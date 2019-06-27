@@ -1,14 +1,12 @@
 /* eslint-disable no-console */
 
-const glob = require('glob');
-const path = require('path');
-const fs = require('fs').promises;
-const { promisify } = require('util');
-const chalk = require('chalk');
+import chalk from 'chalk';
+import { promises as fs } from 'fs';
+import glob from 'glob';
+import * as path from 'path';
+import { promisify } from 'util';
 
-const { handleQuit } = require('../helpers/utils');
-const aws = require('../helpers/aws.js');
-const helpers = require('../helpers/dd-api');
+import helpers from './helpers/dd-api';
 
 interface User {
     email: string;
@@ -48,7 +46,7 @@ interface Test {
         device_ids: string[];
         tick_every: number;
         min_location_failed: number;
-    }
+    };
 }
 
 interface Result {
@@ -111,7 +109,26 @@ interface Suite {
         params: {
             startUrl: string;
         }
-    }]
+    }];
+}
+
+const handleQuit = (stop: () => void) => {
+    // Handle unexpected exits
+    process.on('exit', stop);
+    // catches ctrl+c event
+    process.on('SIGINT', stop);
+    // catches "kill pid" (for example: nodemon restart)
+    process.on('SIGUSR1', stop);
+    process.on('SIGUSR2', stop);
+    // catches uncaught exceptions
+    process.on('uncaughtException', stop);
+};
+
+const API_KEY = process.env.DD_API_KEY;
+const APP_KEY = process.env.DD_APP_KEY;
+
+if (!API_KEY || APP_KEY) {
+    console.log(`Missing ${chalk.red.bold('DD_API_KEY')} and/or ${chalk.red.bold('DD_APP_KEY')} in your environment.`);
 }
 
 const stopIntervals = (interval: NodeJS.Timeout, timeout: NodeJS.Timeout): void => {
@@ -127,7 +144,7 @@ const renderStep = (step: Step) => {
         : chalk.bold.green('✓');
     const value = step.value ? `\n\t\t${chalk.dim(step.value)}` : '';
     const error = step.error ? `\n\t\t${chalk.red.dim(step.error)}` : '';
-    const colorDuration =
+    const colorDuration: (arg: any) => string =
         step.duration > 10000
             ? chalk.bold.red
             : step.duration > 5000
@@ -156,23 +173,19 @@ const renderResult = (test: Test, result: Result) => {
 };
 
 const main = async () => {
-    const API_KEY = await (process.env.DD_API_KEY ||
-        aws.getSecretKey('ci.web-ui.dd_api_key'));
-    const APP_KEY = await (process.env.DD_APP_KEY ||
-        aws.getSecretKey('ci.web-ui.dd_app_key'));
     const BASE_URL = 'https://dd.datad0g.com/api/v1';
 
     const { getTestResults, triggerTests, getTest } = helpers({
-        appKey: APP_KEY,
-        apiKey: API_KEY,
-        baseUrl: BASE_URL
+        apiKey: API_KEY!,
+        appKey: APP_KEY!,
+        baseUrl: BASE_URL,
     });
     const suites: Suite[][] = await promisify(glob)(
         path.join(__dirname, './tests/**/*.synthetics.json')
     )
-        .then((files: string[]) => files.map(test => fs.readFile(test, 'utf8')))
-        .then((promises: Promise<string>[]) => Promise.all(promises))
-        .then((contents: string[]) => contents.map(content => JSON.parse(content)));
+        .then((files: string[]) => files.map((test) => fs.readFile(test, 'utf8')))
+        .then((promises: Array<Promise<string>>) => Promise.all(promises))
+        .then((contents: string[]) => contents.map((content) => JSON.parse(content)));
     const getLatestResult = async (id: string): Promise<ResultContainer | null> =>
         (await getTestResults(id)).results
             .sort((result: ResultContainer) => result.check_time)
@@ -219,16 +232,16 @@ const main = async () => {
             return [test, result];
         });
     };
-    const testPromises: Promise<[Test, Result]>[] = [];
+    const testPromises: Array<Promise<[Test, Result]>> = [];
     console.log(suites);
-    suites.forEach(suite => {
+    suites.forEach((suite) => {
         suite.forEach(({ tests }) => {
             testPromises.push(...tests.map(runTest));
         });
     });
 
     Promise.all(testPromises)
-        .then(results => {
+        .then((results) => {
             let hasSucceed = true;
             results.forEach(([test, result]) => {
                 renderResult(test, result);
@@ -240,7 +253,7 @@ const main = async () => {
                 process.exit(1);
             }
         })
-        .catch(error => {
+        .catch((error) => {
             console.log('ERROR', error);
             process.exit(1);
         });

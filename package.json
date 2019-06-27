@@ -9,7 +9,8 @@
     "private": true,
     "scripts": {
         "build": "tsc",
-        "lint": "tslint -c .tslint.json 'src/**/*.ts'",
+        "lint": "tslint -c tslint.json 'src/**/*.ts'",
+        "typecheck": "tsc --noEmit -p .",
         "format": "yarn lint --fix",
         "prepare": "yarn build"
     },
@@ -21,11 +22,7 @@
     "lint-staged": {
         "linters": {
             "*.{ts,tsx}": [
-                "yarn format",
-                "git add"
-            ],
-            "*.{ts,tsx}": [
-                "tsc --noEmit"
+                "tsc --noEmit --showConfig"
             ],
             ".gitlab-ci.yml": [
                 "yarn lint-gl"
@@ -40,6 +37,7 @@
     "devDependencies": {
         "@types/chalk": "2.2.0",
         "@types/glob": "7.1.1",
+        "@types/node": "12.0.10",
         "eslint": "6.0.1",
         "husky": "2.6.0",
         "lint-staged": "8.2.1",
