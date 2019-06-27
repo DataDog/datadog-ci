@@ -1,0 +1,399 @@
+{
+	"info": {
+		"_postman_id": "f99594cd-4f87-400b-b582-6c0cd41c1178",
+		"name": "DD",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Synthetics",
+			"item": [
+				{
+					"name": "[synth] Trigger test",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"type": "text",
+								"value": "application/json"
+							},
+							{
+								"key": "api_key",
+								"type": "text",
+								"value": "{{API_KEY}}",
+								"disabled": true
+							},
+							{
+								"key": "application_key",
+								"type": "text",
+								"value": "{{APP_KEY}}",
+								"disabled": true
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"public_ids\": [\"{{JOB_ID}}\"]\n}"
+						},
+						"url": {
+							"raw": "{{URL}}/synthetics/tests/trigger?api_key={{API_KEY}}&application_key={{APP_KEY}}",
+							"host": [
+								"{{URL}}"
+							],
+							"path": [
+								"synthetics",
+								"tests",
+								"trigger"
+							],
+							"query": [
+								{
+									"key": "api_key",
+									"value": "{{API_KEY}}"
+								},
+								{
+									"key": "application_key",
+									"value": "{{APP_KEY}}"
+								}
+							]
+						},
+						"description": "Trigger a specific test."
+					},
+					"response": []
+				},
+				{
+					"name": "[synth] Get specific test",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"type": "text",
+								"value": "application/x-www-form-urlencoded"
+							},
+							{
+								"key": "api-key",
+								"type": "text",
+								"value": "{{API_KEY}}",
+								"disabled": true
+							},
+							{
+								"key": "application-key",
+								"type": "text",
+								"value": "{{APP_KEY}}",
+								"disabled": true
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": []
+						},
+						"url": {
+							"raw": "{{URL}}/synthetics/tests/{{JOB_ID}}?api_key={{API_KEY}}&application_key={{APP_KEY}}",
+							"host": [
+								"{{URL}}"
+							],
+							"path": [
+								"synthetics",
+								"tests",
+								"{{JOB_ID}}"
+							],
+							"query": [
+								{
+									"key": "api_key",
+									"value": "{{API_KEY}}"
+								},
+								{
+									"key": "application_key",
+									"value": "{{APP_KEY}}"
+								}
+							]
+						},
+						"description": "Get a specific test."
+					},
+					"response": []
+				},
+				{
+					"name": "[synth] Get list of tests",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"type": "text",
+								"value": "application/x-www-form-urlencoded"
+							},
+							{
+								"key": "api-key",
+								"type": "text",
+								"value": "{{API_KEY}}",
+								"disabled": true
+							},
+							{
+								"key": "application-key",
+								"type": "text",
+								"value": "{{APP_KEY}}",
+								"disabled": true
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": []
+						},
+						"url": {
+							"raw": "{{URL}}/synthetics/tests?api_key={{API_KEY}}&application_key={{APP_KEY}}",
+							"host": [
+								"{{URL}}"
+							],
+							"path": [
+								"synthetics",
+								"tests"
+							],
+							"query": [
+								{
+									"key": "api_key",
+									"value": "{{API_KEY}}"
+								},
+								{
+									"key": "application_key",
+									"value": "{{APP_KEY}}"
+								}
+							]
+						},
+						"description": "Get a list of all tests."
+					},
+					"response": []
+				},
+				{
+					"name": "[synth] Create fast test",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"type": "text",
+								"value": "application/x-www-form-urlencoded"
+							},
+							{
+								"key": "api-key",
+								"type": "text",
+								"value": "{{API_KEY}}",
+								"disabled": true
+							},
+							{
+								"key": "application-key",
+								"type": "text",
+								"value": "{{APP_KEY}}",
+								"disabled": true
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\t\"locations\": [0]\n}"
+						},
+						"url": {
+							"raw": "{{URL}}/synthetics/tests/fast/events?api_key={{API_KEY}}&application_key={{APP_KEY}}",
+							"host": [
+								"{{URL}}"
+							],
+							"path": [
+								"synthetics",
+								"tests",
+								"fast",
+								"events"
+							],
+							"query": [
+								{
+									"key": "api_key",
+									"value": "{{API_KEY}}"
+								},
+								{
+									"key": "application_key",
+									"value": "{{APP_KEY}}"
+								}
+							]
+						},
+						"description": "Create a fast test."
+					},
+					"response": []
+				},
+				{
+					"name": "[synth] Create test",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"type": "text",
+								"value": "application/json"
+							},
+							{
+								"key": "api-key",
+								"type": "text",
+								"value": "{{API_KEY}}",
+								"disabled": true
+							},
+							{
+								"key": "application-key",
+								"type": "text",
+								"value": "{{APP_KEY}}",
+								"disabled": true
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\t\"name\": \"My own test\",\n\t\"tags\": [],\n\t\"type\": \"api\",\n\t\"status\": \"live\",\n\t\"subtype\": \"http\",\n\t\"message\": \"\",\n\t\"options\": {\"min_failure_duration\": 0, \"tick_every\": 3600, \"min_location_failed\": 1},\n\t\"config\": {\"request\":{\"url\":\"https://yoannmoi.net\",\"host\":\"\",\"method\":\"GET\",\"timeout\":30,\"port\":443},\"assertions\":[{\"operator\":\"is\",\"type\":\"statusCode\",\"target\":200},{\"operator\":\"is\",\"property\":\"content-type\",\"type\":\"header\",\"target\":\"text/html; charset=utf-8\"},{\"operator\":\"lessThan\",\"type\":\"responseTime\",\"target\":2000}]},\n\t\"locations\": [\"aws:us-east-1\"]\n}"
+						},
+						"url": {
+							"raw": "{{URL}}/synthetics/tests?api_key={{API_KEY}}&application_key={{APP_KEY}}",
+							"host": [
+								"{{URL}}"
+							],
+							"path": [
+								"synthetics",
+								"tests"
+							],
+							"query": [
+								{
+									"key": "api_key",
+									"value": "{{API_KEY}}"
+								},
+								{
+									"key": "application_key",
+									"value": "{{APP_KEY}}"
+								}
+							]
+						},
+						"description": "Create a test."
+					},
+					"response": []
+				},
+				{
+					"name": "[synth] Get test results",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"type": "text",
+								"value": "application/json"
+							},
+							{
+								"key": "api-key",
+								"type": "text",
+								"value": "{{API_KEY}}",
+								"disabled": true
+							},
+							{
+								"key": "application-key",
+								"type": "text",
+								"value": "{{APP_KEY}}",
+								"disabled": true
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "{{URL}}/synthetics/tests/{{JOB_ID}}/results?api_key={{API_KEY}}&application_key={{APP_KEY}}",
+							"host": [
+								"{{URL}}"
+							],
+							"path": [
+								"synthetics",
+								"tests",
+								"{{JOB_ID}}",
+								"results"
+							],
+							"query": [
+								{
+									"key": "api_key",
+									"value": "{{API_KEY}}"
+								},
+								{
+									"key": "application_key",
+									"value": "{{APP_KEY}}"
+								}
+							]
+						},
+						"description": "Get test results."
+					},
+					"response": []
+				},
+				{
+					"name": "[synth] Get test parameters",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"type": "text",
+								"value": "application/json"
+							},
+							{
+								"key": "api-key",
+								"type": "text",
+								"value": "{{API_KEY}}",
+								"disabled": true
+							},
+							{
+								"key": "application-key",
+								"type": "text",
+								"value": "{{APP_KEY}}",
+								"disabled": true
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "{{URL}}/synthetics/parameters?api_key={{API_KEY}}&application_key={{APP_KEY}}",
+							"host": [
+								"{{URL}}"
+							],
+							"path": [
+								"synthetics",
+								"parameters"
+							],
+							"query": [
+								{
+									"key": "api_key",
+									"value": "{{API_KEY}}"
+								},
+								{
+									"key": "application_key",
+									"value": "{{APP_KEY}}"
+								}
+							]
+						},
+						"description": "Get test parameters."
+					},
+					"response": []
+				}
+			]
+		}
+	]
+}
