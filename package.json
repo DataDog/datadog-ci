@@ -13,7 +13,7 @@
         "format": "yarn lint --fix",
         "lint": "tslint -c tslint.json 'src/**/*.ts'",
         "prepare": "yarn build",
-        "typecheck": "tsc --noEmit -p .",
+        "typecheck": "bash bin/typecheck.sh",
         "watch": "tsc -w"
     },
     "husky": {
@@ -24,17 +24,21 @@
     "lint-staged": {
         "linters": {
             "*.{ts,tsx}": [
-                "tsc --noEmit"
+                "yarn typecheck",
+                "yarn format",
+                "git add"
             ]
         },
         "relative": true
     },
     "dependencies": {
         "chalk": "2.4.2",
+        "commander": "2.20.0",
         "glob": "7.1.4"
     },
     "devDependencies": {
         "@types/chalk": "2.2.0",
+        "@types/commander": "2.12.2",
         "@types/glob": "7.1.1",
         "@types/node": "12.0.10",
         "eslint": "6.0.1",

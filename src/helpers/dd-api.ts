@@ -26,6 +26,12 @@ const getTestResult = (request: (arg: any) => Promise<any>) =>
             endpoint: `/synthetics/tests/${testId}/results/${resultId}`,
         });
 
+const getLatestResult = (request: (arg: any) => Promise<any>) =>
+    async (id: string): Promise<ResultContainer | undefined> =>
+        (await getTestResults(request)(id)).results
+            .sort((result: ResultContainer) => result.check_time)
+            .shift();
+
 export default ({ appKey, apiKey, baseUrl }: { appKey: string, apiKey: string, baseUrl: string}) => {
     const request = (params: any) =>
         req({
@@ -39,6 +45,7 @@ export default ({ appKey, apiKey, baseUrl }: { appKey: string, apiKey: string, b
         });
 
     return {
+        getLatestResult: getLatestResult(request),
         getTest: getTest(request),
         getTestResult: getTestResult(request),
         getTestResults: getTestResults(request),
