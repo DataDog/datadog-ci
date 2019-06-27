@@ -5,6 +5,10 @@ export interface User {
     name: string;
 }
 
+export interface Trigger {
+    triggered_check_ids: string[];
+}
+
 export interface Test {
     status: string;
     public_id: string;
@@ -67,6 +71,11 @@ export interface ResultContainer {
     probe_dc: string;
     result_id: string;
     result: Result;
+}
+
+export interface GetResultsResponse {
+    last_timestamp_fetched: number;
+    results: ResultContainer[];
 }
 
 export interface Resource {

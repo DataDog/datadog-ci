@@ -24,8 +24,9 @@ const handleQuit = (stop: () => void) => {
 const API_KEY = process.env.DD_API_KEY;
 const APP_KEY = process.env.DD_APP_KEY;
 
-if (!API_KEY || APP_KEY) {
+if (!API_KEY || !APP_KEY) {
     console.log(`Missing ${chalk.red.bold('DD_API_KEY')} and/or ${chalk.red.bold('DD_APP_KEY')} in your environment.`);
+    process.exit(1);
 }
 
 const stopIntervals = (interval: NodeJS.Timeout, timeout: NodeJS.Timeout): void => {
@@ -77,13 +78,15 @@ const main = async () => {
         appKey: APP_KEY!,
         baseUrl: BASE_URL,
     });
-    const suites: Suite[][] = await promisify(glob)(
+
+    const suites: Suite[][] = await promisify((glob as any).glob)(
         path.join(__dirname, './tests/**/*.synthetics.json')
     )
         .then((files: string[]) => files.map((test) => fs.readFile(test, 'utf8')))
         .then((promises: Array<Promise<string>>) => Promise.all(promises))
         .then((contents: string[]) => contents.map((content) => JSON.parse(content)));
-    const getLatestResult = async (id: string): Promise<ResultContainer | null> =>
+
+    const getLatestResult = async (id: string): Promise<ResultContainer | undefined> =>
         (await getTestResults(id)).results
             .sort((result: ResultContainer) => result.check_time)
             .shift();
@@ -92,10 +95,13 @@ const main = async () => {
         const test: Test = await getTest(id);
         const latestResult = await getLatestResult(id);
         const idDisplay = `[${chalk.bold.dim(test.public_id)}]`;
+
         console.log(
             `${idDisplay} Trigger test "${chalk.green.bold(test.name)}"`
         );
+
         await triggerTests([id]);
+
         return new Promise<ResultContainer>((resolve, reject) => {
             const timeout = setTimeout(() => {
                 reject('Timeout');

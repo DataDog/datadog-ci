@@ -9,10 +9,12 @@
     "private": true,
     "scripts": {
         "build": "tsc",
-        "lint": "tslint -c tslint.json 'src/**/*.ts'",
-        "typecheck": "tsc --noEmit -p .",
+        "exec": "node ./dist/",
         "format": "yarn lint --fix",
-        "prepare": "yarn build"
+        "lint": "tslint -c tslint.json 'src/**/*.ts'",
+        "prepare": "yarn build",
+        "typecheck": "tsc --noEmit -p .",
+        "watch": "tsc -w"
     },
     "husky": {
         "hooks": {

@@ -1,6 +1,7 @@
+import { GetResultsResponse, ResultContainer, Test, Trigger } from './interfaces';
 import req from './request';
 
-const triggerTests = (request: (arg: any) => Promise<any>) => (testIds: string[]) =>
+const triggerTests = (request: (arg: any) => Promise<any>) => (testIds: string[]): Promise<Trigger> =>
     request({
         body: {
             public_ids: testIds,
@@ -9,20 +10,21 @@ const triggerTests = (request: (arg: any) => Promise<any>) => (testIds: string[]
         method: 'POST',
     });
 
-const getTest = (request: (arg: any) => Promise<any>) => (testId: string) =>
+const getTest = (request: (arg: any) => Promise<any>) => (testId: string): Promise<Test> =>
     request({
         endpoint: `/synthetics/tests/${testId}`,
     });
 
-const getTestResults = (request: (arg: any) => Promise<any>) => (testId: string) =>
+const getTestResults = (request: (arg: any) => Promise<any>) => (testId: string): Promise<GetResultsResponse> =>
     request({
         endpoint: `/synthetics/tests/${testId}/results`,
     });
 
-const getTestResult = (request: (arg: any) => Promise<any>) => (testId: string, resultId: string) =>
-    request({
-        endpoint: `/synthetics/tests/${testId}/results/${resultId}`,
-    });
+const getTestResult = (request: (arg: any) => Promise<any>) =>
+    (testId: string, resultId: string): Promise<ResultContainer> =>
+        request({
+            endpoint: `/synthetics/tests/${testId}/results/${resultId}`,
+        });
 
 export default ({ appKey, apiKey, baseUrl }: { appKey: string, apiKey: string, baseUrl: string}) => {
     const request = (params: any) =>
