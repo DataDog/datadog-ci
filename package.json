@@ -9,8 +9,9 @@
     "private": true,
     "scripts": {
         "build": "tsc",
-        "lint": "tslint -c .tslint.js 'src/**/*.ts'",
-        "format": "yarn lint --fix"
+        "lint": "tslint -c .tslint.json 'src/**/*.ts'",
+        "format": "yarn lint --fix",
+        "prepare": "yarn build"
     },
     "husky": {
         "hooks": {
