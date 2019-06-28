@@ -7,6 +7,14 @@
     "author": "Yoann Moinet <yoann.moinet@datadoghq.com>",
     "license": "Apache-2.0",
     "private": true,
+    "bin": {
+        "synthetics": "dist/index.js"
+    },
+    "files": [
+        "dist/**/*",
+        "README",
+        "LICENSE"
+    ],
     "scripts": {
         "build": "tsc",
         "exec": "node ./dist/",
