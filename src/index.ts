@@ -78,9 +78,14 @@ const runTest = async ({ id }: { id: string }): Promise<[Test, Result]> => {
 const main = async () => {
     const suites = await getSuites(GLOB);
     const testPromises: Array<Promise<[Test, Result]>> = [];
-
+    if (!suites.length) {
+        console.log('No suites to run.');
+        process.exit(0);
+    }
     suites.forEach(({ tests }) => {
-        testPromises.push(...tests.map(runTest));
+        if (tests) {
+            testPromises.push(...tests.map(runTest));
+        }
     });
 
     Promise.all(testPromises)
