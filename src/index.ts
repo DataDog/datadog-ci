@@ -6,6 +6,14 @@ import { Result, ResultContainer, Test } from './helpers/interfaces';
 import { renderResult, renderSteps, renderTrigger, renderWait } from './helpers/renderer';
 import { getSuites, handleQuit, stopIntervals } from './helpers/utils';
 
+const onError = (err: any) => {
+    console.log(err);
+    process.exit(1);
+};
+
+process.on('uncaughtException', onError);
+process.on('unhandledRejection', onError);
+
 program
     .option('--app-key [key]', 'Application Key', process.env.DD_API_KEY)
     .option('--api-key [key]', 'API Key', process.env.DD_APP_KEY)
