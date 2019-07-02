@@ -12,7 +12,7 @@ export DD_API_KEY="your api key"
 export DD_APP_KEY="your application key"
 
 # Passing to CLI
-synthetics --apiKey "your api key" --applicationKey "your application key"
+synthetics --api-key "your api key" --app-key "your application key"
 ```
 
 ### API

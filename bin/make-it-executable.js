@@ -4,13 +4,13 @@ const { exec } = require('child_process');
 const { promisify } = require('util');
 
 const ROOT = path.join(__dirname, '../');
-const scriptPathes = require(path.join(ROOT, './package.json')).bin;
+const scriptPaths = require(path.join(ROOT, './package.json')).bin;
 const execute = promisify(exec);
 
 const INSERT = '#!/usr/bin/env node';
 
 // Loop through all the bin we have in the package.json
-Object.values(scriptPathes).forEach(async script => {
+Object.values(scriptPaths).forEach(async script => {
     const scriptPath = path.join(ROOT, script);
     const content = await fs.readFile(scriptPath, 'utf8');
     // Prepend it with the shebang config.
