@@ -19,7 +19,7 @@
         "build": "tsc",
         "exec": "node ./dist/",
         "format": "yarn lint --fix",
-        "lint": "tslint -c tslint.json 'src/**/*.ts'",
+        "lint": "tslint -p tsconfig.json -c tslint.json",
         "prepare": "yarn build && node ./bin/make-it-executable.js",
         "typecheck": "bash bin/typecheck.sh",
         "watch": "tsc -w"

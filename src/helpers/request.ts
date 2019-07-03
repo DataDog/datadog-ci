@@ -4,13 +4,13 @@ import * as https from 'https';
 import * as querystring from 'querystring';
 import * as url from 'url';
 
-export default ({ TOKEN, BASE_URL }: { TOKEN?: string, BASE_URL: string }) => ({
+export default ({ TOKEN, BASE_URL }: { BASE_URL: string; TOKEN?: string }) => ({
     method = 'GET',
     endpoint,
     qs,
     body,
     json = true,
-}: { method: string, endpoint: string, qs: any, body: any, json: boolean }) => {
+}: { body: any; endpoint: string; json: boolean; method: string; qs: any }) => {
     // Compose the URI.
     const uri = /^https?:\/\//.test(endpoint)
         ? endpoint
@@ -37,6 +37,7 @@ Request Failed.
 `);
                     // Consume response data to free up memory
                     res.resume();
+
                     return;
                 }
 

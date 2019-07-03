@@ -35,6 +35,7 @@ export const renderResult = (test: Test, result: Result) => {
         const error = step.error
             ? `\n\t${chalk.dim(step.value)}\n\t${chalk.red.dim(step.error)}`
             : '';
+
         return `${accu}${error}`;
     }, '');
     const duration = result.stepDetails.reduce(

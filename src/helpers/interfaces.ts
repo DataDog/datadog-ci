@@ -10,67 +10,67 @@ export interface Trigger {
 }
 
 export interface Test {
-    status: string;
-    public_id: string;
-    tags: string[];
-    stepCount: number;
-    locations: string[];
-    message: string;
-    modified_by: User;
-    created_by: User;
-    name: string;
-    monitor_id: number;
-    type: string;
-    created_at: string;
-    modified_at: string;
-    overall_state_modified: string;
-    overall_state: number;
     config: {
-        variables: string[];
+        assertions: any[];
         request: {
-            url: string;
             headers: any;
             method: string;
             timeout: number;
-        },
-        assertions: any[];
+            url: string;
+        };
+        variables: string[];
     };
+    created_at: string;
+    created_by: User;
+    locations: string[];
+    message: string;
+    modified_at: string;
+    modified_by: User;
+    monitor_id: number;
+    name: string;
     options: {
-        min_failure_duration: number;
         device_ids: string[];
-        tick_every: number;
+        min_failure_duration: number;
         min_location_failed: number;
+        tick_every: number;
     };
+    overall_state: number;
+    overall_state_modified: string;
+    public_id: string;
+    status: string;
+    stepCount: number;
+    tags: string[];
+    type: string;
 }
 
 export interface Result {
-    browserVersion: string;
     browserType: string;
-    eventType: string;
-    stepDetails: Step[];
-    timeToInteractive: number;
-    mainDC: string;
-    thumbnailsBucketKey: boolean;
-    receivedEmailCount: number;
+    browserVersion: string;
     device: {
-        width: number;
         height: number;
-        name: string;
-        isMobile: boolean;
         id: string;
+        isMobile: boolean;
+        name: string;
+        width: number;
     };
-    passed: boolean;
     duration: number;
+    eventType: string;
+    mainDC: string;
+    passed: boolean;
+    receivedEmailCount: number;
     startUrl: string;
+    stepDetails: Step[];
+    thumbnailsBucketKey: boolean;
+    timeToInteractive: number;
 }
 
 export interface ResultContainer {
-    status: number;
     check_time: number;
     check_version: number;
     probe_dc: string;
-    result_id: string;
     result: Result;
+    result_id: string;
+    status: number;
 }
 
 export interface GetResultsResponse {
@@ -80,25 +80,25 @@ export interface GetResultsResponse {
 
 export interface Resource {
     duration: number;
-    url: string;
-    type: string;
     size: number;
+    type: string;
+    url: string;
 }
 
 export interface Step {
-    browserErrors: string[];
-    skipped: boolean;
-    description: string;
-    url: string;
-    snapshotBucketKey: boolean;
-    value: string;
     apmTraceIds: string[];
+    browserErrors: string[];
+    description: string;
     duration: number;
-    stepId: number;
-    screenshotBucketKey: boolean;
-    type: string;
-    resource: Resource;
     error?: string;
+    resource: Resource;
+    screenshotBucketKey: boolean;
+    skipped: boolean;
+    snapshotBucketKey: boolean;
+    stepId: number;
+    type: string;
+    url: string;
+    value: string;
 }
 
 export interface Suite {
@@ -107,6 +107,6 @@ export interface Suite {
         id: string;
         params: {
             startUrl: string;
-        }
+        };
     }];
 }

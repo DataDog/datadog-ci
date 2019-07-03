@@ -32,7 +32,7 @@ const getLatestResult = (request: (arg: any) => Promise<any>) =>
             .sort((result: ResultContainer) => result.check_time)
             .shift();
 
-export default ({ appKey, apiKey, baseUrl }: { appKey: string, apiKey: string, baseUrl: string}) => {
+export default ({ appKey, apiKey, baseUrl }: { apiKey: string; appKey: string; baseUrl: string}) => {
     const request = (params: any) =>
         requestConstructor({
             BASE_URL: baseUrl,

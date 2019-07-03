@@ -71,13 +71,14 @@ const runTest = async ({ id }: { id: string }): Promise<[Test, Result]> => {
         handleQuit(() => stopIntervals(interval, timeout));
     }).then(({ result }) => {
         renderSteps(test, result);
+
         return [test, result];
     });
 };
 
 const main = async () => {
     const suites = await getSuites(GLOB);
-    const testPromises: Array<Promise<[Test, Result]>> = [];
+    const testPromises: Promise<[Test, Result]>[] = [];
     if (!suites.length) {
         console.log('No suites to run.');
         process.exit(0);
@@ -89,7 +90,7 @@ const main = async () => {
     });
 
     Promise.all(testPromises)
-        .then((results) => {
+        .then(results => {
             let hasSucceed = true;
             results.forEach(([test, result]) => {
                 renderResult(test, result);
@@ -101,7 +102,7 @@ const main = async () => {
                 process.exit(1);
             }
         })
-        .catch((error) => {
+        .catch(error => {
             console.log(chalk.bgRed.bold(' ERROR '), error);
             process.exit(1);
         });
