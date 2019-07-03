@@ -1,5 +1,5 @@
 import { GetResultsResponse, ResultContainer, Test, Trigger } from './interfaces';
-import req from './request';
+import requestConstructor from './request';
 
 const triggerTests = (request: (arg: any) => Promise<any>) => (testIds: string[]): Promise<Trigger> =>
     request({
@@ -34,7 +34,7 @@ const getLatestResult = (request: (arg: any) => Promise<any>) =>
 
 export default ({ appKey, apiKey, baseUrl }: { appKey: string, apiKey: string, baseUrl: string}) => {
     const request = (params: any) =>
-        req({
+        requestConstructor({
             BASE_URL: baseUrl,
         })({
             ...params,
