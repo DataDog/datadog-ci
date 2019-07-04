@@ -1,5 +1,5 @@
 import { GetResultsResponse, ResultContainer, Test, Trigger } from './interfaces';
-import requestConstructor from './request';
+import { requestConstructor } from './request';
 
 const triggerTests = (request: (arg: any) => Promise<any>) => (testIds: string[]): Promise<Trigger> =>
     request({

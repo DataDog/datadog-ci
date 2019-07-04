@@ -4,7 +4,7 @@ import * as https from 'https';
 import * as querystring from 'querystring';
 import * as url from 'url';
 
-export default ({ TOKEN, BASE_URL }: { BASE_URL: string; TOKEN?: string }) => ({
+export const requestConstructor = ({ TOKEN, BASE_URL }: { BASE_URL: string; TOKEN?: string }) => ({
     method = 'GET',
     endpoint,
     qs,
