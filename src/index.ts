@@ -1,7 +1,7 @@
 import chalk from 'chalk';
 import program from 'commander';
 
-import api from './helpers/dd-api';
+import { apiConstructor } from './helpers/dd-api';
 import { Result, ResultContainer, Test } from './helpers/interfaces';
 import { renderResult, renderSteps, renderTrigger, renderWait } from './helpers/renderer';
 import { getSuites, handleQuit, stopIntervals } from './helpers/utils';
@@ -31,7 +31,7 @@ if (!API_KEY || !APP_KEY) {
     process.exit(1);
 }
 
-const { getLatestResult, triggerTests, getTest } = api({
+const { getLatestResult, triggerTests, getTest } = apiConstructor({
     apiKey: API_KEY!,
     appKey: APP_KEY!,
     baseUrl: BASE_URL,
