@@ -22,16 +22,11 @@ export const stopIntervals = (interval: NodeJS.Timeout, timeout: NodeJS.Timeout)
     clearTimeout(timeout);
 };
 
-export const getSuites = (GLOB: string): Suite[] => {
+export const getSuites = async (GLOB: string): Promise<Suite[]> => {
     console.log(`Finding files in ${path.join(process.cwd(), GLOB)}`);
+    const files: string[] = await promisify((glob as any).glob)(GLOB);
+    console.log(`Got test files:\n${JSON.stringify(files)}`);
+    const contents = await Promise.all(files.map(test => fs.readFile(test, 'utf8')));
 
-    return promisify((glob as any).glob)(GLOB)
-        .then((files: string[]) => {
-            console.log(`Got test files:\n${JSON.stringify(files)}`);
-
-            return files;
-        })
-        .then((files: string[]) => files.map(test => fs.readFile(test, 'utf8')))
-        .then((promises: Promise<string>[]) => Promise.all(promises))
-        .then((contents: string[]) => contents.map(content => JSON.parse(content)));
+    return contents.map(content => JSON.parse(content));
 };
