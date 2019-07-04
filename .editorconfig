@@ -1,6 +1,3 @@
-[*.ts]
-indent_size = 4
-indent_style = space
-[*.json]
-indent_size = 4
+[*.{ts,json,js}]
+indent_size = 2
 indent_style = space

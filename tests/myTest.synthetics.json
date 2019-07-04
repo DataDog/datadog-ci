@@ -1,11 +1,11 @@
 {
-    "description": "Dashboards tests",
-    "tests": [
-        {
-            "id": "3ta-m97-7tc",
-            "params": {
-                "startUrl": "{{BASE}}/dashboard/lists"
-            }
-        }
-    ]
+  "description": "Dashboards tests",
+  "tests": [
+    {
+      "id": "3ta-m97-7tc",
+      "params": {
+        "startUrl": "{{BASE}}/dashboard/lists"
+      }
+    }
+  ]
 }

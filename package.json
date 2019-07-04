@@ -1,57 +1,57 @@
 {
-    "name": "synthetics-ci",
-    "version": "0.0.1",
-    "description": "Run Synthetics tests from your CI.",
-    "main": "dist/index.js",
-    "repository": "git@github.com:DataDog/synthetics-ci.git",
-    "author": "Yoann Moinet <yoann.moinet@datadoghq.com>",
-    "license": "Apache-2.0",
-    "private": true,
-    "bin": {
-        "synthetics": "dist/index.js"
-    },
-    "files": [
-        "dist/**/*",
-        "README",
-        "LICENSE"
-    ],
-    "scripts": {
-        "build": "tsc",
-        "exec": "node ./dist/",
-        "format": "yarn lint --fix",
-        "lint": "tslint -p tsconfig.json -c tslint.json",
-        "prepare": "yarn build && node ./bin/make-it-executable.js",
-        "typecheck": "bash bin/typecheck.sh",
-        "watch": "tsc -w"
-    },
-    "husky": {
-        "hooks": {
-            "pre-commit": "DISABLE_SPINNER=true lint-staged"
-        }
-    },
-    "lint-staged": {
-        "linters": {
-            "*.{ts,tsx}": [
-                "yarn typecheck",
-                "yarn format",
-                "git add"
-            ]
-        },
-        "relative": true
-    },
-    "dependencies": {
-        "chalk": "2.4.2",
-        "commander": "2.20.0",
-        "glob": "7.1.4"
-    },
-    "devDependencies": {
-        "@types/chalk": "2.2.0",
-        "@types/commander": "2.12.2",
-        "@types/glob": "7.1.1",
-        "@types/node": "12.0.10",
-        "husky": "2.6.0",
-        "lint-staged": "8.2.1",
-        "tslint": "5.18.0",
-        "typescript": "3.5.2"
+  "name": "synthetics-ci",
+  "version": "0.0.1",
+  "description": "Run Synthetics tests from your CI.",
+  "main": "dist/index.js",
+  "repository": "git@github.com:DataDog/synthetics-ci.git",
+  "author": "Yoann Moinet <yoann.moinet@datadoghq.com>",
+  "license": "Apache-2.0",
+  "private": true,
+  "bin": {
+    "synthetics": "dist/index.js"
+  },
+  "files": [
+    "dist/**/*",
+    "README",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "exec": "node ./dist/",
+    "format": "yarn lint --fix",
+    "lint": "tslint -p tsconfig.json -c tslint.json",
+    "prepare": "yarn build && node ./bin/make-it-executable.js",
+    "typecheck": "bash bin/typecheck.sh",
+    "watch": "tsc -w"
+  },
+  "husky": {
+    "hooks": {
+      "pre-commit": "DISABLE_SPINNER=true lint-staged"
     }
+  },
+  "lint-staged": {
+    "linters": {
+      "*.{ts,tsx}": [
+        "yarn typecheck",
+        "yarn format",
+        "git add"
+      ]
+    },
+    "relative": true
+  },
+  "dependencies": {
+    "chalk": "2.4.2",
+    "commander": "2.20.0",
+    "glob": "7.1.4"
+  },
+  "devDependencies": {
+    "@types/chalk": "2.2.0",
+    "@types/commander": "2.12.2",
+    "@types/glob": "7.1.1",
+    "@types/node": "12.0.10",
+    "husky": "2.6.0",
+    "lint-staged": "8.2.1",
+    "tslint": "5.18.0",
+    "typescript": "3.5.2"
+  }
 }
