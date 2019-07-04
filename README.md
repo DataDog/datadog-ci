@@ -63,5 +63,3 @@ yarn build
 # Format code
 yarn format
 ```
-
-You can also use [Postman](https://www.getpostman.com/) to test APIs thanks to the [collection](./tests/DD.postman_collection.json) and the [environment](./tests/Staging.postman_environment.json) exports.
