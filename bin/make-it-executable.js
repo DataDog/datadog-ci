@@ -16,5 +16,5 @@ Object.values(scriptPaths).forEach(async script => {
     // Prepend it with the shebang config.
     await fs.writeFile(scriptPath, `${INSERT}\n${content}`);
     // Make it executable.
-    await execute(`chmod +x ${scriptPath}`);
+    await fs.chmod(scriptPath, '755');
 });
