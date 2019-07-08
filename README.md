@@ -17,7 +17,7 @@ synthetics --api-key "your api key" --app-key "your application key"
 
 ### API
 
-By default it will run at the root of the working folder and find `./**/*.synthetics.json` files.
+By default it will run at the root of the working folder and find `{,!(node_modules)/**/}*.synthetics.json` files (every files ending with `.synthetics.json` except those in the `node_modules` folder).
 
 You can pass options to the CLI too.
 
@@ -28,7 +28,7 @@ Options:
   --app-key [app-key]  Application Key
   --api-key [api-key]  API Key
   --api-url [url]      API URL (default: "https://dd.datad0g.com/api/v1")
-  --files [files]      Files to include (default: "./**/*.synthetics.json")
+  --files [files]      Files to include (default: "{,!(node_modules)/**/}*.synthetics.json")
   -h, --help
 ```
 

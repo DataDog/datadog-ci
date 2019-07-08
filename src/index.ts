@@ -18,7 +18,7 @@ program
   .option('--app-key [key]', 'Application Key', process.env.DD_API_KEY)
   .option('--api-key [key]', 'API Key', process.env.DD_APP_KEY)
   .option('--api-url [url]', 'API URL', 'https://dd.datad0g.com/api/v1')
-  .option('--files [glob]', 'Files to include', './**/*.synthetics.json')
+  .option('--files [glob]', 'Files to include', '{,!(node_modules)/**/}*.synthetics.json')
   .parse(process.argv);
 
 const API_KEY = program.appKey;
