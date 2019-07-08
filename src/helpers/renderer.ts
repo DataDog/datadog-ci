@@ -22,9 +22,10 @@ const renderStep = (step: Step) => {
   );
 };
 
-export const renderSteps = (test: Test, result: Result) => {
+export const renderSteps = (test: Test, result: Result, resultId: string, url: string) => {
   const idDisplay = `[${chalk.bold.dim(test.public_id)}]`;
-  console.log(`${idDisplay} ${chalk.green.bold(test.name)} : `);
+  const resultUrl = `${url}/synthetics/details/${test.public_id}/result/${resultId}`;
+  console.log(`${idDisplay} ${chalk.green.bold(test.name)} (${chalk.bold.cyan(resultUrl)}) `);
   result.stepDetails.forEach(renderStep);
 };
 

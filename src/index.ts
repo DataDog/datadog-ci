@@ -67,8 +67,8 @@ const runTest = async ({ id }: { id: string }): Promise<[Test, Result]> => {
   renderTrigger(test);
   await triggerTests([id]);
   renderWait(test);
-  const { result } = await pollNextResult(id);
-  renderSteps(test, result);
+  const { result, result_id } = await pollNextResult(id);
+  renderSteps(test, result, result_id, BASE_URL.replace(/\/api\/v1$/, ''));
 
   return [test, result];
 };
