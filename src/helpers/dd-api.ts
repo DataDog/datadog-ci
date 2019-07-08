@@ -1,32 +1,33 @@
+import { defaults as requestDefaults, RequestPromise } from 'request-promise-native';
 import { GetResultsResponse, ResultContainer, Test, Trigger } from './interfaces';
-import { requestConstructor } from './request';
 
-const triggerTests = (request: (arg: any) => Promise<any>) => (testIds: string[]): Promise<Trigger> =>
+const triggerTests = (request: (arg: any) => RequestPromise<any>) => (testIds: string[]): RequestPromise<Trigger> =>
   request({
     body: {
       public_ids: testIds,
     },
-    endpoint: '/synthetics/tests/trigger',
     method: 'POST',
+    uri: '/synthetics/tests/trigger',
   });
 
-const getTest = (request: (arg: any) => Promise<any>) => (testId: string): Promise<Test> =>
+const getTest = (request: (arg: any) => RequestPromise<any>) => (testId: string): RequestPromise<Test> =>
   request({
-    endpoint: `/synthetics/tests/${testId}`,
+    uri: `/synthetics/tests/${testId}`,
   });
 
-const getTestResults = (request: (arg: any) => Promise<any>) => (testId: string): Promise<GetResultsResponse> =>
-  request({
-    endpoint: `/synthetics/tests/${testId}/results`,
-  });
-
-const getTestResult = (request: (arg: any) => Promise<any>) =>
-  (testId: string, resultId: string): Promise<ResultContainer> =>
+const getTestResults = (request: (arg: any) => RequestPromise<any>) =>
+  (testId: string): RequestPromise<GetResultsResponse> =>
     request({
-      endpoint: `/synthetics/tests/${testId}/results/${resultId}`,
+      uri: `/synthetics/tests/${testId}/results`,
     });
 
-const getLatestResult = (request: (arg: any) => Promise<any>) =>
+const getTestResult = (request: (arg: any) => RequestPromise<any>) =>
+  (testId: string, resultId: string): RequestPromise<ResultContainer> =>
+    request({
+      uri: `/synthetics/tests/${testId}/results/${resultId}`,
+    });
+
+const getLatestResult = (request: (arg: any) => RequestPromise<any>) =>
   async (id: string): Promise<ResultContainer | undefined> =>
     (await getTestResults(request)(id)).results
       .sort((result: ResultContainer) => result.check_time)
@@ -34,15 +35,16 @@ const getLatestResult = (request: (arg: any) => Promise<any>) =>
 
 export const apiConstructor = ({ appKey, apiKey, baseUrl }: { apiKey: string; appKey: string; baseUrl: string}) => {
   const request = (params: any) =>
-    requestConstructor({
-      BASE_URL: baseUrl,
-    })({
-      ...params,
-      qs: {
-        api_key: apiKey,
-        application_key: appKey,
-      },
-    });
+    requestDefaults({
+        baseUrl,
+        json: true,
+      })({
+        ...params,
+        qs: {
+          api_key: apiKey,
+          application_key: appKey,
+        },
+      });
 
   return {
     getLatestResult: getLatestResult(request),
