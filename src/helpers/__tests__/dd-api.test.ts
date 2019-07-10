@@ -1,5 +1,5 @@
 import { apiConstructor } from '../dd-api';
-jest.mock('../request');
+jest.mock('request-promise-native');
 const api = apiConstructor({ apiKey: '123', appKey: '123', baseUrl: 'base' });
 const { getLatestResult } = api;
 
@@ -13,7 +13,7 @@ describe('dd-api', () => {
   };
 
   beforeEach(() => {
-    require('../request')._mockRequest(`/synthetics/tests/${RESULT_ID}/results`, RESULTS);
+    require('request-promise-native')._mockRequest(`/synthetics/tests/${RESULT_ID}/results`, RESULTS);
   });
 
   test('should get latest results from api', async () => {

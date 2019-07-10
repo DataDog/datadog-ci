@@ -5,7 +5,5 @@ const _mockRequest = (path: string, mock: any): void => {
 
 module.exports = {
   _mockRequest,
-  requestConstructor: () => ({
-    endpoint,
-  }: { endpoint: string }) => MOCKS[endpoint],
+  defaults: () => ({ uri }: { uri: string }) => MOCKS[uri],
 };
