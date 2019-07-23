@@ -1,7 +1,8 @@
+import { Options } from 'request';
 import { defaults as requestDefaults, RequestPromise } from 'request-promise-native';
 import { GetResultsResponse, ResultContainer, Test, Trigger } from './interfaces';
 
-const triggerTests = (request: (arg: any) => RequestPromise<any>) => (testIds: string[]): RequestPromise<Trigger> =>
+const triggerTests = (request: (args: Options) => RequestPromise<Trigger>) => (testIds: string[]) =>
   request({
     body: {
       public_ids: testIds,
@@ -10,36 +11,36 @@ const triggerTests = (request: (arg: any) => RequestPromise<any>) => (testIds: s
     uri: '/synthetics/tests/trigger',
   });
 
-const getTest = (request: (arg: any) => RequestPromise<any>) => (testId: string): RequestPromise<Test> =>
+const getTest = (request: (args: Options) => RequestPromise<Test>) => (testId: string) =>
   request({
     uri: `/synthetics/tests/${testId}`,
   });
 
-const getTestResults = (request: (arg: any) => RequestPromise<any>) =>
-  (testId: string): RequestPromise<GetResultsResponse> =>
+const getTestResults = (request: (args: Options) => RequestPromise<GetResultsResponse>) =>
+  (testId: string) =>
     request({
       uri: `/synthetics/tests/${testId}/results`,
     });
 
-const getTestResult = (request: (arg: any) => RequestPromise<any>) =>
-  (testId: string, resultId: string): RequestPromise<ResultContainer> =>
+const getTestResult = (request: (args: Options) => RequestPromise<ResultContainer>) =>
+  (testId: string, resultId: string) =>
     request({
       uri: `/synthetics/tests/${testId}/results/${resultId}`,
     });
 
-const getLatestResult = (request: (arg: any) => RequestPromise<any>) =>
+const getLatestResult = (request: (args: Options) => RequestPromise<GetResultsResponse>) =>
   async (id: string): Promise<ResultContainer | undefined> =>
     (await getTestResults(request)(id)).results
       .sort((result: ResultContainer) => result.check_time)
       .shift();
 
 export const apiConstructor = ({ appKey, apiKey, baseUrl }: { apiKey: string; appKey: string; baseUrl: string}) => {
-  const request = (params: any) =>
+  const request = (args: Options) =>
     requestDefaults({
         baseUrl,
         json: true,
       })({
-        ...params,
+        ...args,
         qs: {
           api_key: apiKey,
           application_key: appKey,
