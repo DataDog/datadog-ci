@@ -1,6 +1,6 @@
 import { Options } from 'request';
 import { defaults as requestDefaults, RequestPromise } from 'request-promise-native';
-import { Config, GetResultsResponse, PollResult, ResultContainer, Test, Trigger } from './interfaces';
+import { Config, PollResult, Test, Trigger } from './interfaces';
 
 const triggerTests = (request: (args: Options) => RequestPromise<Trigger>) => (testIds: string[], config?: Config) =>
   request({
@@ -17,12 +17,6 @@ const getTest = (request: (args: Options) => RequestPromise<Test>) => (testId: s
     uri: `/synthetics/tests/${testId}`,
   });
 
-const getTestResults = (request: (args: Options) => RequestPromise<GetResultsResponse>) =>
-  (testId: string) =>
-    request({
-      uri: `/synthetics/tests/${testId}/results`,
-    });
-
 const pollResults = (request: (args: Options) => RequestPromise<{ results: PollResult[] }>) => (resultIds: string[]) =>
   request({
     qs: {
@@ -30,18 +24,6 @@ const pollResults = (request: (args: Options) => RequestPromise<{ results: PollR
     },
     uri: '/synthetics/tests/poll_results',
   });
-
-const getTestResult = (request: (args: Options) => RequestPromise<ResultContainer>) =>
-  (testId: string, resultId: string) =>
-    request({
-      uri: `/synthetics/tests/${testId}/results/${resultId}`,
-    });
-
-const getLatestResult = (request: (args: Options) => RequestPromise<GetResultsResponse>) =>
-  async (id: string): Promise<ResultContainer | undefined> =>
-    (await getTestResults(request)(id)).results
-      .sort((result: ResultContainer) => result.check_time)
-      .shift();
 
 export const apiConstructor = ({ appKey, apiKey, baseUrl }: { apiKey: string; appKey: string; baseUrl: string}) => {
   const request = (args: Options) =>
@@ -58,10 +40,7 @@ export const apiConstructor = ({ appKey, apiKey, baseUrl }: { apiKey: string; ap
       });
 
   return {
-    getLatestResult: getLatestResult(request),
     getTest: getTest(request),
-    getTestResult: getTestResult(request),
-    getTestResults: getTestResults(request),
     pollResults: pollResults(request),
     triggerTests: triggerTests(request),
   };

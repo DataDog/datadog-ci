@@ -108,20 +108,6 @@ export interface PollResult {
   timestamp: number;
 }
 
-export interface ResultContainer {
-  check_time: number;
-  check_version: number;
-  probe_dc: string;
-  result: Result;
-  result_id: string;
-  status: number;
-}
-
-export interface GetResultsResponse {
-  last_timestamp_fetched: number;
-  results: ResultContainer[];
-}
-
 export interface Resource {
   duration: number;
   size: number;
