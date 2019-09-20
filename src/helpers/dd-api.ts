@@ -1,6 +1,6 @@
 import { Options } from 'request';
 import { defaults as requestDefaults, RequestPromise } from 'request-promise-native';
-import { Config, PollResult, Test, Trigger } from './interfaces';
+import { APIConstructor, Config, PollResult, Test, Trigger } from './interfaces';
 
 const triggerTests = (request: (args: Options) => RequestPromise<Trigger>) => (testIds: string[], config?: Config) =>
   request({
@@ -25,7 +25,7 @@ const pollResults = (request: (args: Options) => RequestPromise<{ results: PollR
     uri: '/synthetics/tests/poll_results',
   });
 
-export const apiConstructor = ({ appKey, apiKey, baseUrl }: { apiKey: string; appKey: string; baseUrl: string}) => {
+export const apiConstructor: APIConstructor = ({ appKey, apiKey, baseUrl }) => {
   const request = (args: Options) =>
     requestDefaults({
         baseUrl,
