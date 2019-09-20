@@ -27,6 +27,7 @@ const BASE_URL = program.apiUrl;
 const GLOB = program.files;
 
 const main = async () => {
+  const startTime = Date.now();
   if (!API_KEY || !APP_KEY) {
     console.log(`Missing ${chalk.red.bold('DD_API_KEY')} and/or ${chalk.red.bold('DD_APP_KEY')} in your environment.`);
     process.exitCode = 1;
@@ -113,7 +114,7 @@ const main = async () => {
       return success1 === success2 ? 0 : success1 ? -1 : 1;
     });
     // Rendering the results.
-    renderHeader(tests);
+    renderHeader(tests, { startTime });
     tests.forEach(t => renderResult(t, BASE_URL.replace(/\/api\/v1$/, '')));
     // Exit the program accordingly.
     if (hasSucceeded) {
