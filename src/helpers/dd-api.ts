@@ -1,10 +1,11 @@
 import { Options } from 'request';
 import { defaults as requestDefaults, RequestPromise } from 'request-promise-native';
-import { GetResultsResponse, ResultContainer, Test, Trigger } from './interfaces';
+import { Config, GetResultsResponse, ResultContainer, Test, Trigger } from './interfaces';
 
-const triggerTests = (request: (args: Options) => RequestPromise<Trigger>) => (testIds: string[]) =>
+const triggerTests = (request: (args: Options) => RequestPromise<Trigger>) => (testIds: string[], config?: Config) =>
   request({
     body: {
+      config,
       public_ids: testIds,
     },
     method: 'POST',

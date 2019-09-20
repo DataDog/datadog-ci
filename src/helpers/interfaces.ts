@@ -5,8 +5,25 @@ export interface User {
   name: string;
 }
 
+export interface Config {
+  startUrl: string;
+}
+
+export interface TriggerResult {
+  device: string;
+  location: number;
+  public_id: string;
+  result_id: string;
+}
+
 export interface Trigger {
+  results: TriggerResult[];
   triggered_check_ids: string[];
+}
+
+export interface TriggerConfig {
+  config?: Config;
+  id: string;
 }
 
 export interface Test {
