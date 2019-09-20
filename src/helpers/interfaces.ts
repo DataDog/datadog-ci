@@ -81,6 +81,15 @@ export interface Result {
   timeToInteractive: number;
 }
 
+export interface PollResult {
+  check_id: number;
+  dc_id: number;
+  orgID: string;
+  result: Result;
+  resultID: string;
+  timestamp: number;
+}
+
 export interface ResultContainer {
   check_time: number;
   check_version: number;

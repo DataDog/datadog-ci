@@ -1,6 +1,6 @@
 import { Options } from 'request';
 import { defaults as requestDefaults, RequestPromise } from 'request-promise-native';
-import { Config, GetResultsResponse, ResultContainer, Test, Trigger } from './interfaces';
+import { Config, GetResultsResponse, PollResult, ResultContainer, Test, Trigger } from './interfaces';
 
 const triggerTests = (request: (args: Options) => RequestPromise<Trigger>) => (testIds: string[], config?: Config) =>
   request({
@@ -22,6 +22,14 @@ const getTestResults = (request: (args: Options) => RequestPromise<GetResultsRes
     request({
       uri: `/synthetics/tests/${testId}/results`,
     });
+
+const pollResults = (request: (args: Options) => RequestPromise<{ results: PollResult[] }>) => (resultIds: string[]) =>
+  request({
+    qs: {
+      result_ids: JSON.stringify(resultIds),
+    },
+    uri: '/synthetics/tests/poll_results',
+  });
 
 const getTestResult = (request: (args: Options) => RequestPromise<ResultContainer>) =>
   (testId: string, resultId: string) =>
@@ -45,6 +53,7 @@ export const apiConstructor = ({ appKey, apiKey, baseUrl }: { apiKey: string; ap
         qs: {
           api_key: apiKey,
           application_key: appKey,
+          ...args.qs,
         },
       });
 
@@ -53,6 +62,7 @@ export const apiConstructor = ({ appKey, apiKey, baseUrl }: { apiKey: string; ap
     getTest: getTest(request),
     getTestResult: getTestResult(request),
     getTestResults: getTestResults(request),
+    pollResults: pollResults(request),
     triggerTests: triggerTests(request),
   };
 };
