@@ -3,7 +3,7 @@ import * as glob from 'glob';
 import * as path from 'path';
 import { promisify } from 'util';
 
-import { Suite } from './interfaces';
+import { Config, PollResult, Suite, Test, TestComposite } from './interfaces';
 
 export const handleQuit = (stop: () => void) => {
   // Handle unexpected exits
@@ -21,6 +21,40 @@ export const stopIntervals = (interval: NodeJS.Timeout, timeout: NodeJS.Timeout)
   clearInterval(interval);
   clearTimeout(timeout);
 };
+
+export const template = (st: string, context: any): string =>
+  st.replace(/{{([A-Z_]+)}}/g, (match: string, p1: string, offset: number) => context[p1] ? context[p1] : match);
+
+export const handleConfig = (test: Test, config?: Config): Config | undefined => {
+  if (!config || !Object.keys(config).length) {
+    return config;
+  }
+
+  const handledConfig = { ...config };
+  const context = {
+    ...process.env,
+    URL: test.config.request.url,
+  };
+
+  handledConfig.startUrl = template(config.startUrl, context);
+
+  return handledConfig;
+};
+
+export const hasResultPassed = (result: PollResult): boolean => {
+  if (typeof result.result.passed === 'boolean') {
+    return result.result.passed;
+  }
+
+  if (typeof result.result.errorCode === 'string') {
+    return false;
+  }
+
+  return true;
+};
+
+export const hasTestSucceeded = (test: TestComposite): boolean =>
+  test.results.reduce((previous: boolean, current: PollResult) => previous && hasResultPassed(current), true);
 
 export const getSuites = async (GLOB: string): Promise<Suite[]> => {
   console.log(`Finding files in ${path.join(process.cwd(), GLOB)}`);

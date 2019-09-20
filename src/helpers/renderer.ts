@@ -1,6 +1,7 @@
 import chalk from 'chalk';
 
-import { Result, Step, Test } from './interfaces';
+import { PollResult, Step, Test, TestComposite } from './interfaces';
+import { hasResultPassed, hasTestSucceeded } from './utils';
 
 const renderStep = (step: Step) => {
   const icon = step.error
@@ -8,8 +9,8 @@ const renderStep = (step: Step) => {
     : step.skipped
     ? chalk.bold.yellow('⇢')
     : chalk.bold.green('✓');
-  const value = step.value ? `\n\t\t${chalk.dim(step.value)}` : '';
-  const error = step.error ? `\n\t\t${chalk.red.dim(step.error)}` : '';
+  const value = step.value ? `\n      ${chalk.dim(step.value)}` : '';
+  const error = step.error ? `\n      ${chalk.red.dim(step.error)}` : '';
   const colorDuration: (arg: any) => string =
     step.duration > 10000
       ? chalk.bold.red
@@ -17,40 +18,60 @@ const renderStep = (step: Step) => {
       ? chalk.bold.yellow
       : chalk.bold;
   const duration = `${colorDuration(step.duration)}ms`;
-  console.log(
-    `\t${icon} | ${duration} - ${step.description}${value}${error}`
-  );
+
+  return `    ${icon} | ${duration} - ${step.description}${value}${error}`;
 };
 
-export const renderSteps = (test: Test, result: Result, resultId: string, url: string) => {
+export const renderSteps = (test: TestComposite, baseUrl: string) => {
+  test.results.forEach((r: PollResult) => {
+    const resultUrl = `${baseUrl}/synthetics/details/${test.public_id}/result/${r.resultID}`;
+    const success = hasResultPassed(r);
+    const color = success ? chalk.green : chalk.red;
+    const icon = success ? chalk.bold.green('✓') : chalk.bold.red('✖');
+    const device = test.type === 'browser' ? ` - device: ${chalk.bold(r.result.device.id)}` : '';
+    const resultIdentification = color(`  ${icon} location: ${chalk.bold(r.dc_id.toString())}${device}`);
+    let steps = '';
+
+    if (test.type === 'api') {
+      const req = test.config.request;
+      const requestText = `${chalk.bold(req.method)} - ${req.url}`;
+      const errors = success
+        ? ''
+        : color(`\n      [${chalk.bold(r.result.errorCode!)}] - ${chalk.dim(r.result.errorMessage!)}`);
+
+      steps = `\n    ${icon} ${color(requestText)}${errors}`;
+    } else if (test.type === 'browser') {
+      steps = `\n${r.result.stepDetails.map(renderStep).join('\n')}`;
+    }
+    console.log(`${resultIdentification}\n    ⎋  ${chalk.dim.cyan(resultUrl)}${steps}`);
+  });
+};
+
+export const renderResult = (test: TestComposite, baseUrl: string) => {
+  const success = hasTestSucceeded(test);
+  const icon = success ? chalk.bold.green('✓') : chalk.bold.red('✖');
   const idDisplay = `[${chalk.bold.dim(test.public_id)}]`;
-  const resultUrl = `${url}/synthetics/details/${test.public_id}/result/${resultId}`;
-  console.log(`${idDisplay} ${chalk.green.bold(test.name)} (${chalk.bold.cyan(resultUrl)}) `);
-  result.stepDetails.forEach(renderStep);
+  const nameColor = success ? chalk.bold.green : chalk.bold.red;
+
+  console.log(`${icon} ${idDisplay} | ${nameColor(test.name)}`);
+
+  if (!success) {
+    renderSteps(test, baseUrl);
+  }
 };
 
-export const renderResult = (test: Test, result: Result) => {
-  const icon = result.passed ? chalk.bold.green('✓') : chalk.bold.red('✖');
-  const nameColor = result.passed ? chalk.bold.green : chalk.bold.red;
-  const errors = result.stepDetails.reduce((accu, step) => {
-    const error = step.error
-      ? `\n\t${chalk.dim(step.value)}\n\t${chalk.red.dim(step.error)}`
-      : '';
-
-    return `${accu}${error}`;
-  }, '');
-  const duration = result.stepDetails.reduce(
-    (accu, step) => accu + step.duration,
-    0
-  );
-  console.log(`${icon} | ${duration}ms - ${nameColor(test.name)}${errors}`);
-};
-
-export const renderTrigger = (test: Test) => {
-  const idDisplay = `[${chalk.bold.dim(test.public_id)}]`;
+export const renderTrigger = (test: Test | undefined, testId: string) => {
+  const idDisplay = `[${chalk.bold.dim(testId)}]`;
+  const message = test
+    ? `Trigger test "${chalk.green.bold(test.name)}"`
+    : chalk.red.bold(`Could not find test "${testId}"`);
   console.log(
-    `${idDisplay} Trigger test "${chalk.green.bold(test.name)}"`
+    `${idDisplay} ${message}`
   );
+};
+
+export const renderHeader = (tests: TestComposite[]) => {
+  console.log(`\n=== ${chalk.bold.cyan('REPORT')} ===\n\n`);
 };
 
 export const renderWait = (test: Test) => {

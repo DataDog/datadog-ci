@@ -60,6 +60,20 @@ export interface Test {
   type: string;
 }
 
+export interface TestComposite extends Test {
+  results: PollResult[];
+  triggerResults: TriggerResult[];
+}
+
+export interface Timings {
+  dns: number;
+  download: number;
+  firstByte: number;
+  ssl: number;
+  tcp: number;
+  total: number;
+}
+
 export interface Result {
   browserType: string;
   browserVersion: string;
@@ -71,6 +85,8 @@ export interface Result {
     width: number;
   };
   duration: number;
+  errorCode?: string;
+  errorMessage?: string;
   eventType: string;
   mainDC: string;
   passed: boolean;
@@ -79,6 +95,8 @@ export interface Result {
   stepDetails: Step[];
   thumbnailsBucketKey: boolean;
   timeToInteractive: number;
+  timings?: Timings;
+  unhealthy?: boolean;
 }
 
 export interface PollResult {
