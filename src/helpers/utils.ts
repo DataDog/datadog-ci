@@ -3,7 +3,11 @@ import * as glob from 'glob';
 import * as path from 'path';
 import { promisify } from 'util';
 
-import { Config, PollResult, Suite, Test, TestComposite } from './interfaces';
+import { APIHelper, Config, PollResult, Suite, Test, TestComposite, TriggerConfig, TriggerResult } from './interfaces';
+import { renderTrigger, renderWait } from './renderer';
+
+const INTERVAL_CHECKING = 5000; // In ms
+const POLL_TIMEOUT = 60 * 60 * 1000; // 1h
 
 export const handleQuit = (stop: () => void) => {
   // Handle unexpected exits
@@ -63,4 +67,56 @@ export const getSuites = async (GLOB: string): Promise<Suite[]> => {
   const contents = await Promise.all(files.map(test => fs.readFile(test, 'utf8')));
 
   return contents.map(content => JSON.parse(content));
+};
+
+export const waitForTests = async (api: APIHelper, resultIds: string[]): Promise<PollResult[]> => {
+  const finishedResults: PollResult[] = [];
+  const pollingIds = [ ...resultIds ];
+  let pollTimeout: NodeJS.Timeout;
+
+  return new Promise((resolve, reject) => {
+    const timeout = setTimeout(() => {
+      clearTimeout(pollTimeout);
+      reject('Timeout');
+    }, POLL_TIMEOUT);
+    const poll = async (toPoll: string[]) => {
+      const { results } = await api.pollResults(toPoll);
+      results.forEach((result: PollResult) => {
+        if (result.result.eventType === 'finished') {
+          finishedResults.push(result);
+          pollingIds.splice(pollingIds.indexOf(result.resultID), 1);
+        }
+      });
+
+      if (pollingIds.length) {
+        pollTimeout = setTimeout(() => {
+          poll(pollingIds);
+        }, INTERVAL_CHECKING);
+      } else {
+        clearTimeout(timeout);
+        resolve(finishedResults);
+      }
+    };
+
+    poll(pollingIds);
+  });
+};
+
+export const runTest = async (api: APIHelper, { id, config }: TriggerConfig): Promise<[Test, TriggerResult[]] | []> => {
+  let test: Test | undefined;
+  try {
+    test = await api.getTest(id);
+  } catch (e) {
+    // Just ignore it for now.
+  }
+
+  renderTrigger(test, id);
+  if (test) {
+    const triggerResponse = await api.triggerTests([id], handleConfig(test, config));
+    renderWait(test);
+
+    return [test, triggerResponse.results];
+  }
+
+  return [];
 };
