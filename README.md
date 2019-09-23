@@ -39,12 +39,11 @@ Your test files have to be named with a `.synthetics.json` suffix.
 ```json
 // myTest.synthetics.json
 {
-    "description": "Description of your suite.",
     "tests": [
         {
             "id": "public-id-of-test",
             "config": {
-                "startUrl": "{{URL}}/startUrl"
+                "startUrl": "{{URL}}?static_hash={{STATIC_HASH}}"
             }
         }
     ]

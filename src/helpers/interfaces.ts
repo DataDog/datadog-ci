@@ -134,7 +134,6 @@ export interface Step {
 }
 
 export interface Suite {
-  description: string;
   tests: [{
     id: string;
     params: {
