@@ -10,7 +10,7 @@ const INSERT = '#!/usr/bin/env node';
 Object.values(scriptPaths).forEach(async script => {
   const scriptPath = path.join(ROOT, script);
   const content = await fs.readFile(scriptPath, 'utf8');
-  if (!new RegExp(`^${INSERT}`).test(content)) {
+  if (!content.startsWith(INSERT)) {
     // Prepend it with the shebang config.
     await fs.writeFile(scriptPath, `${INSERT}\n${content}`);
   }

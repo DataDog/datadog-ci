@@ -61,40 +61,26 @@ const main = async () => {
     // Wait after all the triggers requests.
     const values: ([Test, TriggerResult[]] | [])[] = await Promise.all(triggerTestPromises);
     // Aggregate informations.
-    const tests: TestComposite[] = values.reduce(
-      (previous: TestComposite[], [ test, results ]) => {
-        if (test && results) {
-          return [
-            ...previous,
-            {
-              ...test,
-              results: [],
-              triggerResults: results,
-            },
-          ];
-        }
-
-        return previous;
-      },
-      []
-    );
-    // Get all resultIds as an array for polling.
-    const allResultIds: string[] = tests.reduce(
-      (previous: string[], current: TestComposite) => [
-        ...previous,
-        ...current.triggerResults.map(r => r.result_id),
-      ],
-      []
-    );
+    const tests: TestComposite[] = [];
+    const allResultIds: string[] = [];
+    for (const [test, results] of values) {
+      if (test && results) {
+        tests.push({
+          ...test,
+          results: [],
+          triggerResults: results,
+        });
+        // Get all resultIds as an array for polling.
+        allResultIds.push(...results.map(r => r.result_id));
+      }
+    }
     // Poll the results.
     const testResults = await waitForTests(api, allResultIds);
     // Aggregate results.
     testResults.forEach(result => {
       const resultId = result.resultID;
       const test = tests.find((tc: TestComposite) =>
-        tc.triggerResults.find((t: TriggerResult) => t.result_id === resultId)
-          ? true
-          : false
+        tc.triggerResults.some((t: TriggerResult) => t.result_id === resultId)
       );
 
       if (test) {
@@ -102,10 +88,7 @@ const main = async () => {
       }
     });
     // Determine if all the tests have succeeded
-    const hasSucceeded = tests.reduce(
-      (previous: boolean, current: TestComposite) => previous && hasTestSucceeded(current),
-      true
-    );
+    const hasSucceeded = tests.every((test: TestComposite) => hasTestSucceeded(test));
     // Sort tests to show success first.
     tests.sort((t1, t2) => {
       const success1 = hasTestSucceeded(t1);
@@ -115,7 +98,9 @@ const main = async () => {
     });
     // Rendering the results.
     renderHeader(tests, { startTime });
-    tests.forEach(t => renderResult(t, BASE_URL.replace(/\/api\/v1$/, '')));
+    for (const test of tests) {
+      renderResult(test, BASE_URL.replace(/\/api\/v1$/, ''));
+    }
     // Exit the program accordingly.
     if (hasSucceeded) {
       process.exitCode = 0;

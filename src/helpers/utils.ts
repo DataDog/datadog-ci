@@ -46,11 +46,11 @@ export const handleConfig = (test: Test, config?: Config): Config | undefined =>
 };
 
 export const hasResultPassed = (result: PollResult): boolean => {
-  if (typeof result.result.passed === 'boolean') {
+  if (typeof result.result.passed !== 'undefined') {
     return result.result.passed;
   }
 
-  if (typeof result.result.errorCode === 'string') {
+  if (typeof result.result.errorCode !== 'undefined') {
     return false;
   }
 
@@ -58,7 +58,7 @@ export const hasResultPassed = (result: PollResult): boolean => {
 };
 
 export const hasTestSucceeded = (test: TestComposite): boolean =>
-  test.results.reduce((previous: boolean, current: PollResult) => previous && hasResultPassed(current), true);
+  test.results.every((result: PollResult) => hasResultPassed(result));
 
 export const getSuites = async (GLOB: string): Promise<Suite[]> => {
   console.log(`Finding files in ${path.join(process.cwd(), GLOB)}`);
@@ -81,12 +81,12 @@ export const waitForTests = async (api: APIHelper, resultIds: string[]): Promise
     }, POLL_TIMEOUT);
     const poll = async (toPoll: string[]) => {
       const { results } = await api.pollResults(toPoll);
-      results.forEach((result: PollResult) => {
+      for (const result of results) {
         if (result.result.eventType === 'finished') {
           finishedResults.push(result);
           pollingIds.splice(pollingIds.indexOf(result.resultID), 1);
         }
-      });
+      }
 
       if (pollingIds.length) {
         pollTimeout = setTimeout(() => {
