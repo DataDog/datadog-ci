@@ -1,3 +1,5 @@
+import { RequestPromise } from 'request-promise-native';
+
 export interface User {
   email: string;
   handle: string;
@@ -5,8 +7,25 @@ export interface User {
   name: string;
 }
 
+export interface Config {
+  startUrl: string;
+}
+
+export interface TriggerResult {
+  device: string;
+  location: number;
+  public_id: string;
+  result_id: string;
+}
+
 export interface Trigger {
+  results: TriggerResult[];
   triggered_check_ids: string[];
+}
+
+export interface TriggerConfig {
+  config?: Config;
+  id: string;
 }
 
 export interface Test {
@@ -43,6 +62,20 @@ export interface Test {
   type: string;
 }
 
+export interface TestComposite extends Test {
+  results: PollResult[];
+  triggerResults: TriggerResult[];
+}
+
+export interface Timings {
+  dns: number;
+  download: number;
+  firstByte: number;
+  ssl: number;
+  tcp: number;
+  total: number;
+}
+
 export interface Result {
   browserType: string;
   browserVersion: string;
@@ -54,6 +87,8 @@ export interface Result {
     width: number;
   };
   duration: number;
+  errorCode?: string;
+  errorMessage?: string;
   eventType: string;
   mainDC: string;
   passed: boolean;
@@ -62,20 +97,17 @@ export interface Result {
   stepDetails: Step[];
   thumbnailsBucketKey: boolean;
   timeToInteractive: number;
+  timings?: Timings;
+  unhealthy?: boolean;
 }
 
-export interface ResultContainer {
-  check_time: number;
-  check_version: number;
-  probe_dc: string;
+export interface PollResult {
+  check_id: number;
+  dc_id: number;
+  orgID: string;
   result: Result;
-  result_id: string;
-  status: number;
-}
-
-export interface GetResultsResponse {
-  last_timestamp_fetched: number;
-  results: ResultContainer[];
+  resultID: string;
+  timestamp: number;
 }
 
 export interface Resource {
@@ -102,7 +134,6 @@ export interface Step {
 }
 
 export interface Suite {
-  description: string;
   tests: [{
     id: string;
     params: {
@@ -110,3 +141,15 @@ export interface Suite {
     };
   }];
 }
+
+export type GetTest = (testId: string) => RequestPromise<Test>;
+export type PollResults = (resultIds: string[]) => RequestPromise<{ results: PollResult[] }>;
+export type TriggerTests = (testIds: string[], config?: Config) => RequestPromise<Trigger>;
+
+export interface APIHelper {
+  getTest: GetTest;
+  pollResults: PollResults;
+  triggerTests: TriggerTests;
+}
+
+export type APIConstructor = (args: { apiKey: string; appKey: string; baseUrl: string}) => APIHelper;

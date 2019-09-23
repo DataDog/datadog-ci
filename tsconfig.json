@@ -15,7 +15,10 @@
       ]
     },
     "allowSyntheticDefaultImports": true,
-    "esModuleInterop": true
+    "esModuleInterop": true,
+    "lib": [
+      "es2019"
+    ]
   },
   "include": [
     "src/**/*"

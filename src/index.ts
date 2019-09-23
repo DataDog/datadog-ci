@@ -2,9 +2,9 @@ import chalk from 'chalk';
 import program from 'commander';
 
 import { apiConstructor } from './helpers/dd-api';
-import { Result, ResultContainer, Test } from './helpers/interfaces';
-import { renderResult, renderSteps, renderTrigger, renderWait } from './helpers/renderer';
-import { getSuites, handleQuit, stopIntervals } from './helpers/utils';
+import { Test, TestComposite, TriggerResult } from './helpers/interfaces';
+import { renderHeader, renderResult } from './helpers/renderer';
+import { getSuites, hasTestSucceeded, runTest, waitForTests } from './helpers/utils';
 
 const onError = (err: any) => {
   console.log(err);
@@ -27,6 +27,7 @@ const BASE_URL = program.apiUrl;
 const GLOB = program.files;
 
 const main = async () => {
+  const startTime = Date.now();
   if (!API_KEY || !APP_KEY) {
     console.log(`Missing ${chalk.red.bold('DD_API_KEY')} and/or ${chalk.red.bold('DD_APP_KEY')} in your environment.`);
     process.exitCode = 1;
@@ -34,50 +35,14 @@ const main = async () => {
     return;
   }
 
-  const { getLatestResult, triggerTests, getTest } = apiConstructor({
+  const api = apiConstructor({
     apiKey: API_KEY,
     appKey: APP_KEY,
     baseUrl: BASE_URL,
   });
 
-  const pollNextResult = (id: string) => new Promise<ResultContainer>(async (resolve, reject) => {
-    const latestResult = await getLatestResult(id);
-    const timeout = setTimeout(() => {
-      reject('Timeout');
-    }, 60 * 60 * 1000); // Timeout after 1 hour.
-
-    const interval = setInterval(async () => {
-      const result = await getLatestResult(id);
-      if (!result) {
-        return;
-      }
-
-      if (
-        !latestResult ||
-        result.result_id !== latestResult.result_id
-      ) {
-        stopIntervals(interval, timeout);
-        resolve(result);
-      }
-    }, 5000); // Make a request every 5 seconds.
-
-    // Safety exit.
-    handleQuit(() => stopIntervals(interval, timeout));
-  });
-
-  const runTest = async ({ id }: { id: string }): Promise<[Test, Result]> => {
-    const test: Test = await getTest(id);
-    renderTrigger(test);
-    await triggerTests([id]);
-    renderWait(test);
-    const { result, result_id } = await pollNextResult(id);
-    renderSteps(test, result, result_id, BASE_URL.replace(/\/api\/v1$/, ''));
-
-    return [test, result];
-  };
-
   const suites = await getSuites(GLOB);
-  const testPromises: Promise<[Test, Result]>[] = [];
+  const triggerTestPromises: Promise<[Test, TriggerResult[]] | []>[] = [];
 
   if (!suites.length) {
     console.log('No suites to run.');
@@ -88,18 +53,56 @@ const main = async () => {
 
   suites.forEach(({ tests }) => {
     if (tests) {
-      testPromises.push(...tests.map(runTest));
+      triggerTestPromises.push(...tests.map(t => runTest(api, t)));
     }
   });
 
   try {
-    const results = await Promise.all(testPromises);
-    let hasSucceed = true;
-    results.forEach(([test, result]) => {
-      renderResult(test, result);
-      hasSucceed = hasSucceed && result.passed;
+    // Wait after all the triggers requests.
+    const values: ([Test, TriggerResult[]] | [])[] = await Promise.all(triggerTestPromises);
+    // Aggregate informations.
+    const tests: TestComposite[] = [];
+    const allResultIds: string[] = [];
+    for (const [test, results] of values) {
+      if (test && results) {
+        tests.push({
+          ...test,
+          results: [],
+          triggerResults: results,
+        });
+        // Get all resultIds as an array for polling.
+        allResultIds.push(...results.map(r => r.result_id));
+      }
+    }
+    // Poll the results.
+    const testResults = await waitForTests(api, allResultIds);
+    // Aggregate results.
+    testResults.forEach(result => {
+      const resultId = result.resultID;
+      const test = tests.find((tc: TestComposite) =>
+        tc.triggerResults.some((t: TriggerResult) => t.result_id === resultId)
+      );
+
+      if (test) {
+        test.results.push(result);
+      }
     });
-    if (hasSucceed) {
+    // Determine if all the tests have succeeded
+    const hasSucceeded = tests.every((test: TestComposite) => hasTestSucceeded(test));
+    // Sort tests to show success first.
+    tests.sort((t1, t2) => {
+      const success1 = hasTestSucceeded(t1);
+      const success2 = hasTestSucceeded(t2);
+
+      return success1 === success2 ? 0 : success1 ? -1 : 1;
+    });
+    // Rendering the results.
+    renderHeader(tests, { startTime });
+    for (const test of tests) {
+      renderResult(test, BASE_URL.replace(/\/api\/v1$/, ''));
+    }
+    // Exit the program accordingly.
+    if (hasSucceeded) {
       process.exitCode = 0;
     } else {
       process.exitCode = 1;

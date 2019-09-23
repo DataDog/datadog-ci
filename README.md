@@ -39,17 +39,21 @@ Your test files have to be named with a `.synthetics.json` suffix.
 ```json
 // myTest.synthetics.json
 {
-    "description": "Description of your suite.",
     "tests": [
         {
             "id": "public-id-of-test",
-            "params": {
-                "startUrl": "{{BASE}}/startUrl"
+            "config": {
+                "startUrl": "{{URL}}?static_hash={{STATIC_HASH}}"
             }
         }
     ]
 }
 ```
+
+You can use variables in `config.startUrl`.
+
+- `URL` will be replace by the test's url.
+- any other environment variable.
 
 ## Development
 
@@ -62,4 +66,7 @@ yarn build
 
 # Format code
 yarn format
+
+# Make bin executable
+yarn prepare
 ```

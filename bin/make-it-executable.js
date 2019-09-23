@@ -10,8 +10,10 @@ const INSERT = '#!/usr/bin/env node';
 Object.values(scriptPaths).forEach(async script => {
   const scriptPath = path.join(ROOT, script);
   const content = await fs.readFile(scriptPath, 'utf8');
-  // Prepend it with the shebang config.
-  await fs.writeFile(scriptPath, `${INSERT}\n${content}`);
+  if (!content.startsWith(INSERT)) {
+    // Prepend it with the shebang config.
+    await fs.writeFile(scriptPath, `${INSERT}\n${content}`);
+  }
   // Make it executable.
   await fs.chmod(scriptPath, '755');
 });
