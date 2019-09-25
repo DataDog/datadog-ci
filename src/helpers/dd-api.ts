@@ -32,11 +32,8 @@ export const apiConstructor: APIConstructor = ({ appKey, apiKey, baseUrl }) => {
         json: true,
       })({
         ...args,
-        qs: {
-          api_key: apiKey,
-          application_key: appKey,
-          ...args.qs,
-        },
+        headers: { 'X-Requested-With': 'synthetics-ci' },
+        qs: { api_key: apiKey, application_key: appKey, ...args.qs },
       });
 
   return {
