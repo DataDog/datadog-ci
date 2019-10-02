@@ -74,6 +74,11 @@ const main = async () => {
         allResultIds.push(...results.map(r => r.result_id));
       }
     }
+
+    if (!allResultIds.length) {
+      throw new Error('No result to poll.');
+    }
+
     // Poll the results.
     const testResults = await waitForTests(api, allResultIds);
     // Aggregate results.

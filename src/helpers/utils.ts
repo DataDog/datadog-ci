@@ -80,21 +80,27 @@ export const waitForTests = async (api: APIHelper, resultIds: string[]): Promise
       reject('Timeout');
     }, POLL_TIMEOUT);
     const poll = async (toPoll: string[]) => {
-      const { results } = await api.pollResults(toPoll);
-      for (const result of results) {
-        if (result.result.eventType === 'finished') {
-          finishedResults.push(result);
-          pollingIds.splice(pollingIds.indexOf(result.resultID), 1);
+      try {
+        const { results } = await api.pollResults(toPoll);
+        for (const result of results) {
+          if (result.result.eventType === 'finished') {
+            finishedResults.push(result);
+            pollingIds.splice(pollingIds.indexOf(result.resultID), 1);
+          }
         }
-      }
 
-      if (pollingIds.length) {
-        pollTimeout = setTimeout(() => {
-          poll(pollingIds);
-        }, INTERVAL_CHECKING);
-      } else {
+        if (pollingIds.length) {
+          pollTimeout = setTimeout(() => {
+            poll(pollingIds);
+          }, INTERVAL_CHECKING);
+        } else {
+          clearTimeout(timeout);
+          resolve(finishedResults);
+        }
+      } catch (e) {
         clearTimeout(timeout);
-        resolve(finishedResults);
+        clearTimeout(pollTimeout);
+        reject('Could not poll results.');
       }
     };
 
