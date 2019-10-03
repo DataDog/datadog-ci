@@ -73,7 +73,7 @@ export const renderTrigger = (test: Test | undefined, testId: string) => {
 export const renderHeader = (tests: TestComposite[], timings: { startTime: number }) => {
   const currentTime = Date.now();
   console.log(`\n\n${chalk.bold.cyan('=== REPORT ===')}
-Tooks ${chalk.bold((currentTime - timings.startTime).toString())}ms\n\n`);
+Took ${chalk.bold((currentTime - timings.startTime).toString())}ms\n\n`);
 };
 
 export const renderWait = (test: Test) => {
