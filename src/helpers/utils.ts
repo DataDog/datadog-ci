@@ -88,7 +88,7 @@ export const waitForTests = async (api: APIHelper, resultIds: string[]): Promise
         maxErrors = MAX_RETRIES;
       } catch (e) {
         maxErrors -= 1;
-        if (maxErrors <= 0) {
+        if (maxErrors < 0) {
           clearTimeout(timeout);
           clearTimeout(pollTimeout);
           reject(`Could not poll results: ${e.toString()}`);
