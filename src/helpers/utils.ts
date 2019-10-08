@@ -8,7 +8,7 @@ import { renderTrigger, renderWait } from './renderer';
 
 const INTERVAL_CHECKING = 5000; // In ms
 const POLL_TIMEOUT = 2 * 60 * 1000; // 2m
-const MAX_CONSECUTIVE_POLL_ERRORS = 2;
+const MAX_RETRIES = 2;
 
 export const handleQuit = (stop: () => void) => {
   // Handle unexpected exits
@@ -80,15 +80,15 @@ export const waitForTests = async (api: APIHelper, resultIds: string[]): Promise
       clearTimeout(pollTimeout);
       reject('Timeout');
     }, POLL_TIMEOUT);
-    let maxErrors = MAX_CONSECUTIVE_POLL_ERRORS;
+    let maxErrors = MAX_RETRIES;
     const poll = async (toPoll: string[]) => {
       let results: PollResult[] = [];
       try {
         results = (await api.pollResults(toPoll)).results;
-        maxErrors = MAX_CONSECUTIVE_POLL_ERRORS;
+        maxErrors = MAX_RETRIES;
       } catch (e) {
         maxErrors -= 1;
-        if (!maxErrors) {
+        if (maxErrors <= 0) {
           clearTimeout(timeout);
           clearTimeout(pollTimeout);
           reject(`Could not poll results: ${e.toString()}`);
