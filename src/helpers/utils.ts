@@ -7,7 +7,7 @@ import { APIHelper, Config, PollResult, Suite, Test, TestComposite, TriggerConfi
 import { renderTrigger, renderWait } from './renderer';
 
 const INTERVAL_CHECKING = 5000; // In ms
-const POLL_TIMEOUT = 60 * 60 * 1000; // 1h
+const POLL_TIMEOUT = 2 * 60 * 1000; // 2m
 
 export const handleQuit = (stop: () => void) => {
   // Handle unexpected exits
