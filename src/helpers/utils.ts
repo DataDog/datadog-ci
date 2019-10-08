@@ -7,7 +7,8 @@ import { APIHelper, Config, PollResult, Suite, Test, TestComposite, TriggerConfi
 import { renderTrigger, renderWait } from './renderer';
 
 const INTERVAL_CHECKING = 5000; // In ms
-const POLL_TIMEOUT = 60 * 60 * 1000; // 1h
+const POLL_TIMEOUT = 2 * 60 * 1000; // 2m
+const MAX_RETRIES = 2;
 
 export const handleQuit = (stop: () => void) => {
   // Handle unexpected exits
@@ -79,16 +80,21 @@ export const waitForTests = async (api: APIHelper, resultIds: string[]): Promise
       clearTimeout(pollTimeout);
       reject('Timeout');
     }, POLL_TIMEOUT);
+    let maxErrors = MAX_RETRIES;
     const poll = async (toPoll: string[]) => {
       let results: PollResult[] = [];
       try {
         results = (await api.pollResults(toPoll)).results;
+        maxErrors = MAX_RETRIES;
       } catch (e) {
-        clearTimeout(timeout);
-        clearTimeout(pollTimeout);
-        reject('Could not poll results.');
+        maxErrors -= 1;
+        if (maxErrors < 0) {
+          clearTimeout(timeout);
+          clearTimeout(pollTimeout);
+          reject(`Could not poll results: ${e.toString()}`);
 
-        return;
+          return;
+        }
       }
 
       for (const result of results) {
