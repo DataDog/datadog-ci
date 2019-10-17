@@ -29,6 +29,7 @@ Options:
   --api-key [api-key]  API Key
   --api-url [url]      API URL (default: "https://dd.datad0g.com/api/v1")
   --files [files]      Files to include (default: "{,!(node_modules)/**/}*.synthetics.json")
+  --timeout [timeout]  Timeout in ms (default: 2 minutes)
   -h, --help
 ```
 

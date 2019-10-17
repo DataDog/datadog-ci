@@ -2,7 +2,7 @@ import chalk from 'chalk';
 import program from 'commander';
 
 import { apiConstructor } from './helpers/dd-api';
-import { Test, TestComposite, TriggerResult } from './helpers/interfaces';
+import { PollResult, Test, TestComposite, TriggerResult } from './helpers/interfaces';
 import { renderHeader, renderResult } from './helpers/renderer';
 import { getSuites, hasTestSucceeded, runTest, waitForTests } from './helpers/utils';
 
@@ -19,12 +19,14 @@ program
   .option('--api-key [key]', 'API Key', process.env.DD_APP_KEY)
   .option('--api-url [url]', 'API URL', 'https://dd.datad0g.com/api/v1')
   .option('--files [glob]', 'Files to include', '{,!(node_modules)/**/}*.synthetics.json')
+  .option('--timeout [timeout]', 'Timeout in ms', 2 * 60 * 1000) // 2 minutes
   .parse(process.argv);
 
 const API_KEY = program.appKey;
 const APP_KEY = program.apiKey;
 const BASE_URL = program.apiUrl;
 const GLOB = program.files;
+const TIMEOUT = program.timeout;
 
 const main = async () => {
   const startTime = Date.now();
@@ -80,9 +82,9 @@ const main = async () => {
     }
 
     // Poll the results.
-    const testResults = await waitForTests(api, allResultIds);
+    const testResults = await waitForTests(api, allResultIds, TIMEOUT);
     // Aggregate results.
-    testResults.forEach(result => {
+    testResults.forEach((result: PollResult) => {
       const resultId = result.resultID;
       const test = tests.find((tc: TestComposite) =>
         tc.triggerResults.some((t: TriggerResult) => t.result_id === resultId)
