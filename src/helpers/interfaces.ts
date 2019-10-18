@@ -152,4 +152,8 @@ export interface APIHelper {
   triggerTests: TriggerTests;
 }
 
+export interface WaitForTestsOptions {
+  timeout: number;
+}
+
 export type APIConstructor = (args: { apiKey: string; appKey: string; baseUrl: string}) => APIHelper;

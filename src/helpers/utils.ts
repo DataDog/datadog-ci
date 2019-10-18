@@ -3,11 +3,20 @@ import * as glob from 'glob';
 import * as path from 'path';
 import { promisify } from 'util';
 
-import { APIHelper, Config, PollResult, Suite, Test, TestComposite, TriggerConfig, TriggerResult } from './interfaces';
+import {
+  APIHelper,
+  Config,
+  PollResult,
+  Suite,
+  Test,
+  TestComposite,
+  TriggerConfig,
+  TriggerResult,
+  WaitForTestsOptions
+} from './interfaces';
 import { renderTrigger, renderWait } from './renderer';
 
 const INTERVAL_CHECKING = 5000; // In ms
-const POLL_TIMEOUT = 2 * 60 * 1000; // 2m
 const MAX_RETRIES = 2;
 
 export const handleQuit = (stop: () => void) => {
@@ -70,7 +79,11 @@ export const getSuites = async (GLOB: string): Promise<Suite[]> => {
   return contents.map(content => JSON.parse(content));
 };
 
-export const waitForTests = async (api: APIHelper, resultIds: string[]): Promise<PollResult[]> => {
+export const waitForTests = async (
+  api: APIHelper,
+  resultIds: string[],
+  opts: WaitForTestsOptions
+): Promise<PollResult[]> => {
   const finishedResults: PollResult[] = [];
   const pollingIds = [ ...resultIds ];
   let pollTimeout: NodeJS.Timeout;
@@ -79,7 +92,7 @@ export const waitForTests = async (api: APIHelper, resultIds: string[]): Promise
     const timeout = setTimeout(() => {
       clearTimeout(pollTimeout);
       reject('Timeout');
-    }, POLL_TIMEOUT);
+    }, opts.timeout);
     let maxErrors = MAX_RETRIES;
     const poll = async (toPoll: string[]) => {
       let results: PollResult[] = [];
