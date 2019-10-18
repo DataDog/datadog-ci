@@ -2,7 +2,7 @@ import chalk from 'chalk';
 import program from 'commander';
 
 import { apiConstructor } from './helpers/dd-api';
-import { PollResult, Test, TestComposite, TriggerResult } from './helpers/interfaces';
+import { Test, TestComposite, TriggerResult } from './helpers/interfaces';
 import { renderHeader, renderResult } from './helpers/renderer';
 import { getSuites, hasTestSucceeded, runTest, waitForTests } from './helpers/utils';
 
@@ -82,9 +82,9 @@ const main = async () => {
     }
 
     // Poll the results.
-    const testResults = await waitForTests(api, allResultIds, TIMEOUT);
+    const testResults = await waitForTests(api, allResultIds, { timeout: TIMEOUT });
     // Aggregate results.
-    testResults.forEach((result: PollResult) => {
+    testResults.forEach(result => {
       const resultId = result.resultID;
       const test = tests.find((tc: TestComposite) =>
         tc.triggerResults.some((t: TriggerResult) => t.result_id === resultId)

@@ -3,7 +3,17 @@ import * as glob from 'glob';
 import * as path from 'path';
 import { promisify } from 'util';
 
-import { APIHelper, Config, PollResult, Suite, Test, TestComposite, TriggerConfig, TriggerResult } from './interfaces';
+import {
+  APIHelper,
+  Config,
+  PollResult,
+  Suite,
+  Test,
+  TestComposite,
+  TriggerConfig,
+  TriggerResult,
+  WaitForTestsOptions
+} from './interfaces';
 import { renderTrigger, renderWait } from './renderer';
 
 const INTERVAL_CHECKING = 5000; // In ms
@@ -72,7 +82,7 @@ export const getSuites = async (GLOB: string): Promise<Suite[]> => {
 export const waitForTests = async (
   api: APIHelper,
   resultIds: string[],
-  globalTimeout: number
+  opts: WaitForTestsOptions
 ): Promise<PollResult[]> => {
   const finishedResults: PollResult[] = [];
   const pollingIds = [ ...resultIds ];
@@ -82,7 +92,7 @@ export const waitForTests = async (
     const timeout = setTimeout(() => {
       clearTimeout(pollTimeout);
       reject('Timeout');
-    }, globalTimeout);
+    }, opts.timeout);
     let maxErrors = MAX_RETRIES;
     const poll = async (toPoll: string[]) => {
       let results: PollResult[] = [];
