@@ -24,7 +24,7 @@ const main = async () => {
     global: { },
     timeout: 2 * 60 * 1000,
   });
-  console.log(config);
+
   if (!config.apiKey || !config.appKey) {
     console.log(`Missing ${chalk.red.bold('DD_API_KEY')} and/or ${chalk.red.bold('DD_APP_KEY')} in your environment.`);
     process.exitCode = 1;
