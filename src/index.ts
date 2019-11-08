@@ -1,8 +1,10 @@
 import chalk from 'chalk';
 import program from 'commander';
+import fs from 'fs';
+import { promisify } from 'util';
 
 import { apiConstructor } from './helpers/dd-api';
-import { Test, TestComposite, TriggerResult } from './helpers/interfaces';
+import { ConfigFile, GlobalConfig, Test, TestComposite, TriggerResult } from './helpers/interfaces';
 import { renderHeader, renderResult } from './helpers/renderer';
 import { getSuites, hasTestSucceeded, runTest, waitForTests } from './helpers/utils';
 
@@ -20,13 +22,16 @@ program
   .option('--api-url [url]', 'API URL', 'https://dd.datad0g.com/api/v1')
   .option('--files [glob]', 'Files to include', '{,!(node_modules)/**/}*.synthetics.json')
   .option('--timeout [timeout]', 'Timeout in ms', 2 * 60 * 1000) // 2 minutes
+  .option('--config-file [file]', 'Path to config file')
   .parse(process.argv);
 
-const API_KEY = program.apiKey;
-const APP_KEY = program.appKey;
-const BASE_URL = program.apiUrl;
-const GLOB = program.files;
-const TIMEOUT = program.timeout;
+let API_KEY = program.apiKey;
+let API_URL = program.apiUrl;
+let APP_KEY = program.appKey;
+let GLOB = program.files;
+let TIMEOUT = program.timeout;
+let GLOBAL_CONFIG: GlobalConfig = { };
+const CONFIG_FILE = program.configFile;
 
 const main = async () => {
   const startTime = Date.now();
@@ -37,10 +42,30 @@ const main = async () => {
     return;
   }
 
+  let config: ConfigFile;
+  try {
+    const fileContent = await promisify(fs.readFile)(CONFIG_FILE, 'utf8');
+    config = JSON.parse(fileContent);
+  } catch (e) {
+    console.log(`Error while reading/parsing ${chalk.red.bold(CONFIG_FILE)}.`, e);
+    process.exitCode = 1;
+
+    return;
+  }
+
+  if (config) {
+    API_KEY = config.apiKey || API_KEY;
+    APP_KEY = config.appKey || APP_KEY;
+    API_URL = config.apiUrl || API_URL;
+    GLOB = config.glob || GLOB;
+    GLOBAL_CONFIG = config.global || GLOBAL_CONFIG;
+    TIMEOUT = config.timeout || TIMEOUT;
+  }
+
   const api = apiConstructor({
     apiKey: API_KEY,
     appKey: APP_KEY,
-    baseUrl: BASE_URL,
+    baseUrl: API_URL,
   });
 
   const suites = await getSuites(GLOB);
@@ -55,7 +80,12 @@ const main = async () => {
 
   suites.forEach(({ tests }) => {
     if (tests) {
-      triggerTestPromises.push(...tests.map(t => runTest(api, t)));
+      triggerTestPromises.push(
+        ...tests.map(t => runTest(api, {
+          config: { ...GLOBAL_CONFIG, ...t.config },
+          id: t.id,
+        }))
+      );
     }
   });
 
@@ -106,7 +136,7 @@ const main = async () => {
     // Rendering the results.
     renderHeader(tests, { startTime });
     for (const test of tests) {
-      renderResult(test, BASE_URL.replace(/\/api\/v1$/, ''));
+      renderResult(test, API_URL.replace(/\/api\/v1$/, ''));
     }
     // Exit the program accordingly.
     if (hasSucceeded) {

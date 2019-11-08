@@ -25,11 +25,12 @@ You can pass options to the CLI too.
 Usage: synthetics [options]
 
 Options:
-  --app-key [app-key]  Application Key
-  --api-key [api-key]  API Key
-  --api-url [url]      API URL (default: "https://dd.datad0g.com/api/v1")
-  --files [files]      Files to include (default: "{,!(node_modules)/**/}*.synthetics.json")
-  --timeout [timeout]  Timeout in ms (default: 2 minutes)
+  --app-key     [app-key]    Application Key
+  --api-key     [api-key]    API Key
+  --api-url     [url]        API URL (default: "https://dd.datad0g.com/api/v1")
+  --files       [files]      Files to include (default: "{,!(node_modules)/**/}*.synthetics.json")
+  --timeout     [timeout]    Timeout in ms (default: 2 minutes)
+  --config-file [file]       Path to config file
   -h, --help
 ```
 
@@ -63,6 +64,30 @@ You can use variables in `config.startUrl`.
 - `PROTOCOL` => 'https:'
 - `SUBDOMAIN` => 'www'
 - any other environment variable.
+
+## Config file
+
+You can pass a JSON config file to the CLI as well.
+
+`synthetics-config.json`:
+```json
+{
+    "apiKey": "123456",
+    "appKey": "123456",
+    "apiUrl": "https://app.datadoghq.com/api/v1",
+    "files": "{,!(node_modules)/**/}*.synthetics.json",
+    "global": {
+        "startUrl": "{{PROTOCOL}}//{{SUBDOMAIN}}-{{STATIC_HASH}}.{{HOST}}{{PATHNAME}}{{PARAMS}}"
+    },
+    "timeout": 220000
+}
+```
+
+Then run:
+
+```bash
+yarn synthetics --config-file ./synthetics-config.json
+```
 
 ## Development
 

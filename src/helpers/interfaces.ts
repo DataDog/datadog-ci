@@ -11,6 +11,19 @@ export interface Config {
   startUrl: string;
 }
 
+export interface GlobalConfig {
+  startUrl?: string;
+}
+
+export interface ConfigFile {
+  apiKey: string;
+  apiUrl: string;
+  appKey: string;
+  glob: string;
+  global: GlobalConfig;
+  timeout: number;
+}
+
 export interface TemplateContext extends NodeJS.ProcessEnv {
   HOST: string;
   HOSTNAME: string;
@@ -147,10 +160,10 @@ export interface Step {
 
 export interface Suite {
   tests: [{
-    id: string;
-    params: {
+    config: {
       startUrl: string;
     };
+    id: string;
   }];
 }
 
