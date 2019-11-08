@@ -40,7 +40,7 @@ export const stopIntervals = (interval: NodeJS.Timeout, timeout: NodeJS.Timeout)
 };
 
 export const template = (st: string, context: any): string =>
-  st.replace(/{{([A-Z_]+)}}/g, (match: string, p1: string, offset: number) => context[p1] ? context[p1] : match);
+  st.replace(/{{([A-Z_]+)}}/g, (match: string, p1: string) => context[p1] ? context[p1] : '');
 
 export const handleConfig = (test: Test, config?: Config): Config | undefined => {
   if (!config || !Object.keys(config).length) {
