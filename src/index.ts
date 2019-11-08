@@ -145,7 +145,7 @@ const main = async () => {
       process.exitCode = 1;
     }
   } catch (error) {
-    console.log(chalk.bgRed.bold(' ERROR '), error);
+    console.log(`\n${chalk.bgRed.bold(' ERROR ')}\n${error.toString()}\n`);
     process.exitCode = 1;
   }
 };
