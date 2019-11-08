@@ -53,7 +53,15 @@ Your test files have to be named with a `.synthetics.json` suffix.
 
 You can use variables in `config.startUrl`.
 
-- `URL` will be replace by the test's url.
+- `URL` => Complete url of the test, 'https://www.example.org:81/path/to/something?search=yolo'
+- `HOST` => 'www.example.org:81'
+- `HOSTNAME` => 'www.example.org'
+- `ORIGIN` => 'https://www.example.org:81'
+- `PARAMS` => '?search=yolo'
+- `PATHNAME` => '/path/to/something'
+- `PORT` => '81'
+- `PROTOCOL` => 'https:'
+- `SUBDOMAIN` => 'www'
 - any other environment variable.
 
 ## Development

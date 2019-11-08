@@ -1,6 +1,7 @@
 import { promises as fs } from 'fs';
 import * as glob from 'glob';
 import * as path from 'path';
+import { URL } from 'url';
 import { promisify } from 'util';
 
 import {
@@ -8,6 +9,7 @@ import {
   Config,
   PollResult,
   Suite,
+  TemplateContext,
   Test,
   TestComposite,
   TriggerConfig,
@@ -18,6 +20,7 @@ import { renderTrigger, renderWait } from './renderer';
 
 const INTERVAL_CHECKING = 5000; // In ms
 const MAX_RETRIES = 2;
+const SUBDOMAIN_REGEX = /(.*?)\.(?=[^\/]*\..{2,5})/;
 
 export const handleQuit = (stop: () => void) => {
   // Handle unexpected exits
@@ -45,8 +48,18 @@ export const handleConfig = (test: Test, config?: Config): Config | undefined =>
   }
 
   const handledConfig = { ...config };
-  const context = {
+  const objUrl = new URL(test.config.request.url);
+  const subdomainMatch = objUrl.hostname.match(SUBDOMAIN_REGEX);
+  const context: TemplateContext = {
     ...process.env,
+    HOST: objUrl.host,
+    HOSTNAME: objUrl.hostname,
+    ORIGIN: objUrl.origin,
+    PARAMS: objUrl.search,
+    PATHNAME: objUrl.pathname,
+    PORT: objUrl.port,
+    PROTOCOL: objUrl.protocol,
+    SUBDOMAIN: subdomainMatch ? subdomainMatch[1] : undefined,
     URL: test.config.request.url,
   };
 

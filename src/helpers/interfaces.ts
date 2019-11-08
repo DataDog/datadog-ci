@@ -11,6 +11,18 @@ export interface Config {
   startUrl: string;
 }
 
+export interface TemplateContext extends NodeJS.ProcessEnv {
+  HOST: string;
+  HOSTNAME: string;
+  ORIGIN: string;
+  PARAMS: string;
+  PATHNAME: string;
+  PORT: string;
+  PROTOCOL: string;
+  SUBDOMAIN: string | undefined;
+  URL: string;
+}
+
 export interface TriggerResult {
   device: string;
   location: number;
