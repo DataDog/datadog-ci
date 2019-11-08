@@ -25,6 +25,7 @@ export interface ConfigFile {
 }
 
 export interface TemplateContext extends NodeJS.ProcessEnv {
+  DOMAIN: string;
   HOST: string;
   HOSTNAME: string;
   ORIGIN: string;
