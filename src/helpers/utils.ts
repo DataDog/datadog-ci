@@ -86,7 +86,11 @@ export const hasTestSucceeded = (test: TestComposite): boolean =>
 export const getSuites = async (GLOB: string): Promise<Suite[]> => {
   console.log(`Finding files in ${path.join(process.cwd(), GLOB)}`);
   const files: string[] = await promisify((glob as any).glob)(GLOB);
-  console.log(`\nGot test files:\n${files.map(file => `  - ${file}\n`).join('')}`);
+  if (files.length) {
+    console.log(`\nGot test files:\n${files.map(file => `  - ${file}\n`).join('')}`);
+  } else {
+    console.log('\nNo test files found.\n');
+  }
   const contents = await Promise.all(files.map(test => fs.readFile(test, 'utf8')));
 
   return contents.map(content => JSON.parse(content));

@@ -19,7 +19,7 @@ export interface ConfigFile {
   apiKey: string;
   apiUrl: string;
   appKey: string;
-  glob: string;
+  files: string;
   global: GlobalConfig;
   timeout: number;
 }

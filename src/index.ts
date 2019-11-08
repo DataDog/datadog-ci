@@ -57,7 +57,7 @@ const main = async () => {
     API_KEY = config.apiKey || API_KEY;
     APP_KEY = config.appKey || APP_KEY;
     API_URL = config.apiUrl || API_URL;
-    GLOB = config.glob || GLOB;
+    GLOB = config.files || GLOB;
     GLOBAL_CONFIG = config.global || GLOBAL_CONFIG;
     TIMEOUT = config.timeout || TIMEOUT;
   }
