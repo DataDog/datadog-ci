@@ -80,6 +80,7 @@ You can configure on which url your test will start by providing a `config.start
 You can build your own starting url using any part of your test's original starting url:
 
 - `URL`: your test's original starting url, ex: 'https://www.example.org:81/path/to/something?abc=123'
+- `DOMAIN`: 'example.org'
 - `HOST`: 'www.example.org:81'
 - `HOSTNAME`: 'www.example.org'
 - `ORIGIN`: 'https://www.example.org:81'
@@ -89,6 +90,14 @@ You can build your own starting url using any part of your test's original start
 - `PROTOCOL`: 'https:'
 - `SUBDOMAIN`: 'www'
 - any other environment variable.
+
+For instance, if your test's starting url is `https://www.example.org:81/path/to/something?abc=123`
+
+it could be rewritten:
+- `{{PROTOCOL}}//{{SUBDOMAIN}}.{{DOMAIN}}:{{PORT}}{{PATHNAME}}{{PARAMS}}`
+- `{{PROTOCOL}}//{{HOST}}{{PATHNAME}}{{PARAMS}}`
+- `{{URL}}`
+- and so on...
 
 ## Development
 
