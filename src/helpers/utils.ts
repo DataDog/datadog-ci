@@ -79,19 +79,66 @@ export const getSuites = async (GLOB: string): Promise<Suite[]> => {
   return contents.map(content => JSON.parse(content));
 };
 
+const getTestFromResultID = (tests: TestComposite[], resultID: string): TestComposite | undefined => {
+    const test = tests.find((tc: TestComposite) =>
+      tc.triggerResults.some((t: TriggerResult) => t.result_id === resultID)
+    );
+
+    if (test) {
+      return test;
+    }
+};
+
+const getTriggerResultFromResultID = (tests: TestComposite[], resultID: string): TriggerResult | undefined => {
+  let triggerResult: TriggerResult | undefined;
+  tests.forEach((tc: TestComposite) =>
+    tc.triggerResults.forEach((tr: TriggerResult) => {
+      if (tr.result_id === resultID) {
+        triggerResult = tr;
+
+        return;
+      }
+    }));
+
+  return triggerResult;
+};
+
+// Will mutate `tests` to add results to it.
 export const waitForTests = async (
   api: APIHelper,
-  resultIds: string[],
+  tests: TestComposite[],
   opts: WaitForTestsOptions
 ): Promise<PollResult[]> => {
   const finishedResults: PollResult[] = [];
-  const pollingIds = [ ...resultIds ];
+  const pollingIds: string[] = [ ];
+  for (const test of tests) {
+    pollingIds.push(...test.triggerResults.map(r => r.result_id));
+  }
   let pollTimeout: NodeJS.Timeout;
 
   return new Promise((resolve, reject) => {
+    // When the polling timesout we still want to keep what we've got until now.
     const timeout = setTimeout(() => {
       clearTimeout(pollTimeout);
-      reject('Timeout');
+      // Build and inject timeout errors.
+      for (const resultID of pollingIds) {
+        const triggerResult = getTriggerResultFromResultID(tests, resultID);
+        const pollResult: unknown = {
+          dc_id: triggerResult ? triggerResult.location : undefined,
+          result: {
+            device: triggerResult ? { id: triggerResult.device } : undefined,
+            error: 'Timeout',
+            passed: false,
+            stepDetails: [],
+          },
+          resultID,
+        };
+        const test = getTestFromResultID(tests, resultID);
+        if (test) {
+          test.results.push(pollResult as PollResult);
+        }
+      }
+      resolve(finishedResults);
     }, opts.timeout);
     let maxErrors = MAX_RETRIES;
     const poll = async (toPoll: string[]) => {
@@ -112,7 +159,12 @@ export const waitForTests = async (
 
       for (const result of results) {
         if (result.result.eventType === 'finished') {
-          finishedResults.push(result);
+          const test = getTestFromResultID(tests, result.resultID);
+          if (test) {
+            // Push the result.
+            test.results.push(result);
+          }
+          // Remove the resultID from the ids to poll.
           pollingIds.splice(pollingIds.indexOf(result.resultID), 1);
         }
       }

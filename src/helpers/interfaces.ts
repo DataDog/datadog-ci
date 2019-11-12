@@ -87,6 +87,7 @@ export interface Result {
     width: number;
   };
   duration: number;
+  error?: string;
   errorCode?: string;
   errorMessage?: string;
   eventType: string;

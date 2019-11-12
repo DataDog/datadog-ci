@@ -82,18 +82,9 @@ const main = async () => {
     }
 
     // Poll the results.
-    const testResults = await waitForTests(api, allResultIds, { timeout: TIMEOUT });
-    // Aggregate results.
-    testResults.forEach(result => {
-      const resultId = result.resultID;
-      const test = tests.find((tc: TestComposite) =>
-        tc.triggerResults.some((t: TriggerResult) => t.result_id === resultId)
-      );
+    // It will push results directly in the `tests` object.
+    await waitForTests(api, tests, { timeout: TIMEOUT });
 
-      if (test) {
-        test.results.push(result);
-      }
-    });
     // Determine if all the tests have succeeded
     const hasSucceeded = tests.every((test: TestComposite) => hasTestSucceeded(test));
     // Sort tests to show success first.
