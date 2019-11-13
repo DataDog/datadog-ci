@@ -50,7 +50,7 @@ export const handleConfig = (test: Test, config?: Config): Config | undefined =>
   const handledConfig = { ...config };
   const objUrl = new URL(test.config.request.url);
   const subdomainMatch = objUrl.hostname.match(SUBDOMAIN_REGEX);
-  const domain = subdomainMatch ? objUrl.hostname.replace(subdomainMatch[1], '') : objUrl.hostname;
+  const domain = subdomainMatch ? objUrl.hostname.replace(`${subdomainMatch[1]}.`, '') : objUrl.hostname;
   const context: TemplateContext = {
     ...process.env,
     DOMAIN: domain,
