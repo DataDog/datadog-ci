@@ -62,18 +62,19 @@ const main = async () => {
   try {
     // Wait after all the triggers requests.
     const values: ([Test, TriggerResult[]] | [])[] = await Promise.all(triggerTestPromises);
+
     // Aggregate informations.
     const tests: TestComposite[] = [];
     const allResultIds: string[] = [];
-    for (const [test, results] of values) {
-      if (test && results) {
+    for (const [test, triggerResults] of values) {
+      if (test && triggerResults) {
         tests.push({
           ...test,
           results: [],
-          triggerResults: results,
+          triggerResults,
         });
         // Get all resultIds as an array for polling.
-        allResultIds.push(...results.map(r => r.result_id));
+        allResultIds.push(...triggerResults.map(r => r.result_id));
       }
     }
 
@@ -82,11 +83,13 @@ const main = async () => {
     }
 
     // Poll the results.
-    // It will push results directly in the `tests` object.
-    await waitForTests(api, tests, { timeout: TIMEOUT });
+    const results = await waitForTests(api, tests, { timeout: TIMEOUT });
 
-    // Determine if all the tests have succeeded
-    const hasSucceeded = tests.every((test: TestComposite) => hasTestSucceeded(test));
+    // Give each test its results
+    tests.forEach(test => {
+      test.results = results[test.public_id];
+    });
+
     // Sort tests to show success first.
     tests.sort((t1, t2) => {
       const success1 = hasTestSucceeded(t1);
@@ -94,11 +97,15 @@ const main = async () => {
 
       return success1 === success2 ? 0 : success1 ? -1 : 1;
     });
+
     // Rendering the results.
     renderHeader(tests, { startTime });
     for (const test of tests) {
       renderResult(test, BASE_URL.replace(/\/api\/v1$/, ''));
     }
+
+    // Determine if all the tests have succeeded
+    const hasSucceeded = tests.every((test: TestComposite) => hasTestSucceeded(test));
     // Exit the program accordingly.
     if (hasSucceeded) {
       process.exitCode = 0;

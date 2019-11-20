@@ -79,50 +79,34 @@ export const getSuites = async (GLOB: string): Promise<Suite[]> => {
   return contents.map(content => JSON.parse(content));
 };
 
-const getTestFromResultID = (tests: TestComposite[], resultID: string): TestComposite | undefined => {
-    const test = tests.find((tc: TestComposite) =>
-      tc.triggerResults.some((t: TriggerResult) => t.result_id === resultID)
-    );
-
-    if (test) {
-      return test;
-    }
-};
-
-const getTriggerResultFromResultID = (tests: TestComposite[], resultID: string): TriggerResult | undefined => {
-  let triggerResult: TriggerResult | undefined;
-  tests.forEach((tc: TestComposite) =>
-    tc.triggerResults.forEach((tr: TriggerResult) => {
-      if (tr.result_id === resultID) {
-        triggerResult = tr;
-
-        return;
-      }
-    }));
-
-  return triggerResult;
-};
-
 // Will mutate `tests` to add results to it.
 export const waitForTests = async (
   api: APIHelper,
   tests: TestComposite[],
   opts: WaitForTestsOptions
-): Promise<PollResult[]> => {
-  const finishedResults: PollResult[] = [];
+): Promise<{ [key: string]: PollResult[] }> => {
+  const finishedResults: { [key: string]: PollResult[] } = { };
   const pollingIds: string[] = [ ];
-  for (const test of tests) {
-    pollingIds.push(...test.triggerResults.map(r => r.result_id));
-  }
+  const triggerResultsByResultID: { [key: string]: TriggerResult} = { };
+  let maxErrors = MAX_RETRIES;
+
+  Object.values(tests).forEach(test => {
+    finishedResults[test.public_id] = [];
+    test.triggerResults.forEach(result => {
+      triggerResultsByResultID[result.result_id] = result;
+      pollingIds.push(result.result_id);
+    });
+  });
+
   let pollTimeout: NodeJS.Timeout;
 
   return new Promise((resolve, reject) => {
-    // When the polling timesout we still want to keep what we've got until now.
+    // When the polling timeout we still want to keep what we've got until now.
     const timeout = setTimeout(() => {
       clearTimeout(pollTimeout);
       // Build and inject timeout errors.
       for (const resultID of pollingIds) {
-        const triggerResult = getTriggerResultFromResultID(tests, resultID);
+        const triggerResult = triggerResultsByResultID[resultID];
         const pollResult: unknown = {
           dc_id: triggerResult ? triggerResult.location : undefined,
           result: {
@@ -133,14 +117,11 @@ export const waitForTests = async (
           },
           resultID,
         };
-        const test = getTestFromResultID(tests, resultID);
-        if (test) {
-          test.results.push(pollResult as PollResult);
-        }
+        finishedResults[triggerResult.public_id].push(pollResult as PollResult);
       }
       resolve(finishedResults);
     }, opts.timeout);
-    let maxErrors = MAX_RETRIES;
+
     const poll = async (toPoll: string[]) => {
       let results: PollResult[] = [];
       try {
@@ -159,11 +140,10 @@ export const waitForTests = async (
 
       for (const result of results) {
         if (result.result.eventType === 'finished') {
-          const test = getTestFromResultID(tests, result.resultID);
-          if (test) {
-            // Push the result.
-            test.results.push(result);
-          }
+          // Push the result.
+          const publicId = triggerResultsByResultID[result.resultID].public_id;
+          finishedResults[publicId].push(result);
+
           // Remove the resultID from the ids to poll.
           pollingIds.splice(pollingIds.indexOf(result.resultID), 1);
         }

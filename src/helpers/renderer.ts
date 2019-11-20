@@ -43,6 +43,7 @@ export const renderSteps = (test: TestComposite, baseUrl: string) => {
 
       steps = `\n    ${icon} ${color(requestText)}${errors}`;
     } else if (test.type === 'browser' && !hasResultPassed(r)) {
+      // We render the step only if the test hasn't passed to avoid clutering the output.
       steps = `\n${r.result.stepDetails.map(renderStep).join('\n')}`;
     }
     console.log(`${resultIdentification}\n    ⎋  ${chalk.dim.cyan(resultUrl)}${steps}`);
