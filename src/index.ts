@@ -1,5 +1,5 @@
 import chalk from 'chalk';
-import program from 'commander';
+import rc from 'rc';
 
 import { apiConstructor } from './helpers/dd-api';
 import { Test, TestComposite, TriggerResult } from './helpers/interfaces';
@@ -14,23 +14,18 @@ const onError = (err: any) => {
 process.on('uncaughtException', onError);
 process.on('unhandledRejection', onError);
 
-program
-  .option('--app-key [key]', 'Application Key', process.env.DD_APP_KEY)
-  .option('--api-key [key]', 'API Key', process.env.DD_API_KEY)
-  .option('--api-url [url]', 'API URL', 'https://dd.datad0g.com/api/v1')
-  .option('--files [glob]', 'Files to include', '{,!(node_modules)/**/}*.synthetics.json')
-  .option('--timeout [timeout]', 'Timeout in ms', 2 * 60 * 1000) // 2 minutes
-  .parse(process.argv);
-
-const API_KEY = program.apiKey;
-const APP_KEY = program.appKey;
-const BASE_URL = program.apiUrl;
-const GLOB = program.files;
-const TIMEOUT = program.timeout;
-
 const main = async () => {
   const startTime = Date.now();
-  if (!API_KEY || !APP_KEY) {
+  const config = rc('synthetics', {
+    apiKey: process.env.DD_API_KEY,
+    apiUrl: 'https://dd.datad0g.com/api/v1',
+    appKey: process.env.DD_APP_KEY,
+    files: '{,!(node_modules)/**/}*.synthetics.json',
+    global: { },
+    timeout: 2 * 60 * 1000,
+  });
+
+  if (!config.apiKey || !config.appKey) {
     console.log(`Missing ${chalk.red.bold('DD_API_KEY')} and/or ${chalk.red.bold('DD_APP_KEY')} in your environment.`);
     process.exitCode = 1;
 
@@ -38,12 +33,12 @@ const main = async () => {
   }
 
   const api = apiConstructor({
-    apiKey: API_KEY,
-    appKey: APP_KEY,
-    baseUrl: BASE_URL,
+    apiKey: config.apiKey,
+    appKey: config.appKey,
+    baseUrl: config.apiUrl,
   });
 
-  const suites = await getSuites(GLOB);
+  const suites = await getSuites(config.files);
   const triggerTestPromises: Promise<[Test, TriggerResult[]] | []>[] = [];
 
   if (!suites.length) {
@@ -55,7 +50,12 @@ const main = async () => {
 
   suites.forEach(({ tests }) => {
     if (tests) {
-      triggerTestPromises.push(...tests.map(t => runTest(api, t)));
+      triggerTestPromises.push(
+        ...tests.map(t => runTest(api, {
+          config: { ...config.global, ...t.config },
+          id: t.id,
+        }))
+      );
     }
   });
 
@@ -83,7 +83,7 @@ const main = async () => {
     }
 
     // Poll the results.
-    const results = await waitForTests(api, tests, { timeout: TIMEOUT });
+    const results = await waitForTests(api, tests, { timeout: config.timeout });
 
     // Give each test its results
     tests.forEach(test => {
@@ -101,7 +101,7 @@ const main = async () => {
     // Rendering the results.
     renderHeader(tests, { startTime });
     for (const test of tests) {
-      renderResult(test, BASE_URL.replace(/\/api\/v1$/, ''));
+      renderResult(test, config.apiUrl.replace(/\/api\/v1$/, ''));
     }
 
     // Determine if all the tests have succeeded
@@ -113,7 +113,7 @@ const main = async () => {
       process.exitCode = 1;
     }
   } catch (error) {
-    console.log(chalk.bgRed.bold(' ERROR '), error);
+    console.log(`\n${chalk.bgRed.bold(' ERROR ')}\n${error.toString()}\n`);
     process.exitCode = 1;
   }
 };

@@ -1,6 +1,7 @@
 import { promises as fs } from 'fs';
 import * as glob from 'glob';
 import * as path from 'path';
+import { URL } from 'url';
 import { promisify } from 'util';
 
 import {
@@ -8,6 +9,7 @@ import {
   Config,
   PollResult,
   Suite,
+  TemplateContext,
   Test,
   TestComposite,
   TriggerConfig,
@@ -18,6 +20,7 @@ import { renderTrigger, renderWait } from './renderer';
 
 const INTERVAL_CHECKING = 5000; // In ms
 const MAX_RETRIES = 2;
+const SUBDOMAIN_REGEX = /(.*?)\.(?=[^\/]*\..{2,5})/;
 
 export const handleQuit = (stop: () => void) => {
   // Handle unexpected exits
@@ -37,7 +40,7 @@ export const stopIntervals = (interval: NodeJS.Timeout, timeout: NodeJS.Timeout)
 };
 
 export const template = (st: string, context: any): string =>
-  st.replace(/{{([A-Z_]+)}}/g, (match: string, p1: string, offset: number) => context[p1] ? context[p1] : match);
+  st.replace(/{{([A-Z_]+)}}/g, (match: string, p1: string) => context[p1] ? context[p1] : '');
 
 export const handleConfig = (test: Test, config?: Config): Config | undefined => {
   if (!config || !Object.keys(config).length) {
@@ -45,8 +48,20 @@ export const handleConfig = (test: Test, config?: Config): Config | undefined =>
   }
 
   const handledConfig = { ...config };
-  const context = {
+  const objUrl = new URL(test.config.request.url);
+  const subdomainMatch = objUrl.hostname.match(SUBDOMAIN_REGEX);
+  const domain = subdomainMatch ? objUrl.hostname.replace(`${subdomainMatch[1]}.`, '') : objUrl.hostname;
+  const context: TemplateContext = {
     ...process.env,
+    DOMAIN: domain,
+    HOST: objUrl.host,
+    HOSTNAME: objUrl.hostname,
+    ORIGIN: objUrl.origin,
+    PARAMS: objUrl.search,
+    PATHNAME: objUrl.pathname,
+    PORT: objUrl.port,
+    PROTOCOL: objUrl.protocol,
+    SUBDOMAIN: subdomainMatch ? subdomainMatch[1] : undefined,
     URL: test.config.request.url,
   };
 
@@ -73,7 +88,11 @@ export const hasTestSucceeded = (test: TestComposite): boolean =>
 export const getSuites = async (GLOB: string): Promise<Suite[]> => {
   console.log(`Finding files in ${path.join(process.cwd(), GLOB)}`);
   const files: string[] = await promisify((glob as any).glob)(GLOB);
-  console.log(`Got test files:\n${JSON.stringify(files)}`);
+  if (files.length) {
+    console.log(`\nGot test files:\n${files.map(file => `  - ${file}\n`).join('')}`);
+  } else {
+    console.log('\nNo test files found.\n');
+  }
   const contents = await Promise.all(files.map(test => fs.readFile(test, 'utf8')));
 
   return contents.map(content => JSON.parse(content));
