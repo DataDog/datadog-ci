@@ -98,7 +98,6 @@ export const getSuites = async (GLOB: string): Promise<Suite[]> => {
   return contents.map(content => JSON.parse(content));
 };
 
-// Will mutate `tests` to add results to it.
 export const waitForTests = async (
   api: APIHelper,
   tests: TestComposite[],
@@ -124,7 +123,7 @@ export const waitForTests = async (
     const timeout = setTimeout(() => {
       clearTimeout(pollTimeout);
       // Build and inject timeout errors.
-      for (const resultID of pollingIds) {
+      pollingIds.forEach(resultID => {
         const triggerResult = triggerResultsByResultID[resultID];
         const pollResult: unknown = {
           dc_id: triggerResult ? triggerResult.location : undefined,
@@ -137,7 +136,7 @@ export const waitForTests = async (
           resultID,
         };
         finishedResults[triggerResult.public_id].push(pollResult as PollResult);
-      }
+      });
       resolve(finishedResults);
     }, opts.timeout);
 
