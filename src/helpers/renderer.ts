@@ -32,7 +32,9 @@ export const renderSteps = (test: TestComposite, baseUrl: string) => {
     const resultIdentification = color(`  ${icon} location: ${chalk.bold(r.dc_id.toString())}${device}`);
     let steps = '';
 
-    if (test.type === 'api') {
+    if (r.result.error) {
+      steps = `\n    ${chalk.red.bold(`✖ | ${r.result.error}`)}`;
+    } else if (test.type === 'api') {
       const req = test.config.request;
       const requestText = `${chalk.bold(req.method)} - ${req.url}`;
       const errors = success
@@ -40,7 +42,8 @@ export const renderSteps = (test: TestComposite, baseUrl: string) => {
         : color(`\n      [${chalk.bold(r.result.errorCode!)}] - ${chalk.dim(r.result.errorMessage!)}`);
 
       steps = `\n    ${icon} ${color(requestText)}${errors}`;
-    } else if (test.type === 'browser') {
+    } else if (test.type === 'browser' && !hasResultPassed(r)) {
+      // We render the step only if the test hasn't passed to avoid cluttering the output.
       steps = `\n${r.result.stepDetails.map(renderStep).join('\n')}`;
     }
     console.log(`${resultIdentification}\n    ⎋  ${chalk.dim.cyan(resultUrl)}${steps}`);

@@ -100,19 +100,47 @@ export const getSuites = async (GLOB: string): Promise<Suite[]> => {
 
 export const waitForTests = async (
   api: APIHelper,
-  resultIds: string[],
+  tests: TestComposite[],
   opts: WaitForTestsOptions
-): Promise<PollResult[]> => {
-  const finishedResults: PollResult[] = [];
-  const pollingIds = [ ...resultIds ];
+): Promise<{ [key: string]: PollResult[] }> => {
+  const finishedResults: { [key: string]: PollResult[] } = { };
+  const pollingIds: string[] = [ ];
+  const triggerResultsByResultID: { [key: string]: TriggerResult} = { };
+  let maxErrors = MAX_RETRIES;
+
+  Object.values(tests).forEach(test => {
+    finishedResults[test.public_id] = [];
+    test.triggerResults.forEach(result => {
+      triggerResultsByResultID[result.result_id] = result;
+      pollingIds.push(result.result_id);
+    });
+  });
+
   let pollTimeout: NodeJS.Timeout;
 
   return new Promise((resolve, reject) => {
+    // When the polling timeout we still want to keep what we've got until now.
     const timeout = setTimeout(() => {
       clearTimeout(pollTimeout);
-      reject('Timeout');
+      // Build and inject timeout errors.
+      pollingIds.forEach(resultID => {
+        const triggerResult = triggerResultsByResultID[resultID];
+        const pollResult: PollResult = {
+          dc_id: triggerResult.location,
+          result: {
+            device: { id: triggerResult.device },
+            error: 'Timeout',
+            eventType: 'finished',
+            passed: false,
+            stepDetails: [],
+          },
+          resultID,
+        };
+        finishedResults[triggerResult.public_id].push(pollResult);
+      });
+      resolve(finishedResults);
     }, opts.timeout);
-    let maxErrors = MAX_RETRIES;
+
     const poll = async (toPoll: string[]) => {
       let results: PollResult[] = [];
       try {
@@ -131,7 +159,11 @@ export const waitForTests = async (
 
       for (const result of results) {
         if (result.result.eventType === 'finished') {
-          finishedResults.push(result);
+          // Push the result.
+          const publicId = triggerResultsByResultID[result.resultID].public_id;
+          finishedResults[publicId].push(result);
+
+          // Remove the resultID from the ids to poll.
           pollingIds.splice(pollingIds.indexOf(result.resultID), 1);
         }
       }
