@@ -125,17 +125,18 @@ export const waitForTests = async (
       // Build and inject timeout errors.
       pollingIds.forEach(resultID => {
         const triggerResult = triggerResultsByResultID[resultID];
-        const pollResult: unknown = {
-          dc_id: triggerResult ? triggerResult.location : undefined,
+        const pollResult: PollResult = {
+          dc_id: triggerResult.location,
           result: {
-            device: triggerResult ? { id: triggerResult.device } : undefined,
+            device: { id: triggerResult.device },
             error: 'Timeout',
+            eventType: 'finished',
             passed: false,
             stepDetails: [],
           },
           resultID,
         };
-        finishedResults[triggerResult.public_id].push(pollResult as PollResult);
+        finishedResults[triggerResult.public_id].push(pollResult);
       });
       resolve(finishedResults);
     }, opts.timeout);

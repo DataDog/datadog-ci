@@ -103,38 +103,23 @@ export interface Timings {
 }
 
 export interface Result {
-  browserType: string;
-  browserVersion: string;
   device: {
-    height: number;
     id: string;
-    isMobile: boolean;
-    name: string;
-    width: number;
   };
-  duration: number;
   error?: string;
   errorCode?: string;
   errorMessage?: string;
   eventType: string;
-  mainDC: string;
   passed: boolean;
-  receivedEmailCount: number;
-  startUrl: string;
   stepDetails: Step[];
-  thumbnailsBucketKey: boolean;
-  timeToInteractive: number;
   timings?: Timings;
   unhealthy?: boolean;
 }
 
 export interface PollResult {
-  check_id: number;
   dc_id: number;
-  orgID: string;
   result: Result;
   resultID: string;
-  timestamp: number;
 }
 
 export interface Resource {
