@@ -1,7 +1,10 @@
 import { getSuites, handleQuit, stopIntervals } from '../utils';
 jest.useFakeTimers();
-jest.mock('glob');
+
+// Need to call it for native modules
 jest.mock('fs');
+
+jest.unmock('request-promise-native');
 
 describe('utils', () => {
   describe('handleQuit', () => {
@@ -30,10 +33,9 @@ describe('utils', () => {
   });
 
   test('should call clearInterval and clearTimeout', () => {
-    // Need to cast as unknown because Jest Timer Mock has the wrong type.
-    const timeout = setTimeout(jest.fn()) as unknown;
-    const interval = setInterval(jest.fn()) as unknown;
-    stopIntervals((interval as NodeJS.Timeout), (timeout as NodeJS.Timeout));
+    const timeout = setTimeout(jest.fn(), 0);
+    const interval = setInterval(jest.fn(), 0);
+    stopIntervals(interval, timeout);
     expect(clearInterval).toHaveBeenCalledWith(interval);
     expect(clearTimeout).toHaveBeenCalledWith(timeout);
   });

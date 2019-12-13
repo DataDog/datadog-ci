@@ -14,7 +14,7 @@ const onError = (err: any) => {
 process.on('uncaughtException', onError);
 process.on('unhandledRejection', onError);
 
-const main = async () => {
+export const main = async () => {
   const startTime = Date.now();
   const config = rc('synthetics', {
     apiKey: process.env.DD_API_KEY,
