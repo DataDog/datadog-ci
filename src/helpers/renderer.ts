@@ -1,6 +1,6 @@
 import chalk from 'chalk';
 
-import { PollResult, Step, Test, TestComposite } from './interfaces';
+import { Config, PollResult, Step, Test, TestComposite } from './interfaces';
 import { hasResultPassed, hasTestSucceeded } from './utils';
 
 const renderStep = (step: Step) => {
@@ -63,11 +63,18 @@ export const renderResult = (test: TestComposite, baseUrl: string) => {
   }
 };
 
-export const renderTrigger = (test: Test | undefined, testId: string) => {
+export const renderTrigger = (test: Test | undefined, testId: string, config: Config) => {
   const idDisplay = `[${chalk.bold.dim(testId)}]`;
-  const message = test
-    ? `Trigger test "${chalk.green.bold(test.name)}"`
-    : chalk.red.bold(`Could not find test "${testId}"`);
+  let message;
+
+  if (!test) {
+    message = chalk.red.bold(`Could not find test "${testId}"`);
+  } else if (config.skip === true) {
+    message = `>> Skipped test "${chalk.yellow.dim(test.name)}"`;
+  } else {
+    message = `Trigger test "${chalk.green.bold(test.name)}"`;
+  }
+
   console.log(
     `${idDisplay} ${message}`
   );

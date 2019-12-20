@@ -68,7 +68,8 @@ Your test files have to be named with a `.synthetics.json` suffix.
         {
             "id": "public-id-of-test",
             "config": {
-                "startUrl": "{{URL}}?static_hash={{STATIC_HASH}}"
+                "startUrl": "{{URL}}?static_hash={{STATIC_HASH}}",
+                "skip": true
             }
         }
     ]

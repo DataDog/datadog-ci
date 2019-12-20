@@ -78,6 +78,14 @@ const main = async () => {
       }
     }
 
+    // All tests have been skipped or are missing.
+    if (!tests.length) {
+      console.log('No test to run.');
+      process.exitCode = 0;
+
+      return;
+    }
+
     if (!allResultIds.length) {
       throw new Error('No result to poll.');
     }

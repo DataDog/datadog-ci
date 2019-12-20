@@ -192,8 +192,8 @@ export const runTest = async (api: APIHelper, { id, config }: TriggerConfig): Pr
     // Just ignore it for now.
   }
 
-  renderTrigger(test, id);
-  if (test) {
+  renderTrigger(test, id, config);
+  if (test && !config.skip) {
     const triggerResponse = await api.triggerTests([id], handleConfig(test, config));
     renderWait(test);
 
