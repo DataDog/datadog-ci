@@ -65,7 +65,9 @@ export const handleConfig = (test: Test, config?: Config): Config | undefined =>
     URL: test.config.request.url,
   };
 
-  handledConfig.startUrl = template(config.startUrl, context);
+  if (config.startUrl) {
+    handledConfig.startUrl = template(config.startUrl, context);
+  }
 
   return handledConfig;
 };

@@ -8,20 +8,8 @@ export interface User {
 }
 
 export interface Config {
-  startUrl: string;
-}
-
-export interface GlobalConfig {
+  skip?: boolean;
   startUrl?: string;
-}
-
-export interface ConfigFile {
-  apiKey: string;
-  apiUrl: string;
-  appKey: string;
-  files: string;
-  global: GlobalConfig;
-  timeout: number;
 }
 
 export interface TemplateContext extends NodeJS.ProcessEnv {
@@ -50,7 +38,7 @@ export interface Trigger {
 }
 
 export interface TriggerConfig {
-  config?: Config;
+  config: Config;
   id: string;
 }
 
@@ -147,9 +135,7 @@ export interface Step {
 
 export interface Suite {
   tests: [{
-    config: {
-      startUrl: string;
-    };
+    config?: Config;
     id: string;
   }];
 }
