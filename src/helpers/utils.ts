@@ -65,7 +65,9 @@ export const handleConfig = (test: Test, config?: Config): Config | undefined =>
     URL: test.config.request.url,
   };
 
-  handledConfig.startUrl = template(config.startUrl, context);
+  if (config.startUrl) {
+    handledConfig.startUrl = template(config.startUrl, context);
+  }
 
   return handledConfig;
 };
@@ -190,8 +192,8 @@ export const runTest = async (api: APIHelper, { id, config }: TriggerConfig): Pr
     // Just ignore it for now.
   }
 
-  renderTrigger(test, id);
-  if (test) {
+  renderTrigger(test, id, config);
+  if (test && !config.skip) {
     const triggerResponse = await api.triggerTests([id], handleConfig(test, config));
     renderWait(test);
 
