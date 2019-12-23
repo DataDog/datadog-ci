@@ -69,7 +69,7 @@ export const renderTrigger = (test: Test | undefined, testId: string, config: Co
 
   if (!test) {
     message = chalk.red.bold(`Could not find test "${testId}"`);
-  } else if (config.skip === true) {
+  } else if (config.skip) {
     message = `>> Skipped test "${chalk.yellow.dim(test.name)}"`;
   } else {
     message = `Trigger test "${chalk.green.bold(test.name)}"`;
