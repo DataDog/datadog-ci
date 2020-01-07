@@ -20,7 +20,7 @@
     "exec": "node ./dist/",
     "format": "yarn lint --fix",
     "lint": "tslint -p tsconfig.json -c tslint.json",
-    "prepare": "yarn build && node ./bin/make-it-executable.js",
+    "prepack": "yarn build && node ./bin/make-it-executable.js",
     "typecheck": "bash bin/typecheck.sh",
     "watch": "tsc -w"
   },
