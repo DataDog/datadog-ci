@@ -12,6 +12,10 @@ export interface Config {
   startUrl?: string;
 }
 
+export interface Payload {
+  startUrl?: string;
+}
+
 export interface TemplateContext extends NodeJS.ProcessEnv {
   DOMAIN: string;
   HOST: string;
