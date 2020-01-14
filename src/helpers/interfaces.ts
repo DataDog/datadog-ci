@@ -1,4 +1,3 @@
-import { RequestPromise } from 'request-promise-native';
 
 export interface User {
   email: string;
@@ -144,9 +143,9 @@ export interface Suite {
   }];
 }
 
-export type GetTest = (testId: string) => RequestPromise<Test>;
-export type PollResults = (resultIds: string[]) => RequestPromise<{ results: PollResult[] }>;
-export type TriggerTests = (testIds: string[], config?: Config) => RequestPromise<Trigger>;
+export type GetTest = (testId: string) => Promise<Test>;
+export type PollResults = (resultIds: string[]) => Promise<{ results: PollResult[] }>;
+export type TriggerTests = (testIds: string[], config?: Config) => Promise<Trigger>;
 
 export interface APIHelper {
   getTest: GetTest;

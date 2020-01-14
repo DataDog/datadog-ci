@@ -1,6 +1,6 @@
 {
   "name": "synthetics-ci",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Run Synthetics tests from your CI.",
   "main": "dist/index.js",
   "repository": "git@github.com:DataDog/synthetics-ci.git",
