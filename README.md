@@ -35,7 +35,7 @@ Options:
 
 #### Configuration
 
-You can use many different format of configuration file, [more info in the Non-configurable configuration loader for lazy people Github repository](https://github.com/dominictarr/rc#standards).
+You can use many different format of configuration file, [more info in the **rc** Github repository](https://github.com/dominictarr/rc#standards).
 
 For instance with a JSON file `synthetics-config.json`:
 
@@ -83,7 +83,7 @@ You can configure on which url your test starts by providing a `config.startUrl`
 |----------------------|------------------------------|--------------------------------------------------------|
 | `URL`                | Test's original starting url | `https://www.example.org:81/path/to/something?abc=123` |
 | `DOMAIN`             | Test's domain name           | `example.org`                                          |
-| `HOST`               | Test's host name             | `www.example.org:81`                                   |
+| `HOST`               | Test's host             | `www.example.org:81`                                   |
 | `HOSTNAME`           | Test's hostname              | `www.example.org`                                      |
 | `ORIGIN`             | Test's origin                | `https://www.example.org:81`                           |
 | `PARAMS`             | Test's query parameters      | `?abc=123`                                             |
