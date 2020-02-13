@@ -43,14 +43,42 @@ export const stopIntervals = (interval: NodeJS.Timeout, timeout: NodeJS.Timeout)
 export const template = (st: string, context: any): string =>
   st.replace(/{{([A-Z_]+)}}/g, (match: string, p1: string) => context[p1] ? context[p1] : '');
 
+export function pick<T, K extends keyof T> (
+    object: T, keys: K[], formatter?: (val: T[K]) => T[K]
+  ): { [ k in K ]: T[k]} {
+  const pickedObject: Partial<T> = { };
+
+  if (typeof object !== 'object') {
+    throw new Error(`object is not of type object but ${typeof object}`);
+  }
+
+  keys.map(key => {
+    const value = object[key];
+    // tslint:disable-next-line:strict-type-predicates
+    if (typeof value !== 'undefined') {
+      pickedObject[key] = formatter ? formatter(value) : value;
+    }
+  });
+
+  return pickedObject as { [k in K]: T[k] };
+}
+
 export const handleConfig = (test: Test, config?: Config): Payload | undefined => {
   if (!config || !Object.keys(config).length) {
     return config;
   }
 
-  const handledConfig = {
-    startUrl: config.startUrl,
-  };
+  const handledConfig = pick(config, [
+    'allowInsecureCertificates',
+    'basicAuth',
+    'device_ids',
+    'followRedirects',
+    'headers',
+    'locations',
+    'startUrl',
+    'variables',
+  ]);
+
   const objUrl = new URL(test.config.request.url);
   const subdomainMatch = objUrl.hostname.match(SUBDOMAIN_REGEX);
   const domain = subdomainMatch ? objUrl.hostname.replace(`${subdomainMatch[1]}.`, '') : objUrl.hostname;

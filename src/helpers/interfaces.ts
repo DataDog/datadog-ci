@@ -7,8 +7,20 @@ export interface User {
 }
 
 export interface Config {
+  allowInsecureCertificates?: boolean;
+  basicAuth?: BasicAuthCredentials;
+  device_ids?: string[];
+  followRedirects?: boolean;
+  headers?: { [key: string]: string};
+  locations?: string[];
   skip?: boolean;
   startUrl?: string;
+  variables?: { [key: string]: string};
+}
+
+interface BasicAuthCredentials {
+  password: string;
+  username: string;
 }
 
 export interface Payload {

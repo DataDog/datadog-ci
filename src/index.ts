@@ -16,6 +16,7 @@ process.on('unhandledRejection', onError);
 
 const main = async () => {
   const startTime = Date.now();
+  // TODO: Have rc throw an exception if --config file is not found
   const config = rc('synthetics', {
     apiKey: process.env.DD_API_KEY,
     apiUrl: 'https://dd.datad0g.com/api/v1',
