@@ -1,10 +1,9 @@
+import request from 'request-promise-native';
+
 import { apiConstructor } from '../dd-api';
 import { PollResult, Result } from '../interfaces';
 
-jest.unmock('glob');
-
-const api = apiConstructor({ apiKey: '123', appKey: '123', baseUrl: 'base' });
-const { pollResults } = api;
+jest.mock('request');
 
 describe('dd-api', () => {
   const RESULT_ID = '123';
@@ -18,11 +17,10 @@ describe('dd-api', () => {
     ],
   };
 
-  beforeEach(() => {
-    require('request-promise-native')._mockRequest('/synthetics/tests/poll_results', RESULTS);
-  });
-
   test('should get results from api', async () => {
+    jest.spyOn(request, 'defaults').mockImplementation((() => () => RESULTS) as any);
+    const api = apiConstructor({ apiKey: '123', appKey: '123', baseUrl: 'base' });
+    const { pollResults } = api;
     const { results } = await pollResults([RESULT_ID]);
     expect(results[0].resultID).toBe(RESULT_ID);
   });

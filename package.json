@@ -20,8 +20,8 @@
     "exec": "node ./dist/",
     "format": "yarn lint --fix",
     "lint": "tslint -p tsconfig.json -c tslint.json",
-    "test": "jest",
     "prepack": "yarn build && node ./bin/make-it-executable.js",
+    "test": "jest",
     "typecheck": "bash bin/typecheck.sh",
     "watch": "tsc -w"
   },
@@ -58,10 +58,10 @@
     "@types/rc": "1.1.0",
     "@types/request": "2.48.1",
     "@types/request-promise-native": "1.0.16",
-    "babel-jest": "24.8.0",
     "husky": "2.6.0",
     "jest": "24.8.0",
     "lint-staged": "8.2.1",
+    "ts-jest": "24.3.0",
     "tslint": "5.18.0",
     "typescript": "3.5.2"
   }

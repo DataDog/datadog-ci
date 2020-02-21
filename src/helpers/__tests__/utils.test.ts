@@ -1,14 +1,13 @@
+import * as fs from 'fs';
+// tslint:disable-next-line: no-var-requires
+const glob = require('glob');
+
 import { getSuites, handleQuit, stopIntervals } from '../utils';
 jest.useFakeTimers();
-
-// Need to call it for native modules
-jest.mock('fs');
-
-jest.unmock('request-promise-native');
+jest.mock('glob');
 
 describe('utils', () => {
   describe('handleQuit', () => {
-    const OLD_ON = process.on;
     const CALLS = [
       'exit',
       'SIGINT',
@@ -16,18 +15,13 @@ describe('utils', () => {
       'SIGUSR2',
       'uncaughtException',
     ];
-    beforeEach(() => {
-      process.on = jest.fn();
-    });
-    afterEach(() => {
-      process.on = OLD_ON;
-    });
+    const processMock = jest.spyOn(process, 'on').mockImplementation();
     test('should call stop on every quit events', () => {
       const stop = jest.fn();
       handleQuit(stop);
-      expect(process.on).toHaveBeenCalledTimes(CALLS.length);
+      expect(processMock).toHaveBeenCalledTimes(CALLS.length);
       CALLS.forEach(call => {
-        expect(process.on).toHaveBeenCalledWith(call, stop);
+        expect(processMock).toHaveBeenCalledWith(call, stop);
       });
     });
   });
@@ -45,11 +39,11 @@ describe('utils', () => {
     const FILES = [ 'file1', 'file2' ];
     const FILES_CONTENT = { file1: '{"content":"file1"}', file2: '{"content":"file2"}' };
 
-    beforeEach(() => {
-      require('glob')._setGlobs(GLOB, FILES);
-      require('fs')._setFile('file1', FILES_CONTENT.file1);
-      require('fs')._setFile('file2', FILES_CONTENT.file2);
-    });
+    jest.spyOn(fs.promises, 'readFile').mockImplementation(path =>
+      Promise.resolve(FILES_CONTENT[path as 'file1' | 'file2'])
+    );
+
+    glob.glob.mockImplementation((query: string, callback: (e: any, v: any) => void) => callback(undefined, FILES));
 
     test('should get suites', async () => {
       const suites = await getSuites(GLOB);
