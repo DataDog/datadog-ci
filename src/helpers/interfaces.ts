@@ -1,4 +1,3 @@
-import { RequestPromise } from 'request-promise-native';
 
 export interface User {
   email: string;
@@ -8,20 +7,12 @@ export interface User {
 }
 
 export interface Config {
-  startUrl: string;
-}
-
-export interface GlobalConfig {
+  skip?: boolean;
   startUrl?: string;
 }
 
-export interface ConfigFile {
-  apiKey: string;
-  apiUrl: string;
-  appKey: string;
-  files: string;
-  global: GlobalConfig;
-  timeout: number;
+export interface Payload {
+  startUrl?: string;
 }
 
 export interface TemplateContext extends NodeJS.ProcessEnv {
@@ -50,7 +41,7 @@ export interface Trigger {
 }
 
 export interface TriggerConfig {
-  config?: Config;
+  config: Config;
   id: string;
 }
 
@@ -147,16 +138,14 @@ export interface Step {
 
 export interface Suite {
   tests: [{
-    config: {
-      startUrl: string;
-    };
+    config?: Config;
     id: string;
   }];
 }
 
-export type GetTest = (testId: string) => RequestPromise<Test>;
-export type PollResults = (resultIds: string[]) => RequestPromise<{ results: PollResult[] }>;
-export type TriggerTests = (testIds: string[], config?: Config) => RequestPromise<Trigger>;
+export type GetTest = (testId: string) => Promise<Test>;
+export type PollResults = (resultIds: string[]) => Promise<{ results: PollResult[] }>;
+export type TriggerTests = (testIds: string[], config?: Config) => Promise<Trigger>;
 
 export interface APIHelper {
   getTest: GetTest;

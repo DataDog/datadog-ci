@@ -8,16 +8,16 @@ Run Synthetics tests from your CI.
 You need to either have `DD_API_KEY` and `DD_APP_KEY` in your environment or pass them to the CLI.
 ```bash
 # Environment setup
-export DD_API_KEY="your api key"
-export DD_APP_KEY="your application key"
+export DD_API_KEY="<DATADOG_API_KEY>"
+export DD_APP_KEY="<DATADOG_APPLICATION_KEY>"
 
 # Passing to CLI
-synthetics --apiKey "your api key" --appKey "your application key"
+synthetics --apiKey "<DATADOG_API_KEY>" --appKey "<DATADOG_APPLICATION_KEY>"
 ```
 
 ### API
 
-By default it will run at the root of the working folder and find `{,!(node_modules)/**/}*.synthetics.json` files (every files ending with `.synthetics.json` except those in the `node_modules` folder).
+By default it runs at the root of the working folder and finds `{,!(node_modules)/**/}*.synthetics.json` files (every files ending with `.synthetics.json` except those in the `node_modules` folder).
 
 You can pass options to the CLI too.
 
@@ -35,13 +35,14 @@ Options:
 
 #### Configuration
 
-You can use many different format of configuration file, [more info here](https://github.com/dominictarr/rc#standards).
+You can use many different format of configuration file, [more info in the **rc** Github repository](https://github.com/dominictarr/rc#standards).
 
 For instance with a JSON file `synthetics-config.json`:
+
 ```json
 {
-    "apiKey": "123456",
-    "appKey": "123456",
+    "apiKey": "<DATADOG_API_KEY>",
+    "appKey": "<DATADOG_APPLICATION_KEY>",
     "apiUrl": "https://app.datadoghq.com/api/v1",
     "files": "{,!(node_modules)/**/}*.synthetics.json",
     "global": {
@@ -59,45 +60,47 @@ yarn synthetics --config ./synthetics-config.json
 
 ### Test files
 
-Your test files have to be named with a `.synthetics.json` suffix.
+Your test files must be named with a `.synthetics.json` suffix.
 
 ```json
 // myTest.synthetics.json
 {
     "tests": [
         {
-            "id": "public-id-of-test",
+            "id": "<TEST_PUBLIC_ID>",
             "config": {
-                "startUrl": "{{URL}}?static_hash={{STATIC_HASH}}"
+                "startUrl": "{{URL}}?static_hash={{STATIC_HASH}}",
+                "skip": true
             }
         }
     ]
 }
 ```
 
-You can configure on which url your test will start by providing a `config.startUrl` to your test object.
+You can configure on which url your test starts by providing a `config.startUrl` to your test object and build your own starting url using any part of your test's original starting url and the following environment variables: 
 
-You can build your own starting url using any part of your test's original starting url:
-
-- `URL`: your test's original starting url, ex: 'https://www.example.org:81/path/to/something?abc=123'
-- `DOMAIN`: 'example.org'
-- `HOST`: 'www.example.org:81'
-- `HOSTNAME`: 'www.example.org'
-- `ORIGIN`: 'https://www.example.org:81'
-- `PARAMS`: '?abc=123'
-- `PATHNAME`: '/path/to/something'
-- `PORT`: '81'
-- `PROTOCOL`: 'https:'
-- `SUBDOMAIN`: 'www'
-- any other environment variable.
+| Environment variable | Description                  | Example                                                |
+|----------------------|------------------------------|--------------------------------------------------------|
+| `URL`                | Test's original starting url | `https://www.example.org:81/path/to/something?abc=123` |
+| `DOMAIN`             | Test's domain name           | `example.org`                                          |
+| `HOST`               | Test's host             | `www.example.org:81`                                   |
+| `HOSTNAME`           | Test's hostname              | `www.example.org`                                      |
+| `ORIGIN`             | Test's origin                | `https://www.example.org:81`                           |
+| `PARAMS`             | Test's query parameters      | `?abc=123`                                             |
+| `PATHNAME`           | Test's URl path              | `/path/to/something`                                   |
+| `PORT`               | Test's host port             | `81`                                                   |
+| `PROTOCOL`           | Test's protocol              | `https:`                                               |
+| `SUBDOMAIN`          | Test's sub domain            | `www`                                                  |
 
 For instance, if your test's starting url is `https://www.example.org:81/path/to/something?abc=123`
 
-it could be rewritten:
-- `{{PROTOCOL}}//{{SUBDOMAIN}}.{{DOMAIN}}:{{PORT}}{{PATHNAME}}{{PARAMS}}`
-- `{{PROTOCOL}}//{{HOST}}{{PATHNAME}}{{PARAMS}}`
-- `{{URL}}`
-- and so on...
+It can be written as :
+
+* `{{PROTOCOL}}//{{SUBDOMAIN}}.{{DOMAIN}}:{{PORT}}{{PATHNAME}}{{PARAMS}}`
+* `{{PROTOCOL}}//{{HOST}}{{PATHNAME}}{{PARAMS}}`
+* `{{URL}}`
+
+and so on...
 
 ## Development
 

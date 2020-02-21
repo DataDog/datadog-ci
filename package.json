@@ -1,6 +1,6 @@
 {
   "name": "synthetics-ci",
-  "version": "0.0.1",
+  "version": "0.1.1",
   "description": "Run Synthetics tests from your CI.",
   "main": "dist/index.js",
   "repository": "git@github.com:DataDog/synthetics-ci.git",
@@ -16,14 +16,12 @@
     "LICENSE"
   ],
   "scripts": {
-    "prebuild": "rm -rf ./dist/",
     "build": "tsc",
     "exec": "node ./dist/",
     "format": "yarn lint --fix",
     "lint": "tslint -p tsconfig.json -c tslint.json",
-    "prepare": "yarn build && node ./bin/make-it-executable.js",
-    "pretest": "rm -rf ./dist/",
     "test": "jest",
+    "prepack": "yarn build && node ./bin/make-it-executable.js",
     "typecheck": "bash bin/typecheck.sh",
     "watch": "tsc -w"
   },
