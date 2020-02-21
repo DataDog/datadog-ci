@@ -9,13 +9,13 @@ export interface User {
 export interface Config {
   allowInsecureCertificates?: boolean;
   basicAuth?: BasicAuthCredentials;
-  device_ids?: string[];
+  deviceIds?: string[];
   followRedirects?: boolean;
-  headers?: { [key: string]: string};
+  headers?: { [key: string]: string };
   locations?: string[];
   skip?: boolean;
   startUrl?: string;
-  variables?: { [key: string]: string};
+  variables?: { [key: string]: string };
 }
 
 interface BasicAuthCredentials {

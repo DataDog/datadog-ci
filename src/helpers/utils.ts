@@ -43,24 +43,12 @@ export const stopIntervals = (interval: NodeJS.Timeout, timeout: NodeJS.Timeout)
 export const template = (st: string, context: any): string =>
   st.replace(/{{([A-Z_]+)}}/g, (match: string, p1: string) => context[p1] ? context[p1] : '');
 
-export function pick<T, K extends keyof T> (
-    object: T, keys: K[], formatter?: (val: T[K]) => T[K]
-  ): { [ k in K ]: T[k]} {
-  const pickedObject: Partial<T> = { };
+export function pick<T extends object, K extends keyof T> (base: T, keys: K[]): Pick<T, K> {
+  const entries = keys
+    .filter(key => !!base[key])
+    .map(key => ([key, base[key]]));
 
-  if (typeof object !== 'object') {
-    throw new Error(`object is not of type object but ${typeof object}`);
-  }
-
-  keys.map(key => {
-    const value = object[key];
-    // tslint:disable-next-line:strict-type-predicates
-    if (typeof value !== 'undefined') {
-      pickedObject[key] = formatter ? formatter(value) : value;
-    }
-  });
-
-  return pickedObject as { [k in K]: T[k] };
+  return Object.fromEntries(entries);
 }
 
 export const handleConfig = (test: Test, config?: Config): Payload | undefined => {
@@ -71,7 +59,7 @@ export const handleConfig = (test: Test, config?: Config): Payload | undefined =
   const handledConfig = pick(config, [
     'allowInsecureCertificates',
     'basicAuth',
-    'device_ids',
+    'deviceIds',
     'followRedirects',
     'headers',
     'locations',

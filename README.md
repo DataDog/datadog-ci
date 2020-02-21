@@ -69,8 +69,15 @@ Your test files must be named with a `.synthetics.json` suffix.
         {
             "id": "<TEST_PUBLIC_ID>",
             "config": {
-                "startUrl": "{{URL}}?static_hash={{STATIC_HASH}}",
+                "allowInsecureCertificates": true,
+                "basicAuth": { username: "test", password: "test" },
+                "deviceIds": ["laptop_large"],
+                "followRedirects": true,
+                "headers": { "NEW_HEADER": "NEW VALUE" },
+                "locations": ["aws:us-east-1"],
                 "skip": true
+                "startUrl": "{{URL}}?static_hash={{STATIC_HASH}}",
+                "variables": { "titleVariable": "new title" },
             }
         }
     ]
@@ -83,7 +90,7 @@ You can configure on which url your test starts by providing a `config.startUrl`
 |----------------------|------------------------------|--------------------------------------------------------|
 | `URL`                | Test's original starting url | `https://www.example.org:81/path/to/something?abc=123` |
 | `DOMAIN`             | Test's domain name           | `example.org`                                          |
-| `HOST`               | Test's host             | `www.example.org:81`                                   |
+| `HOST`               | Test's host                  | `www.example.org:81`                                   |
 | `HOSTNAME`           | Test's hostname              | `www.example.org`                                      |
 | `ORIGIN`             | Test's origin                | `https://www.example.org:81`                           |
 | `PARAMS`             | Test's query parameters      | `?abc=123`                                             |
@@ -107,6 +114,9 @@ and so on...
 ```bash
 # Compile and watch
 yarn watch
+
+# Run the tests
+yarn jest
 
 # Build code
 yarn build
