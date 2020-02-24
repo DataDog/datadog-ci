@@ -75,7 +75,7 @@ Your test files must be named with a `.synthetics.json` suffix.
                 "followRedirects": true,
                 "headers": { "NEW_HEADER": "NEW VALUE" },
                 "locations": ["aws:us-east-1"],
-                "skip": true
+                "skip": true,
                 "startUrl": "{{URL}}?static_hash={{STATIC_HASH}}",
                 "variables": { "titleVariable": "new title" },
             }
