@@ -43,14 +43,30 @@ export const stopIntervals = (interval: NodeJS.Timeout, timeout: NodeJS.Timeout)
 export const template = (st: string, context: any): string =>
   st.replace(/{{([A-Z_]+)}}/g, (match: string, p1: string) => context[p1] ? context[p1] : '');
 
+export function pick<T extends object, K extends keyof T> (base: T, keys: K[]): Pick<T, K> {
+  const entries = keys
+    .filter(key => !!base[key])
+    .map(key => ([key, base[key]]));
+
+  return Object.fromEntries(entries);
+}
+
 export const handleConfig = (test: Test, config?: Config): Payload | undefined => {
   if (!config || !Object.keys(config).length) {
     return config;
   }
 
-  const handledConfig = {
-    startUrl: config.startUrl,
-  };
+  const handledConfig = pick(config, [
+    'allowInsecureCertificates',
+    'basicAuth',
+    'deviceIds',
+    'followRedirects',
+    'headers',
+    'locations',
+    'startUrl',
+    'variables',
+  ]);
+
   const objUrl = new URL(test.config.request.url);
   const subdomainMatch = objUrl.hostname.match(SUBDOMAIN_REGEX);
   const domain = subdomainMatch ? objUrl.hostname.replace(`${subdomainMatch[1]}.`, '') : objUrl.hostname;

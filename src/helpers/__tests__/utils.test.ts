@@ -2,7 +2,7 @@ import * as fs from 'fs';
 // tslint:disable-next-line: no-var-requires
 const glob = require('glob');
 
-import { getSuites, handleQuit, stopIntervals } from '../utils';
+import { getSuites, handleQuit, pick, stopIntervals } from '../utils';
 jest.useFakeTimers();
 jest.mock('glob');
 
@@ -49,5 +49,16 @@ describe('utils', () => {
       const suites = await getSuites(GLOB);
       expect(JSON.stringify(suites)).toBe(`[${FILES_CONTENT.file1},${FILES_CONTENT.file2}]`);
     });
+  });
+
+  test('Test pick', () => {
+    const initialHash = { a: 1, b: 2 };
+
+    let resultHash = pick(initialHash, ['a']);
+    expect(Object.keys(resultHash).indexOf('b')).toBe(-1);
+    expect(resultHash.a).toBe(1);
+
+    resultHash = pick(initialHash, ['c'] as any);
+    expect(Object.keys(resultHash).length).toBe(0);
   });
 });
