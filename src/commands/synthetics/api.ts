@@ -1,6 +1,13 @@
 import { Options } from 'request';
 import { defaults as requestDefaults, RequestPromise } from 'request-promise-native';
-import { APIConstructor, Payload, PollResult, Test, Trigger } from './interfaces';
+
+import {
+  APIConstructor,
+  Payload,
+  PollResult,
+  Test,
+  Trigger,
+} from './interfaces';
 
 const triggerTests = (request: (args: Options) => RequestPromise<Trigger>) =>
   async (testIds: string[], config?: Payload) => {

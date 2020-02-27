@@ -1,6 +1,6 @@
 import request from 'request-promise-native';
 
-import { apiConstructor } from '../dd-api';
+import { apiConstructor } from '../api';
 import { PollResult, Result } from '../interfaces';
 
 jest.mock('request');

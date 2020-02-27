@@ -1,6 +1,6 @@
 import chalk from 'chalk';
 
-import { Config, PollResult, Step, Test, TestComposite } from './interfaces';
+import { ConfigOverride, PollResult, Step, Test, TestComposite } from './interfaces';
 import { hasResultPassed, hasTestSucceeded } from './utils';
 
 const renderStep = (step: Step) => {
@@ -63,7 +63,7 @@ export const renderResult = (test: TestComposite, baseUrl: string) => {
   }
 };
 
-export const renderTrigger = (test: Test | undefined, testId: string, config: Config) => {
+export const renderTrigger = (test: Test | undefined, testId: string, config: ConfigOverride) => {
   const idDisplay = `[${chalk.bold.dim(testId)}]`;
   let message;
 
