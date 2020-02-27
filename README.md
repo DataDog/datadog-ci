@@ -127,3 +127,11 @@ yarn format
 # Make bin executable
 yarn prepare
 ```
+
+## Contributing
+
+Pull requests are welcome. First, open an issue to discuss what you would like to change. For more information, read the [Contributing Guide](CONTRIBUTING.md).
+
+## License
+
+[Apache License, v2.0](LICENSE)
