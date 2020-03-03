@@ -1,19 +1,4 @@
-export const handleQuit = (stop: () => void) => {
-  // Handle unexpected exits
-  process.on('exit', stop);
-  // Catches ctrl+c event
-  process.on('SIGINT', stop);
-  // Catches "kill pid" (for example: nodemon restart)
-  process.on('SIGUSR1', stop);
-  process.on('SIGUSR2', stop);
-  // Catches uncaught exceptions
-  process.on('uncaughtException', stop);
-};
-
-export const stopIntervals = (interval: NodeJS.Timeout, timeout: NodeJS.Timeout): void => {
-  clearInterval(interval);
-  clearTimeout(timeout);
-};
+import fs from 'fs';
 
 export function pick<T extends object, K extends keyof T> (base: T, keys: K[]): Pick<T, K> {
   const entries = keys
@@ -21,4 +6,18 @@ export function pick<T extends object, K extends keyof T> (base: T, keys: K[]): 
     .map(key => ([key, base[key]]));
 
   return Object.fromEntries(entries);
+}
+
+export function *getCommandFileNames (folderPath: string) {
+  for (const commandsFolder of fs.readdirSync(folderPath, { withFileTypes: true })) {
+    if (commandsFolder.isDirectory()) {
+      const commandsFolderPath = `${folderPath}/${commandsFolder.name}`;
+      for (const commandFile of fs.readdirSync(commandsFolderPath, { withFileTypes: true })) {
+        // Yield file if it is a javascript file not starting with an underscore
+        if (commandFile.isFile() && commandFile.name.match(/^[^_].*\.js$/)) {
+          yield `${commandsFolderPath}/${commandFile.name}`;
+        }
+      }
+    }
+  }
 }

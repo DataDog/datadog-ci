@@ -148,10 +148,7 @@ export interface TestComposite extends Test {
 }
 
 export interface Suite {
-  tests: [{
-    config?: ConfigOverride;
-    id: string;
-  }];
+  tests: TriggerConfig[];
 }
 
 export type GetTest = (testId: string) => Promise<Test>;

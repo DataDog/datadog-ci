@@ -1,7 +1,7 @@
 import chalk from 'chalk';
 
-import { ConfigOverride, PollResult, Step, Test, TestComposite } from './interfaces';
-import { hasResultPassed, hasTestSucceeded } from './utils';
+import { ConfigOverride, PollResult, Step, Test, TestComposite } from './_interfaces';
+import { hasResultPassed, hasTestSucceeded } from './_utils';
 
 const renderStep = (step: Step) => {
   const icon = step.error

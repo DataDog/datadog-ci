@@ -1,8 +1,8 @@
-import chalk from 'chalk';
+import { Cli, Command } from 'clipanion';
 import rc from 'rc';
 
-import * as synthetics from './commands/synthetics';
 import { GlobalConfig } from './helpers/interfaces';
+import { getCommandFileNames } from './helpers/utils';
 
 const onError = (err: any) => {
   console.log(err);
@@ -16,56 +16,45 @@ const defaultConfig: GlobalConfig = {
   apiKey: process.env.DD_API_KEY,
   appKey: process.env.DD_APP_KEY,
   datadogHost: 'https://dd.datad0g.com/api/v1',
-  synthetics: {
-    files: '{,!(node_modules)/**/}*.synthetics.json',
-    global: { },
-    timeout: 2 * 60 * 1000,
-  },
 };
 
-export async function main () {
-  const config = rc('synthetics', defaultConfig);
+const cli = new Cli({
+  binaryLabel: 'Datadog CI',
+  binaryName: 'datadog-ci',
+  binaryVersion: '0.0.1',
+});
 
-  const command = config._[0];
+export abstract class MainCommand extends Command {
+  protected apiKey?: string;
+  protected appKey?: string;
+  protected config: GlobalConfig;
 
-  if (!command || config.help || config.usage) {
-    displayUsage();
+  constructor () {
+    super();
 
-    return;
-  }
-
-  if (!config.apiKey || !config.appKey) {
-    console.log(`Missing ${chalk.red.bold('DD_API_KEY')} and/or ${chalk.red.bold('DD_APP_KEY')} in your environment.`);
-    process.exitCode = 1;
-
-    return;
-  }
-
-  try {
-    if (command === 'synthetics') {
-      process.exitCode = await synthetics.run(config);
-    }
-  } catch (error) {
-    console.log(`\n${chalk.bgRed.bold(' ERROR ')}\n${error.toString()}\n`);
-    // Exit the program accordingly.
-    process.exitCode = 1;
+    // Pass an empty argv to disable its parsing by rc as clipanion already does it
+    this.config = rc('datadog-ci', defaultConfig, { }) as GlobalConfig;
   }
 }
+MainCommand.addOption('apiKey', Command.String('--apiKey'));
+MainCommand.addOption('appKey', Command.String('--appKey'));
 
-function displayUsage () {
-  const usage = `Usage: datadog-ci [options] <command> [cmdOptions] <subCommand> [subCmdOptions]
-
-  Options:
-  --appKey   [appKey]    Application Key
-  --apiKey   [apiKey]    API Key
-  --apiUrl   [url]       API URL (default: "${defaultConfig.datadogHost}")
-  --files    [files]     Files to include (default: "${defaultConfig.synthetics!.files}")
-  --timeout  [timeout]   Timeout in ms (default: ${defaultConfig.synthetics!.timeout})
-  --config   [file]      Path to config file`;
-
-  console.log(usage);
+const commandsPath = `${__dirname}/commands`;
+for (const commandFileName of getCommandFileNames(commandsPath)) {
+  // tslint:disable-next-line: no-var-requires
+  const commandImport: { [key: string]: any } = require(commandFileName);
+  for (const command of Object.values(commandImport)) {
+    if ('defaultConfig' in command && 'defaultConfigKey' in command) {
+      (defaultConfig as any)[command.defaultConfigKey] = command.defaultConfig;
+    }
+    cli.register(command as any);
+  }
 }
 
 if (require.main === module) {
-  main();
+  cli.runExit(process.argv.slice(2), {
+    stderr: process.stderr,
+    stdin: process.stdin,
+    stdout: process.stdout,
+  });
 }

@@ -1,4 +1,4 @@
-import { ConfigOverride } from '../commands/synthetics/interfaces';
+import { ConfigOverride } from '../commands/synthetics/_interfaces';
 
 export interface GlobalConfig {
   apiKey?: string;

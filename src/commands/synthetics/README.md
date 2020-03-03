@@ -26,7 +26,7 @@ Your test files must be named with a `.synthetics.json` suffix.
             "id": "<TEST_PUBLIC_ID>",
             "config": {
                 "allowInsecureCertificates": true,
-                "basicAuth": { username: "test", password: "test" },
+                "basicAuth": { "username": "test", "password": "test" },
                 "deviceIds": ["laptop_large"],
                 "followRedirects": true,
                 "headers": { "NEW_HEADER": "NEW VALUE" },

@@ -1,5 +1,5 @@
 import { promises as fs } from 'fs';
-import * as glob from 'glob';
+import glob from 'glob';
 import * as path from 'path';
 import { URL } from 'url';
 import { promisify } from 'util';
@@ -16,8 +16,8 @@ import {
   TriggerConfig,
   TriggerResult,
   WaitForTestsOptions,
-} from './interfaces';
-import { renderTrigger, renderWait } from './renderer';
+} from './_interfaces';
+import { renderTrigger, renderWait } from './_renderer';
 
 import { pick } from '../../helpers/utils';
 
@@ -85,7 +85,7 @@ export const hasTestSucceeded = (test: TestComposite): boolean =>
 
 export const getSuites = async (GLOB: string): Promise<Suite[]> => {
   console.log(`Finding files in ${path.join(process.cwd(), GLOB)}`);
-  const files: string[] = await promisify((glob as any).glob)(GLOB);
+  const files: string[] = await await promisify(glob)(GLOB);
   if (files.length) {
     console.log(`\nGot test files:\n${files.map(file => `  - ${file}\n`).join('')}`);
   } else {
