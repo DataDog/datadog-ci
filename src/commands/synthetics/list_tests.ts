@@ -5,7 +5,7 @@ import { getSuites } from './_utils';
 import { SyntheticsBaseCommand } from './base';
 
 export class ListTestsCommand extends SyntheticsBaseCommand {
-  public async execute (): Promise<any> {
+  public async execute () {
     const suites = await getSuites(this.config.synthetics!.files!);
     const testList = suites
       .map(suite => suite.tests)

@@ -1,3 +1,5 @@
+import { CommandClass } from 'clipanion';
+
 import { ConfigOverride } from '../commands/synthetics/_interfaces';
 
 export interface GlobalConfig {
@@ -16,4 +18,8 @@ export interface GlobalConfig {
     global?: ConfigOverride;
     timeout?: number;
   };
+}
+
+export interface CommandImport {
+  [key: string]: CommandClass & { defaultConfig?: Partial<GlobalConfig> };
 }

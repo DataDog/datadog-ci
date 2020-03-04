@@ -1,7 +1,7 @@
 import { Cli, Command } from 'clipanion';
 import rc from 'rc';
 
-import { GlobalConfig } from './helpers/interfaces';
+import { CommandImport, GlobalConfig } from './helpers/interfaces';
 import { getCommandFileNames } from './helpers/utils';
 
 const onError = (err: any) => {
@@ -12,7 +12,7 @@ const onError = (err: any) => {
 process.on('uncaughtException', onError);
 process.on('unhandledRejection', onError);
 
-const defaultConfig: GlobalConfig = {
+let defaultConfig: GlobalConfig = {
   apiKey: process.env.DD_API_KEY,
   appKey: process.env.DD_APP_KEY,
   datadogHost: 'https://dd.datad0g.com/api/v1',
@@ -42,12 +42,12 @@ MainCommand.addOption('appKey', Command.String('--appKey'));
 const commandsPath = `${__dirname}/commands`;
 for (const commandFileName of getCommandFileNames(commandsPath)) {
   // tslint:disable-next-line: no-var-requires
-  const commandImport: { [key: string]: any } = require(commandFileName);
+  const commandImport: CommandImport = require(commandFileName);
   for (const command of Object.values(commandImport)) {
-    if ('defaultConfig' in command && 'defaultConfigKey' in command) {
-      (defaultConfig as any)[command.defaultConfigKey] = command.defaultConfig;
+    if (command.defaultConfig) {
+      defaultConfig = { ...defaultConfig, ...command.defaultConfig };
     }
-    cli.register(command as any);
+    cli.register(command);
   }
 }
 

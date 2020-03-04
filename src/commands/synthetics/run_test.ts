@@ -21,7 +21,7 @@ export class RunTestCommand extends SyntheticsBaseCommand {
     suites.forEach(({ tests }) => {
       if (tests) {
         triggerTestPromises.push(
-          ...tests.map((t: any) => runTest(api, {
+          ...tests.map(t => runTest(api, {
             config: { ...this.config.synthetics!.global, ...t.config },
             id: t.id,
           }))

@@ -56,9 +56,9 @@ export interface Step {
 
 export interface Test {
   config: {
-    assertions: any[];
+    assertions: any[]; // Not typed as it will not be overriden
     request: {
-      headers: any;
+      headers: { [key: string]: string };
       method: string;
       timeout: number;
       url: string;
