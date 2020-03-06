@@ -1,19 +1,33 @@
 import chalk from 'chalk';
+import { Command } from 'clipanion';
 
-import { Test, TestComposite, TriggerResult } from './_interfaces';
-import { renderHeader, renderResult } from './_renderer';
-import { getSuites, hasTestSucceeded, runTest, waitForTests } from './_utils';
-import { SyntheticsBaseCommand } from './base';
+import { ContextWithConfig } from '../../helpers/interfaces';
 
-export class RunTestCommand extends SyntheticsBaseCommand {
+import { apiConstructor } from './api';
+import { Test, TestComposite, TriggerResult } from './interfaces';
+import { renderHeader, renderResult } from './renderer';
+import { getSuites, hasTestSucceeded, runTest, waitForTests } from './utils';
+
+export class RunTestCommand extends Command<ContextWithConfig> {
+  public static defaultConfig = {
+    synthetics: {
+      files: '{,!(node_modules)/**/}*.synthetics.json',
+      global: { },
+      timeout: 2 * 60 * 1000,
+    },
+  };
+
+  protected apiKey?: string;
+  protected appKey?: string;
+
   public async execute () {
     const startTime = Date.now();
-    const suites = await getSuites(this.config.synthetics!.files!);
+    const suites = await getSuites(this.context.config.synthetics!.files!, this.context);
     const triggerTestPromises: Promise<[Test, TriggerResult[]] | []>[] = [];
     const api = this.getApiHelper();
 
     if (!suites.length) {
-      console.log('No suites to run.');
+      this.context.stdout.write('No suites to run.\n');
 
       return;
     }
@@ -22,9 +36,9 @@ export class RunTestCommand extends SyntheticsBaseCommand {
       if (tests) {
         triggerTestPromises.push(
           ...tests.map(t => runTest(api, {
-            config: { ...this.config.synthetics!.global, ...t.config },
+            config: { ...this.context.config.synthetics!.global, ...t.config },
             id: t.id,
-          }))
+          }, this.context))
         );
       }
     });
@@ -50,9 +64,9 @@ export class RunTestCommand extends SyntheticsBaseCommand {
 
       // All tests have been skipped or are missing.
       if (!tests.length) {
-        console.log('No test to run.');
+        this.context.stdout.write('No test to run.\n');
 
-        return;
+        return 1;
       }
 
       if (!allResultIds.length) {
@@ -60,7 +74,7 @@ export class RunTestCommand extends SyntheticsBaseCommand {
       }
 
       // Poll the results.
-      const results = await waitForTests(api, tests, { timeout: this.config.synthetics!.timeout! });
+      const results = await waitForTests(api, tests, { timeout: this.context.config.synthetics!.timeout! });
 
       // Give each test its results
       tests.forEach(test => {
@@ -76,24 +90,44 @@ export class RunTestCommand extends SyntheticsBaseCommand {
       });
 
       // Rendering the results.
-      renderHeader(tests, { startTime });
+      this.context.stdout.write(renderHeader(tests, { startTime }));
       for (const test of tests) {
-        renderResult(test, this.config.datadogHost.replace(/\/api\/v1$/, ''));
+        this.context.stdout.write(renderResult(test, this.context.config.datadogHost.replace(/\/api\/v1$/, '')));
       }
 
       // Determine if all the tests have succeeded
       const hasSucceeded = tests.every((test: TestComposite) => hasTestSucceeded(test));
       if (hasSucceeded) {
-        return;
+        return 0;
       } else {
-        return;
+        return 1;
       }
     } catch (error) {
-      console.log(`\n${chalk.bgRed.bold(' ERROR ')}\n${error.toString()}\n`);
+      this.context.stdout.write(`\n${chalk.bgRed.bold(' ERROR ')}\n${error.toString()}\n\n`);
 
-      return;
+      return 1;
     }
+  }
+
+  protected getApiHelper () {
+    this.context.config.apiKey = this.apiKey || this.context.config.apiKey;
+    this.context.config.appKey = this.appKey || this.context.config.appKey;
+
+    if (!this.context.config.apiKey || !this.context.config.appKey) {
+      this.context.stdout.write(
+        `Missing ${chalk.red.bold('DD_API_KEY')} and/or ${chalk.red.bold('DD_APP_KEY')} in your environment.\n`
+      );
+      throw new Error('API and/or Application keys are missing');
+    }
+
+    return apiConstructor({
+      apiKey: this.context.config.apiKey!,
+      appKey: this.context.config.appKey!,
+      baseUrl: this.context.config.datadogHost,
+    });
   }
 }
 
 RunTestCommand.addPath('synthetics', 'run-tests');
+RunTestCommand.addOption('apiKey', Command.String('--apiKey'));
+RunTestCommand.addOption('appKey', Command.String('--appKey'));

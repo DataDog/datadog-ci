@@ -1,18 +1,11 @@
-import { CommandClass } from 'clipanion';
+import { BaseContext, CommandClass } from 'clipanion';
 
-import { ConfigOverride } from '../commands/synthetics/_interfaces';
+import { ConfigOverride } from '../commands/synthetics/interfaces';
 
 export interface GlobalConfig {
   apiKey?: string;
   appKey?: string;
   datadogHost: string;
-  proxy?: {
-    address: string;
-    ignoreSSLErrors?: boolean;
-    password?: string;
-    protocol: string;
-    user?: string;
-  };
   synthetics?: {
     files?: string;
     global?: ConfigOverride;
@@ -20,6 +13,6 @@ export interface GlobalConfig {
   };
 }
 
-export interface CommandImport {
-  [key: string]: CommandClass & { defaultConfig?: Partial<GlobalConfig> };
-}
+export type ContextWithConfig = BaseContext & { config: GlobalConfig };
+
+export type CommandImport = CommandClass<ContextWithConfig> & { defaultConfig?: Partial<GlobalConfig> };

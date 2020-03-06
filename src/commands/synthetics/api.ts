@@ -7,7 +7,7 @@ import {
   PollResult,
   Test,
   Trigger,
-} from './_interfaces';
+} from './interfaces';
 
 const triggerTests = (request: (args: Options) => RequestPromise<Trigger>) =>
   async (testIds: string[], config?: Payload) => {

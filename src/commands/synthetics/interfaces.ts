@@ -151,9 +151,9 @@ export interface Suite {
   tests: TriggerConfig[];
 }
 
-export type GetTest = (testId: string) => Promise<Test>;
-export type PollResults = (resultIds: string[]) => Promise<{ results: PollResult[] }>;
-export type TriggerTests = (testIds: string[], config?: ConfigOverride) => Promise<Trigger>;
+type GetTest = (testId: string) => Promise<Test>;
+type PollResults = (resultIds: string[]) => Promise<{ results: PollResult[] }>;
+type TriggerTests = (testIds: string[], config?: ConfigOverride) => Promise<Trigger>;
 
 export interface APIHelper {
   getTest: GetTest;

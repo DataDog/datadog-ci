@@ -1,7 +1,7 @@
 import request from 'request-promise-native';
 
-import { apiConstructor } from '../_api';
-import { PollResult, Result } from '../_interfaces';
+import { apiConstructor } from '../api';
+import { PollResult, Result } from '../interfaces';
 
 describe('dd-api', () => {
   const RESULT_ID = '123';

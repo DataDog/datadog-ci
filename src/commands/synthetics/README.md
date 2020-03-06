@@ -4,13 +4,25 @@ Run Synthetics tests from your CI.
 
 ## Usage
 
+### Setup
+
+You need to either have `DD_API_KEY` and `DD_APP_KEY` in your environment or pass them to the CLI.
+```bash
+# Environment setup
+export DD_API_KEY="<DATADOG_API_KEY>"
+export DD_APP_KEY="<DATADOG_APPLICATION_KEY>"
+
+# Passing to CLI
+datadog-ci --apiKey "<DATADOG_API_KEY>" --appKey "<DATADOG_APPLICATION_KEY>"
+```
+
 ### API
 
 By default it runs at the root of the working folder and finds `{,!(node_modules)/**/}*.synthetics.json` files (every files ending with `.synthetics.json` except those in the `node_modules` folder).
 
 #### Commands
 
-The subcommands available are:
+The subcommand available is:
 
 - `run-tests`: run the tests discovered in the folder according to the `files` configuration key
 

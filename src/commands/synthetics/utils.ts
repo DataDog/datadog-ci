@@ -1,8 +1,10 @@
 import { promises as fs } from 'fs';
-import glob from 'glob';
 import * as path from 'path';
 import { URL } from 'url';
 import { promisify } from 'util';
+
+import { BaseContext } from 'clipanion';
+import glob from 'glob';
 
 import {
   APIHelper,
@@ -16,8 +18,8 @@ import {
   TriggerConfig,
   TriggerResult,
   WaitForTestsOptions,
-} from './_interfaces';
-import { renderTrigger, renderWait } from './_renderer';
+} from './interfaces';
+import { renderTrigger, renderWait } from './renderer';
 
 import { pick } from '../../helpers/utils';
 
@@ -83,13 +85,13 @@ export const hasResultPassed = (result: PollResult): boolean => {
 export const hasTestSucceeded = (test: TestComposite): boolean =>
   test.results.every((result: PollResult) => hasResultPassed(result));
 
-export const getSuites = async (GLOB: string): Promise<Suite[]> => {
-  console.log(`Finding files in ${path.join(process.cwd(), GLOB)}`);
+export const getSuites = async (GLOB: string, context: BaseContext): Promise<Suite[]> => {
+  context.stdout.write(`Finding files in ${path.join(process.cwd(), GLOB)}\n`);
   const files: string[] = await await promisify(glob)(GLOB);
   if (files.length) {
-    console.log(`\nGot test files:\n${files.map(file => `  - ${file}\n`).join('')}`);
+    context.stdout.write(`\nGot test files:\n${files.map(file => `  - ${file}\n`).join('')}\n`);
   } else {
-    console.log('\nNo test files found.\n');
+    context.stdout.write('\nNo test files found.\n\n');
   }
   const contents = await Promise.all(files.map(test => fs.readFile(test, 'utf8')));
 
@@ -180,7 +182,8 @@ export const waitForTests = async (
   });
 };
 
-export const runTest = async (api: APIHelper, { id, config }: TriggerConfig): Promise<[Test, TriggerResult[]] | []> => {
+export const runTest = async (api: APIHelper, { id, config }: TriggerConfig, context: BaseContext):
+  Promise<[Test, TriggerResult[]] | []> => {
   let test: Test | undefined;
   try {
     test = await api.getTest(id);
@@ -188,10 +191,10 @@ export const runTest = async (api: APIHelper, { id, config }: TriggerConfig): Pr
     // Just ignore it for now.
   }
 
-  renderTrigger(test, id, config);
+  context.stdout.write(renderTrigger(test, id, config));
   if (test && !config.skip) {
     const triggerResponse = await api.triggerTests([id], handleConfig(test, config));
-    renderWait(test);
+    context.stdout.write(renderWait(test));
 
     return [test, triggerResponse.results];
   }

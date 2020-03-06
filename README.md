@@ -1,64 +1,75 @@
 # datadog-ci
+
 Use Datadog from your CI.
 
 ## Usage
-
-### Setup
-
-You need to either have `DD_API_KEY` and `DD_APP_KEY` in your environment or pass them to the CLI.
-```bash
-# Environment setup
-export DD_API_KEY="<DATADOG_API_KEY>"
-export DD_APP_KEY="<DATADOG_APPLICATION_KEY>"
-
-# Passing to CLI
-datadog-ci --apiKey "<DATADOG_API_KEY>" --appKey "<DATADOG_APPLICATION_KEY>"
-```
 
 ### API
 
 The CLI supports the following commands:
 
-- [synthetics](src/commands/synthetics/README.md): to run and manage synthetics tests in CI
+- [synthetics](src/commands/synthetics/): to run synthetics tests in CI
 
 ```bash
-Usage: datadog-ci [options] <command> [cmdOptions] <subCommand> [subCmdOptions]
+Usage: datadog-ci <command> <subcommand> [options]
 
-Options:
-  --appKey   [appKey]    Application Key
-  --apiKey   [apiKey]    API Key
-  --apiUrl   [url]       API URL (default: "https://dd.datad0g.com/api/v1")
-  --files    [files]     Files to include (default: "{,!(node_modules)/**/}*.synthetics.json")
-  --timeout  [timeout]   Timeout in ms (default: 2 minutes)
-  --config   [file]      Path to config file
+Available command:
+  - synthetics
 ```
 
 #### Configuration
 
 You can use many different format of configuration file, [more info in the **rc** Github repository](https://github.com/dominictarr/rc#standards).
 
-For instance with a JSON file `synthetics-config.json`:
+Configuration options can be overriden through environment variables but not via CLI flags.
+
+For instance with a JSON file `.datadogcirc`:
 
 ```json
 {
     "apiKey": "<DATADOG_API_KEY>",
     "appKey": "<DATADOG_APPLICATION_KEY>",
-    "apiUrl": "https://app.datadoghq.com/api/v1",
-    "files": "{,!(node_modules)/**/}*.synthetics.json",
-    "global": {
-        "startUrl": "{{URL}}?test_param=synthetics"
-    },
-    "timeout": 220000
+    "datadogHost": "https://app.datadoghq.com/api/v1",
+    "synthetics": {
+      "files": "{,!(node_modules)/**/}*.synthetics.json",
+      "global": {
+          "allowInsecureCertificates": true,
+          "basicAuth": {
+            "username": "fakeusername",
+            "password": "fakepassword"
+          },
+          "deviceIds": ["laptop_large", "mobile_small"],
+          "followRedirects": true,
+          "headers": {
+            "User-Agent": "fake-user-agent"
+          },
+          "locations": ["aws:us-east-1", "pl:fake_private_location"],
+          "startUrl": "{{URL}}?test_param=synthetics",
+          "variables": {
+            "ADMIN_USERNAME": "adminuser",
+            "ADMIN_PASSWORD": "adminpassword",
+          }
+      },
+      "timeout": 220000
+    }
 }
 ```
 
 Then run:
 
 ```bash
-yarn datadog-ci --config ./synthetics-config.json synthetics run-tests
+yarn datadog-ci synthetics run-tests
 ```
 
 ## Development
+
+### Repository structure
+
+This tool uses [clipanion](https://github.com/arcanis/clipanion) to handle the different commands. Each command is described in its directory in the `src/commands/` folder. It must contain an `index.ts` file exporting the subcommands available to the user. 
+
+The tests are written using [jest](https://github.com/facebook/jest) and stored in the `__tests__` folders close to the sources under test.
+
+### Workflow
 
 ```bash
 # Compile and watch

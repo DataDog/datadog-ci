@@ -4,7 +4,7 @@ jest.useFakeTimers();
 import * as fs from 'fs';
 import glob from 'glob';
 
-import { getSuites } from '../_utils';
+import { getSuites } from '../utils';
 
 describe('utils', () => {
   describe('getSuites', () => {
@@ -19,7 +19,7 @@ describe('utils', () => {
     (glob as any).mockImplementation((query: string, callback: (e: any, v: any) => void) => callback(undefined, FILES));
 
     test('should get suites', async () => {
-      const suites = await getSuites(GLOB);
+      const suites = await getSuites(GLOB, process);
       expect(JSON.stringify(suites)).toBe(`[${FILES_CONTENT.file1},${FILES_CONTENT.file2}]`);
     });
   });
