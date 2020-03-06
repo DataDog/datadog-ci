@@ -1,0 +1,22 @@
+Component,Origin,Licence,Copyright
+chalk,import,MIT,Copyright (c) Sindre Sorhus <sindresorhus@gmail.com> (sindresorhus.com)
+glob,import,ISC,Copyright (c) Isaac Z. Schlueter and Contributors
+rc,import,Apache-2.0,Copyright (c) 2011 Dominic Tarr
+request,import,Apache-2.0,Copyright 2010-2012 Mikeal Rogers
+request-promise-native,import,ISC,Copyright (c) 2019, Nicolai Kamenzky and contributors
+@babel/core,dev,MIT,Copyright (c) 2014-present Sebastian McKenzie and other contributors
+@babel/preset-env,dev,MIT,Copyright (c) 2014-present Sebastian McKenzie and other contributors
+@babel/preset-typescript,dev,MIT,Copyright (c) 2014-present Sebastian McKenzie and other contributors
+@types/chalk,dev,MIT,Copyright (c) Sindre Sorhus <sindresorhus@gmail.com> (sindresorhus.com)
+@types/glob,dev,MIT,Copyright Microsoft Corporation
+@types/jest,dev,MIT,Copyright Microsoft Corporation
+@types/node,dev,MIT,Copyright Microsoft Corporation
+@types/rc,dev,MIT,Copyright Microsoft Corporation
+@types/request,dev,MIT,Copyright Microsoft Corporation
+@types/request-promise-native,dev,MIT,Copyright Microsoft Corporation
+husky,dev,MIT,Copyright (c) 2017
+jest,dev,MIT,Copyright (c) Facebook, Inc. and its affiliates.
+lint-staged,dev,MIT,Copyright (c) 2016 Andrey Okonetchnikov
+ts-jest,dev,MIT,Copyright (c) 2016-2018
+tslint,dev,Apache-2.0,Copyright 2013-2019 Palantir Technologies, Inc.
+typescript,dev,Apache-2.0,Copyright (c) Microsoft Corporation.
