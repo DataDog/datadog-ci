@@ -19,11 +19,9 @@ Available command:
 
 #### Configuration
 
-You can use many different format of configuration file, [more info in the **rc** Github repository](https://github.com/dominictarr/rc#standards).
+Configuration is done via a json file, by default the tool load `datadog-ci.json` which can be overriden through the `--config` argument.
 
-Configuration options can be overriden through environment variables but not via CLI flags.
-
-For instance with a JSON file `.datadogcirc`:
+The configuration file structure is the following:
 
 ```json
 {
@@ -31,29 +29,12 @@ For instance with a JSON file `.datadogcirc`:
     "appKey": "<DATADOG_APPLICATION_KEY>",
     "datadogHost": "https://app.datadoghq.com/api/v1",
     "synthetics": {
-      "files": "{,!(node_modules)/**/}*.synthetics.json",
-      "global": {
-          "allowInsecureCertificates": true,
-          "basicAuth": {
-            "username": "fakeusername",
-            "password": "fakepassword"
-          },
-          "deviceIds": ["laptop_large", "mobile_small"],
-          "followRedirects": true,
-          "headers": {
-            "User-Agent": "fake-user-agent"
-          },
-          "locations": ["aws:us-east-1", "pl:fake_private_location"],
-          "startUrl": "{{URL}}?test_param=synthetics",
-          "variables": {
-            "ADMIN_USERNAME": "adminuser",
-            "ADMIN_PASSWORD": "adminpassword",
-          }
-      },
-      "timeout": 220000
+      ...
     }
 }
 ```
+
+The `synthetics` sub-object structure is defined by the [synthetics](src/commands/synthetics) command.
 
 Then run:
 
@@ -87,3 +68,11 @@ yarn format
 # Make bin executable
 yarn prepare
 ```
+
+## Contributing
+
+Pull requests are welcome. First, open an issue to discuss what you would like to change. For more information, read the [Contributing Guide](CONTRIBUTING.md).
+
+## License
+
+[Apache License, v2.0](LICENSE)
