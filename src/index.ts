@@ -1,7 +1,6 @@
 import fs from 'fs';
 
 import { Cli } from 'clipanion';
-import rc from 'rc';
 
 import { CommandImport, ContextWithConfig, GlobalConfig } from './helpers/interfaces';
 
@@ -37,11 +36,10 @@ for (const commandFolder of fs.readdirSync(commandsPath)) {
   }
 }
 
-const config = rc('datadogci', defaultConfig, { }) as GlobalConfig;
-
 if (require.main === module) {
   cli.runExit(process.argv.slice(2), {
-    config,
+    config: defaultConfig,
+    defaultConfig,
     stderr: process.stderr,
     stdin: process.stdin,
     stdout: process.stdout,

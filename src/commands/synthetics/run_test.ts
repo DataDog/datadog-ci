@@ -1,14 +1,14 @@
 import chalk from 'chalk';
 import { Command } from 'clipanion';
 
-import { ContextWithConfig } from '../../helpers/interfaces';
+import { CommandWithConfig } from '../../helpers/config-command';
 
 import { apiConstructor } from './api';
 import { Test, TestComposite, TriggerResult } from './interfaces';
 import { renderHeader, renderResult } from './renderer';
 import { getSuites, hasTestSucceeded, runTest, waitForTests } from './utils';
 
-export class RunTestCommand extends Command<ContextWithConfig> {
+export class RunTestCommand extends CommandWithConfig {
   public static defaultConfig = {
     synthetics: {
       files: '{,!(node_modules)/**/}*.synthetics.json',
@@ -21,6 +21,8 @@ export class RunTestCommand extends Command<ContextWithConfig> {
   protected appKey?: string;
 
   public async execute () {
+    await super.execute();
+
     const startTime = Date.now();
     const suites = await getSuites(this.context.config.synthetics!.files!, this.context);
     const triggerTestPromises: Promise<[Test, TriggerResult[]] | []>[] = [];
@@ -109,7 +111,7 @@ export class RunTestCommand extends Command<ContextWithConfig> {
     }
   }
 
-  protected getApiHelper () {
+  private getApiHelper () {
     this.context.config.apiKey = this.apiKey || this.context.config.apiKey;
     this.context.config.appKey = this.appKey || this.context.config.appKey;
 

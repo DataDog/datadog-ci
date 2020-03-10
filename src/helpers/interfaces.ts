@@ -13,6 +13,9 @@ export interface GlobalConfig {
   };
 }
 
-export type ContextWithConfig = BaseContext & { config: GlobalConfig };
+export type ContextWithConfig = BaseContext & {
+  config: GlobalConfig;
+  defaultConfig: GlobalConfig;
+};
 
 export type CommandImport = CommandClass<ContextWithConfig> & { defaultConfig?: Partial<GlobalConfig> };
