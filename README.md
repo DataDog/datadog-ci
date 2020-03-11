@@ -17,31 +17,6 @@ Available command:
   - synthetics
 ```
 
-#### Configuration
-
-Configuration is done via a json file, by default the tool load `datadog-ci.json` which can be overriden through the `--config` argument.
-
-The configuration file structure is the following:
-
-```json
-{
-    "apiKey": "<DATADOG_API_KEY>",
-    "appKey": "<DATADOG_APPLICATION_KEY>",
-    "datadogHost": "https://app.datadoghq.com/api/v1",
-    "synthetics": {
-      ...
-    }
-}
-```
-
-The `synthetics` sub-object structure is defined by the [synthetics](src/commands/synthetics) command.
-
-Then run:
-
-```bash
-yarn datadog-ci synthetics run-tests
-```
-
 ## Development
 
 ### Repository structure

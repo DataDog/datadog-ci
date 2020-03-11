@@ -1,5 +1,6 @@
 import { promises as fs } from 'fs';
 import * as path from 'path';
+import { Writable } from 'stream';
 import { URL } from 'url';
 import { promisify } from 'util';
 
@@ -85,13 +86,13 @@ export const hasResultPassed = (result: PollResult): boolean => {
 export const hasTestSucceeded = (test: TestComposite): boolean =>
   test.results.every((result: PollResult) => hasResultPassed(result));
 
-export const getSuites = async (GLOB: string, context: BaseContext): Promise<Suite[]> => {
-  context.stdout.write(`Finding files in ${path.join(process.cwd(), GLOB)}\n`);
-  const files: string[] = await await promisify(glob)(GLOB);
+export const getSuites = async (GLOB: string, write: Writable['write']): Promise<Suite[]> => {
+  write(`Finding files in ${path.join(process.cwd(), GLOB)}\n`);
+  const files: string[] = await promisify(glob)(GLOB);
   if (files.length) {
-    context.stdout.write(`\nGot test files:\n${files.map(file => `  - ${file}\n`).join('')}\n`);
+    write(`\nGot test files:\n${files.map(file => `  - ${file}\n`).join('')}\n`);
   } else {
-    context.stdout.write('\nNo test files found.\n\n');
+    write('\nNo test files found.\n\n');
   }
   const contents = await Promise.all(files.map(test => fs.readFile(test, 'utf8')));
 

@@ -1,44 +1,47 @@
+import fs from 'fs';
+import { promisify } from 'util';
+
 import chalk from 'chalk';
 import { Command } from 'clipanion';
-
-import { CommandWithConfig } from '../../helpers/config-command';
+import deepExtend from 'deep-extend';
 
 import { apiConstructor } from './api';
 import { Test, TestComposite, TriggerResult } from './interfaces';
 import { renderHeader, renderResult } from './renderer';
 import { getSuites, hasTestSucceeded, runTest, waitForTests } from './utils';
 
-export class RunTestCommand extends CommandWithConfig {
-  public static defaultConfig = {
-    synthetics: {
-      files: '{,!(node_modules)/**/}*.synthetics.json',
-      global: { },
-      timeout: 2 * 60 * 1000,
-    },
+export class RunTestCommand extends Command {
+  private apiKey?: string;
+  private appKey?: string;
+  private config = {
+    apiKey: process.env.DD_API_KEY,
+    appKey: process.env.DD_APP_KEY,
+    datadogHost: process.env.DD_HOST || 'https://dd.datad0g.com/',
+    files: '{,!(node_modules)/**/}*.synthetics.json',
+    global: { },
+    timeout: 2 * 60 * 1000,
   };
-
-  protected apiKey?: string;
-  protected appKey?: string;
+  private configPath?: string;
 
   public async execute () {
-    await super.execute();
+    await this.parseConfigFile();
 
     const startTime = Date.now();
-    const suites = await getSuites(this.context.config.synthetics!.files!, this.context);
+    const suites = await getSuites(this.config!.files!, this.context.stdout.write);
     const triggerTestPromises: Promise<[Test, TriggerResult[]] | []>[] = [];
     const api = this.getApiHelper();
 
     if (!suites.length) {
       this.context.stdout.write('No suites to run.\n');
 
-      return;
+      return 0;
     }
 
     suites.forEach(({ tests }) => {
       if (tests) {
         triggerTestPromises.push(
           ...tests.map(t => runTest(api, {
-            config: { ...this.context.config.synthetics!.global, ...t.config },
+            config: { ...this.config!.global, ...t.config },
             id: t.id,
           }, this.context))
         );
@@ -76,7 +79,7 @@ export class RunTestCommand extends CommandWithConfig {
       }
 
       // Poll the results.
-      const results = await waitForTests(api, tests, { timeout: this.context.config.synthetics!.timeout! });
+      const results = await waitForTests(api, tests, { timeout: this.config!.timeout! });
 
       // Give each test its results
       tests.forEach(test => {
@@ -94,7 +97,7 @@ export class RunTestCommand extends CommandWithConfig {
       // Rendering the results.
       this.context.stdout.write(renderHeader(tests, { startTime }));
       for (const test of tests) {
-        this.context.stdout.write(renderResult(test, this.context.config.datadogHost.replace(/\/api\/v1$/, '')));
+        this.context.stdout.write(renderResult(test, this.config.datadogHost.replace(/\/api\/v1$/, '')));
       }
 
       // Determine if all the tests have succeeded
@@ -112,10 +115,10 @@ export class RunTestCommand extends CommandWithConfig {
   }
 
   private getApiHelper () {
-    this.context.config.apiKey = this.apiKey || this.context.config.apiKey;
-    this.context.config.appKey = this.appKey || this.context.config.appKey;
+    this.config.apiKey = this.apiKey || this.config.apiKey;
+    this.config.appKey = this.appKey || this.config.appKey;
 
-    if (!this.context.config.apiKey || !this.context.config.appKey) {
+    if (!this.config.apiKey || !this.config.appKey) {
       this.context.stdout.write(
         `Missing ${chalk.red.bold('DD_API_KEY')} and/or ${chalk.red.bold('DD_APP_KEY')} in your environment.\n`
       );
@@ -123,13 +126,32 @@ export class RunTestCommand extends CommandWithConfig {
     }
 
     return apiConstructor({
-      apiKey: this.context.config.apiKey!,
-      appKey: this.context.config.appKey!,
-      baseUrl: this.context.config.datadogHost,
+      apiKey: this.config.apiKey!,
+      appKey: this.config.appKey!,
+      baseUrl: this.config.datadogHost,
     });
+  }
+
+  private async parseConfigFile () {
+    try {
+      const configPath = this.configPath || 'datadog-ci.json';
+      const configFile = await promisify(fs.readFile)(configPath, 'utf-8');
+      const config = JSON.parse(configFile);
+      this.config = deepExtend(this.config, config);
+    } catch (e) {
+      if (e.code === 'ENOENT' && this.configPath) {
+        throw new Error('Config file not found');
+      }
+
+      if (e instanceof SyntaxError) {
+        throw new Error('Config file is not correct JSON');
+      }
+    }
+
   }
 }
 
 RunTestCommand.addPath('synthetics', 'run-tests');
 RunTestCommand.addOption('apiKey', Command.String('--apiKey'));
 RunTestCommand.addOption('appKey', Command.String('--appKey'));
+RunTestCommand.addOption('configPath', Command.String('--config'));

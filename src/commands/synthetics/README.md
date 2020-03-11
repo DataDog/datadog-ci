@@ -13,16 +13,39 @@ export DD_API_KEY="<DATADOG_API_KEY>"
 export DD_APP_KEY="<DATADOG_APPLICATION_KEY>"
 
 # Passing to CLI
-datadog-ci --apiKey "<DATADOG_API_KEY>" --appKey "<DATADOG_APPLICATION_KEY>"
+datadog-ci synthetics <command> --apiKey "<DATADOG_API_KEY>" --appKey "<DATADOG_APPLICATION_KEY>"
 ```
 
 ### API
 
 By default it runs at the root of the working folder and finds `{,!(node_modules)/**/}*.synthetics.json` files (every files ending with `.synthetics.json` except those in the `node_modules` folder).
 
+#### Configuration
+
+Configuration is done via a json file, by default the tool load `datadog-ci.json` which can be overriden through the `--config` argument.
+
+The configuration file structure is the following:
+
+```json
+{
+    "apiKey": "<DATADOG_API_KEY>",
+    "appKey": "<DATADOG_APPLICATION_KEY>",
+    "datadogHost": "https://app.datadoghq.com/api/v1",
+    "synthetics": {
+      ...
+    }
+}
+```
+
+Then run:
+
+```bash
+yarn datadog-ci synthetics run-tests
+```
+
 #### Commands
 
-The subcommand available is:
+The available command is:
 
 - `run-tests`: run the tests discovered in the folder according to the `files` configuration key
 
