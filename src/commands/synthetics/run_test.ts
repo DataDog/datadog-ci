@@ -6,7 +6,7 @@ import { Command } from 'clipanion';
 import deepExtend from 'deep-extend';
 
 import { apiConstructor } from './api';
-import { ConfigOverride, Test, TestComposite, TriggerResult } from './interfaces';
+import { ConfigOverride, ExecutionRule, Test, TestComposite, TriggerResult } from './interfaces';
 import { renderHeader, renderResult } from './renderer';
 import { getSuites, hasTestSucceeded, runTest, waitForTests } from './utils';
 
@@ -71,7 +71,7 @@ export class RunTestCommand extends Command {
       if (!tests.length) {
         this.context.stdout.write('No test to run.\n');
 
-        return 1;
+        return 0;
       }
 
       if (!allResultIds.length) {
@@ -79,7 +79,7 @@ export class RunTestCommand extends Command {
       }
 
       // Poll the results.
-      const results = await waitForTests(api, tests, { timeout: this.config!.timeout! });
+      const results = await waitForTests(api, tests, { timeout: this.config.timeout });
 
       // Give each test its results
       tests.forEach(test => {
@@ -101,7 +101,9 @@ export class RunTestCommand extends Command {
       }
 
       // Determine if all the tests have succeeded
-      const hasSucceeded = tests.every((test: TestComposite) => hasTestSucceeded(test));
+      const hasSucceeded = tests.every(
+        (test: TestComposite) => hasTestSucceeded(test) || test.options.execution_rule === ExecutionRule.NON_BLOCKING
+      );
       if (hasSucceeded) {
         return 0;
       } else {

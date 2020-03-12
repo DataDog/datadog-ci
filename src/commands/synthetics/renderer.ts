@@ -1,6 +1,6 @@
 import chalk from 'chalk';
 
-import { ConfigOverride, PollResult, Step, Test, TestComposite } from './interfaces';
+import { ConfigOverride, ExecutionRule, PollResult, Step, Test, TestComposite } from './interfaces';
 import { hasResultPassed, hasTestSucceeded } from './utils';
 
 const renderStep = (step: Step) => {
@@ -53,11 +53,13 @@ export const renderSteps = (test: TestComposite, baseUrl: string) => {
 
 export const renderResult = (test: TestComposite, baseUrl: string) => {
   const success = hasTestSucceeded(test);
-  const icon = success ? chalk.bold.green('✓') : chalk.bold.red('✖');
+  const isNonBlocking = test.options.execution_rule === ExecutionRule.NON_BLOCKING;
+  const icon = success ? chalk.bold.green('✓') : isNonBlocking ? chalk.bold.yellow('⚠') : chalk.bold.red('✖');
   const idDisplay = `[${chalk.bold.dim(test.public_id)}]`;
   const nameColor = success ? chalk.bold.green : chalk.bold.red;
+  const nonBlockingText = !success && isNonBlocking ? 'This tests is set to be non-blocking in Datadog' : '';
 
-  let consoleOutput = `${icon} ${idDisplay} | ${nameColor(test.name)}`;
+  let consoleOutput = `${icon} ${idDisplay} | ${nameColor(test.name)} ${nonBlockingText}`;
 
   if (!success) {
     consoleOutput += renderSteps(test, baseUrl);
@@ -74,6 +76,8 @@ export const renderTrigger = (test: Test | undefined, testId: string, config: Co
     message = chalk.red.bold(`Could not find test "${testId}"`);
   } else if (config.skip) {
     message = `>> Skipped test "${chalk.yellow.dim(test.name)}"`;
+  } else if (test.options.execution_rule === ExecutionRule.SKIPPED) {
+    message = `>> Skipped test "${chalk.yellow.dim(test.name)}" because of execution rule configuration in Datadog`;
   } else {
     message = `Trigger test "${chalk.green.bold(test.name)}"`;
   }

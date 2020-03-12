@@ -1,14 +1,14 @@
 {
-  "name": "synthetics-ci",
+  "name": "datadog-ci",
   "version": "0.1.1",
-  "description": "Run Synthetics tests from your CI.",
+  "description": "Run datadog actions from the CI.",
   "main": "dist/index.js",
-  "repository": "git@github.com:DataDog/synthetics-ci.git",
+  "repository": "git@github.com:DataDog/datadog-ci.git",
   "author": "Yoann Moinet <yoann.moinet@datadoghq.com>",
   "license": "Apache-2.0",
   "private": true,
   "bin": {
-    "synthetics": "dist/index.js"
+    "datadog-ci": "dist/index.js"
   },
   "files": [
     "dist/**/*",
