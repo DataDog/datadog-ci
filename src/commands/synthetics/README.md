@@ -31,9 +31,19 @@ The configuration file structure is the following:
     "apiKey": "<DATADOG_API_KEY>",
     "appKey": "<DATADOG_APPLICATION_KEY>",
     "datadogHost": "https://app.datadoghq.com/api/v1",
-    "synthetics": {
-      ...
-    }
+    "files": "{,!(node_modules)/**/}*.synthetics.json",
+    "global": {
+        "allowInsecureCertificates": true,
+        "basicAuth": { "username": "test", "password": "test" },
+        "deviceIds": ["laptop_large"],
+        "followRedirects": true,
+        "headers": { "NEW_HEADER": "NEW VALUE" },
+        "locations": ["aws:us-east-1"],
+        "skip": true,
+        "startUrl": "{{URL}}?static_hash={{STATIC_HASH}}",
+        "variables": { "titleVariable": "new title" },
+    },
+    "timeout": 120000,
 }
 ```
 

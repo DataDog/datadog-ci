@@ -6,7 +6,7 @@ import { Command } from 'clipanion';
 import deepExtend from 'deep-extend';
 
 import { apiConstructor } from './api';
-import { Test, TestComposite, TriggerResult } from './interfaces';
+import { ConfigOverride, Test, TestComposite, TriggerResult } from './interfaces';
 import { renderHeader, renderResult } from './renderer';
 import { getSuites, hasTestSucceeded, runTest, waitForTests } from './utils';
 
@@ -18,7 +18,7 @@ export class RunTestCommand extends Command {
     appKey: process.env.DD_APP_KEY,
     datadogHost: process.env.DD_HOST || 'https://dd.datad0g.com/',
     files: '{,!(node_modules)/**/}*.synthetics.json',
-    global: { },
+    global: { } as ConfigOverride,
     timeout: 2 * 60 * 1000,
   };
   private configPath?: string;
