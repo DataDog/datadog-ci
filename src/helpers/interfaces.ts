@@ -151,7 +151,7 @@ export interface Step {
 
 export enum ExecutionRule {
   BLOCKING = 'blocking',
-  NON_BLOCKING = 'nonblocking',
+  NON_BLOCKING = 'non_blocking',
   SKIPPED = 'skipped',
 }
 
