@@ -7,6 +7,7 @@ import { promisify } from 'util';
 import {
   APIHelper,
   Config,
+  ExecutionRule,
   Payload,
   PollResult,
   Suite,
@@ -212,7 +213,7 @@ export const runTest = async (api: APIHelper, { id, config }: TriggerConfig): Pr
   }
 
   renderTrigger(test, id, config);
-  if (test && !config.skip) {
+  if (test && !config.skip && test.options.execution_rule !== ExecutionRule.SKIPPED) {
     const triggerResponse = await api.triggerTests([id], handleConfig(test, config));
     renderWait(test);
 

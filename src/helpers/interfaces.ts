@@ -78,6 +78,7 @@ export interface Test {
   name: string;
   options: {
     device_ids: string[];
+    execution_rule?: ExecutionRule;
     min_failure_duration: number;
     min_location_failed: number;
     tick_every: number;
@@ -146,6 +147,12 @@ export interface Step {
   type: string;
   url: string;
   value: string;
+}
+
+export enum ExecutionRule {
+  BLOCKING = 'blocking',
+  NON_BLOCKING = 'non_blocking',
+  SKIPPED = 'skipped',
 }
 
 export interface Suite {

@@ -2,7 +2,7 @@ import chalk from 'chalk';
 import rc from 'rc';
 
 import { apiConstructor } from './helpers/dd-api';
-import { Test, TestComposite, TriggerResult } from './helpers/interfaces';
+import { ExecutionRule, Test, TestComposite, TriggerResult } from './helpers/interfaces';
 import { renderHeader, renderResult } from './helpers/renderer';
 import { getSuites, hasTestSucceeded, runTest, waitForTests } from './helpers/utils';
 
@@ -113,7 +113,9 @@ export const main = async () => {
     }
 
     // Determine if all the tests have succeeded
-    const hasSucceeded = tests.every((test: TestComposite) => hasTestSucceeded(test));
+    const hasSucceeded = tests.every(
+      (test: TestComposite) => hasTestSucceeded(test) || test.options.execution_rule === ExecutionRule.NON_BLOCKING
+    );
     // Exit the program accordingly.
     if (hasSucceeded) {
       process.exitCode = 0;
