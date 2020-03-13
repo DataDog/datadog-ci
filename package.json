@@ -1,12 +1,11 @@
 {
-  "name": "datadog-ci",
-  "version": "0.1.1",
+  "name": "@datadog/datadog-ci",
+  "version": "0.2.0",
   "description": "Run datadog actions from the CI.",
   "main": "dist/index.js",
-  "repository": "git@github.com:DataDog/datadog-ci.git",
+  "repository": "https://github.com/DataDog/datadog-ci",
   "author": "Yoann Moinet <yoann.moinet@datadoghq.com>",
   "license": "Apache-2.0",
-  "private": true,
   "bin": {
     "datadog-ci": "dist/index.js"
   },
@@ -42,8 +41,9 @@
   },
   "dependencies": {
     "chalk": "2.4.2",
+    "clipanion": "^2.2.2",
+    "deep-extend": "^0.6.0",
     "glob": "7.1.4",
-    "rc": "1.2.8",
     "request": "2.88.0",
     "request-promise-native": "1.0.7"
   },
@@ -52,6 +52,7 @@
     "@babel/preset-env": "7.4.5",
     "@babel/preset-typescript": "7.3.3",
     "@types/chalk": "2.2.0",
+    "@types/deep-extend": "^0.4.31",
     "@types/glob": "7.1.1",
     "@types/jest": "24.0.15",
     "@types/node": "12.0.10",
