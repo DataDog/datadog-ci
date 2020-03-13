@@ -4,7 +4,6 @@ import { Writable } from 'stream';
 import { URL } from 'url';
 import { promisify } from 'util';
 
-import { BaseContext } from 'clipanion';
 import glob from 'glob';
 
 import {
@@ -183,7 +182,7 @@ export const waitForTests = async (
   });
 };
 
-export const runTest = async (api: APIHelper, { id, config }: TriggerConfig, context: BaseContext):
+export const runTest = async (api: APIHelper, { id, config }: TriggerConfig, write: Writable['write']):
   Promise<[Test, TriggerResult[]] | []> => {
   let test: Test | undefined;
   try {
@@ -192,10 +191,10 @@ export const runTest = async (api: APIHelper, { id, config }: TriggerConfig, con
     // Just ignore it for now.
   }
 
-  context.stdout.write(renderTrigger(test, id, config));
+  write(renderTrigger(test, id, config));
   if (test && !config.skip) {
     const triggerResponse = await api.triggerTests([id], handleConfig(test, config));
-    context.stdout.write(renderWait(test));
+    write(renderWait(test));
 
     return [test, triggerResponse.results];
   }

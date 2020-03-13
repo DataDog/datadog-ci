@@ -24,9 +24,10 @@ export class RunTestCommand extends Command {
   private configPath?: string;
 
   public async execute () {
+    const startTime = Date.now();
+
     await this.parseConfigFile();
 
-    const startTime = Date.now();
     const suites = await getSuites(this.config!.files!, this.context.stdout.write);
     const triggerTestPromises: Promise<[Test, TriggerResult[]] | []>[] = [];
     const api = this.getApiHelper();
@@ -43,7 +44,7 @@ export class RunTestCommand extends Command {
           ...tests.map(t => runTest(api, {
             config: { ...this.config!.global, ...t.config },
             id: t.id,
-          }, this.context))
+          }, this.context.stdout.write))
         );
       }
     });
@@ -149,7 +150,6 @@ export class RunTestCommand extends Command {
         throw new Error('Config file is not correct JSON');
       }
     }
-
   }
 }
 

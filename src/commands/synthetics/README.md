@@ -18,7 +18,7 @@ datadog-ci synthetics <command> --apiKey "<DATADOG_API_KEY>" --appKey "<DATADOG_
 
 ### API
 
-By default it runs at the root of the working folder and finds `{,!(node_modules)/**/}*.synthetics.json` files (every files ending with `.synthetics.json` except those in the `node_modules` folder).
+By default it runs at the root of the working directory and finds `{,!(node_modules)/**/}*.synthetics.json` files (every files ending with `.synthetics.json` except those in the `node_modules` folder).
 
 #### Configuration
 
@@ -50,7 +50,7 @@ The configuration file structure is the following:
 Then run:
 
 ```bash
-yarn datadog-ci synthetics run-tests
+datadog-ci synthetics run-tests
 ```
 
 #### Commands
