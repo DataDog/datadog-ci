@@ -1,9 +1,7 @@
 import request from 'request-promise-native';
 
-import { apiConstructor } from '../dd-api';
+import { apiConstructor } from '../api';
 import { PollResult, Result } from '../interfaces';
-
-jest.mock('request');
 
 describe('dd-api', () => {
   const RESULT_ID = '123';

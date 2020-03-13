@@ -1,6 +1,6 @@
 import chalk from 'chalk';
 
-import { Config, ExecutionRule, PollResult, Step, Test, TestComposite } from './interfaces';
+import { ConfigOverride, ExecutionRule, PollResult, Step, Test, TestComposite } from './interfaces';
 import { hasResultPassed, hasTestSucceeded } from './utils';
 
 const renderStep = (step: Step) => {
@@ -46,7 +46,8 @@ export const renderSteps = (test: TestComposite, baseUrl: string) => {
       // We render the step only if the test hasn't passed to avoid cluttering the output.
       steps = `\n${r.result.stepDetails.map(renderStep).join('\n')}`;
     }
-    console.log(`${resultIdentification}\n    ⎋  ${chalk.dim.cyan(resultUrl)}${steps}`);
+
+    return `${resultIdentification}\n    ⎋  ${chalk.dim.cyan(resultUrl)}${steps}`;
   });
 };
 
@@ -58,14 +59,16 @@ export const renderResult = (test: TestComposite, baseUrl: string) => {
   const nameColor = success ? chalk.bold.green : chalk.bold.red;
   const nonBlockingText = !success && isNonBlocking ? 'This tests is set to be non-blocking in Datadog' : '';
 
-  console.log(`${icon} ${idDisplay} | ${nameColor(test.name)} ${nonBlockingText}`);
+  let consoleOutput = `${icon} ${idDisplay} | ${nameColor(test.name)} ${nonBlockingText}`;
 
   if (!success) {
-    renderSteps(test, baseUrl);
+    consoleOutput += renderSteps(test, baseUrl);
   }
+
+  return consoleOutput;
 };
 
-export const renderTrigger = (test: Test | undefined, testId: string, config: Config) => {
+export const renderTrigger = (test: Test | undefined, testId: string, config: ConfigOverride) => {
   const idDisplay = `[${chalk.bold.dim(testId)}]`;
   let message;
 
@@ -79,22 +82,20 @@ export const renderTrigger = (test: Test | undefined, testId: string, config: Co
     message = `Trigger test "${chalk.green.bold(test.name)}"`;
   }
 
-  console.log(
-    `${idDisplay} ${message}`
-  );
+  return `${idDisplay} ${message}\n`;
 };
 
 export const renderHeader = (tests: TestComposite[], timings: { startTime: number }) => {
   const currentTime = Date.now();
-  console.log(`\n\n${chalk.bold.cyan('=== REPORT ===')}
-Took ${chalk.bold((currentTime - timings.startTime).toString())}ms\n\n`);
+
+  return `\n\n${chalk.bold.cyan('=== REPORT ===')}
+Took ${chalk.bold((currentTime - timings.startTime).toString())}ms\n\n`;
 };
 
 export const renderWait = (test: Test) => {
   const idDisplay = `[${chalk.bold.dim(test.public_id)}]`;
-  console.log(
-    `${idDisplay} Waiting results for "${chalk.green.bold(
+
+  return `${idDisplay} Waiting results for "${chalk.green.bold(
       test.name
-    )}"`
-  );
+    )}"`;
 };

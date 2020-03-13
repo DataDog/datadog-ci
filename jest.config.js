@@ -11,5 +11,6 @@ module.exports = {
     'ts-jest': {
       tsConfig: 'tsconfig.json'
     }
-  }
+  },
+  roots: ["src"]
 };
