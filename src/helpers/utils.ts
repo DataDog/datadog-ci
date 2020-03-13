@@ -60,10 +60,14 @@ export const handleConfig = (test: Test, config?: Config): Payload | undefined =
   const handledConfig = pick(config, [
     'allowInsecureCertificates',
     'basicAuth',
+    'body',
+    'bodyType',
+    'cookies',
     'deviceIds',
     'followRedirects',
     'headers',
     'locations',
+    'retry',
     'startUrl',
     'variables',
   ]);
