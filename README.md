@@ -21,7 +21,7 @@ Available command:
 
 ### Repository structure
 
-This tool uses [clipanion](https://github.com/arcanis/clipanion) to handle the different commands. Each command is described in its directory in the `src/commands/` folder. It must contain an `index.ts` file exporting the subcommands available to the user. 
+This tool uses [clipanion](https://github.com/arcanis/clipanion) to handle the different commands. Each command is described in its directory in the `src/commands/` folder. It must contain an `index.ts` file exporting the subcommands available to the user.
 
 The tests are written using [jest](https://github.com/facebook/jest) and stored in the `__tests__` folders close to the sources under test.
 
@@ -41,7 +41,7 @@ yarn build
 yarn format
 
 # Make bin executable
-yarn prepare
+yarn prepack
 ```
 
 ## Contributing
