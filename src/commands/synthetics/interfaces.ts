@@ -108,13 +108,22 @@ export interface Trigger {
   triggered_check_ids: string[];
 }
 
+interface RetryConfig {
+  count: number;
+  interval: number;
+}
+
 export interface ConfigOverride {
   allowInsecureCertificates?: boolean;
   basicAuth?: BasicAuthCredentials;
+  body?: string;
+  bodyType?: string;
+  cookies?: string;
   deviceIds?: string[];
   followRedirects?: boolean;
   headers?: { [key: string]: string };
   locations?: string[];
+  retry?: RetryConfig;
   skip?: boolean;
   startUrl?: string;
   variables?: { [key: string]: string };
