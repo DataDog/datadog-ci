@@ -21,7 +21,7 @@ Then, installing the package is done through NPM or Yarn:
 npm install -D @datadog/datadog-ci
 
 # Yarn
-yarn add --save-dev @datadog/datadog-ci
+yarn add -D @datadog/datadog-ci
 ```
 
 ### API
