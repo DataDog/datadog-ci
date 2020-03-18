@@ -19,7 +19,7 @@ const cli = new Cli({
 const commandsPath = `${__dirname}/commands`;
 for (const commandFolder of fs.readdirSync(commandsPath)) {
   // tslint:disable-next-line: no-var-requires
-  require(`${commandsPath}/${commandFolder}`).forEach(cli.register);
+  require(`${commandsPath}/${commandFolder}`).forEach(cli.register.bind(cli));
 }
 
 if (require.main === module) {

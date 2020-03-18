@@ -1,6 +1,6 @@
 {
   "name": "@datadog/datadog-ci",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Run datadog actions from the CI.",
   "main": "dist/index.js",
   "repository": "https://github.com/DataDog/datadog-ci",
@@ -64,6 +64,6 @@
     "lint-staged": "8.2.1",
     "ts-jest": "24.3.0",
     "tslint": "5.18.0",
-    "typescript": "3.5.2"
+    "typescript": "3.7.5"
   }
 }
