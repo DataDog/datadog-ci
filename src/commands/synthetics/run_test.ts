@@ -16,7 +16,7 @@ export class RunTestCommand extends Command {
   private config = {
     apiKey: process.env.DD_API_KEY,
     appKey: process.env.DD_APP_KEY,
-    datadogHost: process.env.DD_HOST || 'https://dd.datad0g.com/',
+    datadogHost: process.env.DD_HOST || 'https://dd.datad0g.com/api/v1/',
     files: '{,!(node_modules)/**/}*.synthetics.json',
     global: { } as ConfigOverride,
     timeout: 2 * 60 * 1000,
@@ -28,7 +28,7 @@ export class RunTestCommand extends Command {
 
     await this.parseConfigFile();
 
-    const suites = await getSuites(this.config!.files!, this.context.stdout.write);
+    const suites = await getSuites(this.config!.files!, this.context.stdout.write.bind(this.context.stdout));
     const triggerTestPromises: Promise<[Test, TriggerResult[]] | []>[] = [];
     const api = this.getApiHelper();
 
@@ -44,7 +44,7 @@ export class RunTestCommand extends Command {
           ...tests.map(t => runTest(api, {
             config: { ...this.config!.global, ...t.config },
             id: t.id,
-          }, this.context.stdout.write))
+          }, this.context.stdout.write.bind(this.context.stdout)))
         );
       }
     });

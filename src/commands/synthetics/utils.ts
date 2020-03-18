@@ -9,6 +9,7 @@ import glob from 'glob';
 import {
   APIHelper,
   ConfigOverride,
+  ExecutionRule,
   Payload,
   PollResult,
   Suite,
@@ -30,7 +31,7 @@ const SUBDOMAIN_REGEX = /(.*?)\.(?=[^\/]*\..{2,5})/;
 const template = (st: string, context: any): string =>
   st.replace(/{{([A-Z_]+)}}/g, (match: string, p1: string) => context[p1] ? context[p1] : '');
 
-export const handleConfig = (test: Test, config?: ConfigOverride): Payload | undefined => {
+const handleConfig = (test: Test, config?: ConfigOverride): Payload | undefined => {
   if (!config || !Object.keys(config).length) {
     return config;
   }
@@ -196,7 +197,7 @@ export const runTest = async (api: APIHelper, { id, config }: TriggerConfig, wri
   }
 
   write(renderTrigger(test, id, config));
-  if (test && !config.skip) {
+  if (test && !config.skip && test.options?.execution_rule !== ExecutionRule.SKIPPED) {
     const triggerResponse = await api.triggerTests([id], handleConfig(test, config));
     write(renderWait(test));
 

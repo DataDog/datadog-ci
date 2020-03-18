@@ -76,7 +76,7 @@ export const renderTrigger = (test: Test | undefined, testId: string, config: Co
     message = chalk.red.bold(`Could not find test "${testId}"`);
   } else if (config.skip) {
     message = `>> Skipped test "${chalk.yellow.dim(test.name)}"`;
-  } else if (test.options.execution_rule === ExecutionRule.SKIPPED) {
+  } else if (test.options?.execution_rule === ExecutionRule.SKIPPED) {
     message = `>> Skipped test "${chalk.yellow.dim(test.name)}" because of execution rule configuration in Datadog`;
   } else {
     message = `Trigger test "${chalk.green.bold(test.name)}"`;
