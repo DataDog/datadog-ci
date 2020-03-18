@@ -4,6 +4,26 @@ Use Datadog from your CI.
 
 ## Usage
 
+### How to install the CLI
+
+The package is published privately under [@datadog/datadog-ci](https://www.npmjs.com/package/@datadog/datadog-ci) in the NPM registry.
+
+Until it is made public, a NPM token is needed to access it, this can be set in the `~/.npmrc` file:
+
+```
+//registry.npmjs.org/:_authToken=<TOKEN>
+```
+
+Then, installing the package is done through NPM or Yarn:
+
+```sh
+# NPM
+npm install -D @datadog/datadog-ci
+
+# Yarn
+yarn add -D @datadog/datadog-ci
+```
+
 ### API
 
 The CLI supports the following commands:
