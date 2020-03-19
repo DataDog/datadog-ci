@@ -16,7 +16,7 @@ export class RunTestCommand extends Command {
   private config = {
     apiKey: process.env.DD_API_KEY,
     appKey: process.env.DD_APP_KEY,
-    datadogHost: process.env.DD_HOST || 'https://dd.datad0g.com/api/v1/',
+    datadogHost: process.env.DD_HOST || 'https://app.datadoghq.com/api/v1/',
     files: '{,!(node_modules)/**/}*.synthetics.json',
     global: { } as ConfigOverride,
     timeout: 2 * 60 * 1000,

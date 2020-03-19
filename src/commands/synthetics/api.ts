@@ -18,7 +18,7 @@ const triggerTests = (request: (args: Options) => RequestPromise<Trigger>) =>
           public_ids: testIds,
         },
         method: 'POST',
-        uri: '/synthetics/tests/trigger',
+        uri: '/synthetics/tests/trigger/ci',
       });
 
       return resp;
