@@ -1,0 +1,20 @@
+# This workflow will do a clean install of node dependencies, build the source code and run tests
+
+name: Continuous Integration
+
+on: pull_request
+
+jobs:
+  build-and-test:
+    name: Build and test
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Install node
+      uses: actions/setup-node@v1
+      with:
+        node-version: '12.16.1'
+    - run: yarn install
+    - run: yarn build
+    - run: yarn test
