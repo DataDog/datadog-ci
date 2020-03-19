@@ -16,6 +16,8 @@ export DD_APP_KEY="<DATADOG_APPLICATION_KEY>"
 datadog-ci synthetics <command> --apiKey "<DATADOG_API_KEY>" --appKey "<DATADOG_APPLICATION_KEY>"
 ```
 
+It is possible to set the datadog host used by defining the `DD_HOST` environment variable.
+
 ### API
 
 By default it runs at the root of the working directory and finds `{,!(node_modules)/**/}*.synthetics.json` files (every files ending with `.synthetics.json` except those in the `node_modules` folder).

@@ -18,7 +18,7 @@ const triggerTests = (request: (args: Options) => RequestPromise<Trigger>) =>
           public_ids: testIds,
         },
         method: 'POST',
-        uri: '/synthetics/tests/trigger',
+        uri: '/synthetics/tests/trigger/ci',
       });
 
       return resp;
@@ -65,7 +65,6 @@ export const apiConstructor: APIConstructor = ({ appKey, apiKey, baseUrl }) => {
         json: true,
       })({
         ...args,
-        headers: { 'X-Requested-With': 'synthetics-ci' },
         qs: { api_key: apiKey, application_key: appKey, ...args.qs },
       });
 
