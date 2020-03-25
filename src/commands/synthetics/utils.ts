@@ -15,10 +15,9 @@ import {
   Suite,
   TemplateContext,
   Test,
-  TestComposite,
+  Trigger,
   TriggerConfig,
   TriggerResult,
-  WaitForTestsOptions,
 } from './interfaces';
 import { renderTrigger, renderWait } from './renderer';
 
@@ -31,9 +30,9 @@ const SUBDOMAIN_REGEX = /(.*?)\.(?=[^\/]*\..{2,5})/;
 const template = (st: string, context: any): string =>
   st.replace(/{{([A-Z_]+)}}/g, (match: string, p1: string) => context[p1] ? context[p1] : '');
 
-const handleConfig = (test: Test, config?: ConfigOverride): Payload | undefined => {
+const handleConfig = (test: Test, config?: ConfigOverride): Payload => {
   if (!config || !Object.keys(config).length) {
-    return config;
+    return { };
   }
 
   const handledConfig = pick(config, [
@@ -87,8 +86,8 @@ export const hasResultPassed = (result: PollResult): boolean => {
   return true;
 };
 
-export const hasTestSucceeded = (test: TestComposite): boolean =>
-  test.results.every((result: PollResult) => hasResultPassed(result));
+export const hasTestSucceeded = (results: PollResult[]): boolean =>
+  results.every((result: PollResult) => hasResultPassed(result));
 
 export const getSuites = async (GLOB: string, write: Writable['write']): Promise<Suite[]> => {
   write(`Finding files in ${path.join(process.cwd(), GLOB)}\n`);
@@ -103,23 +102,21 @@ export const getSuites = async (GLOB: string, write: Writable['write']): Promise
   return contents.map(content => JSON.parse(content));
 };
 
-export const waitForTests = async (
+export const waitForResults = async (
   api: APIHelper,
-  tests: TestComposite[],
-  opts: WaitForTestsOptions
+  triggerResults: TriggerResult[],
+  pollingTimeout: number
 ): Promise<{ [key: string]: PollResult[] }> => {
   const finishedResults: { [key: string]: PollResult[] } = { };
-  const pollingIds: string[] = [ ];
-  const triggerResultsByResultID: { [key: string]: TriggerResult} = { };
-  let maxErrors = MAX_RETRIES;
-
-  Object.values(tests).forEach(test => {
-    finishedResults[test.public_id] = [];
-    test.triggerResults.forEach(result => {
-      triggerResultsByResultID[result.result_id] = result;
-      pollingIds.push(result.result_id);
-    });
+  const pollingIds = triggerResults.map(triggerResult => triggerResult.result_id);
+  const triggerResultsByResultID =
+    Object.fromEntries(triggerResults.map(triggerResult => [triggerResult.result_id, triggerResult]));
+  triggerResults.forEach(triggerResult => {
+    if (!Object.keys(finishedResults).includes(triggerResult.public_id)) {
+      finishedResults[triggerResult.public_id] = [];
+    }
   });
+  let maxErrors = MAX_RETRIES;
 
   let pollTimeout: NodeJS.Timeout;
 
@@ -128,8 +125,7 @@ export const waitForTests = async (
     const timeout = setTimeout(() => {
       clearTimeout(pollTimeout);
       // Build and inject timeout errors.
-      pollingIds.forEach(resultID => {
-        const triggerResult = triggerResultsByResultID[resultID];
+      triggerResults.forEach(triggerResult => {
         const pollResult: PollResult = {
           dc_id: triggerResult.location,
           result: {
@@ -139,12 +135,12 @@ export const waitForTests = async (
             passed: false,
             stepDetails: [],
           },
-          resultID,
+          resultID: triggerResult.result_id,
         };
         finishedResults[triggerResult.public_id].push(pollResult);
       });
       resolve(finishedResults);
-    }, opts.timeout);
+    }, pollingTimeout);
 
     const poll = async (toPoll: string[]) => {
       let results: PollResult[] = [];
@@ -187,22 +183,37 @@ export const waitForTests = async (
   });
 };
 
-export const runTest = async (api: APIHelper, { id, config }: TriggerConfig, write: Writable['write']):
-  Promise<[Test, TriggerResult[]] | []> => {
-  let test: Test | undefined;
-  try {
-    test = await api.getTest(id);
-  } catch (e) {
-    // Just ignore it for now.
-  }
+export const runTests = async (api: APIHelper, triggerConfigs: TriggerConfig[], write: Writable['write']):
+  Promise<{ tests: Test[]; triggers: Trigger }> => {
+  const testsToTrigger: { [key: string]: Payload } = { };
 
-  write(renderTrigger(test, id, config));
-  if (test && !config.skip && test.options?.execution_rule !== ExecutionRule.SKIPPED) {
-    const triggerResponse = await api.triggerTests([id], handleConfig(test, config));
+  const tests = await Promise.all(triggerConfigs.map(async ({ config, id }) => {
+    let test: Test | undefined;
+    try {
+      test = await api.getTest(id);
+      write(renderTrigger(test, id, config));
+    } catch (e) {
+      /* Do nothing */
+      write(`Unable to retrieve test: ${id}\n`);
+    }
+
+    if (!test || config.skip || test.options?.execution_rule === ExecutionRule.SKIPPED) {
+      return;
+    }
+
+    const overloadedConfig = handleConfig(test, config);
     write(renderWait(test));
+    testsToTrigger[id] = overloadedConfig;
 
-    return [test, triggerResponse.results];
-  }
+    return test;
+  }));
 
-  return [];
+  return {
+    tests: tests.filter(definedTypeGuard),
+    triggers: await api.triggerTests(testsToTrigger),
+  };
 };
+
+function definedTypeGuard<T> (o: T | undefined): o is T {
+  return !!o;
+}

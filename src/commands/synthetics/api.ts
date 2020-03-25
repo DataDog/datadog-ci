@@ -10,12 +10,11 @@ import {
 } from './interfaces';
 
 const triggerTests = (request: (args: Options) => RequestPromise<Trigger>) =>
-  async (testIds: string[], config?: Payload) => {
+  async (testsToTrigger: { [key: string]: Payload }) => {
     try {
       const resp = await request({
         body: {
-          config,
-          public_ids: testIds,
+          tests_to_trigger: testsToTrigger,
         },
         method: 'POST',
         uri: '/synthetics/tests/trigger/ci',
@@ -24,6 +23,7 @@ const triggerTests = (request: (args: Options) => RequestPromise<Trigger>) =>
       return resp;
     } catch (e) {
       // Rewrite the error.
+      const testIds = Object.keys(testsToTrigger).join(', ');
       throw new Error(`Could not trigger [${testIds}]. ${e.statusCode}: ${e.name}`);
     }
   };

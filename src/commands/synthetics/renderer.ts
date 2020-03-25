@@ -1,6 +1,6 @@
 import chalk from 'chalk';
 
-import { ConfigOverride, ExecutionRule, PollResult, Step, Test, TestComposite } from './interfaces';
+import { ConfigOverride, ExecutionRule, PollResult, Step, Test } from './interfaces';
 import { hasResultPassed, hasTestSucceeded } from './utils';
 
 const renderStep = (step: Step) => {
@@ -22,8 +22,8 @@ const renderStep = (step: Step) => {
   return `    ${icon} | ${duration} - ${step.description}${value}${error}`;
 };
 
-export const renderSteps = (test: TestComposite, baseUrl: string) =>
-  test.results.map((r: PollResult) => {
+export const renderSteps = (test: Test, results: PollResult[], baseUrl: string) =>
+  results.map((r: PollResult) => {
     const resultUrl = r.result.unhealthy
       ? r.result.errorMessage || 'General Error'
       : `${baseUrl}/synthetics/details/${test.public_id}/result/${r.resultID}`;
@@ -52,8 +52,8 @@ export const renderSteps = (test: TestComposite, baseUrl: string) =>
     return `${resultIdentification}\n    ⎋  ${chalk.dim.cyan(resultUrl)}${steps}`;
   }).join('\n').concat('\n');
 
-export const renderResult = (test: TestComposite, baseUrl: string) => {
-  const success = hasTestSucceeded(test);
+export const renderResult = (test: Test, results: PollResult[], baseUrl: string) => {
+  const success = hasTestSucceeded(results);
   const isNonBlocking = test.options.execution_rule === ExecutionRule.NON_BLOCKING;
   const icon = success ? chalk.bold.green('✓') : isNonBlocking ? chalk.bold.yellow('⚠') : chalk.bold.red('✖');
   const idDisplay = `[${chalk.bold.dim(test.public_id)}]`;
@@ -63,7 +63,7 @@ export const renderResult = (test: TestComposite, baseUrl: string) => {
   let consoleOutput = `${icon} ${idDisplay} | ${nameColor(test.name)} ${nonBlockingText}\n`;
 
   if (!success) {
-    consoleOutput += renderSteps(test, baseUrl);
+    consoleOutput += renderSteps(test, results, baseUrl);
   }
 
   return consoleOutput;
@@ -86,7 +86,7 @@ export const renderTrigger = (test: Test | undefined, testId: string, config: Co
   return `${idDisplay} ${message}\n`;
 };
 
-export const renderHeader = (tests: TestComposite[], timings: { startTime: number }) => {
+export const renderHeader = (timings: { startTime: number }) => {
   const currentTime = Date.now();
 
   return `\n\n${chalk.bold.cyan('=== REPORT ===')}
