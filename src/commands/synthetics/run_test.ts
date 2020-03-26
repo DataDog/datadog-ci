@@ -121,10 +121,13 @@ export class RunTestCommand extends Command {
     this.config.apiKey = this.apiKey || this.config.apiKey;
     this.config.appKey = this.appKey || this.config.appKey;
 
-    if (!this.config.apiKey || !this.config.appKey) {
-      this.context.stdout.write(
-        `Missing ${chalk.red.bold('DD_API_KEY')} and/or ${chalk.red.bold('DD_APP_KEY')} in your environment.\n`
-      );
+    if (!this.config.appKey || !this.config.apiKey) {
+      if (!this.config.appKey) {
+        this.context.stdout.write(`Missing ${chalk.red.bold('DD_APP_KEY')} in your environment.\n`);
+      }
+      if (!this.config.apiKey) {
+        this.context.stdout.write(`Missing ${chalk.red.bold('DD_API_KEY')} in your environment.\n`);
+      }
       throw new Error('API and/or Application keys are missing');
     }
 

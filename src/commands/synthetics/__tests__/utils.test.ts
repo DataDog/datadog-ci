@@ -1,4 +1,5 @@
 jest.mock('glob');
+jest.mock('fs');
 jest.useFakeTimers();
 
 import * as fs from 'fs';
@@ -12,10 +13,8 @@ describe('utils', () => {
     const FILES = [ 'file1', 'file2' ];
     const FILES_CONTENT = { file1: '{"content":"file1"}', file2: '{"content":"file2"}' };
 
-    jest.spyOn(fs.promises, 'readFile').mockImplementation(path =>
-      Promise.resolve(FILES_CONTENT[path as 'file1' | 'file2'])
-    );
-
+    (fs.readFile as any).mockImplementation((path: 'file1' | 'file2', opts: any, callback: any) =>
+      callback(undefined, FILES_CONTENT[path]));
     (glob as any).mockImplementation((query: string, callback: (e: any, v: any) => void) => callback(undefined, FILES));
 
     test('should get suites', async () => {

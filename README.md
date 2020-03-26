@@ -18,10 +18,10 @@ Then, installing the package is done through NPM or Yarn:
 
 ```sh
 # NPM
-npm install -D @datadog/datadog-ci
+npm install --save-dev @datadog/datadog-ci
 
 # Yarn
-yarn add -D @datadog/datadog-ci
+yarn add --dev @datadog/datadog-ci
 ```
 
 ### API
