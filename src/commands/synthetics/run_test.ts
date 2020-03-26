@@ -131,7 +131,7 @@ export class RunTestCommand extends Command {
     return apiConstructor({
       apiKey: this.config.apiKey!,
       appKey: this.config.appKey!,
-      baseUrl: this.config.datadogHost,
+      baseURL: this.config.datadogHost,
     });
   }
 

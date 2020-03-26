@@ -181,4 +181,4 @@ export interface WaitForTestsOptions {
   timeout: number;
 }
 
-export type APIConstructor = (args: { apiKey: string; appKey: string; baseUrl: string}) => APIHelper;
+export type APIConstructor = (args: { apiKey: string; appKey: string; baseURL: string}) => APIHelper;

@@ -1,5 +1,4 @@
-import { Options } from 'request';
-import { defaults as requestDefaults, RequestPromise } from 'request-promise-native';
+import * as axios from 'axios';
 
 import {
   APIConstructor,
@@ -9,64 +8,66 @@ import {
   Trigger,
 } from './interfaces';
 
-const triggerTests = (request: (args: Options) => RequestPromise<Trigger>) =>
+const triggerTests = (request: (args: axios.AxiosRequestConfig) => axios.AxiosPromise<Trigger>) =>
   async (testIds: string[], config?: Payload) => {
     try {
       const resp = await request({
-        body: {
+        data: {
           config,
           public_ids: testIds,
         },
         method: 'POST',
-        uri: '/synthetics/tests/trigger/ci',
+        url: '/synthetics/tests/trigger/ci',
       });
 
-      return resp;
+      return resp.data;
     } catch (e) {
       // Rewrite the error.
       throw new Error(`Could not trigger [${testIds}]. ${e.statusCode}: ${e.name}`);
     }
   };
 
-const getTest = (request: (args: Options) => RequestPromise<Test>) => async (testId: string) => {
+const getTest = (request: (args: axios.AxiosRequestConfig) => axios.AxiosPromise<Test>) => async (testId: string) => {
   try {
     const resp = await request({
-      uri: `/synthetics/tests/${testId}`,
+      url: `/synthetics/tests/${testId}`,
     });
 
-    return resp;
+    return resp.data;
   } catch (e) {
     // Rewrite the error.
     throw new Error(`Could not get test ${testId}. ${e.statusCode}: ${e.name}`);
   }
 };
 
-const pollResults = (request: (args: Options) => RequestPromise<{ results: PollResult[] }>) =>
+const pollResults = (request: (args: axios.AxiosRequestConfig) => axios.AxiosPromise<{ results: PollResult[] }>) =>
   async (resultIds: string[]) => {
     try {
       const resp = await request({
-        qs: {
+        params: {
           result_ids: JSON.stringify(resultIds),
         },
-        uri: '/synthetics/tests/poll_results',
+        url: '/synthetics/tests/poll_results',
       });
 
-      return resp;
+      return resp.data;
     } catch (e) {
       // Rewrite the error.
       throw new Error(`Could not poll results [${resultIds}]. ${e.statusCode}: ${e.name}`);
     }
   };
 
-export const apiConstructor: APIConstructor = ({ appKey, apiKey, baseUrl }) => {
-  const request = (args: Options) =>
-    requestDefaults({
-        baseUrl,
-        json: true,
-      })({
-        ...args,
-        qs: { api_key: apiKey, application_key: appKey, ...args.qs },
-      });
+export const apiConstructor: APIConstructor = ({ appKey, apiKey, baseURL }) => {
+  const request = (args: axios.AxiosRequestConfig) => axios.default.create({
+    baseURL,
+  })({
+    ...args,
+    params: {
+      api_key: apiKey,
+      application_key: appKey,
+      ...args.params,
+    },
+  });
 
   return {
     getTest: getTest(request),
