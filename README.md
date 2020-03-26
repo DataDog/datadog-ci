@@ -57,7 +57,7 @@ The coding style is checked with [tslint](https://github.com/palantir/tslint) an
 
 Commands are stored in the [src/commands](src/commands) folder. 
 
-The skeleton of a command is composed of a README, an `index.ts` and a folder fo the tests.
+The skeleton of a command is composed of a README, an `index.ts` and a folder for the tests.
 
 ```bash
 src/
@@ -73,7 +73,25 @@ Documentation of the command must be placed in the README.md file, the [current 
 
 The `index.ts` file must export classes extending the `Command` class of `clipanion`. The commands of all `src/commands/*/index.ts` files will then be imported and made available in the `datadog-ci` tool.
 
+A sample `index.ts` file for a new command would be:
+
+```typescript
+import { Command } from 'clipanion';
+
+export class HelloWorldCommand extends Command {
+  public async execute () {
+    this.context.stdout.write('Hello world!');
+  }
+}
+
+module.exports = [
+  HelloWorldCommand,
+];
+```
+
 Lastly, test files must be created in the `__tests__/` folder. `jest` is used to run the tests and a CI has been set using Github Actions to ensure all tests are passing when merging a Pull Request.
+
+The tests can then be launched through the `yarn test` command, it will find all files with a filename ending in `.test.ts` in the repo and execute them.
 
 ### Workflow
 
