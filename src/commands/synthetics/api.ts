@@ -9,6 +9,16 @@ import {
   Trigger,
 } from './interfaces';
 
+const formatBackendErrors = (requestError: any) => {
+  try {
+    const backendErrors = requestError.error.errors;
+
+    return backendErrors.map((message: string) => `  - ${message}`).join('\n');
+  } catch (e) {
+    return requestError.name;
+  }
+};
+
 const triggerTests = (request: (args: Options) => RequestPromise<Trigger>) =>
   async (testIds: string[], config?: Payload) => {
     try {
@@ -23,8 +33,12 @@ const triggerTests = (request: (args: Options) => RequestPromise<Trigger>) =>
 
       return resp;
     } catch (e) {
+      let errorMessage = e.name;
+      if (e.statusCode === 400) {
+        errorMessage = `\n${formatBackendErrors(e)}`;
+      }
       // Rewrite the error.
-      throw new Error(`Could not trigger [${testIds}]. ${e.statusCode}: ${e.name}`);
+      throw new Error(`Could not trigger [${testIds}]. ${e.statusCode}: ${errorMessage}`);
     }
   };
 
