@@ -16,6 +16,7 @@
   ],
   "scripts": {
     "build": "tsc",
+    "check-licenses": "node bin/check-licenses.js",
     "exec": "node ./dist/",
     "format": "yarn lint --fix",
     "lint": "tslint -p tsconfig.json -c tslint.json",

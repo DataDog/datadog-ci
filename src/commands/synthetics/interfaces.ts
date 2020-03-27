@@ -15,6 +15,7 @@ export interface Result {
   device: {
     id: string;
   };
+  duration?: number;
   error?: string;
   errorCode?: string;
   errorMessage?: string;

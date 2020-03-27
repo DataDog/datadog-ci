@@ -8,6 +8,20 @@ import {
   Trigger,
 } from './interfaces';
 
+interface BackendError {
+  errors: string[];
+}
+
+const formatBackendErrors = (requestError: axios.AxiosError<BackendError>) => {
+  if (requestError.response && requestError.response.data.errors) {
+    const errors = requestError.response.data.errors.map((message: string) => `  - ${message}`);
+
+    return `\n${errors.join('\n')}`;
+  }
+
+  return requestError.name;
+};
+
 const triggerTests = (request: (args: axios.AxiosRequestConfig) => axios.AxiosPromise<Trigger>) =>
   async (testIds: string[], config?: Payload) => {
     try {
@@ -22,8 +36,9 @@ const triggerTests = (request: (args: axios.AxiosRequestConfig) => axios.AxiosPr
 
       return resp.data;
     } catch (e) {
+      const errorMessage = formatBackendErrors(e);
       // Rewrite the error.
-      throw new Error(`Could not trigger [${testIds}]. ${e.statusCode}: ${e.name}`);
+      throw new Error(`Could not trigger [${testIds}]. ${e.response.status}: ${errorMessage}`);
     }
   };
 
@@ -36,7 +51,7 @@ const getTest = (request: (args: axios.AxiosRequestConfig) => axios.AxiosPromise
     return resp.data;
   } catch (e) {
     // Rewrite the error.
-    throw new Error(`Could not get test ${testId}. ${e.statusCode}: ${e.name}`);
+    throw new Error(`Could not get test ${testId}. ${e.response.status}: ${e.name}`);
   }
 };
 
@@ -53,7 +68,7 @@ const pollResults = (request: (args: axios.AxiosRequestConfig) => axios.AxiosPro
       return resp.data;
     } catch (e) {
       // Rewrite the error.
-      throw new Error(`Could not poll results [${resultIds}]. ${e.statusCode}: ${e.name}`);
+      throw new Error(`Could not poll results [${resultIds}]. ${e.response.status}: ${e.name}`);
     }
   };
 

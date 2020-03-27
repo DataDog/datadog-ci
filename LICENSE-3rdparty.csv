@@ -3,6 +3,8 @@ axios,import,MIT,Copyright (c) 2014-present Matt Zabriskie
 clipanion,import,MIT,Copyright (c) 2019 Mael Nison
 deep-extend,import,MIT,Copyright (c) 2013-2018, Viacheslav Lotsmanov
 chalk,import,MIT,Copyright (c) Sindre Sorhus <sindresorhus@gmail.com> (sindresorhus.com)
+clipanion,import,MIT,Copyright (c) 2019 Mael Nison
+deep-extend,import,MIT,Copyright (c) 2013-2018, Viacheslav Lotsmanov
 glob,import,ISC,Copyright (c) Isaac Z. Schlueter and Contributors
 @babel/core,dev,MIT,Copyright (c) 2014-present Sebastian McKenzie and other contributors
 @babel/preset-env,dev,MIT,Copyright (c) 2014-present Sebastian McKenzie and other contributors

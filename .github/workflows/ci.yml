@@ -18,3 +18,15 @@ jobs:
     - run: yarn install
     - run: yarn build
     - run: yarn test
+
+  check-licenses:
+    name: Check licenses
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Install node
+      uses: actions/setup-node@v1
+      with:
+        node-version: '12.16.1'
+    - run: yarn check-licenses
