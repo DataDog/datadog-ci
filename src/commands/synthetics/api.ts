@@ -1,4 +1,4 @@
-import { Options } from 'request';
+import { Options, Response } from 'request';
 import { defaults as requestDefaults, RequestPromise } from 'request-promise-native';
 
 import {
@@ -9,14 +9,19 @@ import {
   Trigger,
 } from './interfaces';
 
-const formatBackendErrors = (requestError: any) => {
-  try {
-    const backendErrors = requestError.error.errors;
+interface RequestError {
+  name: string;
+  response?: Response;
+}
 
-    return backendErrors.map((message: string) => `  - ${message}`).join('\n');
-  } catch (e) {
-    return requestError.name;
+const formatBackendErrors = (requestError: RequestError) => {
+  if (requestError.response && requestError.response.body.errors) {
+    const errors = requestError.response.body.errors.map((message: string) => `  - ${message}`);
+
+    return `\n${errors.join('\n')}`;
   }
+
+  return requestError.name;
 };
 
 const triggerTests = (request: (args: Options) => RequestPromise<Trigger>) =>
@@ -33,10 +38,7 @@ const triggerTests = (request: (args: Options) => RequestPromise<Trigger>) =>
 
       return resp;
     } catch (e) {
-      let errorMessage = e.name;
-      if (e.statusCode === 400) {
-        errorMessage = `\n${formatBackendErrors(e)}`;
-      }
+      const errorMessage = formatBackendErrors(e);
       // Rewrite the error.
       throw new Error(`Could not trigger [${testIds}]. ${e.statusCode}: ${errorMessage}`);
     }
