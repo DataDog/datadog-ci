@@ -99,9 +99,16 @@ export const getSuites = async (GLOB: string, write: Writable['write']): Promise
   } else {
     write('\nNo test files found.\n\n');
   }
-  const contents = await Promise.all(files.map(test => promisify(fs.readFile)(test, 'utf8')));
 
-  return contents.map(content => JSON.parse(content));
+  return Promise.all(files.map(async test => {
+    try {
+      const content = await promisify(fs.readFile)(test, 'utf8');
+
+      return JSON.parse(content);
+    } catch (e) {
+      throw new Error(`Unable to read and parse the test file ${test}`);
+    }
+  }));
 };
 
 export const waitForTests = async (
