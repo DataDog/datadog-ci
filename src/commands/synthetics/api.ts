@@ -57,9 +57,9 @@ const pollResults = (request: (args: axios.AxiosRequestConfig) => axios.AxiosPro
     }
   };
 
-export const apiConstructor: APIConstructor = ({ appKey, apiKey, baseURL }) => {
+export const apiConstructor: APIConstructor = ({ appKey, apiKey, baseUrl }) => {
   const request = (args: axios.AxiosRequestConfig) => axios.default.create({
-    baseURL,
+    baseURL: baseUrl,
   })({
     ...args,
     params: {
