@@ -26,6 +26,7 @@ import { pick } from '../../helpers/utils';
 
 const INTERVAL_CHECKING = 5000; // In ms
 const MAX_RETRIES = 2;
+const PUBLIC_ID_REGEX = /^[\d\w]{3}-[\d\w]{3}-[\d\w]{3}$/;
 const SUBDOMAIN_REGEX = /(.*?)\.(?=[^\/]*\..{2,5})/;
 
 const template = (st: string, context: any): string =>
@@ -190,6 +191,7 @@ export const waitForTests = async (
 export const runTest = async (api: APIHelper, { id, config }: TriggerConfig, write: Writable['write']):
   Promise<[Test, TriggerResult[]] | []> => {
   let test: Test | undefined;
+  id = PUBLIC_ID_REGEX.test(id) ? id : id.substr(id.lastIndexOf('/') + 1);
   try {
     test = await api.getTest(id);
   } catch (e) {

@@ -95,6 +95,8 @@ Your test files must be named with a `.synthetics.json` suffix.
 }
 ```
 
+The `<TEST_PUBLIC_ID>` can be either the identifier of the test found in the URL of a test details page (eg. for `https://app.datadoghq.com/synthetics/details/abc-def-ghi` it would be `abc-def-ghi`) or the full URL to the details page (ie. directly `https://app.datadoghq.com/synthetics/details/abc-def-ghi`).
+
 You can configure on which url your test starts by providing a `config.startUrl` to your test object and build your own starting url using any part of your test's original starting url and the following environment variables: 
 
 | Environment variable | Description                  | Example                                                |
