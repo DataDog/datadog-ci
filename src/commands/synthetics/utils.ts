@@ -1,4 +1,4 @@
-import { promises as fs } from 'fs';
+import * as fs from 'fs';
 import * as path from 'path';
 import { Writable } from 'stream';
 import { URL } from 'url';
@@ -99,7 +99,7 @@ export const getSuites = async (GLOB: string, write: Writable['write']): Promise
   } else {
     write('\nNo test files found.\n\n');
   }
-  const contents = await Promise.all(files.map(test => fs.readFile(test, 'utf8')));
+  const contents = await Promise.all(files.map(test => promisify(fs.readFile)(test, 'utf8')));
 
   return contents.map(content => JSON.parse(content));
 };
