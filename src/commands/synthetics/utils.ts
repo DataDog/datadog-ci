@@ -1,4 +1,4 @@
-import { promises as fs } from 'fs';
+import * as fs from 'fs';
 import * as path from 'path';
 import { Writable } from 'stream';
 import { URL } from 'url';
@@ -26,6 +26,7 @@ import { pick } from '../../helpers/utils';
 
 const INTERVAL_CHECKING = 5000; // In ms
 const MAX_RETRIES = 2;
+const PUBLIC_ID_REGEX = /^[\d\w]{3}-[\d\w]{3}-[\d\w]{3}$/;
 const SUBDOMAIN_REGEX = /(.*?)\.(?=[^\/]*\..{2,5})/;
 
 const template = (st: string, context: any): string =>
@@ -98,16 +99,9 @@ export const getSuites = async (GLOB: string, write: Writable['write']): Promise
   } else {
     write('\nNo test files found.\n\n');
   }
+  const contents = await Promise.all(files.map(test => promisify(fs.readFile)(test, 'utf8')));
 
-  return Promise.all(files.map(async test => {
-    try {
-      const content = await fs.readFile(test, 'utf8');
-
-      return JSON.parse(content);
-    } catch (e) {
-      throw new Error(`Unable to read and parse the test file ${test}`);
-    }
-  }));
+  return contents.map(content => JSON.parse(content));
 };
 
 export const waitForTests = async (
@@ -197,6 +191,7 @@ export const waitForTests = async (
 export const runTest = async (api: APIHelper, { id, config }: TriggerConfig, write: Writable['write']):
   Promise<[Test, TriggerResult[]] | []> => {
   let test: Test | undefined;
+  id = PUBLIC_ID_REGEX.test(id) ? id : id.substr(id.lastIndexOf('/') + 1);
   try {
     test = await api.getTest(id);
   } catch (e) {
