@@ -22,20 +22,22 @@ const renderStep = (step: Step) => {
   return `    ${icon} | ${duration} - ${step.description}${value}${error}`;
 };
 
-export const renderSteps = (test: Test, results: PollResult[], baseUrl: string) =>
+const renderTestResults = (test: Test, results: PollResult[], baseUrl: string) =>
   results.map((r: PollResult) => {
-    const resultUrl = r.result.unhealthy
-      ? r.result.errorMessage || 'General Error'
-      : `${baseUrl}/synthetics/details/${test.public_id}/result/${r.resultID}`;
+    const resultUrl = `${baseUrl}/synthetics/details/${test.public_id}/result/${r.resultID}`;
     const success = hasResultPassed(r);
     const color = success ? chalk.green : chalk.red;
     const icon = success ? chalk.bold.green('✓') : chalk.bold.red('✖');
+    const duration = `total duration: ${test.type === 'browser' ? r.result.duration : r.result.timings?.total} ms`;
     const device = test.type === 'browser' && r.result.device ? ` - device: ${chalk.bold(r.result.device.id)}` : '';
     const resultIdentification = color(`  ${icon} location: ${chalk.bold(r.dc_id.toString())}${device}`);
     let steps = '';
+    let output = '';
 
     if (r.result.error) {
       steps = `\n    ${chalk.red.bold(`✖ | ${r.result.error}`)}`;
+    } else if (r.result.unhealthy) {
+      steps = `\n    ${chalk.red.bold(`✖ | ${r.result.errorMessage || 'General Error'}`)}`;
     } else if (test.type === 'api') {
       const req = test.config.request;
       const requestText = `${chalk.bold(req.method)} - ${req.url}`;
@@ -49,7 +51,11 @@ export const renderSteps = (test: Test, results: PollResult[], baseUrl: string) 
       steps = `\n${r.result.stepDetails.map(renderStep).join('\n')}`;
     }
 
-    return `${resultIdentification}\n    ⎋  ${chalk.dim.cyan(resultUrl)}${steps}`;
+    output = `${resultIdentification}\n`;
+    output += `    ⎋  ${duration} - result url: ${chalk.dim.cyan(resultUrl)}`;
+    output += `${steps}`;
+
+    return output;
   }).join('\n').concat('\n');
 
 export const renderResult = (test: Test, results: PollResult[], baseUrl: string) => {
@@ -59,14 +65,9 @@ export const renderResult = (test: Test, results: PollResult[], baseUrl: string)
   const idDisplay = `[${chalk.bold.dim(test.public_id)}]`;
   const nameColor = success ? chalk.bold.green : chalk.bold.red;
   const nonBlockingText = !success && isNonBlocking ? 'This tests is set to be non-blocking in Datadog' : '';
+  const testResultsText = renderTestResults(test, results, baseUrl);
 
-  let consoleOutput = `${icon} ${idDisplay} | ${nameColor(test.name)} ${nonBlockingText}\n`;
-
-  if (!success) {
-    consoleOutput += renderSteps(test, results, baseUrl);
-  }
-
-  return consoleOutput;
+  return `${icon} ${idDisplay} | ${nameColor(test.name)} ${nonBlockingText}\n${testResultsText}`;
 };
 
 export const renderTrigger = (test: Test | undefined, testId: string, config: ConfigOverride) => {

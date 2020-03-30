@@ -1,10 +1,10 @@
-# datadog-ci
+# Datadog CI
 
-Use Datadog from your CI.
+![Continuous Integration](https://github.com/DataDog/datadog-ci/workflows/Continuous%20Integration/badge.svg) [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 
-## Usage
+Execute commands with Datadog from within your Continuous Integration/Continuous Deployment scripts. A good way to perform end to end tests of your application before applying you changes or deploying. It currently features running synthetics tests and waiting for the results.
 
-### How to install the CLI
+## How to install the CLI
 
 The package is published privately under [@datadog/datadog-ci](https://www.npmjs.com/package/@datadog/datadog-ci) in the NPM registry.
 
@@ -18,17 +18,13 @@ Then, installing the package is done through NPM or Yarn:
 
 ```sh
 # NPM
-npm install -D @datadog/datadog-ci
+npm install --save-dev @datadog/datadog-ci
 
 # Yarn
-yarn add -D @datadog/datadog-ci
+yarn add --dev @datadog/datadog-ci
 ```
 
-### API
-
-The CLI supports the following commands:
-
-- [synthetics](src/commands/synthetics/): to run synthetics tests in CI
+## Usage
 
 ```bash
 Usage: datadog-ci <command> <subcommand> [options]
@@ -37,13 +33,65 @@ Available command:
   - synthetics
 ```
 
-## Development
+Each command allows interacting with a product of the Datadog platform. The commands are defined in the [src/commands](/src/commands) folder.
+
+Further documentation for each command can be found in its folder, ie:
+
+- [synthetics](src/commands/synthetics/)
+
+
+## Contributing
+
+Pull requests for bug fixes are welcome, but before submitting new features or changes to current functionality [open an issue](https://github.com/DataDog/datadog-ci/issues/new)
+and discuss your ideas or propose the changes you wish to make. After a resolution is reached a PR can be submitted for review.
+
+### Framework and libraries used
+
+This tool uses [clipanion](https://github.com/arcanis/clipanion) to handle the different commands.
+
+The tests are written using [jest](https://github.com/facebook/jest).
+
+The coding style is checked with [tslint](https://github.com/palantir/tslint) and the configuration can be found in the [tslint.json](/tslint.json) file.
 
 ### Repository structure
 
-This tool uses [clipanion](https://github.com/arcanis/clipanion) to handle the different commands. Each command is described in its directory in the `src/commands/` folder. It must contain an `index.ts` file exporting the subcommands available to the user.
+Commands are stored in the [src/commands](src/commands) folder. 
 
-The tests are written using [jest](https://github.com/facebook/jest) and stored in the `__tests__` folders close to the sources under test.
+The skeleton of a command is composed of a README, an `index.ts` and a folder for the tests.
+
+```bash
+src/
+└── commands/
+    └── fakeCommand/
+         ├── __tests__/
+         │   └── index.test.ts
+         ├── README.md
+         └── index.ts
+```
+
+Documentation of the command must be placed in the README.md file, the [current README](/README.md) must be updated to link to the new command README.
+
+The `index.ts` file must export classes extending the `Command` class of `clipanion`. The commands of all `src/commands/*/index.ts` files will then be imported and made available in the `datadog-ci` tool.
+
+A sample `index.ts` file for a new command would be:
+
+```typescript
+import { Command } from 'clipanion';
+
+export class HelloWorldCommand extends Command {
+  public async execute () {
+    this.context.stdout.write('Hello world!');
+  }
+}
+
+module.exports = [
+  HelloWorldCommand,
+];
+```
+
+Lastly, test files must be created in the `__tests__/` folder. `jest` is used to run the tests and a CI has been set using Github Actions to ensure all tests are passing when merging a Pull Request.
+
+The tests can then be launched through the `yarn test` command, it will find all files with a filename ending in `.test.ts` in the repo and execute them.
 
 ### Workflow
 
@@ -63,10 +111,6 @@ yarn format
 # Make bin executable
 yarn prepack
 ```
-
-## Contributing
-
-Pull requests are welcome. First, open an issue to discuss what you would like to change. For more information, read the [Contributing Guide](CONTRIBUTING.md).
 
 ## License
 
