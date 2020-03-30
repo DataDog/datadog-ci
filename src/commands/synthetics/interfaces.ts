@@ -1,7 +1,3 @@
-export interface Payload {
-  startUrl?: string;
-}
-
 interface Timings {
   dns: number;
   download: number;
@@ -130,6 +126,10 @@ export interface ConfigOverride {
   variables?: { [key: string]: string };
 }
 
+export interface Payload extends ConfigOverride {
+  public_id: string;
+}
+
 interface BasicAuthCredentials {
   password: string;
   username: string;
@@ -165,7 +165,7 @@ export interface Suite {
 
 type GetTest = (testId: string) => Promise<Test>;
 type PollResults = (resultIds: string[]) => Promise<{ results: PollResult[] }>;
-type TriggerTests = (testsToTrigger: { [key: string]: Payload }) => Promise<Trigger>;
+type TriggerTests = (testsToTrigger: Payload[]) => Promise<Trigger>;
 
 export interface APIHelper {
   getTest: GetTest;

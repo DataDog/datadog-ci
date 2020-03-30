@@ -31,25 +31,27 @@ const SUBDOMAIN_REGEX = /(.*?)\.(?=[^\/]*\..{2,5})/;
 const template = (st: string, context: any): string =>
   st.replace(/{{([A-Z_]+)}}/g, (match: string, p1: string) => context[p1] ? context[p1] : '');
 
-const handleConfig = (test: Test, config?: ConfigOverride): Payload => {
+const handleConfig = (test: Test, publicId: string, config?: ConfigOverride): Payload => {
+  let handledConfig: Payload = { public_id: publicId };
   if (!config || !Object.keys(config).length) {
-    return { };
+    return handledConfig;
   }
 
-  const handledConfig = pick(config, [
-    'allowInsecureCertificates',
-    'basicAuth',
-    'body',
-    'bodyType',
-    'cookies',
-    'deviceIds',
-    'followRedirects',
-    'headers',
-    'locations',
-    'retry',
-    'startUrl',
-    'variables',
-  ]);
+  handledConfig = {
+    ...handledConfig,
+    ...pick(config, [
+      'allowInsecureCertificates',
+      'basicAuth',
+      'body',
+      'bodyType',
+      'cookies',
+      'deviceIds',
+      'followRedirects',
+      'headers',
+      'locations',
+      'retry',
+      'variables',
+  ])};
 
   const objUrl = new URL(test.config.request.url);
   const subdomainMatch = objUrl.hostname.match(SUBDOMAIN_REGEX);
@@ -193,7 +195,7 @@ export const waitForResults = async (
 
 export const runTests = async (api: APIHelper, triggerConfigs: TriggerConfig[], write: Writable['write']):
   Promise<{ tests: Test[]; triggers: Trigger }> => {
-  const testsToTrigger: { [key: string]: Payload } = { };
+  const testsToTrigger: Payload[] = [];
 
   const tests = await Promise.all(triggerConfigs.map(async ({ config, id }) => {
     let test: Test | undefined;
@@ -210,9 +212,9 @@ export const runTests = async (api: APIHelper, triggerConfigs: TriggerConfig[], 
       return;
     }
 
-    const overloadedConfig = handleConfig(test, config);
+    const overloadedConfig = handleConfig(test, id, config);
     write(renderWait(test));
-    testsToTrigger[id] = overloadedConfig;
+    testsToTrigger.push(overloadedConfig);
 
     return test;
   }));

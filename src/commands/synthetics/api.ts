@@ -25,12 +25,10 @@ const formatBackendErrors = (requestError: RequestError) => {
 };
 
 const triggerTests = (request: (args: Options) => RequestPromise<Trigger>) =>
-  async (testsToTrigger: { [key: string]: Payload }) => {
+  async (testsToTrigger: Payload[]) => {
     try {
       const resp = await request({
-        body: {
-          tests_to_trigger: testsToTrigger,
-        },
+        body: testsToTrigger,
         method: 'POST',
         uri: '/synthetics/tests/trigger/ci',
       });
@@ -39,7 +37,7 @@ const triggerTests = (request: (args: Options) => RequestPromise<Trigger>) =>
     } catch (e) {
       const errorMessage = formatBackendErrors(e);
       // Rewrite the error.
-      const testIds = Object.keys(testsToTrigger).join(', ');
+      const testIds = testsToTrigger.map(t => t.public_id);
       throw new Error(`Could not trigger [${testIds}]. ${e.statusCode}: ${errorMessage}`);
     }
   };
