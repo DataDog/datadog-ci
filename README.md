@@ -11,8 +11,11 @@ The package is published privately under [@datadog/datadog-ci](https://www.npmjs
 Until it is made public, a NPM token is needed to access it, this can be set in the `~/.npmrc` file:
 
 ```
+registry=https://registry.npmjs.org/
 //registry.npmjs.org/:_authToken=<TOKEN>
 ```
+
+If using Yarn v2, it is possible to scope the token to the `@datadog` scope in the `.yarnrc` file as describe [in the documentation](https://yarnpkg.com/configuration/yarnrc#npmScopes).
 
 Then, installing the package is done through NPM or Yarn:
 
