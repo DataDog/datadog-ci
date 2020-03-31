@@ -28,7 +28,7 @@ export class RunTestCommand extends Command {
 
     await this.parseConfigFile();
 
-    const suites = (await getSuites(this.config!.files!, this.context.stdout.write.bind(this.context.stdout)))
+    const suites = (await getSuites(this.config.files, this.context.stdout.write.bind(this.context.stdout)))
       .map(suite => suite.tests)
       .filter(suiteTests => !!suiteTests);
     const api = this.getApiHelper();
