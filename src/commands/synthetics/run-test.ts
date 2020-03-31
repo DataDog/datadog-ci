@@ -103,7 +103,7 @@ export class RunTestCommand extends Command {
 
       // Determine if all the tests have succeeded
       const hasSucceeded = tests.every(
-        (test: TestComposite) => hasTestSucceeded(test) || test.options.execution_rule === ExecutionRule.NON_BLOCKING
+        (test: TestComposite) => hasTestSucceeded(test) || test.options.ci?.executionRule === ExecutionRule.NON_BLOCKING
       );
       if (hasSucceeded) {
         return 0;
