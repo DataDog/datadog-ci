@@ -75,8 +75,10 @@ export interface Test {
   monitor_id: number;
   name: string;
   options: {
+    ci?: {
+      executionRule: ExecutionRule;
+    };
     device_ids: string[];
-    execution_rule?: ExecutionRule;
     min_failure_duration: number;
     min_location_failed: number;
     tick_every: number;

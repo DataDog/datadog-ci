@@ -206,7 +206,7 @@ export const runTest = async (api: APIHelper, { id, config }: TriggerConfig, wri
   }
 
   write(renderTrigger(test, id, config));
-  if (test && !config.skip && test.options?.execution_rule !== ExecutionRule.SKIPPED) {
+  if (test && !config.skip && test.options?.ci?.executionRule !== ExecutionRule.SKIPPED) {
     const triggerResponse = await api.triggerTests([id], handleConfig(test, config));
     write(renderWait(test));
 

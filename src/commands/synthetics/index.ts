@@ -1,4 +1,4 @@
-import { RunTestCommand } from './run_test';
+import { RunTestCommand } from './run-test';
 
 module.exports = [
   RunTestCommand,
