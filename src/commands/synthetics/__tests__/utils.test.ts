@@ -4,8 +4,8 @@ jest.useFakeTimers();
 
 import * as fs from 'fs';
 
+import * as axios from 'axios';
 import glob from 'glob';
-import request from 'request-promise-native';
 
 import { apiConstructor } from '../api';
 import { getSuites, runTests } from '../utils';
@@ -37,13 +37,13 @@ describe('utils', () => {
       results: [],
       triggered_check_ids: [fakeTest.public_id],
     };
-    jest.spyOn(request, 'defaults').mockImplementation((() => (e: request.RequestPromise) => {
-      if (e.uri as any === '/synthetics/tests/trigger/ci') {
-        return fakeTrigger;
+    jest.spyOn(axios.default, 'create').mockImplementation((() => (e: any) => {
+      if (e.url === '/synthetics/tests/trigger/ci') {
+        return { data: fakeTrigger };
       }
 
-      if (e.uri as any === `/synthetics/tests/${fakeTest.public_id}`) {
-        return fakeTest;
+      if (e.url === `/synthetics/tests/${fakeTest.public_id}`) {
+        return { data: fakeTest };
       }
     }) as any);
 

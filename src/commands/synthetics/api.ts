@@ -1,5 +1,4 @@
-import { Options, Response } from 'request';
-import { defaults as requestDefaults, RequestPromise } from 'request-promise-native';
+import * as axios from 'axios';
 
 import {
   APIConstructor,
@@ -9,14 +8,13 @@ import {
   Trigger,
 } from './interfaces';
 
-interface RequestError {
-  name: string;
-  response?: Response;
+interface BackendError {
+  errors: string[];
 }
 
-const formatBackendErrors = (requestError: RequestError) => {
-  if (requestError.response && requestError.response.body.errors) {
-    const errors = requestError.response.body.errors.map((message: string) => `  - ${message}`);
+const formatBackendErrors = (requestError: axios.AxiosError<BackendError>) => {
+  if (requestError.response && requestError.response.data.errors) {
+    const errors = requestError.response.data.errors.map((message: string) => `  - ${message}`);
 
     return `\n${errors.join('\n')}`;
   }
@@ -24,63 +22,65 @@ const formatBackendErrors = (requestError: RequestError) => {
   return requestError.name;
 };
 
-const triggerTests = (request: (args: Options) => RequestPromise<Trigger>) =>
+const triggerTests = (request: (args: axios.AxiosRequestConfig) => axios.AxiosPromise<Trigger>) =>
   async (tests: Payload[]) => {
     try {
       const resp = await request({
-        body: { tests },
+        data: { tests },
         method: 'POST',
-        uri: '/synthetics/tests/trigger/ci',
+        url: '/synthetics/tests/trigger/ci',
       });
 
-      return resp;
+      return resp.data;
     } catch (e) {
       const errorMessage = formatBackendErrors(e);
       // Rewrite the error.
       const testIds = tests.map(t => t.public_id);
-      throw new Error(`Could not trigger [${testIds}]. ${e.statusCode}: ${errorMessage}`);
+      throw new Error(`Could not trigger [${testIds}]. ${e.response.status}: ${errorMessage}`);
     }
   };
 
-const getTest = (request: (args: Options) => RequestPromise<Test>) => async (testId: string) => {
+const getTest = (request: (args: axios.AxiosRequestConfig) => axios.AxiosPromise<Test>) => async (testId: string) => {
   try {
     const resp = await request({
-      uri: `/synthetics/tests/${testId}`,
+      url: `/synthetics/tests/${testId}`,
     });
 
-    return resp;
+    return resp.data;
   } catch (e) {
     // Rewrite the error.
-    throw new Error(`Could not get test ${testId}. ${e.statusCode}: ${e.name}`);
+    throw new Error(`Could not get test ${testId}. ${e.response.status}: ${e.name}`);
   }
 };
 
-const pollResults = (request: (args: Options) => RequestPromise<{ results: PollResult[] }>) =>
+const pollResults = (request: (args: axios.AxiosRequestConfig) => axios.AxiosPromise<{ results: PollResult[] }>) =>
   async (resultIds: string[]) => {
     try {
       const resp = await request({
-        qs: {
+        params: {
           result_ids: JSON.stringify(resultIds),
         },
-        uri: '/synthetics/tests/poll_results',
+        url: '/synthetics/tests/poll_results',
       });
 
-      return resp;
+      return resp.data;
     } catch (e) {
       // Rewrite the error.
-      throw new Error(`Could not poll results [${resultIds}]. ${e.statusCode}: ${e.name}`);
+      throw new Error(`Could not poll results [${resultIds}]. ${e.response.status}: ${e.name}`);
     }
   };
 
 export const apiConstructor: APIConstructor = ({ appKey, apiKey, baseUrl }) => {
-  const request = (args: Options) =>
-    requestDefaults({
-        baseUrl,
-        json: true,
-      })({
-        ...args,
-        qs: { api_key: apiKey, application_key: appKey, ...args.qs },
-      });
+  const request = (args: axios.AxiosRequestConfig) => axios.default.create({
+    baseURL: baseUrl,
+  })({
+    ...args,
+    params: {
+      api_key: apiKey,
+      application_key: appKey,
+      ...args.params,
+    },
+  });
 
   return {
     getTest: getTest(request),

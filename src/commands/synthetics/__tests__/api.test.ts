@@ -1,4 +1,4 @@
-import request from 'request-promise-native';
+import axios from 'axios';
 
 import { apiConstructor } from '../api';
 import { Payload, PollResult, Result, Trigger } from '../interfaces';
@@ -28,7 +28,7 @@ describe('dd-api', () => {
   };
 
   test('should get results from api', async () => {
-    jest.spyOn(request, 'defaults').mockImplementation((() => () => POLL_RESULTS) as any);
+    jest.spyOn(axios, 'create').mockImplementation((() => () => ({ data: POLL_RESULTS })) as any);
     const api = apiConstructor({ apiKey: '123', appKey: '123', baseUrl: 'base' });
     const { pollResults } = api;
     const { results } = await pollResults([RESULT_ID]);
@@ -36,7 +36,7 @@ describe('dd-api', () => {
   });
 
   test('should trigger tests using api', async () => {
-    jest.spyOn(request, 'defaults').mockImplementation((() => () => TRIGGER_RESULTS) as any);
+    jest.spyOn(axios, 'create').mockImplementation((() => () => ({ data: TRIGGER_RESULTS })) as any);
     const api = apiConstructor({ apiKey: '123', appKey: '123', baseUrl: 'base' });
     const { triggerTests } = api;
     const testsToTrigger: Payload[] = [{ public_id: TRIGGERED_TEST_ID }];

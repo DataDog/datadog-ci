@@ -1,10 +1,4 @@
 Component,Origin,Licence,Copyright
-chalk,import,MIT,Copyright (c) Sindre Sorhus <sindresorhus@gmail.com> (sindresorhus.com)
-clipanion,import,MIT,Copyright (c) 2019 Mael Nison
-deep-extend,import,MIT,Copyright (c) 2013-2018, Viacheslav Lotsmanov
-glob,import,ISC,Copyright (c) Isaac Z. Schlueter and Contributors
-request,import,Apache-2.0,Copyright 2010-2012 Mikeal Rogers
-request-promise-native,import,ISC,Copyright (c) 2019, Nicolai Kamenzky and contributors
 @babel/core,dev,MIT,Copyright (c) 2014-present Sebastian McKenzie and other contributors
 @babel/preset-env,dev,MIT,Copyright (c) 2014-present Sebastian McKenzie and other contributors
 @babel/preset-typescript,dev,MIT,Copyright (c) 2014-present Sebastian McKenzie and other contributors
@@ -13,8 +7,11 @@ request-promise-native,import,ISC,Copyright (c) 2019, Nicolai Kamenzky and contr
 @types/glob,dev,MIT,Copyright Microsoft Corporation
 @types/jest,dev,MIT,Copyright Microsoft Corporation
 @types/node,dev,MIT,Copyright Microsoft Corporation
-@types/request,dev,MIT,Copyright Microsoft Corporation
-@types/request-promise-native,dev,MIT,Copyright Microsoft Corporation
+axios,import,MIT,Copyright (c) 2014-present Matt Zabriskie
+chalk,import,MIT,Copyright (c) Sindre Sorhus <sindresorhus@gmail.com> (sindresorhus.com)
+clipanion,import,MIT,Copyright (c) 2019 Mael Nison
+deep-extend,import,MIT,Copyright (c) 2013-2018, Viacheslav Lotsmanov
+glob,import,ISC,Copyright (c) Isaac Z. Schlueter and Contributors
 husky,dev,MIT,Copyright (c) 2017
 jest,dev,MIT,Copyright (c) Facebook, Inc. and its affiliates.
 lint-staged,dev,MIT,Copyright (c) 2016 Andrey Okonetchnikov
