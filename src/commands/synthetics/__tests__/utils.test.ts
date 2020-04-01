@@ -8,7 +8,7 @@ import * as axios from 'axios';
 import glob from 'glob';
 
 import { apiConstructor } from '../api';
-import { getSuites, runTest } from '../utils';
+import { getSuites, runTests } from '../utils';
 
 describe('utils', () => {
   describe('getSuites', () => {
@@ -48,19 +48,19 @@ describe('utils', () => {
     }) as any);
 
     test('should run test', async () => {
-      const output = await runTest(api, { id: fakeTest.public_id, config: { } }, processWrite);
-      expect(output).toEqual([fakeTest, fakeTrigger.results]);
+      const output = await runTests(api, [{ id: fakeTest.public_id, config: { } }], processWrite);
+      expect(output).toEqual({ tests: [fakeTest], triggers: fakeTrigger });
     });
 
     test('should run test with publicId from url', async () => {
-      const output = await runTest(
-        api, {
+      const output = await runTests(
+        api, [{
           config: { },
           id: `http://localhost/synthetics/tests/details/${fakeTest.public_id}`,
-        },
+        }],
         processWrite
       );
-      expect(output).toEqual([fakeTest, fakeTrigger.results]);
+      expect(output).toEqual({ tests: [fakeTest], triggers: fakeTrigger });
     });
   });
 });
