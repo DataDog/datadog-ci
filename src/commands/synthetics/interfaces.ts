@@ -1,7 +1,3 @@
-export interface Payload {
-  startUrl?: string;
-}
-
 interface Timings {
   dns: number;
   download: number;
@@ -132,6 +128,10 @@ export interface ConfigOverride {
   variables?: { [key: string]: string };
 }
 
+export interface Payload extends ConfigOverride {
+  public_id: string;
+}
+
 interface BasicAuthCredentials {
   password: string;
   username: string;
@@ -155,11 +155,6 @@ export interface TriggerConfig {
   id: string;
 }
 
-export interface TestComposite extends Test {
-  results: PollResult[];
-  triggerResults: TriggerResult[];
-}
-
 export enum ExecutionRule {
   BLOCKING = 'blocking',
   NON_BLOCKING = 'non_blocking',
@@ -172,16 +167,12 @@ export interface Suite {
 
 type GetTest = (testId: string) => Promise<Test>;
 type PollResults = (resultIds: string[]) => Promise<{ results: PollResult[] }>;
-type TriggerTests = (testIds: string[], config?: ConfigOverride) => Promise<Trigger>;
+type TriggerTests = (testsToTrigger: Payload[]) => Promise<Trigger>;
 
 export interface APIHelper {
   getTest: GetTest;
   pollResults: PollResults;
   triggerTests: TriggerTests;
-}
-
-export interface WaitForTestsOptions {
-  timeout: number;
 }
 
 export type APIConstructor = (args: { apiKey: string; appKey: string; baseUrl: string}) => APIHelper;

@@ -6,9 +6,9 @@ import { Command } from 'clipanion';
 import deepExtend from 'deep-extend';
 
 import { apiConstructor } from './api';
-import { ConfigOverride, ExecutionRule, Test, TestComposite, TriggerResult } from './interfaces';
+import { ConfigOverride, ExecutionRule, Test } from './interfaces';
 import { renderHeader, renderResult } from './renderer';
-import { getSuites, hasTestSucceeded, runTest, waitForTests } from './utils';
+import { getSuites, hasTestSucceeded, runTests, waitForResults } from './utils';
 
 export class RunTestCommand extends Command {
   private apiKey?: string;
@@ -28,46 +28,26 @@ export class RunTestCommand extends Command {
 
     await this.parseConfigFile();
 
-    const suites = await getSuites(this.config!.files!, this.context.stdout.write.bind(this.context.stdout));
-    const triggerTestPromises: Promise<[Test, TriggerResult[]] | []>[] = [];
+    const suites = (await getSuites(this.config.files, this.context.stdout.write.bind(this.context.stdout)))
+      .map(suite => suite.tests)
+      .filter(suiteTests => !!suiteTests);
     const api = this.getApiHelper();
 
     if (!suites.length) {
-      this.context.stdout.write('No suites to run.\n');
+      this.context.stdout.write('No test suites to run.\n');
 
       return 0;
     }
 
-    suites.forEach(({ tests }) => {
-      if (tests) {
-        triggerTestPromises.push(
-          ...tests.map(t => runTest(api, {
-            config: { ...this.config!.global, ...t.config },
-            id: t.id,
-          }, this.context.stdout.write.bind(this.context.stdout)))
-        );
-      }
-    });
+    const testsToTrigger = suites.reduce((acc, suiteTests) => acc.concat(suiteTests), [])
+      .map(test => ({
+        config: { ...this.config!.global, ...test.config },
+        id: test.id,
+      }));
+    const { tests, triggers } =
+      await runTests(api, testsToTrigger, this.context.stdout.write.bind(this.context.stdout));
 
     try {
-      // Wait after all the triggers requests.
-      const values: ([Test, TriggerResult[]] | [])[] = await Promise.all(triggerTestPromises);
-
-      // Aggregate informations.
-      const tests: TestComposite[] = [];
-      const allResultIds: string[] = [];
-      for (const [test, triggerResults] of values) {
-        if (test && triggerResults) {
-          tests.push({
-            ...test,
-            results: [],
-            triggerResults,
-          });
-          // Get all resultIds as an array for polling.
-          allResultIds.push(...triggerResults.map(r => r.result_id));
-        }
-      }
-
       // All tests have been skipped or are missing.
       if (!tests.length) {
         this.context.stdout.write('No test to run.\n');
@@ -75,35 +55,31 @@ export class RunTestCommand extends Command {
         return 0;
       }
 
-      if (!allResultIds.length) {
+      if (!triggers.results) {
         throw new Error('No result to poll.');
       }
 
       // Poll the results.
-      const results = await waitForTests(api, tests, { timeout: this.config.timeout });
-
-      // Give each test its results
-      tests.forEach(test => {
-        test.results = results[test.public_id];
-      });
+      const results = await waitForResults(api, triggers.results, this.config.timeout);
 
       // Sort tests to show success first.
       tests.sort((t1, t2) => {
-        const success1 = hasTestSucceeded(t1);
-        const success2 = hasTestSucceeded(t2);
+        const success1 = hasTestSucceeded(results[t1.public_id]);
+        const success2 = hasTestSucceeded(results[t2.public_id]);
 
         return success1 === success2 ? 0 : success1 ? -1 : 1;
       });
 
       // Rendering the results.
-      this.context.stdout.write(renderHeader(tests, { startTime }));
+      this.context.stdout.write(renderHeader({ startTime }));
+      const baseUrl = this.config.datadogHost.replace(/\/api\/v1$/, '');
       for (const test of tests) {
-        this.context.stdout.write(renderResult(test, this.config.datadogHost.replace(/\/api\/v1$/, '')));
+        this.context.stdout.write(renderResult(test, results[test.public_id], baseUrl));
       }
 
       // Determine if all the tests have succeeded
-      const hasSucceeded = tests.every(
-        (test: TestComposite) => hasTestSucceeded(test) || test.options.ci?.executionRule === ExecutionRule.NON_BLOCKING
+      const hasSucceeded = tests.every((test: Test) =>
+        hasTestSucceeded(results[test.public_id]) || test.options.ci?.executionRule === ExecutionRule.NON_BLOCKING
       );
       if (hasSucceeded) {
         return 0;
@@ -111,7 +87,7 @@ export class RunTestCommand extends Command {
         return 1;
       }
     } catch (error) {
-      this.context.stdout.write(`\n${chalk.bgRed.bold(' ERROR ')}\n${error.toString()}\n\n`);
+      this.context.stdout.write(`\n${chalk.bgRed.bold(' ERROR ')}\n${error.stack}\n\n`);
 
       return 1;
     }

@@ -1,6 +1,6 @@
 import chalk from 'chalk';
 
-import { ConfigOverride, ExecutionRule, PollResult, Step, Test, TestComposite } from './interfaces';
+import { ConfigOverride, ExecutionRule, PollResult, Step, Test } from './interfaces';
 import { hasResultPassed, hasTestSucceeded } from './utils';
 
 const renderStep = (step: Step) => {
@@ -22,8 +22,8 @@ const renderStep = (step: Step) => {
   return `    ${icon} | ${duration} - ${step.description}${value}${error}`;
 };
 
-const renderTestResults = (test: TestComposite, baseUrl: string) =>
-  test.results.map((r: PollResult) => {
+const renderTestResults = (test: Test, results: PollResult[], baseUrl: string) =>
+  results.map((r: PollResult) => {
     const resultUrl = `${baseUrl}/synthetics/details/${test.public_id}/result/${r.resultID}`;
     const success = hasResultPassed(r);
     const color = success ? chalk.green : chalk.red;
@@ -58,15 +58,16 @@ const renderTestResults = (test: TestComposite, baseUrl: string) =>
     return output;
   }).join('\n').concat('\n');
 
-export const renderResult = (test: TestComposite, baseUrl: string) => {
-  const success = hasTestSucceeded(test);
+export const renderResult = (test: Test, results: PollResult[], baseUrl: string) => {
+  const success = hasTestSucceeded(results);
   const isNonBlocking = test.options.ci?.executionRule === ExecutionRule.NON_BLOCKING;
   const icon = success ? chalk.bold.green('✓') : isNonBlocking ? chalk.bold.yellow('⚠') : chalk.bold.red('✖');
   const idDisplay = `[${chalk.bold.dim(test.public_id)}]`;
   const nameColor = success ? chalk.bold.green : chalk.bold.red;
   const nonBlockingText = !success && isNonBlocking ? 'This tests is set to be non-blocking in Datadog' : '';
+  const testResultsText = renderTestResults(test, results, baseUrl);
 
-  return `${icon} ${idDisplay} | ${nameColor(test.name)} ${nonBlockingText}\n${renderTestResults(test, baseUrl)}`;
+  return `${icon} ${idDisplay} | ${nameColor(test.name)} ${nonBlockingText}\n${testResultsText}`;
 };
 
 export const renderTrigger = (test: Test | undefined, testId: string, config: ConfigOverride) => {
@@ -86,7 +87,7 @@ export const renderTrigger = (test: Test | undefined, testId: string, config: Co
   return `${idDisplay} ${message}\n`;
 };
 
-export const renderHeader = (tests: TestComposite[], timings: { startTime: number }) => {
+export const renderHeader = (timings: { startTime: number }) => {
   const currentTime = Date.now();
 
   return `\n\n${chalk.bold.cyan('=== REPORT ===')}

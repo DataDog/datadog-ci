@@ -25,13 +25,10 @@ const formatBackendErrors = (requestError: RequestError) => {
 };
 
 const triggerTests = (request: (args: Options) => RequestPromise<Trigger>) =>
-  async (testIds: string[], config?: Payload) => {
+  async (tests: Payload[]) => {
     try {
       const resp = await request({
-        body: {
-          config,
-          public_ids: testIds,
-        },
+        body: { tests },
         method: 'POST',
         uri: '/synthetics/tests/trigger/ci',
       });
@@ -40,6 +37,7 @@ const triggerTests = (request: (args: Options) => RequestPromise<Trigger>) =>
     } catch (e) {
       const errorMessage = formatBackendErrors(e);
       // Rewrite the error.
+      const testIds = tests.map(t => t.public_id);
       throw new Error(`Could not trigger [${testIds}]. ${e.statusCode}: ${errorMessage}`);
     }
   };
