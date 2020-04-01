@@ -205,7 +205,7 @@ export const runTests = async (api: APIHelper, triggerConfigs: TriggerConfig[], 
       write(renderTrigger(test, id, config));
     } catch (e) {
       /* Do nothing */
-      write(`Unable to retrieve test: ${id}\n`);
+      write(`${e.toString()}\n`);
     }
 
     if (!test || config.skip || test.options?.ci?.executionRule === ExecutionRule.SKIPPED) {
@@ -218,6 +218,10 @@ export const runTests = async (api: APIHelper, triggerConfigs: TriggerConfig[], 
 
     return test;
   }));
+
+  if (!testsToTrigger.length) {
+    throw new Error('No tests to trigger');
+  }
 
   return {
     tests: tests.filter(definedTypeGuard),
