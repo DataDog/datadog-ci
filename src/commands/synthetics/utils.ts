@@ -208,7 +208,7 @@ export const runTests = async (api: APIHelper, triggerConfigs: TriggerConfig[], 
       write(`Unable to retrieve test: ${id}\n`);
     }
 
-    if (!test || config.skip || test.options?.execution_rule === ExecutionRule.SKIPPED) {
+    if (!test || config.skip || test.options?.ci?.executionRule === ExecutionRule.SKIPPED) {
       return;
     }
 

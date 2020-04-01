@@ -60,7 +60,7 @@ const renderTestResults = (test: Test, results: PollResult[], baseUrl: string) =
 
 export const renderResult = (test: Test, results: PollResult[], baseUrl: string) => {
   const success = hasTestSucceeded(results);
-  const isNonBlocking = test.options.execution_rule === ExecutionRule.NON_BLOCKING;
+  const isNonBlocking = test.options.ci?.executionRule === ExecutionRule.NON_BLOCKING;
   const icon = success ? chalk.bold.green('✓') : isNonBlocking ? chalk.bold.yellow('⚠') : chalk.bold.red('✖');
   const idDisplay = `[${chalk.bold.dim(test.public_id)}]`;
   const nameColor = success ? chalk.bold.green : chalk.bold.red;
@@ -78,7 +78,7 @@ export const renderTrigger = (test: Test | undefined, testId: string, config: Co
     message = chalk.red.bold(`Could not find test "${testId}"`);
   } else if (config.skip) {
     message = `>> Skipped test "${chalk.yellow.dim(test.name)}"`;
-  } else if (test.options?.execution_rule === ExecutionRule.SKIPPED) {
+  } else if (test.options?.ci?.executionRule === ExecutionRule.SKIPPED) {
     message = `>> Skipped test "${chalk.yellow.dim(test.name)}" because of execution rule configuration in Datadog`;
   } else {
     message = `Trigger test "${chalk.green.bold(test.name)}"`;
