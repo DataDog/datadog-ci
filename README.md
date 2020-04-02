@@ -15,7 +15,14 @@ registry=https://registry.npmjs.org/
 //registry.npmjs.org/:_authToken=<TOKEN>
 ```
 
-If using Yarn v2, it is possible to scope the token to the `@datadog` scope in the `.yarnrc` file as describe [in the documentation](https://yarnpkg.com/configuration/yarnrc#npmScopes).
+If using Yarn v2, it is possible to scope the token to the `@datadog` scope in the `.yarnrc` file as described [in the documentation](https://yarnpkg.com/configuration/yarnrc#npmScopes):
+
+```yaml
+npmScopes:
+  datadog:
+    npmRegistryServer: "https://registry.npmjs.org"
+    npmAuthToken: "ffffffff-ffff-ffff-ffff-ffffffffffff"
+```
 
 Then, installing the package is done through NPM or Yarn:
 
