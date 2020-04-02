@@ -205,7 +205,7 @@ export const runTests = async (api: APIHelper, triggerConfigs: TriggerConfig[], 
       write(renderTrigger(test, id, config));
     } catch (e) {
       /* Do nothing */
-      write(`${e.toString()}\n`);
+      write(`Error: ${e.toString()}\n`);
     }
 
     if (!test || config.skip || test.options?.ci?.executionRule === ExecutionRule.SKIPPED) {
