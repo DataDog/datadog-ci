@@ -17,11 +17,12 @@ interface BackendError {
   errors: string[];
 }
 
-const formatBackendErrors = (requestError: AxiosError<BackendError>) => {
+export const formatBackendErrors = (requestError: AxiosError<BackendError>) => {
   if (requestError.response && requestError.response.data.errors) {
     const errors = requestError.response.data.errors.map((message: string) => `  - ${message}`);
+    const serverHead = `query on ${requestError.config.baseURL}${requestError.config.url} returned:`;
 
-    return `\n${errors.join('\n')}`;
+    return `${serverHead}\n${errors.join('\n')}`;
   }
 
   return requestError.name;
@@ -47,17 +48,11 @@ const triggerTests = (request: (args: AxiosRequestConfig) => AxiosPromise<Trigge
   };
 
 const getTest = (request: (args: AxiosRequestConfig) => AxiosPromise<Test>) => async (testId: string) => {
-  try {
-    const resp = await request({
-      url: `/synthetics/tests/${testId}`,
-    });
+  const resp = await request({
+    url: `/synthetics/tests/${testId}`,
+  });
 
-    return resp.data;
-  } catch (e) {
-    const errorMessage = formatBackendErrors(e);
-    // Rewrite the error.
-    throw new Error(`Could not get test ${testId}. ${errorMessage}`);
-  }
+  return resp.data;
 };
 
 const pollResults = (request: (args: AxiosRequestConfig) => AxiosPromise<{ results: PollResult[] }>) =>
