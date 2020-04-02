@@ -145,4 +145,4 @@ RunTestCommand.addPath('synthetics', 'run-tests');
 RunTestCommand.addOption('apiKey', Command.String('--apiKey'));
 RunTestCommand.addOption('appKey', Command.String('--appKey'));
 RunTestCommand.addOption('configPath', Command.String('--config'));
-RunTestCommand.addOption('publicIds', Command.Array('--public-id'));
+RunTestCommand.addOption('publicIds', Command.Array('-p,--public-id'));

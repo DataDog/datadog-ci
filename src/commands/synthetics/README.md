@@ -59,7 +59,7 @@ The available command is:
 
 - `run-tests`: run the tests discovered in the folder according to the `files` configuration key
 
-It accepts the `--public-id` argument to trigger only the specified test. It can be set multiple times to run multiple tests:
+It accepts the `--public-id` (or shorthand `-p`) argument to trigger only the specified test. It can be set multiple times to run multiple tests:
 
 ```bash
 datadog-ci synthetics run-test --public-id pub-lic-id1 --public-id pub-lic-id2
