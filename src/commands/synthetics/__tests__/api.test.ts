@@ -29,7 +29,7 @@ describe('dd-api', () => {
 
   test('should get results from api', async () => {
     jest.spyOn(axios, 'create').mockImplementation((() => () => ({ data: POLL_RESULTS })) as any);
-    const api = apiConstructor({ apiKey: '123', appKey: '123', baseUrl: 'base' });
+    const api = apiConstructor({ apiKey: '123', appKey: '123', baseIntakeUrl: 'baseintake', baseUrl: 'base' });
     const { pollResults } = api;
     const { results } = await pollResults([RESULT_ID]);
     expect(results[0].resultID).toBe(RESULT_ID);
@@ -37,7 +37,7 @@ describe('dd-api', () => {
 
   test('should trigger tests using api', async () => {
     jest.spyOn(axios, 'create').mockImplementation((() => () => ({ data: TRIGGER_RESULTS })) as any);
-    const api = apiConstructor({ apiKey: '123', appKey: '123', baseUrl: 'base' });
+    const api = apiConstructor({ apiKey: '123', appKey: '123', baseIntakeUrl: 'baseintake', baseUrl: 'base' });
     const { triggerTests } = api;
     const testsToTrigger: Payload[] = [{ public_id: TRIGGERED_TEST_ID }];
     const { results, triggered_check_ids } = await triggerTests(testsToTrigger);

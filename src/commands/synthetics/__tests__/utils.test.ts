@@ -27,7 +27,7 @@ describe('utils', () => {
   });
 
   describe('runTest', () => {
-    const api = apiConstructor({ apiKey: '123', appKey: '123', baseUrl: 'base' });
+    const api = apiConstructor({ apiKey: '123', appKey: '123', baseIntakeUrl: 'baseintake', baseUrl: 'base' });
     const processWrite = process.stdout.write.bind(process.stdout);
     const fakeTest = {
       name: 'Fake Test',

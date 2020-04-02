@@ -24,7 +24,7 @@ const renderStep = (step: Step) => {
 
 const renderTestResults = (test: Test, results: PollResult[], baseUrl: string) =>
   results.map((r: PollResult) => {
-    const resultUrl = `${baseUrl}/synthetics/details/${test.public_id}/result/${r.resultID}`;
+    const resultUrl = `${baseUrl}synthetics/details/${test.public_id}?resultId=${r.resultID}`;
     const success = hasResultPassed(r);
     const color = success ? chalk.green : chalk.red;
     const icon = success ? chalk.bold.green('✓') : chalk.bold.red('✖');

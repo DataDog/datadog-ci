@@ -14,9 +14,9 @@ export class RunTestCommand extends Command {
   private apiKey?: string;
   private appKey?: string;
   private config = {
-    apiKey: process.env.DD_API_KEY,
-    appKey: process.env.DD_APP_KEY,
-    datadogHost: process.env.DD_HOST || 'https://app.datadoghq.com/api/v1',
+    apiKey: process.env.DATADOG_API_KEY,
+    appKey: process.env.DATADOG_APP_KEY,
+    datadogSite: process.env.DATADOG_SITE || 'datadoghq.com',
     files: '{,!(node_modules)/**/}*.synthetics.json',
     global: { } as ConfigOverride,
     timeout: 2 * 60 * 1000,
@@ -67,9 +67,10 @@ export class RunTestCommand extends Command {
 
       // Rendering the results.
       this.context.stdout.write(renderHeader({ startTime }));
-      const baseUrl = this.config.datadogHost.replace(/\/api\/v1$/, '');
       for (const test of tests) {
-        this.context.stdout.write(renderResult(test, results[test.public_id], baseUrl));
+        this.context.stdout.write(
+          renderResult(test, results[test.public_id], this.getAppBaseURL())
+        );
       }
 
       // Determine if all the tests have succeeded
@@ -94,10 +95,10 @@ export class RunTestCommand extends Command {
 
     if (!this.config.appKey || !this.config.apiKey) {
       if (!this.config.appKey) {
-        this.context.stdout.write(`Missing ${chalk.red.bold('DD_APP_KEY')} in your environment.\n`);
+        this.context.stdout.write(`Missing ${chalk.red.bold('DATADOG_APP_KEY')} in your environment.\n`);
       }
       if (!this.config.apiKey) {
-        this.context.stdout.write(`Missing ${chalk.red.bold('DD_API_KEY')} in your environment.\n`);
+        this.context.stdout.write(`Missing ${chalk.red.bold('DATADOG_API_KEY')} in your environment.\n`);
       }
       throw new Error('API and/or Application keys are missing');
     }
@@ -105,8 +106,31 @@ export class RunTestCommand extends Command {
     return apiConstructor({
       apiKey: this.config.apiKey!,
       appKey: this.config.appKey!,
-      baseUrl: this.config.datadogHost,
+      baseIntakeUrl: this.getDatadogHost(true),
+      baseUrl: this.getDatadogHost(),
     });
+  }
+
+  private getAppBaseURL () {
+    const subdomain = process.env.DATADOG_SUBDOMAIN || 'app';
+
+    return `https://${subdomain}.${this.config.datadogSite}/`;
+  }
+
+  private getDatadogHost (useIntake = false) {
+    const apiPath = 'api/v1/';
+    let host = `https://api.${this.config.datadogSite}`;
+
+    if (process.env.DD_API_HOST_OVERRIDE) {
+      host = process.env.DD_API_HOST_OVERRIDE;
+    } else if (
+      useIntake
+      && (this.config.datadogSite === 'datadoghq.com' || this.config.datadogSite === 'datad0g.com')
+    ) {
+      host = `https://intake.synthetics.${this.config.datadogSite}`;
+    }
+
+    return `${host}/${apiPath}`;
   }
 
   private async getTestsToTrigger () {

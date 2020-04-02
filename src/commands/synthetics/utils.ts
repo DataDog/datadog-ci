@@ -6,6 +6,7 @@ import { promisify } from 'util';
 
 import glob from 'glob';
 
+import { formatBackendErrors } from './api';
 import {
   APIHelper,
   ConfigOverride,
@@ -202,16 +203,16 @@ export const runTests = async (api: APIHelper, triggerConfigs: TriggerConfig[], 
     id = PUBLIC_ID_REGEX.test(id) ? id : id.substr(id.lastIndexOf('/') + 1);
     try {
       test = await api.getTest(id);
-      write(renderTrigger(test, id, config));
     } catch (e) {
-      /* Do nothing */
-      write(`Unable to retrieve test: ${id}\n`);
+      const errorMessage = formatBackendErrors(e);
+      write(`[${id}] Test not found: ${errorMessage}\n`);
     }
 
     if (!test || config.skip || test.options?.ci?.executionRule === ExecutionRule.SKIPPED) {
       return;
     }
 
+    write(renderTrigger(test, id, config));
     const overloadedConfig = handleConfig(test, id, config);
     write(renderWait(test));
     testsToTrigger.push(overloadedConfig);
@@ -219,10 +220,21 @@ export const runTests = async (api: APIHelper, triggerConfigs: TriggerConfig[], 
     return test;
   }));
 
-  return {
-    tests: tests.filter(definedTypeGuard),
-    triggers: await api.triggerTests(testsToTrigger),
-  };
+  if (!testsToTrigger.length) {
+    throw new Error('No tests to trigger');
+  }
+
+  try {
+    return {
+      tests: tests.filter(definedTypeGuard),
+      triggers: await api.triggerTests(testsToTrigger),
+    };
+  } catch (e) {
+    const errorMessage = formatBackendErrors(e);
+    const testIds = testsToTrigger.map(t => t.public_id).join(',');
+    // Rewrite error message
+    throw new Error(`[${testIds}] Failed to trigger tests: ${errorMessage}\n`);
+  }
 };
 
 function definedTypeGuard<T> (o: T | undefined): o is T {

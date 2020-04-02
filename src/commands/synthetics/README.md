@@ -6,17 +6,23 @@ Run Synthetics tests from your CI.
 
 ### Setup
 
-You need to either have `DD_API_KEY` and `DD_APP_KEY` in your environment or pass them to the CLI.
+You need to either have `DATADOG_API_KEY` and `DATADOG_APP_KEY` in your environment or pass them to the CLI.
 ```bash
 # Environment setup
-export DD_API_KEY="<DATADOG_API_KEY>"
-export DD_APP_KEY="<DATADOG_APPLICATION_KEY>"
+export DATADOG_API_KEY="<API KEY>"
+export DATADOG_APP_KEY="<APPLICATION KEY>"
 
 # Passing to CLI
-datadog-ci synthetics <command> --apiKey "<DATADOG_API_KEY>" --appKey "<DATADOG_APPLICATION_KEY>"
+datadog-ci synthetics <command> --apiKey "<API KEY>" --appKey "<APPLICATION KEY>"
 ```
 
-It is possible to set the datadog host used by defining the `DD_HOST` environment variable.
+It is possible to configure the tool to use Datadog EU by defining the `DATADOG_SITE` environment variable to `datadoghq.eu`. By defaut the requests are sent to Datadog US.
+
+If the org uses a custom sub-domain to access Datadog app, it needs to be set in the `DATADOG_SUBDOMAIN` environment variable to properly display the test results URL. As an example, if the URL used to access Datadog is `myorg.datadoghq.com` then set the environment variable to `myorg`, ie:
+
+```bash
+export DATADOG_SUBDOMAIN="myorg"
+```
 
 ### API
 
@@ -32,7 +38,7 @@ The configuration file structure is the following:
 {
     "apiKey": "<DATADOG_API_KEY>",
     "appKey": "<DATADOG_APPLICATION_KEY>",
-    "datadogHost": "https://app.datadoghq.com/api/v1",
+    "datadogSite": "datadoghq.com",
     "files": "{,!(node_modules)/**/}*.synthetics.json",
     "global": {
         "allowInsecureCertificates": true,

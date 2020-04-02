@@ -175,4 +175,5 @@ export interface APIHelper {
   triggerTests: TriggerTests;
 }
 
-export type APIConstructor = (args: { apiKey: string; appKey: string; baseUrl: string}) => APIHelper;
+export type APIConstructor =
+  (args: { apiKey: string; appKey: string; baseIntakeUrl: string; baseUrl: string}) => APIHelper;

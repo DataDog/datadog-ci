@@ -16,5 +16,6 @@ husky,dev,MIT,Copyright (c) 2017
 jest,dev,MIT,Copyright (c) Facebook, Inc. and its affiliates.
 lint-staged,dev,MIT,Copyright (c) 2016 Andrey Okonetchnikov
 ts-jest,dev,MIT,Copyright (c) 2016-2018
+ts-node,import,MIT,github.com/TypeStrong/ts-node
 tslint,dev,Apache-2.0,Copyright 2013-2019 Palantir Technologies, Inc.
 typescript,dev,Apache-2.0,Copyright (c) Microsoft Corporation.
