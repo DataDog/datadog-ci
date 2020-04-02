@@ -6,7 +6,7 @@ import { Command } from 'clipanion';
 import deepExtend from 'deep-extend';
 
 import { apiConstructor } from './api';
-import { ConfigOverride, ExecutionRule, Test } from './interfaces';
+import { ConfigOverride, ExecutionRule } from './interfaces';
 import { renderHeader, renderResult } from './renderer';
 import { getSuites, hasTestSucceeded, runTests, waitForResults } from './utils';
 
@@ -22,43 +22,38 @@ export class RunTestCommand extends Command {
     timeout: 2 * 60 * 1000,
   };
   private configPath?: string;
+  private publicIds: string[] = [];
 
   public async execute () {
     const startTime = Date.now();
 
     await this.parseConfigFile();
 
-    const suites = (await getSuites(this.config.files, this.context.stdout.write.bind(this.context.stdout)))
-      .map(suite => suite.tests)
-      .filter(suiteTests => !!suiteTests);
     const api = this.getApiHelper();
+    const publicIdsTriggers = this.publicIds.map(id => ({ config: { }, id }));
+    const testsToTrigger = publicIdsTriggers.length ? publicIdsTriggers : await this.getTestsToTrigger();
 
-    if (!suites.length) {
+    if (!testsToTrigger.length) {
       this.context.stdout.write('No test suites to run.\n');
 
       return 0;
     }
 
-    const testsToTrigger = suites.reduce((acc, suiteTests) => acc.concat(suiteTests), [])
-      .map(test => ({
-        config: { ...this.config!.global, ...test.config },
-        id: test.id,
-      }));
     const { tests, triggers } =
       await runTests(api, testsToTrigger, this.context.stdout.write.bind(this.context.stdout));
 
+    // All tests have been skipped or are missing.
+    if (!tests.length) {
+      this.context.stdout.write('No test to run.\n');
+
+      return 0;
+    }
+
+    if (!triggers.results) {
+      throw new Error('No result to poll.');
+    }
+
     try {
-      // All tests have been skipped or are missing.
-      if (!tests.length) {
-        this.context.stdout.write('No test to run.\n');
-
-        return 0;
-      }
-
-      if (!triggers.results) {
-        throw new Error('No result to poll.');
-      }
-
       // Poll the results.
       const results = await waitForResults(api, triggers.results, this.config.timeout);
 
@@ -78,7 +73,7 @@ export class RunTestCommand extends Command {
       }
 
       // Determine if all the tests have succeeded
-      const hasSucceeded = tests.every((test: Test) =>
+      const hasSucceeded = tests.every(test =>
         hasTestSucceeded(results[test.public_id]) || test.options.ci?.executionRule === ExecutionRule.NON_BLOCKING
       );
       if (hasSucceeded) {
@@ -114,6 +109,20 @@ export class RunTestCommand extends Command {
     });
   }
 
+  private async getTestsToTrigger () {
+    const suites = (await getSuites(this.config.files, this.context.stdout.write.bind(this.context.stdout)))
+      .map(suite => suite.tests)
+      .filter(suiteTests => !!suiteTests);
+
+    const testsToTrigger = suites.reduce((acc, suiteTests) => acc.concat(suiteTests), [])
+      .map(test => ({
+        config: { ...this.config!.global, ...test.config },
+        id: test.id,
+      }));
+
+    return testsToTrigger;
+  }
+
   private async parseConfigFile () {
     try {
       const configPath = this.configPath || 'datadog-ci.json';
@@ -136,3 +145,4 @@ RunTestCommand.addPath('synthetics', 'run-tests');
 RunTestCommand.addOption('apiKey', Command.String('--apiKey'));
 RunTestCommand.addOption('appKey', Command.String('--appKey'));
 RunTestCommand.addOption('configPath', Command.String('--config'));
+RunTestCommand.addOption('publicIds', Command.Array('--public-id'));
