@@ -18,6 +18,12 @@ datadog-ci synthetics <command> --apiKey "<API KEY>" --appKey "<APPLICATION KEY>
 
 It is possible to configure the tool to use Datadog EU by defining the `DATADOG_SITE` environment variable to `datadoghq.eu`. By defaut the requests are sent to Datadog US.
 
+If the org uses a custom sub-domain to access Datadog app, it needs to be set in the `DATADOG_SUBDOMAIN` environment variable to properly display the test results URL. As an example, if the URL used to access Datadog is `myorg.datadoghq.com` then set the environment variable to `myorg`, ie:
+
+```bash
+export DATADOG_SUBDOMAIN="myorg"
+```
+
 ### API
 
 By default it runs at the root of the working directory and finds `{,!(node_modules)/**/}*.synthetics.json` files (every files ending with `.synthetics.json` except those in the `node_modules` folder).

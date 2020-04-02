@@ -117,9 +117,9 @@ export class RunTestCommand extends Command {
   }
 
   private getAppBaseURL () {
-    const host = process.env.DD_HOSTNAME || `app.${this.config.datadogSite}`;
+    const subdomain = process.env.DATADOG_SUBDOMAIN || 'app';
 
-    return `https://${host}/`;
+    return `https://${subdomain}.${this.config.datadogSite}/`;
   }
 
   private getDatadogHost (useIntake = false) {

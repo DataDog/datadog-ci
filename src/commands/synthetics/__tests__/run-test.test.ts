@@ -11,7 +11,7 @@ describe('run-test', () => {
     });
 
     test('should be overridable', async () => {
-      process.env = { DD_HOSTNAME: 'app.datadoghq.eu' };
+      process.env = { DATADOG_SUBDOMAIN: 'app.datadoghq.eu' };
       const command = new RunTestCommand();
 
       expect(command['getAppBaseURL']()).toBe('https://app.datadoghq.eu/');
