@@ -224,10 +224,17 @@ export const runTests = async (api: APIHelper, triggerConfigs: TriggerConfig[], 
     throw new Error('No tests to trigger');
   }
 
-  return {
-    tests: tests.filter(definedTypeGuard),
-    triggers: await api.triggerTests(testsToTrigger),
-  };
+  try {
+    return {
+      tests: tests.filter(definedTypeGuard),
+      triggers: await api.triggerTests(testsToTrigger),
+    };
+  } catch (e) {
+    const errorMessage = formatBackendErrors(e);
+    const testIds = testsToTrigger.map(t => t.public_id).join(',');
+    // Rewrite error message
+    throw new Error(`[${testIds}] Failed to trigger tests: ${errorMessage}\n`);
+  }
 };
 
 function definedTypeGuard<T> (o: T | undefined): o is T {

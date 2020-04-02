@@ -10,11 +10,18 @@ describe('run-test', () => {
       expect(command['getAppBaseURL']()).toBe('https://app.datadoghq.com/');
     });
 
-    test('should be overridable', async () => {
-      process.env = { DATADOG_SUBDOMAIN: 'app.datadoghq.eu' };
+    test('subdomain should be overridable', async () => {
+      process.env = { DATADOG_SUBDOMAIN: 'custom' };
       const command = new RunTestCommand();
 
-      expect(command['getAppBaseURL']()).toBe('https://app.datadoghq.eu/');
+      expect(command['getAppBaseURL']()).toBe('https://custom.datadoghq.com/');
+    });
+
+    test('should override subdomain and site', async () => {
+      process.env = { DATADOG_SITE: 'datadoghq.eu', DATADOG_SUBDOMAIN: 'custom' };
+      const command = new RunTestCommand();
+
+      expect(command['getAppBaseURL']()).toBe('https://custom.datadoghq.eu/');
     });
   });
 
