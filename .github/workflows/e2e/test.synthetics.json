@@ -1,0 +1,20 @@
+{
+  "tests": [
+    {
+      "id":"v5u-56k-hgk",
+      "config": {
+        "headers": {
+          "X-Fake-Header": "fake value"
+        }
+      }
+    },
+    {
+      "id":"neg-qw9-eut",
+      "config": {
+        "headers": {
+          "X-Fake-Header": "fake value"
+        }
+      }
+    }
+  ]
+}

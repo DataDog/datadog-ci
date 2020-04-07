@@ -1,0 +1,5 @@
+{
+  "files": "{,!(node_modules)/**/}*.synthetics.json",
+  "global": {},
+  "timeout": 240000
+}
