@@ -32,7 +32,7 @@ const SUBDOMAIN_REGEX = /(.*?)\.(?=[^\/]*\..{2,5})/;
 const template = (st: string, context: any): string =>
   st.replace(/{{([A-Z_]+)}}/g, (match: string, p1: string) => context[p1] ? context[p1] : '');
 
-const handleConfig = (test: Test, publicId: string, config?: ConfigOverride): Payload => {
+export const handleConfig = (test: Test, publicId: string, config?: ConfigOverride): Payload => {
   let handledConfig: Payload = { public_id: publicId };
   if (!config || !Object.keys(config).length) {
     return handledConfig;
