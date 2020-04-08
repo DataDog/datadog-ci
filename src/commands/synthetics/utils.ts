@@ -4,6 +4,7 @@ import { Writable } from 'stream';
 import { URL } from 'url';
 import { promisify } from 'util';
 
+import chalk from 'chalk';
 import glob from 'glob';
 
 import { formatBackendErrors } from './api';
@@ -120,9 +121,10 @@ export const waitForResults = async (
 ): Promise<{ [key: string]: PollResult[] }> => {
   const finishedResults: { [key: string]: PollResult[] } = { };
   const pollingIds = triggerResults.map(triggerResult => triggerResult.result_id);
-  const triggerResultsByResultID =
-    Object.fromEntries(triggerResults.map(triggerResult => [triggerResult.result_id, triggerResult]));
+  const triggerResultsByResultID: { [key: string]: TriggerResult } = { };
+
   triggerResults.forEach(triggerResult => {
+    triggerResultsByResultID[triggerResult.result_id] = triggerResult;
     if (!Object.keys(finishedResults).includes(triggerResult.public_id)) {
       finishedResults[triggerResult.public_id] = [];
     }
@@ -205,10 +207,16 @@ export const runTests = async (api: APIHelper, triggerConfigs: TriggerConfig[], 
       test = await api.getTest(id);
     } catch (e) {
       const errorMessage = formatBackendErrors(e);
-      write(`[${id}] Test not found: ${errorMessage}\n`);
+      write(`[${chalk.bold.dim(id)}] Test not found: ${errorMessage}\n`);
     }
 
-    if (!test || config.skip || test.options?.ci?.executionRule === ExecutionRule.SKIPPED) {
+    if (!test || config.skip) {
+      return;
+    }
+
+    if (test.options?.ci?.executionRule === ExecutionRule.SKIPPED) {
+      write(`[${chalk.bold.dim(id)}] Test skipped as per execution rule in Datadog.\n`);
+
       return;
     }
 
