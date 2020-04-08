@@ -138,7 +138,8 @@ export const waitForResults = async (
     const timeout = setTimeout(() => {
       clearTimeout(pollTimeout);
       // Build and inject timeout errors.
-      triggerResults.forEach(triggerResult => {
+      pollingIds.forEach(resultId => {
+        const triggerResult = triggerResultsByResultID[resultId];
         const pollResult: PollResult = {
           dc_id: triggerResult.location,
           result: {

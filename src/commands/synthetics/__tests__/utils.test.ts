@@ -188,10 +188,14 @@ describe('utils', () => {
   describe('waitForResults', () => {
     beforeAll(() => {
       const axiosMock = jest.spyOn(axios.default, 'create');
-      axiosMock.mockImplementation((() => async () => {
+      axiosMock.mockImplementation((() => async (r: axios.AxiosRequestConfig) => {
         await wait(100);
 
-        return { data: { results: [passingPollResult] }};
+        const results = JSON.parse(r.params.result_ids)
+          .filter((resultId: string) => resultId !== 'timingOutTest')
+          .map((resultId: string) => passingPollResult(resultId));
+
+        return { data: { results }};
       }) as any);
     });
 
@@ -208,11 +212,11 @@ describe('utils', () => {
       passed: true,
       stepDetails: [],
     };
-    const passingPollResult = {
+    const passingPollResult = (resultID: string) => ({
       dc_id: 42,
       result: passingResult,
-      resultID: '0123456789',
-    };
+      resultID,
+    });
     const publicId = 'abc-def-ghi';
     const triggerResult = {
       device: 'laptop_large',
@@ -223,7 +227,7 @@ describe('utils', () => {
 
     test('should poll result ids', async () => {
       const expectedResults: { [key: string]: PollResult[] } = { };
-      expectedResults[publicId] = [passingPollResult];
+      expectedResults[publicId] = [passingPollResult('0123456789')];
       expect(await waitForResults(api, [triggerResult], 120000)).toEqual(expectedResults);
     });
 
@@ -241,6 +245,27 @@ describe('utils', () => {
         resultID: triggerResult.result_id,
       }];
       expect(await waitForResults(api, [triggerResult], 0)).toEqual(expectedResults);
+    });
+
+    test('correct number of pass and timeout results', async () => {
+      const expectedResults: { [key: string]: PollResult[] } = { };
+      const triggerResultPass = triggerResult;
+      const triggerResultTimeOut = { ...triggerResult, result_id: 'timingOutTest' };
+      expectedResults[publicId] = [
+        passingPollResult(triggerResultPass.result_id),
+        {
+          dc_id: triggerResultTimeOut.location,
+          result: {
+            device: { id: triggerResultTimeOut.device },
+            error: 'Timeout',
+            eventType: 'finished',
+            passed: false,
+            stepDetails: [ ],
+          },
+          resultID: triggerResultTimeOut.result_id,
+        },
+      ];
+      expect(await waitForResults(api, [triggerResultPass, triggerResultTimeOut], 2000)).toEqual(expectedResults);
     });
   });
 });
