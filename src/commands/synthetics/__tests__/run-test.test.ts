@@ -51,16 +51,16 @@ describe('run-test', () => {
       process.env = { };
       const command = new RunTestCommand();
 
-      expect(command['getDatadogHost']()).toBe('https://api.datadoghq.com/api/v1/');
-      expect(command['getDatadogHost'](true)).toBe('https://intake.synthetics.datadoghq.com/api/v1/');
+      expect(command['getDatadogHost']()).toBe('https://api.datadoghq.com/api/v1');
+      expect(command['getDatadogHost'](true)).toBe('https://intake.synthetics.datadoghq.com/api/v1');
     });
 
     test('should be tunable through DATADOG_SITE variable', async () => {
       process.env = { DATADOG_SITE: 'datadoghq.eu' };
       const command = new RunTestCommand();
 
-      expect(command['getDatadogHost']()).toBe('https://api.datadoghq.eu/api/v1/');
-      expect(command['getDatadogHost'](true)).toBe('https://api.datadoghq.eu/api/v1/');
+      expect(command['getDatadogHost']()).toBe('https://api.datadoghq.eu/api/v1');
+      expect(command['getDatadogHost'](true)).toBe('https://api.datadoghq.eu/api/v1');
     });
   });
 
