@@ -118,7 +118,7 @@ export class RunTestCommand extends Command {
   }
 
   private getDatadogHost (useIntake = false) {
-    const apiPath = 'api/v1/';
+    const apiPath = 'api/v1';
     let host = `https://api.${this.config.datadogSite}`;
 
     if (process.env.DD_API_HOST_OVERRIDE) {

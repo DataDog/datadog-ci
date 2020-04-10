@@ -18,7 +18,7 @@
     "build": "tsc",
     "check-licenses": "node bin/check-licenses.js",
     "format": "yarn lint --fix",
-    "launch": "ts-node -p .",
+    "launch": "ts-node src/index.ts",
     "lint": "tslint -p tsconfig.json -c tslint.json",
     "prepack": "yarn build && node ./bin/make-it-executable.js",
     "test": "jest",

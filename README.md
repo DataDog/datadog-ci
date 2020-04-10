@@ -55,6 +55,14 @@ Further documentation for each command can be found in its folder, ie:
 Pull requests for bug fixes are welcome, but before submitting new features or changes to current functionality [open an issue](https://github.com/DataDog/datadog-ci/issues/new)
 and discuss your ideas or propose the changes you wish to make. After a resolution is reached a PR can be submitted for review.
 
+### Running command in development environment
+
+When developing the tool it is possible to run commands using `yarn launch`. It relies on `ts-node` so does not need building the project for every new change.
+
+```bash
+yarn launch synthetics run-tests --config dev/global.config.json
+```
+
 ### Framework and libraries used
 
 This tool uses [clipanion](https://github.com/arcanis/clipanion) to handle the different commands.
