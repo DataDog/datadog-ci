@@ -15,10 +15,11 @@
     "LICENSE"
   ],
   "scripts": {
-    "build": "tsc",
+    "build": "yarn clean; tsc",
     "check-licenses": "node bin/check-licenses.js",
+    "clean": "rm -rf dist/*",
     "format": "yarn lint --fix",
-    "launch": "ts-node -p .",
+    "launch": "ts-node src/index.ts",
     "lint": "tslint -p tsconfig.json -c tslint.json",
     "prepack": "yarn build && node ./bin/make-it-executable.js",
     "test": "jest",
