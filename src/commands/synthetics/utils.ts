@@ -76,7 +76,28 @@ export const handleConfig = (test: Test, publicId: string, config?: ConfigOverri
     handledConfig.startUrl = template(config.startUrl, context);
   }
 
+  if (config.executionRule) {
+    const executionRule = getStrictestExecutionRule(config.executionRule, test.options.ci?.executionRule);
+    test.options.ci = { ...(test.options.ci || { }),  executionRule};
+  }
+
   return handledConfig;
+};
+
+export const getStrictestExecutionRule = (configRule: ExecutionRule, testRule?: ExecutionRule): ExecutionRule => {
+  if (configRule === ExecutionRule.SKIPPED || testRule === ExecutionRule.SKIPPED) {
+    return ExecutionRule.SKIPPED;
+  }
+
+  if (configRule === ExecutionRule.NON_BLOCKING || testRule === ExecutionRule.NON_BLOCKING) {
+    return ExecutionRule.NON_BLOCKING;
+  }
+
+  if (configRule === ExecutionRule.BLOCKING || testRule === ExecutionRule.BLOCKING) {
+    return ExecutionRule.BLOCKING;
+  }
+
+  return ExecutionRule.BLOCKING;
 };
 
 export const hasResultPassed = (result: PollResult): boolean => {
@@ -211,7 +232,7 @@ export const runTests = async (api: APIHelper, triggerConfigs: TriggerConfig[], 
       write(`[${chalk.bold.dim(id)}] Test not found: ${errorMessage}\n`);
     }
 
-    if (!test || config.skip) {
+    if (!test || config.executionRule === ExecutionRule.SKIPPED) {
       return;
     }
 

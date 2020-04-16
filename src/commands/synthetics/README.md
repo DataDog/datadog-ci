@@ -47,11 +47,11 @@ The configuration file structure is the following:
         "bodyType": "application/json",
         "cookies": "name1=value1;name2=value2;",
         "deviceIds": ["laptop_large"],
+        "executionRule": "skipped",
         "followRedirects": true,
         "headers": { "NEW_HEADER": "NEW VALUE" },
         "locations": ["aws:us-east-1"],
         "retry": { "count": 2, "interval": 300 },
-        "skip": true,
         "startUrl": "{{URL}}?static_hash={{STATIC_HASH}}",
         "variables": { "titleVariable": "new title" },
     },
@@ -88,11 +88,11 @@ Your test files must be named with a `.synthetics.json` suffix.
                 "bodyType": "application/json",
                 "cookies": "name1=value1;name2=value2;",
                 "deviceIds": ["laptop_large"],
+                "executionRule": "skipped",
                 "followRedirects": true,
                 "headers": { "NEW_HEADER": "NEW VALUE" },
                 "locations": ["aws:us-east-1"],
                 "retry": { "count": 2, "interval": 300 },
-                "skip": true,
                 "startUrl": "{{URL}}?static_hash={{STATIC_HASH}}",
                 "variables": { "titleVariable": "new title" },
             }
@@ -102,6 +102,29 @@ Your test files must be named with a `.synthetics.json` suffix.
 ```
 
 The `<TEST_PUBLIC_ID>` can be either the identifier of the test found in the URL of a test details page (eg. for `https://app.datadoghq.com/synthetics/details/abc-def-ghi` it would be `abc-def-ghi`) or the full URL to the details page (ie. directly `https://app.datadoghq.com/synthetics/details/abc-def-ghi`).
+
+All options under the `config` key allow overriding the configuration of the test as stored in Datadog.
+
+- allowInsecureCertificates: (boolean) disable certificate checks in API tests
+- basicAuth: (object) credentials to provide in case a basic authentication is encountered
+  - username: (string) username to use in basic authentication
+  - password: (string) password to use in basic authentication
+- body: (string) data to send in a synthetics API test
+- bodyType: (string) type of the data sent in a synthetics API test
+- cookies: (string) use provided string as Cookie header in API or Browser test
+- deviceIds: (array) list of devices on which to run the Browser test
+- executionRule: (string) execution rule of the test: it defines the behavior of the CLI in case of a failing test, it can be either:
+  - blocking: the CLI returns an error if the test fails
+  - non_blocking: the CLI only prints a warning if the test fails
+  - skipped: the test is not executed at all
+- followRedirects: (boolean) indicates whether to follow or not HTTP redirections in API tests
+- headers: (object) headers to replace in the test. This object should contain as keys the name of the header to replace and as values the new value of the header.
+- locations: (array) list of locations from which the test should be run.
+- retry: (object) retry policy for the test
+  - count: (integer) number of attempts to perform in case of test failure
+  - interval: (integer) interval between the attempts (in milliseconds)
+- startUrl: (string) new start URL to provide to the test
+- variables: (object) variables to replace in the test. This object should contain as keys the name of the variable to replace and as values the new value of the variable.
 
 You can configure on which url your test starts by providing a `config.startUrl` to your test object and build your own starting url using any part of your test's original starting url and the following environment variables: 
 
