@@ -7,8 +7,9 @@ import * as axios from 'axios';
 import glob from 'glob';
 
 import { apiConstructor } from '../api';
-import { PollResult, Result, Test } from '../interfaces';
+import { ExecutionRule, PollResult, Result, Test } from '../interfaces';
 import {
+  getStrictestExecutionRule,
   getSuites,
   handleConfig,
   hasResultPassed,
@@ -96,7 +97,8 @@ describe('utils', () => {
     test('skipped tests should not be run', async () => {
       let hasThrown = false;
       try {
-        await runTests(api, [{ id: fakeTest.public_id, config: { skip: true } }], processWrite);
+        const config = { executionRule: ExecutionRule.SKIPPED };
+        await runTests(api, [{ id: fakeTest.public_id, config }], processWrite);
       } catch (e) {
         hasThrown = true;
       }
@@ -110,13 +112,14 @@ describe('utils', () => {
       expect(handleConfig({ public_id: publicId } as Test, publicId)).toEqual({ public_id: publicId });
     });
 
-    test('skip is not picked', () => {
+    test('executionRule is not picked', () => {
       const publicId = 'abc-def-ghi';
       const fakeTest = {
         config: { request: { url: 'http://example.org/path' }},
+        options: { },
         public_id: publicId,
       } as Test;
-      const configOverride = { skip: true };
+      const configOverride = { executionRule: ExecutionRule.SKIPPED };
       expect(handleConfig(fakeTest, publicId, configOverride)).toEqual({ public_id: publicId });
     });
 
@@ -267,5 +270,16 @@ describe('utils', () => {
       ];
       expect(await waitForResults(api, [triggerResultPass, triggerResultTimeOut], 2000)).toEqual(expectedResults);
     });
+  });
+
+  test('getStrictestExecutionRule', () => {
+    const BLOCKING = ExecutionRule.BLOCKING;
+    const NON_BLOCKING = ExecutionRule.NON_BLOCKING;
+    const SKIPPED = ExecutionRule.SKIPPED;
+    expect(getStrictestExecutionRule(BLOCKING, NON_BLOCKING)).toBe(NON_BLOCKING);
+    expect(getStrictestExecutionRule(NON_BLOCKING, BLOCKING)).toBe(NON_BLOCKING);
+    expect(getStrictestExecutionRule(NON_BLOCKING, SKIPPED)).toBe(SKIPPED);
+    expect(getStrictestExecutionRule(BLOCKING, undefined)).toBe(BLOCKING);
+    expect(getStrictestExecutionRule(SKIPPED, undefined)).toBe(SKIPPED);
   });
 });

@@ -119,11 +119,11 @@ export interface ConfigOverride {
   bodyType?: string;
   cookies?: string;
   deviceIds?: string[];
+  executionRule?: ExecutionRule;
   followRedirects?: boolean;
   headers?: { [key: string]: string };
   locations?: string[];
   retry?: RetryConfig;
-  skip?: boolean;
   startUrl?: string;
   variables?: { [key: string]: string };
 }
