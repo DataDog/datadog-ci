@@ -28,7 +28,8 @@ const renderTestResults = (test: Test, results: PollResult[], baseUrl: string) =
     const success = hasResultPassed(r);
     const color = success ? chalk.green : chalk.red;
     const icon = success ? chalk.bold.green('✓') : chalk.bold.red('✖');
-    const duration = `total duration: ${test.type === 'browser' ? r.result.duration : r.result.timings?.total} ms`;
+    const duration = test.type === 'browser' ? r.result.duration : r.result.timings?.total;
+    const durationText = duration ? `  total duration: ${duration} ms` : '';
     const device = test.type === 'browser' && r.result.device ? ` - device: ${chalk.bold(r.result.device.id)}` : '';
     const resultIdentification = color(`  ${icon} location: ${chalk.bold(r.dc_id.toString())}${device}`);
     let steps = '';
@@ -52,7 +53,7 @@ const renderTestResults = (test: Test, results: PollResult[], baseUrl: string) =
     }
 
     output = `${resultIdentification}\n`;
-    output += `    ⎋  ${duration} - result url: ${chalk.dim.cyan(resultUrl)}`;
+    output += `    ⎋${durationText} - result url: ${chalk.dim.cyan(resultUrl)}`;
     output += `${steps}`;
 
     return output;
