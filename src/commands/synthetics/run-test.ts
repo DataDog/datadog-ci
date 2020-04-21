@@ -19,6 +19,7 @@ export class RunTestCommand extends Command {
     datadogSite: process.env.DATADOG_SITE || 'datadoghq.com',
     files: '{,!(node_modules)/**/}*.synthetics.json',
     global: { } as ConfigOverride,
+    subdomain: process.env.DATADOG_SUBDOMAIN || 'app',
     timeout: 2 * 60 * 1000,
   };
   private configPath?: string;
@@ -112,9 +113,7 @@ export class RunTestCommand extends Command {
   }
 
   private getAppBaseURL () {
-    const subdomain = process.env.DATADOG_SUBDOMAIN || 'app';
-
-    return `https://${subdomain}.${this.config.datadogSite}/`;
+    return `https://${this.config.subdomain}.${this.config.datadogSite}/`;
   }
 
   private getDatadogHost (useIntake = false) {

@@ -18,7 +18,7 @@ datadog-ci synthetics <command> --apiKey "<API KEY>" --appKey "<APPLICATION KEY>
 
 It is possible to configure the tool to use Datadog EU by defining the `DATADOG_SITE` environment variable to `datadoghq.eu`. By defaut the requests are sent to Datadog US.
 
-If the org uses a custom sub-domain to access Datadog app, it needs to be set in the `DATADOG_SUBDOMAIN` environment variable to properly display the test results URL. As an example, if the URL used to access Datadog is `myorg.datadoghq.com` then set the environment variable to `myorg`, ie:
+If the org uses a custom sub-domain to access Datadog app, it needs to be set in the `DATADOG_SUBDOMAIN` environment variable or in the global configuration file under the `subdomain` key to properly display the test results URL. As an example, if the URL used to access Datadog is `myorg.datadoghq.com` then set the environment variable to `myorg`, ie:
 
 ```bash
 export DATADOG_SUBDOMAIN="myorg"
@@ -55,6 +55,7 @@ The configuration file structure is the following:
         "startUrl": "{{URL}}?static_hash={{STATIC_HASH}}",
         "variables": { "titleVariable": "new title" },
     },
+    "subdomain": "subdomainname",
     "timeout": 120000,
 }
 ```
