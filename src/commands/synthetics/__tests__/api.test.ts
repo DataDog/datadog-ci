@@ -4,6 +4,13 @@ import { apiConstructor } from '../api';
 import { Payload, PollResult, Result, Trigger } from '../interfaces';
 
 describe('dd-api', () => {
+  const LOCATION = {
+    display_name: 'fake location',
+    id: 42,
+    is_active: true,
+    name: 'fake-loc',
+    region: 'fake-region',
+  };
   const RESULT_ID = '123';
   const POLL_RESULTS: { results: PollResult[] } = {
     results: [
@@ -16,6 +23,7 @@ describe('dd-api', () => {
   };
   const TRIGGERED_TEST_ID = 'fakeId';
   const TRIGGER_RESULTS: Trigger = {
+    locations: [LOCATION],
     results: [
       {
         device: 'laptop_large',

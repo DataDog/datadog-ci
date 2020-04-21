@@ -102,7 +102,20 @@ export interface TriggerResult {
   result_id: string;
 }
 
+interface Location {
+  display_name: string;
+  id: number;
+  is_active: boolean;
+  name: string;
+  region: string;
+}
+
+export interface LocationsMapping {
+  [key: number]: string;
+}
+
 export interface Trigger {
+  locations: Location[];
   results: TriggerResult[];
   triggered_check_ids: string[];
 }

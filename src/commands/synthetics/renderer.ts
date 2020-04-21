@@ -1,6 +1,6 @@
 import chalk from 'chalk';
 
-import { ConfigOverride, ExecutionRule, PollResult, Step, Test } from './interfaces';
+import { ConfigOverride, ExecutionRule, LocationsMapping, PollResult, Step, Test } from './interfaces';
 import { hasResultPassed, hasTestSucceeded } from './utils';
 
 const renderStep = (step: Step) => {
@@ -22,16 +22,17 @@ const renderStep = (step: Step) => {
   return `    ${icon} | ${duration} - ${step.description}${value}${error}`;
 };
 
-const renderTestResults = (test: Test, results: PollResult[], baseUrl: string) =>
+const renderTestResults = (test: Test, results: PollResult[], baseUrl: string, locationNames: LocationsMapping) =>
   results.map((r: PollResult) => {
     const resultUrl = `${baseUrl}synthetics/details/${test.public_id}?resultId=${r.resultID}`;
     const success = hasResultPassed(r);
     const color = success ? chalk.green : chalk.red;
     const icon = success ? chalk.bold.green('✓') : chalk.bold.red('✖');
     const duration = test.type === 'browser' ? r.result.duration : r.result.timings?.total;
-    const durationText = duration ? `  total duration: ${duration} ms` : '';
+    const durationText = duration ? `  total duration: ${duration} ms -` : '';
     const device = test.type === 'browser' && r.result.device ? ` - device: ${chalk.bold(r.result.device.id)}` : '';
-    const resultIdentification = color(`  ${icon} location: ${chalk.bold(r.dc_id.toString())}${device}`);
+    const locationName = locationNames[r.dc_id] || r.dc_id.toString();
+    const resultIdentification = color(`  ${icon} location: ${chalk.bold(locationName)}${device}`);
     let steps = '';
     let output = '';
 
@@ -53,20 +54,20 @@ const renderTestResults = (test: Test, results: PollResult[], baseUrl: string) =
     }
 
     output = `${resultIdentification}\n`;
-    output += `    ⎋${durationText} - result url: ${chalk.dim.cyan(resultUrl)}`;
+    output += `    ⎋${durationText} result url: ${chalk.dim.cyan(resultUrl)}`;
     output += `${steps}`;
 
     return output;
   }).join('\n').concat('\n');
 
-export const renderResult = (test: Test, results: PollResult[], baseUrl: string) => {
+export const renderResult = (test: Test, results: PollResult[], baseUrl: string, locationNames: LocationsMapping) => {
   const success = hasTestSucceeded(results);
   const isNonBlocking = test.options.ci?.executionRule === ExecutionRule.NON_BLOCKING;
   const icon = success ? chalk.bold.green('✓') : isNonBlocking ? chalk.bold.yellow('⚠') : chalk.bold.red('✖');
   const idDisplay = `[${chalk.bold.dim(test.public_id)}]`;
   const nameColor = success ? chalk.bold.green : chalk.bold.red;
   const nonBlockingText = !success && isNonBlocking ? 'This tests is set to be non-blocking in Datadog' : '';
-  const testResultsText = renderTestResults(test, results, baseUrl);
+  const testResultsText = renderTestResults(test, results, baseUrl, locationNames);
 
   return `${icon} ${idDisplay} | ${nameColor(test.name)} ${nonBlockingText}\n${testResultsText}`;
 };

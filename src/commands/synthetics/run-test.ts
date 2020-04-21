@@ -6,7 +6,7 @@ import { Command } from 'clipanion';
 import deepExtend from 'deep-extend';
 
 import { apiConstructor } from './api';
-import { ConfigOverride, ExecutionRule } from './interfaces';
+import { ConfigOverride, ExecutionRule, LocationsMapping } from './interfaces';
 import { renderHeader, renderResult } from './renderer';
 import { getSuites, hasTestSucceeded, runTests, waitForResults } from './utils';
 
@@ -67,9 +67,16 @@ export class RunTestCommand extends Command {
 
       // Rendering the results.
       this.context.stdout.write(renderHeader({ startTime }));
+      const locationNames = triggers.locations
+        .reduce((mapping, location) => {
+          mapping[location.id] = location.display_name;
+
+          return mapping;
+        }, { } as LocationsMapping);
+
       for (const test of tests) {
         this.context.stdout.write(
-          renderResult(test, results[test.public_id], this.getAppBaseURL())
+          renderResult(test, results[test.public_id], this.getAppBaseURL(), locationNames)
         );
       }
 
