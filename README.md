@@ -103,6 +103,16 @@ Lastly, test files must be created in the `__tests__/` folder. `jest` is used to
 
 The tests can then be launched through the `yarn test` command, it will find all files with a filename ending in `.test.ts` in the repo and execute them.
 
+### Continuous Integration tests
+
+The CI performs tests to avoid regressions by building the project, running unit tests and running one end-to-end test.
+
+The end-to-end test installs the package in a new project, configures it (using files in the `.github/workflows/e2e` folder) and runs a `synthetics run-tests` command in a Datadog Org (`Synthetics E2E Testing Org`) to verify the command is able to perform a test.
+
+The synthetics tests ran are a browser test (id `neg-qw9-eut`) and an API test (id `v5u-56k-hgk`), both loading a page which outputs the headers of the request and verifying the `X-Fake-Header` header is present. This header is configured as an override in the `.github/workflows/e2e/test.synthetics.json` file. The API and Application keys used by the command are stored in Github Secrets named `datadog_api_key` and `datadog_app_key`.
+
+The goal of this test is to verify the command is able to run tests and wait for their results as expected as well as handling configuration overrides.
+
 ### Workflow
 
 ```bash
