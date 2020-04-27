@@ -72,6 +72,12 @@ It accepts the `--public-id` (or shorthand `-p`) argument to trigger only the sp
 datadog-ci synthetics run-test --public-id pub-lic-id1 --public-id pub-lic-id2
 ```
 
+It is also possible to trigger tests corresponding to a search query by using the flag `--search` (or shorthand `-p`). With this option, the global configuration overrides applies to all tests discovered with the search query.
+
+```bash
+datadog-ci synthetics run-tests -s 'tag:e2e-tests' --config global.config.json
+```
+
 ### Test files
 
 Your test files must be named with a `.synthetics.json` suffix.

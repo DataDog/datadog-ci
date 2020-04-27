@@ -24,6 +24,7 @@ export class RunTestCommand extends Command {
   };
   private configPath?: string;
   private publicIds: string[] = [];
+  private search?: string;
 
   public async execute () {
     const startTime = Date.now();
@@ -140,6 +141,11 @@ export class RunTestCommand extends Command {
   }
 
   private async getTestsToTrigger () {
+    if (this.search) {
+      const searchResult = await this.getApiHelper().searchTests(this.search);
+
+      return searchResult.tests.map(test => ({ config: this.config!.global, id: test.public_id }));
+    }
     const suites = (await getSuites(this.config.files, this.context.stdout.write.bind(this.context.stdout)))
       .map(suite => suite.tests)
       .filter(suiteTests => !!suiteTests);
@@ -176,3 +182,4 @@ RunTestCommand.addOption('apiKey', Command.String('--apiKey'));
 RunTestCommand.addOption('appKey', Command.String('--appKey'));
 RunTestCommand.addOption('configPath', Command.String('--config'));
 RunTestCommand.addOption('publicIds', Command.Array('-p,--public-id'));
+RunTestCommand.addOption('search', Command.String('-s,--search'));

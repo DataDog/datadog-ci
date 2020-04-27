@@ -9,6 +9,7 @@ import {
   APIConstructor,
   Payload,
   PollResult,
+  SearchResults,
   Test,
   Trigger,
 } from './interfaces';
@@ -47,6 +48,17 @@ const getTest = (request: (args: AxiosRequestConfig) => AxiosPromise<Test>) => a
   return resp.data;
 };
 
+const searchTests = (request: (args: AxiosRequestConfig) => AxiosPromise<SearchResults>) => async (query: string) => {
+  const resp = await request({
+    params: {
+      text: query,
+    },
+    url: '/synthetics/tests/search',
+  });
+
+  return resp.data;
+};
+
 const pollResults = (request: (args: AxiosRequestConfig) => AxiosPromise<{ results: PollResult[] }>) =>
   async (resultIds: string[]) => {
     const resp = await request({
@@ -74,6 +86,7 @@ export const apiConstructor: APIConstructor = ({ appKey, apiKey, baseUrl, baseIn
   return {
     getTest: getTest(request),
     pollResults: pollResults(request),
+    searchTests: searchTests(request),
     triggerTests: triggerTests(requestTrigger),
   };
 };
