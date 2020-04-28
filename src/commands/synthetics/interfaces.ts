@@ -53,7 +53,7 @@ export interface Step {
 
 export interface Test {
   config: {
-    assertions: any[]; // Not typed as it will not be overriden
+    assertions: Assertion[];
     request: {
       headers: { [key: string]: string };
       method: string;
@@ -86,6 +86,29 @@ export interface Test {
   stepCount: number;
   tags: string[];
   type: string;
+}
+
+export interface Assertion {
+  actual: string | number | Date | { [key: string]: any };
+  errorMessage?: string;
+  operator: Operator;
+  property?: string;
+  target: string | number | Date | { [key: string]: any };
+  type: string;
+  valid: boolean;
+}
+
+export enum Operator {
+  contains = 'contains',
+  doesNotContain = 'doesNotContain',
+  is = 'is',
+  isNot = 'isNot',
+  lessThan = 'lessThan',
+  matches = 'matches',
+  doesNotMatch = 'doesNotMatch',
+  validates = 'validates',
+  isInMoreThan = 'isInMoreThan',
+  isInLessThan = 'isInLessThan',
 }
 
 interface User {
