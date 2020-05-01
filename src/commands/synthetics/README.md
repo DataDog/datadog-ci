@@ -75,6 +75,8 @@ It is possible to configure a proxy to be used for outgoing connections to Datad
 
 As the [`proxy-agent`](https://github.com/TooTallNate/node-proxy-agent) library is used to configure the proxy, protocols supported are `http, https, socks, socks4, socks4a, socks5, socks5h, pac+data, pac+file, pac+ftp, pac+http, pac+https`. The `proxy` key of the global configuration file is passed to a new `proxy-agent` instance if the environment variables are not defined,  meaning same configuration than the library is supported.
 
+**Note**: the `protocol` key is mandatory in the proxy configuration.
+
 #### Commands
 
 The available command is:

@@ -19,7 +19,7 @@ export class RunTestCommand extends Command {
     datadogSite: getEnvironmentVariable('DATADOG_SITE') || 'datadoghq.com',
     files: '{,!(node_modules)/**/}*.synthetics.json',
     global: { } as ConfigOverride,
-    proxy: { protocol: 'http' } as ProxyConfiguration,
+    proxy: { } as ProxyConfiguration,
     subdomain: getEnvironmentVariable('DATADOG_SUBDOMAIN') || 'app',
     timeout: 2 * 60 * 1000,
   };
