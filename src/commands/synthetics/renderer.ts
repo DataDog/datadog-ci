@@ -1,99 +1,178 @@
 import chalk from 'chalk';
 
-import { ConfigOverride, ExecutionRule, LocationsMapping, PollResult, Step, Test } from './interfaces';
+import { ConfigOverride, ExecutionRule, LocationsMapping, PollResult, Result, Step, Test } from './interfaces';
 import { hasResultPassed, hasTestSucceeded } from './utils';
 
+// Step rendering
+
+const renderStepDuration = (duration: number) => {
+  const getColor = () => {
+    if (duration > 10000) {
+      return chalk.bold.red;
+    }
+    if (duration > 5000) {
+      return chalk.bold.yellow;
+    }
+
+    return chalk.bold;
+  };
+  const color = getColor();
+
+  return `${color(duration.toString())}ms`;
+};
+
+const ICONS = {
+  FAILED: chalk.bold.red('✖'),
+  SKIPPED: chalk.bold.yellow('⇢'),
+  SUCCESS: chalk.bold.green('✓'),
+};
+
+const renderStepIcon = (step: Step) => {
+  if (step.error) {
+    return ICONS.FAILED;
+  }
+  if (step.skipped) {
+    return ICONS.SKIPPED;
+  }
+
+  return ICONS.SUCCESS;
+};
+
 const renderStep = (step: Step) => {
-  const icon = step.error
-    ? chalk.bold.red('✖')
-    : step.skipped
-    ? chalk.bold.yellow('⇢')
-    : chalk.bold.green('✓');
+  const duration = renderStepDuration(step.duration);
+  const icon = renderStepIcon(step);
+
   const value = step.value ? `\n      ${chalk.dim(step.value)}` : '';
   const error = step.error ? `\n      ${chalk.red.dim(step.error)}` : '';
-  const colorDuration: (arg: any) => string =
-    step.duration > 10000
-      ? chalk.bold.red
-      : step.duration > 5000
-      ? chalk.bold.yellow
-      : chalk.bold;
-  const duration = `${colorDuration(step.duration)}ms`;
 
   return `    ${icon} | ${duration} - ${step.description}${value}${error}`;
 };
 
-const renderTestResults = (test: Test, results: PollResult[], baseUrl: string, locationNames: LocationsMapping) =>
-  results.map((r: PollResult) => {
-    const resultUrl = `${baseUrl}synthetics/details/${test.public_id}?resultId=${r.resultID}`;
-    const success = hasResultPassed(r);
-    const color = success ? chalk.green : chalk.red;
-    const icon = success ? chalk.bold.green('✓') : chalk.bold.red('✖');
-    const duration = test.type === 'browser' ? r.result.duration : r.result.timings?.total;
-    const durationText = duration ? `  total duration: ${duration} ms -` : '';
-    const device = test.type === 'browser' && r.result.device ? ` - device: ${chalk.bold(r.result.device.id)}` : '';
-    const locationName = locationNames[r.dc_id] || r.dc_id.toString();
-    const resultIdentification = color(`  ${icon} location: ${chalk.bold(locationName)}${device}`);
-    let steps = '';
-    let output = '';
+// Test execution rendering
+const renderResultOutcome = (result: Result, test: Test, icon: string, color: typeof chalk) => {
+  if (result.error) {
+    return `    ${chalk.red.bold(`✖ | ${result.error}`)}`;
+  }
 
-    if (r.result.error) {
-      steps = `\n    ${chalk.red.bold(`✖ | ${r.result.error}`)}`;
-    } else if (r.result.unhealthy) {
-      steps = `\n    ${chalk.red.bold(`✖ | ${r.result.errorMessage || 'General Error'}`)}`;
-    } else if (test.type === 'api') {
-      const req = test.config.request;
-      const requestText = `${chalk.bold(req.method)} - ${req.url}`;
-      const errors = success
-        ? ''
-        : color(`\n      [${chalk.bold(r.result.errorCode!)}] - ${chalk.dim(r.result.errorMessage!)}`);
+  if (result.unhealthy) {
+    return `    ${chalk.red.bold(`✖ | ${result.errorMessage || 'General Error'}`)}`;
+  }
 
-      steps = `\n    ${icon} ${color(requestText)}${errors}`;
-    } else if (test.type === 'browser' && !hasResultPassed(r) && r.result.stepDetails) {
-      // We render the step only if the test hasn't passed to avoid cluttering the output.
-      steps = `\n${r.result.stepDetails.map(renderStep).join('\n')}`;
+  if (test.type === 'api') {
+    const requestDescription = `${chalk.bold(test.config.request.method)} - ${test.config.request.url}`;
+
+    if (result.errorCode && result.errorMessage) {
+      return [
+        `    ${icon} ${color(requestDescription)}`,
+        `      [${chalk.bold(result.errorCode!)}] - ${chalk.dim(result.errorMessage!)}`,
+      ].join('\n');
     }
 
-    output = `${resultIdentification}\n`;
-    output += `    ⎋${durationText} result url: ${chalk.dim.cyan(resultUrl)}`;
-    output += `${steps}`;
+    return `    ${icon} ${color(requestDescription)}`;
+  }
 
-    return output;
-  }).join('\n').concat('\n');
+  if (test.type === 'browser') {
+    if (!hasResultPassed(result) && result.stepDetails) {
+      // We render the step only if the test hasn't passed to avoid cluttering the output.
+      return result.stepDetails.map(renderStep).join('\n');
+    }
 
-export const renderResult = (test: Test, results: PollResult[], baseUrl: string, locationNames: LocationsMapping) => {
+    return '';
+  }
+};
+
+const getResultUrl = (baseUrl: string, test: Test, resultId: string) => {
+  const testDetailUrl = `${baseUrl}synthetics/details/${test.public_id}`;
+  if (test.type === 'browser') {
+    return `${testDetailUrl}/result/${resultId}`;
+  }
+
+  return `${testDetailUrl}?resultId=${resultId}`;
+};
+
+const renderExecutionResult = (test: Test, execution: PollResult, baseUrl: string, locationNames: LocationsMapping) => {
+  const { dc_id, resultID, result } = execution;
+  const isSuccess = hasResultPassed(result);
+  const color = isSuccess ? chalk.green : chalk.red;
+  const icon = isSuccess ? ICONS.SUCCESS : ICONS.FAILED;
+
+  const locationName = locationNames[dc_id] || dc_id.toString();
+  const device = test.type === 'browser' && result.device ? ` - device: ${chalk.bold(result.device.id)}` : '';
+  const resultIdentification = color(`  ${icon} location: ${chalk.bold(locationName)}${device}`);
+
+  const duration = test.type === 'browser' ? result.duration : result.timings?.total;
+  const durationText = duration ? `  total duration: ${duration} ms -` : '';
+  const resultUrl = getResultUrl(baseUrl, test, resultID);
+
+  return [
+    resultIdentification,
+    `    ⎋${durationText} result url: ${chalk.dim.cyan(resultUrl)}`,
+    renderResultOutcome(result, test, icon, color),
+  ].join('\n');
+};
+
+// Results of all tests rendering
+const renderResultIcon = (success: boolean, isNonBlocking: boolean) => {
+  if (success) {
+    return ICONS.SUCCESS;
+  }
+  if (isNonBlocking) {
+    return ICONS.SKIPPED;
+  }
+
+  return ICONS.FAILED;
+};
+
+export const renderResults = (test: Test, results: PollResult[], baseUrl: string, locationNames: LocationsMapping) => {
   const success = hasTestSucceeded(results);
   const isNonBlocking = test.options.ci?.executionRule === ExecutionRule.NON_BLOCKING;
-  const icon = success ? chalk.bold.green('✓') : isNonBlocking ? chalk.bold.yellow('⚠') : chalk.bold.red('✖');
+
+  const icon = renderResultIcon(success, isNonBlocking);
+
   const idDisplay = `[${chalk.bold.dim(test.public_id)}]`;
   const nameColor = success ? chalk.bold.green : chalk.bold.red;
   const nonBlockingText = !success && isNonBlocking ? 'This tests is set to be non-blocking in Datadog' : '';
-  const testResultsText = renderTestResults(test, results, baseUrl, locationNames);
 
-  return `${icon} ${idDisplay} | ${nameColor(test.name)} ${nonBlockingText}\n${testResultsText}`;
+  const testResultsText = results
+    .map(r => renderExecutionResult(test, r, baseUrl, locationNames))
+    .join('\n').concat('\n');
+
+  return [
+    `${icon} ${idDisplay} | ${nameColor(test.name)} ${nonBlockingText}`,
+    testResultsText,
+  ].join('\n');
 };
 
+// Other rendering
 export const renderTrigger = (test: Test | undefined, testId: string, config: ConfigOverride) => {
   const idDisplay = `[${chalk.bold.dim(testId)}]`;
-  let message;
 
-  if (!test) {
-    message = chalk.red.bold(`Could not find test "${testId}"`);
-  } else if (config.executionRule === ExecutionRule.SKIPPED) {
-    message = `>> Skipped test "${chalk.yellow.dim(test.name)}"`;
-  } else if (test.options?.ci?.executionRule === ExecutionRule.SKIPPED) {
-    message = `>> Skipped test "${chalk.yellow.dim(test.name)}" because of execution rule configuration in Datadog`;
-  } else {
-    message = `Trigger test "${chalk.green.bold(test.name)}"`;
-  }
+  const getMessage = () => {
+    if (!test) {
+      return chalk.red.bold(`Could not find test "${testId}"`);
+    }
+    if (config.executionRule === ExecutionRule.SKIPPED) {
+      return `>> Skipped test "${chalk.yellow.dim(test.name)}"`;
+    }
+    if (test.options?.ci?.executionRule === ExecutionRule.SKIPPED) {
+      return `>> Skipped test "${chalk.yellow.dim(test.name)}" because of execution rule configuration in Datadog`;
+    }
 
-  return `${idDisplay} ${message}\n`;
+    return `Trigger test "${chalk.green.bold(test.name)}"`;
+  };
+
+  return `${idDisplay} ${getMessage()}\n`;
 };
 
 export const renderHeader = (timings: { startTime: number }) => {
-  const currentTime = Date.now();
+  const delay = (Date.now() - timings.startTime).toString();
 
-  return `\n\n${chalk.bold.cyan('=== REPORT ===')}
-Took ${chalk.bold((currentTime - timings.startTime).toString())}ms\n\n`;
+  return [
+    '\n',
+    chalk.bold.cyan('=== REPORT ==='),
+    `Took ${chalk.bold(delay)}ms`,
+    '\n',
+  ].join('\n');
 };
 
 export const renderWait = (test: Test) => {

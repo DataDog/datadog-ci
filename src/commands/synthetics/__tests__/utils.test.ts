@@ -135,33 +135,28 @@ describe('utils', () => {
 
   describe('hasResultPassed', () => {
     test('complete result', () => {
-      const pollResult = {
-        dc_id: 42,
-        result: {
-          device: {
-            id: 'laptop_large',
-          },
-          eventType: 'finished',
-          passed: true,
-          stepDetails: [],
+      const result = {
+        device: {
+          id: 'laptop_large',
         },
-        resultID: '0123456789',
+        eventType: 'finished',
+        passed: true,
+        stepDetails: [],
       };
-      expect(hasResultPassed(pollResult)).toBeTruthy();
-      pollResult.result.passed = false;
-      expect(hasResultPassed(pollResult)).toBeFalsy();
+      expect(hasResultPassed(result)).toBeTruthy();
+      result.passed = false;
+      expect(hasResultPassed(result)).toBeFalsy();
     });
 
     test('result with error', () => {
-      const pollResult = {
-        dc_id: 42,
-        result: {
-          errorCode: 'ERRABORTED',
-          eventType: 'finished',
-        } as Result,
-        resultID: '0123456789',
+      const result: Result = {
+        device: { id: 'laptop_large' },
+        errorCode: 'ERRABORTED',
+        eventType: 'finished',
+        passed: false,
+        stepDetails: [],
       };
-      expect(hasResultPassed(pollResult)).toBeFalsy();
+      expect(hasResultPassed(result)).toBeFalsy();
     });
   });
 
