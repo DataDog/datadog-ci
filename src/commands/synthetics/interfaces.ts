@@ -178,43 +178,22 @@ export interface Suite {
   tests: TriggerConfig[];
 }
 
-interface SearchTest {
-  config: {
-    request: {
-      method: string;
-      url: string;
-    };
-  };
-  last_triggered_ts: number;
-  modified_at: string;
-  monitor_id: number;
-  monitor_status: string;
-  name: string;
-  notifications: string[];
-  public_id: string;
-  status: string;
-  subtype?: string;
-  tags: string[];
-  type: 'api' | 'browser';
+export interface TestSearchResult {
+  tests: {
+    public_id: string;
+  }[];
 }
-
-export interface SearchResults {
-  facets: any[];
-  tests: SearchTest[];
-  total: number;
-}
-
-type GetTest = (testId: string) => Promise<Test>;
-type PollResults = (resultIds: string[]) => Promise<{ results: PollResult[] }>;
-type SearchTests = (query: string) => Promise<SearchResults>;
-type TriggerTests = (testsToTrigger: Payload[]) => Promise<Trigger>;
 
 export interface APIHelper {
-  getTest: GetTest;
-  pollResults: PollResults;
-  searchTests: SearchTests;
-  triggerTests: TriggerTests;
+  getTest (testId: string): Promise<Test>;
+  pollResults (resultIds: string[]): Promise<{ results: PollResult[] }>;
+  searchTests (query: string): Promise<TestSearchResult>;
+  triggerTests (testsToTrigger: Payload[]): Promise<Trigger>;
 }
 
-export type APIConstructor =
-  (args: { apiKey: string; appKey: string; baseIntakeUrl: string; baseUrl: string}) => APIHelper;
+export interface APIConfiguration {
+  apiKey: string;
+  appKey: string;
+  baseIntakeUrl: string;
+  baseUrl: string;
+}

@@ -6,7 +6,7 @@ import { Command } from 'clipanion';
 import deepExtend from 'deep-extend';
 
 import { apiConstructor } from './api';
-import { ConfigOverride, ExecutionRule, LocationsMapping } from './interfaces';
+import { APIHelper, ConfigOverride, ExecutionRule, LocationsMapping } from './interfaces';
 import { renderHeader, renderResult } from './renderer';
 import { getSuites, hasTestSucceeded, runTests, waitForResults } from './utils';
 
@@ -24,7 +24,7 @@ export class RunTestCommand extends Command {
   };
   private configPath?: string;
   private publicIds: string[] = [];
-  private search?: string;
+  private testSearchQuery?: string;
 
   public async execute () {
     const startTime = Date.now();
@@ -33,7 +33,7 @@ export class RunTestCommand extends Command {
 
     const api = this.getApiHelper();
     const publicIdsTriggers = this.publicIds.map(id => ({ config: { }, id }));
-    const testsToTrigger = publicIdsTriggers.length ? publicIdsTriggers : await this.getTestsToTrigger();
+    const testsToTrigger = publicIdsTriggers.length ? publicIdsTriggers : await this.getTestsToTrigger(api);
 
     if (!testsToTrigger.length) {
       this.context.stdout.write('No test suites to run.\n');
@@ -140,11 +140,11 @@ export class RunTestCommand extends Command {
     return `${host}/${apiPath}`;
   }
 
-  private async getTestsToTrigger () {
-    if (this.search) {
-      const searchResult = await this.getApiHelper().searchTests(this.search);
+  private async getTestsToTrigger (api: APIHelper) {
+    if (this.testSearchQuery) {
+      const testSearchResults = await api.searchTests(this.testSearchQuery);
 
-      return searchResult.tests.map(test => ({ config: this.config!.global, id: test.public_id }));
+      return testSearchResults.tests.map(test => ({ config: this.config.global, id: test.public_id }));
     }
     const suites = (await getSuites(this.config.files, this.context.stdout.write.bind(this.context.stdout)))
       .map(suite => suite.tests)
@@ -182,4 +182,4 @@ RunTestCommand.addOption('apiKey', Command.String('--apiKey'));
 RunTestCommand.addOption('appKey', Command.String('--appKey'));
 RunTestCommand.addOption('configPath', Command.String('--config'));
 RunTestCommand.addOption('publicIds', Command.Array('-p,--public-id'));
-RunTestCommand.addOption('search', Command.String('-s,--search'));
+RunTestCommand.addOption('testSearchQuery', Command.String('-s,--search'));

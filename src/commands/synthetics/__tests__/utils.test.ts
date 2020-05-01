@@ -25,11 +25,15 @@ async function wait (duration: number) {
 describe('utils', () => {
   describe('getSuites', () => {
     const GLOB = 'testGlob';
-    const FILES = [ 'file1', 'file2' ];
-    const FILES_CONTENT = { file1: '{"content":"file1"}', file2: '{"content":"file2"}' };
+    const FILES = ['file1', 'file2'];
+    const FILES_CONTENT = {
+      file1: '{"content":"file1"}',
+      file2: '{"content":"file2"}',
+    };
 
     (fs.readFile as any).mockImplementation((path: 'file1' | 'file2', opts: any, callback: any) =>
-      callback(undefined, FILES_CONTENT[path]));
+      callback(undefined, FILES_CONTENT[path])
+    );
     (glob as any).mockImplementation((query: string, callback: (e: any, v: any) => void) => callback(undefined, FILES));
 
     test('should get suites', async () => {
@@ -66,7 +70,12 @@ describe('utils', () => {
       jest.clearAllMocks();
     });
 
-    const api = apiConstructor({ apiKey: '123', appKey: '123', baseIntakeUrl: 'baseintake', baseUrl: 'base' });
+    const api = apiConstructor({
+      apiKey: '123',
+      appKey: '123',
+      baseIntakeUrl: 'baseintake',
+      baseUrl: 'base',
+    });
 
     test('should run test', async () => {
       const output = await runTests(api, [{ id: fakeTest.public_id, config: { } }], processWrite);
@@ -75,10 +84,13 @@ describe('utils', () => {
 
     test('should run test with publicId from url', async () => {
       const output = await runTests(
-        api, [{
-          config: { },
-          id: `http://localhost/synthetics/tests/details/${fakeTest.public_id}`,
-        }],
+        api,
+        [
+          {
+            config: { },
+            id: `http://localhost/synthetics/tests/details/${fakeTest.public_id}`,
+          },
+        ],
         processWrite
       );
       expect(output).toEqual({ tests: [fakeTest], triggers: fakeTrigger });
@@ -109,27 +121,39 @@ describe('utils', () => {
   describe('handleConfig', () => {
     test('empty config returns simple payload', () => {
       const publicId = 'abc-def-ghi';
-      expect(handleConfig({ public_id: publicId } as Test, publicId)).toEqual({ public_id: publicId });
+      expect(handleConfig({ public_id: publicId } as Test, publicId)).toEqual({
+        public_id: publicId,
+      });
     });
 
     test('executionRule is not picked', () => {
       const publicId = 'abc-def-ghi';
       const fakeTest = {
-        config: { request: { url: 'http://example.org/path' }},
+        config: { request: { url: 'http://example.org/path' } },
         options: { },
         public_id: publicId,
       } as Test;
       const configOverride = { executionRule: ExecutionRule.SKIPPED };
-      expect(handleConfig(fakeTest, publicId, configOverride)).toEqual({ public_id: publicId });
+      expect(handleConfig(fakeTest, publicId, configOverride)).toEqual({
+        public_id: publicId,
+      });
     });
 
     test('startUrl template is rendered', () => {
       const publicId = 'abc-def-ghi';
-      const fakeTest = { public_id: publicId, config: { request: { url: 'http://example.org/path' }}} as Test;
-      const configOverride = { startUrl: 'https://{{DOMAIN}}/newPath?oldPath={{PATHNAME}}' };
+      const fakeTest = {
+        config: { request: { url: 'http://example.org/path' } },
+        public_id: publicId,
+      } as Test;
+      const configOverride = {
+        startUrl: 'https://{{DOMAIN}}/newPath?oldPath={{PATHNAME}}',
+      };
       const expectedUrl = 'https://example.org/newPath?oldPath=/path';
 
-      expect(handleConfig(fakeTest, publicId, configOverride)).toEqual({ public_id: publicId, startUrl: expectedUrl });
+      expect(handleConfig(fakeTest, publicId, configOverride)).toEqual({
+        public_id: publicId,
+        startUrl: expectedUrl,
+      });
     });
   });
 
@@ -198,7 +222,7 @@ describe('utils', () => {
           .filter((resultId: string) => resultId !== 'timingOutTest')
           .map((resultId: string) => passingPollResult(resultId));
 
-        return { data: { results }};
+        return { data: { results } };
       }) as any);
     });
 
@@ -206,7 +230,12 @@ describe('utils', () => {
       jest.clearAllMocks();
     });
 
-    const api = apiConstructor({ apiKey: '123', appKey: '123', baseIntakeUrl: 'baseintake', baseUrl: 'base' });
+    const api = apiConstructor({
+      apiKey: '123',
+      appKey: '123',
+      baseIntakeUrl: 'baseintake',
+      baseUrl: 'base',
+    });
     const passingResult = {
       device: {
         id: 'laptop_large',
@@ -236,24 +265,29 @@ describe('utils', () => {
 
     test('results should be timeout-ed if pollingTimeout is exceeded', async () => {
       const expectedResults: { [key: string]: PollResult[] } = { };
-      expectedResults[publicId] = [{
-        dc_id: triggerResult.location,
-        result: {
-          device: { id: triggerResult.device },
-          error: 'Timeout',
-          eventType: 'finished',
-          passed: false,
-          stepDetails: [ ],
+      expectedResults[publicId] = [
+        {
+          dc_id: triggerResult.location,
+          result: {
+            device: { id: triggerResult.device },
+            error: 'Timeout',
+            eventType: 'finished',
+            passed: false,
+            stepDetails: [],
+          },
+          resultID: triggerResult.result_id,
         },
-        resultID: triggerResult.result_id,
-      }];
+      ];
       expect(await waitForResults(api, [triggerResult], 0)).toEqual(expectedResults);
     });
 
     test('correct number of pass and timeout results', async () => {
       const expectedResults: { [key: string]: PollResult[] } = { };
       const triggerResultPass = triggerResult;
-      const triggerResultTimeOut = { ...triggerResult, result_id: 'timingOutTest' };
+      const triggerResultTimeOut = {
+        ...triggerResult,
+        result_id: 'timingOutTest',
+      };
       expectedResults[publicId] = [
         passingPollResult(triggerResultPass.result_id),
         {
@@ -263,7 +297,7 @@ describe('utils', () => {
             error: 'Timeout',
             eventType: 'finished',
             passed: false,
-            stepDetails: [ ],
+            stepDetails: [],
           },
           resultID: triggerResultTimeOut.result_id,
         },
