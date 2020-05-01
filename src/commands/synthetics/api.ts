@@ -4,6 +4,7 @@ import {
   AxiosRequestConfig,
   default as axios,
 } from 'axios';
+import ProxyAgent from 'proxy-agent';
 
 import {
   APIConstructor,
@@ -12,6 +13,8 @@ import {
   Test,
   Trigger,
 } from './interfaces';
+
+import { getEnvironmentVariable } from './utils';
 
 interface BackendError {
   errors: string[];
@@ -25,7 +28,7 @@ export const formatBackendErrors = (requestError: AxiosError<BackendError>) => {
     return `${serverHead}\n${errors.join('\n')}`;
   }
 
-  return requestError.name;
+  return requestError.message;
 };
 
 const triggerTests = (request: (args: AxiosRequestConfig) => AxiosPromise<Trigger>) =>
@@ -59,15 +62,24 @@ const pollResults = (request: (args: AxiosRequestConfig) => AxiosPromise<{ resul
     return resp.data;
   };
 
-export const apiConstructor: APIConstructor = ({ appKey, apiKey, baseUrl, baseIntakeUrl }) => {
-  const overrideArgs = (args: AxiosRequestConfig) => ({
-    ...args,
-    params: {
-      api_key: apiKey,
-      application_key: appKey,
-      ...args.params,
-    },
-  });
+export const apiConstructor: APIConstructor = ({ appKey, apiKey, baseUrl, baseIntakeUrl, proxyOpts }) => {
+  const overrideArgs = (args: AxiosRequestConfig) => {
+    const newArguments = {
+      ...args,
+      params: {
+        api_key: apiKey,
+        application_key: appKey,
+        ...args.params,
+      },
+    };
+
+    const proxyConfig = getEnvironmentVariable('ALL_PROXY') || getEnvironmentVariable('HTTPS_PROXY') || proxyOpts;
+    if (Object.keys(proxyConfig).length) {
+      newArguments.httpsAgent = new ProxyAgent(proxyConfig);
+    }
+
+    return newArguments;
+  };
   const request = (args: AxiosRequestConfig) => axios.create({ baseURL: baseUrl })(overrideArgs(args));
   const requestTrigger = (args: AxiosRequestConfig) => axios.create({ baseURL: baseIntakeUrl })(overrideArgs(args));
 

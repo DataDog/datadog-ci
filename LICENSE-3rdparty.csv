@@ -15,6 +15,7 @@ glob,import,ISC,Copyright (c) Isaac Z. Schlueter and Contributors
 husky,dev,MIT,Copyright (c) 2017
 jest,dev,MIT,Copyright (c) Facebook, Inc. and its affiliates.
 lint-staged,dev,MIT,Copyright (c) 2016 Andrey Okonetchnikov
+proxy-agent,import,MIT,Copyright (c) 2013 Nathan Rajlich <nathan@tootallnate.net>
 ts-jest,dev,MIT,Copyright (c) 2016-2018
 ts-node,import,MIT,github.com/TypeStrong/ts-node
 tslint,dev,Apache-2.0,Copyright 2013-2019 Palantir Technologies, Inc.

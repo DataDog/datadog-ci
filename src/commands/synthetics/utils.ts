@@ -267,6 +267,16 @@ export const runTests = async (api: APIHelper, triggerConfigs: TriggerConfig[], 
   }
 };
 
-function definedTypeGuard<T> (o: T | undefined): o is T {
-  return !!o;
-}
+const definedTypeGuard = <T> (o: T | undefined): o is T => !!o;
+
+/**
+ * Some variables are defined either uppercase or lowercase (*_PROXY)
+ * this function searches environment variables insensitively of casing
+ */
+export const getEnvironmentVariable = (name: string) => {
+  const lowerName = name.toLowerCase();
+  const environmentVariableName = Object.keys(process.env)
+    .find((variable: string) => variable.toLowerCase() === lowerName);
+
+  return environmentVariableName ? process.env[environmentVariableName] : '';
+};

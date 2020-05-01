@@ -7,8 +7,9 @@ import * as axios from 'axios';
 import glob from 'glob';
 
 import { apiConstructor } from '../api';
-import { ExecutionRule, PollResult, Result, Test } from '../interfaces';
+import { ExecutionRule, PollResult, ProxyConfiguration, Result, Test } from '../interfaces';
 import {
+  getEnvironmentVariable,
   getStrictestExecutionRule,
   getSuites,
   handleConfig,
@@ -23,6 +24,15 @@ async function wait (duration: number) {
 }
 
 describe('utils', () => {
+  const apiConfiguration = {
+    apiKey: '123',
+    appKey: '123',
+    baseIntakeUrl: 'baseintake',
+    baseUrl: 'base',
+    proxyOpts: { protocol: 'http' } as ProxyConfiguration,
+  };
+  const api = apiConstructor(apiConfiguration);
+
   describe('getSuites', () => {
     const GLOB = 'testGlob';
     const FILES = [ 'file1', 'file2' ];
@@ -65,8 +75,6 @@ describe('utils', () => {
     afterAll(() => {
       jest.clearAllMocks();
     });
-
-    const api = apiConstructor({ apiKey: '123', appKey: '123', baseIntakeUrl: 'baseintake', baseUrl: 'base' });
 
     test('should run test', async () => {
       const output = await runTests(api, [{ id: fakeTest.public_id, config: { } }], processWrite);
@@ -206,7 +214,6 @@ describe('utils', () => {
       jest.clearAllMocks();
     });
 
-    const api = apiConstructor({ apiKey: '123', appKey: '123', baseIntakeUrl: 'baseintake', baseUrl: 'base' });
     const passingResult = {
       device: {
         id: 'laptop_large',
@@ -281,5 +288,11 @@ describe('utils', () => {
     expect(getStrictestExecutionRule(NON_BLOCKING, SKIPPED)).toBe(SKIPPED);
     expect(getStrictestExecutionRule(BLOCKING, undefined)).toBe(BLOCKING);
     expect(getStrictestExecutionRule(SKIPPED, undefined)).toBe(SKIPPED);
+  });
+
+  test('getEnvironmentVariable', () => {
+    process.env = { HTTP_PROXY: 'custom' };
+    expect(getEnvironmentVariable('http_proxy')).toBe('custom');
+    expect(getEnvironmentVariable('HTTP_PROXY')).toBe('custom');
   });
 });

@@ -6,20 +6,21 @@ import { Command } from 'clipanion';
 import deepExtend from 'deep-extend';
 
 import { apiConstructor } from './api';
-import { ConfigOverride, ExecutionRule, LocationsMapping } from './interfaces';
+import { ConfigOverride, ExecutionRule, LocationsMapping, ProxyConfiguration } from './interfaces';
 import { renderHeader, renderResult } from './renderer';
-import { getSuites, hasTestSucceeded, runTests, waitForResults } from './utils';
+import { getEnvironmentVariable, getSuites, hasTestSucceeded, runTests, waitForResults } from './utils';
 
 export class RunTestCommand extends Command {
   private apiKey?: string;
   private appKey?: string;
   private config = {
-    apiKey: process.env.DATADOG_API_KEY,
-    appKey: process.env.DATADOG_APP_KEY,
-    datadogSite: process.env.DATADOG_SITE || 'datadoghq.com',
+    apiKey: getEnvironmentVariable('DATADOG_API_KEY'),
+    appKey: getEnvironmentVariable('DATADOG_APP_KEY'),
+    datadogSite: getEnvironmentVariable('DATADOG_SITE') || 'datadoghq.com',
     files: '{,!(node_modules)/**/}*.synthetics.json',
     global: { } as ConfigOverride,
-    subdomain: process.env.DATADOG_SUBDOMAIN || 'app',
+    proxy: { protocol: 'http' } as ProxyConfiguration,
+    subdomain: getEnvironmentVariable('DATADOG_SUBDOMAIN') || 'app',
     timeout: 2 * 60 * 1000,
   };
   private configPath?: string;
@@ -116,6 +117,7 @@ export class RunTestCommand extends Command {
       appKey: this.config.appKey!,
       baseIntakeUrl: this.getDatadogHost(true),
       baseUrl: this.getDatadogHost(),
+      proxyOpts: this.config.proxy,
     });
   }
 
@@ -126,9 +128,10 @@ export class RunTestCommand extends Command {
   private getDatadogHost (useIntake = false) {
     const apiPath = 'api/v1';
     let host = `https://api.${this.config.datadogSite}`;
+    const hostOverride = getEnvironmentVariable('DD_API_HOST_OVERRIDE');
 
-    if (process.env.DD_API_HOST_OVERRIDE) {
-      host = process.env.DD_API_HOST_OVERRIDE;
+    if (hostOverride) {
+      host = hostOverride;
     } else if (
       useIntake
       && (this.config.datadogSite === 'datadoghq.com' || this.config.datadogSite === 'datad0g.com')
