@@ -1,6 +1,16 @@
 import chalk from 'chalk';
 
-import { ConfigOverride, ExecutionRule, LocationsMapping, PollResult, Result, Step, Test } from './interfaces';
+import {
+  Assertion,
+  ConfigOverride,
+  ExecutionRule,
+  LocationsMapping,
+  Operator,
+  PollResult,
+  Result,
+  Step,
+  Test,
+} from './interfaces';
 import { hasResultPassed, hasTestSucceeded } from './utils';
 
 // Step rendering
@@ -48,6 +58,40 @@ const renderStep = (step: Step) => {
   return `    ${icon} | ${duration} - ${step.description}${value}${error}`;
 };
 
+const readableOperation: { [key in Operator]: string } = {
+  [Operator.contains]: 'should contain',
+  [Operator.doesNotContain]: 'should not contain',
+  [Operator.is]: 'should be',
+  [Operator.isNot]: 'should not be',
+  [Operator.lessThan]: 'should be less than',
+  [Operator.matches]: 'should match',
+  [Operator.doesNotMatch]: 'should not match',
+  [Operator.validates]: 'will expire in less than',
+  [Operator.isInLessThan]: 'will expire in less than',
+  [Operator.isInMoreThan]: 'will expire in more than',
+};
+
+const renderApiError = (errorCode: string, errorMessage: string) => {
+  if (errorCode === 'INCORRECT_ASSERTION') {
+    try {
+      const assertionsErrors: Assertion[] = JSON.parse(errorMessage);
+      const output = [' - Assertion(s) failed:'];
+      output.push(...assertionsErrors.map(error => {
+        const expected = chalk.underline(`${error.target}`);
+        const actual = chalk.underline(`${error.actual}`);
+
+        return `▶ ${error.type} ${readableOperation[error.operator]} ${expected}. Actual: ${actual}`;
+      }));
+
+      return chalk.red(output.join('\n      '));
+    } catch (e) {
+      // JSON parsing failed, do nothing to return the raw error
+    }
+  }
+
+  return chalk.red(`      [${chalk.bold(errorCode)}] - ${chalk.dim(errorMessage)}`);
+};
+
 // Test execution rendering
 const renderResultOutcome = (result: Result, test: Test, icon: string, color: typeof chalk) => {
   if (result.error) {
@@ -64,7 +108,7 @@ const renderResultOutcome = (result: Result, test: Test, icon: string, color: ty
     if (result.errorCode && result.errorMessage) {
       return [
         `    ${icon} ${color(requestDescription)}`,
-        `      [${chalk.bold(result.errorCode!)}] - ${chalk.dim(result.errorMessage!)}`,
+        renderApiError(result.errorCode!, result.errorMessage!),
       ].join('\n');
     }
 

@@ -6,10 +6,11 @@ import {
 } from 'axios';
 
 import {
-  APIConstructor,
+  APIConfiguration,
   Payload,
   PollResult,
   Test,
+  TestSearchResult,
   Trigger,
 } from './interfaces';
 
@@ -47,6 +48,18 @@ const getTest = (request: (args: AxiosRequestConfig) => AxiosPromise<Test>) => a
   return resp.data;
 };
 
+const searchTests = (request: (args: AxiosRequestConfig) => AxiosPromise<TestSearchResult>) =>
+  async (query: string) => {
+    const resp = await request({
+      params: {
+        text: query,
+      },
+      url: '/synthetics/tests/search',
+    });
+
+    return resp.data;
+  };
+
 const pollResults = (request: (args: AxiosRequestConfig) => AxiosPromise<{ results: PollResult[] }>) =>
   async (resultIds: string[]) => {
     const resp = await request({
@@ -59,7 +72,7 @@ const pollResults = (request: (args: AxiosRequestConfig) => AxiosPromise<{ resul
     return resp.data;
   };
 
-export const apiConstructor: APIConstructor = ({ appKey, apiKey, baseUrl, baseIntakeUrl }) => {
+export const apiConstructor = ({ appKey, apiKey, baseUrl, baseIntakeUrl }: APIConfiguration) => {
   const overrideArgs = (args: AxiosRequestConfig) => ({
     ...args,
     params: {
@@ -74,6 +87,7 @@ export const apiConstructor: APIConstructor = ({ appKey, apiKey, baseUrl, baseIn
   return {
     getTest: getTest(request),
     pollResults: pollResults(request),
+    searchTests: searchTests(request),
     triggerTests: triggerTests(requestTrigger),
   };
 };
