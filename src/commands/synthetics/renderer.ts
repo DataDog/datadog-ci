@@ -1,6 +1,15 @@
 import chalk from 'chalk';
 
-import { ConfigOverride, ExecutionRule, LocationsMapping, PollResult, Step, Test } from './interfaces';
+import {
+  Assertion,
+  ConfigOverride,
+  ExecutionRule,
+  LocationsMapping,
+  Operator,
+  PollResult,
+  Step,
+  Test,
+} from './interfaces';
 import { hasResultPassed, hasTestSucceeded } from './utils';
 
 const renderStep = (step: Step) => {
@@ -20,6 +29,40 @@ const renderStep = (step: Step) => {
   const duration = `${colorDuration(step.duration)}ms`;
 
   return `    ${icon} | ${duration} - ${step.description}${value}${error}`;
+};
+
+const readableOperation: { [key in Operator]: string } = {
+  [Operator.contains]: 'should contain',
+  [Operator.doesNotContain]: 'should not contain',
+  [Operator.is]: 'should be',
+  [Operator.isNot]: 'should not be',
+  [Operator.lessThan]: 'should be less than',
+  [Operator.matches]: 'should match',
+  [Operator.doesNotMatch]: 'should not match',
+  [Operator.validates]: 'will expire in less than',
+  [Operator.isInLessThan]: 'will expire in less than',
+  [Operator.isInMoreThan]: 'will expire in more than',
+};
+
+const renderApiError = (errorCode: string, errorMessage: string) => {
+  if (errorCode === 'INCORRECT_ASSERTION') {
+    try {
+      const assertionsErrors: Assertion[] = JSON.parse(errorMessage);
+      const output = [' - Assertion(s) failed:'];
+      output.push(...assertionsErrors.map(error => {
+        const expected = chalk.underline(`${error.target}`);
+        const actual = chalk.underline(`${error.actual}`);
+
+        return `▶ ${error.type} ${readableOperation[error.operator]} ${expected}. Actual: ${actual}`;
+      }));
+
+      return chalk.red(output.join('\n      '));
+    } catch (e) {
+      // JSON parsing failed, do nothing to return the raw error
+    }
+  }
+
+  return chalk.red(`\n      [${chalk.bold(errorCode)}] - ${chalk.dim(errorMessage)}`);
 };
 
 const renderTestResults = (test: Test, results: PollResult[], baseUrl: string, locationNames: LocationsMapping) =>
@@ -43,9 +86,7 @@ const renderTestResults = (test: Test, results: PollResult[], baseUrl: string, l
     } else if (test.type === 'api') {
       const req = test.config.request;
       const requestText = `${chalk.bold(req.method)} - ${req.url}`;
-      const errors = success
-        ? ''
-        : color(`\n      [${chalk.bold(r.result.errorCode!)}] - ${chalk.dim(r.result.errorMessage!)}`);
+      const errors = success ? '' : renderApiError(r.result.errorCode!, r.result.errorMessage!);
 
       steps = `\n    ${icon} ${color(requestText)}${errors}`;
     } else if (test.type === 'browser' && !hasResultPassed(r) && r.result.stepDetails) {
