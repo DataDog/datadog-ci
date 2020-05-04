@@ -7,10 +7,11 @@ import {
 import ProxyAgent from 'proxy-agent';
 
 import {
-  APIConstructor,
+  APIConfiguration,
   Payload,
   PollResult,
   Test,
+  TestSearchResult,
   Trigger,
 } from './interfaces';
 
@@ -48,6 +49,18 @@ const getTest = (request: (args: AxiosRequestConfig) => AxiosPromise<Test>) => a
   return resp.data;
 };
 
+const searchTests = (request: (args: AxiosRequestConfig) => AxiosPromise<TestSearchResult>) =>
+  async (query: string) => {
+    const resp = await request({
+      params: {
+        text: query,
+      },
+      url: '/synthetics/tests/search',
+    });
+
+    return resp.data;
+  };
+
 const pollResults = (request: (args: AxiosRequestConfig) => AxiosPromise<{ results: PollResult[] }>) =>
   async (resultIds: string[]) => {
     const resp = await request({
@@ -60,7 +73,7 @@ const pollResults = (request: (args: AxiosRequestConfig) => AxiosPromise<{ resul
     return resp.data;
   };
 
-export const apiConstructor: APIConstructor = ({ appKey, apiKey, baseUrl, baseIntakeUrl, proxyOpts }) => {
+export const apiConstructor = ({ appKey, apiKey, baseUrl, baseIntakeUrl, proxyOpts }: APIConfiguration) => {
   const overrideArgs = (args: AxiosRequestConfig) => {
     const newArguments = {
       ...args,
@@ -77,12 +90,14 @@ export const apiConstructor: APIConstructor = ({ appKey, apiKey, baseUrl, baseIn
 
     return newArguments;
   };
+
   const request = (args: AxiosRequestConfig) => axios.create({ baseURL: baseUrl })(overrideArgs(args));
   const requestTrigger = (args: AxiosRequestConfig) => axios.create({ baseURL: baseIntakeUrl })(overrideArgs(args));
 
   return {
     getTest: getTest(request),
     pollResults: pollResults(request),
+    searchTests: searchTests(request),
     triggerTests: triggerTests(requestTrigger),
   };
 };

@@ -6,8 +6,8 @@ import { Command } from 'clipanion';
 import deepExtend from 'deep-extend';
 
 import { apiConstructor } from './api';
-import { ConfigOverride, ExecutionRule, LocationsMapping, ProxyConfiguration } from './interfaces';
-import { renderHeader, renderResult } from './renderer';
+import { APIHelper, ConfigOverride, ExecutionRule, LocationsMapping, ProxyConfiguration } from './interfaces';
+import { renderHeader, renderResults } from './renderer';
 import { getSuites, hasTestSucceeded, runTests, waitForResults } from './utils';
 
 export class RunTestCommand extends Command {
@@ -25,6 +25,7 @@ export class RunTestCommand extends Command {
   };
   private configPath?: string;
   private publicIds: string[] = [];
+  private testSearchQuery?: string;
 
   public async execute () {
     const startTime = Date.now();
@@ -33,7 +34,7 @@ export class RunTestCommand extends Command {
 
     const api = this.getApiHelper();
     const publicIdsTriggers = this.publicIds.map(id => ({ config: { }, id }));
-    const testsToTrigger = publicIdsTriggers.length ? publicIdsTriggers : await this.getTestsToTrigger();
+    const testsToTrigger = publicIdsTriggers.length ? publicIdsTriggers : await this.getTestsToTrigger(api);
 
     if (!testsToTrigger.length) {
       this.context.stdout.write('No test suites to run.\n');
@@ -78,7 +79,7 @@ export class RunTestCommand extends Command {
 
       for (const test of tests) {
         this.context.stdout.write(
-          renderResult(test, results[test.public_id], this.getAppBaseURL(), locationNames)
+          renderResults(test, results[test.public_id], this.getAppBaseURL(), locationNames)
         );
       }
 
@@ -142,7 +143,12 @@ export class RunTestCommand extends Command {
     return `${host}/${apiPath}`;
   }
 
-  private async getTestsToTrigger () {
+  private async getTestsToTrigger (api: APIHelper) {
+    if (this.testSearchQuery) {
+      const testSearchResults = await api.searchTests(this.testSearchQuery);
+
+      return testSearchResults.tests.map(test => ({ config: this.config.global, id: test.public_id }));
+    }
     const suites = (await getSuites(this.config.files, this.context.stdout.write.bind(this.context.stdout)))
       .map(suite => suite.tests)
       .filter(suiteTests => !!suiteTests);
@@ -179,3 +185,4 @@ RunTestCommand.addOption('apiKey', Command.String('--apiKey'));
 RunTestCommand.addOption('appKey', Command.String('--appKey'));
 RunTestCommand.addOption('configPath', Command.String('--config'));
 RunTestCommand.addOption('publicIds', Command.Array('-p,--public-id'));
+RunTestCommand.addOption('testSearchQuery', Command.String('-s,--search'));

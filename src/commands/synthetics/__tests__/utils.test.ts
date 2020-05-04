@@ -34,11 +34,15 @@ describe('utils', () => {
 
   describe('getSuites', () => {
     const GLOB = 'testGlob';
-    const FILES = [ 'file1', 'file2' ];
-    const FILES_CONTENT = { file1: '{"content":"file1"}', file2: '{"content":"file2"}' };
+    const FILES = ['file1', 'file2'];
+    const FILES_CONTENT = {
+      file1: '{"content":"file1"}',
+      file2: '{"content":"file2"}',
+    };
 
     (fs.readFile as any).mockImplementation((path: 'file1' | 'file2', opts: any, callback: any) =>
-      callback(undefined, FILES_CONTENT[path]));
+      callback(undefined, FILES_CONTENT[path])
+    );
     (glob as any).mockImplementation((query: string, callback: (e: any, v: any) => void) => callback(undefined, FILES));
 
     test('should get suites', async () => {
@@ -82,10 +86,13 @@ describe('utils', () => {
 
     test('should run test with publicId from url', async () => {
       const output = await runTests(
-        api, [{
-          config: { },
-          id: `http://localhost/synthetics/tests/details/${fakeTest.public_id}`,
-        }],
+        api,
+        [
+          {
+            config: { },
+            id: `http://localhost/synthetics/tests/details/${fakeTest.public_id}`,
+          },
+        ],
         processWrite
       );
       expect(output).toEqual({ tests: [fakeTest], triggers: fakeTrigger });
@@ -116,59 +123,66 @@ describe('utils', () => {
   describe('handleConfig', () => {
     test('empty config returns simple payload', () => {
       const publicId = 'abc-def-ghi';
-      expect(handleConfig({ public_id: publicId } as Test, publicId)).toEqual({ public_id: publicId });
+      expect(handleConfig({ public_id: publicId } as Test, publicId)).toEqual({
+        public_id: publicId,
+      });
     });
 
     test('executionRule is not picked', () => {
       const publicId = 'abc-def-ghi';
       const fakeTest = {
-        config: { request: { url: 'http://example.org/path' }},
+        config: { request: { url: 'http://example.org/path' } },
         options: { },
         public_id: publicId,
       } as Test;
       const configOverride = { executionRule: ExecutionRule.SKIPPED };
-      expect(handleConfig(fakeTest, publicId, configOverride)).toEqual({ public_id: publicId });
+      expect(handleConfig(fakeTest, publicId, configOverride)).toEqual({
+        public_id: publicId,
+      });
     });
 
     test('startUrl template is rendered', () => {
       const publicId = 'abc-def-ghi';
-      const fakeTest = { public_id: publicId, config: { request: { url: 'http://example.org/path' }}} as Test;
-      const configOverride = { startUrl: 'https://{{DOMAIN}}/newPath?oldPath={{PATHNAME}}' };
+      const fakeTest = {
+        config: { request: { url: 'http://example.org/path' } },
+        public_id: publicId,
+      } as Test;
+      const configOverride = {
+        startUrl: 'https://{{DOMAIN}}/newPath?oldPath={{PATHNAME}}',
+      };
       const expectedUrl = 'https://example.org/newPath?oldPath=/path';
 
-      expect(handleConfig(fakeTest, publicId, configOverride)).toEqual({ public_id: publicId, startUrl: expectedUrl });
+      expect(handleConfig(fakeTest, publicId, configOverride)).toEqual({
+        public_id: publicId,
+        startUrl: expectedUrl,
+      });
     });
   });
 
   describe('hasResultPassed', () => {
     test('complete result', () => {
-      const pollResult = {
-        dc_id: 42,
-        result: {
-          device: {
-            id: 'laptop_large',
-          },
-          eventType: 'finished',
-          passed: true,
-          stepDetails: [],
+      const result = {
+        device: {
+          id: 'laptop_large',
         },
-        resultID: '0123456789',
+        eventType: 'finished',
+        passed: true,
+        stepDetails: [],
       };
-      expect(hasResultPassed(pollResult)).toBeTruthy();
-      pollResult.result.passed = false;
-      expect(hasResultPassed(pollResult)).toBeFalsy();
+      expect(hasResultPassed(result)).toBeTruthy();
+      result.passed = false;
+      expect(hasResultPassed(result)).toBeFalsy();
     });
 
     test('result with error', () => {
-      const pollResult = {
-        dc_id: 42,
-        result: {
-          errorCode: 'ERRABORTED',
-          eventType: 'finished',
-        } as Result,
-        resultID: '0123456789',
+      const result: Result = {
+        device: { id: 'laptop_large' },
+        errorCode: 'ERRABORTED',
+        eventType: 'finished',
+        passed: false,
+        stepDetails: [],
       };
-      expect(hasResultPassed(pollResult)).toBeFalsy();
+      expect(hasResultPassed(result)).toBeFalsy();
     });
   });
 
@@ -205,7 +219,7 @@ describe('utils', () => {
           .filter((resultId: string) => resultId !== 'timingOutTest')
           .map((resultId: string) => passingPollResult(resultId));
 
-        return { data: { results }};
+        return { data: { results } };
       }) as any);
     });
 
@@ -242,24 +256,29 @@ describe('utils', () => {
 
     test('results should be timeout-ed if pollingTimeout is exceeded', async () => {
       const expectedResults: { [key: string]: PollResult[] } = { };
-      expectedResults[publicId] = [{
-        dc_id: triggerResult.location,
-        result: {
-          device: { id: triggerResult.device },
-          error: 'Timeout',
-          eventType: 'finished',
-          passed: false,
-          stepDetails: [ ],
+      expectedResults[publicId] = [
+        {
+          dc_id: triggerResult.location,
+          result: {
+            device: { id: triggerResult.device },
+            error: 'Timeout',
+            eventType: 'finished',
+            passed: false,
+            stepDetails: [],
+          },
+          resultID: triggerResult.result_id,
         },
-        resultID: triggerResult.result_id,
-      }];
+      ];
       expect(await waitForResults(api, [triggerResult], 0)).toEqual(expectedResults);
     });
 
     test('correct number of pass and timeout results', async () => {
       const expectedResults: { [key: string]: PollResult[] } = { };
       const triggerResultPass = triggerResult;
-      const triggerResultTimeOut = { ...triggerResult, result_id: 'timingOutTest' };
+      const triggerResultTimeOut = {
+        ...triggerResult,
+        result_id: 'timingOutTest',
+      };
       expectedResults[publicId] = [
         passingPollResult(triggerResultPass.result_id),
         {
@@ -269,7 +288,7 @@ describe('utils', () => {
             error: 'Timeout',
             eventType: 'finished',
             passed: false,
-            stepDetails: [ ],
+            stepDetails: [],
           },
           resultID: triggerResultTimeOut.result_id,
         },
