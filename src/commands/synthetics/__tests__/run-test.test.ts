@@ -39,7 +39,10 @@ describe('run-test', () => {
     });
 
     test('should override subdomain and site', async () => {
-      process.env = { DATADOG_SITE: 'datadoghq.eu', DATADOG_SUBDOMAIN: 'custom' };
+      process.env = {
+        DATADOG_SITE: 'datadoghq.eu',
+        DATADOG_SUBDOMAIN: 'custom',
+      };
       const command = new RunTestCommand();
 
       expect(command['getAppBaseURL']()).toBe('https://custom.datadoghq.eu/');
@@ -86,7 +89,8 @@ describe('run-test', () => {
   describe('parseConfigFile', () => {
     test('should read a config file', async () => {
       (fs.readFile as any).mockImplementation((path: string, opts: any, callback: any) =>
-        callback(undefined, '{"newconfigkey":"newconfigvalue"}'));
+        callback(undefined, '{"newconfigkey":"newconfigvalue"}')
+      );
 
       const command = new RunTestCommand();
 
@@ -96,7 +100,7 @@ describe('run-test', () => {
     });
 
     test('should throw an error if path is provided and config file is not found', async () => {
-      (fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({ code: 'ENOENT'}));
+      (fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({ code: 'ENOENT' }));
       const command = new RunTestCommand();
       command['configPath'] = '/veryuniqueandabsentfile';
 
@@ -112,20 +116,30 @@ describe('run-test', () => {
   });
 
   describe('getTestsToTrigger', () => {
+    const conf1 = {
+      tests: [{ config: { }, id: 'abc-def-ghi' }],
+    };
+    const conf2 = {
+      tests: [{ config: { }, id: 'jkl-mno-pqr' }],
+    };
+    const startUrl = 'fakeUrl';
+    const fakeApi = {
+      searchTests: () => ({
+        tests: [
+          {
+            public_id: 'stu-vwx-yza',
+          },
+        ],
+      }),
+    } as any;
+
     test('should find all tests and extend global config', async () => {
-      const conf1 = {
-        tests: [ { config: { }, id: 'abc-def-ghi' } ],
-      };
-      const conf2 = {
-        tests: [ { config: { }, id: 'jkl-mno-pqr' } ],
-      };
-      const startUrl = 'fakeUrl';
       jest.spyOn(utils, 'getSuites').mockImplementation((() => [conf1, conf2]) as any);
       const command = new RunTestCommand();
       command.context = process;
       command['config'].global = { startUrl };
 
-      expect(await command['getTestsToTrigger'].bind(command)()).toEqual([
+      expect(await command['getTestsToTrigger'].bind(command)(fakeApi)).toEqual([
         {
           config: { startUrl },
           id: 'abc-def-ghi',
@@ -133,6 +147,21 @@ describe('run-test', () => {
         {
           config: { startUrl },
           id: 'jkl-mno-pqr',
+        },
+      ]);
+    });
+
+    test('should search tests and extend global config', async () => {
+      jest.spyOn(utils, 'getSuites').mockImplementation((() => [conf1, conf2]) as any);
+      const command = new RunTestCommand();
+      command.context = process;
+      command['config'].global = { startUrl };
+      command['testSearchQuery'] = 'fake search';
+
+      expect(await command['getTestsToTrigger'].bind(command)(fakeApi)).toEqual([
+        {
+          config: { startUrl },
+          id: 'stu-vwx-yza',
         },
       ]);
     });

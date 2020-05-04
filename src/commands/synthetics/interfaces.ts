@@ -178,15 +178,22 @@ export interface Suite {
   tests: TriggerConfig[];
 }
 
-type GetTest = (testId: string) => Promise<Test>;
-type PollResults = (resultIds: string[]) => Promise<{ results: PollResult[] }>;
-type TriggerTests = (testsToTrigger: Payload[]) => Promise<Trigger>;
-
-export interface APIHelper {
-  getTest: GetTest;
-  pollResults: PollResults;
-  triggerTests: TriggerTests;
+export interface TestSearchResult {
+  tests: {
+    public_id: string;
+  }[];
 }
 
-export type APIConstructor =
-  (args: { apiKey: string; appKey: string; baseIntakeUrl: string; baseUrl: string}) => APIHelper;
+export interface APIHelper {
+  getTest (testId: string): Promise<Test>;
+  pollResults (resultIds: string[]): Promise<{ results: PollResult[] }>;
+  searchTests (query: string): Promise<TestSearchResult>;
+  triggerTests (testsToTrigger: Payload[]): Promise<Trigger>;
+}
+
+export interface APIConfiguration {
+  apiKey: string;
+  appKey: string;
+  baseIntakeUrl: string;
+  baseUrl: string;
+}
