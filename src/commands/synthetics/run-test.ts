@@ -7,7 +7,7 @@ import deepExtend from 'deep-extend';
 
 import { apiConstructor } from './api';
 import { APIHelper, ConfigOverride, ExecutionRule, LocationsMapping } from './interfaces';
-import { renderHeader, renderResult } from './renderer';
+import { renderHeader, renderResults } from './renderer';
 import { getSuites, hasTestSucceeded, runTests, waitForResults } from './utils';
 
 export class RunTestCommand extends Command {
@@ -78,7 +78,7 @@ export class RunTestCommand extends Command {
 
       for (const test of tests) {
         this.context.stdout.write(
-          renderResult(test, results[test.public_id], this.getAppBaseURL(), locationNames)
+          renderResults(test, results[test.public_id], this.getAppBaseURL(), locationNames)
         );
       }
 

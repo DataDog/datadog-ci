@@ -14,6 +14,7 @@ import {
   ExecutionRule,
   Payload,
   PollResult,
+  Result,
   Suite,
   TemplateContext,
   Test,
@@ -100,12 +101,12 @@ export const getStrictestExecutionRule = (configRule: ExecutionRule, testRule?: 
   return ExecutionRule.BLOCKING;
 };
 
-export const hasResultPassed = (result: PollResult): boolean => {
-  if (typeof result.result.passed !== 'undefined') {
-    return result.result.passed;
+export const hasResultPassed = (result: Result): boolean => {
+  if (typeof result.passed !== 'undefined') {
+    return result.passed;
   }
 
-  if (typeof result.result.errorCode !== 'undefined') {
+  if (typeof result.errorCode !== 'undefined') {
     return false;
   }
 
@@ -113,7 +114,7 @@ export const hasResultPassed = (result: PollResult): boolean => {
 };
 
 export const hasTestSucceeded = (results: PollResult[]): boolean =>
-  results.every((result: PollResult) => hasResultPassed(result));
+  results.every((pollResult: PollResult) => hasResultPassed(pollResult.result));
 
 export const getSuites = async (GLOB: string, write: Writable['write']): Promise<Suite[]> => {
   write(`Finding files in ${path.join(process.cwd(), GLOB)}\n`);
