@@ -9,7 +9,6 @@ import glob from 'glob';
 import { apiConstructor } from '../api';
 import { ExecutionRule, PollResult, ProxyConfiguration, Result, Test } from '../interfaces';
 import {
-  getEnvironmentVariable,
   getStrictestExecutionRule,
   getSuites,
   handleConfig,
@@ -288,11 +287,5 @@ describe('utils', () => {
     expect(getStrictestExecutionRule(NON_BLOCKING, SKIPPED)).toBe(SKIPPED);
     expect(getStrictestExecutionRule(BLOCKING, undefined)).toBe(BLOCKING);
     expect(getStrictestExecutionRule(SKIPPED, undefined)).toBe(SKIPPED);
-  });
-
-  test('getEnvironmentVariable', () => {
-    process.env = { HTTP_PROXY: 'custom' };
-    expect(getEnvironmentVariable('http_proxy')).toBe('custom');
-    expect(getEnvironmentVariable('HTTP_PROXY')).toBe('custom');
   });
 });

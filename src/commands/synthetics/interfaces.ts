@@ -197,16 +197,6 @@ export type APIConstructor = (
     proxyOpts: ProxyConfiguration;
   }) => APIHelper;
 
-// `proxy` defines the hostname and port of the proxy server.
-// You can also define your proxy using the conventional `http_proxy` and
-// `https_proxy` environment variables. If you are using environment variables
-// for your proxy configuration, you can also define a `no_proxy` environment
-// variable as a comma-separated list of domains that should not be proxied.
-// Use `false` to disable proxies, ignoring environment variables.
-// `auth` indicates that HTTP Basic auth should be used to connect to the proxy, and
-// supplies credentials.
-// This will set an `Proxy-Authorization` header, overwriting any existing
-// `Proxy-Authorization` custom headers you have set using `headers`.
 export type ProxyType = 'http' | 'https' |
   'socks' | 'socks4' | 'socks4a' | 'socks5' | 'socks5h' |
   'pac+data' | 'pac+file' | 'pac+ftp' | 'pac+http' | 'pac+https';

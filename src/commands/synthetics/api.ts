@@ -14,8 +14,6 @@ import {
   Trigger,
 } from './interfaces';
 
-import { getEnvironmentVariable } from './utils';
-
 interface BackendError {
   errors: string[];
 }
@@ -73,9 +71,8 @@ export const apiConstructor: APIConstructor = ({ appKey, apiKey, baseUrl, baseIn
       },
     };
 
-    const proxyConfig = getEnvironmentVariable('ALL_PROXY') || getEnvironmentVariable('HTTPS_PROXY') || proxyOpts;
-    if (Object.keys(proxyConfig).length) {
-      newArguments.httpsAgent = new ProxyAgent(proxyConfig);
+    if (proxyOpts.host && proxyOpts.port) {
+      newArguments.httpsAgent = new ProxyAgent(proxyOpts);
     }
 
     return newArguments;
