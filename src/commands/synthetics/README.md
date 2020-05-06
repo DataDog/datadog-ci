@@ -55,10 +55,27 @@ The configuration file structure is the following:
         "startUrl": "{{URL}}?static_hash={{STATIC_HASH}}",
         "variables": { "titleVariable": "new title" },
     },
+    "proxy": {
+      "auth": {
+        "username": "login",
+        "password": "pwd"
+      },
+      "host": "127.0.0.1",
+      "port": 3128,
+      "protocol": "http"
+    },
     "subdomain": "subdomainname",
     "timeout": 120000,
 }
 ```
+
+**Proxy configuration**
+
+It is possible to configure a proxy to be used for outgoing connections to Datadog using the `proxy` key of the global configuration file.
+
+As the [`proxy-agent`](https://github.com/TooTallNate/node-proxy-agent) library is used to configure the proxy, protocols supported are `http, https, socks, socks4, socks4a, socks5, socks5h, pac+data, pac+file, pac+ftp, pac+http, pac+https`. The `proxy` key of the global configuration file is passed to a new `proxy-agent` instance, meaning same configuration than the library is supported.
+
+**Note**: `host` and `port` keys are mandatory arguments and the `protocol` key defaults to `http` if not defined.
 
 #### Commands
 

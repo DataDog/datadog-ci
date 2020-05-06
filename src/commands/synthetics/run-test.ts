@@ -6,7 +6,7 @@ import { Command } from 'clipanion';
 import deepExtend from 'deep-extend';
 
 import { apiConstructor } from './api';
-import { APIHelper, ConfigOverride, ExecutionRule, LocationsMapping } from './interfaces';
+import { APIHelper, ConfigOverride, ExecutionRule, LocationsMapping, ProxyConfiguration } from './interfaces';
 import { renderHeader, renderResults } from './renderer';
 import { getSuites, hasTestSucceeded, runTests, waitForResults } from './utils';
 
@@ -19,6 +19,7 @@ export class RunTestCommand extends Command {
     datadogSite: process.env.DATADOG_SITE || 'datadoghq.com',
     files: '{,!(node_modules)/**/}*.synthetics.json',
     global: { } as ConfigOverride,
+    proxy: { protocol: 'http' } as ProxyConfiguration,
     subdomain: process.env.DATADOG_SUBDOMAIN || 'app',
     timeout: 2 * 60 * 1000,
   };
@@ -117,6 +118,7 @@ export class RunTestCommand extends Command {
       appKey: this.config.appKey!,
       baseIntakeUrl: this.getDatadogHost(true),
       baseUrl: this.getDatadogHost(),
+      proxyOpts: this.config.proxy,
     });
   }
 
@@ -127,9 +129,10 @@ export class RunTestCommand extends Command {
   private getDatadogHost (useIntake = false) {
     const apiPath = 'api/v1';
     let host = `https://api.${this.config.datadogSite}`;
+    const hostOverride = process.env.DD_API_HOST_OVERRIDE;
 
-    if (process.env.DD_API_HOST_OVERRIDE) {
-      host = process.env.DD_API_HOST_OVERRIDE;
+    if (hostOverride) {
+      host = hostOverride;
     } else if (
       useIntake
       && (this.config.datadogSite === 'datadoghq.com' || this.config.datadogSite === 'datad0g.com')

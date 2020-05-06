@@ -4,6 +4,7 @@ import {
   AxiosRequestConfig,
   default as axios,
 } from 'axios';
+import ProxyAgent from 'proxy-agent';
 
 import {
   APIConfiguration,
@@ -26,7 +27,7 @@ export const formatBackendErrors = (requestError: AxiosError<BackendError>) => {
     return `${serverHead}\n${errors.join('\n')}`;
   }
 
-  return requestError.name;
+  return requestError.message;
 };
 
 const triggerTests = (request: (args: AxiosRequestConfig) => AxiosPromise<Trigger>) =>
@@ -72,15 +73,24 @@ const pollResults = (request: (args: AxiosRequestConfig) => AxiosPromise<{ resul
     return resp.data;
   };
 
-export const apiConstructor = ({ appKey, apiKey, baseUrl, baseIntakeUrl }: APIConfiguration) => {
-  const overrideArgs = (args: AxiosRequestConfig) => ({
-    ...args,
-    params: {
-      api_key: apiKey,
-      application_key: appKey,
-      ...args.params,
-    },
-  });
+export const apiConstructor = ({ appKey, apiKey, baseUrl, baseIntakeUrl, proxyOpts }: APIConfiguration) => {
+  const overrideArgs = (args: AxiosRequestConfig) => {
+    const newArguments = {
+      ...args,
+      params: {
+        api_key: apiKey,
+        application_key: appKey,
+        ...args.params,
+      },
+    };
+
+    if (proxyOpts.host && proxyOpts.port) {
+      newArguments.httpsAgent = new ProxyAgent(proxyOpts);
+    }
+
+    return newArguments;
+  };
+
   const request = (args: AxiosRequestConfig) => axios.create({ baseURL: baseUrl })(overrideArgs(args));
   const requestTrigger = (args: AxiosRequestConfig) => axios.create({ baseURL: baseIntakeUrl })(overrideArgs(args));
 

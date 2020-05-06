@@ -268,6 +268,4 @@ export const runTests = async (api: APIHelper, triggerConfigs: TriggerConfig[], 
   }
 };
 
-function definedTypeGuard<T> (o: T | undefined): o is T {
-  return !!o;
-}
+const definedTypeGuard = <T> (o: T | undefined): o is T => !!o;

@@ -7,7 +7,7 @@ import * as axios from 'axios';
 import glob from 'glob';
 
 import { apiConstructor } from '../api';
-import { ExecutionRule, PollResult, Result, Test } from '../interfaces';
+import { ExecutionRule, PollResult, ProxyConfiguration, Result, Test } from '../interfaces';
 import {
   getStrictestExecutionRule,
   getSuites,
@@ -23,6 +23,15 @@ async function wait (duration: number) {
 }
 
 describe('utils', () => {
+  const apiConfiguration = {
+    apiKey: '123',
+    appKey: '123',
+    baseIntakeUrl: 'baseintake',
+    baseUrl: 'base',
+    proxyOpts: { protocol: 'http' } as ProxyConfiguration,
+  };
+  const api = apiConstructor(apiConfiguration);
+
   describe('getSuites', () => {
     const GLOB = 'testGlob';
     const FILES = ['file1', 'file2'];
@@ -68,13 +77,6 @@ describe('utils', () => {
 
     afterAll(() => {
       jest.clearAllMocks();
-    });
-
-    const api = apiConstructor({
-      apiKey: '123',
-      appKey: '123',
-      baseIntakeUrl: 'baseintake',
-      baseUrl: 'base',
     });
 
     test('should run test', async () => {
@@ -225,12 +227,6 @@ describe('utils', () => {
       jest.clearAllMocks();
     });
 
-    const api = apiConstructor({
-      apiKey: '123',
-      appKey: '123',
-      baseIntakeUrl: 'baseintake',
-      baseUrl: 'base',
-    });
     const passingResult = {
       device: {
         id: 'laptop_large',

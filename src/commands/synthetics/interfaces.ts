@@ -214,9 +214,24 @@ export interface APIHelper {
   triggerTests (testsToTrigger: Payload[]): Promise<Trigger>;
 }
 
+export type ProxyType = 'http' | 'https' |
+  'socks' | 'socks4' | 'socks4a' | 'socks5' | 'socks5h' |
+  'pac+data' | 'pac+file' | 'pac+ftp' | 'pac+http' | 'pac+https';
+
+export interface ProxyConfiguration {
+  auth?: {
+    password: string;
+    username: string;
+  };
+  host?: string;
+  port?: number;
+  protocol: ProxyType;
+}
+
 export interface APIConfiguration {
   apiKey: string;
   appKey: string;
   baseIntakeUrl: string;
   baseUrl: string;
+  proxyOpts: ProxyConfiguration;
 }
