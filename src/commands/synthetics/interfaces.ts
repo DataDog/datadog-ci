@@ -164,7 +164,17 @@ export interface ConfigOverride {
   variables?: { [key: string]: string };
 }
 
+interface Metadata {
+  ci?: {
+    branch?: string;
+    commit?: string;
+    engine?: string;
+    pipelineURL?: string;
+  };
+}
+
 export interface Payload extends ConfigOverride {
+  metadata?: Metadata;
   public_id: string;
 }
 

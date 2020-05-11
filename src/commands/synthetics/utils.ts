@@ -8,6 +8,7 @@ import chalk from 'chalk';
 import glob from 'glob';
 
 import { formatBackendErrors } from './api';
+import { getCIMetadata } from './ci-metadata';
 import {
   APIHelper,
   ConfigOverride,
@@ -35,7 +36,9 @@ const template = (st: string, context: any): string =>
   st.replace(/{{([A-Z_]+)}}/g, (match: string, p1: string) => context[p1] ? context[p1] : '');
 
 export const handleConfig = (test: Test, publicId: string, config?: ConfigOverride): Payload => {
-  let handledConfig: Payload = { public_id: publicId };
+  let handledConfig: Payload = {
+    public_id: publicId,
+  };
   if (!config || !Object.keys(config).length) {
     return handledConfig;
   }
@@ -80,6 +83,12 @@ export const handleConfig = (test: Test, publicId: string, config?: ConfigOverri
   if (config.executionRule) {
     const executionRule = getStrictestExecutionRule(config.executionRule, test.options.ci?.executionRule);
     test.options.ci = { ...(test.options.ci || { }),  executionRule};
+  }
+
+  const ciMetadata = getCIMetadata();
+
+  if (ciMetadata) {
+    handledConfig.metadata = { ci: ciMetadata };
   }
 
   return handledConfig;
