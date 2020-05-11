@@ -17,6 +17,8 @@ jobs:
         node-version: '12.16.1'
     - run: yarn install
     - run: yarn build
+    - run: yarn prettier-check
+    - run: yarn lint
     - run: yarn test
     - run: mkdir artifacts
     - run: yarn pack --filename artifacts/datadog-ci.tgz
@@ -25,7 +27,7 @@ jobs:
       with:
         name: artifacts
         path: artifacts/
-  
+
   e2e-test:
     name: End-to-end test the package
     runs-on: ubuntu-latest
