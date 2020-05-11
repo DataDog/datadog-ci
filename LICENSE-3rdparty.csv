@@ -13,10 +13,10 @@ clipanion,import,MIT,Copyright (c) 2019 Mael Nison
 deep-extend,import,MIT,Copyright (c) 2013-2018, Viacheslav Lotsmanov
 glob,import,ISC,Copyright (c) Isaac Z. Schlueter and Contributors
 jest,dev,MIT,Copyright (c) Facebook, Inc. and its affiliates.
-prettier,import,MIT,github.com/prettier/prettier
+prettier,dev,MIT,Copyright © James Long and contributors
 proxy-agent,import,MIT,Copyright (c) 2013 Nathan Rajlich <nathan@tootallnate.net>
 ts-jest,dev,MIT,Copyright (c) 2016-2018
-ts-node,import,MIT,github.com/TypeStrong/ts-node
+ts-node,import,MIT,Copyright (c) 2014 Blake Embrey (hello@blakeembrey.com)
 tslint,dev,Apache-2.0,Copyright 2013-2019 Palantir Technologies, Inc.
-tslint-config-prettier,import,MIT,github.com/alexjoverm/tslint-config-prettier
+tslint-config-prettier,dev,MIT,Copyright 2017 Alex Jover Morales <alexjovermorales@gmail.com>
 typescript,dev,Apache-2.0,Copyright (c) Microsoft Corporation.
