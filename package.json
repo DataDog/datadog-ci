@@ -4,7 +4,6 @@
   "description": "Run datadog actions from the CI.",
   "main": "dist/index.js",
   "repository": "https://github.com/DataDog/datadog-ci",
-  "author": "Yoann Moinet <yoann.moinet@datadoghq.com>",
   "license": "Apache-2.0",
   "bin": {
     "datadog-ci": "dist/index.js"
@@ -22,24 +21,11 @@
     "launch": "ts-node --transpile-only src/index.ts",
     "lint": "tslint -p tsconfig.json -c tslint.json",
     "prepack": "yarn build && node ./bin/make-it-executable.js",
+    "prettier-check": "prettier --check \"src/**/*.{ts,js,json,yml}\" --ignore-path .gitignore || echo \"\nYou can fix this by running ==> yarn prettier-write <==\n\"",
+    "prettier-write": "prettier --write \"src/**/*.{ts,js,json,yml}\" --ignore-path .gitignore",
     "test": "jest",
     "typecheck": "bash bin/typecheck.sh",
     "watch": "tsc -w"
-  },
-  "husky": {
-    "hooks": {
-      "pre-commit": "DISABLE_SPINNER=true lint-staged"
-    }
-  },
-  "lint-staged": {
-    "linters": {
-      "*.{ts,tsx}": [
-        "yarn typecheck",
-        "yarn format",
-        "git add"
-      ]
-    },
-    "relative": true
   },
   "dependencies": {
     "axios": "0.19.2",
@@ -58,12 +44,12 @@
     "@types/glob": "7.1.1",
     "@types/jest": "24.0.15",
     "@types/node": "12.0.10",
-    "husky": "2.6.0",
     "jest": "24.8.0",
-    "lint-staged": "8.2.1",
+    "prettier": "2.0.5",
     "ts-jest": "24.3.0",
     "ts-node": "8.8.1",
     "tslint": "5.18.0",
+    "tslint-config-prettier": "1.18.0",
     "typescript": "3.7.5"
   }
 }

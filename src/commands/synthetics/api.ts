@@ -1,79 +1,68 @@
-import {
-  AxiosError,
-  AxiosPromise,
-  AxiosRequestConfig,
-  default as axios,
-} from 'axios';
-import ProxyAgent from 'proxy-agent';
+import {AxiosError, AxiosPromise, AxiosRequestConfig, default as axios} from 'axios'
+import ProxyAgent from 'proxy-agent'
 
-import {
-  APIConfiguration,
-  Payload,
-  PollResult,
-  Test,
-  TestSearchResult,
-  Trigger,
-} from './interfaces';
+import {APIConfiguration, Payload, PollResult, Test, TestSearchResult, Trigger} from './interfaces'
 
 interface BackendError {
-  errors: string[];
+  errors: string[]
 }
 
 export const formatBackendErrors = (requestError: AxiosError<BackendError>) => {
   if (requestError.response && requestError.response.data.errors) {
-    const errors = requestError.response.data.errors.map((message: string) => `  - ${message}`);
-    const serverHead = `query on ${requestError.config.baseURL}${requestError.config.url} returned:`;
+    const errors = requestError.response.data.errors.map((message: string) => `  - ${message}`)
+    const serverHead = `query on ${requestError.config.baseURL}${requestError.config.url} returned:`
 
-    return `${serverHead}\n${errors.join('\n')}`;
+    return `${serverHead}\n${errors.join('\n')}`
   }
 
-  return requestError.message;
-};
+  return requestError.message
+}
 
-const triggerTests = (request: (args: AxiosRequestConfig) => AxiosPromise<Trigger>) =>
-  async (tests: Payload[]) => {
-    const resp = await request({
-      data: { tests },
-      method: 'POST',
-      url: '/synthetics/tests/trigger/ci',
-    });
+const triggerTests = (request: (args: AxiosRequestConfig) => AxiosPromise<Trigger>) => async (tests: Payload[]) => {
+  const resp = await request({
+    data: {tests},
+    method: 'POST',
+    url: '/synthetics/tests/trigger/ci',
+  })
 
-    return resp.data;
-  };
+  return resp.data
+}
 
 const getTest = (request: (args: AxiosRequestConfig) => AxiosPromise<Test>) => async (testId: string) => {
   const resp = await request({
     url: `/synthetics/tests/${testId}`,
-  });
+  })
 
-  return resp.data;
-};
+  return resp.data
+}
 
-const searchTests = (request: (args: AxiosRequestConfig) => AxiosPromise<TestSearchResult>) =>
-  async (query: string) => {
-    const resp = await request({
-      params: {
-        text: query,
-      },
-      url: '/synthetics/tests/search',
-    });
+const searchTests = (request: (args: AxiosRequestConfig) => AxiosPromise<TestSearchResult>) => async (
+  query: string
+) => {
+  const resp = await request({
+    params: {
+      text: query,
+    },
+    url: '/synthetics/tests/search',
+  })
 
-    return resp.data;
-  };
+  return resp.data
+}
 
-const pollResults = (request: (args: AxiosRequestConfig) => AxiosPromise<{ results: PollResult[] }>) =>
-  async (resultIds: string[]) => {
-    const resp = await request({
-      params: {
-        result_ids: JSON.stringify(resultIds),
-      },
-      url: '/synthetics/tests/poll_results',
-    });
+const pollResults = (request: (args: AxiosRequestConfig) => AxiosPromise<{results: PollResult[]}>) => async (
+  resultIds: string[]
+) => {
+  const resp = await request({
+    params: {
+      result_ids: JSON.stringify(resultIds),
+    },
+    url: '/synthetics/tests/poll_results',
+  })
 
-    return resp.data;
-  };
+  return resp.data
+}
 
-export const apiConstructor = ({ appKey, apiKey, baseUrl, baseIntakeUrl, proxyOpts }: APIConfiguration) => {
+export const apiConstructor = ({appKey, apiKey, baseUrl, baseIntakeUrl, proxyOpts}: APIConfiguration) => {
   const overrideArgs = (args: AxiosRequestConfig) => {
     const newArguments = {
       ...args,
@@ -82,22 +71,22 @@ export const apiConstructor = ({ appKey, apiKey, baseUrl, baseIntakeUrl, proxyOp
         application_key: appKey,
         ...args.params,
       },
-    };
-
-    if (proxyOpts.host && proxyOpts.port) {
-      newArguments.httpsAgent = new ProxyAgent(proxyOpts);
     }
 
-    return newArguments;
-  };
+    if (proxyOpts.host && proxyOpts.port) {
+      newArguments.httpsAgent = new ProxyAgent(proxyOpts)
+    }
 
-  const request = (args: AxiosRequestConfig) => axios.create({ baseURL: baseUrl })(overrideArgs(args));
-  const requestTrigger = (args: AxiosRequestConfig) => axios.create({ baseURL: baseIntakeUrl })(overrideArgs(args));
+    return newArguments
+  }
+
+  const request = (args: AxiosRequestConfig) => axios.create({baseURL: baseUrl})(overrideArgs(args))
+  const requestTrigger = (args: AxiosRequestConfig) => axios.create({baseURL: baseIntakeUrl})(overrideArgs(args))
 
   return {
     getTest: getTest(request),
     pollResults: pollResults(request),
     searchTests: searchTests(request),
     triggerTests: triggerTests(requestTrigger),
-  };
-};
+  }
+}
