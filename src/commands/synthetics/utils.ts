@@ -8,6 +8,7 @@ import chalk from 'chalk'
 import glob from 'glob'
 
 import {formatBackendErrors} from './api'
+import {getCIMetadata} from './ci-metadata'
 import {
   APIHelper,
   ConfigOverride,
@@ -81,6 +82,12 @@ export const handleConfig = (test: Test, publicId: string, config?: ConfigOverri
   if (config.executionRule) {
     const executionRule = getStrictestExecutionRule(config.executionRule, test.options.ci?.executionRule)
     test.options.ci = {...(test.options.ci || {}), executionRule}
+  }
+
+  const ciMetadata = getCIMetadata()
+
+  if (ciMetadata) {
+    handledConfig.metadata = {ci: ciMetadata}
   }
 
   return handledConfig
