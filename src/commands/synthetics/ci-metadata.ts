@@ -1,3 +1,5 @@
+import { Metadata } from './interfaces';
+
 export const CI_ENGINES = {
   CIRCLECI: 'circleci',
   GITHUB: 'github',
@@ -6,7 +8,7 @@ export const CI_ENGINES = {
   TRAVIS: 'travis',
 };
 
-export const getCIMetadata = () => {
+export const getCIMetadata = (): Metadata['ci'] => {
   const env = process.env;
 
   if (env.CIRCLECI) {
@@ -14,7 +16,7 @@ export const getCIMetadata = () => {
       branch: env.CIRCLE_BRANCH,
       commit: env.CIRCLE_SHA1,
       engine: CI_ENGINES.CIRCLECI,
-      pipelineURL: env.CIRCLE_REPOSITORY_URL,
+      pipelineURL: env.CIRCLE_BUILD_URL,
     };
   }
 

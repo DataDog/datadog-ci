@@ -14,7 +14,7 @@ describe('ci-metadata', () => {
     process.env = {
       CIRCLECI: 'true',
       CIRCLE_BRANCH: branch,
-      CIRCLE_REPOSITORY_URL: pipelineURL,
+      CIRCLE_BUILD_URL: pipelineURL,
       CIRCLE_SHA1: commit,
     };
     expect(getCIMetadata()).toEqual({

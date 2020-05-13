@@ -138,12 +138,7 @@ describe('utils', () => {
       const configOverride = { executionRule: ExecutionRule.SKIPPED };
       const handledConfig = handleConfig(fakeTest, publicId, configOverride);
 
-      // Avoid obtaining CI metadata when running tests in CI
-      if (handledConfig.metadata) {
-        delete handledConfig.metadata;
-      }
-
-      expect(handledConfig).toEqual({ public_id: publicId });
+      expect(handledConfig.public_id).toBe(publicId);
     });
 
     test('startUrl template is rendered', () => {
@@ -158,15 +153,8 @@ describe('utils', () => {
       const expectedUrl = 'https://example.org/newPath?oldPath=/path';
       const handledConfig = handleConfig(fakeTest, publicId, configOverride);
 
-      // Avoid obtaining CI metadata when running tests in CI
-      if (handledConfig.metadata) {
-        delete handledConfig.metadata;
-      }
-
-      expect(handledConfig).toEqual({
-        public_id: publicId,
-        startUrl: expectedUrl,
-      });
+      expect(handledConfig.public_id).toBe(publicId);
+      expect(handledConfig.startUrl).toBe(expectedUrl);
     });
   });
 

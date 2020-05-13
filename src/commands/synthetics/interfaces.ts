@@ -164,7 +164,7 @@ export interface ConfigOverride {
   variables?: { [key: string]: string };
 }
 
-interface Metadata {
+export interface Metadata {
   ci?: {
     branch?: string;
     commit?: string;
