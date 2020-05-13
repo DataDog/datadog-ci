@@ -1,5 +1,3 @@
-import { RunTestCommand } from './run-test';
+import {RunTestCommand} from './run-test'
 
-module.exports = [
-  RunTestCommand,
-];
+module.exports = [RunTestCommand]

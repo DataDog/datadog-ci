@@ -12,11 +12,11 @@ chalk,import,MIT,Copyright (c) Sindre Sorhus <sindresorhus@gmail.com> (sindresor
 clipanion,import,MIT,Copyright (c) 2019 Mael Nison
 deep-extend,import,MIT,Copyright (c) 2013-2018, Viacheslav Lotsmanov
 glob,import,ISC,Copyright (c) Isaac Z. Schlueter and Contributors
-husky,dev,MIT,Copyright (c) 2017
 jest,dev,MIT,Copyright (c) Facebook, Inc. and its affiliates.
-lint-staged,dev,MIT,Copyright (c) 2016 Andrey Okonetchnikov
+prettier,dev,MIT,Copyright © James Long and contributors
 proxy-agent,import,MIT,Copyright (c) 2013 Nathan Rajlich <nathan@tootallnate.net>
 ts-jest,dev,MIT,Copyright (c) 2016-2018
-ts-node,import,MIT,github.com/TypeStrong/ts-node
+ts-node,import,MIT,Copyright (c) 2014 Blake Embrey (hello@blakeembrey.com)
 tslint,dev,Apache-2.0,Copyright 2013-2019 Palantir Technologies, Inc.
+tslint-config-prettier,dev,MIT,Copyright 2017 Alex Jover Morales <alexjovermorales@gmail.com>
 typescript,dev,Apache-2.0,Copyright (c) Microsoft Corporation.
