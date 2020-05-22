@@ -1,10 +1,9 @@
 import {Lambda} from 'aws-sdk'
 import {Command} from 'clipanion'
-import {getLambdaConfigs, InstrumentationSettings} from './function'
+import {getLambdaConfigs, InstrumentationSettings, updateLambdaConfigs} from './function'
 
 export class InstrumentCommand extends Command {
   private dryRun = false
-  private forwarderARN?: string
   private functions: string[] = []
   private layerAWSAccount?: string
   private layerVersion?: string
@@ -24,7 +23,6 @@ export class InstrumentCommand extends Command {
     }
 
     const settings: InstrumentationSettings = {
-      forwarderARN: this.forwarderARN,
       layerAWSAccount: this.layerAWSAccount,
       layerVersion,
       mergeXrayTraces: false,
@@ -37,18 +35,23 @@ export class InstrumentCommand extends Command {
     }
     const lambda = new Lambda({region: this.region})
     const configs = await getLambdaConfigs(lambda, this.functions, settings)
-    if (this.dryRun) {
-      this.context.stdout.write('Dry run, would apply the following updates:\n')
-      for (const config of configs) {
-        this.context.stdout.write(
-          `UpdateFunctionConfiguration -> ${config.functionARN}\n${JSON.stringify(
-            config.updateRequest,
-            undefined,
-            2
-          )}\n`
-        )
-      }
+    const prefix = this.dryRun ? '[Dry Run] ' : ''
+    if (configs.length === 0) {
+      this.context.stdout.write(`${prefix}No updates will be applied\n`)
+
+      return 0
     }
+    this.context.stdout.write(`${prefix}Will apply the following updates:\n`)
+    for (const config of configs) {
+      this.context.stdout.write(
+        `UpdateFunctionConfiguration -> ${config.functionARN}\n${JSON.stringify(config.updateRequest, undefined, 2)}\n`
+      )
+    }
+    if (this.dryRun) {
+      return 0
+    }
+
+    await updateLambdaConfigs(lambda, configs, settings)
 
     return 0
   }

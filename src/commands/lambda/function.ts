@@ -1,4 +1,5 @@
 import {Lambda} from 'aws-sdk'
+import deepExtend from 'deep-extend'
 import {DEFAULT_LAYER_AWS_ACCOUNT, HANDLER_LOCATION, Runtime, RUNTIME_LAYER_LOOKUP} from './constants'
 
 export interface FunctionConfiguration {
@@ -9,7 +10,6 @@ export interface FunctionConfiguration {
 }
 
 export interface InstrumentationSettings {
-  forwarderARN?: string
   layerAWSAccount?: string
   layerVersion?: number
   mergeXrayTraces: boolean
@@ -71,15 +71,15 @@ const updateLambdaConfig = async (
   configuration: FunctionConfiguration,
   settings: InstrumentationSettings
 ) => {
-  throw Error('Unimplemented')
+  await lambda.updateFunctionConfiguration(configuration.updateRequest).promise()
 }
 
 const getLayerArn = async (lambda: Lambda, runtime: Runtime, settings: InstrumentationSettings) => {
-  const {layerVersion, region} = settings
+  const {region} = settings
   const layerName = RUNTIME_LAYER_LOOKUP[runtime]
   const account = settings.layerAWSAccount ?? DEFAULT_LAYER_AWS_ACCOUNT
 
-  return `arn:aws:lambda:${region}:${account}:layer:${layerName}:${layerVersion}`
+  return `arn:aws:lambda:${region}:${account}:layer:${layerName}`
 }
 
 const calculateUpdateRequest = (
@@ -88,42 +88,46 @@ const calculateUpdateRequest = (
   layerARN: string,
   runtime: Runtime
 ) => {
-  const env = config.Environment?.Variables
+  const env = deepExtend({}, config.Environment?.Variables)
+  const newEnvVars: Record<string, string> = {}
   const functionARN = config.FunctionArn
   if (functionARN === undefined) {
     return undefined
   }
 
-  const envVars: Record<string, string> = {}
   const updateRequest: Lambda.UpdateFunctionConfigurationRequest = {
     FunctionName: functionARN,
-    Environment: {
-      Variables: envVars,
-    },
   }
   let needsUpdate = false
 
   if (env?.DD_LAMBDA_HANDLER === undefined) {
     needsUpdate = true
-    envVars.DD_LAMBDA_HANDLER = config.Handler ?? ''
+    newEnvVars.DD_LAMBDA_HANDLER = config.Handler ?? ''
   }
   const expectedHandler = HANDLER_LOCATION[runtime]
   if (config.Handler !== expectedHandler) {
     needsUpdate = true
     updateRequest.Handler = HANDLER_LOCATION[runtime]
   }
-  const layerARNs = (config.Layers ?? []).map((layer) => layer.Arn)
-  if (!layerARNs.includes(layerARN)) {
+  const layerARNs = (config.Layers ?? []).map((layer) => layer.Arn ?? '')
+  const fullLayerARN = `${layerARN}:${settings.layerVersion}`
+  if (!layerARNs.includes(fullLayerARN)) {
     needsUpdate = true
-    updateRequest.Layers = [layerARN]
+    // Remove any other versions of the layer
+    updateRequest.Layers = [...layerARNs.filter((l) => !l.startsWith(layerARN)), fullLayerARN]
   }
-  if (env?.DATADOG_TRACE_ENABLED !== settings.tracingEnabled.toString()) {
+  if (env?.DD_TRACE_ENABLED !== settings.tracingEnabled.toString()) {
     needsUpdate = true
-    envVars.DATADOG_TRACE_ENABLED = settings.tracingEnabled.toString()
+    newEnvVars.DD_TRACE_ENABLED = settings.tracingEnabled.toString()
   }
-  if (env?.DD_TRACE_ENABLED !== settings.mergeXrayTraces.toString()) {
+  if (env?.DD_MERGE_XRAY_TRACES !== settings.mergeXrayTraces.toString()) {
     needsUpdate = true
-    envVars.DD_TRACE_ENABLED = settings.mergeXrayTraces.toString()
+    newEnvVars.DD_MERGE_XRAY_TRACES = settings.mergeXrayTraces.toString()
+  }
+  if (Object.entries(newEnvVars).length > 0) {
+    updateRequest.Environment = {
+      Variables: deepExtend({}, env, newEnvVars),
+    }
   }
 
   return needsUpdate ? updateRequest : undefined
