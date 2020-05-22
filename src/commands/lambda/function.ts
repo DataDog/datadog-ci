@@ -63,7 +63,7 @@ const getLambdaConfig = async (lambda: Lambda, functionARN: string) => {
   }
   const result = await lambda.getFunction(params).promise()
 
-  return {config: result.Configuration, functionARN}
+  return {config: result.Configuration, functionARN: result.Configuration?.FunctionArn ?? ''}
 }
 
 const updateLambdaConfig = async (
