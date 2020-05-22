@@ -21,7 +21,6 @@ export const getLambdaConfigs = async (lambda: Lambda, functionARNs: string[], s
   const resultPromises = functionARNs.map((fn) => getLambdaConfig(lambda, fn))
   const results = await Promise.all([...resultPromises])
 
-  const layerARNLookup: {[key: string]: string} = {}
   const functionsToUpdate: FunctionConfiguration[] = []
 
   for (const {config, functionARN} of results) {
@@ -29,11 +28,7 @@ export const getLambdaConfigs = async (lambda: Lambda, functionARNs: string[], s
     if (runtime === undefined || RUNTIME_LAYER_LOOKUP[runtime] === undefined) {
       throw Error(`Can't instrument ${functionARN}, runtime ${runtime} not supported`)
     }
-    let layerARN: string | undefined = layerARNLookup[runtime]
-    if (layerARN === undefined) {
-      layerARN = await getLayerArn(lambda, runtime, settings)
-      layerARNLookup[runtime] = layerARN
-    }
+    let layerARN: string = getLayerArn(runtime, settings)
     const updateRequest = calculateUpdateRequest(config, settings, layerARN, runtime)
     if (updateRequest !== undefined) {
       functionsToUpdate.push({functionARN, layerARN, lambdaConfig: config, updateRequest})
@@ -65,7 +60,7 @@ const updateLambdaConfig = async (lambda: Lambda, configuration: FunctionConfigu
   await lambda.updateFunctionConfiguration(configuration.updateRequest).promise()
 }
 
-const getLayerArn = async (lambda: Lambda, runtime: Runtime, settings: InstrumentationSettings) => {
+const getLayerArn = (runtime: Runtime, settings: InstrumentationSettings) => {
   const {region} = settings
   const layerName = RUNTIME_LAYER_LOOKUP[runtime]
   const account = settings.layerAWSAccount ?? DEFAULT_LAYER_AWS_ACCOUNT
