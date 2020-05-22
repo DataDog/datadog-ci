@@ -38,7 +38,16 @@ export class InstrumentCommand extends Command {
     const lambda = new Lambda({region: this.region})
     const configs = await getLambdaConfigs(lambda, this.functions, settings)
     if (this.dryRun) {
-      console.log(JSON.stringify(configs, undefined, 3))
+      this.context.stdout.write('Dry run, would apply the following updates:\n')
+      for (const config of configs) {
+        this.context.stdout.write(
+          `UpdateFunctionConfiguration -> ${config.functionARN}\n${JSON.stringify(
+            config.updateRequest,
+            undefined,
+            2
+          )}\n`
+        )
+      }
     }
 
     return 0

@@ -5,6 +5,7 @@ export interface FunctionConfiguration {
   functionARN: string
   lambdaConfig: Lambda.FunctionConfiguration
   layerARN: string
+  updateRequest: Lambda.UpdateFunctionConfigurationRequest
 }
 
 export interface InstrumentationSettings {
@@ -38,8 +39,9 @@ export const getLambdaConfigs = async (lambda: Lambda, functionARNs: string[], s
       }
       layerARNLookup[runtime] = layerARN
     }
-    if (configNeedsUpdating(config, settings, layerARN, runtime)) {
-      functionsToUpdate.push({functionARN, layerARN, lambdaConfig: config})
+    const updateRequest = calculateUpdateRequest(config, settings, layerARN, runtime)
+    if (updateRequest !== undefined) {
+      functionsToUpdate.push({functionARN, layerARN, lambdaConfig: config, updateRequest})
     }
   }
 
@@ -80,33 +82,49 @@ const getLayerArn = async (lambda: Lambda, runtime: Runtime, settings: Instrumen
   return `arn:aws:lambda:${region}:${account}:layer:${layerName}:${layerVersion}`
 }
 
-const configNeedsUpdating = async (
+const calculateUpdateRequest = (
   config: Lambda.FunctionConfiguration,
   settings: InstrumentationSettings,
   layerARN: string,
   runtime: Runtime
 ) => {
   const env = config.Environment?.Variables
-  if (env === undefined) {
-    return true
+  const functionARN = config.FunctionArn
+  if (functionARN === undefined) {
+    return undefined
   }
-  if (env.DD_LAMBDA_HANDLER === undefined) {
-    return true
+
+  const envVars: Record<string, string> = {}
+  const updateRequest: Lambda.UpdateFunctionConfigurationRequest = {
+    FunctionName: functionARN,
+    Environment: {
+      Variables: envVars,
+    },
+  }
+  let needsUpdate = false
+
+  if (env?.DD_LAMBDA_HANDLER === undefined) {
+    needsUpdate = true
+    envVars.DD_LAMBDA_HANDLER = config.Handler ?? ''
   }
   const expectedHandler = HANDLER_LOCATION[runtime]
   if (config.Handler !== expectedHandler) {
-    return true
+    needsUpdate = true
+    updateRequest.Handler = HANDLER_LOCATION[runtime]
   }
   const layerARNs = (config.Layers ?? []).map((layer) => layer.Arn)
   if (!layerARNs.includes(layerARN)) {
-    return true
+    needsUpdate = true
+    updateRequest.Layers = [layerARN]
   }
-  if (env.DATADOG_TRACE_ENABLED !== settings.tracingEnabled.toString()) {
-    return true
+  if (env?.DATADOG_TRACE_ENABLED !== settings.tracingEnabled.toString()) {
+    needsUpdate = true
+    envVars.DATADOG_TRACE_ENABLED = settings.tracingEnabled.toString()
   }
-  if (env.DATADOG_MERGE_XRAY_TRACES !== settings.mergeXrayTraces.toString()) {
-    return true
+  if (env?.DD_TRACE_ENABLED !== settings.mergeXrayTraces.toString()) {
+    needsUpdate = true
+    envVars.DD_TRACE_ENABLED = settings.mergeXrayTraces.toString()
   }
 
-  return false
+  return needsUpdate ? updateRequest : undefined
 }
