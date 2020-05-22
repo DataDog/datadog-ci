@@ -20,13 +20,11 @@ export interface InstrumentationSettings {
 export const getLambdaConfigs = async (lambda: Lambda, functionARNs: string[], settings: InstrumentationSettings) => {
   const resultPromises = functionARNs.map((fn) => getLambdaConfig(lambda, fn))
   const results = await Promise.all([...resultPromises])
+
   const layerARNLookup: {[key: string]: string} = {}
   const functionsToUpdate: FunctionConfiguration[] = []
 
   for (const {config, functionARN} of results) {
-    if (config === undefined) {
-      throw Error(`Failed to get config of ${functionARN}`)
-    }
     const runtime = config.Runtime as Runtime
     if (runtime === undefined || RUNTIME_LAYER_LOOKUP[runtime] === undefined) {
       throw Error(`Can't instrument ${functionARN}, runtime ${runtime} not supported`)
@@ -34,9 +32,6 @@ export const getLambdaConfigs = async (lambda: Lambda, functionARNs: string[], s
     let layerARN: string | undefined = layerARNLookup[runtime]
     if (layerARN === undefined) {
       layerARN = await getLayerArn(lambda, runtime, settings)
-      if (layerARN === undefined) {
-        throw Error(`Couldn't find layer for runtime ${runtime}, used by function ${functionARN}`)
-      }
       layerARNLookup[runtime] = layerARN
     }
     const updateRequest = calculateUpdateRequest(config, settings, layerARN, runtime)
@@ -48,12 +43,8 @@ export const getLambdaConfigs = async (lambda: Lambda, functionARNs: string[], s
   return functionsToUpdate
 }
 
-export const updateLambdaConfigs = async (
-  lambda: Lambda,
-  configurations: FunctionConfiguration[],
-  settings: InstrumentationSettings
-) => {
-  const results = configurations.map((c) => updateLambdaConfig(lambda, c, settings))
+export const updateLambdaConfigs = async (lambda: Lambda, configurations: FunctionConfiguration[]) => {
+  const results = configurations.map((c) => updateLambdaConfig(lambda, c))
   await Promise.all([...results])
 }
 
@@ -62,15 +53,15 @@ const getLambdaConfig = async (lambda: Lambda, functionARN: string) => {
     FunctionName: functionARN,
   }
   const result = await lambda.getFunction(params).promise()
+  // AWS typescript API is slightly mistyped, adds undefineds where
+  // there shouldn't be.
+  const config = result.Configuration as Lambda.FunctionConfiguration
+  const resolvedFunctionARN = config.FunctionArn as string
 
-  return {config: result.Configuration, functionARN: result.Configuration?.FunctionArn ?? ''}
+  return {config, functionARN: resolvedFunctionARN}
 }
 
-const updateLambdaConfig = async (
-  lambda: Lambda,
-  configuration: FunctionConfiguration,
-  settings: InstrumentationSettings
-) => {
+const updateLambdaConfig = async (lambda: Lambda, configuration: FunctionConfiguration) => {
   await lambda.updateFunctionConfiguration(configuration.updateRequest).promise()
 }
 
@@ -100,7 +91,7 @@ const calculateUpdateRequest = (
   }
   let needsUpdate = false
 
-  if (env?.DD_LAMBDA_HANDLER === undefined) {
+  if (env.DD_LAMBDA_HANDLER === undefined) {
     needsUpdate = true
     newEnvVars.DD_LAMBDA_HANDLER = config.Handler ?? ''
   }
@@ -116,11 +107,11 @@ const calculateUpdateRequest = (
     // Remove any other versions of the layer
     updateRequest.Layers = [...layerARNs.filter((l) => !l.startsWith(layerARN)), fullLayerARN]
   }
-  if (env?.DD_TRACE_ENABLED !== settings.tracingEnabled.toString()) {
+  if (env.DD_TRACE_ENABLED !== settings.tracingEnabled.toString()) {
     needsUpdate = true
     newEnvVars.DD_TRACE_ENABLED = settings.tracingEnabled.toString()
   }
-  if (env?.DD_MERGE_XRAY_TRACES !== settings.mergeXrayTraces.toString()) {
+  if (env.DD_MERGE_XRAY_TRACES !== settings.mergeXrayTraces.toString()) {
     needsUpdate = true
     newEnvVars.DD_MERGE_XRAY_TRACES = settings.mergeXrayTraces.toString()
   }

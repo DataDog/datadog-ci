@@ -51,7 +51,7 @@ export class InstrumentCommand extends Command {
       return 0
     }
 
-    await updateLambdaConfigs(lambda, configs, settings)
+    await updateLambdaConfigs(lambda, configs)
 
     return 0
   }

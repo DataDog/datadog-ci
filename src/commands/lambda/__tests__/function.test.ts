@@ -1,0 +1,200 @@
+import {Lambda} from 'aws-sdk'
+import {getLambdaConfigs, updateLambdaConfigs} from '../function'
+
+function makeMockLambda(functionConfigs: Record<string, Lambda.FunctionConfiguration>) {
+  return {
+    getFunction: jest.fn().mockImplementation(({FunctionName}) => ({
+      promise: () => Promise.resolve({Configuration: functionConfigs[FunctionName]}),
+    })),
+    updateFunctionConfiguration: jest.fn().mockImplementation(() => ({promise: () => Promise.resolve()})),
+  }
+}
+
+describe('function', () => {
+  describe('getLambdaConfigs', () => {
+    test('returns the update request for each function', async () => {
+      const lambda = makeMockLambda({
+        'arn:aws:lambda:us-east-1:000000000000:function:autoinstrument': {
+          FunctionArn: 'arn:aws:lambda:us-east-1:000000000000:function:autoinstrument',
+          Handler: 'index.handler',
+          Runtime: 'nodejs12.x',
+        },
+      })
+      const settings = {
+        layerVersion: 22,
+        mergeXrayTraces: false,
+        region: 'us-east-1',
+        tracingEnabled: false,
+      }
+      const result = await getLambdaConfigs(
+        lambda as any,
+        ['arn:aws:lambda:us-east-1:000000000000:function:autoinstrument'],
+        settings
+      )
+      expect(result.length).toEqual(1)
+      expect(result[0].updateRequest).toMatchInlineSnapshot(`
+                              Object {
+                                "Environment": Object {
+                                  "Variables": Object {
+                                    "DD_LAMBDA_HANDLER": "index.handler",
+                                    "DD_MERGE_XRAY_TRACES": "false",
+                                    "DD_TRACE_ENABLED": "false",
+                                  },
+                                },
+                                "FunctionName": "arn:aws:lambda:us-east-1:000000000000:function:autoinstrument",
+                                "Handler": "/opt/nodejs/node_modules/datadog-lambda-js/handler.handler",
+                                "Layers": Array [
+                                  "arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Node12-x:22",
+                                ],
+                              }
+                    `)
+    })
+
+    test('returns nothing when the function is already configured correctly', async () => {
+      const lambda = makeMockLambda({
+        'arn:aws:lambda:us-east-1:000000000000:function:autoinstrument': {
+          Environment: {
+            Variables: {
+              DD_LAMBDA_HANDLER: 'index.handler',
+              DD_MERGE_XRAY_TRACES: 'false',
+              DD_TRACE_ENABLED: 'false',
+            },
+          },
+          FunctionArn: 'arn:aws:lambda:us-east-1:000000000000:function:autoinstrument',
+          Handler: '/opt/nodejs/node_modules/datadog-lambda-js/handler.handler',
+          Layers: [{Arn: 'arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Node12-x:22'}],
+          Runtime: 'nodejs12.x',
+        },
+      })
+      const settings = {
+        layerVersion: 22,
+        mergeXrayTraces: false,
+        region: 'us-east-1',
+        tracingEnabled: false,
+      }
+      const result = await getLambdaConfigs(
+        lambda as any,
+        ['arn:aws:lambda:us-east-1:000000000000:function:autoinstrument'],
+        settings
+      )
+      expect(result.length).toEqual(0)
+    })
+
+    test('replaces the layer arn when the version has changed', async () => {
+      const lambda = makeMockLambda({
+        'arn:aws:lambda:us-east-1:000000000000:function:autoinstrument': {
+          FunctionArn: 'arn:aws:lambda:us-east-1:000000000000:function:autoinstrument',
+          Layers: [
+            {Arn: 'arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Node12-x:22'},
+            {Arn: 'arn:aws:lambda:us-east-1:464622532012:layer:AnotherLayer:10'},
+          ],
+          Runtime: 'nodejs12.x',
+        },
+      })
+      const settings = {
+        layerVersion: 23,
+        mergeXrayTraces: false,
+        region: 'us-east-1',
+        tracingEnabled: false,
+      }
+      const result = await getLambdaConfigs(
+        lambda as any,
+        ['arn:aws:lambda:us-east-1:000000000000:function:autoinstrument'],
+        settings
+      )
+      expect(result[0].updateRequest.Layers).toMatchInlineSnapshot(`
+      Array [
+        "arn:aws:lambda:us-east-1:464622532012:layer:AnotherLayer:10",
+        "arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Node12-x:23",
+      ]
+    `)
+    })
+    test('returns results for multiple functions', async () => {
+      const lambda = makeMockLambda({
+        'arn:aws:lambda:us-east-1:000000000000:function:another-func': {
+          FunctionArn: 'arn:aws:lambda:us-east-1:000000000000:function:another-func',
+          Runtime: 'nodejs12.x',
+        },
+        'arn:aws:lambda:us-east-1:000000000000:function:autoinstrument': {
+          FunctionArn: 'arn:aws:lambda:us-east-1:000000000000:function:autoinstrument',
+          Runtime: 'nodejs12.x',
+        },
+      })
+      const settings = {
+        layerVersion: 23,
+        mergeXrayTraces: false,
+        region: 'us-east-1',
+        tracingEnabled: false,
+      }
+      const result = await getLambdaConfigs(
+        lambda as any,
+        [
+          'arn:aws:lambda:us-east-1:000000000000:function:autoinstrument',
+          'arn:aws:lambda:us-east-1:000000000000:function:another-func',
+        ],
+        settings
+      )
+      expect(result.length).toEqual(2)
+    })
+
+    test('throws an error when it encounters an unsupported runtime', async () => {
+      const lambda = makeMockLambda({
+        'arn:aws:lambda:us-east-1:000000000000:function:autoinstrument': {
+          FunctionArn: 'arn:aws:lambda:us-east-1:000000000000:function:autoinstrument',
+          Runtime: 'go',
+        },
+      })
+      const settings = {
+        layerVersion: 23,
+        mergeXrayTraces: false,
+        region: 'us-east-1',
+        tracingEnabled: false,
+      }
+
+      await expect(
+        getLambdaConfigs(lambda as any, ['arn:aws:lambda:us-east-1:000000000000:function:autoinstrument'], settings)
+      ).rejects.toThrow()
+    })
+  })
+  describe('updateLambdaConfigs', () => {
+    test('updates every lambda', async () => {
+      const lambda = makeMockLambda({})
+      const configs = [
+        {
+          functionARN: 'arn:aws:lambda:us-east-1:000000000000:function:autoinstrument',
+          lambdaConfig: {
+            FunctionArn: 'arn:aws:lambda:us-east-1:000000000000:function:autoinstrument',
+            Handler: 'index.handler',
+            Runtime: 'nodejs12.x',
+          },
+          layerARN: 'arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Node12-x',
+          updateRequest: {
+            Environment: {
+              Variables: {
+                DD_LAMBDA_HANDLER: 'index.handler',
+                DD_MERGE_XRAY_TRACES: 'false',
+                DD_TRACE_ENABLED: 'false',
+              },
+            },
+            FunctionName: 'arn:aws:lambda:us-east-1:000000000000:function:autoinstrument',
+            Handler: '/opt/nodejs/node_modules/datadog-lambda-js/handler.handler',
+            Layers: ['arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Node12-x:22'],
+          },
+        },
+      ]
+      await updateLambdaConfigs(lambda as any, configs)
+      expect(lambda.updateFunctionConfiguration).toHaveBeenCalledWith({
+        Environment: {
+          Variables: {
+            DD_LAMBDA_HANDLER: 'index.handler',
+            DD_MERGE_XRAY_TRACES: 'false',
+            DD_TRACE_ENABLED: 'false',
+          },
+        },
+        FunctionName: 'arn:aws:lambda:us-east-1:000000000000:function:autoinstrument',
+        Handler: '/opt/nodejs/node_modules/datadog-lambda-js/handler.handler',
+        Layers: ['arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Node12-x:22'],
+      })
+    })
+  })
+})
