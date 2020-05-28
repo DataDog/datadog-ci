@@ -1,47 +1,48 @@
-import {Command} from 'clipanion'
 import chalk from 'chalk'
+import {Command} from 'clipanion'
 import glob from 'glob'
+import {apiConstructor} from './api';
+import {APIConfiguration, APIHelper} from './interfaces';
 
 export class UploadCommand extends Command {
-  //private apiKey?: string
-  private datadogSourcemapsDomain?: string
-  private basePath: string = ''
-  private releaseVersion?: string
-  private service?: string
-  private projectPath?: string
-  private minifiedPath?: string
-
+  private basePath = ''
   private config = {
     apiKey: process.env.DATADOG_API_KEY,
   }
+  private datadogSourcemapsDomain?: string
+  private minifiedPath?: string
+  private projectPath?: string
+  private releaseVersion?: string
+  private service?: string
 
   public async execute() {
-      this.context.stdout.write("Uploading sourcemaps.\n")
-      if (!this.releaseVersion) {
-          this.context.stderr.write("Missing release version\n")
-          return 1
-      }
-      if (!this.service) {
-          this.context.stderr.write("Missing service\n")
-          return 1
-      }
-      if (!this.minifiedPath) {
-          this.context.stderr.write("Missing minified path\n")
-          return 1
-      }
-      if (!this.basePath.endsWith('/')) {
-          this.basePath = this.basePath + '/'
-      }
-      let sourcemapFiles = glob.sync(`${this.basePath}**/*.min.js.map`, {})
-      sourcemapFiles.forEach((s) => this.uploadSourcemap(s))
+    const api = this.getApiHelper()
+    this.context.stdout.write('Uploading sourcemaps.\n')
+    if (!this.releaseVersion) {
+      this.context.stderr.write('Missing release version\n')
+
+      return 1
+    }
+    if (!this.service) {
+      this.context.stderr.write('Missing service\n')
+
+      return 1
+    }
+    if (!this.minifiedPath) {
+      this.context.stderr.write('Missing minified path\n')
+
+      return 1
+    }
+    if (!this.basePath.endsWith('/')) {
+      this.basePath = this.basePath + '/'
+    }
+    const sourcemapFiles = glob.sync(`${this.basePath}**/*.min.js.map`, {})
+    sourcemapFiles.forEach((s) => api.uploadSourcemap(s))
 
   }
 
-  private uploadSourcemap(path: string) {
-    this.context.stdout.write(path + '\n')
-  }
 
-  private getApiHelper() {
+  private getApiHelper(): APIConfiguration {
     if (!this.config.apiKey) {
       this.context.stdout.write(`Missing ${chalk.red.bold('DATADOG_API_KEY')} in your environment.\n`)
       throw new Error('API key is missing')
@@ -49,20 +50,19 @@ export class UploadCommand extends Command {
 
     return apiConstructor({
       apiKey: this.config.apiKey!,
-      appKey: this.config.appKey!,
-      baseIntakeUrl: this.getDatadogHost(true),
-      baseUrl: this.getDatadogHost(),
-      proxyOpts: this.config.proxy,
+      baseIntakeUrl: this.getSourcemapsUrl(),
     })
   }
 
   private getSourcemapsUrl(): string {
-      let domain = this.datadogSourcemapsDomain || 'https://sourcemaps.datadoghq.com/'
-      if (!domain.endsWith('/')) {
-          domain = domain + '/'
-      }
-      return domain + 'v1/input'
+    let domain = this.datadogSourcemapsDomain || 'https://sourcemaps.datadoghq.com/'
+    if (!domain.endsWith('/')) {
+      domain = domain + '/'
+    }
+
+    return domain
   }
+
 }
 
 UploadCommand.addPath('sourcemaps', 'upload')
