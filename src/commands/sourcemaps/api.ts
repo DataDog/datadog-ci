@@ -1,4 +1,4 @@
-import {AxiosError, AxiosPromise, AxiosRequestConfig, default as axios} from 'axios'
+import {AxiosError, AxiosPromise, AxiosRequestConfig, AxiosResponse, default as axios} from 'axios'
 import FormData from 'form-data'
 import fs from 'fs'
 
@@ -8,30 +8,33 @@ interface BackendError {
   errors: string[]
 }
 
-export const uploadSourcemap = (request: (args: AxiosRequestConfig) => AxiosPromise<void>) => async (sourcemap: Payload) => {
+export const uploadSourcemap = (request: (args: AxiosRequestConfig) => AxiosPromise<AxiosResponse>) => async (
+  sourcemap: Payload
+) => {
   const form = new FormData()
+  console.log(sourcemap)
   form.append('service', sourcemap.service)
   form.append('version', sourcemap.version)
-  form.append('minified_url', sourcemap.minifiedUrl)
-  form.append('sourcemap', fs.createReadStream(sourcemap.sourcemapPath))
+  form.append('source_map', fs.createReadStream(sourcemap.sourcemapPath))
   form.append('minified_file', fs.createReadStream(sourcemap.minifiedFilePath))
-
+  form.append('minified_url', sourcemap.minifiedUrl)
   const resp = await request({
     data: form,
+    headers: {...form.getHeaders()},
     method: 'POST',
     url: 'v1/input',
   })
 
-  return resp.data
+  return resp
 }
 
 export const apiConstructor = ({apiKey, baseIntakeUrl}: APIConfiguration) => {
   const overrideArgs = (args: AxiosRequestConfig) => {
     const newArguments = {
       ...args,
-      params: {
-        api_key: apiKey,
-        ...args.params,
+      headers: {
+        'DD-API-KEY': apiKey,
+        ...args.headers,
       },
     }
 

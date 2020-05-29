@@ -1,8 +1,8 @@
 import chalk from 'chalk'
 import {Command} from 'clipanion'
 import glob from 'glob'
-import {apiConstructor} from './api';
-import {APIConfiguration, APIHelper} from './interfaces';
+import {apiConstructor} from './api'
+import {Payload} from './interfaces'
 
 export class UploadCommand extends Command {
   private basePath = ''
@@ -10,10 +10,10 @@ export class UploadCommand extends Command {
     apiKey: process.env.DATADOG_API_KEY,
   }
   private datadogSourcemapsDomain?: string
-  private minifiedPath?: string
+  private minifiedPathPrefix = ''
   private projectPath?: string
-  private releaseVersion?: string
-  private service?: string
+  private releaseVersion = ''
+  private service = ''
 
   public async execute() {
     const api = this.getApiHelper()
@@ -28,7 +28,7 @@ export class UploadCommand extends Command {
 
       return 1
     }
-    if (!this.minifiedPath) {
+    if (!this.minifiedPathPrefix) {
       this.context.stderr.write('Missing minified path\n')
 
       return 1
@@ -37,12 +37,43 @@ export class UploadCommand extends Command {
       this.basePath = this.basePath + '/'
     }
     const sourcemapFiles = glob.sync(`${this.basePath}**/*.min.js.map`, {})
-    sourcemapFiles.forEach((s) => api.uploadSourcemap(s))
-
+    sourcemapFiles.forEach((sourcemapPath) => {
+      const minifiedFilePath = this.getMinifiedFilePath(sourcemapPath)
+      const s: Payload = {
+        minifiedFilePath,
+        minifiedUrl: this.getMinifiedURL(minifiedFilePath),
+        service: this.service,
+        sourcemapPath,
+        version: this.releaseVersion,
+      }
+      api.uploadSourcemap(s).then((res)=> console.log('ok'))
+    })
   }
 
+  private getMinifiedURL(minifiedFilePath: string): string {
+    const relativePath = minifiedFilePath.replace(this.basePath, '')
 
-  private getApiHelper(): APIConfiguration {
+    return this.buildPath(this.minifiedPathPrefix, relativePath)
+  }
+
+  private getMinifiedFilePath(sourcemapPath: string): string {
+    return sourcemapPath.replace('.min.js.map', '.min.js')
+  }
+
+  private buildPath = (...args: string[]) => {
+    return args
+      .map((part, i) => {
+        if (i === 0) {
+          return part.trim().replace(/[\/]*$/g, '')
+        } else {
+          return part.trim().replace(/(^[\/]*|[\/]*$)/g, '')
+        }
+      })
+      .filter((x) => x.length)
+      .join('/')
+  }
+
+  private getApiHelper() {
     if (!this.config.apiKey) {
       this.context.stdout.write(`Missing ${chalk.red.bold('DATADOG_API_KEY')} in your environment.\n`)
       throw new Error('API key is missing')
@@ -62,7 +93,6 @@ export class UploadCommand extends Command {
 
     return domain
   }
-
 }
 
 UploadCommand.addPath('sourcemaps', 'upload')
@@ -70,5 +100,5 @@ UploadCommand.addOption('basePath', Command.String({required: true}))
 UploadCommand.addOption('datadogSourcemapsDomain', Command.String('--datadog-sourcemaps-domain'))
 UploadCommand.addOption('releaseVersion', Command.String('--release-version'))
 UploadCommand.addOption('service', Command.String('--service'))
-UploadCommand.addOption('minifiedPath', Command.String('--minified-path'))
+UploadCommand.addOption('minifiedPathPrefix', Command.String('--minified-path-prefix'))
 UploadCommand.addOption('projectPath', Command.String('--project-path'))

@@ -1,13 +1,13 @@
-import {AxiosPromise} from 'axios';
+import {AxiosPromise} from 'axios'
 
 export interface Payload {
-    minifiedFilePath: string
-    minifiedUrl: string
-    overwrite?: boolean
-    project_path?: string
-    service: string
-    sourcemapPath: string
-    version: string
+  minifiedFilePath: string
+  minifiedUrl: string
+  overwrite?: boolean
+  project_path?: string
+  service: string
+  sourcemapPath: string
+  version: string
 }
 
 export interface APIConfiguration {
