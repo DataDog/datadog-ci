@@ -1,7 +1,7 @@
 import chalk from 'chalk'
 import {Command} from 'clipanion'
 import glob from 'glob'
-import asyncPool from "tiny-async-pool"
+import asyncPool from 'tiny-async-pool'
 import {apiConstructor} from './api'
 import {APIHelper, Payload} from './interfaces'
 
@@ -49,11 +49,16 @@ export class UploadCommand extends Command {
         version: this.releaseVersion,
       }
     }))
-    asyncPool(this.poolLimit, payloads, (p: Payload) => this.uploadSourcemap(api, p))
+    const fileCount = payloads.length
+    const upload = (p: Payload) => this.uploadSourcemap(api, p)
+    const initialTime = new Date().getTime()
+    await asyncPool(this.poolLimit, payloads, upload)
+    const totalTimeSeconds = (new Date().getTime() - initialTime) / 1000
+    this.context.stdout.write(`Uploaded ${fileCount} files in ${totalTimeSeconds} seconds.`)
   }
 
-  private async uploadSourcemap(api: APIHelper, sourcemap: Payload) {
-      api.uploadSourcemap(sourcemap).then((_) => console.log('ok'))
+  private uploadSourcemap(api: APIHelper, sourcemap: Payload): Promise<void> {
+      return api.uploadSourcemap(sourcemap).then((_) => console.log('ok'))
   }
 
   private buildPath = (...args: string[]) => args
