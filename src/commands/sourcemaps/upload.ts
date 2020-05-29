@@ -2,7 +2,7 @@ import chalk from 'chalk'
 import {Command} from 'clipanion'
 import glob from 'glob'
 import {apiConstructor} from './api'
-import {Payload} from './interfaces'
+import {Payload, APIHelper} from './interfaces'
 
 export class UploadCommand extends Command {
   private basePath = ''
@@ -46,18 +46,8 @@ export class UploadCommand extends Command {
         sourcemapPath,
         version: this.releaseVersion,
       }
-      api.uploadSourcemap(s).then((res)=> console.log('ok'))
+      api.uploadSourcemap(s).then((res) => console.log('ok'))
     })
-  }
-
-  private getMinifiedURL(minifiedFilePath: string): string {
-    const relativePath = minifiedFilePath.replace(this.basePath, '')
-
-    return this.buildPath(this.minifiedPathPrefix, relativePath)
-  }
-
-  private getMinifiedFilePath(sourcemapPath: string): string {
-    return sourcemapPath.replace('.min.js.map', '.min.js')
   }
 
   private buildPath = (...args: string[]) => {
@@ -73,7 +63,7 @@ export class UploadCommand extends Command {
       .join('/')
   }
 
-  private getApiHelper() {
+  private getApiHelper(): APIHelper {
     if (!this.config.apiKey) {
       this.context.stdout.write(`Missing ${chalk.red.bold('DATADOG_API_KEY')} in your environment.\n`)
       throw new Error('API key is missing')
@@ -83,6 +73,16 @@ export class UploadCommand extends Command {
       apiKey: this.config.apiKey!,
       baseIntakeUrl: this.getSourcemapsUrl(),
     })
+  }
+
+  private getMinifiedFilePath(sourcemapPath: string): string {
+    return sourcemapPath.replace('.min.js.map', '.min.js')
+  }
+
+  private getMinifiedURL(minifiedFilePath: string): string {
+    const relativePath = minifiedFilePath.replace(this.basePath, '')
+
+    return this.buildPath(this.minifiedPathPrefix, relativePath)
   }
 
   private getSourcemapsUrl(): string {

@@ -1,12 +1,8 @@
-import {AxiosError, AxiosPromise, AxiosRequestConfig, AxiosResponse, default as axios} from 'axios'
+import {AxiosPromise, AxiosRequestConfig, AxiosResponse, default as axios} from 'axios'
 import FormData from 'form-data'
 import fs from 'fs'
 
 import {APIConfiguration, Payload} from './interfaces'
-
-interface BackendError {
-  errors: string[]
-}
 
 export const uploadSourcemap = (request: (args: AxiosRequestConfig) => AxiosPromise<AxiosResponse>) => async (
   sourcemap: Payload

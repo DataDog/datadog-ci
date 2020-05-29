@@ -1,4 +1,4 @@
-import {AxiosPromise} from 'axios'
+import {AxiosPromise, AxiosResponse} from 'axios'
 
 export interface Payload {
   minifiedFilePath: string
@@ -16,5 +16,5 @@ export interface APIConfiguration {
 }
 
 export interface APIHelper {
-  uploadSourcemap(sourcemapPath: string): AxiosPromise<void>
+  uploadSourcemap(sourcemap: Payload): AxiosPromise<AxiosResponse>
 }
