@@ -34,7 +34,8 @@
     "deep-extend": "0.6.0",
     "form-data": "^3.0.0",
     "glob": "7.1.4",
-    "proxy-agent": "3.1.1"
+    "proxy-agent": "3.1.1",
+    "tiny-async-pool": "^1.1.0"
   },
   "devDependencies": {
     "@babel/core": "7.4.5",

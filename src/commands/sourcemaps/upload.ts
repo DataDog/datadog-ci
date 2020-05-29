@@ -1,8 +1,9 @@
 import chalk from 'chalk'
 import {Command} from 'clipanion'
 import glob from 'glob'
+import asyncPool from "tiny-async-pool"
 import {apiConstructor} from './api'
-import {Payload, APIHelper} from './interfaces'
+import {APIHelper, Payload} from './interfaces'
 
 export class UploadCommand extends Command {
   private basePath = ''
@@ -14,6 +15,7 @@ export class UploadCommand extends Command {
   private projectPath?: string
   private releaseVersion = ''
   private service = ''
+  private poolLimit = 20
 
   public async execute() {
     const api = this.getApiHelper()
@@ -37,21 +39,24 @@ export class UploadCommand extends Command {
       this.basePath = this.basePath + '/'
     }
     const sourcemapFiles = glob.sync(`${this.basePath}**/*.min.js.map`, {})
-    sourcemapFiles.forEach((sourcemapPath) => {
+    const payloads = sourcemapFiles.map((sourcemapPath => {
       const minifiedFilePath = this.getMinifiedFilePath(sourcemapPath)
-      const s: Payload = {
+      return {
         minifiedFilePath,
         minifiedUrl: this.getMinifiedURL(minifiedFilePath),
         service: this.service,
         sourcemapPath,
         version: this.releaseVersion,
       }
-      api.uploadSourcemap(s).then((res) => console.log('ok'))
-    })
+    }))
+    asyncPool(this.poolLimit, payloads, (p: Payload) => this.uploadSourcemap(api, p))
   }
 
-  private buildPath = (...args: string[]) => {
-    return args
+  private async uploadSourcemap(api: APIHelper, sourcemap: Payload) {
+      api.uploadSourcemap(sourcemap).then((_) => console.log('ok'))
+  }
+
+  private buildPath = (...args: string[]) => args
       .map((part, i) => {
         if (i === 0) {
           return part.trim().replace(/[\/]*$/g, '')
@@ -61,7 +66,6 @@ export class UploadCommand extends Command {
       })
       .filter((x) => x.length)
       .join('/')
-  }
 
   private getApiHelper(): APIHelper {
     if (!this.config.apiKey) {
