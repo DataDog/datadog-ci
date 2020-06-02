@@ -23,11 +23,11 @@ describe('function', () => {
       const settings = {
         layerVersion: 22,
         mergeXrayTraces: false,
-        region: 'us-east-1',
         tracingEnabled: false,
       }
       const result = await getLambdaConfigs(
         lambda as any,
+        'us-east-1',
         ['arn:aws:lambda:us-east-1:000000000000:function:autoinstrument'],
         settings
       )
@@ -69,11 +69,11 @@ describe('function', () => {
       const settings = {
         layerVersion: 22,
         mergeXrayTraces: false,
-        region: 'us-east-1',
         tracingEnabled: false,
       }
       const result = await getLambdaConfigs(
         lambda as any,
+        'us-east-1',
         ['arn:aws:lambda:us-east-1:000000000000:function:autoinstrument'],
         settings
       )
@@ -94,11 +94,11 @@ describe('function', () => {
       const settings = {
         layerVersion: 23,
         mergeXrayTraces: false,
-        region: 'us-east-1',
         tracingEnabled: false,
       }
       const result = await getLambdaConfigs(
         lambda as any,
+        'us-east-1',
         ['arn:aws:lambda:us-east-1:000000000000:function:autoinstrument'],
         settings
       )
@@ -123,11 +123,11 @@ describe('function', () => {
       const settings = {
         layerVersion: 23,
         mergeXrayTraces: false,
-        region: 'us-east-1',
         tracingEnabled: false,
       }
       const result = await getLambdaConfigs(
         lambda as any,
+        'us-east-1',
         [
           'arn:aws:lambda:us-east-1:000000000000:function:autoinstrument',
           'arn:aws:lambda:us-east-1:000000000000:function:another-func',
@@ -147,12 +147,16 @@ describe('function', () => {
       const settings = {
         layerVersion: 23,
         mergeXrayTraces: false,
-        region: 'us-east-1',
         tracingEnabled: false,
       }
 
       await expect(
-        getLambdaConfigs(lambda as any, ['arn:aws:lambda:us-east-1:000000000000:function:autoinstrument'], settings)
+        getLambdaConfigs(
+          lambda as any,
+          'us-east-1',
+          ['arn:aws:lambda:us-east-1:000000000000:function:autoinstrument'],
+          settings
+        )
       ).rejects.toThrow()
     })
   })

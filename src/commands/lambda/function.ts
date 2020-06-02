@@ -13,11 +13,15 @@ export interface InstrumentationSettings {
   layerAWSAccount?: string
   layerVersion?: number
   mergeXrayTraces: boolean
-  region: string
   tracingEnabled: boolean
 }
 
-export const getLambdaConfigs = async (lambda: Lambda, functionARNs: string[], settings: InstrumentationSettings) => {
+export const getLambdaConfigs = async (
+  lambda: Lambda,
+  region: string,
+  functionARNs: string[],
+  settings: InstrumentationSettings
+) => {
   const resultPromises = functionARNs.map((fn) => getLambdaConfig(lambda, fn))
   const results = await Promise.all([...resultPromises])
 
@@ -28,7 +32,8 @@ export const getLambdaConfigs = async (lambda: Lambda, functionARNs: string[], s
     if (runtime === undefined || RUNTIME_LAYER_LOOKUP[runtime] === undefined) {
       throw Error(`Can't instrument ${functionARN}, runtime ${runtime} not supported`)
     }
-    let layerARN: string = getLayerArn(runtime, settings)
+
+    let layerARN: string = getLayerArn(runtime, settings, region)
     const updateRequest = calculateUpdateRequest(config, settings, layerARN, runtime)
     if (updateRequest !== undefined) {
       functionsToUpdate.push({functionARN, layerARN, lambdaConfig: config, updateRequest})
@@ -60,8 +65,7 @@ const updateLambdaConfig = async (lambda: Lambda, configuration: FunctionConfigu
   await lambda.updateFunctionConfiguration(configuration.updateRequest).promise()
 }
 
-const getLayerArn = (runtime: Runtime, settings: InstrumentationSettings) => {
-  const {region} = settings
+const getLayerArn = (runtime: Runtime, settings: InstrumentationSettings, region: string) => {
   const layerName = RUNTIME_LAYER_LOOKUP[runtime]
   const account = settings.layerAWSAccount ?? DEFAULT_LAYER_AWS_ACCOUNT
 
