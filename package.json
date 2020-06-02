@@ -28,7 +28,7 @@
     "watch": "tsc -w"
   },
   "dependencies": {
-    "aws-sdk": "true2.682.0",
+    "aws-sdk": "2.682.0",
     "axios": "0.19.2",
     "chalk": "2.4.2",
     "clipanion": "2.2.2",
