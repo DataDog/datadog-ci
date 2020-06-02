@@ -4,7 +4,7 @@ export interface Payload {
   minifiedFilePath: string
   minifiedUrl: string
   overwrite?: boolean
-  project_path?: string
+  projectPath: string
   service: string
   sourcemapPath: string
   version: string
