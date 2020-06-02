@@ -1,32 +1,31 @@
-import {promisify} from 'util'
 import fs from 'fs'
+import {promisify} from 'util'
 
 import {Lambda} from 'aws-sdk'
 import {Command} from 'clipanion'
-import {getLambdaConfigs, InstrumentationSettings, updateLambdaConfigs, FunctionConfiguration} from './function'
-import {LambdaConfigOptions} from './interfaces'
 import deepExtend from 'deep-extend'
+import {FunctionConfiguration, getLambdaConfigs, InstrumentationSettings, updateLambdaConfigs} from './function'
+import {LambdaConfigOptions} from './interfaces'
 
 export class InstrumentCommand extends Command {
-  private dryRun = false
-  private functions: string[] = []
-  private layerAWSAccount?: string
-  private layerVersion?: string
-  private region?: string
-  private configPath?: string
-  private tracing?: boolean
-  private mergeXrayTraces?: boolean
-
   private awsAccessKeyId?: string
   private awsSecretAccessKey?: string
 
   private config: LambdaConfigOptions = {
     awsAccessKeyId: process.env.AWS_ACCESS_KEY_ID,
     awsSecretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+    functions: [],
     region: process.env.AWS_DEFAULT_REGION,
     tracing: true,
-    functions: [],
   }
+  private configPath?: string
+  private dryRun = false
+  private functions: string[] = []
+  private layerAWSAccount?: string
+  private layerVersion?: string
+  private mergeXrayTraces?: boolean
+  private region?: string
+  private tracing?: boolean
 
   public async execute() {
     await this.parseConfigFile()
@@ -38,6 +37,7 @@ export class InstrumentCommand extends Command {
 
     if (this.functions.length === 0) {
       this.context.stdout.write('No functions specified for instrumentation.\n')
+
       return 1
     }
     const functionGroups = this.collectFunctionsByRegion()
@@ -47,18 +47,18 @@ export class InstrumentCommand extends Command {
 
     const configGroups: {
       [region: string]: {
-        lambda: Lambda
         configs: FunctionConfiguration[]
+        lambda: Lambda
       }
     } = {}
-    for (const [region, functions] of Object.entries(functionGroups)) {
+    for (const [region, functionList] of Object.entries(functionGroups)) {
       const lambda = this.getLambdaService(region)
-      const configs = await getLambdaConfigs(lambda, region, functions, settings)
+      const configs = await getLambdaConfigs(lambda, region, functionList, settings)
       configGroups[region] = {configs, lambda}
     }
-    const configs = Object.values(configGroups).flatMap((group) => group.configs)
-    this.printPlannedActions(configs)
-    if (this.dryRun || configs.length === 0) {
+    const configList = Object.values(configGroups).flatMap((group) => group.configs)
+    this.printPlannedActions(configList)
+    if (this.dryRun || configList.length === 0) {
       return 0
     }
     const promises = Object.values(configGroups).map((group) => updateLambdaConfigs(group.lambda, group.configs))
@@ -67,20 +67,44 @@ export class InstrumentCommand extends Command {
     return 0
   }
 
-  private printPlannedActions(configs: FunctionConfiguration[]) {
-    const prefix = this.dryRun ? '[Dry Run] ' : ''
-
-    if (configs.length === 0) {
-      this.context.stdout.write(`${prefix}No updates will be applied\n`)
+  private collectFunctionsByRegion() {
+    const functions = this.functions.length !== 0 ? this.functions : this.config.functions
+    const defaultRegion = this.region || this.config.region
+    const groups: {[key: string]: string[]} = {}
+    const regionless: string[] = []
+    for (const func of functions) {
+      const region = this.getRegion(func) ?? defaultRegion
+      if (region === undefined) {
+        regionless.push(func)
+        continue
+      }
+      if (groups[region] === undefined) {
+        groups[region] = []
+      }
+      const group = groups[region]
+      group.push(func)
+    }
+    if (regionless.length > 0) {
+      this.context.stdout.write(
+        `'No default region specified for ${JSON.stringify(regionless)}. Use -r,--region, or use a full functionARN\n`
+      )
 
       return
     }
-    this.context.stdout.write(`${prefix}Will apply the following updates:\n`)
-    for (const config of configs) {
-      this.context.stdout.write(
-        `UpdateFunctionConfiguration -> ${config.functionARN}\n${JSON.stringify(config.updateRequest, undefined, 2)}\n`
-      )
-    }
+
+    return groups
+  }
+
+  private getLambdaService(region: string) {
+    const accessKeyId = this.awsAccessKeyId ?? this.config.awsAccessKeyId
+    const secretAccessKey = this.awsSecretAccessKey ?? this.config.awsSecretAccessKey
+
+    return new Lambda({region, accessKeyId, secretAccessKey})
+  }
+  private getRegion(functionARN: string) {
+    const [, , , region] = functionARN.split(':')
+
+    return region === undefined || region === '*' ? undefined : region
   }
 
   private getSettings(): InstrumentationSettings | undefined {
@@ -125,42 +149,20 @@ export class InstrumentCommand extends Command {
     }
   }
 
-  private getLambdaService(region: string) {
-    const accessKeyId = this.awsAccessKeyId ?? this.config.awsAccessKeyId
-    const secretAccessKey = this.awsSecretAccessKey ?? this.config.awsSecretAccessKey
+  private printPlannedActions(configs: FunctionConfiguration[]) {
+    const prefix = this.dryRun ? '[Dry Run] ' : ''
 
-    return new Lambda({region, accessKeyId, secretAccessKey})
-  }
-
-  private collectFunctionsByRegion() {
-    const functions = this.functions.length !== 0 ? this.functions : this.config.functions
-    const defaultRegion = this.region || this.config.region
-    const groups: {[key: string]: string[]} = {}
-    const regionless: string[] = []
-    for (const func of functions) {
-      const region = this.getRegion(func) ?? defaultRegion
-      if (region === undefined) {
-        regionless.push(func)
-        continue
-      }
-      if (groups[region] === undefined) {
-        groups[region] = []
-      }
-      const group = groups[region]
-      group.push(func)
-    }
-    if (regionless.length > 0) {
-      this.context.stdout.write(
-        `'No default region specified for ${JSON.stringify(regionless)}. Use -r,--region, or use a full functionARN\n`
-      )
+    if (configs.length === 0) {
+      this.context.stdout.write(`${prefix}No updates will be applied\n`)
 
       return
     }
-    return groups
-  }
-  private getRegion(functionARN: string) {
-    let [, , , region] = functionARN.split(':')
-    return region === undefined || region === '*' ? undefined : region
+    this.context.stdout.write(`${prefix}Will apply the following updates:\n`)
+    for (const config of configs) {
+      this.context.stdout.write(
+        `UpdateFunctionConfiguration -> ${config.functionARN}\n${JSON.stringify(config.updateRequest, undefined, 2)}\n`
+      )
+    }
   }
 }
 

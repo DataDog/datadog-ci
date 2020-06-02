@@ -1,8 +1,10 @@
+// tslint:disable: no-string-literal
 jest.mock('fs')
 jest.mock('aws-sdk')
-import * as fs from 'fs'
-import {InstrumentCommand} from '../instrument'
 import {Lambda} from 'aws-sdk'
+import * as fs from 'fs'
+
+import {InstrumentCommand} from '../instrument'
 
 describe('lambda', () => {
   const createCommand = () => {
@@ -16,36 +18,35 @@ describe('lambda', () => {
         },
       },
     } as any
+
     return command
   }
-  const makeMockLambda = (functionConfigs: Record<string, Lambda.FunctionConfiguration>) => {
-    return {
-      getFunction: jest.fn().mockImplementation(({FunctionName}) => ({
-        promise: () => Promise.resolve({Configuration: functionConfigs[FunctionName]}),
-      })),
-      updateFunctionConfiguration: jest.fn().mockImplementation(() => ({promise: () => Promise.resolve()})),
-    }
-  }
+  const makeMockLambda = (functionConfigs: Record<string, Lambda.FunctionConfiguration>) => ({
+    getFunction: jest.fn().mockImplementation(({FunctionName}) => ({
+      promise: () => Promise.resolve({Configuration: functionConfigs[FunctionName]}),
+    })),
+    updateFunctionConfiguration: jest.fn().mockImplementation(() => ({promise: () => Promise.resolve()})),
+  })
 
   describe('instrument', () => {
     describe('execute', () => {
       test('prints dry run data', async () => {
         ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({code: 'ENOENT'}))
-        ;(Lambda as any).mockImplementation(() => {
-          return makeMockLambda({
+        ;(Lambda as any).mockImplementation(() =>
+          makeMockLambda({
             'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world': {
               FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world',
               Handler: 'index.handler',
               Runtime: 'nodejs12.x',
             },
           })
-        })
+        )
 
         const command = createCommand()
         command['functions'] = ['arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world']
         command['dryRun'] = true
         command['layerVersion'] = '10'
-        const code = await command['execute']()
+        const code = await command.execute()
         const output = command.context.stdout.toString()
         expect(code).toBe(0)
         expect(output).toMatchInlineSnapshot(`
@@ -82,7 +83,7 @@ describe('lambda', () => {
         const command = createCommand()
         command['functions'] = ['arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world']
         command['layerVersion'] = '10'
-        await command['execute']()
+        await command.execute()
         expect(lambda.updateFunctionConfiguration).toHaveBeenCalled()
       })
       test('aborts early when no functions are specified', async () => {
@@ -92,7 +93,7 @@ describe('lambda', () => {
         const command = createCommand()
         command['functions'] = []
         command['layerVersion'] = '10'
-        const code = await command['execute']()
+        const code = await command.execute()
         expect(code).toBe(1)
         const output = command.context.stdout.toString()
         expect(code).toBe(1)
@@ -108,7 +109,7 @@ describe('lambda', () => {
         const command = createCommand()
         command['functions'] = ['my-func']
         command['layerVersion'] = '10'
-        const code = await command['execute']()
+        const code = await command.execute()
         expect(code).toBe(1)
         const output = command.context.stdout.toString()
         expect(code).toBe(1)
@@ -186,7 +187,7 @@ describe('lambda', () => {
         const command = createCommand()
 
         await command['parseConfigFile']()
-        expect((command['config'] as any)['newconfigkey']).toBe('newconfigvalue')
+        expect((command['config'] as any).newconfigkey).toBe('newconfigvalue')
         ;(fs.readFile as any).mockRestore()
       })
 
@@ -209,6 +210,7 @@ describe('lambda', () => {
         let config: any
         ;(Lambda as any).mockImplementation((cfg: any) => {
           config = cfg
+
           return makeMockLambda({})
         })
         const command = createCommand()
@@ -216,7 +218,7 @@ describe('lambda', () => {
         command['awsSecretAccessKey'] = '45678'
         command['config']['awsAccessKeyId'] = 'abcedf'
         command['config']['awsSecretAccessKey'] = 'ghijklm'
-        const service = command['getLambdaService']('us-east-1')
+        command['getLambdaService']('us-east-1')
         expect(config.accessKeyId).toEqual('1234')
         expect(config.secretAccessKey).toEqual('45678')
       })
@@ -224,12 +226,13 @@ describe('lambda', () => {
         let config: any
         ;(Lambda as any).mockImplementation((cfg: any) => {
           config = cfg
+
           return makeMockLambda({})
         })
         const command = createCommand()
-        command['config']['awsAccessKeyId'] = 'abcedf'
-        command['config']['awsSecretAccessKey'] = 'ghijklm'
-        const service = command['getLambdaService']('us-east-1')
+        command['config'].awsAccessKeyId = 'abcedf'
+        command['config'].awsSecretAccessKey = 'ghijklm'
+        command['getLambdaService']('us-east-1')
         expect(config.accessKeyId).toEqual('abcedf')
         expect(config.secretAccessKey).toEqual('ghijklm')
       })
@@ -255,7 +258,7 @@ describe('lambda', () => {
       test('groups functions in the config object', () => {
         process.env = {}
         const command = createCommand()
-        command['config']['functions'] = [
+        command['config'].functions = [
           'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world',
           'arn:aws:lambda:us-east-1:123456789012:function:another',
           'arn:aws:lambda:us-east-2:123456789012:function:third-func',
@@ -282,8 +285,8 @@ describe('lambda', () => {
         command['region'] = 'ap-south-1'
 
         expect(command['collectFunctionsByRegion']()).toEqual({
-          'us-east-1': ['arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world'],
           'ap-south-1': ['arn:aws:lambda:*:123456789012:function:func-with-wildcard', 'func-without-region'],
+          'us-east-1': ['arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world'],
           'us-east-2': ['arn:aws:lambda:us-east-2:123456789012:function:third-func'],
         })
       })

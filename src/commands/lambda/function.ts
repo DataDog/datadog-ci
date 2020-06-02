@@ -33,7 +33,7 @@ export const getLambdaConfigs = async (
       throw Error(`Can't instrument ${functionARN}, runtime ${runtime} not supported`)
     }
 
-    let layerARN: string = getLayerArn(runtime, settings, region)
+    const layerARN: string = getLayerArn(runtime, settings, region)
     const updateRequest = calculateUpdateRequest(config, settings, layerARN, runtime)
     if (updateRequest !== undefined) {
       functionsToUpdate.push({functionARN, layerARN, lambdaConfig: config, updateRequest})
