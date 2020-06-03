@@ -1,8 +1,9 @@
 // tslint:disable: no-string-literal
 jest.mock('glob')
-import {UploadCommand} from '../upload'
-import {Payload} from '../interfaces'
 import glob from 'glob'
+
+import {Payload} from '../interfaces'
+import {UploadCommand} from '../upload'
 
 export const assertThrow = (func: any, errorRegex?: RegExp) => {
   let error
