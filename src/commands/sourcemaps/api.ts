@@ -15,6 +15,7 @@ export const uploadSourcemap = (request: (args: AxiosRequestConfig) => AxiosProm
     form.append('source_map', fs.createReadStream(sourcemap.sourcemapPath))
     form.append('minified_file', fs.createReadStream(sourcemap.minifiedFilePath))
     form.append('minified_url', sourcemap.minifiedUrl)
+    form.append('project_path', sourcemap.projectPath)
 
     return request({
       data: form,
@@ -35,9 +36,10 @@ export const apiConstructor = ({apiKey, baseIntakeUrl}: APIConfiguration) => {
     },
   })
 
-  const request = (args: AxiosRequestConfig) => {
-    return axios.create({baseURL: baseIntakeUrl})(overrideArgs(args))
-  }
+  const request = (args: AxiosRequestConfig) =>
+    axios.create({
+      baseURL: baseIntakeUrl,
+    })(overrideArgs(args))
 
   return {
     uploadSourcemap: uploadSourcemap(request),

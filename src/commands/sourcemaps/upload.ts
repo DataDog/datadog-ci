@@ -4,27 +4,26 @@ import {Command} from 'clipanion'
 import {BufferedMetricsLogger} from 'datadog-metrics'
 import glob from 'glob'
 import asyncPool from 'tiny-async-pool'
+
 import {apiConstructor} from './api'
 import {APIHelper, Payload} from './interfaces'
 import {getMetricsLogger} from './metrics'
-import {renderFailedUpload, renderRetriedUpload} from './renderer'
+import {renderFailedUpload, renderRetriedUpload, renderSuccessfulCommand} from './renderer'
 import {buildPath, getMinifiedFilePath} from './utils'
 
 export class UploadCommand extends Command {
-  private basePath = ''
+  private basePath?: string
   private config = {
     apiKey: process.env.DATADOG_API_KEY,
     datadogSourcemapsDomain: process.env.DATADOG_SOURCE_MAPS_DOMAIN,
+    poolLimit: parseInt(process.env.DATADOG_SOURCE_MAPS_POOL_LIMIT!, 10) || 20,
   }
-  private minifiedPathPrefix = ''
-  private poolLimit = 20
+  private minifiedPathPrefix?: string
   private projectPath = ''
-  private releaseVersion = ''
-  private service = ''
+  private releaseVersion?: string
+  private service?: string
 
   public async execute() {
-    const api = this.getApiHelper()
-    const metricsLogger = getMetricsLogger(this.releaseVersion, this.service)
     this.context.stdout.write('Uploading sourcemaps.\n')
     if (!this.releaseVersion) {
       this.context.stderr.write('Missing release version\n')
@@ -42,29 +41,16 @@ export class UploadCommand extends Command {
 
       return 1
     }
-    if (!this.basePath.endsWith('/')) {
-      this.basePath = this.basePath + '/'
-    }
 
-    const sourcemapFiles = glob.sync(`${this.basePath}**/*.min.js.map`, {})
-    const payloads = sourcemapFiles.map((sourcemapPath) => {
-      const minifiedFilePath = getMinifiedFilePath(sourcemapPath)
-
-      return {
-        minifiedFilePath,
-        minifiedUrl: this.getMinifiedURL(minifiedFilePath),
-        projectPath: this.projectPath,
-        service: this.service,
-        sourcemapPath,
-        version: this.releaseVersion,
-      }
-    })
-    const fileCount = payloads.length
+    const api = this.getApiHelper()
+    const metricsLogger = getMetricsLogger(this.releaseVersion, this.service)
+    const payloads = this.getMatchingSourcemapFiles()
     const upload = (p: Payload) => this.uploadSourcemap(api, metricsLogger, p)
     const initialTime = new Date().getTime()
-    await asyncPool(this.poolLimit, payloads, upload)
+    await asyncPool(this.config.poolLimit, payloads, upload)
     const totalTimeSeconds = (new Date().getTime() - initialTime) / 1000
-    this.context.stdout.write(`Uploaded ${fileCount} files in ${totalTimeSeconds} seconds.`)
+    this.context.stdout.write(renderSuccessfulCommand(payloads.length, totalTimeSeconds))
+    metricsLogger.gauge('duration', totalTimeSeconds)
     metricsLogger.flush()
   }
 
@@ -83,10 +69,27 @@ export class UploadCommand extends Command {
     })
   }
 
-  private getMinifiedURL(minifiedFilePath: string): string {
-    const relativePath = minifiedFilePath.replace(this.basePath, '')
+  private getMatchingSourcemapFiles(): Payload[] {
+    const sourcemapFiles = glob.sync(buildPath(this.basePath!, '**/*.min.js.map'))
 
-    return buildPath(this.minifiedPathPrefix, relativePath)
+    return sourcemapFiles.map((sourcemapPath) => {
+      const minifiedFilePath = getMinifiedFilePath(sourcemapPath)
+
+      return {
+        minifiedFilePath,
+        minifiedUrl: this.getMinifiedURL(minifiedFilePath),
+        projectPath: this.projectPath,
+        service: this.service!,
+        sourcemapPath,
+        version: this.releaseVersion!,
+      }
+    })
+  }
+
+  private getMinifiedURL(minifiedFilePath: string): string {
+    const relativePath = minifiedFilePath.replace(this.basePath!, '')
+
+    return buildPath(this.minifiedPathPrefix!, relativePath)
   }
 
   private async uploadSourcemap(
@@ -96,21 +99,22 @@ export class UploadCommand extends Command {
   ): Promise<void> {
     try {
       await retry(
-        async (bail, attempt) => {
+        async () => {
+          // TODO [alexc] in case un-recoverable errors happen, bail
           await api.uploadSourcemap(sourcemap)
           metricsLogger.increment('success', 1)
         },
         {
           onRetry: (e, attempt) => {
             metricsLogger.increment('retries', 1)
-            this.context.stdout.write(renderRetriedUpload(sourcemap, attempt))
+            this.context.stdout.write(renderRetriedUpload(sourcemap, e.message, attempt))
           },
           retries: 5,
         }
       )
     } catch (error) {
       metricsLogger.increment('failed', 1)
-      this.context.stdout.write(renderFailedUpload(sourcemap))
+      this.context.stdout.write(renderFailedUpload(sourcemap, error))
     }
 
     return

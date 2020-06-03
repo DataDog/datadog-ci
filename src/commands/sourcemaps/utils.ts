@@ -1,4 +1,4 @@
-export const getMinifiedFilePath = (sourcemapPath: string): string => sourcemapPath.replace('.min.js.map', '.min.js')
+export const getMinifiedFilePath = (sourcemapPath: string): string => sourcemapPath.replace(new RegExp('\\.map$'), '')
 
 export const buildPath = (...args: string[]): string =>
   args
