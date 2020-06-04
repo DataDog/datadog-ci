@@ -23,7 +23,7 @@ export const getLambdaConfigs = async (
   settings: InstrumentationSettings
 ) => {
   const resultPromises = functionARNs.map((fn) => getLambdaConfig(lambda, fn))
-  const results = await Promise.all([...resultPromises])
+  const results = await Promise.all(resultPromises)
 
   const functionsToUpdate: FunctionConfiguration[] = []
 
@@ -45,7 +45,7 @@ export const getLambdaConfigs = async (
 
 export const updateLambdaConfigs = async (lambda: Lambda, configurations: FunctionConfiguration[]) => {
   const results = configurations.map((c) => updateLambdaConfig(lambda, c))
-  await Promise.all([...results])
+  await Promise.all(results)
 }
 
 const getLambdaConfig = async (lambda: Lambda, functionARN: string) => {

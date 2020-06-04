@@ -178,33 +178,7 @@ describe('lambda', () => {
         expect(command['getSettings']()).toBeUndefined()
       })
     })
-    describe('parseConfigFile', () => {
-      test('should read a config file', async () => {
-        ;(fs.readFile as any).mockImplementation((path: string, opts: any, callback: any) =>
-          callback(undefined, '{"newconfigkey":"newconfigvalue"}')
-        )
 
-        const command = createCommand()
-
-        await command['parseConfigFile']()
-        expect((command['config'] as any).newconfigkey).toBe('newconfigvalue')
-        ;(fs.readFile as any).mockRestore()
-      })
-
-      test('should throw an error if path is provided and config file is not found', async () => {
-        ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({code: 'ENOENT'}))
-        const command = createCommand()
-        command['configPath'] = '/veryuniqueandabsentfile'
-        await expect(command['parseConfigFile']()).rejects.toEqual(Error('Config file not found'))
-      })
-
-      test('should throw an error if JSON parsing fails', async () => {
-        ;(fs.readFile as any).mockImplementation((p: string, o: any, cb: any) => cb(undefined, 'thisisnoJSON'))
-        const command = new InstrumentCommand()
-
-        await expect(command['parseConfigFile']()).rejects.toEqual(Error('Config file is not correct JSON'))
-      })
-    })
     describe('getLambdaService', () => {
       test('uses cli keys over values in config file', () => {
         let config: any

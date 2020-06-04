@@ -86,35 +86,6 @@ describe('run-test', () => {
     })
   })
 
-  describe('parseConfigFile', () => {
-    test('should read a config file', async () => {
-      ;(fs.readFile as any).mockImplementation((path: string, opts: any, callback: any) =>
-        callback(undefined, '{"newconfigkey":"newconfigvalue"}')
-      )
-
-      const command = new RunTestCommand()
-
-      await command['parseConfigFile']()
-      expect((command['config'] as any)['newconfigkey']).toBe('newconfigvalue')
-      ;(fs.readFile as any).mockRestore()
-    })
-
-    test('should throw an error if path is provided and config file is not found', async () => {
-      ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({code: 'ENOENT'}))
-      const command = new RunTestCommand()
-      command['configPath'] = '/veryuniqueandabsentfile'
-
-      await assertAsyncThrow(command['parseConfigFile'].bind(command), /Config file not found/)
-    })
-
-    test('should throw an error if JSON parsing fails', async () => {
-      ;(fs.readFile as any).mockImplementation((p: string, o: any, cb: any) => cb(undefined, 'thisisnoJSON'))
-      const command = new RunTestCommand()
-
-      await assertAsyncThrow(command['parseConfigFile'].bind(command), /Config file is not correct JSON/)
-    })
-  })
-
   describe('getTestsToTrigger', () => {
     const conf1 = {
       tests: [{config: {}, id: 'abc-def-ghi'}],

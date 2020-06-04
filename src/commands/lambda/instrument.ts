@@ -1,11 +1,8 @@
-import fs from 'fs'
-import {promisify} from 'util'
-
 import {Lambda} from 'aws-sdk'
 import {Command} from 'clipanion'
-import deepExtend from 'deep-extend'
 import {FunctionConfiguration, getLambdaConfigs, InstrumentationSettings, updateLambdaConfigs} from './function'
 import {LambdaConfigOptions} from './interfaces'
+import {parseConfigFile} from '../../helpers/utils'
 
 export class InstrumentCommand extends Command {
   private awsAccessKeyId?: string
@@ -28,7 +25,7 @@ export class InstrumentCommand extends Command {
   private tracing?: boolean
 
   public async execute() {
-    await this.parseConfigFile()
+    this.config = await parseConfigFile(this.config, this.configPath)
 
     const settings = this.getSettings()
     if (settings === undefined) {
@@ -56,7 +53,9 @@ export class InstrumentCommand extends Command {
       const configs = await getLambdaConfigs(lambda, region, functionList, settings)
       configGroups[region] = {configs, lambda}
     }
-    const configList = Object.values(configGroups).flatMap((group) => group.configs)
+    const configList = Object.values(configGroups)
+      .map((group) => group.configs)
+      .reduce((a, b) => a.concat(b))
     this.printPlannedActions(configList)
     if (this.dryRun || configList.length === 0) {
       return 0
@@ -129,23 +128,6 @@ export class InstrumentCommand extends Command {
       layerVersion,
       mergeXrayTraces,
       tracingEnabled,
-    }
-  }
-
-  private async parseConfigFile() {
-    try {
-      const configPath = this.configPath || 'datadog-ci.json'
-      const configFile = await promisify(fs.readFile)(configPath, 'utf-8')
-      const config = JSON.parse(configFile)
-      this.config = deepExtend(this.config, config)
-    } catch (e) {
-      if (e.code === 'ENOENT' && this.configPath) {
-        throw new Error('Config file not found')
-      }
-
-      if (e instanceof SyntaxError) {
-        throw new Error('Config file is not correct JSON')
-      }
     }
   }
 
