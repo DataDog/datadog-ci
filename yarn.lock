@@ -1126,7 +1126,7 @@ atob@^2.1.1:
   resolved "https://registry.yarnpkg.com/atob/-/atob-2.1.2.tgz#6d9517eb9e030d2436666651e86bd9f6f13533c9"
   integrity sha512-Wm6ukoaOGJi/73p/cl2GvLjTI5JM1k/O14isD73YML8StrH/7/lRFgmg8nICZgD3bZZvjwCGxtMOD3wWNAu8cg==
 
-aws-sdk@true2.682.0:
+aws-sdk@2.682.0:
   version "2.682.0"
   resolved "https://registry.yarnpkg.com/aws-sdk/-/aws-sdk-2.682.0.tgz#3c2dd46ea4ef8856c124a48368efc85ffe828589"
   integrity sha512-1eVkM/L53Vi68h07EbPh/1MqL0xI7sKssJAcFACLsBISJTqogxOrIocqPlVoQoprUFK4KiSL5ucK88KwkyoCUA==
