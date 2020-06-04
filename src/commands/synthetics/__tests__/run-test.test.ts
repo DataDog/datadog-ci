@@ -1,6 +1,5 @@
 // tslint:disable: no-string-literal
 jest.mock('fs')
-import * as fs from 'fs'
 
 import {RunTestCommand} from '../run-test'
 import * as utils from '../utils'

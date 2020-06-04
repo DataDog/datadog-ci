@@ -1,8 +1,8 @@
 import {Lambda} from 'aws-sdk'
 import {Command} from 'clipanion'
+import {parseConfigFile} from '../../helpers/utils'
 import {FunctionConfiguration, getLambdaConfigs, InstrumentationSettings, updateLambdaConfigs} from './function'
 import {LambdaConfigOptions} from './interfaces'
-import {parseConfigFile} from '../../helpers/utils'
 
 export class InstrumentCommand extends Command {
   private awsAccessKeyId?: string

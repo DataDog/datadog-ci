@@ -1,7 +1,7 @@
 jest.mock('fs')
 
-import {pick, parseConfigFile} from '../utils'
 import * as fs from 'fs'
+import {parseConfigFile, pick} from '../utils'
 jest.useFakeTimers()
 
 describe('utils', () => {

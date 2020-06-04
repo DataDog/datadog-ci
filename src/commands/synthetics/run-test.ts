@@ -1,11 +1,11 @@
 import chalk from 'chalk'
 import {Command} from 'clipanion'
 
+import {parseConfigFile} from '../../helpers/utils'
 import {apiConstructor} from './api'
 import {APIHelper, ConfigOverride, ExecutionRule, LocationsMapping, ProxyConfiguration} from './interfaces'
 import {renderHeader, renderResults} from './renderer'
 import {getSuites, hasTestSucceeded, runTests, waitForResults} from './utils'
-import {parseConfigFile} from '../../helpers/utils'
 
 export class RunTestCommand extends Command {
   private apiKey?: string

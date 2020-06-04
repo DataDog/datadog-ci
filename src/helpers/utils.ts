@@ -18,8 +18,9 @@ export const parseConfigFile = async <T>(config: T, configPath?: string) => {
   try {
     const resolvedConfigPath = configPath ?? 'datadog-ci.json'
     const configFile = await promisify(fs.readFile)(resolvedConfigPath, 'utf-8')
-    const config = JSON.parse(configFile)
-    return deepExtend(config, config) as T
+    const parsedConfig = JSON.parse(configFile)
+
+    return deepExtend(parsedConfig, config) as T
   } catch (e) {
     if (e.code === 'ENOENT' && configPath) {
       throw new Error('Config file not found')
@@ -29,5 +30,6 @@ export const parseConfigFile = async <T>(config: T, configPath?: string) => {
       throw new Error('Config file is not correct JSON')
     }
   }
+
   return config
 }

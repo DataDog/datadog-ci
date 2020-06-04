@@ -128,5 +128,6 @@ const calculateUpdateRequest = (
 
 const isSupportedRuntime = (runtime?: string): runtime is Runtime => {
   const lookup = RUNTIME_LAYER_LOOKUP as Record<string, string>
+
   return runtime !== undefined && lookup[runtime] !== undefined
 }
