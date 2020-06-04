@@ -25,7 +25,8 @@ export class InstrumentCommand extends Command {
   private tracing?: boolean
 
   public async execute() {
-    this.config = await parseConfigFile(this.config, this.configPath)
+    const lambdaConfig = {lambda: this.config}
+    this.config = await (await parseConfigFile(lambdaConfig, this.configPath)).lambda
 
     const settings = this.getSettings()
     if (settings === undefined) {

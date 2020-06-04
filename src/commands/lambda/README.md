@@ -29,13 +29,15 @@ The configuration file structure is the following, all fields are optional:
 
 ```json
 {
-  "awsAccessKeyId": "ABCEDFG",
-  "awsSecretAccessKey": "HIJKLM",
-  "layerVersion": 10,
-  "functions": ["arn:aws:lambda:us-east-1:000000000000:function:autoinstrument"],
-  "region": "us-east-1",
-  "tracing": true,
-  "mergeXrayTraces": true
+    "lambda": {
+        "awsAccessKeyId": "ABCEDFG",
+        "awsSecretAccessKey": "HIJKLM",
+        "layerVersion": 10,
+        "functions": ["arn:aws:lambda:us-east-1:000000000000:function:autoinstrument"],
+        "region": "us-east-1",
+        "tracing": true,
+        "mergeXrayTraces": true
+    }
 }
 ```
 
