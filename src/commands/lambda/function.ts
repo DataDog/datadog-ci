@@ -64,8 +64,8 @@ const getLambdaConfig = async (
   return {config, functionARN: resolvedFunctionARN}
 }
 
-const updateLambdaConfig = async (lambda: Lambda, configuration: FunctionConfiguration) => {
-  await lambda.updateFunctionConfiguration(configuration.updateRequest).promise()
+const updateLambdaConfig = (lambda: Lambda, configuration: FunctionConfiguration) => {
+  return lambda.updateFunctionConfiguration(configuration.updateRequest).promise()
 }
 
 const getLayerArn = (runtime: Runtime, settings: InstrumentationSettings, region: string) => {
