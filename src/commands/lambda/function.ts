@@ -21,15 +21,15 @@ export const getLambdaConfigs = async (
   region: string,
   functionARNs: string[],
   settings: InstrumentationSettings
-) => {
+): Promise<FunctionConfiguration[]> => {
   const resultPromises = functionARNs.map((fn) => getLambdaConfig(lambda, fn))
   const results = await Promise.all(resultPromises)
 
   const functionsToUpdate: FunctionConfiguration[] = []
 
   for (const {config, functionARN} of results) {
-    const runtime = config.Runtime as Runtime
-    if (runtime === undefined || RUNTIME_LAYER_LOOKUP[runtime] === undefined) {
+    const runtime = config.Runtime
+    if (!isSupportedRuntime(runtime)) {
       throw Error(`Can't instrument ${functionARN}, runtime ${runtime} not supported`)
     }
 
@@ -48,15 +48,18 @@ export const updateLambdaConfigs = async (lambda: Lambda, configurations: Functi
   await Promise.all(results)
 }
 
-const getLambdaConfig = async (lambda: Lambda, functionARN: string) => {
+const getLambdaConfig = async (
+  lambda: Lambda,
+  functionARN: string
+): Promise<{config: Lambda.FunctionConfiguration; functionARN: string}> => {
   const params = {
     FunctionName: functionARN,
   }
   const result = await lambda.getFunction(params).promise()
   // AWS typescript API is slightly mistyped, adds undefineds where
   // there shouldn't be.
-  const config = result.Configuration as Lambda.FunctionConfiguration
-  const resolvedFunctionARN = config.FunctionArn as string
+  const config = result.Configuration!
+  const resolvedFunctionARN = config.FunctionArn!
 
   return {config, functionARN: resolvedFunctionARN}
 }
@@ -121,4 +124,9 @@ const calculateUpdateRequest = (
   }
 
   return needsUpdate ? updateRequest : undefined
+}
+
+const isSupportedRuntime = (runtime?: string): runtime is Runtime => {
+  const lookup = RUNTIME_LAYER_LOOKUP as Record<string, string>
+  return runtime !== undefined && lookup[runtime] !== undefined
 }
