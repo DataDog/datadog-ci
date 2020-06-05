@@ -46,8 +46,13 @@ export class InstrumentCommand extends Command {
     } = {}
     for (const [region, functionList] of Object.entries(functionGroups)) {
       const lambda = new Lambda({region})
-      const configs = await getLambdaConfigs(lambda, region, functionList, settings)
-      configGroups[region] = {configs, lambda}
+      try {
+        const configs = await getLambdaConfigs(lambda, region, functionList, settings)
+        configGroups[region] = {configs, lambda}
+      } catch (err) {
+        this.context.stdout.write(`Couldn't fetch lambda functions. ${err}\n`)
+        return 1
+      }
     }
     const configList = Object.values(configGroups)
       .map((group) => group.configs)
@@ -57,7 +62,11 @@ export class InstrumentCommand extends Command {
       return 0
     }
     const promises = Object.values(configGroups).map((group) => updateLambdaConfigs(group.lambda, group.configs))
-    await Promise.all(promises)
+    try {
+      await Promise.all(promises)
+    } catch (err) {
+      this.context.stdout.write(`Failure during update. ${err}\n`)
+    }
 
     return 0
   }
