@@ -20,7 +20,7 @@ export const uploadSourcemap = (request: (args: AxiosRequestConfig) => AxiosProm
 
   return request({
     data: form,
-    headers: {...form.getHeaders()},
+    headers: form.getHeaders(),
     maxContentLength: maxPayloadLength,
     method: 'POST',
     url: 'v1/input',

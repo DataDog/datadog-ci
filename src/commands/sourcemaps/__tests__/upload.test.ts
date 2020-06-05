@@ -5,23 +5,6 @@ import glob from 'glob'
 import {Payload} from '../interfaces'
 import {UploadCommand} from '../upload'
 
-export const assertThrow = (func: any, errorRegex?: RegExp) => {
-  let error
-  try {
-    func()
-    console.error('Function has not thrown')
-  } catch (e) {
-    error = e
-    if (errorRegex) {
-      expect(e.toString()).toMatch(errorRegex)
-    }
-  }
-
-  expect(error).toBeTruthy()
-
-  return error
-}
-
 describe('upload', () => {
   describe('getMinifiedURL', () => {
     test('should return correct URL', () => {
@@ -70,7 +53,7 @@ describe('upload', () => {
       const command = new UploadCommand()
       command.context = {stdout: {write}} as any
 
-      await assertThrow(command['getApiHelper'].bind(command), /Error: API key is missing/)
+      expect(command['getApiHelper'].bind(command)).toThrow('API key is missing')
       expect(write.mock.calls[0][0]).toContain('DATADOG_API_KEY')
     })
   })

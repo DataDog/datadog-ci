@@ -7,7 +7,9 @@ describe('utils', () => {
       const file2 = 'sourcemaps/file2.js.map.xxx'
 
       expect(getMinifiedFilePath(file1)).toBe('sourcemaps/file1.min.js')
-      expect(getMinifiedFilePath(file2)).toBe('sourcemaps/file2.js.map.xxx')
+      expect(() => getMinifiedFilePath(file2)).toThrow(
+        'cannot get minified file path from a file which is not a sourcemap'
+      )
     })
   })
   describe('buildPath', () => {
