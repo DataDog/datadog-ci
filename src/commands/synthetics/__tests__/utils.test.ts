@@ -210,6 +210,7 @@ describe('utils', () => {
 
   describe('waitForResults', () => {
     beforeAll(() => {
+      jest.setTimeout(10000)
       const axiosMock = jest.spyOn(axios.default, 'create')
       axiosMock.mockImplementation((() => async (r: axios.AxiosRequestConfig) => {
         await wait(100)
@@ -223,6 +224,7 @@ describe('utils', () => {
     })
 
     afterAll(() => {
+      jest.setTimeout(5000)
       jest.clearAllMocks()
     })
 
@@ -246,14 +248,18 @@ describe('utils', () => {
       public_id: publicId,
       result_id: '0123456789',
     }
+    const triggerConfig = {
+      config: { },
+      id: publicId,
+    }
 
     test('should poll result ids', async () => {
       const expectedResults: {[key: string]: PollResult[]} = {}
       expectedResults[publicId] = [passingPollResult('0123456789')]
-      expect(await waitForResults(api, [triggerResult], 120000)).toEqual(expectedResults)
+      expect(await waitForResults(api, [triggerResult], 120000, [triggerConfig])).toEqual(expectedResults)
     })
 
-    test('results should be timeout-ed if pollingTimeout is exceeded', async () => {
+    test('results should be timeout-ed if global pollingTimeout is exceeded', async () => {
       const expectedResults: {[key: string]: PollResult[]} = {}
       expectedResults[publicId] = [
         {
@@ -268,7 +274,29 @@ describe('utils', () => {
           resultID: triggerResult.result_id,
         },
       ]
-      expect(await waitForResults(api, [triggerResult], 0)).toEqual(expectedResults)
+      expect(await waitForResults(api, [triggerResult], 0, [])).toEqual(expectedResults)
+    })
+
+    test('results should be timeout-ed if test pollingTimeout is exceeded', async () => {
+      const expectedResults: {[key: string]: PollResult[]} = {}
+      expectedResults[publicId] = [
+        {
+          dc_id: triggerResult.location,
+          result: {
+            device: {id: triggerResult.device},
+            error: 'Timeout',
+            eventType: 'finished',
+            passed: false,
+            stepDetails: [],
+          },
+          resultID: triggerResult.result_id,
+        },
+      ]
+      const testTriggerConfig = {
+        config: {pollingTimeout: 0},
+        id: publicId,
+      }
+      expect(await waitForResults(api, [triggerResult], 120000, [testTriggerConfig])).toEqual(expectedResults)
     })
 
     test('correct number of pass and timeout results', async () => {
@@ -292,7 +320,7 @@ describe('utils', () => {
           resultID: triggerResultTimeOut.result_id,
         },
       ]
-      expect(await waitForResults(api, [triggerResultPass, triggerResultTimeOut], 2000)).toEqual(expectedResults)
+      expect(await waitForResults(api, [triggerResultPass, triggerResultTimeOut], 2000, [])).toEqual(expectedResults)
     })
   })
 

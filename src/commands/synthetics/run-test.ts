@@ -57,7 +57,7 @@ export class RunTestCommand extends Command {
 
     try {
       // Poll the results.
-      const results = await waitForResults(api, triggers.results, this.config.timeout)
+      const results = await waitForResults(api, triggers.results, this.config.timeout, testsToTrigger)
 
       // Sort tests to show success first.
       tests.sort((t1, t2) => {

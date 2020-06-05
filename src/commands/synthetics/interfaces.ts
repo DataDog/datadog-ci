@@ -159,6 +159,7 @@ export interface ConfigOverride {
   followRedirects?: boolean
   headers?: {[key: string]: string}
   locations?: string[]
+  pollingTimeout?: number
   retry?: RetryConfig
   startUrl?: string
   variables?: {[key: string]: string}
