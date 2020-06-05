@@ -6,7 +6,7 @@ Instrument your AWS Lambda functions with datadog.
 
 ### Setup
 
-You need to have your aws credentials available `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` in your environment or pass them to the CLI.
+You need to have your aws credentials available `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` in your environment, or use any of the authentication methods supported  by the [AWS js sdk](https://docs.aws.amazon.com/sdk-for-javascript/v2/developer-guide/setting-credentials-node.html).
 
 ```bash
 # Environment setup
@@ -14,9 +14,7 @@ export AWS_ACCESS_KEY_ID="<ACCESS KEY ID>"
 export AWS_SECRET_ACCESS_KEY="<ACCESS KEY>"
 
 # Or via passing as CLI argument
-datadog-ci lambda <command> --awsAccessKeyId "<ACCESS KEY ID>" --awsSecretAccessKey "<ACCESS KEY>"
-# Or use the settings is a config file, defaults to datadog-ci.json
-datadog-ci lambda <command> --config "datadog-ci.json"
+datadog-ci lambda <command>
 ```
 
 ### API
@@ -30,8 +28,6 @@ The configuration file structure is the following, all fields are optional:
 ```json
 {
     "lambda": {
-        "awsAccessKeyId": "ABCEDFG",
-        "awsSecretAccessKey": "HIJKLM",
         "layerVersion": 10,
         "functions": ["arn:aws:lambda:us-east-1:000000000000:function:autoinstrument"],
         "region": "us-east-1",

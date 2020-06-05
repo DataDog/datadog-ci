@@ -5,12 +5,7 @@ import {FunctionConfiguration, getLambdaConfigs, InstrumentationSettings, update
 import {LambdaConfigOptions} from './interfaces'
 
 export class InstrumentCommand extends Command {
-  private awsAccessKeyId?: string
-  private awsSecretAccessKey?: string
-
   private config: LambdaConfigOptions = {
-    awsAccessKeyId: process.env.AWS_ACCESS_KEY_ID,
-    awsSecretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
     functions: [],
     region: process.env.AWS_DEFAULT_REGION,
     tracing: true,
@@ -50,7 +45,7 @@ export class InstrumentCommand extends Command {
       }
     } = {}
     for (const [region, functionList] of Object.entries(functionGroups)) {
-      const lambda = this.getLambdaService(region)
+      const lambda = new Lambda({region})
       const configs = await getLambdaConfigs(lambda, region, functionList, settings)
       configGroups[region] = {configs, lambda}
     }
@@ -95,12 +90,6 @@ export class InstrumentCommand extends Command {
     return groups
   }
 
-  private getLambdaService(region: string) {
-    const accessKeyId = this.awsAccessKeyId ?? this.config.awsAccessKeyId
-    const secretAccessKey = this.awsSecretAccessKey ?? this.config.awsSecretAccessKey
-
-    return new Lambda({region, accessKeyId, secretAccessKey})
-  }
   private getRegion(functionARN: string) {
     const [, , , region] = functionARN.split(':')
 
@@ -154,8 +143,6 @@ InstrumentCommand.addOption('functions', Command.Array('-f,--function'))
 InstrumentCommand.addOption('region', Command.String('-r,--region'))
 InstrumentCommand.addOption('layerVersion', Command.String('-v,--layerVersion'))
 InstrumentCommand.addOption('layerAWSAccount', Command.String('-a,--layerAccount', {hidden: true}))
-InstrumentCommand.addOption('awsAccessKeyId', Command.String('--awsAccessKeyId'))
-InstrumentCommand.addOption('awsSecretAccessKey', Command.String('--awsSecretAccessKey'))
 InstrumentCommand.addOption('tracing', Command.Boolean('--tracing'))
 InstrumentCommand.addOption('mergeXrayTraces', Command.Boolean('--mergeXrayTraces'))
 InstrumentCommand.addOption('dryRun', Command.Boolean('-d,--dry'))

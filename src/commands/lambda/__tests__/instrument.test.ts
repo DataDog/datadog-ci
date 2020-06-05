@@ -178,39 +178,6 @@ describe('lambda', () => {
         expect(command['getSettings']()).toBeUndefined()
       })
     })
-
-    describe('getLambdaService', () => {
-      test('uses cli keys over values in config file', () => {
-        let config: any
-        ;(Lambda as any).mockImplementation((cfg: any) => {
-          config = cfg
-
-          return makeMockLambda({})
-        })
-        const command = createCommand()
-        command['awsAccessKeyId'] = '1234'
-        command['awsSecretAccessKey'] = '45678'
-        command['config']['awsAccessKeyId'] = 'abcedf'
-        command['config']['awsSecretAccessKey'] = 'ghijklm'
-        command['getLambdaService']('us-east-1')
-        expect(config.accessKeyId).toEqual('1234')
-        expect(config.secretAccessKey).toEqual('45678')
-      })
-      test('uses config file keys when available', () => {
-        let config: any
-        ;(Lambda as any).mockImplementation((cfg: any) => {
-          config = cfg
-
-          return makeMockLambda({})
-        })
-        const command = createCommand()
-        command['config'].awsAccessKeyId = 'abcedf'
-        command['config'].awsSecretAccessKey = 'ghijklm'
-        command['getLambdaService']('us-east-1')
-        expect(config.accessKeyId).toEqual('abcedf')
-        expect(config.secretAccessKey).toEqual('ghijklm')
-      })
-    })
     describe('collectFunctionsByRegion', () => {
       test('groups functions with region read from arn', () => {
         process.env = {}
