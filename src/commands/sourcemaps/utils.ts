@@ -8,6 +8,26 @@ export const getMinifiedFilePath = (sourcemapPath: string): string => {
   return sourcemapPath.replace(new RegExp('\\.map$'), '')
 }
 
+export const getBaseIntakeUrl = (): string => {
+  if (process.env.DATADOG_SOURCEMAP_INTAKE_DOMAIN) {
+    return process.env.DATADOG_SOURCEMAP_INTAKE_DOMAIN
+  } else if (process.env.DATADOG_SITE) {
+    return 'https://sourcemaps.intake.' + process.env.DATADOG_SITE
+  }
+
+  return 'https://sourcemaps.intake.datadoghq.com'
+}
+
+export const getBaseAPIUrl = (): string => {
+  // Useless for now.
+  // TODO[alexc] Once it's possible to pass this as parameter of BufferedMetricsLogger constructor, call this function
+  if (process.env.DATADOG_SITE) {
+    return 'https://api.' + process.env.DATADOG_SITE
+  }
+
+  return 'https://api.datadoghq.com'
+}
+
 // The buildPath function is used to concatenate several paths. The goal is to have a function working for both unix
 // paths and URL whereas standard path.join does not work with both.
 export const buildPath = (...args: string[]): string =>

@@ -3,6 +3,7 @@ import FormData from 'form-data'
 import fs from 'fs'
 
 import {APIConfiguration, Payload} from './interfaces'
+import {renderUpload} from './renderer'
 
 const maxPayloadLength = 50 * 1024 * 1024 // 50 MB
 
@@ -10,7 +11,7 @@ export const uploadSourcemap = (request: (args: AxiosRequestConfig) => AxiosProm
   sourcemap: Payload
 ) => {
   const form = new FormData()
-  console.log(`Uploading sourcemap ${sourcemap.sourcemapPath}`)
+  console.log(renderUpload(sourcemap.sourcemapPath))
   form.append('service', sourcemap.service)
   form.append('version', sourcemap.version)
   form.append('source_map', fs.createReadStream(sourcemap.sourcemapPath))

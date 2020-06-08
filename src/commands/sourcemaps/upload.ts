@@ -8,23 +8,28 @@ import asyncPool from 'tiny-async-pool'
 import {apiConstructor} from './api'
 import {APIHelper, Payload} from './interfaces'
 import {getMetricsLogger} from './metrics'
-import {renderFailedUpload, renderRetriedUpload, renderSuccessfulCommand} from './renderer'
-import {buildPath, getMinifiedFilePath} from './utils'
+import {
+  renderCommandInfo,
+  renderDryRunUpload,
+  renderFailedUpload,
+  renderRetriedUpload,
+  renderSuccessfulCommand,
+} from './renderer'
+import {buildPath, getBaseIntakeUrl, getMinifiedFilePath} from './utils'
 
 export class UploadCommand extends Command {
   private basePath?: string
   private config = {
     apiKey: process.env.DATADOG_API_KEY,
-    datadogSourcemapsDomain: process.env.DATADOG_SOURCE_MAPS_DOMAIN,
-    poolLimit: parseInt(process.env.DATADOG_SOURCE_MAPS_POOL_LIMIT!, 10) || 20,
   }
+  private dryRun = false
+  private maxConcurrency = 20
   private minifiedPathPrefix?: string
   private projectPath = ''
   private releaseVersion?: string
   private service?: string
 
   public async execute() {
-    this.context.stdout.write('Uploading sourcemaps.\n')
     if (!this.releaseVersion) {
       this.context.stderr.write('Missing release version\n')
 
@@ -43,11 +48,22 @@ export class UploadCommand extends Command {
     }
 
     const api = this.getApiHelper()
+    this.context.stdout.write(
+      renderCommandInfo(
+        this.basePath!,
+        this.minifiedPathPrefix,
+        this.projectPath,
+        this.releaseVersion,
+        this.service,
+        this.maxConcurrency,
+        this.dryRun
+      )
+    )
     const metricsLogger = getMetricsLogger(this.releaseVersion, this.service)
     const payloads = this.getMatchingSourcemapFiles()
     const upload = (p: Payload) => this.uploadSourcemap(api, metricsLogger, p)
     const initialTime = new Date().getTime()
-    await asyncPool(this.config.poolLimit, payloads, upload)
+    await asyncPool(this.maxConcurrency, payloads, upload)
     const totalTimeSeconds = (new Date().getTime() - initialTime) / 1000
     this.context.stdout.write(renderSuccessfulCommand(payloads.length, totalTimeSeconds))
     metricsLogger.gauge('duration', totalTimeSeconds)
@@ -59,13 +75,10 @@ export class UploadCommand extends Command {
       this.context.stdout.write(`Missing ${chalk.red.bold('DATADOG_API_KEY')} in your environment.\n`)
       throw new Error('API key is missing')
     }
-    if (!this.config.datadogSourcemapsDomain) {
-      this.config.datadogSourcemapsDomain = 'https://sourcemaps.datadoghq.com/'
-    }
 
     return apiConstructor({
       apiKey: this.config.apiKey!,
-      baseIntakeUrl: this.config.datadogSourcemapsDomain!,
+      baseIntakeUrl: getBaseIntakeUrl(),
     })
   }
 
@@ -97,11 +110,30 @@ export class UploadCommand extends Command {
     metricsLogger: BufferedMetricsLogger,
     sourcemap: Payload
   ): Promise<void> {
+    if (this.dryRun) {
+      this.context.stdout.write(renderDryRunUpload(sourcemap.sourcemapPath))
+
+      return
+    }
     try {
       await retry(
-        async () => {
-          // TODO [alexc] in case un-recoverable errors happen, bail
-          await api.uploadSourcemap(sourcemap)
+        async (bail) => {
+          try {
+            await api.uploadSourcemap(sourcemap)
+          } catch (error) {
+            if (error.response) {
+              if (error.response.status === 413) {
+                bail(error)
+
+                return
+              } else if (error.response.status === 403) {
+                bail(error)
+
+                return
+              }
+              throw error
+            }
+          }
           metricsLogger.increment('success', 1)
         },
         {
@@ -115,9 +147,10 @@ export class UploadCommand extends Command {
     } catch (error) {
       metricsLogger.increment('failed', 1)
       this.context.stdout.write(renderFailedUpload(sourcemap, error))
+      if (error.response.status === 403) {
+        throw error
+      }
     }
-
-    return
   }
 }
 
@@ -127,3 +160,5 @@ UploadCommand.addOption('releaseVersion', Command.String('--release-version'))
 UploadCommand.addOption('service', Command.String('--service'))
 UploadCommand.addOption('minifiedPathPrefix', Command.String('--minified-path-prefix'))
 UploadCommand.addOption('projectPath', Command.String('--project-path'))
+UploadCommand.addOption('maxConcurrency', Command.String('--max-concurrency'))
+UploadCommand.addOption('dryRun', Command.Boolean('--dry-run'))
