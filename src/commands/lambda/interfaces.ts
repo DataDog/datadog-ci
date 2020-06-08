@@ -5,4 +5,5 @@ export interface LambdaConfigOptions {
   mergeXrayTraces?: boolean
   region?: string
   tracing?: boolean
+  forwarderARN?: string
 }

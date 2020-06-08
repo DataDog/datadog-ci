@@ -1,8 +1,9 @@
-import {Lambda} from 'aws-sdk'
+import {Lambda, CloudWatchLogs} from 'aws-sdk'
 import {Command} from 'clipanion'
 import {parseConfigFile} from '../../helpers/utils'
 import {FunctionConfiguration, getLambdaConfigs, InstrumentationSettings, updateLambdaConfigs} from './function'
 import {LambdaConfigOptions} from './interfaces'
+import {LogConfiguration} from 'aws-sdk/clients/ecs'
 
 export class InstrumentCommand extends Command {
   private config: LambdaConfigOptions = {
@@ -18,6 +19,7 @@ export class InstrumentCommand extends Command {
   private mergeXrayTraces?: boolean
   private region?: string
   private tracing?: boolean
+  private forwarderARN?: string
 
   public async execute() {
     const lambdaConfig = {lambda: this.config}
@@ -42,13 +44,15 @@ export class InstrumentCommand extends Command {
       [region: string]: {
         configs: FunctionConfiguration[]
         lambda: Lambda
+        cloudWatchLogs: CloudWatchLogs
       }
     } = {}
     for (const [region, functionList] of Object.entries(functionGroups)) {
       const lambda = new Lambda({region})
+      const cloudWatchLogs = new CloudWatchLogs({region})
       try {
-        const configs = await getLambdaConfigs(lambda, region, functionList, settings)
-        configGroups[region] = {configs, lambda}
+        const configs = await getLambdaConfigs(lambda, cloudWatchLogs, region, functionList, settings)
+        configGroups[region] = {configs, lambda, cloudWatchLogs}
       } catch (err) {
         this.context.stdout.write(`Couldn't fetch lambda functions. ${err}\n`)
         return 1
@@ -61,7 +65,9 @@ export class InstrumentCommand extends Command {
     if (this.dryRun || configList.length === 0) {
       return 0
     }
-    const promises = Object.values(configGroups).map((group) => updateLambdaConfigs(group.lambda, group.configs))
+    const promises = Object.values(configGroups).map((group) =>
+      updateLambdaConfigs(group.lambda, group.cloudWatchLogs, group.configs)
+    )
     try {
       await Promise.all(promises)
     } catch (err) {
@@ -108,6 +114,7 @@ export class InstrumentCommand extends Command {
   private getSettings(): InstrumentationSettings | undefined {
     const layerVersionStr = this.layerVersion ?? this.config.layerVersion
     const layerAWSAccount = this.layerAWSAccount ?? this.config.layerAWSAccount
+    const forwarderARN = this.forwarderARN ?? this.config.forwarderARN
     if (layerVersionStr === undefined) {
       this.context.stdout.write('No layer version specified. Use -v,--layerVersion\n')
 
@@ -127,22 +134,69 @@ export class InstrumentCommand extends Command {
       layerVersion,
       mergeXrayTraces,
       tracingEnabled,
+      forwarderARN,
     }
   }
 
   private printPlannedActions(configs: FunctionConfiguration[]) {
     const prefix = this.dryRun ? '[Dry Run] ' : ''
 
-    if (configs.length === 0) {
+    let anyUpdates = false
+    for (const config of configs) {
+      if (
+        config.updateRequest !== undefined ||
+        config.logGroupConfiguration?.createLogGroupRequest !== undefined ||
+        config.logGroupConfiguration?.deleteSubscriptionFilterRequest !== undefined ||
+        config.logGroupConfiguration?.subscriptionFilterRequest !== undefined
+      ) {
+        anyUpdates = true
+        break
+      }
+    }
+    if (!anyUpdates) {
       this.context.stdout.write(`${prefix}No updates will be applied\n`)
 
       return
     }
     this.context.stdout.write(`${prefix}Will apply the following updates:\n`)
     for (const config of configs) {
-      this.context.stdout.write(
-        `UpdateFunctionConfiguration -> ${config.functionARN}\n${JSON.stringify(config.updateRequest, undefined, 2)}\n`
-      )
+      if (config.updateRequest) {
+        this.context.stdout.write(
+          `UpdateFunctionConfiguration -> ${config.functionARN}\n${JSON.stringify(
+            config.updateRequest,
+            undefined,
+            2
+          )}\n`
+        )
+      }
+      const {logGroupConfiguration} = config
+      if (logGroupConfiguration?.createLogGroupRequest) {
+        this.context.stdout.write(
+          `CreateLogGroup -> ${logGroupConfiguration.logGroupName}\n${JSON.stringify(
+            config.logGroupConfiguration?.createLogGroupRequest,
+            undefined,
+            2
+          )}\n`
+        )
+      }
+      if (logGroupConfiguration?.deleteSubscriptionFilterRequest) {
+        this.context.stdout.write(
+          `DeleteSubscriptionFilter -> ${logGroupConfiguration.logGroupName}\n${JSON.stringify(
+            config.logGroupConfiguration?.deleteSubscriptionFilterRequest,
+            undefined,
+            2
+          )}\n`
+        )
+      }
+      if (logGroupConfiguration?.subscriptionFilterRequest) {
+        this.context.stdout.write(
+          `PutSubscriptionFilter -> ${logGroupConfiguration.logGroupName}\n${JSON.stringify(
+            config.logGroupConfiguration?.subscriptionFilterRequest,
+            undefined,
+            2
+          )}\n`
+        )
+      }
     }
   }
 }
@@ -156,3 +210,4 @@ InstrumentCommand.addOption('tracing', Command.Boolean('--tracing'))
 InstrumentCommand.addOption('mergeXrayTraces', Command.Boolean('--mergeXrayTraces'))
 InstrumentCommand.addOption('dryRun', Command.Boolean('-d,--dry'))
 InstrumentCommand.addOption('configPath', Command.String('--config'))
+InstrumentCommand.addOption('forwarderARN', Command.String('--forwarder'))

@@ -1,23 +1,27 @@
-import {Lambda} from 'aws-sdk'
+import {Lambda, CloudWatchLogs} from 'aws-sdk'
 import deepExtend from 'deep-extend'
 import {DEFAULT_LAYER_AWS_ACCOUNT, HANDLER_LOCATION, Runtime, RUNTIME_LAYER_LOOKUP} from './constants'
+import {LogGroupConfiguration, getLogGroupConfiguration, applyLogGroupConfig} from './loggroup'
 
 export interface FunctionConfiguration {
   functionARN: string
   lambdaConfig: Lambda.FunctionConfiguration
   layerARN: string
-  updateRequest: Lambda.UpdateFunctionConfigurationRequest
+  updateRequest?: Lambda.UpdateFunctionConfigurationRequest
+  logGroupConfiguration?: LogGroupConfiguration
 }
 
 export interface InstrumentationSettings {
   layerAWSAccount?: string
   layerVersion?: number
+  forwarderARN?: string
   mergeXrayTraces: boolean
   tracingEnabled: boolean
 }
 
 export const getLambdaConfigs = async (
   lambda: Lambda,
+  cloudWatch: CloudWatchLogs,
   region: string,
   functionARNs: string[],
   settings: InstrumentationSettings
@@ -35,16 +39,31 @@ export const getLambdaConfigs = async (
 
     const layerARN: string = getLayerArn(runtime, settings, region)
     const updateRequest = calculateUpdateRequest(config, settings, layerARN, runtime)
-    if (updateRequest !== undefined) {
-      functionsToUpdate.push({functionARN, layerARN, lambdaConfig: config, updateRequest})
+    let logGroupConfiguration: LogGroupConfiguration | undefined
+    if (settings.forwarderARN !== undefined) {
+      const arn = `/aws/lambda/${config.FunctionName}`
+      logGroupConfiguration = await getLogGroupConfiguration(cloudWatch, arn, settings.forwarderARN)
     }
+
+    functionsToUpdate.push({functionARN, layerARN, lambdaConfig: config, updateRequest, logGroupConfiguration})
   }
 
   return functionsToUpdate
 }
 
-export const updateLambdaConfigs = async (lambda: Lambda, configurations: FunctionConfiguration[]) => {
-  const results = configurations.map((c) => updateLambdaConfig(lambda, c))
+export const updateLambdaConfigs = async (
+  lambda: Lambda,
+  cloudWatch: CloudWatchLogs,
+  configurations: FunctionConfiguration[]
+) => {
+  const results = configurations.map(async (c) => {
+    if (c.updateRequest !== undefined) {
+      await lambda.updateFunctionConfiguration(c.updateRequest).promise()
+    }
+    if (c.logGroupConfiguration !== undefined) {
+      await applyLogGroupConfig(cloudWatch, c.logGroupConfiguration)
+    }
+  })
   await Promise.all(results)
 }
 
@@ -63,9 +82,6 @@ const getLambdaConfig = async (
 
   return {config, functionARN: resolvedFunctionARN}
 }
-
-const updateLambdaConfig = (lambda: Lambda, configuration: FunctionConfiguration) =>
-  lambda.updateFunctionConfiguration(configuration.updateRequest).promise()
 
 const getLayerArn = (runtime: Runtime, settings: InstrumentationSettings, region: string) => {
   const layerName = RUNTIME_LAYER_LOOKUP[runtime]

@@ -9,6 +9,9 @@ function makeMockLambda(functionConfigs: Record<string, Lambda.FunctionConfigura
     updateFunctionConfiguration: jest.fn().mockImplementation(() => ({promise: () => Promise.resolve()})),
   }
 }
+function makeMockCloudWatchLogs() {
+  return {}
+}
 
 describe('function', () => {
   describe('getLambdaConfigs', () => {
@@ -20,6 +23,7 @@ describe('function', () => {
           Runtime: 'nodejs12.x',
         },
       })
+      const cloudWatch = makeMockCloudWatchLogs()
       const settings = {
         layerVersion: 22,
         mergeXrayTraces: false,
@@ -27,6 +31,7 @@ describe('function', () => {
       }
       const result = await getLambdaConfigs(
         lambda as any,
+        cloudWatch as any,
         'us-east-1',
         ['arn:aws:lambda:us-east-1:000000000000:function:autoinstrument'],
         settings
@@ -50,7 +55,7 @@ describe('function', () => {
                     `)
     })
 
-    test('returns nothing when the function is already configured correctly', async () => {
+    test('returns configurations without updateRequest when no changes need to be made', async () => {
       const lambda = makeMockLambda({
         'arn:aws:lambda:us-east-1:000000000000:function:autoinstrument': {
           Environment: {
@@ -66,6 +71,8 @@ describe('function', () => {
           Runtime: 'nodejs12.x',
         },
       })
+      const cloudWatch = makeMockCloudWatchLogs()
+
       const settings = {
         layerVersion: 22,
         mergeXrayTraces: false,
@@ -73,11 +80,12 @@ describe('function', () => {
       }
       const result = await getLambdaConfigs(
         lambda as any,
+        cloudWatch as any,
         'us-east-1',
         ['arn:aws:lambda:us-east-1:000000000000:function:autoinstrument'],
         settings
       )
-      expect(result.length).toEqual(0)
+      expect(result[0].updateRequest).toBeUndefined()
     })
 
     test('replaces the layer arn when the version has changed', async () => {
@@ -91,6 +99,8 @@ describe('function', () => {
           Runtime: 'nodejs12.x',
         },
       })
+      const cloudWatch = makeMockCloudWatchLogs()
+
       const settings = {
         layerVersion: 23,
         mergeXrayTraces: false,
@@ -98,11 +108,12 @@ describe('function', () => {
       }
       const result = await getLambdaConfigs(
         lambda as any,
+        cloudWatch as any,
         'us-east-1',
         ['arn:aws:lambda:us-east-1:000000000000:function:autoinstrument'],
         settings
       )
-      expect(result[0].updateRequest.Layers).toMatchInlineSnapshot(`
+      expect(result[0].updateRequest?.Layers).toMatchInlineSnapshot(`
       Array [
         "arn:aws:lambda:us-east-1:464622532012:layer:AnotherLayer:10",
         "arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Node12-x:23",
@@ -120,6 +131,8 @@ describe('function', () => {
           Runtime: 'nodejs12.x',
         },
       })
+      const cloudWatch = makeMockCloudWatchLogs()
+
       const settings = {
         layerVersion: 23,
         mergeXrayTraces: false,
@@ -127,6 +140,7 @@ describe('function', () => {
       }
       const result = await getLambdaConfigs(
         lambda as any,
+        cloudWatch as any,
         'us-east-1',
         [
           'arn:aws:lambda:us-east-1:000000000000:function:autoinstrument',
@@ -144,6 +158,8 @@ describe('function', () => {
           Runtime: 'go',
         },
       })
+      const cloudWatch = makeMockCloudWatchLogs()
+
       const settings = {
         layerVersion: 23,
         mergeXrayTraces: false,
@@ -153,6 +169,7 @@ describe('function', () => {
       await expect(
         getLambdaConfigs(
           lambda as any,
+          cloudWatch as any,
           'us-east-1',
           ['arn:aws:lambda:us-east-1:000000000000:function:autoinstrument'],
           settings
@@ -186,7 +203,9 @@ describe('function', () => {
           },
         },
       ]
-      await updateLambdaConfigs(lambda as any, configs)
+      const cloudWatch = makeMockCloudWatchLogs()
+
+      await updateLambdaConfigs(lambda as any, cloudWatch as any, configs)
       expect(lambda.updateFunctionConfiguration).toHaveBeenCalledWith({
         Environment: {
           Variables: {
