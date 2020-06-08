@@ -32,7 +32,8 @@ The configuration file structure is the following, all fields are optional:
         "functions": ["arn:aws:lambda:us-east-1:000000000000:function:autoinstrument"],
         "region": "us-east-1",
         "tracing": true,
-        "mergeXrayTraces": true
+        "mergeXrayTraces": true,
+        "forwarder": "arn:aws:lambda:us-east-1:000000000000:function:datadog-forwarder"
     }
 }
 ```
@@ -62,4 +63,5 @@ All arguments:
 | --layerVersion | -v | Version of the datadog layer to apply. This varies between runtimes. To see the latest layer version check the [js](https://github.com/DataDog/datadog-lambda-layer-js/releases) or [python](https://github.com/DataDog/datadog-lambda-layer-python/releases) datadog-lambda-layer repo release notes. |
 | --tracing |  | Whether to enable dd-trace tracing on your lambda, (defaults to true). |
 | --mergeXrayTraces | | Whether to join dd-trace traces to AWS X-Ray traces. Useful for tracing API Gateway spans. (defaults to true). |
+| --forwarder | | The arn of the [datadog forwarder](https://github.com/DataDog/datadog-serverless-functions/tree/master/aws/logs_monitoring) to attach this functions LogGroup to. |
 | --dry | -d | Preview changes running command would apply. |

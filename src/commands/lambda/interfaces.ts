@@ -1,5 +1,5 @@
 export interface LambdaConfigOptions {
-  forwarderARN?: string
+  forwarder?: string
   functions: string[]
   layerAWSAccount?: string
   layerVersion?: string

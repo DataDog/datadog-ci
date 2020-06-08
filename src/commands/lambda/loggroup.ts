@@ -29,12 +29,12 @@ export const applyLogGroupConfig = async (logs: CloudWatchLogs, configuration: L
 export const calculateLogGroupUpdateRequest = async (
   logs: CloudWatchLogs,
   logGroupName: string,
-  forwarderArn: string
+  forwarderARN: string
 ) => {
   const config: LogGroupConfiguration = {
     logGroupName,
     subscriptionFilterRequest: {
-      destinationArn: forwarderArn,
+      destinationArn: forwarderARN,
       filterName: SUBSCRIPTION_FILTER_NAME,
       filterPattern: '',
       logGroupName,
@@ -45,7 +45,7 @@ export const calculateLogGroupUpdateRequest = async (
 
   let subscriptionState = SubscriptionState.Empty
   if (logGroupPresent) {
-    subscriptionState = await getSubscriptionFilterState(logs, logGroupName, forwarderArn)
+    subscriptionState = await getSubscriptionFilterState(logs, logGroupName, forwarderARN)
   } else {
     config.createLogGroupRequest = {
       logGroupName,
@@ -75,12 +75,12 @@ export const hasLogGroup = async (logs: CloudWatchLogs, logGroupName: string): P
 
   return logGroups.find((lg) => lg.logGroupName === logGroupName) !== undefined
 }
-export const getSubscriptionFilterState = async (logs: CloudWatchLogs, logGroupName: string, forwarderArn: string) => {
+export const getSubscriptionFilterState = async (logs: CloudWatchLogs, logGroupName: string, forwarderARN: string) => {
   const {subscriptionFilters} = await logs.describeSubscriptionFilters({logGroupName}).promise()
   if (subscriptionFilters === undefined || subscriptionFilters.length === 0) {
     return SubscriptionState.Empty
   }
-  if (subscriptionFilters.find((sf) => sf.destinationArn === forwarderArn) !== undefined) {
+  if (subscriptionFilters.find((sf) => sf.destinationArn === forwarderARN) !== undefined) {
     return SubscriptionState.CorrectDestination
   }
   if (subscriptionFilters.find((sf) => sf.filterName === SUBSCRIPTION_FILTER_NAME)) {

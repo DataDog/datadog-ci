@@ -12,7 +12,7 @@ export class InstrumentCommand extends Command {
   }
   private configPath?: string
   private dryRun = false
-  private forwarderARN?: string
+  private forwarder?: string
   private functions: string[] = []
   private layerAWSAccount?: string
   private layerVersion?: string
@@ -114,7 +114,7 @@ export class InstrumentCommand extends Command {
   private getSettings(): InstrumentationSettings | undefined {
     const layerVersionStr = this.layerVersion ?? this.config.layerVersion
     const layerAWSAccount = this.layerAWSAccount ?? this.config.layerAWSAccount
-    const forwarderARN = this.forwarderARN ?? this.config.forwarderARN
+    const forwarderARN = this.forwarder ?? this.config.forwarder
     if (layerVersionStr === undefined) {
       this.context.stdout.write('No layer version specified. Use -v,--layerVersion\n')
 
