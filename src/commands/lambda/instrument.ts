@@ -1,9 +1,8 @@
-import {Lambda, CloudWatchLogs} from 'aws-sdk'
+import {CloudWatchLogs, Lambda} from 'aws-sdk'
 import {Command} from 'clipanion'
 import {parseConfigFile} from '../../helpers/utils'
 import {FunctionConfiguration, getLambdaConfigs, InstrumentationSettings, updateLambdaConfigs} from './function'
 import {LambdaConfigOptions} from './interfaces'
-import {LogConfiguration} from 'aws-sdk/clients/ecs'
 
 export class InstrumentCommand extends Command {
   private config: LambdaConfigOptions = {
@@ -13,13 +12,13 @@ export class InstrumentCommand extends Command {
   }
   private configPath?: string
   private dryRun = false
+  private forwarderARN?: string
   private functions: string[] = []
   private layerAWSAccount?: string
   private layerVersion?: string
   private mergeXrayTraces?: boolean
   private region?: string
   private tracing?: boolean
-  private forwarderARN?: string
 
   public async execute() {
     const lambdaConfig = {lambda: this.config}
@@ -42,9 +41,9 @@ export class InstrumentCommand extends Command {
 
     const configGroups: {
       [region: string]: {
+        cloudWatchLogs: CloudWatchLogs
         configs: FunctionConfiguration[]
         lambda: Lambda
-        cloudWatchLogs: CloudWatchLogs
       }
     } = {}
     for (const [region, functionList] of Object.entries(functionGroups)) {
@@ -55,6 +54,7 @@ export class InstrumentCommand extends Command {
         configGroups[region] = {configs, lambda, cloudWatchLogs}
       } catch (err) {
         this.context.stdout.write(`Couldn't fetch lambda functions. ${err}\n`)
+
         return 1
       }
     }
@@ -130,11 +130,11 @@ export class InstrumentCommand extends Command {
     const tracingEnabled = this.tracing ?? this.config.tracing ?? true
 
     return {
+      forwarderARN,
       layerAWSAccount,
       layerVersion,
       mergeXrayTraces,
       tracingEnabled,
-      forwarderARN,
     }
   }
 

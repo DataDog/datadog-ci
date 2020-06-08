@@ -2,9 +2,9 @@ import {CloudWatchLogs} from 'aws-sdk'
 import {SUBSCRIPTION_FILTER_NAME} from './constants'
 
 export interface LogGroupConfiguration {
-  logGroupName: string
   createLogGroupRequest?: CloudWatchLogs.CreateLogGroupRequest
   deleteSubscriptionFilterRequest?: CloudWatchLogs.DeleteSubscriptionFilterRequest
+  logGroupName: string
   subscriptionFilterRequest: CloudWatchLogs.PutSubscriptionFilterRequest
 }
 
@@ -23,19 +23,21 @@ export const applyLogGroupConfig = async (logs: CloudWatchLogs, configuration: L
   if (deleteSubscriptionFilterRequest !== undefined) {
     await logs.deleteSubscriptionFilter(deleteSubscriptionFilterRequest).promise()
   }
-  if (subscriptionFilterRequest !== undefined) {
-    await logs.putSubscriptionFilter(subscriptionFilterRequest).promise()
-  }
+  await logs.putSubscriptionFilter(subscriptionFilterRequest).promise()
 }
 
-export const getLogGroupConfiguration = async (logs: CloudWatchLogs, logGroupName: string, forwarderArn: string) => {
+export const calculateLogGroupUpdateRequest = async (
+  logs: CloudWatchLogs,
+  logGroupName: string,
+  forwarderArn: string
+) => {
   const config: LogGroupConfiguration = {
     logGroupName,
     subscriptionFilterRequest: {
-      logGroupName,
+      destinationArn: forwarderArn,
       filterName: SUBSCRIPTION_FILTER_NAME,
       filterPattern: '',
-      destinationArn: forwarderArn,
+      logGroupName,
     },
   }
 
@@ -85,5 +87,6 @@ export const getSubscriptionFilterState = async (logs: CloudWatchLogs, logGroupN
     // Subscription filter was created by this CI tool
     return SubscriptionState.WrongDestinationOwned
   }
+
   return SubscriptionState.WrongDestinationUnowned
 }

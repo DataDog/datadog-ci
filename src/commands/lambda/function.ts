@@ -1,20 +1,20 @@
-import {Lambda, CloudWatchLogs} from 'aws-sdk'
+import {CloudWatchLogs, Lambda} from 'aws-sdk'
 import deepExtend from 'deep-extend'
 import {DEFAULT_LAYER_AWS_ACCOUNT, HANDLER_LOCATION, Runtime, RUNTIME_LAYER_LOOKUP} from './constants'
-import {LogGroupConfiguration, getLogGroupConfiguration, applyLogGroupConfig} from './loggroup'
+import {applyLogGroupConfig, calculateLogGroupUpdateRequest, LogGroupConfiguration} from './loggroup'
 
 export interface FunctionConfiguration {
   functionARN: string
   lambdaConfig: Lambda.FunctionConfiguration
   layerARN: string
-  updateRequest?: Lambda.UpdateFunctionConfigurationRequest
   logGroupConfiguration?: LogGroupConfiguration
+  updateRequest?: Lambda.UpdateFunctionConfigurationRequest
 }
 
 export interface InstrumentationSettings {
+  forwarderARN?: string
   layerAWSAccount?: string
   layerVersion?: number
-  forwarderARN?: string
   mergeXrayTraces: boolean
   tracingEnabled: boolean
 }
@@ -42,7 +42,7 @@ export const getLambdaConfigs = async (
     let logGroupConfiguration: LogGroupConfiguration | undefined
     if (settings.forwarderARN !== undefined) {
       const arn = `/aws/lambda/${config.FunctionName}`
-      logGroupConfiguration = await getLogGroupConfiguration(cloudWatch, arn, settings.forwarderARN)
+      logGroupConfiguration = await calculateLogGroupUpdateRequest(cloudWatch, arn, settings.forwarderARN)
     }
 
     functionsToUpdate.push({functionARN, layerARN, lambdaConfig: config, updateRequest, logGroupConfiguration})
