@@ -17,6 +17,11 @@ import {
 } from './renderer'
 import {buildPath, getBaseIntakeUrl, getMinifiedFilePath} from './utils'
 
+const errorCodesNoRetry = [400, 403, 413]
+const errorCodesNoRetrySet = new Set(errorCodesNoRetry)
+const errorCodesStopUpload = [400, 403]
+const errorCodesStopUploadSet = new Set(errorCodesStopUpload)
+
 export class UploadCommand extends Command {
   private basePath?: string
   private config = {
@@ -122,11 +127,7 @@ export class UploadCommand extends Command {
             await api.uploadSourcemap(sourcemap)
           } catch (error) {
             if (error.response) {
-              if (error.response.status === 413) {
-                bail(error)
-
-                return
-              } else if (error.response.status === 403) {
+              if (errorCodesNoRetrySet.has(error.response.status)) {
                 bail(error)
 
                 return
@@ -147,7 +148,7 @@ export class UploadCommand extends Command {
     } catch (error) {
       metricsLogger.increment('failed', 1)
       this.context.stdout.write(renderFailedUpload(sourcemap, error))
-      if (error.response.status === 403) {
+      if (errorCodesStopUploadSet.has(error.response.status)) {
         throw error
       }
     }
