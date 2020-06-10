@@ -23,6 +23,10 @@ const errorCodesStopUpload = [400, 403]
 const errorCodesStopUploadSet = new Set(errorCodesStopUpload)
 
 export class UploadCommand extends Command {
+  public static usage = Command.Usage({
+    description: '⚠️ This is an experimental feature that the Datadog product does not support.',
+  })
+
   private basePath?: string
   private config = {
     apiKey: process.env.DATADOG_API_KEY,

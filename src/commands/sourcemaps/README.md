@@ -1,3 +1,3 @@
 # Sourcemaps command
 
-Upload source maps to datadog.
+⚠️ This is an experimental feature that the Datadog product does not support.
