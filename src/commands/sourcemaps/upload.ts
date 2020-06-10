@@ -125,17 +125,20 @@ export class UploadCommand extends Command {
         async (bail) => {
           try {
             await api.uploadSourcemap(sourcemap)
+            metricsLogger.increment('success', 1)
           } catch (error) {
             if (error.response) {
-              if (errorCodesNoRetrySet.has(error.response.status)) {
-                bail(error)
-
-                return
+              // If it's an axios error
+              if (!errorCodesNoRetrySet.has(error.response.status)) {
+                // And a status code that is not excluded from retries, throw the error so that upload is retried
+                throw error
               }
-              throw error
             }
+            // If it's another error or an axios error we don't want to retry, bail
+            bail(error)
+
+            return
           }
-          metricsLogger.increment('success', 1)
         },
         {
           onRetry: (e, attempt) => {
@@ -148,9 +151,14 @@ export class UploadCommand extends Command {
     } catch (error) {
       metricsLogger.increment('failed', 1)
       this.context.stdout.write(renderFailedUpload(sourcemap, error))
-      if (errorCodesStopUploadSet.has(error.response.status)) {
-        throw error
+      if (error.response) {
+        // If it's an axios error
+        if (!errorCodesStopUploadSet.has(error.response.status)) {
+          // And a status code that should not stop the whole upload, just return
+          return
+        }
       }
+      throw error
     }
   }
 }
