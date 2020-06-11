@@ -2,6 +2,7 @@ import retry from 'async-retry'
 import chalk from 'chalk'
 import {Command} from 'clipanion'
 import {BufferedMetricsLogger} from 'datadog-metrics'
+import fs from 'fs'
 import glob from 'glob'
 import asyncPool from 'tiny-async-pool'
 
@@ -124,6 +125,16 @@ export class UploadCommand extends Command {
 
       return
     }
+
+    if (!fs.existsSync(sourcemap.minifiedFilePath)) {
+      this.context.stdout.write(
+        renderFailedUpload(sourcemap, `Missing corresponding JS file for sourcemap (${sourcemap.minifiedFilePath})`)
+      )
+      metricsLogger.increment('skipped_missing_js', 1)
+
+      return
+    }
+
     try {
       await retry(
         async (bail) => {
