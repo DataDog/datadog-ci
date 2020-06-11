@@ -210,7 +210,6 @@ describe('utils', () => {
 
   describe('waitForResults', () => {
     beforeAll(() => {
-      jest.setTimeout(10000)
       const axiosMock = jest.spyOn(axios.default, 'create')
       axiosMock.mockImplementation((() => async (r: axios.AxiosRequestConfig) => {
         await wait(100)
@@ -224,7 +223,6 @@ describe('utils', () => {
     })
 
     afterAll(() => {
-      jest.setTimeout(5000)
       jest.clearAllMocks()
     })
 
@@ -254,9 +252,12 @@ describe('utils', () => {
     }
 
     test('should poll result ids', async () => {
+      const setTimeoutMock = jest.spyOn(global, 'setTimeout')
+      setTimeoutMock.mockImplementation((callback) => callback() as any)
       const expectedResults: {[key: string]: PollResult[]} = {}
       expectedResults[publicId] = [passingPollResult('0123456789')]
       expect(await waitForResults(api, [triggerResult], 120000, [triggerConfig])).toEqual(expectedResults)
+      setTimeoutMock.mockReset()
     })
 
     test('results should be timeout-ed if global pollingTimeout is exceeded', async () => {
@@ -300,6 +301,8 @@ describe('utils', () => {
     })
 
     test('correct number of pass and timeout results', async () => {
+      const setTimeoutMock = jest.spyOn(global, 'setTimeout')
+      setTimeoutMock.mockImplementation((callback) => callback() as any)
       const expectedResults: {[key: string]: PollResult[]} = {}
       const triggerResultPass = triggerResult
       const triggerResultTimeOut = {
@@ -321,6 +324,7 @@ describe('utils', () => {
         },
       ]
       expect(await waitForResults(api, [triggerResultPass, triggerResultTimeOut], 2000, [])).toEqual(expectedResults)
+      setTimeoutMock.mockReset()
     })
   })
 

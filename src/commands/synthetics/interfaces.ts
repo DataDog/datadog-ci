@@ -118,11 +118,16 @@ interface User {
   name: string
 }
 
-export interface TriggerResult {
+export interface TriggerResponse {
   device: string
   location: number
   public_id: string
   result_id: string
+}
+
+export interface TriggerResult extends TriggerResponse {
+  pollingTimeout: number
+  result?: PollResult
 }
 
 interface Location {
@@ -139,7 +144,7 @@ export interface LocationsMapping {
 
 export interface Trigger {
   locations: Location[]
-  results: TriggerResult[]
+  results: TriggerResponse[]
   triggered_check_ids: string[]
 }
 

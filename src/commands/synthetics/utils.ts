@@ -21,6 +21,7 @@ import {
   Test,
   Trigger,
   TriggerConfig,
+  TriggerResponse,
   TriggerResult,
 } from './interfaces'
 import {renderTrigger, renderWait} from './renderer'
@@ -149,25 +150,22 @@ const wait = async (duration: number) => new Promise(resolve => setTimeout(resol
 
 export const waitForResults = async (
   api: APIHelper,
-  triggerResults: TriggerResult[],
-  defaultPollingTimeout: number,
+  triggerResponses: TriggerResponse[],
+  defaultTimeout: number,
   triggerConfigs: TriggerConfig[]
 ) => {
-  const triggerResultsWithTimeout = getTriggerResultsByResultId(triggerResults, defaultPollingTimeout, triggerConfigs)
-  const resultsToPoll = new Set(triggerResultsWithTimeout.keys())
-  const resultsPolled = new Map<string, PollResult>()
-  const maxPollingTimeout = Math.max(...[...triggerResultsWithTimeout.values()].map(triggerResult => triggerResult.pollingTimeout))
+  const triggerResultMap = createTriggerResultMap(triggerResponses, defaultTimeout, triggerConfigs)
+  const triggerResults = [...triggerResultMap.values()]
 
+  const maxPollingTimeout = Math.max(...triggerResults.map(tr => tr.pollingTimeout))
   const pollingStartDate = (new Date()).getTime()
-  while (resultsToPoll.size > 0) {
+  while(triggerResults.filter(tr => !tr.result).length) {
     const pollingDuration = (new Date()).getTime() - pollingStartDate
 
     // Remove test which exceeded their pollingTimeout
-    for (const resultId of [...resultsToPoll]) {
-      const triggerResult = triggerResultsWithTimeout.get(resultId)!
+    for (const triggerResult of triggerResults.filter(tr => !tr.result)) {
       if (pollingDuration >= triggerResult.pollingTimeout) {
-        resultsToPoll.delete(resultId)
-        resultsPolled.set(resultId, createTimeoutResult(resultId, triggerResult.device, triggerResult.location))
+        triggerResult.result = createTimeoutResult(triggerResult.result_id, triggerResult.device, triggerResult.location)
       }
     }
 
@@ -175,11 +173,13 @@ export const waitForResults = async (
       break
     }
 
-    const polledResultsResponse = await api.pollResults([...resultsToPoll])
-    for (const result of polledResultsResponse.results) {
-      if (result.result.eventType === 'finished') {
-        resultsToPoll.delete(result.resultID)
-        resultsPolled.set(result.resultID, result)
+    const polledResultsResponse = await api.pollResults(triggerResults.filter(tr => !tr.result).map(tr => tr.result_id))
+    for (const polledResult of polledResultsResponse.results) {
+      if (polledResult.result.eventType === 'finished') {
+        const triggeredResult = triggerResultMap.get(polledResult.resultID)
+        if (triggeredResult) {
+          triggeredResult.result = polledResult
+        }
       }
     }
 
@@ -187,37 +187,33 @@ export const waitForResults = async (
   }
 
   // Bundle results by public id
-  const resultsByPublicId: {[key: string]: PollResult[]} = {}
-  for (const [resultId, pollResult] of resultsPolled) {
-    const triggerResult = triggerResultsWithTimeout.get(resultId)!
-    const resultsWithSamePublicId = resultsByPublicId[triggerResult.public_id]
-    if (resultsWithSamePublicId) {
-      resultsWithSamePublicId.push(pollResult)
-    } else {
-      resultsByPublicId[triggerResult.public_id] = [pollResult]
-    }
-  }
+  return triggerResults.reduce((resultsByPublicId, triggerResult) => {
+    const result = triggerResult.result! // The result exists, as either polled or filled with a timeout result
+    resultsByPublicId[triggerResult.public_id] = [...(resultsByPublicId[triggerResult.public_id] || []), result]
 
-  return resultsByPublicId
+    return resultsByPublicId
+  }, {} as {[key: string]: PollResult[]})
 }
 
-export const getTriggerResultsByResultId = (
-  triggerResults: TriggerResult[],
-  defaultPollingTimeout: number,
+export const createTriggerResultMap = (
+  triggerResponses: TriggerResponse[],
+  defaultTimeout: number,
   triggerConfigs: TriggerConfig[]
-) => {
+): Map<string, TriggerResult> => {
   const timeoutByPublicId: {[key: string]: number} = {}
-  triggerConfigs.forEach(trigger => timeoutByPublicId[trigger.id] = trigger.config.pollingTimeout ?? defaultPollingTimeout)
+  for (const trigger of triggerConfigs) {
+    timeoutByPublicId[trigger.id] = trigger.config.pollingTimeout ?? defaultTimeout
+  }
 
-  const triggerResultsByResultId = new Map<string, TriggerResult & {pollingTimeout: number}>()
-  triggerResults.forEach((triggerResult) => {
-    triggerResultsByResultId.set(triggerResult.result_id, {
-      ...triggerResult,
-      pollingTimeout: timeoutByPublicId[triggerResult.public_id] ?? defaultPollingTimeout,
+  const triggerResultMap = new Map()
+  for (const triggerResponse of triggerResponses) {
+    triggerResultMap.set(triggerResponse.result_id, {
+      ...triggerResponse,
+      pollingTimeout: timeoutByPublicId[triggerResponse.public_id] ?? defaultTimeout,
     })
-  })
+  }
 
-  return triggerResultsByResultId
+  return triggerResultMap
 }
 
 const createTimeoutResult = (resultId: string, deviceId: string, dcId: number): PollResult => ({
