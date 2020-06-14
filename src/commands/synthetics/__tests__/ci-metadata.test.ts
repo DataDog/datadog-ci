@@ -1,14 +1,14 @@
-import { CI_ENGINES, getCIMetadata } from '../ci-metadata';
+import {CI_ENGINES, getCIMetadata} from '../ci-metadata'
 
 describe('ci-metadata', () => {
-  const branch = 'fakeBranch';
-  const commit = 'fakeCommitSha';
-  const pipelineURL = 'fakePipelineUrl';
+  const branch = 'fakeBranch'
+  const commit = 'fakeCommitSha'
+  const pipelineURL = 'fakePipelineUrl'
 
   test('non-recognized CI returns undefined', () => {
-    process.env = { };
-    expect(getCIMetadata()).toBeUndefined();
-  });
+    process.env = {}
+    expect(getCIMetadata()).toBeUndefined()
+  })
 
   test('circle CI is recognized', () => {
     process.env = {
@@ -16,14 +16,14 @@ describe('ci-metadata', () => {
       CIRCLE_BRANCH: branch,
       CIRCLE_BUILD_URL: pipelineURL,
       CIRCLE_SHA1: commit,
-    };
+    }
     expect(getCIMetadata()).toEqual({
       branch,
       commit,
       engine: CI_ENGINES.CIRCLECI,
       pipelineURL,
-    });
-  });
+    })
+  })
 
   test('travis CI is recognized', () => {
     process.env = {
@@ -31,14 +31,14 @@ describe('ci-metadata', () => {
       TRAVIS_BRANCH: branch,
       TRAVIS_COMMIT: commit,
       TRAVIS_JOB_WEB_URL: pipelineURL,
-    };
+    }
     expect(getCIMetadata()).toEqual({
       branch,
       commit,
       engine: CI_ENGINES.TRAVIS,
       pipelineURL,
-    });
-  });
+    })
+  })
 
   test('gitlab CI is recognized', () => {
     process.env = {
@@ -46,14 +46,14 @@ describe('ci-metadata', () => {
       CI_COMMIT_SHA: commit,
       CI_JOB_URL: pipelineURL,
       GITLAB_CI: 'true',
-    };
+    }
     expect(getCIMetadata()).toEqual({
       branch,
       commit,
       engine: CI_ENGINES.GITLAB,
       pipelineURL,
-    });
-  });
+    })
+  })
 
   test('github actions is recognized', () => {
     process.env = {
@@ -62,16 +62,16 @@ describe('ci-metadata', () => {
       GITHUB_REPOSITORY: 'DataDog/datadog-ci',
       GITHUB_RUN_ID: '42',
       GITHUB_SHA: commit,
-    };
+    }
 
-    const expectedPipelineURL = 'https://github.com/DataDog/datadog-ci/actions/runs/42';
+    const expectedPipelineURL = 'https://github.com/DataDog/datadog-ci/actions/runs/42'
     expect(getCIMetadata()).toEqual({
       branch,
       commit,
       engine: CI_ENGINES.GITHUB,
       pipelineURL: expectedPipelineURL,
-    });
-  });
+    })
+  })
 
   test('jenkins is recognized', () => {
     process.env = {
@@ -79,12 +79,12 @@ describe('ci-metadata', () => {
       GIT_BRANCH: branch,
       GIT_COMMIT: commit,
       JENKINS_URL: 'https://fakebuildserver.url/',
-    };
+    }
     expect(getCIMetadata()).toEqual({
       branch,
       commit,
       engine: CI_ENGINES.JENKINS,
       pipelineURL,
-    });
-  });
-});
+    })
+  })
+})
