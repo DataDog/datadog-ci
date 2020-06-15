@@ -40,10 +40,10 @@ export class InstrumentCommand extends Command {
     }
 
     const configGroups: {
-        cloudWatchLogs: CloudWatchLogs
-        configs: FunctionConfiguration[]
-        lambda: Lambda,
-        region: string
+      cloudWatchLogs: CloudWatchLogs
+      configs: FunctionConfiguration[]
+      lambda: Lambda
+      region: string
     }[] = []
     for (const [region, functionList] of Object.entries(functionGroups)) {
       const lambda = new Lambda({region})
@@ -57,9 +57,7 @@ export class InstrumentCommand extends Command {
         return 1
       }
     }
-    const configList = configGroups
-      .map((group) => group.configs)
-      .reduce((a, b) => a.concat(b))
+    const configList = configGroups.map((group) => group.configs).reduce((a, b) => a.concat(b))
     this.printPlannedActions(configList)
     if (this.dryRun || configList.length === 0) {
       return 0

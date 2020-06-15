@@ -95,7 +95,7 @@ const calculateUpdateRequest = (
   layerARN: string,
   runtime: Runtime
 ) => {
-  const env : Record<string, string> = {...config.Environment?.Variables}
+  const env: Record<string, string> = {...config.Environment?.Variables}
   const newEnvVars: Record<string, string> = {}
   const functionARN = config.FunctionArn
   if (functionARN === undefined) {
@@ -133,7 +133,7 @@ const calculateUpdateRequest = (
   }
   if (Object.entries(newEnvVars).length > 0) {
     updateRequest.Environment = {
-      Variables: {... env, ...newEnvVars},
+      Variables: {...env, ...newEnvVars},
     }
   }
 

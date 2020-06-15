@@ -4,11 +4,10 @@ jest.mock('aws-sdk')
 import {Lambda} from 'aws-sdk'
 import * as fs from 'fs'
 
-import { Cli } from 'clipanion/lib/advanced'
+import {Cli} from 'clipanion/lib/advanced'
 import {InstrumentCommand} from '../instrument'
 
 describe('lambda', () => {
-
   const createMockContext = () => {
     let data = ''
 
@@ -56,7 +55,10 @@ describe('lambda', () => {
         const cli = makeCli()
         const context = createMockContext() as any
         const functionARN = 'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world'
-        const code = await cli.run(['lambda', 'instrument', '-f', functionARN, '--dry', '--layerVersion', '10'], context)
+        const code = await cli.run(
+          ['lambda', 'instrument', '-f', functionARN, '--dry', '--layerVersion', '10'],
+          context
+        )
         const output = context.stdout.toString()
         expect(code).toBe(0)
         expect(output).toMatchInlineSnapshot(`
@@ -91,7 +93,17 @@ describe('lambda', () => {
         ;(Lambda as any).mockImplementation(() => lambda)
         const cli = makeCli()
         const context = createMockContext() as any
-        await cli.run(['lambda', 'instrument','--function', 'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world', '--layerVersion','10'], context)
+        await cli.run(
+          [
+            'lambda',
+            'instrument',
+            '--function',
+            'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world',
+            '--layerVersion',
+            '10',
+          ],
+          context
+        )
         expect(lambda.updateFunctionConfiguration).toHaveBeenCalled()
       })
       test('aborts early when no functions are specified', async () => {
@@ -99,7 +111,7 @@ describe('lambda', () => {
         ;(Lambda as any).mockImplementation(() => makeMockLambda({}))
         const cli = makeCli()
         const context = createMockContext() as any
-        const code = await cli.run(['lambda', 'instrument','--layerVersion','10'], context)
+        const code = await cli.run(['lambda', 'instrument', '--layerVersion', '10'], context)
         const output = context.stdout.toString()
         expect(code).toBe(1)
         expect(output).toMatchInlineSnapshot(`
@@ -113,7 +125,7 @@ describe('lambda', () => {
 
         const cli = makeCli()
         const context = createMockContext() as any
-        const code = await cli.run(['lambda', 'instrument','--function', 'my-func', '--layerVersion','10'], context)
+        const code = await cli.run(['lambda', 'instrument', '--function', 'my-func', '--layerVersion', '10'], context)
 
         const output = context.stdout.toString()
         expect(code).toBe(1)
