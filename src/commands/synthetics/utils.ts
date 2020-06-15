@@ -146,7 +146,7 @@ export const getSuites = async (GLOB: string, write: Writable['write']): Promise
   )
 }
 
-const wait = async (duration: number) => new Promise(resolve => setTimeout(resolve, duration))
+export const wait = async (duration: number) => new Promise((resolve) => setTimeout(resolve, duration))
 
 export const waitForResults = async (
   api: APIHelper,
@@ -157,15 +157,19 @@ export const waitForResults = async (
   const triggerResultMap = createTriggerResultMap(triggerResponses, defaultTimeout, triggerConfigs)
   const triggerResults = [...triggerResultMap.values()]
 
-  const maxPollingTimeout = Math.max(...triggerResults.map(tr => tr.pollingTimeout))
-  const pollingStartDate = (new Date()).getTime()
-  while(triggerResults.filter(tr => !tr.result).length) {
-    const pollingDuration = (new Date()).getTime() - pollingStartDate
+  const maxPollingTimeout = Math.max(...triggerResults.map((tr) => tr.pollingTimeout))
+  const pollingStartDate = new Date().getTime()
+  while (triggerResults.filter((tr) => !tr.result).length) {
+    const pollingDuration = new Date().getTime() - pollingStartDate
 
     // Remove test which exceeded their pollingTimeout
-    for (const triggerResult of triggerResults.filter(tr => !tr.result)) {
+    for (const triggerResult of triggerResults.filter((tr) => !tr.result)) {
       if (pollingDuration >= triggerResult.pollingTimeout) {
-        triggerResult.result = createTimeoutResult(triggerResult.result_id, triggerResult.device, triggerResult.location)
+        triggerResult.result = createTimeoutResult(
+          triggerResult.result_id,
+          triggerResult.device,
+          triggerResult.location
+        )
       }
     }
 
@@ -173,7 +177,9 @@ export const waitForResults = async (
       break
     }
 
-    const polledResultsResponse = await api.pollResults(triggerResults.filter(tr => !tr.result).map(tr => tr.result_id))
+    const polledResultsResponse = await api.pollResults(
+      triggerResults.filter((tr) => !tr.result).map((tr) => tr.result_id)
+    )
     for (const polledResult of polledResultsResponse.results) {
       if (polledResult.result.eventType === 'finished') {
         const triggeredResult = triggerResultMap.get(polledResult.resultID)
