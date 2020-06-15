@@ -1,3 +1,4 @@
 * @yoannmoinet @m-rousse
 
 src/commands  @m-rousse
+src/commands/synthetics  @m-rousse @DataDog/synthetics-worker
