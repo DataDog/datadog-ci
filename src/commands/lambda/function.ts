@@ -1,5 +1,4 @@
 import {CloudWatchLogs, Lambda} from 'aws-sdk'
-import deepExtend from 'deep-extend'
 import {DEFAULT_LAYER_AWS_ACCOUNT, HANDLER_LOCATION, Runtime, RUNTIME_LAYER_LOOKUP} from './constants'
 import {applyLogGroupConfig, calculateLogGroupUpdateRequest, LogGroupConfiguration} from './loggroup'
 
@@ -96,7 +95,7 @@ const calculateUpdateRequest = (
   layerARN: string,
   runtime: Runtime
 ) => {
-  const env = deepExtend({}, config.Environment?.Variables)
+  const env : Record<string, string> = {...config.Environment?.Variables}
   const newEnvVars: Record<string, string> = {}
   const functionARN = config.FunctionArn
   if (functionARN === undefined) {
@@ -134,7 +133,7 @@ const calculateUpdateRequest = (
   }
   if (Object.entries(newEnvVars).length > 0) {
     updateRequest.Environment = {
-      Variables: deepExtend({}, env, newEnvVars),
+      Variables: {... env, ...newEnvVars},
     }
   }
 

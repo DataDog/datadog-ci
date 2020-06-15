@@ -22,7 +22,7 @@ export class InstrumentCommand extends Command {
 
   public async execute() {
     const lambdaConfig = {lambda: this.config}
-    this.config = await (await parseConfigFile(lambdaConfig, this.configPath)).lambda
+    this.config = (await parseConfigFile(lambdaConfig, this.configPath)).lambda
 
     const settings = this.getSettings()
     if (settings === undefined) {
@@ -40,25 +40,24 @@ export class InstrumentCommand extends Command {
     }
 
     const configGroups: {
-      [region: string]: {
         cloudWatchLogs: CloudWatchLogs
         configs: FunctionConfiguration[]
-        lambda: Lambda
-      }
-    } = {}
+        lambda: Lambda,
+        region: string
+    }[] = []
     for (const [region, functionList] of Object.entries(functionGroups)) {
       const lambda = new Lambda({region})
       const cloudWatchLogs = new CloudWatchLogs({region})
       try {
         const configs = await getLambdaConfigs(lambda, cloudWatchLogs, region, functionList, settings)
-        configGroups[region] = {configs, lambda, cloudWatchLogs}
+        configGroups.push({configs, lambda, cloudWatchLogs, region})
       } catch (err) {
         this.context.stdout.write(`Couldn't fetch lambda functions. ${err}\n`)
 
         return 1
       }
     }
-    const configList = Object.values(configGroups)
+    const configList = configGroups
       .map((group) => group.configs)
       .reduce((a, b) => a.concat(b))
     this.printPlannedActions(configList)
@@ -72,6 +71,8 @@ export class InstrumentCommand extends Command {
       await Promise.all(promises)
     } catch (err) {
       this.context.stdout.write(`Failure during update. ${err}\n`)
+
+      return 1
     }
 
     return 0
