@@ -253,6 +253,8 @@ export const runTests = async (
       }
 
       if (!test || config.executionRule === ExecutionRule.SKIPPED) {
+        write(`[${chalk.bold.dim(id)}] Test skipped as per test or global configuration.\n`)
+
         return
       }
 
