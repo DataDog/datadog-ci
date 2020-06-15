@@ -166,11 +166,11 @@ export interface ConfigOverride {
 
 export interface Metadata {
   ci?: {
-    branch?: string;
-    commit?: string;
-    engine?: string;
-    pipelineURL?: string;
-  };
+    branch?: string
+    commit?: string
+    engine?: string
+    pipelineURL?: string
+  }
 }
 
 export interface Payload extends ConfigOverride {
