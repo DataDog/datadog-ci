@@ -174,7 +174,7 @@ export class InstrumentCommand extends Command {
       if (logGroupConfiguration?.createLogGroupRequest) {
         this.context.stdout.write(
           `CreateLogGroup -> ${logGroupConfiguration.logGroupName}\n${JSON.stringify(
-            config.logGroupConfiguration?.createLogGroupRequest,
+            logGroupConfiguration.createLogGroupRequest,
             undefined,
             2
           )}\n`
@@ -183,7 +183,7 @@ export class InstrumentCommand extends Command {
       if (logGroupConfiguration?.deleteSubscriptionFilterRequest) {
         this.context.stdout.write(
           `DeleteSubscriptionFilter -> ${logGroupConfiguration.logGroupName}\n${JSON.stringify(
-            config.logGroupConfiguration?.deleteSubscriptionFilterRequest,
+            logGroupConfiguration.deleteSubscriptionFilterRequest,
             undefined,
             2
           )}\n`
@@ -192,7 +192,7 @@ export class InstrumentCommand extends Command {
       if (logGroupConfiguration?.subscriptionFilterRequest) {
         this.context.stdout.write(
           `PutSubscriptionFilter -> ${logGroupConfiguration.logGroupName}\n${JSON.stringify(
-            config.logGroupConfiguration?.subscriptionFilterRequest,
+            logGroupConfiguration.subscriptionFilterRequest,
             undefined,
             2
           )}\n`
