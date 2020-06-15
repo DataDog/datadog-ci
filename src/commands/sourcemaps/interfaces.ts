@@ -1,4 +1,5 @@
-import {AxiosPromise, AxiosResponse} from 'axios'
+import {AxiosResponse} from 'axios'
+import {Writable} from 'stream'
 
 export interface Payload {
   minifiedFilePath: string
@@ -16,5 +17,5 @@ export interface APIConfiguration {
 }
 
 export interface APIHelper {
-  uploadSourcemap(sourcemap: Payload): AxiosPromise<AxiosResponse>
+  uploadSourcemap(sourcemap: Payload, write: Writable['write'], dryRun: boolean): Promise<void | AxiosResponse>
 }

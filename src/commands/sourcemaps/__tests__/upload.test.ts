@@ -2,7 +2,6 @@
 jest.mock('glob')
 import glob from 'glob'
 
-import {Payload} from '../interfaces'
 import {UploadCommand} from '../upload'
 
 describe('upload', () => {
@@ -34,7 +33,7 @@ describe('upload', () => {
       service: 'web-ui',
       sourcemapPath: 'folder1/file1.min.js.map',
       version: '42',
-    } as Payload)
+    })
 
     expect(files[1]).toStrictEqual({
       minifiedFilePath: 'folder2/file2.min.js',
@@ -43,7 +42,7 @@ describe('upload', () => {
       service: 'web-ui',
       sourcemapPath: 'folder2/file2.min.js.map',
       version: '42',
-    } as Payload)
+    })
   })
 
   describe('getApiHelper', () => {

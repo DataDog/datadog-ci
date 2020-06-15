@@ -1,4 +1,5 @@
 import chalk from 'chalk'
+
 import {Payload} from './interfaces'
 
 const ICONS = {
@@ -51,6 +52,6 @@ export const renderCommandInfo = (
   return fullStr
 }
 
-export const renderDryRunUpload = (sourcemapPath: string): string => `[DRYRUN] ${renderUpload(sourcemapPath)} \n`
+export const renderDryRunUpload = (sourcemapPath: string): string => `[DRYRUN] ${renderUpload(sourcemapPath)}`
 
-export const renderUpload = (sourcemapPath: string): string => `Uploading sourcemap ${sourcemapPath}`
+export const renderUpload = (sourcemapPath: string): string => `Uploading sourcemap ${sourcemapPath}\n`

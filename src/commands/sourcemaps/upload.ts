@@ -9,19 +9,11 @@ import asyncPool from 'tiny-async-pool'
 import {apiConstructor} from './api'
 import {APIHelper, Payload} from './interfaces'
 import {getMetricsLogger} from './metrics'
-import {
-  renderCommandInfo,
-  renderDryRunUpload,
-  renderFailedUpload,
-  renderRetriedUpload,
-  renderSuccessfulCommand,
-} from './renderer'
+import {renderCommandInfo, renderFailedUpload, renderRetriedUpload, renderSuccessfulCommand} from './renderer'
 import {buildPath, getBaseIntakeUrl, getMinifiedFilePath} from './utils'
 
 const errorCodesNoRetry = [400, 403, 413]
-const errorCodesNoRetrySet = new Set(errorCodesNoRetry)
 const errorCodesStopUpload = [400, 403]
-const errorCodesStopUploadSet = new Set(errorCodesStopUpload)
 
 export class UploadCommand extends Command {
   public static usage = Command.Usage({
@@ -69,12 +61,12 @@ export class UploadCommand extends Command {
         this.dryRun
       )
     )
-    const metricsLogger = getMetricsLogger(this.releaseVersion, this.service)
+    const metricsLogger = getMetricsLogger(this.releaseVersion, this.service, this.dryRun)
     const payloads = this.getMatchingSourcemapFiles()
     const upload = (p: Payload) => this.uploadSourcemap(api, metricsLogger, p)
     const initialTime = new Date().getTime()
     await asyncPool(this.maxConcurrency, payloads, upload)
-    const totalTimeSeconds = (new Date().getTime() - initialTime) / 1000
+    const totalTimeSeconds = (Date.now() - initialTime) / 1000
     this.context.stdout.write(renderSuccessfulCommand(payloads.length, totalTimeSeconds))
     metricsLogger.gauge('duration', totalTimeSeconds)
     metricsLogger.flush()
@@ -115,17 +107,7 @@ export class UploadCommand extends Command {
     return buildPath(this.minifiedPathPrefix!, relativePath)
   }
 
-  private async uploadSourcemap(
-    api: APIHelper,
-    metricsLogger: BufferedMetricsLogger,
-    sourcemap: Payload
-  ): Promise<void> {
-    if (this.dryRun) {
-      this.context.stdout.write(renderDryRunUpload(sourcemap.sourcemapPath))
-
-      return
-    }
-
+  private async uploadSourcemap(api: APIHelper, metricsLogger: BufferedMetricsLogger, sourcemap: Payload) {
     if (!fs.existsSync(sourcemap.minifiedFilePath)) {
       this.context.stdout.write(
         renderFailedUpload(sourcemap, `Missing corresponding JS file for sourcemap (${sourcemap.minifiedFilePath})`)
@@ -139,12 +121,12 @@ export class UploadCommand extends Command {
       await retry(
         async (bail) => {
           try {
-            await api.uploadSourcemap(sourcemap)
+            await api.uploadSourcemap(sourcemap, this.context.stdout.write.bind(this.context.stdout), this.dryRun)
             metricsLogger.increment('success', 1)
           } catch (error) {
             if (error.response) {
               // If it's an axios error
-              if (!errorCodesNoRetrySet.has(error.response.status)) {
+              if (!errorCodesNoRetry.includes(error.response.status)) {
                 // And a status code that is not excluded from retries, throw the error so that upload is retried
                 throw error
               }
@@ -168,7 +150,7 @@ export class UploadCommand extends Command {
       this.context.stdout.write(renderFailedUpload(sourcemap, error))
       if (error.response) {
         // If it's an axios error
-        if (!errorCodesStopUploadSet.has(error.response.status)) {
+        if (!errorCodesStopUpload.includes(error.response.status)) {
           // And a status code that should not stop the whole upload, just return
           return
         }

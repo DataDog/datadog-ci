@@ -15,7 +15,7 @@ describe('utils', () => {
   describe('buildPath', () => {
     test('should return correct path', () => {
       const pathWithNoTrailingSlash = 'sourcemaps/js'
-      const pathWithTrailingSlash = 'sourcemaps/js'
+      const pathWithTrailingSlash = 'sourcemaps/js/'
       const fileName = 'file1.min.js'
 
       expect(buildPath(pathWithNoTrailingSlash, fileName)).toBe('sourcemaps/js/file1.min.js')

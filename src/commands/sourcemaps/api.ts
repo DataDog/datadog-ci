@@ -1,17 +1,26 @@
 import {AxiosPromise, AxiosRequestConfig, AxiosResponse, default as axios} from 'axios'
 import FormData from 'form-data'
 import fs from 'fs'
+import {Writable} from 'stream'
 
 import {APIConfiguration, Payload} from './interfaces'
-import {renderUpload} from './renderer'
+import {renderDryRunUpload, renderUpload} from './renderer'
 
 const maxPayloadLength = 50 * 1024 * 1024 // 50 MB
 
 export const uploadSourcemap = (request: (args: AxiosRequestConfig) => AxiosPromise<AxiosResponse>) => async (
-  sourcemap: Payload
-) => {
+  sourcemap: Payload,
+  write: Writable['write'],
+  dryRun: boolean
+): Promise<void | AxiosResponse> => {
+  if (dryRun) {
+    write(renderDryRunUpload(sourcemap.sourcemapPath))
+
+    return
+  }
+
   const form = new FormData()
-  console.log(renderUpload(sourcemap.sourcemapPath))
+  write(renderUpload(sourcemap.sourcemapPath))
   form.append('service', sourcemap.service)
   form.append('version', sourcemap.version)
   form.append('source_map', fs.createReadStream(sourcemap.sourcemapPath))
