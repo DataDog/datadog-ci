@@ -21,14 +21,14 @@ import {
   Test,
   Trigger,
   TriggerConfig,
+  TriggerResponse,
   TriggerResult,
 } from './interfaces'
 import {renderTrigger, renderWait} from './renderer'
 
 import {pick} from '../../helpers/utils'
 
-const INTERVAL_CHECKING = 5000 // In ms
-const MAX_RETRIES = 2
+const POLLING_INTERVAL = 5000 // In ms
 const PUBLIC_ID_REGEX = /^[\d\w]{3}-[\d\w]{3}-[\d\w]{3}$/
 const SUBDOMAIN_REGEX = /(.*?)\.(?=[^\/]*\..{2,5})/
 
@@ -146,88 +146,93 @@ export const getSuites = async (GLOB: string, write: Writable['write']): Promise
   )
 }
 
+export const wait = async (duration: number) => new Promise((resolve) => setTimeout(resolve, duration))
+
 export const waitForResults = async (
   api: APIHelper,
-  triggerResults: TriggerResult[],
-  pollingTimeout: number
-): Promise<{[key: string]: PollResult[]}> => {
-  const finishedResults: {[key: string]: PollResult[]} = {}
-  const pollingIds = triggerResults.map((triggerResult) => triggerResult.result_id)
-  const triggerResultsByResultID: {[key: string]: TriggerResult} = {}
+  triggerResponses: TriggerResponse[],
+  defaultTimeout: number,
+  triggerConfigs: TriggerConfig[]
+) => {
+  const triggerResultMap = createTriggerResultMap(triggerResponses, defaultTimeout, triggerConfigs)
+  const triggerResults = [...triggerResultMap.values()]
 
-  triggerResults.forEach((triggerResult) => {
-    triggerResultsByResultID[triggerResult.result_id] = triggerResult
-    if (!Object.keys(finishedResults).includes(triggerResult.public_id)) {
-      finishedResults[triggerResult.public_id] = []
-    }
-  })
-  let maxErrors = MAX_RETRIES
+  const maxPollingTimeout = Math.max(...triggerResults.map((tr) => tr.pollingTimeout))
+  const pollingStartDate = new Date().getTime()
+  while (triggerResults.filter((tr) => !tr.result).length) {
+    const pollingDuration = new Date().getTime() - pollingStartDate
 
-  let pollTimeout: NodeJS.Timeout
-
-  return new Promise((resolve, reject) => {
-    // When the polling timeout we still want to keep what we've got until now.
-    const timeout = setTimeout(() => {
-      clearTimeout(pollTimeout)
-      // Build and inject timeout errors.
-      pollingIds.forEach((resultId) => {
-        const triggerResult = triggerResultsByResultID[resultId]
-        const pollResult: PollResult = {
-          dc_id: triggerResult.location,
-          result: {
-            device: {id: triggerResult.device},
-            error: 'Timeout',
-            eventType: 'finished',
-            passed: false,
-            stepDetails: [],
-          },
-          resultID: triggerResult.result_id,
-        }
-        finishedResults[triggerResult.public_id].push(pollResult)
-      })
-      resolve(finishedResults)
-    }, pollingTimeout)
-
-    const poll = async (toPoll: string[]) => {
-      let results: PollResult[] = []
-      try {
-        results = (await api.pollResults(toPoll)).results
-        maxErrors = MAX_RETRIES
-      } catch (e) {
-        maxErrors -= 1
-        if (maxErrors < 0) {
-          clearTimeout(timeout)
-          clearTimeout(pollTimeout)
-          reject(`Could not poll results: ${e.toString()}`)
-
-          return
-        }
-      }
-
-      for (const result of results) {
-        if (result.result.eventType === 'finished') {
-          // Push the result.
-          const publicId = triggerResultsByResultID[result.resultID].public_id
-          finishedResults[publicId].push(result)
-
-          // Remove the resultID from the ids to poll.
-          pollingIds.splice(pollingIds.indexOf(result.resultID), 1)
-        }
-      }
-
-      if (pollingIds.length) {
-        pollTimeout = setTimeout(() => {
-          poll(pollingIds)
-        }, INTERVAL_CHECKING)
-      } else {
-        clearTimeout(timeout)
-        resolve(finishedResults)
+    // Remove test which exceeded their pollingTimeout
+    for (const triggerResult of triggerResults.filter((tr) => !tr.result)) {
+      if (pollingDuration >= triggerResult.pollingTimeout) {
+        triggerResult.result = createTimeoutResult(
+          triggerResult.result_id,
+          triggerResult.device,
+          triggerResult.location
+        )
       }
     }
 
-    poll(pollingIds)
-  })
+    if (pollingDuration >= maxPollingTimeout) {
+      break
+    }
+
+    const polledResultsResponse = await api.pollResults(
+      triggerResults.filter((tr) => !tr.result).map((tr) => tr.result_id)
+    )
+    for (const polledResult of polledResultsResponse.results) {
+      if (polledResult.result.eventType === 'finished') {
+        const triggeredResult = triggerResultMap.get(polledResult.resultID)
+        if (triggeredResult) {
+          triggeredResult.result = polledResult
+        }
+      }
+    }
+
+    await wait(POLLING_INTERVAL)
+  }
+
+  // Bundle results by public id
+  return triggerResults.reduce((resultsByPublicId, triggerResult) => {
+    const result = triggerResult.result! // The result exists, as either polled or filled with a timeout result
+    resultsByPublicId[triggerResult.public_id] = [...(resultsByPublicId[triggerResult.public_id] || []), result]
+
+    return resultsByPublicId
+  }, {} as {[key: string]: PollResult[]})
 }
+
+export const createTriggerResultMap = (
+  triggerResponses: TriggerResponse[],
+  defaultTimeout: number,
+  triggerConfigs: TriggerConfig[]
+): Map<string, TriggerResult> => {
+  const timeoutByPublicId: {[key: string]: number} = {}
+  for (const trigger of triggerConfigs) {
+    timeoutByPublicId[trigger.id] = trigger.config.pollingTimeout ?? defaultTimeout
+  }
+
+  const triggerResultMap = new Map()
+  for (const triggerResponse of triggerResponses) {
+    triggerResultMap.set(triggerResponse.result_id, {
+      ...triggerResponse,
+      pollingTimeout: timeoutByPublicId[triggerResponse.public_id] ?? defaultTimeout,
+    })
+  }
+
+  return triggerResultMap
+}
+
+const createTimeoutResult = (resultId: string, deviceId: string, dcId: number): PollResult => ({
+  dc_id: dcId,
+  result: {
+    device: {id: deviceId},
+    error: 'Timeout',
+    eventType: 'finished',
+    passed: false,
+    stepDetails: [],
+  },
+  resultID: resultId,
+})
 
 export const runTests = async (
   api: APIHelper,
