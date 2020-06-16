@@ -8,19 +8,7 @@ import glob from 'glob'
 
 import {apiConstructor} from '../api'
 import {ExecutionRule, PollResult, ProxyConfiguration, Result, Test} from '../interfaces'
-import {
-  getStrictestExecutionRule,
-  getSuites,
-  handleConfig,
-  hasResultPassed,
-  hasTestSucceeded,
-  runTests,
-  waitForResults,
-} from '../utils'
-
-async function wait(duration: number) {
-  return new Promise((resolve) => setTimeout(resolve, duration))
-}
+import * as utils from '../utils'
 
 describe('utils', () => {
   const apiConfiguration = {
@@ -46,7 +34,7 @@ describe('utils', () => {
     ;(glob as any).mockImplementation((query: string, callback: (e: any, v: any) => void) => callback(undefined, FILES))
 
     test('should get suites', async () => {
-      const suites = await getSuites(GLOB, process.stdout.write.bind(process.stdout))
+      const suites = await utils.getSuites(GLOB, process.stdout.write.bind(process.stdout))
       expect(JSON.stringify(suites)).toBe(`[${FILES_CONTENT.file1},${FILES_CONTENT.file2}]`)
     })
   })
@@ -80,12 +68,12 @@ describe('utils', () => {
     })
 
     test('should run test', async () => {
-      const output = await runTests(api, [{id: fakeTest.public_id, config: {}}], processWrite)
+      const output = await utils.runTests(api, [{id: fakeTest.public_id, config: {}}], processWrite)
       expect(output).toEqual({tests: [fakeTest], triggers: fakeTrigger})
     })
 
     test('should run test with publicId from url', async () => {
-      const output = await runTests(
+      const output = await utils.runTests(
         api,
         [
           {
@@ -101,7 +89,7 @@ describe('utils', () => {
     test('no tests triggered throws an error', async () => {
       let hasThrown = false
       try {
-        await runTests(api, [], processWrite)
+        await utils.runTests(api, [], processWrite)
       } catch (e) {
         hasThrown = true
       }
@@ -112,7 +100,7 @@ describe('utils', () => {
       let hasThrown = false
       try {
         const config = {executionRule: ExecutionRule.SKIPPED}
-        await runTests(api, [{id: fakeTest.public_id, config}], processWrite)
+        await utils.runTests(api, [{id: fakeTest.public_id, config}], processWrite)
       } catch (e) {
         hasThrown = true
       }
@@ -123,7 +111,7 @@ describe('utils', () => {
   describe('handleConfig', () => {
     test('empty config returns simple payload', () => {
       const publicId = 'abc-def-ghi'
-      expect(handleConfig({public_id: publicId} as Test, publicId)).toEqual({
+      expect(utils.handleConfig({public_id: publicId} as Test, publicId)).toEqual({
         public_id: publicId,
       })
     })
@@ -136,7 +124,7 @@ describe('utils', () => {
         public_id: publicId,
       } as Test
       const configOverride = {executionRule: ExecutionRule.SKIPPED}
-      const handledConfig = handleConfig(fakeTest, publicId, configOverride)
+      const handledConfig = utils.handleConfig(fakeTest, publicId, configOverride)
 
       expect(handledConfig.public_id).toBe(publicId)
     })
@@ -151,7 +139,7 @@ describe('utils', () => {
         startUrl: 'https://{{DOMAIN}}/newPath?oldPath={{PATHNAME}}',
       }
       const expectedUrl = 'https://example.org/newPath?oldPath=/path'
-      const handledConfig = handleConfig(fakeTest, publicId, configOverride)
+      const handledConfig = utils.handleConfig(fakeTest, publicId, configOverride)
 
       expect(handledConfig.public_id).toBe(publicId)
       expect(handledConfig.startUrl).toBe(expectedUrl)
@@ -168,9 +156,9 @@ describe('utils', () => {
         passed: true,
         stepDetails: [],
       }
-      expect(hasResultPassed(result)).toBeTruthy()
+      expect(utils.hasResultPassed(result)).toBeTruthy()
       result.passed = false
-      expect(hasResultPassed(result)).toBeFalsy()
+      expect(utils.hasResultPassed(result)).toBeFalsy()
     })
 
     test('result with error', () => {
@@ -181,7 +169,7 @@ describe('utils', () => {
         passed: false,
         stepDetails: [],
       }
-      expect(hasResultPassed(result)).toBeFalsy()
+      expect(utils.hasResultPassed(result)).toBeFalsy()
     })
   })
 
@@ -204,15 +192,15 @@ describe('utils', () => {
       result: {...passingResult, passed: false},
       resultID: '0123456789',
     }
-    expect(hasTestSucceeded([passingPollResult, failingPollResult])).toBeFalsy()
-    expect(hasTestSucceeded([passingPollResult, passingPollResult])).toBeTruthy()
+    expect(utils.hasTestSucceeded([passingPollResult, failingPollResult])).toBeFalsy()
+    expect(utils.hasTestSucceeded([passingPollResult, passingPollResult])).toBeTruthy()
   })
 
   describe('waitForResults', () => {
     beforeAll(() => {
       const axiosMock = jest.spyOn(axios.default, 'create')
       axiosMock.mockImplementation((() => async (r: axios.AxiosRequestConfig) => {
-        await wait(100)
+        await utils.wait(100)
 
         const results = JSON.parse(r.params.result_ids)
           .filter((resultId: string) => resultId !== 'timingOutTest')
@@ -246,14 +234,21 @@ describe('utils', () => {
       public_id: publicId,
       result_id: '0123456789',
     }
+    const triggerConfig = {
+      config: {},
+      id: publicId,
+    }
 
     test('should poll result ids', async () => {
+      const waitMock = jest.spyOn(utils, 'wait')
+      waitMock.mockImplementation()
       const expectedResults: {[key: string]: PollResult[]} = {}
       expectedResults[publicId] = [passingPollResult('0123456789')]
-      expect(await waitForResults(api, [triggerResult], 120000)).toEqual(expectedResults)
+
+      expect(await utils.waitForResults(api, [triggerResult], 120000, [triggerConfig])).toEqual(expectedResults)
     })
 
-    test('results should be timeout-ed if pollingTimeout is exceeded', async () => {
+    test('results should be timed-out if global pollingTimeout is exceeded', async () => {
       const expectedResults: {[key: string]: PollResult[]} = {}
       expectedResults[publicId] = [
         {
@@ -268,10 +263,35 @@ describe('utils', () => {
           resultID: triggerResult.result_id,
         },
       ]
-      expect(await waitForResults(api, [triggerResult], 0)).toEqual(expectedResults)
+      expect(await utils.waitForResults(api, [triggerResult], 0, [])).toEqual(expectedResults)
+    })
+
+    test('results should be timeout-ed if test pollingTimeout is exceeded', async () => {
+      const expectedResults: {[key: string]: PollResult[]} = {}
+      expectedResults[publicId] = [
+        {
+          dc_id: triggerResult.location,
+          result: {
+            device: {id: triggerResult.device},
+            error: 'Timeout',
+            eventType: 'finished',
+            passed: false,
+            stepDetails: [],
+          },
+          resultID: triggerResult.result_id,
+        },
+      ]
+      const testTriggerConfig = {
+        config: {pollingTimeout: 0},
+        id: publicId,
+      }
+      expect(await utils.waitForResults(api, [triggerResult], 120000, [testTriggerConfig])).toEqual(expectedResults)
     })
 
     test('correct number of pass and timeout results', async () => {
+      const waitMock = jest.spyOn(utils, 'wait')
+      waitMock.mockImplementation()
+
       const expectedResults: {[key: string]: PollResult[]} = {}
       const triggerResultPass = triggerResult
       const triggerResultTimeOut = {
@@ -292,7 +312,9 @@ describe('utils', () => {
           resultID: triggerResultTimeOut.result_id,
         },
       ]
-      expect(await waitForResults(api, [triggerResultPass, triggerResultTimeOut], 2000)).toEqual(expectedResults)
+      expect(await utils.waitForResults(api, [triggerResultPass, triggerResultTimeOut], 2000, [])).toEqual(
+        expectedResults
+      )
     })
   })
 
@@ -300,10 +322,10 @@ describe('utils', () => {
     const BLOCKING = ExecutionRule.BLOCKING
     const NON_BLOCKING = ExecutionRule.NON_BLOCKING
     const SKIPPED = ExecutionRule.SKIPPED
-    expect(getStrictestExecutionRule(BLOCKING, NON_BLOCKING)).toBe(NON_BLOCKING)
-    expect(getStrictestExecutionRule(NON_BLOCKING, BLOCKING)).toBe(NON_BLOCKING)
-    expect(getStrictestExecutionRule(NON_BLOCKING, SKIPPED)).toBe(SKIPPED)
-    expect(getStrictestExecutionRule(BLOCKING, undefined)).toBe(BLOCKING)
-    expect(getStrictestExecutionRule(SKIPPED, undefined)).toBe(SKIPPED)
+    expect(utils.getStrictestExecutionRule(BLOCKING, NON_BLOCKING)).toBe(NON_BLOCKING)
+    expect(utils.getStrictestExecutionRule(NON_BLOCKING, BLOCKING)).toBe(NON_BLOCKING)
+    expect(utils.getStrictestExecutionRule(NON_BLOCKING, SKIPPED)).toBe(SKIPPED)
+    expect(utils.getStrictestExecutionRule(BLOCKING, undefined)).toBe(BLOCKING)
+    expect(utils.getStrictestExecutionRule(SKIPPED, undefined)).toBe(SKIPPED)
   })
 })

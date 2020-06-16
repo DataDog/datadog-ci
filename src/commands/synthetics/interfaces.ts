@@ -118,11 +118,16 @@ interface User {
   name: string
 }
 
-export interface TriggerResult {
+export interface TriggerResponse {
   device: string
   location: number
   public_id: string
   result_id: string
+}
+
+export interface TriggerResult extends TriggerResponse {
+  pollingTimeout: number
+  result?: PollResult
 }
 
 interface Location {
@@ -139,7 +144,7 @@ export interface LocationsMapping {
 
 export interface Trigger {
   locations: Location[]
-  results: TriggerResult[]
+  results: TriggerResponse[]
   triggered_check_ids: string[]
 }
 
@@ -159,6 +164,7 @@ export interface ConfigOverride {
   followRedirects?: boolean
   headers?: {[key: string]: string}
   locations?: string[]
+  pollingTimeout?: number
   retry?: RetryConfig
   startUrl?: string
   variables?: {[key: string]: string}
@@ -166,11 +172,11 @@ export interface ConfigOverride {
 
 export interface Metadata {
   ci?: {
-    branch?: string;
-    commit?: string;
-    engine?: string;
-    pipelineURL?: string;
-  };
+    branch?: string
+    commit?: string
+    engine?: string
+    pipelineURL?: string
+  }
 }
 
 export interface Payload extends ConfigOverride {
