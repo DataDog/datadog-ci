@@ -12,10 +12,10 @@ export const getBaseIntakeUrl = () => {
   if (process.env.DATADOG_SOURCEMAP_INTAKE_DOMAIN) {
     return process.env.DATADOG_SOURCEMAP_INTAKE_DOMAIN
   } else if (process.env.DATADOG_SITE) {
-    return 'https://sourcemaps.intake.' + process.env.DATADOG_SITE
+    return 'https://sourcemap-intake.' + process.env.DATADOG_SITE
   }
 
-  return 'https://sourcemaps.intake.datadoghq.com'
+  return 'https://sourcemap-intake.datadoghq.com'
 }
 
 export const getBaseAPIUrl = () => {
