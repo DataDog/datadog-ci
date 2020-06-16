@@ -55,6 +55,7 @@ The configuration file structure is the following:
         "startUrl": "{{URL}}?static_hash={{STATIC_HASH}}",
         "variables": { "titleVariable": "new title" },
     },
+    "pollingTimeout": 120000,
     "proxy": {
       "auth": {
         "username": "login",
@@ -65,7 +66,6 @@ The configuration file structure is the following:
       "protocol": "http"
     },
     "subdomain": "subdomainname",
-    "timeout": 120000,
 }
 ```
 
@@ -116,6 +116,7 @@ Your test files must be named with a `.synthetics.json` suffix.
                 "followRedirects": true,
                 "headers": { "NEW_HEADER": "NEW VALUE" },
                 "locations": ["aws:us-east-1"],
+                "pollingTimeout": 30000,
                 "retry": { "count": 2, "interval": 300 },
                 "startUrl": "{{URL}}?static_hash={{STATIC_HASH}}",
                 "variables": { "titleVariable": "new title" },
@@ -144,13 +145,14 @@ All options under the `config` key allow overriding the configuration of the tes
 - followRedirects: (boolean) indicates whether to follow or not HTTP redirections in API tests
 - headers: (object) headers to replace in the test. This object should contain as keys the name of the header to replace and as values the new value of the header.
 - locations: (array) list of locations from which the test should be run.
+- pollingTimeout: (integer) maximum duration in milliseconds of a test, if execution exceeds this value it is considered failed.
 - retry: (object) retry policy for the test
   - count: (integer) number of attempts to perform in case of test failure
   - interval: (integer) interval between the attempts (in milliseconds)
 - startUrl: (string) new start URL to provide to the test
 - variables: (object) variables to replace in the test. This object should contain as keys the name of the variable to replace and as values the new value of the variable.
 
-You can configure on which url your test starts by providing a `config.startUrl` to your test object and build your own starting url using any part of your test's original starting url and the following environment variables: 
+You can configure on which url your test starts by providing a `config.startUrl` to your test object and build your own starting url using any part of your test's original starting url and the following environment variables:
 
 | Environment variable | Description                  | Example                                                |
 |----------------------|------------------------------|--------------------------------------------------------|

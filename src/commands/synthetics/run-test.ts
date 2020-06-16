@@ -16,9 +16,9 @@ export class RunTestCommand extends Command {
     datadogSite: process.env.DATADOG_SITE || 'datadoghq.com',
     files: '{,!(node_modules)/**/}*.synthetics.json',
     global: {} as ConfigOverride,
+    pollingTimeout: 2 * 60 * 1000,
     proxy: {protocol: 'http'} as ProxyConfiguration,
     subdomain: process.env.DATADOG_SUBDOMAIN || 'app',
-    timeout: 2 * 60 * 1000,
   }
   private configPath?: string
   private publicIds: string[] = []
@@ -54,7 +54,7 @@ export class RunTestCommand extends Command {
 
     try {
       // Poll the results.
-      const results = await waitForResults(api, triggers.results, this.config.timeout)
+      const results = await waitForResults(api, triggers.results, this.config.pollingTimeout, testsToTrigger)
 
       // Sort tests to show success first.
       tests.sort((t1, t2) => {

@@ -62,3 +62,6 @@ typings/
 
 # Custom paths
 dist
+
+#DS_Store
+**/.DS_Store

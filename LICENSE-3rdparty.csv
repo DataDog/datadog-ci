@@ -2,20 +2,27 @@ Component,Origin,Licence,Copyright
 @babel/core,dev,MIT,Copyright (c) 2014-present Sebastian McKenzie and other contributors
 @babel/preset-env,dev,MIT,Copyright (c) 2014-present Sebastian McKenzie and other contributors
 @babel/preset-typescript,dev,MIT,Copyright (c) 2014-present Sebastian McKenzie and other contributors
+@types/async-retry,dev,MIT,Copyright (c) Microsoft Corporation
+@types/datadog-metrics,dev,MIT,Copyright (c) Microsoft Corporation
+@types/tiny-async-pool,dev,MIT,Copyright (c) Microsoft Corporation
 @types/chalk,dev,MIT,Copyright (c) Sindre Sorhus <sindresorhus@gmail.com> (sindresorhus.com)
 @types/deep-extend,dev,MIT,Copyright Microsoft Corporation
 @types/glob,dev,MIT,Copyright Microsoft Corporation
 @types/jest,dev,MIT,Copyright Microsoft Corporation
 @types/node,dev,MIT,Copyright Microsoft Corporation
 aws-sdk,import,Apache-2.0,Copyright Amazon Web Services
+async-retry,import,MIT,Copyright (c) 2017 ZEIT, Inc.
 axios,import,MIT,Copyright (c) 2014-present Matt Zabriskie
 chalk,import,MIT,Copyright (c) Sindre Sorhus <sindresorhus@gmail.com> (sindresorhus.com)
 clipanion,import,MIT,Copyright (c) 2019 Mael Nison
+datadog-metrics,import,MIT,Copyright (c) 2014 Daniel Bader
 deep-extend,import,MIT,Copyright (c) 2013-2018, Viacheslav Lotsmanov
+form-data,import,MIT,Copyright (c) 2012 Felix Geisendörfer (felix@debuggable.com) and contributors
 glob,import,ISC,Copyright (c) Isaac Z. Schlueter and Contributors
 jest,dev,MIT,Copyright (c) Facebook, Inc. and its affiliates.
 prettier,dev,MIT,Copyright © James Long and contributors
 proxy-agent,import,MIT,Copyright (c) 2013 Nathan Rajlich <nathan@tootallnate.net>
+tiny-async-pool,import,MIT,Copyright (c) 2017 Rafael Xavier de Souza http://rafael.xavier.blog.br
 ts-jest,dev,MIT,Copyright (c) 2016-2018
 ts-node,import,MIT,Copyright (c) 2014 Blake Embrey (hello@blakeembrey.com)
 tslint,dev,Apache-2.0,Copyright 2013-2019 Palantir Technologies, Inc.
