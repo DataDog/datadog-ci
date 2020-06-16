@@ -831,7 +831,7 @@
     "@types/istanbul-reports" "^1.1.1"
     "@types/yargs" "^12.0.9"
 
-"@types/async-retry@^1.4.2":
+"@types/async-retry@1.4.2":
   version "1.4.2"
   resolved "https://registry.yarnpkg.com/@types/async-retry/-/async-retry-1.4.2.tgz#7f910188cd3893b51e32df51765ee8d5646053e3"
   integrity sha512-GUDuJURF0YiJZ+CBjNQA0+vbP/VHlJbB0sFqkzsV7EcOPRfurVonXpXKAt3w8qIjM1TEzpz6hc6POocPvHOS3w==
@@ -878,7 +878,7 @@
   dependencies:
     chalk "*"
 
-"@types/datadog-metrics@^0.6.0":
+"@types/datadog-metrics@0.6.0":
   version "0.6.0"
   resolved "https://registry.yarnpkg.com/@types/datadog-metrics/-/datadog-metrics-0.6.0.tgz#786c9b8669738327e8a742728e34e9b150011364"
   integrity sha512-MBOPUAvG6xRSgQaOtdEUnF1qwx0JGTjTVhKPzw9a3C9hguaWMNM3KUjRJMRlkgjw8AhV56IXfl2cQH9Tqd5ydA==
@@ -954,7 +954,7 @@
   resolved "https://registry.yarnpkg.com/@types/stack-utils/-/stack-utils-1.0.1.tgz#0a851d3bd96498fa25c33ab7278ed3bd65f06c3e"
   integrity sha512-l42BggppR6zLmpfU6fq9HEa2oGPEI8yrSPL3GITjfRInppYFahObbIQOQK3UGxEnyQpltZLaPe75046NOZQikw==
 
-"@types/tiny-async-pool@^1.0.0":
+"@types/tiny-async-pool@1.0.0":
   version "1.0.0"
   resolved "https://registry.yarnpkg.com/@types/tiny-async-pool/-/tiny-async-pool-1.0.0.tgz#9a88f701b736ab440c968b723456604cdcedbaed"
   integrity sha512-d8RK1jg/piCgv5/jD8ta8uJOE10tU8MWExzL1Kf1kOjMaTuL5cW0eZ9ax001SSYa4Ecg6xzZBh/jM4GB7+5OAg==
@@ -1138,7 +1138,7 @@ async-limiter@~1.0.0:
   resolved "https://registry.yarnpkg.com/async-limiter/-/async-limiter-1.0.0.tgz#78faed8c3d074ab81f22b4e985d79e8738f720f8"
   integrity sha512-jp/uFnooOiO+L211eZOoSyzpOITMXx1rBITauYykG3BRYPu8h0UcxsPNB04RR5vo4Tyz3+ay17tR6JVf9qzYWg==
 
-async-retry@^1.3.1:
+async-retry@1.3.1:
   version "1.3.1"
   resolved "https://registry.yarnpkg.com/async-retry/-/async-retry-1.3.1.tgz#139f31f8ddce50c0870b0ba558a6079684aaed55"
   integrity sha512-aiieFW/7h3hY0Bq5d+ktDBejxuwR78vRu9hDUdR8rNhSaQ29VzPL4AoIRG7D/c7tdenwOcKvgPM6tIxB3cB6HA==
@@ -1549,9 +1549,9 @@ data-urls@^1.0.0:
     whatwg-mimetype "^2.2.0"
     whatwg-url "^7.0.0"
 
-"datadog-metrics@https://github.com/fermelone/node-datadog-metrics":
+"datadog-metrics@https://github.com/DataDog/node-datadog-metrics#12d16a80ea2a8846c91d80f5e127fb7b81b9f347":
   version "0.8.1"
-  resolved "https://github.com/fermelone/node-datadog-metrics#12d16a80ea2a8846c91d80f5e127fb7b81b9f347"
+  resolved "https://github.com/DataDog/node-datadog-metrics#12d16a80ea2a8846c91d80f5e127fb7b81b9f347"
   dependencies:
     debug "3.1.0"
     dogapi "1.1.0"
@@ -1966,7 +1966,7 @@ forever-agent@~0.6.1:
   resolved "https://registry.yarnpkg.com/forever-agent/-/forever-agent-0.6.1.tgz#fbc71f0c41adeb37f96c577ad1ed42d8fdacca91"
   integrity sha1-+8cfDEGt6zf5bFd60e1C2P2sypE=
 
-form-data@^3.0.0:
+form-data@3.0.0:
   version "3.0.0"
   resolved "https://registry.yarnpkg.com/form-data/-/form-data-3.0.0.tgz#31b7e39c85f1355b7139ee0c647cf0de7f83c682"
   integrity sha512-CKMFDglpbMi6PyN+brwB9Q/GOw0eAnsrEZDgcsH5Krhz5Od/haKHAX0NmQfha2zPPz0JpWzA7GJHGSnvCRLWsg==
@@ -4408,7 +4408,7 @@ thunkify@^2.1.2:
   resolved "https://registry.yarnpkg.com/thunkify/-/thunkify-2.1.2.tgz#faa0e9d230c51acc95ca13a361ac05ca7e04553d"
   integrity sha1-+qDp0jDFGsyVyhOjYawFyn4EVT0=
 
-tiny-async-pool@^1.1.0:
+tiny-async-pool@1.1.0:
   version "1.1.0"
   resolved "https://registry.yarnpkg.com/tiny-async-pool/-/tiny-async-pool-1.1.0.tgz#cd3fdafaae84f2aa2539a07b428b40f801219c5b"
   integrity sha512-jIglyHF/9QdCC3662m/UMVADE6SlocBDpXdFLMZyiAfrw8MSG1pml7lwRtBMT6L/z4dddAxfzw2lpW2Vm42fyQ==

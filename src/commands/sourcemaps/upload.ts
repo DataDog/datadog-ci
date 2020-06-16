@@ -9,7 +9,13 @@ import asyncPool from 'tiny-async-pool'
 import {apiConstructor} from './api'
 import {APIHelper, Payload} from './interfaces'
 import {getMetricsLogger} from './metrics'
-import {renderCommandInfo, renderFailedUpload, renderRetriedUpload, renderSuccessfulCommand} from './renderer'
+import {
+  renderCommandInfo,
+  renderDryRunUpload,
+  renderFailedUpload,
+  renderRetriedUpload,
+  renderSuccessfulCommand,
+} from './renderer'
 import {buildPath, getBaseIntakeUrl, getMinifiedFilePath} from './utils'
 
 const errorCodesNoRetry = [400, 403, 413]
@@ -17,7 +23,21 @@ const errorCodesStopUpload = [400, 403]
 
 export class UploadCommand extends Command {
   public static usage = Command.Usage({
-    description: '⚠️ This is an experimental feature that the Datadog product does not support.',
+    description: 'Upload javascript sourcemaps to Datadog.',
+    details: `
+            This command will upload all javascript sourcemaps and their corresponding javascript file to Datadog in order to un-minify front-end stack traces received by Datadog.
+            See README for details.
+        `,
+    examples: [
+      [
+        'Upload all sourcemaps in current directory',
+        'datadog-ci sourcemaps upload . --service my-service --minified-path-prefix https://static.datadog.com --release-version 1.234',
+      ],
+      [
+        'Upload all sourcemaps in /home/users/ci with 50 concurrent uploads',
+        'datadog-ci sourcemaps upload . --service my-service --minified-path-prefix https://static.datadog.com --release-version 1.234 --concurency 50',
+      ],
+    ],
   })
 
   private basePath?: string
@@ -61,7 +81,7 @@ export class UploadCommand extends Command {
         this.dryRun
       )
     )
-    const metricsLogger = getMetricsLogger(this.releaseVersion, this.service, this.dryRun)
+    const metricsLogger = getMetricsLogger(this.releaseVersion, this.service)
     const payloads = this.getMatchingSourcemapFiles()
     const upload = (p: Payload) => this.uploadSourcemap(api, metricsLogger, p)
     const initialTime = new Date().getTime()
@@ -121,7 +141,12 @@ export class UploadCommand extends Command {
       await retry(
         async (bail) => {
           try {
-            await api.uploadSourcemap(sourcemap, this.context.stdout.write.bind(this.context.stdout), this.dryRun)
+            if (this.dryRun) {
+              this.context.stdout.write(renderDryRunUpload(sourcemap.sourcemapPath))
+
+              return
+            }
+            await api.uploadSourcemap(sourcemap, this.context.stdout.write.bind(this.context.stdout))
             metricsLogger.increment('success', 1)
           } catch (error) {
             if (error.response) {

@@ -1,4 +1,4 @@
-import {AxiosResponse} from 'axios'
+import {AxiosPromise, AxiosResponse} from 'axios'
 import {Writable} from 'stream'
 
 export interface Payload {
@@ -17,5 +17,5 @@ export interface APIConfiguration {
 }
 
 export interface APIHelper {
-  uploadSourcemap(sourcemap: Payload, write: Writable['write'], dryRun: boolean): Promise<void | AxiosResponse>
+  uploadSourcemap(sourcemap: Payload, write: Writable['write']): AxiosPromise<AxiosResponse>
 }
