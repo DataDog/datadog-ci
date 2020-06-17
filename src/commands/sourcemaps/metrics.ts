@@ -5,5 +5,5 @@ export const getMetricsLogger = (version: string, service: string): metrics.Buff
     defaultTags: [`version:${version}`, `service:${service}`],
     flushIntervalSeconds: 15,
     host: 'ci',
-    prefix: 'dd.datadog_ci.sourcemaps',
+    prefix: 'dd.datadog_ci.sourcemaps.',
   })
