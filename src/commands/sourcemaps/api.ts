@@ -6,8 +6,6 @@ import {Writable} from 'stream'
 import {APIConfiguration, Payload} from './interfaces'
 import {renderUpload} from './renderer'
 
-const maxPayloadLength = 50 * 1024 * 1024 // 50 MB
-
 export const uploadSourcemap = (request: (args: AxiosRequestConfig) => AxiosPromise<AxiosResponse>) => async (
   sourcemap: Payload,
   write: Writable['write']
@@ -24,7 +22,6 @@ export const uploadSourcemap = (request: (args: AxiosRequestConfig) => AxiosProm
   return request({
     data: form,
     headers: form.getHeaders(),
-    maxContentLength: maxPayloadLength,
     method: 'POST',
     url: 'v1/input',
   })
