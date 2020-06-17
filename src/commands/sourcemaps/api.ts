@@ -6,7 +6,9 @@ import {Writable} from 'stream'
 import {APIConfiguration, Payload} from './interfaces'
 import {renderUpload} from './renderer'
 
-const maxPayloadLength = 50 * 1024 * 1024 // 50 MB
+// Dependcy follows-redirects sets a default maxBodyLentgh of 10 MB https://github.com/follow-redirects/follow-redirects/blob/b774a77e582b97174813b3eaeb86931becba69db/index.js#L391
+// We don't want any hard limit enforced by the CLI, the backend will enforce a max size by returning 413 errors.
+const maxContentLength = Infinity
 
 export const uploadSourcemap = (request: (args: AxiosRequestConfig) => AxiosPromise<AxiosResponse>) => async (
   sourcemap: Payload,
@@ -24,7 +26,7 @@ export const uploadSourcemap = (request: (args: AxiosRequestConfig) => AxiosProm
   return request({
     data: form,
     headers: form.getHeaders(),
-    maxContentLength: maxPayloadLength,
+    maxContentLength,
     method: 'POST',
     url: 'v1/input',
   })

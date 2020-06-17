@@ -15,7 +15,7 @@ export DATADOG_API_KEY="<API KEY>"
 
 It is possible to configure the tool to use Datadog EU by defining the `DATADOG_SITE` environment variable to `datadoghq.eu`. By defaut the requests are sent to Datadog US. In order to send the usage metrics to the correct datacenter, the `DATADOG_API_HOST` must also be set if another instance of Datadog is used. For example, for Datadog EU, it should be set to `api.datadoghq.eu`.  
 
-It is also possible to override the full URL for the intake endpoint by defining the `DATADOG_SOURCEMAP_INTAKE_DOMAIN` environment variable.
+It is also possible to override the full URL for the intake endpoint by defining the `DATADOG_SOURCEMAP_INTAKE_URL` environment variable.
 
 
 
@@ -38,7 +38,7 @@ The folder structure should match the structure of the served static files.
 
 * `--release-version` (required) is similar and will be used to match the `version` tag set on the RUM SDK.
 
-* `--minified-path-prefix` (required) is the URL prefix that will be be matched against the URL we got the error from. It must be set to the actual url exposed on the server (and used by browsers to retrieve the minified file).
+* `--minified-path-prefix` (required) is the URL prefix that will be matched against the URL we got the error from. It must be set to the actual url exposed on the server (and used by browsers to retrieve the minified file).
 When un-minifying the stack traces, the URL of the static files will be match against the concatenation of this prefix and the relative path to the folder you're uploading sourcemaps from of the JS file.
 
 In addition, some optional parameters are available:
