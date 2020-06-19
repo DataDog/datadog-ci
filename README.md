@@ -41,6 +41,7 @@ Usage: datadog-ci <command> <subcommand> [options]
 
 Available command:
   - synthetics
+  - lambda
 ```
 
 Each command allows interacting with a product of the Datadog platform. The commands are defined in the [src/commands](/src/commands) folder.
@@ -48,6 +49,7 @@ Each command allows interacting with a product of the Datadog platform. The comm
 Further documentation for each command can be found in its folder, ie:
 
 - [synthetics](src/commands/synthetics/)
+- [lambda](src/commands/lambda)
 
 
 ## Contributing

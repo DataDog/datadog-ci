@@ -1,10 +1,7 @@
-import fs from 'fs'
-import {promisify} from 'util'
-
 import chalk from 'chalk'
 import {Command} from 'clipanion'
-import deepExtend from 'deep-extend'
 
+import {parseConfigFile} from '../../helpers/utils'
 import {apiConstructor} from './api'
 import {APIHelper, ConfigOverride, ExecutionRule, LocationsMapping, ProxyConfiguration} from './interfaces'
 import {renderHeader, renderResults} from './renderer'
@@ -30,7 +27,7 @@ export class RunTestCommand extends Command {
   public async execute() {
     const startTime = Date.now()
 
-    await this.parseConfigFile()
+    this.config = await parseConfigFile(this.config, this.configPath)
 
     const api = this.getApiHelper()
     const publicIdsTriggers = this.publicIds.map((id) => ({config: {}, id}))
@@ -158,23 +155,6 @@ export class RunTestCommand extends Command {
       }))
 
     return testsToTrigger
-  }
-
-  private async parseConfigFile() {
-    try {
-      const configPath = this.configPath || 'datadog-ci.json'
-      const configFile = await promisify(fs.readFile)(configPath, 'utf-8')
-      const config = JSON.parse(configFile)
-      this.config = deepExtend(this.config, config)
-    } catch (e) {
-      if (e.code === 'ENOENT' && this.configPath) {
-        throw new Error('Config file not found')
-      }
-
-      if (e instanceof SyntaxError) {
-        throw new Error('Config file is not correct JSON')
-      }
-    }
   }
 }
 

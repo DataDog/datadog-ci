@@ -28,6 +28,7 @@
     "watch": "tsc -w"
   },
   "dependencies": {
+    "aws-sdk": "2.682.0",
     "async-retry": "1.3.1",
     "axios": "0.19.2",
     "chalk": "2.4.2",

@@ -10,6 +10,7 @@ Component,Origin,Licence,Copyright
 @types/glob,dev,MIT,Copyright Microsoft Corporation
 @types/jest,dev,MIT,Copyright Microsoft Corporation
 @types/node,dev,MIT,Copyright Microsoft Corporation
+aws-sdk,import,Apache-2.0,Copyright Amazon Web Services
 async-retry,import,MIT,Copyright (c) 2017 ZEIT, Inc.
 axios,import,MIT,Copyright (c) 2014-present Matt Zabriskie
 chalk,import,MIT,Copyright (c) Sindre Sorhus <sindresorhus@gmail.com> (sindresorhus.com)
