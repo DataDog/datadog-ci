@@ -105,7 +105,7 @@ export class UploadCommand extends Command {
   }
 
   private getMatchingSourcemapFiles(): Payload[] {
-    const sourcemapFiles = glob.sync(buildPath(this.basePath!, '**/*.min.js.map'))
+    const sourcemapFiles = glob.sync(buildPath(this.basePath!, '**/*.js.map'))
 
     return sourcemapFiles.map((sourcemapPath) => {
       const minifiedFilePath = getMinifiedFilePath(sourcemapPath)
