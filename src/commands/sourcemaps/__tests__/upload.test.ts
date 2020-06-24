@@ -16,7 +16,7 @@ describe('upload', () => {
     })
   })
   describe('getMatchingSourcemapsFiles', () => {
-    const FILES = ['folder1/file1.min.js.map', 'folder2/file2.min.js.map']
+    const FILES = ['folder1/file1.min.js.map', 'folder2/file2.js.map']
     ;(glob as any).sync.mockImplementation((query: string) => FILES)
     const command = new UploadCommand()
     command['basePath'] = '/js/sourcemaps'
@@ -36,11 +36,11 @@ describe('upload', () => {
     })
 
     expect(files[1]).toStrictEqual({
-      minifiedFilePath: 'folder2/file2.min.js',
-      minifiedUrl: 'http://datadog.com/js/folder2/file2.min.js',
+      minifiedFilePath: 'folder2/file2.js',
+      minifiedUrl: 'http://datadog.com/js/folder2/file2.js',
       projectPath: '',
       service: 'web-ui',
-      sourcemapPath: 'folder2/file2.min.js.map',
+      sourcemapPath: 'folder2/file2.js.map',
       version: '42',
     })
   })

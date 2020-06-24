@@ -40,16 +40,18 @@ yarn add --dev @datadog/datadog-ci
 Usage: datadog-ci <command> <subcommand> [options]
 
 Available command:
-  - synthetics
   - lambda
+  - sourcemaps
+  - synthetics
 ```
 
 Each command allows interacting with a product of the Datadog platform. The commands are defined in the [src/commands](/src/commands) folder.
 
 Further documentation for each command can be found in its folder, ie:
 
-- [synthetics](src/commands/synthetics/)
 - [lambda](src/commands/lambda)
+- [sourcemaps](src/commands/sourcemaps/)
+- [synthetics](src/commands/synthetics/)
 
 
 ## Contributing
