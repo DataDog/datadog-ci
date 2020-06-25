@@ -20,6 +20,7 @@ describe('utils', () => {
     afterEach(() => {
       ;(fs.readFile as any).mockRestore()
     })
+
     test('should read a config file', async () => {
       ;(fs.readFile as any).mockImplementation((_path: string, _opts: any, callback: any) =>
         callback(undefined, '{"newconfigkey":"newconfigvalue"}')
@@ -40,6 +41,15 @@ describe('utils', () => {
       ;(fs.readFile as any).mockImplementation((p: string, o: any, cb: any) => cb(undefined, 'thisisnoJSON'))
 
       await expect(parseConfigFile({})).rejects.toEqual(Error('Config file is not correct JSON'))
+    })
+
+    test('config file should overwrite default configuration', async () => {
+      ;(fs.readFile as any).mockImplementation((_path: string, _opts: any, callback: any) =>
+        callback(undefined, '{"configKey":"newconfigvalue"}')
+      )
+
+      const config = await parseConfigFile({configKey: 'configvalue'})
+      await expect(config.configKey).toBe('newconfigvalue')
     })
   })
 })
