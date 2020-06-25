@@ -14,13 +14,13 @@ export function pick<T extends object, K extends keyof T>(base: T, keys: K[]) {
   return pickedObject
 }
 
-export const parseConfigFile = async <T>(config: T, configPath?: string) => {
+export const parseConfigFile = async <T>(baseConfig: T, configPath?: string) => {
   try {
     const resolvedConfigPath = configPath ?? 'datadog-ci.json'
     const configFile = await promisify(fs.readFile)(resolvedConfigPath, 'utf-8')
     const parsedConfig = JSON.parse(configFile)
 
-    return deepExtend(parsedConfig, config) as T
+    return deepExtend(baseConfig, parsedConfig) as T
   } catch (e) {
     if (e.code === 'ENOENT' && configPath) {
       throw new Error('Config file not found')
@@ -31,5 +31,5 @@ export const parseConfigFile = async <T>(config: T, configPath?: string) => {
     }
   }
 
-  return config
+  return baseConfig
 }
