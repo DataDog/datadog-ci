@@ -1,6 +1,7 @@
 // tslint:disable: no-string-literal
 jest.mock('fs')
 
+import {ExecutionRule} from '../interfaces'
 import {RunTestCommand} from '../run-test'
 import * as utils from '../utils'
 
@@ -133,6 +134,35 @@ describe('run-test', () => {
           config: {startUrl},
           id: 'stu-vwx-yza',
         },
+      ])
+    })
+  })
+
+  describe('sortTestsByOutcome', () => {
+    const test1 = {options: {}, public_id: 'test1'}
+    const test2 = {options: {ci: {executionRule: ExecutionRule.BLOCKING}}, public_id: 'test2'}
+    const test3 = {options: {ci: {executionRule: ExecutionRule.NON_BLOCKING}}, public_id: 'test3'}
+    const test4 = {options: {ci: {executionRule: ExecutionRule.BLOCKING}}, public_id: 'test4'}
+    const test5 = {options: {ci: {executionRule: ExecutionRule.NON_BLOCKING}}, public_id: 'test5'}
+    const tests = [test1, test2, test3, test4, test5]
+    const results = {
+      test1: [{result: {passed: true}}],
+      test2: [{result: {passed: true}}],
+      test3: [{result: {passed: true}}],
+      test4: [{result: {passed: false}}],
+      test5: [{result: {passed: false}}],
+    }
+
+    test('should sort tests with success, non_blocking failures then failures', async () => {
+      const command = new RunTestCommand()
+
+      tests.sort((command['sortTestsByOutcome'] as any)(results))
+      expect(tests).toStrictEqual([
+        test3,
+        test1,
+        test2,
+        test5,
+        test4,
       ])
     })
   })

@@ -3,7 +3,15 @@ import {Command} from 'clipanion'
 
 import {parseConfigFile} from '../../helpers/utils'
 import {apiConstructor} from './api'
-import {APIHelper, ConfigOverride, ExecutionRule, LocationsMapping, ProxyConfiguration} from './interfaces'
+import {
+  APIHelper,
+  ConfigOverride,
+  ExecutionRule,
+  LocationsMapping,
+  PollResult,
+  ProxyConfiguration,
+  Test,
+} from './interfaces'
 import {renderHeader, renderResults} from './renderer'
 import {getSuites, hasTestSucceeded, runTests, waitForResults} from './utils'
 
@@ -56,13 +64,8 @@ export class RunTestCommand extends Command {
       // Poll the results.
       const results = await waitForResults(api, triggers.results, this.config.pollingTimeout, testsToTrigger)
 
-      // Sort tests to show success first.
-      tests.sort((t1, t2) => {
-        const success1 = hasTestSucceeded(results[t1.public_id])
-        const success2 = hasTestSucceeded(results[t2.public_id])
-
-        return success1 === success2 ? 0 : success1 ? -1 : 1
-      })
+      // Sort tests to show success first then non blocking failures and finally blocking failures.
+      tests.sort(this.sortTestsByOutcome(results))
 
       // Rendering the results.
       this.context.stdout.write(renderHeader({startTime}))
@@ -155,6 +158,25 @@ export class RunTestCommand extends Command {
       }))
 
     return testsToTrigger
+  }
+
+  private sortTestsByOutcome(results: {[key: string]: PollResult[]}) {
+    return (t1: Test, t2: Test) => {
+      const success1 = hasTestSucceeded(results[t1.public_id])
+      const success2 = hasTestSucceeded(results[t2.public_id])
+      const isNonBlockingTest1 = t1.options.ci?.executionRule === ExecutionRule.NON_BLOCKING
+      const isNonBlockingTest2 = t2.options.ci?.executionRule === ExecutionRule.NON_BLOCKING
+
+      if (success1 === success2) {
+        if (isNonBlockingTest1 === isNonBlockingTest2) {
+          return 0
+        }
+
+        return isNonBlockingTest1 ? -1 : 1
+      }
+
+      return success1 ? -1 : 1
+    }
   }
 }
 

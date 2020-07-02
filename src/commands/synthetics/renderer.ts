@@ -71,7 +71,7 @@ const readableOperation: {[key in Operator]: string} = {
   [Operator.isInMoreThan]: 'will expire in more than',
 }
 
-const renderApiError = (errorCode: string, errorMessage: string) => {
+const renderApiError = (errorCode: string, errorMessage: string, color: typeof chalk) => {
   if (errorCode === 'INCORRECT_ASSERTION') {
     try {
       const assertionsErrors: Assertion[] = JSON.parse(errorMessage)
@@ -85,7 +85,7 @@ const renderApiError = (errorCode: string, errorMessage: string) => {
         })
       )
 
-      return chalk.red(output.join('\n      '))
+      return color(output.join('\n      '))
     } catch (e) {
       // JSON parsing failed, do nothing to return the raw error
     }
@@ -97,20 +97,21 @@ const renderApiError = (errorCode: string, errorMessage: string) => {
 // Test execution rendering
 const renderResultOutcome = (result: Result, test: Test, icon: string, color: typeof chalk) => {
   if (result.error) {
-    return `    ${chalk.red.bold(`✖ | ${result.error}`)}`
+    return `    ${chalk.bold(`✖ | ${result.error}`)}`
   }
 
   if (result.unhealthy) {
-    return `    ${chalk.red.bold(`✖ | ${result.errorMessage || 'General Error'}`)}`
+    return `    ${chalk.bold(`✖ | ${result.errorMessage || 'General Error'}`)}`
   }
 
   if (test.type === 'api') {
     const requestDescription = `${chalk.bold(test.config.request.method)} - ${test.config.request.url}`
 
     if (result.errorCode && result.errorMessage) {
-      return [`    ${icon} ${color(requestDescription)}`, renderApiError(result.errorCode!, result.errorMessage!)].join(
-        '\n'
-      )
+      return [
+        `    ${icon} ${color(requestDescription)}`,
+        renderApiError(result.errorCode!, result.errorMessage!, color),
+      ].join('\n')
     }
 
     return `    ${icon} ${color(requestDescription)}`
@@ -138,7 +139,7 @@ const getResultUrl = (baseUrl: string, test: Test, resultId: string) => {
 const renderExecutionResult = (test: Test, execution: PollResult, baseUrl: string, locationNames: LocationsMapping) => {
   const {dc_id, resultID, result} = execution
   const isSuccess = hasResultPassed(result)
-  const color = isSuccess ? chalk.green : chalk.red
+  const color = getTestResultColor(isSuccess, test.options.ci?.executionRule === ExecutionRule.NON_BLOCKING)
   const icon = isSuccess ? ICONS.SUCCESS : ICONS.FAILED
 
   const locationName = locationNames[dc_id] || dc_id.toString()
@@ -168,6 +169,17 @@ const renderResultIcon = (success: boolean, isNonBlocking: boolean) => {
   return ICONS.FAILED
 }
 
+const getTestResultColor = (success: boolean, isNonBlocking: boolean) => {
+  if (success) {
+    return chalk.bold.green
+  }
+  if (isNonBlocking) {
+    return chalk.bold.yellow
+  }
+
+  return chalk.bold.red
+}
+
 export const renderResults = (test: Test, results: PollResult[], baseUrl: string, locationNames: LocationsMapping) => {
   const success = hasTestSucceeded(results)
   const isNonBlocking = test.options.ci?.executionRule === ExecutionRule.NON_BLOCKING
@@ -175,7 +187,7 @@ export const renderResults = (test: Test, results: PollResult[], baseUrl: string
   const icon = renderResultIcon(success, isNonBlocking)
 
   const idDisplay = `[${chalk.bold.dim(test.public_id)}]`
-  const nameColor = success ? chalk.bold.green : chalk.bold.red
+  const nameColor = getTestResultColor(success, isNonBlocking)
   const nonBlockingText = !success && isNonBlocking ? 'This test is set to be non-blocking in Datadog' : ''
 
   const testResultsText = results
