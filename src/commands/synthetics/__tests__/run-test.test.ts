@@ -157,13 +157,7 @@ describe('run-test', () => {
       const command = new RunTestCommand()
 
       tests.sort((command['sortTestsByOutcome'] as any)(results))
-      expect(tests).toStrictEqual([
-        test3,
-        test1,
-        test2,
-        test5,
-        test4,
-      ])
+      expect(tests).toStrictEqual([test3, test1, test2, test5, test4])
     })
   })
 })
