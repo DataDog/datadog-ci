@@ -54,4 +54,5 @@ export const renderCommandInfo = (
 
 export const renderDryRunUpload = (sourcemap: Payload): string => `[DRYRUN] ${renderUpload(sourcemap)}`
 
-export const renderUpload = (sourcemap: Payload): string => `Uploading sourcemap ${sourcemap.sourcemapPath} for JS file available at ${sourcemap.minifiedUrl}\n`
+export const renderUpload = (sourcemap: Payload): string =>
+  `Uploading sourcemap ${sourcemap.sourcemapPath} for JS file available at ${sourcemap.minifiedUrl}\n`

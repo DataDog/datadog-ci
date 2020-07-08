@@ -4,7 +4,7 @@ import {Command} from 'clipanion'
 import {BufferedMetricsLogger} from 'datadog-metrics'
 import fs from 'fs'
 import glob from 'glob'
-import path from 'path';
+import path from 'path'
 import asyncPool from 'tiny-async-pool'
 
 import {apiConstructor} from './api'
