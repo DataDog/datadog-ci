@@ -12,5 +12,6 @@ module.exports = {
       tsConfig: 'tsconfig.json'
     }
   },
-  roots: ["src"]
+  roots: ["src"],
+  testPathIgnorePatterns: ["fixtures"]
 };
