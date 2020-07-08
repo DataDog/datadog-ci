@@ -76,41 +76,41 @@ describe('execute', () => {
 
     const output = context.stdout.toString().split('\n').slice(0, -2)
     expect(code).toBe(0)
-    expect(output).toEqual(
-      ['\u001b[33m\u001b[1m\u001b[32m⚠️\u001b[33m\u001b[22m DRY-RUN MODE ENABLED. WILL NOT UPLOAD SOURCEMAPS\u001b[39m',
-        '\u001b[33m\u001b[39m\u001b[32mStarting upload with concurrency 20. \u001b[39m',
-        '\u001b[32m\u001b[39m\u001b[32mWill look for sourcemaps in src/commands/sourcemaps/__tests__/fixtures\u001b[39m',
-        '\u001b[32m\u001b[39m\u001b[32mWill match JS files for errors on files starting with https://static.com/js\u001b[39m',
-        '\u001b[32m\u001b[39m\u001b[32mversion: test service: test-service project path: \u001b[39m',
-        '\u001b[32m\u001b[39m[DRYRUN] Uploading sourcemap src/commands/sourcemaps/__tests__/fixtures/common.min.js.map for JS file available at https://static.com/js/common.min.js',
-      ])
+    expect(output).toEqual([
+      '\u001b[33m\u001b[1m\u001b[32m⚠️\u001b[33m\u001b[22m DRY-RUN MODE ENABLED. WILL NOT UPLOAD SOURCEMAPS\u001b[39m',
+      '\u001b[33m\u001b[39m\u001b[32mStarting upload with concurrency 20. \u001b[39m',
+      '\u001b[32m\u001b[39m\u001b[32mWill look for sourcemaps in src/commands/sourcemaps/__tests__/fixtures\u001b[39m',
+      '\u001b[32m\u001b[39m\u001b[32mWill match JS files for errors on files starting with https://static.com/js\u001b[39m',
+      '\u001b[32m\u001b[39m\u001b[32mversion: test service: test-service project path: \u001b[39m',
+      '\u001b[32m\u001b[39m[DRYRUN] Uploading sourcemap src/commands/sourcemaps/__tests__/fixtures/common.min.js.map for JS file available at https://static.com/js/common.min.js',
+    ])
   })
 
   test('relative path', async () => {
     const {context, code} = await runCLI('./src/commands/sourcemaps/__tests__/fixtures')
     const output = context.stdout.toString().split('\n').slice(0, -2)
     expect(code).toBe(0)
-    expect(output).toEqual(
-      ['\u001b[33m\u001b[1m\u001b[32m⚠️\u001b[33m\u001b[22m DRY-RUN MODE ENABLED. WILL NOT UPLOAD SOURCEMAPS\u001b[39m',
-        '\u001b[33m\u001b[39m\u001b[32mStarting upload with concurrency 20. \u001b[39m',
-        '\u001b[32m\u001b[39m\u001b[32mWill look for sourcemaps in src/commands/sourcemaps/__tests__/fixtures\u001b[39m',
-        '\u001b[32m\u001b[39m\u001b[32mWill match JS files for errors on files starting with https://static.com/js\u001b[39m',
-        '\u001b[32m\u001b[39m\u001b[32mversion: test service: test-service project path: \u001b[39m',
-        '\u001b[32m\u001b[39m[DRYRUN] Uploading sourcemap src/commands/sourcemaps/__tests__/fixtures/common.min.js.map for JS file available at https://static.com/js/common.min.js',
-      ])
+    expect(output).toEqual([
+      '\u001b[33m\u001b[1m\u001b[32m⚠️\u001b[33m\u001b[22m DRY-RUN MODE ENABLED. WILL NOT UPLOAD SOURCEMAPS\u001b[39m',
+      '\u001b[33m\u001b[39m\u001b[32mStarting upload with concurrency 20. \u001b[39m',
+      '\u001b[32m\u001b[39m\u001b[32mWill look for sourcemaps in src/commands/sourcemaps/__tests__/fixtures\u001b[39m',
+      '\u001b[32m\u001b[39m\u001b[32mWill match JS files for errors on files starting with https://static.com/js\u001b[39m',
+      '\u001b[32m\u001b[39m\u001b[32mversion: test service: test-service project path: \u001b[39m',
+      '\u001b[32m\u001b[39m[DRYRUN] Uploading sourcemap src/commands/sourcemaps/__tests__/fixtures/common.min.js.map for JS file available at https://static.com/js/common.min.js',
+    ])
   })
 
   test('absolute path', async () => {
     const {context, code} = await runCLI(process.cwd() + '/src/commands/sourcemaps/__tests__/fixtures')
     const output = context.stdout.toString().split('\n').slice(0, -2)
     expect(code).toBe(0)
-    expect(output).toEqual(
-      ['\u001b[33m\u001b[1m\u001b[32m⚠️\u001b[33m\u001b[22m DRY-RUN MODE ENABLED. WILL NOT UPLOAD SOURCEMAPS\u001b[39m',
-        '\u001b[33m\u001b[39m\u001b[32mStarting upload with concurrency 20. \u001b[39m',
-        `\u001b[32m\u001b[39m\u001b[32mWill look for sourcemaps in ${process.cwd()}/src/commands/sourcemaps/__tests__/fixtures\u001b[39m`,
-        '\u001b[32m\u001b[39m\u001b[32mWill match JS files for errors on files starting with https://static.com/js\u001b[39m',
-        '\u001b[32m\u001b[39m\u001b[32mversion: test service: test-service project path: \u001b[39m',
-        `\u001b[32m\u001b[39m[DRYRUN] Uploading sourcemap ${process.cwd()}/src/commands/sourcemaps/__tests__/fixtures/common.min.js.map for JS file available at https://static.com/js/common.min.js`,
-      ])
+    expect(output).toEqual([
+      '\u001b[33m\u001b[1m\u001b[32m⚠️\u001b[33m\u001b[22m DRY-RUN MODE ENABLED. WILL NOT UPLOAD SOURCEMAPS\u001b[39m',
+      '\u001b[33m\u001b[39m\u001b[32mStarting upload with concurrency 20. \u001b[39m',
+      `\u001b[32m\u001b[39m\u001b[32mWill look for sourcemaps in ${process.cwd()}/src/commands/sourcemaps/__tests__/fixtures\u001b[39m`,
+      '\u001b[32m\u001b[39m\u001b[32mWill match JS files for errors on files starting with https://static.com/js\u001b[39m',
+      '\u001b[32m\u001b[39m\u001b[32mversion: test service: test-service project path: \u001b[39m',
+      `\u001b[32m\u001b[39m[DRYRUN] Uploading sourcemap ${process.cwd()}/src/commands/sourcemaps/__tests__/fixtures/common.min.js.map for JS file available at https://static.com/js/common.min.js`,
+    ])
   })
 })
