@@ -15,11 +15,41 @@ describe('upload', () => {
       )
     })
   })
-  describe('getMatchingSourcemapsFiles', () => {
-    const FILES = ['folder1/file1.min.js.map', 'folder2/file2.js.map']
+  describe('getMatchingSourcemapsFilesWithAbsolutePath', () => {
+    const FILES = ['/js/sourcemaps/folder1/file1.min.js.map', '/js/sourcemaps/folder2/file2.js.map']
     ;(glob as any).sync.mockImplementation((query: string) => FILES)
     const command = new UploadCommand()
     command['basePath'] = '/js/sourcemaps'
+    command['minifiedPathPrefix'] = 'http://datadog.com/build'
+    command['service'] = 'web-ui'
+    command['releaseVersion'] = '42'
+
+    const files = command['getMatchingSourcemapFiles']()
+
+    expect(files[0]).toStrictEqual({
+      minifiedFilePath: '/js/sourcemaps/folder1/file1.min.js',
+      minifiedUrl: 'http://datadog.com/build/folder1/file1.min.js',
+      projectPath: '',
+      service: 'web-ui',
+      sourcemapPath: '/js/sourcemaps/folder1/file1.min.js.map',
+      version: '42',
+    })
+
+    expect(files[1]).toStrictEqual({
+      minifiedFilePath: '/js/sourcemaps/folder2/file2.js',
+      minifiedUrl: 'http://datadog.com/build/folder2/file2.js',
+      projectPath: '',
+      service: 'web-ui',
+      sourcemapPath: '/js/sourcemaps/folder2/file2.js.map',
+      version: '42',
+    })
+  })
+
+  describe('getMatchingSourcemapsFilesWithRelativePath', () => {
+    const FILES = ['./folder1/file1.min.js.map', './folder2/file2.js.map']
+    ;(glob as any).sync.mockImplementation((query: string) => FILES)
+    const command = new UploadCommand()
+    command['basePath'] = '.'
     command['minifiedPathPrefix'] = 'http://datadog.com/js'
     command['service'] = 'web-ui'
     command['releaseVersion'] = '42'
@@ -27,20 +57,20 @@ describe('upload', () => {
     const files = command['getMatchingSourcemapFiles']()
 
     expect(files[0]).toStrictEqual({
-      minifiedFilePath: 'folder1/file1.min.js',
+      minifiedFilePath: './folder1/file1.min.js',
       minifiedUrl: 'http://datadog.com/js/folder1/file1.min.js',
       projectPath: '',
       service: 'web-ui',
-      sourcemapPath: 'folder1/file1.min.js.map',
+      sourcemapPath: './folder1/file1.min.js.map',
       version: '42',
     })
 
     expect(files[1]).toStrictEqual({
-      minifiedFilePath: 'folder2/file2.js',
+      minifiedFilePath: './folder2/file2.js',
       minifiedUrl: 'http://datadog.com/js/folder2/file2.js',
       projectPath: '',
       service: 'web-ui',
-      sourcemapPath: 'folder2/file2.js.map',
+      sourcemapPath: './folder2/file2.js.map',
       version: '42',
     })
   })
