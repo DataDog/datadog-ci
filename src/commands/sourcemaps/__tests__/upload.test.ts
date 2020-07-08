@@ -1,4 +1,6 @@
 // tslint:disable: no-string-literal
+import os from 'os'
+
 import {Cli} from 'clipanion/lib/advanced'
 import {UploadCommand} from '../upload'
 
@@ -27,6 +29,82 @@ describe('upload', () => {
   })
 })
 
+describe('execute', () => {
+  async function runCLI(path: string) {
+    const cli = makeCli()
+    const context = createMockContext() as any
+    process.env = {DATADOG_API_KEY: 'PLACEHOLDER'}
+    const code = await cli.run(
+      [
+        'sourcemaps',
+        'upload',
+        path,
+        '--release-version',
+        '1234',
+        '--service',
+        'test-service',
+        '--minified-path-prefix',
+        'https://static.com/js',
+        '--dry-run',
+      ],
+      context
+    )
+
+    return {context, code}
+  }
+
+  test('relative path with double dots', async () => {
+    const {context, code} = await runCLI('./src/commands/sourcemaps/__tests__/doesnotexist/../fixtures')
+    const output = context.stdout.toString().split(os.EOL)
+    expect(code).toBe(0)
+    checkConsoleOutput(
+      output,
+      20,
+      'src/commands/sourcemaps/__tests__/fixtures',
+      'https://static.com/js',
+      '1234',
+      'test-service',
+      '',
+      ['src/commands/sourcemaps/__tests__/fixtures/common.min.js.map'],
+      ['https://static.com/js/common.min.js']
+    )
+  })
+
+  test('relative path', async () => {
+    const {context, code} = await runCLI('./src/commands/sourcemaps/__tests__/fixtures')
+    const output = context.stdout.toString().split(os.EOL)
+    expect(code).toBe(0)
+    checkConsoleOutput(
+      output,
+      20,
+      'src/commands/sourcemaps/__tests__/fixtures',
+      'https://static.com/js',
+      '1234',
+      'test-service',
+      '',
+      ['src/commands/sourcemaps/__tests__/fixtures/common.min.js.map'],
+      ['https://static.com/js/common.min.js']
+    )
+  })
+
+  test('absolute path', async () => {
+    const {context, code} = await runCLI(process.cwd() + '/src/commands/sourcemaps/__tests__/fixtures')
+    const output = context.stdout.toString().split(os.EOL)
+    expect(code).toBe(0)
+    checkConsoleOutput(
+      output,
+      20,
+      `${process.cwd()}/src/commands/sourcemaps/__tests__/fixtures`,
+      'https://static.com/js',
+      '1234',
+      'test-service',
+      '',
+      [`${process.cwd()}/src/commands/sourcemaps/__tests__/fixtures/common.min.js.map`],
+      ['https://static.com/js/common.min.js']
+    )
+  })
+})
+
 const makeCli = () => {
   const cli = new Cli()
   cli.register(UploadCommand)
@@ -47,70 +125,29 @@ const createMockContext = () => {
   }
 }
 
-describe('execute', () => {
-  async function runCLI(path: string) {
-    const cli = makeCli()
-    const context = createMockContext() as any
-    process.env = {DATADOG_API_KEY: 'PLACEHOLDER'}
-    const code = await cli.run(
-      [
-        'sourcemaps',
-        'upload',
-        path,
-        '--release-version',
-        'test',
-        '--service',
-        'test-service',
-        '--minified-path-prefix',
-        'https://static.com/js',
-        '--dry-run',
-      ],
-      context
+const checkConsoleOutput = (
+  output: string[],
+  concurrency: number,
+  basePath: string,
+  minifiedPathPrefix: string,
+  version: string,
+  service: string,
+  projectPath: string,
+  sourcemapsPaths: string[],
+  jsFilesURLs: string[]
+) => {
+  expect(output[0]).toContain('DRY-RUN MODE ENABLED. WILL NOT UPLOAD SOURCEMAPS')
+  expect(output[1]).toContain(`Starting upload with concurrency ${concurrency}.`)
+  expect(output[2]).toContain(`Will look for sourcemaps in ${basePath}`)
+  expect(output[3]).toContain(`Will match JS files for errors on files starting with ${minifiedPathPrefix}`)
+  expect(output[4]).toContain(`version: ${version} service: ${service} project path: ${projectPath}`)
+  const uploadedFileLines = output.slice(5, -2)
+  expect(sourcemapsPaths.length).toEqual(uploadedFileLines.length) // Safety check
+  expect(jsFilesURLs.length).toEqual(uploadedFileLines.length) // Safety check
+  uploadedFileLines.forEach((_, index) => {
+    expect(uploadedFileLines[index]).toContain(
+      `[DRYRUN] Uploading sourcemap ${sourcemapsPaths} for JS file available at ${jsFilesURLs}`
     )
-
-    return {context, code}
-  }
-
-  test('relative path with double dots', async () => {
-    const {context, code} = await runCLI('./src/commands/sourcemaps/__tests__/doesnotexist/../fixtures')
-
-    const output = context.stdout.toString().split('\n').slice(0, -2)
-    expect(code).toBe(0)
-    expect(output).toEqual([
-      '\u001b[33m\u001b[1m\u001b[32m⚠️\u001b[33m\u001b[22m DRY-RUN MODE ENABLED. WILL NOT UPLOAD SOURCEMAPS\u001b[39m',
-      '\u001b[33m\u001b[39m\u001b[32mStarting upload with concurrency 20. \u001b[39m',
-      '\u001b[32m\u001b[39m\u001b[32mWill look for sourcemaps in src/commands/sourcemaps/__tests__/fixtures\u001b[39m',
-      '\u001b[32m\u001b[39m\u001b[32mWill match JS files for errors on files starting with https://static.com/js\u001b[39m',
-      '\u001b[32m\u001b[39m\u001b[32mversion: test service: test-service project path: \u001b[39m',
-      '\u001b[32m\u001b[39m[DRYRUN] Uploading sourcemap src/commands/sourcemaps/__tests__/fixtures/common.min.js.map for JS file available at https://static.com/js/common.min.js',
-    ])
   })
-
-  test('relative path', async () => {
-    const {context, code} = await runCLI('./src/commands/sourcemaps/__tests__/fixtures')
-    const output = context.stdout.toString().split('\n').slice(0, -2)
-    expect(code).toBe(0)
-    expect(output).toEqual([
-      '\u001b[33m\u001b[1m\u001b[32m⚠️\u001b[33m\u001b[22m DRY-RUN MODE ENABLED. WILL NOT UPLOAD SOURCEMAPS\u001b[39m',
-      '\u001b[33m\u001b[39m\u001b[32mStarting upload with concurrency 20. \u001b[39m',
-      '\u001b[32m\u001b[39m\u001b[32mWill look for sourcemaps in src/commands/sourcemaps/__tests__/fixtures\u001b[39m',
-      '\u001b[32m\u001b[39m\u001b[32mWill match JS files for errors on files starting with https://static.com/js\u001b[39m',
-      '\u001b[32m\u001b[39m\u001b[32mversion: test service: test-service project path: \u001b[39m',
-      '\u001b[32m\u001b[39m[DRYRUN] Uploading sourcemap src/commands/sourcemaps/__tests__/fixtures/common.min.js.map for JS file available at https://static.com/js/common.min.js',
-    ])
-  })
-
-  test('absolute path', async () => {
-    const {context, code} = await runCLI(process.cwd() + '/src/commands/sourcemaps/__tests__/fixtures')
-    const output = context.stdout.toString().split('\n').slice(0, -2)
-    expect(code).toBe(0)
-    expect(output).toEqual([
-      '\u001b[33m\u001b[1m\u001b[32m⚠️\u001b[33m\u001b[22m DRY-RUN MODE ENABLED. WILL NOT UPLOAD SOURCEMAPS\u001b[39m',
-      '\u001b[33m\u001b[39m\u001b[32mStarting upload with concurrency 20. \u001b[39m',
-      `\u001b[32m\u001b[39m\u001b[32mWill look for sourcemaps in ${process.cwd()}/src/commands/sourcemaps/__tests__/fixtures\u001b[39m`,
-      '\u001b[32m\u001b[39m\u001b[32mWill match JS files for errors on files starting with https://static.com/js\u001b[39m',
-      '\u001b[32m\u001b[39m\u001b[32mversion: test service: test-service project path: \u001b[39m',
-      `\u001b[32m\u001b[39m[DRYRUN] Uploading sourcemap ${process.cwd()}/src/commands/sourcemaps/__tests__/fixtures/common.min.js.map for JS file available at https://static.com/js/common.min.js`,
-    ])
-  })
-})
+  expect(output.slice(-2, -1)[0]).toContain(`Uploaded ${uploadedFileLines.length} files`)
+}
