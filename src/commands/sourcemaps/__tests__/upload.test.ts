@@ -57,51 +57,48 @@ describe('execute', () => {
     const {context, code} = await runCLI('./src/commands/sourcemaps/__tests__/doesnotexist/../fixtures')
     const output = context.stdout.toString().split(os.EOL)
     expect(code).toBe(0)
-    checkConsoleOutput(
-      output,
-      20,
-      'src/commands/sourcemaps/__tests__/fixtures',
-      'https://static.com/js',
-      '1234',
-      'test-service',
-      '',
-      ['src/commands/sourcemaps/__tests__/fixtures/common.min.js.map'],
-      ['https://static.com/js/common.min.js']
-    )
+    checkConsoleOutput(output, {
+      basePath: 'src/commands/sourcemaps/__tests__/fixtures',
+      concurrency: 20,
+      jsFilesURLs: ['https://static.com/js/common.min.js'],
+      minifiedPathPrefix: 'https://static.com/js',
+      projectPath: '',
+      service: 'test-service',
+      sourcemapsPaths: ['src/commands/sourcemaps/__tests__/fixtures/common.min.js.map'],
+      version: '1234',
+    })
   })
 
   test('relative path', async () => {
     const {context, code} = await runCLI('./src/commands/sourcemaps/__tests__/fixtures')
     const output = context.stdout.toString().split(os.EOL)
     expect(code).toBe(0)
-    checkConsoleOutput(
-      output,
-      20,
-      'src/commands/sourcemaps/__tests__/fixtures',
-      'https://static.com/js',
-      '1234',
-      'test-service',
-      '',
-      ['src/commands/sourcemaps/__tests__/fixtures/common.min.js.map'],
-      ['https://static.com/js/common.min.js']
-    )
+    checkConsoleOutput(output, {
+      basePath: 'src/commands/sourcemaps/__tests__/fixtures',
+      concurrency: 20,
+      jsFilesURLs: ['https://static.com/js/common.min.js'],
+      minifiedPathPrefix: 'https://static.com/js',
+      projectPath: '',
+      service: 'test-service',
+      sourcemapsPaths: ['src/commands/sourcemaps/__tests__/fixtures/common.min.js.map'],
+      version: '1234',
+    })
   })
 
   test('absolute path', async () => {
     const {context, code} = await runCLI(process.cwd() + '/src/commands/sourcemaps/__tests__/fixtures')
     const output = context.stdout.toString().split(os.EOL)
     expect(code).toBe(0)
-    checkConsoleOutput(
-      output,
-      20,
-      `${process.cwd()}/src/commands/sourcemaps/__tests__/fixtures`,
-      'https://static.com/js',
-      '1234',
-      'test-service',
-      '',
-      [`${process.cwd()}/src/commands/sourcemaps/__tests__/fixtures/common.min.js.map`],
-      ['https://static.com/js/common.min.js']
-    )
+    checkConsoleOutput(output, {
+      basePath: `${process.cwd()}/src/commands/sourcemaps/__tests__/fixtures`,
+      concurrency: 20,
+      jsFilesURLs: ['https://static.com/js/common.min.js'],
+      minifiedPathPrefix: 'https://static.com/js',
+      projectPath: '',
+      service: 'test-service',
+      sourcemapsPaths: [`${process.cwd()}/src/commands/sourcemaps/__tests__/fixtures/common.min.js.map`],
+      version: '1234',
+    })
   })
 })
 
@@ -125,28 +122,31 @@ const createMockContext = () => {
   }
 }
 
-const checkConsoleOutput = (
-  output: string[],
-  concurrency: number,
-  basePath: string,
-  minifiedPathPrefix: string,
-  version: string,
-  service: string,
-  projectPath: string,
-  sourcemapsPaths: string[],
+interface ExpectedOutput {
+  basePath: string
+  concurrency: number
   jsFilesURLs: string[]
-) => {
+  minifiedPathPrefix: string
+  projectPath: string
+  service: string
+  sourcemapsPaths: string[]
+  version: string
+}
+
+const checkConsoleOutput = (output: string[], expected: ExpectedOutput) => {
   expect(output[0]).toContain('DRY-RUN MODE ENABLED. WILL NOT UPLOAD SOURCEMAPS')
-  expect(output[1]).toContain(`Starting upload with concurrency ${concurrency}.`)
-  expect(output[2]).toContain(`Will look for sourcemaps in ${basePath}`)
-  expect(output[3]).toContain(`Will match JS files for errors on files starting with ${minifiedPathPrefix}`)
-  expect(output[4]).toContain(`version: ${version} service: ${service} project path: ${projectPath}`)
+  expect(output[1]).toContain(`Starting upload with concurrency ${expected.concurrency}.`)
+  expect(output[2]).toContain(`Will look for sourcemaps in ${expected.basePath}`)
+  expect(output[3]).toContain(`Will match JS files for errors on files starting with ${expected.minifiedPathPrefix}`)
+  expect(output[4]).toContain(
+    `version: ${expected.version} service: ${expected.service} project path: ${expected.projectPath}`
+  )
   const uploadedFileLines = output.slice(5, -2)
-  expect(sourcemapsPaths.length).toEqual(uploadedFileLines.length) // Safety check
-  expect(jsFilesURLs.length).toEqual(uploadedFileLines.length) // Safety check
+  expect(expected.sourcemapsPaths.length).toEqual(uploadedFileLines.length) // Safety check
+  expect(expected.jsFilesURLs.length).toEqual(uploadedFileLines.length) // Safety check
   uploadedFileLines.forEach((_, index) => {
     expect(uploadedFileLines[index]).toContain(
-      `[DRYRUN] Uploading sourcemap ${sourcemapsPaths} for JS file available at ${jsFilesURLs}`
+      `[DRYRUN] Uploading sourcemap ${expected.sourcemapsPaths} for JS file available at ${expected.jsFilesURLs}`
     )
   })
   expect(output.slice(-2, -1)[0]).toContain(`Uploaded ${uploadedFileLines.length} files`)
