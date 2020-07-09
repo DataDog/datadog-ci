@@ -15,7 +15,7 @@ export const uploadSourcemap = (request: (args: AxiosRequestConfig) => AxiosProm
   write: Writable['write']
 ) => {
   const form = new FormData()
-  write(renderUpload(sourcemap.sourcemapPath))
+  write(renderUpload(sourcemap))
   form.append('service', sourcemap.service)
   form.append('version', sourcemap.version)
   form.append('source_map', fs.createReadStream(sourcemap.sourcemapPath))

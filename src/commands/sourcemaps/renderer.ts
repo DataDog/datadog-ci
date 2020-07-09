@@ -52,6 +52,7 @@ export const renderCommandInfo = (
   return fullStr
 }
 
-export const renderDryRunUpload = (sourcemapPath: string): string => `[DRYRUN] ${renderUpload(sourcemapPath)}`
+export const renderDryRunUpload = (sourcemap: Payload): string => `[DRYRUN] ${renderUpload(sourcemap)}`
 
-export const renderUpload = (sourcemapPath: string): string => `Uploading sourcemap ${sourcemapPath}\n`
+export const renderUpload = (sourcemap: Payload): string =>
+  `Uploading sourcemap ${sourcemap.sourcemapPath} for JS file available at ${sourcemap.minifiedUrl}\n`

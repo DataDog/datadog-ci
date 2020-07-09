@@ -4,6 +4,7 @@ import {Command} from 'clipanion'
 import {BufferedMetricsLogger} from 'datadog-metrics'
 import fs from 'fs'
 import glob from 'glob'
+import path from 'path'
 import asyncPool from 'tiny-async-pool'
 
 import {apiConstructor} from './api'
@@ -70,6 +71,8 @@ export class UploadCommand extends Command {
     }
 
     const api = this.getApiHelper()
+    // Normalizing the basePath to resolve .. and .
+    this.basePath = path.normalize(this.basePath!)
     this.context.stdout.write(
       renderCommandInfo(
         this.basePath!,
@@ -142,7 +145,7 @@ export class UploadCommand extends Command {
         async (bail) => {
           try {
             if (this.dryRun) {
-              this.context.stdout.write(renderDryRunUpload(sourcemap.sourcemapPath))
+              this.context.stdout.write(renderDryRunUpload(sourcemap))
 
               return
             }

@@ -1,7 +1,7 @@
 // tslint:disable: no-string-literal
-jest.mock('glob')
-import glob from 'glob'
+import os from 'os'
 
+import {Cli} from 'clipanion/lib/advanced'
 import {UploadCommand} from '../upload'
 
 describe('upload', () => {
@@ -13,35 +13,6 @@ describe('upload', () => {
       expect(command['getMinifiedURL']('/js/sourcemaps/common.min.js.map')).toBe(
         'http://datadog.com/js/common.min.js.map'
       )
-    })
-  })
-  describe('getMatchingSourcemapsFiles', () => {
-    const FILES = ['folder1/file1.min.js.map', 'folder2/file2.js.map']
-    ;(glob as any).sync.mockImplementation((query: string) => FILES)
-    const command = new UploadCommand()
-    command['basePath'] = '/js/sourcemaps'
-    command['minifiedPathPrefix'] = 'http://datadog.com/js'
-    command['service'] = 'web-ui'
-    command['releaseVersion'] = '42'
-
-    const files = command['getMatchingSourcemapFiles']()
-
-    expect(files[0]).toStrictEqual({
-      minifiedFilePath: 'folder1/file1.min.js',
-      minifiedUrl: 'http://datadog.com/js/folder1/file1.min.js',
-      projectPath: '',
-      service: 'web-ui',
-      sourcemapPath: 'folder1/file1.min.js.map',
-      version: '42',
-    })
-
-    expect(files[1]).toStrictEqual({
-      minifiedFilePath: 'folder2/file2.js',
-      minifiedUrl: 'http://datadog.com/js/folder2/file2.js',
-      projectPath: '',
-      service: 'web-ui',
-      sourcemapPath: 'folder2/file2.js.map',
-      version: '42',
     })
   })
 
@@ -57,3 +28,126 @@ describe('upload', () => {
     })
   })
 })
+
+describe('execute', () => {
+  async function runCLI(path: string) {
+    const cli = makeCli()
+    const context = createMockContext() as any
+    process.env = {DATADOG_API_KEY: 'PLACEHOLDER'}
+    const code = await cli.run(
+      [
+        'sourcemaps',
+        'upload',
+        path,
+        '--release-version',
+        '1234',
+        '--service',
+        'test-service',
+        '--minified-path-prefix',
+        'https://static.com/js',
+        '--dry-run',
+      ],
+      context
+    )
+
+    return {context, code}
+  }
+
+  test('relative path with double dots', async () => {
+    const {context, code} = await runCLI('./src/commands/sourcemaps/__tests__/doesnotexist/../fixtures')
+    const output = context.stdout.toString().split(os.EOL)
+    expect(code).toBe(0)
+    checkConsoleOutput(output, {
+      basePath: 'src/commands/sourcemaps/__tests__/fixtures',
+      concurrency: 20,
+      jsFilesURLs: ['https://static.com/js/common.min.js'],
+      minifiedPathPrefix: 'https://static.com/js',
+      projectPath: '',
+      service: 'test-service',
+      sourcemapsPaths: ['src/commands/sourcemaps/__tests__/fixtures/common.min.js.map'],
+      version: '1234',
+    })
+  })
+
+  test('relative path', async () => {
+    const {context, code} = await runCLI('./src/commands/sourcemaps/__tests__/fixtures')
+    const output = context.stdout.toString().split(os.EOL)
+    expect(code).toBe(0)
+    checkConsoleOutput(output, {
+      basePath: 'src/commands/sourcemaps/__tests__/fixtures',
+      concurrency: 20,
+      jsFilesURLs: ['https://static.com/js/common.min.js'],
+      minifiedPathPrefix: 'https://static.com/js',
+      projectPath: '',
+      service: 'test-service',
+      sourcemapsPaths: ['src/commands/sourcemaps/__tests__/fixtures/common.min.js.map'],
+      version: '1234',
+    })
+  })
+
+  test('absolute path', async () => {
+    const {context, code} = await runCLI(process.cwd() + '/src/commands/sourcemaps/__tests__/fixtures')
+    const output = context.stdout.toString().split(os.EOL)
+    expect(code).toBe(0)
+    checkConsoleOutput(output, {
+      basePath: `${process.cwd()}/src/commands/sourcemaps/__tests__/fixtures`,
+      concurrency: 20,
+      jsFilesURLs: ['https://static.com/js/common.min.js'],
+      minifiedPathPrefix: 'https://static.com/js',
+      projectPath: '',
+      service: 'test-service',
+      sourcemapsPaths: [`${process.cwd()}/src/commands/sourcemaps/__tests__/fixtures/common.min.js.map`],
+      version: '1234',
+    })
+  })
+})
+
+const makeCli = () => {
+  const cli = new Cli()
+  cli.register(UploadCommand)
+
+  return cli
+}
+
+const createMockContext = () => {
+  let data = ''
+
+  return {
+    stdout: {
+      toString: () => data,
+      write: (input: string) => {
+        data += input
+      },
+    },
+  }
+}
+
+interface ExpectedOutput {
+  basePath: string
+  concurrency: number
+  jsFilesURLs: string[]
+  minifiedPathPrefix: string
+  projectPath: string
+  service: string
+  sourcemapsPaths: string[]
+  version: string
+}
+
+const checkConsoleOutput = (output: string[], expected: ExpectedOutput) => {
+  expect(output[0]).toContain('DRY-RUN MODE ENABLED. WILL NOT UPLOAD SOURCEMAPS')
+  expect(output[1]).toContain(`Starting upload with concurrency ${expected.concurrency}.`)
+  expect(output[2]).toContain(`Will look for sourcemaps in ${expected.basePath}`)
+  expect(output[3]).toContain(`Will match JS files for errors on files starting with ${expected.minifiedPathPrefix}`)
+  expect(output[4]).toContain(
+    `version: ${expected.version} service: ${expected.service} project path: ${expected.projectPath}`
+  )
+  const uploadedFileLines = output.slice(5, -2)
+  expect(expected.sourcemapsPaths.length).toEqual(uploadedFileLines.length) // Safety check
+  expect(expected.jsFilesURLs.length).toEqual(uploadedFileLines.length) // Safety check
+  uploadedFileLines.forEach((_, index) => {
+    expect(uploadedFileLines[index]).toContain(
+      `[DRYRUN] Uploading sourcemap ${expected.sourcemapsPaths} for JS file available at ${expected.jsFilesURLs}`
+    )
+  })
+  expect(output.slice(-2, -1)[0]).toContain(`Uploaded ${uploadedFileLines.length} files`)
+}
