@@ -172,10 +172,16 @@ export interface ConfigOverride {
 
 export interface Metadata {
   ci?: {
+    pipeline?: {
+      url?: string
+    }
+    provider?: {
+      name: string
+    }
+  }
+  git?: {
     branch?: string
-    commit?: string
-    engine?: string
-    pipelineURL?: string
+    commit_sha?: string
   }
 }
 

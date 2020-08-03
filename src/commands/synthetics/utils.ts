@@ -87,7 +87,7 @@ export const handleConfig = (test: Test, publicId: string, config?: ConfigOverri
   const ciMetadata = getCIMetadata()
 
   if (ciMetadata) {
-    handledConfig.metadata = {ci: ciMetadata}
+    handledConfig.metadata = ciMetadata
   }
 
   return handledConfig
