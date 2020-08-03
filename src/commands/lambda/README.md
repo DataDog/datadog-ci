@@ -1,4 +1,4 @@
-# Lambda command
+# Lambda command (Beta)
 
 Instrument your AWS Lambda functions with datadog.
 
