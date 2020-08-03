@@ -188,14 +188,14 @@ export const renderResults = (test: Test, results: PollResult[], baseUrl: string
 
   const idDisplay = `[${chalk.bold.dim(test.public_id)}]`
   const nameColor = getTestResultColor(success, isNonBlocking)
-  const nonBlockingText = !success && isNonBlocking ? 'This test is set to be non-blocking in Datadog' : ''
+  const nonBlockingText = !success && isNonBlocking ? '[NON-BLOCKING]' : ''
 
   const testResultsText = results
     .map((r) => renderExecutionResult(test, r, baseUrl, locationNames))
     .join('\n')
     .concat('\n')
 
-  return [`${icon} ${idDisplay} | ${nameColor(test.name)} ${nonBlockingText}`, testResultsText].join('\n')
+  return [`${icon} ${idDisplay}${nonBlockingText} | ${nameColor(test.name)}`, testResultsText].join('\n')
 }
 
 // Other rendering
