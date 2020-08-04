@@ -18,10 +18,14 @@ describe('ci-metadata', () => {
       CIRCLE_SHA1: commit,
     }
     expect(getCIMetadata()).toEqual({
-      branch,
-      commit,
-      engine: CI_ENGINES.CIRCLECI,
-      pipelineURL,
+      ci: {
+        pipeline: {url: pipelineURL},
+        provider: {name: CI_ENGINES.CIRCLECI},
+      },
+      git: {
+        branch,
+        commit_sha: commit,
+      },
     })
   })
 
@@ -33,10 +37,14 @@ describe('ci-metadata', () => {
       TRAVIS_JOB_WEB_URL: pipelineURL,
     }
     expect(getCIMetadata()).toEqual({
-      branch,
-      commit,
-      engine: CI_ENGINES.TRAVIS,
-      pipelineURL,
+      ci: {
+        pipeline: {url: pipelineURL},
+        provider: {name: CI_ENGINES.TRAVIS},
+      },
+      git: {
+        branch,
+        commit_sha: commit,
+      },
     })
   })
 
@@ -48,10 +56,14 @@ describe('ci-metadata', () => {
       GITLAB_CI: 'true',
     }
     expect(getCIMetadata()).toEqual({
-      branch,
-      commit,
-      engine: CI_ENGINES.GITLAB,
-      pipelineURL,
+      ci: {
+        pipeline: {url: pipelineURL},
+        provider: {name: CI_ENGINES.GITLAB},
+      },
+      git: {
+        branch,
+        commit_sha: commit,
+      },
     })
   })
 
@@ -66,10 +78,14 @@ describe('ci-metadata', () => {
 
     const expectedPipelineURL = 'https://github.com/DataDog/datadog-ci/actions/runs/42'
     expect(getCIMetadata()).toEqual({
-      branch,
-      commit,
-      engine: CI_ENGINES.GITHUB,
-      pipelineURL: expectedPipelineURL,
+      ci: {
+        pipeline: {url: expectedPipelineURL},
+        provider: {name: CI_ENGINES.GITHUB},
+      },
+      git: {
+        branch,
+        commit_sha: commit,
+      },
     })
   })
 
@@ -81,10 +97,14 @@ describe('ci-metadata', () => {
       JENKINS_URL: 'https://fakebuildserver.url/',
     }
     expect(getCIMetadata()).toEqual({
-      branch,
-      commit,
-      engine: CI_ENGINES.JENKINS,
-      pipelineURL,
+      ci: {
+        pipeline: {url: pipelineURL},
+        provider: {name: CI_ENGINES.JENKINS},
+      },
+      git: {
+        branch,
+        commit_sha: commit,
+      },
     })
   })
 })

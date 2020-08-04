@@ -8,33 +8,57 @@ export const CI_ENGINES = {
   TRAVIS: 'travis',
 }
 
-export const getCIMetadata = (): Metadata['ci'] => {
+export const getCIMetadata = (): Metadata | undefined => {
   const env = process.env
 
   if (env.CIRCLECI) {
     return {
-      branch: env.CIRCLE_BRANCH,
-      commit: env.CIRCLE_SHA1,
-      engine: CI_ENGINES.CIRCLECI,
-      pipelineURL: env.CIRCLE_BUILD_URL,
+      ci: {
+        pipeline: {
+          url: env.CIRCLE_BUILD_URL,
+        },
+        provider: {
+          name: CI_ENGINES.CIRCLECI,
+        },
+      },
+      git: {
+        branch: env.CIRCLE_BRANCH,
+        commit_sha: env.CIRCLE_SHA1,
+      },
     }
   }
 
   if (env.TRAVIS) {
     return {
-      branch: env.TRAVIS_BRANCH,
-      commit: env.TRAVIS_COMMIT,
-      engine: CI_ENGINES.TRAVIS,
-      pipelineURL: env.TRAVIS_JOB_WEB_URL,
+      ci: {
+        pipeline: {
+          url: env.TRAVIS_JOB_WEB_URL,
+        },
+        provider: {
+          name: CI_ENGINES.TRAVIS,
+        },
+      },
+      git: {
+        branch: env.TRAVIS_BRANCH,
+        commit_sha: env.TRAVIS_COMMIT,
+      },
     }
   }
 
   if (env.GITLAB_CI) {
     return {
-      branch: env.CI_COMMIT_BRANCH,
-      commit: env.CI_COMMIT_SHA,
-      engine: CI_ENGINES.GITLAB,
-      pipelineURL: env.CI_JOB_URL,
+      ci: {
+        pipeline: {
+          url: env.CI_JOB_URL,
+        },
+        provider: {
+          name: CI_ENGINES.GITLAB,
+        },
+      },
+      git: {
+        branch: env.CI_COMMIT_BRANCH,
+        commit_sha: env.CI_COMMIT_SHA,
+      },
     }
   }
 
@@ -42,19 +66,35 @@ export const getCIMetadata = (): Metadata['ci'] => {
     const pipelineURL = `https://github.com/${env.GITHUB_REPOSITORY}/actions/runs/${env.GITHUB_RUN_ID}`
 
     return {
-      branch: env.GITHUB_REF,
-      commit: env.GITHUB_SHA,
-      engine: CI_ENGINES.GITHUB,
-      pipelineURL,
+      ci: {
+        pipeline: {
+          url: pipelineURL,
+        },
+        provider: {
+          name: CI_ENGINES.GITHUB,
+        },
+      },
+      git: {
+        branch: env.GITHUB_REF,
+        commit_sha: env.GITHUB_SHA,
+      },
     }
   }
 
   if (env.JENKINS_URL) {
     return {
-      branch: env.GIT_BRANCH,
-      commit: env.GIT_COMMIT,
-      engine: CI_ENGINES.JENKINS,
-      pipelineURL: env.BUILD_URL,
+      ci: {
+        pipeline: {
+          url: env.BUILD_URL,
+        },
+        provider: {
+          name: CI_ENGINES.JENKINS,
+        },
+      },
+      git: {
+        branch: env.GIT_BRANCH,
+        commit_sha: env.GIT_COMMIT,
+      },
     }
   }
 }
