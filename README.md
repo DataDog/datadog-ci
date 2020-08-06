@@ -6,25 +6,7 @@ Execute commands with Datadog from within your Continuous Integration/Continuous
 
 ## How to install the CLI
 
-The package is published privately under [@datadog/datadog-ci](https://www.npmjs.com/package/@datadog/datadog-ci) in the NPM registry.
-
-Until it is made public, a NPM token is needed to access it, this can be set in the `~/.npmrc` file:
-
-```
-registry=https://registry.npmjs.org/
-//registry.npmjs.org/:_authToken=<TOKEN>
-```
-
-If using Yarn v2, it is possible to scope the token to the `@datadog` scope in the `.yarnrc` file as described [in the documentation](https://yarnpkg.com/configuration/yarnrc#npmScopes):
-
-```yaml
-npmScopes:
-  datadog:
-    npmRegistryServer: "https://registry.npmjs.org"
-    npmAuthToken: "ffffffff-ffff-ffff-ffff-ffffffffffff"
-```
-
-Then, installing the package is done through NPM or Yarn:
+The package is under [@datadog/datadog-ci](https://www.npmjs.com/package/@datadog/datadog-ci) and can be installed through NPM or Yarn:
 
 ```sh
 # NPM
