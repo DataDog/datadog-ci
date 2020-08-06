@@ -86,7 +86,7 @@ The available command is:
 It accepts the `--public-id` (or shorthand `-p`) argument to trigger only the specified test. It can be set multiple times to run multiple tests:
 
 ```bash
-datadog-ci synthetics run-test --public-id pub-lic-id1 --public-id pub-lic-id2
+datadog-ci synthetics run-tests --public-id pub-lic-id1 --public-id pub-lic-id2
 ```
 
 It is also possible to trigger tests corresponding to a search query by using the flag `--search` (or shorthand `-s`). With this option, the global configuration overrides applies to all tests discovered with the search query.
