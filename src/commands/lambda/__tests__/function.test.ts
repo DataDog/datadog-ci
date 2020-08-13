@@ -25,10 +25,10 @@ describe('function', () => {
       })
       const cloudWatch = makeMockCloudWatchLogs()
       const settings = {
+        flushMetricsToLogs: false,
         layerVersion: 22,
         mergeXrayTraces: false,
         tracingEnabled: false,
-        flushMetricsToLogs: false,
       }
       const result = await getLambdaConfigs(
         lambda as any,
@@ -62,10 +62,10 @@ describe('function', () => {
         'arn:aws:lambda:us-east-1:000000000000:function:autoinstrument': {
           Environment: {
             Variables: {
+              DD_FLUSH_TO_LOG: 'false',
               DD_LAMBDA_HANDLER: 'index.handler',
               DD_MERGE_XRAY_TRACES: 'false',
               DD_TRACE_ENABLED: 'false',
-              DD_FLUSH_TO_LOG: 'false',
             },
           },
           FunctionArn: 'arn:aws:lambda:us-east-1:000000000000:function:autoinstrument',
@@ -77,11 +77,11 @@ describe('function', () => {
       const cloudWatch = makeMockCloudWatchLogs()
 
       const settings = {
+        flushMetricsToLogs: false,
         layerVersion: 22,
 
         mergeXrayTraces: false,
         tracingEnabled: false,
-        flushMetricsToLogs: false,
       }
       const result = await getLambdaConfigs(
         lambda as any,
@@ -107,10 +107,10 @@ describe('function', () => {
       const cloudWatch = makeMockCloudWatchLogs()
 
       const settings = {
+        flushMetricsToLogs: false,
         layerVersion: 23,
         mergeXrayTraces: false,
         tracingEnabled: false,
-        flushMetricsToLogs: false,
       }
       const result = await getLambdaConfigs(
         lambda as any,
@@ -140,10 +140,10 @@ describe('function', () => {
       const cloudWatch = makeMockCloudWatchLogs()
 
       const settings = {
+        flushMetricsToLogs: false,
         layerVersion: 23,
         mergeXrayTraces: false,
         tracingEnabled: false,
-        flushMetricsToLogs: false,
       }
       const result = await getLambdaConfigs(
         lambda as any,
@@ -168,10 +168,10 @@ describe('function', () => {
       const cloudWatch = makeMockCloudWatchLogs()
 
       const settings = {
+        flushMetricsToLogs: false,
         layerVersion: 23,
         mergeXrayTraces: false,
         tracingEnabled: false,
-        flushMetricsToLogs: false,
       }
 
       await expect(
@@ -197,11 +197,11 @@ describe('function', () => {
       })
       const cloudWatch = makeMockCloudWatchLogs()
       const settings = {
+        flushMetricsToLogs: false,
         forwarderARN: 'my-forwarder',
         layerVersion: 22,
         mergeXrayTraces: false,
         tracingEnabled: false,
-        flushMetricsToLogs: false,
       }
       const result = await getLambdaConfigs(
         lambda as any,
