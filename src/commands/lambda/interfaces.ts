@@ -1,4 +1,5 @@
 export interface LambdaConfigOptions {
+  flushMetricsToLogs?: boolean
   forwarder?: string
   functions: string[]
   layerAWSAccount?: string
