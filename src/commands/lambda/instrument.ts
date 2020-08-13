@@ -125,7 +125,7 @@ export class InstrumentCommand extends Command {
 
       return
     }
-    const mergeXrayTraces = this.mergeXrayTraces ?? this.config.mergeXrayTraces ?? true
+    const mergeXrayTraces = this.mergeXrayTraces ?? this.config.mergeXrayTraces ?? false
     const tracingEnabled = this.tracing ?? this.config.tracing ?? true
 
     return {

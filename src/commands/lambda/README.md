@@ -62,6 +62,6 @@ All arguments:
 | --region | -r | Default region to use, when region isn't specified in function arn | |
 | --layerVersion | -v | Version of the datadog layer to apply. This varies between runtimes. To see the latest layer version check the [js](https://github.com/DataDog/datadog-lambda-layer-js/releases) or [python](https://github.com/DataDog/datadog-lambda-layer-python/releases) datadog-lambda-layer repo release notes. | |
 | --tracing |  | Whether to enable dd-trace tracing on your lambda. | true |
-| --mergeXrayTraces | | Whether to join dd-trace traces to AWS X-Ray traces. Useful for tracing API Gateway spans. | true |
+| --mergeXrayTraces | | Whether to join dd-trace traces to AWS X-Ray traces. Useful for tracing API Gateway spans. | false |
 | --forwarder | | The arn of the [datadog forwarder](https://github.com/DataDog/datadog-serverless-functions/tree/master/aws/logs_monitoring) to attach this functions LogGroup to. | |
 | --dry | -d | Preview changes running command would apply. | false |
