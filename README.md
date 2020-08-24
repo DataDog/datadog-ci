@@ -31,9 +31,9 @@ Each command allows interacting with a product of the Datadog platform. The comm
 
 Further documentation for each command can be found in its folder, ie:
 
-- [lambda](src/commands/lambda)
-- [sourcemaps](src/commands/sourcemaps/)
-- [synthetics](src/commands/synthetics/)
+- [Lambda](src/commands/lambda)
+- [Sourcemaps](src/commands/sourcemaps/)
+- [Synthetics CI/CD Testing](src/commands/synthetics/)
 
 
 ## Contributing
@@ -59,7 +59,7 @@ The coding style is checked with [tslint](https://github.com/palantir/tslint) an
 
 ### Repository structure
 
-Commands are stored in the [src/commands](src/commands) folder. 
+Commands are stored in the [src/commands](src/commands) folder.
 
 The skeleton of a command is composed of a README, an `index.ts` and a folder for the tests.
 
