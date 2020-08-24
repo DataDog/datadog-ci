@@ -1,7 +1,7 @@
 {
   "tests": [
     {
-      "id":"v5u-56k-hgk",
+      "id":"https://app.datadoghq.com/synthetics/details/pwd-mwg-3p5",
       "config": {
         "headers": {
           "X-Fake-Header": "fake value"
@@ -9,7 +9,7 @@
       }
     },
     {
-      "id":"neg-qw9-eut",
+      "id":"https://app.datadoghq.com/synthetics/details/2r9-q7u-4nn",
       "config": {
         "headers": {
           "X-Fake-Header": "fake value"
