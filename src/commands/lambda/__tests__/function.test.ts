@@ -25,6 +25,7 @@ describe('function', () => {
       })
       const cloudWatch = makeMockCloudWatchLogs()
       const settings = {
+        flushMetricsToLogs: false,
         layerVersion: 22,
         mergeXrayTraces: false,
         tracingEnabled: false,
@@ -38,21 +39,22 @@ describe('function', () => {
       )
       expect(result.length).toEqual(1)
       expect(result[0].updateRequest).toMatchInlineSnapshot(`
-                                      Object {
-                                        "Environment": Object {
-                                          "Variables": Object {
-                                            "DD_LAMBDA_HANDLER": "index.handler",
-                                            "DD_MERGE_XRAY_TRACES": "false",
-                                            "DD_TRACE_ENABLED": "false",
-                                          },
-                                        },
-                                        "FunctionName": "arn:aws:lambda:us-east-1:000000000000:function:autoinstrument",
-                                        "Handler": "/opt/nodejs/node_modules/datadog-lambda-js/handler.handler",
-                                        "Layers": Array [
-                                          "arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Node12-x:22",
-                                        ],
-                                      }
-                          `)
+        Object {
+          "Environment": Object {
+            "Variables": Object {
+              "DD_FLUSH_TO_LOG": "false",
+              "DD_LAMBDA_HANDLER": "index.handler",
+              "DD_MERGE_XRAY_TRACES": "false",
+              "DD_TRACE_ENABLED": "false",
+            },
+          },
+          "FunctionName": "arn:aws:lambda:us-east-1:000000000000:function:autoinstrument",
+          "Handler": "/opt/nodejs/node_modules/datadog-lambda-js/handler.handler",
+          "Layers": Array [
+            "arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Node12-x:22",
+          ],
+        }
+      `)
     })
 
     test('returns configurations without updateRequest when no changes need to be made', async () => {
@@ -60,6 +62,7 @@ describe('function', () => {
         'arn:aws:lambda:us-east-1:000000000000:function:autoinstrument': {
           Environment: {
             Variables: {
+              DD_FLUSH_TO_LOG: 'false',
               DD_LAMBDA_HANDLER: 'index.handler',
               DD_MERGE_XRAY_TRACES: 'false',
               DD_TRACE_ENABLED: 'false',
@@ -74,7 +77,9 @@ describe('function', () => {
       const cloudWatch = makeMockCloudWatchLogs()
 
       const settings = {
+        flushMetricsToLogs: false,
         layerVersion: 22,
+
         mergeXrayTraces: false,
         tracingEnabled: false,
       }
@@ -102,6 +107,7 @@ describe('function', () => {
       const cloudWatch = makeMockCloudWatchLogs()
 
       const settings = {
+        flushMetricsToLogs: false,
         layerVersion: 23,
         mergeXrayTraces: false,
         tracingEnabled: false,
@@ -114,11 +120,11 @@ describe('function', () => {
         settings
       )
       expect(result[0].updateRequest?.Layers).toMatchInlineSnapshot(`
-              Array [
-                "arn:aws:lambda:us-east-1:464622532012:layer:AnotherLayer:10",
-                "arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Node12-x:23",
-              ]
-          `)
+                      Array [
+                        "arn:aws:lambda:us-east-1:464622532012:layer:AnotherLayer:10",
+                        "arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Node12-x:23",
+                      ]
+                `)
     })
     test('returns results for multiple functions', async () => {
       const lambda = makeMockLambda({
@@ -134,6 +140,7 @@ describe('function', () => {
       const cloudWatch = makeMockCloudWatchLogs()
 
       const settings = {
+        flushMetricsToLogs: false,
         layerVersion: 23,
         mergeXrayTraces: false,
         tracingEnabled: false,
@@ -161,6 +168,7 @@ describe('function', () => {
       const cloudWatch = makeMockCloudWatchLogs()
 
       const settings = {
+        flushMetricsToLogs: false,
         layerVersion: 23,
         mergeXrayTraces: false,
         tracingEnabled: false,
@@ -189,6 +197,7 @@ describe('function', () => {
       })
       const cloudWatch = makeMockCloudWatchLogs()
       const settings = {
+        flushMetricsToLogs: false,
         forwarderARN: 'my-forwarder',
         layerVersion: 22,
         mergeXrayTraces: false,
@@ -203,10 +212,10 @@ describe('function', () => {
       )
       expect(result.length).toEqual(1)
       expect(result[0].logGroupConfiguration).toMatchInlineSnapshot(`
-        Object {
-          "logGroupName": "/aws/lambda/group",
-        }
-      `)
+                Object {
+                  "logGroupName": "/aws/lambda/group",
+                }
+            `)
     })
   })
   describe('updateLambdaConfigs', () => {
