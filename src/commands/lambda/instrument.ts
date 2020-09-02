@@ -12,6 +12,7 @@ export class InstrumentCommand extends Command {
   }
   private configPath?: string
   private dryRun = false
+  private flushMetricsToLogs?: boolean
   private forwarder?: string
   private functions: string[] = []
   private layerAWSAccount?: string
@@ -125,10 +126,12 @@ export class InstrumentCommand extends Command {
 
       return
     }
-    const mergeXrayTraces = this.mergeXrayTraces ?? this.config.mergeXrayTraces ?? true
+    const flushMetricsToLogs = this.flushMetricsToLogs ?? this.config.flushMetricsToLogs ?? true
+    const mergeXrayTraces = this.mergeXrayTraces ?? this.config.mergeXrayTraces ?? false
     const tracingEnabled = this.tracing ?? this.config.tracing ?? true
 
     return {
+      flushMetricsToLogs,
       forwarderARN,
       layerAWSAccount,
       layerVersion,
@@ -207,6 +210,7 @@ InstrumentCommand.addOption('layerVersion', Command.String('-v,--layerVersion'))
 InstrumentCommand.addOption('layerAWSAccount', Command.String('-a,--layerAccount', {hidden: true}))
 InstrumentCommand.addOption('tracing', Command.Boolean('--tracing'))
 InstrumentCommand.addOption('mergeXrayTraces', Command.Boolean('--mergeXrayTraces'))
+InstrumentCommand.addOption('flushMetricsToLogs', Command.Boolean('--flushMetricsToLogs'))
 InstrumentCommand.addOption('dryRun', Command.Boolean('-d,--dry'))
 InstrumentCommand.addOption('configPath', Command.String('--config'))
-InstrumentCommand.addOption('forwarderARN', Command.String('--forwarder'))
+InstrumentCommand.addOption('forwarder', Command.String('--forwarder'))

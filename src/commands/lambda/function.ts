@@ -11,6 +11,7 @@ export interface FunctionConfiguration {
 }
 
 export interface InstrumentationSettings {
+  flushMetricsToLogs: boolean
   forwarderARN?: string
   layerAWSAccount?: string
   layerVersion?: number
@@ -130,6 +131,10 @@ const calculateUpdateRequest = (
   if (env.DD_MERGE_XRAY_TRACES !== settings.mergeXrayTraces.toString()) {
     needsUpdate = true
     newEnvVars.DD_MERGE_XRAY_TRACES = settings.mergeXrayTraces.toString()
+  }
+  if (env.DD_FLUSH_TO_LOG !== settings.flushMetricsToLogs.toString()) {
+    needsUpdate = true
+    newEnvVars.DD_FLUSH_TO_LOG = settings.flushMetricsToLogs.toString()
   }
   if (Object.entries(newEnvVars).length > 0) {
     updateRequest.Environment = {
