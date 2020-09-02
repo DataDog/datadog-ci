@@ -62,24 +62,25 @@ describe('lambda', () => {
         const output = context.stdout.toString()
         expect(code).toBe(0)
         expect(output).toMatchInlineSnapshot(`
-                                                            "[Dry Run] Will apply the following updates:
-                                                            UpdateFunctionConfiguration -> arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world
-                                                            {
-                                                              \\"FunctionName\\": \\"arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world\\",
-                                                              \\"Handler\\": \\"/opt/nodejs/node_modules/datadog-lambda-js/handler.handler\\",
-                                                              \\"Layers\\": [
-                                                                \\"arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Node12-x:10\\"
-                                                              ],
-                                                              \\"Environment\\": {
-                                                                \\"Variables\\": {
-                                                                  \\"DD_LAMBDA_HANDLER\\": \\"index.handler\\",
-                                                                  \\"DD_TRACE_ENABLED\\": \\"true\\",
-                                                                  \\"DD_MERGE_XRAY_TRACES\\": \\"true\\"
-                                                                }
-                                                              }
-                                                            }
-                                                            "
-                                                `)
+          "[Dry Run] Will apply the following updates:
+          UpdateFunctionConfiguration -> arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world
+          {
+            \\"FunctionName\\": \\"arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world\\",
+            \\"Handler\\": \\"/opt/nodejs/node_modules/datadog-lambda-js/handler.handler\\",
+            \\"Layers\\": [
+              \\"arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Node12-x:10\\"
+            ],
+            \\"Environment\\": {
+              \\"Variables\\": {
+                \\"DD_LAMBDA_HANDLER\\": \\"index.handler\\",
+                \\"DD_TRACE_ENABLED\\": \\"true\\",
+                \\"DD_MERGE_XRAY_TRACES\\": \\"false\\",
+                \\"DD_FLUSH_TO_LOG\\": \\"true\\"
+              }
+            }
+          }
+          "
+        `)
       })
       test('runs function update command', async () => {
         ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({code: 'ENOENT'}))
@@ -115,9 +116,9 @@ describe('lambda', () => {
         const output = context.stdout.toString()
         expect(code).toBe(1)
         expect(output).toMatchInlineSnapshot(`
-                                                  "No functions specified for instrumentation.
-                                                  "
-                                        `)
+                                                            "No functions specified for instrumentation.
+                                                            "
+                                                `)
       })
       test("aborts early when function regions can't be found", async () => {
         ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({code: 'ENOENT'}))
@@ -130,15 +131,16 @@ describe('lambda', () => {
         const output = context.stdout.toString()
         expect(code).toBe(1)
         expect(output).toMatchInlineSnapshot(`
-                                        "'No default region specified for [\\"my-func\\"]. Use -r,--region, or use a full functionARN
-                                        "
-                                `)
+                                                  "'No default region specified for [\\"my-func\\"]. Use -r,--region, or use a full functionARN
+                                                  "
+                                        `)
       })
     })
     describe('getSettings', () => {
       test('uses config file settings', () => {
         process.env = {}
         const command = createCommand()
+        command['config']['flushMetricsToLogs'] = false
         command['config']['forwarder'] = 'my-forwarder'
         command['config']['layerVersion'] = '2'
         command['config']['layerAWSAccount'] = 'another-account'
@@ -146,6 +148,7 @@ describe('lambda', () => {
         command['config']['tracing'] = false
 
         expect(command['getSettings']()).toEqual({
+          flushMetricsToLogs: false,
           forwarderARN: 'my-forwarder',
           layerAWSAccount: 'another-account',
           layerVersion: 2,
@@ -165,10 +168,13 @@ describe('lambda', () => {
         command['config']['layerAWSAccount'] = 'another-account'
         command['mergeXrayTraces'] = true
         command['config']['mergeXrayTraces'] = false
+        command['flushMetricsToLogs'] = false
+        command['config']['flushMetricsToLogs'] = true
         command['tracing'] = true
         command['config']['tracing'] = false
 
         expect(command['getSettings']()).toEqual({
+          flushMetricsToLogs: false,
           forwarderARN: 'my-forwarder',
           layerAWSAccount: 'my-account',
           layerVersion: 1,
@@ -275,9 +281,9 @@ describe('lambda', () => {
         command['printPlannedActions']([])
         const output = command.context.stdout.toString()
         expect(output).toMatchInlineSnapshot(`
-                              "No updates will be applied
-                              "
-                        `)
+                                        "No updates will be applied
+                                        "
+                                `)
       })
       test('prints log group actions', () => {
         process.env = {}
@@ -298,21 +304,21 @@ describe('lambda', () => {
         ])
         const output = command.context.stdout.toString()
         expect(output).toMatchInlineSnapshot(`
-          "Will apply the following updates:
-          CreateLogGroup -> my-log-group
-          {
-            \\"logGroupName\\": \\"my-log-group\\"
-          }
-          DeleteSubscriptionFilter -> my-log-group
-          {
-            \\"filterName\\": \\"my-filter\\"
-          }
-          PutSubscriptionFilter -> my-log-group
-          {
-            \\"filterName\\": \\"my-filter\\"
-          }
-          "
-        `)
+                    "Will apply the following updates:
+                    CreateLogGroup -> my-log-group
+                    {
+                      \\"logGroupName\\": \\"my-log-group\\"
+                    }
+                    DeleteSubscriptionFilter -> my-log-group
+                    {
+                      \\"filterName\\": \\"my-filter\\"
+                    }
+                    PutSubscriptionFilter -> my-log-group
+                    {
+                      \\"filterName\\": \\"my-filter\\"
+                    }
+                    "
+                `)
       })
     })
   })
