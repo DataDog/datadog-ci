@@ -21,7 +21,7 @@ yarn add --dev @datadog/datadog-ci
 ```bash
 Usage: datadog-ci <command> <subcommand> [options]
 
-Available command:
+Available commands:
   - lambda
   - sourcemaps
   - synthetics
