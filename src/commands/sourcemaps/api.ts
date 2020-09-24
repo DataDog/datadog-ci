@@ -3,7 +3,7 @@ import FormData from 'form-data'
 import fs from 'fs'
 import {Writable} from 'stream'
 
-import {requestBuilder} from '../../helpers/utils'
+import {getRequestBuilder} from '../../helpers/utils'
 
 import {Payload} from './interfaces'
 import {renderUpload} from './renderer'
@@ -35,7 +35,7 @@ export const uploadSourcemap = (request: (args: AxiosRequestConfig) => AxiosProm
 }
 
 export const apiConstructor = (baseIntakeUrl: string, apiKey: string) => {
-  const requestIntake = requestBuilder(baseIntakeUrl, apiKey)
+  const requestIntake = getRequestBuilder(baseIntakeUrl, apiKey)
 
   return {
     uploadSourcemap: uploadSourcemap(requestIntake),

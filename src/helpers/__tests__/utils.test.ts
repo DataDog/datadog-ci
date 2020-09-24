@@ -4,7 +4,7 @@ import * as fs from 'fs'
 
 import {AxiosPromise, AxiosRequestConfig, default as axios} from 'axios'
 
-import {parseConfigFile, pick, ProxyConfiguration, requestBuilder} from '../utils'
+import {parseConfigFile, pick, ProxyConfiguration, getRequestBuilder} from '../utils'
 
 jest.useFakeTimers()
 
@@ -57,19 +57,19 @@ describe('utils', () => {
     })
   })
 
-  describe('requestBuilder', () => {
+  describe('getRequestBuilder', () => {
     const fakeEndpointBuilder = (request: (args: AxiosRequestConfig) => AxiosPromise) => async () => request({})
 
     test('should add api key header', async () => {
       jest.spyOn(axios, 'create').mockImplementation((() => (args: AxiosRequestConfig) => args.headers) as any)
-      const request = requestBuilder('http://fake-base.url/', 'apiKey')
+      const request = getRequestBuilder('http://fake-base.url/', 'apiKey')
       const fakeEndpoint = fakeEndpointBuilder(request)
       expect(await fakeEndpoint()).toStrictEqual({'DD-API-KEY': 'apiKey'})
     })
 
     test('should add api and application key header', async () => {
       jest.spyOn(axios, 'create').mockImplementation((() => (args: AxiosRequestConfig) => args.headers) as any)
-      const request = requestBuilder('http://fake-base.url/', 'apiKey', 'applicationKey')
+      const request = getRequestBuilder('http://fake-base.url/', 'apiKey', 'applicationKey')
       const fakeEndpoint = fakeEndpointBuilder(request)
       expect(await fakeEndpoint()).toStrictEqual({'DD-API-KEY': 'apiKey', 'DD-APPLICATION-KEY': 'applicationKey'})
     })
@@ -77,7 +77,7 @@ describe('utils', () => {
     test('should add proxy configuration', async () => {
       jest.spyOn(axios, 'create').mockImplementation((() => (args: AxiosRequestConfig) => args.httpsAgent.proxy) as any)
       const proxyConf: ProxyConfiguration = {protocol: 'http', host: '1.2.3.4', port: 1234}
-      const request = requestBuilder('http://fake-base.url/', 'apiKey', 'applicationKey', proxyConf)
+      const request = getRequestBuilder('http://fake-base.url/', 'apiKey', 'applicationKey', proxyConf)
       const fakeEndpoint = fakeEndpointBuilder(request)
       expect(await fakeEndpoint()).toStrictEqual(proxyConf)
     })

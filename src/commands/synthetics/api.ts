@@ -1,6 +1,6 @@
 import {AxiosError, AxiosPromise, AxiosRequestConfig} from 'axios'
 
-import {requestBuilder} from '../../helpers/utils'
+import {getRequestBuilder} from '../../helpers/utils'
 
 import {APIConfiguration, Payload, PollResult, Test, TestSearchResult, Trigger} from './interfaces'
 
@@ -65,8 +65,8 @@ const pollResults = (request: (args: AxiosRequestConfig) => AxiosPromise<{result
 
 export const apiConstructor = (configuration: APIConfiguration) => {
   const {baseUrl, baseIntakeUrl, apiKey, appKey, proxyOpts} = configuration
-  const request = requestBuilder(baseUrl, apiKey, appKey, proxyOpts)
-  const requestIntake = requestBuilder(baseIntakeUrl, apiKey, appKey, proxyOpts)
+  const request = getRequestBuilder(baseUrl, apiKey, appKey, proxyOpts)
+  const requestIntake = getRequestBuilder(baseIntakeUrl, apiKey, appKey, proxyOpts)
 
   return {
     getTest: getTest(request),

@@ -60,7 +60,7 @@ export interface ProxyConfiguration {
   protocol: ProxyType
 }
 
-export const requestBuilder = (baseUrl: string, apiKey: string, appKey?: string, proxyOpts?: ProxyConfiguration) => {
+export const getRequestBuilder = (baseUrl: string, apiKey: string, appKey?: string, proxyOpts?: ProxyConfiguration) => {
   const overrideArgs = (args: AxiosRequestConfig) => {
     const newArguments = {
       ...args,
