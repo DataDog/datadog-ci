@@ -11,11 +11,6 @@ export interface Payload {
   version: string
 }
 
-export interface APIConfiguration {
-  apiKey: string
-  baseIntakeUrl: string
-}
-
 export interface APIHelper {
   uploadSourcemap(sourcemap: Payload, write: Writable['write']): AxiosPromise<AxiosResponse>
 }

@@ -1,5 +1,6 @@
-import {AxiosError, AxiosPromise, AxiosRequestConfig, default as axios} from 'axios'
-import ProxyAgent from 'proxy-agent'
+import {AxiosError, AxiosPromise, AxiosRequestConfig} from 'axios'
+
+import {getRequestBuilder} from '../../helpers/utils'
 
 import {APIConfiguration, Payload, PollResult, Test, TestSearchResult, Trigger} from './interfaces'
 
@@ -62,31 +63,15 @@ const pollResults = (request: (args: AxiosRequestConfig) => AxiosPromise<{result
   return resp.data
 }
 
-export const apiConstructor = ({appKey, apiKey, baseUrl, baseIntakeUrl, proxyOpts}: APIConfiguration) => {
-  const overrideArgs = (args: AxiosRequestConfig) => {
-    const newArguments = {
-      ...args,
-      params: {
-        api_key: apiKey,
-        application_key: appKey,
-        ...args.params,
-      },
-    }
-
-    if (proxyOpts.host && proxyOpts.port) {
-      newArguments.httpsAgent = new ProxyAgent(proxyOpts)
-    }
-
-    return newArguments
-  }
-
-  const request = (args: AxiosRequestConfig) => axios.create({baseURL: baseUrl})(overrideArgs(args))
-  const requestTrigger = (args: AxiosRequestConfig) => axios.create({baseURL: baseIntakeUrl})(overrideArgs(args))
+export const apiConstructor = (configuration: APIConfiguration) => {
+  const {baseUrl, baseIntakeUrl, apiKey, appKey, proxyOpts} = configuration
+  const request = getRequestBuilder(baseUrl, apiKey, appKey, proxyOpts)
+  const requestIntake = getRequestBuilder(baseIntakeUrl, apiKey, appKey, proxyOpts)
 
   return {
     getTest: getTest(request),
     pollResults: pollResults(request),
     searchTests: searchTests(request),
-    triggerTests: triggerTests(requestTrigger),
+    triggerTests: triggerTests(requestIntake),
   }
 }
