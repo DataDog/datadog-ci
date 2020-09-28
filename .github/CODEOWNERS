@@ -4,3 +4,4 @@ src/commands  @m-rousse
 src/commands/synthetics  @m-rousse @DataDog/synthetics-worker
 src/commands/lambda @DataDog/serverless
 src/commands/sourcemaps/ @lraucy @alxch-
+*.md @DataDog/documentation
