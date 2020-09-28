@@ -1,12 +1,12 @@
-# Lambda command (Beta)
+<div class="alert alert-warning">
+This feature is in open beta. Let us know of any questions or issues by filing an <a href="https://github.com/DataDog/datadog-ci/issues">issue</a> in our repo.
+</div>
 
-Instrument your AWS Lambda functions with datadog.
+You can use the CLI to instrument your AWS Lambda functions with Datadog.
 
-## Usage
+### Before you begin
 
-### Setup
-
-You need to have your aws credentials available `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` in your environment, or use any of the authentication methods supported  by the [AWS js sdk](https://docs.aws.amazon.com/sdk-for-javascript/v2/developer-guide/setting-credentials-node.html).
+Make your AWS credentials `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` available in your environment using the following cmd, or use any of the authentication methods supported by the [AWS js sdk][1].
 
 ```bash
 # Environment setup
@@ -17,13 +17,13 @@ export AWS_SECRET_ACCESS_KEY="<ACCESS KEY>"
 datadog-ci lambda <command>
 ```
 
-### API
+Download the [Datadog CI][2].
 
-#### Configuration
+### Configuration
 
-Configuration is done via a json file, by default the tool load `datadog-ci.json` which can be overriden through the `--config` argument.
+Configuration is done using a JSON file. By default AWS Lambda loads `datadog-ci.json` which can be overriden through the `--config` argument.
 
-The configuration file structure is the following, all fields are optional:
+Use this configuration file structure:
 
 ```json
 {
@@ -66,3 +66,6 @@ All arguments:
 | --flushMetricsToLogs | | Whether to send metrics asynchronously to Datadog via our [Forwarder](https://docs.datadoghq.com/serverless/forwarder/) | true |
 | --forwarder | | The arn of the [datadog forwarder](https://github.com/DataDog/datadog-serverless-functions/tree/master/aws/logs_monitoring) to attach this functions LogGroup to. | |
 | --dry | -d | Preview changes running command would apply. | false |
+
+[1]: https://docs.aws.amazon.com/sdk-for-javascript/v2/developer-guide/setting-credentials-node.html
+[2]: https://github.com/DataDog/datadog-ci
