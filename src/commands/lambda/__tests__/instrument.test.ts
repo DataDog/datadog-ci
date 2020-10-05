@@ -5,10 +5,7 @@ import {Lambda} from 'aws-sdk'
 import * as fs from 'fs'
 
 import {Cli} from 'clipanion/lib/advanced'
-import path from 'path'
 import {InstrumentCommand} from '../instrument'
-// tslint:disable-next-line
-const {version} = require(path.join(__dirname, '../../../../package.json'))
 
 describe('lambda', () => {
   const createMockContext = () => {
@@ -39,8 +36,6 @@ describe('lambda', () => {
     getFunction: jest.fn().mockImplementation(({FunctionName}) => ({
       promise: () => Promise.resolve({Configuration: functionConfigs[FunctionName]}),
     })),
-    listTags: jest.fn().mockImplementation(() => ({promise: () => Promise.resolve({Tags: {}})})),
-    tagResource: jest.fn().mockImplementation(() => ({promise: () => Promise.resolve({})})),
     updateFunctionConfiguration: jest.fn().mockImplementation(() => ({promise: () => Promise.resolve()})),
   })
 
@@ -83,10 +78,6 @@ describe('lambda', () => {
                 \\"DD_FLUSH_TO_LOG\\": \\"true\\"
               }
             }
-          }
-          TagResource -> arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world
-          {
-            \\"dd_sls_ci\\": \\"v${version}\\"
           }
           "
         `)
