@@ -13,6 +13,9 @@
     "README",
     "LICENSE"
   ],
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "build": "yarn clean; tsc",
     "check-licenses": "node bin/check-licenses.js",

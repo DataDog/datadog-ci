@@ -126,6 +126,17 @@ yarn format
 yarn prepack
 ```
 
+### Release Process
+
+Releasing a new version of `datadog-ci` unfolds as follow:
+
+- create a new branch for the version upgrade
+- update the version using `yarn version [--patch|--minor|--major]` depending on the nature of the changes introduced. You may refer to [Semantic Versioning](https://semver.org/#summary) to determine which to increment.
+- push the branch along with the tag to the upstream (Github), create a Pull Request with the changes introduced detailed in the description and get at least one approval. ([sample Pull Request](https://github.com/DataDog/datadog-ci/pull/78))
+- merge the Pull Request
+- create a Github Release from the [Tags page](https://github.com/DataDog/datadog-ci/tags) with the description of changes introduced
+- finally publish the package using `yarn publish`
+
 ## License
 
 [Apache License, v2.0](LICENSE)
