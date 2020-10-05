@@ -1,6 +1,7 @@
-import path from 'path'
 import {Lambda} from 'aws-sdk'
+import path from 'path'
 import {TAG_VERSION_NAME} from './constants'
+// tslint:disable-next-line
 const {version} = require(path.join(__dirname, '../../../package.json'))
 
 export interface TagConfiguration {

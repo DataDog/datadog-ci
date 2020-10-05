@@ -3,6 +3,7 @@ import path from 'path'
 
 import {Lambda} from 'aws-sdk'
 import {applyTagConfig, calculateTagUpdateRequest, hasVersionTag} from '../tags'
+// tslint:disable-next-line
 const {version} = require(path.join(__dirname, '../../../../package.json'))
 
 const makeMockLambda = (functionConfigs: Record<string, Lambda.FunctionConfiguration>) => ({
@@ -152,7 +153,7 @@ describe('tags', () => {
         },
       })
 
-      lambda.listTags.mockImplementation(() => ({promise: () => Promise.resolve({Tags: {dd_sls_ci: `v0.0.0`}})}))
+      lambda.listTags.mockImplementation(() => ({promise: () => Promise.resolve({Tags: {dd_sls_ci: 'v0.0.0'}})}))
 
       const result = await hasVersionTag(lambda as any, functionARN)
       expect(result).toBe(false)

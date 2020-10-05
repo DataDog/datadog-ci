@@ -8,8 +8,8 @@ export interface FunctionConfiguration {
   lambdaConfig: Lambda.FunctionConfiguration
   layerARN: string
   logGroupConfiguration?: LogGroupConfiguration
-  updateRequest?: Lambda.UpdateFunctionConfigurationRequest
   tagConfiguration?: TagConfiguration
+  updateRequest?: Lambda.UpdateFunctionConfigurationRequest
 }
 
 export interface InstrumentationSettings {
@@ -51,11 +51,11 @@ export const getLambdaConfigs = async (
 
     functionsToUpdate.push({
       functionARN,
-      layerARN,
       lambdaConfig: config,
-      updateRequest,
+      layerARN,
       logGroupConfiguration,
       tagConfiguration,
+      updateRequest,
     })
   }
 
