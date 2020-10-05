@@ -149,7 +149,8 @@ export class InstrumentCommand extends Command {
         config.updateRequest !== undefined ||
         config.logGroupConfiguration?.createLogGroupRequest !== undefined ||
         config.logGroupConfiguration?.deleteSubscriptionFilterRequest !== undefined ||
-        config.logGroupConfiguration?.subscriptionFilterRequest !== undefined
+        config.logGroupConfiguration?.subscriptionFilterRequest !== undefined ||
+        config?.tagConfiguration !== undefined
       ) {
         anyUpdates = true
         break
@@ -171,7 +172,16 @@ export class InstrumentCommand extends Command {
           )}\n`
         )
       }
-      const {logGroupConfiguration} = config
+      const {logGroupConfiguration, tagConfiguration} = config
+      if (tagConfiguration?.tagResourceRequest) {
+        this.context.stdout.write(
+          `TagResource -> ${tagConfiguration.tagResourceRequest.Resource}\n${JSON.stringify(
+            tagConfiguration.tagResourceRequest.Tags,
+            undefined,
+            2
+          )}\n`
+        )
+      }
       if (logGroupConfiguration?.createLogGroupRequest) {
         this.context.stdout.write(
           `CreateLogGroup -> ${logGroupConfiguration.logGroupName}\n${JSON.stringify(
