@@ -1,8 +1,9 @@
 jest.mock('../loggroup')
+import path from 'path'
 
 import {Lambda} from 'aws-sdk'
 import {applyTagConfig, calculateTagUpdateRequest, hasVersionTag} from '../tags'
-import {version} from '../../../../package.json'
+const { version } = require(path.join(__dirname, '../../../../package.json'));
 
 const makeMockLambda = (functionConfigs: Record<string, Lambda.FunctionConfiguration>) => ({
   listTags: jest.fn().mockImplementation(() => ({promise: () => Promise.resolve({Tags: {}})})),

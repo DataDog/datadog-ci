@@ -2,7 +2,7 @@
   "name": "@datadog/datadog-ci",
   "version": "0.5.6",
   "description": "Run datadog actions from the CI.",
-  "main": "dist/index.js",
+  "main": "dist/src/index.js",
   "repository": "https://github.com/DataDog/datadog-ci",
   "license": "Apache-2.0",
   "bin": {
