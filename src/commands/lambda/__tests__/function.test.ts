@@ -9,6 +9,8 @@ const makeMockLambda = (functionConfigs: Record<string, Lambda.FunctionConfigura
     promise: () => Promise.resolve({Configuration: functionConfigs[FunctionName]}),
   })),
   updateFunctionConfiguration: jest.fn().mockImplementation(() => ({promise: () => Promise.resolve()})),
+  listTags: jest.fn().mockImplementation(() => ({promise: () => Promise.resolve({Tags: {}})})),
+  tagResource: jest.fn().mockImplementation(() => ({promise: () => Promise.resolve()})),
 })
 
 const makeMockCloudWatchLogs = () => ({})
