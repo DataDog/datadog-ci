@@ -22,7 +22,7 @@ export const calculateTagUpdateRequest = async (lambda: Lambda, functionARN: str
     config.tagResourceRequest = {
       Resource: functionARN,
       Tags: {
-        [TAG_VERSION_NAME]: version,
+        [TAG_VERSION_NAME]: `v${version}`,
       },
     }
 
@@ -39,5 +39,5 @@ export const hasVersionTag = async (lambda: Lambda, functionARN: string): Promis
   const result = await lambda.listTags(args).promise()
   const {Tags} = result
 
-  return Tags !== undefined && Tags[TAG_VERSION_NAME] !== version
+  return Tags !== undefined && Tags[TAG_VERSION_NAME] === `v${version}`
 }
