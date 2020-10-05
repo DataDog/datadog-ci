@@ -1,7 +1,7 @@
 import path from 'path'
 import {Lambda} from 'aws-sdk'
 import {TAG_VERSION_NAME} from './constants'
-const { version } = require(path.join(__dirname, '../../../package.json'));
+const {version} = require(path.join(__dirname, '../../../package.json'))
 
 export interface TagConfiguration {
   tagResourceRequest?: Lambda.TagResourceRequest

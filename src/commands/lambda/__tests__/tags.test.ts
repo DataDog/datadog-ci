@@ -3,7 +3,7 @@ import path from 'path'
 
 import {Lambda} from 'aws-sdk'
 import {applyTagConfig, calculateTagUpdateRequest, hasVersionTag} from '../tags'
-const { version } = require(path.join(__dirname, '../../../../package.json'));
+const {version} = require(path.join(__dirname, '../../../../package.json'))
 
 const makeMockLambda = (functionConfigs: Record<string, Lambda.FunctionConfiguration>) => ({
   listTags: jest.fn().mockImplementation(() => ({promise: () => Promise.resolve({Tags: {}})})),
@@ -121,8 +121,6 @@ describe('tags', () => {
           Runtime: 'nodejs12.x',
         },
       })
-
-      // lambda.listTags.mockImplementation(() => ({promise: () => Promise.resolve({ Tags: { 'dd_sls_ci': `v${version}` }})}))
 
       const result = await hasVersionTag(lambda as any, functionARN)
       expect(result).toBe(false)
