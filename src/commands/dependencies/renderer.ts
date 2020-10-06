@@ -13,13 +13,8 @@ export const renderFailedUpload = (errorMessage: string) => {
 export const renderSuccessfulCommand = (duration: number) =>
   chalk.green(`${ICONS.SUCCESS} Uploaded dependencies in ${duration} seconds.\n`)
 
-export const renderCommandInfo = (
-  dependenciesFilePath: string,
-  version: string,
-  service: string,
-  dryRun: boolean
-) => {
-  const lines: string[] = [];
+export const renderCommandInfo = (dependenciesFilePath: string, version: string, service: string, dryRun: boolean) => {
+  const lines: string[] = []
 
   if (dryRun) {
     lines.push(chalk.yellow(`${ICONS.WARNING} DRY-RUN MODE ENABLED. WILL NOT UPLOAD DEPENDENCIES`))
@@ -34,5 +29,4 @@ export const renderCommandInfo = (
 
 export const renderDryRunUpload = (): string => `[DRYRUN] ${renderUpload()}`
 
-export const renderUpload = (): string =>
-  `Uploading dependencies\n`
+export const renderUpload = (): string => `Uploading dependencies\n`

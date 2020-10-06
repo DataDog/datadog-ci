@@ -1,5 +1,5 @@
 import FormData from 'form-data'
-import fs from 'fs';
+import fs from 'fs'
 
 import {getRequestBuilder} from '../../helpers/utils'
 import {APIHelper, Payload} from './interfaces'
@@ -8,12 +8,12 @@ export const apiConstructor = (baseUrl: string, apiKey: string, appKey: string):
   const request = getRequestBuilder(baseUrl, apiKey, appKey)
 
   function uploadDependencies(payload: Payload) {
-    const form = new FormData();
+    const form = new FormData()
 
     form.append('service', payload.service)
     form.append('version', payload.version)
-    form.append('dependencies_file', fs.readFileSync(payload.dependenciesFilePath));
-  
+    form.append('dependencies_file', fs.readFileSync(payload.dependenciesFilePath))
+
     return request({
       data: form,
       headers: form.getHeaders(),
@@ -23,6 +23,6 @@ export const apiConstructor = (baseUrl: string, apiKey: string, appKey: string):
   }
 
   return {
-    uploadDependencies
+    uploadDependencies,
   }
 }

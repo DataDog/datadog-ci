@@ -1,7 +1,7 @@
 import {AxiosPromise, AxiosResponse} from 'axios'
 
 export interface Payload {
-  dependenciesFilePath: string;
+  dependenciesFilePath: string
   service: string
   version: string
 }
