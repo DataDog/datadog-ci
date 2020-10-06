@@ -16,6 +16,8 @@ import {
 } from './renderer'
 
 export class UploadCommand extends Command {
+  public static SUPPORTED_SOURCES = ['snyk']
+
   public static usage = Command.Usage({
     description: 'Upload dependencies graph to Datadog.',
     details: `
@@ -30,7 +32,6 @@ export class UploadCommand extends Command {
     ],
   })
 
-  private static SUPPORTED_SOURCES = ['snyk']
   private static INVALID_INPUT_EXIT_CODE = 1
   private static MISSING_FILE_EXIT_CODE = 2
   private static UPLOAD_ERROR_EXIT_CODE = 3
@@ -41,13 +42,13 @@ export class UploadCommand extends Command {
     datadogSite: process.env.DATADOG_SITE || 'datadoghq.com',
   }
   private dependenciesFilePath!: string
-  private source?: string
+  private dryRun = false
   private releaseVersion?: string
   private service?: string
-  private dryRun = false
+  private source?: string
 
   public async execute() {
-    // validate input
+    // Validate input
     if (!this.source) {
       this.context.stderr.write(`Missing ${chalk.red.bold('--source')} parameter.\n`)
 
@@ -82,7 +83,7 @@ export class UploadCommand extends Command {
       return UploadCommand.INVALID_INPUT_EXIT_CODE
     }
 
-    // check if file exists (we are not validating the content of the file)
+    // Check if file exists (we are not validating the content of the file)
     this.dependenciesFilePath = path.normalize(this.dependenciesFilePath)
     if (!fs.existsSync(this.dependenciesFilePath)) {
       this.context.stderr.write(`Cannot find "${this.dependenciesFilePath}" file.\n`)
@@ -90,7 +91,7 @@ export class UploadCommand extends Command {
       return UploadCommand.MISSING_FILE_EXIT_CODE
     }
 
-    // upload dependencies
+    // Upload dependencies
     const metricsLogger = getMetricsLogger(this.releaseVersion, this.service)
 
     this.context.stdout.write(
@@ -101,8 +102,8 @@ export class UploadCommand extends Command {
       const initialTime = Date.now()
       const payload: Payload = {
         dependenciesFilePath: this.dependenciesFilePath,
-        version: this.releaseVersion,
         service: this.service,
+        version: this.releaseVersion,
       }
       await this.uploadDependencies(payload, metricsLogger)
       const totalTimeSeconds = (Date.now() - initialTime) / 1000
@@ -125,6 +126,7 @@ export class UploadCommand extends Command {
     try {
       if (this.dryRun) {
         this.context.stdout.write(renderDryRunUpload())
+
         return
       }
 

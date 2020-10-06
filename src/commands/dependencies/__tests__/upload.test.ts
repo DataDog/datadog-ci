@@ -1,12 +1,12 @@
-import os from 'os'
-import fs from 'fs'
-import chalk from 'chalk'
 import {default as axios} from 'axios'
+import chalk from 'chalk'
+import fs from 'fs'
+import os from 'os'
 
 import {BaseContext, Cli} from 'clipanion/lib/advanced'
-import {UploadCommand} from '../upload'
-import {Writable, Readable} from 'stream'
 import FormData from 'form-data'
+import {Readable, Writable} from 'stream'
+import {UploadCommand} from '../upload'
 
 describe('execute', () => {
   test('runs with --dry-run option', async () => {
@@ -15,10 +15,10 @@ describe('execute', () => {
       {
         apiKey: 'DD_API_KEY_EXAMPLE',
         appKey: 'DD_APP_KEY_EXAMPLE',
+        dryRun: true,
         releaseVersion: '1.234',
         service: 'my-service',
         source: 'snyk',
-        dryRun: true,
       }
     )
     const sdtout = context.getStdoutBuffer().split(os.EOL)
@@ -44,10 +44,10 @@ describe('execute', () => {
       './src/commands/dependencies/__tests__/fixtures/dependencies',
       {
         appKey: 'DD_APP_KEY_EXAMPLE',
+        dryRun: true,
         releaseVersion: '1.234',
         service: 'my-service',
         source: 'snyk',
-        dryRun: true,
       }
     )
     const sdtout = context.getStdoutBuffer().split(os.EOL)
@@ -64,10 +64,10 @@ describe('execute', () => {
       './src/commands/dependencies/__tests__/fixtures/dependencies',
       {
         apiKey: 'DD_API_KEY_EXAMPLE',
+        dryRun: true,
         releaseVersion: '1.234',
         service: 'my-service',
         source: 'snyk',
-        dryRun: true,
       }
     )
     const sdtout = context.getStdoutBuffer().split(os.EOL)
@@ -85,9 +85,9 @@ describe('execute', () => {
       {
         apiKey: 'DD_API_KEY_EXAMPLE',
         appKey: 'DD_APP_KEY_EXAMPLE',
+        dryRun: true,
         service: 'my-service',
         source: 'snyk',
-        dryRun: true,
       }
     )
     const sdtout = context.getStdoutBuffer().split(os.EOL)
@@ -105,9 +105,9 @@ describe('execute', () => {
       {
         apiKey: 'DD_API_KEY_EXAMPLE',
         appKey: 'DD_APP_KEY_EXAMPLE',
+        dryRun: true,
         releaseVersion: '1.234',
         source: 'snyk',
-        dryRun: true,
       }
     )
     const sdtout = context.getStdoutBuffer().split(os.EOL)
@@ -125,9 +125,9 @@ describe('execute', () => {
       {
         apiKey: 'DD_API_KEY_EXAMPLE',
         appKey: 'DD_APP_KEY_EXAMPLE',
+        dryRun: true,
         releaseVersion: '1.234',
         service: 'my-service',
-        dryRun: true,
       }
     )
     const sdtout = context.getStdoutBuffer().split(os.EOL)
@@ -145,10 +145,10 @@ describe('execute', () => {
       {
         apiKey: 'DD_API_KEY_EXAMPLE',
         appKey: 'DD_APP_KEY_EXAMPLE',
+        dryRun: true,
         releaseVersion: '1.234',
         service: 'my-service',
         source: 'unknown-source',
-        dryRun: true,
       }
     )
     const sdtout = context.getStdoutBuffer().split(os.EOL)
@@ -169,10 +169,10 @@ describe('execute', () => {
       {
         apiKey: 'DD_API_KEY_EXAMPLE',
         appKey: 'DD_APP_KEY_EXAMPLE',
+        dryRun: true,
         releaseVersion: '1.234',
         service: 'my-service',
         source: 'snyk',
-        dryRun: true,
       }
     )
     const sdtout = context.getStdoutBuffer().split(os.EOL)
@@ -231,7 +231,7 @@ describe('execute', () => {
     })
     const formData = (request.mock.calls[0] as any[])[0].data as FormData
     expect(formData).toBeDefined()
-    // normalize EOL
+    // Normalize EOL
     const formPayload = formData
       .getBuffer()
       .toString()
@@ -284,10 +284,10 @@ describe('execute', () => {
 interface RunUploadDependenciesInput {
   apiKey?: string
   appKey?: string
+  dryRun?: boolean
   releaseVersion?: string
   service?: string
   source?: string
-  dryRun?: boolean
 }
 
 async function runUploadDependeciesCommand(path: string, input: RunUploadDependenciesInput) {
@@ -321,21 +321,17 @@ async function runUploadDependeciesCommand(path: string, input: RunUploadDepende
 }
 
 interface MockContext extends BaseContext {
-  getStdoutBuffer(): string
   getStderrBuffer(): string
+  getStdoutBuffer(): string
 }
 
 const createMockContext = (): MockContext => {
-  let stdoutChunks: any[] = []
-  let stderrChunks: any[] = []
+  const stdoutChunks: any[] = []
+  const stderrChunks: any[] = []
 
   return {
-    stdout: new Writable({
-      write(chunk, encoding, callback) {
-        stdoutChunks.push(chunk)
-        callback()
-      },
-    }),
+    getStderrBuffer: () => stderrChunks.join(''),
+    getStdoutBuffer: () => stdoutChunks.join(''),
     stderr: new Writable({
       write(chunk, encoding, callback) {
         stderrChunks.push(chunk)
@@ -343,7 +339,11 @@ const createMockContext = (): MockContext => {
       },
     }),
     stdin: new Readable(),
-    getStdoutBuffer: () => stdoutChunks.join(''),
-    getStderrBuffer: () => stderrChunks.join(''),
+    stdout: new Writable({
+      write(chunk, encoding, callback) {
+        stdoutChunks.push(chunk)
+        callback()
+      },
+    }),
   }
 }
