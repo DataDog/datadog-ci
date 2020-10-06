@@ -12,7 +12,7 @@ export const apiConstructor = (baseUrl: string, apiKey: string, appKey: string):
 
     form.append('service', payload.service)
     form.append('version', payload.version)
-    form.append('dependencies_file', fs.readFileSync(payload.dependenciesFilePath))
+    form.append('dependencies_file', fs.createReadStream(payload.dependenciesFilePath))
 
     return request({
       data: form,

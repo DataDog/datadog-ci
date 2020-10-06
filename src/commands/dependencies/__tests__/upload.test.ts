@@ -231,18 +231,17 @@ describe('execute', () => {
     })
     const formData = (request.mock.calls[0] as any[])[0].data as FormData
     expect(formData).toBeDefined()
-    // Normalize EOL
-    const formPayload = formData
-      .getBuffer()
-      .toString()
-      .replace(/\r\n|\r|\n/g, '\n')
+
+    // Read stream and normalize EOL
+    const formPayload = (await streamToString(formData)).replace(/\r\n|\r|\n/g, '\n')
+
     const dependenciesContent = fs.readFileSync('./src/commands/dependencies/__tests__/fixtures/dependencies')
     expect(dependenciesContent).not.toBeFalsy()
     expect(formPayload).toContain(['Content-Disposition: form-data; name="service"', '', 'my-service'].join('\n'))
     expect(formPayload).toContain(['Content-Disposition: form-data; name="version"', '', '1.234'].join('\n'))
     expect(formPayload).toContain(
       [
-        'Content-Disposition: form-data; name="dependencies_file"',
+        'Content-Disposition: form-data; name="dependencies_file"; filename="dependencies"',
         'Content-Type: application/octet-stream',
         '',
         dependenciesContent,
@@ -346,4 +345,29 @@ const createMockContext = (): MockContext => {
       },
     }),
   }
+}
+
+function streamToString(stream: Readable): Promise<string> {
+  const chunks: any[] = []
+
+  return new Promise((resolve, reject) => {
+    const handleData = (chunk: any) => chunks.push(chunk)
+    const handleError = (error: any) => {
+      stream.off('data', handleData)
+      stream.off('end', handleEnd)
+
+      reject(error)
+    }
+    const handleEnd = () => {
+      stream.off('data', handleData)
+      stream.off('error', handleError)
+
+      resolve(chunks.join(''))
+    }
+    stream.on('data', handleData)
+    stream.once('error', handleError)
+    stream.once('end', handleEnd)
+
+    stream.resume()
+  })
 }
