@@ -103,6 +103,7 @@ export class UploadCommand extends Command {
       const payload: Payload = {
         dependenciesFilePath: this.dependenciesFilePath,
         service: this.service,
+        source: this.source,
         version: this.releaseVersion,
       }
       await this.uploadDependencies(payload, metricsLogger)

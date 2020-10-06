@@ -239,6 +239,7 @@ describe('execute', () => {
     expect(dependenciesContent).not.toBeFalsy()
     expect(formPayload).toContain(['Content-Disposition: form-data; name="service"', '', 'my-service'].join('\n'))
     expect(formPayload).toContain(['Content-Disposition: form-data; name="version"', '', '1.234'].join('\n'))
+    expect(formPayload).toContain(['Content-Disposition: form-data; name="source"', '', 'snyk'].join('\n'))
     expect(formPayload).toContain(
       [
         'Content-Disposition: form-data; name="dependencies_file"; filename="dependencies"',
