@@ -8,8 +8,6 @@ const makeMockLambda = (functionConfigs: Record<string, Lambda.FunctionConfigura
   getFunction: jest.fn().mockImplementation(({FunctionName}) => ({
     promise: () => Promise.resolve({Configuration: functionConfigs[FunctionName]}),
   })),
-  listTags: jest.fn().mockImplementation(() => ({promise: () => Promise.resolve({Tags: {}})})),
-  tagResource: jest.fn().mockImplementation(() => ({promise: () => Promise.resolve()})),
   updateFunctionConfiguration: jest.fn().mockImplementation(() => ({promise: () => Promise.resolve()})),
 })
 

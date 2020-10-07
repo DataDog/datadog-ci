@@ -1,14 +1,12 @@
 import {CloudWatchLogs, Lambda} from 'aws-sdk'
 import {DEFAULT_LAYER_AWS_ACCOUNT, HANDLER_LOCATION, Runtime, RUNTIME_LAYER_LOOKUP} from './constants'
 import {applyLogGroupConfig, calculateLogGroupUpdateRequest, LogGroupConfiguration} from './loggroup'
-import {applyTagConfig, calculateTagUpdateRequest, TagConfiguration} from './tags'
 
 export interface FunctionConfiguration {
   functionARN: string
   lambdaConfig: Lambda.FunctionConfiguration
   layerARN: string
   logGroupConfiguration?: LogGroupConfiguration
-  tagConfiguration?: TagConfiguration
   updateRequest?: Lambda.UpdateFunctionConfigurationRequest
 }
 
@@ -47,16 +45,7 @@ export const getLambdaConfigs = async (
       logGroupConfiguration = await calculateLogGroupUpdateRequest(cloudWatch, arn, settings.forwarderARN)
     }
 
-    const tagConfiguration: TagConfiguration | undefined = await calculateTagUpdateRequest(lambda, functionARN)
-
-    functionsToUpdate.push({
-      functionARN,
-      lambdaConfig: config,
-      layerARN,
-      logGroupConfiguration,
-      tagConfiguration,
-      updateRequest,
-    })
+    functionsToUpdate.push({functionARN, layerARN, lambdaConfig: config, updateRequest, logGroupConfiguration})
   }
 
   return functionsToUpdate
@@ -73,9 +62,6 @@ export const updateLambdaConfigs = async (
     }
     if (c.logGroupConfiguration !== undefined) {
       await applyLogGroupConfig(cloudWatch, c.logGroupConfiguration)
-    }
-    if (c.tagConfiguration !== undefined) {
-      await applyTagConfig(lambda, c.tagConfiguration)
     }
   })
   await Promise.all(results)
