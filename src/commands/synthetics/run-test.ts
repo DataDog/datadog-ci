@@ -1,9 +1,17 @@
 import chalk from 'chalk'
 import {Command} from 'clipanion'
 
-import {parseConfigFile, ProxyConfiguration} from '../../helpers/utils'
+import {parseConfigFile} from '../../helpers/utils'
 import {apiConstructor} from './api'
-import {APIHelper, ConfigOverride, ExecutionRule, LocationsMapping, PollResult, Test} from './interfaces'
+import {
+  APIHelper,
+  ConfigOverride,
+  ExecutionRule,
+  LocationsMapping,
+  PollResult,
+  ProxyConfiguration,
+  Test,
+} from './interfaces'
 import {renderHeader, renderResults} from './renderer'
 import {getSuites, hasTestSucceeded, runTests, waitForResults} from './utils'
 
