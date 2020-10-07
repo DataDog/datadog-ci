@@ -101,7 +101,10 @@ export class UploadCommand extends Command {
       throw new Error('API key is missing')
     }
 
-    return apiConstructor(this.config.apiKey!, getBaseIntakeUrl())
+    return apiConstructor({
+      apiKey: this.config.apiKey!,
+      baseIntakeUrl: getBaseIntakeUrl(),
+    })
   }
 
   private getMatchingSourcemapFiles(): Payload[] {

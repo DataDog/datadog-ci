@@ -1,9 +1,7 @@
 import axios from 'axios'
 
-import {ProxyConfiguration} from '../../../helpers/utils'
-
 import {apiConstructor} from '../api'
-import {Payload, PollResult, Result, Trigger} from '../interfaces'
+import {Payload, PollResult, ProxyConfiguration, Result, Trigger} from '../interfaces'
 
 describe('dd-api', () => {
   const apiConfiguration = {
