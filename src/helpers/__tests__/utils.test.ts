@@ -1,7 +1,11 @@
 jest.mock('fs')
 
 import * as fs from 'fs'
-import {parseConfigFile, pick} from '../utils'
+
+import {AxiosPromise, AxiosRequestConfig, default as axios} from 'axios'
+
+import {getRequestBuilder, parseConfigFile, pick, ProxyConfiguration} from '../utils'
+
 jest.useFakeTimers()
 
 describe('utils', () => {
@@ -50,6 +54,32 @@ describe('utils', () => {
 
       const config = await parseConfigFile({configKey: 'configvalue'})
       await expect(config.configKey).toBe('newconfigvalue')
+    })
+  })
+
+  describe('getRequestBuilder', () => {
+    const fakeEndpointBuilder = (request: (args: AxiosRequestConfig) => AxiosPromise) => async () => request({})
+
+    test('should add api key header', async () => {
+      jest.spyOn(axios, 'create').mockImplementation((() => (args: AxiosRequestConfig) => args.headers) as any)
+      const request = getRequestBuilder('http://fake-base.url/', 'apiKey')
+      const fakeEndpoint = fakeEndpointBuilder(request)
+      expect(await fakeEndpoint()).toStrictEqual({'DD-API-KEY': 'apiKey'})
+    })
+
+    test('should add api and application key header', async () => {
+      jest.spyOn(axios, 'create').mockImplementation((() => (args: AxiosRequestConfig) => args.headers) as any)
+      const request = getRequestBuilder('http://fake-base.url/', 'apiKey', 'applicationKey')
+      const fakeEndpoint = fakeEndpointBuilder(request)
+      expect(await fakeEndpoint()).toStrictEqual({'DD-API-KEY': 'apiKey', 'DD-APPLICATION-KEY': 'applicationKey'})
+    })
+
+    test('should add proxy configuration', async () => {
+      jest.spyOn(axios, 'create').mockImplementation((() => (args: AxiosRequestConfig) => args.httpsAgent.proxy) as any)
+      const proxyConf: ProxyConfiguration = {protocol: 'http', host: '1.2.3.4', port: 1234}
+      const request = getRequestBuilder('http://fake-base.url/', 'apiKey', 'applicationKey', proxyConf)
+      const fakeEndpoint = fakeEndpointBuilder(request)
+      expect(await fakeEndpoint()).toStrictEqual(proxyConf)
     })
   })
 })
