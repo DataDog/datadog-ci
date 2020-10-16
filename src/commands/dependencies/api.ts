@@ -1,11 +1,23 @@
+import {AxiosRequestConfig, default as axios} from 'axios'
 import FormData from 'form-data'
 import fs from 'fs'
 
-import {getRequestBuilder} from '../../helpers/utils'
 import {APIHelper, Payload} from './interfaces'
 
-export const apiConstructor = (baseUrl: string, apiKey: string, appKey: string): APIHelper => {
-  const request = getRequestBuilder(baseUrl, apiKey, appKey)
+export const apiConstructor = (baseIntakeUrl: string, apiKey: string, appKey: string): APIHelper => {
+  const overrideArgs = (args: AxiosRequestConfig) => ({
+    ...args,
+    headers: {
+      'DD-API-KEY': apiKey,
+      'DD-APPLICATION-KEY': appKey,
+      ...args.headers,
+    },
+  })
+
+  const request = (args: AxiosRequestConfig) =>
+    axios.create({
+      baseURL: baseIntakeUrl,
+    })(overrideArgs(args))
 
   function uploadDependencies(payload: Payload) {
     const form = new FormData()

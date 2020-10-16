@@ -21,3 +21,4 @@ export const HANDLER_LOCATION = {
 
 export const DEFAULT_LAYER_AWS_ACCOUNT = '464622532012'
 export const SUBSCRIPTION_FILTER_NAME = 'datadog-ci-filter'
+export const TAG_VERSION_NAME = 'dd_sls_ci'

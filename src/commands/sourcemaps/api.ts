@@ -1,11 +1,9 @@
-import {AxiosPromise, AxiosRequestConfig, AxiosResponse} from 'axios'
+import {AxiosPromise, AxiosRequestConfig, AxiosResponse, default as axios} from 'axios'
 import FormData from 'form-data'
 import fs from 'fs'
 import {Writable} from 'stream'
 
-import {getRequestBuilder} from '../../helpers/utils'
-
-import {Payload} from './interfaces'
+import {APIConfiguration, Payload} from './interfaces'
 import {renderUpload} from './renderer'
 
 // Dependcy follows-redirects sets a default maxBodyLentgh of 10 MB https://github.com/follow-redirects/follow-redirects/blob/b774a77e582b97174813b3eaeb86931becba69db/index.js#L391
@@ -34,10 +32,21 @@ export const uploadSourcemap = (request: (args: AxiosRequestConfig) => AxiosProm
   })
 }
 
-export const apiConstructor = (baseIntakeUrl: string, apiKey: string) => {
-  const requestIntake = getRequestBuilder(baseIntakeUrl, apiKey)
+export const apiConstructor = ({apiKey, baseIntakeUrl}: APIConfiguration) => {
+  const overrideArgs = (args: AxiosRequestConfig) => ({
+    ...args,
+    headers: {
+      'DD-API-KEY': apiKey,
+      ...args.headers,
+    },
+  })
+
+  const request = (args: AxiosRequestConfig) =>
+    axios.create({
+      baseURL: baseIntakeUrl,
+    })(overrideArgs(args))
 
   return {
-    uploadSourcemap: uploadSourcemap(requestIntake),
+    uploadSourcemap: uploadSourcemap(request),
   }
 }

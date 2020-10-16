@@ -10,23 +10,23 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v2
-    - name: Install node
-      uses: actions/setup-node@v1
-      with:
-        node-version: '12.16.1'
-    - run: yarn install
-    - run: yarn build
-    - run: yarn prettier-check
-    - run: yarn lint
-    - run: yarn test
-    - run: mkdir artifacts
-    - run: yarn pack --filename artifacts/datadog-ci.tgz
-    - run: cp -r .github/workflows/e2e artifacts/
-    - uses: actions/upload-artifact@v1
-      with:
-        name: artifacts
-        path: artifacts/
+      - uses: actions/checkout@v2
+      - name: Install node
+        uses: actions/setup-node@v1
+        with:
+          node-version: '12.x'
+      - run: yarn install
+      - run: yarn build
+      - run: yarn prettier-check
+      - run: yarn lint
+      - run: yarn test
+      - run: mkdir artifacts
+      - run: yarn pack --filename artifacts/datadog-ci.tgz
+      - run: cp -r .github/workflows/e2e artifacts/
+      - uses: actions/upload-artifact@v1
+        with:
+          name: artifacts
+          path: artifacts/
 
   e2e-test:
     name: End-to-end test the package
@@ -34,28 +34,28 @@ jobs:
     needs: build-and-test
 
     steps:
-    - name: Install node
-      uses: actions/setup-node@v1
-      with:
-        node-version: '12.16.1'
-    - uses: actions/download-artifact@v1
-      with:
-        name: artifacts
-    - run: yarn add ./artifacts/datadog-ci.tgz
-    - name: Run synthetics test
-      run: yarn datadog-ci synthetics run-tests --config artifacts/e2e/global.config.json
-      env:
-        DATADOG_API_KEY: ${{ secrets.datadog_api_key }}
-        DATADOG_APP_KEY: ${{ secrets.datadog_app_key }}
+      - name: Install node
+        uses: actions/setup-node@v1
+        with:
+          node-version: '12.x'
+      - uses: actions/download-artifact@v1
+        with:
+          name: artifacts
+      - run: yarn add ./artifacts/datadog-ci.tgz
+      - name: Run synthetics test
+        run: yarn datadog-ci synthetics run-tests --config artifacts/e2e/global.config.json
+        env:
+          DATADOG_API_KEY: ${{ secrets.datadog_api_key }}
+          DATADOG_APP_KEY: ${{ secrets.datadog_app_key }}
 
   check-licenses:
     name: Check licenses
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v2
-    - name: Install node
-      uses: actions/setup-node@v1
-      with:
-        node-version: '12.16.1'
-    - run: yarn check-licenses
+      - uses: actions/checkout@v2
+      - name: Install node
+        uses: actions/setup-node@v1
+        with:
+          node-version: '12.x'
+      - run: yarn check-licenses
