@@ -65,3 +65,6 @@ dist
 
 #DS_Store
 **/.DS_Store
+
+# JetBrains files
+.idea

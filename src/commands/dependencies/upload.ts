@@ -7,6 +7,7 @@ import {apiConstructor} from './api'
 import {Payload} from './interfaces'
 import {getMetricsLogger} from './metrics'
 import {
+  renderCannotFindFile,
   renderCommandInfo,
   renderDryRunUpload,
   renderFailedUpload,
@@ -87,7 +88,7 @@ export class UploadCommand extends Command {
     // Check if file exists (we are not validating the content of the file)
     this.dependenciesFilePath = path.resolve(this.dependenciesFilePath)
     if (!fs.existsSync(this.dependenciesFilePath)) {
-      this.context.stderr.write(`Cannot find "${this.dependenciesFilePath}" file.\n`)
+      this.context.stderr.write(renderCannotFindFile(this.dependenciesFilePath))
 
       return UploadCommand.MISSING_FILE_EXIT_CODE
     }
@@ -136,7 +137,6 @@ export class UploadCommand extends Command {
       await api.uploadDependencies(payload)
       metricsLogger.increment('success', 1)
     } catch (error) {
-      console.log(error)
       if (error.isAxiosError && error.response && error.response.status === 403) {
         this.context.stdout.write(renderFailedUploadBecauseOf403(error.message))
       } else {

@@ -2,6 +2,7 @@ import {default as axios} from 'axios'
 import chalk from 'chalk'
 import fs from 'fs'
 import os from 'os'
+import path from 'path'
 
 import {BaseContext, Cli} from 'clipanion/lib/advanced'
 import FormData from 'form-data'
@@ -9,38 +10,35 @@ import {Readable, Writable} from 'stream'
 import {UploadCommand} from '../upload'
 
 describe('execute', () => {
-  test('runs with --dry-run option', async () => {
-    const {context, code} = await runUploadDependeciesCommand(
-      './src/commands/dependencies/__tests__/fixtures/dependencies',
-      {
-        apiKey: 'DD_API_KEY_EXAMPLE',
-        appKey: 'DD_APP_KEY_EXAMPLE',
-        dryRun: true,
-        releaseVersion: '1.234',
-        service: 'my-service',
-        source: 'snyk',
-      }
-    )
-    const sdtout = context.getStdoutBuffer().split(os.EOL)
+  test('runs with --dry-run parameter', async () => {
+    const filePath = './src/commands/dependencies/__tests__/fixtures/dependencies'
+    const resolvedFilePath = path.resolve(filePath)
+    const {context, code} = await runUploadDependenciesCommand(filePath, {
+      apiKey: 'DD_API_KEY_EXAMPLE',
+      appKey: 'DD_APP_KEY_EXAMPLE',
+      dryRun: true,
+      releaseVersion: '1.234',
+      service: 'my-service',
+      source: 'snyk',
+    })
+    const stdout = context.getStdoutBuffer().split(os.EOL)
     const stderr = context.getStderrBuffer().split(os.EOL)
 
     expect(stderr).toEqual([''])
-    expect(sdtout[0]).toEqual(
-      chalk.yellow(`${chalk.bold.green('⚠️')} DRY-RUN MODE ENABLED. WILL NOT UPLOAD DEPENDENCIES`)
-    )
-    expect(sdtout[1]).toEqual(chalk.green('Starting upload.'))
-    expect(sdtout[2]).toEqual(
-      chalk.green('Will upload dependencies from src/commands/dependencies/__tests__/fixtures/dependencies file.')
-    )
-    expect(sdtout[3]).toEqual('version: 1.234 service: my-service')
-    expect(sdtout[4]).toEqual('[DRYRUN] Uploading dependencies')
-    expect(sdtout[5]).toEqual(expect.stringContaining('Uploaded dependencies in'))
+    expect(stdout[0]).toEqual(chalk.yellow('DRY-RUN MODE ENABLED. WILL NOT UPLOAD DEPENDENCIES.'))
+    expect(stdout[1]).toEqual(`${chalk.bold('File')}:    ${resolvedFilePath}`)
+    expect(stdout[2]).toEqual(`${chalk.bold('Source')}:  snyk`)
+    expect(stdout[3]).toEqual(`${chalk.bold('Service')}: my-service`)
+    expect(stdout[4]).toEqual(`${chalk.bold('Version')}: 1.234`)
+    expect(stdout[5]).toEqual('')
+    expect(stdout[6]).toEqual('[DRYRUN] Uploading dependencies...')
+    expect(stdout[7]).toMatch(/Dependencies uploaded in .* seconds\./)
 
     expect(code).toBe(0)
   })
 
   test('exits if missing api key', async () => {
-    const {context, code} = await runUploadDependeciesCommand(
+    const {context, code} = await runUploadDependenciesCommand(
       './src/commands/dependencies/__tests__/fixtures/dependencies',
       {
         appKey: 'DD_APP_KEY_EXAMPLE',
@@ -50,17 +48,17 @@ describe('execute', () => {
         source: 'snyk',
       }
     )
-    const sdtout = context.getStdoutBuffer().split(os.EOL)
+    const stdout = context.getStdoutBuffer().split(os.EOL)
     const stderr = context.getStderrBuffer().split(os.EOL)
 
-    expect(stderr).toEqual([`Missing ${chalk.red.bold('DATADOG_API_KEY')} in your environment.`, ''])
-    expect(sdtout).toEqual([''])
+    expect(stderr[0]).toEqual(chalk.red(`Missing ${chalk.bold('DATADOG_API_KEY')} in your environment.`))
+    expect(stdout).toEqual([''])
 
     expect(code).toBe(1)
   })
 
   test('exits if missing app key', async () => {
-    const {context, code} = await runUploadDependeciesCommand(
+    const {context, code} = await runUploadDependenciesCommand(
       './src/commands/dependencies/__tests__/fixtures/dependencies',
       {
         apiKey: 'DD_API_KEY_EXAMPLE',
@@ -70,37 +68,17 @@ describe('execute', () => {
         source: 'snyk',
       }
     )
-    const sdtout = context.getStdoutBuffer().split(os.EOL)
+    const stdout = context.getStdoutBuffer().split(os.EOL)
     const stderr = context.getStderrBuffer().split(os.EOL)
 
-    expect(stderr).toEqual([`Missing ${chalk.red.bold('DATADOG_APP_KEY')} in your environment.`, ''])
-    expect(sdtout).toEqual([''])
+    expect(stderr[0]).toEqual(chalk.red(`Missing ${chalk.bold('DATADOG_APP_KEY')} in your environment.`))
+    expect(stdout).toEqual([''])
 
     expect(code).toBe(1)
   })
 
-  test('exits if missing --release-version option', async () => {
-    const {context, code} = await runUploadDependeciesCommand(
-      './src/commands/dependencies/__tests__/fixtures/dependencies',
-      {
-        apiKey: 'DD_API_KEY_EXAMPLE',
-        appKey: 'DD_APP_KEY_EXAMPLE',
-        dryRun: true,
-        service: 'my-service',
-        source: 'snyk',
-      }
-    )
-    const sdtout = context.getStdoutBuffer().split(os.EOL)
-    const stderr = context.getStderrBuffer().split(os.EOL)
-
-    expect(stderr).toEqual([`Missing ${chalk.red.bold('--release-version')} parameter.`, ''])
-    expect(sdtout).toEqual([''])
-
-    expect(code).toBe(1)
-  })
-
-  test('exits if missing --service option', async () => {
-    const {context, code} = await runUploadDependeciesCommand(
+  test('exits if missing --service parameter', async () => {
+    const {context, code} = await runUploadDependenciesCommand(
       './src/commands/dependencies/__tests__/fixtures/dependencies',
       {
         apiKey: 'DD_API_KEY_EXAMPLE',
@@ -110,17 +88,17 @@ describe('execute', () => {
         source: 'snyk',
       }
     )
-    const sdtout = context.getStdoutBuffer().split(os.EOL)
+    const stdout = context.getStdoutBuffer().split(os.EOL)
     const stderr = context.getStderrBuffer().split(os.EOL)
 
-    expect(stderr).toEqual([`Missing ${chalk.red.bold('--service')} parameter.`, ''])
-    expect(sdtout).toEqual([''])
+    expect(stderr[0]).toEqual(chalk.red(`Missing ${chalk.bold('--service')} parameter.`))
+    expect(stdout).toEqual([''])
 
     expect(code).toBe(1)
   })
 
-  test('exits if missing --source option', async () => {
-    const {context, code} = await runUploadDependeciesCommand(
+  test('exits if missing --source parameter', async () => {
+    const {context, code} = await runUploadDependenciesCommand(
       './src/commands/dependencies/__tests__/fixtures/dependencies',
       {
         apiKey: 'DD_API_KEY_EXAMPLE',
@@ -130,17 +108,19 @@ describe('execute', () => {
         service: 'my-service',
       }
     )
-    const sdtout = context.getStdoutBuffer().split(os.EOL)
+    const stdout = context.getStdoutBuffer().split(os.EOL)
     const stderr = context.getStderrBuffer().split(os.EOL)
 
-    expect(stderr).toEqual([`Missing ${chalk.red.bold('--source')} parameter.`, ''])
-    expect(sdtout).toEqual([''])
+    expect(stderr[0]).toEqual(
+      chalk.red(`Missing ${chalk.bold('--source')} parameter. Supported values are: ${chalk.bold('snyk')}`)
+    )
+    expect(stdout).toEqual([''])
 
     expect(code).toBe(1)
   })
 
-  test('exits if invalid --source option', async () => {
-    const {context, code} = await runUploadDependeciesCommand(
+  test('exits if invalid --source parameter', async () => {
+    const {context, code} = await runUploadDependenciesCommand(
       './src/commands/dependencies/__tests__/fixtures/dependencies',
       {
         apiKey: 'DD_API_KEY_EXAMPLE',
@@ -151,68 +131,94 @@ describe('execute', () => {
         source: 'unknown-source',
       }
     )
-    const sdtout = context.getStdoutBuffer().split(os.EOL)
+    const stdout = context.getStdoutBuffer().split(os.EOL)
     const stderr = context.getStderrBuffer().split(os.EOL)
 
-    expect(stderr).toEqual([
-      `Unsupported ${chalk.red.bold('--source')} unknown-source. Supported sources are: ${chalk.green.bold('snyk')}`,
-      '',
-    ])
-    expect(sdtout).toEqual([''])
+    expect(stderr[0]).toEqual(
+      chalk.red(`Unsupported ${chalk.bold('--source')} unknown-source. Supported values are: ${chalk.bold('snyk')}`)
+    )
+    expect(stdout).toEqual([''])
 
     expect(code).toBe(1)
   })
 
   test("exits if file doesn't exist", async () => {
-    const {context, code} = await runUploadDependeciesCommand(
-      './src/commands/dependencies/__tests__/fixtures/unknown-dependencies',
-      {
-        apiKey: 'DD_API_KEY_EXAMPLE',
-        appKey: 'DD_APP_KEY_EXAMPLE',
-        dryRun: true,
-        releaseVersion: '1.234',
-        service: 'my-service',
-        source: 'snyk',
-      }
-    )
-    const sdtout = context.getStdoutBuffer().split(os.EOL)
+    const filePath = './src/commands/dependencies/__tests__/fixtures/unknown-dependencies'
+    const resolvedFilePath = path.resolve(filePath)
+    const {context, code} = await runUploadDependenciesCommand(filePath, {
+      apiKey: 'DD_API_KEY_EXAMPLE',
+      appKey: 'DD_APP_KEY_EXAMPLE',
+      dryRun: true,
+      releaseVersion: '1.234',
+      service: 'my-service',
+      source: 'snyk',
+    })
+    const stdout = context.getStdoutBuffer().split(os.EOL)
     const stderr = context.getStderrBuffer().split(os.EOL)
 
-    expect(stderr).toEqual([
-      'Cannot find "src/commands/dependencies/__tests__/fixtures/unknown-dependencies" file.',
-      '',
-    ])
-    expect(sdtout).toEqual([''])
+    expect(stderr[0]).toEqual(chalk.red(`Cannot find "${resolvedFilePath}" file.`))
+    expect(stdout).toEqual([''])
 
     expect(code).toBe(2)
   })
 
-  test('makes a valid API request', async () => {
-    const request = jest.fn(() => Promise.resolve())
-    ;(axios.create as jest.Mock).mockImplementation(() => request)
-
-    const {context, code} = await runUploadDependeciesCommand(
+  test('shows warning if missing --release-version parameter', async () => {
+    const {context, code} = await runUploadDependenciesCommand(
       './src/commands/dependencies/__tests__/fixtures/dependencies',
       {
         apiKey: 'DD_API_KEY_EXAMPLE',
         appKey: 'DD_APP_KEY_EXAMPLE',
-        releaseVersion: '1.234',
+        dryRun: true,
         service: 'my-service',
         source: 'snyk',
       }
     )
-
-    const sdtout = context.getStdoutBuffer().split(os.EOL)
+    const stdout = context.getStdoutBuffer().split(os.EOL)
     const stderr = context.getStderrBuffer().split(os.EOL)
 
     expect(stderr).toEqual([''])
-    expect(sdtout[0]).toEqual(chalk.green('Starting upload.'))
-    expect(sdtout[1]).toEqual(
-      chalk.green('Will upload dependencies from src/commands/dependencies/__tests__/fixtures/dependencies file.')
+    const releaseVersion = chalk.bold('--release-version')
+    expect(stdout[0]).toEqual(
+      chalk.yellow('┌──────────────────────────────────────────────────────────────────────────────────────┐')
     )
-    expect(sdtout[2]).toEqual('version: 1.234 service: my-service')
-    expect(sdtout[3]).toEqual('Uploading dependencies')
-    expect(sdtout[4]).toEqual(expect.stringContaining('Uploaded dependencies in'))
+    expect(stdout[1]).toEqual(
+      chalk.yellow(`│ Missing optional ${releaseVersion} parameter.                                        │`)
+    )
+    expect(stdout[2]).toEqual(
+      chalk.yellow('│ The analysis may use out of date dependencies and produce false positives/negatives. │')
+    )
+    expect(stdout[3]).toEqual(
+      chalk.yellow('└──────────────────────────────────────────────────────────────────────────────────────┘')
+    )
+
+    expect(code).toBe(0)
+  })
+
+  test('makes a valid API request', async () => {
+    const filePath = './src/commands/dependencies/__tests__/fixtures/dependencies'
+    const resolvedFilePath = path.resolve(filePath)
+    const request = jest.fn(() => Promise.resolve())
+    ;(axios.create as jest.Mock).mockImplementation(() => request)
+
+    const {context, code} = await runUploadDependenciesCommand(filePath, {
+      apiKey: 'DD_API_KEY_EXAMPLE',
+      appKey: 'DD_APP_KEY_EXAMPLE',
+      releaseVersion: '1.234',
+      service: 'my-service',
+      source: 'snyk',
+    })
+
+    const stdout = context.getStdoutBuffer().split(os.EOL)
+    const stderr = context.getStderrBuffer().split(os.EOL)
+
+    expect(stderr).toEqual([''])
+    expect(stdout[0]).toEqual(`${chalk.bold('File')}:    ${resolvedFilePath}`)
+    expect(stdout[1]).toEqual(`${chalk.bold('Source')}:  snyk`)
+    expect(stdout[2]).toEqual(`${chalk.bold('Service')}: my-service`)
+    expect(stdout[3]).toEqual(`${chalk.bold('Version')}: 1.234`)
+    expect(stdout[4]).toEqual('')
+    expect(stdout[5]).toEqual('Uploading dependencies...')
+    expect(stdout[6]).toMatch(/Dependencies uploaded in .* seconds\./)
 
     expect(code).toBe(0)
 
@@ -227,7 +233,7 @@ describe('execute', () => {
         'content-type': expect.stringContaining('multipart/form-data'),
       },
       method: 'POST',
-      url: '/profiling/api/v1/depgraph',
+      url: '/profiling/api/v1/dep-graphs',
     })
     const formData = (request.mock.calls[0] as any[])[0].data as FormData
     expect(formData).toBeDefined()
@@ -242,7 +248,7 @@ describe('execute', () => {
     expect(formPayload).toContain(['Content-Disposition: form-data; name="source"', '', 'snyk'].join('\n'))
     expect(formPayload).toContain(
       [
-        'Content-Disposition: form-data; name="dependencies_file"; filename="dependencies"',
+        'Content-Disposition: form-data; name="file"; filename="dependencies"',
         'Content-Type: application/octet-stream',
         '',
         dependenciesContent,
@@ -251,10 +257,39 @@ describe('execute', () => {
   })
 
   test('handles API errors', async () => {
+    const filePath = './src/commands/dependencies/__tests__/fixtures/dependencies'
+    const resolvedFilePath = path.resolve(filePath)
     const request = jest.fn(() => Promise.reject(new Error('No access granted')))
     ;(axios.create as jest.Mock).mockImplementation(() => request)
 
-    const {context, code} = await runUploadDependeciesCommand(
+    const {context, code} = await runUploadDependenciesCommand(filePath, {
+      apiKey: 'DD_API_KEY_EXAMPLE',
+      appKey: 'DD_APP_KEY_EXAMPLE',
+      releaseVersion: '1.234',
+      service: 'my-service',
+      source: 'snyk',
+    })
+
+    const stdout = context.getStdoutBuffer().split(os.EOL)
+    const stderr = context.getStderrBuffer().split(os.EOL)
+
+    expect(stderr).toEqual(['No access granted'])
+    expect(stdout[0]).toEqual(`${chalk.bold('File')}:    ${resolvedFilePath}`)
+    expect(stdout[1]).toEqual(`${chalk.bold('Source')}:  snyk`)
+    expect(stdout[2]).toEqual(`${chalk.bold('Service')}: my-service`)
+    expect(stdout[3]).toEqual(`${chalk.bold('Version')}: 1.234`)
+    expect(stdout[4]).toEqual('')
+    expect(stdout[5]).toEqual('Uploading dependencies...')
+    expect(stdout[6]).toEqual(chalk.red('Failed upload dependencies: No access granted'))
+
+    expect(code).toBe(3)
+  })
+
+  test('handles API 403 errors', async () => {
+    const request = jest.fn(() => Promise.reject({message: 'Forbidden', isAxiosError: true, response: {status: 403}}))
+    ;(axios.create as jest.Mock).mockImplementation(() => request)
+
+    const {context, code} = await runUploadDependenciesCommand(
       './src/commands/dependencies/__tests__/fixtures/dependencies',
       {
         apiKey: 'DD_API_KEY_EXAMPLE',
@@ -265,17 +300,17 @@ describe('execute', () => {
       }
     )
 
-    const sdtout = context.getStdoutBuffer().split(os.EOL)
+    const stdout = context.getStdoutBuffer().split(os.EOL)
     const stderr = context.getStderrBuffer().split(os.EOL)
 
-    expect(stderr).toEqual(['No access granted'])
-    expect(sdtout[0]).toEqual(chalk.green('Starting upload.'))
-    expect(sdtout[1]).toEqual(
-      chalk.green('Will upload dependencies from src/commands/dependencies/__tests__/fixtures/dependencies file.')
+    expect(stderr).toEqual(['Forbidden'])
+    expect(stdout[6]).toEqual(
+      chalk.red(
+        `Failed upload dependencies: Forbidden. Check ${chalk.bold('DATADOG_API_KEY')} and ${chalk.bold(
+          'DATADOG_APP_KEY'
+        )} environment variables.`
+      )
     )
-    expect(sdtout[2]).toEqual('version: 1.234 service: my-service')
-    expect(sdtout[3]).toEqual('Uploading dependencies')
-    expect(sdtout[4]).toEqual(expect.stringContaining('Failed upload dependencies: No access granted'))
 
     expect(code).toBe(3)
   })
@@ -290,7 +325,7 @@ interface RunUploadDependenciesInput {
   source?: string
 }
 
-async function runUploadDependeciesCommand(path: string, input: RunUploadDependenciesInput) {
+async function runUploadDependenciesCommand(filePath: string, input: RunUploadDependenciesInput) {
   const cli = new Cli()
   cli.register(UploadCommand)
 
@@ -300,7 +335,7 @@ async function runUploadDependeciesCommand(path: string, input: RunUploadDepende
     DATADOG_API_KEY: input.apiKey,
     DATADOG_APP_KEY: input.appKey,
   }
-  const params = ['dependencies', 'upload', path]
+  const params = ['dependencies', 'upload', filePath]
 
   if (input.releaseVersion) {
     params.push('--release-version', input.releaseVersion)

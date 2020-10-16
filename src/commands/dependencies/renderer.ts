@@ -15,16 +15,19 @@ export const renderMissingEnvironmentVariable = (variable: string) =>
 export const renderUnsupportedParameterValue = (parameter: string, value: string, supportedValues: string[]) =>
   chalk.red(`Unsupported ${chalk.bold(parameter)} ${value}. ${renderSupportedValues(supportedValues)}\n`)
 
-export const renderMissingReleaseVersionParameter = () =>
-  [
+export const renderMissingReleaseVersionParameter = () => {
+  const releaseVersion = chalk.bold('--release-version')
+
+  return [
     chalk.yellow('┌──────────────────────────────────────────────────────────────────────────────────────┐'),
-    chalk.yellow(
-      `│ Missing optional ${chalk.bold('--release-version')} parameter.                                        │`
-    ),
+    chalk.yellow(`│ Missing optional ${releaseVersion} parameter.                                        │`),
     chalk.yellow('│ The analysis may use out of date dependencies and produce false positives/negatives. │'),
     chalk.yellow('└──────────────────────────────────────────────────────────────────────────────────────┘'),
     '',
   ].join('\n')
+}
+
+export const renderCannotFindFile = (file: string) => chalk.red(`Cannot find "${file}" file.\n`)
 
 export const renderFailedUpload = (errorMessage: string) => chalk.red(`Failed upload dependencies: ${errorMessage}\n`)
 
