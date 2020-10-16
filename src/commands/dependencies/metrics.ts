@@ -1,9 +1,15 @@
 import metrics from 'datadog-metrics'
 
-export const getMetricsLogger = (version: string, service: string): metrics.BufferedMetricsLogger =>
-  new metrics.BufferedMetricsLogger({
-    defaultTags: [`version:${version}`, `service:${service}`],
+export const getMetricsLogger = (service: string, version?: string): metrics.BufferedMetricsLogger => {
+  const defaultTags = [`service:${service}`]
+  if (version) {
+    defaultTags.push(`version:${version}`)
+  }
+
+  return new metrics.BufferedMetricsLogger({
+    defaultTags,
     flushIntervalSeconds: 15,
     host: 'ci',
     prefix: 'datadog.ci.dependencies.',
   })
+}

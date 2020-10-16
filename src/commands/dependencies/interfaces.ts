@@ -4,7 +4,7 @@ export interface Payload {
   dependenciesFilePath: string
   service: string
   source: string
-  version: string
+  version?: string
 }
 
 export interface APIHelper {

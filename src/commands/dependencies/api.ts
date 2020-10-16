@@ -10,16 +10,18 @@ export const apiConstructor = (baseUrl: string, apiKey: string, appKey: string):
   function uploadDependencies(payload: Payload) {
     const form = new FormData()
 
-    form.append('service', payload.service)
-    form.append('version', payload.version)
     form.append('source', payload.source)
-    form.append('dependencies_file', fs.createReadStream(payload.dependenciesFilePath))
+    form.append('file', fs.createReadStream(payload.dependenciesFilePath))
+    form.append('service', payload.service)
+    if (payload.version) {
+      form.append('version', payload.version)
+    }
 
     return request({
       data: form,
       headers: form.getHeaders(),
       method: 'POST',
-      url: '/profiling/api/v1/depgraph',
+      url: '/profiling/api/v1/dep-graphs',
     })
   }
 
