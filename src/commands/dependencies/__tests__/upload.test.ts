@@ -197,8 +197,6 @@ describe('execute', () => {
   test('makes a valid API request', async () => {
     const filePath = './src/commands/dependencies/__tests__/fixtures/dependencies'
     const resolvedFilePath = path.resolve(filePath)
-    const request = jest.fn(() => Promise.resolve())
-    ;(axios.create as jest.Mock).mockImplementation(() => request)
 
     const {context, code} = await runUploadDependenciesCommand(filePath, {
       apiKey: 'DD_API_KEY_EXAMPLE',
@@ -222,20 +220,18 @@ describe('execute', () => {
 
     expect(code).toBe(0)
 
-    expect(axios.create).toHaveBeenCalledWith({
-      baseURL: 'https://api.datadoghq.com',
-    })
-    expect(request).toHaveBeenCalledWith({
-      data: expect.anything(),
-      headers: {
-        'DD-API-KEY': 'DD_API_KEY_EXAMPLE',
-        'DD-APPLICATION-KEY': 'DD_APP_KEY_EXAMPLE',
-        'content-type': expect.stringContaining('multipart/form-data'),
-      },
-      method: 'POST',
-      url: '/profiling/api/v1/dep-graphs',
-    })
-    const formData = (request.mock.calls[0] as any[])[0].data as FormData
+    expect(axios.post).toHaveBeenCalledWith(
+      'https://api.datadoghq.com/profiling/api/v1/dep-graphs',
+      expect.anything(),
+      {
+        headers: {
+          'DD-API-KEY': 'DD_API_KEY_EXAMPLE',
+          'DD-APPLICATION-KEY': 'DD_APP_KEY_EXAMPLE',
+          'content-type': expect.stringContaining('multipart/form-data'),
+        },
+      }
+    )
+    const formData = ((axios.post as jest.Mock).mock.calls[0] as any[])[1] as FormData
     expect(formData).toBeDefined()
 
     // Read stream and normalize EOL
@@ -259,8 +255,7 @@ describe('execute', () => {
   test('handles API errors', async () => {
     const filePath = './src/commands/dependencies/__tests__/fixtures/dependencies'
     const resolvedFilePath = path.resolve(filePath)
-    const request = jest.fn(() => Promise.reject(new Error('No access granted')))
-    ;(axios.create as jest.Mock).mockImplementation(() => request)
+    ;(axios.post as jest.Mock).mockImplementation(() => Promise.reject(new Error('No access granted')))
 
     const {context, code} = await runUploadDependenciesCommand(filePath, {
       apiKey: 'DD_API_KEY_EXAMPLE',
@@ -286,8 +281,9 @@ describe('execute', () => {
   })
 
   test('handles API 403 errors', async () => {
-    const request = jest.fn(() => Promise.reject({message: 'Forbidden', isAxiosError: true, response: {status: 403}}))
-    ;(axios.create as jest.Mock).mockImplementation(() => request)
+    ;(axios.post as jest.Mock).mockImplementation(() =>
+      Promise.reject({message: 'Forbidden', isAxiosError: true, response: {status: 403}})
+    )
 
     const {context, code} = await runUploadDependenciesCommand(
       './src/commands/dependencies/__tests__/fixtures/dependencies',

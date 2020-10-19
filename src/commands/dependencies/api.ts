@@ -1,24 +1,10 @@
-import {AxiosRequestConfig, default as axios} from 'axios'
+import {default as axios} from 'axios'
 import FormData from 'form-data'
 import fs from 'fs'
 
 import {APIHelper, Payload} from './interfaces'
 
 export const apiConstructor = (baseIntakeUrl: string, apiKey: string, appKey: string): APIHelper => {
-  const overrideArgs = (args: AxiosRequestConfig) => ({
-    ...args,
-    headers: {
-      'DD-API-KEY': apiKey,
-      'DD-APPLICATION-KEY': appKey,
-      ...args.headers,
-    },
-  })
-
-  const request = (args: AxiosRequestConfig) =>
-    axios.create({
-      baseURL: baseIntakeUrl,
-    })(overrideArgs(args))
-
   function uploadDependencies(payload: Payload) {
     const form = new FormData()
 
@@ -29,11 +15,12 @@ export const apiConstructor = (baseIntakeUrl: string, apiKey: string, appKey: st
       form.append('version', payload.version)
     }
 
-    return request({
-      data: form,
-      headers: form.getHeaders(),
-      method: 'POST',
-      url: '/profiling/api/v1/dep-graphs',
+    return axios.post(`${baseIntakeUrl}/profiling/api/v1/dep-graphs`, form, {
+      headers: {
+        'DD-API-KEY': apiKey,
+        'DD-APPLICATION-KEY': appKey,
+        ...form.getHeaders(),
+      },
     })
   }
 
