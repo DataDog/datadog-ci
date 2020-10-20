@@ -1,32 +1,30 @@
 import {CloudWatchLogs} from 'aws-sdk'
 import {applyLogGroupConfig, calculateLogGroupUpdateRequest} from '../loggroup'
 
-function makeMockCloudWatch(
+const makeMockCloudWatch = (
   logGroups: Record<
     string,
     {config: CloudWatchLogs.DescribeLogGroupsResponse; filters?: CloudWatchLogs.DescribeSubscriptionFiltersResponse}
   >
-) {
-  return {
-    createLogGroup: jest.fn().mockImplementation(() => ({promise: () => Promise.resolve()})),
-    deleteSubscriptionFilter: jest.fn().mockImplementation(() => ({promise: () => Promise.resolve()})),
-    describeLogGroups: jest.fn().mockImplementation(({logGroupNamePrefix}) => {
-      const groups = logGroups[logGroupNamePrefix]?.config ?? {logGroups: []}
+) => ({
+  createLogGroup: jest.fn().mockImplementation(() => ({promise: () => Promise.resolve()})),
+  deleteSubscriptionFilter: jest.fn().mockImplementation(() => ({promise: () => Promise.resolve()})),
+  describeLogGroups: jest.fn().mockImplementation(({logGroupNamePrefix}) => {
+    const groups = logGroups[logGroupNamePrefix]?.config ?? {logGroups: []}
 
-      return {
-        promise: () => Promise.resolve(groups),
-      }
-    }),
-    describeSubscriptionFilters: jest.fn().mockImplementation(({logGroupName}) => {
-      const groups = logGroups[logGroupName]?.filters ?? {subscriptionFilters: []}
+    return {
+      promise: () => Promise.resolve(groups),
+    }
+  }),
+  describeSubscriptionFilters: jest.fn().mockImplementation(({logGroupName}) => {
+    const groups = logGroups[logGroupName]?.filters ?? {subscriptionFilters: []}
 
-      return {
-        promise: () => Promise.resolve(groups),
-      }
-    }),
-    putSubscriptionFilter: jest.fn().mockImplementation(() => ({promise: () => Promise.resolve()})),
-  }
-}
+    return {
+      promise: () => Promise.resolve(groups),
+    }
+  }),
+  putSubscriptionFilter: jest.fn().mockImplementation(() => ({promise: () => Promise.resolve()})),
+})
 
 describe('loggroup', () => {
   describe('calculateLogGroupUpdateRequest', () => {

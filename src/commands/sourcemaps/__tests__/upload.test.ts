@@ -30,7 +30,7 @@ describe('upload', () => {
 })
 
 describe('execute', () => {
-  async function runCLI(path: string) {
+  const runCLI = async (path: string) => {
     const cli = makeCli()
     const context = createMockContext() as any
     process.env = {DATADOG_API_KEY: 'PLACEHOLDER'}
