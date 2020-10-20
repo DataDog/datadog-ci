@@ -3,7 +3,7 @@ import {promisify} from 'util'
 
 import deepExtend from 'deep-extend'
 
-export function pick<T extends object, K extends keyof T>(base: T, keys: K[]) {
+export const pick = <T extends object, K extends keyof T>(base: T, keys: K[]) => {
   const definedKeys = keys.filter((key) => !!base[key])
   const pickedObject: Partial<T> = {}
 

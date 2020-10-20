@@ -5,7 +5,7 @@ import fs from 'fs'
 import {APIHelper, Payload} from './interfaces'
 
 export const apiConstructor = (baseIntakeUrl: string, apiKey: string, appKey: string): APIHelper => {
-  function uploadDependencies(payload: Payload) {
+  const uploadDependencies = (payload: Payload) => {
     const form = new FormData()
 
     form.append('source', payload.source)
