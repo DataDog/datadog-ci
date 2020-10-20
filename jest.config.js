@@ -13,5 +13,5 @@ module.exports = {
     }
   },
   roots: ["src"],
-  testPathIgnorePatterns: ["fixtures"]
+  testPathIgnorePatterns: ["fixtures", "helpers"]
 };
