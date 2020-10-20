@@ -33,3 +33,14 @@ export const parseConfigFile = async <T>(baseConfig: T, configPath?: string) => 
 
   return baseConfig
 }
+
+export const getApiHostForSite = (site: string) => {
+  switch (site) {
+    case 'datad0g.com':
+      return `app.${site}`
+    case 'datadoghq.com':
+    case 'datadoghq.eu':
+    default:
+      return `api.${site}`
+  }
+}

@@ -1,7 +1,7 @@
 jest.mock('fs')
 
 import * as fs from 'fs'
-import {parseConfigFile, pick} from '../utils'
+import {getApiHostForSite, parseConfigFile, pick} from '../utils'
 jest.useFakeTimers()
 
 describe('utils', () => {
@@ -50,6 +50,17 @@ describe('utils', () => {
 
       const config = await parseConfigFile({configKey: 'configvalue'})
       await expect(config.configKey).toBe('newconfigvalue')
+    })
+  })
+
+  describe('getApiHostForSite', () => {
+    it.each([
+      ['datad0g.com', 'app.datad0g.com'],
+      ['datadoghq.com', 'api.datadoghq.com'],
+      ['datadoghq.eu', 'api.datadoghq.eu'],
+      ['whitelabel.com', 'api.whitelabel.com'],
+    ])('for site = %p, returns api host = %p ', (site, expectedApiHost) => {
+      expect(getApiHostForSite(site)).toEqual(expectedApiHost)
     })
   })
 })

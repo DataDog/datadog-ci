@@ -2,6 +2,7 @@ import {Command} from 'clipanion'
 import {BufferedMetricsLogger} from 'datadog-metrics'
 import fs from 'fs'
 import path from 'path'
+import {getApiHostForSite} from '../../helpers/utils'
 
 import {apiConstructor} from './api'
 import {Payload} from './interfaces'
@@ -40,7 +41,7 @@ export class UploadCommand extends Command {
   private static UPLOAD_ERROR_EXIT_CODE = 3
 
   private config = {
-    apiHost: process.env.DATADOG_API_HOST || 'api.datadoghq.com',
+    apiHost: getApiHostForSite(process.env.DATADOG_SITE || 'datadoghq.com'),
     apiKey: process.env.DATADOG_API_KEY,
     appKey: process.env.DATADOG_APP_KEY,
   }
@@ -94,7 +95,7 @@ export class UploadCommand extends Command {
     }
 
     // Upload dependencies
-    const metricsLogger = getMetricsLogger(this.service, this.releaseVersion)
+    const metricsLogger = getMetricsLogger(this.config.apiHost, this.service, this.releaseVersion)
 
     this.context.stdout.write(
       renderCommandInfo(this.dependenciesFilePath!, this.source, this.service, this.releaseVersion, this.dryRun)

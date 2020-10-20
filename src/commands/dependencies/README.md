@@ -13,7 +13,7 @@ export DATADOG_API_KEY="<API KEY>"
 export DATADOG_APP_KEY="<APP KEY>"
 ```
 
-By default, the command sends requests to Datadog US. To use Datadog EU, set `DATADOG_API_HOST` environment variable to `api.datadoghq.eu`.
+By default, the command sends requests to Datadog US. To use Datadog EU, set `DATADOG_SITE` environment variable to `datadoghq.eu`.
 
 ### Commands
 
