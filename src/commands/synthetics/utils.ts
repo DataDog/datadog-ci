@@ -302,11 +302,7 @@ export async function retry<T, E extends Error>(
     } catch (e) {
       const waiter = shouldRetryAfterWait(retries, e)
       if (waiter) {
-        if (typeof waiter === 'number') {
-          await wait(waiter)
-        } else {
-          await waiter
-        }
+        await wait(waiter)
 
         return trier(retries + 1)
       }
