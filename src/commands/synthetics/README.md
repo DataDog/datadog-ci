@@ -176,3 +176,30 @@ It can be written as :
 * `{{URL}}`
 
 and so on...
+
+### End-to-end testing process
+
+To verify this command works as expected, you can trigger a test run and verify it returns 0:
+
+```bash
+export DATADOG_API_KEY='<API key>'
+export DATADOG_APP_KEY='<application key>'
+
+yarn launch synthetics run-tests --public-id abc-def-ghi
+```
+
+Successful output should look like this:
+
+```bash
+[abc-def-ghi] Trigger test "Check on testing.website"
+[abc-def-ghi] Waiting results for "Check on testing.website"
+
+
+=== REPORT ===
+Took 11546ms
+
+✓ [abc-def-ghi] | Check on testing.website
+  ✓ location: Frankfurt (AWS)
+    ⎋  total duration: 28.9 ms - result url: https://app.datadoghq.com/synthetics/details/abc-def-ghi?resultId=123456789123456789
+    ✓ GET - https://testing.website
+```
