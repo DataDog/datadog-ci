@@ -68,7 +68,8 @@
       true,
       "check-format",
       "allow-leading-underscore"
-    ]
+    ],
+    "only-arrow-functions": true
   },
   "rulesDirectory": []
 }

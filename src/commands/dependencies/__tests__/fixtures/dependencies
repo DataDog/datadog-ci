@@ -1,0 +1,23 @@
+{
+  "name": "my-example-service",
+  "version": "0.0.1",
+  "dependencies": {
+    "com.google.guava:guava": {
+      "name": "com.google.guava:guava",
+      "version": "54.3",
+      "dependencies": {
+        "com.google.guava:failureaccess": {
+          "name": "com.google.guava:failureaccess",
+          "version": "12.4.6"
+        }
+      }
+    }
+  },
+  "type": "gradle",
+  "packageFormatVersion": "gradle:0.0.1"
+}
+{
+  "ok": false,
+  "error": "This authentication token has been revoked. Try re-authenticating: run `snyk auth`.\nSee more information about authentication in our docs: https://snyk.io/docs/cli-authentication/",
+  "path": "/Users/developer/my-example-service/src"
+}

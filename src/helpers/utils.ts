@@ -5,7 +5,7 @@ import {AxiosRequestConfig, default as axios} from 'axios'
 import deepExtend from 'deep-extend'
 import ProxyAgent from 'proxy-agent'
 
-export function pick<T extends object, K extends keyof T>(base: T, keys: K[]) {
+export const pick = <T extends object, K extends keyof T>(base: T, keys: K[]) => {
   const definedKeys = keys.filter((key) => !!base[key])
   const pickedObject: Partial<T> = {}
 
@@ -79,4 +79,15 @@ export const getRequestBuilder = (baseUrl: string, apiKey: string, appKey?: stri
   }
 
   return (args: AxiosRequestConfig) => axios.create({baseURL: baseUrl})(overrideArgs(args))
+}
+
+export const getApiHostForSite = (site: string) => {
+  switch (site) {
+    case 'datad0g.com':
+      return `app.${site}`
+    case 'datadoghq.com':
+    case 'datadoghq.eu':
+    default:
+      return `api.${site}`
+  }
 }

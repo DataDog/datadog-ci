@@ -4,7 +4,7 @@ import * as fs from 'fs'
 
 import {AxiosPromise, AxiosRequestConfig, default as axios} from 'axios'
 
-import {getRequestBuilder, parseConfigFile, pick, ProxyConfiguration} from '../utils'
+import {getApiHostForSite, getRequestBuilder, parseConfigFile, pick, ProxyConfiguration} from '../utils'
 
 jest.useFakeTimers()
 
@@ -80,6 +80,17 @@ describe('utils', () => {
       const request = getRequestBuilder('http://fake-base.url/', 'apiKey', 'applicationKey', proxyConf)
       const fakeEndpoint = fakeEndpointBuilder(request)
       expect(await fakeEndpoint()).toStrictEqual(proxyConf)
+    })
+  })
+
+  describe('getApiHostForSite', () => {
+    it.each([
+      ['datad0g.com', 'app.datad0g.com'],
+      ['datadoghq.com', 'api.datadoghq.com'],
+      ['datadoghq.eu', 'api.datadoghq.eu'],
+      ['whitelabel.com', 'api.whitelabel.com'],
+    ])('for site = %p, returns api host = %p ', (site, expectedApiHost) => {
+      expect(getApiHostForSite(site)).toEqual(expectedApiHost)
     })
   })
 })
