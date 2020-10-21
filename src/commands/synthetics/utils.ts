@@ -292,7 +292,7 @@ export const runTests = async (
 
 const definedTypeGuard = <T>(o: T | undefined): o is T => !!o
 
-export async function retry<T, E extends Error>(
+export const retry = async <T, E extends Error>(
   func: () => Promise<T>,
   shouldRetryAfterWait: (retries: number, error: E) => number | undefined
 ): Promise<T> {
