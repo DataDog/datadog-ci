@@ -6,8 +6,10 @@ import * as fs from 'fs'
 import * as axios from 'axios'
 import glob from 'glob'
 
+import {ProxyConfiguration} from '../../../helpers/utils'
+
 import {apiConstructor} from '../api'
-import {ExecutionRule, PollResult, ProxyConfiguration, Result, Test} from '../interfaces'
+import {ExecutionRule, PollResult, Result, Test} from '../interfaces'
 import * as utils from '../utils'
 
 describe('utils', () => {
