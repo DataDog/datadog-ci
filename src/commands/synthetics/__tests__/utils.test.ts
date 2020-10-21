@@ -6,8 +6,10 @@ import * as fs from 'fs'
 import * as axios from 'axios'
 import glob from 'glob'
 
+import {ProxyConfiguration} from '../../../helpers/utils'
+
 import {apiConstructor} from '../api'
-import {ExecutionRule, PollResult, ProxyConfiguration, Result, Test} from '../interfaces'
+import {ExecutionRule, PollResult, Result, Test} from '../interfaces'
 import * as utils from '../utils'
 
 describe('utils', () => {
@@ -327,5 +329,57 @@ describe('utils', () => {
     expect(utils.getStrictestExecutionRule(NON_BLOCKING, SKIPPED)).toBe(SKIPPED)
     expect(utils.getStrictestExecutionRule(BLOCKING, undefined)).toBe(BLOCKING)
     expect(utils.getStrictestExecutionRule(SKIPPED, undefined)).toBe(SKIPPED)
+  })
+
+  describe('retry', () => {
+    test('retry works fine', async () => {
+      const result = await utils.retry(
+        async () => 42,
+        () => 1
+      )
+      expect(result).toBe(42)
+    })
+
+    test('retry works fine after some retries', async () => {
+      let counter = 0
+      const start = +new Date()
+      const result = await utils.retry(
+        async () => {
+          if (counter === 3) {
+            return 42
+          }
+          counter += 1
+          throw new Error('')
+        },
+        (retries: number) => 100 * (retries + 1)
+      )
+      const end = +new Date()
+      const approximateWait = 100 + 100 * 2 + 100 * 3
+
+      expect(result).toBe(42)
+      expect(counter).toBe(3)
+      expect(end - start - approximateWait < 50).toBeTruthy()
+    })
+
+    test('retry rethrows after some retries', async () => {
+      let counter = 0
+      try {
+        await utils.retry(
+          async () => {
+            counter += 1
+            throw new Error('FAILURE')
+          },
+          (retries: number) => {
+            if (retries < 2) {
+              return 1
+            }
+          }
+        )
+        expect('Retry should have thrown.').toBeFalsy()
+      } catch (e) {
+        expect(counter).toBe(3)
+        expect(e.message).toBe('FAILURE')
+      }
+    })
   })
 })

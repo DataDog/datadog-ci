@@ -1,7 +1,9 @@
-import axios from 'axios'
+import {AxiosError, AxiosResponse, default as axios} from 'axios'
+
+import {ProxyConfiguration} from '../../../helpers/utils'
 
 import {apiConstructor} from '../api'
-import {Payload, PollResult, ProxyConfiguration, Result, Trigger} from '../interfaces'
+import {Payload, PollResult, Result, Trigger} from '../interfaces'
 
 describe('dd-api', () => {
   const apiConfiguration = {
@@ -59,5 +61,24 @@ describe('dd-api', () => {
     expect(triggered_check_ids).toEqual([TRIGGERED_TEST_ID])
     expect(results[0].public_id).toBe(TRIGGERED_TEST_ID)
     expect(results[0].result_id).toBe(RESULT_ID)
+  })
+
+  test('should retry request that failed with code 5xx', async () => {
+    const serverError = new Error('Server Error') as AxiosError
+    serverError.response = {status: 502} as AxiosResponse
+
+    const requestMock = jest.fn()
+    requestMock.mockImplementation(() => {
+      throw serverError
+    })
+    jest.spyOn(axios, 'create').mockImplementation((() => requestMock) as any)
+
+    const {getTest} = apiConstructor(apiConfiguration)
+    try {
+      await getTest('fake-public-id')
+    } catch {
+      // Empty catch as it is expected to throw
+    }
+    expect(requestMock).toHaveBeenCalledTimes(4)
   })
 })

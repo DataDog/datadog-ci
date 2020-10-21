@@ -1,3 +1,5 @@
+import {ProxyConfiguration} from '../../helpers/utils'
+
 interface Timings {
   dns: number
   download: number
@@ -234,30 +236,6 @@ export interface APIHelper {
   pollResults(resultIds: string[]): Promise<{results: PollResult[]}>
   searchTests(query: string): Promise<TestSearchResult>
   triggerTests(testsToTrigger: Payload[]): Promise<Trigger>
-}
-
-export type ProxyType =
-  | 'http'
-  | 'https'
-  | 'socks'
-  | 'socks4'
-  | 'socks4a'
-  | 'socks5'
-  | 'socks5h'
-  | 'pac+data'
-  | 'pac+file'
-  | 'pac+ftp'
-  | 'pac+http'
-  | 'pac+https'
-
-export interface ProxyConfiguration {
-  auth?: {
-    password: string
-    username: string
-  }
-  host?: string
-  port?: number
-  protocol: ProxyType
 }
 
 export interface APIConfiguration {
