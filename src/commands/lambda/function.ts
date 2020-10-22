@@ -1,5 +1,11 @@
 import {CloudWatchLogs, Lambda} from 'aws-sdk'
-import {DEFAULT_LAYER_AWS_ACCOUNT, HANDLER_LOCATION, Runtime, RUNTIME_LAYER_LOOKUP} from './constants'
+import {
+  DEFAULT_LAYER_AWS_ACCOUNT,
+  GOVCLOUD_LAYER_AWS_ACCOUNT,
+  HANDLER_LOCATION,
+  Runtime,
+  RUNTIME_LAYER_LOOKUP,
+} from './constants'
 import {applyLogGroupConfig, calculateLogGroupUpdateRequest, LogGroupConfiguration} from './loggroup'
 import {applyTagConfig, calculateTagUpdateRequest, TagConfiguration} from './tags'
 
@@ -100,6 +106,10 @@ const getLambdaConfig = async (
 const getLayerArn = (runtime: Runtime, settings: InstrumentationSettings, region: string) => {
   const layerName = RUNTIME_LAYER_LOOKUP[runtime]
   const account = settings.layerAWSAccount ?? DEFAULT_LAYER_AWS_ACCOUNT
+  const isGovCloud = region.startsWith('us-gov')
+  if (isGovCloud) {
+    return `arn:aws-us-gov:lambda:${region}:${GOVCLOUD_LAYER_AWS_ACCOUNT}:layer:${layerName}`
+  }
 
   return `arn:aws:lambda:${region}:${account}:layer:${layerName}`
 }

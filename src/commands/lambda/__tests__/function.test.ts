@@ -128,6 +128,34 @@ describe('function', () => {
                       ]
                 `)
     })
+    test('uses the GovCloud lambda layer when a GovCloud region is detected', async () => {
+      const lambda = makeMockLambda({
+        'arn:aws-us-gov:lambda:us-gov-east-1:000000000000:function:autoinstrument': {
+          FunctionArn: 'arn:aws-us-gov:lambda:us-gov-east-1:000000000000:function:autoinstrument',
+          Runtime: 'nodejs12.x',
+        },
+      })
+      const cloudWatch = makeMockCloudWatchLogs()
+
+      const settings = {
+        flushMetricsToLogs: false,
+        layerVersion: 30,
+        mergeXrayTraces: false,
+        tracingEnabled: false,
+      }
+      const result = await getLambdaConfigs(
+        lambda as any,
+        cloudWatch as any,
+        'us-gov-east-1',
+        ['arn:aws-us-gov:lambda:us-gov-east-1:000000000000:function:autoinstrument'],
+        settings
+      )
+      expect(result[0].updateRequest?.Layers).toMatchInlineSnapshot(`
+                      Array [
+                        "arn:aws-us-gov:lambda:us-gov-east-1:002406178527:layer:Datadog-Node12-x:30",
+                      ]
+                `)
+    })
     test('returns results for multiple functions', async () => {
       const lambda = makeMockLambda({
         'arn:aws:lambda:us-east-1:000000000000:function:another-func': {
