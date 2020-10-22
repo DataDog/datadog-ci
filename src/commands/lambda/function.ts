@@ -106,7 +106,7 @@ const getLambdaConfig = async (
 const getLayerArn = (runtime: Runtime, settings: InstrumentationSettings, region: string) => {
   const layerName = RUNTIME_LAYER_LOOKUP[runtime]
   const account = settings.layerAWSAccount ?? DEFAULT_LAYER_AWS_ACCOUNT
-  const isGovCloud = region === 'us-gov-east-1' || region === 'us-gov-west-1'
+  const isGovCloud = region.startsWith('us-gov')
   if (isGovCloud) {
     return `arn:aws-us-gov:lambda:${region}:${GOVCLOUD_LAYER_AWS_ACCOUNT}:layer:${layerName}`
   }
