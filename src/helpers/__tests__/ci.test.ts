@@ -1,4 +1,5 @@
-import {CI_ENGINES, getCIMetadata} from '../ci-metadata'
+import {CI_ENGINES, getCIMetadata} from '../ci'
+import {CI_ENV_PARENT_SPAN_ID, CI_ENV_TRACE_ID} from '../tags'
 
 describe('ci-metadata', () => {
   const branch = 'fakeBranch'
@@ -104,6 +105,31 @@ describe('ci-metadata', () => {
       git: {
         branch,
         commit_sha: commit,
+      },
+    })
+  })
+
+  test('jenkins context is recognized', () => {
+    process.env = {
+      BUILD_URL: pipelineURL,
+      GIT_BRANCH: branch,
+      GIT_COMMIT: commit,
+      JENKINS_URL: 'https://fakebuildserver.url/',
+      [CI_ENV_PARENT_SPAN_ID]: 'PARENT_SPAN_ID',
+      [CI_ENV_TRACE_ID]: 'TRACE_ID',
+    }
+    expect(getCIMetadata()).toEqual({
+      ci: {
+        pipeline: {url: pipelineURL},
+        provider: {name: CI_ENGINES.JENKINS},
+      },
+      git: {
+        branch,
+        commit_sha: commit,
+      },
+      trace: {
+        parentSpanId: 'PARENT_SPAN_ID',
+        traceId: 'TRACE_ID',
       },
     })
   })

@@ -1,3 +1,4 @@
+import {Metadata} from '../../helpers/interfaces'
 import {ProxyConfiguration} from '../../helpers/utils'
 
 interface Timings {
@@ -170,21 +171,6 @@ export interface ConfigOverride {
   retry?: RetryConfig
   startUrl?: string
   variables?: {[key: string]: string}
-}
-
-export interface Metadata {
-  ci?: {
-    pipeline?: {
-      url?: string
-    }
-    provider?: {
-      name: string
-    }
-  }
-  git?: {
-    branch?: string
-    commit_sha?: string
-  }
 }
 
 export interface Payload extends ConfigOverride {
