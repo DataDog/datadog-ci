@@ -26,6 +26,7 @@ Available command:
   - lambda
   - sourcemaps
   - synthetics
+  - trace
 ```
 
 Each command allows interacting with a product of the Datadog platform. The commands are defined in the [src/commands](/src/commands) folder.
@@ -36,7 +37,7 @@ Further documentation for each command can be found in its folder, ie:
 - [Lambda](src/commands/lambda)
 - [Sourcemaps](src/commands/sourcemaps/)
 - [Synthetics CI/CD Testing](src/commands/synthetics/)
-
+- [Trace](src/commands/trace/)
 
 ## Contributing
 
@@ -82,17 +83,15 @@ The `index.ts` file must export classes extending the `Command` class of `clipan
 A sample `index.ts` file for a new command would be:
 
 ```typescript
-import { Command } from 'clipanion';
+import {Command} from 'clipanion'
 
 export class HelloWorldCommand extends Command {
-  public async execute () {
-    this.context.stdout.write('Hello world!');
+  public async execute() {
+    this.context.stdout.write('Hello world!')
   }
 }
 
-module.exports = [
-  HelloWorldCommand,
-];
+module.exports = [HelloWorldCommand]
 ```
 
 Lastly, test files must be created in the `__tests__/` folder. `jest` is used to run the tests and a CI has been set using Github Actions to ensure all tests are passing when merging a Pull Request.
