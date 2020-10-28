@@ -3,17 +3,7 @@ import {Command} from 'clipanion'
 import tracer from 'dd-trace'
 
 import {getCIMetadata} from '../../helpers/ci'
-import {
-  CI_PIPELINE_URL,
-  CI_PROVIDER_NAME,
-  ERROR,
-  EXIT_CODE,
-  GIT_BRANCH,
-  GIT_SHA,
-  INSTRUCTION,
-  PARENT_SPAN_ID,
-  TRACE_ID,
-} from '../../helpers/tags'
+import {CI_PIPELINE_URL, CI_PROVIDER_NAME, GIT_BRANCH, GIT_SHA, PARENT_SPAN_ID, TRACE_ID} from '../../helpers/tags'
 
 export class TraceInstructionCommand extends Command {
   public static usage = Command.Usage({
@@ -62,9 +52,9 @@ export class TraceInstructionCommand extends Command {
 
           commandToTrace.on('exit', (exitCode: number) => {
             span?.addTags({
-              [ERROR]: exitCode === 0 ? 0 : 1,
-              [EXIT_CODE]: exitCode,
-              [INSTRUCTION]: instruction,
+              error: exitCode === 0 ? 0 : 1,
+              exit_code: exitCode,
+              instruction,
             })
             if (ciMetadata) {
               const {
@@ -72,13 +62,13 @@ export class TraceInstructionCommand extends Command {
                   pipeline: {url: pipelineUrl},
                   provider: {name: providerName},
                 },
-                git: {branch, commit_sha},
+                git: {branch, commitSha},
               } = ciMetadata
               span?.addTags({
                 [CI_PIPELINE_URL]: pipelineUrl,
                 [CI_PROVIDER_NAME]: providerName,
                 [GIT_BRANCH]: branch,
-                [GIT_SHA]: commit_sha,
+                [GIT_SHA]: commitSha,
               })
             }
 

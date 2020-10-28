@@ -25,7 +25,7 @@ describe('ci-metadata', () => {
       },
       git: {
         branch,
-        commit_sha: commit,
+        commitSha: commit,
       },
     })
   })
@@ -44,7 +44,7 @@ describe('ci-metadata', () => {
       },
       git: {
         branch,
-        commit_sha: commit,
+        commitSha: commit,
       },
     })
   })
@@ -52,7 +52,7 @@ describe('ci-metadata', () => {
   test('gitlab CI is recognized', () => {
     process.env = {
       CI_COMMIT_BRANCH: branch,
-      CI_COMMIT_SHA: commit,
+      commitSha: commit,
       CI_JOB_URL: pipelineURL,
       GITLAB_CI: 'true',
     }
@@ -63,7 +63,7 @@ describe('ci-metadata', () => {
       },
       git: {
         branch,
-        commit_sha: commit,
+        commitSha: commit,
       },
     })
   })
@@ -85,7 +85,7 @@ describe('ci-metadata', () => {
       },
       git: {
         branch,
-        commit_sha: commit,
+        commitSha: commit,
       },
     })
   })
@@ -104,7 +104,7 @@ describe('ci-metadata', () => {
       },
       git: {
         branch,
-        commit_sha: commit,
+        commitSha: commit,
       },
     })
   })
@@ -125,7 +125,7 @@ describe('ci-metadata', () => {
       },
       git: {
         branch,
-        commit_sha: commit,
+        commitSha: commit,
       },
       trace: {
         parentSpanId: 'PARENT_SPAN_ID',

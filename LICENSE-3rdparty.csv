@@ -28,4 +28,4 @@ ts-node,import,MIT,Copyright (c) 2014 Blake Embrey (hello@blakeembrey.com)
 tslint,dev,Apache-2.0,Copyright 2013-2019 Palantir Technologies, Inc.
 tslint-config-prettier,dev,MIT,Copyright 2017 Alex Jover Morales <alexjovermorales@gmail.com>
 typescript,dev,Apache-2.0,Copyright (c) Microsoft Corporation.
-dd-trace,import,Apache-2.0,Copyright 2016-Present Datadog, Inc.
+dd-trace,import,Apache-2.0,Copyright 2016-Present Datadog Inc.

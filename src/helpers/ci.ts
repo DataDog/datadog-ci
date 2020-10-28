@@ -24,7 +24,7 @@ export const getCIMetadata = (): Metadata | undefined => {
       },
       git: {
         branch: env.CIRCLE_BRANCH,
-        commit_sha: env.CIRCLE_SHA1,
+        commitSha: env.CIRCLE_SHA1,
       },
     }
   }
@@ -41,7 +41,7 @@ export const getCIMetadata = (): Metadata | undefined => {
       },
       git: {
         branch: env.TRAVIS_BRANCH,
-        commit_sha: env.TRAVIS_COMMIT,
+        commitSha: env.TRAVIS_COMMIT,
       },
     }
   }
@@ -58,7 +58,7 @@ export const getCIMetadata = (): Metadata | undefined => {
       },
       git: {
         branch: env.CI_COMMIT_BRANCH,
-        commit_sha: env.CI_COMMIT_SHA,
+        commitSha: env.CI_COMMIT_SHA,
       },
     }
   }
@@ -79,7 +79,7 @@ export const getCIMetadata = (): Metadata | undefined => {
       },
       git: {
         branch: GITHUB_REF,
-        commit_sha: GITHUB_SHA,
+        commitSha: GITHUB_SHA,
       },
     }
   }
@@ -98,7 +98,7 @@ export const getCIMetadata = (): Metadata | undefined => {
       },
       git: {
         branch: GIT_BRANCH,
-        commit_sha: GIT_COMMIT,
+        commitSha: GIT_COMMIT,
       },
     }
 

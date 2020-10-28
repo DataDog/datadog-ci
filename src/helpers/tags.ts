@@ -12,8 +12,3 @@ export const CI_PROVIDER_NAME = 'ci.provider.name'
 // Git
 export const GIT_BRANCH = 'git.branch'
 export const GIT_SHA = 'git.commit.sha'
-
-// Other
-export const INSTRUCTION = 'instruction'
-export const EXIT_CODE = 'exit_code'
-export const ERROR = 'error'
