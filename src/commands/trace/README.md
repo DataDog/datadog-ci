@@ -2,6 +2,8 @@
 
 Trace your CI commands.
 
+**Warning**: this command is still in alpha and should not be used in production environments.
+
 ## Usage
 
 ### Setup

@@ -10,6 +10,7 @@ export class TraceInstructionCommand extends Command {
     description: 'Trace your CI commands.',
     details: `
             This command will allow you to wrap any instruction and create a span associated to it.
+            Warning: this command is still in alpha. Do not use in production environments.
         `,
     examples: [['Trace your test command', 'datadog-ci trace command yarn test']],
   })
