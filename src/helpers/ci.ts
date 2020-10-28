@@ -1,4 +1,5 @@
 import {Metadata} from './interfaces'
+import {CI_ENV_PARENT_SPAN_ID, CI_ENV_TRACE_ID} from './tags'
 
 export const CI_ENGINES = {
   CIRCLECI: 'circleci',
@@ -63,7 +64,9 @@ export const getCIMetadata = (): Metadata | undefined => {
   }
 
   if (env.GITHUB_ACTIONS) {
-    const pipelineURL = `https://github.com/${env.GITHUB_REPOSITORY}/actions/runs/${env.GITHUB_RUN_ID}`
+    const {GITHUB_REF, GITHUB_SHA, GITHUB_REPOSITORY, GITHUB_RUN_ID} = env
+
+    const pipelineURL = `https://github.com/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}`
 
     return {
       ci: {
@@ -75,25 +78,39 @@ export const getCIMetadata = (): Metadata | undefined => {
         },
       },
       git: {
-        branch: env.GITHUB_REF,
-        commit_sha: env.GITHUB_SHA,
+        branch: GITHUB_REF,
+        commit_sha: GITHUB_SHA,
       },
     }
   }
 
   if (env.JENKINS_URL) {
-    return {
+    const {BUILD_URL, GIT_COMMIT, GIT_BRANCH, [CI_ENV_TRACE_ID]: traceId, [CI_ENV_PARENT_SPAN_ID]: parentSpanId} = env
+
+    const commonMetadata = {
       ci: {
         pipeline: {
-          url: env.BUILD_URL,
+          url: BUILD_URL,
         },
         provider: {
           name: CI_ENGINES.JENKINS,
         },
       },
       git: {
-        branch: env.GIT_BRANCH,
-        commit_sha: env.GIT_COMMIT,
+        branch: GIT_BRANCH,
+        commit_sha: GIT_COMMIT,
+      },
+    }
+
+    if (!traceId || !parentSpanId) {
+      return commonMetadata
+    }
+
+    return {
+      ...commonMetadata,
+      trace: {
+        parentSpanId,
+        traceId,
       },
     }
   }

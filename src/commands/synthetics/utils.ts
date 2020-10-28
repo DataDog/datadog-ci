@@ -8,7 +8,6 @@ import chalk from 'chalk'
 import glob from 'glob'
 
 import {formatBackendErrors} from './api'
-import {getCIMetadata} from './ci-metadata'
 import {
   APIHelper,
   ConfigOverride,
@@ -26,6 +25,7 @@ import {
 } from './interfaces'
 import {renderTrigger, renderWait} from './renderer'
 
+import {getCIMetadata} from '../../helpers/ci'
 import {pick} from '../../helpers/utils'
 
 const POLLING_INTERVAL = 5000 // In ms
