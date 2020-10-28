@@ -52,9 +52,9 @@ describe('ci-metadata', () => {
   test('gitlab CI is recognized', () => {
     process.env = {
       CI_COMMIT_BRANCH: branch,
-      commitSha: commit,
       CI_JOB_URL: pipelineURL,
       GITLAB_CI: 'true',
+      commitSha: commit,
     }
     expect(getCIMetadata()).toEqual({
       ci: {
