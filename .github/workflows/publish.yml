@@ -10,9 +10,8 @@ jobs:
       - uses: actions/setup-node@v1
         with:
           node-version: '12.x'
-      - run: yarn config set npmAuthToken $YARN_NPM_AUTH_TOKEN
-        env:
-          YARN_NPM_AUTH_TOKEN: ${{ secrets.YARN_NPM_AUTH_TOKEN }}
       - run: yarn
       - run: yarn pack
       - run: yarn publish
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.YARN_NPM_AUTH_TOKEN }}
