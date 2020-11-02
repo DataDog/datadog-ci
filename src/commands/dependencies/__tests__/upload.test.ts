@@ -21,7 +21,7 @@ describe('execute', () => {
   })
 
   test('runs with --dry-run parameter', async () => {
-    const filePath = './src/commands/dependencies/__tests__/fixtures/dependencies'
+    const filePath = './src/commands/dependencies/__tests__/fixtures/dependencies.json'
     const resolvedFilePath = path.resolve(filePath)
     const {context, code} = await runUploadCommand(filePath, {
       apiKey: 'DD_API_KEY_EXAMPLE',
@@ -48,7 +48,7 @@ describe('execute', () => {
   })
 
   test('exits if missing api key', async () => {
-    const {context, code} = await runUploadCommand('./src/commands/dependencies/__tests__/fixtures/dependencies', {
+    const {context, code} = await runUploadCommand('./src/commands/dependencies/__tests__/fixtures/dependencies.json', {
       appKey: 'DD_APP_KEY_EXAMPLE',
       dryRun: true,
       releaseVersion: '1.234',
@@ -65,7 +65,7 @@ describe('execute', () => {
   })
 
   test('exits if missing app key', async () => {
-    const {context, code} = await runUploadCommand('./src/commands/dependencies/__tests__/fixtures/dependencies', {
+    const {context, code} = await runUploadCommand('./src/commands/dependencies/__tests__/fixtures/dependencies.json', {
       apiKey: 'DD_API_KEY_EXAMPLE',
       dryRun: true,
       releaseVersion: '1.234',
@@ -82,7 +82,7 @@ describe('execute', () => {
   })
 
   test('exits if missing --service parameter', async () => {
-    const {context, code} = await runUploadCommand('./src/commands/dependencies/__tests__/fixtures/dependencies', {
+    const {context, code} = await runUploadCommand('./src/commands/dependencies/__tests__/fixtures/dependencies.json', {
       apiKey: 'DD_API_KEY_EXAMPLE',
       appKey: 'DD_APP_KEY_EXAMPLE',
       dryRun: true,
@@ -99,7 +99,7 @@ describe('execute', () => {
   })
 
   test('exits if missing --source parameter', async () => {
-    const {context, code} = await runUploadCommand('./src/commands/dependencies/__tests__/fixtures/dependencies', {
+    const {context, code} = await runUploadCommand('./src/commands/dependencies/__tests__/fixtures/dependencies.json', {
       apiKey: 'DD_API_KEY_EXAMPLE',
       appKey: 'DD_APP_KEY_EXAMPLE',
       dryRun: true,
@@ -116,7 +116,7 @@ describe('execute', () => {
   })
 
   test('exits if invalid --source parameter', async () => {
-    const {context, code} = await runUploadCommand('./src/commands/dependencies/__tests__/fixtures/dependencies', {
+    const {context, code} = await runUploadCommand('./src/commands/dependencies/__tests__/fixtures/dependencies.json', {
       apiKey: 'DD_API_KEY_EXAMPLE',
       appKey: 'DD_APP_KEY_EXAMPLE',
       dryRun: true,
@@ -154,7 +154,7 @@ describe('execute', () => {
   })
 
   test('shows warning if missing --release-version parameter', async () => {
-    const {context, code} = await runUploadCommand('./src/commands/dependencies/__tests__/fixtures/dependencies', {
+    const {context, code} = await runUploadCommand('./src/commands/dependencies/__tests__/fixtures/dependencies.json', {
       apiKey: 'DD_API_KEY_EXAMPLE',
       appKey: 'DD_APP_KEY_EXAMPLE',
       dryRun: true,
@@ -172,7 +172,7 @@ describe('execute', () => {
   })
 
   test('makes a valid API request', async () => {
-    const filePath = './src/commands/dependencies/__tests__/fixtures/dependencies'
+    const filePath = './src/commands/dependencies/__tests__/fixtures/dependencies.json'
     const resolvedFilePath = path.resolve(filePath)
 
     const {context, code} = await runUploadCommand(filePath, {
@@ -213,15 +213,15 @@ describe('execute', () => {
     // Read stream and normalize EOL
     const formPayload = (await streamToString(formData)).replace(/\r\n|\r|\n/g, '\n')
 
-    const dependenciesContent = fs.readFileSync('./src/commands/dependencies/__tests__/fixtures/dependencies')
+    const dependenciesContent = fs.readFileSync('./src/commands/dependencies/__tests__/fixtures/dependencies.json')
     expect(dependenciesContent).not.toBeFalsy()
     expect(formPayload).toContain(['Content-Disposition: form-data; name="service"', '', 'my-service'].join('\n'))
     expect(formPayload).toContain(['Content-Disposition: form-data; name="version"', '', '1.234'].join('\n'))
     expect(formPayload).toContain(['Content-Disposition: form-data; name="source"', '', 'snyk'].join('\n'))
     expect(formPayload).toContain(
       [
-        'Content-Disposition: form-data; name="file"; filename="dependencies"',
-        'Content-Type: application/octet-stream',
+        'Content-Disposition: form-data; name="file"; filename="dependencies.json"',
+        'Content-Type: application/json',
         '',
         dependenciesContent,
       ].join('\n')
@@ -229,7 +229,7 @@ describe('execute', () => {
   })
 
   test('handles API errors', async () => {
-    const filePath = './src/commands/dependencies/__tests__/fixtures/dependencies'
+    const filePath = './src/commands/dependencies/__tests__/fixtures/dependencies.json'
     const resolvedFilePath = path.resolve(filePath)
     ;(axios.post as jest.Mock).mockImplementation(() => Promise.reject(new Error('No access granted')))
 
@@ -260,7 +260,7 @@ describe('execute', () => {
       Promise.reject({message: 'Forbidden', isAxiosError: true, response: {status: 403}})
     )
 
-    const {context, code} = await runUploadCommand('./src/commands/dependencies/__tests__/fixtures/dependencies', {
+    const {context, code} = await runUploadCommand('./src/commands/dependencies/__tests__/fixtures/dependencies.json', {
       apiKey: 'DD_API_KEY_EXAMPLE',
       appKey: 'DD_APP_KEY_EXAMPLE',
       releaseVersion: '1.234',
@@ -280,16 +280,16 @@ describe('execute', () => {
   })
 
   test('retries on error', async () => {
-    const filePath = './src/commands/dependencies/__tests__/fixtures/dependencies'
-    let didReject = false;
+    const filePath = './src/commands/dependencies/__tests__/fixtures/dependencies.json'
+    let didReject = false
     ;(axios.post as jest.Mock).mockImplementation(() => {
       if (!didReject) {
-        didReject = true;
+        didReject = true
 
         return Promise.reject({message: 'Internal Server Error', isAxiosError: true, response: {status: 500}})
       }
 
-      return Promise.resolve();
+      return Promise.resolve()
     })
 
     const {context, code} = await runUploadCommand(filePath, {
