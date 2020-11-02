@@ -26,6 +26,7 @@ export interface Result {
 }
 
 export interface PollResult {
+  check: Test
   dc_id: number
   result: Result
   resultID: string

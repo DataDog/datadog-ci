@@ -137,7 +137,7 @@ const getResultUrl = (baseUrl: string, test: Test, resultId: string) => {
 }
 
 const renderExecutionResult = (test: Test, execution: PollResult, baseUrl: string, locationNames: LocationsMapping) => {
-  const {dc_id, resultID, result} = execution
+  const {check: overridedTest, dc_id, resultID, result} = execution
   const isSuccess = hasResultPassed(result)
   const color = getTestResultColor(isSuccess, test.options.ci?.executionRule === ExecutionRule.NON_BLOCKING)
   const icon = isSuccess ? ICONS.SUCCESS : ICONS.FAILED
@@ -153,7 +153,7 @@ const renderExecutionResult = (test: Test, execution: PollResult, baseUrl: strin
   return [
     resultIdentification,
     `    ⎋${durationText} result url: ${chalk.dim.cyan(resultUrl)}`,
-    renderResultOutcome(result, test, icon, color),
+    renderResultOutcome(result, overridedTest, icon, color),
   ].join('\n')
 }
 
