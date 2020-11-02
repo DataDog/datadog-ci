@@ -1,4 +1,4 @@
-# This workflow will do a clean install of node dependencies, build the source code and run tests
+# This workflow will do a clean install of node dependencies.json, build the source code and run tests
 
 name: Continuous Integration
 
@@ -44,6 +44,11 @@ jobs:
       - run: yarn add ./artifacts/datadog-ci.tgz
       - name: Run synthetics test
         run: yarn datadog-ci synthetics run-tests --config artifacts/e2e/global.config.json
+        env:
+          DATADOG_API_KEY: ${{ secrets.datadog_api_key }}
+          DATADOG_APP_KEY: ${{ secrets.datadog_app_key }}
+      - name: Run dependencies upload test
+        run: yarn datadog-ci dependencies upload artifacts/e2e/test.dependencies.json --source=snyk --service=my-service --release-version=1.23.4
         env:
           DATADOG_API_KEY: ${{ secrets.datadog_api_key }}
           DATADOG_APP_KEY: ${{ secrets.datadog_app_key }}
