@@ -278,4 +278,36 @@ describe('execute', () => {
 
     expect(code).toBe(3)
   })
+
+  test('retries on error', async () => {
+    const filePath = './src/commands/dependencies/__tests__/fixtures/dependencies'
+    let didReject = false;
+    ;(axios.post as jest.Mock).mockImplementation(() => {
+      if (!didReject) {
+        didReject = true;
+
+        return Promise.reject({message: 'Internal Server Error', isAxiosError: true, response: {status: 500}})
+      }
+
+      return Promise.resolve();
+    })
+
+    const {context, code} = await runUploadCommand(filePath, {
+      apiKey: 'DD_API_KEY_EXAMPLE',
+      appKey: 'DD_APP_KEY_EXAMPLE',
+      releaseVersion: '1.234',
+      service: 'my-service',
+      source: 'snyk',
+    })
+
+    const stdout = context.stdout.toString()
+    const stderr = context.stderr.toString()
+
+    expect(stderr).toEqual('')
+    expect(stdout).toContain('Uploading dependencies...')
+    expect(stdout).toContain('[attempt 1] Retrying dependencies upload: Internal Server Error')
+    expect(stdout).toMatch(/Dependencies uploaded in .* seconds\./)
+
+    expect(code).toBe(0)
+  })
 })
