@@ -261,7 +261,6 @@ describe('utils', () => {
       const expectedResults: {[key: string]: PollResult[]} = {}
       expectedResults[publicId] = [
         {
-          check: testConfiguration,
           dc_id: triggerResult.location,
           result: {
             device: {id: triggerResult.device},
@@ -280,7 +279,6 @@ describe('utils', () => {
       const expectedResults: {[key: string]: PollResult[]} = {}
       expectedResults[publicId] = [
         {
-          check: testConfiguration,
           dc_id: triggerResult.location,
           result: {
             device: {id: triggerResult.device},
@@ -312,7 +310,6 @@ describe('utils', () => {
       expectedResults[publicId] = [
         passingPollResult(triggerResultPass.result_id),
         {
-          check: testConfiguration,
           dc_id: triggerResultTimeOut.location,
           result: {
             device: {id: triggerResultTimeOut.device},
