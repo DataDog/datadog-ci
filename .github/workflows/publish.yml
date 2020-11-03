@@ -14,4 +14,4 @@ jobs:
       - run: yarn pack
       - run: yarn publish
         env:
-          NODE_AUTH_TOKEN: ${{ secrets.YARN_NPM_AUTH_TOKEN }}
+          NPM_AUTH_TOKEN: ${{ secrets.YARN_NPM_AUTH_TOKEN }}
