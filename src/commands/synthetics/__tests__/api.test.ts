@@ -3,7 +3,7 @@ import {AxiosError, AxiosResponse, default as axios} from 'axios'
 import {ProxyConfiguration} from '../../../helpers/utils'
 
 import {apiConstructor} from '../api'
-import {Payload, PollResult, Result, Test, Trigger} from '../interfaces'
+import {Payload, PollResult, Result, Trigger} from '../interfaces'
 
 import {getApiTest} from './fixtures'
 
