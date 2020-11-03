@@ -50,17 +50,17 @@ To verify this command works as expected, you can send some mock data and valida
 export DATADOG_API_KEY='<API key>'
 export DATADOG_APP_KEY='<application key>'
 
-yarn launch dependencies upload ./src/commands/dependencies/__tests__/fixtures/dependencies --source snyk --service test_datadog-ci --release-version 0.0.1
+yarn launch dependencies upload ./.github/workflows/e2e/test.dependencies.json --source snyk --service test_datadog-ci --release-version 0.0.1
 ```
 
 Successful output should look like this:
 
 ```bash
-File:    /<path>/datadog-ci/src/commands/dependencies/__tests__/fixtures/dependencies
+File:    /<path>/.github/workflows/e2e/test.dependencies.json
 Source:  snyk
 Service: test_datadog-ci
 Version: 0.0.1
 
 Uploading dependencies...
-Dependencies uploaded in 1.008 seconds.
+Dependencies uploaded in ? seconds.
 ```

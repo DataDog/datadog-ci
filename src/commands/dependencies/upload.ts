@@ -1,3 +1,4 @@
+import retry from 'async-retry'
 import {Command} from 'clipanion'
 import {BufferedMetricsLogger} from 'datadog-metrics'
 import fs from 'fs'
@@ -16,10 +17,13 @@ import {
   renderMissingEnvironmentVariable,
   renderMissingParameter,
   renderMissingReleaseVersionParameter,
+  renderRetriedUpload,
   renderSuccessfulCommand,
   renderUnsupportedParameterValue,
   renderUpload,
 } from './renderer'
+
+const errorCodesNoRetry = [400, 403, 413]
 
 export class UploadCommand extends Command {
   public static SUPPORTED_SOURCES = ['snyk']
@@ -128,17 +132,40 @@ export class UploadCommand extends Command {
     const api = apiConstructor(`https://${this.config.apiHost}`, this.config.apiKey!, this.config.appKey!)
 
     try {
-      if (this.dryRun) {
-        this.context.stdout.write(renderDryRunUpload())
+      await retry(
+        async (bail) => {
+          try {
+            if (this.dryRun) {
+              this.context.stdout.write(renderDryRunUpload())
 
-        return
-      }
+              return
+            }
 
-      this.context.stdout.write(renderUpload())
-      await api.uploadDependencies(payload)
-      metricsLogger.increment('success', 1)
+            this.context.stdout.write(renderUpload())
+            await api.uploadDependencies(payload)
+            metricsLogger.increment('success', 1)
+          } catch (error) {
+            if (error.response && !errorCodesNoRetry.includes(error.response.status)) {
+              // If it's an axios error and a status code that is not excluded from retries,
+              // throw the error so that upload is retried
+              throw error
+            }
+            // If it's another error or an axios error we don't want to retry, bail
+            bail(error)
+
+            return
+          }
+        },
+        {
+          onRetry: (error, attempt) => {
+            metricsLogger.increment('retries', 1)
+            this.context.stdout.write(renderRetriedUpload(error.message, attempt))
+          },
+          retries: 5,
+        }
+      )
     } catch (error) {
-      if (error.isAxiosError && error.response && error.response.status === 403) {
+      if (error.response && error.response.status === 403) {
         this.context.stdout.write(renderFailedUploadBecauseOf403(error.message))
       } else {
         this.context.stdout.write(renderFailedUpload(error.message))

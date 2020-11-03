@@ -16,8 +16,3 @@
   "type": "gradle",
   "packageFormatVersion": "gradle:0.0.1"
 }
-{
-  "ok": false,
-  "error": "This authentication token has been revoked. Try re-authenticating: run `snyk auth`.\nSee more information about authentication in our docs: https://snyk.io/docs/cli-authentication/",
-  "path": "/Users/developer/my-example-service/src"
-}

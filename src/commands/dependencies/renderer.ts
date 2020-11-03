@@ -29,18 +29,6 @@ export const renderMissingReleaseVersionParameter = () => {
 
 export const renderCannotFindFile = (file: string) => chalk.red(`Cannot find "${file}" file.\n`)
 
-export const renderFailedUpload = (errorMessage: string) => chalk.red(`Failed upload dependencies: ${errorMessage}\n`)
-
-export const renderFailedUploadBecauseOf403 = (errorMessage: string) =>
-  renderFailedUpload(
-    `${errorMessage}. Check ${chalk.bold('DATADOG_API_KEY')} and ${chalk.bold(
-      'DATADOG_APP_KEY'
-    )} environment variables.`
-  )
-
-export const renderSuccessfulCommand = (duration: number) =>
-  chalk.green(`Dependencies uploaded in ${duration} seconds.\n`)
-
 export const renderCommandInfo = (
   dependenciesFilePath: string,
   source: string,
@@ -68,3 +56,18 @@ export const renderCommandInfo = (
 export const renderDryRunUpload = (): string => `[DRYRUN] ${renderUpload()}`
 
 export const renderUpload = (): string => 'Uploading dependencies...\n'
+
+export const renderRetriedUpload = (errorMessage: string, attempt: number): string =>
+  chalk.yellow(`[attempt ${attempt}] Retrying dependencies upload: ${errorMessage}\n`)
+
+export const renderFailedUploadBecauseOf403 = (errorMessage: string) =>
+  renderFailedUpload(
+    `${errorMessage}. Check ${chalk.bold('DATADOG_API_KEY')} and ${chalk.bold(
+      'DATADOG_APP_KEY'
+    )} environment variables.`
+  )
+
+export const renderFailedUpload = (errorMessage: string) => chalk.red(`Failed upload dependencies: ${errorMessage}\n`)
+
+export const renderSuccessfulCommand = (duration: number) =>
+  chalk.green(`Dependencies uploaded in ${duration} seconds.\n`)
