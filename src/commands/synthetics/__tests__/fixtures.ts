@@ -1,0 +1,42 @@
+import {Test, User} from '../interfaces'
+
+const mockUser: User = {
+  email: '',
+  handle: '',
+  id: 42,
+  name: '',
+}
+
+export const getApiTest = (publicId: string): Test => ({
+  config: {
+    assertions: [],
+    request: {
+      headers: {},
+      method: 'GET',
+      timeout: 60000,
+      url: 'http://fake.url',
+    },
+    variables: [],
+  },
+  created_at: '',
+  created_by: mockUser,
+  locations: [],
+  message: '',
+  modified_at: '',
+  modified_by: mockUser,
+  monitor_id: 0,
+  name: '',
+  options: {
+    device_ids: [],
+    min_failure_duration: 0,
+    min_location_failed: 0,
+    tick_every: 3600,
+  },
+  overall_state: 0,
+  overall_state_modified: '',
+  public_id: publicId,
+  status: '',
+  stepCount: 0,
+  tags: [],
+  type: 'api',
+})

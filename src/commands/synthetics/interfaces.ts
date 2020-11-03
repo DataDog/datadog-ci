@@ -26,7 +26,7 @@ export interface Result {
 }
 
 export interface PollResult {
-  check: Test
+  check?: Test
   dc_id: number
   result: Result
   resultID: string
@@ -115,7 +115,7 @@ export enum Operator {
   isInLessThan = 'isInLessThan',
 }
 
-interface User {
+export interface User {
   email: string
   handle: string
   id: number

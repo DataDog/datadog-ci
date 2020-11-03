@@ -153,7 +153,7 @@ const renderExecutionResult = (test: Test, execution: PollResult, baseUrl: strin
   return [
     resultIdentification,
     `    ⎋${durationText} result url: ${chalk.dim.cyan(resultUrl)}`,
-    renderResultOutcome(result, overridedTest, icon, color),
+    renderResultOutcome(result, overridedTest || test, icon, color),
   ].join('\n')
 }
 

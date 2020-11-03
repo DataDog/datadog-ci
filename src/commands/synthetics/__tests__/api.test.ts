@@ -3,7 +3,9 @@ import {AxiosError, AxiosResponse, default as axios} from 'axios'
 import {ProxyConfiguration} from '../../../helpers/utils'
 
 import {apiConstructor} from '../api'
-import {Payload, PollResult, Result, Trigger} from '../interfaces'
+import {Payload, PollResult, Result, Test, Trigger} from '../interfaces'
+
+import {getApiTest} from './fixtures'
 
 describe('dd-api', () => {
   const apiConfiguration = {
@@ -24,6 +26,7 @@ describe('dd-api', () => {
   const POLL_RESULTS: {results: PollResult[]} = {
     results: [
       {
+        check: getApiTest('abc-def-ghi'),
         dc_id: 0,
         result: {} as Result,
         resultID: RESULT_ID,
