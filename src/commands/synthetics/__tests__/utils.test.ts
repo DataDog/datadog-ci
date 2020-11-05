@@ -12,6 +12,8 @@ import {apiConstructor} from '../api'
 import {ExecutionRule, PollResult, Result, Test} from '../interfaces'
 import * as utils from '../utils'
 
+import {getApiTest} from './fixtures'
+
 describe('utils', () => {
   const apiConfiguration = {
     apiKey: '123',
@@ -176,6 +178,7 @@ describe('utils', () => {
   })
 
   test('hasTestSucceeded', () => {
+    const testConfiguration = getApiTest('abc-def-ghi')
     const passingResult = {
       device: {
         id: 'laptop_large',
@@ -185,11 +188,13 @@ describe('utils', () => {
       stepDetails: [],
     }
     const passingPollResult = {
+      check: testConfiguration,
       dc_id: 42,
       result: passingResult,
       resultID: '0123456789',
     }
     const failingPollResult = {
+      check: testConfiguration,
       dc_id: 42,
       result: {...passingResult, passed: false},
       resultID: '0123456789',
@@ -224,12 +229,14 @@ describe('utils', () => {
       passed: true,
       stepDetails: [],
     }
+    const publicId = 'abc-def-ghi'
+    const testConfiguration = getApiTest(publicId)
     const passingPollResult = (resultID: string) => ({
+      check: testConfiguration,
       dc_id: 42,
       result: passingResult,
       resultID,
     })
-    const publicId = 'abc-def-ghi'
     const triggerResult = {
       device: 'laptop_large',
       location: 42,
