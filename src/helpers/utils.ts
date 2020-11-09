@@ -60,7 +60,13 @@ export interface ProxyConfiguration {
   protocol: ProxyType
 }
 
-export const getRequestBuilder = (baseUrl: string, apiKey: string, appKey?: string, proxyOpts?: ProxyConfiguration) => {
+export const getRequestBuilder = (
+  baseUrl: string,
+  apiKey: string,
+  appKey?: string,
+  proxyOpts?: ProxyConfiguration,
+  disableEnvironmentVariables = false
+) => {
   const overrideArgs = (args: AxiosRequestConfig) => {
     const newArguments = {
       ...args,
@@ -78,7 +84,15 @@ export const getRequestBuilder = (baseUrl: string, apiKey: string, appKey?: stri
     return newArguments
   }
 
-  return (args: AxiosRequestConfig) => axios.create({baseURL: baseUrl})(overrideArgs(args))
+  const baseConfiguration: AxiosRequestConfig = {
+    baseURL: baseUrl,
+  }
+
+  if (disableEnvironmentVariables) {
+    baseConfiguration.proxy = false
+  }
+
+  return (args: AxiosRequestConfig) => axios.create(baseConfiguration)(overrideArgs(args))
 }
 
 export const getApiHostForSite = (site: string) => {
