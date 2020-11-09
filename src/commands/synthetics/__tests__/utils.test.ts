@@ -113,9 +113,11 @@ describe('utils', () => {
   })
 
   describe('handleConfig', () => {
+    const processWrite = process.stdout.write.bind(process.stdout)
+
     test('empty config returns simple payload', () => {
       const publicId = 'abc-def-ghi'
-      expect(utils.handleConfig({public_id: publicId} as Test, publicId)).toEqual({
+      expect(utils.handleConfig({public_id: publicId} as Test, publicId, processWrite)).toEqual({
         public_id: publicId,
       })
     })
@@ -128,7 +130,7 @@ describe('utils', () => {
         public_id: publicId,
       } as Test
       const configOverride = {executionRule: ExecutionRule.SKIPPED}
-      const handledConfig = utils.handleConfig(fakeTest, publicId, configOverride)
+      const handledConfig = utils.handleConfig(fakeTest, publicId, processWrite, configOverride)
 
       expect(handledConfig.public_id).toBe(publicId)
     })
@@ -143,10 +145,29 @@ describe('utils', () => {
         startUrl: 'https://{{DOMAIN}}/newPath?oldPath={{PATHNAME}}',
       }
       const expectedUrl = 'https://example.org/newPath?oldPath=/path'
-      const handledConfig = utils.handleConfig(fakeTest, publicId, configOverride)
+      const handledConfig = utils.handleConfig(fakeTest, publicId, processWrite, configOverride)
 
       expect(handledConfig.public_id).toBe(publicId)
       expect(handledConfig.startUrl).toBe(expectedUrl)
+    })
+
+    test('startUrl is not parsable', () => {
+      const envVars = {...process.env}
+      process.env = {CUSTOMVAR: '/newPath'}
+      const publicId = 'abc-def-ghi'
+      const fakeTest = {
+        config: {request: {url: 'http://{{ FAKE_VAR }}/path'}},
+        public_id: publicId,
+      } as Test
+      const configOverride = {
+        startUrl: 'https://{{DOMAIN}}/newPath?oldPath={{CUSTOMVAR}}',
+      }
+      const expectedUrl = 'https://{{DOMAIN}}/newPath?oldPath=/newPath'
+      const handledConfig = utils.handleConfig(fakeTest, publicId, processWrite, configOverride)
+
+      expect(handledConfig.public_id).toBe(publicId)
+      expect(handledConfig.startUrl).toBe(expectedUrl)
+      process.env = envVars
     })
   })
 

@@ -185,15 +185,15 @@ interface BasicAuthCredentials {
 }
 
 export interface TemplateContext extends NodeJS.ProcessEnv {
-  DOMAIN: string
-  HOST: string
-  HOSTNAME: string
-  ORIGIN: string
-  PARAMS: string
-  PATHNAME: string
-  PORT: string
-  PROTOCOL: string
-  SUBDOMAIN: string | undefined
+  DOMAIN?: string
+  HOST?: string
+  HOSTNAME?: string
+  ORIGIN?: string
+  PARAMS?: string
+  PATHNAME?: string
+  PORT?: string
+  PROTOCOL?: string
+  SUBDOMAIN?: string
   URL: string
 }
 
