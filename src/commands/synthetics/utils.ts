@@ -88,23 +88,27 @@ const parseUrlVariables = (url: string, write: Writable['write']) => {
     ...process.env,
     URL: url,
   }
+  let objUrl
   try {
-    const objUrl = new URL(url)
-    const subdomainMatch = objUrl.hostname.match(SUBDOMAIN_REGEX)
-    const domain = subdomainMatch ? objUrl.hostname.replace(`${subdomainMatch[1]}.`, '') : objUrl.hostname
-
-    context.DOMAIN = domain
-    context.HOST = objUrl.host
-    context.HOSTNAME = objUrl.hostname
-    context.ORIGIN = objUrl.origin
-    context.PARAMS = objUrl.search
-    context.PATHNAME = objUrl.pathname
-    context.PORT = objUrl.port
-    context.PROTOCOL = objUrl.protocol
-    context.SUBDOMAIN = subdomainMatch ? subdomainMatch[1] : undefined
+    objUrl = new URL(url)
   } catch {
-    write(`Unable to parse start url: ${url}`)
+    write(`The start url ${url} contains variables, CI overrides will be ignored`)
+
+    return context
   }
+
+  const subdomainMatch = objUrl.hostname.match(SUBDOMAIN_REGEX)
+  const domain = subdomainMatch ? objUrl.hostname.replace(`${subdomainMatch[1]}.`, '') : objUrl.hostname
+
+  context.DOMAIN = domain
+  context.HOST = objUrl.host
+  context.HOSTNAME = objUrl.hostname
+  context.ORIGIN = objUrl.origin
+  context.PARAMS = objUrl.search
+  context.PATHNAME = objUrl.pathname
+  context.PORT = objUrl.port
+  context.PROTOCOL = objUrl.protocol
+  context.SUBDOMAIN = subdomainMatch ? subdomainMatch[1] : undefined
 
   return context
 }
