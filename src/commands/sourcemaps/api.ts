@@ -35,7 +35,7 @@ export const uploadSourcemap = (request: (args: AxiosRequestConfig) => AxiosProm
 }
 
 export const apiConstructor = (baseIntakeUrl: string, apiKey: string) => {
-  const requestIntake = getRequestBuilder(baseIntakeUrl, apiKey)
+  const requestIntake = getRequestBuilder({baseUrl: baseIntakeUrl, apiKey})
 
   return {
     uploadSourcemap: uploadSourcemap(requestIntake),

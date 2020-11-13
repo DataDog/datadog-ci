@@ -62,24 +62,39 @@ describe('utils', () => {
 
     test('should add api key header', async () => {
       jest.spyOn(axios, 'create').mockImplementation((() => (args: AxiosRequestConfig) => args.headers) as any)
-      const request = getRequestBuilder('http://fake-base.url/', 'apiKey')
+      const requestOptions = {
+        apiKey: 'apiKey',
+        baseUrl: 'http://fake-base.url/',
+      }
+      const request = getRequestBuilder(requestOptions)
       const fakeEndpoint = fakeEndpointBuilder(request)
       expect(await fakeEndpoint()).toStrictEqual({'DD-API-KEY': 'apiKey'})
     })
 
     test('should add api and application key header', async () => {
       jest.spyOn(axios, 'create').mockImplementation((() => (args: AxiosRequestConfig) => args.headers) as any)
-      const request = getRequestBuilder('http://fake-base.url/', 'apiKey', 'applicationKey')
+      const requestOptions = {
+        apiKey: 'apiKey',
+        appKey: 'applicationKey',
+        baseUrl: 'http://fake-base.url/',
+      }
+      const request = getRequestBuilder(requestOptions)
       const fakeEndpoint = fakeEndpointBuilder(request)
       expect(await fakeEndpoint()).toStrictEqual({'DD-API-KEY': 'apiKey', 'DD-APPLICATION-KEY': 'applicationKey'})
     })
 
     test('should add proxy configuration', async () => {
       jest.spyOn(axios, 'create').mockImplementation((() => (args: AxiosRequestConfig) => args.httpsAgent.proxy) as any)
-      const proxyConf: ProxyConfiguration = {protocol: 'http', host: '1.2.3.4', port: 1234}
-      const request = getRequestBuilder('http://fake-base.url/', 'apiKey', 'applicationKey', proxyConf)
+      const proxyOpts: ProxyConfiguration = {protocol: 'http', host: '1.2.3.4', port: 1234}
+      const requestOptions = {
+        apiKey: 'apiKey',
+        appKey: 'applicationKey',
+        baseUrl: 'http://fake-base.url/',
+        proxyOpts,
+      }
+      const request = getRequestBuilder(requestOptions)
       const fakeEndpoint = fakeEndpointBuilder(request)
-      expect(await fakeEndpoint()).toStrictEqual(proxyConf)
+      expect(await fakeEndpoint()).toStrictEqual(proxyOpts)
     })
   })
 

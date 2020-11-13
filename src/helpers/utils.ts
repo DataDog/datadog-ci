@@ -60,13 +60,16 @@ export interface ProxyConfiguration {
   protocol: ProxyType
 }
 
-export const getRequestBuilder = (
-  baseUrl: string,
-  apiKey: string,
-  appKey?: string,
-  proxyOpts?: ProxyConfiguration,
-  disableEnvironmentVariables = false
-) => {
+export interface RequestOptions {
+  apiKey: string
+  appKey?: string
+  baseUrl: string
+  disableEnvironmentVariables?: boolean
+  proxyOpts?: ProxyConfiguration
+}
+
+export const getRequestBuilder = (options: RequestOptions) => {
+  const {apiKey, appKey, baseUrl, disableEnvironmentVariables, proxyOpts} = options
   const overrideArgs = (args: AxiosRequestConfig) => {
     const newArguments = {
       ...args,
