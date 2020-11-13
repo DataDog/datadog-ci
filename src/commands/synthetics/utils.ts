@@ -33,9 +33,14 @@ const PUBLIC_ID_REGEX = /^[\d\w]{3}-[\d\w]{3}-[\d\w]{3}$/
 const SUBDOMAIN_REGEX = /(.*?)\.(?=[^\/]*\..{2,5})/
 
 const template = (st: string, context: any): string =>
-  st.replace(/{{([A-Z_]+)}}/g, (match: string, p1: string) => (context[p1] ? context[p1] : ''))
+  st.replace(/{{([A-Z_]+)}}/g, (match: string, p1: string) => (context[p1] ? context[p1] : match))
 
-export const handleConfig = (test: Test, publicId: string, config?: ConfigOverride): Payload => {
+export const handleConfig = (
+  test: Test,
+  publicId: string,
+  write: Writable['write'],
+  config?: ConfigOverride
+): Payload => {
   let handledConfig: Payload = {public_id: publicId}
   if (!config || !Object.keys(config).length) {
     return handledConfig
@@ -58,22 +63,7 @@ export const handleConfig = (test: Test, publicId: string, config?: ConfigOverri
     ]),
   }
 
-  const objUrl = new URL(test.config.request.url)
-  const subdomainMatch = objUrl.hostname.match(SUBDOMAIN_REGEX)
-  const domain = subdomainMatch ? objUrl.hostname.replace(`${subdomainMatch[1]}.`, '') : objUrl.hostname
-  const context: TemplateContext = {
-    ...process.env,
-    DOMAIN: domain,
-    HOST: objUrl.host,
-    HOSTNAME: objUrl.hostname,
-    ORIGIN: objUrl.origin,
-    PARAMS: objUrl.search,
-    PATHNAME: objUrl.pathname,
-    PORT: objUrl.port,
-    PROTOCOL: objUrl.protocol,
-    SUBDOMAIN: subdomainMatch ? subdomainMatch[1] : undefined,
-    URL: test.config.request.url,
-  }
+  const context = parseUrlVariables(test.config.request.url, write)
 
   if (config.startUrl) {
     handledConfig.startUrl = template(config.startUrl, context)
@@ -91,6 +81,36 @@ export const handleConfig = (test: Test, publicId: string, config?: ConfigOverri
   }
 
   return handledConfig
+}
+
+const parseUrlVariables = (url: string, write: Writable['write']) => {
+  const context: TemplateContext = {
+    ...process.env,
+    URL: url,
+  }
+  let objUrl
+  try {
+    objUrl = new URL(url)
+  } catch {
+    write(`The start url ${url} contains variables, CI overrides will be ignored`)
+
+    return context
+  }
+
+  const subdomainMatch = objUrl.hostname.match(SUBDOMAIN_REGEX)
+  const domain = subdomainMatch ? objUrl.hostname.replace(`${subdomainMatch[1]}.`, '') : objUrl.hostname
+
+  context.DOMAIN = domain
+  context.HOST = objUrl.host
+  context.HOSTNAME = objUrl.hostname
+  context.ORIGIN = objUrl.origin
+  context.PARAMS = objUrl.search
+  context.PATHNAME = objUrl.pathname
+  context.PORT = objUrl.port
+  context.PROTOCOL = objUrl.protocol
+  context.SUBDOMAIN = subdomainMatch ? subdomainMatch[1] : undefined
+
+  return context
 }
 
 export const getStrictestExecutionRule = (configRule: ExecutionRule, testRule?: ExecutionRule): ExecutionRule => {
@@ -265,7 +285,7 @@ export const runTests = async (
       }
 
       write(renderTrigger(test, id, config))
-      const overloadedConfig = handleConfig(test, id, config)
+      const overloadedConfig = handleConfig(test, id, write, config)
       write(renderWait(test))
       testsToTrigger.push(overloadedConfig)
 
