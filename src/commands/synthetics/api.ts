@@ -88,7 +88,7 @@ const retryRequest = <T>(args: AxiosRequestConfig, request: (args: AxiosRequestC
 
 export const apiConstructor = (configuration: APIConfiguration) => {
   const {baseUrl, baseIntakeUrl, apiKey, appKey, proxyOpts} = configuration
-  const request = getRequestBuilder(baseUrl, apiKey, appKey, proxyOpts)
+  const request = getRequestBuilder(baseUrl, apiKey, appKey, proxyOpts, true)
   const requestIntake = getRequestBuilder(baseIntakeUrl, apiKey, appKey, proxyOpts)
 
   return {
