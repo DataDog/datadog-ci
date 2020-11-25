@@ -250,6 +250,7 @@ const createTimeoutResult = (resultId: string, deviceId: string, dcId: number): 
     eventType: 'finished',
     passed: false,
     stepDetails: [],
+    unhealthy: true,
   },
   resultID: resultId,
 })

@@ -200,7 +200,7 @@ export const renderResults = (test: Test, results: PollResult[], baseUrl: string
   const testResultsText = results
     .map((r) => renderExecutionResult(test, r, baseUrl, locationNames))
     .join('\n\n')
-    .concat('\n')
+    .concat('\n\n')
 
   return [`${icon} ${idDisplay}${nonBlockingText} | ${nameColor(test.name)}`, testResultsText].join('\n')
 }
