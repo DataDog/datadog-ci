@@ -146,15 +146,22 @@ const renderExecutionResult = (test: Test, execution: PollResult, baseUrl: strin
   const device = test.type === 'browser' && result.device ? ` - device: ${chalk.bold(result.device.id)}` : ''
   const resultIdentification = color(`  ${icon} location: ${chalk.bold(locationName)}${device}`)
 
-  const duration = test.type === 'browser' ? result.duration : result.timings?.total
-  const durationText = duration ? `  total duration: ${duration} ms -` : ''
-  const resultUrl = getResultUrl(baseUrl, test, resultID)
+  const outputLines = [resultIdentification]
 
-  return [
-    resultIdentification,
-    `    ⎋${durationText} result url: ${chalk.dim.cyan(resultUrl)}`,
-    renderResultOutcome(result, overridedTest || test, icon, color),
-  ].join('\n')
+  if (!result.unhealthy) {
+    // Unhealthy test results don't have a duration and a result URL
+    const duration = test.type === 'browser' ? result.duration : result.timings?.total
+    const durationText = duration ? `  total duration: ${duration} ms -` : ''
+    const resultUrl = getResultUrl(baseUrl, test, resultID)
+    outputLines.push(`    ⎋${durationText} result url: ${chalk.dim.cyan(resultUrl)}`)
+  }
+
+  const resultOutcome = renderResultOutcome(result, overridedTest || test, icon, color)
+  if (resultOutcome) {
+    outputLines.push(resultOutcome)
+  }
+
+  return outputLines.join('\n')
 }
 
 // Results of all tests rendering
@@ -192,7 +199,7 @@ export const renderResults = (test: Test, results: PollResult[], baseUrl: string
 
   const testResultsText = results
     .map((r) => renderExecutionResult(test, r, baseUrl, locationNames))
-    .join('\n')
+    .join('\n\n')
     .concat('\n')
 
   return [`${icon} ${idDisplay}${nonBlockingText} | ${nameColor(test.name)}`, testResultsText].join('\n')
