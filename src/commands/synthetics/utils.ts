@@ -33,7 +33,7 @@ const PUBLIC_ID_REGEX = /^[\d\w]{3}-[\d\w]{3}-[\d\w]{3}$/
 const SUBDOMAIN_REGEX = /(.*?)\.(?=[^\/]*\..{2,5})/
 
 const template = (st: string, context: any): string =>
-  st.replace(/{{([A-Z_]+)}}/g, (match: string, p1: string) => (context[p1] ? context[p1] : match))
+  st.replace(/{{([A-Z_]+)}}/g, (match: string, p1: string) => (p1 in context ? context[p1] : match))
 
 export const handleConfig = (
   test: Test,
