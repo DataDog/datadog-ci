@@ -148,12 +148,16 @@ const renderExecutionResult = (test: Test, execution: PollResult, baseUrl: strin
 
   const outputLines = [resultIdentification]
 
+  // Unhealthy test results don't have a duration or result URL
   if (!result.unhealthy) {
-    // Unhealthy test results don't have a duration and a result URL
     const duration = test.type === 'browser' ? result.duration : result.timings?.total
     const durationText = duration ? `  total duration: ${duration} ms -` : ''
+
     const resultUrl = getResultUrl(baseUrl, test, resultID)
-    outputLines.push(`    ⎋${durationText} result url: ${chalk.dim.cyan(resultUrl)}`)
+    const resultUrlStatus = result.error === 'Timeout' ? '(not yet received)' : ''
+
+    const resultInfo = `    ⎋${durationText} result url: ${chalk.dim.cyan(resultUrl)} ${resultUrlStatus}`
+    outputLines.push(resultInfo)
   }
 
   const resultOutcome = renderResultOutcome(result, overridedTest || test, icon, color)
