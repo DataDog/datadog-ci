@@ -9,7 +9,7 @@ export interface Metadata {
   }
   git: {
     branch?: string
-    commit_sha?: string
+    commitSha?: string
   }
   trace?: {
     parentSpanId: string

@@ -25,7 +25,7 @@ describe('ci-metadata', () => {
       },
       git: {
         branch,
-        commit_sha: commit,
+        commitSha: commit,
       },
     })
   })
@@ -44,7 +44,7 @@ describe('ci-metadata', () => {
       },
       git: {
         branch,
-        commit_sha: commit,
+        commitSha: commit,
       },
     })
   })
@@ -63,7 +63,7 @@ describe('ci-metadata', () => {
       },
       git: {
         branch,
-        commit_sha: commit,
+        commitSha: commit,
       },
     })
   })
@@ -85,7 +85,7 @@ describe('ci-metadata', () => {
       },
       git: {
         branch,
-        commit_sha: commit,
+        commitSha: commit,
       },
     })
   })
@@ -104,7 +104,7 @@ describe('ci-metadata', () => {
       },
       git: {
         branch,
-        commit_sha: commit,
+        commitSha: commit,
       },
     })
   })
@@ -125,7 +125,7 @@ describe('ci-metadata', () => {
       },
       git: {
         branch,
-        commit_sha: commit,
+        commitSha: commit,
       },
       trace: {
         parentSpanId: 'PARENT_SPAN_ID',

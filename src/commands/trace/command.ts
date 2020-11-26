@@ -63,13 +63,13 @@ export class TraceInstructionCommand extends Command {
                   pipeline: {url: pipelineUrl},
                   provider: {name: providerName},
                 },
-                git: {branch, commit_sha},
+                git: {branch, commitSha},
               } = ciMetadata
               span?.addTags({
                 [CI_PIPELINE_URL]: pipelineUrl,
                 [CI_PROVIDER_NAME]: providerName,
                 [GIT_BRANCH]: branch,
-                [GIT_SHA]: commit_sha,
+                [GIT_SHA]: commitSha,
               })
             }
 
