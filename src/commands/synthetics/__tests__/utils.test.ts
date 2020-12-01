@@ -169,6 +169,22 @@ describe('utils', () => {
       expect(handledConfig.startUrl).toBe(expectedUrl)
       process.env = envVars
     })
+
+    test('startUrl with empty variable is replaced', () => {
+      const publicId = 'abc-def-ghi'
+      const fakeTest = {
+        config: {request: {url: 'http://exmaple.org/path'}},
+        public_id: publicId,
+      } as Test
+      const configOverride = {
+        startUrl: 'http://127.0.0.1/newPath{{PARAMS}}',
+      }
+      const expectedUrl = 'http://127.0.0.1/newPath'
+      const handledConfig = utils.handleConfig(fakeTest, publicId, processWrite, configOverride)
+
+      expect(handledConfig.public_id).toBe(publicId)
+      expect(handledConfig.startUrl).toBe(expectedUrl)
+    })
   })
 
   describe('hasResultPassed', () => {
