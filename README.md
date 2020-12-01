@@ -134,7 +134,7 @@ Releasing a new version of `datadog-ci` unfolds as follow:
 - push the branch along with the tag to the upstream (Github), create a Pull Request with the changes introduced detailed in the description and get at least one approval. ([sample Pull Request](https://github.com/DataDog/datadog-ci/pull/78))
 - merge the Pull Request
 - create a Github Release from the [Tags page](https://github.com/DataDog/datadog-ci/tags) with the description of changes introduced
-- finally publish the package using `yarn publish`
+- Once the release has been created, a Github Action will publish the package
 
 ## License
 
