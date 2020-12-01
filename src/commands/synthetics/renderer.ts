@@ -101,7 +101,10 @@ const renderResultOutcome = (result: Result, test: Test, icon: string, color: ty
   }
 
   if (result.unhealthy) {
-    return `    ${chalk.bold(`✖ | ${result.errorMessage || 'General Error'}`)}`
+    const errorName =
+      result.errorMessage && result.errorMessage !== 'Unknown error' ? result.errorMessage : 'General Error'
+
+    return `    ${chalk.bold(`✖ | ${errorName}`)}`
   }
 
   if (test.type === 'api') {
