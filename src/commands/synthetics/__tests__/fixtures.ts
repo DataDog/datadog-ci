@@ -37,6 +37,7 @@ export const getApiTest = (publicId: string): Test => ({
   public_id: publicId,
   status: '',
   stepCount: 0,
+  subtype: 'http',
   tags: [],
   type: 'api',
 })

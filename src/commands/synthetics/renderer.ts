@@ -108,7 +108,7 @@ const renderResultOutcome = (result: Result, test: Test, icon: string, color: ty
   }
 
   if (test.type === 'api') {
-    const requestDescription = `${chalk.bold(test.config.request.method)} - ${test.config.request.url}`
+    const requestDescription = renderApiRequestDescription(test.subtype, test.config.request)
 
     if (result.errorCode && result.errorMessage) {
       return [
@@ -128,6 +128,23 @@ const renderResultOutcome = (result: Result, test: Test, icon: string, color: ty
 
     return ''
   }
+}
+
+const renderApiRequestDescription = (subType: string, request: Test['config']['request']): string => {
+  if (subType === 'dns' && request.host) {
+    const text = `Query for ${request.host}`
+    if (request.dnsServer) {
+      return `${text} on server ${request.dnsServer}`
+    }
+
+    return text
+  }
+
+  if (subType === 'ssl' || subType === 'tcp') {
+    return `Host: ${request.host}:${request.port}`
+  }
+
+  return `${chalk.bold(request.method)} - ${request.url}`
 }
 
 const getResultUrl = (baseUrl: string, test: Test, resultId: string) => {
