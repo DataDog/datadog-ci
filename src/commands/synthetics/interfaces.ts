@@ -59,8 +59,11 @@ export interface Test {
   config: {
     assertions: Assertion[]
     request: {
+      dnsServer?: string
       headers: {[key: string]: string}
+      host?: string
       method: string
+      port?: number
       timeout: number
       url: string
     }
@@ -88,6 +91,7 @@ export interface Test {
   public_id: string
   status: string
   stepCount: number
+  subtype: string
   tags: string[]
   type: string
 }
