@@ -131,7 +131,7 @@ const renderResultOutcome = (result: Result, test: Test, icon: string, color: ty
 }
 
 const renderApiRequestDescription = (subType: string, request: Test['config']['request']): string => {
-  if (subType === 'dns' && request.host) {
+  if (subType === 'dns') {
     const text = `Query for ${request.host}`
     if (request.dnsServer) {
       return `${text} on server ${request.dnsServer}`
