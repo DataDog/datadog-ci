@@ -21,9 +21,7 @@ describe('upload', () => {
       const command = new UploadCommand()
       command['basePath'] = '/js/sourcemaps'
       command['minifiedPathPrefix'] = '/js'
-      expect(command['getMinifiedURL']('/js/sourcemaps/common.min.js.map')).toBe(
-        '/js/common.min.js.map'
-      )
+      expect(command['getMinifiedURL']('/js/sourcemaps/common.min.js.map')).toBe('/js/common.min.js.map')
     })
   })
 
