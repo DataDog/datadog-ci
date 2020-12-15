@@ -16,12 +16,33 @@ describe('upload', () => {
     })
   })
 
+  describe('getMinifiedURL: minifiedPathPrefix has the protocol omitted', () => {
+    test('should return correct URL', () => {
+      const command = new UploadCommand()
+      command['basePath'] = '/js/sourcemaps'
+      command['minifiedPathPrefix'] = '//datadog.com/js'
+      expect(command['getMinifiedURL']('/js/sourcemaps/common.min.js.map')).toBe('//datadog.com/js/common.min.js.map')
+    })
+  })
+
   describe('getMinifiedURL: minifiedPathPrefix is an absolute path', () => {
     test('should return correct URL', () => {
       const command = new UploadCommand()
       command['basePath'] = '/js/sourcemaps'
       command['minifiedPathPrefix'] = '/js'
       expect(command['getMinifiedURL']('/js/sourcemaps/common.min.js.map')).toBe('/js/common.min.js.map')
+    })
+  })
+
+  describe('getMinifiedURL: minifiedPathPrefix has no leading slash', () => {
+    test('should throw an error', () => {
+      const command = new UploadCommand()
+      command['basePath'] = '/js/sourcemaps'
+      command['minifiedPathPrefix'] = 'js'
+
+      expect(() => command['getMinifiedURL']('/js/sourcemaps/common.min.js.map')).toThrow(
+        'Absolute path must have a leading slash'
+      )
     })
   })
 

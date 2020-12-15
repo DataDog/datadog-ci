@@ -6,6 +6,7 @@ import fs from 'fs'
 import glob from 'glob'
 import path from 'path'
 import asyncPool from 'tiny-async-pool'
+import {URL} from 'url'
 
 import {apiConstructor} from './api'
 import {APIHelper, Payload} from './interfaces'
@@ -122,6 +123,17 @@ export class UploadCommand extends Command {
   }
 
   private getMinifiedURL(minifiedFilePath: string): string {
+    let protocol
+    try {
+      const objUrl = new URL(this.minifiedPathPrefix!)
+      protocol = objUrl.protocol
+    } catch {
+      // Do nothing.
+    }
+
+    if (!protocol && !this.minifiedPathPrefix!.startsWith('/')) {
+      throw new Error('Absolute path must have a leading slash')
+    }
     const relativePath = minifiedFilePath.replace(this.basePath!, '')
 
     return buildPath(this.minifiedPathPrefix!, relativePath)
