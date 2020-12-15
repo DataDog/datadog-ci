@@ -12,7 +12,7 @@ jobs:
       agent:
         image: datadog/agent
         env:
-          DD_API_KEY: ${{ secrets.DATADOG_API_KEY_ORG_2 }}
+          DD_API_KEY: ${{ secrets.DATADOG_API_KEY_MAIN_ACCOUNT }}
           DD_ENV: ci
           DD_APM_ENABLED: true
           DD_APM_NON_LOCAL_TRAFFIC: true
