@@ -15,6 +15,7 @@ import {
   renderCommandInfo,
   renderDryRunUpload,
   renderFailedUpload,
+  renderInvalidPrefix,
   renderRetriedUpload,
   renderSuccessfulCommand,
 } from './renderer'
@@ -65,8 +66,15 @@ export class UploadCommand extends Command {
 
       return 1
     }
+
     if (!this.minifiedPathPrefix) {
       this.context.stderr.write('Missing minified path\n')
+
+      return 1
+    }
+
+    if (!this.isMinifiedPathPrefixValid()) {
+      this.context.stdout.write(renderInvalidPrefix)
 
       return 1
     }
@@ -123,6 +131,12 @@ export class UploadCommand extends Command {
   }
 
   private getMinifiedURL(minifiedFilePath: string): string {
+    const relativePath = minifiedFilePath.replace(this.basePath!, '')
+
+    return buildPath(this.minifiedPathPrefix!, relativePath)
+  }
+
+  private isMinifiedPathPrefixValid(): boolean {
     let protocol
     try {
       const objUrl = new URL(this.minifiedPathPrefix!)
@@ -132,11 +146,10 @@ export class UploadCommand extends Command {
     }
 
     if (!protocol && !this.minifiedPathPrefix!.startsWith('/')) {
-      throw new Error('Absolute path must have a leading slash')
+      return false
     }
-    const relativePath = minifiedFilePath.replace(this.basePath!, '')
 
-    return buildPath(this.minifiedPathPrefix!, relativePath)
+    return true
   }
 
   private async uploadSourcemap(api: APIHelper, metricsLogger: BufferedMetricsLogger, sourcemap: Payload) {
