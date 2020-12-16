@@ -16,6 +16,60 @@ describe('upload', () => {
     })
   })
 
+  describe('getMinifiedURL: minifiedPathPrefix has the protocol omitted', () => {
+    test('should return correct URL', () => {
+      const command = new UploadCommand()
+      command['basePath'] = '/js/sourcemaps'
+      command['minifiedPathPrefix'] = '//datadog.com/js'
+      expect(command['getMinifiedURL']('/js/sourcemaps/common.min.js.map')).toBe('//datadog.com/js/common.min.js.map')
+    })
+  })
+
+  describe('getMinifiedURL: minifiedPathPrefix is an absolute path', () => {
+    test('should return correct URL', () => {
+      const command = new UploadCommand()
+      command['basePath'] = '/js/sourcemaps'
+      command['minifiedPathPrefix'] = '/js'
+      expect(command['getMinifiedURL']('/js/sourcemaps/common.min.js.map')).toBe('/js/common.min.js.map')
+    })
+  })
+
+  describe('isMinifiedPathPrefixValid: full URL', () => {
+    test('should return false', () => {
+      const command = new UploadCommand()
+      command['minifiedPathPrefix'] = 'http://datadog.com/js'
+
+      expect(command['isMinifiedPathPrefixValid']()).toBe(true)
+    })
+  })
+
+  describe('isMinifiedPathPrefixValid: URL without protocol', () => {
+    test('should return false', () => {
+      const command = new UploadCommand()
+      command['minifiedPathPrefix'] = '//datadog.com/js'
+
+      expect(command['isMinifiedPathPrefixValid']()).toBe(true)
+    })
+  })
+
+  describe('isMinifiedPathPrefixValid: leading slash', () => {
+    test('should return false', () => {
+      const command = new UploadCommand()
+      command['minifiedPathPrefix'] = '/js'
+
+      expect(command['isMinifiedPathPrefixValid']()).toBe(true)
+    })
+  })
+
+  describe('isMinifiedPathPrefixValid: no leading slash', () => {
+    test('should return false', () => {
+      const command = new UploadCommand()
+      command['minifiedPathPrefix'] = 'js'
+
+      expect(command['isMinifiedPathPrefixValid']()).toBe(false)
+    })
+  })
+
   describe('getApiHelper', () => {
     test('should throw an error if API key is undefined', async () => {
       process.env = {}

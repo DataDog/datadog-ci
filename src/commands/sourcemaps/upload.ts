@@ -6,6 +6,7 @@ import fs from 'fs'
 import glob from 'glob'
 import path from 'path'
 import asyncPool from 'tiny-async-pool'
+import {URL} from 'url'
 
 import {apiConstructor} from './api'
 import {APIHelper, Payload} from './interfaces'
@@ -14,6 +15,7 @@ import {
   renderCommandInfo,
   renderDryRunUpload,
   renderFailedUpload,
+  renderInvalidPrefix,
   renderRetriedUpload,
   renderSuccessfulCommand,
 } from './renderer'
@@ -64,8 +66,15 @@ export class UploadCommand extends Command {
 
       return 1
     }
+
     if (!this.minifiedPathPrefix) {
       this.context.stderr.write('Missing minified path\n')
+
+      return 1
+    }
+
+    if (!this.isMinifiedPathPrefixValid()) {
+      this.context.stdout.write(renderInvalidPrefix)
 
       return 1
     }
@@ -125,6 +134,22 @@ export class UploadCommand extends Command {
     const relativePath = minifiedFilePath.replace(this.basePath!, '')
 
     return buildPath(this.minifiedPathPrefix!, relativePath)
+  }
+
+  private isMinifiedPathPrefixValid(): boolean {
+    let protocol
+    try {
+      const objUrl = new URL(this.minifiedPathPrefix!)
+      protocol = objUrl.protocol
+    } catch {
+      // Do nothing.
+    }
+
+    if (!protocol && !this.minifiedPathPrefix!.startsWith('/')) {
+      return false
+    }
+
+    return true
   }
 
   private async uploadSourcemap(api: APIHelper, metricsLogger: BufferedMetricsLogger, sourcemap: Payload) {

@@ -8,6 +8,10 @@ const ICONS = {
   WARNING: chalk.bold.green('⚠️'),
 }
 
+export const renderInvalidPrefix = chalk.red(
+  `${ICONS.FAILED} --minified-path-prefix should either be an URL (such as "http://example.com/static") or an absolute path starting with a / such as "/static"\n`
+)
+
 export const renderFailedUpload = (payload: Payload, errorMessage: string) => {
   const sourcemapPathBold = `[${chalk.bold.dim(payload.sourcemapPath)}]`
 
