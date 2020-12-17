@@ -49,6 +49,59 @@ export const gitTrackedFiles = async(): Promise<string[]> => {
     return files.split(/\r\n|\r|\n/)
 }
 
+export const trim = (str: string, chars: string[]) => {
+    let start = 0, end = str.length
+    while (start < end && chars.indexOf(str[start]) >= 0) {
+        ++start;
+    }
+    while(end > start && chars.indexOf(str[end - 1]) >= 0) {
+        --end;
+    }
+    return (start > 0 || end < str.length) ? str.substring(start, end) : str;
+}
+
+// cleanupSource generates a proper source file path from a sourcemap:
+// - Prepends the eventual sourceRoot 
+// - Strip the eventual projectPath
+// - Strip a set of hard-coded prefixes ('webpack:///./')
+// - Removes query parameters
+export const cleanupSource = (source: string, sourceRoot: string, projectPath: string) => {
+    // prefixes
+    const prefixesToRemove = ['webpack:']
+    for (let p of prefixesToRemove) {
+        if (source.startsWith(p)) {
+            source = source.slice(p.length)
+        }
+    }
+    source = trim(source, ['/', '.'])
+    // sourceRoot
+    if (sourceRoot.substr(0, 7) != 'http://') {
+        sourceRoot = trim(sourceRoot, ['/', '.'])
+        if (sourceRoot.length > 0) {
+            source = sourceRoot+'/'+source
+        }
+    }
+    // projectPath
+    projectPath = trim(projectPath, ['/', '.'])
+    if (source.substr(0, projectPath.length) == projectPath) {
+        source = source.slice(projectPath.length)
+    }
+    // TODO query parameter + test
+    return trim(source, ['/', '.'])
+}
+
+// toTrackedFile transforms a sourcemap source into a tracked file path.
+// source must have the eventual sourceRoot already prepended and the eventual project path stripped.
+export const toTrackedFile = (source: string, trackedFiles: string[]) => {
+    for (let trackedFile of trackedFiles) {
+        if (source == trackedFile) {
+            return trackedFile
+        }
+    }
+    // TODO subfolder match + test
+    return undefined
+}
+
 // GitInfo returns a stringified json containing git info.
 //
 // TODO sourcemap sources / tracked files matching logic.
@@ -58,7 +111,7 @@ export const gitTrackedFiles = async(): Promise<string[]> => {
 // TODO handle --git-disable flag.
 // TODO optional: attempt to remove query parameters from sourcemap sources
 // TODO optional: support a config file instead of just flags.
-export const GitInfos = async(): Promise<string|undefined> => {
+export const GitInfos = async(srcmapPath: string): Promise<string|undefined> => {
 
     // We're using Promise.all instead of Promive.allSettled since we want to fail early if 
     // any of the promises fails.

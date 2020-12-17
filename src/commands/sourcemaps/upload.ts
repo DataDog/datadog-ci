@@ -119,7 +119,7 @@ export class UploadCommand extends Command {
 
     return Promise.all(sourcemapFiles.map(async (sourcemapPath) => {
       const minifiedFilePath = getMinifiedFilePath(sourcemapPath)
-      const gitInfos = await GitInfos()
+      const gitInfos = await GitInfos(sourcemapPath)
       return {
         minifiedFilePath,
         minifiedUrl: this.getMinifiedURL(minifiedFilePath),
