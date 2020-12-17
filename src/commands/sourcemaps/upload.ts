@@ -9,6 +9,7 @@ import asyncPool from 'tiny-async-pool'
 import {URL} from 'url'
 
 import {apiConstructor} from './api'
+import { GitInfos } from './git'
 import {APIHelper, Payload} from './interfaces'
 import {getMetricsLogger} from './metrics'
 import {
@@ -94,7 +95,7 @@ export class UploadCommand extends Command {
       )
     )
     const metricsLogger = getMetricsLogger(this.releaseVersion, this.service)
-    const payloads = this.getMatchingSourcemapFiles()
+    const payloads = await this.getMatchingSourcemapFiles()
     const upload = (p: Payload) => this.uploadSourcemap(api, metricsLogger, p)
     const initialTime = new Date().getTime()
     await asyncPool(this.maxConcurrency, payloads, upload)
@@ -113,12 +114,12 @@ export class UploadCommand extends Command {
     return apiConstructor(getBaseIntakeUrl(), this.config.apiKey!)
   }
 
-  private getMatchingSourcemapFiles(): Payload[] {
+  private getMatchingSourcemapFiles = async(): Promise<Payload[]> => {
     const sourcemapFiles = glob.sync(buildPath(this.basePath!, '**/*.js.map'))
 
-    return sourcemapFiles.map((sourcemapPath) => {
+    return Promise.all(sourcemapFiles.map(async (sourcemapPath) => {
       const minifiedFilePath = getMinifiedFilePath(sourcemapPath)
-
+      const gitInfos = await GitInfos()
       return {
         minifiedFilePath,
         minifiedUrl: this.getMinifiedURL(minifiedFilePath),
@@ -126,8 +127,9 @@ export class UploadCommand extends Command {
         service: this.service!,
         sourcemapPath,
         version: this.releaseVersion!,
+        gitInfos: gitInfos,
       }
-    })
+    }))
   }
 
   private getMinifiedURL(minifiedFilePath: string): string {

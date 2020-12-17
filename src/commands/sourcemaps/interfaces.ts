@@ -9,6 +9,7 @@ export interface Payload {
   service: string
   sourcemapPath: string
   version: string
+  gitInfos?: string
 }
 
 export interface APIHelper {
