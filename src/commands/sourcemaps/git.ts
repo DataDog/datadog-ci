@@ -1,5 +1,7 @@
 import simpleGit, { SimpleGit, SimpleGitOptions } from 'simple-git'
-import { URL } from 'url'
+import {URL} from 'url'
+import fs from 'fs'
+import {promisify} from 'util'
 
 const options: SimpleGitOptions = {
    baseDir: process.cwd(),
@@ -15,6 +17,7 @@ const options: SimpleGitOptions = {
 // https://github.com/steveukx/git-js#exception-handling
 const git: SimpleGit = simpleGit(options)
 
+// gitRemote returns the remote of the current repository.
 export const gitRemote = async(): Promise<string> => {
     const remotes = await git.getRemotes(true)
     if (remotes.length==0) {
@@ -40,15 +43,18 @@ export const stripCredentials = (remote: string) => {
     }
 }
 
+// gitHash returns the hash of the current repository.
 export const gitHash = async(): Promise<string> => {
     return await git.revparse('HEAD')
 }
 
+// gitTrackedFiles returns the tracked files of the current repository.
 export const gitTrackedFiles = async(): Promise<string[]> => {
     const files = await git.raw('ls-files')
     return files.split(/\r\n|\r|\n/)
 }
 
+// trimStart trims from a set of characters from the start of a string.
 export const trimStart = (str: string, chars: string[]) => {
     let start = 0, end = str.length
     while (start < end && chars.indexOf(str[start]) >= 0) {
@@ -57,6 +63,7 @@ export const trimStart = (str: string, chars: string[]) => {
     return (start > 0) ? str.substring(start, end) : str;
 }
 
+// trim trims from a set of characters from a string.
 export const trim = (str: string, chars: string[]) => {
     let start = 0, end = str.length
     while (start < end && chars.indexOf(str[start]) >= 0) {
@@ -75,7 +82,7 @@ export const trim = (str: string, chars: string[]) => {
 export const cleanupSource = (source: string, projectPath: string) => {
     // prefixes
     const prefixesToRemove = ['webpack:']
-    for (let p of prefixesToRemove) {
+    for (const p of prefixesToRemove) {
         if (source.startsWith(p)) {
             source = source.slice(p.length)
         }
@@ -106,6 +113,13 @@ export const trackedFilesMap = (trackedFiles: string[]) => {
     return map
 }
 
+
+export interface RepositoryPayload {
+    repository_url: string
+    hash: string
+    files: string[]
+}
+
 // GitInfo returns a stringified json containing git info.
 //
 // TODO handle thrown exceptions (explicit and from simpleGit if exit code > 0)
@@ -114,19 +128,48 @@ export const trackedFilesMap = (trackedFiles: string[]) => {
 // TODO handle --git-disable flag.
 // TODO optional: support a config file instead of just flags.
 // TODO make sure it works on windows
-export const GitInfos = async(srcmapPath: string): Promise<string|undefined> => {
+export const GitInfos = async(srcmapPath: string): Promise<RepositoryPayload[]|undefined> => {
 
+    // Read the sources attribute from the sourcemap file.
+    // TODO readFile & JSON.parse can throw.
+    const srcmap = await promisify(fs.readFile)(srcmapPath)
+    let sources: string[]
+    try {
+        const srcmapObj = JSON.parse(srcmap.toString())
+        sources = srcmapObj['sources'] as string[]
+        if (!sources || sources.length == 0) {
+            return undefined
+        }
+    } catch {
+        return undefined
+    }
+
+    // Invoke git commands to retrieve remote, hash and tracked files.
     // We're using Promise.all instead of Promive.allSettled since we want to fail early if 
     // any of the promises fails.
+    // TODO can throw.
     let [remote, hash, trackedFiles] = await Promise.all([gitRemote(), gitHash(), gitTrackedFiles()])
 
+    // Filter our the tracked files that do not match any source.
+    const map = trackedFilesMap(trackedFiles)
+    const filteredTrackedFiles: string[] = new Array()
+    for(const source of sources) {
+        const trackedFile = map.get(source)
+        if (trackedFile) {
+            filteredTrackedFiles.push(trackedFile)
+        }
+    }
+    if (filteredTrackedFiles.length==0) {
+        return undefined
+    }
+    
+    // Prepare the payload.
     var payload: any = {
         repository_url: stripCredentials(remote),
         hash: hash,
-        files: trackedFiles,
+        files: filteredTrackedFiles,
     }
-
-    let arr: any[] = new Array()
+    const arr: RepositoryPayload[] = new Array()
     arr.push(payload)
-    return JSON.stringify(arr)
+    return arr
 }

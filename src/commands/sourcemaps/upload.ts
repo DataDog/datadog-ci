@@ -125,9 +125,9 @@ export class UploadCommand extends Command {
         minifiedUrl: this.getMinifiedURL(minifiedFilePath),
         projectPath: this.projectPath,
         service: this.service!,
-        sourcemapPath,
+        sourcemapPath: sourcemapPath,
         version: this.releaseVersion!,
-        gitInfos: gitInfos,
+        gitInfos: JSON.stringify(gitInfos),
       }
     }))
   }
