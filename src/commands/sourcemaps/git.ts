@@ -94,26 +94,26 @@ export const cleanupSource = (source: string, projectPath: string) => {
     return trimStart(source, ['/', '.'])
 }
 
-// toTrackedFile transforms a sourcemap source into a tracked file path.
-export const toTrackedFile = (source: string, trackedFiles: string[]) => {
-    for (let trackedFile of trackedFiles) {
-        if (source == trackedFile) {
-            return trackedFile
+// trackedFilesMap transforms a list of tracked files into a map to look up sources.
+export const trackedFilesMap = (trackedFiles: string[]) => {
+    const map = new Map<string, string>();
+    for (const trackedFile of trackedFiles) {
+        const split = trackedFile.split("/")
+        for (let i = 0; i < split.length; i++) {
+            map.set(split.slice(i, split.length).join("/"), trackedFile)
         }
     }
-    // TODO subfolder match + test
-    return undefined
+    return map
 }
 
 // GitInfo returns a stringified json containing git info.
 //
-// TODO sourcemap sources / tracked files matching logic.
 // TODO handle thrown exceptions (explicit and from simpleGit if exit code > 0)
-// TODO output a proper error message if the --git-disable is not used but an error occurs.
+// TODO output a proper error message if an error occurs.
 // TODO handle --repository-url flag overwrite.
 // TODO handle --git-disable flag.
-// TODO optional: attempt to remove query parameters from sourcemap sources
 // TODO optional: support a config file instead of just flags.
+// TODO make sure it works on windows
 export const GitInfos = async(srcmapPath: string): Promise<string|undefined> => {
 
     // We're using Promise.all instead of Promive.allSettled since we want to fail early if 

@@ -1,4 +1,4 @@
-import {stripCredentials, cleanupSource, toTrackedFile} from '../git'
+import {stripCredentials, cleanupSource, trackedFilesMap} from '../git'
 
 describe('git', () => {
   describe('stripCredentials: nothing to remove', () => {
@@ -91,24 +91,39 @@ describe('git', () => {
 
       expect(cleanupSource(source, projectPath)).toBe(expected)
     })
-  })
-
-  describe('toTrackedFile', () => {
-    test('no match', () => {
-      const source = 'folder1/folder2/src.js'
-      const trackedFiles = ['wrong/folder2/src.js']
-
-      const expected = undefined
-
-      expect(toTrackedFile(source, trackedFiles)).toBe(expected)
-    })
-    test('exact match', () => {
-      const source = 'folder1/folder2/src.js'
-      const trackedFiles = ['folder1/folder2/src.js']
+    // all at once
+    test('all at once', () => {
+      const source = 'webpack:///./project/folder1/folder2/src.js?abc123'
+      const projectPath = 'project/'
 
       const expected = 'folder1/folder2/src.js'
-      
-      expect(toTrackedFile(source, trackedFiles)).toBe(expected)
+
+      expect(cleanupSource(source, projectPath)).toBe(expected)
+    })
+  })
+
+  describe('trackedFilesMap', () => {
+    test('one file', () => {
+      const trackedFiles = ['folder1/folder2/src.js']
+
+      const expected = new Map<string, string>();
+      expected.set('folder1/folder2/src.js', 'folder1/folder2/src.js')
+      expected.set('folder2/src.js', 'folder1/folder2/src.js')
+      expected.set('src.js', 'folder1/folder2/src.js')
+
+      expect(trackedFilesMap(trackedFiles)).toEqual(expected)
+    })
+    test('two files', () => {
+      const trackedFiles = ['folder1/folder2/src.js','folderA/folderB/src.js']
+
+      const expected = new Map<string, string>();
+      expected.set('folder1/folder2/src.js', 'folder1/folder2/src.js')
+      expected.set('folder2/src.js', 'folder1/folder2/src.js')
+      expected.set('folderA/folderB/src.js', 'folderA/folderB/src.js')
+      expected.set('folderB/src.js', 'folderA/folderB/src.js')
+      expected.set('src.js', 'folderA/folderB/src.js')
+
+      expect(trackedFilesMap(trackedFiles)).toEqual(expected)
     })
   })
 })
