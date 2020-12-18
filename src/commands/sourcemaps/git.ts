@@ -49,6 +49,14 @@ export const gitTrackedFiles = async(): Promise<string[]> => {
     return files.split(/\r\n|\r|\n/)
 }
 
+export const trimStart = (str: string, chars: string[]) => {
+    let start = 0, end = str.length
+    while (start < end && chars.indexOf(str[start]) >= 0) {
+        ++start;
+    }
+    return (start > 0) ? str.substring(start, end) : str;
+}
+
 export const trim = (str: string, chars: string[]) => {
     let start = 0, end = str.length
     while (start < end && chars.indexOf(str[start]) >= 0) {
@@ -61,11 +69,10 @@ export const trim = (str: string, chars: string[]) => {
 }
 
 // cleanupSource generates a proper source file path from a sourcemap:
-// - Prepends the eventual sourceRoot 
 // - Strip the eventual projectPath
 // - Strip a set of hard-coded prefixes ('webpack:///./')
 // - Removes query parameters
-export const cleanupSource = (source: string, sourceRoot: string, projectPath: string) => {
+export const cleanupSource = (source: string, projectPath: string) => {
     // prefixes
     const prefixesToRemove = ['webpack:']
     for (let p of prefixesToRemove) {
@@ -73,25 +80,21 @@ export const cleanupSource = (source: string, sourceRoot: string, projectPath: s
             source = source.slice(p.length)
         }
     }
-    source = trim(source, ['/', '.'])
-    // sourceRoot
-    if (sourceRoot.substr(0, 7) != 'http://') {
-        sourceRoot = trim(sourceRoot, ['/', '.'])
-        if (sourceRoot.length > 0) {
-            source = sourceRoot+'/'+source
-        }
-    }
+    source = trimStart(source, ['/', '.'])
     // projectPath
     projectPath = trim(projectPath, ['/', '.'])
     if (source.substr(0, projectPath.length) == projectPath) {
         source = source.slice(projectPath.length)
     }
-    // TODO query parameter + test
-    return trim(source, ['/', '.'])
+    // query parmeter
+    const pos = source.lastIndexOf("?")
+    if (pos > 0) {
+        source = source.slice(0, pos)
+    }
+    return trimStart(source, ['/', '.'])
 }
 
 // toTrackedFile transforms a sourcemap source into a tracked file path.
-// source must have the eventual sourceRoot already prepended and the eventual project path stripped.
 export const toTrackedFile = (source: string, trackedFiles: string[]) => {
     for (let trackedFile of trackedFiles) {
         if (source == trackedFile) {
