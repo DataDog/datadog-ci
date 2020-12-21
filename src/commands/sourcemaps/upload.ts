@@ -9,13 +9,14 @@ import asyncPool from 'tiny-async-pool'
 import {URL} from 'url'
 
 import {apiConstructor} from './api'
-import { GitInfos } from './git'
+import { GitInfos, RepositoryPayload } from './git'
 import {APIHelper, Payload} from './interfaces'
 import {getMetricsLogger} from './metrics'
 import {
   renderCommandInfo,
   renderDryRunUpload,
   renderFailedUpload,
+  renderGitError,
   renderInvalidPrefix,
   renderRetriedUpload,
   renderSuccessfulCommand,
@@ -119,7 +120,15 @@ export class UploadCommand extends Command {
 
     return Promise.all(sourcemapFiles.map(async (sourcemapPath) => {
       const minifiedFilePath = getMinifiedFilePath(sourcemapPath)
-      const gitInfos = await GitInfos(sourcemapPath)
+      let gitInfos: string | undefined
+      try {
+        let res = await GitInfos(sourcemapPath)
+        if (res) {
+          gitInfos = JSON.stringify(res)
+        }
+      } catch(e) {
+        this.context.stdout.write(renderGitError(e))
+      }
       return {
         minifiedFilePath,
         minifiedUrl: this.getMinifiedURL(minifiedFilePath),
@@ -127,7 +136,7 @@ export class UploadCommand extends Command {
         service: this.service!,
         sourcemapPath: sourcemapPath,
         version: this.releaseVersion!,
-        gitInfos: JSON.stringify(gitInfos),
+        gitInfos: gitInfos,
       }
     }))
   }
