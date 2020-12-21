@@ -76,8 +76,8 @@ export const trim = (str: string, chars: string[]) => {
 }
 
 // cleanupSource generates a proper source file path from a sourcemap:
-// - Strip the eventual projectPath
 // - Strip a set of hard-coded prefixes ('webpack:///./')
+// - Strip the eventual projectPath
 // - Removes query parameters
 export const cleanupSource = (source: string, projectPath: string) => {
     // prefixes
@@ -122,33 +122,37 @@ export interface RepositoryPayload {
 
 // GitInfo returns a stringified json containing git info.
 //
-// TODO handle thrown exceptions (explicit and from simpleGit if exit code > 0)
-// TODO output a proper error message if an error occurs.
+// TODO output a proper error message if an exception occurs.
 // TODO handle --repository-url flag overwrite.
 // TODO handle --git-disable flag.
+// TODO make sure it works on windows.
+// TODO work on a complete integration test like upload.test.ts with /fixtures.
+// TODO proper default behavior if git is not available.
 // TODO optional: support a config file instead of just flags.
-// TODO make sure it works on windows
 export const GitInfos = async(srcmapPath: string): Promise<RepositoryPayload[]|undefined> => {
 
-    // Read the sources attribute from the sourcemap file.
-    // TODO readFile & JSON.parse can throw.
+    // Retrieve the sources attribute from the sourcemap file.
+    // We are not try catching as the srcmapPath must exist and must be a valid JSON.
     const srcmap = await promisify(fs.readFile)(srcmapPath)
-    let sources: string[]
-    try {
-        const srcmapObj = JSON.parse(srcmap.toString())
-        sources = srcmapObj['sources'] as string[]
-        if (!sources || sources.length == 0) {
-            return undefined
-        }
-    } catch {
+    const srcmapObj = JSON.parse(srcmap.toString())
+    const sources = srcmapObj['sources'] as string[]
+    if (!sources || sources.length == 0) {
         return undefined
     }
 
-    // Invoke git commands to retrieve remote, hash and tracked files.
+    // Invoke git commands to retrieve the remote, hash and tracked files.
     // We're using Promise.all instead of Promive.allSettled since we want to fail early if 
     // any of the promises fails.
-    // TODO can throw.
-    let [remote, hash, trackedFiles] = await Promise.all([gitRemote(), gitHash(), gitTrackedFiles()])
+    // TODO handle eventual thrown exception.
+    let remote: string;
+    let hash: string;
+    let trackedFiles: string[];
+    try {
+        [remote, hash, trackedFiles] = await Promise.all([gitRemote(), gitHash(), gitTrackedFiles()])
+    } catch(error) {
+        // TODO error message
+        return undefined;
+    }
 
     // Filter our the tracked files that do not match any source.
     const map = trackedFilesMap(trackedFiles)
@@ -158,6 +162,7 @@ export const GitInfos = async(srcmapPath: string): Promise<RepositoryPayload[]|u
         if (trackedFile) {
             filteredTrackedFiles.push(trackedFile)
         }
+        // TODO output a warning if a source was not found in the tracked files.
     }
     if (filteredTrackedFiles.length==0) {
         return undefined

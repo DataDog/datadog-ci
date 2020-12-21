@@ -1,36 +1,49 @@
 import {stripCredentials, cleanupSource, trackedFilesMap} from '../git'
 
 describe('git', () => {
+  describe('stripCredentials: git protocol', () => {
+    test('should return the same value', () => {
+      const input = 'git@github.com:user/project.git'
+
+      expect(stripCredentials(input)).toBe(input)
+    })
+  })
   describe('stripCredentials: nothing to remove', () => {
     test('should return the same value', () => {
-      const input = 'https://gitlab.com/User/project.git'
+      const input = 'https://gitlab.com/user/project.git'
 
       expect(stripCredentials(input)).toBe(input)
     })
   })
   describe('stripCredentials: user:pwd', () => {
     test('should return without credentials', () => {
-      const input = 'https://token:[MASKED]@gitlab.com/User/project.git'
+      const input = 'https://token:[MASKED]@gitlab.com/user/project.git'
 
-      expect(stripCredentials(input)).toBe('https://gitlab.com/User/project.git')
+      expect(stripCredentials(input)).toBe('https://gitlab.com/user/project.git')
     })
   })
   describe('stripCredentials: token', () => {
     test('should return without credentials', () => {
-      const input = 'https://token@gitlab.com/User/project.git'
+      const input = 'https://token@gitlab.com/user/project.git'
 
-      expect(stripCredentials(input)).toBe('https://gitlab.com/User/project.git')
+      expect(stripCredentials(input)).toBe('https://gitlab.com/user/project.git')
     })
   })
 
   describe('cleanupSource', () => {
     test('no changes', () => {
       const source = 'folder1/folder2/src.js'
-      const projectPath = ''
 
       const expected = 'folder1/folder2/src.js'
 
-      expect(cleanupSource(source, projectPath)).toBe(expected)
+      expect(cleanupSource(source, '')).toBe(expected)
+    })
+    test('strip relative path', () => {
+      const source = '../folder1/folder2/src.js'
+
+      const expected = 'folder1/folder2/src.js'
+
+      expect(cleanupSource(source, '')).toBe(expected)
     })
     // projectPath
     test('strip projectPath', () => {
