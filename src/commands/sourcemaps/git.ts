@@ -122,8 +122,6 @@ export interface RepositoryPayload {
 
 // GitInfo returns a stringified json containing git info.
 //
-// TODO handle --repository-url flag overwrite.
-// TODO handle --git-disable flag.
 // TODO make sure it works on windows.
 // TODO work on a complete integration test like upload.test.ts with /fixtures.
 // TODO proper default behavior if git is not available.

@@ -53,6 +53,7 @@ export class UploadCommand extends Command {
   private maxConcurrency = 20
   private minifiedPathPrefix?: string
   private repositoryURL?: string
+  private disableGit?: boolean
   private projectPath = ''
   private releaseVersion?: string
   private service?: string
@@ -122,13 +123,15 @@ export class UploadCommand extends Command {
     return Promise.all(sourcemapFiles.map(async (sourcemapPath) => {
       const minifiedFilePath = getMinifiedFilePath(sourcemapPath)
       let gitInfos: string | undefined
-      try {
-        let res = await GitInfos(sourcemapPath, this.repositoryURL)
-        if (res) {
-          gitInfos = JSON.stringify(res)
+      if (this.disableGit === undefined || !this.disableGit) {
+        try {
+          let res = await GitInfos(sourcemapPath, this.repositoryURL)
+          if (res) {
+            gitInfos = JSON.stringify(res)
+          }
+        } catch(e) {
+          this.context.stdout.write(renderGitError(e))
         }
-      } catch(e) {
-        this.context.stdout.write(renderGitError(e))
       }
       return {
         minifiedFilePath,
@@ -231,3 +234,4 @@ UploadCommand.addOption('projectPath', Command.String('--project-path'))
 UploadCommand.addOption('maxConcurrency', Command.String('--max-concurrency'))
 UploadCommand.addOption('dryRun', Command.Boolean('--dry-run'))
 UploadCommand.addOption('repositoryURL', Command.String('--repository-url'))
+UploadCommand.addOption('disableGit', Command.String('--disable-git'))
