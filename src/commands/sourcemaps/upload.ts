@@ -52,6 +52,7 @@ export class UploadCommand extends Command {
   private dryRun = false
   private maxConcurrency = 20
   private minifiedPathPrefix?: string
+  private repositoryURL?: string
   private projectPath = ''
   private releaseVersion?: string
   private service?: string
@@ -122,7 +123,7 @@ export class UploadCommand extends Command {
       const minifiedFilePath = getMinifiedFilePath(sourcemapPath)
       let gitInfos: string | undefined
       try {
-        let res = await GitInfos(sourcemapPath)
+        let res = await GitInfos(sourcemapPath, this.repositoryURL)
         if (res) {
           gitInfos = JSON.stringify(res)
         }
@@ -229,3 +230,4 @@ UploadCommand.addOption('minifiedPathPrefix', Command.String('--minified-path-pr
 UploadCommand.addOption('projectPath', Command.String('--project-path'))
 UploadCommand.addOption('maxConcurrency', Command.String('--max-concurrency'))
 UploadCommand.addOption('dryRun', Command.Boolean('--dry-run'))
+UploadCommand.addOption('repositoryURL', Command.String('--repository-url'))

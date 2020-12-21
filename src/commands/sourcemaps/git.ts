@@ -20,7 +20,7 @@ const git: SimpleGit = simpleGit(options)
 // gitRemote returns the remote of the current repository.
 export const gitRemote = async(): Promise<string> => {
     const remotes = await git.getRemotes(true)
-    if (remotes.length==0) {
+    if (remotes.length == 0) {
         throw new Error('No git remotes available')
     }
     remotes.forEach((remote) => {
@@ -128,7 +128,7 @@ export interface RepositoryPayload {
 // TODO work on a complete integration test like upload.test.ts with /fixtures.
 // TODO proper default behavior if git is not available.
 // TODO optional: support a config file instead of just flags.
-export const GitInfos = async(srcmapPath: string): Promise<RepositoryPayload[]|undefined> => {
+export const GitInfos = async(srcmapPath: string, repositoryURL: string | undefined): Promise<RepositoryPayload[]|undefined> => {
 
     // Retrieve the sources attribute from the sourcemap file.
     const srcmap = await promisify(fs.readFile)(srcmapPath)
@@ -141,7 +141,15 @@ export const GitInfos = async(srcmapPath: string): Promise<RepositoryPayload[]|u
     // Invoke git commands to retrieve the remote, hash and tracked files.
     // We're using Promise.all instead of Promive.allSettled since we want to fail early if 
     // any of the promises fails.
-    let [remote, hash, trackedFiles] = await Promise.all([gitRemote(), gitHash(), gitTrackedFiles()])
+    let remote: string
+    let hash: string
+    let trackedFiles: string[]
+    if (repositoryURL) {
+      [hash, trackedFiles] = await Promise.all([gitHash(), gitTrackedFiles()])
+      remote = repositoryURL
+    } else {
+      [remote, hash, trackedFiles] = await Promise.all([gitRemote(), gitHash(), gitTrackedFiles()])
+    }
 
     // Filter our the tracked files that do not match any source.
     const map = trackedFilesMap(trackedFiles)
