@@ -1,6 +1,5 @@
 import {stripCredentials, cleanupSource, trackedFilesMap, GitInfos, NewSimpleGit} from '../git'
 
-
 describe('git', () => {
   describe('stripCredentials: git protocol', () => {
     test('should return the same value', () => {
@@ -120,7 +119,7 @@ describe('git', () => {
     test('one file', () => {
       const trackedFiles = ['folder1/folder2/src.js']
 
-      const expected = new Map<string, string>();
+      const expected = new Map<string, string>()
       expected.set('folder1/folder2/src.js', 'folder1/folder2/src.js')
       expected.set('folder2/src.js', 'folder1/folder2/src.js')
       expected.set('src.js', 'folder1/folder2/src.js')
@@ -128,9 +127,9 @@ describe('git', () => {
       expect(trackedFilesMap(trackedFiles)).toEqual(expected)
     })
     test('two files', () => {
-      const trackedFiles = ['folder1/folder2/src.js','folderA/folderB/src.js']
+      const trackedFiles = ['folder1/folder2/src.js', 'folderA/folderB/src.js']
 
-      const expected = new Map<string, string>();
+      const expected = new Map<string, string>()
       expected.set('folder1/folder2/src.js', 'folder1/folder2/src.js')
       expected.set('folder2/src.js', 'folder1/folder2/src.js')
       expected.set('folderA/folderB/src.js', 'folderA/folderB/src.js')
@@ -142,13 +141,23 @@ describe('git', () => {
 
     const createMockStdout = () => {
       let data = ''
-      return { write: (input: string) => { data += input }, toString: () => data,}
+      return {
+        write: (input: string) => {
+          data += input
+        },
+        toString: () => data,
+      }
     }
 
     describe('GitInfos', () => {
-    test('integration', async () => {
-        const payload = await GitInfos(NewSimpleGit(), createMockStdout() as any, 'src/commands/sourcemaps/__tests__/fixtures/common.min.js.map', '');
-        if(!payload) {
+      test('integration', async () => {
+        const payload = await GitInfos(
+          NewSimpleGit(),
+          createMockStdout() as any,
+          'src/commands/sourcemaps/__tests__/fixtures/common.min.js.map',
+          ''
+        )
+        if (!payload) {
           fail('payload should not be undefined')
         }
         expect(payload[0].repository_url).toBe('git@github.com:DataDog/datadog-ci.git')
@@ -157,9 +166,14 @@ describe('git', () => {
       })
     })
 
-  test('integration: override repository', async () => {
-      const payload = await GitInfos(NewSimpleGit(), createMockStdout() as any, 'src/commands/sourcemaps/__tests__/fixtures/common.min.js.map', 'https://github.com/other/other');
-      if(!payload) {
+    test('integration: override repository', async () => {
+      const payload = await GitInfos(
+        NewSimpleGit(),
+        createMockStdout() as any,
+        'src/commands/sourcemaps/__tests__/fixtures/common.min.js.map',
+        'https://github.com/other/other'
+      )
+      if (!payload) {
         fail('payload should not be undefined')
       }
       expect(payload.length).toBe(1)
@@ -167,6 +181,5 @@ describe('git', () => {
       expect(payload[0].hash.length).toBe(40)
       expect(payload[0].files).toEqual(['src/commands/sourcemaps/__tests__/git.test.ts'])
     })
-    
   })
 })

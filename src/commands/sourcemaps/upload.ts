@@ -116,26 +116,28 @@ export class UploadCommand extends Command {
     return apiConstructor(getBaseIntakeUrl(), this.config.apiKey!)
   }
 
-  private getMatchingSourcemapFiles = async(): Promise<Payload[]> => {
+  private getMatchingSourcemapFiles = async (): Promise<Payload[]> => {
     const sourcemapFiles = glob.sync(buildPath(this.basePath!, '**/*.js.map'))
     const simpleGit = NewSimpleGit()
-    return Promise.all(sourcemapFiles.map(async (sourcemapPath) => {
-      const minifiedFilePath = getMinifiedFilePath(sourcemapPath)
-      let gitInfos: string | undefined
-      const res = await GitInfos(simpleGit, this.context.stdout, sourcemapPath, this.repositoryURL)
-      if (res) {
-        gitInfos = JSON.stringify(res)
-      }
-      return {
-        minifiedFilePath,
-        minifiedUrl: this.getMinifiedURL(minifiedFilePath),
-        projectPath: this.projectPath,
-        service: this.service!,
-        sourcemapPath: sourcemapPath,
-        version: this.releaseVersion!,
-        gitInfos: gitInfos,
-      }
-    }))
+    return Promise.all(
+      sourcemapFiles.map(async (sourcemapPath) => {
+        const minifiedFilePath = getMinifiedFilePath(sourcemapPath)
+        let gitInfos: string | undefined
+        const res = await GitInfos(simpleGit, this.context.stdout, sourcemapPath, this.repositoryURL)
+        if (res) {
+          gitInfos = JSON.stringify(res)
+        }
+        return {
+          minifiedFilePath,
+          minifiedUrl: this.getMinifiedURL(minifiedFilePath),
+          projectPath: this.projectPath,
+          service: this.service!,
+          sourcemapPath: sourcemapPath,
+          version: this.releaseVersion!,
+          gitInfos: gitInfos,
+        }
+      })
+    )
   }
 
   private getMinifiedURL(minifiedFilePath: string): string {
