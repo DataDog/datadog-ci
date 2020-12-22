@@ -152,9 +152,9 @@ describe('git', () => {
 
     const createMockSimpleGit = () => {
       return {
-        getRemotes: (arg: boolean) => [{refs: {push: "git@github.com:user/repository.git" }}],
-        revparse: (arg: string) => "25da22df90210a40b919debe3f7ebfb0c1811898",
-        raw: (arg: string) => "src/commands/sourcemaps/__tests__/git.test.ts",
+        getRemotes: (arg: boolean) => [{refs: {push: 'git@github.com:user/repository.git'}}],
+        revparse: (arg: string) => '25da22df90210a40b919debe3f7ebfb0c1811898',
+        raw: (arg: string) => 'src/commands/sourcemaps/__tests__/git.test.ts',
       }
     }
 
@@ -170,7 +170,7 @@ describe('git', () => {
           fail('payload should not be undefined')
         }
         expect(payload[0].repository_url).toBe('git@github.com:user/repository.git')
-        expect(payload[0].hash).toBe("25da22df90210a40b919debe3f7ebfb0c1811898")
+        expect(payload[0].hash).toBe('25da22df90210a40b919debe3f7ebfb0c1811898')
         expect(payload[0].files).toEqual(['src/commands/sourcemaps/__tests__/git.test.ts'])
       })
 
@@ -185,7 +185,7 @@ describe('git', () => {
           fail('payload should not be undefined')
         }
         expect(payload[0].repository_url).toBe('git@github.com:user/other.git')
-        expect(payload[0].hash).toBe("25da22df90210a40b919debe3f7ebfb0c1811898")
+        expect(payload[0].hash).toBe('25da22df90210a40b919debe3f7ebfb0c1811898')
         expect(payload[0].files).toEqual(['src/commands/sourcemaps/__tests__/git.test.ts'])
       })
     })
