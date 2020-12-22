@@ -150,10 +150,18 @@ describe('git', () => {
       }
     }
 
+    const createMockSimpleGit = () => {
+      return {
+        getRemotes: (arg: boolean) => [{refs: {push: "git@github.com:user/repository.git" }}],
+        revparse: (arg: string) => "25da22df90210a40b919debe3f7ebfb0c1811898",
+        raw: (arg: string) => "src/commands/sourcemaps/__tests__/git.test.ts",
+      }
+    }
+
     describe('GitInfos', () => {
       test('integration', async () => {
         const payload = await gitInfos(
-          newSimpleGit(),
+          createMockSimpleGit() as any,
           createMockStdout() as any,
           'src/commands/sourcemaps/__tests__/fixtures/common.min.js.map',
           ''
@@ -161,26 +169,25 @@ describe('git', () => {
         if (!payload) {
           fail('payload should not be undefined')
         }
-        expect(payload[0].repository_url).toBe('git@github.com:DataDog/datadog-ci.git')
-        expect(payload[0].hash.length).toBe(40)
+        expect(payload[0].repository_url).toBe('git@github.com:user/repository.git')
+        expect(payload[0].hash).toBe("25da22df90210a40b919debe3f7ebfb0c1811898")
         expect(payload[0].files).toEqual(['src/commands/sourcemaps/__tests__/git.test.ts'])
       })
-    })
 
-    test('integration: override repository', async () => {
-      const payload = await gitInfos(
-        newSimpleGit(),
-        createMockStdout() as any,
-        'src/commands/sourcemaps/__tests__/fixtures/common.min.js.map',
-        'https://github.com/other/other'
-      )
-      if (!payload) {
-        fail('payload should not be undefined')
-      }
-      expect(payload.length).toBe(1)
-      expect(payload[0].repository_url).toBe('https://github.com/other/other')
-      expect(payload[0].hash.length).toBe(40)
-      expect(payload[0].files).toEqual(['src/commands/sourcemaps/__tests__/git.test.ts'])
+      test('integration: url override', async () => {
+        const payload = await gitInfos(
+          createMockSimpleGit() as any,
+          createMockStdout() as any,
+          'src/commands/sourcemaps/__tests__/fixtures/common.min.js.map',
+          'git@github.com:user/other.git'
+        )
+        if (!payload) {
+          fail('payload should not be undefined')
+        }
+        expect(payload[0].repository_url).toBe('git@github.com:user/other.git')
+        expect(payload[0].hash).toBe("25da22df90210a40b919debe3f7ebfb0c1811898")
+        expect(payload[0].files).toEqual(['src/commands/sourcemaps/__tests__/git.test.ts'])
+      })
     })
   })
 })
