@@ -9,14 +9,13 @@ import asyncPool from 'tiny-async-pool'
 import {URL} from 'url'
 
 import {apiConstructor} from './api'
-import { GitInfos, RepositoryPayload } from './git'
+import {GitInfos, NewSimpleGit} from './git'
 import {APIHelper, Payload} from './interfaces'
 import {getMetricsLogger} from './metrics'
 import {
   renderCommandInfo,
   renderDryRunUpload,
   renderFailedUpload,
-  renderGitError,
   renderInvalidPrefix,
   renderRetriedUpload,
   renderSuccessfulCommand,
@@ -119,19 +118,13 @@ export class UploadCommand extends Command {
 
   private getMatchingSourcemapFiles = async(): Promise<Payload[]> => {
     const sourcemapFiles = glob.sync(buildPath(this.basePath!, '**/*.js.map'))
-
+    const simpleGit = NewSimpleGit()
     return Promise.all(sourcemapFiles.map(async (sourcemapPath) => {
       const minifiedFilePath = getMinifiedFilePath(sourcemapPath)
       let gitInfos: string | undefined
-      if (this.disableGit === undefined || !this.disableGit) {
-        try {
-          let res = await GitInfos(sourcemapPath, this.repositoryURL)
-          if (res) {
-            gitInfos = JSON.stringify(res)
-          }
-        } catch(e) {
-          this.context.stdout.write(renderGitError(e))
-        }
+      const res = await GitInfos(simpleGit, this.context.stdout, sourcemapPath, this.repositoryURL)
+      if (res) {
+        gitInfos = JSON.stringify(res)
       }
       return {
         minifiedFilePath,

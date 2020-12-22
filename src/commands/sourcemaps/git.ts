@@ -2,21 +2,27 @@ import simpleGit, { SimpleGit, SimpleGitOptions } from 'simple-git'
 import {URL} from 'url'
 import fs from 'fs'
 import {promisify} from 'util'
+import {Writable} from 'stream';
+import {renderGitError, renderSourceNotFoundWarning} from './renderer'
 
-const options: SimpleGitOptions = {
-   baseDir: process.cwd(),
-   binary: 'git',
-   maxConcurrentProcesses: 3, // TODO Can probably be higher since 'GitInfos' is invoked concurrently for each sourcemaps.
+// NewSimpleGit returns a configured SimpleGit.
+export const NewSimpleGit = (): SimpleGit => {
+    
+  const options: SimpleGitOptions = {
+    baseDir: process.cwd(),
+    binary: 'git',
+    maxConcurrentProcesses: 3, // TODO Can probably be higher since 'GitInfos' is invoked concurrently for each sourcemaps.
+  }
+
+  // Use 'git' to invoke git commands.
+  //
+  // Note that when the git process exits with a non-zero status the task will be rejected:
+  // https://github.com/steveukx/git-js#exception-handling
+  return simpleGit(options)
 }
 
-// Use 'git' to invoke git commands.
-//
-// Note that when the git process exits with a non-zero status the task will be rejected:
-// https://github.com/steveukx/git-js#exception-handling
-const git: SimpleGit = simpleGit(options)
-
 // gitRemote returns the remote of the current repository.
-export const gitRemote = async(): Promise<string> => {
+export const gitRemote = async(git: SimpleGit): Promise<string> => {
     const remotes = await git.getRemotes(true)
     if (remotes.length == 0) {
         throw new Error('No git remotes available')
@@ -42,12 +48,12 @@ export const stripCredentials = (remote: string) => {
 }
 
 // gitHash returns the hash of the current repository.
-export const gitHash = async(): Promise<string> => {
+export const gitHash = async(git: SimpleGit): Promise<string> => {
     return await git.revparse('HEAD')
 }
 
 // gitTrackedFiles returns the tracked files of the current repository.
-export const gitTrackedFiles = async(): Promise<string[]> => {
+export const gitTrackedFiles = async(git: SimpleGit): Promise<string[]> => {
     const files = await git.raw('ls-files')
     return files.split(/\r\n|\r|\n/)
 }
@@ -118,8 +124,8 @@ export interface RepositoryPayload {
     files: string[]
 }
 
-// GitInfo returns a stringified json containing git info.
-export const GitInfos = async(srcmapPath: string, repositoryURL: string | undefined): Promise<RepositoryPayload[]|undefined> => {
+// GitInfos gathers git informations.
+export const GitInfos = async(git: SimpleGit, stdout: Writable, srcmapPath: string, repositoryURL: string | undefined): Promise<RepositoryPayload[]|undefined> => {
 
     // Retrieve the sources attribute from the sourcemap file.
     const srcmap = await promisify(fs.readFile)(srcmapPath)
@@ -135,11 +141,16 @@ export const GitInfos = async(srcmapPath: string, repositoryURL: string | undefi
     let remote: string
     let hash: string
     let trackedFiles: string[]
-    if (repositoryURL) {
-      [hash, trackedFiles] = await Promise.all([gitHash(), gitTrackedFiles()])
-      remote = repositoryURL
-    } else {
-      [remote, hash, trackedFiles] = await Promise.all([gitRemote(), gitHash(), gitTrackedFiles()])
+    try {
+      if (repositoryURL) {
+        [hash, trackedFiles] = await Promise.all([gitHash(git), gitTrackedFiles(git)])
+        remote = repositoryURL
+      } else {
+        [remote, hash, trackedFiles] = await Promise.all([gitRemote(git), gitHash(git), gitTrackedFiles(git)])
+      }
+    } catch(e) {
+      stdout.write(renderGitError(e))
+      return undefined
     }
 
     // Filter our the tracked files that do not match any source.
@@ -149,8 +160,9 @@ export const GitInfos = async(srcmapPath: string, repositoryURL: string | undefi
         const trackedFile = map.get(source)
         if (trackedFile) {
             filteredTrackedFiles.push(trackedFile)
+            continue
         }
-        // TODO output a warning if a source was not found in the tracked files.
+        stdout.write(renderSourceNotFoundWarning(source))
     }
     if (filteredTrackedFiles.length == 0) {
         return undefined
@@ -162,7 +174,5 @@ export const GitInfos = async(srcmapPath: string, repositoryURL: string | undefi
         hash: hash,
         files: filteredTrackedFiles,
     }
-    const arr: RepositoryPayload[] = new Array()
-    arr.push(payload)
-    return arr
+    return [payload]
 }

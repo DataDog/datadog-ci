@@ -1,4 +1,4 @@
-import {stripCredentials, cleanupSource, trackedFilesMap, GitInfos} from '../git'
+import {stripCredentials, cleanupSource, trackedFilesMap, GitInfos, NewSimpleGit} from '../git'
 
 
 describe('git', () => {
@@ -140,9 +140,14 @@ describe('git', () => {
       expect(trackedFilesMap(trackedFiles)).toEqual(expected)
     })
 
+    const createMockStdout = () => {
+      let data = ''
+      return { write: (input: string) => { data += input }, toString: () => data,}
+    }
+
     describe('GitInfos', () => {
     test('integration', async () => {
-        const payload = await GitInfos('src/commands/sourcemaps/__tests__/fixtures/common.min.js.map', '');
+        const payload = await GitInfos(NewSimpleGit(), createMockStdout() as any, 'src/commands/sourcemaps/__tests__/fixtures/common.min.js.map', '');
         if(!payload) {
           fail('payload should not be undefined')
         }
@@ -152,8 +157,8 @@ describe('git', () => {
       })
     })
 
-  test('integration override repository', async () => {
-      const payload = await GitInfos('src/commands/sourcemaps/__tests__/fixtures/common.min.js.map', 'https://github.com/other/other');
+  test('integration: override repository', async () => {
+      const payload = await GitInfos(NewSimpleGit(), createMockStdout() as any, 'src/commands/sourcemaps/__tests__/fixtures/common.min.js.map', 'https://github.com/other/other');
       if(!payload) {
         fail('payload should not be undefined')
       }
