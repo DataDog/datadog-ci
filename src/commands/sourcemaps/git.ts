@@ -189,5 +189,8 @@ export const gitInfos = async (
     repository_url: stripCredentials(remote),
   }
 
+  // TODO: Dump payload for test purposes in web-ui.
+  stdout.write(JSON.stringify(payload))
+
   return [payload]
 }
