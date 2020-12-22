@@ -1,4 +1,4 @@
-import {cleanupSource, gitInfos, newSimpleGit, stripCredentials, trackedFilesMap} from '../git'
+import {cleanupSource, gitInfos, stripCredentials, trackedFilesMap} from '../git'
 
 describe('git', () => {
   describe('stripCredentials: git protocol', () => {
@@ -150,13 +150,11 @@ describe('git', () => {
       }
     }
 
-    const createMockSimpleGit = () => {
-      return {
-        getRemotes: (arg: boolean) => [{refs: {push: 'git@github.com:user/repository.git'}}],
-        revparse: (arg: string) => '25da22df90210a40b919debe3f7ebfb0c1811898',
-        raw: (arg: string) => 'src/commands/sourcemaps/__tests__/git.test.ts',
-      }
-    }
+    const createMockSimpleGit = () => ({
+      getRemotes: (arg: boolean) => [{refs: {push: 'git@github.com:user/repository.git'}}],
+      raw: (arg: string) => 'src/commands/sourcemaps/__tests__/git.test.ts',
+      revparse: (arg: string) => '25da22df90210a40b919debe3f7ebfb0c1811898',
+    })
 
     describe('GitInfos', () => {
       test('integration', async () => {
