@@ -1,4 +1,5 @@
-import {stripCredentials, cleanupSource, trackedFilesMap} from '../git'
+import {stripCredentials, cleanupSource, trackedFilesMap, GitInfos} from '../git'
+
 
 describe('git', () => {
   describe('stripCredentials: git protocol', () => {
@@ -138,5 +139,29 @@ describe('git', () => {
 
       expect(trackedFilesMap(trackedFiles)).toEqual(expected)
     })
+
+    describe('GitInfos', () => {
+    test('integration', async () => {
+        const payload = await GitInfos('src/commands/sourcemaps/__tests__/fixtures/common.min.js.map', '');
+        if(!payload) {
+          fail('payload should not be undefined')
+        }
+        expect(payload[0].repository_url).toBe('git@github.com:DataDog/datadog-ci.git')
+        expect(payload[0].hash.length).toBe(40)
+        expect(payload[0].files).toEqual(['src/commands/sourcemaps/__tests__/git.test.ts'])
+      })
+    })
+
+  test('integration override repository', async () => {
+      const payload = await GitInfos('src/commands/sourcemaps/__tests__/fixtures/common.min.js.map', 'https://github.com/other/other');
+      if(!payload) {
+        fail('payload should not be undefined')
+      }
+      expect(payload.length).toBe(1)
+      expect(payload[0].repository_url).toBe('https://github.com/other/other')
+      expect(payload[0].hash.length).toBe(40)
+      expect(payload[0].files).toEqual(['src/commands/sourcemaps/__tests__/git.test.ts'])
+    })
+    
   })
 })

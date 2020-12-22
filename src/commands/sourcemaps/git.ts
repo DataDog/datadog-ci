@@ -6,9 +6,7 @@ import {promisify} from 'util'
 const options: SimpleGitOptions = {
    baseDir: process.cwd(),
    binary: 'git',
-
-   // TODO Can probably be higher since 'GitInfos' is invoked concurrently for each sourcemaps.
-   maxConcurrentProcesses: 3,
+   maxConcurrentProcesses: 3, // TODO Can probably be higher since 'GitInfos' is invoked concurrently for each sourcemaps.
 }
 
 // Use 'git' to invoke git commands.
@@ -121,11 +119,6 @@ export interface RepositoryPayload {
 }
 
 // GitInfo returns a stringified json containing git info.
-//
-// TODO make sure it works on windows.
-// TODO work on a complete integration test like upload.test.ts with /fixtures.
-// TODO proper default behavior if git is not available.
-// TODO optional: support a config file instead of just flags.
 export const GitInfos = async(srcmapPath: string, repositoryURL: string | undefined): Promise<RepositoryPayload[]|undefined> => {
 
     // Retrieve the sources attribute from the sourcemap file.
@@ -159,7 +152,7 @@ export const GitInfos = async(srcmapPath: string, repositoryURL: string | undefi
         }
         // TODO output a warning if a source was not found in the tracked files.
     }
-    if (filteredTrackedFiles.length==0) {
+    if (filteredTrackedFiles.length == 0) {
         return undefined
     }
     
