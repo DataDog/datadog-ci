@@ -155,16 +155,19 @@ export const gitInfos = async (
     return undefined
   }
 
-  return {
+  const data = {
     hash,
     remote,
     trackedFiles: trackedFilesMap(trackedFiles),
   }
+
+  return data
 }
 
 export const filterTrackedFiles = async (
   stdout: Writable,
   srcmapPath: string,
+  projectPath: string,
   trackedFiles: Map<string, string>
 ): Promise<string[] | undefined> => {
   // Retrieve the sources attribute from the sourcemap file.
@@ -180,7 +183,8 @@ export const filterTrackedFiles = async (
 
   // Filter our the tracked files that do not match any source.
   const filteredTrackedFiles: string[] = new Array()
-  for (const source of sources) {
+  for (let source of sources) {
+    source = cleanupSource(source, projectPath)
     const trackedFile = trackedFiles.get(source)
     if (trackedFile) {
       filteredTrackedFiles.push(trackedFile)

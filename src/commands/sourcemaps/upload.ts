@@ -126,15 +126,18 @@ export class UploadCommand extends Command {
         const minifiedFilePath = getMinifiedFilePath(sourcemapPath)
         let infos: string | undefined
         if (repositoryData !== undefined && (this.disableGit === undefined || !this.disableGit)) {
-          const files = await filterTrackedFiles(this.context.stdout, sourcemapPath, repositoryData.trackedFiles)
+          const files = await filterTrackedFiles(
+            this.context.stdout,
+            sourcemapPath,
+            this.projectPath,
+            repositoryData.trackedFiles
+          )
           if (files) {
             infos = JSON.stringify({
               files,
               hash: repositoryData.hash,
               repository_url: repositoryData.remote,
             })
-            // TODO Dump repository data for testing purposes.
-            this.context.stdout.write(infos)
           }
         }
 

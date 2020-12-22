@@ -166,6 +166,7 @@ describe('git', () => {
         const files = await filterTrackedFiles(
           stdout,
           'src/commands/sourcemaps/__tests__/fixtures/common.min.js.map',
+          '',
           data.trackedFiles
         )
         expect(data.remote).toBe('git@github.com:user/repository.git')
@@ -182,6 +183,7 @@ describe('git', () => {
         const files = await filterTrackedFiles(
           stdout,
           'src/commands/sourcemaps/__tests__/fixtures/common.min.js.map',
+          '',
           data.trackedFiles
         )
         expect(data.remote).toBe('git@github.com:user/other.git')
