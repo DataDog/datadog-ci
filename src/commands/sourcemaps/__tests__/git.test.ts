@@ -1,4 +1,4 @@
-import {stripCredentials, cleanupSource, trackedFilesMap, GitInfos, NewSimpleGit} from '../git'
+import {cleanupSource, gitInfos, newSimpleGit, stripCredentials, trackedFilesMap} from '../git'
 
 describe('git', () => {
   describe('stripCredentials: git protocol', () => {
@@ -45,7 +45,7 @@ describe('git', () => {
 
       expect(cleanupSource(source, '')).toBe(expected)
     })
-    // projectPath
+    // ProjectPath
     test('strip projectPath', () => {
       const source = 'project/folder1/folder2/src.js'
       const projectPath = 'project'
@@ -70,7 +70,7 @@ describe('git', () => {
 
       expect(cleanupSource(source, projectPath)).toBe(expected)
     })
-    // hard-coded prefixes
+    // Hard-coded prefixes
     test('strip webpack:///./', () => {
       const source = 'webpack:///./folder1/folder2/src.js'
       const projectPath = ''
@@ -95,7 +95,7 @@ describe('git', () => {
 
       expect(cleanupSource(source, projectPath)).toBe(expected)
     })
-    // query parameter
+    // Query parameter
     test('strip projectPath with slashes', () => {
       const source = 'folder1/folder2/src.js?abc123'
       const projectPath = ''
@@ -104,7 +104,7 @@ describe('git', () => {
 
       expect(cleanupSource(source, projectPath)).toBe(expected)
     })
-    // all at once
+    // All at once
     test('all at once', () => {
       const source = 'webpack:///./project/folder1/folder2/src.js?abc123'
       const projectPath = 'project/'
@@ -141,18 +141,19 @@ describe('git', () => {
 
     const createMockStdout = () => {
       let data = ''
+
       return {
+        toString: () => data,
         write: (input: string) => {
           data += input
         },
-        toString: () => data,
       }
     }
 
     describe('GitInfos', () => {
       test('integration', async () => {
-        const payload = await GitInfos(
-          NewSimpleGit(),
+        const payload = await gitInfos(
+          newSimpleGit(),
           createMockStdout() as any,
           'src/commands/sourcemaps/__tests__/fixtures/common.min.js.map',
           ''
@@ -167,8 +168,8 @@ describe('git', () => {
     })
 
     test('integration: override repository', async () => {
-      const payload = await GitInfos(
-        NewSimpleGit(),
+      const payload = await gitInfos(
+        newSimpleGit(),
         createMockStdout() as any,
         'src/commands/sourcemaps/__tests__/fixtures/common.min.js.map',
         'https://github.com/other/other'

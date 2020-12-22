@@ -6,10 +6,10 @@ export interface Payload {
   minifiedUrl: string
   overwrite?: boolean
   projectPath: string
+  repository?: string
   service: string
   sourcemapPath: string
   version: string
-  gitInfos?: string
 }
 
 export interface APIHelper {

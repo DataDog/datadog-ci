@@ -1,91 +1,95 @@
-import simpleGit, {SimpleGit, SimpleGitOptions} from 'simple-git'
-import {URL} from 'url'
 import fs from 'fs'
-import {promisify} from 'util'
+import * as simpleGit from 'simple-git'
 import {Writable} from 'stream'
+import {URL} from 'url'
+import {promisify} from 'util'
+
 import {renderGitError, renderSourceNotFoundWarning} from './renderer'
 
 // NewSimpleGit returns a configured SimpleGit.
-export const NewSimpleGit = (): SimpleGit => {
-  const options: SimpleGitOptions = {
+export const newSimpleGit = (): simpleGit.SimpleGit => {
+  const options: simpleGit.SimpleGitOptions = {
     baseDir: process.cwd(),
     binary: 'git',
-    maxConcurrentProcesses: 3, // TODO Can probably be higher since 'GitInfos' is invoked concurrently for each sourcemaps.
+    maxConcurrentProcesses: 3, // TODO Can probably be higher since 'gitInfos' is invoked concurrently for each sourcemaps.
   }
 
   // Use 'git' to invoke git commands.
   //
   // Note that when the git process exits with a non-zero status the task will be rejected:
   // https://github.com/steveukx/git-js#exception-handling
-  return simpleGit(options)
+  return simpleGit.gitP(options)
 }
 
-// gitRemote returns the remote of the current repository.
-export const gitRemote = async (git: SimpleGit): Promise<string> => {
+// GitRemote returns the remote of the current repository.
+export const gitRemote = async (git: simpleGit.SimpleGit): Promise<string> => {
   const remotes = await git.getRemotes(true)
-  if (remotes.length == 0) {
+  if (remotes.length === 0) {
     throw new Error('No git remotes available')
   }
   remotes.forEach((remote) => {
-    if (remote.name == 'origin') {
+    if (remote.name === 'origin') {
       return remote.refs.push
     }
   })
+
   return remotes[0].refs.push
 }
 
-// stripCredentials removes credentials from a remote HTTP url.
+// StripCredentials removes credentials from a remote HTTP url.
 export const stripCredentials = (remote: string) => {
   try {
     const url = new URL(remote)
     url.username = ''
     url.password = ''
+
     return url.toString()
   } catch {
     return remote
   }
 }
 
-// gitHash returns the hash of the current repository.
-export const gitHash = async (git: SimpleGit): Promise<string> => {
-  return await git.revparse('HEAD')
-}
+// GitHash returns the hash of the current repository.
+export const gitHash = async (git: simpleGit.SimpleGit): Promise<string> => git.revparse('HEAD')
 
-// gitTrackedFiles returns the tracked files of the current repository.
-export const gitTrackedFiles = async (git: SimpleGit): Promise<string[]> => {
+// GitTrackedFiles returns the tracked files of the current repository.
+export const gitTrackedFiles = async (git: simpleGit.SimpleGit): Promise<string[]> => {
   const files = await git.raw('ls-files')
+
   return files.split(/\r\n|\r|\n/)
 }
 
-// trimStart trims from a set of characters from the start of a string.
+// TrimStart trims from a set of characters from the start of a string.
 export const trimStart = (str: string, chars: string[]) => {
-  let start = 0,
-    end = str.length
+  let start = 0
+  const end = str.length
   while (start < end && chars.indexOf(str[start]) >= 0) {
     ++start
   }
+
   return start > 0 ? str.substring(start, end) : str
 }
 
-// trim trims from a set of characters from a string.
+// Trim trims from a set of characters from a string.
 export const trim = (str: string, chars: string[]) => {
-  let start = 0,
-    end = str.length
+  let start = 0
+  let end = str.length
   while (start < end && chars.indexOf(str[start]) >= 0) {
     ++start
   }
   while (end > start && chars.indexOf(str[end - 1]) >= 0) {
     --end
   }
+
   return start > 0 || end < str.length ? str.substring(start, end) : str
 }
 
-// cleanupSource generates a proper source file path from a sourcemap:
+// CleanupSource generates a proper source file path from a sourcemap:
 // - Strip a set of hard-coded prefixes ('webpack:///./')
 // - Strip the eventual projectPath
 // - Removes query parameters
 export const cleanupSource = (source: string, projectPath: string) => {
-  // prefixes
+  // Prefixes
   const prefixesToRemove = ['webpack:']
   for (const p of prefixesToRemove) {
     if (source.startsWith(p)) {
@@ -93,20 +97,21 @@ export const cleanupSource = (source: string, projectPath: string) => {
     }
   }
   source = trimStart(source, ['/', '.'])
-  // projectPath
+  // ProjectPath
   projectPath = trim(projectPath, ['/', '.'])
-  if (source.substr(0, projectPath.length) == projectPath) {
+  if (source.substr(0, projectPath.length) === projectPath) {
     source = source.slice(projectPath.length)
   }
-  // query parmeter
+  // Auery parmeter
   const pos = source.lastIndexOf('?')
   if (pos > 0) {
     source = source.slice(0, pos)
   }
+
   return trimStart(source, ['/', '.'])
 }
 
-// trackedFilesMap transforms a list of tracked files into a map to look up sources.
+// TrackedFilesMap transforms a list of tracked files into a map to look up sources.
 export const trackedFilesMap = (trackedFiles: string[]) => {
   const map = new Map<string, string>()
   for (const trackedFile of trackedFiles) {
@@ -115,18 +120,19 @@ export const trackedFilesMap = (trackedFiles: string[]) => {
       map.set(split.slice(i, split.length).join('/'), trackedFile)
     }
   }
+
   return map
 }
 
 export interface RepositoryPayload {
-  repository_url: string
-  hash: string
   files: string[]
+  hash: string
+  repository_url: string
 }
 
 // GitInfos gathers git informations.
-export const GitInfos = async (
-  git: SimpleGit,
+export const gitInfos = async (
+  git: simpleGit.SimpleGit,
   stdout: Writable,
   srcmapPath: string,
   repositoryURL: string | undefined
@@ -134,8 +140,11 @@ export const GitInfos = async (
   // Retrieve the sources attribute from the sourcemap file.
   const srcmap = await promisify(fs.readFile)(srcmapPath)
   const srcmapObj = JSON.parse(srcmap.toString())
-  const sources = srcmapObj['sources'] as string[]
-  if (!sources || sources.length == 0) {
+  if (!srcmapObj.sources) {
+    return undefined
+  }
+  const sources = srcmapObj.sources as string[]
+  if (!sources || sources.length === 0) {
     return undefined
   }
 
@@ -154,6 +163,7 @@ export const GitInfos = async (
     }
   } catch (e) {
     stdout.write(renderGitError(e))
+
     return undefined
   }
 
@@ -168,15 +178,16 @@ export const GitInfos = async (
     }
     stdout.write(renderSourceNotFoundWarning(source))
   }
-  if (filteredTrackedFiles.length == 0) {
+  if (filteredTrackedFiles.length === 0) {
     return undefined
   }
 
   // Prepare the payload.
-  var payload: any = {
-    repository_url: stripCredentials(remote),
-    hash: hash,
+  const payload: any = {
     files: filteredTrackedFiles,
+    hash,
+    repository_url: stripCredentials(remote),
   }
+
   return [payload]
 }

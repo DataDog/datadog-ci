@@ -9,7 +9,7 @@ import asyncPool from 'tiny-async-pool'
 import {URL} from 'url'
 
 import {apiConstructor} from './api'
-import {GitInfos, NewSimpleGit} from './git'
+import {gitInfos, newSimpleGit} from './git'
 import {APIHelper, Payload} from './interfaces'
 import {getMetricsLogger} from './metrics'
 import {
@@ -48,13 +48,13 @@ export class UploadCommand extends Command {
   private config = {
     apiKey: process.env.DATADOG_API_KEY,
   }
+  private disableGit?: boolean
   private dryRun = false
   private maxConcurrency = 20
   private minifiedPathPrefix?: string
-  private repositoryURL?: string
-  private disableGit?: boolean
   private projectPath = ''
   private releaseVersion?: string
+  private repositoryURL?: string
   private service?: string
 
   public async execute() {
@@ -118,23 +118,27 @@ export class UploadCommand extends Command {
 
   private getMatchingSourcemapFiles = async (): Promise<Payload[]> => {
     const sourcemapFiles = glob.sync(buildPath(this.basePath!, '**/*.js.map'))
-    const simpleGit = NewSimpleGit()
+    const simpleGit = newSimpleGit()
+
     return Promise.all(
       sourcemapFiles.map(async (sourcemapPath) => {
         const minifiedFilePath = getMinifiedFilePath(sourcemapPath)
-        let gitInfos: string | undefined
-        const res = await GitInfos(simpleGit, this.context.stdout, sourcemapPath, this.repositoryURL)
-        if (res) {
-          gitInfos = JSON.stringify(res)
+        let infos: string | undefined
+        if (this.disableGit === undefined || !this.disableGit) {
+          const res = await gitInfos(simpleGit, this.context.stdout, sourcemapPath, this.repositoryURL)
+          if (res) {
+            infos = JSON.stringify(res)
+          }
         }
+
         return {
           minifiedFilePath,
           minifiedUrl: this.getMinifiedURL(minifiedFilePath),
           projectPath: this.projectPath,
+          repository: infos,
           service: this.service!,
-          sourcemapPath: sourcemapPath,
+          sourcemapPath,
           version: this.releaseVersion!,
-          gitInfos: gitInfos,
         }
       })
     )

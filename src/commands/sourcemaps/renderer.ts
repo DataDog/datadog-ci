@@ -8,13 +8,11 @@ const ICONS = {
   WARNING: chalk.bold.green('⚠️'),
 }
 
-export const renderGitError = (errorMessage: string) => {
-  return chalk.red(`${ICONS.FAILED} An error occured while invoking git: ${errorMessage}\n`)
-}
+export const renderGitError = (errorMessage: string) =>
+  chalk.red(`${ICONS.FAILED} An error occured while invoking git: ${errorMessage}\n`)
 
-export const renderSourceNotFoundWarning = (source: string) => {
-  return chalk.yellow(`${ICONS.WARNING} No tracked file found for the source: ${source}\n`)
-}
+export const renderSourceNotFoundWarning = (source: string) =>
+  chalk.yellow(`${ICONS.WARNING} No tracked file found for the source: ${source}\n`)
 
 export const renderInvalidPrefix = chalk.red(
   `${ICONS.FAILED} --minified-path-prefix should either be an URL (such as "http://example.com/static") or an absolute path starting with a / such as "/static"\n`
