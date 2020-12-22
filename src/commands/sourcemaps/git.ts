@@ -11,7 +11,7 @@ export const newSimpleGit = (): simpleGit.SimpleGit => {
   const options: simpleGit.SimpleGitOptions = {
     baseDir: process.cwd(),
     binary: 'git',
-    maxConcurrentProcesses: 3, // TODO Can probably be higher since 'gitInfos' is invoked concurrently for each sourcemaps.
+    maxConcurrentProcesses: 3,
   }
 
   // Use 'git' to invoke git commands.
@@ -124,30 +124,18 @@ export const trackedFilesMap = (trackedFiles: string[]) => {
   return map
 }
 
-export interface RepositoryPayload {
-  files: string[]
+export interface RepositoryData {
   hash: string
-  repository_url: string
+  remote: string
+  trackedFiles: Map<string, string>
 }
 
 // GitInfos gathers git informations.
 export const gitInfos = async (
   git: simpleGit.SimpleGit,
   stdout: Writable,
-  srcmapPath: string,
   repositoryURL: string | undefined
-): Promise<RepositoryPayload[] | undefined> => {
-  // Retrieve the sources attribute from the sourcemap file.
-  const srcmap = await promisify(fs.readFile)(srcmapPath)
-  const srcmapObj = JSON.parse(srcmap.toString())
-  if (!srcmapObj.sources) {
-    return undefined
-  }
-  const sources = srcmapObj.sources as string[]
-  if (!sources || sources.length === 0) {
-    return undefined
-  }
-
+): Promise<RepositoryData | undefined> => {
   // Invoke git commands to retrieve the remote, hash and tracked files.
   // We're using Promise.all instead of Promive.allSettled since we want to fail early if
   // any of the promises fails.
@@ -167,11 +155,33 @@ export const gitInfos = async (
     return undefined
   }
 
+  return {
+    hash,
+    remote,
+    trackedFiles: trackedFilesMap(trackedFiles),
+  }
+}
+
+export const filterTrackedFiles = async (
+  stdout: Writable,
+  srcmapPath: string,
+  trackedFiles: Map<string, string>
+): Promise<string[] | undefined> => {
+  // Retrieve the sources attribute from the sourcemap file.
+  const srcmap = await promisify(fs.readFile)(srcmapPath)
+  const srcmapObj = JSON.parse(srcmap.toString())
+  if (!srcmapObj.sources) {
+    return undefined
+  }
+  const sources = srcmapObj.sources as string[]
+  if (!sources || sources.length === 0) {
+    return undefined
+  }
+
   // Filter our the tracked files that do not match any source.
-  const map = trackedFilesMap(trackedFiles)
   const filteredTrackedFiles: string[] = new Array()
   for (const source of sources) {
-    const trackedFile = map.get(source)
+    const trackedFile = trackedFiles.get(source)
     if (trackedFile) {
       filteredTrackedFiles.push(trackedFile)
       continue
@@ -182,15 +192,5 @@ export const gitInfos = async (
     return undefined
   }
 
-  // Prepare the payload.
-  const payload: any = {
-    files: filteredTrackedFiles,
-    hash,
-    repository_url: stripCredentials(remote),
-  }
-
-  // TODO: Dump payload for test purposes in web-ui.
-  stdout.write(JSON.stringify(payload))
-
-  return [payload]
+  return filteredTrackedFiles
 }

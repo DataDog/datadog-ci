@@ -1,4 +1,4 @@
-import {cleanupSource, gitInfos, stripCredentials, trackedFilesMap} from '../git'
+import {cleanupSource, filterTrackedFiles, gitInfos, stripCredentials, trackedFilesMap} from '../git'
 
 describe('git', () => {
   describe('stripCredentials: git protocol', () => {
@@ -158,33 +158,35 @@ describe('git', () => {
 
     describe('GitInfos', () => {
       test('integration', async () => {
-        const payload = await gitInfos(
-          createMockSimpleGit() as any,
-          createMockStdout() as any,
-          'src/commands/sourcemaps/__tests__/fixtures/common.min.js.map',
-          ''
-        )
-        if (!payload) {
+        const stdout = createMockStdout() as any
+        const data = await gitInfos(createMockSimpleGit() as any, stdout, '')
+        if (!data) {
           fail('payload should not be undefined')
         }
-        expect(payload[0].repository_url).toBe('git@github.com:user/repository.git')
-        expect(payload[0].hash).toBe('25da22df90210a40b919debe3f7ebfb0c1811898')
-        expect(payload[0].files).toEqual(['src/commands/sourcemaps/__tests__/git.test.ts'])
+        const files = await filterTrackedFiles(
+          stdout,
+          'src/commands/sourcemaps/__tests__/fixtures/common.min.js.map',
+          data.trackedFiles
+        )
+        expect(data.remote).toBe('git@github.com:user/repository.git')
+        expect(data.hash).toBe('25da22df90210a40b919debe3f7ebfb0c1811898')
+        expect(files).toEqual(['src/commands/sourcemaps/__tests__/git.test.ts'])
       })
 
-      test('integration: url override', async () => {
-        const payload = await gitInfos(
-          createMockSimpleGit() as any,
-          createMockStdout() as any,
-          'src/commands/sourcemaps/__tests__/fixtures/common.min.js.map',
-          'git@github.com:user/other.git'
-        )
-        if (!payload) {
+      test('integration: remote override', async () => {
+        const stdout = createMockStdout() as any
+        const data = await gitInfos(createMockSimpleGit() as any, stdout, 'git@github.com:user/other.git')
+        if (!data) {
           fail('payload should not be undefined')
         }
-        expect(payload[0].repository_url).toBe('git@github.com:user/other.git')
-        expect(payload[0].hash).toBe('25da22df90210a40b919debe3f7ebfb0c1811898')
-        expect(payload[0].files).toEqual(['src/commands/sourcemaps/__tests__/git.test.ts'])
+        const files = await filterTrackedFiles(
+          stdout,
+          'src/commands/sourcemaps/__tests__/fixtures/common.min.js.map',
+          data.trackedFiles
+        )
+        expect(data.remote).toBe('git@github.com:user/other.git')
+        expect(data.hash).toBe('25da22df90210a40b919debe3f7ebfb0c1811898')
+        expect(files).toEqual(['src/commands/sourcemaps/__tests__/git.test.ts'])
       })
     })
   })
