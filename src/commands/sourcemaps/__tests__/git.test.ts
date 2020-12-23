@@ -146,30 +146,29 @@ describe('git', () => {
 
       expect(trackedFilesMap(trackedFiles)).toEqual(expected)
     })
-
-    const createMockStdout = () => {
-      let data = ''
-
-      return {
-        toString: () => data,
-        write: (input: string) => {
-          data += input
-        },
-      }
-    }
-
-    const createMockSimpleGit = () => ({
-      getRemotes: (arg: boolean) => [{refs: {push: 'git@github.com:user/repository.git'}}],
-      raw: (arg: string) => 'src/commands/sourcemaps/__tests__/git.test.ts',
-      revparse: (arg: string) => '25da22df90210a40b919debe3f7ebfb0c1811898',
-    })
-
     describe('GitInfos', () => {
+      const createMockStdout = () => {
+        let data = ''
+
+        return {
+          toString: () => data,
+          write: (input: string) => {
+            data += input
+          },
+        }
+      }
+
+      const createMockSimpleGit = () => ({
+        getRemotes: (arg: boolean) => [{refs: {push: 'git@github.com:user/repository.git'}}],
+        raw: (arg: string) => 'src/commands/sourcemaps/__tests__/git.test.ts',
+        revparse: (arg: string) => '25da22df90210a40b919debe3f7ebfb0c1811898',
+      })
+
       test('integration', async () => {
         const stdout = createMockStdout() as any
         const data = await gitInfos(createMockSimpleGit() as any, stdout, '')
         if (!data) {
-          fail('payload should not be undefined')
+          fail('data should not be undefined')
         }
         const files = await filterTrackedFiles(
           stdout,
@@ -186,7 +185,7 @@ describe('git', () => {
         const stdout = createMockStdout() as any
         const data = await gitInfos(createMockSimpleGit() as any, stdout, 'git@github.com:user/other.git')
         if (!data) {
-          fail('payload should not be undefined')
+          fail('data should not be undefined')
         }
         const files = await filterTrackedFiles(
           stdout,

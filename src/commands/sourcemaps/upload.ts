@@ -9,7 +9,7 @@ import asyncPool from 'tiny-async-pool'
 import {URL} from 'url'
 
 import {apiConstructor} from './api'
-import {filterTrackedFiles, gitInfos, newSimpleGit} from './git'
+import {filterTrackedFiles, gitInfos, newSimpleGit, RepositoryData} from './git'
 import {APIHelper, Payload} from './interfaces'
 import {getMetricsLogger} from './metrics'
 import {
@@ -117,15 +117,19 @@ export class UploadCommand extends Command {
   }
 
   private getMatchingSourcemapFiles = async (): Promise<Payload[]> => {
+    const useGit = this.disableGit === undefined || !this.disableGit
     const sourcemapFiles = glob.sync(buildPath(this.basePath!, '**/*.js.map'))
-    const simpleGit = newSimpleGit()
-    const repositoryData = await gitInfos(simpleGit, this.context.stdout, this.repositoryURL)
+    let repositoryData: RepositoryData | undefined
+    if (useGit) {
+      const simpleGit = newSimpleGit()
+      repositoryData = await gitInfos(simpleGit, this.context.stdout, this.repositoryURL)
+    }
 
     return Promise.all(
       sourcemapFiles.map(async (sourcemapPath) => {
         const minifiedFilePath = getMinifiedFilePath(sourcemapPath)
         let infos: string | undefined
-        if (repositoryData !== undefined && (this.disableGit === undefined || !this.disableGit)) {
+        if (repositoryData !== undefined && useGit) {
           const files = await filterTrackedFiles(
             this.context.stdout,
             sourcemapPath,

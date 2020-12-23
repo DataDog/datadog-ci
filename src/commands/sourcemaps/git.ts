@@ -15,10 +15,6 @@ export const newSimpleGit = (): simpleGit.SimpleGit => {
     maxConcurrentProcesses: 3,
   }
 
-  // Use 'git' to invoke git commands.
-  //
-  // Note that when the git process exits with a non-zero status the task will be rejected:
-  // https://github.com/steveukx/git-js#exception-handling
   return simpleGit.gitP(options)
 }
 
