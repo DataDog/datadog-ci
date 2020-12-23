@@ -34,84 +34,92 @@ describe('git', () => {
     test('no changes', () => {
       const source = 'folder1/folder2/src.js'
 
-      const expected = 'folder1/folder2/src.js'
+      const expected = ['folder1/folder2/src.js', true]
 
-      expect(cleanupSource(source, '')).toBe(expected)
+      expect(cleanupSource(source, '')).toStrictEqual(expected)
     })
     test('strip relative path', () => {
       const source = '../folder1/folder2/src.js'
 
-      const expected = 'folder1/folder2/src.js'
+      const expected = ['folder1/folder2/src.js', true]
 
-      expect(cleanupSource(source, '')).toBe(expected)
+      expect(cleanupSource(source, '')).toStrictEqual(expected)
     })
     // ProjectPath
     test('strip projectPath', () => {
       const source = 'project/folder1/folder2/src.js'
       const projectPath = 'project'
 
-      const expected = 'folder1/folder2/src.js'
+      const expected = ['folder1/folder2/src.js', true]
 
-      expect(cleanupSource(source, projectPath)).toBe(expected)
+      expect(cleanupSource(source, projectPath)).toStrictEqual(expected)
     })
     test('strip relative projectPath', () => {
       const source = 'project/folder1/folder2/src.js'
       const projectPath = '../project'
 
-      const expected = 'folder1/folder2/src.js'
+      const expected = ['folder1/folder2/src.js', true]
 
-      expect(cleanupSource(source, projectPath)).toBe(expected)
+      expect(cleanupSource(source, projectPath)).toStrictEqual(expected)
     })
     test('strip projectPath with slashes', () => {
       const source = '/project/folder1/folder2/src.js'
       const projectPath = '/project/'
 
-      const expected = 'folder1/folder2/src.js'
+      const expected = ['folder1/folder2/src.js', true]
 
-      expect(cleanupSource(source, projectPath)).toBe(expected)
+      expect(cleanupSource(source, projectPath)).toStrictEqual(expected)
+    })
+    test('projectPath not found', () => {
+      const source = 'folder1/folder2/src.js'
+      const projectPath = 'other'
+
+      const expected = ['folder1/folder2/src.js', false]
+
+      expect(cleanupSource(source, projectPath)).toStrictEqual(expected)
     })
     // Hard-coded prefixes
     test('strip webpack:///./', () => {
       const source = 'webpack:///./folder1/folder2/src.js'
       const projectPath = ''
 
-      const expected = 'folder1/folder2/src.js'
+      const expected = ['folder1/folder2/src.js', true]
 
-      expect(cleanupSource(source, projectPath)).toBe(expected)
+      expect(cleanupSource(source, projectPath)).toStrictEqual(expected)
     })
     test('strip webpack:///../', () => {
       const source = 'webpack:///../folder1/folder2/src.js'
       const projectPath = ''
 
-      const expected = 'folder1/folder2/src.js'
+      const expected = ['folder1/folder2/src.js', true]
 
-      expect(cleanupSource(source, projectPath)).toBe(expected)
+      expect(cleanupSource(source, projectPath)).toStrictEqual(expected)
     })
     test('strip webpack:////', () => {
       const source = 'webpack:////folder1/folder2/src.js'
       const projectPath = ''
 
-      const expected = 'folder1/folder2/src.js'
+      const expected = ['folder1/folder2/src.js', true]
 
-      expect(cleanupSource(source, projectPath)).toBe(expected)
+      expect(cleanupSource(source, projectPath)).toStrictEqual(expected)
     })
     // Query parameter
     test('strip projectPath with slashes', () => {
       const source = 'folder1/folder2/src.js?abc123'
       const projectPath = ''
 
-      const expected = 'folder1/folder2/src.js'
+      const expected = ['folder1/folder2/src.js', true]
 
-      expect(cleanupSource(source, projectPath)).toBe(expected)
+      expect(cleanupSource(source, projectPath)).toStrictEqual(expected)
     })
     // All at once
     test('all at once', () => {
       const source = 'webpack:///./project/folder1/folder2/src.js?abc123'
       const projectPath = 'project/'
 
-      const expected = 'folder1/folder2/src.js'
+      const expected = ['folder1/folder2/src.js', true]
 
-      expect(cleanupSource(source, projectPath)).toBe(expected)
+      expect(cleanupSource(source, projectPath)).toStrictEqual(expected)
     })
   })
 

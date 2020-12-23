@@ -4,13 +4,14 @@ import {Writable} from 'stream'
 import {URL} from 'url'
 import {promisify} from 'util'
 
-import {renderGitError, renderSourceNotFoundWarning} from './renderer'
+import {renderGitError, renderProjectPathNotFoundWarning, renderSourcesNotFoundWarning} from './renderer'
 
 // NewSimpleGit returns a configured SimpleGit.
 export const newSimpleGit = (): simpleGit.SimpleGit => {
   const options: simpleGit.SimpleGitOptions = {
     baseDir: process.cwd(),
     binary: 'git',
+    // We are invoking at most 3 git commands at the same time.
     maxConcurrentProcesses: 3,
   }
 
@@ -88,7 +89,9 @@ export const trim = (str: string, chars: string[]) => {
 // - Strip a set of hard-coded prefixes ('webpack:///./')
 // - Strip the eventual projectPath
 // - Removes query parameters
-export const cleanupSource = (source: string, projectPath: string) => {
+//
+// It returns the new source as well as wether are not the specified projectPath was stripped.
+export const cleanupSource = (source: string, projectPath: string): [string, boolean] => {
   // Prefixes
   const prefixesToRemove = ['webpack:']
   for (const p of prefixesToRemove) {
@@ -99,16 +102,17 @@ export const cleanupSource = (source: string, projectPath: string) => {
   source = trimStart(source, ['/', '.'])
   // ProjectPath
   projectPath = trim(projectPath, ['/', '.'])
-  if (source.substr(0, projectPath.length) === projectPath) {
+  const projectPathFound = source.substr(0, projectPath.length) === projectPath
+  if (projectPathFound) {
     source = source.slice(projectPath.length)
   }
-  // Auery parmeter
+  // Query parmeter
   const pos = source.lastIndexOf('?')
   if (pos > 0) {
     source = source.slice(0, pos)
   }
 
-  return trimStart(source, ['/', '.'])
+  return [trimStart(source, ['/', '.']), projectPathFound]
 }
 
 // TrackedFilesMap transforms a list of tracked files into a map to look up sources.
@@ -181,19 +185,27 @@ export const filterTrackedFiles = async (
     return undefined
   }
 
-  // Filter our the tracked files that do not match any source.
+  // Only keep tracked files that match sources inside the sourcemap.
   const filteredTrackedFiles: string[] = new Array()
-  for (let source of sources) {
-    source = cleanupSource(source, projectPath)
-    const trackedFile = trackedFiles.get(source)
+  let projectPathFoundInAllSources = false
+  for (const source of sources) {
+    const [cleanedupSource, projectPathFound] = cleanupSource(source, projectPath)
+    if (projectPathFound) {
+      projectPathFoundInAllSources = true
+    }
+    const trackedFile = trackedFiles.get(cleanedupSource)
     if (trackedFile) {
       filteredTrackedFiles.push(trackedFile)
       continue
     }
-    stdout.write(renderSourceNotFoundWarning(source))
   }
   if (filteredTrackedFiles.length === 0) {
+    stdout.write(renderSourcesNotFoundWarning(srcmapPath))
+
     return undefined
+  }
+  if (!projectPathFoundInAllSources) {
+    stdout.write(renderProjectPathNotFoundWarning(srcmapPath, projectPath))
   }
 
   return filteredTrackedFiles
