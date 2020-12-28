@@ -40,13 +40,13 @@ Use `instrument` to apply Datadog instrumentation to a Lambda. This command auto
 This command is the quickest way to try out Datadog instrumentation on an existing Lambda function. To use in the production environment, run this command in your CI/CD pipelines to ensure your Lambda functions are always updated for instrumentation.
 
 ```bash
-# instrument a function specified by ARN
+# Instrument a function specified by ARN
 datadog-ci lambda instrument --function arn:aws:lambda:us-east-1:000000000000:function:functionname --layerVersion 10
 
 # Use the shorthand formats
 datadog-ci lambda instrument -f arn:aws:lambda:us-east-1:000000000000:function:functionname -v 10
 
-# Instrument multiple functions specified by their names (--region must be defined)
+# Instrument multiple functions specified by names (--region must be defined)
 datadog-ci lambda instrument -f functionname -f another-functionname -r us-east-1 -v 10
 
 # Dry run of all update commands
@@ -59,11 +59,11 @@ All arguments:
 | -------- | --------- | ----------- | ------- |
 | --function | -f | The ARN of the Lambda function to be instrumented, or the name of the Lambda function (--region must be defined) | |
 | --region | -r | Default region to use, when `--function` is specified by the function name instead of the ARN | |
-| --layerVersion | -v | Version of the Datadog layer to apply. This varies between runtimes. To see the latest layer version check the [JS][3] or [python][4] datadog-lambda-layer repo release notes. | |
-| --tracing |  | Whether to enable dd-trace tracing on your Lambda. | true |
+| --layerVersion | -v | Version of the Datadog layer to apply. This varies between runtimes. To see the latest layer version check the [JS][3] or [python][4] datadog-lambda-layer repo release notes | |
+| --tracing |  | Whether to enable dd-trace tracing on your Lambda | true |
 | --mergeXrayTraces | | Whether to join dd-trace traces to AWS X-Ray traces. Useful for tracing API Gateway spans. | false |
 | --flushMetricsToLogs | | Whether to send metrics via the Datadog Forwarder [asynchronously](https://docs.datadoghq.com/serverless/custom_metrics?tab=python#enabling-asynchronous-custom-metrics) | true |
-| --forwarder | | The ARN of the [datadog forwarder](https://docs.datadoghq.com/serverless/forwarder/) to attach this functions LogGroup to. | |
+| --forwarder | | The ARN of the [datadog forwarder](https://docs.datadoghq.com/serverless/forwarder/) to attach this function's LogGroup to. | |
 | --dry | -d | Preview changes running command would apply. | false |
 
 [1]: https://docs.aws.amazon.com/sdk-for-javascript/v2/developer-guide/setting-credentials-node.html
