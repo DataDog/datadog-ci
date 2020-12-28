@@ -35,7 +35,7 @@ Configuration is done using a JSON file. Specify the `datadog-ci.json` using the
 
 #### Commands
 
-Use `instrument` to apply Datadog instrumentation to a Lambda. This command automatically adds the Datadog Lambda library as layers to the instrumented Lambda functions and modifies their configurations. 
+Use `instrument` to apply Datadog instrumentation to a Lambda. This command automatically adds the Datadog Lambda library (as a Lambda Layer) to the instrumented Lambda functions and modifies their configurations. 
 
 This command is the quickest way to try out Datadog instrumentation on an existing Lambda function. To use in the production environment, run this command in your CI/CD pipelines to ensure your Lambda functions are always updated for instrumentation.
 
