@@ -62,7 +62,7 @@ All arguments:
 | --layerVersion | -v | Version of the Datadog layer to apply. This varies between runtimes. To see the latest layer version check the [JS][3] or [python][4] datadog-lambda-layer repo release notes. | |
 | --tracing |  | Whether to enable dd-trace tracing on your Lambda. | true |
 | --mergeXrayTraces | | Whether to join dd-trace traces to AWS X-Ray traces. Useful for tracing API Gateway spans. | false |
-| --flushMetricsToLogs | | Whether to send metrics via the Datadog Forwarder[asynchronously](https://docs.datadoghq.com/serverless/custom_metrics?tab=python#enabling-asynchronous-custom-metrics) | true |
+| --flushMetricsToLogs | | Whether to send metrics via the Datadog Forwarder [asynchronously](https://docs.datadoghq.com/serverless/custom_metrics?tab=python#enabling-asynchronous-custom-metrics) | true |
 | --forwarder | | The ARN of the [datadog forwarder](https://docs.datadoghq.com/serverless/forwarder/) to attach this functions LogGroup to. | |
 | --dry | -d | Preview changes running command would apply. | false |
 
