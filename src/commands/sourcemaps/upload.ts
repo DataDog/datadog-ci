@@ -9,7 +9,7 @@ import asyncPool from 'tiny-async-pool'
 import {URL} from 'url'
 
 import {apiConstructor} from './api'
-import {filterTrackedFiles, gitInfos, newSimpleGit, RepositoryData} from './git'
+import {filterTrackedFiles, getRepositoryData, newSimpleGit, RepositoryData} from './git'
 import {APIHelper, Payload} from './interfaces'
 import {getMetricsLogger} from './metrics'
 import {
@@ -97,7 +97,11 @@ export class UploadCommand extends Command {
       )
     )
     const metricsLogger = getMetricsLogger(this.releaseVersion, this.service)
-    const payloads = await this.getMatchingSourcemapFiles()
+    let payloads = await this.getPayloadsToUpload()
+    const useGit = this.disableGit === undefined || !this.disableGit
+    if (useGit) {
+      payloads = await this.addRepositoryDataToPayloads(payloads)
+    }
     const upload = (p: Payload) => this.uploadSourcemap(api, metricsLogger, p)
     const initialTime = new Date().getTime()
     await asyncPool(this.maxConcurrency, payloads, upload)
@@ -105,6 +109,27 @@ export class UploadCommand extends Command {
     this.context.stdout.write(renderSuccessfulCommand(payloads.length, totalTimeSeconds))
     metricsLogger.gauge('duration', totalTimeSeconds)
     metricsLogger.flush()
+  }
+
+  // AddRepositoryDataToPayloads fills the 'repository' field of each payload with data gathered using git.
+  private addRepositoryDataToPayloads = async (payloads: Payload[]): Promise<Payload[]> => {
+    const simpleGit = newSimpleGit()
+    const repositoryData = await getRepositoryData(simpleGit, this.context.stdout, this.repositoryURL)
+    if (repositoryData === undefined) {
+      return payloads
+    }
+
+    return Promise.all(
+      payloads.map(async (payload) => {
+        let repositoryPayload: string | undefined
+        repositoryPayload = await this.getRepositoryPayload(repositoryData, payload.sourcemapPath)
+
+        return {
+          ...payload,
+          repository: repositoryPayload,
+        }
+      })
+    )
   }
 
   private getApiHelper(): APIHelper {
@@ -116,40 +141,26 @@ export class UploadCommand extends Command {
     return apiConstructor(getBaseIntakeUrl(), this.config.apiKey!)
   }
 
-  private getMatchingSourcemapFiles = async (): Promise<Payload[]> => {
-    const useGit = this.disableGit === undefined || !this.disableGit
+  private getMinifiedURL(minifiedFilePath: string): string {
+    const relativePath = minifiedFilePath.replace(this.basePath!, '')
+
+    return buildPath(this.minifiedPathPrefix!, relativePath)
+  }
+
+  // GetPayloadsToUpload looks for the sourcemaps and minified files on disk and returns
+  // the associated payloads.
+  private getPayloadsToUpload = async (): Promise<Payload[]> => {
     const sourcemapFiles = glob.sync(buildPath(this.basePath!, '**/*.js.map'))
-    let repositoryData: RepositoryData | undefined
-    if (useGit) {
-      const simpleGit = newSimpleGit()
-      repositoryData = await gitInfos(simpleGit, this.context.stdout, this.repositoryURL)
-    }
 
     return Promise.all(
       sourcemapFiles.map(async (sourcemapPath) => {
         const minifiedFilePath = getMinifiedFilePath(sourcemapPath)
-        let infos: string | undefined
-        if (repositoryData !== undefined && useGit) {
-          const files = await filterTrackedFiles(
-            this.context.stdout,
-            sourcemapPath,
-            this.projectPath,
-            repositoryData.trackedFiles
-          )
-          if (files) {
-            infos = JSON.stringify({
-              files,
-              hash: repositoryData.hash,
-              repository_url: repositoryData.remote,
-            })
-          }
-        }
+        const minifiedURL = this.getMinifiedURL(minifiedFilePath)
 
         return {
           minifiedFilePath,
-          minifiedUrl: this.getMinifiedURL(minifiedFilePath),
+          minifiedUrl: minifiedURL,
           projectPath: this.projectPath,
-          repository: infos,
           service: this.service!,
           sourcemapPath,
           version: this.releaseVersion!,
@@ -158,10 +169,29 @@ export class UploadCommand extends Command {
     )
   }
 
-  private getMinifiedURL(minifiedFilePath: string): string {
-    const relativePath = minifiedFilePath.replace(this.basePath!, '')
+  // GetRepositoryPayload generates the repository payload for a specific sourcemap.
+  // It specifically looks for the list of tracked files that are associated to the source paths
+  // declared inside the sourcemap.
+  private getRepositoryPayload = async (
+    repositoryData: RepositoryData,
+    sourcemapPath: string
+  ): Promise<string | undefined> => {
+    let repositoryPayload: string | undefined
+    const files = await filterTrackedFiles(
+      this.context.stdout,
+      sourcemapPath,
+      this.projectPath,
+      repositoryData.trackedFiles
+    )
+    if (files) {
+      repositoryPayload = JSON.stringify({
+        files,
+        hash: repositoryData.hash,
+        repository_url: repositoryData.remote,
+      })
+    }
 
-    return buildPath(this.minifiedPathPrefix!, relativePath)
+    return repositoryPayload
   }
 
   private isMinifiedPathPrefixValid(): boolean {

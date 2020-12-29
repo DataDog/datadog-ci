@@ -1,4 +1,4 @@
-import {cleanupSource, filterTrackedFiles, gitInfos, stripCredentials, trackedFilesMap} from '../git'
+import {cleanupSource, filterTrackedFiles, getRepositoryData, stripCredentials, trackedFilesMap} from '../git'
 
 describe('git', () => {
   describe('stripCredentials: git protocol', () => {
@@ -146,7 +146,7 @@ describe('git', () => {
 
       expect(trackedFilesMap(trackedFiles)).toEqual(expected)
     })
-    describe('GitInfos', () => {
+    describe('GetRepositoryData', () => {
       const createMockStdout = () => {
         let data = ''
 
@@ -166,7 +166,7 @@ describe('git', () => {
 
       test('integration', async () => {
         const stdout = createMockStdout() as any
-        const data = await gitInfos(createMockSimpleGit() as any, stdout, '')
+        const data = await getRepositoryData(createMockSimpleGit() as any, stdout, '')
         if (!data) {
           fail('data should not be undefined')
         }
@@ -183,7 +183,7 @@ describe('git', () => {
 
       test('integration: remote override', async () => {
         const stdout = createMockStdout() as any
-        const data = await gitInfos(createMockSimpleGit() as any, stdout, 'git@github.com:user/other.git')
+        const data = await getRepositoryData(createMockSimpleGit() as any, stdout, 'git@github.com:user/other.git')
         if (!data) {
           fail('data should not be undefined')
         }

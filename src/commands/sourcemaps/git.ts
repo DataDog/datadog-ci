@@ -19,7 +19,7 @@ export const newSimpleGit = (): simpleGit.SimpleGit => {
 }
 
 // GitRemote returns the remote of the current repository.
-export const gitRemote = async (git: simpleGit.SimpleGit): Promise<string> => {
+const gitRemote = async (git: simpleGit.SimpleGit): Promise<string> => {
   const remotes = await git.getRemotes(true)
   if (remotes.length === 0) {
     throw new Error('No git remotes available')
@@ -47,7 +47,7 @@ export const stripCredentials = (remote: string) => {
 }
 
 // GitHash returns the hash of the current repository.
-export const gitHash = async (git: simpleGit.SimpleGit): Promise<string> => git.revparse('HEAD')
+const gitHash = async (git: simpleGit.SimpleGit): Promise<string> => git.revparse('HEAD')
 
 // GitTrackedFiles returns the tracked files of the current repository.
 export const gitTrackedFiles = async (git: simpleGit.SimpleGit): Promise<string[]> => {
@@ -57,7 +57,7 @@ export const gitTrackedFiles = async (git: simpleGit.SimpleGit): Promise<string[
 }
 
 // TrimStart trims from a set of characters from the start of a string.
-export const trimStart = (str: string, chars: string[]) => {
+const trimStart = (str: string, chars: string[]) => {
   let start = 0
   const end = str.length
   while (start < end && chars.indexOf(str[start]) >= 0) {
@@ -68,7 +68,7 @@ export const trimStart = (str: string, chars: string[]) => {
 }
 
 // Trim trims from a set of characters from a string.
-export const trim = (str: string, chars: string[]) => {
+const trim = (str: string, chars: string[]) => {
   let start = 0
   let end = str.length
   while (start < end && chars.indexOf(str[start]) >= 0) {
@@ -87,6 +87,11 @@ export const trim = (str: string, chars: string[]) => {
 // - Removes query parameters
 //
 // It returns the new source as well as wether are not the specified projectPath was stripped.
+//
+// For example, the following source path:
+// webpack:///./project/folder1/folder2/src.js?abc123
+//
+// Will be cleaned up into 'project/folder1/folder2/src.js'.
 export const cleanupSource = (source: string, projectPath: string): [string, boolean] => {
   // Prefixes
   const prefixesToRemove = ['webpack:']
@@ -111,8 +116,27 @@ export const cleanupSource = (source: string, projectPath: string): [string, boo
   return [trimStart(source, ['/', '.']), projectPathFound]
 }
 
-// TrackedFilesMap transforms a list of tracked files into a map to look up sources.
-export const trackedFilesMap = (trackedFiles: string[]) => {
+// TrackedFilesMap creates a lookup map from source paths to tracked file paths.
+// The tracked file paths will be split into as many keys as there is folders in the path (+ the filename).
+// It allows to do an exact match when looking up a source path in the tracked files, which will be enough
+// in most cases.
+// It also allows to make an 'educated guess' / 'best-effort' match on the off-chance the source path we are
+// trying to find does not contain the whole tracked file path. It's an edge case but can easily be handled
+// using this method.
+//
+// To perform a match simply lookup the source path in the map keys. The value returned is the complete tracked
+// file path.
+//
+// For example the following tracked file path:
+// project/folder1/folder2/src.js
+//
+// Will be matched by any of:
+// project/folder1/folder2/src.js
+// folder1/folder2/src.js
+// folder2/src.js
+// src.js
+//
+export const trackedFilesMap = (trackedFiles: string[]): Map<string, string> => {
   const map = new Map<string, string>()
   for (const trackedFile of trackedFiles) {
     const split = trackedFile.split('/')
@@ -130,8 +154,13 @@ export interface RepositoryData {
   trackedFiles: Map<string, string>
 }
 
-// GitInfos gathers git informations.
-export const gitInfos = async (
+// GetRepositoryData gathers repository data.
+// It returns the current hash and remote as well as a map of tracked files.
+// Look for the trackedFilesMap function for more details.
+//
+// To obtain the list of tracked files path tied to specific sourcemaps, first invoke 'getRepositoryData',
+// then for each sourcemap invoke the 'filterTrackedFiles' function.
+export const getRepositoryData = async (
   git: simpleGit.SimpleGit,
   stdout: Writable,
   repositoryURL: string | undefined
@@ -164,6 +193,8 @@ export const gitInfos = async (
   return data
 }
 
+// FilterTrackedFiles looks up the source paths declared in the sourcemap and try to match each of them
+// with a tracked file. The list of matching tracked files is returned.
 export const filterTrackedFiles = async (
   stdout: Writable,
   srcmapPath: string,
