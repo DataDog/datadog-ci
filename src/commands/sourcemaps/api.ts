@@ -25,7 +25,7 @@ export const uploadSourcemap = (request: (args: AxiosRequestConfig) => AxiosProm
   form.append('minified_url', sourcemap.minifiedUrl)
   form.append('project_path', sourcemap.projectPath)
   if (sourcemap.repository) {
-    form.append('repository', sourcemap.repository)
+    form.append('repository', sourcemap.repository, {filename: 'repository', contentType: 'application/json'})
   }
 
   return request({
