@@ -47,10 +47,10 @@ Absolute paths must always begin with a leading slash. Simply specify `/` if the
 In addition, some optional parameters are available:
 
 * `--concurrency` (default: `20`): number of concurrent upload to the API.
-* `--dry-run` (default: `false`): it will run the command without the final step of upload. All other checks are performed.
 * `--disable-git` (default: false): Presence of flag prevents the command from sending any repository related data to Datadog (hash, remote URL and the correct paths within the repository of the source paths referenced in the sourcemap).
-* `--repository-url` (default: empty): overrides the repository remote with a custom URL. For example: https://github.com/my-company/my-project
+* `--dry-run` (default: `false`): it will run the command without the final step of upload. All other checks are performed.
 * `--project-path` (default: empty): the path of the project where the sourcemaps were built. This will be stripped off from sources paths referenced in the sourcemap so they can be properly matched against tracked files paths.
+* `--repository-url` (default: empty): overrides the repository remote with a custom URL. For example: https://github.com/my-company/my-project
 
 ### End-to-end testing process
 
