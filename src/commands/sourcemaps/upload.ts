@@ -110,7 +110,7 @@ export class UploadCommand extends Command {
 
   // Fills the 'repository' field of each payload with data gathered using git.
   private addRepositoryDateToPayloads = async (payloads: Payload[]): Promise<Payload[]> => {
-    const simpleGit = newSimpleGit()
+    const simpleGit = await newSimpleGit()
     const repositoryData = await getRepositoryData(simpleGit, this.context.stdout, this.repositoryURL)
     if (repositoryData === undefined) {
       return payloads
@@ -183,17 +183,18 @@ export class UploadCommand extends Command {
     sourcemapPath: string
   ): Promise<string | undefined> => {
     let repositoryPayload: string | undefined
-    const files = await filterTrackedFiles(
-      this.context.stdout,
-      sourcemapPath,
-      this.projectPath,
-      repositoryData.trackedFiles
-    )
+    const files = await filterTrackedFiles(this.context.stdout, sourcemapPath, repositoryData.trackedFiles)
     if (files) {
       repositoryPayload = JSON.stringify({
-        files,
-        hash: repositoryData.hash,
-        repository_url: repositoryData.remote,
+        data: [
+          {
+            files,
+            hash: repositoryData.hash,
+            repository_url: repositoryData.remote,
+          },
+        ],
+        // Make sure to update the version if the format of the JSON payloads changes in any way.
+        version: 1,
       })
     }
 

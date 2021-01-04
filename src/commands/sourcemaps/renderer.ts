@@ -14,11 +14,6 @@ export const renderGitError = (errorMessage: string) =>
 export const renderSourcesNotFoundWarning = (sourcemap: string) =>
   chalk.yellow(`${ICONS.WARNING} No tracked files found for sources contained in ${sourcemap}\n`)
 
-export const renderProjectPathNotFoundWarning = (sourcemap: string, projectPath: string) =>
-  chalk.yellow(
-    `${ICONS.WARNING} The project path ${projectPath} was not found in any of the sources contained in ${sourcemap}\n`
-  )
-
 export const renderInvalidPrefix = chalk.red(
   `${ICONS.FAILED} --minified-path-prefix should either be an URL (such as "http://example.com/static") or an absolute path starting with a / such as "/static"\n`
 )
