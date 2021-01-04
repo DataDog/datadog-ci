@@ -22,6 +22,7 @@ form-data,import,MIT,Copyright (c) 2012 Felix Geisendörfer (felix@debuggable.co
 glob,import,ISC,Copyright (c) Isaac Z. Schlueter and Contributors
 jest,dev,MIT,Copyright (c) Facebook, Inc. and its affiliates.
 jest-circus,dev,MIT,Copyright (c) Facebook, Inc. and its affiliates.
+jest-environment-node,dev,MIT,Copyright (c) Facebook, Inc. and its affiliates.
 prettier,dev,MIT,Copyright © James Long and contributors
 proxy-agent,import,MIT,Copyright (c) 2013 Nathan Rajlich <nathan@tootallnate.net>
 tiny-async-pool,import,MIT,Copyright (c) 2017 Rafael Xavier de Souza http://rafael.xavier.blog.br
