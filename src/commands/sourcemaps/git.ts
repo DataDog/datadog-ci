@@ -85,9 +85,19 @@ const trim = (str: string, chars: string[]) => {
 }
 
 // Generates a proper source file path from a sourcemap:
+//
 // - Strip a set of hard-coded prefixes ('webpack:///./')
+//
 // - Strip the eventual projectPath
-// - Removes query parameters
+//
+// - Removes query parameters:
+//   We are removing any suffix that is after the character '?'. The only reason this is done
+//   is because we noticed that a non-negligable (~5%) amount of source paths from our customers
+//   source maps contained query parameters.
+//   We are assuming that the files are not actually named with the interrogation mark but that
+//   it is only an artifact of the build process. The query parameters look random. It looks
+//   like it may be used as a trick to force a web browser to reload the file content.
+//   Example: webpack:///./src/folder/ui/Select.vue?820e
 //
 // It returns the new source as well as whether or not the specified projectPath was stripped.
 //
