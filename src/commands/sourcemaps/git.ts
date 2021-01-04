@@ -6,7 +6,7 @@ import {promisify} from 'util'
 
 import {renderGitError, renderProjectPathNotFoundWarning, renderSourcesNotFoundWarning} from './renderer'
 
-// NewSimpleGit returns a configured SimpleGit.
+// Returns a configured SimpleGit.
 export const newSimpleGit = (): simpleGit.SimpleGit => {
   const options: simpleGit.SimpleGitOptions = {
     baseDir: process.cwd(),
@@ -18,18 +18,20 @@ export const newSimpleGit = (): simpleGit.SimpleGit => {
   return simpleGit.gitP(options)
 }
 
-// GitRemote returns the remote of the current repository.
+// Returns the remote of the current repository.
 const gitRemote = async (git: simpleGit.SimpleGit): Promise<string> => {
   const remotes = await git.getRemotes(true)
   if (remotes.length === 0) {
     throw new Error('No git remotes available')
   }
   remotes.forEach((remote) => {
+    // We're trying to pick the remote called with the default git name 'origin'.
     if (remote.name === 'origin') {
       return remote.refs.push
     }
   })
 
+  // Falling back to picking the first remote in the list if 'origin' is not found.
   return remotes[0].refs.push
 }
 
@@ -46,17 +48,17 @@ export const stripCredentials = (remote: string) => {
   }
 }
 
-// GitHash returns the hash of the current repository.
+// Returns the hash of the current repository.
 const gitHash = async (git: simpleGit.SimpleGit): Promise<string> => git.revparse('HEAD')
 
-// GitTrackedFiles returns the tracked files of the current repository.
+// Returns the tracked files of the current repository.
 export const gitTrackedFiles = async (git: simpleGit.SimpleGit): Promise<string[]> => {
   const files = await git.raw('ls-files')
 
   return files.split(/\r\n|\r|\n/)
 }
 
-// TrimStart trims from a set of characters from the start of a string.
+// Trims from a set of characters from the start of a string.
 const trimStart = (str: string, chars: string[]) => {
   let start = 0
   const end = str.length
@@ -67,7 +69,7 @@ const trimStart = (str: string, chars: string[]) => {
   return start > 0 ? str.substring(start, end) : str
 }
 
-// Trim trims from a set of characters from a string.
+// Trims from a set of characters from a string.
 const trim = (str: string, chars: string[]) => {
   let start = 0
   let end = str.length
@@ -81,7 +83,7 @@ const trim = (str: string, chars: string[]) => {
   return start > 0 || end < str.length ? str.substring(start, end) : str
 }
 
-// CleanupSource generates a proper source file path from a sourcemap:
+// Generates a proper source file path from a sourcemap:
 // - Strip a set of hard-coded prefixes ('webpack:///./')
 // - Strip the eventual projectPath
 // - Removes query parameters
@@ -116,7 +118,7 @@ export const cleanupSource = (source: string, projectPath: string): [string, boo
   return [trimStart(source, ['/', '.']), projectPathFound]
 }
 
-// TrackedFilesMap creates a lookup map from source paths to tracked file paths.
+// Creates a lookup map from source paths to tracked file paths.
 // The tracked file paths will be split into as many keys as there is folders in the path (+ the filename).
 // It allows to do an exact match when looking up a source path in the tracked files, which will be enough
 // in most cases.
@@ -154,7 +156,7 @@ export interface RepositoryData {
   trackedFiles: Map<string, string>
 }
 
-// GetRepositoryData gathers repository data.
+// Gathers repository data.
 // It returns the current hash and remote as well as a map of tracked files.
 // Look for the trackedFilesMap function for more details.
 //
@@ -193,7 +195,7 @@ export const getRepositoryData = async (
   return data
 }
 
-// FilterTrackedFiles looks up the source paths declared in the sourcemap and try to match each of them
+// Looks up the source paths declared in the sourcemap and try to match each of them
 // with a tracked file. The list of matching tracked files is returned.
 export const filterTrackedFiles = async (
   stdout: Writable,
