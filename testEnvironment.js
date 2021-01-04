@@ -1,5 +1,3 @@
-require('dd-trace').init({
-  startupLogs: false,
-})
+require('dd-trace').init()
 
 module.exports = require('jest-environment-node')
