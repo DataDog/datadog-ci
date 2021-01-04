@@ -19,17 +19,18 @@ export const newSimpleGit = (): simpleGit.SimpleGit => {
 }
 
 // Returns the remote of the current repository.
-const gitRemote = async (git: simpleGit.SimpleGit): Promise<string> => {
+export const gitRemote = async (git: simpleGit.SimpleGit): Promise<string> => {
   const remotes = await git.getRemotes(true)
   if (remotes.length === 0) {
     throw new Error('No git remotes available')
   }
-  remotes.forEach((remote) => {
+
+  for (const remote of remotes) {
     // We're trying to pick the remote called with the default git name 'origin'.
     if (remote.name === 'origin') {
       return remote.refs.push
     }
-  })
+  }
 
   // Falling back to picking the first remote in the list if 'origin' is not found.
   return remotes[0].refs.push
