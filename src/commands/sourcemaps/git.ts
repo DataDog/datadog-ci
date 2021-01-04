@@ -86,7 +86,7 @@ const trim = (str: string, chars: string[]) => {
 // - Strip the eventual projectPath
 // - Removes query parameters
 //
-// It returns the new source as well as wether are not the specified projectPath was stripped.
+// It returns the new source as well as whether or not the specified projectPath was stripped.
 //
 // For example, the following source path:
 // webpack:///./project/folder1/folder2/src.js?abc123
