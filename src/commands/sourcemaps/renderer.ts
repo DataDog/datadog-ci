@@ -8,8 +8,10 @@ const ICONS = {
   WARNING: chalk.bold.green('⚠️'),
 }
 
-export const renderGitError = (errorMessage: string) =>
-  chalk.red(`${ICONS.FAILED} An error occured while invoking git: ${errorMessage}\n`)
+export const renderGitWarning = (errorMessage: string) =>
+  chalk.yellow(`${ICONS.WARNING} An error occured while invoking git: ${errorMessage}
+Make sure the command is running within your git repository to fully leverage Datadog's git integration.
+To ignore this warning use the --disable-git flag.\n`)
 
 export const renderSourcesNotFoundWarning = (sourcemap: string) =>
   chalk.yellow(`${ICONS.WARNING} No tracked files found for sources contained in ${sourcemap}\n`)
