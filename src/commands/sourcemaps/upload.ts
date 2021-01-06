@@ -96,9 +96,10 @@ export class UploadCommand extends Command {
         this.dryRun
       )
     )
-    const metricsLogger = getMetricsLogger(this.releaseVersion, this.service)
+    const cliVersion = require('../../../package.json').version
+    const metricsLogger = getMetricsLogger(this.releaseVersion, this.service, cliVersion)
     const useGit = this.disableGit === undefined || !this.disableGit
-    const payloads = await this.getPayloadsToUpload(useGit)
+    const payloads = await this.getPayloadsToUpload(useGit, cliVersion)
     const upload = (p: Payload) => this.uploadSourcemap(api, metricsLogger, p)
     const initialTime = new Date().getTime()
     await asyncPool(this.maxConcurrency, payloads, upload)
@@ -140,7 +141,7 @@ export class UploadCommand extends Command {
 
   // Looks for the sourcemaps and minified files on disk and returns
   // the associated payloads.
-  private getMatchingSourcemapFiles = async (): Promise<Payload[]> => {
+  private getMatchingSourcemapFiles = async (cliVersion: string): Promise<Payload[]> => {
     const sourcemapFiles = glob.sync(buildPath(this.basePath!, '**/*.js.map'))
 
     return Promise.all(
@@ -149,6 +150,7 @@ export class UploadCommand extends Command {
         const minifiedURL = this.getMinifiedURL(minifiedFilePath)
 
         return {
+          cliVersion,
           minifiedFilePath,
           minifiedUrl: minifiedURL,
           projectPath: this.projectPath,
@@ -166,8 +168,8 @@ export class UploadCommand extends Command {
     return buildPath(this.minifiedPathPrefix!, relativePath)
   }
 
-  private getPayloadsToUpload = async (useGit: boolean): Promise<Payload[]> => {
-    const payloads = await this.getMatchingSourcemapFiles()
+  private getPayloadsToUpload = async (useGit: boolean, cliVersion: string): Promise<Payload[]> => {
+    const payloads = await this.getMatchingSourcemapFiles(cliVersion)
     if (!useGit) {
       return payloads
     }

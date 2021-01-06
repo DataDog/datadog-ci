@@ -2,6 +2,7 @@ import {AxiosPromise, AxiosResponse} from 'axios'
 import {Writable} from 'stream'
 
 export interface Payload {
+  cliVersion: string
   minifiedFilePath: string
   minifiedUrl: string
   overwrite?: boolean
