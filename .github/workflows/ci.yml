@@ -34,7 +34,7 @@ jobs:
       - run: yarn lint
       - run: yarn test
         env:
-          DD_SERVICE: datadog-ci-tests-test
+          DD_SERVICE: datadog-ci-tests-gha
       - run: mkdir artifacts
       - run: yarn pack --filename artifacts/datadog-ci.tgz
       - run: cp -r .github/workflows/e2e artifacts/
