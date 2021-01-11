@@ -1973,11 +1973,6 @@ concat-stream@^1.5.2:
     readable-stream "^2.2.2"
     typedarray "^0.0.6"
 
-container-info@^1.0.1:
-  version "1.0.1"
-  resolved "https://registry.yarnpkg.com/container-info/-/container-info-1.0.1.tgz#6b383cb5e197c8d921e88983388facb04124b56b"
-  integrity sha512-wk/+uJvPHOFG+JSwQS+fw6H6yw3Oyc8Kw9L4O2MN817uA90OqJ59nlZbbLPqDudsjJ7Tetee3pwExdKpd2ahjQ==
-
 convert-source-map@^1.1.0, convert-source-map@^1.4.0:
   version "1.6.0"
   resolved "https://registry.yarnpkg.com/convert-source-map/-/convert-source-map-1.6.0.tgz#51b537a8c43e0f04dec1993bffcdd504e758ac20"
@@ -2086,14 +2081,13 @@ data-urls@^2.0.0:
     debug "3.1.0"
     dogapi "1.1.0"
 
-dd-trace@0.29.2:
-  version "0.29.2"
-  resolved "https://registry.yarnpkg.com/dd-trace/-/dd-trace-0.29.2.tgz#4de4876926f9f05b04f511951bc9877a3c8cb259"
-  integrity sha512-oeWtoFjPxRgFf7o4sIuPrVfWjgRxJ2hdTWC+LW2VYivDrc0jFRSK0mSIB68rfhE+yABq6lfeLUlig2vEbMCTcA==
+dd-trace@0.30.0:
+  version "0.30.0"
+  resolved "https://registry.yarnpkg.com/dd-trace/-/dd-trace-0.30.0.tgz#6ff4874e5ddff982e28242801559d81b4bd77268"
+  integrity sha512-8hAIzCprzIqIlYLOZoSOhVcBY1r6t2M0z4ezS7WvV/inifKtjmrM78nG9HzEhtY+/re7+badhUe0fDgybzNbjg==
   dependencies:
     "@types/node" "^10.12.18"
     axios "^0.21.1"
-    container-info "^1.0.1"
     core-js "^3.6.0"
     form-data "^3.0.0"
     hdr-histogram-js "^1.1.4"
