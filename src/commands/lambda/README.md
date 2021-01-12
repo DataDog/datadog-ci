@@ -66,6 +66,10 @@ All arguments:
 | --forwarder | | The ARN of the [datadog forwarder](https://docs.datadoghq.com/serverless/forwarder/) to attach this function's LogGroup to. | |
 | --dry | -d | Preview changes running command would apply. | false |
 
+## Community
+
+For product feedback and questions, join the `#serverless` channel in the [Datadog community on Slack](https://chat.datadoghq.com/).
+
 [1]: https://docs.aws.amazon.com/sdk-for-javascript/v2/developer-guide/setting-credentials-node.html
 [2]: https://github.com/DataDog/datadog-ci
 [3]: https://github.com/DataDog/datadog-lambda-layer-js/releases
