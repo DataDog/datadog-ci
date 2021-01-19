@@ -1,6 +1,8 @@
 // tslint:disable: no-string-literal
 jest.mock('fs')
 
+import * as ciUtils from '../../../helpers/utils'
+
 import {ExecutionRule} from '../interfaces'
 import {RunTestCommand} from '../run-test'
 import * as utils from '../utils'
@@ -23,6 +25,37 @@ export const assertAsyncThrow = async (func: any, errorRegex?: RegExp) => {
 }
 
 describe('run-test', () => {
+  describe('execute', () => {
+    test('should apply config override for tests triggered by public id', async () => {
+      jest.spyOn(ciUtils, 'parseConfigFile').mockImplementation(async (config, _) => config)
+      const runTestsMock = jest.spyOn(utils, 'runTests').mockImplementation(async () => ({
+        tests: [],
+        triggers: {locations: [], results: [], triggered_check_ids: []},
+      }))
+
+      const startUrl = '{{PROTOCOL}}//myhost{{PATHNAME}}{{PARAMS}}'
+      const locations = ['location1', 'location2']
+      const configOverride = {locations, startUrl}
+
+      const apiHelper = {}
+      const command = new RunTestCommand()
+      command.context = {stdout: {write: jest.fn()}} as any
+      command['getApiHelper'] = (() => apiHelper) as any
+      command['config'].global = configOverride
+      command['publicIds'] = ['public-id-1', 'public-id-2']
+      await command.execute()
+
+      expect(runTestsMock).toHaveBeenCalledWith(
+        apiHelper,
+        expect.arrayContaining([
+          expect.objectContaining({id: 'public-id-1', config: configOverride}),
+          expect.objectContaining({id: 'public-id-2', config: configOverride}),
+        ]),
+        expect.anything()
+      )
+    })
+  })
+
   describe('getAppBaseURL', () => {
     test('should default to datadog us', async () => {
       process.env = {}
