@@ -76,6 +76,12 @@ describe('git', () => {
       const trackedFile = 'src/commands/sourcemaps/__tests__/.git.test.ts'
       expect(trackedFileIsRelated(source, trackedFile)).toBe(false)
     })
+    test('filename not at the end of tracked file', () => {
+      const source = 'webpack:///./.yarn/cache/testfile.js-npm-1.2.3-abc1234567-abc1234567.zip/node_modules/testfile.js/testfile.js'
+      const trackedFile = '.yarn/cache/testfile.js-npm-1.1.1-abc1234567-abc1234567.zip'
+      expect(trackedFileIsRelated(source, trackedFile)).toBe(false)
+    })
+    
   })
 
   describe('GetRepositoryData', () => {

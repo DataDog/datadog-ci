@@ -91,7 +91,7 @@ export const trackedFileIsRelated = (source: string, trackedFile: string): boole
     end = source.length
   }
 
-  return trackedFile.includes(source.substring(start, end))
+  return trackedFile.endsWith(source.substring(start, end))
 }
 
 export interface RepositoryData {
