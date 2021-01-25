@@ -279,15 +279,14 @@ export const runTests = async (
       }
 
       const overloadedConfig = handleConfig(test, id, write, config)
+      testsToTrigger.push(overloadedConfig)
 
       write(renderTrigger(test, id, overloadedConfig.executionRule, config))
       if (overloadedConfig.executionRule !== ExecutionRule.SKIPPED) {
         write(renderWait(test))
+
+        return test
       }
-
-      testsToTrigger.push(overloadedConfig)
-
-      return test
     })
   )
 
