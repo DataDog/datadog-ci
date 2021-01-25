@@ -178,8 +178,12 @@ export interface ConfigOverride {
   variables?: {[key: string]: string}
 }
 
-export interface Payload extends ConfigOverride {
+export interface Payload {
   metadata?: Metadata
+  tests: TestPayload[]
+}
+
+export interface TestPayload extends ConfigOverride {
   public_id: string
 }
 
@@ -226,7 +230,7 @@ export interface APIHelper {
   getTest(testId: string): Promise<Test>
   pollResults(resultIds: string[]): Promise<{results: PollResult[]}>
   searchTests(query: string): Promise<TestSearchResult>
-  triggerTests(testsToTrigger: Payload[]): Promise<Trigger>
+  triggerTests(payload: Payload): Promise<Trigger>
 }
 
 export interface APIConfiguration {

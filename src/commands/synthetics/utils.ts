@@ -18,6 +18,7 @@ import {
   Suite,
   TemplateContext,
   Test,
+  TestPayload,
   Trigger,
   TriggerConfig,
   TriggerResponse,
@@ -40,7 +41,7 @@ export const handleConfig = (
   publicId: string,
   write: Writable['write'],
   config?: ConfigOverride
-): Payload => {
+): TestPayload => {
   let handledConfig: Payload = {public_id: publicId}
   if (!config || !Object.keys(config).length) {
     return handledConfig
@@ -73,12 +74,6 @@ export const handleConfig = (
   if (config.executionRule) {
     const executionRule = getStrictestExecutionRule(config.executionRule, test.options.ci?.executionRule)
     test.options.ci = {...(test.options.ci || {}), executionRule}
-  }
-
-  const ciMetadata = getCIMetadata()
-
-  if (ciMetadata) {
-    handledConfig.metadata = ciMetadata
   }
 
   return handledConfig
@@ -260,7 +255,7 @@ export const runTests = async (
   triggerConfigs: TriggerConfig[],
   write: Writable['write']
 ): Promise<{tests: Test[]; triggers: Trigger}> => {
-  const testsToTrigger: Payload[] = []
+  const testsToTrigger: TestPayload[] = []
 
   const tests = await Promise.all(
     triggerConfigs.map(async ({config, id}) => {
@@ -298,10 +293,16 @@ export const runTests = async (
     throw new Error('No tests to trigger')
   }
 
+  const payload: Payload = {tests: testsToTrigger}
+  const ciMetadata = getCIMetadata()
+  if (ciMetadata) {
+    payload.metadata = ciMetadata
+  }
+
   try {
     return {
       tests: tests.filter(definedTypeGuard),
-      triggers: await api.triggerTests(testsToTrigger),
+      triggers: await api.triggerTests(payload),
     }
   } catch (e) {
     const errorMessage = formatBackendErrors(e)

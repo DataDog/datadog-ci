@@ -20,10 +20,10 @@ export const formatBackendErrors = (requestError: AxiosError<BackendError>) => {
   return requestError.message
 }
 
-const triggerTests = (request: (args: AxiosRequestConfig) => AxiosPromise<Trigger>) => async (tests: Payload[]) => {
+const triggerTests = (request: (args: AxiosRequestConfig) => AxiosPromise<Trigger>) => async (data: Payload) => {
   const resp = await retryRequest(
     {
-      data: {tests},
+      data,
       method: 'POST',
       url: '/synthetics/tests/trigger/ci',
     },
