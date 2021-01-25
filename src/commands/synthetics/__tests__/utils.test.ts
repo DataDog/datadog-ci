@@ -105,15 +105,11 @@ describe('utils', () => {
       expect(hasThrown).toBeTruthy()
     })
 
-    test('skipped tests should not be run', async () => {
-      let hasThrown = false
-      try {
-        const config = {executionRule: ExecutionRule.SKIPPED}
-        await utils.runTests(api, [{id: fakeTest.public_id, config}], processWrite)
-      } catch (e) {
-        hasThrown = true
-      }
-      expect(hasThrown).toBeTruthy()
+    test("batch of skipped tests only doesn't trigger run", async () => {
+      await expect(utils.runTests(api, [], processWrite)).rejects.toEqual(new Error('No tests to trigger'))
+
+      const test = [{config: {executionRule: ExecutionRule.SKIPPED}, id: fakeTest.public_id}]
+      await expect(utils.runTests(api, test, processWrite)).rejects.toEqual(new Error('No tests to trigger'))
     })
   })
 
@@ -123,21 +119,60 @@ describe('utils', () => {
     test('empty config returns simple payload', () => {
       const publicId = 'abc-def-ghi'
       expect(utils.handleConfig({public_id: publicId} as Test, publicId, processWrite)).toEqual({
+        executionRule: ExecutionRule.BLOCKING,
         public_id: publicId,
       })
     })
 
-    test('executionRule is not picked', () => {
-      const publicId = 'abc-def-ghi'
-      const fakeTest = {
-        config: {request: {url: 'http://example.org/path'}},
-        options: {},
-        public_id: publicId,
-      } as Test
-      const configOverride = {executionRule: ExecutionRule.SKIPPED}
-      const handledConfig = utils.handleConfig(fakeTest, publicId, processWrite, configOverride)
+    test('strictest executionRule is forwarded', () => {
+      const expectHandledConfigToBe = (
+        expectedExecutionRule: ExecutionRule,
+        configExecutionRule?: ExecutionRule,
+        testExecutionRule?: ExecutionRule
+      ) => {
+        const publicId = 'abc-def-ghi'
+        const fakeTest = {
+          config: {request: {url: 'http://example.org/path'}},
+          options: {},
+          public_id: publicId,
+        } as Test
 
-      expect(handledConfig.public_id).toBe(publicId)
+        if (testExecutionRule) {
+          fakeTest.options.ci = {executionRule: testExecutionRule}
+        }
+
+        const configOverride = configExecutionRule ? {executionRule: configExecutionRule} : undefined
+
+        expect(utils.getExecutionRule(fakeTest, configOverride)).toBe(expectedExecutionRule)
+
+        const handledConfig = utils.handleConfig(fakeTest, publicId, processWrite, configOverride)
+
+        expect(handledConfig.public_id).toBe(publicId)
+        expect(handledConfig.executionRule).toBe(expectedExecutionRule)
+      }
+
+      const BLOCKING = ExecutionRule.BLOCKING
+      const NON_BLOCKING = ExecutionRule.NON_BLOCKING
+      const SKIPPED = ExecutionRule.SKIPPED
+
+      // No override => BLOCKING
+      expectHandledConfigToBe(BLOCKING)
+
+      // CI config overrides only
+      expectHandledConfigToBe(BLOCKING, BLOCKING)
+      expectHandledConfigToBe(NON_BLOCKING, NON_BLOCKING)
+      expectHandledConfigToBe(SKIPPED, SKIPPED)
+
+      // Test config only
+      expectHandledConfigToBe(BLOCKING, undefined, BLOCKING)
+      expectHandledConfigToBe(NON_BLOCKING, undefined, NON_BLOCKING)
+      expectHandledConfigToBe(SKIPPED, undefined, SKIPPED)
+
+      // Strictest executionRule is forwarded
+      expectHandledConfigToBe(NON_BLOCKING, BLOCKING, NON_BLOCKING)
+      expectHandledConfigToBe(SKIPPED, SKIPPED, BLOCKING)
+      expectHandledConfigToBe(SKIPPED, NON_BLOCKING, SKIPPED)
+      expectHandledConfigToBe(SKIPPED, SKIPPED, NON_BLOCKING)
     })
 
     test('startUrl template is rendered', () => {

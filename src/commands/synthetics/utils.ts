@@ -42,7 +42,12 @@ export const handleConfig = (
   write: Writable['write'],
   config?: ConfigOverride
 ): TestPayload => {
-  let handledConfig: Payload = {public_id: publicId}
+  const executionRule = getExecutionRule(test, config)
+  let handledConfig: TestPayload = {
+    executionRule,
+    public_id: publicId,
+  }
+
   if (!config || !Object.keys(config).length) {
     return handledConfig
   }
@@ -69,11 +74,6 @@ export const handleConfig = (
 
   if (config.startUrl) {
     handledConfig.startUrl = template(config.startUrl, context)
-  }
-
-  if (config.executionRule) {
-    const executionRule = getStrictestExecutionRule(config.executionRule, test.options.ci?.executionRule)
-    test.options.ci = {...(test.options.ci || {}), executionRule}
   }
 
   return handledConfig
@@ -107,6 +107,14 @@ const parseUrlVariables = (url: string, write: Writable['write']) => {
   context.SUBDOMAIN = subdomainMatch ? subdomainMatch[1] : undefined
 
   return context
+}
+
+export const getExecutionRule = (test: Test, configOverride?: ConfigOverride): ExecutionRule => {
+  if (configOverride && configOverride.executionRule) {
+    return getStrictestExecutionRule(configOverride.executionRule, test.options?.ci?.executionRule)
+  }
+
+  return test.options?.ci?.executionRule || ExecutionRule.BLOCKING
 }
 
 export const getStrictestExecutionRule = (configRule: ExecutionRule, testRule?: ExecutionRule): ExecutionRule => {
@@ -266,30 +274,24 @@ export const runTests = async (
       } catch (e) {
         const errorMessage = formatBackendErrors(e)
         write(`[${chalk.bold.dim(id)}] Test not found: ${errorMessage}\n`)
-      }
-
-      if (!test || config.executionRule === ExecutionRule.SKIPPED) {
-        write(`[${chalk.bold.dim(id)}] Test skipped as per test or global configuration.\n`)
 
         return
       }
 
-      if (test.options?.ci?.executionRule === ExecutionRule.SKIPPED) {
-        write(`[${chalk.bold.dim(id)}] Test skipped as per execution rule in Datadog.\n`)
-
-        return
-      }
-
-      write(renderTrigger(test, id, config))
       const overloadedConfig = handleConfig(test, id, write, config)
-      write(renderWait(test))
+
+      write(renderTrigger(test, id, overloadedConfig.executionRule, config))
+      if (overloadedConfig.executionRule !== ExecutionRule.SKIPPED) {
+        write(renderWait(test))
+      }
+
       testsToTrigger.push(overloadedConfig)
 
       return test
     })
   )
 
-  if (!testsToTrigger.length) {
+  if (!testsToTrigger.length || testsToTrigger.every((t: TestPayload) => t.executionRule === ExecutionRule.SKIPPED)) {
     throw new Error('No tests to trigger')
   }
 

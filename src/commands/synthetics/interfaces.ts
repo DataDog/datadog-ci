@@ -184,6 +184,7 @@ export interface Payload {
 }
 
 export interface TestPayload extends ConfigOverride {
+  executionRule: ExecutionRule
   public_id: string
 }
 
