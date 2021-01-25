@@ -58,6 +58,7 @@ export const handleConfig = (
       'followRedirects',
       'headers',
       'locations',
+      'pollingTimeout',
       'retry',
       'variables',
     ]),
