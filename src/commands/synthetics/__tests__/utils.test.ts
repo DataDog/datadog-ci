@@ -46,6 +46,11 @@ describe('utils', () => {
   describe('runTest', () => {
     const processWrite = process.stdout.write.bind(process.stdout)
     const fakeTest = {
+      config: {
+        request: {
+          url: 'http://example.org/',
+        },
+      },
       name: 'Fake Test',
       public_id: '123-456-789',
     }
