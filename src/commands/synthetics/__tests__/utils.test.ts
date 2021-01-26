@@ -96,20 +96,7 @@ describe('utils', () => {
     })
 
     test('no tests triggered throws an error', async () => {
-      let hasThrown = false
-      try {
-        await utils.runTests(api, [], processWrite)
-      } catch (e) {
-        hasThrown = true
-      }
-      expect(hasThrown).toBeTruthy()
-    })
-
-    test("batch of skipped tests only doesn't trigger run", async () => {
       await expect(utils.runTests(api, [], processWrite)).rejects.toEqual(new Error('No tests to trigger'))
-
-      const test = [{config: {executionRule: ExecutionRule.SKIPPED}, id: fakeTest.public_id}]
-      await expect(utils.runTests(api, test, processWrite)).rejects.toEqual(new Error('No tests to trigger'))
     })
   })
 

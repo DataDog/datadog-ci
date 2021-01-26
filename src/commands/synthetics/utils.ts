@@ -290,7 +290,7 @@ export const runTests = async (
     })
   )
 
-  if (!testsToTrigger.length || testsToTrigger.every((t: TestPayload) => t.executionRule === ExecutionRule.SKIPPED)) {
+  if (!testsToTrigger.length) {
     throw new Error('No tests to trigger')
   }
 
