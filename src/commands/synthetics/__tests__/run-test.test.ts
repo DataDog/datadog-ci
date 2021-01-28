@@ -54,6 +54,37 @@ describe('run-test', () => {
         expect.anything()
       )
     })
+
+    test('should not wait for `skipped` only tests batch results', async () => {
+      jest.spyOn(ciUtils, 'parseConfigFile').mockImplementation(async (config, _) => config)
+      const runTestsMock = jest.spyOn(utils, 'runTests').mockImplementation(async () => ({
+        tests: [],
+        triggers: {locations: [], results: [], triggered_check_ids: []},
+      }))
+      const waitForResultSpy = jest.spyOn(utils, 'waitForResults')
+
+      const apiHelper = {}
+      const write = jest.fn()
+      const command = new RunTestCommand()
+      const configOverride = {executionRule: ExecutionRule.SKIPPED}
+      command.context = {stdout: {write}} as any
+      command['getApiHelper'] = (() => apiHelper) as any
+      command['config'].global = configOverride
+      command['publicIds'] = ['public-id-1', 'public-id-2']
+
+      await command.execute()
+
+      expect(runTestsMock).toHaveBeenCalledWith(
+        apiHelper,
+        expect.arrayContaining([
+          expect.objectContaining({id: 'public-id-1', config: configOverride}),
+          expect.objectContaining({id: 'public-id-2', config: configOverride}),
+        ]),
+        expect.anything()
+      )
+      expect(write).toHaveBeenCalledWith('No test to run.\n')
+      expect(waitForResultSpy).not.toHaveBeenCalled()
+    })
   })
 
   describe('getAppBaseURL', () => {
