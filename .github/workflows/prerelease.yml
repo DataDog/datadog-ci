@@ -13,10 +13,11 @@ jobs:
       - run: |
           # Isolate the tag and exit if none found
           IFS='-' read -ra ARR_TAG <<< $TAG
-          if ((${#ARR_TAG[@]} <= 1)); then echo "Missing channel in given tag '$TAG'. Should be in the format '0.0.0-channel'" && exit 1; fi
+          if ((${#ARR_TAG[@]} <= 1)); then echo "Missing channel in given tag '$TAG'. Should be in the format '<version>-<channel>'" && exit 1; fi
           TAG_TO_PUBLISH=${ARR_TAG[${#ARR_TAG[@]} - 1]}
 
           # Publish on npm in the correct channel
+          yarn
           echo "Publishing on $TAG_TO_PUBLISH channel."
           yarn publish --tag=$TAG_TO_PUBLISH
         env:
