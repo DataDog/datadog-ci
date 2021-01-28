@@ -136,6 +136,22 @@ Releasing a new version of `datadog-ci` unfolds as follow:
 - create a Github Release from the [Tags page](https://github.com/DataDog/datadog-ci/tags) with the description of changes introduced
 - Once the release has been created, a Github Action will publish the package
 
+### Pre-Release Process
+
+If you need to create a pre-release or releasing in a different channel here's how it works:
+
+- create a new branch for the channel you want to release to (`alpha`, `beta`, ...).
+- create a PR for your feature branch with the channel branch as a base.
+- pick a version following this format `version-channel`, it can be `0.10.9-alpha` or `1-beta`...
+- merge the Pull Request
+- create a [Github Release](https://github.com/yoannmoinet/testing-actions/releases/new):
+  - target the channel branch
+  - pick a tag based on your version `version-channel`
+  - check the `This is a pre-release` checkbox
+- publish the release and an action will publish it on npm
+
+<img src="./assets/pre-release.png" width="500"/>
+
 ## License
 
 [Apache License, v2.0](LICENSE)
