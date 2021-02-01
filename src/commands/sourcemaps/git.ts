@@ -118,10 +118,10 @@ export const getRepositoryData = async (
 // for a particular sourcemap.
 export class TrackedFilesMatcher {
   // A map with tracked filenames as key and the related tracked file paths as value.
-  trackedFilenames: Map<string, string[]>;
+  private trackedFilenames: Map<string, string[]>
 
   constructor(trackedFiles: string[]) {
-    this.trackedFilenames = new Map<string, string[]>();
+    this.trackedFilenames = new Map<string, string[]>()
     for (const f of trackedFiles) {
       const filename = this.getFilename(f)
       const list = this.trackedFilenames.get(filename)
@@ -134,16 +134,14 @@ export class TrackedFilesMatcher {
   }
 
   // Looks up the sources declared in the sourcemap and return a list of related tracked files.
-  async matchSourcemap(stdout: Writable, srcmapPath: string): Promise<string[] | undefined> {
+  public matchSourcemap(stdout: Writable, srcmapPath: string): string[] | undefined {
     const buff = fs.readFileSync(srcmapPath, 'utf8')
     const srcmapObj = JSON.parse(buff)
     if (!srcmapObj.sources) {
-
       return undefined
     }
     const sources = srcmapObj.sources as string[]
     if (!sources || sources.length === 0) {
-      
       return undefined
     }
     const filtered = this.matchSources(sources)
@@ -156,9 +154,9 @@ export class TrackedFilesMatcher {
     return filtered
   }
 
-  matchSources(sources: string[]): string[] {
+  public matchSources(sources: string[]): string[] {
     let filtered: string[] = new Array()
-    let filenameAlreadyMatched = new Map<string, Boolean>();
+    const filenameAlreadyMatched = new Map<string, boolean>()
     for (const source of sources) {
       const filename = this.getFilename(source)
       if (filenameAlreadyMatched.has(filename)) {
@@ -185,7 +183,7 @@ export class TrackedFilesMatcher {
   // The only side effect of doing that operation is that more tracked files paths may be sent
   // alongside the sourcemap which is not a problem.
   // Example: webpack:///./src/folder/ui/select.vue?821e
-  getFilename (s: string): string {
+  private getFilename(s: string): string {
     let start = s.lastIndexOf('/')
     if (start === -1) {
       start = 0
@@ -196,6 +194,7 @@ export class TrackedFilesMatcher {
     if (end === -1 || end <= start) {
       end = s.length
     }
+
     return s.substring(start, end)
   }
 }

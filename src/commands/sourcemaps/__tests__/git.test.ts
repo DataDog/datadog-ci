@@ -98,7 +98,9 @@ describe('git', () => {
     })
     describe('more complex cases', () => {
       test('filename not at the end of tracked file', () => {
-        const sources = ['webpack:///./.yarn/cache/testfile.js-npm-1.2.3-abc1234567-abc1234567.zip/node_modules/testfile.js/testfile.js']
+        const sources = [
+          'webpack:///./.yarn/cache/testfile.js-npm-1.2.3-abc1234567-abc1234567.zip/node_modules/testfile.js/testfile.js',
+        ]
         const trackedFiles = ['.yarn/cache/testfile.js-npm-1.1.1-abc1234567-abc1234567.zip']
         const matcher = new TrackedFilesMatcher(trackedFiles)
         expect(matcher.matchSources(sources)).toHaveLength(0)
@@ -111,9 +113,9 @@ describe('git', () => {
       })
       test('mix of related and not related', () => {
         const sources = ['folder/file.ts', 'folder/other.ts']
-        const trackedFiles = ['src/file.ts','file.ts', 'src/other2.ts']
+        const trackedFiles = ['src/file.ts', 'file.ts', 'src/other2.ts']
         const matcher = new TrackedFilesMatcher(trackedFiles)
-        expect(matcher.matchSources(sources)).toStrictEqual(['src/file.ts','file.ts'])
+        expect(matcher.matchSources(sources)).toStrictEqual(['src/file.ts', 'file.ts'])
       })
     })
   })
@@ -142,10 +144,10 @@ describe('git', () => {
       if (!data) {
         fail('data should not be undefined')
       }
-   
-      const files = await data.trackedFilesMatcher.matchSourcemap(
+
+      const files = data.trackedFilesMatcher.matchSourcemap(
         stdout,
-        'src/commands/sourcemaps/__tests__/fixtures/common.min.js.map',
+        'src/commands/sourcemaps/__tests__/fixtures/common.min.js.map'
       )
       expect(data.remote).toBe('git@github.com:user/repository.git')
       expect(data.hash).toBe('25da22df90210a40b919debe3f7ebfb0c1811898')
@@ -158,9 +160,9 @@ describe('git', () => {
       if (!data) {
         fail('data should not be undefined')
       }
-      const files = await data.trackedFilesMatcher.matchSourcemap(
+      const files = data.trackedFilesMatcher.matchSourcemap(
         stdout,
-        'src/commands/sourcemaps/__tests__/fixtures/common.min.js.map',
+        'src/commands/sourcemaps/__tests__/fixtures/common.min.js.map'
       )
       expect(data.remote).toBe('git@github.com:user/other.git')
       expect(data.hash).toBe('25da22df90210a40b919debe3f7ebfb0c1811898')

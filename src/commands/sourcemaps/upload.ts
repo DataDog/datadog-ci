@@ -111,15 +111,13 @@ export class UploadCommand extends Command {
 
   // Fills the 'repository' field of each payload with data gathered using git.
   private addRepositoryDataToPayloads = async (payloads: Payload[]) => {
-    // Invoke git commands to retrive remote, hash and tracked files.
     const repositoryData = await getRepositoryData(await newSimpleGit(), this.context.stdout, this.repositoryURL)
     if (repositoryData === undefined) {
       return
     }
     await Promise.all(
       payloads.map(async (payload) => {
-        // Open each sourcemap to only include the related tracked files inside the repository payload.
-        payload.repository = await this.getRepositoryPayload(repositoryData, payload.sourcemapPath)
+        payload.repository = this.getRepositoryPayload(repositoryData, payload.sourcemapPath)
       })
     )
   }
@@ -169,18 +167,16 @@ export class UploadCommand extends Command {
     }
 
     await this.addRepositoryDataToPayloads(payloads)
+
     return payloads
   }
 
   // GetRepositoryPayload generates the repository payload for a specific sourcemap.
   // It specifically looks for the list of tracked files that are associated to the source paths
   // declared inside the sourcemap.
-  private getRepositoryPayload = async (
-    repositoryData: RepositoryData,
-    sourcemapPath: string
-  ): Promise<string | undefined> => {
+  private getRepositoryPayload = (repositoryData: RepositoryData, sourcemapPath: string): string | undefined => {
     let repositoryPayload: string | undefined
-    const files = await repositoryData.trackedFilesMatcher.matchSourcemap(this.context.stdout, sourcemapPath)
+    const files = repositoryData.trackedFilesMatcher.matchSourcemap(this.context.stdout, sourcemapPath)
     if (files) {
       repositoryPayload = JSON.stringify({
         data: [
