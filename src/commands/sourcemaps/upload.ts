@@ -99,38 +99,27 @@ export class UploadCommand extends Command {
     const cliVersion = require('../../../package.json').version
     const metricsLogger = getMetricsLogger(this.releaseVersion, this.service, cliVersion)
     const useGit = this.disableGit === undefined || !this.disableGit
-    var initialTime = new Date().getTime()
+    const initialTime = Date.now()
     const payloads = await this.getPayloadsToUpload(useGit, cliVersion)
-    var totalTime = (Date.now() - initialTime)
-    this.context.stdout.write(chalk.yellow(`Call to getPayloadsToUpload took ${totalTime}ms.\n`))
     const upload = (p: Payload) => this.uploadSourcemap(api, metricsLogger, p)
-    const initialTimeUpload = new Date().getTime()
     await asyncPool(this.maxConcurrency, payloads, upload)
-
-    const totalTimeUpload = (Date.now() - initialTimeUpload) / 1000
-    this.context.stdout.write(renderSuccessfulCommand(payloads.length, totalTimeUpload))
-    metricsLogger.gauge('duration', totalTimeUpload)
+    const totalTime = (Date.now() - initialTime) / 1000
+    this.context.stdout.write(renderSuccessfulCommand(payloads.length, totalTime))
+    metricsLogger.gauge('duration', totalTime)
     metricsLogger.flush()
   }
 
   // Fills the 'repository' field of each payload with data gathered using git.
-  private addRepositoryDataToPayloads = async (payloads: Payload[]): Promise<Payload[]> => {
-    // Invoke git commands to retrive remote, hash and tracke files.
+  private addRepositoryDataToPayloads = async (payloads: Payload[]) => {
+    // Invoke git commands to retrive remote, hash and tracked files.
     const repositoryData = await getRepositoryData(await newSimpleGit(), this.context.stdout, this.repositoryURL)
     if (repositoryData === undefined) {
-      return payloads
+      return
     }
-    return Promise.all(
+    await Promise.all(
       payloads.map(async (payload) => {
-        let repositoryPayload: string | undefined
         // Open each sourcemap to only include the related tracked files inside the repository payload.
-        repositoryPayload = await this.getRepositoryPayload(repositoryData, payload.sourcemapPath)
-        const used = process.memoryUsage().heapUsed / 1024 / 1024;
-        this.context.stdout.write(`datadog-ci uses approximately ${Math.round(used * 100) / 100}MB`);
-        return {
-          ...payload,
-          repository: repositoryPayload,
-        }
+        payload.repository = await this.getRepositoryPayload(repositoryData, payload.sourcemapPath)
       })
     )
   }
@@ -179,7 +168,8 @@ export class UploadCommand extends Command {
       return payloads
     }
 
-    return this.addRepositoryDataToPayloads(payloads)
+    await this.addRepositoryDataToPayloads(payloads)
+    return payloads
   }
 
   // GetRepositoryPayload generates the repository payload for a specific sourcemap.
