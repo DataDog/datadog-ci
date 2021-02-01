@@ -199,7 +199,7 @@ export class UploadCommand extends Command {
     sourcemapPath: string
   ): Promise<string | undefined> => {
     let repositoryPayload: string | undefined
-    const files = await filterTrackedFiles(this.context.stdout, sourcemapPath, repositoryData.trackedFiles)
+    const files = await filterTrackedFiles(this.context.stdout, sourcemapPath, repositoryData.trackedFilenames)
     if (files) {
       repositoryPayload = JSON.stringify({
         data: [

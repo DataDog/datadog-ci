@@ -97,7 +97,7 @@ export const trackedFileIsRelated = (source: string, trackedFile: string): boole
 export interface RepositoryData {
   hash: string
   remote: string
-  trackedFiles: string[]
+  trackedFilenames: Map<string, string[]>
 }
 
 // Gathers repository data.
@@ -130,13 +130,37 @@ export const getRepositoryData = async (
     return undefined
   }
 
+  const trackedFilenames = new Map<string, string[]>();
+  for (const f of trackedFiles) {
+    const filename = getFilename(f)
+    const list = trackedFilenames.get(filename)
+    if (list) {
+      list.push(f)
+      trackedFilenames.set(filename, list)
+    } else {
+      trackedFilenames.set(filename, new Array<string>(f))
+    }
+  }
+
   const data = {
     hash,
     remote,
-    trackedFiles,
+    trackedFilenames,
   }
 
   return data
+}
+
+const getFilename = (s: string): string => {
+  let start = s.lastIndexOf('/')
+  if (start === -1) {
+    start = 0
+  }
+  let end = s.lastIndexOf('?')
+  if (end === -1 || end <= start) {
+    end = s.length
+  }
+  return s.substring(start, end)
 }
 
 // Looks up the source paths declared in the sourcemap and try to filter out unrelated tracked files.
@@ -144,7 +168,7 @@ export const getRepositoryData = async (
 export const filterTrackedFiles = async (
   stdout: Writable,
   srcmapPath: string,
-  trackedFiles: string[]
+  trackedFilenames: Map<string, string[]>
 ): Promise<string[] | undefined> => {
   // Retrieve the sources attribute from the sourcemap file.
   const initialTime = Date.now()
@@ -162,14 +186,17 @@ export const filterTrackedFiles = async (
 
   const initialTime2 = Date.now()
   // Only keep tracked files that may be related to the sources declared in the sourcemap
-  const filtered: string[] = new Array()
-  for (const trackedFile of trackedFiles) {
-    for (const source of sources) {
-      const keep = trackedFileIsRelated(source, trackedFile)
-      if (keep) {
-        filtered.push(trackedFile)
-        break
-      }
+  let filtered: string[] = new Array()
+  let filenameAlreadyMatched = new Map<string, Boolean>();
+  for (const source of sources) {
+    const filename = getFilename(source)
+    if (filenameAlreadyMatched.has(filename)) {
+      continue
+    }
+    filenameAlreadyMatched.set(filename, true)
+    const trackedFiles = trackedFilenames.get(filename)
+    if (trackedFiles) {
+      filtered = filtered.concat(trackedFiles)
     }
   }
 
