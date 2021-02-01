@@ -114,25 +114,33 @@ export class UploadCommand extends Command {
   }
 
   // Fills the 'repository' field of each payload with data gathered using git.
-  private addRepositoryDateToPayloads = async (payloads: Payload[]): Promise<Payload[]> => {
+  private addRepositoryDateToPayloads = async (payloads: Payload[]) => {
     const simpleGit = await newSimpleGit()
     const repositoryData = await getRepositoryData(simpleGit, this.context.stdout, this.repositoryURL)
     if (repositoryData === undefined) {
       return payloads
     }
 
-    return Promise.all(
-      payloads.map(async (payload) => {
-        let repositoryPayload: string | undefined
-        repositoryPayload = await this.getRepositoryPayload(repositoryData, payload.sourcemapPath)
-        const used = process.memoryUsage().heapUsed / 1024 / 1024;
-        this.context.stdout.write(`datadog-ci uses approximately ${Math.round(used * 100) / 100}MB\n`);
-        return {
-          ...payload,
-          repository: repositoryPayload,
-        }
-      })
-    )
+    for (const payload of payloads) {
+      let repositoryPayload: string | undefined
+      repositoryPayload = await this.getRepositoryPayload(repositoryData, payload.sourcemapPath)
+      const used = process.memoryUsage().heapUsed / 1024 / 1024;
+      this.context.stdout.write(`datadog-ci uses approximately ${Math.round(used * 100) / 100}MB\n`);
+      payload.repository = repositoryPayload
+    }
+
+    // return Promise.all(
+    //   payloads.map(async (payload) => {
+    //     let repositoryPayload: string | undefined
+    //     repositoryPayload = await this.getRepositoryPayload(repositoryData, payload.sourcemapPath)
+    //     const used = process.memoryUsage().heapUsed / 1024 / 1024;
+    //     this.context.stdout.write(`datadog-ci uses approximately ${Math.round(used * 100) / 100}MB\n`);
+    //     return {
+    //       ...payload,
+    //       repository: repositoryPayload,
+    //     }
+    //   })
+    // )
   }
 
   private getApiHelper(): APIHelper {
@@ -179,7 +187,8 @@ export class UploadCommand extends Command {
       return payloads
     }
 
-    return this.addRepositoryDateToPayloads(payloads)
+    await this.addRepositoryDateToPayloads(payloads)
+    return payloads
   }
 
   // GetRepositoryPayload generates the repository payload for a specific sourcemap.
