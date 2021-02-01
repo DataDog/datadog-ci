@@ -8,7 +8,7 @@ import {renderGitWarning, renderSourcesNotFoundWarning} from './renderer'
 // Returns a configured SimpleGit.
 export const newSimpleGit = async (): Promise<simpleGit.SimpleGit> => {
   const options = {
-    baseDir: process.cwd(),
+    baseDir: '../web-ui/',
     binary: 'git',
     // We are invoking at most 3 git commands at the same time.
     maxConcurrentProcesses: 3,
@@ -147,6 +147,7 @@ export const filterTrackedFiles = async (
   trackedFiles: string[]
 ): Promise<string[] | undefined> => {
   // Retrieve the sources attribute from the sourcemap file.
+  const initialTime = Date.now()
   const srcmap = await promisify(fs.readFile)(srcmapPath)
   const srcmapObj = JSON.parse(srcmap.toString())
   if (!srcmapObj.sources) {
@@ -156,7 +157,10 @@ export const filterTrackedFiles = async (
   if (!sources || sources.length === 0) {
     return undefined
   }
+  const totalTime = (Date.now() - initialTime)
+  stdout.write(`json.Parse took ${totalTime}ms (${srcmapPath})\n`)
 
+  const initialTime2 = Date.now()
   // Only keep tracked files that may be related to the sources declared in the sourcemap
   const filtered: string[] = new Array()
   for (const trackedFile of trackedFiles) {
@@ -168,6 +172,9 @@ export const filterTrackedFiles = async (
       }
     }
   }
+
+  const totalTime2 = (Date.now() - initialTime2)
+  stdout.write(`filtering took ${totalTime2}ms (${srcmapPath})\n`)
 
   if (filtered.length === 0) {
     stdout.write(renderSourcesNotFoundWarning(srcmapPath))

@@ -99,13 +99,17 @@ export class UploadCommand extends Command {
     const cliVersion = require('../../../package.json').version
     const metricsLogger = getMetricsLogger(this.releaseVersion, this.service, cliVersion)
     const useGit = this.disableGit === undefined || !this.disableGit
+    const initialTime = Date.now()
     const payloads = await this.getPayloadsToUpload(useGit, cliVersion)
-    const upload = (p: Payload) => this.uploadSourcemap(api, metricsLogger, p)
-    const initialTime = new Date().getTime()
-    await asyncPool(this.maxConcurrency, payloads, upload)
-    const totalTimeSeconds = (Date.now() - initialTime) / 1000
-    this.context.stdout.write(renderSuccessfulCommand(payloads.length, totalTimeSeconds))
-    metricsLogger.gauge('duration', totalTimeSeconds)
+    const totalTime = (Date.now() - initialTime)
+    this.context.stdout.write(`getPayloadsToUpload took ${totalTime}ms\n`)
+
+    // const upload = (p: Payload) => this.uploadSourcemap(api, metricsLogger, p)
+    // const initialTime = new Date().getTime()
+    // await asyncPool(this.maxConcurrency, payloads, upload)
+    // const totalTimeSeconds = (Date.now() - initialTime) / 1000
+    // this.context.stdout.write(renderSuccessfulCommand(payloads.length, totalTimeSeconds))
+    // metricsLogger.gauge('duration', totalTimeSeconds)
     metricsLogger.flush()
   }
 
@@ -121,7 +125,8 @@ export class UploadCommand extends Command {
       payloads.map(async (payload) => {
         let repositoryPayload: string | undefined
         repositoryPayload = await this.getRepositoryPayload(repositoryData, payload.sourcemapPath)
-
+        const used = process.memoryUsage().heapUsed / 1024 / 1024;
+        this.context.stdout.write(`datadog-ci uses approximately ${Math.round(used * 100) / 100}MB\n`);
         return {
           ...payload,
           repository: repositoryPayload,
