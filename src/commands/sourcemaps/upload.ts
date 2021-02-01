@@ -9,7 +9,7 @@ import asyncPool from 'tiny-async-pool'
 import {URL} from 'url'
 
 import {apiConstructor} from './api'
-import {filterTrackedFiles, getRepositoryData, newSimpleGit, RepositoryData} from './git'
+import {getRepositoryData, newSimpleGit, RepositoryData} from './git'
 import {APIHelper, Payload} from './interfaces'
 import {getMetricsLogger} from './metrics'
 import {
@@ -99,29 +99,34 @@ export class UploadCommand extends Command {
     const cliVersion = require('../../../package.json').version
     const metricsLogger = getMetricsLogger(this.releaseVersion, this.service, cliVersion)
     const useGit = this.disableGit === undefined || !this.disableGit
+    var initialTime = new Date().getTime()
     const payloads = await this.getPayloadsToUpload(useGit, cliVersion)
+    var totalTime = (Date.now() - initialTime)
+    this.context.stdout.write(chalk.yellow(`Call to getPayloadsToUpload took ${totalTime}ms.\n`))
     const upload = (p: Payload) => this.uploadSourcemap(api, metricsLogger, p)
-    const initialTime = new Date().getTime()
+    const initialTimeUpload = new Date().getTime()
     await asyncPool(this.maxConcurrency, payloads, upload)
-    const totalTimeSeconds = (Date.now() - initialTime) / 1000
-    this.context.stdout.write(renderSuccessfulCommand(payloads.length, totalTimeSeconds))
-    metricsLogger.gauge('duration', totalTimeSeconds)
+
+    const totalTimeUpload = (Date.now() - initialTimeUpload) / 1000
+    this.context.stdout.write(renderSuccessfulCommand(payloads.length, totalTimeUpload))
+    metricsLogger.gauge('duration', totalTimeUpload)
     metricsLogger.flush()
   }
 
   // Fills the 'repository' field of each payload with data gathered using git.
-  private addRepositoryDateToPayloads = async (payloads: Payload[]): Promise<Payload[]> => {
-    const simpleGit = await newSimpleGit()
-    const repositoryData = await getRepositoryData(simpleGit, this.context.stdout, this.repositoryURL)
+  private addRepositoryDataToPayloads = async (payloads: Payload[]): Promise<Payload[]> => {
+    // Invoke git commands to retrive remote, hash and tracke files.
+    const repositoryData = await getRepositoryData(await newSimpleGit(), this.context.stdout, this.repositoryURL)
     if (repositoryData === undefined) {
       return payloads
     }
-
     return Promise.all(
       payloads.map(async (payload) => {
         let repositoryPayload: string | undefined
+        // Open each sourcemap to only include the related tracked files inside the repository payload.
         repositoryPayload = await this.getRepositoryPayload(repositoryData, payload.sourcemapPath)
-
+        const used = process.memoryUsage().heapUsed / 1024 / 1024;
+        this.context.stdout.write(`datadog-ci uses approximately ${Math.round(used * 100) / 100}MB`);
         return {
           ...payload,
           repository: repositoryPayload,
@@ -174,7 +179,7 @@ export class UploadCommand extends Command {
       return payloads
     }
 
-    return this.addRepositoryDateToPayloads(payloads)
+    return this.addRepositoryDataToPayloads(payloads)
   }
 
   // GetRepositoryPayload generates the repository payload for a specific sourcemap.
@@ -185,7 +190,7 @@ export class UploadCommand extends Command {
     sourcemapPath: string
   ): Promise<string | undefined> => {
     let repositoryPayload: string | undefined
-    const files = await filterTrackedFiles(this.context.stdout, sourcemapPath, repositoryData.trackedFiles)
+    const files = await repositoryData.trackedFilesMatcher.matchSourcemap(this.context.stdout, sourcemapPath)
     if (files) {
       repositoryPayload = JSON.stringify({
         data: [
