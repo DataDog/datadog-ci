@@ -30,7 +30,7 @@ export class RunTestCommand extends Command {
     this.config = await parseConfigFile(this.config, this.configPath)
 
     const api = this.getApiHelper()
-    const publicIdsTriggers = this.publicIds.map((id) => ({config: {}, id}))
+    const publicIdsTriggers = this.publicIds.map((id) => ({config: this.config.global, id}))
     const testsToTrigger = publicIdsTriggers.length ? publicIdsTriggers : await this.getTestsToTrigger(api)
 
     if (!testsToTrigger.length) {
