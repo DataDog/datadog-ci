@@ -4,13 +4,14 @@
 module.exports = {
   // Automatically clear mock calls and instances between every test
   clearMocks: true,
-  testMatch: [ "**/__tests__/**/*.test.ts" ],
+  testMatch: ['**/__tests__/**/*.test.ts'],
   preset: 'ts-jest',
-  testEnvironment: 'node',
+  testEnvironment: '<rootDir>/testEnvironment.js',
+  testRunner: 'jest-circus/runner',
   globals: {
     'ts-jest': {
-      tsConfig: 'tsconfig.json'
-    }
+      tsconfig: 'tsconfig.json',
+    },
   },
-  roots: ["src"]
-};
+  roots: ['src'],
+}

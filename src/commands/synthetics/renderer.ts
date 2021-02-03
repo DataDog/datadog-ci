@@ -230,18 +230,22 @@ export const renderResults = (test: Test, results: PollResult[], baseUrl: string
 }
 
 // Other rendering
-export const renderTrigger = (test: Test | undefined, testId: string, config: ConfigOverride) => {
+export const renderTrigger = (test: Test, testId: string, executionRule: ExecutionRule, config: ConfigOverride) => {
   const idDisplay = `[${chalk.bold.dim(testId)}]`
 
   const getMessage = () => {
-    if (!test) {
-      return chalk.red.bold(`Could not find test "${testId}"`)
+    if (executionRule === ExecutionRule.SKIPPED) {
+      // Test is either skipped from datadog-ci config or from test config
+      const isSkippedByCIConfig = config.executionRule === ExecutionRule.SKIPPED
+      if (isSkippedByCIConfig) {
+        return `>> Skipped test "${chalk.yellow.dim(test.name)}"`
+      } else {
+        return `>> Skipped test "${chalk.yellow.dim(test.name)}" because of execution rule configuration in Datadog`
+      }
     }
-    if (config.executionRule === ExecutionRule.SKIPPED) {
-      return `>> Skipped test "${chalk.yellow.dim(test.name)}"`
-    }
-    if (test.options?.ci?.executionRule === ExecutionRule.SKIPPED) {
-      return `>> Skipped test "${chalk.yellow.dim(test.name)}" because of execution rule configuration in Datadog`
+
+    if (executionRule === ExecutionRule.NON_BLOCKING) {
+      return `Trigger test "${chalk.green.bold(test.name)}" (non-blocking)`
     }
 
     return `Trigger test "${chalk.green.bold(test.name)}"`

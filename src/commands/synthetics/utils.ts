@@ -18,6 +18,7 @@ import {
   Suite,
   TemplateContext,
   Test,
+  TestPayload,
   Trigger,
   TriggerConfig,
   TriggerResponse,
@@ -40,8 +41,13 @@ export const handleConfig = (
   publicId: string,
   write: Writable['write'],
   config?: ConfigOverride
-): Payload => {
-  let handledConfig: Payload = {public_id: publicId}
+): TestPayload => {
+  const executionRule = getExecutionRule(test, config)
+  let handledConfig: TestPayload = {
+    executionRule,
+    public_id: publicId,
+  }
+
   if (!config || !Object.keys(config).length) {
     return handledConfig
   }
@@ -58,6 +64,7 @@ export const handleConfig = (
       'followRedirects',
       'headers',
       'locations',
+      'pollingTimeout',
       'retry',
       'variables',
     ]),
@@ -67,17 +74,6 @@ export const handleConfig = (
 
   if (config.startUrl) {
     handledConfig.startUrl = template(config.startUrl, context)
-  }
-
-  if (config.executionRule) {
-    const executionRule = getStrictestExecutionRule(config.executionRule, test.options.ci?.executionRule)
-    test.options.ci = {...(test.options.ci || {}), executionRule}
-  }
-
-  const ciMetadata = getCIMetadata()
-
-  if (ciMetadata) {
-    handledConfig.metadata = ciMetadata
   }
 
   return handledConfig
@@ -111,6 +107,14 @@ const parseUrlVariables = (url: string, write: Writable['write']) => {
   context.SUBDOMAIN = subdomainMatch ? subdomainMatch[1] : undefined
 
   return context
+}
+
+export const getExecutionRule = (test: Test, configOverride?: ConfigOverride): ExecutionRule => {
+  if (configOverride && configOverride.executionRule) {
+    return getStrictestExecutionRule(configOverride.executionRule, test.options?.ci?.executionRule)
+  }
+
+  return test.options?.ci?.executionRule || ExecutionRule.BLOCKING
 }
 
 export const getStrictestExecutionRule = (configRule: ExecutionRule, testRule?: ExecutionRule): ExecutionRule => {
@@ -259,7 +263,7 @@ export const runTests = async (
   triggerConfigs: TriggerConfig[],
   write: Writable['write']
 ): Promise<{tests: Test[]; triggers: Trigger}> => {
-  const testsToTrigger: Payload[] = []
+  const testsToTrigger: TestPayload[] = []
 
   const tests = await Promise.all(
     triggerConfigs.map(async ({config, id}) => {
@@ -270,26 +274,19 @@ export const runTests = async (
       } catch (e) {
         const errorMessage = formatBackendErrors(e)
         write(`[${chalk.bold.dim(id)}] Test not found: ${errorMessage}\n`)
-      }
-
-      if (!test || config.executionRule === ExecutionRule.SKIPPED) {
-        write(`[${chalk.bold.dim(id)}] Test skipped as per test or global configuration.\n`)
 
         return
       }
 
-      if (test.options?.ci?.executionRule === ExecutionRule.SKIPPED) {
-        write(`[${chalk.bold.dim(id)}] Test skipped as per execution rule in Datadog.\n`)
-
-        return
-      }
-
-      write(renderTrigger(test, id, config))
       const overloadedConfig = handleConfig(test, id, write, config)
-      write(renderWait(test))
       testsToTrigger.push(overloadedConfig)
 
-      return test
+      write(renderTrigger(test, id, overloadedConfig.executionRule, config))
+      if (overloadedConfig.executionRule !== ExecutionRule.SKIPPED) {
+        write(renderWait(test))
+
+        return test
+      }
     })
   )
 
@@ -297,10 +294,16 @@ export const runTests = async (
     throw new Error('No tests to trigger')
   }
 
+  const payload: Payload = {tests: testsToTrigger}
+  const ciMetadata = getCIMetadata()
+  if (ciMetadata) {
+    payload.metadata = ciMetadata
+  }
+
   try {
     return {
       tests: tests.filter(definedTypeGuard),
-      triggers: await api.triggerTests(testsToTrigger),
+      triggers: await api.triggerTests(payload),
     }
   } catch (e) {
     const errorMessage = formatBackendErrors(e)
