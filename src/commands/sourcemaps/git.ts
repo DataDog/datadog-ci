@@ -156,13 +156,13 @@ export class TrackedFilesMatcher {
 
   public matchSources(sources: string[]): string[] {
     let filtered: string[] = new Array()
-    const filenameAlreadyMatched = new Map<string, boolean>()
+    const filenameAlreadyMatched = new Set<string>()
     for (const source of sources) {
       const filename = this.getFilename(source)
       if (filenameAlreadyMatched.has(filename)) {
         continue
       }
-      filenameAlreadyMatched.set(filename, true)
+      filenameAlreadyMatched.add(filename)
       const trackedFiles = this.trackedFilenames.get(filename)
       if (trackedFiles) {
         filtered = filtered.concat(trackedFiles)
