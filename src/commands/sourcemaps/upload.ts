@@ -9,7 +9,7 @@ import asyncPool from 'tiny-async-pool'
 import {URL} from 'url'
 
 import {apiConstructor} from './api'
-import {filterTrackedFiles, getRepositoryData, newSimpleGit, RepositoryData} from './git'
+import {getRepositoryData, newSimpleGit, RepositoryData} from './git'
 import {APIHelper, Payload} from './interfaces'
 import {getMetricsLogger} from './metrics'
 import {
@@ -99,33 +99,25 @@ export class UploadCommand extends Command {
     const cliVersion = require('../../../package.json').version
     const metricsLogger = getMetricsLogger(this.releaseVersion, this.service, cliVersion)
     const useGit = this.disableGit === undefined || !this.disableGit
+    const initialTime = Date.now()
     const payloads = await this.getPayloadsToUpload(useGit, cliVersion)
     const upload = (p: Payload) => this.uploadSourcemap(api, metricsLogger, p)
-    const initialTime = new Date().getTime()
     await asyncPool(this.maxConcurrency, payloads, upload)
-    const totalTimeSeconds = (Date.now() - initialTime) / 1000
-    this.context.stdout.write(renderSuccessfulCommand(payloads.length, totalTimeSeconds))
-    metricsLogger.gauge('duration', totalTimeSeconds)
+    const totalTime = (Date.now() - initialTime) / 1000
+    this.context.stdout.write(renderSuccessfulCommand(payloads.length, totalTime))
+    metricsLogger.gauge('duration', totalTime)
     metricsLogger.flush()
   }
 
   // Fills the 'repository' field of each payload with data gathered using git.
-  private addRepositoryDateToPayloads = async (payloads: Payload[]): Promise<Payload[]> => {
-    const simpleGit = await newSimpleGit()
-    const repositoryData = await getRepositoryData(simpleGit, this.context.stdout, this.repositoryURL)
+  private addRepositoryDataToPayloads = async (payloads: Payload[]) => {
+    const repositoryData = await getRepositoryData(await newSimpleGit(), this.context.stdout, this.repositoryURL)
     if (repositoryData === undefined) {
-      return payloads
+      return
     }
-
-    return Promise.all(
+    await Promise.all(
       payloads.map(async (payload) => {
-        let repositoryPayload: string | undefined
-        repositoryPayload = await this.getRepositoryPayload(repositoryData, payload.sourcemapPath)
-
-        return {
-          ...payload,
-          repository: repositoryPayload,
-        }
+        payload.repository = this.getRepositoryPayload(repositoryData, payload.sourcemapPath)
       })
     )
   }
@@ -174,18 +166,17 @@ export class UploadCommand extends Command {
       return payloads
     }
 
-    return this.addRepositoryDateToPayloads(payloads)
+    await this.addRepositoryDataToPayloads(payloads)
+
+    return payloads
   }
 
   // GetRepositoryPayload generates the repository payload for a specific sourcemap.
   // It specifically looks for the list of tracked files that are associated to the source paths
   // declared inside the sourcemap.
-  private getRepositoryPayload = async (
-    repositoryData: RepositoryData,
-    sourcemapPath: string
-  ): Promise<string | undefined> => {
+  private getRepositoryPayload = (repositoryData: RepositoryData, sourcemapPath: string): string | undefined => {
     let repositoryPayload: string | undefined
-    const files = await filterTrackedFiles(this.context.stdout, sourcemapPath, repositoryData.trackedFiles)
+    const files = repositoryData.trackedFilesMatcher.matchSourcemap(this.context.stdout, sourcemapPath)
     if (files) {
       repositoryPayload = JSON.stringify({
         data: [
