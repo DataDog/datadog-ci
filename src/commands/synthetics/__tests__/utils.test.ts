@@ -162,20 +162,34 @@ describe('utils', () => {
       expectHandledConfigToBe(SKIPPED, SKIPPED, NON_BLOCKING)
     })
 
-    test('startUrl template is rendered', () => {
+    test('startUrl template is rendered if correct test type or subtype', () => {
       const publicId = 'abc-def-ghi'
       const fakeTest = {
         config: {request: {url: 'http://example.org/path'}},
         public_id: publicId,
+        type: 'browser',
       } as Test
       const configOverride = {
         startUrl: 'https://{{DOMAIN}}/newPath?oldPath={{PATHNAME}}',
       }
       const expectedUrl = 'https://example.org/newPath?oldPath=/path'
-      const handledConfig = utils.handleConfig(fakeTest, publicId, processWrite, configOverride)
 
+      let handledConfig = utils.handleConfig(fakeTest, publicId, processWrite, configOverride)
       expect(handledConfig.public_id).toBe(publicId)
       expect(handledConfig.startUrl).toBe(expectedUrl)
+
+      fakeTest.type = 'api'
+      fakeTest.subtype = 'http'
+
+      handledConfig = utils.handleConfig(fakeTest, publicId, processWrite, configOverride)
+      expect(handledConfig.public_id).toBe(publicId)
+      expect(handledConfig.startUrl).toBe(expectedUrl)
+
+      fakeTest.subtype = 'dns'
+
+      handledConfig = utils.handleConfig(fakeTest, publicId, processWrite, configOverride)
+      expect(handledConfig.public_id).toBe(publicId)
+      expect(handledConfig.startUrl).toBeUndefined()
     })
 
     test('startUrl is not parsable', () => {
@@ -185,6 +199,7 @@ describe('utils', () => {
       const fakeTest = {
         config: {request: {url: 'http://{{ FAKE_VAR }}/path'}},
         public_id: publicId,
+        type: 'browser',
       } as Test
       const configOverride = {
         startUrl: 'https://{{DOMAIN}}/newPath?oldPath={{CUSTOMVAR}}',
@@ -202,6 +217,7 @@ describe('utils', () => {
       const fakeTest = {
         config: {request: {url: 'http://exmaple.org/path'}},
         public_id: publicId,
+        type: 'browser',
       } as Test
       const configOverride = {
         startUrl: 'http://127.0.0.1/newPath{{PARAMS}}',
