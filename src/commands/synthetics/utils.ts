@@ -70,9 +70,8 @@ export const handleConfig = (
     ]),
   }
 
-  const context = parseUrlVariables(test.config.request.url, write)
-
   if ((test.type === 'browser' || test.subtype === 'http') && config.startUrl) {
+    const context = parseUrlVariables(test.config.request.url, write)
     handledConfig.startUrl = template(config.startUrl, context)
   }
 
