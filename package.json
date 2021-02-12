@@ -42,7 +42,7 @@
     "axios": "0.21.1",
     "chalk": "2.4.2",
     "clipanion": "2.2.2",
-    "datadog-metrics": "https://github.com/DataDog/node-datadog-metrics#12d16a80ea2a8846c91d80f5e127fb7b81b9f347",
+    "datadog-metrics": "0.9.0",
     "dd-trace": "0.30.1",
     "deep-extend": "0.6.0",
     "form-data": "3.0.0",
