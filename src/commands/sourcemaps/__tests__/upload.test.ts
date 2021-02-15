@@ -154,6 +154,22 @@ describe('execute', () => {
       version: '1234',
     })
   })
+
+  test('using the mjs extension', async () => {
+    const {context, code} = await runCLI('./src/commands/sourcemaps/__tests__/mjs')
+    const output = context.stdout.toString().split(os.EOL)
+    expect(code).toBe(0)
+    checkConsoleOutput(output, {
+      basePath: 'src/commands/sourcemaps/__tests__/mjs',
+      concurrency: 20,
+      jsFilesURLs: ['https://static.com/js/common.mjs'],
+      minifiedPathPrefix: 'https://static.com/js',
+      projectPath: '',
+      service: 'test-service',
+      sourcemapsPaths: ['src/commands/sourcemaps/__tests__/mjs/common.mjs.map'],
+      version: '1234',
+    })
+  })
 })
 
 const makeCli = () => {
