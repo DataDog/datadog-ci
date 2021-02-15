@@ -2,6 +2,7 @@
 import os from 'os'
 
 import {Cli} from 'clipanion/lib/advanced'
+import {Payload} from '../interfaces'
 import {UploadCommand} from '../upload'
 
 describe('upload', () => {
@@ -81,6 +82,46 @@ describe('upload', () => {
       expect(write.mock.calls[0][0]).toContain('DATADOG_API_KEY')
     })
   })
+
+  describe('addRepositoryDataToPayloads', () => {
+    test('repository url and commit still defined without payload', async () => {
+      const command = new UploadCommand()
+      const write = jest.fn()
+      command.context = {stdout: {write}} as any
+      const payloads = new Array<Payload>({
+        cliVersion: '0.0.1',
+        minifiedFilePath: 'src/commands/sourcemaps/__tests__/fixtures-empty/empty.min.js',
+        minifiedUrl: 'http://example/empty.min.js',
+        projectPath: '',
+        service: 'svc',
+        sourcemapPath: 'src/commands/sourcemaps/__tests__/fixtures-empty/empty.min.js.map',
+        version: '1.2.3',
+      })
+      await command['addRepositoryDataToPayloads'](payloads)
+      expect(payloads[0].gitRepositoryURL).toBeDefined()
+      expect(payloads[0].gitCommitSha).toHaveLength(40)
+      expect(payloads[0].gitRepositoryPayload).toBeUndefined()
+    })
+
+    test('should include payload', async () => {
+      const command = new UploadCommand()
+      const write = jest.fn()
+      command.context = {stdout: {write}} as any
+      const payloads = new Array<Payload>({
+        cliVersion: '0.0.1',
+        minifiedFilePath: 'src/commands/sourcemaps/__tests__/fixtures/common.min.js',
+        minifiedUrl: 'http://example/common.min.js',
+        projectPath: '',
+        service: 'svc',
+        sourcemapPath: 'src/commands/sourcemaps/__tests__/fixtures/common.min.js.map',
+        version: '1.2.3',
+      })
+      await command['addRepositoryDataToPayloads'](payloads)
+      expect(payloads[0].gitRepositoryURL).toBeDefined()
+      expect(payloads[0].gitCommitSha).toHaveLength(40)
+      expect(payloads[0].gitRepositoryPayload).toBeDefined()
+    })
+  })
 })
 
 describe('execute', () => {
@@ -151,6 +192,22 @@ describe('execute', () => {
       projectPath: '',
       service: 'test-service',
       sourcemapsPaths: [`${process.cwd()}/src/commands/sourcemaps/__tests__/fixtures/common.min.js.map`],
+      version: '1234',
+    })
+  })
+
+  test('using the mjs extension', async () => {
+    const {context, code} = await runCLI('./src/commands/sourcemaps/__tests__/mjs')
+    const output = context.stdout.toString().split(os.EOL)
+    expect(code).toBe(0)
+    checkConsoleOutput(output, {
+      basePath: 'src/commands/sourcemaps/__tests__/mjs',
+      concurrency: 20,
+      jsFilesURLs: ['https://static.com/js/common.mjs'],
+      minifiedPathPrefix: 'https://static.com/js',
+      projectPath: '',
+      service: 'test-service',
+      sourcemapsPaths: ['src/commands/sourcemaps/__tests__/mjs/common.mjs.map'],
       version: '1234',
     })
   })

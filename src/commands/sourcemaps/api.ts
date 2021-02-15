@@ -26,8 +26,14 @@ export const uploadSourcemap = (request: (args: AxiosRequestConfig) => AxiosProm
   form.append('minified_url', sourcemap.minifiedUrl)
   form.append('project_path', sourcemap.projectPath)
   form.append('type', 'js_sourcemap')
-  if (sourcemap.repository) {
-    form.append('repository', sourcemap.repository, {filename: 'repository', contentType: 'application/json'})
+  if (sourcemap.gitRepositoryPayload) {
+    form.append('repository', sourcemap.gitRepositoryPayload, {filename: 'repository', contentType: 'application/json'})
+  }
+  if (sourcemap.gitRepositoryURL) {
+    form.append('git_repository_url', sourcemap.gitRepositoryURL)
+  }
+  if (sourcemap.gitCommitSha) {
+    form.append('git_commit_sha', sourcemap.gitCommitSha)
   }
 
   return request({

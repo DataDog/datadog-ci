@@ -117,7 +117,9 @@ export class UploadCommand extends Command {
     }
     await Promise.all(
       payloads.map(async (payload) => {
-        payload.repository = this.getRepositoryPayload(repositoryData, payload.sourcemapPath)
+        payload.gitRepositoryPayload = this.getRepositoryPayload(repositoryData, payload.sourcemapPath)
+        payload.gitRepositoryURL = repositoryData.remote
+        payload.gitCommitSha = repositoryData.hash
       })
     )
   }
@@ -134,7 +136,7 @@ export class UploadCommand extends Command {
   // Looks for the sourcemaps and minified files on disk and returns
   // the associated payloads.
   private getMatchingSourcemapFiles = async (cliVersion: string): Promise<Payload[]> => {
-    const sourcemapFiles = glob.sync(buildPath(this.basePath!, '**/*.js.map'))
+    const sourcemapFiles = glob.sync(buildPath(this.basePath!, '**/*js.map'))
 
     return Promise.all(
       sourcemapFiles.map(async (sourcemapPath) => {
