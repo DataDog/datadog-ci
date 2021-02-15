@@ -7,7 +7,9 @@ export interface Payload {
   minifiedUrl: string
   overwrite?: boolean
   projectPath: string
-  repository?: string
+  repositoryPayload?: string
+  repositoryURL?: string
+  commitSha?: string
   service: string
   sourcemapPath: string
   version: string

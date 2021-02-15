@@ -117,7 +117,9 @@ export class UploadCommand extends Command {
     }
     await Promise.all(
       payloads.map(async (payload) => {
-        payload.repository = this.getRepositoryPayload(repositoryData, payload.sourcemapPath)
+        payload.repositoryPayload = this.getRepositoryPayload(repositoryData, payload.sourcemapPath)
+        payload.repositoryURL = repositoryData.remote
+        payload.commitSha = repositoryData.hash
       })
     )
   }
