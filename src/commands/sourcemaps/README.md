@@ -38,11 +38,9 @@ The folder structure should match the structure of the served static files.
 
 * `--release-version` (required) is similar and will be used to match the `version` tag set on the RUM SDK.
 
-* `--minified-path-prefix` (required) is the URL or absolute path prefix that will be matched against the URL we got the error from. It must be set to the actual url or the absolute path exposed on the server (and used by browsers to retrieve the minified file). 
-When un-minifying the stack traces, the URL of the static files will be matched against the concatenation of this prefix and the relative path to the folder you're uploading sourcemaps from of the JS file.
-Full URLs matching will be prioritized over absolute paths matches.
-The protocol will be ignored when matching using full URLs. The protocol can be explicitly omitted, for example: `//static.datadog.com/js`.  
-Absolute paths must always begin with a leading slash. Simply specify `/` if the content is expected to be at the root directory on the server.
+* `--minified-path-prefix` (required) should be a prefix common to all your JS source files, depending on the URL they are served from. The prefix can be a full URL or an absolute path.
+Example: if you're uploading `dist/file.js` to `https://example.com/static/file.js`, you can use `datadog-ci sourcemaps upload ./dist --minified-path-prefix https://example.com/static/` or `datadog-ci sourcemaps upload ./dist --minified-path-prefix /static/`.
+`--minified-path-prefix /` is a valid input when you upload JS at the root directory of the server.
 
 In addition, some optional parameters are available:
 
