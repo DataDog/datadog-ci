@@ -10,6 +10,7 @@ import {ProxyConfiguration} from '../../../helpers/utils'
 
 import {apiConstructor} from '../api'
 import {ExecutionRule, PollResult, Result, Test} from '../interfaces'
+import {Tunnel} from '../tunnel'
 import * as utils from '../utils'
 
 import {getApiTest} from './fixtures'
@@ -404,6 +405,23 @@ describe('utils', () => {
       expect(await utils.waitForResults(api, [triggerResultPass, triggerResultTimeOut], 2000, [])).toEqual(
         expectedResults
       )
+    })
+
+    test('tunnel failure should throw', async () => {
+      const waitMock = jest.spyOn(utils, 'wait')
+      waitMock.mockImplementation()
+
+      const triggerResultTimeOut = {
+        ...triggerResult,
+        result_id: 'timingOutTest',
+      }
+      const mockTunnel = {keepAlive: async () => Promise.reject()} as Tunnel
+      try {
+        await utils.waitForResults(api, [triggerResultTimeOut], 2000, [], mockTunnel)
+        expect(false).toBeTruthy()
+      } catch {
+        expect(true).toBeTruthy()
+      }
     })
   })
 

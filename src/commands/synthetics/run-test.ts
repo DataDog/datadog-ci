@@ -5,6 +5,7 @@ import {parseConfigFile, ProxyConfiguration} from '../../helpers/utils'
 import {apiConstructor} from './api'
 import {APIHelper, ConfigOverride, ExecutionRule, LocationsMapping, PollResult, Test} from './interfaces'
 import {renderHeader, renderResults} from './renderer'
+import {Tunnel} from './tunnel'
 import {getSuites, hasTestSucceeded, runTests, waitForResults} from './utils'
 
 export class RunTestCommand extends Command {
@@ -19,9 +20,11 @@ export class RunTestCommand extends Command {
     pollingTimeout: 2 * 60 * 1000,
     proxy: {protocol: 'http'} as ProxyConfiguration,
     subdomain: process.env.DATADOG_SUBDOMAIN || 'app',
+    tunnel: false,
   }
   private configPath?: string
   private publicIds: string[] = []
+  private shouldOpenTunnel?: boolean
   private testSearchQuery?: string
 
   public async execute() {
@@ -39,6 +42,27 @@ export class RunTestCommand extends Command {
       return 0
     }
 
+    let tunnel: Tunnel | undefined
+    if (this.config.tunnel || this.shouldOpenTunnel) {
+      this.context.stdout.write(
+        'You are using tunnel option, the chosen location(s) will be overridden by a location in your account region.\n'
+      )
+      // Get the pre-signed URL to connect to the tunnel service
+      const {url: presignedURL} = await api.getPresignedURL(this.publicIds)
+      // Open a tunnel to Datadog
+      try {
+        tunnel = new Tunnel(presignedURL, this.publicIds, this.context.stdout.write.bind(this.context.stdout))
+        const tunnelInfo = await tunnel.start()
+        testsToTrigger.forEach((testToTrigger) => {
+          testToTrigger.config.tunnel = tunnelInfo
+        })
+      } catch (e) {
+        this.context.stdout.write(`\n${chalk.bgRed.bold(' ERROR on tunnel start ')}\n${e.stack}\n\n`)
+
+        return 1
+      }
+    }
+
     const {tests, triggers} = await runTests(api, testsToTrigger, this.context.stdout.write.bind(this.context.stdout))
 
     // All tests have been skipped or are missing.
@@ -54,7 +78,7 @@ export class RunTestCommand extends Command {
 
     try {
       // Poll the results.
-      const results = await waitForResults(api, triggers.results, this.config.pollingTimeout, testsToTrigger)
+      const results = await waitForResults(api, triggers.results, this.config.pollingTimeout, testsToTrigger, tunnel)
 
       // Sort tests to show success first then non blocking failures and finally blocking failures.
       tests.sort(this.sortTestsByOutcome(results))
@@ -85,6 +109,11 @@ export class RunTestCommand extends Command {
       this.context.stdout.write(`\n${chalk.bgRed.bold(' ERROR ')}\n${error.stack}\n\n`)
 
       return 1
+    } finally {
+      // Stop the tunnel
+      if (tunnel) {
+        await tunnel.stop()
+      }
     }
   }
 
@@ -178,3 +207,4 @@ RunTestCommand.addOption('appKey', Command.String('--appKey'))
 RunTestCommand.addOption('configPath', Command.String('--config'))
 RunTestCommand.addOption('publicIds', Command.Array('-p,--public-id'))
 RunTestCommand.addOption('testSearchQuery', Command.String('-s,--search'))
+RunTestCommand.addOption('shouldOpenTunnel', Command.Boolean('-t,--tunnel'))

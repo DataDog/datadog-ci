@@ -7,6 +7,9 @@ import {promisify} from 'util'
 import chalk from 'chalk'
 import glob from 'glob'
 
+import {getCIMetadata} from '../../helpers/ci'
+import {pick} from '../../helpers/utils'
+
 import {formatBackendErrors} from './api'
 import {
   APIHelper,
@@ -25,9 +28,7 @@ import {
   TriggerResult,
 } from './interfaces'
 import {renderTrigger, renderWait} from './renderer'
-
-import {getCIMetadata} from '../../helpers/ci'
-import {pick} from '../../helpers/utils'
+import {Tunnel} from './tunnel'
 
 const POLLING_INTERVAL = 5000 // In ms
 const PUBLIC_ID_REGEX = /^[\d\w]{3}-[\d\w]{3}-[\d\w]{3}$/
@@ -66,6 +67,7 @@ export const handleConfig = (
       'locations',
       'pollingTimeout',
       'retry',
+      'tunnel',
       'variables',
     ]),
   }
@@ -175,13 +177,22 @@ export const waitForResults = async (
   api: APIHelper,
   triggerResponses: TriggerResponse[],
   defaultTimeout: number,
-  triggerConfigs: TriggerConfig[]
+  triggerConfigs: TriggerConfig[],
+  tunnel?: Tunnel
 ) => {
   const triggerResultMap = createTriggerResultMap(triggerResponses, defaultTimeout, triggerConfigs)
   const triggerResults = [...triggerResultMap.values()]
 
   const maxPollingTimeout = Math.max(...triggerResults.map((tr) => tr.pollingTimeout))
   const pollingStartDate = new Date().getTime()
+
+  let isTunnelConnected = true
+  if (tunnel) {
+    tunnel
+      .keepAlive()
+      .then(() => (isTunnelConnected = false))
+      .catch(() => (isTunnelConnected = false))
+  }
   while (triggerResults.filter((tr) => !tr.result).length) {
     const pollingDuration = new Date().getTime() - pollingStartDate
 
@@ -194,6 +205,10 @@ export const waitForResults = async (
           triggerResult.location
         )
       }
+    }
+
+    if (tunnel && !isTunnelConnected) {
+      throw new Error('Unexpected error: tunnel failure')
     }
 
     if (pollingDuration >= maxPollingTimeout) {
