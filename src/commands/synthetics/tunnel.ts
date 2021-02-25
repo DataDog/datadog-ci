@@ -11,6 +11,8 @@ import {Config as MultiplexerConfig, Server as Multiplexer} from 'yamux-js'
 import {generateOpenSSHKeys, parseSSHKey} from './crypto'
 import {WebSocketWithReconnect} from './websocket'
 
+const MAX_CONCURRENT_FORWARDED_CONNECTIONS = 50
+
 export interface TunnelInfo {
   host: string
   id: string
@@ -23,6 +25,7 @@ const webSocketReconnect = {
 }
 
 export class Tunnel {
+  private forwardSockets: Array<Socket> = []
   private log: Writable['write']
   private logError: Writable['write']
   private multiplexer?: Multiplexer
@@ -103,6 +106,7 @@ export class Tunnel {
     }
 
     await this.ws.close()
+    this.forwardSockets.filter((s) => !!s).forEach((s) => s.destroy())
   }
 
   // Authenticate SSH with key authentication - username should be the test ID
@@ -130,6 +134,11 @@ export class Tunnel {
       return ctx.reject()
     }
 
+    // A connection without a signature is only to check for public key validity
+    if (!ctx.signature) {
+      return ctx.accept()
+    }
+
     // Username is allowed and key authentication was successful
     this.log(`Proxy opened for test ${user}`)
     ctx.accept()
@@ -145,21 +154,24 @@ export class Tunnel {
         // See https://github.com/mscdex/ssh2/issues/479#issuecomment-250416559
         let src: SSHServerChannel
         const dest = new Socket()
+        this.forwardSockets.push(dest)
         dest.on('connect', () => {
           src = accept()
           if (!src) {
             return dest.end()
           }
           src.pipe(dest).pipe(src)
+
+          src.on('close', () => {
+            dest.destroy()
+          })
         })
-        dest.on('error', () => {
-          if (!src) {
-            reject()
-          }
+        dest.on('error', (error) => {
+          console.error('Forwarding error', error)
         })
         dest.on('close', () => {
-          if (!src) {
-            reject()
+          if (src) {
+            src.close()
           }
         })
         dest.connect(info.destPort, info.destIP)
@@ -222,6 +234,8 @@ export class Tunnel {
     const sshStream = new SSH2Stream(this.sshStreamConfig)
     const client: SSHConnection = new (SSHServer as any).IncomingClient(sshStream, stream) // Typing does not include IncomingClient
     stream.pipe(sshStream).pipe(stream)
+    sshStream.setMaxListeners(MAX_CONCURRENT_FORWARDED_CONNECTIONS)
+    stream.setMaxListeners(MAX_CONCURRENT_FORWARDED_CONNECTIONS)
 
     stream
       .once('close', () => {
