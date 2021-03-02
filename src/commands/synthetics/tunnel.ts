@@ -27,7 +27,7 @@ const webSocketReconnect = {
 }
 
 export class Tunnel {
-  private forwardSockets: Array<Socket> = []
+  private forwardSockets: Socket[] = []
   private log: Writable['write']
   private logError: Writable['write']
   private multiplexer?: Multiplexer

@@ -111,7 +111,7 @@ export class WebSocketWithReconnect extends EventEmitter {
       this.reconnectRetries++
       const options: WebSocket.ClientOptions = {}
       if (this.proxyOpts.host && this.proxyOpts.port) {
-        options.agent = (new ProxyAgent(this.proxyOpts) as unknown) as Agent // proxy-agent typings are incomplete
+        options.agent = (new ProxyAgent(this.proxyOpts) as unknown) as Agent // Proxy-agent typings are incomplete
       }
       this.websocket = new WebSocket(this.url, options)
     }
