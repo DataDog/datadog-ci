@@ -8,6 +8,8 @@ import {AuthContext, Connection as SSHConnection, Server as SSHServer, ServerCha
 import {ParsedKey, SSH2Stream, SSH2StreamConfig} from 'ssh2-streams'
 import {Config as MultiplexerConfig, Server as Multiplexer} from 'yamux-js'
 
+import {ProxyConfiguration} from '../../helpers/utils'
+
 import {generateOpenSSHKeys, parseSSHKey} from './crypto'
 import {WebSocketWithReconnect} from './websocket'
 
@@ -34,7 +36,7 @@ export class Tunnel {
   private sshStreamConfig: SSH2StreamConfig
   private ws: WebSocketWithReconnect
 
-  constructor(private url: string, private testIDs: string[], log: Writable['write']) {
+  constructor(private url: string, private testIDs: string[], proxy: ProxyConfiguration, log: Writable['write']) {
     this.log = (message: string) => log(`[${chalk.bold.blue('Tunnel')}] ${message}\n`)
     this.logError = (message: string) => log(`[${chalk.bold.red('Tunnel')}] ${message}\n`)
 
@@ -56,7 +58,13 @@ export class Tunnel {
       },
       server: true,
     }
-    this.ws = new WebSocketWithReconnect(this.url, this.log, webSocketReconnect.maxRetries, webSocketReconnect.interval)
+    this.ws = new WebSocketWithReconnect(
+      this.url,
+      this.log,
+      proxy,
+      webSocketReconnect.maxRetries,
+      webSocketReconnect.interval
+    )
   }
 
   /**

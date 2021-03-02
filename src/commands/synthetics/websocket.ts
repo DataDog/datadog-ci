@@ -1,7 +1,11 @@
 import {EventEmitter, once} from 'events'
+import type {Agent} from 'http'
 import {Writable} from 'stream'
 
+import ProxyAgent from 'proxy-agent'
 import WebSocket, {createWebSocketStream} from 'ws'
+
+import {ProxyConfiguration} from '../../helpers/utils'
 
 /**
  * TODO: test websocket class:
@@ -19,6 +23,7 @@ export class WebSocketWithReconnect extends EventEmitter {
   constructor(
     private url: string,
     private log: Writable['write'],
+    private proxyOpts: ProxyConfiguration,
     private reconnectMaxRetries = 3,
     private reconnectInterval = 3000 // In ms
   ) {
@@ -104,7 +109,11 @@ export class WebSocketWithReconnect extends EventEmitter {
   private establishWebsocketConnection(resolve: (value: void) => void, reject: (error: Error) => void) {
     if (!this.websocket) {
       this.reconnectRetries++
-      this.websocket = new WebSocket(this.url)
+      const options: WebSocket.ClientOptions = {}
+      if (this.proxyOpts.host && this.proxyOpts.port) {
+        options.agent = (new ProxyAgent(this.proxyOpts) as unknown) as Agent // proxy-agent typings are incomplete
+      }
+      this.websocket = new WebSocket(this.url, options)
     }
 
     this.websocket.on('unexpected-response', (req, res) => {
