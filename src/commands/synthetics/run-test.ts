@@ -29,6 +29,7 @@ export class RunTestCommand extends Command {
 
   public async execute() {
     const startTime = Date.now()
+    const stdoutLogger = this.context.stdout.write.bind(this.context.stdout)
 
     this.config = await parseConfigFile(this.config, this.configPath)
 
@@ -51,7 +52,7 @@ export class RunTestCommand extends Command {
       const {url: presignedURL} = await api.getPresignedURL(this.publicIds)
       // Open a tunnel to Datadog
       try {
-        tunnel = new Tunnel(presignedURL, this.publicIds, this.context.stdout.write.bind(this.context.stdout))
+        tunnel = new Tunnel(presignedURL, this.publicIds, this.config.proxy, stdoutLogger)
         const tunnelInfo = await tunnel.start()
         testsToTrigger.forEach((testToTrigger) => {
           testToTrigger.config.tunnel = tunnelInfo
@@ -63,7 +64,7 @@ export class RunTestCommand extends Command {
       }
     }
 
-    const {tests, triggers} = await runTests(api, testsToTrigger, this.context.stdout.write.bind(this.context.stdout))
+    const {tests, triggers} = await runTests(api, testsToTrigger, stdoutLogger)
 
     // All tests have been skipped or are missing.
     if (!tests.length) {
