@@ -29,12 +29,14 @@ export class RunTestCommand extends Command {
 
   public async execute() {
     const startTime = Date.now()
+    const stdoutLogger = this.context.stdout.write.bind(this.context.stdout)
 
     this.config = await parseConfigFile(this.config, this.configPath)
 
     const api = this.getApiHelper()
-    const publicIdsTriggers = this.publicIds.map((id) => ({config: this.config.global, id}))
-    const testsToTrigger = publicIdsTriggers.length ? publicIdsTriggers : await this.getTestsToTrigger(api)
+    const publicIdsFromCli = this.publicIds.map((id) => ({config: this.config.global, id}))
+    const testsToTrigger = publicIdsFromCli.length ? publicIdsFromCli : await this.getTestsToTrigger(api)
+    const publicIdsToTrigger = testsToTrigger.map(({id}) => id)
 
     if (!testsToTrigger.length) {
       this.context.stdout.write('No test suites to run.\n')
@@ -48,10 +50,10 @@ export class RunTestCommand extends Command {
         'You are using tunnel option, the chosen location(s) will be overridden by a location in your account region.\n'
       )
       // Get the pre-signed URL to connect to the tunnel service
-      const {url: presignedURL} = await api.getPresignedURL(this.publicIds)
+      const {url: presignedURL} = await api.getPresignedURL(publicIdsToTrigger)
       // Open a tunnel to Datadog
       try {
-        tunnel = new Tunnel(presignedURL, this.publicIds, this.context.stdout.write.bind(this.context.stdout))
+        tunnel = new Tunnel(presignedURL, publicIdsToTrigger, this.config.proxy, stdoutLogger)
         const tunnelInfo = await tunnel.start()
         testsToTrigger.forEach((testToTrigger) => {
           testToTrigger.config.tunnel = tunnelInfo
@@ -63,7 +65,7 @@ export class RunTestCommand extends Command {
       }
     }
 
-    const {tests, triggers} = await runTests(api, testsToTrigger, this.context.stdout.write.bind(this.context.stdout))
+    const {tests, triggers} = await runTests(api, testsToTrigger, stdoutLogger)
 
     // All tests have been skipped or are missing.
     if (!tests.length) {
