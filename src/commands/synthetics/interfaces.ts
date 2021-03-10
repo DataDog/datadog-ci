@@ -67,6 +67,7 @@ export interface Test {
       timeout: number
       url: string
     }
+    steps?: {subtype: string}[]
     variables: string[]
   }
   created_at: string

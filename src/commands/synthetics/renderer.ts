@@ -108,7 +108,7 @@ const renderResultOutcome = (result: Result, test: Test, icon: string, color: ty
   }
 
   if (test.type === 'api') {
-    const requestDescription = renderApiRequestDescription(test.subtype, test.config.request)
+    const requestDescription = renderApiRequestDescription(test.subtype, test.config)
 
     if (result.errorCode && result.errorMessage) {
       return [
@@ -130,7 +130,8 @@ const renderResultOutcome = (result: Result, test: Test, icon: string, color: ty
   }
 }
 
-const renderApiRequestDescription = (subType: string, request: Test['config']['request']): string => {
+const renderApiRequestDescription = (subType: string, config: Test['config']): string => {
+  const {request, steps} = config
   if (subType === 'dns') {
     const text = `Query for ${request.host}`
     if (request.dnsServer) {
@@ -142,6 +143,22 @@ const renderApiRequestDescription = (subType: string, request: Test['config']['r
 
   if (subType === 'ssl' || subType === 'tcp') {
     return `Host: ${request.host}:${request.port}`
+  }
+
+  if (subType === 'multi' && steps) {
+    const stepsDescription = Object.entries(
+      steps
+        .map((step) => step.subtype)
+        .reduce((counts, type) => {
+          counts[type] = (counts[type] || 0) + 1
+
+          return counts
+        }, {} as {[key: string]: number})
+    )
+      .map(([type, count]) => `${count} ${type.toUpperCase()} test`)
+      .join(', ')
+
+    return `Multistep test containing ${stepsDescription}`
   }
 
   return `${chalk.bold(request.method)} - ${request.url}`
