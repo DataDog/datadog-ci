@@ -4,15 +4,15 @@ import tracer from 'dd-trace'
 
 import {getCIMetadata} from '../../helpers/ci'
 import {
+  CI_BUILD_LEVEL,
+  CI_LEVEL,
   CI_PIPELINE_URL,
   CI_PROVIDER_NAME,
   GIT_BRANCH,
   GIT_SHA,
   PARENT_SPAN_ID,
-  TRACE_ID,
-  CI_LEVEL,
-  CI_BUILD_LEVEL,
   SPAN_TYPE,
+  TRACE_ID,
 } from '../../helpers/tags'
 
 export class TraceInstructionCommand extends Command {
