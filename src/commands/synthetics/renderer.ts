@@ -161,7 +161,11 @@ const renderApiRequestDescription = (subType: string, config: Test['config']): s
     return `Multistep test containing ${stepsDescription}`
   }
 
-  return `${chalk.bold(request.method)} - ${request.url}`
+  if (subType === 'http') {
+    return `${chalk.bold(request.method)} - ${request.url}`
+  }
+
+  return `${chalk.bold(subType)} test`
 }
 
 const getResultUrl = (baseUrl: string, test: Test, resultId: string) => {
