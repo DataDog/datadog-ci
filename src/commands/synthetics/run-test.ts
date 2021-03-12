@@ -57,8 +57,8 @@ export class RunTestCommand extends Command {
       try {
         tunnel = new Tunnel(presignedURL, publicIdsToTrigger, this.config.proxy, stdoutLogger)
         const tunnelInfo = await tunnel.start()
-        testsToTrigger.forEach((testToTrigger) => {
-          testToTrigger.config.tunnel = tunnelInfo
+        overriddenTestsToTrigger.forEach((testToTrigger) => {
+          testToTrigger.tunnel = tunnelInfo
         })
       } catch (e) {
         this.context.stdout.write(`\n${chalk.bgRed.bold(' ERROR on tunnel start ')}\n${e.stack}\n\n`)
