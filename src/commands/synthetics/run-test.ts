@@ -45,7 +45,7 @@ export class RunTestCommand extends Command {
     }
 
     let tunnel: Tunnel | undefined
-    if (this.config.tunnel || this.shouldOpenTunnel) {
+    if ((this.shouldOpenTunnel === undefined && this.config.tunnel) || this.shouldOpenTunnel) {
       this.context.stdout.write(
         'You are using tunnel option, the chosen location(s) will be overridden by a location in your account region.\n'
       )
