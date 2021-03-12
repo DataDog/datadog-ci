@@ -28,10 +28,10 @@ describe('run-test', () => {
   describe('execute', () => {
     test('should apply config override for tests triggered by public id', async () => {
       jest.spyOn(ciUtils, 'parseConfigFile').mockImplementation(async (config, _) => config)
-      const runTestsMock = jest.spyOn(utils, 'runTests').mockImplementation(async () => ({
-        tests: [],
-        triggers: {locations: [], results: [], triggered_check_ids: []},
-      }))
+      const getTestsToTriggersMock = jest
+        .spyOn(utils, 'getTestsToTrigger')
+        .mockReturnValue(Promise.resolve({tests: [], overriddenTestsToTrigger: []}))
+      jest.spyOn(utils, 'runTests').mockImplementation()
 
       const startUrl = '{{PROTOCOL}}//myhost{{PATHNAME}}{{PARAMS}}'
       const locations = ['location1', 'location2']
@@ -45,7 +45,7 @@ describe('run-test', () => {
       command['publicIds'] = ['public-id-1', 'public-id-2']
       await command.execute()
 
-      expect(runTestsMock).toHaveBeenCalledWith(
+      expect(getTestsToTriggersMock).toHaveBeenCalledWith(
         apiHelper,
         expect.arrayContaining([
           expect.objectContaining({id: 'public-id-1', config: configOverride}),
@@ -57,10 +57,12 @@ describe('run-test', () => {
 
     test('should not wait for `skipped` only tests batch results', async () => {
       jest.spyOn(ciUtils, 'parseConfigFile').mockImplementation(async (config, _) => config)
-      const runTestsMock = jest.spyOn(utils, 'runTests').mockImplementation(async () => ({
-        tests: [],
-        triggers: {locations: [], results: [], triggered_check_ids: []},
-      }))
+      const getTestsToTriggersMock = jest
+        .spyOn(utils, 'getTestsToTrigger')
+        .mockReturnValue(Promise.resolve({tests: [], overriddenTestsToTrigger: []}))
+      const runTestsMock = jest
+        .spyOn(utils, 'runTests')
+        .mockReturnValue(Promise.resolve({locations: [], results: [], triggered_check_ids: []}))
       const waitForResultSpy = jest.spyOn(utils, 'waitForResults')
 
       const apiHelper = {}
@@ -74,7 +76,7 @@ describe('run-test', () => {
 
       await command.execute()
 
-      expect(runTestsMock).toHaveBeenCalledWith(
+      expect(getTestsToTriggersMock).toHaveBeenCalledWith(
         apiHelper,
         expect.arrayContaining([
           expect.objectContaining({id: 'public-id-1', config: configOverride}),
@@ -82,6 +84,7 @@ describe('run-test', () => {
         ]),
         expect.anything()
       )
+      expect(runTestsMock).toHaveBeenCalledWith(apiHelper, [])
       expect(write).toHaveBeenCalledWith('No test to run.\n')
       expect(waitForResultSpy).not.toHaveBeenCalled()
     })
