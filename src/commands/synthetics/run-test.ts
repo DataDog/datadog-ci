@@ -6,7 +6,7 @@ import {apiConstructor} from './api'
 import {APIHelper, ConfigOverride, ExecutionRule, LocationsMapping, PollResult, Test} from './interfaces'
 import {renderHeader, renderResults} from './renderer'
 import {Tunnel} from './tunnel'
-import {getSuites, hasTestSucceeded, runTests, waitForResults} from './utils'
+import {getSuites, getTestsToTrigger, hasTestSucceeded, runTests, waitForResults} from './utils'
 
 export class RunTestCommand extends Command {
   private apiKey?: string
@@ -36,7 +36,6 @@ export class RunTestCommand extends Command {
     const api = this.getApiHelper()
     const publicIdsFromCli = this.publicIds.map((id) => ({config: this.config.global, id}))
     const testsToTrigger = publicIdsFromCli.length ? publicIdsFromCli : await this.getTestsToTrigger(api)
-    const publicIdsToTrigger = testsToTrigger.map(({id}) => id)
 
     if (!testsToTrigger.length) {
       this.context.stdout.write('No test suites to run.\n')
@@ -44,8 +43,11 @@ export class RunTestCommand extends Command {
       return 0
     }
 
+    const {tests, overriddenTestsToTrigger} = await getTestsToTrigger(api, testsToTrigger, stdoutLogger)
+    const publicIdsToTrigger = tests.map(({public_id}) => public_id)
+
     let tunnel: Tunnel | undefined
-    if (this.config.tunnel || this.shouldOpenTunnel) {
+    if ((this.shouldOpenTunnel === undefined && this.config.tunnel) || this.shouldOpenTunnel) {
       this.context.stdout.write(
         'You are using tunnel option, the chosen location(s) will be overridden by a location in your account region.\n'
       )
@@ -64,8 +66,7 @@ export class RunTestCommand extends Command {
         return 1
       }
     }
-
-    const {tests, triggers} = await runTests(api, testsToTrigger, stdoutLogger)
+    const triggers = await runTests(api, overriddenTestsToTrigger)
 
     // All tests have been skipped or are missing.
     if (!tests.length) {
