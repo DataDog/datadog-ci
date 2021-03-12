@@ -122,7 +122,7 @@ export class Tunnel {
     const allowedUsers = this.testIDs.map((testId) => Buffer.from(testId))
     // Ensure username is allowed
     const user = Buffer.from(ctx.username)
-    if (allowedUsers.some((allowedUser) => user.length !== allowedUser.length || !timingSafeEqual(user, allowedUser))) {
+    if (!allowedUsers.some((allowedUser) => user.length === allowedUser.length && timingSafeEqual(user, allowedUser))) {
       return ctx.reject()
     }
 

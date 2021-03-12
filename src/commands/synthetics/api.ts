@@ -1,4 +1,4 @@
-import {URLSearchParams} from 'url'
+import {stringify} from 'querystring'
 
 import {AxiosError, AxiosPromise, AxiosRequestConfig} from 'axios'
 
@@ -83,9 +83,10 @@ const getPresignedURL = (request: (args: AxiosRequestConfig) => AxiosPromise<{ur
 ) => {
   const resp = await retryRequest(
     {
-      params: new URLSearchParams({
+      params: {
         test_id: testIds,
-      }),
+      },
+      paramsSerializer: (params) => stringify(params),
       url: '/synthetics/ci/tunnel',
     },
     request
