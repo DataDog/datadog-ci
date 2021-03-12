@@ -272,12 +272,8 @@ const createTimeoutResult = (resultId: string, deviceId: string, dcId: number): 
   resultID: resultId,
 })
 
-export const runTests = async (
-  api: APIHelper,
-  triggerConfigs: TriggerConfig[],
-  write: Writable['write']
-): Promise<{tests: Test[]; triggers: Trigger}> => {
-  const testsToTrigger: TestPayload[] = []
+export const getTestsToTrigger = async (api: APIHelper, triggerConfigs: TriggerConfig[], write: Writable['write']) => {
+  const overriddenTestsToTrigger: TestPayload[] = []
 
   const tests = await Promise.all(
     triggerConfigs.map(async ({config, id}) => {
@@ -292,11 +288,11 @@ export const runTests = async (
         return
       }
 
-      const overloadedConfig = handleConfig(test, id, write, config)
-      testsToTrigger.push(overloadedConfig)
+      const overriddenConfig = handleConfig(test, id, write, config)
+      overriddenTestsToTrigger.push(overriddenConfig)
 
-      write(renderTrigger(test, id, overloadedConfig.executionRule, config))
-      if (overloadedConfig.executionRule !== ExecutionRule.SKIPPED) {
+      write(renderTrigger(test, id, overriddenConfig.executionRule, config))
+      if (overriddenConfig.executionRule !== ExecutionRule.SKIPPED) {
         write(renderWait(test))
 
         return test
@@ -304,10 +300,14 @@ export const runTests = async (
     })
   )
 
-  if (!testsToTrigger.length) {
+  if (!overriddenTestsToTrigger.length) {
     throw new Error('No tests to trigger')
   }
 
+  return {tests: tests.filter(definedTypeGuard), overriddenTestsToTrigger}
+}
+
+export const runTests = async (api: APIHelper, testsToTrigger: TestPayload[]): Promise<Trigger> => {
   const payload: Payload = {tests: testsToTrigger}
   const ciMetadata = getCIMetadata()
   if (ciMetadata) {
@@ -315,10 +315,7 @@ export const runTests = async (
   }
 
   try {
-    return {
-      tests: tests.filter(definedTypeGuard),
-      triggers: await api.triggerTests(payload),
-    }
+    return api.triggerTests(payload)
   } catch (e) {
     const errorMessage = formatBackendErrors(e)
     const testIds = testsToTrigger.map((t) => t.public_id).join(',')
