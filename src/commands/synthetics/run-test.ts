@@ -5,7 +5,8 @@ import {parseConfigFile, ProxyConfiguration} from '../../helpers/utils'
 import {apiConstructor} from './api'
 import {APIHelper, ConfigOverride, ExecutionRule, LocationsMapping, PollResult, Test} from './interfaces'
 import {renderHeader, renderResults} from './renderer'
-import {getSuites, hasTestSucceeded, runTests, waitForResults} from './utils'
+import {Tunnel} from './tunnel'
+import {getSuites, getTestsToTrigger, hasTestSucceeded, runTests, waitForResults} from './utils'
 
 export class RunTestCommand extends Command {
   private apiKey?: string
@@ -19,19 +20,22 @@ export class RunTestCommand extends Command {
     pollingTimeout: 2 * 60 * 1000,
     proxy: {protocol: 'http'} as ProxyConfiguration,
     subdomain: process.env.DATADOG_SUBDOMAIN || 'app',
+    tunnel: false,
   }
   private configPath?: string
   private publicIds: string[] = []
+  private shouldOpenTunnel?: boolean
   private testSearchQuery?: string
 
   public async execute() {
     const startTime = Date.now()
+    const stdoutLogger = this.context.stdout.write.bind(this.context.stdout)
 
     this.config = await parseConfigFile(this.config, this.configPath)
 
     const api = this.getApiHelper()
-    const publicIdsTriggers = this.publicIds.map((id) => ({config: this.config.global, id}))
-    const testsToTrigger = publicIdsTriggers.length ? publicIdsTriggers : await this.getTestsToTrigger(api)
+    const publicIdsFromCli = this.publicIds.map((id) => ({config: this.config.global, id}))
+    const testsToTrigger = publicIdsFromCli.length ? publicIdsFromCli : await this.getTestsToTrigger(api)
 
     if (!testsToTrigger.length) {
       this.context.stdout.write('No test suites to run.\n')
@@ -39,7 +43,30 @@ export class RunTestCommand extends Command {
       return 0
     }
 
-    const {tests, triggers} = await runTests(api, testsToTrigger, this.context.stdout.write.bind(this.context.stdout))
+    const {tests, overriddenTestsToTrigger} = await getTestsToTrigger(api, testsToTrigger, stdoutLogger)
+    const publicIdsToTrigger = tests.map(({public_id}) => public_id)
+
+    let tunnel: Tunnel | undefined
+    if ((this.shouldOpenTunnel === undefined && this.config.tunnel) || this.shouldOpenTunnel) {
+      this.context.stdout.write(
+        'You are using tunnel option, the chosen location(s) will be overridden by a location in your account region.\n'
+      )
+      // Get the pre-signed URL to connect to the tunnel service
+      const {url: presignedURL} = await api.getPresignedURL(publicIdsToTrigger)
+      // Open a tunnel to Datadog
+      try {
+        tunnel = new Tunnel(presignedURL, publicIdsToTrigger, this.config.proxy, stdoutLogger)
+        const tunnelInfo = await tunnel.start()
+        overriddenTestsToTrigger.forEach((testToTrigger) => {
+          testToTrigger.tunnel = tunnelInfo
+        })
+      } catch (e) {
+        this.context.stdout.write(`\n${chalk.bgRed.bold(' ERROR on tunnel start ')}\n${e.stack}\n\n`)
+
+        return 1
+      }
+    }
+    const triggers = await runTests(api, overriddenTestsToTrigger)
 
     // All tests have been skipped or are missing.
     if (!tests.length) {
@@ -54,7 +81,7 @@ export class RunTestCommand extends Command {
 
     try {
       // Poll the results.
-      const results = await waitForResults(api, triggers.results, this.config.pollingTimeout, testsToTrigger)
+      const results = await waitForResults(api, triggers.results, this.config.pollingTimeout, testsToTrigger, tunnel)
 
       // Sort tests to show success first then non blocking failures and finally blocking failures.
       tests.sort(this.sortTestsByOutcome(results))
@@ -85,6 +112,11 @@ export class RunTestCommand extends Command {
       this.context.stdout.write(`\n${chalk.bgRed.bold(' ERROR ')}\n${error.stack}\n\n`)
 
       return 1
+    } finally {
+      // Stop the tunnel
+      if (tunnel) {
+        await tunnel.stop()
+      }
     }
   }
 
@@ -178,3 +210,4 @@ RunTestCommand.addOption('appKey', Command.String('--appKey'))
 RunTestCommand.addOption('configPath', Command.String('--config'))
 RunTestCommand.addOption('publicIds', Command.Array('-p,--public-id'))
 RunTestCommand.addOption('testSearchQuery', Command.String('-s,--search'))
+RunTestCommand.addOption('shouldOpenTunnel', Command.Boolean('-t,--tunnel'))

@@ -71,7 +71,7 @@ const readableOperation: {[key in Operator]: string} = {
   [Operator.isInMoreThan]: 'will expire in more than',
 }
 
-const renderApiError = (errorCode: string, errorMessage: string, color: typeof chalk) => {
+const renderApiError = (errorCode: string, errorMessage: string, color: chalk.Chalk) => {
   if (errorCode === 'INCORRECT_ASSERTION') {
     try {
       const assertionsErrors: Assertion[] = JSON.parse(errorMessage)
@@ -95,7 +95,7 @@ const renderApiError = (errorCode: string, errorMessage: string, color: typeof c
 }
 
 // Test execution rendering
-const renderResultOutcome = (result: Result, test: Test, icon: string, color: typeof chalk) => {
+const renderResultOutcome = (result: Result, test: Test, icon: string, color: chalk.Chalk) => {
   if (result.error) {
     return `    ${chalk.bold(`✖ | ${result.error}`)}`
   }

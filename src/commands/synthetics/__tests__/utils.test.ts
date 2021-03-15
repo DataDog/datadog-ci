@@ -10,6 +10,7 @@ import {ProxyConfiguration} from '../../../helpers/utils'
 
 import {apiConstructor} from '../api'
 import {ExecutionRule, PollResult, Result, Test} from '../interfaces'
+import {Tunnel} from '../tunnel'
 import * as utils from '../utils'
 
 import {getApiTest} from './fixtures'
@@ -44,6 +45,42 @@ describe('utils', () => {
   })
 
   describe('runTest', () => {
+    const fakeId = '123-456-789'
+    const fakeTrigger = {
+      results: [],
+      triggered_check_ids: [fakeId],
+    }
+
+    beforeAll(() => {
+      const axiosMock = jest.spyOn(axios.default, 'create')
+      axiosMock.mockImplementation((() => (e: any) => {
+        if (e.url === '/synthetics/tests/trigger/ci') {
+          return {data: fakeTrigger}
+        }
+      }) as any)
+    })
+
+    afterAll(() => {
+      jest.clearAllMocks()
+    })
+
+    test('should run test', async () => {
+      const output = await utils.runTests(api, [{public_id: fakeId, executionRule: ExecutionRule.NON_BLOCKING}])
+      expect(output).toEqual(fakeTrigger)
+    })
+
+    test('should run test with publicId from url', async () => {
+      const output = await utils.runTests(api, [
+        {
+          executionRule: ExecutionRule.NON_BLOCKING,
+          public_id: `http://localhost/synthetics/tests/details/${fakeId}`,
+        },
+      ])
+      expect(output).toEqual(fakeTrigger)
+    })
+  })
+
+  describe('getTestsToTrigger', () => {
     const processWrite = process.stdout.write.bind(process.stdout)
     const fakeTest = {
       config: {
@@ -54,18 +91,10 @@ describe('utils', () => {
       name: 'Fake Test',
       public_id: '123-456-789',
     }
-    const fakeTrigger = {
-      results: [],
-      triggered_check_ids: [fakeTest.public_id],
-    }
 
     beforeAll(() => {
       const axiosMock = jest.spyOn(axios.default, 'create')
       axiosMock.mockImplementation((() => (e: any) => {
-        if (e.url === '/synthetics/tests/trigger/ci') {
-          return {data: fakeTrigger}
-        }
-
         if (e.url === `/synthetics/tests/${fakeTest.public_id}`) {
           return {data: fakeTest}
         }
@@ -76,27 +105,21 @@ describe('utils', () => {
       jest.clearAllMocks()
     })
 
-    test('should run test', async () => {
-      const output = await utils.runTests(api, [{id: fakeTest.public_id, config: {}}], processWrite)
-      expect(output).toEqual({tests: [fakeTest], triggers: fakeTrigger})
-    })
+    test('only existing tests are returned', async () => {
+      const triggerConfigs = [
+        {config: {}, id: '123-456-789'},
+        {config: {}, id: '987-654-321'},
+      ]
+      const {tests, overriddenTestsToTrigger} = await utils.getTestsToTrigger(api, triggerConfigs, processWrite)
 
-    test('should run test with publicId from url', async () => {
-      const output = await utils.runTests(
-        api,
-        [
-          {
-            config: {},
-            id: `http://localhost/synthetics/tests/details/${fakeTest.public_id}`,
-          },
-        ],
-        processWrite
-      )
-      expect(output).toEqual({tests: [fakeTest], triggers: fakeTrigger})
+      expect(tests).toStrictEqual([fakeTest])
+      expect(overriddenTestsToTrigger).toStrictEqual([
+        {executionRule: ExecutionRule.BLOCKING, public_id: '123-456-789'},
+      ])
     })
 
     test('no tests triggered throws an error', async () => {
-      await expect(utils.runTests(api, [], processWrite)).rejects.toEqual(new Error('No tests to trigger'))
+      await expect(utils.getTestsToTrigger(api, [], processWrite)).rejects.toEqual(new Error('No tests to trigger'))
     })
   })
 
@@ -404,6 +427,23 @@ describe('utils', () => {
       expect(await utils.waitForResults(api, [triggerResultPass, triggerResultTimeOut], 2000, [])).toEqual(
         expectedResults
       )
+    })
+
+    test('tunnel failure should throw', async () => {
+      const waitMock = jest.spyOn(utils, 'wait')
+      waitMock.mockImplementation()
+
+      const triggerResultTimeOut = {
+        ...triggerResult,
+        result_id: 'timingOutTest',
+      }
+      const mockTunnel = {keepAlive: async () => Promise.reject()} as Tunnel
+      try {
+        await utils.waitForResults(api, [triggerResultTimeOut], 2000, [], mockTunnel)
+        expect(false).toBeTruthy()
+      } catch {
+        expect(true).toBeTruthy()
+      }
     })
   })
 

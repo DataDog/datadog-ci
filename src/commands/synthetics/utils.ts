@@ -7,6 +7,9 @@ import {promisify} from 'util'
 import chalk from 'chalk'
 import glob from 'glob'
 
+import {getCIMetadata} from '../../helpers/ci'
+import {pick} from '../../helpers/utils'
+
 import {formatBackendErrors} from './api'
 import {
   APIHelper,
@@ -25,9 +28,7 @@ import {
   TriggerResult,
 } from './interfaces'
 import {renderTrigger, renderWait} from './renderer'
-
-import {getCIMetadata} from '../../helpers/ci'
-import {pick} from '../../helpers/utils'
+import {Tunnel} from './tunnel'
 
 const POLLING_INTERVAL = 5000 // In ms
 const PUBLIC_ID_REGEX = /^[\d\w]{3}-[\d\w]{3}-[\d\w]{3}$/
@@ -66,6 +67,7 @@ export const handleConfig = (
       'locations',
       'pollingTimeout',
       'retry',
+      'tunnel',
       'variables',
     ]),
   }
@@ -175,13 +177,22 @@ export const waitForResults = async (
   api: APIHelper,
   triggerResponses: TriggerResponse[],
   defaultTimeout: number,
-  triggerConfigs: TriggerConfig[]
+  triggerConfigs: TriggerConfig[],
+  tunnel?: Tunnel
 ) => {
   const triggerResultMap = createTriggerResultMap(triggerResponses, defaultTimeout, triggerConfigs)
   const triggerResults = [...triggerResultMap.values()]
 
   const maxPollingTimeout = Math.max(...triggerResults.map((tr) => tr.pollingTimeout))
   const pollingStartDate = new Date().getTime()
+
+  let isTunnelConnected = true
+  if (tunnel) {
+    tunnel
+      .keepAlive()
+      .then(() => (isTunnelConnected = false))
+      .catch(() => (isTunnelConnected = false))
+  }
   while (triggerResults.filter((tr) => !tr.result).length) {
     const pollingDuration = new Date().getTime() - pollingStartDate
 
@@ -194,6 +205,10 @@ export const waitForResults = async (
           triggerResult.location
         )
       }
+    }
+
+    if (tunnel && !isTunnelConnected) {
+      throw new Error('Unexpected error: tunnel failure')
     }
 
     if (pollingDuration >= maxPollingTimeout) {
@@ -257,12 +272,8 @@ const createTimeoutResult = (resultId: string, deviceId: string, dcId: number): 
   resultID: resultId,
 })
 
-export const runTests = async (
-  api: APIHelper,
-  triggerConfigs: TriggerConfig[],
-  write: Writable['write']
-): Promise<{tests: Test[]; triggers: Trigger}> => {
-  const testsToTrigger: TestPayload[] = []
+export const getTestsToTrigger = async (api: APIHelper, triggerConfigs: TriggerConfig[], write: Writable['write']) => {
+  const overriddenTestsToTrigger: TestPayload[] = []
 
   const tests = await Promise.all(
     triggerConfigs.map(async ({config, id}) => {
@@ -277,11 +288,11 @@ export const runTests = async (
         return
       }
 
-      const overloadedConfig = handleConfig(test, id, write, config)
-      testsToTrigger.push(overloadedConfig)
+      const overriddenConfig = handleConfig(test, id, write, config)
+      overriddenTestsToTrigger.push(overriddenConfig)
 
-      write(renderTrigger(test, id, overloadedConfig.executionRule, config))
-      if (overloadedConfig.executionRule !== ExecutionRule.SKIPPED) {
+      write(renderTrigger(test, id, overriddenConfig.executionRule, config))
+      if (overriddenConfig.executionRule !== ExecutionRule.SKIPPED) {
         write(renderWait(test))
 
         return test
@@ -289,10 +300,14 @@ export const runTests = async (
     })
   )
 
-  if (!testsToTrigger.length) {
+  if (!overriddenTestsToTrigger.length) {
     throw new Error('No tests to trigger')
   }
 
+  return {tests: tests.filter(definedTypeGuard), overriddenTestsToTrigger}
+}
+
+export const runTests = async (api: APIHelper, testsToTrigger: TestPayload[]): Promise<Trigger> => {
   const payload: Payload = {tests: testsToTrigger}
   const ciMetadata = getCIMetadata()
   if (ciMetadata) {
@@ -300,10 +315,7 @@ export const runTests = async (
   }
 
   try {
-    return {
-      tests: tests.filter(definedTypeGuard),
-      triggers: await api.triggerTests(payload),
-    }
+    return api.triggerTests(payload)
   } catch (e) {
     const errorMessage = formatBackendErrors(e)
     const testIds = testsToTrigger.map((t) => t.public_id).join(',')
