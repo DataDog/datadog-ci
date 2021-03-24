@@ -12,13 +12,14 @@ describe('Tunnel', () => {
   const mockConnect = jest.fn()
   const mockClose = jest.fn()
   const mockWebSocket = {
-    addEventListener: (event: 'message', handler: (message: string) => void) => {
-      const tunnelInfo = {host: 'host', id: 'tunnel-id'}
-      handler(JSON.stringify(tunnelInfo))
-    },
     close: mockClose,
     connect: mockConnect,
     duplex: () => new PassThrough(),
+    waitForFirstMessage: () => {
+      const tunnelInfo = {host: 'host', id: 'tunnel-id'}
+
+      return JSON.stringify(tunnelInfo)
+    },
   }
 
   const defaultProxyOpts: ProxyConfiguration = {protocol: 'http'}
