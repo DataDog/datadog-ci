@@ -53,7 +53,7 @@
     "sshpk": "1.16.1",
     "tiny-async-pool": "1.1.0",
     "ws": "7.4.0",
-    "yamux-js": "0.0.2"
+    "yamux-js": "0.0.4"
   },
   "devDependencies": {
     "@babel/core": "7.4.5",

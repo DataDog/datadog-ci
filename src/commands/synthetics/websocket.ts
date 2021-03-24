@@ -24,6 +24,7 @@ export class WebSocketWithReconnect extends EventEmitter {
     private url: string,
     private log: Writable['write'],
     private proxyOpts: ProxyConfiguration,
+    private firstMessageHandler: (message: WebSocket.Data) => void = () => undefined,
     private reconnectMaxRetries = 3,
     private reconnectInterval = 3000 // In ms
   ) {
@@ -130,6 +131,10 @@ export class WebSocketWithReconnect extends EventEmitter {
 
     this.websocket.on('open', () => {
       resolve()
+    })
+
+    this.websocket.once('message', (data: WebSocket.Data) => {
+      this.firstMessageHandler(data)
     })
 
     this.websocket.on('close', (code, reason) => {

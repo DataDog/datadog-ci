@@ -6,6 +6,7 @@ import {Duplex, Writable} from 'stream'
 import chalk from 'chalk'
 import {AuthContext, Connection as SSHConnection, Server as SSHServer, ServerChannel as SSHServerChannel} from 'ssh2'
 import {ParsedKey, SSH2Stream, SSH2StreamConfig} from 'ssh2-streams'
+import WebSocket from 'ws'
 import {Config as MultiplexerConfig, Server as Multiplexer} from 'yamux-js'
 
 import {ProxyConfiguration} from '../../helpers/utils'
@@ -27,6 +28,7 @@ const webSocketReconnect = {
 }
 
 export class Tunnel {
+  private firstMessagePromise: Promise<WebSocket.Data>
   private forwardSockets: Socket[] = []
   private log: Writable['write']
   private logError: Writable['write']
@@ -58,10 +60,15 @@ export class Tunnel {
       },
       server: true,
     }
+
+    let onFirstMessage: (data: WebSocket.Data) => void
+    this.firstMessagePromise = new Promise((resolve) => (onFirstMessage = resolve))
+
     this.ws = new WebSocketWithReconnect(
       this.url,
       this.log,
       proxy,
+      onFirstMessage!,
       webSocketReconnect.maxRetries,
       webSocketReconnect.interval
     )
@@ -223,7 +230,7 @@ export class Tunnel {
   }
 
   private async getConnectionInfo() {
-    const [rawConnectionInfo] = (await once(this.ws!, 'message')) as (string | Buffer)[]
+    const rawConnectionInfo = await this.firstMessagePromise
 
     try {
       const connectionInfo: TunnelInfo = {
