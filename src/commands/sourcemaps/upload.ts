@@ -81,7 +81,8 @@ export class UploadCommand extends Command {
 
     const api = this.getApiHelper()
     // Normalizing the basePath to resolve .. and .
-    this.basePath = path.normalize(this.basePath!)
+    // Always using the posix version to avoid \ on Windows.
+    this.basePath = path.posix.normalize(this.basePath!)
     this.context.stdout.write(
       renderCommandInfo(
         this.basePath!,
