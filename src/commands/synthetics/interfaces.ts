@@ -169,6 +169,7 @@ export interface ConfigOverride {
   body?: string
   bodyType?: string
   cookies?: string
+  defaultStepTimeout?: number
   deviceIds?: string[]
   executionRule?: ExecutionRule
   followRedirects?: boolean

@@ -46,6 +46,7 @@ The configuration file structure is the following:
         "body": "{\"fakeContent\":true}",
         "bodyType": "application/json",
         "cookies": "name1=value1;name2=value2;",
+        "defaultStepTimeout": 15,
         "deviceIds": ["laptop_large"],
         "executionRule": "skipped",
         "followRedirects": true,
@@ -111,6 +112,7 @@ Your test files must be named with a `.synthetics.json` suffix.
                 "body": "{\"fakeContent\":true}",
                 "bodyType": "application/json",
                 "cookies": "name1=value1;name2=value2;",
+                "defaultStepTimeout": 15,
                 "deviceIds": ["laptop_large"],
                 "executionRule": "skipped",
                 "followRedirects": true,
@@ -137,6 +139,7 @@ All options under the `config` key allow overriding the configuration of the tes
 - `body`: (string) data to send in a synthetics API test.
 - `bodyType`: (string) type of the data sent in a synthetics API test.
 - `cookies`: (string) use provided string as Cookie header in API or Browser test.
+- `defaultStepTimeout`: (number) maximum duration of steps in seconds for Browser tests, does not override individually set step timeouts.
 - `deviceIds`: (array) list of devices on which to run the Browser test.
 - `executionRule`: (string) execution rule of the test: it defines the behavior of the CLI in case of a failing test, it can be either:
   - `blocking`: the CLI returns an error if the test fails.

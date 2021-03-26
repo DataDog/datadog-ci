@@ -61,6 +61,7 @@ export const handleConfig = (
       'body',
       'bodyType',
       'cookies',
+      'defaultStepTimeout',
       'deviceIds',
       'followRedirects',
       'headers',
