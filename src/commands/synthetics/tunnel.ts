@@ -58,6 +58,7 @@ export class Tunnel {
       },
       server: true,
     }
+
     this.ws = new WebSocketWithReconnect(
       this.url,
       this.log,
@@ -223,7 +224,7 @@ export class Tunnel {
   }
 
   private async getConnectionInfo() {
-    const [rawConnectionInfo] = (await once(this.ws!, 'message')) as (string | Buffer)[]
+    const rawConnectionInfo = await this.ws.waitForFirstMessage()
 
     try {
       const connectionInfo: TunnelInfo = {

@@ -16,6 +16,7 @@ import {ProxyConfiguration} from '../../helpers/utils'
  *  - on/once message
  */
 export class WebSocketWithReconnect extends EventEmitter {
+  private firstMessage?: Promise<WebSocket.Data>
   private keepAliveWebsocket?: Promise<void> // Artificial promise that resolves when closing and will reject in case of error
   private reconnectRetries = 0
   private websocket?: WebSocket
@@ -106,6 +107,14 @@ export class WebSocketWithReconnect extends EventEmitter {
     return this
   }
 
+  public waitForFirstMessage() {
+    if (!this.firstMessage) {
+      throw new Error('Websocket connection was not established before reading first message')
+    }
+
+    return this.firstMessage
+  }
+
   private establishWebsocketConnection(resolve: (value: void) => void, reject: (error: Error) => void) {
     if (!this.websocket) {
       this.reconnectRetries++
@@ -115,6 +124,14 @@ export class WebSocketWithReconnect extends EventEmitter {
       }
       this.websocket = new WebSocket(this.url, options)
     }
+
+    this.firstMessage = new Promise((firstMessageResolve, firstMessageReject) => {
+      if (!this.websocket) {
+        firstMessageReject(Error('Unable to start websocket connection'))
+      } else {
+        this.websocket.once('message', firstMessageResolve)
+      }
+    })
 
     this.websocket.on('unexpected-response', (req, res) => {
       let body = ''
