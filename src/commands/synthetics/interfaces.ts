@@ -23,6 +23,7 @@ export interface Result {
   passed: boolean
   stepDetails: Step[]
   timings?: Timings
+  tunnel?: boolean
   unhealthy?: boolean
 }
 
