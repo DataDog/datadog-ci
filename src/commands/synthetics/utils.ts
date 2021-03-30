@@ -61,6 +61,7 @@ export const handleConfig = (
       'body',
       'bodyType',
       'cookies',
+      'defaultStepTimeout',
       'deviceIds',
       'followRedirects',
       'headers',
@@ -89,7 +90,7 @@ const parseUrlVariables = (url: string, write: Writable['write']) => {
   try {
     objUrl = new URL(url)
   } catch {
-    write(`The start url ${url} contains variables, CI overrides will be ignored`)
+    write(`The start url ${url} contains variables, CI overrides will be ignored\n`)
 
     return context
   }
