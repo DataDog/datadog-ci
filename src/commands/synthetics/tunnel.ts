@@ -11,7 +11,7 @@ import {Config as MultiplexerConfig, Server as Multiplexer} from 'yamux-js'
 import {ProxyConfiguration} from '../../helpers/utils'
 
 import {generateOpenSSHKeys, parseSSHKey} from './crypto'
-import {WebSocketWithReconnect} from './websocket'
+import {WebSocket} from './websocket'
 
 const MAX_CONCURRENT_FORWARDED_CONNECTIONS = 50
 
@@ -19,11 +19,6 @@ export interface TunnelInfo {
   host: string
   id: string
   privateKey: string
-}
-
-const webSocketReconnect = {
-  interval: 2000, // Milliseconds
-  maxRetries: 0, // No retries at the moment
 }
 
 export class Tunnel {
@@ -34,7 +29,7 @@ export class Tunnel {
   private privateKey: string
   private publicKey: ParsedKey
   private sshStreamConfig: SSH2StreamConfig
-  private ws: WebSocketWithReconnect
+  private ws: WebSocket
 
   constructor(private url: string, private testIDs: string[], proxy: ProxyConfiguration, log: Writable['write']) {
     this.log = (message: string) => log(`[${chalk.bold.blue('Tunnel')}] ${message}\n`)
@@ -59,13 +54,7 @@ export class Tunnel {
       server: true,
     }
 
-    this.ws = new WebSocketWithReconnect(
-      this.url,
-      this.log,
-      proxy,
-      webSocketReconnect.maxRetries,
-      webSocketReconnect.interval
-    )
+    this.ws = new WebSocket(this.url, proxy)
   }
 
   /**
@@ -176,7 +165,7 @@ export class Tunnel {
           })
         })
         dest.on('error', (error) => {
-          console.error('Forwarding error', error)
+          console.error('Forwarding error', error.message)
         })
         dest.on('close', () => {
           if (src) {
@@ -194,7 +183,7 @@ export class Tunnel {
 
   private async forwardWebSocketToSSH(): Promise<TunnelInfo> {
     const connectionInfo = await this.getConnectionInfo()
-    this.log('Websocket connection opened, proxy is ready!')
+    this.log(`Websocket connection to tunnel ${connectionInfo.id} opened, proxy is ready!`)
 
     // Stop any existing multiplexing
     if (this.multiplexer) {
@@ -216,6 +205,8 @@ export class Tunnel {
 
     // Pipe WebSocket to multiplexing
     const duplex = this.ws.duplex()
+    this.multiplexer.on('error', (error) => console.error('Multiplexer error:', error.message))
+    duplex.on('error', (error) => console.error('Websocket error:', error.message))
     duplex.pipe(this.multiplexer).pipe(duplex)
 
     // @todo: re-set forwarding in case of reconnection
