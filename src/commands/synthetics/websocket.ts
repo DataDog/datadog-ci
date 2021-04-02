@@ -1,32 +1,17 @@
 import {EventEmitter, once} from 'events'
 import type {Agent} from 'http'
-import {Writable} from 'stream'
 
 import ProxyAgent from 'proxy-agent'
-import WebSocket, {createWebSocketStream} from 'ws'
+import {createWebSocketStream, default as WebSocketModule} from 'ws'
 
 import {ProxyConfiguration} from '../../helpers/utils'
 
-/**
- * TODO: test websocket class:
- *  - connect
- *  - close
- *  - duplex
- *  - keepAlive
- *  - on/once message
- */
-export class WebSocketWithReconnect extends EventEmitter {
+export class WebSocket extends EventEmitter {
+  private firstMessage?: Promise<WebSocketModule.Data>
   private keepAliveWebsocket?: Promise<void> // Artificial promise that resolves when closing and will reject in case of error
-  private reconnectRetries = 0
-  private websocket?: WebSocket
+  private websocket?: WebSocketModule
 
-  constructor(
-    private url: string,
-    private log: Writable['write'],
-    private proxyOpts: ProxyConfiguration,
-    private reconnectMaxRetries = 3,
-    private reconnectInterval = 3000 // In ms
-  ) {
+  constructor(private url: string, private proxyOpts: ProxyConfiguration) {
     super()
   }
 
@@ -36,7 +21,7 @@ export class WebSocketWithReconnect extends EventEmitter {
   public async close(gracefullyClose = true) {
     if (this.websocket) {
       this.websocket.removeAllListeners()
-      if (this.websocket.readyState === WebSocket.OPEN) {
+      if (this.websocket.readyState === WebSocketModule.OPEN) {
         if (gracefullyClose) {
           // Gracefully close the tunnel
           this.websocket.close()
@@ -83,7 +68,7 @@ export class WebSocketWithReconnect extends EventEmitter {
   /**
    * on allows to listen for WebSocket messages
    */
-  public on(event: 'message', listener: (data: WebSocket.Data) => void) {
+  public on(event: 'message', listener: (data: WebSocketModule.Data) => void) {
     if (!this.websocket) {
       throw new Error('You must start the WebSocket connection before listening to messages')
     }
@@ -96,7 +81,7 @@ export class WebSocketWithReconnect extends EventEmitter {
   /**
    * once allows to listen for a WebSocket message
    */
-  public once(event: 'message', listener: (data: WebSocket.Data) => void) {
+  public once(event: 'message', listener: (data: WebSocketModule.Data) => void) {
     if (!this.websocket) {
       throw new Error('You must start the WebSocket connection before listening to messages')
     }
@@ -106,15 +91,30 @@ export class WebSocketWithReconnect extends EventEmitter {
     return this
   }
 
+  public waitForFirstMessage() {
+    if (!this.firstMessage) {
+      throw new Error('Websocket connection was not established before reading first message')
+    }
+
+    return this.firstMessage
+  }
+
   private establishWebsocketConnection(resolve: (value: void) => void, reject: (error: Error) => void) {
     if (!this.websocket) {
-      this.reconnectRetries++
-      const options: WebSocket.ClientOptions = {}
+      const options: WebSocketModule.ClientOptions = {}
       if (this.proxyOpts.host && this.proxyOpts.port) {
         options.agent = (new ProxyAgent(this.proxyOpts) as unknown) as Agent // Proxy-agent typings are incomplete
       }
-      this.websocket = new WebSocket(this.url, options)
+      this.websocket = new WebSocketModule(this.url, options)
     }
+
+    this.firstMessage = new Promise((firstMessageResolve, firstMessageReject) => {
+      if (!this.websocket) {
+        firstMessageReject(Error('Unable to start websocket connection'))
+      } else {
+        this.websocket.once('message', firstMessageResolve)
+      }
+    })
 
     this.websocket.on('unexpected-response', (req, res) => {
       let body = ''
@@ -131,54 +131,5 @@ export class WebSocketWithReconnect extends EventEmitter {
     this.websocket.on('open', () => {
       resolve()
     })
-
-    this.websocket.on('close', (code, reason) => {
-      this.onCloseWithReconnect(code, reason, resolve, reject)
-    })
-
-    this.websocket.on('error', (error) => {
-      this.onErrorWithReconnect(error, reject)
-    })
-  }
-
-  private onCloseWithReconnect(code: number, reason: string, resolve: () => void, reject: (error: Error) => void) {
-    switch (code) {
-      case 1000: // CLOSE_NORMAL
-        resolve()
-
-        return
-      default:
-        // Abnormal closure, try to reconnect
-        this.close(false) // Clean up before reconnecting
-
-        if (this.reconnectRetries >= this.reconnectMaxRetries) {
-          reject(Error('Cannot connect to WebSocket - too many retries'))
-
-          return
-        }
-
-        this.log(`Lost WebSocket connection (code ${code}, reason: "${reason}"), reconnecting…`)
-        this.reconnect(this.reconnectInterval, resolve, reject)
-    }
-  }
-
-  private onErrorWithReconnect(err: Error, reject: (error: Error) => void) {
-    const retryableErrors = ['ECONNREFUSED']
-    if (
-      retryableErrors.some((retryableError) => err.message.includes(retryableError)) &&
-      this.reconnectRetries < this.reconnectMaxRetries
-    ) {
-      // We can try to reconnect so not sending back the error
-      return
-    }
-
-    reject(err)
-  }
-
-  private reconnect(delay: number, resolve: () => void, reject: (error: Error) => void) {
-    const reconnectTimeout = setTimeout(() => {
-      clearTimeout(reconnectTimeout)
-      this.establishWebsocketConnection(resolve, reject)
-    }, delay)
   }
 }

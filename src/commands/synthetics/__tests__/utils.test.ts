@@ -9,7 +9,7 @@ import glob from 'glob'
 import {ProxyConfiguration} from '../../../helpers/utils'
 
 import {apiConstructor} from '../api'
-import {ExecutionRule, PollResult, Result, Test} from '../interfaces'
+import {ConfigOverride, ExecutionRule, PollResult, Result, Test} from '../interfaces'
 import {Tunnel} from '../tunnel'
 import * as utils from '../utils'
 
@@ -251,6 +251,38 @@ describe('utils', () => {
       expect(handledConfig.public_id).toBe(publicId)
       expect(handledConfig.startUrl).toBe(expectedUrl)
     })
+
+    test('config overrides are applied', () => {
+      const publicId = 'abc-def-ghi'
+      const fakeTest = {
+        config: {request: {url: 'http://example.org/path'}},
+        public_id: publicId,
+        type: 'browser',
+      } as Test
+      const configOverride: ConfigOverride = {
+        allowInsecureCertificates: true,
+        basicAuth: {username: 'user', password: 'password'},
+        body: 'body',
+        bodyType: 'application/json',
+        cookies: 'name=value;',
+        defaultStepTimeout: 15,
+        deviceIds: ['device_id'],
+        executionRule: ExecutionRule.NON_BLOCKING,
+        followRedirects: true,
+        headers: {'header-name': 'value'},
+        locations: ['location'],
+        pollingTimeout: 60 * 1000,
+        retry: {count: 5, interval: 30},
+        startUrl: 'http://127.0.0.1:60/newPath',
+        tunnel: {host: 'host', id: 'id', privateKey: 'privateKey'},
+        variables: {VAR_1: 'value'},
+      }
+
+      expect(utils.handleConfig(fakeTest, publicId, processWrite, configOverride)).toEqual({
+        ...configOverride,
+        public_id: publicId,
+      })
+    })
   })
 
   describe('hasResultPassed', () => {
@@ -371,6 +403,7 @@ describe('utils', () => {
             eventType: 'finished',
             passed: false,
             stepDetails: [],
+            tunnel: false,
           },
           resultID: triggerResult.result_id,
         },
@@ -389,6 +422,7 @@ describe('utils', () => {
             eventType: 'finished',
             passed: false,
             stepDetails: [],
+            tunnel: false,
           },
           resultID: triggerResult.result_id,
         },
@@ -420,6 +454,7 @@ describe('utils', () => {
             eventType: 'finished',
             passed: false,
             stepDetails: [],
+            tunnel: false,
           },
           resultID: triggerResultTimeOut.result_id,
         },

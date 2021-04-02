@@ -23,6 +23,7 @@ export interface Result {
   passed: boolean
   stepDetails: Step[]
   timings?: Timings
+  tunnel?: boolean
   unhealthy?: boolean
 }
 
@@ -68,6 +69,7 @@ export interface Test {
       timeout: number
       url: string
     }
+    steps?: {subtype: string}[]
     variables: string[]
   }
   created_at: string
@@ -168,6 +170,7 @@ export interface ConfigOverride {
   body?: string
   bodyType?: string
   cookies?: string
+  defaultStepTimeout?: number
   deviceIds?: string[]
   executionRule?: ExecutionRule
   followRedirects?: boolean
