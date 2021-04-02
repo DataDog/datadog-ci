@@ -4,7 +4,7 @@ import {mocked} from 'ts-jest/utils'
 
 import {ProxyConfiguration} from '../../../helpers/utils'
 import {Tunnel} from '../tunnel'
-import {WebSocketWithReconnect} from '../websocket'
+import {WebSocket} from '../websocket'
 
 jest.mock('../websocket')
 
@@ -27,20 +27,14 @@ describe('Tunnel', () => {
   const testIDs = ['aaa-bbb-ccc']
   const wsPresignedURL = 'wss://tunnel.synthetics'
 
-  const mockedWebSocketWithReconnect = mocked(WebSocketWithReconnect, true)
+  const mockedWebSocket = mocked(WebSocket, true)
 
   test('starts by connecting over WebSocket and closes the WebSocket when stopping', async () => {
-    mockedWebSocketWithReconnect.mockImplementation(() => mockWebSocket as any)
+    mockedWebSocket.mockImplementation(() => mockWebSocket as any)
 
     const tunnel = new Tunnel(wsPresignedURL, testIDs, defaultProxyOpts, noLog)
     const connectionInfo = await tunnel.start()
-    expect(WebSocketWithReconnect).toHaveBeenCalledWith(
-      wsPresignedURL,
-      expect.any(Function),
-      expect.any(Object),
-      expect.any(Number),
-      expect.any(Number)
-    )
+    expect(WebSocket).toHaveBeenCalledWith(wsPresignedURL, expect.any(Object))
     expect(mockConnect).toHaveBeenCalled()
     expect(connectionInfo.host).toEqual('host')
     expect(connectionInfo.id).toEqual('tunnel-id')
@@ -54,7 +48,7 @@ describe('Tunnel', () => {
   })
 
   test('throws an error if the WebSocket connection fails', async () => {
-    mockedWebSocketWithReconnect.mockImplementation(
+    mockedWebSocket.mockImplementation(
       () =>
         ({
           close: mockClose,
@@ -73,7 +67,7 @@ describe('Tunnel', () => {
   })
 
   test('sets websocket proxy options', async () => {
-    mockedWebSocketWithReconnect.mockImplementation(() => mockWebSocket as any)
+    mockedWebSocket.mockImplementation(() => mockWebSocket as any)
     const localProxyOpts: ProxyConfiguration = {
       host: '127.0.0.1',
       port: 8080,
@@ -81,13 +75,7 @@ describe('Tunnel', () => {
     }
     const tunnel = new Tunnel(wsPresignedURL, testIDs, localProxyOpts, noLog)
     await tunnel.start()
-    expect(WebSocketWithReconnect).toHaveBeenCalledWith(
-      wsPresignedURL,
-      expect.any(Function),
-      localProxyOpts,
-      expect.any(Number),
-      expect.any(Number)
-    )
+    expect(WebSocket).toHaveBeenCalledWith(wsPresignedURL, localProxyOpts)
 
     // Stop the tunnel
     await tunnel.stop()
