@@ -61,6 +61,7 @@ export const handleConfig = (
       'body',
       'bodyType',
       'cookies',
+      'defaultStepTimeout',
       'deviceIds',
       'followRedirects',
       'headers',
@@ -89,7 +90,7 @@ const parseUrlVariables = (url: string, write: Writable['write']) => {
   try {
     objUrl = new URL(url)
   } catch {
-    write(`The start url ${url} contains variables, CI overrides will be ignored`)
+    write(`The start url ${url} contains variables, CI overrides will be ignored\n`)
 
     return context
   }
@@ -199,16 +200,26 @@ export const waitForResults = async (
     // Remove test which exceeded their pollingTimeout
     for (const triggerResult of triggerResults.filter((tr) => !tr.result)) {
       if (pollingDuration >= triggerResult.pollingTimeout) {
-        triggerResult.result = createTimeoutResult(
+        triggerResult.result = createFailingResult(
+          'Timeout',
           triggerResult.result_id,
           triggerResult.device,
-          triggerResult.location
+          triggerResult.location,
+          !!tunnel
         )
       }
     }
 
     if (tunnel && !isTunnelConnected) {
-      throw new Error('Unexpected error: tunnel failure')
+      for (const triggerResult of triggerResults.filter((tr) => !tr.result)) {
+        triggerResult.result = createFailingResult(
+          'Tunnel Failure',
+          triggerResult.result_id,
+          triggerResult.device,
+          triggerResult.location,
+          !!tunnel
+        )
+      }
     }
 
     if (pollingDuration >= maxPollingTimeout) {
@@ -225,6 +236,10 @@ export const waitForResults = async (
           triggeredResult.result = polledResult
         }
       }
+    }
+
+    if (!triggerResults.filter((tr) => !tr.result).length) {
+      break
     }
 
     await wait(POLLING_INTERVAL)
@@ -260,14 +275,21 @@ export const createTriggerResultMap = (
   return triggerResultMap
 }
 
-const createTimeoutResult = (resultId: string, deviceId: string, dcId: number): PollResult => ({
+const createFailingResult = (
+  errorMessage: string,
+  resultId: string,
+  deviceId: string,
+  dcId: number,
+  tunnel: boolean
+): PollResult => ({
   dc_id: dcId,
   result: {
     device: {id: deviceId},
-    error: 'Timeout',
+    error: errorMessage,
     eventType: 'finished',
     passed: false,
     stepDetails: [],
+    tunnel,
   },
   resultID: resultId,
 })
