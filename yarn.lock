@@ -5788,10 +5788,9 @@ yallist@^4.0.0:
   resolved "https://registry.yarnpkg.com/yallist/-/yallist-4.0.0.tgz#9bb92790d9c0effec63be73519e11a35019a3a72"
   integrity sha512-3wdGidZyq5PB084XLES5TpOSRA3wjXAlIWMhum2kRcv/41Sn2emQ0dycQW4uZXLejwKvg6EsvbdlVL+FYEct7A==
 
-yamux-js@0.0.4:
+"yamux-js@https://github.com/m-rousse/yamux-js#mrousse/track-window-size":
   version "0.0.4"
-  resolved "https://registry.yarnpkg.com/yamux-js/-/yamux-js-0.0.4.tgz#93319464cff2fca79ee8aa0ca4cf0e7fa352d038"
-  integrity sha512-uobZnzA7kpt0bNqbMBt+RF1Pi/w8iE+VqUMSdyW4gJFHU6tRys5JX6sPUR4ACY6dR2FE6T96h7WORMhTEfLhSw==
+  resolved "https://github.com/m-rousse/yamux-js#c0a32d4dcf5855280860c056665d9d4826da4918"
 
 yargs-parser@20.x:
   version "20.2.4"
