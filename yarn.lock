@@ -5790,7 +5790,7 @@ yallist@^4.0.0:
 
 "yamux-js@https://github.com/m-rousse/yamux-js#mrousse/track-window-size":
   version "0.0.4"
-  resolved "https://github.com/m-rousse/yamux-js#c0a32d4dcf5855280860c056665d9d4826da4918"
+  resolved "https://github.com/m-rousse/yamux-js#af8ca6e67a76de932e2edb22fd6bd62f9eef54b1"
 
 yargs-parser@20.x:
   version "20.2.4"
