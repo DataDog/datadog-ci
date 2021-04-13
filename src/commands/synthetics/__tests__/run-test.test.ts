@@ -28,9 +28,13 @@ describe('run-test', () => {
   describe('execute', () => {
     test('should apply config override for tests triggered by public id', async () => {
       jest.spyOn(ciUtils, 'parseConfigFile').mockImplementation(async (config, _) => config)
-      const getTestsToTriggersMock = jest
-        .spyOn(utils, 'getTestsToTrigger')
-        .mockReturnValue(Promise.resolve({tests: [], overriddenTestsToTrigger: []}))
+      const getTestsToTriggersMock = jest.spyOn(utils, 'getTestsToTrigger').mockReturnValue(
+        Promise.resolve({
+          overriddenTestsToTrigger: [],
+          summary: {passed: 0, failed: 0, skipped: 0, notFound: 0},
+          tests: [],
+        })
+      )
       jest.spyOn(utils, 'runTests').mockImplementation()
 
       const startUrl = '{{PROTOCOL}}//myhost{{PATHNAME}}{{PARAMS}}'
@@ -57,9 +61,13 @@ describe('run-test', () => {
 
     test('should not wait for `skipped` only tests batch results', async () => {
       jest.spyOn(ciUtils, 'parseConfigFile').mockImplementation(async (config, _) => config)
-      const getTestsToTriggersMock = jest
-        .spyOn(utils, 'getTestsToTrigger')
-        .mockReturnValue(Promise.resolve({tests: [], overriddenTestsToTrigger: []}))
+      const getTestsToTriggersMock = jest.spyOn(utils, 'getTestsToTrigger').mockReturnValue(
+        Promise.resolve({
+          overriddenTestsToTrigger: [],
+          summary: {passed: 0, failed: 0, skipped: 0, notFound: 0},
+          tests: [],
+        })
+      )
       const runTestsMock = jest
         .spyOn(utils, 'runTests')
         .mockReturnValue(Promise.resolve({locations: [], results: [], triggered_check_ids: []}))

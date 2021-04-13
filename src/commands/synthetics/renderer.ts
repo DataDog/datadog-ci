@@ -9,6 +9,7 @@ import {
   PollResult,
   Result,
   Step,
+  Summary,
   Test,
 } from './interfaces'
 import {hasResultPassed, hasTestSucceeded} from './utils'
@@ -285,4 +286,20 @@ export const renderWait = (test: Test) => {
   const idDisplay = `[${chalk.bold.dim(test.public_id)}]`
 
   return `${idDisplay} Waiting results for "${chalk.green.bold(test.name)}"\n`
+}
+
+export const renderSummary = (summary: Summary) => {
+  const summaries = [
+    chalk.green(`${chalk.bold(summary.passed)} passed`),
+    chalk.red(`${chalk.bold(summary.failed)} failed`),
+  ]
+
+  if (summary.skipped) {
+    summaries.push(`${chalk.bold(summary.skipped)} skipped`)
+  }
+  if (summary.notFound) {
+    summaries.push(chalk.yellow(`${chalk.bold(summary.notFound)} not found`))
+  }
+
+  return `${chalk.bold('Tests execution summary:')} ${summaries.join(', ')}\n`
 }

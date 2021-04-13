@@ -4,7 +4,7 @@ import {Command} from 'clipanion'
 import {parseConfigFile, ProxyConfiguration} from '../../helpers/utils'
 import {apiConstructor} from './api'
 import {APIHelper, ConfigOverride, ExecutionRule, LocationsMapping, PollResult, Test} from './interfaces'
-import {renderHeader, renderResults} from './renderer'
+import {renderHeader, renderResults, renderSummary} from './renderer'
 import {Tunnel} from './tunnel'
 import {getSuites, getTestsToTrigger, hasTestSucceeded, runTests, waitForResults} from './utils'
 
@@ -43,7 +43,7 @@ export class RunTestCommand extends Command {
       return 0
     }
 
-    const {tests, overriddenTestsToTrigger} = await getTestsToTrigger(api, testsToTrigger, stdoutLogger)
+    const {tests, overriddenTestsToTrigger, summary} = await getTestsToTrigger(api, testsToTrigger, stdoutLogger)
     const publicIdsToTrigger = tests.map(({public_id}) => public_id)
 
     let tunnel: Tunnel | undefined
@@ -94,15 +94,25 @@ export class RunTestCommand extends Command {
         return mapping
       }, {} as LocationsMapping)
 
+      let hasSucceeded = true // Determine if all the tests have succeeded
       for (const test of tests) {
-        this.context.stdout.write(renderResults(test, results[test.public_id], this.getAppBaseURL(), locationNames))
+        const testResults = results[test.public_id]
+
+        const passed = hasTestSucceeded(testResults)
+        if (passed) {
+          summary.passed++
+        } else {
+          summary.failed++
+          if (test.options.ci?.executionRule !== ExecutionRule.NON_BLOCKING) {
+            hasSucceeded = false
+          }
+        }
+
+        this.context.stdout.write(renderResults(test, testResults, this.getAppBaseURL(), locationNames))
       }
 
-      // Determine if all the tests have succeeded
-      const hasSucceeded = tests.every(
-        (test) =>
-          hasTestSucceeded(results[test.public_id]) || test.options.ci?.executionRule === ExecutionRule.NON_BLOCKING
-      )
+      this.context.stdout.write(renderSummary(summary))
+
       if (hasSucceeded) {
         return 0
       } else {
