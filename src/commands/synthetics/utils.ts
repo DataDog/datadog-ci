@@ -19,6 +19,7 @@ import {
   PollResult,
   Result,
   Suite,
+  Summary,
   TemplateContext,
   Test,
   TestPayload,
@@ -296,6 +297,8 @@ const createFailingResult = (
 
 export const getTestsToTrigger = async (api: APIHelper, triggerConfigs: TriggerConfig[], write: Writable['write']) => {
   const overriddenTestsToTrigger: TestPayload[] = []
+  const errorMessages: string[] = []
+  const summary: Summary = {failed: 0, notFound: 0, passed: 0, skipped: 0}
 
   const tests = await Promise.all(
     triggerConfigs.map(async ({config, id}) => {
@@ -304,8 +307,9 @@ export const getTestsToTrigger = async (api: APIHelper, triggerConfigs: TriggerC
       try {
         test = await api.getTest(id)
       } catch (e) {
+        summary.notFound++
         const errorMessage = formatBackendErrors(e)
-        write(`[${chalk.bold.dim(id)}] Test not found: ${errorMessage}\n`)
+        errorMessages.push(`[${chalk.bold.dim(id)}] ${chalk.yellow.bold('Test not found')}: ${errorMessage}\n`)
 
         return
       }
@@ -314,7 +318,9 @@ export const getTestsToTrigger = async (api: APIHelper, triggerConfigs: TriggerC
       overriddenTestsToTrigger.push(overriddenConfig)
 
       write(renderTrigger(test, id, overriddenConfig.executionRule, config))
-      if (overriddenConfig.executionRule !== ExecutionRule.SKIPPED) {
+      if (overriddenConfig.executionRule === ExecutionRule.SKIPPED) {
+        summary.skipped++
+      } else {
         write(renderWait(test))
 
         return test
@@ -322,11 +328,14 @@ export const getTestsToTrigger = async (api: APIHelper, triggerConfigs: TriggerC
     })
   )
 
+  // Display errors at the end of all tests for better visibility.
+  errorMessages.forEach((errorMessage) => write(errorMessage))
+
   if (!overriddenTestsToTrigger.length) {
     throw new Error('No tests to trigger')
   }
 
-  return {tests: tests.filter(definedTypeGuard), overriddenTestsToTrigger}
+  return {tests: tests.filter(definedTypeGuard), overriddenTestsToTrigger, summary}
 }
 
 export const runTests = async (api: APIHelper, testsToTrigger: TestPayload[]): Promise<Trigger> => {

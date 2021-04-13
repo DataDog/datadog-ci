@@ -226,6 +226,13 @@ export interface Suite {
   tests: TriggerConfig[]
 }
 
+export interface Summary {
+  failed: number
+  notFound: number
+  passed: number
+  skipped: number
+}
+
 export interface TestSearchResult {
   tests: {
     public_id: string
