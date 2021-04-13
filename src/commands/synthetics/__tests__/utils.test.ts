@@ -82,21 +82,26 @@ describe('utils', () => {
 
   describe('getTestsToTrigger', () => {
     const processWrite = process.stdout.write.bind(process.stdout)
-    const fakeTest = {
-      config: {
-        request: {
-          url: 'http://example.org/',
-        },
+    const fakeTests: {[id: string]: any} = {
+      '123-456-789': {
+        config: {request: {url: 'http://example.org/'}},
+        name: 'Fake Test',
+        public_id: '123-456-789',
       },
-      name: 'Fake Test',
-      public_id: '123-456-789',
+      'ski-ppe-d01': {
+        config: {request: {url: 'http://example.org/'}},
+        name: 'Skipped Fake Test',
+        options: {ci: {executionRule: 'skipped'}},
+        public_id: 'ski-ppe-d01',
+      },
     }
 
     beforeAll(() => {
       const axiosMock = jest.spyOn(axios.default, 'create')
       axiosMock.mockImplementation((() => (e: any) => {
-        if (e.url === `/synthetics/tests/${fakeTest.public_id}`) {
-          return {data: fakeTest}
+        const publicId = e.url.slice(18)
+        if (fakeTests[publicId]) {
+          return {data: fakeTests[publicId]}
         }
       }) as any)
     })
@@ -109,13 +114,20 @@ describe('utils', () => {
       const triggerConfigs = [
         {config: {}, id: '123-456-789'},
         {config: {}, id: '987-654-321'},
+        {config: {}, id: 'ski-ppe-d01'},
       ]
-      const {tests, overriddenTestsToTrigger} = await utils.getTestsToTrigger(api, triggerConfigs, processWrite)
+      const {tests, overriddenTestsToTrigger, summary} = await utils.getTestsToTrigger(
+        api,
+        triggerConfigs,
+        processWrite
+      )
 
-      expect(tests).toStrictEqual([fakeTest])
+      expect(tests).toStrictEqual([fakeTests['123-456-789']])
       expect(overriddenTestsToTrigger).toStrictEqual([
         {executionRule: ExecutionRule.BLOCKING, public_id: '123-456-789'},
+        {executionRule: ExecutionRule.SKIPPED, public_id: 'ski-ppe-d01'},
       ])
+      expect(summary).toEqual({passed: 0, failed: 0, skipped: 1, notFound: 1})
     })
 
     test('no tests triggered throws an error', async () => {
