@@ -161,7 +161,7 @@ describe('run-test', () => {
     })
   })
 
-  describe('getTestsList', () => {
+  describe('getTestsToTrigger', () => {
     const conf1 = {
       tests: [{config: {}, id: 'abc-def-ghi'}],
     }
@@ -185,7 +185,7 @@ describe('run-test', () => {
       command.context = process
       command['config'].global = {startUrl}
 
-      expect(await command['getTestsList'].bind(command)(fakeApi)).toEqual([
+      expect(await command['getTestsToTrigger'].bind(command)(fakeApi)).toEqual([
         {
           config: {startUrl},
           id: 'abc-def-ghi',
@@ -204,33 +204,12 @@ describe('run-test', () => {
       command['config'].global = {startUrl}
       command['testSearchQuery'] = 'fake search'
 
-      expect(await command['getTestsList'].bind(command)(fakeApi)).toEqual([
+      expect(await command['getTestsToTrigger'].bind(command)(fakeApi)).toEqual([
         {
           config: {startUrl},
           id: 'stu-vwx-yza',
         },
       ])
-    })
-
-    test('should use given globs to get tests list', async () => {
-      const mockFn = jest.spyOn(utils, 'getSuites').mockImplementation((() => [conf1, conf2]) as any)
-      const command = new RunTestCommand()
-      command.context = process
-      command['config'].global = {startUrl}
-      command['config'].files = 'random glob'
-
-      command['fileGlobs'] = ['new glob', 'another one']
-      await command['getTestsList'].bind(command)(fakeApi)
-      expect(utils.getSuites).toHaveBeenCalledTimes(2)
-      expect(utils.getSuites).toHaveBeenCalledWith('new glob', expect.any(Function))
-      expect(utils.getSuites).toHaveBeenCalledWith('another one', expect.any(Function))
-
-      mockFn.mockClear()
-
-      command['fileGlobs'] = undefined
-      await command['getTestsList'].bind(command)(fakeApi)
-      expect(utils.getSuites).toHaveBeenCalledTimes(1)
-      expect(utils.getSuites).toHaveBeenCalledWith('random glob', expect.any(Function))
     })
   })
 
