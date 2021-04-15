@@ -35,7 +35,7 @@ export class RunTestCommand extends Command {
 
     const api = this.getApiHelper()
     const publicIdsFromCli = this.publicIds.map((id) => ({config: this.config.global, id}))
-    const testsToTrigger = publicIdsFromCli.length ? publicIdsFromCli : await this.getTestsToTrigger(api)
+    const testsToTrigger = publicIdsFromCli.length ? publicIdsFromCli : await this.getTestsList(api)
 
     if (!testsToTrigger.length) {
       this.context.stdout.write('No test suites to run.\n')
@@ -174,7 +174,7 @@ export class RunTestCommand extends Command {
     return `${host}/${apiPath}`
   }
 
-  private async getTestsToTrigger(api: APIHelper) {
+  private async getTestsList(api: APIHelper) {
     if (this.testSearchQuery) {
       const testSearchResults = await api.searchTests(this.testSearchQuery)
 

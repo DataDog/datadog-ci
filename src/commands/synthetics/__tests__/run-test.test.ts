@@ -161,7 +161,7 @@ describe('run-test', () => {
     })
   })
 
-  describe('getTestsToTrigger', () => {
+  describe('getTestsList', () => {
     const conf1 = {
       tests: [{config: {}, id: 'abc-def-ghi'}],
     }
@@ -185,7 +185,7 @@ describe('run-test', () => {
       command.context = process
       command['config'].global = {startUrl}
 
-      expect(await command['getTestsToTrigger'].bind(command)(fakeApi)).toEqual([
+      expect(await command['getTestsList'].bind(command)(fakeApi)).toEqual([
         {
           config: {startUrl},
           id: 'abc-def-ghi',
@@ -204,7 +204,7 @@ describe('run-test', () => {
       command['config'].global = {startUrl}
       command['testSearchQuery'] = 'fake search'
 
-      expect(await command['getTestsToTrigger'].bind(command)(fakeApi)).toEqual([
+      expect(await command['getTestsList'].bind(command)(fakeApi)).toEqual([
         {
           config: {startUrl},
           id: 'stu-vwx-yza',
