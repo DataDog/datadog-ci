@@ -8,6 +8,9 @@
   "bin": {
     "datadog-ci": "dist/index.js"
   },
+  "engines": {
+    "node": ">=10.*"
+  },
   "files": [
     "dist/**/*",
     "README",
