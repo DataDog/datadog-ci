@@ -64,7 +64,7 @@
     "@types/deep-extend": "0.4.31",
     "@types/glob": "7.1.1",
     "@types/jest": "24.0.15",
-    "@types/node": "12.20.3",
+    "@types/node": "10.17.57",
     "@types/ssh2": "0.5.45",
     "@types/ssh2-streams": "0.1.7",
     "@types/sshpk": "1.10.5",
