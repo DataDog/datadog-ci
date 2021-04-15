@@ -9,7 +9,7 @@
     "datadog-ci": "dist/index.js"
   },
   "engines": {
-    "node": ">=10.*"
+    "node": ">=10.24.1"
   },
   "files": [
     "dist/**/*",
