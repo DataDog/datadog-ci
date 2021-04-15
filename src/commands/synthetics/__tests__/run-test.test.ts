@@ -211,6 +211,27 @@ describe('run-test', () => {
         },
       ])
     })
+
+    test('should use given globs to get tests list', async () => {
+      const mockFn = jest.spyOn(utils, 'getSuites').mockImplementation((() => [conf1, conf2]) as any)
+      const command = new RunTestCommand()
+      command.context = process
+      command['config'].global = {startUrl}
+      command['config'].files = 'random glob'
+
+      command['files'] = ['new glob', 'another one']
+      await command['getTestsList'].bind(command)(fakeApi)
+      expect(utils.getSuites).toHaveBeenCalledTimes(2)
+      expect(utils.getSuites).toHaveBeenCalledWith('new glob', expect.any(Function))
+      expect(utils.getSuites).toHaveBeenCalledWith('another one', expect.any(Function))
+
+      mockFn.mockClear();
+
+      command['files'] = undefined
+      await command['getTestsList'].bind(command)(fakeApi)
+      expect(utils.getSuites).toHaveBeenCalledTimes(1)
+      expect(utils.getSuites).toHaveBeenCalledWith('random glob', expect.any(Function))
+    });
   })
 
   describe('sortTestsByOutcome', () => {

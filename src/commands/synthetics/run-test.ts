@@ -24,6 +24,7 @@ export class RunTestCommand extends Command {
   }
   private configPath?: string
   private publicIds: string[] = []
+  private files?: string[]
   private shouldOpenTunnel?: boolean
   private testSearchQuery?: string
 
@@ -180,9 +181,14 @@ export class RunTestCommand extends Command {
 
       return testSearchResults.tests.map((test) => ({config: this.config.global, id: test.public_id}))
     }
-    const suites = (await getSuites(this.config.files, this.context.stdout.write.bind(this.context.stdout)))
-      .map((suite) => suite.tests)
-      .filter((suiteTests) => !!suiteTests)
+
+    const files = this.files || [this.config.files];
+
+    const suites = (await Promise.all(
+        files.map(
+          (f: string) => getSuites(f, this.context.stdout.write.bind(this.context.stdout))
+        )
+    )).flat().map((suite) => suite.tests).filter((suiteTests) => !!suiteTests)
 
     const testsToTrigger = suites
       .reduce((acc, suiteTests) => acc.concat(suiteTests), [])
@@ -221,3 +227,4 @@ RunTestCommand.addOption('configPath', Command.String('--config'))
 RunTestCommand.addOption('publicIds', Command.Array('-p,--public-id'))
 RunTestCommand.addOption('testSearchQuery', Command.String('-s,--search'))
 RunTestCommand.addOption('shouldOpenTunnel', Command.Boolean('-t,--tunnel'))
+RunTestCommand.addOption('files', Command.Array('-f,--files'))
