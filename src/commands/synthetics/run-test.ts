@@ -189,7 +189,7 @@ export class RunTestCommand extends Command {
         listOfGlobs.map((glob: string) => getSuites(glob, this.context.stdout.write.bind(this.context.stdout)))
       )
     )
-      .flat()
+      .reduce((acc, val) => acc.concat(val), [])
       .map((suite) => suite.tests)
       .filter((suiteTests) => !!suiteTests)
 
