@@ -219,7 +219,7 @@ describe('run-test', () => {
       command['config'].global = {startUrl}
       command['config'].files = 'random glob'
 
-      command['files'] = ['new glob', 'another one']
+      command['fileGlobs'] = ['new glob', 'another one']
       await command['getTestsList'].bind(command)(fakeApi)
       expect(utils.getSuites).toHaveBeenCalledTimes(2)
       expect(utils.getSuites).toHaveBeenCalledWith('new glob', expect.any(Function))
@@ -227,7 +227,7 @@ describe('run-test', () => {
 
       mockFn.mockClear()
 
-      command['files'] = undefined
+      command['fileGlobs'] = undefined
       await command['getTestsList'].bind(command)(fakeApi)
       expect(utils.getSuites).toHaveBeenCalledTimes(1)
       expect(utils.getSuites).toHaveBeenCalledWith('random glob', expect.any(Function))
