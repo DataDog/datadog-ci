@@ -225,13 +225,13 @@ describe('run-test', () => {
       expect(utils.getSuites).toHaveBeenCalledWith('new glob', expect.any(Function))
       expect(utils.getSuites).toHaveBeenCalledWith('another one', expect.any(Function))
 
-      mockFn.mockClear();
+      mockFn.mockClear()
 
       command['files'] = undefined
       await command['getTestsList'].bind(command)(fakeApi)
       expect(utils.getSuites).toHaveBeenCalledTimes(1)
       expect(utils.getSuites).toHaveBeenCalledWith('random glob', expect.any(Function))
-    });
+    })
   })
 
   describe('sortTestsByOutcome', () => {

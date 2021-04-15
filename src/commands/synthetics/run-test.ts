@@ -182,13 +182,14 @@ export class RunTestCommand extends Command {
       return testSearchResults.tests.map((test) => ({config: this.config.global, id: test.public_id}))
     }
 
-    const files = this.files || [this.config.files];
+    const files = this.files || [this.config.files]
 
-    const suites = (await Promise.all(
-        files.map(
-          (f: string) => getSuites(f, this.context.stdout.write.bind(this.context.stdout))
-        )
-    )).flat().map((suite) => suite.tests).filter((suiteTests) => !!suiteTests)
+    const suites = (
+      await Promise.all(files.map((f: string) => getSuites(f, this.context.stdout.write.bind(this.context.stdout))))
+    )
+      .flat()
+      .map((suite) => suite.tests)
+      .filter((suiteTests) => !!suiteTests)
 
     const testsToTrigger = suites
       .reduce((acc, suiteTests) => acc.concat(suiteTests), [])
