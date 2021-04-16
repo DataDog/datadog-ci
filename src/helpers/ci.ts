@@ -1,6 +1,21 @@
 import {URL} from 'url'
 
-import {Metadata} from './interfaces'
+import {Metadata, SpanTags} from './interfaces'
+import {
+  CI_JOB_NAME,
+  CI_JOB_URL,
+  CI_PIPELINE_ID,
+  CI_PIPELINE_NAME,
+  CI_PIPELINE_NUMBER,
+  CI_PIPELINE_URL,
+  CI_PROVIDER_NAME,
+  CI_STAGE_NAME,
+  CI_WORKSPACE_PATH,
+  GIT_BRANCH,
+  GIT_REPOSITORY_URL,
+  GIT_SHA,
+  GIT_TAG,
+} from './tags'
 
 export const CI_ENGINES = {
   CIRCLECI: 'circleci',
@@ -44,6 +59,55 @@ const normalizeRef = (ref: string) => {
   }
 
   return ref.replace(/origin\/|refs\/heads\/|tags\//gm, '')
+}
+
+export const formatCIMetadataToSpanTags = (ciMetadata: Metadata): SpanTags => {
+  const tags: SpanTags = {}
+
+  if (ciMetadata.git?.branch) {
+    tags[GIT_BRANCH] = ciMetadata.git.branch
+  }
+  if (ciMetadata.git?.commitSha) {
+    tags[GIT_SHA] = ciMetadata.git.commitSha
+  }
+  if (ciMetadata.git?.repositoryUrl) {
+    tags[GIT_REPOSITORY_URL] = ciMetadata.git.repositoryUrl
+  }
+  if (ciMetadata.git?.tag) {
+    tags[GIT_TAG] = ciMetadata.git.tag
+  }
+
+  if (ciMetadata.ci?.job?.name) {
+    tags[CI_JOB_NAME] = ciMetadata.ci.job.name
+  }
+  if (ciMetadata.ci?.job?.url) {
+    tags[CI_JOB_URL] = ciMetadata.ci.job.url
+  }
+
+  if (ciMetadata.ci?.pipeline?.id) {
+    tags[CI_PIPELINE_ID] = ciMetadata.ci.pipeline.id
+  }
+  if (ciMetadata.ci?.pipeline?.name) {
+    tags[CI_PIPELINE_NAME] = ciMetadata.ci.pipeline.name
+  }
+  if (ciMetadata.ci?.pipeline?.number) {
+    tags[CI_PIPELINE_NUMBER] = ciMetadata.ci.pipeline.number
+  }
+  if (ciMetadata.ci?.pipeline?.url) {
+    tags[CI_PIPELINE_URL] = ciMetadata.ci.pipeline.url
+  }
+
+  if (ciMetadata.ci?.provider.name) {
+    tags[CI_PROVIDER_NAME] = ciMetadata.ci.provider.name
+  }
+  if (ciMetadata.ci?.stage?.name) {
+    tags[CI_STAGE_NAME] = ciMetadata.ci.stage.name
+  }
+  if (ciMetadata.ci?.workspacePath) {
+    tags[CI_WORKSPACE_PATH] = ciMetadata.ci.workspacePath
+  }
+
+  return tags
 }
 
 export const getCIMetadata = (): Metadata | undefined => {
@@ -126,30 +190,30 @@ export const getCIMetadata = (): Metadata | undefined => {
 
   if (env.GITLAB_CI) {
     const {
-      CI_PIPELINE_ID,
+      CI_PIPELINE_ID: GITLAB_CI_PIPELINE_ID,
       CI_PROJECT_PATH,
       CI_PIPELINE_IID,
-      CI_PIPELINE_URL,
+      CI_PIPELINE_URL: GITLAB_CI_PIPELINE_URL,
       CI_PROJECT_DIR,
       CI_COMMIT_BRANCH,
       CI_COMMIT_TAG,
       CI_COMMIT_SHA,
       CI_REPOSITORY_URL,
-      CI_JOB_URL,
+      CI_JOB_URL: GITLAB_CI_JOB_URL,
       CI_JOB_STAGE,
-      CI_JOB_NAME,
+      CI_JOB_NAME: GITLAB_CI_JOB_NAME,
     } = env
     tags = {
       ci: {
         job: {
-          name: CI_JOB_NAME,
-          url: CI_JOB_URL,
+          name: GITLAB_CI_JOB_NAME,
+          url: GITLAB_CI_JOB_URL,
         },
         pipeline: {
-          id: CI_PIPELINE_ID,
+          id: GITLAB_CI_PIPELINE_ID,
           name: CI_PROJECT_PATH,
           number: CI_PIPELINE_IID,
-          url: CI_PIPELINE_URL && CI_PIPELINE_URL.replace('/-/pipelines/', '/pipelines/'),
+          url: GITLAB_CI_PIPELINE_URL && GITLAB_CI_PIPELINE_URL.replace('/-/pipelines/', '/pipelines/'),
         },
         provider: {
           name: CI_ENGINES.GITLAB,

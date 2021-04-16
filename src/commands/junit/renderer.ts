@@ -25,8 +25,7 @@ export const renderSuccessfulCommand = (fileCount: number, duration: number) =>
 
 export const renderDryRunUpload = (payload: Payload): string => `[DRYRUN] ${renderUpload(payload)}`
 
-export const renderUpload = (payload: Payload): string =>
-  `Uploading jUnit XML test report files in ${payload.xmlPath}\n`
+export const renderUpload = (payload: Payload): string => `Uploading jUnit XML test report file in ${payload.xmlPath}\n`
 
 export const renderCommandInfo = (basePath: string, service: string, concurrency: number, dryRun: boolean) => {
   let fullStr = ''

@@ -1,11 +1,14 @@
 import {AxiosPromise, AxiosResponse} from 'axios'
 import {Writable} from 'stream'
 
+import {SpanTags} from '../../helpers/interfaces'
+
 export interface Payload {
   service: string
+  spanTags: SpanTags
   xmlPath: string
 }
 
 export interface APIHelper {
-  uploadJUnitXML(sourcemap: Payload, write: Writable['write']): AxiosPromise<AxiosResponse>
+  uploadJUnitXML(jUnitXML: Payload, write: Writable['write']): AxiosPromise<AxiosResponse>
 }
