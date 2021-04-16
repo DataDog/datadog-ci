@@ -8,7 +8,13 @@ import glob from 'glob'
 import {getBaseIntakeUrl} from './utils'
 import {APIHelper, Payload} from './interfaces'
 import {apiConstructor} from './api'
-import {renderFailedUpload, renderRetriedUpload, renderSuccessfulCommand} from './renderer'
+import {
+  renderFailedUpload,
+  renderRetriedUpload,
+  renderSuccessfulCommand,
+  renderDryRunUpload,
+  renderCommandInfo,
+} from './renderer'
 import {buildPath} from '../../helpers/utils'
 
 const errorCodesNoRetry = [400, 403, 413]
@@ -31,6 +37,7 @@ export class UploadJUnitXMLCommand extends Command {
   }
   private service?: string
   private maxConcurrency = 20
+  private dryRun = false
 
   private getApiHelper(): APIHelper {
     if (!this.config.apiKey) {
@@ -46,7 +53,12 @@ export class UploadJUnitXMLCommand extends Command {
       await retry(
         async (bail) => {
           try {
-            await api.uploadJUnitXML(jUnitXML)
+            if (this.dryRun) {
+              this.context.stdout.write(renderDryRunUpload(jUnitXML))
+
+              return
+            }
+            await api.uploadJUnitXML(jUnitXML, this.context.stdout.write.bind(this.context.stdout))
           } catch (error) {
             if (error.response) {
               // If it's an axios error
@@ -106,6 +118,7 @@ export class UploadJUnitXMLCommand extends Command {
     // Normalizing the basePath to resolve .. and .
     // Always using the posix version to avoid \ on Windows.
     this.basePath = path.posix.normalize(this.basePath)
+    this.context.stdout.write(renderCommandInfo(this.basePath!, this.service, this.maxConcurrency, this.dryRun))
 
     const payloads = this.getMatchingJUnitXMLFiles()
     const upload = (p: Payload) => this.uploadJUnitXML(api, p)
@@ -121,3 +134,4 @@ export class UploadJUnitXMLCommand extends Command {
 UploadJUnitXMLCommand.addPath('junit', 'upload')
 UploadJUnitXMLCommand.addOption('basePath', Command.String({required: true}))
 UploadJUnitXMLCommand.addOption('service', Command.String('--service'))
+UploadJUnitXMLCommand.addOption('dryRun', Command.Boolean('--dry-run'))

@@ -22,3 +22,23 @@ export const renderRetriedUpload = (payload: Payload, errorMessage: string, atte
 
 export const renderSuccessfulCommand = (fileCount: number, duration: number) =>
   chalk.green(`${ICONS.SUCCESS} Uploaded ${fileCount} files in ${duration} seconds.\n`)
+
+export const renderDryRunUpload = (payload: Payload): string => `[DRYRUN] ${renderUpload(payload)}`
+
+export const renderUpload = (payload: Payload): string =>
+  `Uploading jUnit XML test report files in ${payload.xmlPath}\n`
+
+export const renderCommandInfo = (basePath: string, service: string, concurrency: number, dryRun: boolean) => {
+  let fullStr = ''
+  if (dryRun) {
+    fullStr += chalk.yellow(`${ICONS.WARNING} DRY-RUN MODE ENABLED. WILL NOT UPLOAD JUNIT XML\n`)
+  }
+  const startStr = chalk.green(`Starting upload with concurrency ${concurrency}. \n`)
+  fullStr += startStr
+  const basePathStr = chalk.green(`Will look for jUnit XML files in ${basePath}\n`)
+  fullStr += basePathStr
+  const serviceVersionProjectPathStr = chalk.green(`service: ${service}\n`)
+  fullStr += serviceVersionProjectPathStr
+
+  return fullStr
+}

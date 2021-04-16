@@ -1,4 +1,5 @@
 import {AxiosPromise, AxiosResponse} from 'axios'
+import {Writable} from 'stream'
 
 export interface Payload {
   service: string
@@ -6,5 +7,5 @@ export interface Payload {
 }
 
 export interface APIHelper {
-  uploadJUnitXML(sourcemap: Payload): AxiosPromise<AxiosResponse>
+  uploadJUnitXML(sourcemap: Payload, write: Writable['write']): AxiosPromise<AxiosResponse>
 }
