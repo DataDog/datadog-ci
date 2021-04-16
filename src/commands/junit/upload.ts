@@ -1,20 +1,21 @@
 import retry from 'async-retry'
 import chalk from 'chalk'
 import {Command} from 'clipanion'
+import glob from 'glob'
 import path from 'path'
 import asyncPool from 'tiny-async-pool'
-import glob from 'glob'
 
-import {getBaseIntakeUrl} from './utils'
-import {APIHelper, Payload} from './interfaces'
 import {apiConstructor} from './api'
+import {APIHelper, Payload} from './interfaces'
 import {
+  renderCommandInfo,
+  renderDryRunUpload,
   renderFailedUpload,
   renderRetriedUpload,
   renderSuccessfulCommand,
-  renderDryRunUpload,
-  renderCommandInfo,
 } from './renderer'
+import {getBaseIntakeUrl} from './utils'
+
 import {buildPath} from '../../helpers/utils'
 
 const errorCodesNoRetry = [400, 403, 413]
@@ -35,9 +36,38 @@ export class UploadJUnitXMLCommand extends Command {
   private config = {
     apiKey: process.env.DATADOG_API_KEY,
   }
-  private service?: string
-  private maxConcurrency = 20
   private dryRun = false
+  private maxConcurrency = 20
+  private service?: string
+
+  public async execute() {
+    if (!this.service) {
+      this.context.stderr.write('Missing service\n')
+
+      return 1
+    }
+    if (!this.basePath) {
+      this.context.stderr.write('Missing basePath\n')
+
+      return 1
+    }
+
+    const api = this.getApiHelper()
+    // Normalizing the basePath to resolve .. and .
+    // Always using the posix version to avoid \ on Windows.
+    this.basePath = path.posix.normalize(this.basePath)
+    this.context.stdout.write(renderCommandInfo(this.basePath!, this.service, this.maxConcurrency, this.dryRun))
+
+    const payloads = this.getMatchingJUnitXMLFiles()
+    const upload = (p: Payload) => this.uploadJUnitXML(api, p)
+
+    const initialTime = new Date().getTime()
+
+    await asyncPool(this.maxConcurrency, payloads, upload)
+
+    const totalTimeSeconds = (Date.now() - initialTime) / 1000
+    this.context.stdout.write(renderSuccessfulCommand(payloads.length, totalTimeSeconds))
+  }
 
   private getApiHelper(): APIHelper {
     if (!this.config.apiKey) {
@@ -46,6 +76,15 @@ export class UploadJUnitXMLCommand extends Command {
     }
 
     return apiConstructor(getBaseIntakeUrl(), this.config.apiKey)
+  }
+
+  private getMatchingJUnitXMLFiles(): Payload[] {
+    const jUnitXMLFiles = glob.sync(buildPath(this.basePath!, '**/*.xml'))
+
+    return jUnitXMLFiles.map((jUnitXMLFilePath) => ({
+      service: this.service!,
+      xmlPath: jUnitXMLFilePath,
+    }))
   }
 
   private async uploadJUnitXML(api: APIHelper, jUnitXML: Payload) {
@@ -91,44 +130,6 @@ export class UploadJUnitXMLCommand extends Command {
       }
       throw error
     }
-  }
-
-  private getMatchingJUnitXMLFiles(): Payload[] {
-    const jUnitXMLFiles = glob.sync(buildPath(this.basePath!, '**/*.xml'))
-
-    return jUnitXMLFiles.map((jUnitXMLFilePath) => ({
-      xmlPath: jUnitXMLFilePath,
-      service: this.service!,
-    }))
-  }
-
-  public async execute() {
-    if (!this.service) {
-      this.context.stderr.write('Missing service\n')
-
-      return 1
-    }
-    if (!this.basePath) {
-      this.context.stderr.write('Missing basePath\n')
-
-      return 1
-    }
-
-    const api = this.getApiHelper()
-    // Normalizing the basePath to resolve .. and .
-    // Always using the posix version to avoid \ on Windows.
-    this.basePath = path.posix.normalize(this.basePath)
-    this.context.stdout.write(renderCommandInfo(this.basePath!, this.service, this.maxConcurrency, this.dryRun))
-
-    const payloads = this.getMatchingJUnitXMLFiles()
-    const upload = (p: Payload) => this.uploadJUnitXML(api, p)
-
-    const initialTime = new Date().getTime()
-
-    await asyncPool(this.maxConcurrency, payloads, upload)
-
-    const totalTimeSeconds = (Date.now() - initialTime) / 1000
-    this.context.stdout.write(renderSuccessfulCommand(payloads.length, totalTimeSeconds))
   }
 }
 UploadJUnitXMLCommand.addPath('junit', 'upload')

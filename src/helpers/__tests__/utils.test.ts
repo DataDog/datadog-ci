@@ -4,7 +4,7 @@ import * as fs from 'fs'
 
 import {AxiosPromise, AxiosRequestConfig, default as axios} from 'axios'
 
-import {getApiHostForSite, getRequestBuilder, parseConfigFile, pick, ProxyConfiguration, buildPath} from '../utils'
+import {buildPath, getApiHostForSite, getRequestBuilder, parseConfigFile, pick, ProxyConfiguration} from '../utils'
 
 jest.useFakeTimers()
 

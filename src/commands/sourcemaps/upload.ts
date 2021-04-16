@@ -20,6 +20,7 @@ import {
   renderSuccessfulCommand,
 } from './renderer'
 import {getBaseIntakeUrl, getMinifiedFilePath} from './utils'
+
 import {buildPath} from '../../helpers/utils'
 
 const errorCodesNoRetry = [400, 403, 413]

@@ -1,11 +1,8 @@
 export interface Metadata {
   ci: {
     job?: {
-      url?: string;
       name?: string
-    },
-    stage?: {
-      name?: string
+      url?: string
     }
     pipeline: {
       id?: string
@@ -15,13 +12,16 @@ export interface Metadata {
     }
     provider: {
       name: string
-    },
+    }
+    stage?: {
+      name?: string
+    }
     workspacePath?: string
   }
   git: {
-    tag?: string
-    repositoryUrl?: string
     branch?: string
     commitSha?: string
+    repositoryUrl?: string
+    tag?: string
   }
 }

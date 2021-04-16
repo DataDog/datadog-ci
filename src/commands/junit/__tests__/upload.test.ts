@@ -1,5 +1,5 @@
-import os from 'os'
 import {Cli} from 'clipanion/lib/advanced'
+import os from 'os'
 
 import {UploadJUnitXMLCommand} from '../upload'
 
@@ -31,6 +31,7 @@ describe('upload', () => {
       const command = new UploadJUnitXMLCommand()
       command.context = {stdout: {write}} as any
 
+      // tslint:disable-next-line
       expect(command['getApiHelper'].bind(command)).toThrow('API key is missing')
       expect(write.mock.calls[0][0]).toContain('DATADOG_API_KEY')
     })
