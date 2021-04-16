@@ -23,6 +23,7 @@ export class RunTestCommand extends Command {
     tunnel: false,
   }
   private configPath?: string
+  private fileGlobs?: string[]
   private publicIds: string[] = []
   private shouldOpenTunnel?: boolean
   private testSearchQuery?: string
@@ -35,7 +36,7 @@ export class RunTestCommand extends Command {
 
     const api = this.getApiHelper()
     const publicIdsFromCli = this.publicIds.map((id) => ({config: this.config.global, id}))
-    const testsToTrigger = publicIdsFromCli.length ? publicIdsFromCli : await this.getTestsToTrigger(api)
+    const testsToTrigger = publicIdsFromCli.length ? publicIdsFromCli : await this.getTestsList(api)
 
     if (!testsToTrigger.length) {
       this.context.stdout.write('No test suites to run.\n')
@@ -174,13 +175,21 @@ export class RunTestCommand extends Command {
     return `${host}/${apiPath}`
   }
 
-  private async getTestsToTrigger(api: APIHelper) {
+  private async getTestsList(api: APIHelper) {
     if (this.testSearchQuery) {
       const testSearchResults = await api.searchTests(this.testSearchQuery)
 
       return testSearchResults.tests.map((test) => ({config: this.config.global, id: test.public_id}))
     }
-    const suites = (await getSuites(this.config.files, this.context.stdout.write.bind(this.context.stdout)))
+
+    const listOfGlobs = this.fileGlobs || [this.config.files]
+
+    const suites = (
+      await Promise.all(
+        listOfGlobs.map((glob: string) => getSuites(glob, this.context.stdout.write.bind(this.context.stdout)))
+      )
+    )
+      .reduce((acc, val) => acc.concat(val), [])
       .map((suite) => suite.tests)
       .filter((suiteTests) => !!suiteTests)
 
@@ -221,3 +230,4 @@ RunTestCommand.addOption('configPath', Command.String('--config'))
 RunTestCommand.addOption('publicIds', Command.Array('-p,--public-id'))
 RunTestCommand.addOption('testSearchQuery', Command.String('-s,--search'))
 RunTestCommand.addOption('shouldOpenTunnel', Command.Boolean('-t,--tunnel'))
+RunTestCommand.addOption('fileGlobs', Command.Array('-f,--files'))
