@@ -1,0 +1,123 @@
+import retry from 'async-retry'
+import chalk from 'chalk'
+import {Command} from 'clipanion'
+import path from 'path'
+import asyncPool from 'tiny-async-pool'
+import glob from 'glob'
+
+import {getBaseIntakeUrl} from './utils'
+import {APIHelper, Payload} from './interfaces'
+import {apiConstructor} from './api'
+import {renderFailedUpload, renderRetriedUpload, renderSuccessfulCommand} from './renderer'
+import {buildPath} from '../../helpers/utils'
+
+const errorCodesNoRetry = [400, 403, 413]
+const errorCodesStopUpload = [400, 403]
+
+export class UploadJUnitXMLCommand extends Command {
+  public static usage = Command.Usage({
+    description: 'Upload jUnit XML test reports files to Datadog.',
+    details: `
+            This command will upload to jUnit XML test reports files to Datadog.
+        `,
+    examples: [
+      ['Upload all jUnit XML test report files in current directory', 'datadog-ci junit upload . --service my-service'],
+    ],
+  })
+
+  private basePath?: string
+  private config = {
+    apiKey: process.env.DATADOG_API_KEY,
+  }
+  private service?: string
+  private maxConcurrency = 20
+
+  private getApiHelper(): APIHelper {
+    if (!this.config.apiKey) {
+      this.context.stdout.write(`Missing ${chalk.red.bold('DATADOG_API_KEY')} in your environment.\n`)
+      throw new Error('API key is missing')
+    }
+
+    return apiConstructor(getBaseIntakeUrl(), this.config.apiKey)
+  }
+
+  private async uploadJUnitXML(api: APIHelper, jUnitXML: Payload) {
+    try {
+      await retry(
+        async (bail) => {
+          try {
+            await api.uploadJUnitXML(jUnitXML)
+          } catch (error) {
+            if (error.response) {
+              // If it's an axios error
+              if (!errorCodesNoRetry.includes(error.response.status)) {
+                // And a status code that is not excluded from retries, throw the error so that upload is retried
+                throw error
+              }
+            }
+            // If it's another error or an axios error we don't want to retry, bail
+            bail(error)
+
+            return
+          }
+        },
+        {
+          onRetry: (e, attempt) => {
+            this.context.stdout.write(renderRetriedUpload(jUnitXML, e.message, attempt))
+          },
+          retries: 5,
+        }
+      )
+    } catch (error) {
+      this.context.stdout.write(renderFailedUpload(jUnitXML, error))
+      if (error.response) {
+        // If it's an axios error
+        if (!errorCodesStopUpload.includes(error.response.status)) {
+          // And a status code that should not stop the whole upload, just return
+          return
+        }
+      }
+      throw error
+    }
+  }
+
+  private getMatchingJUnitXMLFiles(): Payload[] {
+    const jUnitXMLFiles = glob.sync(buildPath(this.basePath!, '**/*.xml'))
+
+    return jUnitXMLFiles.map((jUnitXMLFilePath) => ({
+      xmlPath: jUnitXMLFilePath,
+      service: this.service!,
+    }))
+  }
+
+  public async execute() {
+    if (!this.service) {
+      this.context.stderr.write('Missing service\n')
+
+      return 1
+    }
+    if (!this.basePath) {
+      this.context.stderr.write('Missing basePath\n')
+
+      return 1
+    }
+
+    const api = this.getApiHelper()
+    // Normalizing the basePath to resolve .. and .
+    // Always using the posix version to avoid \ on Windows.
+    this.basePath = path.posix.normalize(this.basePath)
+
+    const payloads = this.getMatchingJUnitXMLFiles()
+    const upload = (p: Payload) => this.uploadJUnitXML(api, p)
+
+    const initialTime = new Date().getTime()
+
+    await asyncPool(this.maxConcurrency, payloads, upload)
+
+    const totalTimeSeconds = (Date.now() - initialTime) / 1000
+    this.context.stdout.write(renderSuccessfulCommand(payloads.length, totalTimeSeconds))
+  }
+}
+UploadJUnitXMLCommand.addPath('junit', 'upload')
+UploadJUnitXMLCommand.addOption('basePath', Command.String({required: true}))
+UploadJUnitXMLCommand.addOption('service', Command.String('--service'))

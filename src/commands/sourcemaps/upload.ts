@@ -19,7 +19,8 @@ import {
   renderRetriedUpload,
   renderSuccessfulCommand,
 } from './renderer'
-import {buildPath, getBaseIntakeUrl, getMinifiedFilePath} from './utils'
+import {getBaseIntakeUrl, getMinifiedFilePath} from './utils'
+import {buildPath} from '../../helpers/utils'
 
 const errorCodesNoRetry = [400, 403, 413]
 const errorCodesStopUpload = [400, 403]

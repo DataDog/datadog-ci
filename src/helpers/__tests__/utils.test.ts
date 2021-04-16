@@ -4,7 +4,7 @@ import * as fs from 'fs'
 
 import {AxiosPromise, AxiosRequestConfig, default as axios} from 'axios'
 
-import {getApiHostForSite, getRequestBuilder, parseConfigFile, pick, ProxyConfiguration} from '../utils'
+import {getApiHostForSite, getRequestBuilder, parseConfigFile, pick, ProxyConfiguration, buildPath} from '../utils'
 
 jest.useFakeTimers()
 
@@ -106,6 +106,17 @@ describe('utils', () => {
       ['whitelabel.com', 'api.whitelabel.com'],
     ])('for site = %p, returns api host = %p ', (site, expectedApiHost) => {
       expect(getApiHostForSite(site)).toEqual(expectedApiHost)
+    })
+  })
+
+  describe('buildPath', () => {
+    test('should return correct path', () => {
+      const pathWithNoTrailingSlash = 'sourcemaps/js'
+      const pathWithTrailingSlash = 'sourcemaps/js/'
+      const fileName = 'file1.min.js'
+
+      expect(buildPath(pathWithNoTrailingSlash, fileName)).toBe('sourcemaps/js/file1.min.js')
+      expect(buildPath(pathWithTrailingSlash, fileName)).toBe('sourcemaps/js/file1.min.js')
     })
   })
 })
