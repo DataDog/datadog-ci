@@ -270,7 +270,16 @@ export const getCIMetadata = (): Metadata | undefined => {
   }
 
   if (env.JENKINS_URL) {
-    const {WORKSPACE, BUILD_TAG, JOB_NAME, BUILD_NUMBER, BUILD_URL, GIT_BRANCH, GIT_COMMIT, GIT_URL} = env
+    const {
+      WORKSPACE,
+      BUILD_TAG,
+      JOB_NAME,
+      BUILD_NUMBER,
+      BUILD_URL,
+      GIT_BRANCH: JENKINS_GIT_BRANCH,
+      GIT_COMMIT,
+      GIT_URL,
+    } = env
 
     tags = {
       ci: {
@@ -286,7 +295,7 @@ export const getCIMetadata = (): Metadata | undefined => {
         workspacePath: WORKSPACE,
       },
       git: {
-        branch: GIT_BRANCH,
+        branch: JENKINS_GIT_BRANCH,
         commitSha: GIT_COMMIT,
         repositoryUrl: GIT_URL,
       },
