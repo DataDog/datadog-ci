@@ -16,7 +16,7 @@ import {
 } from './renderer'
 import {getBaseIntakeUrl} from './utils'
 
-import {formatCIMetadataToSpanTags, getCIMetadata} from '../../helpers/ci'
+import {getCISpanTags} from '../../helpers/ci'
 import {getGitMetadata} from '../../helpers/git'
 import {buildPath} from '../../helpers/utils'
 
@@ -83,9 +83,7 @@ export class UploadJUnitXMLCommand extends Command {
   private getMatchingJUnitXMLFiles(): Payload[] {
     const jUnitXMLFiles = glob.sync(buildPath(this.basePath!, '**/*.xml'))
 
-    const ciMetadata = getCIMetadata()
-    const ciSpanTags = ciMetadata ? formatCIMetadataToSpanTags(ciMetadata) : {}
-
+    const ciSpanTags = getCISpanTags()
     const gitSpanTags = getGitMetadata()
 
     const spanTags = {

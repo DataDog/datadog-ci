@@ -1,6 +1,6 @@
 import {URL} from 'url'
 
-import {Metadata, SpanTags} from './interfaces'
+import {Metadata, SpanTag, SpanTags} from './interfaces'
 import {
   CI_JOB_NAME,
   CI_JOB_URL,
@@ -25,7 +25,19 @@ export const CI_ENGINES = {
   TRAVIS: 'travis',
 }
 
-const resolveTilde = (filePath: string) => {
+const removeEmptyValues = (tags: SpanTags) =>
+  (Object.keys(tags) as SpanTag[]).reduce((filteredTags, tag) => {
+    if (!tags[tag]) {
+      return filteredTags
+    }
+
+    return {
+      ...filteredTags,
+      [tag]: tags[tag],
+    }
+  }, {})
+
+const resolveTilde = (filePath: string | undefined) => {
   if (!filePath || typeof filePath !== 'string') {
     return ''
   }
@@ -61,58 +73,9 @@ const normalizeRef = (ref: string) => {
   return ref.replace(/origin\/|refs\/heads\/|tags\//gm, '')
 }
 
-export const formatCIMetadataToSpanTags = (ciMetadata: Metadata): SpanTags => {
-  const tags: SpanTags = {}
-
-  if (ciMetadata.git?.branch) {
-    tags[GIT_BRANCH] = ciMetadata.git.branch
-  }
-  if (ciMetadata.git?.commitSha) {
-    tags[GIT_SHA] = ciMetadata.git.commitSha
-  }
-  if (ciMetadata.git?.repositoryUrl) {
-    tags[GIT_REPOSITORY_URL] = ciMetadata.git.repositoryUrl
-  }
-  if (ciMetadata.git?.tag) {
-    tags[GIT_TAG] = ciMetadata.git.tag
-  }
-
-  if (ciMetadata.ci?.job?.name) {
-    tags[CI_JOB_NAME] = ciMetadata.ci.job.name
-  }
-  if (ciMetadata.ci?.job?.url) {
-    tags[CI_JOB_URL] = ciMetadata.ci.job.url
-  }
-
-  if (ciMetadata.ci?.pipeline?.id) {
-    tags[CI_PIPELINE_ID] = ciMetadata.ci.pipeline.id
-  }
-  if (ciMetadata.ci?.pipeline?.name) {
-    tags[CI_PIPELINE_NAME] = ciMetadata.ci.pipeline.name
-  }
-  if (ciMetadata.ci?.pipeline?.number) {
-    tags[CI_PIPELINE_NUMBER] = ciMetadata.ci.pipeline.number
-  }
-  if (ciMetadata.ci?.pipeline?.url) {
-    tags[CI_PIPELINE_URL] = ciMetadata.ci.pipeline.url
-  }
-
-  if (ciMetadata.ci?.provider.name) {
-    tags[CI_PROVIDER_NAME] = ciMetadata.ci.provider.name
-  }
-  if (ciMetadata.ci?.stage?.name) {
-    tags[CI_STAGE_NAME] = ciMetadata.ci.stage.name
-  }
-  if (ciMetadata.ci?.workspacePath) {
-    tags[CI_WORKSPACE_PATH] = ciMetadata.ci.workspacePath
-  }
-
-  return tags
-}
-
-export const getCIMetadata = (): Metadata | undefined => {
+export const getCISpanTags = (): SpanTags | undefined => {
   const env = process.env
-  let tags: Metadata | undefined
+  let tags: SpanTags = {}
 
   if (env.CIRCLECI) {
     const {
@@ -127,27 +90,17 @@ export const getCIMetadata = (): Metadata | undefined => {
       CIRCLE_REPOSITORY_URL,
     } = env
     tags = {
-      ci: {
-        job: {
-          name: CIRCLE_BUILD_URL,
-        },
-        pipeline: {
-          id: CIRCLE_WORKFLOW_ID,
-          name: CIRCLE_PROJECT_REPONAME,
-          number: CIRCLE_BUILD_NUM,
-          url: CIRCLE_BUILD_URL,
-        },
-        provider: {
-          name: CI_ENGINES.CIRCLECI,
-        },
-        workspacePath: CIRCLE_WORKING_DIRECTORY,
-      },
-      git: {
-        branch: CIRCLE_BRANCH,
-        commitSha: CIRCLE_SHA1,
-        repositoryUrl: CIRCLE_REPOSITORY_URL,
-        tag: CIRCLE_TAG,
-      },
+      [CI_JOB_URL]: CIRCLE_BUILD_URL,
+      [CI_PIPELINE_ID]: CIRCLE_WORKFLOW_ID,
+      [CI_PIPELINE_NAME]: CIRCLE_PROJECT_REPONAME,
+      [CI_PIPELINE_NUMBER]: CIRCLE_BUILD_NUM,
+      [CI_PIPELINE_URL]: CIRCLE_BUILD_URL,
+      [CI_PROVIDER_NAME]: CI_ENGINES.CIRCLECI,
+      [CI_WORKSPACE_PATH]: CIRCLE_WORKING_DIRECTORY,
+      [GIT_BRANCH]: CIRCLE_BRANCH,
+      [GIT_SHA]: CIRCLE_SHA1,
+      [GIT_REPOSITORY_URL]: CIRCLE_REPOSITORY_URL,
+      [GIT_TAG]: CIRCLE_TAG,
     }
   }
 
@@ -164,27 +117,17 @@ export const getCIMetadata = (): Metadata | undefined => {
       TRAVIS_BUILD_DIR,
     } = env
     tags = {
-      ci: {
-        job: {
-          url: TRAVIS_JOB_WEB_URL,
-        },
-        pipeline: {
-          id: TRAVIS_BUILD_ID,
-          name: TRAVIS_REPO_SLUG,
-          number: TRAVIS_BUILD_NUMBER,
-          url: TRAVIS_BUILD_WEB_URL,
-        },
-        provider: {
-          name: CI_ENGINES.TRAVIS,
-        },
-        workspacePath: TRAVIS_BUILD_DIR,
-      },
-      git: {
-        branch: TRAVIS_BRANCH,
-        commitSha: TRAVIS_COMMIT,
-        repositoryUrl: `https://github.com/${TRAVIS_REPO_SLUG}.git`,
-        tag: TRAVIS_TAG,
-      },
+      [CI_JOB_URL]: TRAVIS_JOB_WEB_URL,
+      [CI_PIPELINE_ID]: TRAVIS_BUILD_ID,
+      [CI_PIPELINE_NAME]: TRAVIS_REPO_SLUG,
+      [CI_PIPELINE_NUMBER]: TRAVIS_BUILD_NUMBER,
+      [CI_PIPELINE_URL]: TRAVIS_BUILD_WEB_URL,
+      [CI_PROVIDER_NAME]: CI_ENGINES.TRAVIS,
+      [CI_WORKSPACE_PATH]: TRAVIS_BUILD_DIR,
+      [GIT_BRANCH]: TRAVIS_BRANCH,
+      [GIT_SHA]: TRAVIS_COMMIT,
+      [GIT_REPOSITORY_URL]: `https://github.com/${TRAVIS_REPO_SLUG}.git`,
+      [GIT_TAG]: TRAVIS_TAG,
     }
   }
 
@@ -204,31 +147,19 @@ export const getCIMetadata = (): Metadata | undefined => {
       CI_JOB_NAME: GITLAB_CI_JOB_NAME,
     } = env
     tags = {
-      ci: {
-        job: {
-          name: GITLAB_CI_JOB_NAME,
-          url: GITLAB_CI_JOB_URL,
-        },
-        pipeline: {
-          id: GITLAB_CI_PIPELINE_ID,
-          name: CI_PROJECT_PATH,
-          number: CI_PIPELINE_IID,
-          url: GITLAB_CI_PIPELINE_URL && GITLAB_CI_PIPELINE_URL.replace('/-/pipelines/', '/pipelines/'),
-        },
-        provider: {
-          name: CI_ENGINES.GITLAB,
-        },
-        stage: {
-          name: CI_JOB_STAGE,
-        },
-        workspacePath: CI_PROJECT_DIR,
-      },
-      git: {
-        branch: CI_COMMIT_BRANCH,
-        commitSha: CI_COMMIT_SHA,
-        repositoryUrl: CI_REPOSITORY_URL,
-        tag: CI_COMMIT_TAG,
-      },
+      [CI_JOB_NAME]: GITLAB_CI_JOB_NAME,
+      [CI_JOB_URL]: GITLAB_CI_JOB_URL,
+      [CI_PIPELINE_ID]: GITLAB_CI_PIPELINE_ID,
+      [CI_PIPELINE_NAME]: CI_PROJECT_PATH,
+      [CI_PIPELINE_NUMBER]: CI_PIPELINE_IID,
+      [CI_PIPELINE_URL]: GITLAB_CI_PIPELINE_URL && GITLAB_CI_PIPELINE_URL.replace('/-/pipelines/', '/pipelines/'),
+      [CI_PROVIDER_NAME]: CI_ENGINES.GITLAB,
+      [CI_WORKSPACE_PATH]: CI_PROJECT_DIR,
+      [CI_STAGE_NAME]: CI_JOB_STAGE,
+      [GIT_BRANCH]: CI_COMMIT_BRANCH,
+      [GIT_SHA]: CI_COMMIT_SHA,
+      [GIT_REPOSITORY_URL]: CI_REPOSITORY_URL,
+      [GIT_TAG]: CI_COMMIT_TAG,
     }
   }
 
@@ -246,26 +177,16 @@ export const getCIMetadata = (): Metadata | undefined => {
     const pipelineURL = `https://github.com/${GITHUB_REPOSITORY}/commit/${GITHUB_SHA}/checks`
 
     tags = {
-      ci: {
-        job: {
-          url: pipelineURL,
-        },
-        pipeline: {
-          id: GITHUB_RUN_ID,
-          name: GITHUB_WORKFLOW,
-          number: GITHUB_RUN_NUMBER,
-          url: pipelineURL,
-        },
-        provider: {
-          name: CI_ENGINES.GITHUB,
-        },
-        workspacePath: GITHUB_WORKSPACE,
-      },
-      git: {
-        branch: GITHUB_REF,
-        commitSha: GITHUB_SHA,
-        repositoryUrl,
-      },
+      [CI_JOB_URL]: pipelineURL,
+      [CI_PIPELINE_ID]: GITHUB_RUN_ID,
+      [CI_PIPELINE_NAME]: GITHUB_WORKFLOW,
+      [CI_PIPELINE_NUMBER]: GITHUB_RUN_NUMBER,
+      [CI_PIPELINE_URL]: pipelineURL,
+      [CI_PROVIDER_NAME]: CI_ENGINES.GITHUB,
+      [CI_WORKSPACE_PATH]: GITHUB_WORKSPACE,
+      [GIT_BRANCH]: GITHUB_REF,
+      [GIT_SHA]: GITHUB_SHA,
+      [GIT_REPOSITORY_URL]: repositoryUrl,
     }
   }
 
@@ -282,37 +203,124 @@ export const getCIMetadata = (): Metadata | undefined => {
     } = env
 
     tags = {
+      [CI_PIPELINE_ID]: BUILD_TAG,
+      [CI_PIPELINE_NAME]: JOB_NAME,
+      [CI_PIPELINE_NUMBER]: BUILD_NUMBER,
+      [CI_PIPELINE_URL]: BUILD_URL,
+      [CI_PROVIDER_NAME]: CI_ENGINES.JENKINS,
+      [CI_WORKSPACE_PATH]: WORKSPACE,
+      [GIT_BRANCH]: JENKINS_GIT_BRANCH,
+      [GIT_SHA]: GIT_COMMIT,
+      [GIT_REPOSITORY_URL]: GIT_URL,
+    }
+  }
+  if (tags[CI_WORKSPACE_PATH]) {
+    tags[CI_WORKSPACE_PATH] = resolveTilde(tags[CI_WORKSPACE_PATH]!)
+  }
+  if (tags[GIT_REPOSITORY_URL]) {
+    tags[GIT_REPOSITORY_URL] = filterSensitiveInfoFromRepository(tags[GIT_REPOSITORY_URL]!)
+  }
+  if (tags[GIT_BRANCH]) {
+    tags[GIT_BRANCH] = normalizeRef(tags[GIT_BRANCH]!)
+  }
+  if (tags[GIT_TAG]) {
+    tags[GIT_TAG] = normalizeRef(tags[GIT_TAG]!)
+  }
+
+  return removeEmptyValues(tags)
+}
+
+export const getCIMetadata = (): Metadata | undefined => {
+  const env = process.env
+
+  if (env.CIRCLECI) {
+    return {
       ci: {
         pipeline: {
-          id: BUILD_TAG,
-          name: JOB_NAME,
-          number: BUILD_NUMBER,
+          url: env.CIRCLE_BUILD_URL,
+        },
+        provider: {
+          name: CI_ENGINES.CIRCLECI,
+        },
+      },
+      git: {
+        branch: env.CIRCLE_BRANCH,
+        commitSha: env.CIRCLE_SHA1,
+      },
+    }
+  }
+
+  if (env.TRAVIS) {
+    return {
+      ci: {
+        pipeline: {
+          url: env.TRAVIS_JOB_WEB_URL,
+        },
+        provider: {
+          name: CI_ENGINES.TRAVIS,
+        },
+      },
+      git: {
+        branch: env.TRAVIS_BRANCH,
+        commitSha: env.TRAVIS_COMMIT,
+      },
+    }
+  }
+
+  if (env.GITLAB_CI) {
+    return {
+      ci: {
+        pipeline: {
+          url: env.CI_JOB_URL,
+        },
+        provider: {
+          name: CI_ENGINES.GITLAB,
+        },
+      },
+      git: {
+        branch: env.CI_COMMIT_BRANCH,
+        commitSha: env.CI_COMMIT_SHA,
+      },
+    }
+  }
+
+  if (env.GITHUB_ACTIONS) {
+    const {GITHUB_REF, GITHUB_SHA, GITHUB_REPOSITORY, GITHUB_RUN_ID} = env
+
+    const pipelineURL = `https://github.com/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}`
+
+    return {
+      ci: {
+        pipeline: {
+          url: pipelineURL,
+        },
+        provider: {
+          name: CI_ENGINES.GITHUB,
+        },
+      },
+      git: {
+        branch: GITHUB_REF,
+        commitSha: GITHUB_SHA,
+      },
+    }
+  }
+
+  if (env.JENKINS_URL) {
+    const {BUILD_URL, GIT_COMMIT, GIT_BRANCH: JENKINS_GIT_BRANCH} = env
+
+    return {
+      ci: {
+        pipeline: {
           url: BUILD_URL,
         },
         provider: {
           name: CI_ENGINES.JENKINS,
         },
-        workspacePath: WORKSPACE,
       },
       git: {
         branch: JENKINS_GIT_BRANCH,
         commitSha: GIT_COMMIT,
-        repositoryUrl: GIT_URL,
       },
     }
   }
-  if (tags?.ci?.workspacePath) {
-    tags.ci.workspacePath = resolveTilde(tags.ci.workspacePath)
-  }
-  if (tags?.git.repositoryUrl) {
-    tags.git.repositoryUrl = filterSensitiveInfoFromRepository(tags.git.repositoryUrl)
-  }
-  if (tags?.git.branch) {
-    tags.git.branch = normalizeRef(tags.git.branch)
-  }
-  if (tags?.git.tag) {
-    tags.git.tag = normalizeRef(tags.git.tag)
-  }
-
-  return tags
 }
