@@ -14,7 +14,7 @@ import {
   renderRetriedUpload,
   renderSuccessfulCommand,
 } from './renderer'
-import {getBaseIntakeUrl} from './utils'
+import {getBaseIntakeUrl, parseTags} from './utils'
 
 import {getCISpanTags} from '../../helpers/ci'
 import {getGitMetadata} from '../../helpers/git'
@@ -37,6 +37,8 @@ export class UploadJUnitXMLCommand extends Command {
   private basePath?: string
   private config = {
     apiKey: process.env.DATADOG_API_KEY,
+    env: process.env.DD_ENV,
+    extraTags: process.env.DD_TAGS,
   }
   private dryRun = false
   private maxConcurrency = 20
@@ -85,10 +87,13 @@ export class UploadJUnitXMLCommand extends Command {
 
     const ciSpanTags = getCISpanTags()
     const gitSpanTags = getGitMetadata()
+    const extraTags = parseTags(this.config.extraTags)
 
     const spanTags = {
       ...gitSpanTags,
       ...ciSpanTags,
+      ...extraTags,
+      ...(this.config.env ? {env: this.config.env} : {}),
     }
 
     return jUnitXMLFiles.map((jUnitXMLFilePath) => ({
