@@ -9,7 +9,8 @@ import glob from 'glob'
 import {ProxyConfiguration} from '../../../helpers/utils'
 
 import {apiConstructor} from '../api'
-import {ExecutionRule, PollResult, Result, Test} from '../interfaces'
+import {ConfigOverride, ExecutionRule, PollResult, Result, Test} from '../interfaces'
+import {Tunnel} from '../tunnel'
 import * as utils from '../utils'
 
 import {getApiTest} from './fixtures'
@@ -44,19 +45,10 @@ describe('utils', () => {
   })
 
   describe('runTest', () => {
-    const processWrite = process.stdout.write.bind(process.stdout)
-    const fakeTest = {
-      config: {
-        request: {
-          url: 'http://example.org/',
-        },
-      },
-      name: 'Fake Test',
-      public_id: '123-456-789',
-    }
+    const fakeId = '123-456-789'
     const fakeTrigger = {
       results: [],
-      triggered_check_ids: [fakeTest.public_id],
+      triggered_check_ids: [fakeId],
     }
 
     beforeAll(() => {
@@ -64,10 +56,6 @@ describe('utils', () => {
       axiosMock.mockImplementation((() => (e: any) => {
         if (e.url === '/synthetics/tests/trigger/ci') {
           return {data: fakeTrigger}
-        }
-
-        if (e.url === `/synthetics/tests/${fakeTest.public_id}`) {
-          return {data: fakeTest}
         }
       }) as any)
     })
@@ -77,26 +65,73 @@ describe('utils', () => {
     })
 
     test('should run test', async () => {
-      const output = await utils.runTests(api, [{id: fakeTest.public_id, config: {}}], processWrite)
-      expect(output).toEqual({tests: [fakeTest], triggers: fakeTrigger})
+      const output = await utils.runTests(api, [{public_id: fakeId, executionRule: ExecutionRule.NON_BLOCKING}])
+      expect(output).toEqual(fakeTrigger)
     })
 
     test('should run test with publicId from url', async () => {
-      const output = await utils.runTests(
+      const output = await utils.runTests(api, [
+        {
+          executionRule: ExecutionRule.NON_BLOCKING,
+          public_id: `http://localhost/synthetics/tests/details/${fakeId}`,
+        },
+      ])
+      expect(output).toEqual(fakeTrigger)
+    })
+  })
+
+  describe('getTestsToTrigger', () => {
+    const processWrite = process.stdout.write.bind(process.stdout)
+    const fakeTests: {[id: string]: any} = {
+      '123-456-789': {
+        config: {request: {url: 'http://example.org/'}},
+        name: 'Fake Test',
+        public_id: '123-456-789',
+      },
+      'ski-ppe-d01': {
+        config: {request: {url: 'http://example.org/'}},
+        name: 'Skipped Fake Test',
+        options: {ci: {executionRule: 'skipped'}},
+        public_id: 'ski-ppe-d01',
+      },
+    }
+
+    beforeAll(() => {
+      const axiosMock = jest.spyOn(axios.default, 'create')
+      axiosMock.mockImplementation((() => (e: any) => {
+        const publicId = e.url.slice(18)
+        if (fakeTests[publicId]) {
+          return {data: fakeTests[publicId]}
+        }
+      }) as any)
+    })
+
+    afterAll(() => {
+      jest.clearAllMocks()
+    })
+
+    test('only existing tests are returned', async () => {
+      const triggerConfigs = [
+        {config: {}, id: '123-456-789'},
+        {config: {}, id: '987-654-321'},
+        {config: {}, id: 'ski-ppe-d01'},
+      ]
+      const {tests, overriddenTestsToTrigger, summary} = await utils.getTestsToTrigger(
         api,
-        [
-          {
-            config: {},
-            id: `http://localhost/synthetics/tests/details/${fakeTest.public_id}`,
-          },
-        ],
+        triggerConfigs,
         processWrite
       )
-      expect(output).toEqual({tests: [fakeTest], triggers: fakeTrigger})
+
+      expect(tests).toStrictEqual([fakeTests['123-456-789']])
+      expect(overriddenTestsToTrigger).toStrictEqual([
+        {executionRule: ExecutionRule.BLOCKING, public_id: '123-456-789'},
+        {executionRule: ExecutionRule.SKIPPED, public_id: 'ski-ppe-d01'},
+      ])
+      expect(summary).toEqual({passed: 0, failed: 0, skipped: 1, notFound: 1})
     })
 
     test('no tests triggered throws an error', async () => {
-      await expect(utils.runTests(api, [], processWrite)).rejects.toEqual(new Error('No tests to trigger'))
+      await expect(utils.getTestsToTrigger(api, [], processWrite)).rejects.toEqual(new Error('No tests to trigger'))
     })
   })
 
@@ -228,6 +263,38 @@ describe('utils', () => {
       expect(handledConfig.public_id).toBe(publicId)
       expect(handledConfig.startUrl).toBe(expectedUrl)
     })
+
+    test('config overrides are applied', () => {
+      const publicId = 'abc-def-ghi'
+      const fakeTest = {
+        config: {request: {url: 'http://example.org/path'}},
+        public_id: publicId,
+        type: 'browser',
+      } as Test
+      const configOverride: ConfigOverride = {
+        allowInsecureCertificates: true,
+        basicAuth: {username: 'user', password: 'password'},
+        body: 'body',
+        bodyType: 'application/json',
+        cookies: 'name=value;',
+        defaultStepTimeout: 15,
+        deviceIds: ['device_id'],
+        executionRule: ExecutionRule.NON_BLOCKING,
+        followRedirects: true,
+        headers: {'header-name': 'value'},
+        locations: ['location'],
+        pollingTimeout: 60 * 1000,
+        retry: {count: 5, interval: 30},
+        startUrl: 'http://127.0.0.1:60/newPath',
+        tunnel: {host: 'host', id: 'id', privateKey: 'privateKey'},
+        variables: {VAR_1: 'value'},
+      }
+
+      expect(utils.handleConfig(fakeTest, publicId, processWrite, configOverride)).toEqual({
+        ...configOverride,
+        public_id: publicId,
+      })
+    })
   })
 
   describe('hasResultPassed', () => {
@@ -348,6 +415,7 @@ describe('utils', () => {
             eventType: 'finished',
             passed: false,
             stepDetails: [],
+            tunnel: false,
           },
           resultID: triggerResult.result_id,
         },
@@ -366,6 +434,7 @@ describe('utils', () => {
             eventType: 'finished',
             passed: false,
             stepDetails: [],
+            tunnel: false,
           },
           resultID: triggerResult.result_id,
         },
@@ -397,6 +466,7 @@ describe('utils', () => {
             eventType: 'finished',
             passed: false,
             stepDetails: [],
+            tunnel: false,
           },
           resultID: triggerResultTimeOut.result_id,
         },
@@ -404,6 +474,23 @@ describe('utils', () => {
       expect(await utils.waitForResults(api, [triggerResultPass, triggerResultTimeOut], 2000, [])).toEqual(
         expectedResults
       )
+    })
+
+    test('tunnel failure should throw', async () => {
+      const waitMock = jest.spyOn(utils, 'wait')
+      waitMock.mockImplementation()
+
+      const triggerResultTimeOut = {
+        ...triggerResult,
+        result_id: 'timingOutTest',
+      }
+      const mockTunnel = {keepAlive: async () => Promise.reject()} as Tunnel
+      try {
+        await utils.waitForResults(api, [triggerResultTimeOut], 2000, [], mockTunnel)
+        expect(false).toBeTruthy()
+      } catch {
+        expect(true).toBeTruthy()
+      }
     })
   })
 

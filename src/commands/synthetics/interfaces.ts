@@ -1,5 +1,6 @@
 import {Metadata} from '../../helpers/interfaces'
 import {ProxyConfiguration} from '../../helpers/utils'
+import {TunnelInfo} from './tunnel'
 
 interface Timings {
   dns: number
@@ -22,6 +23,7 @@ export interface Result {
   passed: boolean
   stepDetails: Step[]
   timings?: Timings
+  tunnel?: boolean
   unhealthy?: boolean
 }
 
@@ -67,6 +69,7 @@ export interface Test {
       timeout: number
       url: string
     }
+    steps?: {subtype: string}[]
     variables: string[]
   }
   created_at: string
@@ -167,6 +170,7 @@ export interface ConfigOverride {
   body?: string
   bodyType?: string
   cookies?: string
+  defaultStepTimeout?: number
   deviceIds?: string[]
   executionRule?: ExecutionRule
   followRedirects?: boolean
@@ -175,6 +179,7 @@ export interface ConfigOverride {
   pollingTimeout?: number
   retry?: RetryConfig
   startUrl?: string
+  tunnel?: TunnelInfo
   variables?: {[key: string]: string}
 }
 
@@ -221,6 +226,13 @@ export interface Suite {
   tests: TriggerConfig[]
 }
 
+export interface Summary {
+  failed: number
+  notFound: number
+  passed: number
+  skipped: number
+}
+
 export interface TestSearchResult {
   tests: {
     public_id: string
@@ -228,6 +240,7 @@ export interface TestSearchResult {
 }
 
 export interface APIHelper {
+  getPresignedURL(testIds: string[]): Promise<{url: string}>
   getTest(testId: string): Promise<Test>
   pollResults(resultIds: string[]): Promise<{results: PollResult[]}>
   searchTests(query: string): Promise<TestSearchResult>

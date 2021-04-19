@@ -3,7 +3,17 @@ import {Command} from 'clipanion'
 import tracer from 'dd-trace'
 
 import {getCIMetadata} from '../../helpers/ci'
-import {CI_PIPELINE_URL, CI_PROVIDER_NAME, GIT_BRANCH, GIT_SHA, PARENT_SPAN_ID, TRACE_ID} from '../../helpers/tags'
+import {
+  CI_BUILD_LEVEL,
+  CI_LEVEL,
+  CI_PIPELINE_URL,
+  CI_PROVIDER_NAME,
+  GIT_BRANCH,
+  GIT_SHA,
+  PARENT_SPAN_ID,
+  SPAN_TYPE,
+  TRACE_ID,
+} from '../../helpers/tags'
 
 export class TraceInstructionCommand extends Command {
   public static usage = Command.Usage({
@@ -20,7 +30,9 @@ export class TraceInstructionCommand extends Command {
     if (!this.instruction.length) {
       throw new Error('No instruction to trace')
     }
-    tracer.init()
+    tracer.init({
+      startupLogs: false,
+    })
 
     const ciMetadata = getCIMetadata()
     let parentSpan
@@ -40,16 +52,19 @@ export class TraceInstructionCommand extends Command {
 
     tracer.trace(
       instruction,
-      {childOf: parentSpan},
+      {
+        childOf: parentSpan,
+        tags: {
+          [SPAN_TYPE]: 'ci',
+          [CI_BUILD_LEVEL]: 'custom',
+          [CI_LEVEL]: 'custom',
+        },
+      },
       (span) =>
         new Promise<number>((resolve) => {
           const [command, ...rest] = this.instruction
 
-          const commandToTrace = spawn(command, rest)
-          process.stdin.pipe(commandToTrace.stdin)
-
-          commandToTrace.stdout.pipe(this.context.stdout)
-          commandToTrace.stderr.pipe(this.context.stderr)
+          const commandToTrace = spawn(command, rest, {stdio: 'inherit'})
 
           commandToTrace.on('exit', (exitCode: number) => {
             span?.addTags({

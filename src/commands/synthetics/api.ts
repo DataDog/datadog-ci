@@ -1,3 +1,5 @@
+import {stringify} from 'querystring'
+
 import {AxiosError, AxiosPromise, AxiosRequestConfig} from 'axios'
 
 import {getRequestBuilder} from '../../helpers/utils'
@@ -11,10 +13,17 @@ interface BackendError {
 
 export const formatBackendErrors = (requestError: AxiosError<BackendError>) => {
   if (requestError.response && requestError.response.data.errors) {
-    const errors = requestError.response.data.errors.map((message: string) => `  - ${message}`)
     const serverHead = `query on ${requestError.config.baseURL}${requestError.config.url} returned:`
+    const errors = requestError.response.data.errors
+    if (errors.length > 1) {
+      const formattedErrors = errors.map((message: string) => `  - ${message}`)
 
-    return `${serverHead}\n${errors.join('\n')}`
+      return `${serverHead}\n${formattedErrors.join('\n')}`
+    } else if (errors.length) {
+      return `${serverHead} "${errors[0]}"`
+    } else {
+      return `error querying ${requestError.config.baseURL}${requestError.config.url}`
+    }
   }
 
   return requestError.message
@@ -76,6 +85,23 @@ const pollResults = (request: (args: AxiosRequestConfig) => AxiosPromise<{result
   return resp.data
 }
 
+const getPresignedURL = (request: (args: AxiosRequestConfig) => AxiosPromise<{url: string}>) => async (
+  testIds: string[]
+) => {
+  const resp = await retryRequest(
+    {
+      params: {
+        test_id: testIds,
+      },
+      paramsSerializer: (params) => stringify(params),
+      url: '/synthetics/ci/tunnel',
+    },
+    request
+  )
+
+  return resp.data
+}
+
 const retryOn5xxErrors = (retries: number, error: AxiosError) => {
   const statusCode = error.response?.status
   if (retries < 3 && statusCode && statusCode >= 500 && statusCode <= 599) {
@@ -93,6 +119,7 @@ export const apiConstructor = (configuration: APIConfiguration) => {
   const requestIntake = getRequestBuilder({...baseOptions, baseUrl: baseIntakeUrl})
 
   return {
+    getPresignedURL: getPresignedURL(requestIntake),
     getTest: getTest(request),
     pollResults: pollResults(request),
     searchTests: searchTests(request),

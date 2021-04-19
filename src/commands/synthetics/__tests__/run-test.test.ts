@@ -28,10 +28,14 @@ describe('run-test', () => {
   describe('execute', () => {
     test('should apply config override for tests triggered by public id', async () => {
       jest.spyOn(ciUtils, 'parseConfigFile').mockImplementation(async (config, _) => config)
-      const runTestsMock = jest.spyOn(utils, 'runTests').mockImplementation(async () => ({
-        tests: [],
-        triggers: {locations: [], results: [], triggered_check_ids: []},
-      }))
+      const getTestsToTriggersMock = jest.spyOn(utils, 'getTestsToTrigger').mockReturnValue(
+        Promise.resolve({
+          overriddenTestsToTrigger: [],
+          summary: {passed: 0, failed: 0, skipped: 0, notFound: 0},
+          tests: [],
+        })
+      )
+      jest.spyOn(utils, 'runTests').mockImplementation()
 
       const startUrl = '{{PROTOCOL}}//myhost{{PATHNAME}}{{PARAMS}}'
       const locations = ['location1', 'location2']
@@ -45,7 +49,7 @@ describe('run-test', () => {
       command['publicIds'] = ['public-id-1', 'public-id-2']
       await command.execute()
 
-      expect(runTestsMock).toHaveBeenCalledWith(
+      expect(getTestsToTriggersMock).toHaveBeenCalledWith(
         apiHelper,
         expect.arrayContaining([
           expect.objectContaining({id: 'public-id-1', config: configOverride}),
@@ -57,10 +61,16 @@ describe('run-test', () => {
 
     test('should not wait for `skipped` only tests batch results', async () => {
       jest.spyOn(ciUtils, 'parseConfigFile').mockImplementation(async (config, _) => config)
-      const runTestsMock = jest.spyOn(utils, 'runTests').mockImplementation(async () => ({
-        tests: [],
-        triggers: {locations: [], results: [], triggered_check_ids: []},
-      }))
+      const getTestsToTriggersMock = jest.spyOn(utils, 'getTestsToTrigger').mockReturnValue(
+        Promise.resolve({
+          overriddenTestsToTrigger: [],
+          summary: {passed: 0, failed: 0, skipped: 0, notFound: 0},
+          tests: [],
+        })
+      )
+      const runTestsMock = jest
+        .spyOn(utils, 'runTests')
+        .mockReturnValue(Promise.resolve({locations: [], results: [], triggered_check_ids: []}))
       const waitForResultSpy = jest.spyOn(utils, 'waitForResults')
 
       const apiHelper = {}
@@ -74,7 +84,7 @@ describe('run-test', () => {
 
       await command.execute()
 
-      expect(runTestsMock).toHaveBeenCalledWith(
+      expect(getTestsToTriggersMock).toHaveBeenCalledWith(
         apiHelper,
         expect.arrayContaining([
           expect.objectContaining({id: 'public-id-1', config: configOverride}),
@@ -82,6 +92,7 @@ describe('run-test', () => {
         ]),
         expect.anything()
       )
+      expect(runTestsMock).toHaveBeenCalledWith(apiHelper, [])
       expect(write).toHaveBeenCalledWith('No test to run.\n')
       expect(waitForResultSpy).not.toHaveBeenCalled()
     })
@@ -150,7 +161,7 @@ describe('run-test', () => {
     })
   })
 
-  describe('getTestsToTrigger', () => {
+  describe('getTestsList', () => {
     const conf1 = {
       tests: [{config: {}, id: 'abc-def-ghi'}],
     }
@@ -174,7 +185,7 @@ describe('run-test', () => {
       command.context = process
       command['config'].global = {startUrl}
 
-      expect(await command['getTestsToTrigger'].bind(command)(fakeApi)).toEqual([
+      expect(await command['getTestsList'].bind(command)(fakeApi)).toEqual([
         {
           config: {startUrl},
           id: 'abc-def-ghi',
@@ -193,12 +204,33 @@ describe('run-test', () => {
       command['config'].global = {startUrl}
       command['testSearchQuery'] = 'fake search'
 
-      expect(await command['getTestsToTrigger'].bind(command)(fakeApi)).toEqual([
+      expect(await command['getTestsList'].bind(command)(fakeApi)).toEqual([
         {
           config: {startUrl},
           id: 'stu-vwx-yza',
         },
       ])
+    })
+
+    test('should use given globs to get tests list', async () => {
+      const mockFn = jest.spyOn(utils, 'getSuites').mockImplementation((() => [conf1, conf2]) as any)
+      const command = new RunTestCommand()
+      command.context = process
+      command['config'].global = {startUrl}
+      command['config'].files = 'random glob'
+
+      command['fileGlobs'] = ['new glob', 'another one']
+      await command['getTestsList'].bind(command)(fakeApi)
+      expect(utils.getSuites).toHaveBeenCalledTimes(2)
+      expect(utils.getSuites).toHaveBeenCalledWith('new glob', expect.any(Function))
+      expect(utils.getSuites).toHaveBeenCalledWith('another one', expect.any(Function))
+
+      mockFn.mockClear()
+
+      command['fileGlobs'] = undefined
+      await command['getTestsList'].bind(command)(fakeApi)
+      expect(utils.getSuites).toHaveBeenCalledTimes(1)
+      expect(utils.getSuites).toHaveBeenCalledWith('random glob', expect.any(Function))
     })
   })
 
