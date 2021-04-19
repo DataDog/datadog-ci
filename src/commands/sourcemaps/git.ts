@@ -72,12 +72,9 @@ export interface RepositoryData {
   trackedFilesMatcher: TrackedFilesMatcher
 }
 
-// Gathers repository data.
-// It returns the current hash and remote as well as a map of tracked files.
-// Look for the trackedFilesMap function for more details.
+// Returns the current hash and remote as well as a TrackedFilesMatcher.
 //
-// To obtain the list of tracked files path tied to specific sourcemaps, first invoke 'getRepositoryData',
-// then for each sourcemap invoke the 'filterTrackedFiles' function.
+// To obtain the list of tracked files paths tied to a specific sourcemap, invoke the 'matchSourcemap' methid.
 export const getRepositoryData = async (
   git: simpleGit.SimpleGit,
   stdout: Writable,
