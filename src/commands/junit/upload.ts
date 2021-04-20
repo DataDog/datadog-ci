@@ -30,11 +30,15 @@ export class UploadJUnitXMLCommand extends Command {
             This command will upload to jUnit XML test reports files to Datadog.
         `,
     examples: [
-      ['Upload all jUnit XML test report files in current directory', 'datadog-ci junit upload . --service my-service'],
+      ['Upload all jUnit XML test report files in current directory', 'datadog-ci junit upload --service my-service .'],
+      [
+        'Upload all jUnit XML test report files in different directories',
+        'datadog-ci junit upload --service my-service src/unit-test-reports assets/acc-test-reports',
+      ],
     ],
   })
 
-  private basePath?: string
+  private basePaths?: string[]
   private config = {
     apiKey: process.env.DATADOG_API_KEY,
     env: process.env.DD_ENV,
@@ -54,7 +58,7 @@ export class UploadJUnitXMLCommand extends Command {
 
       return 1
     }
-    if (!this.basePath) {
+    if (!this.basePaths || !this.basePaths.length) {
       this.context.stderr.write('Missing basePath\n')
 
       return 1
@@ -63,8 +67,8 @@ export class UploadJUnitXMLCommand extends Command {
     const api = this.getApiHelper()
     // Normalizing the basePath to resolve .. and .
     // Always using the posix version to avoid \ on Windows.
-    this.basePath = path.posix.normalize(this.basePath)
-    this.context.stdout.write(renderCommandInfo(this.basePath!, this.service, this.maxConcurrency, this.dryRun))
+    this.basePaths = this.basePaths.map((basePath) => path.posix.normalize(basePath))
+    this.context.stdout.write(renderCommandInfo(this.basePaths!, this.service, this.maxConcurrency, this.dryRun))
 
     const payloads = this.getMatchingJUnitXMLFiles()
     const upload = (p: Payload) => this.uploadJUnitXML(api, p)
@@ -87,7 +91,11 @@ export class UploadJUnitXMLCommand extends Command {
   }
 
   private getMatchingJUnitXMLFiles(): Payload[] {
-    const jUnitXMLFiles = glob.sync(buildPath(this.basePath!, '**/*.xml'))
+    let jUnitXMLFiles: string[] = []
+
+    this.basePaths?.forEach((basePath) => {
+      jUnitXMLFiles = jUnitXMLFiles.concat(glob.sync(buildPath(basePath, '**/*.xml')))
+    })
 
     const ciSpanTags = getCISpanTags()
     const gitSpanTags = getGitMetadata()
@@ -153,6 +161,6 @@ export class UploadJUnitXMLCommand extends Command {
   }
 }
 UploadJUnitXMLCommand.addPath('junit', 'upload')
-UploadJUnitXMLCommand.addOption('basePath', Command.String({required: true}))
 UploadJUnitXMLCommand.addOption('service', Command.String('--service'))
 UploadJUnitXMLCommand.addOption('dryRun', Command.Boolean('--dry-run'))
+UploadJUnitXMLCommand.addOption('basePaths', Command.Rest({required: 1}))

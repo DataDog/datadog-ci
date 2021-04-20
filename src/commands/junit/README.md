@@ -13,16 +13,16 @@ Upload your jUnit XML files.
 This command will upload your jUnit XML test report to Datadog.
 
 ```bash
-datadog-ci junit upload $PATH_TO_YOUR_XML_FOLDER
+datadog-ci junit upload [--service] [--concurrency] [--dry-run] <paths>
 ```
 
 For example:
 
 ```bash
-datadog-ci trace command mkdir ./test/junit-reports
+datadog-ci junit upload --service my-service unit-tests/junit-reports acceptance-tests/junit-reports
 ```
 
-- The first positional argument is the directory in which the jUnit XML reports are located. The CLI will look for all `.xml` files in this folder and subfolders recursively.
+- The positional arguments are the directories in which the jUnit XML reports are located. The CLI will look for all `.xml` files in these folders and subfolders recursively.
 
 * `--service` (default: `DD_SERVICE` env var) should be set as the name of the service you're uploading jUnit XML reports for.
 * `--concurrency` (default: `20`): number of concurrent upload to the API.
@@ -30,7 +30,9 @@ datadog-ci trace command mkdir ./test/junit-reports
 
 #### Environment variables
 
-- `DATADOG_API_KEY` (required): API key used to authenticate the request.
+Additionally you might configure the `junit` command with environment variables:
+
+- `DATADOG_API_KEY` (**required**): API key used to authenticate the request.
 - `DD_ENV`: you may choose the environment you want your test results to appear in.
 - `DD_SERVICE`: if you haven't specified a service through `--service` you might do it with this env var.
 - `DD_TAGS`: set global tags that should be applied to all spans. The format is `key1:value1,key2:value2`.

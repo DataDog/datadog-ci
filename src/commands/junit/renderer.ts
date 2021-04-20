@@ -27,14 +27,14 @@ export const renderDryRunUpload = (payload: Payload): string => `[DRYRUN] ${rend
 
 export const renderUpload = (payload: Payload): string => `Uploading jUnit XML test report file in ${payload.xmlPath}\n`
 
-export const renderCommandInfo = (basePath: string, service: string, concurrency: number, dryRun: boolean) => {
+export const renderCommandInfo = (basePaths: string[], service: string, concurrency: number, dryRun: boolean) => {
   let fullStr = ''
   if (dryRun) {
     fullStr += chalk.yellow(`${ICONS.WARNING} DRY-RUN MODE ENABLED. WILL NOT UPLOAD JUNIT XML\n`)
   }
   const startStr = chalk.green(`Starting upload with concurrency ${concurrency}. \n`)
   fullStr += startStr
-  const basePathStr = chalk.green(`Will look for jUnit XML files in ${basePath}\n`)
+  const basePathStr = chalk.green(`Will look for jUnit XML files in ${basePaths.join(', ')}\n`)
   fullStr += basePathStr
   const serviceVersionProjectPathStr = chalk.green(`service: ${service}\n`)
   fullStr += serviceVersionProjectPathStr
