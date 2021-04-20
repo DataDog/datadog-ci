@@ -112,8 +112,8 @@ export class UploadJUnitXMLCommand extends Command {
     const spanTags = {
       ...gitSpanTags,
       ...ciSpanTags,
-      ...envVarTags,
       ...cliTags,
+      ...envVarTags,
       ...(this.config.env ? {env: this.config.env} : {}),
     }
 
