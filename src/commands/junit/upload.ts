@@ -28,12 +28,13 @@ export class UploadJUnitXMLCommand extends Command {
     description: 'Upload jUnit XML test reports files to Datadog.',
     details: `
             This command will upload to jUnit XML test reports files to Datadog.
+            See README for details.
         `,
     examples: [
       ['Upload all jUnit XML test report files in current directory', 'datadog-ci junit upload --service my-service .'],
       [
-        'Upload all jUnit XML test report files in different directories',
-        'datadog-ci junit upload --service my-service src/unit-test-reports assets/acc-test-reports',
+        'Upload all jUnit XML test report files in src/unit-test-reports and src/acceptance-test-reports',
+        'datadog-ci junit upload --service my-service src/unit-test-reports src/acceptance-test-reports',
       ],
     ],
   })
