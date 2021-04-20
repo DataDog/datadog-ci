@@ -97,6 +97,8 @@ describe('upload', () => {
         sourcemapPath: 'src/commands/sourcemaps/__tests__/fixtures-empty/empty.min.js.map',
         version: '1.2.3',
       })
+      // The command will fetch git metadatas for the current datadog-ci repository.
+      // The `empty.min.js.map` contains no files, therefore no file payload should be set.
       await command['addRepositoryDataToPayloads'](payloads)
       expect(payloads[0].gitRepositoryURL).toBeDefined()
       expect(payloads[0].gitCommitSha).toHaveLength(40)
@@ -116,6 +118,10 @@ describe('upload', () => {
         sourcemapPath: 'src/commands/sourcemaps/__tests__/fixtures/common.min.js.map',
         version: '1.2.3',
       })
+      // The command will fetch git metadatas for the current datadog-ci repository.
+      // The `common.min.js.map` contains the "git.test.ts" filename which matches a tracked filename,
+      // therefore a file payload should be set.
+      // Removing the "git.test.ts" file will break this test.
       await command['addRepositoryDataToPayloads'](payloads)
       expect(payloads[0].gitRepositoryURL).toBeDefined()
       expect(payloads[0].gitCommitSha).toHaveLength(40)

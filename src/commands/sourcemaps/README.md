@@ -46,7 +46,7 @@ In addition, some optional parameters are available:
 
 * `--concurrency` (default: `20`): number of concurrent upload to the API.
 * `--dry-run` (default: `false`): it will run the command without the final step of upload. All other checks are performed.
-* `--project-path` (default: empty): the path of the project where the sourcemaps were built. This will be stripped off from sources paths referenced in the sourcemap so they can be properly matched against tracked files paths.
+* `--project-path` (default: empty): the path of the project where the sourcemaps were built. This will be stripped off from the file name in the displayed stack traces.
 
 ### End-to-end testing process
 
