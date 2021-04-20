@@ -46,6 +46,10 @@ export class UploadJUnitXMLCommand extends Command {
 
   public async execute() {
     if (!this.service) {
+      this.service = process.env.DD_SERVICE
+    }
+
+    if (!this.service) {
       this.context.stderr.write('Missing service\n')
 
       return 1
