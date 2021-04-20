@@ -7,7 +7,7 @@ import {getRequestBuilder} from '../../helpers/utils'
 import {Payload} from './interfaces'
 import {renderUpload} from './renderer'
 
-import {CI_PIPELINE_URL, GIT_SHA} from '../../helpers/tags'
+import {CI_JOB_URL, CI_PIPELINE_URL, GIT_SHA} from '../../helpers/tags'
 
 // Dependency follows-redirects sets a default maxBodyLength of 10 MB https://github.com/follow-redirects/follow-redirects/blob/b774a77e582b97174813b3eaeb86931becba69db/index.js#L391
 // We don't want any hard limit enforced by the CLI, the backend will enforce a max size by returning 413 errors.
@@ -22,7 +22,7 @@ export const uploadJUnitXML = (request: (args: AxiosRequestConfig) => AxiosPromi
 
   let fileName
   try {
-    fileName = jUnitXML.xmlPath.split('/').slice(-1)[0]
+    fileName = jUnitXML.xmlPath.split('/').slice(-1)[0].replace('.xml', '')
   } catch (e) {
     fileName = 'default_file_name'
   }
@@ -31,11 +31,18 @@ export const uploadJUnitXML = (request: (args: AxiosRequestConfig) => AxiosPromi
     service: jUnitXML.service,
     ...jUnitXML.spanTags,
   }
-
-  const uniqueFileName = `${fileName}_${spanTags[CI_PIPELINE_URL]}_${spanTags[GIT_SHA]}`
-
   form.append('message', JSON.stringify(spanTags))
-  form.append(uniqueFileName, fs.createReadStream(jUnitXML.xmlPath))
+
+  let uniqueFileName = `${fileName}-${jUnitXML.service}-${spanTags[GIT_SHA]}`
+
+  if (spanTags[CI_PIPELINE_URL]) {
+    uniqueFileName = `${uniqueFileName}-${spanTags[CI_PIPELINE_URL]}`
+  }
+  if (spanTags[CI_JOB_URL]) {
+    uniqueFileName = `${uniqueFileName}-${spanTags[CI_JOB_URL]}`
+  }
+
+  form.append('junit_xml_report_file', fs.createReadStream(jUnitXML.xmlPath), {filename: `${uniqueFileName}.xml`})
 
   return request({
     data: form,
