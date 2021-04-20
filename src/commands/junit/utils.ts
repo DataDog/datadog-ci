@@ -6,12 +6,16 @@ export const getBaseIntakeUrl = () => {
   return 'https://cireport-http-intake.logs.datadoghq.com'
 }
 
-export const parseTags = (cliTags: string | undefined) => {
-  if (!cliTags) {
-    return {}
-  }
+/**
+ * Receives an array of the form ['key:value', 'key2:value2']
+ * and returns an object of the form {key: 'value', key2: 'value2'}
+ */
+export const parseTags = (tags: string[]) => {
   try {
-    return cliTags.split(',').reduce((acc, keyValuePair) => {
+    return tags.reduce((acc, keyValuePair) => {
+      if (!keyValuePair.includes(':')) {
+        return acc
+      }
       const [key, value] = keyValuePair.split(':')
 
       return {

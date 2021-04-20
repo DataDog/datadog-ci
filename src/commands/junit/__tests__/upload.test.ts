@@ -50,7 +50,7 @@ describe('upload', () => {
         xmlPath: './src/commands/junit/__tests__/fixtures/java-report.xml',
       })
     })
-    test('should read DD_TAGS and DD_ENV environment variables', () => {
+    test('should parse DD_TAGS and DD_ENV environment variables', () => {
       process.env.DD_TAGS = 'key1:value1,key2:value2'
       process.env.DD_ENV = 'ci'
       const command = new UploadJUnitXMLCommand()
@@ -63,6 +63,19 @@ describe('upload', () => {
       })
       expect(command['getMatchingJUnitXMLFiles']()[1].spanTags).toMatchObject({
         env: 'ci',
+        key1: 'value1',
+        key2: 'value2',
+      })
+    })
+    test('should parse tags argument', () => {
+      const command = new UploadJUnitXMLCommand()
+      command['basePaths'] = ['./src/commands/junit/__tests__/fixtures']
+      command['tags'] = ['key1:value1', 'key2:value2']
+      expect(command['getMatchingJUnitXMLFiles']()[0].spanTags).toMatchObject({
+        key1: 'value1',
+        key2: 'value2',
+      })
+      expect(command['getMatchingJUnitXMLFiles']()[1].spanTags).toMatchObject({
         key1: 'value1',
         key2: 'value2',
       })

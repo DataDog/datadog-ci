@@ -36,6 +36,10 @@ export class UploadJUnitXMLCommand extends Command {
         'Upload all jUnit XML test report files in src/unit-test-reports and src/acceptance-test-reports',
         'datadog-ci junit upload --service my-service src/unit-test-reports src/acceptance-test-reports',
       ],
+      [
+        'Upload all jUnit XML test report files in current directory and add extra tags',
+        'datadog-ci junit upload --service my-service --tags key1:value1 --tags key2:value2 .',
+      ],
     ],
   })
 
@@ -43,11 +47,12 @@ export class UploadJUnitXMLCommand extends Command {
   private config = {
     apiKey: process.env.DATADOG_API_KEY,
     env: process.env.DD_ENV,
-    extraTags: process.env.DD_TAGS,
+    envVarTags: process.env.DD_TAGS,
   }
   private dryRun = false
   private maxConcurrency = 20
   private service?: string
+  private tags?: string[]
 
   public async execute() {
     if (!this.service) {
@@ -100,12 +105,15 @@ export class UploadJUnitXMLCommand extends Command {
 
     const ciSpanTags = getCISpanTags()
     const gitSpanTags = getGitMetadata()
-    const extraTags = parseTags(this.config.extraTags)
+
+    const envVarTags = this.config.envVarTags ? parseTags(this.config.envVarTags.split(',')) : {}
+    const cliTags = this.tags ? parseTags(this.tags) : {}
 
     const spanTags = {
       ...gitSpanTags,
       ...ciSpanTags,
-      ...extraTags,
+      ...envVarTags,
+      ...cliTags,
       ...(this.config.env ? {env: this.config.env} : {}),
     }
 
@@ -164,4 +172,5 @@ export class UploadJUnitXMLCommand extends Command {
 UploadJUnitXMLCommand.addPath('junit', 'upload')
 UploadJUnitXMLCommand.addOption('service', Command.String('--service'))
 UploadJUnitXMLCommand.addOption('dryRun', Command.Boolean('--dry-run'))
+UploadJUnitXMLCommand.addOption('tags', Command.Array('--tags'))
 UploadJUnitXMLCommand.addOption('basePaths', Command.Rest({required: 1}))
