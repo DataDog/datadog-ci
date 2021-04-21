@@ -1,25 +1,28 @@
-import {execSync} from 'child_process'
+import simpleGit from 'simple-git'
 
 import {GIT_BRANCH, GIT_REPOSITORY_URL, GIT_SHA} from './tags'
 
-const sanitizedExec = (cmd: string, options = {}) => {
+export const getGitMetadata = async () => {
   try {
-    return execSync(cmd, options)
-      .toString()
-      .replace(/(\r\n|\n|\r)/gm, '')
+    const git = simpleGit({
+      baseDir: process.cwd(),
+      binary: 'git',
+      // We are invoking at most 3 git commands at the same time.
+      maxConcurrentProcesses: 3,
+    })
+
+    const [commitSHA, branch, repositoryUrl] = await Promise.all([
+      git.revparse('HEAD'),
+      git.branch(),
+      git.listRemote(['--get-url']),
+    ])
+
+    return {
+      [GIT_REPOSITORY_URL]: repositoryUrl.trim(),
+      [GIT_BRANCH]: branch.current,
+      [GIT_SHA]: commitSHA,
+    }
   } catch (e) {
-    return ''
-  }
-}
-
-export const getGitMetadata = () => {
-  // With stdio: 'pipe', errors in this command will not be output to the parent process,
-  // so if `git` is not present in the env, we won't show a warning to the user
-  const execOptions = {stdio: 'pipe'}
-
-  return {
-    [GIT_REPOSITORY_URL]: sanitizedExec('git ls-remote --get-url', execOptions),
-    [GIT_BRANCH]: sanitizedExec('git rev-parse --abbrev-ref HEAD', execOptions),
-    [GIT_SHA]: sanitizedExec('git rev-parse HEAD', execOptions),
+    return {}
   }
 }

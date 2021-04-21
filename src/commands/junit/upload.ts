@@ -76,7 +76,7 @@ export class UploadJUnitXMLCommand extends Command {
     this.basePaths = this.basePaths.map((basePath) => path.posix.normalize(basePath))
     this.context.stdout.write(renderCommandInfo(this.basePaths!, this.service, this.maxConcurrency, this.dryRun))
 
-    const payloads = this.getMatchingJUnitXMLFiles()
+    const payloads = await this.getMatchingJUnitXMLFiles()
     const upload = (p: Payload) => this.uploadJUnitXML(api, p)
 
     const initialTime = new Date().getTime()
@@ -96,7 +96,7 @@ export class UploadJUnitXMLCommand extends Command {
     return apiConstructor(getBaseIntakeUrl(), this.config.apiKey)
   }
 
-  private getMatchingJUnitXMLFiles(): Payload[] {
+  private async getMatchingJUnitXMLFiles(): Promise<Payload[]> {
     let jUnitXMLFiles: string[] = []
 
     this.basePaths?.forEach((basePath) => {
@@ -104,7 +104,7 @@ export class UploadJUnitXMLCommand extends Command {
     })
 
     const ciSpanTags = getCISpanTags()
-    const gitSpanTags = getGitMetadata()
+    const gitSpanTags = await getGitMetadata()
 
     const envVarTags = this.config.envVarTags ? parseTags(this.config.envVarTags.split(',')) : {}
     const cliTags = this.tags ? parseTags(this.tags) : {}
