@@ -44,9 +44,9 @@ Example: if you're uploading `dist/file.js` to `https://example.com/static/file.
 
 In addition, some optional parameters are available:
 
-* `--project-path` (default: empty): the path of the project on the filesystem where the sourcemaps were built. This will be stripped off from the file name in the displayed stack traces.
 * `--concurrency` (default: `20`): number of concurrent upload to the API.
 * `--dry-run` (default: `false`): it will run the command without the final step of upload. All other checks are performed.
+* `--project-path` (default: empty): the path of the project where the sourcemaps were built. This will be stripped off from the file name in the displayed stack traces.
 
 ### End-to-end testing process
 

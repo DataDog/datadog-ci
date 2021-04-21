@@ -28,6 +28,7 @@ jest-circus,dev,MIT,Copyright (c) Facebook, Inc. and its affiliates.
 jest-environment-node,dev,MIT,Copyright (c) Facebook, Inc. and its affiliates.
 prettier,dev,MIT,Copyright © James Long and contributors
 proxy-agent,import,MIT,Copyright (c) 2013 Nathan Rajlich <nathan@tootallnate.net>
+simple-git,import,MIT,Copyright (c) 2015 Steve King
 ssh2,import,MIT,Copyright (c) Brian White
 ssh2-streams,import,MIT,Copyright (c) 2014 Brian White
 sshpk,import,MIT,Copyright (c) Joyent, Inc.
