@@ -9,6 +9,7 @@ import asyncPool from 'tiny-async-pool'
 import {URL} from 'url'
 
 import {apiConstructor} from './api'
+import {getRepositoryData, newSimpleGit, RepositoryData} from './git'
 import {APIHelper, Payload} from './interfaces'
 import {getMetricsLogger} from './metrics'
 import {
@@ -50,10 +51,12 @@ export class UploadCommand extends Command {
     apiKey: process.env.DATADOG_API_KEY,
   }
   private dryRun = false
+  private enableGit?: boolean
   private maxConcurrency = 20
   private minifiedPathPrefix?: string
   private projectPath = ''
   private releaseVersion?: string
+  private repositoryURL?: string
   private service?: string
 
   public async execute() {
@@ -96,15 +99,32 @@ export class UploadCommand extends Command {
         this.dryRun
       )
     )
-    const metricsLogger = getMetricsLogger(this.releaseVersion, this.service)
-    const payloads = this.getMatchingSourcemapFiles()
+    const cliVersion = require('../../../package.json').version
+    const metricsLogger = getMetricsLogger(this.releaseVersion, this.service, cliVersion)
+    const useGit = this.enableGit !== undefined && this.enableGit
+    const initialTime = Date.now()
+    const payloads = await this.getPayloadsToUpload(useGit, cliVersion)
     const upload = (p: Payload) => this.uploadSourcemap(api, metricsLogger, p)
-    const initialTime = new Date().getTime()
     await asyncPool(this.maxConcurrency, payloads, upload)
-    const totalTimeSeconds = (Date.now() - initialTime) / 1000
-    this.context.stdout.write(renderSuccessfulCommand(payloads.length, totalTimeSeconds))
-    metricsLogger.gauge('duration', totalTimeSeconds)
+    const totalTime = (Date.now() - initialTime) / 1000
+    this.context.stdout.write(renderSuccessfulCommand(payloads.length, totalTime))
+    metricsLogger.gauge('duration', totalTime)
     metricsLogger.flush()
+  }
+
+  // Fills the 'repository' field of each payload with data gathered using git.
+  private addRepositoryDataToPayloads = async (payloads: Payload[]) => {
+    const repositoryData = await getRepositoryData(await newSimpleGit(), this.context.stdout, this.repositoryURL)
+    if (repositoryData === undefined) {
+      return
+    }
+    await Promise.all(
+      payloads.map(async (payload) => {
+        payload.gitRepositoryPayload = this.getRepositoryPayload(repositoryData, payload.sourcemapPath)
+        payload.gitRepositoryURL = repositoryData.remote
+        payload.gitCommitSha = repositoryData.hash
+      })
+    )
   }
 
   private getApiHelper(): APIHelper {
@@ -116,27 +136,67 @@ export class UploadCommand extends Command {
     return apiConstructor(getBaseIntakeUrl(), this.config.apiKey!)
   }
 
-  private getMatchingSourcemapFiles(): Payload[] {
+  // Looks for the sourcemaps and minified files on disk and returns
+  // the associated payloads.
+  private getMatchingSourcemapFiles = async (cliVersion: string): Promise<Payload[]> => {
     const sourcemapFiles = glob.sync(buildPath(this.basePath!, '**/*js.map'))
 
-    return sourcemapFiles.map((sourcemapPath) => {
-      const minifiedFilePath = getMinifiedFilePath(sourcemapPath)
+    return Promise.all(
+      sourcemapFiles.map(async (sourcemapPath) => {
+        const minifiedFilePath = getMinifiedFilePath(sourcemapPath)
+        const minifiedURL = this.getMinifiedURL(minifiedFilePath)
 
-      return {
-        minifiedFilePath,
-        minifiedUrl: this.getMinifiedURL(minifiedFilePath),
-        projectPath: this.projectPath,
-        service: this.service!,
-        sourcemapPath,
-        version: this.releaseVersion!,
-      }
-    })
+        return {
+          cliVersion,
+          minifiedFilePath,
+          minifiedUrl: minifiedURL,
+          projectPath: this.projectPath,
+          service: this.service!,
+          sourcemapPath,
+          version: this.releaseVersion!,
+        }
+      })
+    )
   }
 
   private getMinifiedURL(minifiedFilePath: string): string {
     const relativePath = minifiedFilePath.replace(this.basePath!, '')
 
     return buildPath(this.minifiedPathPrefix!, relativePath)
+  }
+
+  private getPayloadsToUpload = async (useGit: boolean, cliVersion: string): Promise<Payload[]> => {
+    const payloads = await this.getMatchingSourcemapFiles(cliVersion)
+    if (!useGit) {
+      return payloads
+    }
+
+    await this.addRepositoryDataToPayloads(payloads)
+
+    return payloads
+  }
+
+  // GetRepositoryPayload generates the repository payload for a specific sourcemap.
+  // It specifically looks for the list of tracked files that are associated to the source paths
+  // declared inside the sourcemap.
+  private getRepositoryPayload = (repositoryData: RepositoryData, sourcemapPath: string): string | undefined => {
+    let repositoryPayload: string | undefined
+    const files = repositoryData.trackedFilesMatcher.matchSourcemap(this.context.stdout, sourcemapPath)
+    if (files) {
+      repositoryPayload = JSON.stringify({
+        data: [
+          {
+            files,
+            hash: repositoryData.hash,
+            repository_url: repositoryData.remote,
+          },
+        ],
+        // Make sure to update the version if the format of the JSON payloads changes in any way.
+        version: 1,
+      })
+    }
+
+    return repositoryPayload
   }
 
   private isMinifiedPathPrefixValid(): boolean {
@@ -221,3 +281,5 @@ UploadCommand.addOption('minifiedPathPrefix', Command.String('--minified-path-pr
 UploadCommand.addOption('projectPath', Command.String('--project-path'))
 UploadCommand.addOption('maxConcurrency', Command.String('--max-concurrency'))
 UploadCommand.addOption('dryRun', Command.Boolean('--dry-run'))
+UploadCommand.addOption('repositoryURL', Command.String('--repository-url'))
+UploadCommand.addOption('enableGit', Command.Boolean('--enable-git-experimental'))

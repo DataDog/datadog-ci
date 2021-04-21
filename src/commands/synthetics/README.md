@@ -96,6 +96,13 @@ It is also possible to trigger tests corresponding to a search query by using th
 datadog-ci synthetics run-tests -s 'tag:e2e-tests' --config global.config.json
 ```
 
+You can use `--files` (shorthand `-f`) to override the global file selector.
+It's particularely useful when you want to run multiple suites in parallel with a single global configuration file.
+
+```bash
+datadog-ci synthetics run-tests -f ./component-1/**/*.synthetics.json -f ./component-2/**/*.synthetics.json
+```
+
 ### Test files
 
 Your test files must be named with a `.synthetics.json` suffix.

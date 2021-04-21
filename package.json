@@ -1,6 +1,6 @@
 {
   "name": "@datadog/datadog-ci",
-  "version": "0.11.5",
+  "version": "0.11.7",
   "description": "Run datadog actions from the CI.",
   "main": "dist/index.js",
   "repository": "https://github.com/DataDog/datadog-ci",
@@ -48,6 +48,7 @@
     "form-data": "3.0.0",
     "glob": "7.1.4",
     "proxy-agent": "3.1.1",
+    "simple-git": "2.31.0",
     "ssh2": "0.8.9",
     "ssh2-streams": "0.4.10",
     "sshpk": "1.16.1",
