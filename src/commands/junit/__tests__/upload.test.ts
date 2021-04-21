@@ -37,45 +37,45 @@ describe('upload', () => {
     })
   })
   describe('getMatchingJUnitXMLFiles', () => {
-    test('should read all xml files', () => {
+    test('should read all xml files', async () => {
       const command = new UploadJUnitXMLCommand()
       command['basePaths'] = ['./src/commands/junit/__tests__/fixtures']
       command['service'] = 'service'
-      expect(command['getMatchingJUnitXMLFiles']()[0]).toMatchObject({
+      expect((await command['getMatchingJUnitXMLFiles']())[0]).toMatchObject({
         service: 'service',
         xmlPath: './src/commands/junit/__tests__/fixtures/go-report.xml',
       })
-      expect(command['getMatchingJUnitXMLFiles']()[1]).toMatchObject({
+      expect((await command['getMatchingJUnitXMLFiles']())[1]).toMatchObject({
         service: 'service',
         xmlPath: './src/commands/junit/__tests__/fixtures/java-report.xml',
       })
     })
-    test('should parse DD_TAGS and DD_ENV environment variables', () => {
+    test('should parse DD_TAGS and DD_ENV environment variables', async () => {
       process.env.DD_TAGS = 'key1:value1,key2:value2'
       process.env.DD_ENV = 'ci'
       const command = new UploadJUnitXMLCommand()
       command['basePaths'] = ['./src/commands/junit/__tests__/fixtures']
       command['service'] = 'service'
-      expect(command['getMatchingJUnitXMLFiles']()[0].spanTags).toMatchObject({
+      expect((await command['getMatchingJUnitXMLFiles']())[0].spanTags).toMatchObject({
         env: 'ci',
         key1: 'value1',
         key2: 'value2',
       })
-      expect(command['getMatchingJUnitXMLFiles']()[1].spanTags).toMatchObject({
+      expect((await command['getMatchingJUnitXMLFiles']())[1].spanTags).toMatchObject({
         env: 'ci',
         key1: 'value1',
         key2: 'value2',
       })
     })
-    test('should parse tags argument', () => {
+    test('should parse tags argument', async () => {
       const command = new UploadJUnitXMLCommand()
       command['basePaths'] = ['./src/commands/junit/__tests__/fixtures']
       command['tags'] = ['key1:value1', 'key2:value2']
-      expect(command['getMatchingJUnitXMLFiles']()[0].spanTags).toMatchObject({
+      expect((await command['getMatchingJUnitXMLFiles']())[0].spanTags).toMatchObject({
         key1: 'value1',
         key2: 'value2',
       })
-      expect(command['getMatchingJUnitXMLFiles']()[1].spanTags).toMatchObject({
+      expect((await command['getMatchingJUnitXMLFiles']())[1].spanTags).toMatchObject({
         key1: 'value1',
         key2: 'value2',
       })
