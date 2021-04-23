@@ -16,6 +16,11 @@ To ignore this warning use the --disable-git flag.\n`)
 export const renderSourcesNotFoundWarning = (sourcemap: string) =>
   chalk.yellow(`${ICONS.WARNING} No tracked files found for sources contained in ${sourcemap}\n`)
 
+export const renderConfigurationError = (error: Error) =>
+  chalk.red(
+    `${ICONS.FAILED} Configuration error: ${error}.\n`
+  )
+
 export const renderInvalidPrefix = chalk.red(
   `${ICONS.FAILED} --minified-path-prefix should either be an URL (such as "http://example.com/static") or an absolute path starting with a / such as "/static"\n`
 )

@@ -9,11 +9,14 @@ import asyncPool from 'tiny-async-pool'
 import {URL} from 'url'
 
 import {apiConstructor} from './api'
+import {getApiKey, isApiKeyValid} from './apikey'
+import {InvalidConfigurationError} from './errors'
 import {getRepositoryData, newSimpleGit, RepositoryData} from './git'
 import {APIHelper, Payload} from './interfaces'
 import {getMetricsLogger} from './metrics'
 import {
   renderCommandInfo,
+  renderConfigurationError,
   renderDryRunUpload,
   renderFailedUpload,
   renderInvalidPrefix,
@@ -23,7 +26,6 @@ import {
 import {buildPath, getBaseIntakeUrl, getMinifiedFilePath} from './utils'
 
 const errorCodesNoRetry = [400, 403, 413]
-const errorCodesStopUpload = [400, 403]
 
 export class UploadCommand extends Command {
   public static usage = Command.Usage({
@@ -45,9 +47,6 @@ export class UploadCommand extends Command {
   })
 
   private basePath?: string
-  private config = {
-    apiKey: process.env.DATADOG_API_KEY,
-  }
   private dryRun = false
   private enableGit?: boolean
   private maxConcurrency = 20
@@ -103,7 +102,17 @@ export class UploadCommand extends Command {
     const initialTime = Date.now()
     const payloads = await this.getPayloadsToUpload(useGit, cliVersion)
     const upload = (p: Payload) => this.uploadSourcemap(api, metricsLogger, p)
-    await asyncPool(this.maxConcurrency, payloads, upload)
+    try {
+      await asyncPool(this.maxConcurrency, payloads, upload)
+    } catch (error) {
+        if (error instanceof InvalidConfigurationError) {
+          this.context.stdout.write(renderConfigurationError(error))
+
+          return 1
+        }
+        // Otherwise unknown error, let's propagate the exception
+        throw error
+    }
     const totalTime = (Date.now() - initialTime) / 1000
     this.context.stdout.write(renderSuccessfulCommand(payloads.length, totalTime))
     metricsLogger.gauge('duration', totalTime)
@@ -126,12 +135,11 @@ export class UploadCommand extends Command {
   }
 
   private getApiHelper(): APIHelper {
-    if (!this.config.apiKey) {
-      this.context.stdout.write(`Missing ${chalk.red.bold('DATADOG_API_KEY')} in your environment.\n`)
-      throw new Error('API key is missing')
+    if (!getApiKey()) {
+      throw new InvalidConfigurationError(`Missing ${chalk.red.bold('DATADOG_API_KEY')} in your environment.`)
     }
 
-    return apiConstructor(getBaseIntakeUrl(), this.config.apiKey!)
+    return apiConstructor(getBaseIntakeUrl(), getApiKey()!)
   }
 
   // Looks for the sourcemaps and minified files on disk and returns
@@ -257,16 +265,18 @@ export class UploadCommand extends Command {
         }
       )
     } catch (error) {
+      const invalidApiKey: boolean = error.response && (
+        error.response.status === 403 ||
+          (error.response.status === 400 && !(await isApiKeyValid()))
+      )
+      if (invalidApiKey) {
+        metricsLogger.increment('invalid_auth', 1)
+        throw new InvalidConfigurationError(`${chalk.red.bold('DATADOG_API_KEY')} does not contain a valid API key`)
+      }
       metricsLogger.increment('failed', 1)
       this.context.stdout.write(renderFailedUpload(sourcemap, error))
-      if (error.response) {
-        // If it's an axios error
-        if (!errorCodesStopUpload.includes(error.response.status)) {
-          // And a status code that should not stop the whole upload, just return
-          return
-        }
-      }
-      throw error
+
+      return
     }
   }
 }
