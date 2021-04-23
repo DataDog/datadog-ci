@@ -100,7 +100,7 @@ export class UploadJUnitXMLCommand extends Command {
     let jUnitXMLFiles: string[] = []
 
     this.basePaths?.forEach((basePath) => {
-      jUnitXMLFiles = jUnitXMLFiles.concat(glob.sync(buildPath(basePath, '**/*.xml')))
+      jUnitXMLFiles = jUnitXMLFiles.concat(glob.sync(buildPath(basePath, '*.xml')))
     })
 
     const ciSpanTags = getCISpanTags()
