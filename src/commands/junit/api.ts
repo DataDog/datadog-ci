@@ -1,6 +1,7 @@
 import type {AxiosPromise, AxiosRequestConfig, AxiosResponse} from 'axios'
 import FormData from 'form-data'
 import fs from 'fs'
+import path from 'path'
 import {Writable} from 'stream'
 
 import {getRequestBuilder} from '../../helpers/utils'
