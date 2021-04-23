@@ -105,13 +105,13 @@ export class UploadCommand extends Command {
     try {
       await asyncPool(this.maxConcurrency, payloads, upload)
     } catch (error) {
-        if (error instanceof InvalidConfigurationError) {
-          this.context.stdout.write(renderConfigurationError(error))
+      if (error instanceof InvalidConfigurationError) {
+        this.context.stdout.write(renderConfigurationError(error))
 
-          return 1
-        }
-        // Otherwise unknown error, let's propagate the exception
-        throw error
+        return 1
+      }
+      // Otherwise unknown error, let's propagate the exception
+      throw error
     }
     const totalTime = (Date.now() - initialTime) / 1000
     this.context.stdout.write(renderSuccessfulCommand(payloads.length, totalTime))
@@ -265,10 +265,8 @@ export class UploadCommand extends Command {
         }
       )
     } catch (error) {
-      const invalidApiKey: boolean = error.response && (
-        error.response.status === 403 ||
-          (error.response.status === 400 && !(await isApiKeyValid()))
-      )
+      const invalidApiKey: boolean =
+        error.response && (error.response.status === 403 || (error.response.status === 400 && !(await isApiKeyValid())))
       if (invalidApiKey) {
         metricsLogger.increment('invalid_auth', 1)
         throw new InvalidConfigurationError(`${chalk.red.bold('DATADOG_API_KEY')} does not contain a valid API key`)
