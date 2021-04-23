@@ -3,9 +3,9 @@ import chalk from 'chalk'
 import {Payload} from './interfaces'
 
 const ICONS = {
-  FAILED: chalk.bold.red('❌'),
-  SUCCESS: chalk.bold.green('✅'),
-  WARNING: chalk.bold.green('⚠️'),
+  FAILED: '❌',
+  SUCCESS: '✅',
+  WARNING: '⚠️',
 }
 
 export const renderFailedUpload = (payload: Payload, errorMessage: string) => {
@@ -32,12 +32,9 @@ export const renderCommandInfo = (basePaths: string[], service: string, concurre
   if (dryRun) {
     fullStr += chalk.yellow(`${ICONS.WARNING} DRY-RUN MODE ENABLED. WILL NOT UPLOAD JUNIT XML\n`)
   }
-  const startStr = chalk.green(`Starting upload with concurrency ${concurrency}. \n`)
-  fullStr += startStr
-  const basePathStr = chalk.green(`Will look for jUnit XML files in ${basePaths.join(', ')}\n`)
-  fullStr += basePathStr
-  const serviceVersionProjectPathStr = chalk.green(`service: ${service}\n`)
-  fullStr += serviceVersionProjectPathStr
+  fullStr += chalk.green(`Starting upload with concurrency ${concurrency}. \n`)
+  fullStr += chalk.green(`Will look for jUnit XML files in ${basePaths.join(', ')}\n`)
+  fullStr += chalk.green(`service: ${service}\n`)
 
   return fullStr
 }

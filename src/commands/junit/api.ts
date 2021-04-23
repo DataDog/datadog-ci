@@ -22,7 +22,7 @@ export const uploadJUnitXML = (request: (args: AxiosRequestConfig) => AxiosPromi
 
   let fileName
   try {
-    fileName = jUnitXML.xmlPath.split('/').slice(-1)[0].replace('.xml', '')
+    fileName = path.parse(jUnitXML.xmlPath).name
   } catch (e) {
     fileName = 'default_file_name'
   }
