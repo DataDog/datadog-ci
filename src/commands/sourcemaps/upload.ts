@@ -136,7 +136,7 @@ export class UploadCommand extends Command {
 
   private getApiHelper(): APIHelper {
     if (!getApiKey()) {
-      throw new InvalidConfigurationError(`Missing ${chalk.red.bold('DATADOG_API_KEY')} in your environment.`)
+      throw new InvalidConfigurationError(`Missing ${chalk.bold('DATADOG_API_KEY')} in your environment.`)
     }
 
     return apiConstructor(getBaseIntakeUrl(), getApiKey()!)

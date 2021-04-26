@@ -1,6 +1,7 @@
 // tslint:disable: no-string-literal
 import os from 'os'
 
+import chalk from 'chalk'
 import {Cli} from 'clipanion/lib/advanced'
 import {Payload} from '../interfaces'
 import {UploadCommand} from '../upload'
@@ -74,12 +75,9 @@ describe('upload', () => {
   describe('getApiHelper', () => {
     test('should throw an error if API key is undefined', async () => {
       process.env = {}
-      const write = jest.fn()
       const command = new UploadCommand()
-      command.context = {stdout: {write}} as any
 
-      expect(command['getApiHelper'].bind(command)).toThrow('API key is missing')
-      expect(write.mock.calls[0][0]).toContain('DATADOG_API_KEY')
+      expect(command['getApiHelper'].bind(command)).toThrow(`Missing ${chalk.bold('DATADOG_API_KEY')} in your environment.`)
     })
   })
 
