@@ -52,7 +52,7 @@
     "ssh2": "0.8.9",
     "ssh2-streams": "0.4.10",
     "sshpk": "1.16.1",
-    "tiny-async-pool": "1.1.0",
+    "tiny-async-pool": "1.2.0",
     "ws": "7.4.0",
     "yamux-js": "0.0.6"
   },
