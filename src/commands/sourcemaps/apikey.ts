@@ -1,7 +1,7 @@
 import axios from 'axios'
 
 interface ApiKeyDict {
-    [key: string]: boolean
+    [key: string]: Promise<boolean | undefined>
 }
 
 class ApiKeyProvider {
@@ -24,7 +24,7 @@ class ApiKeyProvider {
 
   public async isApiKeyValid(apiKey: string): Promise<boolean | undefined> {
     if (!this.validatedApiKeys.hasOwnProperty(apiKey)) {
-        this.validatedApiKeys[apiKey] = await this.validateApiKey(apiKey)
+        this.validatedApiKeys[apiKey] = this.validateApiKey(apiKey)
     }
 
     return this.validatedApiKeys[apiKey]
@@ -44,11 +44,10 @@ class ApiKeyProvider {
 
       return response.data.valid
     } catch (error) {
-      if (error.response && error.response.stats === 403) {
+      if (error.response && error.response.status === 403) {
         return false
       }
-
-      return false
+      throw error
     }
   }
 }

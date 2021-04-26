@@ -12,7 +12,7 @@ import {apiConstructor} from './api'
 import {getApiKey, isApiKeyValid} from './apikey'
 import {InvalidConfigurationError} from './errors'
 import {getRepositoryData, newSimpleGit, RepositoryData} from './git'
-import {APIHelper, Payload} from './interfaces'
+import {APIHelper, Payload, UploadStatus} from './interfaces'
 import {getMetricsLogger} from './metrics'
 import {
   renderCommandInfo,
@@ -103,7 +103,14 @@ export class UploadCommand extends Command {
     const payloads = await this.getPayloadsToUpload(useGit, cliVersion)
     const upload = (p: Payload) => this.uploadSourcemap(api, metricsLogger, p)
     try {
-      await asyncPool(this.maxConcurrency, payloads, upload)
+      const results = await asyncPool(this.maxConcurrency, payloads, upload)
+      const totalTime = (Date.now() - initialTime) / 1000
+      this.context.stdout.write('render successful command\n')
+      this.context.stdout.write(renderSuccessfulCommand(results, totalTime, this.dryRun))
+      metricsLogger.gauge('duration', totalTime)
+      metricsLogger.flush()
+
+      return 0
     } catch (error) {
       if (error instanceof InvalidConfigurationError) {
         this.context.stdout.write(renderConfigurationError(error))
@@ -113,10 +120,6 @@ export class UploadCommand extends Command {
       // Otherwise unknown error, let's propagate the exception
       throw error
     }
-    const totalTime = (Date.now() - initialTime) / 1000
-    this.context.stdout.write(renderSuccessfulCommand(payloads.length, totalTime))
-    metricsLogger.gauge('duration', totalTime)
-    metricsLogger.flush()
   }
 
   // Fills the 'repository' field of each payload with data gathered using git.
@@ -221,27 +224,29 @@ export class UploadCommand extends Command {
     return true
   }
 
-  private async uploadSourcemap(api: APIHelper, metricsLogger: BufferedMetricsLogger, sourcemap: Payload) {
+  private async uploadSourcemap(api: APIHelper, metricsLogger: BufferedMetricsLogger, sourcemap: Payload): Promise<UploadStatus> {
     if (!fs.existsSync(sourcemap.minifiedFilePath)) {
       this.context.stdout.write(
         renderFailedUpload(sourcemap, `Missing corresponding JS file for sourcemap (${sourcemap.minifiedFilePath})`)
       )
       metricsLogger.increment('skipped_missing_js', 1)
 
-      return
+      return UploadStatus.Skipped
     }
 
     try {
-      await retry(
+      return await retry(
         async (bail) => {
           try {
             if (this.dryRun) {
               this.context.stdout.write(renderDryRunUpload(sourcemap))
 
-              return
+              return UploadStatus.Success
             }
             await api.uploadSourcemap(sourcemap, this.context.stdout.write.bind(this.context.stdout))
             metricsLogger.increment('success', 1)
+
+            return UploadStatus.Success
           } catch (error) {
             if (error.response) {
               // If it's an axios error
@@ -253,7 +258,7 @@ export class UploadCommand extends Command {
             // If it's another error or an axios error we don't want to retry, bail
             bail(error)
 
-            return
+            return UploadStatus.Failure
           }
         },
         {
@@ -265,8 +270,10 @@ export class UploadCommand extends Command {
         }
       )
     } catch (error) {
-      const invalidApiKey: boolean =
-        error.response && (error.response.status === 403 || (error.response.status === 400 && !(await isApiKeyValid(getApiKey()))))
+      let invalidApiKey: boolean = error.response && error.response.status === 403
+      if (error.response && error.response.status === 400) {
+          invalidApiKey = !(await isApiKeyValid(getApiKey()))
+      }
       if (invalidApiKey) {
         metricsLogger.increment('invalid_auth', 1)
         throw new InvalidConfigurationError(`${chalk.red.bold('DATADOG_API_KEY')} does not contain a valid API key`)
@@ -274,7 +281,7 @@ export class UploadCommand extends Command {
       metricsLogger.increment('failed', 1)
       this.context.stdout.write(renderFailedUpload(sourcemap, error))
 
-      return
+      return UploadStatus.Failure
     }
   }
 }

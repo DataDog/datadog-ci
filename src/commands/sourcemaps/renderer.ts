@@ -1,6 +1,6 @@
 import chalk from 'chalk'
 
-import {Payload} from './interfaces'
+import {Payload, UploadStatus} from './interfaces'
 
 const ICONS = {
   FAILED: chalk.bold.red('❌'),
@@ -34,8 +34,33 @@ export const renderRetriedUpload = (payload: Payload, errorMessage: string, atte
   return chalk.yellow(`[attempt ${attempt}] Retrying sourcemap upload ${sourcemapPathBold}: ${errorMessage}\n`)
 }
 
-export const renderSuccessfulCommand = (fileCount: number, duration: number) =>
-  chalk.green(`${ICONS.SUCCESS} Uploaded ${fileCount} files in ${duration} seconds.\n`)
+export const renderSuccessfulCommand = (statuses: UploadStatus[], duration: number, dryRun: boolean) => {
+  const results = new Map<UploadStatus, number>()
+  statuses.forEach(status => {
+    if (!results.has(status)) {
+      results.set(status, 0)
+    }
+    results.set(status, results.get(status)! + 1)
+  })
+
+  const output = []
+
+  if (results.get(UploadStatus.Success)) {
+      if (dryRun) {
+          output.push(chalk.green(`${ICONS.SUCCESS} successfully handled ${results.get(UploadStatus.Success)} of ${statuses.length} found sourcemaps in ${duration} seconds.`))
+      } else {
+          output.push(chalk.green(`${ICONS.SUCCESS} successfully uploaded ${results.get(UploadStatus.Success)} of ${statuses.length} found sourcemaps in ${duration} seconds.`))
+      }
+  }
+  if (results.get(UploadStatus.Failure)) {
+      output.push(chalk.red(`${ICONS.FAILED} ${results.get(UploadStatus.Failure)} files failed to upload.`))
+  }
+  if (results.get(UploadStatus.Skipped)) {
+      output.push(chalk.yellow(`${ICONS.WARNING}  ${results.get(UploadStatus.Skipped)} files were ignored.`))
+  }
+
+  return output.join('\n') + '\n'
+}
 
 export const renderCommandInfo = (
   basePath: string,
