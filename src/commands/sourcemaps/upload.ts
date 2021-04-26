@@ -105,7 +105,6 @@ export class UploadCommand extends Command {
     try {
       const results = await asyncPool(this.maxConcurrency, payloads, upload)
       const totalTime = (Date.now() - initialTime) / 1000
-      this.context.stdout.write('render successful command\n')
       this.context.stdout.write(renderSuccessfulCommand(results, totalTime, this.dryRun))
       metricsLogger.gauge('duration', totalTime)
       metricsLogger.flush()
