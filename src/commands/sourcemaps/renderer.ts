@@ -36,7 +36,7 @@ export const renderRetriedUpload = (payload: Payload, errorMessage: string, atte
 
 export const renderSuccessfulCommand = (statuses: UploadStatus[], duration: number, dryRun: boolean) => {
   const results = new Map<UploadStatus, number>()
-  statuses.forEach(status => {
+  statuses.forEach((status) => {
     if (!results.has(status)) {
       results.set(status, 0)
     }
@@ -46,17 +46,29 @@ export const renderSuccessfulCommand = (statuses: UploadStatus[], duration: numb
   const output = []
 
   if (results.get(UploadStatus.Success)) {
-      if (dryRun) {
-          output.push(chalk.green(`${ICONS.SUCCESS} [DRYRUN] Handled ${results.get(UploadStatus.Success)} (out of ${statuses.length}) sourcemaps with success in ${duration} seconds.`))
-      } else {
-          output.push(chalk.green(`${ICONS.SUCCESS} Uploaded ${results.get(UploadStatus.Success)} (out of ${statuses.length}) sourcemaps in ${duration} seconds.`))
-      }
+    if (dryRun) {
+      output.push(
+        chalk.green(
+          `${ICONS.SUCCESS} [DRYRUN] Handled ${results.get(UploadStatus.Success)} (out of ${
+            statuses.length
+          }) sourcemaps with success in ${duration} seconds.`
+        )
+      )
+    } else {
+      output.push(
+        chalk.green(
+          `${ICONS.SUCCESS} Uploaded ${results.get(UploadStatus.Success)} (out of ${
+            statuses.length
+          }) sourcemaps in ${duration} seconds.`
+        )
+      )
+    }
   }
   if (results.get(UploadStatus.Failure)) {
-      output.push(chalk.red(`${ICONS.FAILED} ${results.get(UploadStatus.Failure)} files failed to upload.`))
+    output.push(chalk.red(`${ICONS.FAILED} ${results.get(UploadStatus.Failure)} files failed to upload.`))
   }
   if (results.get(UploadStatus.Skipped)) {
-      output.push(chalk.yellow(`${ICONS.WARNING}  ${results.get(UploadStatus.Skipped)} files were ignored.`))
+    output.push(chalk.yellow(`${ICONS.WARNING}  ${results.get(UploadStatus.Skipped)} files were ignored.`))
   }
 
   return output.join('\n') + '\n'

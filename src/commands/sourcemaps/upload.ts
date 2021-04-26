@@ -223,7 +223,11 @@ export class UploadCommand extends Command {
     return true
   }
 
-  private async uploadSourcemap(api: APIHelper, metricsLogger: BufferedMetricsLogger, sourcemap: Payload): Promise<UploadStatus> {
+  private async uploadSourcemap(
+    api: APIHelper,
+    metricsLogger: BufferedMetricsLogger,
+    sourcemap: Payload
+  ): Promise<UploadStatus> {
     if (!fs.existsSync(sourcemap.minifiedFilePath)) {
       this.context.stdout.write(
         renderFailedUpload(sourcemap, `Missing corresponding JS file for sourcemap (${sourcemap.minifiedFilePath})`)
@@ -271,7 +275,7 @@ export class UploadCommand extends Command {
     } catch (error) {
       let invalidApiKey: boolean = error.response && error.response.status === 403
       if (error.response && error.response.status === 400) {
-          invalidApiKey = !(await isApiKeyValid(getApiKey()))
+        invalidApiKey = !(await isApiKeyValid(getApiKey()))
       }
       if (invalidApiKey) {
         metricsLogger.increment('invalid_auth', 1)

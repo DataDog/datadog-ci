@@ -1,7 +1,7 @@
 import axios from 'axios'
 
 interface ApiKeyDict {
-    [key: string]: Promise<boolean | undefined>
+  [key: string]: Promise<boolean | undefined>
 }
 
 class ApiKeyProvider {
@@ -11,7 +11,7 @@ class ApiKeyProvider {
   private validatedApiKeys: ApiKeyDict
 
   private constructor() {
-      this.validatedApiKeys = {}
+    this.validatedApiKeys = {}
   }
 
   public static getInstance(): ApiKeyProvider {
@@ -24,7 +24,7 @@ class ApiKeyProvider {
 
   public async isApiKeyValid(apiKey: string): Promise<boolean | undefined> {
     if (!this.validatedApiKeys.hasOwnProperty(apiKey)) {
-        this.validatedApiKeys[apiKey] = this.validateApiKey(apiKey)
+      this.validatedApiKeys[apiKey] = this.validateApiKey(apiKey)
     }
 
     return this.validatedApiKeys[apiKey]
@@ -58,7 +58,7 @@ export const getApiKey: () => string | undefined = () => process.env.DATADOG_API
 
 export const isApiKeyValid: (apiKey: string | undefined) => Promise<boolean> = async (apiKey) => {
   if (apiKey === undefined) {
-      return false
+    return false
   }
 
   return ApiKeyProvider.getInstance()

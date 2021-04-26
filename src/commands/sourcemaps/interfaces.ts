@@ -20,7 +20,7 @@ export interface APIHelper {
 }
 
 export enum UploadStatus {
-    Success,
-    Failure,
-    Skipped,
+  Success,
+  Failure,
+  Skipped,
 }

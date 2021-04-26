@@ -77,7 +77,9 @@ describe('upload', () => {
       process.env = {}
       const command = new UploadCommand()
 
-      expect(command['getApiHelper'].bind(command)).toThrow(`Missing ${chalk.bold('DATADOG_API_KEY')} in your environment.`)
+      expect(command['getApiHelper'].bind(command)).toThrow(
+        `Missing ${chalk.bold('DATADOG_API_KEY')} in your environment.`
+      )
     })
   })
 
@@ -281,5 +283,7 @@ const checkConsoleOutput = (output: string[], expected: ExpectedOutput) => {
       `[DRYRUN] Uploading sourcemap ${expected.sourcemapsPaths} for JS file available at ${expected.jsFilesURLs}`
     )
   })
-  expect(output.slice(-2, -1)[0]).toContain(`[DRYRUN] Handled ${uploadedFileLines.length} (out of ${uploadedFileLines.length}) sourcemaps with success`)
+  expect(output.slice(-2, -1)[0]).toContain(
+    `[DRYRUN] Handled ${uploadedFileLines.length} (out of ${uploadedFileLines.length}) sourcemaps with success`
+  )
 }
