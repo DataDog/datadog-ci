@@ -266,7 +266,7 @@ export class UploadCommand extends Command {
       )
     } catch (error) {
       const invalidApiKey: boolean =
-        error.response && (error.response.status === 403 || (error.response.status === 400 && !(await isApiKeyValid())))
+        error.response && (error.response.status === 403 || (error.response.status === 400 && !(await isApiKeyValid(getApiKey()))))
       if (invalidApiKey) {
         metricsLogger.increment('invalid_auth', 1)
         throw new InvalidConfigurationError(`${chalk.red.bold('DATADOG_API_KEY')} does not contain a valid API key`)
