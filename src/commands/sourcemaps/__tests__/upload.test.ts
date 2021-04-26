@@ -215,6 +215,23 @@ describe('execute', () => {
       version: '1234',
     })
   })
+
+  test('all files are skipped', async () => {
+    const {context, code} = await runCLI('./src/commands/sourcemaps/__tests__/fixtures-stdout-output/all-skipped')
+    const output = context.stdout.toString().split(os.EOL)
+    expect(code).toBe(0)
+    output.reverse()
+    expect(output[1]).toContain('2 files were ignored.')
+  })
+
+  test('mix of skipped filed and correct files', async () => {
+    const {context, code} = await runCLI('./src/commands/sourcemaps/__tests__/fixtures-stdout-output/mixed')
+    const output = context.stdout.toString().split(os.EOL)
+    expect(code).toBe(0)
+    output.reverse()
+    expect(output[2]).toContain('[DRYRUN] Handled 2 (out of 3) sourcemaps with success')
+    expect(output[1]).toContain('1 files were ignored.')
+  })
 })
 
 const makeCli = () => {
