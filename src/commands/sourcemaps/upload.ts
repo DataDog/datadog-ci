@@ -9,7 +9,7 @@ import asyncPool from 'tiny-async-pool'
 import {URL} from 'url'
 
 import {apiConstructor} from './api'
-import {getApiKey, isApiKeyValid} from './apikey'
+import {ApiKeyValidator} from './apikey'
 import {InvalidConfigurationError} from './errors'
 import {getRepositoryData, newSimpleGit, RepositoryData} from './git'
 import {APIHelper, Payload, UploadStatus} from './interfaces'
@@ -46,7 +46,12 @@ export class UploadCommand extends Command {
     ],
   })
 
+  private apiKeyValidator: ApiKeyValidator
   private basePath?: string
+  private config = {
+    apiKey: process.env.DATADOG_API_KEY,
+    datadogSite: process.env.DATADOG_SITE || 'datadoghq.com',
+  }
   private dryRun = false
   private enableGit?: boolean
   private maxConcurrency = 20
@@ -55,6 +60,11 @@ export class UploadCommand extends Command {
   private releaseVersion?: string
   private repositoryURL?: string
   private service?: string
+
+  constructor() {
+    super()
+    this.apiKeyValidator = new ApiKeyValidator(this.config.apiKey, this.config.datadogSite)
+  }
 
   public async execute() {
     if (!this.releaseVersion) {
@@ -137,11 +147,11 @@ export class UploadCommand extends Command {
   }
 
   private getApiHelper(): APIHelper {
-    if (!getApiKey()) {
+    if (!this.config.apiKey) {
       throw new InvalidConfigurationError(`Missing ${chalk.bold('DATADOG_API_KEY')} in your environment.`)
     }
 
-    return apiConstructor(getBaseIntakeUrl(), getApiKey()!)
+    return apiConstructor(getBaseIntakeUrl(), this.config.apiKey!)
   }
 
   // Looks for the sourcemaps and minified files on disk and returns
@@ -275,11 +285,15 @@ export class UploadCommand extends Command {
     } catch (error) {
       let invalidApiKey: boolean = error.response && error.response.status === 403
       if (error.response && error.response.status === 400) {
-        invalidApiKey = !(await isApiKeyValid(getApiKey()))
+        invalidApiKey = !(await this.apiKeyValidator.isApiKeyValid())
       }
       if (invalidApiKey) {
         metricsLogger.increment('invalid_auth', 1)
-        throw new InvalidConfigurationError(`${chalk.red.bold('DATADOG_API_KEY')} does not contain a valid API key`)
+        throw new InvalidConfigurationError(
+          `${chalk.red.bold('DATADOG_API_KEY')} does not contain a valid API key for Datadog site ${
+            this.config.datadogSite
+          }`
+        )
       }
       metricsLogger.increment('failed', 1)
       this.context.stdout.write(renderFailedUpload(sourcemap, error))

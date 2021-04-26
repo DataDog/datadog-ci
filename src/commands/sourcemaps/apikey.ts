@@ -1,44 +1,33 @@
 import axios from 'axios'
 
-interface ApiKeyDict {
-  [key: string]: Promise<boolean | undefined>
-}
+export class ApiKeyValidator {
+  public apiKey: string | undefined
+  public datadogSite: string
 
-class ApiKeyProvider {
-  private static instance: ApiKeyProvider
+  private isValid?: boolean
 
-  private datadogSite: string = process.env.DATADOG_SITE || 'datadoghq.com'
-  private validatedApiKeys: ApiKeyDict
-
-  private constructor() {
-    this.validatedApiKeys = {}
+  constructor(apiKey: string | undefined, datadogSite: string) {
+    this.apiKey = apiKey
+    this.datadogSite = datadogSite
   }
 
-  public static getInstance(): ApiKeyProvider {
-    if (!ApiKeyProvider.instance) {
-      ApiKeyProvider.instance = new ApiKeyProvider()
+  public async isApiKeyValid(): Promise<boolean | undefined> {
+    if (this.isValid === undefined) {
+      this.isValid = await this.validateApiKey()
     }
 
-    return ApiKeyProvider.instance
-  }
-
-  public async isApiKeyValid(apiKey: string): Promise<boolean | undefined> {
-    if (!this.validatedApiKeys.hasOwnProperty(apiKey)) {
-      this.validatedApiKeys[apiKey] = this.validateApiKey(apiKey)
-    }
-
-    return this.validatedApiKeys[apiKey]
+    return this.isValid!
   }
 
   private getApiKeyValidationURL(): string {
     return `https://api.${this.datadogSite}/api/v1/validate`
   }
 
-  private async validateApiKey(apiKey: string): Promise<boolean> {
+  private async validateApiKey(): Promise<boolean> {
     try {
       const response = await axios.get(this.getApiKeyValidationURL(), {
         headers: {
-          'DD-API-KEY': apiKey,
+          'DD-API-KEY': this.apiKey,
         },
       })
 
@@ -50,18 +39,4 @@ class ApiKeyProvider {
       throw error
     }
   }
-}
-
-// Making this function retrieve the value from env var each time (rather than reading it first
-// and copying it into memory) allows us to change the env var at runtime during tests.
-export const getApiKey: () => string | undefined = () => process.env.DATADOG_API_KEY
-
-export const isApiKeyValid: (apiKey: string | undefined) => Promise<boolean> = async (apiKey) => {
-  if (apiKey === undefined) {
-    return false
-  }
-
-  return ApiKeyProvider.getInstance()
-    .isApiKeyValid(apiKey!)
-    .then((isValid) => isValid !== undefined && isValid)
 }
