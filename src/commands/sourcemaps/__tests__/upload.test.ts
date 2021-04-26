@@ -264,5 +264,5 @@ const checkConsoleOutput = (output: string[], expected: ExpectedOutput) => {
       `[DRYRUN] Uploading sourcemap ${expected.sourcemapsPaths} for JS file available at ${expected.jsFilesURLs}`
     )
   })
-  expect(output.slice(-2, -1)[0]).toContain(`Uploaded ${uploadedFileLines.length} files`)
+  expect(output.slice(-2, -1)[0]).toContain(`[DRYRUN] Handled ${uploadedFileLines.length} (out of ${uploadedFileLines.length}) sourcemaps with success`)
 }

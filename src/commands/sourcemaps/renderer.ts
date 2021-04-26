@@ -47,9 +47,9 @@ export const renderSuccessfulCommand = (statuses: UploadStatus[], duration: numb
 
   if (results.get(UploadStatus.Success)) {
       if (dryRun) {
-          output.push(chalk.green(`${ICONS.SUCCESS} [DRYRUN] successfully handled ${results.get(UploadStatus.Success)} of ${statuses.length} found sourcemaps in ${duration} seconds.`))
+          output.push(chalk.green(`${ICONS.SUCCESS} [DRYRUN] Handled ${results.get(UploadStatus.Success)} (out of ${statuses.length}) sourcemaps with success in ${duration} seconds.`))
       } else {
-          output.push(chalk.green(`${ICONS.SUCCESS} successfully uploaded ${results.get(UploadStatus.Success)} of ${statuses.length} found sourcemaps in ${duration} seconds.`))
+          output.push(chalk.green(`${ICONS.SUCCESS} Uploaded ${results.get(UploadStatus.Success)} (out of ${statuses.length}) sourcemaps in ${duration} seconds.`))
       }
   }
   if (results.get(UploadStatus.Failure)) {
