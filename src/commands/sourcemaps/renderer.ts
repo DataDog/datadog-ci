@@ -43,32 +43,40 @@ export const renderSuccessfulCommand = (statuses: UploadStatus[], duration: numb
     results.set(status, results.get(status)! + 1)
   })
 
-  const output = []
-
-  if (results.get(UploadStatus.Success)) {
+  const output = ['', chalk.bold('Command summary:')]
+  if (results.get(UploadStatus.Failure)) {
+    output.push(chalk.red(`${ICONS.FAILED} All sourcemaps have not been uploaded correctly.`))
+  } else if (results.get(UploadStatus.Skipped)) {
+    output.push(chalk.yellow(`${ICONS.WARNING}  Some sourcemaps have been skipped.`))
+  } else if (results.get(UploadStatus.Success)) {
     if (dryRun) {
       output.push(
         chalk.green(
-          `${ICONS.SUCCESS} [DRYRUN] Handled ${results.get(UploadStatus.Success)} (out of ${
-            statuses.length
-          }) sourcemaps with success in ${duration} seconds.`
+          `${ICONS.SUCCESS} [DRYRUN] Handled ${results.get(
+            UploadStatus.Success
+          )} sourcemaps with success in ${duration} seconds.`
         )
       )
     } else {
       output.push(
-        chalk.green(
-          `${ICONS.SUCCESS} Uploaded ${results.get(UploadStatus.Success)} (out of ${
-            statuses.length
-          }) sourcemaps in ${duration} seconds.`
-        )
+        chalk.green(`${ICONS.SUCCESS} Uploaded ${results.get(UploadStatus.Success)} sourcemaps in ${duration} seconds.`)
       )
     }
+  } else {
+    output.push(chalk.yellow(`${ICONS.WARNING} No sourcemaps detected. Did you specify the correct directory?`))
   }
-  if (results.get(UploadStatus.Failure)) {
-    output.push(chalk.red(`${ICONS.FAILED} ${results.get(UploadStatus.Failure)} files failed to upload.`))
-  }
-  if (results.get(UploadStatus.Skipped)) {
-    output.push(chalk.yellow(`${ICONS.WARNING}  ${results.get(UploadStatus.Skipped)} files were ignored.`))
+
+  if (results.get(UploadStatus.Failure) || results.get(UploadStatus.Skipped)) {
+    output.push(`Details about the ${statuses.length} found sourcemaps:`)
+    if (results.get(UploadStatus.Success)) {
+      output.push(`  * ${results.get(UploadStatus.Success)} sourcemaps successfully uploaded`)
+    }
+    if (results.get(UploadStatus.Skipped)) {
+      output.push(chalk.yellow(`  * ${results.get(UploadStatus.Skipped)} sourcemaps were skipped`))
+    }
+    if (results.get(UploadStatus.Failure)) {
+      output.push(chalk.red(`  * ${results.get(UploadStatus.Failure)} sourcemaps failed to upload`))
+    }
   }
 
   return output.join('\n') + '\n'

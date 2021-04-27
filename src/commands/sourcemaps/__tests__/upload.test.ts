@@ -223,7 +223,9 @@ describe('execute', () => {
     const output = context.stdout.toString().split(os.EOL)
     expect(code).toBe(0)
     output.reverse()
-    expect(output[1]).toContain('2 files were ignored.')
+    expect(output[3]).toContain('Some sourcemaps have been skipped')
+    expect(output[2]).toContain('Details about the 2 found sourcemaps:')
+    expect(output[1]).toContain('  * 2 sourcemaps were skipped')
   })
 
   test('mix of skipped filed and correct files', async () => {
@@ -231,8 +233,10 @@ describe('execute', () => {
     const output = context.stdout.toString().split(os.EOL)
     expect(code).toBe(0)
     output.reverse()
-    expect(output[2]).toContain('[DRYRUN] Handled 2 (out of 3) sourcemaps with success')
-    expect(output[1]).toContain('1 files were ignored.')
+    expect(output[4]).toContain('Some sourcemaps have been skipped')
+    expect(output[3]).toContain('Details about the 3 found sourcemaps:')
+    expect(output[2]).toContain('  * 2 sourcemaps successfully uploaded')
+    expect(output[1]).toContain('  * 1 sourcemaps were skipped')
   })
 })
 
@@ -275,7 +279,7 @@ const checkConsoleOutput = (output: string[], expected: ExpectedOutput) => {
   expect(output[4]).toContain(
     `version: ${expected.version} service: ${expected.service} project path: ${expected.projectPath}`
   )
-  const uploadedFileLines = output.slice(5, -2)
+  const uploadedFileLines = output.slice(5, -4)
   expect(expected.sourcemapsPaths.length).toEqual(uploadedFileLines.length) // Safety check
   expect(expected.jsFilesURLs.length).toEqual(uploadedFileLines.length) // Safety check
   uploadedFileLines.forEach((_, index) => {
@@ -283,7 +287,5 @@ const checkConsoleOutput = (output: string[], expected: ExpectedOutput) => {
       `[DRYRUN] Uploading sourcemap ${expected.sourcemapsPaths} for JS file available at ${expected.jsFilesURLs}`
     )
   })
-  expect(output.slice(-2, -1)[0]).toContain(
-    `[DRYRUN] Handled ${uploadedFileLines.length} (out of ${uploadedFileLines.length}) sourcemaps with success`
-  )
+  expect(output.slice(-2, -1)[0]).toContain(`[DRYRUN] Handled ${uploadedFileLines.length} sourcemaps with success`)
 }
