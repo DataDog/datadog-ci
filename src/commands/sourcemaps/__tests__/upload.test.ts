@@ -236,7 +236,7 @@ describe('execute', () => {
     expect(output[4]).toContain('Some sourcemaps have been skipped')
     expect(output[3]).toContain('Details about the 3 found sourcemaps:')
     expect(output[2]).toContain('  * 2 sourcemaps successfully uploaded')
-    expect(output[1]).toContain('  * 1 sourcemaps were skipped')
+    expect(output[1]).toContain('  * 1 sourcemap was skipped')
   })
 })
 
@@ -287,5 +287,9 @@ const checkConsoleOutput = (output: string[], expected: ExpectedOutput) => {
       `[DRYRUN] Uploading sourcemap ${expected.sourcemapsPaths} for JS file available at ${expected.jsFilesURLs}`
     )
   })
-  expect(output.slice(-2, -1)[0]).toContain(`[DRYRUN] Handled ${uploadedFileLines.length} sourcemaps with success`)
+  if (uploadedFileLines.length > 1) {
+    expect(output.slice(-2, -1)[0]).toContain(`[DRYRUN] Handled ${uploadedFileLines.length} sourcemaps with success`)
+  } else {
+    expect(output.slice(-2, -1)[0]).toContain(`[DRYRUN] Handled ${uploadedFileLines.length} sourcemap with success`)
+  }
 }

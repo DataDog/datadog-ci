@@ -45,3 +45,11 @@ export const buildPath = (...args: string[]) =>
     .filter((x) => x.length)
     // Join all these parts with /
     .join('/')
+
+export const pluralize = (nb: number, singular: string, plural: string) => {
+  if (nb >= 2) {
+    return `${nb} ${plural}`
+  }
+
+  return `${nb} ${singular}`
+}

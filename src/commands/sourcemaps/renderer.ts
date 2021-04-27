@@ -1,6 +1,7 @@
 import chalk from 'chalk'
 
 import {Payload, UploadStatus} from './interfaces'
+import {pluralize} from './utils'
 
 const ICONS = {
   FAILED: chalk.bold.red('❌'),
@@ -52,14 +53,22 @@ export const renderSuccessfulCommand = (statuses: UploadStatus[], duration: numb
     if (dryRun) {
       output.push(
         chalk.green(
-          `${ICONS.SUCCESS} [DRYRUN] Handled ${results.get(
-            UploadStatus.Success
-          )} sourcemaps with success in ${duration} seconds.`
+          `${ICONS.SUCCESS} [DRYRUN] Handled ${pluralize(
+            results.get(UploadStatus.Success)!,
+            'sourcemap',
+            'sourcemaps'
+          )} with success in ${duration} seconds.`
         )
       )
     } else {
       output.push(
-        chalk.green(`${ICONS.SUCCESS} Uploaded ${results.get(UploadStatus.Success)} sourcemaps in ${duration} seconds.`)
+        chalk.green(
+          `${ICONS.SUCCESS} Uploaded ${pluralize(
+            results.get(UploadStatus.Success)!,
+            'sourcemap',
+            'sourcemaps'
+          )} in ${duration} seconds.`
+        )
       )
     }
   } else {
@@ -67,15 +76,21 @@ export const renderSuccessfulCommand = (statuses: UploadStatus[], duration: numb
   }
 
   if (results.get(UploadStatus.Failure) || results.get(UploadStatus.Skipped)) {
-    output.push(`Details about the ${statuses.length} found sourcemaps:`)
+    output.push(`Details about the ${pluralize(statuses.length, 'found sourcemap', 'found sourcemaps')}:`)
     if (results.get(UploadStatus.Success)) {
-      output.push(`  * ${results.get(UploadStatus.Success)} sourcemaps successfully uploaded`)
+      output.push(
+        `  * ${pluralize(results.get(UploadStatus.Success)!, 'sourcemap', 'sourcemaps')} successfully uploaded`
+      )
     }
     if (results.get(UploadStatus.Skipped)) {
-      output.push(chalk.yellow(`  * ${results.get(UploadStatus.Skipped)} sourcemaps were skipped`))
+      output.push(
+        chalk.yellow(`  * ${pluralize(results.get(UploadStatus.Skipped)!, 'sourcemap was', 'sourcemaps were')} skipped`)
+      )
     }
     if (results.get(UploadStatus.Failure)) {
-      output.push(chalk.red(`  * ${results.get(UploadStatus.Failure)} sourcemaps failed to upload`))
+      output.push(
+        chalk.red(`  * ${pluralize(results.get(UploadStatus.Failure)!, 'spourcemap', 'sourcemaps')} failed to upload`)
+      )
     }
   }
 
