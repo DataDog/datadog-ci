@@ -11,8 +11,8 @@ import {
   Step,
   Summary,
   Test,
-} from './interfaces'
-import {hasResultPassed, hasTestSucceeded} from './utils'
+} from '../interfaces'
+import {hasResultPassed, hasTestSucceeded} from '../utils'
 
 // Step rendering
 

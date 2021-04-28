@@ -4,7 +4,7 @@ import {Command} from 'clipanion'
 import {parseConfigFile, ProxyConfiguration} from '../../helpers/utils'
 import {apiConstructor} from './api'
 import {APIHelper, ConfigOverride, ExecutionRule, LocationsMapping, PollResult, Test} from './interfaces'
-import {renderHeader, renderResults, renderSummary} from './renderer'
+import {renderHeader, renderResults, renderSummary} from './reporters/logs'
 import {Tunnel} from './tunnel'
 import {getSuites, getTestsToTrigger, hasTestSucceeded, runTests, waitForResults} from './utils'
 
