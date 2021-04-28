@@ -46,7 +46,7 @@ export const renderSuccessfulCommand = (statuses: UploadStatus[], duration: numb
 
   const output = ['', chalk.bold('Command summary:')]
   if (results.get(UploadStatus.Failure)) {
-    output.push(chalk.red(`${ICONS.FAILED} All sourcemaps have not been uploaded correctly.`))
+    output.push(chalk.red(`${ICONS.FAILED} Some sourcemaps have not been uploaded correctly.`))
   } else if (results.get(UploadStatus.Skipped)) {
     output.push(chalk.yellow(`${ICONS.WARNING}  Some sourcemaps have been skipped.`))
   } else if (results.get(UploadStatus.Success)) {
