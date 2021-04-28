@@ -9,11 +9,14 @@ import asyncPool from 'tiny-async-pool'
 import {URL} from 'url'
 
 import {apiConstructor} from './api'
+import {ApiKeyValidator} from './apikey'
+import {InvalidConfigurationError} from './errors'
 import {getRepositoryData, newSimpleGit, RepositoryData} from './git'
-import {APIHelper, Payload} from './interfaces'
+import {APIHelper, Payload, UploadStatus} from './interfaces'
 import {getMetricsLogger} from './metrics'
 import {
   renderCommandInfo,
+  renderConfigurationError,
   renderDryRunUpload,
   renderFailedUpload,
   renderInvalidPrefix,
@@ -23,7 +26,6 @@ import {
 import {buildPath, getBaseIntakeUrl, getMinifiedFilePath} from './utils'
 
 const errorCodesNoRetry = [400, 403, 413]
-const errorCodesStopUpload = [400, 403]
 
 export class UploadCommand extends Command {
   public static usage = Command.Usage({
@@ -44,9 +46,11 @@ export class UploadCommand extends Command {
     ],
   })
 
+  private apiKeyValidator: ApiKeyValidator
   private basePath?: string
   private config = {
     apiKey: process.env.DATADOG_API_KEY,
+    datadogSite: process.env.DATADOG_SITE || 'datadoghq.com',
   }
   private dryRun = false
   private enableGit?: boolean
@@ -56,6 +60,11 @@ export class UploadCommand extends Command {
   private releaseVersion?: string
   private repositoryURL?: string
   private service?: string
+
+  constructor() {
+    super()
+    this.apiKeyValidator = new ApiKeyValidator(this.config.apiKey, this.config.datadogSite)
+  }
 
   public async execute() {
     if (!this.releaseVersion) {
@@ -103,11 +112,23 @@ export class UploadCommand extends Command {
     const initialTime = Date.now()
     const payloads = await this.getPayloadsToUpload(useGit, cliVersion)
     const upload = (p: Payload) => this.uploadSourcemap(api, metricsLogger, p)
-    await asyncPool(this.maxConcurrency, payloads, upload)
-    const totalTime = (Date.now() - initialTime) / 1000
-    this.context.stdout.write(renderSuccessfulCommand(payloads.length, totalTime))
-    metricsLogger.gauge('duration', totalTime)
-    metricsLogger.flush()
+    try {
+      const results = await asyncPool(this.maxConcurrency, payloads, upload)
+      const totalTime = (Date.now() - initialTime) / 1000
+      this.context.stdout.write(renderSuccessfulCommand(results, totalTime, this.dryRun))
+      metricsLogger.gauge('duration', totalTime)
+      metricsLogger.flush()
+
+      return 0
+    } catch (error) {
+      if (error instanceof InvalidConfigurationError) {
+        this.context.stdout.write(renderConfigurationError(error))
+
+        return 1
+      }
+      // Otherwise unknown error, let's propagate the exception
+      throw error
+    }
   }
 
   // Fills the 'repository' field of each payload with data gathered using git.
@@ -127,8 +148,7 @@ export class UploadCommand extends Command {
 
   private getApiHelper(): APIHelper {
     if (!this.config.apiKey) {
-      this.context.stdout.write(`Missing ${chalk.red.bold('DATADOG_API_KEY')} in your environment.\n`)
-      throw new Error('API key is missing')
+      throw new InvalidConfigurationError(`Missing ${chalk.bold('DATADOG_API_KEY')} in your environment.`)
     }
 
     return apiConstructor(getBaseIntakeUrl(), this.config.apiKey!)
@@ -213,27 +233,33 @@ export class UploadCommand extends Command {
     return true
   }
 
-  private async uploadSourcemap(api: APIHelper, metricsLogger: BufferedMetricsLogger, sourcemap: Payload) {
+  private async uploadSourcemap(
+    api: APIHelper,
+    metricsLogger: BufferedMetricsLogger,
+    sourcemap: Payload
+  ): Promise<UploadStatus> {
     if (!fs.existsSync(sourcemap.minifiedFilePath)) {
       this.context.stdout.write(
         renderFailedUpload(sourcemap, `Missing corresponding JS file for sourcemap (${sourcemap.minifiedFilePath})`)
       )
       metricsLogger.increment('skipped_missing_js', 1)
 
-      return
+      return UploadStatus.Skipped
     }
 
     try {
-      await retry(
+      return await retry(
         async (bail) => {
           try {
             if (this.dryRun) {
               this.context.stdout.write(renderDryRunUpload(sourcemap))
 
-              return
+              return UploadStatus.Success
             }
             await api.uploadSourcemap(sourcemap, this.context.stdout.write.bind(this.context.stdout))
             metricsLogger.increment('success', 1)
+
+            return UploadStatus.Success
           } catch (error) {
             if (error.response) {
               // If it's an axios error
@@ -245,7 +271,7 @@ export class UploadCommand extends Command {
             // If it's another error or an axios error we don't want to retry, bail
             bail(error)
 
-            return
+            return UploadStatus.Failure
           }
         },
         {
@@ -257,16 +283,22 @@ export class UploadCommand extends Command {
         }
       )
     } catch (error) {
+      let invalidApiKey: boolean = error.response && error.response.status === 403
+      if (error.response && error.response.status === 400) {
+        invalidApiKey = !(await this.apiKeyValidator.isApiKeyValid())
+      }
+      if (invalidApiKey) {
+        metricsLogger.increment('invalid_auth', 1)
+        throw new InvalidConfigurationError(
+          `${chalk.red.bold('DATADOG_API_KEY')} does not contain a valid API key for Datadog site ${
+            this.config.datadogSite
+          }`
+        )
+      }
       metricsLogger.increment('failed', 1)
       this.context.stdout.write(renderFailedUpload(sourcemap, error))
-      if (error.response) {
-        // If it's an axios error
-        if (!errorCodesStopUpload.includes(error.response.status)) {
-          // And a status code that should not stop the whole upload, just return
-          return
-        }
-      }
-      throw error
+
+      return UploadStatus.Failure
     }
   }
 }

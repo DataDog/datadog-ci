@@ -1,6 +1,7 @@
 import chalk from 'chalk'
 
-import {Payload} from './interfaces'
+import {Payload, UploadStatus} from './interfaces'
+import {pluralize} from './utils'
 
 const ICONS = {
   FAILED: chalk.bold.red('❌'),
@@ -15,6 +16,8 @@ To ignore this warning use the --disable-git flag.\n`)
 
 export const renderSourcesNotFoundWarning = (sourcemap: string) =>
   chalk.yellow(`${ICONS.WARNING} No tracked files found for sources contained in ${sourcemap}\n`)
+
+export const renderConfigurationError = (error: Error) => chalk.red(`${ICONS.FAILED} Configuration error: ${error}.\n`)
 
 export const renderInvalidPrefix = chalk.red(
   `${ICONS.FAILED} --minified-path-prefix should either be an URL (such as "http://example.com/static") or an absolute path starting with a / such as "/static"\n`
@@ -32,8 +35,67 @@ export const renderRetriedUpload = (payload: Payload, errorMessage: string, atte
   return chalk.yellow(`[attempt ${attempt}] Retrying sourcemap upload ${sourcemapPathBold}: ${errorMessage}\n`)
 }
 
-export const renderSuccessfulCommand = (fileCount: number, duration: number) =>
-  chalk.green(`${ICONS.SUCCESS} Uploaded ${fileCount} files in ${duration} seconds.\n`)
+export const renderSuccessfulCommand = (statuses: UploadStatus[], duration: number, dryRun: boolean) => {
+  const results = new Map<UploadStatus, number>()
+  statuses.forEach((status) => {
+    if (!results.has(status)) {
+      results.set(status, 0)
+    }
+    results.set(status, results.get(status)! + 1)
+  })
+
+  const output = ['', chalk.bold('Command summary:')]
+  if (results.get(UploadStatus.Failure)) {
+    output.push(chalk.red(`${ICONS.FAILED} Some sourcemaps have not been uploaded correctly.`))
+  } else if (results.get(UploadStatus.Skipped)) {
+    output.push(chalk.yellow(`${ICONS.WARNING}  Some sourcemaps have been skipped.`))
+  } else if (results.get(UploadStatus.Success)) {
+    if (dryRun) {
+      output.push(
+        chalk.green(
+          `${ICONS.SUCCESS} [DRYRUN] Handled ${pluralize(
+            results.get(UploadStatus.Success)!,
+            'sourcemap',
+            'sourcemaps'
+          )} with success in ${duration} seconds.`
+        )
+      )
+    } else {
+      output.push(
+        chalk.green(
+          `${ICONS.SUCCESS} Uploaded ${pluralize(
+            results.get(UploadStatus.Success)!,
+            'sourcemap',
+            'sourcemaps'
+          )} in ${duration} seconds.`
+        )
+      )
+    }
+  } else {
+    output.push(chalk.yellow(`${ICONS.WARNING} No sourcemaps detected. Did you specify the correct directory?`))
+  }
+
+  if (results.get(UploadStatus.Failure) || results.get(UploadStatus.Skipped)) {
+    output.push(`Details about the ${pluralize(statuses.length, 'found sourcemap', 'found sourcemaps')}:`)
+    if (results.get(UploadStatus.Success)) {
+      output.push(
+        `  * ${pluralize(results.get(UploadStatus.Success)!, 'sourcemap', 'sourcemaps')} successfully uploaded`
+      )
+    }
+    if (results.get(UploadStatus.Skipped)) {
+      output.push(
+        chalk.yellow(`  * ${pluralize(results.get(UploadStatus.Skipped)!, 'sourcemap was', 'sourcemaps were')} skipped`)
+      )
+    }
+    if (results.get(UploadStatus.Failure)) {
+      output.push(
+        chalk.red(`  * ${pluralize(results.get(UploadStatus.Failure)!, 'spourcemap', 'sourcemaps')} failed to upload`)
+      )
+    }
+  }
+
+  return output.join('\n') + '\n'
+}
 
 export const renderCommandInfo = (
   basePath: string,
