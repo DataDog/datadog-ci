@@ -1,7 +1,7 @@
 import {timingSafeEqual} from 'crypto'
 import {once} from 'events'
 import {Socket} from 'net'
-import {Duplex, Writable} from 'stream'
+import {Duplex} from 'stream'
 
 import chalk from 'chalk'
 import {AuthContext, Connection as SSHConnection, Server as SSHServer, ServerChannel as SSHServerChannel} from 'ssh2'
@@ -11,8 +11,8 @@ import {Config as MultiplexerConfig, Server as Multiplexer} from 'yamux-js'
 import {ProxyConfiguration} from '../../helpers/utils'
 
 import {generateOpenSSHKeys, parseSSHKey} from './crypto'
-import {WebSocket} from './websocket'
 import {Writer} from './interfaces'
+import {WebSocket} from './websocket'
 
 const MAX_CONCURRENT_FORWARDED_CONNECTIONS = 50
 
