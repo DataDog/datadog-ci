@@ -1,6 +1,5 @@
 import * as fs from 'fs'
 import * as path from 'path'
-import {Writable} from 'stream'
 import {URL} from 'url'
 import {promisify} from 'util'
 
@@ -291,60 +290,60 @@ const createFailingResult = (
   resultID: resultId,
 })
 
-export const getWriter = (reporters: Reporter[], write: Writable['write']): Writer => ({
+export const getWriter = (reporters: Reporter[]): Writer => ({
   writeError: (error) => {
     for (const reporter of reporters) {
       if (typeof reporter.renderError === 'function') {
-        write(reporter.renderError(error))
+        reporter.renderError(error)
       }
     }
   },
   writeGlobalErrors: (errors) => {
     for (const reporter of reporters) {
       if (typeof reporter.renderGlobalErrors === 'function') {
-        write(reporter.renderGlobalErrors(errors))
+        reporter.renderGlobalErrors(errors)
       }
     }
   },
   writeHeader: (timings) => {
     for (const reporter of reporters) {
       if (typeof reporter.renderHeader === 'function') {
-        write(reporter.renderHeader(timings))
+        reporter.renderHeader(timings)
       }
     }
   },
   writeLog: (log) => {
     for (const reporter of reporters) {
       if (typeof reporter.renderLog === 'function') {
-        write(reporter.renderLog(log))
+        reporter.renderLog(log)
       }
     }
   },
   writeResults: (test, results, baseUrl, locationNames) => {
     for (const reporter of reporters) {
       if (typeof reporter.renderResults === 'function') {
-        write(reporter.renderResults(test, results, baseUrl, locationNames))
+        reporter.renderResults(test, results, baseUrl, locationNames)
       }
     }
   },
   writeSummary: (summary) => {
     for (const reporter of reporters) {
       if (typeof reporter.renderSummary === 'function') {
-        write(reporter.renderSummary(summary))
+        reporter.renderSummary(summary)
       }
     }
   },
   writeTrigger: (test, testId, executionRule, config) => {
     for (const reporter of reporters) {
       if (typeof reporter.renderTrigger === 'function') {
-        write(reporter.renderTrigger(test, testId, executionRule, config))
+        reporter.renderTrigger(test, testId, executionRule, config)
       }
     }
   },
   writeWait: (test) => {
     for (const reporter of reporters) {
       if (typeof reporter.renderWait === 'function') {
-        write(reporter.renderWait(test))
+        reporter.renderWait(test)
       }
     }
   },

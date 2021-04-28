@@ -4,7 +4,7 @@ import {Command} from 'clipanion'
 import {parseConfigFile, ProxyConfiguration} from '../../helpers/utils'
 import {apiConstructor} from './api'
 import {APIHelper, ConfigOverride, ExecutionRule, LocationsMapping, PollResult, Test, Writer} from './interfaces'
-import {reporter as logsReporter} from './reporters/logs'
+import {LogsReporter} from './reporters/logs'
 import {Tunnel} from './tunnel'
 import {getSuites, getTestsToTrigger, getWriter, hasTestSucceeded, runTests, waitForResults} from './utils'
 
@@ -31,11 +31,10 @@ export class RunTestCommand extends Command {
 
   public async execute() {
     const startTime = Date.now()
-    const stdoutLogger = this.context.stdout.write.bind(this.context.stdout)
-    const reporters = [logsReporter]
+    const reporters = [new LogsReporter(this)]
 
     this.config = await parseConfigFile(this.config, this.configPath)
-    this.writer = getWriter(reporters, stdoutLogger)
+    this.writer = getWriter(reporters)
 
     const api = this.getApiHelper()
     const publicIdsFromCli = this.publicIds.map((id) => ({config: this.config.global, id}))

@@ -1,4 +1,5 @@
 import chalk from 'chalk'
+import {Writable} from 'node:stream'
 
 import {
   Assertion,
@@ -13,6 +14,7 @@ import {
   Summary,
   Test,
 } from '../interfaces'
+import {RunTestCommand} from '../run-test'
 import {hasResultPassed, hasTestSucceeded} from '../utils'
 
 // Step rendering
@@ -234,84 +236,83 @@ const getTestResultColor = (success: boolean, isNonBlocking: boolean) => {
   return chalk.bold.red
 }
 
-export const renderResults = (test: Test, results: PollResult[], baseUrl: string, locationNames: LocationsMapping) => {
-  const success = hasTestSucceeded(results)
-  const isNonBlocking = test.options.ci?.executionRule === ExecutionRule.NON_BLOCKING
+export class LogsReporter implements Reporter {
+  private write: Writable['write']
+  constructor(command: RunTestCommand) {
+    this.write = command.context.stdout.write.bind(command.context.stdout);
+  }
+  renderError(error: string) {
+    this.write(error)
+  }
+  renderGlobalErrors(errors: string[]) {
+    this.write(errors.join('\n'))
+  }
+  renderHeader(timings: {startTime: number}) {
+    const delay = (Date.now() - timings.startTime).toString()
 
-  const icon = renderResultIcon(success, isNonBlocking)
+    this.write(['\n', chalk.bold.cyan('=== REPORT ==='), `Took ${chalk.bold(delay)}ms`, '\n'].join('\n'))
+  }
+  renderLog(log: string) {
+    this.write(log)
+  }
+  renderResults(test: Test, results: PollResult[], baseUrl: string, locationNames: LocationsMapping) {
+    const success = hasTestSucceeded(results)
+    const isNonBlocking = test.options.ci?.executionRule === ExecutionRule.NON_BLOCKING
 
-  const idDisplay = `[${chalk.bold.dim(test.public_id)}]`
-  const nameColor = getTestResultColor(success, isNonBlocking)
-  const nonBlockingText = !success && isNonBlocking ? '[NON-BLOCKING]' : ''
+    const icon = renderResultIcon(success, isNonBlocking)
 
-  const testResultsText = results
-    .map((r) => renderExecutionResult(test, r, baseUrl, locationNames))
-    .join('\n\n')
-    .concat('\n\n')
+    const idDisplay = `[${chalk.bold.dim(test.public_id)}]`
+    const nameColor = getTestResultColor(success, isNonBlocking)
+    const nonBlockingText = !success && isNonBlocking ? '[NON-BLOCKING]' : ''
 
-  return [`${icon} ${idDisplay}${nonBlockingText} | ${nameColor(test.name)}`, testResultsText].join('\n')
-}
+    const testResultsText = results
+      .map((r) => renderExecutionResult(test, r, baseUrl, locationNames))
+      .join('\n\n')
+      .concat('\n\n')
 
-// Other rendering
-const renderTrigger = (test: Test, testId: string, executionRule: ExecutionRule, config: ConfigOverride) => {
-  const idDisplay = `[${chalk.bold.dim(testId)}]`
+    this.write([`${icon} ${idDisplay}${nonBlockingText} | ${nameColor(test.name)}`, testResultsText].join('\n'))
+  }
+  renderSummary(summary: Summary) {
+    const summaries = [
+      chalk.green(`${chalk.bold(summary.passed)} passed`),
+      chalk.red(`${chalk.bold(summary.failed)} failed`),
+    ]
 
-  const getMessage = () => {
-    if (executionRule === ExecutionRule.SKIPPED) {
-      // Test is either skipped from datadog-ci config or from test config
-      const isSkippedByCIConfig = config.executionRule === ExecutionRule.SKIPPED
-      if (isSkippedByCIConfig) {
-        return `>> Skipped test "${chalk.yellow.dim(test.name)}"`
-      } else {
-        return `>> Skipped test "${chalk.yellow.dim(test.name)}" because of execution rule configuration in Datadog`
+    if (summary.skipped) {
+      summaries.push(`${chalk.bold(summary.skipped)} skipped`)
+    }
+    if (summary.notFound) {
+      summaries.push(chalk.yellow(`${chalk.bold(summary.notFound)} not found`))
+    }
+
+    this.write(`${chalk.bold('Tests execution summary:')} ${summaries.join(', ')}\n`)
+  }
+  renderTrigger(test: Test, testId: string, executionRule: ExecutionRule, config: ConfigOverride) {
+    const idDisplay = `[${chalk.bold.dim(testId)}]`
+
+    const getMessage = () => {
+      if (executionRule === ExecutionRule.SKIPPED) {
+        // Test is either skipped from datadog-ci config or from test config
+        const isSkippedByCIConfig = config.executionRule === ExecutionRule.SKIPPED
+        if (isSkippedByCIConfig) {
+          return `>> Skipped test "${chalk.yellow.dim(test.name)}"`
+        } else {
+          return `>> Skipped test "${chalk.yellow.dim(test.name)}" because of execution rule configuration in Datadog`
+        }
       }
+
+      if (executionRule === ExecutionRule.NON_BLOCKING) {
+        return `Trigger test "${chalk.green.bold(test.name)}" (non-blocking)`
+      }
+
+      return `Trigger test "${chalk.green.bold(test.name)}"`
     }
 
-    if (executionRule === ExecutionRule.NON_BLOCKING) {
-      return `Trigger test "${chalk.green.bold(test.name)}" (non-blocking)`
-    }
-
-    return `Trigger test "${chalk.green.bold(test.name)}"`
+    this.write(`${idDisplay} ${getMessage()}\n`)
   }
+  renderWait(test: Test) {
+    const idDisplay = `[${chalk.bold.dim(test.public_id)}]`
 
-  return `${idDisplay} ${getMessage()}\n`
-}
-
-const renderHeader = (timings: {startTime: number}) => {
-  const delay = (Date.now() - timings.startTime).toString()
-
-  return ['\n', chalk.bold.cyan('=== REPORT ==='), `Took ${chalk.bold(delay)}ms`, '\n'].join('\n')
-}
-
-const renderWait = (test: Test) => {
-  const idDisplay = `[${chalk.bold.dim(test.public_id)}]`
-
-  return `${idDisplay} Waiting results for "${chalk.green.bold(test.name)}"\n`
-}
-
-const renderSummary = (summary: Summary) => {
-  const summaries = [
-    chalk.green(`${chalk.bold(summary.passed)} passed`),
-    chalk.red(`${chalk.bold(summary.failed)} failed`),
-  ]
-
-  if (summary.skipped) {
-    summaries.push(`${chalk.bold(summary.skipped)} skipped`)
+    this.write(`${idDisplay} Waiting results for "${chalk.green.bold(test.name)}"\n`)
   }
-  if (summary.notFound) {
-    summaries.push(chalk.yellow(`${chalk.bold(summary.notFound)} not found`))
-  }
-
-  return `${chalk.bold('Tests execution summary:')} ${summaries.join(', ')}\n`
-}
-
-export const reporter: Reporter = {
-  renderError: (error) => error,
-  renderGlobalErrors: (errors) => errors.join('\n'),
-  renderHeader,
-  renderLog: (log) => log,
-  renderResults,
-  renderSummary,
-  renderTrigger,
-  renderWait,
 }

@@ -12,14 +12,14 @@ interface Timings {
 }
 
 export interface Reporter {
-  renderError?(error: string): string
-  renderGlobalErrors?(errors: string[]): string
-  renderHeader?(timings: {startTime: number}): string
-  renderLog?(log: string): string
-  renderResults?(test: Test, results: PollResult[], baseUrl: string, locationNames: LocationsMapping): string
-  renderSummary?(summary: Summary): string
-  renderTrigger?(test: Test, testId: string, executionRule: ExecutionRule, config: ConfigOverride): string
-  renderWait?(test: Test): string
+  renderError?(error: string): void
+  renderGlobalErrors?(errors: string[]): void
+  renderHeader?(timings: {startTime: number}): void
+  renderLog?(log: string): void
+  renderResults?(test: Test, results: PollResult[], baseUrl: string, locationNames: LocationsMapping): void
+  renderSummary?(summary: Summary): void
+  renderTrigger?(test: Test, testId: string, executionRule: ExecutionRule, config: ConfigOverride): void
+  renderWait?(test: Test): void
 }
 
 export interface Writer {
