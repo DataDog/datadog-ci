@@ -13,7 +13,7 @@ import {ConfigOverride, ExecutionRule, PollResult, Result, Test} from '../interf
 import {Tunnel} from '../tunnel'
 import * as utils from '../utils'
 
-import {getApiTest} from './fixtures'
+import {getApiTest, mockWriter} from './fixtures'
 
 describe('utils', () => {
   const apiConfiguration = {
@@ -39,7 +39,7 @@ describe('utils', () => {
     ;(glob as any).mockImplementation((query: string, callback: (e: any, v: any) => void) => callback(undefined, FILES))
 
     test('should get suites', async () => {
-      const suites = await utils.getSuites(GLOB, process.stdout.write.bind(process.stdout))
+      const suites = await utils.getSuites(GLOB, mockWriter)
       expect(JSON.stringify(suites)).toBe(`[${FILES_CONTENT.file1},${FILES_CONTENT.file2}]`)
     })
   })
@@ -81,7 +81,6 @@ describe('utils', () => {
   })
 
   describe('getTestsToTrigger', () => {
-    const processWrite = process.stdout.write.bind(process.stdout)
     const fakeTests: {[id: string]: any} = {
       '123-456-789': {
         config: {request: {url: 'http://example.org/'}},
@@ -119,7 +118,7 @@ describe('utils', () => {
       const {tests, overriddenTestsToTrigger, summary} = await utils.getTestsToTrigger(
         api,
         triggerConfigs,
-        processWrite
+        mockWriter
       )
 
       expect(tests).toStrictEqual([fakeTests['123-456-789']])
@@ -131,16 +130,14 @@ describe('utils', () => {
     })
 
     test('no tests triggered throws an error', async () => {
-      await expect(utils.getTestsToTrigger(api, [], processWrite)).rejects.toEqual(new Error('No tests to trigger'))
+      await expect(utils.getTestsToTrigger(api, [], mockWriter)).rejects.toEqual(new Error('No tests to trigger'))
     })
   })
 
   describe('handleConfig', () => {
-    const processWrite = process.stdout.write.bind(process.stdout)
-
     test('empty config returns simple payload', () => {
       const publicId = 'abc-def-ghi'
-      expect(utils.handleConfig({public_id: publicId} as Test, publicId, processWrite)).toEqual({
+      expect(utils.handleConfig({public_id: publicId} as Test, publicId, mockWriter)).toEqual({
         executionRule: ExecutionRule.BLOCKING,
         public_id: publicId,
       })
@@ -167,7 +164,7 @@ describe('utils', () => {
 
         expect(utils.getExecutionRule(fakeTest, configOverride)).toBe(expectedExecutionRule)
 
-        const handledConfig = utils.handleConfig(fakeTest, publicId, processWrite, configOverride)
+        const handledConfig = utils.handleConfig(fakeTest, publicId, mockWriter, configOverride)
 
         expect(handledConfig.public_id).toBe(publicId)
         expect(handledConfig.executionRule).toBe(expectedExecutionRule)
@@ -209,20 +206,20 @@ describe('utils', () => {
       }
       const expectedUrl = 'https://example.org/newPath?oldPath=/path'
 
-      let handledConfig = utils.handleConfig(fakeTest, publicId, processWrite, configOverride)
+      let handledConfig = utils.handleConfig(fakeTest, publicId, mockWriter, configOverride)
       expect(handledConfig.public_id).toBe(publicId)
       expect(handledConfig.startUrl).toBe(expectedUrl)
 
       fakeTest.type = 'api'
       fakeTest.subtype = 'http'
 
-      handledConfig = utils.handleConfig(fakeTest, publicId, processWrite, configOverride)
+      handledConfig = utils.handleConfig(fakeTest, publicId, mockWriter, configOverride)
       expect(handledConfig.public_id).toBe(publicId)
       expect(handledConfig.startUrl).toBe(expectedUrl)
 
       fakeTest.subtype = 'dns'
 
-      handledConfig = utils.handleConfig(fakeTest, publicId, processWrite, configOverride)
+      handledConfig = utils.handleConfig(fakeTest, publicId, mockWriter, configOverride)
       expect(handledConfig.public_id).toBe(publicId)
       expect(handledConfig.startUrl).toBeUndefined()
     })
@@ -240,7 +237,7 @@ describe('utils', () => {
         startUrl: 'https://{{DOMAIN}}/newPath?oldPath={{CUSTOMVAR}}',
       }
       const expectedUrl = 'https://{{DOMAIN}}/newPath?oldPath=/newPath'
-      const handledConfig = utils.handleConfig(fakeTest, publicId, processWrite, configOverride)
+      const handledConfig = utils.handleConfig(fakeTest, publicId, mockWriter, configOverride)
 
       expect(handledConfig.public_id).toBe(publicId)
       expect(handledConfig.startUrl).toBe(expectedUrl)
@@ -258,7 +255,7 @@ describe('utils', () => {
         startUrl: 'http://127.0.0.1/newPath{{PARAMS}}',
       }
       const expectedUrl = 'http://127.0.0.1/newPath'
-      const handledConfig = utils.handleConfig(fakeTest, publicId, processWrite, configOverride)
+      const handledConfig = utils.handleConfig(fakeTest, publicId, mockWriter, configOverride)
 
       expect(handledConfig.public_id).toBe(publicId)
       expect(handledConfig.startUrl).toBe(expectedUrl)
@@ -290,7 +287,7 @@ describe('utils', () => {
         variables: {VAR_1: 'value'},
       }
 
-      expect(utils.handleConfig(fakeTest, publicId, processWrite, configOverride)).toEqual({
+      expect(utils.handleConfig(fakeTest, publicId, mockWriter, configOverride)).toEqual({
         ...configOverride,
         public_id: publicId,
       })

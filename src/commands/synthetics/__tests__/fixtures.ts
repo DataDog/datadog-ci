@@ -7,6 +7,17 @@ const mockUser: User = {
   name: '',
 }
 
+export const mockWriter = {
+  writeError: jest.fn(),
+  writeGlobalErrors: jest.fn(),
+  writeHeader: jest.fn(),
+  writeLog: jest.fn(),
+  writeResults: jest.fn(),
+  writeSummary: jest.fn(),
+  writeTrigger: jest.fn(),
+  writeWait: jest.fn(),
+}
+
 export const getApiTest = (publicId: string): Test => ({
   config: {
     assertions: [],
