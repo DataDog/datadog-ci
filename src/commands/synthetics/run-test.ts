@@ -3,10 +3,10 @@ import {Command} from 'clipanion'
 
 import {parseConfigFile, ProxyConfiguration} from '../../helpers/utils'
 import {apiConstructor} from './api'
-import {APIHelper, ConfigOverride, ExecutionRule, LocationsMapping, PollResult, Test} from './interfaces'
-import {renderHeader, renderResults, renderSummary} from './reporters/logs'
+import {APIHelper, ConfigOverride, ExecutionRule, LocationsMapping, PollResult, Test, Writer} from './interfaces'
+import {reporter as logsReporter} from './reporters/logs'
 import {Tunnel} from './tunnel'
-import {getSuites, getTestsToTrigger, hasTestSucceeded, runTests, waitForResults} from './utils'
+import {getSuites, getTestsToTrigger, getWriter, hasTestSucceeded, runTests, waitForResults} from './utils'
 
 export class RunTestCommand extends Command {
   private apiKey?: string
@@ -27,12 +27,15 @@ export class RunTestCommand extends Command {
   private publicIds: string[] = []
   private shouldOpenTunnel?: boolean
   private testSearchQuery?: string
+  private writer?: Writer
 
   public async execute() {
     const startTime = Date.now()
     const stdoutLogger = this.context.stdout.write.bind(this.context.stdout)
+    const reporters = [logsReporter]
 
     this.config = await parseConfigFile(this.config, this.configPath)
+    this.writer = getWriter(reporters, stdoutLogger)
 
     const api = this.getApiHelper()
     const publicIdsFromCli = this.publicIds.map((id) => ({config: this.config.global, id}))
@@ -44,7 +47,7 @@ export class RunTestCommand extends Command {
       return 0
     }
 
-    const {tests, overriddenTestsToTrigger, summary} = await getTestsToTrigger(api, testsToTrigger, stdoutLogger)
+    const {tests, overriddenTestsToTrigger, summary} = await getTestsToTrigger(api, testsToTrigger, this.writer)
     const publicIdsToTrigger = tests.map(({public_id}) => public_id)
 
     let tunnel: Tunnel | undefined
@@ -56,7 +59,7 @@ export class RunTestCommand extends Command {
       const {url: presignedURL} = await api.getPresignedURL(publicIdsToTrigger)
       // Open a tunnel to Datadog
       try {
-        tunnel = new Tunnel(presignedURL, publicIdsToTrigger, this.config.proxy, stdoutLogger)
+        tunnel = new Tunnel(presignedURL, publicIdsToTrigger, this.config.proxy, this.writer)
         const tunnelInfo = await tunnel.start()
         overriddenTestsToTrigger.forEach((testToTrigger) => {
           testToTrigger.tunnel = tunnelInfo
@@ -88,7 +91,7 @@ export class RunTestCommand extends Command {
       tests.sort(this.sortTestsByOutcome(results))
 
       // Rendering the results.
-      this.context.stdout.write(renderHeader({startTime}))
+      this.writer.writeHeader({startTime})
       const locationNames = triggers.locations.reduce((mapping, location) => {
         mapping[location.id] = location.display_name
 
@@ -109,10 +112,10 @@ export class RunTestCommand extends Command {
           }
         }
 
-        this.context.stdout.write(renderResults(test, testResults, this.getAppBaseURL(), locationNames))
+        this.writer.writeResults(test, testResults, this.getAppBaseURL(), locationNames)
       }
 
-      this.context.stdout.write(renderSummary(summary))
+      this.writer.writeSummary(summary)
 
       if (hasSucceeded) {
         return 0
@@ -186,7 +189,7 @@ export class RunTestCommand extends Command {
 
     const suites = (
       await Promise.all(
-        listOfGlobs.map((glob: string) => getSuites(glob, this.context.stdout.write.bind(this.context.stdout)))
+        listOfGlobs.map((glob: string) => getSuites(glob, this.writer!))
       )
     )
       .reduce((acc, val) => acc.concat(val), [])

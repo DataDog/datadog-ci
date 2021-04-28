@@ -11,6 +11,28 @@ interface Timings {
   total: number
 }
 
+export interface Reporter {
+  renderError?(error: string): string
+  renderGlobalErrors?(errors: string[]): string
+  renderHeader?(timings: {startTime: number}): string
+  renderLog?(log: string): string
+  renderResults?(test: Test, results: PollResult[], baseUrl: string, locationNames: LocationsMapping): string
+  renderSummary?(summary: Summary): string
+  renderTrigger?(test: Test, testId: string, executionRule: ExecutionRule, config: ConfigOverride): string
+  renderWait?(test: Test): string
+}
+
+export interface Writer {
+  writeError(error: string): void
+  writeGlobalErrors(errors: string[]): void
+  writeHeader(timings: {startTime: number}): void
+  writeLog(log: string): void
+  writeResults(test: Test, results: PollResult[], baseUrl: string, locationNames: LocationsMapping): void
+  writeSummary(summary: Summary): void
+  writeTrigger(test: Test, testId: string, executionRule: ExecutionRule, config: ConfigOverride): void
+  writeWait(test: Test): void
+}
+
 export interface Result {
   device: {
     id: string

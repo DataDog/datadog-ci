@@ -12,6 +12,7 @@ import {ProxyConfiguration} from '../../helpers/utils'
 
 import {generateOpenSSHKeys, parseSSHKey} from './crypto'
 import {WebSocket} from './websocket'
+import {Writer} from './interfaces'
 
 const MAX_CONCURRENT_FORWARDED_CONNECTIONS = 50
 
@@ -23,17 +24,17 @@ export interface TunnelInfo {
 
 export class Tunnel {
   private forwardSockets: Socket[] = []
-  private log: Writable['write']
-  private logError: Writable['write']
+  private log: (message: string) => void
+  private logError: (message: string) => void
   private multiplexer?: Multiplexer
   private privateKey: string
   private publicKey: ParsedKey
   private sshStreamConfig: SSH2StreamConfig
   private ws: WebSocket
 
-  constructor(private url: string, private testIDs: string[], proxy: ProxyConfiguration, log: Writable['write']) {
-    this.log = (message: string) => log(`[${chalk.bold.blue('Tunnel')}] ${message}\n`)
-    this.logError = (message: string) => log(`[${chalk.bold.red('Tunnel')}] ${message}\n`)
+  constructor(private url: string, private testIDs: string[], proxy: ProxyConfiguration, writer: Writer) {
+    this.log = (message: string) => writer.writeLog(`[${chalk.bold.blue('Tunnel')}] ${message}\n`)
+    this.logError = (message: string) => writer.writeLog(`[${chalk.bold.red('Tunnel')}] ${message}\n`)
 
     // Setup SSH
     const {privateKey: hostPrivateKey} = generateOpenSSHKeys()

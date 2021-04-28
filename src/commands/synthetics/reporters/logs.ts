@@ -7,6 +7,7 @@ import {
   LocationsMapping,
   Operator,
   PollResult,
+  Reporter,
   Result,
   Step,
   Summary,
@@ -252,7 +253,7 @@ export const renderResults = (test: Test, results: PollResult[], baseUrl: string
 }
 
 // Other rendering
-export const renderTrigger = (test: Test, testId: string, executionRule: ExecutionRule, config: ConfigOverride) => {
+const renderTrigger = (test: Test, testId: string, executionRule: ExecutionRule, config: ConfigOverride) => {
   const idDisplay = `[${chalk.bold.dim(testId)}]`
 
   const getMessage = () => {
@@ -276,19 +277,19 @@ export const renderTrigger = (test: Test, testId: string, executionRule: Executi
   return `${idDisplay} ${getMessage()}\n`
 }
 
-export const renderHeader = (timings: {startTime: number}) => {
+const renderHeader = (timings: {startTime: number}) => {
   const delay = (Date.now() - timings.startTime).toString()
 
   return ['\n', chalk.bold.cyan('=== REPORT ==='), `Took ${chalk.bold(delay)}ms`, '\n'].join('\n')
 }
 
-export const renderWait = (test: Test) => {
+const renderWait = (test: Test) => {
   const idDisplay = `[${chalk.bold.dim(test.public_id)}]`
 
   return `${idDisplay} Waiting results for "${chalk.green.bold(test.name)}"\n`
 }
 
-export const renderSummary = (summary: Summary) => {
+const renderSummary = (summary: Summary) => {
   const summaries = [
     chalk.green(`${chalk.bold(summary.passed)} passed`),
     chalk.red(`${chalk.bold(summary.failed)} failed`),
@@ -302,4 +303,15 @@ export const renderSummary = (summary: Summary) => {
   }
 
   return `${chalk.bold('Tests execution summary:')} ${summaries.join(', ')}\n`
+}
+
+export const reporter: Reporter = {
+  renderError: (error) => error,
+  renderGlobalErrors: (errors) => errors.join('\n'),
+  renderHeader,
+  renderLog: (log) => log,
+  renderResults,
+  renderSummary,
+  renderTrigger,
+  renderWait,
 }
