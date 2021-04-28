@@ -238,6 +238,16 @@ describe('execute', () => {
     expect(output[2]).toContain('  * 2 sourcemaps successfully uploaded')
     expect(output[1]).toContain('  * 1 sourcemap was skipped')
   })
+
+  test('completely empty sourcemap should be skipped', async () => {
+    const {context, code} = await runCLI('./src/commands/sourcemaps/__tests__/fixtures/empty-file/')
+    const output = context.stdout.toString().split(os.EOL)
+    expect(code).toBe(0)
+    output.reverse()
+    expect(output[3]).toContain('Some sourcemaps have been skipped')
+    expect(output[2]).toContain('Details about the 2 found sourcemaps:')
+    expect(output[1]).toContain('  * 2 sourcemaps were skipped')
+  })
 })
 
 const makeCli = () => {

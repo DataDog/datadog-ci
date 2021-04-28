@@ -238,7 +238,31 @@ export class UploadCommand extends Command {
     metricsLogger: BufferedMetricsLogger,
     sourcemap: Payload
   ): Promise<UploadStatus> {
-    if (!fs.existsSync(sourcemap.minifiedFilePath)) {
+    try {
+      const statSourcemap = fs.statSync(sourcemap.sourcemapPath)
+      if (statSourcemap.size === 0) {
+        this.context.stdout.write(
+          renderFailedUpload(sourcemap, `Skipping empty sourcemap (${sourcemap.sourcemapPath})`)
+        )
+        metricsLogger.increment('skipped_empty_sourcemap', 1)
+
+        return UploadStatus.Skipped
+      }
+    } catch (error) {
+      // File does not exist, not supposed to happen
+    }
+    try {
+      const statMinifiedFile = fs.statSync(sourcemap.minifiedFilePath)
+      if (statMinifiedFile.size === 0) {
+        this.context.stdout.write(
+          renderFailedUpload(sourcemap, `Skipping sourcemap (${sourcemap.sourcemapPath}) due to ${sourcemap.minifiedFilePath} being empty`)
+        )
+        metricsLogger.increment('skipped_empty_js', 1)
+
+        return UploadStatus.Skipped
+      }
+    } catch (error) {
+      // Should we be more specific and check the exact error type? Will this work on windows?
       this.context.stdout.write(
         renderFailedUpload(sourcemap, `Missing corresponding JS file for sourcemap (${sourcemap.minifiedFilePath})`)
       )
