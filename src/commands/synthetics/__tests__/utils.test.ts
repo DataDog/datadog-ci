@@ -115,11 +115,7 @@ describe('utils', () => {
         {config: {}, id: '987-654-321'},
         {config: {}, id: 'ski-ppe-d01'},
       ]
-      const {tests, overriddenTestsToTrigger, summary} = await utils.getTestsToTrigger(
-        api,
-        triggerConfigs,
-        mockWriter
-      )
+      const {tests, overriddenTestsToTrigger, summary} = await utils.getTestsToTrigger(api, triggerConfigs, mockWriter)
 
       expect(tests).toStrictEqual([fakeTests['123-456-789']])
       expect(overriddenTestsToTrigger).toStrictEqual([

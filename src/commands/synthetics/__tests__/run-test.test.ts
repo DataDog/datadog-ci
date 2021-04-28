@@ -6,7 +6,7 @@ import * as ciUtils from '../../../helpers/utils'
 import {ExecutionRule} from '../interfaces'
 import {RunTestCommand} from '../run-test'
 import * as utils from '../utils'
-import { mockWriter } from './fixtures'
+import {mockWriter} from './fixtures'
 
 export const assertAsyncThrow = async (func: any, errorRegex?: RegExp) => {
   let error

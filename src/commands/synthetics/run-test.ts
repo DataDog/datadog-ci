@@ -187,11 +187,7 @@ export class RunTestCommand extends Command {
 
     const listOfGlobs = this.fileGlobs || [this.config.files]
 
-    const suites = (
-      await Promise.all(
-        listOfGlobs.map((glob: string) => getSuites(glob, this.writer!))
-      )
-    )
+    const suites = (await Promise.all(listOfGlobs.map((glob: string) => getSuites(glob, this.writer!))))
       .reduce((acc, val) => acc.concat(val), [])
       .map((suite) => suite.tests)
       .filter((suiteTests) => !!suiteTests)
