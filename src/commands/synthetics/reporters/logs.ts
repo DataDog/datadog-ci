@@ -241,21 +241,21 @@ export class LogsReporter implements Reporter {
   constructor(command: RunTestCommand) {
     this.write = command.context.stdout.write.bind(command.context.stdout)
   }
-  renderError(error: string) {
+  public renderError(error: string) {
     this.write(error)
   }
-  renderGlobalErrors(errors: string[]) {
+  public renderGlobalErrors(errors: string[]) {
     this.write(errors.join('\n'))
   }
-  renderHeader(timings: {startTime: number}) {
+  public renderHeader(timings: {startTime: number}) {
     const delay = (Date.now() - timings.startTime).toString()
 
     this.write(['\n', chalk.bold.cyan('=== REPORT ==='), `Took ${chalk.bold(delay)}ms`, '\n'].join('\n'))
   }
-  renderLog(log: string) {
+  public renderLog(log: string) {
     this.write(log)
   }
-  renderResults(test: Test, results: PollResult[], baseUrl: string, locationNames: LocationsMapping) {
+  public renderResults(test: Test, results: PollResult[], baseUrl: string, locationNames: LocationsMapping) {
     const success = hasTestSucceeded(results)
     const isNonBlocking = test.options.ci?.executionRule === ExecutionRule.NON_BLOCKING
 
@@ -272,7 +272,7 @@ export class LogsReporter implements Reporter {
 
     this.write([`${icon} ${idDisplay}${nonBlockingText} | ${nameColor(test.name)}`, testResultsText].join('\n'))
   }
-  renderSummary(summary: Summary) {
+  public renderSummary(summary: Summary) {
     const summaries = [
       chalk.green(`${chalk.bold(summary.passed)} passed`),
       chalk.red(`${chalk.bold(summary.failed)} failed`),
@@ -287,7 +287,7 @@ export class LogsReporter implements Reporter {
 
     this.write(`${chalk.bold('Tests execution summary:')} ${summaries.join(', ')}\n`)
   }
-  renderTrigger(test: Test, testId: string, executionRule: ExecutionRule, config: ConfigOverride) {
+  public renderTrigger(test: Test, testId: string, executionRule: ExecutionRule, config: ConfigOverride) {
     const idDisplay = `[${chalk.bold.dim(testId)}]`
 
     const getMessage = () => {
@@ -310,7 +310,7 @@ export class LogsReporter implements Reporter {
 
     this.write(`${idDisplay} ${getMessage()}\n`)
   }
-  renderWait(test: Test) {
+  public renderWait(test: Test) {
     const idDisplay = `[${chalk.bold.dim(test.public_id)}]`
 
     this.write(`${idDisplay} Waiting results for "${chalk.green.bold(test.name)}"\n`)
