@@ -239,7 +239,7 @@ const getTestResultColor = (success: boolean, isNonBlocking: boolean) => {
 export class LogsReporter implements Reporter {
   private write: Writable['write']
   constructor(command: RunTestCommand) {
-    this.write = command.context.stdout.write.bind(command.context.stdout);
+    this.write = command.context.stdout.write.bind(command.context.stdout)
   }
   renderError(error: string) {
     this.write(error)
