@@ -40,3 +40,28 @@ Additionally you might configure the `junit` command with environment variables:
 - `DD_TAGS`: set global tags applied to all spans. The format must be `key1:value1,key2:value2`.
   - The resulting dictionary will be merged with whatever is in the `--tags` parameter. If a `key` appears both in `--tags` and `DD_TAGS`, whatever value is in `DD_TAGS` will take precedence.
 - `DATADOG_SITE`: choose your Datadog site, e.g. datadoghq.com or datadoghq.eu.
+
+### Optional dependencies
+
+- [`git`](https://git-scm.com/downloads) is used for extracting repository metadata.
+
+### End-to-end testing process
+
+To verify this command works as expected, you can send some mock data and validate the command returns 0:
+
+```bash
+export DATADOG_API_KEY='<API key>'
+
+yarn launch junit upload /src/commands/junit/__tests__/fixtures --service example-upload
+```
+
+Successful output should look like this:
+
+```bash
+Starting upload with concurrency 20.
+Will look for jUnit XML files in src/commands/junit/__tests__/fixtures
+service: example-upload
+Uploading jUnit XML test report file in src/commands/junit/__tests__/fixtures/go-report.xml
+Uploading jUnit XML test report file in src/commands/junit/__tests__/fixtures/java-report.xml
+✅ Uploaded 2 files in ? seconds.
+```
