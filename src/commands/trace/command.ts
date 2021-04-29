@@ -10,9 +10,7 @@ import {
   CI_PROVIDER_NAME,
   GIT_BRANCH,
   GIT_SHA,
-  PARENT_SPAN_ID,
   SPAN_TYPE,
-  TRACE_ID,
 } from '../../helpers/tags'
 
 export class TraceInstructionCommand extends Command {
@@ -35,25 +33,12 @@ export class TraceInstructionCommand extends Command {
     })
 
     const ciMetadata = getCIMetadata()
-    let parentSpan
-
-    if (ciMetadata?.trace) {
-      const {
-        trace: {parentSpanId, traceId},
-      } = ciMetadata
-      parentSpan =
-        tracer.extract('text_map', {
-          [PARENT_SPAN_ID]: parentSpanId,
-          [TRACE_ID]: traceId,
-        }) || undefined
-    }
 
     const instruction = this.instruction.join(' ')
 
     tracer.trace(
       instruction,
       {
-        childOf: parentSpan,
         tags: {
           [SPAN_TYPE]: 'ci',
           [CI_BUILD_LEVEL]: 'custom',
