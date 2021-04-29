@@ -241,21 +241,36 @@ export class LogsReporter implements Reporter {
   constructor(command: RunTestCommand) {
     this.write = command.context.stdout.write.bind(command.context.stdout)
   }
-  public renderError(error: string) {
+  public error(error: string) {
     this.write(error)
   }
-  public renderGlobalErrors(errors: string[]) {
+  public initError(errors: string[]) {
     this.write(errors.join('\n'))
   }
-  public renderHeader(timings: {startTime: number}) {
+  public log(log: string) {
+    this.write(log)
+  }
+  public runEnd(summary: Summary) {
+    const summaries = [
+      chalk.green(`${chalk.bold(summary.passed)} passed`),
+      chalk.red(`${chalk.bold(summary.failed)} failed`),
+    ]
+
+    if (summary.skipped) {
+      summaries.push(`${chalk.bold(summary.skipped)} skipped`)
+    }
+    if (summary.notFound) {
+      summaries.push(chalk.yellow(`${chalk.bold(summary.notFound)} not found`))
+    }
+
+    this.write(`${chalk.bold('Tests execution summary:')} ${summaries.join(', ')}\n`)
+  }
+  public start(timings: {startTime: number}) {
     const delay = (Date.now() - timings.startTime).toString()
 
     this.write(['\n', chalk.bold.cyan('=== REPORT ==='), `Took ${chalk.bold(delay)}ms`, '\n'].join('\n'))
   }
-  public renderLog(log: string) {
-    this.write(log)
-  }
-  public renderResults(test: Test, results: PollResult[], baseUrl: string, locationNames: LocationsMapping) {
+  public testEnd(test: Test, results: PollResult[], baseUrl: string, locationNames: LocationsMapping) {
     const success = hasTestSucceeded(results)
     const isNonBlocking = test.options.ci?.executionRule === ExecutionRule.NON_BLOCKING
 
@@ -272,22 +287,7 @@ export class LogsReporter implements Reporter {
 
     this.write([`${icon} ${idDisplay}${nonBlockingText} | ${nameColor(test.name)}`, testResultsText].join('\n'))
   }
-  public renderSummary(summary: Summary) {
-    const summaries = [
-      chalk.green(`${chalk.bold(summary.passed)} passed`),
-      chalk.red(`${chalk.bold(summary.failed)} failed`),
-    ]
-
-    if (summary.skipped) {
-      summaries.push(`${chalk.bold(summary.skipped)} skipped`)
-    }
-    if (summary.notFound) {
-      summaries.push(chalk.yellow(`${chalk.bold(summary.notFound)} not found`))
-    }
-
-    this.write(`${chalk.bold('Tests execution summary:')} ${summaries.join(', ')}\n`)
-  }
-  public renderTrigger(test: Test, testId: string, executionRule: ExecutionRule, config: ConfigOverride) {
+  public testTrigger(test: Test, testId: string, executionRule: ExecutionRule, config: ConfigOverride) {
     const idDisplay = `[${chalk.bold.dim(testId)}]`
 
     const getMessage = () => {
@@ -310,7 +310,7 @@ export class LogsReporter implements Reporter {
 
     this.write(`${idDisplay} ${getMessage()}\n`)
   }
-  public renderWait(test: Test) {
+  public testWait(test: Test) {
     const idDisplay = `[${chalk.bold.dim(test.public_id)}]`
 
     this.write(`${idDisplay} Waiting results for "${chalk.green.bold(test.name)}"\n`)

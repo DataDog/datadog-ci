@@ -1,4 +1,4 @@
-import {Test, User} from '../interfaces'
+import {MainReporter, Test, User} from '../interfaces'
 
 const mockUser: User = {
   email: '',
@@ -7,15 +7,15 @@ const mockUser: User = {
   name: '',
 }
 
-export const mockWriter = {
-  writeError: jest.fn(),
-  writeGlobalErrors: jest.fn(),
-  writeHeader: jest.fn(),
-  writeLog: jest.fn(),
-  writeResults: jest.fn(),
-  writeSummary: jest.fn(),
-  writeTrigger: jest.fn(),
-  writeWait: jest.fn(),
+export const mockReporter: MainReporter = {
+  error: jest.fn(),
+  initErrors: jest.fn(),
+  log: jest.fn(),
+  runEnd: jest.fn(),
+  start: jest.fn(),
+  testEnd: jest.fn(),
+  testTrigger: jest.fn(),
+  testWait: jest.fn(),
 }
 
 export const getApiTest = (publicId: string): Test => ({

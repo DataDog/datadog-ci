@@ -11,27 +11,18 @@ interface Timings {
   total: number
 }
 
-export interface Reporter {
-  renderError?(error: string): void
-  renderGlobalErrors?(errors: string[]): void
-  renderHeader?(timings: {startTime: number}): void
-  renderLog?(log: string): void
-  renderResults?(test: Test, results: PollResult[], baseUrl: string, locationNames: LocationsMapping): void
-  renderSummary?(summary: Summary): void
-  renderTrigger?(test: Test, testId: string, executionRule: ExecutionRule, config: ConfigOverride): void
-  renderWait?(test: Test): void
+export interface MainReporter {
+  error(error: string): void
+  initErrors(errors: string[]): void
+  log(log: string): void
+  runEnd(summary: Summary): void
+  start(timings: {startTime: number}): void
+  testEnd(test: Test, results: PollResult[], baseUrl: string, locationNames: LocationsMapping): void
+  testTrigger(test: Test, testId: string, executionRule: ExecutionRule, config: ConfigOverride): void
+  testWait(test: Test): void
 }
 
-export interface Writer {
-  writeError(error: string): void
-  writeGlobalErrors(errors: string[]): void
-  writeHeader(timings: {startTime: number}): void
-  writeLog(log: string): void
-  writeResults(test: Test, results: PollResult[], baseUrl: string, locationNames: LocationsMapping): void
-  writeSummary(summary: Summary): void
-  writeTrigger(test: Test, testId: string, executionRule: ExecutionRule, config: ConfigOverride): void
-  writeWait(test: Test): void
-}
+export type Reporter = Partial<MainReporter>
 
 export interface Result {
   device: {

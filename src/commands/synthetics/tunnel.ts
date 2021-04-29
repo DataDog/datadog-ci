@@ -11,7 +11,7 @@ import {Config as MultiplexerConfig, Server as Multiplexer} from 'yamux-js'
 import {ProxyConfiguration} from '../../helpers/utils'
 
 import {generateOpenSSHKeys, parseSSHKey} from './crypto'
-import {Writer} from './interfaces'
+import {MainReporter} from './interfaces'
 import {WebSocket} from './websocket'
 
 const MAX_CONCURRENT_FORWARDED_CONNECTIONS = 50
@@ -32,9 +32,9 @@ export class Tunnel {
   private sshStreamConfig: SSH2StreamConfig
   private ws: WebSocket
 
-  constructor(private url: string, private testIDs: string[], proxy: ProxyConfiguration, writer: Writer) {
-    this.log = (message: string) => writer.writeLog(`[${chalk.bold.blue('Tunnel')}] ${message}\n`)
-    this.logError = (message: string) => writer.writeLog(`[${chalk.bold.red('Tunnel')}] ${message}\n`)
+  constructor(private url: string, private testIDs: string[], proxy: ProxyConfiguration, reporter: MainReporter) {
+    this.log = (message: string) => reporter.log(`[${chalk.bold.blue('Tunnel')}] ${message}\n`)
+    this.logError = (message: string) => reporter.error(`[${chalk.bold.red('Tunnel')}] ${message}\n`)
 
     // Setup SSH
     const {privateKey: hostPrivateKey} = generateOpenSSHKeys()

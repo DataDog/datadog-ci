@@ -6,7 +6,7 @@ import {ProxyConfiguration} from '../../../helpers/utils'
 import {Tunnel} from '../tunnel'
 import {WebSocket} from '../websocket'
 
-import {mockWriter} from './fixtures'
+import {mockReporter} from './fixtures'
 
 jest.mock('../websocket')
 
@@ -33,7 +33,7 @@ describe('Tunnel', () => {
   test('starts by connecting over WebSocket and closes the WebSocket when stopping', async () => {
     mockedWebSocket.mockImplementation(() => mockWebSocket as any)
 
-    const tunnel = new Tunnel(wsPresignedURL, testIDs, defaultProxyOpts, mockWriter)
+    const tunnel = new Tunnel(wsPresignedURL, testIDs, defaultProxyOpts, mockReporter)
     const connectionInfo = await tunnel.start()
     expect(WebSocket).toHaveBeenCalledWith(wsPresignedURL, expect.any(Object))
     expect(mockConnect).toHaveBeenCalled()
@@ -61,7 +61,7 @@ describe('Tunnel', () => {
     mockConnect.mockImplementation(() => {
       throw websocketConnectError
     })
-    const tunnel = new Tunnel(wsPresignedURL, testIDs, defaultProxyOpts, mockWriter)
+    const tunnel = new Tunnel(wsPresignedURL, testIDs, defaultProxyOpts, mockReporter)
     await expect(tunnel.start()).rejects.toThrow(websocketConnectError)
     expect(mockClose).toBeCalled()
     mockConnect.mockRestore()
@@ -74,7 +74,7 @@ describe('Tunnel', () => {
       port: 8080,
       protocol: 'http',
     }
-    const tunnel = new Tunnel(wsPresignedURL, testIDs, localProxyOpts, mockWriter)
+    const tunnel = new Tunnel(wsPresignedURL, testIDs, localProxyOpts, mockReporter)
     await tunnel.start()
     expect(WebSocket).toHaveBeenCalledWith(wsPresignedURL, localProxyOpts)
 

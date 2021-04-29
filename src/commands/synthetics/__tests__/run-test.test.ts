@@ -6,7 +6,7 @@ import * as ciUtils from '../../../helpers/utils'
 import {ExecutionRule} from '../interfaces'
 import {RunTestCommand} from '../run-test'
 import * as utils from '../utils'
-import {mockWriter} from './fixtures'
+import {mockReporter} from './fixtures'
 
 export const assertAsyncThrow = async (func: any, errorRegex?: RegExp) => {
   let error
@@ -219,20 +219,20 @@ describe('run-test', () => {
       command.context = process
       command['config'].global = {startUrl}
       command['config'].files = 'random glob'
-      command['writer'] = mockWriter
+      command['reporter'] = mockReporter
 
       command['fileGlobs'] = ['new glob', 'another one']
       await command['getTestsList'].bind(command)(fakeApi)
       expect(utils.getSuites).toHaveBeenCalledTimes(2)
-      expect(utils.getSuites).toHaveBeenCalledWith('new glob', command['writer'])
-      expect(utils.getSuites).toHaveBeenCalledWith('another one', command['writer'])
+      expect(utils.getSuites).toHaveBeenCalledWith('new glob', command['reporter'])
+      expect(utils.getSuites).toHaveBeenCalledWith('another one', command['reporter'])
 
       mockFn.mockClear()
 
       command['fileGlobs'] = undefined
       await command['getTestsList'].bind(command)(fakeApi)
       expect(utils.getSuites).toHaveBeenCalledTimes(1)
-      expect(utils.getSuites).toHaveBeenCalledWith('random glob', command['writer'])
+      expect(utils.getSuites).toHaveBeenCalledWith('random glob', command['reporter'])
     })
   })
 
