@@ -50,8 +50,8 @@ export class UploadCommand extends Command {
   private config = {
     apiKey: process.env.DATADOG_API_KEY,
   }
+  private disableGit?: boolean
   private dryRun = false
-  private enableGit?: boolean
   private maxConcurrency = 20
   private minifiedPathPrefix?: string
   private projectPath = ''
@@ -101,7 +101,7 @@ export class UploadCommand extends Command {
     )
     const cliVersion = require('../../../package.json').version
     const metricsLogger = getMetricsLogger(this.releaseVersion, this.service, cliVersion)
-    const useGit = this.enableGit !== undefined && this.enableGit
+    const useGit = this.disableGit === undefined || !this.disableGit
     const initialTime = Date.now()
     const payloads = await this.getPayloadsToUpload(useGit, cliVersion)
     const upload = (p: Payload) => this.uploadSourcemap(api, metricsLogger, p)
@@ -282,4 +282,4 @@ UploadCommand.addOption('projectPath', Command.String('--project-path'))
 UploadCommand.addOption('maxConcurrency', Command.String('--max-concurrency'))
 UploadCommand.addOption('dryRun', Command.Boolean('--dry-run'))
 UploadCommand.addOption('repositoryURL', Command.String('--repository-url'))
-UploadCommand.addOption('enableGit', Command.Boolean('--enable-git-experimental'))
+UploadCommand.addOption('disableGit', Command.Boolean('--disable-git'))
