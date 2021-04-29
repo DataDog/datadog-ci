@@ -1,5 +1,5 @@
 import chalk from 'chalk'
-import {Writable} from 'node:stream'
+import {Writable} from 'stream'
 
 import {
   Assertion,
