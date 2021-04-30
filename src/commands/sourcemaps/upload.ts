@@ -2,7 +2,6 @@ import retry from 'async-retry'
 import chalk from 'chalk'
 import {Command} from 'clipanion'
 import {BufferedMetricsLogger} from 'datadog-metrics'
-import fs from 'fs'
 import glob from 'glob'
 import path from 'path'
 import asyncPool from 'tiny-async-pool'
@@ -24,6 +23,7 @@ import {
   renderSuccessfulCommand,
 } from './renderer'
 import {buildPath, getBaseIntakeUrl, getMinifiedFilePath} from './utils'
+import {InvalidPayload, validatePayload} from './validation'
 
 const errorCodesNoRetry = [400, 403, 413]
 
@@ -239,34 +239,19 @@ export class UploadCommand extends Command {
     sourcemap: Payload
   ): Promise<UploadStatus> {
     try {
-      const statSourcemap = fs.statSync(sourcemap.sourcemapPath)
-      if (statSourcemap.size === 0) {
-        this.context.stdout.write(
-          renderFailedUpload(sourcemap, `Skipping empty sourcemap (${sourcemap.sourcemapPath})`)
-        )
-        metricsLogger.increment('skipped_empty_sourcemap', 1)
-
-        return UploadStatus.Skipped
-      }
+      validatePayload(sourcemap)
     } catch (error) {
-      // File does not exist, not supposed to happen
-    }
-    try {
-      const statMinifiedFile = fs.statSync(sourcemap.minifiedFilePath)
-      if (statMinifiedFile.size === 0) {
+      if (error instanceof InvalidPayload) {
+        this.context.stdout.write(renderFailedUpload(sourcemap, error.message))
+        metricsLogger.increment(error.reason, 1)
+      } else {
         this.context.stdout.write(
-          renderFailedUpload(sourcemap, `Skipping sourcemap (${sourcemap.sourcemapPath}) due to ${sourcemap.minifiedFilePath} being empty`)
+          renderFailedUpload(
+            sourcemap,
+            `Skipping sourcemap ${sourcemap.sourcemapPath} because of error: ${error.message}`
+          )
         )
-        metricsLogger.increment('skipped_empty_js', 1)
-
-        return UploadStatus.Skipped
       }
-    } catch (error) {
-      // Should we be more specific and check the exact error type? Will this work on windows?
-      this.context.stdout.write(
-        renderFailedUpload(sourcemap, `Missing corresponding JS file for sourcemap (${sourcemap.minifiedFilePath})`)
-      )
-      metricsLogger.increment('skipped_missing_js', 1)
 
       return UploadStatus.Skipped
     }
