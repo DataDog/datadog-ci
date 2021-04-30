@@ -24,15 +24,15 @@
     "build": "yarn clean; tsc",
     "check-licenses": "node bin/check-licenses.js",
     "clean": "rm -rf dist/*",
-    "format": "yarn lint --fix",
+    "format": "yarn tslint --fix && yarn prettier --write",
     "launch": "ts-node --transpile-only src/index.ts",
     "launch:debug": "node -r ts-node/register/transpile-only --inspect-brk src/index.ts",
-    "lint": "tslint -p tsconfig.json -c tslint.json",
+    "lint": "(yarn tslint && yarn prettier --check) || (echo \"\nYou can fix this by running ==> yarn format <==\n\" && false)",
     "prepack": "yarn build && node ./bin/make-it-executable.js",
-    "prettier-check": "prettier --check \"src/**/*.{ts,js,json,yml}\" --ignore-path .gitignore || (echo \"\nYou can fix this by running ==> yarn prettier-write <==\n\" && false)",
-    "prettier-write": "prettier --write \"src/**/*.{ts,js,json,yml}\" --ignore-path .gitignore",
+    "prettier": "prettier \"src/**/*.{ts,js,json,yml}\" --ignore-path .gitignore",
     "test": "jest",
     "test:debug": "node --inspect-brk `which jest` --runInBand",
+    "tslint": "tslint -p tsconfig.json -c tslint.json",
     "typecheck": "bash bin/typecheck.sh",
     "watch": "tsc -w"
   },
@@ -79,6 +79,7 @@
     "ts-node": "8.8.1",
     "tslint": "5.18.0",
     "tslint-config-prettier": "1.18.0",
+    "tslint-lines-between-class-members": "^1.3.6",
     "typescript": "4.1.3"
   }
 }

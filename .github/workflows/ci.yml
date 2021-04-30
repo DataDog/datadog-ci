@@ -30,7 +30,6 @@ jobs:
           node-version: '12.x'
       - run: yarn install --immutable
       - run: yarn build
-      - run: yarn prettier-check
       - run: yarn lint
       - run: yarn test
         env:
