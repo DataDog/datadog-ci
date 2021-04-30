@@ -25,15 +25,12 @@ export class RunTestCommand extends Command {
   private configPath?: string
   private fileGlobs?: string[]
   private publicIds: string[] = []
-  private reporter: MainReporter
+  private reporter?: MainReporter
   private shouldOpenTunnel?: boolean
   private testSearchQuery?: string
-  constructor() {
-    super()
+  public async execute() {
     const reporters = [new DefaultReporter(this)]
     this.reporter = getReporter(reporters)
-  }
-  public async execute() {
     const startTime = Date.now()
     this.config = await parseConfigFile(this.config, this.configPath)
 
@@ -140,10 +137,10 @@ export class RunTestCommand extends Command {
 
     if (!this.config.appKey || !this.config.apiKey) {
       if (!this.config.appKey) {
-        this.reporter.error(`Missing ${chalk.red.bold('DATADOG_APP_KEY')} in your environment.\n`)
+        this.reporter!.error(`Missing ${chalk.red.bold('DATADOG_APP_KEY')} in your environment.\n`)
       }
       if (!this.config.apiKey) {
-        this.reporter.error(`Missing ${chalk.red.bold('DATADOG_API_KEY')} in your environment.\n`)
+        this.reporter!.error(`Missing ${chalk.red.bold('DATADOG_API_KEY')} in your environment.\n`)
       }
       throw new Error('API and/or Application keys are missing')
     }
@@ -187,7 +184,7 @@ export class RunTestCommand extends Command {
 
     const listOfGlobs = this.fileGlobs || [this.config.files]
 
-    const suites = (await Promise.all(listOfGlobs.map((glob: string) => getSuites(glob, this.reporter))))
+    const suites = (await Promise.all(listOfGlobs.map((glob: string) => getSuites(glob, this.reporter!))))
       .reduce((acc, val) => acc.concat(val), [])
       .map((suite) => suite.tests)
       .filter((suiteTests) => !!suiteTests)

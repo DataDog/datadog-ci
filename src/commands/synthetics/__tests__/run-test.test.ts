@@ -4,6 +4,7 @@ jest.mock('fs')
 import * as ciUtils from '../../../helpers/utils'
 
 import {ExecutionRule} from '../interfaces'
+import {DefaultReporter} from '../reporters/default'
 import {RunTestCommand} from '../run-test'
 import * as utils from '../utils'
 import {mockReporter} from './fixtures'
@@ -149,6 +150,7 @@ describe('run-test', () => {
       const write = jest.fn()
       const command = new RunTestCommand()
       command.context = {stdout: {write}} as any
+      command['reporter'] = utils.getReporter([new DefaultReporter(command)])
 
       await assertAsyncThrow(command['getApiHelper'].bind(command), /API and\/or Application keys are missing/)
       expect(write.mock.calls[0][0]).toContain('DATADOG_APP_KEY')
