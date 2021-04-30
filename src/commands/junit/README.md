@@ -19,11 +19,10 @@ datadog-ci junit upload [--service] [--max-concurrency] [--dry-run] [--tags] <pa
 For example:
 
 ```bash
-datadog-ci junit upload --service my-service --tags key1:value1 --tags key2:value2 unit-tests/junit-reports acceptance-tests/junit-reports
+datadog-ci junit upload --service my-service --tags key1:value1 --tags key2:value2 unit-tests/junit-reports acceptance-tests/junit-reports e2e-tests/single-report.xml
 ```
 
-- The positional arguments are the directories in which the jUnit XML reports are located. The CLI will look for all `.xml` files in these folders and subfolders recursively.
-
+- The positional arguments are the directories or file paths in which the jUnit XML reports are located. If you pass a folder, the CLI will look for all `.xml` files in it.
 - `--service` (default: `DD_SERVICE` env var) should be set as the name of the service you're uploading jUnit XML reports for.
 - `--tags` is a array of key value pairs of the shape `key:value`. This will set global tags applied to all spans.
   - The resulting dictionary will be merged with whatever is in the `DD_TAGS` environment variable. If a `key` appears both in `--tags` and `DD_TAGS`, whatever value is in `DD_TAGS` will take precedence.
