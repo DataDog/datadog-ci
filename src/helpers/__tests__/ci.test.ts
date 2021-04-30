@@ -131,7 +131,7 @@ describe('getCIMetadata', () => {
   })
 })
 
-describe('ci tags', () => {
+describe('getCISpanTags', () => {
   test('returns an empty object if the CI is not supported', () => {
     process.env = {}
     expect(getCISpanTags()).toEqual({})
