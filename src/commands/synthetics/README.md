@@ -7,6 +7,7 @@ Run Synthetics tests from your CI.
 ### Setup
 
 You need to either have `DATADOG_API_KEY` and `DATADOG_APP_KEY` in your environment or pass them to the CLI.
+
 ```bash
 # Environment setup
 export DATADOG_API_KEY="<API KEY>"
@@ -36,37 +37,37 @@ The configuration file structure is the following:
 
 ```json
 {
-    "apiKey": "<DATADOG_API_KEY>",
-    "appKey": "<DATADOG_APPLICATION_KEY>",
-    "datadogSite": "datadoghq.com",
-    "files": "{,!(node_modules)/**/}*.synthetics.json",
-    "global": {
-        "allowInsecureCertificates": true,
-        "basicAuth": { "username": "test", "password": "test" },
-        "body": "{\"fakeContent\":true}",
-        "bodyType": "application/json",
-        "cookies": "name1=value1;name2=value2;",
-        "defaultStepTimeout": 15,
-        "deviceIds": ["laptop_large"],
-        "executionRule": "skipped",
-        "followRedirects": true,
-        "headers": { "NEW_HEADER": "NEW VALUE" },
-        "locations": ["aws:us-east-1"],
-        "retry": { "count": 2, "interval": 300 },
-        "startUrl": "{{URL}}?static_hash={{STATIC_HASH}}",
-        "variables": { "titleVariable": "new title" },
+  "apiKey": "<DATADOG_API_KEY>",
+  "appKey": "<DATADOG_APPLICATION_KEY>",
+  "datadogSite": "datadoghq.com",
+  "files": "{,!(node_modules)/**/}*.synthetics.json",
+  "global": {
+    "allowInsecureCertificates": true,
+    "basicAuth": {"username": "test", "password": "test"},
+    "body": "{\"fakeContent\":true}",
+    "bodyType": "application/json",
+    "cookies": "name1=value1;name2=value2;",
+    "defaultStepTimeout": 15,
+    "deviceIds": ["laptop_large"],
+    "executionRule": "skipped",
+    "followRedirects": true,
+    "headers": {"NEW_HEADER": "NEW VALUE"},
+    "locations": ["aws:us-east-1"],
+    "retry": {"count": 2, "interval": 300},
+    "startUrl": "{{URL}}?static_hash={{STATIC_HASH}}",
+    "variables": {"titleVariable": "new title"}
+  },
+  "pollingTimeout": 120000,
+  "proxy": {
+    "auth": {
+      "username": "login",
+      "password": "pwd"
     },
-    "pollingTimeout": 120000,
-    "proxy": {
-      "auth": {
-        "username": "login",
-        "password": "pwd"
-      },
-      "host": "127.0.0.1",
-      "port": 3128,
-      "protocol": "http"
-    },
-    "subdomain": "subdomainname",
+    "host": "127.0.0.1",
+    "port": 3128,
+    "protocol": "http"
+  },
+  "subdomain": "subdomainname"
 }
 ```
 
@@ -110,28 +111,28 @@ Your test files must be named with a `.synthetics.json` suffix.
 ```json
 // myTest.synthetics.json
 {
-    "tests": [
-        {
-            "id": "<TEST_PUBLIC_ID>",
-            "config": {
-                "allowInsecureCertificates": true,
-                "basicAuth": { "username": "test", "password": "test" },
-                "body": "{\"fakeContent\":true}",
-                "bodyType": "application/json",
-                "cookies": "name1=value1;name2=value2;",
-                "defaultStepTimeout": 15,
-                "deviceIds": ["laptop_large"],
-                "executionRule": "skipped",
-                "followRedirects": true,
-                "headers": { "NEW_HEADER": "NEW VALUE" },
-                "locations": ["aws:us-east-1"],
-                "pollingTimeout": 30000,
-                "retry": { "count": 2, "interval": 300 },
-                "startUrl": "{{URL}}?static_hash={{STATIC_HASH}}",
-                "variables": { "titleVariable": "new title" },
-            }
-        }
-    ]
+  "tests": [
+    {
+      "id": "<TEST_PUBLIC_ID>",
+      "config": {
+        "allowInsecureCertificates": true,
+        "basicAuth": {"username": "test", "password": "test"},
+        "body": "{\"fakeContent\":true}",
+        "bodyType": "application/json",
+        "cookies": "name1=value1;name2=value2;",
+        "defaultStepTimeout": 15,
+        "deviceIds": ["laptop_large"],
+        "executionRule": "skipped",
+        "followRedirects": true,
+        "headers": {"NEW_HEADER": "NEW VALUE"},
+        "locations": ["aws:us-east-1"],
+        "pollingTimeout": 30000,
+        "retry": {"count": 2, "interval": 300},
+        "startUrl": "{{URL}}?static_hash={{STATIC_HASH}}",
+        "variables": {"titleVariable": "new title"}
+      }
+    }
+  ]
 }
 ```
 
@@ -165,7 +166,7 @@ All options under the `config` key allow overriding the configuration of the tes
 You can configure on which url your Browser or HTTP test starts by providing a `config.startUrl` to your test object and build your own starting url using any part of your test's original starting url and the following environment variables:
 
 | Environment variable | Description                  | Example                                                |
-|----------------------|------------------------------|--------------------------------------------------------|
+| -------------------- | ---------------------------- | ------------------------------------------------------ |
 | `URL`                | Test's original starting url | `https://www.example.org:81/path/to/something?abc=123` |
 | `DOMAIN`             | Test's domain name           | `example.org`                                          |
 | `HOST`               | Test's host                  | `www.example.org:81`                                   |
@@ -181,9 +182,9 @@ For instance, if your test's starting url is `https://www.example.org:81/path/to
 
 It can be written as :
 
-* `{{PROTOCOL}}//{{SUBDOMAIN}}.{{DOMAIN}}:{{PORT}}{{PATHNAME}}{{PARAMS}}`
-* `{{PROTOCOL}}//{{HOST}}{{PATHNAME}}{{PARAMS}}`
-* `{{URL}}`
+- `{{PROTOCOL}}//{{SUBDOMAIN}}.{{DOMAIN}}:{{PORT}}{{PATHNAME}}{{PARAMS}}`
+- `{{PROTOCOL}}//{{HOST}}{{PATHNAME}}{{PARAMS}}`
+- `{{URL}}`
 
 and so on...
 
@@ -213,3 +214,22 @@ Took 11546ms
     ⎋  total duration: 28.9 ms - result url: https://app.datadoghq.com/synthetics/details/abc-def-ghi?resultId=123456789123456789
     ✓ GET - https://testing.website
 ```
+
+### Reporters
+
+We currently only use a default reporter writing in stdout.
+
+Reporters can hook themselves into the `MainReporter` of the command.
+
+#### Available hooks
+
+| Hook name     | Parameters                                                                              | Description                                                     |
+| :------------ | :-------------------------------------------------------------------------------------- | :-------------------------------------------------------------- |
+| `error`       | `(error: string)`                                                                       | called whenever an error occurs.                                |
+| `initErrors`  | `(errors: string[])`                                                                    | called whenever an error occurs during the tests parsing phase. |
+| `log`         | `(log: string)`                                                                         | called for logging.                                             |
+| `runEnd`      | `(summary: Summary)`                                                                    | called at the end of the run.                                   |
+| `start`       | `(timings: {startTime: number})`                                                        | called at the begining of the run.                              |
+| `testEnd`     | `(test: Test, results: PollResult[], baseUrl: string, locationNames: LocationsMapping)` | called when a test receives its results.                        |
+| `testTrigger` | `(test: Test, testId: string, executionRule: ExecutionRule, config: ConfigOverride)`    | called when a test is triggered.                                |
+| `testWait`    | `(test: Test)`                                                                          | called when a test is waiting to receive its results.           |
