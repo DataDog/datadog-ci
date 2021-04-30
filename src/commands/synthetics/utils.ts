@@ -317,17 +317,17 @@ export const getReporter = (reporters: Reporter[]): MainReporter => ({
       }
     }
   },
+  reportStart: (timings) => {
+    for (const reporter of reporters) {
+      if (typeof reporter.reportStart === 'function') {
+        reporter.reportStart(timings)
+      }
+    }
+  },
   runEnd: (summary) => {
     for (const reporter of reporters) {
       if (typeof reporter.runEnd === 'function') {
         reporter.runEnd(summary)
-      }
-    }
-  },
-  start: (timings) => {
-    for (const reporter of reporters) {
-      if (typeof reporter.start === 'function') {
-        reporter.start(timings)
       }
     }
   },

@@ -89,7 +89,7 @@ export class RunTestCommand extends Command {
       tests.sort(this.sortTestsByOutcome(results))
 
       // Rendering the results.
-      this.reporter.start({startTime})
+      this.reporter.reportStart({startTime})
       const locationNames = triggers.locations.reduce((mapping, location) => {
         mapping[location.id] = location.display_name
 

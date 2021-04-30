@@ -255,6 +255,12 @@ export class DefaultReporter implements Reporter {
     this.write(log)
   }
 
+  public reportStart(timings: {startTime: number}) {
+    const delay = (Date.now() - timings.startTime).toString()
+
+    this.write(['\n', chalk.bold.cyan('=== REPORT ==='), `Took ${chalk.bold(delay)}ms`, '\n'].join('\n'))
+  }
+
   public runEnd(summary: Summary) {
     const summaries = [
       chalk.green(`${chalk.bold(summary.passed)} passed`),
@@ -269,12 +275,6 @@ export class DefaultReporter implements Reporter {
     }
 
     this.write(`${chalk.bold('Tests execution summary:')} ${summaries.join(', ')}\n`)
-  }
-
-  public start(timings: {startTime: number}) {
-    const delay = (Date.now() - timings.startTime).toString()
-
-    this.write(['\n', chalk.bold.cyan('=== REPORT ==='), `Took ${chalk.bold(delay)}ms`, '\n'].join('\n'))
   }
 
   public testEnd(test: Test, results: PollResult[], baseUrl: string, locationNames: LocationsMapping) {
