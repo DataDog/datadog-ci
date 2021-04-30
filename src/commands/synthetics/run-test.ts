@@ -4,7 +4,7 @@ import {Command} from 'clipanion'
 import {parseConfigFile, ProxyConfiguration} from '../../helpers/utils'
 import {apiConstructor} from './api'
 import {APIHelper, ConfigOverride, ExecutionRule, LocationsMapping, MainReporter, PollResult, Test} from './interfaces'
-import {LogsReporter} from './reporters/logs'
+import {DefaultReporter} from './reporters/default'
 import {Tunnel} from './tunnel'
 import {getReporter, getSuites, getTestsToTrigger, hasTestSucceeded, runTests, waitForResults} from './utils'
 
@@ -31,7 +31,7 @@ export class RunTestCommand extends Command {
 
   public async execute() {
     const startTime = Date.now()
-    const reporters = [new LogsReporter(this)]
+    const reporters = [new DefaultReporter(this)]
 
     this.config = await parseConfigFile(this.config, this.configPath)
     this.reporter = getReporter(reporters)
