@@ -25,23 +25,24 @@ export class RunTestCommand extends Command {
   private configPath?: string
   private fileGlobs?: string[]
   private publicIds: string[] = []
-  private reporter?: MainReporter
+  private reporter: MainReporter
   private shouldOpenTunnel?: boolean
   private testSearchQuery?: string
-
+  constructor() {
+    super()
+    const reporters = [new DefaultReporter(this)]
+    this.reporter = getReporter(reporters)
+  }
   public async execute() {
     const startTime = Date.now()
-    const reporters = [new DefaultReporter(this)]
-
     this.config = await parseConfigFile(this.config, this.configPath)
-    this.reporter = getReporter(reporters)
 
     const api = this.getApiHelper()
     const publicIdsFromCli = this.publicIds.map((id) => ({config: this.config.global, id}))
     const testsToTrigger = publicIdsFromCli.length ? publicIdsFromCli : await this.getTestsList(api)
 
     if (!testsToTrigger.length) {
-      this.context.stdout.write('No test suites to run.\n')
+      this.reporter.log('No test suites to run.\n')
 
       return 0
     }
@@ -51,7 +52,7 @@ export class RunTestCommand extends Command {
 
     let tunnel: Tunnel | undefined
     if ((this.shouldOpenTunnel === undefined && this.config.tunnel) || this.shouldOpenTunnel) {
-      this.context.stdout.write(
+      this.reporter.log(
         'You are using tunnel option, the chosen location(s) will be overridden by a location in your account region.\n'
       )
       // Get the pre-signed URL to connect to the tunnel service
@@ -64,7 +65,7 @@ export class RunTestCommand extends Command {
           testToTrigger.tunnel = tunnelInfo
         })
       } catch (e) {
-        this.context.stdout.write(`\n${chalk.bgRed.bold(' ERROR on tunnel start ')}\n${e.stack}\n\n`)
+        this.reporter.error(`\n${chalk.bgRed.bold(' ERROR on tunnel start ')}\n${e.stack}\n\n`)
 
         return 1
       }
@@ -73,7 +74,7 @@ export class RunTestCommand extends Command {
 
     // All tests have been skipped or are missing.
     if (!tests.length) {
-      this.context.stdout.write('No test to run.\n')
+      this.reporter.log('No test to run.\n')
 
       return 0
     }
@@ -122,7 +123,7 @@ export class RunTestCommand extends Command {
         return 1
       }
     } catch (error) {
-      this.context.stdout.write(`\n${chalk.bgRed.bold(' ERROR ')}\n${error.stack}\n\n`)
+      this.reporter.error(`\n${chalk.bgRed.bold(' ERROR ')}\n${error.stack}\n\n`)
 
       return 1
     } finally {
@@ -139,10 +140,10 @@ export class RunTestCommand extends Command {
 
     if (!this.config.appKey || !this.config.apiKey) {
       if (!this.config.appKey) {
-        this.context.stdout.write(`Missing ${chalk.red.bold('DATADOG_APP_KEY')} in your environment.\n`)
+        this.reporter.error(`Missing ${chalk.red.bold('DATADOG_APP_KEY')} in your environment.\n`)
       }
       if (!this.config.apiKey) {
-        this.context.stdout.write(`Missing ${chalk.red.bold('DATADOG_API_KEY')} in your environment.\n`)
+        this.reporter.error(`Missing ${chalk.red.bold('DATADOG_API_KEY')} in your environment.\n`)
       }
       throw new Error('API and/or Application keys are missing')
     }
@@ -186,7 +187,7 @@ export class RunTestCommand extends Command {
 
     const listOfGlobs = this.fileGlobs || [this.config.files]
 
-    const suites = (await Promise.all(listOfGlobs.map((glob: string) => getSuites(glob, this.reporter!))))
+    const suites = (await Promise.all(listOfGlobs.map((glob: string) => getSuites(glob, this.reporter))))
       .reduce((acc, val) => acc.concat(val), [])
       .map((suite) => suite.tests)
       .filter((suiteTests) => !!suiteTests)
