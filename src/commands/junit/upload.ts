@@ -98,16 +98,14 @@ export class UploadJUnitXMLCommand extends Command {
   }
 
   private async getMatchingJUnitXMLFiles(): Promise<Payload[]> {
-    const jUnitXMLFiles = (this.basePaths || [])
-      .flatMap((basePath) => {
-        const isFile = !!path.extname(basePath)
-        if (isFile) {
-          return fs.existsSync(basePath) ? basePath : []
-        }
+    const jUnitXMLFiles = (this.basePaths || []).flatMap((basePath) => {
+      const isFile = !!path.extname(basePath)
+      if (isFile) {
+        return fs.existsSync(basePath) ? basePath : []
+      }
 
-        return glob.sync(buildPath(basePath, '*.xml'))
-      })
-      .filter((xmlPath) => !!xmlPath)
+      return glob.sync(buildPath(basePath, '*.xml'))
+    })
 
     const ciSpanTags = getCISpanTags()
     const gitSpanTags = await getGitMetadata()
