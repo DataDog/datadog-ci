@@ -28,6 +28,7 @@ export class RunTestCommand extends Command {
   private reporter?: MainReporter
   private shouldOpenTunnel?: boolean
   private testSearchQuery?: string
+
   public async execute() {
     const reporters = [new DefaultReporter(this)]
     this.reporter = getReporter(reporters)

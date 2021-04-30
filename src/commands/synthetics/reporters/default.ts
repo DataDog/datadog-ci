@@ -238,18 +238,23 @@ const getTestResultColor = (success: boolean, isNonBlocking: boolean) => {
 
 export class DefaultReporter implements Reporter {
   private write: Writable['write']
+
   constructor(command: RunTestCommand) {
     this.write = command.context.stdout.write.bind(command.context.stdout)
   }
+
   public error(error: string) {
     this.write(error)
   }
+
   public initError(errors: string[]) {
     this.write(errors.join('\n'))
   }
+
   public log(log: string) {
     this.write(log)
   }
+
   public runEnd(summary: Summary) {
     const summaries = [
       chalk.green(`${chalk.bold(summary.passed)} passed`),
@@ -265,11 +270,13 @@ export class DefaultReporter implements Reporter {
 
     this.write(`${chalk.bold('Tests execution summary:')} ${summaries.join(', ')}\n`)
   }
+
   public start(timings: {startTime: number}) {
     const delay = (Date.now() - timings.startTime).toString()
 
     this.write(['\n', chalk.bold.cyan('=== REPORT ==='), `Took ${chalk.bold(delay)}ms`, '\n'].join('\n'))
   }
+
   public testEnd(test: Test, results: PollResult[], baseUrl: string, locationNames: LocationsMapping) {
     const success = hasTestSucceeded(results)
     const isNonBlocking = test.options.ci?.executionRule === ExecutionRule.NON_BLOCKING
@@ -287,6 +294,7 @@ export class DefaultReporter implements Reporter {
 
     this.write([`${icon} ${idDisplay}${nonBlockingText} | ${nameColor(test.name)}`, testResultsText].join('\n'))
   }
+
   public testTrigger(test: Test, testId: string, executionRule: ExecutionRule, config: ConfigOverride) {
     const idDisplay = `[${chalk.bold.dim(testId)}]`
 
@@ -310,6 +318,7 @@ export class DefaultReporter implements Reporter {
 
     this.write(`${idDisplay} ${getMessage()}\n`)
   }
+
   public testWait(test: Test) {
     const idDisplay = `[${chalk.bold.dim(test.public_id)}]`
 
