@@ -41,14 +41,66 @@ describe('upload', () => {
       const command = new UploadJUnitXMLCommand()
       command['basePaths'] = ['./src/commands/junit/__tests__/fixtures']
       command['service'] = 'service'
-      expect((await command['getMatchingJUnitXMLFiles']())[0]).toMatchObject({
+      const [firstFile, secondFile] = await command['getMatchingJUnitXMLFiles']()
+
+      expect(firstFile).toMatchObject({
         service: 'service',
         xmlPath: './src/commands/junit/__tests__/fixtures/go-report.xml',
       })
-      expect((await command['getMatchingJUnitXMLFiles']())[1]).toMatchObject({
+      expect(secondFile).toMatchObject({
         service: 'service',
         xmlPath: './src/commands/junit/__tests__/fixtures/java-report.xml',
       })
+    })
+    test('should allow single files', async () => {
+      const command = new UploadJUnitXMLCommand()
+      command['basePaths'] = ['./src/commands/junit/__tests__/fixtures/go-report.xml']
+      command['service'] = 'service'
+      const files = await command['getMatchingJUnitXMLFiles']()
+      expect(files.length).toEqual(1)
+
+      expect(files[0]).toMatchObject({
+        service: 'service',
+        xmlPath: './src/commands/junit/__tests__/fixtures/go-report.xml',
+      })
+    })
+    test('should not fail for invalid single files', async () => {
+      const command = new UploadJUnitXMLCommand()
+      command['basePaths'] = ['./src/commands/junit/__tests__/fixtures/does-not-exist.xml']
+      command['service'] = 'service'
+      const files = await command['getMatchingJUnitXMLFiles']()
+      expect(files.length).toEqual(0)
+    })
+    test('should allow folder and single unit paths', async () => {
+      const command = new UploadJUnitXMLCommand()
+      command['basePaths'] = [
+        './src/commands/junit/__tests__/fixtures',
+        './src/commands/junit/__tests__/fixtures/subfolder/js-report.xml',
+      ]
+      command['service'] = 'service'
+      const [firstFile, secondFile, thirdFile] = await command['getMatchingJUnitXMLFiles']()
+      expect(firstFile).toMatchObject({
+        service: 'service',
+        xmlPath: './src/commands/junit/__tests__/fixtures/go-report.xml',
+      })
+      expect(secondFile).toMatchObject({
+        service: 'service',
+        xmlPath: './src/commands/junit/__tests__/fixtures/java-report.xml',
+      })
+      expect(thirdFile).toMatchObject({
+        service: 'service',
+        xmlPath: './src/commands/junit/__tests__/fixtures/subfolder/js-report.xml',
+      })
+    })
+    test('should not have repeated files', async () => {
+      const command = new UploadJUnitXMLCommand()
+      command['basePaths'] = [
+        './src/commands/junit/__tests__/fixtures',
+        './src/commands/junit/__tests__/fixtures/go-report.xml',
+      ]
+      command['service'] = 'service'
+      const files = await command['getMatchingJUnitXMLFiles']()
+      expect(files.length).toEqual(2)
     })
     test('should parse DD_TAGS and DD_ENV environment variables', async () => {
       process.env.DD_TAGS = 'key1:value1,key2:value2'
@@ -56,12 +108,13 @@ describe('upload', () => {
       const command = new UploadJUnitXMLCommand()
       command['basePaths'] = ['./src/commands/junit/__tests__/fixtures']
       command['service'] = 'service'
-      expect((await command['getMatchingJUnitXMLFiles']())[0].spanTags).toMatchObject({
+      const [firstFile, secondFile] = await command['getMatchingJUnitXMLFiles']()
+      expect(firstFile.spanTags).toMatchObject({
         env: 'ci',
         key1: 'value1',
         key2: 'value2',
       })
-      expect((await command['getMatchingJUnitXMLFiles']())[1].spanTags).toMatchObject({
+      expect(secondFile.spanTags).toMatchObject({
         env: 'ci',
         key1: 'value1',
         key2: 'value2',
@@ -71,11 +124,12 @@ describe('upload', () => {
       const command = new UploadJUnitXMLCommand()
       command['basePaths'] = ['./src/commands/junit/__tests__/fixtures']
       command['tags'] = ['key1:value1', 'key2:value2']
-      expect((await command['getMatchingJUnitXMLFiles']())[0].spanTags).toMatchObject({
+      const [firstFile, secondFile] = await command['getMatchingJUnitXMLFiles']()
+      expect(firstFile.spanTags).toMatchObject({
         key1: 'value1',
         key2: 'value2',
       })
-      expect((await command['getMatchingJUnitXMLFiles']())[1].spanTags).toMatchObject({
+      expect(secondFile.spanTags).toMatchObject({
         key1: 'value1',
         key2: 'value2',
       })
