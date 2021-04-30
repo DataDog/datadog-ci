@@ -1,6 +1,7 @@
 import retry from 'async-retry'
 import chalk from 'chalk'
 import {Command} from 'clipanion'
+import fs from 'fs'
 import glob from 'glob'
 import path from 'path'
 import asyncPool from 'tiny-async-pool'
@@ -97,10 +98,13 @@ export class UploadJUnitXMLCommand extends Command {
   }
 
   private async getMatchingJUnitXMLFiles(): Promise<Payload[]> {
-    let jUnitXMLFiles: string[] = []
+    const jUnitXMLFiles = (this.basePaths || []).flatMap((basePath) => {
+      const isFile = !!path.extname(basePath)
+      if (isFile) {
+        return fs.existsSync(basePath) ? basePath : []
+      }
 
-    this.basePaths?.forEach((basePath) => {
-      jUnitXMLFiles = jUnitXMLFiles.concat(glob.sync(buildPath(basePath, '*.xml')))
+      return glob.sync(buildPath(basePath, '*.xml'))
     })
 
     const ciSpanTags = getCISpanTags()
@@ -117,7 +121,7 @@ export class UploadJUnitXMLCommand extends Command {
       ...(this.config.env ? {env: this.config.env} : {}),
     }
 
-    return jUnitXMLFiles.map((jUnitXMLFilePath) => ({
+    return [...new Set(jUnitXMLFiles)].map((jUnitXMLFilePath) => ({
       service: this.service!,
       spanTags,
       xmlPath: jUnitXMLFilePath,
