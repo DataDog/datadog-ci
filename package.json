@@ -1,6 +1,6 @@
 {
   "name": "@datadog/datadog-ci",
-  "version": "0.12.0-alpha",
+  "version": "0.12.1-alpha",
   "description": "Run datadog actions from the CI.",
   "main": "dist/index.js",
   "repository": "https://github.com/DataDog/datadog-ci",
@@ -32,7 +32,7 @@
     "prettier-check": "prettier --check \"src/**/*.{ts,js,json,yml}\" --ignore-path .gitignore || (echo \"\nYou can fix this by running ==> yarn prettier-write <==\n\" && false)",
     "prettier-write": "prettier --write \"src/**/*.{ts,js,json,yml}\" --ignore-path .gitignore",
     "test": "jest",
-    "test:debug": "node --inspect-brk `which jest`",
+    "test:debug": "node --inspect-brk `which jest` --runInBand",
     "typecheck": "bash bin/typecheck.sh",
     "watch": "tsc -w"
   },
