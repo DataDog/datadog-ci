@@ -243,7 +243,7 @@ export class UploadCommand extends Command {
     } catch (error) {
       if (error instanceof InvalidPayload) {
         this.context.stdout.write(renderFailedUpload(sourcemap, error.message))
-        metricsLogger.increment(error.reason, 1)
+        metricsLogger.increment('skipped_sourcemap', 1, [`reason:${error.reason}`])
       } else {
         this.context.stdout.write(
           renderFailedUpload(
@@ -251,6 +251,7 @@ export class UploadCommand extends Command {
             `Skipping sourcemap ${sourcemap.sourcemapPath} because of error: ${error.message}`
           )
         )
+        metricsLogger.increment('skipped_sourcemap', 1, ['reason:unknown'])
       }
 
       return UploadStatus.Skipped
