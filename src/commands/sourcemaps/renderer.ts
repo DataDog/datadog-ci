@@ -89,7 +89,7 @@ export const renderSuccessfulCommand = (statuses: UploadStatus[], duration: numb
     }
     if (results.get(UploadStatus.Failure)) {
       output.push(
-        chalk.red(`  * ${pluralize(results.get(UploadStatus.Failure)!, 'spourcemap', 'sourcemaps')} failed to upload`)
+        chalk.red(`  * ${pluralize(results.get(UploadStatus.Failure)!, 'sourcemap', 'sourcemaps')} failed to upload`)
       )
     }
   }

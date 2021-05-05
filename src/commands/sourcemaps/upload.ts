@@ -2,7 +2,6 @@ import retry from 'async-retry'
 import chalk from 'chalk'
 import {Command} from 'clipanion'
 import {BufferedMetricsLogger} from 'datadog-metrics'
-import fs from 'fs'
 import glob from 'glob'
 import path from 'path'
 import asyncPool from 'tiny-async-pool'
@@ -24,6 +23,7 @@ import {
   renderSuccessfulCommand,
 } from './renderer'
 import {buildPath, getBaseIntakeUrl, getMinifiedFilePath} from './utils'
+import {InvalidPayload, validatePayload} from './validation'
 
 const errorCodesNoRetry = [400, 403, 413]
 
@@ -238,11 +238,21 @@ export class UploadCommand extends Command {
     metricsLogger: BufferedMetricsLogger,
     sourcemap: Payload
   ): Promise<UploadStatus> {
-    if (!fs.existsSync(sourcemap.minifiedFilePath)) {
-      this.context.stdout.write(
-        renderFailedUpload(sourcemap, `Missing corresponding JS file for sourcemap (${sourcemap.minifiedFilePath})`)
-      )
-      metricsLogger.increment('skipped_missing_js', 1)
+    try {
+      validatePayload(sourcemap)
+    } catch (error) {
+      if (error instanceof InvalidPayload) {
+        this.context.stdout.write(renderFailedUpload(sourcemap, error.message))
+        metricsLogger.increment('skipped_sourcemap', 1, [`reason:${error.reason}`])
+      } else {
+        this.context.stdout.write(
+          renderFailedUpload(
+            sourcemap,
+            `Skipping sourcemap ${sourcemap.sourcemapPath} because of error: ${error.message}`
+          )
+        )
+        metricsLogger.increment('skipped_sourcemap', 1, ['reason:unknown'])
+      }
 
       return UploadStatus.Skipped
     }
