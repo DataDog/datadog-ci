@@ -111,13 +111,12 @@ export class UploadCommand extends Command {
     const useGit = this.enableGit !== undefined && this.enableGit
     const initialTime = Date.now()
     const payloads = await this.getPayloadsToUpload(useGit, cliVersion)
-    const upload = (p: Payload) => this.uploadSourcemap(api, metricsLogger, p)
+    const upload = (p: Payload) => this.uploadSourcemap(api, metricsLogger.logger, p)
     try {
       const results = await asyncPool(this.maxConcurrency, payloads, upload)
       const totalTime = (Date.now() - initialTime) / 1000
       this.context.stdout.write(renderSuccessfulCommand(results, totalTime, this.dryRun))
-      metricsLogger.gauge('duration', totalTime)
-      metricsLogger.flush()
+      metricsLogger.logger.gauge('duration', totalTime)
 
       return 0
     } catch (error) {
@@ -128,6 +127,12 @@ export class UploadCommand extends Command {
       }
       // Otherwise unknown error, let's propagate the exception
       throw error
+    } finally {
+      try {
+        await metricsLogger.flush()
+      } catch (err) {
+        this.context.stdout.write(`WARN: ${err}\n`)
+      }
     }
   }
 
