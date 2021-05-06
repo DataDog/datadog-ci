@@ -244,7 +244,7 @@ describe('execute', () => {
     const stdout = context.stdout.toString()
     const stderr = context.stderr.toString()
 
-    expect(stderr).toEqual('No access granted')
+    expect(stderr).toEqual('No access granted\n')
     expect(stdout).toMatch(new RegExp(`File:[\\s]+${resolvedFilePath}`))
     expect(stdout).toMatch(/Source:[\s]+snyk/)
     expect(stdout).toMatch(/Service:[\s]+my-service/)
@@ -271,7 +271,7 @@ describe('execute', () => {
     const stdout = context.stdout.toString()
     const stderr = context.stderr.toString()
 
-    expect(stderr).toEqual('Forbidden')
+    expect(stderr).toEqual('Forbidden\n')
     expect(stdout).toContain(
       'Failed upload dependencies: Forbidden. Check DATADOG_API_KEY and DATADOG_APP_KEY environment variables.'
     )
