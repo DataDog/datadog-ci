@@ -182,6 +182,10 @@ export class TrackedFilesMatcher {
   // Example: webpack:///./src/folder/ui/select.vue?821e
   private getFilename(s: string): string {
     let start = s.lastIndexOf('/')
+    const backslashStart = s.lastIndexOf('\\')
+    if (backslashStart > start) {
+      start = backslashStart
+    }
     if (start === -1) {
       start = 0
     } else {
