@@ -117,6 +117,12 @@ describe('git', () => {
         const matcher = new TrackedFilesMatcher(trackedFiles)
         expect(matcher.matchSources(sources)).toStrictEqual(['src/file.ts', 'file.ts'])
       })
+      test('mix of related and not related with backslash separator', () => {
+        const sources = ['folder\\file.ts', 'folder\\other.ts']
+        const trackedFiles = ['src/file.ts', 'file.ts', 'src/other2.ts'] // Git is never expected to output backslashes.
+        const matcher = new TrackedFilesMatcher(trackedFiles)
+        expect(matcher.matchSources(sources)).toStrictEqual(['src/file.ts', 'file.ts'])
+      })
     })
   })
 
