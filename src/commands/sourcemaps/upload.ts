@@ -306,7 +306,13 @@ export class UploadCommand extends Command {
         )
       }
       metricsLogger.increment('failed', 1)
-      this.context.stdout.write(renderFailedUpload(sourcemap, error))
+      if (error.response && error.response.statusText) {
+        // Display human readable info about the status code
+        this.context.stdout.write(renderFailedUpload(sourcemap, `${error.message} (${error.response.statusText})`))
+      } else {
+        // Default error handling
+        this.context.stdout.write(renderFailedUpload(sourcemap, error))
+      }
 
       return UploadStatus.Failure
     }
