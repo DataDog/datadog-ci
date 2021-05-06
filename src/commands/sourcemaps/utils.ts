@@ -19,13 +19,11 @@ export const getBaseIntakeUrl = () => {
 }
 
 export const getBaseAPIUrl = () => {
-  // Useless for now.
-  // TODO[alexc] Once it's possible to pass this as parameter of BufferedMetricsLogger constructor, call this function
   if (process.env.DATADOG_SITE) {
-    return 'https://api.' + process.env.DATADOG_SITE
+    return 'api.' + process.env.DATADOG_SITE
   }
 
-  return 'https://api.datadoghq.com'
+  return 'api.datadoghq.com'
 }
 
 // The buildPath function is used to concatenate several paths. The goal is to have a function working for both unix
