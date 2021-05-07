@@ -1,13 +1,8 @@
 {
   "defaultSeverity": "error",
-  "extends": [
-    "tslint:recommended",
-    "tslint-config-prettier"
-  ],
+  "extends": ["tslint:recommended", "tslint-config-prettier"],
   "linterOptions": {
-    "exclude": [
-      "dist"
-    ]
+    "exclude": ["dist"]
   },
   "jsRules": {},
   "rules": {
@@ -18,8 +13,9 @@
     "curly": true,
     "eofline": true,
     "indent": [true, "spaces", 2],
-    "interface-name" : [true, "never-prefix"],
+    "interface-name": [true, "never-prefix"],
     "linebreak-style": [true, "LF"],
+    "lines-between-class-members": [true, 1],
     "member-access": true,
     "member-ordering": [true, {"order": "fields-first", "alphabetize": true}],
     "newline-before-return": true,
@@ -64,12 +60,8 @@
         "singleline": "never"
       }
     ],
-    "variable-name": [
-      true,
-      "check-format",
-      "allow-leading-underscore"
-    ],
+    "variable-name": [true, "check-format", "allow-leading-underscore"],
     "only-arrow-functions": true
   },
-  "rulesDirectory": []
+  "rulesDirectory": ["node_modules/tslint-lines-between-class-members"]
 }

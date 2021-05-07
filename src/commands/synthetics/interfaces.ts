@@ -11,6 +11,19 @@ interface Timings {
   total: number
 }
 
+export interface MainReporter {
+  error(error: string): void
+  initErrors(errors: string[]): void
+  log(log: string): void
+  reportStart(timings: {startTime: number}): void
+  runEnd(summary: Summary): void
+  testEnd(test: Test, results: PollResult[], baseUrl: string, locationNames: LocationsMapping): void
+  testTrigger(test: Test, testId: string, executionRule: ExecutionRule, config: ConfigOverride): void
+  testWait(test: Test): void
+}
+
+export type Reporter = Partial<MainReporter>
+
 export interface Result {
   device: {
     id: string

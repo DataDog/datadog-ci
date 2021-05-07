@@ -1,7 +1,9 @@
-import {CI_ENGINES, getCIMetadata} from '../ci'
-import {CI_ENV_PARENT_SPAN_ID, CI_ENV_TRACE_ID} from '../tags'
+import {CI_ENGINES, getCIMetadata, getCISpanTags} from '../ci'
 
-describe('ci-metadata', () => {
+import fs from 'fs'
+import path from 'path'
+
+describe('getCIMetadata', () => {
   const branch = 'fakeBranch'
   const commit = 'fakeCommitSha'
   const pipelineURL = 'fakePipelineUrl'
@@ -115,8 +117,6 @@ describe('ci-metadata', () => {
       GIT_BRANCH: branch,
       GIT_COMMIT: commit,
       JENKINS_URL: 'https://fakebuildserver.url/',
-      [CI_ENV_PARENT_SPAN_ID]: 'PARENT_SPAN_ID',
-      [CI_ENV_TRACE_ID]: 'TRACE_ID',
     }
     expect(getCIMetadata()).toEqual({
       ci: {
@@ -127,10 +127,25 @@ describe('ci-metadata', () => {
         branch,
         commitSha: commit,
       },
-      trace: {
-        parentSpanId: 'PARENT_SPAN_ID',
-        traceId: 'TRACE_ID',
-      },
+    })
+  })
+})
+
+describe('getCISpanTags', () => {
+  test('returns an empty object if the CI is not supported', () => {
+    process.env = {}
+    expect(getCISpanTags()).toEqual({})
+  })
+
+  const ciProviders = fs.readdirSync(path.join(__dirname, 'ci-env'))
+  ciProviders.forEach((ciProvider) => {
+    const assertions = require(path.join(__dirname, 'ci-env', ciProvider))
+
+    assertions.forEach(([env, expectedSpanTags]: [{[key: string]: string}, {[key: string]: string}], index: number) => {
+      test(`reads env info for spec ${index} from ${ciProvider}`, () => {
+        process.env = env
+        expect(getCISpanTags()).toEqual(expectedSpanTags)
+      })
     })
   })
 })

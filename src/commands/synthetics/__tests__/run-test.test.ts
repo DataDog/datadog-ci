@@ -4,8 +4,10 @@ jest.mock('fs')
 import * as ciUtils from '../../../helpers/utils'
 
 import {ExecutionRule} from '../interfaces'
+import {DefaultReporter} from '../reporters/default'
 import {RunTestCommand} from '../run-test'
 import * as utils from '../utils'
+import {mockReporter} from './fixtures'
 
 export const assertAsyncThrow = async (func: any, errorRegex?: RegExp) => {
   let error
@@ -148,6 +150,7 @@ describe('run-test', () => {
       const write = jest.fn()
       const command = new RunTestCommand()
       command.context = {stdout: {write}} as any
+      command['reporter'] = utils.getReporter([new DefaultReporter(command)])
 
       await assertAsyncThrow(command['getApiHelper'].bind(command), /API and\/or Application keys are missing/)
       expect(write.mock.calls[0][0]).toContain('DATADOG_APP_KEY')
@@ -218,19 +221,20 @@ describe('run-test', () => {
       command.context = process
       command['config'].global = {startUrl}
       command['config'].files = 'random glob'
+      command['reporter'] = mockReporter
 
       command['fileGlobs'] = ['new glob', 'another one']
       await command['getTestsList'].bind(command)(fakeApi)
       expect(utils.getSuites).toHaveBeenCalledTimes(2)
-      expect(utils.getSuites).toHaveBeenCalledWith('new glob', expect.any(Function))
-      expect(utils.getSuites).toHaveBeenCalledWith('another one', expect.any(Function))
+      expect(utils.getSuites).toHaveBeenCalledWith('new glob', command['reporter'])
+      expect(utils.getSuites).toHaveBeenCalledWith('another one', command['reporter'])
 
       mockFn.mockClear()
 
       command['fileGlobs'] = undefined
       await command['getTestsList'].bind(command)(fakeApi)
       expect(utils.getSuites).toHaveBeenCalledTimes(1)
-      expect(utils.getSuites).toHaveBeenCalledWith('random glob', expect.any(Function))
+      expect(utils.getSuites).toHaveBeenCalledWith('random glob', command['reporter'])
     })
   })
 
