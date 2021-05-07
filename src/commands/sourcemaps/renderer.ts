@@ -14,6 +14,9 @@ export const renderGitWarning = (errorMessage: string) =>
 Make sure the command is running within your git repository to fully leverage Datadog's git integration.
 To ignore this warning use the --disable-git flag.\n`)
 
+export const renderGitDataNotAttachedWarning = (sourcemap: string, errorMessage: string) =>
+  chalk.yellow(`${ICONS.WARNING} Could not attach git data for sourcemap ${sourcemap}: ${errorMessage}\n`)
+
 export const renderSourcesNotFoundWarning = (sourcemap: string) =>
   chalk.yellow(`${ICONS.WARNING} No tracked files found for sources contained in ${sourcemap}\n`)
 

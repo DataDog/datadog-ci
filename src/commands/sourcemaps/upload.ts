@@ -18,6 +18,7 @@ import {
   renderConfigurationError,
   renderDryRunUpload,
   renderFailedUpload,
+  renderGitDataNotAttachedWarning,
   renderInvalidPrefix,
   renderRetriedUpload,
   renderSuccessfulCommand,
@@ -206,22 +207,28 @@ export class UploadCommand extends Command {
   // declared inside the sourcemap.
   private getRepositoryPayload = (repositoryData: RepositoryData, sourcemapPath: string): string | undefined => {
     let repositoryPayload: string | undefined
-    const files = repositoryData.trackedFilesMatcher.matchSourcemap(this.context.stdout, sourcemapPath)
-    if (files) {
-      repositoryPayload = JSON.stringify({
-        data: [
-          {
-            files,
-            hash: repositoryData.hash,
-            repository_url: repositoryData.remote,
-          },
-        ],
-        // Make sure to update the version if the format of the JSON payloads changes in any way.
-        version: 1,
-      })
-    }
+    try {
+      const files = repositoryData.trackedFilesMatcher.matchSourcemap(this.context.stdout, sourcemapPath)
+      if (files) {
+        repositoryPayload = JSON.stringify({
+          data: [
+            {
+              files,
+              hash: repositoryData.hash,
+              repository_url: repositoryData.remote,
+            },
+          ],
+          // Make sure to update the version if the format of the JSON payloads changes in any way.
+          version: 1,
+        })
+      }
 
-    return repositoryPayload
+      return repositoryPayload
+    } catch (error) {
+      this.context.stdout.write(renderGitDataNotAttachedWarning(sourcemapPath, error.message))
+
+      return undefined
+    }
   }
 
   private isMinifiedPathPrefixValid(): boolean {
