@@ -92,7 +92,7 @@ describe('utils', () => {
     })
 
     test('should add proxy configuration', async () => {
-      jest.spyOn(axios, 'create').mockImplementation((() => (args: AxiosRequestConfig) => args.httpsAgent.proxy) as any)
+      jest.spyOn(axios, 'create').mockImplementation((() => (args: AxiosRequestConfig) => args.httpsAgent) as any)
       const proxyOpts: ProxyConfiguration = {protocol: 'http', host: '1.2.3.4', port: 1234}
       const requestOptions = {
         apiKey: 'apiKey',
@@ -102,7 +102,9 @@ describe('utils', () => {
       }
       const request = getRequestBuilder(requestOptions)
       const fakeEndpoint = fakeEndpointBuilder(request)
-      expect(await fakeEndpoint()).toStrictEqual(proxyOpts)
+      const httpsAgent = await fakeEndpoint()
+      expect(httpsAgent).toBeDefined()
+      expect((httpsAgent as any).proxyUri).toBe('http://1.2.3.4:1234')
     })
   })
 
