@@ -1,7 +1,7 @@
 import {timingSafeEqual} from 'crypto'
 import {once} from 'events'
 import {Socket} from 'net'
-import {Duplex, Writable} from 'stream'
+import {Duplex} from 'stream'
 
 import chalk from 'chalk'
 import {AuthContext, Connection as SSHConnection, Server as SSHServer, ServerChannel as SSHServerChannel} from 'ssh2'
@@ -11,6 +11,7 @@ import {Config as MultiplexerConfig, Server as Multiplexer} from 'yamux-js'
 import {ProxyConfiguration} from '../../helpers/utils'
 
 import {generateOpenSSHKeys, parseSSHKey} from './crypto'
+import {MainReporter} from './interfaces'
 import {WebSocket} from './websocket'
 
 const MAX_CONCURRENT_FORWARDED_CONNECTIONS = 50
@@ -23,17 +24,17 @@ export interface TunnelInfo {
 
 export class Tunnel {
   private forwardSockets: Socket[] = []
-  private log: Writable['write']
-  private logError: Writable['write']
+  private log: (message: string) => void
+  private logError: (message: string) => void
   private multiplexer?: Multiplexer
   private privateKey: string
   private publicKey: ParsedKey
   private sshStreamConfig: SSH2StreamConfig
   private ws: WebSocket
 
-  constructor(private url: string, private testIDs: string[], proxy: ProxyConfiguration, log: Writable['write']) {
-    this.log = (message: string) => log(`[${chalk.bold.blue('Tunnel')}] ${message}\n`)
-    this.logError = (message: string) => log(`[${chalk.bold.red('Tunnel')}] ${message}\n`)
+  constructor(private url: string, private testIDs: string[], proxy: ProxyConfiguration, reporter: MainReporter) {
+    this.log = (message: string) => reporter.log(`[${chalk.bold.blue('Tunnel')}] ${message}\n`)
+    this.logError = (message: string) => reporter.error(`[${chalk.bold.red('Tunnel')}] ${message}\n`)
 
     // Setup SSH
     const {privateKey: hostPrivateKey} = generateOpenSSHKeys()

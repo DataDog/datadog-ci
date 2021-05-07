@@ -1,6 +1,5 @@
 import * as fs from 'fs'
 import * as path from 'path'
-import {Writable} from 'stream'
 import {URL} from 'url'
 import {promisify} from 'util'
 
@@ -15,8 +14,10 @@ import {
   APIHelper,
   ConfigOverride,
   ExecutionRule,
+  MainReporter,
   Payload,
   PollResult,
+  Reporter,
   Result,
   Suite,
   Summary,
@@ -28,7 +29,6 @@ import {
   TriggerResponse,
   TriggerResult,
 } from './interfaces'
-import {renderTrigger, renderWait} from './renderer'
 import {Tunnel} from './tunnel'
 
 const POLLING_INTERVAL = 5000 // In ms
@@ -41,7 +41,7 @@ const template = (st: string, context: any): string =>
 export const handleConfig = (
   test: Test,
   publicId: string,
-  write: Writable['write'],
+  reporter: MainReporter,
   config?: ConfigOverride
 ): TestPayload => {
   const executionRule = getExecutionRule(test, config)
@@ -75,14 +75,14 @@ export const handleConfig = (
   }
 
   if ((test.type === 'browser' || test.subtype === 'http') && config.startUrl) {
-    const context = parseUrlVariables(test.config.request.url, write)
+    const context = parseUrlVariables(test.config.request.url, reporter)
     handledConfig.startUrl = template(config.startUrl, context)
   }
 
   return handledConfig
 }
 
-const parseUrlVariables = (url: string, write: Writable['write']) => {
+const parseUrlVariables = (url: string, reporter: MainReporter) => {
   const context: TemplateContext = {
     ...process.env,
     URL: url,
@@ -91,7 +91,7 @@ const parseUrlVariables = (url: string, write: Writable['write']) => {
   try {
     objUrl = new URL(url)
   } catch {
-    write(`The start url ${url} contains variables, CI overrides will be ignored\n`)
+    reporter.error(`The start url ${url} contains variables, CI overrides will be ignored\n`)
 
     return context
   }
@@ -151,13 +151,13 @@ export const hasResultPassed = (result: Result): boolean => {
 export const hasTestSucceeded = (results: PollResult[]): boolean =>
   results.every((pollResult: PollResult) => hasResultPassed(pollResult.result))
 
-export const getSuites = async (GLOB: string, write: Writable['write']): Promise<Suite[]> => {
-  write(`Finding files in ${path.join(process.cwd(), GLOB)}\n`)
+export const getSuites = async (GLOB: string, reporter: MainReporter): Promise<Suite[]> => {
+  reporter.log(`Finding files in ${path.join(process.cwd(), GLOB)}\n`)
   const files: string[] = await promisify(glob)(GLOB)
   if (files.length) {
-    write(`\nGot test files:\n${files.map((file) => `  - ${file}\n`).join('')}\n`)
+    reporter.log(`\nGot test files:\n${files.map((file) => `  - ${file}\n`).join('')}\n`)
   } else {
-    write('\nNo test files found.\n\n')
+    reporter.log('\nNo test files found.\n\n')
   }
 
   return Promise.all(
@@ -295,7 +295,66 @@ const createFailingResult = (
   resultID: resultId,
 })
 
-export const getTestsToTrigger = async (api: APIHelper, triggerConfigs: TriggerConfig[], write: Writable['write']) => {
+export const getReporter = (reporters: Reporter[]): MainReporter => ({
+  error: (error) => {
+    for (const reporter of reporters) {
+      if (typeof reporter.error === 'function') {
+        reporter.error(error)
+      }
+    }
+  },
+  initErrors: (errors) => {
+    for (const reporter of reporters) {
+      if (typeof reporter.initErrors === 'function') {
+        reporter.initErrors(errors)
+      }
+    }
+  },
+  log: (log) => {
+    for (const reporter of reporters) {
+      if (typeof reporter.log === 'function') {
+        reporter.log(log)
+      }
+    }
+  },
+  reportStart: (timings) => {
+    for (const reporter of reporters) {
+      if (typeof reporter.reportStart === 'function') {
+        reporter.reportStart(timings)
+      }
+    }
+  },
+  runEnd: (summary) => {
+    for (const reporter of reporters) {
+      if (typeof reporter.runEnd === 'function') {
+        reporter.runEnd(summary)
+      }
+    }
+  },
+  testEnd: (test, results, baseUrl, locationNames) => {
+    for (const reporter of reporters) {
+      if (typeof reporter.testEnd === 'function') {
+        reporter.testEnd(test, results, baseUrl, locationNames)
+      }
+    }
+  },
+  testTrigger: (test, testId, executionRule, config) => {
+    for (const reporter of reporters) {
+      if (typeof reporter.testTrigger === 'function') {
+        reporter.testTrigger(test, testId, executionRule, config)
+      }
+    }
+  },
+  testWait: (test) => {
+    for (const reporter of reporters) {
+      if (typeof reporter.testWait === 'function') {
+        reporter.testWait(test)
+      }
+    }
+  },
+})
+
+export const getTestsToTrigger = async (api: APIHelper, triggerConfigs: TriggerConfig[], reporter: MainReporter) => {
   const overriddenTestsToTrigger: TestPayload[] = []
   const errorMessages: string[] = []
   const summary: Summary = {failed: 0, notFound: 0, passed: 0, skipped: 0}
@@ -314,14 +373,14 @@ export const getTestsToTrigger = async (api: APIHelper, triggerConfigs: TriggerC
         return
       }
 
-      const overriddenConfig = handleConfig(test, id, write, config)
+      const overriddenConfig = handleConfig(test, id, reporter, config)
       overriddenTestsToTrigger.push(overriddenConfig)
 
-      write(renderTrigger(test, id, overriddenConfig.executionRule, config))
+      reporter.testTrigger(test, id, overriddenConfig.executionRule, config)
       if (overriddenConfig.executionRule === ExecutionRule.SKIPPED) {
         summary.skipped++
       } else {
-        write(renderWait(test))
+        reporter.testWait(test)
 
         return test
       }
@@ -329,7 +388,7 @@ export const getTestsToTrigger = async (api: APIHelper, triggerConfigs: TriggerC
   )
 
   // Display errors at the end of all tests for better visibility.
-  errorMessages.forEach((errorMessage) => write(errorMessage))
+  reporter.initErrors(errorMessages)
 
   if (!overriddenTestsToTrigger.length) {
     throw new Error('No tests to trigger')
