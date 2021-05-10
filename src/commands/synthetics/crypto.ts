@@ -5,11 +5,22 @@ import {parseKey, parsePrivateKey} from 'sshpk'
 
 // Generate public/private key in OpenSSH format (used for encryption in tunnel over SSH)
 export const generateOpenSSHKeys = () => {
-  const {publicKey, privateKey} = generateKeyPairSync('ed25519', {})
-  const openSSHPublicKey = parseKey(publicKey.export({format: 'pem', type: 'spki'}), 'pem')
+  const format = 'pem'
+  const {publicKey, privateKey} = generateKeyPairSync('ec', {
+    namedCurve: 'P-256',
+    publicKeyEncoding: {
+      type: 'spki',
+      format
+    },
+    privateKeyEncoding: {
+      type: 'pkcs8',
+      format,
+    }
+  })
+  const openSSHPublicKey = parseKey(publicKey, format)
     .toBuffer('ssh', {})
     .toString('utf-8')
-  const openSSHPrivateKey = parsePrivateKey(privateKey.export({format: 'pem', type: 'pkcs8'}), 'pem')
+  const openSSHPrivateKey = parsePrivateKey(privateKey, format)
     .toBuffer('ssh', {})
     .toString('utf-8')
 
