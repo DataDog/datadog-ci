@@ -8,13 +8,13 @@ export const generateOpenSSHKeys = () => {
   const format = 'pem'
   const {publicKey, privateKey} = generateKeyPairSync('ec', {
     namedCurve: 'P-256',
-    publicKeyEncoding: {
-      type: 'spki',
-      format,
-    },
     privateKeyEncoding: {
-      type: 'pkcs8',
       format,
+      type: 'pkcs8',
+    },
+    publicKeyEncoding: {
+      format,
+      type: 'spki',
     },
   })
   const openSSHPublicKey = parseKey(publicKey, format).toBuffer('ssh', {}).toString('utf-8')
