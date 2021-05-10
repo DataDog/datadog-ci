@@ -1,13 +1,13 @@
 import {generateOpenSSHKeys, parseSSHKey} from '../crypto'
 
 describe('crypto', () => {
-  test('should generate Ed25519 public/private keys with OpenSSH format', () => {
+  test('should generate ECDSA public/private keys with OpenSSH format', () => {
     const {privateKey, publicKey} = generateOpenSSHKeys()
 
     const expectedPrivateKeyFormat = /-----BEGIN OPENSSH PRIVATE KEY-----(.|\n)*-----END OPENSSH PRIVATE KEY-----/
     expect(privateKey).toEqual(expect.stringMatching(expectedPrivateKeyFormat))
 
-    const expectedPublicKeyFormat = /ssh-ed25519 .*/
+    const expectedPublicKeyFormat = /ecdsa-sha2-nistp256 .*/
     expect(publicKey).toEqual(expect.stringMatching(expectedPublicKeyFormat))
   })
 
@@ -16,8 +16,8 @@ describe('crypto', () => {
     const parsedPublicKey = parseSSHKey(publicKey)
     const parsedPrivateKey = parseSSHKey(privateKey)
 
-    expect(parsedPublicKey.type).toBe('ssh-ed25519')
-    expect(parsedPrivateKey.type).toBe('ssh-ed25519')
+    expect(parsedPublicKey.type).toBe('ecdsa-sha2-nistp256')
+    expect(parsedPrivateKey.type).toBe('ecdsa-sha2-nistp256')
 
     expect(() => parseSSHKey('not a valid key')).toThrow('Unsupported key format')
   })
