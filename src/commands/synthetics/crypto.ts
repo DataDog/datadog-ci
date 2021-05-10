@@ -10,19 +10,15 @@ export const generateOpenSSHKeys = () => {
     namedCurve: 'P-256',
     publicKeyEncoding: {
       type: 'spki',
-      format
+      format,
     },
     privateKeyEncoding: {
       type: 'pkcs8',
       format,
-    }
+    },
   })
-  const openSSHPublicKey = parseKey(publicKey, format)
-    .toBuffer('ssh', {})
-    .toString('utf-8')
-  const openSSHPrivateKey = parsePrivateKey(privateKey, format)
-    .toBuffer('ssh', {})
-    .toString('utf-8')
+  const openSSHPublicKey = parseKey(publicKey, format).toBuffer('ssh', {}).toString('utf-8')
+  const openSSHPrivateKey = parsePrivateKey(privateKey, format).toBuffer('ssh', {}).toString('utf-8')
 
   return {
     privateKey: openSSHPrivateKey,
