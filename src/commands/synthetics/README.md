@@ -165,25 +165,26 @@ All options under the `config` key allow overriding the configuration of the tes
 
 You can configure on which url your Browser or HTTP test starts by providing a `config.startUrl` to your test object and build your own starting url using any part of your test's original starting url and the following environment variables:
 
-| Environment variable | Description                  | Example                                                |
-| -------------------- | ---------------------------- | ------------------------------------------------------ |
-| `URL`                | Test's original starting url | `https://www.example.org:81/path/to/something?abc=123` |
-| `DOMAIN`             | Test's domain name           | `example.org`                                          |
-| `HOST`               | Test's host                  | `www.example.org:81`                                   |
-| `HOSTNAME`           | Test's hostname              | `www.example.org`                                      |
-| `ORIGIN`             | Test's origin                | `https://www.example.org:81`                           |
-| `PARAMS`             | Test's query parameters      | `?abc=123`                                             |
-| `PATHNAME`           | Test's URl path              | `/path/to/something`                                   |
-| `PORT`               | Test's host port             | `81`                                                   |
-| `PROTOCOL`           | Test's protocol              | `https:`                                               |
-| `SUBDOMAIN`          | Test's sub domain            | `www`                                                  |
+| Environment variable | Description                  | Example                                                       |
+| -------------------- | ---------------------------- | ------------------------------------------------------------- |
+| `URL`                | Test's original starting url | `https://www.example.org:81/path/to/something?abc=123#target` |
+| `DOMAIN`             | Test's domain name           | `example.org`                                                 |
+| `HASH`               | Test's URL hash              | `#target`                                                     |
+| `HOST`               | Test's host                  | `www.example.org:81`                                          |
+| `HOSTNAME`           | Test's hostname              | `www.example.org`                                             |
+| `ORIGIN`             | Test's origin                | `https://www.example.org:81`                                  |
+| `PARAMS`             | Test's query parameters      | `?abc=123`                                                    |
+| `PATHNAME`           | Test's URl path              | `/path/to/something`                                          |
+| `PORT`               | Test's host port             | `81`                                                          |
+| `PROTOCOL`           | Test's protocol              | `https:`                                                      |
+| `SUBDOMAIN`          | Test's sub domain            | `www`                                                         |
 
-For instance, if your test's starting url is `https://www.example.org:81/path/to/something?abc=123`
+For instance, if your test's starting url is `https://www.example.org:81/path/to/something?abc=123#target`
 
 It can be written as :
 
-- `{{PROTOCOL}}//{{SUBDOMAIN}}.{{DOMAIN}}:{{PORT}}{{PATHNAME}}{{PARAMS}}`
-- `{{PROTOCOL}}//{{HOST}}{{PATHNAME}}{{PARAMS}}`
+- `{{PROTOCOL}}//{{SUBDOMAIN}}.{{DOMAIN}}:{{PORT}}{{PATHNAME}}{{PARAMS}}{{HASH}}`
+- `{{PROTOCOL}}//{{HOST}}{{PATHNAME}}{{PARAMS}}{{HASH}}`
 - `{{URL}}`
 
 and so on...
