@@ -60,6 +60,18 @@ export interface ProxyConfiguration {
   protocol: ProxyType
 }
 
+export const getProxyUrl = (options: ProxyConfiguration) => {
+  const {auth, host, port, protocol} = options
+
+  if (!host || !port) {
+    return ''
+  }
+
+  const authFragment = auth ? `${auth.username}:${auth.password}@` : ''
+
+  return `${protocol}://${authFragment}${host}:${port}`
+}
+
 export interface RequestOptions {
   apiKey: string
   appKey?: string
@@ -81,7 +93,8 @@ export const getRequestBuilder = (options: RequestOptions) => {
     }
 
     if (proxyOpts && proxyOpts.host && proxyOpts.port) {
-      newArguments.httpsAgent = new ProxyAgent(proxyOpts)
+      const proxyUrl = getProxyUrl(proxyOpts)
+      newArguments.httpsAgent = new ProxyAgent(proxyUrl)
     }
 
     return newArguments
