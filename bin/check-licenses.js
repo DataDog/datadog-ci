@@ -12,7 +12,9 @@ async function main() {
   const packageJsonPaths = await findPackageJsonPaths()
 
   console.log(`Look for dependencies in:\n`, packageJsonPaths)
-  const declaredDependencies = withoutDuplicates(packageJsonPaths.flatMap(retrievePackageJsonDependencies)).sort()
+  const declaredDependencies = withoutDuplicates(
+    packageJsonPaths.reduce((acc, packageJsonPath) => acc.concat(retrievePackageJsonDependencies(packageJsonPath)), [])
+  ).sort()
 
   const declaredLicenses = (await retrieveLicenses()).sort()
 
