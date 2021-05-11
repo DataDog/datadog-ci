@@ -113,18 +113,22 @@ export class UploadCommand extends Command {
         source: this.source,
         version: this.releaseVersion,
       }
-      await this.uploadDependencies(payload, metricsLogger)
+      await this.uploadDependencies(payload, metricsLogger.logger)
       const totalTimeSeconds = (Date.now() - initialTime) / 1000
 
       this.context.stdout.write(renderSuccessfulCommand(totalTimeSeconds))
 
-      metricsLogger.gauge('duration', totalTimeSeconds)
+      metricsLogger.logger.gauge('duration', totalTimeSeconds)
     } catch (error) {
-      this.context.stderr.write(error.message)
+      this.context.stderr.write(`${error.message}\n`)
 
       return UploadCommand.UPLOAD_ERROR_EXIT_CODE
     } finally {
-      metricsLogger.flush()
+      try {
+        await metricsLogger.flush()
+      } catch (err) {
+        this.context.stdout.write(`WARN: ${err}\n`)
+      }
     }
   }
 

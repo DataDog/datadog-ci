@@ -2,30 +2,33 @@ import retry from 'async-retry'
 import chalk from 'chalk'
 import {Command} from 'clipanion'
 import {BufferedMetricsLogger} from 'datadog-metrics'
-import fs from 'fs'
 import glob from 'glob'
 import path from 'path'
 import asyncPool from 'tiny-async-pool'
 import {URL} from 'url'
 
 import {apiConstructor} from './api'
+import {ApiKeyValidator} from './apikey'
+import {InvalidConfigurationError} from './errors'
 import {getRepositoryData, newSimpleGit, RepositoryData} from './git'
-import {APIHelper, Payload} from './interfaces'
+import {APIHelper, Payload, UploadStatus} from './interfaces'
 import {getMetricsLogger} from './metrics'
 import {
   renderCommandInfo,
+  renderConfigurationError,
   renderDryRunUpload,
   renderFailedUpload,
+  renderGitDataNotAttachedWarning,
   renderInvalidPrefix,
   renderRetriedUpload,
   renderSuccessfulCommand,
 } from './renderer'
 import {getBaseIntakeUrl, getMinifiedFilePath} from './utils'
+import {InvalidPayload, validatePayload} from './validation'
 
 import {buildPath} from '../../helpers/utils'
 
 const errorCodesNoRetry = [400, 403, 413]
-const errorCodesStopUpload = [400, 403]
 
 export class UploadCommand extends Command {
   public static usage = Command.Usage({
@@ -46,9 +49,11 @@ export class UploadCommand extends Command {
     ],
   })
 
+  private apiKeyValidator: ApiKeyValidator
   private basePath?: string
   private config = {
     apiKey: process.env.DATADOG_API_KEY,
+    datadogSite: process.env.DATADOG_SITE || 'datadoghq.com',
   }
   private dryRun = false
   private enableGit?: boolean
@@ -58,6 +63,11 @@ export class UploadCommand extends Command {
   private releaseVersion?: string
   private repositoryURL?: string
   private service?: string
+
+  constructor() {
+    super()
+    this.apiKeyValidator = new ApiKeyValidator(this.config.apiKey, this.config.datadogSite)
+  }
 
   public async execute() {
     if (!this.releaseVersion) {
@@ -104,12 +114,29 @@ export class UploadCommand extends Command {
     const useGit = this.enableGit !== undefined && this.enableGit
     const initialTime = Date.now()
     const payloads = await this.getPayloadsToUpload(useGit, cliVersion)
-    const upload = (p: Payload) => this.uploadSourcemap(api, metricsLogger, p)
-    await asyncPool(this.maxConcurrency, payloads, upload)
-    const totalTime = (Date.now() - initialTime) / 1000
-    this.context.stdout.write(renderSuccessfulCommand(payloads.length, totalTime))
-    metricsLogger.gauge('duration', totalTime)
-    metricsLogger.flush()
+    const upload = (p: Payload) => this.uploadSourcemap(api, metricsLogger.logger, p)
+    try {
+      const results = await asyncPool(this.maxConcurrency, payloads, upload)
+      const totalTime = (Date.now() - initialTime) / 1000
+      this.context.stdout.write(renderSuccessfulCommand(results, totalTime, this.dryRun))
+      metricsLogger.logger.gauge('duration', totalTime)
+
+      return 0
+    } catch (error) {
+      if (error instanceof InvalidConfigurationError) {
+        this.context.stdout.write(renderConfigurationError(error))
+
+        return 1
+      }
+      // Otherwise unknown error, let's propagate the exception
+      throw error
+    } finally {
+      try {
+        await metricsLogger.flush()
+      } catch (err) {
+        this.context.stdout.write(`WARN: ${err}\n`)
+      }
+    }
   }
 
   // Fills the 'repository' field of each payload with data gathered using git.
@@ -129,8 +156,7 @@ export class UploadCommand extends Command {
 
   private getApiHelper(): APIHelper {
     if (!this.config.apiKey) {
-      this.context.stdout.write(`Missing ${chalk.red.bold('DATADOG_API_KEY')} in your environment.\n`)
-      throw new Error('API key is missing')
+      throw new InvalidConfigurationError(`Missing ${chalk.bold('DATADOG_API_KEY')} in your environment.`)
     }
 
     return apiConstructor(getBaseIntakeUrl(), this.config.apiKey!)
@@ -181,22 +207,28 @@ export class UploadCommand extends Command {
   // declared inside the sourcemap.
   private getRepositoryPayload = (repositoryData: RepositoryData, sourcemapPath: string): string | undefined => {
     let repositoryPayload: string | undefined
-    const files = repositoryData.trackedFilesMatcher.matchSourcemap(this.context.stdout, sourcemapPath)
-    if (files) {
-      repositoryPayload = JSON.stringify({
-        data: [
-          {
-            files,
-            hash: repositoryData.hash,
-            repository_url: repositoryData.remote,
-          },
-        ],
-        // Make sure to update the version if the format of the JSON payloads changes in any way.
-        version: 1,
-      })
-    }
+    try {
+      const files = repositoryData.trackedFilesMatcher.matchSourcemap(this.context.stdout, sourcemapPath)
+      if (files) {
+        repositoryPayload = JSON.stringify({
+          data: [
+            {
+              files,
+              hash: repositoryData.hash,
+              repository_url: repositoryData.remote,
+            },
+          ],
+          // Make sure to update the version if the format of the JSON payloads changes in any way.
+          version: 1,
+        })
+      }
 
-    return repositoryPayload
+      return repositoryPayload
+    } catch (error) {
+      this.context.stdout.write(renderGitDataNotAttachedWarning(sourcemapPath, error.message))
+
+      return undefined
+    }
   }
 
   private isMinifiedPathPrefixValid(): boolean {
@@ -215,27 +247,43 @@ export class UploadCommand extends Command {
     return true
   }
 
-  private async uploadSourcemap(api: APIHelper, metricsLogger: BufferedMetricsLogger, sourcemap: Payload) {
-    if (!fs.existsSync(sourcemap.minifiedFilePath)) {
-      this.context.stdout.write(
-        renderFailedUpload(sourcemap, `Missing corresponding JS file for sourcemap (${sourcemap.minifiedFilePath})`)
-      )
-      metricsLogger.increment('skipped_missing_js', 1)
+  private async uploadSourcemap(
+    api: APIHelper,
+    metricsLogger: BufferedMetricsLogger,
+    sourcemap: Payload
+  ): Promise<UploadStatus> {
+    try {
+      validatePayload(sourcemap)
+    } catch (error) {
+      if (error instanceof InvalidPayload) {
+        this.context.stdout.write(renderFailedUpload(sourcemap, error.message))
+        metricsLogger.increment('skipped_sourcemap', 1, [`reason:${error.reason}`])
+      } else {
+        this.context.stdout.write(
+          renderFailedUpload(
+            sourcemap,
+            `Skipping sourcemap ${sourcemap.sourcemapPath} because of error: ${error.message}`
+          )
+        )
+        metricsLogger.increment('skipped_sourcemap', 1, ['reason:unknown'])
+      }
 
-      return
+      return UploadStatus.Skipped
     }
 
     try {
-      await retry(
+      return await retry(
         async (bail) => {
           try {
             if (this.dryRun) {
               this.context.stdout.write(renderDryRunUpload(sourcemap))
 
-              return
+              return UploadStatus.Success
             }
             await api.uploadSourcemap(sourcemap, this.context.stdout.write.bind(this.context.stdout))
             metricsLogger.increment('success', 1)
+
+            return UploadStatus.Success
           } catch (error) {
             if (error.response) {
               // If it's an axios error
@@ -247,7 +295,7 @@ export class UploadCommand extends Command {
             // If it's another error or an axios error we don't want to retry, bail
             bail(error)
 
-            return
+            return UploadStatus.Failure
           }
         },
         {
@@ -259,16 +307,28 @@ export class UploadCommand extends Command {
         }
       )
     } catch (error) {
-      metricsLogger.increment('failed', 1)
-      this.context.stdout.write(renderFailedUpload(sourcemap, error))
-      if (error.response) {
-        // If it's an axios error
-        if (!errorCodesStopUpload.includes(error.response.status)) {
-          // And a status code that should not stop the whole upload, just return
-          return
-        }
+      let invalidApiKey: boolean = error.response && error.response.status === 403
+      if (error.response && error.response.status === 400) {
+        invalidApiKey = !(await this.apiKeyValidator.isApiKeyValid())
       }
-      throw error
+      if (invalidApiKey) {
+        metricsLogger.increment('invalid_auth', 1)
+        throw new InvalidConfigurationError(
+          `${chalk.red.bold('DATADOG_API_KEY')} does not contain a valid API key for Datadog site ${
+            this.config.datadogSite
+          }`
+        )
+      }
+      metricsLogger.increment('failed', 1)
+      if (error.response && error.response.statusText) {
+        // Display human readable info about the status code
+        this.context.stdout.write(renderFailedUpload(sourcemap, `${error.message} (${error.response.statusText})`))
+      } else {
+        // Default error handling
+        this.context.stdout.write(renderFailedUpload(sourcemap, error))
+      }
+
+      return UploadStatus.Failure
     }
   }
 }

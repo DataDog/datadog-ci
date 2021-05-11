@@ -55,7 +55,7 @@
     "ssh2": "0.8.9",
     "ssh2-streams": "0.4.10",
     "sshpk": "1.16.1",
-    "tiny-async-pool": "1.1.0",
+    "tiny-async-pool": "1.2.0",
     "ws": "7.4.0",
     "yamux-js": "0.0.6"
   },
@@ -64,7 +64,7 @@
     "@babel/preset-env": "7.4.5",
     "@babel/preset-typescript": "7.3.3",
     "@types/async-retry": "1.4.2",
-    "@types/datadog-metrics": "0.6.0",
+    "@types/datadog-metrics": "0.6.1",
     "@types/deep-extend": "0.4.31",
     "@types/glob": "7.1.1",
     "@types/jest": "24.0.15",
