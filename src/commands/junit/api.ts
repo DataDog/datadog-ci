@@ -10,6 +10,8 @@ import {renderUpload} from './renderer'
 
 import {CI_JOB_URL, CI_PIPELINE_URL, GIT_SHA} from '../../helpers/tags'
 
+const getSafeFileName = (unsafeFileName: string) => unsafeFileName.replace(/[^a-z0-9]/gi, '_')
+
 // Dependency follows-redirects sets a default maxBodyLength of 10 MB https://github.com/follow-redirects/follow-redirects/blob/b774a77e582b97174813b3eaeb86931becba69db/index.js#L391
 // We don't want any hard limit enforced by the CLI, the backend will enforce a max size by returning 413 errors.
 const maxBodyLength = Infinity
@@ -43,7 +45,9 @@ export const uploadJUnitXML = (request: (args: AxiosRequestConfig) => AxiosPromi
     uniqueFileName = `${uniqueFileName}-${spanTags[CI_JOB_URL]}`
   }
 
-  form.append('junit_xml_report_file', fs.createReadStream(jUnitXML.xmlPath), {filename: `${uniqueFileName}.xml`})
+  form.append('junit_xml_report_file', fs.createReadStream(jUnitXML.xmlPath), {
+    filename: `${getSafeFileName(uniqueFileName)}.xml`,
+  })
 
   return request({
     data: form,
