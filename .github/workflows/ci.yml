@@ -27,7 +27,7 @@ jobs:
       - name: Install node
         uses: actions/setup-node@v1
         with:
-          node-version: '12.x'
+          node-version: '10.24.1'
       - run: yarn install --immutable
       - run: yarn build
       - run: yarn lint

@@ -197,14 +197,14 @@ describe('utils', () => {
     test('startUrl template is rendered if correct test type or subtype', () => {
       const publicId = 'abc-def-ghi'
       const fakeTest = {
-        config: {request: {url: 'http://example.org/path'}},
+        config: {request: {url: 'http://example.org/path#target'}},
         public_id: publicId,
         type: 'browser',
       } as Test
       const configOverride = {
-        startUrl: 'https://{{DOMAIN}}/newPath?oldPath={{PATHNAME}}',
+        startUrl: 'https://{{DOMAIN}}/newPath?oldPath={{PATHNAME}}{{HASH}}',
       }
-      const expectedUrl = 'https://example.org/newPath?oldPath=/path'
+      const expectedUrl = 'https://example.org/newPath?oldPath=/path#target'
 
       let handledConfig = utils.handleConfig(fakeTest, publicId, mockReporter, configOverride)
       expect(handledConfig.public_id).toBe(publicId)
