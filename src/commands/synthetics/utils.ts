@@ -100,6 +100,7 @@ const parseUrlVariables = (url: string, reporter: MainReporter) => {
   const domain = subdomainMatch ? objUrl.hostname.replace(`${subdomainMatch[1]}.`, '') : objUrl.hostname
 
   context.DOMAIN = domain
+  context.HASH = objUrl.hash
   context.HOST = objUrl.host
   context.HOSTNAME = objUrl.hostname
   context.ORIGIN = objUrl.origin

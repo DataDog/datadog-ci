@@ -4,7 +4,15 @@ import * as fs from 'fs'
 
 import {AxiosPromise, AxiosRequestConfig, default as axios} from 'axios'
 
-import {buildPath, getApiHostForSite, getRequestBuilder, parseConfigFile, pick, ProxyConfiguration} from '../utils'
+import {
+  buildPath,
+  getApiHostForSite,
+  getProxyUrl,
+  getRequestBuilder,
+  parseConfigFile,
+  pick,
+  ProxyConfiguration,
+} from '../utils'
 
 jest.useFakeTimers()
 
@@ -84,7 +92,7 @@ describe('utils', () => {
     })
 
     test('should add proxy configuration', async () => {
-      jest.spyOn(axios, 'create').mockImplementation((() => (args: AxiosRequestConfig) => args.httpsAgent.proxy) as any)
+      jest.spyOn(axios, 'create').mockImplementation((() => (args: AxiosRequestConfig) => args.httpsAgent) as any)
       const proxyOpts: ProxyConfiguration = {protocol: 'http', host: '1.2.3.4', port: 1234}
       const requestOptions = {
         apiKey: 'apiKey',
@@ -94,7 +102,9 @@ describe('utils', () => {
       }
       const request = getRequestBuilder(requestOptions)
       const fakeEndpoint = fakeEndpointBuilder(request)
-      expect(await fakeEndpoint()).toStrictEqual(proxyOpts)
+      const httpsAgent = await fakeEndpoint()
+      expect(httpsAgent).toBeDefined()
+      expect((httpsAgent as any).proxyUri).toBe('http://1.2.3.4:1234')
     })
   })
 
@@ -117,6 +127,20 @@ describe('utils', () => {
 
       expect(buildPath(pathWithNoTrailingSlash, fileName)).toBe('sourcemaps/js/file1.min.js')
       expect(buildPath(pathWithTrailingSlash, fileName)).toBe('sourcemaps/js/file1.min.js')
+    })
+  })
+
+  describe('getProxyUrl', () => {
+    test('should return correct proxy URI', () => {
+      expect(getProxyUrl({protocol: 'http'})).toBe('')
+      expect(getProxyUrl({host: '127.0.0.1', protocol: 'http'})).toBe('')
+      expect(getProxyUrl({host: '127.0.0.1', port: 1234, protocol: 'http'})).toBe('http://127.0.0.1:1234')
+
+      const auth = {password: 'pwd', username: 'john'}
+      expect(getProxyUrl({auth, host: '127.0.0.1', port: 1234, protocol: 'http'})).toBe(
+        'http://john:pwd@127.0.0.1:1234'
+      )
+      expect(getProxyUrl({auth, protocol: 'http'})).toBe('')
     })
   })
 })

@@ -177,6 +177,17 @@ describe('execute', () => {
       service: 'test-service',
     })
   })
+
+  test('single file', async () => {
+    const {context, code} = await runCLI([process.cwd() + '/src/commands/junit/__tests__/fixtures/single_file.xml'])
+    const output = context.stdout.toString().split(os.EOL)
+    const path = `${process.cwd()}/src/commands/junit/__tests__/fixtures/single_file.xml`
+    expect(code).toBe(0)
+    expect(output[0]).toContain('DRY-RUN MODE ENABLED. WILL NOT UPLOAD JUNIT XML')
+    expect(output[1]).toContain('Starting upload with concurrency 20.')
+    expect(output[2]).toContain(`Will upload jUnit XML file ${path}`)
+    expect(output[3]).toContain('service: test-service')
+  })
 })
 
 interface ExpectedOutput {

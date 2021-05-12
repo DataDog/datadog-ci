@@ -12,13 +12,15 @@ async function main() {
   const packageJsonPaths = await findPackageJsonPaths()
 
   console.log(`Look for dependencies in:\n`, packageJsonPaths)
-  const declaredDependencies = withoutDuplicates(packageJsonPaths.flatMap(retrievePackageJsonDependencies)).sort()
+  const declaredDependencies = withoutDuplicates(
+    packageJsonPaths.reduce((acc, packageJsonPath) => acc.concat(retrievePackageJsonDependencies(packageJsonPath)), [])
+  ).sort()
 
   const declaredLicenses = (await retrieveLicenses()).sort()
 
   if (JSON.stringify(declaredDependencies) !== JSON.stringify(declaredLicenses)) {
-    console.error(JSON.stringify(declaredDependencies, null, 2));
-    console.error(JSON.stringify(declaredLicenses, null, 2));
+    console.error(JSON.stringify(declaredDependencies, null, 2))
+    console.error(JSON.stringify(declaredLicenses, null, 2))
     console.error(`\n❌ package.json dependencies and ${LICENSE_FILE} mismatch`)
     console.error(
       `\nIn package.json but not in ${LICENSE_FILE}:\n`,
@@ -34,7 +36,7 @@ async function main() {
 }
 
 async function findPackageJsonPaths() {
-  const { stdout } = await exec('find . -path "*/node_modules/*" -prune -o -name "package.json" -print')
+  const {stdout} = await exec('find . -path "*/node_modules/*" -prune -o -name "package.json" -print')
   return stdout.trim().split('\n')
 }
 
@@ -52,7 +54,7 @@ function withoutDuplicates(a) {
 
 async function retrieveLicenses() {
   const fileStream = fs.createReadStream(path.join(__dirname, '..', LICENSE_FILE))
-  const rl = readline.createInterface({ input: fileStream })
+  const rl = readline.createInterface({input: fileStream})
   const licenses = []
   let header = true
   for await (const line of rl) {

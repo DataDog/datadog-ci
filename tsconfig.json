@@ -10,18 +10,12 @@
     "moduleResolution": "node",
     "baseUrl": "./",
     "paths": {
-      "*": [
-        "node_modules/*"
-      ]
+      "*": ["node_modules/*"]
     },
     "allowSyntheticDefaultImports": true,
     "esModuleInterop": true,
-    "lib": [
-      "es2019"
-    ],
+    "lib": ["es2019"],
     "resolveJsonModule": true
   },
-  "include": [
-    "src/**/*"
-  ]
+  "include": ["src/**/*"]
 }
