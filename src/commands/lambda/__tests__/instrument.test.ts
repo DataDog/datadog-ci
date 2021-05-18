@@ -46,7 +46,15 @@ describe('lambda', () => {
 
   describe('instrument', () => {
     describe('execute', () => {
-      test('prints dry run data', async () => {
+      const OLD_ENV = process.env
+      beforeEach(() => {
+        jest.resetModules()
+        process.env = {...OLD_ENV}
+      })
+      afterAll(() => {
+        process.env = OLD_ENV
+      })
+      test('prints dry run data for lambda library layer', async () => {
         ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({code: 'ENOENT'}))
         ;(Lambda as any).mockImplementation(() =>
           makeMockLambda({
@@ -86,12 +94,59 @@ describe('lambda', () => {
           }
           TagResource -> arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world
           {
-            \\"dd_sls_ci\\": \\"v${version}\\"
+            \\"dd_sls_ci\\": \\"v0.12.0\\"
           }
           "
         `)
       })
-      test('runs function update command', async () => {
+      test('prints dry run data for lambda extension layer', async () => {
+        ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({code: 'ENOENT'}))
+        ;(Lambda as any).mockImplementation(() =>
+          makeMockLambda({
+            'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world': {
+              FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world',
+              Handler: 'index.handler',
+              Runtime: 'nodejs12.x',
+            },
+          })
+        )
+        const cli = makeCli()
+        const context = createMockContext() as any
+        const functionARN = 'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world'
+        process.env.DD_API_KEY = '1234'
+        const code = await cli.run(
+          ['lambda', 'instrument', '-f', functionARN, '--dry', '--extensionVersion', '6'],
+          context
+        )
+        const output = context.stdout.toString()
+        expect(code).toBe(0)
+        expect(output).toMatchInlineSnapshot(`
+          "[Dry Run] Will apply the following updates:
+          UpdateFunctionConfiguration -> arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world
+          {
+            \\"FunctionName\\": \\"arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world\\",
+            \\"Handler\\": \\"/opt/nodejs/node_modules/datadog-lambda-js/handler.handler\\",
+            \\"Layers\\": [
+              \\"arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Extension:6\\"
+            ],
+            \\"Environment\\": {
+              \\"Variables\\": {
+                \\"DD_LAMBDA_HANDLER\\": \\"index.handler\\",
+                \\"DD_API_KEY\\": \\"1234\\",
+                \\"DD_TRACE_ENABLED\\": \\"true\\",
+                \\"DD_MERGE_XRAY_TRACES\\": \\"false\\",
+                \\"DD_FLUSH_TO_LOG\\": \\"true\\"
+              }
+            }
+          }
+          TagResource -> arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world
+          {
+            \\"dd_sls_ci\\": \\"v0.12.0\\"
+          }
+          "
+        `)
+      })
+      test('runs function update command for lambda library layer', async () => {
         ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({code: 'ENOENT'}))
         const lambda = makeMockLambda({
           'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world': {
@@ -111,6 +166,32 @@ describe('lambda', () => {
             'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world',
             '--layerVersion',
             '10',
+          ],
+          context
+        )
+        expect(lambda.updateFunctionConfiguration).toHaveBeenCalled()
+      })
+      test('runs function update command for lambda extension layer', async () => {
+        ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({code: 'ENOENT'}))
+        const lambda = makeMockLambda({
+          'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world': {
+            FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world',
+            Handler: 'index.handler',
+            Runtime: 'nodejs12.x',
+          },
+        })
+        ;(Lambda as any).mockImplementation(() => lambda)
+        const cli = makeCli()
+        const context = createMockContext() as any
+        process.env.DD_API_KEY = '1234'
+        await cli.run(
+          [
+            'lambda',
+            'instrument',
+            '--function',
+            'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world',
+            '--extensionVersion',
+            '6',
           ],
           context
         )
@@ -144,6 +225,33 @@ describe('lambda', () => {
                                                   "
                                         `)
       })
+      test('aborts early when no extensionVersion and forwarder are set', async () => {
+        ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({code: 'ENOENT'}))
+        ;(Lambda as any).mockImplementation(() => makeMockLambda({}))
+        const cli = makeCli()
+        const context = createMockContext() as any
+        const code = await cli.run(
+          [
+            'lambda',
+            'instrument',
+            '--function',
+            'test-function-arn',
+            '--forwarder',
+            'arn:aws:lambda:sa-east-1:000000000000:function:datadog-forwarder',
+            '--extensionVersion',
+            '6',
+            '--region',
+            'us-east-1',
+          ],
+          context
+        )
+        const output = context.stdout.toString()
+        expect(code).toBe(1)
+        expect(output).toMatchInlineSnapshot(`
+          "\\"extensionVersion\\" and \\"forwarder\\" should not be used at the same time.
+          "
+        `)
+      })
     })
     describe('getSettings', () => {
       test('uses config file settings', () => {
@@ -152,11 +260,13 @@ describe('lambda', () => {
         command['config']['flushMetricsToLogs'] = false
         command['config']['forwarder'] = 'my-forwarder'
         command['config']['layerVersion'] = '2'
+        command['config']['extensionVersion'] = '6'
         command['config']['layerAWSAccount'] = 'another-account'
         command['config']['mergeXrayTraces'] = false
         command['config']['tracing'] = false
 
         expect(command['getSettings']()).toEqual({
+          extensionVersion: 6,
           flushMetricsToLogs: false,
           forwarderARN: 'my-forwarder',
           layerAWSAccount: 'another-account',
@@ -191,18 +301,8 @@ describe('lambda', () => {
           tracingEnabled: true,
         })
       })
-      test('returns undefined when layer version is undefined', () => {
-        process.env = {}
 
-        const command = createCommand()
-        command.context = {
-          stdout: {write: jest.fn()} as any,
-        } as any
-        command['layerVersion'] = undefined
-
-        expect(command['getSettings']()).toBeUndefined()
-      })
-      test("returns undefined when layer version can't be  parsed", () => {
+      test("returns undefined when layer version can't be parsed", () => {
         process.env = {}
 
         const command = createCommand()
@@ -210,6 +310,18 @@ describe('lambda', () => {
           stdout: {write: jest.fn()} as any,
         } as any
         command['layerVersion'] = 'abd'
+
+        expect(command['getSettings']()).toBeUndefined()
+      })
+
+      test("returns undefined when extension version can't be parsed", () => {
+        process.env = {}
+
+        const command = createCommand()
+        command.context = {
+          stdout: {write: jest.fn()} as any,
+        } as any
+        command['extensionVersion'] = 'abd'
 
         expect(command['getSettings']()).toBeUndefined()
       })
@@ -302,7 +414,7 @@ describe('lambda', () => {
           {
             functionARN: 'my-func',
             lambdaConfig: {} as any,
-            layerARN: 'my-layer',
+            lambdaLibraryLayerArn: 'my-layer',
             logGroupConfiguration: {
               createLogGroupRequest: {logGroupName: 'my-log-group'} as any,
               deleteSubscriptionFilterRequest: {filterName: 'my-filter'} as any,
