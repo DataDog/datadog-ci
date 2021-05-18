@@ -49,7 +49,7 @@ describe('lambda', () => {
       const OLD_ENV = process.env
       beforeEach(() => {
         jest.resetModules()
-        process.env = {...OLD_ENV}
+        process.env = {}
       })
       afterAll(() => {
         process.env = OLD_ENV
@@ -86,6 +86,7 @@ describe('lambda', () => {
             \\"Environment\\": {
               \\"Variables\\": {
                 \\"DD_LAMBDA_HANDLER\\": \\"index.handler\\",
+                \\"DD_SITE\\": \\"datadoghq.com\\",
                 \\"DD_TRACE_ENABLED\\": \\"true\\",
                 \\"DD_MERGE_XRAY_TRACES\\": \\"false\\",
                 \\"DD_FLUSH_TO_LOG\\": \\"true\\"
@@ -113,7 +114,7 @@ describe('lambda', () => {
         const cli = makeCli()
         const context = createMockContext() as any
         const functionARN = 'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world'
-        process.env.DD_API_KEY = '1234'
+        process.env.DATADOG_API_KEY = '1234'
         const code = await cli.run(
           ['lambda', 'instrument', '-f', functionARN, '--dry', '--extensionVersion', '6'],
           context
@@ -133,6 +134,7 @@ describe('lambda', () => {
               \\"Variables\\": {
                 \\"DD_LAMBDA_HANDLER\\": \\"index.handler\\",
                 \\"DD_API_KEY\\": \\"1234\\",
+                \\"DD_SITE\\": \\"datadoghq.com\\",
                 \\"DD_TRACE_ENABLED\\": \\"true\\",
                 \\"DD_MERGE_XRAY_TRACES\\": \\"false\\",
                 \\"DD_FLUSH_TO_LOG\\": \\"true\\"
@@ -183,7 +185,7 @@ describe('lambda', () => {
         ;(Lambda as any).mockImplementation(() => lambda)
         const cli = makeCli()
         const context = createMockContext() as any
-        process.env.DD_API_KEY = '1234'
+        process.env.DATADOG_API_KEY = '1234'
         await cli.run(
           [
             'lambda',

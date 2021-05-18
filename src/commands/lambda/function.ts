@@ -142,8 +142,9 @@ export const calculateUpdateRequest = (
   const env: Record<string, string> = {...config.Environment?.Variables}
   const newEnvVars: Record<string, string> = {}
   const functionARN = config.FunctionArn
-  const apiKey: string | undefined = process.env.DD_API_KEY
-  const apiKmsKey: string | undefined = process.env.DD_KMS_API_KEY
+  const apiKey: string | undefined = process.env.DATADOG_API_KEY
+  const apiKmsKey: string | undefined = process.env.DATADOG_KMS_API_KEY
+  const site: string | undefined = process.env.DATADOG_SITE
   if (functionARN === undefined) {
     return undefined
   }
@@ -170,13 +171,28 @@ export const calculateUpdateRequest = (
   if (settings.extensionVersion !== undefined) {
     fullExtensionLayerARN = `${lambdaExtensionLayerArn}:${settings.extensionVersion}`
   }
-  if (apiKey !== undefined && env.DD_API_KEY === undefined) {
+  if (apiKey !== undefined && env.DD_API_KEY===undefined) {
     needsUpdate = true
     newEnvVars.DD_API_KEY = apiKey
   }
-  if (apiKmsKey !== undefined && env.DD_KMS_API_KEY === undefined) {
+  if (apiKmsKey !== undefined && env.DD_KMS_API_KEY===undefined) {
     needsUpdate = true
     newEnvVars.DD_KMS_API_KEY = apiKmsKey
+  }
+  if (site !== undefined && env.DD_SITE===undefined) {
+    const siteList: string[] = ["datadoghq.com", "datadoghq.eu", "us3.datadoghq.com", "ddog-gov.com"];
+    if (siteList.includes(site.toLowerCase())){
+      needsUpdate = true
+      newEnvVars.DD_SITE = site
+    } else {
+      throw new Error(
+        "Warning: Invalid site URL. Must be either datadoghq.com, datadoghq.eu, us3.datadoghq.com, or ddog-gov.com.",
+      );
+    }
+  }
+  if (site === undefined && env.DD_SITE === undefined) {
+    needsUpdate = true
+    newEnvVars.DD_SITE = "datadoghq.com"
   }
   let layerARNs = (config.Layers ?? []).map((layer) => layer.Arn ?? '')
   let needsLayerUpdate = false
@@ -196,7 +212,7 @@ export const calculateUpdateRequest = (
         env.DD_KMS_API_KEY === undefined &&
         newEnvVars.DD_KMS_API_KEY === undefined
       ) {
-        throw new Error("When 'extensionLayer' is set, DD_API_KEY or DD_KMS_API_KEY must also be set")
+        throw new Error("When 'extensionLayer' is set, DATADOG_API_KEY or DATADOG_KMS_API_KEY must also be set")
       }
       needsUpdate = true
       needsLayerUpdate = true
