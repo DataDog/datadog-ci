@@ -94,7 +94,7 @@ describe('lambda', () => {
           }
           TagResource -> arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world
           {
-            \\"dd_sls_ci\\": \\"v0.12.0\\"
+            \\"dd_sls_ci\\": \\"v${version}\\"
           }
           "
         `)
@@ -141,7 +141,7 @@ describe('lambda', () => {
           }
           TagResource -> arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world
           {
-            \\"dd_sls_ci\\": \\"v0.12.0\\"
+            \\"dd_sls_ci\\": \\"v${version}\\"
           }
           "
         `)
