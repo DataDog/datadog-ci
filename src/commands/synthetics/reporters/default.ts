@@ -108,7 +108,10 @@ const renderResultOutcome = (result: Result, test: Test, icon: string, color: ch
     const errorName =
       result.errorMessage && result.errorMessage !== 'Unknown error' ? result.errorMessage : 'General Error'
 
-    return `    ${chalk.bold(`✖ | ${errorName}`)}`
+    return [
+      `    ${chalk.yellow(` ${ICONS.SKIPPED} | ${errorName}`)}`,
+      `    ${chalk.yellow('We had an error during the execution of this test. The result will be ignored')}`,
+    ].join('\n')
   }
 
   if (test.type === 'api') {

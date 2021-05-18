@@ -138,6 +138,10 @@ export const getStrictestExecutionRule = (configRule: ExecutionRule, testRule?: 
 }
 
 export const hasResultPassed = (result: Result): boolean => {
+  if (result.unhealthy) {
+    return true
+  }
+
   if (typeof result.passed !== 'undefined') {
     return result.passed
   }

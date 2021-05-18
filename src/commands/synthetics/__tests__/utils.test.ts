@@ -343,7 +343,15 @@ describe('utils', () => {
       result: {...passingResult, passed: false},
       resultID: '0123456789',
     }
+    const unhealthyPollResult = {
+      check: testConfiguration,
+      dc_id: 42,
+      result: {...passingResult, passed: false, unhealthy: true},
+      resultID: '0123456789',
+    }
+
     expect(utils.hasTestSucceeded([passingPollResult, failingPollResult])).toBeFalsy()
+    expect(utils.hasTestSucceeded([passingPollResult, unhealthyPollResult])).toBeTruthy()
     expect(utils.hasTestSucceeded([passingPollResult, passingPollResult])).toBeTruthy()
   })
 
