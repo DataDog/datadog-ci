@@ -77,7 +77,7 @@ describe('function', () => {
               DD_FLUSH_TO_LOG: 'false',
               DD_LAMBDA_HANDLER: 'index.handler',
               DD_MERGE_XRAY_TRACES: 'false',
-              DD_SITE: "datadoghq.com",
+              DD_SITE: 'datadoghq.com',
               DD_TRACE_ENABLED: 'false',
             },
           },
@@ -470,8 +470,8 @@ describe('function', () => {
           "FunctionName": "arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world",
           "Handler": "/opt/nodejs/node_modules/datadog-lambda-js/handler.handler",
           "Layers": Array [
-            "arn:aws:lambda:sa-east-1:123456789012:layer:Datadog-Node12-x:5",
             "arn:aws:lambda:sa-east-1:123456789012:layer:Datadog-Extension:6",
+            "arn:aws:lambda:sa-east-1:123456789012:layer:Datadog-Node12-x:5",
           ],
         }
       `)
@@ -518,8 +518,8 @@ describe('function', () => {
           "FunctionName": "arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world",
           "Handler": "datadog_lambda.handler.handler",
           "Layers": Array [
-            "arn:aws:lambda:sa-east-1:123456789012:layer:Datadog-Python36:5",
             "arn:aws:lambda:sa-east-1:123456789012:layer:Datadog-Extension:6",
+            "arn:aws:lambda:sa-east-1:123456789012:layer:Datadog-Python36:5",
           ],
         }
       `)
@@ -625,7 +625,9 @@ describe('function', () => {
 
       expect(() => {
         calculateUpdateRequest(config, settings, lambdaLibraryLayerArn, lambdaExtensionLayerArn, runtime)
-      }).toThrowError("Warning: Invalid site URL. Must be either datadoghq.com, datadoghq.eu, us3.datadoghq.com, or ddog-gov.com.")
+      }).toThrowError(
+        'Warning: Invalid site URL. Must be either datadoghq.com, datadoghq.eu, us3.datadoghq.com, or ddog-gov.com.'
+      )
     })
     test('throws an error when neither DATADOG_API_KEY nor DATADOG_KMS_API_KEY are given through the environment while using extensionVersion', () => {
       const config = {

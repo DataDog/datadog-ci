@@ -171,56 +171,45 @@ export const calculateUpdateRequest = (
   if (settings.extensionVersion !== undefined) {
     fullExtensionLayerARN = `${lambdaExtensionLayerArn}:${settings.extensionVersion}`
   }
-  if (apiKey !== undefined && env.DD_API_KEY===undefined) {
+  if (apiKey !== undefined && env.DD_API_KEY !== apiKey) {
     needsUpdate = true
     newEnvVars.DD_API_KEY = apiKey
   }
-  if (apiKmsKey !== undefined && env.DD_KMS_API_KEY===undefined) {
+  if (apiKmsKey !== undefined && env.DD_KMS_API_KEY !== apiKmsKey) {
     needsUpdate = true
     newEnvVars.DD_KMS_API_KEY = apiKmsKey
   }
-  if (site !== undefined && env.DD_SITE===undefined) {
-    const siteList: string[] = ["datadoghq.com", "datadoghq.eu", "us3.datadoghq.com", "ddog-gov.com"];
-    if (siteList.includes(site.toLowerCase())){
+  if (site !== undefined && env.DD_SITE !== site) {
+    const siteList: string[] = ['datadoghq.com', 'datadoghq.eu', 'us3.datadoghq.com', 'ddog-gov.com']
+    if (siteList.includes(site.toLowerCase())) {
       needsUpdate = true
       newEnvVars.DD_SITE = site
     } else {
       throw new Error(
-        "Warning: Invalid site URL. Must be either datadoghq.com, datadoghq.eu, us3.datadoghq.com, or ddog-gov.com.",
-      );
+        'Warning: Invalid site URL. Must be either datadoghq.com, datadoghq.eu, us3.datadoghq.com, or ddog-gov.com.'
+      )
     }
   }
   if (site === undefined && env.DD_SITE === undefined) {
     needsUpdate = true
-    newEnvVars.DD_SITE = "datadoghq.com"
+    newEnvVars.DD_SITE = 'datadoghq.com'
   }
   let layerARNs = (config.Layers ?? []).map((layer) => layer.Arn ?? '')
+  const originalLayerARNs = (config.Layers ?? []).map((layer) => layer.Arn ?? '')
   let needsLayerUpdate = false
-  if (fullLambdaLibraryLayerARN !== undefined) {
-    if (!layerARNs.includes(fullLambdaLibraryLayerARN)) {
-      needsUpdate = true
-      needsLayerUpdate = true
-      // Remove any other versions of the layer
-      layerARNs = [...layerARNs.filter((l) => !l.startsWith(lambdaLibraryLayerArn)), fullLambdaLibraryLayerARN]
-    }
-  }
-  if (fullExtensionLayerARN !== undefined) {
-    if (!layerARNs.includes(fullExtensionLayerARN)) {
-      if (
-        env.DD_API_KEY === undefined &&
-        newEnvVars.DD_API_KEY === undefined &&
-        env.DD_KMS_API_KEY === undefined &&
-        newEnvVars.DD_KMS_API_KEY === undefined
-      ) {
-        throw new Error("When 'extensionLayer' is set, DATADOG_API_KEY or DATADOG_KMS_API_KEY must also be set")
-      }
-      needsUpdate = true
-      needsLayerUpdate = true
-      // Remove any other versions of the layer
-      layerARNs = [...layerARNs.filter((l) => !l.startsWith(lambdaExtensionLayerArn)), fullExtensionLayerARN]
-    }
+  layerARNs = determineIfLayerShouldBeAdded(fullLambdaLibraryLayerARN, lambdaLibraryLayerArn, layerARNs, {
+    ...env,
+    ...newEnvVars,
+  })
+  layerARNs = determineIfLayerShouldBeAdded(fullExtensionLayerARN, lambdaExtensionLayerArn, layerARNs, {
+    ...env,
+    ...newEnvVars,
+  })
+  if (originalLayerARNs.sort().join(',') !== layerARNs.sort().join(',')) {
+    needsLayerUpdate = true
   }
   if (needsLayerUpdate) {
+    needsUpdate = true
     updateRequest.Layers = layerARNs
   }
   if (env.DD_TRACE_ENABLED !== settings.tracingEnabled.toString()) {
@@ -244,6 +233,28 @@ export const calculateUpdateRequest = (
   return needsUpdate ? updateRequest : undefined
 }
 
+const determineIfLayerShouldBeAdded = (
+  fullLayerARN: string | undefined,
+  partialLayerARN: string,
+  layerARNs: string[],
+  env: Record<string, string>
+) => {
+  if (fullLayerARN) {
+    if (!layerARNs.includes(fullLayerARN)) {
+      if (
+        fullLayerARN.includes(DD_LAMBDA_EXTENSION_LAYER_NAME) &&
+        env.DD_API_KEY === undefined &&
+        env.DD_KMS_API_KEY === undefined
+      ) {
+        throw new Error("When 'extensionLayer' is set, DATADOG_API_KEY or DATADOG_KMS_API_KEY must also be set")
+      }
+      // Remove any other versions of the layer
+      layerARNs = [...layerARNs.filter((l) => !l.startsWith(partialLayerARN)), fullLayerARN]
+    }
+  }
+
+  return layerARNs
+}
 const isSupportedRuntime = (runtime?: string): runtime is Runtime => {
   const lookup = RUNTIME_LAYER_LOOKUP as Record<string, string>
 
