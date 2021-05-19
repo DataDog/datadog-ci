@@ -197,14 +197,9 @@ export const calculateUpdateRequest = (
   let layerARNs = (config.Layers ?? []).map((layer) => layer.Arn ?? '')
   const originalLayerARNs = (config.Layers ?? []).map((layer) => layer.Arn ?? '')
   let needsLayerUpdate = false
-  layerARNs = determineIfLayerShouldBeAdded(fullLambdaLibraryLayerARN, lambdaLibraryLayerArn, layerARNs, {
-    ...env,
-    ...newEnvVars,
-  })
-  layerARNs = determineIfLayerShouldBeAdded(fullExtensionLayerARN, lambdaExtensionLayerArn, layerARNs, {
-    ...env,
-    ...newEnvVars,
-  })
+  layerARNs = addLayerARN(fullLambdaLibraryLayerARN, lambdaLibraryLayerArn, layerARNs)
+  layerARNs = addLayerARN(fullExtensionLayerARN, lambdaExtensionLayerArn, layerARNs)
+
   if (originalLayerARNs.sort().join(',') !== layerARNs.sort().join(',')) {
     needsLayerUpdate = true
   }
@@ -224,30 +219,28 @@ export const calculateUpdateRequest = (
     needsUpdate = true
     newEnvVars.DD_FLUSH_TO_LOG = settings.flushMetricsToLogs.toString()
   }
+  const allEnvVariables = {...env, ...newEnvVars}
+  layerARNs.forEach((layerARN) => {
+    if (
+      layerARN.includes(DD_LAMBDA_EXTENSION_LAYER_NAME) &&
+      allEnvVariables.DD_API_KEY === undefined &&
+      allEnvVariables.DD_KMS_API_KEY === undefined
+    ) {
+      throw new Error("When 'extensionLayer' is set, DATADOG_API_KEY or DATADOG_KMS_API_KEY must also be set")
+    }
+  })
   if (Object.entries(newEnvVars).length > 0) {
     updateRequest.Environment = {
-      Variables: {...env, ...newEnvVars},
+      Variables: allEnvVariables,
     }
   }
 
   return needsUpdate ? updateRequest : undefined
 }
 
-const determineIfLayerShouldBeAdded = (
-  fullLayerARN: string | undefined,
-  partialLayerARN: string,
-  layerARNs: string[],
-  env: Record<string, string>
-) => {
+const addLayerARN = (fullLayerARN: string | undefined, partialLayerARN: string, layerARNs: string[]) => {
   if (fullLayerARN) {
     if (!layerARNs.includes(fullLayerARN)) {
-      if (
-        fullLayerARN.includes(DD_LAMBDA_EXTENSION_LAYER_NAME) &&
-        env.DD_API_KEY === undefined &&
-        env.DD_KMS_API_KEY === undefined
-      ) {
-        throw new Error("When 'extensionLayer' is set, DATADOG_API_KEY or DATADOG_KMS_API_KEY must also be set")
-      }
       // Remove any other versions of the layer
       layerARNs = [...layerARNs.filter((l) => !l.startsWith(partialLayerARN)), fullLayerARN]
     }
