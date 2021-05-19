@@ -72,11 +72,11 @@ datadog-ci lambda instrument -f functionname -r us-east-1 -v 10 --dry
 #### Additional Environment Variables:
 
 You may configure the `lambda instrument` command with environment variables:
-*You must expose these environment variables in your Environment where you are running `datadog-ci lambda instrument`*
+*You must expose these environment variables in the environment where you are running `datadog-ci lambda instrument`*
 
 | Environment Variable | Description                                                                                                                                                                                                                                                                                               | Example                             |
 |----------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-------------------------------------|
-| DATADOG_API_KEY      | Datadog API Key. Sets the `DD_API_KEY` environment variable on your Lambda function configuration. For more information about getting a Datadog API key, see the [API key documentation][8]                                                                                                               | export DATADOG_API_KEY="1234"       |
+| DATADOG_API_KEY      | Datadog API Key. Sets the `DD_API_KEY` environment variable on your Lambda function configuration. For more information about getting a Datadog API key, see the [API key documentation][6]                                                                                                               | export DATADOG_API_KEY="1234"       |
 | DATADOG_KMS_API_KEY  | Datadog API Key encrypted using KMS. Sets the `DD_KMS_API_KEY` environment variable on your Lambda function  configuration.                                                                                                                                                                               | export DATADOG_KMS_API_KEY="5678"   |
 | DATADOG_SITE         | Set which Datadog site to send data. Only needed when using the Datadog Lambda Extension. Possible values are  `datadoghq.com` , `datadoghq.eu` , `us3.datadoghq.com` and `ddog-gov.com`. The default is `datadoghq.com`. Sets the `DD_SITE` environment variable on your Lambda function configurations. | export DATADOG_SITE="datadoghq.com" |
 
@@ -89,3 +89,4 @@ For product feedback and questions, join the `#serverless` channel in the [Datad
 [3]: https://github.com/DataDog/datadog-lambda-layer-js/releases
 [4]: https://github.com/DataDog/datadog-lambda-layer-python/releases
 [5]: https://docs.datadoghq.com/serverless/datadog_lambda_library/extension
+[6]: https://docs.datadoghq.com/account_management/api-app-keys/#api-keys
