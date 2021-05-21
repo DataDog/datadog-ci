@@ -2,6 +2,7 @@ import {URL} from 'url'
 
 import {Metadata, SpanTag, SpanTags} from './interfaces'
 import {
+  CI_JOB_ID,
   CI_JOB_NAME,
   CI_JOB_URL,
   CI_PIPELINE_ID,
@@ -93,13 +94,18 @@ export const getCISpanTags = (): SpanTags | undefined => {
       CIRCLE_TAG,
       CIRCLE_SHA1,
       CIRCLE_REPOSITORY_URL,
+      CIRCLE_JOB,
     } = env
+
+    const pipelineUrl = `https://app.circle.com/pipelines/workflows/${CIRCLE_WORKFLOW_ID}`
+
     tags = {
       [CI_JOB_URL]: CIRCLE_BUILD_URL,
       [CI_PIPELINE_ID]: CIRCLE_WORKFLOW_ID,
       [CI_PIPELINE_NAME]: CIRCLE_PROJECT_REPONAME,
-      [CI_PIPELINE_NUMBER]: CIRCLE_BUILD_NUM,
-      [CI_PIPELINE_URL]: CIRCLE_BUILD_URL,
+      [CI_PIPELINE_URL]: pipelineUrl,
+      [CI_JOB_NAME]: CIRCLE_JOB,
+      [CI_JOB_ID]: CIRCLE_BUILD_NUM,
       [CI_PROVIDER_NAME]: CI_ENGINES.CIRCLECI,
       [CI_WORKSPACE_PATH]: CIRCLE_WORKING_DIRECTORY,
       [GIT_SHA]: CIRCLE_SHA1,

@@ -1,4 +1,5 @@
 import {
+  CI_JOB_ID,
   CI_JOB_NAME,
   CI_JOB_URL,
   CI_PIPELINE_ID,
@@ -30,6 +31,7 @@ export interface Metadata {
 }
 
 export type SpanTag =
+  | typeof CI_JOB_ID
   | typeof CI_JOB_NAME
   | typeof CI_JOB_URL
   | typeof CI_PIPELINE_ID
