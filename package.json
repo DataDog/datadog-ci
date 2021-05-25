@@ -1,6 +1,6 @@
 {
   "name": "@datadog/datadog-ci",
-  "version": "0.13.0",
+  "version": "0.13.1",
   "description": "Run datadog actions from the CI.",
   "main": "dist/index.js",
   "repository": "https://github.com/DataDog/datadog-ci",
