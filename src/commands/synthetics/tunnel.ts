@@ -49,6 +49,9 @@ export class Tunnel {
       algorithms: {
         serverHostKey: [parsedHostPrivateKey.type],
       },
+      // Greatly increase highWaterMark (32kb -> 255kb) to avoid hanging with large requests
+      // SW-1182, https://github.com/mscdex/ssh2/issues/908
+      highWaterMark: 255 * 1024,
       hostKeys: {
         // Typings are wrong for host keys
         [parsedHostPrivateKey.type]: parsedHostPrivateKey as any,
