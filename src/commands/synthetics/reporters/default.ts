@@ -101,14 +101,14 @@ const renderApiError = (errorCode: string, errorMessage: string, color: chalk.Ch
 // Test execution rendering
 const renderResultOutcome = (result: Result, test: Test, icon: string, color: chalk.Chalk) => {
   if (result.error) {
-    return `    ${chalk.bold(`✖ | ${result.error}`)}`
+    return `    ${chalk.bold(`${ICONS.FAILED} | ${result.error}`)}`
   }
 
   if (result.unhealthy) {
     const errorName =
       result.errorMessage && result.errorMessage !== 'Unknown error' ? result.errorMessage : 'General Error'
 
-    return `    ${chalk.bold(`✖ | ${errorName}`)}`
+    return `    ${chalk.bold(`${ICONS.FAILED} | ${errorName}`)}`
   }
 
   if (test.type === 'api') {

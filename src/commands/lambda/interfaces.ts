@@ -1,4 +1,5 @@
 export interface LambdaConfigOptions {
+  extensionVersion?: string
   flushMetricsToLogs?: boolean
   forwarder?: string
   functions: string[]
