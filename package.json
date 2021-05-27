@@ -1,6 +1,6 @@
 {
   "name": "@datadog/datadog-ci",
-  "version": "0.12.3-alpha",
+  "version": "0.13.1-alpha",
   "description": "Run datadog actions from the CI.",
   "main": "dist/index.js",
   "repository": "https://github.com/DataDog/datadog-ci",
@@ -46,7 +46,7 @@
     "chalk": "3.0.0",
     "clipanion": "2.2.2",
     "datadog-metrics": "0.9.3",
-    "dd-trace": "0.32.2",
+    "dd-trace": "0.33.0-beta.2",
     "deep-extend": "0.6.0",
     "form-data": "3.0.0",
     "glob": "7.1.4",
