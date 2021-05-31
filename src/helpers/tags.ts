@@ -8,7 +8,6 @@ export const CI_WORKSPACE_PATH = 'ci.workspace_path'
 export const GIT_REPOSITORY_URL = 'git.repository_url'
 export const CI_JOB_URL = 'ci.job.url'
 export const CI_JOB_NAME = 'ci.job.name'
-export const CI_JOB_ID = 'ci.job.id'
 export const CI_STAGE_NAME = 'ci.stage.name'
 export const CI_LEVEL = '_dd.ci.level'
 // @deprecated TODO: remove this once backend is updated
