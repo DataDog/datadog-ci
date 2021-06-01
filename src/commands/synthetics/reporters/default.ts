@@ -101,7 +101,7 @@ const renderApiError = (errorCode: string, errorMessage: string, color: chalk.Ch
 // Test execution rendering
 const renderResultOutcome = (result: Result, test: Test, icon: string, color: chalk.Chalk) => {
   if (result.error) {
-    return `    ${chalk.bold(`✖ | ${result.error}`)}`
+    return `    ${chalk.bold(`${ICONS.FAILED} | ${result.error}`)}`
   }
 
   if (result.unhealthy) {
