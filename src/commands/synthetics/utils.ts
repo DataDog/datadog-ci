@@ -137,8 +137,8 @@ export const getStrictestExecutionRule = (configRule: ExecutionRule, testRule?: 
   return ExecutionRule.BLOCKING
 }
 
-export const hasResultPassed = (result: Result): boolean => {
-  if (result.unhealthy) {
+export const hasResultPassed = (result: Result, shouldSkipUnhealthyTest: boolean): boolean => {
+  if (result.unhealthy && !shouldSkipUnhealthyTest) {
     return true
   }
 
@@ -153,8 +153,8 @@ export const hasResultPassed = (result: Result): boolean => {
   return true
 }
 
-export const hasTestSucceeded = (results: PollResult[]): boolean =>
-  results.every((pollResult: PollResult) => hasResultPassed(pollResult.result))
+export const hasTestSucceeded = (results: PollResult[], shouldSkipUnhealthyTest: boolean): boolean =>
+  results.every((pollResult: PollResult) => hasResultPassed(pollResult.result, shouldSkipUnhealthyTest))
 
 export const getSuites = async (GLOB: string, reporter: MainReporter): Promise<Suite[]> => {
   reporter.log(`Finding files in ${path.join(process.cwd(), GLOB)}\n`)
@@ -336,10 +336,10 @@ export const getReporter = (reporters: Reporter[]): MainReporter => ({
       }
     }
   },
-  testEnd: (test, results, baseUrl, locationNames) => {
+  testEnd: (test, results, baseUrl, locationNames, shouldSkipUnhealthyTest) => {
     for (const reporter of reporters) {
       if (typeof reporter.testEnd === 'function') {
-        reporter.testEnd(test, results, baseUrl, locationNames)
+        reporter.testEnd(test, results, baseUrl, locationNames, shouldSkipUnhealthyTest)
       }
     }
   },

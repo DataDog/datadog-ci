@@ -19,6 +19,7 @@ export class RunTestCommand extends Command {
     global: {} as ConfigOverride,
     pollingTimeout: 2 * 60 * 1000,
     proxy: {protocol: 'http'} as ProxyConfiguration,
+    shouldSkipUnhealthyResult: false,
     subdomain: process.env.DATADOG_SUBDOMAIN || 'app',
     tunnel: false,
   }
@@ -86,7 +87,7 @@ export class RunTestCommand extends Command {
       const results = await waitForResults(api, triggers.results, this.config.pollingTimeout, testsToTrigger, tunnel)
 
       // Sort tests to show success first then non blocking failures and finally blocking failures.
-      tests.sort(this.sortTestsByOutcome(results))
+      tests.sort(this.sortTestsByOutcome(results, this.config.shouldSkipUnhealthyResult))
 
       // Rendering the results.
       this.reporter.reportStart({startTime})
@@ -100,7 +101,7 @@ export class RunTestCommand extends Command {
       for (const test of tests) {
         const testResults = results[test.public_id]
 
-        const passed = hasTestSucceeded(testResults)
+        const passed = hasTestSucceeded(testResults, this.config.shouldSkipUnhealthyResult)
         if (passed) {
           summary.passed++
         } else {
@@ -110,7 +111,13 @@ export class RunTestCommand extends Command {
           }
         }
 
-        this.reporter.testEnd(test, testResults, this.getAppBaseURL(), locationNames)
+        this.reporter.testEnd(
+          test,
+          testResults,
+          this.getAppBaseURL(),
+          locationNames,
+          this.config.shouldSkipUnhealthyResult
+        )
       }
 
       this.reporter.runEnd(summary)
@@ -200,10 +207,10 @@ export class RunTestCommand extends Command {
     return testsToTrigger
   }
 
-  private sortTestsByOutcome(results: {[key: string]: PollResult[]}) {
+  private sortTestsByOutcome(results: {[key: string]: PollResult[]}, shouldSkipUnhealthyResult: boolean) {
     return (t1: Test, t2: Test) => {
-      const success1 = hasTestSucceeded(results[t1.public_id])
-      const success2 = hasTestSucceeded(results[t2.public_id])
+      const success1 = hasTestSucceeded(results[t1.public_id], shouldSkipUnhealthyResult)
+      const success2 = hasTestSucceeded(results[t2.public_id], shouldSkipUnhealthyResult)
       const isNonBlockingTest1 = t1.options.ci?.executionRule === ExecutionRule.NON_BLOCKING
       const isNonBlockingTest2 = t2.options.ci?.executionRule === ExecutionRule.NON_BLOCKING
 
