@@ -195,10 +195,10 @@ const renderExecutionResult = (
   execution: PollResult,
   baseUrl: string,
   locationNames: LocationsMapping,
-  shouldSkipUnhealthyTest: boolean
+  shouldSkipUnhealthyResult: boolean
 ) => {
   const {check: overridedTest, dc_id, resultID, result} = execution
-  const isSuccess = hasResultPassed(result, shouldSkipUnhealthyTest)
+  const isSuccess = hasResultPassed(result, shouldSkipUnhealthyResult)
   const color = getTestResultColor(isSuccess, test.options.ci?.executionRule === ExecutionRule.NON_BLOCKING)
   const icon = isSuccess ? ICONS.SUCCESS : ICONS.FAILED
 
@@ -220,7 +220,7 @@ const renderExecutionResult = (
     outputLines.push(resultInfo)
   }
 
-  const resultOutcome = renderResultOutcome(result, overridedTest || test, icon, color, shouldSkipUnhealthyTest)
+  const resultOutcome = renderResultOutcome(result, overridedTest || test, icon, color, shouldSkipUnhealthyResult)
   if (resultOutcome) {
     outputLines.push(resultOutcome)
   }
@@ -297,9 +297,9 @@ export class DefaultReporter implements Reporter {
     results: PollResult[],
     baseUrl: string,
     locationNames: LocationsMapping,
-    shouldSkipUnhealthyTest: boolean
+    shouldSkipUnhealthyResult: boolean
   ) {
-    const success = hasTestSucceeded(results, shouldSkipUnhealthyTest)
+    const success = hasTestSucceeded(results, shouldSkipUnhealthyResult)
     const isNonBlocking = test.options.ci?.executionRule === ExecutionRule.NON_BLOCKING
 
     const icon = renderResultIcon(success, isNonBlocking)
@@ -309,7 +309,7 @@ export class DefaultReporter implements Reporter {
     const nonBlockingText = !success && isNonBlocking ? '[NON-BLOCKING]' : ''
 
     const testResultsText = results
-      .map((r) => renderExecutionResult(test, r, baseUrl, locationNames, shouldSkipUnhealthyTest))
+      .map((r) => renderExecutionResult(test, r, baseUrl, locationNames, shouldSkipUnhealthyResult))
       .join('\n\n')
       .concat('\n\n')
 

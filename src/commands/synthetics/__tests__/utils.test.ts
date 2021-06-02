@@ -304,9 +304,9 @@ describe('utils', () => {
         passed: true,
         stepDetails: [],
       }
-      expect(utils.hasResultPassed(result, false)).toBeTruthy()
+      expect(utils.hasResultPassed(result, true)).toBeTruthy()
       result.passed = false
-      expect(utils.hasResultPassed(result, false)).toBeFalsy()
+      expect(utils.hasResultPassed(result, true)).toBeFalsy()
     })
 
     test('result with error', () => {
@@ -317,7 +317,7 @@ describe('utils', () => {
         passed: false,
         stepDetails: [],
       }
-      expect(utils.hasResultPassed(result, false)).toBeFalsy()
+      expect(utils.hasResultPassed(result, true)).toBeFalsy()
     })
   })
 
@@ -351,8 +351,8 @@ describe('utils', () => {
     }
 
     expect(utils.hasTestSucceeded([passingPollResult, failingPollResult], false)).toBeFalsy()
-    expect(utils.hasTestSucceeded([passingPollResult, unhealthyPollResult], false)).toBeFalsy()
     expect(utils.hasTestSucceeded([passingPollResult, unhealthyPollResult], true)).toBeTruthy()
+    expect(utils.hasTestSucceeded([passingPollResult, unhealthyPollResult], false)).toBeFalsy()
     expect(utils.hasTestSucceeded([passingPollResult, passingPollResult], false)).toBeTruthy()
   })
 

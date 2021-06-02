@@ -19,7 +19,7 @@ export class RunTestCommand extends Command {
     global: {} as ConfigOverride,
     pollingTimeout: 2 * 60 * 1000,
     proxy: {protocol: 'http'} as ProxyConfiguration,
-    shouldSkipUnhealthyResult: false,
+    shouldSkipUnhealthyResult: true,
     subdomain: process.env.DATADOG_SUBDOMAIN || 'app',
     tunnel: false,
   }
