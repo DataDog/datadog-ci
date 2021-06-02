@@ -171,11 +171,20 @@ export class Tunnel {
           })
         })
         dest.on('error', (error) => {
-          console.error('Forwarding error', error.message)
+          if (!src) {
+            if ((error as any).code === 'ENOTFOUND') {
+              this.logError(`Unable to resolve host ${(error as any).hostname}`)
+            } else {
+              this.logError(`Forwarding channel error: "${error.message}"`)
+            }
+            reject()
+          }
         })
         dest.on('close', () => {
           if (src) {
             src.close()
+          } else {
+            reject()
           }
         })
         dest.connect(info.destPort, info.destIP)
