@@ -170,9 +170,9 @@ export class Tunnel {
             dest.destroy()
           })
         })
-        dest.on('error', (error) => {
+        dest.on('error', (error: NodeJS.ErrnoException) => {
           if (!src) {
-            if ((error as any).code === 'ENOTFOUND') {
+            if ('code' in error && error.code === 'ENOTFOUND') {
               this.logError(`Unable to resolve host ${(error as any).hostname}`)
             } else {
               this.logError(`Forwarding channel error: "${error.message}"`)
