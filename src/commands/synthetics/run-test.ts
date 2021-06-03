@@ -14,12 +14,12 @@ export class RunTestCommand extends Command {
   private config = {
     apiKey: process.env.DATADOG_API_KEY,
     appKey: process.env.DATADOG_APP_KEY,
+    blockOnUnexpectedResults: true,
     datadogSite: process.env.DATADOG_SITE || 'datadoghq.com',
     files: '{,!(node_modules)/**/}*.synthetics.json',
     global: {} as ConfigOverride,
     pollingTimeout: 2 * 60 * 1000,
     proxy: {protocol: 'http'} as ProxyConfiguration,
-    shouldSkipUnhealthyResult: true,
     subdomain: process.env.DATADOG_SUBDOMAIN || 'app',
     tunnel: false,
   }
@@ -87,7 +87,7 @@ export class RunTestCommand extends Command {
       const results = await waitForResults(api, triggers.results, this.config.pollingTimeout, testsToTrigger, tunnel)
 
       // Sort tests to show success first then non blocking failures and finally blocking failures.
-      tests.sort(this.sortTestsByOutcome(results, this.config.shouldSkipUnhealthyResult))
+      tests.sort(this.sortTestsByOutcome(results, this.config.blockOnUnexpectedResults))
 
       // Rendering the results.
       this.reporter.reportStart({startTime})
@@ -101,7 +101,7 @@ export class RunTestCommand extends Command {
       for (const test of tests) {
         const testResults = results[test.public_id]
 
-        const passed = hasTestSucceeded(testResults, this.config.shouldSkipUnhealthyResult)
+        const passed = hasTestSucceeded(testResults, this.config.blockOnUnexpectedResults)
         if (passed) {
           summary.passed++
         } else {
@@ -116,7 +116,7 @@ export class RunTestCommand extends Command {
           testResults,
           this.getAppBaseURL(),
           locationNames,
-          this.config.shouldSkipUnhealthyResult
+          this.config.blockOnUnexpectedResults
         )
       }
 
@@ -207,10 +207,10 @@ export class RunTestCommand extends Command {
     return testsToTrigger
   }
 
-  private sortTestsByOutcome(results: {[key: string]: PollResult[]}, shouldSkipUnhealthyResult: boolean) {
+  private sortTestsByOutcome(results: {[key: string]: PollResult[]}, blockOnUnexpectedResults: boolean) {
     return (t1: Test, t2: Test) => {
-      const success1 = hasTestSucceeded(results[t1.public_id], shouldSkipUnhealthyResult)
-      const success2 = hasTestSucceeded(results[t2.public_id], shouldSkipUnhealthyResult)
+      const success1 = hasTestSucceeded(results[t1.public_id], blockOnUnexpectedResults)
+      const success2 = hasTestSucceeded(results[t2.public_id], blockOnUnexpectedResults)
       const isNonBlockingTest1 = t1.options.ci?.executionRule === ExecutionRule.NON_BLOCKING
       const isNonBlockingTest2 = t2.options.ci?.executionRule === ExecutionRule.NON_BLOCKING
 
@@ -230,6 +230,7 @@ export class RunTestCommand extends Command {
 RunTestCommand.addPath('synthetics', 'run-tests')
 RunTestCommand.addOption('apiKey', Command.String('--apiKey'))
 RunTestCommand.addOption('appKey', Command.String('--appKey'))
+RunTestCommand.addOption('blockOnUnexpectedResults', Command.String('--blockOnUnexpectedResults'))
 RunTestCommand.addOption('configPath', Command.String('--config'))
 RunTestCommand.addOption('publicIds', Command.Array('-p,--public-id'))
 RunTestCommand.addOption('testSearchQuery', Command.String('-s,--search'))

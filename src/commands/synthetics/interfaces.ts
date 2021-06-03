@@ -22,7 +22,7 @@ export interface MainReporter {
     results: PollResult[],
     baseUrl: string,
     locationNames: LocationsMapping,
-    shouldSkipUnhealthyResult: boolean
+    blockOnUnexpectedResults: boolean
   ): void
   testTrigger(test: Test, testId: string, executionRule: ExecutionRule, config: ConfigOverride): void
   testWait(test: Test): void
@@ -197,7 +197,6 @@ export interface ConfigOverride {
   locations?: string[]
   pollingTimeout?: number
   retry?: RetryConfig
-  shouldSkipUnhealthyResult?: boolean
   startUrl?: string
   tunnel?: TunnelInfo
   variables?: {[key: string]: string}
