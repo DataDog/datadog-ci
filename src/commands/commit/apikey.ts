@@ -1,15 +1,9 @@
 import axios from 'axios'
 
 export class ApiKeyValidator {
-  public apiKey: string | undefined
-  public datadogSite: string
-
   private isValid?: boolean
 
-  constructor(apiKey: string | undefined, datadogSite: string) {
-    this.apiKey = apiKey
-    this.datadogSite = datadogSite
-  }
+  constructor(public apiKey: string | undefined, public datadogSite: string) {}
 
   public async isApiKeyValid(): Promise<boolean | undefined> {
     if (this.isValid === undefined) {
