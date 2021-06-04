@@ -74,7 +74,7 @@ export interface RepositoryData {
 export const getRepositoryData = async (
   git: simpleGit.SimpleGit,
   stdout: Writable,
-  repositoryURL: string | undefined
+  repositoryURL?: string
 ): Promise<RepositoryData | undefined> => {
   // Invoke git commands to retrieve the remote, hash and tracked files.
   // We're using Promise.all instead of Promive.allSettled since we want to fail early if
