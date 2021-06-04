@@ -11,7 +11,7 @@ import {renderUpload} from './renderer'
 // We don't want any hard limit enforced by the CLI, the backend will enforce a max size by returning 413 errors.
 const maxBodyLength = Infinity
 
-export const uploadRepository = (request: (args: AxiosRequestConfig) => AxiosPromise<AxiosResponse>) => async (
+const uploadRepository = (request: (args: AxiosRequestConfig) => AxiosPromise<AxiosResponse>) => async (
   repository: Payload,
   write: Writable['write']
 ) => {
