@@ -95,11 +95,9 @@ export const getRepositoryData = async (
     return
   }
 
-  const data = {
+  return {
     hash,
     remote,
     trackedFiles,
   }
-
-  return data
 }
