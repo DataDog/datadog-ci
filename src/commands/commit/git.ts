@@ -92,7 +92,7 @@ export const getRepositoryData = async (
   } catch (e) {
     stdout.write(renderGitError(e))
 
-    return undefined
+    return
   }
 
   const data = {
