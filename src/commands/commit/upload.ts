@@ -52,7 +52,7 @@ export class UploadCommand extends Command {
     const cliVersion = require('../../../package.json').version
     const metricsLogger = getMetricsLogger(cliVersion)
     const payload = await this.getPayloadToUpload(cliVersion)
-    if (payload === undefined) {
+    if (!payload) {
       return 0
     }
     try {
