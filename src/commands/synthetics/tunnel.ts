@@ -168,12 +168,21 @@ export class Tunnel {
             dest.destroy()
           })
         })
-        dest.on('error', (error) => {
-          console.error('Forwarding error', error.message)
+        dest.on('error', (error: NodeJS.ErrnoException) => {
+          if (!src) {
+            if ('code' in error && error.code === 'ENOTFOUND') {
+              this.logError(`Unable to resolve host ${(error as any).hostname}`)
+            } else {
+              this.logError(`Forwarding channel error: "${error.message}"`)
+            }
+            reject()
+          }
         })
         dest.on('close', () => {
           if (src) {
             src.close()
+          } else {
+            reject()
           }
         })
         dest.connect(info.destPort, info.destIP)
