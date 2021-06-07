@@ -33,7 +33,9 @@ export type Reporter = Partial<MainReporter>
 
 export interface Result {
   device: {
+    height?: number
     id: string
+    width?: number
   }
   duration?: number
   error?: string | 'Endpoint Failure' | 'Timeout' | 'Tunnel Failure'
@@ -45,6 +47,7 @@ export interface Result {
     message: string
   }
   passed: boolean
+  startUrl?: string
   stepDetails: Step[]
   timings?: Timings
   tunnel?: boolean
@@ -53,6 +56,7 @@ export interface Result {
 
 export interface PollResult {
   check?: Test
+  check_id?: string
   dc_id: number
   result: Result
   resultID: string
@@ -66,8 +70,13 @@ interface Resource {
 }
 
 export interface Step {
+  allowFailure: boolean
   apmTraceIds: string[]
-  browserErrors: string[]
+  browserErrors: {
+    type: string
+    description: string
+    name: string
+  }[]
   description: string
   duration: number
   error?: string

@@ -11,6 +11,7 @@ import {
   LocationsMapping,
   MainReporter,
   PollResult,
+  Reporter,
   Summary,
   Test,
   TestPayload,
@@ -18,6 +19,7 @@ import {
   TriggerConfig,
 } from './interfaces'
 import {DefaultReporter} from './reporters/default'
+import {JUnitReporter} from './reporters/junit'
 import {Tunnel} from './tunnel'
 import {
   getReporter,
@@ -54,14 +56,21 @@ export class RunTestCommand extends Command {
   private failOnCriticalErrors?: boolean
   private failOnTimeout?: boolean
   private files?: string[]
+  public jUnitReport?: string
   private publicIds?: string[]
   private reporter?: MainReporter
+  public runName?: string
   private subdomain?: string
   private testSearchQuery?: string
   private tunnel?: boolean
 
   public async execute() {
-    const reporters = [new DefaultReporter(this)]
+    const reporters: Reporter[] = [new DefaultReporter(this)]
+
+    if (this.jUnitReport) {
+      reporters.push(new JUnitReporter(this))
+    }
+
     this.reporter = getReporter(reporters)
     await this.resolveConfig()
     const startTime = Date.now()
@@ -429,3 +438,5 @@ RunTestCommand.addOption('publicIds', Command.Array('-p,--public-id'))
 RunTestCommand.addOption('testSearchQuery', Command.String('-s,--search'))
 RunTestCommand.addOption('subdomain', Command.Boolean('--subdomain'))
 RunTestCommand.addOption('tunnel', Command.Boolean('-t,--tunnel'))
+RunTestCommand.addOption('jUnitReport', Command.String('-j,--junitReport'))
+RunTestCommand.addOption('runName', Command.String('-n,--runName'))
