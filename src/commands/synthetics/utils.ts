@@ -208,13 +208,13 @@ export const getSuites = async (GLOB: string, reporter: MainReporter): Promise<S
   }
 
   return Promise.all(
-    files.map(async (test) => {
+    files.map(async (file) => {
       try {
-        const content = await promisify(fs.readFile)(test, 'utf8')
+        const content = await promisify(fs.readFile)(file, 'utf8')
 
-        return JSON.parse(content)
+        return {name: file, content: JSON.parse(content)}
       } catch (e) {
-        throw new Error(`Unable to read and parse the test file ${test}`)
+        throw new Error(`Unable to read and parse the test file ${file}`)
       }
     })
   )
@@ -427,11 +427,14 @@ export const getTestsToTrigger = async (api: APIHelper, triggerConfigs: TriggerC
   const summary: Summary = {criticalErrors: 0, failed: 0, notFound: 0, passed: 0, skipped: 0, timedOut: 0}
 
   const tests = await Promise.all(
-    triggerConfigs.map(async ({config, id}) => {
+    triggerConfigs.map(async ({config, id, suite}) => {
       let test: Test | undefined
       id = PUBLIC_ID_REGEX.test(id) ? id : id.substr(id.lastIndexOf('/') + 1)
       try {
-        test = await api.getTest(id)
+        test = {
+          suite,
+          ...(await api.getTest(id)),
+        }
       } catch (e) {
         if (is5xxError(e)) {
           throw e

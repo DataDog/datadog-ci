@@ -67,7 +67,7 @@ export class RunTestCommand extends Command {
     const startTime = Date.now()
 
     const api = this.getApiHelper()
-    const publicIdsFromCli = this.config.publicIds.map((id) => ({config: this.config.global, id}))
+    const publicIdsFromCli = this.config.publicIds.map((id) => ({suite: 'CLI Suite', config: this.config.global, id}))
     let testsToTrigger: TriggerConfig[]
     let tunnel: Tunnel | undefined
     const safeExit = async (exitCode: 0 | 1) => {
@@ -308,25 +308,30 @@ export class RunTestCommand extends Command {
     return `${host}/${apiPath}`
   }
 
-  private async getTestsList(api: APIHelper) {
+  private async getTestsList(api: APIHelper): Promise<TriggerConfig[]> {
     if (this.config.testSearchQuery) {
       const testSearchResults = await api.searchTests(this.config.testSearchQuery)
 
-      return testSearchResults.tests.map((test) => ({config: this.config.global, id: test.public_id}))
+      return testSearchResults.tests.map((test) => ({
+        config: this.config.global,
+        id: test.public_id,
+        suite: `Query: ${this.testSearchQuery}`,
+      }))
     }
 
     const suites = (await Promise.all(this.config.files.map((glob: string) => getSuites(glob, this.reporter!))))
       .reduce((acc, val) => acc.concat(val), [])
-      .map((suite) => suite.tests)
-      .filter((suiteTests) => !!suiteTests)
+      .filter((suite) => !!suite.content.tests)
 
     const testsToTrigger = suites
+      .map((suite) => {
+        return suite.content.tests.map((test) => ({
+          suite: suite.name,
+          config: {...this.config!.global, ...test.config},
+          id: test.id,
+        }))
+      })
       .reduce((acc, suiteTests) => acc.concat(suiteTests), [])
-      .map((test) => ({
-        config: {...this.config.global, ...test.config},
-        id: test.id,
-      }))
-
     return testsToTrigger
   }
 

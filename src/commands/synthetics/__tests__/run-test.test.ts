@@ -375,6 +375,16 @@ describe('run-test', () => {
     const conf2 = {
       tests: [{config: {}, id: 'jkl-mno-pqr'}],
     }
+    const fakeSuites = [
+      {
+        name: 'Suite 1',
+        content: conf1,
+      },
+      {
+        name: 'Suite 2',
+        content: conf2,
+      },
+    ]
     const startUrl = 'fakeUrl'
     const fakeApi = {
       searchTests: () => ({
@@ -387,7 +397,7 @@ describe('run-test', () => {
     } as any
 
     test('should find all tests and extend global config', async () => {
-      jest.spyOn(utils, 'getSuites').mockImplementation((() => [conf1, conf2]) as any)
+      jest.spyOn(utils, 'getSuites').mockImplementation((() => fakeSuites) as any)
       const command = new RunTestCommand()
       command.context = process
       command['config'].global = {startUrl}
@@ -396,16 +406,18 @@ describe('run-test', () => {
         {
           config: {startUrl},
           id: 'abc-def-ghi',
+          suite: 'Suite 1',
         },
         {
           config: {startUrl},
           id: 'jkl-mno-pqr',
+          suite: 'Suite 2',
         },
       ])
     })
 
     test('should search tests and extend global config', async () => {
-      jest.spyOn(utils, 'getSuites').mockImplementation((() => [conf1, conf2]) as any)
+      jest.spyOn(utils, 'getSuites').mockImplementation((() => fakeSuites) as any)
       const command = new RunTestCommand()
       command.context = process
       command['config'].global = {startUrl}
@@ -416,12 +428,13 @@ describe('run-test', () => {
         {
           config: {startUrl},
           id: 'stu-vwx-yza',
+          name: 'Query: fake search',
         },
       ])
     })
 
     test('should use given globs to get tests list', async () => {
-      const getSuitesMock = jest.spyOn(utils, 'getSuites').mockImplementation((() => [conf1, conf2]) as any)
+      const getSuitesMock = jest.spyOn(utils, 'getSuites').mockImplementation((() => fakeSuites) as any)
       const command = new RunTestCommand()
       command.context = process
       command['config'].global = {startUrl}
