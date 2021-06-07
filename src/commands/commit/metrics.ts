@@ -1,5 +1,5 @@
 import metrics from 'datadog-metrics'
-import {getBaseAPIUrl} from './utils'
+import {apiHost} from './api'
 
 export interface MetricsLogger {
   logger: metrics.BufferedMetricsLogger
@@ -8,7 +8,7 @@ export interface MetricsLogger {
 
 export const getMetricsLogger = (cliVersion: string): MetricsLogger => {
   const logger = new metrics.BufferedMetricsLogger({
-    apiHost: getBaseAPIUrl(),
+    apiHost,
     defaultTags: [`cli_version:${cliVersion}`],
     flushIntervalSeconds: 15,
     host: 'ci',
@@ -18,7 +18,7 @@ export const getMetricsLogger = (cliVersion: string): MetricsLogger => {
   return {
     flush: () =>
       new Promise((resolve, reject) => {
-        logger.flush(resolve, (err) => reject(new Error(`Could not flush metrics to ${getBaseAPIUrl()}: ${err}`)))
+        logger.flush(resolve, (err) => reject(new Error(`Could not flush metrics to ${apiHost}: ${err}`)))
       }),
     logger,
   }

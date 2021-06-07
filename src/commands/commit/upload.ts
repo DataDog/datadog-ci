@@ -3,8 +3,7 @@ import chalk from 'chalk'
 import {Command} from 'clipanion'
 import {BufferedMetricsLogger} from 'datadog-metrics'
 
-import {apiConstructor} from './api'
-import {ApiKeyValidator} from './apikey'
+import {apiConstructor, ApiKeyValidator, datadogSite, getBaseIntakeUrl} from './api'
 import {InvalidConfigurationError} from './errors'
 import {getRepositoryData, newSimpleGit, RepositoryData} from './git'
 import {APIHelper, Payload} from './interfaces'
@@ -16,7 +15,6 @@ import {
   renderRetriedUpload,
   renderSuccessfulCommand,
 } from './renderer'
-import {getBaseIntakeUrl} from './utils'
 
 const errorCodesNoRetry = [400, 403, 413]
 
@@ -35,13 +33,12 @@ export class UploadCommand extends Command {
   private apiKeyValidator: ApiKeyValidator
   private config = {
     apiKey: process.env.DATADOG_API_KEY,
-    datadogSite: process.env.DATADOG_SITE || 'datadoghq.com',
   }
   private dryRun = false
 
   constructor() {
     super()
-    this.apiKeyValidator = new ApiKeyValidator(this.config.apiKey, this.config.datadogSite)
+    this.apiKeyValidator = new ApiKeyValidator(this.config.apiKey)
   }
 
   public async execute() {
@@ -159,9 +156,7 @@ export class UploadCommand extends Command {
       if (invalidApiKey) {
         metricsLogger.increment('invalid_auth', 1)
         throw new InvalidConfigurationError(
-          `${chalk.red.bold('DATADOG_API_KEY')} does not contain a valid API key for Datadog site ${
-            this.config.datadogSite
-          }`
+          `${chalk.red.bold('DATADOG_API_KEY')} does not contain a valid API key for Datadog site ${datadogSite}`
         )
       }
       metricsLogger.increment('failed', 1)
