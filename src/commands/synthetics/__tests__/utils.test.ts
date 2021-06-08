@@ -65,7 +65,7 @@ describe('utils', () => {
     })
 
     test('should run test', async () => {
-      const output = await utils.runTests(api, [{public_id: fakeId, executionRule: ExecutionRule.NON_BLOCKING}])
+      const output = await utils.runTests(api, [{public_id: fakeId, executionRule: ExecutionRule.NON_BLOCKING}], false, mockReporter)
       expect(output).toEqual(fakeTrigger)
     })
 
@@ -75,7 +75,7 @@ describe('utils', () => {
           executionRule: ExecutionRule.NON_BLOCKING,
           public_id: `http://localhost/synthetics/tests/details/${fakeId}`,
         },
-      ])
+      ], false, mockReporter)
       expect(output).toEqual(fakeTrigger)
     })
   })
@@ -351,8 +351,8 @@ describe('utils', () => {
     }
 
     expect(utils.hasTestSucceeded([passingPollResult, failingPollResult], false)).toBeFalsy()
-    expect(utils.hasTestSucceeded([passingPollResult, unhealthyPollResult], true)).toBeTruthy()
-    expect(utils.hasTestSucceeded([passingPollResult, unhealthyPollResult], false)).toBeFalsy()
+    expect(utils.hasTestSucceeded([passingPollResult, unhealthyPollResult], true)).toBeFalsy()
+    expect(utils.hasTestSucceeded([passingPollResult, unhealthyPollResult], false)).toBeTruthy()
     expect(utils.hasTestSucceeded([passingPollResult, passingPollResult], false)).toBeTruthy()
   })
 

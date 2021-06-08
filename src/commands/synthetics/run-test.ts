@@ -2,8 +2,8 @@ import chalk from 'chalk'
 import {Command} from 'clipanion'
 
 import {parseConfigFile, ProxyConfiguration} from '../../helpers/utils'
-import {apiConstructor} from './api'
-import {APIHelper, ConfigOverride, ExecutionRule, LocationsMapping, MainReporter, PollResult, Test} from './interfaces'
+import {apiConstructor, is5xxError} from './api'
+import {APIHelper, ConfigOverride, ExecutionRule, LocationsMapping, MainReporter, PollResult, Test, TestSearchResult} from './interfaces'
 import {DefaultReporter} from './reporters/default'
 import {Tunnel} from './tunnel'
 import {getReporter, getSuites, getTestsToTrigger, hasTestSucceeded, runTests, waitForResults} from './utils'
@@ -38,7 +38,7 @@ export class RunTestCommand extends Command {
 
     const api = this.getApiHelper()
     const publicIdsFromCli = this.publicIds.map((id) => ({config: this.config.global, id}))
-    const testsToTrigger = publicIdsFromCli.length ? publicIdsFromCli : await this.getTestsList(api)
+    const testsToTrigger = publicIdsFromCli.length ? publicIdsFromCli : await this.getTestsList(api, this.config.blockOnUnexpectedResults)
 
     if (!testsToTrigger.length) {
       this.reporter.log('No test suites to run.\n')
@@ -54,8 +54,20 @@ export class RunTestCommand extends Command {
       this.reporter.log(
         'You are using tunnel option, the chosen location(s) will be overridden by a location in your account region.\n'
       )
-      // Get the pre-signed URL to connect to the tunnel service
-      const {url: presignedURL} = await api.getPresignedURL(publicIdsToTrigger)
+
+      let presignedURL: string
+      try {
+        // Get the pre-signed URL to connect to the tunnel service
+        presignedURL = (await api.getPresignedURL(publicIdsToTrigger)).url
+      } catch (e) {
+        this.reporter.error(`\n${chalk.bgRed.bold(' ERROR on getting presigned URL')}\n${e.stack}\n\n`)
+        if (is5xxError(e) && !this.config.blockOnUnexpectedResults) {
+          return 0
+        }
+
+        return 1
+      }
+
       // Open a tunnel to Datadog
       try {
         tunnel = new Tunnel(presignedURL, publicIdsToTrigger, this.config.proxy, this.reporter)
@@ -69,7 +81,7 @@ export class RunTestCommand extends Command {
         return 1
       }
     }
-    const triggers = await runTests(api, overriddenTestsToTrigger)
+    const triggers = await runTests(api, overriddenTestsToTrigger, this.config.blockOnUnexpectedResults, this.reporter)
 
     // All tests have been skipped or are missing.
     if (!tests.length) {
@@ -84,7 +96,7 @@ export class RunTestCommand extends Command {
 
     try {
       // Poll the results.
-      const results = await waitForResults(api, triggers.results, this.config.pollingTimeout, testsToTrigger, tunnel)
+      const results = await waitForResults(api, triggers.results, this.config.pollingTimeout, testsToTrigger, tunnel, this.config.blockOnUnexpectedResults)
 
       // Sort tests to show success first then non blocking failures and finally blocking failures.
       tests.sort(this.sortTestsByOutcome(results, this.config.blockOnUnexpectedResults))
@@ -183,9 +195,19 @@ export class RunTestCommand extends Command {
     return `${host}/${apiPath}`
   }
 
-  private async getTestsList(api: APIHelper) {
+  private async getTestsList(api: APIHelper, blockOnUnexpectedResults: boolean): Promise<Array<{config: ConfigOverride, id: string}>> {
+    let testSearchResults: TestSearchResult
     if (this.testSearchQuery) {
-      const testSearchResults = await api.searchTests(this.testSearchQuery)
+      try {
+        testSearchResults = await api.searchTests(this.testSearchQuery)
+      } catch(error) {
+        if (is5xxError(error) && !blockOnUnexpectedResults) {
+          this.reporter!.error('Unexpected error when searching tests')
+          return []
+        }
+
+        throw error
+      }
 
       return testSearchResults.tests.map((test) => ({config: this.config.global, id: test.public_id}))
     }

@@ -103,10 +103,14 @@ const getPresignedURL = (request: (args: AxiosRequestConfig) => AxiosPromise<{ur
 }
 
 const retryOn5xxErrors = (retries: number, error: AxiosError) => {
-  const statusCode = error.response?.status
-  if (retries < 3 && statusCode && statusCode >= 500 && statusCode <= 599) {
+  if (retries < 3 && is5xxError(error)) {
     return 500
   }
+}
+
+export const is5xxError = (error: any) => {
+  const statusCode = error?.response?.status
+  return statusCode && statusCode >= 500 && statusCode <= 599
 }
 
 const retryRequest = <T>(args: AxiosRequestConfig, request: (args: AxiosRequestConfig) => AxiosPromise<T>) =>
