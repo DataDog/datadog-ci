@@ -18,8 +18,8 @@ export const getGitMetadata = async () => {
     const git = simpleGit({
       baseDir: process.cwd(),
       binary: 'git',
-      // We are invoking at most 3 git commands at the same time.
-      maxConcurrentProcesses: 3,
+      // We are invoking at most 5 git commands at the same time.
+      maxConcurrentProcesses: 5,
     })
 
     const [commitSHA, branch, repositoryUrl, message, authorAndCommitter] = await Promise.all([
