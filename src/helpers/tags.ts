@@ -15,15 +15,15 @@ export const CI_BUILD_LEVEL = '_dd.ci.build_level'
 
 // Git
 export const GIT_BRANCH = 'git.branch'
-export const GIT_SHA = 'git.commit.sha'
-export const GIT_TAG = 'git.tag'
-export const GIT_COMMIT_MESSAGE = 'git.commit.message'
-export const GIT_COMMIT_COMMITTER_DATE = 'git.commit.committer.date'
-export const GIT_COMMIT_COMMITTER_EMAIL = 'git.commit.committer.email'
-export const GIT_COMMIT_COMMITTER_NAME = 'git.commit.committer.name'
 export const GIT_COMMIT_AUTHOR_DATE = 'git.commit.author.date'
 export const GIT_COMMIT_AUTHOR_EMAIL = 'git.commit.author.email'
 export const GIT_COMMIT_AUTHOR_NAME = 'git.commit.author.name'
+export const GIT_COMMIT_COMMITTER_DATE = 'git.commit.committer.date'
+export const GIT_COMMIT_COMMITTER_EMAIL = 'git.commit.committer.email'
+export const GIT_COMMIT_COMMITTER_NAME = 'git.commit.committer.name'
+export const GIT_COMMIT_MESSAGE = 'git.commit.message'
+export const GIT_SHA = 'git.commit.sha'
+export const GIT_TAG = 'git.tag'
 
 // General
 export const SPAN_TYPE = 'span.type'
