@@ -108,8 +108,9 @@ const retryOn5xxErrors = (retries: number, error: AxiosError) => {
   }
 }
 
-export const is5xxError = (error: any) => {
+export const is5xxError = (error: AxiosError) => {
   const statusCode = error?.response?.status
+
   return statusCode && statusCode >= 500 && statusCode <= 599
 }
 

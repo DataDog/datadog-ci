@@ -1,6 +1,7 @@
 // tslint:disable: no-string-literal
 jest.mock('fs')
 
+import {AxiosError, AxiosRequestConfig, AxiosResponse, default as axios} from 'axios'
 import * as ciUtils from '../../../helpers/utils'
 
 import {ExecutionRule} from '../interfaces'
@@ -61,42 +62,34 @@ describe('run-test', () => {
       )
     })
 
-    test('should not wait for `skipped` only tests batch results', async () => {
+    test('presignedURL throws', async () => {
       jest.spyOn(ciUtils, 'parseConfigFile').mockImplementation(async (config, _) => config)
-      const getTestsToTriggersMock = jest.spyOn(utils, 'getTestsToTrigger').mockReturnValue(
+      jest.spyOn(utils, 'getTestsToTrigger').mockReturnValue(
         Promise.resolve({
           overriddenTestsToTrigger: [],
           summary: {passed: 0, failed: 0, skipped: 0, notFound: 0},
           tests: [],
         })
       )
-      const runTestsMock = jest
-        .spyOn(utils, 'runTests')
-        .mockReturnValue(Promise.resolve({locations: [], results: [], triggered_check_ids: []}))
-      const waitForResultSpy = jest.spyOn(utils, 'waitForResults')
 
-      const apiHelper = {}
+      const serverError = new Error('Server Error') as AxiosError
+      serverError.response = {status: 502} as AxiosResponse
+      const apiHelper = {
+        getPresignedURL: jest.fn(() => {
+          throw serverError
+        }),
+      }
+
       const write = jest.fn()
       const command = new RunTestCommand()
-      const configOverride = {executionRule: ExecutionRule.SKIPPED}
       command.context = {stdout: {write}} as any
       command['getApiHelper'] = (() => apiHelper) as any
-      command['config'].global = configOverride
+      command['config'].tunnel = true
       command['publicIds'] = ['public-id-1', 'public-id-2']
 
-      await command.execute()
-
-      expect(getTestsToTriggersMock).toHaveBeenCalledWith(
-        apiHelper,
-        expect.arrayContaining([
-          expect.objectContaining({id: 'public-id-1', config: configOverride}),
-          expect.objectContaining({id: 'public-id-2', config: configOverride}),
-        ]),
-        expect.anything()
-      )
-      expect(runTestsMock).toHaveBeenCalledWith(apiHelper, [], true,  expect.anything())
-      expect(write).toHaveBeenCalledWith('No test to run.\n')
-      expect(waitForResultSpy).not.toHaveBeenCalled()
+      expect(await command.execute()).toBe(1)
+      command['config'].blockOnUnexpectedResults = false
+      expect(await command.execute()).toBe(0)
     })
   })
 
@@ -235,6 +228,30 @@ describe('run-test', () => {
       await command['getTestsList'].bind(command)(fakeApi, false)
       expect(utils.getSuites).toHaveBeenCalledTimes(1)
       expect(utils.getSuites).toHaveBeenCalledWith('random glob', command['reporter'])
+    })
+
+    test('searchTests throws', async () => {
+      const command = new RunTestCommand()
+      command.context = process
+      command['config'].global = {startUrl}
+      command['reporter'] = mockReporter
+      command['testSearchQuery'] = 'fake search'
+
+      const axiosMock = jest.spyOn(axios, 'create')
+      const serverError = new Error('Server Error') as AxiosError
+      serverError.response = {status: 502} as AxiosResponse
+      axiosMock.mockImplementation((() => async (r: AxiosRequestConfig) => {
+        throw serverError
+      }) as any)
+
+      const fakeApiSearchTests: any = {
+        searchTests: jest.fn(() => {
+          throw serverError
+        }),
+      }
+
+      await expect(command['getTestsList'].bind(command)(fakeApiSearchTests, true)).rejects.toThrow()
+      expect(await command['getTestsList'].bind(command)(fakeApiSearchTests, false)).toEqual([])
     })
   })
 

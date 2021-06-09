@@ -3,7 +3,16 @@ import {Command} from 'clipanion'
 
 import {parseConfigFile, ProxyConfiguration} from '../../helpers/utils'
 import {apiConstructor, is5xxError} from './api'
-import {APIHelper, ConfigOverride, ExecutionRule, LocationsMapping, MainReporter, PollResult, Test, TestSearchResult} from './interfaces'
+import {
+  APIHelper,
+  ConfigOverride,
+  ExecutionRule,
+  LocationsMapping,
+  MainReporter,
+  PollResult,
+  Test,
+  TestSearchResult,
+} from './interfaces'
 import {DefaultReporter} from './reporters/default'
 import {Tunnel} from './tunnel'
 import {getReporter, getSuites, getTestsToTrigger, hasTestSucceeded, runTests, waitForResults} from './utils'
@@ -38,7 +47,9 @@ export class RunTestCommand extends Command {
 
     const api = this.getApiHelper()
     const publicIdsFromCli = this.publicIds.map((id) => ({config: this.config.global, id}))
-    const testsToTrigger = publicIdsFromCli.length ? publicIdsFromCli : await this.getTestsList(api, this.config.blockOnUnexpectedResults)
+    const testsToTrigger = publicIdsFromCli.length
+      ? publicIdsFromCli
+      : await this.getTestsList(api, this.config.blockOnUnexpectedResults)
 
     if (!testsToTrigger.length) {
       this.reporter.log('No test suites to run.\n')
@@ -60,7 +71,7 @@ export class RunTestCommand extends Command {
         // Get the pre-signed URL to connect to the tunnel service
         presignedURL = (await api.getPresignedURL(publicIdsToTrigger)).url
       } catch (e) {
-        this.reporter.error(`\n${chalk.bgRed.bold(' ERROR on getting presigned URL')}\n${e.stack}\n\n`)
+        this.reporter.error(chalk.bgRed.bold('Unexpected error when initializing the Tunnel connection'))
         if (is5xxError(e) && !this.config.blockOnUnexpectedResults) {
           return 0
         }
@@ -96,7 +107,14 @@ export class RunTestCommand extends Command {
 
     try {
       // Poll the results.
-      const results = await waitForResults(api, triggers.results, this.config.pollingTimeout, testsToTrigger, tunnel, this.config.blockOnUnexpectedResults)
+      const results = await waitForResults(
+        api,
+        triggers.results,
+        this.config.pollingTimeout,
+        testsToTrigger,
+        tunnel,
+        this.config.blockOnUnexpectedResults
+      )
 
       // Sort tests to show success first then non blocking failures and finally blocking failures.
       tests.sort(this.sortTestsByOutcome(results, this.config.blockOnUnexpectedResults))
@@ -195,14 +213,18 @@ export class RunTestCommand extends Command {
     return `${host}/${apiPath}`
   }
 
-  private async getTestsList(api: APIHelper, blockOnUnexpectedResults: boolean): Promise<Array<{config: ConfigOverride, id: string}>> {
+  private async getTestsList(
+    api: APIHelper,
+    blockOnUnexpectedResults: boolean
+  ): Promise<{config: ConfigOverride; id: string}[]> {
     let testSearchResults: TestSearchResult
     if (this.testSearchQuery) {
       try {
         testSearchResults = await api.searchTests(this.testSearchQuery)
-      } catch(error) {
+      } catch (error) {
         if (is5xxError(error) && !blockOnUnexpectedResults) {
           this.reporter!.error('Unexpected error when searching tests')
+
           return []
         }
 

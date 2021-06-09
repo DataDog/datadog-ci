@@ -3,7 +3,7 @@ jest.mock('fs')
 
 import * as fs from 'fs'
 
-import * as axios from 'axios'
+import {AxiosError, AxiosRequestConfig, AxiosResponse, default as axios} from 'axios'
 import glob from 'glob'
 
 import {ProxyConfiguration} from '../../../helpers/utils'
@@ -51,32 +51,68 @@ describe('utils', () => {
       triggered_check_ids: [fakeId],
     }
 
-    beforeAll(() => {
-      const axiosMock = jest.spyOn(axios.default, 'create')
-      axiosMock.mockImplementation((() => (e: any) => {
-        if (e.url === '/synthetics/tests/trigger/ci') {
-          return {data: fakeTrigger}
-        }
-      }) as any)
-    })
-
     afterAll(() => {
       jest.clearAllMocks()
     })
 
     test('should run test', async () => {
-      const output = await utils.runTests(api, [{public_id: fakeId, executionRule: ExecutionRule.NON_BLOCKING}], false, mockReporter)
+      const axiosMock = jest.spyOn(axios, 'create')
+      axiosMock.mockImplementation((() => (e: any) => {
+        if (e.url === '/synthetics/tests/trigger/ci') {
+          return {data: fakeTrigger}
+        }
+      }) as any)
+
+      const output = await utils.runTests(
+        api,
+        [{public_id: fakeId, executionRule: ExecutionRule.NON_BLOCKING}],
+        false,
+        mockReporter
+      )
       expect(output).toEqual(fakeTrigger)
     })
 
     test('should run test with publicId from url', async () => {
-      const output = await utils.runTests(api, [
-        {
-          executionRule: ExecutionRule.NON_BLOCKING,
-          public_id: `http://localhost/synthetics/tests/details/${fakeId}`,
-        },
-      ], false, mockReporter)
+      const axiosMock = jest.spyOn(axios, 'create')
+      axiosMock.mockImplementation((() => (e: any) => {
+        if (e.url === '/synthetics/tests/trigger/ci') {
+          return {data: fakeTrigger}
+        }
+      }) as any)
+      const output = await utils.runTests(
+        api,
+        [
+          {
+            executionRule: ExecutionRule.NON_BLOCKING,
+            public_id: `http://localhost/synthetics/tests/details/${fakeId}`,
+          },
+        ],
+        false,
+        mockReporter
+      )
       expect(output).toEqual(fakeTrigger)
+    })
+
+    test('triggerTests throws', async () => {
+      const serverError = new Error('Server Error') as AxiosError
+      serverError.response = {status: 502} as AxiosResponse
+
+      const requestMock = jest.fn()
+      requestMock.mockImplementation(() => {
+        throw serverError
+      })
+      jest.spyOn(axios, 'create').mockImplementation((() => requestMock) as any)
+
+      await expect(
+        utils.runTests(api, [{public_id: fakeId, executionRule: ExecutionRule.NON_BLOCKING}], true, mockReporter)
+      ).rejects.toThrow()
+      expect(
+        await utils.runTests(api, [{public_id: fakeId, executionRule: ExecutionRule.NON_BLOCKING}], false, mockReporter)
+      ).toEqual({
+        locations: [],
+        results: [],
+        triggered_check_ids: [],
+      })
     })
   })
 
@@ -96,7 +132,7 @@ describe('utils', () => {
     }
 
     beforeAll(() => {
-      const axiosMock = jest.spyOn(axios.default, 'create')
+      const axiosMock = jest.spyOn(axios, 'create')
       axiosMock.mockImplementation((() => (e: any) => {
         const publicId = e.url.slice(18)
         if (fakeTests[publicId]) {
@@ -358,8 +394,8 @@ describe('utils', () => {
 
   describe('waitForResults', () => {
     beforeAll(() => {
-      const axiosMock = jest.spyOn(axios.default, 'create')
-      axiosMock.mockImplementation((() => async (r: axios.AxiosRequestConfig) => {
+      const axiosMock = jest.spyOn(axios, 'create')
+      axiosMock.mockImplementation((() => async (r: AxiosRequestConfig) => {
         await utils.wait(100)
 
         const results = JSON.parse(r.params.result_ids)
@@ -497,6 +533,38 @@ describe('utils', () => {
       } catch {
         expect(true).toBeTruthy()
       }
+    })
+
+    test('pollResults throws', async () => {
+      jest.spyOn(utils, 'wait').mockImplementation()
+      const axiosMock = jest.spyOn(axios, 'create')
+      const serverError = new Error('Server Error') as AxiosError
+      serverError.response = {status: 502} as AxiosResponse
+      axiosMock.mockImplementation((() => async (r: AxiosRequestConfig) => {
+        throw serverError
+      }) as any)
+
+      const mockTunnel = {keepAlive: async () => Promise.reject()} as Tunnel
+
+      const expectedResults: {[key: string]: PollResult[]} = {
+        [publicId]: [
+          {
+            dc_id: triggerResult.location,
+            result: {
+              device: {id: triggerResult.device},
+              error: 'Endpoint Failure',
+              eventType: 'finished',
+              passed: false,
+              stepDetails: [],
+              tunnel: true,
+            },
+            resultID: triggerResult.result_id,
+          },
+        ],
+      }
+
+      expect(await utils.waitForResults(api, [triggerResult], 2000, [], mockTunnel)).toEqual(expectedResults)
+      await expect(utils.waitForResults(api, [triggerResult], 2000, [], mockTunnel, true)).rejects.toThrow()
     })
   })
 

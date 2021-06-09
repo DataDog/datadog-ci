@@ -234,11 +234,11 @@ export const waitForResults = async (
     }
 
     let polledResults: PollResult[]
-    const triggerResultsSucceed=  triggerResults.filter((tr) => !tr.result)
+    const triggerResultsSucceed = triggerResults.filter((tr) => !tr.result)
     try {
       polledResults = (await api.pollResults(triggerResultsSucceed.map((tr) => tr.result_id))).results
-    } catch(e) {
-      if (is5xxError(e) && !blockOnUnexpectedResults) {
+    } catch (error) {
+      if (is5xxError(error) && !blockOnUnexpectedResults) {
         polledResults = []
         for (const triggerResult of triggerResultsSucceed) {
           triggerResult.result = createFailingResult(
@@ -250,7 +250,7 @@ export const waitForResults = async (
           )
         }
       } else {
-        throw e
+        throw error
       }
     }
 
@@ -421,7 +421,12 @@ export const getTestsToTrigger = async (api: APIHelper, triggerConfigs: TriggerC
   return {tests: tests.filter(definedTypeGuard), overriddenTestsToTrigger, summary}
 }
 
-export const runTests = async (api: APIHelper, testsToTrigger: TestPayload[], blockOnUnexpectedResults: boolean, reporter: MainReporter): Promise<Trigger> => {
+export const runTests = async (
+  api: APIHelper,
+  testsToTrigger: TestPayload[],
+  blockOnUnexpectedResults: boolean,
+  reporter: MainReporter
+): Promise<Trigger> => {
   const payload: Payload = {tests: testsToTrigger}
   const ciMetadata = getCIMetadata()
   if (ciMetadata) {
@@ -429,16 +434,18 @@ export const runTests = async (api: APIHelper, testsToTrigger: TestPayload[], bl
   }
 
   try {
-    return api.triggerTests(payload)
+    return await api.triggerTests(payload)
   } catch (e) {
     if (is5xxError(e) && !blockOnUnexpectedResults) {
       reporter!.error('Unexpected error when triggering tests')
+
       return {
         locations: [],
         results: [],
         triggered_check_ids: [],
       }
     }
+
     const errorMessage = formatBackendErrors(e)
     const testIds = testsToTrigger.map((t) => t.public_id).join(',')
     // Rewrite error message
