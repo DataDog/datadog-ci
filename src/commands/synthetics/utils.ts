@@ -437,7 +437,7 @@ export const runTests = async (
     return await api.triggerTests(payload)
   } catch (e) {
     if (is5xxError(e) && !blockOnUnexpectedResults) {
-      reporter!.error('Unexpected error when triggering tests')
+      reporter.error('Unexpected error when triggering tests')
 
       return {
         locations: [],

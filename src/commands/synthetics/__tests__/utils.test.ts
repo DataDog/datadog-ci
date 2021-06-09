@@ -393,9 +393,8 @@ describe('utils', () => {
   })
 
   describe('waitForResults', () => {
-    beforeAll(() => {
-      const axiosMock = jest.spyOn(axios, 'create')
-      axiosMock.mockImplementation((() => async (r: AxiosRequestConfig) => {
+    const mockAxiosWithDefaultResult = () => {
+      jest.spyOn(axios, 'create').mockImplementation((() => async (r: AxiosRequestConfig) => {
         await utils.wait(100)
 
         const results = JSON.parse(r.params.result_ids)
@@ -404,7 +403,7 @@ describe('utils', () => {
 
         return {data: {results}}
       }) as any)
-    })
+    }
 
     afterAll(() => {
       jest.clearAllMocks()
@@ -438,6 +437,7 @@ describe('utils', () => {
     }
 
     test('should poll result ids', async () => {
+      mockAxiosWithDefaultResult()
       const waitMock = jest.spyOn(utils, 'wait')
       waitMock.mockImplementation()
       const expectedResults: {[key: string]: PollResult[]} = {}
@@ -489,6 +489,7 @@ describe('utils', () => {
     })
 
     test('correct number of pass and timeout results', async () => {
+      mockAxiosWithDefaultResult()
       const waitMock = jest.spyOn(utils, 'wait')
       waitMock.mockImplementation()
 
