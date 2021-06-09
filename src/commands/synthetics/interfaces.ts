@@ -85,9 +85,19 @@ export interface Step {
   skipped: boolean
   snapshotBucketKey: boolean
   stepId: number
+  subTestStepDetails: Step[]
   type: string
   url: string
   value: string
+  vitalsMetrics: {
+    url: string
+    lcp: number
+    cls: number
+  }
+  warnings: {
+    message: string
+    type: string
+  }[]
 }
 
 export interface Test {
