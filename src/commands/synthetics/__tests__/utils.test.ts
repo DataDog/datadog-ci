@@ -519,21 +519,38 @@ describe('utils', () => {
       )
     })
 
-    test('tunnel failure should throw', async () => {
+    test('tunnel failure', async () => {
       const waitMock = jest.spyOn(utils, 'wait')
       waitMock.mockImplementation()
 
-      const triggerResultTimeOut = {
-        ...triggerResult,
-        result_id: 'timingOutTest',
+      // Fake pollResults to not update results and iterate until the isTunnelConnected is equal to false
+      jest
+        .spyOn(axios, 'create')
+        .mockImplementation((() => async (r: AxiosRequestConfig) => ({data: {results: []}})) as any)
+
+      const mockTunnel = {
+        keepAlive: async () => {
+          throw new Error('keepAlive failed')
+        },
+      } as any
+      const expectedResults: {[key: string]: PollResult[]} = {
+        [publicId]: [
+          {
+            dc_id: triggerResult.location,
+            result: {
+              device: {id: triggerResult.device},
+              error: 'Tunnel Failure',
+              eventType: 'finished',
+              passed: false,
+              stepDetails: [],
+              tunnel: true,
+            },
+            resultID: triggerResult.result_id,
+          },
+        ],
       }
-      const mockTunnel = {keepAlive: async () => Promise.reject()} as Tunnel
-      try {
-        await utils.waitForResults(api, [triggerResultTimeOut], 2000, [], mockTunnel)
-        expect(false).toBeTruthy()
-      } catch {
-        expect(true).toBeTruthy()
-      }
+
+      expect(await utils.waitForResults(api, [triggerResult], 2000, [], mockTunnel)).toEqual(expectedResults)
     })
 
     test('pollResults throws', async () => {
@@ -612,8 +629,9 @@ describe('utils', () => {
 
     test('retry rethrows after some retries', async () => {
       let counter = 0
-      try {
-        await utils.retry(
+
+      await expect(
+        utils.retry(
           async () => {
             counter += 1
             throw new Error('FAILURE')
@@ -624,11 +642,8 @@ describe('utils', () => {
             }
           }
         )
-        expect('Retry should have thrown.').toBeFalsy()
-      } catch (e) {
-        expect(counter).toBe(3)
-        expect(e.message).toBe('FAILURE')
-      }
+      ).rejects.toThrowError('FAILURE')
+      expect(counter).toBe(3)
     })
   })
 })
