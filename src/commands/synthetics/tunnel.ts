@@ -205,6 +205,9 @@ export class Tunnel {
 
     // Set up multiplexing
     const multiplexerConfig: MultiplexerConfig = {
+      // Increase maximum backlog size to more easily handle
+      // running multiple large browser tests in parallel.
+      acceptBacklog: 2048,
       enableKeepAlive: false,
     }
     this.multiplexer = new Multiplexer((stream) => {
