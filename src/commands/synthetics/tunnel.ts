@@ -27,6 +27,7 @@ export class Tunnel {
   private log: (message: string) => void
   private logError: (message: string) => void
   private multiplexer?: Multiplexer
+  private openedTunnels: Set<string> = new Set()
   private privateKey: string
   private publicKey: ParsedKey
   private sshStreamConfig: SSH2StreamConfig
@@ -139,7 +140,11 @@ export class Tunnel {
     }
 
     // Username is allowed and key authentication was successful
-    this.log(`Proxy opened for test ${user}`)
+    if (!this.openedTunnels.has(ctx.username)) {
+      // Limit to one log per test
+      this.openedTunnels.add(ctx.username)
+      this.log(`Proxy opened for test ${ctx.username}`)
+    }
     ctx.accept()
   }
 
