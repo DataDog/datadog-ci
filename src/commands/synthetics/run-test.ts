@@ -1,27 +1,32 @@
 import chalk from 'chalk'
 import {Command} from 'clipanion'
+import deepExtend from 'deep-extend'
 
-import {parseConfigFile, ProxyConfiguration} from '../../helpers/utils'
+import {parseConfigFile} from '../../helpers/utils'
 import {apiConstructor} from './api'
-import {APIHelper, ConfigOverride, ExecutionRule, LocationsMapping, MainReporter, PollResult, Test} from './interfaces'
+import {APIHelper, CommandConfig, ExecutionRule, LocationsMapping, MainReporter, PollResult, Test} from './interfaces'
 import {DefaultReporter} from './reporters/default'
 import {Tunnel} from './tunnel'
 import {getReporter, getSuites, getTestsToTrigger, hasTestSucceeded, runTests, waitForResults} from './utils'
 
+const defaultConfig: CommandConfig = {
+  apiKey: '',
+  appKey: '',
+  configPath: 'datadog-ci.json',
+  datadogSite: 'datadoghq.com',
+  fileGlobs: ['{,!(node_modules)/**/}*.synthetics.json'],
+  global: {},
+  pollingTimeout: 2 * 60 * 1000,
+  proxy: {protocol: 'http'},
+  publicIds: [],
+  subdomain: 'app',
+  tunnel: false,
+}
+
 export class RunTestCommand extends Command {
   private apiKey?: string
   private appKey?: string
-  private config = {
-    apiKey: process.env.DATADOG_API_KEY,
-    appKey: process.env.DATADOG_APP_KEY,
-    datadogSite: process.env.DATADOG_SITE || 'datadoghq.com',
-    files: '{,!(node_modules)/**/}*.synthetics.json',
-    global: {} as ConfigOverride,
-    pollingTimeout: 2 * 60 * 1000,
-    proxy: {protocol: 'http'} as ProxyConfiguration,
-    subdomain: process.env.DATADOG_SUBDOMAIN || 'app',
-    tunnel: false,
-  }
+  private config: CommandConfig = {...defaultConfig}
   private configPath?: string
   private fileGlobs?: string[]
   private publicIds: string[] = []
@@ -30,10 +35,10 @@ export class RunTestCommand extends Command {
   private testSearchQuery?: string
 
   public async execute() {
+    this.config = await this.resolveConfig()
     const reporters = [new DefaultReporter(this)]
     this.reporter = getReporter(reporters)
     const startTime = Date.now()
-    this.config = await parseConfigFile(this.config, this.configPath)
 
     const api = this.getApiHelper()
     const publicIdsFromCli = this.publicIds.map((id) => ({config: this.config.global, id}))
@@ -183,9 +188,7 @@ export class RunTestCommand extends Command {
       return testSearchResults.tests.map((test) => ({config: this.config.global, id: test.public_id}))
     }
 
-    const listOfGlobs = this.fileGlobs || [this.config.files]
-
-    const suites = (await Promise.all(listOfGlobs.map((glob: string) => getSuites(glob, this.reporter!))))
+    const suites = (await Promise.all(this.config.fileGlobs.map((glob: string) => getSuites(glob, this.reporter!))))
       .reduce((acc, val) => acc.concat(val), [])
       .map((suite) => suite.tests)
       .filter((suiteTests) => !!suiteTests)
@@ -198,6 +201,41 @@ export class RunTestCommand extends Command {
       }))
 
     return testsToTrigger
+  }
+
+  private async resolveConfig(): Promise<CommandConfig> {
+    // Default < ENV < file < CLI
+
+    // Override with ENV variables
+    let config = deepExtend(
+      this.config,
+      removeUndefinedValues({
+        apiKey: process.env.DATADOG_API_KEY,
+        appKey: process.env.DATADOG_APP_KEY,
+        datadogSite: process.env.DATADOG_SITE,
+        subdomain: process.env.DATADOG_SUBDOMAIN,
+      })
+    )
+
+    // Override with file config variables
+    const configPath = this.configPath ?? config.configPath
+    config = await parseConfigFile(config, configPath)
+
+    // Override with CLI parameters
+    config = deepExtend(
+      config,
+      removeUndefinedValues({
+        apiKey: this.apiKey,
+        appKey: this.appKey,
+        configPath: this.configPath,
+        fileGlobs: this.fileGlobs,
+        publicIds: this.publicIds,
+        testSearchQuery: this.testSearchQuery,
+        tunnel: this.shouldOpenTunnel,
+      })
+    )
+
+    return config
   }
 
   private sortTestsByOutcome(results: {[key: string]: PollResult[]}) {
@@ -220,11 +258,17 @@ export class RunTestCommand extends Command {
   }
 }
 
+const removeUndefinedValues = <T extends {[key: string]: any}>(object: T): T => {
+  const newObject = {...object}
+  Object.keys(newObject).forEach((k) => newObject[k] === undefined && delete newObject[k])
+  return newObject
+}
+
 RunTestCommand.addPath('synthetics', 'run-tests')
 RunTestCommand.addOption('apiKey', Command.String('--apiKey'))
 RunTestCommand.addOption('appKey', Command.String('--appKey'))
 RunTestCommand.addOption('configPath', Command.String('--config'))
-RunTestCommand.addOption('publicIds', Command.Array('-p,--public-id'))
-RunTestCommand.addOption('testSearchQuery', Command.String('-s,--search'))
-RunTestCommand.addOption('shouldOpenTunnel', Command.Boolean('-t,--tunnel'))
 RunTestCommand.addOption('fileGlobs', Command.Array('-f,--files'))
+RunTestCommand.addOption('publicIds', Command.Array('-p,--public-id'))
+RunTestCommand.addOption('shouldOpenTunnel', Command.Boolean('-t,--tunnel'))
+RunTestCommand.addOption('testSearchQuery', Command.String('-s,--search'))
