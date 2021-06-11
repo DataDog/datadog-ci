@@ -41,7 +41,7 @@ export class RunTestCommand extends Command {
     const startTime = Date.now()
 
     const api = this.getApiHelper()
-    const publicIdsFromCli = this.publicIds.map((id) => ({config: this.config.global, id}))
+    const publicIdsFromCli = this.config.publicIds.map((id) => ({config: this.config.global, id}))
     const testsToTrigger = publicIdsFromCli.length ? publicIdsFromCli : await this.getTestsList(api)
 
     if (!testsToTrigger.length) {
@@ -54,7 +54,7 @@ export class RunTestCommand extends Command {
     const publicIdsToTrigger = tests.map(({public_id}) => public_id)
 
     let tunnel: Tunnel | undefined
-    if ((this.shouldOpenTunnel === undefined && this.config.tunnel) || this.shouldOpenTunnel) {
+    if (this.config.tunnel) {
       this.reporter.log(
         'You are using tunnel option, the chosen location(s) will be overridden by a location in your account region.\n'
       )
@@ -138,9 +138,6 @@ export class RunTestCommand extends Command {
   }
 
   private getApiHelper() {
-    this.config.apiKey = this.apiKey || this.config.apiKey
-    this.config.appKey = this.appKey || this.config.appKey
-
     if (!this.config.appKey || !this.config.apiKey) {
       if (!this.config.appKey) {
         this.reporter!.error(`Missing ${chalk.red.bold('DATADOG_APP_KEY')} in your environment.\n`)
@@ -182,8 +179,8 @@ export class RunTestCommand extends Command {
   }
 
   private async getTestsList(api: APIHelper) {
-    if (this.testSearchQuery) {
-      const testSearchResults = await api.searchTests(this.testSearchQuery)
+    if (this.config.testSearchQuery) {
+      const testSearchResults = await api.searchTests(this.config.testSearchQuery)
 
       return testSearchResults.tests.map((test) => ({config: this.config.global, id: test.public_id}))
     }
@@ -196,7 +193,7 @@ export class RunTestCommand extends Command {
     const testsToTrigger = suites
       .reduce((acc, suiteTests) => acc.concat(suiteTests), [])
       .map((test) => ({
-        config: {...this.config!.global, ...test.config},
+        config: {...this.config.global, ...test.config},
         id: test.id,
       }))
 
@@ -261,6 +258,7 @@ export class RunTestCommand extends Command {
 const removeUndefinedValues = <T extends {[key: string]: any}>(object: T): T => {
   const newObject = {...object}
   Object.keys(newObject).forEach((k) => newObject[k] === undefined && delete newObject[k])
+
   return newObject
 }
 
