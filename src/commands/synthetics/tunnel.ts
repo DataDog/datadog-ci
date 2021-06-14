@@ -23,11 +23,11 @@ export interface TunnelInfo {
 }
 
 export class Tunnel {
+  private connected = false
   private forwardSockets: Socket[] = []
   private log: (message: string) => void
   private logError: (message: string) => void
   private multiplexer?: Multiplexer
-  private openedTunnels: Set<string> = new Set()
   private privateKey: string
   private publicKey: ParsedKey
   private sshStreamConfig: SSH2StreamConfig
@@ -140,10 +140,10 @@ export class Tunnel {
     }
 
     // Username is allowed and key authentication was successful
-    if (!this.openedTunnels.has(ctx.username)) {
-      // Limit to one log per test
-      this.openedTunnels.add(ctx.username)
-      this.log(`Proxy opened for test ${ctx.username}`)
+    if (!this.connected) {
+      // Limit to one log per tunnel
+      this.connected = true
+      this.log(`Successfully connected for test ${ctx.username}`)
     }
     ctx.accept()
   }
