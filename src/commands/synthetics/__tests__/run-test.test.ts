@@ -208,7 +208,6 @@ describe('run-test', () => {
       expect(await command.execute()).toBe(1)
     })
 
-
     test('waitForResults throws', async () => {
       jest.spyOn(ciUtils, 'parseConfigFile').mockImplementation(async (config, _) => config)
       jest.spyOn(utils, 'getTestsToTrigger').mockReturnValue(

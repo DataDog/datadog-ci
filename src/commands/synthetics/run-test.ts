@@ -165,42 +165,37 @@ export class RunTestCommand extends Command {
       return safeExit(1)
     }
 
-      // Sort tests to show success first then non blocking failures and finally blocking failures.
-      tests.sort(this.sortTestsByOutcome(results))
+    // Sort tests to show success first then non blocking failures and finally blocking failures.
+    tests.sort(this.sortTestsByOutcome(results))
 
-      // Rendering the results.
-      this.reporter.reportStart({startTime})
-      const locationNames = triggers.locations.reduce((mapping, location) => {
-        mapping[location.id] = location.display_name
+    // Rendering the results.
+    this.reporter.reportStart({startTime})
+    const locationNames = triggers.locations.reduce((mapping, location) => {
+      mapping[location.id] = location.display_name
 
-        return mapping
-      }, {} as LocationsMapping)
+      return mapping
+    }, {} as LocationsMapping)
 
-      let hasSucceeded = true // Determine if all the tests have succeeded
-      for (const test of tests) {
-        const testResults = results[test.public_id]
+    let hasSucceeded = true // Determine if all the tests have succeeded
+    for (const test of tests) {
+      const testResults = results[test.public_id]
 
-        const passed = hasTestSucceeded(testResults)
-        if (passed) {
-          summary.passed++
-        } else {
-          summary.failed++
-          if (test.options.ci?.executionRule !== ExecutionRule.NON_BLOCKING) {
-            hasSucceeded = false
-          }
-        }
-
-        this.reporter.testEnd(test, testResults, this.getAppBaseURL(), locationNames)
-      }
-
-      this.reporter.runEnd(summary)
-
-      if (hasSucceeded) {
-        return safeExit(0)
+      const passed = hasTestSucceeded(testResults)
+      if (passed) {
+        summary.passed++
       } else {
-        return safeExit(1)
+        summary.failed++
+        if (test.options.ci?.executionRule !== ExecutionRule.NON_BLOCKING) {
+          hasSucceeded = false
+        }
       }
 
+      this.reporter.testEnd(test, testResults, this.getAppBaseURL(), locationNames)
+    }
+
+    this.reporter.runEnd(summary)
+
+    return safeExit(hasSucceeded ? 0 : 1)
   }
 
   private getApiHelper() {
