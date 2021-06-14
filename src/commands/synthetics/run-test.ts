@@ -28,10 +28,12 @@ export class RunTestCommand extends Command {
   private appKey?: string
   private config: CommandConfig = JSON.parse(JSON.stringify(DEFAULT_COMMAND_CONFIG))
   private configPath?: string
+  private datadogSite?: string
   private fileGlobs?: string[]
   private publicIds?: string[]
   private reporter?: MainReporter
   private shouldOpenTunnel?: boolean
+  private subdomain?: string
   private testSearchQuery?: string
 
   public async execute() {
@@ -225,8 +227,10 @@ export class RunTestCommand extends Command {
         apiKey: this.apiKey,
         appKey: this.appKey,
         configPath: this.configPath,
+        datadogSite: this.datadogSite,
         fileGlobs: this.fileGlobs,
         publicIds: this.publicIds,
+        subdomain: this.subdomain,
         testSearchQuery: this.testSearchQuery,
         tunnel: this.shouldOpenTunnel,
       })
@@ -264,7 +268,9 @@ RunTestCommand.addPath('synthetics', 'run-tests')
 RunTestCommand.addOption('apiKey', Command.String('--apiKey'))
 RunTestCommand.addOption('appKey', Command.String('--appKey'))
 RunTestCommand.addOption('configPath', Command.String('--config'))
+RunTestCommand.addOption('datadogSite', Command.String('--datadogSite'))
 RunTestCommand.addOption('fileGlobs', Command.Array('-f,--files'))
 RunTestCommand.addOption('publicIds', Command.Array('-p,--public-id'))
 RunTestCommand.addOption('shouldOpenTunnel', Command.Boolean('-t,--tunnel'))
+RunTestCommand.addOption('subdomain', Command.Boolean('--subdomain'))
 RunTestCommand.addOption('testSearchQuery', Command.String('-s,--search'))

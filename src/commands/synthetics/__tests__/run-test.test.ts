@@ -324,9 +324,11 @@ describe('run-test', () => {
         apiKey: 'fake_api_key',
         appKey: 'fake_app_key',
         configPath: 'fake-datadog-ci.json',
+        datadogSite: 'datad0g.com',
         fileGlobs: ['new-file'],
         publicIds: ['ran-dom-id'],
         shouldOpenTunnel: true,
+        subdomain: 'new-sub-domain',
         testSearchQuery: 'a-search-query',
       }
 
@@ -334,9 +336,11 @@ describe('run-test', () => {
       command['apiKey'] = overrideCLI.apiKey
       command['appKey'] = overrideCLI.appKey
       command['configPath'] = overrideCLI.configPath
+      command['datadogSite'] = overrideCLI.datadogSite
       command['fileGlobs'] = overrideCLI.fileGlobs
       command['publicIds'] = overrideCLI.publicIds
       command['shouldOpenTunnel'] = overrideCLI.shouldOpenTunnel
+      command['subdomain'] = overrideCLI.subdomain
       command['testSearchQuery'] = overrideCLI.testSearchQuery
 
       await command['resolveConfig']()
@@ -345,8 +349,10 @@ describe('run-test', () => {
         apiKey: 'fake_api_key',
         appKey: 'fake_app_key',
         configPath: 'fake-datadog-ci.json',
+        datadogSite: 'datad0g.com',
         fileGlobs: ['new-file'],
         publicIds: ['ran-dom-id'],
+        subdomain: 'new-sub-domain',
         testSearchQuery: 'a-search-query',
         tunnel: true,
       })
