@@ -23,6 +23,7 @@ export interface TunnelInfo {
 }
 
 export class Tunnel {
+  private connected = false
   private forwardSockets: Socket[] = []
   private log: (message: string) => void
   private logError: (message: string) => void
@@ -142,7 +143,11 @@ export class Tunnel {
     }
 
     // Username is allowed and key authentication was successful
-    this.log(`Proxy opened for test ${user}`)
+    if (!this.connected) {
+      // Limit to one log per tunnel
+      this.connected = true
+      this.log(`Successfully connected for test ${ctx.username}`)
+    }
     ctx.accept()
   }
 

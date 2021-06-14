@@ -12,6 +12,9 @@ import {
   CI_STAGE_NAME,
   CI_WORKSPACE_PATH,
   GIT_BRANCH,
+  GIT_COMMIT_AUTHOR_EMAIL,
+  GIT_COMMIT_AUTHOR_NAME,
+  GIT_COMMIT_MESSAGE,
   GIT_REPOSITORY_URL,
   GIT_SHA,
   GIT_TAG,
@@ -123,6 +126,7 @@ export const getCISpanTags = (): SpanTags | undefined => {
       TRAVIS_BUILD_NUMBER,
       TRAVIS_BUILD_WEB_URL,
       TRAVIS_BUILD_DIR,
+      TRAVIS_COMMIT_MESSAGE,
     } = env
     tags = {
       [CI_JOB_URL]: TRAVIS_JOB_WEB_URL,
@@ -134,6 +138,7 @@ export const getCISpanTags = (): SpanTags | undefined => {
       [CI_WORKSPACE_PATH]: TRAVIS_BUILD_DIR,
       [GIT_SHA]: TRAVIS_COMMIT,
       [GIT_REPOSITORY_URL]: `https://github.com/${TRAVIS_REPO_SLUG}.git`,
+      [GIT_COMMIT_MESSAGE]: TRAVIS_COMMIT_MESSAGE,
     }
     const isTag = !!TRAVIS_TAG
     const ref = TRAVIS_TAG || TRAVIS_PULL_REQUEST_BRANCH || TRAVIS_BRANCH
@@ -155,6 +160,7 @@ export const getCISpanTags = (): SpanTags | undefined => {
       CI_JOB_URL: GITLAB_CI_JOB_URL,
       CI_JOB_STAGE,
       CI_JOB_NAME: GITLAB_CI_JOB_NAME,
+      CI_COMMIT_MESSAGE,
     } = env
     tags = {
       [CI_JOB_NAME]: GITLAB_CI_JOB_NAME,
@@ -170,6 +176,7 @@ export const getCISpanTags = (): SpanTags | undefined => {
       [GIT_SHA]: CI_COMMIT_SHA,
       [GIT_REPOSITORY_URL]: CI_REPOSITORY_URL,
       [GIT_TAG]: CI_COMMIT_TAG,
+      [GIT_COMMIT_MESSAGE]: CI_COMMIT_MESSAGE,
     }
   }
 
@@ -256,6 +263,9 @@ export const getCISpanTags = (): SpanTags | undefined => {
       BUILDKITE_BUILD_URL,
       BUILDKITE_JOB_ID,
       BUILDKITE_BUILD_CHECKOUT_PATH,
+      BUILDKITE_BUILD_AUTHOR,
+      BUILDKITE_BUILD_AUTHOR_EMAIL,
+      BUILDKITE_MESSAGE,
     } = env
 
     const ref = BUILDKITE_TAG || BUILDKITE_BRANCH
@@ -272,6 +282,9 @@ export const getCISpanTags = (): SpanTags | undefined => {
       [CI_WORKSPACE_PATH]: BUILDKITE_BUILD_CHECKOUT_PATH,
       [GIT_REPOSITORY_URL]: BUILDKITE_REPO,
       [refKey]: ref,
+      [GIT_COMMIT_AUTHOR_NAME]: BUILDKITE_BUILD_AUTHOR,
+      [GIT_COMMIT_AUTHOR_EMAIL]: BUILDKITE_BUILD_AUTHOR_EMAIL,
+      [GIT_COMMIT_MESSAGE]: BUILDKITE_MESSAGE,
     }
   }
 
@@ -288,6 +301,7 @@ export const getCISpanTags = (): SpanTags | undefined => {
       BITRISE_SOURCE_DIR,
       GIT_REPOSITORY_URL: BITRISE_GIT_REPOSITORY_URL,
       BITRISE_GIT_TAG,
+      BITRISE_GIT_MESSAGE,
     } = env
 
     const isTag = !!BITRISE_GIT_TAG
@@ -304,6 +318,7 @@ export const getCISpanTags = (): SpanTags | undefined => {
       [GIT_REPOSITORY_URL]: BITRISE_GIT_REPOSITORY_URL,
       [CI_WORKSPACE_PATH]: BITRISE_SOURCE_DIR,
       [refKey]: ref,
+      [GIT_COMMIT_MESSAGE]: BITRISE_GIT_MESSAGE,
     }
   }
 
@@ -352,6 +367,9 @@ export const getCISpanTags = (): SpanTags | undefined => {
       SYSTEM_PULLREQUEST_SOURCEREPOSITORYURI,
       BUILD_REPOSITORY_URI,
       BUILD_SOURCEVERSION,
+      BUILD_REQUESTEDFORID,
+      BUILD_REQUESTEDFOREMAIL,
+      BUILD_SOURCEVERSIONMESSAGE,
     } = env
 
     const ref = SYSTEM_PULLREQUEST_SOURCEBRANCH || BUILD_SOURCEBRANCH || BUILD_SOURCEBRANCHNAME
@@ -366,6 +384,9 @@ export const getCISpanTags = (): SpanTags | undefined => {
       [CI_WORKSPACE_PATH]: BUILD_SOURCESDIRECTORY,
       [GIT_REPOSITORY_URL]: SYSTEM_PULLREQUEST_SOURCEREPOSITORYURI || BUILD_REPOSITORY_URI,
       [refKey]: ref,
+      [GIT_COMMIT_AUTHOR_NAME]: BUILD_REQUESTEDFORID,
+      [GIT_COMMIT_AUTHOR_EMAIL]: BUILD_REQUESTEDFOREMAIL,
+      [GIT_COMMIT_MESSAGE]: BUILD_SOURCEVERSIONMESSAGE,
     }
 
     if (SYSTEM_TEAMFOUNDATIONSERVERURI && SYSTEM_TEAMPROJECTID && BUILD_BUILDID) {
@@ -392,6 +413,9 @@ export const getCISpanTags = (): SpanTags | undefined => {
       APPVEYOR_PULL_REQUEST_HEAD_REPO_BRANCH,
       APPVEYOR_REPO_BRANCH,
       APPVEYOR_REPO_TAG_NAME,
+      APPVEYOR_REPO_COMMIT_AUTHOR,
+      APPVEYOR_REPO_COMMIT_AUTHOR_EMAIL,
+      APPVEYOR_REPO_COMMIT_MESSAGE_EXTENDED,
     } = env
 
     const pipelineUrl = `https://ci.appveyor.com/project/${APPVEYOR_REPO_NAME}/builds/${APPVEYOR_BUILD_ID}`
@@ -404,6 +428,9 @@ export const getCISpanTags = (): SpanTags | undefined => {
       [CI_PIPELINE_NUMBER]: APPVEYOR_BUILD_NUMBER,
       [CI_JOB_URL]: pipelineUrl,
       [CI_WORKSPACE_PATH]: APPVEYOR_BUILD_FOLDER,
+      [GIT_COMMIT_AUTHOR_NAME]: APPVEYOR_REPO_COMMIT_AUTHOR,
+      [GIT_COMMIT_AUTHOR_EMAIL]: APPVEYOR_REPO_COMMIT_AUTHOR_EMAIL,
+      [GIT_COMMIT_MESSAGE]: APPVEYOR_REPO_COMMIT_MESSAGE_EXTENDED,
     }
 
     if (APPVEYOR_REPO_PROVIDER === 'github') {

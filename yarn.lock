@@ -2136,10 +2136,10 @@ datadog-metrics@0.9.3:
     debug "3.1.0"
     dogapi "2.8.4"
 
-dd-trace@0.33.0-beta.2:
-  version "0.33.0-beta.2"
-  resolved "https://registry.yarnpkg.com/dd-trace/-/dd-trace-0.33.0-beta.2.tgz#ccce0e92c0cdb185eb67212b6dd521fb561bb1a4"
-  integrity sha512-17mr2mXWwh2QxLYy4MjQAVGEW9jDaPsome3VWjabWYnY1j8bNfVaYXSbxHB0ZwAqpsNI9oOeW0Tiv6VF4C+BrA==
+dd-trace@0.35.1-beta.1:
+  version "0.35.1-beta.1"
+  resolved "https://registry.yarnpkg.com/dd-trace/-/dd-trace-0.35.1-beta.1.tgz#f47d01667891a86e7f667f063975ac79f451757c"
+  integrity sha512-YA3nCv8vgz4/lIJdynW1QbTQNIan2WXTBAkV0SbmPcYc3GEEnfrpfI0OjXP9yzxq2QR3dN5gS5fZZPqEy6nEWA==
   dependencies:
     "@types/node" "^10.12.18"
     form-data "^3.0.0"
