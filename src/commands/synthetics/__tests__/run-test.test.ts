@@ -47,7 +47,7 @@ describe('run-test', () => {
       jest.spyOn(utils, 'runTests').mockImplementation()
 
       const startUrl = '{{PROTOCOL}}//myhost{{PATHNAME}}{{PARAMS}}'
-      const locations = ['location1', 'location22']
+      const locations = ['location1', 'location2']
       const configOverride = {locations, startUrl}
 
       const apiHelper = {}
