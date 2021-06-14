@@ -7,6 +7,7 @@ import {apiConstructor} from './api'
 import {
   APIHelper,
   CommandConfig,
+  ConfigOverride,
   ExecutionRule,
   LocationsMapping,
   MainReporter,
@@ -65,11 +66,24 @@ export class RunTestCommand extends Command {
 
     const api = this.getApiHelper()
     const publicIdsFromCli = this.config.publicIds.map((id) => ({config: this.config.global, id}))
-    const testsToTrigger = publicIdsFromCli.length ? publicIdsFromCli : await this.getTestsList(api)
+    let testsToTrigger: Array<{
+      config: ConfigOverride
+      id: string
+    }>
+
+    if (publicIdsFromCli.length) {
+      testsToTrigger = publicIdsFromCli
+    } else {
+      try {
+        testsToTrigger = await this.getTestsList(api)
+      } catch (error) {
+        this.reporter.error(`\n${chalk.bgRed.bold(' Failed to get tests list ')}\n${error.message}\n\n`)
+        return safeExit(1)
+      }
+    }
 
     if (!testsToTrigger.length) {
       this.reporter.log('No test suites to run.\n')
-
       return safeExit(0)
     }
 
@@ -85,7 +99,6 @@ export class RunTestCommand extends Command {
       this.reporter.error(`\n${chalk.bgRed.bold(' ERROR on get tests endpoint ')}\n${error.message}\n\n`)
       return safeExit(1)
     }
-
     const {tests, overriddenTestsToTrigger, summary} = testsToTriggerResult
 
     const publicIdsToTrigger = tests.map(({public_id}) => public_id)
@@ -152,7 +165,6 @@ export class RunTestCommand extends Command {
       return safeExit(1)
     }
 
-    try {
       // Sort tests to show success first then non blocking failures and finally blocking failures.
       tests.sort(this.sortTestsByOutcome(results))
 
@@ -188,11 +200,7 @@ export class RunTestCommand extends Command {
       } else {
         return safeExit(1)
       }
-    } catch (error) {
-      this.reporter.error(`\n${chalk.bgRed.bold(' ERROR ')}\n${error.message}\n\n`)
 
-      return safeExit(1)
-    }
   }
 
   private getApiHelper() {
