@@ -4,7 +4,7 @@ import deepExtend from 'deep-extend'
 
 import {parseConfigFile} from '../../helpers/utils'
 import {apiConstructor} from './api'
-import {APIHelper, CommandConfig, ExecutionRule, LocationsMapping, MainReporter, PollResult, Test} from './interfaces'
+import {APIHelper, CommandConfig, ExecutionRule, LocationsMapping, MainReporter, PollResult, Test, Trigger} from './interfaces'
 import {DefaultReporter} from './reporters/default'
 import {Tunnel} from './tunnel'
 import {getReporter, getSuites, getTestsToTrigger, hasTestSucceeded, runTests, waitForResults} from './utils'
@@ -60,8 +60,15 @@ export class RunTestCommand extends Command {
       this.reporter.log(
         'You are using tunnel option, the chosen location(s) will be overridden by a location in your account region.\n'
       )
-      // Get the pre-signed URL to connect to the tunnel service
-      const {url: presignedURL} = await api.getPresignedURL(publicIdsToTrigger)
+
+      let presignedURL: string
+      try {
+        // Get the pre-signed URL to connect to the tunnel service
+       presignedURL = (await api.getPresignedURL(publicIdsToTrigger)).url
+      } catch (e) {
+        this.reporter.error(`\n${chalk.bgRed.bold(' Failed to get tunnel URL')}\n${e.message}\n\n`)
+        return 1
+      }
       // Open a tunnel to Datadog
       try {
         tunnel = new Tunnel(presignedURL, publicIdsToTrigger, this.config.proxy, this.reporter)
@@ -70,12 +77,19 @@ export class RunTestCommand extends Command {
           testToTrigger.tunnel = tunnelInfo
         })
       } catch (e) {
-        this.reporter.error(`\n${chalk.bgRed.bold(' ERROR on tunnel start ')}\n${e.stack}\n\n`)
+        this.reporter.error(`\n${chalk.bgRed.bold(' ERROR on tunnel start ')}\n${e.message}\n\n`)
 
         return 1
       }
     }
-    const triggers = await runTests(api, overriddenTestsToTrigger)
+
+    let triggers: Trigger
+    try {
+      triggers = await runTests(api, overriddenTestsToTrigger)
+    } catch (e) {
+      this.reporter.error(`\n${chalk.bgRed.bold(' ERROR on trigger endpoint ')}\n${e.message}\n\n`)
+      return 1
+    }
 
     // All tests have been skipped or are missing.
     if (!tests.length) {
