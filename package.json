@@ -46,7 +46,7 @@
     "chalk": "3.0.0",
     "clipanion": "2.2.2",
     "datadog-metrics": "0.9.3",
-    "dd-trace": "0.33.0-beta.2",
+    "dd-trace": "0.35.1-beta.1",
     "deep-extend": "0.6.0",
     "form-data": "3.0.0",
     "glob": "7.1.4",
