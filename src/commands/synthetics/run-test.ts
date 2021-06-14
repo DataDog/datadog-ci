@@ -11,7 +11,9 @@ import {
   LocationsMapping,
   MainReporter,
   PollResult,
+  Summary,
   Test,
+  TestPayload,
   Trigger,
 } from './interfaces'
 import {DefaultReporter} from './reporters/default'
@@ -71,7 +73,21 @@ export class RunTestCommand extends Command {
       return safeExit(0)
     }
 
-    const {tests, overriddenTestsToTrigger, summary} = await getTestsToTrigger(api, testsToTrigger, this.reporter)
+    let testsToTriggerResult: {
+      tests: Test[]
+      overriddenTestsToTrigger: TestPayload[]
+      summary: Summary
+    }
+
+    try {
+      testsToTriggerResult = await getTestsToTrigger(api, testsToTrigger, this.reporter)
+    } catch (error) {
+      this.reporter.error(`\n${chalk.bgRed.bold(' ERROR on get tests endpoint ')}\n${error.message}\n\n`)
+      return safeExit(1)
+    }
+
+    const {tests, overriddenTestsToTrigger, summary} = testsToTriggerResult
+
     const publicIdsToTrigger = tests.map(({public_id}) => public_id)
 
     if (this.config.tunnel) {
@@ -120,10 +136,23 @@ export class RunTestCommand extends Command {
       throw new Error('No result to poll.')
     }
 
+    const results: {[key: string]: PollResult[]} = {}
     try {
       // Poll the results.
-      const results = await waitForResults(api, triggers.results, this.config.pollingTimeout, testsToTrigger, tunnel)
+      const resultPolled = await waitForResults(
+        api,
+        triggers.results,
+        this.config.pollingTimeout,
+        testsToTrigger,
+        tunnel
+      )
+      Object.assign(results, resultPolled)
+    } catch (error) {
+      this.reporter.error(`\n${chalk.bgRed.bold(' ERROR on poll endpoint ')}\n${error.message}\n\n`)
+      return safeExit(1)
+    }
 
+    try {
       // Sort tests to show success first then non blocking failures and finally blocking failures.
       tests.sort(this.sortTestsByOutcome(results))
 
@@ -160,7 +189,7 @@ export class RunTestCommand extends Command {
         return safeExit(1)
       }
     } catch (error) {
-      this.reporter.error(`\n${chalk.bgRed.bold(' ERROR ')}\n${error.stack}\n\n`)
+      this.reporter.error(`\n${chalk.bgRed.bold(' ERROR ')}\n${error.message}\n\n`)
 
       return safeExit(1)
     }
