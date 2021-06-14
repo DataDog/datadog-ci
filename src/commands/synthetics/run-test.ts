@@ -9,7 +9,7 @@ import {DefaultReporter} from './reporters/default'
 import {Tunnel} from './tunnel'
 import {getReporter, getSuites, getTestsToTrigger, hasTestSucceeded, runTests, waitForResults} from './utils'
 
-const defaultConfig: CommandConfig = {
+export const DEFAULT_COMMAND_CONFIG: CommandConfig = {
   apiKey: '',
   appKey: '',
   configPath: 'datadog-ci.json',
@@ -26,16 +26,16 @@ const defaultConfig: CommandConfig = {
 export class RunTestCommand extends Command {
   private apiKey?: string
   private appKey?: string
-  private config: CommandConfig = {...defaultConfig}
+  private config: CommandConfig = JSON.parse(JSON.stringify(DEFAULT_COMMAND_CONFIG))
   private configPath?: string
   private fileGlobs?: string[]
-  private publicIds: string[] = []
+  private publicIds?: string[]
   private reporter?: MainReporter
   private shouldOpenTunnel?: boolean
   private testSearchQuery?: string
 
   public async execute() {
-    this.config = await this.resolveConfig()
+    await this.resolveConfig()
     const reporters = [new DefaultReporter(this)]
     this.reporter = getReporter(reporters)
     const startTime = Date.now()
@@ -200,11 +200,11 @@ export class RunTestCommand extends Command {
     return testsToTrigger
   }
 
-  private async resolveConfig(): Promise<CommandConfig> {
+  private async resolveConfig() {
     // Default < ENV < file < CLI
 
     // Override with ENV variables
-    let config = deepExtend(
+    this.config = deepExtend(
       this.config,
       removeUndefinedValues({
         apiKey: process.env.DATADOG_API_KEY,
@@ -215,12 +215,12 @@ export class RunTestCommand extends Command {
     )
 
     // Override with file config variables
-    const configPath = this.configPath ?? config.configPath
-    config = await parseConfigFile(config, configPath)
+    const configPath = this.configPath ?? this.config.configPath
+    this.config = await parseConfigFile(this.config, configPath)
 
     // Override with CLI parameters
-    config = deepExtend(
-      config,
+    this.config = deepExtend(
+      this.config,
       removeUndefinedValues({
         apiKey: this.apiKey,
         appKey: this.appKey,
@@ -231,8 +231,6 @@ export class RunTestCommand extends Command {
         tunnel: this.shouldOpenTunnel,
       })
     )
-
-    return config
   }
 
   private sortTestsByOutcome(results: {[key: string]: PollResult[]}) {
