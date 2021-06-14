@@ -10,23 +10,6 @@ import {RunTestCommand} from '../run-test'
 import * as utils from '../utils'
 import {mockReporter} from './fixtures'
 
-export const assertAsyncThrow = async (func: any, errorRegex?: RegExp) => {
-  let error
-  try {
-    await func()
-    console.error('Function has not thrown')
-  } catch (e) {
-    error = e
-    if (errorRegex) {
-      expect(e.toString()).toMatch(errorRegex)
-    }
-  }
-
-  expect(error).toBeTruthy()
-
-  return error
-}
-
 describe('run-test', () => {
   describe('execute', () => {
     test('should apply config override for tests triggered by public id', async () => {
@@ -183,14 +166,14 @@ describe('run-test', () => {
       command.context = {stdout: {write}} as any
       command['reporter'] = utils.getReporter([new DefaultReporter(command)])
 
-      await assertAsyncThrow(command['getApiHelper'].bind(command), /API and\/or Application keys are missing/)
+      expect(command['getApiHelper'].bind(command)).toThrowError(/API and\/or Application keys are missing/)
       expect(write.mock.calls[0][0]).toContain('DATADOG_APP_KEY')
       expect(write.mock.calls[1][0]).toContain('DATADOG_API_KEY')
 
       command['appKey'] = 'fakeappkey'
 
       write.mockClear()
-      await assertAsyncThrow(command['getApiHelper'].bind(command), /API and\/or Application keys are missing/)
+      expect(command['getApiHelper'].bind(command)).toThrowError(/API and\/or Application keys are missing/)
       expect(write.mock.calls[0][0]).toContain('DATADOG_API_KEY')
     })
   })
