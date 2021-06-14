@@ -9,6 +9,9 @@ import {
   CI_STAGE_NAME,
   CI_WORKSPACE_PATH,
   GIT_BRANCH,
+  GIT_COMMIT_AUTHOR_EMAIL,
+  GIT_COMMIT_AUTHOR_NAME,
+  GIT_COMMIT_MESSAGE,
   GIT_REPOSITORY_URL,
   GIT_SHA,
   GIT_TAG,
@@ -43,5 +46,8 @@ export type SpanTag =
   | typeof GIT_REPOSITORY_URL
   | typeof GIT_SHA
   | typeof GIT_TAG
+  | typeof GIT_COMMIT_AUTHOR_EMAIL
+  | typeof GIT_COMMIT_AUTHOR_NAME
+  | typeof GIT_COMMIT_MESSAGE
 
 export type SpanTags = Partial<Record<SpanTag, string>>
