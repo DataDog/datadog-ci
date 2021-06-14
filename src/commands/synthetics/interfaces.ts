@@ -71,18 +71,18 @@ interface Resource {
 }
 
 export interface Vitals {
-  url: string
-  lcp: number
   cls: number
+  lcp: number
+  url: string
 }
 
 export interface Step {
   allowFailure: boolean
   apmTraceIds: string[]
   browserErrors: {
-    type: string
     description: string
     name: string
+    type: string
   }[]
   description: string
   duration: number
@@ -92,8 +92,8 @@ export interface Step {
   skipped: boolean
   snapshotBucketKey: boolean
   stepId: number
-  subTestStepDetails: Step[]
   subTestPublicId: string
+  subTestStepDetails: Step[]
   type: string
   url: string
   value: string
@@ -275,10 +275,10 @@ export enum ExecutionRule {
 }
 
 export interface Suite {
-  name?: string
   content: {
     tests: TriggerConfig[]
   }
+  name?: string
 }
 
 export interface Summary {

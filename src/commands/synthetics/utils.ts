@@ -359,8 +359,8 @@ const createFailingResult = (
     stepDetails: [],
     tunnel,
   },
-  timestamp: 0,
   resultID: resultId,
+  timestamp: 0,
 })
 
 export const getReporter = (reporters: Reporter[]): MainReporter => ({

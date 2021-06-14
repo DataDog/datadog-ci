@@ -492,9 +492,9 @@ describe('utils', () => {
         result_id: resultId,
       }
       const triggerConfig = {
-        suite: 'Suite 1',
         config: {},
         id: publicId,
+        suite: 'Suite 1',
       }
 
       const passingPollResult = {
@@ -535,8 +535,8 @@ describe('utils', () => {
             stepDetails: [],
             tunnel: false,
           },
-          timestamp: 0,
           resultID: triggerResult.result_id,
+          timestamp: 0,
         },
       ]
       expect(await utils.waitForResults(api, [triggerResult], 0, [], undefined, false)).toEqual(expectedResults)
@@ -556,14 +556,14 @@ describe('utils', () => {
             stepDetails: [],
             tunnel: false,
           },
-          timestamp: 0,
           resultID: triggerResult.result_id,
+          timestamp: 0,
         },
       ]
       const testTriggerConfig = {
-        suite: 'Suite 1',
         config: {pollingTimeout: 0},
         id: triggerResult.public_id,
+        suite: 'Suite 1',
       }
       expect(await utils.waitForResults(api, [triggerResult], 120000, [testTriggerConfig], undefined, false)).toEqual(
         expectedResults
@@ -594,8 +594,8 @@ describe('utils', () => {
             stepDetails: [],
             tunnel: false,
           },
-          timestamp: 0,
           resultID: triggerResultTimeOut.result_id,
+          timestamp: 0,
         },
       ]
       expect(

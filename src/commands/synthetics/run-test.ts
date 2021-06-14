@@ -48,6 +48,8 @@ export const DEFAULT_COMMAND_CONFIG: CommandConfig = {
 }
 
 export class RunTestCommand extends Command {
+  public jUnitReport?: string
+  public runName?: string
   private apiKey?: string
   private appKey?: string
   private config: CommandConfig = JSON.parse(JSON.stringify(DEFAULT_COMMAND_CONFIG)) // Deep copy to avoid mutation during unit tests
@@ -56,10 +58,8 @@ export class RunTestCommand extends Command {
   private failOnCriticalErrors?: boolean
   private failOnTimeout?: boolean
   private files?: string[]
-  public jUnitReport?: string
   private publicIds?: string[]
   private reporter?: MainReporter
-  public runName?: string
   private subdomain?: string
   private testSearchQuery?: string
   private tunnel?: boolean
@@ -333,14 +333,15 @@ export class RunTestCommand extends Command {
       .filter((suite) => !!suite.content.tests)
 
     const testsToTrigger = suites
-      .map((suite) => {
-        return suite.content.tests.map((test) => ({
-          suite: suite.name,
+      .map((suite) =>
+        suite.content.tests.map((test) => ({
           config: {...this.config!.global, ...test.config},
           id: test.id,
+          suite: suite.name,
         }))
-      })
+      )
       .reduce((acc, suiteTests) => acc.concat(suiteTests), [])
+
     return testsToTrigger
   }
 

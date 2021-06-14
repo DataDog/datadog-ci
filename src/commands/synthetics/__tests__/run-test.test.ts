@@ -377,12 +377,12 @@ describe('run-test', () => {
     }
     const fakeSuites = [
       {
-        name: 'Suite 1',
         content: conf1,
+        name: 'Suite 1',
       },
       {
-        name: 'Suite 2',
         content: conf2,
+        name: 'Suite 2',
       },
     ]
     const startUrl = 'fakeUrl'

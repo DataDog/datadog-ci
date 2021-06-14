@@ -1,28 +1,18 @@
+import c from 'chalk'
 import {promises as fs} from 'fs'
 import {Writable} from 'stream'
 import {Builder} from 'xml2js'
-import c from 'chalk'
 
-import {
-  ConfigOverride,
-  ExecutionRule,
-  LocationsMapping,
-  PollResult,
-  Reporter,
-  Step,
-  Summary,
-  Test,
-  Vitals,
-} from '../interfaces'
+import {PollResult, Reporter, Step, Test, Vitals} from '../interfaces'
 import {RunTestCommand} from '../run-test'
 
 interface Stats {
-  tests: number
+  allowfailures: number
+  assertions: number
   errors: number
   failures: number
   skipped: number
-  allowfailures: number
-  assertions: number
+  tests: number
   warnings: number
 }
 
@@ -37,8 +27,8 @@ interface XMLRun {
 
 interface XMLSuiteProperties extends Stats {
   name: string
-  timestamp: number
   time: number
+  timestamp: number
 }
 
 interface XMLSuite {
@@ -50,18 +40,18 @@ interface XMLSuite {
 }
 
 interface XMLStepProperties extends Stats {
-  name: string
-  is_skipped: boolean
-  time: number
   allow_failure: boolean
-  url: string
-  type: string
+  is_skipped: boolean
+  name: string
   substep_public_id?: string
+  time: number
+  type: string
+  url: string
 }
 
 interface XMLStep {
   $: XMLStepProperties
-  browser_error: {$: {type: string; name: string}; _: string}[]
+  browser_error: {$: {name: string; type: string}; _: string}[]
   error: {$: {type: 'assertion'}; _: string}[]
   vitals?: {$: Vitals}[]
   warning: {$: {type: string}; _: string}[]
@@ -75,12 +65,12 @@ interface XMLJSON {
 }
 
 const getDefaultStats = (): Stats => ({
-  tests: 0,
+  allowfailures: 0,
+  assertions: 0,
   errors: 0,
   failures: 0,
   skipped: 0,
-  allowfailures: 0,
-  assertions: 0,
+  tests: 0,
   warnings: 0,
 })
 
@@ -92,14 +82,15 @@ const getStats = (obj: any): Stats => {
     const [key] = entry as [keyof Stats, number]
     baseStats[key] = obj[key] || baseStats[key]
   }
+
   return baseStats
 }
 
 export class JUnitReporter implements Reporter {
-  private json: XMLJSON
-  private destination: string
-  private write: Writable['write']
   private builder: Builder
+  private destination: string
+  private json: XMLJSON
+  private write: Writable['write']
 
   constructor(command: RunTestCommand) {
     this.write = command.context.stdout.write.bind(command.context.stdout)
@@ -113,16 +104,43 @@ export class JUnitReporter implements Reporter {
     }
   }
 
-  private getStepStats(step: Step): Stats {
-    const errors = step.browserErrors ? step.browserErrors.length : 0
-    return {
-      tests: step.subTestStepDetails ? step.subTestStepDetails.length : 1,
-      errors: errors + (step.error ? 1 : 0),
-      failures: step.error ? 1 : 0,
-      skipped: step.skipped ? 1 : 0,
-      allowfailures: step.allowFailure ? 1 : 0,
-      assertions: step.subTestStepDetails ? step.subTestStepDetails.length : 1,
-      warnings: step.warnings ? step.warnings.length : 0,
+  public async runEnd() {
+    try {
+      await fs.writeFile(this.destination.replace(/\.xml$/, '.json'), JSON.stringify(this.json, undefined, 4), 'utf8')
+      const xml = this.builder.buildObject(this.json)
+      await fs.writeFile(this.destination, xml, 'utf8')
+      this.write(`✅ Created a jUnit report at ${c.bold.green(this.destination)}\n`)
+    } catch (e) {
+      this.write(`❌ Couldn't write the report to ${c.bold.green(this.destination)}:\n${e.toString()}\n`)
+    }
+  }
+
+  public testEnd(test: Test, results: PollResult[]) {
+    const suiteRunName = test.suite || 'Undefined suite'
+
+    let suiteRun = this.json.testsuites.testsuite.find((suite: any) => suite.$.name === suiteRunName)
+    if (!suiteRun) {
+      suiteRun = {
+        $: {name: suiteRunName, ...getDefaultStats()},
+        testsuite: [],
+      }
+      this.json.testsuites.testsuite.push(suiteRun as XMLRun)
+    }
+
+    // Update stats for the suite.
+    suiteRun.$ = {
+      ...suiteRun.$,
+      ...this.getSuiteStats(results, getStats(suiteRun.$)),
+    }
+
+    for (const result of results) {
+      const testSuite: XMLSuite = this.getTestSuite(test, result)
+
+      for (const stepDetail of result.result.stepDetails) {
+        testSuite.testcase.push(...this.getStep(stepDetail))
+      }
+
+      suiteRun.testsuite.push(testSuite)
     }
   }
 
@@ -132,6 +150,7 @@ export class JUnitReporter implements Reporter {
         if (!step.subTestStepDetails) {
           return [step]
         }
+
         return [step, ...step.subTestStepDetails]
       })
       .reduce((acc, val) => acc.concat(val), [])
@@ -151,53 +170,16 @@ export class JUnitReporter implements Reporter {
     return stats
   }
 
-  private getSuiteStats(results: PollResult[], stats: Stats | undefined = getDefaultStats()): Stats {
-    for (const result of results) {
-      stats = this.getResultStats(result, stats)
-    }
-    return stats
-  }
-
-  private getTestSuite(test: Test, result: PollResult): XMLSuite {
-    return {
-      $: {
-        name: test.name,
-        timestamp: result.timestamp,
-        time: result.result.duration! / 1000,
-        ...this.getResultStats(result),
-      },
-      properties: {
-        property: [
-          {$: {name: 'status', value: test.status}},
-          {$: {name: 'public_id', value: test.public_id}},
-          {$: {name: 'check_id', value: result.check_id}},
-          {$: {name: 'result_id', value: result.resultID}},
-          {$: {name: 'type', value: test.type}},
-          {$: {name: 'message', value: test.message}},
-          {$: {name: 'monitor_id', value: test.monitor_id}},
-          {$: {name: 'tags', value: test.tags.join(',')}},
-          {$: {name: 'locations', value: test.locations.join(',')}},
-          {$: {name: 'start_url', value: result.result.startUrl}},
-          {$: {name: 'device', value: result.result.device.id}},
-          {$: {name: 'width', value: result.result.device.width}},
-          {$: {name: 'height', value: result.result.device.height}},
-          {$: {name: 'execution_rule', value: test.options.ci?.executionRule}},
-        ],
-      },
-      testcase: [],
-    }
-  }
-
   private getStep(stepDetail: Step): XMLStep[] {
     const mainStep: XMLStep = {
       $: {
-        name: stepDetail.description,
-        is_skipped: stepDetail.skipped,
-        time: stepDetail.duration / 1000,
         allow_failure: stepDetail.allowFailure,
-        url: stepDetail.url,
-        type: stepDetail.type,
+        is_skipped: stepDetail.skipped,
+        name: stepDetail.description,
         substep_public_id: stepDetail.subTestPublicId,
+        time: stepDetail.duration / 1000,
+        type: stepDetail.type,
+        url: stepDetail.url,
         ...this.getStepStats(stepDetail),
       },
       browser_error: [],
@@ -244,43 +226,55 @@ export class JUnitReporter implements Reporter {
     return steps
   }
 
-  public testEnd(test: Test, results: PollResult[]) {
-    const suiteRunName = test.suite || 'Undefined suite'
+  private getStepStats(step: Step): Stats {
+    const errors = step.browserErrors ? step.browserErrors.length : 0
 
-    let suiteRun = this.json.testsuites.testsuite.find((suite: any) => suite.$.name === suiteRunName)
-    if (!suiteRun) {
-      suiteRun = {
-        $: {name: suiteRunName, ...getDefaultStats()},
-        testsuite: [],
-      }
-      this.json.testsuites.testsuite.push(suiteRun as XMLRun)
-    }
-
-    // Update stats for the suite.
-    suiteRun.$ = {
-      ...suiteRun.$,
-      ...this.getSuiteStats(results, getStats(suiteRun.$)),
-    }
-
-    for (const result of results) {
-      const testSuite: XMLSuite = this.getTestSuite(test, result)
-
-      for (const stepDetail of result.result.stepDetails) {
-        testSuite.testcase.push(...this.getStep(stepDetail))
-      }
-
-      suiteRun.testsuite.push(testSuite)
+    return {
+      allowfailures: step.allowFailure ? 1 : 0,
+      assertions: step.subTestStepDetails ? step.subTestStepDetails.length : 1,
+      errors: errors + (step.error ? 1 : 0),
+      failures: step.error ? 1 : 0,
+      skipped: step.skipped ? 1 : 0,
+      tests: step.subTestStepDetails ? step.subTestStepDetails.length : 1,
+      warnings: step.warnings ? step.warnings.length : 0,
     }
   }
 
-  public async runEnd() {
-    try {
-      await fs.writeFile(this.destination.replace(/\.xml$/, '.json'), JSON.stringify(this.json, null, 4), 'utf8')
-      const xml = this.builder.buildObject(this.json)
-      await fs.writeFile(this.destination, xml, 'utf8')
-      this.write(`✅ Created a jUnit report at ${c.bold.green(this.destination)}\n`)
-    } catch (e) {
-      this.write(`❌ Couldn't write the report to ${c.bold.green(this.destination)}:\n${e.toString()}\n`)
+  private getSuiteStats(results: PollResult[], stats: Stats | undefined = getDefaultStats()): Stats {
+    for (const result of results) {
+      stats = this.getResultStats(result, stats)
+    }
+
+    return stats
+  }
+
+  private getTestSuite(test: Test, result: PollResult): XMLSuite {
+    return {
+      $: {
+        name: test.name,
+        time: result.result.duration! / 1000,
+        timestamp: result.timestamp,
+        ...this.getResultStats(result),
+      },
+      properties: {
+        property: [
+          {$: {name: 'status', value: test.status}},
+          {$: {name: 'public_id', value: test.public_id}},
+          {$: {name: 'check_id', value: result.check_id}},
+          {$: {name: 'result_id', value: result.resultID}},
+          {$: {name: 'type', value: test.type}},
+          {$: {name: 'message', value: test.message}},
+          {$: {name: 'monitor_id', value: test.monitor_id}},
+          {$: {name: 'tags', value: test.tags.join(',')}},
+          {$: {name: 'locations', value: test.locations.join(',')}},
+          {$: {name: 'start_url', value: result.result.startUrl}},
+          {$: {name: 'device', value: result.result.device.id}},
+          {$: {name: 'width', value: result.result.device.width}},
+          {$: {name: 'height', value: result.result.device.height}},
+          {$: {name: 'execution_rule', value: test.options.ci?.executionRule}},
+        ],
+      },
+      testcase: [],
     }
   }
 }
