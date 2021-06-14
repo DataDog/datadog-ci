@@ -359,6 +359,7 @@ const createFailingResult = (
     stepDetails: [],
     tunnel,
   },
+  timestamp: 0,
   resultID: resultId,
 })
 

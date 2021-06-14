@@ -399,36 +399,42 @@ describe('utils', () => {
       eventType: 'finished',
       passed: true,
       stepDetails: [],
+      timestamp: 0,
     }
     const passingPollResult = {
       check: testConfiguration,
       dc_id: 42,
       result: passingResult,
       resultID: '0123456789',
+      timestamp: 0,
     }
     const failingPollResult = {
       check: testConfiguration,
       dc_id: 42,
       result: {...passingResult, passed: false},
       resultID: '0123456789',
+      timestamp: 0,
     }
     const unhealthyPollResult = {
       check: testConfiguration,
       dc_id: 42,
       result: {...passingResult, passed: false, unhealthy: true},
       resultID: '0123456789',
+      timestamp: 0,
     }
     const endpointFailurePollResult = {
       check: testConfiguration,
       dc_id: 42,
       result: {...passingResult, passed: false, error: 'Endpoint Failure'},
       resultID: '0123456789',
+      timestamp: 0,
     }
     const timeoutPollResult = {
       check: testConfiguration,
       dc_id: 42,
       result: {...passingResult, passed: false, error: 'Timeout'},
       resultID: '0123456789',
+      timestamp: 0,
     }
 
     expect(utils.hasTestSucceeded([passingPollResult, failingPollResult], false, true)).toBeFalsy()
@@ -472,6 +478,7 @@ describe('utils', () => {
       dc_id: 42,
       result: passingResult,
       resultID: resultId,
+      timestamp: 0,
     })
 
     const getTestConfig = (publicId = 'abc-def-ghi') => getApiTest(publicId)
@@ -495,6 +502,7 @@ describe('utils', () => {
         dc_id: 42,
         result: passingResult,
         resultID: resultId,
+        timestamp: 0,
       }
 
       return {passingPollResult, triggerConfig, triggerResult}
@@ -527,6 +535,7 @@ describe('utils', () => {
             stepDetails: [],
             tunnel: false,
           },
+          timestamp: 0,
           resultID: triggerResult.result_id,
         },
       ]
@@ -547,6 +556,7 @@ describe('utils', () => {
             stepDetails: [],
             tunnel: false,
           },
+          timestamp: 0,
           resultID: triggerResult.result_id,
         },
       ]
@@ -584,6 +594,7 @@ describe('utils', () => {
             stepDetails: [],
             tunnel: false,
           },
+          timestamp: 0,
           resultID: triggerResultTimeOut.result_id,
         },
       ]
@@ -620,6 +631,7 @@ describe('utils', () => {
               tunnel: true,
             },
             resultID: triggerResult.result_id,
+            timestamp: 0,
           },
         ],
       }
@@ -653,6 +665,7 @@ describe('utils', () => {
               tunnel: true,
             },
             resultID: triggerResult.result_id,
+            timestamp: 0,
           },
         ],
       }
