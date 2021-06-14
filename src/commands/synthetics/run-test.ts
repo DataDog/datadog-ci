@@ -4,7 +4,16 @@ import deepExtend from 'deep-extend'
 
 import {parseConfigFile} from '../../helpers/utils'
 import {apiConstructor} from './api'
-import {APIHelper, CommandConfig, ExecutionRule, LocationsMapping, MainReporter, PollResult, Test, Trigger} from './interfaces'
+import {
+  APIHelper,
+  CommandConfig,
+  ExecutionRule,
+  LocationsMapping,
+  MainReporter,
+  PollResult,
+  Test,
+  Trigger,
+} from './interfaces'
 import {DefaultReporter} from './reporters/default'
 import {Tunnel} from './tunnel'
 import {getReporter, getSuites, getTestsToTrigger, hasTestSucceeded, runTests, waitForResults} from './utils'
@@ -38,6 +47,16 @@ export class RunTestCommand extends Command {
 
   public async execute() {
     await this.resolveConfig()
+
+    let tunnel: Tunnel | undefined
+    const safeExit = async (exitCode: 0 | 1) => {
+      if (tunnel) {
+        await tunnel.stop()
+      }
+
+      return exitCode
+    }
+
     const reporters = [new DefaultReporter(this)]
     this.reporter = getReporter(reporters)
     const startTime = Date.now()
@@ -49,13 +68,12 @@ export class RunTestCommand extends Command {
     if (!testsToTrigger.length) {
       this.reporter.log('No test suites to run.\n')
 
-      return 0
+      return safeExit(0)
     }
 
     const {tests, overriddenTestsToTrigger, summary} = await getTestsToTrigger(api, testsToTrigger, this.reporter)
     const publicIdsToTrigger = tests.map(({public_id}) => public_id)
 
-    let tunnel: Tunnel | undefined
     if (this.config.tunnel) {
       this.reporter.log(
         'You are using tunnel option, the chosen location(s) will be overridden by a location in your account region.\n'
@@ -64,10 +82,10 @@ export class RunTestCommand extends Command {
       let presignedURL: string
       try {
         // Get the pre-signed URL to connect to the tunnel service
-       presignedURL = (await api.getPresignedURL(publicIdsToTrigger)).url
+        presignedURL = (await api.getPresignedURL(publicIdsToTrigger)).url
       } catch (e) {
         this.reporter.error(`\n${chalk.bgRed.bold(' Failed to get tunnel URL')}\n${e.message}\n\n`)
-        return 1
+        return safeExit(1)
       }
       // Open a tunnel to Datadog
       try {
@@ -79,7 +97,7 @@ export class RunTestCommand extends Command {
       } catch (e) {
         this.reporter.error(`\n${chalk.bgRed.bold(' ERROR on tunnel start ')}\n${e.message}\n\n`)
 
-        return 1
+        return safeExit(1)
       }
     }
 
@@ -88,14 +106,14 @@ export class RunTestCommand extends Command {
       triggers = await runTests(api, overriddenTestsToTrigger)
     } catch (e) {
       this.reporter.error(`\n${chalk.bgRed.bold(' ERROR on trigger endpoint ')}\n${e.message}\n\n`)
-      return 1
+      return safeExit(1)
     }
 
     // All tests have been skipped or are missing.
     if (!tests.length) {
       this.reporter.log('No test to run.\n')
 
-      return 0
+      return safeExit(0)
     }
 
     if (!triggers.results) {
@@ -137,19 +155,14 @@ export class RunTestCommand extends Command {
       this.reporter.runEnd(summary)
 
       if (hasSucceeded) {
-        return 0
+        return safeExit(0)
       } else {
-        return 1
+        return safeExit(1)
       }
     } catch (error) {
       this.reporter.error(`\n${chalk.bgRed.bold(' ERROR ')}\n${error.stack}\n\n`)
 
-      return 1
-    } finally {
-      // Stop the tunnel
-      if (tunnel) {
-        await tunnel.stop()
-      }
+      return safeExit(1)
     }
   }
 
