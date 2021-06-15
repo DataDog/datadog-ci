@@ -3,6 +3,7 @@ import FormData from 'form-data'
 import fs from 'fs'
 import path from 'path'
 import {Writable} from 'stream'
+import {createGzip} from 'zlib'
 
 import {getRequestBuilder} from '../../helpers/utils'
 import {Payload} from './interfaces'
@@ -48,8 +49,8 @@ export const uploadJUnitXML = (request: (args: AxiosRequestConfig) => AxiosPromi
     uniqueFileName = `${uniqueFileName}-${spanTags[CI_JOB_URL]}`
   }
 
-  form.append('junit_xml_report_file', fs.createReadStream(jUnitXML.xmlPath), {
-    filename: `${getSafeFileName(uniqueFileName)}.xml`,
+  form.append('junit_xml_report_file', fs.createReadStream(jUnitXML.xmlPath).pipe(createGzip()), {
+    filename: `${getSafeFileName(uniqueFileName)}.xml.gz`,
   })
 
   return request({
