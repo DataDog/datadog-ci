@@ -273,8 +273,7 @@ export interface CommandConfig {
   appKey: string
   configPath: string
   datadogSite: string
-  fileGlobs: string[]
-  files: string
+  files: string[]
   global: ConfigOverride
   pollingTimeout: number
   proxy: ProxyConfiguration

@@ -14,8 +14,7 @@ export const DEFAULT_COMMAND_CONFIG: CommandConfig = {
   appKey: '',
   configPath: 'datadog-ci.json',
   datadogSite: 'datadoghq.com',
-  fileGlobs: [],
-  files: '{,!(node_modules)/**/}*.synthetics.json',
+  files: ['{,!(node_modules)/**/}*.synthetics.json'],
   global: {},
   pollingTimeout: 2 * 60 * 1000,
   proxy: {protocol: 'http'},
@@ -29,8 +28,7 @@ export class RunTestCommand extends Command {
   private appKey?: string
   private config: CommandConfig = JSON.parse(JSON.stringify(DEFAULT_COMMAND_CONFIG)) // Deep copy to avoid mutation during unit tests
   private configPath?: string
-  private fileGlobs?: string[]
-  private files?: string
+  private files?: string[]
   private publicIds?: string[]
   private reporter?: MainReporter
   private shouldOpenTunnel?: boolean
@@ -187,8 +185,7 @@ export class RunTestCommand extends Command {
       return testSearchResults.tests.map((test) => ({config: this.config.global, id: test.public_id}))
     }
 
-    const listOfGlobs = this.config.fileGlobs.length ? this.config.fileGlobs : [this.config.files]
-    const suites = (await Promise.all(listOfGlobs.map((glob: string) => getSuites(glob, this.reporter!))))
+    const suites = (await Promise.all(this.config.files.map((glob: string) => getSuites(glob, this.reporter!))))
       .reduce((acc, val) => acc.concat(val), [])
       .map((suite) => suite.tests)
       .filter((suiteTests) => !!suiteTests)
@@ -228,7 +225,6 @@ export class RunTestCommand extends Command {
         apiKey: this.apiKey,
         appKey: this.appKey,
         configPath: this.configPath,
-        fileGlobs: this.fileGlobs,
         files: this.files,
         publicIds: this.publicIds,
         testSearchQuery: this.testSearchQuery,
@@ -268,7 +264,7 @@ RunTestCommand.addPath('synthetics', 'run-tests')
 RunTestCommand.addOption('apiKey', Command.String('--apiKey'))
 RunTestCommand.addOption('appKey', Command.String('--appKey'))
 RunTestCommand.addOption('configPath', Command.String('--config'))
-RunTestCommand.addOption('fileGlobs', Command.Array('-f,--files'))
+RunTestCommand.addOption('files', Command.Array('-f,--files'))
 RunTestCommand.addOption('publicIds', Command.Array('-p,--public-id'))
 RunTestCommand.addOption('shouldOpenTunnel', Command.Boolean('-t,--tunnel'))
 RunTestCommand.addOption('testSearchQuery', Command.String('-s,--search'))

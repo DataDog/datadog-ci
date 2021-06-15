@@ -234,25 +234,14 @@ describe('run-test', () => {
       const command = new RunTestCommand()
       command.context = process
       command['config'].global = {startUrl}
-      command['config'].fileGlobs = ['random glob']
       command['reporter'] = mockReporter
-      command['fileGlobs'] = ['new glob', 'another one']
-      command['files'] = 'a last glob'
+      command['files'] = ['new glob', 'another one']
 
       await command['resolveConfig']()
-      // Should take fileGlobs over files
       await command['getTestsList'].bind(command)(fakeApi)
       expect(getSuitesMock).toHaveBeenCalledTimes(2)
       expect(getSuitesMock).toHaveBeenCalledWith('new glob', command['reporter'])
       expect(getSuitesMock).toHaveBeenCalledWith('another one', command['reporter'])
-
-      command['fileGlobs'] = []
-      await command['resolveConfig']()
-      // Should take files over empty fileGlobs
-      getSuitesMock.mockClear()
-      await command['getTestsList'].bind(command)(fakeApi)
-      expect(getSuitesMock).toHaveBeenCalledTimes(1)
-      expect(getSuitesMock).toHaveBeenCalledWith('a last glob', command['reporter'])
     })
   })
 
@@ -313,8 +302,7 @@ describe('run-test', () => {
         appKey: 'fake_app_key',
         configPath: 'fake-datadog-ci.json',
         datadogSite: 'datadoghq.eu',
-        fileGlobs: ['new-file'],
-        files: 'my-new-file',
+        files: ['my-new-file'],
         global: {locations: []},
         pollingTimeout: 1,
         proxy: {protocol: 'https'},
@@ -335,7 +323,7 @@ describe('run-test', () => {
         apiKey: 'fake_api_key',
         appKey: 'fake_app_key',
         configPath: 'fake-datadog-ci.json',
-        fileGlobs: ['new-file'],
+        files: ['new-file'],
         publicIds: ['ran-dom-id'],
         shouldOpenTunnel: true,
         testSearchQuery: 'a-search-query',
@@ -345,7 +333,7 @@ describe('run-test', () => {
       command['apiKey'] = overrideCLI.apiKey
       command['appKey'] = overrideCLI.appKey
       command['configPath'] = overrideCLI.configPath
-      command['fileGlobs'] = overrideCLI.fileGlobs
+      command['files'] = overrideCLI.files
       command['publicIds'] = overrideCLI.publicIds
       command['shouldOpenTunnel'] = overrideCLI.shouldOpenTunnel
       command['testSearchQuery'] = overrideCLI.testSearchQuery
@@ -356,7 +344,7 @@ describe('run-test', () => {
         apiKey: 'fake_api_key',
         appKey: 'fake_app_key',
         configPath: 'fake-datadog-ci.json',
-        fileGlobs: ['new-file'],
+        files: ['new-file'],
         publicIds: ['ran-dom-id'],
         testSearchQuery: 'a-search-query',
         tunnel: true,
