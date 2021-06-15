@@ -428,7 +428,7 @@ describe('run-test', () => {
         {
           config: {startUrl},
           id: 'stu-vwx-yza',
-          name: 'Query: fake search',
+          suite: 'Query: fake search',
         },
       ])
     })
