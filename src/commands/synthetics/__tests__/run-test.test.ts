@@ -325,8 +325,8 @@ describe('run-test', () => {
         configPath: 'fake-datadog-ci.json',
         files: ['new-file'],
         publicIds: ['ran-dom-id'],
-        shouldOpenTunnel: true,
         testSearchQuery: 'a-search-query',
+        tunnel: true,
       }
 
       const command = new RunTestCommand()
@@ -335,7 +335,7 @@ describe('run-test', () => {
       command['configPath'] = overrideCLI.configPath
       command['files'] = overrideCLI.files
       command['publicIds'] = overrideCLI.publicIds
-      command['shouldOpenTunnel'] = overrideCLI.shouldOpenTunnel
+      command['tunnel'] = overrideCLI.tunnel
       command['testSearchQuery'] = overrideCLI.testSearchQuery
 
       await command['resolveConfig']()

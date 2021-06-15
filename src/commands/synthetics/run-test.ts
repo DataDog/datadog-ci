@@ -31,8 +31,8 @@ export class RunTestCommand extends Command {
   private files?: string[]
   private publicIds?: string[]
   private reporter?: MainReporter
-  private shouldOpenTunnel?: boolean
   private testSearchQuery?: string
+  private tunnel?: boolean
 
   public async execute() {
     await this.resolveConfig()
@@ -228,7 +228,7 @@ export class RunTestCommand extends Command {
         files: this.files,
         publicIds: this.publicIds,
         testSearchQuery: this.testSearchQuery,
-        tunnel: this.shouldOpenTunnel,
+        tunnel: this.tunnel,
       })
     )
   }
@@ -266,5 +266,5 @@ RunTestCommand.addOption('appKey', Command.String('--appKey'))
 RunTestCommand.addOption('configPath', Command.String('--config'))
 RunTestCommand.addOption('files', Command.Array('-f,--files'))
 RunTestCommand.addOption('publicIds', Command.Array('-p,--public-id'))
-RunTestCommand.addOption('shouldOpenTunnel', Command.Boolean('-t,--tunnel'))
 RunTestCommand.addOption('testSearchQuery', Command.String('-s,--search'))
+RunTestCommand.addOption('tunnel', Command.Boolean('-t,--tunnel'))
