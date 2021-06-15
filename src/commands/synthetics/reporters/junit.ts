@@ -188,7 +188,7 @@ export class JUnitReporter implements Reporter {
     }
     const steps = [mainStep]
 
-    if (stepDetail.subTestStepDetails && stepDetail.subTestStepDetails.length) {
+    if (stepDetail.subTestStepDetails) {
       for (const subStepDetail of stepDetail.subTestStepDetails) {
         steps.push(...this.getStep(subStepDetail))
       }
