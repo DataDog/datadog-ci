@@ -14,7 +14,8 @@ export const DEFAULT_COMMAND_CONFIG: CommandConfig = {
   appKey: '',
   configPath: 'datadog-ci.json',
   datadogSite: 'datadoghq.com',
-  fileGlobs: ['{,!(node_modules)/**/}*.synthetics.json'],
+  fileGlobs: [],
+  files: '{,!(node_modules)/**/}*.synthetics.json',
   global: {},
   pollingTimeout: 2 * 60 * 1000,
   proxy: {protocol: 'http'},
@@ -26,9 +27,10 @@ export const DEFAULT_COMMAND_CONFIG: CommandConfig = {
 export class RunTestCommand extends Command {
   private apiKey?: string
   private appKey?: string
-  private config: CommandConfig = JSON.parse(JSON.stringify(DEFAULT_COMMAND_CONFIG))
+  private config: CommandConfig = JSON.parse(JSON.stringify(DEFAULT_COMMAND_CONFIG)) // Deep copy to avoid mutation during unit tests
   private configPath?: string
   private fileGlobs?: string[]
+  private files?: string
   private publicIds?: string[]
   private reporter?: MainReporter
   private shouldOpenTunnel?: boolean
@@ -185,7 +187,8 @@ export class RunTestCommand extends Command {
       return testSearchResults.tests.map((test) => ({config: this.config.global, id: test.public_id}))
     }
 
-    const suites = (await Promise.all(this.config.fileGlobs.map((glob: string) => getSuites(glob, this.reporter!))))
+    const listOfGlobs = this.config.fileGlobs.length ? this.config.fileGlobs : [this.config.files]
+    const suites = (await Promise.all(listOfGlobs.map((glob: string) => getSuites(glob, this.reporter!))))
       .reduce((acc, val) => acc.concat(val), [])
       .map((suite) => suite.tests)
       .filter((suiteTests) => !!suiteTests)
@@ -201,7 +204,11 @@ export class RunTestCommand extends Command {
   }
 
   private async resolveConfig() {
-    // Default < ENV < file < CLI
+    // Default < file < ENV < CLI
+
+    // Override with file config variables
+    const configPath = this.configPath ?? this.config.configPath
+    this.config = await parseConfigFile(this.config, configPath)
 
     // Override with ENV variables
     this.config = deepExtend(
@@ -214,10 +221,6 @@ export class RunTestCommand extends Command {
       })
     )
 
-    // Override with file config variables
-    const configPath = this.configPath ?? this.config.configPath
-    this.config = await parseConfigFile(this.config, configPath)
-
     // Override with CLI parameters
     this.config = deepExtend(
       this.config,
@@ -226,6 +229,7 @@ export class RunTestCommand extends Command {
         appKey: this.appKey,
         configPath: this.configPath,
         fileGlobs: this.fileGlobs,
+        files: this.files,
         publicIds: this.publicIds,
         testSearchQuery: this.testSearchQuery,
         tunnel: this.shouldOpenTunnel,

@@ -230,19 +230,29 @@ describe('run-test', () => {
     })
 
     test('should use given globs to get tests list', async () => {
-      jest.spyOn(utils, 'getSuites').mockImplementation((() => [conf1, conf2]) as any)
+      const getSuitesMock = jest.spyOn(utils, 'getSuites').mockImplementation((() => [conf1, conf2]) as any)
       const command = new RunTestCommand()
       command.context = process
       command['config'].global = {startUrl}
       command['config'].fileGlobs = ['random glob']
       command['reporter'] = mockReporter
       command['fileGlobs'] = ['new glob', 'another one']
+      command['files'] = 'a last glob'
 
       await command['resolveConfig']()
+      // Should take fileGlobs over files
       await command['getTestsList'].bind(command)(fakeApi)
-      expect(utils.getSuites).toHaveBeenCalledTimes(2)
-      expect(utils.getSuites).toHaveBeenCalledWith('new glob', command['reporter'])
-      expect(utils.getSuites).toHaveBeenCalledWith('another one', command['reporter'])
+      expect(getSuitesMock).toHaveBeenCalledTimes(2)
+      expect(getSuitesMock).toHaveBeenCalledWith('new glob', command['reporter'])
+      expect(getSuitesMock).toHaveBeenCalledWith('another one', command['reporter'])
+
+      command['fileGlobs'] = []
+      await command['resolveConfig']()
+      // Should take files over empty fileGlobs
+      getSuitesMock.mockClear()
+      await command['getTestsList'].bind(command)(fakeApi)
+      expect(getSuitesMock).toHaveBeenCalledTimes(1)
+      expect(getSuitesMock).toHaveBeenCalledWith('a last glob', command['reporter'])
     })
   })
 
@@ -304,6 +314,7 @@ describe('run-test', () => {
         configPath: 'fake-datadog-ci.json',
         datadogSite: 'datadoghq.eu',
         fileGlobs: ['new-file'],
+        files: 'my-new-file',
         global: {locations: []},
         pollingTimeout: 1,
         proxy: {protocol: 'https'},
@@ -352,17 +363,17 @@ describe('run-test', () => {
       })
     })
 
-    test('override from ENV < config file < CLI', async () => {
-      process.env = {
-        DATADOG_API_KEY: 'api_key_env',
-        DATADOG_APP_KEY: 'app_key_env',
-        DATADOG_SITE: 'datadog.env',
-      }
-
+    test('override from config file < ENV < CLI', async () => {
       jest.spyOn(ciUtils, 'getConfig').mockImplementation(async () => ({
         apiKey: 'api_key_config_file',
         appKey: 'app_key_config_file',
+        datadogSite: 'datadog.config.file',
       }))
+
+      process.env = {
+        DATADOG_API_KEY: 'api_key_env',
+        DATADOG_APP_KEY: 'app_key_env',
+      }
 
       const command = new RunTestCommand()
       command['apiKey'] = 'api_key_cli'
@@ -371,8 +382,8 @@ describe('run-test', () => {
       expect(command['config']).toEqual({
         ...DEFAULT_COMMAND_CONFIG,
         apiKey: 'api_key_cli',
-        appKey: 'app_key_config_file',
-        datadogSite: 'datadog.env',
+        appKey: 'app_key_env',
+        datadogSite: 'datadog.config.file',
       })
     })
   })
