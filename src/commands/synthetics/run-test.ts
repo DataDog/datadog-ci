@@ -231,6 +231,11 @@ export class RunTestCommand extends Command {
         tunnel: this.tunnel,
       })
     )
+
+    if (typeof this.config.files === 'string') {
+      this.reporter!.log('[DEPRECATED] "files" should not be a string, array of string expected. The conversion will be automatic')
+      this.config.files = [this.config.files]
+    }
   }
 
   private sortTestsByOutcome(results: {[key: string]: PollResult[]}) {
