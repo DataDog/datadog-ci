@@ -113,12 +113,14 @@ describe('utils', () => {
         config: {request: {url: 'http://example.org/'}},
         name: 'Fake Test',
         public_id: '123-456-789',
+        suite: 'Suite 1',
       },
       'ski-ppe-d01': {
         config: {request: {url: 'http://example.org/'}},
         name: 'Skipped Fake Test',
         options: {ci: {executionRule: 'skipped'}},
         public_id: 'ski-ppe-d01',
+        suite: 'Suite 3',
       },
     }
 
