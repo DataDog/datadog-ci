@@ -1,10 +1,9 @@
 // tslint:disable: no-string-literal
-
 import * as ciUtils from '../../../helpers/utils'
 
 import {ExecutionRule} from '../interfaces'
 import {DefaultReporter} from '../reporters/default'
-import {DEFAULT_COMMAND_CONFIG, RunTestCommand} from '../run-test'
+import {DEFAULT_COMMAND_CONFIG, removeUndefinedValues, RunTestCommand} from '../run-test'
 import * as utils from '../utils'
 import {mockReporter} from './fixtures'
 
@@ -374,5 +373,10 @@ describe('run-test', () => {
         datadogSite: 'datadog.config.file',
       })
     })
+  })
+
+  test('removeUndefinedValues', () => {
+    // tslint:disable-next-line: no-null-keyword
+    expect(removeUndefinedValues({a: 'b', c: 'd', e: undefined, g: null})).toEqual({a: 'b', c: 'd', g: null})
   })
 })

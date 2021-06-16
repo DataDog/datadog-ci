@@ -233,7 +233,9 @@ export class RunTestCommand extends Command {
     )
 
     if (typeof this.config.files === 'string') {
-      this.reporter!.log('[DEPRECATED] "files" should be an array of string instead of a string. The conversion will be automatic')
+      this.reporter!.log(
+        '[DEPRECATED] "files" should be an array of string instead of a string. The conversion will be automatic'
+      )
       this.config.files = [this.config.files]
     }
   }
@@ -258,7 +260,7 @@ export class RunTestCommand extends Command {
   }
 }
 
-const removeUndefinedValues = <T extends {[key: string]: any}>(object: T): T => {
+export const removeUndefinedValues = <T extends {[key: string]: any}>(object: T): T => {
   const newObject = {...object}
   Object.keys(newObject).forEach((k) => newObject[k] === undefined && delete newObject[k])
 
