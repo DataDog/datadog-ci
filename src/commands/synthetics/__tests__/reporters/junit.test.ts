@@ -1,12 +1,12 @@
 import {promises as fs} from 'fs'
 
-import {JUnitReporter, getDefaultStats} from '../../reporters/junit'
+import {getDefaultStats, JUnitReporter} from '../../reporters/junit'
 import {RunTestCommand} from '../../run-test'
 
 const globalTestMock = {
-  tags: [],
   locations: [],
   options: {},
+  tags: [],
 }
 
 const globalResultMock = {
@@ -134,10 +134,10 @@ describe('Junit reporter', () => {
                 description: 'Step 1',
               },
               {
-                description: 'Step 2',
-                subTestStepDetails: [{description: 'Subtest 1'}],
                 browserErrors: [{type: 'error', name: 'Error'}],
+                description: 'Step 2',
                 error: 'Error',
+                subTestStepDetails: [{description: 'Subtest 1'}],
                 warnings: [{type: 'warning', message: 'Warning'}],
               },
             ],
@@ -147,11 +147,11 @@ describe('Junit reporter', () => {
       const suite = reporter.getTestSuite(globalTestMock, resultMock)
       expect(suite.$).toMatchObject({
         ...getDefaultStats(),
-        tests: 3,
         assertions: 3,
-        warnings: 1,
         errors: 2,
         failures: 1,
+        tests: 3,
+        warnings: 1,
       })
     })
   })
@@ -161,8 +161,8 @@ describe('Junit reporter', () => {
       const test = reporter.getStep({})[0]
       expect(test.$).toMatchObject({
         ...getDefaultStats(),
-        tests: 1,
         assertions: 1,
+        tests: 1,
       })
     })
 
@@ -191,11 +191,11 @@ describe('Junit reporter', () => {
       expect(test.warning.length).toBe(1)
       expect(test.$).toMatchObject({
         ...getDefaultStats(),
-        tests: 1,
         assertions: 1,
-        warnings: 1,
         errors: 2,
         failures: 1,
+        tests: 1,
+        warnings: 1,
       })
     })
   })
