@@ -35,9 +35,9 @@ export class RunTestCommand extends Command {
   private tunnel?: boolean
 
   public async execute() {
-    await this.resolveConfig()
     const reporters = [new DefaultReporter(this)]
     this.reporter = getReporter(reporters)
+    await this.resolveConfig()
     const startTime = Date.now()
 
     const api = this.getApiHelper()
