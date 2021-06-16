@@ -233,7 +233,7 @@ export class RunTestCommand extends Command {
     )
 
     if (typeof this.config.files === 'string') {
-      this.reporter!.log('[DEPRECATED] "files" should not be a string, array of string expected. The conversion will be automatic')
+      this.reporter!.log('[DEPRECATED] "files" should be an array of string instead of a string. The conversion will be automatic')
       this.config.files = [this.config.files]
     }
   }
