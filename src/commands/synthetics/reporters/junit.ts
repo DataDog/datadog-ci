@@ -64,7 +64,7 @@ interface XMLJSON {
   }
 }
 
-const getDefaultStats = (): Stats => ({
+export const getDefaultStats = (): Stats => ({
   allowfailures: 0,
   assertions: 0,
   errors: 0,
@@ -105,8 +105,8 @@ export class JUnitReporter implements Reporter {
   }
 
   public async runEnd() {
+    // Write the file
     try {
-      await fs.writeFile(this.destination.replace(/\.xml$/, '.json'), JSON.stringify(this.json, undefined, 4), 'utf8')
       const xml = this.builder.buildObject(this.json)
       await fs.writeFile(this.destination, xml, 'utf8')
       this.write(`✅ Created a jUnit report at ${c.bold.green(this.destination)}\n`)
