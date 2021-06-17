@@ -76,29 +76,28 @@ export interface Vitals {
   url: string
 }
 
+export interface BrowserError {
+  description: string
+  name: string
+  type: string
+}
+
 export interface Step {
   allowFailure: boolean
-  apmTraceIds: string[]
-  browserErrors: {
-    description: string
-    name: string
-    type: string
-  }[]
+  browserErrors: BrowserError[]
   description: string
   duration: number
   error?: string
-  resource: Resource
-  screenshotBucketKey: boolean
+  publicId?: string
   skipped: boolean
-  snapshotBucketKey: boolean
   stepId: number
-  subTestPublicId: string
-  subTestStepDetails: Step[]
+  subTestPublicId?: string
+  subTestStepDetails?: Step[]
   type: string
   url: string
-  value: string
+  value?: string | number
   vitalsMetrics: Vitals[]
-  warnings: {
+  warnings?: {
     message: string
     type: string
   }[]
