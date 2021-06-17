@@ -49,6 +49,9 @@ export class Tunnel {
       algorithms: {
         serverHostKey: [parsedHostPrivateKey.type],
       },
+      // Greatly increase highWaterMark (32kb -> 255kb) to avoid hanging with large requests
+      // SW-1182, https://github.com/mscdex/ssh2/issues/908
+      highWaterMark: 255 * 1024,
       hostKeys: {
         // Typings are wrong for host keys
         [parsedHostPrivateKey.type]: parsedHostPrivateKey as any,
@@ -170,12 +173,21 @@ export class Tunnel {
             dest.destroy()
           })
         })
-        dest.on('error', (error) => {
-          console.error('Forwarding error', error.message)
+        dest.on('error', (error: NodeJS.ErrnoException) => {
+          if (!src) {
+            if ('code' in error && error.code === 'ENOTFOUND') {
+              this.logError(`Unable to resolve host ${(error as any).hostname}`)
+            } else {
+              this.logError(`Forwarding channel error: "${error.message}"`)
+            }
+            reject()
+          }
         })
         dest.on('close', () => {
           if (src) {
             src.close()
+          } else {
+            reject()
           }
         })
         dest.connect(info.destPort, info.destIP)
@@ -198,6 +210,9 @@ export class Tunnel {
 
     // Set up multiplexing
     const multiplexerConfig: MultiplexerConfig = {
+      // Increase maximum backlog size to more easily handle
+      // running multiple large browser tests in parallel.
+      acceptBacklog: 2048,
       enableKeepAlive: false,
     }
     this.multiplexer = new Multiplexer((stream) => {
