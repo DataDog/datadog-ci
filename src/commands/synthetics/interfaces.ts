@@ -267,3 +267,18 @@ export interface APIConfiguration {
   baseUrl: string
   proxyOpts: ProxyConfiguration
 }
+
+export interface CommandConfig {
+  apiKey: string
+  appKey: string
+  configPath: string
+  datadogSite: string
+  files: string[]
+  global: ConfigOverride
+  pollingTimeout: number
+  proxy: ProxyConfiguration
+  publicIds: string[]
+  subdomain: string
+  testSearchQuery?: string
+  tunnel: boolean
+}
