@@ -26,8 +26,8 @@ export const getGitMetadata = async () => {
       git.revparse('HEAD'),
       git.branch(),
       git.listRemote(['--get-url']),
-      git.show('--format=%s'),
-      git.show('--format=%an,%ae,%ad,%cn,%ce,%cd'),
+      git.show(['-s', '--format=%s']),
+      git.show(['-s', '--format=%an,%ae,%ad,%cn,%ce,%cd']),
     ])
 
     const [
