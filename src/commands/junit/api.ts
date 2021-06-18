@@ -37,7 +37,7 @@ export const uploadJUnitXML = (request: (args: AxiosRequestConfig) => AxiosPromi
   const spanTags = {
     service: jUnitXML.service,
     ...jUnitXML.spanTags,
-    '_dd.cireport': {type: 'junitxml', version: 2},
+    '_dd.cireport_version': '2',
   }
   form.append('message', JSON.stringify(spanTags))
 
