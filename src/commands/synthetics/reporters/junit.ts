@@ -76,11 +76,11 @@ export const getDefaultStats = (): Stats => ({
 
 // Return the stats from a given object
 // based on getDefaultStats
-const getStats = (obj: any): Stats => {
+const getStats = (obj: Stats): Stats => {
   const baseStats = getDefaultStats()
   for (const entry of Object.entries(baseStats)) {
-    const [key] = entry as [keyof Stats, number]
-    baseStats[key] = obj[key] || baseStats[key]
+    const [key, value] = entry as [keyof Stats, number]
+    baseStats[key] = value || baseStats[key]
   }
 
   return baseStats
@@ -118,7 +118,7 @@ export class JUnitReporter implements Reporter {
   public testEnd(test: Test, results: PollResult[]) {
     const suiteRunName = test.suite || 'Undefined suite'
 
-    let suiteRun = this.json.testsuites.testsuite.find((suite: any) => suite.$.name === suiteRunName)
+    let suiteRun = this.json.testsuites.testsuite.find((suite: XMLRun) => suite.$.name === suiteRunName)
     if (!suiteRun) {
       suiteRun = {
         $: {name: suiteRunName, ...getDefaultStats()},

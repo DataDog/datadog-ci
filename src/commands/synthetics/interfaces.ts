@@ -33,9 +33,9 @@ export type Reporter = Partial<MainReporter>
 
 export interface Result {
   device: {
-    height?: number
+    height: number
     id: string
-    width?: number
+    width: number
   }
   duration?: number
   error?: string | 'Endpoint Failure' | 'Timeout' | 'Tunnel Failure'
@@ -71,8 +71,8 @@ interface Resource {
 }
 
 export interface Vitals {
-  cls: number
-  lcp: number
+  cls?: number
+  lcp?: number
   url: string
 }
 
