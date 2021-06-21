@@ -1,3 +1,4 @@
+// tslint:disable: no-string-literal
 import {promises as fs} from 'fs'
 import {Writable} from 'stream'
 

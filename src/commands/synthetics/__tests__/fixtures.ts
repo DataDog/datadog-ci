@@ -1,4 +1,4 @@
-import {MainReporter, PollResult, Test, User, Step} from '../interfaces'
+import {MainReporter, PollResult, Step, Test, User} from '../interfaces'
 
 const mockUser: User = {
   email: '',
@@ -65,9 +65,9 @@ export const getStep = (): Step => ({
   value: 'value',
   vitalsMetrics: [
     {
-      url: 'http://fake.url',
-      lcp: 1,
       cls: 1,
+      lcp: 1,
+      url: 'http://fake.url',
     },
   ],
   warnings: [],
