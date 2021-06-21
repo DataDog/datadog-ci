@@ -136,7 +136,6 @@ describe('Junit reporter', () => {
       const suite = reporter['getTestSuite'](getApiTest('123'), resultMock)
       expect(suite.$).toMatchObject({
         ...getDefaultStats(),
-        assertions: 3,
         errors: 2,
         failures: 1,
         tests: 3,
@@ -150,7 +149,6 @@ describe('Junit reporter', () => {
       const test = reporter['getStep'](globalStepMock)[0]
       expect(test.$).toMatchObject({
         ...getDefaultStats(),
-        assertions: 1,
         tests: 1,
       })
     })
@@ -192,7 +190,6 @@ describe('Junit reporter', () => {
       expect(test.warning.length).toBe(1)
       expect(test.$).toMatchObject({
         ...getDefaultStats(),
-        assertions: 1,
         errors: 2,
         failures: 1,
         tests: 1,

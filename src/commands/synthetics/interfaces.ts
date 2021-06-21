@@ -141,9 +141,12 @@ export interface Test {
   status: string
   stepCount: number
   subtype: string
-  suite?: string
   tags: string[]
   type: string
+}
+
+export interface InternalTest extends Test {
+  suite?: string
 }
 
 export interface Assertion {

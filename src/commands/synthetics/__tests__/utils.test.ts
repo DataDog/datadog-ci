@@ -9,7 +9,7 @@ import glob from 'glob'
 import {ProxyConfiguration} from '../../../helpers/utils'
 
 import {apiConstructor} from '../api'
-import {ConfigOverride, ExecutionRule, PollResult, Result, Test} from '../interfaces'
+import {ConfigOverride, ExecutionRule, InternalTest, PollResult, Result} from '../interfaces'
 import {Tunnel} from '../tunnel'
 import * as utils from '../utils'
 
@@ -167,7 +167,7 @@ describe('utils', () => {
   describe('handleConfig', () => {
     test('empty config returns simple payload', () => {
       const publicId = 'abc-def-ghi'
-      expect(utils.handleConfig({public_id: publicId} as Test, publicId, mockReporter)).toEqual({
+      expect(utils.handleConfig({public_id: publicId} as InternalTest, publicId, mockReporter)).toEqual({
         executionRule: ExecutionRule.BLOCKING,
         public_id: publicId,
       })
@@ -184,7 +184,7 @@ describe('utils', () => {
           config: {request: {url: 'http://example.org/path'}},
           options: {},
           public_id: publicId,
-        } as Test
+        } as InternalTest
 
         if (testExecutionRule) {
           fakeTest.options.ci = {executionRule: testExecutionRule}
@@ -230,7 +230,7 @@ describe('utils', () => {
         config: {request: {url: 'http://example.org/path#target'}},
         public_id: publicId,
         type: 'browser',
-      } as Test
+      } as InternalTest
       const configOverride = {
         startUrl: 'https://{{DOMAIN}}/newPath?oldPath={{ PATHNAME   }}{{HASH}}',
       }
@@ -262,7 +262,7 @@ describe('utils', () => {
         config: {request: {url: 'http://{{ FAKE_VAR }}/path'}},
         public_id: publicId,
         type: 'browser',
-      } as Test
+      } as InternalTest
       const configOverride = {
         startUrl: 'https://{{DOMAIN}}/newPath?oldPath={{CUSTOMVAR}}',
       }
@@ -280,7 +280,7 @@ describe('utils', () => {
         config: {request: {url: 'http://exmaple.org/path'}},
         public_id: publicId,
         type: 'browser',
-      } as Test
+      } as InternalTest
       const configOverride = {
         startUrl: 'http://127.0.0.1/newPath{{PARAMS}}',
       }
@@ -297,7 +297,7 @@ describe('utils', () => {
         config: {request: {url: 'http://example.org/path'}},
         public_id: publicId,
         type: 'browser',
-      } as Test
+      } as InternalTest
       const configOverride: ConfigOverride = {
         allowInsecureCertificates: true,
         basicAuth: {username: 'user', password: 'password'},
@@ -328,7 +328,9 @@ describe('utils', () => {
     test('complete result', () => {
       const result = {
         device: {
+          height: 0,
           id: 'laptop_large',
+          width: 0,
         },
         eventType: 'finished',
         passed: true,
@@ -343,7 +345,7 @@ describe('utils', () => {
 
     test('result with error', () => {
       const result: Result = {
-        device: {id: 'laptop_large'},
+        device: {height: 0, id: 'laptop_large', width: 0},
         errorCode: 'ERRABORTED',
         eventType: 'finished',
         passed: false,
@@ -396,7 +398,9 @@ describe('utils', () => {
     const testConfiguration = getApiTest('abc-def-ghi')
     const passingResult = {
       device: {
+        height: 0,
         id: 'laptop_large',
+        width: 0,
       },
       eventType: 'finished',
       passed: true,
@@ -468,7 +472,9 @@ describe('utils', () => {
 
     const passingResult = {
       device: {
+        height: 0,
         id: 'laptop_large',
+        width: 0,
       },
       eventType: 'finished',
       passed: true,
@@ -530,7 +536,7 @@ describe('utils', () => {
         {
           dc_id: triggerResult.location,
           result: {
-            device: {id: triggerResult.device},
+            device: {height: 0, id: triggerResult.device, width: 0},
             error: 'Timeout',
             eventType: 'finished',
             passed: false,
@@ -551,7 +557,7 @@ describe('utils', () => {
         {
           dc_id: triggerResult.location,
           result: {
-            device: {id: triggerResult.device},
+            device: {height: 0, id: triggerResult.device, width: 0},
             error: 'Timeout',
             eventType: 'finished',
             passed: false,
@@ -589,7 +595,7 @@ describe('utils', () => {
         {
           dc_id: triggerResultTimeOut.location,
           result: {
-            device: {id: triggerResultTimeOut.device},
+            device: {height: 0, id: triggerResultTimeOut.device, width: 0},
             error: 'Timeout',
             eventType: 'finished',
             passed: false,

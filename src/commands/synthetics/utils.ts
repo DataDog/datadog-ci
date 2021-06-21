@@ -14,6 +14,7 @@ import {
   APIHelper,
   ConfigOverride,
   ExecutionRule,
+  InternalTest,
   MainReporter,
   Payload,
   PollResult,
@@ -23,7 +24,6 @@ import {
   Summary,
   TemplateContext,
   TemplateVariables,
-  Test,
   TestPayload,
   Trigger,
   TriggerConfig,
@@ -41,7 +41,7 @@ const template = (st: string, context: any): string =>
   st.replace(TEMPLATE_REGEX, (match: string, p1: string) => (p1 in context ? context[p1] : match))
 
 export const handleConfig = (
-  test: Test,
+  test: InternalTest,
   publicId: string,
   reporter: MainReporter,
   config?: ConfigOverride
@@ -145,7 +145,7 @@ const warnOnReservedEnvVarNames = (context: TemplateContext, reporter: MainRepor
   }
 }
 
-export const getExecutionRule = (test: Test, configOverride?: ConfigOverride): ExecutionRule => {
+export const getExecutionRule = (test: InternalTest, configOverride?: ConfigOverride): ExecutionRule => {
   if (configOverride && configOverride.executionRule) {
     return getStrictestExecutionRule(configOverride.executionRule, test.options?.ci?.executionRule)
   }
@@ -352,7 +352,7 @@ const createFailingResult = (
 ): PollResult => ({
   dc_id: dcId,
   result: {
-    device: {id: deviceId},
+    device: {height: 0, id: deviceId, width: 0},
     error: errorMessage,
     eventType: 'finished',
     passed: false,
@@ -429,7 +429,7 @@ export const getTestsToTrigger = async (api: APIHelper, triggerConfigs: TriggerC
 
   const tests = await Promise.all(
     triggerConfigs.map(async ({config, id, suite}) => {
-      let test: Test | undefined
+      let test: InternalTest | undefined
       id = PUBLIC_ID_REGEX.test(id) ? id : id.substr(id.lastIndexOf('/') + 1)
       try {
         test = {

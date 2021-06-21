@@ -54,7 +54,15 @@ export const getApiTest = (publicId: string): Test => ({
 })
 
 export const getStep = (): Step => ({
+  allowFailure: false,
   browserErrors: [],
+  description: 'description',
+  duration: 1000,
+  skipped: false,
+  stepId: -1,
+  type: 'type',
+  url: 'about:blank',
+  value: 'value',
   vitalsMetrics: [
     {
       url: 'http://fake.url',
@@ -62,21 +70,11 @@ export const getStep = (): Step => ({
       cls: 1,
     },
   ],
-  skipped: false,
-  description: 'description',
   warnings: [],
-  url: 'about:blank',
-  value: 'value',
-  duration: 1000,
-  allowFailure: false,
-  type: 'type',
-  stepId: -1,
 })
 
 export const getResult = (): PollResult => ({
   dc_id: 1,
-  resultID: '123',
-  timestamp: 1,
   result: {
     device: {
       height: 1,
@@ -87,4 +85,6 @@ export const getResult = (): PollResult => ({
     passed: true,
     stepDetails: [],
   },
+  resultID: '123',
+  timestamp: 1,
 })

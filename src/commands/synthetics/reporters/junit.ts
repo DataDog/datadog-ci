@@ -3,12 +3,11 @@ import {promises as fs} from 'fs'
 import {Writable} from 'stream'
 import {Builder} from 'xml2js'
 
-import {PollResult, Reporter, Step, Test, Vitals} from '../interfaces'
+import {InternalTest, PollResult, Reporter, Step, Vitals} from '../interfaces'
 import {RunTestCommand} from '../run-test'
 
 interface Stats {
   allowfailures: number
-  assertions: number
   errors: number
   failures: number
   skipped: number
@@ -66,7 +65,6 @@ interface XMLJSON {
 
 export const getDefaultStats = (): Stats => ({
   allowfailures: 0,
-  assertions: 0,
   errors: 0,
   failures: 0,
   skipped: 0,
@@ -115,7 +113,7 @@ export class JUnitReporter implements Reporter {
     }
   }
 
-  public testEnd(test: Test, results: PollResult[]) {
+  public testEnd(test: InternalTest, results: PollResult[]) {
     const suiteRunName = test.suite || 'Undefined suite'
 
     let suiteRun = this.json.testsuites.testsuite.find((suite: XMLRun) => suite.$.name === suiteRunName)
@@ -163,7 +161,6 @@ export class JUnitReporter implements Reporter {
       stats.failures += stepStats.failures
       stats.skipped += stepStats.skipped
       stats.allowfailures += stepStats.allowfailures
-      stats.assertions += stepStats.assertions
       stats.warnings += stepStats.warnings
     }
 
@@ -231,7 +228,6 @@ export class JUnitReporter implements Reporter {
 
     return {
       allowfailures: step.allowFailure ? 1 : 0,
-      assertions: step.subTestStepDetails ? step.subTestStepDetails.length : 1,
       errors: errors + (step.error ? 1 : 0),
       failures: step.error ? 1 : 0,
       skipped: step.skipped ? 1 : 0,
@@ -248,7 +244,7 @@ export class JUnitReporter implements Reporter {
     return stats
   }
 
-  private getTestSuite(test: Test, result: PollResult): XMLSuite {
+  private getTestSuite(test: InternalTest, result: PollResult): XMLSuite {
     return {
       $: {
         name: test.name,
