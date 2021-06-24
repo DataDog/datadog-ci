@@ -91,7 +91,7 @@ describe('lambda', () => {
                 \\"DD_TRACE_ENABLED\\": \\"true\\",
                 \\"DD_MERGE_XRAY_TRACES\\": \\"false\\",
                 \\"DD_FLUSH_TO_LOG\\": \\"true\\",
-                \\"DD_LOG_LEVEL\\": \\"debug\\",
+                \\"DD_LOG_LEVEL\\": \\"debug\\"
               }
             }
           }

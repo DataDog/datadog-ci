@@ -57,7 +57,7 @@ describe('function', () => {
             "Variables": Object {
               "DD_FLUSH_TO_LOG": "false",
               "DD_LAMBDA_HANDLER": "index.handler",
-              "DD_LOG_LEVEL", "debug",
+              "DD_LOG_LEVEL": "debug",
               "DD_MERGE_XRAY_TRACES": "false",
               "DD_SITE": "datadoghq.com",
               "DD_TRACE_ENABLED": "false",
