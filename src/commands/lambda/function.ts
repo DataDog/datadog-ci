@@ -221,7 +221,7 @@ export const calculateUpdateRequest = (
     needsUpdate = true
     newEnvVars.DD_FLUSH_TO_LOG = settings.flushMetricsToLogs.toString()
   }
-  if (settings.logLevel && (env.DD_LOG_LEVEL !== settings.logLevel)) {
+  if (settings.logLevel && env.DD_LOG_LEVEL !== settings.logLevel) {
     needsUpdate = true
     newEnvVars.DD_LOG_LEVEL = settings.logLevel
   }
