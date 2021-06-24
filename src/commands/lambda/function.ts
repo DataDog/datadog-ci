@@ -26,7 +26,9 @@ export interface InstrumentationSettings {
   layerVersion?: number
   mergeXrayTraces: boolean
   tracingEnabled: boolean
+  logLevel?: string
 }
+
 export const getLambdaConfigs = async (
   lambda: Lambda,
   cloudWatch: CloudWatchLogs,
@@ -218,6 +220,10 @@ export const calculateUpdateRequest = (
   if (env.DD_FLUSH_TO_LOG !== settings.flushMetricsToLogs.toString()) {
     needsUpdate = true
     newEnvVars.DD_FLUSH_TO_LOG = settings.flushMetricsToLogs.toString()
+  }
+  if (settings.logLevel && (env.DD_LOG_LEVEL !== settings.logLevel)) {
+    needsUpdate = true
+    newEnvVars.DD_LOG_LEVEL = settings.logLevel
   }
   const allEnvVariables = {...env, ...newEnvVars}
   layerARNs.forEach((layerARN) => {

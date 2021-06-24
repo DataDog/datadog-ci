@@ -54,6 +54,7 @@ describe('lambda', () => {
       afterAll(() => {
         process.env = OLD_ENV
       })
+
       test('prints dry run data for lambda library layer', async () => {
         ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({code: 'ENOENT'}))
         ;(Lambda as any).mockImplementation(() =>
@@ -69,7 +70,7 @@ describe('lambda', () => {
         const context = createMockContext() as any
         const functionARN = 'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world'
         const code = await cli.run(
-          ['lambda', 'instrument', '-f', functionARN, '--dry', '--layerVersion', '10'],
+          ['lambda', 'instrument', '-f', functionARN, '--dry', '--layerVersion', '10', '--logLevel', 'debug'],
           context
         )
         const output = context.stdout.toString()
@@ -89,7 +90,8 @@ describe('lambda', () => {
                 \\"DD_SITE\\": \\"datadoghq.com\\",
                 \\"DD_TRACE_ENABLED\\": \\"true\\",
                 \\"DD_MERGE_XRAY_TRACES\\": \\"false\\",
-                \\"DD_FLUSH_TO_LOG\\": \\"true\\"
+                \\"DD_FLUSH_TO_LOG\\": \\"true\\",
+                \\"DD_LOG_LEVEL\\": \\"debug\\",
               }
             }
           }
@@ -100,6 +102,7 @@ describe('lambda', () => {
           "
         `)
       })
+
       test('prints dry run data for lambda extension layer', async () => {
         ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({code: 'ENOENT'}))
         ;(Lambda as any).mockImplementation(() =>
@@ -148,6 +151,7 @@ describe('lambda', () => {
           "
         `)
       })
+
       test('runs function update command for lambda library layer', async () => {
         ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({code: 'ENOENT'}))
         const lambda = makeMockLambda({
@@ -173,6 +177,7 @@ describe('lambda', () => {
         )
         expect(lambda.updateFunctionConfiguration).toHaveBeenCalled()
       })
+
       test('runs function update command for lambda extension layer', async () => {
         ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({code: 'ENOENT'}))
         const lambda = makeMockLambda({
@@ -199,6 +204,7 @@ describe('lambda', () => {
         )
         expect(lambda.updateFunctionConfiguration).toHaveBeenCalled()
       })
+
       test('aborts early when no functions are specified', async () => {
         ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({code: 'ENOENT'}))
         ;(Lambda as any).mockImplementation(() => makeMockLambda({}))
@@ -212,6 +218,7 @@ describe('lambda', () => {
                                                             "
                                                 `)
       })
+
       test("aborts early when function regions can't be found", async () => {
         ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({code: 'ENOENT'}))
         ;(Lambda as any).mockImplementation(() => makeMockLambda({}))
@@ -227,7 +234,8 @@ describe('lambda', () => {
                                                   "
                                         `)
       })
-      test('aborts early when no extensionVersion and forwarder are set', async () => {
+
+      test('aborts early when extensionVersion and forwarder are set', async () => {
         ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({code: 'ENOENT'}))
         ;(Lambda as any).mockImplementation(() => makeMockLambda({}))
         const cli = makeCli()
@@ -255,6 +263,7 @@ describe('lambda', () => {
         `)
       })
     })
+
     describe('getSettings', () => {
       test('uses config file settings', () => {
         process.env = {}
@@ -266,6 +275,7 @@ describe('lambda', () => {
         command['config']['layerAWSAccount'] = 'another-account'
         command['config']['mergeXrayTraces'] = false
         command['config']['tracing'] = false
+        command['config']['logLevel'] = 'debug'
 
         expect(command['getSettings']()).toEqual({
           extensionVersion: 6,
@@ -275,6 +285,7 @@ describe('lambda', () => {
           layerVersion: 2,
           mergeXrayTraces: false,
           tracingEnabled: false,
+          logLevel: 'debug',
         })
       })
 
@@ -293,6 +304,8 @@ describe('lambda', () => {
         command['config']['flushMetricsToLogs'] = true
         command['tracing'] = true
         command['config']['tracing'] = false
+        command['logLevel'] = 'debug'
+        command['config']['logLevel'] = 'info'
 
         expect(command['getSettings']()).toEqual({
           flushMetricsToLogs: false,
@@ -301,6 +314,7 @@ describe('lambda', () => {
           layerVersion: 1,
           mergeXrayTraces: true,
           tracingEnabled: true,
+          logLevel: 'debug',
         })
       })
 
@@ -328,6 +342,7 @@ describe('lambda', () => {
         expect(command['getSettings']()).toBeUndefined()
       })
     })
+
     describe('collectFunctionsByRegion', () => {
       test('groups functions with region read from arn', () => {
         process.env = {}
@@ -346,6 +361,7 @@ describe('lambda', () => {
           'us-east-2': ['arn:aws:lambda:us-east-2:123456789012:function:third-func'],
         })
       })
+
       test('groups functions in the config object', () => {
         process.env = {}
         const command = createCommand()
@@ -381,6 +397,7 @@ describe('lambda', () => {
           'us-east-2': ['arn:aws:lambda:us-east-2:123456789012:function:third-func'],
         })
       })
+
       test('fails to collect when there are regionless functions and no default region is set', () => {
         process.env = {}
         const command = createCommand()
@@ -396,6 +413,7 @@ describe('lambda', () => {
         expect(command['collectFunctionsByRegion']()).toBeUndefined()
       })
     })
+
     describe('printPlannedActions', () => {
       test('prints no output when list is empty', () => {
         process.env = {}
@@ -408,6 +426,7 @@ describe('lambda', () => {
                                         "
                                 `)
       })
+
       test('prints log group actions', () => {
         process.env = {}
         const command = createCommand()

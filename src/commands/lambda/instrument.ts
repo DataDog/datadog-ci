@@ -21,6 +21,7 @@ export class InstrumentCommand extends Command {
   private mergeXrayTraces?: boolean
   private region?: string
   private tracing?: boolean
+  private logLevel?: string
 
   public async execute() {
     const lambdaConfig = {lambda: this.config}
@@ -46,12 +47,14 @@ export class InstrumentCommand extends Command {
 
       return 1
     }
+
     const configGroups: {
       cloudWatchLogs: CloudWatchLogs
       configs: FunctionConfiguration[]
       lambda: Lambda
       region: string
     }[] = []
+
     for (const [region, functionList] of Object.entries(functionGroups)) {
       const lambda = new Lambda({region})
       const cloudWatchLogs = new CloudWatchLogs({region})
@@ -64,11 +67,13 @@ export class InstrumentCommand extends Command {
         return 1
       }
     }
+
     const configList = configGroups.map((group) => group.configs).reduce((a, b) => a.concat(b))
     this.printPlannedActions(configList)
     if (this.dryRun || configList.length === 0) {
       return 0
     }
+
     const promises = Object.values(configGroups).map((group) =>
       updateLambdaConfigs(group.lambda, group.cloudWatchLogs, group.configs)
     )
@@ -76,7 +81,6 @@ export class InstrumentCommand extends Command {
       await Promise.all(promises)
     } catch (err) {
       this.context.stdout.write(`Failure during update. ${err}\n`)
-
       return 1
     }
 
@@ -122,6 +126,7 @@ export class InstrumentCommand extends Command {
     const extensionVersionStr = this.extensionVersion ?? this.config.extensionVersion
     const layerAWSAccount = this.layerAWSAccount ?? this.config.layerAWSAccount
     const forwarderARN = this.forwarder ?? this.config.forwarder
+
     let layerVersion
     if (layerVersionStr !== undefined) {
       layerVersion = parseInt(layerVersionStr, 10)
@@ -131,6 +136,7 @@ export class InstrumentCommand extends Command {
 
       return
     }
+
     let extensionVersion: number | undefined
     if (extensionVersionStr !== undefined) {
       extensionVersion = parseInt(extensionVersionStr, 10)
@@ -140,9 +146,11 @@ export class InstrumentCommand extends Command {
 
       return
     }
+
     const flushMetricsToLogs = this.flushMetricsToLogs ?? this.config.flushMetricsToLogs ?? true
     const mergeXrayTraces = this.mergeXrayTraces ?? this.config.mergeXrayTraces ?? false
     const tracingEnabled = this.tracing ?? this.config.tracing ?? true
+    const logLevel = this.logLevel ?? this.config.logLevel
 
     return {
       extensionVersion,
@@ -152,6 +160,7 @@ export class InstrumentCommand extends Command {
       layerVersion,
       mergeXrayTraces,
       tracingEnabled,
+      logLevel,
     }
   }
 
@@ -240,3 +249,4 @@ InstrumentCommand.addOption('flushMetricsToLogs', Command.Boolean('--flushMetric
 InstrumentCommand.addOption('dryRun', Command.Boolean('-d,--dry'))
 InstrumentCommand.addOption('configPath', Command.String('--config'))
 InstrumentCommand.addOption('forwarder', Command.String('--forwarder'))
+InstrumentCommand.addOption('logLevel', Command.String('--logLevel'))

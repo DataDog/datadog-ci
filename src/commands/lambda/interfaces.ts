@@ -8,4 +8,5 @@ export interface LambdaConfigOptions {
   mergeXrayTraces?: boolean
   region?: string
   tracing?: boolean
+  logLevel?: string
 }

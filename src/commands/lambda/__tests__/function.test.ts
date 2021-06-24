@@ -26,6 +26,7 @@ describe('function', () => {
     afterAll(() => {
       process.env = OLD_ENV
     })
+
     test('returns the update request for each function', async () => {
       const lambda = makeMockLambda({
         'arn:aws:lambda:us-east-1:000000000000:function:autoinstrument': {
@@ -40,6 +41,7 @@ describe('function', () => {
         layerVersion: 22,
         mergeXrayTraces: false,
         tracingEnabled: false,
+        logLevel: 'debug',
       }
       const result = await getLambdaConfigs(
         lambda as any,
@@ -55,6 +57,7 @@ describe('function', () => {
             "Variables": Object {
               "DD_FLUSH_TO_LOG": "false",
               "DD_LAMBDA_HANDLER": "index.handler",
+              "DD_LOG_LEVEL", "debug",
               "DD_MERGE_XRAY_TRACES": "false",
               "DD_SITE": "datadoghq.com",
               "DD_TRACE_ENABLED": "false",
@@ -79,6 +82,7 @@ describe('function', () => {
               DD_MERGE_XRAY_TRACES: 'false',
               DD_SITE: 'datadoghq.com',
               DD_TRACE_ENABLED: 'false',
+              DD_LOG_LEVEL: 'debug',
             },
           },
           FunctionArn: 'arn:aws:lambda:us-east-1:000000000000:function:autoinstrument',
@@ -92,9 +96,9 @@ describe('function', () => {
       const settings = {
         flushMetricsToLogs: false,
         layerVersion: 22,
-
         mergeXrayTraces: false,
         tracingEnabled: false,
+        logLevel: 'debug',
       }
       const result = await getLambdaConfigs(
         lambda as any,
@@ -139,6 +143,7 @@ describe('function', () => {
                       ]
                 `)
     })
+
     test('uses the GovCloud lambda layer when a GovCloud region is detected', async () => {
       const lambda = makeMockLambda({
         'arn:aws-us-gov:lambda:us-gov-east-1:000000000000:function:autoinstrument': {
@@ -167,6 +172,7 @@ describe('function', () => {
                       ]
                 `)
     })
+
     test('returns results for multiple functions', async () => {
       const lambda = makeMockLambda({
         'arn:aws:lambda:us-east-1:000000000000:function:another-func': {
@@ -259,6 +265,7 @@ describe('function', () => {
             `)
     })
   })
+
   describe('updateLambdaConfigs', () => {
     const OLD_ENV = process.env
     beforeEach(() => {
@@ -268,6 +275,7 @@ describe('function', () => {
     afterAll(() => {
       process.env = OLD_ENV
     })
+
     test('updates every lambda', async () => {
       const lambda = makeMockLambda({})
       const configs = [
@@ -310,6 +318,7 @@ describe('function', () => {
       })
     })
   })
+
   describe('getLayerArn', () => {
     const OLD_ENV = process.env
     beforeEach(() => {
@@ -319,6 +328,7 @@ describe('function', () => {
     afterAll(() => {
       process.env = OLD_ENV
     })
+
     test('gets sa-east-1 Node12 Lambda Library layer ARN', async () => {
       const runtime = 'nodejs12.x'
       const settings = {
@@ -331,6 +341,7 @@ describe('function', () => {
       const layerArn = getLayerArn(runtime, settings, region)
       expect(layerArn).toEqual(`arn:aws:lambda:${region}:${mockAwsAccount}:layer:Datadog-Node12-x`)
     })
+
     test('gets sa-east-1 Python37 gov cloud Lambda Library layer ARN', async () => {
       const runtime = 'python3.7'
       const settings = {
@@ -344,6 +355,7 @@ describe('function', () => {
       expect(layerArn).toEqual(`arn:aws-us-gov:lambda:${region}:${GOVCLOUD_LAYER_AWS_ACCOUNT}:layer:Datadog-Python37`)
     })
   })
+
   describe('getExtensionArn', () => {
     const OLD_ENV = process.env
     beforeEach(() => {
@@ -353,6 +365,7 @@ describe('function', () => {
     afterAll(() => {
       process.env = OLD_ENV
     })
+
     test('gets sa-east-1 Lambda Extension layer ARN', async () => {
       const settings = {
         flushMetricsToLogs: false,
@@ -364,6 +377,7 @@ describe('function', () => {
       const layerArn = getExtensionArn(settings, region)
       expect(layerArn).toEqual(`arn:aws:lambda:${region}:${mockAwsAccount}:layer:Datadog-Extension`)
     })
+
     test('gets sa-east-1 gov cloud Lambda Extension layer ARN', async () => {
       const settings = {
         flushMetricsToLogs: false,
@@ -376,6 +390,7 @@ describe('function', () => {
       expect(layerArn).toEqual(`arn:aws-us-gov:lambda:${region}:${GOVCLOUD_LAYER_AWS_ACCOUNT}:layer:Datadog-Extension`)
     })
   })
+
   describe('calculateUpdateRequest', () => {
     const OLD_ENV = process.env
     beforeEach(() => {
@@ -385,6 +400,7 @@ describe('function', () => {
     afterAll(() => {
       process.env = OLD_ENV
     })
+
     test('calculates an update request with just lambda library layers', () => {
       const config = {
         FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world',
@@ -564,6 +580,7 @@ describe('function', () => {
         }
       `)
     })
+
     test('calculates an update request with DATADOG_SITE being set to datadoghq.eu', () => {
       process.env.DATADOG_SITE = 'datadoghq.eu'
       const config = {
@@ -604,6 +621,7 @@ describe('function', () => {
         }
       `)
     })
+
     test('throws an error when an invalid DATADOG_SITE url is given', () => {
       process.env.DATADOG_SITE = 'datacathq.eu'
       const config = {
@@ -629,6 +647,7 @@ describe('function', () => {
         'Warning: Invalid site URL. Must be either datadoghq.com, datadoghq.eu, us3.datadoghq.com, or ddog-gov.com.'
       )
     })
+
     test('throws an error when neither DATADOG_API_KEY nor DATADOG_KMS_API_KEY are given through the environment while using extensionVersion', () => {
       const config = {
         FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world',
