@@ -17,8 +17,8 @@ export AWS_SECRET_ACCESS_KEY="<ACCESS KEY>"
 Download [Datadog CI][2].
 
 ### Configuration
-
-Configuration is done using a JSON file. Specify the `datadog-ci.json` using the `--config` argument, and this configuration file structure:
+#### Configuration file
+Configuration can be done using command-line arguments or a JSON configuration file. If you use a configuration file, specify the `datadog-ci.json` using the `--config` argument, and use this configuration file structure:
 
 ```json
 {
@@ -55,7 +55,9 @@ datadog-ci lambda instrument -f functionname -f another-functionname -r us-east-
 datadog-ci lambda instrument -f functionname -r us-east-1 -v 10 --dry
 ```
 
-#### All arguments:
+#### All arguments
+
+You can pass arguments to `instrument` to specify its behavior. These arguments will override the values set in the configuration file, if any.
 
 | Argument | Shorthand | Description | Default |
 | --- | --- | --- | --- |
@@ -72,7 +74,7 @@ datadog-ci lambda instrument -f functionname -r us-east-1 -v 10 --dry
 
 <br />
 
-#### Additional Environment Variables:
+#### Additional environment variables
 
 You may configure the `lambda instrument` command with environment variables:
 *You must expose these environment variables in the environment where you are running `datadog-ci lambda instrument`*
