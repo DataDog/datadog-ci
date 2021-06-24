@@ -18,10 +18,10 @@ export class InstrumentCommand extends Command {
   private functions: string[] = []
   private layerAWSAccount?: string
   private layerVersion?: string
+  private logLevel?: string
   private mergeXrayTraces?: boolean
   private region?: string
   private tracing?: boolean
-  private logLevel?: string
 
   public async execute() {
     const lambdaConfig = {lambda: this.config}
@@ -81,6 +81,7 @@ export class InstrumentCommand extends Command {
       await Promise.all(promises)
     } catch (err) {
       this.context.stdout.write(`Failure during update. ${err}\n`)
+
       return 1
     }
 
@@ -158,9 +159,9 @@ export class InstrumentCommand extends Command {
       forwarderARN,
       layerAWSAccount,
       layerVersion,
+      logLevel,
       mergeXrayTraces,
       tracingEnabled,
-      logLevel,
     }
   }
 

@@ -283,9 +283,9 @@ describe('lambda', () => {
           forwarderARN: 'my-forwarder',
           layerAWSAccount: 'another-account',
           layerVersion: 2,
+          logLevel: 'debug',
           mergeXrayTraces: false,
           tracingEnabled: false,
-          logLevel: 'debug',
         })
       })
 
@@ -312,9 +312,9 @@ describe('lambda', () => {
           forwarderARN: 'my-forwarder',
           layerAWSAccount: 'my-account',
           layerVersion: 1,
+          logLevel: 'debug',
           mergeXrayTraces: true,
           tracingEnabled: true,
-          logLevel: 'debug',
         })
       })
 

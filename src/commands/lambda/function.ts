@@ -24,9 +24,9 @@ export interface InstrumentationSettings {
   forwarderARN?: string
   layerAWSAccount?: string
   layerVersion?: number
+  logLevel?: string
   mergeXrayTraces: boolean
   tracingEnabled: boolean
-  logLevel?: string
 }
 
 export const getLambdaConfigs = async (

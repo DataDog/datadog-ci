@@ -5,8 +5,8 @@ export interface LambdaConfigOptions {
   functions: string[]
   layerAWSAccount?: string
   layerVersion?: string
+  logLevel?: string
   mergeXrayTraces?: boolean
   region?: string
   tracing?: boolean
-  logLevel?: string
 }

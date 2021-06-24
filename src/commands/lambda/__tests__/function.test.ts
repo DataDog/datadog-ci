@@ -39,9 +39,9 @@ describe('function', () => {
       const settings = {
         flushMetricsToLogs: false,
         layerVersion: 22,
+        logLevel: 'debug',
         mergeXrayTraces: false,
         tracingEnabled: false,
-        logLevel: 'debug',
       }
       const result = await getLambdaConfigs(
         lambda as any,
@@ -79,10 +79,10 @@ describe('function', () => {
             Variables: {
               DD_FLUSH_TO_LOG: 'false',
               DD_LAMBDA_HANDLER: 'index.handler',
+              DD_LOG_LEVEL: 'debug',
               DD_MERGE_XRAY_TRACES: 'false',
               DD_SITE: 'datadoghq.com',
               DD_TRACE_ENABLED: 'false',
-              DD_LOG_LEVEL: 'debug',
             },
           },
           FunctionArn: 'arn:aws:lambda:us-east-1:000000000000:function:autoinstrument',
@@ -96,9 +96,9 @@ describe('function', () => {
       const settings = {
         flushMetricsToLogs: false,
         layerVersion: 22,
+        logLevel: 'debug',
         mergeXrayTraces: false,
         tracingEnabled: false,
-        logLevel: 'debug',
       }
       const result = await getLambdaConfigs(
         lambda as any,
