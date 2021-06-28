@@ -205,7 +205,11 @@ export class RunTestCommand extends Command {
 
     // Override with file config variables
     const configPath = this.configPath ?? this.config.configPath
-    this.config = await parseConfigFile(this.config, configPath)
+    try {
+      this.config = await parseConfigFile(this.config, configPath)
+    } catch (error) {
+      this.reporter!.log(error.message)
+    }
 
     // Override with ENV variables
     this.config = deepExtend(
@@ -233,9 +237,7 @@ export class RunTestCommand extends Command {
     )
 
     if (typeof this.config.files === 'string') {
-      this.reporter!.log(
-        '[DEPRECATED] "files" should be an array of string instead of a string. The conversion will be automatic'
-      )
+      this.reporter!.log('[DEPRECATED] "files" should be an array of string instead of a string.\n')
       this.config.files = [this.config.files]
     }
   }
