@@ -6,7 +6,7 @@ You can use the CLI to instrument your AWS Lambda functions with Datadog. Only P
 
 ### Before you begin
 
-Make your AWS credentials `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` available in your environment using the following cmd, or use any of the authentication methods supported by the [AWS JS sdk][1].
+Make your AWS credentials `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` available in your environment using the following cmd, or use any of the authentication methods supported by the [AWS JS SDK][1].
 
 ```bash
 # Environment setup
