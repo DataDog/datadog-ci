@@ -638,7 +638,6 @@ describe('function', () => {
         Layers: [],
       }
       const settings = {
-        extensionVersion: 6,
         flushMetricsToLogs: false,
         layerAWSAccount: mockAwsAccount,
         layerVersion: 5,
