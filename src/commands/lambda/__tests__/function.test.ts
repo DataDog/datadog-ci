@@ -590,7 +590,7 @@ describe('function', () => {
     })
 
     test('calculates an update request with DATADOG_SITE being set to datadoghq.eu', () => {
-      process.env[SITE_ENV_VAR] = 'datadoghq.eu'
+      process.env.DATADOG_SITE = 'datadoghq.eu'
       const config = {
         FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world',
         Handler: 'index.handler',
@@ -631,7 +631,7 @@ describe('function', () => {
     })
 
     test('throws an error when an invalid DATADOG_SITE url is given', () => {
-      process.env[SITE_ENV_VAR] = 'datacathq.eu'
+      process.env.DATADOG_SITE = 'datacathq.eu'
       const config = {
         FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world',
         Handler: 'index.handler',
