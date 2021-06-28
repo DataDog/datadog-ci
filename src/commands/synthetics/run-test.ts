@@ -209,7 +209,7 @@ export class RunTestCommand extends Command {
       this.config = await parseConfigFile(this.config, configPath)
     } catch (error) {
       if (configPath) {
-        this.reporter!.log(error.message)
+        this.reporter!.log(`${error.message}\n)
       }
     }
 
