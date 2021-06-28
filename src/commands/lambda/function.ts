@@ -159,7 +159,7 @@ export const calculateUpdateRequest = (
   const apiKey: string | undefined = process.env[CI_API_KEY_ENV_VAR]
   const apiKmsKey: string | undefined = process.env[CI_KMS_API_KEY_ENV_VAR]
   const site: string | undefined = process.env[CI_SITE_ENV_VAR]
-  
+
   if (functionARN === undefined) {
     return undefined
   }
@@ -261,7 +261,9 @@ export const calculateUpdateRequest = (
       newEnvVars[API_KEY_ENV_VAR] === undefined &&
       newEnvVars[KMS_API_KEY_ENV_VAR] === undefined
     ) {
-      throw new Error(`When 'extensionLayer' is set, ${CI_API_KEY_ENV_VAR} or ${CI_KMS_API_KEY_ENV_VAR} must also be set`)
+      throw new Error(
+        `When 'extensionLayer' is set, ${CI_API_KEY_ENV_VAR} or ${CI_KMS_API_KEY_ENV_VAR} must also be set`
+      )
     }
   })
 

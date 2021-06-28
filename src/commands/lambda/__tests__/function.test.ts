@@ -1,7 +1,15 @@
 jest.mock('../loggroup')
 
 import {Lambda} from 'aws-sdk'
-import {FLUSH_TO_LOG_ENV_VAR, GOVCLOUD_LAYER_AWS_ACCOUNT, LAMBDA_HANDLER_ENV_VAR, LOG_LEVEL_ENV_VAR, MERGE_XRAY_TRACES_ENV_VAR, SITE_ENV_VAR, TRACE_ENABLED_ENV_VAR} from '../constants'
+import {
+  FLUSH_TO_LOG_ENV_VAR,
+  GOVCLOUD_LAYER_AWS_ACCOUNT,
+  LAMBDA_HANDLER_ENV_VAR,
+  LOG_LEVEL_ENV_VAR,
+  MERGE_XRAY_TRACES_ENV_VAR,
+  SITE_ENV_VAR,
+  TRACE_ENABLED_ENV_VAR,
+} from '../constants'
 import {calculateUpdateRequest, getExtensionArn, getLambdaConfigs, getLayerArn, updateLambdaConfigs} from '../function'
 import * as loggroup from '../loggroup'
 
