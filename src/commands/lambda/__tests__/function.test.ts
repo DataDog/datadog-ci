@@ -1,7 +1,7 @@
 jest.mock('../loggroup')
 
 import {Lambda} from 'aws-sdk'
-import {GOVCLOUD_LAYER_AWS_ACCOUNT} from '../constants'
+import {FLUSH_TO_LOG_ENV_VAR, GOVCLOUD_LAYER_AWS_ACCOUNT, LAMBDA_HANDLER_ENV_VAR, LOG_LEVEL_ENV_VAR, MERGE_XRAY_TRACES_ENV_VAR, SITE_ENV_VAR, TRACE_ENABLED_ENV_VAR} from '../constants'
 import {calculateUpdateRequest, getExtensionArn, getLambdaConfigs, getLayerArn, updateLambdaConfigs} from '../function'
 import * as loggroup from '../loggroup'
 
@@ -77,12 +77,12 @@ describe('function', () => {
         'arn:aws:lambda:us-east-1:000000000000:function:autoinstrument': {
           Environment: {
             Variables: {
-              DD_FLUSH_TO_LOG: 'false',
-              DD_LAMBDA_HANDLER: 'index.handler',
-              DD_LOG_LEVEL: 'debug',
-              DD_MERGE_XRAY_TRACES: 'false',
-              DD_SITE: 'datadoghq.com',
-              DD_TRACE_ENABLED: 'false',
+              [FLUSH_TO_LOG_ENV_VAR]: 'false',
+              [LAMBDA_HANDLER_ENV_VAR]: 'index.handler',
+              [LOG_LEVEL_ENV_VAR]: 'debug',
+              [MERGE_XRAY_TRACES_ENV_VAR]: 'false',
+              [SITE_ENV_VAR]: 'datadoghq.com',
+              [TRACE_ENABLED_ENV_VAR]: 'false',
             },
           },
           FunctionArn: 'arn:aws:lambda:us-east-1:000000000000:function:autoinstrument',
@@ -290,9 +290,9 @@ describe('function', () => {
           updateRequest: {
             Environment: {
               Variables: {
-                DD_LAMBDA_HANDLER: 'index.handler',
-                DD_MERGE_XRAY_TRACES: 'false',
-                DD_TRACE_ENABLED: 'false',
+                [LAMBDA_HANDLER_ENV_VAR]: 'index.handler',
+                [MERGE_XRAY_TRACES_ENV_VAR]: 'false',
+                [TRACE_ENABLED_ENV_VAR]: 'false',
               },
             },
             FunctionName: 'arn:aws:lambda:us-east-1:000000000000:function:autoinstrument',
@@ -307,9 +307,9 @@ describe('function', () => {
       expect(lambda.updateFunctionConfiguration).toHaveBeenCalledWith({
         Environment: {
           Variables: {
-            DD_LAMBDA_HANDLER: 'index.handler',
-            DD_MERGE_XRAY_TRACES: 'false',
-            DD_TRACE_ENABLED: 'false',
+            [LAMBDA_HANDLER_ENV_VAR]: 'index.handler',
+            [MERGE_XRAY_TRACES_ENV_VAR]: 'false',
+            [TRACE_ENABLED_ENV_VAR]: 'false',
           },
         },
         FunctionName: 'arn:aws:lambda:us-east-1:000000000000:function:autoinstrument',
@@ -582,7 +582,7 @@ describe('function', () => {
     })
 
     test('calculates an update request with DATADOG_SITE being set to datadoghq.eu', () => {
-      process.env.DATADOG_SITE = 'datadoghq.eu'
+      process.env[SITE_ENV_VAR] = 'datadoghq.eu'
       const config = {
         FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world',
         Handler: 'index.handler',
@@ -623,7 +623,7 @@ describe('function', () => {
     })
 
     test('throws an error when an invalid DATADOG_SITE url is given', () => {
-      process.env.DATADOG_SITE = 'datacathq.eu'
+      process.env[SITE_ENV_VAR] = 'datacathq.eu'
       const config = {
         FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world',
         Handler: 'index.handler',
