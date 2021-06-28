@@ -81,9 +81,6 @@ describe('lambda', () => {
           {
             \\"FunctionName\\": \\"arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world\\",
             \\"Handler\\": \\"/opt/nodejs/node_modules/datadog-lambda-js/handler.handler\\",
-            \\"Layers\\": [
-              \\"arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Node12-x:10\\"
-            ],
             \\"Environment\\": {
               \\"Variables\\": {
                 \\"DD_LAMBDA_HANDLER\\": \\"index.handler\\",
@@ -93,7 +90,10 @@ describe('lambda', () => {
                 \\"DD_FLUSH_TO_LOG\\": \\"true\\",
                 \\"DD_LOG_LEVEL\\": \\"debug\\"
               }
-            }
+            },
+            \\"Layers\\": [
+              \\"arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Node12-x:10\\"
+            ]
           }
           TagResource -> arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world
           {
@@ -130,9 +130,6 @@ describe('lambda', () => {
           {
             \\"FunctionName\\": \\"arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world\\",
             \\"Handler\\": \\"/opt/nodejs/node_modules/datadog-lambda-js/handler.handler\\",
-            \\"Layers\\": [
-              \\"arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Extension:6\\"
-            ],
             \\"Environment\\": {
               \\"Variables\\": {
                 \\"DD_LAMBDA_HANDLER\\": \\"index.handler\\",
@@ -142,7 +139,10 @@ describe('lambda', () => {
                 \\"DD_MERGE_XRAY_TRACES\\": \\"false\\",
                 \\"DD_FLUSH_TO_LOG\\": \\"true\\"
               }
-            }
+            },
+            \\"Layers\\": [
+              \\"arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Extension:6\\"
+            ]
           }
           TagResource -> arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world
           {
