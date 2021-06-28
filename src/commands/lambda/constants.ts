@@ -1,6 +1,7 @@
 export const RUNTIME_LAYER_LOOKUP = {
   'nodejs10.x': 'Datadog-Node10-x',
   'nodejs12.x': 'Datadog-Node12-x',
+  'nodejs14.x': 'Datadog-Node14-x',
   'python2.7': 'Datadog-Python27',
   'python3.6': 'Datadog-Python36',
   'python3.7': 'Datadog-Python37',
@@ -13,6 +14,7 @@ const NODE_HANDLER_LOCATION = '/opt/nodejs/node_modules/datadog-lambda-js/handle
 export const HANDLER_LOCATION = {
   'nodejs10.x': NODE_HANDLER_LOCATION,
   'nodejs12.x': NODE_HANDLER_LOCATION,
+  'nodejs14.x': NODE_HANDLER_LOCATION,
   'python2.7': PYTHON_HANDLER_LOCATION,
   'python3.6': PYTHON_HANDLER_LOCATION,
   'python3.7': PYTHON_HANDLER_LOCATION,
