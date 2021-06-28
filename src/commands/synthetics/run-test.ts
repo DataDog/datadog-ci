@@ -208,7 +208,9 @@ export class RunTestCommand extends Command {
     try {
       this.config = await parseConfigFile(this.config, configPath)
     } catch (error) {
-      this.reporter!.log(error.message)
+      if (configPath) {
+        this.reporter!.log(error.message)
+      }
     }
 
     // Override with ENV variables
