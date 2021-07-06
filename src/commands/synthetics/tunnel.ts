@@ -3,8 +3,6 @@ import {Socket} from 'net'
 import {Duplex} from 'stream'
 
 import chalk from 'chalk'
-const {KexInit} = require('ssh2/lib/protocol/kex')
-const SSH_CONSTANTS = require('ssh2/lib/protocol/constants')
 import {
   AuthContext,
   Connection as SSHConnection,
@@ -14,6 +12,10 @@ import {
 } from 'ssh2'
 import {ParsedKey} from 'ssh2-streams'
 import {Config as MultiplexerConfig, Server as Multiplexer} from 'yamux-js'
+// tslint:disable-next-line:no-var-requires - SW-1310
+const {KexInit} = require('ssh2/lib/protocol/kex')
+// tslint:disable-next-line:no-var-requires - SW-1310
+const SSH_CONSTANTS = require('ssh2/lib/protocol/constants')
 
 import {ProxyConfiguration} from '../../helpers/utils'
 
@@ -147,7 +149,7 @@ export class Tunnel {
     if (!this.connected) {
       // Limit to one log per tunnel
       this.connected = true
-      this.log(`Successfully connected for test ${ctx.username}`)
+      this.log('Successfully connected')
     }
     ctx.accept()
   }
@@ -256,42 +258,43 @@ export class Tunnel {
     const serverConfig = {
       ...this.sshConfig,
       keepaliveInterval: 0,
-      debug: (message: string) => console.log(`SERVER: ${message}`),
     }
     SSHServer.KEEPALIVE_CLIENT_INTERVAL = 0
-    const server = new SSHServer(serverConfig, () => {})
+    const server = new SSHServer(serverConfig, () => {
+      // 'connection' event listener is required otherwise connection wont proceed.
+    })
     const {ident} = this.sshConfig
     const hostKeys = {'ecdsa-sha2-nistp256': parseSSHKey(this.sshConfig.hostKeys[0] as string)}
 
     const encryptionConfig = {
       cipher: SSH_CONSTANTS.DEFAULT_CIPHER,
-      mac: SSH_CONSTANTS.DEFAULT_MAC,
       compress: SSH_CONSTANTS.DEFAULT_COMPRESSION,
       lang: [],
+      mac: SSH_CONSTANTS.DEFAULT_MAC,
     }
     const algorithms = {
-      kex: SSH_CONSTANTS.DEFAULT_KEX,
-      serverHostKey: ['ecdsa-sha2-nistp256'],
       cs: encryptionConfig,
+      kex: SSH_CONSTANTS.DEFAULT_KEX,
       sc: encryptionConfig,
+      serverHostKey: ['ecdsa-sha2-nistp256'],
     }
 
     const offer = new KexInit(algorithms)
-    const clientDebug = (message: string) => console.log(`CLIENT: ${message}`)
     const clientConfig = {
       ...this.sshConfig,
       keepaliveInterval: 0,
-      debug: clientDebug,
     }
+
+    // SW-1310: Typing does not include IncomingClient
     const client: SSHConnection = new (SSHServer as any).IncomingClient(
       stream,
       hostKeys,
       ident,
       offer,
-      clientDebug,
+      undefined,
       server,
       clientConfig
-    ) // Typing does not include IncomingClient
+    )
 
     client
       .on('authentication', (ctx) => this.authenticateSSHConnection(ctx))
@@ -301,6 +304,7 @@ export class Tunnel {
       })
       .on('close', () => {
         this.log('Proxy closed without error.')
+        server.close()
       })
       .on('error', (err) => {
         this.logError('SSH error in proxy!')
