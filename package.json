@@ -70,7 +70,7 @@
     "@types/jest": "24.0.15",
     "@types/node": "10.17.57",
     "@types/ssh2": "0.5.46",
-    "@types/ssh2-streams": "0.1.7",
+    "@types/ssh2-streams": "0.1.8",
     "@types/sshpk": "1.10.5",
     "@types/tiny-async-pool": "1.0.0",
     "@types/ws": "7.2.9",
