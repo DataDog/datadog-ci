@@ -5,7 +5,13 @@ import {Duplex} from 'stream'
 import chalk from 'chalk'
 const {KexInit} = require('ssh2/lib/protocol/kex')
 const SSH_CONSTANTS = require('ssh2/lib/protocol/constants')
-import {AuthContext, Connection as SSHConnection, Server as SSHServer, ServerChannel as SSHServerChannel, ServerConfig} from 'ssh2'
+import {
+  AuthContext,
+  Connection as SSHConnection,
+  Server as SSHServer,
+  ServerChannel as SSHServerChannel,
+  ServerConfig,
+} from 'ssh2'
 import {ParsedKey} from 'ssh2-streams'
 import {Config as MultiplexerConfig, Server as Multiplexer} from 'yamux-js'
 
@@ -250,7 +256,7 @@ export class Tunnel {
     const serverConfig = {
       ...this.sshConfig,
       keepaliveInterval: 0,
-      debug: (message: string) => console.log(`SERVER: ${message}`)
+      debug: (message: string) => console.log(`SERVER: ${message}`),
     }
     SSHServer.KEEPALIVE_CLIENT_INTERVAL = 0
     const server = new SSHServer(serverConfig, () => {})
@@ -275,9 +281,17 @@ export class Tunnel {
     const clientConfig = {
       ...this.sshConfig,
       keepaliveInterval: 0,
-      debug: clientDebug
+      debug: clientDebug,
     }
-    const client: SSHConnection = new (SSHServer as any).IncomingClient(stream, hostKeys, ident, offer, clientDebug, server, clientConfig) // Typing does not include IncomingClient
+    const client: SSHConnection = new (SSHServer as any).IncomingClient(
+      stream,
+      hostKeys,
+      ident,
+      offer,
+      clientDebug,
+      server,
+      clientConfig
+    ) // Typing does not include IncomingClient
 
     client
       .on('authentication', (ctx) => this.authenticateSSHConnection(ctx))
