@@ -1,20 +1,27 @@
 import {timingSafeEqual} from 'crypto'
-import {once} from 'events'
 import {Socket} from 'net'
 import {Duplex} from 'stream'
 
 import chalk from 'chalk'
-import {AuthContext, Connection as SSHConnection, Server as SSHServer, ServerChannel as SSHServerChannel} from 'ssh2'
-import {ParsedKey, SSH2Stream, SSH2StreamConfig} from 'ssh2-streams'
+import {
+  AuthContext,
+  Connection as SSHConnection,
+  Server as SSHServer,
+  ServerChannel as SSHServerChannel,
+  ServerConfig,
+} from 'ssh2'
+import {ParsedKey} from 'ssh2-streams'
 import {Config as MultiplexerConfig, Server as Multiplexer} from 'yamux-js'
+// tslint:disable-next-line:no-var-requires - SW-1310
+const {KexInit} = require('ssh2/lib/protocol/kex')
+// tslint:disable-next-line:no-var-requires - SW-1310
+const SSH_CONSTANTS = require('ssh2/lib/protocol/constants')
 
 import {ProxyConfiguration} from '../../helpers/utils'
 
 import {generateOpenSSHKeys, parseSSHKey} from './crypto'
 import {MainReporter} from './interfaces'
 import {WebSocket} from './websocket'
-
-const MAX_CONCURRENT_FORWARDED_CONNECTIONS = 50
 
 export interface TunnelInfo {
   host: string
@@ -30,7 +37,7 @@ export class Tunnel {
   private multiplexer?: Multiplexer
   private privateKey: string
   private publicKey: ParsedKey
-  private sshStreamConfig: SSH2StreamConfig
+  private sshConfig: ServerConfig
   private ws: WebSocket
 
   constructor(private url: string, private testIDs: string[], proxy: ProxyConfiguration, reporter: MainReporter) {
@@ -45,18 +52,14 @@ export class Tunnel {
     this.publicKey = parseSSHKey(publicKey)
     this.privateKey = privateKey
 
-    this.sshStreamConfig = {
+    this.sshConfig = {
       algorithms: {
         serverHostKey: [parsedHostPrivateKey.type],
       },
       // Greatly increase highWaterMark (32kb -> 255kb) to avoid hanging with large requests
       // SW-1182, https://github.com/mscdex/ssh2/issues/908
       highWaterMark: 255 * 1024,
-      hostKeys: {
-        // Typings are wrong for host keys
-        [parsedHostPrivateKey.type]: parsedHostPrivateKey as any,
-      },
-      server: true,
+      hostKeys: [hostPrivateKey],
     }
 
     this.ws = new WebSocket(this.url, proxy)
@@ -146,7 +149,7 @@ export class Tunnel {
     if (!this.connected) {
       // Limit to one log per tunnel
       this.connected = true
-      this.log(`Successfully connected for test ${ctx.username}`)
+      this.log('Successfully connected')
     }
     ctx.accept()
   }
@@ -252,28 +255,46 @@ export class Tunnel {
 
   private async processSSHStream(stream: Duplex) {
     // Process SSH stream - see https://github.com/mscdex/ssh2/blob/v0.8.x/lib/server.js#L24
-    const sshStream = new SSH2Stream(this.sshStreamConfig)
-    const client: SSHConnection = new (SSHServer as any).IncomingClient(sshStream, stream) // Typing does not include IncomingClient
-    stream.pipe(sshStream).pipe(stream)
-    sshStream.setMaxListeners(MAX_CONCURRENT_FORWARDED_CONNECTIONS)
-    stream.setMaxListeners(MAX_CONCURRENT_FORWARDED_CONNECTIONS)
+    const serverConfig = {
+      ...this.sshConfig,
+      keepaliveInterval: 0,
+    }
+    SSHServer.KEEPALIVE_CLIENT_INTERVAL = 0
+    const server = new SSHServer(serverConfig, () => {
+      // 'connection' event listener is required otherwise connection wont proceed.
+    })
+    const {ident} = this.sshConfig
+    const hostKeys = {'ecdsa-sha2-nistp256': parseSSHKey(this.sshConfig.hostKeys[0] as string)}
 
-    stream
-      .once('close', () => {
-        // Since joyent/node#993bb93e0a, we have to "read past EOF" in order to
-        // get an `end` event on streams. thankfully adding this does not
-        // negatively affect node versions pre-joyent/node#993bb93e0a.
-        sshStream.read()
-      })
-      .on('error', (err) => {
-        ;(sshStream as any).reset() // Typing does not include reset
-        sshStream.emit('error', err)
-      })
+    const encryptionConfig = {
+      cipher: SSH_CONSTANTS.DEFAULT_CIPHER,
+      compress: SSH_CONSTANTS.DEFAULT_COMPRESSION,
+      lang: [],
+      mac: SSH_CONSTANTS.DEFAULT_MAC,
+    }
+    const algorithms = {
+      cs: encryptionConfig,
+      kex: SSH_CONSTANTS.DEFAULT_KEX,
+      sc: encryptionConfig,
+      serverHostKey: ['ecdsa-sha2-nistp256'],
+    }
 
-    const onClientPreHeaderError = (_: Error) => undefined // Silence pre-header errors
-    client.on('error', onClientPreHeaderError)
-    await once(sshStream, 'header')
-    client.removeListener('error', onClientPreHeaderError)
+    const offer = new KexInit(algorithms)
+    const clientConfig = {
+      ...this.sshConfig,
+      keepaliveInterval: 0,
+    }
+
+    // SW-1310: Typing does not include IncomingClient
+    const client: SSHConnection = new (SSHServer as any).IncomingClient(
+      stream,
+      hostKeys,
+      ident,
+      offer,
+      undefined,
+      server,
+      clientConfig
+    )
 
     client
       .on('authentication', (ctx) => this.authenticateSSHConnection(ctx))
@@ -283,6 +304,7 @@ export class Tunnel {
       })
       .on('close', () => {
         this.log('Proxy closed without error.')
+        server.close()
       })
       .on('error', (err) => {
         this.logError('SSH error in proxy!')
