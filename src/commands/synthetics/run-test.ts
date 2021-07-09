@@ -3,12 +3,25 @@ import {Command} from 'clipanion'
 
 import {parseConfigFile, ProxyConfiguration} from '../../helpers/utils'
 import {apiConstructor} from './api'
-import {APIHelper, ConfigOverride, ExecutionRule, LocationsMapping, MainReporter, PollResult, Test} from './interfaces'
+import {
+  APIHelper,
+  ConfigOverride,
+  ExecutionRule,
+  LocationsMapping,
+  MainReporter,
+  PollResult,
+  Reporter,
+  Test,
+  TriggerConfig,
+} from './interfaces'
 import {DefaultReporter} from './reporters/default'
+import {JUnitReporter} from './reporters/junit'
 import {Tunnel} from './tunnel'
 import {getReporter, getSuites, getTestsToTrigger, hasTestSucceeded, runTests, waitForResults} from './utils'
 
 export class RunTestCommand extends Command {
+  public jUnitReport?: string
+  public runName?: string
   private apiKey?: string
   private appKey?: string
   private config = {
@@ -30,13 +43,18 @@ export class RunTestCommand extends Command {
   private testSearchQuery?: string
 
   public async execute() {
-    const reporters = [new DefaultReporter(this)]
+    const reporters: Reporter[] = [new DefaultReporter(this)]
+
+    if (this.jUnitReport) {
+      reporters.push(new JUnitReporter(this))
+    }
+
     this.reporter = getReporter(reporters)
     const startTime = Date.now()
     this.config = await parseConfigFile(this.config, this.configPath)
 
     const api = this.getApiHelper()
-    const publicIdsFromCli = this.publicIds.map((id) => ({config: this.config.global, id}))
+    const publicIdsFromCli = this.publicIds.map((id) => ({suite: 'CLI Suite', config: this.config.global, id}))
     const testsToTrigger = publicIdsFromCli.length ? publicIdsFromCli : await this.getTestsList(api)
 
     if (!testsToTrigger.length) {
@@ -176,26 +194,32 @@ export class RunTestCommand extends Command {
     return `${host}/${apiPath}`
   }
 
-  private async getTestsList(api: APIHelper) {
+  private async getTestsList(api: APIHelper): Promise<TriggerConfig[]> {
     if (this.testSearchQuery) {
       const testSearchResults = await api.searchTests(this.testSearchQuery)
 
-      return testSearchResults.tests.map((test) => ({config: this.config.global, id: test.public_id}))
+      return testSearchResults.tests.map((test) => ({
+        config: this.config.global,
+        id: test.public_id,
+        suite: `Query: ${this.testSearchQuery}`,
+      }))
     }
 
     const listOfGlobs = this.fileGlobs || [this.config.files]
 
     const suites = (await Promise.all(listOfGlobs.map((glob: string) => getSuites(glob, this.reporter!))))
       .reduce((acc, val) => acc.concat(val), [])
-      .map((suite) => suite.tests)
-      .filter((suiteTests) => !!suiteTests)
+      .filter((suite) => !!suite.content.tests)
 
     const testsToTrigger = suites
+      .map((suite) =>
+        suite.content.tests.map((test) => ({
+          config: {...this.config!.global, ...test.config},
+          id: test.id,
+          suite: suite.name,
+        }))
+      )
       .reduce((acc, suiteTests) => acc.concat(suiteTests), [])
-      .map((test) => ({
-        config: {...this.config!.global, ...test.config},
-        id: test.id,
-      }))
 
     return testsToTrigger
   }
@@ -228,3 +252,5 @@ RunTestCommand.addOption('publicIds', Command.Array('-p,--public-id'))
 RunTestCommand.addOption('testSearchQuery', Command.String('-s,--search'))
 RunTestCommand.addOption('shouldOpenTunnel', Command.Boolean('-t,--tunnel'))
 RunTestCommand.addOption('fileGlobs', Command.Array('-f,--files'))
+RunTestCommand.addOption('jUnitReport', Command.String('-j,--jUnitReport'))
+RunTestCommand.addOption('runName', Command.String('-n,--runName'))

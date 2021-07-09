@@ -14,6 +14,7 @@ import {
   APIHelper,
   ConfigOverride,
   ExecutionRule,
+  InternalTest,
   MainReporter,
   Payload,
   PollResult,
@@ -22,7 +23,6 @@ import {
   Suite,
   Summary,
   TemplateContext,
-  Test,
   TestPayload,
   Trigger,
   TriggerConfig,
@@ -39,7 +39,7 @@ const template = (st: string, context: any): string =>
   st.replace(/{{([A-Z_]+)}}/g, (match: string, p1: string) => (p1 in context ? context[p1] : match))
 
 export const handleConfig = (
-  test: Test,
+  test: InternalTest,
   publicId: string,
   reporter: MainReporter,
   config?: ConfigOverride
@@ -113,7 +113,7 @@ const parseUrlVariables = (url: string, reporter: MainReporter) => {
   return context
 }
 
-export const getExecutionRule = (test: Test, configOverride?: ConfigOverride): ExecutionRule => {
+export const getExecutionRule = (test: InternalTest, configOverride?: ConfigOverride): ExecutionRule => {
   if (configOverride && configOverride.executionRule) {
     return getStrictestExecutionRule(configOverride.executionRule, test.options?.ci?.executionRule)
   }
@@ -162,13 +162,13 @@ export const getSuites = async (GLOB: string, reporter: MainReporter): Promise<S
   }
 
   return Promise.all(
-    files.map(async (test) => {
+    files.map(async (file) => {
       try {
-        const content = await promisify(fs.readFile)(test, 'utf8')
+        const content = await promisify(fs.readFile)(file, 'utf8')
 
-        return JSON.parse(content)
+        return {name: file, content: JSON.parse(content)}
       } catch (e) {
-        throw new Error(`Unable to read and parse the test file ${test}`)
+        throw new Error(`Unable to read and parse the test file ${file}`)
       }
     })
   )
@@ -286,7 +286,7 @@ const createFailingResult = (
 ): PollResult => ({
   dc_id: dcId,
   result: {
-    device: {id: deviceId},
+    device: {height: 0, id: deviceId, width: 0},
     error: errorMessage,
     eventType: 'finished',
     passed: false,
@@ -294,6 +294,7 @@ const createFailingResult = (
     tunnel,
   },
   resultID: resultId,
+  timestamp: 0,
 })
 
 export const getReporter = (reporters: Reporter[]): MainReporter => ({
@@ -361,11 +362,14 @@ export const getTestsToTrigger = async (api: APIHelper, triggerConfigs: TriggerC
   const summary: Summary = {failed: 0, notFound: 0, passed: 0, skipped: 0}
 
   const tests = await Promise.all(
-    triggerConfigs.map(async ({config, id}) => {
-      let test: Test | undefined
+    triggerConfigs.map(async ({config, id, suite}) => {
+      let test: InternalTest | undefined
       id = PUBLIC_ID_REGEX.test(id) ? id : id.substr(id.lastIndexOf('/') + 1)
       try {
-        test = await api.getTest(id)
+        test = {
+          ...(await api.getTest(id)),
+          suite,
+        }
       } catch (e) {
         summary.notFound++
         const errorMessage = formatBackendErrors(e)

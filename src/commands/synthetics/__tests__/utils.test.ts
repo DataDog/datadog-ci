@@ -9,7 +9,7 @@ import glob from 'glob'
 import {ProxyConfiguration} from '../../../helpers/utils'
 
 import {apiConstructor} from '../api'
-import {ConfigOverride, ExecutionRule, PollResult, Result, Test} from '../interfaces'
+import {ConfigOverride, ExecutionRule, InternalTest, PollResult, Result} from '../interfaces'
 import {Tunnel} from '../tunnel'
 import * as utils from '../utils'
 
@@ -29,8 +29,8 @@ describe('utils', () => {
     const GLOB = 'testGlob'
     const FILES = ['file1', 'file2']
     const FILES_CONTENT = {
-      file1: '{"content":"file1"}',
-      file2: '{"content":"file2"}',
+      file1: '{"tests":"file1"}',
+      file2: '{"tests":"file2"}',
     }
 
     ;(fs.readFile as any).mockImplementation((path: 'file1' | 'file2', opts: any, callback: any) =>
@@ -40,7 +40,9 @@ describe('utils', () => {
 
     test('should get suites', async () => {
       const suites = await utils.getSuites(GLOB, mockReporter)
-      expect(JSON.stringify(suites)).toBe(`[${FILES_CONTENT.file1},${FILES_CONTENT.file2}]`)
+      expect(JSON.stringify(suites)).toBe(
+        `[{"name":"file1","content":${FILES_CONTENT.file1}},{"name":"file2","content":${FILES_CONTENT.file2}}]`
+      )
     })
   })
 
@@ -86,12 +88,14 @@ describe('utils', () => {
         config: {request: {url: 'http://example.org/'}},
         name: 'Fake Test',
         public_id: '123-456-789',
+        suite: 'Suite 1',
       },
       'ski-ppe-d01': {
         config: {request: {url: 'http://example.org/'}},
         name: 'Skipped Fake Test',
         options: {ci: {executionRule: 'skipped'}},
         public_id: 'ski-ppe-d01',
+        suite: 'Suite 3',
       },
     }
 
@@ -111,9 +115,9 @@ describe('utils', () => {
 
     test('only existing tests are returned', async () => {
       const triggerConfigs = [
-        {config: {}, id: '123-456-789'},
-        {config: {}, id: '987-654-321'},
-        {config: {}, id: 'ski-ppe-d01'},
+        {suite: 'Suite 1', config: {}, id: '123-456-789'},
+        {suite: 'Suite 2', config: {}, id: '987-654-321'},
+        {suite: 'Suite 3', config: {}, id: 'ski-ppe-d01'},
       ]
       const {tests, overriddenTestsToTrigger, summary} = await utils.getTestsToTrigger(
         api,
@@ -137,7 +141,7 @@ describe('utils', () => {
   describe('handleConfig', () => {
     test('empty config returns simple payload', () => {
       const publicId = 'abc-def-ghi'
-      expect(utils.handleConfig({public_id: publicId} as Test, publicId, mockReporter)).toEqual({
+      expect(utils.handleConfig({public_id: publicId} as InternalTest, publicId, mockReporter)).toEqual({
         executionRule: ExecutionRule.BLOCKING,
         public_id: publicId,
       })
@@ -154,7 +158,7 @@ describe('utils', () => {
           config: {request: {url: 'http://example.org/path'}},
           options: {},
           public_id: publicId,
-        } as Test
+        } as InternalTest
 
         if (testExecutionRule) {
           fakeTest.options.ci = {executionRule: testExecutionRule}
@@ -200,7 +204,7 @@ describe('utils', () => {
         config: {request: {url: 'http://example.org/path#target'}},
         public_id: publicId,
         type: 'browser',
-      } as Test
+      } as InternalTest
       const configOverride = {
         startUrl: 'https://{{DOMAIN}}/newPath?oldPath={{PATHNAME}}{{HASH}}',
       }
@@ -232,7 +236,7 @@ describe('utils', () => {
         config: {request: {url: 'http://{{ FAKE_VAR }}/path'}},
         public_id: publicId,
         type: 'browser',
-      } as Test
+      } as InternalTest
       const configOverride = {
         startUrl: 'https://{{DOMAIN}}/newPath?oldPath={{CUSTOMVAR}}',
       }
@@ -250,7 +254,7 @@ describe('utils', () => {
         config: {request: {url: 'http://exmaple.org/path'}},
         public_id: publicId,
         type: 'browser',
-      } as Test
+      } as InternalTest
       const configOverride = {
         startUrl: 'http://127.0.0.1/newPath{{PARAMS}}',
       }
@@ -267,7 +271,7 @@ describe('utils', () => {
         config: {request: {url: 'http://example.org/path'}},
         public_id: publicId,
         type: 'browser',
-      } as Test
+      } as InternalTest
       const configOverride: ConfigOverride = {
         allowInsecureCertificates: true,
         basicAuth: {username: 'user', password: 'password'},
@@ -298,7 +302,9 @@ describe('utils', () => {
     test('complete result', () => {
       const result = {
         device: {
+          height: 0,
           id: 'laptop_large',
+          width: 0,
         },
         eventType: 'finished',
         passed: true,
@@ -311,7 +317,7 @@ describe('utils', () => {
 
     test('result with error', () => {
       const result: Result = {
-        device: {id: 'laptop_large'},
+        device: {height: 0, id: 'laptop_large', width: 0},
         errorCode: 'ERRABORTED',
         eventType: 'finished',
         passed: false,
@@ -325,23 +331,28 @@ describe('utils', () => {
     const testConfiguration = getApiTest('abc-def-ghi')
     const passingResult = {
       device: {
+        height: 0,
         id: 'laptop_large',
+        width: 0,
       },
       eventType: 'finished',
       passed: true,
       stepDetails: [],
+      timestamp: 0,
     }
     const passingPollResult = {
       check: testConfiguration,
       dc_id: 42,
       result: passingResult,
       resultID: '0123456789',
+      timestamp: 0,
     }
     const failingPollResult = {
       check: testConfiguration,
       dc_id: 42,
       result: {...passingResult, passed: false},
       resultID: '0123456789',
+      timestamp: 0,
     }
     expect(utils.hasTestSucceeded([passingPollResult, failingPollResult])).toBeFalsy()
     expect(utils.hasTestSucceeded([passingPollResult, passingPollResult])).toBeTruthy()
@@ -367,7 +378,9 @@ describe('utils', () => {
 
     const passingResult = {
       device: {
+        height: 0,
         id: 'laptop_large',
+        width: 0,
       },
       eventType: 'finished',
       passed: true,
@@ -380,6 +393,7 @@ describe('utils', () => {
       dc_id: 42,
       result: passingResult,
       resultID,
+      timestamp: 0,
     })
     const triggerResult = {
       device: 'laptop_large',
@@ -390,6 +404,7 @@ describe('utils', () => {
     const triggerConfig = {
       config: {},
       id: publicId,
+      suite: 'Suite 1',
     }
 
     test('should poll result ids', async () => {
@@ -407,7 +422,7 @@ describe('utils', () => {
         {
           dc_id: triggerResult.location,
           result: {
-            device: {id: triggerResult.device},
+            device: {height: 0, id: triggerResult.device, width: 0},
             error: 'Timeout',
             eventType: 'finished',
             passed: false,
@@ -415,6 +430,7 @@ describe('utils', () => {
             tunnel: false,
           },
           resultID: triggerResult.result_id,
+          timestamp: 0,
         },
       ]
       expect(await utils.waitForResults(api, [triggerResult], 0, [])).toEqual(expectedResults)
@@ -426,7 +442,7 @@ describe('utils', () => {
         {
           dc_id: triggerResult.location,
           result: {
-            device: {id: triggerResult.device},
+            device: {height: 0, id: triggerResult.device, width: 0},
             error: 'Timeout',
             eventType: 'finished',
             passed: false,
@@ -434,11 +450,13 @@ describe('utils', () => {
             tunnel: false,
           },
           resultID: triggerResult.result_id,
+          timestamp: 0,
         },
       ]
       const testTriggerConfig = {
         config: {pollingTimeout: 0},
         id: publicId,
+        suite: 'Suite 1',
       }
       expect(await utils.waitForResults(api, [triggerResult], 120000, [testTriggerConfig])).toEqual(expectedResults)
     })
@@ -458,7 +476,7 @@ describe('utils', () => {
         {
           dc_id: triggerResultTimeOut.location,
           result: {
-            device: {id: triggerResultTimeOut.device},
+            device: {height: 0, id: triggerResultTimeOut.device, width: 0},
             error: 'Timeout',
             eventType: 'finished',
             passed: false,
@@ -466,6 +484,7 @@ describe('utils', () => {
             tunnel: false,
           },
           resultID: triggerResultTimeOut.result_id,
+          timestamp: 0,
         },
       ]
       expect(await utils.waitForResults(api, [triggerResultPass, triggerResultTimeOut], 2000, [])).toEqual(

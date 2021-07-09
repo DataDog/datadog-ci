@@ -26,7 +26,9 @@ export type Reporter = Partial<MainReporter>
 
 export interface Result {
   device: {
+    height: number
     id: string
+    width: number
   }
   duration?: number
   error?: string
@@ -34,6 +36,7 @@ export interface Result {
   errorMessage?: string
   eventType: string
   passed: boolean
+  startUrl?: string
   stepDetails: Step[]
   timings?: Timings
   tunnel?: boolean
@@ -42,32 +45,44 @@ export interface Result {
 
 export interface PollResult {
   check?: Test
+  check_id?: string
   dc_id: number
   result: Result
   resultID: string
+  timestamp: number
 }
 
-interface Resource {
-  duration: number
-  size: number
-  type: string
+export interface Vitals {
+  cls?: number
+  lcp?: number
   url: string
+}
+
+export interface BrowserError {
+  description: string
+  name: string
+  type: string
 }
 
 export interface Step {
-  apmTraceIds: string[]
-  browserErrors: string[]
+  allowFailure: boolean
+  browserErrors: BrowserError[]
   description: string
   duration: number
   error?: string
-  resource: Resource
-  screenshotBucketKey: boolean
+  publicId?: string
   skipped: boolean
-  snapshotBucketKey: boolean
   stepId: number
+  subTestPublicId?: string
+  subTestStepDetails?: Step[]
   type: string
   url: string
-  value: string
+  value?: string | number
+  vitalsMetrics: Vitals[]
+  warnings?: {
+    message: string
+    type: string
+  }[]
 }
 
 export interface Test {
@@ -110,6 +125,10 @@ export interface Test {
   subtype: string
   tags: string[]
   type: string
+}
+
+export interface InternalTest extends Test {
+  suite?: string
 }
 
 export interface Assertion {
@@ -227,6 +246,7 @@ export interface TemplateContext extends NodeJS.ProcessEnv {
 export interface TriggerConfig {
   config: ConfigOverride
   id: string
+  suite?: string
 }
 
 export enum ExecutionRule {
@@ -236,7 +256,10 @@ export enum ExecutionRule {
 }
 
 export interface Suite {
-  tests: TriggerConfig[]
+  content: {
+    tests: TriggerConfig[]
+  }
+  name?: string
 }
 
 export interface Summary {

@@ -30,6 +30,7 @@ describe('dd-api', () => {
         dc_id: 0,
         result: {} as Result,
         resultID: RESULT_ID,
+        timestamp: 0,
       },
     ],
   }
