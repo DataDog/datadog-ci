@@ -12,7 +12,7 @@ import {getReporter, getSuites, getTestsToTrigger, hasTestSucceeded, runTests, w
 export const DEFAULT_COMMAND_CONFIG: CommandConfig = {
   apiKey: '',
   appKey: '',
-  configPath: '',
+  configPath: 'datadog-ci.json',
   datadogSite: 'datadoghq.com',
   files: ['{,!(node_modules)/**/}*.synthetics.json'],
   global: {},
@@ -205,9 +205,9 @@ export class RunTestCommand extends Command {
 
     // Override with file config variables
     try {
-      this.config = await parseConfigFile(this.config, this.config.configPath)
+      this.config = await parseConfigFile(this.config, this.configPath ?? this.config.configPath)
     } catch (error) {
-      if (this.config.configPath) {
+      if (this.configPath) {
         throw error
       }
     }
