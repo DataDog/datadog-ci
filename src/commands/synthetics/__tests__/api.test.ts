@@ -80,15 +80,12 @@ describe('dd-api', () => {
     jest.spyOn(axios, 'create').mockImplementation((() => requestMock) as any)
 
     const {getTest} = apiConstructor(apiConfiguration)
-    try {
-      await getTest('fake-public-id')
-    } catch {
-      // Empty catch as it is expected to throw
-    }
+
+    await expect(getTest('fake-public-id')).rejects.toThrow()
     expect(requestMock).toHaveBeenCalledTimes(4)
   })
 
-  test('shoud get a presigned URL from api', async () => {
+  test('should get a presigned URL from api', async () => {
     jest.spyOn(axios, 'create').mockImplementation((() => () => ({data: PRESIGNED_URL_PAYLOAD})) as any)
     const api = apiConstructor(apiConfiguration)
     const {getPresignedURL} = api

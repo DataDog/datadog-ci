@@ -1,6 +1,7 @@
 // tslint:disable: no-string-literal
 jest.mock('fs')
 
+import {AxiosError, AxiosRequestConfig, AxiosResponse, default as axios} from 'axios'
 import * as ciUtils from '../../../helpers/utils'
 
 import {ExecutionRule} from '../interfaces'
@@ -8,23 +9,6 @@ import {DefaultReporter} from '../reporters/default'
 import {RunTestCommand} from '../run-test'
 import * as utils from '../utils'
 import {mockReporter} from './fixtures'
-
-export const assertAsyncThrow = async (func: any, errorRegex?: RegExp) => {
-  let error
-  try {
-    await func()
-    console.error('Function has not thrown')
-  } catch (e) {
-    error = e
-    if (errorRegex) {
-      expect(e.toString()).toMatch(errorRegex)
-    }
-  }
-
-  expect(error).toBeTruthy()
-
-  return error
-}
 
 describe('run-test', () => {
   describe('execute', () => {
@@ -94,9 +78,39 @@ describe('run-test', () => {
         ]),
         expect.anything()
       )
-      expect(runTestsMock).toHaveBeenCalledWith(apiHelper, [])
+      expect(runTestsMock).toHaveBeenCalledWith(apiHelper, [], true, expect.anything())
       expect(write).toHaveBeenCalledWith('No test to run.\n')
       expect(waitForResultSpy).not.toHaveBeenCalled()
+    })
+
+    test('presignedURL throws', async () => {
+      jest.spyOn(ciUtils, 'parseConfigFile').mockImplementation(async (config, _) => config)
+      jest.spyOn(utils, 'getTestsToTrigger').mockReturnValue(
+        Promise.resolve({
+          overriddenTestsToTrigger: [],
+          summary: {passed: 0, failed: 0, skipped: 0, notFound: 0},
+          tests: [],
+        })
+      )
+
+      const serverError = new Error('Server Error') as AxiosError
+      serverError.response = {status: 502} as AxiosResponse
+      const apiHelper = {
+        getPresignedURL: jest.fn(() => {
+          throw serverError
+        }),
+      }
+
+      const write = jest.fn()
+      const command = new RunTestCommand()
+      command.context = {stdout: {write}} as any
+      command['getApiHelper'] = (() => apiHelper) as any
+      command['config'].tunnel = true
+      command['publicIds'] = ['public-id-1', 'public-id-2']
+
+      expect(await command.execute()).toBe(1)
+      command['config'].blockOnUnexpectedResults = false
+      expect(await command.execute()).toBe(0)
     })
   })
 
@@ -152,14 +166,14 @@ describe('run-test', () => {
       command.context = {stdout: {write}} as any
       command['reporter'] = utils.getReporter([new DefaultReporter(command)])
 
-      await assertAsyncThrow(command['getApiHelper'].bind(command), /API and\/or Application keys are missing/)
+      expect(command['getApiHelper'].bind(command)).toThrowError(/API and\/or Application keys are missing/)
       expect(write.mock.calls[0][0]).toContain('DATADOG_APP_KEY')
       expect(write.mock.calls[1][0]).toContain('DATADOG_API_KEY')
 
       command['appKey'] = 'fakeappkey'
 
       write.mockClear()
-      await assertAsyncThrow(command['getApiHelper'].bind(command), /API and\/or Application keys are missing/)
+      expect(command['getApiHelper'].bind(command)).toThrowError(/API and\/or Application keys are missing/)
       expect(write.mock.calls[0][0]).toContain('DATADOG_API_KEY')
     })
   })
@@ -188,7 +202,7 @@ describe('run-test', () => {
       command.context = process
       command['config'].global = {startUrl}
 
-      expect(await command['getTestsList'].bind(command)(fakeApi)).toEqual([
+      expect(await command['getTestsList'].bind(command)(fakeApi, true)).toEqual([
         {
           config: {startUrl},
           id: 'abc-def-ghi',
@@ -207,7 +221,7 @@ describe('run-test', () => {
       command['config'].global = {startUrl}
       command['testSearchQuery'] = 'fake search'
 
-      expect(await command['getTestsList'].bind(command)(fakeApi)).toEqual([
+      expect(await command['getTestsList'].bind(command)(fakeApi, true)).toEqual([
         {
           config: {startUrl},
           id: 'stu-vwx-yza',
@@ -224,7 +238,7 @@ describe('run-test', () => {
       command['reporter'] = mockReporter
 
       command['fileGlobs'] = ['new glob', 'another one']
-      await command['getTestsList'].bind(command)(fakeApi)
+      await command['getTestsList'].bind(command)(fakeApi, true)
       expect(utils.getSuites).toHaveBeenCalledTimes(2)
       expect(utils.getSuites).toHaveBeenCalledWith('new glob', command['reporter'])
       expect(utils.getSuites).toHaveBeenCalledWith('another one', command['reporter'])
@@ -232,9 +246,33 @@ describe('run-test', () => {
       mockFn.mockClear()
 
       command['fileGlobs'] = undefined
-      await command['getTestsList'].bind(command)(fakeApi)
+      await command['getTestsList'].bind(command)(fakeApi, true)
       expect(utils.getSuites).toHaveBeenCalledTimes(1)
       expect(utils.getSuites).toHaveBeenCalledWith('random glob', command['reporter'])
+    })
+
+    test('searchTests throws', async () => {
+      const command = new RunTestCommand()
+      command.context = process
+      command['config'].global = {startUrl}
+      command['reporter'] = mockReporter
+      command['testSearchQuery'] = 'fake search'
+
+      const axiosMock = jest.spyOn(axios, 'create')
+      const serverError = new Error('Server Error') as AxiosError
+      serverError.response = {status: 502} as AxiosResponse
+      axiosMock.mockImplementation((() => async (r: AxiosRequestConfig) => {
+        throw serverError
+      }) as any)
+
+      const fakeApiSearchTests: any = {
+        searchTests: jest.fn(() => {
+          throw serverError
+        }),
+      }
+
+      await expect(command['getTestsList'].bind(command)(fakeApiSearchTests, true)).rejects.toThrow()
+      expect(await command['getTestsList'].bind(command)(fakeApiSearchTests, false)).toEqual([])
     })
   })
 

@@ -2,8 +2,17 @@ import chalk from 'chalk'
 import {Command} from 'clipanion'
 
 import {parseConfigFile, ProxyConfiguration} from '../../helpers/utils'
-import {apiConstructor} from './api'
-import {APIHelper, ConfigOverride, ExecutionRule, LocationsMapping, MainReporter, PollResult, Test} from './interfaces'
+import {apiConstructor, is5xxError} from './api'
+import {
+  APIHelper,
+  ConfigOverride,
+  ExecutionRule,
+  LocationsMapping,
+  MainReporter,
+  PollResult,
+  Test,
+  TestSearchResult,
+} from './interfaces'
 import {DefaultReporter} from './reporters/default'
 import {Tunnel} from './tunnel'
 import {getReporter, getSuites, getTestsToTrigger, hasTestSucceeded, runTests, waitForResults} from './utils'
@@ -14,6 +23,7 @@ export class RunTestCommand extends Command {
   private config = {
     apiKey: process.env.DATADOG_API_KEY,
     appKey: process.env.DATADOG_APP_KEY,
+    blockOnUnexpectedResults: true,
     datadogSite: process.env.DATADOG_SITE || 'datadoghq.com',
     files: '{,!(node_modules)/**/}*.synthetics.json',
     global: {} as ConfigOverride,
@@ -37,7 +47,9 @@ export class RunTestCommand extends Command {
 
     const api = this.getApiHelper()
     const publicIdsFromCli = this.publicIds.map((id) => ({config: this.config.global, id}))
-    const testsToTrigger = publicIdsFromCli.length ? publicIdsFromCli : await this.getTestsList(api)
+    const testsToTrigger = publicIdsFromCli.length
+      ? publicIdsFromCli
+      : await this.getTestsList(api, this.config.blockOnUnexpectedResults)
 
     if (!testsToTrigger.length) {
       this.reporter.log('No test suites to run.\n')
@@ -53,8 +65,20 @@ export class RunTestCommand extends Command {
       this.reporter.log(
         'You are using tunnel option, the chosen location(s) will be overridden by a location in your account region.\n'
       )
-      // Get the pre-signed URL to connect to the tunnel service
-      const {url: presignedURL} = await api.getPresignedURL(publicIdsToTrigger)
+
+      let presignedURL: string
+      try {
+        // Get the pre-signed URL to connect to the tunnel service
+        presignedURL = (await api.getPresignedURL(publicIdsToTrigger)).url
+      } catch (e) {
+        this.reporter.error(chalk.bgRed.bold('Unexpected error when initializing the Tunnel connection'))
+        if (is5xxError(e) && !this.config.blockOnUnexpectedResults) {
+          return 0
+        }
+
+        return 1
+      }
+
       // Open a tunnel to Datadog
       try {
         tunnel = new Tunnel(presignedURL, publicIdsToTrigger, this.config.proxy, this.reporter)
@@ -68,7 +92,7 @@ export class RunTestCommand extends Command {
         return 1
       }
     }
-    const triggers = await runTests(api, overriddenTestsToTrigger)
+    const triggers = await runTests(api, overriddenTestsToTrigger, this.config.blockOnUnexpectedResults, this.reporter)
 
     // All tests have been skipped or are missing.
     if (!tests.length) {
@@ -83,10 +107,17 @@ export class RunTestCommand extends Command {
 
     try {
       // Poll the results.
-      const results = await waitForResults(api, triggers.results, this.config.pollingTimeout, testsToTrigger, tunnel)
+      const results = await waitForResults(
+        api,
+        triggers.results,
+        this.config.pollingTimeout,
+        testsToTrigger,
+        tunnel,
+        this.config.blockOnUnexpectedResults
+      )
 
       // Sort tests to show success first then non blocking failures and finally blocking failures.
-      tests.sort(this.sortTestsByOutcome(results))
+      tests.sort(this.sortTestsByOutcome(results, this.config.blockOnUnexpectedResults))
 
       // Rendering the results.
       this.reporter.reportStart({startTime})
@@ -100,7 +131,7 @@ export class RunTestCommand extends Command {
       for (const test of tests) {
         const testResults = results[test.public_id]
 
-        const passed = hasTestSucceeded(testResults)
+        const passed = hasTestSucceeded(testResults, this.config.blockOnUnexpectedResults)
         if (passed) {
           summary.passed++
         } else {
@@ -110,7 +141,13 @@ export class RunTestCommand extends Command {
           }
         }
 
-        this.reporter.testEnd(test, testResults, this.getAppBaseURL(), locationNames)
+        this.reporter.testEnd(
+          test,
+          testResults,
+          this.getAppBaseURL(),
+          locationNames,
+          this.config.blockOnUnexpectedResults
+        )
       }
 
       this.reporter.runEnd(summary)
@@ -176,9 +213,23 @@ export class RunTestCommand extends Command {
     return `${host}/${apiPath}`
   }
 
-  private async getTestsList(api: APIHelper) {
+  private async getTestsList(
+    api: APIHelper,
+    blockOnUnexpectedResults: boolean
+  ): Promise<{config: ConfigOverride; id: string}[]> {
+    let testSearchResults: TestSearchResult
     if (this.testSearchQuery) {
-      const testSearchResults = await api.searchTests(this.testSearchQuery)
+      try {
+        testSearchResults = await api.searchTests(this.testSearchQuery)
+      } catch (error) {
+        if (is5xxError(error) && !blockOnUnexpectedResults) {
+          this.reporter!.error('Unexpected error when searching tests')
+
+          return []
+        }
+
+        throw error
+      }
 
       return testSearchResults.tests.map((test) => ({config: this.config.global, id: test.public_id}))
     }
@@ -200,10 +251,10 @@ export class RunTestCommand extends Command {
     return testsToTrigger
   }
 
-  private sortTestsByOutcome(results: {[key: string]: PollResult[]}) {
+  private sortTestsByOutcome(results: {[key: string]: PollResult[]}, blockOnUnexpectedResults: boolean) {
     return (t1: Test, t2: Test) => {
-      const success1 = hasTestSucceeded(results[t1.public_id])
-      const success2 = hasTestSucceeded(results[t2.public_id])
+      const success1 = hasTestSucceeded(results[t1.public_id], blockOnUnexpectedResults)
+      const success2 = hasTestSucceeded(results[t2.public_id], blockOnUnexpectedResults)
       const isNonBlockingTest1 = t1.options.ci?.executionRule === ExecutionRule.NON_BLOCKING
       const isNonBlockingTest2 = t2.options.ci?.executionRule === ExecutionRule.NON_BLOCKING
 
@@ -223,6 +274,7 @@ export class RunTestCommand extends Command {
 RunTestCommand.addPath('synthetics', 'run-tests')
 RunTestCommand.addOption('apiKey', Command.String('--apiKey'))
 RunTestCommand.addOption('appKey', Command.String('--appKey'))
+RunTestCommand.addOption('blockOnUnexpectedResults', Command.String('--blockOnUnexpectedResults'))
 RunTestCommand.addOption('configPath', Command.String('--config'))
 RunTestCommand.addOption('publicIds', Command.Array('-p,--public-id'))
 RunTestCommand.addOption('testSearchQuery', Command.String('-s,--search'))

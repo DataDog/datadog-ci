@@ -17,7 +17,13 @@ export interface MainReporter {
   log(log: string): void
   reportStart(timings: {startTime: number}): void
   runEnd(summary: Summary): void
-  testEnd(test: Test, results: PollResult[], baseUrl: string, locationNames: LocationsMapping): void
+  testEnd(
+    test: Test,
+    results: PollResult[],
+    baseUrl: string,
+    locationNames: LocationsMapping,
+    blockOnUnexpectedResults: boolean
+  ): void
   testTrigger(test: Test, testId: string, executionRule: ExecutionRule, config: ConfigOverride): void
   testWait(test: Test): void
 }

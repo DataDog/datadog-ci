@@ -9,7 +9,7 @@ import glob from 'glob'
 import {getCIMetadata} from '../../helpers/ci'
 import {pick} from '../../helpers/utils'
 
-import {formatBackendErrors} from './api'
+import {formatBackendErrors, is5xxError} from './api'
 import {
   APIHelper,
   ConfigOverride,
@@ -137,7 +137,11 @@ export const getStrictestExecutionRule = (configRule: ExecutionRule, testRule?: 
   return ExecutionRule.BLOCKING
 }
 
-export const hasResultPassed = (result: Result): boolean => {
+export const hasResultPassed = (result: Result, blockOnUnexpectedResults: boolean): boolean => {
+  if (result.unhealthy && !blockOnUnexpectedResults) {
+    return true
+  }
+
   if (typeof result.passed !== 'undefined') {
     return result.passed
   }
@@ -149,8 +153,8 @@ export const hasResultPassed = (result: Result): boolean => {
   return true
 }
 
-export const hasTestSucceeded = (results: PollResult[]): boolean =>
-  results.every((pollResult: PollResult) => hasResultPassed(pollResult.result))
+export const hasTestSucceeded = (results: PollResult[], blockOnUnexpectedResults: boolean): boolean =>
+  results.every((pollResult: PollResult) => hasResultPassed(pollResult.result, blockOnUnexpectedResults))
 
 export const getSuites = async (GLOB: string, reporter: MainReporter): Promise<Suite[]> => {
   reporter.log(`Finding files in ${path.join(process.cwd(), GLOB)}\n`)
@@ -181,7 +185,8 @@ export const waitForResults = async (
   triggerResponses: TriggerResponse[],
   defaultTimeout: number,
   triggerConfigs: TriggerConfig[],
-  tunnel?: Tunnel
+  tunnel?: Tunnel,
+  blockOnUnexpectedResults?: boolean
 ) => {
   const triggerResultMap = createTriggerResultMap(triggerResponses, defaultTimeout, triggerConfigs)
   const triggerResults = [...triggerResultMap.values()]
@@ -228,10 +233,28 @@ export const waitForResults = async (
       break
     }
 
-    const polledResultsResponse = await api.pollResults(
-      triggerResults.filter((tr) => !tr.result).map((tr) => tr.result_id)
-    )
-    for (const polledResult of polledResultsResponse.results) {
+    let polledResults: PollResult[]
+    const triggerResultsSucceed = triggerResults.filter((tr) => !tr.result)
+    try {
+      polledResults = (await api.pollResults(triggerResultsSucceed.map((tr) => tr.result_id))).results
+    } catch (error) {
+      if (is5xxError(error) && !blockOnUnexpectedResults) {
+        polledResults = []
+        for (const triggerResult of triggerResultsSucceed) {
+          triggerResult.result = createFailingResult(
+            'Endpoint Failure',
+            triggerResult.result_id,
+            triggerResult.device,
+            triggerResult.location,
+            !!tunnel
+          )
+        }
+      } else {
+        throw error
+      }
+    }
+
+    for (const polledResult of polledResults) {
       if (polledResult.result.eventType === 'finished') {
         const triggeredResult = triggerResultMap.get(polledResult.resultID)
         if (triggeredResult) {
@@ -332,10 +355,10 @@ export const getReporter = (reporters: Reporter[]): MainReporter => ({
       }
     }
   },
-  testEnd: (test, results, baseUrl, locationNames) => {
+  testEnd: (test, results, baseUrl, locationNames, blockOnUnexpectedResults) => {
     for (const reporter of reporters) {
       if (typeof reporter.testEnd === 'function') {
-        reporter.testEnd(test, results, baseUrl, locationNames)
+        reporter.testEnd(test, results, baseUrl, locationNames, blockOnUnexpectedResults)
       }
     }
   },
@@ -398,7 +421,12 @@ export const getTestsToTrigger = async (api: APIHelper, triggerConfigs: TriggerC
   return {tests: tests.filter(definedTypeGuard), overriddenTestsToTrigger, summary}
 }
 
-export const runTests = async (api: APIHelper, testsToTrigger: TestPayload[]): Promise<Trigger> => {
+export const runTests = async (
+  api: APIHelper,
+  testsToTrigger: TestPayload[],
+  blockOnUnexpectedResults: boolean,
+  reporter: MainReporter
+): Promise<Trigger> => {
   const payload: Payload = {tests: testsToTrigger}
   const ciMetadata = getCIMetadata()
   if (ciMetadata) {
@@ -406,8 +434,18 @@ export const runTests = async (api: APIHelper, testsToTrigger: TestPayload[]): P
   }
 
   try {
-    return api.triggerTests(payload)
+    return await api.triggerTests(payload)
   } catch (e) {
+    if (is5xxError(e) && !blockOnUnexpectedResults) {
+      reporter.error('Unexpected error when triggering tests')
+
+      return {
+        locations: [],
+        results: [],
+        triggered_check_ids: [],
+      }
+    }
+
     const errorMessage = formatBackendErrors(e)
     const testIds = testsToTrigger.map((t) => t.public_id).join(',')
     // Rewrite error message
