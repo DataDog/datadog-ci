@@ -41,7 +41,7 @@ export const uploadSourcemap = (request: (args: AxiosRequestConfig) => AxiosProm
     headers: form.getHeaders(),
     maxBodyLength,
     method: 'POST',
-    url: 'v1/input',
+    url: 'api/v2/srcmap',
   })
 }
 
