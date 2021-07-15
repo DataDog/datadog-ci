@@ -28,9 +28,11 @@ export class RunTestCommand extends Command {
   private appKey?: string
   private config: CommandConfig = JSON.parse(JSON.stringify(DEFAULT_COMMAND_CONFIG)) // Deep copy to avoid mutation during unit tests
   private configPath?: string
+  private datadogSite?: string
   private files?: string[]
   private publicIds?: string[]
   private reporter?: MainReporter
+  private subdomain?: string
   private testSearchQuery?: string
   private tunnel?: boolean
 
@@ -230,8 +232,10 @@ export class RunTestCommand extends Command {
         apiKey: this.apiKey,
         appKey: this.appKey,
         configPath: this.configPath,
+        datadogSite: this.datadogSite,
         files: this.files,
         publicIds: this.publicIds,
+        subdomain: this.subdomain,
         testSearchQuery: this.testSearchQuery,
         tunnel: this.tunnel,
       })
@@ -274,7 +278,9 @@ RunTestCommand.addPath('synthetics', 'run-tests')
 RunTestCommand.addOption('apiKey', Command.String('--apiKey'))
 RunTestCommand.addOption('appKey', Command.String('--appKey'))
 RunTestCommand.addOption('configPath', Command.String('--config'))
+RunTestCommand.addOption('datadogSite', Command.String('--datadogSite'))
 RunTestCommand.addOption('files', Command.Array('-f,--files'))
 RunTestCommand.addOption('publicIds', Command.Array('-p,--public-id'))
 RunTestCommand.addOption('testSearchQuery', Command.String('-s,--search'))
+RunTestCommand.addOption('subdomain', Command.Boolean('--subdomain'))
 RunTestCommand.addOption('tunnel', Command.Boolean('-t,--tunnel'))
