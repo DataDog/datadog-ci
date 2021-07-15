@@ -1,10 +1,9 @@
 // tslint:disable: no-string-literal
-
 import * as ciUtils from '../../../helpers/utils'
 
 import {ExecutionRule} from '../interfaces'
 import {DefaultReporter} from '../reporters/default'
-import {DEFAULT_COMMAND_CONFIG, RunTestCommand} from '../run-test'
+import {DEFAULT_COMMAND_CONFIG, removeUndefinedValues, RunTestCommand} from '../run-test'
 import * as utils from '../utils'
 import {mockReporter} from './fixtures'
 
@@ -47,7 +46,7 @@ describe('run-test', () => {
       jest.spyOn(utils, 'runTests').mockImplementation()
 
       const startUrl = '{{PROTOCOL}}//myhost{{PATHNAME}}{{PARAMS}}'
-      const locations = ['location1', 'location22']
+      const locations = ['location1', 'location2']
       const configOverride = {locations, startUrl}
 
       const apiHelper = {}
@@ -230,19 +229,18 @@ describe('run-test', () => {
     })
 
     test('should use given globs to get tests list', async () => {
-      jest.spyOn(utils, 'getSuites').mockImplementation((() => [conf1, conf2]) as any)
+      const getSuitesMock = jest.spyOn(utils, 'getSuites').mockImplementation((() => [conf1, conf2]) as any)
       const command = new RunTestCommand()
       command.context = process
       command['config'].global = {startUrl}
-      command['config'].fileGlobs = ['random glob']
       command['reporter'] = mockReporter
-      command['fileGlobs'] = ['new glob', 'another one']
+      command['files'] = ['new glob', 'another one']
 
       await command['resolveConfig']()
       await command['getTestsList'].bind(command)(fakeApi)
-      expect(utils.getSuites).toHaveBeenCalledTimes(2)
-      expect(utils.getSuites).toHaveBeenCalledWith('new glob', command['reporter'])
-      expect(utils.getSuites).toHaveBeenCalledWith('another one', command['reporter'])
+      expect(getSuitesMock).toHaveBeenCalledTimes(2)
+      expect(getSuitesMock).toHaveBeenCalledWith('new glob', command['reporter'])
+      expect(getSuitesMock).toHaveBeenCalledWith('another one', command['reporter'])
     })
   })
 
@@ -303,7 +301,7 @@ describe('run-test', () => {
         appKey: 'fake_app_key',
         configPath: 'fake-datadog-ci.json',
         datadogSite: 'datadoghq.eu',
-        fileGlobs: ['new-file'],
+        files: ['my-new-file'],
         global: {locations: []},
         pollingTimeout: 1,
         proxy: {protocol: 'https'},
@@ -324,12 +322,12 @@ describe('run-test', () => {
         apiKey: 'fake_api_key',
         appKey: 'fake_app_key',
         configPath: 'fake-datadog-ci.json',
-        datadogSite: 'datad0g.com',
-        fileGlobs: ['new-file'],
+        datadogSite: 'datadoghq.eu',
+        files: ['new-file'],
         publicIds: ['ran-dom-id'],
-        shouldOpenTunnel: true,
         subdomain: 'new-sub-domain',
         testSearchQuery: 'a-search-query',
+        tunnel: true,
       }
 
       const command = new RunTestCommand()
@@ -337,10 +335,10 @@ describe('run-test', () => {
       command['appKey'] = overrideCLI.appKey
       command['configPath'] = overrideCLI.configPath
       command['datadogSite'] = overrideCLI.datadogSite
-      command['fileGlobs'] = overrideCLI.fileGlobs
+      command['files'] = overrideCLI.files
       command['publicIds'] = overrideCLI.publicIds
-      command['shouldOpenTunnel'] = overrideCLI.shouldOpenTunnel
       command['subdomain'] = overrideCLI.subdomain
+      command['tunnel'] = overrideCLI.tunnel
       command['testSearchQuery'] = overrideCLI.testSearchQuery
 
       await command['resolveConfig']()
@@ -349,8 +347,8 @@ describe('run-test', () => {
         apiKey: 'fake_api_key',
         appKey: 'fake_app_key',
         configPath: 'fake-datadog-ci.json',
-        datadogSite: 'datad0g.com',
-        fileGlobs: ['new-file'],
+        datadogSite: 'datadoghq.eu',
+        files: ['new-file'],
         publicIds: ['ran-dom-id'],
         subdomain: 'new-sub-domain',
         testSearchQuery: 'a-search-query',
@@ -358,17 +356,17 @@ describe('run-test', () => {
       })
     })
 
-    test('override from ENV < config file < CLI', async () => {
-      process.env = {
-        DATADOG_API_KEY: 'api_key_env',
-        DATADOG_APP_KEY: 'app_key_env',
-        DATADOG_SITE: 'datadog.env',
-      }
-
+    test('override from config file < ENV < CLI', async () => {
       jest.spyOn(ciUtils, 'getConfig').mockImplementation(async () => ({
         apiKey: 'api_key_config_file',
         appKey: 'app_key_config_file',
+        datadogSite: 'datadog.config.file',
       }))
+
+      process.env = {
+        DATADOG_API_KEY: 'api_key_env',
+        DATADOG_APP_KEY: 'app_key_env',
+      }
 
       const command = new RunTestCommand()
       command['apiKey'] = 'api_key_cli'
@@ -377,9 +375,14 @@ describe('run-test', () => {
       expect(command['config']).toEqual({
         ...DEFAULT_COMMAND_CONFIG,
         apiKey: 'api_key_cli',
-        appKey: 'app_key_config_file',
-        datadogSite: 'datadog.env',
+        appKey: 'app_key_env',
+        datadogSite: 'datadog.config.file',
       })
     })
+  })
+
+  test('removeUndefinedValues', () => {
+    // tslint:disable-next-line: no-null-keyword
+    expect(removeUndefinedValues({a: 'b', c: 'd', e: undefined, g: null})).toEqual({a: 'b', c: 'd', g: null})
   })
 })
