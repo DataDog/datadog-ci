@@ -23,7 +23,7 @@ datadog-ci junit upload --service my-service --tags key1:value1 --tags key2:valu
 ```
 
 - The positional arguments are the directories or file paths in which the jUnit XML reports are located. If you pass a folder, the CLI will look for all `.xml` files in it.
-- `--apiKey` (default: `DATADOG_API_KEY` env var) is the API Key used to authenticate the requests. **Important**: the API key needs to be available either through this parameter or `DATADOG_API_KEY` env var.
+- `--api-key` (default: `DATADOG_API_KEY` env var) is the API Key used to authenticate the requests. **Important**: the API key needs to be available either through this parameter or `DATADOG_API_KEY` env var.
 - `--service` (default: `DD_SERVICE` env var) should be set as the name of the service you're uploading jUnit XML reports for.
 - `--tags` is a array of key value pairs of the shape `key:value`. This will set global tags applied to all spans.
   - The resulting dictionary will be merged with whatever is in the `DD_TAGS` environment variable. If a `key` appears both in `--tags` and `DD_TAGS`, whatever value is in `DD_TAGS` will take precedence.

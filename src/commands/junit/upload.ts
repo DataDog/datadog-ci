@@ -100,7 +100,7 @@ export class UploadJUnitXMLCommand extends Command {
   private getApiHelper(): APIHelper {
     if (!this.config.apiKey) {
       this.context.stdout.write(
-        `Missing ${chalk.red.bold('DATADOG_API_KEY')} in your environment and --apiKey was not passed.\n`
+        `Missing ${chalk.red.bold('DATADOG_API_KEY')} in your environment and --api-key was not passed.\n`
       )
       throw new Error('API key is missing')
     }
@@ -187,7 +187,7 @@ export class UploadJUnitXMLCommand extends Command {
 UploadJUnitXMLCommand.addPath('junit', 'upload')
 UploadJUnitXMLCommand.addOption('service', Command.String('--service'))
 UploadJUnitXMLCommand.addOption('env', Command.String('--env'))
-UploadJUnitXMLCommand.addOption('apiKey', Command.String('--apiKey'))
+UploadJUnitXMLCommand.addOption('apiKey', Command.String('--api-key'))
 UploadJUnitXMLCommand.addOption('dryRun', Command.Boolean('--dry-run'))
 UploadJUnitXMLCommand.addOption('tags', Command.Array('--tags'))
 UploadJUnitXMLCommand.addOption('basePaths', Command.Rest({required: 1}))
