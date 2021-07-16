@@ -27,7 +27,7 @@ const createMockContext = () => {
 
 describe('upload', () => {
   describe('getApiHelper', () => {
-    test('should throw an error if API key and --apiKey are undefined', () => {
+    test('should throw an error if API key and --api-key are undefined', () => {
       process.env = {}
       const write = jest.fn()
       const command = new UploadJUnitXMLCommand()
@@ -35,7 +35,7 @@ describe('upload', () => {
 
       expect(command['getApiHelper'].bind(command)).toThrow('API key is missing')
       expect(write.mock.calls[0][0]).toEqual(
-        `Missing ${chalk.red.bold('DATADOG_API_KEY')} in your environment and --apiKey was not passed.\n`
+        `Missing ${chalk.red.bold('DATADOG_API_KEY')} in your environment and --api-key was not passed.\n`
       )
     })
   })

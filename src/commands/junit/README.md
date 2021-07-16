@@ -35,7 +35,7 @@ datadog-ci junit upload --service my-service --tags key1:value1 --tags key2:valu
 
 Additionally you might configure the `junit` command with environment variables:
 
-- `DATADOG_API_KEY`: API key used to authenticate the requests. **Important**: the API key needs to be available either through this env var or through `--apiKey` parameter.
+- `DATADOG_API_KEY`: API key used to authenticate the requests. **Important**: the API key needs to be available either through this env var or through `--api-key` parameter.
 - `DD_ENV`: you may choose the environment you want your test results to appear in.
 - `DD_SERVICE`: if you haven't specified a service through `--service` you might do it with this env var.
 - `DD_TAGS`: set global tags applied to all spans. The format must be `key1:value1,key2:value2`.
