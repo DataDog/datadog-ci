@@ -1,4 +1,5 @@
 // tslint:disable: no-string-literal
+import chalk from 'chalk'
 import {Cli} from 'clipanion/lib/advanced'
 import os from 'os'
 
@@ -26,14 +27,16 @@ const createMockContext = () => {
 
 describe('upload', () => {
   describe('getApiHelper', () => {
-    test('should throw an error if API key is undefined', () => {
+    test('should throw an error if API key and --apiKey are undefined', () => {
       process.env = {}
       const write = jest.fn()
       const command = new UploadJUnitXMLCommand()
       command.context = {stdout: {write}} as any
 
       expect(command['getApiHelper'].bind(command)).toThrow('API key is missing')
-      expect(write.mock.calls[0][0]).toContain('DATADOG_API_KEY')
+      expect(write.mock.calls[0][0]).toEqual(
+        `Missing ${chalk.red.bold('DATADOG_API_KEY')} in your environment and --apiKey was not passed.\n`
+      )
     })
   })
   describe('getMatchingJUnitXMLFiles', () => {
