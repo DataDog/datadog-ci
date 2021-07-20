@@ -1,12 +1,50 @@
+import {exec} from 'child_process'
+import {mkdirSync} from 'fs'
 import path from 'path'
+import {promisify} from 'util'
 
-export const getMinifiedFilePath = (sourcemapPath: string) => {
-  if (path.extname(sourcemapPath) !== '.map') {
-    throw Error('cannot get minified file path from a file which is not a sourcemap')
-  }
+const UUID_REGEX = '[0-9A-F]{8}-([0-9A-F]{4}-){3}[0-9A-F]{12}'
 
-  return sourcemapPath.replace(new RegExp('\\.map$'), '')
+export const dwarfdumpUUID = async (filePath: string) => {
+  const output = await execute('dwarfdump', ['--uuid', filePath])
+
+  const uuids: string[] = []
+  output.stdout.split('\n').forEach((line: string) => {
+    const regexMatches = line.match(UUID_REGEX)
+    if (regexMatches && regexMatches.length > 0) {
+      uuids.push(regexMatches[0])
+    }
+  })
+
+  return uuids
 }
+
+export const zip = (sourcePath: string, targetPath: string) => {
+  const dirPath = path.dirname(targetPath)
+  mkdirSync(dirPath, {recursive: true})
+
+  const sourceDir = path.dirname(sourcePath)
+  const sourceFile = path.basename(sourcePath)
+
+  // Zip -r foo.zip f1/f2/f3/foo.dSYM
+  // this keeps f1/f2/f3 folders in foo.zip, we don't want this
+  // `cd ${sourceDir}` is called to avoid that
+  return execute(`cd ${sourceDir} && zip`, ['-r', targetPath, sourceFile])
+}
+
+export const unzip = (sourcePath: string, targetPath: string) => {
+  const dirPath = path.dirname(targetPath)
+  mkdirSync(dirPath, {recursive: true})
+
+  return execute('unzip', [sourcePath, '-d', targetPath])
+}
+
+const execProc = promisify(exec)
+const execute = (cmd: string, args: string[], {env = process.env} = {}) =>
+  execProc(`${cmd} ${args.join(' ')}`, {
+    env,
+    maxBuffer: 5 * 1024 * 5000,
+  }).then((output: {stderr: string; stdout: string}) => output)
 
 export const getBaseIntakeUrl = () => {
   if (process.env.DATADOG_SOURCEMAP_INTAKE_URL) {

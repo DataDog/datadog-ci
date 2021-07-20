@@ -6,13 +6,13 @@ export interface MetricsLogger {
   flush(): Promise<void>
 }
 
-export const getMetricsLogger = (version: string, service: string, cliVersion: string): MetricsLogger => {
+export const getMetricsLogger = (cliVersion: string): MetricsLogger => {
   const logger = new metrics.BufferedMetricsLogger({
     apiHost: getBaseAPIUrl(),
-    defaultTags: [`version:${version}`, `service:${service}`, `cli_version:${cliVersion}`],
+    defaultTags: [`cli_version:${cliVersion}`],
     flushIntervalSeconds: 15,
     host: 'ci',
-    prefix: 'datadog.ci.sourcemaps.',
+    prefix: 'datadog.ci.dsyms.',
   })
 
   return {

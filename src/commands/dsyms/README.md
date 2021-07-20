@@ -1,6 +1,6 @@
-# Sourcemaps command
+# dSYMs command
 
-Upload JS sourcemaps to Datadog to un-minify your errors.
+Upload dSYM files to Datadog to symbolicate your crash reports.
 
 ## Usage
 
@@ -23,40 +23,34 @@ It is also possible to override the full URL for the intake endpoint by defining
 
 #### `upload`
 
-This command will upload all javascript sourcemaps and their corresponding javascript file to Datadog in order to un-minify front-end stack traces received by Datadog.
+This command will upload all dSYM files in the given directory.
+If your app has `BITCODE` enabled, more info in **Bitcode** section.
 
-To upload the sourcemaps in the build folder, this command should be run:
+To upload the dSYM files in your Derived Path, this command should be run:
 
 ```bash
-datadog-ci sourcemaps upload ./build --service my-service --minified-path-prefix https://static.datadog.com --release-version 1.234
+datadog-ci dsyms upload ~/Library/Developer/Xcode/DerivedData/
 ```
-
-* The first positional argument is the directory in which sourcemaps are located. The CLI will look for all `.js.map` files in this folder and subfolders recursively. The corresponding JS file should be located in the same folder as the sourcemaps it applies to (for example, `common.min.js.map` and `common.min.js` should be in the same directory).
-The folder structure should match the structure of the served static files.
-
-* `--service` (required) should be set as the name of the service you're uploading sourcemaps for, and Datadog will use this service name to find the corresponding sourcemaps based on the `service` tag set on the RUM SDK.
-
-* `--release-version` (required) is similar and will be used to match the `version` tag set on the RUM SDK.
-
-* `--minified-path-prefix` (required) should be a prefix common to all your JS source files, depending on the URL they are served from. The prefix can be a full URL or an absolute path.
-Example: if you're uploading `dist/file.js` to `https://example.com/static/file.js`, you can use `datadog-ci sourcemaps upload ./dist --minified-path-prefix https://example.com/static/` or `datadog-ci sourcemaps upload ./dist --minified-path-prefix /static/`.
-`--minified-path-prefix /` is a valid input when you upload JS at the root directory of the server.
 
 In addition, some optional parameters are available:
 
 * `--concurrency` (default: `20`): number of concurrent upload to the API.
-* `--disable-git` (default: false): prevents the command from sending any repository related data to Datadog (hash, remote URL and the paths within the repository of the sources referenced in the sourcemap).
 * `--dry-run` (default: `false`): it will run the command without the final step of upload. All other checks are performed.
-* `--project-path` (default: empty): the path of the project where the sourcemaps were built. This will be stripped off from sources paths referenced in the sourcemap so they can be properly matched against tracked files paths.
-* `--repository-url` (default: empty): overrides the repository remote with a custom URL. For example: https://github.com/my-company/my-project
 
+#### Bitcode
+
+With bitcode enabled, you should download your app's dSYM files from [App Store Connect](https://appstoreconnect.apple.com/).
+They come in the form of a zip file, named `appDsyms.zip`. In that case, you can run `datadog-ci` by pointing to the zip file.
+
+```bash
+datadog-ci dsyms upload ~/Downloads/appDsyms.zip
+```
 ### End-to-end testing process
 
 To verify this command works as expected, you can trigger a test run and verify it returns 0:
 
 ```bash
 export DATADOG_API_KEY='<API key>'
-export DATADOG_APP_KEY='<application key>'
 
 TEMP_DIR=$(mktemp -d)
 echo '{}' > $TEMP_DIR/fake.js
