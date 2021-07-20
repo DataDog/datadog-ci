@@ -34,6 +34,7 @@ export class Tunnel {
   private forwardSockets: Socket[] = []
   private log: (message: string) => void
   private logError: (message: string) => void
+  private logWarning: (message: string) => void
   private multiplexer?: Multiplexer
   private privateKey: string
   private publicKey: ParsedKey
@@ -43,6 +44,7 @@ export class Tunnel {
   constructor(private url: string, private testIDs: string[], proxy: ProxyConfiguration, reporter: MainReporter) {
     this.log = (message: string) => reporter.log(`[${chalk.bold.blue('Tunnel')}] ${message}\n`)
     this.logError = (message: string) => reporter.error(`[${chalk.bold.red('Tunnel')}] ${message}\n`)
+    this.logWarning = (message: string) => reporter.log(`[${chalk.bold.yellow('Tunnel')}] ${message}\n`)
 
     // Setup SSH
     const {privateKey: hostPrivateKey} = generateOpenSSHKeys()
@@ -57,7 +59,6 @@ export class Tunnel {
         serverHostKey: [parsedHostPrivateKey.type],
       },
       // Greatly increase highWaterMark (32kb -> 255kb) to avoid hanging with large requests
-      // SW-1182, https://github.com/mscdex/ssh2/issues/908
       highWaterMark: 255 * 1024,
       hostKeys: [hostPrivateKey],
     }
@@ -159,7 +160,7 @@ export class Tunnel {
       .on('session', (accept, reject) => {
         accept()
       })
-      .on('tcpip', (accept, reject, info) => {
+      .on('tcpip', (accept, reject, {destIP, destPort}) => {
         // Forward packets
         // See https://github.com/mscdex/ssh2/issues/479#issuecomment-250416559
         let src: SSHServerChannel
@@ -177,13 +178,18 @@ export class Tunnel {
           })
         })
         dest.on('error', (error: NodeJS.ErrnoException) => {
-          if (!src) {
+          if (src) {
+            this.logWarning(`Error on opened connection (${destIP}): ${error.code}`)
+            src.close()
+          } else {
             if ('code' in error && error.code === 'ENOTFOUND') {
-              this.logError(`Unable to resolve host ${(error as any).hostname}`)
+              this.logWarning(`Unable to resolve host (${destIP})`)
+              // SW-1340: Reject on DNS errors kill requests on the same SSH connection.
+              accept().destroy()
             } else {
-              this.logError(`Forwarding channel error: "${error.message}"`)
+              this.logWarning(`Connection error (${destIP}): ${error.code}`)
+              reject()
             }
-            reject()
           }
         })
         dest.on('close', () => {
@@ -193,7 +199,7 @@ export class Tunnel {
             reject()
           }
         })
-        dest.connect(info.destPort, info.destIP)
+        dest.connect(destPort, destIP)
       })
       .on('request', (accept, reject, name, info) => {
         if (accept) {
@@ -219,9 +225,8 @@ export class Tunnel {
       enableKeepAlive: false,
     }
     this.multiplexer = new Multiplexer((stream) => {
-      stream.on('error', (err) => {
-        this.logError('Error in multiplexing')
-        throw err
+      stream.on('error', (error) => {
+        this.logError(`Error in multiplexing: ${error}`)
       })
 
       this.processSSHStream(stream)
@@ -229,11 +234,9 @@ export class Tunnel {
 
     // Pipe WebSocket to multiplexing
     const duplex = this.ws.duplex()
-    this.multiplexer.on('error', (error) => console.error('Multiplexer error:', error.message))
-    duplex.on('error', (error) => console.error('Websocket error:', error.message))
+    this.multiplexer.on('error', (error) => this.logError(`Multiplexer error: ${error.message}`))
+    duplex.on('error', (error) => this.logError(`Websocket error: ${error.message}`))
     duplex.pipe(this.multiplexer).pipe(duplex)
-
-    // @todo: re-set forwarding in case of reconnection
 
     return connectionInfo
   }
@@ -299,16 +302,11 @@ export class Tunnel {
     client
       .on('authentication', (ctx) => this.authenticateSSHConnection(ctx))
       .on('ready', () => this.forwardProxiedPacketsFromSSH(client))
-      .on('end', () => {
-        this.log('Proxy closed without error.')
-      })
       .on('close', () => {
-        this.log('Proxy closed without error.')
         server.close()
       })
       .on('error', (err) => {
-        this.logError('SSH error in proxy!')
-        throw err
+        this.logError(`SSH error in proxy: ${err.message}`)
       })
   }
 }

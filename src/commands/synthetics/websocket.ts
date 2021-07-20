@@ -49,7 +49,11 @@ export class WebSocket extends EventEmitter {
       throw new Error('You must start the WebSocket connection before calling duplex')
     }
 
-    return createWebSocketStream(this.websocket)
+    return createWebSocketStream(this.websocket, {
+      // Increase websocket buffer sizes from 16kb to 64kb.
+      readableHighWaterMark: 64 * 1024,
+      writableHighWaterMark: 64 * 1024,
+    })
   }
 
   /**
