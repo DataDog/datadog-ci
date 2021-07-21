@@ -7,7 +7,6 @@ module.exports = {
   testMatch: ['**/__tests__/**/*.test.ts'],
   preset: 'ts-jest',
   testEnvironment: '<rootDir>/testEnvironment.js',
-  testRunner: 'jest-circus/runner',
   globals: {
     'ts-jest': {
       tsconfig: 'tsconfig.json',
