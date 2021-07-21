@@ -26,7 +26,7 @@ export const DEFAULT_COMMAND_CONFIG: CommandConfig = {
   appKey: '',
   configPath: 'datadog-ci.json',
   datadogSite: 'datadoghq.com',
-  fileGlobs: ['{,!(node_modules)/**/}*.synthetics.json'],
+  files: ['{,!(node_modules)/**/}*.synthetics.json'],
   global: {},
   pollingTimeout: 2 * 60 * 1000,
   proxy: {protocol: 'http'},
@@ -38,30 +38,20 @@ export const DEFAULT_COMMAND_CONFIG: CommandConfig = {
 export class RunTestCommand extends Command {
   private apiKey?: string
   private appKey?: string
-  private config: CommandConfig = JSON.parse(JSON.stringify(DEFAULT_COMMAND_CONFIG))
+  private config: CommandConfig = JSON.parse(JSON.stringify(DEFAULT_COMMAND_CONFIG)) // Deep copy to avoid mutation during unit tests
   private configPath?: string
   private datadogSite?: string
-  private fileGlobs?: string[]
+  private files?: string[]
   private publicIds?: string[]
   private reporter?: MainReporter
-  private shouldOpenTunnel?: boolean
   private subdomain?: string
   private testSearchQuery?: string
+  private tunnel?: boolean
 
   public async execute() {
-    await this.resolveConfig()
-
-    let tunnel: Tunnel | undefined
-    const safeExit = async (exitCode: 0 | 1) => {
-      if (tunnel) {
-        await tunnel.stop()
-      }
-
-      return exitCode
-    }
-
     const reporters = [new DefaultReporter(this)]
     this.reporter = getReporter(reporters)
+    await this.resolveConfig()
     const startTime = Date.now()
 
     const api = this.getApiHelper()
@@ -70,6 +60,14 @@ export class RunTestCommand extends Command {
       config: ConfigOverride
       id: string
     }>
+    let tunnel: Tunnel | undefined
+    const safeExit = async (exitCode: 0 | 1) => {
+      if (tunnel) {
+        await tunnel.stop()
+      }
+
+      return exitCode
+    }
 
     if (publicIdsFromCli.length) {
       testsToTrigger = publicIdsFromCli
@@ -246,7 +244,7 @@ export class RunTestCommand extends Command {
       return testSearchResults.tests.map((test) => ({config: this.config.global, id: test.public_id}))
     }
 
-    const suites = (await Promise.all(this.config.fileGlobs.map((glob: string) => getSuites(glob, this.reporter!))))
+    const suites = (await Promise.all(this.config.files.map((glob: string) => getSuites(glob, this.reporter!))))
       .reduce((acc, val) => acc.concat(val), [])
       .map((suite) => suite.tests)
       .filter((suiteTests) => !!suiteTests)
@@ -262,7 +260,16 @@ export class RunTestCommand extends Command {
   }
 
   private async resolveConfig() {
-    // Default < ENV < file < CLI
+    // Default < file < ENV < CLI
+
+    // Override with file config variables
+    try {
+      this.config = await parseConfigFile(this.config, this.configPath ?? this.config.configPath)
+    } catch (error) {
+      if (this.configPath) {
+        throw error
+      }
+    }
 
     // Override with ENV variables
     this.config = deepExtend(
@@ -275,10 +282,6 @@ export class RunTestCommand extends Command {
       })
     )
 
-    // Override with file config variables
-    const configPath = this.configPath ?? this.config.configPath
-    this.config = await parseConfigFile(this.config, configPath)
-
     // Override with CLI parameters
     this.config = deepExtend(
       this.config,
@@ -287,13 +290,18 @@ export class RunTestCommand extends Command {
         appKey: this.appKey,
         configPath: this.configPath,
         datadogSite: this.datadogSite,
-        fileGlobs: this.fileGlobs,
+        files: this.files,
         publicIds: this.publicIds,
         subdomain: this.subdomain,
         testSearchQuery: this.testSearchQuery,
-        tunnel: this.shouldOpenTunnel,
+        tunnel: this.tunnel,
       })
     )
+
+    if (typeof this.config.files === 'string') {
+      this.reporter!.log('[DEPRECATED] "files" should be an array of string instead of a string.\n')
+      this.config.files = [this.config.files]
+    }
   }
 
   private sortTestsByOutcome(results: {[key: string]: PollResult[]}) {
@@ -316,7 +324,7 @@ export class RunTestCommand extends Command {
   }
 }
 
-const removeUndefinedValues = <T extends {[key: string]: any}>(object: T): T => {
+export const removeUndefinedValues = <T extends {[key: string]: any}>(object: T): T => {
   const newObject = {...object}
   Object.keys(newObject).forEach((k) => newObject[k] === undefined && delete newObject[k])
 
@@ -328,8 +336,8 @@ RunTestCommand.addOption('apiKey', Command.String('--apiKey'))
 RunTestCommand.addOption('appKey', Command.String('--appKey'))
 RunTestCommand.addOption('configPath', Command.String('--config'))
 RunTestCommand.addOption('datadogSite', Command.String('--datadogSite'))
-RunTestCommand.addOption('fileGlobs', Command.Array('-f,--files'))
+RunTestCommand.addOption('files', Command.Array('-f,--files'))
 RunTestCommand.addOption('publicIds', Command.Array('-p,--public-id'))
-RunTestCommand.addOption('shouldOpenTunnel', Command.Boolean('-t,--tunnel'))
-RunTestCommand.addOption('subdomain', Command.Boolean('--subdomain'))
 RunTestCommand.addOption('testSearchQuery', Command.String('-s,--search'))
+RunTestCommand.addOption('subdomain', Command.Boolean('--subdomain'))
+RunTestCommand.addOption('tunnel', Command.Boolean('-t,--tunnel'))

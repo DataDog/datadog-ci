@@ -22,8 +22,8 @@ describe('getGitMetadata', () => {
       branch: () => ({current: 'main'}),
       listRemote: () => 'repository_url',
       revparse: () => 'commitSHA',
-      show: (input: string) => {
-        if (input === '--format=%s') {
+      show: (input: string[]) => {
+        if (input[1] === '--format=%s') {
           return 'commit message'
         }
 

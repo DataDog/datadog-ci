@@ -1,11 +1,22 @@
 import {CloudWatchLogs, Lambda} from 'aws-sdk'
 import {
+  API_KEY_ENV_VAR,
+  CI_API_KEY_ENV_VAR,
+  CI_KMS_API_KEY_ENV_VAR,
+  CI_SITE_ENV_VAR,
   DD_LAMBDA_EXTENSION_LAYER_NAME,
   DEFAULT_LAYER_AWS_ACCOUNT,
+  FLUSH_TO_LOG_ENV_VAR,
   GOVCLOUD_LAYER_AWS_ACCOUNT,
   HANDLER_LOCATION,
+  KMS_API_KEY_ENV_VAR,
+  LAMBDA_HANDLER_ENV_VAR,
+  LOG_LEVEL_ENV_VAR,
+  MERGE_XRAY_TRACES_ENV_VAR,
   Runtime,
   RUNTIME_LAYER_LOOKUP,
+  SITE_ENV_VAR,
+  TRACE_ENABLED_ENV_VAR,
 } from './constants'
 import {applyLogGroupConfig, calculateLogGroupUpdateRequest, LogGroupConfiguration} from './loggroup'
 import {applyTagConfig, calculateTagUpdateRequest, TagConfiguration} from './tags'
@@ -24,9 +35,11 @@ export interface InstrumentationSettings {
   forwarderARN?: string
   layerAWSAccount?: string
   layerVersion?: number
+  logLevel?: string
   mergeXrayTraces: boolean
   tracingEnabled: boolean
 }
+
 export const getLambdaConfigs = async (
   lambda: Lambda,
   cloudWatch: CloudWatchLogs,
@@ -139,12 +152,14 @@ export const calculateUpdateRequest = (
   lambdaExtensionLayerArn: string,
   runtime: Runtime
 ) => {
-  const env: Record<string, string> = {...config.Environment?.Variables}
-  const newEnvVars: Record<string, string> = {}
+  const oldEnvVars: Record<string, string> = {...config.Environment?.Variables}
+  const changedEnvVars: Record<string, string> = {}
   const functionARN = config.FunctionArn
-  const apiKey: string | undefined = process.env.DATADOG_API_KEY
-  const apiKmsKey: string | undefined = process.env.DATADOG_KMS_API_KEY
-  const site: string | undefined = process.env.DATADOG_SITE
+
+  const apiKey: string | undefined = process.env[CI_API_KEY_ENV_VAR]
+  const apiKmsKey: string | undefined = process.env[CI_KMS_API_KEY_ENV_VAR]
+  const site: string | undefined = process.env[CI_SITE_ENV_VAR]
+
   if (functionARN === undefined) {
     return undefined
   }
@@ -154,15 +169,70 @@ export const calculateUpdateRequest = (
   }
   let needsUpdate = false
 
-  if (env.DD_LAMBDA_HANDLER === undefined) {
-    needsUpdate = true
-    newEnvVars.DD_LAMBDA_HANDLER = config.Handler ?? ''
-  }
+  // Update Handler
   const expectedHandler = HANDLER_LOCATION[runtime]
   if (config.Handler !== expectedHandler) {
     needsUpdate = true
     updateRequest.Handler = HANDLER_LOCATION[runtime]
   }
+
+  // Update Env Vars
+  if (oldEnvVars[LAMBDA_HANDLER_ENV_VAR] === undefined) {
+    needsUpdate = true
+    changedEnvVars[LAMBDA_HANDLER_ENV_VAR] = config.Handler ?? ''
+  }
+  if (apiKey !== undefined && oldEnvVars[API_KEY_ENV_VAR] !== apiKey) {
+    needsUpdate = true
+    changedEnvVars[API_KEY_ENV_VAR] = apiKey
+  }
+  if (apiKmsKey !== undefined && oldEnvVars[KMS_API_KEY_ENV_VAR] !== apiKmsKey) {
+    needsUpdate = true
+    changedEnvVars[KMS_API_KEY_ENV_VAR] = apiKmsKey
+  }
+  if (site !== undefined && oldEnvVars[SITE_ENV_VAR] !== site) {
+    const siteList: string[] = ['datadoghq.com', 'datadoghq.eu', 'us3.datadoghq.com', 'ddog-gov.com']
+    if (siteList.includes(site.toLowerCase())) {
+      needsUpdate = true
+      changedEnvVars[SITE_ENV_VAR] = site
+    } else {
+      throw new Error(
+        'Warning: Invalid site URL. Must be either datadoghq.com, datadoghq.eu, us3.datadoghq.com, or ddog-gov.com.'
+      )
+    }
+  }
+  if (site === undefined && oldEnvVars[SITE_ENV_VAR] === undefined) {
+    needsUpdate = true
+    changedEnvVars[SITE_ENV_VAR] = 'datadoghq.com'
+  }
+  if (oldEnvVars[TRACE_ENABLED_ENV_VAR] !== settings.tracingEnabled.toString()) {
+    needsUpdate = true
+    changedEnvVars[TRACE_ENABLED_ENV_VAR] = settings.tracingEnabled.toString()
+  }
+  if (oldEnvVars[MERGE_XRAY_TRACES_ENV_VAR] !== settings.mergeXrayTraces.toString()) {
+    needsUpdate = true
+    changedEnvVars[MERGE_XRAY_TRACES_ENV_VAR] = settings.mergeXrayTraces.toString()
+  }
+  if (oldEnvVars[FLUSH_TO_LOG_ENV_VAR] !== settings.flushMetricsToLogs.toString()) {
+    needsUpdate = true
+    changedEnvVars[FLUSH_TO_LOG_ENV_VAR] = settings.flushMetricsToLogs.toString()
+  }
+
+  const newEnvVars = {...oldEnvVars, ...changedEnvVars}
+
+  if (newEnvVars[LOG_LEVEL_ENV_VAR] !== settings.logLevel) {
+    needsUpdate = true
+    if (settings.logLevel) {
+      newEnvVars[LOG_LEVEL_ENV_VAR] = settings.logLevel
+    } else {
+      delete newEnvVars[LOG_LEVEL_ENV_VAR]
+    }
+  }
+
+  updateRequest.Environment = {
+    Variables: newEnvVars,
+  }
+
+  // Update Layers
   let fullLambdaLibraryLayerARN: string | undefined
   if (settings.layerVersion !== undefined) {
     fullLambdaLibraryLayerARN = `${lambdaLibraryLayerArn}:${settings.layerVersion}`
@@ -170,29 +240,6 @@ export const calculateUpdateRequest = (
   let fullExtensionLayerARN: string | undefined
   if (settings.extensionVersion !== undefined) {
     fullExtensionLayerARN = `${lambdaExtensionLayerArn}:${settings.extensionVersion}`
-  }
-  if (apiKey !== undefined && env.DD_API_KEY !== apiKey) {
-    needsUpdate = true
-    newEnvVars.DD_API_KEY = apiKey
-  }
-  if (apiKmsKey !== undefined && env.DD_KMS_API_KEY !== apiKmsKey) {
-    needsUpdate = true
-    newEnvVars.DD_KMS_API_KEY = apiKmsKey
-  }
-  if (site !== undefined && env.DD_SITE !== site) {
-    const siteList: string[] = ['datadoghq.com', 'datadoghq.eu', 'us3.datadoghq.com', 'ddog-gov.com']
-    if (siteList.includes(site.toLowerCase())) {
-      needsUpdate = true
-      newEnvVars.DD_SITE = site
-    } else {
-      throw new Error(
-        'Warning: Invalid site URL. Must be either datadoghq.com, datadoghq.eu, us3.datadoghq.com, or ddog-gov.com.'
-      )
-    }
-  }
-  if (site === undefined && env.DD_SITE === undefined) {
-    needsUpdate = true
-    newEnvVars.DD_SITE = 'datadoghq.com'
   }
   let layerARNs = (config.Layers ?? []).map((layer) => layer.Arn ?? '')
   const originalLayerARNs = (config.Layers ?? []).map((layer) => layer.Arn ?? '')
@@ -207,33 +254,18 @@ export const calculateUpdateRequest = (
     needsUpdate = true
     updateRequest.Layers = layerARNs
   }
-  if (env.DD_TRACE_ENABLED !== settings.tracingEnabled.toString()) {
-    needsUpdate = true
-    newEnvVars.DD_TRACE_ENABLED = settings.tracingEnabled.toString()
-  }
-  if (env.DD_MERGE_XRAY_TRACES !== settings.mergeXrayTraces.toString()) {
-    needsUpdate = true
-    newEnvVars.DD_MERGE_XRAY_TRACES = settings.mergeXrayTraces.toString()
-  }
-  if (env.DD_FLUSH_TO_LOG !== settings.flushMetricsToLogs.toString()) {
-    needsUpdate = true
-    newEnvVars.DD_FLUSH_TO_LOG = settings.flushMetricsToLogs.toString()
-  }
-  const allEnvVariables = {...env, ...newEnvVars}
+
   layerARNs.forEach((layerARN) => {
     if (
       layerARN.includes(DD_LAMBDA_EXTENSION_LAYER_NAME) &&
-      allEnvVariables.DD_API_KEY === undefined &&
-      allEnvVariables.DD_KMS_API_KEY === undefined
+      newEnvVars[API_KEY_ENV_VAR] === undefined &&
+      newEnvVars[KMS_API_KEY_ENV_VAR] === undefined
     ) {
-      throw new Error("When 'extensionLayer' is set, DATADOG_API_KEY or DATADOG_KMS_API_KEY must also be set")
+      throw new Error(
+        `When 'extensionLayer' is set, ${CI_API_KEY_ENV_VAR} or ${CI_KMS_API_KEY_ENV_VAR} must also be set`
+      )
     }
   })
-  if (Object.entries(newEnvVars).length > 0) {
-    updateRequest.Environment = {
-      Variables: allEnvVariables,
-    }
-  }
 
   return needsUpdate ? updateRequest : undefined
 }
