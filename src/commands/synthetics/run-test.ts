@@ -28,9 +28,11 @@ export class RunTestCommand extends Command {
   private appKey?: string
   private config: CommandConfig = JSON.parse(JSON.stringify(DEFAULT_COMMAND_CONFIG)) // Deep copy to avoid mutation during unit tests
   private configPath?: string
+  private datadogSite?: string
   private files?: string[]
   private publicIds?: string[]
   private reporter?: MainReporter
+  private subdomain?: string
   private testSearchQuery?: string
   private tunnel?: boolean
 
@@ -204,8 +206,13 @@ export class RunTestCommand extends Command {
     // Default < file < ENV < CLI
 
     // Override with file config variables
-    const configPath = this.configPath ?? this.config.configPath
-    this.config = await parseConfigFile(this.config, configPath)
+    try {
+      this.config = await parseConfigFile(this.config, this.configPath ?? this.config.configPath)
+    } catch (error) {
+      if (this.configPath) {
+        throw error
+      }
+    }
 
     // Override with ENV variables
     this.config = deepExtend(
@@ -225,17 +232,17 @@ export class RunTestCommand extends Command {
         apiKey: this.apiKey,
         appKey: this.appKey,
         configPath: this.configPath,
+        datadogSite: this.datadogSite,
         files: this.files,
         publicIds: this.publicIds,
+        subdomain: this.subdomain,
         testSearchQuery: this.testSearchQuery,
         tunnel: this.tunnel,
       })
     )
 
     if (typeof this.config.files === 'string') {
-      this.reporter!.log(
-        '[DEPRECATED] "files" should be an array of string instead of a string. The conversion will be automatic'
-      )
+      this.reporter!.log('[DEPRECATED] "files" should be an array of string instead of a string.\n')
       this.config.files = [this.config.files]
     }
   }
@@ -271,7 +278,9 @@ RunTestCommand.addPath('synthetics', 'run-tests')
 RunTestCommand.addOption('apiKey', Command.String('--apiKey'))
 RunTestCommand.addOption('appKey', Command.String('--appKey'))
 RunTestCommand.addOption('configPath', Command.String('--config'))
+RunTestCommand.addOption('datadogSite', Command.String('--datadogSite'))
 RunTestCommand.addOption('files', Command.Array('-f,--files'))
 RunTestCommand.addOption('publicIds', Command.Array('-p,--public-id'))
 RunTestCommand.addOption('testSearchQuery', Command.String('-s,--search'))
+RunTestCommand.addOption('subdomain', Command.Boolean('--subdomain'))
 RunTestCommand.addOption('tunnel', Command.Boolean('-t,--tunnel'))
