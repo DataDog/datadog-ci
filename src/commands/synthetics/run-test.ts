@@ -56,10 +56,10 @@ export class RunTestCommand extends Command {
 
     const api = this.getApiHelper()
     const publicIdsFromCli = this.config.publicIds.map((id) => ({config: this.config.global, id}))
-    let testsToTrigger: Array<{
+    let testsToTrigger: {
       config: ConfigOverride
       id: string
-    }>
+    }[]
     let tunnel: Tunnel | undefined
     const safeExit = async (exitCode: 0 | 1) => {
       if (tunnel) {
@@ -76,25 +76,28 @@ export class RunTestCommand extends Command {
         testsToTrigger = await this.getTestsList(api)
       } catch (error) {
         this.reporter.error(`\n${chalk.bgRed.bold(' Failed to get tests list ')}\n${error.message}\n\n`)
+
         return safeExit(1)
       }
     }
 
     if (!testsToTrigger.length) {
       this.reporter.log('No test suites to run.\n')
+
       return safeExit(0)
     }
 
     let testsToTriggerResult: {
-      tests: Test[]
       overriddenTestsToTrigger: TestPayload[]
       summary: Summary
+      tests: Test[]
     }
 
     try {
       testsToTriggerResult = await getTestsToTrigger(api, testsToTrigger, this.reporter)
     } catch (error) {
       this.reporter.error(`\n${chalk.bgRed.bold(' ERROR on get tests endpoint ')}\n${error.message}\n\n`)
+
       return safeExit(1)
     }
     const {tests, overriddenTestsToTrigger, summary} = testsToTriggerResult
@@ -112,6 +115,7 @@ export class RunTestCommand extends Command {
         presignedURL = (await api.getPresignedURL(publicIdsToTrigger)).url
       } catch (e) {
         this.reporter.error(`\n${chalk.bgRed.bold(' Failed to get tunnel URL')}\n${e.message}\n\n`)
+
         return safeExit(1)
       }
       // Open a tunnel to Datadog
@@ -133,6 +137,7 @@ export class RunTestCommand extends Command {
       triggers = await runTests(api, overriddenTestsToTrigger)
     } catch (e) {
       this.reporter.error(`\n${chalk.bgRed.bold(' ERROR on trigger endpoint ')}\n${e.message}\n\n`)
+
       return safeExit(1)
     }
 
@@ -160,6 +165,7 @@ export class RunTestCommand extends Command {
       Object.assign(results, resultPolled)
     } catch (error) {
       this.reporter.error(`\n${chalk.bgRed.bold(' ERROR on poll endpoint ')}\n${error.message}\n\n`)
+
       return safeExit(1)
     }
 
