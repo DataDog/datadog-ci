@@ -1,4 +1,6 @@
 // tslint:disable: no-string-literal
+import {AxiosError, AxiosResponse} from 'axios'
+
 import * as ciUtils from '../../../helpers/utils'
 
 import {ExecutionRule} from '../interfaces'
@@ -26,14 +28,14 @@ export const assertAsyncThrow = async (func: any, errorRegex?: RegExp) => {
 
 describe('run-test', () => {
   beforeEach(() => {
-    jest.resetAllMocks()
+    jest.restoreAllMocks()
     jest.spyOn(ciUtils, 'getConfig').mockImplementation(async () => ({}))
     process.env = {}
   })
 
   describe('execute', () => {
     beforeEach(() => {
-      jest.resetAllMocks()
+      jest.restoreAllMocks()
     })
     test('should apply config override for tests triggered by public id', async () => {
       const getTestsToTriggersMock = jest.spyOn(utils, 'getTestsToTrigger').mockReturnValue(
@@ -105,9 +107,147 @@ describe('run-test', () => {
       expect(write).toHaveBeenCalledWith('No test to run.\n')
       expect(waitForResultSpy).not.toHaveBeenCalled()
     })
+
+    test('getTestsList throws', async () => {
+      jest.spyOn(ciUtils, 'parseConfigFile').mockImplementation(async (config, _) => config)
+
+      const serverError = new Error('Server Error') as AxiosError
+      serverError.response = {data: {errors: ['Bad Gateway']}, status: 502} as AxiosResponse
+      serverError.config = {baseURL: 'baseURL', url: 'url'}
+      const apiHelper = {
+        searchTests: jest.fn(() => {
+          throw serverError
+        }),
+      }
+
+      const write = jest.fn()
+      const command = new RunTestCommand()
+      command.context = {stdout: {write}} as any
+      command['getApiHelper'] = (() => apiHelper) as any
+      command['config'].tunnel = true
+      command['testSearchQuery'] = 'a-search-query'
+
+      expect(await command.execute()).toBe(1)
+    })
+
+    test('getTestsToTrigger throws', async () => {
+      jest.spyOn(ciUtils, 'parseConfigFile').mockImplementation(async (config, _) => config)
+
+      const serverError = new Error('Server Error') as AxiosError
+      serverError.response = {data: {errors: ['Bad Gateway']}, status: 502} as AxiosResponse
+      serverError.config = {baseURL: 'baseURL', url: 'url'}
+      const apiHelper = {
+        getTest: jest.fn(() => {
+          throw serverError
+        }),
+      }
+
+      const write = jest.fn()
+      const command = new RunTestCommand()
+      command.context = {stdout: {write}} as any
+      command['getApiHelper'] = (() => apiHelper) as any
+      command['config'].tunnel = true
+      command['publicIds'] = ['public-id-1']
+
+      expect(await command.execute()).toBe(1)
+    })
+
+    test('getPresignedURL throws', async () => {
+      jest.spyOn(ciUtils, 'parseConfigFile').mockImplementation(async (config, _) => config)
+      jest.spyOn(utils, 'getTestsToTrigger').mockReturnValue(
+        Promise.resolve({
+          overriddenTestsToTrigger: [],
+          summary: {passed: 0, failed: 0, skipped: 0, notFound: 0},
+          tests: [],
+        })
+      )
+
+      const serverError = new Error('Server Error') as AxiosError
+      serverError.response = {status: 502} as AxiosResponse
+      const apiHelper = {
+        getPresignedURL: jest.fn(() => {
+          throw serverError
+        }),
+      }
+
+      const write = jest.fn()
+      const command = new RunTestCommand()
+      command.context = {stdout: {write}} as any
+      command['getApiHelper'] = (() => apiHelper) as any
+      command['config'].tunnel = true
+      command['publicIds'] = ['public-id-1', 'public-id-2']
+
+      expect(await command.execute()).toBe(1)
+    })
+
+    test('runTests throws', async () => {
+      jest.spyOn(ciUtils, 'parseConfigFile').mockImplementation(async (config, _) => config)
+      jest.spyOn(utils, 'getTestsToTrigger').mockReturnValue(
+        Promise.resolve({
+          overriddenTestsToTrigger: [],
+          summary: {passed: 0, failed: 0, skipped: 0, notFound: 0},
+          tests: [],
+        })
+      )
+
+      const serverError = new Error('Server Error') as AxiosError
+      serverError.response = {status: 502} as AxiosResponse
+      const apiHelper = {
+        triggerTests: jest.fn(() => {
+          throw serverError
+        }),
+      }
+
+      const write = jest.fn()
+      const command = new RunTestCommand()
+      command.context = {stdout: {write}} as any
+      command['getApiHelper'] = (() => apiHelper) as any
+      command['publicIds'] = ['public-id-1', 'public-id-2']
+
+      expect(await command.execute()).toBe(1)
+    })
+
+    test('waitForResults throws', async () => {
+      jest.spyOn(ciUtils, 'parseConfigFile').mockImplementation(async (config, _) => config)
+      jest.spyOn(utils, 'getTestsToTrigger').mockReturnValue(
+        Promise.resolve({
+          overriddenTestsToTrigger: [],
+          summary: {passed: 0, failed: 0, skipped: 0, notFound: 0},
+          tests: [{public_id: 'publicId'} as any],
+        })
+      )
+
+      jest.spyOn(utils, 'runTests').mockReturnValue(
+        Promise.resolve({
+          locations: [],
+          results: [{public_id: 'publicId'} as any],
+          triggered_check_ids: [],
+        })
+      )
+
+      const serverError = new Error('Server Error') as AxiosError
+      serverError.response = {status: 502} as AxiosResponse
+      const apiHelper = {
+        pollResults: jest.fn(() => {
+          throw serverError
+        }),
+      }
+
+      const write = jest.fn()
+      const command = new RunTestCommand()
+      command.context = {stdout: {write}} as any
+      command['getApiHelper'] = (() => apiHelper) as any
+      command['publicIds'] = ['public-id-1', 'public-id-2']
+
+      expect(await command.execute()).toBe(1)
+    })
   })
 
   describe('getAppBaseURL', () => {
+    beforeEach(() => {
+      jest.restoreAllMocks()
+    })
+
     test('should default to datadog us', async () => {
       process.env = {}
       const command = new RunTestCommand()
@@ -136,6 +276,10 @@ describe('run-test', () => {
   })
 
   describe('getDatadogHost', () => {
+    beforeEach(() => {
+      jest.restoreAllMocks()
+    })
+
     test('should default to datadog us api', async () => {
       process.env = {}
       const command = new RunTestCommand()
@@ -156,6 +300,10 @@ describe('run-test', () => {
   })
 
   describe('getApiHelper', () => {
+    beforeEach(() => {
+      jest.restoreAllMocks()
+    })
+
     test('should throw an error if API or Application key are undefined', async () => {
       process.env = {}
       const write = jest.fn()
@@ -177,6 +325,10 @@ describe('run-test', () => {
   })
 
   describe('getTestsList', () => {
+    beforeEach(() => {
+      jest.restoreAllMocks()
+    })
+
     const conf1 = {
       tests: [{config: {}, id: 'abc-def-ghi'}],
     }
@@ -245,6 +397,10 @@ describe('run-test', () => {
   })
 
   describe('sortTestsByOutcome', () => {
+    beforeEach(() => {
+      jest.restoreAllMocks()
+    })
+
     const test1 = {options: {}, public_id: 'test1'}
     const test2 = {options: {ci: {executionRule: ExecutionRule.BLOCKING}}, public_id: 'test2'}
     const test3 = {options: {ci: {executionRule: ExecutionRule.NON_BLOCKING}}, public_id: 'test3'}
@@ -269,7 +425,7 @@ describe('run-test', () => {
 
   describe('resolveConfig', () => {
     beforeEach(() => {
-      jest.resetAllMocks()
+      jest.restoreAllMocks()
       process.env = {}
       jest.spyOn(ciUtils, 'getConfig').mockImplementation(async () => ({}))
     })
