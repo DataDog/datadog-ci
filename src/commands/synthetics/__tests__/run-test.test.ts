@@ -28,14 +28,14 @@ export const assertAsyncThrow = async (func: any, errorRegex?: RegExp) => {
 
 describe('run-test', () => {
   beforeEach(() => {
-    jest.resetAllMocks()
+    jest.restoreAllMocks()
     jest.spyOn(ciUtils, 'getConfig').mockImplementation(async () => ({}))
     process.env = {}
   })
 
   describe('execute', () => {
     beforeEach(() => {
-      jest.resetAllMocks()
+      jest.restoreAllMocks()
     })
     test('should apply config override for tests triggered by public id', async () => {
       const getTestsToTriggersMock = jest.spyOn(utils, 'getTestsToTrigger').mockReturnValue(
@@ -208,6 +208,7 @@ describe('run-test', () => {
     })
 
     test('waitForResults throws', async () => {
+      console.log(utils.waitForResults)
       jest.spyOn(ciUtils, 'parseConfigFile').mockImplementation(async (config, _) => config)
       jest.spyOn(utils, 'getTestsToTrigger').mockReturnValue(
         Promise.resolve({
@@ -244,6 +245,10 @@ describe('run-test', () => {
   })
 
   describe('getAppBaseURL', () => {
+    beforeEach(() => {
+      jest.restoreAllMocks()
+    })
+
     test('should default to datadog us', async () => {
       process.env = {}
       const command = new RunTestCommand()
@@ -272,6 +277,10 @@ describe('run-test', () => {
   })
 
   describe('getDatadogHost', () => {
+    beforeEach(() => {
+      jest.restoreAllMocks()
+    })
+
     test('should default to datadog us api', async () => {
       process.env = {}
       const command = new RunTestCommand()
@@ -292,6 +301,10 @@ describe('run-test', () => {
   })
 
   describe('getApiHelper', () => {
+    beforeEach(() => {
+      jest.restoreAllMocks()
+    })
+
     test('should throw an error if API or Application key are undefined', async () => {
       process.env = {}
       const write = jest.fn()
@@ -313,6 +326,10 @@ describe('run-test', () => {
   })
 
   describe('getTestsList', () => {
+    beforeEach(() => {
+      jest.restoreAllMocks()
+    })
+
     const conf1 = {
       tests: [{config: {}, id: 'abc-def-ghi'}],
     }
@@ -381,6 +398,10 @@ describe('run-test', () => {
   })
 
   describe('sortTestsByOutcome', () => {
+    beforeEach(() => {
+      jest.restoreAllMocks()
+    })
+
     const test1 = {options: {}, public_id: 'test1'}
     const test2 = {options: {ci: {executionRule: ExecutionRule.BLOCKING}}, public_id: 'test2'}
     const test3 = {options: {ci: {executionRule: ExecutionRule.NON_BLOCKING}}, public_id: 'test3'}
@@ -405,7 +426,7 @@ describe('run-test', () => {
 
   describe('resolveConfig', () => {
     beforeEach(() => {
-      jest.resetAllMocks()
+      jest.restoreAllMocks()
       process.env = {}
       jest.spyOn(ciUtils, 'getConfig').mockImplementation(async () => ({}))
     })
