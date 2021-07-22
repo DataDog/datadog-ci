@@ -7,7 +7,6 @@ import {apiConstructor} from './api'
 import {
   APIHelper,
   CommandConfig,
-  ConfigOverride,
   ExecutionRule,
   LocationsMapping,
   MainReporter,
@@ -16,6 +15,7 @@ import {
   Test,
   TestPayload,
   Trigger,
+  TriggerConfig,
 } from './interfaces'
 import {DefaultReporter} from './reporters/default'
 import {Tunnel} from './tunnel'
@@ -56,10 +56,7 @@ export class RunTestCommand extends Command {
 
     const api = this.getApiHelper()
     const publicIdsFromCli = this.config.publicIds.map((id) => ({config: this.config.global, id}))
-    let testsToTrigger: {
-      config: ConfigOverride
-      id: string
-    }[]
+    let testsToTrigger: TriggerConfig[]
     let tunnel: Tunnel | undefined
     const safeExit = async (exitCode: 0 | 1) => {
       if (tunnel) {

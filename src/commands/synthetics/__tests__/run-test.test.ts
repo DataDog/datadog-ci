@@ -208,7 +208,6 @@ describe('run-test', () => {
     })
 
     test('waitForResults throws', async () => {
-      console.log(utils.waitForResults)
       jest.spyOn(ciUtils, 'parseConfigFile').mockImplementation(async (config, _) => config)
       jest.spyOn(utils, 'getTestsToTrigger').mockReturnValue(
         Promise.resolve({
