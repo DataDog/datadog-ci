@@ -22,9 +22,9 @@ import {Tunnel} from './tunnel'
 import {getReporter, getSuites, getTestsToTrigger, hasTestSucceeded, runTests, waitForResults} from './utils'
 
 export const DEFAULT_COMMAND_CONFIG: CommandConfig = {
+  allowOnUnexpectedResults: false,
   apiKey: '',
   appKey: '',
-  blockOnUnexpectedResults: true,
   configPath: 'datadog-ci.json',
   datadogSite: 'datadoghq.com',
   files: ['{,!(node_modules)/**/}*.synthetics.json'],
@@ -37,9 +37,9 @@ export const DEFAULT_COMMAND_CONFIG: CommandConfig = {
 }
 
 export class RunTestCommand extends Command {
+  private allowOnUnexpectedResults?: boolean
   private apiKey?: string
   private appKey?: string
-  private blockOnUnexpectedResults?: boolean
   private config: CommandConfig = JSON.parse(JSON.stringify(DEFAULT_COMMAND_CONFIG)) // Deep copy to avoid mutation during unit tests
   private configPath?: string
   private datadogSite?: string
@@ -75,9 +75,13 @@ export class RunTestCommand extends Command {
         testsToTrigger = await this.getTestsList(api)
       } catch (error) {
         this.reporter.error(`\n${chalk.bgRed.bold(' Failed to get tests list ')}\n${error.message}\n\n`)
-        if (is5xxError(error) && !this.config.blockOnUnexpectedResults) {
+        if (is5xxError(error) && this.config.allowOnUnexpectedResults) {
+          this.reporter.error(`\n${chalk.bgRed.bold('TODO  getTestsList')}\n`)
+
           return safeExit(0)
         }
+
+        this.reporter.error(`\n${chalk.bgRed.bold(' ERROR on search test endpoint ')}\n${error.message}\n\n`)
 
         return safeExit(1)
       }
@@ -98,6 +102,12 @@ export class RunTestCommand extends Command {
     try {
       testsToTriggerResult = await getTestsToTrigger(api, testsToTrigger, this.reporter)
     } catch (error) {
+      if (is5xxError(error) && this.config.allowOnUnexpectedResults) {
+        this.reporter.error(`\n${chalk.bgRed.bold('TODO  get tests endpoint')}\n`)
+
+        return safeExit(0)
+      }
+
       this.reporter.error(`\n${chalk.bgRed.bold(' ERROR on get tests endpoint ')}\n${error.message}\n\n`)
 
       return safeExit(1)
@@ -116,10 +126,13 @@ export class RunTestCommand extends Command {
         // Get the pre-signed URL to connect to the tunnel service
         presignedURL = (await api.getPresignedURL(publicIdsToTrigger)).url
       } catch (e) {
-        this.reporter.error(`\n${chalk.bgRed.bold(' Failed to get tunnel URL')}\n${e.message}\n\n`)
-        if (is5xxError(e) && !this.config.blockOnUnexpectedResults) {
-          return 0
+        if (is5xxError(e) && this.config.allowOnUnexpectedResults) {
+          this.reporter.error(`\n${chalk.bgRed.bold('TODO tunnel URL')}\n`)
+
+          return safeExit(0)
         }
+
+        this.reporter.error(`\n${chalk.bgRed.bold(' Failed to get tunnel URL')}\n${e.message}\n\n`)
 
         return safeExit(1)
       }
@@ -131,6 +144,12 @@ export class RunTestCommand extends Command {
           testToTrigger.tunnel = tunnelInfo
         })
       } catch (e) {
+        if (is5xxError(e) && this.config.allowOnUnexpectedResults) {
+          this.reporter.error(`\n${chalk.bgRed.bold('TODO tunnel start')}\n`)
+
+          return safeExit(0)
+        }
+
         this.reporter.error(`\n${chalk.bgRed.bold(' ERROR on tunnel start ')}\n${e.message}\n\n`)
 
         return safeExit(1)
@@ -139,8 +158,14 @@ export class RunTestCommand extends Command {
 
     let triggers: Trigger
     try {
-      triggers = await runTests(api, overriddenTestsToTrigger, this.config.blockOnUnexpectedResults, this.reporter)
+      triggers = await runTests(api, overriddenTestsToTrigger)
     } catch (e) {
+      if (is5xxError(e) && this.config.allowOnUnexpectedResults) {
+        this.reporter.error(`\n${chalk.bgRed.bold('TODO trigger endpoint')}\n`)
+
+        return safeExit(0)
+      }
+
       this.reporter.error(`\n${chalk.bgRed.bold(' ERROR on trigger endpoint ')}\n${e.message}\n\n`)
 
       return safeExit(1)
@@ -165,10 +190,17 @@ export class RunTestCommand extends Command {
         triggers.results,
         this.config.pollingTimeout,
         testsToTrigger,
-        tunnel
+        tunnel,
+        this.config.allowOnUnexpectedResults
       )
       Object.assign(results, resultPolled)
     } catch (error) {
+      if (is5xxError(error) && this.config.allowOnUnexpectedResults) {
+        this.reporter.error(`\n${chalk.bgRed.bold('TODO poll endpoint')}\n`)
+
+        return safeExit(0)
+      }
+
       this.reporter.error(`\n${chalk.bgRed.bold(' ERROR on poll endpoint ')}\n${error.message}\n\n`)
 
       return safeExit(1)
@@ -189,7 +221,7 @@ export class RunTestCommand extends Command {
     for (const test of tests) {
       const testResults = results[test.public_id]
 
-      const passed = hasTestSucceeded(testResults, this.config.blockOnUnexpectedResults)
+      const passed = hasTestSucceeded(testResults, this.config.allowOnUnexpectedResults)
       if (passed) {
         summary.passed++
       } else {
@@ -204,7 +236,7 @@ export class RunTestCommand extends Command {
         testResults,
         this.getAppBaseURL(),
         locationNames,
-        this.config.blockOnUnexpectedResults
+        this.config.allowOnUnexpectedResults
       )
     }
 
@@ -254,7 +286,7 @@ export class RunTestCommand extends Command {
     return `${host}/${apiPath}`
   }
 
-  private async getTestsList(api: APIHelper, blockOnUnexpectedResults = false) {
+  private async getTestsList(api: APIHelper) {
     if (this.config.testSearchQuery) {
       const testSearchResults = await api.searchTests(this.config.testSearchQuery)
 
@@ -303,6 +335,7 @@ export class RunTestCommand extends Command {
     this.config = deepExtend(
       this.config,
       removeUndefinedValues({
+        allowOnUnexpectedResults: this.allowOnUnexpectedResults,
         apiKey: this.apiKey,
         appKey: this.appKey,
         configPath: this.configPath,
@@ -323,8 +356,8 @@ export class RunTestCommand extends Command {
 
   private sortTestsByOutcome(results: {[key: string]: PollResult[]}) {
     return (t1: Test, t2: Test) => {
-      const success1 = hasTestSucceeded(results[t1.public_id], this.config.blockOnUnexpectedResults)
-      const success2 = hasTestSucceeded(results[t2.public_id], this.config.blockOnUnexpectedResults)
+      const success1 = hasTestSucceeded(results[t1.public_id], this.config.allowOnUnexpectedResults)
+      const success2 = hasTestSucceeded(results[t2.public_id], this.config.allowOnUnexpectedResults)
       const isNonBlockingTest1 = t1.options.ci?.executionRule === ExecutionRule.NON_BLOCKING
       const isNonBlockingTest2 = t2.options.ci?.executionRule === ExecutionRule.NON_BLOCKING
 
@@ -351,7 +384,7 @@ export const removeUndefinedValues = <T extends {[key: string]: any}>(object: T)
 RunTestCommand.addPath('synthetics', 'run-tests')
 RunTestCommand.addOption('apiKey', Command.String('--apiKey'))
 RunTestCommand.addOption('appKey', Command.String('--appKey'))
-RunTestCommand.addOption('blockOnUnexpectedResults', Command.String('--blockOnUnexpectedResults'))
+RunTestCommand.addOption('allowOnUnexpectedResults', Command.Boolean('--allowOnUnexpectedResults'))
 RunTestCommand.addOption('configPath', Command.String('--config'))
 RunTestCommand.addOption('datadogSite', Command.String('--datadogSite'))
 RunTestCommand.addOption('files', Command.Array('-f,--files'))

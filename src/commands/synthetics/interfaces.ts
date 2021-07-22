@@ -22,7 +22,7 @@ export interface MainReporter {
     results: PollResult[],
     baseUrl: string,
     locationNames: LocationsMapping,
-    blockOnUnexpectedResults: boolean
+    allowOnUnexpectedResults: boolean
   ): void
   testTrigger(test: Test, testId: string, executionRule: ExecutionRule, config: ConfigOverride): void
   testWait(test: Test): void
@@ -275,9 +275,9 @@ export interface APIConfiguration {
 }
 
 export interface CommandConfig {
+  allowOnUnexpectedResults: boolean
   apiKey: string
   appKey: string
-  blockOnUnexpectedResults: boolean
   configPath: string
   datadogSite: string
   files: string[]

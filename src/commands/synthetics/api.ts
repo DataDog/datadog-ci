@@ -11,6 +11,13 @@ interface BackendError {
   errors: string[]
 }
 
+export class EndpointError extends Error {
+  constructor(public message: string, public status: string) {
+    super(message)
+    Object.setPrototypeOf(this, EndpointError.prototype)
+  }
+}
+
 export const formatBackendErrors = (requestError: AxiosError<BackendError>) => {
   if (requestError.response && requestError.response.data.errors) {
     const serverHead = `query on ${requestError.config.baseURL}${requestError.config.url} returned:`
@@ -108,8 +115,8 @@ const retryOn5xxErrors = (retries: number, error: AxiosError) => {
   }
 }
 
-export const is5xxError = (error: AxiosError) => {
-  const statusCode = error?.response?.status
+export const is5xxError = (error: AxiosError | EndpointError) => {
+  const statusCode = 'status' in error ? error.status : error.response?.status
 
   return statusCode && statusCode >= 500 && statusCode <= 599
 }

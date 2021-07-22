@@ -9,7 +9,7 @@ import glob from 'glob'
 import {getCIMetadata} from '../../helpers/ci'
 import {pick} from '../../helpers/utils'
 
-import {formatBackendErrors, is5xxError} from './api'
+import {EndpointError, formatBackendErrors, is5xxError} from './api'
 import {
   APIHelper,
   ConfigOverride,
@@ -137,8 +137,8 @@ export const getStrictestExecutionRule = (configRule: ExecutionRule, testRule?: 
   return ExecutionRule.BLOCKING
 }
 
-export const hasResultPassed = (result: Result, blockOnUnexpectedResults: boolean): boolean => {
-  if (result.unhealthy && !blockOnUnexpectedResults) {
+export const hasResultPassed = (result: Result, allowOnUnexpectedResults: boolean): boolean => {
+  if (result.unhealthy && !allowOnUnexpectedResults) {
     return true
   }
 
@@ -153,8 +153,8 @@ export const hasResultPassed = (result: Result, blockOnUnexpectedResults: boolea
   return true
 }
 
-export const hasTestSucceeded = (results: PollResult[], blockOnUnexpectedResults: boolean): boolean =>
-  results.every((pollResult: PollResult) => hasResultPassed(pollResult.result, blockOnUnexpectedResults))
+export const hasTestSucceeded = (results: PollResult[], allowOnUnexpectedResults: boolean): boolean =>
+  results.every((pollResult: PollResult) => hasResultPassed(pollResult.result, allowOnUnexpectedResults))
 
 export const getSuites = async (GLOB: string, reporter: MainReporter): Promise<Suite[]> => {
   reporter.log(`Finding files in ${path.join(process.cwd(), GLOB)}\n`)
@@ -186,7 +186,7 @@ export const waitForResults = async (
   defaultTimeout: number,
   triggerConfigs: TriggerConfig[],
   tunnel?: Tunnel,
-  blockOnUnexpectedResults?: boolean
+  allowOnUnexpectedResults?: boolean
 ) => {
   const triggerResultMap = createTriggerResultMap(triggerResponses, defaultTimeout, triggerConfigs)
   const triggerResults = [...triggerResultMap.values()]
@@ -238,7 +238,8 @@ export const waitForResults = async (
     try {
       polledResults = (await api.pollResults(triggerResultsSucceed.map((tr) => tr.result_id))).results
     } catch (error) {
-      if (is5xxError(error) && !blockOnUnexpectedResults) {
+      console.log()
+      if (is5xxError(error) && !allowOnUnexpectedResults) {
         polledResults = []
         for (const triggerResult of triggerResultsSucceed) {
           triggerResult.result = createFailingResult(
@@ -355,10 +356,10 @@ export const getReporter = (reporters: Reporter[]): MainReporter => ({
       }
     }
   },
-  testEnd: (test, results, baseUrl, locationNames, blockOnUnexpectedResults) => {
+  testEnd: (test, results, baseUrl, locationNames, allowOnUnexpectedResults) => {
     for (const reporter of reporters) {
       if (typeof reporter.testEnd === 'function') {
-        reporter.testEnd(test, results, baseUrl, locationNames, blockOnUnexpectedResults)
+        reporter.testEnd(test, results, baseUrl, locationNames, allowOnUnexpectedResults)
       }
     }
   },
@@ -390,6 +391,10 @@ export const getTestsToTrigger = async (api: APIHelper, triggerConfigs: TriggerC
       try {
         test = await api.getTest(id)
       } catch (e) {
+        if (is5xxError(e)) {
+          throw e
+        }
+
         summary.notFound++
         const errorMessage = formatBackendErrors(e)
         errorMessages.push(`[${chalk.bold.dim(id)}] ${chalk.yellow.bold('Test not found')}: ${errorMessage}\n`)
@@ -421,12 +426,7 @@ export const getTestsToTrigger = async (api: APIHelper, triggerConfigs: TriggerC
   return {tests: tests.filter(definedTypeGuard), overriddenTestsToTrigger, summary}
 }
 
-export const runTests = async (
-  api: APIHelper,
-  testsToTrigger: TestPayload[],
-  blockOnUnexpectedResults: boolean,
-  reporter: MainReporter
-): Promise<Trigger> => {
+export const runTests = async (api: APIHelper, testsToTrigger: TestPayload[]): Promise<Trigger> => {
   const payload: Payload = {tests: testsToTrigger}
   const ciMetadata = getCIMetadata()
   if (ciMetadata) {
@@ -436,20 +436,10 @@ export const runTests = async (
   try {
     return await api.triggerTests(payload)
   } catch (e) {
-    if (is5xxError(e) && !blockOnUnexpectedResults) {
-      reporter.error('Unexpected error when triggering tests')
-
-      return {
-        locations: [],
-        results: [],
-        triggered_check_ids: [],
-      }
-    }
-
     const errorMessage = formatBackendErrors(e)
     const testIds = testsToTrigger.map((t) => t.public_id).join(',')
     // Rewrite error message
-    throw new Error(`[${testIds}] Failed to trigger tests: ${errorMessage}\n`)
+    throw new EndpointError(`[${testIds}] Failed to trigger tests: ${errorMessage}\n`, e.response.status)
   }
 }
 

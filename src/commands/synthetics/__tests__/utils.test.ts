@@ -63,12 +63,7 @@ describe('utils', () => {
         }
       }) as any)
 
-      const output = await utils.runTests(
-        api,
-        [{public_id: fakeId, executionRule: ExecutionRule.NON_BLOCKING}],
-        false,
-        mockReporter
-      )
+      const output = await utils.runTests(api, [{public_id: fakeId, executionRule: ExecutionRule.NON_BLOCKING}])
       expect(output).toEqual(fakeTrigger)
     })
 
@@ -79,23 +74,18 @@ describe('utils', () => {
           return {data: fakeTrigger}
         }
       }) as any)
-      const output = await utils.runTests(
-        api,
-        [
-          {
-            executionRule: ExecutionRule.NON_BLOCKING,
-            public_id: `http://localhost/synthetics/tests/details/${fakeId}`,
-          },
-        ],
-        false,
-        mockReporter
-      )
+      const output = await utils.runTests(api, [
+        {
+          executionRule: ExecutionRule.NON_BLOCKING,
+          public_id: `http://localhost/synthetics/tests/details/${fakeId}`,
+        },
+      ])
       expect(output).toEqual(fakeTrigger)
     })
 
     test('triggerTests throws', async () => {
       const serverError = new Error('Server Error') as AxiosError
-      serverError.response = {status: 502} as AxiosResponse
+      serverError.response = {status: 502, data: {errors: []}, config: {baseURL: 'baseURL', url: 'url'}} as AxiosResponse
 
       const requestMock = jest.fn()
       requestMock.mockImplementation(() => {
@@ -104,11 +94,9 @@ describe('utils', () => {
       jest.spyOn(axios, 'create').mockImplementation((() => requestMock) as any)
 
       await expect(
-        utils.runTests(api, [{public_id: fakeId, executionRule: ExecutionRule.NON_BLOCKING}], true, mockReporter)
+        utils.runTests(api, [{public_id: fakeId, executionRule: ExecutionRule.NON_BLOCKING}])
       ).rejects.toThrow()
-      expect(
-        await utils.runTests(api, [{public_id: fakeId, executionRule: ExecutionRule.NON_BLOCKING}], false, mockReporter)
-      ).toEqual({
+      expect(await utils.runTests(api, [{public_id: fakeId, executionRule: ExecutionRule.NON_BLOCKING}])).toEqual({
         locations: [],
         results: [],
         triggered_check_ids: [],

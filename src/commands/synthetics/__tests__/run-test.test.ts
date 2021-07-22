@@ -335,7 +335,7 @@ describe('run-test', () => {
       command.context = process
       command['config'].global = {startUrl}
 
-      expect(await command['getTestsList'].bind(command)(fakeApi, true)).toEqual([
+      expect(await command['getTestsList'].bind(command)(fakeApi)).toEqual([
         {
           config: {startUrl},
           id: 'abc-def-ghi',
@@ -376,30 +376,6 @@ describe('run-test', () => {
       expect(getSuitesMock).toHaveBeenCalledTimes(2)
       expect(getSuitesMock).toHaveBeenCalledWith('new glob', command['reporter'])
       expect(getSuitesMock).toHaveBeenCalledWith('another one', command['reporter'])
-    })
-
-    test('searchTests throws', async () => {
-      const command = new RunTestCommand()
-      command.context = process
-      command['config'].global = {startUrl}
-      command['reporter'] = mockReporter
-      command['testSearchQuery'] = 'fake search'
-
-      const axiosMock = jest.spyOn(axios, 'create')
-      const serverError = new Error('Server Error') as AxiosError
-      serverError.response = {status: 502} as AxiosResponse
-      axiosMock.mockImplementation((() => async (r: AxiosRequestConfig) => {
-        throw serverError
-      }) as any)
-
-      const fakeApiSearchTests: any = {
-        searchTests: jest.fn(() => {
-          throw serverError
-        }),
-      }
-
-      await expect(command['getTestsList'].bind(command)(fakeApiSearchTests, true)).rejects.toThrow()
-      expect(await command['getTestsList'].bind(command)(fakeApiSearchTests, false)).toEqual([])
     })
   })
 
@@ -460,6 +436,7 @@ describe('run-test', () => {
 
     test('override from config file', async () => {
       const overrideConfigFile = {
+        allowOnUnexpectedResults: true,
         apiKey: 'fake_api_key',
         appKey: 'fake_app_key',
         configPath: 'fake-datadog-ci.json',
@@ -482,6 +459,7 @@ describe('run-test', () => {
 
     test('override from CLI', async () => {
       const overrideCLI = {
+        allowOnUnexpectedResults: true,
         apiKey: 'fake_api_key',
         appKey: 'fake_app_key',
         configPath: 'fake-datadog-ci.json',
@@ -494,6 +472,7 @@ describe('run-test', () => {
       }
 
       const command = new RunTestCommand()
+      command['allowOnUnexpectedResults'] = overrideCLI.allowOnUnexpectedResults
       command['apiKey'] = overrideCLI.apiKey
       command['appKey'] = overrideCLI.appKey
       command['configPath'] = overrideCLI.configPath
@@ -507,6 +486,7 @@ describe('run-test', () => {
       await command['resolveConfig']()
       expect(command['config']).toEqual({
         ...DEFAULT_COMMAND_CONFIG,
+        allowOnUnexpectedResults: true,
         apiKey: 'fake_api_key',
         appKey: 'fake_app_key',
         configPath: 'fake-datadog-ci.json',
