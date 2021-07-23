@@ -238,8 +238,7 @@ export const waitForResults = async (
     try {
       polledResults = (await api.pollResults(triggerResultsSucceed.map((tr) => tr.result_id))).results
     } catch (error) {
-      console.log()
-      if (is5xxError(error) && !allowOnUnexpectedResults) {
+      if (is5xxError(error) && allowOnUnexpectedResults) {
         polledResults = []
         for (const triggerResult of triggerResultsSucceed) {
           triggerResult.result = createFailingResult(

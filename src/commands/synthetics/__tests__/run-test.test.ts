@@ -16,7 +16,7 @@ describe('run-test', () => {
     process.env = {}
   })
 
-  describe('execute', () => {
+  describe('execute 1', () => {
     beforeEach(() => {
       jest.restoreAllMocks()
     })
@@ -86,7 +86,7 @@ describe('run-test', () => {
         ]),
         expect.anything()
       )
-      expect(runTestsMock).toHaveBeenCalledWith(apiHelper, [], true, expect.anything())
+      expect(runTestsMock).toHaveBeenCalledWith(apiHelper, [])
       expect(write).toHaveBeenCalledWith('No test to run.\n')
       expect(waitForResultSpy).not.toHaveBeenCalled()
     })
@@ -209,7 +209,14 @@ describe('run-test', () => {
       )
 
       const serverError = new Error('Server Error') as AxiosError
-      serverError.response = {status: 502} as AxiosResponse
+      Object.assign(serverError, {
+        response: {
+          status: 502,
+          data: {errors: []},
+        },
+        config: {baseURL: 'baseURL', url: 'url'},
+      })
+
       const apiHelper = {
         pollResults: jest.fn(() => {
           throw serverError

@@ -85,7 +85,13 @@ describe('utils', () => {
 
     test('triggerTests throws', async () => {
       const serverError = new Error('Server Error') as AxiosError
-      serverError.response = {status: 502, data: {errors: []}, config: {baseURL: 'baseURL', url: 'url'}} as AxiosResponse
+      Object.assign(serverError, {
+        response: {
+          status: 502,
+          data: {errors: []},
+        },
+        config: {baseURL: 'baseURL', url: 'url'},
+      })
 
       const requestMock = jest.fn()
       requestMock.mockImplementation(() => {
@@ -95,12 +101,7 @@ describe('utils', () => {
 
       await expect(
         utils.runTests(api, [{public_id: fakeId, executionRule: ExecutionRule.NON_BLOCKING}])
-      ).rejects.toThrow()
-      expect(await utils.runTests(api, [{public_id: fakeId, executionRule: ExecutionRule.NON_BLOCKING}])).toEqual({
-        locations: [],
-        results: [],
-        triggered_check_ids: [],
-      })
+      ).rejects.toThrow(/Failed to trigger tests:/)
     })
   })
 
@@ -569,8 +570,8 @@ describe('utils', () => {
         ],
       }
 
-      expect(await utils.waitForResults(api, [triggerResult], 2000, [], mockTunnel)).toEqual(expectedResults)
-      await expect(utils.waitForResults(api, [triggerResult], 2000, [], mockTunnel, true)).rejects.toThrow()
+      expect(await utils.waitForResults(api, [triggerResult], 2000, [], mockTunnel, true)).toEqual(expectedResults)
+      await expect(utils.waitForResults(api, [triggerResult], 2000, [], mockTunnel, false)).rejects.toThrow()
     })
   })
 
