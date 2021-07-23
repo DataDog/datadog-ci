@@ -329,8 +329,10 @@ describe('utils', () => {
         passed: true,
         stepDetails: [],
       }
+      expect(utils.hasResultPassed(result, false)).toBeTruthy()
       expect(utils.hasResultPassed(result, true)).toBeTruthy()
       result.passed = false
+      expect(utils.hasResultPassed(result, false)).toBeFalsy()
       expect(utils.hasResultPassed(result, true)).toBeFalsy()
     })
 
@@ -342,7 +344,21 @@ describe('utils', () => {
         passed: false,
         stepDetails: [],
       }
+      expect(utils.hasResultPassed(result, false)).toBeFalsy()
       expect(utils.hasResultPassed(result, true)).toBeFalsy()
+    })
+
+    test('result with unhealthy result', () => {
+      const result: Result = {
+        device: {id: 'laptop_large'},
+        errorCode: 'ERRABORTED',
+        eventType: 'finished',
+        passed: false,
+        stepDetails: [],
+        unhealthy: true,
+      }
+      expect(utils.hasResultPassed(result, false)).toBeFalsy()
+      expect(utils.hasResultPassed(result, true)).toBeTruthy()
     })
   })
 
@@ -376,8 +392,8 @@ describe('utils', () => {
     }
 
     expect(utils.hasTestSucceeded([passingPollResult, failingPollResult], false)).toBeFalsy()
-    expect(utils.hasTestSucceeded([passingPollResult, unhealthyPollResult], true)).toBeFalsy()
-    expect(utils.hasTestSucceeded([passingPollResult, unhealthyPollResult], false)).toBeTruthy()
+    expect(utils.hasTestSucceeded([passingPollResult, unhealthyPollResult], true)).toBeTruthy()
+    expect(utils.hasTestSucceeded([passingPollResult, unhealthyPollResult], false)).toBeFalsy()
     expect(utils.hasTestSucceeded([passingPollResult, passingPollResult], false)).toBeTruthy()
   })
 

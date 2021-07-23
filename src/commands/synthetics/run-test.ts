@@ -233,13 +233,7 @@ export class RunTestCommand extends Command {
         }
       }
 
-      this.reporter.testEnd(
-        test,
-        testResults,
-        this.getAppBaseURL(),
-        locationNames,
-        this.config.allowNetworkIssue
-      )
+      this.reporter.testEnd(test, testResults, this.getAppBaseURL(), locationNames, this.config.allowNetworkIssue)
     }
 
     this.reporter.runEnd(summary)

@@ -453,6 +453,7 @@ describe('run-test', () => {
     test('override from config file', async () => {
       const overrideConfigFile = {
         allowNetworkIssue: true,
+        allowOnUnexpectedResults: true,
         apiKey: 'fake_api_key',
         appKey: 'fake_app_key',
         configPath: 'fake-datadog-ci.json',
@@ -476,6 +477,7 @@ describe('run-test', () => {
     test('override from CLI', async () => {
       const overrideCLI = {
         allowNetworkIssue: true,
+        allowOnUnexpectedResults: true,
         apiKey: 'fake_api_key',
         appKey: 'fake_app_key',
         configPath: 'fake-datadog-ci.json',
@@ -489,6 +491,7 @@ describe('run-test', () => {
 
       const command = new RunTestCommand()
       command['allowNetworkIssue'] = overrideCLI.allowNetworkIssue
+      command['allowOnUnexpectedResults'] = overrideCLI.allowOnUnexpectedResults
       command['apiKey'] = overrideCLI.apiKey
       command['appKey'] = overrideCLI.appKey
       command['configPath'] = overrideCLI.configPath
@@ -503,6 +506,7 @@ describe('run-test', () => {
       expect(command['config']).toEqual({
         ...DEFAULT_COMMAND_CONFIG,
         allowNetworkIssue: true,
+        allowOnUnexpectedResults: true,
         apiKey: 'fake_api_key',
         appKey: 'fake_app_key',
         configPath: 'fake-datadog-ci.json',

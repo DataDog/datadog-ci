@@ -138,7 +138,7 @@ export const getStrictestExecutionRule = (configRule: ExecutionRule, testRule?: 
 }
 
 export const hasResultPassed = (result: Result, allowOnUnexpectedResults: boolean): boolean => {
-  if (result.unhealthy && !allowOnUnexpectedResults) {
+  if (result.unhealthy && allowOnUnexpectedResults) {
     return true
   }
 
