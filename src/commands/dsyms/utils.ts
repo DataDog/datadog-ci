@@ -37,7 +37,7 @@ export const getSearchPaths = async (baseSearchPath: string): Promise<string[]> 
   const searchPaths = (await Promise.all(
     zipFiles
       .map(async (zipFile: string) => {
-        const unzipPath = buildPath(unzipFolder, path.basename(zipFile, '.zip'))
+        const unzipPath = buildPath(unzipFolder, path.basename(zipFile, '.zip'), Date.now().toString())
         try {
           await unzip(zipFile, unzipPath)
 

@@ -43,7 +43,8 @@ With bitcode enabled, you should download your app's dSYM files from [App Store 
 They come in the form of a zip file, named `appDsyms.zip`. In that case, you can run `datadog-ci` by pointing to the zip file.
 
 ```bash
-datadog-ci dsyms upload ~/Downloads/appDsyms.zip
+// if appDsyms.zip path: ~/Downloads/appDsyms.zip
+datadog-ci dsyms upload ~/Downloads/
 ```
 ### End-to-end testing process
 
@@ -52,20 +53,23 @@ To verify this command works as expected, you can trigger a test run and verify 
 ```bash
 export DATADOG_API_KEY='<API key>'
 
-TEMP_DIR=$(mktemp -d)
-echo '{}' > $TEMP_DIR/fake.js
-echo '{"version":3,"file":"out.js","sourceRoot":"","sources":["fake.js"],"names":["src"],"mappings":"AAgBC"}' > $TEMP_DIR/fake.js.map
-yarn launch sourcemaps upload $TEMP_DIR/ --service test_datadog-ci --release-version 0.0.1 --minified-path-prefix https//fake.website
-rm -rf $TEMP_DIR
+// at this point, build any project in Xcode so that it produces dSYM files in Derived Data path
+// assuming your Derived Data path is ~/Library/Developer/Xcode/DerivedData/
+
+yarn launch dsyms upload ~/Library/Developer/Xcode/DerivedData/
 ```
 
 Successful output should look like this:
 
 ```bash
-Starting upload with concurrency 20.
-Will look for sourcemaps in /var/folders/s_/ds1hc9g54k7ct8x7p3kwsq1h0000gn/T/tmp.fqWhNgGdn6/
-Will match JS files for errors on files starting with https//fake.website
-version: 0.0.1 service: test_datadog-ci project path:
-Uploading sourcemap /var/folders/s_/ds1hc9g54k7ct8x7p3kwsq1h0000gn/T/tmp.fqWhNgGdn6/fake.js.map for JS file available at https//fake.website/fake.js
-✅ Uploaded 1 files in 0.68 seconds.
+Starting upload with concurrency 20. 
+Will look for dSYMs in /Users/mert.buran/Library/Developer/Xcode/DerivedData
+Uploading dSYM with 00000-11111-00000-11111 from /path/to/dsym/file1.dSYM
+Uploading dSYM with 00000-22222-00000-22222 from /path/to/dsym/file2.dSYM
+Uploading dSYM with 00000-33333-00000-33333 from /path/to/dsym/file3.dSYM
+...
+
+Command summary:
+✅ Uploaded 5 dSYMs in 8.281 seconds.
+✨  Done in 10.71s.
 ```

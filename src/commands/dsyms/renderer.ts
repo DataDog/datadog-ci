@@ -10,16 +10,7 @@ const ICONS = {
   WARNING: chalk.bold.green('⚠️'),
 }
 
-export const renderGitWarning = (errorMessage: string) =>
-  chalk.yellow(`${ICONS.WARNING} An error occured while invoking git: ${errorMessage}
-Make sure the command is running within your git repository to fully leverage Datadog's git integration.
-To ignore this warning use the --disable-git flag.\n`)
-
 export const renderConfigurationError = (error: Error) => chalk.red(`${ICONS.FAILED} Configuration error: ${error}.\n`)
-
-export const renderInvalidPrefix = chalk.red(
-  `${ICONS.FAILED} --minified-path-prefix should either be an URL (such as "http://example.com/static") or an absolute path starting with a / such as "/static"\n`
-)
 
 export const renderFailedUpload = (payload: Payload, errorMessage: string) => {
   const dSYMPathBold = `[${chalk.bold.dim(payload.path)}]`
@@ -91,15 +82,7 @@ export const renderSuccessfulCommand = (statuses: UploadStatus[], duration: numb
   return output.join('\n') + '\n'
 }
 
-export const renderCommandInfo = (
-  basePath: string,
-  minifiedPathPrefix: string,
-  projectPath: string,
-  releaseVersion: string,
-  service: string,
-  poolLimit: number,
-  dryRun: boolean
-) => {
+export const renderCommandInfo = (basePath: string, poolLimit: number, dryRun: boolean) => {
   let fullStr = ''
   if (dryRun) {
     fullStr += chalk.yellow(`${ICONS.WARNING} DRY-RUN MODE ENABLED. WILL NOT UPLOAD DSYMS\n`)
@@ -108,14 +91,6 @@ export const renderCommandInfo = (
   fullStr += startStr
   const basePathStr = chalk.green(`Will look for dSYMs in ${basePath}\n`)
   fullStr += basePathStr
-  const minifiedPathPrefixStr = chalk.green(
-    `Will match JS files for errors on files starting with ${minifiedPathPrefix}\n`
-  )
-  fullStr += minifiedPathPrefixStr
-  const serviceVersionProjectPathStr = chalk.green(
-    `version: ${releaseVersion} service: ${service} project path: ${projectPath}\n`
-  )
-  fullStr += serviceVersionProjectPathStr
 
   return fullStr
 }

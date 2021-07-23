@@ -5,13 +5,14 @@ import {BufferedMetricsLogger} from 'datadog-metrics'
 import path from 'path'
 import asyncPool from 'tiny-async-pool'
 
+import {ApiKeyValidator} from '../../helpers/apikey'
 import {UploadStatus} from '../../helpers/interfaces'
 import {apiConstructor} from './api'
-import {ApiKeyValidator} from './apikey'
 import {InvalidConfigurationError} from './errors'
 import {APIHelper, Payload} from './interfaces'
 import {getMetricsLogger} from './metrics'
 import {
+  renderCommandInfo,
   renderConfigurationError,
   renderDryRunUpload,
   renderFailedUpload,
@@ -24,19 +25,16 @@ const errorCodesNoRetry = [400, 403, 413]
 
 export class UploadCommand extends Command {
   public static usage = Command.Usage({
-    description: 'Upload javascript sourcemaps to Datadog.',
+    description: 'Upload dSYM files to Datadog.',
     details: `
-            This command will upload all javascript sourcemaps and their corresponding javascript file to Datadog in order to un-minify front-end stack traces received by Datadog.
+            This command will upload all dSYM files to Datadog in order to symbolicate crash reports received by Datadog.
             See README for details.
         `,
     examples: [
+      ['Upload all dSYM files in current directory', 'datadog-ci dsyms upload .'],
       [
-        'Upload all sourcemaps in current directory',
-        'datadog-ci sourcemaps upload . --service my-service --minified-path-prefix https://static.datadog.com --release-version 1.234',
-      ],
-      [
-        'Upload all sourcemaps in /home/users/ci with 50 concurrent uploads',
-        'datadog-ci sourcemaps upload . --service my-service --minified-path-prefix https://static.datadog.com --release-version 1.234 --concurency 50',
+        'Upload all dSYM files in a zip file (this is usually the case if your app has Bitcode enabled)',
+        'datadog-ci dsyms upload /path/to/folder/with/zip/file',
       ],
     ],
   })
@@ -60,6 +58,8 @@ export class UploadCommand extends Command {
     const cliVersion = require('../../../package.json').version
     const metricsLogger = getMetricsLogger(cliVersion)
     const api = this.getApiHelper()
+
+    this.context.stdout.write(renderCommandInfo(this.basePath!, this.maxConcurrency, this.dryRun))
 
     const initialTime = Date.now()
 
