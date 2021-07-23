@@ -16,7 +16,7 @@ describe('run-test', () => {
     process.env = {}
   })
 
-  describe('execute 1', () => {
+  describe('execute', () => {
     beforeEach(() => {
       jest.restoreAllMocks()
     })
@@ -111,6 +111,9 @@ describe('run-test', () => {
       command['testSearchQuery'] = 'a-search-query'
 
       expect(await command.execute()).toBe(1)
+
+      command['allowOnUnexpectedResults'] = true
+      expect(await command.execute()).toBe(0)
     })
 
     test('getTestsToTrigger throws', async () => {
@@ -133,6 +136,9 @@ describe('run-test', () => {
       command['publicIds'] = ['public-id-1']
 
       expect(await command.execute()).toBe(1)
+
+      command['allowOnUnexpectedResults'] = true
+      expect(await command.execute()).toBe(0)
     })
 
     test('getPresignedURL throws', async () => {
@@ -146,7 +152,8 @@ describe('run-test', () => {
       )
 
       const serverError = new Error('Server Error') as AxiosError
-      serverError.response = {status: 502} as AxiosResponse
+      serverError.response = {data: {errors: ['Bad Gateway']}, status: 502} as AxiosResponse
+      serverError.config = {baseURL: 'baseURL', url: 'url'}
       const apiHelper = {
         getPresignedURL: jest.fn(() => {
           throw serverError
@@ -161,6 +168,9 @@ describe('run-test', () => {
       command['publicIds'] = ['public-id-1', 'public-id-2']
 
       expect(await command.execute()).toBe(1)
+
+      command['allowOnUnexpectedResults'] = true
+      expect(await command.execute()).toBe(0)
     })
 
     test('runTests throws', async () => {
@@ -174,7 +184,8 @@ describe('run-test', () => {
       )
 
       const serverError = new Error('Server Error') as AxiosError
-      serverError.response = {status: 502} as AxiosResponse
+      serverError.response = {data: {errors: ['Bad Gateway']}, status: 502} as AxiosResponse
+      serverError.config = {baseURL: 'baseURL', url: 'url'}
       const apiHelper = {
         triggerTests: jest.fn(() => {
           throw serverError
@@ -188,6 +199,9 @@ describe('run-test', () => {
       command['publicIds'] = ['public-id-1', 'public-id-2']
 
       expect(await command.execute()).toBe(1)
+
+      command['allowOnUnexpectedResults'] = true
+      expect(await command.execute()).toBe(0)
     })
 
     test('waitForResults throws', async () => {
@@ -203,19 +217,14 @@ describe('run-test', () => {
       jest.spyOn(utils, 'runTests').mockReturnValue(
         Promise.resolve({
           locations: [],
-          results: [{public_id: 'publicId'} as any],
+          results: [{options: {ci: {executionRule: ExecutionRule.BLOCKING}}, public_id: 'test'} as any],
           triggered_check_ids: [],
         })
       )
 
       const serverError = new Error('Server Error') as AxiosError
-      Object.assign(serverError, {
-        config: {baseURL: 'baseURL', url: 'url'},
-        response: {
-          data: {errors: []},
-          status: 502,
-        },
-      })
+      serverError.response = {data: {errors: ['Bad Gateway']}, status: 502} as AxiosResponse
+      serverError.config = {baseURL: 'baseURL', url: 'url'}
 
       const apiHelper = {
         pollResults: jest.fn(() => {
