@@ -1,6 +1,6 @@
 // tslint:disable: no-string-literal
 
-import {AxiosError, AxiosRequestConfig, AxiosResponse, default as axios} from 'axios'
+import {AxiosError, AxiosResponse} from 'axios'
 import * as ciUtils from '../../../helpers/utils'
 
 import {ExecutionRule} from '../interfaces'
@@ -210,11 +210,11 @@ describe('run-test', () => {
 
       const serverError = new Error('Server Error') as AxiosError
       Object.assign(serverError, {
-        response: {
-          status: 502,
-          data: {errors: []},
-        },
         config: {baseURL: 'baseURL', url: 'url'},
+        response: {
+          data: {errors: []},
+          status: 502,
+        },
       })
 
       const apiHelper = {

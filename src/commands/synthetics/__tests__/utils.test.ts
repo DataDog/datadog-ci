@@ -86,11 +86,11 @@ describe('utils', () => {
     test('triggerTests throws', async () => {
       const serverError = new Error('Server Error') as AxiosError
       Object.assign(serverError, {
-        response: {
-          status: 502,
-          data: {errors: []},
-        },
         config: {baseURL: 'baseURL', url: 'url'},
+        response: {
+          data: {errors: []},
+          status: 502,
+        },
       })
 
       const requestMock = jest.fn()
