@@ -51,3 +51,9 @@ export type SpanTag =
   | typeof GIT_COMMIT_MESSAGE
 
 export type SpanTags = Partial<Record<SpanTag, string>>
+
+export enum UploadStatus {
+  Success,
+  Failure,
+  Skipped,
+}

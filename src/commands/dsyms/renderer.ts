@@ -1,6 +1,7 @@
 import chalk from 'chalk'
 
-import {Payload, UploadStatus} from './interfaces'
+import {UploadStatus} from '../../helpers/interfaces'
+import {Payload} from './interfaces'
 import {pluralize} from './utils'
 
 const ICONS = {

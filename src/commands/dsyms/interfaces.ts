@@ -10,9 +10,3 @@ export interface Payload {
 export interface APIHelper {
   uploadDSYM(dSYM: Payload, write: Writable['write']): AxiosPromise<AxiosResponse>
 }
-
-export enum UploadStatus {
-  Success,
-  Failure,
-  Skipped,
-}

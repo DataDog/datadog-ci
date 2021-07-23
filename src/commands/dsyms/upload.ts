@@ -2,14 +2,14 @@ import retry from 'async-retry'
 import chalk from 'chalk'
 import {Command} from 'clipanion'
 import {BufferedMetricsLogger} from 'datadog-metrics'
-import glob from 'glob'
 import path from 'path'
 import asyncPool from 'tiny-async-pool'
 
+import {UploadStatus} from '../../helpers/interfaces'
 import {apiConstructor} from './api'
 import {ApiKeyValidator} from './apikey'
 import {InvalidConfigurationError} from './errors'
-import {APIHelper, Payload, UploadStatus} from './interfaces'
+import {APIHelper, Payload} from './interfaces'
 import {getMetricsLogger} from './metrics'
 import {
   renderConfigurationError,
@@ -18,10 +18,7 @@ import {
   renderRetriedUpload,
   renderSuccessfulCommand,
 } from './renderer'
-import {dwarfdumpUUID, getBaseIntakeUrl, unzip} from './utils'
-import {checkNonEmptyFile} from './validation'
-
-import {buildPath} from '../../helpers/utils'
+import {getBaseIntakeUrl, getPayloads, getSearchPaths} from './utils'
 
 const errorCodesNoRetry = [400, 403, 413]
 
@@ -66,19 +63,8 @@ export class UploadCommand extends Command {
 
     const initialTime = Date.now()
 
-    let targetFolderPath = this.basePath
-    const appDsymsFilePath = buildPath(this.basePath, 'appDsyms.zip')
-    if (checkNonEmptyFile(appDsymsFilePath)) {
-      const unzippedPath = buildPath('/tmp', 'datadog-ci', 'dsyms', Date.now().toString())
-      try {
-        await unzip(appDsymsFilePath, unzippedPath)
-      } catch (err) {
-        console.log(err)
-      }
-      targetFolderPath = unzippedPath
-    }
-
-    const payloads = await this.getMatchingDSYMFiles(cliVersion, targetFolderPath)
+    const searchPaths = await getSearchPaths(this.basePath)
+    const payloads = await getPayloads(searchPaths)
     const upload = (p: Payload) => this.uploadDSYM(api, metricsLogger.logger, p)
     try {
       const results = await asyncPool(this.maxConcurrency, payloads, upload)
@@ -110,24 +96,6 @@ export class UploadCommand extends Command {
     }
 
     return apiConstructor(getBaseIntakeUrl(), this.config.apiKey!)
-  }
-
-  // Looks for the sourcemaps and minified files on disk and returns
-  // the associated payloads.
-  private getMatchingDSYMFiles = async (cliVersion: string, absoluteFolderPath: string): Promise<Payload[]> => {
-    const dSYMFiles = glob.sync(buildPath(absoluteFolderPath, '**/*.dSYM'))
-
-    return Promise.all(
-      dSYMFiles.map(async (dSYMPath) => {
-        const uuids = await dwarfdumpUUID(dSYMPath)
-
-        return {
-          path: dSYMPath,
-          type: 'ios_symbols',
-          uuids,
-        }
-      })
-    )
   }
 
   private async uploadDSYM(api: APIHelper, metricsLogger: BufferedMetricsLogger, dSYM: Payload): Promise<UploadStatus> {
