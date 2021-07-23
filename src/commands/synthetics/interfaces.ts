@@ -22,7 +22,7 @@ export interface MainReporter {
     results: PollResult[],
     baseUrl: string,
     locationNames: LocationsMapping,
-    allowOnUnexpectedResults: boolean
+    allowNetworkIssue: boolean
   ): void
   testTrigger(test: Test, testId: string, executionRule: ExecutionRule, config: ConfigOverride): void
   testWait(test: Test): void
@@ -275,6 +275,7 @@ export interface APIConfiguration {
 }
 
 export interface CommandConfig {
+  allowNetworkIssue: boolean
   allowOnUnexpectedResults: boolean
   apiKey: string
   appKey: string

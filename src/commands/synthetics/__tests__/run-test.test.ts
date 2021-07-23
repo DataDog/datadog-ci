@@ -112,7 +112,7 @@ describe('run-test', () => {
 
       expect(await command.execute()).toBe(1)
 
-      command['allowOnUnexpectedResults'] = true
+      command['allowNetworkIssue'] = true
       expect(await command.execute()).toBe(0)
     })
 
@@ -137,7 +137,7 @@ describe('run-test', () => {
 
       expect(await command.execute()).toBe(1)
 
-      command['allowOnUnexpectedResults'] = true
+      command['allowNetworkIssue'] = true
       expect(await command.execute()).toBe(0)
     })
 
@@ -169,7 +169,7 @@ describe('run-test', () => {
 
       expect(await command.execute()).toBe(1)
 
-      command['allowOnUnexpectedResults'] = true
+      command['allowNetworkIssue'] = true
       expect(await command.execute()).toBe(0)
     })
 
@@ -200,7 +200,7 @@ describe('run-test', () => {
 
       expect(await command.execute()).toBe(1)
 
-      command['allowOnUnexpectedResults'] = true
+      command['allowNetworkIssue'] = true
       expect(await command.execute()).toBe(0)
     })
 
@@ -452,7 +452,7 @@ describe('run-test', () => {
 
     test('override from config file', async () => {
       const overrideConfigFile = {
-        allowOnUnexpectedResults: true,
+        allowNetworkIssue: true,
         apiKey: 'fake_api_key',
         appKey: 'fake_app_key',
         configPath: 'fake-datadog-ci.json',
@@ -475,7 +475,7 @@ describe('run-test', () => {
 
     test('override from CLI', async () => {
       const overrideCLI = {
-        allowOnUnexpectedResults: true,
+        allowNetworkIssue: true,
         apiKey: 'fake_api_key',
         appKey: 'fake_app_key',
         configPath: 'fake-datadog-ci.json',
@@ -488,7 +488,7 @@ describe('run-test', () => {
       }
 
       const command = new RunTestCommand()
-      command['allowOnUnexpectedResults'] = overrideCLI.allowOnUnexpectedResults
+      command['allowNetworkIssue'] = overrideCLI.allowNetworkIssue
       command['apiKey'] = overrideCLI.apiKey
       command['appKey'] = overrideCLI.appKey
       command['configPath'] = overrideCLI.configPath
@@ -502,7 +502,7 @@ describe('run-test', () => {
       await command['resolveConfig']()
       expect(command['config']).toEqual({
         ...DEFAULT_COMMAND_CONFIG,
-        allowOnUnexpectedResults: true,
+        allowNetworkIssue: true,
         apiKey: 'fake_api_key',
         appKey: 'fake_app_key',
         configPath: 'fake-datadog-ci.json',

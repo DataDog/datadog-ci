@@ -186,7 +186,7 @@ export const waitForResults = async (
   defaultTimeout: number,
   triggerConfigs: TriggerConfig[],
   tunnel?: Tunnel,
-  allowOnUnexpectedResults?: boolean
+  allowNetworkIssue?: boolean
 ) => {
   const triggerResultMap = createTriggerResultMap(triggerResponses, defaultTimeout, triggerConfigs)
   const triggerResults = [...triggerResultMap.values()]
@@ -238,7 +238,7 @@ export const waitForResults = async (
     try {
       polledResults = (await api.pollResults(triggerResultsSucceed.map((tr) => tr.result_id))).results
     } catch (error) {
-      if (is5xxError(error) && allowOnUnexpectedResults) {
+      if (is5xxError(error) && allowNetworkIssue) {
         polledResults = []
         for (const triggerResult of triggerResultsSucceed) {
           triggerResult.result = createFailingResult(
@@ -355,10 +355,10 @@ export const getReporter = (reporters: Reporter[]): MainReporter => ({
       }
     }
   },
-  testEnd: (test, results, baseUrl, locationNames, allowOnUnexpectedResults) => {
+  testEnd: (test, results, baseUrl, locationNames, allowNetworkIssue) => {
     for (const reporter of reporters) {
       if (typeof reporter.testEnd === 'function') {
-        reporter.testEnd(test, results, baseUrl, locationNames, allowOnUnexpectedResults)
+        reporter.testEnd(test, results, baseUrl, locationNames, allowNetworkIssue)
       }
     }
   },

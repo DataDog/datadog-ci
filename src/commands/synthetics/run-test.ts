@@ -22,6 +22,7 @@ import {Tunnel} from './tunnel'
 import {getReporter, getSuites, getTestsToTrigger, hasTestSucceeded, runTests, waitForResults} from './utils'
 
 export const DEFAULT_COMMAND_CONFIG: CommandConfig = {
+  allowNetworkIssue: false,
   allowOnUnexpectedResults: false,
   apiKey: '',
   appKey: '',
@@ -37,6 +38,7 @@ export const DEFAULT_COMMAND_CONFIG: CommandConfig = {
 }
 
 export class RunTestCommand extends Command {
+  private allowNetworkIssue?: boolean
   private allowOnUnexpectedResults?: boolean
   private apiKey?: string
   private appKey?: string
@@ -75,7 +77,7 @@ export class RunTestCommand extends Command {
         testsToTrigger = await this.getTestsList(api)
       } catch (error) {
         this.reporter.error(`\n${chalk.bgRed.bold(' Failed to get tests list ')}\n${error.message}\n\n`)
-        if (is5xxError(error) && this.config.allowOnUnexpectedResults) {
+        if (is5xxError(error) && this.config.allowNetworkIssue) {
           this.reporter.error(`\n${chalk.bgRed.bold('TODO  getTestsList')}\n`)
 
           return safeExit(0)
@@ -102,7 +104,7 @@ export class RunTestCommand extends Command {
     try {
       testsToTriggerResult = await getTestsToTrigger(api, testsToTrigger, this.reporter)
     } catch (error) {
-      if (is5xxError(error) && this.config.allowOnUnexpectedResults) {
+      if (is5xxError(error) && this.config.allowNetworkIssue) {
         this.reporter.error(`\n${chalk.bgRed.bold('TODO  get tests endpoint')}\n`)
 
         return safeExit(0)
@@ -126,7 +128,7 @@ export class RunTestCommand extends Command {
         // Get the pre-signed URL to connect to the tunnel service
         presignedURL = (await api.getPresignedURL(publicIdsToTrigger)).url
       } catch (e) {
-        if (is5xxError(e) && this.config.allowOnUnexpectedResults) {
+        if (is5xxError(e) && this.config.allowNetworkIssue) {
           this.reporter.error(`\n${chalk.bgRed.bold('TODO tunnel URL')}\n`)
 
           return safeExit(0)
@@ -144,7 +146,7 @@ export class RunTestCommand extends Command {
           testToTrigger.tunnel = tunnelInfo
         })
       } catch (e) {
-        if (is5xxError(e) && this.config.allowOnUnexpectedResults) {
+        if (is5xxError(e) && this.config.allowNetworkIssue) {
           this.reporter.error(`\n${chalk.bgRed.bold('TODO tunnel start')}\n`)
 
           return safeExit(0)
@@ -160,7 +162,7 @@ export class RunTestCommand extends Command {
     try {
       triggers = await runTests(api, overriddenTestsToTrigger)
     } catch (e) {
-      if (is5xxError(e) && this.config.allowOnUnexpectedResults) {
+      if (is5xxError(e) && this.config.allowNetworkIssue) {
         this.reporter.error(`\n${chalk.bgRed.bold('TODO trigger endpoint')}\n`)
 
         return safeExit(0)
@@ -191,11 +193,11 @@ export class RunTestCommand extends Command {
         this.config.pollingTimeout,
         testsToTrigger,
         tunnel,
-        this.config.allowOnUnexpectedResults
+        this.config.allowNetworkIssue
       )
       Object.assign(results, resultPolled)
     } catch (error) {
-      if (is5xxError(error) && this.config.allowOnUnexpectedResults) {
+      if (is5xxError(error) && this.config.allowNetworkIssue) {
         this.reporter.error(`\n${chalk.bgRed.bold('TODO poll endpoint')}\n`)
 
         return safeExit(0)
@@ -236,7 +238,7 @@ export class RunTestCommand extends Command {
         testResults,
         this.getAppBaseURL(),
         locationNames,
-        this.config.allowOnUnexpectedResults
+        this.config.allowNetworkIssue
       )
     }
 
@@ -335,6 +337,7 @@ export class RunTestCommand extends Command {
     this.config = deepExtend(
       this.config,
       removeUndefinedValues({
+        allowNetworkIssue: this.allowNetworkIssue,
         allowOnUnexpectedResults: this.allowOnUnexpectedResults,
         apiKey: this.apiKey,
         appKey: this.appKey,
@@ -384,6 +387,7 @@ export const removeUndefinedValues = <T extends {[key: string]: any}>(object: T)
 RunTestCommand.addPath('synthetics', 'run-tests')
 RunTestCommand.addOption('apiKey', Command.String('--apiKey'))
 RunTestCommand.addOption('appKey', Command.String('--appKey'))
+RunTestCommand.addOption('allowNetworkIssue', Command.Boolean('--allowNetworkIssue'))
 RunTestCommand.addOption('allowOnUnexpectedResults', Command.Boolean('--allowOnUnexpectedResults'))
 RunTestCommand.addOption('configPath', Command.String('--config'))
 RunTestCommand.addOption('datadogSite', Command.String('--datadogSite'))
