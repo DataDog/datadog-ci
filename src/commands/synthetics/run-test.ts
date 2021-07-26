@@ -78,7 +78,7 @@ export class RunTestCommand extends Command {
       } catch (error) {
         this.reporter.error(`\n${chalk.bgRed.bold(' Failed to get tests list ')}\n${error.message}\n\n`)
         if (is5xxError(error) && this.config.allowNetworkIssue) {
-          this.reporter.error(`\n${chalk.bgRed.bold('TODO  getTestsList')}\n`)
+          this.reporter.error(`\n${chalk.bgRed.bold(' ERROR on search test endpoint ')}\n`)
 
           return safeExit(0)
         }
@@ -105,7 +105,7 @@ export class RunTestCommand extends Command {
       testsToTriggerResult = await getTestsToTrigger(api, testsToTrigger, this.reporter)
     } catch (error) {
       if (is5xxError(error) && this.config.allowNetworkIssue) {
-        this.reporter.error(`\n${chalk.bgRed.bold('TODO  get tests endpoint')}\n`)
+        this.reporter.error(`\n${chalk.bgRed.bold(' ERROR on get tests endpoint ')}\n`)
 
         return safeExit(0)
       }
@@ -129,7 +129,7 @@ export class RunTestCommand extends Command {
         presignedURL = (await api.getPresignedURL(publicIdsToTrigger)).url
       } catch (e) {
         if (is5xxError(e) && this.config.allowNetworkIssue) {
-          this.reporter.error(`\n${chalk.bgRed.bold('TODO tunnel URL')}\n`)
+          this.reporter.error(`\n${chalk.bgRed.bold(' Failed to get tunnel URL')}\n`)
 
           return safeExit(0)
         }
@@ -147,7 +147,7 @@ export class RunTestCommand extends Command {
         })
       } catch (e) {
         if (is5xxError(e) && this.config.allowNetworkIssue) {
-          this.reporter.error(`\n${chalk.bgRed.bold('TODO tunnel start')}\n`)
+          this.reporter.error(`\n${chalk.bgRed.bold('ERROR on tunnel start')}\n`)
 
           return safeExit(0)
         }
@@ -163,7 +163,7 @@ export class RunTestCommand extends Command {
       triggers = await runTests(api, overriddenTestsToTrigger)
     } catch (e) {
       if (is5xxError(e) && this.config.allowNetworkIssue) {
-        this.reporter.error(`\n${chalk.bgRed.bold('TODO trigger endpoint')}\n`)
+        this.reporter.error(`\n${chalk.bgRed.bold('ERROR on trigger endpoint')}\n`)
 
         return safeExit(0)
       }
@@ -198,7 +198,7 @@ export class RunTestCommand extends Command {
       Object.assign(results, resultPolled)
     } catch (error) {
       if (is5xxError(error) && this.config.allowNetworkIssue) {
-        this.reporter.error(`\n${chalk.bgRed.bold('TODO poll endpoint')}\n`)
+        this.reporter.error(`\n${chalk.bgRed.bold(' ERROR on poll endpoint ')}\n`)
 
         return safeExit(0)
       }
