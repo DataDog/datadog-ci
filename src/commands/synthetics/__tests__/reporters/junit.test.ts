@@ -147,7 +147,7 @@ describe('Junit reporter', () => {
 
   describe('getStep', () => {
     it('should add stats to the testcase', () => {
-      const test = reporter['getStep'](globalStepMock)[0]
+      const test = reporter['getBrowserTestStep'](globalStepMock)[0]
       expect(test.$).toMatchObject({
         ...getDefaultStats(),
         tests: 1,
@@ -167,12 +167,12 @@ describe('Junit reporter', () => {
           ],
         },
       }
-      const tests = reporter['getStep'](stepMock)
+      const tests = reporter['getBrowserTestStep'](stepMock)
       expect(tests.length).toBe(2)
     })
 
     it('should add vitals if present', () => {
-      const test = reporter['getStep'](globalStepMock)[0]
+      const test = reporter['getBrowserTestStep'](globalStepMock)[0]
       expect(test.vitals).toEqual([{$: globalStepMock.vitalsMetrics[0]}])
     })
 
@@ -185,10 +185,10 @@ describe('Junit reporter', () => {
           warnings: [{type: 'warning', message: 'Warning'}],
         },
       }
-      const test = reporter['getStep'](stepMock)[0]
+      const test = reporter['getBrowserTestStep'](stepMock)[0]
       expect(test.error.length).toBe(1)
-      expect(test.browser_error.length).toBe(1)
-      expect(test.warning.length).toBe(1)
+      expect(test.browser_error!.length).toBe(1)
+      expect(test.warning!.length).toBe(1)
       expect(test.$).toMatchObject({
         ...getDefaultStats(),
         errors: 2,

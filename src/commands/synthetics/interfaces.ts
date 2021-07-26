@@ -2,15 +2,6 @@ import {Metadata} from '../../helpers/interfaces'
 import {ProxyConfiguration} from '../../helpers/utils'
 import {TunnelInfo} from './tunnel'
 
-interface Timings {
-  dns: number
-  download: number
-  firstByte: number
-  ssl: number
-  tcp: number
-  total: number
-}
-
 export interface MainReporter {
   error(error: string): void
   initErrors(errors: string[]): void
@@ -31,14 +22,8 @@ export interface MainReporter {
 
 export type Reporter = Partial<MainReporter>
 
-export interface Result {
-  device: {
-    height: number
-    id: string
-    width: number
-  }
-  duration?: number
-  error?: string | 'Endpoint Failure' | 'Timeout' | 'Tunnel Failure'
+export interface TestResult {
+  error?: string
   errorCode?: string
   errorMessage?: string
   eventType: string
@@ -47,12 +32,55 @@ export interface Result {
     message: string
   }
   passed: boolean
-  startUrl?: string
+}
+
+export interface BrowserTestResult extends TestResult {
+  device: {
+    height: number
+    id: string
+    width: number
+  }
+  duration: number
+  error?: string | 'Endpoint Failure' | 'Timeout' | 'Tunnel Failure'
+  startUrl: string
   stepDetails: Step[]
-  timings?: Timings
   tunnel?: boolean
   unhealthy?: boolean
 }
+
+type AssertionResult = {
+  actual: any
+  expected?: any
+  valid: boolean
+}
+
+export interface ApiTestResult extends TestResult {
+  assertionResults: AssertionResult[]
+  timings: {
+    total: number
+  }
+}
+
+export interface MultiStep {
+  allowFailure: boolean
+  assertionResults: AssertionResult[]
+  errorCode?: string
+  errorMessage?: string
+  name: string
+  passed: boolean
+  skipped: boolean
+  subtype: string
+  timings: {
+    total: number
+  }
+}
+
+export interface MultiStepsTestResult extends TestResult {
+  duration: number
+  steps: MultiStep[]
+}
+
+export type Result = BrowserTestResult | ApiTestResult | MultiStepsTestResult
 
 export interface PollResult {
   check?: Test

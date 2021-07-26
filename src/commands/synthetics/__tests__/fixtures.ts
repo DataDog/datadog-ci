@@ -1,4 +1,4 @@
-import {MainReporter, PollResult, Step, Test, User} from '../interfaces'
+import {MainReporter, PollResult, Result, Step, Test, User} from '../interfaces'
 
 const mockUser: User = {
   email: '',
@@ -75,16 +75,21 @@ export const getStep = (): Step => ({
 
 export const getResult = (): PollResult => ({
   dc_id: 1,
-  result: {
-    device: {
-      height: 1,
-      id: 'chrome',
-      width: 1,
-    },
-    eventType: 'event',
-    passed: true,
-    stepDetails: [],
-  },
+  result: getBrowserResult(),
   resultID: '123',
   timestamp: 1,
+})
+
+export const getBrowserResult = (opts: any = {}): Result => ({
+  device: {
+    height: 1,
+    id: 'chrome',
+    width: 1,
+  },
+  duration: 0,
+  eventType: 'event',
+  passed: true,
+  startUrl: '',
+  stepDetails: [],
+  ...opts,
 })

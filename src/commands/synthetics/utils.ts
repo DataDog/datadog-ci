@@ -353,15 +353,27 @@ const createFailingResult = (
   dc_id: dcId,
   result: {
     device: {height: 0, id: deviceId, width: 0},
+    duration: 0,
     error: errorMessage,
     eventType: 'finished',
     passed: false,
+    startUrl: '',
     stepDetails: [],
     tunnel,
   },
   resultID: resultId,
   timestamp: 0,
 })
+
+export const getResultDuration = (result: Result): number => {
+  if ('duration' in result) {
+    return result.duration
+  }
+  if ('timings' in result) {
+    return result.timings.total
+  }
+  return 0
+}
 
 export const getReporter = (reporters: Reporter[]): MainReporter => ({
   error: (error) => {

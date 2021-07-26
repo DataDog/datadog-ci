@@ -13,7 +13,7 @@ import {ConfigOverride, ExecutionRule, InternalTest, PollResult, Result} from '.
 import {Tunnel} from '../tunnel'
 import * as utils from '../utils'
 
-import {getApiTest, mockReporter} from './fixtures'
+import {getApiTest, getBrowserResult, mockReporter} from './fixtures'
 
 describe('utils', () => {
   const apiConfiguration = {
@@ -332,8 +332,10 @@ describe('utils', () => {
           id: 'laptop_large',
           width: 0,
         },
+        duration: 0,
         eventType: 'finished',
         passed: true,
+        startUrl: '',
         stepDetails: [],
       }
       expect(utils.hasResultPassed(result, false, true)).toBeTruthy()
@@ -346,9 +348,11 @@ describe('utils', () => {
     test('result with error', () => {
       const result: Result = {
         device: {height: 0, id: 'laptop_large', width: 0},
+        duration: 0,
         errorCode: 'ERRABORTED',
         eventType: 'finished',
         passed: false,
+        startUrl: '',
         stepDetails: [],
       }
       expect(utils.hasResultPassed(result, false, true)).toBeFalsy()
@@ -396,17 +400,7 @@ describe('utils', () => {
 
   test('hasTestSucceeded', () => {
     const testConfiguration = getApiTest('abc-def-ghi')
-    const passingResult = {
-      device: {
-        height: 0,
-        id: 'laptop_large',
-        width: 0,
-      },
-      eventType: 'finished',
-      passed: true,
-      stepDetails: [],
-      timestamp: 0,
-    }
+    const passingResult = getBrowserResult()
     const passingPollResult = {
       check: testConfiguration,
       dc_id: 42,
@@ -470,16 +464,9 @@ describe('utils', () => {
       jest.clearAllMocks()
     })
 
-    const passingResult = {
-      device: {
-        height: 0,
-        id: 'laptop_large',
-        width: 0,
-      },
-      eventType: 'finished',
-      passed: true,
-      stepDetails: [],
-    }
+    const passingResult = getBrowserResult()
+    const publicId = 'abc-def-ghi'
+    const testConfiguration = getApiTest(publicId)
 
     const getPassingPollResult = (resultId: string) => ({
       check: getTestConfig(),
@@ -535,14 +522,12 @@ describe('utils', () => {
       expectedResults[triggerResult.public_id] = [
         {
           dc_id: triggerResult.location,
-          result: {
+          result: getBrowserResult({
             device: {height: 0, id: triggerResult.device, width: 0},
             error: 'Timeout',
             eventType: 'finished',
             passed: false,
-            stepDetails: [],
-            tunnel: false,
-          },
+          }),
           resultID: triggerResult.result_id,
           timestamp: 0,
         },
@@ -556,14 +541,12 @@ describe('utils', () => {
       expectedResults[triggerResult.public_id] = [
         {
           dc_id: triggerResult.location,
-          result: {
+          result: getBrowserResult({
             device: {height: 0, id: triggerResult.device, width: 0},
             error: 'Timeout',
             eventType: 'finished',
             passed: false,
-            stepDetails: [],
-            tunnel: false,
-          },
+          }),
           resultID: triggerResult.result_id,
           timestamp: 0,
         },
@@ -594,14 +577,12 @@ describe('utils', () => {
         passingPollResult,
         {
           dc_id: triggerResultTimeOut.location,
-          result: {
+          result: getBrowserResult({
             device: {height: 0, id: triggerResultTimeOut.device, width: 0},
             error: 'Timeout',
             eventType: 'finished',
             passed: false,
-            stepDetails: [],
-            tunnel: false,
-          },
+          }),
           resultID: triggerResultTimeOut.result_id,
           timestamp: 0,
         },
