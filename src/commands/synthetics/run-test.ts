@@ -4,7 +4,19 @@ import deepExtend from 'deep-extend'
 
 import {parseConfigFile} from '../../helpers/utils'
 import {apiConstructor} from './api'
-import {APIHelper, CommandConfig, ExecutionRule, LocationsMapping, MainReporter, PollResult, Test} from './interfaces'
+import {
+  APIHelper,
+  CommandConfig,
+  ExecutionRule,
+  LocationsMapping,
+  MainReporter,
+  PollResult,
+  Summary,
+  Test,
+  TestPayload,
+  Trigger,
+  TriggerConfig,
+} from './interfaces'
 import {DefaultReporter} from './reporters/default'
 import {Tunnel} from './tunnel'
 import {getReporter, getSuites, getTestsToTrigger, hasTestSucceeded, runTests, waitForResults} from './utils'
@@ -44,24 +56,65 @@ export class RunTestCommand extends Command {
 
     const api = this.getApiHelper()
     const publicIdsFromCli = this.config.publicIds.map((id) => ({config: this.config.global, id}))
-    const testsToTrigger = publicIdsFromCli.length ? publicIdsFromCli : await this.getTestsList(api)
+    let testsToTrigger: TriggerConfig[]
+    let tunnel: Tunnel | undefined
+    const safeExit = async (exitCode: 0 | 1) => {
+      if (tunnel) {
+        await tunnel.stop()
+      }
+
+      return exitCode
+    }
+
+    if (publicIdsFromCli.length) {
+      testsToTrigger = publicIdsFromCli
+    } else {
+      try {
+        testsToTrigger = await this.getTestsList(api)
+      } catch (error) {
+        this.reporter.error(`\n${chalk.bgRed.bold(' Failed to get tests list ')}\n${error.message}\n\n`)
+
+        return safeExit(1)
+      }
+    }
 
     if (!testsToTrigger.length) {
       this.reporter.log('No test suites to run.\n')
 
-      return 0
+      return safeExit(0)
     }
 
-    const {tests, overriddenTestsToTrigger, summary} = await getTestsToTrigger(api, testsToTrigger, this.reporter)
+    let testsToTriggerResult: {
+      overriddenTestsToTrigger: TestPayload[]
+      summary: Summary
+      tests: Test[]
+    }
+
+    try {
+      testsToTriggerResult = await getTestsToTrigger(api, testsToTrigger, this.reporter)
+    } catch (error) {
+      this.reporter.error(`\n${chalk.bgRed.bold(' ERROR on get tests endpoint ')}\n${error.message}\n\n`)
+
+      return safeExit(1)
+    }
+    const {tests, overriddenTestsToTrigger, summary} = testsToTriggerResult
+
     const publicIdsToTrigger = tests.map(({public_id}) => public_id)
 
-    let tunnel: Tunnel | undefined
     if (this.config.tunnel) {
       this.reporter.log(
         'You are using tunnel option, the chosen location(s) will be overridden by a location in your account region.\n'
       )
-      // Get the pre-signed URL to connect to the tunnel service
-      const {url: presignedURL} = await api.getPresignedURL(publicIdsToTrigger)
+
+      let presignedURL: string
+      try {
+        // Get the pre-signed URL to connect to the tunnel service
+        presignedURL = (await api.getPresignedURL(publicIdsToTrigger)).url
+      } catch (e) {
+        this.reporter.error(`\n${chalk.bgRed.bold(' Failed to get tunnel URL')}\n${e.message}\n\n`)
+
+        return safeExit(1)
+      }
       // Open a tunnel to Datadog
       try {
         tunnel = new Tunnel(presignedURL, publicIdsToTrigger, this.config.proxy, this.reporter)
@@ -70,73 +123,80 @@ export class RunTestCommand extends Command {
           testToTrigger.tunnel = tunnelInfo
         })
       } catch (e) {
-        this.reporter.error(`\n${chalk.bgRed.bold(' ERROR on tunnel start ')}\n${e.stack}\n\n`)
+        this.reporter.error(`\n${chalk.bgRed.bold(' ERROR on tunnel start ')}\n${e.message}\n\n`)
 
-        return 1
+        return safeExit(1)
       }
     }
-    const triggers = await runTests(api, overriddenTestsToTrigger)
+
+    let triggers: Trigger
+    try {
+      triggers = await runTests(api, overriddenTestsToTrigger)
+    } catch (e) {
+      this.reporter.error(`\n${chalk.bgRed.bold(' ERROR on trigger endpoint ')}\n${e.message}\n\n`)
+
+      return safeExit(1)
+    }
 
     // All tests have been skipped or are missing.
     if (!tests.length) {
       this.reporter.log('No test to run.\n')
 
-      return 0
+      return safeExit(0)
     }
 
     if (!triggers.results) {
       throw new Error('No result to poll.')
     }
 
+    const results: {[key: string]: PollResult[]} = {}
     try {
       // Poll the results.
-      const results = await waitForResults(api, triggers.results, this.config.pollingTimeout, testsToTrigger, tunnel)
-
-      // Sort tests to show success first then non blocking failures and finally blocking failures.
-      tests.sort(this.sortTestsByOutcome(results))
-
-      // Rendering the results.
-      this.reporter.reportStart({startTime})
-      const locationNames = triggers.locations.reduce((mapping, location) => {
-        mapping[location.id] = location.display_name
-
-        return mapping
-      }, {} as LocationsMapping)
-
-      let hasSucceeded = true // Determine if all the tests have succeeded
-      for (const test of tests) {
-        const testResults = results[test.public_id]
-
-        const passed = hasTestSucceeded(testResults)
-        if (passed) {
-          summary.passed++
-        } else {
-          summary.failed++
-          if (test.options.ci?.executionRule !== ExecutionRule.NON_BLOCKING) {
-            hasSucceeded = false
-          }
-        }
-
-        this.reporter.testEnd(test, testResults, this.getAppBaseURL(), locationNames)
-      }
-
-      this.reporter.runEnd(summary)
-
-      if (hasSucceeded) {
-        return 0
-      } else {
-        return 1
-      }
+      const resultPolled = await waitForResults(
+        api,
+        triggers.results,
+        this.config.pollingTimeout,
+        testsToTrigger,
+        tunnel
+      )
+      Object.assign(results, resultPolled)
     } catch (error) {
-      this.reporter.error(`\n${chalk.bgRed.bold(' ERROR ')}\n${error.stack}\n\n`)
+      this.reporter.error(`\n${chalk.bgRed.bold(' ERROR on poll endpoint ')}\n${error.message}\n\n`)
 
-      return 1
-    } finally {
-      // Stop the tunnel
-      if (tunnel) {
-        await tunnel.stop()
-      }
+      return safeExit(1)
     }
+
+    // Sort tests to show success first then non blocking failures and finally blocking failures.
+    tests.sort(this.sortTestsByOutcome(results))
+
+    // Rendering the results.
+    this.reporter.reportStart({startTime})
+    const locationNames = triggers.locations.reduce((mapping, location) => {
+      mapping[location.id] = location.display_name
+
+      return mapping
+    }, {} as LocationsMapping)
+
+    let hasSucceeded = true // Determine if all the tests have succeeded
+    for (const test of tests) {
+      const testResults = results[test.public_id]
+
+      const passed = hasTestSucceeded(testResults)
+      if (passed) {
+        summary.passed++
+      } else {
+        summary.failed++
+        if (test.options.ci?.executionRule !== ExecutionRule.NON_BLOCKING) {
+          hasSucceeded = false
+        }
+      }
+
+      this.reporter.testEnd(test, testResults, this.getAppBaseURL(), locationNames)
+    }
+
+    this.reporter.runEnd(summary)
+
+    return safeExit(hasSucceeded ? 0 : 1)
   }
 
   private getApiHelper() {
