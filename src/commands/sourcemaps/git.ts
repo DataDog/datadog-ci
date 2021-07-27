@@ -35,12 +35,12 @@ export const gitRemote = async (git: simpleGit.SimpleGit): Promise<string> => {
   for (const remote of remotes) {
     // We're trying to pick the remote called with the default git name 'origin'.
     if (remote.name === 'origin') {
-      return remote.refs.push
+      return stripCredentials(remote.refs.push)
     }
   }
 
   // Falling back to picking the first remote in the list if 'origin' is not found.
-  return remotes[0].refs.push
+  return stripCredentials(remotes[0].refs.push)
 }
 
 // StripCredentials removes credentials from a remote HTTP url.
