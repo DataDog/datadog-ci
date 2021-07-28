@@ -26,6 +26,7 @@ datadog-ci junit upload --service my-service --tags key1:value1 --tags key2:valu
 - `--service` (default: `DD_SERVICE` env var) should be set as the name of the service you're uploading jUnit XML reports for.
 - `--tags` is a array of key value pairs of the shape `key:value`. This will set global tags applied to all spans.
   - The resulting dictionary will be merged with whatever is in the `DD_TAGS` environment variable. If a `key` appears both in `--tags` and `DD_TAGS`, whatever value is in `DD_TAGS` will take precedence.
+- `--env` (default: `DD_ENV` env var) is a string that represents the environment where you want your tests to appear in.
 - `--max-concurrency` (default: `20`): number of concurrent uploads to the API.
 - `--dry-run` (default: `false`): it will run the command without the final upload step. All other checks are performed.
 

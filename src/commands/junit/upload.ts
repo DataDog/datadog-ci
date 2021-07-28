@@ -55,6 +55,7 @@ export class UploadJUnitXMLCommand extends Command {
     envVarTags: process.env.DD_TAGS,
   }
   private dryRun = false
+  private env?: string
   private maxConcurrency = 20
   private service?: string
   private tags?: string[]
@@ -73,6 +74,10 @@ export class UploadJUnitXMLCommand extends Command {
       this.context.stderr.write('Missing basePath\n')
 
       return 1
+    }
+
+    if (!this.config.env) {
+      this.config.env = this.env
     }
 
     const api = this.getApiHelper()
@@ -179,6 +184,7 @@ export class UploadJUnitXMLCommand extends Command {
 }
 UploadJUnitXMLCommand.addPath('junit', 'upload')
 UploadJUnitXMLCommand.addOption('service', Command.String('--service'))
+UploadJUnitXMLCommand.addOption('env', Command.String('--env'))
 UploadJUnitXMLCommand.addOption('dryRun', Command.Boolean('--dry-run'))
 UploadJUnitXMLCommand.addOption('tags', Command.Array('--tags'))
 UploadJUnitXMLCommand.addOption('basePaths', Command.Rest({required: 1}))
