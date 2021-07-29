@@ -50,7 +50,7 @@ export class UploadJUnitXMLCommand extends Command {
 
   private basePaths?: string[]
   private config = {
-    apiKey: process.env.DATADOG_API_KEY,
+    apiKey: process.env.DATADOG_API_KEY || process.env.DD_API_KEY,
     env: process.env.DD_ENV,
     envVarTags: process.env.DD_TAGS,
   }
@@ -99,7 +99,9 @@ export class UploadJUnitXMLCommand extends Command {
 
   private getApiHelper(): APIHelper {
     if (!this.config.apiKey) {
-      this.context.stdout.write(`Missing ${chalk.red.bold('DATADOG_API_KEY')} in your environment.\n`)
+      this.context.stdout.write(
+        `Neither ${chalk.red.bold('DATADOG_API_KEY')} nor ${chalk.red.bold('DD_API_KEY')} is in your environment.\n`
+      )
       throw new Error('API key is missing')
     }
 
