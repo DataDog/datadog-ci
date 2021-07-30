@@ -34,9 +34,10 @@ import {Tunnel} from './tunnel'
 const POLLING_INTERVAL = 5000 // In ms
 const PUBLIC_ID_REGEX = /^[\d\w]{3}-[\d\w]{3}-[\d\w]{3}$/
 const SUBDOMAIN_REGEX = /(.*?)\.(?=[^\/]*\..{2,5})/
+const TEMPLATE_REGEX = /{{\s*([^{}]*?)\s*}}/g
 
 const template = (st: string, context: any): string =>
-  st.replace(/{{\s*([A-Z_]+)\s*}}/g, (match: string, p1: string) => (p1 in context ? context[p1] : match))
+  st.replace(TEMPLATE_REGEX, (match: string, p1: string) => (p1 in context ? context[p1] : match))
 
 export const handleConfig = (
   test: Test,
