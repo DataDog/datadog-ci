@@ -22,6 +22,7 @@ import {
   Suite,
   Summary,
   TemplateContext,
+  TemplateVariables,
   Test,
   TestPayload,
   Trigger,
@@ -96,6 +97,8 @@ const parseUrlVariables = (url: string, reporter: MainReporter) => {
     return context
   }
 
+  warnOnReservedEnvVarNames(context, reporter)
+
   const subdomainMatch = objUrl.hostname.match(SUBDOMAIN_REGEX)
   const domain = subdomainMatch ? objUrl.hostname.replace(`${subdomainMatch[1]}.`, '') : objUrl.hostname
 
@@ -111,6 +114,34 @@ const parseUrlVariables = (url: string, reporter: MainReporter) => {
   context.SUBDOMAIN = subdomainMatch ? subdomainMatch[1] : undefined
 
   return context
+}
+
+const warnOnReservedEnvVarNames = (context: TemplateContext, reporter: MainReporter) => {
+  const reservedVarNames: Set<keyof TemplateVariables> = new Set([
+    'DOMAIN',
+    'HASH',
+    'HOST',
+    'HOSTNAME',
+    'ORIGIN',
+    'PARAMS',
+    'PATHNAME',
+    'PORT',
+    'PROTOCOL',
+    'SUBDOMAIN',
+  ])
+
+  const usedEnvVarNames = Object.keys(context).filter((name) => (reservedVarNames as Set<string>).has(name))
+  if (usedEnvVarNames.length > 0) {
+    const names = usedEnvVarNames.join(', ')
+    const plural = usedEnvVarNames.length > 1
+    reporter.log(
+      `Detected ${names} environment variable${plural ? 's' : ''}. ${names} ${plural ? 'are' : 'is a'} Datadog ` +
+        `reserved variable${plural ? 's' : ''} used to parse your original test URL, read more about it on ` +
+        'our documentation https://docs.datadoghq.com/synthetics/ci/?tab=apitest#start-url. ' +
+        'If you want to override your startUrl parameter using environment variables, ' +
+        `use ${plural ? '' : 'a '}different namespace${plural ? 's' : ''}.\n\n`
+    )
+  }
 }
 
 export const getExecutionRule = (test: Test, configOverride?: ConfigOverride): ExecutionRule => {

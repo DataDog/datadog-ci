@@ -211,8 +211,9 @@ interface BasicAuthCredentials {
   username: string
 }
 
-export interface TemplateContext extends NodeJS.ProcessEnv {
+export interface TemplateVariables {
   DOMAIN?: string
+  HASH?: string
   HOST?: string
   HOSTNAME?: string
   ORIGIN?: string
@@ -223,6 +224,8 @@ export interface TemplateContext extends NodeJS.ProcessEnv {
   SUBDOMAIN?: string
   URL: string
 }
+
+export interface TemplateContext extends TemplateVariables, NodeJS.ProcessEnv {}
 
 export interface TriggerConfig {
   config: ConfigOverride
