@@ -2,7 +2,6 @@ import retry from 'async-retry'
 import chalk from 'chalk'
 import {Command} from 'clipanion'
 import {BufferedMetricsLogger} from 'datadog-metrics'
-import {platform} from 'os'
 import path from 'path'
 import asyncPool from 'tiny-async-pool'
 
@@ -167,9 +166,7 @@ export class UploadCommand extends Command {
   }
 }
 
-if (platform() === 'darwin') {
-  UploadCommand.addPath('dsyms', 'upload')
-  UploadCommand.addOption('basePath', Command.String({required: true}))
-  UploadCommand.addOption('maxConcurrency', Command.String('--max-concurrency'))
-  UploadCommand.addOption('dryRun', Command.Boolean('--dry-run'))
-}
+UploadCommand.addPath('dsyms', 'upload')
+UploadCommand.addOption('basePath', Command.String({required: true}))
+UploadCommand.addOption('maxConcurrency', Command.String('--max-concurrency'))
+UploadCommand.addOption('dryRun', Command.Boolean('--dry-run'))

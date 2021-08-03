@@ -40,7 +40,7 @@ export const getMatchingDSYMFiles = async (absoluteFolderPath: string): Promise<
   )
 }
 
-const dwarfdumpUUID = async (filePath: string) => {
+export const dwarfdumpUUID = async (filePath: string) => {
   const output = await execute(`dwarfdump --uuid ${filePath}`)
 
   const uuids: string[] = []
