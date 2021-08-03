@@ -2,6 +2,7 @@ import retry from 'async-retry'
 import chalk from 'chalk'
 import {Command} from 'clipanion'
 import {BufferedMetricsLogger} from 'datadog-metrics'
+import {platform} from 'os'
 import path from 'path'
 import asyncPool from 'tiny-async-pool'
 
@@ -65,7 +66,7 @@ export class UploadCommand extends Command {
     const initialTime = Date.now()
 
     let searchPath = this.basePath
-    if (isZipFile(this.basePath)) {
+    if (await isZipFile(this.basePath)) {
       searchPath = await unzipToTmpDir(this.basePath)
     }
 
@@ -166,7 +167,9 @@ export class UploadCommand extends Command {
   }
 }
 
-UploadCommand.addPath('dsyms', 'upload')
-UploadCommand.addOption('basePath', Command.String({required: true}))
-UploadCommand.addOption('maxConcurrency', Command.String('--max-concurrency'))
-UploadCommand.addOption('dryRun', Command.Boolean('--dry-run'))
+if (platform() === 'darwin') {
+  UploadCommand.addPath('dsyms', 'upload')
+  UploadCommand.addOption('basePath', Command.String({required: true}))
+  UploadCommand.addOption('maxConcurrency', Command.String('--max-concurrency'))
+  UploadCommand.addOption('dryRun', Command.Boolean('--dry-run'))
+}

@@ -2,6 +2,8 @@
 
 Upload dSYM files to Datadog to symbolicate your crash reports.
 
+**This command runs only in macOS.**
+
 ## Usage
 
 ### Setup

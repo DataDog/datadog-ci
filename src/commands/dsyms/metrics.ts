@@ -1,4 +1,5 @@
 import metrics from 'datadog-metrics'
+
 import {getBaseAPIUrl} from './utils'
 
 export interface MetricsLogger {

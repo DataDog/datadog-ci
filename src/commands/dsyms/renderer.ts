@@ -1,8 +1,9 @@
 import chalk from 'chalk'
 
-import {UploadStatus} from '../../helpers/interfaces'
 import {Payload} from './interfaces'
 import {pluralize} from './utils'
+
+import {UploadStatus} from '../../helpers/interfaces'
 
 const ICONS = {
   FAILED: chalk.bold.red('❌'),
