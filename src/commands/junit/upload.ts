@@ -1,6 +1,7 @@
 import retry from 'async-retry'
 import chalk from 'chalk'
 import {Command} from 'clipanion'
+import xmlParser from 'fast-xml-parser'
 import fs from 'fs'
 import glob from 'glob'
 import path from 'path'
@@ -12,6 +13,7 @@ import {
   renderCommandInfo,
   renderDryRunUpload,
   renderFailedUpload,
+  renderInvalidFile,
   renderRetriedUpload,
   renderSuccessfulCommand,
 } from './renderer'
@@ -23,6 +25,20 @@ import {buildPath} from '../../helpers/utils'
 
 const errorCodesNoRetry = [400, 403, 413]
 const errorCodesStopUpload = [400, 403]
+
+const validateXml = (xmlFilePath: string) => {
+  const xmlFileContentString = String(fs.readFileSync(xmlFilePath))
+  const validationOutput = xmlParser.validate(xmlFileContentString)
+  if (validationOutput !== true) {
+    return validationOutput.err.msg
+  }
+  const xmlFileJSON = xmlParser.parse(String(xmlFileContentString))
+  if (!xmlFileJSON.testsuites && !xmlFileJSON.testsuite) {
+    return 'Neither <testsuites> nor <testsuite> are the root tag.'
+  }
+
+  return undefined
+}
 
 export class UploadJUnitXMLCommand extends Command {
   public static usage = Command.Usage({
@@ -132,7 +148,18 @@ export class UploadJUnitXMLCommand extends Command {
       ...(this.config.env ? {env: this.config.env} : {}),
     }
 
-    return [...new Set(jUnitXMLFiles)].map((jUnitXMLFilePath) => ({
+    const validUniqueFiles = [...new Set(jUnitXMLFiles)].filter((jUnitXMLFilePath) => {
+      const validationErrorMessage = validateXml(jUnitXMLFilePath)
+      if (validationErrorMessage) {
+        this.context.stdout.write(renderInvalidFile(jUnitXMLFilePath, validationErrorMessage))
+
+        return false
+      }
+
+      return true
+    })
+
+    return validUniqueFiles.map((jUnitXMLFilePath) => ({
       service: this.service!,
       spanTags,
       xmlPath: jUnitXMLFilePath,

@@ -9,6 +9,12 @@ const ICONS = {
   WARNING: '⚠️',
 }
 
+export const renderInvalidFile = (xmlPath: string, errorMessage: string) => {
+  const jUnitXMLPath = `[${chalk.bold.dim(xmlPath)}]`
+
+  return chalk.red(`${ICONS.FAILED} Invalid jUnitXML file ${jUnitXMLPath}: ${errorMessage}\n`)
+}
+
 export const renderFailedUpload = (payload: Payload, errorMessage: string) => {
   const jUnitXMLPath = `[${chalk.bold.dim(payload.xmlPath)}]`
 
