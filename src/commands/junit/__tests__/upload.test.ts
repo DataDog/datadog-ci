@@ -62,7 +62,10 @@ describe('upload', () => {
         renderInvalidFile('./src/commands/junit/__tests__/fixtures/empty.xml', 'Start tag expected.')
       )
       expect(output).toContain(
-        renderInvalidFile('./src/commands/junit/__tests__/fixtures/invalid.xml', '<testsuites> is not the root tag.')
+        renderInvalidFile(
+          './src/commands/junit/__tests__/fixtures/invalid.xml',
+          'Neither <testsuites> nor <testsuite> are the root tag.'
+        )
       )
     })
     test('should allow single files', async () => {
