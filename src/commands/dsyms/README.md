@@ -15,7 +15,7 @@ export DATADOG_API_KEY="<API KEY>"
 
 It is possible to configure the tool to use Datadog EU by defining the `DATADOG_SITE` environment variable to `datadoghq.eu`. By defaut the requests are sent to Datadog US.
 
-It is also possible to override the full URL for the intake endpoint by defining the `DATADOG_SOURCEMAP_INTAKE_URL` environment variable.
+It is also possible to override the full URL for the intake endpoint by defining the `DATADOG_DSYM_INTAKE_URL` environment variable.
 
 
 
@@ -34,7 +34,7 @@ datadog-ci dsyms upload ~/Library/Developer/Xcode/DerivedData/
 
 In addition, some optional parameters are available:
 
-* `--concurrency` (default: `20`): number of concurrent upload to the API.
+* `--max-concurrency` (default: `20`): number of concurrent upload to the API.
 * `--dry-run` (default: `false`): it will run the command without the final step of upload. All other checks are performed.
 
 #### Bitcode
@@ -43,9 +43,9 @@ With bitcode enabled, you should download your app's dSYM files from [App Store 
 They come in the form of a zip file, named `appDsyms.zip`. In that case, you can run `datadog-ci` by pointing to the zip file.
 
 ```bash
-// if appDsyms.zip path: ~/Downloads/appDsyms.zip
-datadog-ci dsyms upload ~/Downloads/
+datadog-ci dsyms upload ~/Downloads/appDsyms.zip
 ```
+
 ### End-to-end testing process
 
 To verify this command works as expected, you can trigger a test run and verify it returns 0:

@@ -5,8 +5,6 @@ import {BufferedMetricsLogger} from 'datadog-metrics'
 import path from 'path'
 import asyncPool from 'tiny-async-pool'
 
-import {ApiKeyValidator} from '../../helpers/apikey'
-import {UploadStatus} from '../../helpers/interfaces'
 import {apiConstructor} from './api'
 import {InvalidConfigurationError} from './errors'
 import {APIHelper, Payload} from './interfaces'
@@ -19,7 +17,10 @@ import {
   renderRetriedUpload,
   renderSuccessfulCommand,
 } from './renderer'
-import {getBaseIntakeUrl, getPayloads, getSearchPaths} from './utils'
+import {getBaseIntakeUrl, getMatchingDSYMFiles, isZipFile, unzipToTmpDir} from './utils'
+
+import {ApiKeyValidator} from '../../helpers/apikey'
+import {UploadStatus} from '../../helpers/interfaces'
 
 const errorCodesNoRetry = [400, 403, 413]
 
@@ -31,10 +32,10 @@ export class UploadCommand extends Command {
             See README for details.
         `,
     examples: [
-      ['Upload all dSYM files in current directory', 'datadog-ci dsyms upload .'],
+      ['Upload all dSYM files in Derived Data path', 'datadog-ci dsyms upload ~/Library/Developer/Xcode/DerivedData'],
       [
         'Upload all dSYM files in a zip file (this is usually the case if your app has Bitcode enabled)',
-        'datadog-ci dsyms upload /path/to/folder/with/zip/file',
+        'datadog-ci dsyms upload /path/to/folder/my_file.zip',
       ],
     ],
   })
@@ -63,8 +64,12 @@ export class UploadCommand extends Command {
 
     const initialTime = Date.now()
 
-    const searchPaths = await getSearchPaths(this.basePath)
-    const payloads = await getPayloads(searchPaths)
+    let searchPath = this.basePath
+    if (isZipFile(this.basePath)) {
+      searchPath = await unzipToTmpDir(this.basePath)
+    }
+
+    const payloads = await getMatchingDSYMFiles(searchPath)
     const upload = (p: Payload) => this.uploadDSYM(api, metricsLogger.logger, p)
     try {
       const results = await asyncPool(this.maxConcurrency, payloads, upload)

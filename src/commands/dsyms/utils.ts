@@ -1,16 +1,31 @@
 import {exec} from 'child_process'
-import {mkdirSync} from 'fs'
+import {promises} from 'fs'
 import glob from 'glob'
+import {tmpdir} from 'os'
 import path from 'path'
 import {promisify} from 'util'
-import {buildPath} from '../../helpers/utils'
+
 import {Payload} from './interfaces'
-import {checkNonEmptyFile} from './validation'
+
+import {buildPath} from '../../helpers/utils'
 
 const UUID_REGEX = '[0-9A-F]{8}-([0-9A-F]{4}-){3}[0-9A-F]{12}'
 
-const getMatchingDSYMFiles = async (absoluteFolderPath: string): Promise<Payload[]> => {
-  const dSYMFiles = glob.sync(buildPath(absoluteFolderPath, '**/*.dSYM'))
+const globAsync = promisify(glob)
+
+export const isZipFile = async (filepath: string) => {
+  try {
+    const stats = await promises.stat(filepath)
+
+    return stats.size !== 0 && path.extname(filepath) === '.zip'
+  } catch (error) {
+    // Log to console "file exists yet empty" ?
+    return false
+  }
+}
+
+export const getMatchingDSYMFiles = async (absoluteFolderPath: string): Promise<Payload[]> => {
+  const dSYMFiles = await globAsync(buildPath(absoluteFolderPath, '**/*.dSYM'))
 
   return Promise.all(
     dSYMFiles.map(async (dSYMPath) => {
@@ -25,42 +40,8 @@ const getMatchingDSYMFiles = async (absoluteFolderPath: string): Promise<Payload
   )
 }
 
-export const getPayloads = async (searchPaths: string[]): Promise<Payload[]> => {
-  const nestedPayloads = await Promise.all(searchPaths.map((searchPath: string) => getMatchingDSYMFiles(searchPath)))
-
-  return nestedPayloads.flat()
-}
-
-export const getSearchPaths = async (baseSearchPath: string): Promise<string[]> => {
-  const zipFiles = getZipFiles(baseSearchPath)
-  const unzipFolder = buildPath('/tmp', 'datadog-ci', 'dsyms')
-  const searchPaths = (await Promise.all(
-    zipFiles
-      .map(async (zipFile: string) => {
-        const unzipPath = buildPath(unzipFolder, path.basename(zipFile, '.zip'), Date.now().toString())
-        try {
-          await unzip(zipFile, unzipPath)
-
-          return unzipPath
-        } catch (err) {
-          console.log(err)
-        }
-      })
-      .filter((item) => item !== undefined)
-  )) as string[]
-  searchPaths.push(baseSearchPath)
-
-  return searchPaths
-}
-
-export const getZipFiles = (absoluteFolderPath: string): string[] => {
-  const zipFiles = glob.sync(buildPath(absoluteFolderPath, '*.zip'))
-
-  return zipFiles.filter((file: string) => checkNonEmptyFile(file))
-}
-
 const dwarfdumpUUID = async (filePath: string) => {
-  const output = await execute('dwarfdump', ['--uuid', filePath])
+  const output = await execute(`dwarfdump --uuid ${filePath}`)
 
   const uuids: string[] = []
   output.stdout.split('\n').forEach((line: string) => {
@@ -73,36 +54,40 @@ const dwarfdumpUUID = async (filePath: string) => {
   return uuids
 }
 
-export const zip = (sourcePath: string, targetPath: string) => {
-  const dirPath = path.dirname(targetPath)
-  mkdirSync(dirPath, {recursive: true})
+const tmpFolder = buildPath(tmpdir(), 'datadog-ci', 'dsyms')
 
+export const zipToTmpDir = async (sourcePath: string, targetFilename: string): Promise<string> => {
+  await promises.mkdir(tmpFolder, {recursive: true})
+  const targetPath = buildPath(tmpFolder, targetFilename)
   const sourceDir = path.dirname(sourcePath)
   const sourceFile = path.basename(sourcePath)
-
   // `zip -r foo.zip f1/f2/f3/foo.dSYM`
   // this keeps f1/f2/f3 folders in foo.zip, we don't want this
-  // `cd ${sourceDir}` is called to avoid that
-  return execute(`cd ${sourceDir} && zip`, ['-r', targetPath, sourceFile])
+  // `cwd: sourceDir` is passed to avoid that
+  await execute(`zip -r ${targetPath} ${sourceFile}`, sourceDir)
+
+  return targetPath
 }
 
-const unzip = (sourcePath: string, targetPath: string) => {
+export const unzipToTmpDir = async (sourcePath: string): Promise<string> => {
+  const targetPath = buildPath(tmpFolder, path.basename(sourcePath, '.zip'), Date.now().toString())
   const dirPath = path.dirname(targetPath)
-  mkdirSync(dirPath, {recursive: true})
+  await promises.mkdir(dirPath, {recursive: true})
+  await execute(`unzip -o ${sourcePath} -d ${targetPath}`)
 
-  return execute('unzip', ['-o', sourcePath, '-d', targetPath])
+  return targetPath
 }
 
 const execProc = promisify(exec)
-const execute = (cmd: string, args: string[], {env = process.env} = {}) =>
-  execProc(`${cmd} ${args.join(' ')}`, {
-    env,
+const execute = (cmd: string, cwd: string | undefined = undefined): Promise<{stderr: string; stdout: string}> =>
+  execProc(cmd, {
+    cwd,
     maxBuffer: 5 * 1024 * 5000,
-  }).then((output: {stderr: string; stdout: string}) => output)
+  })
 
 export const getBaseIntakeUrl = () => {
-  if (process.env.DATADOG_SOURCEMAP_INTAKE_URL) {
-    return process.env.DATADOG_SOURCEMAP_INTAKE_URL
+  if (process.env.DATADOG_DSYM_INTAKE_URL) {
+    return process.env.DATADOG_DSYM_INTAKE_URL
   } else if (process.env.DATADOG_SITE) {
     return 'https://sourcemap-intake.' + process.env.DATADOG_SITE
   }
