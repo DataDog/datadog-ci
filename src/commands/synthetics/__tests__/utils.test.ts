@@ -202,7 +202,7 @@ describe('utils', () => {
         type: 'browser',
       } as Test
       const configOverride = {
-        startUrl: 'https://{{DOMAIN}}/newPath?oldPath={{PATHNAME}}{{HASH}}',
+        startUrl: 'https://{{DOMAIN}}/newPath?oldPath={{ PATHNAME   }}{{HASH}}',
       }
       const expectedUrl = 'https://example.org/newPath?oldPath=/path#target'
 
