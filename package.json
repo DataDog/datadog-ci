@@ -48,6 +48,7 @@
     "datadog-metrics": "0.9.3",
     "dd-trace": "0.35.1-beta.1",
     "deep-extend": "0.6.0",
+    "fast-xml-parser": "^3.19.0",
     "form-data": "3.0.0",
     "glob": "7.1.4",
     "proxy-agent": "4.0.1",
