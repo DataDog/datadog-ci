@@ -34,7 +34,7 @@ const validateXml = (xmlFilePath: string) => {
   }
   const xmlFileJSON = xmlParser.parse(String(xmlFileContentString))
   if (!xmlFileJSON.testsuites && !xmlFileJSON.testsuite) {
-    return 'Neither <testsuites> nor <testsuite> is not the root tag.'
+    return 'Neither <testsuites> nor <testsuite> are the root tag.'
   }
 
   return undefined
