@@ -33,8 +33,8 @@ const validateXml = (xmlFilePath: string) => {
     return validationOutput.err.msg
   }
   const xmlFileJSON = xmlParser.parse(String(xmlFileContentString))
-  if (!('testsuites' in xmlFileJSON)) {
-    return '<testsuites> is not the root tag.'
+  if (!xmlFileJSON.testsuites && !xmlFileJSON.testsuite) {
+    return 'Neither <testsuites> nor <testsuite> is not the root tag.'
   }
 
   return undefined
