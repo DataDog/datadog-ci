@@ -66,7 +66,7 @@ export const renderSuccessfulCommand = (statuses: UploadStatus[], duration: numb
   }
 
   if (results.get(UploadStatus.Failure) || results.get(UploadStatus.Skipped)) {
-    output.push(`Details about the ${pluralize(statuses.length, 'found dSYM', 'found dSYMs')}:`)
+    output.push(`Details about the found ${pluralize(statuses.length, 'dSYM', 'dSYMs')}:`)
     if (results.get(UploadStatus.Success)) {
       output.push(`  * ${pluralize(results.get(UploadStatus.Success)!, 'dSYM', 'dSYMs')} successfully uploaded`)
     }

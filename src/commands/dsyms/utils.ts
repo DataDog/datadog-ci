@@ -79,7 +79,7 @@ export const unzipToTmpDir = async (sourcePath: string): Promise<string> => {
 }
 
 const execProc = promisify(exec)
-const execute = (cmd: string, cwd: string | undefined = undefined): Promise<{stderr: string; stdout: string}> =>
+const execute = (cmd: string, cwd?: string): Promise<{stderr: string; stdout: string}> =>
   execProc(cmd, {
     cwd,
     maxBuffer: 5 * 1024 * 5000,

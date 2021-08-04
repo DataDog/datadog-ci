@@ -41,7 +41,7 @@ export class UploadCommand extends Command {
   })
 
   private apiKeyValidator: ApiKeyValidator
-  private basePath?: string
+  private basePath!: string
   private config = {
     apiKey: process.env.DATADOG_API_KEY,
     datadogSite: process.env.DATADOG_SITE || 'datadoghq.com',
@@ -55,12 +55,12 @@ export class UploadCommand extends Command {
   }
 
   public async execute() {
-    this.basePath = path.posix.normalize(this.basePath!)
+    this.basePath = path.posix.normalize(this.basePath)
     const cliVersion = require('../../../package.json').version
     const metricsLogger = getMetricsLogger(cliVersion)
     const api = this.getApiHelper()
 
-    this.context.stdout.write(renderCommandInfo(this.basePath!, this.maxConcurrency, this.dryRun))
+    this.context.stdout.write(renderCommandInfo(this.basePath, this.maxConcurrency, this.dryRun))
 
     const initialTime = Date.now()
 
