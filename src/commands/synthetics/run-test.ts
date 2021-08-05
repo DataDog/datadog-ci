@@ -78,12 +78,18 @@ export class RunTestCommand extends Command {
       } catch (error) {
         this.reporter.error(`\n${chalk.bgRed.bold(' Failed to get tests list ')}\n${error.message}\n\n`)
         if (is5xxError(error) && this.config.allowNetworkIssue) {
-          this.reporter.error(`\n${chalk.bgRed.bold(' ERROR on search test endpoint ')}\n`)
+          this.reporter.error(
+            `\n${chalk.bgRed.bold(' ERROR: unable to obtain test configurations with search query ')}\n`
+          )
 
           return safeExit(0)
         }
 
-        this.reporter.error(`\n${chalk.bgRed.bold(' ERROR on search test endpoint ')}\n${error.message}\n\n`)
+        this.reporter.error(
+          `\n${chalk.bgRed.bold(' ERROR: unable to obtain test configurations with search query ')}\n${
+            error.message
+          }\n\n`
+        )
 
         return safeExit(1)
       }
@@ -104,13 +110,13 @@ export class RunTestCommand extends Command {
     try {
       testsToTriggerResult = await getTestsToTrigger(api, testsToTrigger, this.reporter)
     } catch (error) {
-      if (is5xxError(error) && this.config.allowNetworkIssue) {
-        this.reporter.error(`\n${chalk.bgRed.bold(' ERROR on get tests endpoint ')}\n`)
+      this.reporter.error(
+        `\n${chalk.bgRed.bold(' ERROR: unable to obtain test configurations ')}\n${error.message}\n\n`
+      )
 
+      if (is5xxError(error) && this.config.allowNetworkIssue) {
         return safeExit(0)
       }
-
-      this.reporter.error(`\n${chalk.bgRed.bold(' ERROR on get tests endpoint ')}\n${error.message}\n\n`)
 
       return safeExit(1)
     }
@@ -129,12 +135,12 @@ export class RunTestCommand extends Command {
         presignedURL = (await api.getPresignedURL(publicIdsToTrigger)).url
       } catch (e) {
         if (is5xxError(e) && this.config.allowNetworkIssue) {
-          this.reporter.error(`\n${chalk.bgRed.bold(' Failed to get tunnel URL')}\n`)
+          this.reporter.error(`\n${chalk.bgRed.bold(' ERROR: unable to get tunnel configuration')}\n`)
 
           return safeExit(0)
         }
 
-        this.reporter.error(`\n${chalk.bgRed.bold(' Failed to get tunnel URL')}\n${e.message}\n\n`)
+        this.reporter.error(`\n${chalk.bgRed.bold(' ERROR: unable to get tunnel configuration')}\n${e.message}\n\n`)
 
         return safeExit(1)
       }
@@ -146,13 +152,11 @@ export class RunTestCommand extends Command {
           testToTrigger.tunnel = tunnelInfo
         })
       } catch (e) {
-        if (is5xxError(e) && this.config.allowNetworkIssue) {
-          this.reporter.error(`\n${chalk.bgRed.bold('ERROR on tunnel start')}\n`)
+        this.reporter.error(`\n${chalk.bgRed.bold(' ERROR: unable to start tunnel ')}\n${e.message}\n\n`)
 
+        if (is5xxError(e) && this.config.allowNetworkIssue) {
           return safeExit(0)
         }
-
-        this.reporter.error(`\n${chalk.bgRed.bold(' ERROR on tunnel start ')}\n${e.message}\n\n`)
 
         return safeExit(1)
       }
@@ -162,13 +166,11 @@ export class RunTestCommand extends Command {
     try {
       triggers = await runTests(api, overriddenTestsToTrigger)
     } catch (e) {
-      if (is5xxError(e) && this.config.allowNetworkIssue) {
-        this.reporter.error(`\n${chalk.bgRed.bold('ERROR on trigger endpoint')}\n`)
+      this.reporter.error(`\n${chalk.bgRed.bold(' ERROR: unable to trigger tests ')}\n${e.message}\n\n`)
 
+      if (is5xxError(e) && this.config.allowNetworkIssue) {
         return safeExit(0)
       }
-
-      this.reporter.error(`\n${chalk.bgRed.bold(' ERROR on trigger endpoint ')}\n${e.message}\n\n`)
 
       return safeExit(1)
     }
@@ -197,13 +199,11 @@ export class RunTestCommand extends Command {
       )
       Object.assign(results, resultPolled)
     } catch (error) {
-      if (is5xxError(error) && this.config.allowNetworkIssue) {
-        this.reporter.error(`\n${chalk.bgRed.bold(' ERROR on poll endpoint ')}\n`)
+      this.reporter.error(`\n${chalk.bgRed.bold(' ERROR: unable to poll test results ')}\n${error.message}\n\n`)
 
+      if (is5xxError(error) && this.config.allowNetworkIssue) {
         return safeExit(0)
       }
-
-      this.reporter.error(`\n${chalk.bgRed.bold(' ERROR on poll endpoint ')}\n${error.message}\n\n`)
 
       return safeExit(1)
     }

@@ -12,7 +12,7 @@ interface BackendError {
 }
 
 export class EndpointError extends Error {
-  constructor(public message: string, public status: string) {
+  constructor(public message: string, public status: number) {
     super(message)
     Object.setPrototypeOf(this, EndpointError.prototype)
   }
