@@ -18,9 +18,3 @@ export interface Payload {
 export interface APIHelper {
   uploadSourcemap(sourcemap: Payload, write: Writable['write']): AxiosPromise<AxiosResponse>
 }
-
-export enum UploadStatus {
-  Success,
-  Failure,
-  Skipped,
-}
