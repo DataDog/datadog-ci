@@ -137,8 +137,8 @@ export const getStrictestExecutionRule = (configRule: ExecutionRule, testRule?: 
   return ExecutionRule.BLOCKING
 }
 
-export const hasResultPassed = (result: Result, allowOnUnexpectedResults: boolean): boolean => {
-  if (result.unhealthy && allowOnUnexpectedResults) {
+export const hasResultPassed = (result: Result, failOnCriticalErrors: boolean): boolean => {
+  if (result.unhealthy && failOnCriticalErrors) {
     return true
   }
 
@@ -153,8 +153,8 @@ export const hasResultPassed = (result: Result, allowOnUnexpectedResults: boolea
   return true
 }
 
-export const hasTestSucceeded = (results: PollResult[], allowOnUnexpectedResults: boolean): boolean =>
-  results.every((pollResult: PollResult) => hasResultPassed(pollResult.result, allowOnUnexpectedResults))
+export const hasTestSucceeded = (results: PollResult[], failOnCriticalErrors: boolean): boolean =>
+  results.every((pollResult: PollResult) => hasResultPassed(pollResult.result, failOnCriticalErrors))
 
 export const getSuites = async (GLOB: string, reporter: MainReporter): Promise<Suite[]> => {
   reporter.log(`Finding files in ${path.join(process.cwd(), GLOB)}\n`)
@@ -186,7 +186,7 @@ export const waitForResults = async (
   defaultTimeout: number,
   triggerConfigs: TriggerConfig[],
   tunnel?: Tunnel,
-  allowNetworkIssue?: boolean
+  failOnCriticalErrors?: boolean
 ) => {
   const triggerResultMap = createTriggerResultMap(triggerResponses, defaultTimeout, triggerConfigs)
   const triggerResults = [...triggerResultMap.values()]
@@ -238,7 +238,7 @@ export const waitForResults = async (
     try {
       polledResults = (await api.pollResults(triggerResultsSucceed.map((tr) => tr.result_id))).results
     } catch (error) {
-      if (is5xxError(error) && allowNetworkIssue) {
+      if (is5xxError(error) && failOnCriticalErrors) {
         polledResults = []
         for (const triggerResult of triggerResultsSucceed) {
           triggerResult.result = createFailingResult(
@@ -355,10 +355,10 @@ export const getReporter = (reporters: Reporter[]): MainReporter => ({
       }
     }
   },
-  testEnd: (test, results, baseUrl, locationNames, allowNetworkIssue) => {
+  testEnd: (test, results, baseUrl, locationNames, failOnCriticalErrors) => {
     for (const reporter of reporters) {
       if (typeof reporter.testEnd === 'function') {
-        reporter.testEnd(test, results, baseUrl, locationNames, allowNetworkIssue)
+        reporter.testEnd(test, results, baseUrl, locationNames, failOnCriticalErrors)
       }
     }
   },

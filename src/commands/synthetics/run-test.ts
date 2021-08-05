@@ -22,8 +22,7 @@ import {Tunnel} from './tunnel'
 import {getReporter, getSuites, getTestsToTrigger, hasTestSucceeded, runTests, waitForResults} from './utils'
 
 export const DEFAULT_COMMAND_CONFIG: CommandConfig = {
-  allowNetworkIssue: false,
-  allowOnUnexpectedResults: false,
+  failOnCriticalErrors: false,
   apiKey: '',
   appKey: '',
   configPath: 'datadog-ci.json',
@@ -38,8 +37,7 @@ export const DEFAULT_COMMAND_CONFIG: CommandConfig = {
 }
 
 export class RunTestCommand extends Command {
-  private allowNetworkIssue?: boolean
-  private allowOnUnexpectedResults?: boolean
+  private failOnCriticalErrors?: boolean
   private apiKey?: string
   private appKey?: string
   private config: CommandConfig = JSON.parse(JSON.stringify(DEFAULT_COMMAND_CONFIG)) // Deep copy to avoid mutation during unit tests
@@ -77,7 +75,7 @@ export class RunTestCommand extends Command {
         testsToTrigger = await this.getTestsList(api)
       } catch (error) {
         this.reporter.error(`\n${chalk.bgRed.bold(' Failed to get tests list ')}\n${error.message}\n\n`)
-        if (is5xxError(error) && this.config.allowNetworkIssue) {
+        if (is5xxError(error) && this.config.failOnCriticalErrors) {
           this.reporter.error(
             `\n${chalk.bgRed.bold(' ERROR: unable to obtain test configurations with search query ')}\n`
           )
@@ -114,7 +112,7 @@ export class RunTestCommand extends Command {
         `\n${chalk.bgRed.bold(' ERROR: unable to obtain test configurations ')}\n${error.message}\n\n`
       )
 
-      if (is5xxError(error) && this.config.allowNetworkIssue) {
+      if (is5xxError(error) && this.config.failOnCriticalErrors) {
         return safeExit(0)
       }
 
@@ -134,7 +132,7 @@ export class RunTestCommand extends Command {
         // Get the pre-signed URL to connect to the tunnel service
         presignedURL = (await api.getPresignedURL(publicIdsToTrigger)).url
       } catch (e) {
-        if (is5xxError(e) && this.config.allowNetworkIssue) {
+        if (is5xxError(e) && this.config.failOnCriticalErrors) {
           this.reporter.error(`\n${chalk.bgRed.bold(' ERROR: unable to get tunnel configuration')}\n`)
 
           return safeExit(0)
@@ -154,7 +152,7 @@ export class RunTestCommand extends Command {
       } catch (e) {
         this.reporter.error(`\n${chalk.bgRed.bold(' ERROR: unable to start tunnel ')}\n${e.message}\n\n`)
 
-        if (is5xxError(e) && this.config.allowNetworkIssue) {
+        if (is5xxError(e) && this.config.failOnCriticalErrors) {
           return safeExit(0)
         }
 
@@ -168,7 +166,7 @@ export class RunTestCommand extends Command {
     } catch (e) {
       this.reporter.error(`\n${chalk.bgRed.bold(' ERROR: unable to trigger tests ')}\n${e.message}\n\n`)
 
-      if (is5xxError(e) && this.config.allowNetworkIssue) {
+      if (is5xxError(e) && this.config.failOnCriticalErrors) {
         return safeExit(0)
       }
 
@@ -195,13 +193,13 @@ export class RunTestCommand extends Command {
         this.config.pollingTimeout,
         testsToTrigger,
         tunnel,
-        this.config.allowNetworkIssue
+        this.config.failOnCriticalErrors
       )
       Object.assign(results, resultPolled)
     } catch (error) {
       this.reporter.error(`\n${chalk.bgRed.bold(' ERROR: unable to poll test results ')}\n${error.message}\n\n`)
 
-      if (is5xxError(error) && this.config.allowNetworkIssue) {
+      if (is5xxError(error) && this.config.failOnCriticalErrors) {
         return safeExit(0)
       }
 
@@ -223,7 +221,7 @@ export class RunTestCommand extends Command {
     for (const test of tests) {
       const testResults = results[test.public_id]
 
-      const passed = hasTestSucceeded(testResults, this.config.allowOnUnexpectedResults)
+      const passed = hasTestSucceeded(testResults, this.config.failOnCriticalErrors)
       if (passed) {
         summary.passed++
       } else {
@@ -233,7 +231,7 @@ export class RunTestCommand extends Command {
         }
       }
 
-      this.reporter.testEnd(test, testResults, this.getAppBaseURL(), locationNames, this.config.allowNetworkIssue)
+      this.reporter.testEnd(test, testResults, this.getAppBaseURL(), locationNames, this.config.failOnCriticalErrors)
     }
 
     this.reporter.runEnd(summary)
@@ -331,8 +329,7 @@ export class RunTestCommand extends Command {
     this.config = deepExtend(
       this.config,
       removeUndefinedValues({
-        allowNetworkIssue: this.allowNetworkIssue,
-        allowOnUnexpectedResults: this.allowOnUnexpectedResults,
+        failOnCriticalErrors: this.failOnCriticalErrors,
         apiKey: this.apiKey,
         appKey: this.appKey,
         configPath: this.configPath,
@@ -353,8 +350,8 @@ export class RunTestCommand extends Command {
 
   private sortTestsByOutcome(results: {[key: string]: PollResult[]}) {
     return (t1: Test, t2: Test) => {
-      const success1 = hasTestSucceeded(results[t1.public_id], this.config.allowOnUnexpectedResults)
-      const success2 = hasTestSucceeded(results[t2.public_id], this.config.allowOnUnexpectedResults)
+      const success1 = hasTestSucceeded(results[t1.public_id], this.config.failOnCriticalErrors)
+      const success2 = hasTestSucceeded(results[t2.public_id], this.config.failOnCriticalErrors)
       const isNonBlockingTest1 = t1.options.ci?.executionRule === ExecutionRule.NON_BLOCKING
       const isNonBlockingTest2 = t2.options.ci?.executionRule === ExecutionRule.NON_BLOCKING
 
@@ -381,8 +378,7 @@ export const removeUndefinedValues = <T extends {[key: string]: any}>(object: T)
 RunTestCommand.addPath('synthetics', 'run-tests')
 RunTestCommand.addOption('apiKey', Command.String('--apiKey'))
 RunTestCommand.addOption('appKey', Command.String('--appKey'))
-RunTestCommand.addOption('allowNetworkIssue', Command.Boolean('--allowNetworkIssue'))
-RunTestCommand.addOption('allowOnUnexpectedResults', Command.Boolean('--allowOnUnexpectedResults'))
+RunTestCommand.addOption('failOnCriticalErrors', Command.Boolean('--failOnCriticalErrors'))
 RunTestCommand.addOption('configPath', Command.String('--config'))
 RunTestCommand.addOption('datadogSite', Command.String('--datadogSite'))
 RunTestCommand.addOption('files', Command.Array('-f,--files'))

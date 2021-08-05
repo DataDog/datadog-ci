@@ -104,7 +104,7 @@ const renderResultOutcome = (
   test: Test,
   icon: string,
   color: chalk.Chalk,
-  allowNetworkIssue: boolean
+  failOnCriticalErrors: boolean
 ) => {
   if (result.error) {
     return `    ${chalk.bold(`${ICONS.FAILED} | ${result.error}`)}`
@@ -134,7 +134,7 @@ const renderResultOutcome = (
   }
 
   if (test.type === 'browser') {
-    if (!hasResultPassed(result, allowNetworkIssue) && result.stepDetails) {
+    if (!hasResultPassed(result, failOnCriticalErrors) && result.stepDetails) {
       // We render the step only if the test hasn't passed to avoid cluttering the output.
       return result.stepDetails.map(renderStep).join('\n')
     }
@@ -195,10 +195,10 @@ const renderExecutionResult = (
   execution: PollResult,
   baseUrl: string,
   locationNames: LocationsMapping,
-  allowNetworkIssue: boolean
+  failOnCriticalErrors: boolean
 ) => {
   const {check: overridedTest, dc_id, resultID, result} = execution
-  const isSuccess = hasResultPassed(result, allowNetworkIssue)
+  const isSuccess = hasResultPassed(result, failOnCriticalErrors)
   const color = getTestResultColor(isSuccess, test.options.ci?.executionRule === ExecutionRule.NON_BLOCKING)
   const icon = isSuccess ? ICONS.SUCCESS : ICONS.FAILED
 
@@ -220,7 +220,7 @@ const renderExecutionResult = (
     outputLines.push(resultInfo)
   }
 
-  const resultOutcome = renderResultOutcome(result, overridedTest || test, icon, color, allowNetworkIssue)
+  const resultOutcome = renderResultOutcome(result, overridedTest || test, icon, color, failOnCriticalErrors)
   if (resultOutcome) {
     outputLines.push(resultOutcome)
   }
@@ -297,9 +297,9 @@ export class DefaultReporter implements Reporter {
     results: PollResult[],
     baseUrl: string,
     locationNames: LocationsMapping,
-    allowNetworkIssue: boolean
+    failOnCriticalErrors: boolean
   ) {
-    const success = hasTestSucceeded(results, allowNetworkIssue)
+    const success = hasTestSucceeded(results, failOnCriticalErrors)
     const isNonBlocking = test.options.ci?.executionRule === ExecutionRule.NON_BLOCKING
 
     const icon = renderResultIcon(success, isNonBlocking)
@@ -309,7 +309,7 @@ export class DefaultReporter implements Reporter {
     const nonBlockingText = !success && isNonBlocking ? '[NON-BLOCKING]' : ''
 
     const testResultsText = results
-      .map((r) => renderExecutionResult(test, r, baseUrl, locationNames, allowNetworkIssue))
+      .map((r) => renderExecutionResult(test, r, baseUrl, locationNames, failOnCriticalErrors))
       .join('\n\n')
       .concat('\n\n')
 
