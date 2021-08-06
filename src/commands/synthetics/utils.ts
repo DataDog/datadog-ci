@@ -307,7 +307,7 @@ export const createTriggerResultMap = (
 }
 
 const createFailingResult = (
-  errorMessage: 'Endpoint Failure' | 'Timeout' | 'Tunnel Failure',
+  errorMessage: 'Endpoint Failure' | 'Timeout' | 'Tunnel Failure',
   resultId: string,
   deviceId: string,
   dcId: number,
