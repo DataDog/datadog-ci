@@ -1,5 +1,7 @@
 # Commit command
 
+**Access to this command is currently restricted.**
+
 Upload the git commit details to Datadog.
 
 ## Usage
