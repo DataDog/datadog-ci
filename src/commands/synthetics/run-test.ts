@@ -195,8 +195,7 @@ export class RunTestCommand extends Command {
         this.config.pollingTimeout,
         testsToTrigger,
         tunnel,
-        this.config.failOnCriticalErrors,
-        this.config.failOnTimeout
+        this.config.failOnCriticalErrors
       )
       Object.assign(results, resultPolled)
     } catch (error) {

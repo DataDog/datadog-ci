@@ -483,7 +483,7 @@ describe('utils', () => {
       const expectedResults: {[key: string]: PollResult[]} = {}
       expectedResults[triggerResult.public_id] = [passingPollResult]
 
-      expect(await utils.waitForResults(api, [triggerResult], 120000, [triggerConfig], undefined, false, true)).toEqual(
+      expect(await utils.waitForResults(api, [triggerResult], 120000, [triggerConfig], undefined, false)).toEqual(
         expectedResults
       )
     })
@@ -505,7 +505,7 @@ describe('utils', () => {
           resultID: triggerResult.result_id,
         },
       ]
-      expect(await utils.waitForResults(api, [triggerResult], 0, [], undefined, false, true)).toEqual(expectedResults)
+      expect(await utils.waitForResults(api, [triggerResult], 0, [], undefined, false)).toEqual(expectedResults)
     })
 
     test('results should be timeout-ed if test pollingTimeout is exceeded', async () => {
@@ -529,62 +529,9 @@ describe('utils', () => {
         config: {pollingTimeout: 0},
         id: triggerResult.public_id,
       }
-      expect(
-        await utils.waitForResults(api, [triggerResult], 120000, [testTriggerConfig], undefined, false, true)
-      ).toEqual(expectedResults)
-    })
-
-    test('results should not be timed-out if global pollingTimeout is exceeded but failOnTimeout sets to false', async () => {
-      mockAxiosWithDefaultResult()
-      const {triggerResult, passingPollResult} = getTestAndResult()
-      const expectedResults: {[key: string]: PollResult[]} = {}
-      expectedResults[triggerResult.public_id] = [
-        {
-          dc_id: triggerResult.location,
-          result: {
-            device: {id: triggerResult.device},
-            error: 'Timeout',
-            eventType: 'finished',
-            passed: false,
-            stepDetails: [],
-            tunnel: false,
-          },
-          resultID: triggerResult.result_id,
-        },
-      ]
-
-      const triggerConfigs = [
-        {
-          config: {pollingTimeout: 0},
-          id: triggerResult.public_id,
-        },
-      ]
-
-      expect(await utils.waitForResults(api, [triggerResult], 120000, triggerConfigs, undefined, false, false)).toEqual(
+      expect(await utils.waitForResults(api, [triggerResult], 120000, [testTriggerConfig], undefined, false)).toEqual(
         expectedResults
       )
-
-      expectedResults[triggerResult.public_id] = [passingPollResult, getPassingPollResult('zyw-abc-efg')]
-      const {triggerResult: secondTriggerResult, passingPollResult: secondPassingPollResult} = getTestAndResult()
-
-      triggerConfigs.push({
-        config: {pollingTimeout: 50},
-        id: secondTriggerResult.public_id,
-      })
-
-      expectedResults[triggerResult.public_id] = [passingPollResult]
-      expectedResults[secondTriggerResult.public_id] = [secondPassingPollResult]
-      expect(
-        await utils.waitForResults(
-          api,
-          [triggerResult, secondTriggerResult],
-          120000,
-          triggerConfigs,
-          undefined,
-          false,
-          false
-        )
-      ).toEqual(expectedResults)
     })
 
     test('correct number of pass and timeout results', async () => {
@@ -615,7 +562,7 @@ describe('utils', () => {
         },
       ]
       expect(
-        await utils.waitForResults(api, [triggerResultPass, triggerResultTimeOut], 2000, [], undefined, false, true)
+        await utils.waitForResults(api, [triggerResultPass, triggerResultTimeOut], 2000, [], undefined, false)
       ).toEqual(expectedResults)
     })
 
@@ -651,12 +598,8 @@ describe('utils', () => {
         ],
       }
 
-      expect(await utils.waitForResults(api, [triggerResult], 2000, [], mockTunnel, true, true)).toEqual(
-        expectedResults
-      )
-      expect(await utils.waitForResults(api, [triggerResult], 2000, [], mockTunnel, false, true)).toEqual(
-        expectedResults
-      )
+      expect(await utils.waitForResults(api, [triggerResult], 2000, [], mockTunnel, true)).toEqual(expectedResults)
+      expect(await utils.waitForResults(api, [triggerResult], 2000, [], mockTunnel, false)).toEqual(expectedResults)
     })
 
     test('pollResults throws', async () => {
@@ -688,10 +631,8 @@ describe('utils', () => {
         ],
       }
 
-      expect(await utils.waitForResults(api, [triggerResult], 2000, [], mockTunnel, true, true)).toEqual(
-        expectedResults
-      )
-      await expect(utils.waitForResults(api, [triggerResult], 2000, [], mockTunnel, false, true)).rejects.toThrow()
+      expect(await utils.waitForResults(api, [triggerResult], 2000, [], mockTunnel, true)).toEqual(expectedResults)
+      await expect(utils.waitForResults(api, [triggerResult], 2000, [], mockTunnel, false)).rejects.toThrow()
     })
   })
 
