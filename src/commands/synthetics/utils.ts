@@ -210,15 +210,12 @@ export const waitForResults = async (
       .then(() => (isTunnelConnected = false))
       .catch(() => (isTunnelConnected = false))
   }
-  console.log({maxPollingTimeout})
+
   while (triggerResults.filter((tr) => !tr.result).length) {
     const pollingDuration = new Date().getTime() - pollingStartDate
 
     // Remove test which exceeded their pollingTimeout
-    console.log(triggerResults.length)
     for (const triggerResult of triggerResults.filter((tr) => !tr.result)) {
-      console.log(triggerResult.pollingTimeout)
-      console.log({pollingDuration})
       if ((pollingDuration >= triggerResult.pollingTimeout && failOnTimeout) || pollingDuration >= maxPollingTimeout) {
         triggerResult.result = createFailingResult(
           'Timeout',
