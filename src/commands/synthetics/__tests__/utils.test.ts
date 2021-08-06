@@ -422,6 +422,7 @@ describe('utils', () => {
       passed: true,
       stepDetails: [],
     }
+
     const publicId = 'abc-def-ghi'
     const testConfiguration = getApiTest(publicId)
     const passingPollResult = (resultID: string) => ({
@@ -499,14 +500,55 @@ describe('utils', () => {
 
     test('results should not be timed-out if global pollingTimeout is exceeded but failOnTimeout sets to false', async () => {
       mockAxiosWithDefaultResult()
-      const triggerConfig = {
-        config: {pollingTimeout: 0},
-        id: publicId,
-      }
       const expectedResults: {[key: string]: PollResult[]} = {}
-      expectedResults[publicId] = [passingPollResult(triggerResult.result_id)]
+      expectedResults[publicId] = [
+        {
+          dc_id: triggerResult.location,
+          result: {
+            device: {id: triggerResult.device},
+            error: 'Timeout',
+            eventType: 'finished',
+            passed: false,
+            stepDetails: [],
+            tunnel: false,
+          },
+          resultID: triggerResult.result_id,
+        },
+      ]
+
+      const triggerConfigs = [
+        {
+          config: {pollingTimeout: 0},
+          id: publicId,
+        },
+      ]
+
+      expect(await utils.waitForResults(api, [triggerResult], 120000, triggerConfigs, undefined, false, false)).toEqual(
+        expectedResults
+      )
+
+      expectedResults[publicId] = [passingPollResult(triggerResult.result_id), passingPollResult('1234556')]
+
+      const secondTriggerResult = {
+        device: 'laptop_large',
+        location: 42,
+        public_id: 'zyw-abc-efg',
+        result_id: '1234556',
+      }
+      triggerConfigs.push({
+        config: {pollingTimeout: 50},
+        id: 'zyw-abc-efg',
+      })
       expect(
-        await utils.waitForResults(api, [triggerResult], 120000, [triggerConfig], undefined, false, false)
+        await utils.waitForResults(
+          api,
+          [triggerResult, secondTriggerResult],
+          120000,
+          triggerConfigs,
+          undefined,
+          false,
+          false
+        )
       ).toEqual(expectedResults)
     })
 

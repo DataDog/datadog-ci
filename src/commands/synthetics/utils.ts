@@ -157,7 +157,11 @@ export const hasResultPassed = (result: Result, failOnCriticalErrors: boolean, f
   return true
 }
 
-export const hasTestSucceeded = (results: PollResult[], failOnCriticalErrors: boolean, failOnTimeout: boolean): boolean =>
+export const hasTestSucceeded = (
+  results: PollResult[],
+  failOnCriticalErrors: boolean,
+  failOnTimeout: boolean
+): boolean =>
   results.every((pollResult: PollResult) => hasResultPassed(pollResult.result, failOnCriticalErrors, failOnTimeout))
 
 export const getSuites = async (GLOB: string, reporter: MainReporter): Promise<Suite[]> => {
@@ -211,9 +215,11 @@ export const waitForResults = async (
     const pollingDuration = new Date().getTime() - pollingStartDate
 
     // Remove test which exceeded their pollingTimeout
+    console.log(triggerResults.length)
     for (const triggerResult of triggerResults.filter((tr) => !tr.result)) {
       console.log(triggerResult.pollingTimeout)
-      if ((pollingDuration >= triggerResult.pollingTimeout && failOnTimeout) || pollingDuration < maxPollingTimeout) {
+      console.log({pollingDuration})
+      if ((pollingDuration >= triggerResult.pollingTimeout && failOnTimeout) || pollingDuration >= maxPollingTimeout) {
         triggerResult.result = createFailingResult(
           'Timeout',
           triggerResult.result_id,
@@ -234,10 +240,6 @@ export const waitForResults = async (
           !!tunnel
         )
       }
-    }
-
-    if (pollingDuration >= maxPollingTimeout) {
-      break
     }
 
     let polledResults: PollResult[]
