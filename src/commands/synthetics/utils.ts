@@ -137,8 +137,12 @@ export const getStrictestExecutionRule = (configRule: ExecutionRule, testRule?: 
   return ExecutionRule.BLOCKING
 }
 
-export const hasResultPassed = (result: Result, failOnCriticalErrors: boolean): boolean => {
+export const hasResultPassed = (result: Result, failOnCriticalErrors: boolean, failOnTimeout: boolean): boolean => {
   if (result.unhealthy && failOnCriticalErrors) {
+    return true
+  }
+
+  if (result.error === 'Timeout' && !failOnTimeout) {
     return true
   }
 
@@ -153,8 +157,8 @@ export const hasResultPassed = (result: Result, failOnCriticalErrors: boolean): 
   return true
 }
 
-export const hasTestSucceeded = (results: PollResult[], failOnCriticalErrors: boolean): boolean =>
-  results.every((pollResult: PollResult) => hasResultPassed(pollResult.result, failOnCriticalErrors))
+export const hasTestSucceeded = (results: PollResult[], failOnCriticalErrors: boolean, failOnTimeout: boolean): boolean =>
+  results.every((pollResult: PollResult) => hasResultPassed(pollResult.result, failOnCriticalErrors, failOnTimeout))
 
 export const getSuites = async (GLOB: string, reporter: MainReporter): Promise<Suite[]> => {
   reporter.log(`Finding files in ${path.join(process.cwd(), GLOB)}\n`)
@@ -202,21 +206,21 @@ export const waitForResults = async (
       .then(() => (isTunnelConnected = false))
       .catch(() => (isTunnelConnected = false))
   }
+  console.log({maxPollingTimeout})
   while (triggerResults.filter((tr) => !tr.result).length) {
     const pollingDuration = new Date().getTime() - pollingStartDate
 
     // Remove test which exceeded their pollingTimeout
     for (const triggerResult of triggerResults.filter((tr) => !tr.result)) {
-      if (pollingDuration >= triggerResult.pollingTimeout) {
-        if (failOnTimeout) {
-          triggerResult.result = createFailingResult(
-            'Timeout',
-            triggerResult.result_id,
-            triggerResult.device,
-            triggerResult.location,
-            !!tunnel
-          )
-        }
+      console.log(triggerResult.pollingTimeout)
+      if ((pollingDuration >= triggerResult.pollingTimeout && failOnTimeout) || pollingDuration < maxPollingTimeout) {
+        triggerResult.result = createFailingResult(
+          'Timeout',
+          triggerResult.result_id,
+          triggerResult.device,
+          triggerResult.location,
+          !!tunnel
+        )
       }
     }
 

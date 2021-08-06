@@ -224,7 +224,7 @@ export class RunTestCommand extends Command {
     for (const test of tests) {
       const testResults = results[test.public_id]
 
-      const passed = hasTestSucceeded(testResults, this.config.failOnCriticalErrors)
+      const passed = hasTestSucceeded(testResults, this.config.failOnCriticalErrors, this.config.failOnTimeout)
       if (passed) {
         summary.passed++
       } else {
@@ -354,8 +354,8 @@ export class RunTestCommand extends Command {
 
   private sortTestsByOutcome(results: {[key: string]: PollResult[]}) {
     return (t1: Test, t2: Test) => {
-      const success1 = hasTestSucceeded(results[t1.public_id], this.config.failOnCriticalErrors)
-      const success2 = hasTestSucceeded(results[t2.public_id], this.config.failOnCriticalErrors)
+      const success1 = hasTestSucceeded(results[t1.public_id], this.config.failOnCriticalErrors, this.config.failOnTimeout)
+      const success2 = hasTestSucceeded(results[t2.public_id], this.config.failOnCriticalErrors, this.config.failOnTimeout)
       const isNonBlockingTest1 = t1.options.ci?.executionRule === ExecutionRule.NON_BLOCKING
       const isNonBlockingTest2 = t2.options.ci?.executionRule === ExecutionRule.NON_BLOCKING
 
