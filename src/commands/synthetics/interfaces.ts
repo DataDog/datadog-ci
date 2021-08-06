@@ -36,7 +36,7 @@ export interface Result {
     id: string
   }
   duration?: number
-  error?: string
+  error?: string | 'Endpoint Failure' | 'Timeout' | 'Tunnel Failure'
   errorCode?: string
   errorMessage?: string
   eventType: string
