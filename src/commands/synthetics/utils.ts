@@ -364,10 +364,10 @@ export const getReporter = (reporters: Reporter[]): MainReporter => ({
       }
     }
   },
-  testEnd: (test, results, baseUrl, locationNames, failOnCriticalErrors) => {
+  testEnd: (test, results, baseUrl, locationNames, failOnCriticalErrors, failOnTimeout) => {
     for (const reporter of reporters) {
       if (typeof reporter.testEnd === 'function') {
-        reporter.testEnd(test, results, baseUrl, locationNames, failOnCriticalErrors)
+        reporter.testEnd(test, results, baseUrl, locationNames, failOnCriticalErrors, failOnTimeout)
       }
     }
   },

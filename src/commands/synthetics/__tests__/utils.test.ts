@@ -443,18 +443,14 @@ describe('utils', () => {
       stepDetails: [],
     }
 
-    const getPassingPollResult = (resultId: string) => {
-      return {
-        check: getTestConfig(),
-        dc_id: 42,
-        result: passingResult,
-        resultID: resultId,
-      }
-    }
+    const getPassingPollResult = (resultId: string) => ({
+      check: getTestConfig(),
+      dc_id: 42,
+      result: passingResult,
+      resultID: resultId,
+    })
 
-    const getTestConfig = (publicId = 'abc-def-ghi') => {
-      return getApiTest(publicId)
-    }
+    const getTestConfig = (publicId = 'abc-def-ghi') => getApiTest(publicId)
 
     const getTestAndResult = (publicId = 'abc-def-ghi', resultId = '0123456789') => {
       const testConfiguration = getTestConfig()

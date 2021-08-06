@@ -22,7 +22,8 @@ export interface MainReporter {
     results: PollResult[],
     baseUrl: string,
     locationNames: LocationsMapping,
-    failOnCriticalErrors: boolean
+    failOnCriticalErrors: boolean,
+    failOnTimeout: boolean
   ): void
   testTrigger(test: Test, testId: string, executionRule: ExecutionRule, config: ConfigOverride): void
   testWait(test: Test): void

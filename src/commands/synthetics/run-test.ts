@@ -234,7 +234,14 @@ export class RunTestCommand extends Command {
         }
       }
 
-      this.reporter.testEnd(test, testResults, this.getAppBaseURL(), locationNames, this.config.failOnCriticalErrors)
+      this.reporter.testEnd(
+        test,
+        testResults,
+        this.getAppBaseURL(),
+        locationNames,
+        this.config.failOnCriticalErrors,
+        this.config.failOnTimeout
+      )
     }
 
     this.reporter.runEnd(summary)
