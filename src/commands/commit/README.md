@@ -1,5 +1,7 @@
 # Commit command
 
+**This command does not unlock any feature in Datadog yet.**
+
 Upload the git commit details to Datadog.
 
 ## Usage
