@@ -357,8 +357,8 @@ describe('utils', () => {
         stepDetails: [],
         unhealthy: true,
       }
-      expect(utils.hasResultPassed(result, false, true)).toBeFalsy()
-      expect(utils.hasResultPassed(result, true, true)).toBeTruthy()
+      expect(utils.hasResultPassed(result, false, true)).toBeTruthy()
+      expect(utils.hasResultPassed(result, true, true)).toBeFalsy()
     })
 
     test('result with timeout result', () => {
@@ -383,8 +383,8 @@ describe('utils', () => {
       stepDetails: [],
     }
 
-    expect(utils.hasResultPassed(result, false, true)).toBeFalsy()
-    expect(utils.hasResultPassed(result, true, true)).toBeTruthy()
+    expect(utils.hasResultPassed(result, false, true)).toBeTruthy()
+    expect(utils.hasResultPassed(result, true, true)).toBeFalsy()
   })
 
   test('hasTestSucceeded', () => {
@@ -429,10 +429,10 @@ describe('utils', () => {
     }
 
     expect(utils.hasTestSucceeded([passingPollResult, failingPollResult], false, true)).toBeFalsy()
-    expect(utils.hasTestSucceeded([passingPollResult, unhealthyPollResult], true, true)).toBeTruthy()
-    expect(utils.hasTestSucceeded([passingPollResult, unhealthyPollResult], false, true)).toBeFalsy()
-    expect(utils.hasTestSucceeded([passingPollResult, endpointFailurePollResult], true, true)).toBeTruthy()
-    expect(utils.hasTestSucceeded([passingPollResult, endpointFailurePollResult], false, true)).toBeFalsy()
+    expect(utils.hasTestSucceeded([passingPollResult, unhealthyPollResult], true, true)).toBeFalsy()
+    expect(utils.hasTestSucceeded([passingPollResult, unhealthyPollResult], false, true)).toBeTruthy()
+    expect(utils.hasTestSucceeded([passingPollResult, endpointFailurePollResult], true, true)).toBeFalsy()
+    expect(utils.hasTestSucceeded([passingPollResult, endpointFailurePollResult], false, true)).toBeTruthy()
     expect(utils.hasTestSucceeded([passingPollResult, passingPollResult], false, true)).toBeTruthy()
     expect(utils.hasTestSucceeded([passingPollResult, timeoutPollResult], false, true)).toBeFalsy()
     expect(utils.hasTestSucceeded([passingPollResult, timeoutPollResult], false, false)).toBeTruthy()
@@ -652,8 +652,8 @@ describe('utils', () => {
         ],
       }
 
-      expect(await utils.waitForResults(api, [triggerResult], 2000, [], mockTunnel, true)).toEqual(expectedResults)
-      await expect(utils.waitForResults(api, [triggerResult], 2000, [], mockTunnel, false)).rejects.toThrow()
+      expect(await utils.waitForResults(api, [triggerResult], 2000, [], mockTunnel, false)).toEqual(expectedResults)
+      await expect(utils.waitForResults(api, [triggerResult], 2000, [], mockTunnel, true)).rejects.toThrow()
     })
   })
 

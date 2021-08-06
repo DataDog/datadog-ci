@@ -203,7 +203,6 @@ const renderExecutionResult = (
   const isSuccess = hasResultPassed(result, failOnCriticalErrors, failOnTimeout)
   const color = getTestResultColor(isSuccess, test.options.ci?.executionRule === ExecutionRule.NON_BLOCKING)
   const icon = isSuccess ? ICONS.SUCCESS : ICONS.FAILED
-
   const locationName = !!result.tunnel ? 'Tunneled' : locationNames[dc_id] || dc_id.toString()
   const device = test.type === 'browser' && result.device ? ` - device: ${chalk.bold(result.device.id)}` : ''
   const resultIdentification = color(`  ${icon} location: ${chalk.bold(locationName)}${device}`)

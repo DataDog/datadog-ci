@@ -210,11 +210,9 @@ export class RunTestCommand extends Command {
 
       return mapping
     }, {} as LocationsMapping)
-
     let hasSucceeded = true // Determine if all the tests have succeeded
     for (const test of tests) {
       const testResults = results[test.public_id]
-
       const passed = hasTestSucceeded(testResults, this.config.failOnCriticalErrors, this.config.failOnTimeout)
       if (passed) {
         summary.passed++

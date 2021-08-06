@@ -206,18 +206,25 @@ describe('run-test', () => {
 
     test('waitForResults throws', async () => {
       jest.spyOn(ciUtils, 'parseConfigFile').mockImplementation(async (config, _) => config)
+      const location = {
+        display_name: 'us1',
+        id: 1,
+        is_active: true,
+        name: 'us1',
+        region: 'us1',
+      }
       jest.spyOn(utils, 'getTestsToTrigger').mockReturnValue(
         Promise.resolve({
           overriddenTestsToTrigger: [],
           summary: {passed: 0, failed: 0, skipped: 0, notFound: 0},
-          tests: [{public_id: 'publicId'} as any],
+          tests: [{options: {ci: {executionRule: ExecutionRule.BLOCKING}}, public_id: 'publicId'} as any],
         })
       )
 
       jest.spyOn(utils, 'runTests').mockReturnValue(
         Promise.resolve({
-          locations: [],
-          results: [{options: {ci: {executionRule: ExecutionRule.BLOCKING}}, public_id: 'test'} as any],
+          locations: [location],
+          results: [{device: 'chrome_laptop.large', location: 1, public_id: 'publicId', result_id: '1111'}],
           triggered_check_ids: [],
         })
       )
@@ -239,6 +246,9 @@ describe('run-test', () => {
       command['publicIds'] = ['public-id-1', 'public-id-2']
 
       expect(await command.execute()).toBe(0)
+
+      command['failOnCriticalErrors'] = true
+      expect(await command.execute()).toBe(1)
     })
   })
 

@@ -138,11 +138,11 @@ export const getStrictestExecutionRule = (configRule: ExecutionRule, testRule?: 
 }
 
 export const hasResultPassed = (result: Result, failOnCriticalErrors: boolean, failOnTimeout: boolean): boolean => {
-  if (result.unhealthy && failOnCriticalErrors) {
+  if (result.unhealthy && !failOnCriticalErrors) {
     return true
   }
 
-  if (result.error === 'Endpoint Failure' && failOnCriticalErrors) {
+  if (result.error === 'Endpoint Failure' && !failOnCriticalErrors) {
     return true
   }
 
