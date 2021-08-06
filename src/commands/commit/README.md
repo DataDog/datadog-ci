@@ -1,6 +1,6 @@
 # Commit command
 
-**This command does not unlock any feature in Datadog yet.**
+**Access to this command is currently restricted.**
 
 Upload the git commit details to Datadog.
 
