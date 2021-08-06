@@ -27,6 +27,7 @@ export const DEFAULT_COMMAND_CONFIG: CommandConfig = {
   configPath: 'datadog-ci.json',
   datadogSite: 'datadoghq.com',
   failOnCriticalErrors: false,
+  failOnTimeout: true,
   files: ['{,!(node_modules)/**/}*.synthetics.json'],
   global: {},
   pollingTimeout: 2 * 60 * 1000,
@@ -43,6 +44,7 @@ export class RunTestCommand extends Command {
   private configPath?: string
   private datadogSite?: string
   private failOnCriticalErrors?: boolean
+  private failOnTimeout?: boolean
   private files?: string[]
   private publicIds?: string[]
   private reporter?: MainReporter
@@ -193,7 +195,8 @@ export class RunTestCommand extends Command {
         this.config.pollingTimeout,
         testsToTrigger,
         tunnel,
-        this.config.failOnCriticalErrors
+        this.config.failOnCriticalErrors,
+        this.config.failOnTimeout
       )
       Object.assign(results, resultPolled)
     } catch (error) {
@@ -334,6 +337,7 @@ export class RunTestCommand extends Command {
         configPath: this.configPath,
         datadogSite: this.datadogSite,
         failOnCriticalErrors: this.failOnCriticalErrors,
+        failOnTimeout: this.failOnTimeout,
         files: this.files,
         publicIds: this.publicIds,
         subdomain: this.subdomain,
@@ -382,6 +386,7 @@ RunTestCommand.addOption('failOnCriticalErrors', Command.Boolean('--failOnCritic
 RunTestCommand.addOption('configPath', Command.String('--config'))
 RunTestCommand.addOption('datadogSite', Command.String('--datadogSite'))
 RunTestCommand.addOption('files', Command.Array('-f,--files'))
+RunTestCommand.addOption('failOnTimeout', Command.Boolean('--failOnTimeout'))
 RunTestCommand.addOption('publicIds', Command.Array('-p,--public-id'))
 RunTestCommand.addOption('testSearchQuery', Command.String('-s,--search'))
 RunTestCommand.addOption('subdomain', Command.Boolean('--subdomain'))

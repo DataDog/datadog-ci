@@ -280,6 +280,7 @@ export interface CommandConfig {
   configPath: string
   datadogSite: string
   failOnCriticalErrors: boolean
+  failOnTimeout: boolean
   files: string[]
   global: ConfigOverride
   pollingTimeout: number

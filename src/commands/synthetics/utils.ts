@@ -186,7 +186,8 @@ export const waitForResults = async (
   defaultTimeout: number,
   triggerConfigs: TriggerConfig[],
   tunnel?: Tunnel,
-  failOnCriticalErrors?: boolean
+  failOnCriticalErrors?: boolean,
+  failOnTimeout?: boolean
 ) => {
   const triggerResultMap = createTriggerResultMap(triggerResponses, defaultTimeout, triggerConfigs)
   const triggerResults = [...triggerResultMap.values()]
@@ -207,13 +208,15 @@ export const waitForResults = async (
     // Remove test which exceeded their pollingTimeout
     for (const triggerResult of triggerResults.filter((tr) => !tr.result)) {
       if (pollingDuration >= triggerResult.pollingTimeout) {
-        triggerResult.result = createFailingResult(
-          'Timeout',
-          triggerResult.result_id,
-          triggerResult.device,
-          triggerResult.location,
-          !!tunnel
-        )
+        if (failOnTimeout) {
+          triggerResult.result = createFailingResult(
+            'Timeout',
+            triggerResult.result_id,
+            triggerResult.device,
+            triggerResult.location,
+            !!tunnel
+          )
+        }
       }
     }
 
@@ -229,7 +232,7 @@ export const waitForResults = async (
       }
     }
 
-    if (pollingDuration >= maxPollingTimeout) {
+    if (pollingDuration >= maxPollingTimeout && failOnTimeout) {
       break
     }
 

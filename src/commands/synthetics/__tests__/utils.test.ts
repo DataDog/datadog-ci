@@ -493,6 +493,13 @@ describe('utils', () => {
       expect(await utils.waitForResults(api, [triggerResult], 120000, [testTriggerConfig])).toEqual(expectedResults)
     })
 
+    test('results should not be timed-out if global pollingTimeout is exceeded but failOnTimeout sets to false', async () => {
+      mockAxiosWithDefaultResult()
+      const expectedResults: {[key: string]: PollResult[]} = {}
+      expectedResults[publicId] = [passingPollResult(triggerResult.result_id)]
+      expect(await utils.waitForResults(api, [triggerResult], 0, [], undefined, false, false)).toEqual(expectedResults)
+    })
+
     test('correct number of pass and timeout results', async () => {
       mockAxiosWithDefaultResult()
       const waitMock = jest.spyOn(utils, 'wait')

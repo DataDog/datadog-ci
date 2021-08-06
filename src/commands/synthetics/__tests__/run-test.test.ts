@@ -457,6 +457,7 @@ describe('run-test', () => {
         configPath: 'fake-datadog-ci.json',
         datadogSite: 'datadoghq.eu',
         failOnCriticalErrors: true,
+        failOnTimeout: false,
         files: ['my-new-file'],
         global: {locations: []},
         pollingTimeout: 1,
@@ -480,6 +481,7 @@ describe('run-test', () => {
         configPath: 'fake-datadog-ci.json',
         datadogSite: 'datadoghq.eu',
         failOnCriticalErrors: true,
+        failOnTimeout: false,
         files: ['new-file'],
         publicIds: ['ran-dom-id'],
         subdomain: 'new-sub-domain',
@@ -488,11 +490,12 @@ describe('run-test', () => {
       }
 
       const command = new RunTestCommand()
-      command['failOnCriticalErrors'] = overrideCLI.failOnCriticalErrors
       command['apiKey'] = overrideCLI.apiKey
       command['appKey'] = overrideCLI.appKey
       command['configPath'] = overrideCLI.configPath
       command['datadogSite'] = overrideCLI.datadogSite
+      command['failOnCriticalErrors'] = overrideCLI.failOnCriticalErrors
+      command['failOnTimeout'] = overrideCLI.failOnCriticalErrors
       command['files'] = overrideCLI.files
       command['publicIds'] = overrideCLI.publicIds
       command['subdomain'] = overrideCLI.subdomain
@@ -507,6 +510,7 @@ describe('run-test', () => {
         configPath: 'fake-datadog-ci.json',
         datadogSite: 'datadoghq.eu',
         failOnCriticalErrors: true,
+        failOnTimeout: false,
         files: ['new-file'],
         publicIds: ['ran-dom-id'],
         subdomain: 'new-sub-domain',
