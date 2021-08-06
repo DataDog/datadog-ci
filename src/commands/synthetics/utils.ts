@@ -142,6 +142,10 @@ export const hasResultPassed = (result: Result, failOnCriticalErrors: boolean, f
     return true
   }
 
+  if (result.error === 'Endpoint Failure' && failOnCriticalErrors) {
+    return true
+  }
+
   if (result.error === 'Timeout' && !failOnTimeout) {
     return true
   }
@@ -247,7 +251,7 @@ export const waitForResults = async (
     try {
       polledResults = (await api.pollResults(triggerResultsSucceed.map((tr) => tr.result_id))).results
     } catch (error) {
-      if (is5xxError(error) && failOnCriticalErrors) {
+      if (is5xxError(error) && !failOnCriticalErrors) {
         polledResults = []
         for (const triggerResult of triggerResultsSucceed) {
           triggerResult.result = createFailingResult(

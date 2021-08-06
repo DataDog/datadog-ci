@@ -76,20 +76,15 @@ export class RunTestCommand extends Command {
       try {
         testsToTrigger = await this.getTestsList(api)
       } catch (error) {
-        this.reporter.error(`\n${chalk.bgRed.bold(' Failed to get tests list ')}\n${error.message}\n\n`)
-        if (is5xxError(error) && this.config.failOnCriticalErrors) {
-          this.reporter.error(
-            `\n${chalk.bgRed.bold(' ERROR: unable to obtain test configurations with search query ')}\n`
-          )
-
-          return safeExit(0)
-        }
-
         this.reporter.error(
           `\n${chalk.bgRed.bold(' ERROR: unable to obtain test configurations with search query ')}\n${
             error.message
           }\n\n`
         )
+
+        if (is5xxError(error) && !this.config.failOnCriticalErrors) {
+          return safeExit(0)
+        }
 
         return safeExit(1)
       }
@@ -114,7 +109,7 @@ export class RunTestCommand extends Command {
         `\n${chalk.bgRed.bold(' ERROR: unable to obtain test configurations ')}\n${error.message}\n\n`
       )
 
-      if (is5xxError(error) && this.config.failOnCriticalErrors) {
+      if (is5xxError(error) && !this.config.failOnCriticalErrors) {
         return safeExit(0)
       }
 
@@ -134,13 +129,10 @@ export class RunTestCommand extends Command {
         // Get the pre-signed URL to connect to the tunnel service
         presignedURL = (await api.getPresignedURL(publicIdsToTrigger)).url
       } catch (e) {
-        if (is5xxError(e) && this.config.failOnCriticalErrors) {
-          this.reporter.error(`\n${chalk.bgRed.bold(' ERROR: unable to get tunnel configuration')}\n`)
-
+        this.reporter.error(`\n${chalk.bgRed.bold(' ERROR: unable to get tunnel configuration')}\n${e.message}\n\n`)
+        if (is5xxError(e) && !this.config.failOnCriticalErrors) {
           return safeExit(0)
         }
-
-        this.reporter.error(`\n${chalk.bgRed.bold(' ERROR: unable to get tunnel configuration')}\n${e.message}\n\n`)
 
         return safeExit(1)
       }
@@ -154,7 +146,7 @@ export class RunTestCommand extends Command {
       } catch (e) {
         this.reporter.error(`\n${chalk.bgRed.bold(' ERROR: unable to start tunnel ')}\n${e.message}\n\n`)
 
-        if (is5xxError(e) && this.config.failOnCriticalErrors) {
+        if (is5xxError(e) && !this.config.failOnCriticalErrors) {
           return safeExit(0)
         }
 
@@ -168,7 +160,7 @@ export class RunTestCommand extends Command {
     } catch (e) {
       this.reporter.error(`\n${chalk.bgRed.bold(' ERROR: unable to trigger tests ')}\n${e.message}\n\n`)
 
-      if (is5xxError(e) && this.config.failOnCriticalErrors) {
+      if (is5xxError(e) && !this.config.failOnCriticalErrors) {
         return safeExit(0)
       }
 
@@ -201,7 +193,7 @@ export class RunTestCommand extends Command {
     } catch (error) {
       this.reporter.error(`\n${chalk.bgRed.bold(' ERROR: unable to poll test results ')}\n${error.message}\n\n`)
 
-      if (is5xxError(error) && this.config.failOnCriticalErrors) {
+      if (is5xxError(error) && !this.config.failOnCriticalErrors) {
         return safeExit(0)
       }
 

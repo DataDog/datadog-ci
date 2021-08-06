@@ -110,10 +110,10 @@ describe('run-test', () => {
       command['config'].tunnel = true
       command['testSearchQuery'] = 'a-search-query'
 
-      expect(await command.execute()).toBe(1)
+      expect(await command.execute()).toBe(0)
 
       command['failOnCriticalErrors'] = true
-      expect(await command.execute()).toBe(0)
+      expect(await command.execute()).toBe(1)
     })
 
     test('getTestsToTrigger throws', async () => {
@@ -135,10 +135,10 @@ describe('run-test', () => {
       command['config'].tunnel = true
       command['publicIds'] = ['public-id-1']
 
-      expect(await command.execute()).toBe(1)
+      expect(await command.execute()).toBe(0)
 
       command['failOnCriticalErrors'] = true
-      expect(await command.execute()).toBe(0)
+      expect(await command.execute()).toBe(1)
     })
 
     test('getPresignedURL throws', async () => {
@@ -167,10 +167,10 @@ describe('run-test', () => {
       command['config'].tunnel = true
       command['publicIds'] = ['public-id-1', 'public-id-2']
 
-      expect(await command.execute()).toBe(1)
+      expect(await command.execute()).toBe(0)
 
       command['failOnCriticalErrors'] = true
-      expect(await command.execute()).toBe(0)
+      expect(await command.execute()).toBe(1)
     })
 
     test('runTests throws', async () => {
@@ -198,10 +198,10 @@ describe('run-test', () => {
       command['getApiHelper'] = (() => apiHelper) as any
       command['publicIds'] = ['public-id-1', 'public-id-2']
 
-      expect(await command.execute()).toBe(1)
+      expect(await command.execute()).toBe(0)
 
       command['failOnCriticalErrors'] = true
-      expect(await command.execute()).toBe(0)
+      expect(await command.execute()).toBe(1)
     })
 
     test('waitForResults throws', async () => {
@@ -238,7 +238,7 @@ describe('run-test', () => {
       command['getApiHelper'] = (() => apiHelper) as any
       command['publicIds'] = ['public-id-1', 'public-id-2']
 
-      expect(await command.execute()).toBe(1)
+      expect(await command.execute()).toBe(0)
     })
   })
 

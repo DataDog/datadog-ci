@@ -374,6 +374,19 @@ describe('utils', () => {
     })
   })
 
+  test('result with endpoint failure result', () => {
+    const result: Result = {
+      device: {id: 'laptop_large'},
+      error: 'Endpoint Failure',
+      eventType: 'finished',
+      passed: false,
+      stepDetails: [],
+    }
+
+    expect(utils.hasResultPassed(result, false, true)).toBeFalsy()
+    expect(utils.hasResultPassed(result, true, true)).toBeTruthy()
+  })
+
   test('hasTestSucceeded', () => {
     const testConfiguration = getApiTest('abc-def-ghi')
     const passingResult = {
@@ -402,6 +415,12 @@ describe('utils', () => {
       result: {...passingResult, passed: false, unhealthy: true},
       resultID: '0123456789',
     }
+    const endpointFailurePollResult = {
+      check: testConfiguration,
+      dc_id: 42,
+      result: {...passingResult, passed: false, unhealthy: true, error: 'Endpoint Failure'},
+      resultID: '0123456789',
+    }
     const timeoutPollResult = {
       check: testConfiguration,
       dc_id: 42,
@@ -412,6 +431,8 @@ describe('utils', () => {
     expect(utils.hasTestSucceeded([passingPollResult, failingPollResult], false, true)).toBeFalsy()
     expect(utils.hasTestSucceeded([passingPollResult, unhealthyPollResult], true, true)).toBeTruthy()
     expect(utils.hasTestSucceeded([passingPollResult, unhealthyPollResult], false, true)).toBeFalsy()
+    expect(utils.hasTestSucceeded([passingPollResult, endpointFailurePollResult], true, true)).toBeTruthy()
+    expect(utils.hasTestSucceeded([passingPollResult, endpointFailurePollResult], false, true)).toBeFalsy()
     expect(utils.hasTestSucceeded([passingPollResult, passingPollResult], false, true)).toBeTruthy()
     expect(utils.hasTestSucceeded([passingPollResult, timeoutPollResult], false, true)).toBeFalsy()
     expect(utils.hasTestSucceeded([passingPollResult, timeoutPollResult], false, false)).toBeTruthy()
