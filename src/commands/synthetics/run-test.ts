@@ -22,11 +22,11 @@ import {Tunnel} from './tunnel'
 import {getReporter, getSuites, getTestsToTrigger, hasTestSucceeded, runTests, waitForResults} from './utils'
 
 export const DEFAULT_COMMAND_CONFIG: CommandConfig = {
-  failOnCriticalErrors: false,
   apiKey: '',
   appKey: '',
   configPath: 'datadog-ci.json',
   datadogSite: 'datadoghq.com',
+  failOnCriticalErrors: false,
   files: ['{,!(node_modules)/**/}*.synthetics.json'],
   global: {},
   pollingTimeout: 2 * 60 * 1000,
@@ -37,12 +37,12 @@ export const DEFAULT_COMMAND_CONFIG: CommandConfig = {
 }
 
 export class RunTestCommand extends Command {
-  private failOnCriticalErrors?: boolean
   private apiKey?: string
   private appKey?: string
   private config: CommandConfig = JSON.parse(JSON.stringify(DEFAULT_COMMAND_CONFIG)) // Deep copy to avoid mutation during unit tests
   private configPath?: string
   private datadogSite?: string
+  private failOnCriticalErrors?: boolean
   private files?: string[]
   private publicIds?: string[]
   private reporter?: MainReporter
@@ -329,11 +329,11 @@ export class RunTestCommand extends Command {
     this.config = deepExtend(
       this.config,
       removeUndefinedValues({
-        failOnCriticalErrors: this.failOnCriticalErrors,
         apiKey: this.apiKey,
         appKey: this.appKey,
         configPath: this.configPath,
         datadogSite: this.datadogSite,
+        failOnCriticalErrors: this.failOnCriticalErrors,
         files: this.files,
         publicIds: this.publicIds,
         subdomain: this.subdomain,

@@ -452,11 +452,11 @@ describe('run-test', () => {
 
     test('override from config file', async () => {
       const overrideConfigFile = {
-        failOnCriticalErrors: true,
         apiKey: 'fake_api_key',
         appKey: 'fake_app_key',
         configPath: 'fake-datadog-ci.json',
         datadogSite: 'datadoghq.eu',
+        failOnCriticalErrors: true,
         files: ['my-new-file'],
         global: {locations: []},
         pollingTimeout: 1,
@@ -475,11 +475,11 @@ describe('run-test', () => {
 
     test('override from CLI', async () => {
       const overrideCLI = {
-        failOnCriticalErrors: true,
         apiKey: 'fake_api_key',
         appKey: 'fake_app_key',
         configPath: 'fake-datadog-ci.json',
         datadogSite: 'datadoghq.eu',
+        failOnCriticalErrors: true,
         files: ['new-file'],
         publicIds: ['ran-dom-id'],
         subdomain: 'new-sub-domain',
@@ -502,11 +502,11 @@ describe('run-test', () => {
       await command['resolveConfig']()
       expect(command['config']).toEqual({
         ...DEFAULT_COMMAND_CONFIG,
-        failOnCriticalErrors: true,
         apiKey: 'fake_api_key',
         appKey: 'fake_app_key',
         configPath: 'fake-datadog-ci.json',
         datadogSite: 'datadoghq.eu',
+        failOnCriticalErrors: true,
         files: ['new-file'],
         publicIds: ['ran-dom-id'],
         subdomain: 'new-sub-domain',

@@ -275,11 +275,11 @@ export interface APIConfiguration {
 }
 
 export interface CommandConfig {
-  failOnCriticalErrors: boolean
   apiKey: string
   appKey: string
   configPath: string
   datadogSite: string
+  failOnCriticalErrors: boolean
   files: string[]
   global: ConfigOverride
   pollingTimeout: number
