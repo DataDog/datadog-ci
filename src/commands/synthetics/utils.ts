@@ -232,7 +232,7 @@ export const waitForResults = async (
       }
     }
 
-    if (pollingDuration >= maxPollingTimeout && failOnTimeout) {
+    if (pollingDuration >= maxPollingTimeout) {
       break
     }
 
