@@ -6,9 +6,7 @@ import {MultipartPayload, newMultipartValue} from '../../helpers/upload'
 
 export class Sourcemap {
   // These fields should probably not be marked as public, refactor
-  public gitCommitSha?: string
-  public gitRepositoryPayload?: string
-  public gitRepositoryURL?: string
+  public gitData?: GitData
   public minifiedFilePath: string
   public sourcemapPath: string
 
@@ -24,10 +22,8 @@ export class Sourcemap {
     this.sourcemapPath = sourcemapPath
   }
 
-  public addRepositoryData(gitCommitSha: string, gitRepositoryURL: string, gitRepositoryPayload: string) {
-    this.gitCommitSha = gitCommitSha
-    this.gitRepositoryPayload = gitRepositoryPayload
-    this.gitRepositoryURL = gitRepositoryURL
+  public addRepositoryData(gitData: GitData) {
+    this.gitData = gitData
   }
 
   public asMultipartPayload(
@@ -46,14 +42,10 @@ export class Sourcemap {
       ['project_path', newMultipartValue(projectPath)],
       ['type', newMultipartValue('js_sourcemap')],
     ])
-    if (this.gitRepositoryPayload) {
-      content.set('repository', newMultipartValue(this.gitRepositoryPayload, {filename: 'repository', contentType: 'application/json'}))
-    }
-    if (this.gitRepositoryURL) {
-      content.set('git_repository_url', newMultipartValue(this.gitRepositoryURL))
-    }
-    if (this.gitCommitSha) {
-      content.set('git_commit_sha', newMultipartValue(this.gitCommitSha))
+    if (this.gitData) {
+      content.set('repository', newMultipartValue((this.gitData!).gitRepositoryPayload, {filename: 'repository', contentType: 'application/json'}))
+      content.set('git_repository_url', newMultipartValue((this.gitData!).gitRepositoryURL))
+      content.set('git_commit_sha', newMultipartValue((this.gitData!).gitCommitSha))
     }
 
     return {
@@ -61,6 +53,12 @@ export class Sourcemap {
       renderUpload: () => `Uploading sourcemap ${this.sourcemapPath} for JS file available at ${this.minifiedUrl}\n`,
     }
   }
+}
+
+export interface GitData {
+  gitCommitSha: string
+  gitRepositoryPayload: string
+  gitRepositoryURL: string
 }
 
 export interface Payload {

@@ -96,9 +96,10 @@ describe('upload', () => {
       // The command will fetch git metadatas for the current datadog-ci repository.
       // The `empty.min.js.map` contains no files, therefore no file payload should be set.
       await command['addRepositoryDataToPayloads'](sourcemaps)
-      expect(sourcemaps[0].gitRepositoryURL).toBeDefined()
-      expect(sourcemaps[0].gitCommitSha).toHaveLength(40)
-      expect(sourcemaps[0].gitRepositoryPayload).toBeUndefined()
+      expect(sourcemaps[0].gitData).toBeDefined()
+      expect((sourcemaps[0].gitData!).gitRepositoryURL).toBeDefined()
+      expect((sourcemaps[0].gitData!).gitCommitSha).toHaveLength(40)
+      expect((sourcemaps[0].gitData!).gitRepositoryPayload).toBeUndefined()
     })
 
     test('should include payload', async () => {
@@ -115,9 +116,10 @@ describe('upload', () => {
       // therefore a file payload should be set.
       // Removing the "git.test.ts" file will break this test.
       await command['addRepositoryDataToPayloads'](sourcemaps)
-      expect(sourcemaps[0].gitRepositoryURL).toBeDefined()
-      expect(sourcemaps[0].gitCommitSha).toHaveLength(40)
-      expect(sourcemaps[0].gitRepositoryPayload).toBeDefined()
+      expect(sourcemaps[0].gitData).toBeDefined()
+      expect((sourcemaps[0].gitData!).gitRepositoryURL).toBeDefined()
+      expect((sourcemaps[0].gitData!).gitCommitSha).toHaveLength(40)
+      expect((sourcemaps[0].gitData!).gitRepositoryPayload).toBeDefined()
     })
   })
 })
