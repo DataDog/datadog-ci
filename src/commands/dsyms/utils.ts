@@ -41,7 +41,7 @@ export const getMatchingDSYMFiles = async (absoluteFolderPath: string): Promise<
 }
 
 export const dwarfdumpUUID = async (filePath: string) => {
-  const output = await execute(`dwarfdump --uuid ${filePath}`)
+  const output = await execute(`dwarfdump --uuid '${filePath}'`)
 
   const uuids: string[] = []
   output.stdout.split('\n').forEach((line: string) => {
@@ -64,7 +64,7 @@ export const zipToTmpDir = async (sourcePath: string, targetFilename: string): P
   // `zip -r foo.zip f1/f2/f3/foo.dSYM`
   // this keeps f1/f2/f3 folders in foo.zip, we don't want this
   // `cwd: sourceDir` is passed to avoid that
-  await execute(`zip -r ${targetPath} ${sourceFile}`, sourceDir)
+  await execute(`zip -r '${targetPath}' '${sourceFile}'`, sourceDir)
 
   return targetPath
 }
@@ -73,7 +73,7 @@ export const unzipToTmpDir = async (sourcePath: string): Promise<string> => {
   const targetPath = buildPath(tmpFolder, path.basename(sourcePath, '.zip'), Date.now().toString())
   const dirPath = path.dirname(targetPath)
   await promises.mkdir(dirPath, {recursive: true})
-  await execute(`unzip -o ${sourcePath} -d ${targetPath}`)
+  await execute(`unzip -o '${sourcePath}' -d '${targetPath}'`)
 
   return targetPath
 }
