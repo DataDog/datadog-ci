@@ -1,5 +1,5 @@
 import fs from 'fs'
-import {Payload} from './interfaces'
+import {Sourcemap} from './interfaces'
 
 export class InvalidPayload extends Error {
   public reason: string
@@ -27,7 +27,7 @@ const checkFile: (path: string) => {empty: boolean; exists: boolean} = (path: st
   return {exists: true, empty: false}
 }
 
-export const validatePayload = (sourcemap: Payload) => {
+export const validatePayload = (sourcemap: Sourcemap) => {
   // Check existence of sourcemap file
   const sourcemapCheck = checkFile(sourcemap.sourcemapPath)
   if (!sourcemapCheck.exists) {

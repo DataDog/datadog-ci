@@ -9,15 +9,14 @@ import {URL} from 'url'
 
 import {ApiKeyValidator} from '../../helpers/apikey'
 import {UploadStatus} from '../../helpers/interfaces'
-import {apiConstructor} from './api'
+import {apiConstructor, APIHelper} from '../../helpers/upload'
 import {InvalidConfigurationError} from './errors'
 import {getRepositoryData, newSimpleGit, RepositoryData} from './git'
-import {APIHelper, Payload} from './interfaces'
+import {Sourcemap} from './interfaces'
 import {getMetricsLogger} from './metrics'
 import {
   renderCommandInfo,
   renderConfigurationError,
-  renderDryRunUpload,
   renderFailedUpload,
   renderGitDataNotAttachedWarning,
   renderInvalidPrefix,
@@ -52,6 +51,7 @@ export class UploadCommand extends Command {
 
   private apiKeyValidator: ApiKeyValidator
   private basePath?: string
+  private cliVersion: string
   private config = {
     apiKey: process.env.DATADOG_API_KEY,
     datadogSite: process.env.DATADOG_SITE || 'datadoghq.com',
@@ -68,6 +68,7 @@ export class UploadCommand extends Command {
   constructor() {
     super()
     this.apiKeyValidator = new ApiKeyValidator(this.config.apiKey, this.config.datadogSite)
+    this.cliVersion = require('../../../package.json').version
   }
 
   public async execute() {
@@ -110,12 +111,11 @@ export class UploadCommand extends Command {
         this.dryRun
       )
     )
-    const cliVersion = require('../../../package.json').version
-    const metricsLogger = getMetricsLogger(this.releaseVersion, this.service, cliVersion)
+    const metricsLogger = getMetricsLogger(this.releaseVersion, this.service, this.cliVersion)
     const useGit = this.disableGit === undefined || !this.disableGit
     const initialTime = Date.now()
-    const payloads = await this.getPayloadsToUpload(useGit, cliVersion)
-    const upload = (p: Payload) => this.uploadSourcemap(api, metricsLogger.logger, p)
+    const payloads = await this.getPayloadsToUpload(useGit)
+    const upload = (p: Sourcemap) => this.uploadSourcemap(api, metricsLogger.logger, p)
     try {
       const results = await asyncPool(this.maxConcurrency, payloads, upload)
       const totalTime = (Date.now() - initialTime) / 1000
@@ -141,16 +141,18 @@ export class UploadCommand extends Command {
   }
 
   // Fills the 'repository' field of each payload with data gathered using git.
-  private addRepositoryDataToPayloads = async (payloads: Payload[]) => {
+  private addRepositoryDataToPayloads = async (payloads: Sourcemap[]) => {
     const repositoryData = await getRepositoryData(await newSimpleGit(), this.context.stdout, this.repositoryURL)
     if (repositoryData === undefined) {
       return
     }
     await Promise.all(
       payloads.map(async (payload) => {
-        payload.gitRepositoryPayload = this.getRepositoryPayload(repositoryData, payload.sourcemapPath)
-        payload.gitRepositoryURL = repositoryData.remote
-        payload.gitCommitSha = repositoryData.hash
+        payload.addRepositoryData(
+          repositoryData.hash,
+          repositoryData.remote,
+          this.getRepositoryPayload(repositoryData, payload.sourcemapPath)!
+        )
       })
     )
   }
@@ -165,7 +167,7 @@ export class UploadCommand extends Command {
 
   // Looks for the sourcemaps and minified files on disk and returns
   // the associated payloads.
-  private getMatchingSourcemapFiles = async (cliVersion: string): Promise<Payload[]> => {
+  private getMatchingSourcemapFiles = async (): Promise<Sourcemap[]> => {
     const sourcemapFiles = glob.sync(buildPath(this.basePath!, '**/*js.map'))
 
     return Promise.all(
@@ -173,15 +175,7 @@ export class UploadCommand extends Command {
         const minifiedFilePath = getMinifiedFilePath(sourcemapPath)
         const minifiedURL = this.getMinifiedURL(minifiedFilePath)
 
-        return {
-          cliVersion,
-          minifiedFilePath,
-          minifiedUrl: minifiedURL,
-          projectPath: this.projectPath,
-          service: this.service!,
-          sourcemapPath,
-          version: this.releaseVersion!,
-        }
+        return new Sourcemap(minifiedFilePath, minifiedURL, sourcemapPath)
       })
     )
   }
@@ -192,8 +186,8 @@ export class UploadCommand extends Command {
     return buildPath(this.minifiedPathPrefix!, relativePath)
   }
 
-  private getPayloadsToUpload = async (useGit: boolean, cliVersion: string): Promise<Payload[]> => {
-    const payloads = await this.getMatchingSourcemapFiles(cliVersion)
+  private getPayloadsToUpload = async (useGit: boolean): Promise<Sourcemap[]> => {
+    const payloads = await this.getMatchingSourcemapFiles()
     if (!useGit) {
       return payloads
     }
@@ -251,7 +245,7 @@ export class UploadCommand extends Command {
   private async uploadSourcemap(
     api: APIHelper,
     metricsLogger: BufferedMetricsLogger,
-    sourcemap: Payload
+    sourcemap: Sourcemap
   ): Promise<UploadStatus> {
     try {
       validatePayload(sourcemap)
@@ -276,12 +270,15 @@ export class UploadCommand extends Command {
       return await retry(
         async (bail) => {
           try {
+            const payload = sourcemap.asMultipartPayload(
+              this.cliVersion, this.service!, this.releaseVersion!, this.projectPath
+            )
             if (this.dryRun) {
-              this.context.stdout.write(renderDryRunUpload(sourcemap))
+              this.context.stdout.write(`[DRYRUN] ${payload.renderUpload()}`)
 
               return UploadStatus.Success
             }
-            await api.uploadSourcemap(sourcemap, this.context.stdout.write.bind(this.context.stdout))
+            await api.uploadMultipart(payload, this.context.stdout.write.bind(this.context.stdout))
             metricsLogger.increment('success', 1)
 
             return UploadStatus.Success
@@ -315,8 +312,7 @@ export class UploadCommand extends Command {
       if (invalidApiKey) {
         metricsLogger.increment('invalid_auth', 1)
         throw new InvalidConfigurationError(
-          `${chalk.red.bold('DATADOG_API_KEY')} does not contain a valid API key for Datadog site ${
-            this.config.datadogSite
+          `${chalk.red.bold('DATADOG_API_KEY')} does not contain a valid API key for Datadog site ${this.config.datadogSite
           }`
         )
       }

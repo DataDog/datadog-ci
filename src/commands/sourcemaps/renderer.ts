@@ -1,7 +1,7 @@
 import chalk from 'chalk'
 
 import {UploadStatus} from '../../helpers/interfaces'
-import {Payload} from './interfaces'
+import {Sourcemap} from './interfaces'
 import {pluralize} from './utils'
 
 const ICONS = {
@@ -27,13 +27,13 @@ export const renderInvalidPrefix = chalk.red(
   `${ICONS.FAILED} --minified-path-prefix should either be an URL (such as "http://example.com/static") or an absolute path starting with a / such as "/static"\n`
 )
 
-export const renderFailedUpload = (payload: Payload, errorMessage: string) => {
-  const sourcemapPathBold = `[${chalk.bold.dim(payload.sourcemapPath)}]`
+export const renderFailedUpload = (sourcemap: Sourcemap, errorMessage: string) => {
+  const sourcemapPathBold = `[${chalk.bold.dim(sourcemap.sourcemapPath)}]`
 
   return chalk.red(`${ICONS.FAILED} Failed upload sourcemap for ${sourcemapPathBold}: ${errorMessage}\n`)
 }
 
-export const renderRetriedUpload = (payload: Payload, errorMessage: string, attempt: number) => {
+export const renderRetriedUpload = (payload: Sourcemap, errorMessage: string, attempt: number) => {
   const sourcemapPathBold = `[${chalk.bold.dim(payload.sourcemapPath)}]`
 
   return chalk.yellow(`[attempt ${attempt}] Retrying sourcemap upload ${sourcemapPathBold}: ${errorMessage}\n`)
@@ -129,8 +129,3 @@ export const renderCommandInfo = (
 
   return fullStr
 }
-
-export const renderDryRunUpload = (sourcemap: Payload): string => `[DRYRUN] ${renderUpload(sourcemap)}`
-
-export const renderUpload = (sourcemap: Payload): string =>
-  `Uploading sourcemap ${sourcemap.sourcemapPath} for JS file available at ${sourcemap.minifiedUrl}\n`
