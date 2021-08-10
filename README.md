@@ -16,6 +16,18 @@ npm install --save-dev @datadog/datadog-ci
 yarn add --dev @datadog/datadog-ci
 ```
 
+If you need `datadog-ci` as a CLI tool instead of a package, you can run it with `npx` or install globally:
+
+```sh
+# npx
+npx @datadog/datadog-ci [command]
+
+# NPM install globally
+npm install -g @datadog/datadog-ci
+
+# Yarn add globally
+yarn global add @datadog/datadog-ci
+```
 ## Usage
 
 ```bash
