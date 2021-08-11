@@ -1,6 +1,7 @@
 // tslint:disable: no-string-literal
 import {promises} from 'fs'
 
+import {Dsym} from '../interfaces'
 import {getMatchingDSYMFiles, isZipFile, unzipToTmpDir, zipToTmpDir} from '../utils'
 
 describe('isZipFile', () => {
@@ -22,11 +23,7 @@ describe('getMatchingDSYMFiles', () => {
     const folder = './src/commands/dsyms/__tests__/test files/'
     const foundFiles = await getMatchingDSYMFiles(folder)
     expect(foundFiles).toEqual([
-      {
-        path: './src/commands/dsyms/__tests__/test files/test.dSYM',
-        type: 'ios_symbols',
-        uuids: ['BD8CE358-D5F3-358B-86DC-CBCF2148097B'],
-      },
+      new Dsym('./src/commands/dsyms/__tests__/test files/test.dSYM', ['BD8CE358-D5F3-358B-86DC-CBCF2148097B']),
     ])
   })
 })
