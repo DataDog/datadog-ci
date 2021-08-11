@@ -1,7 +1,9 @@
 import {AxiosPromise, AxiosResponse} from 'axios'
+import chalk from 'chalk'
 import fs from 'fs'
 import {Writable} from 'stream'
 
+import {ICONS} from '../../helpers/formatting'
 import {MultipartPayload, newMultipartValue} from '../../helpers/upload'
 
 export class Sourcemap {
@@ -42,14 +44,26 @@ export class Sourcemap {
       ['project_path', newMultipartValue(projectPath)],
       ['type', newMultipartValue('js_sourcemap')],
     ])
-    if (this.gitData) {
-      content.set('repository', newMultipartValue((this.gitData!).gitRepositoryPayload, {filename: 'repository', contentType: 'application/json'}))
+    if (this.gitData !== undefined) {
+      if ((this.gitData!).gitRepositoryPayload !== undefined) {
+        content.set('repository', newMultipartValue((this.gitData!).gitRepositoryPayload, {filename: 'repository', contentType: 'application/json'}))
+      }
       content.set('git_repository_url', newMultipartValue((this.gitData!).gitRepositoryURL))
       content.set('git_commit_sha', newMultipartValue((this.gitData!).gitCommitSha))
     }
 
     return {
       content,
+      renderFailedUpload: (errorMessage: string) => {
+        const sourcemapPathBold = `[${chalk.bold.dim(this.sourcemapPath)}]`
+
+        return chalk.red(`${ICONS.FAILED} Failed upload sourcemap for ${sourcemapPathBold}: ${errorMessage}\n`)
+      },
+      renderRetry: (errorMessage: string, attempt: number) => {
+        const sourcemapPathBold = `[${chalk.bold.dim(this.sourcemapPath)}]`
+
+        return chalk.yellow(`[attempt ${attempt}] Retrying sourcemap upload ${sourcemapPathBold}: ${errorMessage}\n`)
+      },
       renderUpload: () => `Uploading sourcemap ${this.sourcemapPath} for JS file available at ${this.minifiedUrl}\n`,
     }
   }
@@ -57,7 +71,7 @@ export class Sourcemap {
 
 export interface GitData {
   gitCommitSha: string
-  gitRepositoryPayload: string
+  gitRepositoryPayload?: string
   gitRepositoryURL: string
 }
 

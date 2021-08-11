@@ -158,3 +158,5 @@ export const removeEmptyValues = (tags: SpanTags) =>
       [tag]: tags[tag],
     }
   }, {})
+
+export type Logger = (s: string) => void

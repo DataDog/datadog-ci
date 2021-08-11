@@ -60,6 +60,7 @@ export type SpanTag =
 
 export type SpanTags = Partial<Record<SpanTag, string>>
 
+// TODO deduplicate
 export enum UploadStatus {
   Success,
   Failure,

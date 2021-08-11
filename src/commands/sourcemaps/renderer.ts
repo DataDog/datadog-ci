@@ -1,14 +1,9 @@
 import chalk from 'chalk'
 
+import {ICONS} from '../../helpers/formatting'
 import {UploadStatus} from '../../helpers/interfaces'
 import {Sourcemap} from './interfaces'
 import {pluralize} from './utils'
-
-const ICONS = {
-  FAILED: chalk.bold.red('❌'),
-  SUCCESS: chalk.bold.green('✅'),
-  WARNING: chalk.bold.green('⚠️'),
-}
 
 export const renderGitWarning = (errorMessage: string) =>
   chalk.yellow(`${ICONS.WARNING} An error occured while invoking git: ${errorMessage}
