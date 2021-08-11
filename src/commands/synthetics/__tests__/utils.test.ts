@@ -418,13 +418,13 @@ describe('utils', () => {
     const endpointFailurePollResult = {
       check: testConfiguration,
       dc_id: 42,
-      result: {...passingResult, passed: false, unhealthy: true, error: 'Endpoint Failure'},
+      result: {...passingResult, passed: false, error: 'Endpoint Failure'},
       resultID: '0123456789',
     }
     const timeoutPollResult = {
       check: testConfiguration,
       dc_id: 42,
-      result: {...passingResult, passed: false, unhealthy: true, error: 'Timeout'},
+      result: {...passingResult, passed: false, error: 'Timeout'},
       resultID: '0123456789',
     }
 
