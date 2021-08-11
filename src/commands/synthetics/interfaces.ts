@@ -17,7 +17,14 @@ export interface MainReporter {
   log(log: string): void
   reportStart(timings: {startTime: number}): void
   runEnd(summary: Summary): void
-  testEnd(test: Test, results: PollResult[], baseUrl: string, locationNames: LocationsMapping): void
+  testEnd(
+    test: Test,
+    results: PollResult[],
+    baseUrl: string,
+    locationNames: LocationsMapping,
+    failOnCriticalErrors: boolean,
+    failOnTimeout: boolean
+  ): void
   testTrigger(test: Test, testId: string, executionRule: ExecutionRule, config: ConfigOverride): void
   testWait(test: Test): void
 }
@@ -29,7 +36,7 @@ export interface Result {
     id: string
   }
   duration?: number
-  error?: string
+  error?: string | 'Endpoint Failure' | 'Timeout' | 'Tunnel Failure'
   errorCode?: string
   errorMessage?: string
   eventType: string
@@ -276,6 +283,8 @@ export interface CommandConfig {
   appKey: string
   configPath: string
   datadogSite: string
+  failOnCriticalErrors: boolean
+  failOnTimeout: boolean
   files: string[]
   global: ConfigOverride
   pollingTimeout: number

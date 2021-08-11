@@ -9,7 +9,7 @@ import glob from 'glob'
 import {getCIMetadata} from '../../helpers/ci'
 import {pick} from '../../helpers/utils'
 
-import {formatBackendErrors} from './api'
+import {EndpointError, formatBackendErrors, is5xxError} from './api'
 import {
   APIHelper,
   ConfigOverride,
@@ -169,7 +169,19 @@ export const getStrictestExecutionRule = (configRule: ExecutionRule, testRule?: 
   return ExecutionRule.BLOCKING
 }
 
-export const hasResultPassed = (result: Result): boolean => {
+export const hasResultPassed = (result: Result, failOnCriticalErrors: boolean, failOnTimeout: boolean): boolean => {
+  if (result.unhealthy && !failOnCriticalErrors) {
+    return true
+  }
+
+  if (result.error === 'Endpoint Failure' && !failOnCriticalErrors) {
+    return true
+  }
+
+  if (result.error === 'Timeout' && !failOnTimeout) {
+    return true
+  }
+
   if (typeof result.passed !== 'undefined') {
     return result.passed
   }
@@ -181,8 +193,12 @@ export const hasResultPassed = (result: Result): boolean => {
   return true
 }
 
-export const hasTestSucceeded = (results: PollResult[]): boolean =>
-  results.every((pollResult: PollResult) => hasResultPassed(pollResult.result))
+export const hasTestSucceeded = (
+  results: PollResult[],
+  failOnCriticalErrors: boolean,
+  failOnTimeout: boolean
+): boolean =>
+  results.every((pollResult: PollResult) => hasResultPassed(pollResult.result, failOnCriticalErrors, failOnTimeout))
 
 export const getSuites = async (GLOB: string, reporter: MainReporter): Promise<Suite[]> => {
   reporter.log(`Finding files in ${path.join(process.cwd(), GLOB)}\n`)
@@ -213,7 +229,8 @@ export const waitForResults = async (
   triggerResponses: TriggerResponse[],
   defaultTimeout: number,
   triggerConfigs: TriggerConfig[],
-  tunnel?: Tunnel
+  tunnel?: Tunnel,
+  failOnCriticalErrors?: boolean
 ) => {
   const triggerResultMap = createTriggerResultMap(triggerResponses, defaultTimeout, triggerConfigs)
   const triggerResults = [...triggerResultMap.values()]
@@ -228,6 +245,7 @@ export const waitForResults = async (
       .then(() => (isTunnelConnected = false))
       .catch(() => (isTunnelConnected = false))
   }
+
   while (triggerResults.filter((tr) => !tr.result).length) {
     const pollingDuration = new Date().getTime() - pollingStartDate
 
@@ -260,10 +278,28 @@ export const waitForResults = async (
       break
     }
 
-    const polledResultsResponse = await api.pollResults(
-      triggerResults.filter((tr) => !tr.result).map((tr) => tr.result_id)
-    )
-    for (const polledResult of polledResultsResponse.results) {
+    let polledResults: PollResult[]
+    const triggerResultsSucceed = triggerResults.filter((tr) => !tr.result)
+    try {
+      polledResults = (await api.pollResults(triggerResultsSucceed.map((tr) => tr.result_id))).results
+    } catch (error) {
+      if (is5xxError(error) && !failOnCriticalErrors) {
+        polledResults = []
+        for (const triggerResult of triggerResultsSucceed) {
+          triggerResult.result = createFailingResult(
+            'Endpoint Failure',
+            triggerResult.result_id,
+            triggerResult.device,
+            triggerResult.location,
+            !!tunnel
+          )
+        }
+      } else {
+        throw error
+      }
+    }
+
+    for (const polledResult of polledResults) {
       if (polledResult.result.eventType === 'finished') {
         const triggeredResult = triggerResultMap.get(polledResult.resultID)
         if (triggeredResult) {
@@ -310,7 +346,7 @@ export const createTriggerResultMap = (
 }
 
 const createFailingResult = (
-  errorMessage: string,
+  errorMessage: 'Endpoint Failure' | 'Timeout' | 'Tunnel Failure',
   resultId: string,
   deviceId: string,
   dcId: number,
@@ -364,10 +400,10 @@ export const getReporter = (reporters: Reporter[]): MainReporter => ({
       }
     }
   },
-  testEnd: (test, results, baseUrl, locationNames) => {
+  testEnd: (test, results, baseUrl, locationNames, failOnCriticalErrors, failOnTimeout) => {
     for (const reporter of reporters) {
       if (typeof reporter.testEnd === 'function') {
-        reporter.testEnd(test, results, baseUrl, locationNames)
+        reporter.testEnd(test, results, baseUrl, locationNames, failOnCriticalErrors, failOnTimeout)
       }
     }
   },
@@ -399,6 +435,10 @@ export const getTestsToTrigger = async (api: APIHelper, triggerConfigs: TriggerC
       try {
         test = await api.getTest(id)
       } catch (e) {
+        if (is5xxError(e)) {
+          throw e
+        }
+
         summary.notFound++
         const errorMessage = formatBackendErrors(e)
         errorMessages.push(`[${chalk.bold.dim(id)}] ${chalk.yellow.bold('Test not found')}: ${errorMessage}\n`)
@@ -438,12 +478,12 @@ export const runTests = async (api: APIHelper, testsToTrigger: TestPayload[]): P
   }
 
   try {
-    return api.triggerTests(payload)
+    return await api.triggerTests(payload)
   } catch (e) {
     const errorMessage = formatBackendErrors(e)
     const testIds = testsToTrigger.map((t) => t.public_id).join(',')
     // Rewrite error message
-    throw new Error(`[${testIds}] Failed to trigger tests: ${errorMessage}\n`)
+    throw new EndpointError(`[${testIds}] Failed to trigger tests: ${errorMessage}\n`, e.response.status)
   }
 }
 

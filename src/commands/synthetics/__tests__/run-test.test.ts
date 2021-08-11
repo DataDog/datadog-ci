@@ -1,6 +1,6 @@
 // tslint:disable: no-string-literal
-import {AxiosError, AxiosResponse} from 'axios'
 
+import {AxiosError, AxiosResponse} from 'axios'
 import * as ciUtils from '../../../helpers/utils'
 
 import {ExecutionRule} from '../interfaces'
@@ -8,23 +8,6 @@ import {DefaultReporter} from '../reporters/default'
 import {DEFAULT_COMMAND_CONFIG, removeUndefinedValues, RunTestCommand} from '../run-test'
 import * as utils from '../utils'
 import {mockReporter} from './fixtures'
-
-export const assertAsyncThrow = async (func: any, errorRegex?: RegExp) => {
-  let error
-  try {
-    await func()
-    console.error('Function has not thrown')
-  } catch (e) {
-    error = e
-    if (errorRegex) {
-      expect(e.toString()).toMatch(errorRegex)
-    }
-  }
-
-  expect(error).toBeTruthy()
-
-  return error
-}
 
 describe('run-test', () => {
   beforeEach(() => {
@@ -127,6 +110,9 @@ describe('run-test', () => {
       command['config'].tunnel = true
       command['testSearchQuery'] = 'a-search-query'
 
+      expect(await command.execute()).toBe(0)
+
+      command['failOnCriticalErrors'] = true
       expect(await command.execute()).toBe(1)
     })
 
@@ -149,6 +135,9 @@ describe('run-test', () => {
       command['config'].tunnel = true
       command['publicIds'] = ['public-id-1']
 
+      expect(await command.execute()).toBe(0)
+
+      command['failOnCriticalErrors'] = true
       expect(await command.execute()).toBe(1)
     })
 
@@ -163,7 +152,8 @@ describe('run-test', () => {
       )
 
       const serverError = new Error('Server Error') as AxiosError
-      serverError.response = {status: 502} as AxiosResponse
+      serverError.response = {data: {errors: ['Bad Gateway']}, status: 502} as AxiosResponse
+      serverError.config = {baseURL: 'baseURL', url: 'url'}
       const apiHelper = {
         getPresignedURL: jest.fn(() => {
           throw serverError
@@ -177,6 +167,9 @@ describe('run-test', () => {
       command['config'].tunnel = true
       command['publicIds'] = ['public-id-1', 'public-id-2']
 
+      expect(await command.execute()).toBe(0)
+
+      command['failOnCriticalErrors'] = true
       expect(await command.execute()).toBe(1)
     })
 
@@ -191,7 +184,8 @@ describe('run-test', () => {
       )
 
       const serverError = new Error('Server Error') as AxiosError
-      serverError.response = {status: 502} as AxiosResponse
+      serverError.response = {data: {errors: ['Bad Gateway']}, status: 502} as AxiosResponse
+      serverError.config = {baseURL: 'baseURL', url: 'url'}
       const apiHelper = {
         triggerTests: jest.fn(() => {
           throw serverError
@@ -204,29 +198,41 @@ describe('run-test', () => {
       command['getApiHelper'] = (() => apiHelper) as any
       command['publicIds'] = ['public-id-1', 'public-id-2']
 
+      expect(await command.execute()).toBe(0)
+
+      command['failOnCriticalErrors'] = true
       expect(await command.execute()).toBe(1)
     })
 
     test('waitForResults throws', async () => {
       jest.spyOn(ciUtils, 'parseConfigFile').mockImplementation(async (config, _) => config)
+      const location = {
+        display_name: 'us1',
+        id: 1,
+        is_active: true,
+        name: 'us1',
+        region: 'us1',
+      }
       jest.spyOn(utils, 'getTestsToTrigger').mockReturnValue(
         Promise.resolve({
           overriddenTestsToTrigger: [],
           summary: {passed: 0, failed: 0, skipped: 0, notFound: 0},
-          tests: [{public_id: 'publicId'} as any],
+          tests: [{options: {ci: {executionRule: ExecutionRule.BLOCKING}}, public_id: 'publicId'} as any],
         })
       )
 
       jest.spyOn(utils, 'runTests').mockReturnValue(
         Promise.resolve({
-          locations: [],
-          results: [{public_id: 'publicId'} as any],
+          locations: [location],
+          results: [{device: 'chrome_laptop.large', location: 1, public_id: 'publicId', result_id: '1111'}],
           triggered_check_ids: [],
         })
       )
 
       const serverError = new Error('Server Error') as AxiosError
-      serverError.response = {status: 502} as AxiosResponse
+      serverError.response = {data: {errors: ['Bad Gateway']}, status: 502} as AxiosResponse
+      serverError.config = {baseURL: 'baseURL', url: 'url'}
+
       const apiHelper = {
         pollResults: jest.fn(() => {
           throw serverError
@@ -239,6 +245,9 @@ describe('run-test', () => {
       command['getApiHelper'] = (() => apiHelper) as any
       command['publicIds'] = ['public-id-1', 'public-id-2']
 
+      expect(await command.execute()).toBe(0)
+
+      command['failOnCriticalErrors'] = true
       expect(await command.execute()).toBe(1)
     })
   })
@@ -312,14 +321,14 @@ describe('run-test', () => {
       command['reporter'] = utils.getReporter([new DefaultReporter(command)])
       await command['resolveConfig']()
 
-      await assertAsyncThrow(command['getApiHelper'].bind(command), /API and\/or Application keys are missing/)
+      expect(command['getApiHelper'].bind(command)).toThrowError(/API and\/or Application keys are missing/)
       expect(write.mock.calls[0][0]).toContain('DATADOG_APP_KEY')
       expect(write.mock.calls[1][0]).toContain('DATADOG_API_KEY')
 
       command['appKey'] = 'fakeappkey'
       await command['resolveConfig']()
       write.mockClear()
-      await assertAsyncThrow(command['getApiHelper'].bind(command), /API and\/or Application keys are missing/)
+      expect(command['getApiHelper'].bind(command)).toThrowError(/API and\/or Application keys are missing/)
       expect(write.mock.calls[0][0]).toContain('DATADOG_API_KEY')
     })
   })
@@ -457,6 +466,8 @@ describe('run-test', () => {
         appKey: 'fake_app_key',
         configPath: 'fake-datadog-ci.json',
         datadogSite: 'datadoghq.eu',
+        failOnCriticalErrors: true,
+        failOnTimeout: false,
         files: ['my-new-file'],
         global: {locations: []},
         pollingTimeout: 1,
@@ -479,6 +490,8 @@ describe('run-test', () => {
         appKey: 'fake_app_key',
         configPath: 'fake-datadog-ci.json',
         datadogSite: 'datadoghq.eu',
+        failOnCriticalErrors: true,
+        failOnTimeout: false,
         files: ['new-file'],
         publicIds: ['ran-dom-id'],
         subdomain: 'new-sub-domain',
@@ -491,6 +504,8 @@ describe('run-test', () => {
       command['appKey'] = overrideCLI.appKey
       command['configPath'] = overrideCLI.configPath
       command['datadogSite'] = overrideCLI.datadogSite
+      command['failOnCriticalErrors'] = overrideCLI.failOnCriticalErrors
+      command['failOnTimeout'] = overrideCLI.failOnTimeout
       command['files'] = overrideCLI.files
       command['publicIds'] = overrideCLI.publicIds
       command['subdomain'] = overrideCLI.subdomain
@@ -504,6 +519,8 @@ describe('run-test', () => {
         appKey: 'fake_app_key',
         configPath: 'fake-datadog-ci.json',
         datadogSite: 'datadoghq.eu',
+        failOnCriticalErrors: true,
+        failOnTimeout: false,
         files: ['new-file'],
         publicIds: ['ran-dom-id'],
         subdomain: 'new-sub-domain',

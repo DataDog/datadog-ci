@@ -3,7 +3,7 @@ jest.mock('fs')
 
 import * as fs from 'fs'
 
-import * as axios from 'axios'
+import {AxiosError, AxiosRequestConfig, AxiosResponse, default as axios} from 'axios'
 import glob from 'glob'
 
 import {ProxyConfiguration} from '../../../helpers/utils'
@@ -51,25 +51,29 @@ describe('utils', () => {
       triggered_check_ids: [fakeId],
     }
 
-    beforeAll(() => {
-      const axiosMock = jest.spyOn(axios.default, 'create')
-      axiosMock.mockImplementation((() => (e: any) => {
-        if (e.url === '/synthetics/tests/trigger/ci') {
-          return {data: fakeTrigger}
-        }
-      }) as any)
-    })
-
     afterAll(() => {
       jest.clearAllMocks()
     })
 
     test('should run test', async () => {
+      const axiosMock = jest.spyOn(axios, 'create')
+      axiosMock.mockImplementation((() => (e: any) => {
+        if (e.url === '/synthetics/tests/trigger/ci') {
+          return {data: fakeTrigger}
+        }
+      }) as any)
+
       const output = await utils.runTests(api, [{public_id: fakeId, executionRule: ExecutionRule.NON_BLOCKING}])
       expect(output).toEqual(fakeTrigger)
     })
 
     test('should run test with publicId from url', async () => {
+      const axiosMock = jest.spyOn(axios, 'create')
+      axiosMock.mockImplementation((() => (e: any) => {
+        if (e.url === '/synthetics/tests/trigger/ci') {
+          return {data: fakeTrigger}
+        }
+      }) as any)
       const output = await utils.runTests(api, [
         {
           executionRule: ExecutionRule.NON_BLOCKING,
@@ -77,6 +81,27 @@ describe('utils', () => {
         },
       ])
       expect(output).toEqual(fakeTrigger)
+    })
+
+    test('triggerTests throws', async () => {
+      const serverError = new Error('Server Error') as AxiosError
+      Object.assign(serverError, {
+        config: {baseURL: 'baseURL', url: 'url'},
+        response: {
+          data: {errors: []},
+          status: 502,
+        },
+      })
+
+      const requestMock = jest.fn()
+      requestMock.mockImplementation(() => {
+        throw serverError
+      })
+      jest.spyOn(axios, 'create').mockImplementation((() => requestMock) as any)
+
+      await expect(
+        utils.runTests(api, [{public_id: fakeId, executionRule: ExecutionRule.NON_BLOCKING}])
+      ).rejects.toThrow(/Failed to trigger tests:/)
     })
   })
 
@@ -96,7 +121,7 @@ describe('utils', () => {
     }
 
     beforeAll(() => {
-      const axiosMock = jest.spyOn(axios.default, 'create')
+      const axiosMock = jest.spyOn(axios, 'create')
       axiosMock.mockImplementation((() => (e: any) => {
         const publicId = e.url.slice(18)
         if (fakeTests[publicId]) {
@@ -304,9 +329,11 @@ describe('utils', () => {
         passed: true,
         stepDetails: [],
       }
-      expect(utils.hasResultPassed(result)).toBeTruthy()
+      expect(utils.hasResultPassed(result, false, true)).toBeTruthy()
+      expect(utils.hasResultPassed(result, true, true)).toBeTruthy()
       result.passed = false
-      expect(utils.hasResultPassed(result)).toBeFalsy()
+      expect(utils.hasResultPassed(result, false, true)).toBeFalsy()
+      expect(utils.hasResultPassed(result, true, true)).toBeFalsy()
     })
 
     test('result with error', () => {
@@ -317,8 +344,47 @@ describe('utils', () => {
         passed: false,
         stepDetails: [],
       }
-      expect(utils.hasResultPassed(result)).toBeFalsy()
+      expect(utils.hasResultPassed(result, false, true)).toBeFalsy()
+      expect(utils.hasResultPassed(result, true, true)).toBeFalsy()
     })
+
+    test('result with unhealthy result', () => {
+      const result: Result = {
+        device: {id: 'laptop_large'},
+        errorCode: 'ERRABORTED',
+        eventType: 'finished',
+        passed: false,
+        stepDetails: [],
+        unhealthy: true,
+      }
+      expect(utils.hasResultPassed(result, false, true)).toBeTruthy()
+      expect(utils.hasResultPassed(result, true, true)).toBeFalsy()
+    })
+
+    test('result with timeout result', () => {
+      const result: Result = {
+        device: {id: 'laptop_large'},
+        error: 'Timeout',
+        eventType: 'finished',
+        passed: false,
+        stepDetails: [],
+      }
+      expect(utils.hasResultPassed(result, true, true)).toBeFalsy()
+      expect(utils.hasResultPassed(result, true, false)).toBeTruthy()
+    })
+  })
+
+  test('result with endpoint failure result', () => {
+    const result: Result = {
+      device: {id: 'laptop_large'},
+      error: 'Endpoint Failure',
+      eventType: 'finished',
+      passed: false,
+      stepDetails: [],
+    }
+
+    expect(utils.hasResultPassed(result, false, true)).toBeTruthy()
+    expect(utils.hasResultPassed(result, true, true)).toBeFalsy()
   })
 
   test('hasTestSucceeded', () => {
@@ -343,23 +409,47 @@ describe('utils', () => {
       result: {...passingResult, passed: false},
       resultID: '0123456789',
     }
-    expect(utils.hasTestSucceeded([passingPollResult, failingPollResult])).toBeFalsy()
-    expect(utils.hasTestSucceeded([passingPollResult, passingPollResult])).toBeTruthy()
+    const unhealthyPollResult = {
+      check: testConfiguration,
+      dc_id: 42,
+      result: {...passingResult, passed: false, unhealthy: true},
+      resultID: '0123456789',
+    }
+    const endpointFailurePollResult = {
+      check: testConfiguration,
+      dc_id: 42,
+      result: {...passingResult, passed: false, error: 'Endpoint Failure'},
+      resultID: '0123456789',
+    }
+    const timeoutPollResult = {
+      check: testConfiguration,
+      dc_id: 42,
+      result: {...passingResult, passed: false, error: 'Timeout'},
+      resultID: '0123456789',
+    }
+
+    expect(utils.hasTestSucceeded([passingPollResult, failingPollResult], false, true)).toBeFalsy()
+    expect(utils.hasTestSucceeded([passingPollResult, unhealthyPollResult], true, true)).toBeFalsy()
+    expect(utils.hasTestSucceeded([passingPollResult, unhealthyPollResult], false, true)).toBeTruthy()
+    expect(utils.hasTestSucceeded([passingPollResult, endpointFailurePollResult], true, true)).toBeFalsy()
+    expect(utils.hasTestSucceeded([passingPollResult, endpointFailurePollResult], false, true)).toBeTruthy()
+    expect(utils.hasTestSucceeded([passingPollResult, passingPollResult], false, true)).toBeTruthy()
+    expect(utils.hasTestSucceeded([passingPollResult, timeoutPollResult], false, true)).toBeFalsy()
+    expect(utils.hasTestSucceeded([passingPollResult, timeoutPollResult], false, false)).toBeTruthy()
   })
 
   describe('waitForResults', () => {
-    beforeAll(() => {
-      const axiosMock = jest.spyOn(axios.default, 'create')
-      axiosMock.mockImplementation((() => async (r: axios.AxiosRequestConfig) => {
+    const mockAxiosWithDefaultResult = () => {
+      jest.spyOn(axios, 'create').mockImplementation((() => async (r: AxiosRequestConfig) => {
         await utils.wait(100)
 
         const results = JSON.parse(r.params.result_ids)
           .filter((resultId: string) => resultId !== 'timingOutTest')
-          .map((resultId: string) => passingPollResult(resultId))
+          .map((resultId: string) => getPassingPollResult(resultId))
 
         return {data: {results}}
       }) as any)
-    })
+    }
 
     afterAll(() => {
       jest.clearAllMocks()
@@ -373,37 +463,56 @@ describe('utils', () => {
       passed: true,
       stepDetails: [],
     }
-    const publicId = 'abc-def-ghi'
-    const testConfiguration = getApiTest(publicId)
-    const passingPollResult = (resultID: string) => ({
-      check: testConfiguration,
+
+    const getPassingPollResult = (resultId: string) => ({
+      check: getTestConfig(),
       dc_id: 42,
       result: passingResult,
-      resultID,
+      resultID: resultId,
     })
-    const triggerResult = {
-      device: 'laptop_large',
-      location: 42,
-      public_id: publicId,
-      result_id: '0123456789',
-    }
-    const triggerConfig = {
-      config: {},
-      id: publicId,
+
+    const getTestConfig = (publicId = 'abc-def-ghi') => getApiTest(publicId)
+
+    const getTestAndResult = (publicId = 'abc-def-ghi', resultId = '0123456789') => {
+      const testConfiguration = getTestConfig()
+      const triggerResult = {
+        device: 'laptop_large',
+        location: 42,
+        public_id: publicId,
+        result_id: resultId,
+      }
+      const triggerConfig = {
+        config: {},
+        id: publicId,
+      }
+
+      const passingPollResult = {
+        check: testConfiguration,
+        dc_id: 42,
+        result: passingResult,
+        resultID: resultId,
+      }
+
+      return {passingPollResult, triggerConfig, triggerResult}
     }
 
     test('should poll result ids', async () => {
+      mockAxiosWithDefaultResult()
+      const {triggerResult, passingPollResult, triggerConfig} = getTestAndResult()
       const waitMock = jest.spyOn(utils, 'wait')
       waitMock.mockImplementation()
       const expectedResults: {[key: string]: PollResult[]} = {}
-      expectedResults[publicId] = [passingPollResult('0123456789')]
+      expectedResults[triggerResult.public_id] = [passingPollResult]
 
-      expect(await utils.waitForResults(api, [triggerResult], 120000, [triggerConfig])).toEqual(expectedResults)
+      expect(await utils.waitForResults(api, [triggerResult], 120000, [triggerConfig], undefined, false)).toEqual(
+        expectedResults
+      )
     })
 
     test('results should be timed-out if global pollingTimeout is exceeded', async () => {
+      const {triggerResult} = getTestAndResult()
       const expectedResults: {[key: string]: PollResult[]} = {}
-      expectedResults[publicId] = [
+      expectedResults[triggerResult.public_id] = [
         {
           dc_id: triggerResult.location,
           result: {
@@ -417,12 +526,13 @@ describe('utils', () => {
           resultID: triggerResult.result_id,
         },
       ]
-      expect(await utils.waitForResults(api, [triggerResult], 0, [])).toEqual(expectedResults)
+      expect(await utils.waitForResults(api, [triggerResult], 0, [], undefined, false)).toEqual(expectedResults)
     })
 
     test('results should be timeout-ed if test pollingTimeout is exceeded', async () => {
+      const {triggerResult} = getTestAndResult()
       const expectedResults: {[key: string]: PollResult[]} = {}
-      expectedResults[publicId] = [
+      expectedResults[triggerResult.public_id] = [
         {
           dc_id: triggerResult.location,
           result: {
@@ -438,12 +548,16 @@ describe('utils', () => {
       ]
       const testTriggerConfig = {
         config: {pollingTimeout: 0},
-        id: publicId,
+        id: triggerResult.public_id,
       }
-      expect(await utils.waitForResults(api, [triggerResult], 120000, [testTriggerConfig])).toEqual(expectedResults)
+      expect(await utils.waitForResults(api, [triggerResult], 120000, [testTriggerConfig], undefined, false)).toEqual(
+        expectedResults
+      )
     })
 
     test('correct number of pass and timeout results', async () => {
+      mockAxiosWithDefaultResult()
+      const {triggerResult, passingPollResult} = getTestAndResult()
       const waitMock = jest.spyOn(utils, 'wait')
       waitMock.mockImplementation()
 
@@ -453,8 +567,8 @@ describe('utils', () => {
         ...triggerResult,
         result_id: 'timingOutTest',
       }
-      expectedResults[publicId] = [
-        passingPollResult(triggerResultPass.result_id),
+      expectedResults[triggerResult.public_id] = [
+        passingPollResult,
         {
           dc_id: triggerResultTimeOut.location,
           result: {
@@ -468,26 +582,78 @@ describe('utils', () => {
           resultID: triggerResultTimeOut.result_id,
         },
       ]
-      expect(await utils.waitForResults(api, [triggerResultPass, triggerResultTimeOut], 2000, [])).toEqual(
-        expectedResults
-      )
+      expect(
+        await utils.waitForResults(api, [triggerResultPass, triggerResultTimeOut], 2000, [], undefined, false)
+      ).toEqual(expectedResults)
     })
 
-    test('tunnel failure should throw', async () => {
+    test('tunnel failure', async () => {
       const waitMock = jest.spyOn(utils, 'wait')
       waitMock.mockImplementation()
+      const {triggerResult} = getTestAndResult()
 
-      const triggerResultTimeOut = {
-        ...triggerResult,
-        result_id: 'timingOutTest',
+      // Fake pollResults to not update results and iterate until the isTunnelConnected is equal to false
+      jest
+        .spyOn(axios, 'create')
+        .mockImplementation((() => async (r: AxiosRequestConfig) => ({data: {results: []}})) as any)
+
+      const mockTunnel = {
+        keepAlive: async () => {
+          throw new Error('keepAlive failed')
+        },
+      } as any
+      const expectedResults: {[key: string]: PollResult[]} = {
+        [triggerResult.public_id]: [
+          {
+            dc_id: triggerResult.location,
+            result: {
+              device: {id: triggerResult.device},
+              error: 'Tunnel Failure',
+              eventType: 'finished',
+              passed: false,
+              stepDetails: [],
+              tunnel: true,
+            },
+            resultID: triggerResult.result_id,
+          },
+        ],
       }
+
+      expect(await utils.waitForResults(api, [triggerResult], 2000, [], mockTunnel, true)).toEqual(expectedResults)
+      expect(await utils.waitForResults(api, [triggerResult], 2000, [], mockTunnel, false)).toEqual(expectedResults)
+    })
+
+    test('pollResults throws', async () => {
+      const {triggerResult} = getTestAndResult()
+      jest.spyOn(utils, 'wait').mockImplementation()
+      const axiosMock = jest.spyOn(axios, 'create')
+      const serverError = new Error('Server Error') as AxiosError
+      serverError.response = {status: 502} as AxiosResponse
+      axiosMock.mockImplementation((() => async (r: AxiosRequestConfig) => {
+        throw serverError
+      }) as any)
+
       const mockTunnel = {keepAlive: async () => Promise.reject()} as Tunnel
-      try {
-        await utils.waitForResults(api, [triggerResultTimeOut], 2000, [], mockTunnel)
-        expect(false).toBeTruthy()
-      } catch {
-        expect(true).toBeTruthy()
+
+      const expectedResults: {[key: string]: PollResult[]} = {
+        [triggerResult.public_id]: [
+          {
+            dc_id: triggerResult.location,
+            result: {
+              device: {id: triggerResult.device},
+              error: 'Endpoint Failure',
+              eventType: 'finished',
+              passed: false,
+              stepDetails: [],
+              tunnel: true,
+            },
+            resultID: triggerResult.result_id,
+          },
+        ],
       }
+
+      expect(await utils.waitForResults(api, [triggerResult], 2000, [], mockTunnel, false)).toEqual(expectedResults)
+      await expect(utils.waitForResults(api, [triggerResult], 2000, [], mockTunnel, true)).rejects.toThrow()
     })
   })
 
@@ -534,8 +700,9 @@ describe('utils', () => {
 
     test('retry rethrows after some retries', async () => {
       let counter = 0
-      try {
-        await utils.retry(
+
+      await expect(
+        utils.retry(
           async () => {
             counter += 1
             throw new Error('FAILURE')
@@ -546,11 +713,8 @@ describe('utils', () => {
             }
           }
         )
-        expect('Retry should have thrown.').toBeFalsy()
-      } catch (e) {
-        expect(counter).toBe(3)
-        expect(e.message).toBe('FAILURE')
-      }
+      ).rejects.toThrowError('FAILURE')
+      expect(counter).toBe(3)
     })
   })
 })
