@@ -1,6 +1,6 @@
 import {URL} from 'url'
 
-import {Metadata, SpanTag, SpanTags} from './interfaces'
+import {Metadata, SpanTags} from './interfaces'
 import {
   CI_JOB_NAME,
   CI_JOB_URL,
