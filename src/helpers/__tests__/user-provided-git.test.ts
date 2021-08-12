@@ -58,7 +58,7 @@ describe('getUserGitMetadata', () => {
       [GIT_COMMIT_AUTHOR_NAME]: 'DD_GIT_COMMIT_AUTHOR_NAME',
     })
   })
-  it('returns an empty object is no user git is defined', () => {
+  it('returns an empty object if no user git is defined', () => {
     delete process.env.DD_GIT_REPOSITORY_URL
     delete process.env.DD_GIT_BRANCH
     delete process.env.DD_GIT_TAG
