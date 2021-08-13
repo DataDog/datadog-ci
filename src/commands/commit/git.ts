@@ -3,6 +3,8 @@ import {Writable} from 'stream'
 import {URL} from 'url'
 import {renderGitError} from './renderer'
 
+import {CommitInfo} from './interfaces'
+
 // Returns a configured SimpleGit.
 export const newSimpleGit = async (): Promise<simpleGit.SimpleGit> => {
   const options = {
@@ -61,21 +63,15 @@ const gitHash = async (git: simpleGit.SimpleGit): Promise<string> => git.revpars
 export const gitTrackedFiles = async (git: simpleGit.SimpleGit): Promise<string[]> => {
   const files = await git.raw('ls-files')
 
-  return files.split(/\r\n|\r|\n/)
-}
-
-export interface RepositoryData {
-  hash: string
-  remote: string
-  trackedFiles: string[]
+  return files.split(/\r\n|\r|\n/).filter(s => s !== '')
 }
 
 // Returns the current hash, remote URL and tracked files paths.
-export const getRepositoryData = async (
+export const getCommitInfo = async (
   git: simpleGit.SimpleGit,
   stdout: Writable,
   repositoryURL?: string
-): Promise<RepositoryData | undefined> => {
+): Promise<CommitInfo | undefined> => {
   // Invoke git commands to retrieve the remote, hash and tracked files.
   // We're using Promise.all instead of Promive.allSettled since we want to fail early if
   // any of the promises fails.
@@ -95,9 +91,5 @@ export const getRepositoryData = async (
     return
   }
 
-  return {
-    hash,
-    remote,
-    trackedFiles,
-  }
+  return new CommitInfo(hash, remote, trackedFiles)
 }

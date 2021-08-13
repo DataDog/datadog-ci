@@ -16,20 +16,6 @@ describe('upload', () => {
       )
     })
   })
-
-  describe('getPayloadToUpload', () => {
-    test('getPayloadToUpload', async () => {
-      const command = new UploadCommand()
-      const write = jest.fn()
-      command.context = {stdout: {write}} as any
-      command.repositoryURL = 'https://github.com/user/repo.git'
-      const payload = await command['getPayloadToUpload']('0.0.1')
-      expect(payload?.cliVersion).toBe('0.0.1')
-      expect(payload?.gitRepositoryURL).toBe('https://github.com/user/repo.git')
-      expect(payload?.gitCommitSha).toHaveLength(40)
-      expect(payload?.gitRepositoryPayload).toBeDefined()
-    })
-  })
 })
 
 describe('execute', () => {
