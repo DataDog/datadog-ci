@@ -4,7 +4,7 @@ import fs from 'fs'
 import {Writable} from 'stream'
 
 import {ICONS} from '../../helpers/formatting'
-import {MultipartPayload, newMultipartValue} from '../../helpers/upload'
+import {MultipartPayload, MultipartValue} from '../../helpers/upload'
 
 export class Sourcemap {
   // These fields should probably not be marked as public, refactor
@@ -34,22 +34,28 @@ export class Sourcemap {
     version: string,
     projectPath: string
   ): MultipartPayload {
-    const content = new Map([
-      ['cli_version', newMultipartValue(cliVersion)],
-      ['service', newMultipartValue(service)],
-      ['version', newMultipartValue(version)],
-      ['source_map', newMultipartValue(fs.createReadStream(this.sourcemapPath))],
-      ['minified_file', newMultipartValue(fs.createReadStream(this.minifiedFilePath))],
-      ['minified_url', newMultipartValue(this.minifiedUrl)],
-      ['project_path', newMultipartValue(projectPath)],
-      ['type', newMultipartValue('js_sourcemap')],
+    const content = new Map<string, MultipartValue>([
+      ['cli_version', {value: cliVersion}],
+      ['service', {value: service}],
+      ['version', {value: version}],
+      ['source_map', {value: fs.createReadStream(this.sourcemapPath)}],
+      ['minified_file', {value: fs.createReadStream(this.minifiedFilePath)}],
+      ['minified_url', {value: this.minifiedUrl}],
+      ['project_path', {value: projectPath}],
+      ['type', {value: 'js_sourcemap'}],
     ])
     if (this.gitData !== undefined) {
       if ((this.gitData!).gitRepositoryPayload !== undefined) {
-        content.set('repository', newMultipartValue((this.gitData!).gitRepositoryPayload, {filename: 'repository', contentType: 'application/json'}))
+        content.set('repository', {
+          options: {
+            contentType: 'application/json',
+            filename: 'repository',
+          },
+          value: (this.gitData!).gitRepositoryPayload,
+        })
       }
-      content.set('git_repository_url', newMultipartValue((this.gitData!).gitRepositoryURL))
-      content.set('git_commit_sha', newMultipartValue((this.gitData!).gitCommitSha))
+      content.set('git_repository_url', {value: (this.gitData!).gitRepositoryURL})
+      content.set('git_commit_sha', {value: (this.gitData!).gitCommitSha})
     }
 
     return {

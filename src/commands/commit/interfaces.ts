@@ -1,7 +1,7 @@
 import chalk from 'chalk'
 
 import {ICONS} from '../../helpers/formatting'
-import {MultipartPayload, newMultipartValue} from '../../helpers/upload'
+import {MultipartPayload} from '../../helpers/upload'
 
 export class CommitInfo {
   public hash: string
@@ -17,14 +17,17 @@ export class CommitInfo {
   public asMultipartPayload(cliVersion: string): MultipartPayload {
     return {
       content: new Map([
-        ['cli_version', newMultipartValue(cliVersion)],
-        ['type', newMultipartValue('repository')],
-        ['repository', newMultipartValue(this.repositoryPayload(), {
-          contentType: 'application/json',
-          filename: 'repository',
-        })],
-        ['git_repository_url', newMultipartValue(this.remote)],
-        ['git_commit_sha', newMultipartValue(this.hash)],
+        ['cli_version', {value: cliVersion}],
+        ['type', {value: 'repository'}],
+        ['repository', {
+          options: {
+            contentType: 'application/json',
+            filename: 'repository',
+          },
+          value: this.repositoryPayload(),
+        }],
+        ['git_repository_url', {value: this.remote}],
+        ['git_commit_sha', {value: this.hash}],
       ]),
       renderFailedUpload: (errorMessage: string) =>
         chalk.red(`${ICONS.FAILED} Failed upload: ${errorMessage}\n`),

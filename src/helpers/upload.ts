@@ -23,11 +23,6 @@ export interface MultipartValue {
   value: string | ReadStream
 }
 
-export const newMultipartValue = (value: string | ReadStream, options?: FormData.AppendOptions | string) => ({
-  options,
-  value,
-})
-
 export interface APIHelper {
   uploadMultipart(sourcemap: MultipartPayload, write: Logger): AxiosPromise<AxiosResponse>
 }

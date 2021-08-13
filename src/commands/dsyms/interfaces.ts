@@ -2,7 +2,7 @@ import chalk from 'chalk'
 import fs from 'fs'
 
 import {ICONS} from '../../helpers/formatting'
-import {MultipartPayload, newMultipartValue} from '../../helpers/upload'
+import {MultipartPayload} from '../../helpers/upload'
 import {zipToTmpDir} from './utils'
 
 export class Dsym {
@@ -18,9 +18,9 @@ export class Dsym {
     const concatUUIDs = this.uuids.join()
     const zipFilePath = await zipToTmpDir(this.path, `${concatUUIDs}.zip`)
     const content = new Map([
-      ['symbols_archive', newMultipartValue(fs.createReadStream(zipFilePath))],
-      ['type', newMultipartValue('ios_symbols')],
-      ['uuids', newMultipartValue(concatUUIDs)],
+      ['symbols_archive', {value: fs.createReadStream(zipFilePath)}],
+      ['type', {value: 'ios_symbols'}],
+      ['uuids', {value: concatUUIDs}],
     ])
 
     return {
