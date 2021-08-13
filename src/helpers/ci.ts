@@ -1,6 +1,6 @@
 import {URL} from 'url'
 
-import {Metadata, SpanTag, SpanTags} from './interfaces'
+import {Metadata, SpanTags} from './interfaces'
 import {
   CI_JOB_NAME,
   CI_JOB_URL,
@@ -19,6 +19,7 @@ import {
   GIT_SHA,
   GIT_TAG,
 } from './tags'
+import {removeEmptyValues} from './utils'
 
 export const CI_ENGINES = {
   APPVEYOR: 'appveyor',
@@ -32,18 +33,6 @@ export const CI_ENGINES = {
   JENKINS: 'jenkins',
   TRAVIS: 'travisci',
 }
-
-const removeEmptyValues = (tags: SpanTags) =>
-  (Object.keys(tags) as SpanTag[]).reduce((filteredTags, tag) => {
-    if (!tags[tag]) {
-      return filteredTags
-    }
-
-    return {
-      ...filteredTags,
-      [tag]: tags[tag],
-    }
-  }, {})
 
 const resolveTilde = (filePath: string | undefined) => {
   if (!filePath || typeof filePath !== 'string') {

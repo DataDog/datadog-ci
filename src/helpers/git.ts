@@ -1,5 +1,6 @@
 import simpleGit from 'simple-git'
 
+import type {SpanTags} from './interfaces'
 import {
   GIT_BRANCH,
   GIT_COMMIT_AUTHOR_DATE,
@@ -13,7 +14,7 @@ import {
   GIT_SHA,
 } from './tags'
 
-export const getGitMetadata = async () => {
+export const getGitMetadata = async (): Promise<SpanTags> => {
   try {
     const git = simpleGit({
       baseDir: process.cwd(),

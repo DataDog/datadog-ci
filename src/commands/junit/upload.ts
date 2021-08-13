@@ -21,6 +21,7 @@ import {getBaseIntakeUrl, parseTags} from './utils'
 
 import {getCISpanTags} from '../../helpers/ci'
 import {getGitMetadata} from '../../helpers/git'
+import {getUserGitMetadata} from '../../helpers/user-provided-git'
 import {buildPath} from '../../helpers/utils'
 
 const errorCodesNoRetry = [400, 403, 413]
@@ -136,6 +137,7 @@ export class UploadJUnitXMLCommand extends Command {
 
     const ciSpanTags = getCISpanTags()
     const gitSpanTags = await getGitMetadata()
+    const userGitSpanTags = getUserGitMetadata()
 
     const envVarTags = this.config.envVarTags ? parseTags(this.config.envVarTags.split(',')) : {}
     const cliTags = this.tags ? parseTags(this.tags) : {}
@@ -143,6 +145,7 @@ export class UploadJUnitXMLCommand extends Command {
     const spanTags = {
       ...gitSpanTags,
       ...ciSpanTags,
+      ...userGitSpanTags,
       ...cliTags,
       ...envVarTags,
       ...(this.config.env ? {env: this.config.env} : {}),
