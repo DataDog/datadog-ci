@@ -111,7 +111,7 @@ export const uploadWithRetry = async (payload: MultipartPayload, opts: RetryOpti
       bail(error)
     }
 
-    return UploadStatus.Success
+    return UploadStatus.Failure
   }
   try {
     return await retry(doUpload, {
