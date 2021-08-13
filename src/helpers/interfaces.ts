@@ -59,10 +59,3 @@ export type SpanTag =
   | typeof GIT_COMMIT_COMMITTER_NAME
 
 export type SpanTags = Partial<Record<SpanTag, string>>
-
-// TODO deduplicate
-export enum UploadStatus {
-  Success,
-  Failure,
-  Skipped,
-}

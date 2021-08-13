@@ -8,7 +8,7 @@ import {URL} from 'url'
 
 import {ApiKeyValidator} from '../../helpers/apikey'
 import {InvalidConfigurationError} from '../../helpers/errors'
-import {UploadStatus} from '../../helpers/interfaces'
+import {UploadStatus} from '../../helpers/upload'
 import {apiConstructor, APIHelper, uploadWithRetry} from '../../helpers/upload'
 import {getRepositoryData, newSimpleGit, RepositoryData} from './git'
 import {Sourcemap} from './interfaces'

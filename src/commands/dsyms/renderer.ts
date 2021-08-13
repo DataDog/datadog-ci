@@ -3,7 +3,7 @@ import chalk from 'chalk'
 import {pluralize} from './utils'
 
 import {ICONS} from '../../helpers/formatting'
-import {UploadStatus} from '../../helpers/interfaces'
+import {UploadStatus} from '../../helpers/upload'
 
 export const renderConfigurationError = (error: Error) => chalk.red(`${ICONS.FAILED} Configuration error: ${error}.\n`)
 

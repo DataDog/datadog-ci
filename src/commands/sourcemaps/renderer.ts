@@ -1,7 +1,7 @@
 import chalk from 'chalk'
 
 import {ICONS} from '../../helpers/formatting'
-import {UploadStatus} from '../../helpers/interfaces'
+import {UploadStatus} from '../../helpers/upload'
 import {Sourcemap} from './interfaces'
 import {pluralize} from './utils'
 
