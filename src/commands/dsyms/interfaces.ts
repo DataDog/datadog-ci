@@ -1,7 +1,5 @@
-import chalk from 'chalk'
 import fs from 'fs'
 
-import {ICONS} from '../../helpers/formatting'
 import {MultipartPayload} from '../../helpers/upload'
 import {zipToTmpDir} from './utils'
 
@@ -25,17 +23,6 @@ export class Dsym {
 
     return {
       content,
-      renderFailedUpload: (errorMessage: string) => {
-        const dSYMPathBold = `[${chalk.bold.dim(this.path)}]`
-
-        return chalk.red(`${ICONS.FAILED} Failed upload dSYM for ${dSYMPathBold}: ${errorMessage}\n`)
-      },
-      renderRetry: (errorMessage: string, attempt: number) => {
-        const dSYMPathBold = `[${chalk.bold.dim(this.path)}]`
-
-        return chalk.yellow(`[attempt ${attempt}] Retrying dSYM upload ${dSYMPathBold}: ${errorMessage}\n`)
-      },
-      renderUpload: () => `Uploading dSYM with ${this.uuids} from ${this.path}\n`,
     }
   }
 }

@@ -13,7 +13,10 @@ import {getMetricsLogger} from './metrics'
 import {
   renderCommandInfo,
   renderConfigurationError,
+  renderFailedUpload,
+  renderRetriedUpload,
   renderSuccessfulCommand,
+  renderUpload,
 } from './renderer'
 
 export class UploadCommand extends Command {
@@ -44,19 +47,27 @@ export class UploadCommand extends Command {
     this.context.stdout.write(renderCommandInfo(this.dryRun))
 
     const metricsLogger = getMetricsLogger(this.cliVersion)
-    const apiKeyValidator = new ApiKeyValidator(this.config.apiKey, datadogSite)
+    const apiKeyValidator = new ApiKeyValidator(this.config.apiKey, datadogSite, metricsLogger.logger)
     const payload = await getCommitInfo(await newSimpleGit(), this.context.stdout, this.repositoryURL)
     if (payload === undefined) {
       return 0
     }
     try {
       const requestBuilder = this.getRequestBuilder()
-      const status = await this.uploadRepository(requestBuilder, {
+      const status = await this.uploadRepository(requestBuilder)(payload, {
         apiKeyValidator,
-        logger: this.context.stdout.write.bind(this.context.stdout),
-        metricsLogger: metricsLogger.logger,
+        onError: (e) => {
+          this.context.stdout.write(renderFailedUpload(e.message)),
+            metricsLogger.logger.increment('failed', 1)
+        },
+        onRetry: (e, attempt) => {
+          this.context.stdout.write(renderRetriedUpload(e.message, attempt))
+          metricsLogger.logger.increment('retries', 1)
+        },
+        onUpload: () => this.context.stdout.write(renderUpload),
         retries: 5,
-      })(payload)
+      })
+      metricsLogger.logger.increment('success', 1)
 
       const totalTime = (Date.now() - initialTime) / 1000
 
@@ -97,17 +108,17 @@ export class UploadCommand extends Command {
     })
   }
 
-  private uploadRepository(
-    requestBuilder: RequestBuilder,
+  private uploadRepository(requestBuilder: RequestBuilder): (
+    commitInfo: CommitInfo,
     opts: UploadOptions
-  ): (commitInfo: CommitInfo) => Promise<UploadStatus> {
-    return async (commitInfo: CommitInfo) => {
+  ) => Promise<UploadStatus> {
+    return async (commitInfo: CommitInfo, opts: UploadOptions) => {
       const payload = commitInfo.asMultipartPayload(this.cliVersion)
       if (this.dryRun) {
         return UploadStatus.Success
       }
 
-      return upload(requestBuilder, opts)(payload)
+      return upload(requestBuilder)(payload, opts)
     }
   }
 }

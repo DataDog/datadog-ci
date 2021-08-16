@@ -1,11 +1,24 @@
 import chalk from 'chalk'
 
+import {Dsym} from './interfaces'
 import {pluralize} from './utils'
 
 import {ICONS} from '../../helpers/formatting'
 import {UploadStatus} from '../../helpers/upload'
 
 export const renderConfigurationError = (error: Error) => chalk.red(`${ICONS.FAILED} Configuration error: ${error}.\n`)
+
+export const renderFailedUpload = (dSYM: Dsym, errorMessage: string) => {
+  const dSYMPathBold = `[${chalk.bold.dim(dSYM.path)}]`
+
+  return chalk.red(`${ICONS.FAILED} Failed upload dSYM for ${dSYMPathBold}: ${errorMessage}\n`)
+}
+
+export const renderRetriedUpload = (dSYM: Dsym, errorMessage: string, attempt: number) => {
+  const dSYMPathBold = `[${chalk.bold.dim(dSYM.path)}]`
+
+  return chalk.yellow(`[attempt ${attempt}] Retrying dSYM upload ${dSYMPathBold}: ${errorMessage}\n`)
+}
 
 export const renderSuccessfulCommand = (statuses: UploadStatus[], duration: number, dryRun: boolean) => {
   const results = new Map<UploadStatus, number>()
@@ -77,3 +90,5 @@ export const renderCommandInfo = (basePath: string, poolLimit: number, dryRun: b
 
   return fullStr
 }
+
+export const renderUpload = (dSYM: Dsym): string => `Uploading dSYM with ${dSYM.uuids} from ${dSYM.path}\n`

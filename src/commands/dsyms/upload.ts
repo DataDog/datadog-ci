@@ -5,14 +5,17 @@ import asyncPool from 'tiny-async-pool'
 
 import {ApiKeyValidator} from '../../helpers/apikey'
 import {InvalidConfigurationError} from '../../helpers/errors'
-import {upload, UploadOptions, UploadStatus} from '../../helpers/upload'
+import {upload, UploadStatus} from '../../helpers/upload'
 import {getRequestBuilder, RequestBuilder} from '../../helpers/utils'
 import {Dsym} from './interfaces'
-import {getMetricsLogger} from './metrics'
+import {getMetricsLogger, MetricsLogger} from './metrics'
 import {
   renderCommandInfo,
   renderConfigurationError,
+  renderFailedUpload,
+  renderRetriedUpload,
   renderSuccessfulCommand,
+  renderUpload,
 } from './renderer'
 import {getBaseIntakeUrl, getMatchingDSYMFiles, isZipFile, unzipToTmpDir} from './utils'
 
@@ -61,12 +64,7 @@ export class UploadCommand extends Command {
     const apiKeyValidator = new ApiKeyValidator(this.config.apiKey, this.config.datadogSite)
     const payloads = await getMatchingDSYMFiles(searchPath)
     const requestBuilder = this.getRequestBuilder()
-    const uploadDSYM = this.uploadDSYM(requestBuilder, {
-      apiKeyValidator,
-      logger: this.context.stdout.write.bind(this.context.stdout),
-      metricsLogger: metricsLogger.logger,
-      retries: 5,
-    })
+    const uploadDSYM = this.uploadDSYM(requestBuilder, metricsLogger, apiKeyValidator)
     try {
       const results = await asyncPool(this.maxConcurrency, payloads, uploadDSYM)
       const totalTime = (Date.now() - initialTime) / 1000
@@ -104,17 +102,32 @@ export class UploadCommand extends Command {
 
   private uploadDSYM(
     requestBuilder: RequestBuilder,
-    opts: UploadOptions
+    metricsLogger: MetricsLogger,
+    apiKeyValidator: ApiKeyValidator
   ): (dSYM: Dsym) => Promise<UploadStatus> {
     return async (dSYM: Dsym) => {
       const payload = await dSYM.asMultipartPayload()
       if (this.dryRun) {
-        this.context.stdout.write(`[DRYRUN] ${payload.renderUpload()}`)
+        this.context.stdout.write(`[DRYRUN] ${renderUpload(dSYM)}`)
 
         return UploadStatus.Success
       }
 
-      return upload(requestBuilder, opts)(payload)
+      return upload(requestBuilder)(payload, {
+        apiKeyValidator,
+        onError: (e) => {
+          this.context.stdout.write(renderFailedUpload(dSYM, e.message))
+          metricsLogger.logger.increment('failed', 1)
+        },
+        onRetry: (e, attempts) => {
+          this.context.stdout.write(renderRetriedUpload(dSYM, e.message, attempts))
+          metricsLogger.logger.increment('retries', 1)
+        },
+        onUpload: () => {
+          this.context.stdout.write(renderUpload(dSYM))
+        },
+        retries: 5,
+      })
     }
   }
 }

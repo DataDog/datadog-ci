@@ -1,11 +1,10 @@
 import retry from 'async-retry'
 import {AxiosPromise, AxiosRequestConfig, AxiosResponse} from 'axios'
-import {BufferedMetricsLogger} from 'datadog-metrics'
 import FormData from 'form-data'
 import {ReadStream} from 'fs'
 
 import {ApiKeyValidator} from './apikey'
-import {Logger, RequestBuilder} from './utils'
+import {RequestBuilder} from './utils'
 
 const errorCodesNoRetry = [400, 403, 413]
 
@@ -13,9 +12,6 @@ const errorCodesNoRetry = [400, 403, 413]
  */
 export interface MultipartPayload {
   content: Map<string, MultipartValue>
-  renderFailedUpload(message: string): string
-  renderRetry(errorMessage: string, attempt: number): string
-  renderUpload(): string
 }
 
 export interface MultipartValue {
@@ -30,19 +26,22 @@ export interface UploadOptions {
    */
   apiKeyValidator?: ApiKeyValidator,
 
-  /** Logger is used to display information about the upload. Most of the time callers should use
-   * stdout.
-   */
-  logger?: Logger,
-
-  /** MetricsLogger reports metrics about upload to Datadog.
-   */
-  metricsLogger?: BufferedMetricsLogger,
-
   /** Retries is the amount of upload retries before giving up. Some requests are never retried
    * (400, 413).
    */
   retries: number,
+
+  /** Callback when upload fails (retries are not considered as failure)
+   */
+  onError(error: Error): void
+
+  /** Callback to execute before retries
+   */
+  onRetry(e: Error, attempts: number): void
+
+  /** Callback to execute before upload.
+   */
+  onUpload(): void
 }
 
 export enum UploadStatus {
@@ -55,46 +54,30 @@ export enum UploadStatus {
  * This handles retries as well as logging information about upload if a logger is provided in
  * the options
  */
-export const upload = (requestBuilder: RequestBuilder, opts: UploadOptions) => async (payload: MultipartPayload): Promise<UploadStatus> => {
+export const upload = (requestBuilder: RequestBuilder) => async (
+  payload: MultipartPayload,
+  opts: UploadOptions
+): Promise<UploadStatus> => {
 
-  // Logger function, when provided in the options
-  const log = (s: string) => {
-    if (opts.logger) {
-      opts.logger(s)
-    }
-  }
-
-  // Metrics reporting functionm when provided in the options
-  const incrementMetric = (key: string, value?: number, tags?: string[]) => {
-    if (opts.metricsLogger) {
-      opts.metricsLogger.increment(key, value, tags)
-    }
-  }
-
-  log(payload.renderUpload())
+  opts.onUpload()
   try {
     await uploadWithRetry(requestBuilder, {
-      onRetry: (e, attempt) => {
-        incrementMetric('retries', 1)
-        log(payload.renderRetry(e.message, attempt))
-      },
+      onRetry: opts.onRetry,
       retries: opts.retries,
     })(payload)
-    incrementMetric('success', 1)
 
     return UploadStatus.Success
   } catch (error) {
     if (opts.apiKeyValidator) {
       // Raise an exception in case of invalid API key
-      await opts.apiKeyValidator.verifyApiKey(error, incrementMetric)
+      await opts.apiKeyValidator.verifyApiKey(error)
     }
-    incrementMetric('failed', 1)
     if (error.response && error.response.statusText) {
-      // Display human readable info about the status code
-      log(payload.renderFailedUpload(`${error.message} (${error.response.statusText})`))
+      // Rewrite error to have formatted error string
+      opts.onError(new Error(`${error.message} (${error.response.statusText})`))
     } else {
       // Default error handling
-      log(payload.renderFailedUpload(error))
+      opts.onError(error)
     }
 
     return UploadStatus.Failure

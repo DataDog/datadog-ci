@@ -1,18 +1,13 @@
-import {AxiosPromise, AxiosResponse} from 'axios'
-import chalk from 'chalk'
 import fs from 'fs'
-import {Writable} from 'stream'
 
-import {ICONS} from '../../helpers/formatting'
 import {MultipartPayload, MultipartValue} from '../../helpers/upload'
 
 export class Sourcemap {
   // These fields should probably not be marked as public, refactor
   public gitData?: GitData
   public minifiedFilePath: string
+  public minifiedUrl: string
   public sourcemapPath: string
-
-  private minifiedUrl: string
 
   constructor(
     minifiedFilePath: string,
@@ -60,17 +55,6 @@ export class Sourcemap {
 
     return {
       content,
-      renderFailedUpload: (errorMessage: string) => {
-        const sourcemapPathBold = `[${chalk.bold.dim(this.sourcemapPath)}]`
-
-        return chalk.red(`${ICONS.FAILED} Failed upload sourcemap for ${sourcemapPathBold}: ${errorMessage}\n`)
-      },
-      renderRetry: (errorMessage: string, attempt: number) => {
-        const sourcemapPathBold = `[${chalk.bold.dim(this.sourcemapPath)}]`
-
-        return chalk.yellow(`[attempt ${attempt}] Retrying sourcemap upload ${sourcemapPathBold}: ${errorMessage}\n`)
-      },
-      renderUpload: () => `Uploading sourcemap ${this.sourcemapPath} for JS file available at ${this.minifiedUrl}\n`,
     }
   }
 }

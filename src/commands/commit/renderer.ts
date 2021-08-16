@@ -8,6 +8,14 @@ Make sure the command is running within your git repository.\n`)
 
 export const renderConfigurationError = (error: Error) => chalk.red(`${ICONS.FAILED} Configuration error: ${error}.\n`)
 
+export const renderFailedUpload = (errorMessage: string) =>
+  chalk.red(`${ICONS.FAILED} Failed upload: ${errorMessage}\n`)
+
+export const renderRetriedUpload = (errorMessage: string, attempt: number) =>
+  chalk.yellow(`[attempt ${attempt}] Retrying upload: ${errorMessage}\n`)
+
+export const renderUpload = 'Uploading\n'
+
 export const renderSuccessfulCommand = (duration: number, dryRun: boolean) => {
   if (dryRun) {
     return chalk.green(`${ICONS.SUCCESS} [DRYRUN] Handled in ${duration} seconds.\n`)

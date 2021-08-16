@@ -1,6 +1,3 @@
-import chalk from 'chalk'
-
-import {ICONS} from '../../helpers/formatting'
 import {MultipartPayload} from '../../helpers/upload'
 
 export class CommitInfo {
@@ -29,11 +26,6 @@ export class CommitInfo {
         ['git_repository_url', {value: this.remote}],
         ['git_commit_sha', {value: this.hash}],
       ]),
-      renderFailedUpload: (errorMessage: string) =>
-        chalk.red(`${ICONS.FAILED} Failed upload: ${errorMessage}\n`),
-      renderRetry: (errorMessage: string, attempt: number) =>
-        chalk.yellow(`[attempt ${attempt}] Retrying upload: ${errorMessage}\n`),
-      renderUpload: () => 'Uploading\n',
     }
   }
 

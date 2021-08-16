@@ -1,8 +1,9 @@
 import {AxiosError, default as axios} from 'axios'
 import chalk from 'chalk'
+import {BufferedMetricsLogger} from 'datadog-metrics'
 
 import {InvalidConfigurationError} from './errors'
-import {MetricCounter} from './utils'
+import {} from './utils'
 
 /** ApiKeyValidator is an helper class to interpret Datadog error responses and possibly check the
  * validity of the api key.
@@ -12,10 +13,12 @@ export class ApiKeyValidator {
   public datadogSite: string
 
   private isValid?: boolean
+  private metricsLogger?: BufferedMetricsLogger
 
-  constructor(apiKey: string | undefined, datadogSite: string) {
+  constructor(apiKey: string | undefined, datadogSite: string, metricsLogger?: BufferedMetricsLogger) {
     this.apiKey = apiKey
     this.datadogSite = datadogSite
+    this.metricsLogger = metricsLogger
   }
 
   /** Check if an API key is valid, based on the Axios error and defaulting to verify the API key
@@ -23,7 +26,7 @@ export class ApiKeyValidator {
    * An exception is raised when the API key is invalid.
    * Callers should catch the exception to display it nicely.
    */
-  public async verifyApiKey(error: AxiosError, metricCounter: MetricCounter): Promise<void> {
+  public async verifyApiKey(error: AxiosError): Promise<void> {
     if (error.response === undefined) {
 
       return
@@ -34,7 +37,9 @@ export class ApiKeyValidator {
         !(await this.isApiKeyValid())
       )
     ) {
-      metricCounter('invalid_auth', 1)
+      if (this.metricsLogger !== undefined) {
+        this.metricsLogger.increment('invalid_auth', 1)
+      }
       throw new InvalidConfigurationError(
         `${chalk.red.bold('DATADOG_API_KEY')} does not contain a valid API key for Datadog site ${this.datadogSite
         }`

@@ -7,7 +7,7 @@ import {URL} from 'url'
 
 import {ApiKeyValidator} from '../../helpers/apikey'
 import {InvalidConfigurationError} from '../../helpers/errors'
-import {upload, UploadOptions, UploadStatus} from '../../helpers/upload'
+import {upload, UploadStatus} from '../../helpers/upload'
 import {getRequestBuilder, RequestBuilder} from '../../helpers/utils'
 import {getRepositoryData, newSimpleGit, RepositoryData} from './git'
 import {Sourcemap} from './interfaces'
@@ -18,7 +18,9 @@ import {
   renderFailedUpload,
   renderGitDataNotAttachedWarning,
   renderInvalidPrefix,
+  renderRetriedUpload,
   renderSuccessfulCommand,
+  renderUpload,
 } from './renderer'
 import {getBaseIntakeUrl, getMinifiedFilePath} from './utils'
 import {InvalidPayload, validatePayload} from './validation'
@@ -104,17 +106,12 @@ export class UploadCommand extends Command {
       )
     )
     const metricsLogger = getMetricsLogger(this.releaseVersion, this.service, this.cliVersion)
-    const apiKeyValidator = new ApiKeyValidator(this.config.apiKey, this.config.datadogSite)
+    const apiKeyValidator = new ApiKeyValidator(this.config.apiKey, this.config.datadogSite, metricsLogger.logger)
     const useGit = this.disableGit === undefined || !this.disableGit
     const initialTime = Date.now()
     const payloads = await this.getPayloadsToUpload(useGit)
     const requestBuilder = this.getRequestBuilder()
-    const uploadMultipart = this.upload(requestBuilder, {
-      apiKeyValidator,
-      logger: this.context.stdout.write.bind(this.context.stdout),
-      metricsLogger: metricsLogger.logger,
-      retries: 5,
-    }, metricsLogger)
+    const uploadMultipart = this.upload(requestBuilder, metricsLogger, apiKeyValidator)
     try {
       const results = await asyncPool(this.maxConcurrency, payloads, uploadMultipart)
       const totalTime = (Date.now() - initialTime) / 1000
@@ -248,8 +245,8 @@ export class UploadCommand extends Command {
 
   private upload(
     requestBuilder: RequestBuilder,
-    opts: UploadOptions,
-    metricsLogger: MetricsLogger
+    metricsLogger: MetricsLogger,
+    apiKeyValidator: ApiKeyValidator
   ): (sourcemap: Sourcemap) => Promise<UploadStatus> {
     return async (sourcemap: Sourcemap) => {
       try {
@@ -275,12 +272,26 @@ export class UploadCommand extends Command {
         this.cliVersion, this.service!, this.releaseVersion!, this.projectPath
       )
       if (this.dryRun) {
-        this.context.stdout.write(`[DRYRUN] ${payload.renderUpload()}`)
+        this.context.stdout.write(`[DRYRUN] ${renderUpload(sourcemap)}`)
 
         return UploadStatus.Success
       }
 
-      return upload(requestBuilder, opts)(payload)
+      return upload(requestBuilder)(payload, {
+        apiKeyValidator,
+        onError: (e) => {
+          this.context.stdout.write(renderFailedUpload(sourcemap, e.message))
+          metricsLogger.logger.increment('failed', 1)
+        },
+        onRetry: (e, attempts) => {
+          this.context.stdout.write(renderRetriedUpload(sourcemap, e.message, attempts))
+          metricsLogger.logger.increment('retries', 1)
+        },
+        onUpload: () => {
+          this.context.stdout.write(renderUpload(sourcemap))
+        },
+        retries: 5,
+      })
     }
   }
 }
