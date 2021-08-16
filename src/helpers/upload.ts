@@ -1,13 +1,11 @@
 import retry from 'async-retry'
 import {AxiosPromise, AxiosRequestConfig, AxiosResponse} from 'axios'
-import chalk from 'chalk'
 import {BufferedMetricsLogger} from 'datadog-metrics'
 import FormData from 'form-data'
 import {ReadStream} from 'fs'
 
 import {ApiKeyValidator} from './apikey'
-import {InvalidConfigurationError} from './errors'
-import {getRequestBuilder, Logger} from './utils'
+import {Logger, RequestBuilder} from './utils'
 
 const errorCodesNoRetry = [400, 403, 413]
 
@@ -27,36 +25,11 @@ export interface APIHelper {
   uploadMultipart(sourcemap: MultipartPayload, write: Logger): AxiosPromise<AxiosResponse>
 }
 
-// Dependency follows-redirects sets a default maxBodyLength of 10 MB https://github.com/follow-redirects/follow-redirects/blob/b774a77e582b97174813b3eaeb86931becba69db/index.js#L391
-// We don't want any hard limit enforced by the CLI, the backend will enforce a max size by returning 413 errors.
-const maxBodyLength = Infinity
-
-const uploadMultipart = (request: (args: AxiosRequestConfig) => AxiosPromise<AxiosResponse>) => async (
-  payload: MultipartPayload,
-  log: Logger
-) => {
-  const form = new FormData()
-
-  log(payload.renderUpload())
-  payload.content.forEach((value: MultipartValue, key: string) => {
-    form.append(key, value.value, value.options)
-  })
-
-  return request({
-    data: form,
-    headers: form.getHeaders(),
-    maxBodyLength,
-    method: 'POST',
-    url: 'v1/input',
-  })
-}
-
-export const apiConstructor = (baseIntakeUrl: string, apiKey: string) => {
-  const request = getRequestBuilder({baseUrl: baseIntakeUrl, apiKey})
-
-  return {
-    uploadMultipart: uploadMultipart(request),
-  }
+export interface UploadOptions {
+  apiKeyValidator?: ApiKeyValidator,
+  logger?: Logger,
+  metricsLogger?: BufferedMetricsLogger,
+  retries: number,
 }
 
 export enum UploadStatus {
@@ -65,16 +38,7 @@ export enum UploadStatus {
   Skipped,
 }
 
-export interface RetryOptions {
-  api: APIHelper,
-  apiKeyValidator?: ApiKeyValidator,
-  datadogSite: string,
-  logger?: Logger,
-  metricsLogger?: BufferedMetricsLogger,
-  retries: number,
-}
-
-export const uploadWithRetry = async (payload: MultipartPayload, opts: RetryOptions): Promise<UploadStatus> => {
+export const upload = (requestBuilder: RequestBuilder, opts: UploadOptions) => async (payload: MultipartPayload): Promise<UploadStatus> => {
 
   const log = (s: string) => {
     if (opts.logger) {
@@ -90,7 +54,7 @@ export const uploadWithRetry = async (payload: MultipartPayload, opts: RetryOpti
 
   const doUpload = async (bail: (e: Error) => void) => {
     try {
-      await opts.api.uploadMultipart(payload, log)
+      await uploadMultipart(requestBuilder)(payload, log)
       incrementMetric('success', 1)
 
       return UploadStatus.Success
@@ -118,17 +82,7 @@ export const uploadWithRetry = async (payload: MultipartPayload, opts: RetryOpti
     })
   } catch (error) {
     if (opts.apiKeyValidator) {
-      let invalidApiKey: boolean = error.response && error.response.status === 403
-      if (error.response && error.response.status === 400) {
-        invalidApiKey = !(await opts.apiKeyValidator.isApiKeyValid())
-      }
-      if (invalidApiKey) {
-        incrementMetric('invalid_auth', 1)
-        throw new InvalidConfigurationError(
-          `${chalk.red.bold('DATADOG_API_KEY')} does not contain a valid API key for Datadog site ${opts.datadogSite
-          }`
-        )
-      }
+      opts.apiKeyValidator.verifyApiKey(error, incrementMetric)
     }
     incrementMetric('failed', 1)
     if (error.response && error.response.statusText) {
@@ -141,4 +95,28 @@ export const uploadWithRetry = async (payload: MultipartPayload, opts: RetryOpti
 
     return UploadStatus.Failure
   }
+}
+
+// Dependency follows-redirects sets a default maxBodyLength of 10 MB https://github.com/follow-redirects/follow-redirects/blob/b774a77e582b97174813b3eaeb86931becba69db/index.js#L391
+// We don't want any hard limit enforced by the CLI, the backend will enforce a max size by returning 413 errors.
+const maxBodyLength = Infinity
+
+const uploadMultipart = (request: (args: AxiosRequestConfig) => AxiosPromise<AxiosResponse>) => async (
+  payload: MultipartPayload,
+  log: Logger
+) => {
+  const form = new FormData()
+
+  log(payload.renderUpload())
+  payload.content.forEach((value: MultipartValue, key: string) => {
+    form.append(key, value.value, value.options)
+  })
+
+  return request({
+    data: form,
+    headers: form.getHeaders(),
+    maxBodyLength,
+    method: 'POST',
+    url: 'v1/input',
+  })
 }

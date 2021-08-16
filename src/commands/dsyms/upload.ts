@@ -1,12 +1,12 @@
 import chalk from 'chalk'
 import {Command} from 'clipanion'
-import {BufferedMetricsLogger} from 'datadog-metrics'
 import path from 'path'
 import asyncPool from 'tiny-async-pool'
 
 import {ApiKeyValidator} from '../../helpers/apikey'
 import {InvalidConfigurationError} from '../../helpers/errors'
-import {apiConstructor, APIHelper, UploadStatus, uploadWithRetry} from '../../helpers/upload'
+import {upload, UploadOptions, UploadStatus} from '../../helpers/upload'
+import {getRequestBuilder, RequestBuilder} from '../../helpers/utils'
 import {Dsym} from './interfaces'
 import {getMetricsLogger} from './metrics'
 import {
@@ -32,7 +32,6 @@ export class UploadCommand extends Command {
     ],
   })
 
-  private apiKeyValidator: ApiKeyValidator
   private basePath!: string
   private config = {
     apiKey: process.env.DATADOG_API_KEY,
@@ -43,14 +42,12 @@ export class UploadCommand extends Command {
 
   constructor() {
     super()
-    this.apiKeyValidator = new ApiKeyValidator(this.config.apiKey, this.config.datadogSite)
   }
 
   public async execute() {
     this.basePath = path.posix.normalize(this.basePath)
     const cliVersion = require('../../../package.json').version
     const metricsLogger = getMetricsLogger(cliVersion)
-    const api = this.getApiHelper()
 
     this.context.stdout.write(renderCommandInfo(this.basePath, this.maxConcurrency, this.dryRun))
 
@@ -61,10 +58,17 @@ export class UploadCommand extends Command {
       searchPath = await unzipToTmpDir(this.basePath)
     }
 
+    const apiKeyValidator = new ApiKeyValidator(this.config.apiKey, this.config.datadogSite)
     const payloads = await getMatchingDSYMFiles(searchPath)
-    const upload = (p: Dsym) => this.uploadDSYM(api, metricsLogger.logger, p)
+    const requestBuilder = this.getRequestBuilder()
+    const uploadDSYM = this.uploadDSYM(requestBuilder, {
+      apiKeyValidator,
+      logger: this.context.stdout.write.bind(this.context.stdout),
+      metricsLogger: metricsLogger.logger,
+      retries: 5,
+    })
     try {
-      const results = await asyncPool(this.maxConcurrency, payloads, upload)
+      const results = await asyncPool(this.maxConcurrency, payloads, uploadDSYM)
       const totalTime = (Date.now() - initialTime) / 1000
       this.context.stdout.write(renderSuccessfulCommand(results, totalTime, this.dryRun))
       metricsLogger.logger.gauge('duration', totalTime)
@@ -87,30 +91,31 @@ export class UploadCommand extends Command {
     }
   }
 
-  private getApiHelper(): APIHelper {
+  private getRequestBuilder(): RequestBuilder {
     if (!this.config.apiKey) {
       throw new InvalidConfigurationError(`Missing ${chalk.bold('DATADOG_API_KEY')} in your environment.`)
     }
 
-    return apiConstructor(getBaseIntakeUrl(), this.config.apiKey!)
+    return getRequestBuilder({
+      apiKey: this.config.apiKey!,
+      baseUrl: getBaseIntakeUrl(),
+    })
   }
 
-  private async uploadDSYM(api: APIHelper, metricsLogger: BufferedMetricsLogger, dSYM: Dsym): Promise<UploadStatus> {
-    const payload = await dSYM.asMultipartPayload()
-    if (this.dryRun) {
-      this.context.stdout.write(`[DRYRUN] ${payload.renderUpload()}`)
+  private uploadDSYM(
+    requestBuilder: RequestBuilder,
+    opts: UploadOptions
+  ): (dSYM: Dsym) => Promise<UploadStatus> {
+    return async (dSYM: Dsym) => {
+      const payload = await dSYM.asMultipartPayload()
+      if (this.dryRun) {
+        this.context.stdout.write(`[DRYRUN] ${payload.renderUpload()}`)
 
-      return UploadStatus.Success
+        return UploadStatus.Success
+      }
+
+      return upload(requestBuilder, opts)(payload)
     }
-
-    return uploadWithRetry(payload, {
-      api,
-      apiKeyValidator: this.apiKeyValidator,
-      datadogSite: this.config.datadogSite,
-      logger: this.context.stdout.write.bind(this.context.stdout),
-      metricsLogger,
-      retries: 5,
-    })
   }
 }
 

@@ -1,11 +1,11 @@
 import chalk from 'chalk'
 import {Command} from 'clipanion'
-import {BufferedMetricsLogger} from 'datadog-metrics'
 
 import {ApiKeyValidator} from '../../helpers/apikey'
 import {InvalidConfigurationError} from '../../helpers/errors'
 import {ICONS} from '../../helpers/formatting'
-import {apiConstructor, APIHelper, UploadStatus, uploadWithRetry} from '../../helpers/upload'
+import {upload, UploadOptions, UploadStatus} from '../../helpers/upload'
+import {getRequestBuilder, RequestBuilder} from '../../helpers/utils'
 import {datadogSite, getBaseIntakeUrl} from './api'
 import {getCommitInfo, newSimpleGit} from './git'
 import {CommitInfo} from './interfaces'
@@ -28,7 +28,6 @@ export class UploadCommand extends Command {
 
   public repositoryURL?: string
 
-  private apiKeyValidator: ApiKeyValidator
   private cliVersion: string
   private config = {
     apiKey: process.env.DATADOG_API_KEY,
@@ -37,22 +36,28 @@ export class UploadCommand extends Command {
 
   constructor() {
     super()
-    this.apiKeyValidator = new ApiKeyValidator(this.config.apiKey, datadogSite)
     this.cliVersion = require('../../../package.json').version
   }
 
   public async execute() {
     const initialTime = new Date().getTime()
-    const api = this.getApiHelper()
     this.context.stdout.write(renderCommandInfo(this.dryRun))
 
     const metricsLogger = getMetricsLogger(this.cliVersion)
+    const apiKeyValidator = new ApiKeyValidator(this.config.apiKey, datadogSite)
     const payload = await getCommitInfo(await newSimpleGit(), this.context.stdout, this.repositoryURL)
     if (payload === undefined) {
       return 0
     }
     try {
-      const status = await this.uploadRepository(api, metricsLogger.logger, payload)
+      const requestBuilder = this.getRequestBuilder()
+      const status = await this.uploadRepository(requestBuilder, {
+        apiKeyValidator,
+        logger: this.context.stdout.write.bind(this.context.stdout),
+        metricsLogger: metricsLogger.logger,
+        retries: 5,
+      })(payload)
+
       const totalTime = (Date.now() - initialTime) / 1000
 
       if (status !== UploadStatus.Success) {
@@ -81,28 +86,29 @@ export class UploadCommand extends Command {
     }
   }
 
-  private getApiHelper(): APIHelper {
+  private getRequestBuilder(): RequestBuilder {
     if (!this.config.apiKey) {
       throw new InvalidConfigurationError(`Missing ${chalk.bold('DATADOG_API_KEY')} in your environment.`)
     }
 
-    return apiConstructor(getBaseIntakeUrl(), this.config.apiKey!)
+    return getRequestBuilder({
+      apiKey: this.config.apiKey!,
+      baseUrl: getBaseIntakeUrl(),
+    })
   }
 
-  private async uploadRepository(api: APIHelper, metricsLogger: BufferedMetricsLogger, commitInfo: CommitInfo) {
-    const payload = commitInfo.asMultipartPayload(this.cliVersion)
-    if (this.dryRun) {
-      return UploadStatus.Success
-    }
+  private uploadRepository(
+    requestBuilder: RequestBuilder,
+    opts: UploadOptions
+  ): (commitInfo: CommitInfo) => Promise<UploadStatus> {
+    return async (commitInfo: CommitInfo) => {
+      const payload = commitInfo.asMultipartPayload(this.cliVersion)
+      if (this.dryRun) {
+        return UploadStatus.Success
+      }
 
-    return uploadWithRetry(payload, {
-      api,
-      apiKeyValidator: this.apiKeyValidator,
-      datadogSite,
-      logger: this.context.stdout.write.bind(this.context.stdout),
-      metricsLogger,
-      retries: 5,
-    })
+      return upload(requestBuilder, opts)(payload)
+    }
   }
 }
 

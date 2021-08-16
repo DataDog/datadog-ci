@@ -77,7 +77,7 @@ describe('upload', () => {
       process.env = {}
       const command = new UploadCommand()
 
-      expect(command['getApiHelper'].bind(command)).toThrow(
+      expect(command['getRequestBuilder'].bind(command)).toThrow(
         `Missing ${chalk.bold('DATADOG_API_KEY')} in your environment.`
       )
     })

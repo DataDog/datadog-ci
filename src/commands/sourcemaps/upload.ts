@@ -1,6 +1,5 @@
 import chalk from 'chalk'
 import {Command} from 'clipanion'
-import {BufferedMetricsLogger} from 'datadog-metrics'
 import glob from 'glob'
 import path from 'path'
 import asyncPool from 'tiny-async-pool'
@@ -8,11 +7,11 @@ import {URL} from 'url'
 
 import {ApiKeyValidator} from '../../helpers/apikey'
 import {InvalidConfigurationError} from '../../helpers/errors'
-import {UploadStatus} from '../../helpers/upload'
-import {apiConstructor, APIHelper, uploadWithRetry} from '../../helpers/upload'
+import {upload, UploadOptions, UploadStatus} from '../../helpers/upload'
+import {getRequestBuilder, RequestBuilder} from '../../helpers/utils'
 import {getRepositoryData, newSimpleGit, RepositoryData} from './git'
 import {Sourcemap} from './interfaces'
-import {getMetricsLogger} from './metrics'
+import {getMetricsLogger, MetricsLogger} from './metrics'
 import {
   renderCommandInfo,
   renderConfigurationError,
@@ -45,7 +44,6 @@ export class UploadCommand extends Command {
     ],
   })
 
-  private apiKeyValidator: ApiKeyValidator
   private basePath?: string
   private cliVersion: string
   private config = {
@@ -63,7 +61,6 @@ export class UploadCommand extends Command {
 
   constructor() {
     super()
-    this.apiKeyValidator = new ApiKeyValidator(this.config.apiKey, this.config.datadogSite)
     this.cliVersion = require('../../../package.json').version
   }
 
@@ -92,7 +89,6 @@ export class UploadCommand extends Command {
       return 1
     }
 
-    const api = this.getApiHelper()
     // Normalizing the basePath to resolve .. and .
     // Always using the posix version to avoid \ on Windows.
     this.basePath = path.posix.normalize(this.basePath!)
@@ -108,12 +104,19 @@ export class UploadCommand extends Command {
       )
     )
     const metricsLogger = getMetricsLogger(this.releaseVersion, this.service, this.cliVersion)
+    const apiKeyValidator = new ApiKeyValidator(this.config.apiKey, this.config.datadogSite)
     const useGit = this.disableGit === undefined || !this.disableGit
     const initialTime = Date.now()
     const payloads = await this.getPayloadsToUpload(useGit)
-    const upload = (p: Sourcemap) => this.uploadSourcemap(api, metricsLogger.logger, p)
+    const requestBuilder = this.getRequestBuilder()
+    const uploadMultipart = this.upload(requestBuilder, {
+      apiKeyValidator,
+      logger: this.context.stdout.write.bind(this.context.stdout),
+      metricsLogger: metricsLogger.logger,
+      retries: 5,
+    }, metricsLogger)
     try {
-      const results = await asyncPool(this.maxConcurrency, payloads, upload)
+      const results = await asyncPool(this.maxConcurrency, payloads, uploadMultipart)
       const totalTime = (Date.now() - initialTime) / 1000
       this.context.stdout.write(renderSuccessfulCommand(results, totalTime, this.dryRun))
       metricsLogger.logger.gauge('duration', totalTime)
@@ -152,14 +155,6 @@ export class UploadCommand extends Command {
         })
       })
     )
-  }
-
-  private getApiHelper(): APIHelper {
-    if (!this.config.apiKey) {
-      throw new InvalidConfigurationError(`Missing ${chalk.bold('DATADOG_API_KEY')} in your environment.`)
-    }
-
-    return apiConstructor(getBaseIntakeUrl(), this.config.apiKey!)
   }
 
   // Looks for the sourcemaps and minified files on disk and returns
@@ -223,6 +218,18 @@ export class UploadCommand extends Command {
     }
   }
 
+  private getRequestBuilder(): RequestBuilder {
+    if (!this.config.apiKey) {
+      throw new InvalidConfigurationError(`Missing ${chalk.bold('DATADOG_API_KEY')} in your environment.`)
+    }
+
+    return getRequestBuilder({
+      apiKey: this.config.apiKey!,
+      baseUrl: getBaseIntakeUrl(),
+    })
+
+  }
+
   private isMinifiedPathPrefixValid(): boolean {
     let protocol
     try {
@@ -239,47 +246,43 @@ export class UploadCommand extends Command {
     return true
   }
 
-  private async uploadSourcemap(
-    api: APIHelper,
-    metricsLogger: BufferedMetricsLogger,
-    sourcemap: Sourcemap
-  ): Promise<UploadStatus> {
-    try {
-      validatePayload(sourcemap)
-    } catch (error) {
-      if (error instanceof InvalidPayload) {
-        this.context.stdout.write(renderFailedUpload(sourcemap, error.message))
-        metricsLogger.increment('skipped_sourcemap', 1, [`reason:${error.reason}`])
-      } else {
-        this.context.stdout.write(
-          renderFailedUpload(
-            sourcemap,
-            `Skipping sourcemap ${sourcemap.sourcemapPath} because of error: ${error.message}`
+  private upload(
+    requestBuilder: RequestBuilder,
+    opts: UploadOptions,
+    metricsLogger: MetricsLogger
+  ): (sourcemap: Sourcemap) => Promise<UploadStatus> {
+    return async (sourcemap: Sourcemap) => {
+      try {
+        validatePayload(sourcemap)
+      } catch (error) {
+        if (error instanceof InvalidPayload) {
+          this.context.stdout.write(renderFailedUpload(sourcemap, error.message))
+          metricsLogger.logger.increment('skipped_sourcemap', 1, [`reason:${error.reason}`])
+        } else {
+          this.context.stdout.write(
+            renderFailedUpload(
+              sourcemap,
+              `Skipping sourcemap ${sourcemap.sourcemapPath} because of error: ${error.message}`
+            )
           )
-        )
-        metricsLogger.increment('skipped_sourcemap', 1, ['reason:unknown'])
+          metricsLogger.logger.increment('skipped_sourcemap', 1, ['reason:unknown'])
+        }
+
+        return UploadStatus.Skipped
       }
 
-      return UploadStatus.Skipped
+      const payload = sourcemap.asMultipartPayload(
+        this.cliVersion, this.service!, this.releaseVersion!, this.projectPath
+      )
+      if (this.dryRun) {
+        this.context.stdout.write(`[DRYRUN] ${payload.renderUpload()}`)
+
+        return UploadStatus.Success
+      }
+
+      return upload(requestBuilder, opts)(payload)
     }
 
-    const payload = sourcemap.asMultipartPayload(
-      this.cliVersion, this.service!, this.releaseVersion!, this.projectPath
-    )
-    if (this.dryRun) {
-      this.context.stdout.write(`[DRYRUN] ${payload.renderUpload()}`)
-
-      return UploadStatus.Success
-    }
-
-    return uploadWithRetry(payload, {
-      api,
-      apiKeyValidator: this.apiKeyValidator,
-      datadogSite: this.config.datadogSite,
-      logger: this.context.stdout.write.bind(this.context.stdout),
-      metricsLogger,
-      retries: 5,
-    })
   }
 }
 
