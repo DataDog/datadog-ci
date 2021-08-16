@@ -80,21 +80,3 @@ export interface GitData {
   gitRepositoryPayload?: string
   gitRepositoryURL: string
 }
-
-export interface Payload {
-  cliVersion: string
-  gitCommitSha?: string
-  gitRepositoryPayload?: string
-  gitRepositoryURL?: string
-  minifiedFilePath: string
-  minifiedUrl: string
-  overwrite?: boolean
-  projectPath: string
-  service: string
-  sourcemapPath: string
-  version: string
-}
-
-export interface APIHelper {
-  uploadSourcemap(sourcemap: Payload, write: Writable['write']): AxiosPromise<AxiosResponse>
-}

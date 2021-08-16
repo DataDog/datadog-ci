@@ -282,7 +282,6 @@ export class UploadCommand extends Command {
 
       return upload(requestBuilder, opts)(payload)
     }
-
   }
 }
 
