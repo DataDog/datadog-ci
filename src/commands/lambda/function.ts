@@ -47,7 +47,7 @@ const MAX_LAMBDA_STATE_CHECKS = 3
  * @param ms
  * @returns
  */
-const wait = (ms: number): Promise<void> => new Promise((res) => setTimeout(res, ms));
+const wait = (ms: number): Promise<void> => new Promise((res) => setTimeout(res, ms))
 
 /**
  *
@@ -56,7 +56,12 @@ const wait = (ms: number): Promise<void> => new Promise((res) => setTimeout(res,
  * @param attempts
  * @returns bool
  */
-const checkLambdaState = async (lambda: Lambda, config: Lambda.FunctionConfiguration, functionArn: string, attempts: number = 0): Promise<Boolean> => {
+const checkLambdaState = async (
+  lambda: Lambda,
+  config: Lambda.FunctionConfiguration,
+  functionArn: string,
+  attempts = 0
+): Promise<boolean> => {
   if (!config.State || !config.LastUpdateStatus) {
     return true
   }
@@ -64,11 +69,14 @@ const checkLambdaState = async (lambda: Lambda, config: Lambda.FunctionConfigura
     return true
   }
   if (config.State === 'Pending' && attempts <= MAX_LAMBDA_STATE_CHECKS) {
-    await wait(2 ** attempts * 1000 )
+    await wait(2 ** attempts * 1000)
     const refetchedConfig = await getLambdaConfig(lambda, functionArn)
-    return checkLambdaState(lambda, refetchedConfig.config, functionArn, attempts += 1)
+
+    return checkLambdaState(lambda, refetchedConfig.config, functionArn, (attempts += 1))
   }
-  throw Error(`Can't instrument ${functionArn}, as current State is ${config.State} (must be "Active") and Last Update Status is ${config.LastUpdateStatus} (must be "Successful")`)
+  throw Error(
+    `Can't instrument ${functionArn}, as current State is ${config.State} (must be "Active") and Last Update Status is ${config.LastUpdateStatus} (must be "Successful")`
+  )
 }
 
 export const getLambdaConfigs = async (
@@ -83,7 +91,7 @@ export const getLambdaConfigs = async (
 
   const functionsToUpdate: FunctionConfiguration[] = []
 
-  for (let {config, functionARN} of results) {
+  for (const {config, functionARN} of results) {
     const runtime = config.Runtime
     if (!isSupportedRuntime(runtime)) {
       throw Error(`Can't instrument ${functionARN}, runtime ${runtime} not supported`)

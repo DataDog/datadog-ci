@@ -235,21 +235,33 @@ describe('lambda', () => {
                                         `)
       })
 
-      test("aborts if a function is not in an Active state with LastUpdateStatus Successful", async () => {
+      test('aborts if a function is not in an Active state with LastUpdateStatus Successful', async () => {
         ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({code: 'ENOENT'}))
-        ;(Lambda as any).mockImplementation(() => makeMockLambda({
-          'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world': {
-            FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world',
-            Handler: 'index.handler',
-            Runtime: 'nodejs12.x',
-            State: 'Failed',
-            LastUpdateStatus: 'Unsuccessful'
-          }
-        }))
+        ;(Lambda as any).mockImplementation(() =>
+          makeMockLambda({
+            'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world': {
+              FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world',
+              Handler: 'index.handler',
+              LastUpdateStatus: 'Unsuccessful',
+              Runtime: 'nodejs12.x',
+              State: 'Failed',
+            },
+          })
+        )
 
         const cli = makeCli()
         const context = createMockContext() as any
-        const code = await cli.run(['lambda', 'instrument', '--function', 'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world', '--layerVersion', '10'], context)
+        const code = await cli.run(
+          [
+            'lambda',
+            'instrument',
+            '--function',
+            'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world',
+            '--layerVersion',
+            '10',
+          ],
+          context
+        )
 
         const output = context.stdout.toString()
         expect(code).toBe(1)
