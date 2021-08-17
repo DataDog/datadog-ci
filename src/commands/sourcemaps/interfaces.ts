@@ -8,11 +8,7 @@ export class Sourcemap {
   public minifiedUrl: string
   public sourcemapPath: string
 
-  constructor(
-    minifiedFilePath: string,
-    minifiedUrl: string,
-    sourcemapPath: string
-  ) {
+  constructor(minifiedFilePath: string, minifiedUrl: string, sourcemapPath: string) {
     this.minifiedFilePath = minifiedFilePath
     this.minifiedUrl = minifiedUrl
     this.sourcemapPath = sourcemapPath
@@ -39,17 +35,17 @@ export class Sourcemap {
       ['type', {value: 'js_sourcemap'}],
     ])
     if (this.gitData !== undefined) {
-      if ((this.gitData!).gitRepositoryPayload !== undefined) {
+      if (this.gitData!.gitRepositoryPayload !== undefined) {
         content.set('repository', {
           options: {
             contentType: 'application/json',
             filename: 'repository',
           },
-          value: (this.gitData!).gitRepositoryPayload,
+          value: this.gitData!.gitRepositoryPayload,
         })
       }
-      content.set('git_repository_url', {value: (this.gitData!).gitRepositoryURL})
-      content.set('git_commit_sha', {value: (this.gitData!).gitCommitSha})
+      content.set('git_repository_url', {value: this.gitData!.gitRepositoryURL})
+      content.set('git_commit_sha', {value: this.gitData!.gitCommitSha})
     }
 
     return {

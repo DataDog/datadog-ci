@@ -63,7 +63,7 @@ const gitHash = async (git: simpleGit.SimpleGit): Promise<string> => git.revpars
 export const gitTrackedFiles = async (git: simpleGit.SimpleGit): Promise<string[]> => {
   const files = await git.raw('ls-files')
 
-  return files.split(/\r\n|\r|\n/).filter(s => s !== '')
+  return files.split(/\r\n|\r|\n/).filter((s) => s !== '')
 }
 
 // Returns the current hash, remote URL and tracked files paths.

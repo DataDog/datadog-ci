@@ -269,7 +269,10 @@ export class UploadCommand extends Command {
       }
 
       const payload = sourcemap.asMultipartPayload(
-        this.cliVersion, this.service!, this.releaseVersion!, this.projectPath
+        this.cliVersion,
+        this.service!,
+        this.releaseVersion!,
+        this.projectPath
       )
       if (this.dryRun) {
         this.context.stdout.write(`[DRYRUN] ${renderUpload(sourcemap)}`)

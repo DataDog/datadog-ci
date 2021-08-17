@@ -31,7 +31,6 @@ const createMockSimpleGit = (conf: MockConfig) => ({
 
 describe('git', () => {
   describe('gitRemote', () => {
-
     test('should choose the remote named origin', async () => {
       const mock = createMockSimpleGit({
         remotes: [
@@ -88,11 +87,8 @@ describe('git', () => {
     test('should return commit info from simple git', async () => {
       const mock = createMockSimpleGit({
         hash: 'abcd',
-        remotes: [
-          {name: 'first', refs: {push: 'https://git-repo'}},
-        ],
+        remotes: [{name: 'first', refs: {push: 'https://git-repo'}}],
         trackedFiles: ['myfile.js'],
-
       }) as any
       const commitInfo = await getCommitInfo(mock, process.stdout)
 
@@ -105,7 +101,6 @@ describe('git', () => {
       const mock = createMockSimpleGit({
         hash: 'abcd',
         trackedFiles: ['myfile.js'],
-
       }) as any
       const commitInfo = await getCommitInfo(mock, process.stdout, 'https://overridden')
 

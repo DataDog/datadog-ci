@@ -24,12 +24,12 @@ export interface UploadOptions {
    * of an invalid API key. Callers should most likely catch this exception and display it as a
    * nice error message.
    */
-  apiKeyValidator?: ApiKeyValidator,
+  apiKeyValidator?: ApiKeyValidator
 
   /** Retries is the amount of upload retries before giving up. Some requests are never retried
    * (400, 413).
    */
-  retries: number,
+  retries: number
 
   /** Callback when upload fails (retries are not considered as failure)
    */
@@ -58,7 +58,6 @@ export const upload = (requestBuilder: RequestBuilder) => async (
   payload: MultipartPayload,
   opts: UploadOptions
 ): Promise<UploadStatus> => {
-
   opts.onUpload()
   try {
     await uploadWithRetry(requestBuilder, {
@@ -84,10 +83,9 @@ export const upload = (requestBuilder: RequestBuilder) => async (
   }
 }
 
-const uploadWithRetry = (
-  requestBuilder: RequestBuilder, retryOpts: retry.Options
-) => async (payload: MultipartPayload): Promise<void> => {
-
+const uploadWithRetry = (requestBuilder: RequestBuilder, retryOpts: retry.Options) => async (
+  payload: MultipartPayload
+): Promise<void> => {
   // Upload function, passed to async-retry
   const doUpload = async (bail: (e: Error) => void) => {
     try {
@@ -113,9 +111,9 @@ const uploadWithRetry = (
 // We don't want any hard limit enforced by the CLI, the backend will enforce a max size by returning 413 errors.
 const maxBodyLength = Infinity
 
-const uploadMultipart = (
-  request: (args: AxiosRequestConfig) => AxiosPromise<AxiosResponse>
-) => async (payload: MultipartPayload) => {
+const uploadMultipart = (request: (args: AxiosRequestConfig) => AxiosPromise<AxiosResponse>) => async (
+  payload: MultipartPayload
+) => {
   const form = new FormData()
   payload.content.forEach((value: MultipartValue, key: string) => {
     form.append(key, value.value, value.options)

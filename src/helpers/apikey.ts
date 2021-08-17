@@ -28,21 +28,14 @@ export class ApiKeyValidator {
    */
   public async verifyApiKey(error: AxiosError): Promise<void> {
     if (error.response === undefined) {
-
       return
     }
-    if (
-      error.response.status === 403 || (
-        error.response.status === 400 &&
-        !(await this.isApiKeyValid())
-      )
-    ) {
+    if (error.response.status === 403 || (error.response.status === 400 && !(await this.isApiKeyValid()))) {
       if (this.metricsLogger !== undefined) {
         this.metricsLogger.increment('invalid_auth', 1)
       }
       throw new InvalidConfigurationError(
-        `${chalk.red.bold('DATADOG_API_KEY')} does not contain a valid API key for Datadog site ${this.datadogSite
-        }`
+        `${chalk.red.bold('DATADOG_API_KEY')} does not contain a valid API key for Datadog site ${this.datadogSite}`
       )
     }
   }

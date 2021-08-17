@@ -58,8 +58,7 @@ export class UploadCommand extends Command {
       const status = await this.uploadRepository(requestBuilder)(payload, {
         apiKeyValidator,
         onError: (e) => {
-          this.context.stdout.write(renderFailedUpload(e.message)),
-            metricsLogger.logger.increment('failed', 1)
+          this.context.stdout.write(renderFailedUpload(e.message)), metricsLogger.logger.increment('failed', 1)
         },
         onRetry: (e, attempt) => {
           this.context.stdout.write(renderRetriedUpload(e.message, attempt))
@@ -109,10 +108,9 @@ export class UploadCommand extends Command {
     })
   }
 
-  private uploadRepository(requestBuilder: RequestBuilder): (
-    commitInfo: CommitInfo,
-    opts: UploadOptions
-  ) => Promise<UploadStatus> {
+  private uploadRepository(
+    requestBuilder: RequestBuilder
+  ): (commitInfo: CommitInfo, opts: UploadOptions) => Promise<UploadStatus> {
     return async (commitInfo: CommitInfo, opts: UploadOptions) => {
       const payload = commitInfo.asMultipartPayload(this.cliVersion)
       if (this.dryRun) {
