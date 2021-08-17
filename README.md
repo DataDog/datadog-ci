@@ -25,7 +25,7 @@ npx @datadog/datadog-ci [command]
 # NPM install globally
 npm install -g @datadog/datadog-ci
 
-# Yarn add globally
+# Yarn v1 add globally
 yarn global add @datadog/datadog-ci
 ```
 ## Usage
