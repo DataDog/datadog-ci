@@ -40,6 +40,37 @@ export interface InstrumentationSettings {
   tracingEnabled: boolean
 }
 
+const MAX_LAMBDA_STATE_CHECKS = 3
+
+/**
+ * Waits for n ms
+ * @param ms
+ * @returns
+ */
+const wait = (ms: number): Promise<void> => new Promise((res) => setTimeout(res, ms));
+
+/**
+ *
+ * @param config
+ * @param functionArn
+ * @param attempts
+ * @returns bool
+ */
+const checkLambdaState = async (lambda: Lambda, config: Lambda.FunctionConfiguration, functionArn: string, attempts: number = 0): Promise<Boolean> => {
+  if (!config.State || !config.LastUpdateStatus) {
+    return true
+  }
+  if (config.LastUpdateStatus === 'Successful' && config.State === 'Active') {
+    return true
+  }
+  if (config.State === 'Pending' && attempts <= MAX_LAMBDA_STATE_CHECKS) {
+    await wait(2 ** attempts * 1000 )
+    const refetchedConfig = await getLambdaConfig(lambda, functionArn)
+    return checkLambdaState(lambda, refetchedConfig.config, functionArn, attempts += 1)
+  }
+  throw Error(`Can't instrument ${functionArn}, as current State is ${config.State} (must be "Active") and Last Update Status is ${config.LastUpdateStatus} (must be "Successful")`)
+}
+
 export const getLambdaConfigs = async (
   lambda: Lambda,
   cloudWatch: CloudWatchLogs,
@@ -52,12 +83,13 @@ export const getLambdaConfigs = async (
 
   const functionsToUpdate: FunctionConfiguration[] = []
 
-  for (const {config, functionARN} of results) {
+  for (let {config, functionARN} of results) {
     const runtime = config.Runtime
     if (!isSupportedRuntime(runtime)) {
       throw Error(`Can't instrument ${functionARN}, runtime ${runtime} not supported`)
     }
 
+    await checkLambdaState(lambda, config, functionARN)
     const lambdaLibraryLayerArn: string = getLayerArn(runtime, settings, region)
     const lambdaExtensionLayerArn: string = getExtensionArn(settings, region)
     const updateRequest = calculateUpdateRequest(
