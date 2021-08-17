@@ -4,7 +4,7 @@ import FormData from 'form-data'
 import {ReadStream} from 'fs'
 
 import {ApiKeyValidator} from './apikey'
-import {RequestBuilder} from './utils'
+import {RequestBuilder} from './interfaces'
 
 const errorCodesNoRetry = [400, 403, 413]
 
@@ -84,10 +84,6 @@ export const upload = (requestBuilder: RequestBuilder) => async (
   }
 }
 
-// Dependency follows-redirects sets a default maxBodyLength of 10 MB https://github.com/follow-redirects/follow-redirects/blob/b774a77e582b97174813b3eaeb86931becba69db/index.js#L391
-// We don't want any hard limit enforced by the CLI, the backend will enforce a max size by returning 413 errors.
-const maxBodyLength = Infinity
-
 const uploadWithRetry = (
   requestBuilder: RequestBuilder, retryOpts: retry.Options
 ) => async (payload: MultipartPayload): Promise<void> => {
@@ -112,6 +108,10 @@ const uploadWithRetry = (
   // Do the actual call
   return retry(doUpload, retryOpts)
 }
+
+// Dependency follows-redirects sets a default maxBodyLength of 10 MB https://github.com/follow-redirects/follow-redirects/blob/b774a77e582b97174813b3eaeb86931becba69db/index.js#L391
+// We don't want any hard limit enforced by the CLI, the backend will enforce a max size by returning 413 errors.
+const maxBodyLength = Infinity
 
 const uploadMultipart = (
   request: (args: AxiosRequestConfig) => AxiosPromise<AxiosResponse>

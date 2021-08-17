@@ -3,7 +3,6 @@ import fs from 'fs'
 import {MultipartPayload, MultipartValue} from '../../helpers/upload'
 
 export class Sourcemap {
-  // These fields should probably not be marked as public, refactor
   public gitData?: GitData
   public minifiedFilePath: string
   public minifiedUrl: string

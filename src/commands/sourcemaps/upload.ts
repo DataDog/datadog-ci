@@ -7,8 +7,9 @@ import {URL} from 'url'
 
 import {ApiKeyValidator} from '../../helpers/apikey'
 import {InvalidConfigurationError} from '../../helpers/errors'
+import {RequestBuilder} from '../../helpers/interfaces'
 import {upload, UploadStatus} from '../../helpers/upload'
-import {getRequestBuilder, RequestBuilder} from '../../helpers/utils'
+import {getRequestBuilder} from '../../helpers/utils'
 import {getRepositoryData, newSimpleGit, RepositoryData} from './git'
 import {Sourcemap} from './interfaces'
 import {getMetricsLogger, MetricsLogger} from './metrics'
@@ -224,7 +225,6 @@ export class UploadCommand extends Command {
       apiKey: this.config.apiKey!,
       baseUrl: getBaseIntakeUrl(),
     })
-
   }
 
   private isMinifiedPathPrefixValid(): boolean {

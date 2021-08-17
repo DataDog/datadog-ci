@@ -5,8 +5,9 @@ import asyncPool from 'tiny-async-pool'
 
 import {ApiKeyValidator} from '../../helpers/apikey'
 import {InvalidConfigurationError} from '../../helpers/errors'
+import {RequestBuilder} from '../../helpers/interfaces'
 import {upload, UploadStatus} from '../../helpers/upload'
-import {getRequestBuilder, RequestBuilder} from '../../helpers/utils'
+import {getRequestBuilder} from '../../helpers/utils'
 import {Dsym} from './interfaces'
 import {getMetricsLogger, MetricsLogger} from './metrics'
 import {
@@ -42,10 +43,6 @@ export class UploadCommand extends Command {
   }
   private dryRun = false
   private maxConcurrency = 20
-
-  constructor() {
-    super()
-  }
 
   public async execute() {
     this.basePath = path.posix.normalize(this.basePath)

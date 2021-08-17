@@ -1,7 +1,7 @@
 import fs from 'fs'
 import {promisify} from 'util'
 
-import {AxiosPromise, AxiosRequestConfig, AxiosResponse, default as axios} from 'axios'
+import {AxiosRequestConfig, default as axios} from 'axios'
 import deepExtend from 'deep-extend'
 import ProxyAgent from 'proxy-agent'
 
@@ -117,8 +117,6 @@ export const getRequestBuilder = (options: RequestOptions) => {
 
   return (args: AxiosRequestConfig) => axios.create(baseConfiguration)(overrideArgs(args))
 }
-
-export type RequestBuilder = (args: AxiosRequestConfig) => AxiosPromise<AxiosResponse>
 
 export const getApiHostForSite = (site: string) => {
   switch (site) {
