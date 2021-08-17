@@ -254,7 +254,7 @@ describe('lambda', () => {
         const output = context.stdout.toString()
         expect(code).toBe(1)
         expect(output).toMatchInlineSnapshot(`
-                                                  "Couldn't fetch lambda functions. Error: Can't instrument arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world, as current State is Failed (must be "Active") and Last Update Status is Unsuccessful (must be "Successful")
+                                                  "Couldn't fetch lambda functions. Error: Can't instrument arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world, as current State is Failed (must be \\"Active\\") and Last Update Status is Unsuccessful (must be \\"Successful\\")
                                                   "
                                         `)
       })
