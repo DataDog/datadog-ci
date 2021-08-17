@@ -62,6 +62,7 @@ const checkLambdaState = async (
   functionArn: string,
   attempts = 0
 ): Promise<boolean> => {
+  // TODO remove 1 Oct 2021 https://aws.amazon.com/blogs/compute/tracking-the-state-of-lambda-functions/
   if (!config.State || !config.LastUpdateStatus) {
     return true
   }
