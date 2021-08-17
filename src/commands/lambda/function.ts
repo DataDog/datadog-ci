@@ -49,14 +49,7 @@ const MAX_LAMBDA_STATE_CHECKS = 3
  */
 const wait = (ms: number): Promise<void> => new Promise((res) => setTimeout(res, ms))
 
-/**
- *
- * @param config
- * @param functionArn
- * @param attempts
- * @returns bool
- */
-const checkLambdaState = async (
+const isLambdaActive = async (
   lambda: Lambda,
   config: Lambda.FunctionConfiguration,
   functionArn: string,
@@ -73,7 +66,7 @@ const checkLambdaState = async (
     await wait(2 ** attempts * 1000)
     const refetchedConfig = await getLambdaConfig(lambda, functionArn)
 
-    return checkLambdaState(lambda, refetchedConfig.config, functionArn, (attempts += 1))
+    return isLambdaActive(lambda, refetchedConfig.config, functionArn, (attempts += 1))
   }
   throw Error(
     `Can't instrument ${functionArn}, as current State is ${config.State} (must be "Active") and Last Update Status is ${config.LastUpdateStatus} (must be "Successful")`
@@ -98,7 +91,7 @@ export const getLambdaConfigs = async (
       throw Error(`Can't instrument ${functionARN}, runtime ${runtime} not supported`)
     }
 
-    await checkLambdaState(lambda, config, functionARN)
+    await isLambdaActive(lambda, config, functionARN)
     const lambdaLibraryLayerArn: string = getLayerArn(runtime, settings, region)
     const lambdaExtensionLayerArn: string = getExtensionArn(settings, region)
     const updateRequest = calculateUpdateRequest(
