@@ -16,7 +16,7 @@ npm install --save-dev @datadog/datadog-ci
 yarn add --dev @datadog/datadog-ci
 ```
 
-If you need `datadog-ci` as a CLI tool instead of a package, you can run it with `npx` or install globally:
+If you need `datadog-ci` as a CLI tool instead of a package, you can run it with [`npx`](https://www.npmjs.com/package/npx) or install globally:
 
 ```sh
 # npx
