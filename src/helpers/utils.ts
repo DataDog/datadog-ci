@@ -64,7 +64,8 @@ export interface ProxyConfiguration {
   }
   host?: string
   port?: number
-  protocol: ProxyType
+  protocol?: ProxyType
+  url?: string
 }
 
 export const getProxyUrl = (options: ProxyConfiguration) => {
@@ -105,9 +106,11 @@ export const getRequestBuilder = (options: RequestOptions) => {
       newArguments.url = overrideUrl
     }
 
-    if (proxyOpts && proxyOpts.host && proxyOpts.port) {
+    if (proxyOpts && proxyOpts.host && proxyOpts.port && proxyOpts.protocol) {
       const proxyUrl = getProxyUrl(proxyOpts)
       newArguments.httpsAgent = new ProxyAgent(proxyUrl)
+    } else if (proxyOpts && proxyOpts.url !== undefined) {
+      newArguments.httpsAgent = new ProxyAgent(proxyOpts.url!)
     }
 
     if (options.headers !== undefined) {
