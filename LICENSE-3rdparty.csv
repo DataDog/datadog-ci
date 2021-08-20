@@ -21,6 +21,7 @@ clipanion,import,MIT,Copyright (c) 2019 Mael Nison
 datadog-metrics,import,MIT,Copyright (c) 2014 Daniel Bader
 dd-trace,import,Apache-2.0,Copyright 2016-Present Datadog Inc.
 deep-extend,import,MIT,Copyright (c) 2013-2018, Viacheslav Lotsmanov
+fast-xml-parser,import,MIT,Copyright (c) 2017 Amit Kumar Gupta
 form-data,import,MIT,Copyright (c) 2012 Felix Geisendörfer (felix@debuggable.com) and contributors
 glob,import,ISC,Copyright (c) Isaac Z. Schlueter and Contributors
 jest,dev,MIT,Copyright (c) Facebook, Inc. and its affiliates.
