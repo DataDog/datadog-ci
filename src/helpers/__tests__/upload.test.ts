@@ -1,6 +1,5 @@
-import {AxiosPromise, AxiosRequestConfig, AxiosResponse, default as axios} from 'axios'
+import {default as axios} from 'axios'
 
-import {ApiKeyValidator} from '../apikey'
 import {upload, UploadStatus} from '../upload'
 import * as ciUtils from '../utils'
 
