@@ -6,6 +6,7 @@ export const RUNTIME_LAYER_LOOKUP = {
   'python3.6': 'Datadog-Python36',
   'python3.7': 'Datadog-Python37',
   'python3.8': 'Datadog-Python38',
+  'python3.9': 'Datadog-Python39',
 } as const
 export type Runtime = keyof typeof RUNTIME_LAYER_LOOKUP
 
@@ -19,6 +20,7 @@ export const HANDLER_LOCATION = {
   'python3.6': PYTHON_HANDLER_LOCATION,
   'python3.7': PYTHON_HANDLER_LOCATION,
   'python3.8': PYTHON_HANDLER_LOCATION,
+  'python3.9': PYTHON_HANDLER_LOCATION,
 }
 
 export const DEFAULT_LAYER_AWS_ACCOUNT = '464622532012'

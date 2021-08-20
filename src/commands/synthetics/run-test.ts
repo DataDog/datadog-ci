@@ -3,7 +3,7 @@ import {Command} from 'clipanion'
 import deepExtend from 'deep-extend'
 
 import {parseConfigFile} from '../../helpers/utils'
-import {apiConstructor} from './api'
+import {apiConstructor, is5xxError} from './api'
 import {
   APIHelper,
   CommandConfig,
@@ -26,6 +26,8 @@ export const DEFAULT_COMMAND_CONFIG: CommandConfig = {
   appKey: '',
   configPath: 'datadog-ci.json',
   datadogSite: 'datadoghq.com',
+  failOnCriticalErrors: false,
+  failOnTimeout: true,
   files: ['{,!(node_modules)/**/}*.synthetics.json'],
   global: {},
   pollingTimeout: 2 * 60 * 1000,
@@ -41,6 +43,8 @@ export class RunTestCommand extends Command {
   private config: CommandConfig = JSON.parse(JSON.stringify(DEFAULT_COMMAND_CONFIG)) // Deep copy to avoid mutation during unit tests
   private configPath?: string
   private datadogSite?: string
+  private failOnCriticalErrors?: boolean
+  private failOnTimeout?: boolean
   private files?: string[]
   private publicIds?: string[]
   private reporter?: MainReporter
@@ -72,7 +76,15 @@ export class RunTestCommand extends Command {
       try {
         testsToTrigger = await this.getTestsList(api)
       } catch (error) {
-        this.reporter.error(`\n${chalk.bgRed.bold(' Failed to get tests list ')}\n${error.message}\n\n`)
+        this.reporter.error(
+          `\n${chalk.bgRed.bold(' ERROR: unable to obtain test configurations with search query ')}\n${
+            error.message
+          }\n\n`
+        )
+
+        if (is5xxError(error) && !this.config.failOnCriticalErrors) {
+          return safeExit(0)
+        }
 
         return safeExit(1)
       }
@@ -93,7 +105,13 @@ export class RunTestCommand extends Command {
     try {
       testsToTriggerResult = await getTestsToTrigger(api, testsToTrigger, this.reporter)
     } catch (error) {
-      this.reporter.error(`\n${chalk.bgRed.bold(' ERROR on get tests endpoint ')}\n${error.message}\n\n`)
+      this.reporter.error(
+        `\n${chalk.bgRed.bold(' ERROR: unable to obtain test configurations ')}\n${error.message}\n\n`
+      )
+
+      if (is5xxError(error) && !this.config.failOnCriticalErrors) {
+        return safeExit(0)
+      }
 
       return safeExit(1)
     }
@@ -111,7 +129,10 @@ export class RunTestCommand extends Command {
         // Get the pre-signed URL to connect to the tunnel service
         presignedURL = (await api.getPresignedURL(publicIdsToTrigger)).url
       } catch (e) {
-        this.reporter.error(`\n${chalk.bgRed.bold(' Failed to get tunnel URL')}\n${e.message}\n\n`)
+        this.reporter.error(`\n${chalk.bgRed.bold(' ERROR: unable to get tunnel configuration')}\n${e.message}\n\n`)
+        if (is5xxError(e) && !this.config.failOnCriticalErrors) {
+          return safeExit(0)
+        }
 
         return safeExit(1)
       }
@@ -123,7 +144,11 @@ export class RunTestCommand extends Command {
           testToTrigger.tunnel = tunnelInfo
         })
       } catch (e) {
-        this.reporter.error(`\n${chalk.bgRed.bold(' ERROR on tunnel start ')}\n${e.message}\n\n`)
+        this.reporter.error(`\n${chalk.bgRed.bold(' ERROR: unable to start tunnel ')}\n${e.message}\n\n`)
+
+        if (is5xxError(e) && !this.config.failOnCriticalErrors) {
+          return safeExit(0)
+        }
 
         return safeExit(1)
       }
@@ -133,7 +158,11 @@ export class RunTestCommand extends Command {
     try {
       triggers = await runTests(api, overriddenTestsToTrigger)
     } catch (e) {
-      this.reporter.error(`\n${chalk.bgRed.bold(' ERROR on trigger endpoint ')}\n${e.message}\n\n`)
+      this.reporter.error(`\n${chalk.bgRed.bold(' ERROR: unable to trigger tests ')}\n${e.message}\n\n`)
+
+      if (is5xxError(e) && !this.config.failOnCriticalErrors) {
+        return safeExit(0)
+      }
 
       return safeExit(1)
     }
@@ -157,11 +186,16 @@ export class RunTestCommand extends Command {
         triggers.results,
         this.config.pollingTimeout,
         testsToTrigger,
-        tunnel
+        tunnel,
+        this.config.failOnCriticalErrors
       )
       Object.assign(results, resultPolled)
     } catch (error) {
-      this.reporter.error(`\n${chalk.bgRed.bold(' ERROR on poll endpoint ')}\n${error.message}\n\n`)
+      this.reporter.error(`\n${chalk.bgRed.bold(' ERROR: unable to poll test results ')}\n${error.message}\n\n`)
+
+      if (is5xxError(error) && !this.config.failOnCriticalErrors) {
+        return safeExit(0)
+      }
 
       return safeExit(1)
     }
@@ -176,12 +210,10 @@ export class RunTestCommand extends Command {
 
       return mapping
     }, {} as LocationsMapping)
-
     let hasSucceeded = true // Determine if all the tests have succeeded
     for (const test of tests) {
       const testResults = results[test.public_id]
-
-      const passed = hasTestSucceeded(testResults)
+      const passed = hasTestSucceeded(testResults, this.config.failOnCriticalErrors, this.config.failOnTimeout)
       if (passed) {
         summary.passed++
       } else {
@@ -191,7 +223,14 @@ export class RunTestCommand extends Command {
         }
       }
 
-      this.reporter.testEnd(test, testResults, this.getAppBaseURL(), locationNames)
+      this.reporter.testEnd(
+        test,
+        testResults,
+        this.getAppBaseURL(),
+        locationNames,
+        this.config.failOnCriticalErrors,
+        this.config.failOnTimeout
+      )
     }
 
     this.reporter.runEnd(summary)
@@ -293,6 +332,8 @@ export class RunTestCommand extends Command {
         appKey: this.appKey,
         configPath: this.configPath,
         datadogSite: this.datadogSite,
+        failOnCriticalErrors: this.failOnCriticalErrors,
+        failOnTimeout: this.failOnTimeout,
         files: this.files,
         publicIds: this.publicIds,
         subdomain: this.subdomain,
@@ -309,8 +350,16 @@ export class RunTestCommand extends Command {
 
   private sortTestsByOutcome(results: {[key: string]: PollResult[]}) {
     return (t1: Test, t2: Test) => {
-      const success1 = hasTestSucceeded(results[t1.public_id])
-      const success2 = hasTestSucceeded(results[t2.public_id])
+      const success1 = hasTestSucceeded(
+        results[t1.public_id],
+        this.config.failOnCriticalErrors,
+        this.config.failOnTimeout
+      )
+      const success2 = hasTestSucceeded(
+        results[t2.public_id],
+        this.config.failOnCriticalErrors,
+        this.config.failOnTimeout
+      )
       const isNonBlockingTest1 = t1.options.ci?.executionRule === ExecutionRule.NON_BLOCKING
       const isNonBlockingTest2 = t2.options.ci?.executionRule === ExecutionRule.NON_BLOCKING
 
@@ -337,9 +386,11 @@ export const removeUndefinedValues = <T extends {[key: string]: any}>(object: T)
 RunTestCommand.addPath('synthetics', 'run-tests')
 RunTestCommand.addOption('apiKey', Command.String('--apiKey'))
 RunTestCommand.addOption('appKey', Command.String('--appKey'))
+RunTestCommand.addOption('failOnCriticalErrors', Command.Boolean('--failOnCriticalErrors'))
 RunTestCommand.addOption('configPath', Command.String('--config'))
 RunTestCommand.addOption('datadogSite', Command.String('--datadogSite'))
 RunTestCommand.addOption('files', Command.Array('-f,--files'))
+RunTestCommand.addOption('failOnTimeout', Command.Boolean('--failOnTimeout'))
 RunTestCommand.addOption('publicIds', Command.Array('-p,--public-id'))
 RunTestCommand.addOption('testSearchQuery', Command.String('-s,--search'))
 RunTestCommand.addOption('subdomain', Command.Boolean('--subdomain'))

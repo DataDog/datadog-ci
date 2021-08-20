@@ -7,11 +7,12 @@ import path from 'path'
 import asyncPool from 'tiny-async-pool'
 import {URL} from 'url'
 
+import {ApiKeyValidator} from '../../helpers/apikey'
+import {UploadStatus} from '../../helpers/interfaces'
 import {apiConstructor} from './api'
-import {ApiKeyValidator} from './apikey'
 import {InvalidConfigurationError} from './errors'
 import {getRepositoryData, newSimpleGit, RepositoryData} from './git'
-import {APIHelper, Payload, UploadStatus} from './interfaces'
+import {APIHelper, Payload} from './interfaces'
 import {getMetricsLogger} from './metrics'
 import {
   renderCommandInfo,

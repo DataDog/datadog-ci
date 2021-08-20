@@ -1,5 +1,7 @@
 # Commit command
 
+**Access to this command is currently restricted.**
+
 Upload the git commit details to Datadog.
 
 ## Usage
@@ -23,7 +25,7 @@ It is also possible to override the full URL for the intake endpoint by defining
 
 This command will upload the current commit details to Datadog in order to create links to your repositories inside DataDog's UI.
 
-To upload the commit details, this command should be run inisde a local git repository:
+This command should be run inside a local git repository and the git program must be available:
 
 ```bash
 datadog-ci commit upload

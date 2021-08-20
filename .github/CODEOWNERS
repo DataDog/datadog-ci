@@ -6,3 +6,4 @@ src/commands/lambda @DataDog/serverless
 src/commands/sourcemaps/ @DataDog/source-code-integration
 *.md @DataDog/documentation
 src/commands/junit @DataDog/ci-app-tracers
+src/commands/dsyms @DataDog/rum-mobile

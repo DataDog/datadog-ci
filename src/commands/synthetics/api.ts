@@ -11,6 +11,13 @@ interface BackendError {
   errors: string[]
 }
 
+export class EndpointError extends Error {
+  constructor(public message: string, public status: number) {
+    super(message)
+    Object.setPrototypeOf(this, EndpointError.prototype)
+  }
+}
+
 export const formatBackendErrors = (requestError: AxiosError<BackendError>) => {
   if (requestError.response && requestError.response.data.errors) {
     const serverHead = `query on ${requestError.config.baseURL}${requestError.config.url} returned:`
@@ -103,10 +110,15 @@ const getPresignedURL = (request: (args: AxiosRequestConfig) => AxiosPromise<{ur
 }
 
 const retryOn5xxErrors = (retries: number, error: AxiosError) => {
-  const statusCode = error.response?.status
-  if (retries < 3 && statusCode && statusCode >= 500 && statusCode <= 599) {
+  if (retries < 3 && is5xxError(error)) {
     return 500
   }
+}
+
+export const is5xxError = (error: AxiosError | EndpointError) => {
+  const statusCode = 'status' in error ? error.status : error.response?.status
+
+  return statusCode && statusCode >= 500 && statusCode <= 599
 }
 
 const retryRequest = <T>(args: AxiosRequestConfig, request: (args: AxiosRequestConfig) => AxiosPromise<T>) =>

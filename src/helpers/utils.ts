@@ -5,6 +5,8 @@ import {AxiosRequestConfig, default as axios} from 'axios'
 import deepExtend from 'deep-extend'
 import ProxyAgent from 'proxy-agent'
 
+import type {SpanTag, SpanTags} from './interfaces'
+
 export const pick = <T extends object, K extends keyof T>(base: T, keys: K[]) => {
   const definedKeys = keys.filter((key) => !!base[key])
   const pickedObject: Partial<T> = {}
@@ -144,3 +146,15 @@ export const buildPath = (...args: string[]) =>
     .filter((x) => x.length)
     // Join all these parts with /
     .join('/')
+
+export const removeEmptyValues = (tags: SpanTags) =>
+  (Object.keys(tags) as SpanTag[]).reduce((filteredTags, tag) => {
+    if (!tags[tag]) {
+      return filteredTags
+    }
+
+    return {
+      ...filteredTags,
+      [tag]: tags[tag],
+    }
+  }, {})

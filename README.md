@@ -16,6 +16,18 @@ npm install --save-dev @datadog/datadog-ci
 yarn add --dev @datadog/datadog-ci
 ```
 
+If you need `datadog-ci` as a CLI tool instead of a package, you can run it with [`npx`](https://www.npmjs.com/package/npx) or install globally:
+
+```sh
+# npx
+npx @datadog/datadog-ci [command]
+
+# NPM install globally
+npm install -g @datadog/datadog-ci
+
+# Yarn v1 add globally
+yarn global add @datadog/datadog-ci
+```
 ## Usage
 
 ```bash
@@ -26,6 +38,7 @@ Available command:
   - lambda
   - sourcemaps
   - synthetics
+  - dsyms
 ```
 
 Each command allows interacting with a product of the Datadog platform. The commands are defined in the [src/commands](/src/commands) folder.
@@ -36,6 +49,7 @@ Further documentation for each command can be found in its folder, ie:
 - [Lambda](src/commands/lambda)
 - [Sourcemaps](src/commands/sourcemaps/)
 - [Synthetics CI/CD Testing](src/commands/synthetics/)
+- [iOS dSYM Files](src/commands/dsyms/)
 
 ## Contributing
 

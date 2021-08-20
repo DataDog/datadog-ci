@@ -40,6 +40,7 @@ The configuration file structure is the following:
   "apiKey": "<DATADOG_API_KEY>",
   "appKey": "<DATADOG_APPLICATION_KEY>",
   "datadogSite": "datadoghq.com",
+  "failOnTimeout": "true",
   "files": "{,!(node_modules)/**/}*.synthetics.json",
   "global": {
     "allowInsecureCertificates": true,
@@ -99,6 +100,8 @@ datadog-ci synthetics run-tests -s 'tag:e2e-tests' --config global.config.json
 
 You can use `--files` (shorthand `-f`) to override the global file selector.
 It's particularely useful when you want to run multiple suites in parallel with a single global configuration file.
+
+You can use `--failOnTimeout` (--no-failOnTimeout to sets the value to false) to make the CI fail (or pass) if one of the result exceed its test timeout.
 
 ```bash
 datadog-ci synthetics run-tests -f ./component-1/**/*.synthetics.json -f ./component-2/**/*.synthetics.json
