@@ -84,7 +84,7 @@ export interface RequestOptions {
   appKey?: string
   baseUrl: string
   disableEnvironmentVariables?: boolean
-  headers?: Map<string, string>,
+  headers?: Map<string, string>
   overrideUrl?: string
   proxyOpts?: ProxyConfiguration
 }
