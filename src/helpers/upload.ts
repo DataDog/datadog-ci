@@ -20,7 +20,7 @@ export interface MultipartValue {
 }
 
 export interface UploadOptions {
-  /** ApiKeyValidator (optional) throws an InvalidConfiguratonException when upload fails because
+  /** ApiKeyValidator (optional) throws an InvalidConfigurationException when upload fails because
    * of an invalid API key. Callers should most likely catch this exception and display it as a
    * nice error message.
    */
@@ -37,7 +37,7 @@ export interface UploadOptions {
 
   /** Callback to execute before retries
    */
-  onRetry(e: Error, attempts: number): void
+  onRetry(error: Error, attempts: number): void
 
   /** Callback to execute before upload.
    */

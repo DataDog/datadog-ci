@@ -3,7 +3,6 @@ import chalk from 'chalk'
 import {BufferedMetricsLogger} from 'datadog-metrics'
 
 import {InvalidConfigurationError} from './errors'
-import {} from './utils'
 
 /** ApiKeyValidator is an helper class to interpret Datadog error responses and possibly check the
  * validity of the api key.
