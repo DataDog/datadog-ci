@@ -84,11 +84,12 @@ export interface RequestOptions {
   appKey?: string
   baseUrl: string
   disableEnvironmentVariables?: boolean
+  overrideUrl?: string
   proxyOpts?: ProxyConfiguration
 }
 
 export const getRequestBuilder = (options: RequestOptions) => {
-  const {apiKey, appKey, baseUrl, disableEnvironmentVariables, proxyOpts} = options
+  const {apiKey, appKey, baseUrl, disableEnvironmentVariables, overrideUrl, proxyOpts} = options
   const overrideArgs = (args: AxiosRequestConfig) => {
     const newArguments = {
       ...args,
@@ -97,6 +98,10 @@ export const getRequestBuilder = (options: RequestOptions) => {
         ...(appKey ? {'DD-APPLICATION-KEY': appKey} : {}),
         ...args.headers,
       },
+    }
+
+    if (overrideUrl !== undefined) {
+      newArguments.url = overrideUrl
     }
 
     if (proxyOpts && proxyOpts.host && proxyOpts.port) {

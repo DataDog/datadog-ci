@@ -224,6 +224,7 @@ export class UploadCommand extends Command {
     return getRequestBuilder({
       apiKey: this.config.apiKey!,
       baseUrl: getBaseIntakeUrl(),
+      overrideUrl: 'api/v2/srcmap',
     })
   }
 
