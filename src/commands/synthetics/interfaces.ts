@@ -17,7 +17,14 @@ export interface MainReporter {
   log(log: string): void
   reportStart(timings: {startTime: number}): void
   runEnd(summary: Summary): void
-  testEnd(test: Test, results: PollResult[], baseUrl: string, locationNames: LocationsMapping): void
+  testEnd(
+    test: Test,
+    results: PollResult[],
+    baseUrl: string,
+    locationNames: LocationsMapping,
+    failOnCriticalErrors: boolean,
+    failOnTimeout: boolean
+  ): void
   testTrigger(test: Test, testId: string, executionRule: ExecutionRule, config: ConfigOverride): void
   testWait(test: Test): void
 }
@@ -29,7 +36,7 @@ export interface Result {
     id: string
   }
   duration?: number
-  error?: string
+  error?: string | 'Endpoint Failure' | 'Timeout' | 'Tunnel Failure'
   errorCode?: string
   errorMessage?: string
   eventType: string
@@ -211,8 +218,9 @@ interface BasicAuthCredentials {
   username: string
 }
 
-export interface TemplateContext extends NodeJS.ProcessEnv {
+export interface TemplateVariables {
   DOMAIN?: string
+  HASH?: string
   HOST?: string
   HOSTNAME?: string
   ORIGIN?: string
@@ -223,6 +231,8 @@ export interface TemplateContext extends NodeJS.ProcessEnv {
   SUBDOMAIN?: string
   URL: string
 }
+
+export interface TemplateContext extends TemplateVariables, NodeJS.ProcessEnv {}
 
 export interface TriggerConfig {
   config: ConfigOverride
@@ -266,4 +276,21 @@ export interface APIConfiguration {
   baseIntakeUrl: string
   baseUrl: string
   proxyOpts: ProxyConfiguration
+}
+
+export interface CommandConfig {
+  apiKey: string
+  appKey: string
+  configPath: string
+  datadogSite: string
+  failOnCriticalErrors: boolean
+  failOnTimeout: boolean
+  files: string[]
+  global: ConfigOverride
+  pollingTimeout: number
+  proxy: ProxyConfiguration
+  publicIds: string[]
+  subdomain: string
+  testSearchQuery?: string
+  tunnel: boolean
 }

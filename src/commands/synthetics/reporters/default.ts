@@ -99,7 +99,14 @@ const renderApiError = (errorCode: string, errorMessage: string, color: chalk.Ch
 }
 
 // Test execution rendering
-const renderResultOutcome = (result: Result, test: Test, icon: string, color: chalk.Chalk) => {
+const renderResultOutcome = (
+  result: Result,
+  test: Test,
+  icon: string,
+  color: chalk.Chalk,
+  failOnCriticalErrors: boolean,
+  failOnTimeout: boolean
+) => {
   if (result.error) {
     return `    ${chalk.bold(`${ICONS.FAILED} | ${result.error}`)}`
   }
@@ -108,7 +115,10 @@ const renderResultOutcome = (result: Result, test: Test, icon: string, color: ch
     const errorName =
       result.errorMessage && result.errorMessage !== 'Unknown error' ? result.errorMessage : 'General Error'
 
-    return `    ${chalk.bold(`${ICONS.FAILED} | ${errorName}`)}`
+    return [
+      `    ${chalk.yellow(` ${ICONS.SKIPPED} | ${errorName}`)}`,
+      `    ${chalk.yellow('We had an error during the execution of this test. The result will be ignored')}`,
+    ].join('\n')
   }
 
   if (test.type === 'api') {
@@ -125,7 +135,7 @@ const renderResultOutcome = (result: Result, test: Test, icon: string, color: ch
   }
 
   if (test.type === 'browser') {
-    if (!hasResultPassed(result) && result.stepDetails) {
+    if (!hasResultPassed(result, failOnCriticalErrors, failOnTimeout) && result.stepDetails) {
       // We render the step only if the test hasn't passed to avoid cluttering the output.
       return result.stepDetails.map(renderStep).join('\n')
     }
@@ -181,12 +191,18 @@ const getResultUrl = (baseUrl: string, test: Test, resultId: string) => {
   return `${testDetailUrl}?resultId=${resultId}`
 }
 
-const renderExecutionResult = (test: Test, execution: PollResult, baseUrl: string, locationNames: LocationsMapping) => {
+const renderExecutionResult = (
+  test: Test,
+  execution: PollResult,
+  baseUrl: string,
+  locationNames: LocationsMapping,
+  failOnCriticalErrors: boolean,
+  failOnTimeout: boolean
+) => {
   const {check: overridedTest, dc_id, resultID, result} = execution
-  const isSuccess = hasResultPassed(result)
+  const isSuccess = hasResultPassed(result, failOnCriticalErrors, failOnTimeout)
   const color = getTestResultColor(isSuccess, test.options.ci?.executionRule === ExecutionRule.NON_BLOCKING)
   const icon = isSuccess ? ICONS.SUCCESS : ICONS.FAILED
-
   const locationName = !!result.tunnel ? 'Tunneled' : locationNames[dc_id] || dc_id.toString()
   const device = test.type === 'browser' && result.device ? ` - device: ${chalk.bold(result.device.id)}` : ''
   const resultIdentification = color(`  ${icon} location: ${chalk.bold(locationName)}${device}`)
@@ -205,7 +221,14 @@ const renderExecutionResult = (test: Test, execution: PollResult, baseUrl: strin
     outputLines.push(resultInfo)
   }
 
-  const resultOutcome = renderResultOutcome(result, overridedTest || test, icon, color)
+  const resultOutcome = renderResultOutcome(
+    result,
+    overridedTest || test,
+    icon,
+    color,
+    failOnCriticalErrors,
+    failOnTimeout
+  )
   if (resultOutcome) {
     outputLines.push(resultOutcome)
   }
@@ -277,8 +300,15 @@ export class DefaultReporter implements Reporter {
     this.write(`${chalk.bold('Tests execution summary:')} ${summaries.join(', ')}\n`)
   }
 
-  public testEnd(test: Test, results: PollResult[], baseUrl: string, locationNames: LocationsMapping) {
-    const success = hasTestSucceeded(results)
+  public testEnd(
+    test: Test,
+    results: PollResult[],
+    baseUrl: string,
+    locationNames: LocationsMapping,
+    failOnCriticalErrors: boolean,
+    failOnTimeout: boolean
+  ) {
+    const success = hasTestSucceeded(results, failOnCriticalErrors, failOnTimeout)
     const isNonBlocking = test.options.ci?.executionRule === ExecutionRule.NON_BLOCKING
 
     const icon = renderResultIcon(success, isNonBlocking)
@@ -288,7 +318,7 @@ export class DefaultReporter implements Reporter {
     const nonBlockingText = !success && isNonBlocking ? '[NON-BLOCKING]' : ''
 
     const testResultsText = results
-      .map((r) => renderExecutionResult(test, r, baseUrl, locationNames))
+      .map((r) => renderExecutionResult(test, r, baseUrl, locationNames, failOnCriticalErrors, failOnTimeout))
       .join('\n\n')
       .concat('\n\n')
 

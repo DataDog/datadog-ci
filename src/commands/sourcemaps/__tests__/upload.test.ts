@@ -3,7 +3,7 @@ import os from 'os'
 
 import chalk from 'chalk'
 import {Cli} from 'clipanion/lib/advanced'
-import {Payload} from '../interfaces'
+import {Sourcemap} from '../interfaces'
 import {UploadCommand} from '../upload'
 
 describe('upload', () => {
@@ -77,7 +77,7 @@ describe('upload', () => {
       process.env = {}
       const command = new UploadCommand()
 
-      expect(command['getApiHelper'].bind(command)).toThrow(
+      expect(command['getRequestBuilder'].bind(command)).toThrow(
         `Missing ${chalk.bold('DATADOG_API_KEY')} in your environment.`
       )
     })
@@ -88,44 +88,42 @@ describe('upload', () => {
       const command = new UploadCommand()
       const write = jest.fn()
       command.context = {stdout: {write}} as any
-      const payloads = new Array<Payload>({
-        cliVersion: '0.0.1',
-        minifiedFilePath: 'src/commands/sourcemaps/__tests__/fixtures/sourcemap-with-no-files/empty.min.js',
-        minifiedUrl: 'http://example/empty.min.js',
-        projectPath: '',
-        service: 'svc',
-        sourcemapPath: 'src/commands/sourcemaps/__tests__/fixtures/sourcemap-with-no-files/empty.min.js.map',
-        version: '1.2.3',
-      })
+      const sourcemaps = new Array<Sourcemap>(
+        new Sourcemap(
+          'src/commands/sourcemaps/__tests__/fixtures/sourcemap-with-no-files/empty.min.js',
+          'http://example/empty.min.js',
+          'src/commands/sourcemaps/__tests__/fixtures/sourcemap-with-no-files/empty.min.js.map'
+        )
+      )
       // The command will fetch git metadatas for the current datadog-ci repository.
       // The `empty.min.js.map` contains no files, therefore no file payload should be set.
-      await command['addRepositoryDataToPayloads'](payloads)
-      expect(payloads[0].gitRepositoryURL).toBeDefined()
-      expect(payloads[0].gitCommitSha).toHaveLength(40)
-      expect(payloads[0].gitRepositoryPayload).toBeUndefined()
+      await command['addRepositoryDataToPayloads'](sourcemaps)
+      expect(sourcemaps[0].gitData).toBeDefined()
+      expect(sourcemaps[0].gitData!.gitRepositoryURL).toBeDefined()
+      expect(sourcemaps[0].gitData!.gitCommitSha).toHaveLength(40)
+      expect(sourcemaps[0].gitData!.gitRepositoryPayload).toBeUndefined()
     })
 
     test('should include payload', async () => {
       const command = new UploadCommand()
       const write = jest.fn()
       command.context = {stdout: {write}} as any
-      const payloads = new Array<Payload>({
-        cliVersion: '0.0.1',
-        minifiedFilePath: 'src/commands/sourcemaps/__tests__/fixtures/basic/common.min.js',
-        minifiedUrl: 'http://example/common.min.js',
-        projectPath: '',
-        service: 'svc',
-        sourcemapPath: 'src/commands/sourcemaps/__tests__/fixtures/basic/common.min.js.map',
-        version: '1.2.3',
-      })
+      const sourcemaps = new Array<Sourcemap>(
+        new Sourcemap(
+          'src/commands/sourcemaps/__tests__/fixtures/basic/common.min.js',
+          'http://example/common.min.js',
+          'src/commands/sourcemaps/__tests__/fixtures/basic/common.min.js.map'
+        )
+      )
       // The command will fetch git metadatas for the current datadog-ci repository.
       // The `common.min.js.map` contains the "git.test.ts" filename which matches a tracked filename,
       // therefore a file payload should be set.
       // Removing the "git.test.ts" file will break this test.
-      await command['addRepositoryDataToPayloads'](payloads)
-      expect(payloads[0].gitRepositoryURL).toBeDefined()
-      expect(payloads[0].gitCommitSha).toHaveLength(40)
-      expect(payloads[0].gitRepositoryPayload).toBeDefined()
+      await command['addRepositoryDataToPayloads'](sourcemaps)
+      expect(sourcemaps[0].gitData).toBeDefined()
+      expect(sourcemaps[0].gitData!.gitRepositoryURL).toBeDefined()
+      expect(sourcemaps[0].gitData!.gitCommitSha).toHaveLength(40)
+      expect(sourcemaps[0].gitData!.gitRepositoryPayload).toBeDefined()
     })
   })
 })

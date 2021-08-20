@@ -1,3 +1,5 @@
+import {AxiosPromise, AxiosRequestConfig, AxiosResponse} from 'axios'
+
 import {
   CI_JOB_NAME,
   CI_JOB_URL,
@@ -9,8 +11,12 @@ import {
   CI_STAGE_NAME,
   CI_WORKSPACE_PATH,
   GIT_BRANCH,
+  GIT_COMMIT_AUTHOR_DATE,
   GIT_COMMIT_AUTHOR_EMAIL,
   GIT_COMMIT_AUTHOR_NAME,
+  GIT_COMMIT_COMMITTER_DATE,
+  GIT_COMMIT_COMMITTER_EMAIL,
+  GIT_COMMIT_COMMITTER_NAME,
   GIT_COMMIT_MESSAGE,
   GIT_REPOSITORY_URL,
   GIT_SHA,
@@ -48,6 +54,12 @@ export type SpanTag =
   | typeof GIT_TAG
   | typeof GIT_COMMIT_AUTHOR_EMAIL
   | typeof GIT_COMMIT_AUTHOR_NAME
+  | typeof GIT_COMMIT_AUTHOR_DATE
   | typeof GIT_COMMIT_MESSAGE
+  | typeof GIT_COMMIT_COMMITTER_DATE
+  | typeof GIT_COMMIT_COMMITTER_EMAIL
+  | typeof GIT_COMMIT_COMMITTER_NAME
 
 export type SpanTags = Partial<Record<SpanTag, string>>
+
+export type RequestBuilder = (args: AxiosRequestConfig) => AxiosPromise<AxiosResponse>

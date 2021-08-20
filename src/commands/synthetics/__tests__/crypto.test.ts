@@ -5,10 +5,10 @@ describe('crypto', () => {
     const {privateKey, publicKey} = generateOpenSSHKeys()
 
     const expectedPrivateKeyFormat = /-----BEGIN OPENSSH PRIVATE KEY-----(.|\n)*-----END OPENSSH PRIVATE KEY-----/
-    expect(privateKey).toEqual(expect.stringMatching(expectedPrivateKeyFormat))
+    expect(privateKey).toMatch(expectedPrivateKeyFormat)
 
     const expectedPublicKeyFormat = /ecdsa-sha2-nistp256 .*/
-    expect(publicKey).toEqual(expect.stringMatching(expectedPublicKeyFormat))
+    expect(publicKey).toMatch(expectedPublicKeyFormat)
   })
 
   test('should parse SSH keys', () => {

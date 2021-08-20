@@ -5,6 +5,8 @@ import {AxiosRequestConfig, default as axios} from 'axios'
 import deepExtend from 'deep-extend'
 import ProxyAgent from 'proxy-agent'
 
+import type {SpanTag, SpanTags} from './interfaces'
+
 export const pick = <T extends object, K extends keyof T>(base: T, keys: K[]) => {
   const definedKeys = keys.filter((key) => !!base[key])
   const pickedObject: Partial<T> = {}
@@ -16,13 +18,18 @@ export const pick = <T extends object, K extends keyof T>(base: T, keys: K[]) =>
   return pickedObject
 }
 
-export const parseConfigFile = async <T>(baseConfig: T, configPath?: string) => {
+export const getConfig = async (configPath: string) => {
+  const configFile = await promisify(fs.readFile)(configPath, 'utf-8')
+
+  return JSON.parse(configFile)
+}
+
+export const parseConfigFile = async <T>(baseConfig: T, configPath?: string): Promise<T> => {
   try {
     const resolvedConfigPath = configPath ?? 'datadog-ci.json'
-    const configFile = await promisify(fs.readFile)(resolvedConfigPath, 'utf-8')
-    const parsedConfig = JSON.parse(configFile)
+    const parsedConfig = await getConfig(resolvedConfigPath)
 
-    return deepExtend(baseConfig, parsedConfig) as T
+    return deepExtend(baseConfig, parsedConfig)
   } catch (e) {
     if (e.code === 'ENOENT' && configPath) {
       throw new Error('Config file not found')
@@ -139,3 +146,15 @@ export const buildPath = (...args: string[]) =>
     .filter((x) => x.length)
     // Join all these parts with /
     .join('/')
+
+export const removeEmptyValues = (tags: SpanTags) =>
+  (Object.keys(tags) as SpanTag[]).reduce((filteredTags, tag) => {
+    if (!tags[tag]) {
+      return filteredTags
+    }
+
+    return {
+      ...filteredTags,
+      [tag]: tags[tag],
+    }
+  }, {})
