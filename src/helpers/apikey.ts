@@ -4,10 +4,26 @@ import {BufferedMetricsLogger} from 'datadog-metrics'
 
 import {InvalidConfigurationError} from './errors'
 
+/** ApiKeyValidator is an helper interface to interpret Datadog error responses and possibly check the
+ * validity of the api key.
+ */
+export interface ApiKeyValidator {
+  verifyApiKey(error: AxiosError): Promise<void>
+}
+
+export interface ApiKeyValidatorParams {
+  apiKey: string | undefined
+  datadogSite: string
+  metricsLogger?: BufferedMetricsLogger
+}
+
+export const newApiKeyValidator = (params: ApiKeyValidatorParams): ApiKeyValidator =>
+  new ApiKeyValidatorImplem(params.apiKey, params.datadogSite, params.metricsLogger)
+
 /** ApiKeyValidator is an helper class to interpret Datadog error responses and possibly check the
  * validity of the api key.
  */
-export class ApiKeyValidator {
+class ApiKeyValidatorImplem {
   public apiKey: string | undefined
   public datadogSite: string
 

@@ -1,5 +1,4 @@
 import retry from 'async-retry'
-import {AxiosPromise, AxiosRequestConfig, AxiosResponse} from 'axios'
 import FormData from 'form-data'
 import {ReadStream} from 'fs'
 
@@ -111,9 +110,7 @@ const uploadWithRetry = (requestBuilder: RequestBuilder, retryOpts: retry.Option
 // We don't want any hard limit enforced by the CLI, the backend will enforce a max size by returning 413 errors.
 const maxBodyLength = Infinity
 
-const uploadMultipart = (request: (args: AxiosRequestConfig) => AxiosPromise<AxiosResponse>) => async (
-  payload: MultipartPayload
-) => {
+const uploadMultipart = (request: RequestBuilder) => async (payload: MultipartPayload) => {
   const form = new FormData()
   payload.content.forEach((value: MultipartValue, key: string) => {
     form.append(key, value.value, value.options)

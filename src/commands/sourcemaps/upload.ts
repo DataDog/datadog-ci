@@ -5,7 +5,7 @@ import path from 'path'
 import asyncPool from 'tiny-async-pool'
 import {URL} from 'url'
 
-import {ApiKeyValidator} from '../../helpers/apikey'
+import {ApiKeyValidator, newApiKeyValidator} from '../../helpers/apikey'
 import {InvalidConfigurationError} from '../../helpers/errors'
 import {RequestBuilder} from '../../helpers/interfaces'
 import {upload, UploadStatus} from '../../helpers/upload'
@@ -107,7 +107,11 @@ export class UploadCommand extends Command {
       )
     )
     const metricsLogger = getMetricsLogger(this.releaseVersion, this.service, this.cliVersion)
-    const apiKeyValidator = new ApiKeyValidator(this.config.apiKey, this.config.datadogSite, metricsLogger.logger)
+    const apiKeyValidator = newApiKeyValidator({
+      apiKey: this.config.apiKey,
+      datadogSite: this.config.datadogSite,
+      metricsLogger: metricsLogger.logger,
+    })
     const useGit = this.disableGit === undefined || !this.disableGit
     const initialTime = Date.now()
     const payloads = await this.getPayloadsToUpload(useGit)

@@ -3,7 +3,7 @@ import {Command} from 'clipanion'
 import path from 'path'
 import asyncPool from 'tiny-async-pool'
 
-import {ApiKeyValidator} from '../../helpers/apikey'
+import {ApiKeyValidator, newApiKeyValidator} from '../../helpers/apikey'
 import {InvalidConfigurationError} from '../../helpers/errors'
 import {RequestBuilder} from '../../helpers/interfaces'
 import {upload, UploadStatus} from '../../helpers/upload'
@@ -58,7 +58,11 @@ export class UploadCommand extends Command {
       searchPath = await unzipToTmpDir(this.basePath)
     }
 
-    const apiKeyValidator = new ApiKeyValidator(this.config.apiKey, this.config.datadogSite)
+    const apiKeyValidator = newApiKeyValidator({
+      apiKey: this.config.apiKey,
+      datadogSite: this.config.datadogSite,
+      metricsLogger: metricsLogger.logger,
+    })
     const payloads = await getMatchingDSYMFiles(searchPath)
     const requestBuilder = this.getRequestBuilder()
     const uploadDSYM = this.uploadDSYM(requestBuilder, metricsLogger, apiKeyValidator)

@@ -1,7 +1,7 @@
 import chalk from 'chalk'
 import {Command} from 'clipanion'
 
-import {ApiKeyValidator} from '../../helpers/apikey'
+import {newApiKeyValidator} from '../../helpers/apikey'
 import {InvalidConfigurationError} from '../../helpers/errors'
 import {ICONS} from '../../helpers/formatting'
 import {RequestBuilder} from '../../helpers/interfaces'
@@ -48,7 +48,11 @@ export class UploadCommand extends Command {
     this.context.stdout.write(renderCommandInfo(this.dryRun))
 
     const metricsLogger = getMetricsLogger(this.cliVersion)
-    const apiKeyValidator = new ApiKeyValidator(this.config.apiKey, datadogSite, metricsLogger.logger)
+    const apiKeyValidator = newApiKeyValidator({
+      apiKey: this.config.apiKey,
+      datadogSite,
+      metricsLogger: metricsLogger.logger,
+    })
     const payload = await getCommitInfo(await newSimpleGit(), this.context.stdout, this.repositoryURL)
     if (payload === undefined) {
       return 0
