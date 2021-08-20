@@ -224,6 +224,10 @@ export class UploadCommand extends Command {
     return getRequestBuilder({
       apiKey: this.config.apiKey!,
       baseUrl: getBaseIntakeUrl(),
+      headers: new Map([
+        ['DD-EVP-ORIGIN', 'datadog-ci sourcemaps'],
+        ['DD-EVP-ORIGIN-VERSION', this.cliVersion],
+      ]),
       overrideUrl: 'api/v2/srcmap',
     })
   }

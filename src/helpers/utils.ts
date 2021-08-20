@@ -84,6 +84,7 @@ export interface RequestOptions {
   appKey?: string
   baseUrl: string
   disableEnvironmentVariables?: boolean
+  headers?: Map<string, string>,
   overrideUrl?: string
   proxyOpts?: ProxyConfiguration
 }
@@ -107,6 +108,12 @@ export const getRequestBuilder = (options: RequestOptions) => {
     if (proxyOpts && proxyOpts.host && proxyOpts.port) {
       const proxyUrl = getProxyUrl(proxyOpts)
       newArguments.httpsAgent = new ProxyAgent(proxyUrl)
+    }
+
+    if (options.headers !== undefined) {
+      options.headers.forEach((value, key) => {
+        newArguments.headers[key] = value
+      })
     }
 
     return newArguments

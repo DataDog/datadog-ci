@@ -91,6 +91,41 @@ describe('utils', () => {
       expect(httpsAgent).toBeDefined()
       expect((httpsAgent as any).proxyUri).toBe('http://1.2.3.4:1234')
     })
+
+    test('should accept overrideUrl', async () => {
+      jest.spyOn(axios, 'create').mockImplementation((() => (args: AxiosRequestConfig) => args.url) as any)
+      const requestOptions = {
+        apiKey: 'apiKey',
+        appKey: 'applicationKey',
+        baseUrl: 'http://fake-base.url/',
+        overrideUrl: 'override/url',
+      }
+      const request = ciUtils.getRequestBuilder(requestOptions)
+      const fakeEndpoint = fakeEndpointBuilder(request)
+      expect(await fakeEndpoint()).toStrictEqual('override/url')
+    })
+
+    test('should accept additional headers', async () => {
+      jest.spyOn(axios, 'create').mockImplementation((() => (args: AxiosRequestConfig) => args.headers) as any)
+      const requestOptions = {
+        apiKey: 'apiKey',
+        appKey: 'applicationKey',
+        baseUrl: 'http://fake-base.url/',
+        headers: new Map([
+          ['HEADER1', 'value1'],
+          ['HEADER2', 'value2'],
+        ]),
+        overrideUrl: 'override/url',
+      }
+      const request = ciUtils.getRequestBuilder(requestOptions)
+      const fakeEndpoint = fakeEndpointBuilder(request)
+      expect(await fakeEndpoint()).toStrictEqual({
+        'DD-API-KEY': 'apiKey',
+        'DD-APPLICATION-KEY': 'applicationKey',
+        HEADER1: 'value1',
+        HEADER2: 'value2',
+      })
+    })
   })
 
   describe('getApiHostForSite', () => {
