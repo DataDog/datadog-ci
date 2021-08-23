@@ -31,7 +31,7 @@ export interface TunnelInfo {
 
 export class Tunnel {
   private connected = false
-  private forwardSockets: Socket[] = []
+  private forwardedSockets: Set<Socket> = new Set()
   private log: (message: string) => void
   private logError: (message: string) => void
   private logWarning: (message: string) => void
@@ -108,12 +108,17 @@ export class Tunnel {
   public async stop() {
     this.log('Shutting down tunnel…')
 
+    this.forwardedSockets.forEach((socket) => {
+      if (!!socket) {
+        socket.destroy()
+      }
+    })
+
     if (this.multiplexer) {
       this.multiplexer.close()
     }
 
     await this.ws.close()
-    this.forwardSockets.filter((s) => !!s).forEach((s) => s.destroy())
   }
 
   // Authenticate SSH with key authentication - username should be the test ID
@@ -165,13 +170,17 @@ export class Tunnel {
         // See https://github.com/mscdex/ssh2/issues/479#issuecomment-250416559
         let src: SSHServerChannel
         const dest = new Socket()
-        this.forwardSockets.push(dest)
+
+        this.forwardedSockets.add(dest)
+
         dest.on('connect', () => {
           src = accept()
           if (!src) {
             return dest.end()
           }
-          src.pipe(dest).pipe(src)
+
+          pipeline([dest, src], () => this.forwardedSockets.delete(dest))
+          pipeline([src, dest], () => this.forwardedSockets.delete(dest))
 
           src.on('close', () => {
             dest.destroy()
@@ -198,6 +207,7 @@ export class Tunnel {
           } else {
             reject()
           }
+          this.forwardedSockets.delete(dest)
         })
         dest.connect(destPort, destIP)
       })
@@ -236,7 +246,17 @@ export class Tunnel {
     const duplex = this.ws.duplex()
     this.multiplexer.on('error', (error) => this.logError(`Multiplexer error: ${error.message}`))
     duplex.on('error', (error) => this.logError(`Websocket error: ${error.message}`))
-    duplex.pipe(this.multiplexer).pipe(duplex)
+
+    pipeline([duplex, this.multiplexer], (err) => {
+      if (err) {
+        this.logWarning(`Error on duplex connection close: ${err}`)
+      }
+    })
+    pipeline([this.multiplexer, duplex], (err) => {
+      if (err) {
+        this.logWarning(`Error on Multiplexer connection close: ${err}`)
+      }
+    })
 
     return connectionInfo
   }
