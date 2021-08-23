@@ -210,12 +210,10 @@ export class Tunnel {
           } else {
             if ('code' in error && error.code === 'ENOTFOUND') {
               this.logWarning(`Unable to resolve host (${destIP})`)
-              // SW-1340: Reject on DNS errors kill requests on the same SSH connection.
-              accept().destroy()
             } else {
               this.logWarning(`Connection error (${destIP}): ${error.code}`)
-              reject()
             }
+            reject()
 
             this.forwardedSockets.delete(dest)
             dest.end()
