@@ -1,6 +1,6 @@
 import {timingSafeEqual} from 'crypto'
 import {Socket} from 'net'
-import {Duplex} from 'stream'
+import {Duplex, pipeline} from 'stream'
 
 import chalk from 'chalk'
 import {
@@ -32,6 +32,7 @@ export interface TunnelInfo {
 export class Tunnel {
   private connected = false
   private forwardedSockets: Set<Socket> = new Set()
+  private FORWARDING_TIMEOUT = 30000 as const
   private log: (message: string) => void
   private logError: (message: string) => void
   private logWarning: (message: string) => void
@@ -162,8 +163,10 @@ export class Tunnel {
 
   private forwardProxiedPacketsFromSSH(client: SSHConnection) {
     client
-      .on('session', (accept, reject) => {
-        accept()
+      .on('session', (accept) => {
+        accept().on('close', () => {
+          client.end()
+        })
       })
       .on('tcpip', (accept, reject, {destIP, destPort}) => {
         // Forward packets
@@ -171,7 +174,20 @@ export class Tunnel {
         let src: SSHServerChannel
         const dest = new Socket()
 
+        dest.setTimeout(this.FORWARDING_TIMEOUT)
         this.forwardedSockets.add(dest)
+
+        dest.on('timeout', () => {
+          this.logWarning(`Connection timeout (${destIP})`)
+          if (src) {
+            src.destroy()
+          } else {
+            reject()
+          }
+          this.forwardedSockets.delete(dest)
+          dest.end()
+          dest.destroy()
+        })
 
         dest.on('connect', () => {
           src = accept()
@@ -183,6 +199,7 @@ export class Tunnel {
           pipeline([src, dest], () => this.forwardedSockets.delete(dest))
 
           src.on('close', () => {
+            dest.end()
             dest.destroy()
           })
         })
@@ -199,6 +216,10 @@ export class Tunnel {
               this.logWarning(`Connection error (${destIP}): ${error.code}`)
               reject()
             }
+
+            this.forwardedSockets.delete(dest)
+            dest.end()
+            dest.destroy()
           }
         })
         dest.on('close', () => {
