@@ -32,7 +32,7 @@ export interface TunnelInfo {
 export class Tunnel {
   private connected = false
   private forwardedSockets: Set<Socket> = new Set()
-  private FORWARDING_TIMEOUT = 30000 as const
+  private FORWARDING_TIMEOUT = 40000 as const
   private log: (message: string) => void
   private logError: (message: string) => void
   private logWarning: (message: string) => void
