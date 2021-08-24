@@ -1,26 +1,21 @@
 import chalk from 'chalk'
 
-import {Payload} from './interfaces'
+import {Dsym} from './interfaces'
 import {pluralize} from './utils'
 
-import {UploadStatus} from '../../helpers/interfaces'
-
-const ICONS = {
-  FAILED: chalk.bold.red('❌'),
-  SUCCESS: chalk.bold.green('✅'),
-  WARNING: chalk.bold.green('⚠️'),
-}
+import {ICONS} from '../../helpers/formatting'
+import {UploadStatus} from '../../helpers/upload'
 
 export const renderConfigurationError = (error: Error) => chalk.red(`${ICONS.FAILED} Configuration error: ${error}.\n`)
 
-export const renderFailedUpload = (payload: Payload, errorMessage: string) => {
-  const dSYMPathBold = `[${chalk.bold.dim(payload.path)}]`
+export const renderFailedUpload = (dSYM: Dsym, errorMessage: string) => {
+  const dSYMPathBold = `[${chalk.bold.dim(dSYM.path)}]`
 
   return chalk.red(`${ICONS.FAILED} Failed upload dSYM for ${dSYMPathBold}: ${errorMessage}\n`)
 }
 
-export const renderRetriedUpload = (payload: Payload, errorMessage: string, attempt: number) => {
-  const dSYMPathBold = `[${chalk.bold.dim(payload.path)}]`
+export const renderRetriedUpload = (dSYM: Dsym, errorMessage: string, attempt: number) => {
+  const dSYMPathBold = `[${chalk.bold.dim(dSYM.path)}]`
 
   return chalk.yellow(`[attempt ${attempt}] Retrying dSYM upload ${dSYMPathBold}: ${errorMessage}\n`)
 }
@@ -96,6 +91,4 @@ export const renderCommandInfo = (basePath: string, poolLimit: number, dryRun: b
   return fullStr
 }
 
-export const renderDryRunUpload = (dSYM: Payload): string => `[DRYRUN] ${renderUpload(dSYM)}`
-
-export const renderUpload = (dSYM: Payload): string => `Uploading dSYM with ${dSYM.uuids} from ${dSYM.path}\n`
+export const renderUpload = (dSYM: Dsym): string => `Uploading dSYM with ${dSYM.uuids} from ${dSYM.path}\n`
