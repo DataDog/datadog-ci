@@ -1,63 +1,49 @@
-<div class="alert alert-warning">
-This feature is in open beta. Let us know of any questions or issues by filing an <a href="https://github.com/DataDog/datadog-ci/issues">issue</a> in our repo.
-</div>
+You can use the CLI to instrument your AWS Lambda functions with Datadog. The CLI enables instrumentation by modifying existing Lambda functions' configuration and hence does *not* require redeployment. It is the quickest way to get started with Datadog serverless monitoring.
 
-You can use the CLI to instrument your AWS Lambda functions with Datadog. Only Python and Node.js runtimes are currently supported.
+You can also add the command to your CI/CD pipelines to enable instrumentation for *all* your serverless applications. Run the command *after* your normal serverless application deployment, so that changes made by the Datadog CLI command do not get overridden.
 
-### Before you begin
+Only Lambda functions using the Python or Node.js runtime are currently supported.
 
-Make your AWS credentials `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` available in your environment using the following command, or use any of the authentication methods supported by the [AWS JS SDK][1].
+## Installation
 
-```bash
-# Environment setup
-export AWS_ACCESS_KEY_ID="<ACCESS KEY ID>"
-export AWS_SECRET_ACCESS_KEY="<ACCESS KEY>"
-```
+Follow the installation instructions for [Python](https://docs.datadoghq.com/serverless/installation/python/?tab=datadogcli) or [Node.js](https://docs.datadoghq.com/serverless/installation/nodejs/?tab=datadogcli) to instrument your Lambda functions using the `datadog-ci lambda instrument` command.
 
-Download [Datadog CI][2].
+## Commands
 
-### Configuration
-#### Configuration file
-Configuration can be done using command-line arguments or a JSON configuration file. If you use a configuration file, specify the `datadog-ci.json` using the `--config` argument, and use this configuration file structure:
-
-```json
-{
-    "lambda": {
-        "layerVersion": 10,
-        "extensionVersion": 8,
-        "functions": ["arn:aws:lambda:us-east-1:000000000000:function:autoinstrument"],
-        "region": "us-east-1",
-        "tracing": true,
-        "mergeXrayTraces": true,
-        "forwarder": "arn:aws:lambda:us-east-1:000000000000:function:datadog-forwarder",
-        "logLevel": "debug"
-    }
-}
-```
-
-#### Commands
-
-Use `instrument` to apply Datadog instrumentation to a Lambda. This command automatically adds the Datadog Lambda Library and/or the Datadog Lambda Extension as Lambda Layers to the instrumented Lambda functions and modifies their configurations. 
-
-This command is the quickest way to try out Datadog instrumentation on an existing Lambda function. To use in the production environment, run this command in your CI/CD pipelines to ensure your Lambda functions are always updated for instrumentation.
+Run `datadog-ci lambda instrument` to apply Datadog instrumentation to a Lambda. This command automatically adds the Datadog Lambda Library and/or the Datadog Lambda Extension as Lambda Layers to the instrumented Lambda functions and modifies their configurations. 
 
 ```bash
-# Instrument a function specified by ARN
-datadog-ci lambda instrument --function arn:aws:lambda:us-east-1:000000000000:function:functionname --layerVersion 10
+# Instrument multiple functions specified by names
+datadog-ci lambda instrument -f functionname -f another-functionname -r us-east-1 -v 46 -e 10
 
-# Use the shorthand formats
-datadog-ci lambda instrument -f arn:aws:lambda:us-east-1:000000000000:function:functionname -v 10
-
-# Instrument multiple functions specified by names (--region must be defined)
-datadog-ci lambda instrument -f functionname -f another-functionname -r us-east-1 -v 10
-
-# Dry run of all update commands
-datadog-ci lambda instrument -f functionname -r us-east-1 -v 10 --dry
+# Dry run of all updates
+datadog-ci lambda instrument -f functionname -f another-functionname -r us-east-1 -v 46 -e 10 --dry
 ```
 
-#### All arguments
+See the configuration section for additional settings.
 
-You can pass arguments to `instrument` to specify its behavior. These arguments will override the values set in the configuration file, if any.
+## Configuration
+
+### AWS Credentials
+
+You must have valid [AWS credentials](https://docs.aws.amazon.com/sdk-for-javascript/v2/developer-guide/setting-credentials-node.html) configured with access to the Lambda and CloudWatch services where you are running `datadog-ci lambda instrument`.
+
+### Environment variables
+
+You must expose these environment variables in the environment where you are running `datadog-ci lambda instrument`:
+
+| Environment Variable | Description | Example |
+| --- | --- | --- |
+| DATADOG_API_KEY | Datadog API Key. Sets the `DD_API_KEY` environment variable on your Lambda function configuration. For more information about getting a Datadog API key, see the [API key documentation][6].  | export DATADOG_API_KEY="1234" |
+| DATADOG_KMS_API_KEY | Datadog API Key encrypted using KMS. Sets the `DD_KMS_API_KEY` environment variable on your Lambda function configuration. Note: `DD_API_KEY` is ignored when `DD_KMS_API_KEY` is set. | export DATADOG_KMS_API_KEY="5678" |
+| DATADOG_SITE | Set which Datadog site to send data. Only needed when using the Datadog Lambda Extension. Possible values are  `datadoghq.com` , `datadoghq.eu` , `us3.datadoghq.com` and `ddog-gov.com`. The default is `datadoghq.com`. Sets the `DD_SITE` environment variable on your Lambda function configurations. | export DATADOG_SITE="datadoghq.com" |
+
+
+### Arguments
+
+Configuration can be done using command-line arguments or a JSON configuration file (see the next section).
+
+You can pass the following arguments to `instrument` to specify its behavior. These arguments will override the values set in the configuration file, if any.
 
 | Argument | Shorthand | Description | Default |
 | --- | --- | --- | --- |
@@ -74,17 +60,25 @@ You can pass arguments to `instrument` to specify its behavior. These arguments 
 
 <br />
 
-#### Additional environment variables
 
-You may configure the `lambda instrument` command with environment variables:
-*You must expose these environment variables in the environment where you are running `datadog-ci lambda instrument`*
+### Configuration file
 
-| Environment Variable | Description | Example |
-| --- | --- | --- |
-| DATADOG_API_KEY | Datadog API Key. Sets the `DD_API_KEY` environment variable on your Lambda function configuration. For more information about getting a Datadog API key, see the [API key documentation][6] | export DATADOG_API_KEY="1234" |
-| DATADOG_KMS_API_KEY | Datadog API Key encrypted using KMS. Sets the `DD_KMS_API_KEY` environment variable on your Lambda function  configuration. | export DATADOG_KMS_API_KEY="5678" |
-| DATADOG_SITE | Set which Datadog site to send data. Only needed when using the Datadog Lambda Extension. Possible values are  `datadoghq.com` , `datadoghq.eu` , `us3.datadoghq.com` and `ddog-gov.com`. The default is `datadoghq.com`. Sets the `DD_SITE` environment variable on your Lambda function configurations. | export DATADOG_SITE="datadoghq.com" |
+Instead of supplying arguments, you can create a configuration file in your project and simply run the `datadog-ci lambda instrument --config datadog-ci.json` command on each deployment. Specify the `datadog-ci.json` using the `--config` argument, and use this configuration file structure:
 
+```json
+{
+    "lambda": {
+        "layerVersion": 10,
+        "extensionVersion": 8,
+        "functions": ["arn:aws:lambda:us-east-1:000000000000:function:autoinstrument"],
+        "region": "us-east-1",
+        "tracing": true,
+        "mergeXrayTraces": true,
+        "forwarder": "arn:aws:lambda:us-east-1:000000000000:function:datadog-forwarder",
+        "logLevel": "debug"
+    }
+}
+```
 ## Community
 
 For product feedback and questions, join the `#serverless` channel in the [Datadog community on Slack](https://chat.datadoghq.com/).
