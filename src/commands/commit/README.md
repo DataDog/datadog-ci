@@ -42,8 +42,8 @@ The only repository URLs supported are the ones whose host contains: `github`, `
 
 | Provider  | URL |
 | --- | --- |
-| GitHub / GitLab  | https://<repository-url>/blob/<commit-hash>/<tracked-file-path>#L<line> |
-| Bitbucket | https://<repository-url>/src/<commit-hash>/<tracked-file-path>#lines-<line>  |
+| GitHub / GitLab  | https://\<repository-url\>/blob/\<commit-hash\>/\<tracked-file-path\>#L\<line\> |
+| Bitbucket | https://\<repository-url\>/src/\<commit-hash\>/\<tracked-file-path\>#lines-\<line\>  |
 
 ### End-to-end testing process
 

@@ -62,8 +62,8 @@ The only repository URLs supported are the ones whose host contains: `github`, `
 
 | Provider  | URL |
 | --- | --- |
-| GitHub / GitLab  | https://<repository-url>/blob/<commit-hash>/<tracked-file-path>#L<line> |
-| Bitbucket | https://<repository-url>/src/<commit-hash>/<tracked-file-path>#lines-<line>  |
+| GitHub / GitLab  | https://\<repository-url\>/blob/\<commit-hash\>/\<tracked-file-path\>#L\<line\> |
+| Bitbucket | https://\<repository-url\>/src/\<commit-hash\>/\<tracked-file-path\>#lines-\<line\>  |
 
 Only tracked files paths related to the sourcemap being uploaded are gathered.
 For example: A sourcemap containing inside its `sources` attribute `["webpack:///./src/folder/example.ts"]` will have associated with it all tracked file paths with `example.ts` as filename.
