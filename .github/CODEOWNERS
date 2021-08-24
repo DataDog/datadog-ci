@@ -7,3 +7,10 @@ src/commands/sourcemaps/ @DataDog/source-code-integration
 *.md @DataDog/documentation
 src/commands/junit @DataDog/ci-app-tracers
 src/commands/dsyms @DataDog/rum-mobile
+src/helpers/ci.ts @DataDog/ci-app-tracers
+src/helpers/git.ts @DataDog/ci-app-tracers
+src/helpers/user-provided-git.ts @DataDog/ci-app-tracers
+src/helpers/__tests__/ci-env @DataDog/ci-app-tracers
+src/helpers/__tests__/ci.test.ts @DataDog/ci-app-tracers
+src/helpers/__tests__/git.test.ts @DataDog/ci-app-tracers
+src/helpers/__tests__/user-provided-git.test.ts @DataDog/ci-app-tracers
