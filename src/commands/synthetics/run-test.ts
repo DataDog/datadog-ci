@@ -119,6 +119,13 @@ export class RunTestCommand extends Command {
 
     const publicIdsToTrigger = tests.map(({public_id}) => public_id)
 
+    // All tests have been skipped or are missing.
+    if (!tests.length) {
+      this.reporter.log('No test to run.\n')
+
+      return safeExit(0)
+    }
+
     if (this.config.tunnel) {
       this.reporter.log(
         'You are using tunnel option, the chosen location(s) will be overridden by a location in your account region.\n'
@@ -165,13 +172,6 @@ export class RunTestCommand extends Command {
       }
 
       return safeExit(1)
-    }
-
-    // All tests have been skipped or are missing.
-    if (!tests.length) {
-      this.reporter.log('No test to run.\n')
-
-      return safeExit(0)
     }
 
     if (!triggers.results) {
