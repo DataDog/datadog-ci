@@ -62,10 +62,6 @@ describe('run-test', () => {
           tests: [],
         })
       )
-      const runTestsMock = jest
-        .spyOn(utils, 'runTests')
-        .mockReturnValue(Promise.resolve({locations: [], results: [], triggered_check_ids: []}))
-      const waitForResultSpy = jest.spyOn(utils, 'waitForResults')
 
       const apiHelper = {}
       const write = jest.fn()
@@ -86,9 +82,44 @@ describe('run-test', () => {
         ]),
         expect.anything()
       )
-      expect(runTestsMock).toHaveBeenCalledWith(apiHelper, [])
+
       expect(write).toHaveBeenCalledWith('No test to run.\n')
-      expect(waitForResultSpy).not.toHaveBeenCalled()
+    })
+
+    test('should not open tunnel if no test to run', async () => {
+      const getTestsToTriggersMock = jest.spyOn(utils, 'getTestsToTrigger').mockReturnValue(
+        Promise.resolve({
+          overriddenTestsToTrigger: [],
+          summary: {passed: 0, failed: 0, skipped: 0, notFound: 0},
+          tests: [],
+        })
+      )
+
+      const apiHelper = {
+        getPresignedURL: jest.fn(),
+      }
+      const write = jest.fn()
+      const command = new RunTestCommand()
+      const configOverride = {executionRule: ExecutionRule.SKIPPED}
+      command.context = {stdout: {write}} as any
+      command['getApiHelper'] = (() => apiHelper) as any
+      command['config'].tunnel = true
+      jest
+        .spyOn(ciUtils, 'getConfig')
+        .mockImplementation(async () => ({global: configOverride, publicIds: ['public-id-1', 'public-id-2']}))
+      await command.execute()
+
+      expect(getTestsToTriggersMock).toHaveBeenCalledWith(
+        apiHelper,
+        expect.arrayContaining([
+          expect.objectContaining({id: 'public-id-1', config: configOverride}),
+          expect.objectContaining({id: 'public-id-2', config: configOverride}),
+        ]),
+        expect.anything()
+      )
+
+      expect(apiHelper.getPresignedURL).not.toHaveBeenCalled()
+      expect(write).toHaveBeenCalledWith('No test to run.\n')
     })
 
     test('getTestsList throws', async () => {
@@ -147,7 +178,7 @@ describe('run-test', () => {
         Promise.resolve({
           overriddenTestsToTrigger: [],
           summary: {passed: 0, failed: 0, skipped: 0, notFound: 0},
-          tests: [],
+          tests: [{options: {ci: {executionRule: ExecutionRule.BLOCKING}}, public_id: 'publicId'} as any],
         })
       )
 
@@ -179,7 +210,7 @@ describe('run-test', () => {
         Promise.resolve({
           overriddenTestsToTrigger: [],
           summary: {passed: 0, failed: 0, skipped: 0, notFound: 0},
-          tests: [],
+          tests: [{options: {ci: {executionRule: ExecutionRule.BLOCKING}}, public_id: 'publicId'} as any],
         })
       )
 
