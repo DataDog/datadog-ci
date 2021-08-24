@@ -27,3 +27,25 @@ export const GIT_TAG = 'git.tag'
 
 // General
 export const SPAN_TYPE = 'span.type'
+
+/**
+ * Receives an array of the form ['key:value', 'key2:value2']
+ * and returns an object of the form {key: 'value', key2: 'value2'}
+ */
+export const parseTags = (tags: string[]) => {
+  try {
+    return tags.reduce((acc, keyValuePair) => {
+      if (!keyValuePair.includes(':')) {
+        return acc
+      }
+      const [key, value] = keyValuePair.split(':')
+
+      return {
+        ...acc,
+        [key]: value,
+      }
+    }, {})
+  } catch (e) {
+    return {}
+  }
+}
