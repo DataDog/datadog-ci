@@ -39,9 +39,9 @@ export class TraceCommand extends Command {
 
     const [command, ...args] = this.command
     const id = crypto.randomBytes(5).toString('hex')
-    const start_time = new Date().toISOString()
+    const startTime = new Date().toISOString()
     const spawnResult = spawnSync(command, args, {env: {...process.env, DD_CUSTOM_PARENT_ID: id}, stdio: 'inherit'})
-    const end_time = new Date().toISOString()
+    const endTime = new Date().toISOString()
     const exitCode = spawnResult.status ?? this.signalToNumber(spawnResult.signal) ?? 127
     const api = this.getApiHelper()
     const [provider, data] = this.getData()
@@ -52,10 +52,10 @@ export class TraceCommand extends Command {
           parent_id: process.env.DD_CUSTOM_PARENT_ID,
         },
         data,
-        end_time,
-        name: this.command.join(' '), // TODO
+        end_time: endTime,
         is_error: exitCode !== 0,
-        start_time,
+        name: this.command.join(' '), // TODO
+        start_time: startTime,
         tags: this.config.envVarTags ? parseTags(this.config.envVarTags.split(',')) : {},
       },
       provider
