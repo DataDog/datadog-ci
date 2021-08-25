@@ -3,7 +3,6 @@ import {spawnSync} from 'child_process'
 import {Command} from 'clipanion'
 import crypto from 'crypto'
 import os from 'os'
-import {performance} from 'perf_hooks'
 import {parseTags} from '../../helpers/tags'
 import {apiConstructor} from './api'
 import {APIHelper} from './interfaces'
@@ -16,10 +15,10 @@ export class TraceCommand extends Command {
             See README for details.
         `,
     examples: [
-      ['Trace a command and report to Datadog', 'datadog-ci trace echo "Hello World"'],
+      ['Trace a command and report to Datadog', 'datadog-ci trace -- echo "Hello World"'],
       [
         'Trace a command and report to the datadoghq.eu site',
-        'DATADOG_SITE=datadoghq.eu datadog-ci trace echo "Hello World"',
+        'DATADOG_SITE=datadoghq.eu datadog-ci trace -- echo "Hello World"',
       ],
     ],
   })
@@ -40,20 +39,23 @@ export class TraceCommand extends Command {
 
     const [command, ...args] = this.command
     const id = crypto.randomBytes(5).toString('hex')
-    const t0 = performance.now()
+    const start_time = new Date().toISOString()
     const spawnResult = spawnSync(command, args, {env: {...process.env, DD_CUSTOM_PARENT_ID: id}, stdio: 'inherit'})
-    const t1 = performance.now()
-    const duration = t1 - t0
-    const exitCode = spawnResult.status ?? this.signalToNumber(spawnResult.signal!) ?? 127
+    const end_time = new Date().toISOString()
+    const exitCode = spawnResult.status ?? this.signalToNumber(spawnResult.signal) ?? 127
     const api = this.getApiHelper()
     const [provider, data] = this.getData()
     await api.reportCustomSpan(
       {
+        custom: {
+          id,
+          parent_id: process.env.DD_CUSTOM_PARENT_ID,
+        },
         data,
-        duration,
-        id,
+        end_time,
+        name: this.command.join(' '), // TODO
         is_error: exitCode !== 0,
-        parent_id: process.env.DD_CUSTOM_PARENT_ID,
+        start_time,
         tags: this.config.envVarTags ? parseTags(this.config.envVarTags.split(',')) : {},
       },
       provider
@@ -108,12 +110,12 @@ export class TraceCommand extends Command {
     return keys.filter((key) => key in process.env).reduce((accum, key) => ({...accum, [key]: process.env[key]!}), {})
   }
 
-  private signalToNumber(signal?: string): number | undefined {
+  private signalToNumber(signal: string | null): number | undefined {
     if (!signal) {
       return undefined
     }
 
-    return (os.constants.signals as any)[signal!] + 128
+    return (os.constants.signals as any)[signal] + 128
   }
 }
 

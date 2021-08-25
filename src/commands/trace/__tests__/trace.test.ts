@@ -9,7 +9,7 @@ describe('trace', () => {
       const command = new TraceCommand()
       command.context = {stdout: {write}} as any
 
-      expect(command['signalToNumber'].call(undefined, undefined)).toBeUndefined()
+      expect(command['signalToNumber'].call(undefined, null)).toBeUndefined()
     })
     test('should map SIGKILL to 137', () => {
       process.env = {}

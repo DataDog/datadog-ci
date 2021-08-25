@@ -1,11 +1,17 @@
 import {AxiosPromise, AxiosResponse} from 'axios'
 
-export interface Payload {
-  data: Record<string, string>
-  duration: number
+export interface CustomIDs {
   id: string
-  is_error: boolean
   parent_id?: string
+}
+
+export interface Payload {
+  custom: CustomIDs
+  data: Record<string, string>
+  end_time: string
+  is_error: boolean
+  name: string
+  start_time: string
   tags: Partial<Record<string, string>>
 }
 
