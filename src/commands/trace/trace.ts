@@ -105,7 +105,7 @@ export class TraceCommand extends Command {
   }
 
   private getEnvironmentVars(keys: string[]): Record<string, string> {
-    return Object.fromEntries(keys.filter((key) => key in process.env).map((key) => [key, process.env[key]!]))
+    return keys.filter((key) => key in process.env).reduce((accum, key) => ({...accum, [key]: process.env[key]!}), {})
   }
 
   private signalToNumber(signal?: string): number | undefined {
