@@ -1,3 +1,5 @@
+import {AxiosPromise, AxiosRequestConfig, AxiosResponse} from 'axios'
+
 import {
   CI_JOB_NAME,
   CI_JOB_URL,
@@ -60,8 +62,4 @@ export type SpanTag =
 
 export type SpanTags = Partial<Record<SpanTag, string>>
 
-export enum UploadStatus {
-  Success,
-  Failure,
-  Skipped,
-}
+export type RequestBuilder = (args: AxiosRequestConfig) => AxiosPromise<AxiosResponse>

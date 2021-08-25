@@ -5,7 +5,7 @@ import {tmpdir} from 'os'
 import path from 'path'
 import {promisify} from 'util'
 
-import {Payload} from './interfaces'
+import {Dsym} from './interfaces'
 
 import {buildPath} from '../../helpers/utils'
 
@@ -24,18 +24,14 @@ export const isZipFile = async (filepath: string) => {
   }
 }
 
-export const getMatchingDSYMFiles = async (absoluteFolderPath: string): Promise<Payload[]> => {
+export const getMatchingDSYMFiles = async (absoluteFolderPath: string): Promise<Dsym[]> => {
   const dSYMFiles = await globAsync(buildPath(absoluteFolderPath, '**/*.dSYM'))
 
   return Promise.all(
     dSYMFiles.map(async (dSYMPath) => {
       const uuids = await dwarfdumpUUID(dSYMPath)
 
-      return {
-        path: dSYMPath,
-        type: 'ios_symbols',
-        uuids,
-      }
+      return new Dsym(dSYMPath, uuids)
     })
   )
 }

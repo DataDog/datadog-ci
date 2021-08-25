@@ -117,6 +117,13 @@ export class RunTestCommand extends Command {
     }
     const {tests, overriddenTestsToTrigger, summary} = testsToTriggerResult
 
+    // All tests have been skipped or are missing.
+    if (!tests.length) {
+      this.reporter.log('No test to run.\n')
+
+      return safeExit(0)
+    }
+
     const publicIdsToTrigger = tests.map(({public_id}) => public_id)
 
     if (this.config.tunnel) {
@@ -165,13 +172,6 @@ export class RunTestCommand extends Command {
       }
 
       return safeExit(1)
-    }
-
-    // All tests have been skipped or are missing.
-    if (!tests.length) {
-      this.reporter.log('No test to run.\n')
-
-      return safeExit(0)
     }
 
     if (!triggers.results) {
