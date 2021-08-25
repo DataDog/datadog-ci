@@ -15,14 +15,15 @@ export const reportCustomSpan = (request: (args: AxiosRequestConfig) => AxiosPro
 ) => {
   const gitSpanTags = await getGitMetadata()
   const userGitSpanTags = getUserGitMetadata()
-  customSpan.tags = {
-    ...gitSpanTags,
-    ...userGitSpanTags,
-    ...customSpan.tags,
-  }
-
   return request({
-    data: customSpan,
+    data: {
+      ...customSpan,
+      tags: {
+         ...gitSpanTags,
+         ...userGitSpanTags,
+         ...customSpan.tags,
+      }
+    },
     headers: {
       'X-Datadog-CI-Custom-Event': provider,
     },

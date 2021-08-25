@@ -65,7 +65,7 @@ export class TraceCommand extends Command {
   }
 
   public getData(): [string, Record<string, string>] {
-    if (process.env.CIRCLECI === 'true') {
+    if (process.env.CIRCLECI) {
       return [
         'circleci',
         this.getEnvironmentVars([
