@@ -5,12 +5,12 @@ import {newApiKeyValidator} from '../../helpers/apikey'
 import {InvalidConfigurationError} from '../../helpers/errors'
 import {ICONS} from '../../helpers/formatting'
 import {RequestBuilder} from '../../helpers/interfaces'
+import {getMetricsLogger} from '../../helpers/metrics'
 import {upload, UploadOptions, UploadStatus} from '../../helpers/upload'
 import {getRequestBuilder} from '../../helpers/utils'
 import {datadogSite, getBaseIntakeUrl} from './api'
 import {getCommitInfo, newSimpleGit} from './git'
 import {CommitInfo} from './interfaces'
-import {getMetricsLogger} from './metrics'
 import {
   renderCommandInfo,
   renderConfigurationError,
@@ -47,7 +47,11 @@ export class UploadCommand extends Command {
     const initialTime = new Date().getTime()
     this.context.stdout.write(renderCommandInfo(this.dryRun))
 
-    const metricsLogger = getMetricsLogger(this.cliVersion)
+    const metricsLogger = getMetricsLogger({
+      datadogSite: process.env.DATADOG_SITE,
+      defaultTags: [`cli_version:${this.cliVersion}`],
+      prefix: 'datadog.ci.report_commits.',
+    })
     const apiKeyValidator = newApiKeyValidator({
       apiKey: this.config.apiKey,
       datadogSite,
