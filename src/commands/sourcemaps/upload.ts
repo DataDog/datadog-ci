@@ -108,11 +108,7 @@ export class UploadCommand extends Command {
     )
     const metricsLogger = getMetricsLogger({
       datadogSite: process.env.DATADOG_SITE,
-      defaultTags: [
-        `version:${this.releaseVersion}`,
-        `service:${this.service}`,
-        `cli_version:${this.cliVersion}`,
-      ],
+      defaultTags: [`version:${this.releaseVersion}`, `service:${this.service}`, `cli_version:${this.cliVersion}`],
       prefix: 'datadog.ci.sourcemaps.',
     })
     const apiKeyValidator = newApiKeyValidator({
