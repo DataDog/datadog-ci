@@ -296,6 +296,12 @@ export class DefaultReporter implements Reporter {
     if (summary.notFound) {
       summaries.push(chalk.yellow(`${chalk.bold(summary.notFound)} not found`))
     }
+    if (summary.timedOut) {
+      summaries.push(chalk.yellow(`${chalk.bold(summary.timedOut)} timed out`))
+    }
+    if (summary.criticalErrors) {
+      summaries.push(chalk.red(`${chalk.bold(summary.criticalErrors)} critical errors`))
+    }
 
     this.write(`${chalk.bold('Tests execution summary:')} ${summaries.join(', ')}\n`)
   }
