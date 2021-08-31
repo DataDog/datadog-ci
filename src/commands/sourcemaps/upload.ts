@@ -5,14 +5,14 @@ import path from 'path'
 import asyncPool from 'tiny-async-pool'
 import {URL} from 'url'
 
-import {ApiKeyValidator} from '../../helpers/apikey'
+import {ApiKeyValidator, newApiKeyValidator} from '../../helpers/apikey'
 import {InvalidConfigurationError} from '../../helpers/errors'
 import {RequestBuilder} from '../../helpers/interfaces'
+import {getMetricsLogger, MetricsLogger} from '../../helpers/metrics'
 import {upload, UploadStatus} from '../../helpers/upload'
 import {getRequestBuilder} from '../../helpers/utils'
 import {getRepositoryData, newSimpleGit, RepositoryData} from './git'
 import {Sourcemap} from './interfaces'
-import {getMetricsLogger, MetricsLogger} from './metrics'
 import {
   renderCommandInfo,
   renderConfigurationError,
@@ -106,8 +106,16 @@ export class UploadCommand extends Command {
         this.dryRun
       )
     )
-    const metricsLogger = getMetricsLogger(this.releaseVersion, this.service, this.cliVersion)
-    const apiKeyValidator = new ApiKeyValidator(this.config.apiKey, this.config.datadogSite, metricsLogger.logger)
+    const metricsLogger = getMetricsLogger({
+      datadogSite: process.env.DATADOG_SITE,
+      defaultTags: [`version:${this.releaseVersion}`, `service:${this.service}`, `cli_version:${this.cliVersion}`],
+      prefix: 'datadog.ci.sourcemaps.',
+    })
+    const apiKeyValidator = newApiKeyValidator({
+      apiKey: this.config.apiKey,
+      datadogSite: this.config.datadogSite,
+      metricsLogger: metricsLogger.logger,
+    })
     const useGit = this.disableGit === undefined || !this.disableGit
     const initialTime = Date.now()
     const payloads = await this.getPayloadsToUpload(useGit)

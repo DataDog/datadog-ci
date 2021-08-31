@@ -1,6 +1,7 @@
 jest.mock('fs')
 import {AxiosPromise, AxiosRequestConfig, default as axios} from 'axios'
 import fs from 'fs'
+import ProxyAgent from 'proxy-agent'
 
 import * as ciUtils from '../utils'
 
@@ -76,20 +77,66 @@ describe('utils', () => {
       expect(await fakeEndpoint()).toStrictEqual({'DD-API-KEY': 'apiKey', 'DD-APPLICATION-KEY': 'applicationKey'})
     })
 
-    test('should add proxy configuration', async () => {
-      jest.spyOn(axios, 'create').mockImplementation((() => (args: AxiosRequestConfig) => args.httpsAgent) as any)
-      const proxyOpts: ciUtils.ProxyConfiguration = {protocol: 'http', host: '1.2.3.4', port: 1234}
-      const requestOptions = {
-        apiKey: 'apiKey',
-        appKey: 'applicationKey',
-        baseUrl: 'http://fake-base.url/',
-        proxyOpts,
-      }
-      const request = ciUtils.getRequestBuilder(requestOptions)
-      const fakeEndpoint = fakeEndpointBuilder(request)
-      const httpsAgent = await fakeEndpoint()
-      expect(httpsAgent).toBeDefined()
-      expect((httpsAgent as any).proxyUri).toBe('http://1.2.3.4:1234')
+    describe('proxy configuration', () => {
+      test('should have a ProxyAgent by default', async () => {
+        jest.spyOn(axios, 'create').mockImplementation((() => (args: AxiosRequestConfig) => args.httpsAgent) as any)
+        const requestOptions = {
+          apiKey: 'apiKey',
+          appKey: 'applicationKey',
+          baseUrl: 'http://fake-base.url/',
+        }
+        const request = ciUtils.getRequestBuilder(requestOptions)
+        const fakeEndpoint = fakeEndpointBuilder(request)
+        const httpsAgent = await fakeEndpoint()
+        expect(httpsAgent).toBeDefined()
+        expect(httpsAgent).toBeInstanceOf(ProxyAgent)
+      })
+      test('should not have a proxy agent if proxy env vars support is disabled', async () => {
+        jest.spyOn(axios, 'create').mockImplementation((() => (args: AxiosRequestConfig) => args.httpsAgent) as any)
+        const requestOptions = {
+          apiKey: 'apiKey',
+          appKey: 'applicationKey',
+          baseUrl: 'http://fake-base.url/',
+          disableEnvironmentVariables: true,
+        }
+        const request = ciUtils.getRequestBuilder(requestOptions)
+        const fakeEndpoint = fakeEndpointBuilder(request)
+        const httpsAgent = await fakeEndpoint()
+        expect(httpsAgent).toBeUndefined()
+      })
+
+      test('should add proxy configuration when explicitly defined', async () => {
+        jest.spyOn(axios, 'create').mockImplementation((() => (args: AxiosRequestConfig) => args.httpsAgent) as any)
+        const proxyOpts: ciUtils.ProxyConfiguration = {protocol: 'http', host: '1.2.3.4', port: 1234}
+        const requestOptions = {
+          apiKey: 'apiKey',
+          appKey: 'applicationKey',
+          baseUrl: 'http://fake-base.url/',
+          proxyOpts,
+        }
+        const request = ciUtils.getRequestBuilder(requestOptions)
+        const fakeEndpoint = fakeEndpointBuilder(request)
+        const httpsAgent = await fakeEndpoint()
+        expect(httpsAgent).toBeDefined()
+        expect((httpsAgent as any).proxyUri).toBe('http://1.2.3.4:1234')
+      })
+
+      test('should add proxy configuration when explicitly defined even without env vars', async () => {
+        jest.spyOn(axios, 'create').mockImplementation((() => (args: AxiosRequestConfig) => args.httpsAgent) as any)
+        const proxyOpts: ciUtils.ProxyConfiguration = {protocol: 'http', host: '1.2.3.4', port: 1234}
+        const requestOptions = {
+          apiKey: 'apiKey',
+          appKey: 'applicationKey',
+          baseUrl: 'http://fake-base.url/',
+          disableEnvironmentVariables: true,
+          proxyOpts,
+        }
+        const request = ciUtils.getRequestBuilder(requestOptions)
+        const fakeEndpoint = fakeEndpointBuilder(request)
+        const httpsAgent = await fakeEndpoint()
+        expect(httpsAgent).toBeDefined()
+        expect((httpsAgent as any).proxyUri).toBe('http://1.2.3.4:1234')
+      })
     })
 
     test('should accept overrideUrl', async () => {
@@ -152,6 +199,7 @@ describe('utils', () => {
 
   describe('getProxyUrl', () => {
     test('should return correct proxy URI', () => {
+      expect(ciUtils.getProxyUrl()).toBe('')
       expect(ciUtils.getProxyUrl({protocol: 'http'})).toBe('')
       expect(ciUtils.getProxyUrl({host: '127.0.0.1', protocol: 'http'})).toBe('')
       expect(ciUtils.getProxyUrl({host: '127.0.0.1', port: 1234, protocol: 'http'})).toBe('http://127.0.0.1:1234')

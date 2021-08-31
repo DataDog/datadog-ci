@@ -12,6 +12,7 @@ import {
   CI_STAGE_NAME,
   CI_WORKSPACE_PATH,
   GIT_BRANCH,
+  GIT_COMMIT_AUTHOR_DATE,
   GIT_COMMIT_AUTHOR_EMAIL,
   GIT_COMMIT_AUTHOR_NAME,
   GIT_COMMIT_MESSAGE,
@@ -32,6 +33,23 @@ export const CI_ENGINES = {
   GITLAB: 'gitlab',
   JENKINS: 'jenkins',
   TRAVIS: 'travisci',
+}
+
+// Receives a string with the form 'John Doe <john.doe@gmail.com>'
+// and returns { name: 'John Doe', email: 'john.doe@gmail.com' }
+const parseEmailAndName = (emailAndName: string | undefined) => {
+  if (!emailAndName) {
+    return {name: '', email: ''}
+  }
+  let name = ''
+  let email = ''
+  const matchNameAndEmail = emailAndName.match(/(?:"?([^"]*)"?\s)?(?:<?(.+@[^>]+)>?)/)
+  if (matchNameAndEmail) {
+    name = matchNameAndEmail[1]
+    email = matchNameAndEmail[2]
+  }
+
+  return {name, email}
 }
 
 const resolveTilde = (filePath: string | undefined) => {
@@ -150,7 +168,12 @@ export const getCISpanTags = (): SpanTags | undefined => {
       CI_JOB_STAGE,
       CI_JOB_NAME: GITLAB_CI_JOB_NAME,
       CI_COMMIT_MESSAGE,
+      CI_COMMIT_TIMESTAMP,
+      CI_COMMIT_AUTHOR,
     } = env
+
+    const {name, email} = parseEmailAndName(CI_COMMIT_AUTHOR)
+
     tags = {
       [CI_JOB_NAME]: GITLAB_CI_JOB_NAME,
       [CI_JOB_URL]: GITLAB_CI_JOB_URL,
@@ -166,6 +189,9 @@ export const getCISpanTags = (): SpanTags | undefined => {
       [GIT_REPOSITORY_URL]: CI_REPOSITORY_URL,
       [GIT_TAG]: CI_COMMIT_TAG,
       [GIT_COMMIT_MESSAGE]: CI_COMMIT_MESSAGE,
+      [GIT_COMMIT_AUTHOR_NAME]: name,
+      [GIT_COMMIT_AUTHOR_EMAIL]: email,
+      [GIT_COMMIT_AUTHOR_DATE]: CI_COMMIT_TIMESTAMP,
     }
   }
 
@@ -210,6 +236,7 @@ export const getCISpanTags = (): SpanTags | undefined => {
       GIT_BRANCH: JENKINS_GIT_BRANCH,
       GIT_COMMIT,
       GIT_URL,
+      GIT_URL_1,
     } = env
 
     tags = {
@@ -219,7 +246,7 @@ export const getCISpanTags = (): SpanTags | undefined => {
       [CI_PROVIDER_NAME]: CI_ENGINES.JENKINS,
       [CI_WORKSPACE_PATH]: WORKSPACE,
       [GIT_SHA]: GIT_COMMIT,
-      [GIT_REPOSITORY_URL]: GIT_URL,
+      [GIT_REPOSITORY_URL]: GIT_URL || GIT_URL_1,
     }
     const isTag = JENKINS_GIT_BRANCH && JENKINS_GIT_BRANCH.includes('tags')
     const refKey = isTag ? GIT_TAG : GIT_BRANCH
@@ -284,7 +311,7 @@ export const getCISpanTags = (): SpanTags | undefined => {
       BITRISEIO_GIT_BRANCH_DEST,
       BITRISE_GIT_BRANCH,
       BITRISE_BUILD_SLUG,
-      BITRISE_APP_TITLE,
+      BITRISE_TRIGGERED_WORKFLOW_ID,
       BITRISE_BUILD_NUMBER,
       BITRISE_BUILD_URL,
       BITRISE_SOURCE_DIR,
@@ -300,7 +327,7 @@ export const getCISpanTags = (): SpanTags | undefined => {
     tags = {
       [CI_PROVIDER_NAME]: CI_ENGINES.BITRISE,
       [CI_PIPELINE_ID]: BITRISE_BUILD_SLUG,
-      [CI_PIPELINE_NAME]: BITRISE_APP_TITLE,
+      [CI_PIPELINE_NAME]: BITRISE_TRIGGERED_WORKFLOW_ID,
       [CI_PIPELINE_NUMBER]: BITRISE_BUILD_NUMBER,
       [CI_PIPELINE_URL]: BITRISE_BUILD_URL,
       [GIT_SHA]: BITRISE_GIT_COMMIT || GIT_CLONE_COMMIT_HASH,
@@ -359,6 +386,8 @@ export const getCISpanTags = (): SpanTags | undefined => {
       BUILD_REQUESTEDFORID,
       BUILD_REQUESTEDFOREMAIL,
       BUILD_SOURCEVERSIONMESSAGE,
+      SYSTEM_STAGEDISPLAYNAME,
+      SYSTEM_JOBDISPLAYNAME,
     } = env
 
     const ref = SYSTEM_PULLREQUEST_SOURCEBRANCH || BUILD_SOURCEBRANCH || BUILD_SOURCEBRANCHNAME
@@ -376,6 +405,8 @@ export const getCISpanTags = (): SpanTags | undefined => {
       [GIT_COMMIT_AUTHOR_NAME]: BUILD_REQUESTEDFORID,
       [GIT_COMMIT_AUTHOR_EMAIL]: BUILD_REQUESTEDFOREMAIL,
       [GIT_COMMIT_MESSAGE]: BUILD_SOURCEVERSIONMESSAGE,
+      [CI_STAGE_NAME]: SYSTEM_STAGEDISPLAYNAME,
+      [CI_JOB_NAME]: SYSTEM_JOBDISPLAYNAME,
     }
 
     if (SYSTEM_TEAMFOUNDATIONSERVERURI && SYSTEM_TEAMPROJECTID && BUILD_BUILDID) {

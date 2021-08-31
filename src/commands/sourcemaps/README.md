@@ -50,6 +50,27 @@ In addition, some optional parameters are available:
 * `--project-path` (default: empty): the path of the project where the sourcemaps were built. This will be stripped off from sources paths referenced in the sourcemap so they can be properly matched against tracked files paths.
 * `--repository-url` (default: empty): overrides the repository remote with a custom URL. For example: https://github.com/my-company/my-project
 
+#### Link errors with your source code
+
+In addition to sending source maps, the sourcemaps upload command reports Git information such as the current commit hash, the repository URL, and the list of tracked file paths in the code repository. This requires the `git` program and also the current working directory to be inside a git repository.
+Each sourcemap uploaded will get such information associated with it.
+
+The repository URL is infered from the remote named `origin` (or the first remote if none are named `origin`). The value can be overriden by using the `--repository-url` flag.
+For example: The remote `git@github.com:DataDog/example.git` will create links that point to `https://github.com/DataDog/example`.
+
+The only repository URLs supported are the ones whose host contains: `github`, `gitlab` or `bitbucket`. This allows DataDog to create proper URLs such as:
+
+| Provider  | URL |
+| --- | --- |
+| GitHub / GitLab  | https://\<repository-url\>/blob/\<commit-hash\>/\<tracked-file-path\>#L\<line\> |
+| Bitbucket | https://\<repository-url\>/src/\<commit-hash\>/\<tracked-file-path\>#lines-\<line\>  |
+
+Only tracked files paths related to the sourcemap being uploaded are gathered.
+For example: A sourcemap containing inside its `sources` attribute `["webpack:///./src/folder/example.ts"]` will have associated with it all tracked file paths with `example.ts` as filename.
+
+The following warning will be displayed if none of the filenames inside a sourcemap `sources` attribute are found within tracked files:
+`Could not attach git data for sourcemap ...`
+
 ### End-to-end testing process
 
 To verify this command works as expected, you can trigger a test run and verify it returns 0:

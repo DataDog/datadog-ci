@@ -157,6 +157,7 @@ If you need to create a pre-release or releasing in a different channel here's h
 - create a new branch for the channel you want to release to (`alpha`, `beta`, ...).
 - create a PR for your feature branch with the channel branch as a base.
 - pick a version following this format `version-channel`, it can be `0.10.9-alpha` or `1-beta`...
+- update the `version` field in `package.json`
 - merge the Pull Request
 - create a [Github Release](https://github.com/DataDog/datadog-ci/releases/new?target=alpha&tag=0.10.9-alpha&prerelease=1&title=Alpha+prerelease):
   - target the channel branch

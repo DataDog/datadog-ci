@@ -33,6 +33,18 @@ datadog-ci commit upload
 
 * `--repository-url` (default: empty): overrides the repository remote with a custom URL. For example: https://github.com/my-company/my-project
 
+#### Limitations
+
+The repository URL is infered from the remote named `origin` (or the first remote if none are named `origin`). The value can be overriden by using the `--repository-url` flag.
+For example: The remote `git@github.com:DataDog/example.git` will create links that point to `https://github.com/DataDog/example`.
+
+The only repository URLs supported are the ones whose host contains: `github`, `gitlab` or `bitbucket`. This allows DataDog to create proper URLs such as:
+
+| Provider  | URL |
+| --- | --- |
+| GitHub / GitLab  | https://\<repository-url\>/blob/\<commit-hash\>/\<tracked-file-path\>#L\<line\> |
+| Bitbucket | https://\<repository-url\>/src/\<commit-hash\>/\<tracked-file-path\>#lines-\<line\>  |
+
 ### End-to-end testing process
 
 To verify this command works as expected, you can trigger a test run and verify it returns 0:

@@ -67,7 +67,11 @@ export interface ProxyConfiguration {
   protocol: ProxyType
 }
 
-export const getProxyUrl = (options: ProxyConfiguration) => {
+export const getProxyUrl = (options?: ProxyConfiguration): string => {
+  if (!options) {
+    return ''
+  }
+
   const {auth, host, port, protocol} = options
 
   if (!host || !port) {
@@ -105,9 +109,10 @@ export const getRequestBuilder = (options: RequestOptions) => {
       newArguments.url = overrideUrl
     }
 
-    if (proxyOpts && proxyOpts.host && proxyOpts.port) {
-      const proxyUrl = getProxyUrl(proxyOpts)
-      newArguments.httpsAgent = new ProxyAgent(proxyUrl)
+    const proxyAgent = getProxyAgent(proxyOpts, disableEnvironmentVariables)
+    if (proxyAgent) {
+      newArguments.httpAgent = proxyAgent
+      newArguments.httpsAgent = proxyAgent
     }
 
     if (options.headers !== undefined) {
@@ -121,13 +126,21 @@ export const getRequestBuilder = (options: RequestOptions) => {
 
   const baseConfiguration: AxiosRequestConfig = {
     baseURL: baseUrl,
-  }
-
-  if (disableEnvironmentVariables) {
-    baseConfiguration.proxy = false
+    // Disabling proxy in Axios config as it's not working properly
+    // the passed httpAgent/httpsAgent are handling the proxy instead.
+    proxy: false,
   }
 
   return (args: AxiosRequestConfig) => axios.create(baseConfiguration)(overrideArgs(args))
+}
+
+const getProxyAgent = (proxyOpts?: ProxyConfiguration, disableProxyFromEnvVar?: boolean) => {
+  const proxyUrlFromConfiguration = getProxyUrl(proxyOpts)
+  if (disableProxyFromEnvVar && proxyUrlFromConfiguration === '') {
+    return
+  }
+
+  return new ProxyAgent(proxyUrlFromConfiguration)
 }
 
 export const getApiHostForSite = (site: string) => {

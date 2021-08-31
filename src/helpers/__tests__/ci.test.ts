@@ -1,4 +1,5 @@
 import {CI_ENGINES, getCIMetadata, getCISpanTags} from '../ci'
+import {getUserGitMetadata} from '../user-provided-git'
 
 import fs from 'fs'
 import path from 'path'
@@ -131,10 +132,14 @@ describe('getCIMetadata', () => {
   })
 })
 
-describe('getCISpanTags', () => {
+describe('ci spec', () => {
   test('returns an empty object if the CI is not supported', () => {
     process.env = {}
-    expect(getCISpanTags()).toEqual({})
+    const tags = {
+      ...getCISpanTags(),
+      ...getUserGitMetadata(),
+    }
+    expect(tags).toEqual({})
   })
 
   const ciProviders = fs.readdirSync(path.join(__dirname, 'ci-env'))
@@ -144,7 +149,11 @@ describe('getCISpanTags', () => {
     assertions.forEach(([env, expectedSpanTags]: [{[key: string]: string}, {[key: string]: string}], index: number) => {
       test(`reads env info for spec ${index} from ${ciProvider}`, () => {
         process.env = env
-        expect(getCISpanTags()).toEqual(expectedSpanTags)
+        const tags = {
+          ...getCISpanTags(),
+          ...getUserGitMetadata(),
+        }
+        expect(tags).toEqual(expectedSpanTags)
       })
     })
   })

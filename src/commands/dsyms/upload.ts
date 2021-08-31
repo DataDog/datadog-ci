@@ -3,13 +3,13 @@ import {Command} from 'clipanion'
 import path from 'path'
 import asyncPool from 'tiny-async-pool'
 
-import {ApiKeyValidator} from '../../helpers/apikey'
+import {ApiKeyValidator, newApiKeyValidator} from '../../helpers/apikey'
 import {InvalidConfigurationError} from '../../helpers/errors'
 import {RequestBuilder} from '../../helpers/interfaces'
+import {getMetricsLogger, MetricsLogger} from '../../helpers/metrics'
 import {upload, UploadStatus} from '../../helpers/upload'
 import {getRequestBuilder} from '../../helpers/utils'
 import {Dsym} from './interfaces'
-import {getMetricsLogger, MetricsLogger} from './metrics'
 import {
   renderCommandInfo,
   renderConfigurationError,
@@ -47,7 +47,11 @@ export class UploadCommand extends Command {
   public async execute() {
     this.basePath = path.posix.normalize(this.basePath)
     const cliVersion = require('../../../package.json').version
-    const metricsLogger = getMetricsLogger(cliVersion)
+    const metricsLogger = getMetricsLogger({
+      datadogSite: process.env.DATADOG_SITE,
+      defaultTags: [`cli_version:${cliVersion}`],
+      prefix: 'datadog.ci.dsyms.',
+    })
 
     this.context.stdout.write(renderCommandInfo(this.basePath, this.maxConcurrency, this.dryRun))
 
@@ -58,7 +62,11 @@ export class UploadCommand extends Command {
       searchPath = await unzipToTmpDir(this.basePath)
     }
 
-    const apiKeyValidator = new ApiKeyValidator(this.config.apiKey, this.config.datadogSite)
+    const apiKeyValidator = newApiKeyValidator({
+      apiKey: this.config.apiKey,
+      datadogSite: this.config.datadogSite,
+      metricsLogger: metricsLogger.logger,
+    })
     const payloads = await getMatchingDSYMFiles(searchPath)
     const requestBuilder = this.getRequestBuilder()
     const uploadDSYM = this.uploadDSYM(requestBuilder, metricsLogger, apiKeyValidator)
