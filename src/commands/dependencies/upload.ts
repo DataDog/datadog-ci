@@ -3,11 +3,11 @@ import {Command} from 'clipanion'
 import {BufferedMetricsLogger} from 'datadog-metrics'
 import fs from 'fs'
 import path from 'path'
+import {getMetricsLogger} from '../../helpers/metrics'
 import {getApiHostForSite} from '../../helpers/utils'
 
 import {apiConstructor} from './api'
 import {Payload} from './interfaces'
-import {getMetricsLogger} from './metrics'
 import {
   renderCannotFindFile,
   renderCommandInfo,
@@ -98,9 +98,17 @@ export class UploadCommand extends Command {
       return UploadCommand.MISSING_FILE_EXIT_CODE
     }
 
-    // Upload dependencies
-    const metricsLogger = getMetricsLogger(this.config.apiHost, this.service, this.releaseVersion)
+    const defaultTags = [`service:${this.service}`]
+    if (this.releaseVersion) {
+      defaultTags.push(`version:${this.releaseVersion}`)
+    }
+    const metricsLogger = getMetricsLogger({
+      datadogSite: process.env.DATADOG_SITE,
+      defaultTags,
+      prefix: 'datadog.ci.dependencies.',
+    })
 
+    // Upload dependencies
     this.context.stdout.write(
       renderCommandInfo(this.dependenciesFilePath!, this.source, this.service, this.releaseVersion, this.dryRun)
     )
