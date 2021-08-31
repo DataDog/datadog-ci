@@ -1,6 +1,6 @@
 import {timingSafeEqual} from 'crypto'
 import {Socket} from 'net'
-import {Duplex} from 'stream'
+import {Duplex, pipeline} from 'stream'
 
 import chalk from 'chalk'
 import {
@@ -31,7 +31,8 @@ export interface TunnelInfo {
 
 export class Tunnel {
   private connected = false
-  private forwardSockets: Socket[] = []
+  private forwardedSockets: Set<Socket> = new Set()
+  private FORWARDING_TIMEOUT = 40000 as const
   private log: (message: string) => void
   private logError: (message: string) => void
   private logWarning: (message: string) => void
@@ -108,12 +109,17 @@ export class Tunnel {
   public async stop() {
     this.log('Shutting down tunnel…')
 
+    this.forwardedSockets.forEach((socket) => {
+      if (!!socket) {
+        socket.destroy()
+      }
+    })
+
     if (this.multiplexer) {
       this.multiplexer.close()
     }
 
     await this.ws.close()
-    this.forwardSockets.filter((s) => !!s).forEach((s) => s.destroy())
   }
 
   // Authenticate SSH with key authentication - username should be the test ID
@@ -157,23 +163,43 @@ export class Tunnel {
 
   private forwardProxiedPacketsFromSSH(client: SSHConnection) {
     client
-      .on('session', (accept, reject) => {
-        accept()
+      .on('session', (accept) => {
+        accept().on('close', () => {
+          client.end()
+        })
       })
       .on('tcpip', (accept, reject, {destIP, destPort}) => {
         // Forward packets
         // See https://github.com/mscdex/ssh2/issues/479#issuecomment-250416559
         let src: SSHServerChannel
         const dest = new Socket()
-        this.forwardSockets.push(dest)
+
+        dest.setTimeout(this.FORWARDING_TIMEOUT)
+        this.forwardedSockets.add(dest)
+
+        dest.on('timeout', () => {
+          this.logWarning(`Connection timeout (${destIP})`)
+          if (src) {
+            src.destroy()
+          } else {
+            reject()
+          }
+          this.forwardedSockets.delete(dest)
+          dest.end()
+          dest.destroy()
+        })
+
         dest.on('connect', () => {
           src = accept()
           if (!src) {
             return dest.end()
           }
-          src.pipe(dest).pipe(src)
+
+          pipeline([dest, src], () => this.forwardedSockets.delete(dest))
+          pipeline([src, dest], () => this.forwardedSockets.delete(dest))
 
           src.on('close', () => {
+            dest.end()
             dest.destroy()
           })
         })
@@ -184,12 +210,14 @@ export class Tunnel {
           } else {
             if ('code' in error && error.code === 'ENOTFOUND') {
               this.logWarning(`Unable to resolve host (${destIP})`)
-              // SW-1340: Reject on DNS errors kill requests on the same SSH connection.
-              accept().destroy()
             } else {
               this.logWarning(`Connection error (${destIP}): ${error.code}`)
-              reject()
             }
+            reject()
+
+            this.forwardedSockets.delete(dest)
+            dest.end()
+            dest.destroy()
           }
         })
         dest.on('close', () => {
@@ -198,6 +226,7 @@ export class Tunnel {
           } else {
             reject()
           }
+          this.forwardedSockets.delete(dest)
         })
         dest.connect(destPort, destIP)
       })
@@ -236,7 +265,17 @@ export class Tunnel {
     const duplex = this.ws.duplex()
     this.multiplexer.on('error', (error) => this.logError(`Multiplexer error: ${error.message}`))
     duplex.on('error', (error) => this.logError(`Websocket error: ${error.message}`))
-    duplex.pipe(this.multiplexer).pipe(duplex)
+
+    pipeline([duplex, this.multiplexer], (err) => {
+      if (err) {
+        this.logWarning(`Error on duplex connection close: ${err}`)
+      }
+    })
+    pipeline([this.multiplexer, duplex], (err) => {
+      if (err) {
+        this.logWarning(`Error on Multiplexer connection close: ${err}`)
+      }
+    })
 
     return connectionInfo
   }
