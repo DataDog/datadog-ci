@@ -68,7 +68,7 @@ export interface ProxyConfiguration {
 }
 
 export const getProxyUrl = (options?: ProxyConfiguration): string => {
-  if (options === undefined) {
+  if (!options) {
     return ''
   }
 
@@ -110,7 +110,7 @@ export const getRequestBuilder = (options: RequestOptions) => {
     }
 
     const proxyAgent = getProxyAgent(proxyOpts, disableEnvironmentVariables)
-    if (proxyAgent !== undefined) {
+    if (proxyAgent) {
       newArguments.httpAgent = proxyAgent
       newArguments.httpsAgent = proxyAgent
     }
@@ -135,12 +135,12 @@ export const getRequestBuilder = (options: RequestOptions) => {
 }
 
 const getProxyAgent = (proxyOpts?: ProxyConfiguration, disableProxyFromEnvVar?: boolean) => {
-  const proxyUrl = getProxyUrl(proxyOpts)
-  if (disableProxyFromEnvVar && proxyUrl === '') {
+  const proxyUrlFromConfiguration = getProxyUrl(proxyOpts)
+  if (disableProxyFromEnvVar && proxyUrlFromConfiguration === '') {
     return
   }
 
-  return new ProxyAgent(proxyUrl)
+  return new ProxyAgent(proxyUrlFromConfiguration)
 }
 
 export const getApiHostForSite = (site: string) => {
