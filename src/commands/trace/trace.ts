@@ -15,7 +15,7 @@ export class TraceCommand extends Command {
             See README for details.
         `,
     examples: [
-      ['Trace a command and report to Datadog', 'datadog-ci trace -- echo "Hello World"'],
+      ['Trace a command and report to Datadog', 'datadog-ci trace --name "Say Hello" -- echo "Hello World"'],
       [
         'Trace a command and report to the datadoghq.eu site',
         'DATADOG_SITE=datadoghq.eu datadog-ci trace -- echo "Hello World"',
@@ -23,6 +23,7 @@ export class TraceCommand extends Command {
     ],
   })
 
+  private name?: string
   private command?: string[]
 
   private config = {
@@ -45,8 +46,10 @@ export class TraceCommand extends Command {
     const exitCode = spawnResult.status ?? this.signalToNumber(spawnResult.signal) ?? 127
     const api = this.getApiHelper()
     const [provider, data] = this.getData()
+    const commandStr = this.command.join(' ')
     await api.reportCustomSpan(
       {
+        command: commandStr,
         custom: {
           id,
           parent_id: process.env.DD_CUSTOM_PARENT_ID,
@@ -54,7 +57,7 @@ export class TraceCommand extends Command {
         data,
         end_time: endTime,
         is_error: exitCode !== 0,
-        name: this.command.join(' '), // TODO
+        name: this.name ?? commandStr,
         start_time: startTime,
         tags: this.config.envVarTags ? parseTags(this.config.envVarTags.split(',')) : {},
       },
@@ -120,4 +123,5 @@ export class TraceCommand extends Command {
 }
 
 TraceCommand.addPath('trace')
+TraceCommand.addOption('name', Command.String('--name'))
 TraceCommand.addOption('command', Command.Rest({required: 1}))
