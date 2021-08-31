@@ -22,14 +22,14 @@ export class TraceCommand extends Command {
       ],
     ],
   })
-
-  private name?: string
   private command?: string[]
 
   private config = {
     apiKey: process.env.DATADOG_API_KEY || process.env.DD_API_KEY,
     envVarTags: process.env.DD_TAGS,
   }
+
+  private name?: string
 
   public async execute() {
     if (!this.command || !this.command.length) {

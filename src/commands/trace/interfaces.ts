@@ -6,7 +6,7 @@ export interface CustomIDs {
 }
 
 export interface Payload {
-  command: string,
+  command: string
   custom: CustomIDs
   data: Record<string, string>
   end_time: string
