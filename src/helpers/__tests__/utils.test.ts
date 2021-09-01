@@ -1,6 +1,9 @@
 jest.mock('fs')
 import {AxiosPromise, AxiosRequestConfig, default as axios} from 'axios'
 import fs from 'fs'
+import http from 'http'
+import {AddressInfo} from 'net'
+import proxy from 'proxy'
 import ProxyAgent from 'proxy-agent'
 
 import * as ciUtils from '../utils'
@@ -8,6 +11,10 @@ import * as ciUtils from '../utils'
 jest.useFakeTimers()
 
 describe('utils', () => {
+  beforeEach(() => {
+    jest.restoreAllMocks()
+  })
+
   test('Test pick', () => {
     const initialHash = {a: 1, b: 2}
 
@@ -20,9 +27,6 @@ describe('utils', () => {
   })
 
   describe('parseConfigFile', () => {
-    beforeEach(() => {
-      jest.restoreAllMocks()
-    })
     test('should read a config file', async () => {
       jest.spyOn(ciUtils, 'getConfig').mockImplementation(async () => ({newconfigkey: 'newconfigvalue'}))
 
@@ -209,6 +213,230 @@ describe('utils', () => {
         'http://john:pwd@127.0.0.1:1234'
       )
       expect(ciUtils.getProxyUrl({auth, protocol: 'http'})).toBe('')
+    })
+  })
+
+  // Test the different possibilities of proxy configuration of getRequestHelper.
+  // All the calls to getRequestHelpers should be https calls, but to keep the test suite
+  // simple tests are using http calls (testing with https would require us to add tls certs
+  // and configure axios to trust these tls certs, which requires an agent config, which
+  // interferes a bit with how the proxies are configured since they are configured through an
+  // agent themselves.
+  // Proxy of https requests is still tested in the proxy-agent library itself.
+  describe('Proxy configuration', () => {
+    let initialHttpProxyEnv: string | undefined
+
+    beforeAll(() => {
+      initialHttpProxyEnv = process.env.HTTP_PROXY
+    })
+
+    afterAll(() => {
+      if (initialHttpProxyEnv !== undefined) {
+        process.env.HTTP_PROXY = initialHttpProxyEnv
+      } else {
+        delete process.env.HTTP_PROXY
+      }
+    })
+
+    beforeEach(() => {
+      delete process.env.HTTP_PROXY
+    })
+
+    // Start a target http server and a proxy server listening on localhost,
+    // returns the ports they listen to, a spy method allowing us to check if they've been
+    // handling any requests, and a function to close them.
+    const setupServer = async () => {
+      // Create target http server
+      const mockCallback = jest.fn((_, res) => {
+        res.end('response from target http server')
+      })
+      const targetHttpServer = http.createServer(mockCallback)
+      await new Promise<void>((resolve, reject) => {
+        targetHttpServer.listen((err: Error | undefined) => {
+          if (err) {
+            reject(err)
+          }
+          resolve()
+        })
+      })
+
+      // Create proxy
+      const proxyHttpServer = http.createServer()
+      const proxyServer = proxy(proxyHttpServer)
+      const spyProxy = jest.fn()
+      proxyHttpServer.on('request', spyProxy)
+      await new Promise<void>((resolve, reject) => {
+        proxyServer.listen((err: Error | undefined) => {
+          if (err) {
+            reject(err)
+          }
+          resolve()
+        })
+      })
+
+      return {
+        proxyServer: {
+          close: async () =>
+            new Promise<void>((resolve, reject) => {
+              proxyServer.close((err: Error) => {
+                if (err) {
+                  reject(err)
+                }
+                resolve()
+              })
+            }),
+          port: (proxyHttpServer.address() as AddressInfo).port,
+          spy: spyProxy,
+        },
+        targetServer: {
+          close: async () =>
+            new Promise<void>((resolve, reject) => {
+              targetHttpServer.close((err: Error | undefined) => {
+                if (err) {
+                  reject(err)
+                }
+                resolve()
+              })
+            }),
+          port: (targetHttpServer.address() as AddressInfo).port,
+          spy: mockCallback,
+        },
+      }
+    }
+
+    test('Work without a proxy defined', async () => {
+      const {proxyServer, targetServer} = await setupServer()
+      try {
+        const requestBuilder = ciUtils.getRequestBuilder({
+          apiKey: 'abc',
+          baseUrl: `http://localhost:${targetServer.port}`,
+        })
+        await requestBuilder({
+          method: 'GET',
+          url: 'test-from-proxy',
+        })
+        expect(targetServer.spy.mock.calls.length).toBe(1)
+        expect(proxyServer.spy.mock.calls.length).toBe(0)
+      } finally {
+        await targetServer.close()
+        await proxyServer.close()
+      }
+    })
+
+    test('Proxy configured explicitly', async () => {
+      const {proxyServer, targetServer} = await setupServer()
+      try {
+        const requestBuilder = ciUtils.getRequestBuilder({
+          apiKey: 'abc',
+          baseUrl: `http://localhost:${targetServer.port}`,
+          proxyOpts: {
+            host: 'localhost',
+            port: proxyServer.port,
+            protocol: 'http',
+          },
+        })
+        await requestBuilder({
+          method: 'GET',
+          url: 'test-from-proxy',
+        })
+        expect(targetServer.spy.mock.calls.length).toBe(1)
+        expect(proxyServer.spy.mock.calls.length).toBe(1)
+      } finally {
+        await targetServer.close()
+        await proxyServer.close()
+      }
+    })
+
+    test('Proxy configured through env var', async () => {
+      const {proxyServer, targetServer} = await setupServer()
+      try {
+        process.env.HTTP_PROXY = `http://localhost:${proxyServer.port}`
+        const requestBuilder = ciUtils.getRequestBuilder({
+          apiKey: 'abc',
+          baseUrl: `http://localhost:${targetServer.port}`,
+        })
+        await requestBuilder({
+          method: 'GET',
+          url: 'test-from-proxy',
+        })
+        expect(targetServer.spy.mock.calls.length).toBe(1)
+        expect(proxyServer.spy.mock.calls.length).toBe(1)
+      } finally {
+        await targetServer.close()
+        await proxyServer.close()
+      }
+    })
+
+    test('Proxy configured explicitly takes precedence over env var', async () => {
+      const {proxyServer, targetServer} = await setupServer()
+      try {
+        process.env.HTTP_PROXY = `http://incorrecthost:${proxyServer.port}`
+        const requestBuilder = ciUtils.getRequestBuilder({
+          apiKey: 'abc',
+          baseUrl: `http://localhost:${targetServer.port}`,
+          proxyOpts: {
+            host: 'localhost',
+            port: proxyServer.port,
+            protocol: 'http',
+          },
+        })
+        await requestBuilder({
+          method: 'GET',
+          url: 'test-from-proxy',
+        })
+        expect(targetServer.spy.mock.calls.length).toBe(1)
+        expect(proxyServer.spy.mock.calls.length).toBe(1)
+      } finally {
+        await targetServer.close()
+        await proxyServer.close()
+      }
+    })
+
+    test('Proxy through env var can be disabled', async () => {
+      const {proxyServer, targetServer} = await setupServer()
+      try {
+        process.env.HTTP_PROXY = `http://incorrecthost:${proxyServer.port}`
+        const requestBuilder = ciUtils.getRequestBuilder({
+          apiKey: 'abc',
+          baseUrl: `http://localhost:${targetServer.port}`,
+          disableEnvironmentVariables: true,
+        })
+        await requestBuilder({
+          method: 'GET',
+          url: 'test-from-proxy',
+        })
+        expect(targetServer.spy.mock.calls.length).toBe(1)
+        expect(proxyServer.spy.mock.calls.length).toBe(0)
+      } finally {
+        await targetServer.close()
+        await proxyServer.close()
+      }
+    })
+
+    test('Proxy can still be configured manually when env vars are disabled', async () => {
+      const {proxyServer, targetServer} = await setupServer()
+      try {
+        process.env.HTTP_PROXY = `http://incorrecthost:${proxyServer.port}`
+        const requestBuilder = ciUtils.getRequestBuilder({
+          apiKey: 'abc',
+          baseUrl: `http://localhost:${targetServer.port}`,
+          disableEnvironmentVariables: true,
+          proxyOpts: {
+            host: 'localhost',
+            port: proxyServer.port,
+            protocol: 'http',
+          },
+        })
+        await requestBuilder({
+          method: 'GET',
+          url: 'test-from-proxy',
+        })
+        expect(targetServer.spy.mock.calls.length).toBe(1)
+        expect(proxyServer.spy.mock.calls.length).toBe(1)
+      } finally {
+        await targetServer.close()
+        await proxyServer.close()
+      }
     })
   })
 })
