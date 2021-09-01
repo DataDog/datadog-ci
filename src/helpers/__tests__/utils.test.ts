@@ -218,24 +218,28 @@ describe('utils', () => {
 
   // Test the different possibilities of proxy configuration of getRequestHelper.
   // All the calls to getRequestHelpers should be https calls, but to keep the test suite
-  // simple tests are using http calls (testing with https would require us to add http certs
-  // and configure axios to trust these https certs, which requires an agent config, which
+  // simple tests are using http calls (testing with https would require us to add tls certs
+  // and configure axios to trust these tls certs, which requires an agent config, which
   // interferes a bit with how the proxies are configured since they are configured through an
   // agent themselves.
   // Proxy of https requests is still tested in the proxy-agent library itself.
   describe('Proxy configuration', () => {
-    const initialHttpProxyEnv = process.env.HTTP_PROXY
+    let initialHttpProxyEnv: string | undefined
 
-    beforeEach(() => {
-      delete process.env.HTTP_PROXY
+    beforeAll(() => {
+      initialHttpProxyEnv = process.env.HTTP_PROXY
     })
 
     afterAll(() => {
-      if (initialHttpProxyEnv) {
+      if (initialHttpProxyEnv !== undefined) {
         process.env.HTTP_PROXY = initialHttpProxyEnv
       } else {
         delete process.env.HTTP_PROXY
       }
+    })
+
+    beforeEach(() => {
+      delete process.env.HTTP_PROXY
     })
 
     // Start a target http server and a proxy server listening on localhost,

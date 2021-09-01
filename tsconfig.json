@@ -17,8 +17,5 @@
     "lib": ["es2019"],
     "resolveJsonModule": true
   },
-  "include": [
-    "src/**/*",
-    "proxy.d.ts"
-  ]
+  "include": ["src/**/*"]
 }
