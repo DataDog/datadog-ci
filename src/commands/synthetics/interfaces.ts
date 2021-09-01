@@ -250,10 +250,12 @@ export interface Suite {
 }
 
 export interface Summary {
+  criticalErrors: number
   failed: number
   notFound: number
   passed: number
   skipped: number
+  timedOut: number
 }
 
 export interface TestSearchResult {

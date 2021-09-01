@@ -24,7 +24,7 @@ describe('run-test', () => {
       const getTestsToTriggersMock = jest.spyOn(utils, 'getTestsToTrigger').mockReturnValue(
         Promise.resolve({
           overriddenTestsToTrigger: [],
-          summary: {passed: 0, failed: 0, skipped: 0, notFound: 0},
+          summary: {criticalErrors: 0, passed: 0, failed: 0, skipped: 0, notFound: 0, timedOut: 0},
           tests: [],
         })
       )
@@ -58,7 +58,7 @@ describe('run-test', () => {
       const getTestsToTriggersMock = jest.spyOn(utils, 'getTestsToTrigger').mockReturnValue(
         Promise.resolve({
           overriddenTestsToTrigger: [],
-          summary: {passed: 0, failed: 0, skipped: 0, notFound: 0},
+          summary: {criticalErrors: 0, passed: 0, failed: 0, skipped: 0, notFound: 0, timedOut: 0},
           tests: [],
         })
       )
@@ -90,7 +90,7 @@ describe('run-test', () => {
       const getTestsToTriggersMock = jest.spyOn(utils, 'getTestsToTrigger').mockReturnValue(
         Promise.resolve({
           overriddenTestsToTrigger: [],
-          summary: {passed: 0, failed: 0, skipped: 0, notFound: 0},
+          summary: {criticalErrors: 0, passed: 0, failed: 0, skipped: 0, notFound: 0, timedOut: 0},
           tests: [],
         })
       )
@@ -177,7 +177,7 @@ describe('run-test', () => {
       jest.spyOn(utils, 'getTestsToTrigger').mockReturnValue(
         Promise.resolve({
           overriddenTestsToTrigger: [],
-          summary: {passed: 0, failed: 0, skipped: 0, notFound: 0},
+          summary: {criticalErrors: 0, passed: 0, failed: 0, skipped: 0, notFound: 0, timedOut: 0},
           tests: [{options: {ci: {executionRule: ExecutionRule.BLOCKING}}, public_id: 'publicId'} as any],
         })
       )
@@ -209,7 +209,7 @@ describe('run-test', () => {
       jest.spyOn(utils, 'getTestsToTrigger').mockReturnValue(
         Promise.resolve({
           overriddenTestsToTrigger: [],
-          summary: {passed: 0, failed: 0, skipped: 0, notFound: 0},
+          summary: {criticalErrors: 0, passed: 0, failed: 0, skipped: 0, notFound: 0, timedOut: 0},
           tests: [{options: {ci: {executionRule: ExecutionRule.BLOCKING}}, public_id: 'publicId'} as any],
         })
       )
@@ -247,7 +247,7 @@ describe('run-test', () => {
       jest.spyOn(utils, 'getTestsToTrigger').mockReturnValue(
         Promise.resolve({
           overriddenTestsToTrigger: [],
-          summary: {passed: 0, failed: 0, skipped: 0, notFound: 0},
+          summary: {criticalErrors: 0, passed: 0, failed: 0, skipped: 0, notFound: 0, timedOut: 0},
           tests: [{options: {ci: {executionRule: ExecutionRule.BLOCKING}}, public_id: 'publicId'} as any],
         })
       )
