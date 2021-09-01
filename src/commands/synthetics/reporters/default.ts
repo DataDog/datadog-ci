@@ -107,7 +107,8 @@ const renderResultOutcome = (
   failOnCriticalErrors: boolean,
   failOnTimeout: boolean
 ) => {
-  if (result.error) {
+  // Only display critical errors if failure is not filled.
+  if (result.error && !(result.failure || result.errorMessage)) {
     return `    ${chalk.bold(`${ICONS.FAILED} | ${result.error}`)}`
   }
 
