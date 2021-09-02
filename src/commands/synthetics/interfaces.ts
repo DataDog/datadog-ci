@@ -40,6 +40,10 @@ export interface Result {
   errorCode?: string
   errorMessage?: string
   eventType: string
+  failure?: {
+    code: string
+    message: string
+  }
   passed: boolean
   stepDetails: Step[]
   timings?: Timings

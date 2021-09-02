@@ -107,13 +107,14 @@ const renderResultOutcome = (
   failOnCriticalErrors: boolean,
   failOnTimeout: boolean
 ) => {
-  if (result.error) {
+  // Only display critical errors if failure is not filled.
+  if (result.error && !(result.failure || result.errorMessage)) {
     return `    ${chalk.bold(`${ICONS.FAILED} | ${result.error}`)}`
   }
 
   if (result.unhealthy) {
-    const errorName =
-      result.errorMessage && result.errorMessage !== 'Unknown error' ? result.errorMessage : 'General Error'
+    const errorMessage = result.failure ? result.failure.message : result.errorMessage
+    const errorName = errorMessage && errorMessage !== 'Unknown error' ? errorMessage : 'General Error'
 
     return [
       `    ${chalk.yellow(` ${ICONS.SKIPPED} | ${errorName}`)}`,
@@ -124,11 +125,11 @@ const renderResultOutcome = (
   if (test.type === 'api') {
     const requestDescription = renderApiRequestDescription(test.subtype, test.config)
 
-    if (result.errorCode && result.errorMessage) {
-      return [
-        `    ${icon} ${color(requestDescription)}`,
-        renderApiError(result.errorCode!, result.errorMessage!, color),
-      ].join('\n')
+    if (result.failure || (result.errorCode && result.errorMessage)) {
+      const errorCode = result.failure ? result.failure.code : result.errorCode
+      const errorMessage = result.failure ? result.failure.message : result.errorMessage
+
+      return [`    ${icon} ${color(requestDescription)}`, renderApiError(errorCode!, errorMessage!, color)].join('\n')
     }
 
     return `    ${icon} ${color(requestDescription)}`
