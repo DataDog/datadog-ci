@@ -13,4 +13,4 @@ RUN chown -R node:node /app
 USER node
 WORKDIR /app 
 RUN yarn install
-ENTRYPOINT [ "node", "dist/index.js" ]
+ENTRYPOINT [ "node", "/app/dist/index.js" ]
