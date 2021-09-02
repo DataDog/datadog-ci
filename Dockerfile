@@ -6,6 +6,7 @@ RUN yarn install && \
     yarn run prepack
 
 FROM node:10.24.1-alpine3.11
+RUN apk add --no-cache git=2.24.4-r0
 COPY ./package.json ./yarn.lock LICENSE /app/
 COPY --from=base /work/dist /app/dist
 RUN chown -R node:node /app
