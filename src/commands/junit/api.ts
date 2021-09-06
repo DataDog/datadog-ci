@@ -59,7 +59,7 @@ export const uploadJUnitXML = (request: (args: AxiosRequestConfig) => AxiosPromi
     headers: form.getHeaders(),
     maxBodyLength,
     method: 'POST',
-    url: 'v1/input',
+    url: 'api/v2/cireport',
   })
 }
 
