@@ -1,9 +1,9 @@
 export const getBaseIntakeUrl = () => {
   if (process.env.DATADOG_SITE || process.env.DD_SITE) {
-    return `https://cireport-http-intake.logs.${process.env.DATADOG_SITE || process.env.DD_SITE}`
+    return `https://cireport-intake.${process.env.DATADOG_SITE || process.env.DD_SITE}`
   }
 
-  return 'https://cireport-http-intake.logs.datadoghq.com'
+  return 'https://cireport-intake.datadoghq.com'
 }
 
 /**
