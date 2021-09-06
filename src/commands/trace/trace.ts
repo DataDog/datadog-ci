@@ -5,7 +5,10 @@ import crypto from 'crypto'
 import os from 'os'
 import {parseTags} from '../../helpers/tags'
 import {apiConstructor} from './api'
-import {APIHelper} from './interfaces'
+import {APIHelper, CIRCLECI, Provider, SUPPORTED_PROVIDERS} from './interfaces'
+
+// We use 127 as exit code for invalid commands since that is what *sh terminals
+const badCommandExitCode = 127
 
 export class TraceCommand extends Command {
   public static usage = Command.Usage({
@@ -31,6 +34,8 @@ export class TraceCommand extends Command {
 
   private name?: string
 
+  private noFail?: boolean
+
   public async execute() {
     if (!this.command || !this.command.length) {
       this.context.stderr.write('Missing command to run\n')
@@ -43,34 +48,35 @@ export class TraceCommand extends Command {
     const startTime = new Date().toISOString()
     const spawnResult = spawnSync(command, args, {env: {...process.env, DD_CUSTOM_PARENT_ID: id}, stdio: 'inherit'})
     const endTime = new Date().toISOString()
-    const exitCode = spawnResult.status ?? this.signalToNumber(spawnResult.signal) ?? 127
-    const api = this.getApiHelper()
-    const [provider, data] = this.getData()
-    const commandStr = this.command.join(' ')
-    await api.reportCustomSpan(
-      {
-        command: commandStr,
-        custom: {
-          id,
-          parent_id: process.env.DD_CUSTOM_PARENT_ID,
+    const exitCode = spawnResult.status ?? this.signalToNumber(spawnResult.signal) ?? badCommandExitCode
+    const [ciEnvVars, provider] = this.getCIEnvVars()
+    if (provider) {
+      const api = this.getApiHelper()
+      const commandStr = this.command.join(' ')
+      await api.reportCustomSpan(
+        {
+          command: commandStr,
+          custom: {
+            id,
+            parent_id: process.env.DD_CUSTOM_PARENT_ID,
+          },
+          data: ciEnvVars,
+          end_time: endTime,
+          is_error: exitCode !== 0,
+          name: this.name ?? commandStr,
+          start_time: startTime,
+          tags: this.config.envVarTags ? parseTags(this.config.envVarTags.split(',')) : {},
         },
-        data,
-        end_time: endTime,
-        is_error: exitCode !== 0,
-        name: this.name ?? commandStr,
-        start_time: startTime,
-        tags: this.config.envVarTags ? parseTags(this.config.envVarTags.split(',')) : {},
-      },
-      provider
-    )
+        provider
+      )
+    }
 
     return exitCode
   }
 
-  public getData(): [string, Record<string, string>] {
+  public getCIEnvVars(): [Record<string, string>, Provider?] {
     if (process.env.CIRCLECI) {
       return [
-        'circleci',
         this.getEnvironmentVars([
           'CIRCLE_BRANCH',
           'CIRCLE_BUILD_NUM',
@@ -85,9 +91,19 @@ export class TraceCommand extends Command {
           'CIRCLE_TAG',
           'CIRCLE_WORKFLOW_ID',
         ]),
+        CIRCLECI,
       ]
     }
-    throw new Error('Cannot detect any CI Provider. This command only works if run as part of your CI.')
+    const errorMsg = `Cannot detect any supported CI Provider. This command only works if run as part of your CI. Supported providers: ${SUPPORTED_PROVIDERS}.`
+    if (this.noFail) {
+      this.context.stdout.write(
+        `${chalk.yellow.bold('[WARNING]')} ${errorMsg} Not failing since the --no-fail options was used.\n`
+      )
+
+      return [{}]
+    } else {
+      throw new Error(errorMsg)
+    }
   }
 
   private getApiHelper(): APIHelper {
@@ -123,5 +139,6 @@ export class TraceCommand extends Command {
 }
 
 TraceCommand.addPath('trace')
+TraceCommand.addOption('noFail', Command.Boolean('--no-fail'))
 TraceCommand.addOption('name', Command.String('--name'))
 TraceCommand.addOption('command', Command.Rest({required: 1}))

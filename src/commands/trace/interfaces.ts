@@ -1,13 +1,16 @@
 import {AxiosPromise, AxiosResponse} from 'axios'
 
-export interface CustomIDs {
-  id: string
-  parent_id?: string
-}
+export const CIRCLECI = 'circleci'
+
+export const SUPPORTED_PROVIDERS = [CIRCLECI] as const
+export type Provider = typeof SUPPORTED_PROVIDERS[number]
 
 export interface Payload {
   command: string
-  custom: CustomIDs
+  custom: {
+    id: string
+    parent_id?: string
+  }
   data: Record<string, string>
   end_time: string
   is_error: boolean
@@ -17,5 +20,5 @@ export interface Payload {
 }
 
 export interface APIHelper {
-  reportCustomSpan(customSpan: Payload, provider: string): AxiosPromise<AxiosResponse>
+  reportCustomSpan(customSpan: Payload, provider: Provider): AxiosPromise<AxiosResponse>
 }
