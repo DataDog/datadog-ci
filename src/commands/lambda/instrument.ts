@@ -37,7 +37,7 @@ export class InstrumentCommand extends Command {
 
       return 1
     }
-    
+
     const functionGroups = this.collectFunctionsByRegion()
     if (functionGroups === undefined) {
       return 1
