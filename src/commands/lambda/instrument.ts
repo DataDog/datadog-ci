@@ -26,17 +26,18 @@ export class InstrumentCommand extends Command {
   public async execute() {
     const lambdaConfig = {lambda: this.config}
     this.config = (await parseConfigFile(lambdaConfig, this.configPath)).lambda
-
     const settings = this.getSettings()
     if (settings === undefined) {
       return 1
     }
 
-    if (this.functions.length === 0) {
+    const functions = this.configPath ? this.config.functions : this.functions
+    if (functions.length === 0) {
       this.context.stdout.write('No functions specified for instrumentation.\n')
 
       return 1
     }
+    
     const functionGroups = this.collectFunctionsByRegion()
     if (functionGroups === undefined) {
       return 1
