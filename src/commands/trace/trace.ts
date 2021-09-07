@@ -7,8 +7,8 @@ import {parseTags} from '../../helpers/tags'
 import {apiConstructor} from './api'
 import {APIHelper, CIRCLECI, Provider, SUPPORTED_PROVIDERS} from './interfaces'
 
-// We use 127 as exit code for invalid commands since that is what *sh terminals
-const badCommandExitCode = 127
+// We use 127 as exit code for invalid commands since that is what *sh terminals return
+const BAD_COMMAND_EXIT_CODE = 127
 
 export class TraceCommand extends Command {
   public static usage = Command.Usage({
@@ -18,7 +18,10 @@ export class TraceCommand extends Command {
             See README for details.
         `,
     examples: [
-      ['Trace a command and report to Datadog', 'datadog-ci trace --name "Say Hello" -- echo "Hello World"'],
+      [
+        'Trace a command with name "Say Hello" and report to Datadog',
+        'datadog-ci trace --name "Say Hello" -- echo "Hello World"',
+      ],
       [
         'Trace a command and report to the datadoghq.eu site',
         'DATADOG_SITE=datadoghq.eu datadog-ci trace -- echo "Hello World"',
@@ -48,7 +51,7 @@ export class TraceCommand extends Command {
     const startTime = new Date().toISOString()
     const spawnResult = spawnSync(command, args, {env: {...process.env, DD_CUSTOM_PARENT_ID: id}, stdio: 'inherit'})
     const endTime = new Date().toISOString()
-    const exitCode = spawnResult.status ?? this.signalToNumber(spawnResult.signal) ?? badCommandExitCode
+    const exitCode = spawnResult.status ?? this.signalToNumber(spawnResult.signal) ?? BAD_COMMAND_EXIT_CODE
     const [ciEnvVars, provider] = this.getCIEnvVars()
     if (provider) {
       const api = this.getApiHelper()
@@ -119,10 +122,10 @@ export class TraceCommand extends Command {
 
   private getBaseIntakeUrl() {
     if (process.env.DATADOG_SITE || process.env.DD_SITE) {
-      return `https://webhooks-http-intake.logs.${process.env.DATADOG_SITE || process.env.DD_SITE}`
+      return `https://webhook-intake.${process.env.DATADOG_SITE || process.env.DD_SITE}`
     }
 
-    return 'https://webhooks-http-intake.logs.datadoghq.com'
+    return 'https://webhook-intake.datadoghq.com'
   }
 
   private getEnvironmentVars(keys: string[]): Record<string, string> {

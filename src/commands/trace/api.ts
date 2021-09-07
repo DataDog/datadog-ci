@@ -30,7 +30,7 @@ export const reportCustomSpan = (request: (args: AxiosRequestConfig) => AxiosPro
     },
     maxBodyLength,
     method: 'POST',
-    url: 'v1/input',
+    url: 'api/v2/webhook',
   })
 }
 

@@ -3,13 +3,13 @@ import {TraceCommand} from '../trace'
 
 describe('trace', () => {
   describe('signalToNumber', () => {
-    test('should map undefined to undefined', () => {
+    test('should map null to undefined', () => {
       const command = new TraceCommand()
       expect(command['signalToNumber'](null)).toBeUndefined()
     })
     test('should map SIGKILL to 137', () => {
       const command = new TraceCommand()
-      expect(command['signalToNumber']('SIGKILL')).toEqual(137)
+      expect(command['signalToNumber']('SIGKILL')).toEqual(128 + 9)
     })
   })
 
