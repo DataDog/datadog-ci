@@ -55,8 +55,8 @@ export class TraceCommand extends Command {
         reject(error)
       })
 
-      childProcess.on('close', (status: number, signal: string) => {
-        resolve([status, signal])
+      childProcess.on('close', (exitStatus: number, exitSignal: string) => {
+        resolve([exitStatus, exitSignal])
       })
     })
     const endTime = new Date().toISOString()
