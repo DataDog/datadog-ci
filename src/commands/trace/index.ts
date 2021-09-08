@@ -1,2 +1,3 @@
-// Disable until we support this officially
-module.exports = [] // [TraceCommand]
+import { TraceCommand } from "./trace";
+
+module.exports = [TraceCommand]
