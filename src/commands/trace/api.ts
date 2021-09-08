@@ -34,8 +34,8 @@ export const reportCustomSpan = (request: (args: AxiosRequestConfig) => AxiosPro
   })
 }
 
-export const apiConstructor = (baseIntakeUrl: string, apiKey: string) => {
-  const requestIntake = getRequestBuilder({baseUrl: baseIntakeUrl, apiKey})
+export const apiConstructor = (baseUrl: string, apiKey: string) => {
+  const requestIntake = getRequestBuilder({baseUrl, apiKey})
 
   return {
     reportCustomSpan: reportCustomSpan(requestIntake),
