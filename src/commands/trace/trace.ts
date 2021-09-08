@@ -49,7 +49,16 @@ export class TraceCommand extends Command {
     const [command, ...args] = this.command
     const id = crypto.randomBytes(5).toString('hex')
     const startTime = new Date().toISOString()
-    const spawnResult = spawnSync(command, args, {env: {...process.env, DD_CUSTOM_PARENT_ID: id}, stdio: 'inherit'})
+    const childProcess = spawn(command, args, {env: {...process.env, DD_CUSTOM_PARENT_ID: id}, stdio: 'inherit'})
+    const spawnResult = await new Promise((resolve, reject) => {
+      childProcess.on('error', (error: Error) => {
+        reject(error)
+      })
+
+      childProcess.on('close', (exitCode: number) => {
+        resolve(exitCode)
+      }
+    })
     const endTime = new Date().toISOString()
     const exitCode = spawnResult.status ?? this.signalToNumber(spawnResult.signal) ?? BAD_COMMAND_EXIT_CODE
     const [ciEnvVars, provider] = this.getCIEnvVars()
