@@ -235,7 +235,7 @@ describe('lambda', () => {
 
         process.env = {}
         const command = createCommand()
-        command['configPath'] = path.join(__dirname, './mock-configs/no-functions.json')
+        command['configPath'] = 'someConfigPath.json'
         command['config']['layerVersion'] = '60'
         command['config']['extensionVersion'] = '10'
         command['config']['region'] = 'ap-southeast-1'
