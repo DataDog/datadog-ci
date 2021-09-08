@@ -139,12 +139,12 @@ export class TraceCommand extends Command {
     return keys.filter((key) => key in process.env).reduce((accum, key) => ({...accum, [key]: process.env[key]!}), {})
   }
 
-  private signalToNumber(signal: string | null): number | undefined {
+  private signalToNumber(signal: NodeJS.Signals | null): number | undefined {
     if (!signal) {
       return undefined
     }
 
-    return (os.constants.signals as any)[signal] + 128
+    return os.constants.signal[signal] + 128
   }
 }
 
