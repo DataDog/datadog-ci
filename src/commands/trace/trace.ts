@@ -121,11 +121,9 @@ export class TraceCommand extends Command {
   }
 
   private getBaseIntakeUrl() {
-    if (process.env.DATADOG_SITE || process.env.DD_SITE) {
-      return `https://webhook-intake.${process.env.DATADOG_SITE || process.env.DD_SITE}`
-    }
+    const site = process.env.DATADOG_SITE || process.env.DD_SITE || 'datadoghq.com'
 
-    return 'https://webhook-intake.datadoghq.com'
+    return `https://webhook-intake.${site}`
   }
 
   private getEnvironmentVars(keys: string[]): Record<string, string> {
