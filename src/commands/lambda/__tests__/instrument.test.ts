@@ -220,10 +220,26 @@ describe('lambda', () => {
       })
 
       test('aborts early when no functions are specified while using config file', async () => {
+        ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) =>
+          callback(
+            JSON.stringify({
+              lambda: {
+                extensionVersion: '10',
+                functions: [],
+                layerVersion: '60',
+                region: 'ap-southeast-1',
+              },
+            })
+          )
+        )
+
         process.env = {}
         const command = createCommand()
         command['configPath'] = path.join(__dirname, './mock-configs/no-functions.json')
-        command['execute']()
+        command['config']['layerVersion'] = '60'
+        command['config']['extensionVersion'] = '10'
+        command['config']['region'] = 'ap-southeast-1'
+        await command['execute']()
         const output = command.context.stdout.toString()
         expect(output).toMatchInlineSnapshot(`
                                                             "No functions specified for instrumentation.
