@@ -219,6 +219,18 @@ describe('lambda', () => {
                                                 `)
       })
 
+      test('aborts early when no functions are specified while using config file', async () => {
+        process.env = {}
+        const command = createCommand()
+        command['configPath'] = path.join(__dirname, './mock-configs/no-functions.json')
+        command['execute']()
+        const output = command.context.stdout.toString()
+        expect(output).toMatchInlineSnapshot(`
+                                                            "No functions specified for instrumentation.
+                                                            "
+                                                `)
+      })
+
       test("aborts early when function regions can't be found", async () => {
         ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({code: 'ENOENT'}))
         ;(Lambda as any).mockImplementation(() => makeMockLambda({}))
