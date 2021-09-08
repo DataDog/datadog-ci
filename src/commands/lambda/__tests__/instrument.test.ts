@@ -219,6 +219,23 @@ describe('lambda', () => {
                                                 `)
       })
 
+      test('aborts early when no functions are specified while using config file', async () => {
+        ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({}))
+
+        process.env = {}
+        const command = createCommand()
+        command['configPath'] = 'someConfigPath.json'
+        command['config']['layerVersion'] = '60'
+        command['config']['extensionVersion'] = '10'
+        command['config']['region'] = 'ap-southeast-1'
+        await command['execute']()
+        const output = command.context.stdout.toString()
+        expect(output).toMatchInlineSnapshot(`
+                                                            "No functions specified for instrumentation.
+                                                            "
+                                                `)
+      })
+
       test("aborts early when function regions can't be found", async () => {
         ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({code: 'ENOENT'}))
         ;(Lambda as any).mockImplementation(() => makeMockLambda({}))
@@ -297,6 +314,20 @@ describe('lambda', () => {
           "\\"extensionVersion\\" and \\"forwarder\\" should not be used at the same time.
           "
         `)
+      })
+
+      test('check if functions are not empty while using config file', async () => {
+        ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({}))
+
+        process.env = {}
+        const command = createCommand()
+        command['configPath'] = 'someConfigPath.json'
+        command['config']['layerVersion'] = '60'
+        command['config']['extensionVersion'] = '10'
+        command['config']['region'] = 'ap-southeast-1'
+        command['config']['functions'] = ['arn:aws:lambda:ap-southeast-1:123456789012:function:lambda-hello-world']
+        await command['execute']()
+        expect(command['config']['functions']).toHaveLength(1)
       })
     })
 
