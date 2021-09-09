@@ -224,7 +224,6 @@ describe('lambda', () => {
 
         process.env = {}
         const command = createCommand()
-        command['configPath'] = 'someConfigPath.json'
         command['config']['layerVersion'] = '60'
         command['config']['extensionVersion'] = '10'
         command['config']['region'] = 'ap-southeast-1'
@@ -321,7 +320,6 @@ describe('lambda', () => {
 
         process.env = {}
         const command = createCommand()
-        command['configPath'] = 'someConfigPath.json'
         command['config']['layerVersion'] = '60'
         command['config']['extensionVersion'] = '10'
         command['config']['region'] = 'ap-southeast-1'
@@ -335,13 +333,13 @@ describe('lambda', () => {
       test('uses config file settings', () => {
         process.env = {}
         const command = createCommand()
-        command['config']['flushMetricsToLogs'] = false
+        command['config']['flushMetricsToLogs'] = 'false'
         command['config']['forwarder'] = 'my-forwarder'
         command['config']['layerVersion'] = '2'
         command['config']['extensionVersion'] = '6'
         command['config']['layerAWSAccount'] = 'another-account'
         command['config']['mergeXrayTraces'] = false
-        command['config']['tracing'] = false
+        command['config']['tracing'] = 'false'
         command['config']['logLevel'] = 'debug'
 
         expect(command['getSettings']()).toEqual({
@@ -367,10 +365,10 @@ describe('lambda', () => {
         command['config']['layerAWSAccount'] = 'another-account'
         command['mergeXrayTraces'] = true
         command['config']['mergeXrayTraces'] = false
-        command['flushMetricsToLogs'] = false
-        command['config']['flushMetricsToLogs'] = true
-        command['tracing'] = true
-        command['config']['tracing'] = false
+        command['flushMetricsToLogs'] = 'false'
+        command['config']['flushMetricsToLogs'] = 'true'
+        command['tracing'] = 'true'
+        command['config']['tracing'] = 'false'
         command['logLevel'] = 'debug'
         command['config']['logLevel'] = 'info'
 
