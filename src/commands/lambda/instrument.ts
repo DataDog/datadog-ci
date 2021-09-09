@@ -152,17 +152,27 @@ export class InstrumentCommand extends Command {
 
     if (!['true', 'false', undefined].includes(this.flushMetricsToLogs?.toLowerCase())) {
       this.context.stdout.write('No valid value specified for flushMetricsToLogs.\n')
+
       return
     }
 
     if (!['true', 'false', undefined].includes(this.tracing?.toLowerCase())) {
       this.context.stdout.write('No valid value specified for tracing.\n')
+
       return
     }
 
-    const flushMetricsToLogs = this.flushMetricsToLogs ? this.flushMetricsToLogs === 'true' : this.config.flushMetricsToLogs ? this.config.flushMetricsToLogs === 'true' : true
+    const flushMetricsToLogs = this.flushMetricsToLogs
+      ? this.flushMetricsToLogs.toLowerCase() === 'true'
+      : this.config.flushMetricsToLogs
+      ? this.config.flushMetricsToLogs.toLowerCase() === 'true'
+      : true
     const mergeXrayTraces = this.mergeXrayTraces ?? this.config.mergeXrayTraces ?? false
-    const tracingEnabled = this.tracing ? this.tracing === 'true' : this.config.tracing ? this.config.tracing === 'true' : true
+    const tracingEnabled = this.tracing
+      ? this.tracing === 'true'
+      : this.config.tracing
+      ? this.config.tracing === 'true'
+      : true
     const logLevel = this.logLevel ?? this.config.logLevel
 
     return {
