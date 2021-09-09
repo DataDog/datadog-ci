@@ -8,12 +8,12 @@ export class InstrumentCommand extends Command {
   private config: LambdaConfigOptions = {
     functions: [],
     region: process.env.AWS_DEFAULT_REGION,
-    tracing: true,
+    tracing: 'true',
   }
   private configPath?: string
   private dryRun = false
   private extensionVersion?: string
-  private flushMetricsToLogs?: boolean
+  private flushMetricsToLogs?: string
   private forwarder?: string
   private functions: string[] = []
   private layerAWSAccount?: string
@@ -21,18 +21,19 @@ export class InstrumentCommand extends Command {
   private logLevel?: string
   private mergeXrayTraces?: boolean
   private region?: string
-  private tracing?: boolean
+  private tracing?: string
 
   public async execute() {
     const lambdaConfig = {lambda: this.config}
     this.config = (await parseConfigFile(lambdaConfig, this.configPath)).lambda
+
     const settings = this.getSettings()
     if (settings === undefined) {
       return 1
     }
 
-    const functions = this.configPath ? this.config.functions : this.functions
-    if (functions.length === 0) {
+    const hasSpecifiedFuntions = this.functions.length !== 0 || this.config.functions.length !== 0
+    if (!hasSpecifiedFuntions) {
       this.context.stdout.write('No functions specified for instrumentation.\n')
 
       return 1
@@ -149,9 +150,19 @@ export class InstrumentCommand extends Command {
       return
     }
 
-    const flushMetricsToLogs = this.flushMetricsToLogs ?? this.config.flushMetricsToLogs ?? true
+    if (!['true', 'false', undefined].includes(this.flushMetricsToLogs?.toLowerCase())) {
+      this.context.stdout.write('No valid value specified for flushMetricsToLogs.\n')
+      return
+    }
+
+    if (!['true', 'false', undefined].includes(this.tracing?.toLowerCase())) {
+      this.context.stdout.write('No valid value specified for tracing.\n')
+      return
+    }
+
+    const flushMetricsToLogs = this.flushMetricsToLogs ? this.flushMetricsToLogs === 'true' : this.config.flushMetricsToLogs ? this.config.flushMetricsToLogs === 'true' : true
     const mergeXrayTraces = this.mergeXrayTraces ?? this.config.mergeXrayTraces ?? false
-    const tracingEnabled = this.tracing ?? this.config.tracing ?? true
+    const tracingEnabled = this.tracing ? this.tracing === 'true' : this.config.tracing ? this.config.tracing === 'true' : true
     const logLevel = this.logLevel ?? this.config.logLevel
 
     return {
@@ -245,9 +256,9 @@ InstrumentCommand.addOption('region', Command.String('-r,--region'))
 InstrumentCommand.addOption('extensionVersion', Command.String('-e,--extensionVersion'))
 InstrumentCommand.addOption('layerVersion', Command.String('-v,--layerVersion'))
 InstrumentCommand.addOption('layerAWSAccount', Command.String('-a,--layerAccount', {hidden: true}))
-InstrumentCommand.addOption('tracing', Command.Boolean('--tracing'))
+InstrumentCommand.addOption('tracing', Command.String('--tracing'))
 InstrumentCommand.addOption('mergeXrayTraces', Command.Boolean('--mergeXrayTraces'))
-InstrumentCommand.addOption('flushMetricsToLogs', Command.Boolean('--flushMetricsToLogs'))
+InstrumentCommand.addOption('flushMetricsToLogs', Command.String('--flushMetricsToLogs'))
 InstrumentCommand.addOption('dryRun', Command.Boolean('-d,--dry'))
 InstrumentCommand.addOption('configPath', Command.String('--config'))
 InstrumentCommand.addOption('forwarder', Command.String('--forwarder'))
