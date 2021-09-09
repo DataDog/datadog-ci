@@ -200,7 +200,7 @@ To verify this command works as expected, you can trigger a test run and verify 
 export DATADOG_API_KEY='<API key>'
 export DATADOG_APP_KEY='<application key>'
 
-yarn launch synthetics run-tests --public-id abc-def-ghi
+yarn datadog-ci synthetics run-tests --public-id abc-def-ghi
 ```
 
 Successful output should look like this:
