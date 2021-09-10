@@ -406,6 +406,56 @@ describe('lambda', () => {
 
         expect(command['getSettings']()).toBeUndefined()
       })
+
+      test('converts string boolean from command line and config file correctly', () => {
+        process.env = {}
+        const command = createCommand()
+        const validSettings = {
+          extensionVersion: undefined,
+          flushMetricsToLogs: false,
+          forwardARN: undefined,
+          layerAWSAccount: undefined,
+          layerVersion: undefined,
+          logLevel: undefined,
+          mergeXrayTraces: false,
+          tracingEnabled: true,
+        }
+        command['config']['flushMetricsToLogs'] = 'False'
+        command['config']['tracing'] = 'TRUE'
+        expect(command['getSettings']()).toEqual(validSettings)
+
+        command['config']['flushMetricsToLogs'] = 'false'
+        command['config']['tracing'] = 'true'
+        expect(command['getSettings']()).toEqual(validSettings)
+
+        validSettings.flushMetricsToLogs = true
+        validSettings.tracingEnabled = false
+
+        command['flushMetricsToLogs'] = 'truE'
+        command['tracing'] = 'FALSE'
+        expect(command['getSettings']()).toEqual(validSettings)
+
+        command['flushMetricsToLogs'] = 'true'
+        command['tracing'] = 'false'
+        expect(command['getSettings']()).toEqual(validSettings)
+      })
+
+      test('aborts early if converting string boolean has an invalid value', () => {
+        process.env = {}
+        let command = createCommand()
+        command['config']['flushMetricsToLogs'] = 'NotBoolean'
+        command['config']['tracing'] = 'TRUE'
+        command['getSettings']()
+        let output = command.context.stdout.toString()
+        expect(output).toMatch('Invalid boolean specified for flushMetricsToLogs.\n')
+
+        command = createCommand()
+        command['config']['flushMetricsToLogs'] = 'FALSE'
+        command['config']['tracing'] = 'NotBoolean'
+        command['getSettings']()
+        output = command.context.stdout.toString()
+        expect(output).toMatch('Invalid boolean specified for tracing.\n')
+      })
     })
 
     describe('collectFunctionsByRegion', () => {

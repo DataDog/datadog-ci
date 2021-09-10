@@ -118,6 +118,10 @@ export class InstrumentCommand extends Command {
     return groups
   }
 
+  private convertStringBooleanToBoolean(fallback: boolean, value?: string, configValue?: string): boolean {
+    return value ? value.toLowerCase() === 'true' : configValue ? configValue.toLowerCase() === 'true' : fallback
+  }
+
   private getRegion(functionARN: string) {
     const [, , , region] = functionARN.split(':')
 
@@ -150,19 +154,27 @@ export class InstrumentCommand extends Command {
       return
     }
 
-    if (!['true', 'false', undefined].includes(this.flushMetricsToLogs?.toLowerCase())) {
-      this.context.stdout.write('No valid value specified for flushMetricsToLogs.\n')
+    if (
+      !['true', 'false', undefined].includes(
+        this.flushMetricsToLogs?.toLowerCase() ?? this.config.flushMetricsToLogs?.toLowerCase()
+      )
+    ) {
+      this.context.stdout.write('Invalid boolean specified for flushMetricsToLogs.\n')
 
       return
     }
 
-    if (!['true', 'false', undefined].includes(this.tracing?.toLowerCase())) {
-      this.context.stdout.write('No valid value specified for tracing.\n')
+    if (!['true', 'false', undefined].includes(this.tracing?.toLowerCase() ?? this.config.tracing?.toLowerCase())) {
+      this.context.stdout.write('Invalid boolean specified for tracing.\n')
 
       return
     }
 
-    const flushMetricsToLogs = this.convertStringBooleanToBoolean(true, this.flushMetricsToLogs, this.config.flushMetricsToLogs)
+    const flushMetricsToLogs = this.convertStringBooleanToBoolean(
+      true,
+      this.flushMetricsToLogs,
+      this.config.flushMetricsToLogs
+    )
     const mergeXrayTraces = this.mergeXrayTraces ?? this.config.mergeXrayTraces ?? false
     const tracingEnabled = this.convertStringBooleanToBoolean(true, this.tracing, this.config.tracing)
     const logLevel = this.logLevel ?? this.config.logLevel
@@ -249,14 +261,6 @@ export class InstrumentCommand extends Command {
         )
       }
     }
-  }
-
-  private convertStringBooleanToBoolean(fallback: boolean, value?: string, configValue?: string): boolean {
-    return value
-    ? value.toLowerCase() === 'true'
-    : configValue
-    ? configValue.toLowerCase() === 'true'
-    : fallback
   }
 }
 
