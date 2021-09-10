@@ -7,6 +7,8 @@ import * as fs from 'fs'
 import {Cli} from 'clipanion/lib/advanced'
 import path from 'path'
 import {InstrumentCommand} from '../instrument'
+import { InstrumentationSettings } from '../function'
+import { LambdaConfigOptions } from '../interfaces'
 // tslint:disable-next-line
 const {version} = require(path.join(__dirname, '../../../../package.json'))
 
@@ -410,10 +412,10 @@ describe('lambda', () => {
       test('converts string boolean from command line and config file correctly', () => {
         process.env = {}
         const command = createCommand()
-        const validSettings = {
+        const validSettings: InstrumentationSettings = {
           extensionVersion: undefined,
           flushMetricsToLogs: false,
-          forwardARN: undefined,
+          forwarderARN: undefined,
           layerAWSAccount: undefined,
           layerVersion: undefined,
           logLevel: undefined,
@@ -421,40 +423,49 @@ describe('lambda', () => {
           tracingEnabled: true,
         }
         command['config']['flushMetricsToLogs'] = 'False'
+        command['config']['mergeXrayTraces'] = 'falSE'
         command['config']['tracing'] = 'TRUE'
+       
         expect(command['getSettings']()).toEqual(validSettings)
 
         command['config']['flushMetricsToLogs'] = 'false'
+        command['config']['mergeXrayTraces'] = 'false'
         command['config']['tracing'] = 'true'
         expect(command['getSettings']()).toEqual(validSettings)
 
         validSettings.flushMetricsToLogs = true
+        validSettings.mergeXrayTraces = true
         validSettings.tracingEnabled = false
 
         command['flushMetricsToLogs'] = 'truE'
+        command['mergeXrayTraces'] = 'TRUe'
         command['tracing'] = 'FALSE'
         expect(command['getSettings']()).toEqual(validSettings)
 
         command['flushMetricsToLogs'] = 'true'
+        command['mergeXrayTraces'] = 'true'
         command['tracing'] = 'false'
         expect(command['getSettings']()).toEqual(validSettings)
       })
 
       test('aborts early if converting string boolean has an invalid value', () => {
         process.env = {}
-        let command = createCommand()
-        command['config']['flushMetricsToLogs'] = 'NotBoolean'
-        command['config']['tracing'] = 'TRUE'
-        command['getSettings']()
-        let output = command.context.stdout.toString()
-        expect(output).toMatch('Invalid boolean specified for flushMetricsToLogs.\n')
+        const stringBooleans: (keyof Omit<LambdaConfigOptions, 'functions'>)[] = ['flushMetricsToLogs', 'mergeXrayTraces', 'tracing']
+        for (const option of stringBooleans) {
+          let command = createCommand()
+          command['config'][option] = 'NotBoolean'
+          command['getSettings']()
 
-        command = createCommand()
-        command['config']['flushMetricsToLogs'] = 'FALSE'
-        command['config']['tracing'] = 'NotBoolean'
-        command['getSettings']()
-        output = command.context.stdout.toString()
-        expect(output).toMatch('Invalid boolean specified for tracing.\n')
+          let output = command.context.stdout.toString()
+          expect(output).toMatch(`Invalid boolean specified for ${option}.\n`)
+
+          command = createCommand()
+          command[option] = 'NotBoolean'
+          command['getSettings']()
+
+          output = command.context.stdout.toString()
+          expect(output).toMatch(`Invalid boolean specified for ${option}.\n`)
+        }
       })
     })
 
