@@ -6,9 +6,9 @@ import * as fs from 'fs'
 
 import {Cli} from 'clipanion/lib/advanced'
 import path from 'path'
+import {InstrumentationSettings} from '../function'
 import {InstrumentCommand} from '../instrument'
-import { InstrumentationSettings } from '../function'
-import { LambdaConfigOptions } from '../interfaces'
+import {LambdaConfigOptions} from '../interfaces'
 // tslint:disable-next-line
 const {version} = require(path.join(__dirname, '../../../../package.json'))
 
@@ -425,7 +425,7 @@ describe('lambda', () => {
         command['config']['flushMetricsToLogs'] = 'False'
         command['config']['mergeXrayTraces'] = 'falSE'
         command['config']['tracing'] = 'TRUE'
-       
+
         expect(command['getSettings']()).toEqual(validSettings)
 
         command['config']['flushMetricsToLogs'] = 'false'
@@ -450,7 +450,11 @@ describe('lambda', () => {
 
       test('aborts early if converting string boolean has an invalid value', () => {
         process.env = {}
-        const stringBooleans: (keyof Omit<LambdaConfigOptions, 'functions'>)[] = ['flushMetricsToLogs', 'mergeXrayTraces', 'tracing']
+        const stringBooleans: (keyof Omit<LambdaConfigOptions, 'functions'>)[] = [
+          'flushMetricsToLogs',
+          'mergeXrayTraces',
+          'tracing',
+        ]
         for (const option of stringBooleans) {
           let command = createCommand()
           command['config'][option] = 'NotBoolean'
