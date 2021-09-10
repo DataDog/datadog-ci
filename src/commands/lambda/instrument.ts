@@ -154,20 +154,17 @@ export class InstrumentCommand extends Command {
       return
     }
 
-    if (
-      !['true', 'false', undefined].includes(
-        this.flushMetricsToLogs?.toLowerCase() ?? this.config.flushMetricsToLogs?.toLowerCase()
-      )
-    ) {
-      this.context.stdout.write('Invalid boolean specified for flushMetricsToLogs.\n')
-
-      return
+    const stringBooleans: {[key: string]: string | undefined} = {
+      flushMetricsToLogs: this.flushMetricsToLogs?.toLowerCase() ?? this.config.flushMetricsToLogs?.toLowerCase(),
+      tracing: this.tracing?.toLowerCase() ?? this.config.tracing?.toLowerCase(),
     }
 
-    if (!['true', 'false', undefined].includes(this.tracing?.toLowerCase() ?? this.config.tracing?.toLowerCase())) {
-      this.context.stdout.write('Invalid boolean specified for tracing.\n')
+    for (const [stringBoolean, value] of Object.entries(stringBooleans)) {
+      if (!['true', 'false', undefined].includes(value)) {
+        this.context.stdout.write(`Invalid boolean specified for ${stringBoolean}.\n`)
 
-      return
+        return
+      }
     }
 
     const flushMetricsToLogs = this.convertStringBooleanToBoolean(
