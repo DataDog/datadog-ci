@@ -19,7 +19,7 @@ export class InstrumentCommand extends Command {
   private layerAWSAccount?: string
   private layerVersion?: string
   private logLevel?: string
-  private mergeXrayTraces?: boolean
+  private mergeXrayTraces?: string
   private region?: string
   private tracing?: string
 
@@ -156,6 +156,7 @@ export class InstrumentCommand extends Command {
 
     const stringBooleans: {[key: string]: string | undefined} = {
       flushMetricsToLogs: this.flushMetricsToLogs?.toLowerCase() ?? this.config.flushMetricsToLogs?.toLowerCase(),
+      mergeXrayTraces: this.mergeXrayTraces?.toLowerCase() ?? this.config.mergeXrayTraces?.toLowerCase(),
       tracing: this.tracing?.toLowerCase() ?? this.config.tracing?.toLowerCase(),
     }
 
@@ -172,7 +173,7 @@ export class InstrumentCommand extends Command {
       this.flushMetricsToLogs,
       this.config.flushMetricsToLogs
     )
-    const mergeXrayTraces = this.mergeXrayTraces ?? this.config.mergeXrayTraces ?? false
+    const mergeXrayTraces = this.convertStringBooleanToBoolean(false, this.mergeXrayTraces, this.config.mergeXrayTraces)
     const tracingEnabled = this.convertStringBooleanToBoolean(true, this.tracing, this.config.tracing)
     const logLevel = this.logLevel ?? this.config.logLevel
 
@@ -268,7 +269,7 @@ InstrumentCommand.addOption('extensionVersion', Command.String('-e,--extensionVe
 InstrumentCommand.addOption('layerVersion', Command.String('-v,--layerVersion'))
 InstrumentCommand.addOption('layerAWSAccount', Command.String('-a,--layerAccount', {hidden: true}))
 InstrumentCommand.addOption('tracing', Command.String('--tracing'))
-InstrumentCommand.addOption('mergeXrayTraces', Command.Boolean('--mergeXrayTraces'))
+InstrumentCommand.addOption('mergeXrayTraces', Command.String('--mergeXrayTraces'))
 InstrumentCommand.addOption('flushMetricsToLogs', Command.String('--flushMetricsToLogs'))
 InstrumentCommand.addOption('dryRun', Command.Boolean('-d,--dry'))
 InstrumentCommand.addOption('configPath', Command.String('--config'))
