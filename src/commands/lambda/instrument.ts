@@ -162,17 +162,9 @@ export class InstrumentCommand extends Command {
       return
     }
 
-    const flushMetricsToLogs = this.flushMetricsToLogs
-      ? this.flushMetricsToLogs.toLowerCase() === 'true'
-      : this.config.flushMetricsToLogs
-      ? this.config.flushMetricsToLogs.toLowerCase() === 'true'
-      : true
+    const flushMetricsToLogs = this.convertStringBooleanToBoolean(true, this.flushMetricsToLogs, this.config.flushMetricsToLogs)
     const mergeXrayTraces = this.mergeXrayTraces ?? this.config.mergeXrayTraces ?? false
-    const tracingEnabled = this.tracing
-      ? this.tracing === 'true'
-      : this.config.tracing
-      ? this.config.tracing === 'true'
-      : true
+    const tracingEnabled = this.convertStringBooleanToBoolean(true, this.tracing, this.config.tracing)
     const logLevel = this.logLevel ?? this.config.logLevel
 
     return {
@@ -257,6 +249,14 @@ export class InstrumentCommand extends Command {
         )
       }
     }
+  }
+
+  private convertStringBooleanToBoolean(fallback: boolean, value?: string, configValue?: string): boolean {
+    return value
+    ? value.toLowerCase() === 'true'
+    : configValue
+    ? configValue.toLowerCase() === 'true'
+    : fallback
   }
 }
 
