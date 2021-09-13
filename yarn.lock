@@ -3958,7 +3958,7 @@ proxy-from-env@^1.0.0:
   resolved "https://registry.npmjs.org/proxy-from-env/-/proxy-from-env-1.1.0.tgz"
   integrity sha512-D+zkORCbA9f1tdWRK0RaCR3GPv50cMxcrz4X8k5LTSUD1Dkw47mKJEZQNunItRTkWwgtaUSo1RVFRIG9ZXiFYg==
 
-proxy@^1.0.2:
+proxy@1.0.2:
   version "1.0.2"
   resolved "https://registry.yarnpkg.com/proxy/-/proxy-1.0.2.tgz#e0cfbe11c0a7a8b238fd2d7134de4e2867578e7f"
   integrity sha512-KNac2ueWRpjbUh77OAFPZuNdfEqNynm9DD4xHT14CccGpW8wKZwEkN0yjlb7X9G9Z9F55N0Q+1z+WfgAhwYdzQ==
