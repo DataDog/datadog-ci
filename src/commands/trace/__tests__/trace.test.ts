@@ -36,5 +36,20 @@ describe('trace', () => {
         'circleci',
       ])
     })
+
+    test('should correctly detect the github environment', () => {
+      process.env = {
+        GITHUB_ACTIONS: 'true',
+        GITHUB_RUN_ID: '123456789',
+        NON_CIRCLE_ENV: 'bar',
+      }
+      const command = new TraceCommand()
+      expect(command['getCIEnvVars']()).toEqual([
+        {
+          GITHUB_RUN_ID: '123456789',
+        },
+        'github',
+      ])
+    })
   })
 })

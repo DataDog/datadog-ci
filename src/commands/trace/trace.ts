@@ -5,7 +5,7 @@ import crypto from 'crypto'
 import os from 'os'
 import {parseTags} from '../../helpers/tags'
 import {apiConstructor} from './api'
-import {APIHelper, CIRCLECI, Provider, SUPPORTED_PROVIDERS} from './interfaces'
+import {APIHelper, CIRCLECI, GITHUB Provider, SUPPORTED_PROVIDERS} from './interfaces'
 
 // We use 127 as exit code for invalid commands since that is what *sh terminals return
 const BAD_COMMAND_EXIT_CODE = 127
@@ -104,6 +104,21 @@ export class TraceCommand extends Command {
           'CIRCLE_WORKFLOW_ID',
         ]),
         CIRCLECI,
+      ]
+    }
+    if (process.env.GITHUB_ACTIONS || process.env.GITHUB_ACTION) {
+      return [
+        this.getEnvironmentVars([
+          'GITHUB_RUN_ID',
+          'GITHUB_WORKFLOW',
+          'GITHUB_RUN_NUMBER',
+          'GITHUB_WORKSPACE',
+          'GITHUB_HEAD_REF',
+          'GITHUB_REF',
+          'GITHUB_SHA',
+          'GITHUB_REPOSITORY',
+        ]),
+        GITHUB,
       ]
     }
     const errorMsg = `Cannot detect any supported CI Provider. This command only works if run as part of your CI. Supported providers: ${SUPPORTED_PROVIDERS}.`
