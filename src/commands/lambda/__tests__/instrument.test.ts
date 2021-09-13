@@ -6,7 +6,9 @@ import * as fs from 'fs'
 
 import {Cli} from 'clipanion/lib/advanced'
 import path from 'path'
+import {InstrumentationSettings} from '../function'
 import {InstrumentCommand} from '../instrument'
+import {LambdaConfigOptions} from '../interfaces'
 // tslint:disable-next-line
 const {version} = require(path.join(__dirname, '../../../../package.json'))
 
@@ -224,7 +226,6 @@ describe('lambda', () => {
 
         process.env = {}
         const command = createCommand()
-        command['configPath'] = 'someConfigPath.json'
         command['config']['layerVersion'] = '60'
         command['config']['extensionVersion'] = '10'
         command['config']['region'] = 'ap-southeast-1'
@@ -321,7 +322,6 @@ describe('lambda', () => {
 
         process.env = {}
         const command = createCommand()
-        command['configPath'] = 'someConfigPath.json'
         command['config']['layerVersion'] = '60'
         command['config']['extensionVersion'] = '10'
         command['config']['region'] = 'ap-southeast-1'
@@ -335,13 +335,13 @@ describe('lambda', () => {
       test('uses config file settings', () => {
         process.env = {}
         const command = createCommand()
-        command['config']['flushMetricsToLogs'] = false
+        command['config']['flushMetricsToLogs'] = 'false'
         command['config']['forwarder'] = 'my-forwarder'
         command['config']['layerVersion'] = '2'
         command['config']['extensionVersion'] = '6'
         command['config']['layerAWSAccount'] = 'another-account'
-        command['config']['mergeXrayTraces'] = false
-        command['config']['tracing'] = false
+        command['config']['mergeXrayTraces'] = 'false'
+        command['config']['tracing'] = 'false'
         command['config']['logLevel'] = 'debug'
 
         expect(command['getSettings']()).toEqual({
@@ -365,12 +365,12 @@ describe('lambda', () => {
         command['config']['layerVersion'] = '2'
         command['layerAWSAccount'] = 'my-account'
         command['config']['layerAWSAccount'] = 'another-account'
-        command['mergeXrayTraces'] = true
-        command['config']['mergeXrayTraces'] = false
-        command['flushMetricsToLogs'] = false
-        command['config']['flushMetricsToLogs'] = true
-        command['tracing'] = true
-        command['config']['tracing'] = false
+        command['mergeXrayTraces'] = 'true'
+        command['config']['mergeXrayTraces'] = 'false'
+        command['flushMetricsToLogs'] = 'false'
+        command['config']['flushMetricsToLogs'] = 'true'
+        command['tracing'] = 'true'
+        command['config']['tracing'] = 'false'
         command['logLevel'] = 'debug'
         command['config']['logLevel'] = 'info'
 
@@ -407,6 +407,69 @@ describe('lambda', () => {
         command['extensionVersion'] = 'abd'
 
         expect(command['getSettings']()).toBeUndefined()
+      })
+
+      test('converts string boolean from command line and config file correctly', () => {
+        process.env = {}
+        const command = createCommand()
+        const validSettings: InstrumentationSettings = {
+          extensionVersion: undefined,
+          flushMetricsToLogs: false,
+          forwarderARN: undefined,
+          layerAWSAccount: undefined,
+          layerVersion: undefined,
+          logLevel: undefined,
+          mergeXrayTraces: false,
+          tracingEnabled: true,
+        }
+        command['config']['flushMetricsToLogs'] = 'False'
+        command['config']['mergeXrayTraces'] = 'falSE'
+        command['config']['tracing'] = 'TRUE'
+
+        expect(command['getSettings']()).toEqual(validSettings)
+
+        command['config']['flushMetricsToLogs'] = 'false'
+        command['config']['mergeXrayTraces'] = 'false'
+        command['config']['tracing'] = 'true'
+        expect(command['getSettings']()).toEqual(validSettings)
+
+        validSettings.flushMetricsToLogs = true
+        validSettings.mergeXrayTraces = true
+        validSettings.tracingEnabled = false
+
+        command['flushMetricsToLogs'] = 'truE'
+        command['mergeXrayTraces'] = 'TRUe'
+        command['tracing'] = 'FALSE'
+        expect(command['getSettings']()).toEqual(validSettings)
+
+        command['flushMetricsToLogs'] = 'true'
+        command['mergeXrayTraces'] = 'true'
+        command['tracing'] = 'false'
+        expect(command['getSettings']()).toEqual(validSettings)
+      })
+
+      test('aborts early if converting string boolean has an invalid value', () => {
+        process.env = {}
+        const stringBooleans: (keyof Omit<LambdaConfigOptions, 'functions'>)[] = [
+          'flushMetricsToLogs',
+          'mergeXrayTraces',
+          'tracing',
+        ]
+        for (const option of stringBooleans) {
+          let command = createCommand()
+          command['config'][option] = 'NotBoolean'
+          command['getSettings']()
+
+          let output = command.context.stdout.toString()
+          expect(output).toMatch(`Invalid boolean specified for ${option}.\n`)
+
+          command = createCommand()
+          command[option] = 'NotBoolean'
+          command['getSettings']()
+
+          output = command.context.stdout.toString()
+          expect(output).toMatch(`Invalid boolean specified for ${option}.\n`)
+        }
       })
     })
 

@@ -1,12 +1,12 @@
 export interface LambdaConfigOptions {
   extensionVersion?: string
-  flushMetricsToLogs?: boolean
+  flushMetricsToLogs?: string
   forwarder?: string
   functions: string[]
   layerAWSAccount?: string
   layerVersion?: string
   logLevel?: string
-  mergeXrayTraces?: boolean
+  mergeXrayTraces?: string
   region?: string
-  tracing?: boolean
+  tracing?: string
 }
