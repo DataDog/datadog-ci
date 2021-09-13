@@ -27,6 +27,7 @@ glob,import,ISC,Copyright (c) Isaac Z. Schlueter and Contributors
 jest,dev,MIT,Copyright (c) Facebook, Inc. and its affiliates.
 jest-environment-node,dev,MIT,Copyright (c) Facebook, Inc. and its affiliates.
 prettier,dev,MIT,Copyright © James Long and contributors
+proxy,dev,MIT,Copyright (c) 2013 Nathan Rajlich <nathan@tootallnate.net>
 proxy-agent,import,MIT,Copyright (c) 2013 Nathan Rajlich <nathan@tootallnate.net>
 simple-git,import,MIT,Copyright (c) 2015 Steve King
 ssh2,import,MIT,Copyright (c) Brian White

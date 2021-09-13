@@ -1,4 +1,4 @@
-import {parseTags} from '../utils'
+import {parseTags} from '../tags'
 
 describe('parseTags', () => {
   test('falls back to empty object if invalid format', () => {

@@ -169,12 +169,10 @@ export const getStrictestExecutionRule = (configRule: ExecutionRule, testRule?: 
   return ExecutionRule.BLOCKING
 }
 
-export const hasResultPassed = (result: Result, failOnCriticalErrors: boolean, failOnTimeout: boolean): boolean => {
-  if (result.unhealthy && !failOnCriticalErrors) {
-    return true
-  }
+export const isCriticalError = (result: Result): boolean => result.unhealthy || result.error === 'Endpoint Failure'
 
-  if (result.error === 'Endpoint Failure' && !failOnCriticalErrors) {
+export const hasResultPassed = (result: Result, failOnCriticalErrors: boolean, failOnTimeout: boolean): boolean => {
+  if (isCriticalError(result) && !failOnCriticalErrors) {
     return true
   }
 
@@ -426,7 +424,7 @@ export const getReporter = (reporters: Reporter[]): MainReporter => ({
 export const getTestsToTrigger = async (api: APIHelper, triggerConfigs: TriggerConfig[], reporter: MainReporter) => {
   const overriddenTestsToTrigger: TestPayload[] = []
   const errorMessages: string[] = []
-  const summary: Summary = {failed: 0, notFound: 0, passed: 0, skipped: 0}
+  const summary: Summary = {criticalErrors: 0, failed: 0, notFound: 0, passed: 0, skipped: 0, timedOut: 0}
 
   const tests = await Promise.all(
     triggerConfigs.map(async ({config, id}) => {

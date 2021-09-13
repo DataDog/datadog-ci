@@ -17,10 +17,11 @@ import {
   renderRetriedUpload,
   renderSuccessfulCommand,
 } from './renderer'
-import {getBaseIntakeUrl, parseTags} from './utils'
+import {getBaseIntakeUrl} from './utils'
 
 import {getCISpanTags} from '../../helpers/ci'
 import {getGitMetadata} from '../../helpers/git'
+import {parseTags} from '../../helpers/tags'
 import {getUserGitMetadata} from '../../helpers/user-provided-git'
 import {buildPath} from '../../helpers/utils'
 

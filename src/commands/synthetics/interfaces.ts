@@ -40,6 +40,10 @@ export interface Result {
   errorCode?: string
   errorMessage?: string
   eventType: string
+  failure?: {
+    code: string
+    message: string
+  }
   passed: boolean
   stepDetails: Step[]
   timings?: Timings
@@ -250,10 +254,12 @@ export interface Suite {
 }
 
 export interface Summary {
+  criticalErrors: number
   failed: number
   notFound: number
   passed: number
   skipped: number
+  timedOut: number
 }
 
 export interface TestSearchResult {
