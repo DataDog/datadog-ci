@@ -151,7 +151,8 @@ describe('utils', () => {
         {executionRule: ExecutionRule.BLOCKING, public_id: '123-456-789'},
         {executionRule: ExecutionRule.SKIPPED, public_id: 'ski-ppe-d01'},
       ])
-      expect(summary).toEqual({passed: 0, failed: 0, skipped: 1, notFound: 1})
+
+      expect(summary).toEqual({criticalErrors: 0, failed: 0, notFound: 1, passed: 0, skipped: 1, timedOut: 0})
     })
 
     test('no tests triggered throws an error', async () => {

@@ -19,7 +19,15 @@ import {
 } from './interfaces'
 import {DefaultReporter} from './reporters/default'
 import {Tunnel} from './tunnel'
-import {getReporter, getSuites, getTestsToTrigger, hasTestSucceeded, runTests, waitForResults} from './utils'
+import {
+  getReporter,
+  getSuites,
+  getTestsToTrigger,
+  hasTestSucceeded,
+  isCriticalError,
+  runTests,
+  waitForResults,
+} from './utils'
 
 export const DEFAULT_COMMAND_CONFIG: CommandConfig = {
   apiKey: '',
@@ -213,6 +221,27 @@ export class RunTestCommand extends Command {
     let hasSucceeded = true // Determine if all the tests have succeeded
     for (const test of tests) {
       const testResults = results[test.public_id]
+      if (!this.config.failOnTimeout) {
+        if (!summary.timedOut) {
+          summary.timedOut = 0
+        }
+
+        const hasTimeout = testResults.some((pollResult) => pollResult.result.error === 'Timeout')
+        if (hasTimeout) {
+          summary.timedOut++
+        }
+      }
+
+      if (!this.config.failOnCriticalErrors) {
+        if (!summary.criticalErrors) {
+          summary.criticalErrors = 0
+        }
+        const hasCriticalErrors = testResults.some((pollResult) => isCriticalError(pollResult.result))
+        if (hasCriticalErrors) {
+          summary.criticalErrors++
+        }
+      }
+
       const passed = hasTestSucceeded(testResults, this.config.failOnCriticalErrors, this.config.failOnTimeout)
       if (passed) {
         summary.passed++
