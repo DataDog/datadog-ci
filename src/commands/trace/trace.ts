@@ -5,7 +5,7 @@ import crypto from 'crypto'
 import os from 'os'
 import {parseTags} from '../../helpers/tags'
 import {apiConstructor} from './api'
-import {APIHelper, CIRCLECI, GITHUB Provider, SUPPORTED_PROVIDERS} from './interfaces'
+import {APIHelper, CIRCLECI, GITHUB, Provider, SUPPORTED_PROVIDERS} from './interfaces'
 
 // We use 127 as exit code for invalid commands since that is what *sh terminals return
 const BAD_COMMAND_EXIT_CODE = 127
