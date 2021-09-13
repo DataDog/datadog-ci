@@ -1,8 +1,9 @@
 import {AxiosPromise, AxiosResponse} from 'axios'
 
 export const CIRCLECI = 'circleci'
+export const JENKINS = 'jenkins'
 
-export const SUPPORTED_PROVIDERS = [CIRCLECI] as const
+export const SUPPORTED_PROVIDERS = [CIRCLECI, JENKINS] as const
 export type Provider = typeof SUPPORTED_PROVIDERS[number]
 
 export interface Payload {
