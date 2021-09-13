@@ -36,5 +36,22 @@ describe('trace', () => {
         'circleci',
       ])
     })
+
+    test('should correctly detect the jenkins environment', () => {
+      process.env = {
+        DD_CUSTOM_TRACE_ID: 'abc',
+        JENKINS_HOME: '/root',
+        NON_JENKINS_ENV: 'bar',
+        WORKSPACE: 'def',
+      }
+      const command = new TraceCommand()
+      expect(command['getCIEnvVars']()).toEqual([
+        {
+          DD_CUSTOM_TRACE_ID: 'abc',
+          WORKSPACE: 'def',
+        },
+        'jenkins',
+      ])
+    })
   })
 })
