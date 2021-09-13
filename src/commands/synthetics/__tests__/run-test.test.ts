@@ -281,6 +281,68 @@ describe('run-test', () => {
       command['failOnCriticalErrors'] = true
       expect(await command.execute()).toBe(1)
     })
+
+    test('override locations with ENV variable', async () => {
+      jest.spyOn(ciUtils, 'parseConfigFile').mockImplementation(async (config, _) => config)
+      jest.spyOn(utils, 'getTestsToTrigger').mockReturnValue(
+        Promise.resolve({
+          overriddenTestsToTrigger: [
+            {public_id: 'publicId', executionRule: ExecutionRule.BLOCKING, locations: ['edge.us1.prod.dog']},
+          ],
+          summary: {criticalErrors: 0, passed: 0, failed: 0, skipped: 0, notFound: 0, timedOut: 0},
+          tests: [{options: {ci: {executionRule: ExecutionRule.BLOCKING}}, public_id: 'publicId'} as any],
+        })
+      )
+      
+      // throw to stop the test
+      const serverError = new Error('Server Error') as AxiosError
+      serverError.response = {data: {errors: ['Bad Gateway']}, status: 502} as AxiosResponse
+      serverError.config = {baseURL: 'baseURL', url: 'url'}
+      const triggerTests = jest.fn(() => {
+        throw serverError
+      })
+
+      const apiHelper = {
+        triggerTests,
+      }
+
+      const write = jest.fn()
+      const command = new RunTestCommand()
+      command.context = {stdout: {write}} as any
+      command['getApiHelper'] = (() => apiHelper) as any
+      command['publicIds'] = ['publicId']
+
+      expect(await command.execute()).toBe(0)
+      expect(triggerTests).toHaveBeenCalledWith(
+        expect.objectContaining({tests: [{executionRule: 'blocking', locations: [], public_id: 'publicId'}]})
+      )
+
+      process.env = {
+        DATADOG_LOCATIONS: 'edge.us2.prod.dog',
+      }
+      expect(await command.execute()).toBe(0)
+      expect(triggerTests).toHaveBeenCalledTimes(2)
+      expect(triggerTests).toHaveBeenNthCalledWith(
+        2,
+        expect.objectContaining({
+          tests: [{executionRule: 'blocking', locations: ['edge.us2.prod.dog'], public_id: 'publicId'}],
+        })
+      )
+
+      process.env = {
+        DATADOG_LOCATIONS: 'edge.us2.prod.dog;edge.us3.prod.dog',
+      }
+      expect(await command.execute()).toBe(0)
+      expect(triggerTests).toHaveBeenCalledTimes(3)
+      expect(triggerTests).toHaveBeenNthCalledWith(
+        3,
+        expect.objectContaining({
+          tests: [
+            {executionRule: 'blocking', locations: ['edge.us2.prod.dog', 'edge.us3.prod.dog'], public_id: 'publicId'},
+          ],
+        })
+      )
+    })
   })
 
   describe('getAppBaseURL', () => {

@@ -292,6 +292,7 @@ export interface CommandConfig {
   failOnCriticalErrors: boolean
   failOnTimeout: boolean
   files: string[]
+  locations: string[]
   global: ConfigOverride
   pollingTimeout: number
   proxy: ProxyConfiguration

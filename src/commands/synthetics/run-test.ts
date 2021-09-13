@@ -37,6 +37,7 @@ export const DEFAULT_COMMAND_CONFIG: CommandConfig = {
   failOnCriticalErrors: false,
   failOnTimeout: true,
   files: ['{,!(node_modules)/**/}*.synthetics.json'],
+  locations: [],
   global: {},
   pollingTimeout: 2 * 60 * 1000,
   proxy: {protocol: 'http'},
@@ -124,6 +125,11 @@ export class RunTestCommand extends Command {
       return safeExit(1)
     }
     const {tests, overriddenTestsToTrigger, summary} = testsToTriggerResult
+    if (this.config.locations) {
+      overriddenTestsToTrigger.forEach((overriddenTestToTrigger) => {
+        overriddenTestToTrigger.locations = this.config.locations
+      })
+    }
 
     // All tests have been skipped or are missing.
     if (!tests.length) {
@@ -349,6 +355,7 @@ export class RunTestCommand extends Command {
         apiKey: process.env.DATADOG_API_KEY,
         appKey: process.env.DATADOG_APP_KEY,
         datadogSite: process.env.DATADOG_SITE,
+        locations: process.env.DATADOG_LOCATIONS?.split(';'),
         subdomain: process.env.DATADOG_SUBDOMAIN,
       })
     )
