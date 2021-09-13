@@ -107,6 +107,19 @@ export class TraceCommand extends Command {
       ]
     }
     if (process.env.JENKINS_HOME) {
+      if (!process.env.DD_CUSTOM_TRACE_ID) {
+        this.context.stdout.write(
+          `${chalk.yellow.bold(
+            '[WARNING]'
+          )} Your Jenkins instance does not seem to be instrumented with the DataDog plugin.\n`
+        )
+        this.context.stdout.write(
+          'Please follow the instructions at https://docs.datadoghq.com/continuous_integration/setup_pipelines/jenkins/\n'
+        )
+
+        return [{}]
+      }
+
       return [
         this.getEnvironmentVars([
           'BUILD_ID',

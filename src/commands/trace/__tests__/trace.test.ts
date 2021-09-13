@@ -53,5 +53,16 @@ describe('trace', () => {
         'jenkins',
       ])
     })
+
+    test('should not detect the jenkins environment if it is not instrumented', () => {
+      process.env = {
+        // DD_CUSTOM_TRACE_ID: 'abc',
+        JENKINS_HOME: '/root',
+        NON_JENKINS_ENV: 'bar',
+        WORKSPACE: 'def',
+      }
+      const command = new TraceCommand()
+      expect(command['getCIEnvVars'].call({context: {stdout: {write: () => undefined}}})).toEqual([{}])
+    })
   })
 })
