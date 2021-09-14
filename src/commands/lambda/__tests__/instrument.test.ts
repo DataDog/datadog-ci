@@ -72,7 +72,25 @@ describe('lambda', () => {
         const context = createMockContext() as any
         const functionARN = 'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world'
         const code = await cli.run(
-          ['lambda', 'instrument', '-f', functionARN, '--dry', '--layerVersion', '10', '--logLevel', 'debug'],
+          [
+            'lambda',
+            'instrument',
+            '-f',
+            functionARN,
+            '--dry',
+            '--layerVersion',
+            '10',
+            '--logLevel',
+            'debug',
+            '--service',
+            'middletier',
+            '--env',
+            'staging',
+            '--version',
+            '0.2',
+            '--extra-tags',
+            'layer:api,team:intake',
+          ],
           context
         )
         const output = context.stdout.toString()
@@ -90,6 +108,10 @@ describe('lambda', () => {
                 \\"DD_TRACE_ENABLED\\": \\"true\\",
                 \\"DD_MERGE_XRAY_TRACES\\": \\"false\\",
                 \\"DD_FLUSH_TO_LOG\\": \\"true\\",
+                \\"DD_ENV\\": \\"staging\\",
+                \\"DD_SERVICE\\": \\"middletier\\",
+                \\"DD_VERSION\\": \\"0.2\\",
+                \\"DD_TAGS\\": \\"layer:api,team:intake\\",
                 \\"DD_LOG_LEVEL\\": \\"debug\\"
               }
             },
@@ -121,7 +143,23 @@ describe('lambda', () => {
         const functionARN = 'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world'
         process.env.DATADOG_API_KEY = '1234'
         const code = await cli.run(
-          ['lambda', 'instrument', '-f', functionARN, '--dry', '--extensionVersion', '6'],
+          [
+            'lambda',
+            'instrument',
+            '-f',
+            functionARN,
+            '--dry',
+            '--extensionVersion',
+            '6',
+            '--service',
+            'middletier',
+            '--env',
+            'staging',
+            '--version',
+            '0.2',
+            '--extra-tags',
+            'layer:api,team:intake',
+          ],
           context
         )
         const output = context.stdout.toString()
@@ -139,7 +177,11 @@ describe('lambda', () => {
                 \\"DD_SITE\\": \\"datadoghq.com\\",
                 \\"DD_TRACE_ENABLED\\": \\"true\\",
                 \\"DD_MERGE_XRAY_TRACES\\": \\"false\\",
-                \\"DD_FLUSH_TO_LOG\\": \\"true\\"
+                \\"DD_FLUSH_TO_LOG\\": \\"true\\",
+                \\"DD_ENV\\": \\"staging\\",
+                \\"DD_SERVICE\\": \\"middletier\\",
+                \\"DD_VERSION\\": \\"0.2\\",
+                \\"DD_TAGS\\": \\"layer:api,team:intake\\"
               }
             },
             \\"Layers\\": [
@@ -212,7 +254,21 @@ describe('lambda', () => {
         ;(Lambda as any).mockImplementation(() => makeMockLambda({}))
         const cli = makeCli()
         const context = createMockContext() as any
-        const code = await cli.run(['lambda', 'instrument', '--layerVersion', '10'], context)
+        const code = await cli.run(
+          [
+            'lambda',
+            'instrument',
+            '--layerVersion',
+            '10',
+            '--service',
+            'middletier',
+            '--env',
+            'staging',
+            '--version',
+            '0.2',
+          ],
+          context
+        )
         const output = context.stdout.toString()
         expect(code).toBe(1)
         expect(output).toMatchInlineSnapshot(`
@@ -229,6 +285,10 @@ describe('lambda', () => {
         command['config']['layerVersion'] = '60'
         command['config']['extensionVersion'] = '10'
         command['config']['region'] = 'ap-southeast-1'
+        command['config']['service'] = 'middletier'
+        command['config']['environment'] = 'staging'
+        command['config']['version'] = '0.2'
+
         await command['execute']()
         const output = command.context.stdout.toString()
         expect(output).toMatchInlineSnapshot(`
@@ -243,7 +303,23 @@ describe('lambda', () => {
 
         const cli = makeCli()
         const context = createMockContext() as any
-        const code = await cli.run(['lambda', 'instrument', '--function', 'my-func', '--layerVersion', '10'], context)
+        const code = await cli.run(
+          [
+            'lambda',
+            'instrument',
+            '--function',
+            'my-func',
+            '--layerVersion',
+            '10',
+            '--service',
+            'middletier',
+            '--env',
+            'staging',
+            '--version',
+            '0.2',
+          ],
+          context
+        )
 
         const output = context.stdout.toString()
         expect(code).toBe(1)
@@ -277,6 +353,12 @@ describe('lambda', () => {
             'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world',
             '--layerVersion',
             '10',
+            '--service',
+            'middletier',
+            '--env',
+            'staging',
+            '--version',
+            '0.2',
           ],
           context
         )
@@ -306,6 +388,12 @@ describe('lambda', () => {
             '6',
             '--region',
             'us-east-1',
+            '--service',
+            'middletier',
+            '--env',
+            'staging',
+            '--version',
+            '0.2',
           ],
           context
         )
@@ -470,6 +558,36 @@ describe('lambda', () => {
           output = command.context.stdout.toString()
           expect(output).toMatch(`Invalid boolean specified for ${option}.\n`)
         }
+      })
+
+      test('warns if any of environment, service or version tags is not set', async () => {
+        ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({}))
+
+        process.env = {}
+        const command = createCommand()
+        command['config']['region'] = 'ap-southeast-1'
+        command['config']['functions'] = ['arn:aws:lambda:ap-southeast-1:123456789012:function:lambda-hello-world']
+        await command['getSettings']()
+        const output = command.context.stdout.toString()
+        expect(output).toMatch(
+          'No value found for the environment tag.\nNo value found for the service tag.\nNo value found for the version tag.\nIt is recommended to set tags, try to do it later.\n'
+        )
+      })
+
+      test('aborts early if extraTags do not comply with expected key:value list', async () => {
+        ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({}))
+
+        process.env = {}
+        const command = createCommand()
+        command['config']['region'] = 'ap-southeast-1'
+        command['config']['functions'] = ['arn:aws:lambda:ap-southeast-1:123456789012:function:lambda-hello-world']
+        command['config']['service'] = 'middletier'
+        command['config']['environment'] = 'staging'
+        command['config']['version'] = '0.2'
+        command['config']['extraTags'] = 'not-complying:illegal-chars-in-key,complies:valid-pair'
+        await command['getSettings']()
+        const output = command.context.stdout.toString()
+        expect(output).toMatch('Extra tags do not comply with the <key>:<value> array.\n')
       })
     })
 

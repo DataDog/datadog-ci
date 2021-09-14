@@ -6,6 +6,8 @@ import {
   CI_SITE_ENV_VAR,
   DD_LAMBDA_EXTENSION_LAYER_NAME,
   DEFAULT_LAYER_AWS_ACCOUNT,
+  ENVIRONMENT_ENV_VAR,
+  EXTRA_TAGS_ENV_VAR,
   FLUSH_TO_LOG_ENV_VAR,
   GOVCLOUD_LAYER_AWS_ACCOUNT,
   HANDLER_LOCATION,
@@ -15,8 +17,10 @@ import {
   MERGE_XRAY_TRACES_ENV_VAR,
   Runtime,
   RUNTIME_LAYER_LOOKUP,
+  SERVICE_ENV_VAR,
   SITE_ENV_VAR,
   TRACE_ENABLED_ENV_VAR,
+  VERSION_ENV_VAR,
 } from './constants'
 import {applyLogGroupConfig, calculateLogGroupUpdateRequest, LogGroupConfiguration} from './loggroup'
 import {applyTagConfig, calculateTagUpdateRequest, TagConfiguration} from './tags'
@@ -30,14 +34,18 @@ export interface FunctionConfiguration {
 }
 
 export interface InstrumentationSettings {
+  environment?: string
   extensionVersion?: number
+  extraTags?: string
   flushMetricsToLogs: boolean
   forwarderARN?: string
   layerAWSAccount?: string
   layerVersion?: number
   logLevel?: string
   mergeXrayTraces: boolean
+  service?: string
   tracingEnabled: boolean
+  version?: string
 }
 
 const MAX_LAMBDA_STATE_CHECKS = 3
@@ -249,6 +257,23 @@ export const calculateUpdateRequest = (
   if (oldEnvVars[FLUSH_TO_LOG_ENV_VAR] !== settings.flushMetricsToLogs.toString()) {
     needsUpdate = true
     changedEnvVars[FLUSH_TO_LOG_ENV_VAR] = settings.flushMetricsToLogs.toString()
+  }
+
+  if (settings.environment && oldEnvVars[ENVIRONMENT_ENV_VAR] !== settings.environment.toString()) {
+    needsUpdate = true
+    changedEnvVars[ENVIRONMENT_ENV_VAR] = settings.environment.toString()
+  }
+  if (settings.service && oldEnvVars[SERVICE_ENV_VAR] !== settings.service.toString()) {
+    needsUpdate = true
+    changedEnvVars[SERVICE_ENV_VAR] = settings.service.toString()
+  }
+  if (settings.version && oldEnvVars[VERSION_ENV_VAR] !== settings.version.toString()) {
+    needsUpdate = true
+    changedEnvVars[VERSION_ENV_VAR] = settings.version.toString()
+  }
+  if (settings.extraTags && oldEnvVars[EXTRA_TAGS_ENV_VAR] !== settings.extraTags.toString()) {
+    needsUpdate = true
+    changedEnvVars[EXTRA_TAGS_ENV_VAR] = settings.extraTags.toString()
   }
 
   const newEnvVars = {...oldEnvVars, ...changedEnvVars}

@@ -1,5 +1,7 @@
 export interface LambdaConfigOptions {
+  environment?: string
   extensionVersion?: string
+  extraTags?: string
   flushMetricsToLogs?: string
   forwarder?: string
   functions: string[]
@@ -8,5 +10,7 @@ export interface LambdaConfigOptions {
   logLevel?: string
   mergeXrayTraces?: string
   region?: string
+  service?: string
   tracing?: string
+  version?: string
 }
