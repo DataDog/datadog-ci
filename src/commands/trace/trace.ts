@@ -36,8 +36,8 @@ export class TraceCommand extends Command {
   }
 
   private name?: string
-
   private noFail?: boolean
+  private tags?: string[]
 
   public async execute() {
     if (!this.command || !this.command.length) {
@@ -65,6 +65,8 @@ export class TraceCommand extends Command {
     if (provider) {
       const api = this.getApiHelper()
       const commandStr = this.command.join(' ')
+      const envVarTags = this.config.envVarTags ? parseTags(this.config.envVarTags.split(',')) : {}
+      const cliTags = this.tags ? parseTags(this.tags) : {}
       await api.reportCustomSpan(
         {
           command: commandStr,
@@ -77,7 +79,10 @@ export class TraceCommand extends Command {
           is_error: exitCode !== 0,
           name: this.name ?? commandStr,
           start_time: startTime,
-          tags: this.config.envVarTags ? parseTags(this.config.envVarTags.split(',')) : {},
+          tags: {
+            ...cliTags,
+            ...envVarTags,
+          },
         },
         provider
       )
@@ -151,4 +156,5 @@ export class TraceCommand extends Command {
 TraceCommand.addPath('trace')
 TraceCommand.addOption('noFail', Command.Boolean('--no-fail'))
 TraceCommand.addOption('name', Command.String('--name'))
+TraceCommand.addOption('tags', Command.Array('--tags'))
 TraceCommand.addOption('command', Command.Rest({required: 1}))
