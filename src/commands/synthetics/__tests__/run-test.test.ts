@@ -287,7 +287,7 @@ describe('run-test', () => {
       jest.spyOn(utils, 'getTestsToTrigger').mockReturnValue(
         Promise.resolve({
           overriddenTestsToTrigger: [
-            {public_id: 'publicId', executionRule: ExecutionRule.BLOCKING, locations: ['edge.us1.prod.dog']},
+            {public_id: 'publicId', executionRule: ExecutionRule.BLOCKING, locations: ['aws:us-east-1']},
           ],
           summary: {criticalErrors: 0, passed: 0, failed: 0, skipped: 0, notFound: 0, timedOut: 0},
           tests: [{options: {ci: {executionRule: ExecutionRule.BLOCKING}}, public_id: 'publicId'} as any],
@@ -314,32 +314,32 @@ describe('run-test', () => {
 
       expect(await command.execute()).toBe(0)
       expect(triggerTests).toHaveBeenCalledWith(
-        expect.objectContaining({tests: [{executionRule: 'blocking', locations: ['edge.us1.prod.dog'], public_id: 'publicId'}]})
+        expect.objectContaining({
+          tests: [{executionRule: 'blocking', locations: ['aws:us-east-1'], public_id: 'publicId'}],
+        })
       )
 
       process.env = {
-        DATADOG_LOCATIONS: 'edge.us2.prod.dog',
+        DATADOG_SYNTHETICS_LOCATIONS: 'aws:us-east-2',
       }
       expect(await command.execute()).toBe(0)
       expect(triggerTests).toHaveBeenCalledTimes(2)
       expect(triggerTests).toHaveBeenNthCalledWith(
         2,
         expect.objectContaining({
-          tests: [{executionRule: 'blocking', locations: ['edge.us2.prod.dog'], public_id: 'publicId'}],
+          tests: [{executionRule: 'blocking', locations: ['aws:us-east-2'], public_id: 'publicId'}],
         })
       )
 
       process.env = {
-        DATADOG_LOCATIONS: 'edge.us2.prod.dog;edge.us3.prod.dog',
+        DATADOG_SYNTHETICS_LOCATIONS: 'aws:us-east-2;aws:us-east-3',
       }
       expect(await command.execute()).toBe(0)
       expect(triggerTests).toHaveBeenCalledTimes(3)
       expect(triggerTests).toHaveBeenNthCalledWith(
         3,
         expect.objectContaining({
-          tests: [
-            {executionRule: 'blocking', locations: ['edge.us2.prod.dog', 'edge.us3.prod.dog'], public_id: 'publicId'},
-          ],
+          tests: [{executionRule: 'blocking', locations: ['aws:us-east-2', 'aws:us-east-3'], public_id: 'publicId'}],
         })
       )
     })

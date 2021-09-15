@@ -355,7 +355,7 @@ export class RunTestCommand extends Command {
         apiKey: process.env.DATADOG_API_KEY,
         appKey: process.env.DATADOG_APP_KEY,
         datadogSite: process.env.DATADOG_SITE,
-        locations: process.env.DATADOG_LOCATIONS?.split(';'),
+        locations: process.env.DATADOG_SYNTHETICS_LOCATIONS?.split(';'),
         subdomain: process.env.DATADOG_SUBDOMAIN,
       })
     )
