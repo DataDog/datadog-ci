@@ -33,19 +33,22 @@ export interface FunctionConfiguration {
   updateRequest?: Lambda.UpdateFunctionConfigurationRequest
 }
 
-export interface InstrumentationSettings {
+interface InstrumentationTags {
   environment?: string
-  extensionVersion?: number
   extraTags?: string
+  service?: string
+  version?: string
+}
+
+export interface InstrumentationSettings extends InstrumentationTags {
+  extensionVersion?: number
   flushMetricsToLogs: boolean
   forwarderARN?: string
   layerAWSAccount?: string
   layerVersion?: number
   logLevel?: string
   mergeXrayTraces: boolean
-  service?: string
   tracingEnabled: boolean
-  version?: string
 }
 
 const MAX_LAMBDA_STATE_CHECKS = 3
@@ -246,34 +249,22 @@ export const calculateUpdateRequest = (
     needsUpdate = true
     changedEnvVars[SITE_ENV_VAR] = 'datadoghq.com'
   }
-  if (oldEnvVars[TRACE_ENABLED_ENV_VAR] !== settings.tracingEnabled.toString()) {
-    needsUpdate = true
-    changedEnvVars[TRACE_ENABLED_ENV_VAR] = settings.tracingEnabled.toString()
-  }
-  if (oldEnvVars[MERGE_XRAY_TRACES_ENV_VAR] !== settings.mergeXrayTraces.toString()) {
-    needsUpdate = true
-    changedEnvVars[MERGE_XRAY_TRACES_ENV_VAR] = settings.mergeXrayTraces.toString()
-  }
-  if (oldEnvVars[FLUSH_TO_LOG_ENV_VAR] !== settings.flushMetricsToLogs.toString()) {
-    needsUpdate = true
-    changedEnvVars[FLUSH_TO_LOG_ENV_VAR] = settings.flushMetricsToLogs.toString()
-  }
 
-  if (settings.environment && oldEnvVars[ENVIRONMENT_ENV_VAR] !== settings.environment.toString()) {
-    needsUpdate = true
-    changedEnvVars[ENVIRONMENT_ENV_VAR] = settings.environment.toString()
-  }
-  if (settings.service && oldEnvVars[SERVICE_ENV_VAR] !== settings.service.toString()) {
-    needsUpdate = true
-    changedEnvVars[SERVICE_ENV_VAR] = settings.service.toString()
-  }
-  if (settings.version && oldEnvVars[VERSION_ENV_VAR] !== settings.version.toString()) {
-    needsUpdate = true
-    changedEnvVars[VERSION_ENV_VAR] = settings.version.toString()
-  }
-  if (settings.extraTags && oldEnvVars[EXTRA_TAGS_ENV_VAR] !== settings.extraTags.toString()) {
-    needsUpdate = true
-    changedEnvVars[EXTRA_TAGS_ENV_VAR] = settings.extraTags.toString()
+  const environmentVarsTupleArray: [keyof InstrumentationSettings, string][] = [
+    ['environment', ENVIRONMENT_ENV_VAR],
+    ['extraTags', EXTRA_TAGS_ENV_VAR],
+    ['flushMetricsToLogs', FLUSH_TO_LOG_ENV_VAR],
+    ['mergeXrayTraces', MERGE_XRAY_TRACES_ENV_VAR],
+    ['service', SERVICE_ENV_VAR],
+    ['tracingEnabled', TRACE_ENABLED_ENV_VAR],
+    ['version', VERSION_ENV_VAR],
+  ]
+
+  for (const [key, environmentVar] of environmentVarsTupleArray) {
+    if (settings[key] !== undefined && oldEnvVars[environmentVar] !== settings[key]?.toString()) {
+      needsUpdate = true
+      changedEnvVars[environmentVar] = settings[key]!.toString()
+    }
   }
 
   const newEnvVars = {...oldEnvVars, ...changedEnvVars}

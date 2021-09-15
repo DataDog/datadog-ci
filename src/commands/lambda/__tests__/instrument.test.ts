@@ -105,13 +105,13 @@ describe('lambda', () => {
               \\"Variables\\": {
                 \\"DD_LAMBDA_HANDLER\\": \\"index.handler\\",
                 \\"DD_SITE\\": \\"datadoghq.com\\",
-                \\"DD_TRACE_ENABLED\\": \\"true\\",
-                \\"DD_MERGE_XRAY_TRACES\\": \\"false\\",
-                \\"DD_FLUSH_TO_LOG\\": \\"true\\",
                 \\"DD_ENV\\": \\"staging\\",
-                \\"DD_SERVICE\\": \\"middletier\\",
-                \\"DD_VERSION\\": \\"0.2\\",
                 \\"DD_TAGS\\": \\"layer:api,team:intake\\",
+                \\"DD_FLUSH_TO_LOG\\": \\"true\\",
+                \\"DD_MERGE_XRAY_TRACES\\": \\"false\\",
+                \\"DD_SERVICE\\": \\"middletier\\",
+                \\"DD_TRACE_ENABLED\\": \\"true\\",
+                \\"DD_VERSION\\": \\"0.2\\",
                 \\"DD_LOG_LEVEL\\": \\"debug\\"
               }
             },
@@ -175,13 +175,13 @@ describe('lambda', () => {
                 \\"DD_LAMBDA_HANDLER\\": \\"index.handler\\",
                 \\"DD_API_KEY\\": \\"1234\\",
                 \\"DD_SITE\\": \\"datadoghq.com\\",
-                \\"DD_TRACE_ENABLED\\": \\"true\\",
-                \\"DD_MERGE_XRAY_TRACES\\": \\"false\\",
-                \\"DD_FLUSH_TO_LOG\\": \\"true\\",
                 \\"DD_ENV\\": \\"staging\\",
+                \\"DD_TAGS\\": \\"layer:api,team:intake\\",
+                \\"DD_FLUSH_TO_LOG\\": \\"true\\",
+                \\"DD_MERGE_XRAY_TRACES\\": \\"false\\",
                 \\"DD_SERVICE\\": \\"middletier\\",
-                \\"DD_VERSION\\": \\"0.2\\",
-                \\"DD_TAGS\\": \\"layer:api,team:intake\\"
+                \\"DD_TRACE_ENABLED\\": \\"true\\",
+                \\"DD_VERSION\\": \\"0.2\\"
               }
             },
             \\"Layers\\": [
