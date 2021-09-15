@@ -203,7 +203,7 @@ export class InstrumentCommand extends Command {
     }
 
     const extraTags = this.extraTags?.toLowerCase() ?? this.config.extraTags?.toLowerCase()
-    if (extraTags && !this.sentenceMatchesRegEx(extraTags, EXTRA_TAGS_REG_EXP)) {
+    if (extraTags && !sentenceMatchesRegEx(extraTags, EXTRA_TAGS_REG_EXP)) {
       this.context.stdout.write('Extra tags do not comply with the <key>:<value> array.\n')
 
       return
@@ -296,11 +296,9 @@ export class InstrumentCommand extends Command {
       }
     }
   }
-
-  private sentenceMatchesRegEx(sentence: string, regex: RegExp) {
-    return sentence.match(regex)
-  }
 }
+
+export const sentenceMatchesRegEx = (sentence: string, regex: RegExp) => sentence.match(regex)
 
 InstrumentCommand.addPath('lambda', 'instrument')
 InstrumentCommand.addOption('functions', Command.Array('-f,--function'))
