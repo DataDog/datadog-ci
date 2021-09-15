@@ -56,7 +56,7 @@ describe('trace', () => {
 
     test('should not detect the jenkins environment if it is not instrumented', () => {
       process.env = {
-        // DD_CUSTOM_TRACE_ID: 'abc',
+        // DD_CUSTOM_TRACE_ID not defined to simulate a non-instrumented instance
         JENKINS_HOME: '/root',
         NON_JENKINS_ENV: 'bar',
         WORKSPACE: 'def',
