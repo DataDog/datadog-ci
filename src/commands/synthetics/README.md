@@ -14,7 +14,7 @@ export DATADOG_API_KEY="<API KEY>"
 export DATADOG_APP_KEY="<APPLICATION KEY>"
 
 # Passing to CLI
-datadog-ci synthetics <command> --apiKey "<API KEY>" --appKey "<APPLICATION KEY>"
+yarn datadog-ci synthetics <command> --apiKey "<API KEY>" --appKey "<APPLICATION KEY>"
 ```
 
 It is possible to configure the tool to use Datadog EU by defining the `DATADOG_SITE` environment variable to `datadoghq.eu`. By defaut the requests are sent to Datadog US.
@@ -89,13 +89,13 @@ The available command is:
 It accepts the `--public-id` (or shorthand `-p`) argument to trigger only the specified test. It can be set multiple times to run multiple tests:
 
 ```bash
-datadog-ci synthetics run-tests --public-id pub-lic-id1 --public-id pub-lic-id2
+yarn datadog-ci synthetics run-tests --public-id pub-lic-id1 --public-id pub-lic-id2
 ```
 
 It is also possible to trigger tests corresponding to a search query by using the flag `--search` (or shorthand `-s`). With this option, the global configuration overrides applies to all tests discovered with the search query.
 
 ```bash
-datadog-ci synthetics run-tests -s 'tag:e2e-tests' --config global.config.json
+yarn datadog-ci synthetics run-tests -s 'tag:e2e-tests' --config global.config.json
 ```
 
 You can use `--files` (shorthand `-f`) to override the global file selector.
@@ -104,7 +104,7 @@ It's particularely useful when you want to run multiple suites in parallel with 
 You can use `--failOnTimeout` (--no-failOnTimeout to sets the value to false) to make the CI fail (or pass) if one of the result exceed its test timeout.
 
 ```bash
-datadog-ci synthetics run-tests -f ./component-1/**/*.synthetics.json -f ./component-2/**/*.synthetics.json
+yarn datadog-ci synthetics run-tests -f ./component-1/**/*.synthetics.json -f ./component-2/**/*.synthetics.json
 ```
 
 ### Test files
@@ -200,7 +200,7 @@ To verify this command works as expected, you can trigger a test run and verify 
 export DATADOG_API_KEY='<API key>'
 export DATADOG_APP_KEY='<application key>'
 
-yarn launch synthetics run-tests --public-id abc-def-ghi
+yarn datadog-ci synthetics run-tests --public-id abc-def-ghi
 ```
 
 Successful output should look like this:

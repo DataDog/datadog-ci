@@ -8,20 +8,20 @@ export class InstrumentCommand extends Command {
   private config: LambdaConfigOptions = {
     functions: [],
     region: process.env.AWS_DEFAULT_REGION,
-    tracing: true,
+    tracing: 'true',
   }
   private configPath?: string
   private dryRun = false
   private extensionVersion?: string
-  private flushMetricsToLogs?: boolean
+  private flushMetricsToLogs?: string
   private forwarder?: string
   private functions: string[] = []
   private layerAWSAccount?: string
   private layerVersion?: string
   private logLevel?: string
-  private mergeXrayTraces?: boolean
+  private mergeXrayTraces?: string
   private region?: string
-  private tracing?: boolean
+  private tracing?: string
 
   public async execute() {
     const lambdaConfig = {lambda: this.config}
@@ -32,11 +32,13 @@ export class InstrumentCommand extends Command {
       return 1
     }
 
-    if (this.functions.length === 0) {
+    const hasSpecifiedFuntions = this.functions.length !== 0 || this.config.functions.length !== 0
+    if (!hasSpecifiedFuntions) {
       this.context.stdout.write('No functions specified for instrumentation.\n')
 
       return 1
     }
+
     const functionGroups = this.collectFunctionsByRegion()
     if (functionGroups === undefined) {
       return 1
@@ -116,6 +118,10 @@ export class InstrumentCommand extends Command {
     return groups
   }
 
+  private convertStringBooleanToBoolean(fallback: boolean, value?: string, configValue?: string): boolean {
+    return value ? value.toLowerCase() === 'true' : configValue ? configValue.toLowerCase() === 'true' : fallback
+  }
+
   private getRegion(functionARN: string) {
     const [, , , region] = functionARN.split(':')
 
@@ -148,9 +154,27 @@ export class InstrumentCommand extends Command {
       return
     }
 
-    const flushMetricsToLogs = this.flushMetricsToLogs ?? this.config.flushMetricsToLogs ?? true
-    const mergeXrayTraces = this.mergeXrayTraces ?? this.config.mergeXrayTraces ?? false
-    const tracingEnabled = this.tracing ?? this.config.tracing ?? true
+    const stringBooleans: {[key: string]: string | undefined} = {
+      flushMetricsToLogs: this.flushMetricsToLogs?.toLowerCase() ?? this.config.flushMetricsToLogs?.toLowerCase(),
+      mergeXrayTraces: this.mergeXrayTraces?.toLowerCase() ?? this.config.mergeXrayTraces?.toLowerCase(),
+      tracing: this.tracing?.toLowerCase() ?? this.config.tracing?.toLowerCase(),
+    }
+
+    for (const [stringBoolean, value] of Object.entries(stringBooleans)) {
+      if (!['true', 'false', undefined].includes(value)) {
+        this.context.stdout.write(`Invalid boolean specified for ${stringBoolean}.\n`)
+
+        return
+      }
+    }
+
+    const flushMetricsToLogs = this.convertStringBooleanToBoolean(
+      true,
+      this.flushMetricsToLogs,
+      this.config.flushMetricsToLogs
+    )
+    const mergeXrayTraces = this.convertStringBooleanToBoolean(false, this.mergeXrayTraces, this.config.mergeXrayTraces)
+    const tracingEnabled = this.convertStringBooleanToBoolean(true, this.tracing, this.config.tracing)
     const logLevel = this.logLevel ?? this.config.logLevel
 
     return {
@@ -244,9 +268,9 @@ InstrumentCommand.addOption('region', Command.String('-r,--region'))
 InstrumentCommand.addOption('extensionVersion', Command.String('-e,--extensionVersion'))
 InstrumentCommand.addOption('layerVersion', Command.String('-v,--layerVersion'))
 InstrumentCommand.addOption('layerAWSAccount', Command.String('-a,--layerAccount', {hidden: true}))
-InstrumentCommand.addOption('tracing', Command.Boolean('--tracing'))
-InstrumentCommand.addOption('mergeXrayTraces', Command.Boolean('--mergeXrayTraces'))
-InstrumentCommand.addOption('flushMetricsToLogs', Command.Boolean('--flushMetricsToLogs'))
+InstrumentCommand.addOption('tracing', Command.String('--tracing'))
+InstrumentCommand.addOption('mergeXrayTraces', Command.String('--mergeXrayTraces'))
+InstrumentCommand.addOption('flushMetricsToLogs', Command.String('--flushMetricsToLogs'))
 InstrumentCommand.addOption('dryRun', Command.Boolean('-d,--dry'))
 InstrumentCommand.addOption('configPath', Command.String('--config'))
 InstrumentCommand.addOption('forwarder', Command.String('--forwarder'))
