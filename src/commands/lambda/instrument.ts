@@ -202,7 +202,7 @@ export class InstrumentCommand extends Command {
       this.context.stdout.write('It is recommended to set tags, try to do it later.\n')
     }
 
-    const extraTags = this.extraTags ?? this.config.extraTags
+    const extraTags = this.extraTags?.toLowerCase() ?? this.config.extraTags?.toLowerCase()
     if (extraTags && !this.sentenceMatchesRegEx(extraTags, EXTRA_TAGS_REG_EXP)) {
       this.context.stdout.write('Extra tags do not comply with the <key>:<value> array.\n')
 
