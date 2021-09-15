@@ -23,6 +23,10 @@ export class TraceCommand extends Command {
         'datadog-ci trace --name "Say Hello" -- echo "Hello World"',
       ],
       [
+        'Trace a command with name "Say Hello" and a extra tags and report to Datadog',
+        'datadog-ci trace --name "Say Hello" --tags key1:value1 --tags key2:value2 -- echo "Hello World"',
+      ],
+      [
         'Trace a command and report to the datadoghq.eu site',
         'DATADOG_SITE=datadoghq.eu datadog-ci trace -- echo "Hello World"',
       ],
