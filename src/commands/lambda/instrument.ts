@@ -203,7 +203,7 @@ export class InstrumentCommand extends Command {
     }
 
     const extraTags = this.extraTags ?? this.config.extraTags
-    if (extraTags && !extraTags.match(EXTRA_TAGS_REG_EXP)) {
+    if (extraTags && !this.sentenceMatchesRegEx(extraTags, EXTRA_TAGS_REG_EXP)) {
       this.context.stdout.write('Extra tags do not comply with the <key>:<value> array.\n')
 
       return
@@ -295,6 +295,10 @@ export class InstrumentCommand extends Command {
         )
       }
     }
+  }
+
+  private sentenceMatchesRegEx(sentence: string, regex: RegExp) {
+    return sentence.match(regex)
   }
 }
 

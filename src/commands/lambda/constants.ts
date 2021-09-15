@@ -52,4 +52,4 @@ export const CI_KMS_API_KEY_ENV_VAR = 'DATADOG_KMS_API_KEY'
 // This RegExp ensures that the --extra-tags string
 // matches a list of <key>:<value> separated by commas
 // such as: layer:api,team:intake
-export const EXTRA_TAGS_REG_EXP: RegExp = /^(([a-zA-Z_]+)\w+:[\w\-]+)+((\,)([a-zA-Z_]+)\w+:[\w\-]+)*$/g
+export const EXTRA_TAGS_REG_EXP: RegExp = /^(([a-zA-Z]+)\w+:[\w\-/\.]+)+((\,)([a-zA-Z]+)\w+:[\w\-/\.]+)*$/g
