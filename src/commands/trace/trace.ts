@@ -5,7 +5,7 @@ import crypto from 'crypto'
 import os from 'os'
 import {parseTags} from '../../helpers/tags'
 import {apiConstructor} from './api'
-import {APIHelper, CIRCLECI, Provider, SUPPORTED_PROVIDERS} from './interfaces'
+import {APIHelper, CIRCLECI, JENKINS, Provider, SUPPORTED_PROVIDERS} from './interfaces'
 
 // We use 127 as exit code for invalid commands since that is what *sh terminals return
 const BAD_COMMAND_EXIT_CODE = 127
@@ -113,6 +113,47 @@ export class TraceCommand extends Command {
           'CIRCLE_WORKFLOW_ID',
         ]),
         CIRCLECI,
+      ]
+    }
+    if (process.env.JENKINS_HOME) {
+      if (!process.env.DD_CUSTOM_TRACE_ID) {
+        this.context.stdout.write(
+          `${chalk.yellow.bold(
+            '[WARNING]'
+          )} Your Jenkins instance does not seem to be instrumented with the DataDog plugin.\n`
+        )
+        this.context.stdout.write(
+          'Please follow the instructions at https://docs.datadoghq.com/continuous_integration/setup_pipelines/jenkins/\n'
+        )
+
+        return [{}]
+      }
+
+      return [
+        this.getEnvironmentVars([
+          'BUILD_ID',
+          'BUILD_NUMBER',
+          'BUILD_TAG',
+          'BUILD_URL',
+          'DD_CUSTOM_TRACE_ID',
+          'EXECUTOR_NUMBER',
+          'GIT_AUTHOR_EMAIL',
+          'GIT_AUTHOR_NAME',
+          'GIT_BRANCH',
+          'GIT_COMMIT',
+          'GIT_COMMITTER_EMAIL',
+          'GIT_COMMITTER_NAME',
+          'GIT_URL',
+          'GIT_URL_1',
+          'JENKINS_URL',
+          'JOB_BASE_NAME',
+          'JOB_NAME',
+          'JOB_URL',
+          'NODE_NAME',
+          'NODE_LABELS',
+          'WORKSPACE',
+        ]),
+        JENKINS,
       ]
     }
     const errorMsg = `Cannot detect any supported CI Provider. This command only works if run as part of your CI. Supported providers: ${SUPPORTED_PROVIDERS}.`
