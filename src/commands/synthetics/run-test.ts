@@ -37,8 +37,8 @@ export const DEFAULT_COMMAND_CONFIG: CommandConfig = {
   failOnCriticalErrors: false,
   failOnTimeout: true,
   files: ['{,!(node_modules)/**/}*.synthetics.json'],
-  locations: [],
   global: {},
+  locations: [],
   pollingTimeout: 2 * 60 * 1000,
   proxy: {protocol: 'http'},
   publicIds: [],
@@ -125,7 +125,7 @@ export class RunTestCommand extends Command {
       return safeExit(1)
     }
     const {tests, overriddenTestsToTrigger, summary} = testsToTriggerResult
-    if (this.config.locations) {
+    if (this.config.locations.length) {
       overriddenTestsToTrigger.forEach((overriddenTestToTrigger) => {
         overriddenTestToTrigger.locations = this.config.locations
       })

@@ -293,8 +293,8 @@ describe('run-test', () => {
           tests: [{options: {ci: {executionRule: ExecutionRule.BLOCKING}}, public_id: 'publicId'} as any],
         })
       )
-      
-      // throw to stop the test
+
+      // Throw to stop the test
       const serverError = new Error('Server Error') as AxiosError
       serverError.response = {data: {errors: ['Bad Gateway']}, status: 502} as AxiosResponse
       serverError.config = {baseURL: 'baseURL', url: 'url'}
@@ -314,7 +314,7 @@ describe('run-test', () => {
 
       expect(await command.execute()).toBe(0)
       expect(triggerTests).toHaveBeenCalledWith(
-        expect.objectContaining({tests: [{executionRule: 'blocking', locations: [], public_id: 'publicId'}]})
+        expect.objectContaining({tests: [{executionRule: 'blocking', locations: ['edge.us1.prod.dog'], public_id: 'publicId'}]})
       )
 
       process.env = {
@@ -563,6 +563,7 @@ describe('run-test', () => {
         failOnTimeout: false,
         files: ['my-new-file'],
         global: {locations: []},
+        locations: [],
         pollingTimeout: 1,
         proxy: {protocol: 'https'},
         publicIds: ['ran-dom-id'],
