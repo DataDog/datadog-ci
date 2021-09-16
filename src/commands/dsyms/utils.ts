@@ -24,16 +24,20 @@ export const isZipFile = async (filepath: string) => {
   }
 }
 
-export const getMatchingDSYMFiles = async (absoluteFolderPath: string): Promise<Dsym[]> => {
-  const dSYMFiles = await globAsync(buildPath(absoluteFolderPath, '**/*.dSYM'))
+export const getMatchingDSYMFiles = async (absoluteFolderPath: string): Promise<(Dsym | undefined)[]> => {
+  const dSYMFiles = await globAsync(buildPath(absoluteFolderPath, '**/*.dSYM'), {})
 
-  return Promise.all(
-    dSYMFiles.map(async (dSYMPath) => {
+  const allDsyms = dSYMFiles.map(async (dSYMPath) => {
+    try {
       const uuids = await dwarfdumpUUID(dSYMPath)
 
       return new Dsym(dSYMPath, uuids)
-    })
-  )
+    } catch {
+      return undefined
+    }
+  })
+
+  return Promise.all(allDsyms)
 }
 
 export const dwarfdumpUUID = async (filePath: string) => {

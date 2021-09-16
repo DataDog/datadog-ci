@@ -68,10 +68,11 @@ export class UploadCommand extends Command {
       metricsLogger: metricsLogger.logger,
     })
     const payloads = await getMatchingDSYMFiles(searchPath)
+    const validPayloads = payloads.filter((payload) => payload !== undefined) as Dsym[]
     const requestBuilder = this.getRequestBuilder()
     const uploadDSYM = this.uploadDSYM(requestBuilder, metricsLogger, apiKeyValidator)
     try {
-      const results = await asyncPool(this.maxConcurrency, payloads, uploadDSYM)
+      const results = await asyncPool(this.maxConcurrency, validPayloads, uploadDSYM)
       const totalTime = (Date.now() - initialTime) / 1000
       this.context.stdout.write(renderSuccessfulCommand(results, totalTime, this.dryRun))
       metricsLogger.logger.gauge('duration', totalTime)
