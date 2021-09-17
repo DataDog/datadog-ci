@@ -52,37 +52,39 @@ export class InstrumentCommand extends Command {
       lambda: Lambda
       region: string
     }[] = []
-    
+
     if (hasSpecifiedRegExPattern) {
       if (hasSpecifiedFuntions) {
         const usedCommand = this.functions.length !== 0 ? '"--functions"' : 'Functions in config file'
         this.context.stdout.write(`${usedCommand} and "--functions-regex" should not be used at the same time.\n`)
-  
+
         return 1
       }
       if (this.regExPattern!.match(':')) {
         this.context.stdout.write(`--functions-regex isn't meant to be used with ARNs.\n`)
-  
+
         return 1
       }
 
       const region = this.region || this.config.region
       if (!region) {
         this.context.stdout.write('No default region specified. Use -r,--region,')
+
         return 1
       }
-      
+
       try {
         const cloudWatchLogs = new CloudWatchLogs({region})
         const configs = await getLambdaConfigsFromRegEx(this.regExPattern!, cloudWatchLogs, region!, settings)
         const lambda = new Lambda({region})
-        
+
         configGroups.push({configs, lambda, cloudWatchLogs, region: region!})
       } catch (err) {
         this.context.stdout.write(`Couldn't fetch lambda functions. ${err}\n`)
+
         return 1
       }
-      
+
     } else {
       const functionGroups = this.collectFunctionsByRegion()
       if (functionGroups === undefined) {
@@ -220,33 +222,6 @@ export class InstrumentCommand extends Command {
       mergeXrayTraces,
       tracingEnabled,
     }
-  }
-
-  private getUserFunctions = async (pattern: string) => {
-    const re = new RegExp(pattern);
-    const region = this.region || this.config.region
-    const lambda = new Lambda({ region })
-    const functions: any[] = []
-    let nextMarker
-    try {
-      let results = await lambda.listFunctions().promise()
-      results.Functions?.map(f => f.FunctionName?.match(re) && functions.push(f))
-      
-      nextMarker = results.NextMarker
-      while (nextMarker) {
-        results = await lambda.listFunctions({ Marker: nextMarker }).promise()
-        results.Functions?.map(f => f.FunctionName?.match(re) && functions.push(f))
-        nextMarker = results.NextMarker
-      }
-    } catch (e) {
-      this.context.stdout.write(
-        `An error occurred ${e}. \n`
-      )
-    }
-    this.context.stdout.write(
-      `Found ${functions.length} functions for this user. \n`
-    )
-    return
   }
 
   private printPlannedActions(configs: FunctionConfiguration[]) {
