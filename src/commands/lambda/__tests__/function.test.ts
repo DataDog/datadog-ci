@@ -274,6 +274,10 @@ describe('function', () => {
     })
   })
 
+  describe('getLambdaConfigsFromRegEx', () => {
+    
+  })
+
   describe('updateLambdaConfigs', () => {
     const OLD_ENV = process.env
     beforeEach(() => {

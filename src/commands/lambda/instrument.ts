@@ -1,7 +1,13 @@
 import {CloudWatchLogs, Lambda} from 'aws-sdk'
 import {Command} from 'clipanion'
 import {parseConfigFile} from '../../helpers/utils'
-import {FunctionConfiguration, getLambdaConfigs, getLambdaConfigsFromRegEx, InstrumentationSettings, updateLambdaConfigs} from './function'
+import {
+  FunctionConfiguration,
+  getLambdaConfigs,
+  getLambdaConfigsFromRegEx,
+  InstrumentationSettings,
+  updateLambdaConfigs,
+} from './function'
 import {LambdaConfigOptions} from './interfaces'
 
 export class InstrumentCommand extends Command {
@@ -61,7 +67,7 @@ export class InstrumentCommand extends Command {
         return 1
       }
       if (this.regExPattern!.match(':')) {
-        this.context.stdout.write(`--functions-regex isn't meant to be used with ARNs.\n`)
+        this.context.stdout.write("--functions-regex isn't meant to be used with ARNs.\n")
 
         return 1
       }
@@ -75,8 +81,8 @@ export class InstrumentCommand extends Command {
 
       try {
         const cloudWatchLogs = new CloudWatchLogs({region})
-        const configs = await getLambdaConfigsFromRegEx(this.regExPattern!, cloudWatchLogs, region!, settings)
         const lambda = new Lambda({region})
+        const configs = await getLambdaConfigsFromRegEx(lambda, cloudWatchLogs, region!, this.regExPattern!, settings)
 
         configGroups.push({configs, lambda, cloudWatchLogs, region: region!})
       } catch (err) {
@@ -84,7 +90,6 @@ export class InstrumentCommand extends Command {
 
         return 1
       }
-
     } else {
       const functionGroups = this.collectFunctionsByRegion()
       if (functionGroups === undefined) {
