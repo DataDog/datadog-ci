@@ -191,15 +191,17 @@ export class InstrumentCommand extends Command {
       service,
       version,
     }
-    let tagMissing = false
+    const tagsMissing = []
     for (const [tag, value] of Object.entries(tagsMap)) {
       if (!value) {
-        tagMissing = true
-        this.context.stdout.write(`No value found for the ${tag} tag.\n`)
+        tagsMissing.push(tag)
       }
     }
-    if (tagMissing) {
-      this.context.stdout.write('It is recommended to set tags, try to do it later.\n')
+    if (tagsMissing.length > 0) {
+      const tags = tagsMissing.join(', ').replace(/, ([^,]*)$/, ' and $1')
+      this.context.stdout.write(
+        `Warning: The ${tags} tags have not been configured. Learn more about Datadog unified service tagging: https://docs.datadoghq.com/getting_started/tagging/unified_service_tagging/#serverless-environment.\n`
+      )
     }
 
     const extraTags = this.extraTags?.toLowerCase() ?? this.config.extraTags?.toLowerCase()

@@ -571,7 +571,7 @@ describe('lambda', () => {
         await command['getSettings']()
         const output = command.context.stdout.toString()
         expect(output).toMatch(
-          'No value found for the environment tag.\nNo value found for the service tag.\nNo value found for the version tag.\nIt is recommended to set tags, try to do it later.\n'
+          'Warning: The environment, service and version tags have not been configured. Learn more about Datadog unified service tagging: https://docs.datadoghq.com/getting_started/tagging/unified_service_tagging/#serverless-environment.\n'
         )
       })
 
