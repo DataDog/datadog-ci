@@ -160,7 +160,7 @@ const getLambdaConfig = async (
   return {config, functionARN: resolvedFunctionARN}
 }
 
-const getFunctionConfiguration = async (
+export const getFunctionConfiguration = async (
   lambda: Lambda,
   cloudWatch: CloudWatchLogs,
   config: Lambda.FunctionConfiguration,
