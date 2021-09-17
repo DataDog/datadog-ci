@@ -10,12 +10,15 @@ import {
   SITE_ENV_VAR,
   TRACE_ENABLED_ENV_VAR,
 } from '../constants'
-import {calculateUpdateRequest, getExtensionArn, getLambdaConfigs, getLayerArn, updateLambdaConfigs} from '../function'
+import {calculateUpdateRequest, getExtensionArn, getFunctionConfiguration, getLambdaConfigs, getLayerArn, updateLambdaConfigs} from '../function'
 import * as loggroup from '../loggroup'
 
 const makeMockLambda = (functionConfigs: Record<string, Lambda.FunctionConfiguration>) => ({
   getFunction: jest.fn().mockImplementation(({FunctionName}) => ({
     promise: () => Promise.resolve({Configuration: functionConfigs[FunctionName]}),
+  })),
+  listFunctions: jest.fn().mockImplementation(() => ({
+    promise: () => Promise.resolve({Functions: Object.values(functionConfigs)})
   })),
   listTags: jest.fn().mockImplementation(() => ({promise: () => Promise.resolve({Tags: {}})})),
   tagResource: jest.fn().mockImplementation(() => ({promise: () => Promise.resolve()})),
@@ -238,6 +241,14 @@ describe('function', () => {
           settings
         )
       ).rejects.toThrow()
+
+      await expect(getFunctionConfiguration(
+        lambda as any,
+        cloudWatch as any,
+        lambda.listFunctions(),
+        'us-east-1',
+        settings
+      )).rejects.toThrow()
     })
 
     test('requests log group configuration when forwarderARN is set', async () => {
@@ -273,6 +284,8 @@ describe('function', () => {
             `)
     })
   })
+
+  describe('getFunctionConfiguration', () => {})
 
   describe('getLambdaConfigsFromRegEx', () => {
     
