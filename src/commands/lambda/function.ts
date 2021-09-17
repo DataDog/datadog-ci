@@ -66,7 +66,7 @@ const isLambdaActive = async (
     await wait(2 ** attempts * 1000)
     const refetchedConfig = await getLambdaConfig(lambda, functionArn)
 
-    return isLambdaActive(lambda, refetchedConfig.config, functionArn, (attempts += 1))
+    return isLambdaActive(lambda, refetchedConfig, functionArn, (attempts += 1))
   }
   throw Error(
     `Can't instrument ${functionArn}, as current State is ${config.State} (must be "Active") and Last Update Status is ${config.LastUpdateStatus} (must be "Successful")`
@@ -85,7 +85,7 @@ export const getLambdaConfigs = async (
 
   const functionsToUpdate: FunctionConfiguration[] = []
 
-  for (const {config, functionARN} of results) {
+  for (const config of results) {
     const functionConfiguration = await getFunctionConfiguration(lambda, cloudWatch, config, region, settings)
 
     functionsToUpdate.push(functionConfiguration)
@@ -147,7 +147,7 @@ export const updateLambdaConfigs = async (
 const getLambdaConfig = async (
   lambda: Lambda,
   functionARN: string
-): Promise<{config: Lambda.FunctionConfiguration; functionARN: string}> => {
+): Promise<Lambda.FunctionConfiguration> => {
   const params = {
     FunctionName: functionARN,
   }
@@ -155,9 +155,8 @@ const getLambdaConfig = async (
   // AWS typescript API is slightly mistyped, adds undefineds where
   // there shouldn't be.
   const config = result.Configuration!
-  const resolvedFunctionARN = config.FunctionArn!
 
-  return {config, functionARN: resolvedFunctionARN}
+  return config
 }
 
 export const getFunctionConfiguration = async (
@@ -190,7 +189,7 @@ export const getFunctionConfiguration = async (
   }
 
   const tagConfiguration: TagConfiguration | undefined = await calculateTagUpdateRequest(lambda, functionARN)
-  
+
   return {
     functionARN,
     lambdaConfig: config,
