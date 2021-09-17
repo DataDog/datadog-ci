@@ -1,7 +1,7 @@
 import {CloudWatchLogs, Lambda} from 'aws-sdk'
 import {Command} from 'clipanion'
 import {parseConfigFile} from '../../helpers/utils'
-import {FunctionConfiguration, getLambdaConfigs, InstrumentationSettings, updateLambdaConfigs} from './function'
+import {FunctionConfiguration, getLambdaConfigs, getLambdaConfigsFromRegEx, InstrumentationSettings, updateLambdaConfigs} from './function'
 import {LambdaConfigOptions} from './interfaces'
 
 export class InstrumentCommand extends Command {
@@ -20,6 +20,7 @@ export class InstrumentCommand extends Command {
   private layerVersion?: string
   private logLevel?: string
   private mergeXrayTraces?: string
+  private regExPattern?: string
   private region?: string
   private tracing?: string
 
@@ -33,17 +34,12 @@ export class InstrumentCommand extends Command {
     }
 
     const hasSpecifiedFuntions = this.functions.length !== 0 || this.config.functions.length !== 0
-    if (!hasSpecifiedFuntions) {
+    const hasSpecifiedRegExPattern = this.regExPattern !== undefined
+    if (!hasSpecifiedFuntions && !hasSpecifiedRegExPattern) {
       this.context.stdout.write('No functions specified for instrumentation.\n')
 
       return 1
     }
-
-    const functionGroups = this.collectFunctionsByRegion()
-    if (functionGroups === undefined) {
-      return 1
-    }
-
     if (settings.extensionVersion && settings.forwarderARN) {
       this.context.stdout.write('"extensionVersion" and "forwarder" should not be used at the same time.\n')
 
@@ -56,17 +52,54 @@ export class InstrumentCommand extends Command {
       lambda: Lambda
       region: string
     }[] = []
+    
+    if (hasSpecifiedRegExPattern) {
+      if (hasSpecifiedFuntions) {
+        const usedCommand = this.functions.length !== 0 ? '"--functions"' : 'Functions in config file'
+        this.context.stdout.write(`${usedCommand} and "--functions-regex" should not be used at the same time.\n`)
+  
+        return 1
+      }
+      if (this.regExPattern!.match(':')) {
+        this.context.stdout.write(`--functions-regex isn't meant to be used with ARNs.\n`)
+  
+        return 1
+      }
 
-    for (const [region, functionList] of Object.entries(functionGroups)) {
-      const lambda = new Lambda({region})
-      const cloudWatchLogs = new CloudWatchLogs({region})
+      const region = this.region || this.config.region
+      if (!region) {
+        this.context.stdout.write('No default region specified. Use -r,--region,')
+        return 1
+      }
+      
       try {
-        const configs = await getLambdaConfigs(lambda, cloudWatchLogs, region, functionList, settings)
-        configGroups.push({configs, lambda, cloudWatchLogs, region})
+        const cloudWatchLogs = new CloudWatchLogs({region})
+        const configs = await getLambdaConfigsFromRegEx(this.regExPattern!, cloudWatchLogs, region!, settings)
+        const lambda = new Lambda({region})
+        
+        configGroups.push({configs, lambda, cloudWatchLogs, region: region!})
       } catch (err) {
         this.context.stdout.write(`Couldn't fetch lambda functions. ${err}\n`)
-
         return 1
+      }
+      
+    } else {
+      const functionGroups = this.collectFunctionsByRegion()
+      if (functionGroups === undefined) {
+        return 1
+      }
+
+      for (const [region, functionList] of Object.entries(functionGroups)) {
+        const lambda = new Lambda({region})
+        const cloudWatchLogs = new CloudWatchLogs({region})
+        try {
+          const configs = await getLambdaConfigs(lambda, cloudWatchLogs, region, functionList, settings)
+          configGroups.push({configs, lambda, cloudWatchLogs, region})
+        } catch (err) {
+          this.context.stdout.write(`Couldn't fetch lambda functions. ${err}\n`)
+
+          return 1
+        }
       }
     }
 
@@ -189,33 +222,6 @@ export class InstrumentCommand extends Command {
     }
   }
 
-  private getUserFunctions = async (pattern: string) => {
-    const re = new RegExp(pattern);
-    const region = this.region || this.config.region
-    const lambda = new Lambda({ region })
-    const functions: any[] = []
-    let nextMarker
-    try {
-      let results = await lambda.listFunctions().promise()
-      results.Functions?.map(f => f.FunctionName?.match(re) && functions.push(f))
-      
-      nextMarker = results.NextMarker
-      while (nextMarker) {
-        results = await lambda.listFunctions({ Marker: nextMarker }).promise()
-        results.Functions?.map(f => f.FunctionName?.match(re) && functions.push(f))
-        nextMarker = results.NextMarker
-      }
-    } catch (e) {
-      this.context.stdout.write(
-        `An error occurred ${e}. \n`
-      )
-    }
-    this.context.stdout.write(
-      `Found ${functions.length} functions for this user. \n`
-    )
-    return
-  }
-
   private printPlannedActions(configs: FunctionConfiguration[]) {
     const prefix = this.dryRun ? '[Dry Run] ' : ''
 
@@ -291,6 +297,7 @@ export class InstrumentCommand extends Command {
 
 InstrumentCommand.addPath('lambda', 'instrument')
 InstrumentCommand.addOption('functions', Command.Array('-f,--function'))
+InstrumentCommand.addOption('regExPattern', Command.String('-fR,--functions-regex'))
 InstrumentCommand.addOption('region', Command.String('-r,--region'))
 InstrumentCommand.addOption('extensionVersion', Command.String('-e,--extensionVersion'))
 InstrumentCommand.addOption('layerVersion', Command.String('-v,--layerVersion'))
