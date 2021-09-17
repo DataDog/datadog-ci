@@ -175,7 +175,7 @@ export const getLambdaConfigsFromRegEx = async (pattern: string, cloudWatch: Clo
   }
 
   return functionsToUpdate
-  
+
 }
 
 export const updateLambdaConfigs = async (
