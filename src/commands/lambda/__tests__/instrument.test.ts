@@ -6,8 +6,9 @@ import * as fs from 'fs'
 
 import {Cli} from 'clipanion/lib/advanced'
 import path from 'path'
+import {EXTRA_TAGS_REG_EXP} from '../constants'
 import {InstrumentationSettings} from '../function'
-import {InstrumentCommand} from '../instrument'
+import {InstrumentCommand, sentenceMatchesRegEx} from '../instrument'
 import {LambdaConfigOptions} from '../interfaces'
 // tslint:disable-next-line
 const {version} = require(path.join(__dirname, '../../../../package.json'))
@@ -72,7 +73,25 @@ describe('lambda', () => {
         const context = createMockContext() as any
         const functionARN = 'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world'
         const code = await cli.run(
-          ['lambda', 'instrument', '-f', functionARN, '--dry', '--layerVersion', '10', '--logLevel', 'debug'],
+          [
+            'lambda',
+            'instrument',
+            '-f',
+            functionARN,
+            '--dry',
+            '--layerVersion',
+            '10',
+            '--logLevel',
+            'debug',
+            '--service',
+            'middletier',
+            '--env',
+            'staging',
+            '--version',
+            '0.2',
+            '--extra-tags',
+            'layer:api,team:intake',
+          ],
           context
         )
         const output = context.stdout.toString()
@@ -87,9 +106,13 @@ describe('lambda', () => {
               \\"Variables\\": {
                 \\"DD_LAMBDA_HANDLER\\": \\"index.handler\\",
                 \\"DD_SITE\\": \\"datadoghq.com\\",
-                \\"DD_TRACE_ENABLED\\": \\"true\\",
-                \\"DD_MERGE_XRAY_TRACES\\": \\"false\\",
+                \\"DD_ENV\\": \\"staging\\",
+                \\"DD_TAGS\\": \\"layer:api,team:intake\\",
                 \\"DD_FLUSH_TO_LOG\\": \\"true\\",
+                \\"DD_MERGE_XRAY_TRACES\\": \\"false\\",
+                \\"DD_SERVICE\\": \\"middletier\\",
+                \\"DD_TRACE_ENABLED\\": \\"true\\",
+                \\"DD_VERSION\\": \\"0.2\\",
                 \\"DD_LOG_LEVEL\\": \\"debug\\"
               }
             },
@@ -121,7 +144,23 @@ describe('lambda', () => {
         const functionARN = 'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world'
         process.env.DATADOG_API_KEY = '1234'
         const code = await cli.run(
-          ['lambda', 'instrument', '-f', functionARN, '--dry', '--extensionVersion', '6'],
+          [
+            'lambda',
+            'instrument',
+            '-f',
+            functionARN,
+            '--dry',
+            '--extensionVersion',
+            '6',
+            '--service',
+            'middletier',
+            '--env',
+            'staging',
+            '--version',
+            '0.2',
+            '--extra-tags',
+            'layer:api,team:intake',
+          ],
           context
         )
         const output = context.stdout.toString()
@@ -137,9 +176,13 @@ describe('lambda', () => {
                 \\"DD_LAMBDA_HANDLER\\": \\"index.handler\\",
                 \\"DD_API_KEY\\": \\"1234\\",
                 \\"DD_SITE\\": \\"datadoghq.com\\",
-                \\"DD_TRACE_ENABLED\\": \\"true\\",
+                \\"DD_ENV\\": \\"staging\\",
+                \\"DD_TAGS\\": \\"layer:api,team:intake\\",
+                \\"DD_FLUSH_TO_LOG\\": \\"true\\",
                 \\"DD_MERGE_XRAY_TRACES\\": \\"false\\",
-                \\"DD_FLUSH_TO_LOG\\": \\"true\\"
+                \\"DD_SERVICE\\": \\"middletier\\",
+                \\"DD_TRACE_ENABLED\\": \\"true\\",
+                \\"DD_VERSION\\": \\"0.2\\"
               }
             },
             \\"Layers\\": [
@@ -212,7 +255,21 @@ describe('lambda', () => {
         ;(Lambda as any).mockImplementation(() => makeMockLambda({}))
         const cli = makeCli()
         const context = createMockContext() as any
-        const code = await cli.run(['lambda', 'instrument', '--layerVersion', '10'], context)
+        const code = await cli.run(
+          [
+            'lambda',
+            'instrument',
+            '--layerVersion',
+            '10',
+            '--service',
+            'middletier',
+            '--env',
+            'staging',
+            '--version',
+            '0.2',
+          ],
+          context
+        )
         const output = context.stdout.toString()
         expect(code).toBe(1)
         expect(output).toMatchInlineSnapshot(`
@@ -229,6 +286,10 @@ describe('lambda', () => {
         command['config']['layerVersion'] = '60'
         command['config']['extensionVersion'] = '10'
         command['config']['region'] = 'ap-southeast-1'
+        command['config']['service'] = 'middletier'
+        command['config']['environment'] = 'staging'
+        command['config']['version'] = '0.2'
+
         await command['execute']()
         const output = command.context.stdout.toString()
         expect(output).toMatchInlineSnapshot(`
@@ -243,7 +304,23 @@ describe('lambda', () => {
 
         const cli = makeCli()
         const context = createMockContext() as any
-        const code = await cli.run(['lambda', 'instrument', '--function', 'my-func', '--layerVersion', '10'], context)
+        const code = await cli.run(
+          [
+            'lambda',
+            'instrument',
+            '--function',
+            'my-func',
+            '--layerVersion',
+            '10',
+            '--service',
+            'middletier',
+            '--env',
+            'staging',
+            '--version',
+            '0.2',
+          ],
+          context
+        )
 
         const output = context.stdout.toString()
         expect(code).toBe(1)
@@ -277,6 +354,12 @@ describe('lambda', () => {
             'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world',
             '--layerVersion',
             '10',
+            '--service',
+            'middletier',
+            '--env',
+            'staging',
+            '--version',
+            '0.2',
           ],
           context
         )
@@ -306,6 +389,12 @@ describe('lambda', () => {
             '6',
             '--region',
             'us-east-1',
+            '--service',
+            'middletier',
+            '--env',
+            'staging',
+            '--version',
+            '0.2',
           ],
           context
         )
@@ -471,6 +560,47 @@ describe('lambda', () => {
           expect(output).toMatch(`Invalid boolean specified for ${option}.\n`)
         }
       })
+
+      test('warns if any of environment, service or version tags are not set', async () => {
+        ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({}))
+
+        process.env = {}
+        let command = createCommand()
+        command['config']['region'] = 'ap-southeast-1'
+        command['config']['functions'] = ['arn:aws:lambda:ap-southeast-1:123456789012:function:lambda-hello-world']
+        await command['getSettings']()
+        let output = command.context.stdout.toString()
+        expect(output).toMatch(
+          'Warning: The environment, service and version tags have not been configured. Learn more about Datadog unified service tagging: https://docs.datadoghq.com/getting_started/tagging/unified_service_tagging/#serverless-environment.\n'
+        )
+
+        command = createCommand()
+        command['config']['region'] = 'ap-southeast-1'
+        command['config']['functions'] = ['arn:aws:lambda:ap-southeast-1:123456789012:function:lambda-hello-world']
+        command['config']['environment'] = 'b'
+        command['config']['service'] = 'middletier'
+        await command['getSettings']()
+        output = command.context.stdout.toString()
+        expect(output).toMatch(
+          'Warning: The version tag has not been configured. Learn more about Datadog unified service tagging: https://docs.datadoghq.com/getting_started/tagging/unified_service_tagging/#serverless-environment.\n'
+        )
+      })
+
+      test('aborts early if extraTags do not comply with expected key:value list', async () => {
+        ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({}))
+
+        process.env = {}
+        const command = createCommand()
+        command['config']['region'] = 'ap-southeast-1'
+        command['config']['functions'] = ['arn:aws:lambda:ap-southeast-1:123456789012:function:lambda-hello-world']
+        command['config']['service'] = 'middletier'
+        command['config']['environment'] = 'staging'
+        command['config']['version'] = '0.2'
+        command['config']['extraTags'] = 'not-complying:illegal-chars-in-key,complies:valid-pair'
+        await command['getSettings']()
+        const output = command.context.stdout.toString()
+        expect(output).toMatch('Extra tags do not comply with the <key>:<value> array.\n')
+      })
     })
 
     describe('collectFunctionsByRegion', () => {
@@ -591,6 +721,24 @@ describe('lambda', () => {
                     }
                     "
                 `)
+      })
+    })
+    describe('sentenceMatchesRegEx', () => {
+      const tags: [string, boolean][] = [
+        ['not-complying:regex-should-fail', false],
+        ['1first-char-is-number:should-fail', false],
+        ['_also-not-complying:should-fail', false],
+        ['complying_tag:accepted/with/slashes.and.dots,but-empty-tag', false],
+        ['also_complying:success,1but_is_illegal:should-fail', false],
+        ['this:complies,also_this_one:yes,numb3r_in_name:should-succeed,dots:al.lo.wed', true],
+        ['complying_ip_address_4:192.342.3134.231', true],
+        ['complying:alone', true],
+        ['one_divided_by_two:1/2,one_divided_by_four:0.25,three_minus_one_half:3-1/2', true],
+        ['this_is_a_valid_t4g:yes/it.is-42', true],
+      ]
+      test.each(tags)('check if the tags match the expected result from the regex', (tag, expectedResult) => {
+        const result = !!sentenceMatchesRegEx(tag, EXTRA_TAGS_REG_EXP)
+        expect(result).toEqual(expectedResult)
       })
     })
   })

@@ -6,6 +6,8 @@ import {
   CI_SITE_ENV_VAR,
   DD_LAMBDA_EXTENSION_LAYER_NAME,
   DEFAULT_LAYER_AWS_ACCOUNT,
+  ENVIRONMENT_ENV_VAR,
+  EXTRA_TAGS_ENV_VAR,
   FLUSH_TO_LOG_ENV_VAR,
   GOVCLOUD_LAYER_AWS_ACCOUNT,
   HANDLER_LOCATION,
@@ -15,8 +17,10 @@ import {
   MERGE_XRAY_TRACES_ENV_VAR,
   Runtime,
   RUNTIME_LAYER_LOOKUP,
+  SERVICE_ENV_VAR,
   SITE_ENV_VAR,
   TRACE_ENABLED_ENV_VAR,
+  VERSION_ENV_VAR,
 } from './constants'
 import {applyLogGroupConfig, calculateLogGroupUpdateRequest, LogGroupConfiguration} from './loggroup'
 import {applyTagConfig, calculateTagUpdateRequest, TagConfiguration} from './tags'
@@ -29,7 +33,14 @@ export interface FunctionConfiguration {
   updateRequest?: Lambda.UpdateFunctionConfigurationRequest
 }
 
-export interface InstrumentationSettings {
+interface InstrumentationTags {
+  environment?: string
+  extraTags?: string
+  service?: string
+  version?: string
+}
+
+export interface InstrumentationSettings extends InstrumentationTags {
   extensionVersion?: number
   flushMetricsToLogs: boolean
   forwarderARN?: string
@@ -238,17 +249,22 @@ export const calculateUpdateRequest = (
     needsUpdate = true
     changedEnvVars[SITE_ENV_VAR] = 'datadoghq.com'
   }
-  if (oldEnvVars[TRACE_ENABLED_ENV_VAR] !== settings.tracingEnabled.toString()) {
-    needsUpdate = true
-    changedEnvVars[TRACE_ENABLED_ENV_VAR] = settings.tracingEnabled.toString()
-  }
-  if (oldEnvVars[MERGE_XRAY_TRACES_ENV_VAR] !== settings.mergeXrayTraces.toString()) {
-    needsUpdate = true
-    changedEnvVars[MERGE_XRAY_TRACES_ENV_VAR] = settings.mergeXrayTraces.toString()
-  }
-  if (oldEnvVars[FLUSH_TO_LOG_ENV_VAR] !== settings.flushMetricsToLogs.toString()) {
-    needsUpdate = true
-    changedEnvVars[FLUSH_TO_LOG_ENV_VAR] = settings.flushMetricsToLogs.toString()
+
+  const environmentVarsTupleArray: [keyof InstrumentationSettings, string][] = [
+    ['environment', ENVIRONMENT_ENV_VAR],
+    ['extraTags', EXTRA_TAGS_ENV_VAR],
+    ['flushMetricsToLogs', FLUSH_TO_LOG_ENV_VAR],
+    ['mergeXrayTraces', MERGE_XRAY_TRACES_ENV_VAR],
+    ['service', SERVICE_ENV_VAR],
+    ['tracingEnabled', TRACE_ENABLED_ENV_VAR],
+    ['version', VERSION_ENV_VAR],
+  ]
+
+  for (const [key, environmentVar] of environmentVarsTupleArray) {
+    if (settings[key] !== undefined && oldEnvVars[environmentVar] !== settings[key]?.toString()) {
+      needsUpdate = true
+      changedEnvVars[environmentVar] = settings[key]!.toString()
+    }
   }
 
   const newEnvVars = {...oldEnvVars, ...changedEnvVars}

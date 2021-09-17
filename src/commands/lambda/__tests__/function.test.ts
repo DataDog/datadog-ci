@@ -2,13 +2,16 @@ jest.mock('../loggroup')
 
 import {Lambda} from 'aws-sdk'
 import {
+  ENVIRONMENT_ENV_VAR,
   FLUSH_TO_LOG_ENV_VAR,
   GOVCLOUD_LAYER_AWS_ACCOUNT,
   LAMBDA_HANDLER_ENV_VAR,
   LOG_LEVEL_ENV_VAR,
   MERGE_XRAY_TRACES_ENV_VAR,
+  SERVICE_ENV_VAR,
   SITE_ENV_VAR,
   TRACE_ENABLED_ENV_VAR,
+  VERSION_ENV_VAR,
 } from '../constants'
 import {calculateUpdateRequest, getExtensionArn, getLambdaConfigs, getLayerArn, updateLambdaConfigs} from '../function'
 import * as loggroup from '../loggroup'
@@ -45,11 +48,14 @@ describe('function', () => {
       })
       const cloudWatch = makeMockCloudWatchLogs()
       const settings = {
+        environment: 'staging',
         flushMetricsToLogs: false,
         layerVersion: 22,
         logLevel: 'debug',
         mergeXrayTraces: false,
+        service: 'middletier',
         tracingEnabled: false,
+        version: '0.2',
       }
       const result = await getLambdaConfigs(
         lambda as any,
@@ -63,12 +69,15 @@ describe('function', () => {
         Object {
           "Environment": Object {
             "Variables": Object {
+              "DD_ENV": "staging",
               "DD_FLUSH_TO_LOG": "false",
               "DD_LAMBDA_HANDLER": "index.handler",
               "DD_LOG_LEVEL": "debug",
               "DD_MERGE_XRAY_TRACES": "false",
+              "DD_SERVICE": "middletier",
               "DD_SITE": "datadoghq.com",
               "DD_TRACE_ENABLED": "false",
+              "DD_VERSION": "0.2",
             },
           },
           "FunctionName": "arn:aws:lambda:us-east-1:000000000000:function:autoinstrument",
@@ -91,6 +100,9 @@ describe('function', () => {
               [MERGE_XRAY_TRACES_ENV_VAR]: 'false',
               [SITE_ENV_VAR]: 'datadoghq.com',
               [TRACE_ENABLED_ENV_VAR]: 'false',
+              [SERVICE_ENV_VAR]: 'middletier',
+              [ENVIRONMENT_ENV_VAR]: 'staging',
+              [VERSION_ENV_VAR]: '0.2',
             },
           },
           FunctionArn: 'arn:aws:lambda:us-east-1:000000000000:function:autoinstrument',
@@ -102,11 +114,14 @@ describe('function', () => {
       const cloudWatch = makeMockCloudWatchLogs()
 
       const settings = {
+        environment: 'staging',
         flushMetricsToLogs: false,
         layerVersion: 22,
         logLevel: 'debug',
         mergeXrayTraces: false,
+        service: 'middletier',
         tracingEnabled: false,
+        version: '0.2',
       }
       const result = await getLambdaConfigs(
         lambda as any,
