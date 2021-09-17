@@ -561,17 +561,28 @@ describe('lambda', () => {
         }
       })
 
-      test('warns if any of environment, service or version tags is not set', async () => {
+      test('warns if any of environment, service or version tags are not set', async () => {
         ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({}))
 
         process.env = {}
-        const command = createCommand()
+        let command = createCommand()
         command['config']['region'] = 'ap-southeast-1'
         command['config']['functions'] = ['arn:aws:lambda:ap-southeast-1:123456789012:function:lambda-hello-world']
         await command['getSettings']()
-        const output = command.context.stdout.toString()
+        let output = command.context.stdout.toString()
         expect(output).toMatch(
           'Warning: The environment, service and version tags have not been configured. Learn more about Datadog unified service tagging: https://docs.datadoghq.com/getting_started/tagging/unified_service_tagging/#serverless-environment.\n'
+        )
+
+        command = createCommand()
+        command['config']['region'] = 'ap-southeast-1'
+        command['config']['functions'] = ['arn:aws:lambda:ap-southeast-1:123456789012:function:lambda-hello-world']
+        command['config']['environment'] = 'b'
+        command['config']['service'] = 'middletier'
+        await command['getSettings']()
+        output = command.context.stdout.toString()
+        expect(output).toMatch(
+          'Warning: The version tag has not been configured. Learn more about Datadog unified service tagging: https://docs.datadoghq.com/getting_started/tagging/unified_service_tagging/#serverless-environment.\n'
         )
       })
 

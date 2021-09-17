@@ -199,8 +199,11 @@ export class InstrumentCommand extends Command {
     }
     if (tagsMissing.length > 0) {
       const tags = tagsMissing.join(', ').replace(/, ([^,]*)$/, ' and $1')
+      const plural = tagsMissing.length > 1
       this.context.stdout.write(
-        `Warning: The ${tags} tags have not been configured. Learn more about Datadog unified service tagging: https://docs.datadoghq.com/getting_started/tagging/unified_service_tagging/#serverless-environment.\n`
+        `Warning: The ${tags} tag${
+          plural ? 's have' : ' has'
+        } not been configured. Learn more about Datadog unified service tagging: https://docs.datadoghq.com/getting_started/tagging/unified_service_tagging/#serverless-environment.\n`
       )
     }
 
