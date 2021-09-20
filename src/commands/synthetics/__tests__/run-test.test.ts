@@ -299,8 +299,8 @@ describe('run-test', () => {
       })
 
       const apiHelper = {
-        triggerTests,
         getTest: jest.fn(() => ({...getApiTest('publicId')})),
+        triggerTests,
       }
 
       const write = jest.fn()
