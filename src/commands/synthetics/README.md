@@ -25,6 +25,12 @@ If the org uses a custom sub-domain to access Datadog app, it needs to be set in
 export DATADOG_SUBDOMAIN="myorg"
 ```
 
+You can use the `DATADOG_SYNTHETICS_LOCATIONS` to override the locations where your tests run. Locations should be separated with `;`.
+
+```bash
+export DATADOG_SYNTHETICS_LOCATIONS="aws:us-east-1;aws:us-east-2"
+```
+
 ### API
 
 By default it runs at the root of the working directory and finds `{,!(node_modules)/**/}*.synthetics.json` files (every files ending with `.synthetics.json` except those in the `node_modules` folder).

@@ -322,13 +322,14 @@ export class RunTestCommand extends Command {
       .map((suite) => suite.tests)
       .filter((suiteTests) => !!suiteTests)
 
+    const configFromEnvironment = this.config.locations?.length ? {locations: this.config.locations} : {}
     const testsToTrigger = suites
       .reduce((acc, suiteTests) => acc.concat(suiteTests), [])
       .map((test) => ({
         config: {
           ...this.config.global,
           ...test.config,
-          ...(this.config.locations?.length ? {locations: this.config.locations} : {}),
+          ...configFromEnvironment,
         },
         id: test.id,
       }))
