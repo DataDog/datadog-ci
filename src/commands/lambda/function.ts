@@ -11,6 +11,7 @@ import {
   HANDLER_LOCATION,
   KMS_API_KEY_ENV_VAR,
   LAMBDA_HANDLER_ENV_VAR,
+  LIST_FUNCTIONS_MAX_RETRY_COUNT,
   LOG_LEVEL_ENV_VAR,
   MERGE_XRAY_TRACES_ENV_VAR,
   Runtime,
@@ -101,17 +102,28 @@ export const getLambdaConfigsFromRegEx = async (
   pattern: string,
   settings: InstrumentationSettings
 ): Promise<FunctionConfiguration[]> => {
-  const re = new RegExp(pattern)
+  const regEx = new RegExp(pattern)
   const matchedFunctions: Lambda.FunctionConfiguration[] = []
-  let nextMarker
-  let results = await lambda.listFunctions().promise()
-  results.Functions?.map((fn) => fn.FunctionName?.match(re) && matchedFunctions.push(fn))
+  let retryCount = 0
+  let listFunctionsResponse: Lambda.ListFunctionsResponse
+  let nextMarker: string | undefined
+  let firstCall = true
 
-  nextMarker = results.NextMarker
-  while (nextMarker) {
-    results = await lambda.listFunctions({Marker: nextMarker}).promise()
-    results.Functions?.map((fn) => fn.FunctionName?.match(re) && matchedFunctions.push(fn))
-    nextMarker = results.NextMarker
+  while (nextMarker || firstCall) {
+    if (firstCall) {
+      firstCall = false
+    }
+    if (retryCount >= LIST_FUNCTIONS_MAX_RETRY_COUNT) {
+      throw Error("Couldn't fetch lambda functions. Max retry count exceeded.")
+    }
+    try {
+      listFunctionsResponse = await lambda.listFunctions({Marker: nextMarker}).promise()
+      listFunctionsResponse.Functions?.map((fn) => fn.FunctionName?.match(regEx) && matchedFunctions.push(fn))
+      nextMarker = listFunctionsResponse.NextMarker
+      retryCount = 0
+    } catch (e) {
+      retryCount++
+    }
   }
 
   const functionsToUpdate: FunctionConfiguration[] = []
@@ -144,10 +156,7 @@ export const updateLambdaConfigs = async (
   await Promise.all(results)
 }
 
-const getLambdaConfig = async (
-  lambda: Lambda,
-  functionARN: string
-): Promise<Lambda.FunctionConfiguration> => {
+const getLambdaConfig = async (lambda: Lambda, functionARN: string): Promise<Lambda.FunctionConfiguration> => {
   const params = {
     FunctionName: functionARN,
   }
