@@ -124,12 +124,8 @@ export class RunTestCommand extends Command {
 
       return safeExit(1)
     }
+
     const {tests, overriddenTestsToTrigger, summary} = testsToTriggerResult
-    if (this.config.locations.length) {
-      overriddenTestsToTrigger.forEach((overriddenTestToTrigger) => {
-        overriddenTestToTrigger.locations = this.config.locations
-      })
-    }
 
     // All tests have been skipped or are missing.
     if (!tests.length) {
@@ -329,7 +325,11 @@ export class RunTestCommand extends Command {
     const testsToTrigger = suites
       .reduce((acc, suiteTests) => acc.concat(suiteTests), [])
       .map((test) => ({
-        config: {...this.config.global, ...test.config},
+        config: {
+          ...this.config.global,
+          ...test.config,
+          ...(this.config.locations?.length ? {locations: this.config.locations} : {}),
+        },
         id: test.id,
       }))
 

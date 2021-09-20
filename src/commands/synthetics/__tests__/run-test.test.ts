@@ -7,7 +7,7 @@ import {ExecutionRule} from '../interfaces'
 import {DefaultReporter} from '../reporters/default'
 import {DEFAULT_COMMAND_CONFIG, removeUndefinedValues, RunTestCommand} from '../run-test'
 import * as utils from '../utils'
-import {mockReporter} from './fixtures'
+import {getApiTest, mockReporter} from './fixtures'
 
 describe('run-test', () => {
   beforeEach(() => {
@@ -283,16 +283,12 @@ describe('run-test', () => {
     })
 
     test('override locations with ENV variable', async () => {
+      const conf1 = {
+        tests: [{config: {locations: ['aws:us-east-1']}, id: 'publicId'}],
+      }
+
       jest.spyOn(ciUtils, 'parseConfigFile').mockImplementation(async (config, _) => config)
-      jest.spyOn(utils, 'getTestsToTrigger').mockReturnValue(
-        Promise.resolve({
-          overriddenTestsToTrigger: [
-            {public_id: 'publicId', executionRule: ExecutionRule.BLOCKING, locations: ['aws:us-east-1']},
-          ],
-          summary: {criticalErrors: 0, passed: 0, failed: 0, skipped: 0, notFound: 0, timedOut: 0},
-          tests: [{options: {ci: {executionRule: ExecutionRule.BLOCKING}}, public_id: 'publicId'} as any],
-        })
-      )
+      jest.spyOn(utils, 'getSuites').mockImplementation((() => [conf1]) as any)
 
       // Throw to stop the test
       const serverError = new Error('Server Error') as AxiosError
@@ -304,13 +300,13 @@ describe('run-test', () => {
 
       const apiHelper = {
         triggerTests,
+        getTest: jest.fn(() => ({...getApiTest('publicId')})),
       }
 
       const write = jest.fn()
       const command = new RunTestCommand()
       command.context = {stdout: {write}} as any
       command['getApiHelper'] = (() => apiHelper) as any
-      command['publicIds'] = ['publicId']
 
       expect(await command.execute()).toBe(0)
       expect(triggerTests).toHaveBeenCalledWith(
