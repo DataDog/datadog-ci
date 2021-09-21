@@ -38,6 +38,10 @@ export const MERGE_XRAY_TRACES_ENV_VAR = 'DD_MERGE_XRAY_TRACES'
 export const FLUSH_TO_LOG_ENV_VAR = 'DD_FLUSH_TO_LOG'
 export const LOG_LEVEL_ENV_VAR = 'DD_LOG_LEVEL'
 export const LAMBDA_HANDLER_ENV_VAR = 'DD_LAMBDA_HANDLER'
+export const SERVICE_ENV_VAR = 'DD_SERVICE'
+export const VERSION_ENV_VAR = 'DD_VERSION'
+export const ENVIRONMENT_ENV_VAR = 'DD_ENV'
+export const EXTRA_TAGS_ENV_VAR = 'DD_TAGS'
 
 // Environment variables used by Datadog CI
 export const CI_SITE_ENV_VAR = 'DATADOG_SITE'
@@ -45,3 +49,10 @@ export const CI_API_KEY_ENV_VAR = 'DATADOG_API_KEY'
 export const CI_KMS_API_KEY_ENV_VAR = 'DATADOG_KMS_API_KEY'
 
 export const LIST_FUNCTIONS_MAX_RETRY_COUNT = 2
+
+// DD_TAGS Regular Expression
+// This RegExp ensures that the --extra-tags string
+// matches a list of <key>:<value> separated by commas
+// such as: layer:api,team:intake
+export const EXTRA_TAGS_REG_EXP: RegExp = /^(([a-zA-Z]+)\w+:[\w\-/\.]+)+((\,)([a-zA-Z]+)\w+:[\w\-/\.]+)*$/g
+

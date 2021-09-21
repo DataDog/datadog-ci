@@ -8,6 +8,7 @@ import {
   InstrumentationSettings,
   updateLambdaConfigs,
 } from './function'
+import {EXTRA_TAGS_REG_EXP} from './constants'
 import {LambdaConfigOptions} from './interfaces'
 
 export class InstrumentCommand extends Command {
@@ -18,7 +19,9 @@ export class InstrumentCommand extends Command {
   }
   private configPath?: string
   private dryRun = false
+  private environment?: string
   private extensionVersion?: string
+  private extraTags?: string
   private flushMetricsToLogs?: string
   private forwarder?: string
   private functions: string[] = []
@@ -28,7 +31,9 @@ export class InstrumentCommand extends Command {
   private mergeXrayTraces?: string
   private regExPattern?: string
   private region?: string
+  private service?: string
   private tracing?: string
+  private version?: string
 
   public async execute() {
     const lambdaConfig = {lambda: this.config}
@@ -195,13 +200,13 @@ export class InstrumentCommand extends Command {
       return
     }
 
-    const stringBooleans: {[key: string]: string | undefined} = {
+    const stringBooleansMap: {[key: string]: string | undefined} = {
       flushMetricsToLogs: this.flushMetricsToLogs?.toLowerCase() ?? this.config.flushMetricsToLogs?.toLowerCase(),
       mergeXrayTraces: this.mergeXrayTraces?.toLowerCase() ?? this.config.mergeXrayTraces?.toLowerCase(),
       tracing: this.tracing?.toLowerCase() ?? this.config.tracing?.toLowerCase(),
     }
 
-    for (const [stringBoolean, value] of Object.entries(stringBooleans)) {
+    for (const [stringBoolean, value] of Object.entries(stringBooleansMap)) {
       if (!['true', 'false', undefined].includes(value)) {
         this.context.stdout.write(`Invalid boolean specified for ${stringBoolean}.\n`)
 
@@ -218,15 +223,51 @@ export class InstrumentCommand extends Command {
     const tracingEnabled = this.convertStringBooleanToBoolean(true, this.tracing, this.config.tracing)
     const logLevel = this.logLevel ?? this.config.logLevel
 
+    const service = this.service ?? this.config.service
+    const environment = this.environment ?? this.config.environment
+    const version = this.version ?? this.config.version
+
+    const tagsMap: {[key: string]: string | undefined} = {
+      environment,
+      service,
+      version,
+    }
+    const tagsMissing = []
+    for (const [tag, value] of Object.entries(tagsMap)) {
+      if (!value) {
+        tagsMissing.push(tag)
+      }
+    }
+    if (tagsMissing.length > 0) {
+      const tags = tagsMissing.join(', ').replace(/, ([^,]*)$/, ' and $1')
+      const plural = tagsMissing.length > 1
+      this.context.stdout.write(
+        `Warning: The ${tags} tag${
+          plural ? 's have' : ' has'
+        } not been configured. Learn more about Datadog unified service tagging: https://docs.datadoghq.com/getting_started/tagging/unified_service_tagging/#serverless-environment.\n`
+      )
+    }
+
+    const extraTags = this.extraTags?.toLowerCase() ?? this.config.extraTags?.toLowerCase()
+    if (extraTags && !sentenceMatchesRegEx(extraTags, EXTRA_TAGS_REG_EXP)) {
+      this.context.stdout.write('Extra tags do not comply with the <key>:<value> array.\n')
+
+      return
+    }
+
     return {
+      environment,
       extensionVersion,
+      extraTags,
       flushMetricsToLogs,
       forwarderARN,
       layerAWSAccount,
       layerVersion,
       logLevel,
       mergeXrayTraces,
+      service,
       tracingEnabled,
+      version,
     }
   }
 
@@ -303,6 +344,8 @@ export class InstrumentCommand extends Command {
   }
 }
 
+export const sentenceMatchesRegEx = (sentence: string, regex: RegExp) => sentence.match(regex)
+
 InstrumentCommand.addPath('lambda', 'instrument')
 InstrumentCommand.addOption('functions', Command.Array('-f,--function'))
 InstrumentCommand.addOption('regExPattern', Command.String('-fR,--functions-regex'))
@@ -317,3 +360,8 @@ InstrumentCommand.addOption('dryRun', Command.Boolean('-d,--dry'))
 InstrumentCommand.addOption('configPath', Command.String('--config'))
 InstrumentCommand.addOption('forwarder', Command.String('--forwarder'))
 InstrumentCommand.addOption('logLevel', Command.String('--logLevel'))
+
+InstrumentCommand.addOption('service', Command.String('--service'))
+InstrumentCommand.addOption('environment', Command.String('--env'))
+InstrumentCommand.addOption('version', Command.String('--version'))
+InstrumentCommand.addOption('extraTags', Command.String('--extra-tags'))
