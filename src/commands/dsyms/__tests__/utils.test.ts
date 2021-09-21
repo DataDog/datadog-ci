@@ -19,7 +19,7 @@ describe('isZipFile', () => {
 describe('getMatchingDSYMFiles', () => {
   test('Should find no valid dSYM file in Linux', async () => {
     const folder = './src/commands/dsyms/__tests__/test files/'
-    const foundFiles = await getMatchingDSYMFiles(folder)
+    const foundFiles = await getMatchingDSYMFiles(folder, undefined)
     expect(foundFiles).toEqual([undefined])
   })
 
@@ -27,7 +27,7 @@ describe('getMatchingDSYMFiles', () => {
     require('../utils').dwarfdumpUUID = jest.fn().mockResolvedValue(['BD8CE358-D5F3-358B-86DC-CBCF2148097B'])
 
     const folder = './src/commands/dsyms/__tests__/test files/'
-    const foundFiles = await getMatchingDSYMFiles(folder)
+    const foundFiles = await getMatchingDSYMFiles(folder, undefined)
     expect(foundFiles).toEqual([
       new Dsym('./src/commands/dsyms/__tests__/test files/test.dSYM', ['BD8CE358-D5F3-358B-86DC-CBCF2148097B']),
     ])

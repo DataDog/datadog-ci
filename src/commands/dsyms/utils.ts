@@ -1,4 +1,5 @@
 import {exec} from 'child_process'
+import {BaseContext} from 'clipanion'
 import {promises} from 'fs'
 import glob from 'glob'
 import {tmpdir} from 'os'
@@ -8,6 +9,7 @@ import {promisify} from 'util'
 import {Dsym} from './interfaces'
 
 import {buildPath} from '../../helpers/utils'
+import {renderInvalidDsymWarning} from './renderer'
 
 const UUID_REGEX = '[0-9A-F]{8}-([0-9A-F]{4}-){3}[0-9A-F]{12}'
 
@@ -24,7 +26,10 @@ export const isZipFile = async (filepath: string) => {
   }
 }
 
-export const getMatchingDSYMFiles = async (absoluteFolderPath: string): Promise<(Dsym | undefined)[]> => {
+export const getMatchingDSYMFiles = async (
+  absoluteFolderPath: string,
+  context: BaseContext | undefined
+): Promise<(Dsym | undefined)[]> => {
   const dSYMFiles = await globAsync(buildPath(absoluteFolderPath, '**/*.dSYM'), {})
 
   const allDsyms = dSYMFiles.map(async (dSYMPath) => {
@@ -33,6 +38,8 @@ export const getMatchingDSYMFiles = async (absoluteFolderPath: string): Promise<
 
       return new Dsym(dSYMPath, uuids)
     } catch {
+      context?.stdout.write(renderInvalidDsymWarning(dSYMPath))
+
       return undefined
     }
   })

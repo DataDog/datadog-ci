@@ -67,7 +67,7 @@ export class UploadCommand extends Command {
       datadogSite: this.config.datadogSite,
       metricsLogger: metricsLogger.logger,
     })
-    const payloads = await getMatchingDSYMFiles(searchPath)
+    const payloads = await getMatchingDSYMFiles(searchPath, this.context)
     const validPayloads = payloads.filter((payload) => payload !== undefined) as Dsym[]
     const requestBuilder = this.getRequestBuilder()
     const uploadDSYM = this.uploadDSYM(requestBuilder, metricsLogger, apiKeyValidator)
