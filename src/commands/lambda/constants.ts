@@ -55,4 +55,3 @@ export const LIST_FUNCTIONS_MAX_RETRY_COUNT = 2
 // matches a list of <key>:<value> separated by commas
 // such as: layer:api,team:intake
 export const EXTRA_TAGS_REG_EXP: RegExp = /^(([a-zA-Z]+)\w+:[\w\-/\.]+)+((\,)([a-zA-Z]+)\w+:[\w\-/\.]+)*$/g
-

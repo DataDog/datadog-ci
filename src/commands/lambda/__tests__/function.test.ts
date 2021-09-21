@@ -28,14 +28,8 @@ const makeMockLambda = (functionConfigs: Record<string, Lambda.FunctionConfigura
   getFunction: jest.fn().mockImplementation(({FunctionName}) => ({
     promise: () => Promise.resolve({Configuration: functionConfigs[FunctionName]}),
   })),
-  listFunctions: jest.fn().mockImplementation((args) => ({
-    promise: () => {
-      if (args) {
-        Promise.resolve({Functions: Object.values(functionConfigs), Marker: 'valid-marker'})
-      }
-
-      return Promise.resolve({Functions: Object.values(functionConfigs)})
-    },
+  listFunctions: jest.fn().mockImplementation(() => ({
+    promise: () => Promise.resolve({Functions: Object.values(functionConfigs)}),
   })),
   listTags: jest.fn().mockImplementation(() => ({promise: () => Promise.resolve({Tags: {}})})),
   tagResource: jest.fn().mockImplementation(() => ({promise: () => Promise.resolve()})),
@@ -379,6 +373,26 @@ describe('function', () => {
           ],
         }
       `)
+    })
+    test('fails when retry count is exceeded', async () => {
+      const makeMockLambdaListFunctionsError = () => ({
+        listFunctions: jest.fn().mockImplementation((args) => ({
+          promise: () => Promise.reject(),
+        })),
+      })
+      const lambda = makeMockLambdaListFunctionsError()
+      const cloudWatch = makeMockCloudWatchLogs()
+      const settings = {
+        flushMetricsToLogs: false,
+        layerVersion: 22,
+        logLevel: 'debug',
+        mergeXrayTraces: false,
+        tracingEnabled: false,
+      }
+
+      await expect(
+        getLambdaConfigsFromRegEx(lambda as any, cloudWatch as any, 'us-east-1', 'fake-pattern', settings)
+      ).rejects.toStrictEqual(new Error('Max retry count exceeded.'))
     })
   })
 

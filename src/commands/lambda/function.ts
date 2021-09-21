@@ -121,11 +121,8 @@ export const getLambdaConfigsFromRegEx = async (
   let firstCall = true
 
   while (nextMarker || firstCall) {
-    if (firstCall) {
-      firstCall = false
-    }
     if (retryCount >= LIST_FUNCTIONS_MAX_RETRY_COUNT) {
-      throw Error("Couldn't fetch lambda functions. Max retry count exceeded.")
+      throw Error('Max retry count exceeded.')
     }
     try {
       listFunctionsResponse = await lambda.listFunctions({Marker: nextMarker}).promise()
@@ -134,6 +131,12 @@ export const getLambdaConfigsFromRegEx = async (
       retryCount = 0
     } catch (e) {
       retryCount++
+      if (firstCall) {
+        continue
+      }
+    }
+    if (firstCall) {
+      firstCall = false
     }
   }
 
