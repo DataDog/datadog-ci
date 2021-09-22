@@ -36,6 +36,10 @@ interface XMLSuite {
   properties: {
     property: {$: {name: string; value: any}}[]
   }
+  // These are singular for a better display in the XML format of the report.
+  browser_error?: XMLError[]
+  error: XMLError[]
+  warning?: XMLError[]
   testcase: XMLStep[]
 }
 
@@ -62,6 +66,11 @@ interface XMLJSON {
     $: {name: string}
     testsuite: XMLRun[]
   }
+}
+
+interface XMLError {
+  $: {type: string; [key: string]: string}
+  _: string
 }
 
 export const getDefaultStats = (): Stats => ({
@@ -116,9 +125,8 @@ export class JUnitReporter implements Reporter {
 
   public testEnd(test: InternalTest, results: PollResult[]) {
     const suiteRunName = test.suite || 'Undefined suite'
-    console.log(test.type, test.subtype)
-    // console.log(JSON.stringify(results, null, 4))
     let suiteRun = this.json.testsuites.testsuite.find((suite: XMLRun) => suite.$.name === suiteRunName)
+
     if (!suiteRun) {
       suiteRun = {
         $: {name: suiteRunName, ...getDefaultStats()},
@@ -139,12 +147,16 @@ export class JUnitReporter implements Reporter {
       if ('stepDetails' in result.result) {
         // It's a browser test.
         for (const stepDetail of result.result.stepDetails) {
-          testSuite.testcase.push(...this.getBrowserTestStep(stepDetail))
+          const {browser_error, error, warning} = this.getBrowserTestStep(stepDetail)
+          testSuite.browser_error = browser_error
+          testSuite.error = error
+          testSuite.warning = warning
         }
       } else if ('steps' in result.result) {
         // It's a multistep test.
         for (const step of result.result.steps) {
-          testSuite.testcase.push(...this.getApiTestStep(step))
+          const {error} = this.getApiTestStep(step)
+          testSuite.error = error
         }
       }
 
@@ -154,7 +166,6 @@ export class JUnitReporter implements Reporter {
 
   private getResultStats(result: PollResult, stats: Stats | undefined = getDefaultStats()): Stats {
     let stepsStats: Stats[] = []
-    let aggregateFunction
     if ('stepDetails' in result.result) {
       // It's a browser test.
       stepsStats = result.result.stepDetails
@@ -167,15 +178,10 @@ export class JUnitReporter implements Reporter {
         })
         .reduce((acc, val) => acc.concat(val), [])
         .map(this.getBrowserStepStats)
-      aggregateFunction = this.getBrowserStepStats
     } else if ('steps' in result.result) {
-      console.log(
-        'MULTI STEP',
-        result.result.steps.map((step) => step.assertionResults)
-      )
+      // It's an multistep API test
       stepsStats = result.result.steps.map(this.getApiStepStats)
     } else {
-      console.log('API STEP', result.result.assertionResults)
       stepsStats = [this.getApiStepStats(result.result)]
     }
 
@@ -191,77 +197,52 @@ export class JUnitReporter implements Reporter {
     return stats
   }
 
-  private getApiTestStep(step: MultiStep): XMLStep[] {
-    const mainStep: XMLStep = {
-      $: {
-        allow_failure: step.allowFailure,
-        is_skipped: step.skipped,
-        name: step.name,
-        time: step.timings.total / 1000,
-        type: step.subtype,
-        ...this.getApiStepStats(step),
-      },
-      error: [],
+  private getApiTestStep(step: MultiStep): {error: XMLError[]} {
+    const error: XMLError[] = []
+
+    if (step.failure) {
+      error.push({$: {type: step.failure.code, step: step.name}, _: step.failure.message})
     }
-    const steps = [mainStep]
-    // TODO Add results
-    return steps
+
+    return {
+      error,
+    }
   }
 
-  private getBrowserTestStep(stepDetail: Step): XMLStep[] {
-    const mainStep: XMLStep = {
-      $: {
-        allow_failure: stepDetail.allowFailure,
-        is_skipped: stepDetail.skipped,
-        name: stepDetail.description,
-        substep_public_id: stepDetail.subTestPublicId,
-        time: stepDetail.duration / 1000,
-        type: stepDetail.type,
-        url: stepDetail.url,
-        ...this.getBrowserStepStats(stepDetail),
-      },
-      browser_error: [],
-      error: [],
-      warning: [],
-    }
-    const steps = [mainStep]
-
-    if (stepDetail.subTestStepDetails) {
-      for (const subStepDetail of stepDetail.subTestStepDetails) {
-        steps.push(...this.getBrowserTestStep(subStepDetail))
-      }
-    }
-
-    if (stepDetail.vitalsMetrics) {
-      mainStep.vitals = stepDetail.vitalsMetrics.map((vital) => ({$: vital}))
-    }
-
+  private getBrowserTestStep(stepDetail: Step): {browser_error: XMLError[]; error: XMLError[]; warning: XMLError[]} {
+    const browser_error = []
+    const error = []
+    const warning = []
     if (stepDetail.browserErrors?.length) {
-      mainStep.browser_error!.push(
+      browser_error.push(
         ...stepDetail.browserErrors.map((error) => ({
-          $: {type: error.type, name: error.name},
+          $: {type: error.type, name: error.name, step: stepDetail.description},
           _: error.description,
         }))
       )
     }
 
     if (stepDetail.error) {
-      mainStep.error.push({
-        $: {type: 'assertion'},
+      error.push({
+        $: {type: 'assertion', step: stepDetail.description},
         _: stepDetail.error,
       })
     }
 
     if (stepDetail.warnings?.length) {
-      mainStep.warning!.push(
+      warning.push(
         ...stepDetail.warnings.map((warning) => ({
-          $: {type: warning.type},
+          $: {type: warning.type, step: stepDetail.description},
           _: warning.message,
         }))
       )
     }
 
-    return steps
+    return {
+      browser_error,
+      error,
+      warning,
+    }
   }
 
   private getBrowserStepStats(step: Step): Stats {
@@ -314,6 +295,8 @@ export class JUnitReporter implements Reporter {
         timestamp: result.timestamp,
         ...this.getResultStats(result),
       },
+      browser_error: [],
+      error: [],
       properties: {
         property: [
           {$: {name: 'status', value: test.status}},
@@ -337,6 +320,7 @@ export class JUnitReporter implements Reporter {
         ].filter((prop) => prop.$.value),
       },
       testcase: [],
+      warning: [],
     }
   }
 }

@@ -64,8 +64,10 @@ export interface ApiTestResult extends TestResult {
 export interface MultiStep {
   allowFailure: boolean
   assertionResults: AssertionResult[]
-  errorCode?: string
-  errorMessage?: string
+  failure?: {
+    message: string
+    code: string
+  }
   name: string
   passed: boolean
   skipped: boolean

@@ -89,27 +89,6 @@ describe('Junit reporter', () => {
       const testsuite = reporter['json'].testsuites.testsuite[0]
       expect(testsuite.$).toMatchObject(getDefaultStats())
     })
-
-    it('should populate the report with steps', () => {
-      const testMock = {
-        suite: 'Sweet Suite',
-        ...globalTestMock,
-      }
-      const resultMock = [
-        {
-          ...globalResultMock,
-          ...{
-            result: {
-              ...globalResultMock.result,
-              stepDetails: [globalStepMock, globalStepMock],
-            },
-          },
-        },
-      ]
-      reporter.testEnd(testMock, resultMock)
-      const testsuite = reporter['json'].testsuites.testsuite[0].testsuite[0]
-      expect(testsuite.testcase.length).toBe(resultMock[0].result.stepDetails.length)
-    })
   })
 
   describe('getTestSuite', () => {
@@ -140,60 +119,6 @@ describe('Junit reporter', () => {
         errors: 2,
         failures: 1,
         tests: 3,
-        warnings: 1,
-      })
-    })
-  })
-
-  describe('getStep', () => {
-    it('should add stats to the testcase', () => {
-      const test = reporter['getBrowserTestStep'](globalStepMock)[0]
-      expect(test.$).toMatchObject({
-        ...getDefaultStats(),
-        tests: 1,
-      })
-    })
-
-    it('should merge subTests', () => {
-      const stepMock = {
-        ...globalStepMock,
-        ...{
-          description: 'Step 2',
-          subTestStepDetails: [
-            {
-              ...globalStepMock,
-              ...{description: 'Subtest 1'},
-            },
-          ],
-        },
-      }
-      const tests = reporter['getBrowserTestStep'](stepMock)
-      expect(tests.length).toBe(2)
-    })
-
-    it('should add vitals if present', () => {
-      const test = reporter['getBrowserTestStep'](globalStepMock)[0]
-      expect(test.vitals).toEqual([{$: globalStepMock.vitalsMetrics[0]}])
-    })
-
-    it('should add browser errors, errors and warnings', () => {
-      const stepMock = {
-        ...globalStepMock,
-        ...{
-          browserErrors: [{type: 'error', name: 'Error', description: 'Description'}],
-          error: 'Error',
-          warnings: [{type: 'warning', message: 'Warning'}],
-        },
-      }
-      const test = reporter['getBrowserTestStep'](stepMock)[0]
-      expect(test.error.length).toBe(1)
-      expect(test.browser_error!.length).toBe(1)
-      expect(test.warning!.length).toBe(1)
-      expect(test.$).toMatchObject({
-        ...getDefaultStats(),
-        errors: 2,
-        failures: 1,
-        tests: 1,
         warnings: 1,
       })
     })
