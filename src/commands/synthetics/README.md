@@ -25,7 +25,7 @@ If the org uses a custom sub-domain to access Datadog app, it needs to be set in
 export DATADOG_SUBDOMAIN="myorg"
 ```
 
-You can use the `DATADOG_SYNTHETICS_LOCATIONS` to override the locations where your tests run. Locations should be separated with `;`. Note that the configuration of the test will always the precedent over others overrides.  
+You can use the `DATADOG_SYNTHETICS_LOCATIONS` to override the locations where your tests run. Locations should be separated with `;`. Note that the configuration in test files takes precedence over others overrides.  
 
 ```bash
 export DATADOG_SYNTHETICS_LOCATIONS="aws:us-east-1;aws:us-east-2"
