@@ -470,20 +470,17 @@ describe('utils', () => {
       jest.clearAllMocks()
     })
 
-    const passingResult = getBrowserResult()
-
     const getTestConfig = (publicId = 'abc-def-ghi') => getApiTest(publicId)
 
     const getPassingPollResult = (resultId: string) => ({
       check: getTestConfig(),
       dc_id: 42,
-      result: passingResult,
+      result: getBrowserResult({error: 'Timeout', passed: false}),
       resultID: resultId,
       timestamp: 0,
     })
 
     const getTestAndResult = (publicId = 'abc-def-ghi', resultId = '0123456789') => {
-      const testConfiguration = getTestConfig()
       const triggerResult = {
         device: 'laptop_large',
         location: 42,
@@ -496,13 +493,7 @@ describe('utils', () => {
         suite: 'Suite 1',
       }
 
-      const passingPollResult = {
-        check: testConfiguration,
-        dc_id: 42,
-        result: passingResult,
-        resultID: resultId,
-        timestamp: 0,
-      }
+      const passingPollResult = getPassingPollResult(resultId)
 
       return {passingPollResult, triggerConfig, triggerResult}
     }
@@ -529,7 +520,6 @@ describe('utils', () => {
           result: getBrowserResult({
             device: {height: 0, id: triggerResult.device, width: 0},
             error: 'Timeout',
-            eventType: 'finished',
             passed: false,
           }),
           resultID: triggerResult.result_id,
@@ -548,7 +538,6 @@ describe('utils', () => {
           result: getBrowserResult({
             device: {height: 0, id: triggerResult.device, width: 0},
             error: 'Timeout',
-            eventType: 'finished',
             passed: false,
           }),
           resultID: triggerResult.result_id,
@@ -584,7 +573,6 @@ describe('utils', () => {
           result: getBrowserResult({
             device: {height: 0, id: triggerResultTimeOut.device, width: 0},
             error: 'Timeout',
-            eventType: 'finished',
             passed: false,
           }),
           resultID: triggerResultTimeOut.result_id,
@@ -615,16 +603,12 @@ describe('utils', () => {
         [triggerResult.public_id]: [
           {
             dc_id: triggerResult.location,
-            result: {
+            result: getBrowserResult({
               device: {height: 0, id: triggerResult.device, width: 0},
-              duration: 0,
               error: 'Tunnel Failure',
-              eventType: 'finished',
               passed: false,
-              startUrl: '',
-              stepDetails: [],
               tunnel: true,
-            },
+            }),
             resultID: triggerResult.result_id,
             timestamp: 0,
           },
@@ -651,16 +635,12 @@ describe('utils', () => {
         [triggerResult.public_id]: [
           {
             dc_id: triggerResult.location,
-            result: {
+            result: getBrowserResult({
               device: {height: 0, id: triggerResult.device, width: 0},
-              duration: 0,
               error: 'Endpoint Failure',
-              eventType: 'finished',
               passed: false,
-              startUrl: '',
-              stepDetails: [],
               tunnel: true,
-            },
+            }),
             resultID: triggerResult.result_id,
             timestamp: 0,
           },

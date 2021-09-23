@@ -83,13 +83,14 @@ export const getResult = (): PollResult => ({
 export const getBrowserResult = (opts: any = {}): Result => ({
   device: {
     height: 1,
-    id: 'chrome',
+    id: 'laptop_large',
     width: 1,
   },
   duration: 0,
-  eventType: 'event',
+  eventType: 'finished',
   passed: true,
   startUrl: '',
   stepDetails: [],
+  tunnel: false,
   ...opts,
 })
