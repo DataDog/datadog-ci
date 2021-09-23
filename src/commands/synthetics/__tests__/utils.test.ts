@@ -471,8 +471,8 @@ describe('utils', () => {
     })
 
     const passingResult = getBrowserResult()
-    const publicId = 'abc-def-ghi'
-    const testConfiguration = getApiTest(publicId)
+
+    const getTestConfig = (publicId = 'abc-def-ghi') => getApiTest(publicId)
 
     const getPassingPollResult = (resultId: string) => ({
       check: getTestConfig(),
@@ -481,8 +481,6 @@ describe('utils', () => {
       resultID: resultId,
       timestamp: 0,
     })
-
-    const getTestConfig = (publicId = 'abc-def-ghi') => getApiTest(publicId)
 
     const getTestAndResult = (publicId = 'abc-def-ghi', resultId = '0123456789') => {
       const testConfiguration = getTestConfig()

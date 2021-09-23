@@ -173,6 +173,7 @@ export const isCriticalError = (result: Result): boolean => {
   if ('unhealthy' in result && result.unhealthy) {
     return result.unhealthy
   }
+
   return result.error === 'Endpoint Failure'
 }
 
@@ -377,6 +378,7 @@ export const getResultDuration = (result: Result): number => {
   if ('timings' in result) {
     return result.timings.total
   }
+
   return 0
 }
 

@@ -42,14 +42,14 @@ interface XMLSuiteProperties extends Stats {
 
 interface XMLSuite {
   $: XMLSuiteProperties
-  properties: {
-    property: {$: {name: string; value: any}}[]
-  }
   // These are singular for a better display in the XML format of the report.
   browser_error?: XMLError[]
   error: XMLError[]
-  warning?: XMLError[]
+  properties: {
+    property: {$: {name: string; value: any}}[]
+  }
   testcase: XMLStep[]
+  warning?: XMLError[]
 }
 
 interface XMLStepProperties extends Stats {
@@ -173,6 +173,88 @@ export class JUnitReporter implements Reporter {
     }
   }
 
+  private getApiStepStats(step: MultiStep | ApiTestResult): Stats {
+    // TODO use more granular result based on step.assertionResults
+    let allowfailures = 0
+    let skipped = 0
+    if ('allowFailure' in step) {
+      allowfailures += step.allowFailure ? 1 : 0
+    }
+    if ('skipped' in step) {
+      skipped += step.skipped ? 1 : 0
+    }
+
+    return {
+      allowfailures,
+      errors: step.passed ? 1 : 0,
+      failures: step.passed ? 1 : 0,
+      skipped,
+      tests: 1,
+      warnings: 0,
+    }
+  }
+
+  private getApiTestStep(step: MultiStep): {error: XMLError[]} {
+    const error: XMLError[] = []
+
+    if (step.failure) {
+      error.push({$: {type: step.failure.code, step: step.name}, _: step.failure.message})
+    }
+
+    return {
+      error,
+    }
+  }
+
+  private getBrowserStepStats(step: Step): Stats {
+    const errors = step.browserErrors ? step.browserErrors.length : 0
+
+    return {
+      allowfailures: step.allowFailure ? 1 : 0,
+      errors: errors + (step.error ? 1 : 0),
+      failures: step.error ? 1 : 0,
+      skipped: step.skipped ? 1 : 0,
+      tests: step.subTestStepDetails ? step.subTestStepDetails.length : 1,
+      warnings: step.warnings ? step.warnings.length : 0,
+    }
+  }
+
+  private getBrowserTestStep(stepDetail: Step): {browser_error: XMLError[]; error: XMLError[]; warning: XMLError[]} {
+    const browserError = []
+    const error = []
+    const warning = []
+    if (stepDetail.browserErrors?.length) {
+      browserError.push(
+        ...stepDetail.browserErrors.map((e) => ({
+          $: {type: e.type, name: e.name, step: stepDetail.description},
+          _: e.description,
+        }))
+      )
+    }
+
+    if (stepDetail.error) {
+      error.push({
+        $: {type: 'assertion', step: stepDetail.description},
+        _: stepDetail.error,
+      })
+    }
+
+    if (stepDetail.warnings?.length) {
+      warning.push(
+        ...stepDetail.warnings.map((w) => ({
+          $: {type: w.type, step: stepDetail.description},
+          _: w.message,
+        }))
+      )
+    }
+
+    return {
+      browser_error: browserError,
+      error,
+      warning,
+    }
+  }
+
   private getResultStats(result: PollResult, stats: Stats | undefined = getDefaultStats()): Stats {
     let stepsStats: Stats[] = []
     if ('stepDetails' in result.result) {
@@ -204,88 +286,6 @@ export class JUnitReporter implements Reporter {
     }
 
     return stats
-  }
-
-  private getApiTestStep(step: MultiStep): {error: XMLError[]} {
-    const error: XMLError[] = []
-
-    if (step.failure) {
-      error.push({$: {type: step.failure.code, step: step.name}, _: step.failure.message})
-    }
-
-    return {
-      error,
-    }
-  }
-
-  private getBrowserTestStep(stepDetail: Step): {browser_error: XMLError[]; error: XMLError[]; warning: XMLError[]} {
-    const browser_error = []
-    const error = []
-    const warning = []
-    if (stepDetail.browserErrors?.length) {
-      browser_error.push(
-        ...stepDetail.browserErrors.map((error) => ({
-          $: {type: error.type, name: error.name, step: stepDetail.description},
-          _: error.description,
-        }))
-      )
-    }
-
-    if (stepDetail.error) {
-      error.push({
-        $: {type: 'assertion', step: stepDetail.description},
-        _: stepDetail.error,
-      })
-    }
-
-    if (stepDetail.warnings?.length) {
-      warning.push(
-        ...stepDetail.warnings.map((warning) => ({
-          $: {type: warning.type, step: stepDetail.description},
-          _: warning.message,
-        }))
-      )
-    }
-
-    return {
-      browser_error,
-      error,
-      warning,
-    }
-  }
-
-  private getBrowserStepStats(step: Step): Stats {
-    const errors = step.browserErrors ? step.browserErrors.length : 0
-
-    return {
-      allowfailures: step.allowFailure ? 1 : 0,
-      errors: errors + (step.error ? 1 : 0),
-      failures: step.error ? 1 : 0,
-      skipped: step.skipped ? 1 : 0,
-      tests: step.subTestStepDetails ? step.subTestStepDetails.length : 1,
-      warnings: step.warnings ? step.warnings.length : 0,
-    }
-  }
-
-  private getApiStepStats(step: MultiStep | ApiTestResult): Stats {
-    // TODO use more granular result based on step.assertionResults
-    let allowfailures = 0
-    let skipped = 0
-    if ('allowFailure' in step) {
-      allowfailures += step.allowFailure ? 1 : 0
-    }
-    if ('skipped' in step) {
-      skipped += step.skipped ? 1 : 0
-    }
-
-    return {
-      allowfailures,
-      errors: step.passed ? 1 : 0,
-      failures: step.passed ? 1 : 0,
-      skipped,
-      tests: 1,
-      warnings: 0,
-    }
   }
 
   private getSuiteStats(results: PollResult[], stats: Stats | undefined = getDefaultStats()): Stats {

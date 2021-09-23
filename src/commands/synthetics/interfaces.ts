@@ -48,7 +48,7 @@ export interface BrowserTestResult extends TestResult {
   unhealthy?: boolean
 }
 
-type AssertionResult = {
+interface AssertionResult {
   actual: any
   expected?: any
   valid: boolean
@@ -65,8 +65,8 @@ export interface MultiStep {
   allowFailure: boolean
   assertionResults: AssertionResult[]
   failure?: {
-    message: string
     code: string
+    message: string
   }
   name: string
   passed: boolean
