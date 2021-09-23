@@ -72,7 +72,7 @@ export class InstrumentCommand extends Command {
         return 1
       }
       if (this.regExPattern!.match(':')) {
-        this.context.stdout.write("--functions-regex isn't meant to be used with ARNs.\n")
+        this.context.stdout.write(`"--functions-regex" isn't meant to be used with ARNs.\n`)
 
         return 1
       }
