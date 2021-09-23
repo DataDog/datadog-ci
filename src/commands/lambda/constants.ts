@@ -51,5 +51,5 @@ export const CI_KMS_API_KEY_ENV_VAR = 'DATADOG_KMS_API_KEY'
 // DD_TAGS Regular Expression
 // This RegExp ensures that the --extra-tags string
 // matches a list of <key>:<value> separated by commas
-// such as: layer:api,team:intake
-export const EXTRA_TAGS_REG_EXP: RegExp = /^(([a-zA-Z]+)\w+:[\w\-/\.]+)+((\,)([a-zA-Z]+)\w+:[\w\-/\.]+)*$/g
+// such as: layer:api,team:intake,git.commit.sha:1a2b3c4d5e,env-tag:test,custom_tag:enabled,this-tag:is:valid
+export const EXTRA_TAGS_REG_EXP: RegExp = /^[a-zA-Z]+((\.|-|:)?\w)+:(\w(\.|-|:)?)+((\,)[a-zA-Z]+((\.|-|:)?\w)+:(\w(\.|-|:)?)+)*$/g

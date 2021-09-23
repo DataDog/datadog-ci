@@ -1,5 +1,6 @@
 import {CloudWatchLogs, Lambda} from 'aws-sdk'
-import {Command} from 'clipanion'
+import {UploadCommand} from '../commit/upload';
+import {Cli, Command} from 'clipanion'
 import {parseConfigFile} from '../../helpers/utils'
 import {EXTRA_TAGS_REG_EXP} from './constants'
 import {FunctionConfiguration, getLambdaConfigs, InstrumentationSettings, updateLambdaConfigs} from './function'
@@ -90,6 +91,19 @@ export class InstrumentCommand extends Command {
       this.context.stdout.write(`Failure during update. ${err}\n`)
 
       return 1
+    }
+
+    if (this.extraTags && this.extraTags.includes("git.commit.sha:")) {
+      this.context.stdout.write(`Found 'git.commit.sha' tag. Will upload git commit.\n`)
+      try {
+        const cli = new Cli();
+        cli.register(UploadCommand)
+        await cli.run(['commit', 'upload'], this.context)
+      } catch (err) {
+        this.context.stdout.write(`Could not upload commit information. ${err}\n`)
+
+        return 1
+      }
     }
 
     return 0
