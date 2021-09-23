@@ -283,12 +283,12 @@ describe('run-test', () => {
     })
 
     test('override locations with ENV variable', async () => {
-      const conf1 = {
-        tests: [{config: {locations: ['aws:us-east-1']}, id: 'publicId'}],
+      const conf = {
+        tests: [{config: {}, id: 'publicId'}],
       }
 
       jest.spyOn(ciUtils, 'parseConfigFile').mockImplementation(async (config, _) => config)
-      jest.spyOn(utils, 'getSuites').mockImplementation((() => [conf1]) as any)
+      jest.spyOn(utils, 'getSuites').mockImplementation((() => [conf]) as any)
 
       // Throw to stop the test
       const serverError = new Error('Server Error') as AxiosError
@@ -306,36 +306,51 @@ describe('run-test', () => {
       const write = jest.fn()
       const command = new RunTestCommand()
       command.context = {stdout: {write}} as any
+      command['config'].global = {locations: ['aws:us-east-2']}
       command['getApiHelper'] = (() => apiHelper) as any
 
       expect(await command.execute()).toBe(0)
       expect(triggerTests).toHaveBeenCalledWith(
         expect.objectContaining({
-          tests: [{executionRule: 'blocking', locations: ['aws:us-east-1'], public_id: 'publicId'}],
+          tests: [{executionRule: 'blocking', locations: ['aws:us-east-2'], public_id: 'publicId'}],
         })
       )
 
+      // env > global
       process.env = {
-        DATADOG_SYNTHETICS_LOCATIONS: 'aws:us-east-2',
+        DATADOG_SYNTHETICS_LOCATIONS: 'aws:us-east-3',
       }
       expect(await command.execute()).toBe(0)
       expect(triggerTests).toHaveBeenCalledTimes(2)
       expect(triggerTests).toHaveBeenNthCalledWith(
         2,
         expect.objectContaining({
-          tests: [{executionRule: 'blocking', locations: ['aws:us-east-2'], public_id: 'publicId'}],
+          tests: [{executionRule: 'blocking', locations: ['aws:us-east-3'], public_id: 'publicId'}],
         })
       )
 
       process.env = {
-        DATADOG_SYNTHETICS_LOCATIONS: 'aws:us-east-2;aws:us-east-3',
+        DATADOG_SYNTHETICS_LOCATIONS: 'aws:us-east-3;aws:us-east-4',
       }
       expect(await command.execute()).toBe(0)
       expect(triggerTests).toHaveBeenCalledTimes(3)
       expect(triggerTests).toHaveBeenNthCalledWith(
         3,
         expect.objectContaining({
-          tests: [{executionRule: 'blocking', locations: ['aws:us-east-2', 'aws:us-east-3'], public_id: 'publicId'}],
+          tests: [{executionRule: 'blocking', locations: ['aws:us-east-3', 'aws:us-east-4'], public_id: 'publicId'}],
+        })
+      )
+
+      // test > env
+      const confWithLocation = {
+        tests: [{config: {locations: ['aws:us-east-1']}, id: 'publicId'}],
+      }
+      jest.spyOn(utils, 'getSuites').mockImplementation((() => [confWithLocation]) as any)
+
+      expect(await command.execute()).toBe(0)
+      expect(triggerTests).toHaveBeenCalledWith(
+        expect.objectContaining({
+          tests: [{executionRule: 'blocking', locations: ['aws:us-east-1'], public_id: 'publicId'}],
         })
       )
     })
