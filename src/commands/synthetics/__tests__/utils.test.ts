@@ -361,10 +361,12 @@ describe('utils', () => {
 
     test('result with unhealthy result', () => {
       const result: Result = {
-        device: {id: 'laptop_large'},
+        device: {height: 0, id: 'laptop_large', width: 0},
+        duration: 0,
         errorCode: 'ERRABORTED',
         eventType: 'finished',
         passed: false,
+        startUrl: '',
         stepDetails: [],
         unhealthy: true,
       }
@@ -374,10 +376,12 @@ describe('utils', () => {
 
     test('result with timeout result', () => {
       const result: Result = {
-        device: {id: 'laptop_large'},
+        device: {height: 0, id: 'laptop_large', width: 0},
+        duration: 0,
         error: 'Timeout',
         eventType: 'finished',
         passed: false,
+        startUrl: '',
         stepDetails: [],
       }
       expect(utils.hasResultPassed(result, true, true)).toBeFalsy()
@@ -387,10 +391,12 @@ describe('utils', () => {
 
   test('result with endpoint failure result', () => {
     const result: Result = {
-      device: {id: 'laptop_large'},
+      device: {height: 0, id: 'laptop_large', width: 0},
+      duration: 0,
       error: 'Endpoint Failure',
       eventType: 'finished',
       passed: false,
+      startUrl: '',
       stepDetails: [],
     }
 
@@ -612,10 +618,12 @@ describe('utils', () => {
           {
             dc_id: triggerResult.location,
             result: {
-              device: {id: triggerResult.device},
+              device: {height: 0, id: triggerResult.device, width: 0},
+              duration: 0,
               error: 'Tunnel Failure',
               eventType: 'finished',
               passed: false,
+              startUrl: '',
               stepDetails: [],
               tunnel: true,
             },
@@ -646,10 +654,12 @@ describe('utils', () => {
           {
             dc_id: triggerResult.location,
             result: {
-              device: {id: triggerResult.device},
+              device: {height: 0, id: triggerResult.device, width: 0},
+              duration: 0,
               error: 'Endpoint Failure',
               eventType: 'finished',
               passed: false,
+              startUrl: '',
               stepDetails: [],
               tunnel: true,
             },

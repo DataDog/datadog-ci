@@ -169,7 +169,12 @@ export const getStrictestExecutionRule = (configRule: ExecutionRule, testRule?: 
   return ExecutionRule.BLOCKING
 }
 
-export const isCriticalError = (result: Result): boolean => result.unhealthy || result.error === 'Endpoint Failure'
+export const isCriticalError = (result: Result): boolean => {
+  if ('unhealthy' in result && result.unhealthy) {
+    return result.unhealthy
+  }
+  return result.error === 'Endpoint Failure'
+}
 
 export const hasResultPassed = (result: Result, failOnCriticalErrors: boolean, failOnTimeout: boolean): boolean => {
   if (isCriticalError(result) && !failOnCriticalErrors) {
