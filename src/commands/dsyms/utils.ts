@@ -28,7 +28,7 @@ export const isZipFile = async (filepath: string) => {
 
 export const getMatchingDSYMFiles = async (
   absoluteFolderPath: string,
-  context: BaseContext | undefined
+  context: BaseContext
 ): Promise<(Dsym | undefined)[]> => {
   const dSYMFiles = await globAsync(buildPath(absoluteFolderPath, '**/*.dSYM'), {})
 
@@ -38,7 +38,7 @@ export const getMatchingDSYMFiles = async (
 
       return new Dsym(dSYMPath, uuids)
     } catch {
-      context?.stdout.write(renderInvalidDsymWarning(dSYMPath))
+      context.stdout.write(renderInvalidDsymWarning(dSYMPath))
 
       return undefined
     }
