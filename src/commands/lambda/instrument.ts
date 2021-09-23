@@ -230,33 +230,6 @@ export class InstrumentCommand extends Command {
     }
   }
 
-  private getUserFunctions = async (pattern: string) => {
-    const re = new RegExp(pattern);
-    const region = this.region || this.config.region
-    const lambda = new Lambda({ region })
-    const functions: any[] = []
-    let nextMarker
-    try {
-      let results = await lambda.listFunctions().promise()
-      results.Functions?.map(f => f.FunctionName?.match(re) && functions.push(f))
-      
-      nextMarker = results.NextMarker
-      while (nextMarker) {
-        results = await lambda.listFunctions({ Marker: nextMarker }).promise()
-        results.Functions?.map(f => f.FunctionName?.match(re) && functions.push(f))
-        nextMarker = results.NextMarker
-      }
-    } catch (e) {
-      this.context.stdout.write(
-        `An error occurred ${e}. \n`
-      )
-    }
-    this.context.stdout.write(
-      `Found ${functions.length} functions for this user. \n`
-    )
-    return
-  }
-
   private printPlannedActions(configs: FunctionConfiguration[]) {
     const prefix = this.dryRun ? '[Dry Run] ' : ''
 
