@@ -328,8 +328,8 @@ export class RunTestCommand extends Command {
       .map((test) => ({
         config: {
           ...this.config.global,
-          ...test.config,
           ...configFromEnvironment,
+          ...test.config,
         },
         id: test.id,
       }))
