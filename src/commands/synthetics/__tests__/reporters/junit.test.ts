@@ -69,7 +69,7 @@ describe('Junit reporter', () => {
     })
 
     it('should give a default suite name', () => {
-      reporter.testEnd(globalTestMock, [])
+      reporter.testEnd(globalTestMock, [], '', {})
       const testsuite = reporter['json'].testsuites.testsuite[0]
       expect(testsuite.$.name).toBe('Undefined suite')
     })
@@ -79,13 +79,13 @@ describe('Junit reporter', () => {
         suite: 'Suite 1',
         ...globalTestMock,
       }
-      reporter.testEnd(testMock, [])
-      reporter.testEnd(testMock, [])
+      reporter.testEnd(testMock, [], '', {})
+      reporter.testEnd(testMock, [], '', {})
       expect(reporter['json'].testsuites.testsuite.length).toBe(1)
     })
 
     it('should add stats to the run', () => {
-      reporter.testEnd(globalTestMock, [])
+      reporter.testEnd(globalTestMock, [], '', {})
       const testsuite = reporter['json'].testsuites.testsuite[0]
       expect(testsuite.$).toMatchObject(getDefaultStats())
     })
@@ -113,7 +113,7 @@ describe('Junit reporter', () => {
           },
         },
       }
-      const suite = reporter['getTestSuite'](getApiTest('123'), resultMock)
+      const suite = reporter['getTestSuite'](getApiTest('123'), resultMock, {})
       expect(suite.$).toMatchObject({
         ...getDefaultStats(),
         errors: 2,

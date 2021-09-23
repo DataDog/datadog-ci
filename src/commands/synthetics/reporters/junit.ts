@@ -3,7 +3,16 @@ import {promises as fs} from 'fs'
 import {Writable} from 'stream'
 import {Builder} from 'xml2js'
 
-import {ApiTestResult, InternalTest, MultiStep, PollResult, Reporter, Step, Vitals} from '../interfaces'
+import {
+  ApiTestResult,
+  InternalTest,
+  LocationsMapping,
+  MultiStep,
+  PollResult,
+  Reporter,
+  Step,
+  Vitals,
+} from '../interfaces'
 import {RunTestCommand} from '../run-test'
 import {getResultDuration} from '../utils'
 
@@ -123,7 +132,7 @@ export class JUnitReporter implements Reporter {
     }
   }
 
-  public testEnd(test: InternalTest, results: PollResult[]) {
+  public testEnd(test: InternalTest, results: PollResult[], baseUrl: string, locations: LocationsMapping) {
     const suiteRunName = test.suite || 'Undefined suite'
     let suiteRun = this.json.testsuites.testsuite.find((suite: XMLRun) => suite.$.name === suiteRunName)
 
@@ -142,7 +151,7 @@ export class JUnitReporter implements Reporter {
     }
 
     for (const result of results) {
-      const testSuite: XMLSuite = this.getTestSuite(test, result)
+      const testSuite: XMLSuite = this.getTestSuite(test, result, locations)
 
       if ('stepDetails' in result.result) {
         // It's a browser test.
@@ -287,7 +296,7 @@ export class JUnitReporter implements Reporter {
     return stats
   }
 
-  private getTestSuite(test: InternalTest, result: PollResult): XMLSuite {
+  private getTestSuite(test: InternalTest, result: PollResult, locations: LocationsMapping): XMLSuite {
     return {
       $: {
         name: test.name,
@@ -307,7 +316,7 @@ export class JUnitReporter implements Reporter {
           {$: {name: 'message', value: test.message}},
           {$: {name: 'monitor_id', value: test.monitor_id}},
           {$: {name: 'tags', value: test.tags.join(',')}},
-          {$: {name: 'locations', value: test.locations.join(',')}},
+          {$: {name: 'location', value: locations[result.dc_id]}},
           {$: {name: 'execution_rule', value: test.options.ci?.executionRule}},
           ...('startUrl' in result.result ? [{$: {name: 'start_url', value: result.result.startUrl}}] : []),
           ...('device' in result.result
