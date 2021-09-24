@@ -346,6 +346,7 @@ export interface CommandConfig {
   failOnTimeout: boolean
   files: string[]
   global: ConfigOverride
+  locations: string[]
   pollingTimeout: number
   proxy: ProxyConfiguration
   publicIds: string[]

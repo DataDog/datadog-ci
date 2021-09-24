@@ -40,6 +40,7 @@ export const DEFAULT_COMMAND_CONFIG: CommandConfig = {
   failOnTimeout: true,
   files: ['{,!(node_modules)/**/}*.synthetics.json'],
   global: {},
+  locations: [],
   pollingTimeout: 2 * 60 * 1000,
   proxy: {protocol: 'http'},
   publicIds: [],
@@ -132,6 +133,7 @@ export class RunTestCommand extends Command {
 
       return safeExit(1)
     }
+
     const {tests, overriddenTestsToTrigger, summary} = testsToTriggerResult
 
     // All tests have been skipped or are missing.
@@ -332,10 +334,15 @@ export class RunTestCommand extends Command {
       .reduce((acc, val) => acc.concat(val), [])
       .filter((suite) => !!suite.content.tests)
 
+    const configFromEnvironment = this.config.locations?.length ? {locations: this.config.locations} : {}
     const testsToTrigger = suites
       .map((suite) =>
         suite.content.tests.map((test) => ({
-          config: {...this.config!.global, ...test.config},
+          config: {
+            ...this.config.global,
+            ...configFromEnvironment,
+            ...test.config,
+          },
           id: test.id,
           suite: suite.name,
         }))
@@ -364,6 +371,7 @@ export class RunTestCommand extends Command {
         apiKey: process.env.DATADOG_API_KEY,
         appKey: process.env.DATADOG_APP_KEY,
         datadogSite: process.env.DATADOG_SITE,
+        locations: process.env.DATADOG_SYNTHETICS_LOCATIONS?.split(';'),
         subdomain: process.env.DATADOG_SUBDOMAIN,
       })
     )
