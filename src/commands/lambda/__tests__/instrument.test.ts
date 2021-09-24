@@ -654,7 +654,7 @@ describe('lambda', () => {
           'arn:aws:lambda:us-east-2:123456789012:function:third-func',
         ]
 
-        expect(command['collectFunctionsByRegion']()).toEqual({
+        expect(command['collectFunctionsByRegion'](command['functions'])).toEqual({
           'us-east-1': [
             'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world',
             'arn:aws:lambda:us-east-1:123456789012:function:another',
@@ -672,7 +672,7 @@ describe('lambda', () => {
           'arn:aws:lambda:us-east-2:123456789012:function:third-func',
         ]
 
-        expect(command['collectFunctionsByRegion']()).toEqual({
+        expect(command['collectFunctionsByRegion'](command['config'].functions)).toEqual({
           'us-east-1': [
             'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world',
             'arn:aws:lambda:us-east-1:123456789012:function:another',
@@ -692,7 +692,7 @@ describe('lambda', () => {
         ]
         command['region'] = 'ap-south-1'
 
-        expect(command['collectFunctionsByRegion']()).toEqual({
+        expect(command['collectFunctionsByRegion'](command['functions'])).toEqual({
           'ap-south-1': ['arn:aws:lambda:*:123456789012:function:func-with-wildcard', 'func-without-region'],
           'us-east-1': ['arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world'],
           'us-east-2': ['arn:aws:lambda:us-east-2:123456789012:function:third-func'],
@@ -711,7 +711,7 @@ describe('lambda', () => {
         command['region'] = undefined
         command['config']['region'] = undefined
 
-        expect(command['collectFunctionsByRegion']()).toBeUndefined()
+        expect(command['collectFunctionsByRegion'](command['functions'])).toBeUndefined()
       })
     })
 

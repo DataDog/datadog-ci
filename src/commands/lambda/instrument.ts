@@ -2,7 +2,7 @@ import {CloudWatchLogs, Lambda} from 'aws-sdk'
 import {Command} from 'clipanion'
 import {parseConfigFile} from '../../helpers/utils'
 import {EXTRA_TAGS_REG_EXP} from './constants'
-import {getLambdaConfigs, getLambdaConfigsFromRegEx, updateLambdaConfigs} from './function'
+import {getLambdaConfigs, getLambdaConfigsFromRegEx, getRegion, updateLambdaConfigs} from './function'
 import {FunctionConfiguration, InstrumentationSettings, LambdaConfigOptions} from './interfaces'
 
 export class InstrumentCommand extends Command {
@@ -91,7 +91,7 @@ export class InstrumentCommand extends Command {
         return 1
       }
     } else {
-      const functionGroups = this.collectFunctionsByRegion()
+      const functionGroups = this.collectFunctionsByRegion(this.functions.length !== 0 ? this.functions : this.config.functions)
       if (functionGroups === undefined) {
         return 1
       }
@@ -130,13 +130,12 @@ export class InstrumentCommand extends Command {
     return 0
   }
 
-  private collectFunctionsByRegion() {
-    const functions = this.functions.length !== 0 ? this.functions : this.config.functions
+  private collectFunctionsByRegion(functions: string[]) {
     const defaultRegion = this.region || this.config.region
     const groups: {[key: string]: string[]} = {}
     const regionless: string[] = []
     for (const func of functions) {
-      const region = this.getRegion(func) ?? defaultRegion
+      const region = getRegion(func) ?? defaultRegion
       if (region === undefined) {
         regionless.push(func)
         continue
@@ -160,12 +159,6 @@ export class InstrumentCommand extends Command {
 
   private convertStringBooleanToBoolean(fallback: boolean, value?: string, configValue?: string): boolean {
     return value ? value.toLowerCase() === 'true' : configValue ? configValue.toLowerCase() === 'true' : fallback
-  }
-
-  private getRegion(functionARN: string) {
-    const [, , , region] = functionARN.split(':')
-
-    return region === undefined || region === '*' ? undefined : region
   }
 
   private getSettings(): InstrumentationSettings | undefined {

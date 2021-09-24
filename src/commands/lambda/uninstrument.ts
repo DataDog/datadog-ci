@@ -1,5 +1,8 @@
+import { CloudWatchLogs, Lambda } from 'aws-sdk'
 import { Command } from 'clipanion'
 import { parseConfigFile } from '../../helpers/utils'
+import { getLambdaConfigs, getRegion } from './function'
+import { FunctionConfiguration } from './interfaces'
 
 export class UninstrumentCommand extends Command {
   private config: any = {
@@ -21,6 +24,47 @@ export class UninstrumentCommand extends Command {
 
       return 1
     }    
+
+    const functionGroups = this.collectFunctionsByRegion(this.functions.length !== 0 ? this.functions : this.config.functions)
+    if (functionGroups === undefined) {
+      return 1
+    }
+    
+    const configGroups: {
+      cloudWatchLogs: CloudWatchLogs
+      configs: FunctionConfiguration[]
+      lambda: Lambda
+      region: string
+    }[] = []
+
+    
+  }
+
+  private collectFunctionsByRegion(functions: string[]) {
+    const defaultRegion = this.region || this.config.region
+    const groups: {[key: string]: string[]} = {}
+    const regionless: string[] = []
+    for (const func of functions) {
+      const region = getRegion(func) ?? defaultRegion
+      if (region === undefined) {
+        regionless.push(func)
+        continue
+      }
+      if (groups[region] === undefined) {
+        groups[region] = []
+      }
+      const group = groups[region]
+      group.push(func)
+    }
+    if (regionless.length > 0) {
+      this.context.stdout.write(
+        `'No default region specified for ${JSON.stringify(regionless)}. Use -r,--region, or use a full functionARN\n`
+      )
+
+      return
+    }
+
+    return groups
   }
 }
 

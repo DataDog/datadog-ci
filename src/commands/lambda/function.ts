@@ -14,6 +14,7 @@ import {
   KMS_API_KEY_ENV_VAR,
   LAMBDA_HANDLER_ENV_VAR,
   LIST_FUNCTIONS_MAX_RETRY_COUNT,
+  MAX_LAMBDA_STATE_CHECKS,
   LOG_LEVEL_ENV_VAR,
   MERGE_XRAY_TRACES_ENV_VAR,
   Runtime,
@@ -26,8 +27,6 @@ import {
 import { FunctionConfiguration, InstrumentationSettings, LogGroupConfiguration, TagConfiguration } from './interfaces'
 import {applyLogGroupConfig, calculateLogGroupUpdateRequest} from './loggroup'
 import {applyTagConfig, calculateTagUpdateRequest} from './tags'
-
-const MAX_LAMBDA_STATE_CHECKS = 3
 
 /**
  * Waits for n ms
@@ -214,6 +213,12 @@ export const getExtensionArn = (settings: InstrumentationSettings, region: strin
   }
 
   return `arn:aws:lambda:${region}:${account}:layer:${layerName}`
+}
+
+export const getRegion = (functionARN: string) => {
+  const [, , , region] = functionARN.split(':')
+
+  return region === undefined || region === '*' ? undefined : region
 }
 
 export const calculateUpdateRequest = (
