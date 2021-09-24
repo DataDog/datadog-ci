@@ -364,7 +364,6 @@ export class RunTestCommand extends Command {
         protocol,
       }
     } catch (error) {
-      console.error(error)
       this.reporter!.log(`Could not parse proxy URL from environment: ${error}`)
     }
   }
