@@ -316,7 +316,7 @@ describe('run-test', () => {
         })
       )
 
-      // env > global
+      // Env > global
       process.env = {
         DATADOG_SYNTHETICS_LOCATIONS: 'aws:us-east-3',
       }
@@ -341,7 +341,7 @@ describe('run-test', () => {
         })
       )
 
-      // test > env
+      // Test > env
       const confWithLocation = {
         tests: [{config: {locations: ['aws:us-east-1']}, id: 'publicId'}],
       }
