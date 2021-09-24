@@ -17,7 +17,7 @@ Run `datadog-ci lambda instrument` to apply Datadog instrumentation to a Lambda.
 datadog-ci lambda instrument -f functionname -f another-functionname -r us-east-1 -v 46 -e 10
 
 # Instrument multiple functions that match a regex pattern
-datadog-ci lambda instrument -fR validregexpattern -r us-east-1 -v 46 -e 10
+datadog-ci lambda instrument --functions-regex validregexpattern -r us-east-1 -v 46 -e 10
 
 # Dry run of all updates
 datadog-ci lambda instrument -f functionname -f another-functionname -r us-east-1 -v 46 -e 10 --dry
@@ -51,7 +51,7 @@ You can pass the following arguments to `instrument` to specify its behavior. Th
 | Argument | Shorthand | Description | Default |
 | --- | --- | --- | --- |
 | --function | -f | The ARN of the Lambda function to be instrumented, or the name of the Lambda function (--region must be defined) | |
-| --functions-regex | -fR | A regex pattern to match with the Lambda function name | |
+| --functions-regex | | A regex pattern to match with the Lambda function name | |
 | --region | -r | Default region to use, when `--function` is specified by the function name instead of the ARN | |
 | --layerVersion | -v | Version of the Datadog Lambda Library layer to apply. This varies between runtimes. To see the latest layer version check the [JS][3] or [python][4] datadog-lambda-layer repo release notes | |
 | --extensionVersion | -e | Version of the Datadog Lambda Extension layer to apply. When `extensionVersion` is set, make sure to export `DATADOG_API_KEY` (or `DATADOG_KMS_API_KEY`) in your environment as well. While using `extensionVersion`, leave out `forwarder` Learn more about the Lambda Extension [here][5]| |

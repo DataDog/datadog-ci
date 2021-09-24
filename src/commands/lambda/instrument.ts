@@ -348,7 +348,7 @@ export const sentenceMatchesRegEx = (sentence: string, regex: RegExp) => sentenc
 
 InstrumentCommand.addPath('lambda', 'instrument')
 InstrumentCommand.addOption('functions', Command.Array('-f,--function'))
-InstrumentCommand.addOption('regExPattern', Command.String('-fR,--functions-regex'))
+InstrumentCommand.addOption('regExPattern', Command.String('--functions-regex'))
 InstrumentCommand.addOption('region', Command.String('-r,--region'))
 InstrumentCommand.addOption('extensionVersion', Command.String('-e,--extensionVersion'))
 InstrumentCommand.addOption('layerVersion', Command.String('-v,--layerVersion'))
