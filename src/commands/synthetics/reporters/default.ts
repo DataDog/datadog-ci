@@ -14,7 +14,7 @@ import {
   Summary,
   Test,
 } from '../interfaces'
-import {RunTestCommand} from '../run-test'
+import {RunTestCommand} from '../cli'
 import {hasResultPassed, hasTestSucceeded} from '../utils'
 
 // Step rendering

@@ -1,5 +1,5 @@
 import {DefaultReporter} from '../../reporters/default'
-import {RunTestCommand} from '../../run-test'
+import {RunTestCommand} from '../../cli'
 
 describe('Default reporter', () => {
   const writeMock = jest.fn()

@@ -5,7 +5,7 @@ import * as ciUtils from '../../../helpers/utils'
 
 import {ExecutionRule} from '../interfaces'
 import {DefaultReporter} from '../reporters/default'
-import {DEFAULT_COMMAND_CONFIG, removeUndefinedValues, RunTestCommand} from '../run-test'
+import {DEFAULT_COMMAND_CONFIG, removeUndefinedValues, RunTestCommand} from '../cli'
 import * as utils from '../utils'
 import {getApiTest, mockReporter} from './fixtures'
 
