@@ -170,7 +170,7 @@ export const getStrictestExecutionRule = (configRule: ExecutionRule, testRule?: 
 }
 
 export const isCriticalError = (result: Result): boolean => {
-  if ('unhealthy' in result && result.unhealthy) {
+  if (result.unhealthy) {
     return result.unhealthy
   }
 

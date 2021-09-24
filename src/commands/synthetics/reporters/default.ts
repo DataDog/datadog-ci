@@ -112,7 +112,7 @@ const renderResultOutcome = (
     return `    ${chalk.bold(`${ICONS.FAILED} | ${result.error}`)}`
   }
 
-  if ('unhealthy' in result && result.unhealthy) {
+  if (result.unhealthy) {
     const errorMessage = result.failure ? result.failure.message : result.errorMessage
     const errorName = errorMessage && errorMessage !== 'Unknown error' ? errorMessage : 'General Error'
 
@@ -205,14 +205,14 @@ const renderExecutionResult = (
   const color = getTestResultColor(isSuccess, test.options.ci?.executionRule === ExecutionRule.NON_BLOCKING)
   const icon = isSuccess ? ICONS.SUCCESS : ICONS.FAILED
 
-  const locationName = !!('tunnel' in result && result.tunnel) ? 'Tunneled' : locationNames[dc_id] || dc_id.toString()
+  const locationName = !!result.tunnel ? 'Tunneled' : locationNames[dc_id] || dc_id.toString()
   const device = test.type === 'browser' && 'device' in result ? ` - device: ${chalk.bold(result.device.id)}` : ''
   const resultIdentification = color(`  ${icon} location: ${chalk.bold(locationName)}${device}`)
 
   const outputLines = [resultIdentification]
 
   // Unhealthy test results don't have a duration or result URL
-  if (!('unhealthy' in result) || !result.unhealthy) {
+  if (!result.unhealthy) {
     const duration = getResultDuration(result)
     const durationText = duration ? `  total duration: ${duration} ms -` : ''
 

@@ -326,12 +326,8 @@ describe('utils', () => {
 
   describe('hasResultPassed', () => {
     test('complete result', () => {
-      const result = {
-        device: {
-          height: 0,
-          id: 'laptop_large',
-          width: 0,
-        },
+      const result: Result = {
+        device: {height: 0, id: 'laptop_large', width: 0},
         duration: 0,
         eventType: 'finished',
         passed: true,

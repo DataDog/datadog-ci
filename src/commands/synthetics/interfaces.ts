@@ -32,6 +32,8 @@ export interface TestResult {
     message: string
   }
   passed: boolean
+  tunnel?: boolean
+  unhealthy?: boolean
 }
 
 export interface BrowserTestResult extends TestResult {
@@ -44,8 +46,6 @@ export interface BrowserTestResult extends TestResult {
   error?: string | 'Endpoint Failure' | 'Timeout' | 'Tunnel Failure'
   startUrl: string
   stepDetails: Step[]
-  tunnel?: boolean
-  unhealthy?: boolean
 }
 
 interface AssertionResult {
