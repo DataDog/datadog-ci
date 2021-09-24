@@ -31,17 +31,17 @@ interface XMLRunProperties extends Stats {
 
 interface XMLRun {
   $: XMLRunProperties
-  testsuite: XMLSuite[]
+  testcase: XMLTestCase[]
 }
 
-interface XMLSuiteProperties extends Stats {
+interface XMLTestCaseProperties extends Stats {
   name: string
   time: number | undefined
   timestamp: number
 }
 
-interface XMLSuite {
-  $: XMLSuiteProperties
+interface XMLTestCase {
+  $: XMLTestCaseProperties
   // These are singular for a better display in the XML format of the report.
   browser_error?: XMLError[]
   error: XMLError[]
@@ -139,7 +139,7 @@ export class JUnitReporter implements Reporter {
     if (!suiteRun) {
       suiteRun = {
         $: {name: suiteRunName, ...getDefaultStats()},
-        testsuite: [],
+        testcase: [],
       }
       this.json.testsuites.testsuite.push(suiteRun as XMLRun)
     }
@@ -151,25 +151,25 @@ export class JUnitReporter implements Reporter {
     }
 
     for (const result of results) {
-      const testSuite: XMLSuite = this.getTestSuite(test, result, locations)
+      const testCase: XMLTestCase = this.getTestCase(test, result, locations)
 
       if ('stepDetails' in result.result) {
         // It's a browser test.
         for (const stepDetail of result.result.stepDetails) {
           const {browser_error, error, warning} = this.getBrowserTestStep(stepDetail)
-          testSuite.browser_error = browser_error
-          testSuite.error = error
-          testSuite.warning = warning
+          testCase.browser_error = browser_error
+          testCase.error = error
+          testCase.warning = warning
         }
       } else if ('steps' in result.result) {
         // It's a multistep test.
         for (const step of result.result.steps) {
           const {error} = this.getApiTestStep(step)
-          testSuite.error = error
+          testCase.error = error
         }
       }
 
-      suiteRun.testsuite.push(testSuite)
+      suiteRun.testcase.push(testCase)
     }
   }
 
@@ -296,7 +296,7 @@ export class JUnitReporter implements Reporter {
     return stats
   }
 
-  private getTestSuite(test: InternalTest, result: PollResult, locations: LocationsMapping): XMLSuite {
+  private getTestCase(test: InternalTest, result: PollResult, locations: LocationsMapping): XMLTestCase {
     return {
       $: {
         name: test.name,

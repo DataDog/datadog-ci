@@ -27,7 +27,8 @@ describe('Junit reporter', () => {
     beforeEach(() => {
       reporter = new JUnitReporter(commandMock as RunTestCommand)
     })
-    it('should update destination with .xml if needed', () => {
+
+    it(`should append '.xml' to destination if isn't there`, () => {
       expect(reporter['destination']).toBe('junit.xml')
     })
 
@@ -91,7 +92,7 @@ describe('Junit reporter', () => {
     })
   })
 
-  describe('getTestSuite', () => {
+  describe('getTestCase', () => {
     it('should add stats to the suite', () => {
       const resultMock = {
         ...globalResultMock,
@@ -113,7 +114,7 @@ describe('Junit reporter', () => {
           },
         },
       }
-      const suite = reporter['getTestSuite'](getApiTest('123'), resultMock, {})
+      const suite = reporter['getTestCase'](getApiTest('123'), resultMock, {})
       expect(suite.$).toMatchObject({
         ...getDefaultStats(),
         errors: 2,
