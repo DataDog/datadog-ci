@@ -341,7 +341,9 @@ export class RunTestCommand extends Command {
 
   private parseProxyConfigFromEnv(): ProxyConfiguration | undefined {
     if (process.env.NO_PROXY) {
-      return
+      this.reporter?.log('NO_PROXY is set, ignoring other proxy configurations\n')
+
+      return {protocol: 'http'}
     }
 
     const proxyUrl = process.env.HTTPS_PROXY ?? process.env.HTTP_PROXY
@@ -353,18 +355,18 @@ export class RunTestCommand extends Command {
       const url = new URL(proxyUrl)
       const protocol = url.protocol?.replace(':', '')
       if (protocol !== 'http' && protocol !== 'https') {
-        this.reporter!.log(`Unsupported proxy protocol from environment: ${protocol}`)
+        this.reporter?.log(`Unsupported proxy protocol from environment: ${protocol}\n`)
 
         return
       }
 
       return {
         host: url.hostname,
-        port: Number(url.port),
         protocol,
+        ...(url.port ? {port: Number(url.port)} : {}),
       }
     } catch (error) {
-      this.reporter!.log(`Could not parse proxy URL from environment: ${error}`)
+      this.reporter?.log(`Could not parse proxy URL from environment:\n${error}\n`)
     }
   }
 

@@ -3,7 +3,7 @@
 import {AxiosError, AxiosResponse} from 'axios'
 import * as ciUtils from '../../../helpers/utils'
 
-import {ExecutionRule} from '../interfaces'
+import {ExecutionRule, MainReporter} from '../interfaces'
 import {DefaultReporter} from '../reporters/default'
 import {DEFAULT_COMMAND_CONFIG, removeUndefinedValues, RunTestCommand} from '../run-test'
 import * as utils from '../utils'
@@ -656,6 +656,79 @@ describe('run-test', () => {
         appKey: 'app_key_env',
         datadogSite: 'datadog.config.file',
       })
+    })
+
+    test('NO_PROXY environment variable disable all configure proxy', async () => {
+      jest.spyOn(ciUtils, 'getConfig').mockImplementation(async () => ({
+        apiKey: 'api_key_config_file',
+        appKey: 'app_key_config_file',
+        datadogSite: 'datadog.config.file',
+        proxy: {
+          host: 'hostname',
+          port: 1,
+          protocol: 'https',
+        },
+      }))
+
+      process.env = {
+        HTTPS_PROXY: 'https://inexistanthost/',
+        HTTP_PROXY: 'https://inexistanthost/',
+        NO_PROXY: '1',
+      }
+
+      const command = new RunTestCommand()
+
+      await command['resolveConfig']()
+      expect(command['config']).toMatchObject({
+        proxy: {protocol: 'http'},
+      })
+    })
+  })
+
+  describe('parseProxyConfigFromEnv', () => {
+    test('valid environment variables', () => {
+      const command = new RunTestCommand()
+
+      process.env = {}
+      expect(command['parseProxyConfigFromEnv']()).toBeUndefined()
+
+      process.env = {HTTPS_PROXY: 'https://hostname:12345/'}
+      expect(command['parseProxyConfigFromEnv']()).toEqual({
+        host: 'hostname',
+        port: 12345,
+        protocol: 'https',
+      })
+
+      process.env = {HTTP_PROXY: 'http://domain/'}
+      expect(command['parseProxyConfigFromEnv']()).toEqual({
+        host: 'domain',
+        protocol: 'http',
+      })
+
+      process.env = {
+        HTTPS_PROXY: 'https://hostname:12345/',
+        HTTP_PROXY: 'http://domain/',
+        NO_PROXY: 'true',
+      }
+      expect(command['parseProxyConfigFromEnv']()).toEqual({
+        protocol: 'http',
+      })
+    })
+
+    test('invalid environment variables', () => {
+      const command = new RunTestCommand()
+      const logMock = jest.fn()
+      command['reporter'] = ({
+        log: logMock,
+      } as unknown) as MainReporter
+
+      process.env = {HTTP_PROXY: 'not an url'}
+      expect(command['parseProxyConfigFromEnv']()).toBeUndefined()
+      expect(logMock).toHaveBeenCalledWith(expect.stringContaining('Could not parse proxy URL from environment:'))
+
+      process.env = {HTTPS_PROXY: 'wss://wrongprotocol/'}
+      expect(command['parseProxyConfigFromEnv']()).toBeUndefined()
+      expect(logMock).toHaveBeenCalledWith(expect.stringContaining('Unsupported proxy protocol from environment: wss'))
     })
   })
 
