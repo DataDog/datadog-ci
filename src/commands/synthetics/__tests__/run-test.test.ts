@@ -7,7 +7,7 @@ import {ExecutionRule} from '../interfaces'
 import {DefaultReporter} from '../reporters/default'
 import {DEFAULT_COMMAND_CONFIG, removeUndefinedValues, RunTestCommand} from '../run-test'
 import * as utils from '../utils'
-import {mockReporter} from './fixtures'
+import {getApiTest, mockReporter} from './fixtures'
 
 describe('run-test', () => {
   beforeEach(() => {
@@ -281,6 +281,79 @@ describe('run-test', () => {
       command['failOnCriticalErrors'] = true
       expect(await command.execute()).toBe(1)
     })
+
+    test('override locations with ENV variable', async () => {
+      const conf = {
+        tests: [{config: {}, id: 'publicId'}],
+      }
+
+      jest.spyOn(ciUtils, 'parseConfigFile').mockImplementation(async (config, _) => config)
+      jest.spyOn(utils, 'getSuites').mockImplementation((() => [conf]) as any)
+
+      // Throw to stop the test
+      const serverError = new Error('Server Error') as AxiosError
+      serverError.response = {data: {errors: ['Bad Gateway']}, status: 502} as AxiosResponse
+      serverError.config = {baseURL: 'baseURL', url: 'url'}
+      const triggerTests = jest.fn(() => {
+        throw serverError
+      })
+
+      const apiHelper = {
+        getTest: jest.fn(() => ({...getApiTest('publicId')})),
+        triggerTests,
+      }
+
+      const write = jest.fn()
+      const command = new RunTestCommand()
+      command.context = {stdout: {write}} as any
+      command['config'].global = {locations: ['aws:us-east-2']}
+      command['getApiHelper'] = (() => apiHelper) as any
+
+      expect(await command.execute()).toBe(0)
+      expect(triggerTests).toHaveBeenCalledWith(
+        expect.objectContaining({
+          tests: [{executionRule: 'blocking', locations: ['aws:us-east-2'], public_id: 'publicId'}],
+        })
+      )
+
+      // Env > global
+      process.env = {
+        DATADOG_SYNTHETICS_LOCATIONS: 'aws:us-east-3',
+      }
+      expect(await command.execute()).toBe(0)
+      expect(triggerTests).toHaveBeenCalledTimes(2)
+      expect(triggerTests).toHaveBeenNthCalledWith(
+        2,
+        expect.objectContaining({
+          tests: [{executionRule: 'blocking', locations: ['aws:us-east-3'], public_id: 'publicId'}],
+        })
+      )
+
+      process.env = {
+        DATADOG_SYNTHETICS_LOCATIONS: 'aws:us-east-3;aws:us-east-4',
+      }
+      expect(await command.execute()).toBe(0)
+      expect(triggerTests).toHaveBeenCalledTimes(3)
+      expect(triggerTests).toHaveBeenNthCalledWith(
+        3,
+        expect.objectContaining({
+          tests: [{executionRule: 'blocking', locations: ['aws:us-east-3', 'aws:us-east-4'], public_id: 'publicId'}],
+        })
+      )
+
+      // Test > env
+      const confWithLocation = {
+        tests: [{config: {locations: ['aws:us-east-1']}, id: 'publicId'}],
+      }
+      jest.spyOn(utils, 'getSuites').mockImplementation((() => [confWithLocation]) as any)
+
+      expect(await command.execute()).toBe(0)
+      expect(triggerTests).toHaveBeenCalledWith(
+        expect.objectContaining({
+          tests: [{executionRule: 'blocking', locations: ['aws:us-east-1'], public_id: 'publicId'}],
+        })
+      )
+    })
   })
 
   describe('getAppBaseURL', () => {
@@ -501,6 +574,7 @@ describe('run-test', () => {
         failOnTimeout: false,
         files: ['my-new-file'],
         global: {locations: []},
+        locations: [],
         pollingTimeout: 1,
         proxy: {protocol: 'https'},
         publicIds: ['ran-dom-id'],
