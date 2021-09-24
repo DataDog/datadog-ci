@@ -1,6 +1,12 @@
 import { Command } from 'clipanion'
+import { LambdaConfigOptions } from './interfaces'
 
 export class UninstrumentCommand extends Command {
+    private config: LambdaConfigOptions = {
+        functions: [],
+        region: process.env.AWS_DEFAULT_REGION,
+    }
+
     private dryRun = false
     private functions: string[] = []
     private region?: string

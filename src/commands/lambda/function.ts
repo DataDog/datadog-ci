@@ -22,34 +22,9 @@ import {
   TRACE_ENABLED_ENV_VAR,
   VERSION_ENV_VAR,
 } from './constants'
-import {applyLogGroupConfig, calculateLogGroupUpdateRequest, LogGroupConfiguration} from './loggroup'
-import {applyTagConfig, calculateTagUpdateRequest, TagConfiguration} from './tags'
-export interface FunctionConfiguration {
-  functionARN: string
-  lambdaConfig: Lambda.FunctionConfiguration
-  lambdaLibraryLayerArn: string
-  logGroupConfiguration?: LogGroupConfiguration
-  tagConfiguration?: TagConfiguration
-  updateRequest?: Lambda.UpdateFunctionConfigurationRequest
-}
-
-interface InstrumentationTags {
-  environment?: string
-  extraTags?: string
-  service?: string
-  version?: string
-}
-
-export interface InstrumentationSettings extends InstrumentationTags {
-  extensionVersion?: number
-  flushMetricsToLogs: boolean
-  forwarderARN?: string
-  layerAWSAccount?: string
-  layerVersion?: number
-  logLevel?: string
-  mergeXrayTraces: boolean
-  tracingEnabled: boolean
-}
+import { FunctionConfiguration, InstrumentationSettings, LogGroupConfiguration, TagConfiguration } from './interfaces'
+import {applyLogGroupConfig, calculateLogGroupUpdateRequest} from './loggroup'
+import {applyTagConfig, calculateTagUpdateRequest} from './tags'
 
 const MAX_LAMBDA_STATE_CHECKS = 3
 

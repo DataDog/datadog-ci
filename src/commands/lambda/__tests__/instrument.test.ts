@@ -7,9 +7,8 @@ import * as fs from 'fs'
 import {Cli} from 'clipanion/lib/advanced'
 import path from 'path'
 import {EXTRA_TAGS_REG_EXP} from '../constants'
-import {InstrumentationSettings} from '../function'
 import {InstrumentCommand, sentenceMatchesRegEx} from '../instrument'
-import {LambdaConfigOptions} from '../interfaces'
+import {InstrumentationSettings, LambdaConfigOptions} from '../interfaces'
 // tslint:disable-next-line
 const {version} = require(path.join(__dirname, '../../../../package.json'))
 

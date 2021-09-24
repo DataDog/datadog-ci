@@ -1,12 +1,6 @@
 import {CloudWatchLogs} from 'aws-sdk'
 import {SUBSCRIPTION_FILTER_NAME} from './constants'
-
-export interface LogGroupConfiguration {
-  createLogGroupRequest?: CloudWatchLogs.CreateLogGroupRequest
-  deleteSubscriptionFilterRequest?: CloudWatchLogs.DeleteSubscriptionFilterRequest
-  logGroupName: string
-  subscriptionFilterRequest: CloudWatchLogs.PutSubscriptionFilterRequest
-}
+import { LogGroupConfiguration } from './interfaces'
 
 export enum SubscriptionState {
   Empty,

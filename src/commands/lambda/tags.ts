@@ -1,12 +1,9 @@
 import {Lambda} from 'aws-sdk'
 import path from 'path'
 import {TAG_VERSION_NAME} from './constants'
+import { TagConfiguration } from './interfaces'
 // tslint:disable-next-line
 const {version} = require(path.join(__dirname, '../../../package.json'))
-
-export interface TagConfiguration {
-  tagResourceRequest?: Lambda.TagResourceRequest
-}
 
 export const applyTagConfig = async (lambda: Lambda, configuration: TagConfiguration) => {
   const {tagResourceRequest} = configuration
