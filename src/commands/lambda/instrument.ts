@@ -2,7 +2,7 @@ import {CloudWatchLogs, Lambda} from 'aws-sdk'
 import {Command} from 'clipanion'
 import {parseConfigFile} from '../../helpers/utils'
 import {EXTRA_TAGS_REG_EXP} from './constants'
-import {getLambdaConfigs, updateLambdaConfigs} from './function'
+import {getLambdaConfigs, getLambdaConfigsFromRegEx, updateLambdaConfigs} from './function'
 import {FunctionConfiguration, InstrumentationSettings, LambdaConfigOptions} from './interfaces'
 
 export class InstrumentCommand extends Command {
@@ -23,6 +23,7 @@ export class InstrumentCommand extends Command {
   private layerVersion?: string
   private logLevel?: string
   private mergeXrayTraces?: string
+  private regExPattern?: string
   private region?: string
   private service?: string
   private tracing?: string
@@ -38,17 +39,12 @@ export class InstrumentCommand extends Command {
     }
 
     const hasSpecifiedFuntions = this.functions.length !== 0 || this.config.functions.length !== 0
-    if (!hasSpecifiedFuntions) {
+    const hasSpecifiedRegExPattern = this.regExPattern !== undefined
+    if (!hasSpecifiedFuntions && !hasSpecifiedRegExPattern) {
       this.context.stdout.write('No functions specified for instrumentation.\n')
 
       return 1
     }
-
-    const functionGroups = this.collectFunctionsByRegion()
-    if (functionGroups === undefined) {
-      return 1
-    }
-
     if (settings.extensionVersion && settings.forwarderARN) {
       this.context.stdout.write('"extensionVersion" and "forwarder" should not be used at the same time.\n')
 
@@ -62,16 +58,55 @@ export class InstrumentCommand extends Command {
       region: string
     }[] = []
 
-    for (const [region, functionList] of Object.entries(functionGroups)) {
-      const lambda = new Lambda({region})
-      const cloudWatchLogs = new CloudWatchLogs({region})
+    if (hasSpecifiedRegExPattern) {
+      if (hasSpecifiedFuntions) {
+        const usedCommand = this.functions.length !== 0 ? '"--functions"' : 'Functions in config file'
+        this.context.stdout.write(`${usedCommand} and "--functions-regex" should not be used at the same time.\n`)
+
+        return 1
+      }
+      if (this.regExPattern!.match(':')) {
+        this.context.stdout.write(`"--functions-regex" isn't meant to be used with ARNs.\n`)
+
+        return 1
+      }
+
+      const region = this.region || this.config.region
+      if (!region) {
+        this.context.stdout.write('No default region specified. Use -r,--region,')
+
+        return 1
+      }
+
       try {
-        const configs = await getLambdaConfigs(lambda, cloudWatchLogs, region, functionList, settings)
-        configGroups.push({configs, lambda, cloudWatchLogs, region})
+        const cloudWatchLogs = new CloudWatchLogs({region})
+        const lambda = new Lambda({region})
+        this.context.stdout.write('Fetching lambda functions, this might take a while.\n')
+        const configs = await getLambdaConfigsFromRegEx(lambda, cloudWatchLogs, region!, this.regExPattern!, settings)
+
+        configGroups.push({configs, lambda, cloudWatchLogs, region: region!})
       } catch (err) {
         this.context.stdout.write(`Couldn't fetch lambda functions. ${err}\n`)
 
         return 1
+      }
+    } else {
+      const functionGroups = this.collectFunctionsByRegion()
+      if (functionGroups === undefined) {
+        return 1
+      }
+
+      for (const [region, functionList] of Object.entries(functionGroups)) {
+        const lambda = new Lambda({region})
+        const cloudWatchLogs = new CloudWatchLogs({region})
+        try {
+          const configs = await getLambdaConfigs(lambda, cloudWatchLogs, region, functionList, settings)
+          configGroups.push({configs, lambda, cloudWatchLogs, region})
+        } catch (err) {
+          this.context.stdout.write(`Couldn't fetch lambda functions. ${err}\n`)
+
+          return 1
+        }
       }
     }
 
@@ -307,6 +342,7 @@ export const sentenceMatchesRegEx = (sentence: string, regex: RegExp) => sentenc
 
 InstrumentCommand.addPath('lambda', 'instrument')
 InstrumentCommand.addOption('functions', Command.Array('-f,--function'))
+InstrumentCommand.addOption('regExPattern', Command.String('--functions-regex'))
 InstrumentCommand.addOption('region', Command.String('-r,--region'))
 InstrumentCommand.addOption('extensionVersion', Command.String('-e,--extensionVersion'))
 InstrumentCommand.addOption('layerVersion', Command.String('-v,--layerVersion'))

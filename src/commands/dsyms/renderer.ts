@@ -8,6 +8,9 @@ import {UploadStatus} from '../../helpers/upload'
 
 export const renderConfigurationError = (error: Error) => chalk.red(`${ICONS.FAILED} Configuration error: ${error}.\n`)
 
+export const renderInvalidDsymWarning = (path: string) =>
+  chalk.yellow(`${ICONS.WARNING} Invalid dSYM file, will be skipped: ${path}\n`)
+
 export const renderFailedUpload = (dSYM: Dsym, errorMessage: string) => {
   const dSYMPathBold = `[${chalk.bold.dim(dSYM.path)}]`
 

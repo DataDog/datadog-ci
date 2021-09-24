@@ -13,6 +13,7 @@ import {
   HANDLER_LOCATION,
   KMS_API_KEY_ENV_VAR,
   LAMBDA_HANDLER_ENV_VAR,
+  LIST_FUNCTIONS_MAX_RETRY_COUNT,
   LOG_LEVEL_ENV_VAR,
   MERGE_XRAY_TRACES_ENV_VAR,
   Runtime,
@@ -52,7 +53,7 @@ const isLambdaActive = async (
     await wait(2 ** attempts * 1000)
     const refetchedConfig = await getLambdaConfig(lambda, functionArn)
 
-    return isLambdaActive(lambda, refetchedConfig.config, functionArn, (attempts += 1))
+    return isLambdaActive(lambda, refetchedConfig, functionArn, (attempts += 1))
   }
   throw Error(
     `Can't instrument ${functionArn}, as current State is ${config.State} (must be "Active") and Last Update Status is ${config.LastUpdateStatus} (must be "Successful")`
@@ -71,38 +72,51 @@ export const getLambdaConfigs = async (
 
   const functionsToUpdate: FunctionConfiguration[] = []
 
-  for (const {config, functionARN} of results) {
-    const runtime = config.Runtime
-    if (!isSupportedRuntime(runtime)) {
-      throw Error(`Can't instrument ${functionARN}, runtime ${runtime} not supported`)
+  for (const config of results) {
+    const functionConfiguration = await getFunctionConfiguration(lambda, cloudWatch, config, region, settings)
+
+    functionsToUpdate.push(functionConfiguration)
+  }
+
+  return functionsToUpdate
+}
+
+export const getLambdaConfigsFromRegEx = async (
+  lambda: Lambda,
+  cloudWatch: CloudWatchLogs,
+  region: string,
+  pattern: string,
+  settings: InstrumentationSettings
+): Promise<FunctionConfiguration[]> => {
+  const regEx = new RegExp(pattern)
+  const matchedFunctions: Lambda.FunctionConfiguration[] = []
+  let retryCount = 0
+  let listFunctionsResponse: Lambda.ListFunctionsResponse
+  let nextMarker: string | undefined
+
+  while (true) {
+    try {
+      listFunctionsResponse = await lambda.listFunctions({Marker: nextMarker}).promise()
+      listFunctionsResponse.Functions?.map((fn) => fn.FunctionName?.match(regEx) && matchedFunctions.push(fn))
+      nextMarker = listFunctionsResponse.NextMarker
+      if (!nextMarker) {
+        break
+      }
+      retryCount = 0
+    } catch (e) {
+      retryCount++
+      if (retryCount > LIST_FUNCTIONS_MAX_RETRY_COUNT) {
+        throw Error('Max retry count exceeded.')
+      }
     }
+  }
 
-    await isLambdaActive(lambda, config, functionARN)
-    const lambdaLibraryLayerArn: string = getLayerArn(runtime, settings, region)
-    const lambdaExtensionLayerArn: string = getExtensionArn(settings, region)
-    const updateRequest = calculateUpdateRequest(
-      config,
-      settings,
-      lambdaLibraryLayerArn,
-      lambdaExtensionLayerArn,
-      runtime
-    )
-    let logGroupConfiguration: LogGroupConfiguration | undefined
-    if (settings.forwarderARN !== undefined) {
-      const arn = `/aws/lambda/${config.FunctionName}`
-      logGroupConfiguration = await calculateLogGroupUpdateRequest(cloudWatch, arn, settings.forwarderARN)
-    }
+  const functionsToUpdate: FunctionConfiguration[] = []
 
-    const tagConfiguration: TagConfiguration | undefined = await calculateTagUpdateRequest(lambda, functionARN)
+  for (const config of matchedFunctions) {
+    const functionConfiguration = await getFunctionConfiguration(lambda, cloudWatch, config, region, settings)
 
-    functionsToUpdate.push({
-      functionARN,
-      lambdaConfig: config,
-      lambdaLibraryLayerArn,
-      logGroupConfiguration,
-      tagConfiguration,
-      updateRequest,
-    })
+    functionsToUpdate.push(functionConfiguration)
   }
 
   return functionsToUpdate
@@ -127,10 +141,7 @@ export const updateLambdaConfigs = async (
   await Promise.all(results)
 }
 
-const getLambdaConfig = async (
-  lambda: Lambda,
-  functionARN: string
-): Promise<{config: Lambda.FunctionConfiguration; functionARN: string}> => {
+const getLambdaConfig = async (lambda: Lambda, functionARN: string): Promise<Lambda.FunctionConfiguration> => {
   const params = {
     FunctionName: functionARN,
   }
@@ -138,9 +149,49 @@ const getLambdaConfig = async (
   // AWS typescript API is slightly mistyped, adds undefineds where
   // there shouldn't be.
   const config = result.Configuration!
-  const resolvedFunctionARN = config.FunctionArn!
 
-  return {config, functionARN: resolvedFunctionARN}
+  return config
+}
+
+export const getFunctionConfiguration = async (
+  lambda: Lambda,
+  cloudWatch: CloudWatchLogs,
+  config: Lambda.FunctionConfiguration,
+  region: string,
+  settings: InstrumentationSettings
+) => {
+  const functionARN = config.FunctionArn!
+  const runtime = config.Runtime
+  if (!isSupportedRuntime(runtime)) {
+    throw Error(`Can't instrument ${functionARN}, runtime ${runtime} not supported`)
+  }
+
+  await isLambdaActive(lambda, config, functionARN)
+  const lambdaLibraryLayerArn: string = getLayerArn(runtime, settings, region)
+  const lambdaExtensionLayerArn: string = getExtensionArn(settings, region)
+  const updateRequest = calculateUpdateRequest(
+    config,
+    settings,
+    lambdaLibraryLayerArn,
+    lambdaExtensionLayerArn,
+    runtime
+  )
+  let logGroupConfiguration: LogGroupConfiguration | undefined
+  if (settings.forwarderARN !== undefined) {
+    const arn = `/aws/lambda/${config.FunctionName}`
+    logGroupConfiguration = await calculateLogGroupUpdateRequest(cloudWatch, arn, settings.forwarderARN)
+  }
+
+  const tagConfiguration: TagConfiguration | undefined = await calculateTagUpdateRequest(lambda, functionARN)
+
+  return {
+    functionARN,
+    lambdaConfig: config,
+    lambdaLibraryLayerArn,
+    logGroupConfiguration,
+    tagConfiguration,
+    updateRequest,
+  }
 }
 
 export const getLayerArn = (runtime: Runtime, settings: InstrumentationSettings, region: string) => {
