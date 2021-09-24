@@ -126,7 +126,7 @@ const retryRequest = <T>(args: AxiosRequestConfig, request: (args: AxiosRequestC
 
 export const apiConstructor = (configuration: APIConfiguration) => {
   const {baseUrl, baseIntakeUrl, apiKey, appKey, proxyOpts} = configuration
-  const baseOptions = {apiKey, appKey, disableEnvironmentVariables: true, proxyOpts}
+  const baseOptions = {apiKey, appKey, proxyOpts}
   const request = getRequestBuilder({...baseOptions, baseUrl})
   const requestIntake = getRequestBuilder({...baseOptions, baseUrl: baseIntakeUrl})
 

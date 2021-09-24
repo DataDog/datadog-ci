@@ -1,8 +1,10 @@
+import {URL} from 'url'
+
 import chalk from 'chalk'
 import {Command} from 'clipanion'
 import deepExtend from 'deep-extend'
 
-import {parseConfigFile} from '../../helpers/utils'
+import {parseConfigFile, ProxyConfiguration} from '../../helpers/utils'
 import {apiConstructor, is5xxError} from './api'
 import {
   APIHelper,
@@ -337,6 +339,36 @@ export class RunTestCommand extends Command {
     return testsToTrigger
   }
 
+  private parseProxyConfigFromEnv(): ProxyConfiguration | undefined {
+    if (process.env.NO_PROXY) {
+      return
+    }
+
+    const proxyUrl = process.env.HTTPS_PROXY ?? process.env.HTTP_PROXY
+    if (!proxyUrl) {
+      return
+    }
+
+    try {
+      const url = new URL(proxyUrl)
+      const protocol = url.protocol?.replace(':', '')
+      if (protocol !== 'http' && protocol !== 'https') {
+        this.reporter!.log(`Unsupported proxy protocol from environment: ${protocol}`)
+
+        return
+      }
+
+      return {
+        host: url.hostname,
+        port: Number(url.port),
+        protocol,
+      }
+    } catch (error) {
+      console.error(error)
+      this.reporter!.log(`Could not parse proxy URL from environment: ${error}`)
+    }
+  }
+
   private async resolveConfig() {
     // Default < file < ENV < CLI
 
@@ -357,6 +389,7 @@ export class RunTestCommand extends Command {
         appKey: process.env.DATADOG_APP_KEY,
         datadogSite: process.env.DATADOG_SITE,
         locations: process.env.DATADOG_SYNTHETICS_LOCATIONS?.split(';'),
+        proxy: this.parseProxyConfigFromEnv(),
         subdomain: process.env.DATADOG_SUBDOMAIN,
       })
     )
