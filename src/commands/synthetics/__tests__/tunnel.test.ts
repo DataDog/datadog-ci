@@ -128,15 +128,17 @@ describe('Tunnel', () => {
 
         expect(proxyCalls.get).toHaveBeenCalled()
         expect(proxyCalls.presignedUrl).toHaveBeenCalled()
-        expect(proxyCalls.trigger).toHaveBeenCalledWith({
-          tests: [
-            {
-              executionRule: ExecutionRule.BLOCKING,
-              public_id: '123-456-789',
-              tunnel: expect.objectContaining({host: 'host', id: 'tunnel-id', privateKey: expect.any(String)}),
-            },
-          ],
-        })
+        expect(proxyCalls.trigger).toHaveBeenCalledWith(
+          expect.objectContaining({
+            tests: [
+              {
+                executionRule: ExecutionRule.BLOCKING,
+                public_id: '123-456-789',
+                tunnel: expect.objectContaining({host: 'host', id: 'tunnel-id', privateKey: expect.any(String)}),
+              },
+            ],
+          })
+        )
 
         expect(mockedWebSocket).toHaveBeenCalledWith('wss://tunnel.synthetics', proxyOpts)
       } finally {
@@ -164,15 +166,17 @@ describe('Tunnel', () => {
 
         expect(proxyCalls.get).toHaveBeenCalled()
         expect(proxyCalls.presignedUrl).toHaveBeenCalled()
-        expect(proxyCalls.trigger).toHaveBeenCalledWith({
-          tests: [
-            {
-              executionRule: ExecutionRule.BLOCKING,
-              public_id: '123-456-789',
-              tunnel: expect.objectContaining({host: 'host', id: 'tunnel-id', privateKey: expect.any(String)}),
-            },
-          ],
-        })
+        expect(proxyCalls.trigger).toHaveBeenCalledWith(
+          expect.objectContaining({
+            tests: [
+              {
+                executionRule: ExecutionRule.BLOCKING,
+                public_id: '123-456-789',
+                tunnel: expect.objectContaining({host: 'host', id: 'tunnel-id', privateKey: expect.any(String)}),
+              },
+            ],
+          })
+        )
 
         expect(mockedWebSocket).toHaveBeenCalledWith('wss://tunnel.synthetics', proxyOpts)
       } finally {
