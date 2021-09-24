@@ -28,7 +28,7 @@ describe('Junit reporter', () => {
       reporter = new JUnitReporter(commandMock as RunTestCommand)
     })
 
-    it(`should append '.xml' to destination if isn't there`, () => {
+    it("should append '.xml' to destination if isn't there", () => {
       expect(reporter['destination']).toBe('junit.xml')
     })
 
