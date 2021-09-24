@@ -1,10 +1,12 @@
 import {CloudWatchLogs, Lambda} from 'aws-sdk'
-import {UploadCommand} from '../commit/upload';
+import {UploadCommand} from '../commit/upload'
+import {getCommitInfo, newSimpleGit} from '../commit/git'
 import {Cli, Command} from 'clipanion'
 import {parseConfigFile} from '../../helpers/utils'
 import {EXTRA_TAGS_REG_EXP} from './constants'
 import {FunctionConfiguration, getLambdaConfigs, InstrumentationSettings, updateLambdaConfigs} from './function'
 import {LambdaConfigOptions} from './interfaces'
+import { FileStatusResult } from 'simple-git'
 
 export class InstrumentCommand extends Command {
   private config: LambdaConfigOptions = {
@@ -28,6 +30,7 @@ export class InstrumentCommand extends Command {
   private service?: string
   private tracing?: string
   private version?: string
+  private sourceCodeIntegration = false
 
   public async execute() {
     const lambdaConfig = {lambda: this.config}
@@ -54,6 +57,44 @@ export class InstrumentCommand extends Command {
       this.context.stdout.write('"extensionVersion" and "forwarder" should not be used at the same time.\n')
 
       return 1
+    }
+
+    if (this.sourceCodeIntegration) {
+      const simpleGit = await newSimpleGit()
+      const payload = await getCommitInfo(simpleGit, this.context.stdout)
+      if (payload === undefined) {
+        return 1
+      }
+
+      const currentStatus = await simpleGit.status()
+      if (!currentStatus.isClean()) {
+        this.printModifiedFilesFound(currentStatus.files);
+
+        return 1
+      }
+
+      if (currentStatus.ahead > 0) {
+        this.context.stdout.write(`Local changes have not been pushed remotely. Aborting git upload.\n`)
+
+        return 1
+      }
+
+      const commitSha = payload.hash
+      if (settings.extraTags) {
+        settings.extraTags += `,git.commit.sha:${commitSha}`
+      } else {
+        settings.extraTags = `git.commit.sha:${commitSha}`
+      }
+
+      try {
+        const cli = new Cli();
+        cli.register(UploadCommand)
+        await cli.run(['commit', 'upload'], this.context)
+      } catch (err) {
+        this.context.stdout.write(`Could not upload commit information. ${err}\n`)
+
+        return 1
+      }
     }
 
     const configGroups: {
@@ -93,20 +134,15 @@ export class InstrumentCommand extends Command {
       return 1
     }
 
-    if (this.extraTags && this.extraTags.includes("git.commit.sha:")) {
-      this.context.stdout.write(`Found 'git.commit.sha' tag. Will upload git commit.\n`)
-      try {
-        const cli = new Cli();
-        cli.register(UploadCommand)
-        await cli.run(['commit', 'upload'], this.context)
-      } catch (err) {
-        this.context.stdout.write(`Could not upload commit information. ${err}\n`)
-
-        return 1
-      }
-    }
-
     return 0
+  }
+
+  private printModifiedFilesFound(gitStatusPayload: FileStatusResult[]) {
+    this.context.stdout.write(`Found local modified files:\n`)
+    gitStatusPayload.forEach((file) => {
+      this.context.stdout.write(`${file['path']}\n`)
+    })
+    this.context.stdout.write(`\nAborting git upload...\n`)
   }
 
   private collectFunctionsByRegion() {
@@ -337,3 +373,4 @@ InstrumentCommand.addOption('service', Command.String('--service'))
 InstrumentCommand.addOption('environment', Command.String('--env'))
 InstrumentCommand.addOption('version', Command.String('--version'))
 InstrumentCommand.addOption('extraTags', Command.String('--extra-tags'))
+InstrumentCommand.addOption('sourceCodeIntegration', Command.Boolean('-sci,--sourceCodeIntegration'))
