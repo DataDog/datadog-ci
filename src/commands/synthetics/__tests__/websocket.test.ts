@@ -27,7 +27,7 @@ describe('Proxy configuration', () => {
   })
 
   test('use proxy defined in configuration', async () => {
-    const {server: proxy, config: proxyOpts, close: proxyClose, calls: proxyCalls} = getSyntheticsProxy()
+    const {config: proxyOpts, close: proxyClose, calls: proxyCalls} = getSyntheticsProxy()
 
     try {
       jest.spyOn(ciUtils, 'getConfig').mockImplementation(async () => ({

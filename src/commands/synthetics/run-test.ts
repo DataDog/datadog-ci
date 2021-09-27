@@ -1,10 +1,8 @@
-import {URL} from 'url'
-
 import chalk from 'chalk'
 import {Command} from 'clipanion'
 import deepExtend from 'deep-extend'
 
-import {parseConfigFile, ProxyConfiguration} from '../../helpers/utils'
+import {parseConfigFile} from '../../helpers/utils'
 import {apiConstructor, is5xxError} from './api'
 import {
   APIHelper,
