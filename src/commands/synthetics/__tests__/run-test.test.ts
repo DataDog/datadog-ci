@@ -282,9 +282,10 @@ describe('run-test', () => {
       expect(await command.execute()).toBe(1)
     })
 
-    test('override locations with ENV variable', async () => {
+    it('override locations with ENV variable', async () => {
       const conf = {
-        tests: [{config: {}, id: 'publicId'}],
+        content: {tests: [{config: {}, id: 'publicId'}]},
+        name: 'Suite 1',
       }
 
       jest.spyOn(ciUtils, 'parseConfigFile').mockImplementation(async (config, _) => config)
@@ -343,7 +344,7 @@ describe('run-test', () => {
 
       // Test > env
       const confWithLocation = {
-        tests: [{config: {locations: ['aws:us-east-1']}, id: 'publicId'}],
+        content: {tests: [{config: {locations: ['aws:us-east-1']}, id: 'publicId'}]},
       }
       jest.spyOn(utils, 'getSuites').mockImplementation((() => [confWithLocation]) as any)
 
@@ -448,6 +449,16 @@ describe('run-test', () => {
     const conf2 = {
       tests: [{config: {}, id: 'jkl-mno-pqr'}],
     }
+    const fakeSuites = [
+      {
+        content: conf1,
+        name: 'Suite 1',
+      },
+      {
+        content: conf2,
+        name: 'Suite 2',
+      },
+    ]
     const startUrl = 'fakeUrl'
     const fakeApi = {
       searchTests: () => ({
@@ -460,7 +471,7 @@ describe('run-test', () => {
     } as any
 
     test('should find all tests and extend global config', async () => {
-      jest.spyOn(utils, 'getSuites').mockImplementation((() => [conf1, conf2]) as any)
+      jest.spyOn(utils, 'getSuites').mockImplementation((() => fakeSuites) as any)
       const command = new RunTestCommand()
       command.context = process
       command['config'].global = {startUrl}
@@ -469,16 +480,18 @@ describe('run-test', () => {
         {
           config: {startUrl},
           id: 'abc-def-ghi',
+          suite: 'Suite 1',
         },
         {
           config: {startUrl},
           id: 'jkl-mno-pqr',
+          suite: 'Suite 2',
         },
       ])
     })
 
     test('should search tests and extend global config', async () => {
-      jest.spyOn(utils, 'getSuites').mockImplementation((() => [conf1, conf2]) as any)
+      jest.spyOn(utils, 'getSuites').mockImplementation((() => fakeSuites) as any)
       const command = new RunTestCommand()
       command.context = process
       command['config'].global = {startUrl}
@@ -489,12 +502,13 @@ describe('run-test', () => {
         {
           config: {startUrl},
           id: 'stu-vwx-yza',
+          suite: 'Query: fake search',
         },
       ])
     })
 
     test('should use given globs to get tests list', async () => {
-      const getSuitesMock = jest.spyOn(utils, 'getSuites').mockImplementation((() => [conf1, conf2]) as any)
+      const getSuitesMock = jest.spyOn(utils, 'getSuites').mockImplementation((() => fakeSuites) as any)
       const command = new RunTestCommand()
       command.context = process
       command['config'].global = {startUrl}
