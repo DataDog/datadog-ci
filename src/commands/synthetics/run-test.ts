@@ -1,228 +1,215 @@
-
-import chalk from 'chalk'
-import {is5xxError} from './api'
-import { 
-    APIHelper,
-    CommandConfig,
-    ExecutionRule,
-    LocationsMapping,
-    MainReporter,
-    PollResult,
-    Summary,
-    Test,
-    TestPayload,
-    Trigger,
-    TriggerConfig
+import {apiConstructor, is5xxError} from './api'
+import {CiError, CriticalError} from './errors'
+import {
+  APIHelper,
+  CommandConfig,
+  MainReporter,
+  PollResult,
+  Summary,
+  Test,
+  TestPayload,
+  Trigger,
+  TriggerConfig,
 } from './interfaces'
 import {Tunnel} from './tunnel'
-import {
-    getTestsToTrigger,
-    hasTestSucceeded,
-    isCriticalError,
-    runTests,
-    waitForResults,
-  } from './utils'
+import {getSuites, getTestsToTrigger, runTests, waitForResults} from './utils'
 
-export const executeTests = async (reporter: MainReporter, config:CommandConfig, getApiHelper: () => any, getTestsList: (api: APIHelper) => any, sortTestsByOutcome: (results: { [key: string]: PollResult[]; }) => any, getAppBaseURL: ()=>any) => { 
-    const startTime = Date.now()
-    const api = getApiHelper()
-    const publicIdsFromCli = config.publicIds.map((id) => ({config: config.global, id}))
-    let testsToTrigger: TriggerConfig[]
-    let tunnel: Tunnel | undefined
-    const safeExit = async (exitCode: 0 | 1) => {
+export const executeTests = async (reporter: MainReporter, config: CommandConfig) => {
+  const api = getApiHelper(config)
+
+  const publicIdsFromCli = config.publicIds.map((id) => ({config: config.global, id}))
+  let testsToTrigger: TriggerConfig[]
+  let tunnel: Tunnel | undefined
+
+  const tunnelStop = async () => {
     if (tunnel) {
-        await tunnel.stop()
+      await tunnel.stop()
     }
+  }
 
-    return exitCode
-    }
-
-    if (publicIdsFromCli.length) {
+  if (publicIdsFromCli.length) {
     testsToTrigger = publicIdsFromCli
-    } else {
+  } else {
     try {
-        testsToTrigger = await getTestsList(api)
+      testsToTrigger = await getTestsList(api, config, reporter)
     } catch (error) {
-        reporter.error(
-        `\n${chalk.bgRed.bold(' ERROR: unable to obtain test configurations with search query ')}\n${
-            error.message
-        }\n\n`
-        )
-
-        if (is5xxError(error) && !config.failOnCriticalErrors) {
-        return safeExit(0)
-        }
-
-        return safeExit(1)
+      const isCriticalError = is5xxError(error as any)
+      if (isCriticalError) {
+        await tunnelStop()
+        throw new CriticalError('UNAVAILABLE_TEST_CONF')
+      } else {
+        await tunnelStop()
+        throw new CiError('UNAVAILABLE_TEST_CONF')
+      }
     }
-    }
+  }
 
-    if (!testsToTrigger.length) {
-    reporter.log('No test suites to run.\n')
+  if (!testsToTrigger.length) {
+    await tunnelStop()
+    throw new CiError('NO_TESTS_TO_RUN')
+  }
 
-    return safeExit(0)
-    }
-
-    let testsToTriggerResult: {
+  let testsToTriggerResult: {
     overriddenTestsToTrigger: TestPayload[]
     summary: Summary
     tests: Test[]
-    }
+  }
 
-    try {
+  try {
     testsToTriggerResult = await getTestsToTrigger(api, testsToTrigger, reporter)
-    } catch (error) {
-    reporter.error(
-        `\n${chalk.bgRed.bold(' ERROR: unable to obtain test configurations ')}\n${error.message}\n\n`
-    )
-
-    if (is5xxError(error) && !config.failOnCriticalErrors) {
-        return safeExit(0)
+  } catch (error) {
+    const isCriticalError = is5xxError(error as any)
+    if (isCriticalError) {
+      await tunnelStop()
+      throw new CriticalError('UNAVAILABLE_TEST_CONF')
+    } else {
+      await tunnelStop()
+      throw new CiError('UNAVAILABLE_TEST_CONF')
     }
+  }
 
-    return safeExit(1)
-    }
+  const {tests, overriddenTestsToTrigger, summary} = testsToTriggerResult
 
-    const {tests, overriddenTestsToTrigger, summary} = testsToTriggerResult
+  // All tests have been skipped or are missing.
+  if (!tests.length) {
+    await tunnelStop()
+    throw new CiError('NO_TESTS_TO_RUN')
+  }
 
-    // All tests have been skipped or are missing.
-    if (!tests.length) {
-    reporter.log('No test to run.\n')
+  const publicIdsToTrigger = tests.map(({public_id}) => public_id)
 
-    return safeExit(0)
-    }
-
-    const publicIdsToTrigger = tests.map(({public_id}) => public_id)
-
-    if (config.tunnel) {
-    reporter.log(
-        'You are using tunnel option, the chosen location(s) will be overridden by a location in your account region.\n'
-    )
-
+  if (config.tunnel) {
     let presignedURL: string
     try {
-        // Get the pre-signed URL to connect to the tunnel service
-        presignedURL = (await api.getPresignedURL(publicIdsToTrigger)).url
-    } catch (e) {
-        reporter.error(`\n${chalk.bgRed.bold(' ERROR: unable to get tunnel configuration')}\n${e.message}\n\n`)
-        if (is5xxError(e) && !config.failOnCriticalErrors) {
-        return safeExit(0)
-        }
-
-        return safeExit(1)
+      // Get the pre-signed URL to connect to the tunnel service
+      presignedURL = (await api.getPresignedURL(publicIdsToTrigger)).url
+    } catch (error) {
+      const isCriticalError = is5xxError(error as any)
+      if (isCriticalError) {
+        await tunnelStop()
+        throw new CriticalError('UNAVAILABLE_TUNNEL_CONF')
+      } else {
+        await tunnelStop()
+        throw new CiError('UNAVAILABLE_TUNNEL_CONF')
+      }
     }
     // Open a tunnel to Datadog
     try {
-        tunnel = new Tunnel(presignedURL, publicIdsToTrigger, config.proxy,reporter)
-        const tunnelInfo = await tunnel.start()
-        overriddenTestsToTrigger.forEach((testToTrigger) => {
+      tunnel = new Tunnel(presignedURL, publicIdsToTrigger, config.proxy, reporter)
+      const tunnelInfo = await tunnel.start()
+      overriddenTestsToTrigger.forEach((testToTrigger) => {
         testToTrigger.tunnel = tunnelInfo
-        })
-    } catch (e) {
-        reporter.error(`\n${chalk.bgRed.bold(' ERROR: unable to start tunnel ')}\n${e.message}\n\n`)
-
-        if (is5xxError(e) && !config.failOnCriticalErrors) {
-        return safeExit(0)
-        }
-
-        return safeExit(1)
+      })
+    } catch (error) {
+      const isCriticalError = is5xxError(error as any)
+      if (isCriticalError) {
+        await tunnelStop()
+        throw new CriticalError('TUNNEL_START_FAILED')
+      } else {
+        await tunnelStop()
+        throw new CiError('TUNNEL_START_FAILED')
+      }
     }
-    }
+  }
 
-    let triggers: Trigger
-    try {
+  let triggers: Trigger
+  try {
     triggers = await runTests(api, overriddenTestsToTrigger)
-    } catch (e) {
-    reporter.error(`\n${chalk.bgRed.bold(' ERROR: unable to trigger tests ')}\n${e.message}\n\n`)
-
-    if (is5xxError(e) && !config.failOnCriticalErrors) {
-        return safeExit(0)
+  } catch (error) {
+    const isCriticalError = is5xxError(error as any)
+    if (isCriticalError) {
+      await tunnelStop()
+      throw new CriticalError('TRIGGER_TESTS_FAILED')
+    } else {
+      await tunnelStop()
+      throw new CiError('TRIGGER_TESTS_FAILED')
     }
+  }
 
-    return safeExit(1)
-    }
-
-    if (!triggers.results) {
+  if (!triggers.results) {
     throw new Error('No result to poll.')
-    }
+  }
 
-    const results: {[key: string]: PollResult[]} = {}
-    try {
+  const results: {[key: string]: PollResult[]} = {}
+  try {
     // Poll the results.
     const resultPolled = await waitForResults(
-        api,
-        triggers.results,
-        config.pollingTimeout,
-        testsToTrigger,
-        tunnel,
-        config.failOnCriticalErrors
+      api,
+      triggers.results,
+      config.pollingTimeout,
+      testsToTrigger,
+      tunnel,
+      config.failOnCriticalErrors
     )
     Object.assign(results, resultPolled)
-    } catch (error) {
-    reporter.error(`\n${chalk.bgRed.bold(' ERROR: unable to poll test results ')}\n${error.message}\n\n`)
-
-    if (is5xxError(error) && !config.failOnCriticalErrors) {
-        return safeExit(0)
-    }
-
-    return safeExit(1)
-    }
-
-    // Sort tests to show success first then non blocking failures and finally blocking failures.
-    tests.sort(sortTestsByOutcome(results))
-
-    // Rendering the results.
-    reporter.reportStart({startTime})
-    const locationNames = triggers.locations.reduce((mapping, location) => {
-    mapping[location.id] = location.display_name
-
-    return mapping
-    }, {} as LocationsMapping)
-    let hasSucceeded = true // Determine if all the tests have succeeded
-    for (const test of tests) {
-    const testResults = results[test.public_id]
-    if (!config.failOnTimeout) {
-        if (!summary.timedOut) {
-        summary.timedOut = 0
-        }
-
-        const hasTimeout = testResults.some((pollResult) => pollResult.result.error === 'Timeout')
-        if (hasTimeout) {
-        summary.timedOut++
-        }
-    }
-
-    if (!config.failOnCriticalErrors) {
-        if (!summary.criticalErrors) {
-        summary.criticalErrors = 0
-        }
-        const hasCriticalErrors = testResults.some((pollResult) => isCriticalError(pollResult.result))
-        if (hasCriticalErrors) {
-        summary.criticalErrors++
-        }
-    }
-
-    const passed = hasTestSucceeded(testResults, config.failOnCriticalErrors, config.failOnTimeout)
-    if (passed) {
-        summary.passed++
+  } catch (error) {
+    const isCriticalError = is5xxError(error as any)
+    if (isCriticalError) {
+      await tunnelStop()
+      throw new CriticalError('POLL_RESULTS_FAILED')
     } else {
-        summary.failed++
-        if (test.options.ci?.executionRule !== ExecutionRule.NON_BLOCKING) {
-        hasSucceeded = false
-        }
+      await tunnelStop()
+      throw new CiError('POLL_RESULTS_FAILED')
     }
+  }
 
-    reporter.testEnd(
-        test,
-        testResults,
-        getAppBaseURL(),
-        locationNames,
-        config.failOnCriticalErrors,
-        config.failOnTimeout
-    )
-    }
+  return {results, summary, tests, triggers}
+}
 
-    reporter.runEnd(summary)
+export const getTestsList = async (api: APIHelper, config: CommandConfig, reporter: MainReporter) => {
+  if (config.testSearchQuery) {
+    const testSearchResults = await api.searchTests(config.testSearchQuery)
 
-    return safeExit(hasSucceeded ? 0 : 1)
+    return testSearchResults.tests.map((test) => ({config: config.global, id: test.public_id}))
+  }
+
+  const suites = (await Promise.all(config.files.map((glob: string) => getSuites(glob, reporter!))))
+    .reduce((acc, val) => acc.concat(val), [])
+    .map((suite) => suite.tests)
+    .filter((suiteTests) => !!suiteTests)
+
+  const configFromEnvironment = config.locations?.length ? {locations: config.locations} : {}
+  const testsToTrigger = suites
+    .reduce((acc, suiteTests) => acc.concat(suiteTests), [])
+    .map((test) => ({
+      config: {
+        ...config.global,
+        ...configFromEnvironment,
+        ...test.config,
+      },
+      id: test.id,
+    }))
+
+  return testsToTrigger
+}
+
+export const getApiHelper = (config: CommandConfig) => {
+  if (!config.appKey) {
+    throw new CiError('MISSING_APP_KEY')
+  }
+  if (!config.apiKey) {
+    throw new CiError('MISSING_API_KEY')
+  }
+
+  return apiConstructor({
+    apiKey: config.apiKey!,
+    appKey: config.appKey!,
+    baseIntakeUrl: getDatadogHost(true, config),
+    baseUrl: getDatadogHost(false, config),
+    proxyOpts: config.proxy,
+  })
+}
+
+export const getDatadogHost = (useIntake = false, config: CommandConfig) => {
+  const apiPath = 'api/v1'
+  let host = `https://api.${config.datadogSite}`
+  const hostOverride = process.env.DD_API_HOST_OVERRIDE
+
+  if (hostOverride) {
+    host = hostOverride
+  } else if (useIntake && (config.datadogSite === 'datadoghq.com' || config.datadogSite === 'datad0g.com')) {
+    host = `https://intake.synthetics.${config.datadogSite}`
+  }
+
+  return `${host}/${apiPath}`
 }

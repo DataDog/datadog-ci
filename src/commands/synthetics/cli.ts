@@ -3,23 +3,11 @@ import {Command} from 'clipanion'
 import deepExtend from 'deep-extend'
 
 import {parseConfigFile} from '../../helpers/utils'
-import {apiConstructor} from './api'
-import {
-  APIHelper,
-  CommandConfig,
-  ExecutionRule,
-  MainReporter,
-  PollResult,
-  Test
-} from './interfaces'
+import {CiError, CriticalError} from './errors'
+import {CommandConfig, ExecutionRule, LocationsMapping, MainReporter, PollResult, Test} from './interfaces'
 import {DefaultReporter} from './reporters/default'
-import {Tunnel} from './tunnel'
-import {
-  getReporter,
-  getSuites,
-  hasTestSucceeded,
-} from './utils'
-import { executeTests } from './run-test'
+import {executeTests} from './run-test'
+import {getReporter, hasTestSucceeded, isCriticalError} from './utils'
 
 export const DEFAULT_COMMAND_CONFIG: CommandConfig = {
   apiKey: '',
@@ -58,75 +46,114 @@ export class RunTestCommand extends Command {
     this.reporter = getReporter(reporters)
     await this.resolveConfig()
     const startTime = Date.now()
-    return await executeTests(this.reporter, this.config, this.getApiHelper, this.getTestsList, this.sortTestsByOutcome, this.getAppBaseURL) 
-  }
-
-  private getApiHelper = () => {
-    if (!this.config.appKey || !this.config.apiKey) {
-      if (!this.config.appKey) {
-        this.reporter!.error(`Missing ${chalk.red.bold('DATADOG_APP_KEY')} in your environment.\n`)
-      }
-      if (!this.config.apiKey) {
-        this.reporter!.error(`Missing ${chalk.red.bold('DATADOG_API_KEY')} in your environment.\n`)
-      }
-      throw new Error('API and/or Application keys are missing')
+    if (this.config.tunnel) {
+      this.reporter.log(
+        'You are using tunnel option, the chosen location(s) will be overridden by a location in your account region.\n'
+      )
     }
+    try {
+      const {results, summary, tests, triggers} = await executeTests(this.reporter, this.config)
+      // Sort tests to show success first then non blocking failures and finally blocking failures.
+      tests.sort(this.sortTestsByOutcome(results))
 
-    return apiConstructor({
-      apiKey: this.config.apiKey!,
-      appKey: this.config.appKey!,
-      baseIntakeUrl: this.getDatadogHost(true),
-      baseUrl: this.getDatadogHost(),
-      proxyOpts: this.config.proxy,
-    })
+      // Rendering the results.
+      this.reporter.reportStart({startTime})
+      const locationNames = triggers.locations.reduce((mapping, location) => {
+        mapping[location.id] = location.display_name
+
+        return mapping
+      }, {} as LocationsMapping)
+      let hasSucceeded = true // Determine if all the tests have succeeded
+      for (const test of tests) {
+        const testResults = results[test.public_id]
+        if (!this.config.failOnTimeout) {
+          if (!summary.timedOut) {
+            summary.timedOut = 0
+          }
+
+          const hasTimeout = testResults.some((pollResult) => pollResult.result.error === 'Timeout')
+          if (hasTimeout) {
+            summary.timedOut++
+          }
+        }
+
+        if (!this.config.failOnCriticalErrors) {
+          if (!summary.criticalErrors) {
+            summary.criticalErrors = 0
+          }
+          const hasCriticalErrors = testResults.some((pollResult) => isCriticalError(pollResult.result))
+          if (hasCriticalErrors) {
+            summary.criticalErrors++
+          }
+        }
+
+        const passed = hasTestSucceeded(testResults, this.config.failOnCriticalErrors, this.config.failOnTimeout)
+        if (passed) {
+          summary.passed++
+        } else {
+          summary.failed++
+          if (test.options.ci?.executionRule !== ExecutionRule.NON_BLOCKING) {
+            hasSucceeded = false
+          }
+        }
+
+        this.reporter.testEnd(
+          test,
+          testResults,
+          this.getAppBaseURL(),
+          locationNames,
+          this.config.failOnCriticalErrors,
+          this.config.failOnTimeout
+        )
+      }
+
+      this.reporter.runEnd(summary)
+
+      return hasSucceeded ? 0 : 1
+    } catch (error) {
+      if (error instanceof CiError) {
+        switch (error.code) {
+          case 'NO_TESTS_TO_RUN':
+            this.reporter.log('No test to run.\n')
+            break
+          case 'MISSING_APP_KEY':
+            this.reporter.error(`Missing ${chalk.red.bold('DATADOG_APP_KEY')} in your environment.\n`)
+            break
+          case 'MISSING_API_KEY':
+            this.reporter.error(`Missing ${chalk.red.bold('DATADOG_API_KEY')} in your environment.\n`)
+            break
+          case 'POLL_RESULTS_FAILED':
+            this.reporter.error(`\n${chalk.bgRed.bold(' ERROR: unable to poll test results ')}\n${error.message}\n\n`)
+            break
+          case 'TUNNEL_START_FAILED':
+            this.reporter.error(`\n${chalk.bgRed.bold(' ERROR: unable to start tunnel')}\n${error.message}\n\n`)
+            break
+          case 'TRIGGER_TESTS_FAILED':
+            this.reporter.error(`\n${chalk.bgRed.bold(' ERROR: unable to trigger tests')}\n${error.message}\n\n`)
+            break
+          case 'UNAVAILABLE_TEST_CONF':
+            this.reporter.error(
+              `\n${chalk.bgRed.bold(' ERROR: unable to obtain test configurations with search query ')}\n${
+                error.message
+              }\n\n`
+            )
+            break
+          case 'UNAVAILABLE_TUNNEL_CONF':
+            this.reporter.error(
+              `\n${chalk.bgRed.bold(' ERROR: unable to get tunnel configuration')}\n${error.message}\n\n`
+            )
+        }
+        if (error instanceof CriticalError && this.config.failOnCriticalErrors) {
+          return 1
+        }
+      }
+
+      return 0
+    }
   }
 
-  private getAppBaseURL = () => {
+  private getAppBaseURL() {
     return `https://${this.config.subdomain}.${this.config.datadogSite}/`
-  }
-
-  private getDatadogHost(useIntake = false) {
-    const apiPath = 'api/v1'
-    let host = `https://api.${this.config.datadogSite}`
-    const hostOverride = process.env.DD_API_HOST_OVERRIDE
-
-    if (hostOverride) {
-      host = hostOverride
-    } else if (
-      useIntake &&
-      (this.config.datadogSite === 'datadoghq.com' || this.config.datadogSite === 'datad0g.com')
-    ) {
-      host = `https://intake.synthetics.${this.config.datadogSite}`
-    }
-
-    return `${host}/${apiPath}`
-  }
-
-  private getTestsList = async (api: APIHelper) => {
-    if (this.config.testSearchQuery) {
-      const testSearchResults = await api.searchTests(this.config.testSearchQuery)
-
-      return testSearchResults.tests.map((test) => ({config: this.config.global, id: test.public_id}))
-    }
-
-    const suites = (await Promise.all(this.config.files.map((glob: string) => getSuites(glob, this.reporter!))))
-      .reduce((acc, val) => acc.concat(val), [])
-      .map((suite) => suite.tests)
-      .filter((suiteTests) => !!suiteTests)
-
-    const configFromEnvironment = this.config.locations?.length ? {locations: this.config.locations} : {}
-    const testsToTrigger = suites
-      .reduce((acc, suiteTests) => acc.concat(suiteTests), [])
-      .map((test) => ({
-        config: {
-          ...this.config.global,
-          ...configFromEnvironment,
-          ...test.config,
-        },
-        id: test.id,
-      }))
-
-    return testsToTrigger
   }
 
   private async resolveConfig() {
@@ -177,7 +204,7 @@ export class RunTestCommand extends Command {
     }
   }
 
-  private sortTestsByOutcome = (results: {[key: string]: PollResult[]}) => {
+  private sortTestsByOutcome(results: {[key: string]: PollResult[]}) {
     return (t1: Test, t2: Test) => {
       const success1 = hasTestSucceeded(
         results[t1.public_id],

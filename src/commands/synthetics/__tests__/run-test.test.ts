@@ -1,13 +1,15 @@
 // tslint:disable: no-string-literal
-
 import {AxiosError, AxiosResponse} from 'axios'
 import * as ciUtils from '../../../helpers/utils'
 
+import {DEFAULT_COMMAND_CONFIG, removeUndefinedValues, RunTestCommand} from '../cli'
+import {CiError} from '../errors'
+import {getApiTest, mockReporter} from './fixtures'
+
 import {ExecutionRule} from '../interfaces'
 import {DefaultReporter} from '../reporters/default'
-import {DEFAULT_COMMAND_CONFIG, removeUndefinedValues, RunTestCommand} from '../cli'
+import * as runTests from '../run-test'
 import * as utils from '../utils'
-import {getApiTest, mockReporter} from './fixtures'
 
 describe('run-test', () => {
   beforeEach(() => {
@@ -37,7 +39,8 @@ describe('run-test', () => {
       const apiHelper = {}
       const command = new RunTestCommand()
       command.context = {stdout: {write: jest.fn()}} as any
-      command['getApiHelper'] = (() => apiHelper) as any
+      jest.spyOn(runTests, 'getApiHelper').mockImplementation(() => ({} as any))
+
       // Override with config file
       jest
         .spyOn(ciUtils, 'getConfig')
@@ -68,7 +71,7 @@ describe('run-test', () => {
       const command = new RunTestCommand()
       const configOverride = {executionRule: ExecutionRule.SKIPPED}
       command.context = {stdout: {write}} as any
-      command['getApiHelper'] = (() => apiHelper) as any
+      jest.spyOn(runTests, 'getApiHelper').mockImplementation(() => ({} as any))
       jest
         .spyOn(ciUtils, 'getConfig')
         .mockImplementation(async () => ({global: configOverride, publicIds: ['public-id-1', 'public-id-2']}))
@@ -102,7 +105,7 @@ describe('run-test', () => {
       const command = new RunTestCommand()
       const configOverride = {executionRule: ExecutionRule.SKIPPED}
       command.context = {stdout: {write}} as any
-      command['getApiHelper'] = (() => apiHelper) as any
+      jest.spyOn(runTests, 'getApiHelper').mockImplementation(() => apiHelper as any)
       command['config'].tunnel = true
       jest
         .spyOn(ciUtils, 'getConfig')
@@ -137,7 +140,7 @@ describe('run-test', () => {
       const write = jest.fn()
       const command = new RunTestCommand()
       command.context = {stdout: {write}} as any
-      command['getApiHelper'] = (() => apiHelper) as any
+      jest.spyOn(runTests, 'getApiHelper').mockImplementation(() => apiHelper as any)
       command['config'].tunnel = true
       command['testSearchQuery'] = 'a-search-query'
 
@@ -162,7 +165,7 @@ describe('run-test', () => {
       const write = jest.fn()
       const command = new RunTestCommand()
       command.context = {stdout: {write}} as any
-      command['getApiHelper'] = (() => apiHelper) as any
+      jest.spyOn(runTests, 'getApiHelper').mockImplementation(() => apiHelper as any)
       command['config'].tunnel = true
       command['publicIds'] = ['public-id-1']
 
@@ -194,7 +197,7 @@ describe('run-test', () => {
       const write = jest.fn()
       const command = new RunTestCommand()
       command.context = {stdout: {write}} as any
-      command['getApiHelper'] = (() => apiHelper) as any
+      jest.spyOn(runTests, 'getApiHelper').mockImplementation(() => apiHelper as any)
       command['config'].tunnel = true
       command['publicIds'] = ['public-id-1', 'public-id-2']
 
@@ -226,7 +229,7 @@ describe('run-test', () => {
       const write = jest.fn()
       const command = new RunTestCommand()
       command.context = {stdout: {write}} as any
-      command['getApiHelper'] = (() => apiHelper) as any
+      jest.spyOn(runTests, 'getApiHelper').mockImplementation(() => apiHelper as any)
       command['publicIds'] = ['public-id-1', 'public-id-2']
 
       expect(await command.execute()).toBe(0)
@@ -273,7 +276,7 @@ describe('run-test', () => {
       const write = jest.fn()
       const command = new RunTestCommand()
       command.context = {stdout: {write}} as any
-      command['getApiHelper'] = (() => apiHelper) as any
+      jest.spyOn(runTests, 'getApiHelper').mockImplementation(() => apiHelper as any)
       command['publicIds'] = ['public-id-1', 'public-id-2']
 
       expect(await command.execute()).toBe(0)
@@ -307,7 +310,7 @@ describe('run-test', () => {
       const command = new RunTestCommand()
       command.context = {stdout: {write}} as any
       command['config'].global = {locations: ['aws:us-east-2']}
-      command['getApiHelper'] = (() => apiHelper) as any
+      jest.spyOn(runTests, 'getApiHelper').mockImplementation(() => apiHelper as any)
 
       expect(await command.execute()).toBe(0)
       expect(triggerTests).toHaveBeenCalledWith(
@@ -398,8 +401,8 @@ describe('run-test', () => {
       const command = new RunTestCommand()
       await command['resolveConfig']()
 
-      expect(command['getDatadogHost']()).toBe('https://api.datadoghq.com/api/v1')
-      expect(command['getDatadogHost'](true)).toBe('https://intake.synthetics.datadoghq.com/api/v1')
+      expect(runTests.getDatadogHost(false, command['config'])).toBe('https://api.datadoghq.com/api/v1')
+      expect(runTests.getDatadogHost(true, command['config'])).toBe('https://intake.synthetics.datadoghq.com/api/v1')
     })
 
     test('should be tunable through DATADOG_SITE variable', async () => {
@@ -407,8 +410,8 @@ describe('run-test', () => {
       const command = new RunTestCommand()
       await command['resolveConfig']()
 
-      expect(command['getDatadogHost']()).toBe('https://api.datadoghq.eu/api/v1')
-      expect(command['getDatadogHost'](true)).toBe('https://api.datadoghq.eu/api/v1')
+      expect(runTests.getDatadogHost(false, command['config'])).toBe('https://api.datadoghq.eu/api/v1')
+      expect(runTests.getDatadogHost(true, command['config'])).toBe('https://api.datadoghq.eu/api/v1')
     })
   })
 
@@ -425,18 +428,22 @@ describe('run-test', () => {
       command['reporter'] = utils.getReporter([new DefaultReporter(command)])
       await command['resolveConfig']()
 
-      expect(command['getApiHelper'].bind(command)).toThrowError(/API and\/or Application keys are missing/)
+      expect(() => {
+        runTests.getApiHelper(command['config'])
+      }).toThrow(new CiError('MISSING_APP_KEY'))
+      await command.execute()
       expect(write.mock.calls[0][0]).toContain('DATADOG_APP_KEY')
-      expect(write.mock.calls[1][0]).toContain('DATADOG_API_KEY')
 
       command['appKey'] = 'fakeappkey'
       await command['resolveConfig']()
       write.mockClear()
-      expect(command['getApiHelper'].bind(command)).toThrowError(/API and\/or Application keys are missing/)
+      expect(() => {
+        runTests.getApiHelper(command['config'])
+      }).toThrow(new CiError('MISSING_API_KEY'))
+      await command.execute()
       expect(write.mock.calls[0][0]).toContain('DATADOG_API_KEY')
     })
   })
-
   describe('getTestsList', () => {
     beforeEach(() => {
       jest.restoreAllMocks()
@@ -463,9 +470,10 @@ describe('run-test', () => {
       jest.spyOn(utils, 'getSuites').mockImplementation((() => [conf1, conf2]) as any)
       const command = new RunTestCommand()
       command.context = process
+      command['reporter'] = mockReporter
       command['config'].global = {startUrl}
 
-      expect(await command['getTestsList'].bind(command)(fakeApi)).toEqual([
+      expect(await runTests.getTestsList(fakeApi, command['config'], command['reporter'])).toEqual([
         {
           config: {startUrl},
           id: 'abc-def-ghi',
@@ -481,11 +489,12 @@ describe('run-test', () => {
       jest.spyOn(utils, 'getSuites').mockImplementation((() => [conf1, conf2]) as any)
       const command = new RunTestCommand()
       command.context = process
+      command['reporter'] = mockReporter
       command['config'].global = {startUrl}
       command['testSearchQuery'] = 'fake search'
 
       await command['resolveConfig']()
-      expect(await command['getTestsList'].bind(command)(fakeApi)).toEqual([
+      expect(await runTests.getTestsList(fakeApi, command['config'], command['reporter'])).toEqual([
         {
           config: {startUrl},
           id: 'stu-vwx-yza',
@@ -502,7 +511,7 @@ describe('run-test', () => {
       command['files'] = ['new glob', 'another one']
 
       await command['resolveConfig']()
-      await command['getTestsList'].bind(command)(fakeApi)
+      await runTests.getTestsList(fakeApi, command['config'], command['reporter'])
       expect(getSuitesMock).toHaveBeenCalledTimes(2)
       expect(getSuitesMock).toHaveBeenCalledWith('new glob', command['reporter'])
       expect(getSuitesMock).toHaveBeenCalledWith('another one', command['reporter'])

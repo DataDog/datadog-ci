@@ -1,6 +1,7 @@
 import chalk from 'chalk'
 import {Writable} from 'stream'
 
+import {RunTestCommand} from '../cli'
 import {
   Assertion,
   ConfigOverride,
@@ -14,7 +15,6 @@ import {
   Summary,
   Test,
 } from '../interfaces'
-import {RunTestCommand} from '../cli'
 import {hasResultPassed, hasTestSucceeded} from '../utils'
 
 // Step rendering
