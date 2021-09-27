@@ -5,13 +5,7 @@ import {ProxyConfiguration} from '../../../helpers/utils'
 import {apiConstructor} from '../api'
 import {APIConfiguration, ExecutionRule, PollResult, Result, TestPayload, Trigger} from '../interfaces'
 
-import {
-  getApiTest,
-  getSyntheticsProxy,
-  mockSearchResponse,
-  mockTestTriggerResponse,
-  mockTunnelPresignedUrlResponse,
-} from './fixtures'
+import {getApiTest, getSyntheticsProxy, mockSearchResponse, mockTestTriggerResponse} from './fixtures'
 
 describe('dd-api', () => {
   const apiConfiguration: APIConfiguration = {
@@ -122,7 +116,7 @@ describe('dd-api', () => {
     })
 
     test('use proxy defined in configuration', async () => {
-      const {server: proxy, config: proxyOpts, calls} = getSyntheticsProxy()
+      const {close: proxyClose, config: proxyOpts, calls} = getSyntheticsProxy()
 
       try {
         const proxyApiConfiguration = {
@@ -137,7 +131,7 @@ describe('dd-api', () => {
         expect(calls.search).toHaveBeenCalled()
 
         const tunnelOutput = await api.getPresignedURL(['123-456-789'])
-        expect(tunnelOutput).toEqual(mockTunnelPresignedUrlResponse)
+        expect(tunnelOutput).toEqual({url: expect.stringContaining('ws://127.0.0.1:')})
         expect(calls.presignedUrl).toHaveBeenCalled()
 
         const testOutput = await api.getTest('123-456-789')
@@ -148,12 +142,12 @@ describe('dd-api', () => {
         expect(triggerOutput).toEqual(mockTestTriggerResponse)
         expect(calls.trigger).toHaveBeenCalledWith({tests})
       } finally {
-        await new Promise((res) => proxy.close(res))
+        await proxyClose()
       }
     })
 
     test('use proxy defined in environment variable', async () => {
-      const {server: proxy, config: proxyOpts, calls} = getSyntheticsProxy()
+      const {close: proxyClose, config: proxyOpts, calls} = getSyntheticsProxy()
       process.env.HTTP_PROXY = `http://localhost:${proxyOpts.port}`
 
       try {
@@ -167,12 +161,12 @@ describe('dd-api', () => {
         expect(triggerOutput).toEqual(mockTestTriggerResponse)
         expect(calls.trigger).toHaveBeenCalledWith({tests})
       } finally {
-        await new Promise((res) => proxy.close(res))
+        await proxyClose()
       }
     })
 
     test('use configuration proxy over environment variable', async () => {
-      const {server: proxy, config: proxyOpts, calls} = getSyntheticsProxy()
+      const {close: proxyClose, config: proxyOpts, calls} = getSyntheticsProxy()
       process.env.HTTP_PROXY = 'http://inexistanthost/'
 
       try {
@@ -186,7 +180,7 @@ describe('dd-api', () => {
         expect(triggerOutput).toEqual(mockTestTriggerResponse)
         expect(calls.trigger).toHaveBeenCalledWith({tests})
       } finally {
-        await new Promise((res) => proxy.close(res))
+        await proxyClose()
       }
     })
   })
