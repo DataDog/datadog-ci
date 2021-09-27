@@ -1,6 +1,8 @@
 import * as http from 'http'
 import {URL} from 'url'
 
+import WebSocket, {Server as WebSocketServer} from 'ws'
+
 import {ProxyConfiguration} from '../../../helpers/utils'
 
 import {MainReporter, PollResult, Result, Step, Test, User} from '../interfaces'
@@ -123,9 +125,9 @@ export const mockTestTriggerResponse = {
   triggered_check_ids: ['123-456-789'],
 }
 
-export const mockTunnelPresignedUrlResponse = {url: 'wss://tunnel.synthetics'}
-
 export const mockPollResultResponse = {results: [{dc_id: 1, result: mockResult, resultID: '1'}]}
+
+const mockTunnelConnectionFirstMessage = {host: 'host', id: 'tunnel-id'}
 
 export const getSyntheticsProxy = () => {
   const calls = {
@@ -134,8 +136,12 @@ export const getSyntheticsProxy = () => {
     presignedUrl: jest.fn(),
     search: jest.fn(),
     trigger: jest.fn(),
+    tunnel: jest.fn(),
   }
 
+  const wss = new WebSocketServer({noServer: true})
+
+  let port: number
   const server = http.createServer({}, (request, response) => {
     const mockResponse = (call: jest.Mock, responseData: any) => {
       let body = ''
@@ -162,7 +168,7 @@ export const getSyntheticsProxy = () => {
       return mockResponse(calls.trigger, mockTestTriggerResponse)
     }
     if (/\/synthetics\/ci\/tunnel/.test(request.url)) {
-      return mockResponse(calls.presignedUrl, mockTunnelPresignedUrlResponse)
+      return mockResponse(calls.presignedUrl, {url: `ws://127.0.0.1:${port}`})
     }
     if (/\/synthetics\/tests\/poll_results/.test(request.url)) {
       return mockResponse(calls.poll, mockPollResultResponse)
@@ -170,14 +176,24 @@ export const getSyntheticsProxy = () => {
     if (/\/synthetics\/tests\//.test(request.url)) {
       return mockResponse(calls.get, getApiTest('123-456-789'))
     }
+    console.log(request.url)
 
     response.end()
   })
 
+  server.on('upgrade', (request, socket, head) => {
+    wss.handleUpgrade(request, socket, head, (ws: WebSocket) => {
+      calls.tunnel()
+      ws.send(JSON.stringify(mockTunnelConnectionFirstMessage))
+    })
+  })
+
   server.listen()
   const address = server.address()
-  const port = typeof address === 'string' ? Number(new URL(address).port) : address.port
+  port = typeof address === 'string' ? Number(new URL(address).port) : address.port
   const config: ProxyConfiguration = {host: '127.0.0.1', port, protocol: 'http'}
 
-  return {calls, config, server}
+  const close = () => Promise.all([new Promise((res) => server.close(res)), new Promise((res) => wss.close(res))])
+
+  return {calls, close, config, server}
 }
