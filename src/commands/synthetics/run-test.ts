@@ -354,37 +354,6 @@ export class RunTestCommand extends Command {
     return testsToTrigger
   }
 
-  private parseProxyConfigFromEnv(): ProxyConfiguration | undefined {
-    if (process.env.NO_PROXY) {
-      this.reporter?.log('NO_PROXY is set, ignoring other proxy configurations\n')
-
-      return {protocol: 'http'}
-    }
-
-    const proxyUrl = process.env.HTTPS_PROXY ?? process.env.HTTP_PROXY
-    if (!proxyUrl) {
-      return
-    }
-
-    try {
-      const url = new URL(proxyUrl)
-      const protocol = url.protocol?.replace(':', '')
-      if (protocol !== 'http' && protocol !== 'https') {
-        this.reporter?.log(`Unsupported proxy protocol from environment: ${protocol}\n`)
-
-        return
-      }
-
-      return {
-        host: url.hostname,
-        protocol,
-        ...(url.port ? {port: Number(url.port)} : {}),
-      }
-    } catch (error) {
-      this.reporter?.log(`Could not parse proxy URL from environment:\n${error}\n`)
-    }
-  }
-
   private async resolveConfig() {
     // Default < file < ENV < CLI
 
@@ -405,7 +374,6 @@ export class RunTestCommand extends Command {
         appKey: process.env.DATADOG_APP_KEY,
         datadogSite: process.env.DATADOG_SITE,
         locations: process.env.DATADOG_SYNTHETICS_LOCATIONS?.split(';'),
-        proxy: this.parseProxyConfigFromEnv(),
         subdomain: process.env.DATADOG_SUBDOMAIN,
       })
     )

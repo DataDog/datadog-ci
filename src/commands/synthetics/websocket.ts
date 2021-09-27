@@ -1,9 +1,8 @@
 import {EventEmitter, once} from 'events'
 
-import ProxyAgent from 'proxy-agent'
 import {createWebSocketStream, default as WebSocketModule} from 'ws'
 
-import {getProxyUrl, ProxyConfiguration} from '../../helpers/utils'
+import {getProxyAgent, ProxyConfiguration} from '../../helpers/utils'
 
 export class WebSocket extends EventEmitter {
   private firstMessage?: Promise<WebSocketModule.Data>
@@ -105,10 +104,11 @@ export class WebSocket extends EventEmitter {
   private establishWebsocketConnection(resolve: (value: void) => void, reject: (error: Error) => void) {
     if (!this.websocket) {
       const options: WebSocketModule.ClientOptions = {}
-      if (this.proxyOpts.host && this.proxyOpts.port) {
-        const proxyUrl = getProxyUrl(this.proxyOpts)
-        options.agent = new ProxyAgent(proxyUrl)
+      const proxyAgent = getProxyAgent(this.proxyOpts, false)
+      if (proxyAgent) {
+        options.agent = proxyAgent
       }
+
       this.websocket = new WebSocketModule(this.url, options)
     }
 
