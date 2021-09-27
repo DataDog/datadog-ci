@@ -1,4 +1,4 @@
-import {MainReporter, Test, User} from '../interfaces'
+import {MainReporter, PollResult, Result, Step, Test, User} from '../interfaces'
 
 const mockUser: User = {
   email: '',
@@ -51,4 +51,46 @@ export const getApiTest = (publicId: string): Test => ({
   subtype: 'http',
   tags: [],
   type: 'api',
+})
+
+export const getStep = (): Step => ({
+  allowFailure: false,
+  browserErrors: [],
+  description: 'description',
+  duration: 1000,
+  skipped: false,
+  stepId: -1,
+  type: 'type',
+  url: 'about:blank',
+  value: 'value',
+  vitalsMetrics: [
+    {
+      cls: 1,
+      lcp: 1,
+      url: 'http://fake.url',
+    },
+  ],
+  warnings: [],
+})
+
+export const getResult = (): PollResult => ({
+  dc_id: 1,
+  result: getBrowserResult(),
+  resultID: '123',
+  timestamp: 1,
+})
+
+export const getBrowserResult = (opts: any = {}): Result => ({
+  device: {
+    height: 1,
+    id: 'laptop_large',
+    width: 1,
+  },
+  duration: 0,
+  eventType: 'finished',
+  passed: true,
+  startUrl: '',
+  stepDetails: [],
+  tunnel: false,
+  ...opts,
 })

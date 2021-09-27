@@ -1,4 +1,5 @@
 import chalk from 'chalk'
+import {BaseContext} from 'clipanion'
 import {Writable} from 'stream'
 
 import {
@@ -14,8 +15,7 @@ import {
   Summary,
   Test,
 } from '../interfaces'
-import {RunTestCommand} from '../run-test'
-import {hasResultPassed, hasTestSucceeded} from '../utils'
+import {getResultDuration, hasResultPassed, hasTestSucceeded} from '../utils'
 
 // Step rendering
 
@@ -136,7 +136,7 @@ const renderResultOutcome = (
   }
 
   if (test.type === 'browser') {
-    if (!hasResultPassed(result, failOnCriticalErrors, failOnTimeout) && result.stepDetails) {
+    if (!hasResultPassed(result, failOnCriticalErrors, failOnTimeout) && 'stepDetails' in result) {
       // We render the step only if the test hasn't passed to avoid cluttering the output.
       return result.stepDetails.map(renderStep).join('\n')
     }
@@ -204,15 +204,16 @@ const renderExecutionResult = (
   const isSuccess = hasResultPassed(result, failOnCriticalErrors, failOnTimeout)
   const color = getTestResultColor(isSuccess, test.options.ci?.executionRule === ExecutionRule.NON_BLOCKING)
   const icon = isSuccess ? ICONS.SUCCESS : ICONS.FAILED
+
   const locationName = !!result.tunnel ? 'Tunneled' : locationNames[dc_id] || dc_id.toString()
-  const device = test.type === 'browser' && result.device ? ` - device: ${chalk.bold(result.device.id)}` : ''
+  const device = test.type === 'browser' && 'device' in result ? ` - device: ${chalk.bold(result.device.id)}` : ''
   const resultIdentification = color(`  ${icon} location: ${chalk.bold(locationName)}${device}`)
 
   const outputLines = [resultIdentification]
 
   // Unhealthy test results don't have a duration or result URL
   if (!result.unhealthy) {
-    const duration = test.type === 'browser' ? result.duration : result.timings?.total
+    const duration = getResultDuration(result)
     const durationText = duration ? `  total duration: ${duration} ms -` : ''
 
     const resultUrl = getResultUrl(baseUrl, test, resultID)
@@ -263,8 +264,8 @@ const getTestResultColor = (success: boolean, isNonBlocking: boolean) => {
 export class DefaultReporter implements Reporter {
   private write: Writable['write']
 
-  constructor(command: RunTestCommand) {
-    this.write = command.context.stdout.write.bind(command.context.stdout)
+  constructor({context}: {context: BaseContext}) {
+    this.write = context.stdout.write.bind(context.stdout)
   }
 
   public error(error: string) {
