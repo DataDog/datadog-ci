@@ -1,12 +1,15 @@
 import {CloudWatchLogs, Lambda} from 'aws-sdk'
 import {UploadCommand} from '../commit/upload'
 import {getCommitInfo, newSimpleGit} from '../commit/git'
+import {InvalidConfigurationError} from '../../helpers/errors'
+import chalk from 'chalk'
 import {Cli, Command} from 'clipanion'
 import {parseConfigFile} from '../../helpers/utils'
 import {EXTRA_TAGS_REG_EXP} from './constants'
 import {FunctionConfiguration, getLambdaConfigs, InstrumentationSettings, updateLambdaConfigs} from './function'
 import {LambdaConfigOptions} from './interfaces'
-import { FileStatusResult } from 'simple-git'
+import { FileStatusResult, SimpleGit } from 'simple-git'
+import { CommitInfo } from '../commit/interfaces'
 
 export class InstrumentCommand extends Command {
   private config: LambdaConfigOptions = {
@@ -60,40 +63,12 @@ export class InstrumentCommand extends Command {
     }
 
     if (this.sourceCodeIntegration) {
-      const simpleGit = await newSimpleGit()
-      const payload = await getCommitInfo(simpleGit, this.context.stdout)
-      if (payload === undefined) {
-        return 1
+      if (!process.env.DATADOG_API_KEY) {
+        throw new InvalidConfigurationError(`Missing ${chalk.bold('DATADOG_API_KEY')} in your environment.`)
       }
-
-      const currentStatus = await simpleGit.status()
-      if (!currentStatus.isClean()) {
-        this.printModifiedFilesFound(currentStatus.files);
-
-        return 1
-      }
-
-      if (currentStatus.ahead > 0) {
-        this.context.stdout.write(`Local changes have not been pushed remotely. Aborting git upload.\n`)
-
-        return 1
-      }
-
-      const commitSha = payload.hash
-      if (settings.extraTags) {
-        settings.extraTags += `,git.commit.sha:${commitSha}`
-      } else {
-        settings.extraTags = `git.commit.sha:${commitSha}`
-      }
-
-      try {
-        const cli = new Cli();
-        cli.register(UploadCommand)
-        await cli.run(['commit', 'upload'], this.context)
-      } catch (err) {
-        this.context.stdout.write(`Could not upload commit information. ${err}\n`)
-
-        return 1
+      const code = await this.getGitDataAndUpload(settings)
+      if (code == 1) { 
+        return code
       }
     }
 
@@ -130,6 +105,57 @@ export class InstrumentCommand extends Command {
       await Promise.all(promises)
     } catch (err) {
       this.context.stdout.write(`Failure during update. ${err}\n`)
+
+      return 1
+    }
+
+    return 0
+  }
+
+  private async getCurrentGitStatus() {
+    const simpleGit = await newSimpleGit()
+    const gitCommitInfo = await getCommitInfo(simpleGit, this.context.stdout)
+    if (gitCommitInfo === undefined) {
+      return 1
+    }
+    const status = await simpleGit.status()
+    return { isClean: status.isClean(), ahead: status.ahead, files: status.files, hash: gitCommitInfo?.hash }
+  }
+
+  private async getGitDataAndUpload(settings: InstrumentationSettings) {
+    const currentStatus = await this.getCurrentGitStatus();
+
+    if (currentStatus == 1) { return 1; }
+
+    if (!currentStatus.isClean) {
+      this.printModifiedFilesFound(currentStatus.files);
+
+      return 1
+    }
+
+    if (currentStatus.ahead > 0) {
+      this.context.stdout.write(`Local changes have not been pushed remotely. Aborting git upload.\n`)
+
+      return 1
+    }
+
+    const commitSha = currentStatus.hash
+    if (settings.extraTags) {
+      settings.extraTags += `,git.commit.sha:${commitSha}`
+    } else {
+      settings.extraTags = `git.commit.sha:${commitSha}`
+    }
+
+    return this.uploadGitData()
+  }
+
+  private async uploadGitData() {
+    try {
+      const cli = new Cli();
+      cli.register(UploadCommand)
+      await cli.run(['commit', 'upload'], this.context)
+    } catch (err) {
+      this.context.stdout.write(`Could not upload commit information. ${err}\n`)
 
       return 1
     }
