@@ -282,9 +282,10 @@ describe('run-test', () => {
       expect(await command.execute()).toBe(1)
     })
 
-    test('override locations with ENV variable', async () => {
+    it('override locations with ENV variable', async () => {
       const conf = {
-        tests: [{config: {}, id: 'publicId'}],
+        content: {tests: [{config: {}, id: 'publicId'}]},
+        name: 'Suite 1',
       }
 
       jest.spyOn(ciUtils, 'parseConfigFile').mockImplementation(async (config, _) => config)
@@ -343,7 +344,7 @@ describe('run-test', () => {
 
       // Test > env
       const confWithLocation = {
-        tests: [{config: {locations: ['aws:us-east-1']}, id: 'publicId'}],
+        content: {tests: [{config: {locations: ['aws:us-east-1']}, id: 'publicId'}]},
       }
       jest.spyOn(utils, 'getSuites').mockImplementation((() => [confWithLocation]) as any)
 
