@@ -1,8 +1,8 @@
 import c from 'chalk'
+import {BaseContext} from 'clipanion'
 import {promises as fs} from 'fs'
 import {Writable} from 'stream'
 import {Builder} from 'xml2js'
-import {BaseContext} from 'clipanion'
 
 import {
   ApiTestResult,
@@ -14,7 +14,6 @@ import {
   Step,
   Vitals,
 } from '../interfaces'
-import {RunTestCommand} from '../run-test'
 import {getResultDuration} from '../utils'
 
 interface Stats {
