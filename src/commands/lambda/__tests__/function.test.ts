@@ -16,8 +16,8 @@ import {
 import {
   calculateUpdateRequest,
   getExtensionArn,
-  getFunctionConfiguration,
-  getLambdaConfigs,
+  getFunctionConfig,
+  getFunctionConfigs,
   getLambdaConfigsFromRegEx,
   getLayerArn,
   updateLambdaConfigs,
@@ -68,7 +68,7 @@ describe('function', () => {
         tracingEnabled: false,
         version: '0.2',
       }
-      const result = await getLambdaConfigs(
+      const result = await getFunctionConfigs(
         lambda as any,
         cloudWatch as any,
         'us-east-1',
@@ -135,7 +135,7 @@ describe('function', () => {
         tracingEnabled: false,
         version: '0.2',
       }
-      const result = await getLambdaConfigs(
+      const result = await getFunctionConfigs(
         lambda as any,
         cloudWatch as any,
         'us-east-1',
@@ -148,7 +148,7 @@ describe('function', () => {
       expect(result.length).toEqual(2)
     })
   })
-  describe('getFunctionConfiguration', () => {
+  describe('getFunctionConfig', () => {
     const OLD_ENV = process.env
     beforeEach(() => {
       jest.resetModules()
@@ -178,7 +178,7 @@ describe('function', () => {
           .promise()
       ).Configuration
       await expect(
-        getFunctionConfiguration(lambda as any, cloudWatch as any, config, 'us-east-1', settings)
+        getFunctionConfig(lambda as any, cloudWatch as any, config, 'us-east-1', settings)
       ).rejects.toThrow()
     })
 
@@ -207,7 +207,7 @@ describe('function', () => {
           .promise()
       ).Configuration
 
-      const result = await getFunctionConfiguration(lambda as any, cloudWatch as any, config, 'us-east-1', settings)
+      const result = await getFunctionConfig(lambda as any, cloudWatch as any, config, 'us-east-1', settings)
       expect(result.updateRequest?.Layers).toMatchInlineSnapshot(`
                       Array [
                         "arn:aws:lambda:us-east-1:464622532012:layer:AnotherLayer:10",
@@ -250,7 +250,7 @@ describe('function', () => {
           .promise()
       ).Configuration
       expect(
-        (await getFunctionConfiguration(lambda as any, cloudWatch as any, config, 'us-east-1', settings)).updateRequest
+        (await getFunctionConfig(lambda as any, cloudWatch as any, config, 'us-east-1', settings)).updateRequest
       ).toBeUndefined()
     })
 
@@ -274,7 +274,7 @@ describe('function', () => {
           .getFunction({FunctionName: 'arn:aws-us-gov:lambda:us-gov-east-1:000000000000:function:autoinstrument'})
           .promise()
       ).Configuration
-      const result = await getFunctionConfiguration(lambda as any, cloudWatch as any, config, 'us-gov-east-1', settings)
+      const result = await getFunctionConfig(lambda as any, cloudWatch as any, config, 'us-gov-east-1', settings)
       expect(result.updateRequest?.Layers).toMatchInlineSnapshot(`
                       Array [
                         "arn:aws-us-gov:lambda:us-gov-east-1:002406178527:layer:Datadog-Node12-x:30",
@@ -305,7 +305,7 @@ describe('function', () => {
           .getFunction({FunctionName: 'arn:aws:lambda:us-east-1:000000000000:function:autoinstrument'})
           .promise()
       ).Configuration
-      const result = await getFunctionConfiguration(lambda as any, cloudWatch as any, config, 'us-east-1', settings)
+      const result = await getFunctionConfig(lambda as any, cloudWatch as any, config, 'us-east-1', settings)
       expect(result).toBeDefined()
       expect(result.logGroupConfiguration).toMatchInlineSnapshot(`
                 Object {

@@ -59,25 +59,33 @@ const isLambdaActive = async (
   )
 }
 
-export const getLambdaConfigs = async (
+export const getLambdaFunctionConfigs = async (
+  lambda: Lambda,
+  functionARNs: string[]
+): Promise<Lambda.FunctionConfiguration[]> => {
+  const resultPromises = functionARNs.map(fn => getLambdaConfig(lambda, fn))
+  const results = await Promise.all(resultPromises)
+
+  return results
+}
+
+export const getFunctionConfigs = async (
   lambda: Lambda,
   cloudWatch: CloudWatchLogs,
   region: string,
   functionARNs: string[],
   settings: InstrumentationSettings
 ): Promise<FunctionConfiguration[]> => {
-  const resultPromises = functionARNs.map((fn) => getLambdaConfig(lambda, fn))
-  const results = await Promise.all(resultPromises)
+  const lambdaFunctionConfigs = await getLambdaFunctionConfigs(lambda, functionARNs)
 
-  const functionsToUpdate: FunctionConfiguration[] = []
+  const configs: FunctionConfiguration[] = []
+  for (const config of lambdaFunctionConfigs) {
+    const functionConfiguration = await getFunctionConfig(lambda, cloudWatch, config, region, settings)
 
-  for (const config of results) {
-    const functionConfiguration = await getFunctionConfiguration(lambda, cloudWatch, config, region, settings)
-
-    functionsToUpdate.push(functionConfiguration)
+    configs.push(functionConfiguration)
   }
 
-  return functionsToUpdate
+  return configs
 }
 
 export const getLambdaConfigsFromRegEx = async (
@@ -113,7 +121,7 @@ export const getLambdaConfigsFromRegEx = async (
   const functionsToUpdate: FunctionConfiguration[] = []
 
   for (const config of matchedFunctions) {
-    const functionConfiguration = await getFunctionConfiguration(lambda, cloudWatch, config, region, settings)
+    const functionConfiguration = await getFunctionConfig(lambda, cloudWatch, config, region, settings)
 
     functionsToUpdate.push(functionConfiguration)
   }
@@ -152,7 +160,7 @@ const getLambdaConfig = async (lambda: Lambda, functionARN: string): Promise<Lam
   return config
 }
 
-export const getFunctionConfiguration = async (
+export const getFunctionConfig = async (
   lambda: Lambda,
   cloudWatch: CloudWatchLogs,
   config: Lambda.FunctionConfiguration,
@@ -219,6 +227,12 @@ export const getRegion = (functionARN: string) => {
   const [, , , region] = functionARN.split(':')
 
   return region === undefined || region === '*' ? undefined : region
+}
+
+export const getLayerName = (layerARN: string) => {
+  const [, , , , , , layerName] = layerARN.split(':')
+  
+  return layerName
 }
 
 export const calculateUpdateRequest = (
@@ -361,8 +375,21 @@ const addLayerARN = (fullLayerARN: string | undefined, partialLayerARN: string, 
 
   return layerARNs
 }
+
 const isSupportedRuntime = (runtime?: string): runtime is Runtime => {
   const lookup = RUNTIME_LAYER_LOOKUP as Record<string, string>
 
   return runtime !== undefined && lookup[runtime] !== undefined
+}
+
+/**
+ * Check whether a function is instrumented.
+ * Either the lambda has the extension layer or
+ * a forwarder.
+ */
+export const isInstrumentedLambda = (lambdaFunctionConfig: Lambda.FunctionConfiguration): boolean => {
+  const layers = lambdaFunctionConfig.Layers
+  const hasExtensionInstalled = layers?.some(layer => getLayerName(layer.Arn!) === DD_LAMBDA_EXTENSION_LAYER_NAME)
+
+  return !!hasExtensionInstalled
 }

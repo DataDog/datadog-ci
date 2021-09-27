@@ -2,7 +2,7 @@ import {CloudWatchLogs, Lambda} from 'aws-sdk'
 import {Command} from 'clipanion'
 import {parseConfigFile} from '../../helpers/utils'
 import {EXTRA_TAGS_REG_EXP} from './constants'
-import {getLambdaConfigs, getLambdaConfigsFromRegEx, getRegion, updateLambdaConfigs} from './function'
+import {getFunctionConfigs, getLambdaConfigsFromRegEx, getRegion, updateLambdaConfigs} from './function'
 import {FunctionConfiguration, InstrumentationSettings, LambdaConfigOptions} from './interfaces'
 
 export class InstrumentCommand extends Command {
@@ -100,7 +100,7 @@ export class InstrumentCommand extends Command {
         const lambda = new Lambda({region})
         const cloudWatchLogs = new CloudWatchLogs({region})
         try {
-          const configs = await getLambdaConfigs(lambda, cloudWatchLogs, region, functionList, settings)
+          const configs = await getFunctionConfigs(lambda, cloudWatchLogs, region, functionList, settings)
           configGroups.push({configs, lambda, cloudWatchLogs, region})
         } catch (err) {
           this.context.stdout.write(`Couldn't fetch lambda functions. ${err}\n`)

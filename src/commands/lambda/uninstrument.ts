@@ -1,7 +1,7 @@
 import { CloudWatchLogs, Lambda } from 'aws-sdk'
 import { Command } from 'clipanion'
 import { parseConfigFile } from '../../helpers/utils'
-import { getLambdaConfigs, getRegion } from './function'
+import { getLambdaFunctionConfigs, getRegion, isInstrumentedLambda } from './function'
 import { FunctionConfiguration } from './interfaces'
 
 export class UninstrumentCommand extends Command {
@@ -37,7 +37,27 @@ export class UninstrumentCommand extends Command {
       region: string
     }[] = []
 
+    // Fetch lambda function configurations that are
+    // available to be un-instrumented.
+    for (const [region, functionList] of Object.entries(functionGroups)) {
+      const lambda = new Lambda({region})
+      const cloudWatchLogs = new CloudWatchLogs({region})
+      try {
+        const lambdaFunctionConfigs = await getLambdaFunctionConfigs(lambda, functionList)
+        
+      } catch (err) {
+        this.context.stdout.write(`Couldn't fetch lambda functions. ${err}\n`)
+
+        return 1
+      }
+    }
+
+    // Print planned actions to be done.
+
+
+    // Un-instrument functions.
     
+    return 0
   }
 
   private collectFunctionsByRegion(functions: string[]) {
