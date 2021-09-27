@@ -184,12 +184,13 @@ const renderApiRequestDescription = (subType: string, config: Test['config']): s
 }
 
 const getResultUrl = (baseUrl: string, test: Test, resultId: string) => {
+  const ciQueryParam = 'from_ci=true'
   const testDetailUrl = `${baseUrl}synthetics/details/${test.public_id}`
   if (test.type === 'browser') {
-    return `${testDetailUrl}/result/${resultId}`
+    return `${testDetailUrl}/result/${resultId}?${ciQueryParam}`
   }
 
-  return `${testDetailUrl}?resultId=${resultId}`
+  return `${testDetailUrl}?resultId=${resultId}&${ciQueryParam}`
 }
 
 const renderExecutionResult = (
