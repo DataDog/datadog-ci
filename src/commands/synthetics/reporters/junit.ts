@@ -38,7 +38,7 @@ interface XMLRun {
 interface XMLTestCaseProperties extends Stats {
   name: string
   time: number | undefined
-  timestamp: number
+  timestamp: string
 }
 
 interface XMLTestCase {
@@ -308,7 +308,7 @@ export class JUnitReporter implements Reporter {
       $: {
         name: test.name,
         time: getResultDuration(result.result) / 1000,
-        timestamp: result.timestamp,
+        timestamp: new Date(result.timestamp).toISOString(),
         ...this.getResultStats(result),
       },
       browser_error: [],
