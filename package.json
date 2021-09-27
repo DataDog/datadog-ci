@@ -1,6 +1,6 @@
 {
   "name": "@datadog/datadog-ci",
-  "version": "0.16.2",
+  "version": "0.17.0",
   "description": "Run datadog actions from the CI.",
   "main": "dist/index.js",
   "repository": "https://github.com/DataDog/datadog-ci",
@@ -58,6 +58,7 @@
     "sshpk": "1.16.1",
     "tiny-async-pool": "1.2.0",
     "ws": "7.4.6",
+    "xml2js": "0.4.23",
     "yamux-js": "0.1.0"
   },
   "devDependencies": {
@@ -75,6 +76,7 @@
     "@types/sshpk": "1.10.5",
     "@types/tiny-async-pool": "1.0.0",
     "@types/ws": "7.2.9",
+    "@types/xml2js": "0.4.9",
     "jest": "27.0.5",
     "jest-environment-node": "27.0.5",
     "prettier": "2.0.5",

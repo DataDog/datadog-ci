@@ -13,6 +13,7 @@ import {
   LocationsMapping,
   MainReporter,
   PollResult,
+  Reporter,
   Summary,
   Test,
   TestPayload,
@@ -20,6 +21,7 @@ import {
   TriggerConfig,
 } from './interfaces'
 import {DefaultReporter} from './reporters/default'
+import {JUnitReporter} from './reporters/junit'
 import {Tunnel} from './tunnel'
 import {
   getReporter,
@@ -49,6 +51,8 @@ export const DEFAULT_COMMAND_CONFIG: CommandConfig = {
 }
 
 export class RunTestCommand extends Command {
+  public jUnitReport?: string
+  public runName?: string
   private apiKey?: string
   private appKey?: string
   private config: CommandConfig = JSON.parse(JSON.stringify(DEFAULT_COMMAND_CONFIG)) // Deep copy to avoid mutation during unit tests
@@ -64,13 +68,18 @@ export class RunTestCommand extends Command {
   private tunnel?: boolean
 
   public async execute() {
-    const reporters = [new DefaultReporter(this)]
+    const reporters: Reporter[] = [new DefaultReporter(this)]
+
+    if (this.jUnitReport) {
+      reporters.push(new JUnitReporter(this))
+    }
+
     this.reporter = getReporter(reporters)
     await this.resolveConfig()
     const startTime = Date.now()
 
     const api = this.getApiHelper()
-    const publicIdsFromCli = this.config.publicIds.map((id) => ({config: this.config.global, id}))
+    const publicIdsFromCli = this.config.publicIds.map((id) => ({suite: 'CLI Suite', config: this.config.global, id}))
     let testsToTrigger: TriggerConfig[]
     let tunnel: Tunnel | undefined
     const safeExit = async (exitCode: 0 | 1) => {
@@ -312,29 +321,35 @@ export class RunTestCommand extends Command {
     return `${host}/${apiPath}`
   }
 
-  private async getTestsList(api: APIHelper) {
+  private async getTestsList(api: APIHelper): Promise<TriggerConfig[]> {
     if (this.config.testSearchQuery) {
       const testSearchResults = await api.searchTests(this.config.testSearchQuery)
 
-      return testSearchResults.tests.map((test) => ({config: this.config.global, id: test.public_id}))
+      return testSearchResults.tests.map((test) => ({
+        config: this.config.global,
+        id: test.public_id,
+        suite: `Query: ${this.testSearchQuery}`,
+      }))
     }
 
     const suites = (await Promise.all(this.config.files.map((glob: string) => getSuites(glob, this.reporter!))))
       .reduce((acc, val) => acc.concat(val), [])
-      .map((suite) => suite.tests)
-      .filter((suiteTests) => !!suiteTests)
+      .filter((suite) => !!suite.content.tests)
 
     const configFromEnvironment = this.config.locations?.length ? {locations: this.config.locations} : {}
     const testsToTrigger = suites
+      .map((suite) =>
+        suite.content.tests.map((test) => ({
+          config: {
+            ...this.config.global,
+            ...configFromEnvironment,
+            ...test.config,
+          },
+          id: test.id,
+          suite: suite.name,
+        }))
+      )
       .reduce((acc, suiteTests) => acc.concat(suiteTests), [])
-      .map((test) => ({
-        config: {
-          ...this.config.global,
-          ...configFromEnvironment,
-          ...test.config,
-        },
-        id: test.id,
-      }))
 
     return testsToTrigger
   }
@@ -466,3 +481,5 @@ RunTestCommand.addOption('publicIds', Command.Array('-p,--public-id'))
 RunTestCommand.addOption('testSearchQuery', Command.String('-s,--search'))
 RunTestCommand.addOption('subdomain', Command.Boolean('--subdomain'))
 RunTestCommand.addOption('tunnel', Command.Boolean('-t,--tunnel'))
+RunTestCommand.addOption('jUnitReport', Command.String('-j,--jUnitReport'))
+RunTestCommand.addOption('runName', Command.String('-n,--runName'))

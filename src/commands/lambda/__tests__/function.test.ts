@@ -13,12 +13,23 @@ import {
   TRACE_ENABLED_ENV_VAR,
   VERSION_ENV_VAR,
 } from '../constants'
-import {calculateUpdateRequest, getExtensionArn, getLambdaConfigs, getLayerArn, updateLambdaConfigs} from '../function'
+import {
+  calculateUpdateRequest,
+  getExtensionArn,
+  getFunctionConfiguration,
+  getLambdaConfigs,
+  getLambdaConfigsFromRegEx,
+  getLayerArn,
+  updateLambdaConfigs,
+} from '../function'
 import * as loggroup from '../loggroup'
 
 const makeMockLambda = (functionConfigs: Record<string, Lambda.FunctionConfiguration>) => ({
   getFunction: jest.fn().mockImplementation(({FunctionName}) => ({
     promise: () => Promise.resolve({Configuration: functionConfigs[FunctionName]}),
+  })),
+  listFunctions: jest.fn().mockImplementation(() => ({
+    promise: () => Promise.resolve({Functions: Object.values(functionConfigs)}),
   })),
   listTags: jest.fn().mockImplementation(() => ({promise: () => Promise.resolve({Tags: {}})})),
   tagResource: jest.fn().mockImplementation(() => ({promise: () => Promise.resolve()})),
@@ -89,8 +100,12 @@ describe('function', () => {
       `)
     })
 
-    test('returns configurations without updateRequest when no changes need to be made', async () => {
+    test('returns results for multiple functions', async () => {
       const lambda = makeMockLambda({
+        'arn:aws:lambda:us-east-1:000000000000:function:another-func': {
+          FunctionArn: 'arn:aws:lambda:us-east-1:000000000000:function:another-func',
+          Runtime: 'nodejs12.x',
+        },
         'arn:aws:lambda:us-east-1:000000000000:function:autoinstrument': {
           Environment: {
             Variables: {
@@ -106,8 +121,6 @@ describe('function', () => {
             },
           },
           FunctionArn: 'arn:aws:lambda:us-east-1:000000000000:function:autoinstrument',
-          Handler: '/opt/nodejs/node_modules/datadog-lambda-js/handler.handler',
-          Layers: [{Arn: 'arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Node12-x:22'}],
           Runtime: 'nodejs12.x',
         },
       })
@@ -116,8 +129,7 @@ describe('function', () => {
       const settings = {
         environment: 'staging',
         flushMetricsToLogs: false,
-        layerVersion: 22,
-        logLevel: 'debug',
+        layerVersion: 23,
         mergeXrayTraces: false,
         service: 'middletier',
         tracingEnabled: false,
@@ -127,10 +139,47 @@ describe('function', () => {
         lambda as any,
         cloudWatch as any,
         'us-east-1',
-        ['arn:aws:lambda:us-east-1:000000000000:function:autoinstrument'],
+        [
+          'arn:aws:lambda:us-east-1:000000000000:function:autoinstrument',
+          'arn:aws:lambda:us-east-1:000000000000:function:another-func',
+        ],
         settings
       )
-      expect(result[0].updateRequest).toBeUndefined()
+      expect(result.length).toEqual(2)
+    })
+  })
+  describe('getFunctionConfiguration', () => {
+    const OLD_ENV = process.env
+    beforeEach(() => {
+      jest.resetModules()
+      process.env = {}
+    })
+    afterAll(() => {
+      process.env = OLD_ENV
+    })
+    test('throws an error when it encounters an unsupported runtime', async () => {
+      const lambda = makeMockLambda({
+        'arn:aws:lambda:us-east-1:000000000000:function:autoinstrument': {
+          FunctionArn: 'arn:aws:lambda:us-east-1:000000000000:function:autoinstrument',
+          Runtime: 'go',
+        },
+      })
+      const cloudWatch = makeMockCloudWatchLogs()
+
+      const settings = {
+        flushMetricsToLogs: false,
+        layerVersion: 23,
+        mergeXrayTraces: false,
+        tracingEnabled: false,
+      }
+      const config = (
+        await lambda
+          .getFunction({FunctionName: 'arn:aws:lambda:us-east-1:000000000000:function:autoinstrument'})
+          .promise()
+      ).Configuration
+      await expect(
+        getFunctionConfiguration(lambda as any, cloudWatch as any, config, 'us-east-1', settings)
+      ).rejects.toThrow()
     })
 
     test('replaces the layer arn when the version has changed', async () => {
@@ -152,19 +201,57 @@ describe('function', () => {
         mergeXrayTraces: false,
         tracingEnabled: false,
       }
-      const result = await getLambdaConfigs(
-        lambda as any,
-        cloudWatch as any,
-        'us-east-1',
-        ['arn:aws:lambda:us-east-1:000000000000:function:autoinstrument'],
-        settings
-      )
-      expect(result[0].updateRequest?.Layers).toMatchInlineSnapshot(`
+      const config = (
+        await lambda
+          .getFunction({FunctionName: 'arn:aws:lambda:us-east-1:000000000000:function:autoinstrument'})
+          .promise()
+      ).Configuration
+
+      const result = await getFunctionConfiguration(lambda as any, cloudWatch as any, config, 'us-east-1', settings)
+      expect(result.updateRequest?.Layers).toMatchInlineSnapshot(`
                       Array [
                         "arn:aws:lambda:us-east-1:464622532012:layer:AnotherLayer:10",
                         "arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Node12-x:23",
                       ]
                 `)
+    })
+
+    test('returns configurations without updateRequest when no changes need to be made', async () => {
+      const lambda = makeMockLambda({
+        'arn:aws:lambda:us-east-1:000000000000:function:autoinstrument': {
+          Environment: {
+            Variables: {
+              [FLUSH_TO_LOG_ENV_VAR]: 'false',
+              [LAMBDA_HANDLER_ENV_VAR]: 'index.handler',
+              [LOG_LEVEL_ENV_VAR]: 'debug',
+              [MERGE_XRAY_TRACES_ENV_VAR]: 'false',
+              [SITE_ENV_VAR]: 'datadoghq.com',
+              [TRACE_ENABLED_ENV_VAR]: 'false',
+            },
+          },
+          FunctionArn: 'arn:aws:lambda:us-east-1:000000000000:function:autoinstrument',
+          Handler: '/opt/nodejs/node_modules/datadog-lambda-js/handler.handler',
+          Layers: [{Arn: 'arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Node12-x:22'}],
+          Runtime: 'nodejs12.x',
+        },
+      })
+      const cloudWatch = makeMockCloudWatchLogs()
+
+      const settings = {
+        flushMetricsToLogs: false,
+        layerVersion: 22,
+        logLevel: 'debug',
+        mergeXrayTraces: false,
+        tracingEnabled: false,
+      }
+      const config = (
+        await lambda
+          .getFunction({FunctionName: 'arn:aws:lambda:us-east-1:000000000000:function:autoinstrument'})
+          .promise()
+      ).Configuration
+      expect(
+        (await getFunctionConfiguration(lambda as any, cloudWatch as any, config, 'us-east-1', settings)).updateRequest
+      ).toBeUndefined()
     })
 
     test('uses the GovCloud lambda layer when a GovCloud region is detected', async () => {
@@ -182,77 +269,17 @@ describe('function', () => {
         mergeXrayTraces: false,
         tracingEnabled: false,
       }
-      const result = await getLambdaConfigs(
-        lambda as any,
-        cloudWatch as any,
-        'us-gov-east-1',
-        ['arn:aws-us-gov:lambda:us-gov-east-1:000000000000:function:autoinstrument'],
-        settings
-      )
-      expect(result[0].updateRequest?.Layers).toMatchInlineSnapshot(`
+      const config = (
+        await lambda
+          .getFunction({FunctionName: 'arn:aws-us-gov:lambda:us-gov-east-1:000000000000:function:autoinstrument'})
+          .promise()
+      ).Configuration
+      const result = await getFunctionConfiguration(lambda as any, cloudWatch as any, config, 'us-gov-east-1', settings)
+      expect(result.updateRequest?.Layers).toMatchInlineSnapshot(`
                       Array [
                         "arn:aws-us-gov:lambda:us-gov-east-1:002406178527:layer:Datadog-Node12-x:30",
                       ]
                 `)
-    })
-
-    test('returns results for multiple functions', async () => {
-      const lambda = makeMockLambda({
-        'arn:aws:lambda:us-east-1:000000000000:function:another-func': {
-          FunctionArn: 'arn:aws:lambda:us-east-1:000000000000:function:another-func',
-          Runtime: 'nodejs12.x',
-        },
-        'arn:aws:lambda:us-east-1:000000000000:function:autoinstrument': {
-          FunctionArn: 'arn:aws:lambda:us-east-1:000000000000:function:autoinstrument',
-          Runtime: 'nodejs12.x',
-        },
-      })
-      const cloudWatch = makeMockCloudWatchLogs()
-
-      const settings = {
-        flushMetricsToLogs: false,
-        layerVersion: 23,
-        mergeXrayTraces: false,
-        tracingEnabled: false,
-      }
-      const result = await getLambdaConfigs(
-        lambda as any,
-        cloudWatch as any,
-        'us-east-1',
-        [
-          'arn:aws:lambda:us-east-1:000000000000:function:autoinstrument',
-          'arn:aws:lambda:us-east-1:000000000000:function:another-func',
-        ],
-        settings
-      )
-      expect(result.length).toEqual(2)
-    })
-
-    test('throws an error when it encounters an unsupported runtime', async () => {
-      const lambda = makeMockLambda({
-        'arn:aws:lambda:us-east-1:000000000000:function:autoinstrument': {
-          FunctionArn: 'arn:aws:lambda:us-east-1:000000000000:function:autoinstrument',
-          Runtime: 'go',
-        },
-      })
-      const cloudWatch = makeMockCloudWatchLogs()
-
-      const settings = {
-        flushMetricsToLogs: false,
-        layerVersion: 23,
-        mergeXrayTraces: false,
-        tracingEnabled: false,
-      }
-
-      await expect(
-        getLambdaConfigs(
-          lambda as any,
-          cloudWatch as any,
-          'us-east-1',
-          ['arn:aws:lambda:us-east-1:000000000000:function:autoinstrument'],
-          settings
-        )
-      ).rejects.toThrow()
     })
 
     test('requests log group configuration when forwarderARN is set', async () => {
@@ -273,19 +300,99 @@ describe('function', () => {
         mergeXrayTraces: false,
         tracingEnabled: false,
       }
-      const result = await getLambdaConfigs(
-        lambda as any,
-        cloudWatch as any,
-        'us-east-1',
-        ['arn:aws:lambda:us-east-1:000000000000:function:autoinstrument'],
-        settings
-      )
-      expect(result.length).toEqual(1)
-      expect(result[0].logGroupConfiguration).toMatchInlineSnapshot(`
+      const config = (
+        await lambda
+          .getFunction({FunctionName: 'arn:aws:lambda:us-east-1:000000000000:function:autoinstrument'})
+          .promise()
+      ).Configuration
+      const result = await getFunctionConfiguration(lambda as any, cloudWatch as any, config, 'us-east-1', settings)
+      expect(result).toBeDefined()
+      expect(result.logGroupConfiguration).toMatchInlineSnapshot(`
                 Object {
                   "logGroupName": "/aws/lambda/group",
                 }
             `)
+    })
+  })
+  describe('getLambdaConfigsFromRegEx', () => {
+    const OLD_ENV = process.env
+    beforeEach(() => {
+      jest.resetModules()
+      process.env = {}
+    })
+    afterAll(() => {
+      process.env = OLD_ENV
+    })
+    test('returns the update request for each function that matches the pattern', async () => {
+      const lambda = makeMockLambda({
+        'arn:aws:lambda:us-east-1:000000000000:function:autoinstrument-scooby': {
+          FunctionArn: 'arn:aws:lambda:us-east-1:000000000000:function:autoinstrument-scooby',
+          FunctionName: 'autoinstrument-scooby',
+          Handler: 'index.handler',
+          Runtime: 'nodejs12.x',
+        },
+        'arn:aws:lambda:us-east-1:000000000000:function:autoinstrument-scr.': {
+          FunctionArn: 'arn:aws:lambda:us-east-1:000000000000:function:autoinstrument-scr.',
+          FunctionName: 'autoinstrument-scr.',
+          Handler: 'index.handler',
+          Runtime: 'nodejs12.x',
+        },
+      })
+      const cloudWatch = makeMockCloudWatchLogs()
+      const settings = {
+        flushMetricsToLogs: false,
+        layerVersion: 22,
+        logLevel: 'debug',
+        mergeXrayTraces: false,
+        tracingEnabled: false,
+      }
+      const result = await getLambdaConfigsFromRegEx(
+        lambda as any,
+        cloudWatch as any,
+        'us-east-1',
+        'autoinstrument-scr.',
+        settings
+      )
+      expect(result.length).toEqual(1)
+      expect(result[0].updateRequest).toMatchInlineSnapshot(`
+        Object {
+          "Environment": Object {
+            "Variables": Object {
+              "DD_FLUSH_TO_LOG": "false",
+              "DD_LAMBDA_HANDLER": "index.handler",
+              "DD_LOG_LEVEL": "debug",
+              "DD_MERGE_XRAY_TRACES": "false",
+              "DD_SITE": "datadoghq.com",
+              "DD_TRACE_ENABLED": "false",
+            },
+          },
+          "FunctionName": "arn:aws:lambda:us-east-1:000000000000:function:autoinstrument-scr.",
+          "Handler": "/opt/nodejs/node_modules/datadog-lambda-js/handler.handler",
+          "Layers": Array [
+            "arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Node12-x:22",
+          ],
+        }
+      `)
+    })
+    test('fails when retry count is exceeded', async () => {
+      const makeMockLambdaListFunctionsError = () => ({
+        listFunctions: jest.fn().mockImplementation((args) => ({
+          promise: () => Promise.reject(),
+        })),
+      })
+      const lambda = makeMockLambdaListFunctionsError()
+      const cloudWatch = makeMockCloudWatchLogs()
+      const settings = {
+        flushMetricsToLogs: false,
+        layerVersion: 22,
+        logLevel: 'debug',
+        mergeXrayTraces: false,
+        tracingEnabled: false,
+      }
+
+      await expect(
+        getLambdaConfigsFromRegEx(lambda as any, cloudWatch as any, 'us-east-1', 'fake-pattern', settings)
+      ).rejects.toStrictEqual(new Error('Max retry count exceeded.'))
     })
   })
 
