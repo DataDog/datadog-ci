@@ -1,4 +1,5 @@
 import chalk from 'chalk'
+import {BaseContext} from 'clipanion'
 import {Writable} from 'stream'
 
 import {
@@ -264,8 +265,8 @@ const getTestResultColor = (success: boolean, isNonBlocking: boolean) => {
 export class DefaultReporter implements Reporter {
   private write: Writable['write']
 
-  constructor(command: RunTestCommand) {
-    this.write = command.context.stdout.write.bind(command.context.stdout)
+  constructor({context}: {context: BaseContext}) {
+    this.write = context.stdout.write.bind(context.stdout)
   }
 
   public error(error: string) {

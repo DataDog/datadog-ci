@@ -2,6 +2,7 @@ import c from 'chalk'
 import {promises as fs} from 'fs'
 import {Writable} from 'stream'
 import {Builder} from 'xml2js'
+import {BaseContext} from 'clipanion'
 
 import {
   ApiTestResult,
@@ -82,6 +83,12 @@ interface XMLError {
   _: string
 }
 
+interface Args {
+  context: BaseContext
+  jUnitReport?: string
+  runName?: string
+}
+
 export const getDefaultStats = (): Stats => ({
   allowfailures: 0,
   errors: 0,
@@ -109,15 +116,15 @@ export class JUnitReporter implements Reporter {
   private json: XMLJSON
   private write: Writable['write']
 
-  constructor(command: RunTestCommand) {
-    this.write = command.context.stdout.write.bind(command.context.stdout)
-    this.destination = command.jUnitReport!
+  constructor({context, jUnitReport, runName}: Args) {
+    this.write = context.stdout.write.bind(context.stdout)
+    this.destination = jUnitReport!
     if (!this.destination.endsWith('.xml')) {
       this.destination += '.xml'
     }
     this.builder = new Builder()
     this.json = {
-      testsuites: {$: {name: command.runName || 'Undefined run'}, testsuite: []},
+      testsuites: {$: {name: runName || 'Undefined run'}, testsuite: []},
     }
   }
 
