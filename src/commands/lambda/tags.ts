@@ -5,8 +5,8 @@ import { TagConfiguration } from './interfaces'
 // tslint:disable-next-line
 const {version} = require(path.join(__dirname, '../../../package.json'))
 
-export const applyTagConfig = async (lambda: Lambda, configuration: TagConfiguration) => {
-  const {tagResourceRequest} = configuration
+export const applyTagConfig = async (lambda: Lambda, config: TagConfiguration) => {
+  const {tagResourceRequest} = config
   if (tagResourceRequest !== undefined) {
     await lambda.tagResource(tagResourceRequest).promise()
   }
@@ -32,7 +32,7 @@ export const calculateTagUpdateRequest = async (lambda: Lambda, functionARN: str
 }
 
 export const hasVersionTag = async (lambda: Lambda, functionARN: string): Promise<boolean> => {
-  const args = {
+  const args: Lambda.ListTagsRequest = {
     Resource: functionARN,
   }
   const result = await lambda.listTags(args).promise()

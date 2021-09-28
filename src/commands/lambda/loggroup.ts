@@ -69,6 +69,7 @@ export const hasLogGroup = async (logs: CloudWatchLogs, logGroupName: string): P
 
   return logGroups.find((lg) => lg.logGroupName === logGroupName) !== undefined
 }
+
 export const getSubscriptionFilterState = async (logs: CloudWatchLogs, logGroupName: string, forwarderARN: string) => {
   const {subscriptionFilters} = await logs.describeSubscriptionFilters({logGroupName}).promise()
   if (subscriptionFilters === undefined || subscriptionFilters.length === 0) {
