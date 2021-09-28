@@ -1,4 +1,4 @@
-import {MainReporter, Test, User} from '../interfaces'
+import {CommandConfig, MainReporter, Test, User} from '../interfaces'
 
 const mockUser: User = {
   email: '',
@@ -16,6 +16,23 @@ export const mockReporter: MainReporter = {
   testEnd: jest.fn(),
   testTrigger: jest.fn(),
   testWait: jest.fn(),
+}
+
+export const config: CommandConfig = {
+  apiKey: '',
+  appKey: '',
+  configPath: 'datadog-ci.json',
+  datadogSite: 'datadoghq.com',
+  failOnCriticalErrors: false,
+  failOnTimeout: true,
+  files: ['{,!(node_modules)/**/}*.synthetics.json'],
+  global: {},
+  locations: [],
+  pollingTimeout: 2 * 60 * 1000,
+  proxy: {protocol: 'http'},
+  publicIds: [],
+  subdomain: 'app',
+  tunnel: false,
 }
 
 export const getApiTest = (publicId: string): Test => ({
