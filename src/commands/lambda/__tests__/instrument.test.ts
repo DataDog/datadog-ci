@@ -4,15 +4,14 @@ jest.mock('aws-sdk')
 import {Lambda} from 'aws-sdk'
 import * as fs from 'fs'
 
+import chalk from 'chalk'
 import {Cli} from 'clipanion/lib/advanced'
 import path from 'path'
+import * as git from '../../commit/git'
 import {EXTRA_TAGS_REG_EXP} from '../constants'
 import {InstrumentationSettings} from '../function'
 import {InstrumentCommand, sentenceMatchesRegEx} from '../instrument'
 import {LambdaConfigOptions} from '../interfaces'
-import * as git from '../../commit/git'
-import chalk from 'chalk'
-import simpleGit, { FileStatusResult } from 'simple-git'
 // tslint:disable-next-line
 const {version} = require(path.join(__dirname, '../../../../package.json'))
 
@@ -53,15 +52,15 @@ describe('lambda', () => {
   interface MockConfig {
     hash?: string
     remotes?: any[]
-    trackedFiles?: Object[]
+    trackedFiles?: object[]
   }
-  
+
   const createMockSimpleGit = (conf: MockConfig) => ({
     getRemotes: async (_: boolean) => {
       if (conf.remotes === undefined) {
         throw Error('Unexpected call to getRemotes')
       }
-  
+
       return conf.remotes!
     },
     raw: async (command: string) => {
@@ -74,7 +73,7 @@ describe('lambda', () => {
       if (conf.hash === undefined) {
         throw Error('Unexpected call to revparse')
       }
-  
+
       return conf.hash!
     },
   })
@@ -471,7 +470,7 @@ describe('lambda', () => {
             'staging',
             '--version',
             '0.2',
-            '-sci'
+            '-sci',
           ],
           context
         )
@@ -480,7 +479,7 @@ describe('lambda', () => {
       })
 
       test('calls getGitDataAndUpload when DATADOG_API_KEY is set', async () => {
-        process.env = { DATADOG_API_KEY: "1234" }
+        process.env = {DATADOG_API_KEY: '1234'}
         const cli = makeCli()
         const context = createMockContext() as any
         const getGitDataAndUploadSpy = jest.spyOn(InstrumentCommand.prototype as any, 'getGitDataAndUpload')
@@ -498,20 +497,16 @@ describe('lambda', () => {
             'staging',
             '--version',
             '0.2',
-            '-sci'
+            '-sci',
           ],
           context
         )
-        expect(getGitDataAndUploadSpy).toHaveBeenCalled();
+        expect(getGitDataAndUploadSpy).toHaveBeenCalled()
       })
 
       test('aborts early and prints updated files when git status is not clean', async () => {
-        process.env = { DATADOG_API_KEY: "1234" }
-        const trackedFiles = [
-          { path: 'myfile.py' },
-          { path: 'index.py' },
-          { path: '.gitignore'}
-        ]
+        process.env = {DATADOG_API_KEY: '1234'}
+        const trackedFiles = [{path: 'myfile.py'}, {path: 'index.py'}, {path: '.gitignore'}]
         const context = createMockContext() as any
         const mockGitData = createMockSimpleGit({
           hash: 'abcd',
@@ -522,8 +517,8 @@ describe('lambda', () => {
         jest.spyOn(git, 'newSimpleGit').mockReturnValue(mockGitData)
         const getCurrentGitStatusSpy = jest.spyOn(InstrumentCommand.prototype as any, 'getCurrentGitStatus')
         getCurrentGitStatusSpy.mockReturnValue({
+          files: trackedFiles,
           isClean: false,
-          files: trackedFiles
         })
         const cli = makeCli()
         await cli.run(
@@ -540,17 +535,17 @@ describe('lambda', () => {
             'staging',
             '--version',
             '0.2',
-            '-sci'
+            '-sci',
           ],
           context
         )
         const output = context.stdout.toString()
-        expect(getCurrentGitStatusSpy).toHaveBeenCalled();
+        expect(getCurrentGitStatusSpy).toHaveBeenCalled()
         expect(output).toBe('Found local modified files:\nmyfile.py\nindex.py\n.gitignore\n\nAborting git upload...\n')
       })
 
       test('uploads data only when git status is clean', async () => {
-        process.env = { DATADOG_API_KEY: "1234" }
+        process.env = {DATADOG_API_KEY: '1234'}
         const context = createMockContext() as any
         const mockGitData = createMockSimpleGit({
           hash: 'abcd',
@@ -559,9 +554,9 @@ describe('lambda', () => {
         jest.spyOn(git, 'newSimpleGit').mockReturnValue(mockGitData)
         const getCurrentGitStatusSpy = jest.spyOn(InstrumentCommand.prototype as any, 'getCurrentGitStatus')
         getCurrentGitStatusSpy.mockReturnValue({
-          isClean: true,
+          ahead: 0,
           hash: 'abcd',
-          ahead: 0
+          isClean: true,
         })
         const uploadGitDataSpy = jest.spyOn(InstrumentCommand.prototype as any, 'uploadGitData')
         const cli = makeCli()
@@ -579,12 +574,12 @@ describe('lambda', () => {
             'staging',
             '--version',
             '0.2',
-            '-sci'
+            '-sci',
           ],
           context
         )
-        expect(uploadGitDataSpy).toHaveBeenCalled();
-        expect(uploadGitDataSpy).toHaveReturned();
+        expect(uploadGitDataSpy).toHaveBeenCalled()
+        expect(uploadGitDataSpy).toHaveReturned()
       })
     })
 
@@ -904,7 +899,7 @@ describe('lambda', () => {
         ['complying:alone', true],
         ['one_divided_by_two:1/2,one_divided_by_four:0.25,three_minus_one_half:3-1/2', true],
         ['this_is_a_valid_t4g:yes/it.is-42', true],
-        ['this.is/valid:indeed.it_is', true]
+        ['this.is/valid:indeed.it_is', true],
       ]
       test.each(tags)('check if the tags match the expected result from the regex', (tag, expectedResult) => {
         const result = !!sentenceMatchesRegEx(tag, EXTRA_TAGS_REG_EXP)
