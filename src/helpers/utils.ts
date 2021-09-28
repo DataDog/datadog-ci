@@ -87,14 +87,13 @@ export interface RequestOptions {
   apiKey: string
   appKey?: string
   baseUrl: string
-  disableEnvironmentVariables?: boolean
   headers?: Map<string, string>
   overrideUrl?: string
   proxyOpts?: ProxyConfiguration
 }
 
 export const getRequestBuilder = (options: RequestOptions) => {
-  const {apiKey, appKey, baseUrl, disableEnvironmentVariables, overrideUrl, proxyOpts} = options
+  const {apiKey, appKey, baseUrl, overrideUrl, proxyOpts} = options
   const overrideArgs = (args: AxiosRequestConfig) => {
     const newArguments = {
       ...args,
@@ -109,7 +108,7 @@ export const getRequestBuilder = (options: RequestOptions) => {
       newArguments.url = overrideUrl
     }
 
-    const proxyAgent = getProxyAgent(proxyOpts, disableEnvironmentVariables)
+    const proxyAgent = getProxyAgent(proxyOpts)
     if (proxyAgent) {
       newArguments.httpAgent = proxyAgent
       newArguments.httpsAgent = proxyAgent
@@ -134,11 +133,8 @@ export const getRequestBuilder = (options: RequestOptions) => {
   return (args: AxiosRequestConfig) => axios.create(baseConfiguration)(overrideArgs(args))
 }
 
-export const getProxyAgent = (proxyOpts?: ProxyConfiguration, disableProxyFromEnvVar?: boolean) => {
+export const getProxyAgent = (proxyOpts?: ProxyConfiguration) => {
   const proxyUrlFromConfiguration = getProxyUrl(proxyOpts)
-  if (disableProxyFromEnvVar && proxyUrlFromConfiguration === '') {
-    return
-  }
 
   return new ProxyAgent(proxyUrlFromConfiguration)
 }

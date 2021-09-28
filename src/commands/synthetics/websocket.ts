@@ -104,7 +104,7 @@ export class WebSocket extends EventEmitter {
   private establishWebsocketConnection(resolve: (value: void) => void, reject: (error: Error) => void) {
     if (!this.websocket) {
       const options: WebSocketModule.ClientOptions = {}
-      const proxyAgent = getProxyAgent(this.proxyOpts, false)
+      const proxyAgent = getProxyAgent(this.proxyOpts)
       if (proxyAgent) {
         options.agent = proxyAgent
       }

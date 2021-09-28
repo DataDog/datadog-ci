@@ -1,10 +1,10 @@
 // tslint:disable: no-string-literal
 
+import {ProxyConfiguration} from '../../../../src/helpers/utils'
+
 import {PassThrough} from 'stream'
 
 import {mocked} from 'ts-jest/utils'
-
-import * as ciUtils from '../../../helpers/utils'
 
 import {Tunnel} from '../tunnel'
 import {WebSocket} from '../websocket'
@@ -28,7 +28,7 @@ describe('Tunnel', () => {
     waitForFirstMessage: async () => Promise.resolve(JSON.stringify(mockWebSocket.firstMessage)),
   }
 
-  const defaultProxyOpts: ciUtils.ProxyConfiguration = {protocol: 'http'}
+  const defaultProxyOpts: ProxyConfiguration = {protocol: 'http'}
   const testIDs = ['aaa-bbb-ccc']
   const wsPresignedURL = 'wss://tunnel.synthetics'
 
@@ -73,7 +73,7 @@ describe('Tunnel', () => {
 
   test('sets websocket proxy options', async () => {
     mockedWebSocket.mockImplementation(() => mockWebSocket as any)
-    const localProxyOpts: ciUtils.ProxyConfiguration = {
+    const localProxyOpts: ProxyConfiguration = {
       host: '127.0.0.1',
       port: 8080,
       protocol: 'http',
