@@ -2,13 +2,21 @@
 import {promises as fs} from 'fs'
 import {Writable} from 'stream'
 
-import {getDefaultStats, JUnitReporter} from '../../reporters/junit'
+import {getDefaultStats, JUnitReporter, XMLTestCase} from '../../reporters/junit'
 import {RunTestCommand} from '../../run-test'
-import {getApiTest, getResult, getStep} from '../fixtures'
+import {
+  getApiPollResult,
+  getApiTest,
+  getBrowserPollResult,
+  getBrowserResult,
+  getMultiStep,
+  getMultiStepsResult,
+  getStep,
+} from '../fixtures'
 
 const globalTestMock = getApiTest('123')
 const globalStepMock = getStep()
-const globalResultMock = getResult()
+const globalResultMock = getBrowserPollResult()
 
 describe('Junit reporter', () => {
   const writeMock: Writable['write'] = jest.fn()
@@ -40,8 +48,7 @@ describe('Junit reporter', () => {
   describe('runEnd', () => {
     beforeEach(() => {
       reporter = new JUnitReporter(commandMock as RunTestCommand)
-      // Also mock implementation so it doesn't write the file during the test
-      jest.spyOn(fs, 'writeFile').mockImplementation(jest.fn())
+      jest.spyOn(fs, 'writeFile')
       jest.spyOn(reporter['builder'], 'buildObject')
     })
 
@@ -50,6 +57,9 @@ describe('Junit reporter', () => {
       expect(reporter['builder'].buildObject).toHaveBeenCalledWith(reporter['json'])
       expect(fs.writeFile).toHaveBeenCalledWith('junit.xml', expect.any(String), 'utf8')
       expect(writeMock).toHaveBeenCalledTimes(1)
+
+      // Cleaning
+      await fs.unlink(reporter['destination'])
     })
 
     it('should gracefully fail', async () => {
@@ -61,6 +71,27 @@ describe('Junit reporter', () => {
 
       expect(fs.writeFile).not.toHaveBeenCalled()
       expect(writeMock).toHaveBeenCalledTimes(1)
+    })
+
+    it('should create the file', async () => {
+      reporter['destination'] = 'junit/report.xml'
+      await reporter.runEnd()
+      const stat = await fs.stat(reporter['destination'])
+      expect(stat).toBeDefined()
+
+      // Cleaning
+      await fs.unlink(reporter['destination'])
+      await fs.rmdir('junit')
+    })
+
+    it('should not throw on existing directory', async () => {
+      await fs.mkdir('junit')
+      reporter['destination'] = 'junit/report.xml'
+      await reporter.runEnd()
+
+      // Cleaning
+      await fs.unlink(reporter['destination'])
+      await fs.rmdir('junit')
     })
   })
 
@@ -89,6 +120,73 @@ describe('Junit reporter', () => {
       reporter.testEnd(globalTestMock, [], '', {})
       const testsuite = reporter['json'].testsuites.testsuite[0]
       expect(testsuite.$).toMatchObject(getDefaultStats())
+    })
+
+    it('should report errors', () => {
+      const browserResult1 = {
+        ...globalResultMock,
+        result: {
+          ...getBrowserResult(),
+          stepDetails: [
+            {
+              ...getStep(),
+              browserErrors: [
+                {
+                  description: 'error description',
+                  name: 'error name',
+                  type: 'error type',
+                },
+                {
+                  description: 'error description',
+                  name: 'error name',
+                  type: 'error type',
+                },
+              ],
+              error: 'error',
+              warnings: [
+                {
+                  message: 'warning message',
+                  type: 'warning type',
+                },
+              ],
+            },
+            getStep(),
+          ],
+        },
+      }
+      const browserResult2 = {
+        ...globalResultMock,
+        result: getBrowserResult(),
+      }
+      const apiResult = {
+        ...getApiPollResult(),
+        result: {
+          ...getMultiStepsResult(),
+          steps: [
+            {
+              ...getMultiStep(),
+              failure: {
+                code: '1',
+                message: 'message',
+              },
+            },
+          ],
+        },
+      }
+      reporter.testEnd(globalTestMock, [browserResult1, browserResult2, apiResult], '', {})
+      const testsuite = reporter['json'].testsuites.testsuite[0]
+      const results = [
+        [2, 1, 1],
+        [0, 0, 0],
+        [0, 1, 0],
+      ]
+      const entries: [any, XMLTestCase][] = Object.entries(testsuite.testcase)
+      for (const [i, testcase] of entries) {
+        const result = results[i]
+        expect(testcase.browser_error.length).toBe(result[0])
+        expect(testcase.error.length).toBe(result[1])
+        expect(testcase.warning.length).toBe(result[2])
+      }
     })
   })
 

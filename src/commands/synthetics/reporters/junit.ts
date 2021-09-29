@@ -1,6 +1,7 @@
 import c from 'chalk'
 import {BaseContext} from 'clipanion'
 import {promises as fs} from 'fs'
+import path from 'path'
 import {Writable} from 'stream'
 import {Builder} from 'xml2js'
 
@@ -40,16 +41,16 @@ interface XMLTestCaseProperties extends Stats {
   timestamp: string
 }
 
-interface XMLTestCase {
+export interface XMLTestCase {
   $: XMLTestCaseProperties
   // These are singular for a better display in the XML format of the report.
-  browser_error?: XMLError[]
+  browser_error: XMLError[]
   error: XMLError[]
   properties: {
     property: {$: {name: string; value: any}}[]
   }
   testcase: XMLStep[]
-  warning?: XMLError[]
+  warning: XMLError[]
 }
 
 interface XMLStepProperties extends Stats {
@@ -131,6 +132,7 @@ export class JUnitReporter implements Reporter {
     // Write the file
     try {
       const xml = this.builder.buildObject(this.json)
+      await fs.mkdir(path.dirname(this.destination), {recursive: true})
       await fs.writeFile(this.destination, xml, 'utf8')
       this.write(`✅ Created a jUnit report at ${c.bold.green(this.destination)}\n`)
     } catch (e) {
@@ -163,15 +165,15 @@ export class JUnitReporter implements Reporter {
         // It's a browser test.
         for (const stepDetail of result.result.stepDetails) {
           const {browser_error, error, warning} = this.getBrowserTestStep(stepDetail)
-          testCase.browser_error = browser_error
-          testCase.error = error
-          testCase.warning = warning
+          testCase.browser_error.push(...browser_error)
+          testCase.error.push(...error)
+          testCase.warning.push(...warning)
         }
       } else if ('steps' in result.result) {
         // It's a multistep test.
         for (const step of result.result.steps) {
           const {error} = this.getApiTestStep(step)
-          testCase.error = error
+          testCase.error.push(...error)
         }
       }
 
