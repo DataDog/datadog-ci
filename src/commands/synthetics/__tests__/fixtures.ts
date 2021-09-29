@@ -5,7 +5,18 @@ import WebSocket, {Server as WebSocketServer} from 'ws'
 
 import {ProxyConfiguration} from '../../../helpers/utils'
 
-import {MainReporter, PollResult, Result, Step, Test, User} from '../interfaces'
+import {
+  ApiTestResult,
+  BrowserTestResult,
+  MainReporter,
+  MultiStep,
+  MultiStepsTestResult,
+  PollResult,
+  Step,
+  Test,
+  TestResult,
+  User,
+} from '../interfaces'
 
 const mockUser: User = {
   email: '',
@@ -80,26 +91,70 @@ export const getStep = (): Step => ({
   warnings: [],
 })
 
-export const getResult = (): PollResult => ({
+export const getMultiStep = (): MultiStep => ({
+  allowFailure: false,
+  assertionResults: [],
+  name: 'name',
+  passed: true,
+  skipped: false,
+  subtype: 'subtype',
+  timings: {
+    total: 123,
+  },
+})
+
+const getPollResult = () => ({
   dc_id: 1,
-  result: getBrowserResult(),
   resultID: '123',
   timestamp: 1,
 })
 
-export const getBrowserResult = (opts: any = {}): Result => ({
+export const getBrowserPollResult = (): PollResult => ({
+  ...getPollResult(),
+  result: getBrowserResult(),
+})
+
+export const getApiPollResult = (): PollResult => ({
+  ...getPollResult(),
+  result: getApiResult(),
+})
+
+const getResult = (): TestResult => ({
+  eventType: 'finished',
+  passed: true,
+})
+
+export const getBrowserResult = (opts: any = {}): BrowserTestResult => ({
+  ...getResult(),
   device: {
     height: 1,
     id: 'laptop_large',
     width: 1,
   },
   duration: 0,
-  eventType: 'finished',
-  passed: true,
   startUrl: '',
   stepDetails: [],
   tunnel: false,
   ...opts,
+})
+
+export const getApiResult = (): ApiTestResult => ({
+  ...getResult(),
+  assertionResults: [
+    {
+      actual: 'actual',
+      valid: true,
+    },
+  ],
+  timings: {
+    total: 123,
+  },
+})
+
+export const getMultiStepsResult = (): MultiStepsTestResult => ({
+  ...getResult(),
+  duration: 123,
+  steps: [],
 })
 
 const mockResult = {

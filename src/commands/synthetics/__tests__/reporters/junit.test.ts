@@ -2,13 +2,22 @@
 import {promises as fs} from 'fs'
 import {Writable} from 'stream'
 
-import {getDefaultStats, JUnitReporter} from '../../reporters/junit'
+import {getDefaultStats, JUnitReporter, XMLTestCase} from '../../reporters/junit'
 import {RunTestCommand} from '../../run-test'
-import {getApiTest, getResult, getStep} from '../fixtures'
+import {
+  getApiTest,
+  getBrowserResult,
+  getBrowserPollResult,
+  getStep,
+  getApiPollResult,
+  getApiResult,
+  getMultiStepsResult,
+  getMultiStep,
+} from '../fixtures'
 
 const globalTestMock = getApiTest('123')
 const globalStepMock = getStep()
-const globalResultMock = getResult()
+const globalResultMock = getBrowserPollResult()
 
 describe('Junit reporter', () => {
   const writeMock: Writable['write'] = jest.fn()
@@ -102,6 +111,73 @@ describe('Junit reporter', () => {
       reporter.testEnd(globalTestMock, [], '', {})
       const testsuite = reporter['json'].testsuites.testsuite[0]
       expect(testsuite.$).toMatchObject(getDefaultStats())
+    })
+
+    it('should report errors', () => {
+      const browserResult1 = {
+        ...globalResultMock,
+        result: {
+          ...getBrowserResult(),
+          stepDetails: [
+            {
+              ...getStep(),
+              browserErrors: [
+                {
+                  type: 'error type',
+                  name: 'error name',
+                  description: 'error description',
+                },
+                {
+                  type: 'error type',
+                  name: 'error name',
+                  description: 'error description',
+                },
+              ],
+              error: 'error',
+              warnings: [
+                {
+                  type: 'warning type',
+                  message: 'warning message',
+                },
+              ],
+            },
+            getStep(),
+          ],
+        },
+      }
+      const browserResult2 = {
+        ...globalResultMock,
+        result: getBrowserResult(),
+      }
+      const apiResult = {
+        ...getApiPollResult(),
+        result: {
+          ...getMultiStepsResult(),
+          steps: [
+            {
+              ...getMultiStep(),
+              failure: {
+                code: '1',
+                message: 'message',
+              },
+            },
+          ],
+        },
+      }
+      reporter.testEnd(globalTestMock, [browserResult1, browserResult2, apiResult], '', {})
+      const testsuite = reporter['json'].testsuites.testsuite[0]
+      const results = [
+        [2, 1, 1],
+        [0, 0, 0],
+        [0, 1, 0],
+      ]
+      const entries: [any, XMLTestCase][] = Object.entries(testsuite.testcase)
+      for (const [i, testcase] of entries) {
+        const result = results[i]
+        expect(testcase.browser_error.length).toBe(result[0])
+        expect(testcase.error.length).toBe(result[1])
+        expect(testcase.warning.length).toBe(result[2])
+      }
     })
   })
 
