@@ -40,8 +40,7 @@ describe('Junit reporter', () => {
   describe('runEnd', () => {
     beforeEach(() => {
       reporter = new JUnitReporter(commandMock as RunTestCommand)
-      // Also mock implementation so it doesn't write the file during the test
-      jest.spyOn(fs, 'writeFile').mockImplementation(jest.fn())
+      jest.spyOn(fs, 'writeFile')
       jest.spyOn(reporter['builder'], 'buildObject')
     })
 
@@ -50,6 +49,9 @@ describe('Junit reporter', () => {
       expect(reporter['builder'].buildObject).toHaveBeenCalledWith(reporter['json'])
       expect(fs.writeFile).toHaveBeenCalledWith('junit.xml', expect.any(String), 'utf8')
       expect(writeMock).toHaveBeenCalledTimes(1)
+
+      // Cleaning
+      await fs.unlink(reporter['destination'])
     })
 
     it('should gracefully fail', async () => {
@@ -61,6 +63,17 @@ describe('Junit reporter', () => {
 
       expect(fs.writeFile).not.toHaveBeenCalled()
       expect(writeMock).toHaveBeenCalledTimes(1)
+    })
+
+    it('should create the file', async () => {
+      reporter['destination'] = 'junit/report.xml'
+      await reporter.runEnd()
+      const stat = await fs.stat(reporter['destination'])
+      expect(stat).toBeDefined()
+
+      // Cleaning
+      await fs.unlink(reporter['destination'])
+      await fs.rmdir('junit')
     })
   })
 
