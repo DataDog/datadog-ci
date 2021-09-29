@@ -5,14 +5,13 @@ import {Writable} from 'stream'
 import {getDefaultStats, JUnitReporter, XMLTestCase} from '../../reporters/junit'
 import {RunTestCommand} from '../../run-test'
 import {
-  getApiTest,
-  getBrowserResult,
-  getBrowserPollResult,
-  getStep,
   getApiPollResult,
-  getApiResult,
-  getMultiStepsResult,
+  getApiTest,
+  getBrowserPollResult,
+  getBrowserResult,
   getMultiStep,
+  getMultiStepsResult,
+  getStep,
 } from '../fixtures'
 
 const globalTestMock = getApiTest('123')
@@ -123,21 +122,21 @@ describe('Junit reporter', () => {
               ...getStep(),
               browserErrors: [
                 {
-                  type: 'error type',
-                  name: 'error name',
                   description: 'error description',
+                  name: 'error name',
+                  type: 'error type',
                 },
                 {
-                  type: 'error type',
-                  name: 'error name',
                   description: 'error description',
+                  name: 'error name',
+                  type: 'error type',
                 },
               ],
               error: 'error',
               warnings: [
                 {
-                  type: 'warning type',
                   message: 'warning message',
+                  type: 'warning type',
                 },
               ],
             },
