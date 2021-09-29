@@ -1,3 +1,10 @@
+import * as http from 'http'
+import {URL} from 'url'
+
+import WebSocket, {Server as WebSocketServer} from 'ws'
+
+import {ProxyConfiguration} from '../../../helpers/utils'
+
 import {MainReporter, PollResult, Result, Step, Test, User} from '../interfaces'
 
 const mockUser: User = {
@@ -36,7 +43,7 @@ export const getApiTest = (publicId: string): Test => ({
   modified_at: '',
   modified_by: mockUser,
   monitor_id: 0,
-  name: '',
+  name: 'Test name',
   options: {
     device_ids: [],
     min_failure_duration: 0,
@@ -94,3 +101,99 @@ export const getBrowserResult = (opts: any = {}): Result => ({
   tunnel: false,
   ...opts,
 })
+
+const mockResult = {
+  location: 1,
+  public_id: '123-456-789',
+  result: {
+    dc_id: 1,
+    result: {
+      device: 'chrome_laptop.large',
+      passed: true,
+      public_id: '123-456-789',
+    },
+    result_id: '1',
+  },
+  result_id: '1',
+}
+
+export const mockSearchResponse = {tests: [{public_id: '123-456-789'}]}
+
+export const mockTestTriggerResponse = {
+  locations: ['location-1'],
+  results: [mockResult],
+  triggered_check_ids: ['123-456-789'],
+}
+
+export const mockPollResultResponse = {results: [{dc_id: 1, result: mockResult, resultID: '1'}]}
+
+const mockTunnelConnectionFirstMessage = {host: 'host', id: 'tunnel-id'}
+
+export const getSyntheticsProxy = () => {
+  const calls = {
+    get: jest.fn(),
+    poll: jest.fn(),
+    presignedUrl: jest.fn(),
+    search: jest.fn(),
+    trigger: jest.fn(),
+    tunnel: jest.fn(),
+  }
+
+  const wss = new WebSocketServer({noServer: true})
+
+  let port: number
+  const server = http.createServer({}, (request, response) => {
+    const mockResponse = (call: jest.Mock, responseData: any) => {
+      let body = ''
+      request.on('data', (data) => (body += data.toString()))
+      request.on('end', () => {
+        try {
+          call(JSON.parse(body))
+        } catch (_) {
+          call(body)
+        }
+      })
+
+      return response.end(JSON.stringify(responseData))
+    }
+
+    if (!request.url) {
+      return response.end()
+    }
+
+    if (/\/synthetics\/tests\/search/.test(request.url)) {
+      return mockResponse(calls.search, mockSearchResponse)
+    }
+    if (/\/synthetics\/tests\/trigger\/ci/.test(request.url)) {
+      return mockResponse(calls.trigger, mockTestTriggerResponse)
+    }
+    if (/\/synthetics\/ci\/tunnel/.test(request.url)) {
+      return mockResponse(calls.presignedUrl, {url: `ws://127.0.0.1:${port}`})
+    }
+    if (/\/synthetics\/tests\/poll_results/.test(request.url)) {
+      return mockResponse(calls.poll, mockPollResultResponse)
+    }
+    if (/\/synthetics\/tests\//.test(request.url)) {
+      return mockResponse(calls.get, getApiTest('123-456-789'))
+    }
+    console.log(request.url)
+
+    response.end()
+  })
+
+  server.on('upgrade', (request, socket, head) => {
+    wss.handleUpgrade(request, socket, head, (ws: WebSocket) => {
+      calls.tunnel()
+      ws.send(JSON.stringify(mockTunnelConnectionFirstMessage))
+    })
+  })
+
+  server.listen()
+  const address = server.address()
+  port = typeof address === 'string' ? Number(new URL(address).port) : address.port
+  const config: ProxyConfiguration = {host: '127.0.0.1', port, protocol: 'http'}
+
+  const close = () => Promise.all([new Promise((res) => server.close(res)), new Promise((res) => wss.close(res))])
+
+  return {calls, close, config, server}
+}
