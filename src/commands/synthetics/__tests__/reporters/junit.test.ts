@@ -83,6 +83,16 @@ describe('Junit reporter', () => {
       await fs.unlink(reporter['destination'])
       await fs.rmdir('junit')
     })
+
+    it('should not throw on existing directory', async () => {
+      await fs.mkdir('junit')
+      reporter['destination'] = 'junit/report.xml'
+      await reporter.runEnd()
+
+      // Cleaning
+      await fs.unlink(reporter['destination'])
+      await fs.rmdir('junit')
+    })
   })
 
   describe('testEnd', () => {
