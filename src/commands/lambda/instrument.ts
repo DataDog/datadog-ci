@@ -2,7 +2,8 @@ import {CloudWatchLogs, Lambda} from 'aws-sdk'
 import {Command} from 'clipanion'
 import {parseConfigFile} from '../../helpers/utils'
 import {EXTRA_TAGS_REG_EXP} from './constants'
-import {getFunctionConfigs, getLambdaConfigsFromRegEx, getRegion, updateLambdaConfigs} from './function'
+import { getRegion } from './functions/commons'
+import { getFunctionConfigs, getLambdaConfigsFromRegEx, updateLambdaConfigs } from './functions/instrument'
 import {FunctionConfiguration, InstrumentationSettings, LambdaConfigOptions} from './interfaces'
 
 export class InstrumentCommand extends Command {

@@ -1,36 +1,36 @@
 import { CloudWatchLogs, Lambda } from 'aws-sdk'
-import { cyan, red } from 'chalk'
+import { red } from 'chalk'
 import { Command } from 'clipanion'
 import { parseConfigFile } from '../../helpers/utils'
-import { getLambdaFunctionConfigs, getRegion, isInstrumentedLambda, uninstrumentLambdaFunctions } from './function'
-import { FunctionConfiguration } from './interfaces'
+import { getLambdaFunctionConfigs, getRegion } from './functions/commons'
+import { uninstrumentLambdaFunctions } from './functions/uninstrument'
 
 export class UninstrumentCommand extends Command {
   private config: any = {
     functions: [],
-    region: process.env.AWS_DEFAULT_REGION
+    region: process.env.AWS_DEFAULT_REGION,
   }
+  private configPath?: string
   private dryRun = false
   private functions: string[] = []
   private region?: string
-  private configPath?: string
 
   public async execute() {
     const lambdaConfig = {lambda: this.config}
     this.config = (await parseConfigFile(lambdaConfig, this.configPath)).lambda
-    
+
     const hasSpecifiedFuntions = this.functions.length !== 0 || this.config.functions.length !== 0
     if (!hasSpecifiedFuntions) {
       this.context.stdout.write('No functions specified for un-instrumentation.\n')
 
       return 1
-    }    
+    }
 
     const functionGroups = this.collectFunctionsByRegion(this.functions.length !== 0 ? this.functions : this.config.functions)
     if (functionGroups === undefined) {
       return 1
     }
-    
+
     const configGroups: {
       cloudWatchLogs: CloudWatchLogs
       configs: Lambda.FunctionConfiguration[]
@@ -54,11 +54,10 @@ export class UninstrumentCommand extends Command {
     }
 
     // TODO: Print planned actions to be done.
-    
 
     // Un-instrument functions.
     const promises = Object.values(configGroups).map(group => {
-      
+
       uninstrumentLambdaFunctions(group.lambda, group.cloudWatchLogs, group.configs)
     })
 
