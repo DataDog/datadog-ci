@@ -460,7 +460,6 @@ describe('lambda', () => {
         expect(output).toMatch(`"--functions-regex" isn't meant to be used with ARNs.\n`)
       })
     })
-
     describe('getSettings', () => {
       test('uses config file settings', () => {
         process.env = {}
@@ -643,7 +642,6 @@ describe('lambda', () => {
         expect(output).toMatch('Extra tags do not comply with the <key>:<value> array.\n')
       })
     })
-
     describe('collectFunctionsByRegion', () => {
       test('groups functions with region read from arn', () => {
         process.env = {}
@@ -714,7 +712,6 @@ describe('lambda', () => {
         expect(command['collectFunctionsByRegion'](command['functions'])).toBeUndefined()
       })
     })
-
     describe('printPlannedActions', () => {
       test('prints no output when list is empty', () => {
         process.env = {}
