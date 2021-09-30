@@ -9,7 +9,7 @@ import glob from 'glob'
 import {ProxyConfiguration} from '../../../helpers/utils'
 
 import {apiConstructor} from '../api'
-import {ConfigOverride, ExecutionRule, InternalTest, PollResult, Result} from '../interfaces'
+import {ConfigOverride, ERRORS, ExecutionRule, InternalTest, PollResult, Result} from '../interfaces'
 import {Tunnel} from '../tunnel'
 import * as utils from '../utils'
 
@@ -374,7 +374,7 @@ describe('utils', () => {
       const result: Result = {
         device: {height: 0, id: 'laptop_large', width: 0},
         duration: 0,
-        error: 'Timeout',
+        error: ERRORS.TIMEOUT,
         eventType: 'finished',
         passed: false,
         startUrl: '',
@@ -389,7 +389,7 @@ describe('utils', () => {
     const result: Result = {
       device: {height: 0, id: 'laptop_large', width: 0},
       duration: 0,
-      error: 'Endpoint Failure',
+      error: ERRORS.ENDPOINT,
       eventType: 'finished',
       passed: false,
       startUrl: '',
@@ -427,14 +427,14 @@ describe('utils', () => {
     const endpointFailurePollResult = {
       check: testConfiguration,
       dc_id: 42,
-      result: {...passingResult, passed: false, error: 'Endpoint Failure'},
+      result: {...passingResult, passed: false, error: ERRORS.ENDPOINT},
       resultID: '0123456789',
       timestamp: 0,
     }
     const timeoutPollResult = {
       check: testConfiguration,
       dc_id: 42,
-      result: {...passingResult, passed: false, error: 'Timeout'},
+      result: {...passingResult, passed: false, error: ERRORS.TIMEOUT},
       resultID: '0123456789',
       timestamp: 0,
     }
@@ -471,7 +471,7 @@ describe('utils', () => {
     const getPassingPollResult = (resultId: string) => ({
       check: getTestConfig(),
       dc_id: 42,
-      result: getBrowserResult({error: 'Timeout', passed: false}),
+      result: getBrowserResult({error: ERRORS.TIMEOUT, passed: false}),
       resultID: resultId,
       timestamp: 0,
     })
@@ -515,7 +515,7 @@ describe('utils', () => {
           dc_id: triggerResult.location,
           result: getBrowserResult({
             device: {height: 0, id: triggerResult.device, width: 0},
-            error: 'Timeout',
+            error: ERRORS.TIMEOUT,
             passed: false,
           }),
           resultID: triggerResult.result_id,
@@ -533,7 +533,7 @@ describe('utils', () => {
           dc_id: triggerResult.location,
           result: getBrowserResult({
             device: {height: 0, id: triggerResult.device, width: 0},
-            error: 'Timeout',
+            error: ERRORS.TIMEOUT,
             passed: false,
           }),
           resultID: triggerResult.result_id,
@@ -568,7 +568,7 @@ describe('utils', () => {
           dc_id: triggerResultTimeOut.location,
           result: getBrowserResult({
             device: {height: 0, id: triggerResultTimeOut.device, width: 0},
-            error: 'Timeout',
+            error: ERRORS.TIMEOUT,
             passed: false,
           }),
           resultID: triggerResultTimeOut.result_id,
@@ -601,7 +601,7 @@ describe('utils', () => {
             dc_id: triggerResult.location,
             result: getBrowserResult({
               device: {height: 0, id: triggerResult.device, width: 0},
-              error: 'Tunnel Failure',
+              error: ERRORS.TUNNEL,
               passed: false,
               tunnel: true,
             }),
@@ -633,7 +633,7 @@ describe('utils', () => {
             dc_id: triggerResult.location,
             result: getBrowserResult({
               device: {height: 0, id: triggerResult.device, width: 0},
-              error: 'Endpoint Failure',
+              error: ERRORS.ENDPOINT,
               passed: false,
               tunnel: true,
             }),

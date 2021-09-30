@@ -7,6 +7,7 @@ import {Builder} from 'xml2js'
 
 import {
   ApiTestResult,
+  ERRORS,
   InternalTest,
   LocationsMapping,
   MultiStep,
@@ -160,7 +161,13 @@ export class JUnitReporter implements Reporter {
 
     for (const result of results) {
       const testCase: XMLTestCase = this.getTestCase(test, result, locations)
-
+      // Timeout errors are only reported at the top level.
+      if (result.result.error === ERRORS.TIMEOUT) {
+        testCase.error.push({
+          $: {type: 'timeout'},
+          _: result.result.error,
+        })
+      }
       if ('stepDetails' in result.result) {
         // It's a browser test.
         for (const stepDetail of result.result.stepDetails) {

@@ -7,6 +7,7 @@ import {apiConstructor, is5xxError} from './api'
 import {
   APIHelper,
   CommandConfig,
+  ERRORS,
   ExecutionRule,
   LocationsMapping,
   MainReporter,
@@ -237,7 +238,7 @@ export class RunTestCommand extends Command {
           summary.timedOut = 0
         }
 
-        const hasTimeout = testResults.some((pollResult) => pollResult.result.error === 'Timeout')
+        const hasTimeout = testResults.some((pollResult) => pollResult.result.error === ERRORS.TIMEOUT)
         if (hasTimeout) {
           summary.timedOut++
         }
