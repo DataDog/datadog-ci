@@ -21,7 +21,7 @@ export const executeTests = async (reporter: MainReporter, config: CommandConfig
   let testsToTrigger: TriggerConfig[]
   let tunnel: Tunnel | undefined
 
-  const tunnelStop = async () => {
+  const stopTunnel = async () => {
     if (tunnel) {
       await tunnel.stop()
     }
@@ -34,18 +34,13 @@ export const executeTests = async (reporter: MainReporter, config: CommandConfig
       testsToTrigger = await getTestsList(api, config, reporter)
     } catch (error) {
       const isCriticalError = is5xxError(error as any)
-      if (isCriticalError) {
-        await tunnelStop()
-        throw new CriticalError('UNAVAILABLE_TEST_CONF')
-      } else {
-        await tunnelStop()
-        throw new CiError('UNAVAILABLE_TEST_CONF')
-      }
+      await stopTunnel()
+      throw new (isCriticalError ? CriticalError : CiError)('UNAVAILABLE_TEST_CONF')
     }
   }
 
   if (!testsToTrigger.length) {
-    await tunnelStop()
+    await stopTunnel()
     throw new CiError('NO_TESTS_TO_RUN')
   }
 
@@ -59,20 +54,15 @@ export const executeTests = async (reporter: MainReporter, config: CommandConfig
     testsToTriggerResult = await getTestsToTrigger(api, testsToTrigger, reporter)
   } catch (error) {
     const isCriticalError = is5xxError(error as any)
-    if (isCriticalError) {
-      await tunnelStop()
-      throw new CriticalError('UNAVAILABLE_TEST_CONF')
-    } else {
-      await tunnelStop()
-      throw new CiError('UNAVAILABLE_TEST_CONF')
-    }
+    await stopTunnel()
+    throw new (isCriticalError ? CriticalError : CiError)('UNAVAILABLE_TEST_CONF')
   }
 
   const {tests, overriddenTestsToTrigger, summary} = testsToTriggerResult
 
   // All tests have been skipped or are missing.
   if (!tests.length) {
-    await tunnelStop()
+    await stopTunnel()
     throw new CiError('NO_TESTS_TO_RUN')
   }
 
@@ -85,13 +75,8 @@ export const executeTests = async (reporter: MainReporter, config: CommandConfig
       presignedURL = (await api.getPresignedURL(publicIdsToTrigger)).url
     } catch (error) {
       const isCriticalError = is5xxError(error as any)
-      if (isCriticalError) {
-        await tunnelStop()
-        throw new CriticalError('UNAVAILABLE_TUNNEL_CONF')
-      } else {
-        await tunnelStop()
-        throw new CiError('UNAVAILABLE_TUNNEL_CONF')
-      }
+      await stopTunnel()
+      throw new (isCriticalError ? CriticalError : CiError)('UNAVAILABLE_TUNNEL_CONF')
     }
     // Open a tunnel to Datadog
     try {
@@ -102,13 +87,8 @@ export const executeTests = async (reporter: MainReporter, config: CommandConfig
       })
     } catch (error) {
       const isCriticalError = is5xxError(error as any)
-      if (isCriticalError) {
-        await tunnelStop()
-        throw new CriticalError('TUNNEL_START_FAILED')
-      } else {
-        await tunnelStop()
-        throw new CiError('TUNNEL_START_FAILED')
-      }
+      await stopTunnel()
+      throw new (isCriticalError ? CriticalError : CiError)('TUNNEL_START_FAILED')
     }
   }
 
@@ -117,13 +97,8 @@ export const executeTests = async (reporter: MainReporter, config: CommandConfig
     triggers = await runTests(api, overriddenTestsToTrigger)
   } catch (error) {
     const isCriticalError = is5xxError(error as any)
-    if (isCriticalError) {
-      await tunnelStop()
-      throw new CriticalError('TRIGGER_TESTS_FAILED')
-    } else {
-      await tunnelStop()
-      throw new CiError('TRIGGER_TESTS_FAILED')
-    }
+    await stopTunnel()
+    throw new (isCriticalError ? CriticalError : CiError)('TRIGGER_TESTS_FAILED')
   }
 
   if (!triggers.results) {
@@ -144,13 +119,8 @@ export const executeTests = async (reporter: MainReporter, config: CommandConfig
     Object.assign(results, resultPolled)
   } catch (error) {
     const isCriticalError = is5xxError(error as any)
-    if (isCriticalError) {
-      await tunnelStop()
-      throw new CriticalError('POLL_RESULTS_FAILED')
-    } else {
-      await tunnelStop()
-      throw new CiError('POLL_RESULTS_FAILED')
-    }
+    await stopTunnel()
+    throw new (isCriticalError ? CriticalError : CiError)('POLL_RESULTS_FAILED')
   }
 
   return {results, summary, tests, triggers}

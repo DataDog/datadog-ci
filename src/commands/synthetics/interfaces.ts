@@ -165,7 +165,7 @@ export interface TriggerResult extends TriggerResponse {
   result?: PollResult
 }
 
-interface Location {
+export interface Location {
   display_name: string
   id: number
   is_active: boolean

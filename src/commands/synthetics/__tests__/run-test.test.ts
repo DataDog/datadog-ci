@@ -7,6 +7,25 @@ import * as runTests from '../run-test'
 import * as utils from '../utils'
 import {config, mockReporter} from './fixtures'
 
+expect.extend({
+  toBeError(received, errorClass, errorCode) {
+    const pass = received instanceof errorClass && errorCode === received.code
+    if (pass) {
+      return {
+        message: () =>
+          `expected ${received.constructor.name} with code ${received.code} but received ${errorClass.name} with code ${errorCode}`,
+        pass: true,
+      }
+    } else {
+      return {
+        message: () =>
+          `Received ${received.constructor.name} with code ${received.code} but expected ${errorClass.name} Error with code ${errorCode}`,
+        pass: false,
+      }
+    }
+  },
+})
+
 describe('run-test', () => {
   beforeEach(() => {
     jest.restoreAllMocks()
@@ -35,22 +54,22 @@ describe('run-test', () => {
       const apiHelper = {}
 
       jest.spyOn(runTests, 'getApiHelper').mockImplementation(() => ({} as any))
-      try {
-        await runTests.executeTests(mockReporter, {
+
+      await expect(
+        runTests.executeTests(mockReporter, {
           ...config,
           global: configOverride,
           publicIds: ['public-id-1', 'public-id-2'],
         })
-      } catch (error) {
-        expect(getTestsToTriggersMock).toHaveBeenCalledWith(
-          apiHelper,
-          expect.arrayContaining([
-            expect.objectContaining({id: 'public-id-1', config: configOverride}),
-            expect.objectContaining({id: 'public-id-2', config: configOverride}),
-          ]),
-          expect.anything()
-        )
-      }
+      ).rejects.toThrow()
+      expect(getTestsToTriggersMock).toHaveBeenCalledWith(
+        apiHelper,
+        expect.arrayContaining([
+          expect.objectContaining({id: 'public-id-1', config: configOverride}),
+          expect.objectContaining({id: 'public-id-2', config: configOverride}),
+        ]),
+        expect.anything()
+      )
     })
 
     test('should not wait for `skipped` only tests batch results', async () => {
@@ -66,24 +85,21 @@ describe('run-test', () => {
       const configOverride = {executionRule: ExecutionRule.SKIPPED}
 
       jest.spyOn(runTests, 'getApiHelper').mockImplementation(() => ({} as any))
-      try {
-        await runTests.executeTests(mockReporter, {
+      await expect(
+        runTests.executeTests(mockReporter, {
           ...config,
           global: configOverride,
           publicIds: ['public-id-1', 'public-id-2'],
         })
-      } catch (error) {
-        expect(getTestsToTriggersMock).toHaveBeenCalledWith(
-          apiHelper,
-          expect.arrayContaining([
-            expect.objectContaining({id: 'public-id-1', config: configOverride}),
-            expect.objectContaining({id: 'public-id-2', config: configOverride}),
-          ]),
-          expect.anything()
-        )
-        expect(error).toBeInstanceOf(CiError)
-        expect(error).toHaveProperty('code', 'NO_TESTS_TO_RUN')
-      }
+      ).rejects.toBeError(CiError as any, 'NO_TESTS_TO_RUN')
+      expect(getTestsToTriggersMock).toHaveBeenCalledWith(
+        apiHelper,
+        expect.arrayContaining([
+          expect.objectContaining({id: 'public-id-1', config: configOverride}),
+          expect.objectContaining({id: 'public-id-2', config: configOverride}),
+        ]),
+        expect.anything()
+      )
     })
 
     test('should not open tunnel if no test to run', async () => {
@@ -101,26 +117,23 @@ describe('run-test', () => {
       const configOverride = {executionRule: ExecutionRule.SKIPPED}
       jest.spyOn(runTests, 'getApiHelper').mockImplementation(() => apiHelper as any)
 
-      try {
-        await runTests.executeTests(mockReporter, {
+      await expect(
+        runTests.executeTests(mockReporter, {
           ...config,
           global: configOverride,
           publicIds: ['public-id-1', 'public-id-2'],
           tunnel: true,
         })
-      } catch (error) {
-        expect(getTestsToTriggersMock).toHaveBeenCalledWith(
-          apiHelper,
-          expect.arrayContaining([
-            expect.objectContaining({id: 'public-id-1', config: configOverride}),
-            expect.objectContaining({id: 'public-id-2', config: configOverride}),
-          ]),
-          expect.anything()
-        )
-        expect(apiHelper.getPresignedURL).not.toHaveBeenCalled()
-        expect(error).toBeInstanceOf(CiError)
-        expect(error).toHaveProperty('code', 'NO_TESTS_TO_RUN')
-      }
+      ).rejects.toBeError(CiError as any, 'NO_TESTS_TO_RUN')
+      expect(getTestsToTriggersMock).toHaveBeenCalledWith(
+        apiHelper,
+        expect.arrayContaining([
+          expect.objectContaining({id: 'public-id-1', config: configOverride}),
+          expect.objectContaining({id: 'public-id-2', config: configOverride}),
+        ]),
+        expect.anything()
+      )
+      expect(apiHelper.getPresignedURL).not.toHaveBeenCalled()
     })
 
     test('getTestsList throws', async () => {
@@ -132,14 +145,10 @@ describe('run-test', () => {
           throw serverError
         }),
       }
-
       jest.spyOn(runTests, 'getApiHelper').mockImplementation(() => apiHelper as any)
-      try {
-        await runTests.executeTests(mockReporter, {...config, testSearchQuery: 'a-search-query', tunnel: true})
-      } catch (error) {
-        expect(error).toBeInstanceOf(CriticalError)
-        expect(error).toHaveProperty('code', 'UNAVAILABLE_TEST_CONF')
-      }
+      await expect(
+        runTests.executeTests(mockReporter, {...config, testSearchQuery: 'a-search-query', tunnel: true})
+      ).rejects.toBeError(CriticalError as any, 'UNAVAILABLE_TEST_CONF')
     })
 
     test('getTestsToTrigger throws', async () => {
@@ -152,13 +161,9 @@ describe('run-test', () => {
         }),
       }
       jest.spyOn(runTests, 'getApiHelper').mockImplementation(() => apiHelper as any)
-
-      try {
-        await runTests.executeTests(mockReporter, {...config, publicIds: ['public-id-1'], tunnel: true})
-      } catch (error) {
-        expect(error).toBeInstanceOf(CriticalError)
-        expect(error).toHaveProperty('code', 'UNAVAILABLE_TEST_CONF')
-      }
+      await expect(
+        runTests.executeTests(mockReporter, {...config, publicIds: ['public-id-1'], tunnel: true})
+      ).rejects.toBeError(CriticalError as any, 'UNAVAILABLE_TEST_CONF')
     })
 
     test('getPresignedURL throws', async () => {
@@ -180,13 +185,9 @@ describe('run-test', () => {
       }
 
       jest.spyOn(runTests, 'getApiHelper').mockImplementation(() => apiHelper as any)
-
-      try {
-        await runTests.executeTests(mockReporter, {...config, publicIds: ['public-id-1', 'public-id-2'], tunnel: true})
-      } catch (error) {
-        expect(error).toBeInstanceOf(CriticalError)
-        expect(error).toHaveProperty('code', 'UNAVAILABLE_TUNNEL_CONF')
-      }
+      await expect(
+        runTests.executeTests(mockReporter, {...config, publicIds: ['public-id-1', 'public-id-2'], tunnel: true})
+      ).rejects.toBeError(CriticalError as any, 'UNAVAILABLE_TUNNEL_CONF')
     })
 
     test('runTests throws', async () => {
@@ -208,13 +209,9 @@ describe('run-test', () => {
       }
 
       jest.spyOn(runTests, 'getApiHelper').mockImplementation(() => apiHelper as any)
-
-      try {
-        await runTests.executeTests(mockReporter, {...config, publicIds: ['public-id-1', 'public-id-2']})
-      } catch (error) {
-        expect(error).toBeInstanceOf(CriticalError)
-        expect(error).toHaveProperty('code', 'TRIGGER_TESTS_FAILED')
-      }
+      await expect(
+        runTests.executeTests(mockReporter, {...config, publicIds: ['public-id-1', 'public-id-2']})
+      ).rejects.toBeError(CriticalError as any, 'TRIGGER_TESTS_FAILED')
     })
 
     test('waitForResults throws', async () => {
@@ -252,17 +249,13 @@ describe('run-test', () => {
       }
 
       jest.spyOn(runTests, 'getApiHelper').mockImplementation(() => apiHelper as any)
-
-      try {
-        await runTests.executeTests(mockReporter, {
+      await expect(
+        runTests.executeTests(mockReporter, {
           ...config,
           failOnCriticalErrors: true,
           publicIds: ['public-id-1', 'public-id-2'],
         })
-      } catch (error) {
-        expect(error).toBeInstanceOf(CriticalError)
-        expect(error).toHaveProperty('code', 'POLL_RESULTS_FAILED')
-      }
+      ).rejects.toBeError(CriticalError as any, 'POLL_RESULTS_FAILED')
     })
   })
 
@@ -278,14 +271,19 @@ describe('run-test', () => {
       expect(runTests.getDatadogHost(true, config)).toBe('https://intake.synthetics.datadoghq.com/api/v1')
     })
 
-    test('should be tunable through DATADOG_SITE variable', async () => {
-      process.env = {DATADOG_SITE: 'datadoghq.eu'}
+    test('should use DD_API_HOST_OVERRIDE', async () => {
+      process.env = {DD_API_HOST_OVERRIDE: 'foobar'}
 
-      expect(runTests.getDatadogHost(false, {...config, datadogSite: process.env.DATADOG_SITE as string})).toBe(
-        'https://api.datadoghq.eu/api/v1'
+      expect(runTests.getDatadogHost(true, config)).toBe('foobar/api/v1')
+      expect(runTests.getDatadogHost(true, config)).toBe('foobar/api/v1')
+    })
+
+    test('should use Synthetics intake endpoint', async () => {
+      expect(runTests.getDatadogHost(true, {...config, datadogSite: 'datadoghq.com' as string})).toBe(
+        'https://intake.synthetics.datadoghq.com/api/v1'
       )
-      expect(runTests.getDatadogHost(true, {...config, datadogSite: process.env.DATADOG_SITE as string})).toBe(
-        'https://api.datadoghq.eu/api/v1'
+      expect(runTests.getDatadogHost(true, {...config, datadogSite: 'datad0g.com' as string})).toBe(
+        'https://intake.synthetics.datad0g.com/api/v1'
       )
     })
   })
@@ -298,27 +296,13 @@ describe('run-test', () => {
     test('should throw an error if API or Application key are undefined', async () => {
       process.env = {}
 
-      expect(() => {
-        runTests.getApiHelper(config)
-      }).toThrow(new CiError('MISSING_APP_KEY'))
-
-      try {
-        await runTests.executeTests(mockReporter, config)
-      } catch (error) {
-        expect(error).toBeInstanceOf(CiError)
-        expect(error).toHaveProperty('code', 'MISSING_APP_KEY')
-      }
-
-      expect(() => {
-        runTests.getApiHelper({...config, appKey: 'fakeappkey'})
-      }).toThrow(new CiError('MISSING_API_KEY'))
-
-      try {
-        await runTests.executeTests(mockReporter, {...config, appKey: 'fakeappkey'})
-      } catch (error) {
-        expect(error).toBeInstanceOf(CiError)
-        expect(error).toHaveProperty('code', 'MISSING_API_KEY')
-      }
+      expect(() => runTests.getApiHelper(config)).toThrow(new CiError('MISSING_APP_KEY'))
+      await expect(runTests.executeTests(mockReporter, config)).rejects.toBeError(CiError as any, 'MISSING_APP_KEY')
+      expect(() => runTests.getApiHelper({...config, appKey: 'fakeappkey'})).toThrow(new CiError('MISSING_API_KEY'))
+      await expect(runTests.executeTests(mockReporter, {...config, appKey: 'fakeappkey'})).rejects.toBeError(
+        CiError as any,
+        'MISSING_API_KEY'
+      )
     })
   })
   describe('getTestsList', () => {
@@ -347,7 +331,7 @@ describe('run-test', () => {
       jest.spyOn(utils, 'getSuites').mockImplementation((() => [conf1, conf2]) as any)
       const configOverride = {startUrl}
 
-      expect(await runTests.getTestsList(fakeApi, {...config, global: configOverride}, mockReporter)).toEqual([
+      await expect(runTests.getTestsList(fakeApi, {...config, global: configOverride}, mockReporter)).resolves.toEqual([
         {
           config: {startUrl},
           id: 'abc-def-ghi',
@@ -364,13 +348,9 @@ describe('run-test', () => {
       const configOverride = {startUrl}
       const searchQuery = 'fake search'
 
-      expect(
-        await runTests.getTestsList(
-          fakeApi,
-          {...config, global: configOverride, testSearchQuery: searchQuery},
-          mockReporter
-        )
-      ).toEqual([
+      await expect(
+        runTests.getTestsList(fakeApi, {...config, global: configOverride, testSearchQuery: searchQuery}, mockReporter)
+      ).resolves.toEqual([
         {
           config: {startUrl},
           id: 'stu-vwx-yza',

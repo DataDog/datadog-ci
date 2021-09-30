@@ -1,16 +1,14 @@
-import {RunTestCommand} from '../../cli'
+import {BaseContext} from 'clipanion/lib/advanced'
 import {DefaultReporter} from '../../reporters/default'
 
 describe('Default reporter', () => {
   const writeMock = jest.fn()
-  const commandMock: unknown = {
-    context: {
-      stdout: {
-        write: writeMock,
-      },
+  const mockContext: unknown = {
+    stdout: {
+      write: writeMock,
     },
   }
-  const reporter: any = new DefaultReporter(commandMock as RunTestCommand)
+  const reporter: any = new DefaultReporter(mockContext as BaseContext)
   it('should log for each hook', () => {
     const calls: [string, any[]][] = [
       ['error', ['error']],

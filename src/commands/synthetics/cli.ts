@@ -1,10 +1,18 @@
-import chalk from 'chalk'
 import {Command} from 'clipanion'
 import deepExtend from 'deep-extend'
 
 import {parseConfigFile} from '../../helpers/utils'
-import {CiError, CriticalError} from './errors'
-import {CommandConfig, ExecutionRule, LocationsMapping, MainReporter, PollResult, Test} from './interfaces'
+import {CiError, CriticalError, handleCiError} from './errors'
+import {
+  CommandConfig,
+  ExecutionRule,
+  LocationsMapping,
+  MainReporter,
+  PollResult,
+  Summary,
+  Test,
+  Trigger,
+} from './interfaces'
 import {DefaultReporter} from './reporters/default'
 import {executeTests} from './run-test'
 import {getReporter, hasTestSucceeded, isCriticalError} from './utils'
@@ -42,7 +50,7 @@ export class RunTestCommand extends Command {
   private tunnel?: boolean
 
   public async execute() {
-    const reporters = [new DefaultReporter(this)]
+    const reporters = [new DefaultReporter(this.context)]
     this.reporter = getReporter(reporters)
     await this.resolveConfig()
     const startTime = Date.now()
@@ -51,98 +59,17 @@ export class RunTestCommand extends Command {
         'You are using tunnel option, the chosen location(s) will be overridden by a location in your account region.\n'
       )
     }
+
+    let results: {[key: string]: PollResult[]}
+    let summary: Summary
+    let tests: Test[]
+    let triggers: Trigger
+
     try {
-      const {results, summary, tests, triggers} = await executeTests(this.reporter, this.config)
-      // Sort tests to show success first then non blocking failures and finally blocking failures.
-      tests.sort(this.sortTestsByOutcome(results))
-
-      // Rendering the results.
-      this.reporter.reportStart({startTime})
-      const locationNames = triggers.locations.reduce((mapping, location) => {
-        mapping[location.id] = location.display_name
-
-        return mapping
-      }, {} as LocationsMapping)
-      let hasSucceeded = true // Determine if all the tests have succeeded
-      for (const test of tests) {
-        const testResults = results[test.public_id]
-        if (!this.config.failOnTimeout) {
-          if (!summary.timedOut) {
-            summary.timedOut = 0
-          }
-
-          const hasTimeout = testResults.some((pollResult) => pollResult.result.error === 'Timeout')
-          if (hasTimeout) {
-            summary.timedOut++
-          }
-        }
-
-        if (!this.config.failOnCriticalErrors) {
-          if (!summary.criticalErrors) {
-            summary.criticalErrors = 0
-          }
-          const hasCriticalErrors = testResults.some((pollResult) => isCriticalError(pollResult.result))
-          if (hasCriticalErrors) {
-            summary.criticalErrors++
-          }
-        }
-
-        const passed = hasTestSucceeded(testResults, this.config.failOnCriticalErrors, this.config.failOnTimeout)
-        if (passed) {
-          summary.passed++
-        } else {
-          summary.failed++
-          if (test.options.ci?.executionRule !== ExecutionRule.NON_BLOCKING) {
-            hasSucceeded = false
-          }
-        }
-
-        this.reporter.testEnd(
-          test,
-          testResults,
-          this.getAppBaseURL(),
-          locationNames,
-          this.config.failOnCriticalErrors,
-          this.config.failOnTimeout
-        )
-      }
-
-      this.reporter.runEnd(summary)
-
-      return hasSucceeded ? 0 : 1
+      ;({results, summary, tests, triggers} = await executeTests(this.reporter, this.config))
     } catch (error) {
       if (error instanceof CiError) {
-        switch (error.code) {
-          case 'NO_TESTS_TO_RUN':
-            this.reporter.log('No test to run.\n')
-            break
-          case 'MISSING_APP_KEY':
-            this.reporter.error(`Missing ${chalk.red.bold('DATADOG_APP_KEY')} in your environment.\n`)
-            break
-          case 'MISSING_API_KEY':
-            this.reporter.error(`Missing ${chalk.red.bold('DATADOG_API_KEY')} in your environment.\n`)
-            break
-          case 'POLL_RESULTS_FAILED':
-            this.reporter.error(`\n${chalk.bgRed.bold(' ERROR: unable to poll test results ')}\n${error.message}\n\n`)
-            break
-          case 'TUNNEL_START_FAILED':
-            this.reporter.error(`\n${chalk.bgRed.bold(' ERROR: unable to start tunnel')}\n${error.message}\n\n`)
-            break
-          case 'TRIGGER_TESTS_FAILED':
-            this.reporter.error(`\n${chalk.bgRed.bold(' ERROR: unable to trigger tests')}\n${error.message}\n\n`)
-            break
-          case 'UNAVAILABLE_TEST_CONF':
-            this.reporter.error(
-              `\n${chalk.bgRed.bold(' ERROR: unable to obtain test configurations with search query ')}\n${
-                error.message
-              }\n\n`
-            )
-            break
-          case 'UNAVAILABLE_TUNNEL_CONF':
-            this.reporter.error(
-              `\n${chalk.bgRed.bold(' ERROR: unable to get tunnel configuration')}\n${error.message}\n\n`
-            )
-        }
+        handleCiError(error, this.reporter)
         if (error instanceof CriticalError && this.config.failOnCriticalErrors) {
           return 1
         }
@@ -150,10 +77,78 @@ export class RunTestCommand extends Command {
 
       return 0
     }
+
+    return this.renderResults(results, summary, tests, triggers, startTime)
   }
 
   private getAppBaseURL() {
     return `https://${this.config.subdomain}.${this.config.datadogSite}/`
+  }
+
+  private renderResults(
+    results: {[key: string]: PollResult[]},
+    summary: Summary,
+    tests: Test[],
+    triggers: Trigger,
+    startTime: number
+  ) {
+    // Sort tests to show success first then non blocking failures and finally blocking failures.
+    tests.sort(this.sortTestsByOutcome(results))
+
+    // Rendering the results.
+    this.reporter?.reportStart({startTime})
+    const locationNames = triggers.locations.reduce((mapping, location) => {
+      mapping[location.id] = location.display_name
+
+      return mapping
+    }, {} as LocationsMapping)
+    let hasSucceeded = true // Determine if all the tests have succeeded
+    for (const test of tests) {
+      const testResults = results[test.public_id]
+      if (!this.config.failOnTimeout) {
+        if (!summary.timedOut) {
+          summary.timedOut = 0
+        }
+
+        const hasTimeout = testResults.some((pollResult) => pollResult.result.error === 'Timeout')
+        if (hasTimeout) {
+          summary.timedOut++
+        }
+      }
+
+      if (!this.config.failOnCriticalErrors) {
+        if (!summary.criticalErrors) {
+          summary.criticalErrors = 0
+        }
+        const hasCriticalErrors = testResults.some((pollResult) => isCriticalError(pollResult.result))
+        if (hasCriticalErrors) {
+          summary.criticalErrors++
+        }
+      }
+
+      const passed = hasTestSucceeded(testResults, this.config.failOnCriticalErrors, this.config.failOnTimeout)
+      if (passed) {
+        summary.passed++
+      } else {
+        summary.failed++
+        if (test.options.ci?.executionRule !== ExecutionRule.NON_BLOCKING) {
+          hasSucceeded = false
+        }
+      }
+
+      this.reporter?.testEnd(
+        test,
+        testResults,
+        this.getAppBaseURL(),
+        locationNames,
+        this.config.failOnCriticalErrors,
+        this.config.failOnTimeout
+      )
+    }
+
+    this.reporter?.runEnd(summary)
+
+    return hasSucceeded ? 0 : 1
   }
 
   private async resolveConfig() {
