@@ -13,6 +13,7 @@ import {EndpointError, formatBackendErrors, is5xxError} from './api'
 import {
   APIHelper,
   ConfigOverride,
+  ERRORS,
   ExecutionRule,
   InternalTest,
   MainReporter,
@@ -169,14 +170,14 @@ export const getStrictestExecutionRule = (configRule: ExecutionRule, testRule?: 
   return ExecutionRule.BLOCKING
 }
 
-export const isCriticalError = (result: Result): boolean => result.unhealthy || result.error === 'Endpoint Failure'
+export const isCriticalError = (result: Result): boolean => result.unhealthy || result.error === ERRORS.ENDPOINT
 
 export const hasResultPassed = (result: Result, failOnCriticalErrors: boolean, failOnTimeout: boolean): boolean => {
   if (isCriticalError(result) && !failOnCriticalErrors) {
     return true
   }
 
-  if (result.error === 'Timeout' && !failOnTimeout) {
+  if (result.error === ERRORS.TIMEOUT && !failOnTimeout) {
     return true
   }
 
@@ -251,7 +252,7 @@ export const waitForResults = async (
     for (const triggerResult of triggerResults.filter((tr) => !tr.result)) {
       if (pollingDuration >= triggerResult.pollingTimeout) {
         triggerResult.result = createFailingResult(
-          'Timeout',
+          ERRORS.TIMEOUT,
           triggerResult.result_id,
           triggerResult.device,
           triggerResult.location,
@@ -263,7 +264,7 @@ export const waitForResults = async (
     if (tunnel && !isTunnelConnected) {
       for (const triggerResult of triggerResults.filter((tr) => !tr.result)) {
         triggerResult.result = createFailingResult(
-          'Tunnel Failure',
+          ERRORS.TUNNEL,
           triggerResult.result_id,
           triggerResult.device,
           triggerResult.location,
@@ -285,7 +286,7 @@ export const waitForResults = async (
         polledResults = []
         for (const triggerResult of triggerResultsSucceed) {
           triggerResult.result = createFailingResult(
-            'Endpoint Failure',
+            ERRORS.ENDPOINT,
             triggerResult.result_id,
             triggerResult.device,
             triggerResult.location,
@@ -344,7 +345,7 @@ export const createTriggerResultMap = (
 }
 
 const createFailingResult = (
-  errorMessage: 'Endpoint Failure' | 'Timeout' | 'Tunnel Failure',
+  errorMessage: ERRORS,
   resultId: string,
   deviceId: string,
   dcId: number,

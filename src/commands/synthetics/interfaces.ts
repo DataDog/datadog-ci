@@ -20,6 +20,12 @@ export interface MainReporter {
   testWait(test: Test): void
 }
 
+export enum ERRORS {
+  TIMEOUT = 'Timeout',
+  ENDPOINT = 'Endpoint Failure',
+  TUNNEL = 'Tunnel Failure',
+}
+
 export type Reporter = Partial<MainReporter>
 
 export interface TestResult {
@@ -43,7 +49,7 @@ export interface BrowserTestResult extends TestResult {
     width: number
   }
   duration: number
-  error?: string | 'Endpoint Failure' | 'Timeout' | 'Tunnel Failure'
+  error?: string | ERRORS
   startUrl: string
   stepDetails: Step[]
 }

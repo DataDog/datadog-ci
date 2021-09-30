@@ -5,6 +5,7 @@ import {Writable} from 'stream'
 import {
   Assertion,
   ConfigOverride,
+  ERRORS,
   ExecutionRule,
   LocationsMapping,
   Operator,
@@ -218,7 +219,7 @@ const renderExecutionResult = (
     const durationText = duration ? `  total duration: ${duration} ms -` : ''
 
     const resultUrl = getResultUrl(baseUrl, test, resultID)
-    const resultUrlStatus = result.error === 'Timeout' ? '(not yet received)' : ''
+    const resultUrlStatus = result.error === ERRORS.TIMEOUT ? '(not yet received)' : ''
 
     const resultInfo = `    ⎋${durationText} result url: ${chalk.dim.cyan(resultUrl)} ${resultUrlStatus}`
     outputLines.push(resultInfo)
