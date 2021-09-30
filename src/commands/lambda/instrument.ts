@@ -2,7 +2,7 @@ import {CloudWatchLogs, Lambda} from 'aws-sdk'
 import {Command} from 'clipanion'
 import {parseConfigFile} from '../../helpers/utils'
 import {EXTRA_TAGS_REG_EXP} from './constants'
-import { getRegion } from './functions/commons'
+import { collectFunctionsByRegion } from './functions/commons'
 import { getFunctionConfigs, getLambdaConfigsFromRegEx, updateLambdaConfigs } from './functions/instrument'
 import {FunctionConfiguration, InstrumentationSettings, LambdaConfigOptions} from './interfaces'
 
@@ -92,8 +92,12 @@ export class InstrumentCommand extends Command {
         return 1
       }
     } else {
-      const functionGroups = this.collectFunctionsByRegion(this.functions.length !== 0 ? this.functions : this.config.functions)
-      if (functionGroups === undefined) {
+      let functionGroups
+      try {
+        functionGroups = collectFunctionsByRegion(this.functions.length !== 0 ? this.functions : this.config.functions, this.region || this.config.region)
+      } catch (err: any) {
+        this.context.stdout.write(`Couldn't group functions. ${err.message}`)
+
         return 1
       }
 
@@ -129,33 +133,6 @@ export class InstrumentCommand extends Command {
     }
 
     return 0
-  }
-
-  private collectFunctionsByRegion(functions: string[]) {
-    const defaultRegion = this.region || this.config.region
-    const groups: {[key: string]: string[]} = {}
-    const regionless: string[] = []
-    for (const func of functions) {
-      const region = getRegion(func) ?? defaultRegion
-      if (region === undefined) {
-        regionless.push(func)
-        continue
-      }
-      if (groups[region] === undefined) {
-        groups[region] = []
-      }
-      const group = groups[region]
-      group.push(func)
-    }
-    if (regionless.length > 0) {
-      this.context.stdout.write(
-        `'No default region specified for ${JSON.stringify(regionless)}. Use -r,--region, or use a full functionARN\n`
-      )
-
-      return
-    }
-
-    return groups
   }
 
   private convertStringBooleanToBoolean(fallback: boolean, value?: string, configValue?: string): boolean {

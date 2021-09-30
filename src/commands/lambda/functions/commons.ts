@@ -23,6 +23,39 @@ export const addLayerARN = (fullLayerARN: string | undefined, partialLayerARN: s
 }
 
 /**
+ * Returns an arrayed grouped functions by its region, it
+ * throws an error if there are functions without a region.
+ *
+ * @param functions an array of strings comprised by
+ * Functions ARNs, Partial ARNs, or Function Names.
+ * @param defaultRegion a fallback region
+ * @returns an array of functions grouped by region
+ */
+export const collectFunctionsByRegion = (functions: string[], defaultRegion: string | undefined) => {
+  const groups: {[key: string]: string[]} = {}
+  const regionless: string[] = []
+  for (const func of functions) {
+    const region = getRegion(func) ?? defaultRegion
+    if (region === undefined) {
+      regionless.push(func)
+      continue
+    }
+    if (groups[region] === undefined) {
+      groups[region] = []
+    }
+    const group = groups[region]
+    group.push(func)
+  }
+  if (regionless.length > 0) {
+    throw new Error(
+      `No default region specified for ${JSON.stringify(regionless)}. Use -r,--region, or use a full functionARN\n`
+    )
+  }
+
+  return groups
+}
+
+/**
  * Given a Lambda instance and an array of Lambda names,
  * return all the Lambda Function Configurations.
  *

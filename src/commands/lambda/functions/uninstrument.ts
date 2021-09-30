@@ -14,7 +14,7 @@ export const uninstrumentLambdaFunctions = async (
       console.log(`Environment variables -> ${yellow(JSON.stringify(c.Environment, undefined, 2))}\n`)
       console.log(`Layers -> ${blueBright(JSON.stringify(c.Layers, undefined, 2))}\n`)
     } catch (err) {
-      throw new Error(`An error occurred while trying to un-instrumenta function ${err}`)
+      throw new Error(`An error occurred while trying to un-instrument a function ${err}`)
     }
     // TODO: Apply uninstrumentation
   })

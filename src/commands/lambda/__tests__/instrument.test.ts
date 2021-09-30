@@ -323,10 +323,7 @@ describe('lambda', () => {
 
         const output = context.stdout.toString()
         expect(code).toBe(1)
-        expect(output).toMatchInlineSnapshot(`
-                                                  "'No default region specified for [\\"my-func\\"]. Use -r,--region, or use a full functionARN
-                                                  "
-                                        `)
+        expect(output).toMatch(`Couldn't group functions. No default region specified for ["my-func"]. Use -r,--region, or use a full functionARN\n`)
       })
 
       test('aborts if a function is not in an Active state with LastUpdateStatus Successful', async () => {
@@ -640,76 +637,6 @@ describe('lambda', () => {
         await command['getSettings']()
         const output = command.context.stdout.toString()
         expect(output).toMatch('Extra tags do not comply with the <key>:<value> array.\n')
-      })
-    })
-    describe('collectFunctionsByRegion', () => {
-      test('groups functions with region read from arn', () => {
-        process.env = {}
-        const command = createCommand()
-        command['functions'] = [
-          'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world',
-          'arn:aws:lambda:us-east-1:123456789012:function:another',
-          'arn:aws:lambda:us-east-2:123456789012:function:third-func',
-        ]
-
-        expect(command['collectFunctionsByRegion'](command['functions'])).toEqual({
-          'us-east-1': [
-            'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world',
-            'arn:aws:lambda:us-east-1:123456789012:function:another',
-          ],
-          'us-east-2': ['arn:aws:lambda:us-east-2:123456789012:function:third-func'],
-        })
-      })
-
-      test('groups functions in the config object', () => {
-        process.env = {}
-        const command = createCommand()
-        command['config'].functions = [
-          'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world',
-          'arn:aws:lambda:us-east-1:123456789012:function:another',
-          'arn:aws:lambda:us-east-2:123456789012:function:third-func',
-        ]
-
-        expect(command['collectFunctionsByRegion'](command['config'].functions)).toEqual({
-          'us-east-1': [
-            'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world',
-            'arn:aws:lambda:us-east-1:123456789012:function:another',
-          ],
-          'us-east-2': ['arn:aws:lambda:us-east-2:123456789012:function:third-func'],
-        })
-      })
-
-      test('uses default region for functions not in arn format', () => {
-        process.env = {}
-        const command = createCommand()
-        command['functions'] = [
-          'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world',
-          'arn:aws:lambda:*:123456789012:function:func-with-wildcard',
-          'func-without-region',
-          'arn:aws:lambda:us-east-2:123456789012:function:third-func',
-        ]
-        command['region'] = 'ap-south-1'
-
-        expect(command['collectFunctionsByRegion'](command['functions'])).toEqual({
-          'ap-south-1': ['arn:aws:lambda:*:123456789012:function:func-with-wildcard', 'func-without-region'],
-          'us-east-1': ['arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world'],
-          'us-east-2': ['arn:aws:lambda:us-east-2:123456789012:function:third-func'],
-        })
-      })
-
-      test('fails to collect when there are regionless functions and no default region is set', () => {
-        process.env = {}
-        const command = createCommand()
-        command['functions'] = [
-          'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world',
-          'arn:aws:lambda:*:123456789012:function:func-with-wildcard',
-          'func-without-region',
-          'arn:aws:lambda:us-east-2:123456789012:function:third-func',
-        ]
-        command['region'] = undefined
-        command['config']['region'] = undefined
-
-        expect(command['collectFunctionsByRegion'](command['functions'])).toBeUndefined()
       })
     })
     describe('printPlannedActions', () => {
