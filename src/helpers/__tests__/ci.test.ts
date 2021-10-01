@@ -54,7 +54,7 @@ describe('getCIMetadata', () => {
 
   test('gitlab CI is recognized', () => {
     process.env = {
-      CI_COMMIT_BRANCH: branch,
+      CI_COMMIT_REF_NAME: branch,
       CI_COMMIT_SHA: commit,
       CI_JOB_URL: pipelineURL,
       GITLAB_CI: 'true',
