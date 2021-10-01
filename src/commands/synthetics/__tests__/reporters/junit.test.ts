@@ -132,6 +132,7 @@ describe('Junit reporter', () => {
           stepDetails: [
             {
               ...getStep(),
+              allowFailure: true,
               browserErrors: [
                 {
                   description: 'error description',
@@ -182,17 +183,18 @@ describe('Junit reporter', () => {
       reporter.testEnd(globalTestMock, [browserResult1, browserResult2, browserResult3, apiResult], '', {}, true, true)
       const testsuite = reporter['json'].testsuites.testsuite[0]
       const results = [
-        [2, 1, 1],
-        [0, 0, 0],
-        [0, 1, 0],
-        [0, 1, 0],
+        [1, 2, 0, 1],
+        [0, 0, 0, 0],
+        [0, 0, 1, 0],
+        [0, 0, 1, 0],
       ]
       const entries: [any, XMLTestCase][] = Object.entries(testsuite.testcase)
       for (const [i, testcase] of entries) {
         const result = results[i]
-        expect(testcase.browser_error.length).toBe(result[0])
-        expect(testcase.error.length).toBe(result[1])
-        expect(testcase.warning.length).toBe(result[2])
+        expect(testcase.allowed_error.length).toBe(result[0])
+        expect(testcase.browser_error.length).toBe(result[1])
+        expect(testcase.error.length).toBe(result[2])
+        expect(testcase.warning.length).toBe(result[3])
       }
     })
   })

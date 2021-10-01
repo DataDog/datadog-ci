@@ -45,6 +45,7 @@ interface XMLTestCaseProperties extends Stats {
 export interface XMLTestCase {
   $: XMLTestCaseProperties
   // These are singular for a better display in the XML format of the report.
+  allowed_error: XMLError[]
   browser_error: XMLError[]
   error: XMLError[]
   properties: {
@@ -178,7 +179,8 @@ export class JUnitReporter implements Reporter {
       if ('stepDetails' in result.result) {
         // It's a browser test.
         for (const stepDetail of result.result.stepDetails) {
-          const {browser_error, error, warning} = this.getBrowserTestStep(stepDetail)
+          const {allowed_error, browser_error, error, warning} = this.getBrowserTestStep(stepDetail)
+          testCase.allowed_error.push(...allowed_error)
           testCase.browser_error.push(...browser_error)
           testCase.error.push(...error)
           testCase.warning.push(...warning)
@@ -186,7 +188,8 @@ export class JUnitReporter implements Reporter {
       } else if ('steps' in result.result) {
         // It's a multistep test.
         for (const step of result.result.steps) {
-          const {error} = this.getApiTestStep(step)
+          const {allowed_error, error} = this.getApiTestStep(step)
+          testCase.allowed_error.push(...allowed_error)
           testCase.error.push(...error)
         }
       }
@@ -216,17 +219,24 @@ export class JUnitReporter implements Reporter {
     }
   }
 
-  private getApiTestStep(step: MultiStep): {error: XMLError[]} {
-    const error: XMLError[] = []
+  private getApiTestStep(step: MultiStep): {allowed_error: XMLError[]; error: XMLError[]} {
+    const allowedError = []
+    const error = []
 
     if (step.failure) {
-      error.push({
+      const xmlError = {
         $: {type: step.failure.code, step: step.name, allowFailure: `${step.allowFailure}`},
         _: step.failure.message,
-      })
+      }
+      if (step.allowFailure) {
+        allowedError.push(xmlError)
+      } else {
+        error.push(xmlError)
+      }
     }
 
     return {
+      allowed_error: allowedError,
       error,
     }
   }
@@ -244,7 +254,10 @@ export class JUnitReporter implements Reporter {
     }
   }
 
-  private getBrowserTestStep(stepDetail: Step): {browser_error: XMLError[]; error: XMLError[]; warning: XMLError[]} {
+  private getBrowserTestStep(
+    stepDetail: Step
+  ): {allowed_error: XMLError[]; browser_error: XMLError[]; error: XMLError[]; warning: XMLError[]} {
+    const allowedError = []
     const browserError = []
     const error = []
     const warning = []
@@ -258,10 +271,15 @@ export class JUnitReporter implements Reporter {
     }
 
     if (stepDetail.error) {
-      error.push({
+      const xmlError = {
         $: {type: 'assertion', step: stepDetail.description, allowFailure: `${stepDetail.allowFailure}`},
         _: stepDetail.error,
-      })
+      }
+      if (stepDetail.allowFailure) {
+        allowedError.push(xmlError)
+      } else {
+        error.push(xmlError)
+      }
     }
 
     if (stepDetail.warnings?.length) {
@@ -274,6 +292,7 @@ export class JUnitReporter implements Reporter {
     }
 
     return {
+      allowed_error: allowedError,
       browser_error: browserError,
       error,
       warning,
@@ -338,6 +357,7 @@ export class JUnitReporter implements Reporter {
         timestamp: new Date(result.timestamp).toISOString(),
         ...this.getResultStats(result),
       },
+      allowed_error: [],
       browser_error: [],
       error: [],
       properties: {
