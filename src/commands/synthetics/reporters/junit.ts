@@ -80,7 +80,7 @@ interface XMLJSON {
 }
 
 interface XMLError {
-  $: {type: string; [key: string]: string | boolean}
+  $: {type: string; [key: string]: string}
   _: string
 }
 
@@ -221,7 +221,7 @@ export class JUnitReporter implements Reporter {
 
     if (step.failure) {
       error.push({
-        $: {type: step.failure.code, step: step.name, allowFailure: step.allowFailure},
+        $: {type: step.failure.code, step: step.name, allowFailure: `${step.allowFailure}`},
         _: step.failure.message,
       })
     }
@@ -259,7 +259,7 @@ export class JUnitReporter implements Reporter {
 
     if (stepDetail.error) {
       error.push({
-        $: {type: 'assertion', step: stepDetail.description, allowFailure: stepDetail.allowFailure},
+        $: {type: 'assertion', step: stepDetail.description, allowFailure: `${stepDetail.allowFailure}`},
         _: stepDetail.error,
       })
     }
