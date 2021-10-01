@@ -1,8 +1,9 @@
+import chalk from 'chalk'
 import {Command} from 'clipanion'
 import deepExtend from 'deep-extend'
 
 import {parseConfigFile} from '../../helpers/utils'
-import {CiError, CriticalError, handleCiError} from './errors'
+import {CiError, CriticalError} from './errors'
 import {
   CommandConfig,
   ExecutionRule,
@@ -69,7 +70,7 @@ export class RunTestCommand extends Command {
       ;({results, summary, tests, triggers} = await executeTests(this.reporter, this.config))
     } catch (error) {
       if (error instanceof CiError) {
-        handleCiError(error, this.reporter)
+        this.reportCiError(error, this.reporter)
         if (error instanceof CriticalError && this.config.failOnCriticalErrors) {
           return 1
         }
@@ -149,6 +150,38 @@ export class RunTestCommand extends Command {
     this.reporter?.runEnd(summary)
 
     return hasSucceeded ? 0 : 1
+  }
+
+  private reportCiError(error: CiError, reporter: MainReporter) {
+    switch (error.code) {
+      case 'NO_TESTS_TO_RUN':
+        reporter.log('No test to run.\n')
+        break
+      case 'MISSING_APP_KEY':
+        reporter.error(`Missing ${chalk.red.bold('DATADOG_APP_KEY')} in your environment.\n`)
+        break
+      case 'MISSING_API_KEY':
+        reporter.error(`Missing ${chalk.red.bold('DATADOG_API_KEY')} in your environment.\n`)
+        break
+      case 'POLL_RESULTS_FAILED':
+        reporter.error(`\n${chalk.bgRed.bold(' ERROR: unable to poll test results ')}\n${error.message}\n\n`)
+        break
+      case 'TUNNEL_START_FAILED':
+        reporter.error(`\n${chalk.bgRed.bold(' ERROR: unable to start tunnel')}\n${error.message}\n\n`)
+        break
+      case 'TRIGGER_TESTS_FAILED':
+        reporter.error(`\n${chalk.bgRed.bold(' ERROR: unable to trigger tests')}\n${error.message}\n\n`)
+        break
+      case 'UNAVAILABLE_TEST_CONF':
+        reporter.error(
+          `\n${chalk.bgRed.bold(' ERROR: unable to obtain test configurations with search query ')}\n${
+            error.message
+          }\n\n`
+        )
+        break
+      case 'UNAVAILABLE_TUNNEL_CONF':
+        reporter.error(`\n${chalk.bgRed.bold(' ERROR: unable to get tunnel configuration')}\n${error.message}\n\n`)
+    }
   }
 
   private async resolveConfig() {

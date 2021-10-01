@@ -91,7 +91,7 @@ describe('run-test', () => {
           global: configOverride,
           publicIds: ['public-id-1', 'public-id-2'],
         })
-      ).rejects.toBeError(CiError as any, 'NO_TESTS_TO_RUN')
+      ).rejects.toMatchError(new CiError('NO_TESTS_TO_RUN'))
       expect(getTestsToTriggersMock).toHaveBeenCalledWith(
         apiHelper,
         expect.arrayContaining([
@@ -124,7 +124,7 @@ describe('run-test', () => {
           publicIds: ['public-id-1', 'public-id-2'],
           tunnel: true,
         })
-      ).rejects.toBeError(CiError as any, 'NO_TESTS_TO_RUN')
+      ).rejects.toMatchError(new CiError('NO_TESTS_TO_RUN'))
       expect(getTestsToTriggersMock).toHaveBeenCalledWith(
         apiHelper,
         expect.arrayContaining([
@@ -148,7 +148,7 @@ describe('run-test', () => {
       jest.spyOn(runTests, 'getApiHelper').mockImplementation(() => apiHelper as any)
       await expect(
         runTests.executeTests(mockReporter, {...config, testSearchQuery: 'a-search-query', tunnel: true})
-      ).rejects.toBeError(CriticalError as any, 'UNAVAILABLE_TEST_CONF')
+      ).rejects.toMatchError(new CriticalError('UNAVAILABLE_TEST_CONF'))
     })
 
     test('getTestsToTrigger throws', async () => {
@@ -163,7 +163,7 @@ describe('run-test', () => {
       jest.spyOn(runTests, 'getApiHelper').mockImplementation(() => apiHelper as any)
       await expect(
         runTests.executeTests(mockReporter, {...config, publicIds: ['public-id-1'], tunnel: true})
-      ).rejects.toBeError(CriticalError as any, 'UNAVAILABLE_TEST_CONF')
+      ).rejects.toMatchError(new CriticalError('UNAVAILABLE_TEST_CONF'))
     })
 
     test('getPresignedURL throws', async () => {
@@ -187,7 +187,7 @@ describe('run-test', () => {
       jest.spyOn(runTests, 'getApiHelper').mockImplementation(() => apiHelper as any)
       await expect(
         runTests.executeTests(mockReporter, {...config, publicIds: ['public-id-1', 'public-id-2'], tunnel: true})
-      ).rejects.toBeError(CriticalError as any, 'UNAVAILABLE_TUNNEL_CONF')
+      ).rejects.toMatchError(new CriticalError('UNAVAILABLE_TUNNEL_CONF'))
     })
 
     test('runTests throws', async () => {
@@ -211,7 +211,7 @@ describe('run-test', () => {
       jest.spyOn(runTests, 'getApiHelper').mockImplementation(() => apiHelper as any)
       await expect(
         runTests.executeTests(mockReporter, {...config, publicIds: ['public-id-1', 'public-id-2']})
-      ).rejects.toBeError(CriticalError as any, 'TRIGGER_TESTS_FAILED')
+      ).rejects.toMatchError(new CriticalError('TRIGGER_TESTS_FAILED'))
     })
 
     test('waitForResults throws', async () => {
@@ -255,7 +255,7 @@ describe('run-test', () => {
           failOnCriticalErrors: true,
           publicIds: ['public-id-1', 'public-id-2'],
         })
-      ).rejects.toBeError(CriticalError as any, 'POLL_RESULTS_FAILED')
+      ).rejects.toMatchError(new CriticalError('POLL_RESULTS_FAILED'))
     })
   })
 
@@ -272,10 +272,10 @@ describe('run-test', () => {
     })
 
     test('should use DD_API_HOST_OVERRIDE', async () => {
-      process.env = {DD_API_HOST_OVERRIDE: 'foobar'}
+      process.env = {DD_API_HOST_OVERRIDE: 'https://foobar'}
 
-      expect(runTests.getDatadogHost(true, config)).toBe('foobar/api/v1')
-      expect(runTests.getDatadogHost(true, config)).toBe('foobar/api/v1')
+      expect(runTests.getDatadogHost(true, config)).toBe('https://foobar/api/v1')
+      expect(runTests.getDatadogHost(true, config)).toBe('https://foobar/api/v1')
     })
 
     test('should use Synthetics intake endpoint', async () => {
@@ -297,11 +297,10 @@ describe('run-test', () => {
       process.env = {}
 
       expect(() => runTests.getApiHelper(config)).toThrow(new CiError('MISSING_APP_KEY'))
-      await expect(runTests.executeTests(mockReporter, config)).rejects.toBeError(CiError as any, 'MISSING_APP_KEY')
+      await expect(runTests.executeTests(mockReporter, config)).rejects.toMatchError(new CiError('MISSING_APP_KEY'))
       expect(() => runTests.getApiHelper({...config, appKey: 'fakeappkey'})).toThrow(new CiError('MISSING_API_KEY'))
-      await expect(runTests.executeTests(mockReporter, {...config, appKey: 'fakeappkey'})).rejects.toBeError(
-        CiError as any,
-        'MISSING_API_KEY'
+      await expect(runTests.executeTests(mockReporter, {...config, appKey: 'fakeappkey'})).rejects.toMatchError(
+        new CiError('MISSING_API_KEY')
       )
     })
   })
