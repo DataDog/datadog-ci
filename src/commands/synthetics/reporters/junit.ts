@@ -16,7 +16,7 @@ import {
   Step,
   Vitals,
 } from '../interfaces'
-import {getResultDuration} from '../utils'
+import {getResultDuration, hasTestSucceeded} from '../utils'
 
 interface Stats {
   allowfailures: number
@@ -80,7 +80,7 @@ interface XMLJSON {
 }
 
 interface XMLError {
-  $: {type: string; [key: string]: string}
+  $: {type: string; [key: string]: string | boolean}
   _: string
 }
 
@@ -141,7 +141,14 @@ export class JUnitReporter implements Reporter {
     }
   }
 
-  public testEnd(test: InternalTest, results: PollResult[], baseUrl: string, locations: LocationsMapping) {
+  public testEnd(
+    test: InternalTest,
+    results: PollResult[],
+    baseUrl: string,
+    locations: LocationsMapping,
+    failOnCriticalErrors: boolean,
+    failOnTimeout: boolean
+  ) {
     const suiteRunName = test.suite || 'Undefined suite'
     let suiteRun = this.json.testsuites.testsuite.find((suite: XMLRun) => suite.$.name === suiteRunName)
 
@@ -160,7 +167,7 @@ export class JUnitReporter implements Reporter {
     }
 
     for (const result of results) {
-      const testCase: XMLTestCase = this.getTestCase(test, result, locations)
+      const testCase: XMLTestCase = this.getTestCase(test, result, locations, failOnCriticalErrors, failOnTimeout)
       // Timeout errors are only reported at the top level.
       if (result.result.error === ERRORS.TIMEOUT) {
         testCase.error.push({
@@ -213,7 +220,10 @@ export class JUnitReporter implements Reporter {
     const error: XMLError[] = []
 
     if (step.failure) {
-      error.push({$: {type: step.failure.code, step: step.name}, _: step.failure.message})
+      error.push({
+        $: {type: step.failure.code, step: step.name, allowFailure: step.allowFailure},
+        _: step.failure.message,
+      })
     }
 
     return {
@@ -249,7 +259,7 @@ export class JUnitReporter implements Reporter {
 
     if (stepDetail.error) {
       error.push({
-        $: {type: 'assertion', step: stepDetail.description},
+        $: {type: 'assertion', step: stepDetail.description, allowFailure: stepDetail.allowFailure},
         _: stepDetail.error,
       })
     }
@@ -311,7 +321,16 @@ export class JUnitReporter implements Reporter {
     return stats
   }
 
-  private getTestCase(test: InternalTest, result: PollResult, locations: LocationsMapping): XMLTestCase {
+  private getTestCase(
+    test: InternalTest,
+    result: PollResult,
+    locations: LocationsMapping,
+    failOnCriticalErrors: boolean,
+    failOnTimeout: boolean
+  ): XMLTestCase {
+    const timeout = result.result.error === ERRORS.TIMEOUT
+    const passed = hasTestSucceeded([result], failOnCriticalErrors, failOnTimeout)
+
     return {
       $: {
         name: test.name,
@@ -323,17 +342,7 @@ export class JUnitReporter implements Reporter {
       error: [],
       properties: {
         property: [
-          {$: {name: 'status', value: test.status}},
-          {$: {name: 'public_id', value: test.public_id}},
           {$: {name: 'check_id', value: result.check_id}},
-          {$: {name: 'result_id', value: result.resultID}},
-          {$: {name: 'type', value: test.type}},
-          {$: {name: 'message', value: test.message}},
-          {$: {name: 'monitor_id', value: test.monitor_id}},
-          {$: {name: 'tags', value: test.tags.join(',')}},
-          {$: {name: 'location', value: locations[result.dc_id]}},
-          {$: {name: 'execution_rule', value: test.options.ci?.executionRule}},
-          ...('startUrl' in result.result ? [{$: {name: 'start_url', value: result.result.startUrl}}] : []),
           ...('device' in result.result
             ? [
                 {$: {name: 'device', value: result.result.device.id}},
@@ -341,6 +350,18 @@ export class JUnitReporter implements Reporter {
                 {$: {name: 'height', value: result.result.device.height}},
               ]
             : []),
+          {$: {name: 'execution_rule', value: test.options.ci?.executionRule}},
+          {$: {name: 'location', value: locations[result.dc_id]}},
+          {$: {name: 'message', value: test.message}},
+          {$: {name: 'monitor_id', value: test.monitor_id}},
+          {$: {name: 'passed', value: `${passed}`}},
+          {$: {name: 'timeout', value: `${timeout}`}},
+          {$: {name: 'public_id', value: test.public_id}},
+          {$: {name: 'result_id', value: result.resultID}},
+          ...('startUrl' in result.result ? [{$: {name: 'start_url', value: result.result.startUrl}}] : []),
+          {$: {name: 'status', value: test.status}},
+          {$: {name: 'tags', value: test.tags.join(',')}},
+          {$: {name: 'type', value: test.type}},
         ].filter((prop) => prop.$.value),
       },
       testcase: [],
