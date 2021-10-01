@@ -189,21 +189,22 @@ export class UploadJUnitXMLCommand extends Command {
                 throw error
               }
             }
-            // If it's another error or an axios error we don't want to retry, bail
-            bail(error)
+            // If it's another error or an axios error let us retry just in case
+            // This will catch DNS resolution errors and connection timeouts
+            throw error
 
             return
           }
         },
         {
           onRetry: (e, attempt) => {
-            this.context.stdout.write(renderRetriedUpload(jUnitXML, e.message, attempt))
+            this.context.stderr.write(renderRetriedUpload(jUnitXML, e.message, attempt))
           },
           retries: 5,
         }
       )
     } catch (error) {
-      this.context.stdout.write(renderFailedUpload(jUnitXML, error))
+      this.context.stderr.write(renderFailedUpload(jUnitXML, error))
       if (error.response) {
         // If it's an axios error
         if (!errorCodesStopUpload.includes(error.response.status)) {
