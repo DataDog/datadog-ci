@@ -1,4 +1,3 @@
-import retry from 'async-retry'
 import chalk from 'chalk'
 import {Command} from 'clipanion'
 import xmlParser from 'fast-xml-parser'
@@ -21,11 +20,11 @@ import {getBaseIntakeUrl} from './utils'
 
 import {getCISpanTags} from '../../helpers/ci'
 import {getGitMetadata} from '../../helpers/git'
+import {retryRequest} from '../../helpers/retry'
 import {parseTags} from '../../helpers/tags'
 import {getUserGitMetadata} from '../../helpers/user-provided-git'
 import {buildPath} from '../../helpers/utils'
 
-const errorCodesNoRetry = [400, 403, 413]
 const errorCodesStopUpload = [400, 403]
 
 const validateXml = (xmlFilePath: string) => {
@@ -171,38 +170,19 @@ export class UploadJUnitXMLCommand extends Command {
   }
 
   private async uploadJUnitXML(api: APIHelper, jUnitXML: Payload) {
+    if (this.dryRun) {
+      this.context.stdout.write(renderDryRunUpload(jUnitXML))
+
+      return
+    }
+
     try {
-      await retry(
-        async (bail) => {
-          try {
-            if (this.dryRun) {
-              this.context.stdout.write(renderDryRunUpload(jUnitXML))
-
-              return
-            }
-            await api.uploadJUnitXML(jUnitXML, this.context.stdout.write.bind(this.context.stdout))
-          } catch (error) {
-            if (error.response) {
-              // If it's an axios error
-              if (!errorCodesNoRetry.includes(error.response.status)) {
-                // And a status code that is not excluded from retries, throw the error so that upload is retried
-                throw error
-              }
-            }
-            // If it's another error or an axios error let us retry just in case
-            // This will catch DNS resolution errors and connection timeouts
-            throw error
-
-            return
-          }
+      await retryRequest(() => api.uploadJUnitXML(jUnitXML, this.context.stdout.write.bind(this.context.stdout)), {
+        onRetry: (e, attempt) => {
+          this.context.stderr.write(renderRetriedUpload(jUnitXML, e.message, attempt))
         },
-        {
-          onRetry: (e, attempt) => {
-            this.context.stderr.write(renderRetriedUpload(jUnitXML, e.message, attempt))
-          },
-          retries: 5,
-        }
-      )
+        retries: 5,
+      })
     } catch (error) {
       this.context.stderr.write(renderFailedUpload(jUnitXML, error))
       if (error.response) {

@@ -1,11 +1,9 @@
-import retry from 'async-retry'
 import FormData from 'form-data'
 import {ReadStream} from 'fs'
 
 import {ApiKeyValidator} from './apikey'
 import {RequestBuilder} from './interfaces'
-
-const errorCodesNoRetry = [400, 403, 413]
+import {retryRequest} from './retry'
 
 /** Multipart payload destined to be sent to Datadog's API
  */
@@ -59,10 +57,10 @@ export const upload = (requestBuilder: RequestBuilder) => async (
 ): Promise<UploadStatus> => {
   opts.onUpload()
   try {
-    await uploadWithRetry(requestBuilder, {
+    await retryRequest(() => uploadMultipart(requestBuilder, payload), {
       onRetry: opts.onRetry,
       retries: opts.retries,
-    })(payload)
+    })
 
     return UploadStatus.Success
   } catch (error) {
@@ -82,35 +80,11 @@ export const upload = (requestBuilder: RequestBuilder) => async (
   }
 }
 
-const uploadWithRetry = (requestBuilder: RequestBuilder, retryOpts: retry.Options) => async (
-  payload: MultipartPayload
-): Promise<void> => {
-  // Upload function, passed to async-retry
-  const doUpload = async (bail: (e: Error) => void) => {
-    try {
-      await uploadMultipart(requestBuilder)(payload)
-    } catch (error) {
-      if (error.response) {
-        // If it's an axios error
-        if (!errorCodesNoRetry.includes(error.response.status)) {
-          // And a status code that is not excluded from retries, throw the error so that upload is retried
-          throw error
-        }
-      }
-      // If it's another error or an axios error we don't want to retry, bail
-      bail(error)
-    }
-  }
-
-  // Do the actual call
-  return retry(doUpload, retryOpts)
-}
-
 // Dependency follows-redirects sets a default maxBodyLength of 10 MB https://github.com/follow-redirects/follow-redirects/blob/b774a77e582b97174813b3eaeb86931becba69db/index.js#L391
 // We don't want any hard limit enforced by the CLI, the backend will enforce a max size by returning 413 errors.
 const maxBodyLength = Infinity
 
-const uploadMultipart = (request: RequestBuilder) => async (payload: MultipartPayload) => {
+const uploadMultipart = async (request: RequestBuilder, payload: MultipartPayload) => {
   const form = new FormData()
   payload.content.forEach((value: MultipartValue, key: string) => {
     form.append(key, value.value, value.options)

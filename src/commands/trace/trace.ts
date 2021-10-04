@@ -1,14 +1,12 @@
-import retry from 'async-retry'
 import chalk from 'chalk'
 import {spawn} from 'child_process'
 import {Command} from 'clipanion'
 import crypto from 'crypto'
 import os from 'os'
+import {retryRequest} from '../../helpers/retry'
 import {parseTags} from '../../helpers/tags'
 import {apiConstructor} from './api'
 import {APIHelper, CIRCLECI, JENKINS, Payload, Provider, SUPPORTED_PROVIDERS} from './interfaces'
-
-const errorCodesNoRetry = [400, 403, 413]
 
 // We use 127 as exit code for invalid commands since that is what *sh terminals return
 const BAD_COMMAND_EXIT_CODE = 127
@@ -111,39 +109,6 @@ export class TraceCommand extends Command {
     return exitCode
   }
 
-  private async reportCustomSpan(payload: Payload, provider: Provider) {
-    const api = this.getApiHelper()
-    try {
-      await retry(
-        async (bail) => {
-          try {
-            await api.reportCustomSpan(payload, provider)
-          } catch (error) {
-            const util = require('util')
-            if (error.response) {
-              // If it's an axios error
-              if (!errorCodesNoRetry.includes(error.response.status)) {
-                // And a status code that is not excluded from retries, throw the error to retry
-                throw error
-              }
-            }
-            // If it's another error or an axios error let us retry just in case
-            // This will catch DNS resolution errors and connection timeouts
-            throw error
-          }
-        },
-        {
-          onRetry: (e, attempt) => {
-            this.context.stderr.write(chalk.yellow(`[attempt ${attempt}] Could not report custom span. Retrying...: ${e.message}\n`))
-          },
-          retries: 5,
-        }
-      )
-    } catch (error) {
-      this.context.stderr.write(chalk.red(`Failed to report custom span: ${error.message}\n`))
-    }
-  }
-
   public getCIEnvVars(): [Record<string, string>, Provider?] {
     if (process.env.CIRCLECI) {
       return [
@@ -236,6 +201,22 @@ export class TraceCommand extends Command {
 
   private getEnvironmentVars(keys: string[]): Record<string, string> {
     return keys.filter((key) => key in process.env).reduce((accum, key) => ({...accum, [key]: process.env[key]!}), {})
+  }
+
+  private async reportCustomSpan(payload: Payload, provider: Provider) {
+    const api = this.getApiHelper()
+    try {
+      await retryRequest(() => api.reportCustomSpan(payload, provider), {
+        onRetry: (e, attempt) => {
+          this.context.stderr.write(
+            chalk.yellow(`[attempt ${attempt}] Could not report custom span. Retrying...: ${e.message}\n`)
+          )
+        },
+        retries: 5,
+      })
+    } catch (error) {
+      this.context.stderr.write(chalk.red(`Failed to report custom span: ${error.message}\n`))
+    }
   }
 
   private signalToNumber(signal: NodeJS.Signals | null): number | undefined {
