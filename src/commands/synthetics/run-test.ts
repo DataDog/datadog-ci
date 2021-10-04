@@ -90,6 +90,7 @@ export const executeTests = async (reporter: MainReporter, config: CommandConfig
       await stopTunnel()
       throw new (isCriticalError ? CriticalError : CiError)('TUNNEL_START_FAILED')
     }
+
   }
 
   let triggers: Trigger
@@ -130,27 +131,33 @@ export const getTestsList = async (api: APIHelper, config: CommandConfig, report
   if (config.testSearchQuery) {
     const testSearchResults = await api.searchTests(config.testSearchQuery)
 
-    return testSearchResults.tests.map((test) => ({config: config.global, id: test.public_id}))
+    return testSearchResults.tests.map((test) => ({
+      config: config.global,
+      id: test.public_id,
+      suite: `Query: ${config.testSearchQuery}`,
+    }))
   }
 
   const suites = (await Promise.all(config.files.map((glob: string) => getSuites(glob, reporter!))))
     .reduce((acc, val) => acc.concat(val), [])
-    .map((suite) => suite.tests)
-    .filter((suiteTests) => !!suiteTests)
+    .filter((suite) => !!suite.content.tests)
 
   const configFromEnvironment = config.locations?.length ? {locations: config.locations} : {}
   const testsToTrigger = suites
+    .map((suite) =>
+      suite.content.tests.map((test) => ({
+        config: {
+          ...config.global,
+          ...configFromEnvironment,
+          ...test.config,
+        },
+        id: test.id,
+        suite: suite.name,
+      }))
+    )
     .reduce((acc, suiteTests) => acc.concat(suiteTests), [])
-    .map((test) => ({
-      config: {
-        ...config.global,
-        ...configFromEnvironment,
-        ...test.config,
-      },
-      id: test.id,
-    }))
 
-  return testsToTrigger
+    return testsToTrigger
 }
 
 export const getApiHelper = (config: CommandConfig) => {
@@ -183,3 +190,4 @@ export const getDatadogHost = (useIntake = false, config: CommandConfig) => {
 
   return `${host}/${apiPath}`
 }
+

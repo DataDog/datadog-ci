@@ -1629,6 +1629,13 @@
   dependencies:
     "@types/node" "*"
 
+"@types/xml2js@0.4.9":
+  version "0.4.9"
+  resolved "https://registry.yarnpkg.com/@types/xml2js/-/xml2js-0.4.9.tgz#a38267d8c2fe121c96922b12ee3bd89a58a6e20e"
+  integrity sha512-CHiCKIihl1pychwR2RNX5mAYmJDACgFVCMT5OArMaO3erzwXVcBqPcusr+Vl8yeeXukxZqtF8mZioqX+mpjjdw==
+  dependencies:
+    "@types/node" "*"
+
 "@types/yargs-parser@*":
   version "15.0.0"
   resolved "https://registry.npmjs.org/@types/yargs-parser/-/yargs-parser-15.0.0.tgz"
@@ -1684,9 +1691,9 @@ ansi-escapes@^4.2.1:
     type-fest "^0.11.0"
 
 ansi-regex@^5.0.0:
-  version "5.0.0"
-  resolved "https://registry.npmjs.org/ansi-regex/-/ansi-regex-5.0.0.tgz"
-  integrity sha512-bY6fj56OUQ0hU1KjFNDQuJFezqKdrAyFdIevADiqrWHwSlbmBNMHp5ak2f40Pm8JTFyM2mqxkG6ngkHO11f/lg==
+  version "5.0.1"
+  resolved "https://registry.yarnpkg.com/ansi-regex/-/ansi-regex-5.0.1.tgz#082cb2c89c9fe8659a311a53bd6a4dc5301db304"
+  integrity sha512-quJQXlTSUGL2LH9SUXo8VwsY4soanhgo6LNSm84E1LBcE8s3O0wpdiRzyR9z/ZZJMlMWv37qOOb9pdJlMUEKFQ==
 
 ansi-styles@^3.2.1:
   version "3.2.1"
@@ -2305,14 +2312,15 @@ define-properties@^1.1.2:
   dependencies:
     object-keys "^1.0.12"
 
-degenerator@^2.2.0:
-  version "2.2.0"
-  resolved "https://registry.npmjs.org/degenerator/-/degenerator-2.2.0.tgz"
-  integrity sha512-aiQcQowF01RxFI4ZLFMpzyotbQonhNpBao6dkI8JPk5a+hmSjR5ErHp2CQySmQe8os3VBqLCIh87nDBgZXvsmg==
+degenerator@^3.0.1:
+  version "3.0.1"
+  resolved "https://registry.yarnpkg.com/degenerator/-/degenerator-3.0.1.tgz#7ef78ec0c8577a544477308ddf1d2d6e88d51f5b"
+  integrity sha512-LFsIFEeLPlKvAKXu7j3ssIG6RT0TbI7/GhsqrI0DnHASEQjXQ0LUSYcjJteGgRGmZbl1TnMSxpNQIAiJ7Du5TQ==
   dependencies:
     ast-types "^0.13.2"
     escodegen "^1.8.1"
     esprima "^4.0.0"
+    vm2 "^3.9.3"
 
 delayed-stream@~1.0.0:
   version "1.0.0"
@@ -3794,10 +3802,10 @@ p-try@^2.0.0:
   resolved "https://registry.npmjs.org/p-try/-/p-try-2.2.0.tgz"
   integrity sha512-R4nPAVTAU0B9D35/Gk3uJf/7XYbQcyohSKdvAxIRSNghFl4e71hVoGnBNQz9cWaXxO2I10KTC+3jMdvvoKw6dQ==
 
-pac-proxy-agent@^4.1.0:
-  version "4.1.0"
-  resolved "https://registry.npmjs.org/pac-proxy-agent/-/pac-proxy-agent-4.1.0.tgz"
-  integrity sha512-ejNgYm2HTXSIYX9eFlkvqFp8hyJ374uDf0Zq5YUAifiSh1D6fo+iBivQZirGvVv8dCYUsLhmLBRhlAYvBKI5+Q==
+pac-proxy-agent@^5.0.0:
+  version "5.0.0"
+  resolved "https://registry.yarnpkg.com/pac-proxy-agent/-/pac-proxy-agent-5.0.0.tgz#b718f76475a6a5415c2efbe256c1c971c84f635e"
+  integrity sha512-CcFG3ZtnxO8McDigozwE3AqAw15zDvGH+OjXO4kzf7IkEKkQ4gxQ+3sdF50WmhQ4P/bVusXcqNE2S3XrNURwzQ==
   dependencies:
     "@tootallnate/once" "1"
     agent-base "6"
@@ -3805,16 +3813,16 @@ pac-proxy-agent@^4.1.0:
     get-uri "3"
     http-proxy-agent "^4.0.1"
     https-proxy-agent "5"
-    pac-resolver "^4.1.0"
+    pac-resolver "^5.0.0"
     raw-body "^2.2.0"
     socks-proxy-agent "5"
 
-pac-resolver@^4.1.0:
-  version "4.2.0"
-  resolved "https://registry.npmjs.org/pac-resolver/-/pac-resolver-4.2.0.tgz"
-  integrity sha512-rPACZdUyuxT5Io/gFKUeeZFfE5T7ve7cAkE5TUZRRfuKP0u5Hocwe48X7ZEm6mYB+bTB0Qf+xlVlA/RM/i6RCQ==
+pac-resolver@^5.0.0:
+  version "5.0.0"
+  resolved "https://registry.yarnpkg.com/pac-resolver/-/pac-resolver-5.0.0.tgz#1d717a127b3d7a9407a16d6e1b012b13b9ba8dc0"
+  integrity sha512-H+/A6KitiHNNW+bxBKREk2MCGSxljfqRX76NjummWEYIat7ldVXRU3dhRIE3iXZ0nvGBk6smv3nntxKkzRL8NA==
   dependencies:
-    degenerator "^2.2.0"
+    degenerator "^3.0.1"
     ip "^1.1.5"
     netmask "^2.0.1"
 
@@ -3939,17 +3947,17 @@ protobufjs@^6.9.0:
     "@types/node" "^13.7.0"
     long "^4.0.0"
 
-proxy-agent@4.0.1:
-  version "4.0.1"
-  resolved "https://registry.npmjs.org/proxy-agent/-/proxy-agent-4.0.1.tgz"
-  integrity sha512-ODnQnW2jc/FUVwHHuaZEfN5otg/fMbvMxz9nMSUQfJ9JU7q2SZvSULSsjLloVgJOiv9yhc8GlNMKc4GkFmcVEA==
+proxy-agent@^5.0.0:
+  version "5.0.0"
+  resolved "https://registry.yarnpkg.com/proxy-agent/-/proxy-agent-5.0.0.tgz#d31405c10d6e8431fde96cba7a0c027ce01d633b"
+  integrity sha512-gkH7BkvLVkSfX9Dk27W6TyNOWWZWRilRfk1XxGNWOYJ2TuedAv1yFpCaU9QSBmBe716XOTNpYNOzhysyw8xn7g==
   dependencies:
     agent-base "^6.0.0"
     debug "4"
     http-proxy-agent "^4.0.0"
     https-proxy-agent "^5.0.0"
     lru-cache "^5.1.1"
-    pac-proxy-agent "^4.1.0"
+    pac-proxy-agent "^5.0.0"
     proxy-from-env "^1.0.0"
     socks-proxy-agent "^5.0.0"
 
@@ -4682,6 +4690,11 @@ v8-to-istanbul@^8.0.0:
     convert-source-map "^1.6.0"
     source-map "^0.7.3"
 
+vm2@^3.9.3:
+  version "3.9.3"
+  resolved "https://registry.yarnpkg.com/vm2/-/vm2-3.9.3.tgz#29917f6cc081cc43a3f580c26c5b553fd3c91f40"
+  integrity sha512-smLS+18RjXYMl9joyJxMNI9l4w7biW8ilSDaVRvFBDwOH8P0BK1ognFQTpg0wyQ6wIKLTblHJvROW692L/E53Q==
+
 w3c-hr-time@^1.0.2:
   version "1.0.2"
   resolved "https://registry.npmjs.org/w3c-hr-time/-/w3c-hr-time-1.0.2.tgz"
@@ -4801,6 +4814,19 @@ xml2js@0.4.19:
   dependencies:
     sax ">=0.6.0"
     xmlbuilder "~9.0.1"
+
+xml2js@0.4.23:
+  version "0.4.23"
+  resolved "https://registry.yarnpkg.com/xml2js/-/xml2js-0.4.23.tgz#a0c69516752421eb2ac758ee4d4ccf58843eac66"
+  integrity sha512-ySPiMjM0+pLDftHgXY4By0uswI3SPKLDw/i3UXbnO8M/p28zqexCUoPmQFrYD+/1BzhGJSs2i1ERWKJAtiLrug==
+  dependencies:
+    sax ">=0.6.0"
+    xmlbuilder "~11.0.0"
+
+xmlbuilder@~11.0.0:
+  version "11.0.1"
+  resolved "https://registry.yarnpkg.com/xmlbuilder/-/xmlbuilder-11.0.1.tgz#be9bae1c8a046e76b31127726347d0ad7002beb3"
+  integrity sha512-fDlsI/kFEx7gLvbecc0/ohLG50fugQp8ryHzMTuW9vSa1GJ0XYWKnhsUx7oie3G98+r56aTQIUB4kht42R3JvA==
 
 xmlbuilder@~9.0.1:
   version "9.0.7"

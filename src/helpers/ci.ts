@@ -160,7 +160,7 @@ export const getCISpanTags = (): SpanTags | undefined => {
       CI_PIPELINE_IID,
       CI_PIPELINE_URL: GITLAB_CI_PIPELINE_URL,
       CI_PROJECT_DIR,
-      CI_COMMIT_BRANCH,
+      CI_COMMIT_REF_NAME,
       CI_COMMIT_TAG,
       CI_COMMIT_SHA,
       CI_REPOSITORY_URL,
@@ -184,7 +184,7 @@ export const getCISpanTags = (): SpanTags | undefined => {
       [CI_PROVIDER_NAME]: CI_ENGINES.GITLAB,
       [CI_WORKSPACE_PATH]: CI_PROJECT_DIR,
       [CI_STAGE_NAME]: CI_JOB_STAGE,
-      [GIT_BRANCH]: CI_COMMIT_BRANCH,
+      [GIT_BRANCH]: CI_COMMIT_REF_NAME,
       [GIT_SHA]: CI_COMMIT_SHA,
       [GIT_REPOSITORY_URL]: CI_REPOSITORY_URL,
       [GIT_TAG]: CI_COMMIT_TAG,
@@ -529,7 +529,7 @@ export const getCIMetadata = (): Metadata | undefined => {
         },
       },
       git: {
-        branch: env.CI_COMMIT_BRANCH,
+        branch: env.CI_COMMIT_REF_NAME,
         commitSha: env.CI_COMMIT_SHA,
       },
     }

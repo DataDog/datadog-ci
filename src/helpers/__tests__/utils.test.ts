@@ -95,19 +95,6 @@ describe('utils', () => {
         expect(httpsAgent).toBeDefined()
         expect(httpsAgent).toBeInstanceOf(ProxyAgent)
       })
-      test('should not have a proxy agent if proxy env vars support is disabled', async () => {
-        jest.spyOn(axios, 'create').mockImplementation((() => (args: AxiosRequestConfig) => args.httpsAgent) as any)
-        const requestOptions = {
-          apiKey: 'apiKey',
-          appKey: 'applicationKey',
-          baseUrl: 'http://fake-base.url/',
-          disableEnvironmentVariables: true,
-        }
-        const request = ciUtils.getRequestBuilder(requestOptions)
-        const fakeEndpoint = fakeEndpointBuilder(request)
-        const httpsAgent = await fakeEndpoint()
-        expect(httpsAgent).toBeUndefined()
-      })
 
       test('should add proxy configuration when explicitly defined', async () => {
         jest.spyOn(axios, 'create').mockImplementation((() => (args: AxiosRequestConfig) => args.httpsAgent) as any)
@@ -116,23 +103,6 @@ describe('utils', () => {
           apiKey: 'apiKey',
           appKey: 'applicationKey',
           baseUrl: 'http://fake-base.url/',
-          proxyOpts,
-        }
-        const request = ciUtils.getRequestBuilder(requestOptions)
-        const fakeEndpoint = fakeEndpointBuilder(request)
-        const httpsAgent = await fakeEndpoint()
-        expect(httpsAgent).toBeDefined()
-        expect((httpsAgent as any).proxyUri).toBe('http://1.2.3.4:1234')
-      })
-
-      test('should add proxy configuration when explicitly defined even without env vars', async () => {
-        jest.spyOn(axios, 'create').mockImplementation((() => (args: AxiosRequestConfig) => args.httpsAgent) as any)
-        const proxyOpts: ciUtils.ProxyConfiguration = {protocol: 'http', host: '1.2.3.4', port: 1234}
-        const requestOptions = {
-          apiKey: 'apiKey',
-          appKey: 'applicationKey',
-          baseUrl: 'http://fake-base.url/',
-          disableEnvironmentVariables: true,
           proxyOpts,
         }
         const request = ciUtils.getRequestBuilder(requestOptions)
@@ -374,53 +344,6 @@ describe('utils', () => {
         const requestBuilder = ciUtils.getRequestBuilder({
           apiKey: 'abc',
           baseUrl: `http://localhost:${targetServer.port}`,
-          proxyOpts: {
-            host: 'localhost',
-            port: proxyServer.port,
-            protocol: 'http',
-          },
-        })
-        await requestBuilder({
-          method: 'GET',
-          url: 'test-from-proxy',
-        })
-        expect(targetServer.spy.mock.calls.length).toBe(1)
-        expect(proxyServer.spy.mock.calls.length).toBe(1)
-      } finally {
-        await targetServer.close()
-        await proxyServer.close()
-      }
-    })
-
-    test('Proxy through env var can be disabled', async () => {
-      const {proxyServer, targetServer} = await setupServer()
-      try {
-        process.env.HTTP_PROXY = `http://incorrecthost:${proxyServer.port}`
-        const requestBuilder = ciUtils.getRequestBuilder({
-          apiKey: 'abc',
-          baseUrl: `http://localhost:${targetServer.port}`,
-          disableEnvironmentVariables: true,
-        })
-        await requestBuilder({
-          method: 'GET',
-          url: 'test-from-proxy',
-        })
-        expect(targetServer.spy.mock.calls.length).toBe(1)
-        expect(proxyServer.spy.mock.calls.length).toBe(0)
-      } finally {
-        await targetServer.close()
-        await proxyServer.close()
-      }
-    })
-
-    test('Proxy can still be configured manually when env vars are disabled', async () => {
-      const {proxyServer, targetServer} = await setupServer()
-      try {
-        process.env.HTTP_PROXY = `http://incorrecthost:${proxyServer.port}`
-        const requestBuilder = ciUtils.getRequestBuilder({
-          apiKey: 'abc',
-          baseUrl: `http://localhost:${targetServer.port}`,
-          disableEnvironmentVariables: true,
           proxyOpts: {
             host: 'localhost',
             port: proxyServer.port,

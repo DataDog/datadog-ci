@@ -4,11 +4,13 @@ import {DefaultReporter} from '../../reporters/default'
 describe('Default reporter', () => {
   const writeMock = jest.fn()
   const mockContext: unknown = {
-    stdout: {
-      write: writeMock,
-    },
+    context : {
+      stdout: {
+        write: writeMock,
+      },
+    }
   }
-  const reporter: any = new DefaultReporter(mockContext as BaseContext)
+  const reporter: any = new DefaultReporter(mockContext as {context: BaseContext})
   it('should log for each hook', () => {
     const calls: [string, any[]][] = [
       ['error', ['error']],

@@ -418,6 +418,48 @@ describe('lambda', () => {
         await command['execute']()
         expect(command['config']['functions']).toHaveLength(1)
       })
+      test('aborts if functions and a pattern are set at the same time', async () => {
+        ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({}))
+
+        process.env = {}
+        let command = createCommand()
+        command['config']['environment'] = 'staging'
+        command['config']['service'] = 'middletier'
+        command['config']['version'] = '2'
+        command['config']['region'] = 'ap-southeast-1'
+        command['config']['functions'] = ['arn:aws:lambda:ap-southeast-1:123456789012:function:lambda-hello-world']
+        command['regExPattern'] = 'valid-pattern'
+        await command['execute']()
+        let output = command.context.stdout.toString()
+        expect(output).toMatch(
+          'Functions in config file and "--functions-regex" should not be used at the same time.\n'
+        )
+
+        command = createCommand()
+        command['environment'] = 'staging'
+        command['service'] = 'middletier'
+        command['version'] = '2'
+        command['region'] = 'ap-southeast-1'
+        command['functions'] = ['arn:aws:lambda:ap-southeast-1:123456789012:function:lambda-hello-world']
+        command['regExPattern'] = 'valid-pattern'
+        await command['execute']()
+        output = command.context.stdout.toString()
+        expect(output).toMatch('"--functions" and "--functions-regex" should not be used at the same time.\n')
+      })
+      test('aborts if the regEx pattern is an ARN', async () => {
+        ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({}))
+
+        process.env = {}
+        const command = createCommand()
+        command['environment'] = 'staging'
+        command['service'] = 'middletier'
+        command['version'] = '2'
+        command['region'] = 'ap-southeast-1'
+        command['regExPattern'] = 'arn:aws:lambda:ap-southeast-1:123456789012:function:*'
+        await command['execute']()
+        const output = command.context.stdout.toString()
+        expect(output).toMatch(`"--functions-regex" isn't meant to be used with ARNs.\n`)
+      })
     })
 
     describe('getSettings', () => {

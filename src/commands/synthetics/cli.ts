@@ -6,15 +6,18 @@ import {parseConfigFile} from '../../helpers/utils'
 import {CiError, CriticalError} from './errors'
 import {
   CommandConfig,
+  ERRORS,
   ExecutionRule,
   LocationsMapping,
   MainReporter,
   PollResult,
+  Reporter,
   Summary,
   Test,
   Trigger,
 } from './interfaces'
 import {DefaultReporter} from './reporters/default'
+import { JUnitReporter } from './reporters/junit'
 import {executeTests} from './run-test'
 import {getReporter, hasTestSucceeded, isCriticalError} from './utils'
 
@@ -38,6 +41,8 @@ export const DEFAULT_COMMAND_CONFIG: CommandConfig = {
 export class RunTestCommand extends Command {
   private apiKey?: string
   private appKey?: string
+  public jUnitReport?: string
+  public runName?: string
   private config: CommandConfig = JSON.parse(JSON.stringify(DEFAULT_COMMAND_CONFIG)) // Deep copy to avoid mutation during unit tests
   private configPath?: string
   private datadogSite?: string
@@ -51,8 +56,12 @@ export class RunTestCommand extends Command {
   private tunnel?: boolean
 
   public async execute() {
-    const reporters = [new DefaultReporter(this.context)]
+    const reporters : Reporter[] = [new DefaultReporter(this)]
     this.reporter = getReporter(reporters)
+
+    if (this.jUnitReport) {
+      reporters.push(new JUnitReporter(this))
+    }
     await this.resolveConfig()
     const startTime = Date.now()
     if (this.config.tunnel) {
@@ -111,7 +120,7 @@ export class RunTestCommand extends Command {
           summary.timedOut = 0
         }
 
-        const hasTimeout = testResults.some((pollResult) => pollResult.result.error === 'Timeout')
+        const hasTimeout = testResults.some((pollResult) => pollResult.result.error === ERRORS.TIMEOUT)
         if (hasTimeout) {
           summary.timedOut++
         }
@@ -279,3 +288,4 @@ RunTestCommand.addOption('publicIds', Command.Array('-p,--public-id'))
 RunTestCommand.addOption('testSearchQuery', Command.String('-s,--search'))
 RunTestCommand.addOption('subdomain', Command.Boolean('--subdomain'))
 RunTestCommand.addOption('tunnel', Command.Boolean('-t,--tunnel'))
+RunTestCommand.addOption('runName', Command.String('-n,--runName'))
