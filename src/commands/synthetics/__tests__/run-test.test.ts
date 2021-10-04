@@ -7,25 +7,6 @@ import * as runTests from '../run-test'
 import * as utils from '../utils'
 import {config, mockReporter} from './fixtures'
 
-expect.extend({
-  toBeError(received, errorClass, errorCode) {
-    const pass = received instanceof errorClass && errorCode === received.code
-    if (pass) {
-      return {
-        message: () =>
-          `expected ${received.constructor.name} with code ${received.code} but received ${errorClass.name} with code ${errorCode}`,
-        pass: true,
-      }
-    } else {
-      return {
-        message: () =>
-          `Received ${received.constructor.name} with code ${received.code} but expected ${errorClass.name} Error with code ${errorCode}`,
-        pass: false,
-      }
-    }
-  },
-})
-
 describe('run-test', () => {
   beforeEach(() => {
     jest.restoreAllMocks()
