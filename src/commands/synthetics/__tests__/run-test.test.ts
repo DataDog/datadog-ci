@@ -5,7 +5,7 @@ import {CiError, CriticalError} from '../errors'
 import {ExecutionRule} from '../interfaces'
 import * as runTests from '../run-test'
 import * as utils from '../utils'
-import {config, mockReporter} from './fixtures'
+import {ciConfig, mockReporter} from './fixtures'
 
 describe('run-test', () => {
   beforeEach(() => {
@@ -38,7 +38,7 @@ describe('run-test', () => {
 
       await expect(
         runTests.executeTests(mockReporter, {
-          ...config,
+          ...ciConfig,
           global: configOverride,
           publicIds: ['public-id-1', 'public-id-2'],
         })
@@ -68,7 +68,7 @@ describe('run-test', () => {
       jest.spyOn(runTests, 'getApiHelper').mockImplementation(() => ({} as any))
       await expect(
         runTests.executeTests(mockReporter, {
-          ...config,
+          ...ciConfig,
           global: configOverride,
           publicIds: ['public-id-1', 'public-id-2'],
         })
@@ -100,7 +100,7 @@ describe('run-test', () => {
 
       await expect(
         runTests.executeTests(mockReporter, {
-          ...config,
+          ...ciConfig,
           global: configOverride,
           publicIds: ['public-id-1', 'public-id-2'],
           tunnel: true,
@@ -128,7 +128,7 @@ describe('run-test', () => {
       }
       jest.spyOn(runTests, 'getApiHelper').mockImplementation(() => apiHelper as any)
       await expect(
-        runTests.executeTests(mockReporter, {...config, testSearchQuery: 'a-search-query', tunnel: true})
+        runTests.executeTests(mockReporter, {...ciConfig, testSearchQuery: 'a-search-query', tunnel: true})
       ).rejects.toMatchError(new CriticalError('UNAVAILABLE_TEST_CONF'))
     })
 
@@ -143,7 +143,7 @@ describe('run-test', () => {
       }
       jest.spyOn(runTests, 'getApiHelper').mockImplementation(() => apiHelper as any)
       await expect(
-        runTests.executeTests(mockReporter, {...config, publicIds: ['public-id-1'], tunnel: true})
+        runTests.executeTests(mockReporter, {...ciConfig, publicIds: ['public-id-1'], tunnel: true})
       ).rejects.toMatchError(new CriticalError('UNAVAILABLE_TEST_CONF'))
     })
 
@@ -167,7 +167,7 @@ describe('run-test', () => {
 
       jest.spyOn(runTests, 'getApiHelper').mockImplementation(() => apiHelper as any)
       await expect(
-        runTests.executeTests(mockReporter, {...config, publicIds: ['public-id-1', 'public-id-2'], tunnel: true})
+        runTests.executeTests(mockReporter, {...ciConfig, publicIds: ['public-id-1', 'public-id-2'], tunnel: true})
       ).rejects.toMatchError(new CriticalError('UNAVAILABLE_TUNNEL_CONF'))
     })
 
@@ -191,7 +191,7 @@ describe('run-test', () => {
 
       jest.spyOn(runTests, 'getApiHelper').mockImplementation(() => apiHelper as any)
       await expect(
-        runTests.executeTests(mockReporter, {...config, publicIds: ['public-id-1', 'public-id-2']})
+        runTests.executeTests(mockReporter, {...ciConfig, publicIds: ['public-id-1', 'public-id-2']})
       ).rejects.toMatchError(new CriticalError('TRIGGER_TESTS_FAILED'))
     })
 
@@ -232,7 +232,7 @@ describe('run-test', () => {
       jest.spyOn(runTests, 'getApiHelper').mockImplementation(() => apiHelper as any)
       await expect(
         runTests.executeTests(mockReporter, {
-          ...config,
+          ...ciConfig,
           failOnCriticalErrors: true,
           publicIds: ['public-id-1', 'public-id-2'],
         })
@@ -248,22 +248,22 @@ describe('run-test', () => {
     test('should default to datadog us api', async () => {
       process.env = {}
 
-      expect(runTests.getDatadogHost(false, config)).toBe('https://api.datadoghq.com/api/v1')
-      expect(runTests.getDatadogHost(true, config)).toBe('https://intake.synthetics.datadoghq.com/api/v1')
+      expect(runTests.getDatadogHost(false, ciConfig)).toBe('https://api.datadoghq.com/api/v1')
+      expect(runTests.getDatadogHost(true, ciConfig)).toBe('https://intake.synthetics.datadoghq.com/api/v1')
     })
 
     test('should use DD_API_HOST_OVERRIDE', async () => {
       process.env = {DD_API_HOST_OVERRIDE: 'https://foobar'}
 
-      expect(runTests.getDatadogHost(true, config)).toBe('https://foobar/api/v1')
-      expect(runTests.getDatadogHost(true, config)).toBe('https://foobar/api/v1')
+      expect(runTests.getDatadogHost(true, ciConfig)).toBe('https://foobar/api/v1')
+      expect(runTests.getDatadogHost(true, ciConfig)).toBe('https://foobar/api/v1')
     })
 
     test('should use Synthetics intake endpoint', async () => {
-      expect(runTests.getDatadogHost(true, {...config, datadogSite: 'datadoghq.com' as string})).toBe(
+      expect(runTests.getDatadogHost(true, {...ciConfig, datadogSite: 'datadoghq.com' as string})).toBe(
         'https://intake.synthetics.datadoghq.com/api/v1'
       )
-      expect(runTests.getDatadogHost(true, {...config, datadogSite: 'datad0g.com' as string})).toBe(
+      expect(runTests.getDatadogHost(true, {...ciConfig, datadogSite: 'datad0g.com' as string})).toBe(
         'https://intake.synthetics.datad0g.com/api/v1'
       )
     })
@@ -277,10 +277,10 @@ describe('run-test', () => {
     test('should throw an error if API or Application key are undefined', async () => {
       process.env = {}
 
-      expect(() => runTests.getApiHelper(config)).toThrow(new CiError('MISSING_APP_KEY'))
-      await expect(runTests.executeTests(mockReporter, config)).rejects.toMatchError(new CiError('MISSING_APP_KEY'))
-      expect(() => runTests.getApiHelper({...config, appKey: 'fakeappkey'})).toThrow(new CiError('MISSING_API_KEY'))
-      await expect(runTests.executeTests(mockReporter, {...config, appKey: 'fakeappkey'})).rejects.toMatchError(
+      expect(() => runTests.getApiHelper(ciConfig)).toThrow(new CiError('MISSING_APP_KEY'))
+      await expect(runTests.executeTests(mockReporter, ciConfig)).rejects.toMatchError(new CiError('MISSING_APP_KEY'))
+      expect(() => runTests.getApiHelper({...ciConfig, appKey: 'fakeappkey'})).toThrow(new CiError('MISSING_API_KEY'))
+      await expect(runTests.executeTests(mockReporter, {...ciConfig, appKey: 'fakeappkey'})).rejects.toMatchError(
         new CiError('MISSING_API_KEY')
       )
     })
@@ -321,7 +321,9 @@ describe('run-test', () => {
       jest.spyOn(utils, 'getSuites').mockImplementation((() => fakeSuites) as any)
       const configOverride = {startUrl}
 
-      await expect(runTests.getTestsList(fakeApi, {...config, global: configOverride}, mockReporter)).resolves.toEqual([
+      await expect(
+        runTests.getTestsList(fakeApi, {...ciConfig, global: configOverride}, mockReporter)
+      ).resolves.toEqual([
         {
           config: {startUrl},
           id: 'abc-def-ghi',
@@ -341,7 +343,11 @@ describe('run-test', () => {
       const searchQuery = 'fake search'
 
       await expect(
-        runTests.getTestsList(fakeApi, {...config, global: configOverride, testSearchQuery: searchQuery}, mockReporter)
+        runTests.getTestsList(
+          fakeApi,
+          {...ciConfig, global: configOverride, testSearchQuery: searchQuery},
+          mockReporter
+        )
       ).resolves.toEqual([
         {
           config: {startUrl},
@@ -356,7 +362,7 @@ describe('run-test', () => {
       const configOverride = {startUrl}
       const files = ['new glob', 'another one']
 
-      await runTests.getTestsList(fakeApi, {...config, global: configOverride, files}, mockReporter)
+      await runTests.getTestsList(fakeApi, {...ciConfig, global: configOverride, files}, mockReporter)
       expect(getSuitesMock).toHaveBeenCalledTimes(2)
       expect(getSuitesMock).toHaveBeenCalledWith('new glob', mockReporter)
       expect(getSuitesMock).toHaveBeenCalledWith('another one', mockReporter)

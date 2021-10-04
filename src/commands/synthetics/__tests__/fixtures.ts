@@ -37,7 +37,7 @@ export const mockReporter: MainReporter = {
   testWait: jest.fn(),
 }
 
-export const config: CommandConfig = {
+export const ciConfig: CommandConfig = {
   apiKey: '',
   appKey: '',
   configPath: 'datadog-ci.json',
