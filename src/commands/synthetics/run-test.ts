@@ -90,7 +90,6 @@ export const executeTests = async (reporter: MainReporter, config: CommandConfig
       await stopTunnel()
       throw new (isCriticalError ? CriticalError : CiError)('TUNNEL_START_FAILED')
     }
-
   }
 
   let triggers: Trigger
@@ -157,7 +156,7 @@ export const getTestsList = async (api: APIHelper, config: CommandConfig, report
     )
     .reduce((acc, suiteTests) => acc.concat(suiteTests), [])
 
-    return testsToTrigger
+  return testsToTrigger
 }
 
 export const getApiHelper = (config: CommandConfig) => {
@@ -190,4 +189,3 @@ export const getDatadogHost = (useIntake = false, config: CommandConfig) => {
 
   return `${host}/${apiPath}`
 }
-

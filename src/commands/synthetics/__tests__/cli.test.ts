@@ -260,7 +260,7 @@ describe('run-test', () => {
         content: {tests: [{config: {locations: ['aws:us-east-1']}, id: 'publicId'}]},
       }
       jest.spyOn(utils, 'getSuites').mockImplementation((() => [confWithLocation]) as any)
-      
+
       expect(await command.execute()).toBe(0)
       expect(triggerTests).toHaveBeenCalledWith(
         expect.objectContaining({

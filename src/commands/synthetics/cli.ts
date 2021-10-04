@@ -17,7 +17,7 @@ import {
   Trigger,
 } from './interfaces'
 import {DefaultReporter} from './reporters/default'
-import { JUnitReporter } from './reporters/junit'
+import {JUnitReporter} from './reporters/junit'
 import {executeTests} from './run-test'
 import {getReporter, hasTestSucceeded, isCriticalError} from './utils'
 
@@ -39,10 +39,10 @@ export const DEFAULT_COMMAND_CONFIG: CommandConfig = {
 }
 
 export class RunTestCommand extends Command {
-  private apiKey?: string
-  private appKey?: string
   public jUnitReport?: string
   public runName?: string
+  private apiKey?: string
+  private appKey?: string
   private config: CommandConfig = JSON.parse(JSON.stringify(DEFAULT_COMMAND_CONFIG)) // Deep copy to avoid mutation during unit tests
   private configPath?: string
   private datadogSite?: string
@@ -56,7 +56,7 @@ export class RunTestCommand extends Command {
   private tunnel?: boolean
 
   public async execute() {
-    const reporters : Reporter[] = [new DefaultReporter(this)]
+    const reporters: Reporter[] = [new DefaultReporter(this)]
     this.reporter = getReporter(reporters)
 
     if (this.jUnitReport) {
