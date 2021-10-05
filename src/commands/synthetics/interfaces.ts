@@ -343,13 +343,11 @@ export interface APIConfiguration {
   proxyOpts: ProxyConfiguration
 }
 
-export interface CommandConfig {
+export interface SyntheticsCIConfig {
   apiKey: string
   appKey: string
   configPath: string
   datadogSite: string
-  failOnCriticalErrors: boolean
-  failOnTimeout: boolean
   files: string[]
   global: ConfigOverride
   locations: string[]
@@ -359,4 +357,9 @@ export interface CommandConfig {
   subdomain: string
   testSearchQuery?: string
   tunnel: boolean
+}
+
+export interface CommandConfig extends SyntheticsCIConfig {
+  failOnCriticalErrors: boolean
+  failOnTimeout: boolean
 }
