@@ -59,7 +59,8 @@ export class TraceCommand extends Command {
       stdio: ['inherit', 'inherit', 'pipe'],
     })
     const chunks: Buffer[] = []
-    const strerrCatcher: Promise<string> = new Promise((resolve, reject) => {
+    childProcess.stderr.pipe(this.context.stderr)
+    const stderrCatcher: Promise<string> = new Promise((resolve, reject) => {
       childProcess.stderr.on('data', (chunk) => chunks.push(Buffer.from(chunk)))
       childProcess.stderr.on('error', (err) => reject(err))
       childProcess.stderr.on('end', () => resolve(Buffer.concat(chunks).toString('utf8')))
@@ -74,8 +75,7 @@ export class TraceCommand extends Command {
       })
     })
 
-    const stderr: string = await strerrCatcher
-    this.context.stderr.write(stderr)
+    const stderr: string = await stderrCatcher
     const endTime = new Date().toISOString()
     const exitCode: number = status ?? this.signalToNumber(signal) ?? BAD_COMMAND_EXIT_CODE
     const [ciEnvVars, provider] = this.getCIEnvVars()

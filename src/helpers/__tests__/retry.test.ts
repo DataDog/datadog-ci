@@ -16,9 +16,9 @@ describe('retry', () => {
           status: 200,
           statusText: '',
         })
-      } else {
-        return Promise.reject(errors[i])
       }
+
+      return Promise.reject(errors[i])
     }
   }
 
