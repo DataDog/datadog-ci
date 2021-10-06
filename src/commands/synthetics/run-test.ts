@@ -102,7 +102,7 @@ export const executeTests = async (reporter: MainReporter, config: SyntheticsCIC
   }
 
   if (!triggers.results) {
-    await stopTunnel()  
+    await stopTunnel()
     throw new CriticalError('NO_RESULTS_TO_POLL')
   }
 
