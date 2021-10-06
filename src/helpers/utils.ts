@@ -133,7 +133,7 @@ export const getRequestBuilder = (options: RequestOptions) => {
   return (args: AxiosRequestConfig) => axios.create(baseConfiguration)(overrideArgs(args))
 }
 
-export const getProxyAgent: any = (proxyOpts?: ProxyConfiguration) => {
+export const getProxyAgent = (proxyOpts?: ProxyConfiguration): ReturnType<typeof ProxyAgent> => {
   const proxyUrlFromConfiguration = getProxyUrl(proxyOpts)
 
   return new ProxyAgent(proxyUrlFromConfiguration)

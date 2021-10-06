@@ -1,7 +1,7 @@
 // tslint:disable: no-string-literal
 import {AxiosError, AxiosResponse} from 'axios'
 import * as ciUtils from '../../../helpers/utils'
-import {DEFAULT_COMMAND_CONFIG, removeUndefinedValues, RunTestCommand} from '../cli'
+import {DEFAULT_COMMAND_CONFIG, RunTestCommand} from '../cli'
 import {ExecutionRule} from '../interfaces'
 import * as runTests from '../run-test'
 import * as utils from '../utils'
@@ -272,6 +272,6 @@ describe('run-test', () => {
 
   test('removeUndefinedValues', () => {
     // tslint:disable-next-line: no-null-keyword
-    expect(removeUndefinedValues({a: 'b', c: 'd', e: undefined, g: null})).toEqual({a: 'b', c: 'd', g: null})
+    expect(utils.removeUndefinedValues({a: 'b', c: 'd', e: undefined, g: null})).toEqual({a: 'b', c: 'd', g: null})
   })
 })

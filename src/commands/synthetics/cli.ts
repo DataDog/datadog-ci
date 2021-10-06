@@ -19,7 +19,7 @@ import {
 import {DefaultReporter} from './reporters/default'
 import {JUnitReporter} from './reporters/junit'
 import {executeTests} from './run-test'
-import {getReporter, hasTestSucceeded, isCriticalError} from './utils'
+import {getReporter, hasTestSucceeded, isCriticalError, removeUndefinedValues} from './utils'
 
 export const DEFAULT_COMMAND_CONFIG: CommandConfig = {
   apiKey: '',
@@ -163,6 +163,9 @@ export class RunTestCommand extends Command {
 
   private reportCiError(error: CiError, reporter: MainReporter) {
     switch (error.code) {
+      case 'NO_RESULTS_TO_POLL':
+        reporter.log('No results to poll.\n')
+        break
       case 'NO_TESTS_TO_RUN':
         reporter.log('No test to run.\n')
         break
@@ -181,14 +184,14 @@ export class RunTestCommand extends Command {
       case 'TRIGGER_TESTS_FAILED':
         reporter.error(`\n${chalk.bgRed.bold(' ERROR: unable to trigger tests')}\n${error.message}\n\n`)
         break
-      case 'UNAVAILABLE_TEST_CONF':
+      case 'UNAVAILABLE_TEST_CONFIG':
         reporter.error(
           `\n${chalk.bgRed.bold(' ERROR: unable to obtain test configurations with search query ')}\n${
             error.message
           }\n\n`
         )
         break
-      case 'UNAVAILABLE_TUNNEL_CONF':
+      case 'UNAVAILABLE_TUNNEL_CONFIG':
         reporter.error(`\n${chalk.bgRed.bold(' ERROR: unable to get tunnel configuration')}\n${error.message}\n\n`)
     }
   }
@@ -268,16 +271,6 @@ export class RunTestCommand extends Command {
     }
   }
 }
-
-export const removeUndefinedValues = <T extends {[key: string]: any}>(object: T): T => {
-  const newObject = {...object}
-  for (const[key, value] of Object.entries(newObject)) {
-    if (value === undefined) {
-      delete newObject[key]
-    }
-  }
-  return newObject
-} 
 
 RunTestCommand.addPath('synthetics', 'run-tests')
 RunTestCommand.addOption('apiKey', Command.String('--apiKey'))

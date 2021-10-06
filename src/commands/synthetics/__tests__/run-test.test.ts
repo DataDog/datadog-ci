@@ -129,7 +129,7 @@ describe('run-test', () => {
       jest.spyOn(runTests, 'getApiHelper').mockImplementation(() => apiHelper as any)
       await expect(
         runTests.executeTests(mockReporter, {...ciConfig, testSearchQuery: 'a-search-query', tunnel: true})
-      ).rejects.toMatchError(new CriticalError('UNAVAILABLE_TEST_CONF'))
+      ).rejects.toMatchError(new CriticalError('UNAVAILABLE_TEST_CONFIG'))
     })
 
     test('getTestsToTrigger throws', async () => {
@@ -144,7 +144,7 @@ describe('run-test', () => {
       jest.spyOn(runTests, 'getApiHelper').mockImplementation(() => apiHelper as any)
       await expect(
         runTests.executeTests(mockReporter, {...ciConfig, publicIds: ['public-id-1'], tunnel: true})
-      ).rejects.toMatchError(new CriticalError('UNAVAILABLE_TEST_CONF'))
+      ).rejects.toMatchError(new CriticalError('UNAVAILABLE_TEST_CONFIG'))
     })
 
     test('getPresignedURL throws', async () => {
@@ -168,7 +168,7 @@ describe('run-test', () => {
       jest.spyOn(runTests, 'getApiHelper').mockImplementation(() => apiHelper as any)
       await expect(
         runTests.executeTests(mockReporter, {...ciConfig, publicIds: ['public-id-1', 'public-id-2'], tunnel: true})
-      ).rejects.toMatchError(new CriticalError('UNAVAILABLE_TUNNEL_CONF'))
+      ).rejects.toMatchError(new CriticalError('UNAVAILABLE_TUNNEL_CONFIG'))
     })
 
     test('runTests throws', async () => {

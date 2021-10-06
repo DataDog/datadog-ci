@@ -2,7 +2,6 @@ import {apiConstructor, is5xxError} from './api'
 import {CiError, CriticalError} from './errors'
 import {
   APIHelper,
-  CommandConfig,
   MainReporter,
   PollResult,
   Summary,
@@ -36,7 +35,7 @@ export const executeTests = async (reporter: MainReporter, config: SyntheticsCIC
     } catch (error) {
       const isCriticalError = is5xxError(error as any)
       await stopTunnel()
-      throw new (isCriticalError ? CriticalError : CiError)('UNAVAILABLE_TEST_CONF')
+      throw new (isCriticalError ? CriticalError : CiError)('UNAVAILABLE_TEST_CONFIG')
     }
   }
 
@@ -56,7 +55,7 @@ export const executeTests = async (reporter: MainReporter, config: SyntheticsCIC
   } catch (error) {
     const isCriticalError = is5xxError(error as any)
     await stopTunnel()
-    throw new (isCriticalError ? CriticalError : CiError)('UNAVAILABLE_TEST_CONF')
+    throw new (isCriticalError ? CriticalError : CiError)('UNAVAILABLE_TEST_CONFIG')
   }
 
   const {tests, overriddenTestsToTrigger, summary} = testsToTriggerResult
@@ -77,7 +76,7 @@ export const executeTests = async (reporter: MainReporter, config: SyntheticsCIC
     } catch (error) {
       const isCriticalError = is5xxError(error as any)
       await stopTunnel()
-      throw new (isCriticalError ? CriticalError : CiError)('UNAVAILABLE_TUNNEL_CONF')
+      throw new (isCriticalError ? CriticalError : CiError)('UNAVAILABLE_TUNNEL_CONFIG')
     }
     // Open a tunnel to Datadog
     try {
@@ -103,7 +102,7 @@ export const executeTests = async (reporter: MainReporter, config: SyntheticsCIC
   }
 
   if (!triggers.results) {
-    throw new Error('No result to poll.')
+    throw new CiError('NO_RESULTS_TO_POLL')
   }
 
   const results: {[key: string]: PollResult[]} = {}
