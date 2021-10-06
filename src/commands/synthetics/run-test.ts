@@ -6,6 +6,7 @@ import {
   MainReporter,
   PollResult,
   Summary,
+  SyntheticsCIConfig,
   Test,
   TestPayload,
   Trigger,
@@ -14,7 +15,7 @@ import {
 import {Tunnel} from './tunnel'
 import {getSuites, getTestsToTrigger, runTests, waitForResults} from './utils'
 
-export const executeTests = async (reporter: MainReporter, config: CommandConfig) => {
+export const executeTests = async (reporter: MainReporter, config: SyntheticsCIConfig) => {
   const api = getApiHelper(config)
 
   const publicIdsFromCli = config.publicIds.map((id) => ({config: config.global, id}))
@@ -126,7 +127,7 @@ export const executeTests = async (reporter: MainReporter, config: CommandConfig
   return {results, summary, tests, triggers}
 }
 
-export const getTestsList = async (api: APIHelper, config: CommandConfig, reporter: MainReporter) => {
+export const getTestsList = async (api: APIHelper, config: SyntheticsCIConfig, reporter: MainReporter) => {
   if (config.testSearchQuery) {
     const testSearchResults = await api.searchTests(config.testSearchQuery)
 
@@ -159,7 +160,7 @@ export const getTestsList = async (api: APIHelper, config: CommandConfig, report
   return testsToTrigger
 }
 
-export const getApiHelper = (config: CommandConfig) => {
+export const getApiHelper = (config: SyntheticsCIConfig) => {
   if (!config.appKey) {
     throw new CiError('MISSING_APP_KEY')
   }
@@ -176,7 +177,7 @@ export const getApiHelper = (config: CommandConfig) => {
   })
 }
 
-export const getDatadogHost = (useIntake = false, config: CommandConfig) => {
+export const getDatadogHost = (useIntake = false, config: SyntheticsCIConfig) => {
   const apiPath = 'api/v1'
   let host = `https://api.${config.datadogSite}`
   const hostOverride = process.env.DD_API_HOST_OVERRIDE

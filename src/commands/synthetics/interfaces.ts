@@ -348,6 +348,7 @@ export interface SyntheticsCIConfig {
   appKey: string
   configPath: string
   datadogSite: string
+  failOnCriticalErrors: boolean
   files: string[]
   global: ConfigOverride
   locations: string[]
@@ -360,6 +361,5 @@ export interface SyntheticsCIConfig {
 }
 
 export interface CommandConfig extends SyntheticsCIConfig {
-  failOnCriticalErrors: boolean
   failOnTimeout: boolean
 }
