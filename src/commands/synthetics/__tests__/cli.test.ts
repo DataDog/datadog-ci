@@ -269,9 +269,4 @@ describe('run-test', () => {
       )
     })
   })
-
-  test('removeUndefinedValues', () => {
-    // tslint:disable-next-line: no-null-keyword
-    expect(utils.removeUndefinedValues({a: 'b', c: 'd', e: undefined, g: null})).toEqual({a: 'b', c: 'd', g: null})
-  })
 })

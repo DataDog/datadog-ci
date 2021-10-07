@@ -34,13 +34,11 @@ export const executeTests = async (reporter: MainReporter, config: SyntheticsCIC
       testsToTrigger = await getTestsList(api, config, reporter)
     } catch (error) {
       const isCriticalError = is5xxError(error as any)
-      await stopTunnel()
       throw new (isCriticalError ? CriticalError : CiError)('UNAVAILABLE_TEST_CONFIG')
     }
   }
 
   if (!testsToTrigger.length) {
-    await stopTunnel()
     throw new CiError('NO_TESTS_TO_RUN')
   }
 
@@ -54,7 +52,6 @@ export const executeTests = async (reporter: MainReporter, config: SyntheticsCIC
     testsToTriggerResult = await getTestsToTrigger(api, testsToTrigger, reporter)
   } catch (error) {
     const isCriticalError = is5xxError(error as any)
-    await stopTunnel()
     throw new (isCriticalError ? CriticalError : CiError)('UNAVAILABLE_TEST_CONFIG')
   }
 
@@ -62,7 +59,6 @@ export const executeTests = async (reporter: MainReporter, config: SyntheticsCIC
 
   // All tests have been skipped or are missing.
   if (!tests.length) {
-    await stopTunnel()
     throw new CiError('NO_TESTS_TO_RUN')
   }
 
@@ -75,7 +71,6 @@ export const executeTests = async (reporter: MainReporter, config: SyntheticsCIC
       presignedURL = (await api.getPresignedURL(publicIdsToTrigger)).url
     } catch (error) {
       const isCriticalError = is5xxError(error as any)
-      await stopTunnel()
       throw new (isCriticalError ? CriticalError : CiError)('UNAVAILABLE_TUNNEL_CONFIG')
     }
     // Open a tunnel to Datadog
