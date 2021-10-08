@@ -6,9 +6,12 @@ import { TagConfiguration } from './interfaces'
 const {version} = require(path.join(__dirname, '../../../package.json'))
 
 export const applyTagConfig = async (lambda: Lambda, config: TagConfiguration) => {
-  const {tagResourceRequest} = config
+  const {tagResourceRequest, untagResourceRequest} = config
   if (tagResourceRequest !== undefined) {
     await lambda.tagResource(tagResourceRequest).promise()
+  }
+  if (untagResourceRequest !== undefined) {
+    await lambda.untagResource(untagResourceRequest).promise()
   }
 }
 

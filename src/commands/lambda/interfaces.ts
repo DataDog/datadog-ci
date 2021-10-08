@@ -66,9 +66,10 @@ export interface LogGroupConfiguration {
   createLogGroupRequest?: CloudWatchLogs.CreateLogGroupRequest
   deleteSubscriptionFilterRequest?: CloudWatchLogs.DeleteSubscriptionFilterRequest
   logGroupName: string
-  subscriptionFilterRequest: CloudWatchLogs.PutSubscriptionFilterRequest
+  subscriptionFilterRequest?: CloudWatchLogs.PutSubscriptionFilterRequest
 }
 
 export interface TagConfiguration {
   tagResourceRequest?: Lambda.TagResourceRequest
+  untagResourceRequest?: Lambda.UntagResourceRequest
 }

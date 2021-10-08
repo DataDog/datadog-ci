@@ -1,9 +1,10 @@
 import { CloudWatchLogs, Lambda } from 'aws-sdk'
-import { red } from 'chalk'
+import { cyan, red } from 'chalk'
 import { Command } from 'clipanion'
 import { parseConfigFile } from '../../helpers/utils'
 import { collectFunctionsByRegion, getLambdaFunctionConfigs } from './functions/commons'
-import { uninstrumentLambdaFunctions } from './functions/uninstrument'
+import { getFunctionConfigs, uninstrumentLambdaFunctions } from './functions/uninstrument'
+import { FunctionConfiguration } from './interfaces'
 
 export class UninstrumentCommand extends Command {
   private config: any = {
@@ -12,6 +13,7 @@ export class UninstrumentCommand extends Command {
   }
   private configPath?: string
   private dryRun = false
+  private forwarder?: string
   private functions: string[] = []
   private region?: string
 
@@ -36,9 +38,8 @@ export class UninstrumentCommand extends Command {
 
     const configGroups: {
       cloudWatchLogs: CloudWatchLogs
-      configs: Lambda.FunctionConfiguration[]
+      configs: FunctionConfiguration[]
       lambda: Lambda
-      region: string
     }[] = []
 
     // Fetch lambda function configurations that are
@@ -47,8 +48,10 @@ export class UninstrumentCommand extends Command {
       const lambda = new Lambda({region})
       const cloudWatchLogs = new CloudWatchLogs({region})
       try {
-        const lambdaFunctionConfigs = await getLambdaFunctionConfigs(lambda, functionList)
-        configGroups.push({configs: lambdaFunctionConfigs, cloudWatchLogs, lambda, region})
+        const configs = await getFunctionConfigs(lambda, cloudWatchLogs, functionList, this.forwarder)
+        const lambdaConfigs = await getLambdaFunctionConfigs(lambda, functionList)
+        await uninstrumentLambdaFunctions(lambda, cloudWatchLogs, lambdaConfigs)
+        configGroups.push({configs, lambda, cloudWatchLogs})
       } catch (err) {
         this.context.stdout.write(`${red('[Error]')} Couldn't fetch lambda functions. ${err}\n`)
 
@@ -57,11 +60,12 @@ export class UninstrumentCommand extends Command {
     }
 
     // TODO: Print planned actions to be done.
+    const configList = configGroups.map((group) => group.configs).reduce((a, b) => a.concat(b))
+    this.printPlannedActions(configList)
 
     // Un-instrument functions.
     const promises = Object.values(configGroups).map(group => {
-
-      uninstrumentLambdaFunctions(group.lambda, group.cloudWatchLogs, group.configs)
+      // updateLambdaConfigs(group.lambda, group.cloudWatchLogs, group.configs)
     })
 
     try {
@@ -74,6 +78,60 @@ export class UninstrumentCommand extends Command {
 
     return 0
   }
+
+  private printPlannedActions(configs: FunctionConfiguration[]) {
+    const prefix = this.dryRun ? cyan('[Dry Run] ') : ''
+
+    let anyUpdates = false
+    for (const config of configs) {
+      if (
+        config.updateRequest !== undefined ||
+        config.logGroupConfiguration?.deleteSubscriptionFilterRequest !== undefined ||
+        config?.tagConfiguration !== undefined
+      ) {
+        anyUpdates = true
+        break
+      }
+    }
+
+    if (!anyUpdates) {
+      this.context.stdout.write(`${prefix}No updates will be applied\n`)
+
+      return
+    }
+
+    this.context.stdout.write(`${prefix}Will apply the following updates:\n`)
+    for (const config of configs) {
+      if (config.updateRequest) {
+        this.context.stdout.write(
+          `UpdateFunctionConfiguration -> ${config.functionARN}\n${JSON.stringify(
+            config.updateRequest,
+            undefined,
+            2
+          )}\n`
+        )
+      }
+      const {logGroupConfiguration, tagConfiguration} = config
+      if (tagConfiguration?.untagResourceRequest) {
+        this.context.stdout.write(
+          `TagResource -> ${tagConfiguration.untagResourceRequest.Resource}\n${JSON.stringify(
+            tagConfiguration.untagResourceRequest.TagKeys,
+            undefined,
+            2
+          )}\n`
+        )
+      }
+      if (logGroupConfiguration?.deleteSubscriptionFilterRequest) {
+        this.context.stdout.write(
+          `DeleteSubscriptionFilter -> ${logGroupConfiguration.logGroupName}\n${JSON.stringify(
+            logGroupConfiguration.deleteSubscriptionFilterRequest,
+            undefined,
+            2
+          )}\n`
+        )
+      }
+    }
+  }
 }
 
 UninstrumentCommand.addPath('lambda', 'uninstrument')
@@ -81,3 +139,4 @@ UninstrumentCommand.addOption('functions', Command.Array('-f,--function'))
 UninstrumentCommand.addOption('region', Command.String('-r,--region'))
 UninstrumentCommand.addOption('configPath', Command.Array('--config'))
 UninstrumentCommand.addOption('dryRun', Command.Boolean('-d,--dry'))
+UninstrumentCommand.addOption('forwarder', Command.String('--forwarder'))

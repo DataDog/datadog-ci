@@ -1,4 +1,5 @@
 import {CloudWatchLogs} from 'aws-sdk'
+import { DescribeSubscriptionFiltersRequest } from 'aws-sdk/clients/cloudwatchlogs'
 import {SUBSCRIPTION_FILTER_NAME} from './constants'
 import { LogGroupConfiguration } from './interfaces'
 
@@ -9,15 +10,15 @@ export enum SubscriptionState {
   WrongDestinationUnowned,
 }
 
-export const applyLogGroupConfig = async (logs: CloudWatchLogs, configuration: LogGroupConfiguration) => {
-  const {createLogGroupRequest, deleteSubscriptionFilterRequest, subscriptionFilterRequest} = configuration
+export const applyLogGroupConfig = async (logs: CloudWatchLogs, config: LogGroupConfiguration) => {
+  const {createLogGroupRequest, deleteSubscriptionFilterRequest, subscriptionFilterRequest} = config
   if (createLogGroupRequest !== undefined) {
     await logs.createLogGroup(createLogGroupRequest).promise()
   }
   if (deleteSubscriptionFilterRequest !== undefined) {
     await logs.deleteSubscriptionFilter(deleteSubscriptionFilterRequest).promise()
   }
-  await logs.putSubscriptionFilter(subscriptionFilterRequest).promise()
+  await logs.putSubscriptionFilter(subscriptionFilterRequest!).promise()
 }
 
 export const calculateLogGroupUpdateRequest = async (
@@ -71,7 +72,7 @@ export const hasLogGroup = async (logs: CloudWatchLogs, logGroupName: string): P
 }
 
 export const getSubscriptionFilterState = async (logs: CloudWatchLogs, logGroupName: string, forwarderARN: string) => {
-  const {subscriptionFilters} = await logs.describeSubscriptionFilters({logGroupName}).promise()
+  const subscriptionFilters = await getSubscriptionFilters(logs, logGroupName)
   if (subscriptionFilters === undefined || subscriptionFilters.length === 0) {
     return SubscriptionState.Empty
   }
@@ -84,4 +85,14 @@ export const getSubscriptionFilterState = async (logs: CloudWatchLogs, logGroupN
   }
 
   return SubscriptionState.WrongDestinationUnowned
+}
+
+export const getSubscriptionFilters = async (logs: CloudWatchLogs, logGroupName: string) => {
+  const subscriptionFiltersRequest: DescribeSubscriptionFiltersRequest = {
+    logGroupName,
+  }
+
+  const { subscriptionFilters } = await logs.describeSubscriptionFilters(subscriptionFiltersRequest).promise()
+ 
+  return subscriptionFilters
 }

@@ -82,7 +82,7 @@ export const getLambdaFunctionConfigs = async (
  * @param functionARN a string, can be Function ARN, Partial ARN, or a Function Name.
  * @returns the Lambda FunctionConfiguration of the given ARN.
  */
-const getLambdaFunctionConfig = async (
+export const getLambdaFunctionConfig = async (
   lambda: Lambda,
   functionARN: string
 ): Promise<Lambda.FunctionConfiguration> => {
