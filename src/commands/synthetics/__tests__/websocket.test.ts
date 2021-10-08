@@ -2,8 +2,9 @@
 
 import * as ciUtils from '../../../helpers/utils'
 
+import {RunTestCommand} from '../cli'
 import {ExecutionRule} from '../interfaces'
-import {RunTestCommand} from '../run-test'
+import * as runTests from '../run-test'
 
 import {getSyntheticsProxy} from './fixtures'
 
@@ -40,7 +41,7 @@ describe('Proxy configuration', () => {
 
       const command = new RunTestCommand()
       command.context = {stdout: {write: jest.fn()}} as any
-      command['getDatadogHost'] = () => 'http://datadoghq.com/'
+      jest.spyOn(runTests, 'getDatadogHost').mockImplementation(() => 'http://datadoghq.com/')
 
       await command.execute()
 
@@ -77,7 +78,7 @@ describe('Proxy configuration', () => {
 
       const command = new RunTestCommand()
       command.context = {stdout: {write: jest.fn()}} as any
-      command['getDatadogHost'] = () => 'http://datadoghq.com/'
+      jest.spyOn(runTests, 'getDatadogHost').mockImplementation(() => 'http://datadoghq.com/')
 
       await command.execute()
 

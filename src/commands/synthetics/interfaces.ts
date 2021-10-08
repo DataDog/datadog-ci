@@ -220,7 +220,7 @@ export interface TriggerResult extends TriggerResponse {
   result?: PollResult
 }
 
-interface Location {
+export interface Location {
   display_name: string
   id: number
   is_active: boolean
@@ -238,7 +238,7 @@ export interface Trigger {
   triggered_check_ids: string[]
 }
 
-interface RetryConfig {
+export interface RetryConfig {
   count: number
   interval: number
 }
@@ -272,7 +272,7 @@ export interface TestPayload extends ConfigOverride {
   public_id: string
 }
 
-interface BasicAuthCredentials {
+export interface BasicAuthCredentials {
   password: string
   username: string
 }
@@ -343,13 +343,12 @@ export interface APIConfiguration {
   proxyOpts: ProxyConfiguration
 }
 
-export interface CommandConfig {
+export interface SyntheticsCIConfig {
   apiKey: string
   appKey: string
   configPath: string
   datadogSite: string
   failOnCriticalErrors: boolean
-  failOnTimeout: boolean
   files: string[]
   global: ConfigOverride
   locations: string[]
@@ -359,4 +358,8 @@ export interface CommandConfig {
   subdomain: string
   testSearchQuery?: string
   tunnel: boolean
+}
+
+export interface CommandConfig extends SyntheticsCIConfig {
+  failOnTimeout: boolean
 }

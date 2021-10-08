@@ -2011,7 +2011,7 @@ caniuse-lite@^1.0.30001219:
 
 chalk@2.4.2, chalk@^2.0.0, chalk@^2.3.0, chalk@^2.4.2:
   version "2.4.2"
-  resolved "https://registry.npmjs.org/chalk/-/chalk-2.4.2.tgz"
+  resolved "https://registry.yarnpkg.com/chalk/-/chalk-2.4.2.tgz#cd42541677a54333cf541a49108c1432b44c9424"
   integrity sha512-Mti+f9lpJNcwF4tWV8/OrTTtF1gZi+f8FqlyAdouralcFWFQWF2+NgCHShjkCb+IFBLq9buZwE1xckQU4peSuQ==
   dependencies:
     ansi-styles "^3.2.1"
@@ -2051,7 +2051,7 @@ cjs-module-lexer@^1.0.0:
 
 clipanion@2.2.2:
   version "2.2.2"
-  resolved "https://registry.npmjs.org/clipanion/-/clipanion-2.2.2.tgz"
+  resolved "https://registry.yarnpkg.com/clipanion/-/clipanion-2.2.2.tgz#e0931b4b4afe1ef3157cf18c8bf4c68fab10890b"
   integrity sha512-OvH+rtaTeTbyQfRpE3jlEcPf1F92IpgFSypaJGnCJMzn6WYF4h9CBMcd2jU+rSt5qGm91Px6WiapK2lTqYsERQ==
   dependencies:
     chalk "^2.4.2"
@@ -2522,9 +2522,9 @@ fast-levenshtein@~2.0.4:
   resolved "https://registry.npmjs.org/fast-levenshtein/-/fast-levenshtein-2.0.6.tgz"
   integrity sha1-PYpcZog6FqMMqGQ+hR8Zuqd5eRc=
 
-fast-xml-parser@^3.19.0:
+fast-xml-parser@3.19.0:
   version "3.19.0"
-  resolved "https://registry.npmjs.org/fast-xml-parser/-/fast-xml-parser-3.19.0.tgz"
+  resolved "https://registry.yarnpkg.com/fast-xml-parser/-/fast-xml-parser-3.19.0.tgz#cb637ec3f3999f51406dd8ff0e6fc4d83e520d01"
   integrity sha512-4pXwmBplsCPv8FOY1WRakF970TjNGnGnfbOnLqjlYvMiF1SR3yOHyxMR/YCXpPTOspNF5gwudqktIP4VsWkvBg==
 
 fb-watchman@^2.0.0:
@@ -3106,6 +3106,11 @@ jest-leak-detector@^27.0.2:
   dependencies:
     jest-get-type "^27.0.1"
     pretty-format "^27.0.2"
+
+jest-matcher-specific-error@1.0.0:
+  version "1.0.0"
+  resolved "https://registry.yarnpkg.com/jest-matcher-specific-error/-/jest-matcher-specific-error-1.0.0.tgz#746097fb20ac34c36da99fa20ebdd5bbff05d33e"
+  integrity sha512-thJdy9ibhDo8k+0arFalNCQBJ0u7eqTfpTzS2MzL3iCLmbRCkI+yhhKSiAxEi55e5ZUyf01ySa0fMqzF+sblAw==
 
 jest-matcher-utils@^27.0.2:
   version "27.0.2"
@@ -3947,7 +3952,7 @@ protobufjs@^6.9.0:
     "@types/node" "^13.7.0"
     long "^4.0.0"
 
-proxy-agent@^5.0.0:
+proxy-agent@5.0.0:
   version "5.0.0"
   resolved "https://registry.yarnpkg.com/proxy-agent/-/proxy-agent-5.0.0.tgz#d31405c10d6e8431fde96cba7a0c027ce01d633b"
   integrity sha512-gkH7BkvLVkSfX9Dk27W6TyNOWWZWRilRfk1XxGNWOYJ2TuedAv1yFpCaU9QSBmBe716XOTNpYNOzhysyw8xn7g==

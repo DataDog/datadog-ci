@@ -8,6 +8,7 @@ import {ProxyConfiguration} from '../../../helpers/utils'
 import {
   ApiTestResult,
   BrowserTestResult,
+  CommandConfig,
   MainReporter,
   MultiStep,
   MultiStepsTestResult,
@@ -34,6 +35,23 @@ export const mockReporter: MainReporter = {
   testEnd: jest.fn(),
   testTrigger: jest.fn(),
   testWait: jest.fn(),
+}
+
+export const ciConfig: CommandConfig = {
+  apiKey: '',
+  appKey: '',
+  configPath: 'datadog-ci.json',
+  datadogSite: 'datadoghq.com',
+  failOnCriticalErrors: false,
+  failOnTimeout: true,
+  files: ['{,!(node_modules)/**/}*.synthetics.json'],
+  global: {},
+  locations: [],
+  pollingTimeout: 2 * 60 * 1000,
+  proxy: {protocol: 'http'},
+  publicIds: [],
+  subdomain: 'app',
+  tunnel: false,
 }
 
 export const getApiTest = (publicId: string): Test => ({
