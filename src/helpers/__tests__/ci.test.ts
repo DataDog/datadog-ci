@@ -1,133 +1,44 @@
-import {CI_ENGINES, getCIMetadata, getCISpanTags} from '../ci'
-import {getUserGitMetadata} from '../user-provided-git'
-
 import fs from 'fs'
 import path from 'path'
 
-describe('getCIMetadata', () => {
-  const branch = 'fakeBranch'
-  const commit = 'fakeCommitSha'
-  const pipelineURL = 'fakePipelineUrl'
+import {getCIMetadata, getCISpanTags} from '../ci'
+import {Metadata, SpanTags} from '../interfaces'
+import {getUserGitMetadata} from '../user-provided-git'
 
+const CI_PROVIDERS = fs.readdirSync(path.join(__dirname, 'ci-env'))
+
+describe('getCIMetadata', () => {
   test('non-recognized CI returns undefined', () => {
     process.env = {}
     expect(getCIMetadata()).toBeUndefined()
   })
 
-  test('circle CI is recognized', () => {
-    process.env = {
-      CIRCLECI: 'true',
-      CIRCLE_BRANCH: branch,
-      CIRCLE_BUILD_URL: pipelineURL,
-      CIRCLE_SHA1: commit,
+  const spanTagsToMetadata = (tags: SpanTags): Metadata => {
+    const metadata: Metadata = {
+      ci: {job: {}, pipeline: {}, provider: {}, stage: {}},
+      git: {commit: {author: {}, committer: {}}},
     }
-    expect(getCIMetadata()).toEqual({
-      ci: {
-        pipeline: {url: pipelineURL},
-        provider: {name: CI_ENGINES.CIRCLECI},
-      },
-      git: {
-        branch,
-        commitSha: commit,
-      },
+    Object.entries(tags).forEach(([tag, value]) => {
+      // Set metadata nested properties from tag
+      const properties = tag.split('.') // ['git', 'commit', 'author', 'name']
+      let metadataAttribute: {[k: string]: any} = metadata // Current attribute up to second to last
+      for (let i = 0; i < properties.length - 1; i++) {
+        metadataAttribute = metadataAttribute[properties[i]]
+      }
+      metadataAttribute[properties[properties.length - 1]] = value
     })
-  })
 
-  test('travis CI is recognized', () => {
-    process.env = {
-      TRAVIS: 'true',
-      TRAVIS_BRANCH: branch,
-      TRAVIS_COMMIT: commit,
-      TRAVIS_JOB_WEB_URL: pipelineURL,
-    }
-    expect(getCIMetadata()).toEqual({
-      ci: {
-        pipeline: {url: pipelineURL},
-        provider: {name: CI_ENGINES.TRAVIS},
-      },
-      git: {
-        branch,
-        commitSha: commit,
-      },
-    })
-  })
+    return metadata
+  }
 
-  test('gitlab CI is recognized', () => {
-    process.env = {
-      CI_COMMIT_REF_NAME: branch,
-      CI_COMMIT_SHA: commit,
-      CI_JOB_URL: pipelineURL,
-      GITLAB_CI: 'true',
-    }
-    expect(getCIMetadata()).toEqual({
-      ci: {
-        pipeline: {url: pipelineURL},
-        provider: {name: CI_ENGINES.GITLAB},
-      },
-      git: {
-        branch,
-        commitSha: commit,
-      },
-    })
-  })
+  describe.each(CI_PROVIDERS)('%s', (ciProvider) => {
+    const assertions = require(path.join(__dirname, 'ci-env', ciProvider))
 
-  test('github actions is recognized', () => {
-    process.env = {
-      GITHUB_ACTIONS: 'true',
-      GITHUB_REF: branch,
-      GITHUB_REPOSITORY: 'DataDog/datadog-ci',
-      GITHUB_RUN_ID: '42',
-      GITHUB_SHA: commit,
-    }
+    test.each(assertions)('spec %#', (env, tags: SpanTags) => {
+      process.env = env
 
-    const expectedPipelineURL = 'https://github.com/DataDog/datadog-ci/actions/runs/42'
-    expect(getCIMetadata()).toEqual({
-      ci: {
-        pipeline: {url: expectedPipelineURL},
-        provider: {name: CI_ENGINES.GITHUB},
-      },
-      git: {
-        branch,
-        commitSha: commit,
-      },
-    })
-  })
-
-  test('jenkins is recognized', () => {
-    process.env = {
-      BUILD_URL: pipelineURL,
-      GIT_BRANCH: branch,
-      GIT_COMMIT: commit,
-      JENKINS_URL: 'https://fakebuildserver.url/',
-    }
-    expect(getCIMetadata()).toEqual({
-      ci: {
-        pipeline: {url: pipelineURL},
-        provider: {name: CI_ENGINES.JENKINS},
-      },
-      git: {
-        branch,
-        commitSha: commit,
-      },
-    })
-  })
-
-  test('jenkins context is recognized', () => {
-    process.env = {
-      BUILD_URL: pipelineURL,
-      GIT_BRANCH: branch,
-      GIT_COMMIT: commit,
-      JENKINS_URL: 'https://fakebuildserver.url/',
-    }
-    expect(getCIMetadata()).toEqual({
-      ci: {
-        pipeline: {url: pipelineURL},
-        provider: {name: CI_ENGINES.JENKINS},
-      },
-      git: {
-        branch,
-        commitSha: commit,
-      },
+      const expectedMetadata = spanTagsToMetadata(tags)
+      expect(getCIMetadata()).toEqual(expectedMetadata)
     })
   })
 })
@@ -142,8 +53,7 @@ describe('ci spec', () => {
     expect(tags).toEqual({})
   })
 
-  const ciProviders = fs.readdirSync(path.join(__dirname, 'ci-env'))
-  ciProviders.forEach((ciProvider) => {
+  CI_PROVIDERS.forEach((ciProvider) => {
     const assertions = require(path.join(__dirname, 'ci-env', ciProvider))
 
     assertions.forEach(([env, expectedSpanTags]: [{[key: string]: string}, {[key: string]: string}], index: number) => {

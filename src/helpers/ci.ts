@@ -15,12 +15,16 @@ import {
   GIT_COMMIT_AUTHOR_DATE,
   GIT_COMMIT_AUTHOR_EMAIL,
   GIT_COMMIT_AUTHOR_NAME,
+  GIT_COMMIT_COMMITTER_DATE,
+  GIT_COMMIT_COMMITTER_EMAIL,
+  GIT_COMMIT_COMMITTER_NAME,
   GIT_COMMIT_MESSAGE,
   GIT_REPOSITORY_URL,
   GIT_SHA,
   GIT_TAG,
 } from './tags'
-import {removeEmptyValues} from './utils'
+import {getUserGitMetadata} from './user-provided-git'
+import {removeEmptyValues, removeUndefinedValues} from './utils'
 
 export const CI_ENGINES = {
   APPVEYOR: 'appveyor',
@@ -482,96 +486,55 @@ export const getCISpanTags = (): SpanTags | undefined => {
 }
 
 export const getCIMetadata = (): Metadata | undefined => {
-  const env = process.env
-
-  if (env.CIRCLECI) {
-    return {
-      ci: {
-        pipeline: {
-          url: env.CIRCLE_BUILD_URL,
-        },
-        provider: {
-          name: CI_ENGINES.CIRCLECI,
-        },
-      },
-      git: {
-        branch: env.CIRCLE_BRANCH,
-        commitSha: env.CIRCLE_SHA1,
-      },
-    }
+  const tags = {
+    ...getCISpanTags(),
+    ...getUserGitMetadata(),
+  }
+  if (!tags || !Object.keys(tags).length) {
+    return
   }
 
-  if (env.TRAVIS) {
-    return {
-      ci: {
-        pipeline: {
-          url: env.TRAVIS_JOB_WEB_URL,
-        },
-        provider: {
-          name: CI_ENGINES.TRAVIS,
-        },
-      },
-      git: {
-        branch: env.TRAVIS_BRANCH,
-        commitSha: env.TRAVIS_COMMIT,
-      },
-    }
+  const metadata: Metadata = {
+    ci: removeUndefinedValues({
+      job: removeUndefinedValues({
+        name: tags[CI_JOB_NAME],
+        url: tags[CI_JOB_URL],
+      }),
+      pipeline: removeUndefinedValues({
+        id: tags[CI_PIPELINE_ID],
+        name: tags[CI_PIPELINE_NAME],
+        number: tags[CI_PIPELINE_NUMBER],
+        url: tags[CI_PIPELINE_URL],
+      }),
+      provider: removeUndefinedValues({
+        name: tags[CI_PROVIDER_NAME],
+      }),
+      stage: removeUndefinedValues({
+        name: tags[CI_STAGE_NAME],
+      }),
+      workspace_path: tags[CI_WORKSPACE_PATH],
+    }),
+
+    git: removeUndefinedValues({
+      branch: tags[GIT_BRANCH],
+      commit: removeUndefinedValues({
+        author: removeUndefinedValues({
+          date: tags[GIT_COMMIT_AUTHOR_DATE],
+          email: tags[GIT_COMMIT_AUTHOR_EMAIL],
+          name: tags[GIT_COMMIT_AUTHOR_NAME],
+        }),
+        committer: removeUndefinedValues({
+          date: tags[GIT_COMMIT_COMMITTER_DATE],
+          email: tags[GIT_COMMIT_COMMITTER_EMAIL],
+          name: tags[GIT_COMMIT_COMMITTER_NAME],
+        }),
+        message: tags[GIT_COMMIT_MESSAGE],
+        sha: tags[GIT_SHA],
+      }),
+      repository_url: tags[GIT_REPOSITORY_URL],
+      tag: tags[GIT_TAG],
+    }),
   }
 
-  if (env.GITLAB_CI) {
-    return {
-      ci: {
-        pipeline: {
-          url: env.CI_JOB_URL,
-        },
-        provider: {
-          name: CI_ENGINES.GITLAB,
-        },
-      },
-      git: {
-        branch: env.CI_COMMIT_REF_NAME,
-        commitSha: env.CI_COMMIT_SHA,
-      },
-    }
-  }
-
-  if (env.GITHUB_ACTIONS) {
-    const {GITHUB_REF, GITHUB_SHA, GITHUB_REPOSITORY, GITHUB_RUN_ID} = env
-
-    const pipelineURL = `https://github.com/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}`
-
-    return {
-      ci: {
-        pipeline: {
-          url: pipelineURL,
-        },
-        provider: {
-          name: CI_ENGINES.GITHUB,
-        },
-      },
-      git: {
-        branch: GITHUB_REF,
-        commitSha: GITHUB_SHA,
-      },
-    }
-  }
-
-  if (env.JENKINS_URL) {
-    const {BUILD_URL, GIT_COMMIT, GIT_BRANCH: JENKINS_GIT_BRANCH} = env
-
-    return {
-      ci: {
-        pipeline: {
-          url: BUILD_URL,
-        },
-        provider: {
-          name: CI_ENGINES.JENKINS,
-        },
-      },
-      git: {
-        branch: JENKINS_GIT_BRANCH,
-        commitSha: GIT_COMMIT,
-      },
-    }
-  }
+  return metadata
 }
