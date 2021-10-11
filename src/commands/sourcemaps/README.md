@@ -48,15 +48,15 @@ In addition, some optional parameters are available:
 
 ### Link errors with your source code
 
-Errors in Datadog UI can be enriched with links to GitHub/Gitlab/BitBucket if these requirements are met:
+Errors in Datadog UI can be enriched with links to GitHub/GitLab/Bitbucket if these requirements are met:
 - `git` executable is installed
 - `datadog-ci` is run within the git repository
 
 When these requirements are met, the upload command reports Git information such as the current commit hash, the repository URL, and the list of tracked file paths in the code repository.
 Each sourcemap uploaded gets such information associated with it.
 
-Only tracked files paths related to the sourcemap being uploaded are gathered.
-For example: A sourcemap containing inside its `sources` attribute `["webpack:///./src/folder/example.ts"]` will have associated with it all tracked file paths with `example.ts` as filename.
+Only tracked file paths that could be related to the sourcemap being uploaded are gathered.
+For example: A sourcemap containing `["webpack:///./src/folder/example.ts"]` inside its `sources` attribute will have associated with it all tracked file paths with `example.ts` as filename.
 
 #### Override repository URL
 
