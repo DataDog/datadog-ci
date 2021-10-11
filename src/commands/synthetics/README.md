@@ -62,7 +62,7 @@ The configuration file structure is the following:
     "locations": ["aws:us-east-1"],
     "retry": {"count": 2, "interval": 300},
     "startUrl": "{{URL}}?static_hash={{STATIC_HASH}}",
-    "variables": {"titleVariable": "new title"}
+    "variables": {"MY_VARIABLE": "new title"}
   },
   "pollingTimeout": 120000,
   "proxy": {
@@ -138,7 +138,7 @@ Your test files must be named with a `.synthetics.json` suffix.
         "pollingTimeout": 30000,
         "retry": {"count": 2, "interval": 300},
         "startUrl": "{{URL}}?static_hash={{STATIC_HASH}}",
-        "variables": {"titleVariable": "new title"}
+        "variables": {"MY_VARIABLE": "new title"}
       }
     }
   ]
