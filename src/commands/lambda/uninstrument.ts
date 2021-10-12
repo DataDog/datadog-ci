@@ -2,8 +2,8 @@ import {CloudWatchLogs, Lambda} from 'aws-sdk'
 import {cyan, red} from 'chalk'
 import {Command} from 'clipanion'
 import {parseConfigFile} from '../../helpers/utils'
-import {collectFunctionsByRegion, getLambdaFunctionConfigs, updateLambdaFunctionConfigs} from './functions/commons'
-import {getFunctionConfigs, uninstrumentLambdaFunctions} from './functions/uninstrument'
+import {collectFunctionsByRegion, updateLambdaFunctionConfigs} from './functions/commons'
+import {getFunctionConfigs} from './functions/uninstrument'
 import {FunctionConfiguration} from './interfaces'
 
 export class UninstrumentCommand extends Command {
@@ -49,8 +49,6 @@ export class UninstrumentCommand extends Command {
       const cloudWatchLogs = new CloudWatchLogs({region})
       try {
         const configs = await getFunctionConfigs(lambda, cloudWatchLogs, functionList, this.forwarder)
-        const lambdaConfigs = await getLambdaFunctionConfigs(lambda, functionList)
-        await uninstrumentLambdaFunctions(lambda, cloudWatchLogs, lambdaConfigs)
         configGroups.push({configs, lambda, cloudWatchLogs})
       } catch (err) {
         this.context.stdout.write(`${red('[Error]')} Couldn't fetch lambda functions. ${err}\n`)

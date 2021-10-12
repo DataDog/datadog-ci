@@ -1,5 +1,4 @@
 import {CloudWatchLogs, Lambda} from 'aws-sdk'
-import {blueBright, gray, green, yellow} from 'chalk'
 import {
   API_KEY_ENV_VAR,
   DD_LAMBDA_EXTENSION_LAYER_NAME,
@@ -21,7 +20,7 @@ import {
 import {FunctionConfiguration, LogGroupConfiguration, TagConfiguration} from '../interfaces'
 import {calculateLogGroupRemoveRequest} from '../loggroup'
 import {calculateTagRemoveRequest} from '../tags'
-import {getLambdaFunctionConfig, getLambdaFunctionConfigs, isSupportedRuntime} from './commons'
+import {getLambdaFunctionConfigs, isSupportedRuntime} from './commons'
 
 export const getFunctionConfigs = async (
   lambda: Lambda,
@@ -140,40 +139,4 @@ export const calculateUpdateRequest = (config: Lambda.FunctionConfiguration, run
   }
 
   return needsUpdate ? updateRequest : undefined
-}
-
-export const uninstrumentLambdaFunctions = async (
-  lambda: Lambda,
-  cloudWatch: CloudWatchLogs,
-  configs: Lambda.FunctionConfiguration[]
-) => {
-  const results = configs.map(async (c) => {
-    try {
-      const functionARN = c.FunctionArn!
-      const tags = await lambda.listTags({Resource: functionARN}).promise()
-      try {
-        const logs = await cloudWatch.describeLogGroups({logGroupNamePrefix: `/aws/lambda/${c.FunctionName}`}).promise()
-        console.log(`Log Groups -> ${blueBright(JSON.stringify(logs, undefined, 2))}\n`)
-        const subs = await cloudWatch
-          .describeSubscriptionFilters({logGroupName: `/aws/lambda/${c.FunctionName}`})
-          .promise()
-        subs.subscriptionFilters?.map(async (sub) => {
-          const forwarderArn = sub.destinationArn
-          const config = await getLambdaFunctionConfig(lambda, forwarderArn!)
-          console.log(`\n\nGeneral Forwarder Config -> ${gray(JSON.stringify(config, undefined, 2))}`)
-        })
-        console.log(`Subscriptions -> ${yellow(JSON.stringify(subs, undefined, 2))}\n`)
-      } catch (e) {
-        console.log(`Tags -> ${green(JSON.stringify(tags, undefined, 2))}\n`)
-        console.log(`Environment variables -> ${yellow(JSON.stringify(c.Environment, undefined, 2))}\n`)
-        console.log(`Layers -> ${blueBright(JSON.stringify(c.Layers, undefined, 2))}\n`)
-        console.log(`\n\nGeneral Config -> ${green(JSON.stringify(c, undefined, 2))}`)
-      }
-    } catch (err) {
-      throw new Error(`An error occurred while trying to un-instrument a function ${err}`)
-    }
-    // TODO: Apply uninstrumentation
-  })
-
-  await Promise.all(results)
 }
