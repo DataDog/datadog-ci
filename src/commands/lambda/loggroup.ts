@@ -58,6 +58,30 @@ export const calculateLogGroupUpdateRequest = async (
   return config
 }
 
+export const calculateLogGroupRemoveRequest = async (
+  logs: CloudWatchLogs,
+  logGroupName: string,
+  forwarderARN: string
+) => {
+  const config: LogGroupConfiguration = {
+    logGroupName,
+  }
+
+  const subscriptionFilters = await getSubscriptionFilters(logs, logGroupName)
+  const subscriptionToRemove = subscriptionFilters?.find(
+    subscription => (subscription.destinationArn === forwarderARN || subscription.filterName === SUBSCRIPTION_FILTER_NAME)
+  )
+
+  if (subscriptionToRemove) {
+    config.deleteSubscriptionFilterRequest = {
+      filterName: subscriptionToRemove.filterName!,
+      logGroupName,
+    }
+  }
+
+  return config
+}
+
 export const hasLogGroup = async (logs: CloudWatchLogs, logGroupName: string): Promise<boolean> => {
   const args = {
     logGroupNamePrefix: logGroupName,
@@ -93,6 +117,6 @@ export const getSubscriptionFilters = async (logs: CloudWatchLogs, logGroupName:
   }
 
   const { subscriptionFilters } = await logs.describeSubscriptionFilters(subscriptionFiltersRequest).promise()
- 
+
   return subscriptionFilters
 }

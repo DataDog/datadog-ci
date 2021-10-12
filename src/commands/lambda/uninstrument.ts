@@ -2,7 +2,7 @@ import { CloudWatchLogs, Lambda } from 'aws-sdk'
 import { cyan, red } from 'chalk'
 import { Command } from 'clipanion'
 import { parseConfigFile } from '../../helpers/utils'
-import { collectFunctionsByRegion, getLambdaFunctionConfigs } from './functions/commons'
+import { collectFunctionsByRegion, getLambdaFunctionConfigs, updateLambdaFunctionConfigs } from './functions/commons'
 import { getFunctionConfigs, uninstrumentLambdaFunctions } from './functions/uninstrument'
 import { FunctionConfiguration } from './interfaces'
 
@@ -59,13 +59,15 @@ export class UninstrumentCommand extends Command {
       }
     }
 
-    // TODO: Print planned actions to be done.
     const configList = configGroups.map((group) => group.configs).reduce((a, b) => a.concat(b))
     this.printPlannedActions(configList)
+    if (this.dryRun || configList.length === 0) {
+      return 0
+    }
 
     // Un-instrument functions.
     const promises = Object.values(configGroups).map(group => {
-      // updateLambdaConfigs(group.lambda, group.cloudWatchLogs, group.configs)
+      updateLambdaFunctionConfigs(group.lambda, group.cloudWatchLogs, group.configs)
     })
 
     try {
@@ -114,7 +116,7 @@ export class UninstrumentCommand extends Command {
       const {logGroupConfiguration, tagConfiguration} = config
       if (tagConfiguration?.untagResourceRequest) {
         this.context.stdout.write(
-          `TagResource -> ${tagConfiguration.untagResourceRequest.Resource}\n${JSON.stringify(
+          `UntagResoure -> ${tagConfiguration.untagResourceRequest.Resource}\n${JSON.stringify(
             tagConfiguration.untagResourceRequest.TagKeys,
             undefined,
             2

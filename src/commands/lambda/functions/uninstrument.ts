@@ -1,9 +1,9 @@
 import {CloudWatchLogs, Lambda} from 'aws-sdk'
 import { blueBright, gray, green, yellow } from 'chalk'
-import { API_KEY_ENV_VAR, DD_LAMBDA_EXTENSION_LAYER_NAME, ENVIRONMENT_ENV_VAR, EXTRA_TAGS_ENV_VAR, FLUSH_TO_LOG_ENV_VAR, HANDLER_LOCATION, KMS_API_KEY_ENV_VAR, LAMBDA_HANDLER_ENV_VAR, LOG_LEVEL_ENV_VAR, MERGE_XRAY_TRACES_ENV_VAR, Runtime, RUNTIME_LAYER_LOOKUP, SERVICE_ENV_VAR, SITE_ENV_VAR, SUBSCRIPTION_FILTER_NAME, TAG_VERSION_NAME, TRACE_ENABLED_ENV_VAR, VERSION_ENV_VAR } from '../constants'
+import { API_KEY_ENV_VAR, DD_LAMBDA_EXTENSION_LAYER_NAME, ENVIRONMENT_ENV_VAR, EXTRA_TAGS_ENV_VAR, FLUSH_TO_LOG_ENV_VAR, HANDLER_LOCATION, KMS_API_KEY_ENV_VAR, LAMBDA_HANDLER_ENV_VAR, LOG_LEVEL_ENV_VAR, MERGE_XRAY_TRACES_ENV_VAR, Runtime, RUNTIME_LAYER_LOOKUP, SERVICE_ENV_VAR, SITE_ENV_VAR, TRACE_ENABLED_ENV_VAR, VERSION_ENV_VAR } from '../constants'
 import { FunctionConfiguration, LogGroupConfiguration, TagConfiguration } from '../interfaces'
-import { getSubscriptionFilters } from '../loggroup'
-import { hasVersionTag } from '../tags'
+import { calculateLogGroupRemoveRequest } from '../loggroup'
+import { calculateTagRemoveRequest } from '../tags'
 import { getLambdaFunctionConfig, getLambdaFunctionConfigs, isSupportedRuntime } from './commons'
 
 export const getFunctionConfigs = async (
@@ -16,9 +16,9 @@ export const getFunctionConfigs = async (
 
   const configs: FunctionConfiguration[] = []
   for (const config of lambdaFunctionConfigs) {
-    const functionConfiguration = await getFunctionConfig(lambda, cloudWatch, config, forwarderARN)
-  
-    configs.push(functionConfiguration)
+    const functionConfig = await getFunctionConfig(lambda, cloudWatch, config, forwarderARN)
+
+    configs.push(functionConfig)
   }
 
   return configs
@@ -28,7 +28,7 @@ export const getFunctionConfig = async (
   lambda: Lambda,
   cloudWatch: CloudWatchLogs,
   config: Lambda.FunctionConfiguration,
-  forwarderARN: string | undefined,
+  forwarderARN: string | undefined
 ): Promise<FunctionConfiguration> => {
   const functionARN = config.FunctionArn!
   const runtime = config.Runtime
@@ -40,17 +40,17 @@ export const getFunctionConfig = async (
   let logGroupConfiguration: LogGroupConfiguration | undefined
   if (forwarderARN) {
     const arn = `/aws/lambda/${config.FunctionName}`
-    logGroupConfiguration = await calculateLogGroupUpdateRequest(cloudWatch, arn, forwarderARN)
+    logGroupConfiguration = await calculateLogGroupRemoveRequest(cloudWatch, arn, forwarderARN)
   }
 
-  const tagConfiguration: TagConfiguration | undefined = await calculateTagUpdateRequest(lambda, functionARN)
+  const tagConfiguration: TagConfiguration | undefined = await calculateTagRemoveRequest(lambda, functionARN)
 
   return {
     functionARN,
     lambdaConfig: config,
     logGroupConfiguration,
     tagConfiguration,
-    updateRequest
+    updateRequest,
   }
 }
 
@@ -128,47 +128,6 @@ export const calculateUpdateRequest = (
   return needsUpdate ? updateRequest : undefined
 }
 
-export const calculateLogGroupUpdateRequest = async (
-  logs: CloudWatchLogs,
-  logGroupName: string,
-  forwarderARN: string
-) => {
-  const config: LogGroupConfiguration = {
-    logGroupName,
-  }
-  
-  const subscriptionFilters = await getSubscriptionFilters(logs, logGroupName)
-  const subscriptionToRemove = subscriptionFilters?.find(
-    subscription => (subscription.destinationArn === forwarderARN || subscription.filterName === SUBSCRIPTION_FILTER_NAME)
-  )
-
-  if (subscriptionToRemove) {
-    config.deleteSubscriptionFilterRequest = {
-      logGroupName,
-      filterName: subscriptionToRemove.filterName!,
-    }
-  }
-
-  return config
-}
-
-export const calculateTagUpdateRequest = async (lambda: Lambda, functionARN: string) => {
-  const config: TagConfiguration = {}
-  const versionTagPresent = await hasVersionTag(lambda, functionARN)
-  if (versionTagPresent) {
-    config.untagResourceRequest = {
-      Resource: functionARN,
-      TagKeys: [
-        TAG_VERSION_NAME
-   ,   ]
-    }
-
-    return config
-  }
-
-  return
-}
-
 export const uninstrumentLambdaFunctions = async (
   lambda: Lambda,
   cloudWatch: CloudWatchLogs,
@@ -188,7 +147,7 @@ export const uninstrumentLambdaFunctions = async (
           console.log(`\n\nGeneral Forwarder Config -> ${gray(JSON.stringify(config, undefined, 2))}`)
         })
         console.log(`Subscriptions -> ${yellow(JSON.stringify(subs, undefined, 2))}\n`)
-      } catch (e) {  
+      } catch (e) {
       console.log(`Tags -> ${green(JSON.stringify(tags, undefined, 2))}\n`)
       console.log(`Environment variables -> ${yellow(JSON.stringify(c.Environment, undefined, 2))}\n`)
       console.log(`Layers -> ${blueBright(JSON.stringify(c.Layers, undefined, 2))}\n`)

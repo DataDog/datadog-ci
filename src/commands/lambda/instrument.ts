@@ -2,8 +2,8 @@ import {CloudWatchLogs, Lambda} from 'aws-sdk'
 import {Command} from 'clipanion'
 import {parseConfigFile} from '../../helpers/utils'
 import {EXTRA_TAGS_REG_EXP} from './constants'
-import { collectFunctionsByRegion } from './functions/commons'
-import { getFunctionConfigs, getLambdaConfigsFromRegEx, updateLambdaConfigs } from './functions/instrument'
+import { collectFunctionsByRegion, sentenceMatchesRegEx, updateLambdaFunctionConfigs } from './functions/commons'
+import { getFunctionConfigs, getLambdaConfigsFromRegEx } from './functions/instrument'
 import {FunctionConfiguration, InstrumentationSettings, LambdaConfigOptions} from './interfaces'
 
 export class InstrumentCommand extends Command {
@@ -122,7 +122,7 @@ export class InstrumentCommand extends Command {
     }
 
     const promises = Object.values(configGroups).map((group) =>
-      updateLambdaConfigs(group.lambda, group.cloudWatchLogs, group.configs)
+      updateLambdaFunctionConfigs(group.lambda, group.cloudWatchLogs, group.configs)
     )
     try {
       await Promise.all(promises)
@@ -308,8 +308,6 @@ export class InstrumentCommand extends Command {
     }
   }
 }
-
-export const sentenceMatchesRegEx = (sentence: string, regex: RegExp) => sentence.match(regex)
 
 InstrumentCommand.addPath('lambda', 'instrument')
 InstrumentCommand.addOption('functions', Command.Array('-f,--function'))

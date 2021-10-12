@@ -1,6 +1,9 @@
-import { Lambda } from 'aws-sdk'
+import { CloudWatchLogs, Lambda } from 'aws-sdk'
 import { GetFunctionRequest } from 'aws-sdk/clients/lambda'
 import { MAX_LAMBDA_STATE_CHECKS, Runtime, RUNTIME_LAYER_LOOKUP } from '../constants'
+import { FunctionConfiguration } from '../interfaces'
+import { applyLogGroupConfig } from '../loggroup'
+import { applyTagConfig } from '../tags'
 
 /**
  * Returns an array of merged layer ARNs if given a Full Layer ARN,
@@ -167,6 +170,27 @@ export const isSupportedRuntime = (runtime?: string): runtime is Runtime => {
   const lookup = RUNTIME_LAYER_LOOKUP as Record<string, string>
 
   return runtime !== undefined && lookup[runtime] !== undefined
+}
+
+export const sentenceMatchesRegEx = (sentence: string, regex: RegExp) => sentence.match(regex)
+
+export const updateLambdaFunctionConfigs = async (
+  lambda: Lambda,
+  cloudWatch: CloudWatchLogs,
+  configs: FunctionConfiguration[]
+) => {
+  const results = configs.map(async (c) => {
+    if (c.updateRequest !== undefined) {
+      await lambda.updateFunctionConfiguration(c.updateRequest).promise()
+    }
+    if (c.logGroupConfiguration !== undefined) {
+      await applyLogGroupConfig(cloudWatch, c.logGroupConfiguration)
+    }
+    if (c.tagConfiguration !== undefined) {
+      await applyTagConfig(lambda, c.tagConfiguration)
+    }
+  })
+  await Promise.all(results)
 }
 
 /**

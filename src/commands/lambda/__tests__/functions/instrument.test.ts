@@ -1,26 +1,12 @@
 jest.mock('../../loggroup')
 
-import { Lambda } from 'aws-sdk'
 import { ENVIRONMENT_ENV_VAR, FLUSH_TO_LOG_ENV_VAR, GOVCLOUD_LAYER_AWS_ACCOUNT, LAMBDA_HANDLER_ENV_VAR, LOG_LEVEL_ENV_VAR, MERGE_XRAY_TRACES_ENV_VAR, SERVICE_ENV_VAR, SITE_ENV_VAR, TRACE_ENABLED_ENV_VAR, VERSION_ENV_VAR } from '../../constants'
-import { calculateUpdateRequest, getExtensionArn, getFunctionConfig, getFunctionConfigs, getLambdaConfigsFromRegEx, getLayerArn, updateLambdaConfigs } from '../../functions/instrument'
+import { calculateUpdateRequest, getExtensionArn, getFunctionConfig, getFunctionConfigs, getLambdaConfigsFromRegEx, getLayerArn } from '../../functions/instrument'
 
 import * as loggroup from '../../loggroup'
+import { makeMockCloudWatchLogs, makeMockLambda, mockAwsAccount } from '../fixtures'
 
-const makeMockLambda = (functionConfigs: Record<string, Lambda.FunctionConfiguration>) => ({
-  getFunction: jest.fn().mockImplementation(({FunctionName}) => ({
-    promise: () => Promise.resolve({Configuration: functionConfigs[FunctionName]}),
-  })),
-  listFunctions: jest.fn().mockImplementation(() => ({
-    promise: () => Promise.resolve({Functions: Object.values(functionConfigs)}),
-  })),
-  listTags: jest.fn().mockImplementation(() => ({promise: () => Promise.resolve({Tags: {}})})),
-  tagResource: jest.fn().mockImplementation(() => ({promise: () => Promise.resolve()})),
-  updateFunctionConfiguration: jest.fn().mockImplementation(() => ({promise: () => Promise.resolve()})),
-})
-
-const makeMockCloudWatchLogs = () => ({})
-const mockAwsAccount = '123456789012'
-describe('instrument functions', () => {
+describe('instrument', () => {
   describe('calculateUpdateRequest', () => {
     const OLD_ENV = process.env
     beforeEach(() => {
@@ -724,58 +710,6 @@ describe('instrument functions', () => {
       const region = 'us-gov-1'
       const layerArn = getLayerArn(runtime, settings, region)
       expect(layerArn).toEqual(`arn:aws-us-gov:lambda:${region}:${GOVCLOUD_LAYER_AWS_ACCOUNT}:layer:Datadog-Python37`)
-    })
-  })
-  describe('updateLambdaConfigs', () => {
-    const OLD_ENV = process.env
-    beforeEach(() => {
-      jest.resetModules()
-      process.env = {}
-    })
-    afterAll(() => {
-      process.env = OLD_ENV
-    })
-
-    test('updates every lambda', async () => {
-      const lambda = makeMockLambda({})
-      const configs = [
-        {
-          functionARN: 'arn:aws:lambda:us-east-1:000000000000:function:autoinstrument',
-          lambdaConfig: {
-            FunctionArn: 'arn:aws:lambda:us-east-1:000000000000:function:autoinstrument',
-            Handler: 'index.handler',
-            Runtime: 'nodejs12.x',
-          },
-          lambdaLibraryLayerArn: 'arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Node12-x',
-          updateRequest: {
-            Environment: {
-              Variables: {
-                [LAMBDA_HANDLER_ENV_VAR]: 'index.handler',
-                [MERGE_XRAY_TRACES_ENV_VAR]: 'false',
-                [TRACE_ENABLED_ENV_VAR]: 'false',
-              },
-            },
-            FunctionName: 'arn:aws:lambda:us-east-1:000000000000:function:autoinstrument',
-            Handler: '/opt/nodejs/node_modules/datadog-lambda-js/handler.handler',
-            Layers: ['arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Node12-x:22'],
-          },
-        },
-      ]
-      const cloudWatch = makeMockCloudWatchLogs()
-
-      await updateLambdaConfigs(lambda as any, cloudWatch as any, configs)
-      expect(lambda.updateFunctionConfiguration).toHaveBeenCalledWith({
-        Environment: {
-          Variables: {
-            [LAMBDA_HANDLER_ENV_VAR]: 'index.handler',
-            [MERGE_XRAY_TRACES_ENV_VAR]: 'false',
-            [TRACE_ENABLED_ENV_VAR]: 'false',
-          },
-        },
-        FunctionName: 'arn:aws:lambda:us-east-1:000000000000:function:autoinstrument',
-        Handler: '/opt/nodejs/node_modules/datadog-lambda-js/handler.handler',
-        Layers: ['arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Node12-x:22'],
-      })
     })
   })
 })

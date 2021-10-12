@@ -34,6 +34,23 @@ export const calculateTagUpdateRequest = async (lambda: Lambda, functionARN: str
   return
 }
 
+export const calculateTagRemoveRequest = async (lambda: Lambda, functionARN: string) => {
+  const config: TagConfiguration = {}
+  const versionTagPresent = await hasVersionTag(lambda, functionARN)
+  if (versionTagPresent) {
+    config.untagResourceRequest = {
+      Resource: functionARN,
+      TagKeys: [
+        TAG_VERSION_NAME
+   ,   ],
+    }
+
+    return config
+  }
+
+  return
+}
+
 export const hasVersionTag = async (lambda: Lambda, functionARN: string): Promise<boolean> => {
   const args: Lambda.ListTagsRequest = {
     Resource: functionARN,

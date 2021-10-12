@@ -1,8 +1,8 @@
 import { CloudWatchLogs, Lambda } from 'aws-sdk'
 import { API_KEY_ENV_VAR, CI_API_KEY_ENV_VAR, CI_KMS_API_KEY_ENV_VAR, CI_SITE_ENV_VAR, DD_LAMBDA_EXTENSION_LAYER_NAME, DEFAULT_LAYER_AWS_ACCOUNT, ENVIRONMENT_ENV_VAR, EXTRA_TAGS_ENV_VAR, FLUSH_TO_LOG_ENV_VAR, GOVCLOUD_LAYER_AWS_ACCOUNT, HANDLER_LOCATION, KMS_API_KEY_ENV_VAR, LAMBDA_HANDLER_ENV_VAR, LIST_FUNCTIONS_MAX_RETRY_COUNT, LOG_LEVEL_ENV_VAR, MERGE_XRAY_TRACES_ENV_VAR, Runtime, RUNTIME_LAYER_LOOKUP, SERVICE_ENV_VAR, SITE_ENV_VAR, TRACE_ENABLED_ENV_VAR, VERSION_ENV_VAR } from '../constants'
 import { FunctionConfiguration, InstrumentationSettings, LogGroupConfiguration, TagConfiguration } from '../interfaces'
-import { applyLogGroupConfig, calculateLogGroupUpdateRequest } from '../loggroup'
-import { applyTagConfig, calculateTagUpdateRequest } from '../tags'
+import { calculateLogGroupUpdateRequest } from '../loggroup'
+import { calculateTagUpdateRequest } from '../tags'
 import { addLayerARN, getLambdaFunctionConfigs, isLambdaActive, isSupportedRuntime } from './commons'
 
 export const getFunctionConfigs = async (
@@ -16,9 +16,9 @@ export const getFunctionConfigs = async (
 
   const configs: FunctionConfiguration[] = []
   for (const config of lambdaFunctionConfigs) {
-    const functionConfiguration = await getFunctionConfig(lambda, cloudWatch, config, region, settings)
+    const functionConfig = await getFunctionConfig(lambda, cloudWatch, config, region, settings)
 
-    configs.push(functionConfiguration)
+    configs.push(functionConfig)
   }
 
   return configs
@@ -98,30 +98,11 @@ export const getLambdaConfigsFromRegEx = async (
   const functionsToUpdate: FunctionConfiguration[] = []
 
   for (const config of matchedFunctions) {
-    const functionConfiguration = await getFunctionConfig(lambda, cloudWatch, config, region, settings)
-    functionsToUpdate.push(functionConfiguration)
+    const functionConfig = await getFunctionConfig(lambda, cloudWatch, config, region, settings)
+    functionsToUpdate.push(functionConfig)
   }
 
   return functionsToUpdate
-}
-
-export const updateLambdaConfigs = async (
-  lambda: Lambda,
-  cloudWatch: CloudWatchLogs,
-  configurations: FunctionConfiguration[]
-) => {
-  const results = configurations.map(async (c) => {
-    if (c.updateRequest !== undefined) {
-      await lambda.updateFunctionConfiguration(c.updateRequest).promise()
-    }
-    if (c.logGroupConfiguration !== undefined) {
-      await applyLogGroupConfig(cloudWatch, c.logGroupConfiguration)
-    }
-    if (c.tagConfiguration !== undefined) {
-      await applyTagConfig(lambda, c.tagConfiguration)
-    }
-  })
-  await Promise.all(results)
 }
 
 export const getLayerArn = (runtime: Runtime, settings: InstrumentationSettings, region: string) => {
