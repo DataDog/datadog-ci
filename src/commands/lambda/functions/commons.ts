@@ -50,7 +50,7 @@ export const collectFunctionsByRegion = (functions: string[], defaultRegion: str
     group.push(func)
   }
   if (regionless.length > 0) {
-    throw new Error(
+    throw Error(
       `No default region specified for ${JSON.stringify(regionless)}. Use -r,--region, or use a full functionARN\n`
     )
   }

@@ -288,7 +288,7 @@ describe('lambda', () => {
         const output = context.stdout.toString()
         expect(code).toBe(1)
         expect(output).toMatch(
-          `Couldn't group functions. No default region specified for ["my-func"]. Use -r,--region, or use a full functionARN\n`
+          `Couldn't group functions. Error: No default region specified for ["my-func"]. Use -r,--region, or use a full functionARN\n`
         )
       })
 
