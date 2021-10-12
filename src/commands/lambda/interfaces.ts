@@ -1,4 +1,4 @@
-import { CloudWatchLogs, Lambda } from 'aws-sdk';
+import {CloudWatchLogs, Lambda} from 'aws-sdk'
 
 /**
  * Configuration options provided by the user through

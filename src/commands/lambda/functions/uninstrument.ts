@@ -1,10 +1,27 @@
 import {CloudWatchLogs, Lambda} from 'aws-sdk'
-import { blueBright, gray, green, yellow } from 'chalk'
-import { API_KEY_ENV_VAR, DD_LAMBDA_EXTENSION_LAYER_NAME, ENVIRONMENT_ENV_VAR, EXTRA_TAGS_ENV_VAR, FLUSH_TO_LOG_ENV_VAR, HANDLER_LOCATION, KMS_API_KEY_ENV_VAR, LAMBDA_HANDLER_ENV_VAR, LOG_LEVEL_ENV_VAR, MERGE_XRAY_TRACES_ENV_VAR, Runtime, RUNTIME_LAYER_LOOKUP, SERVICE_ENV_VAR, SITE_ENV_VAR, TRACE_ENABLED_ENV_VAR, VERSION_ENV_VAR } from '../constants'
-import { FunctionConfiguration, LogGroupConfiguration, TagConfiguration } from '../interfaces'
-import { calculateLogGroupRemoveRequest } from '../loggroup'
-import { calculateTagRemoveRequest } from '../tags'
-import { getLambdaFunctionConfig, getLambdaFunctionConfigs, isSupportedRuntime } from './commons'
+import {blueBright, gray, green, yellow} from 'chalk'
+import {
+  API_KEY_ENV_VAR,
+  DD_LAMBDA_EXTENSION_LAYER_NAME,
+  ENVIRONMENT_ENV_VAR,
+  EXTRA_TAGS_ENV_VAR,
+  FLUSH_TO_LOG_ENV_VAR,
+  HANDLER_LOCATION,
+  KMS_API_KEY_ENV_VAR,
+  LAMBDA_HANDLER_ENV_VAR,
+  LOG_LEVEL_ENV_VAR,
+  MERGE_XRAY_TRACES_ENV_VAR,
+  Runtime,
+  RUNTIME_LAYER_LOOKUP,
+  SERVICE_ENV_VAR,
+  SITE_ENV_VAR,
+  TRACE_ENABLED_ENV_VAR,
+  VERSION_ENV_VAR,
+} from '../constants'
+import {FunctionConfiguration, LogGroupConfiguration, TagConfiguration} from '../interfaces'
+import {calculateLogGroupRemoveRequest} from '../loggroup'
+import {calculateTagRemoveRequest} from '../tags'
+import {getLambdaFunctionConfig, getLambdaFunctionConfigs, isSupportedRuntime} from './commons'
 
 export const getFunctionConfigs = async (
   lambda: Lambda,
@@ -54,10 +71,7 @@ export const getFunctionConfig = async (
   }
 }
 
-export const calculateUpdateRequest = (
-  config: Lambda.FunctionConfiguration,
-  runtime: Runtime
-) => {
+export const calculateUpdateRequest = (config: Lambda.FunctionConfiguration, runtime: Runtime) => {
   const oldEnvVars: Record<string, string> = {...config.Environment?.Variables}
   const functionARN = config.FunctionArn
 
@@ -111,11 +125,11 @@ export const calculateUpdateRequest = (
   let needsLayerRemoval = false
   const lambdaLibraryLayerName = RUNTIME_LAYER_LOOKUP[runtime]
   const originalLayerARNs = (config.Layers ?? []).map((layer) => layer.Arn ?? '')
-  const layerARNs = (config.Layers ?? []).filter(
-    layer =>
-      !layer.Arn?.includes(lambdaLibraryLayerName) &&
-      !layer.Arn?.includes(DD_LAMBDA_EXTENSION_LAYER_NAME)
-    ).map(layer => layer.Arn ?? '')
+  const layerARNs = (config.Layers ?? [])
+    .filter(
+      (layer) => !layer.Arn?.includes(lambdaLibraryLayerName) && !layer.Arn?.includes(DD_LAMBDA_EXTENSION_LAYER_NAME)
+    )
+    .map((layer) => layer.Arn ?? '')
 
   if (originalLayerARNs.sort().join(',') !== layerARNs.sort().join(',')) {
     needsLayerRemoval = true
@@ -138,9 +152,11 @@ export const uninstrumentLambdaFunctions = async (
       const functionARN = c.FunctionArn!
       const tags = await lambda.listTags({Resource: functionARN}).promise()
       try {
-        const logs = await cloudWatch.describeLogGroups({ logGroupNamePrefix: `/aws/lambda/${c.FunctionName}`}).promise()
+        const logs = await cloudWatch.describeLogGroups({logGroupNamePrefix: `/aws/lambda/${c.FunctionName}`}).promise()
         console.log(`Log Groups -> ${blueBright(JSON.stringify(logs, undefined, 2))}\n`)
-        const subs = await cloudWatch.describeSubscriptionFilters({ logGroupName: `/aws/lambda/${c.FunctionName}` }).promise()
+        const subs = await cloudWatch
+          .describeSubscriptionFilters({logGroupName: `/aws/lambda/${c.FunctionName}`})
+          .promise()
         subs.subscriptionFilters?.map(async (sub) => {
           const forwarderArn = sub.destinationArn
           const config = await getLambdaFunctionConfig(lambda, forwarderArn!)
@@ -148,10 +164,10 @@ export const uninstrumentLambdaFunctions = async (
         })
         console.log(`Subscriptions -> ${yellow(JSON.stringify(subs, undefined, 2))}\n`)
       } catch (e) {
-      console.log(`Tags -> ${green(JSON.stringify(tags, undefined, 2))}\n`)
-      console.log(`Environment variables -> ${yellow(JSON.stringify(c.Environment, undefined, 2))}\n`)
-      console.log(`Layers -> ${blueBright(JSON.stringify(c.Layers, undefined, 2))}\n`)
-      console.log(`\n\nGeneral Config -> ${green(JSON.stringify(c, undefined, 2))}`)
+        console.log(`Tags -> ${green(JSON.stringify(tags, undefined, 2))}\n`)
+        console.log(`Environment variables -> ${yellow(JSON.stringify(c.Environment, undefined, 2))}\n`)
+        console.log(`Layers -> ${blueBright(JSON.stringify(c.Layers, undefined, 2))}\n`)
+        console.log(`\n\nGeneral Config -> ${green(JSON.stringify(c, undefined, 2))}`)
       }
     } catch (err) {
       throw new Error(`An error occurred while trying to un-instrument a function ${err}`)

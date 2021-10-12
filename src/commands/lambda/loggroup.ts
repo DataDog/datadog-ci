@@ -1,7 +1,7 @@
 import {CloudWatchLogs} from 'aws-sdk'
-import { DescribeSubscriptionFiltersRequest } from 'aws-sdk/clients/cloudwatchlogs'
+import {DescribeSubscriptionFiltersRequest} from 'aws-sdk/clients/cloudwatchlogs'
 import {SUBSCRIPTION_FILTER_NAME} from './constants'
-import { LogGroupConfiguration } from './interfaces'
+import {LogGroupConfiguration} from './interfaces'
 
 export enum SubscriptionState {
   Empty,
@@ -69,7 +69,8 @@ export const calculateLogGroupRemoveRequest = async (
 
   const subscriptionFilters = await getSubscriptionFilters(logs, logGroupName)
   const subscriptionToRemove = subscriptionFilters?.find(
-    subscription => (subscription.destinationArn === forwarderARN || subscription.filterName === SUBSCRIPTION_FILTER_NAME)
+    (subscription) =>
+      subscription.destinationArn === forwarderARN || subscription.filterName === SUBSCRIPTION_FILTER_NAME
   )
 
   if (subscriptionToRemove) {
@@ -116,7 +117,7 @@ export const getSubscriptionFilters = async (logs: CloudWatchLogs, logGroupName:
     logGroupName,
   }
 
-  const { subscriptionFilters } = await logs.describeSubscriptionFilters(subscriptionFiltersRequest).promise()
+  const {subscriptionFilters} = await logs.describeSubscriptionFilters(subscriptionFiltersRequest).promise()
 
   return subscriptionFilters
 }

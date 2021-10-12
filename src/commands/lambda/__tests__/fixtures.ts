@@ -1,6 +1,6 @@
-import { Lambda } from 'aws-sdk'
-import { Cli } from 'clipanion/lib/advanced'
-import { InstrumentCommand } from '../instrument'
+import {Lambda} from 'aws-sdk'
+import {Cli} from 'clipanion/lib/advanced'
+import {InstrumentCommand} from '../instrument'
 
 export const createMockContext = () => {
   let data = ''
@@ -9,7 +9,7 @@ export const createMockContext = () => {
     stdout: {
       toString: () => data,
       write: (input: string) => {
-          data += input
+        data += input
       },
     },
   }

@@ -5,7 +5,7 @@ import {Lambda} from 'aws-sdk'
 import * as fs from 'fs'
 import path from 'path'
 import {InstrumentationSettings, LambdaConfigOptions} from '../interfaces'
-import { createCommand, createMockContext, makeCli, makeMockLambda } from './fixtures'
+import {createCommand, createMockContext, makeCli, makeMockLambda} from './fixtures'
 // tslint:disable-next-line
 const {version} = require(path.join(__dirname, '../../../../package.json'))
 
@@ -287,7 +287,9 @@ describe('lambda', () => {
 
         const output = context.stdout.toString()
         expect(code).toBe(1)
-        expect(output).toMatch(`Couldn't group functions. No default region specified for ["my-func"]. Use -r,--region, or use a full functionARN\n`)
+        expect(output).toMatch(
+          `Couldn't group functions. No default region specified for ["my-func"]. Use -r,--region, or use a full functionARN\n`
+        )
       })
 
       test('aborts if a function is not in an Active state with LastUpdateStatus Successful', async () => {

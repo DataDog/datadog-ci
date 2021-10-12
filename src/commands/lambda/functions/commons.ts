@@ -1,9 +1,9 @@
-import { CloudWatchLogs, Lambda } from 'aws-sdk'
-import { GetFunctionRequest } from 'aws-sdk/clients/lambda'
-import { MAX_LAMBDA_STATE_CHECKS, Runtime, RUNTIME_LAYER_LOOKUP } from '../constants'
-import { FunctionConfiguration } from '../interfaces'
-import { applyLogGroupConfig } from '../loggroup'
-import { applyTagConfig } from '../tags'
+import {CloudWatchLogs, Lambda} from 'aws-sdk'
+import {GetFunctionRequest} from 'aws-sdk/clients/lambda'
+import {MAX_LAMBDA_STATE_CHECKS, Runtime, RUNTIME_LAYER_LOOKUP} from '../constants'
+import {FunctionConfiguration} from '../interfaces'
+import {applyLogGroupConfig} from '../loggroup'
+import {applyTagConfig} from '../tags'
 
 /**
  * Returns an array of merged layer ARNs if given a Full Layer ARN,
@@ -71,7 +71,7 @@ export const getLambdaFunctionConfigs = async (
   lambda: Lambda,
   functionARNs: string[]
 ): Promise<Lambda.FunctionConfiguration[]> => {
-  const promises = functionARNs.map(fn => getLambdaFunctionConfig(lambda, fn))
+  const promises = functionARNs.map((fn) => getLambdaFunctionConfig(lambda, fn))
   const configs = await Promise.all(promises)
 
   return configs
@@ -198,4 +198,4 @@ export const updateLambdaFunctionConfigs = async (
  *
  * @param ms
  */
- const wait = (ms: number): Promise<void> => new Promise((res) => setTimeout(res, ms))
+const wait = (ms: number): Promise<void> => new Promise((res) => setTimeout(res, ms))

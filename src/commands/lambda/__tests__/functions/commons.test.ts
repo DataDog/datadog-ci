@@ -1,6 +1,18 @@
-import { EXTRA_TAGS_REG_EXP, LAMBDA_HANDLER_ENV_VAR, MERGE_XRAY_TRACES_ENV_VAR, TRACE_ENABLED_ENV_VAR } from '../../constants'
-import { collectFunctionsByRegion, getLayerName, getRegion, sentenceMatchesRegEx, updateLambdaFunctionConfigs } from '../../functions/commons'
-import { createCommand, makeMockCloudWatchLogs, makeMockLambda } from '../fixtures'
+/* tslint:disable:no-string-literal */
+import {
+  EXTRA_TAGS_REG_EXP,
+  LAMBDA_HANDLER_ENV_VAR,
+  MERGE_XRAY_TRACES_ENV_VAR,
+  TRACE_ENABLED_ENV_VAR,
+} from '../../constants'
+import {
+  collectFunctionsByRegion,
+  getLayerName,
+  getRegion,
+  sentenceMatchesRegEx,
+  updateLambdaFunctionConfigs,
+} from '../../functions/commons'
+import {createCommand, makeMockCloudWatchLogs, makeMockLambda} from '../fixtures'
 
 describe('commons', () => {
   describe('collectFunctionsByRegion', () => {

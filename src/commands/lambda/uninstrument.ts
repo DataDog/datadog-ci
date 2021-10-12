@@ -1,10 +1,10 @@
-import { CloudWatchLogs, Lambda } from 'aws-sdk'
-import { cyan, red } from 'chalk'
-import { Command } from 'clipanion'
-import { parseConfigFile } from '../../helpers/utils'
-import { collectFunctionsByRegion, getLambdaFunctionConfigs, updateLambdaFunctionConfigs } from './functions/commons'
-import { getFunctionConfigs, uninstrumentLambdaFunctions } from './functions/uninstrument'
-import { FunctionConfiguration } from './interfaces'
+import {CloudWatchLogs, Lambda} from 'aws-sdk'
+import {cyan, red} from 'chalk'
+import {Command} from 'clipanion'
+import {parseConfigFile} from '../../helpers/utils'
+import {collectFunctionsByRegion, getLambdaFunctionConfigs, updateLambdaFunctionConfigs} from './functions/commons'
+import {getFunctionConfigs, uninstrumentLambdaFunctions} from './functions/uninstrument'
+import {FunctionConfiguration} from './interfaces'
 
 export class UninstrumentCommand extends Command {
   private config: any = {
@@ -31,7 +31,7 @@ export class UninstrumentCommand extends Command {
     const functionGroups = collectFunctionsByRegion(
       this.functions.length !== 0 ? this.functions : this.config.functions,
       this.region || this.config.region
-      )
+    )
     if (functionGroups === undefined) {
       return 1
     }
@@ -66,7 +66,7 @@ export class UninstrumentCommand extends Command {
     }
 
     // Un-instrument functions.
-    const promises = Object.values(configGroups).map(group => {
+    const promises = Object.values(configGroups).map((group) => {
       updateLambdaFunctionConfigs(group.lambda, group.cloudWatchLogs, group.configs)
     })
 

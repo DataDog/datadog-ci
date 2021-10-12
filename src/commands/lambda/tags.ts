@@ -1,7 +1,7 @@
 import {Lambda} from 'aws-sdk'
 import path from 'path'
 import {TAG_VERSION_NAME} from './constants'
-import { TagConfiguration } from './interfaces'
+import {TagConfiguration} from './interfaces'
 // tslint:disable-next-line
 const {version} = require(path.join(__dirname, '../../../package.json'))
 
@@ -40,9 +40,7 @@ export const calculateTagRemoveRequest = async (lambda: Lambda, functionARN: str
   if (versionTagPresent) {
     config.untagResourceRequest = {
       Resource: functionARN,
-      TagKeys: [
-        TAG_VERSION_NAME
-   ,   ],
+      TagKeys: [TAG_VERSION_NAME],
     }
 
     return config

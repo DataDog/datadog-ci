@@ -1,9 +1,32 @@
-import { CloudWatchLogs, Lambda } from 'aws-sdk'
-import { API_KEY_ENV_VAR, CI_API_KEY_ENV_VAR, CI_KMS_API_KEY_ENV_VAR, CI_SITE_ENV_VAR, DD_LAMBDA_EXTENSION_LAYER_NAME, DEFAULT_LAYER_AWS_ACCOUNT, ENVIRONMENT_ENV_VAR, EXTRA_TAGS_ENV_VAR, FLUSH_TO_LOG_ENV_VAR, GOVCLOUD_LAYER_AWS_ACCOUNT, HANDLER_LOCATION, KMS_API_KEY_ENV_VAR, LAMBDA_HANDLER_ENV_VAR, LIST_FUNCTIONS_MAX_RETRY_COUNT, LOG_LEVEL_ENV_VAR, MERGE_XRAY_TRACES_ENV_VAR, Runtime, RUNTIME_LAYER_LOOKUP, SERVICE_ENV_VAR, SITE_ENV_VAR, TRACE_ENABLED_ENV_VAR, VERSION_ENV_VAR } from '../constants'
-import { FunctionConfiguration, InstrumentationSettings, LogGroupConfiguration, TagConfiguration } from '../interfaces'
-import { calculateLogGroupUpdateRequest } from '../loggroup'
-import { calculateTagUpdateRequest } from '../tags'
-import { addLayerARN, getLambdaFunctionConfigs, isLambdaActive, isSupportedRuntime } from './commons'
+import {CloudWatchLogs, Lambda} from 'aws-sdk'
+import {
+  API_KEY_ENV_VAR,
+  CI_API_KEY_ENV_VAR,
+  CI_KMS_API_KEY_ENV_VAR,
+  CI_SITE_ENV_VAR,
+  DD_LAMBDA_EXTENSION_LAYER_NAME,
+  DEFAULT_LAYER_AWS_ACCOUNT,
+  ENVIRONMENT_ENV_VAR,
+  EXTRA_TAGS_ENV_VAR,
+  FLUSH_TO_LOG_ENV_VAR,
+  GOVCLOUD_LAYER_AWS_ACCOUNT,
+  HANDLER_LOCATION,
+  KMS_API_KEY_ENV_VAR,
+  LAMBDA_HANDLER_ENV_VAR,
+  LIST_FUNCTIONS_MAX_RETRY_COUNT,
+  LOG_LEVEL_ENV_VAR,
+  MERGE_XRAY_TRACES_ENV_VAR,
+  Runtime,
+  RUNTIME_LAYER_LOOKUP,
+  SERVICE_ENV_VAR,
+  SITE_ENV_VAR,
+  TRACE_ENABLED_ENV_VAR,
+  VERSION_ENV_VAR,
+} from '../constants'
+import {FunctionConfiguration, InstrumentationSettings, LogGroupConfiguration, TagConfiguration} from '../interfaces'
+import {calculateLogGroupUpdateRequest} from '../loggroup'
+import {calculateTagUpdateRequest} from '../tags'
+import {addLayerARN, getLambdaFunctionConfigs, isLambdaActive, isSupportedRuntime} from './commons'
 
 export const getFunctionConfigs = async (
   lambda: Lambda,
