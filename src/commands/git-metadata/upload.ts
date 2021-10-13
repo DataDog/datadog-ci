@@ -131,6 +131,6 @@ export class UploadCommand extends Command {
   }
 }
 
-UploadCommand.addPath('commit', 'upload')
+UploadCommand.addPath('git-metadata', 'upload')
 UploadCommand.addOption('dryRun', Command.Boolean('--dry-run'))
 UploadCommand.addOption('repositoryURL', Command.String('--repository-url'))
