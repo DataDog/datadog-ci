@@ -14,10 +14,10 @@ import {CommitInfo} from './interfaces'
 import {
   renderCommandInfo,
   renderConfigurationError,
+  renderDryRunWarning,
   renderFailedUpload,
   renderRetriedUpload,
   renderSuccessfulCommand,
-  renderUpload,
 } from './renderer'
 
 export class UploadCommand extends Command {
@@ -45,7 +45,9 @@ export class UploadCommand extends Command {
 
   public async execute() {
     const initialTime = new Date().getTime()
-    this.context.stdout.write(renderCommandInfo(this.dryRun))
+    if (this.dryRun) {
+      this.context.stdout.write(renderDryRunWarning())
+    }
 
     const metricsLogger = getMetricsLogger({
       datadogSite: process.env.DATADOG_SITE,
@@ -61,6 +63,7 @@ export class UploadCommand extends Command {
     if (payload === undefined) {
       return 0
     }
+    this.context.stdout.write(renderCommandInfo(payload))
     try {
       const requestBuilder = this.getRequestBuilder()
       const status = await this.uploadRepository(requestBuilder)(payload, {
@@ -73,7 +76,9 @@ export class UploadCommand extends Command {
           this.context.stdout.write(renderRetriedUpload(e.message, attempt))
           metricsLogger.logger.increment('retries', 1)
         },
-        onUpload: () => this.context.stdout.write(renderUpload),
+        onUpload: () => {
+          return
+        },
         retries: 5,
       })
       metricsLogger.logger.increment('success', 1)
