@@ -23,7 +23,7 @@ describe('execute', () => {
     const cli = makeCli()
     const context = createMockContext() as any
     process.env = {DATADOG_API_KEY: 'PLACEHOLDER'}
-    const code = await cli.run(['commit', 'upload', '--dry-run'], context)
+    const code = await cli.run(['git-metadata', 'upload', '--dry-run'], context)
 
     return {context, code}
   }
