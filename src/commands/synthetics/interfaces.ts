@@ -248,7 +248,7 @@ export interface ConfigOverride {
   basicAuth?: BasicAuthCredentials
   body?: string
   bodyType?: string
-  cookies?: string
+  cookies?: string | {append?: boolean; value: string}
   defaultStepTimeout?: number
   deviceIds?: string[]
   executionRule?: ExecutionRule
