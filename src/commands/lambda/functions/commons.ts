@@ -1,6 +1,6 @@
 import {CloudWatchLogs, Lambda} from 'aws-sdk'
 import {GetFunctionRequest} from 'aws-sdk/clients/lambda'
-import {MAX_LAMBDA_STATE_CHECKS, Runtime, RUNTIME_LAYER_LOOKUP} from '../constants'
+import {MAX_LAMBDA_STATE_CHECK_ATTEMPTS, Runtime, RUNTIME_LAYER_LOOKUP} from '../constants'
 import {FunctionConfiguration} from '../interfaces'
 import {applyLogGroupConfig} from '../loggroup'
 import {applyTagConfig} from '../tags'
@@ -149,7 +149,7 @@ export const isLambdaActive = async (
   if (config.LastUpdateStatus === 'Successful' && config.State === 'Active') {
     return true
   }
-  if (config.State === 'Pending' && attempts <= MAX_LAMBDA_STATE_CHECKS) {
+  if (config.State === 'Pending' && attempts <= MAX_LAMBDA_STATE_CHECK_ATTEMPTS) {
     await wait(2 ** attempts * 1000)
     const refetchedConfig = await getLambdaFunctionConfig(lambda, functionArn)
 
