@@ -67,14 +67,13 @@ export const collectFunctionsByRegion = (functions: string[], defaultRegion: str
  * Functions ARNs, Partial ARNs, or Function Names.
  * @returns an array of Lambda FunctionConfiguration's.
  */
-export const getLambdaFunctionConfigs = async (
+export const getLambdaFunctionConfigs = (
   lambda: Lambda,
   functionARNs: string[]
 ): Promise<Lambda.FunctionConfiguration[]> => {
   const promises = functionARNs.map((fn) => getLambdaFunctionConfig(lambda, fn))
-  const configs = await Promise.all(promises)
 
-  return configs
+  return Promise.all(promises)
 }
 
 /**
