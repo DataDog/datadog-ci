@@ -100,19 +100,6 @@ export const getLambdaFunctionConfig = async (
 }
 
 /**
- * Given a Layer ARN, returns its layer name by splitting the string,
- * can return undefined if doesn't exist.
- *
- * @param layerARN a Layer ARN string.
- * @returns the layer name of a Layer ARN.
- */
-export const getLayerName = (layerARN: string) => {
-  const [, , , , , , layerName] = layerARN.split(':')
-
-  return layerName
-}
-
-/**
  * Given a Function ARN, return its region by splitting the string,
  * can return undefined if it is doesn't exist.
  *

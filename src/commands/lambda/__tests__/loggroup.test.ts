@@ -1,5 +1,5 @@
 import {applyLogGroupConfig, calculateLogGroupRemoveRequest, calculateLogGroupUpdateRequest} from '../loggroup'
-import { makeMockCloudWatchLogs } from './fixtures'
+import {makeMockCloudWatchLogs} from './fixtures'
 
 describe('loggroup', () => {
   describe('calculateLogGroupUpdateRequest', () => {

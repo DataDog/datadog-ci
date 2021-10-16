@@ -2,15 +2,22 @@
 jest.mock('fs')
 jest.mock('aws-sdk')
 import {Lambda} from 'aws-sdk'
-import { cyan } from 'chalk'
+import {cyan} from 'chalk'
 import * as fs from 'fs'
-import path from 'path'
 
-import { ENVIRONMENT_ENV_VAR, FLUSH_TO_LOG_ENV_VAR, LAMBDA_HANDLER_ENV_VAR, LOG_LEVEL_ENV_VAR, MERGE_XRAY_TRACES_ENV_VAR, SERVICE_ENV_VAR, SITE_ENV_VAR, TRACE_ENABLED_ENV_VAR, VERSION_ENV_VAR } from '../constants'
-import { UninstrumentCommand } from "../uninstrument"
-import { createCommand, createMockContext, makeCli, makeMockLambda } from "./fixtures"
-// tslint:disable-next-line
-const {version} = require(path.join(__dirname, '../../../../package.json'))
+import {
+  ENVIRONMENT_ENV_VAR,
+  FLUSH_TO_LOG_ENV_VAR,
+  LAMBDA_HANDLER_ENV_VAR,
+  LOG_LEVEL_ENV_VAR,
+  MERGE_XRAY_TRACES_ENV_VAR,
+  SERVICE_ENV_VAR,
+  SITE_ENV_VAR,
+  TRACE_ENABLED_ENV_VAR,
+  VERSION_ENV_VAR,
+} from '../constants'
+import {UninstrumentCommand} from '../uninstrument'
+import {createCommand, createMockContext, makeCli, makeMockLambda} from './fixtures'
 
 describe('uninstrument', () => {
   describe('execute', () => {
@@ -66,22 +73,11 @@ describe('uninstrument', () => {
       const context = createMockContext() as any
       const functionARN = 'arn:aws:lambda:us-east-1:000000000000:function:uninstrument'
       process.env.DATADOG_API_KEY = '1234'
-      const code = await cli.run(
-        [
-          'lambda',
-          'uninstrument',
-          '-f',
-          functionARN,
-          '-r',
-          'us-east-1',
-          '-d',
-        ],
-        context
-      )
+      const code = await cli.run(['lambda', 'uninstrument', '-f', functionARN, '-r', 'us-east-1', '-d'], context)
       const output = context.stdout.toString()
       expect(code).toBe(0)
       expect(output).toMatchInlineSnapshot(`
-        "${cyan(`[Dry Run] `)}Will apply the following updates:
+        "${cyan('[Dry Run] ')}Will apply the following updates:
         UpdateFunctionConfiguration -> arn:aws:lambda:us-east-1:000000000000:function:uninstrument
         {
           \\"FunctionName\\": \\"arn:aws:lambda:us-east-1:000000000000:function:uninstrument\\",
@@ -95,7 +91,6 @@ describe('uninstrument', () => {
         }
         "
       `)
-      
     })
 
     test('runs function update command for valid uninstrumentation', async () => {
@@ -136,22 +131,12 @@ describe('uninstrument', () => {
         },
       })
       ;(Lambda as any).mockImplementation(() => lambda)
-      
+
       const cli = makeCli()
       const context = createMockContext() as any
       const functionARN = 'arn:aws:lambda:us-east-1:000000000000:function:uninstrument'
       process.env.DATADOG_API_KEY = '1234'
-      await cli.run(
-        [
-          'lambda',
-          'uninstrument',
-          '-f',
-          functionARN,
-          '-r',
-          'us-east-1',
-        ],
-        context
-      )
+      await cli.run(['lambda', 'uninstrument', '-f', functionARN, '-r', 'us-east-1'], context)
       expect(lambda.updateFunctionConfiguration).toHaveBeenCalled()
     })
     test("aborts early when function regions can't be found", async () => {
@@ -160,34 +145,18 @@ describe('uninstrument', () => {
 
       const cli = makeCli()
       const context = createMockContext() as any
-      const code = await cli.run(
-        [
-          'lambda',
-          'uninstrument',
-          '--function',
-          'my-func',
-        ],
-        context
-      )
+      const code = await cli.run(['lambda', 'uninstrument', '--function', 'my-func'], context)
 
       const output = context.stdout.toString()
       expect(code).toBe(1)
-      expect(output).toMatch(
-        `No default region specified for [\"my-func\"]. Use -r, --region, or use a full functionARN`
-      )
+      expect(output).toMatch('No default region specified for ["my-func"]. Use -r, --region, or use a full functionARN')
     })
     test('aborts early when no functions are specified', async () => {
       ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({code: 'ENOENT'}))
       ;(Lambda as any).mockImplementation(() => makeMockLambda({}))
       const cli = makeCli()
       const context = createMockContext() as any
-      const code = await cli.run(
-        [
-          'lambda',
-          'uninstrument',
-        ],
-        context
-      )
+      const code = await cli.run(['lambda', 'uninstrument'], context)
       const output = context.stdout.toString()
       expect(code).toBe(1)
       expect(output).toMatchInlineSnapshot(`

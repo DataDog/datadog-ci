@@ -7,12 +7,11 @@ import {
 } from '../../constants'
 import {
   collectFunctionsByRegion,
-  getLayerName,
   getRegion,
   sentenceMatchesRegEx,
   updateLambdaFunctionConfigs,
 } from '../../functions/commons'
-import { InstrumentCommand } from '../../instrument'
+import {InstrumentCommand} from '../../instrument'
 import {createCommand, makeMockCloudWatchLogs, makeMockLambda} from '../fixtures'
 
 describe('commons', () => {
@@ -93,6 +92,7 @@ describe('commons', () => {
       expect(functionsGroup).toBeUndefined()
     })
   })
+
   describe('getRegion', () => {
     test('should return the expected region', () => {
       const functionARN = 'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world'
@@ -107,23 +107,6 @@ describe('commons', () => {
 
       const region = getRegion(functionName)
       expect(region).toBe(undefined)
-    })
-  })
-
-  describe('getLayerName', () => {
-    test('should return the expected layer name', () => {
-      const layerARN = 'arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Node12-x:10'
-      const expectedLayerName = 'Datadog-Node12-x'
-
-      const layerName = getLayerName(layerARN)
-      expect(layerName).toBe(expectedLayerName)
-    })
-
-    test('should return undefined if layer ARN does not contain the layer name', () => {
-      const layerARN = 'arn:aws:lambda:invalid-layer:Datadog-Node12-x'
-
-      const layerName = getLayerName(layerARN)
-      expect(layerName).toBe(undefined)
     })
   })
 

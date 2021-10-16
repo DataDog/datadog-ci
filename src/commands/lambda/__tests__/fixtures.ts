@@ -1,7 +1,7 @@
 import {CloudWatchLogs, Lambda} from 'aws-sdk'
 import {Cli, Command} from 'clipanion/lib/advanced'
 import {InstrumentCommand} from '../instrument'
-import { UninstrumentCommand } from '../uninstrument'
+import {UninstrumentCommand} from '../uninstrument'
 
 export const createMockContext = () => {
   let data = ''
@@ -28,17 +28,15 @@ export const makeCli = () => {
  * Allow for constructors with any amount of parameters.
  * Mainly used for testing when we are creating commands.
  */
- export interface ConstructorOf<T> {
-  new(...args: any[]): T;
-}
+export type ConstructorOf<T> = new (...args: any[]) => T
 
 /**
  * Allows to create an instance of any command that
- * extends the Command class.
- * 
+ * extends the Command clss.
+ *
  * @param commandClass any class that extends the Command class.
  * @param parameters parameters to use while creating the commandClass
- * @returns 
+ * @returns the instance of the given command with a mock context attatched.
  */
 export const createCommand = <T extends Command>(commandClass: ConstructorOf<T>, ...parameters: any[]) => {
   // Create a new instance of commandClass and pass in the parameters

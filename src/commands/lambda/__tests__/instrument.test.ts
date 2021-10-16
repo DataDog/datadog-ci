@@ -4,7 +4,7 @@ jest.mock('aws-sdk')
 import {Lambda} from 'aws-sdk'
 import * as fs from 'fs'
 import path from 'path'
-import { InstrumentCommand } from '../instrument'
+import {InstrumentCommand} from '../instrument'
 import {InstrumentationSettings, LambdaConfigOptions} from '../interfaces'
 import {createCommand, createMockContext, makeCli, makeMockLambda} from './fixtures'
 // tslint:disable-next-line
