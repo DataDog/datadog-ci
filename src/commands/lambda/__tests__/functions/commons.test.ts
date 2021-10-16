@@ -12,13 +12,14 @@ import {
   sentenceMatchesRegEx,
   updateLambdaFunctionConfigs,
 } from '../../functions/commons'
+import { InstrumentCommand } from '../../instrument'
 import {createCommand, makeMockCloudWatchLogs, makeMockLambda} from '../fixtures'
 
 describe('commons', () => {
   describe('collectFunctionsByRegion', () => {
     test('groups functions with region read from arn', () => {
       process.env = {}
-      const command = createCommand()
+      const command = createCommand(InstrumentCommand)
       const region = 'us-east-1'
       command['functions'] = [
         'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world',
@@ -37,7 +38,7 @@ describe('commons', () => {
 
     test('groups functions in the config object', () => {
       process.env = {}
-      const command = createCommand()
+      const command = createCommand(InstrumentCommand)
       const region = 'us-east-1'
       command['config']['functions'] = [
         'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world',
@@ -56,7 +57,7 @@ describe('commons', () => {
 
     test('uses default region for functions not in arn format', () => {
       process.env = {}
-      const command = createCommand()
+      const command = createCommand(InstrumentCommand)
       command['functions'] = [
         'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world',
         'arn:aws:lambda:*:123456789012:function:func-with-wildcard',
@@ -74,7 +75,7 @@ describe('commons', () => {
 
     test('fails to collect when there are regionless functions and no default region is set', () => {
       process.env = {}
-      const command = createCommand()
+      const command = createCommand(InstrumentCommand)
       command['functions'] = [
         'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world',
         'arn:aws:lambda:*:123456789012:function:func-with-wildcard',
@@ -180,7 +181,7 @@ describe('commons', () => {
           },
         },
       ]
-      const cloudWatch = makeMockCloudWatchLogs()
+      const cloudWatch = makeMockCloudWatchLogs({})
 
       await updateLambdaFunctionConfigs(lambda as any, cloudWatch as any, configs)
       expect(lambda.updateFunctionConfiguration).toHaveBeenCalledWith({

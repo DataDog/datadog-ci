@@ -173,7 +173,7 @@ describe('uninstrument', () => {
           Runtime: 'python3.8',
         },
       })
-      const cloudWatch = makeMockCloudWatchLogs()
+      const cloudWatch = makeMockCloudWatchLogs({})
       const result = await getFunctionConfigs(
         lambda as any,
         cloudWatch as any,
@@ -219,7 +219,7 @@ describe('uninstrument', () => {
           Runtime: 'nodejs12.x',
         },
       })
-      const cloudWatch = makeMockCloudWatchLogs()
+      const cloudWatch = makeMockCloudWatchLogs({})
 
       const result = await getFunctionConfigs(
         lambda as any,
@@ -260,7 +260,7 @@ describe('uninstrument', () => {
           Runtime: 'go',
         },
       })
-      const cloudWatch = makeMockCloudWatchLogs()
+      const cloudWatch = makeMockCloudWatchLogs({})
       const config = await getLambdaFunctionConfig(
         lambda as any,
         'arn:aws:lambda:us-east-1:000000000000:function:uninstrument'
@@ -279,7 +279,7 @@ describe('uninstrument', () => {
           Runtime: 'nodejs12.x',
         },
       })
-      const cloudWatch = makeMockCloudWatchLogs()
+      const cloudWatch = makeMockCloudWatchLogs({})
 
       const config = await getLambdaFunctionConfig(
         lambda as any,
@@ -304,7 +304,7 @@ describe('uninstrument', () => {
           Runtime: 'nodejs12.x',
         },
       })
-      const cloudWatch = makeMockCloudWatchLogs()
+      const cloudWatch = makeMockCloudWatchLogs({})
       const config = await getLambdaFunctionConfig(
         lambda as any,
         'arn:aws:lambda:us-east-1:000000000000:function:uninstrument'

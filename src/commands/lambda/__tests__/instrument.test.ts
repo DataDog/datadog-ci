@@ -4,6 +4,7 @@ jest.mock('aws-sdk')
 import {Lambda} from 'aws-sdk'
 import * as fs from 'fs'
 import path from 'path'
+import { InstrumentCommand } from '../instrument'
 import {InstrumentationSettings, LambdaConfigOptions} from '../interfaces'
 import {createCommand, createMockContext, makeCli, makeMockLambda} from './fixtures'
 // tslint:disable-next-line
@@ -245,7 +246,7 @@ describe('lambda', () => {
         ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({}))
 
         process.env = {}
-        const command = createCommand()
+        const command = createCommand(InstrumentCommand)
         command['config']['layerVersion'] = '60'
         command['config']['extensionVersion'] = '10'
         command['config']['region'] = 'ap-southeast-1'
@@ -288,7 +289,7 @@ describe('lambda', () => {
         const output = context.stdout.toString()
         expect(code).toBe(1)
         expect(output).toMatch(
-          `Couldn't group functions. Error: No default region specified for ["my-func"]. Use -r,--region, or use a full functionARN\n`
+          `Couldn't group functions. Error: No default region specified for ["my-func"]. Use -r, --region, or use a full functionARN\n`
         )
       })
 
@@ -372,7 +373,7 @@ describe('lambda', () => {
         ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({}))
 
         process.env = {}
-        const command = createCommand()
+        const command = createCommand(InstrumentCommand)
         command['config']['layerVersion'] = '60'
         command['config']['extensionVersion'] = '10'
         command['config']['region'] = 'ap-southeast-1'
@@ -384,7 +385,7 @@ describe('lambda', () => {
         ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({}))
 
         process.env = {}
-        let command = createCommand()
+        let command = createCommand(InstrumentCommand)
         command['config']['environment'] = 'staging'
         command['config']['service'] = 'middletier'
         command['config']['version'] = '2'
@@ -397,7 +398,7 @@ describe('lambda', () => {
           'Functions in config file and "--functions-regex" should not be used at the same time.\n'
         )
 
-        command = createCommand()
+        command = createCommand(InstrumentCommand)
         command['environment'] = 'staging'
         command['service'] = 'middletier'
         command['version'] = '2'
@@ -412,7 +413,7 @@ describe('lambda', () => {
         ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({}))
 
         process.env = {}
-        const command = createCommand()
+        const command = createCommand(InstrumentCommand)
         command['environment'] = 'staging'
         command['service'] = 'middletier'
         command['version'] = '2'
@@ -426,7 +427,7 @@ describe('lambda', () => {
     describe('getSettings', () => {
       test('uses config file settings', () => {
         process.env = {}
-        const command = createCommand()
+        const command = createCommand(InstrumentCommand)
         command['config']['flushMetricsToLogs'] = 'false'
         command['config']['forwarder'] = 'my-forwarder'
         command['config']['layerVersion'] = '2'
@@ -450,7 +451,7 @@ describe('lambda', () => {
 
       test('prefers command line arguments over config file', () => {
         process.env = {}
-        const command = createCommand()
+        const command = createCommand(InstrumentCommand)
         command['forwarder'] = 'my-forwarder'
         command['config']['forwarder'] = 'another-forwarder'
         command['layerVersion'] = '1'
@@ -480,7 +481,7 @@ describe('lambda', () => {
       test("returns undefined when layer version can't be parsed", () => {
         process.env = {}
 
-        const command = createCommand()
+        const command = createCommand(InstrumentCommand)
         command.context = {
           stdout: {write: jest.fn()} as any,
         } as any
@@ -492,7 +493,7 @@ describe('lambda', () => {
       test("returns undefined when extension version can't be parsed", () => {
         process.env = {}
 
-        const command = createCommand()
+        const command = createCommand(InstrumentCommand)
         command.context = {
           stdout: {write: jest.fn()} as any,
         } as any
@@ -503,7 +504,7 @@ describe('lambda', () => {
 
       test('converts string boolean from command line and config file correctly', () => {
         process.env = {}
-        const command = createCommand()
+        const command = createCommand(InstrumentCommand)
         const validSettings: InstrumentationSettings = {
           extensionVersion: undefined,
           flushMetricsToLogs: false,
@@ -548,14 +549,14 @@ describe('lambda', () => {
           'tracing',
         ]
         for (const option of stringBooleans) {
-          let command = createCommand()
+          let command = createCommand(InstrumentCommand)
           command['config'][option] = 'NotBoolean'
           command['getSettings']()
 
           let output = command.context.stdout.toString()
           expect(output).toMatch(`Invalid boolean specified for ${option}.\n`)
 
-          command = createCommand()
+          command = createCommand(InstrumentCommand)
           command[option] = 'NotBoolean'
           command['getSettings']()
 
@@ -568,7 +569,7 @@ describe('lambda', () => {
         ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({}))
 
         process.env = {}
-        let command = createCommand()
+        let command = createCommand(InstrumentCommand)
         command['config']['region'] = 'ap-southeast-1'
         command['config']['functions'] = ['arn:aws:lambda:ap-southeast-1:123456789012:function:lambda-hello-world']
         await command['getSettings']()
@@ -577,7 +578,7 @@ describe('lambda', () => {
           'Warning: The environment, service and version tags have not been configured. Learn more about Datadog unified service tagging: https://docs.datadoghq.com/getting_started/tagging/unified_service_tagging/#serverless-environment.\n'
         )
 
-        command = createCommand()
+        command = createCommand(InstrumentCommand)
         command['config']['region'] = 'ap-southeast-1'
         command['config']['functions'] = ['arn:aws:lambda:ap-southeast-1:123456789012:function:lambda-hello-world']
         command['config']['environment'] = 'b'
@@ -593,7 +594,7 @@ describe('lambda', () => {
         ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({}))
 
         process.env = {}
-        const command = createCommand()
+        const command = createCommand(InstrumentCommand)
         command['config']['region'] = 'ap-southeast-1'
         command['config']['functions'] = ['arn:aws:lambda:ap-southeast-1:123456789012:function:lambda-hello-world']
         command['config']['service'] = 'middletier'
@@ -608,7 +609,7 @@ describe('lambda', () => {
     describe('printPlannedActions', () => {
       test('prints no output when list is empty', () => {
         process.env = {}
-        const command = createCommand()
+        const command = createCommand(InstrumentCommand)
 
         command['printPlannedActions']([])
         const output = command.context.stdout.toString()
@@ -620,7 +621,7 @@ describe('lambda', () => {
 
       test('prints log group actions', () => {
         process.env = {}
-        const command = createCommand()
+        const command = createCommand(InstrumentCommand)
 
         command['printPlannedActions']([
           {

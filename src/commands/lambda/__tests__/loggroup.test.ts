@@ -1,35 +1,10 @@
-import {CloudWatchLogs} from 'aws-sdk'
 import {applyLogGroupConfig, calculateLogGroupRemoveRequest, calculateLogGroupUpdateRequest} from '../loggroup'
-
-const makeMockCloudWatch = (
-  logGroups: Record<
-    string,
-    {config: CloudWatchLogs.DescribeLogGroupsResponse; filters?: CloudWatchLogs.DescribeSubscriptionFiltersResponse}
-  >
-) => ({
-  createLogGroup: jest.fn().mockImplementation(() => ({promise: () => Promise.resolve()})),
-  deleteSubscriptionFilter: jest.fn().mockImplementation(() => ({promise: () => Promise.resolve()})),
-  describeLogGroups: jest.fn().mockImplementation(({logGroupNamePrefix}) => {
-    const groups = logGroups[logGroupNamePrefix]?.config ?? {logGroups: []}
-
-    return {
-      promise: () => Promise.resolve(groups),
-    }
-  }),
-  describeSubscriptionFilters: jest.fn().mockImplementation(({logGroupName}) => {
-    const groups = logGroups[logGroupName]?.filters ?? {subscriptionFilters: []}
-
-    return {
-      promise: () => Promise.resolve(groups),
-    }
-  }),
-  putSubscriptionFilter: jest.fn().mockImplementation(() => ({promise: () => Promise.resolve()})),
-})
+import { makeMockCloudWatchLogs } from './fixtures'
 
 describe('loggroup', () => {
   describe('calculateLogGroupUpdateRequest', () => {
     test("creates a new log group when one doesn't exist", async () => {
-      const logs = makeMockCloudWatch({})
+      const logs = makeMockCloudWatchLogs({})
       const result = await calculateLogGroupUpdateRequest(logs as any, '/aws/lambda/my-func', 'my-forwarder')
       expect(result).toMatchInlineSnapshot(`
                         Object {
@@ -47,7 +22,7 @@ describe('loggroup', () => {
                   `)
     })
     test("adds a subscription filter when one doesn't exist", async () => {
-      const logs = makeMockCloudWatch({
+      const logs = makeMockCloudWatchLogs({
         '/aws/lambda/my-func': {
           config: {
             logGroups: [{logGroupName: '/aws/lambda/my-func'}],
@@ -69,7 +44,7 @@ describe('loggroup', () => {
             `)
     })
     test('updates a subscription filter when an owned one already exists', async () => {
-      const logs = makeMockCloudWatch({
+      const logs = makeMockCloudWatchLogs({
         '/aws/lambda/my-func': {
           config: {
             logGroups: [{logGroupName: '/aws/lambda/my-func'}],
@@ -99,7 +74,7 @@ describe('loggroup', () => {
             `)
     })
     test('throws an exception when an unowned subscription filter exists', async () => {
-      const logs = makeMockCloudWatch({
+      const logs = makeMockCloudWatchLogs({
         '/aws/lambda/my-func': {
           config: {
             logGroups: [{logGroupName: '/aws/lambda/my-func'}],
@@ -121,7 +96,7 @@ describe('loggroup', () => {
       )
     })
     test("doesn't update a subscription when filter is already correct", async () => {
-      const logs = makeMockCloudWatch({
+      const logs = makeMockCloudWatchLogs({
         '/aws/lambda/my-func': {
           config: {
             logGroups: [{logGroupName: '/aws/lambda/my-func'}],
@@ -143,7 +118,7 @@ describe('loggroup', () => {
   })
   describe('calculateLogGroupRemoveRequest', () => {
     test('deletes the subscription filter that matches the forwarder', async () => {
-      const logs = makeMockCloudWatch({
+      const logs = makeMockCloudWatchLogs({
         '/aws/lambda/my-func': {
           config: {
             logGroups: [{logGroupName: '/aws/lambda/my-func'}],
@@ -168,7 +143,7 @@ describe('loggroup', () => {
       `)
     })
     test('deletes the subscription filter that matches the datadog subscription filter constant name', async () => {
-      const logs = makeMockCloudWatch({
+      const logs = makeMockCloudWatchLogs({
         '/aws/lambda/my-func': {
           config: {
             logGroups: [{logGroupName: '/aws/lambda/my-func'}],
@@ -193,7 +168,7 @@ describe('loggroup', () => {
       `)
     })
     test('returns log group configuration without delete request when forwarder and filter name does not match', async () => {
-      const logs = makeMockCloudWatch({
+      const logs = makeMockCloudWatchLogs({
         '/aws/lambda/my-func': {
           config: {
             logGroups: [{logGroupName: '/aws/lambda/my-func'}],
@@ -224,7 +199,7 @@ describe('loggroup', () => {
   })
   describe('applyLogGroupConfiguration', () => {
     test('applies specified changes', async () => {
-      const logs = makeMockCloudWatch({})
+      const logs = makeMockCloudWatchLogs({})
 
       const config = {
         createLogGroupRequest: {
@@ -259,7 +234,7 @@ describe('loggroup', () => {
       })
     })
     test("doesn't apply unspecified changes", async () => {
-      const logs = makeMockCloudWatch({})
+      const logs = makeMockCloudWatchLogs({})
 
       const config = {
         logGroupName: '/aws/lambda/my-func',

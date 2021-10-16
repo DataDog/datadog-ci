@@ -354,7 +354,7 @@ describe('instrument', () => {
           Runtime: 'go',
         },
       })
-      const cloudWatch = makeMockCloudWatchLogs()
+      const cloudWatch = makeMockCloudWatchLogs({})
 
       const settings = {
         flushMetricsToLogs: false,
@@ -381,7 +381,7 @@ describe('instrument', () => {
           Runtime: 'nodejs12.x',
         },
       })
-      const cloudWatch = makeMockCloudWatchLogs()
+      const cloudWatch = makeMockCloudWatchLogs({})
 
       const settings = {
         flushMetricsToLogs: false,
@@ -423,7 +423,7 @@ describe('instrument', () => {
           Runtime: 'nodejs12.x',
         },
       })
-      const cloudWatch = makeMockCloudWatchLogs()
+      const cloudWatch = makeMockCloudWatchLogs({})
 
       const settings = {
         flushMetricsToLogs: false,
@@ -449,7 +449,7 @@ describe('instrument', () => {
           Runtime: 'nodejs12.x',
         },
       })
-      const cloudWatch = makeMockCloudWatchLogs()
+      const cloudWatch = makeMockCloudWatchLogs({})
 
       const settings = {
         flushMetricsToLogs: false,
@@ -480,7 +480,7 @@ describe('instrument', () => {
           Runtime: 'nodejs12.x',
         },
       })
-      const cloudWatch = makeMockCloudWatchLogs()
+      const cloudWatch = makeMockCloudWatchLogs({})
       const settings = {
         flushMetricsToLogs: false,
         forwarderARN: 'my-forwarder',
@@ -520,7 +520,7 @@ describe('instrument', () => {
           Runtime: 'nodejs12.x',
         },
       })
-      const cloudWatch = makeMockCloudWatchLogs()
+      const cloudWatch = makeMockCloudWatchLogs({})
       const settings = {
         environment: 'staging',
         flushMetricsToLogs: false,
@@ -587,7 +587,7 @@ describe('instrument', () => {
           Runtime: 'nodejs12.x',
         },
       })
-      const cloudWatch = makeMockCloudWatchLogs()
+      const cloudWatch = makeMockCloudWatchLogs({})
 
       const settings = {
         environment: 'staging',
@@ -635,7 +635,7 @@ describe('instrument', () => {
           Runtime: 'nodejs12.x',
         },
       })
-      const cloudWatch = makeMockCloudWatchLogs()
+      const cloudWatch = makeMockCloudWatchLogs({})
       const settings = {
         flushMetricsToLogs: false,
         layerVersion: 22,
@@ -678,7 +678,7 @@ describe('instrument', () => {
         })),
       })
       const lambda = makeMockLambdaListFunctionsError()
-      const cloudWatch = makeMockCloudWatchLogs()
+      const cloudWatch = makeMockCloudWatchLogs({})
       const settings = {
         flushMetricsToLogs: false,
         layerVersion: 22,
