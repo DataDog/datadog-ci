@@ -1,4 +1,4 @@
-# Commit command
+# git-metadata command
 
 **Access to this command is currently restricted.**
 
@@ -28,7 +28,7 @@ This command will upload the current commit details to Datadog in order to creat
 This command should be run inside a local git repository and the git program must be available:
 
 ```bash
-datadog-ci commit upload
+datadog-ci git-metadata upload
 ```
 
 * `--repository-url` (default: empty): overrides the repository remote with a custom URL. For example: https://github.com/my-company/my-project
@@ -52,7 +52,7 @@ To verify this command works as expected, you can trigger a test run and verify 
 ```bash
 export DATADOG_API_KEY='<API key>'
 
-yarn launch commit upload
+yarn launch git-metadata upload
 ```
 
 Successful output should look like this:

@@ -2,9 +2,7 @@
 
 Upload JS sourcemaps to Datadog to un-minify your errors.
 
-## Usage
-
-### Setup
+## Setup
 
 You need to have `DATADOG_API_KEY` in your environment.
 
@@ -17,11 +15,9 @@ It is possible to configure the tool to use Datadog EU by defining the `DATADOG_
 
 It is also possible to override the full URL for the intake endpoint by defining the `DATADOG_SOURCEMAP_INTAKE_URL` environment variable.
 
+## Commands
 
-
-### Commands
-
-#### `upload`
+### `upload`
 
 This command will upload all javascript sourcemaps and their corresponding javascript file to Datadog in order to un-minify front-end stack traces received by Datadog.
 
@@ -50,28 +46,39 @@ In addition, some optional parameters are available:
 * `--project-path` (default: empty): the path of the project where the sourcemaps were built. This will be stripped off from sources paths referenced in the sourcemap so they can be properly matched against tracked files paths.
 * `--repository-url` (default: empty): overrides the repository remote with a custom URL. For example: https://github.com/my-company/my-project
 
-#### Link errors with your source code
+### Link errors with your source code
 
-In addition to sending source maps, the sourcemaps upload command reports Git information such as the current commit hash, the repository URL, and the list of tracked file paths in the code repository. This requires the `git` program and also the current working directory to be inside a git repository.
-Each sourcemap uploaded will get such information associated with it.
+Errors in Datadog UI can be enriched with links to GitHub/GitLab/Bitbucket if these requirements are met:
+- `git` executable is installed
+- `datadog-ci` is run within the git repository
 
-The repository URL is infered from the remote named `origin` (or the first remote if none are named `origin`). The value can be overriden by using the `--repository-url` flag.
-For example: The remote `git@github.com:DataDog/example.git` will create links that point to `https://github.com/DataDog/example`.
+When these requirements are met, the upload command reports Git information such as the current commit hash, the repository URL, and the list of tracked file paths in the code repository.
+Each sourcemap uploaded gets such information associated with it.
 
-The only repository URLs supported are the ones whose host contains: `github`, `gitlab` or `bitbucket`. This allows DataDog to create proper URLs such as:
+Only tracked file paths that could be related to the sourcemap being uploaded are gathered.
+For example: A sourcemap containing `["webpack:///./src/folder/example.ts"]` inside its `sources` attribute will have associated with it all tracked file paths with `example.ts` as filename.
+
+#### Override repository URL
+
+The repository URL is inferred
+- from the remote named `origin` if present
+- from the first remote otherwise
+
+The value can be overriden with `--repository-url`.
+
+Example: With a remote `git@github.com:Datadog/example.git`, links pointing to `https://github.com/Datadog/example` are generated.
+This behavior can be overriden with links to `https://gitlab.com/Datadog/example` with the flag `--repository-url=https://gitlab.com/Datadog/example`.
+
+#### Supported repositories
+
+The only repository URLs supported are the ones whose host contains: `github`, `gitlab` or `bitbucket`. This allows Datadog to create proper URLs such as:
 
 | Provider  | URL |
 | --- | --- |
 | GitHub / GitLab  | https://\<repository-url\>/blob/\<commit-hash\>/\<tracked-file-path\>#L\<line\> |
 | Bitbucket | https://\<repository-url\>/src/\<commit-hash\>/\<tracked-file-path\>#lines-\<line\>  |
 
-Only tracked files paths related to the sourcemap being uploaded are gathered.
-For example: A sourcemap containing inside its `sources` attribute `["webpack:///./src/folder/example.ts"]` will have associated with it all tracked file paths with `example.ts` as filename.
-
-The following warning will be displayed if none of the filenames inside a sourcemap `sources` attribute are found within tracked files:
-`Could not attach git data for sourcemap ...`
-
-### End-to-end testing process
+## End-to-end testing process
 
 To verify this command works as expected, you can trigger a test run and verify it returns 0:
 
