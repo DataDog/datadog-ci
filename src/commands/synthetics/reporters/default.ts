@@ -8,9 +8,9 @@ import {
   ERRORS,
   ExecutionRule,
   LocationsMapping,
+  MainReporter,
   Operator,
   PollResult,
-  Reporter,
   Result,
   Step,
   Summary,
@@ -263,7 +263,7 @@ const getTestResultColor = (success: boolean, isNonBlocking: boolean) => {
   return chalk.bold.red
 }
 
-export class DefaultReporter implements Reporter {
+export class DefaultReporter implements MainReporter {
   private write: Writable['write']
 
   constructor({context}: {context: BaseContext}) {
