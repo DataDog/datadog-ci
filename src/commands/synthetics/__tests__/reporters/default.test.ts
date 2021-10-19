@@ -1,4 +1,6 @@
 import {BaseContext} from 'clipanion/lib/advanced'
+
+import {MainReporter} from '../../interfaces'
 import {DefaultReporter} from '../../reporters/default'
 
 describe('Default reporter', () => {
@@ -12,9 +14,9 @@ describe('Default reporter', () => {
   }
   const reporter: any = new DefaultReporter(mockContext as {context: BaseContext})
   it('should log for each hook', () => {
-    const calls: [string, any[]][] = [
+    const calls: [keyof MainReporter, any[]][] = [
       ['error', ['error']],
-      ['initError', [['error']]],
+      ['initErrors', [['error']]],
       ['log', ['log']],
       ['reportStart', [{startTime: 0}]],
       ['runEnd', [{passed: 0, failed: 0, skipped: 0}]],

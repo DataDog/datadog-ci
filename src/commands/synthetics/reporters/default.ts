@@ -274,7 +274,7 @@ export class DefaultReporter implements Reporter {
     this.write(error)
   }
 
-  public initError(errors: string[]) {
+  public initErrors(errors: string[]) {
     this.write(errors.join('\n'))
   }
 

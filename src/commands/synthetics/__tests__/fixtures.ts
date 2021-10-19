@@ -249,7 +249,6 @@ export const getSyntheticsProxy = () => {
     if (/\/synthetics\/tests\//.test(request.url)) {
       return mockResponse(calls.get, getApiTest('123-456-789'))
     }
-    console.log(request.url)
 
     response.end()
   })
