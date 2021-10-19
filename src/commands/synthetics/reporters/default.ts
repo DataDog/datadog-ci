@@ -297,8 +297,10 @@ export class DefaultReporter implements MainReporter {
     if (summary.skipped) {
       summaries.push(`${chalk.bold(summary.skipped)} skipped`)
     }
-    if (summary.notFound) {
-      summaries.push(chalk.yellow(`${chalk.bold(summary.notFound)} not found`))
+
+    if (summary.testsNotFound.size > 0) {
+      const testsNotFoundStr = chalk.gray(`(${[...summary.testsNotFound].join(', ')})`)
+      summaries.push(`${chalk.yellow(`${chalk.bold(summary.testsNotFound.size)} not found`)} ${testsNotFoundStr}`)
     }
 
     const extraInfo = []

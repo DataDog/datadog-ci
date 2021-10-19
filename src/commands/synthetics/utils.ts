@@ -366,12 +366,21 @@ const createFailingResult = (
   timestamp: 0,
 })
 
+export const createSummary = (): Summary => ({
+  criticalErrors: 0,
+  failed: 0,
+  passed: 0,
+  skipped: 0,
+  testsNotFound: new Set(),
+  timedOut: 0,
+})
+
 export const getResultDuration = (result: Result): number => {
   if ('duration' in result) {
-    return result.duration
+    return Math.round(result.duration)
   }
   if ('timings' in result) {
-    return result.timings.total
+    return Math.round(result.timings.total)
   }
 
   return 0
@@ -439,7 +448,7 @@ export const getReporter = (reporters: Reporter[]): MainReporter => ({
 export const getTestsToTrigger = async (api: APIHelper, triggerConfigs: TriggerConfig[], reporter: MainReporter) => {
   const overriddenTestsToTrigger: TestPayload[] = []
   const errorMessages: string[] = []
-  const summary: Summary = {criticalErrors: 0, failed: 0, notFound: 0, passed: 0, skipped: 0, timedOut: 0}
+  const summary = createSummary()
 
   const tests = await Promise.all(
     triggerConfigs.map(async ({config, id, suite}) => {
@@ -455,7 +464,7 @@ export const getTestsToTrigger = async (api: APIHelper, triggerConfigs: TriggerC
           throw e
         }
 
-        summary.notFound++
+        summary.testsNotFound.add(id)
         const errorMessage = formatBackendErrors(e)
         errorMessages.push(`[${chalk.bold.dim(id)}] ${chalk.yellow.bold('Test not found')}: ${errorMessage}\n`)
 
