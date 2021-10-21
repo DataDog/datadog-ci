@@ -1,3 +1,4 @@
+import { SUBSCRIPTION_FILTER_NAME } from '../constants'
 import {applyLogGroupConfig, calculateLogGroupRemoveRequest, calculateLogGroupUpdateRequest} from '../loggroup'
 import {makeMockCloudWatchLogs} from './fixtures'
 
@@ -53,7 +54,7 @@ describe('loggroup', () => {
             subscriptionFilters: [
               {
                 destinationArn: 'wrong-destination',
-                filterName: 'datadog-ci-filter',
+                filterName: SUBSCRIPTION_FILTER_NAME,
                 logGroupName: '/aws/lambda/my-func',
               },
             ],
@@ -105,7 +106,7 @@ describe('loggroup', () => {
             subscriptionFilters: [
               {
                 destinationArn: 'my-forwarder',
-                filterName: 'datadog-ci-filter',
+                filterName: SUBSCRIPTION_FILTER_NAME,
                 logGroupName: '/aws/lambda/my-func',
               },
             ],
@@ -127,7 +128,7 @@ describe('loggroup', () => {
             subscriptionFilters: [
               {
                 destinationArn: 'my-forwarder',
-                filterName: 'datadog-ci-filter',
+                filterName: SUBSCRIPTION_FILTER_NAME,
                 logGroupName: '/aws/lambda/my-func',
               },
             ],
@@ -152,7 +153,7 @@ describe('loggroup', () => {
             subscriptionFilters: [
               {
                 destinationArn: 'wrong-destination',
-                filterName: 'datadog-ci-filter',
+                filterName: SUBSCRIPTION_FILTER_NAME,
                 logGroupName: '/aws/lambda/my-func',
               },
             ],
@@ -206,13 +207,13 @@ describe('loggroup', () => {
           logGroupName: '/aws/lambda/my-func',
         },
         deleteSubscriptionFilterRequest: {
-          filterName: 'datadog-ci-filter',
+          filterName: SUBSCRIPTION_FILTER_NAME,
           logGroupName: '/aws/lambda/my-func',
         },
         logGroupName: '/aws/lambda/my-func',
         subscriptionFilterRequest: {
           destinationArn: 'my-forwarder',
-          filterName: 'datadog-ci-filter',
+          filterName: SUBSCRIPTION_FILTER_NAME,
           filterPattern: '',
           logGroupName: '/aws/lambda/my-func',
         },
@@ -223,12 +224,12 @@ describe('loggroup', () => {
         logGroupName: '/aws/lambda/my-func',
       })
       expect(logs.deleteSubscriptionFilter).toHaveBeenCalledWith({
-        filterName: 'datadog-ci-filter',
+        filterName: SUBSCRIPTION_FILTER_NAME,
         logGroupName: '/aws/lambda/my-func',
       })
       expect(logs.putSubscriptionFilter).toHaveBeenCalledWith({
         destinationArn: 'my-forwarder',
-        filterName: 'datadog-ci-filter',
+        filterName: SUBSCRIPTION_FILTER_NAME,
         filterPattern: '',
         logGroupName: '/aws/lambda/my-func',
       })
@@ -240,7 +241,7 @@ describe('loggroup', () => {
         logGroupName: '/aws/lambda/my-func',
         subscriptionFilterRequest: {
           destinationArn: 'my-forwarder',
-          filterName: 'datadog-ci-filter',
+          filterName: SUBSCRIPTION_FILTER_NAME,
           filterPattern: '',
           logGroupName: '/aws/lambda/my-func',
         },
@@ -251,7 +252,7 @@ describe('loggroup', () => {
       expect(logs.deleteSubscriptionFilter).not.toHaveBeenCalled()
       expect(logs.putSubscriptionFilter).toHaveBeenCalledWith({
         destinationArn: 'my-forwarder',
-        filterName: 'datadog-ci-filter',
+        filterName: SUBSCRIPTION_FILTER_NAME,
         filterPattern: '',
         logGroupName: '/aws/lambda/my-func',
       })
