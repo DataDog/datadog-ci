@@ -1,18 +1,21 @@
 /* tslint:disable:no-string-literal */
 import {
   EXTRA_TAGS_REG_EXP,
+  GOVCLOUD_LAYER_AWS_ACCOUNT,
   LAMBDA_HANDLER_ENV_VAR,
   MERGE_XRAY_TRACES_ENV_VAR,
   TRACE_ENABLED_ENV_VAR,
 } from '../../constants'
 import {
   collectFunctionsByRegion,
+  getExtensionArn,
+  getLayerArn,
   getRegion,
   sentenceMatchesRegEx,
   updateLambdaFunctionConfigs,
 } from '../../functions/commons'
 import {InstrumentCommand} from '../../instrument'
-import {createCommand, makeMockCloudWatchLogs, makeMockLambda} from '../fixtures'
+import {createCommand, makeMockCloudWatchLogs, makeMockLambda, mockAwsAccount} from '../fixtures'
 
 describe('commons', () => {
   describe('collectFunctionsByRegion', () => {
@@ -92,7 +95,82 @@ describe('commons', () => {
       expect(functionsGroup).toBeUndefined()
     })
   })
+  describe('getExtensionArn', () => {
+    const OLD_ENV = process.env
+    beforeEach(() => {
+      jest.resetModules()
+      process.env = {}
+    })
+    afterAll(() => {
+      process.env = OLD_ENV
+    })
 
+    test('gets sa-east-1 Lambda Extension layer ARN', async () => {
+      const settings = {
+        flushMetricsToLogs: false,
+        layerAWSAccount: mockAwsAccount,
+        mergeXrayTraces: false,
+        tracingEnabled: false,
+      }
+      const region = 'sa-east-1'
+      const layerArn = getExtensionArn({}, region, settings)
+      expect(layerArn).toEqual(`arn:aws:lambda:${region}:${mockAwsAccount}:layer:Datadog-Extension`)
+    })
+
+    test('gets sa-east-1 gov cloud Lambda Extension layer ARN', async () => {
+      const settings = {
+        flushMetricsToLogs: false,
+        layerAWSAccount: mockAwsAccount,
+        mergeXrayTraces: false,
+        tracingEnabled: false,
+      }
+      const region = 'us-gov-1'
+      const layerArn = getExtensionArn({}, region, settings)
+      expect(layerArn).toEqual(`arn:aws-us-gov:lambda:${region}:${GOVCLOUD_LAYER_AWS_ACCOUNT}:layer:Datadog-Extension`)
+    })
+  })
+  describe('getLayerArn', () => {
+    const OLD_ENV = process.env
+    beforeEach(() => {
+      jest.resetModules()
+      process.env = {}
+    })
+    afterAll(() => {
+      process.env = OLD_ENV
+    })
+
+    test('gets sa-east-1 Node12 Lambda Library layer ARN', async () => {
+      const runtime = 'nodejs12.x'
+      const config = {
+        Runtime: runtime,
+      }
+      const settings = {
+        flushMetricsToLogs: false,
+        layerAWSAccount: mockAwsAccount,
+        mergeXrayTraces: false,
+        tracingEnabled: false,
+      }
+      const region = 'sa-east-1'
+      const layerArn = getLayerArn(config, region, settings)
+      expect(layerArn).toEqual(`arn:aws:lambda:${region}:${mockAwsAccount}:layer:Datadog-Node12-x`)
+    })
+
+    test('gets sa-east-1 Python37 gov cloud Lambda Library layer ARN', async () => {
+      const runtime = 'python3.7'
+      const config = {
+        Runtime: runtime,
+      }
+      const settings = {
+        flushMetricsToLogs: false,
+        layerAWSAccount: mockAwsAccount,
+        mergeXrayTraces: false,
+        tracingEnabled: false,
+      }
+      const region = 'us-gov-1'
+      const layerArn = getLayerArn(config, region, settings)
+      expect(layerArn).toEqual(`arn:aws-us-gov:lambda:${region}:${GOVCLOUD_LAYER_AWS_ACCOUNT}:layer:Datadog-Python37`)
+    })
+  })
   describe('getRegion', () => {
     test('should return the expected region', () => {
       const functionARN = 'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world'
@@ -109,7 +187,6 @@ describe('commons', () => {
       expect(region).toBe(undefined)
     })
   })
-
   describe('sentenceMatchesRegEx', () => {
     const tags: [string, boolean][] = [
       ['not-complying:regex-should-fail', false],

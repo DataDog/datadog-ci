@@ -1,7 +1,17 @@
 import {CloudWatchLogs, Lambda} from 'aws-sdk'
 import {GetFunctionRequest} from 'aws-sdk/clients/lambda'
-import {MAX_LAMBDA_STATE_CHECK_ATTEMPTS, Runtime, RUNTIME_LAYER_LOOKUP} from '../constants'
-import {FunctionConfiguration} from '../interfaces'
+import {
+  ARM64_ARCHITECTURE,
+  ARM_LAYER_SUFFIX,
+  ARM_RUNTIMES,
+  DD_LAMBDA_EXTENSION_LAYER_NAME,
+  DEFAULT_LAYER_AWS_ACCOUNT,
+  GOVCLOUD_LAYER_AWS_ACCOUNT,
+  MAX_LAMBDA_STATE_CHECK_ATTEMPTS,
+  Runtime,
+  RUNTIME_LAYER_LOOKUP,
+} from '../constants'
+import {FunctionConfiguration, InstrumentationSettings} from '../interfaces'
 import {applyLogGroupConfig} from '../loggroup'
 import {applyTagConfig} from '../tags'
 
@@ -58,6 +68,24 @@ export const collectFunctionsByRegion = (functions: string[], defaultRegion: str
   return groups
 }
 
+export const getExtensionArn = (
+  config: Lambda.FunctionConfiguration,
+  region: string,
+  settings?: InstrumentationSettings
+) => {
+  let layerName = DD_LAMBDA_EXTENSION_LAYER_NAME
+  if (config.Architectures?.includes(ARM64_ARCHITECTURE)) {
+    layerName += ARM_LAYER_SUFFIX
+  }
+  const account = settings?.layerAWSAccount ?? DEFAULT_LAYER_AWS_ACCOUNT
+  const isGovCloud = region.startsWith('us-gov')
+  if (isGovCloud) {
+    return `arn:aws-us-gov:lambda:${region}:${GOVCLOUD_LAYER_AWS_ACCOUNT}:layer:${layerName}`
+  }
+
+  return `arn:aws:lambda:${region}:${account}:layer:${layerName}`
+}
+
 /**
  * Given a Lambda instance and an array of Lambda names,
  * return all the Lambda Function Configurations.
@@ -74,6 +102,25 @@ export const getLambdaFunctionConfigs = (
   const promises = functionARNs.map((fn) => getLambdaFunctionConfig(lambda, fn))
 
   return Promise.all(promises)
+}
+
+export const getLayerArn = (
+  config: Lambda.FunctionConfiguration,
+  region: string,
+  settings?: InstrumentationSettings
+) => {
+  const runtime = config.Runtime as Runtime
+  let layerName = RUNTIME_LAYER_LOOKUP[runtime]
+  if (runtime in ARM_RUNTIMES && config.Architectures?.includes(ARM64_ARCHITECTURE)) {
+    layerName += ARM_LAYER_SUFFIX
+  }
+  const account = settings?.layerAWSAccount ?? DEFAULT_LAYER_AWS_ACCOUNT
+  const isGovCloud = region.startsWith('us-gov')
+  if (isGovCloud) {
+    return `arn:aws-us-gov:lambda:${region}:${GOVCLOUD_LAYER_AWS_ACCOUNT}:layer:${layerName}`
+  }
+
+  return `arn:aws:lambda:${region}:${account}:layer:${layerName}`
 }
 
 /**

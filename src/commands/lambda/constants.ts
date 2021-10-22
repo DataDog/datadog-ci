@@ -10,6 +10,13 @@ export const RUNTIME_LAYER_LOOKUP = {
 } as const
 export type Runtime = keyof typeof RUNTIME_LAYER_LOOKUP
 
+export const ARM_RUNTIMES = ['python3.8', 'python3.9']
+export const X86_64_ARCHITECTURE = 'x86_64'
+export const ARM64_ARCHITECTURE = 'arm64'
+export const DEFAULT_ARCHITECTURE = X86_64_ARCHITECTURE
+export const LAMBDA_ARCHITECTURES = [ARM64_ARCHITECTURE, X86_64_ARCHITECTURE]
+export const ARM_LAYER_SUFFIX = '-ARM'
+
 const PYTHON_HANDLER_LOCATION = 'datadog_lambda.handler.handler'
 const NODE_HANDLER_LOCATION = '/opt/nodejs/node_modules/datadog-lambda-js/handler.handler'
 export const HANDLER_LOCATION = {

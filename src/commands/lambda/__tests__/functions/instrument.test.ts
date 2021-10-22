@@ -3,7 +3,6 @@ jest.mock('../../loggroup')
 import {
   ENVIRONMENT_ENV_VAR,
   FLUSH_TO_LOG_ENV_VAR,
-  GOVCLOUD_LAYER_AWS_ACCOUNT,
   LAMBDA_HANDLER_ENV_VAR,
   LOG_LEVEL_ENV_VAR,
   MERGE_XRAY_TRACES_ENV_VAR,
@@ -14,11 +13,9 @@ import {
 } from '../../constants'
 import {
   calculateUpdateRequest,
-  getExtensionArn,
   getFunctionConfig,
   getFunctionConfigs,
   getLambdaConfigsFromRegEx,
-  getLayerArn,
 } from '../../functions/instrument'
 
 import * as loggroup from '../../loggroup'
@@ -302,40 +299,6 @@ describe('instrument', () => {
       expect(() => {
         calculateUpdateRequest(config, settings, lambdaLibraryLayerArn, lambdaExtensionLayerArn, runtime)
       }).toThrowError("When 'extensionLayer' is set, DATADOG_API_KEY or DATADOG_KMS_API_KEY must also be set")
-    })
-  })
-  describe('getExtensionArn', () => {
-    const OLD_ENV = process.env
-    beforeEach(() => {
-      jest.resetModules()
-      process.env = {}
-    })
-    afterAll(() => {
-      process.env = OLD_ENV
-    })
-
-    test('gets sa-east-1 Lambda Extension layer ARN', async () => {
-      const settings = {
-        flushMetricsToLogs: false,
-        layerAWSAccount: mockAwsAccount,
-        mergeXrayTraces: false,
-        tracingEnabled: false,
-      }
-      const region = 'sa-east-1'
-      const layerArn = getExtensionArn(settings, region)
-      expect(layerArn).toEqual(`arn:aws:lambda:${region}:${mockAwsAccount}:layer:Datadog-Extension`)
-    })
-
-    test('gets sa-east-1 gov cloud Lambda Extension layer ARN', async () => {
-      const settings = {
-        flushMetricsToLogs: false,
-        layerAWSAccount: mockAwsAccount,
-        mergeXrayTraces: false,
-        tracingEnabled: false,
-      }
-      const region = 'us-gov-1'
-      const layerArn = getExtensionArn(settings, region)
-      expect(layerArn).toEqual(`arn:aws-us-gov:lambda:${region}:${GOVCLOUD_LAYER_AWS_ACCOUNT}:layer:Datadog-Extension`)
     })
   })
   describe('getFunctionConfig', () => {
@@ -690,42 +653,6 @@ describe('instrument', () => {
       await expect(
         getLambdaConfigsFromRegEx(lambda as any, cloudWatch as any, 'us-east-1', 'fake-pattern', settings)
       ).rejects.toStrictEqual(new Error('Max retry count exceeded.'))
-    })
-  })
-  describe('getLayerArn', () => {
-    const OLD_ENV = process.env
-    beforeEach(() => {
-      jest.resetModules()
-      process.env = {}
-    })
-    afterAll(() => {
-      process.env = OLD_ENV
-    })
-
-    test('gets sa-east-1 Node12 Lambda Library layer ARN', async () => {
-      const runtime = 'nodejs12.x'
-      const settings = {
-        flushMetricsToLogs: false,
-        layerAWSAccount: mockAwsAccount,
-        mergeXrayTraces: false,
-        tracingEnabled: false,
-      }
-      const region = 'sa-east-1'
-      const layerArn = getLayerArn(runtime, settings, region)
-      expect(layerArn).toEqual(`arn:aws:lambda:${region}:${mockAwsAccount}:layer:Datadog-Node12-x`)
-    })
-
-    test('gets sa-east-1 Python37 gov cloud Lambda Library layer ARN', async () => {
-      const runtime = 'python3.7'
-      const settings = {
-        flushMetricsToLogs: false,
-        layerAWSAccount: mockAwsAccount,
-        mergeXrayTraces: false,
-        tracingEnabled: false,
-      }
-      const region = 'us-gov-1'
-      const layerArn = getLayerArn(runtime, settings, region)
-      expect(layerArn).toEqual(`arn:aws-us-gov:lambda:${region}:${GOVCLOUD_LAYER_AWS_ACCOUNT}:layer:Datadog-Python37`)
     })
   })
 })
