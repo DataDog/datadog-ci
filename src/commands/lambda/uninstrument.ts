@@ -114,7 +114,7 @@ export class UninstrumentCommand extends Command {
       const {logGroupConfiguration, tagConfiguration} = config
       if (tagConfiguration?.untagResourceRequest) {
         this.context.stdout.write(
-          `UntagResoure -> ${tagConfiguration.untagResourceRequest.Resource}\n${JSON.stringify(
+          `UntagResource -> ${tagConfiguration.untagResourceRequest.Resource}\n${JSON.stringify(
             tagConfiguration.untagResourceRequest.TagKeys,
             undefined,
             2
@@ -140,3 +140,18 @@ UninstrumentCommand.addOption('region', Command.String('-r,--region'))
 UninstrumentCommand.addOption('configPath', Command.Array('--config'))
 UninstrumentCommand.addOption('dryRun', Command.Boolean('-d,--dry'))
 UninstrumentCommand.addOption('forwarder', Command.String('--forwarder'))
+
+/**
+ * Commands that are not really in use, but to
+ * make uninstrumentation easier for the user.
+ */
+UninstrumentCommand.addOption('extensionVersion', Command.String('-e,--extensionVersion', {hidden: true}))
+UninstrumentCommand.addOption('layerVersion', Command.String('-v,--layerVersion', {hidden: true}))
+UninstrumentCommand.addOption('tracing', Command.String('--tracing', {hidden: true}))
+UninstrumentCommand.addOption('mergeXrayTraces', Command.String('--mergeXrayTraces', {hidden: true}))
+UninstrumentCommand.addOption('flushMetricsToLogs', Command.String('--flushMetricsToLogs', {hidden: true}))
+UninstrumentCommand.addOption('logLevel', Command.String('--logLevel', {hidden: true}))
+UninstrumentCommand.addOption('service', Command.String('--service', {hidden: true}))
+UninstrumentCommand.addOption('environment', Command.String('--env', {hidden: true}))
+UninstrumentCommand.addOption('version', Command.String('--version', {hidden: true}))
+UninstrumentCommand.addOption('extraTags', Command.String('--extra-tags', {hidden: true}))

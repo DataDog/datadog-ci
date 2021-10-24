@@ -2,7 +2,7 @@
 jest.mock('fs')
 jest.mock('aws-sdk')
 import {Lambda} from 'aws-sdk'
-import {cyan} from 'chalk'
+import {cyan, red} from 'chalk'
 import * as fs from 'fs'
 
 import {
@@ -92,7 +92,6 @@ describe('uninstrument', () => {
         "
       `)
     })
-
     test('runs function update command for valid uninstrumentation', async () => {
       ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({code: 'ENOENT'}))
       const lambda = makeMockLambda({
@@ -138,6 +137,22 @@ describe('uninstrument', () => {
       process.env.DATADOG_API_KEY = '1234'
       await cli.run(['lambda', 'uninstrument', '-f', functionARN, '-r', 'us-east-1'], context)
       expect(lambda.updateFunctionConfiguration).toHaveBeenCalled()
+    })
+    test('aborts early when the aws-sdk throws an error', async () => {
+      ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({code: 'ENOENT'}))
+      ;(Lambda as any).mockImplementation(() => ({
+        getFunction: jest.fn().mockImplementation(() => ({promise: () => Promise.reject('Lambda failed')})),
+      }))
+
+      process.env = {}
+      const command = createCommand(UninstrumentCommand)
+      command['functions'] = ['my-func']
+      command['region'] = 'us-east-1'
+
+      const code = await command['execute']()
+      const output = command.context.stdout.toString()
+      expect(code).toBe(1)
+      expect(output).toMatch(`${red('[Error]')} Couldn't fetch lambda functions. Lambda failed\n`)
     })
     test("aborts early when function regions can't be found", async () => {
       ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({code: 'ENOENT'}))
