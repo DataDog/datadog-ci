@@ -36,7 +36,7 @@ export const addLayerARN = (fullLayerARN: string | undefined, partialLayerARN: s
 }
 
 /**
- * Returns an arrayed grouped functions by its region, it
+ * Returns an array of functions grouped by its region, it
  * throws an error if there are functions without a region.
  *
  * @param functions an array of strings comprised by
@@ -67,7 +67,15 @@ export const collectFunctionsByRegion = (functions: string[], defaultRegion: str
 
   return groups
 }
-
+/**
+ * Returns the correct ARN of the **Extension Layer** given its configuration, region,
+ * and settings (optional).
+ *
+ * @param config a Lambda FunctionConfiguration.
+ * @param region a region where the layer is hosted.
+ * @param settings instrumentation settings, mainly used to change the AWS account that contains the Layer.
+ * @returns the ARN of the **Extension Layer** with the correct region, account, architecture, and name.
+ */
 export const getExtensionArn = (
   config: Lambda.FunctionConfiguration,
   region: string,
@@ -104,6 +112,15 @@ export const getLambdaFunctionConfigs = (
   return Promise.all(promises)
 }
 
+/**
+ * Returns the correct ARN of a **Specific Runtime Layer** given its configuration, region,
+ * and settings (optional).
+ *
+ * @param config a Lambda FunctionConfiguration.
+ * @param region a region where the layer is hosted.
+ * @param settings instrumentation settings, mainly used to change the AWS account that contains the Layer.
+ * @returns the ARN of a **Specific Runtime Layer** with the correct region, account, architecture, and name.
+ */
 export const getLayerArn = (
   config: Lambda.FunctionConfiguration,
   region: string,
@@ -111,7 +128,7 @@ export const getLayerArn = (
 ) => {
   const runtime = config.Runtime as Runtime
   let layerName = RUNTIME_LAYER_LOOKUP[runtime]
-  if (runtime in ARM_RUNTIMES && config.Architectures?.includes(ARM64_ARCHITECTURE)) {
+  if (ARM_RUNTIMES.includes(runtime) && config.Architectures?.includes(ARM64_ARCHITECTURE)) {
     layerName += ARM_LAYER_SUFFIX
   }
   const account = settings?.layerAWSAccount ?? DEFAULT_LAYER_AWS_ACCOUNT
