@@ -137,7 +137,7 @@ export class UninstrumentCommand extends Command {
 UninstrumentCommand.addPath('lambda', 'uninstrument')
 UninstrumentCommand.addOption('functions', Command.Array('-f,--function'))
 UninstrumentCommand.addOption('region', Command.String('-r,--region'))
-UninstrumentCommand.addOption('configPath', Command.String('--config'))
+UninstrumentCommand.addOption('configPath', Command.Array('--config'))
 UninstrumentCommand.addOption('dryRun', Command.Boolean('-d,--dry'))
 UninstrumentCommand.addOption('forwarder', Command.String('--forwarder'))
 
