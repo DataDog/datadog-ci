@@ -49,6 +49,7 @@ export const CI_API_KEY_ENV_VAR = 'DATADOG_API_KEY'
 export const CI_KMS_API_KEY_ENV_VAR = 'DATADOG_KMS_API_KEY'
 
 export const LIST_FUNCTIONS_MAX_RETRY_COUNT = 2
+export const MAX_LAMBDA_STATE_CHECK_ATTEMPTS = 3
 
 // DD_TAGS Regular Expression
 // This RegExp ensures that the --extra-tags string

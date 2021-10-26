@@ -3,50 +3,14 @@ jest.mock('fs')
 jest.mock('aws-sdk')
 import {Lambda} from 'aws-sdk'
 import * as fs from 'fs'
-
-import {Cli} from 'clipanion/lib/advanced'
 import path from 'path'
-import {EXTRA_TAGS_REG_EXP} from '../constants'
-import {InstrumentationSettings} from '../function'
-import {InstrumentCommand, sentenceMatchesRegEx} from '../instrument'
-import {LambdaConfigOptions} from '../interfaces'
+import {InstrumentCommand} from '../instrument'
+import {InstrumentationSettings, LambdaConfigOptions} from '../interfaces'
+import {createCommand, createMockContext, makeCli, makeMockLambda} from './fixtures'
 // tslint:disable-next-line
 const {version} = require(path.join(__dirname, '../../../../package.json'))
 
 describe('lambda', () => {
-  const createMockContext = () => {
-    let data = ''
-
-    return {
-      stdout: {
-        toString: () => data,
-        write: (input: string) => {
-          data += input
-        },
-      },
-    }
-  }
-  const createCommand = () => {
-    const command = new InstrumentCommand()
-    command.context = createMockContext() as any
-
-    return command
-  }
-  const makeCli = () => {
-    const cli = new Cli()
-    cli.register(InstrumentCommand)
-
-    return cli
-  }
-  const makeMockLambda = (functionConfigs: Record<string, Lambda.FunctionConfiguration>) => ({
-    getFunction: jest.fn().mockImplementation(({FunctionName}) => ({
-      promise: () => Promise.resolve({Configuration: functionConfigs[FunctionName]}),
-    })),
-    listTags: jest.fn().mockImplementation(() => ({promise: () => Promise.resolve({Tags: {}})})),
-    tagResource: jest.fn().mockImplementation(() => ({promise: () => Promise.resolve({})})),
-    updateFunctionConfiguration: jest.fn().mockImplementation(() => ({promise: () => Promise.resolve()})),
-  })
-
   describe('instrument', () => {
     describe('execute', () => {
       const OLD_ENV = process.env
@@ -282,7 +246,7 @@ describe('lambda', () => {
         ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({}))
 
         process.env = {}
-        const command = createCommand()
+        const command = createCommand(InstrumentCommand)
         command['config']['layerVersion'] = '60'
         command['config']['extensionVersion'] = '10'
         command['config']['region'] = 'ap-southeast-1'
@@ -324,10 +288,9 @@ describe('lambda', () => {
 
         const output = context.stdout.toString()
         expect(code).toBe(1)
-        expect(output).toMatchInlineSnapshot(`
-                                                  "'No default region specified for [\\"my-func\\"]. Use -r,--region, or use a full functionARN
-                                                  "
-                                        `)
+        expect(output).toMatch(
+          `Couldn't group functions. Error: No default region specified for ["my-func"]. Use -r, --region, or use a full functionARN\n`
+        )
       })
 
       test('aborts if a function is not in an Active state with LastUpdateStatus Successful', async () => {
@@ -410,7 +373,7 @@ describe('lambda', () => {
         ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({}))
 
         process.env = {}
-        const command = createCommand()
+        const command = createCommand(InstrumentCommand)
         command['config']['layerVersion'] = '60'
         command['config']['extensionVersion'] = '10'
         command['config']['region'] = 'ap-southeast-1'
@@ -422,7 +385,7 @@ describe('lambda', () => {
         ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({}))
 
         process.env = {}
-        let command = createCommand()
+        let command = createCommand(InstrumentCommand)
         command['config']['environment'] = 'staging'
         command['config']['service'] = 'middletier'
         command['config']['version'] = '2'
@@ -435,7 +398,7 @@ describe('lambda', () => {
           'Functions in config file and "--functions-regex" should not be used at the same time.\n'
         )
 
-        command = createCommand()
+        command = createCommand(InstrumentCommand)
         command['environment'] = 'staging'
         command['service'] = 'middletier'
         command['version'] = '2'
@@ -450,7 +413,7 @@ describe('lambda', () => {
         ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({}))
 
         process.env = {}
-        const command = createCommand()
+        const command = createCommand(InstrumentCommand)
         command['environment'] = 'staging'
         command['service'] = 'middletier'
         command['version'] = '2'
@@ -461,11 +424,10 @@ describe('lambda', () => {
         expect(output).toMatch(`"--functions-regex" isn't meant to be used with ARNs.\n`)
       })
     })
-
     describe('getSettings', () => {
       test('uses config file settings', () => {
         process.env = {}
-        const command = createCommand()
+        const command = createCommand(InstrumentCommand)
         command['config']['flushMetricsToLogs'] = 'false'
         command['config']['forwarder'] = 'my-forwarder'
         command['config']['layerVersion'] = '2'
@@ -489,7 +451,7 @@ describe('lambda', () => {
 
       test('prefers command line arguments over config file', () => {
         process.env = {}
-        const command = createCommand()
+        const command = createCommand(InstrumentCommand)
         command['forwarder'] = 'my-forwarder'
         command['config']['forwarder'] = 'another-forwarder'
         command['layerVersion'] = '1'
@@ -519,7 +481,7 @@ describe('lambda', () => {
       test("returns undefined when layer version can't be parsed", () => {
         process.env = {}
 
-        const command = createCommand()
+        const command = createCommand(InstrumentCommand)
         command.context = {
           stdout: {write: jest.fn()} as any,
         } as any
@@ -531,7 +493,7 @@ describe('lambda', () => {
       test("returns undefined when extension version can't be parsed", () => {
         process.env = {}
 
-        const command = createCommand()
+        const command = createCommand(InstrumentCommand)
         command.context = {
           stdout: {write: jest.fn()} as any,
         } as any
@@ -542,7 +504,7 @@ describe('lambda', () => {
 
       test('converts string boolean from command line and config file correctly', () => {
         process.env = {}
-        const command = createCommand()
+        const command = createCommand(InstrumentCommand)
         const validSettings: InstrumentationSettings = {
           extensionVersion: undefined,
           flushMetricsToLogs: false,
@@ -587,14 +549,14 @@ describe('lambda', () => {
           'tracing',
         ]
         for (const option of stringBooleans) {
-          let command = createCommand()
+          let command = createCommand(InstrumentCommand)
           command['config'][option] = 'NotBoolean'
           command['getSettings']()
 
           let output = command.context.stdout.toString()
           expect(output).toMatch(`Invalid boolean specified for ${option}.\n`)
 
-          command = createCommand()
+          command = createCommand(InstrumentCommand)
           command[option] = 'NotBoolean'
           command['getSettings']()
 
@@ -607,7 +569,7 @@ describe('lambda', () => {
         ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({}))
 
         process.env = {}
-        let command = createCommand()
+        let command = createCommand(InstrumentCommand)
         command['config']['region'] = 'ap-southeast-1'
         command['config']['functions'] = ['arn:aws:lambda:ap-southeast-1:123456789012:function:lambda-hello-world']
         await command['getSettings']()
@@ -616,7 +578,7 @@ describe('lambda', () => {
           'Warning: The environment, service and version tags have not been configured. Learn more about Datadog unified service tagging: https://docs.datadoghq.com/getting_started/tagging/unified_service_tagging/#serverless-environment.\n'
         )
 
-        command = createCommand()
+        command = createCommand(InstrumentCommand)
         command['config']['region'] = 'ap-southeast-1'
         command['config']['functions'] = ['arn:aws:lambda:ap-southeast-1:123456789012:function:lambda-hello-world']
         command['config']['environment'] = 'b'
@@ -632,7 +594,7 @@ describe('lambda', () => {
         ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({}))
 
         process.env = {}
-        const command = createCommand()
+        const command = createCommand(InstrumentCommand)
         command['config']['region'] = 'ap-southeast-1'
         command['config']['functions'] = ['arn:aws:lambda:ap-southeast-1:123456789012:function:lambda-hello-world']
         command['config']['service'] = 'middletier'
@@ -644,82 +606,10 @@ describe('lambda', () => {
         expect(output).toMatch('Extra tags do not comply with the <key>:<value> array.\n')
       })
     })
-
-    describe('collectFunctionsByRegion', () => {
-      test('groups functions with region read from arn', () => {
-        process.env = {}
-        const command = createCommand()
-        command['functions'] = [
-          'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world',
-          'arn:aws:lambda:us-east-1:123456789012:function:another',
-          'arn:aws:lambda:us-east-2:123456789012:function:third-func',
-        ]
-
-        expect(command['collectFunctionsByRegion']()).toEqual({
-          'us-east-1': [
-            'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world',
-            'arn:aws:lambda:us-east-1:123456789012:function:another',
-          ],
-          'us-east-2': ['arn:aws:lambda:us-east-2:123456789012:function:third-func'],
-        })
-      })
-
-      test('groups functions in the config object', () => {
-        process.env = {}
-        const command = createCommand()
-        command['config'].functions = [
-          'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world',
-          'arn:aws:lambda:us-east-1:123456789012:function:another',
-          'arn:aws:lambda:us-east-2:123456789012:function:third-func',
-        ]
-
-        expect(command['collectFunctionsByRegion']()).toEqual({
-          'us-east-1': [
-            'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world',
-            'arn:aws:lambda:us-east-1:123456789012:function:another',
-          ],
-          'us-east-2': ['arn:aws:lambda:us-east-2:123456789012:function:third-func'],
-        })
-      })
-
-      test('uses default region for functions not in arn format', () => {
-        process.env = {}
-        const command = createCommand()
-        command['functions'] = [
-          'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world',
-          'arn:aws:lambda:*:123456789012:function:func-with-wildcard',
-          'func-without-region',
-          'arn:aws:lambda:us-east-2:123456789012:function:third-func',
-        ]
-        command['region'] = 'ap-south-1'
-
-        expect(command['collectFunctionsByRegion']()).toEqual({
-          'ap-south-1': ['arn:aws:lambda:*:123456789012:function:func-with-wildcard', 'func-without-region'],
-          'us-east-1': ['arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world'],
-          'us-east-2': ['arn:aws:lambda:us-east-2:123456789012:function:third-func'],
-        })
-      })
-
-      test('fails to collect when there are regionless functions and no default region is set', () => {
-        process.env = {}
-        const command = createCommand()
-        command['functions'] = [
-          'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world',
-          'arn:aws:lambda:*:123456789012:function:func-with-wildcard',
-          'func-without-region',
-          'arn:aws:lambda:us-east-2:123456789012:function:third-func',
-        ]
-        command['region'] = undefined
-        command['config']['region'] = undefined
-
-        expect(command['collectFunctionsByRegion']()).toBeUndefined()
-      })
-    })
-
     describe('printPlannedActions', () => {
       test('prints no output when list is empty', () => {
         process.env = {}
-        const command = createCommand()
+        const command = createCommand(InstrumentCommand)
 
         command['printPlannedActions']([])
         const output = command.context.stdout.toString()
@@ -731,7 +621,7 @@ describe('lambda', () => {
 
       test('prints log group actions', () => {
         process.env = {}
-        const command = createCommand()
+        const command = createCommand(InstrumentCommand)
 
         command['printPlannedActions']([
           {
@@ -763,24 +653,6 @@ describe('lambda', () => {
                     }
                     "
                 `)
-      })
-    })
-    describe('sentenceMatchesRegEx', () => {
-      const tags: [string, boolean][] = [
-        ['not-complying:regex-should-fail', false],
-        ['1first-char-is-number:should-fail', false],
-        ['_also-not-complying:should-fail', false],
-        ['complying_tag:accepted/with/slashes.and.dots,but-empty-tag', false],
-        ['also_complying:success,1but_is_illegal:should-fail', false],
-        ['this:complies,also_this_one:yes,numb3r_in_name:should-succeed,dots:al.lo.wed', true],
-        ['complying_ip_address_4:192.342.3134.231', true],
-        ['complying:alone', true],
-        ['one_divided_by_two:1/2,one_divided_by_four:0.25,three_minus_one_half:3-1/2', true],
-        ['this_is_a_valid_t4g:yes/it.is-42', true],
-      ]
-      test.each(tags)('check if the tags match the expected result from the regex', (tag, expectedResult) => {
-        const result = !!sentenceMatchesRegEx(tag, EXTRA_TAGS_REG_EXP)
-        expect(result).toEqual(expectedResult)
       })
     })
   })
