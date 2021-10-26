@@ -1,5 +1,5 @@
 import {CloudWatchLogs, Lambda} from 'aws-sdk'
-import {cyan, red} from 'chalk'
+import {bold, cyan, red} from 'chalk'
 import {Command} from 'clipanion'
 import {parseConfigFile} from '../../helpers/utils'
 import {collectFunctionsByRegion, updateLambdaFunctionConfigs} from './functions/commons'
@@ -80,7 +80,7 @@ export class UninstrumentCommand extends Command {
   }
 
   private printPlannedActions(configs: FunctionConfiguration[]) {
-    const prefix = this.dryRun ? cyan('[Dry Run] ') : ''
+    const prefix = this.dryRun ? bold(cyan('[Dry Run] ')) : ''
 
     let anyUpdates = false
     for (const config of configs) {

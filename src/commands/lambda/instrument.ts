@@ -1,4 +1,5 @@
 import {CloudWatchLogs, Lambda} from 'aws-sdk'
+import {blueBright, bold, cyan, hex, underline, yellow} from 'chalk'
 import {Command} from 'clipanion'
 import {parseConfigFile} from '../../helpers/utils'
 import {EXTRA_TAGS_REG_EXP} from './constants'
@@ -210,9 +211,13 @@ export class InstrumentCommand extends Command {
       const tags = tagsMissing.join(', ').replace(/, ([^,]*)$/, ' and $1')
       const plural = tagsMissing.length > 1
       this.context.stdout.write(
-        `Warning: The ${tags} tag${
+        `${bold(yellow('[Warning]'))} The ${tags} tag${
           plural ? 's have' : ' has'
-        } not been configured. Learn more about Datadog unified service tagging: https://docs.datadoghq.com/getting_started/tagging/unified_service_tagging/#serverless-environment.\n`
+        } not been configured. Learn more about Datadog unified service tagging: ${underline(
+          blueBright(
+            'https://docs.datadoghq.com/getting_started/tagging/unified_service_tagging/#serverless-environment.'
+          )
+        )}\n`
       )
     }
 
@@ -240,7 +245,7 @@ export class InstrumentCommand extends Command {
   }
 
   private printPlannedActions(configs: FunctionConfiguration[]) {
-    const prefix = this.dryRun ? '[Dry Run] ' : ''
+    const prefix = this.dryRun ? bold(cyan('[Dry Run] ')) : ''
 
     let anyUpdates = false
     for (const config of configs) {
@@ -260,6 +265,13 @@ export class InstrumentCommand extends Command {
 
       return
     }
+    this.context.stdout.write(
+      `${bold(yellow('[Warning]'))} Instrument your ${hex('#FF9900').bold(
+        'Lambda'
+      )} functions in a dev or staging environment first. Should the instrumentation result be unsatisfactory, run \`${bold(
+        'uninstrument'
+      )}\` with the same arguments to revert the changes.\n`
+    )
     this.context.stdout.write(`${prefix}Will apply the following updates:\n`)
     for (const config of configs) {
       if (config.updateRequest) {
