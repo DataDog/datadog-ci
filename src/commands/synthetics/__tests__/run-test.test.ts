@@ -129,7 +129,7 @@ describe('run-test', () => {
       jest.spyOn(runTests, 'getApiHelper').mockImplementation(() => apiHelper as any)
       await expect(
         runTests.executeTests(mockReporter, {...ciConfig, testSearchQuery: 'a-search-query', tunnel: true})
-      ).rejects.toMatchError(new CriticalError('UNAVAILABLE_TEST_CONFIG'))
+      ).rejects.toMatchError(new CriticalError('UNAVAILABLE_TEST_CONFIG', serverError.message))
     })
 
     test('getTestsToTrigger throws', async () => {
@@ -144,7 +144,7 @@ describe('run-test', () => {
       jest.spyOn(runTests, 'getApiHelper').mockImplementation(() => apiHelper as any)
       await expect(
         runTests.executeTests(mockReporter, {...ciConfig, publicIds: ['public-id-1'], tunnel: true})
-      ).rejects.toMatchError(new CriticalError('UNAVAILABLE_TEST_CONFIG'))
+      ).rejects.toMatchError(new CriticalError('UNAVAILABLE_TEST_CONFIG', serverError.message))
     })
 
     test('getPresignedURL throws', async () => {
@@ -168,7 +168,7 @@ describe('run-test', () => {
       jest.spyOn(runTests, 'getApiHelper').mockImplementation(() => apiHelper as any)
       await expect(
         runTests.executeTests(mockReporter, {...ciConfig, publicIds: ['public-id-1', 'public-id-2'], tunnel: true})
-      ).rejects.toMatchError(new CriticalError('UNAVAILABLE_TUNNEL_CONFIG'))
+      ).rejects.toMatchError(new CriticalError('UNAVAILABLE_TUNNEL_CONFIG', serverError.message))
     })
 
     test('runTests throws', async () => {
@@ -192,7 +192,12 @@ describe('run-test', () => {
       jest.spyOn(runTests, 'getApiHelper').mockImplementation(() => apiHelper as any)
       await expect(
         runTests.executeTests(mockReporter, {...ciConfig, publicIds: ['public-id-1', 'public-id-2']})
-      ).rejects.toMatchError(new CriticalError('TRIGGER_TESTS_FAILED'))
+      ).rejects.toMatchError(
+        new CriticalError(
+          'TRIGGER_TESTS_FAILED',
+          '[] Failed to trigger tests: query on baseURLurl returned: "Bad Gateway"\n'
+        )
+      )
     })
 
     test('waitForResults throws', async () => {
@@ -236,7 +241,7 @@ describe('run-test', () => {
           failOnCriticalErrors: true,
           publicIds: ['public-id-1', 'public-id-2'],
         })
-      ).rejects.toMatchError(new CriticalError('POLL_RESULTS_FAILED'))
+      ).rejects.toMatchError(new CriticalError('POLL_RESULTS_FAILED', serverError.message))
     })
   })
 

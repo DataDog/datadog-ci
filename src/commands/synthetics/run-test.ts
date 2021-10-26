@@ -18,7 +18,7 @@ export const executeTests = async (reporter: MainReporter, config: SyntheticsCIC
   const api = getApiHelper(config)
 
   const publicIdsFromCli = config.publicIds.map((id) => ({config: config.global, id}))
-  let testsToTrigger: TriggerConfig[]
+  let testsToTrigger: TriggerConfig[] = [] as TriggerConfig[]
   let tunnel: Tunnel | undefined
 
   const stopTunnel = async () => {
@@ -33,8 +33,10 @@ export const executeTests = async (reporter: MainReporter, config: SyntheticsCIC
     try {
       testsToTrigger = await getTestsList(api, config, reporter)
     } catch (error) {
-      const isCriticalError = is5xxError(error as any)
-      throw new (isCriticalError ? CriticalError : CiError)('UNAVAILABLE_TEST_CONFIG')
+      if (error instanceof Error) {
+        const isCriticalError = is5xxError(error as any)
+        throw new (isCriticalError ? CriticalError : CiError)('UNAVAILABLE_TEST_CONFIG', error.message)
+      }
     }
   }
 
@@ -46,13 +48,19 @@ export const executeTests = async (reporter: MainReporter, config: SyntheticsCIC
     overriddenTestsToTrigger: TestPayload[]
     summary: Summary
     tests: Test[]
+  } = {
+    overriddenTestsToTrigger: [],
+    summary: {} as Summary,
+    tests: [],
   }
 
   try {
     testsToTriggerResult = await getTestsToTrigger(api, testsToTrigger, reporter)
   } catch (error) {
-    const isCriticalError = is5xxError(error as any)
-    throw new (isCriticalError ? CriticalError : CiError)('UNAVAILABLE_TEST_CONFIG')
+    if (error instanceof Error) {
+      const isCriticalError = is5xxError(error as any)
+      throw new (isCriticalError ? CriticalError : CiError)('UNAVAILABLE_TEST_CONFIG', error.message)
+    }
   }
 
   const {tests, overriddenTestsToTrigger, summary} = testsToTriggerResult
@@ -65,13 +73,15 @@ export const executeTests = async (reporter: MainReporter, config: SyntheticsCIC
   const publicIdsToTrigger = tests.map(({public_id}) => public_id)
 
   if (config.tunnel) {
-    let presignedURL: string
+    let presignedURL: string = '' as string
     try {
       // Get the pre-signed URL to connect to the tunnel service
       presignedURL = (await api.getPresignedURL(publicIdsToTrigger)).url
     } catch (error) {
-      const isCriticalError = is5xxError(error as any)
-      throw new (isCriticalError ? CriticalError : CiError)('UNAVAILABLE_TUNNEL_CONFIG')
+      if (error instanceof Error) {
+        const isCriticalError = is5xxError(error as any)
+        throw new (isCriticalError ? CriticalError : CiError)('UNAVAILABLE_TUNNEL_CONFIG', error.message)
+      }
     }
     // Open a tunnel to Datadog
     try {
@@ -81,19 +91,23 @@ export const executeTests = async (reporter: MainReporter, config: SyntheticsCIC
         testToTrigger.tunnel = tunnelInfo
       })
     } catch (error) {
-      const isCriticalError = is5xxError(error as any)
-      await stopTunnel()
-      throw new (isCriticalError ? CriticalError : CiError)('TUNNEL_START_FAILED')
+      if (error instanceof Error) {
+        const isCriticalError = is5xxError(error as any)
+        await stopTunnel()
+        throw new (isCriticalError ? CriticalError : CiError)('TUNNEL_START_FAILED', error.message)
+      }
     }
   }
 
-  let triggers: Trigger
+  let triggers: Trigger = {} as Trigger
   try {
     triggers = await runTests(api, overriddenTestsToTrigger)
   } catch (error) {
-    const isCriticalError = is5xxError(error as any)
-    await stopTunnel()
-    throw new (isCriticalError ? CriticalError : CiError)('TRIGGER_TESTS_FAILED')
+    if (error instanceof Error) {
+      const isCriticalError = is5xxError(error as any)
+      await stopTunnel()
+      throw new (isCriticalError ? CriticalError : CiError)('TRIGGER_TESTS_FAILED', error.message)
+    }
   }
 
   if (!triggers.results) {
@@ -114,9 +128,11 @@ export const executeTests = async (reporter: MainReporter, config: SyntheticsCIC
     )
     Object.assign(results, resultPolled)
   } catch (error) {
-    const isCriticalError = is5xxError(error as any)
-    await stopTunnel()
-    throw new (isCriticalError ? CriticalError : CiError)('POLL_RESULTS_FAILED')
+    if (error instanceof Error) {
+      const isCriticalError = is5xxError(error as any)
+      await stopTunnel()
+      throw new (isCriticalError ? CriticalError : CiError)('POLL_RESULTS_FAILED', error.message)
+    }
   }
 
   return {results, summary, tests, triggers}

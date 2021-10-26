@@ -1,7 +1,9 @@
 // tslint:disable: no-string-literal
 import {AxiosError, AxiosResponse} from 'axios'
+import chalk from 'chalk'
 import * as ciUtils from '../../../helpers/utils'
 import {DEFAULT_COMMAND_CONFIG, RunTestCommand} from '../cli'
+import {CiError} from '../errors'
 import {ExecutionRule} from '../interfaces'
 import * as runTests from '../run-test'
 import * as utils from '../utils'
@@ -70,6 +72,27 @@ describe('run-test', () => {
 
       tests.sort((command['sortTestsByOutcome'] as any)(results))
       expect(tests).toStrictEqual([test3, test1, test2, test5, test4])
+    })
+  })
+
+  describe('reportCiError', () => {
+    beforeEach(() => {
+      jest.restoreAllMocks()
+    })
+
+    test('Should bubble up error messsage', async () => {
+      const mockError = new Error('Mock error')
+      jest.spyOn(runTests, 'executeTests').mockImplementation(() => {
+        throw new CiError('UNAVAILABLE_TEST_CONFIG', mockError.message)
+      })
+      const command = new RunTestCommand()
+      command.context = {stdout: {write: jest.fn()}} as any
+      await command.execute()
+      expect(command.context.stdout.write).toHaveBeenLastCalledWith(
+        `\n${chalk.bgRed.bold(' ERROR: unable to obtain test configurations with search query ')}\n${
+          mockError.message
+        }\n\n`
+      )
     })
   })
 
