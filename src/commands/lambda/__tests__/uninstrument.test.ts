@@ -184,7 +184,7 @@ describe('uninstrument', () => {
 
       process.env = {}
       const command = createCommand(UninstrumentCommand)
-
+      command['config']['region'] = 'ap-southeast-1'
       await command['execute']()
       const output = command.context.stdout.toString()
       expect(output).toMatchInlineSnapshot(`
