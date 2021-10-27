@@ -15,6 +15,7 @@ import {
   LOG_LEVEL_ENV_VAR,
   MERGE_XRAY_TRACES_ENV_VAR,
   Runtime,
+  RUNTIME_LAYER_LOOKUP,
   SERVICE_ENV_VAR,
   SITE_ENV_VAR,
   TRACE_ENABLED_ENV_VAR,
@@ -24,7 +25,7 @@ import {FunctionConfiguration, InstrumentationSettings, LogGroupConfiguration, T
 import {calculateLogGroupUpdateRequest} from '../loggroup'
 import {calculateTagUpdateRequest} from '../tags'
 import {
-  addLayerARN,
+  addLayerArn,
   getExtensionArn,
   getLambdaFunctionConfigs,
   getLayerArn,
@@ -65,15 +66,7 @@ export const getFunctionConfig = async (
   }
 
   await isLambdaActive(lambda, config, functionARN)
-  const lambdaLibraryLayerArn: string = getLayerArn(config, region, settings)
-  const lambdaExtensionLayerArn: string = getExtensionArn(config, region, settings)
-  const updateRequest = calculateUpdateRequest(
-    config,
-    settings,
-    lambdaLibraryLayerArn,
-    lambdaExtensionLayerArn,
-    runtime
-  )
+  const updateRequest = calculateUpdateRequest(config, settings, region, runtime)
   let logGroupConfiguration: LogGroupConfiguration | undefined
   if (settings.forwarderARN !== undefined) {
     const arn = `/aws/lambda/${config.FunctionName}`
@@ -85,7 +78,6 @@ export const getFunctionConfig = async (
   return {
     functionARN,
     lambdaConfig: config,
-    lambdaLibraryLayerArn,
     logGroupConfiguration,
     tagConfiguration,
     updateRequest,
@@ -135,8 +127,7 @@ export const getLambdaConfigsFromRegEx = async (
 export const calculateUpdateRequest = (
   config: Lambda.FunctionConfiguration,
   settings: InstrumentationSettings,
-  lambdaLibraryLayerArn: string,
-  lambdaExtensionLayerArn: string,
+  region: string,
   runtime: Runtime
 ) => {
   const oldEnvVars: Record<string, string> = {...config.Environment?.Variables}
@@ -225,10 +216,13 @@ export const calculateUpdateRequest = (
   }
 
   // Update Layers
+  const lambdaLibraryLayerArn = getLayerArn(config, region, settings)
+  const lambraLibraryLayerName = RUNTIME_LAYER_LOOKUP[runtime]
   let fullLambdaLibraryLayerARN: string | undefined
   if (settings.layerVersion !== undefined) {
     fullLambdaLibraryLayerARN = `${lambdaLibraryLayerArn}:${settings.layerVersion}`
   }
+  const lambdaExtensionLayerArn = getExtensionArn(config, region, settings)
   let fullExtensionLayerARN: string | undefined
   if (settings.extensionVersion !== undefined) {
     fullExtensionLayerARN = `${lambdaExtensionLayerArn}:${settings.extensionVersion}`
@@ -236,8 +230,8 @@ export const calculateUpdateRequest = (
   let layerARNs = (config.Layers ?? []).map((layer) => layer.Arn ?? '')
   const originalLayerARNs = (config.Layers ?? []).map((layer) => layer.Arn ?? '')
   let needsLayerUpdate = false
-  layerARNs = addLayerARN(fullLambdaLibraryLayerARN, lambdaLibraryLayerArn, layerARNs)
-  layerARNs = addLayerARN(fullExtensionLayerARN, lambdaExtensionLayerArn, layerARNs)
+  layerARNs = addLayerArn(fullLambdaLibraryLayerARN, lambraLibraryLayerName, layerARNs)
+  layerARNs = addLayerArn(fullExtensionLayerARN, DD_LAMBDA_EXTENSION_LAYER_NAME, layerARNs)
 
   if (originalLayerARNs.sort().join(',') !== layerARNs.sort().join(',')) {
     needsLayerUpdate = true

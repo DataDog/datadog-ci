@@ -35,6 +35,7 @@ describe('uninstrument', () => {
       ;(Lambda as any).mockImplementation(() =>
         makeMockLambda({
           'arn:aws:lambda:us-east-1:000000000000:function:uninstrument': {
+            Architectures: ['x86_64'],
             Environment: {
               Variables: {
                 [ENVIRONMENT_ENV_VAR]: 'staging',

@@ -1,12 +1,16 @@
 /* tslint:disable:no-string-literal */
 import {
+  DD_LAMBDA_EXTENSION_LAYER_NAME,
   EXTRA_TAGS_REG_EXP,
   GOVCLOUD_LAYER_AWS_ACCOUNT,
   LAMBDA_HANDLER_ENV_VAR,
   MERGE_XRAY_TRACES_ENV_VAR,
+  Runtime,
+  RUNTIME_LAYER_LOOKUP,
   TRACE_ENABLED_ENV_VAR,
 } from '../../constants'
 import {
+  addLayerArn,
   collectFunctionsByRegion,
   getExtensionArn,
   getLayerArn,
@@ -18,6 +22,52 @@ import {InstrumentCommand} from '../../instrument'
 import {createCommand, makeMockCloudWatchLogs, makeMockLambda, mockAwsAccount} from '../fixtures'
 
 describe('commons', () => {
+  describe('addLayerArn', () => {
+    test('adds layers and removes previous versions', () => {
+      const runtime: Runtime = 'python3.9'
+      const config = {
+        Runtime: runtime,
+      }
+      let layerARNs = [
+        'arn:aws:lambda:sa-east-1:464622532012:layer:Datadog-Python39:48',
+        'arn:aws:lambda:sa-east-1:464622532012:layer:Datadog-Extension:10',
+      ]
+      const region = 'sa-east-1'
+      const lambdaLibraryLayerName = RUNTIME_LAYER_LOOKUP[runtime]
+      const fullLambdaLibraryLayerArn = getLayerArn(config, region) + ':49'
+      const fullExtensionLayerArn = getExtensionArn(config, region) + ':11'
+      layerARNs = addLayerArn(fullLambdaLibraryLayerArn, lambdaLibraryLayerName, layerARNs)
+      layerARNs = addLayerArn(fullExtensionLayerArn, DD_LAMBDA_EXTENSION_LAYER_NAME, layerARNs)
+
+      expect(layerARNs).toEqual([
+        'arn:aws:lambda:sa-east-1:464622532012:layer:Datadog-Python39:49',
+        'arn:aws:lambda:sa-east-1:464622532012:layer:Datadog-Extension:11',
+      ])
+    })
+
+    test('swaps layers if architecture is arm64', () => {
+      const runtime: Runtime = 'python3.9'
+      const config = {
+        Architectures: ['arm64'],
+        Runtime: runtime,
+      }
+      let layerARNs = [
+        'arn:aws:lambda:sa-east-1:464622532012:layer:Datadog-Python39:49',
+        'arn:aws:lambda:sa-east-1:464622532012:layer:Datadog-Extension:11',
+      ]
+      const region = 'sa-east-1'
+      const lambdaLibraryLayerName = RUNTIME_LAYER_LOOKUP[runtime]
+      const fullLambdaLibraryLayerArn = getLayerArn(config, region) + ':49'
+      const fullExtensionLayerArn = getExtensionArn(config, region) + ':11'
+      layerARNs = addLayerArn(fullLambdaLibraryLayerArn, lambdaLibraryLayerName, layerARNs)
+      layerARNs = addLayerArn(fullExtensionLayerArn, DD_LAMBDA_EXTENSION_LAYER_NAME, layerARNs)
+
+      expect(layerARNs).toEqual([
+        'arn:aws:lambda:sa-east-1:464622532012:layer:Datadog-Python39-ARM:49',
+        'arn:aws:lambda:sa-east-1:464622532012:layer:Datadog-Extension-ARM:11',
+      ])
+    })
+  })
   describe('collectFunctionsByRegion', () => {
     test('groups functions with region read from arn', () => {
       process.env = {}

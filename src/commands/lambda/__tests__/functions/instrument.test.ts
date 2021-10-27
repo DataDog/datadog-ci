@@ -33,10 +33,12 @@ describe('instrument', () => {
     })
 
     test('calculates an update request with just lambda library layers', () => {
+      const runtime = 'nodejs12.x'
       const config = {
         FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world',
         Handler: 'index.handler',
         Layers: [],
+        Runtime: runtime,
       }
       const settings = {
         flushMetricsToLogs: false,
@@ -45,17 +47,9 @@ describe('instrument', () => {
         mergeXrayTraces: false,
         tracingEnabled: false,
       }
-      const lambdaLibraryLayerArn = `arn:aws:lambda:sa-east-1:${mockAwsAccount}:layer:Datadog-Node12-x`
-      const lambdaExtensionLayerArn = `arn:aws:lambda:sa-east-1:${mockAwsAccount}:layer:Datadog-Extension`
-      const runtime = 'nodejs12.x'
+      const region = 'sa-east-1'
 
-      const updateRequest = calculateUpdateRequest(
-        config,
-        settings,
-        lambdaLibraryLayerArn,
-        lambdaExtensionLayerArn,
-        runtime
-      )
+      const updateRequest = calculateUpdateRequest(config, settings, region, runtime)
       expect(updateRequest).toMatchInlineSnapshot(`
         Object {
           "Environment": Object {
@@ -76,12 +70,53 @@ describe('instrument', () => {
       `)
     })
 
+    test('calculates an update request with just lambda library layers in arm architecture', () => {
+      const runtime = 'python3.9'
+      const config = {
+        Architectures: ['arm64'],
+        FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world',
+        Handler: 'handler.hello',
+        Layers: [],
+        Runtime: runtime,
+      }
+      const settings = {
+        flushMetricsToLogs: false,
+        layerAWSAccount: mockAwsAccount,
+        layerVersion: 11,
+        mergeXrayTraces: false,
+        tracingEnabled: false,
+      }
+      const region = 'sa-east-1'
+
+      const updateRequest = calculateUpdateRequest(config, settings, region, runtime)
+      expect(updateRequest).toMatchInlineSnapshot(`
+        Object {
+          "Environment": Object {
+            "Variables": Object {
+              "DD_FLUSH_TO_LOG": "false",
+              "DD_LAMBDA_HANDLER": "handler.hello",
+              "DD_MERGE_XRAY_TRACES": "false",
+              "DD_SITE": "datadoghq.com",
+              "DD_TRACE_ENABLED": "false",
+            },
+          },
+          "FunctionName": "arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world",
+          "Handler": "datadog_lambda.handler.handler",
+          "Layers": Array [
+            "arn:aws:lambda:sa-east-1:123456789012:layer:Datadog-Python39-ARM:11",
+          ],
+        }
+      `)
+    })
+
     test('calculates an update request with a lambda library, extension, and DATADOG_API_KEY', () => {
       process.env.DATADOG_API_KEY = '1234'
+      const runtime = 'nodejs12.x'
       const config = {
         FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world',
         Handler: 'index.handler',
         Layers: [],
+        Runtime: runtime,
       }
       const settings = {
         extensionVersion: 6,
@@ -91,17 +126,9 @@ describe('instrument', () => {
         mergeXrayTraces: false,
         tracingEnabled: false,
       }
-      const lambdaLibraryLayerArn = `arn:aws:lambda:sa-east-1:${mockAwsAccount}:layer:Datadog-Node12-x`
-      const lambdaExtensionLayerArn = `arn:aws:lambda:sa-east-1:${mockAwsAccount}:layer:Datadog-Extension`
-      const runtime = 'nodejs12.x'
+      const region = 'sa-east-1'
 
-      const updateRequest = calculateUpdateRequest(
-        config,
-        settings,
-        lambdaLibraryLayerArn,
-        lambdaExtensionLayerArn,
-        runtime
-      )
+      const updateRequest = calculateUpdateRequest(config, settings, region, runtime)
       expect(updateRequest).toMatchInlineSnapshot(`
         Object {
           "Environment": Object {
@@ -126,10 +153,12 @@ describe('instrument', () => {
 
     test('calculates an update request with a lambda library, extension, and DATADOG_KMS_API_KEY', () => {
       process.env.DATADOG_KMS_API_KEY = '5678'
+      const runtime = 'python3.6'
       const config = {
         FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world',
         Handler: 'index.handler',
         Layers: [],
+        Runtime: runtime,
       }
       const settings = {
         extensionVersion: 6,
@@ -139,17 +168,9 @@ describe('instrument', () => {
         mergeXrayTraces: false,
         tracingEnabled: false,
       }
-      const lambdaLibraryLayerArn = `arn:aws:lambda:sa-east-1:${mockAwsAccount}:layer:Datadog-Python36`
-      const lambdaExtensionLayerArn = `arn:aws:lambda:sa-east-1:${mockAwsAccount}:layer:Datadog-Extension`
-      const runtime = 'python3.6'
+      const region = 'sa-east-1'
 
-      const updateRequest = calculateUpdateRequest(
-        config,
-        settings,
-        lambdaLibraryLayerArn,
-        lambdaExtensionLayerArn,
-        runtime
-      )
+      const updateRequest = calculateUpdateRequest(config, settings, region, runtime)
       expect(updateRequest).toMatchInlineSnapshot(`
         Object {
           "Environment": Object {
@@ -173,10 +194,12 @@ describe('instrument', () => {
     })
 
     test('by default calculates an update request with DATADOG_SITE being set to datadoghq.com', () => {
+      const runtime = 'python3.6'
       const config = {
         FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world',
         Handler: 'index.handler',
         Layers: [],
+        Runtime: runtime,
       }
       const settings = {
         flushMetricsToLogs: false,
@@ -184,17 +207,9 @@ describe('instrument', () => {
         mergeXrayTraces: false,
         tracingEnabled: false,
       }
-      const lambdaLibraryLayerArn = `arn:aws:lambda:sa-east-1:${mockAwsAccount}:layer:Datadog-Python36`
-      const lambdaExtensionLayerArn = `arn:aws:lambda:sa-east-1:${mockAwsAccount}:layer:Datadog-Extension`
-      const runtime = 'python3.6'
+      const region = 'sa-east-1'
 
-      const updateRequest = calculateUpdateRequest(
-        config,
-        settings,
-        lambdaLibraryLayerArn,
-        lambdaExtensionLayerArn,
-        runtime
-      )
+      const updateRequest = calculateUpdateRequest(config, settings, region, runtime)
       expect(updateRequest).toMatchInlineSnapshot(`
         Object {
           "Environment": Object {
@@ -225,17 +240,10 @@ describe('instrument', () => {
         mergeXrayTraces: false,
         tracingEnabled: false,
       }
-      const lambdaLibraryLayerArn = `arn:aws:lambda:sa-east-1:${mockAwsAccount}:layer:Datadog-Python36`
-      const lambdaExtensionLayerArn = `arn:aws:lambda:sa-east-1:${mockAwsAccount}:layer:Datadog-Extension`
+      const region = 'sa-east-1'
       const runtime = 'python3.6'
 
-      const updateRequest = calculateUpdateRequest(
-        config,
-        settings,
-        lambdaLibraryLayerArn,
-        lambdaExtensionLayerArn,
-        runtime
-      )
+      const updateRequest = calculateUpdateRequest(config, settings, region, runtime)
       expect(updateRequest).toMatchInlineSnapshot(`
         Object {
           "Environment": Object {
@@ -267,12 +275,11 @@ describe('instrument', () => {
         mergeXrayTraces: false,
         tracingEnabled: false,
       }
-      const lambdaLibraryLayerArn = `arn:aws:lambda:sa-east-1:${mockAwsAccount}:layer:Datadog-Python36`
-      const lambdaExtensionLayerArn = `arn:aws:lambda:sa-east-1:${mockAwsAccount}:layer:Datadog-Extension`
+      const region = 'us-east-1'
       const runtime = 'python3.6'
 
       expect(() => {
-        calculateUpdateRequest(config, settings, lambdaLibraryLayerArn, lambdaExtensionLayerArn, runtime)
+        calculateUpdateRequest(config, settings, region, runtime)
       }).toThrowError(
         'Warning: Invalid site URL. Must be either datadoghq.com, datadoghq.eu, us3.datadoghq.com, or ddog-gov.com.'
       )
@@ -292,12 +299,11 @@ describe('instrument', () => {
         mergeXrayTraces: false,
         tracingEnabled: false,
       }
-      const lambdaLibraryLayerArn = `arn:aws:lambda:sa-east-1:${mockAwsAccount}:layer:Datadog-Python36`
-      const lambdaExtensionLayerArn = `arn:aws:lambda:sa-east-1:${mockAwsAccount}:layer:Datadog-Extension`
+      const region = 'us-east-1'
       const runtime = 'python3.6'
 
       expect(() => {
-        calculateUpdateRequest(config, settings, lambdaLibraryLayerArn, lambdaExtensionLayerArn, runtime)
+        calculateUpdateRequest(config, settings, region, runtime)
       }).toThrowError("When 'extensionLayer' is set, DATADOG_API_KEY or DATADOG_KMS_API_KEY must also be set")
     })
   })

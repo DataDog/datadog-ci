@@ -24,11 +24,11 @@ import {applyTagConfig} from '../tags'
  * @param layerARNs an array of layer ARNs.
  * @returns an array of layer ARNs.
  */
-export const addLayerARN = (fullLayerARN: string | undefined, partialLayerARN: string, layerARNs: string[]) => {
-  if (fullLayerARN) {
-    if (!layerARNs.includes(fullLayerARN)) {
+export const addLayerArn = (fullLayerArn: string | undefined, previousLayerName: string, layerARNs: string[]) => {
+  if (fullLayerArn) {
+    if (!layerARNs.includes(fullLayerArn)) {
       // Remove any other versions of the layer
-      layerARNs = [...layerARNs.filter((l) => !l.startsWith(partialLayerARN)), fullLayerARN]
+      layerARNs = [...layerARNs.filter((layer) => !layer.includes(previousLayerName)), fullLayerArn]
     }
   }
 
@@ -139,6 +139,8 @@ export const getLayerArn = (
 
   return `arn:aws:lambda:${region}:${account}:layer:${layerName}`
 }
+
+export const getLayers = (config: Lambda.FunctionConfiguration) => (config.Layers ?? []).map((layer) => layer.Arn ?? '')
 
 /**
  * Call the aws-sdk Lambda api to get a Function given
