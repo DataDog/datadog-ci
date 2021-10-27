@@ -29,8 +29,6 @@ datadog-ci lambda instrument -f <function-name> -f <another-function-name> -r us
 
 Run `datadog-ci lambda uninstrument` to revert Datadog instrumentation in a Lambda. This command automatically removes the Datadog configuration, such as the Datadog Lambda Library and the Datadog Lambda Extension layers, as well as other configurations applied by the datadog-ci.
 
-Although it is only required 
-
 ```bash
 # Uninstrument multiple functions specified by names
 datadog-ci lambda uninstrument -f <function-name> -f <another-function-name> -r us-east-1 
@@ -45,7 +43,7 @@ See the configuration section for additional settings.
 
 ### AWS Credentials
 
-You must have valid [AWS credentials](https://docs.aws.amazon.com/sdk-for-javascript/v2/developer-guide/setting-credentials-node.html) configured with access to the Lambda and CloudWatch services where you are running `datadog-ci lambda`.
+You must have valid [AWS credentials](https://docs.aws.amazon.com/sdk-for-javascript/v2/developer-guide/setting-credentials-node.html) configured with access to the Lambda and CloudWatch services where you are running any `datadog-ci lambda` command.
 
 ### Environment variables
 
