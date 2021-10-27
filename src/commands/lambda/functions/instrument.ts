@@ -29,6 +29,7 @@ import {
   getExtensionArn,
   getLambdaFunctionConfigs,
   getLayerArn,
+  getLayers,
   isLambdaActive,
   isSupportedRuntime,
 } from './commons'
@@ -227,8 +228,8 @@ export const calculateUpdateRequest = (
   if (settings.extensionVersion !== undefined) {
     fullExtensionLayerARN = `${lambdaExtensionLayerArn}:${settings.extensionVersion}`
   }
-  let layerARNs = (config.Layers ?? []).map((layer) => layer.Arn ?? '')
-  const originalLayerARNs = (config.Layers ?? []).map((layer) => layer.Arn ?? '')
+  let layerARNs = getLayers(config)
+  const originalLayerARNs = layerARNs
   let needsLayerUpdate = false
   layerARNs = addLayerArn(fullLambdaLibraryLayerARN, lambraLibraryLayerName, layerARNs)
   layerARNs = addLayerArn(fullExtensionLayerARN, DD_LAMBDA_EXTENSION_LAYER_NAME, layerARNs)
