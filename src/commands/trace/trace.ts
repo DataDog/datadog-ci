@@ -186,7 +186,7 @@ export class TraceCommand extends Command {
           'GITHUB_RUN_ATTEMPT',
         ]),
         GITHUB,
-      ];
+      ]
     }
 
     const errorMsg = `Cannot detect any supported CI Provider. This command only works if run as part of your CI. Supported providers: ${SUPPORTED_PROVIDERS}.`
