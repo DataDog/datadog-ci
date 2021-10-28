@@ -69,7 +69,7 @@ describe('trace', () => {
   test('should correctly detect the GitHub environment', () => {
     process.env = {
       GITHUB_ACTIONS: 'true',
-      GITHUB_RUN_ID: '10000',
+      GITHUB_RUN_ID: '1000',
       NON_GITHUB_ENV: 'bar',
     }
     const command = new TraceCommand()

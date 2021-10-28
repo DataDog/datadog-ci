@@ -170,7 +170,7 @@ export class TraceCommand extends Command {
         JENKINS,
       ]
     }
-    if (process.env.GITHUB_ACTION) {
+    if (process.env.GITHUB_ACTIONS) {
       return [
         this.getEnvironmentVars([
           'GITHUB_WORKFLOW',
