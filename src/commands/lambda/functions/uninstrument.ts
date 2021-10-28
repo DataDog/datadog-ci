@@ -1,6 +1,7 @@
 import {CloudWatchLogs, Lambda} from 'aws-sdk'
 import {
   API_KEY_ENV_VAR,
+  API_KEY_SECRET_ARN_ENV_VAR,
   DD_LAMBDA_EXTENSION_LAYER_NAME,
   ENVIRONMENT_ENV_VAR,
   EXTRA_TAGS_ENV_VAR,
@@ -97,6 +98,7 @@ export const calculateUpdateRequest = (config: Lambda.FunctionConfiguration, run
    */
   const environmentVarsArray = [
     API_KEY_ENV_VAR,
+    API_KEY_SECRET_ARN_ENV_VAR,
     KMS_API_KEY_ENV_VAR,
     SITE_ENV_VAR,
     ENVIRONMENT_ENV_VAR,

@@ -31,6 +31,7 @@ export const DD_LAMBDA_EXTENSION_LAYER_NAME = 'Datadog-Extension'
 
 // Environment variables used in the Lambda environment
 export const API_KEY_ENV_VAR = 'DD_API_KEY'
+export const API_KEY_SECRET_ARN_ENV_VAR = 'DD_API_KEY_SECRET_ARN'
 export const KMS_API_KEY_ENV_VAR = 'DD_KMS_API_KEY'
 export const SITE_ENV_VAR = 'DD_SITE'
 export const TRACE_ENABLED_ENV_VAR = 'DD_TRACE_ENABLED'
@@ -46,6 +47,7 @@ export const EXTRA_TAGS_ENV_VAR = 'DD_TAGS'
 // Environment variables used by Datadog CI
 export const CI_SITE_ENV_VAR = 'DATADOG_SITE'
 export const CI_API_KEY_ENV_VAR = 'DATADOG_API_KEY'
+export const CI_API_KEY_SECRET_ARN_ENV_VAR = 'DATADOG_API_KEY_SECRET_ARN'
 export const CI_KMS_API_KEY_ENV_VAR = 'DATADOG_KMS_API_KEY'
 
 export const LIST_FUNCTIONS_MAX_RETRY_COUNT = 2
