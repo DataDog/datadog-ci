@@ -6,7 +6,7 @@ import os from 'os'
 import {retryRequest} from '../../helpers/retry'
 import {parseTags} from '../../helpers/tags'
 import {apiConstructor} from './api'
-import {APIHelper, CIRCLECI, JENKINS, Payload, Provider, SUPPORTED_PROVIDERS} from './interfaces'
+import {APIHelper, CIRCLECI, JENKINS, GITHUB, Payload, Provider, SUPPORTED_PROVIDERS} from './interfaces'
 
 // We use 127 as exit code for invalid commands since that is what *sh terminals return
 const BAD_COMMAND_EXIT_CODE = 127
@@ -170,6 +170,25 @@ export class TraceCommand extends Command {
         JENKINS,
       ]
     }
+    if (process.env.GITHUB_ACTION) {
+      return [
+        this.getEnvironmentVars([
+          'GITHUB_WORKFLOW',
+          'GITHUB_RUN_ID',
+          'GITHUB_RUN_NUMBER',
+          'GITHUB_JOB',
+          'GITHUB_REPOSITORY',
+          'GITHUB_SHA',
+          'GITHUB_REF',
+          'GITHUB_SERVER_URL',
+          'RUNNER_NAME',
+          'RUNNER_OS',
+          'GITHUB_RUN_ATTEMPT',
+        ]),
+        GITHUB,
+      ];
+    }
+
     const errorMsg = `Cannot detect any supported CI Provider. This command only works if run as part of your CI. Supported providers: ${SUPPORTED_PROVIDERS}.`
     if (this.noFail) {
       this.context.stdout.write(

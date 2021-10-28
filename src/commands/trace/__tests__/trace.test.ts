@@ -65,4 +65,19 @@ describe('trace', () => {
       expect(command['getCIEnvVars'].call({context: {stdout: {write: () => undefined}}})).toEqual([{}])
     })
   })
+
+  test('should correctly detect the GitHub environment', () => {
+    process.env = {
+      GITHUB_ACTIONS: 'true',
+      GITHUB_RUN_ID: '10000',
+      NON_GITHUB_ENV: 'bar',
+    }
+    const command = new TraceCommand()
+    expect(command['getCIEnvVars']()).toEqual([
+      {
+        GITHUB_RUN_ID: '1000',
+      },
+      'github',
+    ])
+  })
 })
