@@ -2,14 +2,9 @@ import {CloudWatchLogs, Lambda} from 'aws-sdk'
 import {Command} from 'clipanion'
 import {parseConfigFile} from '../../helpers/utils'
 import {EXTRA_TAGS_REG_EXP} from './constants'
-import {
-  FunctionConfiguration,
-  getLambdaConfigs,
-  getLambdaConfigsFromRegEx,
-  InstrumentationSettings,
-  updateLambdaConfigs,
-} from './function'
-import {LambdaConfigOptions} from './interfaces'
+import {collectFunctionsByRegion, sentenceMatchesRegEx, updateLambdaFunctionConfigs} from './functions/commons'
+import {getFunctionConfigs, getLambdaConfigsFromRegEx} from './functions/instrument'
+import {FunctionConfiguration, InstrumentationSettings, LambdaConfigOptions} from './interfaces'
 
 export class InstrumentCommand extends Command {
   private config: LambdaConfigOptions = {
@@ -97,8 +92,15 @@ export class InstrumentCommand extends Command {
         return 1
       }
     } else {
-      const functionGroups = this.collectFunctionsByRegion()
-      if (functionGroups === undefined) {
+      let functionGroups
+      try {
+        functionGroups = collectFunctionsByRegion(
+          this.functions.length !== 0 ? this.functions : this.config.functions,
+          this.region || this.config.region
+        )
+      } catch (err) {
+        this.context.stdout.write(`Couldn't group functions. ${err}`)
+
         return 1
       }
 
@@ -106,7 +108,7 @@ export class InstrumentCommand extends Command {
         const lambda = new Lambda({region})
         const cloudWatchLogs = new CloudWatchLogs({region})
         try {
-          const configs = await getLambdaConfigs(lambda, cloudWatchLogs, region, functionList, settings)
+          const configs = await getFunctionConfigs(lambda, cloudWatchLogs, region, functionList, settings)
           configGroups.push({configs, lambda, cloudWatchLogs, region})
         } catch (err) {
           this.context.stdout.write(`Couldn't fetch lambda functions. ${err}\n`)
@@ -123,7 +125,7 @@ export class InstrumentCommand extends Command {
     }
 
     const promises = Object.values(configGroups).map((group) =>
-      updateLambdaConfigs(group.lambda, group.cloudWatchLogs, group.configs)
+      updateLambdaFunctionConfigs(group.lambda, group.cloudWatchLogs, group.configs)
     )
     try {
       await Promise.all(promises)
@@ -136,42 +138,8 @@ export class InstrumentCommand extends Command {
     return 0
   }
 
-  private collectFunctionsByRegion() {
-    const functions = this.functions.length !== 0 ? this.functions : this.config.functions
-    const defaultRegion = this.region || this.config.region
-    const groups: {[key: string]: string[]} = {}
-    const regionless: string[] = []
-    for (const func of functions) {
-      const region = this.getRegion(func) ?? defaultRegion
-      if (region === undefined) {
-        regionless.push(func)
-        continue
-      }
-      if (groups[region] === undefined) {
-        groups[region] = []
-      }
-      const group = groups[region]
-      group.push(func)
-    }
-    if (regionless.length > 0) {
-      this.context.stdout.write(
-        `'No default region specified for ${JSON.stringify(regionless)}. Use -r,--region, or use a full functionARN\n`
-      )
-
-      return
-    }
-
-    return groups
-  }
-
   private convertStringBooleanToBoolean(fallback: boolean, value?: string, configValue?: string): boolean {
     return value ? value.toLowerCase() === 'true' : configValue ? configValue.toLowerCase() === 'true' : fallback
-  }
-
-  private getRegion(functionARN: string) {
-    const [, , , region] = functionARN.split(':')
-
-    return region === undefined || region === '*' ? undefined : region
   }
 
   private getSettings(): InstrumentationSettings | undefined {
@@ -343,8 +311,6 @@ export class InstrumentCommand extends Command {
     }
   }
 }
-
-export const sentenceMatchesRegEx = (sentence: string, regex: RegExp) => sentence.match(regex)
 
 InstrumentCommand.addPath('lambda', 'instrument')
 InstrumentCommand.addOption('functions', Command.Array('-f,--function'))

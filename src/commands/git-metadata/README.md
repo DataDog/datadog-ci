@@ -1,7 +1,5 @@
 # git-metadata command
 
-**Access to this command is currently restricted.**
-
 Upload the git commit details to Datadog.
 
 ## Usage
@@ -57,7 +55,8 @@ yarn launch git-metadata upload
 
 Successful output should look like this:
 ```bash
-Starting upload.
-Uploading
-✅ Uploaded in 1.862 seconds.
+Reporting commit fceed94376fc50dea8ba6d6310002dcf1efcc06e from repository git@github.com:DataDog/datadog-ci.git.
+180 tracked file paths will be reported.
+✅ Uploaded in 0.736 seconds.
+✨  Done in 4.27s
 ```

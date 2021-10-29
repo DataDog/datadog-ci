@@ -8,9 +8,9 @@ import {
   ERRORS,
   ExecutionRule,
   LocationsMapping,
+  MainReporter,
   Operator,
   PollResult,
-  Reporter,
   Result,
   Step,
   Summary,
@@ -263,7 +263,7 @@ const getTestResultColor = (success: boolean, isNonBlocking: boolean) => {
   return chalk.bold.red
 }
 
-export class DefaultReporter implements Reporter {
+export class DefaultReporter implements MainReporter {
   private write: Writable['write']
 
   constructor({context}: {context: BaseContext}) {
@@ -274,7 +274,7 @@ export class DefaultReporter implements Reporter {
     this.write(error)
   }
 
-  public initError(errors: string[]) {
+  public initErrors(errors: string[]) {
     this.write(errors.join('\n'))
   }
 
@@ -297,8 +297,10 @@ export class DefaultReporter implements Reporter {
     if (summary.skipped) {
       summaries.push(`${chalk.bold(summary.skipped)} skipped`)
     }
-    if (summary.notFound) {
-      summaries.push(chalk.yellow(`${chalk.bold(summary.notFound)} not found`))
+
+    if (summary.testsNotFound.size > 0) {
+      const testsNotFoundStr = chalk.gray(`(${[...summary.testsNotFound].join(', ')})`)
+      summaries.push(`${chalk.yellow(`${chalk.bold(summary.testsNotFound.size)} not found`)} ${testsNotFoundStr}`)
     }
 
     const extraInfo = []

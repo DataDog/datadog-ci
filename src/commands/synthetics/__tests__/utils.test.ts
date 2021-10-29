@@ -9,7 +9,7 @@ import glob from 'glob'
 import {ProxyConfiguration} from '../../../helpers/utils'
 
 import {apiConstructor} from '../api'
-import {ConfigOverride, ERRORS, ExecutionRule, InternalTest, PollResult, Result} from '../interfaces'
+import {ConfigOverride, ERRORS, ExecutionRule, InternalTest, PollResult, Result, Summary} from '../interfaces'
 import {Tunnel} from '../tunnel'
 import * as utils from '../utils'
 
@@ -156,7 +156,15 @@ describe('utils', () => {
         {executionRule: ExecutionRule.SKIPPED, public_id: 'ski-ppe-d01'},
       ])
 
-      expect(summary).toEqual({criticalErrors: 0, failed: 0, notFound: 1, passed: 0, skipped: 1, timedOut: 0})
+      const expectedSummary: Summary = {
+        criticalErrors: 0,
+        failed: 0,
+        passed: 0,
+        skipped: 1,
+        testsNotFound: new Set(['987-654-321']),
+        timedOut: 0,
+      }
+      expect(summary).toEqual(expectedSummary)
     })
 
     test('no tests triggered throws an error', async () => {
