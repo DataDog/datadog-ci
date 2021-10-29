@@ -2,6 +2,7 @@
 jest.mock('fs')
 jest.mock('aws-sdk')
 import {Lambda} from 'aws-sdk'
+import {blueBright, bold, cyan, hex, underline, yellow} from 'chalk'
 import * as fs from 'fs'
 import path from 'path'
 import {InstrumentCommand} from '../instrument'
@@ -61,7 +62,12 @@ describe('lambda', () => {
         const output = context.stdout.toString()
         expect(code).toBe(0)
         expect(output).toMatchInlineSnapshot(`
-          "[Dry Run] Will apply the following updates:
+          "${bold(yellow('[Warning]'))} Instrument your ${hex('#FF9900').bold(
+          'Lambda'
+        )} functions in a dev or staging environment first. Should the instrumentation result be unsatisfactory, run \`${bold(
+          'uninstrument'
+        )}\` with the same arguments to revert the changes.
+          ${bold(cyan('[Dry Run] '))}Will apply the following updates:
           UpdateFunctionConfiguration -> arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world
           {
             \\"FunctionName\\": \\"arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world\\",
@@ -130,7 +136,12 @@ describe('lambda', () => {
         const output = context.stdout.toString()
         expect(code).toBe(0)
         expect(output).toMatchInlineSnapshot(`
-          "[Dry Run] Will apply the following updates:
+          "${bold(yellow('[Warning]'))} Instrument your ${hex('#FF9900').bold(
+          'Lambda'
+        )} functions in a dev or staging environment first. Should the instrumentation result be unsatisfactory, run \`${bold(
+          'uninstrument'
+        )}\` with the same arguments to revert the changes.
+          ${bold(cyan('[Dry Run] '))}Will apply the following updates:
           UpdateFunctionConfiguration -> arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world
           {
             \\"FunctionName\\": \\"arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world\\",
@@ -575,7 +586,13 @@ describe('lambda', () => {
         await command['getSettings']()
         let output = command.context.stdout.toString()
         expect(output).toMatch(
-          'Warning: The environment, service and version tags have not been configured. Learn more about Datadog unified service tagging: https://docs.datadoghq.com/getting_started/tagging/unified_service_tagging/#serverless-environment.\n'
+          `${bold(
+            yellow('[Warning]')
+          )} The environment, service and version tags have not been configured. Learn more about Datadog unified service tagging: ${underline(
+            blueBright(
+              'https://docs.datadoghq.com/getting_started/tagging/unified_service_tagging/#serverless-environment.'
+            )
+          )}\n`
         )
 
         command = createCommand(InstrumentCommand)
@@ -586,7 +603,13 @@ describe('lambda', () => {
         await command['getSettings']()
         output = command.context.stdout.toString()
         expect(output).toMatch(
-          'Warning: The version tag has not been configured. Learn more about Datadog unified service tagging: https://docs.datadoghq.com/getting_started/tagging/unified_service_tagging/#serverless-environment.\n'
+          `${bold(
+            yellow('[Warning]')
+          )} The version tag has not been configured. Learn more about Datadog unified service tagging: ${underline(
+            blueBright(
+              'https://docs.datadoghq.com/getting_started/tagging/unified_service_tagging/#serverless-environment.'
+            )
+          )}\n`
         )
       })
 
@@ -638,7 +661,12 @@ describe('lambda', () => {
         ])
         const output = command.context.stdout.toString()
         expect(output).toMatchInlineSnapshot(`
-                    "Will apply the following updates:
+                    "${bold(yellow('[Warning]'))} Instrument your ${hex('#FF9900').bold(
+          'Lambda'
+        )} functions in a dev or staging environment first. Should the instrumentation result be unsatisfactory, run \`${bold(
+          'uninstrument'
+        )}\` with the same arguments to revert the changes.
+                    Will apply the following updates:
                     CreateLogGroup -> my-log-group
                     {
                       \\"logGroupName\\": \\"my-log-group\\"
