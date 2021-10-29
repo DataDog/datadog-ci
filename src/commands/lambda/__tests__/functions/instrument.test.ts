@@ -131,7 +131,7 @@ describe('instrument', () => {
     })
 
     test('calculates an update request with a lambda library, extension, and DATADOG_API_KEY_SECRET_ARN', () => {
-      process.env[CI_API_KEY_SECRET_ARN_ENV_VAR] = '5678'
+      process.env[CI_API_KEY_SECRET_ARN_ENV_VAR] = 'some-secret:arn:from:aws'
       const config = {
         FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world',
         Handler: 'index.handler',
@@ -160,7 +160,7 @@ describe('instrument', () => {
         Object {
           "Environment": Object {
             "Variables": Object {
-              "DD_API_KEY_SECRET_ARN": "5678",
+              "DD_API_KEY_SECRET_ARN": "some-secret:arn:from:aws",
               "DD_FLUSH_TO_LOG": "false",
               "DD_LAMBDA_HANDLER": "index.handler",
               "DD_MERGE_XRAY_TRACES": "false",

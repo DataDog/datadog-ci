@@ -34,7 +34,7 @@ describe('uninstrument', () => {
         'arn:aws:lambda:us-east-1:000000000000:function:uninstrument': {
           Environment: {
             Variables: {
-              [API_KEY_SECRET_ARN_ENV_VAR]: 'secret-arn',
+              [API_KEY_SECRET_ARN_ENV_VAR]: 'some-secret:arn:from:aws',
               [ENVIRONMENT_ENV_VAR]: 'staging',
               [FLUSH_TO_LOG_ENV_VAR]: 'true',
               [LAMBDA_HANDLER_ENV_VAR]: 'lambda_function.lambda_handler',
