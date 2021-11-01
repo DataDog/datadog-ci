@@ -1,11 +1,11 @@
 import {CloudWatchLogs, Lambda} from 'aws-sdk'
-import chalk, {blueBright, bold, cyan, hex, underline, yellow} from 'chalk'
+import {blueBright, bold, cyan, hex, underline, yellow} from 'chalk'
 import {Cli, Command} from 'clipanion'
 import {FileStatusResult} from 'simple-git'
 import {InvalidConfigurationError} from '../../helpers/errors'
 import {parseConfigFile} from '../../helpers/utils'
-import {getCommitInfo, newSimpleGit} from '../commit/git'
-import {UploadCommand} from '../commit/upload'
+import {getCommitInfo, newSimpleGit} from '../git-metadata/git'
+import {UploadCommand} from '../git-metadata/upload'
 import {EXTRA_TAGS_REG_EXP} from './constants'
 import {collectFunctionsByRegion, sentenceMatchesRegEx, updateLambdaFunctionConfigs} from './functions/commons'
 import {getFunctionConfigs, getLambdaConfigsFromRegEx} from './functions/instrument'
@@ -60,7 +60,7 @@ export class InstrumentCommand extends Command {
 
     if (this.sourceCodeIntegration) {
       if (!process.env.DATADOG_API_KEY) {
-        throw new InvalidConfigurationError(`Missing ${chalk.bold('DATADOG_API_KEY')} in your environment.`)
+        throw new InvalidConfigurationError(`Missing ${bold('DATADOG_API_KEY')} in your environment.`)
       }
       const code = await this.getGitDataAndUpload(settings)
       if (code === 1) {

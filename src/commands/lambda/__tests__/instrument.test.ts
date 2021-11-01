@@ -2,81 +2,16 @@
 jest.mock('fs')
 jest.mock('aws-sdk')
 import {Lambda} from 'aws-sdk'
-import chalk, {blueBright, bold, cyan, hex, underline, yellow} from 'chalk'
-import {Cli} from 'clipanion/lib/advanced'
+import {blueBright, bold, cyan, hex, underline, yellow} from 'chalk'
 import * as fs from 'fs'
 import path from 'path'
-import * as git from '../../commit/git'
-import {EXTRA_TAGS_REG_EXP} from '../constants'
-import {InstrumentationSettings} from '../function'
-import {InstrumentCommand, sentenceMatchesRegEx} from '../instrument'
-import {LambdaConfigOptions} from '../interfaces'
+import {InstrumentCommand} from '../instrument'
+import {InstrumentationSettings, LambdaConfigOptions} from '../interfaces'
+import {createCommand, createMockContext, makeCli, makeMockLambda} from './fixtures'
 // tslint:disable-next-line
 const {version} = require(path.join(__dirname, '../../../../package.json'))
 
 describe('lambda', () => {
-  const createMockContext = () => {
-    let data = ''
-
-    return {
-      stdout: {
-        toString: () => data,
-        write: (input: string) => {
-          data += input
-        },
-      },
-    }
-  }
-  const createCommand = () => {
-    const command = new InstrumentCommand()
-    command.context = createMockContext() as any
-
-    return command
-  }
-  const makeCli = () => {
-    const cli = new Cli()
-    cli.register(InstrumentCommand)
-
-    return cli
-  }
-  const makeMockLambda = (functionConfigs: Record<string, Lambda.FunctionConfiguration>) => ({
-    getFunction: jest.fn().mockImplementation(({FunctionName}) => ({
-      promise: () => Promise.resolve({Configuration: functionConfigs[FunctionName]}),
-    })),
-    listTags: jest.fn().mockImplementation(() => ({promise: () => Promise.resolve({Tags: {}})})),
-    tagResource: jest.fn().mockImplementation(() => ({promise: () => Promise.resolve({})})),
-    updateFunctionConfiguration: jest.fn().mockImplementation(() => ({promise: () => Promise.resolve()})),
-  })
-
-  interface MockConfig {
-    hash?: string
-    remotes?: any[]
-    trackedFiles?: object[]
-  }
-
-  const createMockSimpleGit = (conf: MockConfig) => ({
-    getRemotes: async (_: boolean) => {
-      if (conf.remotes === undefined) {
-        throw Error('Unexpected call to getRemotes')
-      }
-
-      return conf.remotes!
-    },
-    raw: async (command: string) => {
-      if (command === 'ls-files' && conf.trackedFiles !== undefined) {
-        return conf.trackedFiles.join('\n') + '\n'
-      }
-      throw Error(`Unexpected call to raw(${command})`)
-    },
-    revparse: async (_: string) => {
-      if (conf.hash === undefined) {
-        throw Error('Unexpected call to revparse')
-      }
-
-      return conf.hash!
-    },
-  })
-
   describe('instrument', () => {
     describe('execute', () => {
       const OLD_ENV = process.env
@@ -459,6 +394,7 @@ describe('lambda', () => {
       })
       test('aborts if functions and a pattern are set at the same time', async () => {
         ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({}))
+
         process.env = {}
         let command = createCommand(InstrumentCommand)
         command['config']['environment'] = 'staging'
@@ -687,7 +623,7 @@ describe('lambda', () => {
         command['config']['service'] = 'middletier'
         command['config']['environment'] = 'staging'
         command['config']['version'] = '0.2'
-        command['config']['extraTags'] = 'not-,complying:illegal-chars-in-,key,complies:valid-pair'
+        command['config']['extraTags'] = 'not-complying:illegal-chars-in-key,complies:valid-pair'
         await command['getSettings']()
         const output = command.context.stdout.toString()
         expect(output).toMatch('Extra tags do not comply with the <key>:<value> array.\n')
@@ -745,157 +681,6 @@ describe('lambda', () => {
                     }
                     "
                 `)
-      })
-    })
-    describe('sourceCodeIntegration flagged', () => {
-      test('aborts early when DATADOG_API_KEY is not set', async () => {
-        process.env = {}
-        const cli = makeCli()
-        const context = createMockContext() as any
-        await cli.run(
-          [
-            'lambda',
-            'instrument',
-            '--function',
-            'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world',
-            '--extensionVersion',
-            '6',
-            '--service',
-            'hello-world',
-            '--env',
-            'staging',
-            '--version',
-            '0.2',
-            '-sci',
-          ],
-          context
-        )
-        const output = context.stdout.toString()
-        expect(output).toContain(`Missing ${chalk.bold('DATADOG_API_KEY')} in your environment.`)
-      })
-
-      test('calls getGitDataAndUpload when DATADOG_API_KEY is set', async () => {
-        process.env = {DATADOG_API_KEY: '1234'}
-        const cli = makeCli()
-        const context = createMockContext() as any
-        const getGitDataAndUploadSpy = jest.spyOn(InstrumentCommand.prototype as any, 'getGitDataAndUpload')
-        await cli.run(
-          [
-            'lambda',
-            'instrument',
-            '--function',
-            'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world',
-            '--extensionVersion',
-            '6',
-            '--service',
-            'hello-world',
-            '--env',
-            'staging',
-            '--version',
-            '0.2',
-            '-sci',
-          ],
-          context
-        )
-        expect(getGitDataAndUploadSpy).toHaveBeenCalled()
-      })
-
-      test('aborts early and prints updated files when git status is not clean', async () => {
-        process.env = {DATADOG_API_KEY: '1234'}
-        const trackedFiles = [{path: 'myfile.py'}, {path: 'index.py'}, {path: '.gitignore'}]
-        const context = createMockContext() as any
-        const mockGitData = createMockSimpleGit({
-          hash: 'abcd',
-          remotes: [{name: 'first', refs: {push: 'https://git-repo'}}],
-          trackedFiles,
-        }) as any
-
-        jest.spyOn(git, 'newSimpleGit').mockReturnValue(mockGitData)
-        const getCurrentGitStatusSpy = jest.spyOn(InstrumentCommand.prototype as any, 'getCurrentGitStatus')
-        getCurrentGitStatusSpy.mockReturnValue({
-          files: trackedFiles,
-          isClean: false,
-        })
-        const cli = makeCli()
-        await cli.run(
-          [
-            'lambda',
-            'instrument',
-            '--function',
-            'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world',
-            '--extensionVersion',
-            '6',
-            '--service',
-            'hello-world',
-            '--env',
-            'staging',
-            '--version',
-            '0.2',
-            '-sci',
-          ],
-          context
-        )
-        const output = context.stdout.toString()
-        expect(getCurrentGitStatusSpy).toHaveBeenCalled()
-        expect(output).toBe('Found local modified files:\nmyfile.py\nindex.py\n.gitignore\n\nAborting git upload...\n')
-      })
-
-      test('uploads data only when git status is clean', async () => {
-        process.env = {DATADOG_API_KEY: '1234'}
-        const context = createMockContext() as any
-        const mockGitData = createMockSimpleGit({
-          hash: 'abcd',
-        }) as any
-
-        jest.spyOn(git, 'newSimpleGit').mockReturnValue(mockGitData)
-        const getCurrentGitStatusSpy = jest.spyOn(InstrumentCommand.prototype as any, 'getCurrentGitStatus')
-        getCurrentGitStatusSpy.mockReturnValue({
-          ahead: 0,
-          hash: 'abcd',
-          isClean: true,
-        })
-        const uploadGitDataSpy = jest.spyOn(InstrumentCommand.prototype as any, 'uploadGitData')
-        const cli = makeCli()
-        await cli.run(
-          [
-            'lambda',
-            'instrument',
-            '--function',
-            'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world',
-            '--extensionVersion',
-            '6',
-            '--service',
-            'hello-world',
-            '--env',
-            'staging',
-            '--version',
-            '0.2',
-            '-sci',
-          ],
-          context
-        )
-        expect(uploadGitDataSpy).toHaveBeenCalled()
-        expect(uploadGitDataSpy).toHaveReturned()
-      })
-    })
-    describe('sentenceMatchesRegEx', () => {
-      const tags: [string, boolean][] = [
-        ['1first-char-is-number:should-fail', false],
-        ['_also-not-complying:should-fail', false],
-        ['complying_tag:accepted/with/slashes.and.dots,but-empty-tag', false],
-        ['also_complying:success,1but_is_illegal:should-fail', false],
-        ['not./compliant:tag', false],
-        ['is-complying:regex-should-not-fail', true],
-        ['this:complies,also_this_one:yes,numb3r_in_name:should-succeed,dots:al.lo.wed', true],
-        ['complying_ip_address_4:192.342.3134.231', true],
-        ['complying:alone', true],
-        ['one_divided_by_two:1/2,one_divided_by_four:0.25,three_minus_one_half:3-1/2', true],
-        ['this_is_a_valid_t4g:yes/it.is-42', true],
-        ['this.is/valid:indeed.it_is', true],
-      ]
-      test.each(tags)('check if the tags match the expected result from the regex', (tag, expectedResult) => {
-        const result = !!sentenceMatchesRegEx(tag, EXTRA_TAGS_REG_EXP)
-        expect(result).toEqual(expectedResult)
       })
     })
   })
