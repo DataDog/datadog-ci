@@ -64,9 +64,10 @@ export class InstrumentCommand extends Command {
           `Missing ${bold('DATADOG_API_KEY')} or ${bold('DATADOG_KMS_API_KEY')} in your environment.`
         )
       }
-      const code = await this.getGitDataAndUpload(settings)
-      if (code === 1) {
-        return code
+      try {
+        await this.getGitDataAndUpload(settings)
+      } catch (err) {
+        this.context.stdout.write(`Couldn't attach git data for source code integration: ${err}\n`)
       }
     }
 
@@ -164,7 +165,7 @@ export class InstrumentCommand extends Command {
     const simpleGit = await newSimpleGit()
     const gitCommitInfo = await getCommitInfo(simpleGit, this.context.stdout)
     if (gitCommitInfo === undefined) {
-      return 1
+      throw new Error('Git commit info is not defined')
     }
     const status = await simpleGit.status()
 
@@ -172,22 +173,23 @@ export class InstrumentCommand extends Command {
   }
 
   private async getGitDataAndUpload(settings: InstrumentationSettings) {
-    const currentStatus = await this.getCurrentGitStatus()
+    let currentStatus
 
-    if (currentStatus === 1) {
-      return 1
+    try {
+      currentStatus = await this.getCurrentGitStatus()
+    } catch (err) {
+      this.context.stdout.write(`Could not get current git status. ${err}\n`)
+
+      return
     }
 
     if (!currentStatus.isClean) {
       this.printModifiedFilesFound(currentStatus.files)
-
-      return 1
+      throw Error("Can't attach source code integration with a dirty git repository")
     }
 
     if (currentStatus.ahead > 0) {
-      this.context.stdout.write('Local changes have not been pushed remotely. Aborting git upload.\n')
-
-      return 1
+      throw Error('Local changes have not been pushed remotely. Aborting git upload.')
     }
 
     const commitSha = currentStatus.hash
@@ -197,7 +199,11 @@ export class InstrumentCommand extends Command {
       settings.extraTags = `git.commit.sha:${commitSha}`
     }
 
-    return this.uploadGitData()
+    try {
+      this.uploadGitData()
+    } catch (err) {
+      throw Error(`Error uploading git data: ${err}\n`)
+    }
   }
 
   private getSettings(): InstrumentationSettings | undefined {
@@ -394,12 +400,10 @@ export class InstrumentCommand extends Command {
       cli.register(UploadCommand)
       await cli.run(['commit', 'upload'], this.context)
     } catch (err) {
-      this.context.stdout.write(`Could not upload commit information. ${err}\n`)
-
-      return 1
+      throw err
     }
 
-    return 0
+    return
   }
 }
 
