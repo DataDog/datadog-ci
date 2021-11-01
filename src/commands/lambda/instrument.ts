@@ -4,7 +4,7 @@ import {Command} from 'clipanion'
 import {parseConfigFile} from '../../helpers/utils'
 import {EXTRA_TAGS_REG_EXP} from './constants'
 import {collectFunctionsByRegion, sentenceMatchesRegEx, updateLambdaFunctionConfigs} from './functions/commons'
-import {getFunctionConfigs, getLambdaConfigsFromRegEx} from './functions/instrument'
+import {getFunctionConfigs, getFunctionConfigsFromRegEx} from './functions/instrument'
 import {FunctionConfiguration, InstrumentationSettings, LambdaConfigOptions} from './interfaces'
 
 export class InstrumentCommand extends Command {
@@ -75,7 +75,7 @@ export class InstrumentCommand extends Command {
 
       const region = this.region || this.config.region
       if (!region) {
-        this.context.stdout.write('No default region specified. Use -r,--region,')
+        this.context.stdout.write('No default region specified. Use `-r`, `--region`.')
 
         return 1
       }
@@ -84,7 +84,7 @@ export class InstrumentCommand extends Command {
         const cloudWatchLogs = new CloudWatchLogs({region})
         const lambda = new Lambda({region})
         this.context.stdout.write('Fetching lambda functions, this might take a while.\n')
-        const configs = await getLambdaConfigsFromRegEx(lambda, cloudWatchLogs, region!, this.regExPattern!, settings)
+        const configs = await getFunctionConfigsFromRegEx(lambda, cloudWatchLogs, region!, this.regExPattern!, settings)
 
         configGroups.push({configs, lambda, cloudWatchLogs, region: region!})
       } catch (err) {

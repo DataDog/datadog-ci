@@ -8,6 +8,7 @@ import {
   HANDLER_LOCATION,
   KMS_API_KEY_ENV_VAR,
   LAMBDA_HANDLER_ENV_VAR,
+  LIST_FUNCTIONS_MAX_RETRY_COUNT,
   LOG_LEVEL_ENV_VAR,
   MERGE_XRAY_TRACES_ENV_VAR,
   Runtime,
@@ -68,6 +69,45 @@ export const getFunctionConfig = async (
     tagConfiguration,
     updateRequest,
   }
+}
+
+export const getFunctionConfigsFromRegEx = async (
+  lambda: Lambda,
+  cloudWatch: CloudWatchLogs,
+  pattern: string,
+  forwarderArn: string | undefined
+): Promise<FunctionConfiguration[]> => {
+  const regEx = new RegExp(pattern)
+  const matchedFunctions: Lambda.FunctionConfiguration[] = []
+  let retryCount = 0
+  let listFunctionsResponse: Lambda.ListFunctionsResponse
+  let nextMarker: string | undefined
+
+  while (true) {
+    try {
+      listFunctionsResponse = await lambda.listFunctions({Marker: nextMarker}).promise()
+      listFunctionsResponse.Functions?.map((fn) => fn.FunctionName?.match(regEx) && matchedFunctions.push(fn))
+      nextMarker = listFunctionsResponse.NextMarker
+      if (!nextMarker) {
+        break
+      }
+      retryCount = 0
+    } catch (e) {
+      retryCount++
+      if (retryCount > LIST_FUNCTIONS_MAX_RETRY_COUNT) {
+        throw Error('Max retry count exceeded.')
+      }
+    }
+  }
+
+  const functionsToUpdate: FunctionConfiguration[] = []
+
+  for (const config of matchedFunctions) {
+    const functionConfig = await getFunctionConfig(lambda, cloudWatch, config, forwarderArn)
+    functionsToUpdate.push(functionConfig)
+  }
+
+  return functionsToUpdate
 }
 
 export const calculateUpdateRequest = (config: Lambda.FunctionConfiguration, runtime: Runtime) => {

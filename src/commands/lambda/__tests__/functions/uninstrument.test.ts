@@ -1,5 +1,6 @@
 jest.mock('../../loggroup')
 import {
+  API_KEY_ENV_VAR,
   ENVIRONMENT_ENV_VAR,
   FLUSH_TO_LOG_ENV_VAR,
   LAMBDA_HANDLER_ENV_VAR,
@@ -12,7 +13,12 @@ import {
   VERSION_ENV_VAR,
 } from '../../constants'
 import {getLambdaFunctionConfig} from '../../functions/commons'
-import {calculateUpdateRequest, getFunctionConfig, getFunctionConfigs} from '../../functions/uninstrument'
+import {
+  calculateUpdateRequest,
+  getFunctionConfig,
+  getFunctionConfigs,
+  getFunctionConfigsFromRegEx,
+} from '../../functions/uninstrument'
 import {makeMockCloudWatchLogs, makeMockLambda} from '../fixtures'
 
 import * as loggroup from '../../loggroup'
@@ -317,6 +323,87 @@ describe('uninstrument', () => {
           "logGroupName": "${logGroupName}",
         }
       `)
+    })
+  })
+
+  describe('getFunctionConfigsFromRegEx', () => {
+    const OLD_ENV = process.env
+    beforeEach(() => {
+      jest.resetModules()
+      process.env = {}
+    })
+    afterAll(() => {
+      process.env = OLD_ENV
+    })
+    test('returns the update request for each function that matches the pattern', async () => {
+      const lambda = makeMockLambda({
+        'autoinstrument-scooby': {
+          Environment: {
+            Variables: {
+              [ENVIRONMENT_ENV_VAR]: 'staging',
+              [FLUSH_TO_LOG_ENV_VAR]: 'true',
+              [LAMBDA_HANDLER_ENV_VAR]: 'index.handler',
+              [LOG_LEVEL_ENV_VAR]: 'debug',
+              [MERGE_XRAY_TRACES_ENV_VAR]: 'false',
+              [SERVICE_ENV_VAR]: 'middletier',
+              [SITE_ENV_VAR]: 'datadoghq.com',
+              [TRACE_ENABLED_ENV_VAR]: 'true',
+              [VERSION_ENV_VAR]: '0.2',
+              USER_VARIABLE: 'shouldnt be deleted by uninstrumentation',
+            },
+          },
+          FunctionArn: 'arn:aws:lambda:us-east-1:000000000000:function:autoinstrument-scooby',
+          FunctionName: 'autoinstrument-scooby',
+          Handler: '/opt/nodejs/node_modules/datadog-lambda-js/handler.handler',
+          Runtime: 'nodejs12.x',
+        },
+        'autoinstrument-scrapy': {
+          Environment: {
+            Variables: {
+              [API_KEY_ENV_VAR]: '1234',
+              [ENVIRONMENT_ENV_VAR]: 'staging',
+              [FLUSH_TO_LOG_ENV_VAR]: 'true',
+              [LAMBDA_HANDLER_ENV_VAR]: 'index.handler',
+              [LOG_LEVEL_ENV_VAR]: 'debug',
+              [MERGE_XRAY_TRACES_ENV_VAR]: 'false',
+            },
+          },
+          FunctionArn: 'arn:aws:lambda:us-east-1:000000000000:function:autoinstrument-scrapy',
+          FunctionName: 'autoinstrument-scrapy',
+          Handler: '/opt/nodejs/node_modules/datadog-lambda-js/handler.handler',
+          Runtime: 'nodejs12.x',
+        },
+      })
+      const cloudWatch = makeMockCloudWatchLogs({})
+      const result = await getFunctionConfigsFromRegEx(
+        lambda as any,
+        cloudWatch as any,
+        'autoinstrument-scr.',
+        undefined
+      )
+      expect(result.length).toEqual(1)
+      expect(result[0].updateRequest).toMatchInlineSnapshot(`
+        Object {
+          "Environment": Object {
+            "Variables": Object {},
+          },
+          "FunctionName": "arn:aws:lambda:us-east-1:000000000000:function:autoinstrument-scrapy",
+          "Handler": "index.handler",
+        }
+      `)
+    })
+    test('fails when retry count is exceeded', async () => {
+      const makeMockLambdaListFunctionsError = () => ({
+        listFunctions: jest.fn().mockImplementation((args) => ({
+          promise: () => Promise.reject(),
+        })),
+      })
+      const lambda = makeMockLambdaListFunctionsError()
+      const cloudWatch = makeMockCloudWatchLogs({})
+
+      await expect(
+        getFunctionConfigsFromRegEx(lambda as any, cloudWatch as any, 'fake-pattern', undefined)
+      ).rejects.toStrictEqual(new Error('Max retry count exceeded.'))
     })
   })
 })

@@ -88,7 +88,7 @@ export const getFunctionConfig = async (
   }
 }
 
-export const getLambdaConfigsFromRegEx = async (
+export const getFunctionConfigsFromRegEx = async (
   lambda: Lambda,
   cloudWatch: CloudWatchLogs,
   region: string,

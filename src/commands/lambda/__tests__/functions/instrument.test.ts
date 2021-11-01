@@ -17,7 +17,7 @@ import {
   getExtensionArn,
   getFunctionConfig,
   getFunctionConfigs,
-  getLambdaConfigsFromRegEx,
+  getFunctionConfigsFromRegEx,
   getLayerArn,
 } from '../../functions/instrument'
 
@@ -502,7 +502,7 @@ describe('instrument', () => {
             `)
     })
   })
-  describe('getLambdaConfigs', () => {
+  describe('getFunctionConfigs', () => {
     const OLD_ENV = process.env
     beforeEach(() => {
       jest.resetModules()
@@ -611,7 +611,7 @@ describe('instrument', () => {
       expect(result.length).toEqual(2)
     })
   })
-  describe('getLambdaConfigsFromRegEx', () => {
+  describe('getFunctionConfigsFromRegEx', () => {
     const OLD_ENV = process.env
     beforeEach(() => {
       jest.resetModules()
@@ -643,7 +643,7 @@ describe('instrument', () => {
         mergeXrayTraces: false,
         tracingEnabled: false,
       }
-      const result = await getLambdaConfigsFromRegEx(
+      const result = await getFunctionConfigsFromRegEx(
         lambda as any,
         cloudWatch as any,
         'us-east-1',
@@ -688,7 +688,7 @@ describe('instrument', () => {
       }
 
       await expect(
-        getLambdaConfigsFromRegEx(lambda as any, cloudWatch as any, 'us-east-1', 'fake-pattern', settings)
+        getFunctionConfigsFromRegEx(lambda as any, cloudWatch as any, 'us-east-1', 'fake-pattern', settings)
       ).rejects.toStrictEqual(new Error('Max retry count exceeded.'))
     })
   })
