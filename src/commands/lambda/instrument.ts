@@ -1,7 +1,6 @@
 import {CloudWatchLogs, Lambda} from 'aws-sdk'
-import {blueBright, bold, cyan, hex, underline, yellow} from 'chalk'
+import {blueBright, bold, cyan, hex, red, underline, yellow} from 'chalk'
 import {Cli, Command} from 'clipanion'
-import {FileStatusResult} from 'simple-git'
 import {InvalidConfigurationError} from '../../helpers/errors'
 import {parseConfigFile} from '../../helpers/utils'
 import {getCommitInfo, newSimpleGit} from '../git-metadata/git'
@@ -67,7 +66,7 @@ export class InstrumentCommand extends Command {
       try {
         await this.getGitDataAndUpload(settings)
       } catch (err) {
-        this.context.stdout.write(`Couldn't attach git data for source code integration: ${err}\n`)
+        this.context.stdout.write(`${red('[Error]')} Couldn't attach git source code hash: ${err}\n`)
       }
     }
 
@@ -178,14 +177,11 @@ export class InstrumentCommand extends Command {
     try {
       currentStatus = await this.getCurrentGitStatus()
     } catch (err) {
-      this.context.stdout.write(`Could not get current git status. ${err}\n`)
-
-      return
+      throw Error("Couldn't get local git status")
     }
 
     if (!currentStatus.isClean) {
-      this.printModifiedFilesFound(currentStatus.files)
-      throw Error("Can't attach source code integration with a dirty git repository")
+      throw Error('Local git repository is dirty')
     }
 
     if (currentStatus.ahead > 0) {
@@ -307,14 +303,6 @@ export class InstrumentCommand extends Command {
     }
   }
 
-  private printModifiedFilesFound(gitStatusPayload: FileStatusResult[]) {
-    this.context.stdout.write('Found local modified files:\n')
-    gitStatusPayload.forEach((file) => {
-      this.context.stdout.write(`${file.path}\n`)
-    })
-    this.context.stdout.write('\nAborting git upload...\n')
-  }
-
   private printPlannedActions(configs: FunctionConfiguration[]) {
     const prefix = this.dryRun ? bold(cyan('[Dry Run] ')) : ''
 
@@ -332,7 +320,7 @@ export class InstrumentCommand extends Command {
       }
     }
     if (!anyUpdates) {
-      this.context.stdout.write(`${prefix}No updates will be applied\n`)
+      this.context.stdout.write(`\n${prefix}No updates will be applied\n`)
 
       return
     }

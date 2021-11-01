@@ -637,7 +637,8 @@ describe('lambda', () => {
         command['printPlannedActions']([])
         const output = command.context.stdout.toString()
         expect(output).toMatchInlineSnapshot(`
-                                        "No updates will be applied
+                                        "
+                                        No updates will be applied
                                         "
                                 `)
       })
