@@ -2,10 +2,9 @@
 jest.mock('fs')
 jest.mock('aws-sdk')
 import {Lambda} from 'aws-sdk'
-import * as fs from 'fs'
-
-import chalk from 'chalk'
+import chalk, {blueBright, bold, cyan, hex, underline, yellow} from 'chalk'
 import {Cli} from 'clipanion/lib/advanced'
+import * as fs from 'fs'
 import path from 'path'
 import * as git from '../../commit/git'
 import {EXTRA_TAGS_REG_EXP} from '../constants'
@@ -128,7 +127,12 @@ describe('lambda', () => {
         const output = context.stdout.toString()
         expect(code).toBe(0)
         expect(output).toMatchInlineSnapshot(`
-          "[Dry Run] Will apply the following updates:
+          "${bold(yellow('[Warning]'))} Instrument your ${hex('#FF9900').bold(
+          'Lambda'
+        )} functions in a dev or staging environment first. Should the instrumentation result be unsatisfactory, run \`${bold(
+          'uninstrument'
+        )}\` with the same arguments to revert the changes.
+          ${bold(cyan('[Dry Run] '))}Will apply the following updates:
           UpdateFunctionConfiguration -> arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world
           {
             \\"FunctionName\\": \\"arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world\\",
@@ -197,7 +201,12 @@ describe('lambda', () => {
         const output = context.stdout.toString()
         expect(code).toBe(0)
         expect(output).toMatchInlineSnapshot(`
-          "[Dry Run] Will apply the following updates:
+          "${bold(yellow('[Warning]'))} Instrument your ${hex('#FF9900').bold(
+          'Lambda'
+        )} functions in a dev or staging environment first. Should the instrumentation result be unsatisfactory, run \`${bold(
+          'uninstrument'
+        )}\` with the same arguments to revert the changes.
+          ${bold(cyan('[Dry Run] '))}Will apply the following updates:
           UpdateFunctionConfiguration -> arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world
           {
             \\"FunctionName\\": \\"arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world\\",
@@ -313,7 +322,7 @@ describe('lambda', () => {
         ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({}))
 
         process.env = {}
-        const command = createCommand()
+        const command = createCommand(InstrumentCommand)
         command['config']['layerVersion'] = '60'
         command['config']['extensionVersion'] = '10'
         command['config']['region'] = 'ap-southeast-1'
@@ -355,10 +364,9 @@ describe('lambda', () => {
 
         const output = context.stdout.toString()
         expect(code).toBe(1)
-        expect(output).toMatchInlineSnapshot(`
-                                                  "'No default region specified for [\\"my-func\\"]. Use -r,--region, or use a full functionARN
-                                                  "
-                                        `)
+        expect(output).toMatch(
+          `Couldn't group functions. Error: No default region specified for ["my-func"]. Use -r, --region, or use a full functionARN\n`
+        )
       })
 
       test('aborts if a function is not in an Active state with LastUpdateStatus Successful', async () => {
@@ -441,7 +449,7 @@ describe('lambda', () => {
         ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({}))
 
         process.env = {}
-        const command = createCommand()
+        const command = createCommand(InstrumentCommand)
         command['config']['layerVersion'] = '60'
         command['config']['extensionVersion'] = '10'
         command['config']['region'] = 'ap-southeast-1'
@@ -449,8 +457,296 @@ describe('lambda', () => {
         await command['execute']()
         expect(command['config']['functions']).toHaveLength(1)
       })
-    })
+      test('aborts if functions and a pattern are set at the same time', async () => {
+        ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({}))
+        process.env = {}
+        let command = createCommand(InstrumentCommand)
+        command['config']['environment'] = 'staging'
+        command['config']['service'] = 'middletier'
+        command['config']['version'] = '2'
+        command['config']['region'] = 'ap-southeast-1'
+        command['config']['functions'] = ['arn:aws:lambda:ap-southeast-1:123456789012:function:lambda-hello-world']
+        command['regExPattern'] = 'valid-pattern'
+        await command['execute']()
+        let output = command.context.stdout.toString()
+        expect(output).toMatch(
+          'Functions in config file and "--functions-regex" should not be used at the same time.\n'
+        )
 
+        command = createCommand(InstrumentCommand)
+        command['environment'] = 'staging'
+        command['service'] = 'middletier'
+        command['version'] = '2'
+        command['region'] = 'ap-southeast-1'
+        command['functions'] = ['arn:aws:lambda:ap-southeast-1:123456789012:function:lambda-hello-world']
+        command['regExPattern'] = 'valid-pattern'
+        await command['execute']()
+        output = command.context.stdout.toString()
+        expect(output).toMatch('"--functions" and "--functions-regex" should not be used at the same time.\n')
+      })
+      test('aborts if the regEx pattern is an ARN', async () => {
+        ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({}))
+
+        process.env = {}
+        const command = createCommand(InstrumentCommand)
+        command['environment'] = 'staging'
+        command['service'] = 'middletier'
+        command['version'] = '2'
+        command['region'] = 'ap-southeast-1'
+        command['regExPattern'] = 'arn:aws:lambda:ap-southeast-1:123456789012:function:*'
+        await command['execute']()
+        const output = command.context.stdout.toString()
+        expect(output).toMatch(`"--functions-regex" isn't meant to be used with ARNs.\n`)
+      })
+    })
+    describe('getSettings', () => {
+      test('uses config file settings', () => {
+        process.env = {}
+        const command = createCommand(InstrumentCommand)
+        command['config']['flushMetricsToLogs'] = 'false'
+        command['config']['forwarder'] = 'my-forwarder'
+        command['config']['layerVersion'] = '2'
+        command['config']['extensionVersion'] = '6'
+        command['config']['layerAWSAccount'] = 'another-account'
+        command['config']['mergeXrayTraces'] = 'false'
+        command['config']['tracing'] = 'false'
+        command['config']['logLevel'] = 'debug'
+
+        expect(command['getSettings']()).toEqual({
+          extensionVersion: 6,
+          flushMetricsToLogs: false,
+          forwarderARN: 'my-forwarder',
+          layerAWSAccount: 'another-account',
+          layerVersion: 2,
+          logLevel: 'debug',
+          mergeXrayTraces: false,
+          tracingEnabled: false,
+        })
+      })
+
+      test('prefers command line arguments over config file', () => {
+        process.env = {}
+        const command = createCommand(InstrumentCommand)
+        command['forwarder'] = 'my-forwarder'
+        command['config']['forwarder'] = 'another-forwarder'
+        command['layerVersion'] = '1'
+        command['config']['layerVersion'] = '2'
+        command['layerAWSAccount'] = 'my-account'
+        command['config']['layerAWSAccount'] = 'another-account'
+        command['mergeXrayTraces'] = 'true'
+        command['config']['mergeXrayTraces'] = 'false'
+        command['flushMetricsToLogs'] = 'false'
+        command['config']['flushMetricsToLogs'] = 'true'
+        command['tracing'] = 'true'
+        command['config']['tracing'] = 'false'
+        command['logLevel'] = 'debug'
+        command['config']['logLevel'] = 'info'
+
+        expect(command['getSettings']()).toEqual({
+          flushMetricsToLogs: false,
+          forwarderARN: 'my-forwarder',
+          layerAWSAccount: 'my-account',
+          layerVersion: 1,
+          logLevel: 'debug',
+          mergeXrayTraces: true,
+          tracingEnabled: true,
+        })
+      })
+
+      test("returns undefined when layer version can't be parsed", () => {
+        process.env = {}
+
+        const command = createCommand(InstrumentCommand)
+        command.context = {
+          stdout: {write: jest.fn()} as any,
+        } as any
+        command['layerVersion'] = 'abd'
+
+        expect(command['getSettings']()).toBeUndefined()
+      })
+
+      test("returns undefined when extension version can't be parsed", () => {
+        process.env = {}
+
+        const command = createCommand(InstrumentCommand)
+        command.context = {
+          stdout: {write: jest.fn()} as any,
+        } as any
+        command['extensionVersion'] = 'abd'
+
+        expect(command['getSettings']()).toBeUndefined()
+      })
+
+      test('converts string boolean from command line and config file correctly', () => {
+        process.env = {}
+        const command = createCommand(InstrumentCommand)
+        const validSettings: InstrumentationSettings = {
+          extensionVersion: undefined,
+          flushMetricsToLogs: false,
+          forwarderARN: undefined,
+          layerAWSAccount: undefined,
+          layerVersion: undefined,
+          logLevel: undefined,
+          mergeXrayTraces: false,
+          tracingEnabled: true,
+        }
+        command['config']['flushMetricsToLogs'] = 'False'
+        command['config']['mergeXrayTraces'] = 'falSE'
+        command['config']['tracing'] = 'TRUE'
+
+        expect(command['getSettings']()).toEqual(validSettings)
+
+        command['config']['flushMetricsToLogs'] = 'false'
+        command['config']['mergeXrayTraces'] = 'false'
+        command['config']['tracing'] = 'true'
+        expect(command['getSettings']()).toEqual(validSettings)
+
+        validSettings.flushMetricsToLogs = true
+        validSettings.mergeXrayTraces = true
+        validSettings.tracingEnabled = false
+
+        command['flushMetricsToLogs'] = 'truE'
+        command['mergeXrayTraces'] = 'TRUe'
+        command['tracing'] = 'FALSE'
+        expect(command['getSettings']()).toEqual(validSettings)
+
+        command['flushMetricsToLogs'] = 'true'
+        command['mergeXrayTraces'] = 'true'
+        command['tracing'] = 'false'
+        expect(command['getSettings']()).toEqual(validSettings)
+      })
+
+      test('aborts early if converting string boolean has an invalid value', () => {
+        process.env = {}
+        const stringBooleans: (keyof Omit<LambdaConfigOptions, 'functions'>)[] = [
+          'flushMetricsToLogs',
+          'mergeXrayTraces',
+          'tracing',
+        ]
+        for (const option of stringBooleans) {
+          let command = createCommand(InstrumentCommand)
+          command['config'][option] = 'NotBoolean'
+          command['getSettings']()
+
+          let output = command.context.stdout.toString()
+          expect(output).toMatch(`Invalid boolean specified for ${option}.\n`)
+
+          command = createCommand(InstrumentCommand)
+          command[option] = 'NotBoolean'
+          command['getSettings']()
+
+          output = command.context.stdout.toString()
+          expect(output).toMatch(`Invalid boolean specified for ${option}.\n`)
+        }
+      })
+
+      test('warns if any of environment, service or version tags are not set', async () => {
+        ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({}))
+
+        process.env = {}
+        let command = createCommand(InstrumentCommand)
+        command['config']['region'] = 'ap-southeast-1'
+        command['config']['functions'] = ['arn:aws:lambda:ap-southeast-1:123456789012:function:lambda-hello-world']
+        await command['getSettings']()
+        let output = command.context.stdout.toString()
+        expect(output).toMatch(
+          `${bold(
+            yellow('[Warning]')
+          )} The environment, service and version tags have not been configured. Learn more about Datadog unified service tagging: ${underline(
+            blueBright(
+              'https://docs.datadoghq.com/getting_started/tagging/unified_service_tagging/#serverless-environment.'
+            )
+          )}\n`
+        )
+
+        command = createCommand(InstrumentCommand)
+        command['config']['region'] = 'ap-southeast-1'
+        command['config']['functions'] = ['arn:aws:lambda:ap-southeast-1:123456789012:function:lambda-hello-world']
+        command['config']['environment'] = 'b'
+        command['config']['service'] = 'middletier'
+        await command['getSettings']()
+        output = command.context.stdout.toString()
+        expect(output).toMatch(
+          `${bold(
+            yellow('[Warning]')
+          )} The version tag has not been configured. Learn more about Datadog unified service tagging: ${underline(
+            blueBright(
+              'https://docs.datadoghq.com/getting_started/tagging/unified_service_tagging/#serverless-environment.'
+            )
+          )}\n`
+        )
+      })
+
+      test('aborts early if extraTags do not comply with expected key:value list', async () => {
+        ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({}))
+
+        process.env = {}
+        const command = createCommand(InstrumentCommand)
+        command['config']['region'] = 'ap-southeast-1'
+        command['config']['functions'] = ['arn:aws:lambda:ap-southeast-1:123456789012:function:lambda-hello-world']
+        command['config']['service'] = 'middletier'
+        command['config']['environment'] = 'staging'
+        command['config']['version'] = '0.2'
+        command['config']['extraTags'] = 'not-,complying:illegal-chars-in-,key,complies:valid-pair'
+        await command['getSettings']()
+        const output = command.context.stdout.toString()
+        expect(output).toMatch('Extra tags do not comply with the <key>:<value> array.\n')
+      })
+    })
+    describe('printPlannedActions', () => {
+      test('prints no output when list is empty', () => {
+        process.env = {}
+        const command = createCommand(InstrumentCommand)
+
+        command['printPlannedActions']([])
+        const output = command.context.stdout.toString()
+        expect(output).toMatchInlineSnapshot(`
+                                        "No updates will be applied
+                                        "
+                                `)
+      })
+
+      test('prints log group actions', () => {
+        process.env = {}
+        const command = createCommand(InstrumentCommand)
+
+        command['printPlannedActions']([
+          {
+            functionARN: 'my-func',
+            lambdaConfig: {} as any,
+            lambdaLibraryLayerArn: 'my-layer',
+            logGroupConfiguration: {
+              createLogGroupRequest: {logGroupName: 'my-log-group'} as any,
+              deleteSubscriptionFilterRequest: {filterName: 'my-filter'} as any,
+              logGroupName: 'my-log-group',
+              subscriptionFilterRequest: {filterName: 'my-filter'} as any,
+            },
+          },
+        ])
+        const output = command.context.stdout.toString()
+        expect(output).toMatchInlineSnapshot(`
+                    "${bold(yellow('[Warning]'))} Instrument your ${hex('#FF9900').bold(
+          'Lambda'
+        )} functions in a dev or staging environment first. Should the instrumentation result be unsatisfactory, run \`${bold(
+          'uninstrument'
+        )}\` with the same arguments to revert the changes.
+                    Will apply the following updates:
+                    CreateLogGroup -> my-log-group
+                    {
+                      \\"logGroupName\\": \\"my-log-group\\"
+                    }
+                    DeleteSubscriptionFilter -> my-log-group
+                    {
+                      \\"filterName\\": \\"my-filter\\"
+                    }
+                    PutSubscriptionFilter -> my-log-group
+                    {
+                      \\"filterName\\": \\"my-filter\\"
+                    }
+                    "
+                `)
+      })
+    })
     describe('sourceCodeIntegration flagged', () => {
       test('aborts early when DATADOG_API_KEY is not set', async () => {
         process.env = {}
@@ -580,310 +876,6 @@ describe('lambda', () => {
         )
         expect(uploadGitDataSpy).toHaveBeenCalled()
         expect(uploadGitDataSpy).toHaveReturned()
-      })
-    })
-
-    describe('getSettings', () => {
-      test('uses config file settings', () => {
-        process.env = {}
-        const command = createCommand()
-        command['config']['flushMetricsToLogs'] = 'false'
-        command['config']['forwarder'] = 'my-forwarder'
-        command['config']['layerVersion'] = '2'
-        command['config']['extensionVersion'] = '6'
-        command['config']['layerAWSAccount'] = 'another-account'
-        command['config']['mergeXrayTraces'] = 'false'
-        command['config']['tracing'] = 'false'
-        command['config']['logLevel'] = 'debug'
-
-        expect(command['getSettings']()).toEqual({
-          extensionVersion: 6,
-          flushMetricsToLogs: false,
-          forwarderARN: 'my-forwarder',
-          layerAWSAccount: 'another-account',
-          layerVersion: 2,
-          logLevel: 'debug',
-          mergeXrayTraces: false,
-          tracingEnabled: false,
-        })
-      })
-
-      test('prefers command line arguments over config file', () => {
-        process.env = {}
-        const command = createCommand()
-        command['forwarder'] = 'my-forwarder'
-        command['config']['forwarder'] = 'another-forwarder'
-        command['layerVersion'] = '1'
-        command['config']['layerVersion'] = '2'
-        command['layerAWSAccount'] = 'my-account'
-        command['config']['layerAWSAccount'] = 'another-account'
-        command['mergeXrayTraces'] = 'true'
-        command['config']['mergeXrayTraces'] = 'false'
-        command['flushMetricsToLogs'] = 'false'
-        command['config']['flushMetricsToLogs'] = 'true'
-        command['tracing'] = 'true'
-        command['config']['tracing'] = 'false'
-        command['logLevel'] = 'debug'
-        command['config']['logLevel'] = 'info'
-
-        expect(command['getSettings']()).toEqual({
-          flushMetricsToLogs: false,
-          forwarderARN: 'my-forwarder',
-          layerAWSAccount: 'my-account',
-          layerVersion: 1,
-          logLevel: 'debug',
-          mergeXrayTraces: true,
-          tracingEnabled: true,
-        })
-      })
-
-      test("returns undefined when layer version can't be parsed", () => {
-        process.env = {}
-
-        const command = createCommand()
-        command.context = {
-          stdout: {write: jest.fn()} as any,
-        } as any
-        command['layerVersion'] = 'abd'
-
-        expect(command['getSettings']()).toBeUndefined()
-      })
-
-      test("returns undefined when extension version can't be parsed", () => {
-        process.env = {}
-
-        const command = createCommand()
-        command.context = {
-          stdout: {write: jest.fn()} as any,
-        } as any
-        command['extensionVersion'] = 'abd'
-
-        expect(command['getSettings']()).toBeUndefined()
-      })
-
-      test('converts string boolean from command line and config file correctly', () => {
-        process.env = {}
-        const command = createCommand()
-        const validSettings: InstrumentationSettings = {
-          extensionVersion: undefined,
-          flushMetricsToLogs: false,
-          forwarderARN: undefined,
-          layerAWSAccount: undefined,
-          layerVersion: undefined,
-          logLevel: undefined,
-          mergeXrayTraces: false,
-          tracingEnabled: true,
-        }
-        command['config']['flushMetricsToLogs'] = 'False'
-        command['config']['mergeXrayTraces'] = 'falSE'
-        command['config']['tracing'] = 'TRUE'
-
-        expect(command['getSettings']()).toEqual(validSettings)
-
-        command['config']['flushMetricsToLogs'] = 'false'
-        command['config']['mergeXrayTraces'] = 'false'
-        command['config']['tracing'] = 'true'
-        expect(command['getSettings']()).toEqual(validSettings)
-
-        validSettings.flushMetricsToLogs = true
-        validSettings.mergeXrayTraces = true
-        validSettings.tracingEnabled = false
-
-        command['flushMetricsToLogs'] = 'truE'
-        command['mergeXrayTraces'] = 'TRUe'
-        command['tracing'] = 'FALSE'
-        expect(command['getSettings']()).toEqual(validSettings)
-
-        command['flushMetricsToLogs'] = 'true'
-        command['mergeXrayTraces'] = 'true'
-        command['tracing'] = 'false'
-        expect(command['getSettings']()).toEqual(validSettings)
-      })
-
-      test('aborts early if converting string boolean has an invalid value', () => {
-        process.env = {}
-        const stringBooleans: (keyof Omit<LambdaConfigOptions, 'functions'>)[] = [
-          'flushMetricsToLogs',
-          'mergeXrayTraces',
-          'tracing',
-        ]
-        for (const option of stringBooleans) {
-          let command = createCommand()
-          command['config'][option] = 'NotBoolean'
-          command['getSettings']()
-
-          let output = command.context.stdout.toString()
-          expect(output).toMatch(`Invalid boolean specified for ${option}.\n`)
-
-          command = createCommand()
-          command[option] = 'NotBoolean'
-          command['getSettings']()
-
-          output = command.context.stdout.toString()
-          expect(output).toMatch(`Invalid boolean specified for ${option}.\n`)
-        }
-      })
-
-      test('warns if any of environment, service or version tags are not set', async () => {
-        ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({}))
-
-        process.env = {}
-        let command = createCommand()
-        command['config']['region'] = 'ap-southeast-1'
-        command['config']['functions'] = ['arn:aws:lambda:ap-southeast-1:123456789012:function:lambda-hello-world']
-        await command['getSettings']()
-        let output = command.context.stdout.toString()
-        expect(output).toMatch(
-          'Warning: The environment, service and version tags have not been configured. Learn more about Datadog unified service tagging: https://docs.datadoghq.com/getting_started/tagging/unified_service_tagging/#serverless-environment.\n'
-        )
-
-        command = createCommand()
-        command['config']['region'] = 'ap-southeast-1'
-        command['config']['functions'] = ['arn:aws:lambda:ap-southeast-1:123456789012:function:lambda-hello-world']
-        command['config']['environment'] = 'b'
-        command['config']['service'] = 'middletier'
-        await command['getSettings']()
-        output = command.context.stdout.toString()
-        expect(output).toMatch(
-          'Warning: The version tag has not been configured. Learn more about Datadog unified service tagging: https://docs.datadoghq.com/getting_started/tagging/unified_service_tagging/#serverless-environment.\n'
-        )
-      })
-
-      test('aborts early if extraTags do not comply with expected key:value list', async () => {
-        ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({}))
-
-        process.env = {}
-        const command = createCommand()
-        command['config']['region'] = 'ap-southeast-1'
-        command['config']['functions'] = ['arn:aws:lambda:ap-southeast-1:123456789012:function:lambda-hello-world']
-        command['config']['service'] = 'middletier'
-        command['config']['environment'] = 'staging'
-        command['config']['version'] = '0.2'
-        command['config']['extraTags'] = 'not-,complying:illegal-chars-in-,key,complies:valid-pair'
-        await command['getSettings']()
-        const output = command.context.stdout.toString()
-        expect(output).toMatch('Extra tags do not comply with the <key>:<value> array.\n')
-      })
-    })
-
-    describe('collectFunctionsByRegion', () => {
-      test('groups functions with region read from arn', () => {
-        process.env = {}
-        const command = createCommand()
-        command['functions'] = [
-          'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world',
-          'arn:aws:lambda:us-east-1:123456789012:function:another',
-          'arn:aws:lambda:us-east-2:123456789012:function:third-func',
-        ]
-
-        expect(command['collectFunctionsByRegion']()).toEqual({
-          'us-east-1': [
-            'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world',
-            'arn:aws:lambda:us-east-1:123456789012:function:another',
-          ],
-          'us-east-2': ['arn:aws:lambda:us-east-2:123456789012:function:third-func'],
-        })
-      })
-
-      test('groups functions in the config object', () => {
-        process.env = {}
-        const command = createCommand()
-        command['config'].functions = [
-          'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world',
-          'arn:aws:lambda:us-east-1:123456789012:function:another',
-          'arn:aws:lambda:us-east-2:123456789012:function:third-func',
-        ]
-
-        expect(command['collectFunctionsByRegion']()).toEqual({
-          'us-east-1': [
-            'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world',
-            'arn:aws:lambda:us-east-1:123456789012:function:another',
-          ],
-          'us-east-2': ['arn:aws:lambda:us-east-2:123456789012:function:third-func'],
-        })
-      })
-
-      test('uses default region for functions not in arn format', () => {
-        process.env = {}
-        const command = createCommand()
-        command['functions'] = [
-          'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world',
-          'arn:aws:lambda:*:123456789012:function:func-with-wildcard',
-          'func-without-region',
-          'arn:aws:lambda:us-east-2:123456789012:function:third-func',
-        ]
-        command['region'] = 'ap-south-1'
-
-        expect(command['collectFunctionsByRegion']()).toEqual({
-          'ap-south-1': ['arn:aws:lambda:*:123456789012:function:func-with-wildcard', 'func-without-region'],
-          'us-east-1': ['arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world'],
-          'us-east-2': ['arn:aws:lambda:us-east-2:123456789012:function:third-func'],
-        })
-      })
-
-      test('fails to collect when there are regionless functions and no default region is set', () => {
-        process.env = {}
-        const command = createCommand()
-        command['functions'] = [
-          'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world',
-          'arn:aws:lambda:*:123456789012:function:func-with-wildcard',
-          'func-without-region',
-          'arn:aws:lambda:us-east-2:123456789012:function:third-func',
-        ]
-        command['region'] = undefined
-        command['config']['region'] = undefined
-
-        expect(command['collectFunctionsByRegion']()).toBeUndefined()
-      })
-    })
-
-    describe('printPlannedActions', () => {
-      test('prints no output when list is empty', () => {
-        process.env = {}
-        const command = createCommand()
-
-        command['printPlannedActions']([])
-        const output = command.context.stdout.toString()
-        expect(output).toMatchInlineSnapshot(`
-                                        "No updates will be applied
-                                        "
-                                `)
-      })
-
-      test('prints log group actions', () => {
-        process.env = {}
-        const command = createCommand()
-
-        command['printPlannedActions']([
-          {
-            functionARN: 'my-func',
-            lambdaConfig: {} as any,
-            lambdaLibraryLayerArn: 'my-layer',
-            logGroupConfiguration: {
-              createLogGroupRequest: {logGroupName: 'my-log-group'} as any,
-              deleteSubscriptionFilterRequest: {filterName: 'my-filter'} as any,
-              logGroupName: 'my-log-group',
-              subscriptionFilterRequest: {filterName: 'my-filter'} as any,
-            },
-          },
-        ])
-        const output = command.context.stdout.toString()
-        expect(output).toMatchInlineSnapshot(`
-                    "Will apply the following updates:
-                    CreateLogGroup -> my-log-group
-                    {
-                      \\"logGroupName\\": \\"my-log-group\\"
-                    }
-                    DeleteSubscriptionFilter -> my-log-group
-                    {
-                      \\"filterName\\": \\"my-filter\\"
-                    }
-                    PutSubscriptionFilter -> my-log-group
-                    {
-                      \\"filterName\\": \\"my-filter\\"
-                    }
-                    "
-                `)
       })
     })
     describe('sentenceMatchesRegEx', () => {

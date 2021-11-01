@@ -13,7 +13,9 @@ import {EndpointError, formatBackendErrors, is5xxError} from './api'
 import {
   APIHelper,
   ConfigOverride,
+  ERRORS,
   ExecutionRule,
+  InternalTest,
   MainReporter,
   Payload,
   PollResult,
@@ -23,7 +25,6 @@ import {
   Summary,
   TemplateContext,
   TemplateVariables,
-  Test,
   TestPayload,
   Trigger,
   TriggerConfig,
@@ -41,7 +42,7 @@ const template = (st: string, context: any): string =>
   st.replace(TEMPLATE_REGEX, (match: string, p1: string) => (p1 in context ? context[p1] : match))
 
 export const handleConfig = (
-  test: Test,
+  test: InternalTest,
   publicId: string,
   reporter: MainReporter,
   config?: ConfigOverride
@@ -145,7 +146,7 @@ const warnOnReservedEnvVarNames = (context: TemplateContext, reporter: MainRepor
   }
 }
 
-export const getExecutionRule = (test: Test, configOverride?: ConfigOverride): ExecutionRule => {
+export const getExecutionRule = (test: InternalTest, configOverride?: ConfigOverride): ExecutionRule => {
   if (configOverride && configOverride.executionRule) {
     return getStrictestExecutionRule(configOverride.executionRule, test.options?.ci?.executionRule)
   }
@@ -169,14 +170,14 @@ export const getStrictestExecutionRule = (configRule: ExecutionRule, testRule?: 
   return ExecutionRule.BLOCKING
 }
 
-export const isCriticalError = (result: Result): boolean => result.unhealthy || result.error === 'Endpoint Failure'
+export const isCriticalError = (result: Result): boolean => result.unhealthy || result.error === ERRORS.ENDPOINT
 
 export const hasResultPassed = (result: Result, failOnCriticalErrors: boolean, failOnTimeout: boolean): boolean => {
   if (isCriticalError(result) && !failOnCriticalErrors) {
     return true
   }
 
-  if (result.error === 'Timeout' && !failOnTimeout) {
+  if (result.error === ERRORS.TIMEOUT && !failOnTimeout) {
     return true
   }
 
@@ -208,13 +209,13 @@ export const getSuites = async (GLOB: string, reporter: MainReporter): Promise<S
   }
 
   return Promise.all(
-    files.map(async (test) => {
+    files.map(async (file) => {
       try {
-        const content = await promisify(fs.readFile)(test, 'utf8')
+        const content = await promisify(fs.readFile)(file, 'utf8')
 
-        return JSON.parse(content)
+        return {name: file, content: JSON.parse(content)}
       } catch (e) {
-        throw new Error(`Unable to read and parse the test file ${test}`)
+        throw new Error(`Unable to read and parse the test file ${file}`)
       }
     })
   )
@@ -251,7 +252,7 @@ export const waitForResults = async (
     for (const triggerResult of triggerResults.filter((tr) => !tr.result)) {
       if (pollingDuration >= triggerResult.pollingTimeout) {
         triggerResult.result = createFailingResult(
-          'Timeout',
+          ERRORS.TIMEOUT,
           triggerResult.result_id,
           triggerResult.device,
           triggerResult.location,
@@ -263,7 +264,7 @@ export const waitForResults = async (
     if (tunnel && !isTunnelConnected) {
       for (const triggerResult of triggerResults.filter((tr) => !tr.result)) {
         triggerResult.result = createFailingResult(
-          'Tunnel Failure',
+          ERRORS.TUNNEL,
           triggerResult.result_id,
           triggerResult.device,
           triggerResult.location,
@@ -285,7 +286,7 @@ export const waitForResults = async (
         polledResults = []
         for (const triggerResult of triggerResultsSucceed) {
           triggerResult.result = createFailingResult(
-            'Endpoint Failure',
+            ERRORS.ENDPOINT,
             triggerResult.result_id,
             triggerResult.device,
             triggerResult.location,
@@ -344,7 +345,7 @@ export const createTriggerResultMap = (
 }
 
 const createFailingResult = (
-  errorMessage: 'Endpoint Failure' | 'Timeout' | 'Tunnel Failure',
+  errorMessage: ERRORS,
   resultId: string,
   deviceId: string,
   dcId: number,
@@ -352,15 +353,38 @@ const createFailingResult = (
 ): PollResult => ({
   dc_id: dcId,
   result: {
-    device: {id: deviceId},
+    device: {height: 0, id: deviceId, width: 0},
+    duration: 0,
     error: errorMessage,
     eventType: 'finished',
     passed: false,
+    startUrl: '',
     stepDetails: [],
     tunnel,
   },
   resultID: resultId,
+  timestamp: 0,
 })
+
+export const createSummary = (): Summary => ({
+  criticalErrors: 0,
+  failed: 0,
+  passed: 0,
+  skipped: 0,
+  testsNotFound: new Set(),
+  timedOut: 0,
+})
+
+export const getResultDuration = (result: Result): number => {
+  if ('duration' in result) {
+    return Math.round(result.duration)
+  }
+  if ('timings' in result) {
+    return Math.round(result.timings.total)
+  }
+
+  return 0
+}
 
 export const getReporter = (reporters: Reporter[]): MainReporter => ({
   error: (error) => {
@@ -424,20 +448,23 @@ export const getReporter = (reporters: Reporter[]): MainReporter => ({
 export const getTestsToTrigger = async (api: APIHelper, triggerConfigs: TriggerConfig[], reporter: MainReporter) => {
   const overriddenTestsToTrigger: TestPayload[] = []
   const errorMessages: string[] = []
-  const summary: Summary = {criticalErrors: 0, failed: 0, notFound: 0, passed: 0, skipped: 0, timedOut: 0}
+  const summary = createSummary()
 
   const tests = await Promise.all(
-    triggerConfigs.map(async ({config, id}) => {
-      let test: Test | undefined
+    triggerConfigs.map(async ({config, id, suite}) => {
+      let test: InternalTest | undefined
       id = PUBLIC_ID_REGEX.test(id) ? id : id.substr(id.lastIndexOf('/') + 1)
       try {
-        test = await api.getTest(id)
+        test = {
+          ...(await api.getTest(id)),
+          suite,
+        }
       } catch (e) {
         if (is5xxError(e)) {
           throw e
         }
 
-        summary.notFound++
+        summary.testsNotFound.add(id)
         const errorMessage = formatBackendErrors(e)
         errorMessages.push(`[${chalk.bold.dim(id)}] ${chalk.yellow.bold('Test not found')}: ${errorMessage}\n`)
 
@@ -506,4 +533,15 @@ export const retry = async <T, E extends Error>(
   }
 
   return trier()
+}
+
+export const removeUndefinedValues = <T extends {[key: string]: any}>(object: T): T => {
+  const newObject = {...object}
+  for (const [key, value] of Object.entries(newObject)) {
+    if (value === undefined) {
+      delete newObject[key]
+    }
+  }
+
+  return newObject
 }

@@ -1,8 +1,11 @@
+// tslint:disable: no-string-literal
+
+import {ProxyConfiguration} from '../../../../src/helpers/utils'
+
 import {PassThrough} from 'stream'
 
 import {mocked} from 'ts-jest/utils'
 
-import {ProxyConfiguration} from '../../../helpers/utils'
 import {Tunnel} from '../tunnel'
 import {WebSocket} from '../websocket'
 
@@ -17,11 +20,12 @@ describe('Tunnel', () => {
     close: mockClose,
     connect: mockConnect,
     duplex: () => new PassThrough(),
-    waitForFirstMessage: () => {
-      const tunnelInfo = {host: 'host', id: 'tunnel-id'}
-
-      return JSON.stringify(tunnelInfo)
-    },
+    firstMessage: {host: 'host', id: 'tunnel-id'},
+    keepAlive: async () =>
+      new Promise(() => {
+        // Never resolve
+      }),
+    waitForFirstMessage: async () => Promise.resolve(JSON.stringify(mockWebSocket.firstMessage)),
   }
 
   const defaultProxyOpts: ProxyConfiguration = {protocol: 'http'}

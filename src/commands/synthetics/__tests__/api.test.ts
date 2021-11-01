@@ -3,12 +3,12 @@ import {AxiosError, AxiosResponse, default as axios} from 'axios'
 import {ProxyConfiguration} from '../../../helpers/utils'
 
 import {apiConstructor} from '../api'
-import {ExecutionRule, PollResult, Result, TestPayload, Trigger} from '../interfaces'
+import {APIConfiguration, ExecutionRule, PollResult, Result, TestPayload, Trigger} from '../interfaces'
 
-import {getApiTest} from './fixtures'
+import {getApiTest, getSyntheticsProxy, mockSearchResponse, mockTestTriggerResponse} from './fixtures'
 
 describe('dd-api', () => {
-  const apiConfiguration = {
+  const apiConfiguration: APIConfiguration = {
     apiKey: '123',
     appKey: '123',
     baseIntakeUrl: 'baseintake',
@@ -30,6 +30,7 @@ describe('dd-api', () => {
         dc_id: 0,
         result: {} as Result,
         resultID: RESULT_ID,
+        timestamp: 0,
       },
     ],
   }
@@ -86,10 +87,101 @@ describe('dd-api', () => {
   })
 
   test('should get a presigned URL from api', async () => {
-    jest.spyOn(axios, 'create').mockImplementation((() => () => ({data: PRESIGNED_URL_PAYLOAD})) as any)
+    const spy = jest.spyOn(axios, 'create').mockImplementation((() => () => ({data: PRESIGNED_URL_PAYLOAD})) as any)
     const api = apiConstructor(apiConfiguration)
     const {getPresignedURL} = api
     const {url} = await getPresignedURL([TRIGGERED_TEST_ID])
     expect(url).toEqual(PRESIGNED_URL_PAYLOAD.url)
+    spy.mockRestore()
+  })
+
+  describe('proxy configuration', () => {
+    const tests = [{public_id: '123-456-789', executionRule: ExecutionRule.NON_BLOCKING}]
+    let initialHttpProxyEnv: string | undefined
+
+    beforeAll(() => {
+      initialHttpProxyEnv = process.env.HTTP_PROXY
+    })
+
+    afterAll(() => {
+      if (initialHttpProxyEnv !== undefined) {
+        process.env.HTTP_PROXY = initialHttpProxyEnv
+      } else {
+        delete process.env.HTTP_PROXY
+      }
+    })
+
+    beforeEach(() => {
+      delete process.env.HTTP_PROXY
+    })
+
+    test('use proxy defined in configuration', async () => {
+      const {close: proxyClose, config: proxyOpts, calls} = getSyntheticsProxy()
+
+      try {
+        const proxyApiConfiguration = {
+          ...apiConfiguration,
+          proxyOpts,
+        }
+
+        const api = apiConstructor(proxyApiConfiguration)
+
+        const searchOutput = await api.searchTests('tag:test')
+        expect(searchOutput).toEqual(mockSearchResponse)
+        expect(calls.search).toHaveBeenCalled()
+
+        const tunnelOutput = await api.getPresignedURL(['123-456-789'])
+        expect(tunnelOutput).toEqual({url: expect.stringContaining('ws://127.0.0.1:')})
+        expect(calls.presignedUrl).toHaveBeenCalled()
+
+        const testOutput = await api.getTest('123-456-789')
+        expect(testOutput).toEqual(getApiTest('123-456-789'))
+        expect(calls.get).toHaveBeenCalled()
+
+        const triggerOutput = await api.triggerTests({tests})
+        expect(triggerOutput).toEqual(mockTestTriggerResponse)
+        expect(calls.trigger).toHaveBeenCalledWith({tests})
+      } finally {
+        await proxyClose()
+      }
+    })
+
+    test('use proxy defined in environment variable', async () => {
+      const {close: proxyClose, config: proxyOpts, calls} = getSyntheticsProxy()
+      process.env.HTTP_PROXY = `http://localhost:${proxyOpts.port}`
+
+      try {
+        const api = apiConstructor(apiConfiguration)
+
+        const searchOutput = await api.searchTests('tag:test')
+        expect(searchOutput).toEqual(mockSearchResponse)
+        expect(calls.search).toHaveBeenCalled()
+
+        const triggerOutput = await api.triggerTests({tests})
+        expect(triggerOutput).toEqual(mockTestTriggerResponse)
+        expect(calls.trigger).toHaveBeenCalledWith({tests})
+      } finally {
+        await proxyClose()
+      }
+    })
+
+    test('use configuration proxy over environment variable', async () => {
+      const {close: proxyClose, config: proxyOpts, calls} = getSyntheticsProxy()
+      process.env.HTTP_PROXY = 'http://inexistanthost/'
+
+      try {
+        const proxyApiConfiguration = {
+          ...apiConfiguration,
+          proxyOpts,
+        }
+        const api = apiConstructor(proxyApiConfiguration)
+
+        const triggerOutput = await api.triggerTests({tests})
+        expect(triggerOutput).toEqual(mockTestTriggerResponse)
+        expect(calls.trigger).toHaveBeenCalledWith({tests})
+      } finally {
+        await proxyClose()
+      }
+    })
   })
 })

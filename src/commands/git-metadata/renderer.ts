@@ -1,6 +1,7 @@
 import chalk from 'chalk'
 
 import {ICONS} from '../../helpers/formatting'
+import {CommitInfo} from './interfaces'
 
 export const renderGitError = (errorMessage: string) =>
   chalk.red(`${ICONS.FAILED} An error occured while invoking git: ${errorMessage}
@@ -14,8 +15,6 @@ export const renderFailedUpload = (errorMessage: string) =>
 export const renderRetriedUpload = (errorMessage: string, attempt: number) =>
   chalk.yellow(`[attempt ${attempt}] Retrying upload: ${errorMessage}\n`)
 
-export const renderUpload = 'Uploading\n'
-
 export const renderSuccessfulCommand = (duration: number, dryRun: boolean) => {
   if (dryRun) {
     return chalk.green(`${ICONS.SUCCESS} [DRYRUN] Handled in ${duration} seconds.\n`)
@@ -24,10 +23,8 @@ export const renderSuccessfulCommand = (duration: number, dryRun: boolean) => {
   }
 }
 
-export const renderCommandInfo = (dryRun: boolean) => {
-  if (dryRun) {
-    return chalk.yellow(`${ICONS.WARNING} DRY-RUN MODE ENABLED. WILL NOT UPLOAD\n`)
-  }
+export const renderDryRunWarning = () => chalk.yellow(`${ICONS.WARNING} DRY-RUN MODE ENABLED. WILL NOT UPLOAD\n`)
 
-  return chalk.green('Starting upload. \n')
-}
+export const renderCommandInfo = (commit: CommitInfo) =>
+  `Reporting commit ${commit.hash} from repository ${commit.remote}.
+${commit.trackedFiles.length} tracked file paths will be reported.\n`

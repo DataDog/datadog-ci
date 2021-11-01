@@ -1,21 +1,22 @@
 import chalk from 'chalk'
+import {BaseContext} from 'clipanion'
 import {Writable} from 'stream'
 
 import {
   Assertion,
   ConfigOverride,
+  ERRORS,
   ExecutionRule,
   LocationsMapping,
+  MainReporter,
   Operator,
   PollResult,
-  Reporter,
   Result,
   Step,
   Summary,
   Test,
 } from '../interfaces'
-import {RunTestCommand} from '../run-test'
-import {hasResultPassed, hasTestSucceeded} from '../utils'
+import {getResultDuration, hasResultPassed, hasTestSucceeded} from '../utils'
 
 // Step rendering
 
@@ -136,7 +137,7 @@ const renderResultOutcome = (
   }
 
   if (test.type === 'browser') {
-    if (!hasResultPassed(result, failOnCriticalErrors, failOnTimeout) && result.stepDetails) {
+    if (!hasResultPassed(result, failOnCriticalErrors, failOnTimeout) && 'stepDetails' in result) {
       // We render the step only if the test hasn't passed to avoid cluttering the output.
       return result.stepDetails.map(renderStep).join('\n')
     }
@@ -184,12 +185,13 @@ const renderApiRequestDescription = (subType: string, config: Test['config']): s
 }
 
 const getResultUrl = (baseUrl: string, test: Test, resultId: string) => {
+  const ciQueryParam = 'from_ci=true'
   const testDetailUrl = `${baseUrl}synthetics/details/${test.public_id}`
   if (test.type === 'browser') {
-    return `${testDetailUrl}/result/${resultId}`
+    return `${testDetailUrl}/result/${resultId}?${ciQueryParam}`
   }
 
-  return `${testDetailUrl}?resultId=${resultId}`
+  return `${testDetailUrl}?resultId=${resultId}&${ciQueryParam}`
 }
 
 const renderExecutionResult = (
@@ -204,19 +206,20 @@ const renderExecutionResult = (
   const isSuccess = hasResultPassed(result, failOnCriticalErrors, failOnTimeout)
   const color = getTestResultColor(isSuccess, test.options.ci?.executionRule === ExecutionRule.NON_BLOCKING)
   const icon = isSuccess ? ICONS.SUCCESS : ICONS.FAILED
+
   const locationName = !!result.tunnel ? 'Tunneled' : locationNames[dc_id] || dc_id.toString()
-  const device = test.type === 'browser' && result.device ? ` - device: ${chalk.bold(result.device.id)}` : ''
+  const device = test.type === 'browser' && 'device' in result ? ` - device: ${chalk.bold(result.device.id)}` : ''
   const resultIdentification = color(`  ${icon} location: ${chalk.bold(locationName)}${device}`)
 
   const outputLines = [resultIdentification]
 
   // Unhealthy test results don't have a duration or result URL
   if (!result.unhealthy) {
-    const duration = test.type === 'browser' ? result.duration : result.timings?.total
+    const duration = getResultDuration(result)
     const durationText = duration ? `  total duration: ${duration} ms -` : ''
 
     const resultUrl = getResultUrl(baseUrl, test, resultID)
-    const resultUrlStatus = result.error === 'Timeout' ? '(not yet received)' : ''
+    const resultUrlStatus = result.error === ERRORS.TIMEOUT ? '(not yet received)' : ''
 
     const resultInfo = `    ⎋${durationText} result url: ${chalk.dim.cyan(resultUrl)} ${resultUrlStatus}`
     outputLines.push(resultInfo)
@@ -260,18 +263,18 @@ const getTestResultColor = (success: boolean, isNonBlocking: boolean) => {
   return chalk.bold.red
 }
 
-export class DefaultReporter implements Reporter {
+export class DefaultReporter implements MainReporter {
   private write: Writable['write']
 
-  constructor(command: RunTestCommand) {
-    this.write = command.context.stdout.write.bind(command.context.stdout)
+  constructor({context}: {context: BaseContext}) {
+    this.write = context.stdout.write.bind(context.stdout)
   }
 
   public error(error: string) {
     this.write(error)
   }
 
-  public initError(errors: string[]) {
+  public initErrors(errors: string[]) {
     this.write(errors.join('\n'))
   }
 
@@ -294,8 +297,10 @@ export class DefaultReporter implements Reporter {
     if (summary.skipped) {
       summaries.push(`${chalk.bold(summary.skipped)} skipped`)
     }
-    if (summary.notFound) {
-      summaries.push(chalk.yellow(`${chalk.bold(summary.notFound)} not found`))
+
+    if (summary.testsNotFound.size > 0) {
+      const testsNotFoundStr = chalk.gray(`(${[...summary.testsNotFound].join(', ')})`)
+      summaries.push(`${chalk.yellow(`${chalk.bold(summary.testsNotFound.size)} not found`)} ${testsNotFoundStr}`)
     }
 
     const extraInfo = []

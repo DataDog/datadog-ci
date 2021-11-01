@@ -13,6 +13,7 @@ import {
   HANDLER_LOCATION,
   KMS_API_KEY_ENV_VAR,
   LAMBDA_HANDLER_ENV_VAR,
+  LIST_FUNCTIONS_MAX_RETRY_COUNT,
   LOG_LEVEL_ENV_VAR,
   MERGE_XRAY_TRACES_ENV_VAR,
   Runtime,
@@ -21,151 +22,110 @@ import {
   SITE_ENV_VAR,
   TRACE_ENABLED_ENV_VAR,
   VERSION_ENV_VAR,
-} from './constants'
-import {applyLogGroupConfig, calculateLogGroupUpdateRequest, LogGroupConfiguration} from './loggroup'
-import {applyTagConfig, calculateTagUpdateRequest, TagConfiguration} from './tags'
-export interface FunctionConfiguration {
-  functionARN: string
-  lambdaConfig: Lambda.FunctionConfiguration
-  lambdaLibraryLayerArn: string
-  logGroupConfiguration?: LogGroupConfiguration
-  tagConfiguration?: TagConfiguration
-  updateRequest?: Lambda.UpdateFunctionConfigurationRequest
-}
+} from '../constants'
+import {FunctionConfiguration, InstrumentationSettings, LogGroupConfiguration, TagConfiguration} from '../interfaces'
+import {calculateLogGroupUpdateRequest} from '../loggroup'
+import {calculateTagUpdateRequest} from '../tags'
+import {addLayerARN, getLambdaFunctionConfigs, isLambdaActive, isSupportedRuntime} from './commons'
 
-interface InstrumentationTags {
-  environment?: string
-  extraTags?: string
-  service?: string
-  version?: string
-}
-
-export interface InstrumentationSettings extends InstrumentationTags {
-  extensionVersion?: number
-  flushMetricsToLogs: boolean
-  forwarderARN?: string
-  layerAWSAccount?: string
-  layerVersion?: number
-  logLevel?: string
-  mergeXrayTraces: boolean
-  tracingEnabled: boolean
-}
-
-const MAX_LAMBDA_STATE_CHECKS = 3
-
-/**
- * Waits for n ms
- * @param ms
- * @returns
- */
-const wait = (ms: number): Promise<void> => new Promise((res) => setTimeout(res, ms))
-
-const isLambdaActive = async (
-  lambda: Lambda,
-  config: Lambda.FunctionConfiguration,
-  functionArn: string,
-  attempts = 0
-): Promise<boolean> => {
-  // TODO remove 1 Oct 2021 https://aws.amazon.com/blogs/compute/tracking-the-state-of-lambda-functions/
-  if (!config.State || !config.LastUpdateStatus) {
-    return true
-  }
-  if (config.LastUpdateStatus === 'Successful' && config.State === 'Active') {
-    return true
-  }
-  if (config.State === 'Pending' && attempts <= MAX_LAMBDA_STATE_CHECKS) {
-    await wait(2 ** attempts * 1000)
-    const refetchedConfig = await getLambdaConfig(lambda, functionArn)
-
-    return isLambdaActive(lambda, refetchedConfig.config, functionArn, (attempts += 1))
-  }
-  throw Error(
-    `Can't instrument ${functionArn}, as current State is ${config.State} (must be "Active") and Last Update Status is ${config.LastUpdateStatus} (must be "Successful")`
-  )
-}
-
-export const getLambdaConfigs = async (
+export const getFunctionConfigs = async (
   lambda: Lambda,
   cloudWatch: CloudWatchLogs,
   region: string,
   functionARNs: string[],
   settings: InstrumentationSettings
 ): Promise<FunctionConfiguration[]> => {
-  const resultPromises = functionARNs.map((fn) => getLambdaConfig(lambda, fn))
-  const results = await Promise.all(resultPromises)
+  const lambdaFunctionConfigs = await getLambdaFunctionConfigs(lambda, functionARNs)
+
+  const configs: FunctionConfiguration[] = []
+  for (const config of lambdaFunctionConfigs) {
+    const functionConfig = await getFunctionConfig(lambda, cloudWatch, config, region, settings)
+
+    configs.push(functionConfig)
+  }
+
+  return configs
+}
+
+export const getFunctionConfig = async (
+  lambda: Lambda,
+  cloudWatch: CloudWatchLogs,
+  config: Lambda.FunctionConfiguration,
+  region: string,
+  settings: InstrumentationSettings
+) => {
+  const functionARN = config.FunctionArn!
+  const runtime = config.Runtime
+  if (!isSupportedRuntime(runtime)) {
+    throw Error(`Can't instrument ${functionARN}, runtime ${runtime} not supported`)
+  }
+
+  await isLambdaActive(lambda, config, functionARN)
+  const lambdaLibraryLayerArn: string = getLayerArn(runtime, settings, region)
+  const lambdaExtensionLayerArn: string = getExtensionArn(settings, region)
+  const updateRequest = calculateUpdateRequest(
+    config,
+    settings,
+    lambdaLibraryLayerArn,
+    lambdaExtensionLayerArn,
+    runtime
+  )
+  let logGroupConfiguration: LogGroupConfiguration | undefined
+  if (settings.forwarderARN !== undefined) {
+    const arn = `/aws/lambda/${config.FunctionName}`
+    logGroupConfiguration = await calculateLogGroupUpdateRequest(cloudWatch, arn, settings.forwarderARN)
+  }
+
+  const tagConfiguration: TagConfiguration | undefined = await calculateTagUpdateRequest(lambda, functionARN)
+
+  return {
+    functionARN,
+    lambdaConfig: config,
+    lambdaLibraryLayerArn,
+    logGroupConfiguration,
+    tagConfiguration,
+    updateRequest,
+  }
+}
+
+export const getLambdaConfigsFromRegEx = async (
+  lambda: Lambda,
+  cloudWatch: CloudWatchLogs,
+  region: string,
+  pattern: string,
+  settings: InstrumentationSettings
+): Promise<FunctionConfiguration[]> => {
+  const regEx = new RegExp(pattern)
+  const matchedFunctions: Lambda.FunctionConfiguration[] = []
+  let retryCount = 0
+  let listFunctionsResponse: Lambda.ListFunctionsResponse
+  let nextMarker: string | undefined
+
+  while (true) {
+    try {
+      listFunctionsResponse = await lambda.listFunctions({Marker: nextMarker}).promise()
+      listFunctionsResponse.Functions?.map((fn) => fn.FunctionName?.match(regEx) && matchedFunctions.push(fn))
+      nextMarker = listFunctionsResponse.NextMarker
+      if (!nextMarker) {
+        break
+      }
+      retryCount = 0
+    } catch (e) {
+      retryCount++
+      if (retryCount > LIST_FUNCTIONS_MAX_RETRY_COUNT) {
+        throw Error('Max retry count exceeded.')
+      }
+    }
+  }
 
   const functionsToUpdate: FunctionConfiguration[] = []
 
-  for (const {config, functionARN} of results) {
-    const runtime = config.Runtime
-    if (!isSupportedRuntime(runtime)) {
-      throw Error(`Can't instrument ${functionARN}, runtime ${runtime} not supported`)
-    }
-
-    await isLambdaActive(lambda, config, functionARN)
-    const lambdaLibraryLayerArn: string = getLayerArn(runtime, settings, region)
-    const lambdaExtensionLayerArn: string = getExtensionArn(settings, region)
-    const updateRequest = calculateUpdateRequest(
-      config,
-      settings,
-      lambdaLibraryLayerArn,
-      lambdaExtensionLayerArn,
-      runtime
-    )
-    let logGroupConfiguration: LogGroupConfiguration | undefined
-    if (settings.forwarderARN !== undefined) {
-      const arn = `/aws/lambda/${config.FunctionName}`
-      logGroupConfiguration = await calculateLogGroupUpdateRequest(cloudWatch, arn, settings.forwarderARN)
-    }
-
-    const tagConfiguration: TagConfiguration | undefined = await calculateTagUpdateRequest(lambda, functionARN)
-
-    functionsToUpdate.push({
-      functionARN,
-      lambdaConfig: config,
-      lambdaLibraryLayerArn,
-      logGroupConfiguration,
-      tagConfiguration,
-      updateRequest,
-    })
+  for (const config of matchedFunctions) {
+    const functionConfig = await getFunctionConfig(lambda, cloudWatch, config, region, settings)
+    functionsToUpdate.push(functionConfig)
   }
 
   return functionsToUpdate
-}
-
-export const updateLambdaConfigs = async (
-  lambda: Lambda,
-  cloudWatch: CloudWatchLogs,
-  configurations: FunctionConfiguration[]
-) => {
-  const results = configurations.map(async (c) => {
-    if (c.updateRequest !== undefined) {
-      await lambda.updateFunctionConfiguration(c.updateRequest).promise()
-    }
-    if (c.logGroupConfiguration !== undefined) {
-      await applyLogGroupConfig(cloudWatch, c.logGroupConfiguration)
-    }
-    if (c.tagConfiguration !== undefined) {
-      await applyTagConfig(lambda, c.tagConfiguration)
-    }
-  })
-  await Promise.all(results)
-}
-
-const getLambdaConfig = async (
-  lambda: Lambda,
-  functionARN: string
-): Promise<{config: Lambda.FunctionConfiguration; functionARN: string}> => {
-  const params = {
-    FunctionName: functionARN,
-  }
-  const result = await lambda.getFunction(params).promise()
-  // AWS typescript API is slightly mistyped, adds undefineds where
-  // there shouldn't be.
-  const config = result.Configuration!
-  const resolvedFunctionARN = config.FunctionArn!
-
-  return {config, functionARN: resolvedFunctionARN}
 }
 
 export const getLayerArn = (runtime: Runtime, settings: InstrumentationSettings, region: string) => {
@@ -318,20 +278,4 @@ export const calculateUpdateRequest = (
   })
 
   return needsUpdate ? updateRequest : undefined
-}
-
-const addLayerARN = (fullLayerARN: string | undefined, partialLayerARN: string, layerARNs: string[]) => {
-  if (fullLayerARN) {
-    if (!layerARNs.includes(fullLayerARN)) {
-      // Remove any other versions of the layer
-      layerARNs = [...layerARNs.filter((l) => !l.startsWith(partialLayerARN)), fullLayerARN]
-    }
-  }
-
-  return layerARNs
-}
-const isSupportedRuntime = (runtime?: string): runtime is Runtime => {
-  const lookup = RUNTIME_LAYER_LOOKUP as Record<string, string>
-
-  return runtime !== undefined && lookup[runtime] !== undefined
 }

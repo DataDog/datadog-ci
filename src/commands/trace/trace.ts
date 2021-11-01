@@ -3,9 +3,10 @@ import {spawn} from 'child_process'
 import {Command} from 'clipanion'
 import crypto from 'crypto'
 import os from 'os'
+import {retryRequest} from '../../helpers/retry'
 import {parseTags} from '../../helpers/tags'
 import {apiConstructor} from './api'
-import {APIHelper, CIRCLECI, JENKINS, Provider, SUPPORTED_PROVIDERS} from './interfaces'
+import {APIHelper, CIRCLECI, JENKINS, Payload, Provider, SUPPORTED_PROVIDERS} from './interfaces'
 
 // We use 127 as exit code for invalid commands since that is what *sh terminals return
 const BAD_COMMAND_EXIT_CODE = 127
@@ -53,7 +54,17 @@ export class TraceCommand extends Command {
     const [command, ...args] = this.command
     const id = crypto.randomBytes(5).toString('hex')
     const startTime = new Date().toISOString()
-    const childProcess = spawn(command, args, {env: {...process.env, DD_CUSTOM_PARENT_ID: id}, stdio: 'inherit'})
+    const childProcess = spawn(command, args, {
+      env: {...process.env, DD_CUSTOM_PARENT_ID: id},
+      stdio: ['inherit', 'inherit', 'pipe'],
+    })
+    const chunks: Buffer[] = []
+    childProcess.stderr.pipe(this.context.stderr)
+    const stderrCatcher: Promise<string> = new Promise((resolve, reject) => {
+      childProcess.stderr.on('data', (chunk) => chunks.push(Buffer.from(chunk)))
+      childProcess.stderr.on('error', (err) => reject(err))
+      childProcess.stderr.on('end', () => resolve(Buffer.concat(chunks).toString('utf8')))
+    })
     const [status, signal] = await new Promise((resolve, reject) => {
       childProcess.on('error', (error: Error) => {
         reject(error)
@@ -63,15 +74,16 @@ export class TraceCommand extends Command {
         resolve([exitStatus, exitSignal])
       })
     })
+
+    const stderr: string = await stderrCatcher
     const endTime = new Date().toISOString()
-    const exitCode = status ?? this.signalToNumber(signal) ?? BAD_COMMAND_EXIT_CODE
+    const exitCode: number = status ?? this.signalToNumber(signal) ?? BAD_COMMAND_EXIT_CODE
     const [ciEnvVars, provider] = this.getCIEnvVars()
     if (provider) {
-      const api = this.getApiHelper()
       const commandStr = this.command.join(' ')
       const envVarTags = this.config.envVarTags ? parseTags(this.config.envVarTags.split(',')) : {}
       const cliTags = this.tags ? parseTags(this.tags) : {}
-      await api.reportCustomSpan(
+      await this.reportCustomSpan(
         {
           command: commandStr,
           custom: {
@@ -80,6 +92,8 @@ export class TraceCommand extends Command {
           },
           data: ciEnvVars,
           end_time: endTime,
+          error_message: stderr,
+          exit_code: exitCode,
           is_error: exitCode !== 0,
           name: this.name ?? commandStr,
           start_time: startTime,
@@ -187,6 +201,22 @@ export class TraceCommand extends Command {
 
   private getEnvironmentVars(keys: string[]): Record<string, string> {
     return keys.filter((key) => key in process.env).reduce((accum, key) => ({...accum, [key]: process.env[key]!}), {})
+  }
+
+  private async reportCustomSpan(payload: Payload, provider: Provider) {
+    const api = this.getApiHelper()
+    try {
+      await retryRequest(() => api.reportCustomSpan(payload, provider), {
+        onRetry: (e, attempt) => {
+          this.context.stderr.write(
+            chalk.yellow(`[attempt ${attempt}] Could not report custom span. Retrying...: ${e.message}\n`)
+          )
+        },
+        retries: 5,
+      })
+    } catch (error) {
+      this.context.stderr.write(chalk.red(`Failed to report custom span: ${error.message}\n`))
+    }
   }
 
   private signalToNumber(signal: NodeJS.Signals | null): number | undefined {

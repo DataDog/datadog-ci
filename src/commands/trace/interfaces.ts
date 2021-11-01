@@ -15,6 +15,8 @@ export interface Payload {
   // Data is a map of CI-provider-specific environment variables
   data: Record<string, string>
   end_time: string
+  error_message: string
+  exit_code: number
   is_error: boolean
   name: string
   start_time: string

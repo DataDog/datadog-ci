@@ -25,6 +25,12 @@ If the org uses a custom sub-domain to access Datadog app, it needs to be set in
 export DATADOG_SUBDOMAIN="myorg"
 ```
 
+You can use the `DATADOG_SYNTHETICS_LOCATIONS` to override the locations where your tests run. Locations should be separated with `;`. Note that the configuration in test files takes precedence over others overrides.
+
+```bash
+export DATADOG_SYNTHETICS_LOCATIONS="aws:us-east-1;aws:us-east-2"
+```
+
 ### API
 
 By default it runs at the root of the working directory and finds `{,!(node_modules)/**/}*.synthetics.json` files (every files ending with `.synthetics.json` except those in the `node_modules` folder).
@@ -56,7 +62,7 @@ The configuration file structure is the following:
     "locations": ["aws:us-east-1"],
     "retry": {"count": 2, "interval": 300},
     "startUrl": "{{URL}}?static_hash={{STATIC_HASH}}",
-    "variables": {"titleVariable": "new title"}
+    "variables": {"MY_VARIABLE": "new title"}
   },
   "pollingTimeout": 120000,
   "proxy": {
@@ -132,7 +138,7 @@ Your test files must be named with a `.synthetics.json` suffix.
         "pollingTimeout": 30000,
         "retry": {"count": 2, "interval": 300},
         "startUrl": "{{URL}}?static_hash={{STATIC_HASH}}",
-        "variables": {"titleVariable": "new title"}
+        "variables": {"MY_VARIABLE": "new title"}
       }
     }
   ]
@@ -149,7 +155,9 @@ All options under the `config` key allow overriding the configuration of the tes
   - `password`: (string) password to use in basic authentication.
 - `body`: (string) data to send in a synthetics API test.
 - `bodyType`: (string) type of the data sent in a synthetics API test.
-- `cookies`: (string) use provided string as Cookie header in API or Browser test.
+- `cookies`: (string or object) use provided string as Cookie header in API or Browser test, in addition or in replacement.
+  - if a string, it will be used to replace the original cookies.
+  - if an object, its format must be `{append?: boolean, value: string}` and depending on the value of `append`, it will be appended or will replace the original cookies.
 - `defaultStepTimeout`: (number) maximum duration of steps in seconds for Browser tests, does not override individually set step timeouts.
 - `deviceIds`: (array) list of devices on which to run the Browser test.
 - `executionRule`: (string) execution rule of the test: it defines the behavior of the CLI in case of a failing test, it can be either:

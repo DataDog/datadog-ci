@@ -2,15 +2,6 @@ import {Metadata} from '../../helpers/interfaces'
 import {ProxyConfiguration} from '../../helpers/utils'
 import {TunnelInfo} from './tunnel'
 
-interface Timings {
-  dns: number
-  download: number
-  firstByte: number
-  ssl: number
-  tcp: number
-  total: number
-}
-
 export interface MainReporter {
   error(error: string): void
   initErrors(errors: string[]): void
@@ -29,14 +20,16 @@ export interface MainReporter {
   testWait(test: Test): void
 }
 
+export enum ERRORS {
+  TIMEOUT = 'Timeout',
+  ENDPOINT = 'Endpoint Failure',
+  TUNNEL = 'Tunnel Failure',
+}
+
 export type Reporter = Partial<MainReporter>
 
-export interface Result {
-  device: {
-    id: string
-  }
-  duration?: number
-  error?: string | 'Endpoint Failure' | 'Timeout' | 'Tunnel Failure'
+export interface TestResult {
+  error?: string
   errorCode?: string
   errorMessage?: string
   eventType: string
@@ -45,40 +38,98 @@ export interface Result {
     message: string
   }
   passed: boolean
-  stepDetails: Step[]
-  timings?: Timings
   tunnel?: boolean
   unhealthy?: boolean
 }
 
+export interface BrowserTestResult extends TestResult {
+  device: {
+    height: number
+    id: string
+    width: number
+  }
+  duration: number
+  error?: string | ERRORS
+  startUrl: string
+  stepDetails: Step[]
+}
+
+interface AssertionResult {
+  actual: any
+  expected?: any
+  valid: boolean
+}
+
+export interface ApiTestResult extends TestResult {
+  assertionResults: AssertionResult[]
+  timings: {
+    total: number
+  }
+}
+
+export interface MultiStep {
+  allowFailure: boolean
+  assertionResults: AssertionResult[]
+  failure?: {
+    code: string
+    message: string
+  }
+  name: string
+  passed: boolean
+  skipped: boolean
+  subtype: string
+  timings: {
+    total: number
+  }
+}
+
+export interface MultiStepsTestResult extends TestResult {
+  duration: number
+  steps: MultiStep[]
+}
+
+export type Result = BrowserTestResult | ApiTestResult | MultiStepsTestResult
+
 export interface PollResult {
   check?: Test
+  check_id?: string
   dc_id: number
   result: Result
   resultID: string
+  timestamp: number
 }
 
-interface Resource {
-  duration: number
-  size: number
-  type: string
+export interface Vitals {
+  cls?: number
+  lcp?: number
   url: string
+}
+
+export interface BrowserError {
+  description: string
+  name: string
+  type: string
 }
 
 export interface Step {
-  apmTraceIds: string[]
-  browserErrors: string[]
+  allowFailure: boolean
+  browserErrors: BrowserError[]
   description: string
   duration: number
   error?: string
-  resource: Resource
-  screenshotBucketKey: boolean
+  publicId?: string
   skipped: boolean
-  snapshotBucketKey: boolean
   stepId: number
+  subTestPublicId?: string
+  subTestStepDetails?: Step[]
   type: string
   url: string
-  value: string
+  value?: string | number
+  vitalsMetrics: Vitals[]
+  warnings?: {
+    message: string
+    type: string
+  }[]
 }
 
 export interface Test {
@@ -123,6 +174,10 @@ export interface Test {
   type: string
 }
 
+export interface InternalTest extends Test {
+  suite?: string
+}
+
 export interface Assertion {
   actual: string | number | Date | {[key: string]: any}
   errorMessage?: string
@@ -165,7 +220,7 @@ export interface TriggerResult extends TriggerResponse {
   result?: PollResult
 }
 
-interface Location {
+export interface Location {
   display_name: string
   id: number
   is_active: boolean
@@ -183,7 +238,7 @@ export interface Trigger {
   triggered_check_ids: string[]
 }
 
-interface RetryConfig {
+export interface RetryConfig {
   count: number
   interval: number
 }
@@ -193,7 +248,7 @@ export interface ConfigOverride {
   basicAuth?: BasicAuthCredentials
   body?: string
   bodyType?: string
-  cookies?: string
+  cookies?: string | {append?: boolean; value: string}
   defaultStepTimeout?: number
   deviceIds?: string[]
   executionRule?: ExecutionRule
@@ -217,7 +272,7 @@ export interface TestPayload extends ConfigOverride {
   public_id: string
 }
 
-interface BasicAuthCredentials {
+export interface BasicAuthCredentials {
   password: string
   username: string
 }
@@ -241,6 +296,7 @@ export interface TemplateContext extends TemplateVariables, NodeJS.ProcessEnv {}
 export interface TriggerConfig {
   config: ConfigOverride
   id: string
+  suite?: string
 }
 
 export enum ExecutionRule {
@@ -250,15 +306,18 @@ export enum ExecutionRule {
 }
 
 export interface Suite {
-  tests: TriggerConfig[]
+  content: {
+    tests: TriggerConfig[]
+  }
+  name?: string
 }
 
 export interface Summary {
   criticalErrors: number
   failed: number
-  notFound: number
   passed: number
   skipped: number
+  testsNotFound: Set<string>
   timedOut: number
 }
 
@@ -284,19 +343,23 @@ export interface APIConfiguration {
   proxyOpts: ProxyConfiguration
 }
 
-export interface CommandConfig {
+export interface SyntheticsCIConfig {
   apiKey: string
   appKey: string
   configPath: string
   datadogSite: string
   failOnCriticalErrors: boolean
-  failOnTimeout: boolean
   files: string[]
   global: ConfigOverride
+  locations: string[]
   pollingTimeout: number
   proxy: ProxyConfiguration
   publicIds: string[]
   subdomain: string
   testSearchQuery?: string
   tunnel: boolean
+}
+
+export interface CommandConfig extends SyntheticsCIConfig {
+  failOnTimeout: boolean
 }
