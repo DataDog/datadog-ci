@@ -200,12 +200,6 @@ export class InstrumentCommand extends Command {
     return this.uploadGitData()
   }
 
-  private getRegion(functionARN: string) {
-    const [, , , region] = functionARN.split(':')
-
-    return region === undefined || region === '*' ? undefined : region
-  }
-
   private getSettings(): InstrumentationSettings | undefined {
     const layerVersionStr = this.layerVersion ?? this.config.layerVersion
     const extensionVersionStr = this.extensionVersion ?? this.config.extensionVersion
