@@ -59,8 +59,10 @@ export class InstrumentCommand extends Command {
     }
 
     if (this.sourceCodeIntegration) {
-      if (!process.env.DATADOG_API_KEY) {
-        throw new InvalidConfigurationError(`Missing ${bold('DATADOG_API_KEY')} in your environment.`)
+      if (!process.env.DATADOG_API_KEY && !process.env.DATADOG_KMS_API_KEY) {
+        throw new InvalidConfigurationError(
+          `Missing ${bold('DATADOG_API_KEY')} or ${bold('DATADOG_KMS_API_KEY')} in your environment.`
+        )
       }
       const code = await this.getGitDataAndUpload(settings)
       if (code === 1) {
