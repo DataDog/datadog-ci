@@ -32,7 +32,7 @@ export interface Metadata {
     pipeline: {
       id?: string
       name?: string
-      number?: string
+      number?: number
       url?: string
     }
     provider: {

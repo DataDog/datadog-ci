@@ -503,7 +503,7 @@ export const getCIMetadata = (): Metadata | undefined => {
       pipeline: removeUndefinedValues({
         id: tags[CI_PIPELINE_ID],
         name: tags[CI_PIPELINE_NAME],
-        number: tags[CI_PIPELINE_NUMBER],
+        number: parsePipelineNumber(tags[CI_PIPELINE_NUMBER]),
         url: tags[CI_PIPELINE_URL],
       }),
       provider: removeUndefinedValues({
@@ -537,4 +537,12 @@ export const getCIMetadata = (): Metadata | undefined => {
   }
 
   return metadata
+}
+
+const parsePipelineNumber = (pipelineNumberStr: string | undefined): number | undefined => {
+  if (pipelineNumberStr) {
+    const pipelineNumber = parseInt(pipelineNumberStr, 10)
+
+    return isFinite(pipelineNumber) ? pipelineNumber : undefined
+  }
 }
