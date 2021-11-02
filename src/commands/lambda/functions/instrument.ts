@@ -20,6 +20,8 @@ import {
   MERGE_XRAY_TRACES_ENV_VAR,
   Runtime,
   RUNTIME_LAYER_LOOKUP,
+  RUNTIME_LOOKUP,
+  RuntimeType,
   SERVICE_ENV_VAR,
   SITE_ENV_VAR,
   TRACE_ENABLED_ENV_VAR,
@@ -195,6 +197,13 @@ export const calculateUpdateRequest = (
     needsUpdate = true
     changedEnvVars[KMS_API_KEY_ENV_VAR] = apiKmsKey
   } else if (apiKeySecretArn !== undefined && oldEnvVars[API_KEY_SECRET_ARN_ENV_VAR] !== apiKeySecretArn) {
+    const isNode = RUNTIME_LOOKUP[runtime] === RuntimeType.NODE
+    const isSendingSynchronousMetrics = settings.extensionVersion === undefined && !settings.flushMetricsToLogs
+    if (isSendingSynchronousMetrics && isNode) {
+      throw new Error(
+        '`apiKeySecretArn` is not supported for Node runtimes when using Synchronous Metrics. Use either `apiKey` or `apiKmsKey`.'
+      )
+    }
     needsUpdate = true
     changedEnvVars[API_KEY_SECRET_ARN_ENV_VAR] = apiKeySecretArn
   } else if (apiKey !== undefined && oldEnvVars[API_KEY_ENV_VAR] !== apiKey) {

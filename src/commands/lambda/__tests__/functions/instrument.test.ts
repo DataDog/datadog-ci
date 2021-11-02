@@ -386,6 +386,32 @@ describe('instrument', () => {
         "When 'extensionLayer' is set, DATADOG_API_KEY, DATADOG_KMS_API_KEY, or DATADOG_API_KEY_SECRET_ARN must also be set"
       )
     })
+
+    test('throws error when trying to add `DD_API_KEY_SECRET_ARN` while using sync metrics in a node runtime', () => {
+      process.env[CI_API_KEY_SECRET_ARN_ENV_VAR] = 'some-secret:arn:from:aws'
+      const runtime = 'nodejs14.x'
+      const config = {
+        FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world',
+        Handler: 'index.handler',
+        Layers: [],
+        Runtime: runtime,
+      }
+      const settings = {
+        flushMetricsToLogs: false,
+        layerAWSAccount: mockAwsAccount,
+        layerVersion: 13,
+        mergeXrayTraces: false,
+        tracingEnabled: false,
+      }
+      const lambdaLibraryLayerArn = `arn:aws:lambda:sa-east-1:${mockAwsAccount}:layer:Datadog-Python36`
+      const lambdaExtensionLayerArn = `arn:aws:lambda:sa-east-1:${mockAwsAccount}:layer:Datadog-Extension`
+
+      expect(() => {
+        calculateUpdateRequest(config, settings, lambdaLibraryLayerArn, lambdaExtensionLayerArn, runtime)
+      }).toThrowError(
+        '`apiKeySecretArn` is not supported for Node runtimes when using Synchronous Metrics. Use either `apiKey` or `apiKmsKey`.'
+      )
+    })
   })
   describe('getExtensionArn', () => {
     const OLD_ENV = process.env
