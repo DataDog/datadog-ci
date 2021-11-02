@@ -1,7 +1,7 @@
 [
   [
     {
-      "BITRISE_BUILD_NUMBER": "bitrise-pipeline-number",
+      "BITRISE_BUILD_NUMBER": "12345",
       "BITRISE_BUILD_SLUG": "bitrise-pipeline-id",
       "BITRISE_BUILD_URL": "bitrise-build-url",
       "BITRISE_GIT_COMMIT": "gitcommit",
@@ -14,7 +14,7 @@
     {
       "ci.pipeline.id": "bitrise-pipeline-id",
       "ci.pipeline.name": "bitrise-pipeline-name",
-      "ci.pipeline.number": "bitrise-pipeline-number",
+      "ci.pipeline.number": "12345",
       "ci.pipeline.url": "bitrise-build-url",
       "ci.provider.name": "bitrise",
       "ci.workspace_path": "/foo/bar",
@@ -25,7 +25,7 @@
   ],
   [
     {
-      "BITRISE_BUILD_NUMBER": "bitrise-pipeline-number",
+      "BITRISE_BUILD_NUMBER": "12345",
       "BITRISE_BUILD_SLUG": "bitrise-pipeline-id",
       "BITRISE_BUILD_URL": "bitrise-build-url",
       "BITRISE_GIT_BRANCH": "origin/master",
@@ -38,7 +38,7 @@
     {
       "ci.pipeline.id": "bitrise-pipeline-id",
       "ci.pipeline.name": "bitrise-pipeline-name",
-      "ci.pipeline.number": "bitrise-pipeline-number",
+      "ci.pipeline.number": "12345",
       "ci.pipeline.url": "bitrise-build-url",
       "ci.provider.name": "bitrise",
       "ci.workspace_path": "/foo/bar",
@@ -50,7 +50,7 @@
   ],
   [
     {
-      "BITRISE_BUILD_NUMBER": "bitrise-pipeline-number",
+      "BITRISE_BUILD_NUMBER": "12345",
       "BITRISE_BUILD_SLUG": "bitrise-pipeline-id",
       "BITRISE_BUILD_URL": "bitrise-build-url",
       "BITRISE_GIT_BRANCH": "origin/master",
@@ -63,7 +63,7 @@
     {
       "ci.pipeline.id": "bitrise-pipeline-id",
       "ci.pipeline.name": "bitrise-pipeline-name",
-      "ci.pipeline.number": "bitrise-pipeline-number",
+      "ci.pipeline.number": "12345",
       "ci.pipeline.url": "bitrise-build-url",
       "ci.provider.name": "bitrise",
       "ci.workspace_path": "foo/bar",
@@ -75,7 +75,7 @@
   ],
   [
     {
-      "BITRISE_BUILD_NUMBER": "bitrise-pipeline-number",
+      "BITRISE_BUILD_NUMBER": "12345",
       "BITRISE_BUILD_SLUG": "bitrise-pipeline-id",
       "BITRISE_BUILD_URL": "bitrise-build-url",
       "BITRISE_GIT_BRANCH": "origin/master",
@@ -88,7 +88,7 @@
     {
       "ci.pipeline.id": "bitrise-pipeline-id",
       "ci.pipeline.name": "bitrise-pipeline-name",
-      "ci.pipeline.number": "bitrise-pipeline-number",
+      "ci.pipeline.number": "12345",
       "ci.pipeline.url": "bitrise-build-url",
       "ci.provider.name": "bitrise",
       "ci.workspace_path": "/foo/bar~",
@@ -100,7 +100,7 @@
   ],
   [
     {
-      "BITRISE_BUILD_NUMBER": "bitrise-pipeline-number",
+      "BITRISE_BUILD_NUMBER": "12345",
       "BITRISE_BUILD_SLUG": "bitrise-pipeline-id",
       "BITRISE_BUILD_URL": "bitrise-build-url",
       "BITRISE_GIT_BRANCH": "origin/master",
@@ -113,7 +113,7 @@
     {
       "ci.pipeline.id": "bitrise-pipeline-id",
       "ci.pipeline.name": "bitrise-pipeline-name",
-      "ci.pipeline.number": "bitrise-pipeline-number",
+      "ci.pipeline.number": "12345",
       "ci.pipeline.url": "bitrise-build-url",
       "ci.provider.name": "bitrise",
       "ci.workspace_path": "/foo/~/bar",
@@ -125,7 +125,7 @@
   ],
   [
     {
-      "BITRISE_BUILD_NUMBER": "bitrise-pipeline-number",
+      "BITRISE_BUILD_NUMBER": "12345",
       "BITRISE_BUILD_SLUG": "bitrise-pipeline-id",
       "BITRISE_BUILD_URL": "bitrise-build-url",
       "BITRISE_GIT_BRANCH": "origin/master",
@@ -140,7 +140,7 @@
     {
       "ci.pipeline.id": "bitrise-pipeline-id",
       "ci.pipeline.name": "bitrise-pipeline-name",
-      "ci.pipeline.number": "bitrise-pipeline-number",
+      "ci.pipeline.number": "12345",
       "ci.pipeline.url": "bitrise-build-url",
       "ci.provider.name": "bitrise",
       "ci.workspace_path": "/not-my-home/foo/bar",
@@ -152,7 +152,7 @@
   ],
   [
     {
-      "BITRISE_BUILD_NUMBER": "bitrise-pipeline-number",
+      "BITRISE_BUILD_NUMBER": "12345",
       "BITRISE_BUILD_SLUG": "bitrise-pipeline-id",
       "BITRISE_BUILD_URL": "bitrise-build-url",
       "BITRISE_GIT_BRANCH": "origin/master",
@@ -167,7 +167,7 @@
     {
       "ci.pipeline.id": "bitrise-pipeline-id",
       "ci.pipeline.name": "bitrise-pipeline-name",
-      "ci.pipeline.number": "bitrise-pipeline-number",
+      "ci.pipeline.number": "12345",
       "ci.pipeline.url": "bitrise-build-url",
       "ci.provider.name": "bitrise",
       "ci.workspace_path": "~foo/bar",
@@ -179,7 +179,7 @@
   ],
   [
     {
-      "BITRISE_BUILD_NUMBER": "bitrise-pipeline-number",
+      "BITRISE_BUILD_NUMBER": "12345",
       "BITRISE_BUILD_SLUG": "bitrise-pipeline-id",
       "BITRISE_BUILD_URL": "bitrise-build-url",
       "BITRISE_GIT_BRANCH": "origin/master",
@@ -194,7 +194,7 @@
     {
       "ci.pipeline.id": "bitrise-pipeline-id",
       "ci.pipeline.name": "bitrise-pipeline-name",
-      "ci.pipeline.number": "bitrise-pipeline-number",
+      "ci.pipeline.number": "12345",
       "ci.pipeline.url": "bitrise-build-url",
       "ci.provider.name": "bitrise",
       "ci.workspace_path": "/not-my-home",
@@ -206,7 +206,7 @@
   ],
   [
     {
-      "BITRISE_BUILD_NUMBER": "bitrise-pipeline-number",
+      "BITRISE_BUILD_NUMBER": "12345",
       "BITRISE_BUILD_SLUG": "bitrise-pipeline-id",
       "BITRISE_BUILD_URL": "bitrise-build-url",
       "BITRISE_GIT_BRANCH": "refs/heads/master",
@@ -219,7 +219,7 @@
     {
       "ci.pipeline.id": "bitrise-pipeline-id",
       "ci.pipeline.name": "bitrise-pipeline-name",
-      "ci.pipeline.number": "bitrise-pipeline-number",
+      "ci.pipeline.number": "12345",
       "ci.pipeline.url": "bitrise-build-url",
       "ci.provider.name": "bitrise",
       "ci.workspace_path": "/foo/bar",
@@ -231,7 +231,7 @@
   ],
   [
     {
-      "BITRISE_BUILD_NUMBER": "bitrise-pipeline-number",
+      "BITRISE_BUILD_NUMBER": "12345",
       "BITRISE_BUILD_SLUG": "bitrise-pipeline-id",
       "BITRISE_BUILD_URL": "bitrise-build-url",
       "BITRISE_GIT_BRANCH": "refs/heads/feature/one",
@@ -244,7 +244,7 @@
     {
       "ci.pipeline.id": "bitrise-pipeline-id",
       "ci.pipeline.name": "bitrise-pipeline-name",
-      "ci.pipeline.number": "bitrise-pipeline-number",
+      "ci.pipeline.number": "12345",
       "ci.pipeline.url": "bitrise-build-url",
       "ci.provider.name": "bitrise",
       "ci.workspace_path": "/foo/bar",
@@ -256,7 +256,7 @@
   ],
   [
     {
-      "BITRISE_BUILD_NUMBER": "bitrise-pipeline-number",
+      "BITRISE_BUILD_NUMBER": "12345",
       "BITRISE_BUILD_SLUG": "bitrise-pipeline-id",
       "BITRISE_BUILD_URL": "bitrise-build-url",
       "BITRISE_GIT_BRANCH": "origin/tags/0.1.0",
@@ -270,7 +270,7 @@
     {
       "ci.pipeline.id": "bitrise-pipeline-id",
       "ci.pipeline.name": "bitrise-pipeline-name",
-      "ci.pipeline.number": "bitrise-pipeline-number",
+      "ci.pipeline.number": "12345",
       "ci.pipeline.url": "bitrise-build-url",
       "ci.provider.name": "bitrise",
       "ci.workspace_path": "/foo/bar",
@@ -282,7 +282,7 @@
   ],
   [
     {
-      "BITRISE_BUILD_NUMBER": "bitrise-pipeline-number",
+      "BITRISE_BUILD_NUMBER": "12345",
       "BITRISE_BUILD_SLUG": "bitrise-pipeline-id",
       "BITRISE_BUILD_URL": "bitrise-build-url",
       "BITRISE_GIT_BRANCH": "refs/heads/tags/0.1.0",
@@ -296,7 +296,7 @@
     {
       "ci.pipeline.id": "bitrise-pipeline-id",
       "ci.pipeline.name": "bitrise-pipeline-name",
-      "ci.pipeline.number": "bitrise-pipeline-number",
+      "ci.pipeline.number": "12345",
       "ci.pipeline.url": "bitrise-build-url",
       "ci.provider.name": "bitrise",
       "ci.workspace_path": "/foo/bar",
@@ -308,7 +308,7 @@
   ],
   [
     {
-      "BITRISE_BUILD_NUMBER": "bitrise-pipeline-number",
+      "BITRISE_BUILD_NUMBER": "12345",
       "BITRISE_BUILD_SLUG": "bitrise-pipeline-id",
       "BITRISE_BUILD_URL": "bitrise-build-url",
       "BITRISE_GIT_BRANCH": "origin/master",
@@ -321,7 +321,7 @@
     {
       "ci.pipeline.id": "bitrise-pipeline-id",
       "ci.pipeline.name": "bitrise-pipeline-name",
-      "ci.pipeline.number": "bitrise-pipeline-number",
+      "ci.pipeline.number": "12345",
       "ci.pipeline.url": "bitrise-build-url",
       "ci.provider.name": "bitrise",
       "ci.workspace_path": "/foo/bar",
@@ -333,7 +333,7 @@
   ],
   [
     {
-      "BITRISE_BUILD_NUMBER": "bitrise-pipeline-number",
+      "BITRISE_BUILD_NUMBER": "12345",
       "BITRISE_BUILD_SLUG": "bitrise-pipeline-id",
       "BITRISE_BUILD_URL": "bitrise-build-url",
       "BITRISE_GIT_BRANCH": "origin/master",
@@ -346,7 +346,7 @@
     {
       "ci.pipeline.id": "bitrise-pipeline-id",
       "ci.pipeline.name": "bitrise-pipeline-name",
-      "ci.pipeline.number": "bitrise-pipeline-number",
+      "ci.pipeline.number": "12345",
       "ci.pipeline.url": "bitrise-build-url",
       "ci.provider.name": "bitrise",
       "ci.workspace_path": "/foo/bar",
@@ -358,7 +358,7 @@
   ],
   [
     {
-      "BITRISE_BUILD_NUMBER": "bitrise-pipeline-number",
+      "BITRISE_BUILD_NUMBER": "12345",
       "BITRISE_BUILD_SLUG": "bitrise-pipeline-id",
       "BITRISE_BUILD_URL": "bitrise-build-url",
       "BITRISE_GIT_BRANCH": "origin/notmaster",
@@ -371,7 +371,7 @@
     {
       "ci.pipeline.id": "bitrise-pipeline-id",
       "ci.pipeline.name": "bitrise-pipeline-name",
-      "ci.pipeline.number": "bitrise-pipeline-number",
+      "ci.pipeline.number": "12345",
       "ci.pipeline.url": "bitrise-build-url",
       "ci.provider.name": "bitrise",
       "ci.workspace_path": "/foo/bar",
@@ -383,7 +383,7 @@
   ],
   [
     {
-      "BITRISE_BUILD_NUMBER": "bitrise-pipeline-number",
+      "BITRISE_BUILD_NUMBER": "12345",
       "BITRISE_BUILD_SLUG": "bitrise-pipeline-id",
       "BITRISE_BUILD_URL": "bitrise-build-url",
       "BITRISE_GIT_MESSAGE": "bitrise-git-commit-message",
@@ -403,7 +403,7 @@
     {
       "ci.pipeline.id": "bitrise-pipeline-id",
       "ci.pipeline.name": "bitrise-pipeline-name",
-      "ci.pipeline.number": "bitrise-pipeline-number",
+      "ci.pipeline.number": "12345",
       "ci.pipeline.url": "bitrise-build-url",
       "ci.provider.name": "bitrise",
       "git.branch": "user-supplied-branch",
@@ -420,7 +420,7 @@
   ],
   [
     {
-      "BITRISE_BUILD_NUMBER": "bitrise-pipeline-number",
+      "BITRISE_BUILD_NUMBER": "12345",
       "BITRISE_BUILD_SLUG": "bitrise-pipeline-id",
       "BITRISE_BUILD_URL": "bitrise-build-url",
       "BITRISE_GIT_MESSAGE": "bitrise-git-commit-message",
@@ -440,7 +440,7 @@
     {
       "ci.pipeline.id": "bitrise-pipeline-id",
       "ci.pipeline.name": "bitrise-pipeline-name",
-      "ci.pipeline.number": "bitrise-pipeline-number",
+      "ci.pipeline.number": "12345",
       "ci.pipeline.url": "bitrise-build-url",
       "ci.provider.name": "bitrise",
       "git.commit.author.date": "usersupplied-authordate",
