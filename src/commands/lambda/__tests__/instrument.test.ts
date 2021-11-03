@@ -207,41 +207,6 @@ describe('lambda', () => {
         expect(output).toMatch(/.*Make sure the command is running within your git repository\..*/i)
       })
 
-      test('instrumenting with source code integrations fails if git repository is not clean', async () => {
-        ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({code: 'ENOENT'}))
-        const lambda = makeMockLambda({
-          'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world': {
-            FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world',
-            Handler: 'index.handler',
-            Runtime: 'nodejs12.x',
-          },
-        })
-        ;(Lambda as any).mockImplementation(() => lambda)
-        process.env.DATADOG_API_KEY = '1234'
-        const cli = makeCli()
-        const context = createMockContext() as any
-        await cli.run(
-          [
-            'lambda',
-            'instrument',
-            '--function',
-            'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world',
-            '--layerVersion',
-            '10',
-            '-sci',
-            '--service',
-            'dummy',
-            '--env',
-            'dummy',
-            '--version',
-            '0.1',
-          ],
-          context
-        )
-        const output = context.stdout.toString()
-        expect(output).toMatch('asd')
-      })
-
       test('runs function update command for lambda library layer', async () => {
         ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({code: 'ENOENT'}))
         const lambda = makeMockLambda({
