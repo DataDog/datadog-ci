@@ -59,6 +59,7 @@ export class InstrumentCommand extends Command {
     if (this.sourceCodeIntegration) {
       if (!process.env.DATADOG_API_KEY) {
         this.context.stdout.write(`${red('[Error]')} Missing DATADOG_API_KEY in your environment\n`)
+        return
       }
       try {
         await this.getGitDataAndUpload(settings)
