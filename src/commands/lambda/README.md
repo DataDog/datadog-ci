@@ -33,6 +33,9 @@ Run `datadog-ci lambda uninstrument` to revert Datadog instrumentation in a Lamb
 # Uninstrument multiple functions specified by names
 datadog-ci lambda uninstrument -f <function-name> -f <another-function-name> -r us-east-1 
 
+# Instrument multiple functions that match a regex pattern
+datadog-ci lambda uninstrument --functions-regex <valid-regex-pattern> -r us-east-1
+
 # Dry run of all updates
 datadog-ci lambda uninstrument -f <function-name> -f <another-function-name> -r us-east-1 --dry
 ```
@@ -91,6 +94,7 @@ Any other argument stated on the `instrument` table, but not below, will be igno
 | Argument | Shorthand | Description | Default |
 | --- | --- | --- | --- |
 | `--function` | `-f` | The ARN of the Lambda function to be **uninstrumented**, or the name of the Lambda function (`--region` must be defined). | |
+| `--functions-regex` | | A regex pattern to match with the Lambda function name to be **uninstrumented**. | |
 | `--region` | `-r` | Default region to use, when `--function` is specified by the function name instead of the ARN. | |
 | `--forwarder` | | The ARN of the [datadog forwarder][10] to remove from this function. | |
 | `--dry` | `-d` | Preview changes running command would apply. | `false` |
