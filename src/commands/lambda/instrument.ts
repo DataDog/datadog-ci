@@ -1,5 +1,5 @@
 import {CloudWatchLogs, Lambda} from 'aws-sdk'
-import {blueBright, bold, cyan, hex, red, underline, yellow} from 'chalk'
+import {blueBright, bold, cyan, hex, underline, yellow} from 'chalk'
 import {Cli, Command} from 'clipanion'
 import {parseConfigFile} from '../../helpers/utils'
 import {getCommitInfo, newSimpleGit} from '../git-metadata/git'
@@ -58,13 +58,16 @@ export class InstrumentCommand extends Command {
 
     if (this.sourceCodeIntegration) {
       if (!process.env.DATADOG_API_KEY) {
-        this.context.stdout.write(`${red('[Error]')} Missing DATADOG_API_KEY in your environment\n`)
-        return
+        this.context.stdout.write('Missing DATADOG_API_KEY in your environment\n')
+
+        return 1
       }
       try {
         await this.getGitDataAndUpload(settings)
       } catch (err) {
-        return
+        this.context.stdout.write(err)
+
+        return 1
       }
     }
 
@@ -384,7 +387,7 @@ export class InstrumentCommand extends Command {
     try {
       const cli = new Cli()
       cli.register(UploadCommand)
-      await cli.run(['commit', 'upload'], this.context)
+      await cli.run(['git-metadata', 'upload'], this.context)
     } catch (err) {
       throw err
     }
