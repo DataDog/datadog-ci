@@ -1,7 +1,6 @@
 import {CloudWatchLogs, Lambda} from 'aws-sdk'
 import {blueBright, bold, cyan, hex, red, underline, yellow} from 'chalk'
 import {Cli, Command} from 'clipanion'
-import {InvalidConfigurationError} from '../../helpers/errors'
 import {parseConfigFile} from '../../helpers/utils'
 import {getCommitInfo, newSimpleGit} from '../git-metadata/git'
 import {UploadCommand} from '../git-metadata/upload'
@@ -58,15 +57,13 @@ export class InstrumentCommand extends Command {
     }
 
     if (this.sourceCodeIntegration) {
-      if (!process.env.DATADOG_API_KEY && !process.env.DATADOG_KMS_API_KEY) {
-        throw new InvalidConfigurationError(
-          `Missing ${bold('DATADOG_API_KEY')} or ${bold('DATADOG_KMS_API_KEY')} in your environment.`
-        )
+      if (!process.env.DATADOG_API_KEY) {
+        this.context.stdout.write(`${red('[Error]')} Missing DATADOG_API_KEY in your environment\n`)
       }
       try {
         await this.getGitDataAndUpload(settings)
       } catch (err) {
-        this.context.stdout.write(`${red('[Error]')} Couldn't attach git source code hash: ${err}\n`)
+        return
       }
     }
 
