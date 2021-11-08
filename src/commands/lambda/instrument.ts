@@ -197,7 +197,7 @@ export class InstrumentCommand extends Command {
     }
 
     try {
-      this.uploadGitData()
+      await this.uploadGitData()
     } catch (err) {
       throw Error(`Error uploading git data: ${err}\n`)
     }
