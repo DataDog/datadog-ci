@@ -65,7 +65,9 @@ export class InstrumentCommand extends Command {
       try {
         await this.getGitDataAndUpload(settings)
       } catch (err) {
-        this.context.stdout.write(`Couldn't upload git metadata: ${err}\n`)
+        this.context.stdout.write(
+          "Couldn't upload git metadata. Make sure that your DATADOG_API_KEY is set correctly.\n"
+        )
 
         return 1
       }
