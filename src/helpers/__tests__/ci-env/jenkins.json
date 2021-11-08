@@ -1,7 +1,7 @@
 [
   [
     {
-      "BUILD_NUMBER": "12345",
+      "BUILD_NUMBER": "jenkins-pipeline-number",
       "BUILD_TAG": "jenkins-pipeline-id",
       "BUILD_URL": "jenkins-pipeline-url",
       "GIT_BRANCH": "origin/master",
@@ -15,7 +15,7 @@
     {
       "ci.pipeline.id": "jenkins-pipeline-id",
       "ci.pipeline.name": "jobName",
-      "ci.pipeline.number": "12345",
+      "ci.pipeline.number": "jenkins-pipeline-number",
       "ci.pipeline.url": "jenkins-pipeline-url",
       "ci.provider.name": "jenkins",
       "git.branch": "master",
@@ -25,7 +25,7 @@
   ],
   [
     {
-      "BUILD_NUMBER": "12345",
+      "BUILD_NUMBER": "jenkins-pipeline-number",
       "BUILD_TAG": "jenkins-pipeline-id",
       "BUILD_URL": "jenkins-pipeline-url",
       "GIT_BRANCH": "origin/master",
@@ -38,7 +38,7 @@
     {
       "ci.pipeline.id": "jenkins-pipeline-id",
       "ci.pipeline.name": "jobName",
-      "ci.pipeline.number": "12345",
+      "ci.pipeline.number": "jenkins-pipeline-number",
       "ci.pipeline.url": "jenkins-pipeline-url",
       "ci.provider.name": "jenkins",
       "git.branch": "master",
@@ -48,7 +48,7 @@
   ],
   [
     {
-      "BUILD_NUMBER": "12345",
+      "BUILD_NUMBER": "jenkins-pipeline-number",
       "BUILD_TAG": "jenkins-pipeline-id",
       "BUILD_URL": "jenkins-pipeline-url",
       "GIT_BRANCH": "origin/master",
@@ -61,7 +61,7 @@
     {
       "ci.pipeline.id": "jenkins-pipeline-id",
       "ci.pipeline.name": "jobName",
-      "ci.pipeline.number": "12345",
+      "ci.pipeline.number": "jenkins-pipeline-number",
       "ci.pipeline.url": "jenkins-pipeline-url",
       "ci.provider.name": "jenkins",
       "git.branch": "master",
@@ -71,7 +71,7 @@
   ],
   [
     {
-      "BUILD_NUMBER": "12345",
+      "BUILD_NUMBER": "jenkins-pipeline-number",
       "BUILD_TAG": "jenkins-pipeline-id",
       "BUILD_URL": "jenkins-pipeline-url",
       "GIT_BRANCH": "origin/master",
@@ -85,7 +85,7 @@
     {
       "ci.pipeline.id": "jenkins-pipeline-id",
       "ci.pipeline.name": "jobName",
-      "ci.pipeline.number": "12345",
+      "ci.pipeline.number": "jenkins-pipeline-number",
       "ci.pipeline.url": "jenkins-pipeline-url",
       "ci.provider.name": "jenkins",
       "ci.workspace_path": "foo/bar",
@@ -96,7 +96,7 @@
   ],
   [
     {
-      "BUILD_NUMBER": "12345",
+      "BUILD_NUMBER": "jenkins-pipeline-number",
       "BUILD_TAG": "jenkins-pipeline-id",
       "BUILD_URL": "jenkins-pipeline-url",
       "GIT_BRANCH": "origin/master",
@@ -110,7 +110,7 @@
     {
       "ci.pipeline.id": "jenkins-pipeline-id",
       "ci.pipeline.name": "jobName",
-      "ci.pipeline.number": "12345",
+      "ci.pipeline.number": "jenkins-pipeline-number",
       "ci.pipeline.url": "jenkins-pipeline-url",
       "ci.provider.name": "jenkins",
       "ci.workspace_path": "/foo/bar~",
@@ -121,7 +121,7 @@
   ],
   [
     {
-      "BUILD_NUMBER": "12345",
+      "BUILD_NUMBER": "jenkins-pipeline-number",
       "BUILD_TAG": "jenkins-pipeline-id",
       "BUILD_URL": "jenkins-pipeline-url",
       "GIT_BRANCH": "origin/master",
@@ -135,7 +135,7 @@
     {
       "ci.pipeline.id": "jenkins-pipeline-id",
       "ci.pipeline.name": "jobName",
-      "ci.pipeline.number": "12345",
+      "ci.pipeline.number": "jenkins-pipeline-number",
       "ci.pipeline.url": "jenkins-pipeline-url",
       "ci.provider.name": "jenkins",
       "ci.workspace_path": "/foo/~/bar",
@@ -146,7 +146,7 @@
   ],
   [
     {
-      "BUILD_NUMBER": "12345",
+      "BUILD_NUMBER": "jenkins-pipeline-number",
       "BUILD_TAG": "jenkins-pipeline-id",
       "BUILD_URL": "jenkins-pipeline-url",
       "GIT_BRANCH": "origin/master",
@@ -162,7 +162,7 @@
     {
       "ci.pipeline.id": "jenkins-pipeline-id",
       "ci.pipeline.name": "jobName",
-      "ci.pipeline.number": "12345",
+      "ci.pipeline.number": "jenkins-pipeline-number",
       "ci.pipeline.url": "jenkins-pipeline-url",
       "ci.provider.name": "jenkins",
       "ci.workspace_path": "/not-my-home/foo/bar",
@@ -173,7 +173,7 @@
   ],
   [
     {
-      "BUILD_NUMBER": "12345",
+      "BUILD_NUMBER": "jenkins-pipeline-number",
       "BUILD_TAG": "jenkins-pipeline-id",
       "BUILD_URL": "jenkins-pipeline-url",
       "GIT_BRANCH": "origin/master",
@@ -189,7 +189,7 @@
     {
       "ci.pipeline.id": "jenkins-pipeline-id",
       "ci.pipeline.name": "jobName",
-      "ci.pipeline.number": "12345",
+      "ci.pipeline.number": "jenkins-pipeline-number",
       "ci.pipeline.url": "jenkins-pipeline-url",
       "ci.provider.name": "jenkins",
       "ci.workspace_path": "~foo/bar",
@@ -200,7 +200,7 @@
   ],
   [
     {
-      "BUILD_NUMBER": "12345",
+      "BUILD_NUMBER": "jenkins-pipeline-number",
       "BUILD_TAG": "jenkins-pipeline-id",
       "BUILD_URL": "jenkins-pipeline-url",
       "GIT_BRANCH": "origin/master",
@@ -216,7 +216,7 @@
     {
       "ci.pipeline.id": "jenkins-pipeline-id",
       "ci.pipeline.name": "jobName",
-      "ci.pipeline.number": "12345",
+      "ci.pipeline.number": "jenkins-pipeline-number",
       "ci.pipeline.url": "jenkins-pipeline-url",
       "ci.provider.name": "jenkins",
       "ci.workspace_path": "/not-my-home",
@@ -227,7 +227,7 @@
   ],
   [
     {
-      "BUILD_NUMBER": "12345",
+      "BUILD_NUMBER": "jenkins-pipeline-number",
       "BUILD_TAG": "jenkins-pipeline-id",
       "BUILD_URL": "jenkins-pipeline-url",
       "GIT_BRANCH": "origin/master",
@@ -241,7 +241,7 @@
     {
       "ci.pipeline.id": "jenkins-pipeline-id",
       "ci.pipeline.name": "jobName",
-      "ci.pipeline.number": "12345",
+      "ci.pipeline.number": "jenkins-pipeline-number",
       "ci.pipeline.url": "jenkins-pipeline-url",
       "ci.provider.name": "jenkins",
       "ci.workspace_path": "/foo/bar",
@@ -252,7 +252,7 @@
   ],
   [
     {
-      "BUILD_NUMBER": "12345",
+      "BUILD_NUMBER": "jenkins-pipeline-number",
       "BUILD_TAG": "jenkins-pipeline-id",
       "BUILD_URL": "jenkins-pipeline-url",
       "GIT_BRANCH": "refs/heads/master",
@@ -266,7 +266,7 @@
     {
       "ci.pipeline.id": "jenkins-pipeline-id",
       "ci.pipeline.name": "jobName",
-      "ci.pipeline.number": "12345",
+      "ci.pipeline.number": "jenkins-pipeline-number",
       "ci.pipeline.url": "jenkins-pipeline-url",
       "ci.provider.name": "jenkins",
       "ci.workspace_path": "/foo/bar",
@@ -277,7 +277,7 @@
   ],
   [
     {
-      "BUILD_NUMBER": "12345",
+      "BUILD_NUMBER": "jenkins-pipeline-number",
       "BUILD_TAG": "jenkins-pipeline-id",
       "BUILD_URL": "jenkins-pipeline-url",
       "GIT_BRANCH": "refs/heads/master",
@@ -291,7 +291,7 @@
     {
       "ci.pipeline.id": "jenkins-pipeline-id",
       "ci.pipeline.name": "jobName/another",
-      "ci.pipeline.number": "12345",
+      "ci.pipeline.number": "jenkins-pipeline-number",
       "ci.pipeline.url": "jenkins-pipeline-url",
       "ci.provider.name": "jenkins",
       "ci.workspace_path": "/foo/bar",
@@ -302,7 +302,7 @@
   ],
   [
     {
-      "BUILD_NUMBER": "12345",
+      "BUILD_NUMBER": "jenkins-pipeline-number",
       "BUILD_TAG": "jenkins-pipeline-id",
       "BUILD_URL": "jenkins-pipeline-url",
       "GIT_BRANCH": "refs/heads/feature/one",
@@ -316,7 +316,7 @@
     {
       "ci.pipeline.id": "jenkins-pipeline-id",
       "ci.pipeline.name": "jobName",
-      "ci.pipeline.number": "12345",
+      "ci.pipeline.number": "jenkins-pipeline-number",
       "ci.pipeline.url": "jenkins-pipeline-url",
       "ci.provider.name": "jenkins",
       "ci.workspace_path": "/foo/bar",
@@ -327,7 +327,7 @@
   ],
   [
     {
-      "BUILD_NUMBER": "12345",
+      "BUILD_NUMBER": "jenkins-pipeline-number",
       "BUILD_TAG": "jenkins-pipeline-id",
       "BUILD_URL": "jenkins-pipeline-url",
       "GIT_BRANCH": "refs/heads/master",
@@ -341,7 +341,7 @@
     {
       "ci.pipeline.id": "jenkins-pipeline-id",
       "ci.pipeline.name": "jobName",
-      "ci.pipeline.number": "12345",
+      "ci.pipeline.number": "jenkins-pipeline-number",
       "ci.pipeline.url": "jenkins-pipeline-url",
       "ci.provider.name": "jenkins",
       "ci.workspace_path": "/foo/bar",
@@ -352,7 +352,7 @@
   ],
   [
     {
-      "BUILD_NUMBER": "12345",
+      "BUILD_NUMBER": "jenkins-pipeline-number",
       "BUILD_TAG": "jenkins-pipeline-id",
       "BUILD_URL": "jenkins-pipeline-url",
       "GIT_BRANCH": "refs/heads/master",
@@ -366,7 +366,7 @@
     {
       "ci.pipeline.id": "jenkins-pipeline-id",
       "ci.pipeline.name": "jobName",
-      "ci.pipeline.number": "12345",
+      "ci.pipeline.number": "jenkins-pipeline-number",
       "ci.pipeline.url": "jenkins-pipeline-url",
       "ci.provider.name": "jenkins",
       "ci.workspace_path": "/foo/bar",
@@ -377,7 +377,7 @@
   ],
   [
     {
-      "BUILD_NUMBER": "12345",
+      "BUILD_NUMBER": "jenkins-pipeline-number",
       "BUILD_TAG": "jenkins-pipeline-id",
       "BUILD_URL": "jenkins-pipeline-url",
       "GIT_BRANCH": "origin/tags/0.1.0",
@@ -389,7 +389,7 @@
     },
     {
       "ci.pipeline.id": "jenkins-pipeline-id",
-      "ci.pipeline.number": "12345",
+      "ci.pipeline.number": "jenkins-pipeline-number",
       "ci.pipeline.url": "jenkins-pipeline-url",
       "ci.provider.name": "jenkins",
       "ci.workspace_path": "/foo/bar",
@@ -400,7 +400,7 @@
   ],
   [
     {
-      "BUILD_NUMBER": "12345",
+      "BUILD_NUMBER": "jenkins-pipeline-number",
       "BUILD_TAG": "jenkins-pipeline-id",
       "BUILD_URL": "jenkins-pipeline-url",
       "GIT_BRANCH": "refs/heads/tags/0.1.0",
@@ -412,7 +412,7 @@
     },
     {
       "ci.pipeline.id": "jenkins-pipeline-id",
-      "ci.pipeline.number": "12345",
+      "ci.pipeline.number": "jenkins-pipeline-number",
       "ci.pipeline.url": "jenkins-pipeline-url",
       "ci.provider.name": "jenkins",
       "ci.workspace_path": "/foo/bar",
@@ -423,7 +423,7 @@
   ],
   [
     {
-      "BUILD_NUMBER": "12345",
+      "BUILD_NUMBER": "jenkins-pipeline-number",
       "BUILD_TAG": "jenkins-pipeline-id",
       "BUILD_URL": "jenkins-pipeline-url",
       "GIT_BRANCH": "origin/master",
@@ -437,7 +437,7 @@
     {
       "ci.pipeline.id": "jenkins-pipeline-id",
       "ci.pipeline.name": "jobName",
-      "ci.pipeline.number": "12345",
+      "ci.pipeline.number": "jenkins-pipeline-number",
       "ci.pipeline.url": "jenkins-pipeline-url",
       "ci.provider.name": "jenkins",
       "ci.workspace_path": "/foo/bar",
@@ -448,7 +448,7 @@
   ],
   [
     {
-      "BUILD_NUMBER": "12345",
+      "BUILD_NUMBER": "jenkins-pipeline-number",
       "BUILD_TAG": "jenkins-pipeline-id",
       "BUILD_URL": "jenkins-pipeline-url",
       "GIT_BRANCH": "origin/master",
@@ -462,7 +462,7 @@
     {
       "ci.pipeline.id": "jenkins-pipeline-id",
       "ci.pipeline.name": "jobName",
-      "ci.pipeline.number": "12345",
+      "ci.pipeline.number": "jenkins-pipeline-number",
       "ci.pipeline.url": "jenkins-pipeline-url",
       "ci.provider.name": "jenkins",
       "ci.workspace_path": "/foo/bar",
@@ -473,7 +473,7 @@
   ],
   [
     {
-      "BUILD_NUMBER": "12345",
+      "BUILD_NUMBER": "jenkins-pipeline-number",
       "BUILD_TAG": "jenkins-pipeline-id",
       "BUILD_URL": "jenkins-pipeline-url",
       "GIT_BRANCH": "origin/master",
@@ -487,7 +487,7 @@
     {
       "ci.pipeline.id": "jenkins-pipeline-id",
       "ci.pipeline.name": "jobName",
-      "ci.pipeline.number": "12345",
+      "ci.pipeline.number": "jenkins-pipeline-number",
       "ci.pipeline.url": "jenkins-pipeline-url",
       "ci.provider.name": "jenkins",
       "ci.workspace_path": "/foo/bar",
@@ -498,7 +498,7 @@
   ],
   [
     {
-      "BUILD_NUMBER": "12345",
+      "BUILD_NUMBER": "jenkins-pipeline-number",
       "BUILD_TAG": "jenkins-pipeline-id",
       "BUILD_URL": "jenkins-pipeline-url",
       "GIT_BRANCH": "origin/master",
@@ -512,7 +512,7 @@
     {
       "ci.pipeline.id": "jenkins-pipeline-id",
       "ci.pipeline.name": "jobName",
-      "ci.pipeline.number": "12345",
+      "ci.pipeline.number": "jenkins-pipeline-number",
       "ci.pipeline.url": "jenkins-pipeline-url",
       "ci.provider.name": "jenkins",
       "ci.workspace_path": "/foo/bar",
@@ -523,7 +523,7 @@
   ],
   [
     {
-      "BUILD_NUMBER": "12345",
+      "BUILD_NUMBER": "jenkins-pipeline-number",
       "BUILD_TAG": "jenkins-pipeline-id",
       "BUILD_URL": "jenkins-pipeline-url",
       "GIT_BRANCH": "origin/master",
@@ -537,7 +537,7 @@
     {
       "ci.pipeline.id": "jenkins-pipeline-id",
       "ci.pipeline.name": "jobName",
-      "ci.pipeline.number": "12345",
+      "ci.pipeline.number": "jenkins-pipeline-number",
       "ci.pipeline.url": "jenkins-pipeline-url",
       "ci.provider.name": "jenkins",
       "ci.workspace_path": "/foo/bar",
@@ -548,7 +548,7 @@
   ],
   [
     {
-      "BUILD_NUMBER": "12345",
+      "BUILD_NUMBER": "jenkins-pipeline-number",
       "BUILD_TAG": "jenkins-pipeline-id",
       "BUILD_URL": "jenkins-pipeline-url",
       "DD_GIT_BRANCH": "user-supplied-branch",
@@ -567,7 +567,7 @@
     },
     {
       "ci.pipeline.id": "jenkins-pipeline-id",
-      "ci.pipeline.number": "12345",
+      "ci.pipeline.number": "jenkins-pipeline-number",
       "ci.pipeline.url": "jenkins-pipeline-url",
       "ci.provider.name": "jenkins",
       "git.branch": "user-supplied-branch",
@@ -584,7 +584,7 @@
   ],
   [
     {
-      "BUILD_NUMBER": "12345",
+      "BUILD_NUMBER": "jenkins-pipeline-number",
       "BUILD_TAG": "jenkins-pipeline-id",
       "BUILD_URL": "jenkins-pipeline-url",
       "DD_GIT_COMMIT_AUTHOR_DATE": "usersupplied-authordate",
@@ -603,7 +603,7 @@
     },
     {
       "ci.pipeline.id": "jenkins-pipeline-id",
-      "ci.pipeline.number": "12345",
+      "ci.pipeline.number": "jenkins-pipeline-number",
       "ci.pipeline.url": "jenkins-pipeline-url",
       "ci.provider.name": "jenkins",
       "git.commit.author.date": "usersupplied-authordate",
