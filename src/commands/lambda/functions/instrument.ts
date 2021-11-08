@@ -26,7 +26,7 @@ import {
 import {FunctionConfiguration, InstrumentationSettings, LogGroupConfiguration, TagConfiguration} from '../interfaces'
 import {calculateLogGroupUpdateRequest} from '../loggroup'
 import {calculateTagUpdateRequest} from '../tags'
-import {addLayerARN, getLambdaFunctionConfigs, isLambdaActive, isSupportedRuntime} from './commons'
+import {addLayerARN, getLambdaFunctionConfigs, isSupportedRuntime} from './commons'
 
 export const getFunctionConfigs = async (
   lambda: Lambda,
@@ -60,7 +60,6 @@ export const getFunctionConfig = async (
     throw Error(`Can't instrument ${functionARN}, runtime ${runtime} not supported`)
   }
 
-  await isLambdaActive(lambda, config, functionARN)
   const lambdaLibraryLayerArn: string = getLayerArn(runtime, settings, region)
   const lambdaExtensionLayerArn: string = getExtensionArn(settings, region)
   const updateRequest = calculateUpdateRequest(

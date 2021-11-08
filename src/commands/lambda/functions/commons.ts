@@ -1,6 +1,6 @@
 import {CloudWatchLogs, Lambda} from 'aws-sdk'
 import {GetFunctionRequest} from 'aws-sdk/clients/lambda'
-import {MAX_LAMBDA_STATE_CHECK_ATTEMPTS, Runtime, RUNTIME_LAYER_LOOKUP} from '../constants'
+import {Runtime, RUNTIME_LAYER_LOOKUP} from '../constants'
 import {FunctionConfiguration} from '../interfaces'
 import {applyLogGroupConfig} from '../loggroup'
 import {applyTagConfig} from '../tags'
@@ -113,40 +113,6 @@ export const getRegion = (functionARN: string): string | undefined => {
 }
 
 /**
- * Returns whether a Lambda Function is active or throws an error if
- * the FunctionConfiguration does not comply with `Successful` or `Active`.
- *
- * @param lambda an instance of Lambda from aws-sdk.
- * @param config a Lambda FunctionConfiguration.
- * @param functionArn a string, can be Function ARN, Partial ARN, or a Function Name.
- * @param attempts the number of attemps that have passed since the last retry.
- * @returns if a Lambda Function is active.
- */
-export const isLambdaActive = async (
-  lambda: Lambda,
-  config: Lambda.FunctionConfiguration,
-  functionArn: string,
-  attempts = 0
-): Promise<boolean> => {
-  // TODO remove 1 Oct 2021 https://aws.amazon.com/blogs/compute/tracking-the-state-of-lambda-functions/
-  if (!config.State || !config.LastUpdateStatus) {
-    return true
-  }
-  if (config.LastUpdateStatus === 'Successful' && config.State === 'Active') {
-    return true
-  }
-  if (config.State === 'Pending' && attempts <= MAX_LAMBDA_STATE_CHECK_ATTEMPTS) {
-    await wait(2 ** attempts * 1000)
-    const refetchedConfig = await getLambdaFunctionConfig(lambda, functionArn)
-
-    return isLambdaActive(lambda, refetchedConfig, functionArn, (attempts += 1))
-  }
-  throw Error(
-    `Can't instrument ${functionArn}, as current State is ${config.State} (must be "Active") and Last Update Status is ${config.LastUpdateStatus} (must be "Successful")`
-  )
-}
-
-/**
  * Returns whether the runtime given is supported by the Datadog CI Lambda.
  *
  * @param runtime a string representing a Lambda FunctionConfiguration Runtime.
@@ -178,10 +144,3 @@ export const updateLambdaFunctionConfigs = async (
   })
   await Promise.all(results)
 }
-
-/**
- * Waits for n ms
- *
- * @param ms
- */
-const wait = (ms: number): Promise<void> => new Promise((res) => setTimeout(res, ms))
