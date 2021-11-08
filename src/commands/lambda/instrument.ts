@@ -384,12 +384,10 @@ export class InstrumentCommand extends Command {
   }
 
   private async uploadGitData() {
-    try {
-      const cli = new Cli()
-      cli.register(UploadCommand)
-      await cli.run(['git-metadata', 'upload'], this.context)
-    } catch (err) {
-      throw err
+    const cli = new Cli()
+    cli.register(UploadCommand)
+    if ((await cli.run(['git-metadata', 'upload'], this.context)) !== 0) {
+      throw Error("Couldn't upload git metadata")
     }
 
     return
