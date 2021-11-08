@@ -13,6 +13,28 @@ describe('getCIMetadata', () => {
     expect(getCIMetadata()).toBeUndefined()
   })
 
+  test('pipeline number is parsed to int or ignored', () => {
+    process.env = {GITLAB_CI: 'gitlab'}
+
+    process.env.CI_PIPELINE_IID = '0'
+    expect(getCIMetadata()?.ci.pipeline.number).toBe(0)
+    process.env.CI_PIPELINE_IID = ' \n\r 12345 \n\n '
+    expect(getCIMetadata()?.ci.pipeline.number).toBe(12345)
+    process.env.CI_PIPELINE_IID = '123.45'
+    expect(getCIMetadata()?.ci.pipeline.number).toBe(123)
+    process.env.CI_PIPELINE_IID = '999b'
+    expect(getCIMetadata()?.ci.pipeline.number).toBe(999)
+    process.env.CI_PIPELINE_IID = '-1'
+    expect(getCIMetadata()?.ci.pipeline.number).toBe(-1)
+
+    process.env.CI_PIPELINE_IID = ''
+    expect(getCIMetadata()?.ci.pipeline.number).toBeUndefined()
+    process.env.CI_PIPELINE_IID = 'not a number'
+    expect(getCIMetadata()?.ci.pipeline.number).toBeUndefined()
+    process.env.CI_PIPELINE_IID = '$1'
+    expect(getCIMetadata()?.ci.pipeline.number).toBeUndefined()
+  })
+
   describe.each(CI_PROVIDERS)('%s', (ciProvider) => {
     const assertions = require(path.join(__dirname, 'ci-env', ciProvider))
 
@@ -38,18 +60,16 @@ describe('ci spec', () => {
   CI_PROVIDERS.forEach((ciProvider) => {
     const assertions = require(path.join(__dirname, 'ci-env', ciProvider))
 
-    assertions.forEach(
-      ([env, expectedSpanTags]: [{[key: string]: string}, {[key: string]: string | number}], index: number) => {
-        test(`reads env info for spec ${index} from ${ciProvider}`, () => {
-          process.env = env
-          const tags = {
-            ...getCISpanTags(),
-            ...getUserGitMetadata(),
-          }
-          expect(tags).toEqual(expectedSpanTags)
-        })
-      }
-    )
+    assertions.forEach(([env, expectedSpanTags]: [{[key: string]: string}, {[key: string]: string}], index: number) => {
+      test(`reads env info for spec ${index} from ${ciProvider}`, () => {
+        process.env = env
+        const tags = {
+          ...getCISpanTags(),
+          ...getUserGitMetadata(),
+        }
+        expect(tags).toEqual(expectedSpanTags)
+      })
+    })
   })
 })
 
@@ -60,7 +80,8 @@ const ciAppTagsToMetadata = (tags: SpanTags): Metadata => {
   }
 
   Object.entries(tags).forEach(([tag, value]) => {
-    if (!value) {
+    // Ignore JSON fixtures pipeline number that can't be parsed to numbers
+    if (!value || tag === 'ci.pipeline.number') {
       return
     }
 
@@ -73,7 +94,7 @@ const ciAppTagsToMetadata = (tags: SpanTags): Metadata => {
     }
 
     const attributeName = properties[properties.length - 1]
-    currentAttr[attributeName] = attributeName === 'number' ? parseInt(value, 10) : value
+    currentAttr[attributeName] = value
   })
 
   return metadata
