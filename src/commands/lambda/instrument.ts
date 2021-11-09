@@ -41,7 +41,7 @@ export class InstrumentCommand extends Command {
     }
 
     const hasSpecifiedFuntions = this.functions.length !== 0 || this.config.functions.length !== 0
-    const hasSpecifiedRegExPattern = this.regExPattern !== undefined
+    const hasSpecifiedRegExPattern = this.regExPattern !== undefined && this.regExPattern !== ''
     if (!hasSpecifiedFuntions && !hasSpecifiedRegExPattern) {
       this.context.stdout.write('No functions specified for instrumentation.\n')
 
