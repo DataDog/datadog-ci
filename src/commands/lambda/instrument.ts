@@ -1,7 +1,9 @@
 import {CloudWatchLogs, Lambda} from 'aws-sdk'
 import {blueBright, bold, cyan, hex, underline, yellow} from 'chalk'
-import {Command} from 'clipanion'
+import {Cli, Command} from 'clipanion'
 import {parseConfigFile} from '../../helpers/utils'
+import {getCommitInfo, newSimpleGit} from '../git-metadata/git'
+import {UploadCommand} from '../git-metadata/upload'
 import {EXTRA_TAGS_REG_EXP} from './constants'
 import {collectFunctionsByRegion, sentenceMatchesRegEx, updateLambdaFunctionConfigs} from './functions/commons'
 import {getFunctionConfigs, getLambdaConfigsFromRegEx} from './functions/instrument'
@@ -28,6 +30,7 @@ export class InstrumentCommand extends Command {
   private regExPattern?: string
   private region?: string
   private service?: string
+  private sourceCodeIntegration = false
   private tracing?: string
   private version?: string
 
@@ -51,6 +54,21 @@ export class InstrumentCommand extends Command {
       this.context.stdout.write('"extensionVersion" and "forwarder" should not be used at the same time.\n')
 
       return 1
+    }
+
+    if (this.sourceCodeIntegration) {
+      if (!process.env.DATADOG_API_KEY) {
+        this.context.stdout.write('Missing DATADOG_API_KEY in your environment\n')
+
+        return 1
+      }
+      try {
+        await this.getGitDataAndUpload(settings)
+      } catch (err) {
+        this.context.stdout.write(`${err}\n`)
+
+        return 1
+      }
     }
 
     const configGroups: {
@@ -141,6 +159,48 @@ export class InstrumentCommand extends Command {
 
   private convertStringBooleanToBoolean(fallback: boolean, value?: string, configValue?: string): boolean {
     return value ? value.toLowerCase() === 'true' : configValue ? configValue.toLowerCase() === 'true' : fallback
+  }
+
+  private async getCurrentGitStatus() {
+    const simpleGit = await newSimpleGit()
+    const gitCommitInfo = await getCommitInfo(simpleGit, this.context.stdout)
+    if (gitCommitInfo === undefined) {
+      throw new Error('Git commit info is not defined')
+    }
+    const status = await simpleGit.status()
+
+    return {isClean: status.isClean(), ahead: status.ahead, files: status.files, hash: gitCommitInfo?.hash}
+  }
+
+  private async getGitDataAndUpload(settings: InstrumentationSettings) {
+    let currentStatus
+
+    try {
+      currentStatus = await this.getCurrentGitStatus()
+    } catch (err) {
+      throw Error("Couldn't get local git status")
+    }
+
+    if (!currentStatus.isClean) {
+      throw Error('Local git repository is dirty')
+    }
+
+    if (currentStatus.ahead > 0) {
+      throw Error('Local changes have not been pushed remotely. Aborting git upload.')
+    }
+
+    const commitSha = currentStatus.hash
+    if (settings.extraTags) {
+      settings.extraTags += `,git.commit.sha:${commitSha}`
+    } else {
+      settings.extraTags = `git.commit.sha:${commitSha}`
+    }
+
+    try {
+      await this.uploadGitData()
+    } catch (err) {
+      throw Error(`Error uploading git data: ${err}\n`)
+    }
   }
 
   private getSettings(): InstrumentationSettings | undefined {
@@ -261,7 +321,7 @@ export class InstrumentCommand extends Command {
       }
     }
     if (!anyUpdates) {
-      this.context.stdout.write(`${prefix}No updates will be applied\n`)
+      this.context.stdout.write(`\n${prefix}No updates will be applied\n`)
 
       return
     }
@@ -322,6 +382,16 @@ export class InstrumentCommand extends Command {
       }
     }
   }
+
+  private async uploadGitData() {
+    const cli = new Cli()
+    cli.register(UploadCommand)
+    if ((await cli.run(['git-metadata', 'upload'], this.context)) !== 0) {
+      throw Error("Couldn't upload git metadata")
+    }
+
+    return
+  }
 }
 
 InstrumentCommand.addPath('lambda', 'instrument')
@@ -343,3 +413,4 @@ InstrumentCommand.addOption('service', Command.String('--service'))
 InstrumentCommand.addOption('environment', Command.String('--env'))
 InstrumentCommand.addOption('version', Command.String('--version'))
 InstrumentCommand.addOption('extraTags', Command.String('--extra-tags'))
+InstrumentCommand.addOption('sourceCodeIntegration', Command.Boolean('-s,--source-code-integration'))
