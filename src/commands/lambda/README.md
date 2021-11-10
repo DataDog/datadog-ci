@@ -65,6 +65,7 @@ You can pass the following arguments to `instrument` to specify its behavior. Th
 | `--forwarder` | | The ARN of the [datadog forwarder][10] to attach this function's LogGroup to. | |
 | `--dry` | `-d` | Preview changes running command would apply. | `false` |
 | `--logLevel` | | Set to `debug` to see additional output from the Datadog Lambda Library and/or Lambda Extension for troubleshooting purposes. | |
+| `--source-code-integration` | `-s` | Whether to enable Datadog Source Code Integration. This will send Datadog the Git metadata in the current local directory and tag your lambda(s) with the latest commit. Provide `DATADOG_API_KEY` if using this feature. **Note**: Git repository must not be ahead of remote, and must not be dirty. | `false` |
 
 <br />
 
