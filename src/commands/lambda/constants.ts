@@ -1,5 +1,4 @@
 export const RUNTIME_LAYER_LOOKUP = {
-  'nodejs10.x': 'Datadog-Node10-x',
   'nodejs12.x': 'Datadog-Node12-x',
   'nodejs14.x': 'Datadog-Node14-x',
   'python2.7': 'Datadog-Python27',
