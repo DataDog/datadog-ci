@@ -149,10 +149,10 @@ export const calculateUpdateRequest = (
   let needsUpdate = false
 
   // Update Handler
-  const expectedHandler = HANDLER_LOCATION[runtime as Runtime]
+  const expectedHandler = HANDLER_LOCATION[runtime]
   if (config.Handler !== expectedHandler) {
     needsUpdate = true
-    updateRequest.Handler = HANDLER_LOCATION[runtime as Runtime]
+    updateRequest.Handler = HANDLER_LOCATION[runtime]
   }
 
   // Update Env Vars
