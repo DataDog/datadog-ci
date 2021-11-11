@@ -16,7 +16,6 @@ export enum RuntimeType {
 }
 
 export const RUNTIME_LOOKUP: {[key: string]: RuntimeType} = {
-  'nodejs10.x': RuntimeType.NODE,
   'nodejs12.x': RuntimeType.NODE,
   'nodejs14.x': RuntimeType.NODE,
   'python2.7': RuntimeType.PYTHON,
@@ -29,7 +28,6 @@ export const RUNTIME_LOOKUP: {[key: string]: RuntimeType} = {
 const PYTHON_HANDLER_LOCATION = 'datadog_lambda.handler.handler'
 const NODE_HANDLER_LOCATION = '/opt/nodejs/node_modules/datadog-lambda-js/handler.handler'
 export const HANDLER_LOCATION = {
-  'nodejs10.x': NODE_HANDLER_LOCATION,
   'nodejs12.x': NODE_HANDLER_LOCATION,
   'nodejs14.x': NODE_HANDLER_LOCATION,
   'python2.7': PYTHON_HANDLER_LOCATION,
