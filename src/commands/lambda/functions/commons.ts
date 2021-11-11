@@ -1,6 +1,11 @@
 import {CloudWatchLogs, Lambda} from 'aws-sdk'
 import {GetFunctionRequest} from 'aws-sdk/clients/lambda'
-import {MAX_LAMBDA_STATE_CHECK_ATTEMPTS, Runtime, RUNTIME_LAYER_LOOKUP} from '../constants'
+import {
+  LIST_FUNCTIONS_MAX_RETRY_COUNT,
+  MAX_LAMBDA_STATE_CHECK_ATTEMPTS,
+  Runtime,
+  RUNTIME_LAYER_LOOKUP,
+} from '../constants'
 import {FunctionConfiguration} from '../interfaces'
 import {applyLogGroupConfig} from '../loggroup'
 import {applyTagConfig} from '../tags'
@@ -56,6 +61,44 @@ export const collectFunctionsByRegion = (functions: string[], defaultRegion: str
   }
 
   return groups
+}
+
+/**
+ * Given a Lambda instance and a regular expression,
+ * returns all the Function Configurations that match.
+ *
+ * @param lambda an instance of Lambda from aws-sdk.
+ * @param pattern a regular expression
+ * @returns an array of Lambda FunctionConfiguration's that match the pattern above.
+ */
+export const getLambdaFunctionConfigsFromRegex = async (
+  lambda: Lambda,
+  pattern: string
+): Promise<Lambda.FunctionConfiguration[]> => {
+  const regEx = new RegExp(pattern)
+  const matchedFunctions: Lambda.FunctionConfiguration[] = []
+  let retryCount = 0
+  let listFunctionsResponse: Lambda.ListFunctionsResponse
+  let nextMarker: string | undefined
+
+  while (true) {
+    try {
+      listFunctionsResponse = await lambda.listFunctions({Marker: nextMarker}).promise()
+      listFunctionsResponse.Functions?.map((fn) => fn.FunctionName?.match(regEx) && matchedFunctions.push(fn))
+      nextMarker = listFunctionsResponse.NextMarker
+      if (!nextMarker) {
+        break
+      }
+      retryCount = 0
+    } catch (e) {
+      retryCount++
+      if (retryCount > LIST_FUNCTIONS_MAX_RETRY_COUNT) {
+        throw Error('Max retry count exceeded.')
+      }
+    }
+  }
+
+  return matchedFunctions
 }
 
 /**

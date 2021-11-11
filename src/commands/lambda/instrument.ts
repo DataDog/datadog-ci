@@ -4,7 +4,7 @@ import {Command} from 'clipanion'
 import {parseConfigFile} from '../../helpers/utils'
 import {EXTRA_TAGS_REG_EXP} from './constants'
 import {collectFunctionsByRegion, sentenceMatchesRegEx, updateLambdaFunctionConfigs} from './functions/commons'
-import {getFunctionConfigs, getFunctionConfigsFromRegEx} from './functions/instrument'
+import {getInstrumentedFunctionConfigs, getInstrumentedFunctionConfigsFromRegEx} from './functions/instrument'
 import {FunctionConfiguration, InstrumentationSettings, LambdaConfigOptions} from './interfaces'
 
 export class InstrumentCommand extends Command {
@@ -84,7 +84,13 @@ export class InstrumentCommand extends Command {
         const cloudWatchLogs = new CloudWatchLogs({region})
         const lambda = new Lambda({region})
         this.context.stdout.write('Fetching lambda functions, this might take a while.\n')
-        const configs = await getFunctionConfigsFromRegEx(lambda, cloudWatchLogs, region!, this.regExPattern!, settings)
+        const configs = await getInstrumentedFunctionConfigsFromRegEx(
+          lambda,
+          cloudWatchLogs,
+          region!,
+          this.regExPattern!,
+          settings
+        )
 
         configGroups.push({configs, lambda, cloudWatchLogs, region: region!})
       } catch (err) {
@@ -109,7 +115,7 @@ export class InstrumentCommand extends Command {
         const lambda = new Lambda({region})
         const cloudWatchLogs = new CloudWatchLogs({region})
         try {
-          const configs = await getFunctionConfigs(lambda, cloudWatchLogs, region, functionList, settings)
+          const configs = await getInstrumentedFunctionConfigs(lambda, cloudWatchLogs, region, functionList, settings)
           configGroups.push({configs, lambda, cloudWatchLogs, region})
         } catch (err) {
           this.context.stdout.write(`Couldn't fetch lambda functions. ${err}\n`)

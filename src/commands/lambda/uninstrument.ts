@@ -3,7 +3,7 @@ import {bold, cyan, red} from 'chalk'
 import {Command} from 'clipanion'
 import {parseConfigFile} from '../../helpers/utils'
 import {collectFunctionsByRegion, updateLambdaFunctionConfigs} from './functions/commons'
-import {getFunctionConfigs, getFunctionConfigsFromRegEx} from './functions/uninstrument'
+import {getUninstrumentedFunctionConfigs, getUninstrumentedFunctionConfigsFromRegEx} from './functions/uninstrument'
 import {FunctionConfiguration} from './interfaces'
 
 export class UninstrumentCommand extends Command {
@@ -62,7 +62,12 @@ export class UninstrumentCommand extends Command {
         const cloudWatchLogs = new CloudWatchLogs({region})
         const lambda = new Lambda({region})
         this.context.stdout.write('Fetching lambda functions, this might take a while.\n')
-        const configs = await getFunctionConfigsFromRegEx(lambda, cloudWatchLogs, this.regExPattern!, this.forwarder!)
+        const configs = await getUninstrumentedFunctionConfigsFromRegEx(
+          lambda,
+          cloudWatchLogs,
+          this.regExPattern!,
+          this.forwarder!
+        )
 
         configGroups.push({configs, lambda, cloudWatchLogs})
       } catch (err) {
@@ -87,7 +92,7 @@ export class UninstrumentCommand extends Command {
         const lambda = new Lambda({region})
         const cloudWatchLogs = new CloudWatchLogs({region})
         try {
-          const configs = await getFunctionConfigs(lambda, cloudWatchLogs, functionARNs, this.forwarder)
+          const configs = await getUninstrumentedFunctionConfigs(lambda, cloudWatchLogs, functionARNs, this.forwarder)
           configGroups.push({configs, lambda, cloudWatchLogs})
         } catch (err) {
           this.context.stdout.write(`${red('[Error]')} Couldn't fetch lambda functions. ${err}\n`)

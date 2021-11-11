@@ -650,7 +650,6 @@ describe('lambda', () => {
           {
             functionARN: 'my-func',
             lambdaConfig: {} as any,
-            lambdaLibraryLayerArn: 'my-layer',
             logGroupConfiguration: {
               createLogGroupRequest: {logGroupName: 'my-log-group'} as any,
               deleteSubscriptionFilterRequest: {filterName: 'my-filter'} as any,

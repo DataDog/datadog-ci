@@ -15,9 +15,9 @@ import {
 import {getLambdaFunctionConfig} from '../../functions/commons'
 import {
   calculateUpdateRequest,
-  getFunctionConfig,
-  getFunctionConfigs,
-  getFunctionConfigsFromRegEx,
+  getUninstrumentedFunctionConfig,
+  getUninstrumentedFunctionConfigs,
+  getUninstrumentedFunctionConfigsFromRegEx,
 } from '../../functions/uninstrument'
 import {makeMockCloudWatchLogs, makeMockLambda} from '../fixtures'
 
@@ -147,7 +147,7 @@ describe('uninstrument', () => {
       `)
     })
   })
-  describe('getFunctionConfigs', () => {
+  describe('getUninstrumentedFunctionConfigs', () => {
     const OLD_ENV = process.env
     beforeEach(() => {
       jest.resetModules()
@@ -180,7 +180,7 @@ describe('uninstrument', () => {
         },
       })
       const cloudWatch = makeMockCloudWatchLogs({})
-      const result = await getFunctionConfigs(
+      const result = await getUninstrumentedFunctionConfigs(
         lambda as any,
         cloudWatch as any,
         ['arn:aws:lambda:us-east-1:000000000000:function:uninstrument'],
@@ -227,7 +227,7 @@ describe('uninstrument', () => {
       })
       const cloudWatch = makeMockCloudWatchLogs({})
 
-      const result = await getFunctionConfigs(
+      const result = await getUninstrumentedFunctionConfigs(
         lambda as any,
         cloudWatch as any,
         [
@@ -250,7 +250,7 @@ describe('uninstrument', () => {
       `)
     })
   })
-  describe('getFunctionConfig', () => {
+  describe('getUninstrumentedFunctionConfig', () => {
     const OLD_ENV = process.env
     beforeEach(() => {
       jest.resetModules()
@@ -271,7 +271,9 @@ describe('uninstrument', () => {
         lambda as any,
         'arn:aws:lambda:us-east-1:000000000000:function:uninstrument'
       )
-      await expect(getFunctionConfig(lambda as any, cloudWatch as any, config, undefined)).rejects.toThrow()
+      await expect(
+        getUninstrumentedFunctionConfig(lambda as any, cloudWatch as any, config, undefined)
+      ).rejects.toThrow()
     })
 
     test('returns configurations without updateRequest when no changes need to be made', async () => {
@@ -292,7 +294,7 @@ describe('uninstrument', () => {
         'arn:aws:lambda:us-east-1:000000000000:function:uninstrument'
       )
       expect(
-        (await getFunctionConfig(lambda as any, cloudWatch as any, config, undefined)).updateRequest
+        (await getUninstrumentedFunctionConfig(lambda as any, cloudWatch as any, config, undefined)).updateRequest
       ).toBeUndefined()
     })
 
@@ -315,7 +317,12 @@ describe('uninstrument', () => {
         lambda as any,
         'arn:aws:lambda:us-east-1:000000000000:function:uninstrument'
       )
-      const result = await getFunctionConfig(lambda as any, cloudWatch as any, config, 'valid-forwarder-arn')
+      const result = await getUninstrumentedFunctionConfig(
+        lambda as any,
+        cloudWatch as any,
+        config,
+        'valid-forwarder-arn'
+      )
       expect(result).toBeDefined()
       expect(result.logGroupConfiguration).toMatchInlineSnapshot(`
         Object {
@@ -326,7 +333,7 @@ describe('uninstrument', () => {
     })
   })
 
-  describe('getFunctionConfigsFromRegEx', () => {
+  describe('getUninstrumentedFunctionConfigsFromRegEx', () => {
     const OLD_ENV = process.env
     beforeEach(() => {
       jest.resetModules()
@@ -375,7 +382,7 @@ describe('uninstrument', () => {
         },
       })
       const cloudWatch = makeMockCloudWatchLogs({})
-      const result = await getFunctionConfigsFromRegEx(
+      const result = await getUninstrumentedFunctionConfigsFromRegEx(
         lambda as any,
         cloudWatch as any,
         'autoinstrument-scr.',
@@ -402,7 +409,7 @@ describe('uninstrument', () => {
       const cloudWatch = makeMockCloudWatchLogs({})
 
       await expect(
-        getFunctionConfigsFromRegEx(lambda as any, cloudWatch as any, 'fake-pattern', undefined)
+        getUninstrumentedFunctionConfigsFromRegEx(lambda as any, cloudWatch as any, 'fake-pattern', undefined)
       ).rejects.toStrictEqual(new Error('Max retry count exceeded.'))
     })
   })
