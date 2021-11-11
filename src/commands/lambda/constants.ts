@@ -1,7 +1,6 @@
 export const RUNTIME_LAYER_LOOKUP = {
   'nodejs12.x': 'Datadog-Node12-x',
   'nodejs14.x': 'Datadog-Node14-x',
-  'python2.7': 'Datadog-Python27',
   'python3.6': 'Datadog-Python36',
   'python3.7': 'Datadog-Python37',
   'python3.8': 'Datadog-Python38',
@@ -17,7 +16,6 @@ export enum RuntimeType {
 export const RUNTIME_LOOKUP: {[key: string]: RuntimeType} = {
   'nodejs12.x': RuntimeType.NODE,
   'nodejs14.x': RuntimeType.NODE,
-  'python2.7': RuntimeType.PYTHON,
   'python3.6': RuntimeType.PYTHON,
   'python3.7': RuntimeType.PYTHON,
   'python3.8': RuntimeType.PYTHON,
@@ -29,7 +27,6 @@ const NODE_HANDLER_LOCATION = '/opt/nodejs/node_modules/datadog-lambda-js/handle
 export const HANDLER_LOCATION = {
   'nodejs12.x': NODE_HANDLER_LOCATION,
   'nodejs14.x': NODE_HANDLER_LOCATION,
-  'python2.7': PYTHON_HANDLER_LOCATION,
   'python3.6': PYTHON_HANDLER_LOCATION,
   'python3.7': PYTHON_HANDLER_LOCATION,
   'python3.8': PYTHON_HANDLER_LOCATION,
