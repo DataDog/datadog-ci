@@ -6,6 +6,7 @@ import {
   CI_SITE_ENV_VAR,
   DD_LAMBDA_EXTENSION_LAYER_NAME,
   ENVIRONMENT_ENV_VAR,
+  EXTENSION_LAYER_KEY,
   EXTRA_TAGS_ENV_VAR,
   FLUSH_TO_LOG_ENV_VAR,
   HANDLER_LOCATION,
@@ -26,7 +27,6 @@ import {calculateLogGroupUpdateRequest} from '../loggroup'
 import {calculateTagUpdateRequest} from '../tags'
 import {
   addLayerArn,
-  getExtensionArn,
   getLambdaFunctionConfigs,
   getLayerArn,
   getLayers,
@@ -149,10 +149,10 @@ export const calculateUpdateRequest = (
   let needsUpdate = false
 
   // Update Handler
-  const expectedHandler = HANDLER_LOCATION[runtime]
+  const expectedHandler = HANDLER_LOCATION[runtime as Runtime]
   if (config.Handler !== expectedHandler) {
     needsUpdate = true
-    updateRequest.Handler = HANDLER_LOCATION[runtime]
+    updateRequest.Handler = HANDLER_LOCATION[runtime as Runtime]
   }
 
   // Update Env Vars
@@ -217,13 +217,13 @@ export const calculateUpdateRequest = (
   }
 
   // Update Layers
-  const lambdaLibraryLayerArn = getLayerArn(config, region, settings)
+  const lambdaLibraryLayerArn = getLayerArn(config, config.Runtime as Runtime, region, settings)
   const lambraLibraryLayerName = RUNTIME_LAYER_LOOKUP[runtime]
   let fullLambdaLibraryLayerARN: string | undefined
   if (settings.layerVersion !== undefined) {
     fullLambdaLibraryLayerARN = `${lambdaLibraryLayerArn}:${settings.layerVersion}`
   }
-  const lambdaExtensionLayerArn = getExtensionArn(config, region, settings)
+  const lambdaExtensionLayerArn = getLayerArn(config, EXTENSION_LAYER_KEY as Runtime, region, settings)
   let fullExtensionLayerARN: string | undefined
   if (settings.extensionVersion !== undefined) {
     fullExtensionLayerARN = `${lambdaExtensionLayerArn}:${settings.extensionVersion}`

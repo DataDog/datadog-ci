@@ -1,6 +1,7 @@
 /* tslint:disable:no-string-literal */
 import {
   DD_LAMBDA_EXTENSION_LAYER_NAME,
+  EXTENSION_LAYER_KEY,
   EXTRA_TAGS_REG_EXP,
   GOVCLOUD_LAYER_AWS_ACCOUNT,
   LAMBDA_HANDLER_ENV_VAR,
@@ -12,7 +13,6 @@ import {
 import {
   addLayerArn,
   collectFunctionsByRegion,
-  getExtensionArn,
   getLayerArn,
   getRegion,
   sentenceMatchesRegEx,
@@ -34,8 +34,8 @@ describe('commons', () => {
       ]
       const region = 'sa-east-1'
       const lambdaLibraryLayerName = RUNTIME_LAYER_LOOKUP[runtime]
-      const fullLambdaLibraryLayerArn = getLayerArn(config, region) + ':49'
-      const fullExtensionLayerArn = getExtensionArn(config, region) + ':11'
+      const fullLambdaLibraryLayerArn = getLayerArn(config, config.Runtime, region) + ':49'
+      const fullExtensionLayerArn = getLayerArn(config, EXTENSION_LAYER_KEY as Runtime, region) + ':11'
       layerARNs = addLayerArn(fullLambdaLibraryLayerArn, lambdaLibraryLayerName, layerARNs)
       layerARNs = addLayerArn(fullExtensionLayerArn, DD_LAMBDA_EXTENSION_LAYER_NAME, layerARNs)
 
@@ -57,8 +57,8 @@ describe('commons', () => {
       ]
       const region = 'sa-east-1'
       const lambdaLibraryLayerName = RUNTIME_LAYER_LOOKUP[runtime]
-      const fullLambdaLibraryLayerArn = getLayerArn(config, region) + ':49'
-      const fullExtensionLayerArn = getExtensionArn(config, region) + ':11'
+      const fullLambdaLibraryLayerArn = getLayerArn(config, config.Runtime, region) + ':49'
+      const fullExtensionLayerArn = getLayerArn(config, EXTENSION_LAYER_KEY as Runtime, region) + ':11'
       layerARNs = addLayerArn(fullLambdaLibraryLayerArn, lambdaLibraryLayerName, layerARNs)
       layerARNs = addLayerArn(fullExtensionLayerArn, DD_LAMBDA_EXTENSION_LAYER_NAME, layerARNs)
 
@@ -145,7 +145,7 @@ describe('commons', () => {
       expect(functionsGroup).toBeUndefined()
     })
   })
-  describe('getExtensionArn', () => {
+  describe('getLayerArn', () => {
     const OLD_ENV = process.env
     beforeEach(() => {
       jest.resetModules()
@@ -163,7 +163,7 @@ describe('commons', () => {
         tracingEnabled: false,
       }
       const region = 'sa-east-1'
-      const layerArn = getExtensionArn({}, region, settings)
+      const layerArn = getLayerArn({}, EXTENSION_LAYER_KEY as Runtime, region, settings)
       expect(layerArn).toEqual(`arn:aws:lambda:${region}:${mockAwsAccount}:layer:Datadog-Extension`)
     })
 
@@ -178,7 +178,7 @@ describe('commons', () => {
         tracingEnabled: false,
       }
       const region = 'sa-east-1'
-      const layerArn = getExtensionArn(config, region, settings)
+      const layerArn = getLayerArn(config, EXTENSION_LAYER_KEY as Runtime, region, settings)
       expect(layerArn).toEqual(`arn:aws:lambda:${region}:${mockAwsAccount}:layer:Datadog-Extension-ARM`)
     })
 
@@ -190,7 +190,7 @@ describe('commons', () => {
         tracingEnabled: false,
       }
       const region = 'us-gov-1'
-      const layerArn = getExtensionArn({}, region, settings)
+      const layerArn = getLayerArn({}, EXTENSION_LAYER_KEY as Runtime, region, settings)
       expect(layerArn).toEqual(`arn:aws-us-gov:lambda:${region}:${GOVCLOUD_LAYER_AWS_ACCOUNT}:layer:Datadog-Extension`)
     })
 
@@ -205,20 +205,10 @@ describe('commons', () => {
         tracingEnabled: false,
       }
       const region = 'us-gov-1'
-      const layerArn = getExtensionArn(config, region, settings)
+      const layerArn = getLayerArn(config, EXTENSION_LAYER_KEY as Runtime, region, settings)
       expect(layerArn).toEqual(
         `arn:aws-us-gov:lambda:${region}:${GOVCLOUD_LAYER_AWS_ACCOUNT}:layer:Datadog-Extension-ARM`
       )
-    })
-  })
-  describe('getLayerArn', () => {
-    const OLD_ENV = process.env
-    beforeEach(() => {
-      jest.resetModules()
-      process.env = {}
-    })
-    afterAll(() => {
-      process.env = OLD_ENV
     })
 
     test('gets sa-east-1 Node12 Lambda Library layer ARN', async () => {
@@ -233,7 +223,7 @@ describe('commons', () => {
         tracingEnabled: false,
       }
       const region = 'sa-east-1'
-      const layerArn = getLayerArn(config, region, settings)
+      const layerArn = getLayerArn(config, config.Runtime as Runtime, region, settings)
       expect(layerArn).toEqual(`arn:aws:lambda:${region}:${mockAwsAccount}:layer:Datadog-Node12-x`)
     })
 
@@ -250,7 +240,7 @@ describe('commons', () => {
         tracingEnabled: false,
       }
       const region = 'sa-east-1'
-      const layerArn = getLayerArn(config, region, settings)
+      const layerArn = getLayerArn(config, config.Runtime as Runtime, region, settings)
       expect(layerArn).toEqual(`arn:aws:lambda:${region}:${mockAwsAccount}:layer:Datadog-Python39-ARM`)
     })
     test('gets us-gov-1 Python37 gov cloud Lambda Library layer ARN', async () => {
@@ -265,7 +255,7 @@ describe('commons', () => {
         tracingEnabled: false,
       }
       const region = 'us-gov-1'
-      const layerArn = getLayerArn(config, region, settings)
+      const layerArn = getLayerArn(config, config.Runtime as Runtime, region, settings)
       expect(layerArn).toEqual(`arn:aws-us-gov:lambda:${region}:${GOVCLOUD_LAYER_AWS_ACCOUNT}:layer:Datadog-Python37`)
     })
     test('gets us-gov-1 Python39 gov cloud arm64 Lambda Library layer ARN', async () => {
@@ -281,7 +271,7 @@ describe('commons', () => {
         tracingEnabled: false,
       }
       const region = 'us-gov-1'
-      const layerArn = getLayerArn(config, region, settings)
+      const layerArn = getLayerArn(config, config.Runtime as Runtime, region, settings)
       expect(layerArn).toEqual(
         `arn:aws-us-gov:lambda:${region}:${GOVCLOUD_LAYER_AWS_ACCOUNT}:layer:Datadog-Python39-ARM`
       )

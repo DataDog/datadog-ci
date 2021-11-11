@@ -4,7 +4,6 @@ import {
   ARM64_ARCHITECTURE,
   ARM_LAYER_SUFFIX,
   ARM_RUNTIMES,
-  DD_LAMBDA_EXTENSION_LAYER_NAME,
   DEFAULT_LAYER_AWS_ACCOUNT,
   GOVCLOUD_LAYER_AWS_ACCOUNT,
   MAX_LAMBDA_STATE_CHECK_ATTEMPTS,
@@ -67,32 +66,6 @@ export const collectFunctionsByRegion = (functions: string[], defaultRegion: str
 
   return groups
 }
-/**
- * Returns the correct ARN of the **Extension Layer** given its configuration, region,
- * and settings (optional).
- *
- * @param config a Lambda FunctionConfiguration.
- * @param region a region where the layer is hosted.
- * @param settings instrumentation settings, mainly used to change the AWS account that contains the Layer.
- * @returns the ARN of the **Extension Layer** with the correct region, account, architecture, and name.
- */
-export const getExtensionArn = (
-  config: Lambda.FunctionConfiguration,
-  region: string,
-  settings?: InstrumentationSettings
-) => {
-  let layerName = DD_LAMBDA_EXTENSION_LAYER_NAME
-  if (config.Architectures?.includes(ARM64_ARCHITECTURE)) {
-    layerName += ARM_LAYER_SUFFIX
-  }
-  const account = settings?.layerAWSAccount ?? DEFAULT_LAYER_AWS_ACCOUNT
-  const isGovCloud = region.startsWith('us-gov')
-  if (isGovCloud) {
-    return `arn:aws-us-gov:lambda:${region}:${GOVCLOUD_LAYER_AWS_ACCOUNT}:layer:${layerName}`
-  }
-
-  return `arn:aws:lambda:${region}:${account}:layer:${layerName}`
-}
 
 /**
  * Given a Lambda instance and an array of Lambda names,
@@ -123,10 +96,10 @@ export const getLambdaFunctionConfigs = (
  */
 export const getLayerArn = (
   config: Lambda.FunctionConfiguration,
+  runtime: Runtime,
   region: string,
   settings?: InstrumentationSettings
 ) => {
-  const runtime = config.Runtime as Runtime
   let layerName = RUNTIME_LAYER_LOOKUP[runtime]
   if (ARM_RUNTIMES.includes(runtime) && config.Architectures?.includes(ARM64_ARCHITECTURE)) {
     layerName += ARM_LAYER_SUFFIX
