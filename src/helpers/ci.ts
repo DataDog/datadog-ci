@@ -205,9 +205,15 @@ export const getCISpanTags = (): SpanTags | undefined => {
       GITHUB_REF,
       GITHUB_SHA,
       GITHUB_REPOSITORY,
+      GITHUB_SERVER_URL,
     } = env
-    const repositoryUrl = `https://github.com/${GITHUB_REPOSITORY}.git`
-    const pipelineURL = `https://github.com/${GITHUB_REPOSITORY}/commit/${GITHUB_SHA}/checks`
+    const repositoryUrl = `${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}.git`
+    let pipelineURL = `${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}`
+
+    // Some older versions of enterprise might not have this yet.
+    if (env.GITHUB_RUN_ATTEMPT) {
+      pipelineURL += `/attempts/${env.GITHUB_RUN_ATTEMPT}`
+    }
 
     const ref = GITHUB_HEAD_REF || GITHUB_REF || ''
     const refKey = ref.includes('tags') ? GIT_TAG : GIT_BRANCH
@@ -536,9 +542,12 @@ export const getCIMetadata = (): Metadata | undefined => {
   }
 
   if (env.GITHUB_ACTIONS) {
-    const {GITHUB_REF, GITHUB_SHA, GITHUB_REPOSITORY, GITHUB_RUN_ID} = env
+    const {GITHUB_REF, GITHUB_SHA, GITHUB_REPOSITORY, GITHUB_RUN_ID, GITHUB_SERVER_URL} = env
 
-    const pipelineURL = `https://github.com/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}`
+    let pipelineURL = `${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}`
+    if (env.GITHUB_RUN_ATTEMPT) {
+      pipelineURL += `/attempts/${env.GITHUB_RUN_ATTEMPT}`
+    }
 
     return {
       ci: {
