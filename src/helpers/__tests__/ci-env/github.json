@@ -13,7 +13,7 @@
       "GITHUB_RUN_ATTEMPT": "10"
     },
     {
-      "ci.job.url": "https://github.com/ghactions-repo/actions/runs/ghactions-pipeline-id/attempts/10",
+      "ci.job.url": "https://github.com/ghactions-repo/commit/ghactions-commit/checks",
       "ci.pipeline.id": "ghactions-pipeline-id",
       "ci.pipeline.name": "ghactions-pipeline-name",
       "ci.pipeline.number": "ghactions-pipeline-number",
@@ -38,7 +38,7 @@
       "GITHUB_SERVER_URL": "https://githubenterprise.com"
     },
     {
-      "ci.job.url": "https://githubenterprise.com/ghactions-repo/actions/runs/ghactions-pipeline-id",
+      "ci.job.url": "https://githubenterprise.com/ghactions-repo/commit/ghactions-commit/checks",
       "ci.pipeline.id": "ghactions-pipeline-id",
       "ci.pipeline.name": "ghactions-pipeline-name",
       "ci.pipeline.number": "ghactions-pipeline-number",
@@ -63,7 +63,7 @@
       "GITHUB_SERVER_URL": "https://github.com"
     },
     {
-      "ci.job.url": "https://github.com/ghactions-repo/actions/runs/ghactions-pipeline-id",
+      "ci.job.url": "https://github.com/ghactions-repo/commit/ghactions-commit/checks",
       "ci.pipeline.id": "ghactions-pipeline-id",
       "ci.pipeline.name": "ghactions-pipeline-name",
       "ci.pipeline.number": "ghactions-pipeline-number",
@@ -88,7 +88,7 @@
       "GITHUB_SERVER_URL": "https://github.com"
     },
     {
-      "ci.job.url": "https://github.com/ghactions-repo/actions/runs/ghactions-pipeline-id",
+      "ci.job.url": "https://github.com/ghactions-repo/commit/ghactions-commit/checks",
       "ci.pipeline.id": "ghactions-pipeline-id",
       "ci.pipeline.name": "ghactions-pipeline-name",
       "ci.pipeline.number": "ghactions-pipeline-number",
@@ -115,7 +115,7 @@
       "USERPROFILE": "/not-my-home"
     },
     {
-      "ci.job.url": "https://github.com/ghactions-repo/actions/runs/ghactions-pipeline-id",
+      "ci.job.url": "https://github.com/ghactions-repo/commit/ghactions-commit/checks",
       "ci.pipeline.id": "ghactions-pipeline-id",
       "ci.pipeline.name": "ghactions-pipeline-name",
       "ci.pipeline.number": "ghactions-pipeline-number",
@@ -142,7 +142,7 @@
       "USERPROFILE": "/not-my-home"
     },
     {
-      "ci.job.url": "https://github.com/ghactions-repo/actions/runs/ghactions-pipeline-id",
+      "ci.job.url": "https://github.com/ghactions-repo/commit/ghactions-commit/checks",
       "ci.pipeline.id": "ghactions-pipeline-id",
       "ci.pipeline.name": "ghactions-pipeline-name",
       "ci.pipeline.number": "ghactions-pipeline-number",
@@ -169,7 +169,7 @@
       "USERPROFILE": "/not-my-home"
     },
     {
-      "ci.job.url": "https://github.com/ghactions-repo/actions/runs/ghactions-pipeline-id",
+      "ci.job.url": "https://github.com/ghactions-repo/commit/ghactions-commit/checks",
       "ci.pipeline.id": "ghactions-pipeline-id",
       "ci.pipeline.name": "ghactions-pipeline-name",
       "ci.pipeline.number": "ghactions-pipeline-number",
@@ -194,7 +194,7 @@
       "GITHUB_SERVER_URL": "https://github.com"
     },
     {
-      "ci.job.url": "https://github.com/ghactions-repo/actions/runs/ghactions-pipeline-id",
+      "ci.job.url": "https://github.com/ghactions-repo/commit/ghactions-commit/checks",
       "ci.pipeline.id": "ghactions-pipeline-id",
       "ci.pipeline.name": "ghactions-pipeline-name",
       "ci.pipeline.number": "ghactions-pipeline-number",
@@ -219,7 +219,7 @@
       "GITHUB_SERVER_URL": "https://github.com"
     },
     {
-      "ci.job.url": "https://github.com/ghactions-repo/actions/runs/ghactions-pipeline-id",
+      "ci.job.url": "https://github.com/ghactions-repo/commit/ghactions-commit/checks",
       "ci.pipeline.id": "ghactions-pipeline-id",
       "ci.pipeline.name": "ghactions-pipeline-name",
       "ci.pipeline.number": "ghactions-pipeline-number",
@@ -244,7 +244,7 @@
       "GITHUB_SERVER_URL": "https://github.com"
     },
     {
-      "ci.job.url": "https://github.com/ghactions-repo/actions/runs/ghactions-pipeline-id",
+      "ci.job.url": "https://github.com/ghactions-repo/commit/ghactions-commit/checks",
       "ci.pipeline.id": "ghactions-pipeline-id",
       "ci.pipeline.name": "ghactions-pipeline-name",
       "ci.pipeline.number": "ghactions-pipeline-number",
@@ -269,7 +269,7 @@
       "GITHUB_SERVER_URL": "https://github.com"
     },
     {
-      "ci.job.url": "https://github.com/ghactions-repo/actions/runs/ghactions-pipeline-id",
+      "ci.job.url": "https://github.com/ghactions-repo/commit/ghactions-commit/checks",
       "ci.pipeline.id": "ghactions-pipeline-id",
       "ci.pipeline.name": "ghactions-pipeline-name",
       "ci.pipeline.number": "ghactions-pipeline-number",
@@ -294,7 +294,7 @@
       "GITHUB_SERVER_URL": "https://github.com"
     },
     {
-      "ci.job.url": "https://github.com/ghactions-repo/actions/runs/ghactions-pipeline-id",
+      "ci.job.url": "https://github.com/ghactions-repo/commit/ghactions-commit/checks",
       "ci.pipeline.id": "ghactions-pipeline-id",
       "ci.pipeline.name": "ghactions-pipeline-name",
       "ci.pipeline.number": "ghactions-pipeline-number",
@@ -320,7 +320,7 @@
       "GITHUB_SERVER_URL": "https://github.com"
     },
     {
-      "ci.job.url": "https://github.com/ghactions-repo/actions/runs/ghactions-pipeline-id",
+      "ci.job.url": "https://github.com/ghactions-repo/commit/ghactions-commit/checks",
       "ci.pipeline.id": "ghactions-pipeline-id",
       "ci.pipeline.name": "ghactions-pipeline-name",
       "ci.pipeline.number": "ghactions-pipeline-number",
@@ -346,7 +346,7 @@
       "GITHUB_SERVER_URL": "https://github.com"
     },
     {
-      "ci.job.url": "https://github.com/ghactions-repo/actions/runs/ghactions-pipeline-id",
+      "ci.job.url": "https://github.com/ghactions-repo/commit/ghactions-commit/checks",
       "ci.pipeline.id": "ghactions-pipeline-id",
       "ci.pipeline.name": "ghactions-pipeline-name",
       "ci.pipeline.number": "ghactions-pipeline-number",
@@ -372,7 +372,7 @@
       "GITHUB_SERVER_URL": "https://github.com"
     },
     {
-      "ci.job.url": "https://github.com/ghactions-repo/actions/runs/ghactions-pipeline-id",
+      "ci.job.url": "https://github.com/ghactions-repo/commit/ghactions-commit/checks",
       "ci.pipeline.id": "ghactions-pipeline-id",
       "ci.pipeline.name": "ghactions-pipeline-name",
       "ci.pipeline.number": "ghactions-pipeline-number",
@@ -406,7 +406,7 @@
       "GITHUB_SERVER_URL": "https://github.com"
     },
     {
-      "ci.job.url": "https://github.com/ghactions-repo/actions/runs/ghactions-pipeline-id",
+      "ci.job.url": "https://github.com/ghactions-repo/commit/ghactions-commit/checks",
       "ci.pipeline.id": "ghactions-pipeline-id",
       "ci.pipeline.name": "ghactions-pipeline-name",
       "ci.pipeline.number": "ghactions-pipeline-number",
@@ -447,7 +447,7 @@
       "GITHUB_SERVER_URL": "https://github.com"
     },
     {
-      "ci.job.url": "https://github.com/ghactions-repo/actions/runs/ghactions-pipeline-id",
+      "ci.job.url": "https://github.com/ghactions-repo/commit/ghactions-commit/checks",
       "ci.pipeline.id": "ghactions-pipeline-id",
       "ci.pipeline.name": "ghactions-pipeline-name",
       "ci.pipeline.number": "ghactions-pipeline-number",
