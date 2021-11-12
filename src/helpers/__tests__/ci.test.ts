@@ -77,10 +77,35 @@ describe('getCIMetadata', () => {
       GITHUB_REF: branch,
       GITHUB_REPOSITORY: 'DataDog/datadog-ci',
       GITHUB_RUN_ID: '42',
+      GITHUB_SERVER_URL: 'https://github.com',
       GITHUB_SHA: commit,
     }
 
     const expectedPipelineURL = 'https://github.com/DataDog/datadog-ci/actions/runs/42'
+    expect(getCIMetadata()).toEqual({
+      ci: {
+        pipeline: {url: expectedPipelineURL},
+        provider: {name: CI_ENGINES.GITHUB},
+      },
+      git: {
+        branch,
+        commitSha: commit,
+      },
+    })
+  })
+
+  test('github actions with run attempt is recognized', () => {
+    process.env = {
+      GITHUB_ACTIONS: 'true',
+      GITHUB_REF: branch,
+      GITHUB_REPOSITORY: 'DataDog/datadog-ci',
+      GITHUB_RUN_ATTEMPT: '2',
+      GITHUB_RUN_ID: '42',
+      GITHUB_SERVER_URL: 'https://github.com',
+      GITHUB_SHA: commit,
+    }
+
+    const expectedPipelineURL = 'https://github.com/DataDog/datadog-ci/actions/runs/42/attempts/2'
     expect(getCIMetadata()).toEqual({
       ci: {
         pipeline: {url: expectedPipelineURL},
