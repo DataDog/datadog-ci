@@ -52,11 +52,11 @@ Errors in Datadog UI can be enriched with links to GitHub/GitLab/Bitbucket if th
 - `git` executable is installed
 - `datadog-ci` is run within the git repository
 
-When these requirements are met, the upload command reports Git information such as the current commit hash, the repository URL, and the list of tracked file paths in the code repository.
-Each sourcemap uploaded gets such information associated with it.
-
-Only tracked file paths that could be related to the sourcemap being uploaded are gathered.
-For example: A sourcemap containing `["webpack:///./src/folder/example.ts"]` inside its `sources` attribute will have associated with it all tracked file paths with `example.ts` as filename.
+When these requirements are met, the upload command reports Git information such as:
+- the current commit hash
+- the repository URL
+- for each sourcemap, the list of file paths that are tracked in the repository. Only tracked file paths that could be related to a sourcemap are gathered.
+For example, for a sourcemap referencing `["webpack:///./src/folder/example.ts"]` inside its `sources` attribute, the command will gather all file paths with `example.ts` as filename.
 
 #### Override repository URL
 
@@ -68,6 +68,14 @@ The value can be overriden with `--repository-url`.
 
 Example: With a remote `git@github.com:Datadog/example.git`, links pointing to `https://github.com/Datadog/example` are generated.
 This behavior can be overriden with links to `https://gitlab.com/Datadog/example` with the flag `--repository-url=https://gitlab.com/Datadog/example`.
+
+#### Setting the project path
+
+If the file paths referenced by your sourcemaps have a prefix before the part relative to the repository root, you need to specify the `--project-path` argument.
+
+For example, if your repository contains a file at `src/foo/example.js`, then:
+  - if the path referenced in the sourcemap is `webpack://src/foo/example.js`, you don't need to use `--project-path`.
+  - if the path referenced in the sourcemap is `webpack://MyProject/src/foo/example.js`, you need to use `--project-path MyProject/` for files to be correctly linked to your repository.
 
 #### Supported repositories
 
