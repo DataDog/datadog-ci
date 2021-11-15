@@ -2,6 +2,8 @@
 jest.mock('fs')
 jest.mock('aws-sdk')
 import {Lambda} from 'aws-sdk'
+import {blueBright, bold, cyan, hex, underline, yellow} from 'chalk'
+import {Cli} from 'clipanion/lib/advanced'
 import * as fs from 'fs'
 import path from 'path'
 import {InstrumentCommand} from '../instrument'
@@ -61,7 +63,12 @@ describe('lambda', () => {
         const output = context.stdout.toString()
         expect(code).toBe(0)
         expect(output).toMatchInlineSnapshot(`
-          "[Dry Run] Will apply the following updates:
+          "${bold(yellow('[Warning]'))} Instrument your ${hex('#FF9900').bold(
+          'Lambda'
+        )} functions in a dev or staging environment first. Should the instrumentation result be unsatisfactory, run \`${bold(
+          'uninstrument'
+        )}\` with the same arguments to revert the changes.
+          ${bold(cyan('[Dry Run] '))}Will apply the following updates:
           UpdateFunctionConfiguration -> arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world
           {
             \\"FunctionName\\": \\"arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world\\",
@@ -130,7 +137,12 @@ describe('lambda', () => {
         const output = context.stdout.toString()
         expect(code).toBe(0)
         expect(output).toMatchInlineSnapshot(`
-          "[Dry Run] Will apply the following updates:
+          "${bold(yellow('[Warning]'))} Instrument your ${hex('#FF9900').bold(
+          'Lambda'
+        )} functions in a dev or staging environment first. Should the instrumentation result be unsatisfactory, run \`${bold(
+          'uninstrument'
+        )}\` with the same arguments to revert the changes.
+          ${bold(cyan('[Dry Run] '))}Will apply the following updates:
           UpdateFunctionConfiguration -> arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world
           {
             \\"FunctionName\\": \\"arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world\\",
@@ -159,6 +171,246 @@ describe('lambda', () => {
           }
           "
         `)
+      })
+
+      test('instrumenting with source code integrations fails if not run within a git repo', async () => {
+        ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({code: 'ENOENT'}))
+        const lambda = makeMockLambda({
+          'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world': {
+            FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world',
+            Handler: 'index.handler',
+            Runtime: 'nodejs12.x',
+          },
+        })
+        ;(Lambda as any).mockImplementation(() => lambda)
+        process.env.DATADOG_API_KEY = '1234'
+        const cli = makeCli()
+        const context = createMockContext() as any
+        await cli.run(
+          [
+            'lambda',
+            'instrument',
+            '--function',
+            'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world',
+            '--layerVersion',
+            '10',
+            '-s',
+            '--service',
+            'dummy',
+            '--env',
+            'dummy',
+            '--version',
+            '0.1',
+          ],
+          context
+        )
+        const output = context.stdout.toString()
+        expect(output).toMatch(/.*Make sure the command is running within your git repository\..*/i)
+      })
+
+      test('instrumenting with source code integrations fails if DATADOG_API_KEY is not provided', async () => {
+        ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({code: 'ENOENT'}))
+        const lambda = makeMockLambda({
+          'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world': {
+            FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world',
+            Handler: 'index.handler',
+            Runtime: 'nodejs12.x',
+          },
+        })
+        ;(Lambda as any).mockImplementation(() => lambda)
+        const cli = makeCli()
+        const context = createMockContext() as any
+        await cli.run(
+          [
+            'lambda',
+            'instrument',
+            '--function',
+            'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world',
+            '--layerVersion',
+            '10',
+            '-s',
+            '--service',
+            'dummy',
+            '--env',
+            'dummy',
+            '--version',
+            '0.1',
+          ],
+          context
+        )
+        const output = context.stdout.toString()
+        expect(output).toMatch(/.*Missing DATADOG_API_KEY in your environment.*/i)
+      })
+
+      test('ensure the instrument command ran from a dirty git repo fails', async () => {
+        ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({code: 'ENOENT'}))
+        const lambda = makeMockLambda({
+          'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world': {
+            FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world',
+            Handler: 'index.handler',
+            Runtime: 'nodejs12.x',
+          },
+        })
+        ;(Lambda as any).mockImplementation(() => lambda)
+        process.env.DATADOG_API_KEY = '1234'
+        const context = createMockContext() as any
+        const instrumentCommand = InstrumentCommand
+        const mockGitStatus = jest.spyOn(instrumentCommand.prototype as any, 'getCurrentGitStatus')
+        mockGitStatus.mockImplementation(() => ({
+          ahead: 0,
+          isClean: false,
+        }))
+
+        const cli = new Cli()
+        cli.register(instrumentCommand)
+
+        await cli.run(
+          [
+            'lambda',
+            'instrument',
+            '--function',
+            'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world',
+            '--layerVersion',
+            '10',
+            '-s',
+            '--service',
+            'dummy',
+            '--env',
+            'dummy',
+            '--version',
+            '0.1',
+          ],
+          context
+        )
+        const output = context.stdout.toString()
+        expect(output).toMatch('Error: Local git repository is dirty')
+      })
+
+      test('ensure source code integration flag works from a clean repo', async () => {
+        ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({code: 'ENOENT'}))
+        const lambda = makeMockLambda({
+          'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world': {
+            FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world',
+            Handler: 'index.handler',
+            Runtime: 'nodejs12.x',
+          },
+        })
+        ;(Lambda as any).mockImplementation(() => lambda)
+        process.env.DATADOG_API_KEY = '1234'
+        const context = createMockContext() as any
+        const instrumentCommand = InstrumentCommand
+        const mockGitStatus = jest.spyOn(instrumentCommand.prototype as any, 'getCurrentGitStatus')
+        mockGitStatus.mockImplementation(() => ({
+          ahead: 0,
+          hash: '1be168ff837f043bde17c0314341c84271047b31',
+          isClean: true,
+        }))
+        const mockUploadFunction = jest.spyOn(instrumentCommand.prototype as any, 'uploadGitData')
+        mockUploadFunction.mockImplementation(() => {
+          return
+        })
+
+        const cli = new Cli()
+        cli.register(instrumentCommand)
+
+        await cli.run(
+          [
+            'lambda',
+            'instrument',
+            '--function',
+            'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world',
+            '--layerVersion',
+            '10',
+            '-s',
+            '--service',
+            'dummy',
+            '--env',
+            'dummy',
+            '--version',
+            '0.1',
+          ],
+          context
+        )
+        const output = context.stdout.toString()
+        expect(output).toMatchInlineSnapshot(`
+          "${bold(yellow('[Warning]'))} Instrument your ${hex('#FF9900').bold(
+          'Lambda'
+        )} functions in a dev or staging environment first. Should the instrumentation result be unsatisfactory, run \`${bold(
+          'uninstrument'
+        )}\` with the same arguments to revert the changes.
+          Will apply the following updates:
+          UpdateFunctionConfiguration -> arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world
+          {
+            \\"FunctionName\\": \\"arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world\\",
+            \\"Handler\\": \\"/opt/nodejs/node_modules/datadog-lambda-js/handler.handler\\",
+            \\"Environment\\": {
+              \\"Variables\\": {
+                \\"DD_LAMBDA_HANDLER\\": \\"index.handler\\",
+                \\"DD_API_KEY\\": \\"1234\\",
+                \\"DD_SITE\\": \\"datadoghq.com\\",
+                \\"DD_ENV\\": \\"dummy\\",
+                \\"DD_TAGS\\": \\"git.commit.sha:1be168ff837f043bde17c0314341c84271047b31\\",
+                \\"DD_FLUSH_TO_LOG\\": \\"true\\",
+                \\"DD_MERGE_XRAY_TRACES\\": \\"false\\",
+                \\"DD_SERVICE\\": \\"dummy\\",
+                \\"DD_TRACE_ENABLED\\": \\"true\\",
+                \\"DD_VERSION\\": \\"0.1\\"
+              }
+            },
+            \\"Layers\\": [
+              \\"arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Node12-x:10\\"
+            ]
+          }
+          TagResource -> arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world
+          {
+            \\"dd_sls_ci\\": \\"v${version}\\"
+          }
+          "
+        `)
+      })
+
+      test('ensure the instrument command ran from a local git repo ahead of the origin fails', async () => {
+        ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({code: 'ENOENT'}))
+        const lambda = makeMockLambda({
+          'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world': {
+            FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world',
+            Handler: 'index.handler',
+            Runtime: 'nodejs12.x',
+          },
+        })
+        ;(Lambda as any).mockImplementation(() => lambda)
+        process.env.DATADOG_API_KEY = '1234'
+        const context = createMockContext() as any
+        const instrumentCommand = InstrumentCommand
+        const mockGitStatus = jest.spyOn(instrumentCommand.prototype as any, 'getCurrentGitStatus')
+        mockGitStatus.mockImplementation(() => ({
+          ahead: 1,
+          isClean: true,
+        }))
+
+        const cli = new Cli()
+        cli.register(instrumentCommand)
+
+        await cli.run(
+          [
+            'lambda',
+            'instrument',
+            '--function',
+            'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world',
+            '--layerVersion',
+            '10',
+            '-s',
+            '--service',
+            'dummy',
+            '--env',
+            'dummy',
+            '--version',
+            '0.1',
+          ],
+          context
+        )
+        const output = context.stdout.toString()
+        expect(output).toMatch('Error: Local changes have not been pushed remotely. Aborting git upload.')
       })
 
       test('runs function update command for lambda library layer', async () => {
@@ -575,7 +827,13 @@ describe('lambda', () => {
         await command['getSettings']()
         let output = command.context.stdout.toString()
         expect(output).toMatch(
-          'Warning: The environment, service and version tags have not been configured. Learn more about Datadog unified service tagging: https://docs.datadoghq.com/getting_started/tagging/unified_service_tagging/#serverless-environment.\n'
+          `${bold(
+            yellow('[Warning]')
+          )} The environment, service and version tags have not been configured. Learn more about Datadog unified service tagging: ${underline(
+            blueBright(
+              'https://docs.datadoghq.com/getting_started/tagging/unified_service_tagging/#serverless-environment.'
+            )
+          )}\n`
         )
 
         command = createCommand(InstrumentCommand)
@@ -586,7 +844,13 @@ describe('lambda', () => {
         await command['getSettings']()
         output = command.context.stdout.toString()
         expect(output).toMatch(
-          'Warning: The version tag has not been configured. Learn more about Datadog unified service tagging: https://docs.datadoghq.com/getting_started/tagging/unified_service_tagging/#serverless-environment.\n'
+          `${bold(
+            yellow('[Warning]')
+          )} The version tag has not been configured. Learn more about Datadog unified service tagging: ${underline(
+            blueBright(
+              'https://docs.datadoghq.com/getting_started/tagging/unified_service_tagging/#serverless-environment.'
+            )
+          )}\n`
         )
       })
 
@@ -614,7 +878,8 @@ describe('lambda', () => {
         command['printPlannedActions']([])
         const output = command.context.stdout.toString()
         expect(output).toMatchInlineSnapshot(`
-                                        "No updates will be applied
+                                        "
+                                        No updates will be applied
                                         "
                                 `)
       })
@@ -638,7 +903,12 @@ describe('lambda', () => {
         ])
         const output = command.context.stdout.toString()
         expect(output).toMatchInlineSnapshot(`
-                    "Will apply the following updates:
+                    "${bold(yellow('[Warning]'))} Instrument your ${hex('#FF9900').bold(
+          'Lambda'
+        )} functions in a dev or staging environment first. Should the instrumentation result be unsatisfactory, run \`${bold(
+          'uninstrument'
+        )}\` with the same arguments to revert the changes.
+                    Will apply the following updates:
                     CreateLogGroup -> my-log-group
                     {
                       \\"logGroupName\\": \\"my-log-group\\"

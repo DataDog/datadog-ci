@@ -190,3 +190,11 @@ export const removeUndefinedValues = <T extends {[key: string]: any}>(object: T)
 
   return newObject
 }
+
+export const normalizeRef = (ref: string | undefined) => {
+  if (!ref) {
+    return ref
+  }
+
+  return ref.replace(/origin\/|refs\/heads\/|tags\//gm, '')
+}

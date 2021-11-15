@@ -24,7 +24,7 @@ import {
   GIT_TAG,
 } from './tags'
 import {getUserGitMetadata} from './user-provided-git'
-import {removeEmptyValues, removeUndefinedValues} from './utils'
+import {normalizeRef, removeEmptyValues, removeUndefinedValues} from './utils'
 
 export const CI_ENGINES = {
   APPVEYOR: 'appveyor',
@@ -82,14 +82,6 @@ const filterSensitiveInfoFromRepository = (repositoryUrl: string) => {
   } catch (e) {
     return repositoryUrl
   }
-}
-
-const normalizeRef = (ref: string | undefined) => {
-  if (!ref) {
-    return ref
-  }
-
-  return ref.replace(/origin\/|refs\/heads\/|tags\//gm, '')
 }
 
 export const getCISpanTags = (): SpanTags | undefined => {
@@ -209,15 +201,21 @@ export const getCISpanTags = (): SpanTags | undefined => {
       GITHUB_REF,
       GITHUB_SHA,
       GITHUB_REPOSITORY,
+      GITHUB_SERVER_URL,
     } = env
-    const repositoryUrl = `https://github.com/${GITHUB_REPOSITORY}.git`
-    const pipelineURL = `https://github.com/${GITHUB_REPOSITORY}/commit/${GITHUB_SHA}/checks`
+    const repositoryUrl = `${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}.git`
+    let pipelineURL = `${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}`
+
+    // Some older versions of enterprise might not have this yet.
+    if (env.GITHUB_RUN_ATTEMPT) {
+      pipelineURL += `/attempts/${env.GITHUB_RUN_ATTEMPT}`
+    }
 
     const ref = GITHUB_HEAD_REF || GITHUB_REF || ''
     const refKey = ref.includes('tags') ? GIT_TAG : GIT_BRANCH
 
     tags = {
-      [CI_JOB_URL]: pipelineURL,
+      [CI_JOB_URL]: `${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/commit/${GITHUB_SHA}/checks`,
       [CI_PIPELINE_ID]: GITHUB_RUN_ID,
       [CI_PIPELINE_NAME]: GITHUB_WORKFLOW,
       [CI_PIPELINE_NUMBER]: GITHUB_RUN_NUMBER,
