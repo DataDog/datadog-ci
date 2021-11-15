@@ -179,3 +179,11 @@ export const removeEmptyValues = (tags: SpanTags) =>
       [tag]: tags[tag],
     }
   }, {})
+
+export const normalizeRef = (ref: string | undefined) => {
+  if (!ref) {
+    return ref
+  }
+
+  return ref.replace(/origin\/|refs\/heads\/|tags\//gm, '')
+}

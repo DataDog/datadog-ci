@@ -21,7 +21,7 @@ import {
 import {FunctionConfiguration, LogGroupConfiguration, TagConfiguration} from '../interfaces'
 import {calculateLogGroupRemoveRequest} from '../loggroup'
 import {calculateTagRemoveRequest} from '../tags'
-import {getLambdaFunctionConfigs, isSupportedRuntime} from './commons'
+import {getLambdaFunctionConfigs, getLayers, isSupportedRuntime} from './commons'
 
 export const getFunctionConfigs = async (
   lambda: Lambda,
@@ -125,7 +125,7 @@ export const calculateUpdateRequest = (config: Lambda.FunctionConfiguration, run
   // Remove Layers
   let needsLayerRemoval = false
   const lambdaLibraryLayerName = RUNTIME_LAYER_LOOKUP[runtime]
-  const originalLayerARNs = (config.Layers ?? []).map((layer) => layer.Arn ?? '')
+  const originalLayerARNs = getLayers(config)
   const layerARNs = (config.Layers ?? [])
     .filter(
       (layer) => !layer.Arn?.includes(lambdaLibraryLayerName) && !layer.Arn?.includes(DD_LAMBDA_EXTENSION_LAYER_NAME)

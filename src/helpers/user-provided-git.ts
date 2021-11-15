@@ -11,7 +11,7 @@ import {
   GIT_SHA,
   GIT_TAG,
 } from './tags'
-import {removeEmptyValues} from './utils'
+import {normalizeRef, removeEmptyValues} from './utils'
 
 export const getUserGitMetadata = () => {
   const {
@@ -28,11 +28,23 @@ export const getUserGitMetadata = () => {
     DD_GIT_COMMIT_COMMITTER_DATE,
   } = process.env
 
+  let branch = normalizeRef(DD_GIT_BRANCH)
+  let tag = normalizeRef(DD_GIT_TAG)
+
+  if (DD_GIT_TAG) {
+    branch = undefined
+  }
+
+  if (DD_GIT_BRANCH?.includes('origin/tags') || DD_GIT_BRANCH?.includes('refs/heads/tags')) {
+    branch = undefined
+    tag = normalizeRef(DD_GIT_BRANCH)
+  }
+
   return removeEmptyValues({
     [GIT_REPOSITORY_URL]: DD_GIT_REPOSITORY_URL,
-    [GIT_BRANCH]: DD_GIT_BRANCH,
+    [GIT_BRANCH]: branch,
     [GIT_SHA]: DD_GIT_COMMIT_SHA,
-    [GIT_TAG]: DD_GIT_TAG,
+    [GIT_TAG]: tag,
     [GIT_COMMIT_MESSAGE]: DD_GIT_COMMIT_MESSAGE,
     [GIT_COMMIT_COMMITTER_DATE]: DD_GIT_COMMIT_COMMITTER_DATE,
     [GIT_COMMIT_COMMITTER_EMAIL]: DD_GIT_COMMIT_COMMITTER_EMAIL,

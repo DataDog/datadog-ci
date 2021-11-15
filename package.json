@@ -1,6 +1,6 @@
 {
   "name": "@datadog/datadog-ci",
-  "version": "0.17.8",
+  "version": "0.17.9",
   "description": "Run datadog actions from the CI.",
   "main": "dist/index.js",
   "repository": "https://github.com/DataDog/datadog-ci",
@@ -41,7 +41,7 @@
   },
   "dependencies": {
     "async-retry": "1.3.1",
-    "aws-sdk": "2.903.0",
+    "aws-sdk": "2.1012.0",
     "axios": "0.21.2",
     "chalk": "3.0.0",
     "clipanion": "2.2.2",

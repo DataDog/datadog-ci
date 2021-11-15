@@ -2,7 +2,7 @@
 jest.mock('fs')
 jest.mock('aws-sdk')
 import {Lambda} from 'aws-sdk'
-import {cyan, red} from 'chalk'
+import {bold, cyan, red} from 'chalk'
 import * as fs from 'fs'
 
 import {
@@ -35,6 +35,7 @@ describe('uninstrument', () => {
       ;(Lambda as any).mockImplementation(() =>
         makeMockLambda({
           'arn:aws:lambda:us-east-1:000000000000:function:uninstrument': {
+            Architectures: ['x86_64'],
             Environment: {
               Variables: {
                 [ENVIRONMENT_ENV_VAR]: 'staging',
@@ -77,7 +78,7 @@ describe('uninstrument', () => {
       const output = context.stdout.toString()
       expect(code).toBe(0)
       expect(output).toMatchInlineSnapshot(`
-        "${cyan('[Dry Run] ')}Will apply the following updates:
+        "${bold(cyan('[Dry Run] '))}Will apply the following updates:
         UpdateFunctionConfiguration -> arn:aws:lambda:us-east-1:000000000000:function:uninstrument
         {
           \\"FunctionName\\": \\"arn:aws:lambda:us-east-1:000000000000:function:uninstrument\\",
