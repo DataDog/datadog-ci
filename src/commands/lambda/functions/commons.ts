@@ -1,12 +1,17 @@
 import {CloudWatchLogs, Lambda} from 'aws-sdk'
 import {GetFunctionRequest} from 'aws-sdk/clients/lambda'
 import {
+  ARM64_ARCHITECTURE,
+  ARM_LAYER_SUFFIX,
+  ARM_RUNTIMES,
+  DEFAULT_LAYER_AWS_ACCOUNT,
+  GOVCLOUD_LAYER_AWS_ACCOUNT,
   LIST_FUNCTIONS_MAX_RETRY_COUNT,
   MAX_LAMBDA_STATE_CHECK_ATTEMPTS,
   Runtime,
   RUNTIME_LAYER_LOOKUP,
 } from '../constants'
-import {FunctionConfiguration} from '../interfaces'
+import {FunctionConfiguration, InstrumentationSettings} from '../interfaces'
 import {applyLogGroupConfig} from '../loggroup'
 import {applyTagConfig} from '../tags'
 
@@ -19,11 +24,11 @@ import {applyTagConfig} from '../tags'
  * @param layerARNs an array of layer ARNs.
  * @returns an array of layer ARNs.
  */
-export const addLayerARN = (fullLayerARN: string | undefined, partialLayerARN: string, layerARNs: string[]) => {
-  if (fullLayerARN) {
-    if (!layerARNs.includes(fullLayerARN)) {
+export const addLayerArn = (fullLayerArn: string | undefined, previousLayerName: string, layerARNs: string[]) => {
+  if (fullLayerArn) {
+    if (!layerARNs.includes(fullLayerArn)) {
       // Remove any other versions of the layer
-      layerARNs = [...layerARNs.filter((l) => !l.startsWith(partialLayerARN)), fullLayerARN]
+      layerARNs = [...layerARNs.filter((layer) => !layer.includes(previousLayerName)), fullLayerArn]
     }
   }
 
@@ -31,7 +36,7 @@ export const addLayerARN = (fullLayerARN: string | undefined, partialLayerARN: s
 }
 
 /**
- * Returns an arrayed grouped functions by its region, it
+ * Returns an array of functions grouped by its region, it
  * throws an error if there are functions without a region.
  *
  * @param functions an array of strings comprised by
@@ -39,7 +44,10 @@ export const addLayerARN = (fullLayerARN: string | undefined, partialLayerARN: s
  * @param defaultRegion a fallback region
  * @returns an array of functions grouped by region
  */
-export const collectFunctionsByRegion = (functions: string[], defaultRegion: string | undefined) => {
+export const collectFunctionsByRegion = (
+  functions: string[],
+  defaultRegion: string | undefined
+): {[key: string]: string[]} => {
   const groups: {[key: string]: string[]} = {}
   const regionless: string[] = []
   for (const func of functions) {
@@ -118,6 +126,36 @@ export const getLambdaFunctionConfigs = (
 
   return Promise.all(promises)
 }
+
+/**
+ * Returns the correct ARN of a **Specific Runtime Layer** given its configuration, region,
+ * and settings (optional).
+ *
+ * @param config a Lambda FunctionConfiguration.
+ * @param region a region where the layer is hosted.
+ * @param settings instrumentation settings, mainly used to change the AWS account that contains the Layer.
+ * @returns the ARN of a **Specific Runtime Layer** with the correct region, account, architecture, and name.
+ */
+export const getLayerArn = (
+  config: Lambda.FunctionConfiguration,
+  runtime: Runtime,
+  region: string,
+  settings?: InstrumentationSettings
+) => {
+  let layerName = RUNTIME_LAYER_LOOKUP[runtime]
+  if (ARM_RUNTIMES.includes(runtime) && config.Architectures?.includes(ARM64_ARCHITECTURE)) {
+    layerName += ARM_LAYER_SUFFIX
+  }
+  const account = settings?.layerAWSAccount ?? DEFAULT_LAYER_AWS_ACCOUNT
+  const isGovCloud = region.startsWith('us-gov')
+  if (isGovCloud) {
+    return `arn:aws-us-gov:lambda:${region}:${GOVCLOUD_LAYER_AWS_ACCOUNT}:layer:${layerName}`
+  }
+
+  return `arn:aws:lambda:${region}:${account}:layer:${layerName}`
+}
+
+export const getLayers = (config: Lambda.FunctionConfiguration) => (config.Layers ?? []).map((layer) => layer.Arn ?? '')
 
 /**
  * Call the aws-sdk Lambda api to get a Function given
