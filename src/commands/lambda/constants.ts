@@ -1,4 +1,7 @@
+export const DD_LAMBDA_EXTENSION_LAYER_NAME = 'Datadog-Extension'
+export const EXTENSION_LAYER_KEY = 'extension'
 export const RUNTIME_LAYER_LOOKUP = {
+  [EXTENSION_LAYER_KEY]: DD_LAMBDA_EXTENSION_LAYER_NAME,
   'nodejs10.x': 'Datadog-Node10-x',
   'nodejs12.x': 'Datadog-Node12-x',
   'nodejs14.x': 'Datadog-Node14-x',
@@ -8,7 +11,13 @@ export const RUNTIME_LAYER_LOOKUP = {
   'python3.8': 'Datadog-Python38',
   'python3.9': 'Datadog-Python39',
 } as const
-export type Runtime = keyof typeof RUNTIME_LAYER_LOOKUP
+// We exclude the Extension Layer Key in order for the runtime
+// to be used directly in HANDLER_LOCATION.
+export type Runtime = Exclude<keyof typeof RUNTIME_LAYER_LOOKUP, typeof EXTENSION_LAYER_KEY>
+
+export const ARM_RUNTIMES = [EXTENSION_LAYER_KEY, 'python3.8', 'python3.9']
+export const ARM64_ARCHITECTURE = 'arm64'
+export const ARM_LAYER_SUFFIX = '-ARM'
 
 const PYTHON_HANDLER_LOCATION = 'datadog_lambda.handler.handler'
 const NODE_HANDLER_LOCATION = '/opt/nodejs/node_modules/datadog-lambda-js/handler.handler'
@@ -27,7 +36,6 @@ export const DEFAULT_LAYER_AWS_ACCOUNT = '464622532012'
 export const GOVCLOUD_LAYER_AWS_ACCOUNT = '002406178527'
 export const SUBSCRIPTION_FILTER_NAME = 'datadog-ci-filter'
 export const TAG_VERSION_NAME = 'dd_sls_ci'
-export const DD_LAMBDA_EXTENSION_LAYER_NAME = 'Datadog-Extension'
 
 // Environment variables used in the Lambda environment
 export const API_KEY_ENV_VAR = 'DD_API_KEY'

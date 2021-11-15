@@ -5,11 +5,10 @@ import {
   CI_KMS_API_KEY_ENV_VAR,
   CI_SITE_ENV_VAR,
   DD_LAMBDA_EXTENSION_LAYER_NAME,
-  DEFAULT_LAYER_AWS_ACCOUNT,
   ENVIRONMENT_ENV_VAR,
+  EXTENSION_LAYER_KEY,
   EXTRA_TAGS_ENV_VAR,
   FLUSH_TO_LOG_ENV_VAR,
-  GOVCLOUD_LAYER_AWS_ACCOUNT,
   HANDLER_LOCATION,
   KMS_API_KEY_ENV_VAR,
   LAMBDA_HANDLER_ENV_VAR,
@@ -26,7 +25,14 @@ import {
 import {FunctionConfiguration, InstrumentationSettings, LogGroupConfiguration, TagConfiguration} from '../interfaces'
 import {calculateLogGroupUpdateRequest} from '../loggroup'
 import {calculateTagUpdateRequest} from '../tags'
-import {addLayerARN, getLambdaFunctionConfigs, isLambdaActive, isSupportedRuntime} from './commons'
+import {
+  addLayerArn,
+  getLambdaFunctionConfigs,
+  getLayerArn,
+  getLayers,
+  isLambdaActive,
+  isSupportedRuntime,
+} from './commons'
 
 export const getFunctionConfigs = async (
   lambda: Lambda,
@@ -61,15 +67,7 @@ export const getFunctionConfig = async (
   }
 
   await isLambdaActive(lambda, config, functionARN)
-  const lambdaLibraryLayerArn: string = getLayerArn(runtime, settings, region)
-  const lambdaExtensionLayerArn: string = getExtensionArn(settings, region)
-  const updateRequest = calculateUpdateRequest(
-    config,
-    settings,
-    lambdaLibraryLayerArn,
-    lambdaExtensionLayerArn,
-    runtime
-  )
+  const updateRequest = calculateUpdateRequest(config, settings, region, runtime)
   let logGroupConfiguration: LogGroupConfiguration | undefined
   if (settings.forwarderARN !== undefined) {
     const arn = `/aws/lambda/${config.FunctionName}`
@@ -81,7 +79,6 @@ export const getFunctionConfig = async (
   return {
     functionARN,
     lambdaConfig: config,
-    lambdaLibraryLayerArn,
     logGroupConfiguration,
     tagConfiguration,
     updateRequest,
@@ -128,33 +125,10 @@ export const getLambdaConfigsFromRegEx = async (
   return functionsToUpdate
 }
 
-export const getLayerArn = (runtime: Runtime, settings: InstrumentationSettings, region: string) => {
-  const layerName = RUNTIME_LAYER_LOOKUP[runtime]
-  const account = settings.layerAWSAccount ?? DEFAULT_LAYER_AWS_ACCOUNT
-  const isGovCloud = region.startsWith('us-gov')
-  if (isGovCloud) {
-    return `arn:aws-us-gov:lambda:${region}:${GOVCLOUD_LAYER_AWS_ACCOUNT}:layer:${layerName}`
-  }
-
-  return `arn:aws:lambda:${region}:${account}:layer:${layerName}`
-}
-
-export const getExtensionArn = (settings: InstrumentationSettings, region: string) => {
-  const layerName = DD_LAMBDA_EXTENSION_LAYER_NAME
-  const account = settings.layerAWSAccount ?? DEFAULT_LAYER_AWS_ACCOUNT
-  const isGovCloud = region.startsWith('us-gov')
-  if (isGovCloud) {
-    return `arn:aws-us-gov:lambda:${region}:${GOVCLOUD_LAYER_AWS_ACCOUNT}:layer:${layerName}`
-  }
-
-  return `arn:aws:lambda:${region}:${account}:layer:${layerName}`
-}
-
 export const calculateUpdateRequest = (
   config: Lambda.FunctionConfiguration,
   settings: InstrumentationSettings,
-  lambdaLibraryLayerArn: string,
-  lambdaExtensionLayerArn: string,
+  region: string,
   runtime: Runtime
 ) => {
   const oldEnvVars: Record<string, string> = {...config.Environment?.Variables}
@@ -243,19 +217,22 @@ export const calculateUpdateRequest = (
   }
 
   // Update Layers
+  const lambdaLibraryLayerArn = getLayerArn(config, config.Runtime as Runtime, region, settings)
+  const lambraLibraryLayerName = RUNTIME_LAYER_LOOKUP[runtime]
   let fullLambdaLibraryLayerARN: string | undefined
   if (settings.layerVersion !== undefined) {
     fullLambdaLibraryLayerARN = `${lambdaLibraryLayerArn}:${settings.layerVersion}`
   }
+  const lambdaExtensionLayerArn = getLayerArn(config, EXTENSION_LAYER_KEY as Runtime, region, settings)
   let fullExtensionLayerARN: string | undefined
   if (settings.extensionVersion !== undefined) {
     fullExtensionLayerARN = `${lambdaExtensionLayerArn}:${settings.extensionVersion}`
   }
-  let layerARNs = (config.Layers ?? []).map((layer) => layer.Arn ?? '')
-  const originalLayerARNs = (config.Layers ?? []).map((layer) => layer.Arn ?? '')
+  let layerARNs = getLayers(config)
+  const originalLayerARNs = layerARNs
   let needsLayerUpdate = false
-  layerARNs = addLayerARN(fullLambdaLibraryLayerARN, lambdaLibraryLayerArn, layerARNs)
-  layerARNs = addLayerARN(fullExtensionLayerARN, lambdaExtensionLayerArn, layerARNs)
+  layerARNs = addLayerArn(fullLambdaLibraryLayerARN, lambraLibraryLayerName, layerARNs)
+  layerARNs = addLayerArn(fullExtensionLayerARN, DD_LAMBDA_EXTENSION_LAYER_NAME, layerARNs)
 
   if (originalLayerARNs.sort().join(',') !== layerARNs.sort().join(',')) {
     needsLayerUpdate = true
@@ -272,7 +249,7 @@ export const calculateUpdateRequest = (
       newEnvVars[KMS_API_KEY_ENV_VAR] === undefined
     ) {
       throw new Error(
-        `When 'extensionLayer' is set, ${CI_API_KEY_ENV_VAR} or ${CI_KMS_API_KEY_ENV_VAR} must also be set`
+        `When 'extensionLayer' is set, ${CI_API_KEY_ENV_VAR} or ${CI_KMS_API_KEY_ENV_VAR} must also be set.`
       )
     }
   })
