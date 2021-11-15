@@ -20,7 +20,7 @@ import {
   GIT_SHA,
   GIT_TAG,
 } from './tags'
-import {removeEmptyValues} from './utils'
+import {normalizeRef, removeEmptyValues} from './utils'
 
 export const CI_ENGINES = {
   APPVEYOR: 'appveyor',
@@ -78,14 +78,6 @@ const filterSensitiveInfoFromRepository = (repositoryUrl: string) => {
   } catch (e) {
     return repositoryUrl
   }
-}
-
-const normalizeRef = (ref: string | undefined) => {
-  if (!ref) {
-    return ref
-  }
-
-  return ref.replace(/origin\/|refs\/heads\/|tags\//gm, '')
 }
 
 export const getCISpanTags = (): SpanTags | undefined => {
