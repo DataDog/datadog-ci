@@ -43,7 +43,10 @@ export const addLayerArn = (fullLayerArn: string | undefined, previousLayerName:
  * @param defaultRegion a fallback region
  * @returns an array of functions grouped by region
  */
-export const collectFunctionsByRegion = (functions: string[], defaultRegion: string | undefined) => {
+export const collectFunctionsByRegion = (
+  functions: string[],
+  defaultRegion: string | undefined
+): {[key: string]: string[]} => {
   const groups: {[key: string]: string[]} = {}
   const regionless: string[] = []
   for (const func of functions) {

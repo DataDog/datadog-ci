@@ -1,6 +1,9 @@
 jest.mock('../../loggroup')
 
 import {
+  CI_API_KEY_ENV_VAR,
+  CI_API_KEY_SECRET_ARN_ENV_VAR,
+  CI_KMS_API_KEY_ENV_VAR,
   ENVIRONMENT_ENV_VAR,
   FLUSH_TO_LOG_ENV_VAR,
   LAMBDA_HANDLER_ENV_VAR,
@@ -110,7 +113,7 @@ describe('instrument', () => {
     })
 
     test('calculates an update request with a lambda library, extension, and DATADOG_API_KEY', () => {
-      process.env.DATADOG_API_KEY = '1234'
+      process.env[CI_API_KEY_ENV_VAR] = '1234'
       const runtime = 'nodejs12.x'
       const config = {
         FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world',
@@ -151,8 +154,49 @@ describe('instrument', () => {
       `)
     })
 
+    test('calculates an update request with a lambda library, extension, and DATADOG_API_KEY_SECRET_ARN', () => {
+      process.env[CI_API_KEY_SECRET_ARN_ENV_VAR] = 'some-secret:arn:from:aws'
+      const runtime = 'python3.9'
+      const config = {
+        FunctionArn: 'arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world',
+        Handler: 'index.handler',
+        Layers: [],
+        Runtime: runtime,
+      }
+      const settings = {
+        extensionVersion: 11,
+        flushMetricsToLogs: false,
+        layerAWSAccount: mockAwsAccount,
+        layerVersion: 49,
+        mergeXrayTraces: false,
+        tracingEnabled: false,
+      }
+      const region = 'sa-east-1'
+      const updateRequest = calculateUpdateRequest(config, settings, region, runtime)
+      expect(updateRequest).toMatchInlineSnapshot(`
+        Object {
+          "Environment": Object {
+            "Variables": Object {
+              "DD_API_KEY_SECRET_ARN": "some-secret:arn:from:aws",
+              "DD_FLUSH_TO_LOG": "false",
+              "DD_LAMBDA_HANDLER": "index.handler",
+              "DD_MERGE_XRAY_TRACES": "false",
+              "DD_SITE": "datadoghq.com",
+              "DD_TRACE_ENABLED": "false",
+            },
+          },
+          "FunctionName": "arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world",
+          "Handler": "datadog_lambda.handler.handler",
+          "Layers": Array [
+            "arn:aws:lambda:sa-east-1:123456789012:layer:Datadog-Extension:11",
+            "arn:aws:lambda:sa-east-1:123456789012:layer:Datadog-Python39:49",
+          ],
+        }
+      `)
+    })
+
     test('calculates an update request with a lambda library, extension, and DATADOG_KMS_API_KEY', () => {
-      process.env.DATADOG_KMS_API_KEY = '5678'
+      process.env[CI_KMS_API_KEY_ENV_VAR] = '5678'
       const runtime = 'python3.6'
       const config = {
         FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world',
@@ -189,6 +233,36 @@ describe('instrument', () => {
             "arn:aws:lambda:sa-east-1:123456789012:layer:Datadog-Extension:6",
             "arn:aws:lambda:sa-east-1:123456789012:layer:Datadog-Python36:5",
           ],
+        }
+      `)
+    })
+
+    test('prioritizes the KMS API KEY when all of them are exported', () => {
+      process.env = {
+        [CI_API_KEY_ENV_VAR]: '1234',
+        [CI_API_KEY_SECRET_ARN_ENV_VAR]: '5678',
+        [CI_KMS_API_KEY_ENV_VAR]: 'should-be-selected',
+      }
+
+      const config = {
+        FunctionArn: 'arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world',
+        Handler: 'index.handler',
+        Layers: [],
+      }
+      const runtime = 'python3.9'
+      const region = 'sa-east-1'
+      const updateRequest = calculateUpdateRequest(config, {} as any, region, runtime)
+      expect(updateRequest).toMatchInlineSnapshot(`
+        Object {
+          "Environment": Object {
+            "Variables": Object {
+              "DD_KMS_API_KEY": "should-be-selected",
+              "DD_LAMBDA_HANDLER": "index.handler",
+              "DD_SITE": "datadoghq.com",
+            },
+          },
+          "FunctionName": "arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world",
+          "Handler": "datadog_lambda.handler.handler",
         }
       `)
     })
@@ -304,7 +378,34 @@ describe('instrument', () => {
 
       expect(() => {
         calculateUpdateRequest(config, settings, region, runtime)
-      }).toThrowError("When 'extensionLayer' is set, DATADOG_API_KEY or DATADOG_KMS_API_KEY must also be set")
+      }).toThrowError(
+        "When 'extensionLayer' is set, DATADOG_API_KEY, DATADOG_KMS_API_KEY, or DATADOG_API_KEY_SECRET_ARN must also be set"
+      )
+    })
+
+    test('throws error when trying to add `DD_API_KEY_SECRET_ARN` while using sync metrics in a node runtime', () => {
+      process.env[CI_API_KEY_SECRET_ARN_ENV_VAR] = 'some-secret:arn:from:aws'
+      const runtime = 'nodejs14.x'
+      const region = 'us-east-1'
+      const config = {
+        FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world',
+        Handler: 'index.handler',
+        Layers: [],
+        Runtime: runtime,
+      }
+      const settings = {
+        flushMetricsToLogs: false,
+        layerAWSAccount: mockAwsAccount,
+        layerVersion: 13,
+        mergeXrayTraces: false,
+        tracingEnabled: false,
+      }
+
+      expect(() => {
+        calculateUpdateRequest(config, settings, region, runtime)
+      }).toThrowError(
+        '`apiKeySecretArn` is not supported for Node runtimes when using Synchronous Metrics. Use either `apiKey` or `apiKmsKey`.'
+      )
     })
   })
   describe('getFunctionConfig', () => {
