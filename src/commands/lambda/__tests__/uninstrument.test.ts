@@ -2,7 +2,7 @@
 jest.mock('fs')
 jest.mock('aws-sdk')
 import {Lambda} from 'aws-sdk'
-import {bold, cyan, red} from 'chalk'
+import {bold, cyan, red, yellow} from 'chalk'
 import * as fs from 'fs'
 
 import {
@@ -78,20 +78,22 @@ describe('uninstrument', () => {
       const output = context.stdout.toString()
       expect(code).toBe(0)
       expect(output).toMatchInlineSnapshot(`
-        "${bold(cyan('[Dry Run] '))}Will apply the following updates:
-        UpdateFunctionConfiguration -> arn:aws:lambda:us-east-1:000000000000:function:uninstrument
-        {
-          \\"FunctionName\\": \\"arn:aws:lambda:us-east-1:000000000000:function:uninstrument\\",
-          \\"Handler\\": \\"lambda_function.lambda_handler\\",
-          \\"Environment\\": {
-            \\"Variables\\": {
-              \\"USER_VARIABLE\\": \\"shouldnt be deleted by uninstrumentation\\"
-            }
-          },
-          \\"Layers\\": []
-        }
-        "
-      `)
+"\n${bold(yellow('[!]'))} Functions to be updated:
+\t- ${bold('arn:aws:lambda:us-east-1:000000000000:function:uninstrument')}\n
+${bold(cyan('[Dry Run] '))}Will apply the following updates:
+UpdateFunctionConfiguration -> arn:aws:lambda:us-east-1:000000000000:function:uninstrument
+{
+  \\"FunctionName\\": \\"arn:aws:lambda:us-east-1:000000000000:function:uninstrument\\",
+  \\"Handler\\": \\"lambda_function.lambda_handler\\",
+  \\"Environment\\": {
+    \\"Variables\\": {
+      \\"USER_VARIABLE\\": \\"shouldnt be deleted by uninstrumentation\\"
+    }
+  },
+  \\"Layers\\": []
+}
+"
+`)
     })
     test('runs function update command for valid uninstrumentation', async () => {
       ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({code: 'ENOENT'}))
@@ -192,6 +194,65 @@ describe('uninstrument', () => {
         "No functions specified for un-instrumentation.
         "
       `)
+    })
+    test('aborts if functions and a pattern are set at the same time', async () => {
+      ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({}))
+
+      process.env = {}
+      let command = createCommand(UninstrumentCommand)
+      command['config']['region'] = 'ap-southeast-1'
+      command['config']['functions'] = ['arn:aws:lambda:ap-southeast-1:123456789012:function:lambda-hello-world']
+      command['regExPattern'] = 'valid-pattern'
+      await command['execute']()
+      let output = command.context.stdout.toString()
+      expect(output).toMatch('Functions in config file and "--functions-regex" should not be used at the same time.\n')
+
+      command = createCommand(UninstrumentCommand)
+      command['region'] = 'ap-southeast-1'
+      command['functions'] = ['arn:aws:lambda:ap-southeast-1:123456789012:function:lambda-hello-world']
+      command['regExPattern'] = 'valid-pattern'
+      await command['execute']()
+      output = command.context.stdout.toString()
+      expect(output).toMatch('"--functions" and "--functions-regex" should not be used at the same time.\n')
+    })
+    test('aborts if the regEx pattern is an ARN', async () => {
+      ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({}))
+
+      process.env = {}
+      const command = createCommand(UninstrumentCommand)
+      command['region'] = 'ap-southeast-1'
+      command['regExPattern'] = 'arn:aws:lambda:ap-southeast-1:123456789012:function:*'
+      const code = await command['execute']()
+      const output = command.context.stdout.toString()
+      expect(code).toBe(1)
+      expect(output).toMatch(`"--functions-regex" isn't meant to be used with ARNs.\n`)
+    })
+
+    test('aborts if the regEx pattern is set but no region is specified', async () => {
+      ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({}))
+
+      process.env = {}
+      const command = createCommand(UninstrumentCommand)
+      command['regExPattern'] = 'my-function'
+      const code = await command['execute']()
+      const output = command.context.stdout.toString()
+      expect(code).toBe(1)
+      expect(output).toMatch('No default region specified. Use `-r`, `--region`.')
+    })
+
+    test('aborts if the the aws-sdk fails', async () => {
+      ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({}))
+      ;(Lambda as any).mockImplementation(() => ({promise: Promise.reject()}))
+      process.env = {}
+      const command = createCommand(UninstrumentCommand)
+      command['region'] = 'ap-southeast-1'
+      command['regExPattern'] = 'my-function'
+      const code = await command['execute']()
+      const output = command.context.stdout.toString()
+      expect(code).toBe(1)
+      expect(output).toMatch(
+        "Fetching lambda functions, this might take a while.\nCouldn't fetch lambda functions. Error: Max retry count exceeded.\n"
+      )
     })
   })
 

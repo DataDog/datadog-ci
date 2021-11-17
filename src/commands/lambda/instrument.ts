@@ -6,7 +6,7 @@ import {getCommitInfo, newSimpleGit} from '../git-metadata/git'
 import {UploadCommand} from '../git-metadata/upload'
 import {EXTRA_TAGS_REG_EXP} from './constants'
 import {collectFunctionsByRegion, sentenceMatchesRegEx, updateLambdaFunctionConfigs} from './functions/commons'
-import {getFunctionConfigs, getLambdaConfigsFromRegEx} from './functions/instrument'
+import {getInstrumentedFunctionConfigs, getInstrumentedFunctionConfigsFromRegEx} from './functions/instrument'
 import {FunctionConfiguration, InstrumentationSettings, LambdaConfigOptions} from './interfaces'
 
 export class InstrumentCommand extends Command {
@@ -44,7 +44,7 @@ export class InstrumentCommand extends Command {
     }
 
     const hasSpecifiedFuntions = this.functions.length !== 0 || this.config.functions.length !== 0
-    const hasSpecifiedRegExPattern = this.regExPattern !== undefined
+    const hasSpecifiedRegExPattern = this.regExPattern !== undefined && this.regExPattern !== ''
     if (!hasSpecifiedFuntions && !hasSpecifiedRegExPattern) {
       this.context.stdout.write('No functions specified for instrumentation.\n')
 
@@ -93,7 +93,7 @@ export class InstrumentCommand extends Command {
 
       const region = this.region || this.config.region
       if (!region) {
-        this.context.stdout.write('No default region specified. Use -r,--region,')
+        this.context.stdout.write('No default region specified. Use `-r`, `--region`.')
 
         return 1
       }
@@ -102,7 +102,13 @@ export class InstrumentCommand extends Command {
         const cloudWatchLogs = new CloudWatchLogs({region})
         const lambda = new Lambda({region})
         this.context.stdout.write('Fetching lambda functions, this might take a while.\n')
-        const configs = await getLambdaConfigsFromRegEx(lambda, cloudWatchLogs, region!, this.regExPattern!, settings)
+        const configs = await getInstrumentedFunctionConfigsFromRegEx(
+          lambda,
+          cloudWatchLogs,
+          region!,
+          this.regExPattern!,
+          settings
+        )
 
         configGroups.push({configs, lambda, cloudWatchLogs, region: region!})
       } catch (err) {
@@ -127,7 +133,7 @@ export class InstrumentCommand extends Command {
         const lambda = new Lambda({region})
         const cloudWatchLogs = new CloudWatchLogs({region})
         try {
-          const configs = await getFunctionConfigs(lambda, cloudWatchLogs, region, functionList, settings)
+          const configs = await getInstrumentedFunctionConfigs(lambda, cloudWatchLogs, region, functionList, settings)
           configGroups.push({configs, lambda, cloudWatchLogs, region})
         } catch (err) {
           this.context.stdout.write(`Couldn't fetch lambda functions. ${err}\n`)
@@ -332,7 +338,13 @@ export class InstrumentCommand extends Command {
         'uninstrument'
       )}\` with the same arguments to revert the changes.\n`
     )
-    this.context.stdout.write(`${prefix}Will apply the following updates:\n`)
+
+    this.context.stdout.write(`\n${bold(yellow('[!]'))} Functions to be updated:\n`)
+    for (const config of configs) {
+      this.context.stdout.write(`\t- ${bold(config.functionARN)}\n`)
+    }
+
+    this.context.stdout.write(`\n${prefix}Will apply the following updates:\n`)
     for (const config of configs) {
       if (config.updateRequest) {
         this.context.stdout.write(

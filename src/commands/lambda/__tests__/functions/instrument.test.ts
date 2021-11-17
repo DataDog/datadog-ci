@@ -16,9 +16,9 @@ import {
 } from '../../constants'
 import {
   calculateUpdateRequest,
-  getFunctionConfig,
-  getFunctionConfigs,
-  getLambdaConfigsFromRegEx,
+  getInstrumentedFunctionConfig,
+  getInstrumentedFunctionConfigs,
+  getInstrumentedFunctionConfigsFromRegEx,
 } from '../../functions/instrument'
 
 import * as loggroup from '../../loggroup'
@@ -408,7 +408,7 @@ describe('instrument', () => {
       )
     })
   })
-  describe('getFunctionConfig', () => {
+  describe('getInstrumentedFunctionConfig', () => {
     const OLD_ENV = process.env
     beforeEach(() => {
       jest.resetModules()
@@ -437,7 +437,9 @@ describe('instrument', () => {
           .getFunction({FunctionName: 'arn:aws:lambda:us-east-1:000000000000:function:autoinstrument'})
           .promise()
       ).Configuration
-      await expect(getFunctionConfig(lambda as any, cloudWatch as any, config, 'us-east-1', settings)).rejects.toThrow()
+      await expect(
+        getInstrumentedFunctionConfig(lambda as any, cloudWatch as any, config, 'us-east-1', settings)
+      ).rejects.toThrow()
     })
 
     test('replaces the layer arn when the version has changed', async () => {
@@ -465,7 +467,13 @@ describe('instrument', () => {
           .promise()
       ).Configuration
 
-      const result = await getFunctionConfig(lambda as any, cloudWatch as any, config, 'us-east-1', settings)
+      const result = await getInstrumentedFunctionConfig(
+        lambda as any,
+        cloudWatch as any,
+        config,
+        'us-east-1',
+        settings
+      )
       expect(result.updateRequest?.Layers).toMatchInlineSnapshot(`
                       Array [
                         "arn:aws:lambda:us-east-1:464622532012:layer:AnotherLayer:10",
@@ -508,7 +516,8 @@ describe('instrument', () => {
           .promise()
       ).Configuration
       expect(
-        (await getFunctionConfig(lambda as any, cloudWatch as any, config, 'us-east-1', settings)).updateRequest
+        (await getInstrumentedFunctionConfig(lambda as any, cloudWatch as any, config, 'us-east-1', settings))
+          .updateRequest
       ).toBeUndefined()
     })
 
@@ -532,7 +541,13 @@ describe('instrument', () => {
           .getFunction({FunctionName: 'arn:aws-us-gov:lambda:us-gov-east-1:000000000000:function:autoinstrument'})
           .promise()
       ).Configuration
-      const result = await getFunctionConfig(lambda as any, cloudWatch as any, config, 'us-gov-east-1', settings)
+      const result = await getInstrumentedFunctionConfig(
+        lambda as any,
+        cloudWatch as any,
+        config,
+        'us-gov-east-1',
+        settings
+      )
       expect(result.updateRequest?.Layers).toMatchInlineSnapshot(`
                       Array [
                         "arn:aws-us-gov:lambda:us-gov-east-1:002406178527:layer:Datadog-Node12-x:30",
@@ -563,7 +578,13 @@ describe('instrument', () => {
           .getFunction({FunctionName: 'arn:aws:lambda:us-east-1:000000000000:function:autoinstrument'})
           .promise()
       ).Configuration
-      const result = await getFunctionConfig(lambda as any, cloudWatch as any, config, 'us-east-1', settings)
+      const result = await getInstrumentedFunctionConfig(
+        lambda as any,
+        cloudWatch as any,
+        config,
+        'us-east-1',
+        settings
+      )
       expect(result).toBeDefined()
       expect(result.logGroupConfiguration).toMatchInlineSnapshot(`
                 Object {
@@ -572,7 +593,7 @@ describe('instrument', () => {
             `)
     })
   })
-  describe('getLambdaConfigs', () => {
+  describe('getInstrumentedFunctionConfigs', () => {
     const OLD_ENV = process.env
     beforeEach(() => {
       jest.resetModules()
@@ -601,7 +622,7 @@ describe('instrument', () => {
         tracingEnabled: false,
         version: '0.2',
       }
-      const result = await getFunctionConfigs(
+      const result = await getInstrumentedFunctionConfigs(
         lambda as any,
         cloudWatch as any,
         'us-east-1',
@@ -668,7 +689,7 @@ describe('instrument', () => {
         tracingEnabled: false,
         version: '0.2',
       }
-      const result = await getFunctionConfigs(
+      const result = await getInstrumentedFunctionConfigs(
         lambda as any,
         cloudWatch as any,
         'us-east-1',
@@ -681,7 +702,7 @@ describe('instrument', () => {
       expect(result.length).toEqual(2)
     })
   })
-  describe('getLambdaConfigsFromRegEx', () => {
+  describe('getInstrumentedFunctionConfigsFromRegEx', () => {
     const OLD_ENV = process.env
     beforeEach(() => {
       jest.resetModules()
@@ -713,7 +734,7 @@ describe('instrument', () => {
         mergeXrayTraces: false,
         tracingEnabled: false,
       }
-      const result = await getLambdaConfigsFromRegEx(
+      const result = await getInstrumentedFunctionConfigsFromRegEx(
         lambda as any,
         cloudWatch as any,
         'us-east-1',
@@ -758,7 +779,7 @@ describe('instrument', () => {
       }
 
       await expect(
-        getLambdaConfigsFromRegEx(lambda as any, cloudWatch as any, 'us-east-1', 'fake-pattern', settings)
+        getInstrumentedFunctionConfigsFromRegEx(lambda as any, cloudWatch as any, 'us-east-1', 'fake-pattern', settings)
       ).rejects.toStrictEqual(new Error('Max retry count exceeded.'))
     })
   })

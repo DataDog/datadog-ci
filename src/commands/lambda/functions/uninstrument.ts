@@ -21,9 +21,9 @@ import {
 import {FunctionConfiguration, LogGroupConfiguration, TagConfiguration} from '../interfaces'
 import {calculateLogGroupRemoveRequest} from '../loggroup'
 import {calculateTagRemoveRequest} from '../tags'
-import {getLambdaFunctionConfigs, getLayers, isSupportedRuntime} from './commons'
+import {getLambdaFunctionConfigs, getLambdaFunctionConfigsFromRegex, getLayers, isSupportedRuntime} from './commons'
 
-export const getFunctionConfigs = async (
+export const getUninstrumentedFunctionConfigs = async (
   lambda: Lambda,
   cloudWatch: CloudWatchLogs,
   functionARNs: string[],
@@ -33,7 +33,7 @@ export const getFunctionConfigs = async (
 
   const configs: FunctionConfiguration[] = []
   for (const config of lambdaFunctionConfigs) {
-    const functionConfig = await getFunctionConfig(lambda, cloudWatch, config, forwarderARN)
+    const functionConfig = await getUninstrumentedFunctionConfig(lambda, cloudWatch, config, forwarderARN)
 
     configs.push(functionConfig)
   }
@@ -41,7 +41,7 @@ export const getFunctionConfigs = async (
   return configs
 }
 
-export const getFunctionConfig = async (
+export const getUninstrumentedFunctionConfig = async (
   lambda: Lambda,
   cloudWatch: CloudWatchLogs,
   config: Lambda.FunctionConfiguration,
@@ -56,8 +56,8 @@ export const getFunctionConfig = async (
   const updateRequest = calculateUpdateRequest(config, runtime)
   let logGroupConfiguration: LogGroupConfiguration | undefined
   if (forwarderARN) {
-    const arn = `/aws/lambda/${config.FunctionName}`
-    logGroupConfiguration = await calculateLogGroupRemoveRequest(cloudWatch, arn, forwarderARN)
+    const logGroupName = `/aws/lambda/${config.FunctionName}`
+    logGroupConfiguration = await calculateLogGroupRemoveRequest(cloudWatch, logGroupName, forwarderARN)
   }
 
   const tagConfiguration: TagConfiguration | undefined = await calculateTagRemoveRequest(lambda, functionARN)
@@ -69,6 +69,23 @@ export const getFunctionConfig = async (
     tagConfiguration,
     updateRequest,
   }
+}
+
+export const getUninstrumentedFunctionConfigsFromRegEx = async (
+  lambda: Lambda,
+  cloudWatch: CloudWatchLogs,
+  pattern: string,
+  forwarderArn: string | undefined
+): Promise<FunctionConfiguration[]> => {
+  const matchedFunctions = await getLambdaFunctionConfigsFromRegex(lambda, pattern)
+  const functionsToUpdate: FunctionConfiguration[] = []
+
+  for (const config of matchedFunctions) {
+    const functionConfig = await getUninstrumentedFunctionConfig(lambda, cloudWatch, config, forwarderArn)
+    functionsToUpdate.push(functionConfig)
+  }
+
+  return functionsToUpdate
 }
 
 export const calculateUpdateRequest = (config: Lambda.FunctionConfiguration, runtime: Runtime) => {

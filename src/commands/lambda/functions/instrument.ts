@@ -14,7 +14,6 @@ import {
   HANDLER_LOCATION,
   KMS_API_KEY_ENV_VAR,
   LAMBDA_HANDLER_ENV_VAR,
-  LIST_FUNCTIONS_MAX_RETRY_COUNT,
   LOG_LEVEL_ENV_VAR,
   MERGE_XRAY_TRACES_ENV_VAR,
   Runtime,
@@ -33,13 +32,14 @@ import {calculateTagUpdateRequest} from '../tags'
 import {
   addLayerArn,
   getLambdaFunctionConfigs,
+  getLambdaFunctionConfigsFromRegex,
   getLayerArn,
   getLayers,
   isLambdaActive,
   isSupportedRuntime,
 } from './commons'
 
-export const getFunctionConfigs = async (
+export const getInstrumentedFunctionConfigs = async (
   lambda: Lambda,
   cloudWatch: CloudWatchLogs,
   region: string,
@@ -50,7 +50,7 @@ export const getFunctionConfigs = async (
 
   const configs: FunctionConfiguration[] = []
   for (const config of lambdaFunctionConfigs) {
-    const functionConfig = await getFunctionConfig(lambda, cloudWatch, config, region, settings)
+    const functionConfig = await getInstrumentedFunctionConfig(lambda, cloudWatch, config, region, settings)
 
     configs.push(functionConfig)
   }
@@ -58,13 +58,13 @@ export const getFunctionConfigs = async (
   return configs
 }
 
-export const getFunctionConfig = async (
+export const getInstrumentedFunctionConfig = async (
   lambda: Lambda,
   cloudWatch: CloudWatchLogs,
   config: Lambda.FunctionConfiguration,
   region: string,
   settings: InstrumentationSettings
-) => {
+): Promise<FunctionConfiguration> => {
   const functionARN = config.FunctionArn!
   const runtime = config.Runtime
   if (!isSupportedRuntime(runtime)) {
@@ -75,8 +75,8 @@ export const getFunctionConfig = async (
   const updateRequest = calculateUpdateRequest(config, settings, region, runtime)
   let logGroupConfiguration: LogGroupConfiguration | undefined
   if (settings.forwarderARN !== undefined) {
-    const arn = `/aws/lambda/${config.FunctionName}`
-    logGroupConfiguration = await calculateLogGroupUpdateRequest(cloudWatch, arn, settings.forwarderARN)
+    const logGroupName = `/aws/lambda/${config.FunctionName}`
+    logGroupConfiguration = await calculateLogGroupUpdateRequest(cloudWatch, logGroupName, settings.forwarderARN)
   }
 
   const tagConfiguration: TagConfiguration | undefined = await calculateTagUpdateRequest(lambda, functionARN)
@@ -90,40 +90,18 @@ export const getFunctionConfig = async (
   }
 }
 
-export const getLambdaConfigsFromRegEx = async (
+export const getInstrumentedFunctionConfigsFromRegEx = async (
   lambda: Lambda,
   cloudWatch: CloudWatchLogs,
   region: string,
   pattern: string,
   settings: InstrumentationSettings
 ): Promise<FunctionConfiguration[]> => {
-  const regEx = new RegExp(pattern)
-  const matchedFunctions: Lambda.FunctionConfiguration[] = []
-  let retryCount = 0
-  let listFunctionsResponse: Lambda.ListFunctionsResponse
-  let nextMarker: string | undefined
-
-  while (true) {
-    try {
-      listFunctionsResponse = await lambda.listFunctions({Marker: nextMarker}).promise()
-      listFunctionsResponse.Functions?.map((fn) => fn.FunctionName?.match(regEx) && matchedFunctions.push(fn))
-      nextMarker = listFunctionsResponse.NextMarker
-      if (!nextMarker) {
-        break
-      }
-      retryCount = 0
-    } catch (e) {
-      retryCount++
-      if (retryCount > LIST_FUNCTIONS_MAX_RETRY_COUNT) {
-        throw Error('Max retry count exceeded.')
-      }
-    }
-  }
-
+  const matchedFunctions = await getLambdaFunctionConfigsFromRegex(lambda, pattern)
   const functionsToUpdate: FunctionConfiguration[] = []
 
   for (const config of matchedFunctions) {
-    const functionConfig = await getFunctionConfig(lambda, cloudWatch, config, region, settings)
+    const functionConfig = await getInstrumentedFunctionConfig(lambda, cloudWatch, config, region, settings)
     functionsToUpdate.push(functionConfig)
   }
 

@@ -1,9 +1,9 @@
 import {CloudWatchLogs, Lambda} from 'aws-sdk'
-import {bold, cyan, red} from 'chalk'
+import {bold, cyan, red, yellow} from 'chalk'
 import {Command} from 'clipanion'
 import {parseConfigFile} from '../../helpers/utils'
 import {collectFunctionsByRegion, updateLambdaFunctionConfigs} from './functions/commons'
-import {getFunctionConfigs} from './functions/uninstrument'
+import {getUninstrumentedFunctionConfigs, getUninstrumentedFunctionConfigsFromRegEx} from './functions/uninstrument'
 import {FunctionConfiguration} from './interfaces'
 
 export class UninstrumentCommand extends Command {
@@ -15,6 +15,7 @@ export class UninstrumentCommand extends Command {
   private dryRun = false
   private forwarder?: string
   private functions: string[] = []
+  private regExPattern?: string
   private region?: string
 
   public async execute() {
@@ -22,17 +23,10 @@ export class UninstrumentCommand extends Command {
     this.config = (await parseConfigFile(lambdaConfig, this.configPath)).lambda
 
     const hasSpecifiedFuntions = this.functions.length !== 0 || this.config.functions.length !== 0
-    if (!hasSpecifiedFuntions) {
+    const hasSpecifiedRegExPattern = this.regExPattern !== undefined && this.regExPattern !== ''
+    if (!hasSpecifiedFuntions && !hasSpecifiedRegExPattern) {
       this.context.stdout.write('No functions specified for un-instrumentation.\n')
 
-      return 1
-    }
-
-    const functionGroups = collectFunctionsByRegion(
-      this.functions.length !== 0 ? this.functions : this.config.functions,
-      this.region || this.config.region
-    )
-    if (functionGroups === undefined) {
       return 1
     }
 
@@ -44,16 +38,67 @@ export class UninstrumentCommand extends Command {
 
     // Fetch lambda function configurations that are
     // available to be un-instrumented.
-    for (const [region, functionList] of Object.entries(functionGroups)) {
-      const lambda = new Lambda({region})
-      const cloudWatchLogs = new CloudWatchLogs({region})
-      try {
-        const configs = await getFunctionConfigs(lambda, cloudWatchLogs, functionList, this.forwarder)
-        configGroups.push({configs, lambda, cloudWatchLogs})
-      } catch (err) {
-        this.context.stdout.write(`${red('[Error]')} Couldn't fetch lambda functions. ${err}\n`)
+    if (hasSpecifiedRegExPattern) {
+      if (hasSpecifiedFuntions) {
+        const usedCommand = this.functions.length !== 0 ? '"--functions"' : 'Functions in config file'
+        this.context.stdout.write(`${usedCommand} and "--functions-regex" should not be used at the same time.\n`)
 
         return 1
+      }
+      if (this.regExPattern!.match(':')) {
+        this.context.stdout.write(`"--functions-regex" isn't meant to be used with ARNs.\n`)
+
+        return 1
+      }
+
+      const region = this.region || this.config.region
+      if (!region) {
+        this.context.stdout.write('No default region specified. Use `-r`, `--region`.')
+
+        return 1
+      }
+
+      try {
+        const cloudWatchLogs = new CloudWatchLogs({region})
+        const lambda = new Lambda({region})
+        this.context.stdout.write('Fetching lambda functions, this might take a while.\n')
+        const configs = await getUninstrumentedFunctionConfigsFromRegEx(
+          lambda,
+          cloudWatchLogs,
+          this.regExPattern!,
+          this.forwarder!
+        )
+
+        configGroups.push({configs, lambda, cloudWatchLogs})
+      } catch (err) {
+        this.context.stdout.write(`Couldn't fetch lambda functions. ${err}\n`)
+
+        return 1
+      }
+    } else {
+      let functionGroups
+      try {
+        functionGroups = collectFunctionsByRegion(
+          this.functions.length !== 0 ? this.functions : this.config.functions,
+          this.region || this.config.region
+        )
+      } catch (err) {
+        this.context.stdout.write(`Couldn't group functions. ${err}`)
+
+        return 1
+      }
+
+      for (const [region, functionARNs] of Object.entries(functionGroups)) {
+        const lambda = new Lambda({region})
+        const cloudWatchLogs = new CloudWatchLogs({region})
+        try {
+          const configs = await getUninstrumentedFunctionConfigs(lambda, cloudWatchLogs, functionARNs, this.forwarder)
+          configGroups.push({configs, lambda, cloudWatchLogs})
+        } catch (err) {
+          this.context.stdout.write(`${red('[Error]')} Couldn't fetch lambda functions. ${err}\n`)
+
+          return 1
+        }
       }
     }
 
@@ -100,7 +145,12 @@ export class UninstrumentCommand extends Command {
       return
     }
 
-    this.context.stdout.write(`${prefix}Will apply the following updates:\n`)
+    this.context.stdout.write(`\n${bold(yellow('[!]'))} Functions to be updated:\n`)
+    for (const config of configs) {
+      this.context.stdout.write(`\t- ${bold(config.functionARN)}\n`)
+    }
+
+    this.context.stdout.write(`\n${prefix}Will apply the following updates:\n`)
     for (const config of configs) {
       if (config.updateRequest) {
         this.context.stdout.write(
@@ -140,6 +190,7 @@ UninstrumentCommand.addOption('region', Command.String('-r,--region'))
 UninstrumentCommand.addOption('configPath', Command.String('--config'))
 UninstrumentCommand.addOption('dryRun', Command.Boolean('-d,--dry'))
 UninstrumentCommand.addOption('forwarder', Command.String('--forwarder'))
+UninstrumentCommand.addOption('regExPattern', Command.String('--functions-regex'))
 
 /**
  * Commands that are not really in use, but to

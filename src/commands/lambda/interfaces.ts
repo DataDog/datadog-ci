@@ -29,7 +29,6 @@ export interface LambdaConfigOptions {
 export interface FunctionConfiguration {
   functionARN: string
   lambdaConfig: Lambda.FunctionConfiguration
-  lambdaLibraryLayerArn?: string
   logGroupConfiguration?: LogGroupConfiguration
   tagConfiguration?: TagConfiguration
   updateRequest?: Lambda.UpdateFunctionConfigurationRequest

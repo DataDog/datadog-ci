@@ -18,7 +18,9 @@ export const applyLogGroupConfig = async (logs: CloudWatchLogs, config: LogGroup
   if (deleteSubscriptionFilterRequest !== undefined) {
     await logs.deleteSubscriptionFilter(deleteSubscriptionFilterRequest).promise()
   }
-  await logs.putSubscriptionFilter(subscriptionFilterRequest!).promise()
+  if (subscriptionFilterRequest !== undefined) {
+    await logs.putSubscriptionFilter(subscriptionFilterRequest).promise()
+  }
 }
 
 export const calculateLogGroupUpdateRequest = async (
