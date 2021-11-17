@@ -62,41 +62,44 @@ describe('lambda', () => {
         )
         const output = context.stdout.toString()
         expect(code).toBe(0)
+        console.log(output)
         expect(output).toMatchInlineSnapshot(`
-          "${bold(yellow('[Warning]'))} Instrument your ${hex('#FF9900').bold(
+"${bold(yellow('[Warning]'))} Instrument your ${hex('#FF9900').bold(
           'Lambda'
         )} functions in a dev or staging environment first. Should the instrumentation result be unsatisfactory, run \`${bold(
           'uninstrument'
         )}\` with the same arguments to revert the changes.
-          ${bold(cyan('[Dry Run] '))}Will apply the following updates:
-          UpdateFunctionConfiguration -> arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world
-          {
-            \\"FunctionName\\": \\"arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world\\",
-            \\"Handler\\": \\"/opt/nodejs/node_modules/datadog-lambda-js/handler.handler\\",
-            \\"Environment\\": {
-              \\"Variables\\": {
-                \\"DD_LAMBDA_HANDLER\\": \\"index.handler\\",
-                \\"DD_SITE\\": \\"datadoghq.com\\",
-                \\"DD_ENV\\": \\"staging\\",
-                \\"DD_TAGS\\": \\"layer:api,team:intake\\",
-                \\"DD_FLUSH_TO_LOG\\": \\"true\\",
-                \\"DD_MERGE_XRAY_TRACES\\": \\"false\\",
-                \\"DD_SERVICE\\": \\"middletier\\",
-                \\"DD_TRACE_ENABLED\\": \\"true\\",
-                \\"DD_VERSION\\": \\"0.2\\",
-                \\"DD_LOG_LEVEL\\": \\"debug\\"
-              }
-            },
-            \\"Layers\\": [
-              \\"arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Node12-x:10\\"
-            ]
-          }
-          TagResource -> arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world
-          {
-            \\"dd_sls_ci\\": \\"v${version}\\"
-          }
-          "
-        `)
+\n${bold(yellow('[!]'))} Functions to be updated:
+\t- ${bold('arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world')}\n
+${bold(cyan('[Dry Run] '))}Will apply the following updates:
+UpdateFunctionConfiguration -> arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world
+{
+  \\"FunctionName\\": \\"arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world\\",
+  \\"Handler\\": \\"/opt/nodejs/node_modules/datadog-lambda-js/handler.handler\\",
+  \\"Environment\\": {
+    \\"Variables\\": {
+      \\"DD_LAMBDA_HANDLER\\": \\"index.handler\\",
+      \\"DD_SITE\\": \\"datadoghq.com\\",
+      \\"DD_ENV\\": \\"staging\\",
+      \\"DD_TAGS\\": \\"layer:api,team:intake\\",
+      \\"DD_FLUSH_TO_LOG\\": \\"true\\",
+      \\"DD_MERGE_XRAY_TRACES\\": \\"false\\",
+      \\"DD_SERVICE\\": \\"middletier\\",
+      \\"DD_TRACE_ENABLED\\": \\"true\\",
+      \\"DD_VERSION\\": \\"0.2\\",
+      \\"DD_LOG_LEVEL\\": \\"debug\\"
+    }
+  },
+  \\"Layers\\": [
+    \\"arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Node12-x:10\\"
+  ]
+}
+TagResource -> arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world
+{
+  \\"dd_sls_ci\\": \\"v${version}\\"
+}
+"
+`)
       })
 
       test('prints dry run data for lambda extension layer', async () => {
@@ -137,40 +140,42 @@ describe('lambda', () => {
         const output = context.stdout.toString()
         expect(code).toBe(0)
         expect(output).toMatchInlineSnapshot(`
-          "${bold(yellow('[Warning]'))} Instrument your ${hex('#FF9900').bold(
+"${bold(yellow('[Warning]'))} Instrument your ${hex('#FF9900').bold(
           'Lambda'
         )} functions in a dev or staging environment first. Should the instrumentation result be unsatisfactory, run \`${bold(
           'uninstrument'
         )}\` with the same arguments to revert the changes.
-          ${bold(cyan('[Dry Run] '))}Will apply the following updates:
-          UpdateFunctionConfiguration -> arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world
-          {
-            \\"FunctionName\\": \\"arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world\\",
-            \\"Handler\\": \\"/opt/nodejs/node_modules/datadog-lambda-js/handler.handler\\",
-            \\"Environment\\": {
-              \\"Variables\\": {
-                \\"DD_LAMBDA_HANDLER\\": \\"index.handler\\",
-                \\"DD_API_KEY\\": \\"1234\\",
-                \\"DD_SITE\\": \\"datadoghq.com\\",
-                \\"DD_ENV\\": \\"staging\\",
-                \\"DD_TAGS\\": \\"layer:api,team:intake\\",
-                \\"DD_FLUSH_TO_LOG\\": \\"true\\",
-                \\"DD_MERGE_XRAY_TRACES\\": \\"false\\",
-                \\"DD_SERVICE\\": \\"middletier\\",
-                \\"DD_TRACE_ENABLED\\": \\"true\\",
-                \\"DD_VERSION\\": \\"0.2\\"
-              }
-            },
-            \\"Layers\\": [
-              \\"arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Extension:6\\"
-            ]
-          }
-          TagResource -> arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world
-          {
-            \\"dd_sls_ci\\": \\"v${version}\\"
-          }
-          "
-        `)
+\n${bold(yellow('[!]'))} Functions to be updated:
+\t- ${bold('arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world')}\n
+${bold(cyan('[Dry Run] '))}Will apply the following updates:
+UpdateFunctionConfiguration -> arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world
+{
+  \\"FunctionName\\": \\"arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world\\",
+  \\"Handler\\": \\"/opt/nodejs/node_modules/datadog-lambda-js/handler.handler\\",
+  \\"Environment\\": {
+    \\"Variables\\": {
+      \\"DD_LAMBDA_HANDLER\\": \\"index.handler\\",
+      \\"DD_API_KEY\\": \\"1234\\",
+      \\"DD_SITE\\": \\"datadoghq.com\\",
+      \\"DD_ENV\\": \\"staging\\",
+      \\"DD_TAGS\\": \\"layer:api,team:intake\\",
+      \\"DD_FLUSH_TO_LOG\\": \\"true\\",
+      \\"DD_MERGE_XRAY_TRACES\\": \\"false\\",
+      \\"DD_SERVICE\\": \\"middletier\\",
+      \\"DD_TRACE_ENABLED\\": \\"true\\",
+      \\"DD_VERSION\\": \\"0.2\\"
+    }
+  },
+  \\"Layers\\": [
+    \\"arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Extension:6\\"
+  ]
+}
+TagResource -> arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world
+{
+  \\"dd_sls_ci\\": \\"v${version}\\"
+}
+"
+`)
       })
 
       test('instrumenting with source code integrations fails if not run within a git repo', async () => {
@@ -333,40 +338,42 @@ describe('lambda', () => {
         )
         const output = context.stdout.toString()
         expect(output).toMatchInlineSnapshot(`
-          "${bold(yellow('[Warning]'))} Instrument your ${hex('#FF9900').bold(
+"${bold(yellow('[Warning]'))} Instrument your ${hex('#FF9900').bold(
           'Lambda'
         )} functions in a dev or staging environment first. Should the instrumentation result be unsatisfactory, run \`${bold(
           'uninstrument'
         )}\` with the same arguments to revert the changes.
-          Will apply the following updates:
-          UpdateFunctionConfiguration -> arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world
-          {
-            \\"FunctionName\\": \\"arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world\\",
-            \\"Handler\\": \\"/opt/nodejs/node_modules/datadog-lambda-js/handler.handler\\",
-            \\"Environment\\": {
-              \\"Variables\\": {
-                \\"DD_LAMBDA_HANDLER\\": \\"index.handler\\",
-                \\"DD_API_KEY\\": \\"1234\\",
-                \\"DD_SITE\\": \\"datadoghq.com\\",
-                \\"DD_ENV\\": \\"dummy\\",
-                \\"DD_TAGS\\": \\"git.commit.sha:1be168ff837f043bde17c0314341c84271047b31\\",
-                \\"DD_FLUSH_TO_LOG\\": \\"true\\",
-                \\"DD_MERGE_XRAY_TRACES\\": \\"false\\",
-                \\"DD_SERVICE\\": \\"dummy\\",
-                \\"DD_TRACE_ENABLED\\": \\"true\\",
-                \\"DD_VERSION\\": \\"0.1\\"
-              }
-            },
-            \\"Layers\\": [
-              \\"arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Node12-x:10\\"
-            ]
-          }
-          TagResource -> arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world
-          {
-            \\"dd_sls_ci\\": \\"v${version}\\"
-          }
-          "
-        `)
+\n${bold(yellow('[!]'))} Functions to be updated:
+\t- ${bold('arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world')}\n
+Will apply the following updates:
+UpdateFunctionConfiguration -> arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world
+{
+  \\"FunctionName\\": \\"arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world\\",
+  \\"Handler\\": \\"/opt/nodejs/node_modules/datadog-lambda-js/handler.handler\\",
+  \\"Environment\\": {
+    \\"Variables\\": {
+      \\"DD_LAMBDA_HANDLER\\": \\"index.handler\\",
+      \\"DD_API_KEY\\": \\"1234\\",
+      \\"DD_SITE\\": \\"datadoghq.com\\",
+      \\"DD_ENV\\": \\"dummy\\",
+      \\"DD_TAGS\\": \\"git.commit.sha:1be168ff837f043bde17c0314341c84271047b31\\",
+      \\"DD_FLUSH_TO_LOG\\": \\"true\\",
+      \\"DD_MERGE_XRAY_TRACES\\": \\"false\\",
+      \\"DD_SERVICE\\": \\"dummy\\",
+      \\"DD_TRACE_ENABLED\\": \\"true\\",
+      \\"DD_VERSION\\": \\"0.1\\"
+    }
+  },
+  \\"Layers\\": [
+    \\"arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Node12-x:10\\"
+  ]
+}
+TagResource -> arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world
+{
+  \\"dd_sls_ci\\": \\"v${version}\\"
+}
+"
+`)
       })
 
       test('ensure the instrument command ran from a local git repo ahead of the origin fails', async () => {
@@ -902,26 +909,28 @@ describe('lambda', () => {
         ])
         const output = command.context.stdout.toString()
         expect(output).toMatchInlineSnapshot(`
-                    "${bold(yellow('[Warning]'))} Instrument your ${hex('#FF9900').bold(
+"${bold(yellow('[Warning]'))} Instrument your ${hex('#FF9900').bold(
           'Lambda'
         )} functions in a dev or staging environment first. Should the instrumentation result be unsatisfactory, run \`${bold(
           'uninstrument'
         )}\` with the same arguments to revert the changes.
-                    Will apply the following updates:
-                    CreateLogGroup -> my-log-group
-                    {
-                      \\"logGroupName\\": \\"my-log-group\\"
-                    }
-                    DeleteSubscriptionFilter -> my-log-group
-                    {
-                      \\"filterName\\": \\"my-filter\\"
-                    }
-                    PutSubscriptionFilter -> my-log-group
-                    {
-                      \\"filterName\\": \\"my-filter\\"
-                    }
-                    "
-                `)
+\n${bold(yellow('[!]'))} Functions to be updated:
+\t- ${bold('my-func')}\n
+Will apply the following updates:
+CreateLogGroup -> my-log-group
+{
+  \\"logGroupName\\": \\"my-log-group\\"
+}
+DeleteSubscriptionFilter -> my-log-group
+{
+  \\"filterName\\": \\"my-filter\\"
+}
+PutSubscriptionFilter -> my-log-group
+{
+  \\"filterName\\": \\"my-filter\\"
+}
+"
+`)
       })
     })
   })

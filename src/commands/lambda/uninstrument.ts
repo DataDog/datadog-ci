@@ -1,5 +1,5 @@
 import {CloudWatchLogs, Lambda} from 'aws-sdk'
-import {bold, cyan, red} from 'chalk'
+import {bold, cyan, red, yellow} from 'chalk'
 import {Command} from 'clipanion'
 import {parseConfigFile} from '../../helpers/utils'
 import {collectFunctionsByRegion, updateLambdaFunctionConfigs} from './functions/commons'
@@ -145,7 +145,12 @@ export class UninstrumentCommand extends Command {
       return
     }
 
-    this.context.stdout.write(`${prefix}Will apply the following updates:\n`)
+    this.context.stdout.write(`\n${bold(yellow('[!]'))} Functions to be updated:\n`)
+    for (const config of configs) {
+      this.context.stdout.write(`\t- ${bold(config.functionARN)}\n`)
+    }
+
+    this.context.stdout.write(`\n${prefix}Will apply the following updates:\n`)
     for (const config of configs) {
       if (config.updateRequest) {
         this.context.stdout.write(

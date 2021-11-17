@@ -2,7 +2,7 @@
 jest.mock('fs')
 jest.mock('aws-sdk')
 import {Lambda} from 'aws-sdk'
-import {bold, cyan, red} from 'chalk'
+import {bold, cyan, red, yellow} from 'chalk'
 import * as fs from 'fs'
 
 import {
@@ -78,20 +78,22 @@ describe('uninstrument', () => {
       const output = context.stdout.toString()
       expect(code).toBe(0)
       expect(output).toMatchInlineSnapshot(`
-        "${bold(cyan('[Dry Run] '))}Will apply the following updates:
-        UpdateFunctionConfiguration -> arn:aws:lambda:us-east-1:000000000000:function:uninstrument
-        {
-          \\"FunctionName\\": \\"arn:aws:lambda:us-east-1:000000000000:function:uninstrument\\",
-          \\"Handler\\": \\"lambda_function.lambda_handler\\",
-          \\"Environment\\": {
-            \\"Variables\\": {
-              \\"USER_VARIABLE\\": \\"shouldnt be deleted by uninstrumentation\\"
-            }
-          },
-          \\"Layers\\": []
-        }
-        "
-      `)
+"\n${bold(yellow('[!]'))} Functions to be updated:
+\t- ${bold('arn:aws:lambda:us-east-1:000000000000:function:uninstrument')}\n
+${bold(cyan('[Dry Run] '))}Will apply the following updates:
+UpdateFunctionConfiguration -> arn:aws:lambda:us-east-1:000000000000:function:uninstrument
+{
+  \\"FunctionName\\": \\"arn:aws:lambda:us-east-1:000000000000:function:uninstrument\\",
+  \\"Handler\\": \\"lambda_function.lambda_handler\\",
+  \\"Environment\\": {
+    \\"Variables\\": {
+      \\"USER_VARIABLE\\": \\"shouldnt be deleted by uninstrumentation\\"
+    }
+  },
+  \\"Layers\\": []
+}
+"
+`)
     })
     test('runs function update command for valid uninstrumentation', async () => {
       ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({code: 'ENOENT'}))

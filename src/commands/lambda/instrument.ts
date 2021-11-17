@@ -338,7 +338,13 @@ export class InstrumentCommand extends Command {
         'uninstrument'
       )}\` with the same arguments to revert the changes.\n`
     )
-    this.context.stdout.write(`${prefix}Will apply the following updates:\n`)
+
+    this.context.stdout.write(`\n${bold(yellow('[!]'))} Functions to be updated:\n`)
+    for (const config of configs) {
+      this.context.stdout.write(`\t- ${bold(config.functionARN)}\n`)
+    }
+
+    this.context.stdout.write(`\n${prefix}Will apply the following updates:\n`)
     for (const config of configs) {
       if (config.updateRequest) {
         this.context.stdout.write(
