@@ -42,6 +42,14 @@ export const HANDLER_LOCATION = {
   'python3.9': PYTHON_HANDLER_LOCATION,
 }
 
+export const SITES: string[] = [
+  'datadoghq.com',
+  'datadoghq.eu',
+  'us3.datadoghq.com',
+  'us5.datadoghq.com',
+  'ddog-gov.,com',
+]
+
 export const DEFAULT_LAYER_AWS_ACCOUNT = '464622532012'
 export const GOVCLOUD_LAYER_AWS_ACCOUNT = '002406178527'
 export const SUBSCRIPTION_FILTER_NAME = 'datadog-ci-filter'

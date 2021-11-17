@@ -23,6 +23,7 @@ import {
   RuntimeType,
   SERVICE_ENV_VAR,
   SITE_ENV_VAR,
+  SITES,
   TRACE_ENABLED_ENV_VAR,
   VERSION_ENV_VAR,
 } from '../constants'
@@ -186,13 +187,12 @@ export const calculateUpdateRequest = (
   }
 
   if (site !== undefined && oldEnvVars[SITE_ENV_VAR] !== site) {
-    const siteList: string[] = ['datadoghq.com', 'datadoghq.eu', 'us3.datadoghq.com', 'ddog-gov.com']
-    if (siteList.includes(site.toLowerCase())) {
+    if (SITES.includes(site.toLowerCase())) {
       needsUpdate = true
       changedEnvVars[SITE_ENV_VAR] = site
     } else {
       throw new Error(
-        'Warning: Invalid site URL. Must be either datadoghq.com, datadoghq.eu, us3.datadoghq.com, or ddog-gov.com.'
+        'Warning: Invalid site URL. Must be either datadoghq.com, datadoghq.eu, us3.datadoghq.com, us5.datadoghq.com, or ddog-gov.com.'
       )
     }
   }
