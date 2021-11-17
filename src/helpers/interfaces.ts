@@ -25,16 +25,42 @@ import {
 
 export interface Metadata {
   ci: {
+    job: {
+      name?: string
+      url?: string
+    }
     pipeline: {
+      id?: string
+      name?: string
+      number?: number
       url?: string
     }
     provider: {
-      name: string
+      name?: string
     }
+    stage: {
+      name?: string
+    }
+    workspace_path?: string
   }
   git: {
     branch?: string
-    commitSha?: string
+    commit: {
+      author: {
+        date?: string
+        email?: string
+        name?: string
+      }
+      committer: {
+        date?: string
+        email?: string
+        name?: string
+      }
+      message?: string
+      sha?: string
+    }
+    repository_url?: string
+    tag?: string
   }
 }
 
