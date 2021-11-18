@@ -1,6 +1,10 @@
 name: Generate binary and distribute it
 
-on: workflow_dispatch
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - juan-fernandez/hackathon-bundle
 
 jobs:
   generate-binary-and-distribute:
