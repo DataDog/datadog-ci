@@ -20,8 +20,8 @@ jobs:
         run: yarn build
       - name: Run create binary
         run: yarn dist-standalone
-      - name: Test binary
-        run: ./datadog-ci-linux help
+      # - name: Test binary
+      #   run: ./datadog-ci-linux help
       - name: Upload to draft release
         uses: softprops/action-gh-release@v1
         # if: startsWith(github.ref, 'refs/tags/')
