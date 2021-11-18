@@ -2,11 +2,12 @@
 set -e
 
 REPO_BASE_URL="https://github.com/DataDog/datadog-ci"
+INSTALL_PATH="/usr/local/bin/datadog-ci"
 
 function download {
     detect_os
-    curl -L --fail "$REPO_BASE_URL/releases/latest/download/datadog-ci-$os_suffix" --output $1
-    chmod +x $1
+    curl -L --fail "$REPO_BASE_URL/releases/latest/download/datadog-ci-$os_suffix" --output $INSTALL_PATH
+    chmod +x $INSTALL_PATH
 }
 
 function detect_os {
@@ -17,6 +18,4 @@ function detect_os {
     esac
 }
 
-bin="/tmp/datadog-ci"
-if ! [ -x $bin ]; then download $bin; fi
-$bin "$@"
+if ![ -x $INSTALL_PATH ]; then download ; fi

@@ -28,6 +28,13 @@ npm install -g @datadog/datadog-ci
 # Yarn v1 add globally
 yarn global add @datadog/datadog-ci
 ```
+
+If installing nodejs in the CI is an issue, standalone binaries are provided with [releases](/releases). There is also a one line install script for the latest version:
+
+```sh
+bash -c $(curl https://raw.githubusercontent.com/DataDog/datadog-ci/master/quick-install.sh)
+```
+
 ## Usage
 
 ```bash
