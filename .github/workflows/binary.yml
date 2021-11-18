@@ -2,7 +2,7 @@ name: Generate binary and distribute it
 
 on:
   release:
-    types: [prereleased]
+    types: [released]
 
 jobs:
   generate-binary-and-distribute:
@@ -20,15 +20,8 @@ jobs:
         run: yarn dist-standalone
       - name: Test binary
         run: ./datadog-ci-linux version
-      - name: Upload linux to release
-        uses: JasonEtco/upload-to-release@master
+      - name: Upload asset to release
+        uses: shogo82148/actions-upload-release-asset@v1
         with:
-          args: ./datadog-ci-linux
-      - name: Upload macos to release
-        uses: JasonEtco/upload-to-release@master
-        with:
-          args: ./datadog-ci-macos
-      - name: Upload windows to release
-        uses: JasonEtco/upload-to-release@master
-        with:
-          args: ./datadog-ci-win.exe
+          upload_url: ${{ github.event.release.upload_url }}
+          asset_path: ./datadog-ci-*
