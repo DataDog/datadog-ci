@@ -5,7 +5,7 @@ REPO_BASE_URL="https://github.com/DataDog/datadog-ci"
 
 function download {
     detect_os
-    curl -L --fail "$REPO_BASE_URL/releases/download/latest/datadog-ci-$os_suffix" --output $1
+    curl -L --fail "$REPO_BASE_URL/releases/latest/download/datadog-ci-$os_suffix" --output $1
     chmod +x $1
 }
 
