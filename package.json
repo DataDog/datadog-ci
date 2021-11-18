@@ -8,6 +8,12 @@
   "bin": {
     "datadog-ci": "dist/index.js"
   },
+  "pkg": {
+    "scripts": [
+      "dist/commands/*/*.js",
+      "node_modules/vm2/lib/contextify.js"
+    ]
+  },
   "engines": {
     "node": ">=10.24.1"
   },
@@ -25,6 +31,7 @@
   },
   "scripts": {
     "build": "yarn clean; tsc",
+    "dist-standalone": "pkg .",
     "check-licenses": "node bin/check-licenses.js",
     "clean": "rm -rf dist/*",
     "format": "yarn tslint --fix && yarn prettier --write",
@@ -80,6 +87,7 @@
     "jest": "27.0.5",
     "jest-environment-node": "27.0.5",
     "jest-matcher-specific-error": "1.0.0",
+    "pkg": "^5.4.1",
     "prettier": "2.0.5",
     "proxy": "1.0.2",
     "ts-jest": "27.0.3",

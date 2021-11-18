@@ -17,6 +17,6 @@ jobs:
       - name: Install project dependencies
         run: yarn install --immutable
       - name: Run create binary
-        run: yarn binary
-      - name: Run distribute
-        run: yarn distribute
+        run: yarn dist-standalone
+      # - name: Run distribute
+      #   run: yarn distribute
