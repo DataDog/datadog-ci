@@ -22,5 +22,13 @@ jobs:
         run: yarn dist-standalone
       - name: Test binary
         run: ./datadog-ci-linux help
-      # - name: Run distribute
-      #   run: yarn distribute
+      - name: Upload to draft release
+        uses: softprops/action-gh-release@v1
+        # if: startsWith(github.ref, 'refs/tags/')
+        with:
+          draft: true
+          files: |
+            ./datadog-ci-linux
+            ./datadog-ci-macos
+            ./datadog-ci-win.exe
+          fail_on_unmatched_files: true
