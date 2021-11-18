@@ -16,6 +16,8 @@ jobs:
         uses: actions/setup-node@v1
       - name: Install project dependencies
         run: yarn install --immutable
+      - name: Bundle library
+        run: yarn build
       - name: Run create binary
         run: yarn dist-standalone
       # - name: Run distribute
