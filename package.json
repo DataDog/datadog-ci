@@ -31,7 +31,7 @@
   },
   "scripts": {
     "build": "yarn clean; tsc",
-    "dist-standalone": "pkg .",
+    "dist-standalone": "pkg --compress GZip .",
     "check-licenses": "node bin/check-licenses.js",
     "clean": "rm -rf dist/*",
     "format": "yarn tslint --fix && yarn prettier --write",
