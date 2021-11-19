@@ -18,4 +18,4 @@ function detect_os {
     esac
 }
 
-if ![ -x $INSTALL_PATH ]; then download ; fi
+if [ ! -x $INSTALL_PATH ]; then download ; fi
