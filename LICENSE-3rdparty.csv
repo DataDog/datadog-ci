@@ -28,6 +28,7 @@ glob,import,ISC,Copyright (c) Isaac Z. Schlueter and Contributors
 jest,dev,MIT,Copyright (c) Facebook, Inc. and its affiliates.
 jest-environment-node,dev,MIT,Copyright (c) Facebook, Inc. and its affiliates.
 jest-matcher-specific-error,dev,MIT,Copyright (c) 2020 Daniel Hreben
+pkg,dev,MIT,Copyright (c) 2021 Vercel, Inc.
 prettier,dev,MIT,Copyright © James Long and contributors
 proxy,dev,MIT,Copyright (c) 2013 Nathan Rajlich <nathan@tootallnate.net>
 proxy-agent,import,MIT,Copyright (c) 2013 Nathan Rajlich <nathan@tootallnate.net>
