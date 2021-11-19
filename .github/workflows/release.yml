@@ -14,3 +14,22 @@ jobs:
       - run: yarn publish
         env:
           NPM_AUTH_TOKEN: ${{ secrets.YARN_NPM_AUTH_TOKEN }}
+  build-binary:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Install node
+        uses: actions/setup-node@v1
+      - name: Install project dependencies
+        run: yarn install --immutable
+      - name: Bundle library
+        run: yarn build
+      - name: Create standalone binary
+        run: yarn dist-standalone
+      - name: Test binary
+        run: ./datadog-ci-linux version
+      - name: Upload binaries to GitHub release
+        uses: shogo82148/actions-upload-release-asset@v1
+        with:
+          upload_url: ${{ github.event.release.upload_url }}
+          asset_path: ./datadog-ci-*
