@@ -37,8 +37,9 @@ You must expose these environment variables in the environment where you are run
 
 | Environment Variable | Description | Example |
 | --- | --- | --- |
-| `DATADOG_API_KEY` | Datadog API Key. Sets the `DD_API_KEY` environment variable on your Lambda function configuration. For more information about getting a Datadog API key, see the [API key documentation][6].  | `export DATADOG_API_KEY="1234"` |
-| `DATADOG_KMS_API_KEY` | Datadog API Key encrypted using KMS. Sets the `DD_KMS_API_KEY` environment variable on your Lambda function configuration. Note: `DD_API_KEY` is ignored when `DD_KMS_API_KEY` is set. | `export DATADOG_KMS_API_KEY="5678"` |
+| `DATADOG_API_KEY` | Datadog API Key. Sets the `DD_API_KEY` environment variable on your Lambda function configuration. For more information about getting a Datadog API key, see the [API key documentation][6].  | `export DATADOG_API_KEY=<API_KEY>` |
+| `DATADOG_API_KEY_SECRET_ARN` | The ARN of the secret storing the Datadog API key in AWS Secrets Manager. Sets the `DD_API_KEY_SECRET_ARN` on your Lambda function configuration. Notes: `DD_API_KEY_SECRET_ARN` is ignored when `DD_KMS_API_KEY` is set. Add the `secretsmanager:GetSecretValue` permission to the Lambda execution role. | `export DATADOG_API_KEY_SECRET_ARN=<SECRETS_MANAGER_RESOURCE_ARN>` |
+| `DATADOG_KMS_API_KEY` | Datadog API Key encrypted using KMS. Sets the `DD_KMS_API_KEY` environment variable on your Lambda function configuration. Note: `DD_API_KEY` is ignored when `DD_KMS_API_KEY` is set. | `export DATADOG_KMS_API_KEY=<KMS_ENCRYPTED_API_KEY>` |
 | `DATADOG_SITE` | Set which Datadog site to send data. Only needed when using the Datadog Lambda Extension. Possible values are  `datadoghq.com` , `datadoghq.eu` , `us3.datadoghq.com` and `ddog-gov.com`. The default is `datadoghq.com`. Sets the `DD_SITE` environment variable on your Lambda function configurations. | `export DATADOG_SITE="datadoghq.com"` |
 
 
@@ -58,13 +59,14 @@ You can pass the following arguments to `instrument` to specify its behavior. Th
 | `--env` | | Use `--env` to separate out your staging, development, and production environments. Learn more about the `env` tag [here][7]. | |
 | `--extra-tags` | | Add custom tags to your Lambda function in Datadog. Must be a list of `<key>:<value>` separated by commas such as: `layer:api,team:intake`. | |
 | `--layerVersion` | `-v` | Version of the Datadog Lambda Library layer to apply. This varies between runtimes. To see the latest layer version check the [JS][3] or [python][4] datadog-lambda-layer repo release notes. | |
-| `--extensionVersion` | `-e` | Version of the Datadog Lambda Extension layer to apply. When `extensionVersion` is set, make sure to export `DATADOG_API_KEY` (or `DATADOG_KMS_API_KEY`) in your environment as well. While using `extensionVersion`, leave out `forwarder`. Learn more about the Lambda Extension [here][5].| |
+| `--extensionVersion` | `-e` | Version of the Datadog Lambda Extension layer to apply. When `extensionVersion` is set, make sure to export `DATADOG_API_KEY` (or if encrypted, `DATADOG_KMS_API_KEY` or `DATADOG_API_KEY_SECRET_ARN`) in your environment as well. While using `extensionVersion`, leave out `forwarder`. Learn more about the Lambda Extension [here][5]. | |
 | `--tracing` |  | Whether to enable dd-trace tracing on your Lambda. | `true` |
 | `--mergeXrayTraces` | | Whether to join dd-trace traces to AWS X-Ray traces. Useful for tracing API Gateway spans. | `false` |
-| `--flushMetricsToLogs` | | Whether to send metrics via the Datadog Forwarder [asynchronously][11]. | `true` |
+| `--flushMetricsToLogs` | | Whether to send metrics via the Datadog Forwarder [asynchronously][11]. If you disable this parameter, it's required to export `DATADOG_API_KEY` (or if encrypted, `DATADOG_KMS_API_KEY` or `DATADOG_API_KEY_SECRET_ARN`). | `true` |
 | `--forwarder` | | The ARN of the [datadog forwarder][10] to attach this function's LogGroup to. | |
 | `--dry` | `-d` | Preview changes running command would apply. | `false` |
 | `--logLevel` | | Set to `debug` to see additional output from the Datadog Lambda Library and/or Lambda Extension for troubleshooting purposes. | |
+| `--source-code-integration` | `-s` | Whether to enable Datadog Source Code Integration. This will send Datadog the Git metadata in the current local directory and tag your lambda(s) with the latest commit. Provide `DATADOG_API_KEY` if using this feature. **Note**: Git repository must not be ahead of remote, and must not be dirty. | `false` |
 
 <br />
 

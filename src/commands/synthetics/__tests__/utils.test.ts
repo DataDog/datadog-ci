@@ -408,11 +408,6 @@ describe('utils', () => {
     expect(utils.hasResultPassed(result, true, true)).toBeFalsy()
   })
 
-  test('removeUndefinedValues', () => {
-    // tslint:disable-next-line: no-null-keyword
-    expect(utils.removeUndefinedValues({a: 'b', c: 'd', e: undefined, g: null})).toEqual({a: 'b', c: 'd', g: null})
-  })
-
   test('hasTestSucceeded', () => {
     const testConfiguration = getApiTest('abc-def-ghi')
     const passingResult = getBrowserResult()
