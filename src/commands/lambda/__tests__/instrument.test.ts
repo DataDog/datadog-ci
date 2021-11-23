@@ -62,7 +62,6 @@ describe('lambda', () => {
         )
         const output = context.stdout.toString()
         expect(code).toBe(0)
-        console.log(output)
         expect(output).toMatchInlineSnapshot(`
 "${bold(yellow('[Warning]'))} Instrument your ${hex('#FF9900').bold(
           'Lambda'
@@ -82,11 +81,11 @@ UpdateFunctionConfiguration -> arn:aws:lambda:us-east-1:123456789012:function:la
       \\"DD_SITE\\": \\"datadoghq.com\\",
       \\"DD_ENV\\": \\"staging\\",
       \\"DD_TAGS\\": \\"layer:api,team:intake\\",
-      \\"DD_FLUSH_TO_LOG\\": \\"true\\",
       \\"DD_MERGE_XRAY_TRACES\\": \\"false\\",
       \\"DD_SERVICE\\": \\"middletier\\",
       \\"DD_TRACE_ENABLED\\": \\"true\\",
       \\"DD_VERSION\\": \\"0.2\\",
+      \\"DD_FLUSH_TO_LOG\\": \\"true\\",
       \\"DD_LOG_LEVEL\\": \\"debug\\"
     }
   },
@@ -159,7 +158,6 @@ UpdateFunctionConfiguration -> arn:aws:lambda:us-east-1:123456789012:function:la
       \\"DD_SITE\\": \\"datadoghq.com\\",
       \\"DD_ENV\\": \\"staging\\",
       \\"DD_TAGS\\": \\"layer:api,team:intake\\",
-      \\"DD_FLUSH_TO_LOG\\": \\"true\\",
       \\"DD_MERGE_XRAY_TRACES\\": \\"false\\",
       \\"DD_SERVICE\\": \\"middletier\\",
       \\"DD_TRACE_ENABLED\\": \\"true\\",
@@ -357,11 +355,11 @@ UpdateFunctionConfiguration -> arn:aws:lambda:us-east-1:123456789012:function:la
       \\"DD_SITE\\": \\"datadoghq.com\\",
       \\"DD_ENV\\": \\"dummy\\",
       \\"DD_TAGS\\": \\"git.commit.sha:1be168ff837f043bde17c0314341c84271047b31\\",
-      \\"DD_FLUSH_TO_LOG\\": \\"true\\",
       \\"DD_MERGE_XRAY_TRACES\\": \\"false\\",
       \\"DD_SERVICE\\": \\"dummy\\",
       \\"DD_TRACE_ENABLED\\": \\"true\\",
-      \\"DD_VERSION\\": \\"0.1\\"
+      \\"DD_VERSION\\": \\"0.1\\",
+      \\"DD_FLUSH_TO_LOG\\": \\"true\\"
     }
   },
   \\"Layers\\": [

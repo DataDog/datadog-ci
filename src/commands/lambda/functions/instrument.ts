@@ -182,7 +182,6 @@ export const calculateUpdateRequest = (
   const environmentVarsTupleArray: [keyof InstrumentationSettings, string][] = [
     ['environment', ENVIRONMENT_ENV_VAR],
     ['extraTags', EXTRA_TAGS_ENV_VAR],
-    ['flushMetricsToLogs', FLUSH_TO_LOG_ENV_VAR],
     ['mergeXrayTraces', MERGE_XRAY_TRACES_ENV_VAR],
     ['service', SERVICE_ENV_VAR],
     ['tracingEnabled', TRACE_ENABLED_ENV_VAR],
@@ -194,6 +193,15 @@ export const calculateUpdateRequest = (
       needsUpdate = true
       changedEnvVars[environmentVar] = settings[key]!.toString()
     }
+  }
+  const isUsingExtension = settings.extensionVersion !== undefined
+  if (
+    !isUsingExtension &&
+    settings.flushMetricsToLogs !== undefined &&
+    oldEnvVars[FLUSH_TO_LOG_ENV_VAR] !== settings.flushMetricsToLogs?.toString()
+  ) {
+    needsUpdate = true
+    changedEnvVars[FLUSH_TO_LOG_ENV_VAR] = settings.flushMetricsToLogs!.toString()
   }
 
   const newEnvVars = {...oldEnvVars, ...changedEnvVars}
