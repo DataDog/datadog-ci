@@ -35,6 +35,26 @@ export const addLayerArn = (fullLayerArn: string | undefined, previousLayerName:
   return layerARNs
 }
 
+export const coerceBoolean = (fallback: boolean, ...values: any[]): boolean => {
+  for (const value of values) {
+    switch (typeof value) {
+      case 'boolean':
+        return value
+      case 'string':
+        if (value.toString().toLowerCase() === 'true') {
+          return true
+        } else if (value.toString().toLowerCase() === 'false') {
+          return false
+        }
+        break
+
+      default:
+    }
+  }
+
+  return fallback
+}
+
 /**
  * Returns an array of functions grouped by its region, it
  * throws an error if there are functions without a region.

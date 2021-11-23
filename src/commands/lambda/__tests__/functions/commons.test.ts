@@ -12,6 +12,7 @@ import {
 } from '../../constants'
 import {
   addLayerArn,
+  coerceBoolean,
   collectFunctionsByRegion,
   getLayerArn,
   getRegion,
@@ -66,6 +67,18 @@ describe('commons', () => {
         'arn:aws:lambda:sa-east-1:464622532012:layer:Datadog-Python39-ARM:49',
         'arn:aws:lambda:sa-east-1:464622532012:layer:Datadog-Extension-ARM:11',
       ])
+    })
+  })
+
+  describe('coerceBoolean', () => {
+    test('return fallback when none of the values provided can be parsed to boolean', () => {
+      expect(coerceBoolean(true, 'NotBoolean', 123, [], {})).toBe(true)
+      expect(coerceBoolean(false, 'NotBooleanEither', 456, ['An array'], {booleanInObject: true})).toBe(false)
+    })
+
+    test('return the first boolean when one of the values provided can be parsed to boolean', () => {
+      expect(coerceBoolean(true, 'false', 'true')).toBe(false)
+      expect(coerceBoolean(false, 'true', 'False')).toBe(true)
     })
   })
   describe('collectFunctionsByRegion', () => {
