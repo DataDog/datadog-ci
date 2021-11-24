@@ -5,7 +5,12 @@ import {parseConfigFile} from '../../helpers/utils'
 import {getCommitInfo, newSimpleGit} from '../git-metadata/git'
 import {UploadCommand} from '../git-metadata/upload'
 import {EXTRA_TAGS_REG_EXP} from './constants'
-import {collectFunctionsByRegion, sentenceMatchesRegEx, updateLambdaFunctionConfigs} from './functions/commons'
+import {
+  coerceBoolean,
+  collectFunctionsByRegion,
+  sentenceMatchesRegEx,
+  updateLambdaFunctionConfigs,
+} from './functions/commons'
 import {getInstrumentedFunctionConfigs, getInstrumentedFunctionConfigsFromRegEx} from './functions/instrument'
 import {FunctionConfiguration, InstrumentationSettings, LambdaConfigOptions} from './interfaces'
 
@@ -163,10 +168,6 @@ export class InstrumentCommand extends Command {
     return 0
   }
 
-  private convertStringBooleanToBoolean(fallback: boolean, value?: string, configValue?: string): boolean {
-    return value ? value.toLowerCase() === 'true' : configValue ? configValue.toLowerCase() === 'true' : fallback
-  }
-
   private async getCurrentGitStatus() {
     const simpleGit = await newSimpleGit()
     const gitCommitInfo = await getCommitInfo(simpleGit, this.context.stdout)
@@ -236,26 +237,22 @@ export class InstrumentCommand extends Command {
     }
 
     const stringBooleansMap: {[key: string]: string | undefined} = {
-      flushMetricsToLogs: this.flushMetricsToLogs?.toLowerCase() ?? this.config.flushMetricsToLogs?.toLowerCase(),
-      mergeXrayTraces: this.mergeXrayTraces?.toLowerCase() ?? this.config.mergeXrayTraces?.toLowerCase(),
-      tracing: this.tracing?.toLowerCase() ?? this.config.tracing?.toLowerCase(),
+      flushMetricsToLogs: this.flushMetricsToLogs ?? this.config.flushMetricsToLogs,
+      mergeXrayTraces: this.mergeXrayTraces ?? this.config.mergeXrayTraces,
+      tracing: this.tracing ?? this.config.tracing,
     }
 
     for (const [stringBoolean, value] of Object.entries(stringBooleansMap)) {
-      if (!['true', 'false', undefined].includes(value)) {
+      if (!['true', 'false', undefined].includes(value?.toString().toLowerCase())) {
         this.context.stdout.write(`Invalid boolean specified for ${stringBoolean}.\n`)
 
         return
       }
     }
 
-    const flushMetricsToLogs = this.convertStringBooleanToBoolean(
-      true,
-      this.flushMetricsToLogs,
-      this.config.flushMetricsToLogs
-    )
-    const mergeXrayTraces = this.convertStringBooleanToBoolean(false, this.mergeXrayTraces, this.config.mergeXrayTraces)
-    const tracingEnabled = this.convertStringBooleanToBoolean(true, this.tracing, this.config.tracing)
+    const flushMetricsToLogs = coerceBoolean(true, this.flushMetricsToLogs, this.config.flushMetricsToLogs)
+    const mergeXrayTraces = coerceBoolean(false, this.mergeXrayTraces, this.config.mergeXrayTraces)
+    const tracingEnabled = coerceBoolean(true, this.tracing, this.config.tracing)
     const logLevel = this.logLevel ?? this.config.logLevel
 
     const service = this.service ?? this.config.service

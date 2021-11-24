@@ -36,6 +36,35 @@ export const addLayerArn = (fullLayerArn: string | undefined, previousLayerName:
 }
 
 /**
+ * Returns a coerced boolean given string booleans or booleans in
+ * an spread array. Every other value will be ignored.
+ *
+ * @param fallback default value if none of the provided `values` comply.
+ * @param values an spread array of string booleans or booleans.
+ * @returns a coerced boolean.
+ */
+export const coerceBoolean = (fallback: boolean, ...values: any[]): boolean => {
+  for (const value of values) {
+    switch (typeof value) {
+      case 'boolean':
+        return value
+      case 'string':
+        if (value.toString().toLowerCase() === 'true') {
+          return true
+        } else if (value.toString().toLowerCase() === 'false') {
+          return false
+        }
+        break
+
+      default:
+        continue
+    }
+  }
+
+  return fallback
+}
+
+/**
  * Returns an array of functions grouped by its region, it
  * throws an error if there are functions without a region.
  *

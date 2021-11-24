@@ -697,14 +697,18 @@ TagResource -> arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world
         command['config']['logLevel'] = 'debug'
 
         expect(command['getSettings']()).toEqual({
+          environment: undefined,
           extensionVersion: 6,
+          extraTags: undefined,
           flushMetricsToLogs: false,
           forwarderARN: 'my-forwarder',
           layerAWSAccount: 'another-account',
           layerVersion: 2,
           logLevel: 'debug',
           mergeXrayTraces: false,
+          service: undefined,
           tracingEnabled: false,
+          version: undefined,
         })
       })
 
