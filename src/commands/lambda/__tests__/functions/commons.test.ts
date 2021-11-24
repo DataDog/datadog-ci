@@ -80,6 +80,11 @@ describe('commons', () => {
       expect(coerceBoolean(true, 'false', 'true')).toBe(false)
       expect(coerceBoolean(false, 'true', 'False')).toBe(true)
     })
+
+    test('return the first boolean when one of the values provided is boolean', () => {
+      expect(coerceBoolean(true, false, 'truE', true)).toBe(false)
+      expect(coerceBoolean(false, true, 'False', false)).toBe(true)
+    })
   })
   describe('collectFunctionsByRegion', () => {
     test('groups functions with region read from arn', () => {
