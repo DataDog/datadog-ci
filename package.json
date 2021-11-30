@@ -50,6 +50,7 @@
     "fast-xml-parser": "3.19.0",
     "form-data": "3.0.0",
     "glob": "7.1.4",
+    "inquirer": "^8.2.0",
     "proxy-agent": "5.0.0",
     "simple-git": "2.31.0",
     "ssh2": "1.4.0",
