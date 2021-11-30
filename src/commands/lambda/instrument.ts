@@ -20,6 +20,7 @@ export class InstrumentCommand extends Command {
     region: process.env.AWS_DEFAULT_REGION,
     tracing: 'true',
   }
+  private captureLambdaPayload?: string
   private configPath?: string
   private dryRun = false
   private environment?: string
@@ -237,6 +238,7 @@ export class InstrumentCommand extends Command {
     }
 
     const stringBooleansMap: {[key: string]: string | undefined} = {
+      captureLambdaPayload: this.captureLambdaPayload ?? this.config.captureLambdaPayload,
       flushMetricsToLogs: this.flushMetricsToLogs ?? this.config.flushMetricsToLogs,
       mergeXrayTraces: this.mergeXrayTraces ?? this.config.mergeXrayTraces,
       tracing: this.tracing ?? this.config.tracing,
@@ -250,6 +252,7 @@ export class InstrumentCommand extends Command {
       }
     }
 
+    const captureLambdaPayload = coerceBoolean(false, this.captureLambdaPayload, this.config.captureLambdaPayload)
     const flushMetricsToLogs = coerceBoolean(true, this.flushMetricsToLogs, this.config.flushMetricsToLogs)
     const mergeXrayTraces = coerceBoolean(false, this.mergeXrayTraces, this.config.mergeXrayTraces)
     const tracingEnabled = coerceBoolean(true, this.tracing, this.config.tracing)
@@ -292,6 +295,7 @@ export class InstrumentCommand extends Command {
     }
 
     return {
+      captureLambdaPayload,
       environment,
       extensionVersion,
       extraTags,
@@ -423,3 +427,4 @@ InstrumentCommand.addOption('environment', Command.String('--env'))
 InstrumentCommand.addOption('version', Command.String('--version'))
 InstrumentCommand.addOption('extraTags', Command.String('--extra-tags'))
 InstrumentCommand.addOption('sourceCodeIntegration', Command.Boolean('-s,--source-code-integration'))
+InstrumentCommand.addOption('captureLambdaPayload', Command.String('--capture-lambda-payload'))
