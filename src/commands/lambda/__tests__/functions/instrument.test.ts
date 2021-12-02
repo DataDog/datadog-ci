@@ -20,6 +20,7 @@ import {
   getInstrumentedFunctionConfigs,
   getInstrumentedFunctionConfigsFromRegEx,
 } from '../../functions/instrument'
+import {InstrumentationSettings} from '../../interfaces'
 
 import * as loggroup from '../../loggroup'
 import {makeMockCloudWatchLogs, makeMockLambda, mockAwsAccount} from '../fixtures'
@@ -137,7 +138,6 @@ describe('instrument', () => {
           "Environment": Object {
             "Variables": Object {
               "DD_API_KEY": "1234",
-              "DD_FLUSH_TO_LOG": "false",
               "DD_LAMBDA_HANDLER": "index.handler",
               "DD_MERGE_XRAY_TRACES": "false",
               "DD_SITE": "datadoghq.com",
@@ -178,7 +178,6 @@ describe('instrument', () => {
           "Environment": Object {
             "Variables": Object {
               "DD_API_KEY_SECRET_ARN": "some-secret:arn:from:aws",
-              "DD_FLUSH_TO_LOG": "false",
               "DD_LAMBDA_HANDLER": "index.handler",
               "DD_MERGE_XRAY_TRACES": "false",
               "DD_SITE": "datadoghq.com",
@@ -219,7 +218,6 @@ describe('instrument', () => {
         Object {
           "Environment": Object {
             "Variables": Object {
-              "DD_FLUSH_TO_LOG": "false",
               "DD_KMS_API_KEY": "5678",
               "DD_LAMBDA_HANDLER": "index.handler",
               "DD_MERGE_XRAY_TRACES": "false",
@@ -263,6 +261,43 @@ describe('instrument', () => {
           },
           "FunctionName": "arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world",
           "Handler": "datadog_lambda.handler.handler",
+        }
+      `)
+    })
+
+    test("doesn't set DD_FLUSH_TO_LOGS when extension is being used", () => {
+      process.env[CI_API_KEY_ENV_VAR] = '1234'
+
+      const config = {
+        FunctionArn: 'arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world',
+        Handler: 'index.handler',
+        Layers: [],
+      }
+      const runtime = 'python3.9'
+      const region = 'sa-east-1'
+      const settings: InstrumentationSettings = {
+        extensionVersion: 13,
+        flushMetricsToLogs: true,
+        mergeXrayTraces: false,
+        tracingEnabled: false,
+      }
+      const updateRequest = calculateUpdateRequest(config, settings, region, runtime)
+      expect(updateRequest).toMatchInlineSnapshot(`
+        Object {
+          "Environment": Object {
+            "Variables": Object {
+              "DD_API_KEY": "1234",
+              "DD_LAMBDA_HANDLER": "index.handler",
+              "DD_MERGE_XRAY_TRACES": "false",
+              "DD_SITE": "datadoghq.com",
+              "DD_TRACE_ENABLED": "false",
+            },
+          },
+          "FunctionName": "arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world",
+          "Handler": "datadog_lambda.handler.handler",
+          "Layers": Array [
+            "arn:aws:lambda:sa-east-1:464622532012:layer:Datadog-Extension:13",
+          ],
         }
       `)
     })
