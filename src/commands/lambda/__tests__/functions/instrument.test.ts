@@ -60,7 +60,6 @@ describe('instrument', () => {
             "Variables": Object {
               "DD_FLUSH_TO_LOG": "false",
               "DD_LAMBDA_HANDLER": "index.handler",
-              "DD_MERGE_XRAY_TRACES": "false",
               "DD_SITE": "datadoghq.com",
               "DD_TRACE_ENABLED": "false",
             },
@@ -87,7 +86,7 @@ describe('instrument', () => {
         flushMetricsToLogs: false,
         layerAWSAccount: mockAwsAccount,
         layerVersion: 11,
-        mergeXrayTraces: false,
+        mergeXrayTraces: true,
         tracingEnabled: false,
       }
       const region = 'sa-east-1'
@@ -99,7 +98,7 @@ describe('instrument', () => {
             "Variables": Object {
               "DD_FLUSH_TO_LOG": "false",
               "DD_LAMBDA_HANDLER": "handler.hello",
-              "DD_MERGE_XRAY_TRACES": "false",
+              "DD_MERGE_XRAY_TRACES": "true",
               "DD_SITE": "datadoghq.com",
               "DD_TRACE_ENABLED": "false",
             },
@@ -127,7 +126,7 @@ describe('instrument', () => {
         flushMetricsToLogs: false,
         layerAWSAccount: mockAwsAccount,
         layerVersion: 5,
-        mergeXrayTraces: false,
+        mergeXrayTraces: true,
         tracingEnabled: false,
       }
       const region = 'sa-east-1'
@@ -139,7 +138,7 @@ describe('instrument', () => {
             "Variables": Object {
               "DD_API_KEY": "1234",
               "DD_LAMBDA_HANDLER": "index.handler",
-              "DD_MERGE_XRAY_TRACES": "false",
+              "DD_MERGE_XRAY_TRACES": "true",
               "DD_SITE": "datadoghq.com",
               "DD_TRACE_ENABLED": "false",
             },
@@ -168,7 +167,7 @@ describe('instrument', () => {
         flushMetricsToLogs: false,
         layerAWSAccount: mockAwsAccount,
         layerVersion: 49,
-        mergeXrayTraces: false,
+        mergeXrayTraces: true,
         tracingEnabled: false,
       }
       const region = 'sa-east-1'
@@ -179,7 +178,7 @@ describe('instrument', () => {
             "Variables": Object {
               "DD_API_KEY_SECRET_ARN": "some-secret:arn:from:aws",
               "DD_LAMBDA_HANDLER": "index.handler",
-              "DD_MERGE_XRAY_TRACES": "false",
+              "DD_MERGE_XRAY_TRACES": "true",
               "DD_SITE": "datadoghq.com",
               "DD_TRACE_ENABLED": "false",
             },
@@ -220,7 +219,6 @@ describe('instrument', () => {
             "Variables": Object {
               "DD_KMS_API_KEY": "5678",
               "DD_LAMBDA_HANDLER": "index.handler",
-              "DD_MERGE_XRAY_TRACES": "false",
               "DD_SITE": "datadoghq.com",
               "DD_TRACE_ENABLED": "false",
             },
@@ -278,7 +276,7 @@ describe('instrument', () => {
       const settings: InstrumentationSettings = {
         extensionVersion: 13,
         flushMetricsToLogs: true,
-        mergeXrayTraces: false,
+        mergeXrayTraces: true,
         tracingEnabled: false,
       }
       const updateRequest = calculateUpdateRequest(config, settings, region, runtime)
@@ -288,7 +286,7 @@ describe('instrument', () => {
             "Variables": Object {
               "DD_API_KEY": "1234",
               "DD_LAMBDA_HANDLER": "index.handler",
-              "DD_MERGE_XRAY_TRACES": "false",
+              "DD_MERGE_XRAY_TRACES": "true",
               "DD_SITE": "datadoghq.com",
               "DD_TRACE_ENABLED": "false",
             },
@@ -313,7 +311,7 @@ describe('instrument', () => {
       const settings = {
         flushMetricsToLogs: false,
         layerAWSAccount: mockAwsAccount,
-        mergeXrayTraces: false,
+        mergeXrayTraces: true,
         tracingEnabled: false,
       }
       const region = 'sa-east-1'
@@ -325,7 +323,7 @@ describe('instrument', () => {
             "Variables": Object {
               "DD_FLUSH_TO_LOG": "false",
               "DD_LAMBDA_HANDLER": "index.handler",
-              "DD_MERGE_XRAY_TRACES": "false",
+              "DD_MERGE_XRAY_TRACES": "true",
               "DD_SITE": "datadoghq.com",
               "DD_TRACE_ENABLED": "false",
             },
@@ -359,7 +357,6 @@ describe('instrument', () => {
             "Variables": Object {
               "DD_FLUSH_TO_LOG": "false",
               "DD_LAMBDA_HANDLER": "index.handler",
-              "DD_MERGE_XRAY_TRACES": "false",
               "DD_SITE": "datadoghq.eu",
               "DD_TRACE_ENABLED": "false",
             },
@@ -673,7 +670,6 @@ describe('instrument', () => {
               "DD_FLUSH_TO_LOG": "false",
               "DD_LAMBDA_HANDLER": "index.handler",
               "DD_LOG_LEVEL": "debug",
-              "DD_MERGE_XRAY_TRACES": "false",
               "DD_SERVICE": "middletier",
               "DD_SITE": "datadoghq.com",
               "DD_TRACE_ENABLED": "false",
@@ -784,7 +780,6 @@ describe('instrument', () => {
               "DD_FLUSH_TO_LOG": "false",
               "DD_LAMBDA_HANDLER": "index.handler",
               "DD_LOG_LEVEL": "debug",
-              "DD_MERGE_XRAY_TRACES": "false",
               "DD_SITE": "datadoghq.com",
               "DD_TRACE_ENABLED": "false",
             },

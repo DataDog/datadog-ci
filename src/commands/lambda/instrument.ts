@@ -15,12 +15,12 @@ import {getInstrumentedFunctionConfigs, getInstrumentedFunctionConfigsFromRegEx}
 import {FunctionConfiguration, InstrumentationSettings, LambdaConfigOptions} from './interfaces'
 
 export class InstrumentCommand extends Command {
+  private captureLambdaPayload?: string
   private config: LambdaConfigOptions = {
     functions: [],
     region: process.env.AWS_DEFAULT_REGION,
     tracing: 'true',
   }
-  private captureLambdaPayload?: string
   private configPath?: string
   private dryRun = false
   private environment?: string
