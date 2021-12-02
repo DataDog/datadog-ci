@@ -50,6 +50,32 @@ export const SITES: string[] = [
   'ddog-gov.com',
 ]
 
+export const AWS_REGIONS: string[] = [
+  'us-east-1',
+  'us-east-2',
+  'us-west-1',
+  'us-west-2',
+  'af-south-1',
+  'ap-east-1',
+  'ap-south-1',
+  'ap-northeast-3',
+  'ap-northeast-2',
+  'ap-southeast-1',
+  'ap-southeast-2',
+  'ap-northeast-1',
+  'ca-central-1',
+  'eu-central-1',
+  'eu-west-1',
+  'eu-west-2',
+  'eu-south-1',
+  'eu-west-3',
+  'eu-north-1',
+  'me-south-1',
+  'sa-east-1',
+  'us-gov-east-1',
+  'us-gov-west-1',
+]
+
 export const DEFAULT_LAYER_AWS_ACCOUNT = '464622532012'
 export const GOVCLOUD_LAYER_AWS_ACCOUNT = '002406178527'
 export const SUBSCRIPTION_FILTER_NAME = 'datadog-ci-filter'
@@ -78,6 +104,7 @@ export const CI_KMS_API_KEY_ENV_VAR = 'DATADOG_KMS_API_KEY'
 
 export const AWS_ACCESS_KEY_ID_ENV_VAR = 'AWS_ACCESS_KEY_ID'
 export const AWS_SECRET_ACCESS_KEY_ENV_VAR = 'AWS_SECRET_ACCESS_KEY'
+export const AWS_DEFAULT_REGION_ENV_VAR = 'AWS_DEFAULT_REGION'
 
 export const LIST_FUNCTIONS_MAX_RETRY_COUNT = 2
 export const MAX_LAMBDA_STATE_CHECK_ATTEMPTS = 3
@@ -89,3 +116,5 @@ export const MAX_LAMBDA_STATE_CHECK_ATTEMPTS = 3
 export const EXTRA_TAGS_REG_EXP: RegExp = /^(([a-zA-Z]+)\w+:[\w\-/\.]+)+((\,)([a-zA-Z]+)\w+:[\w\-/\.]+)*$/g
 export const AWS_ACCESS_KEY_ID_REG_EXP: RegExp = /(?<![A-Z0-9])[A-Z0-9]{20}(?![A-Z0-9])/g
 export const AWS_SECRET_ACCESS_KEY_REG_EXP: RegExp = /(?<![A-Za-z0-9/+=])[A-Za-z0-9/+=]{40}(?![A-Za-z0-9/+=])/g
+export const DATADOG_API_KEY_REG_EXP: RegExp = /(?<![a-f0-9])[a-f0-9]{32}(?![a-f0-9])/g
+export const DATADOG_APP_KEY_REG_EXP: RegExp = /(?<![a-f0-9])[a-f0-9]{40}(?![a-f0-9])/g

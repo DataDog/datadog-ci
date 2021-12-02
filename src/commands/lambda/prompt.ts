@@ -3,12 +3,15 @@ import {ListQuestion, prompt, QuestionCollection} from 'inquirer'
 import {
   AWS_ACCESS_KEY_ID_ENV_VAR,
   AWS_ACCESS_KEY_ID_REG_EXP,
+  AWS_DEFAULT_REGION_ENV_VAR,
+  AWS_REGIONS,
   AWS_SECRET_ACCESS_KEY_ENV_VAR,
   AWS_SECRET_ACCESS_KEY_REG_EXP,
   CI_API_KEY_ENV_VAR,
   CI_API_KEY_SECRET_ARN_ENV_VAR,
   CI_KMS_API_KEY_ENV_VAR,
   CI_SITE_ENV_VAR,
+  DATADOG_API_KEY_REG_EXP,
   SITES,
 } from './constants'
 import {sentenceMatchesRegEx} from './functions/commons'
@@ -40,6 +43,14 @@ const awsCredentialsQuestions: QuestionCollection = [
 
       return true
     },
+  },
+  {
+    // AWS_DEFAULT_REGION
+    choices: AWS_REGIONS,
+    default: 0,
+    message: 'Select an AWS region:',
+    name: AWS_DEFAULT_REGION_ENV_VAR,
+    type: 'list',
   },
 ]
 
@@ -79,7 +90,7 @@ const datadogEnvVarsQuestions = (datadogApiKeyType: Record<string, any>): Questi
     name: datadogApiKeyType.envVar,
     type: 'input',
     validate: (value) => {
-      if (!value) {
+      if (!value || !sentenceMatchesRegEx(value, DATADOG_API_KEY_REG_EXP)) {
         return 'Enter a valid Datadog API Key.'
       }
 
