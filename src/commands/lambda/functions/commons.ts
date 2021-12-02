@@ -4,6 +4,12 @@ import {
   ARM64_ARCHITECTURE,
   ARM_LAYER_SUFFIX,
   ARM_RUNTIMES,
+  AWS_ACCESS_KEY_ID_ENV_VAR,
+  AWS_SECRET_ACCESS_KEY_ENV_VAR,
+  CI_API_KEY_ENV_VAR,
+  CI_API_KEY_SECRET_ARN_ENV_VAR,
+  CI_KMS_API_KEY_ENV_VAR,
+  CI_SITE_ENV_VAR,
   DEFAULT_LAYER_AWS_ACCOUNT,
   GOVCLOUD_LAYER_AWS_ACCOUNT,
   LIST_FUNCTIONS_MAX_RETRY_COUNT,
@@ -99,6 +105,16 @@ export const collectFunctionsByRegion = (
 
   return groups
 }
+
+export const isMissingAWSCredentials = () =>
+  !process.env[AWS_ACCESS_KEY_ID_ENV_VAR] || !process.env[AWS_SECRET_ACCESS_KEY_ENV_VAR]
+export const isMissingDatadogEnvVars = () =>
+  !process.env[CI_SITE_ENV_VAR] ||
+  !(
+    process.env[CI_API_KEY_ENV_VAR] ||
+    process.env[CI_KMS_API_KEY_ENV_VAR] ||
+    process.env[CI_API_KEY_SECRET_ARN_ENV_VAR]
+  )
 
 /**
  * Given a Lambda instance and a regular expression,
