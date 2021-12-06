@@ -22,7 +22,7 @@ for (const commandFolder of fs.readdirSync(commandsPath)) {
   const commandPath = `${commandsPath}/${commandFolder}`
   if (fs.statSync(commandPath).isDirectory()) {
     // tslint:disable-next-line: no-var-requires
-    require(commandPath).forEach((command: CommandClass) => cli.register(command))
+    require(`${commandPath}/cli`).forEach((command: CommandClass) => cli.register(command))
   }
 }
 
