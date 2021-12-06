@@ -363,3 +363,8 @@ describe('utils', () => {
     })
   })
 })
+
+test('removeUndefinedValues', () => {
+  // tslint:disable-next-line: no-null-keyword
+  expect(ciUtils.removeUndefinedValues({a: 'b', c: 'd', e: undefined, g: null})).toEqual({a: 'b', c: 'd', g: null})
+})

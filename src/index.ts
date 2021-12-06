@@ -1,4 +1,4 @@
 import * as synthetics from './commands/synthetics'
-import {parseConfigFile} from './helpers/utils'
+import * as utils from './helpers/utils'
 
-export {parseConfigFile, synthetics}
+export {utils, synthetics}

@@ -1,20 +1,91 @@
 /* tslint:disable:no-string-literal */
 import {
+  DD_LAMBDA_EXTENSION_LAYER_NAME,
+  EXTENSION_LAYER_KEY,
   EXTRA_TAGS_REG_EXP,
+  GOVCLOUD_LAYER_AWS_ACCOUNT,
   LAMBDA_HANDLER_ENV_VAR,
   MERGE_XRAY_TRACES_ENV_VAR,
+  Runtime,
+  RUNTIME_LAYER_LOOKUP,
   TRACE_ENABLED_ENV_VAR,
 } from '../../constants'
 import {
+  addLayerArn,
+  coerceBoolean,
   collectFunctionsByRegion,
+  getLayerArn,
   getRegion,
   sentenceMatchesRegEx,
   updateLambdaFunctionConfigs,
 } from '../../functions/commons'
 import {InstrumentCommand} from '../../instrument'
-import {createCommand, makeMockCloudWatchLogs, makeMockLambda} from '../fixtures'
+import {createCommand, makeMockCloudWatchLogs, makeMockLambda, mockAwsAccount} from '../fixtures'
 
 describe('commons', () => {
+  describe('addLayerArn', () => {
+    test('adds layers and removes previous versions', () => {
+      const runtime: Runtime = 'python3.9'
+      const config = {
+        Runtime: runtime,
+      }
+      let layerARNs = [
+        'arn:aws:lambda:sa-east-1:464622532012:layer:Datadog-Python39:48',
+        'arn:aws:lambda:sa-east-1:464622532012:layer:Datadog-Extension:10',
+      ]
+      const region = 'sa-east-1'
+      const lambdaLibraryLayerName = RUNTIME_LAYER_LOOKUP[runtime]
+      const fullLambdaLibraryLayerArn = getLayerArn(config, config.Runtime, region) + ':49'
+      const fullExtensionLayerArn = getLayerArn(config, EXTENSION_LAYER_KEY as Runtime, region) + ':11'
+      layerARNs = addLayerArn(fullLambdaLibraryLayerArn, lambdaLibraryLayerName, layerARNs)
+      layerARNs = addLayerArn(fullExtensionLayerArn, DD_LAMBDA_EXTENSION_LAYER_NAME, layerARNs)
+
+      expect(layerARNs).toEqual([
+        'arn:aws:lambda:sa-east-1:464622532012:layer:Datadog-Python39:49',
+        'arn:aws:lambda:sa-east-1:464622532012:layer:Datadog-Extension:11',
+      ])
+    })
+
+    test('swaps layers if architecture is arm64', () => {
+      const runtime: Runtime = 'python3.9'
+      const config = {
+        Architectures: ['arm64'],
+        Runtime: runtime,
+      }
+      let layerARNs = [
+        'arn:aws:lambda:sa-east-1:464622532012:layer:Datadog-Python39:49',
+        'arn:aws:lambda:sa-east-1:464622532012:layer:Datadog-Extension:11',
+      ]
+      const region = 'sa-east-1'
+      const lambdaLibraryLayerName = RUNTIME_LAYER_LOOKUP[runtime]
+      const fullLambdaLibraryLayerArn = getLayerArn(config, config.Runtime, region) + ':49'
+      const fullExtensionLayerArn = getLayerArn(config, EXTENSION_LAYER_KEY as Runtime, region) + ':11'
+      layerARNs = addLayerArn(fullLambdaLibraryLayerArn, lambdaLibraryLayerName, layerARNs)
+      layerARNs = addLayerArn(fullExtensionLayerArn, DD_LAMBDA_EXTENSION_LAYER_NAME, layerARNs)
+
+      expect(layerARNs).toEqual([
+        'arn:aws:lambda:sa-east-1:464622532012:layer:Datadog-Python39-ARM:49',
+        'arn:aws:lambda:sa-east-1:464622532012:layer:Datadog-Extension-ARM:11',
+      ])
+    })
+  })
+
+  describe('coerceBoolean', () => {
+    test('return fallback when none of the values provided can be parsed to boolean', () => {
+      expect(coerceBoolean(true, 'NotBoolean', 123, [], {})).toBe(true)
+      expect(coerceBoolean(false, 'NotBooleanEither', 456, ['An array'], {booleanInObject: true})).toBe(false)
+    })
+
+    test('return the first boolean when one of the values provided can be parsed to boolean', () => {
+      expect(coerceBoolean(true, 'false', 'true')).toBe(false)
+      expect(coerceBoolean(false, 'true', 'False')).toBe(true)
+    })
+
+    test('return the first boolean when one of the values provided is boolean', () => {
+      expect(coerceBoolean(true, false, 'truE', true)).toBe(false)
+      expect(coerceBoolean(false, true, 'False', false)).toBe(true)
+    })
+  })
   describe('collectFunctionsByRegion', () => {
     test('groups functions with region read from arn', () => {
       process.env = {}
@@ -92,7 +163,138 @@ describe('commons', () => {
       expect(functionsGroup).toBeUndefined()
     })
   })
+  describe('getLayerArn', () => {
+    const OLD_ENV = process.env
+    beforeEach(() => {
+      jest.resetModules()
+      process.env = {}
+    })
+    afterAll(() => {
+      process.env = OLD_ENV
+    })
 
+    test('gets sa-east-1 Lambda Extension layer ARN', async () => {
+      const settings = {
+        flushMetricsToLogs: false,
+        layerAWSAccount: mockAwsAccount,
+        mergeXrayTraces: false,
+        tracingEnabled: false,
+      }
+      const region = 'sa-east-1'
+      const layerArn = getLayerArn({}, EXTENSION_LAYER_KEY as Runtime, region, settings)
+      expect(layerArn).toEqual(`arn:aws:lambda:${region}:${mockAwsAccount}:layer:Datadog-Extension`)
+    })
+
+    test('gets sa-east-1 arm64 Lambda Extension layer ARN', async () => {
+      const config = {
+        Architectures: ['arm64'],
+      }
+      const settings = {
+        flushMetricsToLogs: false,
+        layerAWSAccount: mockAwsAccount,
+        mergeXrayTraces: false,
+        tracingEnabled: false,
+      }
+      const region = 'sa-east-1'
+      const layerArn = getLayerArn(config, EXTENSION_LAYER_KEY as Runtime, region, settings)
+      expect(layerArn).toEqual(`arn:aws:lambda:${region}:${mockAwsAccount}:layer:Datadog-Extension-ARM`)
+    })
+
+    test('gets us-gov-1 gov cloud Lambda Extension layer ARN', async () => {
+      const settings = {
+        flushMetricsToLogs: false,
+        layerAWSAccount: mockAwsAccount,
+        mergeXrayTraces: false,
+        tracingEnabled: false,
+      }
+      const region = 'us-gov-1'
+      const layerArn = getLayerArn({}, EXTENSION_LAYER_KEY as Runtime, region, settings)
+      expect(layerArn).toEqual(`arn:aws-us-gov:lambda:${region}:${GOVCLOUD_LAYER_AWS_ACCOUNT}:layer:Datadog-Extension`)
+    })
+
+    test('gets us-gov-1 gov cloud arm64 Lambda Extension layer ARN', async () => {
+      const config = {
+        Architectures: ['arm64'],
+      }
+      const settings = {
+        flushMetricsToLogs: false,
+        layerAWSAccount: mockAwsAccount,
+        mergeXrayTraces: false,
+        tracingEnabled: false,
+      }
+      const region = 'us-gov-1'
+      const layerArn = getLayerArn(config, EXTENSION_LAYER_KEY as Runtime, region, settings)
+      expect(layerArn).toEqual(
+        `arn:aws-us-gov:lambda:${region}:${GOVCLOUD_LAYER_AWS_ACCOUNT}:layer:Datadog-Extension-ARM`
+      )
+    })
+
+    test('gets sa-east-1 Node12 Lambda Library layer ARN', async () => {
+      const runtime = 'nodejs12.x'
+      const config = {
+        Runtime: runtime,
+      }
+      const settings = {
+        flushMetricsToLogs: false,
+        layerAWSAccount: mockAwsAccount,
+        mergeXrayTraces: false,
+        tracingEnabled: false,
+      }
+      const region = 'sa-east-1'
+      const layerArn = getLayerArn(config, config.Runtime as Runtime, region, settings)
+      expect(layerArn).toEqual(`arn:aws:lambda:${region}:${mockAwsAccount}:layer:Datadog-Node12-x`)
+    })
+
+    test('gets sa-east-1 Python3.9 arm64 Lambda Library layer ARN', async () => {
+      const runtime = 'python3.9'
+      const config = {
+        Architectures: ['arm64'],
+        Runtime: runtime,
+      }
+      const settings = {
+        flushMetricsToLogs: false,
+        layerAWSAccount: mockAwsAccount,
+        mergeXrayTraces: false,
+        tracingEnabled: false,
+      }
+      const region = 'sa-east-1'
+      const layerArn = getLayerArn(config, config.Runtime as Runtime, region, settings)
+      expect(layerArn).toEqual(`arn:aws:lambda:${region}:${mockAwsAccount}:layer:Datadog-Python39-ARM`)
+    })
+    test('gets us-gov-1 Python37 gov cloud Lambda Library layer ARN', async () => {
+      const runtime = 'python3.7'
+      const config = {
+        Runtime: runtime,
+      }
+      const settings = {
+        flushMetricsToLogs: false,
+        layerAWSAccount: mockAwsAccount,
+        mergeXrayTraces: false,
+        tracingEnabled: false,
+      }
+      const region = 'us-gov-1'
+      const layerArn = getLayerArn(config, config.Runtime as Runtime, region, settings)
+      expect(layerArn).toEqual(`arn:aws-us-gov:lambda:${region}:${GOVCLOUD_LAYER_AWS_ACCOUNT}:layer:Datadog-Python37`)
+    })
+    test('gets us-gov-1 Python39 gov cloud arm64 Lambda Library layer ARN', async () => {
+      const runtime = 'python3.9'
+      const config = {
+        Architectures: ['arm64'],
+        Runtime: runtime,
+      }
+      const settings = {
+        flushMetricsToLogs: false,
+        layerAWSAccount: mockAwsAccount,
+        mergeXrayTraces: false,
+        tracingEnabled: false,
+      }
+      const region = 'us-gov-1'
+      const layerArn = getLayerArn(config, config.Runtime as Runtime, region, settings)
+      expect(layerArn).toEqual(
+        `arn:aws-us-gov:lambda:${region}:${GOVCLOUD_LAYER_AWS_ACCOUNT}:layer:Datadog-Python39-ARM`
+      )
+    })
+  })
   describe('getRegion', () => {
     test('should return the expected region', () => {
       const functionARN = 'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world'
@@ -109,7 +311,6 @@ describe('commons', () => {
       expect(region).toBe(undefined)
     })
   })
-
   describe('sentenceMatchesRegEx', () => {
     const tags: [string, boolean][] = [
       ['not-complying:regex-should-fail', false],
