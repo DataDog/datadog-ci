@@ -2,7 +2,7 @@
 import {AxiosError, AxiosResponse} from 'axios'
 import {Cli} from 'clipanion/lib/advanced'
 import * as ciUtils from '../../../helpers/utils'
-import {DEFAULT_COMMAND_CONFIG, RunTestCommand} from '../cli'
+import {DEFAULT_COMMAND_CONFIG, RunTestCommand} from '../command'
 import {ExecutionRule} from '../interfaces'
 import * as runTests from '../run-test'
 import * as utils from '../utils'

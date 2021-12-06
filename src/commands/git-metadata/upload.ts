@@ -61,7 +61,7 @@ export class UploadCommand extends Command {
     })
     const payload = await getCommitInfo(await newSimpleGit(), this.context.stdout, this.repositoryURL)
     if (payload === undefined) {
-      return 0
+      return 1
     }
     this.context.stdout.write(renderCommandInfo(payload))
     try {
