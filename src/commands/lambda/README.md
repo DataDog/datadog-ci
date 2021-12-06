@@ -10,17 +10,34 @@ Follow the installation instructions for [Python](https://docs.datadoghq.com/ser
 
 ## Commands
 
+### `instrument`
+
 Run `datadog-ci lambda instrument` to apply Datadog instrumentation to a Lambda. This command automatically adds the Datadog Lambda Library and/or the Datadog Lambda Extension as Lambda Layers to the instrumented Lambda functions and modifies their configurations. 
 
 ```bash
 # Instrument multiple functions specified by names
-datadog-ci lambda instrument -f function-name -f another-function-name -r us-east-1 -v 46 -e 10
+datadog-ci lambda instrument -f <function-name> -f <another-function-name> -r us-east-1 -v 46 -e 10
 
 # Instrument multiple functions that match a regex pattern
-datadog-ci lambda instrument --functions-regex valid-regex-pattern -r us-east-1 -v 46 -e 10
+datadog-ci lambda instrument --functions-regex <valid-regex-pattern> -r us-east-1 -v 46 -e 10
 
 # Dry run of all updates
-datadog-ci lambda instrument -f function-name -f another-function-name -r us-east-1 -v 46 -e 10 --dry
+datadog-ci lambda instrument -f <function-name> -f <another-function-name> -r us-east-1 -v 46 -e 10 --dry
+```
+
+### `uninstrument`
+
+Run `datadog-ci lambda uninstrument` to revert Datadog instrumentation in a Lambda. This command automatically removes the Datadog configuration, such as the Datadog Lambda Library and the Datadog Lambda Extension layers, as well as other configurations applied by the datadog-ci.
+
+```bash
+# Uninstrument multiple functions specified by names
+datadog-ci lambda uninstrument -f <function-name> -f <another-function-name> -r us-east-1 
+
+# Instrument multiple functions that match a regex pattern
+datadog-ci lambda uninstrument --functions-regex <valid-regex-pattern> -r us-east-1
+
+# Dry run of all updates
+datadog-ci lambda uninstrument -f <function-name> -f <another-function-name> -r us-east-1 --dry
 ```
 
 See the configuration section for additional settings.
@@ -29,7 +46,7 @@ See the configuration section for additional settings.
 
 ### AWS Credentials
 
-You must have valid [AWS credentials](https://docs.aws.amazon.com/sdk-for-javascript/v2/developer-guide/setting-credentials-node.html) configured with access to the Lambda and CloudWatch services where you are running `datadog-ci lambda instrument`.
+You must have valid [AWS credentials](https://docs.aws.amazon.com/sdk-for-javascript/v2/developer-guide/setting-credentials-node.html) configured with access to the Lambda and CloudWatch services where you are running any `datadog-ci lambda` command.
 
 ### Environment variables
 
@@ -47,11 +64,12 @@ You must expose these environment variables in the environment where you are run
 
 Configuration can be done using command-line arguments or a JSON configuration file (see the next section).
 
+#### `instrument`
 You can pass the following arguments to `instrument` to specify its behavior. These arguments will override the values set in the configuration file, if any.
 
 | Argument | Shorthand | Description | Default |
 | --- | --- | --- | --- |
-| `--function` | `-f` | The ARN of the Lambda function to be instrumented, or the name of the Lambda function (`--region` must be defined). | |
+| `--function` | `-f` | The ARN of the Lambda function to be **instrumented**, or the name of the Lambda function (`--region` must be defined). | |
 | `--functions-regex` | | A regex pattern to match with the Lambda function name. | |
 | `--region` | `-r` | Default region to use, when `--function` is specified by the function name instead of the ARN. | |
 | `--service` | | Use `--service` to group related functions belonging to similar workloads. Learn more about the `service` tag [here][9]. | |
@@ -70,10 +88,24 @@ You can pass the following arguments to `instrument` to specify its behavior. Th
 
 <br />
 
+#### `uninstrument`
+The following arguments are passed to `uninstrument` to specify its behavior. These arguments will override the values set in the configuration file, if any.
+
+Any other argument stated on the `instrument` table, but not below, will be ignored, this to allow you to uninstrument quicker, if needed.
+
+| Argument | Shorthand | Description | Default |
+| --- | --- | --- | --- |
+| `--function` | `-f` | The ARN of the Lambda function to be **uninstrumented**, or the name of the Lambda function (`--region` must be defined). | |
+| `--functions-regex` | | A regex pattern to match with the Lambda function name to be **uninstrumented**. | |
+| `--region` | `-r` | Default region to use, when `--function` is specified by the function name instead of the ARN. | |
+| `--forwarder` | | The ARN of the [datadog forwarder][10] to remove from this function. | |
+| `--dry` | `-d` | Preview changes running command would apply. | `false` |
+
+<br/>
 
 ### Configuration file
 
-Instead of supplying arguments, you can create a configuration file in your project and simply run the `datadog-ci lambda instrument --config datadog-ci.json` command on each deployment. Specify the `datadog-ci.json` using the `--config` argument, and use this configuration file structure:
+Instead of supplying arguments, you can create a configuration file in your project and simply run the `datadog-ci lambda {instrument|uninstrument} --config datadog-ci.json` command on each deployment. Specify the `datadog-ci.json` using the `--config` argument, and use this configuration file structure:
 
 ```json
 {
