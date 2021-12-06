@@ -1,6 +1,7 @@
 import {CloudWatchLogs, Lambda} from 'aws-sdk'
 import {
   API_KEY_ENV_VAR,
+  API_KEY_SECRET_ARN_ENV_VAR,
   DD_LAMBDA_EXTENSION_LAYER_NAME,
   ENVIRONMENT_ENV_VAR,
   EXTRA_TAGS_ENV_VAR,
@@ -20,9 +21,9 @@ import {
 import {FunctionConfiguration, LogGroupConfiguration, TagConfiguration} from '../interfaces'
 import {calculateLogGroupRemoveRequest} from '../loggroup'
 import {calculateTagRemoveRequest} from '../tags'
-import {getLambdaFunctionConfigs, isSupportedRuntime} from './commons'
+import {getLambdaFunctionConfigs, getLambdaFunctionConfigsFromRegex, getLayers, isSupportedRuntime} from './commons'
 
-export const getFunctionConfigs = async (
+export const getUninstrumentedFunctionConfigs = async (
   lambda: Lambda,
   cloudWatch: CloudWatchLogs,
   functionARNs: string[],
@@ -32,7 +33,7 @@ export const getFunctionConfigs = async (
 
   const configs: FunctionConfiguration[] = []
   for (const config of lambdaFunctionConfigs) {
-    const functionConfig = await getFunctionConfig(lambda, cloudWatch, config, forwarderARN)
+    const functionConfig = await getUninstrumentedFunctionConfig(lambda, cloudWatch, config, forwarderARN)
 
     configs.push(functionConfig)
   }
@@ -40,7 +41,7 @@ export const getFunctionConfigs = async (
   return configs
 }
 
-export const getFunctionConfig = async (
+export const getUninstrumentedFunctionConfig = async (
   lambda: Lambda,
   cloudWatch: CloudWatchLogs,
   config: Lambda.FunctionConfiguration,
@@ -55,8 +56,8 @@ export const getFunctionConfig = async (
   const updateRequest = calculateUpdateRequest(config, runtime)
   let logGroupConfiguration: LogGroupConfiguration | undefined
   if (forwarderARN) {
-    const arn = `/aws/lambda/${config.FunctionName}`
-    logGroupConfiguration = await calculateLogGroupRemoveRequest(cloudWatch, arn, forwarderARN)
+    const logGroupName = `/aws/lambda/${config.FunctionName}`
+    logGroupConfiguration = await calculateLogGroupRemoveRequest(cloudWatch, logGroupName, forwarderARN)
   }
 
   const tagConfiguration: TagConfiguration | undefined = await calculateTagRemoveRequest(lambda, functionARN)
@@ -68,6 +69,23 @@ export const getFunctionConfig = async (
     tagConfiguration,
     updateRequest,
   }
+}
+
+export const getUninstrumentedFunctionConfigsFromRegEx = async (
+  lambda: Lambda,
+  cloudWatch: CloudWatchLogs,
+  pattern: string,
+  forwarderArn: string | undefined
+): Promise<FunctionConfiguration[]> => {
+  const matchedFunctions = await getLambdaFunctionConfigsFromRegex(lambda, pattern)
+  const functionsToUpdate: FunctionConfiguration[] = []
+
+  for (const config of matchedFunctions) {
+    const functionConfig = await getUninstrumentedFunctionConfig(lambda, cloudWatch, config, forwarderArn)
+    functionsToUpdate.push(functionConfig)
+  }
+
+  return functionsToUpdate
 }
 
 export const calculateUpdateRequest = (config: Lambda.FunctionConfiguration, runtime: Runtime) => {
@@ -97,6 +115,7 @@ export const calculateUpdateRequest = (config: Lambda.FunctionConfiguration, run
    */
   const environmentVarsArray = [
     API_KEY_ENV_VAR,
+    API_KEY_SECRET_ARN_ENV_VAR,
     KMS_API_KEY_ENV_VAR,
     SITE_ENV_VAR,
     ENVIRONMENT_ENV_VAR,
@@ -123,7 +142,7 @@ export const calculateUpdateRequest = (config: Lambda.FunctionConfiguration, run
   // Remove Layers
   let needsLayerRemoval = false
   const lambdaLibraryLayerName = RUNTIME_LAYER_LOOKUP[runtime]
-  const originalLayerARNs = (config.Layers ?? []).map((layer) => layer.Arn ?? '')
+  const originalLayerARNs = getLayers(config)
   const layerARNs = (config.Layers ?? [])
     .filter(
       (layer) => !layer.Arn?.includes(lambdaLibraryLayerName) && !layer.Arn?.includes(DD_LAMBDA_EXTENSION_LAYER_NAME)
