@@ -15,6 +15,7 @@
     "README",
     "LICENSE"
   ],
+  "main": "dist/index.js",
   "publishConfig": {
     "access": "public"
   },
