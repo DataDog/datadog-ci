@@ -1,34 +1,45 @@
 import {CloudWatchLogs, Lambda} from 'aws-sdk'
 import {
   API_KEY_ENV_VAR,
+  API_KEY_SECRET_ARN_ENV_VAR,
   CI_API_KEY_ENV_VAR,
+  CI_API_KEY_SECRET_ARN_ENV_VAR,
   CI_KMS_API_KEY_ENV_VAR,
   CI_SITE_ENV_VAR,
   DD_LAMBDA_EXTENSION_LAYER_NAME,
-  DEFAULT_LAYER_AWS_ACCOUNT,
   ENVIRONMENT_ENV_VAR,
+  EXTENSION_LAYER_KEY,
   EXTRA_TAGS_ENV_VAR,
   FLUSH_TO_LOG_ENV_VAR,
-  GOVCLOUD_LAYER_AWS_ACCOUNT,
   HANDLER_LOCATION,
   KMS_API_KEY_ENV_VAR,
   LAMBDA_HANDLER_ENV_VAR,
-  LIST_FUNCTIONS_MAX_RETRY_COUNT,
   LOG_LEVEL_ENV_VAR,
   MERGE_XRAY_TRACES_ENV_VAR,
   Runtime,
   RUNTIME_LAYER_LOOKUP,
+  RUNTIME_LOOKUP,
+  RuntimeType,
   SERVICE_ENV_VAR,
   SITE_ENV_VAR,
+  SITES,
   TRACE_ENABLED_ENV_VAR,
   VERSION_ENV_VAR,
 } from '../constants'
 import {FunctionConfiguration, InstrumentationSettings, LogGroupConfiguration, TagConfiguration} from '../interfaces'
 import {calculateLogGroupUpdateRequest} from '../loggroup'
 import {calculateTagUpdateRequest} from '../tags'
-import {addLayerARN, getLambdaFunctionConfigs, isLambdaActive, isSupportedRuntime} from './commons'
+import {
+  addLayerArn,
+  getLambdaFunctionConfigs,
+  getLambdaFunctionConfigsFromRegex,
+  getLayerArn,
+  getLayers,
+  isLambdaActive,
+  isSupportedRuntime,
+} from './commons'
 
-export const getFunctionConfigs = async (
+export const getInstrumentedFunctionConfigs = async (
   lambda: Lambda,
   cloudWatch: CloudWatchLogs,
   region: string,
@@ -39,7 +50,7 @@ export const getFunctionConfigs = async (
 
   const configs: FunctionConfiguration[] = []
   for (const config of lambdaFunctionConfigs) {
-    const functionConfig = await getFunctionConfig(lambda, cloudWatch, config, region, settings)
+    const functionConfig = await getInstrumentedFunctionConfig(lambda, cloudWatch, config, region, settings)
 
     configs.push(functionConfig)
   }
@@ -47,13 +58,13 @@ export const getFunctionConfigs = async (
   return configs
 }
 
-export const getFunctionConfig = async (
+export const getInstrumentedFunctionConfig = async (
   lambda: Lambda,
   cloudWatch: CloudWatchLogs,
   config: Lambda.FunctionConfiguration,
   region: string,
   settings: InstrumentationSettings
-) => {
+): Promise<FunctionConfiguration> => {
   const functionARN = config.FunctionArn!
   const runtime = config.Runtime
   if (!isSupportedRuntime(runtime)) {
@@ -61,19 +72,11 @@ export const getFunctionConfig = async (
   }
 
   await isLambdaActive(lambda, config, functionARN)
-  const lambdaLibraryLayerArn: string = getLayerArn(runtime, settings, region)
-  const lambdaExtensionLayerArn: string = getExtensionArn(settings, region)
-  const updateRequest = calculateUpdateRequest(
-    config,
-    settings,
-    lambdaLibraryLayerArn,
-    lambdaExtensionLayerArn,
-    runtime
-  )
+  const updateRequest = calculateUpdateRequest(config, settings, region, runtime)
   let logGroupConfiguration: LogGroupConfiguration | undefined
   if (settings.forwarderARN !== undefined) {
-    const arn = `/aws/lambda/${config.FunctionName}`
-    logGroupConfiguration = await calculateLogGroupUpdateRequest(cloudWatch, arn, settings.forwarderARN)
+    const logGroupName = `/aws/lambda/${config.FunctionName}`
+    logGroupConfiguration = await calculateLogGroupUpdateRequest(cloudWatch, logGroupName, settings.forwarderARN)
   }
 
   const tagConfiguration: TagConfiguration | undefined = await calculateTagUpdateRequest(lambda, functionARN)
@@ -81,80 +84,34 @@ export const getFunctionConfig = async (
   return {
     functionARN,
     lambdaConfig: config,
-    lambdaLibraryLayerArn,
     logGroupConfiguration,
     tagConfiguration,
     updateRequest,
   }
 }
 
-export const getLambdaConfigsFromRegEx = async (
+export const getInstrumentedFunctionConfigsFromRegEx = async (
   lambda: Lambda,
   cloudWatch: CloudWatchLogs,
   region: string,
   pattern: string,
   settings: InstrumentationSettings
 ): Promise<FunctionConfiguration[]> => {
-  const regEx = new RegExp(pattern)
-  const matchedFunctions: Lambda.FunctionConfiguration[] = []
-  let retryCount = 0
-  let listFunctionsResponse: Lambda.ListFunctionsResponse
-  let nextMarker: string | undefined
-
-  while (true) {
-    try {
-      listFunctionsResponse = await lambda.listFunctions({Marker: nextMarker}).promise()
-      listFunctionsResponse.Functions?.map((fn) => fn.FunctionName?.match(regEx) && matchedFunctions.push(fn))
-      nextMarker = listFunctionsResponse.NextMarker
-      if (!nextMarker) {
-        break
-      }
-      retryCount = 0
-    } catch (e) {
-      retryCount++
-      if (retryCount > LIST_FUNCTIONS_MAX_RETRY_COUNT) {
-        throw Error('Max retry count exceeded.')
-      }
-    }
-  }
-
+  const matchedFunctions = await getLambdaFunctionConfigsFromRegex(lambda, pattern)
   const functionsToUpdate: FunctionConfiguration[] = []
 
   for (const config of matchedFunctions) {
-    const functionConfig = await getFunctionConfig(lambda, cloudWatch, config, region, settings)
+    const functionConfig = await getInstrumentedFunctionConfig(lambda, cloudWatch, config, region, settings)
     functionsToUpdate.push(functionConfig)
   }
 
   return functionsToUpdate
 }
 
-export const getLayerArn = (runtime: Runtime, settings: InstrumentationSettings, region: string) => {
-  const layerName = RUNTIME_LAYER_LOOKUP[runtime]
-  const account = settings.layerAWSAccount ?? DEFAULT_LAYER_AWS_ACCOUNT
-  const isGovCloud = region.startsWith('us-gov')
-  if (isGovCloud) {
-    return `arn:aws-us-gov:lambda:${region}:${GOVCLOUD_LAYER_AWS_ACCOUNT}:layer:${layerName}`
-  }
-
-  return `arn:aws:lambda:${region}:${account}:layer:${layerName}`
-}
-
-export const getExtensionArn = (settings: InstrumentationSettings, region: string) => {
-  const layerName = DD_LAMBDA_EXTENSION_LAYER_NAME
-  const account = settings.layerAWSAccount ?? DEFAULT_LAYER_AWS_ACCOUNT
-  const isGovCloud = region.startsWith('us-gov')
-  if (isGovCloud) {
-    return `arn:aws-us-gov:lambda:${region}:${GOVCLOUD_LAYER_AWS_ACCOUNT}:layer:${layerName}`
-  }
-
-  return `arn:aws:lambda:${region}:${account}:layer:${layerName}`
-}
-
 export const calculateUpdateRequest = (
   config: Lambda.FunctionConfiguration,
   settings: InstrumentationSettings,
-  lambdaLibraryLayerArn: string,
-  lambdaExtensionLayerArn: string,
+  region: string,
   runtime: Runtime
 ) => {
   const oldEnvVars: Record<string, string> = {...config.Environment?.Variables}
@@ -162,6 +119,7 @@ export const calculateUpdateRequest = (
   const functionARN = config.FunctionArn
 
   const apiKey: string | undefined = process.env[CI_API_KEY_ENV_VAR]
+  const apiKeySecretArn: string | undefined = process.env[CI_API_KEY_SECRET_ARN_ENV_VAR]
   const apiKmsKey: string | undefined = process.env[CI_KMS_API_KEY_ENV_VAR]
   const site: string | undefined = process.env[CI_SITE_ENV_VAR]
 
@@ -186,22 +144,33 @@ export const calculateUpdateRequest = (
     needsUpdate = true
     changedEnvVars[LAMBDA_HANDLER_ENV_VAR] = config.Handler ?? ''
   }
-  if (apiKey !== undefined && oldEnvVars[API_KEY_ENV_VAR] !== apiKey) {
-    needsUpdate = true
-    changedEnvVars[API_KEY_ENV_VAR] = apiKey
-  }
+
+  // KMS > Secrets Manager > API Key
   if (apiKmsKey !== undefined && oldEnvVars[KMS_API_KEY_ENV_VAR] !== apiKmsKey) {
     needsUpdate = true
     changedEnvVars[KMS_API_KEY_ENV_VAR] = apiKmsKey
+  } else if (apiKeySecretArn !== undefined && oldEnvVars[API_KEY_SECRET_ARN_ENV_VAR] !== apiKeySecretArn) {
+    const isNode = RUNTIME_LOOKUP[runtime] === RuntimeType.NODE
+    const isSendingSynchronousMetrics = settings.extensionVersion === undefined && !settings.flushMetricsToLogs
+    if (isSendingSynchronousMetrics && isNode) {
+      throw new Error(
+        '`apiKeySecretArn` is not supported for Node runtimes when using Synchronous Metrics. Use either `apiKey` or `apiKmsKey`.'
+      )
+    }
+    needsUpdate = true
+    changedEnvVars[API_KEY_SECRET_ARN_ENV_VAR] = apiKeySecretArn
+  } else if (apiKey !== undefined && oldEnvVars[API_KEY_ENV_VAR] !== apiKey) {
+    needsUpdate = true
+    changedEnvVars[API_KEY_ENV_VAR] = apiKey
   }
+
   if (site !== undefined && oldEnvVars[SITE_ENV_VAR] !== site) {
-    const siteList: string[] = ['datadoghq.com', 'datadoghq.eu', 'us3.datadoghq.com', 'ddog-gov.com']
-    if (siteList.includes(site.toLowerCase())) {
+    if (SITES.includes(site.toLowerCase())) {
       needsUpdate = true
       changedEnvVars[SITE_ENV_VAR] = site
     } else {
       throw new Error(
-        'Warning: Invalid site URL. Must be either datadoghq.com, datadoghq.eu, us3.datadoghq.com, or ddog-gov.com.'
+        'Warning: Invalid site URL. Must be either datadoghq.com, datadoghq.eu, us3.datadoghq.com, us5.datadoghq.com, or ddog-gov.com.'
       )
     }
   }
@@ -213,7 +182,6 @@ export const calculateUpdateRequest = (
   const environmentVarsTupleArray: [keyof InstrumentationSettings, string][] = [
     ['environment', ENVIRONMENT_ENV_VAR],
     ['extraTags', EXTRA_TAGS_ENV_VAR],
-    ['flushMetricsToLogs', FLUSH_TO_LOG_ENV_VAR],
     ['mergeXrayTraces', MERGE_XRAY_TRACES_ENV_VAR],
     ['service', SERVICE_ENV_VAR],
     ['tracingEnabled', TRACE_ENABLED_ENV_VAR],
@@ -225,6 +193,15 @@ export const calculateUpdateRequest = (
       needsUpdate = true
       changedEnvVars[environmentVar] = settings[key]!.toString()
     }
+  }
+  const isUsingExtension = settings.extensionVersion !== undefined
+  if (
+    !isUsingExtension &&
+    settings.flushMetricsToLogs !== undefined &&
+    oldEnvVars[FLUSH_TO_LOG_ENV_VAR] !== settings.flushMetricsToLogs?.toString()
+  ) {
+    needsUpdate = true
+    changedEnvVars[FLUSH_TO_LOG_ENV_VAR] = settings.flushMetricsToLogs!.toString()
   }
 
   const newEnvVars = {...oldEnvVars, ...changedEnvVars}
@@ -243,19 +220,22 @@ export const calculateUpdateRequest = (
   }
 
   // Update Layers
+  const lambdaLibraryLayerArn = getLayerArn(config, config.Runtime as Runtime, region, settings)
+  const lambraLibraryLayerName = RUNTIME_LAYER_LOOKUP[runtime]
   let fullLambdaLibraryLayerARN: string | undefined
   if (settings.layerVersion !== undefined) {
     fullLambdaLibraryLayerARN = `${lambdaLibraryLayerArn}:${settings.layerVersion}`
   }
+  const lambdaExtensionLayerArn = getLayerArn(config, EXTENSION_LAYER_KEY as Runtime, region, settings)
   let fullExtensionLayerARN: string | undefined
   if (settings.extensionVersion !== undefined) {
     fullExtensionLayerARN = `${lambdaExtensionLayerArn}:${settings.extensionVersion}`
   }
-  let layerARNs = (config.Layers ?? []).map((layer) => layer.Arn ?? '')
-  const originalLayerARNs = (config.Layers ?? []).map((layer) => layer.Arn ?? '')
+  let layerARNs = getLayers(config)
+  const originalLayerARNs = layerARNs
   let needsLayerUpdate = false
-  layerARNs = addLayerARN(fullLambdaLibraryLayerARN, lambdaLibraryLayerArn, layerARNs)
-  layerARNs = addLayerARN(fullExtensionLayerARN, lambdaExtensionLayerArn, layerARNs)
+  layerARNs = addLayerArn(fullLambdaLibraryLayerARN, lambraLibraryLayerName, layerARNs)
+  layerARNs = addLayerArn(fullExtensionLayerARN, DD_LAMBDA_EXTENSION_LAYER_NAME, layerARNs)
 
   if (originalLayerARNs.sort().join(',') !== layerARNs.sort().join(',')) {
     needsLayerUpdate = true
@@ -269,10 +249,11 @@ export const calculateUpdateRequest = (
     if (
       layerARN.includes(DD_LAMBDA_EXTENSION_LAYER_NAME) &&
       newEnvVars[API_KEY_ENV_VAR] === undefined &&
+      newEnvVars[API_KEY_SECRET_ARN_ENV_VAR] === undefined &&
       newEnvVars[KMS_API_KEY_ENV_VAR] === undefined
     ) {
       throw new Error(
-        `When 'extensionLayer' is set, ${CI_API_KEY_ENV_VAR} or ${CI_KMS_API_KEY_ENV_VAR} must also be set`
+        `When 'extensionLayer' is set, ${CI_API_KEY_ENV_VAR}, ${CI_KMS_API_KEY_ENV_VAR}, or ${CI_API_KEY_SECRET_ARN_ENV_VAR} must also be set`
       )
     }
   })

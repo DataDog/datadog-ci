@@ -2,7 +2,7 @@ import chalk from 'chalk'
 import {Command} from 'clipanion'
 import deepExtend from 'deep-extend'
 
-import {parseConfigFile} from '../../helpers/utils'
+import {parseConfigFile, removeUndefinedValues} from '../../helpers/utils'
 import {CiError, CriticalError} from './errors'
 import {
   CommandConfig,
@@ -19,7 +19,7 @@ import {
 import {DefaultReporter} from './reporters/default'
 import {JUnitReporter} from './reporters/junit'
 import {executeTests} from './run-test'
-import {getReporter, hasTestSucceeded, isCriticalError, removeUndefinedValues} from './utils'
+import {getReporter, hasTestSucceeded, isCriticalError} from './utils'
 
 export const DEFAULT_COMMAND_CONFIG: CommandConfig = {
   apiKey: '',

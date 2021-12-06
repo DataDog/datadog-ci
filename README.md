@@ -33,12 +33,13 @@ yarn global add @datadog/datadog-ci
 ```bash
 Usage: datadog-ci <command> <subcommand> [options]
 
-Available command:
+Available commands:
   - dependencies
   - lambda
   - sourcemaps
   - synthetics
   - dsyms
+  - git-metadata
 ```
 
 Each command allows interacting with a product of the Datadog platform. The commands are defined in the [src/commands](/src/commands) folder.
@@ -50,6 +51,7 @@ Further documentation for each command can be found in its folder, ie:
 - [Sourcemaps](src/commands/sourcemaps/)
 - [Synthetics CI/CD Testing](src/commands/synthetics/)
 - [iOS dSYM Files](src/commands/dsyms/)
+- [Git metadata](src/commands/git-metadata)
 
 ## Contributing
 
