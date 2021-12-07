@@ -3,7 +3,7 @@ import {promises as fs} from 'fs'
 import {Writable} from 'stream'
 import {ERRORS, LocationsMapping, PollResult} from '../../interfaces'
 
-import {RunTestCommand} from '../../cli'
+import {RunTestCommand} from '../../command'
 import {getDefaultStats, JUnitReporter, XMLTestCase} from '../../reporters/junit'
 import {
   getApiPollResult,

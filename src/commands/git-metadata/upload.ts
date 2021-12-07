@@ -61,7 +61,7 @@ export class UploadCommand extends Command {
     })
     const payload = await getCommitInfo(await newSimpleGit(), this.context.stdout, this.repositoryURL)
     if (payload === undefined) {
-      return 0
+      return 1
     }
     this.context.stdout.write(renderCommandInfo(payload))
     try {
@@ -119,6 +119,11 @@ export class UploadCommand extends Command {
     return getRequestBuilder({
       apiKey: this.config.apiKey!,
       baseUrl: getBaseIntakeUrl(),
+      headers: new Map([
+        ['DD-EVP-ORIGIN', 'datadog-ci git-metadata'],
+        ['DD-EVP-ORIGIN-VERSION', this.cliVersion],
+      ]),
+      overrideUrl: 'api/v2/srcmap',
     })
   }
 

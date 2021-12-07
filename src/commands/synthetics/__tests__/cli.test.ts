@@ -1,11 +1,36 @@
 // tslint:disable: no-string-literal
 import {AxiosError, AxiosResponse} from 'axios'
+import {Cli} from 'clipanion/lib/advanced'
 import * as ciUtils from '../../../helpers/utils'
-import {DEFAULT_COMMAND_CONFIG, RunTestCommand} from '../cli'
+import {DEFAULT_COMMAND_CONFIG, RunTestCommand} from '../command'
 import {ExecutionRule} from '../interfaces'
 import * as runTests from '../run-test'
 import * as utils from '../utils'
 import {getApiTest} from './fixtures'
+
+test('all option flags are supported', async () => {
+  const options = [
+    'apiKey',
+    'appKey',
+    'failOnCriticalErrors',
+    'config',
+    'datadogSite',
+    'files',
+    'failOnTimeout',
+    'public-id',
+    'search',
+    'subdomain',
+    'tunnel',
+    'jUnitReport',
+    'runName',
+  ]
+
+  const cli = new Cli()
+  cli.register(RunTestCommand)
+  const usage = cli.usage(RunTestCommand)
+
+  options.forEach((option) => expect(usage).toContain(`--${option}`))
+})
 
 describe('run-test', () => {
   beforeEach(() => {
