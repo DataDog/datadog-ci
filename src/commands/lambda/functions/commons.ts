@@ -106,41 +106,41 @@ export const collectFunctionsByRegion = (
   return groups
 }
 
-export const findLatestLayerVersion = async (lambda: Lambda, runtime: Runtime, region: string) => {
-  // TODO: Optimize caching latest versions with process env 
+export const findLatestLayerVersion = async (runtime: Runtime, region: string) => {
+  // TODO: Optimize caching latest versions with process env
   // although it may only work for current sessions
 
-  let layers = process.env['DATADOG_LAYERS']?.split(',').map(layer => layer.trim()) ?? [runtime]
-  let latestVersionDataByLayer: Record<string, any> = {}
-  for (const layer of layers) {
-    latestVersionDataByLayer[layer] = {
+  const latestVersionDataByLayer: Record<string, any> = {
+    [runtime]: {
+      size: 0,
       version: 0,
-      size: 0
-    }
+    },
   }
-  let latestVersionData = latestVersionDataByLayer[runtime]
-  
+  const latestVersionData = latestVersionDataByLayer[runtime]
+
   let searchStep = latestVersionData.version > 0 ? 1 : 100
   let layerVersion = latestVersionData.version + searchStep
   let layerVersionData
   const account = region.startsWith('us-gov') ? GOVCLOUD_LAYER_AWS_ACCOUNT : DEFAULT_LAYER_AWS_ACCOUNT
-  let layerName = RUNTIME_LAYER_LOOKUP[runtime]
+  const layerName = RUNTIME_LAYER_LOOKUP[runtime]
   let foundLatestVersion = false
+  const lambda = new Lambda({region})
   while (!foundLatestVersion) {
     try {
       // Search next version
-      layerVersionData = await lambda.getLayerVersion({
-        LayerName: `arn:aws:lambda:${region}:${account}:layer:${layerName}`,
-        VersionNumber: layerVersion
-      }).promise()
+      layerVersionData = await lambda
+        .getLayerVersion({
+          LayerName: `arn:aws:lambda:${region}:${account}:layer:${layerName}`,
+          VersionNumber: layerVersion,
+        })
+        .promise()
       latestVersionData.version = layerVersion
       latestVersionData.size = layerVersionData.Content?.CodeSize
-      
       // Increase layer version
       layerVersion += searchStep
     } catch (e) {
-      // Search step is too big, reset target to previous version 
-      // with a smaller search step 
+      // Search step is too big, reset target to previous version
+      // with a smaller search step
       if (searchStep > 1) {
         layerVersion -= searchStep
         searchStep /= 10
@@ -151,15 +151,17 @@ export const findLatestLayerVersion = async (lambda: Lambda, runtime: Runtime, r
         // Check the next version to be certain, since
         // current version could've been deleted by accident.
         try {
-          layerVersion += searchStep;
-          layerVersionData = await lambda.getLayerVersion({
-            LayerName: `arn:aws:lambda:${region}:${account}:layer:${layerName}`,
-            VersionNumber: layerVersion
-          }).promise()
+          layerVersion += searchStep
+          layerVersionData = await lambda
+            .getLayerVersion({
+              LayerName: `arn:aws:lambda:${region}:${account}:layer:${layerName}`,
+              VersionNumber: layerVersion,
+            })
+            .promise()
           latestVersionData.version = layerVersion
-          latestVersionData.size = layerVersionData.Content ?.CodeSize
+          latestVersionData.size = layerVersionData.Content?.CodeSize
           // Continue the search if the next version does exist (unlikely event)
-          layerVersion += searchStep;
+          layerVersion += searchStep
         } catch (e) {
           // The next version doesn't exist either, so the previous version is indeed the latest
           foundLatestVersion = true
@@ -167,6 +169,7 @@ export const findLatestLayerVersion = async (lambda: Lambda, runtime: Runtime, r
       }
     }
   }
+
   return latestVersionData.version
 }
 

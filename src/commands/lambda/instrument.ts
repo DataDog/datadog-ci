@@ -8,11 +8,14 @@ import {EXTRA_TAGS_REG_EXP} from './constants'
 import {
   coerceBoolean,
   collectFunctionsByRegion,
+  isMissingAWSCredentials,
+  isMissingDatadogEnvVars,
   sentenceMatchesRegEx,
   updateLambdaFunctionConfigs,
 } from './functions/commons'
 import {getInstrumentedFunctionConfigs, getInstrumentedFunctionConfigsFromRegEx} from './functions/instrument'
 import {FunctionConfiguration, InstrumentationSettings, LambdaConfigOptions} from './interfaces'
+import {requestAWSCredentials, requestDatadogEnvVars} from './prompt'
 
 export class InstrumentCommand extends Command {
   private config: LambdaConfigOptions = {
@@ -28,6 +31,7 @@ export class InstrumentCommand extends Command {
   private flushMetricsToLogs?: string
   private forwarder?: string
   private functions: string[] = []
+  private interactive = false
   private layerAWSAccount?: string
   private layerVersion?: string
   private logLevel?: string
@@ -40,6 +44,18 @@ export class InstrumentCommand extends Command {
   private version?: string
 
   public async execute() {
+    // Trial user experience
+    if (this.interactive) {
+      if (isMissingAWSCredentials()) {
+        this.context.stdout.write(`${bold(yellow('[!]'))} AWS Credentials are missing, let's set them up!\n`)
+        await requestAWSCredentials()
+      }
+      if (isMissingDatadogEnvVars()) {
+        this.context.stdout.write(`${bold(yellow('[!]'))} Datadog Environment Variables are needed.\n`)
+        await requestDatadogEnvVars()
+      }
+    }
+
     const lambdaConfig = {lambda: this.config}
     this.config = (await parseConfigFile(lambdaConfig, this.configPath)).lambda
 
@@ -230,6 +246,7 @@ export class InstrumentCommand extends Command {
     if (extensionVersionStr !== undefined) {
       extensionVersion = parseInt(extensionVersionStr, 10)
     }
+
     if (Number.isNaN(extensionVersion)) {
       this.context.stdout.write(`Invalid extension version ${extensionVersion}.\n`)
 
@@ -253,6 +270,7 @@ export class InstrumentCommand extends Command {
     const flushMetricsToLogs = coerceBoolean(true, this.flushMetricsToLogs, this.config.flushMetricsToLogs)
     const mergeXrayTraces = coerceBoolean(false, this.mergeXrayTraces, this.config.mergeXrayTraces)
     const tracingEnabled = coerceBoolean(true, this.tracing, this.config.tracing)
+    const interactive = coerceBoolean(false, this.interactive, this.config.interactive)
     const logLevel = this.logLevel ?? this.config.logLevel
 
     const service = this.service ?? this.config.service
@@ -297,6 +315,7 @@ export class InstrumentCommand extends Command {
       extraTags,
       flushMetricsToLogs,
       forwarderARN,
+      interactive,
       layerAWSAccount,
       layerVersion,
       logLevel,
@@ -423,3 +442,4 @@ InstrumentCommand.addOption('environment', Command.String('--env'))
 InstrumentCommand.addOption('version', Command.String('--version'))
 InstrumentCommand.addOption('extraTags', Command.String('--extra-tags'))
 InstrumentCommand.addOption('sourceCodeIntegration', Command.Boolean('-s,--source-code-integration'))
+InstrumentCommand.addOption('interactive', Command.Boolean('-i,--interactive'))

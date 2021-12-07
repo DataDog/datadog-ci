@@ -36,7 +36,7 @@ describe('instrument', () => {
       process.env = OLD_ENV
     })
 
-    test('calculates an update request with just lambda library layers', () => {
+    test('calculates an update request with just lambda library layers', async () => {
       const runtime = 'nodejs12.x'
       const config = {
         FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world',
@@ -53,7 +53,7 @@ describe('instrument', () => {
       }
       const region = 'sa-east-1'
 
-      const updateRequest = calculateUpdateRequest(config, settings, region, runtime)
+      const updateRequest = await calculateUpdateRequest(config, settings, region, runtime)
       expect(updateRequest).toMatchInlineSnapshot(`
         Object {
           "Environment": Object {
@@ -74,7 +74,7 @@ describe('instrument', () => {
       `)
     })
 
-    test('calculates an update request with just lambda library layers in arm architecture', () => {
+    test('calculates an update request with just lambda library layers in arm architecture', async () => {
       const runtime = 'python3.9'
       const config = {
         Architectures: ['arm64'],
@@ -92,7 +92,7 @@ describe('instrument', () => {
       }
       const region = 'sa-east-1'
 
-      const updateRequest = calculateUpdateRequest(config, settings, region, runtime)
+      const updateRequest = await calculateUpdateRequest(config, settings, region, runtime)
       expect(updateRequest).toMatchInlineSnapshot(`
         Object {
           "Environment": Object {
@@ -113,7 +113,7 @@ describe('instrument', () => {
       `)
     })
 
-    test('calculates an update request with a lambda library, extension, and DATADOG_API_KEY', () => {
+    test('calculates an update request with a lambda library, extension, and DATADOG_API_KEY', async () => {
       process.env[CI_API_KEY_ENV_VAR] = '1234'
       const runtime = 'nodejs12.x'
       const config = {
@@ -132,7 +132,7 @@ describe('instrument', () => {
       }
       const region = 'sa-east-1'
 
-      const updateRequest = calculateUpdateRequest(config, settings, region, runtime)
+      const updateRequest = await calculateUpdateRequest(config, settings, region, runtime)
       expect(updateRequest).toMatchInlineSnapshot(`
         Object {
           "Environment": Object {
@@ -154,7 +154,7 @@ describe('instrument', () => {
       `)
     })
 
-    test('calculates an update request with a lambda library, extension, and DATADOG_API_KEY_SECRET_ARN', () => {
+    test('calculates an update request with a lambda library, extension, and DATADOG_API_KEY_SECRET_ARN', async () => {
       process.env[CI_API_KEY_SECRET_ARN_ENV_VAR] = 'some-secret:arn:from:aws'
       const runtime = 'python3.9'
       const config = {
@@ -172,7 +172,7 @@ describe('instrument', () => {
         tracingEnabled: false,
       }
       const region = 'sa-east-1'
-      const updateRequest = calculateUpdateRequest(config, settings, region, runtime)
+      const updateRequest = await calculateUpdateRequest(config, settings, region, runtime)
       expect(updateRequest).toMatchInlineSnapshot(`
         Object {
           "Environment": Object {
@@ -194,7 +194,7 @@ describe('instrument', () => {
       `)
     })
 
-    test('calculates an update request with a lambda library, extension, and DATADOG_KMS_API_KEY', () => {
+    test('calculates an update request with a lambda library, extension, and DATADOG_KMS_API_KEY', async () => {
       process.env[CI_KMS_API_KEY_ENV_VAR] = '5678'
       const runtime = 'python3.6'
       const config = {
@@ -213,7 +213,7 @@ describe('instrument', () => {
       }
       const region = 'sa-east-1'
 
-      const updateRequest = calculateUpdateRequest(config, settings, region, runtime)
+      const updateRequest = await calculateUpdateRequest(config, settings, region, runtime)
       expect(updateRequest).toMatchInlineSnapshot(`
         Object {
           "Environment": Object {
@@ -235,7 +235,7 @@ describe('instrument', () => {
       `)
     })
 
-    test('prioritizes the KMS API KEY when all of them are exported', () => {
+    test('prioritizes the KMS API KEY when all of them are exported', async () => {
       process.env = {
         [CI_API_KEY_ENV_VAR]: '1234',
         [CI_API_KEY_SECRET_ARN_ENV_VAR]: '5678',
@@ -249,7 +249,7 @@ describe('instrument', () => {
       }
       const runtime = 'python3.9'
       const region = 'sa-east-1'
-      const updateRequest = calculateUpdateRequest(config, {} as any, region, runtime)
+      const updateRequest = await calculateUpdateRequest(config, {} as any, region, runtime)
       expect(updateRequest).toMatchInlineSnapshot(`
         Object {
           "Environment": Object {
@@ -265,7 +265,7 @@ describe('instrument', () => {
       `)
     })
 
-    test("doesn't set DD_FLUSH_TO_LOGS when extension is being used", () => {
+    test("doesn't set DD_FLUSH_TO_LOGS when extension is being used", async () => {
       process.env[CI_API_KEY_ENV_VAR] = '1234'
 
       const config = {
@@ -281,7 +281,7 @@ describe('instrument', () => {
         mergeXrayTraces: false,
         tracingEnabled: false,
       }
-      const updateRequest = calculateUpdateRequest(config, settings, region, runtime)
+      const updateRequest = await calculateUpdateRequest(config, settings, region, runtime)
       expect(updateRequest).toMatchInlineSnapshot(`
         Object {
           "Environment": Object {
@@ -302,7 +302,7 @@ describe('instrument', () => {
       `)
     })
 
-    test('by default calculates an update request with DATADOG_SITE being set to datadoghq.com', () => {
+    test('by default calculates an update request with DATADOG_SITE being set to datadoghq.com', async () => {
       const runtime = 'python3.6'
       const config = {
         FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world',
@@ -318,7 +318,7 @@ describe('instrument', () => {
       }
       const region = 'sa-east-1'
 
-      const updateRequest = calculateUpdateRequest(config, settings, region, runtime)
+      const updateRequest = await calculateUpdateRequest(config, settings, region, runtime)
       expect(updateRequest).toMatchInlineSnapshot(`
         Object {
           "Environment": Object {
@@ -336,7 +336,7 @@ describe('instrument', () => {
       `)
     })
 
-    test('calculates an update request with DATADOG_SITE being set to datadoghq.eu', () => {
+    test('calculates an update request with DATADOG_SITE being set to datadoghq.eu', async () => {
       process.env.DATADOG_SITE = 'datadoghq.eu'
       const config = {
         FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world',
@@ -352,7 +352,7 @@ describe('instrument', () => {
       const region = 'sa-east-1'
       const runtime = 'python3.6'
 
-      const updateRequest = calculateUpdateRequest(config, settings, region, runtime)
+      const updateRequest = await calculateUpdateRequest(config, settings, region, runtime)
       expect(updateRequest).toMatchInlineSnapshot(`
         Object {
           "Environment": Object {
@@ -370,7 +370,7 @@ describe('instrument', () => {
       `)
     })
 
-    test('throws an error when an invalid DATADOG_SITE url is given', () => {
+    test('throws an error when an invalid DATADOG_SITE url is given', async () => {
       process.env.DATADOG_SITE = 'datacathq.eu'
       const config = {
         FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world',
@@ -379,6 +379,7 @@ describe('instrument', () => {
       }
       const settings = {
         flushMetricsToLogs: false,
+        interactive: false,
         layerAWSAccount: mockAwsAccount,
         layerVersion: 5,
         mergeXrayTraces: false,
@@ -386,15 +387,20 @@ describe('instrument', () => {
       }
       const region = 'us-east-1'
       const runtime = 'python3.6'
-
-      expect(() => {
-        calculateUpdateRequest(config, settings, region, runtime)
-      }).toThrowError(
+      let error
+      try {
+        await calculateUpdateRequest(config, settings, region, runtime)
+      } catch (e) {
+        if (e instanceof Error) {
+          error = e
+        }
+      }
+      expect(error?.message).toBe(
         'Warning: Invalid site URL. Must be either datadoghq.com, datadoghq.eu, us3.datadoghq.com, us5.datadoghq.com, or ddog-gov.com.'
       )
     })
 
-    test('throws an error when neither DATADOG_API_KEY nor DATADOG_KMS_API_KEY are given through the environment while using extensionVersion', () => {
+    test('throws an error when neither DATADOG_API_KEY nor DATADOG_KMS_API_KEY are given through the environment while using extensionVersion', async () => {
       const config = {
         FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world',
         Handler: 'index.handler',
@@ -410,15 +416,20 @@ describe('instrument', () => {
       }
       const region = 'us-east-1'
       const runtime = 'python3.6'
-
-      expect(() => {
-        calculateUpdateRequest(config, settings, region, runtime)
-      }).toThrowError(
+      let error
+      try {
+        await calculateUpdateRequest(config, settings, region, runtime)
+      } catch (e) {
+        if (e instanceof Error) {
+          error = e
+        }
+      }
+      expect(error?.message).toBe(
         "When 'extensionLayer' is set, DATADOG_API_KEY, DATADOG_KMS_API_KEY, or DATADOG_API_KEY_SECRET_ARN must also be set"
       )
     })
 
-    test('throws error when trying to add `DD_API_KEY_SECRET_ARN` while using sync metrics in a node runtime', () => {
+    test('throws error when trying to add `DD_API_KEY_SECRET_ARN` while using sync metrics in a node runtime', async () => {
       process.env[CI_API_KEY_SECRET_ARN_ENV_VAR] = 'some-secret:arn:from:aws'
       const runtime = 'nodejs14.x'
       const region = 'us-east-1'
@@ -435,10 +446,15 @@ describe('instrument', () => {
         mergeXrayTraces: false,
         tracingEnabled: false,
       }
-
-      expect(() => {
-        calculateUpdateRequest(config, settings, region, runtime)
-      }).toThrowError(
+      let error
+      try {
+        await calculateUpdateRequest(config, settings, region, runtime)
+      } catch (e) {
+        if (e instanceof Error) {
+          error = e
+        }
+      }
+      expect(error?.message).toBe(
         '`apiKeySecretArn` is not supported for Node runtimes when using Synchronous Metrics. Use either `apiKey` or `apiKmsKey`.'
       )
     })

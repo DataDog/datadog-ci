@@ -700,6 +700,7 @@ TagResource -> arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world
           extraTags: undefined,
           flushMetricsToLogs: false,
           forwarderARN: 'my-forwarder',
+          interactive: false,
           layerAWSAccount: 'another-account',
           layerVersion: 2,
           logLevel: 'debug',
@@ -731,6 +732,7 @@ TagResource -> arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world
         expect(command['getSettings']()).toEqual({
           flushMetricsToLogs: false,
           forwarderARN: 'my-forwarder',
+          interactive: false,
           layerAWSAccount: 'my-account',
           layerVersion: 1,
           logLevel: 'debug',
@@ -770,6 +772,7 @@ TagResource -> arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world
           extensionVersion: undefined,
           flushMetricsToLogs: false,
           forwarderARN: undefined,
+          interactive: false,
           layerAWSAccount: undefined,
           layerVersion: undefined,
           logLevel: undefined,
@@ -804,7 +807,7 @@ TagResource -> arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world
 
       test('aborts early if converting string boolean has an invalid value', () => {
         process.env = {}
-        const stringBooleans: (keyof Omit<LambdaConfigOptions, 'functions'>)[] = [
+        const stringBooleans: (keyof Omit<LambdaConfigOptions, 'functions' | 'interactive'>)[] = [
           'flushMetricsToLogs',
           'mergeXrayTraces',
           'tracing',

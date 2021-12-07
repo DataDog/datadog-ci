@@ -1,5 +1,5 @@
 import {bold} from 'chalk'
-import {ListQuestion, prompt, QuestionCollection} from 'inquirer'
+import {ListQuestion, prompt, QuestionCollection, Separator} from 'inquirer'
 import {
   AWS_ACCESS_KEY_ID_ENV_VAR,
   AWS_ACCESS_KEY_ID_REG_EXP,
@@ -54,15 +54,16 @@ const awsCredentialsQuestions: QuestionCollection = [
   },
 ]
 
-const datadogApiKeyTypeQuestion: ListQuestion = {
+const datadogApiKeyTypeQuestion = (datadogSite: string): ListQuestion => ({
   choices: [
     {
-      name: `Plain text ${bold('API Key')}`,
+      name: `Plain text ${bold('API Key')} (Recommended for trial users) `,
       value: {
         envVar: CI_API_KEY_ENV_VAR,
         message: 'API Key:',
       },
     },
+    new Separator(),
     {
       name: `AWS Key Management Service ${bold('(KMS) API Key')}`,
       value: {
@@ -78,14 +79,23 @@ const datadogApiKeyTypeQuestion: ListQuestion = {
       },
     },
   ],
-  message: 'Which type of Datadog API Key you want to set?',
+  message: `Which type of Datadog API Key you want to set? \nLearn more at https://app.${datadogSite}/organization-settings/api-keys`,
   name: 'type',
+  type: 'list',
+})
+
+const datadogSiteQuestion: QuestionCollection = {
+  // DATADOG SITE
+  choices: SITES,
+  message: 'Select the Datadog site to send data. Learn more at \nhttps://docs.datadoghq.com/getting_started/site/',
+  name: CI_SITE_ENV_VAR,
   type: 'list',
 }
 
 const datadogEnvVarsQuestions = (datadogApiKeyType: Record<string, any>): QuestionCollection => [
   {
     // DATADOG API KEY given type
+    default: process.env[datadogApiKeyType.envVar],
     message: datadogApiKeyType.message,
     name: datadogApiKeyType.envVar,
     type: 'input',
@@ -96,13 +106,6 @@ const datadogEnvVarsQuestions = (datadogApiKeyType: Record<string, any>): Questi
 
       return true
     },
-  },
-  {
-    // DATADOG SITE
-    choices: SITES,
-    message: 'Select the Datadog site to send data.',
-    name: CI_SITE_ENV_VAR,
-    type: 'list',
   },
 ]
 
@@ -120,12 +123,15 @@ export const requestAWSCredentials = async () => {
 
 export const requestDatadogEnvVars = async () => {
   try {
-    const datadogApiKeyTypeAnswer = await prompt(datadogApiKeyTypeQuestion)
+    const datadogSiteAnswer = await prompt(datadogSiteQuestion)
+    const selectedDatadogSite = datadogSiteAnswer[CI_SITE_ENV_VAR]
+    process.env[CI_SITE_ENV_VAR] = selectedDatadogSite
+
+    const datadogApiKeyTypeAnswer = await prompt(datadogApiKeyTypeQuestion(selectedDatadogSite))
     const datadogApiKeyType = datadogApiKeyTypeAnswer.type
     const datadogEnvVars = await prompt(datadogEnvVarsQuestions(datadogApiKeyType))
-
-    process.env[datadogApiKeyType.envVar] = datadogEnvVars[datadogApiKeyType.envVar]
-    process.env[CI_SITE_ENV_VAR] = datadogEnvVars[CI_SITE_ENV_VAR]
+    const selectedDatadogApiKeyEnvVar = datadogApiKeyType.envVar
+    process.env[selectedDatadogApiKeyEnvVar] = datadogEnvVars[selectedDatadogApiKeyEnvVar]
   } catch (e) {
     if (e instanceof Error) {
       throw Error(`Couldn't set Datadog Environment Variables. ${e}`)
