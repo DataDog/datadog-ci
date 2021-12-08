@@ -60,6 +60,7 @@ describe('instrument', () => {
             "Variables": Object {
               "DD_FLUSH_TO_LOG": "false",
               "DD_LAMBDA_HANDLER": "index.handler",
+              "DD_MERGE_XRAY_TRACES": "false",
               "DD_SITE": "datadoghq.com",
               "DD_TRACE_ENABLED": "false",
             },
@@ -219,6 +220,7 @@ describe('instrument', () => {
             "Variables": Object {
               "DD_KMS_API_KEY": "5678",
               "DD_LAMBDA_HANDLER": "index.handler",
+              "DD_MERGE_XRAY_TRACES": "false",
               "DD_SITE": "datadoghq.com",
               "DD_TRACE_ENABLED": "false",
             },
@@ -357,6 +359,7 @@ describe('instrument', () => {
             "Variables": Object {
               "DD_FLUSH_TO_LOG": "false",
               "DD_LAMBDA_HANDLER": "index.handler",
+              "DD_MERGE_XRAY_TRACES": "false",
               "DD_SITE": "datadoghq.eu",
               "DD_TRACE_ENABLED": "false",
             },
@@ -670,6 +673,7 @@ describe('instrument', () => {
               "DD_FLUSH_TO_LOG": "false",
               "DD_LAMBDA_HANDLER": "index.handler",
               "DD_LOG_LEVEL": "debug",
+              "DD_MERGE_XRAY_TRACES": "false",
               "DD_SERVICE": "middletier",
               "DD_SITE": "datadoghq.com",
               "DD_TRACE_ENABLED": "false",
@@ -780,6 +784,7 @@ describe('instrument', () => {
               "DD_FLUSH_TO_LOG": "false",
               "DD_LAMBDA_HANDLER": "index.handler",
               "DD_LOG_LEVEL": "debug",
+              "DD_MERGE_XRAY_TRACES": "false",
               "DD_SITE": "datadoghq.com",
               "DD_TRACE_ENABLED": "false",
             },

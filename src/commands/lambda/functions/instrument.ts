@@ -181,8 +181,10 @@ export const calculateUpdateRequest = (
   }
 
   const environmentVarsTupleArray: [keyof InstrumentationSettings, string][] = [
+    ['captureLambdaPayload', CAPTURE_LAMBDA_PAYLOAD_ENV_VAR],
     ['environment', ENVIRONMENT_ENV_VAR],
     ['extraTags', EXTRA_TAGS_ENV_VAR],
+    ['mergeXrayTraces', MERGE_XRAY_TRACES_ENV_VAR],
     ['service', SERVICE_ENV_VAR],
     ['tracingEnabled', TRACE_ENABLED_ENV_VAR],
     ['version', VERSION_ENV_VAR],
@@ -193,25 +195,6 @@ export const calculateUpdateRequest = (
       needsUpdate = true
       changedEnvVars[environmentVar] = settings[key]!.toString()
     }
-  }
-
-  // Skip adding Env Vars which default value is `false`
-  if (
-    settings.captureLambdaPayload &&
-    settings.captureLambdaPayload !== undefined &&
-    oldEnvVars[CAPTURE_LAMBDA_PAYLOAD_ENV_VAR] !== settings.captureLambdaPayload?.toString()
-  ) {
-    needsUpdate = true
-    changedEnvVars[CAPTURE_LAMBDA_PAYLOAD_ENV_VAR] = settings.captureLambdaPayload!.toString()
-  }
-
-  if (
-    settings.mergeXrayTraces &&
-    settings.mergeXrayTraces !== undefined &&
-    oldEnvVars[MERGE_XRAY_TRACES_ENV_VAR] !== settings.mergeXrayTraces?.toString()
-  ) {
-    needsUpdate = true
-    changedEnvVars[MERGE_XRAY_TRACES_ENV_VAR] = settings.mergeXrayTraces!.toString()
   }
 
   // Skip adding DD_FLUSH_TO_LOGS when using Extension
