@@ -2,7 +2,7 @@
 
 import * as ciUtils from '../../../helpers/utils'
 
-import {RunTestCommand} from '../cli'
+import {RunTestCommand} from '../command'
 import {ExecutionRule} from '../interfaces'
 import * as runTests from '../run-test'
 
