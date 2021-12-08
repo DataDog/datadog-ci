@@ -2,9 +2,15 @@ import {CloudWatchLogs, Lambda} from 'aws-sdk'
 import {bold, cyan, red, yellow} from 'chalk'
 import {Command} from 'clipanion'
 import {parseConfigFile} from '../../helpers/utils'
-import {collectFunctionsByRegion, updateLambdaFunctionConfigs} from './functions/commons'
+import {
+  collectFunctionsByRegion,
+  isMissingAWSCredentials,
+  isMissingDatadogEnvVars,
+  updateLambdaFunctionConfigs,
+} from './functions/commons'
 import {getUninstrumentedFunctionConfigs, getUninstrumentedFunctionConfigsFromRegEx} from './functions/uninstrument'
 import {FunctionConfiguration} from './interfaces'
+import {requestAWSCredentials, requestDatadogEnvVars} from './prompt'
 
 export class UninstrumentCommand extends Command {
   private config: any = {
@@ -15,10 +21,23 @@ export class UninstrumentCommand extends Command {
   private dryRun = false
   private forwarder?: string
   private functions: string[] = []
+  private interactive = false
   private regExPattern?: string
   private region?: string
 
   public async execute() {
+    // Trial user experience
+    if (this.interactive) {
+      if (isMissingAWSCredentials()) {
+        this.context.stdout.write(`${bold(yellow('[!]'))} AWS Credentials are missing, let's set them up!\n`)
+        await requestAWSCredentials()
+      }
+      if (isMissingDatadogEnvVars()) {
+        this.context.stdout.write(`${bold(yellow('[!]'))} Datadog Environment Variables are needed.\n`)
+        await requestDatadogEnvVars()
+      }
+    }
+
     const lambdaConfig = {lambda: this.config}
     this.config = (await parseConfigFile(lambdaConfig, this.configPath)).lambda
 
@@ -191,7 +210,7 @@ UninstrumentCommand.addOption('configPath', Command.String('--config'))
 UninstrumentCommand.addOption('dryRun', Command.Boolean('-d,--dry'))
 UninstrumentCommand.addOption('forwarder', Command.String('--forwarder'))
 UninstrumentCommand.addOption('regExPattern', Command.String('--functions-regex'))
-
+UninstrumentCommand.addOption('interactive', Command.Boolean('-i,--interactive'))
 /**
  * Commands that are not really in use, but to
  * make uninstrumentation easier for the user.

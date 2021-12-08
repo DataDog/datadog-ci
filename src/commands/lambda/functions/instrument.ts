@@ -227,7 +227,7 @@ export const calculateUpdateRequest = async (
   if (settings.layerVersion !== undefined || settings.interactive) {
     let layerVersion = settings.layerVersion
     if (settings.interactive && !settings.layerVersion) {
-      layerVersion = await await findLatestLayerVersion(config.Runtime as Runtime, region)
+      layerVersion = await findLatestLayerVersion(config.Runtime as Runtime, region)
     }
     fullLambdaLibraryLayerARN = `${lambdaLibraryLayerArn}:${layerVersion}`
   }
@@ -236,7 +236,7 @@ export const calculateUpdateRequest = async (
   if (settings.extensionVersion !== undefined || settings.interactive) {
     let extensionVersion = settings.extensionVersion
     if (settings.interactive && !settings.extensionVersion) {
-      extensionVersion = await await findLatestLayerVersion(EXTENSION_LAYER_KEY as Runtime, region)
+      extensionVersion = await findLatestLayerVersion(EXTENSION_LAYER_KEY as Runtime, region)
     }
     fullExtensionLayerARN = `${lambdaExtensionLayerArn}:${extensionVersion}`
   }
