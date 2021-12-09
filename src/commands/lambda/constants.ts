@@ -69,6 +69,7 @@ export const SERVICE_ENV_VAR = 'DD_SERVICE'
 export const VERSION_ENV_VAR = 'DD_VERSION'
 export const ENVIRONMENT_ENV_VAR = 'DD_ENV'
 export const EXTRA_TAGS_ENV_VAR = 'DD_TAGS'
+export const CAPTURE_LAMBDA_PAYLOAD_ENV_VAR = 'DD_CAPTURE_LAMBDA_PAYLOAD'
 
 // Environment variables used by Datadog CI
 export const CI_SITE_ENV_VAR = 'DATADOG_SITE'

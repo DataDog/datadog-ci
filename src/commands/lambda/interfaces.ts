@@ -5,6 +5,7 @@ import {CloudWatchLogs, Lambda} from 'aws-sdk'
  * the CLI in order to instrument properly.
  */
 export interface LambdaConfigOptions {
+  captureLambdaPayload?: string
   environment?: string
   extensionVersion?: string
   extraTags?: string
@@ -39,6 +40,7 @@ export interface FunctionConfiguration {
  * lambda to be instrumented.
  */
 export interface InstrumentationSettings extends InstrumentationTags {
+  captureLambdaPayload?: boolean
   extensionVersion?: number
   flushMetricsToLogs: boolean
   forwarderARN?: string

@@ -79,6 +79,7 @@ UpdateFunctionConfiguration -> arn:aws:lambda:us-east-1:123456789012:function:la
     \\"Variables\\": {
       \\"DD_LAMBDA_HANDLER\\": \\"index.handler\\",
       \\"DD_SITE\\": \\"datadoghq.com\\",
+      \\"DD_CAPTURE_LAMBDA_PAYLOAD\\": \\"false\\",
       \\"DD_ENV\\": \\"staging\\",
       \\"DD_TAGS\\": \\"layer:api,team:intake\\",
       \\"DD_MERGE_XRAY_TRACES\\": \\"false\\",
@@ -156,6 +157,7 @@ UpdateFunctionConfiguration -> arn:aws:lambda:us-east-1:123456789012:function:la
       \\"DD_LAMBDA_HANDLER\\": \\"index.handler\\",
       \\"DD_API_KEY\\": \\"1234\\",
       \\"DD_SITE\\": \\"datadoghq.com\\",
+      \\"DD_CAPTURE_LAMBDA_PAYLOAD\\": \\"false\\",
       \\"DD_ENV\\": \\"staging\\",
       \\"DD_TAGS\\": \\"layer:api,team:intake\\",
       \\"DD_MERGE_XRAY_TRACES\\": \\"false\\",
@@ -353,6 +355,7 @@ UpdateFunctionConfiguration -> arn:aws:lambda:us-east-1:123456789012:function:la
       \\"DD_LAMBDA_HANDLER\\": \\"index.handler\\",
       \\"DD_API_KEY\\": \\"1234\\",
       \\"DD_SITE\\": \\"datadoghq.com\\",
+      \\"DD_CAPTURE_LAMBDA_PAYLOAD\\": \\"false\\",
       \\"DD_ENV\\": \\"dummy\\",
       \\"DD_TAGS\\": \\"git.commit.sha:1be168ff837f043bde17c0314341c84271047b31\\",
       \\"DD_MERGE_XRAY_TRACES\\": \\"false\\",
@@ -695,6 +698,7 @@ TagResource -> arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world
         command['config']['logLevel'] = 'debug'
 
         expect(command['getSettings']()).toEqual({
+          captureLambdaPayload: false,
           environment: undefined,
           extensionVersion: 6,
           extraTags: undefined,
@@ -729,6 +733,7 @@ TagResource -> arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world
         command['config']['logLevel'] = 'info'
 
         expect(command['getSettings']()).toEqual({
+          captureLambdaPayload: false,
           flushMetricsToLogs: false,
           forwarderARN: 'my-forwarder',
           layerAWSAccount: 'my-account',
@@ -767,6 +772,7 @@ TagResource -> arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world
         process.env = {}
         const command = createCommand(InstrumentCommand)
         const validSettings: InstrumentationSettings = {
+          captureLambdaPayload: true,
           extensionVersion: undefined,
           flushMetricsToLogs: false,
           forwarderARN: undefined,
@@ -776,26 +782,31 @@ TagResource -> arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world
           mergeXrayTraces: false,
           tracingEnabled: true,
         }
+        command['config']['captureLambdaPayload'] = 'truE'
         command['config']['flushMetricsToLogs'] = 'False'
         command['config']['mergeXrayTraces'] = 'falSE'
         command['config']['tracing'] = 'TRUE'
 
         expect(command['getSettings']()).toEqual(validSettings)
 
+        command['config']['captureLambdaPayload'] = 'true'
         command['config']['flushMetricsToLogs'] = 'false'
         command['config']['mergeXrayTraces'] = 'false'
         command['config']['tracing'] = 'true'
         expect(command['getSettings']()).toEqual(validSettings)
 
+        validSettings.captureLambdaPayload = false
         validSettings.flushMetricsToLogs = true
         validSettings.mergeXrayTraces = true
         validSettings.tracingEnabled = false
 
+        command['captureLambdaPayload'] = 'faLSE'
         command['flushMetricsToLogs'] = 'truE'
         command['mergeXrayTraces'] = 'TRUe'
         command['tracing'] = 'FALSE'
         expect(command['getSettings']()).toEqual(validSettings)
 
+        command['captureLambdaPayload'] = 'false'
         command['flushMetricsToLogs'] = 'true'
         command['mergeXrayTraces'] = 'true'
         command['tracing'] = 'false'
