@@ -80,7 +80,7 @@ const datadogApiKeyTypeQuestion = (datadogSite: string): ListQuestion => ({
     },
   ],
   message: `Which type of Datadog API Key you want to set? \nLearn more at ${blueBright(
-    'https://app.${datadogSite}/organization-settings/api-keys'
+    `https://app.${datadogSite}/organization-settings/api-keys`
   )}`,
   name: 'type',
   type: 'list',

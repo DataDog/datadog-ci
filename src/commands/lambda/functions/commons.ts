@@ -106,21 +106,18 @@ export const collectFunctionsByRegion = (
   return groups
 }
 
+/**
+ * Given a layer runtime, return its latest version.
+ *
+ * @param runtime the runtime of the layer.
+ * @param region the region where the layer is stored.
+ * @returns the latest version of the layer to find.
+ */
 export const findLatestLayerVersion = async (runtime: Runtime, region: string) => {
-  // TODO: Optimize caching latest versions with process env
-  // although it may only work for current sessions
+  let latestVersion = 0
 
-  const latestVersionDataByLayer: Record<string, any> = {
-    [runtime]: {
-      size: 0,
-      version: 0,
-    },
-  }
-  const latestVersionData = latestVersionDataByLayer[runtime]
-
-  let searchStep = latestVersionData.version > 0 ? 1 : 100
-  let layerVersion = latestVersionData.version + searchStep
-  let layerVersionData
+  let searchStep = latestVersion > 0 ? 1 : 100
+  let layerVersion = latestVersion + searchStep
   const account = region.startsWith('us-gov') ? GOVCLOUD_LAYER_AWS_ACCOUNT : DEFAULT_LAYER_AWS_ACCOUNT
   const layerName = RUNTIME_LAYER_LOOKUP[runtime]
   let foundLatestVersion = false
@@ -128,14 +125,13 @@ export const findLatestLayerVersion = async (runtime: Runtime, region: string) =
   while (!foundLatestVersion) {
     try {
       // Search next version
-      layerVersionData = await lambda
+      await lambda
         .getLayerVersion({
           LayerName: `arn:aws:lambda:${region}:${account}:layer:${layerName}`,
           VersionNumber: layerVersion,
         })
         .promise()
-      latestVersionData.version = layerVersion
-      latestVersionData.size = layerVersionData.Content?.CodeSize
+      latestVersion = layerVersion
       // Increase layer version
       layerVersion += searchStep
     } catch (e) {
@@ -152,14 +148,13 @@ export const findLatestLayerVersion = async (runtime: Runtime, region: string) =
         // current version could've been deleted by accident.
         try {
           layerVersion += searchStep
-          layerVersionData = await lambda
+          await lambda
             .getLayerVersion({
               LayerName: `arn:aws:lambda:${region}:${account}:layer:${layerName}`,
               VersionNumber: layerVersion,
             })
             .promise()
-          latestVersionData.version = layerVersion
-          latestVersionData.size = layerVersionData.Content?.CodeSize
+          latestVersion = layerVersion
           // Continue the search if the next version does exist (unlikely event)
           layerVersion += searchStep
         } catch (e) {
@@ -170,7 +165,7 @@ export const findLatestLayerVersion = async (runtime: Runtime, region: string) =
     }
   }
 
-  return latestVersionData.version
+  return latestVersion
 }
 
 export const isMissingAWSCredentials =
