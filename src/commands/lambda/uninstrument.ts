@@ -1,16 +1,16 @@
 import {CloudWatchLogs, Lambda} from 'aws-sdk'
-import {bold, cyan, red, yellow} from 'chalk'
+import {bold, cyan, green, red, yellow} from 'chalk'
 import {Command} from 'clipanion'
 import {parseConfigFile} from '../../helpers/utils'
 import {
   collectFunctionsByRegion,
   isMissingAWSCredentials,
-  isMissingDatadogEnvVars,
   updateLambdaFunctionConfigs,
+  willUpdateFunctionConfigs,
 } from './functions/commons'
 import {getUninstrumentedFunctionConfigs, getUninstrumentedFunctionConfigsFromRegEx} from './functions/uninstrument'
 import {FunctionConfiguration} from './interfaces'
-import {requestAWSCredentials, requestDatadogEnvVars} from './prompt'
+import {requestAWSCredentials, requestChangesConfirmation} from './prompt'
 
 export class UninstrumentCommand extends Command {
   private config: any = {
@@ -28,13 +28,9 @@ export class UninstrumentCommand extends Command {
   public async execute() {
     // Trial user experience
     if (this.interactive) {
-      if (isMissingAWSCredentials()) {
+      if (isMissingAWSCredentials) {
         this.context.stdout.write(`${bold(yellow('[!]'))} AWS Credentials are missing, let's set them up!\n`)
         await requestAWSCredentials()
-      }
-      if (isMissingDatadogEnvVars()) {
-        this.context.stdout.write(`${bold(yellow('[!]'))} Datadog Environment Variables are needed.\n`)
-        await requestDatadogEnvVars()
       }
     }
 
@@ -127,6 +123,16 @@ export class UninstrumentCommand extends Command {
       return 0
     }
 
+    const willUpdate = willUpdateFunctionConfigs(configList)
+    if (this.interactive && willUpdate) {
+      this.context.stdout.write(`${yellow('[!]')} Confirmation needed.\n`)
+      const isConfirmed = await requestChangesConfirmation(`Do you wanna apply the changes? ${green('y/n')}:`)
+      if (!isConfirmed) {
+        return 0
+      }
+      this.context.stdout.write(`${yellow('[!]')} Uninstrumenting functions.\n`)
+    }
+
     // Un-instrument functions.
     const promises = Object.values(configGroups).map((group) => {
       updateLambdaFunctionConfigs(group.lambda, group.cloudWatchLogs, group.configs)
@@ -146,19 +152,9 @@ export class UninstrumentCommand extends Command {
   private printPlannedActions(configs: FunctionConfiguration[]) {
     const prefix = this.dryRun ? bold(cyan('[Dry Run] ')) : ''
 
-    let anyUpdates = false
-    for (const config of configs) {
-      if (
-        config.updateRequest !== undefined ||
-        config.logGroupConfiguration?.deleteSubscriptionFilterRequest !== undefined ||
-        config?.tagConfiguration !== undefined
-      ) {
-        anyUpdates = true
-        break
-      }
-    }
+    const willUpdate = willUpdateFunctionConfigs(configs)
 
-    if (!anyUpdates) {
+    if (!willUpdate) {
       this.context.stdout.write(`${prefix}No updates will be applied\n`)
 
       return

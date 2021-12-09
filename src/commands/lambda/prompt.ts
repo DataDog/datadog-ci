@@ -1,4 +1,4 @@
-import {bold} from 'chalk'
+import {blueBright, bold} from 'chalk'
 import {ListQuestion, prompt, QuestionCollection, Separator} from 'inquirer'
 import {
   AWS_ACCESS_KEY_ID_ENV_VAR,
@@ -79,7 +79,9 @@ const datadogApiKeyTypeQuestion = (datadogSite: string): ListQuestion => ({
       },
     },
   ],
-  message: `Which type of Datadog API Key you want to set? \nLearn more at https://app.${datadogSite}/organization-settings/api-keys`,
+  message: `Which type of Datadog API Key you want to set? \nLearn more at ${blueBright(
+    'https://app.${datadogSite}/organization-settings/api-keys'
+  )}`,
   name: 'type',
   type: 'list',
 })
@@ -87,7 +89,9 @@ const datadogApiKeyTypeQuestion = (datadogSite: string): ListQuestion => ({
 const datadogSiteQuestion: QuestionCollection = {
   // DATADOG SITE
   choices: SITES,
-  message: 'Select the Datadog site to send data. Learn more at \nhttps://docs.datadoghq.com/getting_started/site/',
+  message: `Select the Datadog site to send data. \nLearn more at ${blueBright(
+    'https://docs.datadoghq.com/getting_started/site/'
+  )}`,
   name: CI_SITE_ENV_VAR,
   type: 'list',
 }
@@ -108,6 +112,19 @@ const datadogEnvVarsQuestions = (datadogApiKeyType: Record<string, any>): Questi
     },
   },
 ]
+
+const confirmationQuestion = (message: string): QuestionCollection => ({
+  message,
+  name: 'confirm',
+  type: 'input',
+  validate: (value) => {
+    if (!value || (value.toLowerCase() !== 'y' && value.toLowerCase() !== 'n')) {
+      return 'Enter either `y`|`n`'
+    }
+
+    return true
+  },
+})
 
 export const requestAWSCredentials = async () => {
   try {
@@ -135,6 +152,18 @@ export const requestDatadogEnvVars = async () => {
   } catch (e) {
     if (e instanceof Error) {
       throw Error(`Couldn't set Datadog Environment Variables. ${e}`)
+    }
+  }
+}
+
+export const requestChangesConfirmation = async (message: string) => {
+  try {
+    const confirmationAnswer = await prompt(confirmationQuestion(message))
+
+    return confirmationAnswer.confirm === 'y'
+  } catch (e) {
+    if (e instanceof Error) {
+      throw Error(`Couldn't receive confirmation. ${e}`)
     }
   }
 }

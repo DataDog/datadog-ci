@@ -173,15 +173,15 @@ export const findLatestLayerVersion = async (runtime: Runtime, region: string) =
   return latestVersionData.version
 }
 
-export const isMissingAWSCredentials = () =>
+export const isMissingAWSCredentials =
   !process.env[AWS_ACCESS_KEY_ID_ENV_VAR] || !process.env[AWS_SECRET_ACCESS_KEY_ENV_VAR]
-export const isMissingDatadogEnvVars = () =>
-  !process.env[CI_SITE_ENV_VAR] ||
-  !(
-    process.env[CI_API_KEY_ENV_VAR] ||
-    process.env[CI_KMS_API_KEY_ENV_VAR] ||
-    process.env[CI_API_KEY_SECRET_ARN_ENV_VAR]
-  )
+export const isMissingDatadogSite = !process.env[CI_SITE_ENV_VAR]
+export const isMissingAnyDatadogApiKey = !(
+  process.env[CI_API_KEY_ENV_VAR] ||
+  process.env[CI_KMS_API_KEY_ENV_VAR] ||
+  process.env[CI_API_KEY_SECRET_ARN_ENV_VAR]
+)
+export const isMissingDatadogEnvVars = isMissingDatadogSite || isMissingAnyDatadogApiKey
 
 /**
  * Given a Lambda instance and a regular expression,
@@ -305,6 +305,12 @@ export const getRegion = (functionARN: string): string | undefined => {
   return region === undefined || region === '*' ? undefined : region
 }
 
+export const getLayerNameWithVersion = (layerArn: string): string | undefined => {
+  const [, , , , , , name, version] = layerArn.split(':')
+
+  return name && version ? `${name}:${version}` : undefined
+}
+
 /**
  * Returns whether a Lambda Function is active or throws an error if
  * the FunctionConfiguration does not comply with `Successful` or `Active`.
@@ -370,6 +376,25 @@ export const updateLambdaFunctionConfigs = async (
     }
   })
   await Promise.all(results)
+}
+
+export const willUpdateFunctionConfigs = (configs: FunctionConfiguration[]) => {
+  let willUpdate = false
+  for (const config of configs) {
+    if (
+      config.updateRequest !== undefined ||
+      config.logGroupConfiguration?.createLogGroupRequest !== undefined ||
+      config.logGroupConfiguration?.deleteSubscriptionFilterRequest !== undefined ||
+      config.logGroupConfiguration?.subscriptionFilterRequest !== undefined ||
+      config?.tagConfiguration !== undefined
+    ) {
+      willUpdate = true
+
+      break
+    }
+  }
+
+  return willUpdate
 }
 
 /**

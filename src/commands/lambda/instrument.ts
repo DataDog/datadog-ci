@@ -1,5 +1,5 @@
 import {CloudWatchLogs, Lambda} from 'aws-sdk'
-import {blueBright, bold, cyan, hex, underline, yellow} from 'chalk'
+import {blueBright, bold, cyan, green, hex, underline, yellow} from 'chalk'
 import {Cli, Command} from 'clipanion'
 import {parseConfigFile} from '../../helpers/utils'
 import {getCommitInfo, newSimpleGit} from '../git-metadata/git'
@@ -8,14 +8,16 @@ import {EXTRA_TAGS_REG_EXP} from './constants'
 import {
   coerceBoolean,
   collectFunctionsByRegion,
+  getLayerNameWithVersion,
   isMissingAWSCredentials,
   isMissingDatadogEnvVars,
   sentenceMatchesRegEx,
   updateLambdaFunctionConfigs,
+  willUpdateFunctionConfigs,
 } from './functions/commons'
 import {getInstrumentedFunctionConfigs, getInstrumentedFunctionConfigsFromRegEx} from './functions/instrument'
 import {FunctionConfiguration, InstrumentationSettings, LambdaConfigOptions} from './interfaces'
-import {requestAWSCredentials, requestDatadogEnvVars} from './prompt'
+import {requestAWSCredentials, requestChangesConfirmation, requestDatadogEnvVars} from './prompt'
 
 export class InstrumentCommand extends Command {
   private config: LambdaConfigOptions = {
@@ -46,11 +48,11 @@ export class InstrumentCommand extends Command {
   public async execute() {
     // Trial user experience
     if (this.interactive) {
-      if (isMissingAWSCredentials()) {
+      if (isMissingAWSCredentials) {
         this.context.stdout.write(`${bold(yellow('[!]'))} AWS Credentials are missing, let's set them up!\n`)
         await requestAWSCredentials()
       }
-      if (isMissingDatadogEnvVars()) {
+      if (isMissingDatadogEnvVars) {
         this.context.stdout.write(`${bold(yellow('[!]'))} Datadog Environment Variables are needed.\n`)
         await requestDatadogEnvVars()
       }
@@ -168,6 +170,16 @@ export class InstrumentCommand extends Command {
     this.printPlannedActions(configList)
     if (this.dryRun || configList.length === 0) {
       return 0
+    }
+
+    const willUpdate = willUpdateFunctionConfigs(configList)
+    if (this.interactive && willUpdate) {
+      this.context.stdout.write(`${yellow('[!]')} Confirmation needed.\n`)
+      const isConfirmed = await requestChangesConfirmation(`Do you wanna apply the changes? ${green('y/n')}:`)
+      if (!isConfirmed) {
+        return 0
+      }
+      this.context.stdout.write(`${yellow('[!]')} Instrumenting functions.\n`)
     }
 
     const promises = Object.values(configGroups).map((group) =>
@@ -328,21 +340,8 @@ export class InstrumentCommand extends Command {
 
   private printPlannedActions(configs: FunctionConfiguration[]) {
     const prefix = this.dryRun ? bold(cyan('[Dry Run] ')) : ''
-
-    let anyUpdates = false
-    for (const config of configs) {
-      if (
-        config.updateRequest !== undefined ||
-        config.logGroupConfiguration?.createLogGroupRequest !== undefined ||
-        config.logGroupConfiguration?.deleteSubscriptionFilterRequest !== undefined ||
-        config.logGroupConfiguration?.subscriptionFilterRequest !== undefined ||
-        config?.tagConfiguration !== undefined
-      ) {
-        anyUpdates = true
-        break
-      }
-    }
-    if (!anyUpdates) {
+    const willUpdate = willUpdateFunctionConfigs(configs)
+    if (!willUpdate) {
       this.context.stdout.write(`\n${prefix}No updates will be applied\n`)
 
       return
@@ -358,6 +357,18 @@ export class InstrumentCommand extends Command {
     this.context.stdout.write(`\n${bold(yellow('[!]'))} Functions to be updated:\n`)
     for (const config of configs) {
       this.context.stdout.write(`\t- ${bold(config.functionARN)}\n`)
+      if (this.interactive) {
+        const layersArray = config.updateRequest?.Layers?.map((layer) => yellow(getLayerNameWithVersion(layer)))
+        const layers = layersArray?.join(', ').replace(/, ([^,]*)$/, ' and $1')
+        const plural = !this.layerVersion && !this.extensionVersion
+        this.context.stdout.write(
+          `\t${bold(yellow('[Warning]'))} Latest layer version${plural && 's'} ${layers} ${
+            plural ? 'are used.' : 'is used.'
+          } Ensure to lock in versions for production applications using \`${bold('--layerVersion')}\` and \`${bold(
+            '--extensionVersion'
+          )}\`.\n`
+        )
+      }
     }
 
     this.context.stdout.write(`\n${prefix}Will apply the following updates:\n`)
