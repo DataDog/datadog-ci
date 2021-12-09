@@ -116,14 +116,7 @@ const datadogEnvVarsQuestions = (datadogApiKeyType: Record<string, any>): Questi
 const confirmationQuestion = (message: string): QuestionCollection => ({
   message,
   name: 'confirm',
-  type: 'input',
-  validate: (value) => {
-    if (!value || (value.toLowerCase() !== 'y' && value.toLowerCase() !== 'n')) {
-      return 'Enter either `y`|`n`'
-    }
-
-    return true
-  },
+  type: 'confirm',
 })
 
 export const requestAWSCredentials = async () => {
@@ -160,7 +153,7 @@ export const requestChangesConfirmation = async (message: string) => {
   try {
     const confirmationAnswer = await prompt(confirmationQuestion(message))
 
-    return confirmationAnswer.confirm === 'y'
+    return confirmationAnswer.confirm
   } catch (e) {
     if (e instanceof Error) {
       throw Error(`Couldn't receive confirmation. ${e}`)

@@ -1,5 +1,5 @@
 import {CloudWatchLogs, Lambda} from 'aws-sdk'
-import {bold, cyan, green, red, yellow} from 'chalk'
+import {bold, cyan, red, yellow} from 'chalk'
 import {Command} from 'clipanion'
 import {parseConfigFile} from '../../helpers/utils'
 import {
@@ -126,7 +126,7 @@ export class UninstrumentCommand extends Command {
     const willUpdate = willUpdateFunctionConfigs(configList)
     if (this.interactive && willUpdate) {
       this.context.stdout.write(`${yellow('[!]')} Confirmation needed.\n`)
-      const isConfirmed = await requestChangesConfirmation(`Do you wanna apply the changes? ${green('y/n')}:`)
+      const isConfirmed = await requestChangesConfirmation('Do you wanna apply the changes?')
       if (!isConfirmed) {
         return 0
       }
