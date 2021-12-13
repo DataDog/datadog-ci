@@ -8,6 +8,7 @@ import {EXTRA_TAGS_REG_EXP} from './constants'
 import {
   coerceBoolean,
   collectFunctionsByRegion,
+  getLambdaFunctionConfigsFromRegex,
   getLayerNameWithVersion,
   isMissingAWSCredentials,
   isMissingDatadogEnvVars,
@@ -17,7 +18,7 @@ import {
 } from './functions/commons'
 import {getInstrumentedFunctionConfigs, getInstrumentedFunctionConfigsFromRegEx} from './functions/instrument'
 import {FunctionConfiguration, InstrumentationSettings, LambdaConfigOptions} from './interfaces'
-import {requestAWSCredentials, requestChangesConfirmation, requestDatadogEnvVars} from './prompt'
+import {requestAWSCredentials, requestChangesConfirmation, requestDatadogEnvVars, requestFunctionsToInstrument} from './prompt'
 
 export class InstrumentCommand extends Command {
   private config: LambdaConfigOptions = {
@@ -46,15 +47,40 @@ export class InstrumentCommand extends Command {
   private version?: string
 
   public async execute() {
+    let hasSpecifiedFuntions = this.functions.length !== 0 || this.config.functions.length !== 0
     // Trial user experience
     if (this.interactive) {
-      if (isMissingAWSCredentials) {
+      if (isMissingAWSCredentials()) {
         this.context.stdout.write(`${bold(yellow('[!]'))} AWS Credentials are missing, let's set them up!\n`)
         await requestAWSCredentials()
       }
-      if (isMissingDatadogEnvVars) {
+      if (isMissingDatadogEnvVars()) {
         this.context.stdout.write(`${bold(yellow('[!]'))} Datadog Environment Variables are needed.\n`)
         await requestDatadogEnvVars()
+      }
+
+      // If user doesn't specify functions, allow them
+      // to select from all of the functions from the
+      // requested region.
+      if (!hasSpecifiedFuntions) {
+        try {
+          const region = this.region || this.config.region
+          const lambda = new Lambda({region})
+          this.context.stdout.write('Fetching lambda functions, this might take a while.\n')
+          const configs = (await getLambdaFunctionConfigsFromRegex(lambda, '.')).map(config => config.FunctionName!).sort() ?? []
+          if (!configs) {
+            this.context.stdout.write(`You don't have any Lambda Functions in your AWS account.\n`)
+  
+            return 1
+          }
+          const functions = await requestFunctionsToInstrument(configs)
+          this.functions = functions
+
+        } catch (err) {
+          this.context.stdout.write(`Couldn't fetch lambda functions. ${err}\n`)
+
+          return 1
+        }
       }
     }
 
@@ -66,7 +92,7 @@ export class InstrumentCommand extends Command {
       return 1
     }
 
-    const hasSpecifiedFuntions = this.functions.length !== 0 || this.config.functions.length !== 0
+    hasSpecifiedFuntions = this.functions.length !== 0 || this.config.functions.length !== 0
     const hasSpecifiedRegExPattern = this.regExPattern !== undefined && this.regExPattern !== ''
     if (!hasSpecifiedFuntions && !hasSpecifiedRegExPattern) {
       this.context.stdout.write('No functions specified for instrumentation.\n')
@@ -357,17 +383,21 @@ export class InstrumentCommand extends Command {
     this.context.stdout.write(`\n${bold(yellow('[!]'))} Functions to be updated:\n`)
     for (const config of configs) {
       this.context.stdout.write(`\t- ${bold(config.functionARN)}\n`)
+      
       if (this.interactive) {
-        const layersArray = config.updateRequest?.Layers?.map((layer) => yellow(getLayerNameWithVersion(layer)))
-        const layers = layersArray?.join(', ').replace(/, ([^,]*)$/, ' and $1')
-        const plural = !this.layerVersion && !this.extensionVersion
-        this.context.stdout.write(
-          `\t${bold(yellow('[Warning]'))} Latest layer version${plural && 's'} ${layers} ${
-            plural ? 'are used.' : 'is used.'
-          } Ensure to lock in versions for production applications using \`${bold('--layerVersion')}\` and \`${bold(
-            '--extensionVersion'
-          )}\`.\n`
-        )
+        const hasLayerUpdate = config.updateRequest?.Layers
+        if (hasLayerUpdate) { 
+          const layersArray = config.updateRequest?.Layers?.map((layer) => yellow(getLayerNameWithVersion(layer)))
+          const layers = layersArray?.join(', ').replace(/, ([^,]*)$/, ' and $1')
+          const plural = !this.layerVersion && !this.extensionVersion
+          this.context.stdout.write(
+            `\t${bold(yellow('[Warning]'))} Latest layer version${plural && 's'} ${layers} ${
+              plural ? 'are used.' : 'is used.'
+            } Ensure to lock in versions for production applications using \`${bold('--layerVersion')}\` and \`${bold(
+              '--extensionVersion'
+            )}\`.\n`
+          )
+        }
       }
     }
 

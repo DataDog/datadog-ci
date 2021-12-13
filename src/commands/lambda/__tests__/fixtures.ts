@@ -46,9 +46,15 @@ export const createCommand = <T extends Command>(commandClass: ConstructorOf<T>,
   return command
 }
 
-export const makeMockLambda = (functionConfigs: Record<string, Lambda.FunctionConfiguration>) => ({
+export const makeMockLambda = (functionConfigs: Record<string, Lambda.FunctionConfiguration>, layers?: Record<string, Lambda.LayerVersionsListItem>) => ({
   getFunction: jest.fn().mockImplementation(({FunctionName}) => ({
     promise: () => Promise.resolve({Configuration: functionConfigs[FunctionName]}),
+  })),
+  getLayerVersion: jest.fn().mockImplementation(({LayerName, VersionNumber}) => ({
+    promise: () => {
+      const layer = LayerName + ':' + VersionNumber
+      return (layers && layers[layer] && layers[layer].Version === VersionNumber) ? Promise.resolve(layers[layer]) : Promise.reject()
+    }
   })),
   listFunctions: jest.fn().mockImplementation(() => ({
     promise: () => Promise.resolve({Functions: Object.values(functionConfigs)}),

@@ -16,6 +16,7 @@ import {
   MAX_LAMBDA_STATE_CHECK_ATTEMPTS,
   Runtime,
   RUNTIME_LAYER_LOOKUP,
+  SITES,
 } from '../constants'
 import {FunctionConfiguration, InstrumentationSettings} from '../interfaces'
 import {applyLogGroupConfig} from '../loggroup'
@@ -168,15 +169,21 @@ export const findLatestLayerVersion = async (runtime: Runtime, region: string) =
   return latestVersion
 }
 
-export const isMissingAWSCredentials =
-  !process.env[AWS_ACCESS_KEY_ID_ENV_VAR] || !process.env[AWS_SECRET_ACCESS_KEY_ENV_VAR]
-export const isMissingDatadogSite = !process.env[CI_SITE_ENV_VAR]
-export const isMissingAnyDatadogApiKey = !(
+export const isMissingAWSCredentials = () =>
+  process.env[AWS_ACCESS_KEY_ID_ENV_VAR] === undefined || process.env[AWS_SECRET_ACCESS_KEY_ENV_VAR] === undefined 
+export const isMissingDatadogSiteEnvVar = () => {
+  const site = process.env[CI_SITE_ENV_VAR]
+  if (site !== undefined) {
+    return !SITES.includes(site)  
+  }
+  return true
+}
+export const isMissingAnyDatadogApiKeyEnvVar = () => !(
   process.env[CI_API_KEY_ENV_VAR] ||
   process.env[CI_KMS_API_KEY_ENV_VAR] ||
   process.env[CI_API_KEY_SECRET_ARN_ENV_VAR]
 )
-export const isMissingDatadogEnvVars = isMissingDatadogSite || isMissingAnyDatadogApiKey
+export const isMissingDatadogEnvVars = () => isMissingDatadogSiteEnvVar() || isMissingAnyDatadogApiKeyEnvVar()
 
 /**
  * Given a Lambda instance and a regular expression,

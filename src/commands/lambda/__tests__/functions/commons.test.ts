@@ -1,6 +1,15 @@
 /* tslint:disable:no-string-literal */
+jest.mock('aws-sdk')
+import { Lambda } from 'aws-sdk'
 import {
+  AWS_ACCESS_KEY_ID_ENV_VAR,
+  AWS_SECRET_ACCESS_KEY_ENV_VAR,
+  CI_API_KEY_ENV_VAR,
+  CI_API_KEY_SECRET_ARN_ENV_VAR,
+  CI_KMS_API_KEY_ENV_VAR,
+  CI_SITE_ENV_VAR,
   DD_LAMBDA_EXTENSION_LAYER_NAME,
+  DEFAULT_LAYER_AWS_ACCOUNT,
   EXTENSION_LAYER_KEY,
   EXTRA_TAGS_REG_EXP,
   GOVCLOUD_LAYER_AWS_ACCOUNT,
@@ -8,14 +17,21 @@ import {
   MERGE_XRAY_TRACES_ENV_VAR,
   Runtime,
   RUNTIME_LAYER_LOOKUP,
+  SITES,
   TRACE_ENABLED_ENV_VAR,
 } from '../../constants'
 import {
   addLayerArn,
   coerceBoolean,
   collectFunctionsByRegion,
+  findLatestLayerVersion,
   getLayerArn,
+  getLayerNameWithVersion,
   getRegion,
+  isMissingAnyDatadogApiKeyEnvVar,
+  isMissingAWSCredentials,
+  isMissingDatadogEnvVars,
+  isMissingDatadogSiteEnvVar,
   sentenceMatchesRegEx,
   updateLambdaFunctionConfigs,
 } from '../../functions/commons'
@@ -86,6 +102,7 @@ describe('commons', () => {
       expect(coerceBoolean(false, true, 'False', false)).toBe(true)
     })
   })
+
   describe('collectFunctionsByRegion', () => {
     test('groups functions with region read from arn', () => {
       process.env = {}
@@ -163,6 +180,226 @@ describe('commons', () => {
       expect(functionsGroup).toBeUndefined()
     })
   })
+
+  describe('findLatestLayerVersion', () => {
+    test('finds latests version for Python39', async () => {
+      const layer = `arn:aws:lambda:sa-east-1:${DEFAULT_LAYER_AWS_ACCOUNT}:layer:Datadog-Python39`
+      ;(Lambda as any).mockImplementation(() =>
+        makeMockLambda({}, {
+          [`${layer}:1`]: {
+            Version: 1,
+            LayerVersionArn: `${layer}:1`,
+          },
+          [`${layer}:2`]: {
+            Version: 2,
+            LayerVersionArn: `${layer}:2`,
+          },
+          [`${layer}:10`]: {
+            Version: 10,
+            LayerVersionArn: `${layer}:10`,
+          },
+          [`${layer}:20`]: {
+            Version: 20,
+            LayerVersionArn: `${layer}:20`,
+          },
+          [`${layer}:30`]: {
+            Version: 30,
+            LayerVersionArn: `${layer}:30`,
+          },
+          [`${layer}:31`]: {
+            Version: 31,
+            LayerVersionArn: `${layer}:31`,
+          },
+          [`${layer}:32`]: {
+            Version: 32,
+            LayerVersionArn: `${layer}:32`,
+          },
+        })
+      )
+      const runtime: Runtime = 'python3.9'
+      const region = 'sa-east-1'
+      const expectedLatestVersion = 32
+      const latestVersionFound = await findLatestLayerVersion(runtime, region)
+      expect(latestVersionFound).toBe(expectedLatestVersion)
+    })
+
+    test('finds latests version for Node14', async () => {
+      const layer = `arn:aws:lambda:us-east-1:${DEFAULT_LAYER_AWS_ACCOUNT}:layer:Datadog-Node14-x`
+      ;(Lambda as any).mockImplementation(() =>
+        makeMockLambda({}, {
+          [`${layer}:1`]: {
+            Version: 1,
+            LayerVersionArn: `${layer}:1`,
+          },
+          [`${layer}:10`]: {
+            Version: 10,
+            LayerVersionArn: `${layer}:10`,
+          },
+          [`${layer}:20`]: {
+            Version: 20,
+            LayerVersionArn: `${layer}:20`,
+          },
+          [`${layer}:30`]: {
+            Version: 30,
+            LayerVersionArn: `${layer}:30`,
+          },
+          [`${layer}:40`]: {
+            Version: 40,
+            LayerVersionArn: `${layer}:40`,
+          },
+          [`${layer}:41`]: {
+            Version: 41,
+            LayerVersionArn: `${layer}:41`,
+          },
+        })
+      )
+      const runtime: Runtime = 'nodejs14.x'
+      const region = 'us-east-1'
+      const expectedLatestVersion = 41
+      const latestVersionFound = await findLatestLayerVersion(runtime, region)
+      expect(latestVersionFound).toBe(expectedLatestVersion)
+    })
+
+    test('returns 0 when no layer can be found', async () => {
+      ;(Lambda as any).mockImplementation(() =>
+        makeMockLambda({}, {}))
+        const runtime: Runtime = 'python3.7'
+        const region = 'us-east-1'
+        const expectedLatestVersion = 0
+        const latestVersionFound = await findLatestLayerVersion(runtime, region)
+        expect(latestVersionFound).toBe(expectedLatestVersion)
+    })
+  })
+
+  describe('isMissingAWSCredentials', () => {
+    const OLD_ENV = process.env
+    beforeEach(() => {
+      jest.resetModules()
+      process.env = {}
+    })
+    afterAll(() => {
+      process.env = OLD_ENV
+    })
+    test('returns true when any AWS credential is missing', () => {
+      process.env[AWS_SECRET_ACCESS_KEY_ENV_VAR] = 'SOME-AWS-SECRET-ACCESS-KEY'
+      expect(isMissingAWSCredentials()).toBe(true)
+      
+      // reset env
+      process.env = {}
+
+      process.env[AWS_ACCESS_KEY_ID_ENV_VAR] = 'SOME-AWS-ACCESS-KEY-ID'
+      expect(isMissingAWSCredentials()).toBe(true)
+      
+    })
+
+    test('returns false when AWS credentials are set', () => {
+      process.env[AWS_ACCESS_KEY_ID_ENV_VAR] = 'SOME-AWS-ACCESS-KEY-ID'
+      process.env[AWS_SECRET_ACCESS_KEY_ENV_VAR] = 'SOME-AWS-SECRET-ACCESS-KEY'
+      expect(isMissingAWSCredentials()).toBe(false)
+    })
+  })
+
+  describe('isMissingDatadogEnvVars', () => {
+    const OLD_ENV = process.env
+    beforeEach(() => {
+      jest.resetModules()
+      process.env = {}
+    })
+    afterAll(() => {
+      process.env = OLD_ENV
+    })
+    test('returns true when any Datadog Env Var is missing', () => {
+      process.env[CI_SITE_ENV_VAR] = 'datadoghq.com'
+      expect(isMissingDatadogEnvVars()).toBe(true)
+      
+      // reset env
+      process.env = {}
+      process.env[CI_API_KEY_ENV_VAR] = 'SOME-DATADOG-API-KEY'
+      expect(isMissingDatadogEnvVars()).toBe(true)
+
+      process.env = {}
+      process.env[CI_KMS_API_KEY_ENV_VAR] = 'SOME-AWS-KMS-API-KEY-CONTAINING-DATADOG-API-KEY'
+      expect(isMissingDatadogEnvVars()).toBe(true)
+      
+      process.env = {}
+      process.env[CI_API_KEY_SECRET_ARN_ENV_VAR] = 'SOME-AWS-SECRET-ARN-CONTAINING-DATADOG-API-KEY'
+      expect(isMissingDatadogEnvVars()).toBe(true)
+    })
+
+    test('returns false when Datadog Env Vars are set with DATADOG_API_KEY', () => {
+      process.env[CI_API_KEY_ENV_VAR] = 'SOME-DATADOG-API-KEY'
+      process.env[CI_SITE_ENV_VAR] = 'datadoghq.com'
+      expect(isMissingDatadogEnvVars()).toBe(false)
+    })
+
+    test('returns false when Datadog Env Vars are set with DATADOG_KMS_API_KEY', () => {
+      process.env[CI_KMS_API_KEY_ENV_VAR] = 'SOME-AWS-KMS-API-KEY-CONTAINING-DATADOG-API-KEY'
+      process.env[CI_SITE_ENV_VAR] = 'datadoghq.com'
+      expect(isMissingDatadogEnvVars()).toBe(false)
+    })
+
+    test('returns false when Datadog Env Vars are set with DATADOG_API_KEY_SECRET_ARN', () => {
+      process.env[CI_API_KEY_SECRET_ARN_ENV_VAR] = 'SOME-AWS-SECRET-ARN-CONTAINING-DATADOG-API-KEY'
+      process.env[CI_SITE_ENV_VAR] = 'datadoghq.com'
+      expect(isMissingDatadogEnvVars()).toBe(false)
+    })
+  })
+
+  describe('isMissingDatadogSiteEnvVar', () => {
+    const OLD_ENV = process.env
+    beforeEach(() => {
+      jest.resetModules()
+      process.env = {}
+    })
+    afterAll(() => {
+      process.env = OLD_ENV
+    })
+
+    test('returns true when Datadog Site Env Var is missing', () => {
+      expect(isMissingDatadogSiteEnvVar()).toBe(true)
+    })
+
+    test('returns false when Datadog Site Env Var is set', () => {
+      process.env[CI_SITE_ENV_VAR] = 'datadoghq.com'
+      expect(isMissingDatadogSiteEnvVar()).toBe(false)
+    })
+
+    test('returns true when Datadog Site Env Var is set and is not a valid Datadog site', () => {
+      process.env[CI_SITE_ENV_VAR] = 'datacathq.com'
+      expect(isMissingDatadogSiteEnvVar()).toBe(true)
+    })
+  })
+
+  describe('isMissingAnyDatadogApiKeyEnvVar', () => {
+    const OLD_ENV = process.env
+    beforeEach(() => {
+      jest.resetModules()
+      process.env = {}
+    })
+    afterAll(() => {
+      process.env = OLD_ENV
+    })
+
+    test('returns true when no Datadog Api Key is set', () => {
+      expect(isMissingAnyDatadogApiKeyEnvVar()).toBe(true)
+    })
+
+    test('returns false when DATADOG_API_KEY is set', () => {
+      process.env[CI_API_KEY_ENV_VAR] = 'SOME-DATADOG-API-KEY'
+      expect(isMissingAnyDatadogApiKeyEnvVar()).toBe(false)
+    })
+
+    test('returns false when DATADOG_KMS_API_KEY is set', () => {
+      process.env[CI_KMS_API_KEY_ENV_VAR] = 'SOME-AWS-KMS-API-KEY-CONTAINING-DATADOG-API-KEY'
+      expect(isMissingAnyDatadogApiKeyEnvVar()).toBe(false)
+    })
+
+    test('returns false when DATADOG_API_KEY_SECRET_ARN is set', () => {
+      process.env[CI_API_KEY_SECRET_ARN_ENV_VAR] = 'SOME-AWS-SECRET-ARN-CONTAINING-DATADOG-API-KEY'
+      expect(isMissingAnyDatadogApiKeyEnvVar()).toBe(false)
+    })
+  })
+  
   describe('getLayerArn', () => {
     const OLD_ENV = process.env
     beforeEach(() => {
@@ -293,6 +530,38 @@ describe('commons', () => {
       expect(layerArn).toEqual(
         `arn:aws-us-gov:lambda:${region}:${GOVCLOUD_LAYER_AWS_ACCOUNT}:layer:Datadog-Python39-ARM`
       )
+    })
+  })
+
+  describe('getLayerNameWithVersion', () => {
+    const OLD_ENV = process.env
+    beforeEach(() => {
+      jest.resetModules()
+      process.env = {}
+    })
+    afterAll(() => {
+      process.env = OLD_ENV
+    })
+    
+    test('returns the correct name and version given an extension layer arn', () => {
+      const layerName = DD_LAMBDA_EXTENSION_LAYER_NAME
+      const version = '16'
+      const layerNameWithVersion = `${layerName}:${version}`
+      const layerArn = `arn:aws:lambda:sa-east-1:${mockAwsAccount}:layer:${layerNameWithVersion}`
+      expect(getLayerNameWithVersion(layerArn)).toBe(layerNameWithVersion)
+    })
+
+    test('returns the correct name and version given a library layer arn', () => {
+      const layerName = 'Datadog-Python39'
+      const version = '59'
+      const layerNameWithVersion = `${layerName}:${version}`
+      const layerArn = `arn:aws:lambda:sa-east-1:${mockAwsAccount}:layer:${layerNameWithVersion}`
+      expect(getLayerNameWithVersion(layerArn)).toBe(layerNameWithVersion)
+    })
+
+    test('returns undefined if arn is incomplete', () => {
+      const layerArn = `arn:aws:lambda:sa-east-1:${mockAwsAccount}:layer:Datadog-Python39`
+      expect(getLayerNameWithVersion(layerArn)).toBe(undefined)
     })
   })
   describe('getRegion', () => {

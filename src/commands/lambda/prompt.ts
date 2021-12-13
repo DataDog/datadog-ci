@@ -119,6 +119,20 @@ const confirmationQuestion = (message: string): QuestionCollection => ({
   type: 'confirm',
 })
 
+const functionsToInstrumentQuestion = (configs: string[]): QuestionCollection => ({
+  type: 'checkbox',
+  message: 'Select the functions to instrument',
+  name: 'functions',
+  choices: configs,
+  validate: (functions) => {
+    if (functions.length < 1) {
+      return 'You must choose at least one function.';
+    }
+
+    return true;
+  },
+})
+
 export const requestAWSCredentials = async () => {
   try {
     const awsCredentialsAnswers = await prompt(awsCredentialsQuestions)
@@ -157,6 +171,18 @@ export const requestChangesConfirmation = async (message: string) => {
   } catch (e) {
     if (e instanceof Error) {
       throw Error(`Couldn't receive confirmation. ${e}`)
+    }
+  }
+}
+
+export const requestFunctionsToInstrument = async (configs: string[]) => {
+  try {
+    const selectedFunctionsAnswer = await prompt(functionsToInstrumentQuestion(configs))
+
+    return selectedFunctionsAnswer.functions
+  } catch (e) {
+    if (e instanceof Error) {
+      throw Error(`Couldn't receive selected functions. ${e}`)
     }
   }
 }

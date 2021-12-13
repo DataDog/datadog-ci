@@ -28,7 +28,7 @@ export class UninstrumentCommand extends Command {
   public async execute() {
     // Trial user experience
     if (this.interactive) {
-      if (isMissingAWSCredentials) {
+      if (isMissingAWSCredentials()) {
         this.context.stdout.write(`${bold(yellow('[!]'))} AWS Credentials are missing, let's set them up!\n`)
         await requestAWSCredentials()
       }
