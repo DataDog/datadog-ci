@@ -1,6 +1,6 @@
 /* tslint:disable:no-string-literal */
 jest.mock('aws-sdk')
-import { Lambda } from 'aws-sdk'
+import {Lambda} from 'aws-sdk'
 import {
   AWS_ACCESS_KEY_ID_ENV_VAR,
   AWS_SECRET_ACCESS_KEY_ENV_VAR,
@@ -17,7 +17,6 @@ import {
   MERGE_XRAY_TRACES_ENV_VAR,
   Runtime,
   RUNTIME_LAYER_LOOKUP,
-  SITES,
   TRACE_ENABLED_ENV_VAR,
 } from '../../constants'
 import {
@@ -185,36 +184,39 @@ describe('commons', () => {
     test('finds latests version for Python39', async () => {
       const layer = `arn:aws:lambda:sa-east-1:${DEFAULT_LAYER_AWS_ACCOUNT}:layer:Datadog-Python39`
       ;(Lambda as any).mockImplementation(() =>
-        makeMockLambda({}, {
-          [`${layer}:1`]: {
-            Version: 1,
-            LayerVersionArn: `${layer}:1`,
-          },
-          [`${layer}:2`]: {
-            Version: 2,
-            LayerVersionArn: `${layer}:2`,
-          },
-          [`${layer}:10`]: {
-            Version: 10,
-            LayerVersionArn: `${layer}:10`,
-          },
-          [`${layer}:20`]: {
-            Version: 20,
-            LayerVersionArn: `${layer}:20`,
-          },
-          [`${layer}:30`]: {
-            Version: 30,
-            LayerVersionArn: `${layer}:30`,
-          },
-          [`${layer}:31`]: {
-            Version: 31,
-            LayerVersionArn: `${layer}:31`,
-          },
-          [`${layer}:32`]: {
-            Version: 32,
-            LayerVersionArn: `${layer}:32`,
-          },
-        })
+        makeMockLambda(
+          {},
+          {
+            [`${layer}:1`]: {
+              LayerVersionArn: `${layer}:1`,
+              Version: 1,
+            },
+            [`${layer}:2`]: {
+              LayerVersionArn: `${layer}:2`,
+              Version: 2,
+            },
+            [`${layer}:10`]: {
+              LayerVersionArn: `${layer}:10`,
+              Version: 10,
+            },
+            [`${layer}:20`]: {
+              LayerVersionArn: `${layer}:20`,
+              Version: 20,
+            },
+            [`${layer}:30`]: {
+              LayerVersionArn: `${layer}:30`,
+              Version: 30,
+            },
+            [`${layer}:31`]: {
+              LayerVersionArn: `${layer}:31`,
+              Version: 31,
+            },
+            [`${layer}:32`]: {
+              LayerVersionArn: `${layer}:32`,
+              Version: 32,
+            },
+          }
+        )
       )
       const runtime: Runtime = 'python3.9'
       const region = 'sa-east-1'
@@ -226,32 +228,35 @@ describe('commons', () => {
     test('finds latests version for Node14', async () => {
       const layer = `arn:aws:lambda:us-east-1:${DEFAULT_LAYER_AWS_ACCOUNT}:layer:Datadog-Node14-x`
       ;(Lambda as any).mockImplementation(() =>
-        makeMockLambda({}, {
-          [`${layer}:1`]: {
-            Version: 1,
-            LayerVersionArn: `${layer}:1`,
-          },
-          [`${layer}:10`]: {
-            Version: 10,
-            LayerVersionArn: `${layer}:10`,
-          },
-          [`${layer}:20`]: {
-            Version: 20,
-            LayerVersionArn: `${layer}:20`,
-          },
-          [`${layer}:30`]: {
-            Version: 30,
-            LayerVersionArn: `${layer}:30`,
-          },
-          [`${layer}:40`]: {
-            Version: 40,
-            LayerVersionArn: `${layer}:40`,
-          },
-          [`${layer}:41`]: {
-            Version: 41,
-            LayerVersionArn: `${layer}:41`,
-          },
-        })
+        makeMockLambda(
+          {},
+          {
+            [`${layer}:1`]: {
+              LayerVersionArn: `${layer}:1`,
+              Version: 1,
+            },
+            [`${layer}:10`]: {
+              LayerVersionArn: `${layer}:10`,
+              Version: 10,
+            },
+            [`${layer}:20`]: {
+              LayerVersionArn: `${layer}:20`,
+              Version: 20,
+            },
+            [`${layer}:30`]: {
+              LayerVersionArn: `${layer}:30`,
+              Version: 30,
+            },
+            [`${layer}:40`]: {
+              LayerVersionArn: `${layer}:40`,
+              Version: 40,
+            },
+            [`${layer}:41`]: {
+              LayerVersionArn: `${layer}:41`,
+              Version: 41,
+            },
+          }
+        )
       )
       const runtime: Runtime = 'nodejs14.x'
       const region = 'us-east-1'
@@ -261,13 +266,12 @@ describe('commons', () => {
     })
 
     test('returns 0 when no layer can be found', async () => {
-      ;(Lambda as any).mockImplementation(() =>
-        makeMockLambda({}, {}))
-        const runtime: Runtime = 'python3.7'
-        const region = 'us-east-1'
-        const expectedLatestVersion = 0
-        const latestVersionFound = await findLatestLayerVersion(runtime, region)
-        expect(latestVersionFound).toBe(expectedLatestVersion)
+      ;(Lambda as any).mockImplementation(() => makeMockLambda({}, {}))
+      const runtime: Runtime = 'python3.7'
+      const region = 'us-east-1'
+      const expectedLatestVersion = 0
+      const latestVersionFound = await findLatestLayerVersion(runtime, region)
+      expect(latestVersionFound).toBe(expectedLatestVersion)
     })
   })
 
@@ -283,13 +287,12 @@ describe('commons', () => {
     test('returns true when any AWS credential is missing', () => {
       process.env[AWS_SECRET_ACCESS_KEY_ENV_VAR] = 'SOME-AWS-SECRET-ACCESS-KEY'
       expect(isMissingAWSCredentials()).toBe(true)
-      
-      // reset env
+
+      // Reset env
       process.env = {}
 
       process.env[AWS_ACCESS_KEY_ID_ENV_VAR] = 'SOME-AWS-ACCESS-KEY-ID'
       expect(isMissingAWSCredentials()).toBe(true)
-      
     })
 
     test('returns false when AWS credentials are set', () => {
@@ -311,8 +314,8 @@ describe('commons', () => {
     test('returns true when any Datadog Env Var is missing', () => {
       process.env[CI_SITE_ENV_VAR] = 'datadoghq.com'
       expect(isMissingDatadogEnvVars()).toBe(true)
-      
-      // reset env
+
+      // Reset env
       process.env = {}
       process.env[CI_API_KEY_ENV_VAR] = 'SOME-DATADOG-API-KEY'
       expect(isMissingDatadogEnvVars()).toBe(true)
@@ -320,7 +323,7 @@ describe('commons', () => {
       process.env = {}
       process.env[CI_KMS_API_KEY_ENV_VAR] = 'SOME-AWS-KMS-API-KEY-CONTAINING-DATADOG-API-KEY'
       expect(isMissingDatadogEnvVars()).toBe(true)
-      
+
       process.env = {}
       process.env[CI_API_KEY_SECRET_ARN_ENV_VAR] = 'SOME-AWS-SECRET-ARN-CONTAINING-DATADOG-API-KEY'
       expect(isMissingDatadogEnvVars()).toBe(true)
@@ -399,7 +402,7 @@ describe('commons', () => {
       expect(isMissingAnyDatadogApiKeyEnvVar()).toBe(false)
     })
   })
-  
+
   describe('getLayerArn', () => {
     const OLD_ENV = process.env
     beforeEach(() => {
@@ -542,7 +545,7 @@ describe('commons', () => {
     afterAll(() => {
       process.env = OLD_ENV
     })
-    
+
     test('returns the correct name and version given an extension layer arn', () => {
       const layerName = DD_LAMBDA_EXTENSION_LAYER_NAME
       const version = '16'

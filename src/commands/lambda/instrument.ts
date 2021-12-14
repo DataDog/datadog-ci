@@ -8,8 +8,7 @@ import {EXTRA_TAGS_REG_EXP} from './constants'
 import {
   coerceBoolean,
   collectFunctionsByRegion,
-  getLambdaFunctionConfigsFromRegex,
-  getLayerNameWithVersion,
+  getAllLambdaFunctionConfigs,
   isMissingAWSCredentials,
   isMissingDatadogEnvVars,
   sentenceMatchesRegEx,
@@ -18,7 +17,12 @@ import {
 } from './functions/commons'
 import {getInstrumentedFunctionConfigs, getInstrumentedFunctionConfigsFromRegEx} from './functions/instrument'
 import {FunctionConfiguration, InstrumentationSettings, LambdaConfigOptions} from './interfaces'
-import {requestAWSCredentials, requestChangesConfirmation, requestDatadogEnvVars, requestFunctionsToInstrument} from './prompt'
+import {
+  requestAWSCredentials,
+  requestChangesConfirmation,
+  requestDatadogEnvVars,
+  requestFunctionsToInstrument,
+} from './prompt'
 
 export class InstrumentCommand extends Command {
   private config: LambdaConfigOptions = {
@@ -67,15 +71,15 @@ export class InstrumentCommand extends Command {
           const region = this.region || this.config.region
           const lambda = new Lambda({region})
           this.context.stdout.write('Fetching lambda functions, this might take a while.\n')
-          const configs = (await getLambdaFunctionConfigsFromRegex(lambda, '.')).map(config => config.FunctionName!).sort() ?? []
-          if (!configs) {
-            this.context.stdout.write(`You don't have any Lambda Functions in your AWS account.\n`)
-  
+          const functionNames =
+            (await getAllLambdaFunctionConfigs(lambda)).map((config) => config.FunctionName!).sort() ?? []
+          if (!functionNames) {
+            this.context.stdout.write("You don't have any Lambda Functions in your AWS account.\n")
+
             return 1
           }
-          const functions = await requestFunctionsToInstrument(configs)
+          const functions = await requestFunctionsToInstrument(functionNames)
           this.functions = functions
-
         } catch (err) {
           this.context.stdout.write(`Couldn't fetch lambda functions. ${err}\n`)
 
@@ -383,22 +387,8 @@ export class InstrumentCommand extends Command {
     this.context.stdout.write(`\n${bold(yellow('[!]'))} Functions to be updated:\n`)
     for (const config of configs) {
       this.context.stdout.write(`\t- ${bold(config.functionARN)}\n`)
-      
-      if (this.interactive) {
-        const hasLayerUpdate = config.updateRequest?.Layers
-        if (hasLayerUpdate) { 
-          const layersArray = config.updateRequest?.Layers?.map((layer) => yellow(getLayerNameWithVersion(layer)))
-          const layers = layersArray?.join(', ').replace(/, ([^,]*)$/, ' and $1')
-          const plural = !this.layerVersion && !this.extensionVersion
-          this.context.stdout.write(
-            `\t${bold(yellow('[Warning]'))} Latest layer version${plural && 's'} ${layers} ${
-              plural ? 'are used.' : 'is used.'
-            } Ensure to lock in versions for production applications using \`${bold('--layerVersion')}\` and \`${bold(
-              '--extensionVersion'
-            )}\`.\n`
-          )
-        }
-      }
+
+      // TODO: Inform user if using latest layer version
     }
 
     this.context.stdout.write(`\n${prefix}Will apply the following updates:\n`)

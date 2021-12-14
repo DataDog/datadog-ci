@@ -170,20 +170,24 @@ export const findLatestLayerVersion = async (runtime: Runtime, region: string) =
 }
 
 export const isMissingAWSCredentials = () =>
-  process.env[AWS_ACCESS_KEY_ID_ENV_VAR] === undefined || process.env[AWS_SECRET_ACCESS_KEY_ENV_VAR] === undefined 
+  process.env[AWS_ACCESS_KEY_ID_ENV_VAR] === undefined || process.env[AWS_SECRET_ACCESS_KEY_ENV_VAR] === undefined
 export const isMissingDatadogSiteEnvVar = () => {
   const site = process.env[CI_SITE_ENV_VAR]
   if (site !== undefined) {
-    return !SITES.includes(site)  
+    return !SITES.includes(site)
   }
+
   return true
 }
-export const isMissingAnyDatadogApiKeyEnvVar = () => !(
-  process.env[CI_API_KEY_ENV_VAR] ||
-  process.env[CI_KMS_API_KEY_ENV_VAR] ||
-  process.env[CI_API_KEY_SECRET_ARN_ENV_VAR]
-)
+export const isMissingAnyDatadogApiKeyEnvVar = () =>
+  !(
+    process.env[CI_API_KEY_ENV_VAR] ||
+    process.env[CI_KMS_API_KEY_ENV_VAR] ||
+    process.env[CI_API_KEY_SECRET_ARN_ENV_VAR]
+  )
 export const isMissingDatadogEnvVars = () => isMissingDatadogSiteEnvVar() || isMissingAnyDatadogApiKeyEnvVar()
+
+export const getAllLambdaFunctionConfigs = async (lambda: Lambda) => getLambdaFunctionConfigsFromRegex(lambda, '.')
 
 /**
  * Given a Lambda instance and a regular expression,
@@ -269,7 +273,13 @@ export const getLayerArn = (
   return `arn:aws:lambda:${region}:${account}:layer:${layerName}`
 }
 
-export const getLayers = (config: Lambda.FunctionConfiguration) => (config.Layers ?? []).map((layer) => layer.Arn ?? '')
+export const getLayerNameWithVersion = (layerArn: string): string | undefined => {
+  const [, , , , , , name, version] = layerArn.split(':')
+
+  return name && version ? `${name}:${version}` : undefined
+}
+
+export const getLayers = (config: Lambda.FunctionConfiguration) => (config.Layers ?? []).map((layer) => layer.Arn!)
 
 /**
  * Call the aws-sdk Lambda api to get a Function given
@@ -305,12 +315,6 @@ export const getRegion = (functionARN: string): string | undefined => {
   const [, , , region] = functionARN.split(':')
 
   return region === undefined || region === '*' ? undefined : region
-}
-
-export const getLayerNameWithVersion = (layerArn: string): string | undefined => {
-  const [, , , , , , name, version] = layerArn.split(':')
-
-  return name && version ? `${name}:${version}` : undefined
 }
 
 /**

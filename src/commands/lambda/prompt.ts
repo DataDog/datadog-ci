@@ -1,5 +1,13 @@
 import {blueBright, bold} from 'chalk'
-import {ListQuestion, prompt, QuestionCollection, Separator} from 'inquirer'
+import {
+  CheckboxQuestion,
+  ConfirmQuestion,
+  InputQuestion,
+  ListQuestion,
+  prompt,
+  QuestionCollection,
+  Separator,
+} from 'inquirer'
 import {
   AWS_ACCESS_KEY_ID_ENV_VAR,
   AWS_ACCESS_KEY_ID_REG_EXP,
@@ -54,7 +62,7 @@ const awsCredentialsQuestions: QuestionCollection = [
   },
 ]
 
-const datadogApiKeyTypeQuestion = (datadogSite: string): ListQuestion => ({
+export const datadogApiKeyTypeQuestion = (datadogSite: string): ListQuestion => ({
   choices: [
     {
       name: `Plain text ${bold('API Key')} (Recommended for trial users) `,
@@ -86,7 +94,7 @@ const datadogApiKeyTypeQuestion = (datadogSite: string): ListQuestion => ({
   type: 'list',
 })
 
-const datadogSiteQuestion: QuestionCollection = {
+const datadogSiteQuestion: ListQuestion = {
   // DATADOG SITE
   choices: SITES,
   message: `Select the Datadog site to send data. \nLearn more at ${blueBright(
@@ -96,40 +104,38 @@ const datadogSiteQuestion: QuestionCollection = {
   type: 'list',
 }
 
-const datadogEnvVarsQuestions = (datadogApiKeyType: Record<string, any>): QuestionCollection => [
-  {
-    // DATADOG API KEY given type
-    default: process.env[datadogApiKeyType.envVar],
-    message: datadogApiKeyType.message,
-    name: datadogApiKeyType.envVar,
-    type: 'input',
-    validate: (value) => {
-      if (!value || !sentenceMatchesRegEx(value, DATADOG_API_KEY_REG_EXP)) {
-        return 'Enter a valid Datadog API Key.'
-      }
+export const datadogEnvVarsQuestions = (datadogApiKeyType: Record<string, any>): InputQuestion => ({
+  // DATADOG API KEY given type
+  default: process.env[datadogApiKeyType.envVar],
+  message: datadogApiKeyType.message,
+  name: datadogApiKeyType.envVar,
+  type: 'input',
+  validate: (value) => {
+    if (!value || !sentenceMatchesRegEx(value, DATADOG_API_KEY_REG_EXP)) {
+      return 'Enter a valid Datadog API Key.'
+    }
 
-      return true
-    },
+    return true
   },
-]
+})
 
-const confirmationQuestion = (message: string): QuestionCollection => ({
+export const confirmationQuestion = (message: string): ConfirmQuestion => ({
   message,
-  name: 'confirm',
+  name: 'confirmation',
   type: 'confirm',
 })
 
-const functionsToInstrumentQuestion = (configs: string[]): QuestionCollection => ({
-  type: 'checkbox',
+export const functionsToInstrumentQuestion = (functionNames: string[]): CheckboxQuestion => ({
+  choices: functionNames,
   message: 'Select the functions to instrument',
   name: 'functions',
-  choices: configs,
-  validate: (functions) => {
-    if (functions.length < 1) {
-      return 'You must choose at least one function.';
+  type: 'checkbox',
+  validate: (selectedFunctions) => {
+    if (selectedFunctions.length < 1) {
+      return 'You must choose at least one function.'
     }
 
-    return true;
+    return true
   },
 })
 
@@ -138,9 +144,10 @@ export const requestAWSCredentials = async () => {
     const awsCredentialsAnswers = await prompt(awsCredentialsQuestions)
     process.env[AWS_ACCESS_KEY_ID_ENV_VAR] = awsCredentialsAnswers[AWS_ACCESS_KEY_ID_ENV_VAR]
     process.env[AWS_SECRET_ACCESS_KEY_ENV_VAR] = awsCredentialsAnswers[AWS_SECRET_ACCESS_KEY_ENV_VAR]
+    process.env[AWS_DEFAULT_REGION_ENV_VAR] = awsCredentialsAnswers[AWS_DEFAULT_REGION_ENV_VAR]
   } catch (e) {
     if (e instanceof Error) {
-      throw Error(`Couldn't set AWS Credentials. ${e}`)
+      throw Error(`Couldn't set AWS Credentials. ${e.message}`)
     }
   }
 }
@@ -158,7 +165,7 @@ export const requestDatadogEnvVars = async () => {
     process.env[selectedDatadogApiKeyEnvVar] = datadogEnvVars[selectedDatadogApiKeyEnvVar]
   } catch (e) {
     if (e instanceof Error) {
-      throw Error(`Couldn't set Datadog Environment Variables. ${e}`)
+      throw Error(`Couldn't set Datadog Environment Variables. ${e.message}`)
     }
   }
 }
@@ -167,22 +174,22 @@ export const requestChangesConfirmation = async (message: string) => {
   try {
     const confirmationAnswer = await prompt(confirmationQuestion(message))
 
-    return confirmationAnswer.confirm
+    return confirmationAnswer.confirmation
   } catch (e) {
     if (e instanceof Error) {
-      throw Error(`Couldn't receive confirmation. ${e}`)
+      throw Error(`Couldn't receive confirmation. ${e.message}`)
     }
   }
 }
 
-export const requestFunctionsToInstrument = async (configs: string[]) => {
+export const requestFunctionsToInstrument = async (functionNames: string[]) => {
   try {
-    const selectedFunctionsAnswer = await prompt(functionsToInstrumentQuestion(configs))
+    const selectedFunctionsAnswer = await prompt(functionsToInstrumentQuestion(functionNames))
 
     return selectedFunctionsAnswer.functions
   } catch (e) {
     if (e instanceof Error) {
-      throw Error(`Couldn't receive selected functions. ${e}`)
+      throw Error(`Couldn't receive selected functions. ${e.message}`)
     }
   }
 }

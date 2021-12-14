@@ -46,15 +46,21 @@ export const createCommand = <T extends Command>(commandClass: ConstructorOf<T>,
   return command
 }
 
-export const makeMockLambda = (functionConfigs: Record<string, Lambda.FunctionConfiguration>, layers?: Record<string, Lambda.LayerVersionsListItem>) => ({
+export const makeMockLambda = (
+  functionConfigs: Record<string, Lambda.FunctionConfiguration>,
+  layers?: Record<string, Lambda.LayerVersionsListItem>
+) => ({
   getFunction: jest.fn().mockImplementation(({FunctionName}) => ({
     promise: () => Promise.resolve({Configuration: functionConfigs[FunctionName]}),
   })),
   getLayerVersion: jest.fn().mockImplementation(({LayerName, VersionNumber}) => ({
     promise: () => {
       const layer = LayerName + ':' + VersionNumber
-      return (layers && layers[layer] && layers[layer].Version === VersionNumber) ? Promise.resolve(layers[layer]) : Promise.reject()
-    }
+
+      return layers && layers[layer] && layers[layer].Version === VersionNumber
+        ? Promise.resolve(layers[layer])
+        : Promise.reject()
+    },
   })),
   listFunctions: jest.fn().mockImplementation(() => ({
     promise: () => Promise.resolve({Functions: Object.values(functionConfigs)}),
@@ -90,3 +96,6 @@ export const makeMockCloudWatchLogs = (
 })
 
 export const mockAwsAccount = '123456789012'
+export const mockAwsAccessKeyId = 'M0CKAWS4CC3SSK3Y1DSL'
+export const mockAwsSecretAccessKey = 'M0CKAWSs3cR3T4cC3SSK3YS3rv3rL3SSD4tad0g!'
+export const mockDatadogApiKey = '02aeb762fff59ac0d5ad1536cd9633bd'
