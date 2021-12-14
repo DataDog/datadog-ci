@@ -2,6 +2,7 @@ import {CloudWatchLogs, Lambda} from 'aws-sdk'
 import {
   API_KEY_ENV_VAR,
   API_KEY_SECRET_ARN_ENV_VAR,
+  CAPTURE_LAMBDA_PAYLOAD_ENV_VAR,
   CI_API_KEY_ENV_VAR,
   CI_API_KEY_SECRET_ARN_ENV_VAR,
   CI_KMS_API_KEY_ENV_VAR,
@@ -181,6 +182,7 @@ export const calculateUpdateRequest = async (
   }
 
   const environmentVarsTupleArray: [keyof InstrumentationSettings, string][] = [
+    ['captureLambdaPayload', CAPTURE_LAMBDA_PAYLOAD_ENV_VAR],
     ['environment', ENVIRONMENT_ENV_VAR],
     ['extraTags', EXTRA_TAGS_ENV_VAR],
     ['mergeXrayTraces', MERGE_XRAY_TRACES_ENV_VAR],
@@ -195,6 +197,8 @@ export const calculateUpdateRequest = async (
       changedEnvVars[environmentVar] = settings[key]!.toString()
     }
   }
+
+  // Skip adding DD_FLUSH_TO_LOGS when using Extension
   const isUsingExtension = settings.extensionVersion !== undefined
   if (
     !isUsingExtension &&

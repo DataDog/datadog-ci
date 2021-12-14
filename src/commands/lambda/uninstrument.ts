@@ -221,3 +221,4 @@ UninstrumentCommand.addOption('service', Command.String('--service', {hidden: tr
 UninstrumentCommand.addOption('environment', Command.String('--env', {hidden: true}))
 UninstrumentCommand.addOption('version', Command.String('--version', {hidden: true}))
 UninstrumentCommand.addOption('extraTags', Command.String('--extra-tags', {hidden: true}))
+UninstrumentCommand.addOption('captureLambdaPayload', Command.String('--capture-lambda-payload', {hidden: true}))
