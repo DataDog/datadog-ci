@@ -86,7 +86,7 @@ export class UninstrumentCommand extends Command {
 
         configGroups.push({configs, lambda, cloudWatchLogs})
       } catch (err) {
-        this.context.stdout.write(`Couldn't fetch lambda functions. ${err}\n`)
+        this.context.stdout.write(`${red('[Error]')} Couldn't fetch lambda functions. ${err}\n`)
 
         return 1
       }

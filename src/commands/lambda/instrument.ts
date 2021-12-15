@@ -1,10 +1,10 @@
 import {CloudWatchLogs, Lambda} from 'aws-sdk'
-import {blueBright, bold, cyan, hex, underline, yellow} from 'chalk'
+import {blueBright, bold, cyan, hex, red, underline, yellow} from 'chalk'
 import {Cli, Command} from 'clipanion'
 import {parseConfigFile} from '../../helpers/utils'
 import {getCommitInfo, newSimpleGit} from '../git-metadata/git'
 import {UploadCommand} from '../git-metadata/upload'
-import {EXTRA_TAGS_REG_EXP} from './constants'
+import {AWS_DEFAULT_REGION_ENV_VAR, EXTRA_TAGS_REG_EXP} from './constants'
 import {
   coerceBoolean,
   collectFunctionsByRegion,
@@ -28,7 +28,7 @@ export class InstrumentCommand extends Command {
   private captureLambdaPayload?: string
   private config: LambdaConfigOptions = {
     functions: [],
-    region: process.env.AWS_DEFAULT_REGION,
+    region: process.env[AWS_DEFAULT_REGION_ENV_VAR],
     tracing: 'true',
   }
   private configPath?: string
@@ -52,46 +52,52 @@ export class InstrumentCommand extends Command {
   private version?: string
 
   public async execute() {
+    const lambdaConfig = {lambda: this.config}
+    this.config = (await parseConfigFile(lambdaConfig, this.configPath)).lambda
+
     let hasSpecifiedFuntions = this.functions.length !== 0 || this.config.functions.length !== 0
     // Trial user experience
     if (this.interactive) {
-      if (isMissingAWSCredentials()) {
-        this.context.stdout.write(`${bold(yellow('[!]'))} AWS Credentials are missing, let's set them up!\n`)
-        await requestAWSCredentials()
-      }
-      if (isMissingDatadogEnvVars()) {
-        this.context.stdout.write(`${bold(yellow('[!]'))} Datadog Environment Variables are needed.\n`)
-        await requestDatadogEnvVars()
+      try {
+        if (isMissingAWSCredentials()) {
+          this.context.stdout.write(`${bold(yellow('[!]'))} AWS Credentials are missing, let's set them up!\n`)
+          await requestAWSCredentials()
+        }
+        if (isMissingDatadogEnvVars()) {
+          this.context.stdout.write(`${bold(yellow('[!]'))} Datadog Environment Variables are needed.\n`)
+          await requestDatadogEnvVars()
+        }
+      } catch (e) {
+        this.context.stdout.write(`${red('[Error]')} ${e}\n`)
+
+        return 1
       }
 
+      const region = this.region ?? this.config.region ?? process.env[AWS_DEFAULT_REGION_ENV_VAR]
+      this.region = region
       // If user doesn't specify functions, allow them
       // to select from all of the functions from the
       // requested region.
       if (!hasSpecifiedFuntions) {
         try {
-          const region = this.region || this.config.region
           const lambda = new Lambda({region})
           this.context.stdout.write('Fetching lambda functions, this might take a while.\n')
           const functionNames =
             (await getAllLambdaFunctionConfigs(lambda)).map((config) => config.FunctionName!).sort() ?? []
-          if (!functionNames) {
-            this.context.stdout.write("You don't have any Lambda Functions in your AWS account.\n")
+          if (functionNames.length === 0) {
+            this.context.stdout.write(`${red('[Error]')} You don't have any Lambda Functions in your AWS account.\n`)
 
             return 1
           }
           const functions = await requestFunctionsToInstrument(functionNames)
           this.functions = functions
         } catch (err) {
-          this.context.stdout.write(`Couldn't fetch lambda functions. ${err}\n`)
+          this.context.stdout.write(`${red('[Error]')} Couldn't fetch lambda functions. ${err}\n`)
 
           return 1
         }
       }
     }
-
-    const lambdaConfig = {lambda: this.config}
-    this.config = (await parseConfigFile(lambdaConfig, this.configPath)).lambda
-
     const settings = this.getSettings()
     if (settings === undefined) {
       return 1

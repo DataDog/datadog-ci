@@ -1,14 +1,37 @@
 // tslint:disable: no-string-literal
 jest.mock('fs')
 jest.mock('aws-sdk')
+jest.mock('../prompt')
 import {Lambda} from 'aws-sdk'
-import {blueBright, bold, cyan, hex, underline, yellow} from 'chalk'
+import {blueBright, bold, cyan, hex, red, underline, yellow} from 'chalk'
 import {Cli} from 'clipanion/lib/advanced'
 import * as fs from 'fs'
 import path from 'path'
+import {
+  AWS_ACCESS_KEY_ID_ENV_VAR,
+  AWS_DEFAULT_REGION_ENV_VAR,
+  AWS_SECRET_ACCESS_KEY_ENV_VAR,
+  CI_API_KEY_ENV_VAR,
+  CI_SITE_ENV_VAR,
+  DEFAULT_LAYER_AWS_ACCOUNT,
+} from '../constants'
 import {InstrumentCommand} from '../instrument'
 import {InstrumentationSettings, LambdaConfigOptions} from '../interfaces'
-import {createCommand, createMockContext, makeCli, makeMockLambda} from './fixtures'
+import {
+  requestAWSCredentials,
+  requestChangesConfirmation,
+  requestDatadogEnvVars,
+  requestFunctionsToInstrument,
+} from '../prompt'
+import {
+  createCommand,
+  createMockContext,
+  makeCli,
+  makeMockLambda,
+  mockAwsAccessKeyId,
+  mockAwsSecretAccessKey,
+  mockDatadogApiKey,
+} from './fixtures'
 // tslint:disable-next-line
 const {version} = require(path.join(__dirname, '../../../../package.json'))
 
@@ -683,7 +706,358 @@ TagResource -> arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world
         const output = command.context.stdout.toString()
         expect(output).toMatch(`"--functions-regex" isn't meant to be used with ARNs.\n`)
       })
+
+      test('instrument multiple functions interactively', async () => {
+        const node14LibraryLayer = `arn:aws:lambda:sa-east-1:${DEFAULT_LAYER_AWS_ACCOUNT}:layer:Datadog-Node14-x`
+        const node12LibraryLayer = `arn:aws:lambda:sa-east-1:${DEFAULT_LAYER_AWS_ACCOUNT}:layer:Datadog-Node12-x`
+        const extensionLayer = `arn:aws:lambda:sa-east-1:${DEFAULT_LAYER_AWS_ACCOUNT}:layer:Datadog-Extension`
+        ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({code: 'ENOENT'}))
+        ;(Lambda as any).mockImplementation(() =>
+          makeMockLambda(
+            {
+              'arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world': {
+                FunctionArn: 'arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world',
+                FunctionName: 'lambda-hello-world',
+                Handler: 'index.handler',
+                Runtime: 'nodejs12.x',
+              },
+              'arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world-2': {
+                FunctionArn: 'arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world-2',
+                FunctionName: 'lambda-hello-world-2',
+                Handler: 'index.handler',
+                Runtime: 'nodejs14.x',
+              },
+            },
+            {
+              [`${node14LibraryLayer}:1`]: {
+                LayerVersionArn: `${node14LibraryLayer}:1`,
+                Version: 1,
+              },
+              [`${node12LibraryLayer}:1`]: {
+                LayerVersionArn: `${node12LibraryLayer}:1`,
+                Version: 1,
+              },
+              [`${extensionLayer}:1`]: {
+                LayerVersionArn: `${extensionLayer}:1`,
+                Version: 1,
+              },
+            }
+          )
+        )
+        ;(requestAWSCredentials as any).mockImplementation(() => {
+          process.env[AWS_ACCESS_KEY_ID_ENV_VAR] = mockAwsAccessKeyId
+          process.env[AWS_SECRET_ACCESS_KEY_ENV_VAR] = mockAwsSecretAccessKey
+          process.env[AWS_DEFAULT_REGION_ENV_VAR] = 'sa-east-1'
+        })
+        ;(requestDatadogEnvVars as any).mockImplementation(() => {
+          process.env[CI_SITE_ENV_VAR] = 'datadoghq.com'
+          process.env[CI_API_KEY_ENV_VAR] = mockDatadogApiKey
+        })
+        ;(requestFunctionsToInstrument as any).mockImplementation(() => [
+          'arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world',
+          'arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world-2',
+        ])
+        ;(requestChangesConfirmation as any).mockImplementation(() => true)
+
+        const cli = makeCli()
+        const context = createMockContext() as any
+        const code = await cli.run(['lambda', 'instrument', '-i'], context)
+        const output = context.stdout.toString()
+        expect(code).toBe(0)
+        expect(output).toMatchInlineSnapshot(`
+"${bold(yellow('[!]'))} AWS Credentials are missing, let's set them up!
+${bold(yellow('[!]'))} Datadog Environment Variables are needed.
+Fetching lambda functions, this might take a while.
+${bold(
+  yellow('[Warning]')
+)} The environment, service and version tags have not been configured. Learn more about Datadog unified service tagging: ${underline(
+          blueBright(
+            'https://docs.datadoghq.com/getting_started/tagging/unified_service_tagging/#serverless-environment.'
+          )
+        )}
+${bold(yellow('[Warning]'))} Instrument your ${hex('#FF9900').bold(
+          'Lambda'
+        )} functions in a dev or staging environment first. Should the instrumentation result be unsatisfactory, run \`${bold(
+          'uninstrument'
+        )}\` with the same arguments to revert the changes.\n
+${bold(yellow('[!]'))} Functions to be updated:
+\t- ${bold('arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world')}
+\t- ${bold('arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world-2')}\n
+Will apply the following updates:
+UpdateFunctionConfiguration -> arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world
+{
+  \\"FunctionName\\": \\"arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world\\",
+  \\"Handler\\": \\"/opt/nodejs/node_modules/datadog-lambda-js/handler.handler\\",
+  \\"Environment\\": {
+    \\"Variables\\": {
+      \\"DD_LAMBDA_HANDLER\\": \\"index.handler\\",
+      \\"DD_API_KEY\\": \\"02aeb762fff59ac0d5ad1536cd9633bd\\",
+      \\"DD_SITE\\": \\"datadoghq.com\\",
+      \\"DD_CAPTURE_LAMBDA_PAYLOAD\\": \\"false\\",
+      \\"DD_MERGE_XRAY_TRACES\\": \\"false\\",
+      \\"DD_TRACE_ENABLED\\": \\"true\\",
+      \\"DD_FLUSH_TO_LOG\\": \\"true\\"
+    }
+  },
+  \\"Layers\\": [
+    \\"arn:aws:lambda:sa-east-1:464622532012:layer:Datadog-Extension:1\\",
+    \\"arn:aws:lambda:sa-east-1:464622532012:layer:Datadog-Node12-x:1\\"
+  ]
+}
+TagResource -> arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world
+{
+  \\"dd_sls_ci\\": \\"v${version}\\"
+}
+UpdateFunctionConfiguration -> arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world-2
+{
+  \\"FunctionName\\": \\"arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world-2\\",
+  \\"Handler\\": \\"/opt/nodejs/node_modules/datadog-lambda-js/handler.handler\\",
+  \\"Environment\\": {
+    \\"Variables\\": {
+      \\"DD_LAMBDA_HANDLER\\": \\"index.handler\\",
+      \\"DD_API_KEY\\": \\"02aeb762fff59ac0d5ad1536cd9633bd\\",
+      \\"DD_SITE\\": \\"datadoghq.com\\",
+      \\"DD_CAPTURE_LAMBDA_PAYLOAD\\": \\"false\\",
+      \\"DD_MERGE_XRAY_TRACES\\": \\"false\\",
+      \\"DD_TRACE_ENABLED\\": \\"true\\",
+      \\"DD_FLUSH_TO_LOG\\": \\"true\\"
+    }
+  },
+  \\"Layers\\": [
+    \\"arn:aws:lambda:sa-east-1:464622532012:layer:Datadog-Extension:1\\",
+    \\"arn:aws:lambda:sa-east-1:464622532012:layer:Datadog-Node14-x:1\\"
+  ]
+}
+TagResource -> arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world-2
+{
+  \\"dd_sls_ci\\": \\"v${version}\\"
+}
+${yellow('[!]')} Confirmation needed.
+${yellow('[!]')} Instrumenting functions.
+"
+`)
+      })
+
+      test('instrument multiple specified functions interactively', async () => {
+        const node14LibraryLayer = `arn:aws:lambda:sa-east-1:${DEFAULT_LAYER_AWS_ACCOUNT}:layer:Datadog-Node14-x`
+        const node12LibraryLayer = `arn:aws:lambda:sa-east-1:${DEFAULT_LAYER_AWS_ACCOUNT}:layer:Datadog-Node12-x`
+        const extensionLayer = `arn:aws:lambda:sa-east-1:${DEFAULT_LAYER_AWS_ACCOUNT}:layer:Datadog-Extension`
+        ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({code: 'ENOENT'}))
+        ;(Lambda as any).mockImplementation(() =>
+          makeMockLambda(
+            {
+              'arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world': {
+                FunctionArn: 'arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world',
+                FunctionName: 'lambda-hello-world',
+                Handler: 'index.handler',
+                Runtime: 'nodejs12.x',
+              },
+              'arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world-2': {
+                FunctionArn: 'arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world-2',
+                FunctionName: 'lambda-hello-world-2',
+                Handler: 'index.handler',
+                Runtime: 'nodejs14.x',
+              },
+            },
+            {
+              [`${node14LibraryLayer}:1`]: {
+                LayerVersionArn: `${node14LibraryLayer}:1`,
+                Version: 1,
+              },
+              [`${node12LibraryLayer}:1`]: {
+                LayerVersionArn: `${node12LibraryLayer}:1`,
+                Version: 1,
+              },
+              [`${extensionLayer}:1`]: {
+                LayerVersionArn: `${extensionLayer}:1`,
+                Version: 1,
+              },
+            }
+          )
+        )
+        ;(requestAWSCredentials as any).mockImplementation(() => {
+          process.env[AWS_ACCESS_KEY_ID_ENV_VAR] = mockAwsAccessKeyId
+          process.env[AWS_SECRET_ACCESS_KEY_ENV_VAR] = mockAwsSecretAccessKey
+          process.env[AWS_DEFAULT_REGION_ENV_VAR] = 'sa-east-1'
+        })
+        ;(requestDatadogEnvVars as any).mockImplementation(() => {
+          process.env[CI_SITE_ENV_VAR] = 'datadoghq.com'
+          process.env[CI_API_KEY_ENV_VAR] = mockDatadogApiKey
+        })
+        ;(requestChangesConfirmation as any).mockImplementation(() => true)
+
+        const cli = makeCli()
+        const context = createMockContext() as any
+        const code = await cli.run(
+          [
+            'lambda',
+            'instrument',
+            '-i',
+            '-f',
+            'arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world',
+            '-f',
+            'arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world-2',
+          ],
+          context
+        )
+        const output = context.stdout.toString()
+        expect(code).toBe(0)
+        expect(output).toMatchInlineSnapshot(`
+"${bold(yellow('[!]'))} AWS Credentials are missing, let's set them up!
+${bold(yellow('[!]'))} Datadog Environment Variables are needed.
+${bold(
+  yellow('[Warning]')
+)} The environment, service and version tags have not been configured. Learn more about Datadog unified service tagging: ${underline(
+          blueBright(
+            'https://docs.datadoghq.com/getting_started/tagging/unified_service_tagging/#serverless-environment.'
+          )
+        )}
+${bold(yellow('[Warning]'))} Instrument your ${hex('#FF9900').bold(
+          'Lambda'
+        )} functions in a dev or staging environment first. Should the instrumentation result be unsatisfactory, run \`${bold(
+          'uninstrument'
+        )}\` with the same arguments to revert the changes.\n
+${bold(yellow('[!]'))} Functions to be updated:
+\t- ${bold('arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world')}
+\t- ${bold('arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world-2')}\n
+Will apply the following updates:
+UpdateFunctionConfiguration -> arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world
+{
+  \\"FunctionName\\": \\"arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world\\",
+  \\"Handler\\": \\"/opt/nodejs/node_modules/datadog-lambda-js/handler.handler\\",
+  \\"Environment\\": {
+    \\"Variables\\": {
+      \\"DD_LAMBDA_HANDLER\\": \\"index.handler\\",
+      \\"DD_API_KEY\\": \\"02aeb762fff59ac0d5ad1536cd9633bd\\",
+      \\"DD_SITE\\": \\"datadoghq.com\\",
+      \\"DD_CAPTURE_LAMBDA_PAYLOAD\\": \\"false\\",
+      \\"DD_MERGE_XRAY_TRACES\\": \\"false\\",
+      \\"DD_TRACE_ENABLED\\": \\"true\\",
+      \\"DD_FLUSH_TO_LOG\\": \\"true\\"
+    }
+  },
+  \\"Layers\\": [
+    \\"arn:aws:lambda:sa-east-1:464622532012:layer:Datadog-Extension:1\\",
+    \\"arn:aws:lambda:sa-east-1:464622532012:layer:Datadog-Node12-x:1\\"
+  ]
+}
+TagResource -> arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world
+{
+  \\"dd_sls_ci\\": \\"v${version}\\"
+}
+UpdateFunctionConfiguration -> arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world-2
+{
+  \\"FunctionName\\": \\"arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world-2\\",
+  \\"Handler\\": \\"/opt/nodejs/node_modules/datadog-lambda-js/handler.handler\\",
+  \\"Environment\\": {
+    \\"Variables\\": {
+      \\"DD_LAMBDA_HANDLER\\": \\"index.handler\\",
+      \\"DD_API_KEY\\": \\"02aeb762fff59ac0d5ad1536cd9633bd\\",
+      \\"DD_SITE\\": \\"datadoghq.com\\",
+      \\"DD_CAPTURE_LAMBDA_PAYLOAD\\": \\"false\\",
+      \\"DD_MERGE_XRAY_TRACES\\": \\"false\\",
+      \\"DD_TRACE_ENABLED\\": \\"true\\",
+      \\"DD_FLUSH_TO_LOG\\": \\"true\\"
+    }
+  },
+  \\"Layers\\": [
+    \\"arn:aws:lambda:sa-east-1:464622532012:layer:Datadog-Extension:1\\",
+    \\"arn:aws:lambda:sa-east-1:464622532012:layer:Datadog-Node14-x:1\\"
+  ]
+}
+TagResource -> arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world-2
+{
+  \\"dd_sls_ci\\": \\"v${version}\\"
+}
+${yellow('[!]')} Confirmation needed.
+${yellow('[!]')} Instrumenting functions.
+"
+`)
+      })
+
+      test('aborts if a problem occurs while setting the AWS credentials interactively', async () => {
+        ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({code: 'ENOENT'}))
+        ;(requestAWSCredentials as any).mockImplementation(() => Promise.reject('Unexpected error'))
+        const cli = makeCli()
+        const context = createMockContext() as any
+        const code = await cli.run(['lambda', 'instrument', '-i'], context)
+        const output = context.stdout.toString()
+        expect(code).toBe(1)
+        expect(output).toMatchInlineSnapshot(`
+"${bold(yellow('[!]'))} AWS Credentials are missing, let's set them up!
+${red('[Error]')} Unexpected error
+"
+`)
+      })
+
+      test('aborts if a problem occurs while setting the Datadog Environment Variables interactively', async () => {
+        process.env = {
+          [AWS_ACCESS_KEY_ID_ENV_VAR]: mockAwsAccessKeyId,
+          [AWS_SECRET_ACCESS_KEY_ENV_VAR]: mockAwsSecretAccessKey,
+          [AWS_DEFAULT_REGION_ENV_VAR]: 'sa,-east-1',
+        }
+        ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({code: 'ENOENT'}))
+        ;(requestDatadogEnvVars as any).mockImplementation(() => Promise.reject('Unexpected error'))
+        const cli = makeCli()
+        const context = createMockContext() as any
+        const code = await cli.run(['lambda', 'instrument', '-i'], context)
+        const output = context.stdout.toString()
+        expect(code).toBe(1)
+        expect(output).toMatchInlineSnapshot(`
+"${bold(yellow('[!]'))} Datadog Environment Variables are needed.
+${red('[Error]')} Unexpected error
+"
+`)
+      })
+
+      test('aborts if there are no functions to instrument in the user AWS account', async () => {
+        process.env = {
+          [AWS_ACCESS_KEY_ID_ENV_VAR]: mockAwsAccessKeyId,
+          [AWS_SECRET_ACCESS_KEY_ENV_VAR]: mockAwsSecretAccessKey,
+          [AWS_DEFAULT_REGION_ENV_VAR]: 'sa-east-1',
+          [CI_SITE_ENV_VAR]: 'datadoghq.com',
+          [CI_API_KEY_ENV_VAR]: mockDatadogApiKey,
+        }
+        ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({code: 'ENOENT'}))
+        ;(Lambda as any).mockImplementation(() => makeMockLambda({}))
+        const cli = makeCli()
+        const context = createMockContext() as any
+        const code = await cli.run(['lambda', 'instrument', '-i'], context)
+        const output = context.stdout.toString()
+        expect(code).toBe(1)
+        expect(output).toMatchInlineSnapshot(`
+"Fetching lambda functions, this might take a while.
+${red('[Error]')} You don't have any Lambda Functions in your AWS account.
+"
+`)
+      })
+
+      test('aborts early when the aws-sdk throws an error while instrumenting interactively', async () => {
+        process.env = {
+          [AWS_ACCESS_KEY_ID_ENV_VAR]: mockAwsAccessKeyId,
+          [AWS_SECRET_ACCESS_KEY_ENV_VAR]: mockAwsSecretAccessKey,
+          [AWS_DEFAULT_REGION_ENV_VAR]: 'sa-east-1',
+          [CI_SITE_ENV_VAR]: 'datadoghq.com',
+          [CI_API_KEY_ENV_VAR]: mockDatadogApiKey,
+        }
+        ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({code: 'ENOENT'}))
+        ;(Lambda as any).mockImplementation(() => ({
+          listFunctions: jest.fn().mockImplementation(() => ({promise: () => Promise.reject('Lambda failed')})),
+        }))
+
+        const cli = makeCli()
+        const context = createMockContext() as any
+        const code = await cli.run(['lambda', 'instrument', '-i'], context)
+        const output = context.stdout.toString()
+        expect(code).toBe(1)
+        expect(output).toMatchInlineSnapshot(`
+"Fetching lambda functions, this might take a while.
+${red('[Error]')} Couldn't fetch lambda functions. Error: Max retry count exceeded.
+"
+`)
+      })
     })
+
     describe('getSettings', () => {
       test('uses config file settings', () => {
         process.env = {}

@@ -251,7 +251,9 @@ UpdateFunctionConfiguration -> arn:aws:lambda:us-east-1:000000000000:function:un
       const output = command.context.stdout.toString()
       expect(code).toBe(1)
       expect(output).toMatch(
-        "Fetching lambda functions, this might take a while.\nCouldn't fetch lambda functions. Error: Max retry count exceeded.\n"
+        `Fetching lambda functions, this might take a while.\n${red(
+          '[Error]'
+        )} Couldn't fetch lambda functions. Error: Max retry count exceeded.\n`
       )
     })
   })
