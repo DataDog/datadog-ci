@@ -12,7 +12,7 @@ import {
 } from './functions/commons'
 import {getUninstrumentedFunctionConfigs, getUninstrumentedFunctionConfigsFromRegEx} from './functions/uninstrument'
 import {FunctionConfiguration} from './interfaces'
-import {requestAWSCredentials, requestChangesConfirmation, requestFunctionsToInstrument} from './prompt'
+import {requestAWSCredentials, requestChangesConfirmation, requestFunctionSelection} from './prompt'
 
 export class UninstrumentCommand extends Command {
   private config: any = {
@@ -59,7 +59,7 @@ export class UninstrumentCommand extends Command {
 
             return 1
           }
-          const functions = await requestFunctionsToInstrument(functionNames)
+          const functions = await requestFunctionSelection(functionNames)
           this.functions = functions
         } catch (err) {
           this.context.stdout.write(`${red('[Error]')} Couldn't fetch lambda functions. ${err}\n`)

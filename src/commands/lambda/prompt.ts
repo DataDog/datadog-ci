@@ -125,9 +125,9 @@ export const confirmationQuestion = (message: string): ConfirmQuestion => ({
   type: 'confirm',
 })
 
-export const functionsToInstrumentQuestion = (functionNames: string[]): CheckboxQuestion => ({
+export const functionSelectionQuestion = (functionNames: string[]): CheckboxQuestion => ({
   choices: functionNames,
-  message: 'Select the functions to instrument',
+  message: 'Select the functions to modify',
   name: 'functions',
   type: 'checkbox',
   validate: (selectedFunctions) => {
@@ -182,9 +182,9 @@ export const requestChangesConfirmation = async (message: string) => {
   }
 }
 
-export const requestFunctionsToInstrument = async (functionNames: string[]) => {
+export const requestFunctionSelection = async (functionNames: string[]) => {
   try {
-    const selectedFunctionsAnswer = await prompt(functionsToInstrumentQuestion(functionNames))
+    const selectedFunctionsAnswer = await prompt(functionSelectionQuestion(functionNames))
 
     return selectedFunctionsAnswer.functions
   } catch (e) {

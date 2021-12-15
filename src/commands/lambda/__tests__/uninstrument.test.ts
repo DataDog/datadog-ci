@@ -20,7 +20,7 @@ import {
   TRACE_ENABLED_ENV_VAR,
   VERSION_ENV_VAR,
 } from '../constants'
-import {requestAWSCredentials, requestChangesConfirmation, requestFunctionsToInstrument} from '../prompt'
+import {requestAWSCredentials, requestChangesConfirmation, requestFunctionSelection} from '../prompt'
 import {UninstrumentCommand} from '../uninstrument'
 import {
   createCommand,
@@ -349,7 +349,7 @@ UpdateFunctionConfiguration -> arn:aws:lambda:us-east-1:000000000000:function:un
         process.env[AWS_SECRET_ACCESS_KEY_ENV_VAR] = mockAwsSecretAccessKey
         process.env[AWS_DEFAULT_REGION_ENV_VAR] = 'sa-east-1'
       })
-      ;(requestFunctionsToInstrument as any).mockImplementation(() => [
+      ;(requestFunctionSelection as any).mockImplementation(() => [
         'arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world',
         'arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world-2',
       ])
@@ -473,7 +473,7 @@ ${yellow('[!]')} Uninstrumenting functions.
         process.env[AWS_SECRET_ACCESS_KEY_ENV_VAR] = mockAwsSecretAccessKey
         process.env[AWS_DEFAULT_REGION_ENV_VAR] = 'sa-east-1'
       })
-      ;(requestFunctionsToInstrument as any).mockImplementation(() => [
+      ;(requestFunctionSelection as any).mockImplementation(() => [
         'arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world',
         'arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world-2',
       ])

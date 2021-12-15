@@ -21,7 +21,7 @@ import {
   requestAWSCredentials,
   requestChangesConfirmation,
   requestDatadogEnvVars,
-  requestFunctionsToInstrument,
+  requestFunctionSelection,
 } from '../prompt'
 import {
   createCommand,
@@ -753,7 +753,7 @@ TagResource -> arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world
           process.env[CI_SITE_ENV_VAR] = 'datadoghq.com'
           process.env[CI_API_KEY_ENV_VAR] = mockDatadogApiKey
         })
-        ;(requestFunctionsToInstrument as any).mockImplementation(() => [
+        ;(requestFunctionSelection as any).mockImplementation(() => [
           'arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world',
           'arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world-2',
         ])

@@ -14,11 +14,11 @@ import {
   confirmationQuestion,
   datadogApiKeyTypeQuestion,
   datadogEnvVarsQuestions,
-  functionsToInstrumentQuestion,
+  functionSelectionQuestion,
   requestAWSCredentials,
   requestChangesConfirmation,
   requestDatadogEnvVars,
-  requestFunctionsToInstrument,
+  requestFunctionSelection,
 } from '../prompt'
 import {mockAwsAccessKeyId, mockAwsSecretAccessKey, mockDatadogApiKey} from './fixtures'
 
@@ -75,10 +75,10 @@ describe('prompt', () => {
     })
   })
 
-  describe('functionsToInstrumentQuestion', () => {
+  describe('functionSelectionQuestion', () => {
     test('returns question with the provided function names being its choices', () => {
       const functionNames = ['my-func', 'my-func-2', 'my-third-func']
-      const question = functionsToInstrumentQuestion(functionNames)
+      const question = functionSelectionQuestion(functionNames)
       expect(question.choices).toBe(functionNames)
     })
   })
@@ -200,12 +200,12 @@ describe('prompt', () => {
     })
   })
 
-  describe('requestFunctionsToInstrument', () => {
+  describe('requestFunctionSelection', () => {
     const selectedFunctions = ['my-func', 'my-func-2', 'my-third-func']
     test('returns the selected functions', async () => {
       ;(prompt as any).mockImplementation(() => Promise.resolve({functions: selectedFunctions}))
 
-      const functions = await requestFunctionsToInstrument(selectedFunctions)
+      const functions = await requestFunctionSelection(selectedFunctions)
       expect(functions).toBe(selectedFunctions)
     })
 
@@ -213,7 +213,7 @@ describe('prompt', () => {
       ;(prompt as any).mockImplementation(() => Promise.reject(new Error('Unexpected error')))
       let error
       try {
-        await requestFunctionsToInstrument(selectedFunctions)
+        await requestFunctionSelection(selectedFunctions)
       } catch (e) {
         if (e instanceof Error) {
           error = e

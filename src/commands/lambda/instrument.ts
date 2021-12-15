@@ -21,7 +21,7 @@ import {
   requestAWSCredentials,
   requestChangesConfirmation,
   requestDatadogEnvVars,
-  requestFunctionsToInstrument,
+  requestFunctionSelection,
 } from './prompt'
 
 export class InstrumentCommand extends Command {
@@ -89,7 +89,7 @@ export class InstrumentCommand extends Command {
 
             return 1
           }
-          const functions = await requestFunctionsToInstrument(functionNames)
+          const functions = await requestFunctionSelection(functionNames)
           this.functions = functions
         } catch (err) {
           this.context.stdout.write(`${red('[Error]')} Couldn't fetch lambda functions. ${err}\n`)
