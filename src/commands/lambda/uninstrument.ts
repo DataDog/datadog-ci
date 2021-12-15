@@ -2,20 +2,22 @@ import {CloudWatchLogs, Lambda} from 'aws-sdk'
 import {bold, cyan, red, yellow} from 'chalk'
 import {Command} from 'clipanion'
 import {parseConfigFile} from '../../helpers/utils'
+import {AWS_DEFAULT_REGION_ENV_VAR} from './constants'
 import {
   collectFunctionsByRegion,
+  getAllLambdaFunctionConfigs,
   isMissingAWSCredentials,
   updateLambdaFunctionConfigs,
   willUpdateFunctionConfigs,
 } from './functions/commons'
 import {getUninstrumentedFunctionConfigs, getUninstrumentedFunctionConfigsFromRegEx} from './functions/uninstrument'
 import {FunctionConfiguration} from './interfaces'
-import {requestAWSCredentials, requestChangesConfirmation} from './prompt'
+import {requestAWSCredentials, requestChangesConfirmation, requestFunctionsToInstrument} from './prompt'
 
 export class UninstrumentCommand extends Command {
   private config: any = {
     functions: [],
-    region: process.env.AWS_DEFAULT_REGION,
+    region: process.env[AWS_DEFAULT_REGION_ENV_VAR],
   }
   private configPath?: string
   private dryRun = false
@@ -26,18 +28,48 @@ export class UninstrumentCommand extends Command {
   private region?: string
 
   public async execute() {
-    // Trial user experience
-    if (this.interactive) {
-      if (isMissingAWSCredentials()) {
-        this.context.stdout.write(`${bold(yellow('[!]'))} AWS Credentials are missing, let's set them up!\n`)
-        await requestAWSCredentials()
-      }
-    }
-
     const lambdaConfig = {lambda: this.config}
     this.config = (await parseConfigFile(lambdaConfig, this.configPath)).lambda
 
-    const hasSpecifiedFuntions = this.functions.length !== 0 || this.config.functions.length !== 0
+    let hasSpecifiedFuntions = this.functions.length !== 0 || this.config.functions.length !== 0
+    // Trial user experience
+    if (this.interactive) {
+      try {
+        if (isMissingAWSCredentials()) {
+          this.context.stdout.write(`${bold(yellow('[!]'))} AWS Credentials are missing, let's set them up!\n`)
+          await requestAWSCredentials()
+        }
+      } catch (e) {
+        this.context.stdout.write(`${red('[Error]')} ${e}\n`)
+
+        return 1
+      }
+
+      const region = this.region ?? this.config.region ?? process.env[AWS_DEFAULT_REGION_ENV_VAR]
+      this.region = region
+
+      if (!hasSpecifiedFuntions) {
+        try {
+          const lambda = new Lambda({region})
+          this.context.stdout.write('Fetching lambda functions, this might take a while.\n')
+          const functionNames =
+            (await getAllLambdaFunctionConfigs(lambda)).map((config) => config.FunctionName!).sort() ?? []
+          if (functionNames.length === 0) {
+            this.context.stdout.write(`${red('[Error]')} You don't have any Lambda Functions in your AWS account.\n`)
+
+            return 1
+          }
+          const functions = await requestFunctionsToInstrument(functionNames)
+          this.functions = functions
+        } catch (err) {
+          this.context.stdout.write(`${red('[Error]')} Couldn't fetch lambda functions. ${err}\n`)
+
+          return 1
+        }
+      }
+    }
+
+    hasSpecifiedFuntions = this.functions.length !== 0 || this.config.functions.length !== 0
     const hasSpecifiedRegExPattern = this.regExPattern !== undefined && this.regExPattern !== ''
     if (!hasSpecifiedFuntions && !hasSpecifiedRegExPattern) {
       this.context.stdout.write('No functions specified for un-instrumentation.\n')
