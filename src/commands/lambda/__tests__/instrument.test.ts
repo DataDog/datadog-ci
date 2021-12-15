@@ -782,7 +782,13 @@ ${bold(yellow('[Warning]'))} Instrument your ${hex('#FF9900').bold(
         )}\` with the same arguments to revert the changes.\n
 ${bold(yellow('[!]'))} Functions to be updated:
 \t- ${bold('arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world')}
-\t- ${bold('arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world-2')}\n
+\t${bold(
+          yellow('[Warning]')
+        )} At least one latest layer version is being used. Ensure to lock in versions for production applications using \`--layerVersion\` and \`--extensionVersion\`.
+\t- ${bold('arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world-2')}
+\t${bold(
+          yellow('[Warning]')
+        )} At least one latest layer version is being used. Ensure to lock in versions for production applications using \`--layerVersion\` and \`--extensionVersion\`.\n
 Will apply the following updates:
 UpdateFunctionConfiguration -> arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world
 {
@@ -919,7 +925,13 @@ ${bold(yellow('[Warning]'))} Instrument your ${hex('#FF9900').bold(
         )}\` with the same arguments to revert the changes.\n
 ${bold(yellow('[!]'))} Functions to be updated:
 \t- ${bold('arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world')}
-\t- ${bold('arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world-2')}\n
+\t${bold(
+          yellow('[Warning]')
+        )} At least one latest layer version is being used. Ensure to lock in versions for production applications using \`--layerVersion\` and \`--extensionVersion\`.
+\t- ${bold('arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world-2')}
+\t${bold(
+          yellow('[Warning]')
+        )} At least one latest layer version is being used. Ensure to lock in versions for production applications using \`--layerVersion\` and \`--extensionVersion\`.\n
 Will apply the following updates:
 UpdateFunctionConfiguration -> arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world
 {

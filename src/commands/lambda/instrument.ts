@@ -398,7 +398,16 @@ export class InstrumentCommand extends Command {
     for (const config of configs) {
       this.context.stdout.write(`\t- ${bold(config.functionARN)}\n`)
 
-      // TODO: Inform user if using latest layer version
+      // Later, we should inform which layer is the latest.
+      if (this.interactive) {
+        if (!this.extensionVersion || !this.extensionVersion) {
+          this.context.stdout.write(
+            `\t${bold(
+              yellow('[Warning]')
+            )} At least one latest layer version is being used. Ensure to lock in versions for production applications using \`--layerVersion\` and \`--extensionVersion\`.\n`
+          )
+        }
+      }
     }
 
     this.context.stdout.write(`\n${prefix}Will apply the following updates:\n`)
