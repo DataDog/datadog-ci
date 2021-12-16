@@ -97,5 +97,5 @@ export const makeMockCloudWatchLogs = (
 
 export const mockAwsAccount = '123456789012'
 export const mockAwsAccessKeyId = 'M0CKAWS4CC3SSK3Y1DSL'
-export const mockAwsSecretAccessKey = 'M0CKAWSs3cR3T4cC3SSK3YS3rv3rL3SSD4tad0g!'
+export const mockAwsSecretAccessKey = 'M0CKAWSs3cR3T4cC3SSK3YS3rv3rL3SSD4tad0g0'
 export const mockDatadogApiKey = '02aeb762fff59ac0d5ad1536cd9633bd'
