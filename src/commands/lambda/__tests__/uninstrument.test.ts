@@ -557,7 +557,7 @@ ${red('[Error]')} Unexpected error
       expect(code).toBe(1)
       expect(output).toMatchInlineSnapshot(`
 "Fetching lambda functions, this might take a while.
-${red('[Error]')} You don't have any Lambda Functions in your AWS account.
+${red('[Error]')} Couldn't find any Lambda functions in the specified region.
 "
 `)
     })

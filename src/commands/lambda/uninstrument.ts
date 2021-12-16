@@ -54,7 +54,7 @@ export class UninstrumentCommand extends Command {
           const functionNames =
             (await getAllLambdaFunctionConfigs(lambda)).map((config) => config.FunctionName!).sort() ?? []
           if (functionNames.length === 0) {
-            this.context.stdout.write(`${red('[Error]')} You don't have any Lambda Functions in your AWS account.\n`)
+            this.context.stdout.write(`${red('[Error]')} Couldn't find any Lambda functions in the specified region.\n`)
 
             return 1
           }
