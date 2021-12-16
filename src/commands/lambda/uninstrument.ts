@@ -32,7 +32,6 @@ export class UninstrumentCommand extends Command {
     this.config = (await parseConfigFile(lambdaConfig, this.configPath)).lambda
 
     let hasSpecifiedFunctions = this.functions.length !== 0 || this.config.functions.length !== 0
-    // Trial user experience
     if (this.interactive) {
       try {
         if (isMissingAWSCredentials()) {
