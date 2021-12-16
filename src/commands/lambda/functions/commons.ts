@@ -171,6 +171,7 @@ export const findLatestLayerVersion = async (runtime: Runtime, region: string) =
 
 export const isMissingAWSCredentials = () =>
   process.env[AWS_ACCESS_KEY_ID_ENV_VAR] === undefined || process.env[AWS_SECRET_ACCESS_KEY_ENV_VAR] === undefined
+
 export const isMissingDatadogSiteEnvVar = () => {
   const site = process.env[CI_SITE_ENV_VAR]
   if (site !== undefined) {
@@ -179,6 +180,7 @@ export const isMissingDatadogSiteEnvVar = () => {
 
   return true
 }
+
 export const isMissingAnyDatadogApiKeyEnvVar = () =>
   !(
     process.env[CI_API_KEY_ENV_VAR] ||

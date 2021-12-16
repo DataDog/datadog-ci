@@ -39,7 +39,7 @@ const awsCredentialsQuestions: QuestionCollection = [
     },
   },
   {
-    // AWS_SCRET_ACCESS_KEY_ENV_VAR question
+    // AWS_SECRET_ACCESS_KEY_ENV_VAR question
     mask: true,
     message: 'Enter AWS Secret Access Key:',
     name: AWS_SECRET_ACCESS_KEY_ENV_VAR,
@@ -73,10 +73,10 @@ export const datadogApiKeyTypeQuestion = (datadogSite: string): ListQuestion => 
     },
     new Separator(),
     {
-      name: `AWS Key Management Service ${bold('(KMS) API Key')}`,
+      name: `API key encrypted with AWS Key Management Service ${bold('(KMS) API Key')}`,
       value: {
         envVar: CI_KMS_API_KEY_ENV_VAR,
-        message: 'KMS API Key:',
+        message: 'KMS Encrypted API Key:',
       },
     },
     {
