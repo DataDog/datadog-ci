@@ -55,7 +55,7 @@ export class InstrumentCommand extends Command {
     const lambdaConfig = {lambda: this.config}
     this.config = (await parseConfigFile(lambdaConfig, this.configPath)).lambda
 
-    let hasSpecifiedFuntions = this.functions.length !== 0 || this.config.functions.length !== 0
+    let hasSpecifiedFunctions = this.functions.length !== 0 || this.config.functions.length !== 0
     // Trial user experience
     if (this.interactive) {
       try {
@@ -78,7 +78,7 @@ export class InstrumentCommand extends Command {
       // If user doesn't specify functions, allow them
       // to select from all of the functions from the
       // requested region.
-      if (!hasSpecifiedFuntions) {
+      if (!hasSpecifiedFunctions) {
         try {
           const lambda = new Lambda({region})
           this.context.stdout.write('Fetching lambda functions, this might take a while.\n')
@@ -103,9 +103,9 @@ export class InstrumentCommand extends Command {
       return 1
     }
 
-    hasSpecifiedFuntions = this.functions.length !== 0 || this.config.functions.length !== 0
+    hasSpecifiedFunctions = this.functions.length !== 0 || this.config.functions.length !== 0
     const hasSpecifiedRegExPattern = this.regExPattern !== undefined && this.regExPattern !== ''
-    if (!hasSpecifiedFuntions && !hasSpecifiedRegExPattern) {
+    if (!hasSpecifiedFunctions && !hasSpecifiedRegExPattern) {
       this.context.stdout.write('No functions specified for instrumentation.\n')
 
       return 1
@@ -139,7 +139,7 @@ export class InstrumentCommand extends Command {
     }[] = []
 
     if (hasSpecifiedRegExPattern) {
-      if (hasSpecifiedFuntions) {
+      if (hasSpecifiedFunctions) {
         const usedCommand = this.functions.length !== 0 ? '"--functions"' : 'Functions in config file'
         this.context.stdout.write(`${usedCommand} and "--functions-regex" should not be used at the same time.\n`)
 
