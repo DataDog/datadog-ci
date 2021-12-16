@@ -25,7 +25,7 @@ import {mockAwsAccessKeyId, mockAwsSecretAccessKey, mockDatadogApiKey} from './f
 describe('prompt', () => {
   describe('confirmationQuestion', () => {
     test('returns question with provided message', () => {
-      const message = 'Do you wanna continue?'
+      const message = 'Do you want to continue?'
       const question = confirmationQuestion(message)
       expect(question.message).toBe(message)
     })
@@ -130,7 +130,7 @@ describe('prompt', () => {
         })
       )
 
-      const confirmation = await requestChangesConfirmation('Do you wanna continue?')
+      const confirmation = await requestChangesConfirmation('Do you want to continue?')
       expect(confirmation).toBe(true)
     })
 

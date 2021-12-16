@@ -212,7 +212,7 @@ export class InstrumentCommand extends Command {
     const willUpdate = willUpdateFunctionConfigs(configList)
     if (this.interactive && willUpdate) {
       this.context.stdout.write(`${yellow('[!]')} Confirmation needed.\n`)
-      const isConfirmed = await requestChangesConfirmation('Do you wanna apply the changes?')
+      const isConfirmed = await requestChangesConfirmation('Do you want to apply the changes?')
       if (!isConfirmed) {
         return 0
       }
