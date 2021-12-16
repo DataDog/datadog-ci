@@ -62,7 +62,7 @@ export class UninstrumentCommand extends Command {
           const functions = await requestFunctionSelection(functionNames)
           this.functions = functions
         } catch (err) {
-          this.context.stdout.write(`${red('[Error]')} Couldn't fetch lambda functions. ${err}\n`)
+          this.context.stdout.write(`${red('[Error]')} Couldn't fetch Lambda functions. ${err}\n`)
 
           return 1
         }
@@ -118,7 +118,7 @@ export class UninstrumentCommand extends Command {
 
         configGroups.push({configs, lambda, cloudWatchLogs})
       } catch (err) {
-        this.context.stdout.write(`${red('[Error]')} Couldn't fetch lambda functions. ${err}\n`)
+        this.context.stdout.write(`${red('[Error]')} Couldn't fetch Lambda functions. ${err}\n`)
 
         return 1
       }
@@ -142,7 +142,7 @@ export class UninstrumentCommand extends Command {
           const configs = await getUninstrumentedFunctionConfigs(lambda, cloudWatchLogs, functionARNs, this.forwarder)
           configGroups.push({configs, lambda, cloudWatchLogs})
         } catch (err) {
-          this.context.stdout.write(`${red('[Error]')} Couldn't fetch lambda functions. ${err}\n`)
+          this.context.stdout.write(`${red('[Error]')} Couldn't fetch Lambda functions. ${err}\n`)
 
           return 1
         }

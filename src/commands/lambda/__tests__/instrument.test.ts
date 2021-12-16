@@ -613,7 +613,7 @@ TagResource -> arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world
         const output = context.stdout.toString()
         expect(code).toBe(1)
         expect(output).toMatchInlineSnapshot(`
-                                                  "Couldn't fetch lambda functions. Error: Can't instrument arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world, as current State is Failed (must be \\"Active\\") and Last Update Status is Unsuccessful (must be \\"Successful\\")
+                                                  "Couldn't fetch Lambda functions. Error: Can't instrument arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world, as current State is Failed (must be \\"Active\\") and Last Update Status is Unsuccessful (must be \\"Successful\\")
                                                   "
                                         `)
       })
@@ -1064,7 +1064,7 @@ ${red('[Error]')} You don't have any Lambda Functions in your AWS account.
         expect(code).toBe(1)
         expect(output).toMatchInlineSnapshot(`
 "Fetching lambda functions, this might take a while.
-${red('[Error]')} Couldn't fetch lambda functions. Error: Max retry count exceeded.
+${red('[Error]')} Couldn't fetch Lambda functions. Error: Max retry count exceeded.
 "
 `)
       })
