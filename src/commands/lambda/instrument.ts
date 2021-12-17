@@ -80,7 +80,7 @@ export class InstrumentCommand extends Command {
       if (!hasSpecifiedFunctions) {
         try {
           const lambda = new Lambda({region})
-          this.context.stdout.write('Fetching lambda functions, this might take a while.\n')
+          this.context.stdout.write('Fetching Lambda functions, this might take a while.\n')
           const functionNames =
             (await getAllLambdaFunctionConfigs(lambda)).map((config) => config.FunctionName!).sort() ?? []
           if (functionNames.length === 0) {
