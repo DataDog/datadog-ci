@@ -263,7 +263,7 @@ UpdateFunctionConfiguration -> arn:aws:lambda:us-east-1:000000000000:function:un
       const output = command.context.stdout.toString()
       expect(code).toBe(1)
       expect(output).toMatch(
-        `Fetching lambda functions, this might take a while.\n${red(
+        `Fetching Lambda functions, this might take a while.\n${red(
           '[Error]'
         )} Couldn't fetch Lambda functions. Error: Max retry count exceeded.\n`
       )
@@ -361,8 +361,8 @@ UpdateFunctionConfiguration -> arn:aws:lambda:us-east-1:000000000000:function:un
       const output = context.stdout.toString()
       expect(code).toBe(0)
       expect(output).toMatchInlineSnapshot(`
-"${bold(yellow('[!]'))} AWS Credentials are missing, let's set them up!
-Fetching lambda functions, this might take a while.\n
+"${bold(yellow('[!]'))} No existing AWS credentials found, let's set them up!
+Fetching Lambda functions, this might take a while.\n
 ${bold(yellow('[!]'))} Functions to be updated:
 \t- ${bold('arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world')}
 \t- ${bold('arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world-2')}\n
@@ -496,7 +496,7 @@ ${yellow('[!]')} Uninstrumenting functions.
       const output = context.stdout.toString()
       expect(code).toBe(0)
       expect(output).toMatchInlineSnapshot(`
-"${bold(yellow('[!]'))} AWS Credentials are missing, let's set them up!\n
+"${bold(yellow('[!]'))} No existing AWS credentials found, let's set them up!\n
 ${bold(yellow('[!]'))} Functions to be updated:
 \t- ${bold('arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world')}
 \t- ${bold('arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world-2')}\n
@@ -536,7 +536,7 @@ ${yellow('[!]')} Uninstrumenting functions.
       const output = context.stdout.toString()
       expect(code).toBe(1)
       expect(output).toMatchInlineSnapshot(`
-"${bold(yellow('[!]'))} AWS Credentials are missing, let's set them up!
+"${bold(yellow('[!]'))} No existing AWS credentials found, let's set them up!
 ${red('[Error]')} Unexpected error
 "
 `)
@@ -556,7 +556,7 @@ ${red('[Error]')} Unexpected error
       const output = context.stdout.toString()
       expect(code).toBe(1)
       expect(output).toMatchInlineSnapshot(`
-"Fetching lambda functions, this might take a while.
+"Fetching Lambda functions, this might take a while.
 ${red('[Error]')} Couldn't find any Lambda functions in the specified region.
 "
 `)
@@ -579,7 +579,7 @@ ${red('[Error]')} Couldn't find any Lambda functions in the specified region.
       const output = context.stdout.toString()
       expect(code).toBe(1)
       expect(output).toMatchInlineSnapshot(`
-"Fetching lambda functions, this might take a while.
+"Fetching Lambda functions, this might take a while.
 ${red('[Error]')} Couldn't fetch Lambda functions. Error: Max retry count exceeded.
 "
 `)

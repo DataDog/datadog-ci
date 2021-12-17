@@ -160,7 +160,7 @@ export class InstrumentCommand extends Command {
       try {
         const cloudWatchLogs = new CloudWatchLogs({region})
         const lambda = new Lambda({region})
-        this.context.stdout.write('Fetching lambda functions, this might take a while.\n')
+        this.context.stdout.write('Fetching Lambda functions, this might take a while.\n')
         const configs = await getInstrumentedFunctionConfigsFromRegEx(
           lambda,
           cloudWatchLogs,

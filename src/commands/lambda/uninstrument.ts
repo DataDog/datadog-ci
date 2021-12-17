@@ -35,7 +35,7 @@ export class UninstrumentCommand extends Command {
     if (this.interactive) {
       try {
         if (isMissingAWSCredentials()) {
-          this.context.stdout.write(`${bold(yellow('[!]'))} AWS Credentials are missing, let's set them up!\n`)
+          this.context.stdout.write(`${bold(yellow('[!]'))} No existing AWS credentials found, let's set them up!\n`)
           await requestAWSCredentials()
         }
       } catch (e) {
@@ -50,7 +50,7 @@ export class UninstrumentCommand extends Command {
       if (!hasSpecifiedFunctions) {
         try {
           const lambda = new Lambda({region})
-          this.context.stdout.write('Fetching lambda functions, this might take a while.\n')
+          this.context.stdout.write('Fetching Lambda functions, this might take a while.\n')
           const functionNames =
             (await getAllLambdaFunctionConfigs(lambda)).map((config) => config.FunctionName!).sort() ?? []
           if (functionNames.length === 0) {
@@ -107,7 +107,7 @@ export class UninstrumentCommand extends Command {
       try {
         const cloudWatchLogs = new CloudWatchLogs({region})
         const lambda = new Lambda({region})
-        this.context.stdout.write('Fetching lambda functions, this might take a while.\n')
+        this.context.stdout.write('Fetching Lambda functions, this might take a while.\n')
         const configs = await getUninstrumentedFunctionConfigsFromRegEx(
           lambda,
           cloudWatchLogs,

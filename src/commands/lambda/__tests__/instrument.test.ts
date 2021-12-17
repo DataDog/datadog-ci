@@ -765,9 +765,9 @@ TagResource -> arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world
         const output = context.stdout.toString()
         expect(code).toBe(0)
         expect(output).toMatchInlineSnapshot(`
-"${bold(yellow('[!]'))} AWS Credentials are missing, let's set them up!
-${bold(yellow('[!]'))} Datadog Environment Variables are needed.
-Fetching lambda functions, this might take a while.
+"${bold(yellow('[!]'))} No existing AWS credentials found, let's set them up!
+${bold(yellow('[!]'))} Configure Datadog settings.
+Fetching Lambda functions, this might take a while.
 ${bold(
   yellow('[Warning]')
 )} The environment, service and version tags have not been configured. Learn more about Datadog unified service tagging: ${underline(
@@ -909,8 +909,8 @@ ${yellow('[!]')} Instrumenting functions.
         const output = context.stdout.toString()
         expect(code).toBe(0)
         expect(output).toMatchInlineSnapshot(`
-"${bold(yellow('[!]'))} AWS Credentials are missing, let's set them up!
-${bold(yellow('[!]'))} Datadog Environment Variables are needed.
+"${bold(yellow('[!]'))} No existing AWS credentials found, let's set them up!
+${bold(yellow('[!]'))} Configure Datadog settings.
 ${bold(
   yellow('[Warning]')
 )} The environment, service and version tags have not been configured. Learn more about Datadog unified service tagging: ${underline(
@@ -996,7 +996,7 @@ ${yellow('[!]')} Instrumenting functions.
         const output = context.stdout.toString()
         expect(code).toBe(1)
         expect(output).toMatchInlineSnapshot(`
-"${bold(yellow('[!]'))} AWS Credentials are missing, let's set them up!
+"${bold(yellow('[!]'))} No existing AWS credentials found, let's set them up!
 ${red('[Error]')} Unexpected error
 "
 `)
@@ -1016,7 +1016,7 @@ ${red('[Error]')} Unexpected error
         const output = context.stdout.toString()
         expect(code).toBe(1)
         expect(output).toMatchInlineSnapshot(`
-"${bold(yellow('[!]'))} Datadog Environment Variables are needed.
+"${bold(yellow('[!]'))} Configure Datadog settings.
 ${red('[Error]')} Unexpected error
 "
 `)
@@ -1038,7 +1038,7 @@ ${red('[Error]')} Unexpected error
         const output = context.stdout.toString()
         expect(code).toBe(1)
         expect(output).toMatchInlineSnapshot(`
-"Fetching lambda functions, this might take a while.
+"Fetching Lambda functions, this might take a while.
 ${red('[Error]')} Couldn't find any Lambda functions in the specified region.
 "
 `)
@@ -1063,7 +1063,7 @@ ${red('[Error]')} Couldn't find any Lambda functions in the specified region.
         const output = context.stdout.toString()
         expect(code).toBe(1)
         expect(output).toMatchInlineSnapshot(`
-"Fetching lambda functions, this might take a while.
+"Fetching Lambda functions, this might take a while.
 ${red('[Error]')} Couldn't fetch Lambda functions. Error: Max retry count exceeded.
 "
 `)
