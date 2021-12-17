@@ -2,19 +2,28 @@ import {CloudWatchLogs, Lambda} from 'aws-sdk'
 import {bold, cyan, red, yellow} from 'chalk'
 import {Command} from 'clipanion'
 import {parseConfigFile} from '../../helpers/utils'
-import {collectFunctionsByRegion, updateLambdaFunctionConfigs} from './functions/commons'
+import {AWS_DEFAULT_REGION_ENV_VAR} from './constants'
+import {
+  collectFunctionsByRegion,
+  getAllLambdaFunctionConfigs,
+  isMissingAWSCredentials,
+  updateLambdaFunctionConfigs,
+  willUpdateFunctionConfigs,
+} from './functions/commons'
 import {getUninstrumentedFunctionConfigs, getUninstrumentedFunctionConfigsFromRegEx} from './functions/uninstrument'
 import {FunctionConfiguration} from './interfaces'
+import {requestAWSCredentials, requestChangesConfirmation, requestFunctionSelection} from './prompt'
 
 export class UninstrumentCommand extends Command {
   private config: any = {
     functions: [],
-    region: process.env.AWS_DEFAULT_REGION,
+    region: process.env[AWS_DEFAULT_REGION_ENV_VAR],
   }
   private configPath?: string
   private dryRun = false
   private forwarder?: string
   private functions: string[] = []
+  private interactive = false
   private regExPattern?: string
   private region?: string
 
@@ -22,9 +31,46 @@ export class UninstrumentCommand extends Command {
     const lambdaConfig = {lambda: this.config}
     this.config = (await parseConfigFile(lambdaConfig, this.configPath)).lambda
 
-    const hasSpecifiedFuntions = this.functions.length !== 0 || this.config.functions.length !== 0
+    let hasSpecifiedFunctions = this.functions.length !== 0 || this.config.functions.length !== 0
+    if (this.interactive) {
+      try {
+        if (isMissingAWSCredentials()) {
+          this.context.stdout.write(`${bold(yellow('[!]'))} No existing AWS credentials found, let's set them up!\n`)
+          await requestAWSCredentials()
+        }
+      } catch (e) {
+        this.context.stdout.write(`${red('[Error]')} ${e}\n`)
+
+        return 1
+      }
+
+      const region = this.region ?? this.config.region ?? process.env[AWS_DEFAULT_REGION_ENV_VAR]
+      this.region = region
+
+      if (!hasSpecifiedFunctions) {
+        try {
+          const lambda = new Lambda({region})
+          this.context.stdout.write('Fetching Lambda functions, this might take a while.\n')
+          const functionNames =
+            (await getAllLambdaFunctionConfigs(lambda)).map((config) => config.FunctionName!).sort() ?? []
+          if (functionNames.length === 0) {
+            this.context.stdout.write(`${red('[Error]')} Couldn't find any Lambda functions in the specified region.\n`)
+
+            return 1
+          }
+          const functions = await requestFunctionSelection(functionNames)
+          this.functions = functions
+        } catch (err) {
+          this.context.stdout.write(`${red('[Error]')} Couldn't fetch Lambda functions. ${err}\n`)
+
+          return 1
+        }
+      }
+    }
+
+    hasSpecifiedFunctions = this.functions.length !== 0 || this.config.functions.length !== 0
     const hasSpecifiedRegExPattern = this.regExPattern !== undefined && this.regExPattern !== ''
-    if (!hasSpecifiedFuntions && !hasSpecifiedRegExPattern) {
+    if (!hasSpecifiedFunctions && !hasSpecifiedRegExPattern) {
       this.context.stdout.write('No functions specified for un-instrumentation.\n')
 
       return 1
@@ -39,7 +85,7 @@ export class UninstrumentCommand extends Command {
     // Fetch lambda function configurations that are
     // available to be un-instrumented.
     if (hasSpecifiedRegExPattern) {
-      if (hasSpecifiedFuntions) {
+      if (hasSpecifiedFunctions) {
         const usedCommand = this.functions.length !== 0 ? '"--functions"' : 'Functions in config file'
         this.context.stdout.write(`${usedCommand} and "--functions-regex" should not be used at the same time.\n`)
 
@@ -61,7 +107,7 @@ export class UninstrumentCommand extends Command {
       try {
         const cloudWatchLogs = new CloudWatchLogs({region})
         const lambda = new Lambda({region})
-        this.context.stdout.write('Fetching lambda functions, this might take a while.\n')
+        this.context.stdout.write('Fetching Lambda functions, this might take a while.\n')
         const configs = await getUninstrumentedFunctionConfigsFromRegEx(
           lambda,
           cloudWatchLogs,
@@ -71,7 +117,7 @@ export class UninstrumentCommand extends Command {
 
         configGroups.push({configs, lambda, cloudWatchLogs})
       } catch (err) {
-        this.context.stdout.write(`Couldn't fetch lambda functions. ${err}\n`)
+        this.context.stdout.write(`${red('[Error]')} Couldn't fetch Lambda functions. ${err}\n`)
 
         return 1
       }
@@ -95,7 +141,7 @@ export class UninstrumentCommand extends Command {
           const configs = await getUninstrumentedFunctionConfigs(lambda, cloudWatchLogs, functionARNs, this.forwarder)
           configGroups.push({configs, lambda, cloudWatchLogs})
         } catch (err) {
-          this.context.stdout.write(`${red('[Error]')} Couldn't fetch lambda functions. ${err}\n`)
+          this.context.stdout.write(`${red('[Error]')} Couldn't fetch Lambda functions. ${err}\n`)
 
           return 1
         }
@@ -106,6 +152,16 @@ export class UninstrumentCommand extends Command {
     this.printPlannedActions(configList)
     if (this.dryRun || configList.length === 0) {
       return 0
+    }
+
+    const willUpdate = willUpdateFunctionConfigs(configList)
+    if (this.interactive && willUpdate) {
+      this.context.stdout.write(`${yellow('[!]')} Confirmation needed.\n`)
+      const isConfirmed = await requestChangesConfirmation('Do you want to apply the changes?')
+      if (!isConfirmed) {
+        return 0
+      }
+      this.context.stdout.write(`${yellow('[!]')} Uninstrumenting functions.\n`)
     }
 
     // Un-instrument functions.
@@ -127,19 +183,9 @@ export class UninstrumentCommand extends Command {
   private printPlannedActions(configs: FunctionConfiguration[]) {
     const prefix = this.dryRun ? bold(cyan('[Dry Run] ')) : ''
 
-    let anyUpdates = false
-    for (const config of configs) {
-      if (
-        config.updateRequest !== undefined ||
-        config.logGroupConfiguration?.deleteSubscriptionFilterRequest !== undefined ||
-        config?.tagConfiguration !== undefined
-      ) {
-        anyUpdates = true
-        break
-      }
-    }
+    const willUpdate = willUpdateFunctionConfigs(configs)
 
-    if (!anyUpdates) {
+    if (!willUpdate) {
       this.context.stdout.write(`${prefix}No updates will be applied\n`)
 
       return
@@ -191,7 +237,7 @@ UninstrumentCommand.addOption('configPath', Command.String('--config'))
 UninstrumentCommand.addOption('dryRun', Command.Boolean('-d,--dry'))
 UninstrumentCommand.addOption('forwarder', Command.String('--forwarder'))
 UninstrumentCommand.addOption('regExPattern', Command.String('--functions-regex'))
-
+UninstrumentCommand.addOption('interactive', Command.Boolean('-i,--interactive'))
 /**
  * Commands that are not really in use, but to
  * make uninstrumentation easier for the user.

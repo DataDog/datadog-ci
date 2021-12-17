@@ -4,12 +4,19 @@ import {
   ARM64_ARCHITECTURE,
   ARM_LAYER_SUFFIX,
   ARM_RUNTIMES,
+  AWS_ACCESS_KEY_ID_ENV_VAR,
+  AWS_SECRET_ACCESS_KEY_ENV_VAR,
+  CI_API_KEY_ENV_VAR,
+  CI_API_KEY_SECRET_ARN_ENV_VAR,
+  CI_KMS_API_KEY_ENV_VAR,
+  CI_SITE_ENV_VAR,
   DEFAULT_LAYER_AWS_ACCOUNT,
   GOVCLOUD_LAYER_AWS_ACCOUNT,
   LIST_FUNCTIONS_MAX_RETRY_COUNT,
   MAX_LAMBDA_STATE_CHECK_ATTEMPTS,
   Runtime,
   RUNTIME_LAYER_LOOKUP,
+  SITES,
 } from '../constants'
 import {FunctionConfiguration, InstrumentationSettings} from '../interfaces'
 import {applyLogGroupConfig} from '../loggroup'
@@ -101,6 +108,90 @@ export const collectFunctionsByRegion = (
 }
 
 /**
+ * Given a layer runtime, return its latest version.
+ *
+ * @param runtime the runtime of the layer.
+ * @param region the region where the layer is stored.
+ * @returns the latest version of the layer to find.
+ */
+export const findLatestLayerVersion = async (runtime: Runtime, region: string) => {
+  let latestVersion = 0
+
+  let searchStep = latestVersion > 0 ? 1 : 100
+  let layerVersion = latestVersion + searchStep
+  const account = region.startsWith('us-gov') ? GOVCLOUD_LAYER_AWS_ACCOUNT : DEFAULT_LAYER_AWS_ACCOUNT
+  const layerName = RUNTIME_LAYER_LOOKUP[runtime]
+  let foundLatestVersion = false
+  const lambda = new Lambda({region})
+  while (!foundLatestVersion) {
+    try {
+      // Search next version
+      await lambda
+        .getLayerVersion({
+          LayerName: `arn:aws:lambda:${region}:${account}:layer:${layerName}`,
+          VersionNumber: layerVersion,
+        })
+        .promise()
+      latestVersion = layerVersion
+      // Increase layer version
+      layerVersion += searchStep
+    } catch (e) {
+      // Search step is too big, reset target to previous version
+      // with a smaller search step
+      if (searchStep > 1) {
+        layerVersion -= searchStep
+        searchStep /= 10
+        layerVersion += searchStep
+      } else {
+        // Search step is 1, current version was not found.
+        // It is likely that the last checked is the latest.
+        // Check the next version to be certain, since
+        // current version could've been deleted by accident.
+        try {
+          layerVersion += searchStep
+          await lambda
+            .getLayerVersion({
+              LayerName: `arn:aws:lambda:${region}:${account}:layer:${layerName}`,
+              VersionNumber: layerVersion,
+            })
+            .promise()
+          latestVersion = layerVersion
+          // Continue the search if the next version does exist (unlikely event)
+          layerVersion += searchStep
+        } catch (e) {
+          // The next version doesn't exist either, so the previous version is indeed the latest
+          foundLatestVersion = true
+        }
+      }
+    }
+  }
+
+  return latestVersion
+}
+
+export const isMissingAWSCredentials = () =>
+  process.env[AWS_ACCESS_KEY_ID_ENV_VAR] === undefined || process.env[AWS_SECRET_ACCESS_KEY_ENV_VAR] === undefined
+
+export const isMissingDatadogSiteEnvVar = () => {
+  const site = process.env[CI_SITE_ENV_VAR]
+  if (site !== undefined) {
+    return !SITES.includes(site)
+  }
+
+  return true
+}
+
+export const isMissingAnyDatadogApiKeyEnvVar = () =>
+  !(
+    process.env[CI_API_KEY_ENV_VAR] ||
+    process.env[CI_KMS_API_KEY_ENV_VAR] ||
+    process.env[CI_API_KEY_SECRET_ARN_ENV_VAR]
+  )
+export const isMissingDatadogEnvVars = () => isMissingDatadogSiteEnvVar() || isMissingAnyDatadogApiKeyEnvVar()
+
+export const getAllLambdaFunctionConfigs = async (lambda: Lambda) => getLambdaFunctionConfigsFromRegex(lambda, '.')
+
+/**
  * Given a Lambda instance and a regular expression,
  * returns all the Function Configurations that match.
  *
@@ -184,7 +275,13 @@ export const getLayerArn = (
   return `arn:aws:lambda:${region}:${account}:layer:${layerName}`
 }
 
-export const getLayers = (config: Lambda.FunctionConfiguration) => (config.Layers ?? []).map((layer) => layer.Arn ?? '')
+export const getLayerNameWithVersion = (layerArn: string): string | undefined => {
+  const [, , , , , , name, version] = layerArn.split(':')
+
+  return name && version ? `${name}:${version}` : undefined
+}
+
+export const getLayers = (config: Lambda.FunctionConfiguration) => (config.Layers ?? []).map((layer) => layer.Arn!)
 
 /**
  * Call the aws-sdk Lambda api to get a Function given
@@ -287,6 +384,25 @@ export const updateLambdaFunctionConfigs = async (
     }
   })
   await Promise.all(results)
+}
+
+export const willUpdateFunctionConfigs = (configs: FunctionConfiguration[]) => {
+  let willUpdate = false
+  for (const config of configs) {
+    if (
+      config.updateRequest !== undefined ||
+      config.logGroupConfiguration?.createLogGroupRequest !== undefined ||
+      config.logGroupConfiguration?.deleteSubscriptionFilterRequest !== undefined ||
+      config.logGroupConfiguration?.subscriptionFilterRequest !== undefined ||
+      config?.tagConfiguration !== undefined
+    ) {
+      willUpdate = true
+
+      break
+    }
+  }
+
+  return willUpdate
 }
 
 /**

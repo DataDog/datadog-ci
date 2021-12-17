@@ -32,6 +32,7 @@ import {calculateLogGroupUpdateRequest} from '../loggroup'
 import {calculateTagUpdateRequest} from '../tags'
 import {
   addLayerArn,
+  findLatestLayerVersion,
   getLambdaFunctionConfigs,
   getLambdaFunctionConfigsFromRegex,
   getLayerArn,
@@ -73,7 +74,7 @@ export const getInstrumentedFunctionConfig = async (
   }
 
   await isLambdaActive(lambda, config, functionARN)
-  const updateRequest = calculateUpdateRequest(config, settings, region, runtime)
+  const updateRequest = await calculateUpdateRequest(config, settings, region, runtime)
   let logGroupConfiguration: LogGroupConfiguration | undefined
   if (settings.forwarderARN !== undefined) {
     const logGroupName = `/aws/lambda/${config.FunctionName}`
@@ -109,7 +110,7 @@ export const getInstrumentedFunctionConfigsFromRegEx = async (
   return functionsToUpdate
 }
 
-export const calculateUpdateRequest = (
+export const calculateUpdateRequest = async (
   config: Lambda.FunctionConfiguration,
   settings: InstrumentationSettings,
   region: string,
@@ -227,13 +228,21 @@ export const calculateUpdateRequest = (
   const lambdaLibraryLayerArn = getLayerArn(config, config.Runtime as Runtime, region, settings)
   const lambraLibraryLayerName = RUNTIME_LAYER_LOOKUP[runtime]
   let fullLambdaLibraryLayerARN: string | undefined
-  if (settings.layerVersion !== undefined) {
-    fullLambdaLibraryLayerARN = `${lambdaLibraryLayerArn}:${settings.layerVersion}`
+  if (settings.layerVersion !== undefined || settings.interactive) {
+    let layerVersion = settings.layerVersion
+    if (settings.interactive && !settings.layerVersion) {
+      layerVersion = await findLatestLayerVersion(config.Runtime as Runtime, region)
+    }
+    fullLambdaLibraryLayerARN = `${lambdaLibraryLayerArn}:${layerVersion}`
   }
   const lambdaExtensionLayerArn = getLayerArn(config, EXTENSION_LAYER_KEY as Runtime, region, settings)
   let fullExtensionLayerARN: string | undefined
-  if (settings.extensionVersion !== undefined) {
-    fullExtensionLayerARN = `${lambdaExtensionLayerArn}:${settings.extensionVersion}`
+  if (settings.extensionVersion !== undefined || settings.interactive) {
+    let extensionVersion = settings.extensionVersion
+    if (settings.interactive && !settings.extensionVersion) {
+      extensionVersion = await findLatestLayerVersion(EXTENSION_LAYER_KEY as Runtime, region)
+    }
+    fullExtensionLayerARN = `${lambdaExtensionLayerArn}:${extensionVersion}`
   }
   let layerARNs = getLayers(config)
   const originalLayerARNs = layerARNs

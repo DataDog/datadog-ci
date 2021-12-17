@@ -1,24 +1,34 @@
 import {CloudWatchLogs, Lambda} from 'aws-sdk'
-import {blueBright, bold, cyan, hex, underline, yellow} from 'chalk'
+import {blueBright, bold, cyan, hex, red, underline, yellow} from 'chalk'
 import {Cli, Command} from 'clipanion'
 import {parseConfigFile} from '../../helpers/utils'
 import {getCommitInfo, newSimpleGit} from '../git-metadata/git'
 import {UploadCommand} from '../git-metadata/upload'
-import {EXTRA_TAGS_REG_EXP} from './constants'
+import {AWS_DEFAULT_REGION_ENV_VAR, EXTRA_TAGS_REG_EXP} from './constants'
 import {
   coerceBoolean,
   collectFunctionsByRegion,
+  getAllLambdaFunctionConfigs,
+  isMissingAWSCredentials,
+  isMissingDatadogEnvVars,
   sentenceMatchesRegEx,
   updateLambdaFunctionConfigs,
+  willUpdateFunctionConfigs,
 } from './functions/commons'
 import {getInstrumentedFunctionConfigs, getInstrumentedFunctionConfigsFromRegEx} from './functions/instrument'
 import {FunctionConfiguration, InstrumentationSettings, LambdaConfigOptions} from './interfaces'
+import {
+  requestAWSCredentials,
+  requestChangesConfirmation,
+  requestDatadogEnvVars,
+  requestFunctionSelection,
+} from './prompt'
 
 export class InstrumentCommand extends Command {
   private captureLambdaPayload?: string
   private config: LambdaConfigOptions = {
     functions: [],
-    region: process.env.AWS_DEFAULT_REGION,
+    region: process.env[AWS_DEFAULT_REGION_ENV_VAR],
     tracing: 'true',
   }
   private configPath?: string
@@ -29,6 +39,7 @@ export class InstrumentCommand extends Command {
   private flushMetricsToLogs?: string
   private forwarder?: string
   private functions: string[] = []
+  private interactive = false
   private layerAWSAccount?: string
   private layerVersion?: string
   private logLevel?: string
@@ -44,14 +55,56 @@ export class InstrumentCommand extends Command {
     const lambdaConfig = {lambda: this.config}
     this.config = (await parseConfigFile(lambdaConfig, this.configPath)).lambda
 
+    let hasSpecifiedFunctions = this.functions.length !== 0 || this.config.functions.length !== 0
+    if (this.interactive) {
+      try {
+        if (isMissingAWSCredentials()) {
+          this.context.stdout.write(`${bold(yellow('[!]'))} No existing AWS credentials found, let's set them up!\n`)
+          await requestAWSCredentials()
+        }
+        if (isMissingDatadogEnvVars()) {
+          this.context.stdout.write(`${bold(yellow('[!]'))} Configure Datadog settings.\n`)
+          await requestDatadogEnvVars()
+        }
+      } catch (e) {
+        this.context.stdout.write(`${red('[Error]')} ${e}\n`)
+
+        return 1
+      }
+
+      const region = this.region ?? this.config.region ?? process.env[AWS_DEFAULT_REGION_ENV_VAR]
+      this.region = region
+      // If user doesn't specify functions, allow them
+      // to select from all of the functions from the
+      // requested region.
+      if (!hasSpecifiedFunctions) {
+        try {
+          const lambda = new Lambda({region})
+          this.context.stdout.write('Fetching Lambda functions, this might take a while.\n')
+          const functionNames =
+            (await getAllLambdaFunctionConfigs(lambda)).map((config) => config.FunctionName!).sort() ?? []
+          if (functionNames.length === 0) {
+            this.context.stdout.write(`${red('[Error]')} Couldn't find any Lambda functions in the specified region.\n`)
+
+            return 1
+          }
+          const functions = await requestFunctionSelection(functionNames)
+          this.functions = functions
+        } catch (err) {
+          this.context.stdout.write(`${red('[Error]')} Couldn't fetch Lambda functions. ${err}\n`)
+
+          return 1
+        }
+      }
+    }
     const settings = this.getSettings()
     if (settings === undefined) {
       return 1
     }
 
-    const hasSpecifiedFuntions = this.functions.length !== 0 || this.config.functions.length !== 0
+    hasSpecifiedFunctions = this.functions.length !== 0 || this.config.functions.length !== 0
     const hasSpecifiedRegExPattern = this.regExPattern !== undefined && this.regExPattern !== ''
-    if (!hasSpecifiedFuntions && !hasSpecifiedRegExPattern) {
+    if (!hasSpecifiedFunctions && !hasSpecifiedRegExPattern) {
       this.context.stdout.write('No functions specified for instrumentation.\n')
 
       return 1
@@ -85,7 +138,7 @@ export class InstrumentCommand extends Command {
     }[] = []
 
     if (hasSpecifiedRegExPattern) {
-      if (hasSpecifiedFuntions) {
+      if (hasSpecifiedFunctions) {
         const usedCommand = this.functions.length !== 0 ? '"--functions"' : 'Functions in config file'
         this.context.stdout.write(`${usedCommand} and "--functions-regex" should not be used at the same time.\n`)
 
@@ -107,7 +160,7 @@ export class InstrumentCommand extends Command {
       try {
         const cloudWatchLogs = new CloudWatchLogs({region})
         const lambda = new Lambda({region})
-        this.context.stdout.write('Fetching lambda functions, this might take a while.\n')
+        this.context.stdout.write('Fetching Lambda functions, this might take a while.\n')
         const configs = await getInstrumentedFunctionConfigsFromRegEx(
           lambda,
           cloudWatchLogs,
@@ -118,7 +171,7 @@ export class InstrumentCommand extends Command {
 
         configGroups.push({configs, lambda, cloudWatchLogs, region: region!})
       } catch (err) {
-        this.context.stdout.write(`Couldn't fetch lambda functions. ${err}\n`)
+        this.context.stdout.write(`Couldn't fetch Lambda functions. ${err}\n`)
 
         return 1
       }
@@ -142,7 +195,7 @@ export class InstrumentCommand extends Command {
           const configs = await getInstrumentedFunctionConfigs(lambda, cloudWatchLogs, region, functionList, settings)
           configGroups.push({configs, lambda, cloudWatchLogs, region})
         } catch (err) {
-          this.context.stdout.write(`Couldn't fetch lambda functions. ${err}\n`)
+          this.context.stdout.write(`Couldn't fetch Lambda functions. ${err}\n`)
 
           return 1
         }
@@ -153,6 +206,16 @@ export class InstrumentCommand extends Command {
     this.printPlannedActions(configList)
     if (this.dryRun || configList.length === 0) {
       return 0
+    }
+
+    const willUpdate = willUpdateFunctionConfigs(configList)
+    if (this.interactive && willUpdate) {
+      this.context.stdout.write(`${yellow('[!]')} Confirmation needed.\n`)
+      const isConfirmed = await requestChangesConfirmation('Do you want to apply the changes?')
+      if (!isConfirmed) {
+        return 0
+      }
+      this.context.stdout.write(`${yellow('[!]')} Instrumenting functions.\n`)
     }
 
     const promises = Object.values(configGroups).map((group) =>
@@ -231,6 +294,7 @@ export class InstrumentCommand extends Command {
     if (extensionVersionStr !== undefined) {
       extensionVersion = parseInt(extensionVersionStr, 10)
     }
+
     if (Number.isNaN(extensionVersion)) {
       this.context.stdout.write(`Invalid extension version ${extensionVersion}.\n`)
 
@@ -256,6 +320,7 @@ export class InstrumentCommand extends Command {
     const flushMetricsToLogs = coerceBoolean(true, this.flushMetricsToLogs, this.config.flushMetricsToLogs)
     const mergeXrayTraces = coerceBoolean(false, this.mergeXrayTraces, this.config.mergeXrayTraces)
     const tracingEnabled = coerceBoolean(true, this.tracing, this.config.tracing)
+    const interactive = coerceBoolean(false, this.interactive, this.config.interactive)
     const logLevel = this.logLevel ?? this.config.logLevel
 
     const service = this.service ?? this.config.service
@@ -301,6 +366,7 @@ export class InstrumentCommand extends Command {
       extraTags,
       flushMetricsToLogs,
       forwarderARN,
+      interactive,
       layerAWSAccount,
       layerVersion,
       logLevel,
@@ -313,21 +379,8 @@ export class InstrumentCommand extends Command {
 
   private printPlannedActions(configs: FunctionConfiguration[]) {
     const prefix = this.dryRun ? bold(cyan('[Dry Run] ')) : ''
-
-    let anyUpdates = false
-    for (const config of configs) {
-      if (
-        config.updateRequest !== undefined ||
-        config.logGroupConfiguration?.createLogGroupRequest !== undefined ||
-        config.logGroupConfiguration?.deleteSubscriptionFilterRequest !== undefined ||
-        config.logGroupConfiguration?.subscriptionFilterRequest !== undefined ||
-        config?.tagConfiguration !== undefined
-      ) {
-        anyUpdates = true
-        break
-      }
-    }
-    if (!anyUpdates) {
+    const willUpdate = willUpdateFunctionConfigs(configs)
+    if (!willUpdate) {
       this.context.stdout.write(`\n${prefix}No updates will be applied\n`)
 
       return
@@ -343,6 +396,17 @@ export class InstrumentCommand extends Command {
     this.context.stdout.write(`\n${bold(yellow('[!]'))} Functions to be updated:\n`)
     for (const config of configs) {
       this.context.stdout.write(`\t- ${bold(config.functionARN)}\n`)
+
+      // Later, we should inform which layer is the latest.
+      if (this.interactive) {
+        if (!this.extensionVersion || !this.extensionVersion) {
+          this.context.stdout.write(
+            `\t${bold(
+              yellow('[Warning]')
+            )} At least one latest layer version is being used. Ensure to lock in versions for production applications using \`--layerVersion\` and \`--extensionVersion\`.\n`
+          )
+        }
+      }
     }
 
     this.context.stdout.write(`\n${prefix}Will apply the following updates:\n`)
@@ -427,4 +491,5 @@ InstrumentCommand.addOption('environment', Command.String('--env'))
 InstrumentCommand.addOption('version', Command.String('--version'))
 InstrumentCommand.addOption('extraTags', Command.String('--extra-tags'))
 InstrumentCommand.addOption('sourceCodeIntegration', Command.Boolean('-s,--source-code-integration'))
+InstrumentCommand.addOption('interactive', Command.Boolean('-i,--interactive'))
 InstrumentCommand.addOption('captureLambdaPayload', Command.String('--capture-lambda-payload'))

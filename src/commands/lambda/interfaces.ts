@@ -12,6 +12,7 @@ export interface LambdaConfigOptions {
   flushMetricsToLogs?: string
   forwarder?: string
   functions: string[]
+  interactive?: boolean
   layerAWSAccount?: string
   layerVersion?: string
   logLevel?: string
@@ -44,6 +45,7 @@ export interface InstrumentationSettings extends InstrumentationTags {
   extensionVersion?: number
   flushMetricsToLogs: boolean
   forwarderARN?: string
+  interactive?: boolean
   layerAWSAccount?: string
   layerVersion?: number
   logLevel?: string
