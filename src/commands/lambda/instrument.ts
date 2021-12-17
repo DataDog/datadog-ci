@@ -63,7 +63,7 @@ export class InstrumentCommand extends Command {
           await requestAWSCredentials()
         }
         if (isMissingDatadogEnvVars()) {
-          this.context.stdout.write(`${bold(yellow('[!]'))} Datadog Environment Variables are needed.\n`)
+          this.context.stdout.write(`${bold(yellow('[!]'))} Configure Datadog settings.\n`)
           await requestDatadogEnvVars()
         }
       } catch (e) {
