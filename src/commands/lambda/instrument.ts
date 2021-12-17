@@ -59,7 +59,7 @@ export class InstrumentCommand extends Command {
     if (this.interactive) {
       try {
         if (isMissingAWSCredentials()) {
-          this.context.stdout.write(`${bold(yellow('[!]'))} AWS Credentials are missing, let's set them up!\n`)
+          this.context.stdout.write(`${bold(yellow('[!]'))} No existing AWS credentials found, let's set them up!\n`)
           await requestAWSCredentials()
         }
         if (isMissingDatadogEnvVars()) {
