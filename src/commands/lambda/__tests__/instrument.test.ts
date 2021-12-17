@@ -11,6 +11,7 @@ import {
   AWS_ACCESS_KEY_ID_ENV_VAR,
   AWS_DEFAULT_REGION_ENV_VAR,
   AWS_SECRET_ACCESS_KEY_ENV_VAR,
+  AWS_SESSION_TOKEN_ENV_VAR,
   CI_API_KEY_ENV_VAR,
   CI_SITE_ENV_VAR,
   DEFAULT_LAYER_AWS_ACCOUNT,
@@ -885,6 +886,7 @@ ${yellow('[!]')} Instrumenting functions.
           process.env[AWS_ACCESS_KEY_ID_ENV_VAR] = mockAwsAccessKeyId
           process.env[AWS_SECRET_ACCESS_KEY_ENV_VAR] = mockAwsSecretAccessKey
           process.env[AWS_DEFAULT_REGION_ENV_VAR] = 'sa-east-1'
+          process.env[AWS_SESSION_TOKEN_ENV_VAR] = 'some-session-token'
         })
         ;(requestDatadogEnvVars as any).mockImplementation(() => {
           process.env[CI_SITE_ENV_VAR] = 'datadoghq.com'

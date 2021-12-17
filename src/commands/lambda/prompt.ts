@@ -15,6 +15,7 @@ import {
   AWS_REGIONS,
   AWS_SECRET_ACCESS_KEY_ENV_VAR,
   AWS_SECRET_ACCESS_KEY_REG_EXP,
+  AWS_SESSION_TOKEN_ENV_VAR,
   CI_API_KEY_ENV_VAR,
   CI_API_KEY_SECRET_ARN_ENV_VAR,
   CI_KMS_API_KEY_ENV_VAR,
@@ -51,6 +52,13 @@ const awsCredentialsQuestions: QuestionCollection = [
 
       return true
     },
+  },
+  {
+    // AWS_SESSION_TOKEN
+    mask: true,
+    message: 'Enter AWS Session Token (optional):',
+    name: AWS_SESSION_TOKEN_ENV_VAR,
+    type: 'password',
   },
   {
     // AWS_DEFAULT_REGION
@@ -145,6 +153,9 @@ export const requestAWSCredentials = async () => {
     process.env[AWS_ACCESS_KEY_ID_ENV_VAR] = awsCredentialsAnswers[AWS_ACCESS_KEY_ID_ENV_VAR]
     process.env[AWS_SECRET_ACCESS_KEY_ENV_VAR] = awsCredentialsAnswers[AWS_SECRET_ACCESS_KEY_ENV_VAR]
     process.env[AWS_DEFAULT_REGION_ENV_VAR] = awsCredentialsAnswers[AWS_DEFAULT_REGION_ENV_VAR]
+    if (awsCredentialsAnswers[AWS_SESSION_TOKEN_ENV_VAR] !== undefined) {
+      process.env[AWS_SESSION_TOKEN_ENV_VAR] = awsCredentialsAnswers[AWS_SESSION_TOKEN_ENV_VAR]
+    }
   } catch (e) {
     if (e instanceof Error) {
       throw Error(`Couldn't set AWS Credentials. ${e.message}`)
