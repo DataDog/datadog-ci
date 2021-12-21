@@ -489,6 +489,7 @@ export const getCIMetadata = (): Metadata | undefined => {
     ...getUserCIMetadata(),
     ...getUserGitMetadata(),
   }
+
   if (!tags || !Object.keys(tags).length) {
     return
   }

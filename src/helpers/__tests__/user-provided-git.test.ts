@@ -29,7 +29,7 @@ describe('getUserGitMetadata', () => {
     DD_GIT_COMMIT_AUTHOR_DATE: 'DD_GIT_COMMIT_AUTHOR_DATE',
     DD_GIT_COMMIT_AUTHOR_EMAIL: 'DD_GIT_COMMIT_AUTHOR_EMAIL',
     DD_GIT_COMMIT_AUTHOR_NAME: 'DD_GIT_COMMIT_AUTHOR_NAME',
-    DD_GIT_COMMIT_COMMITTER_DATE: 'DD_GIT_COMMIT_COMMITTER_DATES',
+    DD_GIT_COMMIT_COMMITTER_DATE: 'DD_GIT_COMMIT_COMMITTER_DATE',
     DD_GIT_COMMIT_COMMITTER_EMAIL: 'DD_GIT_COMMIT_COMMITTER_EMAIL',
     DD_GIT_COMMIT_COMMITTER_NAME: 'DD_GIT_COMMIT_COMMITTER_NAME',
     DD_GIT_COMMIT_MESSAGE: 'DD_GIT_COMMIT_MESSAGE',
@@ -74,6 +74,7 @@ describe('getUserGitMetadata', () => {
     expect(result).toEqual({
       [GIT_TAG]: 'DD_GIT_TAG',
       [GIT_REPOSITORY_URL]: 'DD_GIT_REPOSITORY_URL',
+      [GIT_SHA]: 'DD_GIT_COMMIT_SHA',
       [GIT_COMMIT_MESSAGE]: 'DD_GIT_COMMIT_MESSAGE',
       [GIT_COMMIT_COMMITTER_DATE]: 'DD_GIT_COMMIT_COMMITTER_DATE',
       [GIT_COMMIT_COMMITTER_EMAIL]: 'DD_GIT_COMMIT_COMMITTER_EMAIL',
@@ -93,7 +94,7 @@ describe('getUserGitMetadata', () => {
 describe('getUserGitMetadata', () => {
   const DD_CI_METADATA = {
     DD_CI_JOB_NAME: 'DD_CI_JOB_NAME',
-    DD_CI_JOB_URL: 'DD_CI_JDD_OB_URL',
+    DD_CI_JOB_URL: 'DD_CI_JOB_URL',
     DD_CI_PIPELINE_ID: 'DD_CI_PIPELINE_ID',
     DD_CI_PIPELINE_NAME: 'DD_CI_PIPELINE_NAME',
     DD_CI_PIPELINE_NUMBER: 'DD_CI_PIPELINE_NUMBER',
@@ -103,7 +104,7 @@ describe('getUserGitMetadata', () => {
     DD_CI_WORKSPACE_PATH: 'DD_CI_WORKSPACE_PATH',
   }
 
-  it('reads user defined git metadata successfully', () => {
+  it('reads user defined CI metadata successfully', () => {
     process.env = {...DD_CI_METADATA}
     const result = getUserCIMetadata()
     expect(result).toEqual({
@@ -119,8 +120,8 @@ describe('getUserGitMetadata', () => {
     })
   })
   it('does not include empty values', () => {
-    process.env = {...DD_CI_METADATA, CI_PIPELINE_ID: undefined}
-    const result = getUserGitMetadata()
+    process.env = {...DD_CI_METADATA, DD_CI_PIPELINE_ID: undefined}
+    const result = getUserCIMetadata()
     expect(result).toEqual({
       [CI_JOB_NAME]: 'DD_CI_JOB_NAME',
       [CI_JOB_URL]: 'DD_CI_JOB_URL',
@@ -132,9 +133,9 @@ describe('getUserGitMetadata', () => {
       [CI_WORKSPACE_PATH]: 'DD_CI_WORKSPACE_PATH',
     })
   })
-  it('returns an empty object if no user git is defined', () => {
+  it('returns an empty object if no user CI is defined', () => {
     process.env = {}
-    const result = getUserGitMetadata()
+    const result = getUserCIMetadata()
     expect(result).toEqual({})
   })
 })
