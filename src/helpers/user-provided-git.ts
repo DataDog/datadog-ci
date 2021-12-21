@@ -77,7 +77,6 @@ export const getUserCIMetadata = () => {
     DD_CI_WORKSPACE_PATH,
   } = process.env
 
-
   return removeEmptyValues({
     [CI_JOB_NAME]: DD_CI_JOB_NAME,
     [CI_JOB_URL]: DD_CI_JOB_URL,
@@ -87,6 +86,6 @@ export const getUserCIMetadata = () => {
     [CI_PIPELINE_URL]: DD_CI_PIPELINE_URL,
     [CI_PROVIDER_NAME]: DD_CI_PROVIDER_NAME,
     [CI_STAGE_NAME]: DD_CI_STAGE_NAME,
-    [CI_WORKSPACE_PATH]: DD_CI_WORKSPACE_PATH
+    [CI_WORKSPACE_PATH]: DD_CI_WORKSPACE_PATH,
   })
 }

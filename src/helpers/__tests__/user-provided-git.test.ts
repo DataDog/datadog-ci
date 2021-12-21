@@ -1,4 +1,13 @@
 import {
+  CI_JOB_NAME,
+  CI_JOB_URL,
+  CI_PIPELINE_ID,
+  CI_PIPELINE_NAME,
+  CI_PIPELINE_NUMBER,
+  CI_PIPELINE_URL,
+  CI_PROVIDER_NAME,
+  CI_STAGE_NAME,
+  CI_WORKSPACE_PATH,
   GIT_BRANCH,
   GIT_COMMIT_AUTHOR_DATE,
   GIT_COMMIT_AUTHOR_EMAIL,
@@ -12,7 +21,7 @@ import {
   GIT_TAG,
 } from '../tags'
 
-import {getUserGitMetadata} from '../user-provided-git'
+import {getUserCIMetadata, getUserGitMetadata} from '../user-provided-git'
 
 describe('getUserGitMetadata', () => {
   const DD_GIT_METADATA = {
@@ -72,6 +81,55 @@ describe('getUserGitMetadata', () => {
       [GIT_COMMIT_AUTHOR_DATE]: 'DD_GIT_COMMIT_AUTHOR_DATE',
       [GIT_COMMIT_AUTHOR_EMAIL]: 'DD_GIT_COMMIT_AUTHOR_EMAIL',
       [GIT_COMMIT_AUTHOR_NAME]: 'DD_GIT_COMMIT_AUTHOR_NAME',
+    })
+  })
+  it('returns an empty object if no user git is defined', () => {
+    process.env = {}
+    const result = getUserGitMetadata()
+    expect(result).toEqual({})
+  })
+})
+
+describe('getUserGitMetadata', () => {
+  const DD_CI_METADATA = {
+    DD_CI_JOB_NAME: 'DD_CI_JOB_NAME',
+    DD_CI_JOB_URL: 'DD_CI_JDD_OB_URL',
+    DD_CI_PIPELINE_ID: 'DD_CI_PIPELINE_ID',
+    DD_CI_PIPELINE_NAME: 'DD_CI_PIPELINE_NAME',
+    DD_CI_PIPELINE_NUMBER: 'DD_CI_PIPELINE_NUMBER',
+    DD_CI_PIPELINE_URL: 'DD_CI_PIPELINE_URL',
+    DD_CI_PROVIDER_NAME: 'DD_CI_PROVIDER_NAME',
+    DD_CI_STAGE_NAME: 'DD_CI_STAGE_NAME',
+    DD_CI_WORKSPACE_PATH: 'DD_CI_WORKSPACE_PATH',
+  }
+
+  it('reads user defined git metadata successfully', () => {
+    process.env = {...DD_CI_METADATA}
+    const result = getUserCIMetadata()
+    expect(result).toEqual({
+      [CI_JOB_NAME]: 'DD_CI_JOB_NAME',
+      [CI_JOB_URL]: 'DD_CI_JOB_URL',
+      [CI_PIPELINE_ID]: 'DD_CI_PIPELINE_ID',
+      [CI_PIPELINE_NAME]: 'DD_CI_PIPELINE_NAME',
+      [CI_PIPELINE_NUMBER]: 'DD_CI_PIPELINE_NUMBER',
+      [CI_PIPELINE_URL]: 'DD_CI_PIPELINE_URL',
+      [CI_PROVIDER_NAME]: 'DD_CI_PROVIDER_NAME',
+      [CI_STAGE_NAME]: 'DD_CI_STAGE_NAME',
+      [CI_WORKSPACE_PATH]: 'DD_CI_WORKSPACE_PATH',
+    })
+  })
+  it('does not include empty values', () => {
+    process.env = {...DD_CI_METADATA, CI_PIPELINE_ID: undefined}
+    const result = getUserGitMetadata()
+    expect(result).toEqual({
+      [CI_JOB_NAME]: 'DD_CI_JOB_NAME',
+      [CI_JOB_URL]: 'DD_CI_JOB_URL',
+      [CI_PIPELINE_NAME]: 'DD_CI_PIPELINE_NAME',
+      [CI_PIPELINE_NUMBER]: 'DD_CI_PIPELINE_NUMBER',
+      [CI_PIPELINE_URL]: 'DD_CI_PIPELINE_URL',
+      [CI_PROVIDER_NAME]: 'DD_CI_PROVIDER_NAME',
+      [CI_STAGE_NAME]: 'DD_CI_STAGE_NAME',
+      [CI_WORKSPACE_PATH]: 'DD_CI_WORKSPACE_PATH',
     })
   })
   it('returns an empty object if no user git is defined', () => {
