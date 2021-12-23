@@ -91,7 +91,7 @@ describe('getUserGitMetadata', () => {
   })
 })
 
-describe('getUserGitMetadata', () => {
+describe('getUserCIMetadata', () => {
   const DD_CI_METADATA = {
     DD_CI_JOB_NAME: 'DD_CI_JOB_NAME',
     DD_CI_JOB_URL: 'DD_CI_JOB_URL',
