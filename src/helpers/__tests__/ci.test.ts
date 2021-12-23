@@ -3,7 +3,7 @@ import path from 'path'
 
 import {getCIMetadata, getCISpanTags} from '../ci'
 import {Metadata, SpanTags} from '../interfaces'
-import {getUserCIMetadata, getUserGitMetadata} from '../user-provided-git'
+import {getUserCISpanTags, getUserGitSpanTags} from '../user-provided-git'
 
 const CI_PROVIDERS = fs.readdirSync(path.join(__dirname, 'ci-env'))
 
@@ -133,8 +133,8 @@ describe('ci spec', () => {
     process.env = {}
     const tags = {
       ...getCISpanTags(),
-      ...getUserCIMetadata(),
-      ...getUserGitMetadata(),
+      ...getUserCISpanTags(),
+      ...getUserGitSpanTags(),
     }
     expect(tags).toEqual({})
   })
@@ -147,7 +147,7 @@ describe('ci spec', () => {
         process.env = env
         const tags = {
           ...getCISpanTags(),
-          ...getUserGitMetadata(),
+          ...getUserGitSpanTags(),
         }
         expect(tags).toEqual(expectedSpanTags)
       })

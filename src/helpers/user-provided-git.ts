@@ -22,7 +22,7 @@ import {
 } from './tags'
 import {normalizeRef, removeEmptyValues} from './utils'
 
-export const getUserGitMetadata = () => {
+export const getUserGitSpanTags = () => {
   const {
     DD_GIT_REPOSITORY_URL,
     DD_GIT_COMMIT_SHA,
@@ -64,7 +64,7 @@ export const getUserGitMetadata = () => {
   })
 }
 
-export const getUserCIMetadata = () => {
+export const getUserCISpanTags = () => {
   const {
     DD_CI_JOB_NAME,
     DD_CI_JOB_URL,

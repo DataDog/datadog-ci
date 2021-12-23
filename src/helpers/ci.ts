@@ -23,7 +23,7 @@ import {
   GIT_SHA,
   GIT_TAG,
 } from './tags'
-import {getUserCIMetadata, getUserGitMetadata} from './user-provided-git'
+import {getUserCISpanTags, getUserGitSpanTags} from './user-provided-git'
 import {normalizeRef, removeEmptyValues, removeUndefinedValues} from './utils'
 
 export const CI_ENGINES = {
@@ -486,8 +486,8 @@ export const getCISpanTags = (): SpanTags | undefined => {
 export const getCIMetadata = (): Metadata | undefined => {
   const tags = {
     ...getCISpanTags(),
-    ...getUserCIMetadata(),
-    ...getUserGitMetadata(),
+    ...getUserCISpanTags(),
+    ...getUserGitSpanTags(),
   }
 
   if (!tags || !Object.keys(tags).length) {
