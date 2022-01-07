@@ -490,6 +490,9 @@ InstrumentCommand.addOption('service', Command.String('--service'))
 InstrumentCommand.addOption('environment', Command.String('--env'))
 InstrumentCommand.addOption('version', Command.String('--version'))
 InstrumentCommand.addOption('extraTags', Command.String('--extra-tags,--extraTags'))
-InstrumentCommand.addOption('sourceCodeIntegration', Command.Boolean('-s,--source-code-integration,--sourceCodeIntegration'))
+InstrumentCommand.addOption(
+  'sourceCodeIntegration',
+  Command.Boolean('-s,--source-code-integration,--sourceCodeIntegration')
+)
 InstrumentCommand.addOption('interactive', Command.Boolean('-i,--interactive'))
 InstrumentCommand.addOption('captureLambdaPayload', Command.String('--capture-lambda-payload,--captureLambdaPayload'))
