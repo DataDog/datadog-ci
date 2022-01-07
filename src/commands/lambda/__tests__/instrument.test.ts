@@ -165,13 +165,12 @@ TagResource -> arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world
             '--flush-metrics-to-logs',
             'false',
             '--log-level',
-            'debug'
+            'debug',
           ],
           context
         )
         const output = context.stdout.toString()
         expect(code).toBe(0)
-        console.log("logging::::: " + output)
         expect(output).toMatchInlineSnapshot(`
 "${bold(yellow('[Warning]'))} Instrument your ${hex('#FF9900').bold(
           'Lambda'
