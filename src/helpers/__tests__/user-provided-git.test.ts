@@ -21,9 +21,9 @@ import {
   GIT_TAG,
 } from '../tags'
 
-import {getUserCIMetadata, getUserGitMetadata} from '../user-provided-git'
+import {getUserCISpanTags, getUserGitSpanTags} from '../user-provided-git'
 
-describe('getUserGitMetadata', () => {
+describe('getUserGitSpanTags', () => {
   const DD_GIT_METADATA = {
     DD_GIT_BRANCH: 'DD_GIT_BRANCH',
     DD_GIT_COMMIT_AUTHOR_DATE: 'DD_GIT_COMMIT_AUTHOR_DATE',
@@ -39,7 +39,7 @@ describe('getUserGitMetadata', () => {
 
   it('reads user defined git metadata successfully', () => {
     process.env = {...DD_GIT_METADATA}
-    const result = getUserGitMetadata()
+    const result = getUserGitSpanTags()
     expect(result).toEqual({
       [GIT_REPOSITORY_URL]: 'DD_GIT_REPOSITORY_URL',
       [GIT_BRANCH]: 'DD_GIT_BRANCH',
@@ -55,7 +55,7 @@ describe('getUserGitMetadata', () => {
   })
   it('does not include empty values', () => {
     process.env = {...DD_GIT_METADATA, DD_GIT_COMMIT_SHA: undefined}
-    const result = getUserGitMetadata()
+    const result = getUserGitSpanTags()
     expect(result).toEqual({
       [GIT_REPOSITORY_URL]: 'DD_GIT_REPOSITORY_URL',
       [GIT_BRANCH]: 'DD_GIT_BRANCH',
@@ -70,7 +70,7 @@ describe('getUserGitMetadata', () => {
   })
   it('overwrites branch when tag is available', () => {
     process.env = {...DD_GIT_METADATA, DD_GIT_TAG: 'DD_GIT_TAG'}
-    const result = getUserGitMetadata()
+    const result = getUserGitSpanTags()
     expect(result).toEqual({
       [GIT_TAG]: 'DD_GIT_TAG',
       [GIT_REPOSITORY_URL]: 'DD_GIT_REPOSITORY_URL',
@@ -86,12 +86,12 @@ describe('getUserGitMetadata', () => {
   })
   it('returns an empty object if no user git is defined', () => {
     process.env = {}
-    const result = getUserGitMetadata()
+    const result = getUserGitSpanTags()
     expect(result).toEqual({})
   })
 })
 
-describe('getUserCIMetadata', () => {
+describe('getUserCISpanTags', () => {
   const DD_CI_METADATA = {
     DD_CI_JOB_NAME: 'DD_CI_JOB_NAME',
     DD_CI_JOB_URL: 'DD_CI_JOB_URL',
@@ -106,7 +106,7 @@ describe('getUserCIMetadata', () => {
 
   it('reads user defined CI metadata successfully', () => {
     process.env = {...DD_CI_METADATA}
-    const result = getUserCIMetadata()
+    const result = getUserCISpanTags()
     expect(result).toEqual({
       [CI_JOB_NAME]: 'DD_CI_JOB_NAME',
       [CI_JOB_URL]: 'DD_CI_JOB_URL',
@@ -121,7 +121,7 @@ describe('getUserCIMetadata', () => {
   })
   it('does not include empty values', () => {
     process.env = {...DD_CI_METADATA, DD_CI_PIPELINE_ID: undefined}
-    const result = getUserCIMetadata()
+    const result = getUserCISpanTags()
     expect(result).toEqual({
       [CI_JOB_NAME]: 'DD_CI_JOB_NAME',
       [CI_JOB_URL]: 'DD_CI_JOB_URL',
@@ -135,7 +135,7 @@ describe('getUserCIMetadata', () => {
   })
   it('returns an empty object if no user CI is defined', () => {
     process.env = {}
-    const result = getUserCIMetadata()
+    const result = getUserCISpanTags()
     expect(result).toEqual({})
   })
 })

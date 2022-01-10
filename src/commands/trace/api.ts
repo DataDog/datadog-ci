@@ -1,7 +1,7 @@
 import type {AxiosPromise, AxiosRequestConfig, AxiosResponse} from 'axios'
 
 import {getGitMetadata} from '../../helpers/git'
-import {getUserGitMetadata} from '../../helpers/user-provided-git'
+import {getUserGitSpanTags} from '../../helpers/user-provided-git'
 import {getRequestBuilder} from '../../helpers/utils'
 import {Payload} from './interfaces'
 
@@ -14,7 +14,7 @@ export const reportCustomSpan = (request: (args: AxiosRequestConfig) => AxiosPro
   provider: string
 ) => {
   const gitSpanTags = await getGitMetadata()
-  const userGitSpanTags = getUserGitMetadata()
+  const userGitSpanTags = getUserGitSpanTags()
 
   return request({
     data: {
