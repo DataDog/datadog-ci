@@ -3,9 +3,53 @@ import path from 'path'
 
 import {getCIMetadata, getCISpanTags} from '../ci'
 import {Metadata, SpanTags} from '../interfaces'
-import {getUserGitMetadata} from '../user-provided-git'
+import {getUserCIMetadata, getUserGitMetadata} from '../user-provided-git'
 
 const CI_PROVIDERS = fs.readdirSync(path.join(__dirname, 'ci-env'))
+
+const ciAppTagsToMetadata = (tags: SpanTags): Metadata => {
+  const metadata: Metadata = {
+    ci: {job: {}, pipeline: {}, provider: {}, stage: {}},
+    git: {commit: {author: {}, committer: {}}},
+  }
+
+  Object.entries(tags).forEach(([tag, value]) => {
+    // Ignore JSON fixtures pipeline number that can't be parsed to numbers
+    if (!value || tag === 'ci.pipeline.number') {
+      return
+    }
+
+    // Get Metadata nested property from tag name ('git.commit.author.name')
+    let currentAttr: {[k: string]: any} = metadata
+    // Current attribute up to second to last
+    const properties = tag.split('.')
+    for (let i = 0; i < properties.length - 1; i++) {
+      currentAttr = currentAttr[properties[i]]
+    }
+
+    const attributeName = properties[properties.length - 1]
+    currentAttr[attributeName] = value
+  })
+
+  return metadata
+}
+
+const ddMetadataToSpanTags = (ddMetadata: {[key: string]: string}): SpanTags => {
+  const spanTags: SpanTags = {}
+  Object.entries(ddMetadata).map(([key, value]) => {
+    let tagKey = key.split('_').slice(1).join('.').toLocaleLowerCase() // Split and remove DD prefix
+
+    if (tagKey === 'git.repository.url') {
+      tagKey = 'git.repository_url'
+    } else if (tagKey === 'ci.workspace.path') {
+      tagKey = 'ci.workspace_path'
+    }
+
+    spanTags[tagKey as keyof SpanTags] = value
+  })
+
+  return spanTags
+}
 
 describe('getCIMetadata', () => {
   test('non-recognized CI returns undefined', () => {
@@ -45,6 +89,43 @@ describe('getCIMetadata', () => {
       expect(getCIMetadata()).toEqual(expectedMetadata)
     })
   })
+
+  describe.each(CI_PROVIDERS)('Ensure DD env variables override %s env variables', (ciProvider) => {
+    const DD_METADATA = {
+      DD_CI_JOB_NAME: 'DD_CI_JOB_NAME',
+      DD_CI_JOB_URL: 'DD_CI_JOB_URL',
+      DD_CI_PIPELINE_ID: 'DD_CI_PIPELINE_ID',
+      DD_CI_PIPELINE_NAME: 'DD_CI_PIPELINE_NAME',
+      DD_CI_PIPELINE_NUMBER: 'DD_CI_PIPELINE_NUMBER',
+      DD_CI_PIPELINE_URL: 'DD_CI_PIPELINE_URL',
+      DD_CI_PROVIDER_NAME: 'DD_CI_PROVIDER_NAME',
+      DD_CI_STAGE_NAME: 'DD_CI_STAGE_NAME',
+      DD_CI_WORKSPACE_PATH: 'DD_CI_WORKSPACE_PATH',
+      DD_GIT_BRANCH: 'DD_GIT_BRANCH',
+      DD_GIT_COMMIT_AUTHOR_DATE: 'DD_GIT_COMMIT_AUTHOR_DATE',
+      DD_GIT_COMMIT_AUTHOR_EMAIL: 'DD_GIT_COMMIT_AUTHOR_EMAIL',
+      DD_GIT_COMMIT_AUTHOR_NAME: 'DD_GIT_COMMIT_AUTHOR_NAME',
+      DD_GIT_COMMIT_COMMITTER_DATE: 'DD_GIT_COMMIT_COMMITTER_DATE',
+      DD_GIT_COMMIT_COMMITTER_EMAIL: 'DD_GIT_COMMIT_COMMITTER_EMAIL',
+      DD_GIT_COMMIT_COMMITTER_NAME: 'DD_GIT_COMMIT_COMMITTER_NAME',
+      DD_GIT_COMMIT_MESSAGE: 'DD_GIT_COMMIT_MESSAGE',
+      DD_GIT_COMMIT_SHA: 'DD_GIT_COMMIT_SHA',
+      DD_GIT_REPOSITORY_URL: 'DD_GIT_REPOSITORY_URL',
+      DD_GIT_TAG: 'DD_GIT_TAG',
+    }
+
+    const expectedMetadata = ciAppTagsToMetadata(ddMetadataToSpanTags(DD_METADATA))
+    delete expectedMetadata.git.branch
+
+    const assertions = require(path.join(__dirname, 'ci-env', ciProvider))
+
+    it.each(assertions)('spec %#', (env, tags: SpanTags) => {
+      process.env = {...env, ...DD_METADATA}
+      const ciMetadata = getCIMetadata()
+      delete ciMetadata?.git.branch
+      expect(ciMetadata).toEqual(expectedMetadata)
+    })
+  })
 })
 
 describe('ci spec', () => {
@@ -52,6 +133,7 @@ describe('ci spec', () => {
     process.env = {}
     const tags = {
       ...getCISpanTags(),
+      ...getUserCIMetadata(),
       ...getUserGitMetadata(),
     }
     expect(tags).toEqual({})
@@ -72,30 +154,3 @@ describe('ci spec', () => {
     })
   })
 })
-
-const ciAppTagsToMetadata = (tags: SpanTags): Metadata => {
-  const metadata: Metadata = {
-    ci: {job: {}, pipeline: {}, provider: {}, stage: {}},
-    git: {commit: {author: {}, committer: {}}},
-  }
-
-  Object.entries(tags).forEach(([tag, value]) => {
-    // Ignore JSON fixtures pipeline number that can't be parsed to numbers
-    if (!value || tag === 'ci.pipeline.number') {
-      return
-    }
-
-    // Get Metadata nested property from tag name ('git.commit.author.name')
-    let currentAttr: {[k: string]: any} = metadata
-    // Current attribute up to second to last
-    const properties = tag.split('.')
-    for (let i = 0; i < properties.length - 1; i++) {
-      currentAttr = currentAttr[properties[i]]
-    }
-
-    const attributeName = properties[properties.length - 1]
-    currentAttr[attributeName] = value
-  })
-
-  return metadata
-}
