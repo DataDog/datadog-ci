@@ -71,7 +71,7 @@ export class UninstrumentCommand extends Command {
     hasSpecifiedFunctions = this.functions.length !== 0 || this.config.functions.length !== 0
     const hasSpecifiedRegExPattern = this.regExPattern !== undefined && this.regExPattern !== ''
     if (!hasSpecifiedFunctions && !hasSpecifiedRegExPattern) {
-      this.context.stdout.write('No functions specified for un-instrumentation.\n')
+      this.context.stdout.write(`${red('[Error]')} No functions specified for un-instrumentation.\n`)
 
       return 1
     }
@@ -87,19 +87,21 @@ export class UninstrumentCommand extends Command {
     if (hasSpecifiedRegExPattern) {
       if (hasSpecifiedFunctions) {
         const usedCommand = this.functions.length !== 0 ? '"--functions"' : 'Functions in config file'
-        this.context.stdout.write(`${usedCommand} and "--functions-regex" should not be used at the same time.\n`)
+        this.context.stdout.write(
+          `${red('[Error]')} ${usedCommand} and "--functions-regex" should not be used at the same time.\n`
+        )
 
         return 1
       }
       if (this.regExPattern!.match(':')) {
-        this.context.stdout.write(`"--functions-regex" isn't meant to be used with ARNs.\n`)
+        this.context.stdout.write(`${red('[Error]')} "--functions-regex" isn't meant to be used with ARNs.\n`)
 
         return 1
       }
 
       const region = this.region || this.config.region
       if (!region) {
-        this.context.stdout.write('No default region specified. Use `-r`, `--region`.')
+        this.context.stdout.write(`${red('[Error]')} No default region specified. Use \`-r\`, \`--region\`.`)
 
         return 1
       }
@@ -129,7 +131,7 @@ export class UninstrumentCommand extends Command {
           this.region || this.config.region
         )
       } catch (err) {
-        this.context.stdout.write(`Couldn't group functions. ${err}`)
+        this.context.stdout.write(`${red('[Error]')} Couldn't group functions. ${err}`)
 
         return 1
       }
