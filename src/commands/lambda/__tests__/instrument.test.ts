@@ -607,7 +607,9 @@ TagResource -> arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world
         const output = context.stdout.toString()
         expect(code).toBe(1)
         expect(output).toMatchInlineSnapshot(`
-                                                            "No functions specified for instrumentation.
+                                                            "${red(
+                                                              '[Error]'
+                                                            )} No functions specified for instrumentation.
                                                             "
                                                 `)
       })
@@ -627,7 +629,9 @@ TagResource -> arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world
         await command['execute']()
         const output = command.context.stdout.toString()
         expect(output).toMatchInlineSnapshot(`
-                                                            "No functions specified for instrumentation.
+                                                            "${red(
+                                                              '[Error]'
+                                                            )} No functions specified for instrumentation.
                                                             "
                                                 `)
       })
@@ -700,7 +704,9 @@ TagResource -> arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world
         const output = context.stdout.toString()
         expect(code).toBe(1)
         expect(output).toMatchInlineSnapshot(`
-                                                  "Couldn't fetch Lambda functions. Error: Can't instrument arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world, as current State is Failed (must be \\"Active\\") and Last Update Status is Unsuccessful (must be \\"Successful\\")
+                                                  "${red(
+                                                    '[Error]'
+                                                  )} Couldn't fetch Lambda functions. Error: Can't instrument arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world, as current State is Failed (must be \\"Active\\") and Last Update Status is Unsuccessful (must be \\"Successful\\")
                                                   "
                                         `)
       })
@@ -734,7 +740,7 @@ TagResource -> arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world
         const output = context.stdout.toString()
         expect(code).toBe(1)
         expect(output).toMatchInlineSnapshot(`
-          "\\"extensionVersion\\" and \\"forwarder\\" should not be used at the same time.
+          "${red('[Error]')} \\"extensionVersion\\" and \\"forwarder\\" should not be used at the same time.
           "
         `)
       })
@@ -778,6 +784,20 @@ TagResource -> arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world
         await command['execute']()
         output = command.context.stdout.toString()
         expect(output).toMatch('"--functions" and "--functions-regex" should not be used at the same time.\n')
+      })
+      test('aborts if pattern is set and no default region is specified', async () => {
+        ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({}))
+
+        process.env = {}
+
+        const command = createCommand(InstrumentCommand)
+        command['environment'] = 'staging'
+        command['service'] = 'middletier'
+        command['version'] = '2'
+        command['regExPattern'] = 'valid-pattern'
+        await command['execute']()
+        const output = command.context.stdout.toString()
+        expect(output).toMatch(`${red('[Error]')} No default region specified. Use \`-r\`, \`--region\`.\n`)
       })
       test('aborts if the regEx pattern is an ARN', async () => {
         ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({}))
