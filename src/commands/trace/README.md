@@ -2,8 +2,6 @@
 
 Trace a command with a custom span and report it to Datadog.
 
-**Warning**: this command is still in alpha and should not be used in production environments.
-
 ## Usage
 
 ```bash

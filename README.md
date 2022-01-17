@@ -28,6 +28,7 @@ npm install -g @datadog/datadog-ci
 # Yarn v1 add globally
 yarn global add @datadog/datadog-ci
 ```
+
 ## Usage
 
 ```bash
@@ -40,6 +41,8 @@ Available commands:
   - synthetics
   - dsyms
   - git-metadata
+  - junit
+  - trace
 ```
 
 Each command allows interacting with a product of the Datadog platform. The commands are defined in the [src/commands](/src/commands) folder.
@@ -52,6 +55,8 @@ Further documentation for each command can be found in its folder, ie:
 - [Synthetics CI/CD Testing](src/commands/synthetics/)
 - [iOS dSYM Files](src/commands/dsyms/)
 - [Git metadata](src/commands/git-metadata)
+- [JUnit XML](src/commands/junit)
+- [Trace](src/commands/trace)
 
 ## Contributing
 

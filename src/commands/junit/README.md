@@ -2,8 +2,6 @@
 
 Upload your jUnit XML files.
 
-**Warning**: this command is still in alpha and should not be used in production environments.
-
 ## Usage
 
 #### Commands
@@ -47,21 +45,21 @@ Additionally you might configure the `junit` command with environment variables:
 
 ### End-to-end testing process
 
-To verify this command works as expected, you can send some mock data and validate the command returns 0:
+To verify this command works as expected, you can use `--dry-run`:
 
 ```bash
 export DATADOG_API_KEY='<API key>'
 
-yarn launch junit upload /src/commands/junit/__tests__/fixtures --service example-upload
+yarn launch junit upload ./src/commands/junit/__tests__/fixtures/java-report.xml --service example-upload --dry-run
 ```
 
 Successful output should look like this:
 
 ```bash
+⚠️ DRY-RUN MODE ENABLED. WILL NOT UPLOAD JUNIT XML
 Starting upload with concurrency 20.
-Will look for jUnit XML files in src/commands/junit/__tests__/fixtures
+Will upload jUnit XML file src/commands/junit/__tests__/fixtures/java-report.xml
 service: example-upload
-Uploading jUnit XML test report file in src/commands/junit/__tests__/fixtures/go-report.xml
-Uploading jUnit XML test report file in src/commands/junit/__tests__/fixtures/java-report.xml
-✅ Uploaded 2 files in ? seconds.
+[DRYRUN] Uploading jUnit XML test report file in src/commands/junit/__tests__/fixtures/java-report.xml
+✅ Uploaded 1 files in 0 seconds.
 ```
