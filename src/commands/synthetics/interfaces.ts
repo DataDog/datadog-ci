@@ -193,12 +193,16 @@ export enum Operator {
   doesNotContain = 'doesNotContain',
   is = 'is',
   isNot = 'isNot',
+  isInLessThan = 'isInLessThan',
+  isInMoreThan = 'isInMoreThan',
   lessThan = 'lessThan',
+  lessThanOrEqual = 'lessThanOrEqual',
+  moreThan = 'moreThan',
+  moreThanOrEqual = 'moreThanOrEqual',
   matches = 'matches',
   doesNotMatch = 'doesNotMatch',
-  validates = 'validates',
-  isInMoreThan = 'isInMoreThan',
-  isInLessThan = 'isInLessThan',
+  validatesJSONPath = 'validatesJSONPath',
+  validatesXPath = 'validatesXPath',
 }
 
 export interface User {
@@ -358,6 +362,7 @@ export interface SyntheticsCIConfig {
   subdomain: string
   testSearchQuery?: string
   tunnel: boolean
+  variableStrings: string[]
 }
 
 export interface CommandConfig extends SyntheticsCIConfig {

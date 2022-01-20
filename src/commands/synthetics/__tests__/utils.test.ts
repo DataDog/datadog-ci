@@ -716,4 +716,13 @@ describe('utils', () => {
       expect(counter).toBe(3)
     })
   })
+
+  test('parseVariablesFromCli', () => {
+    expect(utils.parseVariablesFromCli(['TEST=42'])).toEqual({TEST: '42'})
+    expect(utils.parseVariablesFromCli(['TEST=42 with some spaces'])).toEqual({TEST: '42 with some spaces'})
+    expect(utils.parseVariablesFromCli(['TEST=42=43=44'])).toEqual({TEST: '42=43=44'})
+    expect(utils.parseVariablesFromCli(['TEST='])).toEqual({TEST: ''})
+    expect(utils.parseVariablesFromCli([''])).toBeUndefined()
+    expect(utils.parseVariablesFromCli()).toBeUndefined()
+  })
 })

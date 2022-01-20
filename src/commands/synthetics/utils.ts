@@ -534,3 +534,22 @@ export const retry = async <T, E extends Error>(
 
   return trier()
 }
+
+export const parseVariablesFromCli = (variableArguments: string[] = []): {[key: string]: string} | undefined => {
+  const variables: {[key: string]: string} = {}
+
+  for (const variableArgument of variableArguments) {
+    const separatorIndex = variableArgument.indexOf('=')
+
+    if (separatorIndex === -1) {
+      continue
+    }
+
+    const key = variableArgument.substring(0, separatorIndex)
+    const value = variableArgument.substring(separatorIndex + 1)
+
+    variables[key] = value
+  }
+
+  return Object.keys(variables).length > 0 ? variables : undefined
+}
