@@ -244,7 +244,7 @@ export class RunTestCommand extends Command {
     this.config.global = deepExtend(
       this.config.global,
       removeUndefinedValues({
-        variables: parseVariablesFromCli(this.variableStrings),
+        variables: parseVariablesFromCli(this.variableStrings, this.reporter!.log.bind(this.reporter)),
       })
     )
 

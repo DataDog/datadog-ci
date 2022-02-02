@@ -535,13 +535,22 @@ export const retry = async <T, E extends Error>(
   return trier()
 }
 
-export const parseVariablesFromCli = (variableArguments: string[] = []): {[key: string]: string} | undefined => {
+export const parseVariablesFromCli = (
+  variableArguments: string[] = [],
+  logFunction: (log: string) => void
+): {[key: string]: string} | undefined => {
   const variables: {[key: string]: string} = {}
 
   for (const variableArgument of variableArguments) {
     const separatorIndex = variableArgument.indexOf('=')
 
     if (separatorIndex === -1) {
+      logFunction(`Ignoring variable "${variableArgument}" as separator "=" was not found`)
+      continue
+    }
+
+    if (separatorIndex === 0) {
+      logFunction(`Ignoring variable "${variableArgument}" as variable name is empty`)
       continue
     }
 
