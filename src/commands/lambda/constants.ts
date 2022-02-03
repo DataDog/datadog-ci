@@ -80,8 +80,7 @@ export const AWS_REGIONS: string[] = [
   'us-gov-west-1',
 ]
 
-// export const DEFAULT_LAYER_AWS_ACCOUNT = '464622532012'
-export const DEFAULT_LAYER_AWS_ACCOUNT = '601427279990'
+export const DEFAULT_LAYER_AWS_ACCOUNT = '464622532012'
 export const GOVCLOUD_LAYER_AWS_ACCOUNT = '002406178527'
 export const SUBSCRIPTION_FILTER_NAME = 'datadog-ci-filter'
 export const TAG_VERSION_NAME = 'dd_sls_ci'
