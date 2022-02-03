@@ -718,11 +718,14 @@ describe('utils', () => {
   })
 
   test('parseVariablesFromCli', () => {
-    expect(utils.parseVariablesFromCli(['TEST=42'])).toEqual({TEST: '42'})
-    expect(utils.parseVariablesFromCli(['TEST=42 with some spaces'])).toEqual({TEST: '42 with some spaces'})
-    expect(utils.parseVariablesFromCli(['TEST=42=43=44'])).toEqual({TEST: '42=43=44'})
-    expect(utils.parseVariablesFromCli(['TEST='])).toEqual({TEST: ''})
-    expect(utils.parseVariablesFromCli([''])).toBeUndefined()
-    expect(utils.parseVariablesFromCli()).toBeUndefined()
+    const mockLogFunction = (message: string) => undefined
+    expect(utils.parseVariablesFromCli(['TEST=42'], mockLogFunction)).toEqual({TEST: '42'})
+    expect(utils.parseVariablesFromCli(['TEST=42 with some spaces'], mockLogFunction)).toEqual({
+      TEST: '42 with some spaces',
+    })
+    expect(utils.parseVariablesFromCli(['TEST=42=43=44'], mockLogFunction)).toEqual({TEST: '42=43=44'})
+    expect(utils.parseVariablesFromCli(['TEST='], mockLogFunction)).toEqual({TEST: ''})
+    expect(utils.parseVariablesFromCli([''], mockLogFunction)).toBeUndefined()
+    expect(utils.parseVariablesFromCli(undefined, mockLogFunction)).toBeUndefined()
   })
 })
