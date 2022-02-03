@@ -117,6 +117,7 @@ Instead of supplying arguments, you can create a configuration file in your proj
         "region": "us-east-1",
         "tracing": true,
         "mergeXrayTraces": true,
+        "captureLambdaPayload": true,
         "forwarder": "arn:aws:lambda:us-east-1:000000000000:function:datadog-forwarder",
         "logLevel": "debug",
         "service":"some-service",
