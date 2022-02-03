@@ -71,9 +71,13 @@ const readableOperation: {[key in Operator]: string} = {
   [Operator.lessThan]: 'should be less than',
   [Operator.matches]: 'should match',
   [Operator.doesNotMatch]: 'should not match',
-  [Operator.validates]: 'will expire in less than',
   [Operator.isInLessThan]: 'will expire in less than',
   [Operator.isInMoreThan]: 'will expire in more than',
+  [Operator.lessThanOrEqual]: 'should be less than or equal to',
+  [Operator.moreThan]: 'should be more than',
+  [Operator.moreThanOrEqual]: 'should be less than or equal to',
+  [Operator.validatesJSONPath]: 'assert on JSONPath extracted value',
+  [Operator.validatesXPath]: 'assert on XPath extracted value',
 }
 
 const renderApiError = (errorCode: string, errorMessage: string, color: chalk.Chalk) => {

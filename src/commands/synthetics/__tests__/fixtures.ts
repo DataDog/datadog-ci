@@ -52,6 +52,7 @@ export const ciConfig: CommandConfig = {
   publicIds: [],
   subdomain: 'app',
   tunnel: false,
+  variableStrings: [],
 }
 
 export const getApiTest = (publicId: string): Test => ({

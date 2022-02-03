@@ -19,7 +19,7 @@ import {
 import {DefaultReporter} from './reporters/default'
 import {JUnitReporter} from './reporters/junit'
 import {executeTests} from './run-test'
-import {getReporter, hasTestSucceeded, isCriticalError} from './utils'
+import {getReporter, hasTestSucceeded, isCriticalError, parseVariablesFromCli} from './utils'
 
 export const DEFAULT_COMMAND_CONFIG: CommandConfig = {
   apiKey: '',
@@ -36,6 +36,7 @@ export const DEFAULT_COMMAND_CONFIG: CommandConfig = {
   publicIds: [],
   subdomain: 'app',
   tunnel: false,
+  variableStrings: [],
 }
 
 export class RunTestCommand extends Command {
@@ -54,6 +55,7 @@ export class RunTestCommand extends Command {
   private subdomain?: string
   private testSearchQuery?: string
   private tunnel?: boolean
+  private variableStrings?: string[]
 
   public async execute() {
     const reporters: Reporter[] = [new DefaultReporter(this)]
@@ -238,6 +240,14 @@ export class RunTestCommand extends Command {
       })
     )
 
+    // Override with Global CLI parameters
+    this.config.global = deepExtend(
+      this.config.global,
+      removeUndefinedValues({
+        variables: parseVariablesFromCli(this.variableStrings, (log) => this.reporter?.log(log)),
+      })
+    )
+
     if (typeof this.config.files === 'string') {
       this.reporter!.log('[DEPRECATED] "files" should be an array of string instead of a string.\n')
       this.config.files = [this.config.files]
@@ -275,14 +285,15 @@ export class RunTestCommand extends Command {
 RunTestCommand.addPath('synthetics', 'run-tests')
 RunTestCommand.addOption('apiKey', Command.String('--apiKey'))
 RunTestCommand.addOption('appKey', Command.String('--appKey'))
-RunTestCommand.addOption('failOnCriticalErrors', Command.Boolean('--failOnCriticalErrors'))
 RunTestCommand.addOption('configPath', Command.String('--config'))
 RunTestCommand.addOption('datadogSite', Command.String('--datadogSite'))
-RunTestCommand.addOption('files', Command.Array('-f,--files'))
+RunTestCommand.addOption('failOnCriticalErrors', Command.Boolean('--failOnCriticalErrors'))
 RunTestCommand.addOption('failOnTimeout', Command.Boolean('--failOnTimeout'))
-RunTestCommand.addOption('publicIds', Command.Array('-p,--public-id'))
-RunTestCommand.addOption('testSearchQuery', Command.String('-s,--search'))
-RunTestCommand.addOption('subdomain', Command.Boolean('--subdomain'))
-RunTestCommand.addOption('tunnel', Command.Boolean('-t,--tunnel'))
+RunTestCommand.addOption('files', Command.Array('-f,--files'))
 RunTestCommand.addOption('jUnitReport', Command.String('-j,--jUnitReport'))
+RunTestCommand.addOption('publicIds', Command.Array('-p,--public-id'))
 RunTestCommand.addOption('runName', Command.String('-n,--runName'))
+RunTestCommand.addOption('subdomain', Command.Boolean('--subdomain'))
+RunTestCommand.addOption('testSearchQuery', Command.String('-s,--search'))
+RunTestCommand.addOption('tunnel', Command.Boolean('-t,--tunnel'))
+RunTestCommand.addOption('variableStrings', Command.Array('-v,--variable'))
