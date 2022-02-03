@@ -23,6 +23,7 @@ import {
   PROFILER_PATH,
   DOTNET_TRACER_HOME,
   INTEGRATIONS,
+  DOTNET_RUNTIME,
 } from '../constants'
 import { FunctionConfiguration, LogGroupConfiguration, TagConfiguration } from '../interfaces'
 import { calculateLogGroupRemoveRequest } from '../loggroup'
@@ -108,8 +109,7 @@ export const calculateUpdateRequest = (config: Lambda.FunctionConfiguration, run
   let needsUpdate = false
 
   // Remove Handler
-  const expectedHandler = HANDLER_LOCATION[runtime]
-  if (config.Handler === expectedHandler || runtime === 'dotnetcore3.1') {
+  if (runtime === DOTNET_RUNTIME || config.Handler === HANDLER_LOCATION[runtime]) {
     needsUpdate = true
     updateRequest.Handler = oldEnvVars[LAMBDA_HANDLER_ENV_VAR]
     delete oldEnvVars[LAMBDA_HANDLER_ENV_VAR]

@@ -1,5 +1,6 @@
 export const DD_LAMBDA_EXTENSION_LAYER_NAME = 'Datadog-Extension'
 export const EXTENSION_LAYER_KEY = 'extension'
+export const DOTNET_RUNTIME = 'dotnetcore3.1'
 export const RUNTIME_LAYER_LOOKUP = {
   [EXTENSION_LAYER_KEY]: DD_LAMBDA_EXTENSION_LAYER_NAME,
   'nodejs12.x': 'Datadog-Node12-x',

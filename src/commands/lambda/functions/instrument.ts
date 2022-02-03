@@ -36,6 +36,7 @@ import {
   CORECLR_PROFILER_PATH,
   DD_DOTNET_TRACER_HOME,
   DD_INTEGRATIONS,
+  DOTNET_RUNTIME,
 } from '../constants'
 import { FunctionConfiguration, InstrumentationSettings, LogGroupConfiguration, TagConfiguration } from '../interfaces'
 import { calculateLogGroupUpdateRequest } from '../loggroup'
@@ -145,7 +146,7 @@ export const calculateUpdateRequest = async (
   let needsUpdate = false
 
   // Update Handler
-  if (runtime !== "dotnetcore3.1") {
+  if (runtime !== DOTNET_RUNTIME) {
     const expectedHandler = HANDLER_LOCATION[runtime]
     if (config.Handler !== expectedHandler) {
       needsUpdate = true
@@ -233,7 +234,7 @@ export const calculateUpdateRequest = async (
   }
 
   //Add dotnet Env Vars
-  if (runtime === "dotnetcore3.1") {
+  if (runtime === DOTNET_RUNTIME) {
     needsUpdate = true
     newEnvVars[ENABLE_PROFILING] = CORECLR_ENABLE_PROFILING
     newEnvVars[PROFILER] = CORECLR_PROFILER
