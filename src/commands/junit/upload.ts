@@ -22,7 +22,7 @@ import {getCISpanTags} from '../../helpers/ci'
 import {getGitMetadata} from '../../helpers/git'
 import {retryRequest} from '../../helpers/retry'
 import {parseTags} from '../../helpers/tags'
-import {getUserGitMetadata} from '../../helpers/user-provided-git'
+import {getUserGitSpanTags} from '../../helpers/user-provided-git'
 import {buildPath} from '../../helpers/utils'
 
 const errorCodesStopUpload = [400, 403]
@@ -137,7 +137,7 @@ export class UploadJUnitXMLCommand extends Command {
 
     const ciSpanTags = getCISpanTags()
     const gitSpanTags = await getGitMetadata()
-    const userGitSpanTags = getUserGitMetadata()
+    const userGitSpanTags = getUserGitSpanTags()
 
     const envVarTags = this.config.envVarTags ? parseTags(this.config.envVarTags.split(',')) : {}
     const cliTags = this.tags ? parseTags(this.tags) : {}

@@ -716,4 +716,16 @@ describe('utils', () => {
       expect(counter).toBe(3)
     })
   })
+
+  test('parseVariablesFromCli', () => {
+    const mockLogFunction = (message: string) => undefined
+    expect(utils.parseVariablesFromCli(['TEST=42'], mockLogFunction)).toEqual({TEST: '42'})
+    expect(utils.parseVariablesFromCli(['TEST=42 with some spaces'], mockLogFunction)).toEqual({
+      TEST: '42 with some spaces',
+    })
+    expect(utils.parseVariablesFromCli(['TEST=42=43=44'], mockLogFunction)).toEqual({TEST: '42=43=44'})
+    expect(utils.parseVariablesFromCli(['TEST='], mockLogFunction)).toEqual({TEST: ''})
+    expect(utils.parseVariablesFromCli([''], mockLogFunction)).toBeUndefined()
+    expect(utils.parseVariablesFromCli(undefined, mockLogFunction)).toBeUndefined()
+  })
 })

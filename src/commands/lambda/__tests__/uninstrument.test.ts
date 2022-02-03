@@ -190,7 +190,7 @@ UpdateFunctionConfiguration -> arn:aws:lambda:us-east-1:000000000000:function:un
       const output = context.stdout.toString()
       expect(code).toBe(1)
       expect(output).toMatchInlineSnapshot(`
-        "No functions specified for un-instrumentation.
+        "${red('[Error]')} No functions specified for un-instrumentation.
         "
       `)
     })
@@ -203,7 +203,7 @@ UpdateFunctionConfiguration -> arn:aws:lambda:us-east-1:000000000000:function:un
       await command['execute']()
       const output = command.context.stdout.toString()
       expect(output).toMatchInlineSnapshot(`
-        "No functions specified for un-instrumentation.
+        "${red('[Error]')} No functions specified for un-instrumentation.
         "
       `)
     })

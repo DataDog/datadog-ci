@@ -115,8 +115,9 @@ export const executeTests = async (reporter: MainReporter, config: SyntheticsCIC
     Object.assign(results, resultPolled)
   } catch (error) {
     const isCriticalError = is5xxError(error as any)
-    await stopTunnel()
     throw new (isCriticalError ? CriticalError : CiError)('POLL_RESULTS_FAILED')
+  } finally {
+    await stopTunnel()
   }
 
   return {results, summary, tests, triggers}

@@ -2,7 +2,7 @@
 
 ![Continuous Integration](https://github.com/DataDog/datadog-ci/workflows/Continuous%20Integration/badge.svg) [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0) ![NodeJS Version](https://img.shields.io/badge/Node.js-10.24.1+-green)
 
-Execute commands with Datadog from within your Continuous Integration/Continuous Deployment scripts. A good way to perform end to end tests of your application before applying you changes or deploying. It currently features running synthetics tests and waiting for the results.
+Execute commands with Datadog from within your Continuous Integration/Continuous Deployment scripts. A good way to perform end to end tests of your application before applying your changes or deploying. It currently features running synthetics tests and waiting for the results.
 
 ## How to install the CLI
 
@@ -28,6 +28,7 @@ npm install -g @datadog/datadog-ci
 # Yarn v1 add globally
 yarn global add @datadog/datadog-ci
 ```
+
 ## Usage
 
 ```bash
@@ -40,6 +41,8 @@ Available commands:
   - synthetics
   - dsyms
   - git-metadata
+  - junit
+  - trace
 ```
 
 Each command allows interacting with a product of the Datadog platform. The commands are defined in the [src/commands](/src/commands) folder.
@@ -52,6 +55,8 @@ Further documentation for each command can be found in its folder, ie:
 - [Synthetics CI/CD Testing](src/commands/synthetics/)
 - [iOS dSYM Files](src/commands/dsyms/)
 - [Git metadata](src/commands/git-metadata)
+- [JUnit XML](src/commands/junit)
+- [Trace](src/commands/trace)
 
 ## Contributing
 

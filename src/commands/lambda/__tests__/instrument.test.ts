@@ -126,6 +126,92 @@ TagResource -> arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world
 `)
       })
 
+      test('prints dry run data for lambda library and extension layers using kebab case args', async () => {
+        ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({code: 'ENOENT'}))
+        ;(Lambda as any).mockImplementation(() =>
+          makeMockLambda({
+            'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world': {
+              FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world',
+              Handler: 'index.handler',
+              Runtime: 'nodejs12.x',
+            },
+          })
+        )
+        const cli = makeCli()
+        const context = createMockContext() as any
+        const functionARN = 'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world'
+        process.env.DATADOG_API_KEY = '1234'
+        const code = await cli.run(
+          [
+            'lambda',
+            'instrument',
+            '-f',
+            functionARN,
+            '--dry',
+            '--service',
+            'middletier',
+            '--env',
+            'staging',
+            '--version',
+            '0.2',
+            '--extra-tags',
+            'layer:api,team:intake',
+            '--layer-version',
+            '10',
+            '--extension-version',
+            '5',
+            '--merge-xray-traces',
+            'true',
+            '--flush-metrics-to-logs',
+            'false',
+            '--log-level',
+            'debug',
+          ],
+          context
+        )
+        const output = context.stdout.toString()
+        expect(code).toBe(0)
+        expect(output).toMatchInlineSnapshot(`
+"${bold(yellow('[Warning]'))} Instrument your ${hex('#FF9900').bold(
+          'Lambda'
+        )} functions in a dev or staging environment first. Should the instrumentation result be unsatisfactory, run \`${bold(
+          'uninstrument'
+        )}\` with the same arguments to revert the changes.
+\n${bold(yellow('[!]'))} Functions to be updated:
+\t- ${bold('arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world')}\n
+${bold(cyan('[Dry Run] '))}Will apply the following updates:
+UpdateFunctionConfiguration -> arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world
+{
+  \\"FunctionName\\": \\"arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world\\",
+  \\"Handler\\": \\"/opt/nodejs/node_modules/datadog-lambda-js/handler.handler\\",
+  \\"Environment\\": {
+    \\"Variables\\": {
+      \\"DD_LAMBDA_HANDLER\\": \\"index.handler\\",
+      \\"DD_API_KEY\\": \\"1234\\",
+      \\"DD_SITE\\": \\"datadoghq.com\\",
+      \\"DD_CAPTURE_LAMBDA_PAYLOAD\\": \\"false\\",
+      \\"DD_ENV\\": \\"staging\\",
+      \\"DD_TAGS\\": \\"layer:api,team:intake\\",
+      \\"DD_MERGE_XRAY_TRACES\\": \\"true\\",
+      \\"DD_SERVICE\\": \\"middletier\\",
+      \\"DD_TRACE_ENABLED\\": \\"true\\",
+      \\"DD_VERSION\\": \\"0.2\\",
+      \\"DD_LOG_LEVEL\\": \\"debug\\"
+    }
+  },
+  \\"Layers\\": [
+    \\"arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Extension:5\\",
+    \\"arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Node12-x:10\\"
+  ]
+}
+TagResource -> arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world
+{
+  \\"dd_sls_ci\\": \\"v${version}\\"
+}
+"
+`)
+      })
+
       test('prints dry run data for lambda extension layer', async () => {
         ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({code: 'ENOENT'}))
         ;(Lambda as any).mockImplementation(() =>
@@ -521,7 +607,9 @@ TagResource -> arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world
         const output = context.stdout.toString()
         expect(code).toBe(1)
         expect(output).toMatchInlineSnapshot(`
-                                                            "No functions specified for instrumentation.
+                                                            "${red(
+                                                              '[Error]'
+                                                            )} No functions specified for instrumentation.
                                                             "
                                                 `)
       })
@@ -541,7 +629,9 @@ TagResource -> arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world
         await command['execute']()
         const output = command.context.stdout.toString()
         expect(output).toMatchInlineSnapshot(`
-                                                            "No functions specified for instrumentation.
+                                                            "${red(
+                                                              '[Error]'
+                                                            )} No functions specified for instrumentation.
                                                             "
                                                 `)
       })
@@ -614,7 +704,9 @@ TagResource -> arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world
         const output = context.stdout.toString()
         expect(code).toBe(1)
         expect(output).toMatchInlineSnapshot(`
-                                                  "Couldn't fetch Lambda functions. Error: Can't instrument arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world, as current State is Failed (must be \\"Active\\") and Last Update Status is Unsuccessful (must be \\"Successful\\")
+                                                  "${red(
+                                                    '[Error]'
+                                                  )} Couldn't fetch Lambda functions. Error: Can't instrument arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world, as current State is Failed (must be \\"Active\\") and Last Update Status is Unsuccessful (must be \\"Successful\\")
                                                   "
                                         `)
       })
@@ -648,7 +740,7 @@ TagResource -> arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world
         const output = context.stdout.toString()
         expect(code).toBe(1)
         expect(output).toMatchInlineSnapshot(`
-          "\\"extensionVersion\\" and \\"forwarder\\" should not be used at the same time.
+          "${red('[Error]')} \\"extensionVersion\\" and \\"forwarder\\" should not be used at the same time.
           "
         `)
       })
@@ -692,6 +784,20 @@ TagResource -> arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world
         await command['execute']()
         output = command.context.stdout.toString()
         expect(output).toMatch('"--functions" and "--functions-regex" should not be used at the same time.\n')
+      })
+      test('aborts if pattern is set and no default region is specified', async () => {
+        ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({}))
+
+        process.env = {}
+
+        const command = createCommand(InstrumentCommand)
+        command['environment'] = 'staging'
+        command['service'] = 'middletier'
+        command['version'] = '2'
+        command['regExPattern'] = 'valid-pattern'
+        await command['execute']()
+        const output = command.context.stdout.toString()
+        expect(output).toMatch(`${red('[Error]')} No default region specified. Use \`-r\`, \`--region\`.\n`)
       })
       test('aborts if the regEx pattern is an ARN', async () => {
         ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({}))

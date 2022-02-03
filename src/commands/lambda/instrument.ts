@@ -105,26 +105,28 @@ export class InstrumentCommand extends Command {
     hasSpecifiedFunctions = this.functions.length !== 0 || this.config.functions.length !== 0
     const hasSpecifiedRegExPattern = this.regExPattern !== undefined && this.regExPattern !== ''
     if (!hasSpecifiedFunctions && !hasSpecifiedRegExPattern) {
-      this.context.stdout.write('No functions specified for instrumentation.\n')
+      this.context.stdout.write(`${red('[Error]')} No functions specified for instrumentation.\n`)
 
       return 1
     }
     if (settings.extensionVersion && settings.forwarderARN) {
-      this.context.stdout.write('"extensionVersion" and "forwarder" should not be used at the same time.\n')
+      this.context.stdout.write(
+        `${red('[Error]')} "extensionVersion" and "forwarder" should not be used at the same time.\n`
+      )
 
       return 1
     }
 
     if (this.sourceCodeIntegration) {
       if (!process.env.DATADOG_API_KEY) {
-        this.context.stdout.write('Missing DATADOG_API_KEY in your environment\n')
+        this.context.stdout.write(`${red('[Error]')} Missing DATADOG_API_KEY in your environment\n`)
 
         return 1
       }
       try {
         await this.getGitDataAndUpload(settings)
       } catch (err) {
-        this.context.stdout.write(`${err}\n`)
+        this.context.stdout.write(`${red('[Error]')} ${err}\n`)
 
         return 1
       }
@@ -140,19 +142,21 @@ export class InstrumentCommand extends Command {
     if (hasSpecifiedRegExPattern) {
       if (hasSpecifiedFunctions) {
         const usedCommand = this.functions.length !== 0 ? '"--functions"' : 'Functions in config file'
-        this.context.stdout.write(`${usedCommand} and "--functions-regex" should not be used at the same time.\n`)
+        this.context.stdout.write(
+          `${red('[Error]')} ${usedCommand} and "--functions-regex" should not be used at the same time.\n`
+        )
 
         return 1
       }
       if (this.regExPattern!.match(':')) {
-        this.context.stdout.write(`"--functions-regex" isn't meant to be used with ARNs.\n`)
+        this.context.stdout.write(`${red('[Error]')} "--functions-regex" isn't meant to be used with ARNs.\n`)
 
         return 1
       }
 
       const region = this.region || this.config.region
       if (!region) {
-        this.context.stdout.write('No default region specified. Use `-r`, `--region`.')
+        this.context.stdout.write(`${red('[Error]')} No default region specified. Use \`-r\`, \`--region\`.\n`)
 
         return 1
       }
@@ -171,7 +175,7 @@ export class InstrumentCommand extends Command {
 
         configGroups.push({configs, lambda, cloudWatchLogs, region: region!})
       } catch (err) {
-        this.context.stdout.write(`Couldn't fetch Lambda functions. ${err}\n`)
+        this.context.stdout.write(`${red('[Error]')} Couldn't fetch Lambda functions. ${err}\n`)
 
         return 1
       }
@@ -183,7 +187,7 @@ export class InstrumentCommand extends Command {
           this.region || this.config.region
         )
       } catch (err) {
-        this.context.stdout.write(`Couldn't group functions. ${err}`)
+        this.context.stdout.write(`${red('[Error]')} Couldn't group functions. ${err}`)
 
         return 1
       }
@@ -195,7 +199,7 @@ export class InstrumentCommand extends Command {
           const configs = await getInstrumentedFunctionConfigs(lambda, cloudWatchLogs, region, functionList, settings)
           configGroups.push({configs, lambda, cloudWatchLogs, region})
         } catch (err) {
-          this.context.stdout.write(`Couldn't fetch Lambda functions. ${err}\n`)
+          this.context.stdout.write(`${red('[Error]')} Couldn't fetch Lambda functions. ${err}\n`)
 
           return 1
         }
@@ -224,7 +228,7 @@ export class InstrumentCommand extends Command {
     try {
       await Promise.all(promises)
     } catch (err) {
-      this.context.stdout.write(`Failure during update. ${err}\n`)
+      this.context.stdout.write(`${red('[Error]')} Failure during update. ${err}\n`)
 
       return 1
     }
@@ -473,23 +477,26 @@ export class InstrumentCommand extends Command {
 
 InstrumentCommand.addPath('lambda', 'instrument')
 InstrumentCommand.addOption('functions', Command.Array('-f,--function'))
-InstrumentCommand.addOption('regExPattern', Command.String('--functions-regex'))
+InstrumentCommand.addOption('regExPattern', Command.String('--functions-regex,--functionsRegex'))
 InstrumentCommand.addOption('region', Command.String('-r,--region'))
-InstrumentCommand.addOption('extensionVersion', Command.String('-e,--extensionVersion'))
-InstrumentCommand.addOption('layerVersion', Command.String('-v,--layerVersion'))
-InstrumentCommand.addOption('layerAWSAccount', Command.String('-a,--layerAccount', {hidden: true}))
+InstrumentCommand.addOption('extensionVersion', Command.String('-e,--extension-version,--extensionVersion'))
+InstrumentCommand.addOption('layerVersion', Command.String('-v,--layer-version,--layerVersion'))
+InstrumentCommand.addOption('layerAWSAccount', Command.String('-a,--layer-account,--layerAccount', {hidden: true}))
 InstrumentCommand.addOption('tracing', Command.String('--tracing'))
-InstrumentCommand.addOption('mergeXrayTraces', Command.String('--mergeXrayTraces'))
-InstrumentCommand.addOption('flushMetricsToLogs', Command.String('--flushMetricsToLogs'))
+InstrumentCommand.addOption('mergeXrayTraces', Command.String('--merge-xray-traces,--mergeXrayTraces'))
+InstrumentCommand.addOption('flushMetricsToLogs', Command.String('--flush-metrics-to-logs,--flushMetricsToLogs'))
 InstrumentCommand.addOption('dryRun', Command.Boolean('-d,--dry'))
 InstrumentCommand.addOption('configPath', Command.String('--config'))
 InstrumentCommand.addOption('forwarder', Command.String('--forwarder'))
-InstrumentCommand.addOption('logLevel', Command.String('--logLevel'))
+InstrumentCommand.addOption('logLevel', Command.String('--log-level,--logLevel'))
 
 InstrumentCommand.addOption('service', Command.String('--service'))
 InstrumentCommand.addOption('environment', Command.String('--env'))
 InstrumentCommand.addOption('version', Command.String('--version'))
-InstrumentCommand.addOption('extraTags', Command.String('--extra-tags'))
-InstrumentCommand.addOption('sourceCodeIntegration', Command.Boolean('-s,--source-code-integration'))
+InstrumentCommand.addOption('extraTags', Command.String('--extra-tags,--extraTags'))
+InstrumentCommand.addOption(
+  'sourceCodeIntegration',
+  Command.Boolean('-s,--source-code-integration,--sourceCodeIntegration')
+)
 InstrumentCommand.addOption('interactive', Command.Boolean('-i,--interactive'))
-InstrumentCommand.addOption('captureLambdaPayload', Command.String('--capture-lambda-payload'))
+InstrumentCommand.addOption('captureLambdaPayload', Command.String('--capture-lambda-payload,--captureLambdaPayload'))
