@@ -1,4 +1,4 @@
-import {CloudWatchLogs, Lambda} from 'aws-sdk'
+import { CloudWatchLogs, Lambda } from 'aws-sdk'
 import {
   API_KEY_ENV_VAR,
   API_KEY_SECRET_ARN_ENV_VAR,
@@ -18,11 +18,16 @@ import {
   SITE_ENV_VAR,
   TRACE_ENABLED_ENV_VAR,
   VERSION_ENV_VAR,
+  ENABLE_PROFILING,
+  PROFILER,
+  PROFILER_PATH,
+  DOTNET_TRACER_HOME,
+  INTEGRATIONS,
 } from '../constants'
-import {FunctionConfiguration, LogGroupConfiguration, TagConfiguration} from '../interfaces'
-import {calculateLogGroupRemoveRequest} from '../loggroup'
-import {calculateTagRemoveRequest} from '../tags'
-import {getLambdaFunctionConfigs, getLambdaFunctionConfigsFromRegex, getLayers, isSupportedRuntime} from './commons'
+import { FunctionConfiguration, LogGroupConfiguration, TagConfiguration } from '../interfaces'
+import { calculateLogGroupRemoveRequest } from '../loggroup'
+import { calculateTagRemoveRequest } from '../tags'
+import { getLambdaFunctionConfigs, getLambdaFunctionConfigsFromRegex, getLayers, isSupportedRuntime } from './commons'
 
 export const getUninstrumentedFunctionConfigs = async (
   lambda: Lambda,
@@ -90,7 +95,7 @@ export const getUninstrumentedFunctionConfigsFromRegEx = async (
 }
 
 export const calculateUpdateRequest = (config: Lambda.FunctionConfiguration, runtime: Runtime) => {
-  const oldEnvVars: Record<string, string> = {...config.Environment?.Variables}
+  const oldEnvVars: Record<string, string> = { ...config.Environment?.Variables }
   const functionARN = config.FunctionArn
 
   if (functionARN === undefined) {
@@ -104,7 +109,7 @@ export const calculateUpdateRequest = (config: Lambda.FunctionConfiguration, run
 
   // Remove Handler
   const expectedHandler = HANDLER_LOCATION[runtime]
-  if (config.Handler === expectedHandler) {
+  if (config.Handler === expectedHandler || runtime === 'dotnetcore3.1') {
     needsUpdate = true
     updateRequest.Handler = oldEnvVars[LAMBDA_HANDLER_ENV_VAR]
     delete oldEnvVars[LAMBDA_HANDLER_ENV_VAR]
@@ -128,6 +133,11 @@ export const calculateUpdateRequest = (config: Lambda.FunctionConfiguration, run
     SERVICE_ENV_VAR,
     TRACE_ENABLED_ENV_VAR,
     VERSION_ENV_VAR,
+    ENABLE_PROFILING,
+    PROFILER,
+    PROFILER_PATH,
+    DOTNET_TRACER_HOME,
+    INTEGRATIONS,
   ]
   // Remove Environment Variables
   for (const environmentVar of environmentVarsArray) {

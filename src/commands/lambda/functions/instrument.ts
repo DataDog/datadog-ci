@@ -1,4 +1,4 @@
-import {CloudWatchLogs, Lambda} from 'aws-sdk'
+import { CloudWatchLogs, Lambda } from 'aws-sdk'
 import {
   API_KEY_ENV_VAR,
   API_KEY_SECRET_ARN_ENV_VAR,
@@ -26,10 +26,20 @@ import {
   SITES,
   TRACE_ENABLED_ENV_VAR,
   VERSION_ENV_VAR,
+  ENABLE_PROFILING,
+  PROFILER,
+  PROFILER_PATH,
+  DOTNET_TRACER_HOME,
+  INTEGRATIONS,
+  CORECLR_ENABLE_PROFILING,
+  CORECLR_PROFILER,
+  CORECLR_PROFILER_PATH,
+  DD_DOTNET_TRACER_HOME,
+  DD_INTEGRATIONS,
 } from '../constants'
-import {FunctionConfiguration, InstrumentationSettings, LogGroupConfiguration, TagConfiguration} from '../interfaces'
-import {calculateLogGroupUpdateRequest} from '../loggroup'
-import {calculateTagUpdateRequest} from '../tags'
+import { FunctionConfiguration, InstrumentationSettings, LogGroupConfiguration, TagConfiguration } from '../interfaces'
+import { calculateLogGroupUpdateRequest } from '../loggroup'
+import { calculateTagUpdateRequest } from '../tags'
 import {
   addLayerArn,
   findLatestLayerVersion,
@@ -116,7 +126,7 @@ export const calculateUpdateRequest = async (
   region: string,
   runtime: Runtime
 ) => {
-  const oldEnvVars: Record<string, string> = {...config.Environment?.Variables}
+  const oldEnvVars: Record<string, string> = { ...config.Environment?.Variables }
   const changedEnvVars: Record<string, string> = {}
   const functionARN = config.FunctionArn
 
@@ -135,10 +145,12 @@ export const calculateUpdateRequest = async (
   let needsUpdate = false
 
   // Update Handler
-  const expectedHandler = HANDLER_LOCATION[runtime]
-  if (config.Handler !== expectedHandler) {
-    needsUpdate = true
-    updateRequest.Handler = HANDLER_LOCATION[runtime]
+  if (runtime !== "dotnetcore3.1") {
+    const expectedHandler = HANDLER_LOCATION[runtime]
+    if (config.Handler !== expectedHandler) {
+      needsUpdate = true
+      updateRequest.Handler = HANDLER_LOCATION[runtime]
+    }
   }
 
   // Update Env Vars
@@ -209,7 +221,7 @@ export const calculateUpdateRequest = async (
     changedEnvVars[FLUSH_TO_LOG_ENV_VAR] = settings.flushMetricsToLogs!.toString()
   }
 
-  const newEnvVars = {...oldEnvVars, ...changedEnvVars}
+  const newEnvVars = { ...oldEnvVars, ...changedEnvVars }
 
   if (newEnvVars[LOG_LEVEL_ENV_VAR] !== settings.logLevel) {
     needsUpdate = true
@@ -218,6 +230,16 @@ export const calculateUpdateRequest = async (
     } else {
       delete newEnvVars[LOG_LEVEL_ENV_VAR]
     }
+  }
+
+  //Add dotnet Env Vars
+  if (runtime === "dotnetcore3.1") {
+    needsUpdate = true
+    newEnvVars[ENABLE_PROFILING] = CORECLR_ENABLE_PROFILING
+    newEnvVars[PROFILER] = CORECLR_PROFILER
+    newEnvVars[PROFILER_PATH] = CORECLR_PROFILER_PATH
+    newEnvVars[DOTNET_TRACER_HOME] = DD_DOTNET_TRACER_HOME
+    newEnvVars[INTEGRATIONS] = DD_INTEGRATIONS
   }
 
   updateRequest.Environment = {

@@ -8,6 +8,7 @@ export const RUNTIME_LAYER_LOOKUP = {
   'python3.7': 'Datadog-Python37',
   'python3.8': 'Datadog-Python38',
   'python3.9': 'Datadog-Python39',
+  'dotnetcore3.1': 'poc-maxday-dotnet',
 } as const
 // We exclude the Extension Layer Key in order for the runtime
 // to be used directly in HANDLER_LOCATION.
@@ -20,15 +21,17 @@ export const ARM_LAYER_SUFFIX = '-ARM'
 export enum RuntimeType {
   NODE,
   PYTHON,
+  DOTNET,
 }
 
-export const RUNTIME_LOOKUP: {[key: string]: RuntimeType} = {
+export const RUNTIME_LOOKUP: { [key: string]: RuntimeType } = {
   'nodejs12.x': RuntimeType.NODE,
   'nodejs14.x': RuntimeType.NODE,
   'python3.6': RuntimeType.PYTHON,
   'python3.7': RuntimeType.PYTHON,
   'python3.8': RuntimeType.PYTHON,
   'python3.9': RuntimeType.PYTHON,
+  'dotnet3.1': RuntimeType.DOTNET,
 }
 
 const PYTHON_HANDLER_LOCATION = 'datadog_lambda.handler.handler'
@@ -76,10 +79,18 @@ export const AWS_REGIONS: string[] = [
   'us-gov-west-1',
 ]
 
-export const DEFAULT_LAYER_AWS_ACCOUNT = '464622532012'
+// export const DEFAULT_LAYER_AWS_ACCOUNT = '464622532012'
+export const DEFAULT_LAYER_AWS_ACCOUNT = '601427279990'
 export const GOVCLOUD_LAYER_AWS_ACCOUNT = '002406178527'
 export const SUBSCRIPTION_FILTER_NAME = 'datadog-ci-filter'
 export const TAG_VERSION_NAME = 'dd_sls_ci'
+
+// export const values for .NET tracer
+export const CORECLR_ENABLE_PROFILING = "1"
+export const CORECLR_PROFILER = "{846F5F1C-F9AE-4B07-969E-05C26BC060D8}"
+export const CORECLR_PROFILER_PATH = "/opt/datadog/Datadog.Trace.ClrProfiler.Native.so"
+export const DD_DOTNET_TRACER_HOME = "/opt/datadog"
+export const DD_INTEGRATIONS = "/opt/datadog/integrations.json"
 
 // Environment variables used in the Lambda environment
 export const API_KEY_ENV_VAR = 'DD_API_KEY'
@@ -96,6 +107,11 @@ export const VERSION_ENV_VAR = 'DD_VERSION'
 export const ENVIRONMENT_ENV_VAR = 'DD_ENV'
 export const EXTRA_TAGS_ENV_VAR = 'DD_TAGS'
 export const CAPTURE_LAMBDA_PAYLOAD_ENV_VAR = 'DD_CAPTURE_LAMBDA_PAYLOAD'
+export const ENABLE_PROFILING = 'CORECLR_ENABLE_PROFILING'
+export const PROFILER = 'CORECLR_PROFILER'
+export const PROFILER_PATH = 'CORECLR_PROFILER_PATH'
+export const DOTNET_TRACER_HOME = 'DD_DOTNET_TRACER_HOME'
+export const INTEGRATIONS = 'DD_INTEGRATIONS'
 
 // Environment variables used by Datadog CI
 export const CI_SITE_ENV_VAR = 'DATADOG_SITE'
@@ -110,6 +126,7 @@ export const AWS_SESSION_TOKEN_ENV_VAR = 'AWS_SESSION_TOKEN'
 
 export const LIST_FUNCTIONS_MAX_RETRY_COUNT = 2
 export const MAX_LAMBDA_STATE_CHECK_ATTEMPTS = 3
+
 
 // DD_TAGS Regular Expression
 // This RegExp ensures that the --extra-tags string
