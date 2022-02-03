@@ -107,10 +107,16 @@ yarn datadog-ci synthetics run-tests -s 'tag:e2e-tests' --config global.config.j
 You can use `--files` (shorthand `-f`) to override the global file selector.
 It's particularely useful when you want to run multiple suites in parallel with a single global configuration file.
 
-You can use `--failOnTimeout` (--no-failOnTimeout to sets the value to false) to make the CI fail (or pass) if one of the result exceed its test timeout.
-
 ```bash
 yarn datadog-ci synthetics run-tests -f ./component-1/**/*.synthetics.json -f ./component-2/**/*.synthetics.json
+```
+
+You can use `--failOnTimeout` (--no-failOnTimeout to sets the value to false) to make the CI fail (or pass) if one of the result exceed its test timeout.
+
+Variables can also be passed as arguments using `--variable KEY=VALUE`.
+
+```bash
+yarn datadog-ci synthetics run-tests -f ./component-1/**/*.synthetics.json -v PASSWORD=$PASSWORD
 ```
 
 ### Test files

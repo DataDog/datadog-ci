@@ -142,6 +142,7 @@ describe('run-test', () => {
         publicIds: ['ran-dom-id'],
         subdomain: 'ppa',
         tunnel: true,
+        variableStrings: [],
       }
 
       jest.spyOn(ciUtils, 'getConfig').mockImplementation(async () => overrideConfigFile)
