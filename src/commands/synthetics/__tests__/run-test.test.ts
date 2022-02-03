@@ -4,8 +4,9 @@ import * as ciUtils from '../../../helpers/utils'
 import {CiError, CriticalError} from '../errors'
 import {ExecutionRule} from '../interfaces'
 import * as runTests from '../run-test'
+import {Tunnel} from '../tunnel'
 import * as utils from '../utils'
-import {ciConfig, mockReporter} from './fixtures'
+import {ciConfig, mockPollResultResponse, mockReporter, mockTestTriggerResponse} from './fixtures'
 
 describe('run-test', () => {
   beforeEach(() => {
@@ -117,6 +118,55 @@ describe('run-test', () => {
       expect(apiHelper.getPresignedURL).not.toHaveBeenCalled()
     })
 
+    test('open and close tunnel for successful runs', async () => {
+      const location = {
+        display_name: 'us1',
+        id: 1,
+        is_active: true,
+        name: 'us1',
+        region: 'us1',
+      }
+
+      jest.spyOn(utils, 'wait').mockImplementation(() => new Promise((res) => setTimeout(res, 10)))
+      const startTunnelSpy = jest
+        .spyOn(Tunnel.prototype, 'start')
+        .mockImplementation(async () => ({host: 'host', id: 'id', privateKey: 'key'}))
+      const stopTunnelSpy = jest.spyOn(Tunnel.prototype, 'stop')
+
+      jest.spyOn(utils, 'getTestsToTrigger').mockReturnValue(
+        Promise.resolve({
+          overriddenTestsToTrigger: [],
+          summary: utils.createSummary(),
+          tests: [{options: {ci: {executionRule: ExecutionRule.BLOCKING}}, public_id: '123-456-789'} as any],
+        })
+      )
+
+      jest.spyOn(utils, 'runTests').mockReturnValue(
+        Promise.resolve({
+          locations: [location],
+          results: [{device: 'chrome_laptop.large', location: 1, public_id: '123-456-789', result_id: '1'}],
+          triggered_check_ids: [],
+        })
+      )
+
+      const apiHelper = {
+        getPresignedURL: () => ({url: 'url'}),
+        pollResults: () => mockPollResultResponse,
+        triggerTests: () => mockTestTriggerResponse,
+      }
+
+      jest.spyOn(runTests, 'getApiHelper').mockImplementation(() => apiHelper as any)
+      await runTests.executeTests(mockReporter, {
+        ...ciConfig,
+        failOnCriticalErrors: true,
+        publicIds: ['123-456-789'],
+        tunnel: true,
+      })
+
+      expect(startTunnelSpy).toHaveBeenCalledTimes(1)
+      expect(stopTunnelSpy).toHaveBeenCalledTimes(1)
+    })
+
     test('getTestsList throws', async () => {
       const serverError = new Error('Server Error') as AxiosError
       serverError.response = {data: {errors: ['Bad Gateway']}, status: 502} as AxiosResponse
@@ -172,6 +222,11 @@ describe('run-test', () => {
     })
 
     test('runTests throws', async () => {
+      jest
+        .spyOn(Tunnel.prototype, 'start')
+        .mockImplementation(async () => ({host: 'host', id: 'id', privateKey: 'key'}))
+      const stopTunnelSpy = jest.spyOn(Tunnel.prototype, 'stop')
+
       jest.spyOn(utils, 'getTestsToTrigger').mockReturnValue(
         Promise.resolve({
           overriddenTestsToTrigger: [],
@@ -184,6 +239,7 @@ describe('run-test', () => {
       serverError.response = {data: {errors: ['Bad Gateway']}, status: 502} as AxiosResponse
       serverError.config = {baseURL: 'baseURL', url: 'url'}
       const apiHelper = {
+        getPresignedURL: () => ({url: 'url'}),
         triggerTests: jest.fn(() => {
           throw serverError
         }),
@@ -191,8 +247,9 @@ describe('run-test', () => {
 
       jest.spyOn(runTests, 'getApiHelper').mockImplementation(() => apiHelper as any)
       await expect(
-        runTests.executeTests(mockReporter, {...ciConfig, publicIds: ['public-id-1', 'public-id-2']})
+        runTests.executeTests(mockReporter, {...ciConfig, publicIds: ['public-id-1', 'public-id-2'], tunnel: true})
       ).rejects.toMatchError(new CriticalError('TRIGGER_TESTS_FAILED'))
+      expect(stopTunnelSpy).toHaveBeenCalledTimes(1)
     })
 
     test('waitForResults throws', async () => {
@@ -203,6 +260,10 @@ describe('run-test', () => {
         name: 'us1',
         region: 'us1',
       }
+      jest
+        .spyOn(Tunnel.prototype, 'start')
+        .mockImplementation(async () => ({host: 'host', id: 'id', privateKey: 'key'}))
+      const stopTunnelSpy = jest.spyOn(Tunnel.prototype, 'stop')
       jest.spyOn(utils, 'getTestsToTrigger').mockReturnValue(
         Promise.resolve({
           overriddenTestsToTrigger: [],
@@ -224,6 +285,7 @@ describe('run-test', () => {
       serverError.config = {baseURL: 'baseURL', url: 'url'}
 
       const apiHelper = {
+        getPresignedURL: () => ({url: 'url'}),
         pollResults: jest.fn(() => {
           throw serverError
         }),
@@ -235,8 +297,10 @@ describe('run-test', () => {
           ...ciConfig,
           failOnCriticalErrors: true,
           publicIds: ['public-id-1', 'public-id-2'],
+          tunnel: true,
         })
       ).rejects.toMatchError(new CriticalError('POLL_RESULTS_FAILED'))
+      expect(stopTunnelSpy).toHaveBeenCalledTimes(1)
     })
   })
 
