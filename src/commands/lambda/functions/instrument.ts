@@ -155,9 +155,12 @@ export const calculateUpdateRequest = async (
   }
 
   // Update Env Vars
-  if (oldEnvVars[LAMBDA_HANDLER_ENV_VAR] === undefined) {
-    needsUpdate = true
-    changedEnvVars[LAMBDA_HANDLER_ENV_VAR] = config.Handler ?? ''
+  // Don't add dotnet
+  if (runtime !== DOTNET_RUNTIME) {
+    if (oldEnvVars[LAMBDA_HANDLER_ENV_VAR] === undefined) {
+      needsUpdate = true
+      changedEnvVars[LAMBDA_HANDLER_ENV_VAR] = config.Handler ?? ''
+    }
   }
 
   // KMS > Secrets Manager > API Key
