@@ -25,7 +25,7 @@ export enum RuntimeType {
   DOTNET,
 }
 
-export const RUNTIME_LOOKUP: { [key: string]: RuntimeType } = {
+export const RUNTIME_LOOKUP: {[key: string]: RuntimeType} = {
   'dotnetcore3.1': RuntimeType.DOTNET,
   'nodejs12.x': RuntimeType.NODE,
   'nodejs14.x': RuntimeType.NODE,

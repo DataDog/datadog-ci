@@ -1,4 +1,4 @@
-import { CloudWatchLogs, Lambda } from 'aws-sdk'
+import {CloudWatchLogs, Lambda} from 'aws-sdk'
 import {
   API_KEY_ENV_VAR,
   API_KEY_SECRET_ARN_ENV_VAR,
@@ -38,9 +38,9 @@ import {
   TRACE_ENABLED_ENV_VAR,
   VERSION_ENV_VAR,
 } from '../constants'
-import { FunctionConfiguration, InstrumentationSettings, LogGroupConfiguration, TagConfiguration } from '../interfaces'
-import { calculateLogGroupUpdateRequest } from '../loggroup'
-import { calculateTagUpdateRequest } from '../tags'
+import {FunctionConfiguration, InstrumentationSettings, LogGroupConfiguration, TagConfiguration} from '../interfaces'
+import {calculateLogGroupUpdateRequest} from '../loggroup'
+import {calculateTagUpdateRequest} from '../tags'
 import {
   addLayerArn,
   findLatestLayerVersion,
@@ -127,7 +127,7 @@ export const calculateUpdateRequest = async (
   region: string,
   runtime: Runtime
 ) => {
-  const oldEnvVars: Record<string, string> = { ...config.Environment?.Variables }
+  const oldEnvVars: Record<string, string> = {...config.Environment?.Variables}
   const changedEnvVars: Record<string, string> = {}
   const functionARN = config.FunctionArn
 
@@ -222,7 +222,7 @@ export const calculateUpdateRequest = async (
     changedEnvVars[FLUSH_TO_LOG_ENV_VAR] = settings.flushMetricsToLogs!.toString()
   }
 
-  const newEnvVars = { ...oldEnvVars, ...changedEnvVars }
+  const newEnvVars = {...oldEnvVars, ...changedEnvVars}
 
   if (newEnvVars[LOG_LEVEL_ENV_VAR] !== settings.logLevel) {
     needsUpdate = true

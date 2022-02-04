@@ -1,5 +1,5 @@
-import { CloudWatchLogs, Lambda } from 'aws-sdk'
-import { GetFunctionRequest } from 'aws-sdk/clients/lambda'
+import {CloudWatchLogs, Lambda} from 'aws-sdk'
+import {GetFunctionRequest} from 'aws-sdk/clients/lambda'
 import {
   ARM64_ARCHITECTURE,
   ARM_LAYER_SUFFIX,
@@ -18,9 +18,9 @@ import {
   RUNTIME_LAYER_LOOKUP,
   SITES,
 } from '../constants'
-import { FunctionConfiguration, InstrumentationSettings } from '../interfaces'
-import { applyLogGroupConfig } from '../loggroup'
-import { applyTagConfig } from '../tags'
+import {FunctionConfiguration, InstrumentationSettings} from '../interfaces'
+import {applyLogGroupConfig} from '../loggroup'
+import {applyTagConfig} from '../tags'
 
 /**
  * Returns an array of merged layer ARNs if given a Full Layer ARN,
@@ -83,8 +83,8 @@ export const coerceBoolean = (fallback: boolean, ...values: any[]): boolean => {
 export const collectFunctionsByRegion = (
   functions: string[],
   defaultRegion: string | undefined
-): { [key: string]: string[] } => {
-  const groups: { [key: string]: string[] } = {}
+): {[key: string]: string[]} => {
+  const groups: {[key: string]: string[]} = {}
   const regionless: string[] = []
   for (const func of functions) {
     const region = getRegion(func) ?? defaultRegion
@@ -122,7 +122,7 @@ export const findLatestLayerVersion = async (runtime: Runtime, region: string) =
   const account = region.startsWith('us-gov') ? GOVCLOUD_LAYER_AWS_ACCOUNT : DEFAULT_LAYER_AWS_ACCOUNT
   const layerName = RUNTIME_LAYER_LOOKUP[runtime]
   let foundLatestVersion = false
-  const lambda = new Lambda({ region })
+  const lambda = new Lambda({region})
   while (!foundLatestVersion) {
     try {
       // Search next version
@@ -211,7 +211,7 @@ export const getLambdaFunctionConfigsFromRegex = async (
 
   while (true) {
     try {
-      listFunctionsResponse = await lambda.listFunctions({ Marker: nextMarker }).promise()
+      listFunctionsResponse = await lambda.listFunctions({Marker: nextMarker}).promise()
       listFunctionsResponse.Functions?.map((fn) => fn.FunctionName?.match(regEx) && matchedFunctions.push(fn))
       nextMarker = listFunctionsResponse.NextMarker
       if (!nextMarker) {
