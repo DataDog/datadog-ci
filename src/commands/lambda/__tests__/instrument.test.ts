@@ -288,6 +288,86 @@ TagResource -> arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world
 `)
       })
 
+      test('prints dry run data for lambda .NET layer', async () => {
+        ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({code: 'ENOENT'}))
+        ;(Lambda as any).mockImplementation(() =>
+          makeMockLambda({
+            'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world': {
+              FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world',
+              Handler: 'ok',
+              Runtime: 'dotnetcore3.1',
+            },
+          })
+        )
+        const cli = makeCli()
+        const context = createMockContext() as any
+        const functionARN = 'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world'
+        process.env.DATADOG_API_KEY = '1234'
+        const code = await cli.run(
+          [
+            'lambda',
+            'instrument',
+            '-f',
+            functionARN,
+            '--dry',
+            '-v',
+            '129',
+            '--extra-tags',
+            'layer:api,team:intake',
+            '--service',
+            'middletier',
+            '--env',
+            'staging',
+            '--version',
+            '0.2',
+          ],
+          context
+        )
+        const output = context.stdout.toString()
+        expect(code).toBe(0)
+        expect(output).toMatchInlineSnapshot(`
+"${bold(yellow('[Warning]'))} Instrument your ${hex('#FF9900').bold(
+          'Lambda'
+        )} functions in a dev or staging environment first. Should the instrumentation result be unsatisfactory, run \`${bold(
+          'uninstrument'
+        )}\` with the same arguments to revert the changes.
+\n${bold(yellow('[!]'))} Functions to be updated:
+\t- ${bold('arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world')}\n
+${bold(cyan('[Dry Run] '))}Will apply the following updates:
+UpdateFunctionConfiguration -> arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world
+{
+  \\"FunctionName\\": \\"arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world\\",
+  \\"Environment\\": {
+    \\"Variables\\": {
+      \\"DD_API_KEY\\": \\"1234\\",
+      \\"DD_SITE\\": \\"datadoghq.com\\",
+      \\"DD_CAPTURE_LAMBDA_PAYLOAD\\": \\"false\\",
+      \\"DD_ENV\\": \\"staging\\",
+      \\"DD_TAGS\\": \\"layer:api,team:intake\\",
+      \\"DD_MERGE_XRAY_TRACES\\": \\"false\\",
+      \\"DD_SERVICE\\": \\"middletier\\",
+      \\"DD_TRACE_ENABLED\\": \\"true\\",
+      \\"DD_VERSION\\": \\"0.2\\",
+      \\"DD_FLUSH_TO_LOG\\": \\"true\\",
+      \\"CORECLR_ENABLE_PROFILING\\": \\"1\\",
+      \\"CORECLR_PROFILER\\": \\"{846F5F1C-F9AE-4B07-969E-05C26BC060D8}\\",
+      \\"CORECLR_PROFILER_PATH\\": \\"/opt/datadog/Datadog.Trace.ClrProfiler.Native.so\\",
+      \\"DD_DOTNET_TRACER_HOME\\": \\"/opt/datadog\\",
+      \\"DD_INTEGRATIONS\\": \\"/opt/datadog/integrations.json\\"
+    }
+  },
+  \\"Layers\\": [
+    \\"arn:aws:lambda:us-east-1:464622532012:layer:poc-maxday-dotnet:129\\"
+  ]
+}
+TagResource -> arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world
+{
+  \\"dd_sls_ci\\": \\"v${version}\\"
+}
+"
+`)
+      })
+
       test('instrumenting with source code integrations fails if not run within a git repo', async () => {
         ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({code: 'ENOENT'}))
         const lambda = makeMockLambda({

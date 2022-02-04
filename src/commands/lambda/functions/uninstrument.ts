@@ -111,7 +111,7 @@ export const calculateUpdateRequest = (config: Lambda.FunctionConfiguration, run
   // Remove Handler. Dotnet should not have a handler ENV_VAR
   if (runtime !== DOTNET_RUNTIME) {
     const expectedHandler = HANDLER_LOCATION[runtime]
-    if (config.Handler !== expectedHandler) {
+    if (config.Handler === expectedHandler) {
       needsUpdate = true
       updateRequest.Handler = oldEnvVars[LAMBDA_HANDLER_ENV_VAR]
       delete oldEnvVars[LAMBDA_HANDLER_ENV_VAR]
