@@ -86,11 +86,11 @@ export const SUBSCRIPTION_FILTER_NAME = 'datadog-ci-filter'
 export const TAG_VERSION_NAME = 'dd_sls_ci'
 
 // export const values for .NET tracer
-export const CORECLR_ENABLE_PROFILING = "1"
-export const CORECLR_PROFILER = "{846F5F1C-F9AE-4B07-969E-05C26BC060D8}"
-export const CORECLR_PROFILER_PATH = "/opt/datadog/Datadog.Trace.ClrProfiler.Native.so"
-export const DD_DOTNET_TRACER_HOME = "/opt/datadog"
-export const DD_INTEGRATIONS = "/opt/datadog/integrations.json"
+export const CORECLR_ENABLE_PROFILING = '1'
+export const CORECLR_PROFILER = '{846F5F1C-F9AE-4B07-969E-05C26BC060D8}'
+export const CORECLR_PROFILER_PATH = '/opt/datadog/Datadog.Trace.ClrProfiler.Native.so'
+export const DD_DOTNET_TRACER_HOME = '/opt/datadog'
+export const DD_INTEGRATIONS = '/opt/datadog/integrations.json'
 
 // Environment variables used in the Lambda environment
 export const API_KEY_ENV_VAR = 'DD_API_KEY'
@@ -126,7 +126,6 @@ export const AWS_SESSION_TOKEN_ENV_VAR = 'AWS_SESSION_TOKEN'
 
 export const LIST_FUNCTIONS_MAX_RETRY_COUNT = 2
 export const MAX_LAMBDA_STATE_CHECK_ATTEMPTS = 3
-
 
 // DD_TAGS Regular Expression
 // This RegExp ensures that the --extra-tags string
