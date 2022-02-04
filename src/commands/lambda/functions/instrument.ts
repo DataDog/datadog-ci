@@ -233,7 +233,7 @@ export const calculateUpdateRequest = async (
     }
   }
 
-  //Add dotnet Env Vars
+  // Add dotnet Env Vars
   if (runtime === DOTNET_RUNTIME) {
     needsUpdate = true
     newEnvVars[ENABLE_PROFILING] = CORECLR_ENABLE_PROFILING

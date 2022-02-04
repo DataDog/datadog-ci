@@ -3,13 +3,13 @@ export const EXTENSION_LAYER_KEY = 'extension'
 export const DOTNET_RUNTIME = 'dotnetcore3.1'
 export const RUNTIME_LAYER_LOOKUP = {
   [EXTENSION_LAYER_KEY]: DD_LAMBDA_EXTENSION_LAYER_NAME,
+  'dotnetcore3.1': 'poc-maxday-dotnet',
   'nodejs12.x': 'Datadog-Node12-x',
   'nodejs14.x': 'Datadog-Node14-x',
   'python3.6': 'Datadog-Python36',
   'python3.7': 'Datadog-Python37',
   'python3.8': 'Datadog-Python38',
   'python3.9': 'Datadog-Python39',
-  'dotnetcore3.1': 'poc-maxday-dotnet',
 } as const
 // We exclude the Extension Layer Key in order for the runtime
 // to be used directly in HANDLER_LOCATION.
@@ -26,13 +26,13 @@ export enum RuntimeType {
 }
 
 export const RUNTIME_LOOKUP: { [key: string]: RuntimeType } = {
+  'dotnetcore3.1': RuntimeType.DOTNET,
   'nodejs12.x': RuntimeType.NODE,
   'nodejs14.x': RuntimeType.NODE,
   'python3.6': RuntimeType.PYTHON,
   'python3.7': RuntimeType.PYTHON,
   'python3.8': RuntimeType.PYTHON,
   'python3.9': RuntimeType.PYTHON,
-  'dotnet3.1': RuntimeType.DOTNET,
 }
 
 const PYTHON_HANDLER_LOCATION = 'datadog_lambda.handler.handler'
@@ -85,7 +85,7 @@ export const GOVCLOUD_LAYER_AWS_ACCOUNT = '002406178527'
 export const SUBSCRIPTION_FILTER_NAME = 'datadog-ci-filter'
 export const TAG_VERSION_NAME = 'dd_sls_ci'
 
-// export const values for .NET tracer
+// Export const values for .NET tracer
 export const CORECLR_ENABLE_PROFILING = '1'
 export const CORECLR_PROFILER = '{846F5F1C-F9AE-4B07-969E-05C26BC060D8}'
 export const CORECLR_PROFILER_PATH = '/opt/datadog/Datadog.Trace.ClrProfiler.Native.so'
