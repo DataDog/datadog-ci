@@ -18,14 +18,14 @@ import {
   TRACE_ENABLED_ENV_VAR,
   VERSION_ENV_VAR,
 } from '../../constants'
-import { getLambdaFunctionConfig } from '../../functions/commons'
+import {getLambdaFunctionConfig} from '../../functions/commons'
 import {
   calculateUpdateRequest,
   getUninstrumentedFunctionConfig,
   getUninstrumentedFunctionConfigs,
   getUninstrumentedFunctionConfigsFromRegEx,
 } from '../../functions/uninstrument'
-import { makeMockCloudWatchLogs, makeMockLambda } from '../fixtures'
+import {makeMockCloudWatchLogs, makeMockLambda} from '../fixtures'
 
 import * as loggroup from '../../loggroup'
 
@@ -351,10 +351,10 @@ describe('uninstrument', () => {
 
     test('returns log group configuration subscription delete request when forwarderARN is set', async () => {
       const logGroupName = '/aws/lambda/group'
-        ; (loggroup.calculateLogGroupRemoveRequest as any).mockImplementation(() => ({
-          filterName: SUBSCRIPTION_FILTER_NAME,
-          logGroupName,
-        }))
+      ;(loggroup.calculateLogGroupRemoveRequest as any).mockImplementation(() => ({
+        filterName: SUBSCRIPTION_FILTER_NAME,
+        logGroupName,
+      }))
 
       const lambda = makeMockLambda({
         'arn:aws:lambda:us-east-1:000000000000:function:uninstrument': {
