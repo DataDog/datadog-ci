@@ -25,7 +25,7 @@ export enum RuntimeType {
   DOTNET,
 }
 
-export const RUNTIME_LOOKUP: {[key: string]: RuntimeType} = {
+export const RUNTIME_LOOKUP: { [key: string]: RuntimeType } = {
   'dotnetcore3.1': RuntimeType.DOTNET,
   'nodejs12.x': RuntimeType.NODE,
   'nodejs14.x': RuntimeType.NODE,
@@ -107,11 +107,11 @@ export const VERSION_ENV_VAR = 'DD_VERSION'
 export const ENVIRONMENT_ENV_VAR = 'DD_ENV'
 export const EXTRA_TAGS_ENV_VAR = 'DD_TAGS'
 export const CAPTURE_LAMBDA_PAYLOAD_ENV_VAR = 'DD_CAPTURE_LAMBDA_PAYLOAD'
-export const ENABLE_PROFILING = 'CORECLR_ENABLE_PROFILING'
-export const PROFILER = 'CORECLR_PROFILER'
-export const PROFILER_PATH = 'CORECLR_PROFILER_PATH'
-export const DOTNET_TRACER_HOME = 'DD_DOTNET_TRACER_HOME'
-export const INTEGRATIONS = 'DD_INTEGRATIONS'
+export const ENABLE_PROFILING_ENV_VAR = 'CORECLR_ENABLE_PROFILING'
+export const PROFILER_ENV_VAR = 'CORECLR_PROFILER'
+export const PROFILER_PATH_ENV_VAR = 'CORECLR_PROFILER_PATH'
+export const DOTNET_TRACER_HOME_ENV_VAR = 'DD_DOTNET_TRACER_HOME'
+export const INTEGRATIONS_ENV_VAR = 'DD_INTEGRATIONS'
 
 // Environment variables used by Datadog CI
 export const CI_SITE_ENV_VAR = 'DATADOG_SITE'
