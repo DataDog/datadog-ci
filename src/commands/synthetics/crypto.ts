@@ -1,4 +1,3 @@
-// @ts-nocheck
 import {generateKeyPairSync} from 'crypto'
 import {utils} from 'ssh2'
 import {parseKey, parsePrivateKey} from 'sshpk'
