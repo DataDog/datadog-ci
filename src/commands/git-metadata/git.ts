@@ -1,9 +1,9 @@
 import * as simpleGit from 'simple-git'
-import {Writable} from 'stream'
-import {URL} from 'url'
-import {renderGitError} from './renderer'
+import { Writable } from 'stream'
+import { URL } from 'url'
+import { CommitInfo } from './interfaces'
+import { renderGitError } from './renderer'
 
-import {CommitInfo} from './interfaces'
 
 // Returns a configured SimpleGit.
 export const newSimpleGit = async (): Promise<simpleGit.SimpleGit> => {
@@ -88,6 +88,22 @@ export const getCommitInfo = async (
   } catch (e) {
     stdout.write(renderGitError(e))
 
+    return
+  }
+
+  return new CommitInfo(hash, remote, trackedFiles)
+}
+
+export const getCommitInfoBasic = async (
+  git: simpleGit.SimpleGit
+): Promise<CommitInfo | undefined> => {
+  let remote: string
+  let hash: string
+  let trackedFiles: string[]
+  try {
+    [remote, hash, trackedFiles] = await Promise.all([gitRemote(git), gitHash(git), gitTrackedFiles(git)])
+  } catch (e) {
+    // Ignore errors here as we want to silently fail
     return
   }
 

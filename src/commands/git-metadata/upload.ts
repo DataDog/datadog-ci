@@ -1,24 +1,24 @@
 import chalk from 'chalk'
-import {Command} from 'clipanion'
-
-import {newApiKeyValidator} from '../../helpers/apikey'
-import {InvalidConfigurationError} from '../../helpers/errors'
-import {ICONS} from '../../helpers/formatting'
-import {RequestBuilder} from '../../helpers/interfaces'
-import {getMetricsLogger} from '../../helpers/metrics'
-import {upload, UploadOptions, UploadStatus} from '../../helpers/upload'
-import {getRequestBuilder} from '../../helpers/utils'
-import {datadogSite, getBaseIntakeUrl} from './api'
-import {getCommitInfo, newSimpleGit} from './git'
-import {CommitInfo} from './interfaces'
+import { Command } from 'clipanion'
+import { newApiKeyValidator } from '../../helpers/apikey'
+import { InvalidConfigurationError } from '../../helpers/errors'
+import { ICONS } from '../../helpers/formatting'
+import { RequestBuilder } from '../../helpers/interfaces'
+import { getMetricsLogger } from '../../helpers/metrics'
+import { upload, UploadOptions, UploadStatus } from '../../helpers/upload'
+import { getRequestBuilder } from '../../helpers/utils'
+import { datadogSite, getBaseIntakeUrl } from './api'
+import { getCommitInfo, newSimpleGit } from './git'
+import { CommitInfo } from './interfaces'
 import {
   renderCommandInfo,
   renderConfigurationError,
   renderDryRunWarning,
   renderFailedUpload,
   renderRetriedUpload,
-  renderSuccessfulCommand,
+  renderSuccessfulCommand
 } from './renderer'
+
 
 export class UploadCommand extends Command {
   public static usage = Command.Usage({
