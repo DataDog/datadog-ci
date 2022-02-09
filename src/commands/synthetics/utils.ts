@@ -41,6 +41,8 @@ const TEMPLATE_REGEX = /{{\s*([^{}]*?)\s*}}/g
 const template = (st: string, context: any): string =>
   st.replace(TEMPLATE_REGEX, (match: string, p1: string) => (p1 in context ? context[p1] : match))
 
+let ciTriggerSource = 'npm_package'
+
 export const handleConfig = (
   test: InternalTest,
   publicId: string,
@@ -83,6 +85,10 @@ export const handleConfig = (
   }
 
   return handledConfig
+}
+
+export const setCiTriggerSource = (source: string): void => {
+  ciTriggerSource = source
 }
 
 const parseUrlVariables = (url: string, reporter: MainReporter) => {
@@ -499,7 +505,7 @@ export const runTests = async (api: APIHelper, testsToTrigger: TestPayload[]): P
   const payload: Payload = {tests: testsToTrigger}
   const ciMetadata = getCIMetadata()
   if (ciMetadata) {
-    payload.metadata = ciMetadata
+    payload.metadata = {...ciMetadata, trigger_source: ciTriggerSource}
   }
 
   try {
