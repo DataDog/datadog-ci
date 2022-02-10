@@ -1,2 +1,1 @@
-export * from './sci';
-
+export * from './library'

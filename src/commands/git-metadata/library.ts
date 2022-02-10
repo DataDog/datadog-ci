@@ -2,13 +2,13 @@ import {newApiKeyValidator} from '../../helpers/apikey'
 import {RequestBuilder} from '../../helpers/interfaces'
 import {upload, UploadOptions, UploadStatus} from '../../helpers/upload'
 import {getRequestBuilder} from '../../helpers/utils'
-import {getCommitInfoBasic, newSimpleGit} from './git'
+import {getCommitInfoBasic, newSimpleGitOrFail} from './git'
 import {CommitInfo} from './interfaces'
 
 export class SourceCodeIntegration {
   private apiKey: string
   private datadogSite: string
-  private version = require('../../package.json').version
+  private version = require('../../../package.json').version
 
   constructor(apiKey: string, datadogSite?: string) {
     this.datadogSite = datadogSite ?? 'datadoghq.com'
@@ -16,26 +16,29 @@ export class SourceCodeIntegration {
   }
 
   public static async shouldAddSourceCodeIntegration(apiKey: string | undefined): Promise<boolean> {
-    const simpleGit = await newSimpleGit()
+    let simpleGit
+    let isRepo
+    try {
+      simpleGit = await newSimpleGitOrFail()
+      isRepo = simpleGit.checkIsRepo()
+    } catch {
+      return false
+    }
 
     // Only enable if the system has `git` installed and we're in a git repo
-    return apiKey !== undefined && simpleGit !== undefined && simpleGit.checkIsRepo()
+    return apiKey !== undefined && isRepo
   }
 
-  public async addSourceCodeIntegration(): Promise<string | undefined> {
+  public async addSourceCodeIntegration(): Promise<string> {
     const apiKeyValidator = newApiKeyValidator({
       apiKey: this.apiKey,
       datadogSite: this.datadogSite,
     })
 
-    const simpleGit = await newSimpleGit()
-
-    const payload = await getCommitInfoBasic(simpleGit)
-    if (payload === undefined) {
-      return
-    }
-
     try {
+      const simpleGit = await newSimpleGitOrFail()
+      const payload = await getCommitInfoBasic(simpleGit)
+
       const requestBuilder = getRequestBuilder({
         apiKey: this.apiKey!,
         baseUrl: 'https://sourcemap-intake.' + this.datadogSite,
@@ -48,8 +51,8 @@ export class SourceCodeIntegration {
 
       const status = await this.uploadRepository(requestBuilder)(payload, {
         apiKeyValidator,
-        onError: () => {
-          // Do nothing
+        onError: (e) => {
+          throw e
         },
         onRetry: () => {
           // Do nothing

@@ -24,6 +24,25 @@ export const newSimpleGit = async (): Promise<simpleGit.SimpleGit> => {
   return simpleGit.gitP(options)
 }
 
+// Returns a configured SimpleGit or undefined
+// in the case that the user does not have git installed
+export const newSimpleGitOrFail = async (): Promise<simpleGit.SimpleGit> => {
+  const options = {
+    baseDir: process.cwd(),
+    binary: 'git',
+    maxConcurrentProcesses: 1,
+  }
+  try {
+    const git = simpleGit.gitP(options)
+    const root = await git.revparse('--show-toplevel')
+    options.baseDir = root
+  } catch (err) {
+    throw err
+  }
+
+  return simpleGit.gitP(options)
+}
+
 // Returns the remote of the current repository.
 export const gitRemote = async (git: simpleGit.SimpleGit): Promise<string> => {
   const remotes = await git.getRemotes(true)
@@ -93,15 +112,14 @@ export const getCommitInfo = async (
   return new CommitInfo(hash, remote, trackedFiles)
 }
 
-export const getCommitInfoBasic = async (git: simpleGit.SimpleGit): Promise<CommitInfo | undefined> => {
+export const getCommitInfoBasic = async (git: simpleGit.SimpleGit): Promise<CommitInfo> => {
   let remote: string
   let hash: string
   let trackedFiles: string[]
   try {
     ;[remote, hash, trackedFiles] = await Promise.all([gitRemote(git), gitHash(git), gitTrackedFiles(git)])
-  } catch (e) {
-    // Ignore errors here as we want to silently fail
-    return
+  } catch (err) {
+    throw err
   }
 
   return new CommitInfo(hash, remote, trackedFiles)

@@ -1,4 +1,5 @@
-import {getCommitInfo, gitRemote, stripCredentials} from '../git'
+import * as simpleGit from 'simple-git'
+import {getCommitInfo, gitRemote, newSimpleGitOrFail, stripCredentials} from '../git'
 
 interface MockConfig {
   hash?: string
@@ -108,6 +109,33 @@ describe('git', () => {
       expect(commitInfo!.hash).toBe('abcd')
       expect(commitInfo!.trackedFiles).toStrictEqual(['myfile.js'])
       expect(commitInfo!.remote).toBe('https://overridden')
+    })
+  })
+
+  describe('newSimpleGitOrFail', () => {
+    test('should throw an error if git is not installed', async () => {
+      jest.spyOn(simpleGit, 'gitP').mockImplementation(() => {
+        throw Error('gitp error')
+      })
+      await expect(newSimpleGitOrFail()).rejects.toThrow('gitp error')
+    })
+
+    test('should throw an error if revparse throws an error', async () => {
+      const mock = createMockSimpleGit({}) as any
+      jest.spyOn(simpleGit, 'gitP').mockReturnValue(mock)
+      jest.spyOn(mock, 'revparse').mockImplementation(async () => {
+        throw Error('revparse error')
+      })
+
+      await expect(newSimpleGitOrFail()).rejects.toThrow('revparse error')
+    })
+
+    test('should not throw any errors', async () => {
+      const mock = createMockSimpleGit({}) as any
+      jest.spyOn(simpleGit, 'gitP').mockReturnValue(mock)
+      jest.spyOn(mock, 'revparse').mockResolvedValue('1234')
+
+      await expect(newSimpleGitOrFail()).resolves.not.toThrow()
     })
   })
 })
