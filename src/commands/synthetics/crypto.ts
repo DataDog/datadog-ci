@@ -26,7 +26,7 @@ export const generateOpenSSHKeys = () => {
 }
 
 // Parse SSH key for ssh2 module
-export const parseSSHKey: any = (key: string) => {
+export const parseSSHKey = (key: string): ParsedKey => {
   const parsedKey = utils.parseKey(key)
 
   if (!parsedKey) {
