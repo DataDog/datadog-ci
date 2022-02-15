@@ -4,35 +4,47 @@ export const DOTNET_RUNTIME = 'dotnetcore3.1'
 export const RUNTIME_LAYER_LOOKUP = {
   [EXTENSION_LAYER_KEY]: DD_LAMBDA_EXTENSION_LAYER_NAME,
   'dotnetcore3.1': 'poc-maxday-dotnet',
+  'java11': DD_LAMBDA_EXTENSION_LAYER_NAME,
+  'java8.al2': DD_LAMBDA_EXTENSION_LAYER_NAME,
   'nodejs12.x': 'Datadog-Node12-x',
   'nodejs14.x': 'Datadog-Node14-x',
+  'provided.al2': DD_LAMBDA_EXTENSION_LAYER_NAME,
   'python3.6': 'Datadog-Python36',
   'python3.7': 'Datadog-Python37',
   'python3.8': 'Datadog-Python38',
   'python3.9': 'Datadog-Python39',
+  'ruby2.5': 'Datadog-Ruby2-5',
+  'ruby2.7': 'Datadog-Ruby2-7',
 } as const
 // We exclude the Extension Layer Key in order for the runtime
 // to be used directly in HANDLER_LOCATION.
 export type Runtime = Exclude<keyof typeof RUNTIME_LAYER_LOOKUP, typeof EXTENSION_LAYER_KEY>
-
-export const ARM_RUNTIMES = [EXTENSION_LAYER_KEY, 'python3.8', 'python3.9']
+export const ARM_RUNTIMES = [EXTENSION_LAYER_KEY, 'java8.al2', 'java11', 'provided.al2', 'python3.8', 'python3.9']
 export const ARM64_ARCHITECTURE = 'arm64'
 export const ARM_LAYER_SUFFIX = '-ARM'
 
 export enum RuntimeType {
+  DOTNET,
+  GO,
+  JAVA,
   NODE,
   PYTHON,
-  DOTNET,
+  RUBY,
 }
 
-export const RUNTIME_LOOKUP: {[key: string]: RuntimeType} = {
+export const RUNTIME_LOOKUP: { [key: string]: RuntimeType } = {
   'dotnetcore3.1': RuntimeType.DOTNET,
+  'java11': RuntimeType.JAVA,
+  'java8.al2': RuntimeType.JAVA,
+  'provided.al2': RuntimeType.GO,
   'nodejs12.x': RuntimeType.NODE,
   'nodejs14.x': RuntimeType.NODE,
   'python3.6': RuntimeType.PYTHON,
   'python3.7': RuntimeType.PYTHON,
   'python3.8': RuntimeType.PYTHON,
   'python3.9': RuntimeType.PYTHON,
+  'ruby2.5': RuntimeType.RUBY,
+  'ruby2.7': RuntimeType.RUBY,
 }
 
 const PYTHON_HANDLER_LOCATION = 'datadog_lambda.handler.handler'
@@ -112,6 +124,9 @@ export const PROFILER_ENV_VAR = 'CORECLR_PROFILER'
 export const PROFILER_PATH_ENV_VAR = 'CORECLR_PROFILER_PATH'
 export const DOTNET_TRACER_HOME_ENV_VAR = 'DD_DOTNET_TRACER_HOME'
 export const INTEGRATIONS_ENV_VAR = 'DD_INTEGRATIONS'
+export const JAVA_TOOL_OPTIONS_ENV_VAR = 'JAVA_TOOL_OPTIONS'
+export const LOGS_INJECTION_ENV_VAR = 'DD_LOGS_INJECTION'
+export const JMXFETCH_ENV_VAR = 'DD_JMXFETCH_ENABLED'
 
 // Environment variables used by Datadog CI
 export const CI_SITE_ENV_VAR = 'DATADOG_SITE'

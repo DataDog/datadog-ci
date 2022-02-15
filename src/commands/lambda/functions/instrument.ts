@@ -1,4 +1,4 @@
-import {CloudWatchLogs, Lambda} from 'aws-sdk'
+import { CloudWatchLogs, Lambda } from 'aws-sdk'
 import {
   API_KEY_ENV_VAR,
   API_KEY_SECRET_ARN_ENV_VAR,
@@ -25,6 +25,7 @@ import {
   KMS_API_KEY_ENV_VAR,
   LAMBDA_HANDLER_ENV_VAR,
   LOG_LEVEL_ENV_VAR,
+  LOGS_INJECTION_ENV_VAR,
   MERGE_XRAY_TRACES_ENV_VAR,
   PROFILER_ENV_VAR,
   PROFILER_PATH_ENV_VAR,
@@ -38,9 +39,9 @@ import {
   TRACE_ENABLED_ENV_VAR,
   VERSION_ENV_VAR,
 } from '../constants'
-import {FunctionConfiguration, InstrumentationSettings, LogGroupConfiguration, TagConfiguration} from '../interfaces'
-import {calculateLogGroupUpdateRequest} from '../loggroup'
-import {calculateTagUpdateRequest} from '../tags'
+import { FunctionConfiguration, InstrumentationSettings, LogGroupConfiguration, TagConfiguration } from '../interfaces'
+import { calculateLogGroupUpdateRequest } from '../loggroup'
+import { calculateTagUpdateRequest } from '../tags'
 import {
   addLayerArn,
   findLatestLayerVersion,
@@ -127,7 +128,7 @@ export const calculateUpdateRequest = async (
   region: string,
   runtime: Runtime
 ) => {
-  const oldEnvVars: Record<string, string> = {...config.Environment?.Variables}
+  const oldEnvVars: Record<string, string> = { ...config.Environment?.Variables }
   const changedEnvVars: Record<string, string> = {}
   const functionARN = config.FunctionArn
 
@@ -146,7 +147,7 @@ export const calculateUpdateRequest = async (
   let needsUpdate = false
 
   // Update Handler
-  if (runtime !== DOTNET_RUNTIME) {
+  if (runtime !== DOTNET_RUNTIME && runtime !== 'java11' && runtime !== 'java8.al2' && runtime !== 'provided.al2' && runtime !== 'ruby2.5' && runtime !== 'ruby2.7') {
     const expectedHandler = HANDLER_LOCATION[runtime]
     if (config.Handler !== expectedHandler) {
       needsUpdate = true
@@ -155,8 +156,7 @@ export const calculateUpdateRequest = async (
   }
 
   // Update Env Vars
-  // We don't need to add a dotnet handler env var
-  if (runtime !== DOTNET_RUNTIME) {
+  if (runtime !== DOTNET_RUNTIME && runtime !== 'java11' && runtime !== 'java8.al2' && runtime !== 'provided.al2' && runtime !== 'ruby2.5' && runtime !== 'ruby2.7') {
     if (oldEnvVars[LAMBDA_HANDLER_ENV_VAR] === undefined) {
       needsUpdate = true
       changedEnvVars[LAMBDA_HANDLER_ENV_VAR] = config.Handler ?? ''
@@ -225,7 +225,7 @@ export const calculateUpdateRequest = async (
     changedEnvVars[FLUSH_TO_LOG_ENV_VAR] = settings.flushMetricsToLogs!.toString()
   }
 
-  const newEnvVars = {...oldEnvVars, ...changedEnvVars}
+  const newEnvVars = { ...oldEnvVars, ...changedEnvVars }
 
   if (newEnvVars[LOG_LEVEL_ENV_VAR] !== settings.logLevel) {
     needsUpdate = true

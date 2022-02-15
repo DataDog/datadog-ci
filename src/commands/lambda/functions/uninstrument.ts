@@ -1,4 +1,4 @@
-import {CloudWatchLogs, Lambda} from 'aws-sdk'
+import { CloudWatchLogs, Lambda } from 'aws-sdk'
 import {
   API_KEY_ENV_VAR,
   API_KEY_SECRET_ARN_ENV_VAR,
@@ -25,10 +25,10 @@ import {
   TRACE_ENABLED_ENV_VAR,
   VERSION_ENV_VAR,
 } from '../constants'
-import {FunctionConfiguration, LogGroupConfiguration, TagConfiguration} from '../interfaces'
-import {calculateLogGroupRemoveRequest} from '../loggroup'
-import {calculateTagRemoveRequest} from '../tags'
-import {getLambdaFunctionConfigs, getLambdaFunctionConfigsFromRegex, getLayers, isSupportedRuntime} from './commons'
+import { FunctionConfiguration, LogGroupConfiguration, TagConfiguration } from '../interfaces'
+import { calculateLogGroupRemoveRequest } from '../loggroup'
+import { calculateTagRemoveRequest } from '../tags'
+import { getLambdaFunctionConfigs, getLambdaFunctionConfigsFromRegex, getLayers, isSupportedRuntime } from './commons'
 
 export const getUninstrumentedFunctionConfigs = async (
   lambda: Lambda,
@@ -96,7 +96,7 @@ export const getUninstrumentedFunctionConfigsFromRegEx = async (
 }
 
 export const calculateUpdateRequest = (config: Lambda.FunctionConfiguration, runtime: Runtime) => {
-  const oldEnvVars: Record<string, string> = {...config.Environment?.Variables}
+  const oldEnvVars: Record<string, string> = { ...config.Environment?.Variables }
   const functionARN = config.FunctionArn
 
   if (functionARN === undefined) {
@@ -109,7 +109,7 @@ export const calculateUpdateRequest = (config: Lambda.FunctionConfiguration, run
   let needsUpdate = false
 
   // Remove Handler. Dotnet should not have a handler ENV_VAR
-  if (runtime !== DOTNET_RUNTIME) {
+  if (runtime !== DOTNET_RUNTIME && runtime !== 'java11' && runtime !== 'java8.al2' && runtime !== 'provided.al2' && runtime !== 'ruby2.5' && runtime !== 'ruby2.7') {
     const expectedHandler = HANDLER_LOCATION[runtime]
     if (config.Handler === expectedHandler) {
       needsUpdate = true
