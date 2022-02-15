@@ -355,7 +355,7 @@ UpdateFunctionConfiguration -> arn:aws:lambda:us-east-1:123456789012:function:la
     }
   },
   \\"Layers\\": [
-    \\"arn:aws:lambda:us-east-1:464622532012:layer:poc-maxday-dotnet:129\\"
+    \\"arn:aws:lambda:us-east-1:464622532012:layer:dd-trace-dotnet:129\\"
   ]
 }
 TagResource -> arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world

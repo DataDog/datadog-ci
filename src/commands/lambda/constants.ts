@@ -3,7 +3,7 @@ export const EXTENSION_LAYER_KEY = 'extension'
 export const DOTNET_RUNTIME = 'dotnetcore3.1'
 export const RUNTIME_LAYER_LOOKUP = {
   [EXTENSION_LAYER_KEY]: DD_LAMBDA_EXTENSION_LAYER_NAME,
-  'dotnetcore3.1': 'poc-maxday-dotnet',
+  'dotnetcore3.1': 'dd-trace-dotnet',
   'java11': DD_LAMBDA_EXTENSION_LAYER_NAME,
   'java8.al2': DD_LAMBDA_EXTENSION_LAYER_NAME,
   'nodejs12.x': 'Datadog-Node12-x',
@@ -25,7 +25,7 @@ export const ARM_LAYER_SUFFIX = '-ARM'
 
 export enum RuntimeType {
   DOTNET,
-  GO,
+  CUSTOM,
   JAVA,
   NODE,
   PYTHON,
@@ -36,9 +36,9 @@ export const RUNTIME_LOOKUP: { [key: string]: RuntimeType } = {
   'dotnetcore3.1': RuntimeType.DOTNET,
   'java11': RuntimeType.JAVA,
   'java8.al2': RuntimeType.JAVA,
-  'provided.al2': RuntimeType.GO,
   'nodejs12.x': RuntimeType.NODE,
   'nodejs14.x': RuntimeType.NODE,
+  'provided.al2': RuntimeType.CUSTOM,
   'python3.6': RuntimeType.PYTHON,
   'python3.7': RuntimeType.PYTHON,
   'python3.8': RuntimeType.PYTHON,
@@ -123,7 +123,6 @@ export const ENABLE_PROFILING_ENV_VAR = 'CORECLR_ENABLE_PROFILING'
 export const PROFILER_ENV_VAR = 'CORECLR_PROFILER'
 export const PROFILER_PATH_ENV_VAR = 'CORECLR_PROFILER_PATH'
 export const DOTNET_TRACER_HOME_ENV_VAR = 'DD_DOTNET_TRACER_HOME'
-export const INTEGRATIONS_ENV_VAR = 'DD_INTEGRATIONS'
 export const JAVA_TOOL_OPTIONS_ENV_VAR = 'JAVA_TOOL_OPTIONS'
 export const LOGS_INJECTION_ENV_VAR = 'DD_LOGS_INJECTION'
 export const JMXFETCH_ENV_VAR = 'DD_JMXFETCH_ENABLED'
