@@ -350,8 +350,7 @@ UpdateFunctionConfiguration -> arn:aws:lambda:us-east-1:123456789012:function:la
       \\"CORECLR_ENABLE_PROFILING\\": \\"1\\",
       \\"CORECLR_PROFILER\\": \\"{846F5F1C-F9AE-4B07-969E-05C26BC060D8}\\",
       \\"CORECLR_PROFILER_PATH\\": \\"/opt/datadog/Datadog.Trace.ClrProfiler.Native.so\\",
-      \\"DD_DOTNET_TRACER_HOME\\": \\"/opt/datadog\\",
-      \\"DD_INTEGRATIONS\\": \\"/opt/datadog/integrations.json\\"
+      \\"DD_DOTNET_TRACER_HOME\\": \\"/opt/datadog\\"
     }
   },
   \\"Layers\\": [

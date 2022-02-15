@@ -6,7 +6,6 @@ import {
   ENABLE_PROFILING_ENV_VAR,
   ENVIRONMENT_ENV_VAR,
   FLUSH_TO_LOG_ENV_VAR,
-  INTEGRATIONS_ENV_VAR,
   LAMBDA_HANDLER_ENV_VAR,
   LOG_LEVEL_ENV_VAR,
   MERGE_XRAY_TRACES_ENV_VAR,
@@ -18,14 +17,14 @@ import {
   TRACE_ENABLED_ENV_VAR,
   VERSION_ENV_VAR,
 } from '../../constants'
-import {getLambdaFunctionConfig} from '../../functions/commons'
+import { getLambdaFunctionConfig } from '../../functions/commons'
 import {
   calculateUpdateRequest,
   getUninstrumentedFunctionConfig,
   getUninstrumentedFunctionConfigs,
   getUninstrumentedFunctionConfigsFromRegEx,
 } from '../../functions/uninstrument'
-import {makeMockCloudWatchLogs, makeMockLambda} from '../fixtures'
+import { makeMockCloudWatchLogs, makeMockLambda } from '../fixtures'
 
 import * as loggroup from '../../loggroup'
 
@@ -274,7 +273,6 @@ describe('uninstrument', () => {
               [PROFILER_ENV_VAR]: '{846F5F1C-F9AE-4B07-969E-05C26BC060D8}',
               [PROFILER_PATH_ENV_VAR]: '/opt/datadog/Datadog.Trace.ClrProfiler.Native.so',
               [DOTNET_TRACER_HOME_ENV_VAR]: '/opt/datadog',
-              [INTEGRATIONS_ENV_VAR]: '/opt/datadog/integrations.json',
             },
           },
           FunctionArn: 'arn:aws:lambda:us-east-1:000000000000:function:uninstrument',
@@ -351,10 +349,10 @@ describe('uninstrument', () => {
 
     test('returns log group configuration subscription delete request when forwarderARN is set', async () => {
       const logGroupName = '/aws/lambda/group'
-      ;(loggroup.calculateLogGroupRemoveRequest as any).mockImplementation(() => ({
-        filterName: SUBSCRIPTION_FILTER_NAME,
-        logGroupName,
-      }))
+        ; (loggroup.calculateLogGroupRemoveRequest as any).mockImplementation(() => ({
+          filterName: SUBSCRIPTION_FILTER_NAME,
+          logGroupName,
+        }))
 
       const lambda = makeMockLambda({
         'arn:aws:lambda:us-east-1:000000000000:function:uninstrument': {

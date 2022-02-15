@@ -11,7 +11,6 @@ import {
   EXTRA_TAGS_ENV_VAR,
   FLUSH_TO_LOG_ENV_VAR,
   HANDLER_LOCATION,
-  INTEGRATIONS_ENV_VAR,
   KMS_API_KEY_ENV_VAR,
   LAMBDA_HANDLER_ENV_VAR,
   LOG_LEVEL_ENV_VAR,
@@ -140,7 +139,6 @@ export const calculateUpdateRequest = (config: Lambda.FunctionConfiguration, run
     PROFILER_ENV_VAR,
     PROFILER_PATH_ENV_VAR,
     DOTNET_TRACER_HOME_ENV_VAR,
-    INTEGRATIONS_ENV_VAR,
   ]
   // Remove Environment Variables
   for (const environmentVar of environmentVarsArray) {

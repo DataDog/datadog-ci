@@ -16,9 +16,12 @@ export const RUNTIME_LAYER_LOOKUP = {
   'ruby2.5': 'Datadog-Ruby2-5',
   'ruby2.7': 'Datadog-Ruby2-7',
 } as const
+
+type NoHandlerRedirection = "dotnetcore3.1" | "java11" | "java8.al2" | "provided.al2" | "ruby2.5" | "ruby2.7"
 // We exclude the Extension Layer Key in order for the runtime
 // to be used directly in HANDLER_LOCATION.
 export type Runtime = Exclude<keyof typeof RUNTIME_LAYER_LOOKUP, typeof EXTENSION_LAYER_KEY>
+export type AddRuntimeHandler = Exclude<Runtime, NoHandlerRedirection>
 export const ARM_RUNTIMES = [EXTENSION_LAYER_KEY, 'java8.al2', 'java11', 'provided.al2', 'python3.8', 'python3.9']
 export const ARM64_ARCHITECTURE = 'arm64'
 export const ARM_LAYER_SUFFIX = '-ARM'

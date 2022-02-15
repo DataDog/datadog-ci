@@ -35,6 +35,7 @@ import {
   SITES,
   TRACE_ENABLED_ENV_VAR,
   VERSION_ENV_VAR,
+  AddRuntimeHandler
 } from '../constants'
 import { FunctionConfiguration, InstrumentationSettings, LogGroupConfiguration, TagConfiguration } from '../interfaces'
 import { calculateLogGroupUpdateRequest } from '../loggroup'
