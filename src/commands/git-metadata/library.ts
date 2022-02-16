@@ -1,9 +1,9 @@
-import {newApiKeyValidator} from '../../helpers/apikey'
-import {RequestBuilder} from '../../helpers/interfaces'
-import {upload, UploadOptions, UploadStatus} from '../../helpers/upload'
-import {getRequestBuilder} from '../../helpers/utils'
-import {getCommitInfoBasic, newSimpleGitOrFail} from './git'
-import {CommitInfo} from './interfaces'
+import { newApiKeyValidator } from '../../helpers/apikey'
+import { RequestBuilder } from '../../helpers/interfaces'
+import { upload, UploadOptions, UploadStatus } from '../../helpers/upload'
+import { getRequestBuilder } from '../../helpers/utils'
+import { getCommitInfoBasic, newSimpleGitOrFail } from './git'
+import { CommitInfo } from './interfaces'
 
 export class SourceCodeIntegration {
   private apiKey: string
@@ -29,7 +29,7 @@ export class SourceCodeIntegration {
     return apiKey !== undefined && isRepo
   }
 
-  public async addSourceCodeIntegration(): Promise<string> {
+  public async uploadGitCommitHash(): Promise<string> {
     const apiKeyValidator = newApiKeyValidator({
       apiKey: this.apiKey,
       datadogSite: this.datadogSite,

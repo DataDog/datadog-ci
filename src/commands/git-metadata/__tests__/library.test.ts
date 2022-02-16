@@ -1,11 +1,11 @@
-import {SimpleGit} from 'simple-git'
-
-import {SourceCodeIntegration} from '..'
+import { SimpleGit } from 'simple-git'
+import { SourceCodeIntegration } from '..'
 import * as apikey from '../../../helpers/apikey'
 import * as upload from '../../../helpers/upload'
 import * as git from '../git'
-import {CommitInfo} from '../interfaces'
+import { CommitInfo } from '../interfaces'
 import * as sci from '../library'
+
 
 describe('library', () => {
   describe('shouldAddSourceCodeIntegration', () => {
@@ -50,7 +50,7 @@ describe('library', () => {
 
       jest.spyOn(apikey, 'newApiKeyValidator').mockReturnValue({} as any)
 
-      await expect(sourceCodeIntegration.addSourceCodeIntegration()).rejects.toThrowError('git is not installed')
+      await expect(sourceCodeIntegration.uploadGitCommitHash()).rejects.toThrowError('git is not installed')
     })
 
     test('source code integration returns the correct hash', async () => {
@@ -72,7 +72,7 @@ describe('library', () => {
 
       jest.spyOn(apikey, 'newApiKeyValidator').mockReturnValue({} as any)
 
-      expect(await sourceCodeIntegration.addSourceCodeIntegration()).toBe('hash')
+      expect(await sourceCodeIntegration.uploadGitCommitHash()).toBe('hash')
     })
   })
 })
