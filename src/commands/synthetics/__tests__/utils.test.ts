@@ -72,11 +72,7 @@ describe('utils', () => {
     })
 
     test('runTests sends batch metadata', async () => {
-      const metadata: Metadata = {
-        ci: {job: {name: 'job'}, pipeline: {}, provider: {name: 'jest'}, stage: {}},
-        git: {commit: {author: {}, committer: {}, message: 'test'}},
-      }
-      jest.spyOn(ciHelpers, 'getCIMetadata').mockImplementation(() => metadata)
+      jest.spyOn(ciHelpers, 'getCIMetadata').mockImplementation(() => undefined)
 
       const payloadMetadataSpy = jest.fn()
       const axiosMock = jest.spyOn(axios, 'create')
@@ -88,11 +84,21 @@ describe('utils', () => {
       }) as any)
 
       await utils.runTests(api, [{public_id: fakeId, executionRule: ExecutionRule.NON_BLOCKING}])
-      expect(payloadMetadataSpy).toHaveBeenCalledWith({...metadata, trigger_source: 'npm_package'})
+      expect(payloadMetadataSpy).toHaveBeenCalledWith({
+        ci: {job: {}, pipeline: {}, provider: {}, stage: {}},
+        git: {commit: {author: {}, committer: {}}},
+        trigger_app: 'npm_package',
+      })
 
-      utils.setCiTriggerSource('unit_test')
+      const metadata: Metadata = {
+        ci: {job: {name: 'job'}, pipeline: {}, provider: {name: 'jest'}, stage: {}},
+        git: {commit: {author: {}, committer: {}, message: 'test'}},
+      }
+      jest.spyOn(ciHelpers, 'getCIMetadata').mockImplementation(() => metadata)
+
+      utils.setCiTriggerApp('unit_test')
       await utils.runTests(api, [{public_id: fakeId, executionRule: ExecutionRule.NON_BLOCKING}])
-      expect(payloadMetadataSpy).toHaveBeenCalledWith({...metadata, trigger_source: 'unit_test'})
+      expect(payloadMetadataSpy).toHaveBeenCalledWith({...metadata, trigger_app: 'unit_test'})
     })
 
     test('should run test with publicId from url', async () => {

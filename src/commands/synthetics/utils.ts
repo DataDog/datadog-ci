@@ -23,6 +23,7 @@ import {
   Result,
   Suite,
   Summary,
+  SyntheticsMetadata,
   TemplateContext,
   TemplateVariables,
   TestPayload,
@@ -41,7 +42,7 @@ const TEMPLATE_REGEX = /{{\s*([^{}]*?)\s*}}/g
 const template = (st: string, context: any): string =>
   st.replace(TEMPLATE_REGEX, (match: string, p1: string) => (p1 in context ? context[p1] : match))
 
-let ciTriggerSource = 'npm_package'
+let ciTriggerApp = 'npm_package'
 
 export const handleConfig = (
   test: InternalTest,
@@ -87,8 +88,8 @@ export const handleConfig = (
   return handledConfig
 }
 
-export const setCiTriggerSource = (source: string): void => {
-  ciTriggerSource = source
+export const setCiTriggerApp = (source: string): void => {
+  ciTriggerApp = source
 }
 
 const parseUrlVariables = (url: string, reporter: MainReporter) => {
@@ -504,9 +505,14 @@ export const getTestsToTrigger = async (api: APIHelper, triggerConfigs: TriggerC
 export const runTests = async (api: APIHelper, testsToTrigger: TestPayload[]): Promise<Trigger> => {
   const payload: Payload = {tests: testsToTrigger}
   const ciMetadata = getCIMetadata()
-  if (ciMetadata) {
-    payload.metadata = {...ciMetadata, trigger_source: ciTriggerSource}
+
+  const syntheticsMetadata: SyntheticsMetadata = {
+    ci: {job: {}, pipeline: {}, provider: {}, stage: {}},
+    git: {commit: {author: {}, committer: {}}},
+    ...ciMetadata,
+    trigger_app: ciTriggerApp,
   }
+  payload.metadata = syntheticsMetadata
 
   try {
     return await api.triggerTests(payload)
