@@ -6,11 +6,12 @@ import {InvalidConfigurationError} from '../../helpers/errors'
 import {ICONS} from '../../helpers/formatting'
 import {RequestBuilder} from '../../helpers/interfaces'
 import {getMetricsLogger} from '../../helpers/metrics'
-import {upload, UploadOptions, UploadStatus} from '../../helpers/upload'
+import {UploadStatus} from '../../helpers/upload'
 import {getRequestBuilder} from '../../helpers/utils'
 import {datadogSite, getBaseIntakeUrl} from './api'
 import {getCommitInfo, newSimpleGit} from './git'
 import {CommitInfo} from './interfaces'
+import {uploadRepository} from './library'
 import {
   renderCommandInfo,
   renderConfigurationError,
@@ -59,33 +60,41 @@ export class UploadCommand extends Command {
       datadogSite,
       metricsLogger: metricsLogger.logger,
     })
+
     let payload: CommitInfo
     try {
       payload = await getCommitInfo(await newSimpleGit(), this.repositoryURL)
     } catch (e) {
-      this.context.stdout.write(`Error uploading git metadata: ${e}`)
+      if (e instanceof Error) {
+        this.context.stdout.write(renderFailedUpload(e.message))
+      }
 
       return
     }
 
     this.context.stdout.write(renderCommandInfo(payload))
+    let status
     try {
       const requestBuilder = this.getRequestBuilder()
-      const status = await this.uploadRepository(requestBuilder)(payload, {
-        apiKeyValidator,
-        onError: (e) => {
-          this.context.stdout.write(renderFailedUpload(e.message))
-          metricsLogger.logger.increment('failed', 1)
-        },
-        onRetry: (e, attempt) => {
-          this.context.stdout.write(renderRetriedUpload(e.message, attempt))
-          metricsLogger.logger.increment('retries', 1)
-        },
-        onUpload: () => {
-          return
-        },
-        retries: 5,
-      })
+      if (this.dryRun) {
+        status = UploadStatus.Success
+      } else {
+        status = await uploadRepository(requestBuilder, this.cliVersion)(payload, {
+          apiKeyValidator,
+          onError: (e) => {
+            this.context.stdout.write(renderFailedUpload(e.message))
+            metricsLogger.logger.increment('failed', 1)
+          },
+          onRetry: (e, attempt) => {
+            this.context.stdout.write(renderRetriedUpload(e.message, attempt))
+            metricsLogger.logger.increment('retries', 1)
+          },
+          onUpload: () => {
+            return
+          },
+          retries: 5,
+        })
+      }
       metricsLogger.logger.increment('success', 1)
 
       const totalTime = (Date.now() - initialTime) / 1000
@@ -130,19 +139,6 @@ export class UploadCommand extends Command {
       ]),
       overrideUrl: 'api/v2/srcmap',
     })
-  }
-
-  private uploadRepository(
-    requestBuilder: RequestBuilder
-  ): (commitInfo: CommitInfo, opts: UploadOptions) => Promise<UploadStatus> {
-    return async (commitInfo: CommitInfo, opts: UploadOptions) => {
-      const payload = commitInfo.asMultipartPayload(this.cliVersion)
-      if (this.dryRun) {
-        return UploadStatus.Success
-      }
-
-      return upload(requestBuilder)(payload, opts)
-    }
   }
 }
 
