@@ -35,42 +35,38 @@ export class SourceCodeIntegration {
       datadogSite: this.datadogSite,
     })
 
-    try {
-      const simpleGit = await newSimpleGitOrFail()
-      const payload = await getCommitInfoBasic(simpleGit)
+    const simpleGit = await newSimpleGitOrFail()
+    const payload = await getCommitInfoBasic(simpleGit)
 
-      const requestBuilder = getRequestBuilder({
-        apiKey: this.apiKey!,
-        baseUrl: 'https://sourcemap-intake.' + this.datadogSite,
-        headers: new Map([
-          ['DD-EVP-ORIGIN', 'datadog-ci sci'],
-          ['DD-EVP-ORIGIN-VERSION', this.version],
-        ]),
-        overrideUrl: 'api/v2/srcmap',
-      })
+    const requestBuilder = getRequestBuilder({
+      apiKey: this.apiKey!,
+      baseUrl: 'https://sourcemap-intake.' + this.datadogSite,
+      headers: new Map([
+        ['DD-EVP-ORIGIN', 'datadog-ci sci'],
+        ['DD-EVP-ORIGIN-VERSION', this.version],
+      ]),
+      overrideUrl: 'api/v2/srcmap',
+    })
 
-      const status = await this.uploadRepository(requestBuilder)(payload, {
-        apiKeyValidator,
-        onError: (e) => {
-          throw e
-        },
-        onRetry: () => {
-          // Do nothing
-        },
-        onUpload: () => {
-          return
-        },
-        retries: 5,
-      })
+    const status = await this.uploadRepository(requestBuilder)(payload, {
+      apiKeyValidator,
+      onError: (e) => {
+        throw e
+      },
+      onRetry: () => {
+        // Do nothing
+      },
+      onUpload: () => {
+        return
+      },
+      retries: 5,
+    })
 
-      if (status !== UploadStatus.Success) {
-        throw new Error('Error uploading commit information.')
-      }
-
-      return payload.hash
-    } catch (error) {
-      throw error
+    if (status !== UploadStatus.Success) {
+      throw new Error('Error uploading commit information.')
     }
+
+    return payload.hash
   }
 
   private uploadRepository(
