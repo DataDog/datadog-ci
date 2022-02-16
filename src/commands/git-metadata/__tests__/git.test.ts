@@ -1,4 +1,5 @@
 import * as simpleGit from 'simple-git'
+
 import {getCommitInfo, gitRemote, newSimpleGitOrFail, stripCredentials} from '../git'
 
 interface MockConfig {
