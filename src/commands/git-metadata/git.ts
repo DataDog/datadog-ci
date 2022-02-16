@@ -1,5 +1,6 @@
 import * as simpleGit from 'simple-git'
 import {URL} from 'url'
+
 import {CommitInfo} from './interfaces'
 
 // Returns a configured SimpleGit.
