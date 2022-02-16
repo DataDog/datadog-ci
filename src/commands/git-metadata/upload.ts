@@ -1,5 +1,6 @@
 import chalk from 'chalk'
 import {Command} from 'clipanion'
+
 import {newApiKeyValidator} from '../../helpers/apikey'
 import {InvalidConfigurationError} from '../../helpers/errors'
 import {ICONS} from '../../helpers/formatting'
