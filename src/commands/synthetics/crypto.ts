@@ -1,4 +1,5 @@
 import {generateKeyPairSync} from 'crypto'
+
 import {utils} from 'ssh2'
 import {ParsedKey} from 'ssh2-streams'
 import {parseKey, parsePrivateKey} from 'sshpk'
