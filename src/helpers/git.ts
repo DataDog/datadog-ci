@@ -28,7 +28,7 @@ export const getGitMetadata = async (): Promise<SpanTags> => {
       git.branch(),
       git.listRemote(['--get-url']),
       git.show(['-s', '--format=%s']),
-      git.show(['-s', '--format=%an,%ae,%ad,%cn,%ce,%cd']),
+      git.show(['-s', '--format=%an,%ae,%aI,%cn,%ce,%cI']),
     ])
 
     const [
