@@ -59,10 +59,15 @@ export class UploadCommand extends Command {
       datadogSite,
       metricsLogger: metricsLogger.logger,
     })
-    const payload = await getCommitInfo(await newSimpleGit(), this.context.stdout, this.repositoryURL)
-    if (payload === undefined) {
-      return 1
+    let payload: CommitInfo
+    try {
+      payload = await getCommitInfo(await newSimpleGit(), this.repositoryURL)
+    } catch (e) {
+      this.context.stdout.write(`Error uploading git metadata: ${e}`)
+
+      return
     }
+
     this.context.stdout.write(renderCommandInfo(payload))
     try {
       const requestBuilder = this.getRequestBuilder()

@@ -1,6 +1,6 @@
 import * as simpleGit from 'simple-git'
 
-import {getCommitInfo, gitRemote, newSimpleGitOrFail, stripCredentials} from '../git'
+import {getCommitInfo, gitRemote, newSimpleGit, stripCredentials} from '../git'
 
 interface MockConfig {
   hash?: string
@@ -92,7 +92,7 @@ describe('git', () => {
         remotes: [{name: 'first', refs: {push: 'https://git-repo'}}],
         trackedFiles: ['myfile.js'],
       }) as any
-      const commitInfo = await getCommitInfo(mock, process.stdout)
+      const commitInfo = await getCommitInfo(mock)
 
       expect(commitInfo).toBeDefined()
       expect(commitInfo!.hash).toBe('abcd')
@@ -104,7 +104,7 @@ describe('git', () => {
         hash: 'abcd',
         trackedFiles: ['myfile.js'],
       }) as any
-      const commitInfo = await getCommitInfo(mock, process.stdout, 'https://overridden')
+      const commitInfo = await getCommitInfo(mock, 'https://overridden')
 
       expect(commitInfo).toBeDefined()
       expect(commitInfo!.hash).toBe('abcd')
@@ -113,12 +113,12 @@ describe('git', () => {
     })
   })
 
-  describe('newSimpleGitOrFail', () => {
+  describe('newSimpleGit', () => {
     test('should throw an error if git is not installed', async () => {
       jest.spyOn(simpleGit, 'gitP').mockImplementation(() => {
         throw Error('gitp error')
       })
-      await expect(newSimpleGitOrFail()).rejects.toThrow('gitp error')
+      await expect(newSimpleGit()).rejects.toThrow('gitp error')
     })
 
     test('should throw an error if revparse throws an error', async () => {
@@ -128,7 +128,7 @@ describe('git', () => {
         throw Error('revparse error')
       })
 
-      await expect(newSimpleGitOrFail()).rejects.toThrow('revparse error')
+      await expect(newSimpleGit()).rejects.toThrow('revparse error')
     })
 
     test('should not throw any errors', async () => {
@@ -136,7 +136,7 @@ describe('git', () => {
       jest.spyOn(simpleGit, 'gitP').mockReturnValue(mock)
       jest.spyOn(mock, 'revparse').mockResolvedValue('1234')
 
-      await expect(newSimpleGitOrFail()).resolves.not.toThrow()
+      await expect(newSimpleGit()).resolves.not.toThrow()
     })
   })
 })

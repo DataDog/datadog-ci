@@ -9,7 +9,7 @@ import * as sci from '../library'
 describe('library', () => {
   describe('shouldAddSourceCodeIntegration', () => {
     test('should return false if datadog API key is not set', async () => {
-      jest.spyOn(git, 'newSimpleGitOrFail').mockResolvedValue({} as SimpleGit)
+      jest.spyOn(git, 'newSimpleGit').mockResolvedValue({} as SimpleGit)
       await expect(sci.SourceCodeIntegration.shouldAddSourceCodeIntegration(undefined)).resolves.toEqual(false)
     })
 
@@ -19,13 +19,13 @@ describe('library', () => {
           throw Error()
         },
       } as any
-      jest.spyOn(git, 'newSimpleGitOrFail').mockResolvedValue(simpleGitClient)
+      jest.spyOn(git, 'newSimpleGit').mockResolvedValue(simpleGitClient)
 
       await expect(sci.SourceCodeIntegration.shouldAddSourceCodeIntegration('placeholder')).resolves.toEqual(false)
     })
 
     test('should return false git is not installed', async () => {
-      jest.spyOn(git, 'newSimpleGitOrFail').mockImplementation(() => {
+      jest.spyOn(git, 'newSimpleGit').mockImplementation(() => {
         throw new Error('git is not installed')
       })
       await expect(sci.SourceCodeIntegration.shouldAddSourceCodeIntegration('placeholder')).resolves.toEqual(false)
@@ -33,7 +33,7 @@ describe('library', () => {
 
     test('should return true if datadog API key is set, git is installed, and we are in a repo', async () => {
       const simpleGitClient = {checkIsRepo: () => true} as any
-      jest.spyOn(git, 'newSimpleGitOrFail').mockResolvedValue(simpleGitClient)
+      jest.spyOn(git, 'newSimpleGit').mockResolvedValue(simpleGitClient)
 
       await expect(sci.SourceCodeIntegration.shouldAddSourceCodeIntegration('placeholder')).resolves.toEqual(true)
     })
@@ -43,7 +43,7 @@ describe('library', () => {
     test('source code integration fails if simpleGitOrFail throws an exception', async () => {
       const sourceCodeIntegration = new SourceCodeIntegration('dummy', 'fake.site')
 
-      jest.spyOn(git, 'newSimpleGitOrFail').mockImplementation(() => {
+      jest.spyOn(git, 'newSimpleGit').mockImplementation(() => {
         throw new Error('git is not installed')
       })
 
@@ -56,11 +56,9 @@ describe('library', () => {
       const sourceCodeIntegration = new SourceCodeIntegration('dummy', 'fake.site')
 
       const simpleGitClient = {checkIsRepo: () => true} as any
-      jest.spyOn(git, 'newSimpleGitOrFail').mockResolvedValue(simpleGitClient)
+      jest.spyOn(git, 'newSimpleGit').mockResolvedValue(simpleGitClient)
 
-      jest
-        .spyOn(git, 'getCommitInfoBasic')
-        .mockImplementation(async () => new CommitInfo('hash', 'url', ['file1', 'file2']))
+      jest.spyOn(git, 'getCommitInfo').mockImplementation(async () => new CommitInfo('hash', 'url', ['file1', 'file2']))
       jest.spyOn(upload, 'upload').mockReturnValue((a, b) => {
         {
           return new Promise<upload.UploadStatus>((resolve) => {

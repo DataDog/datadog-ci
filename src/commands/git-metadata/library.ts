@@ -2,7 +2,7 @@ import {newApiKeyValidator} from '../../helpers/apikey'
 import {RequestBuilder} from '../../helpers/interfaces'
 import {upload, UploadOptions, UploadStatus} from '../../helpers/upload'
 import {getRequestBuilder} from '../../helpers/utils'
-import {getCommitInfoBasic, newSimpleGitOrFail} from './git'
+import {getCommitInfo, newSimpleGit} from './git'
 import {CommitInfo} from './interfaces'
 
 export class SourceCodeIntegration {
@@ -19,7 +19,7 @@ export class SourceCodeIntegration {
     let simpleGit
     let isRepo
     try {
-      simpleGit = await newSimpleGitOrFail()
+      simpleGit = await newSimpleGit()
       isRepo = simpleGit.checkIsRepo()
     } catch {
       return false
@@ -35,8 +35,8 @@ export class SourceCodeIntegration {
       datadogSite: this.datadogSite,
     })
 
-    const simpleGit = await newSimpleGitOrFail()
-    const payload = await getCommitInfoBasic(simpleGit)
+    const simpleGit = await newSimpleGit()
+    const payload = await getCommitInfo(simpleGit)
 
     const requestBuilder = getRequestBuilder({
       apiKey: this.apiKey!,
