@@ -1,4 +1,4 @@
-import { CloudWatchLogs, Lambda } from 'aws-sdk'
+import {CloudWatchLogs, Lambda} from 'aws-sdk'
 import {
   API_KEY_ENV_VAR,
   API_KEY_SECRET_ARN_ENV_VAR,
@@ -19,13 +19,15 @@ import {
   EXTENSION_LAYER_KEY,
   EXTRA_TAGS_ENV_VAR,
   FLUSH_TO_LOG_ENV_VAR,
-  HANDLER_LOCATION,
   KMS_API_KEY_ENV_VAR,
   LAMBDA_HANDLER_ENV_VAR,
+  LayerRuntime,
   LOG_LEVEL_ENV_VAR,
   MERGE_XRAY_TRACES_ENV_VAR,
+  NODE_HANDLER_LOCATION,
   PROFILER_ENV_VAR,
   PROFILER_PATH_ENV_VAR,
+  PYTHON_HANDLER_LOCATION,
   Runtime,
   RUNTIME_LAYER_LOOKUP,
   RUNTIME_LOOKUP,
@@ -34,11 +36,11 @@ import {
   SITE_ENV_VAR,
   SITES,
   TRACE_ENABLED_ENV_VAR,
-  VERSION_ENV_VAR
+  VERSION_ENV_VAR,
 } from '../constants'
-import { FunctionConfiguration, InstrumentationSettings, LogGroupConfiguration, TagConfiguration } from '../interfaces'
-import { calculateLogGroupUpdateRequest } from '../loggroup'
-import { calculateTagUpdateRequest } from '../tags'
+import {FunctionConfiguration, InstrumentationSettings, LogGroupConfiguration, TagConfiguration} from '../interfaces'
+import {calculateLogGroupUpdateRequest} from '../loggroup'
+import {calculateTagUpdateRequest} from '../tags'
 import {
   addLayerArn,
   findLatestLayerVersion,
@@ -47,6 +49,7 @@ import {
   getLayerArn,
   getLayers,
   isLambdaActive,
+  isLayerRuntime,
   isSupportedRuntime,
 } from './commons'
 
@@ -125,7 +128,7 @@ export const calculateUpdateRequest = async (
   region: string,
   runtime: Runtime
 ) => {
-  const oldEnvVars: Record<string, string> = { ...config.Environment?.Variables }
+  const oldEnvVars: Record<string, string> = {...config.Environment?.Variables}
   const changedEnvVars: Record<string, string> = {}
   const functionARN = config.FunctionArn
 
@@ -143,17 +146,45 @@ export const calculateUpdateRequest = async (
   }
   let needsUpdate = false
 
-  // Update Handler
-  if (runtime !== DOTNET_RUNTIME && runtime !== 'java11' && runtime !== 'java8.al2' && runtime !== 'provided.al2' && runtime !== 'ruby2.5' && runtime !== 'ruby2.7') {
-    const expectedHandler = HANDLER_LOCATION[runtime]
+  // If a layer version is set for Java or a custom runtime.
+  // We need to inform the customer to only set the extension argument.
+  if (RUNTIME_LOOKUP[runtime] === RuntimeType.JAVA || RUNTIME_LOOKUP[runtime] === RuntimeType.CUSTOM) {
+    if (settings.layerVersion !== undefined) {
+      throw new Error(
+        `Only the extension version should be set for the ${runtime} runtime. Please remove the layer version from the instrument command and only use the extension version.`
+      )
+    }
+  }
+  // Ruby requires handler redirection, which needs to be performed manually.
+  // We need to inform the customer to only set the extension and remove they layer version.
+  if (RUNTIME_LOOKUP[runtime] === RuntimeType.RUBY) {
+    if (settings.layerVersion !== undefined) {
+      throw new Error(
+        'The Ruby layer requires extensive manual instrumentation. Please only set the extension version with the instrument command.'
+      )
+    }
+  }
+
+  // Update Python Handler
+  if (RUNTIME_LOOKUP[runtime] === RuntimeType.PYTHON) {
+    const expectedHandler = PYTHON_HANDLER_LOCATION
     if (config.Handler !== expectedHandler) {
       needsUpdate = true
-      updateRequest.Handler = HANDLER_LOCATION[runtime]
+      updateRequest.Handler = PYTHON_HANDLER_LOCATION
+    }
+  }
+
+  // Update Node Handler
+  if (RUNTIME_LOOKUP[runtime] === RuntimeType.NODE) {
+    const expectedHandler = NODE_HANDLER_LOCATION
+    if (config.Handler !== expectedHandler) {
+      needsUpdate = true
+      updateRequest.Handler = NODE_HANDLER_LOCATION
     }
   }
 
   // Update Env Vars
-  if (runtime !== DOTNET_RUNTIME && runtime !== 'java11' && runtime !== 'java8.al2' && runtime !== 'provided.al2' && runtime !== 'ruby2.5' && runtime !== 'ruby2.7') {
+  if (RUNTIME_LOOKUP[runtime] === RuntimeType.PYTHON || RUNTIME_LOOKUP[runtime] === RuntimeType.NODE) {
     if (oldEnvVars[LAMBDA_HANDLER_ENV_VAR] === undefined) {
       needsUpdate = true
       changedEnvVars[LAMBDA_HANDLER_ENV_VAR] = config.Handler ?? ''
@@ -222,7 +253,7 @@ export const calculateUpdateRequest = async (
     changedEnvVars[FLUSH_TO_LOG_ENV_VAR] = settings.flushMetricsToLogs!.toString()
   }
 
-  const newEnvVars = { ...oldEnvVars, ...changedEnvVars }
+  const newEnvVars = {...oldEnvVars, ...changedEnvVars}
 
   if (newEnvVars[LOG_LEVEL_ENV_VAR] !== settings.logLevel) {
     needsUpdate = true
@@ -245,30 +276,33 @@ export const calculateUpdateRequest = async (
     Variables: newEnvVars,
   }
 
-  // Update Layers
-  const lambdaLibraryLayerArn = getLayerArn(config, config.Runtime as Runtime, region, settings)
-  const lambraLibraryLayerName = RUNTIME_LAYER_LOOKUP[runtime]
-  let fullLambdaLibraryLayerARN: string | undefined
-  if (settings.layerVersion !== undefined || settings.interactive) {
-    let layerVersion = settings.layerVersion
-    if (settings.interactive && !settings.layerVersion) {
-      layerVersion = await findLatestLayerVersion(config.Runtime as Runtime, region)
+  let layerARNs = getLayers(config)
+  const originalLayerARNs = layerARNs
+  let needsLayerUpdate = false
+  if (isLayerRuntime(runtime)) {
+    const lambdaLibraryLayerArn = getLayerArn(config, config.Runtime as LayerRuntime, region, settings)
+    const lambdaLibraryLayerName = RUNTIME_LAYER_LOOKUP[runtime]
+    let fullLambdaLibraryLayerARN: string | undefined
+    if (settings.layerVersion !== undefined || settings.interactive) {
+      let layerVersion = settings.layerVersion
+      if (settings.interactive && !settings.layerVersion) {
+        layerVersion = await findLatestLayerVersion(config.Runtime as LayerRuntime, region)
+      }
+      fullLambdaLibraryLayerARN = `${lambdaLibraryLayerArn}:${layerVersion}`
     }
-    fullLambdaLibraryLayerARN = `${lambdaLibraryLayerArn}:${layerVersion}`
+    layerARNs = addLayerArn(fullLambdaLibraryLayerARN, lambdaLibraryLayerName, layerARNs)
   }
-  const lambdaExtensionLayerArn = getLayerArn(config, EXTENSION_LAYER_KEY as Runtime, region, settings)
+
+  const lambdaExtensionLayerArn = getLayerArn(config, EXTENSION_LAYER_KEY as LayerRuntime, region, settings)
   let fullExtensionLayerARN: string | undefined
   if (settings.extensionVersion !== undefined || settings.interactive) {
     let extensionVersion = settings.extensionVersion
     if (settings.interactive && !settings.extensionVersion) {
-      extensionVersion = await findLatestLayerVersion(EXTENSION_LAYER_KEY as Runtime, region)
+      extensionVersion = await findLatestLayerVersion(EXTENSION_LAYER_KEY as LayerRuntime, region)
     }
     fullExtensionLayerARN = `${lambdaExtensionLayerArn}:${extensionVersion}`
   }
-  let layerARNs = getLayers(config)
-  const originalLayerARNs = layerARNs
-  let needsLayerUpdate = false
-  layerARNs = addLayerArn(fullLambdaLibraryLayerARN, lambraLibraryLayerName, layerARNs)
+
   layerARNs = addLayerArn(fullExtensionLayerARN, DD_LAMBDA_EXTENSION_LAYER_NAME, layerARNs)
 
   if (originalLayerARNs.sort().join(',') !== layerARNs.sort().join(',')) {

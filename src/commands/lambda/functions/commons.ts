@@ -12,10 +12,12 @@ import {
   CI_SITE_ENV_VAR,
   DEFAULT_LAYER_AWS_ACCOUNT,
   GOVCLOUD_LAYER_AWS_ACCOUNT,
+  LayerRuntime,
   LIST_FUNCTIONS_MAX_RETRY_COUNT,
   MAX_LAMBDA_STATE_CHECK_ATTEMPTS,
   Runtime,
   RUNTIME_LAYER_LOOKUP,
+  RUNTIME_LOOKUP,
   SITES,
 } from '../constants'
 import {FunctionConfiguration, InstrumentationSettings} from '../interfaces'
@@ -114,13 +116,13 @@ export const collectFunctionsByRegion = (
  * @param region the region where the layer is stored.
  * @returns the latest version of the layer to find.
  */
-export const findLatestLayerVersion = async (runtime: Runtime, region: string) => {
+export const findLatestLayerVersion = async (layer: LayerRuntime, region: string) => {
   let latestVersion = 0
 
   let searchStep = latestVersion > 0 ? 1 : 100
   let layerVersion = latestVersion + searchStep
   const account = region.startsWith('us-gov') ? GOVCLOUD_LAYER_AWS_ACCOUNT : DEFAULT_LAYER_AWS_ACCOUNT
-  const layerName = RUNTIME_LAYER_LOOKUP[runtime]
+  const layerName = RUNTIME_LAYER_LOOKUP[layer]
   let foundLatestVersion = false
   const lambda = new Lambda({region})
   while (!foundLatestVersion) {
@@ -258,12 +260,12 @@ export const getLambdaFunctionConfigs = (
  */
 export const getLayerArn = (
   config: Lambda.FunctionConfiguration,
-  runtime: Runtime,
+  layer: LayerRuntime,
   region: string,
   settings?: InstrumentationSettings
 ) => {
-  let layerName = RUNTIME_LAYER_LOOKUP[runtime]
-  if (ARM_RUNTIMES.includes(runtime) && config.Architectures?.includes(ARM64_ARCHITECTURE)) {
+  let layerName = RUNTIME_LAYER_LOOKUP[layer]
+  if (ARM_RUNTIMES.includes(layer) && config.Architectures?.includes(ARM64_ARCHITECTURE)) {
     layerName += ARM_LAYER_SUFFIX
   }
   const account = settings?.layerAWSAccount ?? DEFAULT_LAYER_AWS_ACCOUNT
@@ -359,11 +361,11 @@ export const isLambdaActive = async (
  * @param runtime a string representing a Lambda FunctionConfiguration Runtime.
  * @returns if a runtime is supported.
  */
-export const isSupportedRuntime = (runtime?: string): runtime is Runtime => {
-  const lookup = RUNTIME_LAYER_LOOKUP as Record<string, string>
+export const isSupportedRuntime = (runtime?: string): runtime is Runtime =>
+  runtime !== undefined && RUNTIME_LOOKUP[runtime as Runtime] !== undefined
 
-  return runtime !== undefined && lookup[runtime] !== undefined
-}
+export const isLayerRuntime = (runtime: string): runtime is LayerRuntime =>
+  RUNTIME_LAYER_LOOKUP[runtime as LayerRuntime] !== undefined
 
 export const sentenceMatchesRegEx = (sentence: string, regex: RegExp) => sentence.match(regex)
 

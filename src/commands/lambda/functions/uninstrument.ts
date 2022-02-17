@@ -1,33 +1,41 @@
-import { CloudWatchLogs, Lambda } from 'aws-sdk'
+import {CloudWatchLogs, Lambda} from 'aws-sdk'
 import {
   API_KEY_ENV_VAR,
   API_KEY_SECRET_ARN_ENV_VAR,
   CAPTURE_LAMBDA_PAYLOAD_ENV_VAR,
   DD_LAMBDA_EXTENSION_LAYER_NAME,
-  DOTNET_RUNTIME,
   DOTNET_TRACER_HOME_ENV_VAR,
   ENABLE_PROFILING_ENV_VAR,
   ENVIRONMENT_ENV_VAR,
   EXTRA_TAGS_ENV_VAR,
   FLUSH_TO_LOG_ENV_VAR,
-  HANDLER_LOCATION,
   KMS_API_KEY_ENV_VAR,
   LAMBDA_HANDLER_ENV_VAR,
   LOG_LEVEL_ENV_VAR,
   MERGE_XRAY_TRACES_ENV_VAR,
+  NODE_HANDLER_LOCATION,
   PROFILER_ENV_VAR,
   PROFILER_PATH_ENV_VAR,
+  PYTHON_HANDLER_LOCATION,
   Runtime,
   RUNTIME_LAYER_LOOKUP,
+  RUNTIME_LOOKUP,
+  RuntimeType,
   SERVICE_ENV_VAR,
   SITE_ENV_VAR,
   TRACE_ENABLED_ENV_VAR,
   VERSION_ENV_VAR,
 } from '../constants'
-import { FunctionConfiguration, LogGroupConfiguration, TagConfiguration } from '../interfaces'
-import { calculateLogGroupRemoveRequest } from '../loggroup'
-import { calculateTagRemoveRequest } from '../tags'
-import { getLambdaFunctionConfigs, getLambdaFunctionConfigsFromRegex, getLayers, isSupportedRuntime } from './commons'
+import {FunctionConfiguration, LogGroupConfiguration, TagConfiguration} from '../interfaces'
+import {calculateLogGroupRemoveRequest} from '../loggroup'
+import {calculateTagRemoveRequest} from '../tags'
+import {
+  getLambdaFunctionConfigs,
+  getLambdaFunctionConfigsFromRegex,
+  getLayers,
+  isLayerRuntime,
+  isSupportedRuntime,
+} from './commons'
 
 export const getUninstrumentedFunctionConfigs = async (
   lambda: Lambda,
@@ -95,7 +103,7 @@ export const getUninstrumentedFunctionConfigsFromRegEx = async (
 }
 
 export const calculateUpdateRequest = (config: Lambda.FunctionConfiguration, runtime: Runtime) => {
-  const oldEnvVars: Record<string, string> = { ...config.Environment?.Variables }
+  const oldEnvVars: Record<string, string> = {...config.Environment?.Variables}
   const functionARN = config.FunctionArn
 
   if (functionARN === undefined) {
@@ -107,9 +115,19 @@ export const calculateUpdateRequest = (config: Lambda.FunctionConfiguration, run
   }
   let needsUpdate = false
 
-  // Remove Handler. Dotnet should not have a handler ENV_VAR
-  if (runtime !== DOTNET_RUNTIME && runtime !== 'java11' && runtime !== 'java8.al2' && runtime !== 'provided.al2' && runtime !== 'ruby2.5' && runtime !== 'ruby2.7') {
-    const expectedHandler = HANDLER_LOCATION[runtime]
+  // Remove Handler for Python
+  if (RUNTIME_LOOKUP[runtime] === RuntimeType.PYTHON) {
+    const expectedHandler = PYTHON_HANDLER_LOCATION
+    if (config.Handler === expectedHandler) {
+      needsUpdate = true
+      updateRequest.Handler = oldEnvVars[LAMBDA_HANDLER_ENV_VAR]
+      delete oldEnvVars[LAMBDA_HANDLER_ENV_VAR]
+    }
+  }
+
+  // Remove Handler for Node
+  if (RUNTIME_LOOKUP[runtime] === RuntimeType.NODE) {
+    const expectedHandler = NODE_HANDLER_LOCATION
     if (config.Handler === expectedHandler) {
       needsUpdate = true
       updateRequest.Handler = oldEnvVars[LAMBDA_HANDLER_ENV_VAR]
@@ -154,7 +172,7 @@ export const calculateUpdateRequest = (config: Lambda.FunctionConfiguration, run
 
   // Remove Layers
   let needsLayerRemoval = false
-  const lambdaLibraryLayerName = RUNTIME_LAYER_LOOKUP[runtime]
+  const lambdaLibraryLayerName = isLayerRuntime(runtime) ? RUNTIME_LAYER_LOOKUP[runtime] : 'not-a-layer-runtime'
   const originalLayerARNs = getLayers(config)
   const layerARNs = (config.Layers ?? [])
     .filter(

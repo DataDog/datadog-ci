@@ -4,27 +4,13 @@ export const DOTNET_RUNTIME = 'dotnetcore3.1'
 export const RUNTIME_LAYER_LOOKUP = {
   [EXTENSION_LAYER_KEY]: DD_LAMBDA_EXTENSION_LAYER_NAME,
   'dotnetcore3.1': 'dd-trace-dotnet',
-  java11: DD_LAMBDA_EXTENSION_LAYER_NAME,
-  'java8.al2': DD_LAMBDA_EXTENSION_LAYER_NAME,
   'nodejs12.x': 'Datadog-Node12-x',
   'nodejs14.x': 'Datadog-Node14-x',
-  'provided.al2': DD_LAMBDA_EXTENSION_LAYER_NAME,
   'python3.6': 'Datadog-Python36',
   'python3.7': 'Datadog-Python37',
   'python3.8': 'Datadog-Python38',
   'python3.9': 'Datadog-Python39',
-  'ruby2.5': 'Datadog-Ruby2-5',
-  'ruby2.7': 'Datadog-Ruby2-7',
 } as const
-
-// type NoHandlerRedirection = "dotnetcore3.1" | "java11" | "java8.al2" | "provided.al2" | "ruby2.5" | "ruby2.7"
-// We exclude the Extension Layer Key in order for the runtime
-// to be used directly in HANDLER_LOCATION.
-export type Runtime = Exclude<keyof typeof RUNTIME_LAYER_LOOKUP, typeof EXTENSION_LAYER_KEY>
-// export type AddRuntimeHandler = Exclude<Runtime, NoHandlerRedirection>
-export const ARM_RUNTIMES = [EXTENSION_LAYER_KEY, 'java8.al2', 'java11', 'provided.al2', 'python3.8', 'python3.9']
-export const ARM64_ARCHITECTURE = 'arm64'
-export const ARM_LAYER_SUFFIX = '-ARM'
 
 export enum RuntimeType {
   DOTNET,
@@ -35,7 +21,7 @@ export enum RuntimeType {
   RUBY,
 }
 
-export const RUNTIME_LOOKUP: { [key: string]: RuntimeType } = {
+export const RUNTIME_LOOKUP = {
   'dotnetcore3.1': RuntimeType.DOTNET,
   java11: RuntimeType.JAVA,
   'java8.al2': RuntimeType.JAVA,
@@ -50,16 +36,16 @@ export const RUNTIME_LOOKUP: { [key: string]: RuntimeType } = {
   'ruby2.7': RuntimeType.RUBY,
 }
 
-const PYTHON_HANDLER_LOCATION = 'datadog_lambda.handler.handler'
-const NODE_HANDLER_LOCATION = '/opt/nodejs/node_modules/datadog-lambda-js/handler.handler'
-export const HANDLER_LOCATION = {
-  'nodejs12.x': NODE_HANDLER_LOCATION,
-  'nodejs14.x': NODE_HANDLER_LOCATION,
-  'python3.6': PYTHON_HANDLER_LOCATION,
-  'python3.7': PYTHON_HANDLER_LOCATION,
-  'python3.8': PYTHON_HANDLER_LOCATION,
-  'python3.9': PYTHON_HANDLER_LOCATION,
-}
+// We exclude the Extension Layer Key in order for the runtime
+// to be used directly in HANDLER_LOCATION.
+export type Runtime = keyof typeof RUNTIME_LOOKUP
+export type LayerRuntime = keyof typeof RUNTIME_LAYER_LOOKUP
+export const ARM_RUNTIMES = [EXTENSION_LAYER_KEY, 'python3.8', 'python3.9']
+export const ARM64_ARCHITECTURE = 'arm64'
+export const ARM_LAYER_SUFFIX = '-ARM'
+
+export const PYTHON_HANDLER_LOCATION = 'datadog_lambda.handler.handler'
+export const NODE_HANDLER_LOCATION = '/opt/nodejs/node_modules/datadog-lambda-js/handler.handler'
 
 export const SITES: string[] = [
   'datadoghq.com',
