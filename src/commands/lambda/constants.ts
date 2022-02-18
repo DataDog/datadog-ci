@@ -1,7 +1,7 @@
 export const DD_LAMBDA_EXTENSION_LAYER_NAME = 'Datadog-Extension'
 export const EXTENSION_LAYER_KEY = 'extension'
 export const DOTNET_RUNTIME = 'dotnetcore3.1'
-export const RUNTIME_LAYER_LOOKUP = {
+export const LAYER_LOOKUP = {
   [EXTENSION_LAYER_KEY]: DD_LAMBDA_EXTENSION_LAYER_NAME,
   'dotnetcore3.1': 'dd-trace-dotnet',
   'nodejs12.x': 'Datadog-Node12-x',
@@ -36,11 +36,9 @@ export const RUNTIME_LOOKUP = {
   'ruby2.7': RuntimeType.RUBY,
 }
 
-// We exclude the Extension Layer Key in order for the runtime
-// to be used directly in HANDLER_LOCATION.
 export type Runtime = keyof typeof RUNTIME_LOOKUP
-export type LayerRuntime = keyof typeof RUNTIME_LAYER_LOOKUP
-export const ARM_RUNTIMES = [EXTENSION_LAYER_KEY, 'python3.8', 'python3.9']
+export type LayerName = keyof typeof LAYER_LOOKUP
+export const ARM_LAYERS = [EXTENSION_LAYER_KEY, 'python3.8', 'python3.9']
 export const ARM64_ARCHITECTURE = 'arm64'
 export const ARM_LAYER_SUFFIX = '-ARM'
 
@@ -91,7 +89,6 @@ export const CORECLR_ENABLE_PROFILING = '1'
 export const CORECLR_PROFILER = '{846F5F1C-F9AE-4B07-969E-05C26BC060D8}'
 export const CORECLR_PROFILER_PATH = '/opt/datadog/Datadog.Trace.ClrProfiler.Native.so'
 export const DD_DOTNET_TRACER_HOME = '/opt/datadog'
-export const DD_INTEGRATIONS = '/opt/datadog/integrations.json'
 
 // Environment variables used in the Lambda environment
 export const API_KEY_ENV_VAR = 'DD_API_KEY'
@@ -112,9 +109,6 @@ export const ENABLE_PROFILING_ENV_VAR = 'CORECLR_ENABLE_PROFILING'
 export const PROFILER_ENV_VAR = 'CORECLR_PROFILER'
 export const PROFILER_PATH_ENV_VAR = 'CORECLR_PROFILER_PATH'
 export const DOTNET_TRACER_HOME_ENV_VAR = 'DD_DOTNET_TRACER_HOME'
-export const JAVA_TOOL_OPTIONS_ENV_VAR = 'JAVA_TOOL_OPTIONS'
-export const LOGS_INJECTION_ENV_VAR = 'DD_LOGS_INJECTION'
-export const JMXFETCH_ENV_VAR = 'DD_JMXFETCH_ENABLED'
 
 // Environment variables used by Datadog CI
 export const CI_SITE_ENV_VAR = 'DATADOG_SITE'

@@ -2,6 +2,7 @@ import {CloudWatchLogs, Lambda} from 'aws-sdk'
 import {
   API_KEY_ENV_VAR,
   API_KEY_SECRET_ARN_ENV_VAR,
+  ARM64_ARCHITECTURE,
   CAPTURE_LAMBDA_PAYLOAD_ENV_VAR,
   CI_API_KEY_ENV_VAR,
   CI_API_KEY_SECRET_ARN_ENV_VAR,
@@ -21,7 +22,8 @@ import {
   FLUSH_TO_LOG_ENV_VAR,
   KMS_API_KEY_ENV_VAR,
   LAMBDA_HANDLER_ENV_VAR,
-  LayerRuntime,
+  LAYER_LOOKUP,
+  LayerName,
   LOG_LEVEL_ENV_VAR,
   MERGE_XRAY_TRACES_ENV_VAR,
   NODE_HANDLER_LOCATION,
@@ -29,7 +31,6 @@ import {
   PROFILER_PATH_ENV_VAR,
   PYTHON_HANDLER_LOCATION,
   Runtime,
-  RUNTIME_LAYER_LOOKUP,
   RUNTIME_LOOKUP,
   RuntimeType,
   SERVICE_ENV_VAR,
@@ -151,7 +152,7 @@ export const calculateUpdateRequest = async (
   if (RUNTIME_LOOKUP[runtime] === RuntimeType.JAVA || RUNTIME_LOOKUP[runtime] === RuntimeType.CUSTOM) {
     if (settings.layerVersion !== undefined) {
       throw new Error(
-        `Only the extension version should be set for the ${runtime} runtime. Please remove the layer version from the instrument command and only use the extension version.`
+        `Only the extensionVersion argument should be set for the ${runtime} runtime. Please remove the layerVersion argument from the instrument command.`
       )
     }
   }
@@ -160,7 +161,16 @@ export const calculateUpdateRequest = async (
   if (RUNTIME_LOOKUP[runtime] === RuntimeType.RUBY) {
     if (settings.layerVersion !== undefined) {
       throw new Error(
-        'The Ruby layer requires extensive manual instrumentation. Please only set the extension version with the instrument command.'
+        'The Ruby layer requires additional manual instrumentation. Please only set the extensionVersion argument with the instrument command.'
+      )
+    }
+  }
+
+  // We don't support ARM Architecture for .NET at this time. Abort instrumentation if the combination is detected.
+  if (RUNTIME_LOOKUP[runtime] === RuntimeType.DOTNET) {
+    if (config.Architectures?.includes(ARM64_ARCHITECTURE)) {
+      throw new Error(
+        'Instrumenting arm64 architecture is not currently supported for .NET. Please only instrument .NET functions using x86_64 architecture.'
       )
     }
   }
@@ -280,25 +290,25 @@ export const calculateUpdateRequest = async (
   const originalLayerARNs = layerARNs
   let needsLayerUpdate = false
   if (isLayerRuntime(runtime)) {
-    const lambdaLibraryLayerArn = getLayerArn(config, config.Runtime as LayerRuntime, region, settings)
-    const lambdaLibraryLayerName = RUNTIME_LAYER_LOOKUP[runtime]
+    const lambdaLibraryLayerArn = getLayerArn(config, config.Runtime as LayerName, region, settings)
+    const lambdaLibraryLayerName = LAYER_LOOKUP[runtime as LayerName]
     let fullLambdaLibraryLayerARN: string | undefined
     if (settings.layerVersion !== undefined || settings.interactive) {
       let layerVersion = settings.layerVersion
       if (settings.interactive && !settings.layerVersion) {
-        layerVersion = await findLatestLayerVersion(config.Runtime as LayerRuntime, region)
+        layerVersion = await findLatestLayerVersion(config.Runtime as LayerName, region)
       }
       fullLambdaLibraryLayerARN = `${lambdaLibraryLayerArn}:${layerVersion}`
     }
     layerARNs = addLayerArn(fullLambdaLibraryLayerARN, lambdaLibraryLayerName, layerARNs)
   }
 
-  const lambdaExtensionLayerArn = getLayerArn(config, EXTENSION_LAYER_KEY as LayerRuntime, region, settings)
+  const lambdaExtensionLayerArn = getLayerArn(config, EXTENSION_LAYER_KEY as LayerName, region, settings)
   let fullExtensionLayerARN: string | undefined
   if (settings.extensionVersion !== undefined || settings.interactive) {
     let extensionVersion = settings.extensionVersion
     if (settings.interactive && !settings.extensionVersion) {
-      extensionVersion = await findLatestLayerVersion(EXTENSION_LAYER_KEY as LayerRuntime, region)
+      extensionVersion = await findLatestLayerVersion(EXTENSION_LAYER_KEY as LayerName, region)
     }
     fullExtensionLayerARN = `${lambdaExtensionLayerArn}:${extensionVersion}`
   }

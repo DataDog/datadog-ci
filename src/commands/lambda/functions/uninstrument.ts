@@ -11,6 +11,8 @@ import {
   FLUSH_TO_LOG_ENV_VAR,
   KMS_API_KEY_ENV_VAR,
   LAMBDA_HANDLER_ENV_VAR,
+  LAYER_LOOKUP,
+  LayerName,
   LOG_LEVEL_ENV_VAR,
   MERGE_XRAY_TRACES_ENV_VAR,
   NODE_HANDLER_LOCATION,
@@ -18,7 +20,6 @@ import {
   PROFILER_PATH_ENV_VAR,
   PYTHON_HANDLER_LOCATION,
   Runtime,
-  RUNTIME_LAYER_LOOKUP,
   RUNTIME_LOOKUP,
   RuntimeType,
   SERVICE_ENV_VAR,
@@ -29,13 +30,7 @@ import {
 import {FunctionConfiguration, LogGroupConfiguration, TagConfiguration} from '../interfaces'
 import {calculateLogGroupRemoveRequest} from '../loggroup'
 import {calculateTagRemoveRequest} from '../tags'
-import {
-  getLambdaFunctionConfigs,
-  getLambdaFunctionConfigsFromRegex,
-  getLayers,
-  isLayerRuntime,
-  isSupportedRuntime,
-} from './commons'
+import {getLambdaFunctionConfigs, getLambdaFunctionConfigsFromRegex, getLayers, isSupportedRuntime} from './commons'
 
 export const getUninstrumentedFunctionConfigs = async (
   lambda: Lambda,
@@ -172,7 +167,7 @@ export const calculateUpdateRequest = (config: Lambda.FunctionConfiguration, run
 
   // Remove Layers
   let needsLayerRemoval = false
-  const lambdaLibraryLayerName = isLayerRuntime(runtime) ? RUNTIME_LAYER_LOOKUP[runtime] : 'not-a-layer-runtime'
+  const lambdaLibraryLayerName = LAYER_LOOKUP[runtime as LayerName]
   const originalLayerARNs = getLayers(config)
   const layerARNs = (config.Layers ?? [])
     .filter(
