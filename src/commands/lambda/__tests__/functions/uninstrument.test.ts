@@ -2,11 +2,15 @@ jest.mock('../../loggroup')
 import {
   API_KEY_ENV_VAR,
   API_KEY_SECRET_ARN_ENV_VAR,
+  DOTNET_TRACER_HOME_ENV_VAR,
+  ENABLE_PROFILING_ENV_VAR,
   ENVIRONMENT_ENV_VAR,
   FLUSH_TO_LOG_ENV_VAR,
   LAMBDA_HANDLER_ENV_VAR,
   LOG_LEVEL_ENV_VAR,
   MERGE_XRAY_TRACES_ENV_VAR,
+  PROFILER_ENV_VAR,
+  PROFILER_PATH_ENV_VAR,
   SERVICE_ENV_VAR,
   SITE_ENV_VAR,
   SUBSCRIPTION_FILTER_NAME,
@@ -251,7 +255,50 @@ describe('uninstrument', () => {
         }
       `)
     })
+
+    test('correctly removes .NET env vars', async () => {
+      const lambda = makeMockLambda({
+        'arn:aws:lambda:us-east-1:000000000000:function:uninstrument': {
+          Environment: {
+            Variables: {
+              [FLUSH_TO_LOG_ENV_VAR]: 'false',
+              [LOG_LEVEL_ENV_VAR]: 'debug',
+              [MERGE_XRAY_TRACES_ENV_VAR]: 'false',
+              [SITE_ENV_VAR]: 'datadoghq.com',
+              [TRACE_ENABLED_ENV_VAR]: 'false',
+              [SERVICE_ENV_VAR]: 'middletier',
+              [ENVIRONMENT_ENV_VAR]: 'staging',
+              [VERSION_ENV_VAR]: '0.2',
+              [ENABLE_PROFILING_ENV_VAR]: '1',
+              [PROFILER_ENV_VAR]: '{846F5F1C-F9AE-4B07-969E-05C26BC060D8}',
+              [PROFILER_PATH_ENV_VAR]: '/opt/datadog/Datadog.Trace.ClrProfiler.Native.so',
+              [DOTNET_TRACER_HOME_ENV_VAR]: '/opt/datadog',
+            },
+          },
+          FunctionArn: 'arn:aws:lambda:us-east-1:000000000000:function:uninstrument',
+          Runtime: 'dotnetcore3.1',
+        },
+      })
+      const cloudWatch = makeMockCloudWatchLogs({})
+
+      const result = await getUninstrumentedFunctionConfigs(
+        lambda as any,
+        cloudWatch as any,
+        ['arn:aws:lambda:us-east-1:000000000000:function:uninstrument'],
+        undefined
+      )
+
+      expect(result[0].updateRequest).toMatchInlineSnapshot(`
+          Object {
+            "Environment": Object {
+              "Variables": Object {},
+            },
+            "FunctionName": "arn:aws:lambda:us-east-1:000000000000:function:uninstrument",
+          }
+        `)
+    })
   })
+
   describe('getUninstrumentedFunctionConfig', () => {
     const OLD_ENV = process.env
     beforeEach(() => {

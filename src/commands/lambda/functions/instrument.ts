@@ -2,23 +2,35 @@ import {CloudWatchLogs, Lambda} from 'aws-sdk'
 import {
   API_KEY_ENV_VAR,
   API_KEY_SECRET_ARN_ENV_VAR,
+  ARM64_ARCHITECTURE,
   CAPTURE_LAMBDA_PAYLOAD_ENV_VAR,
   CI_API_KEY_ENV_VAR,
   CI_API_KEY_SECRET_ARN_ENV_VAR,
   CI_KMS_API_KEY_ENV_VAR,
   CI_SITE_ENV_VAR,
+  CORECLR_ENABLE_PROFILING,
+  CORECLR_PROFILER,
+  CORECLR_PROFILER_PATH,
+  DD_DOTNET_TRACER_HOME,
   DD_LAMBDA_EXTENSION_LAYER_NAME,
+  DOTNET_RUNTIME,
+  DOTNET_TRACER_HOME_ENV_VAR,
+  ENABLE_PROFILING_ENV_VAR,
   ENVIRONMENT_ENV_VAR,
   EXTENSION_LAYER_KEY,
   EXTRA_TAGS_ENV_VAR,
   FLUSH_TO_LOG_ENV_VAR,
-  HANDLER_LOCATION,
   KMS_API_KEY_ENV_VAR,
   LAMBDA_HANDLER_ENV_VAR,
+  LAYER_LOOKUP,
+  LayerKey,
   LOG_LEVEL_ENV_VAR,
   MERGE_XRAY_TRACES_ENV_VAR,
+  NODE_HANDLER_LOCATION,
+  PROFILER_ENV_VAR,
+  PROFILER_PATH_ENV_VAR,
+  PYTHON_HANDLER_LOCATION,
   Runtime,
-  RUNTIME_LAYER_LOOKUP,
   RUNTIME_LOOKUP,
   RuntimeType,
   SERVICE_ENV_VAR,
@@ -38,6 +50,7 @@ import {
   getLayerArn,
   getLayers,
   isLambdaActive,
+  isLayerRuntime,
   isSupportedRuntime,
 } from './commons'
 
@@ -134,17 +147,51 @@ export const calculateUpdateRequest = async (
   }
   let needsUpdate = false
 
-  // Update Handler
-  const expectedHandler = HANDLER_LOCATION[runtime]
-  if (config.Handler !== expectedHandler) {
-    needsUpdate = true
-    updateRequest.Handler = HANDLER_LOCATION[runtime]
+  if (
+    RUNTIME_LOOKUP[runtime] === RuntimeType.JAVA ||
+    RUNTIME_LOOKUP[runtime] === RuntimeType.CUSTOM ||
+    RUNTIME_LOOKUP[runtime] === RuntimeType.RUBY
+  ) {
+    if (settings.layerVersion !== undefined) {
+      throw new Error(
+        `Only the --extension-version argument should be set for the ${runtime} runtime. Please remove the --layer-version argument from the instrument command.`
+      )
+    }
+  }
+
+  // We don't support ARM Architecture for .NET at this time. Abort instrumentation if the combination is detected.
+  if (RUNTIME_LOOKUP[runtime] === RuntimeType.DOTNET) {
+    if (config.Architectures?.includes(ARM64_ARCHITECTURE)) {
+      throw new Error(
+        'Instrumenting arm64 architecture is not currently supported for .NET. Please only instrument .NET functions using x86_64 architecture.'
+      )
+    }
+  }
+
+  // Update Python Handler
+  if (RUNTIME_LOOKUP[runtime] === RuntimeType.PYTHON) {
+    const expectedHandler = PYTHON_HANDLER_LOCATION
+    if (config.Handler !== expectedHandler) {
+      needsUpdate = true
+      updateRequest.Handler = PYTHON_HANDLER_LOCATION
+    }
+  }
+
+  // Update Node Handler
+  if (RUNTIME_LOOKUP[runtime] === RuntimeType.NODE) {
+    const expectedHandler = NODE_HANDLER_LOCATION
+    if (config.Handler !== expectedHandler) {
+      needsUpdate = true
+      updateRequest.Handler = NODE_HANDLER_LOCATION
+    }
   }
 
   // Update Env Vars
-  if (oldEnvVars[LAMBDA_HANDLER_ENV_VAR] === undefined) {
-    needsUpdate = true
-    changedEnvVars[LAMBDA_HANDLER_ENV_VAR] = config.Handler ?? ''
+  if (RUNTIME_LOOKUP[runtime] === RuntimeType.PYTHON || RUNTIME_LOOKUP[runtime] === RuntimeType.NODE) {
+    if (oldEnvVars[LAMBDA_HANDLER_ENV_VAR] === undefined) {
+      needsUpdate = true
+      changedEnvVars[LAMBDA_HANDLER_ENV_VAR] = config.Handler ?? ''
+    }
   }
 
   // KMS > Secrets Manager > API Key
@@ -220,34 +267,45 @@ export const calculateUpdateRequest = async (
     }
   }
 
+  if (runtime === DOTNET_RUNTIME) {
+    needsUpdate = true
+    newEnvVars[ENABLE_PROFILING_ENV_VAR] = CORECLR_ENABLE_PROFILING
+    newEnvVars[PROFILER_ENV_VAR] = CORECLR_PROFILER
+    newEnvVars[PROFILER_PATH_ENV_VAR] = CORECLR_PROFILER_PATH
+    newEnvVars[DOTNET_TRACER_HOME_ENV_VAR] = DD_DOTNET_TRACER_HOME
+  }
+
   updateRequest.Environment = {
     Variables: newEnvVars,
   }
 
-  // Update Layers
-  const lambdaLibraryLayerArn = getLayerArn(config, config.Runtime as Runtime, region, settings)
-  const lambraLibraryLayerName = RUNTIME_LAYER_LOOKUP[runtime]
-  let fullLambdaLibraryLayerARN: string | undefined
-  if (settings.layerVersion !== undefined || settings.interactive) {
-    let layerVersion = settings.layerVersion
-    if (settings.interactive && !settings.layerVersion) {
-      layerVersion = await findLatestLayerVersion(config.Runtime as Runtime, region)
+  let layerARNs = getLayers(config)
+  const originalLayerARNs = layerARNs
+  let needsLayerUpdate = false
+  if (isLayerRuntime(runtime)) {
+    const lambdaLibraryLayerArn = getLayerArn(config, config.Runtime as LayerKey, region, settings)
+    const lambdaLibraryLayerName = LAYER_LOOKUP[runtime as LayerKey]
+    let fullLambdaLibraryLayerARN: string | undefined
+    if (settings.layerVersion !== undefined || settings.interactive) {
+      let layerVersion = settings.layerVersion
+      if (settings.interactive && !settings.layerVersion) {
+        layerVersion = await findLatestLayerVersion(config.Runtime as LayerKey, region)
+      }
+      fullLambdaLibraryLayerARN = `${lambdaLibraryLayerArn}:${layerVersion}`
     }
-    fullLambdaLibraryLayerARN = `${lambdaLibraryLayerArn}:${layerVersion}`
+    layerARNs = addLayerArn(fullLambdaLibraryLayerARN, lambdaLibraryLayerName, layerARNs)
   }
-  const lambdaExtensionLayerArn = getLayerArn(config, EXTENSION_LAYER_KEY as Runtime, region, settings)
+
+  const lambdaExtensionLayerArn = getLayerArn(config, EXTENSION_LAYER_KEY as LayerKey, region, settings)
   let fullExtensionLayerARN: string | undefined
   if (settings.extensionVersion !== undefined || settings.interactive) {
     let extensionVersion = settings.extensionVersion
     if (settings.interactive && !settings.extensionVersion) {
-      extensionVersion = await findLatestLayerVersion(EXTENSION_LAYER_KEY as Runtime, region)
+      extensionVersion = await findLatestLayerVersion(EXTENSION_LAYER_KEY as LayerKey, region)
     }
     fullExtensionLayerARN = `${lambdaExtensionLayerArn}:${extensionVersion}`
   }
-  let layerARNs = getLayers(config)
-  const originalLayerARNs = layerARNs
-  let needsLayerUpdate = false
-  layerARNs = addLayerArn(fullLambdaLibraryLayerARN, lambraLibraryLayerName, layerARNs)
+
   layerARNs = addLayerArn(fullExtensionLayerARN, DD_LAMBDA_EXTENSION_LAYER_NAME, layerARNs)
 
   if (originalLayerARNs.sort().join(',') !== layerARNs.sort().join(',')) {

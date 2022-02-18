@@ -3,7 +3,7 @@ import {GetFunctionRequest} from 'aws-sdk/clients/lambda'
 import {
   ARM64_ARCHITECTURE,
   ARM_LAYER_SUFFIX,
-  ARM_RUNTIMES,
+  ARM_LAYERS,
   AWS_ACCESS_KEY_ID_ENV_VAR,
   AWS_SECRET_ACCESS_KEY_ENV_VAR,
   CI_API_KEY_ENV_VAR,
@@ -12,10 +12,12 @@ import {
   CI_SITE_ENV_VAR,
   DEFAULT_LAYER_AWS_ACCOUNT,
   GOVCLOUD_LAYER_AWS_ACCOUNT,
+  LAYER_LOOKUP,
+  LayerKey,
   LIST_FUNCTIONS_MAX_RETRY_COUNT,
   MAX_LAMBDA_STATE_CHECK_ATTEMPTS,
   Runtime,
-  RUNTIME_LAYER_LOOKUP,
+  RUNTIME_LOOKUP,
   SITES,
 } from '../constants'
 import {FunctionConfiguration, InstrumentationSettings} from '../interfaces'
@@ -114,13 +116,13 @@ export const collectFunctionsByRegion = (
  * @param region the region where the layer is stored.
  * @returns the latest version of the layer to find.
  */
-export const findLatestLayerVersion = async (runtime: Runtime, region: string) => {
+export const findLatestLayerVersion = async (layer: LayerKey, region: string) => {
   let latestVersion = 0
 
   let searchStep = latestVersion > 0 ? 1 : 100
   let layerVersion = latestVersion + searchStep
   const account = region.startsWith('us-gov') ? GOVCLOUD_LAYER_AWS_ACCOUNT : DEFAULT_LAYER_AWS_ACCOUNT
-  const layerName = RUNTIME_LAYER_LOOKUP[runtime]
+  const layerName = LAYER_LOOKUP[layer]
   let foundLatestVersion = false
   const lambda = new Lambda({region})
   while (!foundLatestVersion) {
@@ -191,6 +193,14 @@ export const isMissingDatadogEnvVars = () => isMissingDatadogSiteEnvVar() || isM
 
 export const getAllLambdaFunctionConfigs = async (lambda: Lambda) => getLambdaFunctionConfigsFromRegex(lambda, '.')
 
+// Returns false if not all runtimes are of the same RuntimeType across multiple functions
+export const checkRuntimeTypesAreUniform = (configList: FunctionConfiguration[]) =>
+  configList
+    .map((item) => item.lambdaConfig.Runtime)
+    .every(
+      (runtime) =>
+        RUNTIME_LOOKUP[runtime! as Runtime] === RUNTIME_LOOKUP[configList[0].lambdaConfig.Runtime! as Runtime]
+    )
 /**
  * Given a Lambda instance and a regular expression,
  * returns all the Function Configurations that match.
@@ -258,12 +268,12 @@ export const getLambdaFunctionConfigs = (
  */
 export const getLayerArn = (
   config: Lambda.FunctionConfiguration,
-  runtime: Runtime,
+  layer: LayerKey,
   region: string,
   settings?: InstrumentationSettings
 ) => {
-  let layerName = RUNTIME_LAYER_LOOKUP[runtime]
-  if (ARM_RUNTIMES.includes(runtime) && config.Architectures?.includes(ARM64_ARCHITECTURE)) {
+  let layerName = LAYER_LOOKUP[layer]
+  if (ARM_LAYERS.includes(layer) && config.Architectures?.includes(ARM64_ARCHITECTURE)) {
     layerName += ARM_LAYER_SUFFIX
   }
   const account = settings?.layerAWSAccount ?? DEFAULT_LAYER_AWS_ACCOUNT
@@ -359,11 +369,10 @@ export const isLambdaActive = async (
  * @param runtime a string representing a Lambda FunctionConfiguration Runtime.
  * @returns if a runtime is supported.
  */
-export const isSupportedRuntime = (runtime?: string): runtime is Runtime => {
-  const lookup = RUNTIME_LAYER_LOOKUP as Record<string, string>
+export const isSupportedRuntime = (runtime?: string): runtime is Runtime =>
+  runtime !== undefined && RUNTIME_LOOKUP[runtime as Runtime] !== undefined
 
-  return runtime !== undefined && lookup[runtime] !== undefined
-}
+export const isLayerRuntime = (runtime: string): runtime is LayerKey => LAYER_LOOKUP[runtime as LayerKey] !== undefined
 
 export const sentenceMatchesRegEx = (sentence: string, regex: RegExp) => sentence.match(regex)
 

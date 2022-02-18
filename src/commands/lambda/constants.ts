@@ -1,7 +1,9 @@
 export const DD_LAMBDA_EXTENSION_LAYER_NAME = 'Datadog-Extension'
 export const EXTENSION_LAYER_KEY = 'extension'
-export const RUNTIME_LAYER_LOOKUP = {
+export const DOTNET_RUNTIME = 'dotnetcore3.1'
+export const LAYER_LOOKUP = {
   [EXTENSION_LAYER_KEY]: DD_LAMBDA_EXTENSION_LAYER_NAME,
+  'dotnetcore3.1': 'dd-trace-dotnet',
   'nodejs12.x': 'Datadog-Node12-x',
   'nodejs14.x': 'Datadog-Node14-x',
   'python3.6': 'Datadog-Python36',
@@ -9,38 +11,39 @@ export const RUNTIME_LAYER_LOOKUP = {
   'python3.8': 'Datadog-Python38',
   'python3.9': 'Datadog-Python39',
 } as const
-// We exclude the Extension Layer Key in order for the runtime
-// to be used directly in HANDLER_LOCATION.
-export type Runtime = Exclude<keyof typeof RUNTIME_LAYER_LOOKUP, typeof EXTENSION_LAYER_KEY>
-
-export const ARM_RUNTIMES = [EXTENSION_LAYER_KEY, 'python3.8', 'python3.9']
-export const ARM64_ARCHITECTURE = 'arm64'
-export const ARM_LAYER_SUFFIX = '-ARM'
 
 export enum RuntimeType {
+  DOTNET,
+  CUSTOM,
+  JAVA,
   NODE,
   PYTHON,
+  RUBY,
 }
 
-export const RUNTIME_LOOKUP: {[key: string]: RuntimeType} = {
+export const RUNTIME_LOOKUP = {
+  'dotnetcore3.1': RuntimeType.DOTNET,
+  java11: RuntimeType.JAVA,
+  'java8.al2': RuntimeType.JAVA,
   'nodejs12.x': RuntimeType.NODE,
   'nodejs14.x': RuntimeType.NODE,
+  'provided.al2': RuntimeType.CUSTOM,
   'python3.6': RuntimeType.PYTHON,
   'python3.7': RuntimeType.PYTHON,
   'python3.8': RuntimeType.PYTHON,
   'python3.9': RuntimeType.PYTHON,
+  'ruby2.5': RuntimeType.RUBY,
+  'ruby2.7': RuntimeType.RUBY,
 }
 
-const PYTHON_HANDLER_LOCATION = 'datadog_lambda.handler.handler'
-const NODE_HANDLER_LOCATION = '/opt/nodejs/node_modules/datadog-lambda-js/handler.handler'
-export const HANDLER_LOCATION = {
-  'nodejs12.x': NODE_HANDLER_LOCATION,
-  'nodejs14.x': NODE_HANDLER_LOCATION,
-  'python3.6': PYTHON_HANDLER_LOCATION,
-  'python3.7': PYTHON_HANDLER_LOCATION,
-  'python3.8': PYTHON_HANDLER_LOCATION,
-  'python3.9': PYTHON_HANDLER_LOCATION,
-}
+export type Runtime = keyof typeof RUNTIME_LOOKUP
+export type LayerKey = keyof typeof LAYER_LOOKUP
+export const ARM_LAYERS = [EXTENSION_LAYER_KEY, 'python3.8', 'python3.9']
+export const ARM64_ARCHITECTURE = 'arm64'
+export const ARM_LAYER_SUFFIX = '-ARM'
+
+export const PYTHON_HANDLER_LOCATION = 'datadog_lambda.handler.handler'
+export const NODE_HANDLER_LOCATION = '/opt/nodejs/node_modules/datadog-lambda-js/handler.handler'
 
 export const SITES: string[] = [
   'datadoghq.com',
@@ -81,6 +84,12 @@ export const GOVCLOUD_LAYER_AWS_ACCOUNT = '002406178527'
 export const SUBSCRIPTION_FILTER_NAME = 'datadog-ci-filter'
 export const TAG_VERSION_NAME = 'dd_sls_ci'
 
+// Export const values for .NET tracer
+export const CORECLR_ENABLE_PROFILING = '1'
+export const CORECLR_PROFILER = '{846F5F1C-F9AE-4B07-969E-05C26BC060D8}'
+export const CORECLR_PROFILER_PATH = '/opt/datadog/Datadog.Trace.ClrProfiler.Native.so'
+export const DD_DOTNET_TRACER_HOME = '/opt/datadog'
+
 // Environment variables used in the Lambda environment
 export const API_KEY_ENV_VAR = 'DD_API_KEY'
 export const API_KEY_SECRET_ARN_ENV_VAR = 'DD_API_KEY_SECRET_ARN'
@@ -96,6 +105,10 @@ export const VERSION_ENV_VAR = 'DD_VERSION'
 export const ENVIRONMENT_ENV_VAR = 'DD_ENV'
 export const EXTRA_TAGS_ENV_VAR = 'DD_TAGS'
 export const CAPTURE_LAMBDA_PAYLOAD_ENV_VAR = 'DD_CAPTURE_LAMBDA_PAYLOAD'
+export const ENABLE_PROFILING_ENV_VAR = 'CORECLR_ENABLE_PROFILING'
+export const PROFILER_ENV_VAR = 'CORECLR_PROFILER'
+export const PROFILER_PATH_ENV_VAR = 'CORECLR_PROFILER_PATH'
+export const DOTNET_TRACER_HOME_ENV_VAR = 'DD_DOTNET_TRACER_HOME'
 
 // Environment variables used by Datadog CI
 export const CI_SITE_ENV_VAR = 'DATADOG_SITE'

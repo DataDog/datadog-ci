@@ -6,6 +6,7 @@ import {getCommitInfo, newSimpleGit} from '../git-metadata/git'
 import {UploadCommand} from '../git-metadata/upload'
 import {AWS_DEFAULT_REGION_ENV_VAR, EXTRA_TAGS_REG_EXP} from './constants'
 import {
+  checkRuntimeTypesAreUniform,
   coerceBoolean,
   collectFunctionsByRegion,
   getAllLambdaFunctionConfigs,
@@ -207,6 +208,13 @@ export class InstrumentCommand extends Command {
     }
 
     const configList = configGroups.map((group) => group.configs).reduce((a, b) => a.concat(b))
+
+    if (!checkRuntimeTypesAreUniform(configList)) {
+      throw Error(
+        'Detected Lambda functions using different runtimes. Please only instrument batches of functions that share a similar runtime'
+      )
+    }
+
     this.printPlannedActions(configList)
     if (this.dryRun || configList.length === 0) {
       return 0
