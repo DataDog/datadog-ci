@@ -194,7 +194,7 @@ export const isMissingDatadogEnvVars = () => isMissingDatadogSiteEnvVar() || isM
 export const getAllLambdaFunctionConfigs = async (lambda: Lambda) => getLambdaFunctionConfigsFromRegex(lambda, '.')
 
 // Returns false if not all runtimes are of the same RuntimeType across multiple functions
-export const runtimesAreUniform = (configList: FunctionConfiguration[]) =>
+export const checkRuntimeTypesAreUniform = (configList: FunctionConfiguration[]) =>
   configList
     .map((item) => item.lambdaConfig.Runtime)
     .every(

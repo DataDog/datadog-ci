@@ -22,6 +22,7 @@ import {
 } from '../../constants'
 import {
   addLayerArn,
+  checkRuntimeTypesAreUniform,
   coerceBoolean,
   collectFunctionsByRegion,
   findLatestLayerVersion,
@@ -32,7 +33,6 @@ import {
   isMissingAWSCredentials,
   isMissingDatadogEnvVars,
   isMissingDatadogSiteEnvVar,
-  runtimesAreUniform,
   sentenceMatchesRegEx,
   updateLambdaFunctionConfigs,
 } from '../../functions/commons'
@@ -677,7 +677,7 @@ describe('commons', () => {
           },
         },
       ]
-      expect(runtimesAreUniform(configs)).toBeTruthy()
+      expect(checkRuntimeTypesAreUniform(configs)).toBe(true)
     })
 
     test('returns false if runtimes are not uniform', async () => {
@@ -699,7 +699,7 @@ describe('commons', () => {
           },
         },
       ]
-      expect(runtimesAreUniform(configs)).toBeFalsy()
+      expect(checkRuntimeTypesAreUniform(configs)).toBe(false)
     })
   })
 })

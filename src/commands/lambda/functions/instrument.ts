@@ -147,8 +147,6 @@ export const calculateUpdateRequest = async (
   }
   let needsUpdate = false
 
-  // If a layer version is set for Java or a custom runtime.
-  // We need to inform the customer to only set the extension argument.
   if (
     RUNTIME_LOOKUP[runtime] === RuntimeType.JAVA ||
     RUNTIME_LOOKUP[runtime] === RuntimeType.CUSTOM ||
