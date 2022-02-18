@@ -15,7 +15,7 @@ import {
   GOVCLOUD_LAYER_AWS_ACCOUNT,
   LAMBDA_HANDLER_ENV_VAR,
   LAYER_LOOKUP,
-  LayerName,
+  LayerKey,
   MERGE_XRAY_TRACES_ENV_VAR,
   Runtime,
   TRACE_ENABLED_ENV_VAR,
@@ -32,10 +32,12 @@ import {
   isMissingAWSCredentials,
   isMissingDatadogEnvVars,
   isMissingDatadogSiteEnvVar,
+  runtimesAreUniform,
   sentenceMatchesRegEx,
   updateLambdaFunctionConfigs,
 } from '../../functions/commons'
 import {InstrumentCommand} from '../../instrument'
+import {FunctionConfiguration} from '../../interfaces'
 import {createCommand, makeMockCloudWatchLogs, makeMockLambda, mockAwsAccount} from '../fixtures'
 
 describe('commons', () => {
@@ -52,7 +54,7 @@ describe('commons', () => {
       const region = 'sa-east-1'
       const lambdaLibraryLayerName = LAYER_LOOKUP[runtime]
       const fullLambdaLibraryLayerArn = getLayerArn(config, config.Runtime, region) + ':49'
-      const fullExtensionLayerArn = getLayerArn(config, EXTENSION_LAYER_KEY as LayerName, region) + ':11'
+      const fullExtensionLayerArn = getLayerArn(config, EXTENSION_LAYER_KEY as LayerKey, region) + ':11'
       layerARNs = addLayerArn(fullLambdaLibraryLayerArn, lambdaLibraryLayerName, layerARNs)
       layerARNs = addLayerArn(fullExtensionLayerArn, DD_LAMBDA_EXTENSION_LAYER_NAME, layerARNs)
 
@@ -75,7 +77,7 @@ describe('commons', () => {
       const region = 'sa-east-1'
       const lambdaLibraryLayerName = LAYER_LOOKUP[runtime]
       const fullLambdaLibraryLayerArn = getLayerArn(config, config.Runtime, region) + ':49'
-      const fullExtensionLayerArn = getLayerArn(config, EXTENSION_LAYER_KEY as LayerName, region) + ':11'
+      const fullExtensionLayerArn = getLayerArn(config, EXTENSION_LAYER_KEY as LayerKey, region) + ':11'
       layerARNs = addLayerArn(fullLambdaLibraryLayerArn, lambdaLibraryLayerName, layerARNs)
       layerARNs = addLayerArn(fullExtensionLayerArn, DD_LAMBDA_EXTENSION_LAYER_NAME, layerARNs)
 
@@ -422,7 +424,7 @@ describe('commons', () => {
         tracingEnabled: false,
       }
       const region = 'sa-east-1'
-      const layerArn = getLayerArn({}, EXTENSION_LAYER_KEY as LayerName, region, settings)
+      const layerArn = getLayerArn({}, EXTENSION_LAYER_KEY as LayerKey, region, settings)
       expect(layerArn).toEqual(`arn:aws:lambda:${region}:${mockAwsAccount}:layer:Datadog-Extension`)
     })
 
@@ -437,7 +439,7 @@ describe('commons', () => {
         tracingEnabled: false,
       }
       const region = 'sa-east-1'
-      const layerArn = getLayerArn(config, EXTENSION_LAYER_KEY as LayerName, region, settings)
+      const layerArn = getLayerArn(config, EXTENSION_LAYER_KEY as LayerKey, region, settings)
       expect(layerArn).toEqual(`arn:aws:lambda:${region}:${mockAwsAccount}:layer:Datadog-Extension-ARM`)
     })
 
@@ -449,7 +451,7 @@ describe('commons', () => {
         tracingEnabled: false,
       }
       const region = 'us-gov-1'
-      const layerArn = getLayerArn({}, EXTENSION_LAYER_KEY as LayerName, region, settings)
+      const layerArn = getLayerArn({}, EXTENSION_LAYER_KEY as LayerKey, region, settings)
       expect(layerArn).toEqual(`arn:aws-us-gov:lambda:${region}:${GOVCLOUD_LAYER_AWS_ACCOUNT}:layer:Datadog-Extension`)
     })
 
@@ -464,7 +466,7 @@ describe('commons', () => {
         tracingEnabled: false,
       }
       const region = 'us-gov-1'
-      const layerArn = getLayerArn(config, EXTENSION_LAYER_KEY as LayerName, region, settings)
+      const layerArn = getLayerArn(config, EXTENSION_LAYER_KEY as LayerKey, region, settings)
       expect(layerArn).toEqual(
         `arn:aws-us-gov:lambda:${region}:${GOVCLOUD_LAYER_AWS_ACCOUNT}:layer:Datadog-Extension-ARM`
       )
@@ -482,7 +484,7 @@ describe('commons', () => {
         tracingEnabled: false,
       }
       const region = 'sa-east-1'
-      const layerArn = getLayerArn(config, config.Runtime as LayerName, region, settings)
+      const layerArn = getLayerArn(config, config.Runtime as LayerKey, region, settings)
       expect(layerArn).toEqual(`arn:aws:lambda:${region}:${mockAwsAccount}:layer:Datadog-Node12-x`)
     })
 
@@ -499,7 +501,7 @@ describe('commons', () => {
         tracingEnabled: false,
       }
       const region = 'sa-east-1'
-      const layerArn = getLayerArn(config, config.Runtime as LayerName, region, settings)
+      const layerArn = getLayerArn(config, config.Runtime as LayerKey, region, settings)
       expect(layerArn).toEqual(`arn:aws:lambda:${region}:${mockAwsAccount}:layer:Datadog-Python39-ARM`)
     })
     test('gets us-gov-1 Python37 gov cloud Lambda Library layer ARN', async () => {
@@ -514,7 +516,7 @@ describe('commons', () => {
         tracingEnabled: false,
       }
       const region = 'us-gov-1'
-      const layerArn = getLayerArn(config, config.Runtime as LayerName, region, settings)
+      const layerArn = getLayerArn(config, config.Runtime as LayerKey, region, settings)
       expect(layerArn).toEqual(`arn:aws-us-gov:lambda:${region}:${GOVCLOUD_LAYER_AWS_ACCOUNT}:layer:Datadog-Python37`)
     })
     test('gets us-gov-1 Python39 gov cloud arm64 Lambda Library layer ARN', async () => {
@@ -530,7 +532,7 @@ describe('commons', () => {
         tracingEnabled: false,
       }
       const region = 'us-gov-1'
-      const layerArn = getLayerArn(config, config.Runtime as LayerName, region, settings)
+      const layerArn = getLayerArn(config, config.Runtime as LayerKey, region, settings)
       expect(layerArn).toEqual(
         `arn:aws-us-gov:lambda:${region}:${GOVCLOUD_LAYER_AWS_ACCOUNT}:layer:Datadog-Python39-ARM`
       )
@@ -653,6 +655,51 @@ describe('commons', () => {
         Handler: '/opt/nodejs/node_modules/datadog-lambda-js/handler.handler',
         Layers: ['arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Node12-x:22'],
       })
+    })
+  })
+  describe('Correctly handles multiple runtimes', () => {
+    test('returns true if all runtimes are uniform', async () => {
+      const configs: FunctionConfiguration[] = [
+        {
+          functionARN: 'arn:aws:lambda:us-east-1:000000000000:function:func1',
+          lambdaConfig: {
+            FunctionArn: 'arn:aws:lambda:us-east-1:000000000000:function:func1',
+            Handler: 'index.handler',
+            Runtime: 'nodejs14.x',
+          },
+        },
+        {
+          functionARN: 'arn:aws:lambda:us-east-1:000000000000:function:func2',
+          lambdaConfig: {
+            FunctionArn: 'arn:aws:lambda:us-east-1:000000000000:function:func2',
+            Handler: 'index.handler',
+            Runtime: 'nodejs12.x',
+          },
+        },
+      ]
+      expect(runtimesAreUniform(configs)).toBeTruthy()
+    })
+
+    test('returns false if runtimes are not uniform', async () => {
+      const configs: FunctionConfiguration[] = [
+        {
+          functionARN: 'arn:aws:lambda:us-east-1:000000000000:function:func1',
+          lambdaConfig: {
+            FunctionArn: 'arn:aws:lambda:us-east-1:000000000000:function:func1',
+            Handler: 'index.handler',
+            Runtime: 'nodejs14.x',
+          },
+        },
+        {
+          functionARN: 'arn:aws:lambda:us-east-1:000000000000:function:func2',
+          lambdaConfig: {
+            FunctionArn: 'arn:aws:lambda:us-east-1:000000000000:function:func2',
+            Handler: 'index.handler',
+            Runtime: 'python3.9',
+          },
+        },
+      ]
+      expect(runtimesAreUniform(configs)).toBeFalsy()
     })
   })
 })

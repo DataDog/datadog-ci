@@ -23,7 +23,7 @@ import {
   KMS_API_KEY_ENV_VAR,
   LAMBDA_HANDLER_ENV_VAR,
   LAYER_LOOKUP,
-  LayerName,
+  LayerKey,
   LOG_LEVEL_ENV_VAR,
   MERGE_XRAY_TRACES_ENV_VAR,
   NODE_HANDLER_LOCATION,
@@ -149,19 +149,14 @@ export const calculateUpdateRequest = async (
 
   // If a layer version is set for Java or a custom runtime.
   // We need to inform the customer to only set the extension argument.
-  if (RUNTIME_LOOKUP[runtime] === RuntimeType.JAVA || RUNTIME_LOOKUP[runtime] === RuntimeType.CUSTOM) {
+  if (
+    RUNTIME_LOOKUP[runtime] === RuntimeType.JAVA ||
+    RUNTIME_LOOKUP[runtime] === RuntimeType.CUSTOM ||
+    RUNTIME_LOOKUP[runtime] === RuntimeType.RUBY
+  ) {
     if (settings.layerVersion !== undefined) {
       throw new Error(
-        `Only the extensionVersion argument should be set for the ${runtime} runtime. Please remove the layerVersion argument from the instrument command.`
-      )
-    }
-  }
-  // Ruby requires handler redirection, which needs to be performed manually.
-  // We need to inform the customer to only set the extension and remove they layer version.
-  if (RUNTIME_LOOKUP[runtime] === RuntimeType.RUBY) {
-    if (settings.layerVersion !== undefined) {
-      throw new Error(
-        'The Ruby layer requires additional manual instrumentation. Please only set the extensionVersion argument with the instrument command.'
+        `Only the --extension-version argument should be set for the ${runtime} runtime. Please remove the --layer-version argument from the instrument command.`
       )
     }
   }
@@ -290,25 +285,25 @@ export const calculateUpdateRequest = async (
   const originalLayerARNs = layerARNs
   let needsLayerUpdate = false
   if (isLayerRuntime(runtime)) {
-    const lambdaLibraryLayerArn = getLayerArn(config, config.Runtime as LayerName, region, settings)
-    const lambdaLibraryLayerName = LAYER_LOOKUP[runtime as LayerName]
+    const lambdaLibraryLayerArn = getLayerArn(config, config.Runtime as LayerKey, region, settings)
+    const lambdaLibraryLayerName = LAYER_LOOKUP[runtime as LayerKey]
     let fullLambdaLibraryLayerARN: string | undefined
     if (settings.layerVersion !== undefined || settings.interactive) {
       let layerVersion = settings.layerVersion
       if (settings.interactive && !settings.layerVersion) {
-        layerVersion = await findLatestLayerVersion(config.Runtime as LayerName, region)
+        layerVersion = await findLatestLayerVersion(config.Runtime as LayerKey, region)
       }
       fullLambdaLibraryLayerARN = `${lambdaLibraryLayerArn}:${layerVersion}`
     }
     layerARNs = addLayerArn(fullLambdaLibraryLayerARN, lambdaLibraryLayerName, layerARNs)
   }
 
-  const lambdaExtensionLayerArn = getLayerArn(config, EXTENSION_LAYER_KEY as LayerName, region, settings)
+  const lambdaExtensionLayerArn = getLayerArn(config, EXTENSION_LAYER_KEY as LayerKey, region, settings)
   let fullExtensionLayerARN: string | undefined
   if (settings.extensionVersion !== undefined || settings.interactive) {
     let extensionVersion = settings.extensionVersion
     if (settings.interactive && !settings.extensionVersion) {
-      extensionVersion = await findLatestLayerVersion(EXTENSION_LAYER_KEY as LayerName, region)
+      extensionVersion = await findLatestLayerVersion(EXTENSION_LAYER_KEY as LayerKey, region)
     }
     fullExtensionLayerARN = `${lambdaExtensionLayerArn}:${extensionVersion}`
   }

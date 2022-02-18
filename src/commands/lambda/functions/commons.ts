@@ -13,7 +13,7 @@ import {
   DEFAULT_LAYER_AWS_ACCOUNT,
   GOVCLOUD_LAYER_AWS_ACCOUNT,
   LAYER_LOOKUP,
-  LayerName,
+  LayerKey,
   LIST_FUNCTIONS_MAX_RETRY_COUNT,
   MAX_LAMBDA_STATE_CHECK_ATTEMPTS,
   Runtime,
@@ -116,7 +116,7 @@ export const collectFunctionsByRegion = (
  * @param region the region where the layer is stored.
  * @returns the latest version of the layer to find.
  */
-export const findLatestLayerVersion = async (layer: LayerName, region: string) => {
+export const findLatestLayerVersion = async (layer: LayerKey, region: string) => {
   let latestVersion = 0
 
   let searchStep = latestVersion > 0 ? 1 : 100
@@ -193,6 +193,14 @@ export const isMissingDatadogEnvVars = () => isMissingDatadogSiteEnvVar() || isM
 
 export const getAllLambdaFunctionConfigs = async (lambda: Lambda) => getLambdaFunctionConfigsFromRegex(lambda, '.')
 
+// Returns false if not all runtimes are of the same RuntimeType across multiple functions
+export const runtimesAreUniform = (configList: FunctionConfiguration[]) =>
+  configList
+    .map((item) => item.lambdaConfig.Runtime)
+    .every(
+      (runtime) =>
+        RUNTIME_LOOKUP[runtime! as Runtime] === RUNTIME_LOOKUP[configList[0].lambdaConfig.Runtime! as Runtime]
+    )
 /**
  * Given a Lambda instance and a regular expression,
  * returns all the Function Configurations that match.
@@ -260,7 +268,7 @@ export const getLambdaFunctionConfigs = (
  */
 export const getLayerArn = (
   config: Lambda.FunctionConfiguration,
-  layer: LayerName,
+  layer: LayerKey,
   region: string,
   settings?: InstrumentationSettings
 ) => {
@@ -364,8 +372,7 @@ export const isLambdaActive = async (
 export const isSupportedRuntime = (runtime?: string): runtime is Runtime =>
   runtime !== undefined && RUNTIME_LOOKUP[runtime as Runtime] !== undefined
 
-export const isLayerRuntime = (runtime: string): runtime is LayerName =>
-  LAYER_LOOKUP[runtime as LayerName] !== undefined
+export const isLayerRuntime = (runtime: string): runtime is LayerKey => LAYER_LOOKUP[runtime as LayerKey] !== undefined
 
 export const sentenceMatchesRegEx = (sentence: string, regex: RegExp) => sentence.match(regex)
 

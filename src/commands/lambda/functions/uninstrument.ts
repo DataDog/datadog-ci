@@ -12,7 +12,7 @@ import {
   KMS_API_KEY_ENV_VAR,
   LAMBDA_HANDLER_ENV_VAR,
   LAYER_LOOKUP,
-  LayerName,
+  LayerKey,
   LOG_LEVEL_ENV_VAR,
   MERGE_XRAY_TRACES_ENV_VAR,
   NODE_HANDLER_LOCATION,
@@ -167,7 +167,7 @@ export const calculateUpdateRequest = (config: Lambda.FunctionConfiguration, run
 
   // Remove Layers
   let needsLayerRemoval = false
-  const lambdaLibraryLayerName = LAYER_LOOKUP[runtime as LayerName]
+  const lambdaLibraryLayerName = LAYER_LOOKUP[runtime as LayerKey]
   const originalLayerARNs = getLayers(config)
   const layerARNs = (config.Layers ?? [])
     .filter(

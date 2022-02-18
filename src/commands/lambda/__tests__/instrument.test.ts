@@ -1293,7 +1293,7 @@ ${red('[Error]')} Couldn't fetch Lambda functions. Error: Max retry count exceed
         expect(output).toMatchInlineSnapshot(`
 "${red(
           '[Error]'
-        )} Couldn't fetch Lambda functions. Error: Only the extensionVersion argument should be set for the java8.al2 runtime. Please remove the layerVersion argument from the instrument command.
+        )} Couldn't fetch Lambda functions. Error: Only the --extension-version argument should be set for the java8.al2 runtime. Please remove the --layer-version argument from the instrument command.
 "
 `)
       })
@@ -1337,7 +1337,7 @@ ${red('[Error]')} Couldn't fetch Lambda functions. Error: Max retry count exceed
         expect(output).toMatchInlineSnapshot(`
 "${red(
           '[Error]'
-        )} Couldn't fetch Lambda functions. Error: The Ruby layer requires additional manual instrumentation. Please only set the extensionVersion argument with the instrument command.
+        )} Couldn't fetch Lambda functions. Error: Only the --extension-version argument should be set for the ruby2.7 runtime. Please remove the --layer-version argument from the instrument command.
 "
 `)
       })
@@ -1381,7 +1381,7 @@ ${red('[Error]')} Couldn't fetch Lambda functions. Error: Max retry count exceed
         expect(output).toMatchInlineSnapshot(`
 "${red(
           '[Error]'
-        )} Couldn't fetch Lambda functions. Error: Only the extensionVersion argument should be set for the provided.al2 runtime. Please remove the layerVersion argument from the instrument command.
+        )} Couldn't fetch Lambda functions. Error: Only the --extension-version argument should be set for the provided.al2 runtime. Please remove the --layer-version argument from the instrument command.
 "
 `)
       })

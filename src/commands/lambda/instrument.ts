@@ -4,13 +4,14 @@ import {Cli, Command} from 'clipanion'
 import {parseConfigFile} from '../../helpers/utils'
 import {getCommitInfo, newSimpleGit} from '../git-metadata/git'
 import {UploadCommand} from '../git-metadata/upload'
-import {AWS_DEFAULT_REGION_ENV_VAR, EXTRA_TAGS_REG_EXP, Runtime, RUNTIME_LOOKUP} from './constants'
+import {AWS_DEFAULT_REGION_ENV_VAR, EXTRA_TAGS_REG_EXP} from './constants'
 import {
   coerceBoolean,
   collectFunctionsByRegion,
   getAllLambdaFunctionConfigs,
   isMissingAWSCredentials,
   isMissingDatadogEnvVars,
+  runtimesAreUniform,
   sentenceMatchesRegEx,
   updateLambdaFunctionConfigs,
   willUpdateFunctionConfigs,
@@ -207,15 +208,9 @@ export class InstrumentCommand extends Command {
     }
 
     const configList = configGroups.map((group) => group.configs).reduce((a, b) => a.concat(b))
-    // Returns false if not all runtimes are of the same RuntimeType across multiple functions
-    const runtimesAreUniform = configList
-      .map((item) => item.lambdaConfig.Runtime)
-      .every(
-        (runtime) =>
-          RUNTIME_LOOKUP[runtime! as Runtime] === RUNTIME_LOOKUP[configList[0].lambdaConfig.Runtime! as Runtime]
-      )
 
-    if (!runtimesAreUniform) {
+    // Check that all runtimes are of the same RuntimeType
+    if (!runtimesAreUniform(configList)) {
       throw Error(
         'Detected Lambda functions using different runtimes. Please only instrument batches of functions that share a similar runtime'
       )

@@ -37,7 +37,7 @@ export const RUNTIME_LOOKUP = {
 }
 
 export type Runtime = keyof typeof RUNTIME_LOOKUP
-export type LayerName = keyof typeof LAYER_LOOKUP
+export type LayerKey = keyof typeof LAYER_LOOKUP
 export const ARM_LAYERS = [EXTENSION_LAYER_KEY, 'python3.8', 'python3.9']
 export const ARM64_ARCHITECTURE = 'arm64'
 export const ARM_LAYER_SUFFIX = '-ARM'
