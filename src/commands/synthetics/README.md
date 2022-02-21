@@ -62,6 +62,7 @@ The configuration file structure is the following:
     "locations": ["aws:us-east-1"],
     "retry": {"count": 2, "interval": 300},
     "startUrl": "{{URL}}?static_hash={{STATIC_HASH}}",
+    "startUrlSubstitutionRegex": "s/(https://www.)(.*)/$1extra-$2/",
     "variables": {"MY_VARIABLE": "new title"}
   },
   "pollingTimeout": 120000,
@@ -144,6 +145,7 @@ Your test files must be named with a `.synthetics.json` suffix.
         "pollingTimeout": 30000,
         "retry": {"count": 2, "interval": 300},
         "startUrl": "{{URL}}?static_hash={{STATIC_HASH}}",
+        "startUrlSubstitutionRegex": "s/(https://www.)(.*)/$1extra-$2/",
         "variables": {"MY_VARIABLE": "new title"}
       }
     }
@@ -153,7 +155,7 @@ Your test files must be named with a `.synthetics.json` suffix.
 
 The `<TEST_PUBLIC_ID>` can be either the identifier of the test found in the URL of a test details page (eg. for `https://app.datadoghq.com/synthetics/details/abc-def-ghi` it would be `abc-def-ghi`) or the full URL to the details page (ie. directly `https://app.datadoghq.com/synthetics/details/abc-def-ghi`).
 
-All options under the `config` key allow overriding the configuration of the test as stored in Datadog.
+All options under the `config` key are optional and allow overriding the configuration of the test as stored in Datadog.
 
 - `allowInsecureCertificates`: (boolean) disable certificate checks in API tests.
 - `basicAuth`: (object) credentials to provide in case a basic authentication is encountered.
@@ -178,7 +180,13 @@ All options under the `config` key allow overriding the configuration of the tes
   - `count`: (integer) number of attempts to perform in case of test failure.
   - `interval`: (integer) interval between the attempts (in milliseconds).
 - `startUrl`: (string) new start URL to provide to the test.
+- `startUrlSubstitutionRegex`: (string) regex to modify the starting URL of the test (browser and HTTP tests only), whether it was given by the original test or by the configuration override `startUrl`. If the URL contains variables, this regex will be applied after the interpolation of the variables. The format is `s/your_regex/your_substitution/modifiers`, for instance `s/(https://www.)(.*)/$1extra-$2/` to transform `https://www.example.com` into `https://www.extra-example.com`.
 - `variables`: (object) variables to replace in the test. This object should contain as keys the name of the variable to replace and as values the new value of the variable.
+
+<details>
+  <summary>(Deprecated) Usage of URL variables</summary>
+
+_The following has been deprecated since 0.18.1 and will be removed in a few versions. You should now use `startUrlSubstitutionRegex` or regular variable overrides._
 
 You can configure on which url your Browser or HTTP test starts by providing a `config.startUrl` to your test object and build your own starting url using any part of your test's original starting url and the following environment variables:
 
@@ -205,6 +213,8 @@ It can be written as :
 - `{{URL}}`
 
 and so on...
+
+</details>
 
 ### End-to-end testing process
 

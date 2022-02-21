@@ -72,6 +72,7 @@ export const handleConfig = (
       'locations',
       'pollingTimeout',
       'retry',
+      'startUrlSubstitutionRegex',
       'tunnel',
       'variables',
     ]),
@@ -79,6 +80,9 @@ export const handleConfig = (
 
   if ((test.type === 'browser' || test.subtype === 'http') && config.startUrl) {
     const context = parseUrlVariables(test.config.request.url, reporter)
+    if (URL_VARIABLES.some((v) => config.startUrl?.includes(v))) {
+      reporter.error('[DEPRECATION] The usage of URL variables is deprecated, see explanation in the README\n\n')
+    }
     handledConfig.startUrl = template(config.startUrl, context)
   }
 
@@ -118,19 +122,21 @@ const parseUrlVariables = (url: string, reporter: MainReporter) => {
   return context
 }
 
+const URL_VARIABLES = [
+  'DOMAIN',
+  'HASH',
+  'HOST',
+  'HOSTNAME',
+  'ORIGIN',
+  'PARAMS',
+  'PATHNAME',
+  'PORT',
+  'PROTOCOL',
+  'SUBDOMAIN',
+] as const
+
 const warnOnReservedEnvVarNames = (context: TemplateContext, reporter: MainReporter) => {
-  const reservedVarNames: Set<keyof TemplateVariables> = new Set([
-    'DOMAIN',
-    'HASH',
-    'HOST',
-    'HOSTNAME',
-    'ORIGIN',
-    'PARAMS',
-    'PATHNAME',
-    'PORT',
-    'PROTOCOL',
-    'SUBDOMAIN',
-  ])
+  const reservedVarNames: Set<keyof TemplateVariables> = new Set(URL_VARIABLES)
 
   const usedEnvVarNames = Object.keys(context).filter((name) => (reservedVarNames as Set<string>).has(name))
   if (usedEnvVarNames.length > 0) {
