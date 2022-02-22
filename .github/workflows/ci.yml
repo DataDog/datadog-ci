@@ -68,6 +68,24 @@ jobs:
           DATADOG_API_KEY: ${{ secrets.datadog_api_key }}
           DATADOG_APP_KEY: ${{ secrets.datadog_app_key }}
 
+  standalone-binary-test:
+    name: Test standalone binary
+    runs-on: ubuntu-latest
+    needs: build-and-test
+    steps:
+      - name: Install node
+        uses: actions/setup-node@v1
+        with:
+          node-version: '12.x'
+      - uses: actions/download-artifact@v1
+        with:
+          name: artifacts
+      - run: yarn add ./artifacts/datadog-ci.tgz
+      - name: Bundle standalone binary
+        run: yarn dist-standalone
+      - name: Test generated standalone binary
+        run: yarn test-standalone
+
   check-licenses:
     name: Check licenses
     runs-on: ubuntu-latest
