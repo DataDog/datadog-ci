@@ -30,6 +30,7 @@ inquirer,import,MIT,Copyright (c) 2012 Simon Boudrias
 jest,dev,MIT,Copyright (c) Facebook, Inc. and its affiliates.
 jest-environment-node,dev,MIT,Copyright (c) Facebook, Inc. and its affiliates.
 jest-matcher-specific-error,dev,MIT,Copyright (c) 2020 Daniel Hreben
+nexe,dev,MIT,Copyright (c) 2013-2018 Nexe Contributors
 prettier,dev,MIT,Copyright © James Long and contributors
 proxy,dev,MIT,Copyright (c) 2013 Nathan Rajlich <nathan@tootallnate.net>
 proxy-agent,import,MIT,Copyright (c) 2013 Nathan Rajlich <nathan@tootallnate.net>
