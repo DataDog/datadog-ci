@@ -180,7 +180,7 @@ All options under the `config` key are optional and allow overriding the configu
   - `count`: (integer) number of attempts to perform in case of test failure.
   - `interval`: (integer) interval between the attempts (in milliseconds).
 - `startUrl`: (string) new start URL to provide to the test.
-- `startUrlSubstitutionRegex`: (string) regex to modify the starting URL of the test (browser and HTTP tests only), whether it was given by the original test or by the configuration override `startUrl`. If the URL contains variables, this regex will be applied after the interpolation of the variables. The format is `s/your_regex/your_substitution/modifiers`, for instance `s/(https://www.)(.*)/$1extra-$2/` to transform `https://www.example.com` into `https://www.extra-example.com`.
+- `startUrlSubstitutionRegex`: (string) regex to modify the starting URL of the test (browser and HTTP tests only), whether it was given by the original test or by the configuration override `startUrl`. If the URL contains variables, this regex will be applied after the interpolation of the variables. The format is `s/your_regex/your_substitution/modifiers` and follow Javascript regex syntax, for instance `s/(https://www.)(.*)/$1extra-$2/` to transform `https://www.example.com` into `https://www.extra-example.com`.
 - `variables`: (object) variables to replace in the test. This object should contain as keys the name of the variable to replace and as values the new value of the variable.
 
 <details>
