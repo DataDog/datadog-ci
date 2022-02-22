@@ -262,6 +262,7 @@ export interface ConfigOverride {
   pollingTimeout?: number
   retry?: RetryConfig
   startUrl?: string
+  startUrlSubstitutionRegex?: string
   tunnel?: TunnelInfo
   variables?: {[key: string]: string}
 }
