@@ -5,21 +5,18 @@ import {getRequestBuilder} from '../../helpers/utils'
 import {getCommitInfo, newSimpleGit} from './git'
 import {CommitInfo} from './interfaces'
 
-export const shouldAddSourceCodeIntegration = async (apiKey: string | undefined): Promise<boolean> => {
-  let simpleGit
-  let isRepo
+export const isGitRepo = async (): Promise<boolean> => {
   try {
-    simpleGit = await newSimpleGit()
-    isRepo = simpleGit.checkIsRepo()
+    const simpleGit = await newSimpleGit()
+    const isRepo = simpleGit.checkIsRepo()
+
+    return isRepo
   } catch {
     return false
   }
-
-  // Only enable if the system has `git` installed and we're in a git repo
-  return apiKey !== undefined && isRepo
 }
 
-export const uploadGitCommitHash = async (apiKey: string, datadogSite: string, version: string): Promise<string> => {
+export const uploadGitCommitHash = async (apiKey: string, datadogSite: string): Promise<string> => {
   const apiKeyValidator = newApiKeyValidator({
     apiKey,
     datadogSite,
@@ -27,6 +24,8 @@ export const uploadGitCommitHash = async (apiKey: string, datadogSite: string, v
 
   const simpleGit = await newSimpleGit()
   const payload = await getCommitInfo(simpleGit)
+
+  const version = require('../../../package.json').version
 
   const requestBuilder = getRequestBuilder({
     apiKey,
