@@ -6,17 +6,15 @@ import {getCommitInfo, newSimpleGit} from './git'
 import {CommitInfo} from './interfaces'
 
 export const shouldAddSourceCodeIntegration = async (apiKey: string | undefined): Promise<boolean> => {
-  let simpleGit
-  let isRepo
   try {
-    simpleGit = await newSimpleGit()
-    isRepo = simpleGit.checkIsRepo()
+    const simpleGit = await newSimpleGit()
+    const isRepo = simpleGit.checkIsRepo()
+
+    // Only enable if the system has `git` installed and we're in a git repo
+    return apiKey !== undefined && isRepo
   } catch {
     return false
   }
-
-  // Only enable if the system has `git` installed and we're in a git repo
-  return apiKey !== undefined && isRepo
 }
 
 export const uploadGitCommitHash = async (apiKey: string, datadogSite: string, version: string): Promise<string> => {
