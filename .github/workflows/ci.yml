@@ -73,14 +73,13 @@ jobs:
     runs-on: ubuntu-latest
     needs: build-and-test
     steps:
+      - uses: actions/checkout@v2
       - name: Install node
         uses: actions/setup-node@v1
         with:
           node-version: '12.x'
-      - uses: actions/download-artifact@v1
-        with:
-          name: artifacts
-      - run: yarn add ./artifacts/datadog-ci.tgz
+      - run: yarn install --immutable
+      - run: yarn build
       - name: Bundle standalone binary
         run: yarn dist-standalone
       - name: Test generated standalone binary
