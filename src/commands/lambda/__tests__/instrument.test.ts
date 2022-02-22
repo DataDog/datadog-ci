@@ -397,7 +397,7 @@ TagResource -> arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world
           context
         )
         const output = context.stdout.toString()
-        expect(output).toMatch(/.*Make sure the command is running within your git repository\..*/i)
+        expect(output.replace('\n', '')).toMatch(/.*Error: Couldn't get local git status.*/)
       })
 
       test('instrumenting with source code integrations fails if DATADOG_API_KEY is not provided', async () => {

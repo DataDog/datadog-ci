@@ -246,7 +246,7 @@ export class InstrumentCommand extends Command {
 
   private async getCurrentGitStatus() {
     const simpleGit = await newSimpleGit()
-    const gitCommitInfo = await getCommitInfo(simpleGit, this.context.stdout)
+    const gitCommitInfo = await getCommitInfo(simpleGit)
     if (gitCommitInfo === undefined) {
       throw new Error('Git commit info is not defined')
     }
