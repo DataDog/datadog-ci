@@ -84,7 +84,7 @@ jobs:
       - run: yarn install --immutable
       - run: yarn build
       - name: Bundle standalone binary
-        run: yarn dist-standalone
+        run: yarn dist-standalone -t 'linux-x64-14.15.3'
       - name: Test generated standalone binary
         run: yarn dist-standalone:test
 
