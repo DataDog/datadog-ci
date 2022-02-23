@@ -83,7 +83,7 @@ jobs:
       - name: Bundle standalone binary
         run: yarn dist-standalone
       - name: Test generated standalone binary
-        run: yarn test-standalone
+        run: yarn dist-standalone:test
 
   check-licenses:
     name: Check licenses
