@@ -27,8 +27,8 @@ jobs:
         run: yarn build
       - name: Create standalone binary
         run: yarn dist-standalone
-      - name: Test binary
-        run: ./datadog-ci-linux version
+      - name: Test generated standalone binary
+        run: yarn dist-standalone:test
       - name: Upload binaries to GitHub release
         uses: shogo82148/actions-upload-release-asset@v1
         with:
