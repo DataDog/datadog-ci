@@ -28,7 +28,7 @@
     "check-licenses": "node bin/check-licenses.js",
     "clean": "rm -rf dist/*",
     "dist-standalone": "nexe --build -i './dist/cli.js' --name datadog-ci",
-    "dist-standalone:test": "node bin/test-standalone-binary.js",
+    "dist-standalone:test": "jest --config ./jest.config-standalone.js",
     "format": "yarn tslint --fix && yarn prettier --write",
     "launch": "ts-node --transpile-only src/cli.ts",
     "launch:debug": "node -r ts-node/register/transpile-only --inspect-brk src/cli.ts",
