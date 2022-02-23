@@ -77,6 +77,9 @@ jobs:
         uses: actions/setup-node@v1
         with:
           node-version: '10.24.1'
+      - uses: actions/setup-python@v2
+        with:
+          python-version: '2.7'
       - run: npm config set python python2.7
       - run: yarn install --immutable
       - run: yarn build
