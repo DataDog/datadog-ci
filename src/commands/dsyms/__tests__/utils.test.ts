@@ -1,57 +1,85 @@
-// tslint:disable: no-string-literal
-import {promises} from 'fs'
+import fs, {promises} from 'fs'
+import glob from 'glob'
+import {buildPath} from '../../../helpers/utils'
 
-import {Dsym} from '../interfaces'
-import {getMatchingDSYMFiles, isZipFile, unzipToTmpDir, zipToTmpDir} from '../utils'
+import {createTmpDirectory, deleteDirectory, isZipFile, unzipArchiveToDirectory, zipDirectoryToArchive} from '../utils'
 
-describe('isZipFile', () => {
-  test('Zip file should return true', async () => {
-    const zipFile = './src/commands/dsyms/__tests__/test files/test.zip'
-    expect(await isZipFile(zipFile)).toBeTruthy()
+describe('utils', () => {
+  describe('createTmpDirectory', () => {
+    test('Create unique directory', async () => {
+      const tmpDirectory1 = await createTmpDirectory()
+      const tmpDirectory2 = await createTmpDirectory()
+
+      expect(fs.existsSync(tmpDirectory1)).toBeTruthy()
+      expect(fs.existsSync(tmpDirectory2)).toBeTruthy()
+      expect(tmpDirectory1).not.toEqual(tmpDirectory2)
+
+      await deleteDirectory(tmpDirectory1)
+      await deleteDirectory(tmpDirectory2)
+    })
   })
 
-  test('Arbitrary file should return false', async () => {
-    const dsymFile = './src/commands/dsyms/__tests__/test files/test.dSYM'
-    expect(await isZipFile(dsymFile)).toBeFalsy()
+  describe('deleteDirectory', () => {
+    test('Delete empty directory', async () => {
+      const tmpDirectory = await createTmpDirectory()
+
+      await deleteDirectory(tmpDirectory)
+
+      expect(fs.existsSync(tmpDirectory)).toBeFalsy()
+    })
+
+    test('Delete non-empty directory', async () => {
+      const tmpDirectory = await createTmpDirectory()
+      await promises.mkdir(buildPath(tmpDirectory, 'foo'))
+      await promises.writeFile(buildPath(tmpDirectory, 'foo', 'bar1'), 'mock1')
+      await promises.writeFile(buildPath(tmpDirectory, 'foo', 'bar2'), 'mock2')
+
+      await deleteDirectory(tmpDirectory)
+
+      expect(fs.existsSync(tmpDirectory)).toBeFalsy()
+    })
   })
-})
 
-describe('getMatchingDSYMFiles', () => {
-  test('Should find no valid dSYM file in Linux', async () => {
-    const write = jest.fn()
-    const mockContext = {stdout: {write}} as any
-    const folder = './src/commands/dsyms/__tests__/test files/'
-    const foundFiles = await getMatchingDSYMFiles(folder, mockContext)
-    expect(foundFiles).toEqual([undefined])
+  describe('zipDirectoryToArchive', () => {
+    test('Compress folder to archive at given path', async () => {
+      const archiveDirectory = await createTmpDirectory()
+      const archivePath = buildPath(archiveDirectory, 'archive.zip')
+
+      await zipDirectoryToArchive('./src/commands/dsyms/__tests__/fixtures', archivePath)
+
+      expect(fs.existsSync(archivePath)).toBeTruthy()
+
+      await deleteDirectory(archiveDirectory)
+    })
   })
 
-  test('Should find one valid dSYM file with mocking', async () => {
-    require('../utils').dwarfdumpUUID = jest.fn().mockResolvedValue(['BD8CE358-D5F3-358B-86DC-CBCF2148097B'])
+  describe('unzipArchiveToDirectory', () => {
+    test('Uncompress archive to given destination', async () => {
+      const archiveDirectory = await createTmpDirectory()
+      const destinationDirectory = await createTmpDirectory()
+      const archivePath = buildPath(archiveDirectory, 'archive.zip')
+      await zipDirectoryToArchive('./src/commands/dsyms/__tests__/fixtures', archivePath)
 
-    const write = jest.fn()
-    const mockContext = {stdout: {write}} as any
-    const folder = './src/commands/dsyms/__tests__/test files/'
-    const foundFiles = await getMatchingDSYMFiles(folder, mockContext)
-    expect(foundFiles).toEqual([
-      new Dsym('./src/commands/dsyms/__tests__/test files/test.dSYM', ['BD8CE358-D5F3-358B-86DC-CBCF2148097B']),
-    ])
+      await unzipArchiveToDirectory(archivePath, destinationDirectory)
+
+      const originalContentList = glob.sync(buildPath('./src/commands/dsyms/__tests__/', 'fixtures/**/*'))
+      const unzippedContentList = glob.sync(buildPath(destinationDirectory, 'fixtures/**/*'))
+      expect(originalContentList.length).toEqual(unzippedContentList.length)
+
+      await deleteDirectory(archiveDirectory)
+      await deleteDirectory(destinationDirectory)
+    })
   })
-})
 
-describe('zipToTmpDir', () => {
-  test('Zip files to temporary directory', async () => {
-    const dsymFile = './src/commands/dsyms/__tests__/test files/test.dSYM'
-    const zippedFile = await zipToTmpDir(dsymFile, `${Date.now().toString()}.zip`)
+  describe('isZipFile', () => {
+    test('Zip file should return true', async () => {
+      const file = './src/commands/dsyms/__tests__/fixtures/all.zip'
+      expect(await isZipFile(file)).toBeTruthy()
+    })
 
-    expect((await promises.stat(zippedFile)).size).toBeGreaterThan(0)
-  })
-})
-
-describe('unzipToTmpDir', () => {
-  test('Unzip a file to temporary directory', async () => {
-    const zipFile = './src/commands/dsyms/__tests__/test files/test.zip'
-    const unzippedFolder = await unzipToTmpDir(zipFile)
-
-    expect((await promises.stat(unzippedFolder)).size).toBeGreaterThan(0)
+    test('Arbitrary file should return false', async () => {
+      const file = './src/commands/dsyms/__tests__/fixtures/multiple-archs/DDTest.framework.dSYM'
+      expect(await isZipFile(file)).toBeFalsy()
+    })
   })
 })

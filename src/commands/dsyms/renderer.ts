@@ -1,24 +1,27 @@
 import chalk from 'chalk'
 
-import {Dsym} from './interfaces'
-import {pluralize} from './utils'
-
+import path from 'path'
 import {ICONS} from '../../helpers/formatting'
 import {UploadStatus} from '../../helpers/upload'
+import {ArchSlice, CompressedDsym, Dsym} from './interfaces'
+import {pluralize} from './utils'
 
 export const renderConfigurationError = (error: Error) => chalk.red(`${ICONS.FAILED} Configuration error: ${error}.\n`)
 
-export const renderInvalidDsymWarning = (path: string) =>
-  chalk.yellow(`${ICONS.WARNING} Invalid dSYM file, will be skipped: ${path}\n`)
+export const renderInvalidDsymWarning = (dSYMPath: string) =>
+  chalk.yellow(`${ICONS.WARNING} Invalid dSYM file, will be skipped: ${dSYMPath}\n`)
 
-export const renderFailedUpload = (dSYM: Dsym, errorMessage: string) => {
-  const dSYMPathBold = `[${chalk.bold.dim(dSYM.path)}]`
+export const renderDSYMSlimmingFailure = (dSYM: Dsym, slice: ArchSlice) =>
+  chalk.yellow(`${ICONS.WARNING} Failed to export '${slice.arch}' arch (${slice.uuid}) from ${dSYM.bundlePath}\n`)
+
+export const renderFailedUpload = (dSYM: CompressedDsym, errorMessage: string) => {
+  const dSYMPathBold = `[${chalk.bold.dim(dSYM.dsym.bundlePath)}]`
 
   return chalk.red(`${ICONS.FAILED} Failed upload dSYM for ${dSYMPathBold}: ${errorMessage}\n`)
 }
 
-export const renderRetriedUpload = (dSYM: Dsym, errorMessage: string, attempt: number) => {
-  const dSYMPathBold = `[${chalk.bold.dim(dSYM.path)}]`
+export const renderRetriedUpload = (dSYM: CompressedDsym, errorMessage: string, attempt: number) => {
+  const dSYMPathBold = `[${chalk.bold.dim(dSYM.dsym.bundlePath)}]`
 
   return chalk.yellow(`[attempt ${attempt}] Retrying dSYM upload ${dSYMPathBold}: ${errorMessage}\n`)
 }
@@ -94,4 +97,10 @@ export const renderCommandInfo = (basePath: string, poolLimit: number, dryRun: b
   return fullStr
 }
 
-export const renderUpload = (dSYM: Dsym): string => `Uploading dSYM with ${dSYM.uuids} from ${dSYM.path}\n`
+export const renderUpload = (dSYM: CompressedDsym): string => {
+  const objectName = dSYM.dsym.slices.map((slice) => path.basename(slice.objectPath))[0]
+  const archs = dSYM.dsym.slices.map((slice) => slice.arch).join()
+  const uuids = dSYM.dsym.slices.map((slice) => slice.uuid).join()
+
+  return `Uploading dSYM, UUID: ${uuids} ('${objectName}', ${archs}) from ${dSYM.archivePath}\n`
+}
