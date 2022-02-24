@@ -28,7 +28,7 @@ jobs:
       - name: Bundle library
         run: yarn build
       - name: Create standalone binary
-        run: yarn dist-standalone
+        run: yarn dist-standalone -t 'linux-x64-14.15.3'
       - name: Test generated standalone binary
         run: yarn dist-standalone:test
       - name: Upload binaries to GitHub release
