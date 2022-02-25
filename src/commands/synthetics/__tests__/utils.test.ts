@@ -6,6 +6,8 @@ import * as fs from 'fs'
 import {AxiosError, AxiosRequestConfig, AxiosResponse, default as axios} from 'axios'
 import glob from 'glob'
 
+import * as ciHelpers from '../../../helpers/ci'
+import {Metadata} from '../../../helpers/interfaces'
 import {ProxyConfiguration} from '../../../helpers/utils'
 
 import {apiConstructor} from '../api'
@@ -67,6 +69,36 @@ describe('utils', () => {
 
       const output = await utils.runTests(api, [{public_id: fakeId, executionRule: ExecutionRule.NON_BLOCKING}])
       expect(output).toEqual(fakeTrigger)
+    })
+
+    test('runTests sends batch metadata', async () => {
+      jest.spyOn(ciHelpers, 'getCIMetadata').mockImplementation(() => undefined)
+
+      const payloadMetadataSpy = jest.fn()
+      const axiosMock = jest.spyOn(axios, 'create')
+      axiosMock.mockImplementation((() => (e: any) => {
+        payloadMetadataSpy(e.data.metadata)
+        if (e.url === '/synthetics/tests/trigger/ci') {
+          return {data: fakeTrigger}
+        }
+      }) as any)
+
+      await utils.runTests(api, [{public_id: fakeId, executionRule: ExecutionRule.NON_BLOCKING}])
+      expect(payloadMetadataSpy).toHaveBeenCalledWith({
+        ci: {job: {}, pipeline: {}, provider: {}, stage: {}},
+        git: {commit: {author: {}, committer: {}}},
+        trigger_app: 'npm_package',
+      })
+
+      const metadata: Metadata = {
+        ci: {job: {name: 'job'}, pipeline: {}, provider: {name: 'jest'}, stage: {}},
+        git: {commit: {author: {}, committer: {}, message: 'test'}},
+      }
+      jest.spyOn(ciHelpers, 'getCIMetadata').mockImplementation(() => metadata)
+
+      utils.setCiTriggerApp('unit_test')
+      await utils.runTests(api, [{public_id: fakeId, executionRule: ExecutionRule.NON_BLOCKING}])
+      expect(payloadMetadataSpy).toHaveBeenCalledWith({...metadata, trigger_app: 'unit_test'})
     })
 
     test('should run test with publicId from url', async () => {
