@@ -41,7 +41,6 @@ curl https://raw.githubusercontent.com/DataDog/datadog-ci/master/quick-install.s
 Usage: datadog-ci <command> <subcommand> [options]
 
 Available commands:
-  - dependencies
   - lambda
   - sourcemaps
   - synthetics
@@ -55,7 +54,6 @@ Each command allows interacting with a product of the Datadog platform. The comm
 
 Further documentation for each command can be found in its folder, ie:
 
-- [Dependencies](src/commands/dependencies)
 - [Lambda](src/commands/lambda)
 - [Sourcemaps](src/commands/sourcemaps/)
 - [Synthetics CI/CD Testing](src/commands/synthetics/)
