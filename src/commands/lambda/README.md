@@ -2,17 +2,22 @@ You can use the CLI to instrument your AWS Lambda functions with Datadog. The CL
 
 You can also add the command to your CI/CD pipelines to enable instrumentation for *all* your serverless applications. Run the command *after* your normal serverless application deployment, so that changes made by the Datadog CLI command do not get overridden.
 
-Only Lambda functions using the Python or Node.js runtime are currently supported.
-
 ## Installation
 
-Follow the installation instructions for [Python](https://docs.datadoghq.com/serverless/installation/python/?tab=datadogcli) or [Node.js](https://docs.datadoghq.com/serverless/installation/nodejs/?tab=datadogcli) to instrument your Lambda functions using the `datadog-ci lambda instrument` command.
+To instrument your Lambda functions using the `datadog-ci lambda instrument` command, follow the instructions for a specific runtime listed below:
+
+- [.NET](https://docs.datadoghq.com/serverless/installation/dotnet/?tab=datadogcli)
+- [Go](https://docs.datadoghq.com/serverless/installation/go/?tab=datadogcli)
+- [Java](https://docs.datadoghq.com/serverless/installation/java/?tab=datadogcli)
+- [Node.js](https://docs.datadoghq.com/serverless/installation/nodejs/?tab=datadogcli)
+- [Python](https://docs.datadoghq.com/serverless/installation/python/?tab=datadogcli)
+- [Ruby](https://docs.datadoghq.com/serverless/installation/ruby/?tab=datadogcli)
 
 ## Commands
 
 ### `instrument`
 
-Run `datadog-ci lambda instrument` to apply Datadog instrumentation to a Lambda. This command automatically adds the Datadog Lambda Library and/or the Datadog Lambda Extension as Lambda Layers to the instrumented Lambda functions and modifies their configurations. 
+Run `datadog-ci lambda instrument` to apply Datadog instrumentation to a Lambda. This command automatically adds the Datadog Lambda Library and/or the Datadog Lambda Extension as Lambda Layers to the instrumented Lambda functions and modifies their configurations.
 
 ```bash
 # Instrument multiple functions specified by names
@@ -31,7 +36,7 @@ Run `datadog-ci lambda uninstrument` to revert Datadog instrumentation in a Lamb
 
 ```bash
 # Uninstrument multiple functions specified by names
-datadog-ci lambda uninstrument -f <function-name> -f <another-function-name> -r us-east-1 
+datadog-ci lambda uninstrument -f <function-name> -f <another-function-name> -r us-east-1
 
 # Instrument multiple functions that match a regex pattern
 datadog-ci lambda uninstrument --functions-regex <valid-regex-pattern> -r us-east-1
