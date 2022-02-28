@@ -18,13 +18,6 @@ describe('standalone binary', () => {
       expect(binaryVersion.slice(1)).toEqual(version)
     })
   })
-  describe('dependencies', () => {
-    it('can be called', async () => {
-      const {stdout} = await execPromise(`${STANDALONE_BINARY_PATH} dependencies upload --help`)
-      const dependenciesHelpText = sanitizeOutput(stdout)
-      expect(dependenciesHelpText).toContain('datadog-ci dependencies upload')
-    })
-  })
   describe('dsyms', () => {
     it('can be called', async () => {
       const {stdout} = await execPromise(`${STANDALONE_BINARY_PATH} dsyms upload --help`)
