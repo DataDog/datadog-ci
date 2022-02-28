@@ -17,7 +17,7 @@ To instrument your Lambda functions using the `datadog-ci lambda instrument` com
 
 ### `instrument`
 
-Run `datadog-ci lambda instrument` to apply Datadog instrumentation to a Lambda. This command automatically adds the Datadog Lambda Library and/or the Datadog Lambda Extension as Lambda Layers to the instrumented Lambda functions and modifies their configurations.
+Run `datadog-ci lambda instrument` to apply Datadog instrumentation to a Lambda. This command adds the Datadog Lambda Library and/or the Datadog Lambda Extension as Lambda Layers to the instrumented Lambda functions and modifies their configurations.
 
 ```bash
 # Instrument multiple functions specified by names
