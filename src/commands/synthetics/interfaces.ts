@@ -262,13 +262,18 @@ export interface ConfigOverride {
   pollingTimeout?: number
   retry?: RetryConfig
   startUrl?: string
+  startUrlSubstitutionRegex?: string
   tunnel?: TunnelInfo
   variables?: {[key: string]: string}
 }
 
 export interface Payload {
-  metadata?: Metadata
+  metadata?: SyntheticsMetadata
   tests: TestPayload[]
+}
+
+export type SyntheticsMetadata = Metadata & {
+  trigger_app: string
 }
 
 export interface TestPayload extends ConfigOverride {

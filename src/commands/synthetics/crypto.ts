@@ -1,6 +1,7 @@
 import {generateKeyPairSync} from 'crypto'
 
 import {utils} from 'ssh2'
+import {ParsedKey} from 'ssh2-streams'
 import {parseKey, parsePrivateKey} from 'sshpk'
 
 // Generate public/private key in OpenSSH format (used for encryption in tunnel over SSH)
@@ -27,7 +28,7 @@ export const generateOpenSSHKeys = () => {
 }
 
 // Parse SSH key for ssh2 module
-export const parseSSHKey = (key: string) => {
+export const parseSSHKey = (key: string): ParsedKey => {
   const parsedKey = utils.parseKey(key)
 
   if (!parsedKey) {

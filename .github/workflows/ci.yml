@@ -68,6 +68,26 @@ jobs:
           DATADOG_API_KEY: ${{ secrets.datadog_api_key }}
           DATADOG_APP_KEY: ${{ secrets.datadog_app_key }}
 
+  standalone-binary-test:
+    name: Test standalone binary
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Install node
+        uses: actions/setup-node@v1
+        with:
+          node-version: '14.15.3'
+      - uses: actions/setup-python@v2
+        with:
+          python-version: '2.7'
+      - run: npm config set python python2.7
+      - run: yarn install --immutable
+      - run: yarn build
+      - name: Bundle standalone binary
+        run: yarn dist-standalone -t 'linux-x64-14.15.3'
+      - name: Test generated standalone binary
+        run: yarn dist-standalone:test
+
   check-licenses:
     name: Check licenses
     runs-on: ubuntu-latest

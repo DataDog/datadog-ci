@@ -23,6 +23,7 @@ import {
   Result,
   Suite,
   Summary,
+  SyntheticsMetadata,
   TemplateContext,
   TemplateVariables,
   TestPayload,
@@ -40,6 +41,8 @@ const TEMPLATE_REGEX = /{{\s*([^{}]*?)\s*}}/g
 
 const template = (st: string, context: any): string =>
   st.replace(TEMPLATE_REGEX, (match: string, p1: string) => (p1 in context ? context[p1] : match))
+
+let ciTriggerApp = 'npm_package'
 
 export const handleConfig = (
   test: InternalTest,
@@ -72,6 +75,7 @@ export const handleConfig = (
       'locations',
       'pollingTimeout',
       'retry',
+      'startUrlSubstitutionRegex',
       'tunnel',
       'variables',
     ]),
@@ -79,10 +83,17 @@ export const handleConfig = (
 
   if ((test.type === 'browser' || test.subtype === 'http') && config.startUrl) {
     const context = parseUrlVariables(test.config.request.url, reporter)
+    if (URL_VARIABLES.some((v) => config.startUrl?.includes(v))) {
+      reporter.error('[DEPRECATION] The usage of URL variables is deprecated, see explanation in the README\n\n')
+    }
     handledConfig.startUrl = template(config.startUrl, context)
   }
 
   return handledConfig
+}
+
+export const setCiTriggerApp = (source: string): void => {
+  ciTriggerApp = source
 }
 
 const parseUrlVariables = (url: string, reporter: MainReporter) => {
@@ -118,19 +129,21 @@ const parseUrlVariables = (url: string, reporter: MainReporter) => {
   return context
 }
 
+const URL_VARIABLES = [
+  'DOMAIN',
+  'HASH',
+  'HOST',
+  'HOSTNAME',
+  'ORIGIN',
+  'PARAMS',
+  'PATHNAME',
+  'PORT',
+  'PROTOCOL',
+  'SUBDOMAIN',
+] as const
+
 const warnOnReservedEnvVarNames = (context: TemplateContext, reporter: MainReporter) => {
-  const reservedVarNames: Set<keyof TemplateVariables> = new Set([
-    'DOMAIN',
-    'HASH',
-    'HOST',
-    'HOSTNAME',
-    'ORIGIN',
-    'PARAMS',
-    'PATHNAME',
-    'PORT',
-    'PROTOCOL',
-    'SUBDOMAIN',
-  ])
+  const reservedVarNames: Set<keyof TemplateVariables> = new Set(URL_VARIABLES)
 
   const usedEnvVarNames = Object.keys(context).filter((name) => (reservedVarNames as Set<string>).has(name))
   if (usedEnvVarNames.length > 0) {
@@ -498,9 +511,14 @@ export const getTestsToTrigger = async (api: APIHelper, triggerConfigs: TriggerC
 export const runTests = async (api: APIHelper, testsToTrigger: TestPayload[]): Promise<Trigger> => {
   const payload: Payload = {tests: testsToTrigger}
   const ciMetadata = getCIMetadata()
-  if (ciMetadata) {
-    payload.metadata = ciMetadata
+
+  const syntheticsMetadata: SyntheticsMetadata = {
+    ci: {job: {}, pipeline: {}, provider: {}, stage: {}},
+    git: {commit: {author: {}, committer: {}}},
+    ...ciMetadata,
+    trigger_app: ciTriggerApp,
   }
+  payload.metadata = syntheticsMetadata
 
   try {
     return await api.triggerTests(payload)
