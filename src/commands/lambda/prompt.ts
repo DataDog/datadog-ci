@@ -61,9 +61,9 @@ const awsCredentialsQuestions: QuestionCollection = [
   },
 ]
 
-const awsRegionQuestion = (defaultRegion?: string) : InputQuestion => ({
+const awsRegionQuestion = (defaultRegion?: string): InputQuestion => ({
   default: defaultRegion,
-  message: `Which AWS region (e.g., us-east-1) your Lambda functions are deployed?`,
+  message: 'Which AWS region (e.g., us-east-1) your Lambda functions are deployed?',
   name: AWS_DEFAULT_REGION_ENV_VAR,
   type: 'input',
 })
