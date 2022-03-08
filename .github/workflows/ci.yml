@@ -89,6 +89,7 @@ jobs:
         run: |
           rm -rf dist
           rm -rf src
+          rm -rf this_does_not_exist
       - name: Test generated standalone binary
         run: yarn dist-standalone:test
 
