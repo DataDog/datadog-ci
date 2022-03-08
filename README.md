@@ -37,6 +37,12 @@ If installing nodejs in the CI is an issue, a standalone binary is provided with
 curl -L --fail "https://github.com/DataDog/datadog-ci/releases/latest/download/datadog-ci-linux-x64" --output "/usr/local/bin/datadog-ci-linux-x64" && chmod +x /usr/local/bin/datadog-ci
 ```
 
+Then you can run `datadog-ci` commands normally:
+
+```sh
+datadog-ci version
+```
+
 ## Usage
 
 ```bash
