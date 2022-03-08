@@ -35,7 +35,11 @@ export class UninstrumentCommand extends Command {
     if (this.interactive) {
       try {
         if (isMissingAWSCredentials()) {
-          this.context.stdout.write(`${bold(yellow('[!]'))} No AWS credentials found, let's set them up! Or you can re-run the command and supply the AWS credentials in the same way when you invoke the AWS CLI.\n`)
+          this.context.stdout.write(
+            `${bold(
+              yellow('[!]')
+            )} No AWS credentials found, let's set them up! Or you can re-run the command and supply the AWS credentials in the same way when you invoke the AWS CLI.\n`
+          )
           await requestAWSCredentials()
         }
       } catch (e) {

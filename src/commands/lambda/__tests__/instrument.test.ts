@@ -949,7 +949,9 @@ TagResource -> arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world
         const output = context.stdout.toString()
         expect(code).toBe(0)
         expect(output).toMatchInlineSnapshot(`
-"${bold(yellow('[!]'))} No AWS credentials found, let's set them up! Or you can re-run the command and supply the AWS credentials in the same way when you invoke the AWS CLI.
+"${bold(
+          yellow('[!]')
+        )} No AWS credentials found, let's set them up! Or you can re-run the command and supply the AWS credentials in the same way when you invoke the AWS CLI.
 ${bold(yellow('[!]'))} Configure AWS region.
 ${bold(yellow('[!]'))} Configure Datadog settings.
 Fetching Lambda functions, this might take a while.
@@ -1095,7 +1097,9 @@ ${yellow('[!]')} Instrumenting functions.
         const output = context.stdout.toString()
         expect(code).toBe(0)
         expect(output).toMatchInlineSnapshot(`
-"${bold(yellow('[!]'))} No AWS credentials found, let's set them up! Or you can re-run the command and supply the AWS credentials in the same way when you invoke the AWS CLI.
+"${bold(
+          yellow('[!]')
+        )} No AWS credentials found, let's set them up! Or you can re-run the command and supply the AWS credentials in the same way when you invoke the AWS CLI.
 ${bold(yellow('[!]'))} Configure AWS region.
 ${bold(yellow('[!]'))} Configure Datadog settings.
 ${bold(
@@ -1183,7 +1187,9 @@ ${yellow('[!]')} Instrumenting functions.
         const output = context.stdout.toString()
         expect(code).toBe(1)
         expect(output).toMatchInlineSnapshot(`
-"${bold(yellow('[!]'))} No AWS credentials found, let's set them up! Or you can re-run the command and supply the AWS credentials in the same way when you invoke the AWS CLI.
+"${bold(
+          yellow('[!]')
+        )} No AWS credentials found, let's set them up! Or you can re-run the command and supply the AWS credentials in the same way when you invoke the AWS CLI.
 ${red('[Error]')} Unexpected error
 "
 `)

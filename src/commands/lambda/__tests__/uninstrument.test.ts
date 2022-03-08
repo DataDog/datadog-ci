@@ -258,7 +258,6 @@ UpdateFunctionConfiguration -> arn:aws:lambda:us-east-1:000000000000:function:un
         listFunctions: jest.fn().mockImplementation(() => ({promise: () => Promise.reject('ListFunctionsError')})),
       }))
       process.env = {}
-
       ;(Lambda as any).mockImplementation(() => ({
         listFunctions: jest.fn().mockImplementation(() => ({promise: () => Promise.reject('ListFunctionsError')})),
       }))
@@ -367,7 +366,9 @@ UpdateFunctionConfiguration -> arn:aws:lambda:us-east-1:000000000000:function:un
       const output = context.stdout.toString()
       expect(code).toBe(0)
       expect(output).toMatchInlineSnapshot(`
-"${bold(yellow('[!]'))} No AWS credentials found, let's set them up! Or you can re-run the command and supply the AWS credentials in the same way when you invoke the AWS CLI.
+"${bold(
+        yellow('[!]')
+      )} No AWS credentials found, let's set them up! Or you can re-run the command and supply the AWS credentials in the same way when you invoke the AWS CLI.
 Fetching Lambda functions, this might take a while.\n
 ${bold(yellow('[!]'))} Functions to be updated:
 \t- ${bold('arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world')}
@@ -502,7 +503,9 @@ ${yellow('[!]')} Uninstrumenting functions.
       const output = context.stdout.toString()
       expect(code).toBe(0)
       expect(output).toMatchInlineSnapshot(`
-"${bold(yellow('[!]'))} No AWS credentials found, let's set them up! Or you can re-run the command and supply the AWS credentials in the same way when you invoke the AWS CLI.\n
+"${bold(
+        yellow('[!]')
+      )} No AWS credentials found, let's set them up! Or you can re-run the command and supply the AWS credentials in the same way when you invoke the AWS CLI.\n
 ${bold(yellow('[!]'))} Functions to be updated:
 \t- ${bold('arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world')}
 \t- ${bold('arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world-2')}\n
@@ -542,7 +545,9 @@ ${yellow('[!]')} Uninstrumenting functions.
       const output = context.stdout.toString()
       expect(code).toBe(1)
       expect(output).toMatchInlineSnapshot(`
-"${bold(yellow('[!]'))} No AWS credentials found, let's set them up! Or you can re-run the command and supply the AWS credentials in the same way when you invoke the AWS CLI.
+"${bold(
+        yellow('[!]')
+      )} No AWS credentials found, let's set them up! Or you can re-run the command and supply the AWS credentials in the same way when you invoke the AWS CLI.
 ${red('[Error]')} Unexpected error
 "
 `)
