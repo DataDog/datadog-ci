@@ -254,8 +254,14 @@ UpdateFunctionConfiguration -> arn:aws:lambda:us-east-1:000000000000:function:un
 
     test('aborts if the the aws-sdk fails', async () => {
       ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({}))
-      ;(Lambda as any).mockImplementation(() => ({promise: Promise.reject()}))
+      ;(Lambda as any).mockImplementation(() => ({
+        listFunctions: jest.fn().mockImplementation(() => ({promise: () => Promise.reject('ListFunctionsError')})),
+      }))
       process.env = {}
+
+      ;(Lambda as any).mockImplementation(() => ({
+        listFunctions: jest.fn().mockImplementation(() => ({promise: () => Promise.reject('ListFunctionsError')})),
+      }))
       const command = createCommand(UninstrumentCommand)
       command['region'] = 'ap-southeast-1'
       command['regExPattern'] = 'my-function'
@@ -265,7 +271,7 @@ UpdateFunctionConfiguration -> arn:aws:lambda:us-east-1:000000000000:function:un
       expect(output).toMatch(
         `Fetching Lambda functions, this might take a while.\n${red(
           '[Error]'
-        )} Couldn't fetch Lambda functions. Error: Max retry count exceeded.\n`
+        )} Couldn't fetch Lambda functions. Error: Max retry count exceeded. ListFunctionsError\n`
       )
     })
 
@@ -361,7 +367,7 @@ UpdateFunctionConfiguration -> arn:aws:lambda:us-east-1:000000000000:function:un
       const output = context.stdout.toString()
       expect(code).toBe(0)
       expect(output).toMatchInlineSnapshot(`
-"${bold(yellow('[!]'))} No existing AWS credentials found, let's set them up!
+"${bold(yellow('[!]'))} No AWS credentials found, let's set them up! Or you can re-run the command and supply the AWS credentials in the same way when you invoke the AWS CLI.
 Fetching Lambda functions, this might take a while.\n
 ${bold(yellow('[!]'))} Functions to be updated:
 \t- ${bold('arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world')}
@@ -496,7 +502,7 @@ ${yellow('[!]')} Uninstrumenting functions.
       const output = context.stdout.toString()
       expect(code).toBe(0)
       expect(output).toMatchInlineSnapshot(`
-"${bold(yellow('[!]'))} No existing AWS credentials found, let's set them up!\n
+"${bold(yellow('[!]'))} No AWS credentials found, let's set them up! Or you can re-run the command and supply the AWS credentials in the same way when you invoke the AWS CLI.\n
 ${bold(yellow('[!]'))} Functions to be updated:
 \t- ${bold('arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world')}
 \t- ${bold('arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world-2')}\n
@@ -536,7 +542,7 @@ ${yellow('[!]')} Uninstrumenting functions.
       const output = context.stdout.toString()
       expect(code).toBe(1)
       expect(output).toMatchInlineSnapshot(`
-"${bold(yellow('[!]'))} No existing AWS credentials found, let's set them up!
+"${bold(yellow('[!]'))} No AWS credentials found, let's set them up! Or you can re-run the command and supply the AWS credentials in the same way when you invoke the AWS CLI.
 ${red('[Error]')} Unexpected error
 "
 `)
@@ -570,7 +576,7 @@ ${red('[Error]')} Couldn't find any Lambda functions in the specified region.
       }
       ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({code: 'ENOENT'}))
       ;(Lambda as any).mockImplementation(() => ({
-        listFunctions: jest.fn().mockImplementation(() => ({promise: () => Promise.reject('Lambda failed')})),
+        listFunctions: jest.fn().mockImplementation(() => ({promise: () => Promise.reject('ListFunctionsError')})),
       }))
 
       const cli = makeCli()
@@ -580,7 +586,7 @@ ${red('[Error]')} Couldn't find any Lambda functions in the specified region.
       expect(code).toBe(1)
       expect(output).toMatchInlineSnapshot(`
 "Fetching Lambda functions, this might take a while.
-${red('[Error]')} Couldn't fetch Lambda functions. Error: Max retry count exceeded.
+${red('[Error]')} Couldn't fetch Lambda functions. Error: Max retry count exceeded. ListFunctionsError
 "
 `)
     })
