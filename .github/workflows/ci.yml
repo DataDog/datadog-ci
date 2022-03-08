@@ -87,6 +87,7 @@ jobs:
         run: yarn dist-standalone -t node14-linux-x64 -o datadog-ci-linux-x64
       - name: Remove dist and src folder to check that binary can stand alone
         run: |
+          ls
           rm -rf dist
           rm -rf src
           ls
