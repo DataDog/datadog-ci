@@ -3,7 +3,6 @@ import {blueBright} from 'chalk'
 import {prompt} from 'inquirer'
 import {
   AWS_ACCESS_KEY_ID_ENV_VAR,
-  AWS_DEFAULT_REGION_ENV_VAR,
   AWS_SECRET_ACCESS_KEY_ENV_VAR,
   AWS_SESSION_TOKEN_ENV_VAR,
   CI_API_KEY_ENV_VAR,

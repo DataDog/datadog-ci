@@ -451,7 +451,7 @@ describe('uninstrument', () => {
     test('fails when retry count is exceeded', async () => {
       const makeMockLambdaListFunctionsError = () => ({
         listFunctions: jest.fn().mockImplementation((args) => ({
-          promise: () => Promise.reject("ListFunctionsError"),
+          promise: () => Promise.reject('ListFunctionsError'),
         })),
       })
       const lambda = makeMockLambdaListFunctionsError()
