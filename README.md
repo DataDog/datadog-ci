@@ -31,13 +31,25 @@ yarn global add @datadog/datadog-ci
 
 ### Standalone binary (**beta**)
 
-If installing nodejs in the CI is an issue, a standalone binary is provided with [releases](https://github.com/DataDog/datadog-ci/releases). Only _linux-x64_, _darwin-x64_ (macOS) and _win-x64_ (Windows) are supported at the time. **These standalone binaries are in _beta_ and their stability is not guaranteed**. To install for linux:
+If installing nodejs in the CI is an issue, a standalone binary is provided with [releases](https://github.com/DataDog/datadog-ci/releases). Only _linux-x64_, _darwin-x64_ (macOS) and _win-x64_ (Windows) are supported at the time. **These standalone binaries are in _beta_ and their stability is not guaranteed**. To install:
+
+#### Linux
 
 ```sh
-curl -L --fail "https://github.com/DataDog/datadog-ci/releases/latest/download/datadog-ci-linux" --output "/usr/local/bin/datadog-ci" && chmod +x /usr/local/bin/datadog-ci
+curl -L --fail "https://github.com/DataDog/datadog-ci/releases/latest/download/datadog-ci_linux-x64" --output "/usr/local/bin/datadog-ci" && chmod +x /usr/local/bin/datadog-ci
 ```
 
-For other operating systems, change the URL to the corresponding OS: https://github.com/DataDog/datadog-ci/releases/latest/download/datadog-ci-win.exe or https://github.com/DataDog/datadog-ci/releases/latest/download/datadog-ci-macos.
+#### MacOS
+
+```sh
+curl -L --fail "https://github.com/DataDog/datadog-ci/releases/latest/download/datadog-ci_darwin-x64" --output "/usr/local/bin/datadog-ci" && chmod +x /usr/local/bin/datadog-ci
+```
+
+#### Windows
+
+```sh
+Invoke-WebRequest -Uri "https://github.com/DataDog/datadog-ci/releases/latest/download/datadog-ci_win-x64.exe" -OutFile "datadog-ci.exe"
+```
 
 Then you can run `datadog-ci` commands normally:
 
