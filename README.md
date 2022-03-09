@@ -31,11 +31,13 @@ yarn global add @datadog/datadog-ci
 
 ### Standalone binary (**beta**)
 
-If installing nodejs in the CI is an issue, a standalone binary is provided with [releases](https://github.com/DataDog/datadog-ci/releases). Only _linux-x64_ is supported at the time. **This standalone binary is in *beta* and its stability is not guaranteed**. To install:
+If installing nodejs in the CI is an issue, a standalone binary is provided with [releases](https://github.com/DataDog/datadog-ci/releases). Only _linux-x64_, _darwin-x64_ (macOS) and _win-x64_ (Windows) are supported at the time. **This standalone binary is in _beta_ and its stability is not guaranteed**. To install for linux:
 
 ```sh
-curl -L --fail "https://github.com/DataDog/datadog-ci/releases/latest/download/datadog-ci-linux-x64" --output "/usr/local/bin/datadog-ci-linux-x64" && chmod +x /usr/local/bin/datadog-ci
+curl -L --fail "https://github.com/DataDog/datadog-ci/releases/latest/download/datadog-ci-linux" --output "/usr/local/bin/datadog-ci" && chmod +x /usr/local/bin/datadog-ci
 ```
+
+For other operating systems, change the URL to the corresponding OS: https://github.com/DataDog/datadog-ci/releases/latest/download/datadog-ci-win.exe or https://github.com/DataDog/datadog-ci/releases/latest/download/datadog-ci-macos.
 
 Then you can run `datadog-ci` commands normally:
 

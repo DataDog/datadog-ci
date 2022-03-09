@@ -69,22 +69,58 @@ jobs:
           DATADOG_APP_KEY: ${{ secrets.datadog_app_key }}
 
   standalone-binary-test:
-    name: Test standalone binary
+    name: Test standalone binary in ubuntu
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
       - name: Install node
         uses: actions/setup-node@v1
         with:
-          node-version: '14.15.3'
-      - uses: actions/setup-python@v2
-        with:
-          python-version: '2.7'
-      - run: npm config set python python2.7
+          node-version: '14.18.3'
       - run: yarn install --immutable
       - run: yarn build
       - name: Bundle standalone binary
-        run: yarn dist-standalone -t node14-linux-x64 -o datadog-ci-linux-x64
+        run: yarn dist-standalone -t node14-linux-x64 -o datadog-ci-linux
+      - name: Remove dist and src folder to check that binary can stand alone
+        run: |
+          rm -rf dist
+          rm -rf src
+      - name: Test generated standalone binary
+        run: yarn dist-standalone:test
+
+  standalone-binary-test-windows:
+    name: Test standalone binary in windows
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Install node
+        uses: actions/setup-node@v1
+        with:
+          node-version: '14.18.3'
+      - run: yarn install --immutable
+      - run: yarn build
+      - name: Bundle standalone binary
+        run: yarn dist-standalone -t node14-win-x64 -o datadog-ci-win
+      - name: Remove dist and src folder to check that binary can stand alone
+        run: |
+          rm -rf dist
+          rm -rf src
+      - name: Test generated standalone binary
+        run: yarn dist-standalone:test
+
+  standalone-binary-test-macos:
+    name: Test standalone binary in macOS
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Install node
+        uses: actions/setup-node@v1
+        with:
+          node-version: '14.18.3'
+      - run: yarn install --immutable
+      - run: yarn build
+      - name: Bundle standalone binary
+        run: yarn dist-standalone -t node14-macos-x64 -o datadog-ci-macos
       - name: Remove dist and src folder to check that binary can stand alone
         run: |
           rm -rf dist
