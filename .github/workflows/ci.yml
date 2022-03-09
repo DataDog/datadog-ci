@@ -68,7 +68,7 @@ jobs:
           DATADOG_API_KEY: ${{ secrets.datadog_api_key }}
           DATADOG_APP_KEY: ${{ secrets.datadog_app_key }}
 
-  standalone-binary-test:
+  standalone-binary-test-ubuntu:
     name: Test standalone binary in ubuntu
     runs-on: ubuntu-latest
     steps:
