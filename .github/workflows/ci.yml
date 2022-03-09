@@ -84,7 +84,11 @@ jobs:
       - run: yarn install --immutable
       - run: yarn build
       - name: Bundle standalone binary
-        run: yarn dist-standalone -t 'linux-x64-14.15.3'
+        run: yarn dist-standalone -t node14-linux-x64 -o datadog-ci-linux-x64
+      - name: Remove dist and src folder to check that binary can stand alone
+        run: |
+          rm -rf dist
+          rm -rf src
       - name: Test generated standalone binary
         run: yarn dist-standalone:test
 
