@@ -98,7 +98,7 @@ jobs:
         with:
           node-version: '14.18.3'
       - run: yarn install --immutable
-      - run: yarn build
+      - run: yarn build:win
       - name: Bundle standalone binary
         run: yarn dist-standalone -t node14-win-x64 -o datadog-ci-win
       - name: Remove dist and src folder to check that binary can stand alone

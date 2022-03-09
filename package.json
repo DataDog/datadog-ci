@@ -32,6 +32,7 @@
   },
   "scripts": {
     "build": "yarn clean; tsc",
+    "build:win": "yarn clean & tsc",
     "check-licenses": "node bin/check-licenses.js",
     "clean": "rm -rf dist/*",
     "dist-standalone": "pkg --compress GZip .",
