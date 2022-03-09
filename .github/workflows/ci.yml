@@ -103,8 +103,8 @@ jobs:
         run: yarn dist-standalone -t node14-win-x64 -o datadog-ci-win
       - name: Remove dist and src folder to check that binary can stand alone
         run: |
-          rmdir dist /s /q
-          rmdir src /s /q
+          rm dist -r
+          rm src -r
       - name: Test generated standalone binary
         run: yarn dist-standalone:test
 
