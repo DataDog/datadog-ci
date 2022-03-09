@@ -451,7 +451,7 @@ describe('uninstrument', () => {
     test('fails when retry count is exceeded', async () => {
       const makeMockLambdaListFunctionsError = () => ({
         listFunctions: jest.fn().mockImplementation((args) => ({
-          promise: () => Promise.reject(),
+          promise: () => Promise.reject('ListFunctionsError'),
         })),
       })
       const lambda = makeMockLambdaListFunctionsError()
@@ -459,7 +459,7 @@ describe('uninstrument', () => {
 
       await expect(
         getUninstrumentedFunctionConfigsFromRegEx(lambda as any, cloudWatch as any, 'fake-pattern', undefined)
-      ).rejects.toStrictEqual(new Error('Max retry count exceeded.'))
+      ).rejects.toStrictEqual(new Error('Max retry count exceeded. ListFunctionsError'))
     })
   })
 })

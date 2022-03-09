@@ -231,7 +231,7 @@ export const getLambdaFunctionConfigsFromRegex = async (
     } catch (e) {
       retryCount++
       if (retryCount > LIST_FUNCTIONS_MAX_RETRY_COUNT) {
-        throw Error('Max retry count exceeded.')
+        throw Error(`Max retry count exceeded. ${e}`)
       }
     }
   }

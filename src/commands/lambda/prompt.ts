@@ -12,7 +12,6 @@ import {
   AWS_ACCESS_KEY_ID_ENV_VAR,
   AWS_ACCESS_KEY_ID_REG_EXP,
   AWS_DEFAULT_REGION_ENV_VAR,
-  AWS_REGIONS,
   AWS_SECRET_ACCESS_KEY_ENV_VAR,
   AWS_SECRET_ACCESS_KEY_REG_EXP,
   AWS_SESSION_TOKEN_ENV_VAR,
@@ -60,15 +59,14 @@ const awsCredentialsQuestions: QuestionCollection = [
     name: AWS_SESSION_TOKEN_ENV_VAR,
     type: 'password',
   },
-  {
-    // AWS_DEFAULT_REGION
-    choices: AWS_REGIONS,
-    default: 0,
-    message: 'Select an AWS region:',
-    name: AWS_DEFAULT_REGION_ENV_VAR,
-    type: 'list',
-  },
 ]
+
+const awsRegionQuestion = (defaultRegion?: string): InputQuestion => ({
+  default: defaultRegion,
+  message: 'Which AWS region (e.g., us-east-1) your Lambda functions are deployed?',
+  name: AWS_DEFAULT_REGION_ENV_VAR,
+  type: 'input',
+})
 
 export const datadogApiKeyTypeQuestion = (datadogSite: string): ListQuestion => ({
   choices: [
@@ -152,13 +150,23 @@ export const requestAWSCredentials = async () => {
     const awsCredentialsAnswers = await prompt(awsCredentialsQuestions)
     process.env[AWS_ACCESS_KEY_ID_ENV_VAR] = awsCredentialsAnswers[AWS_ACCESS_KEY_ID_ENV_VAR]
     process.env[AWS_SECRET_ACCESS_KEY_ENV_VAR] = awsCredentialsAnswers[AWS_SECRET_ACCESS_KEY_ENV_VAR]
-    process.env[AWS_DEFAULT_REGION_ENV_VAR] = awsCredentialsAnswers[AWS_DEFAULT_REGION_ENV_VAR]
     if (awsCredentialsAnswers[AWS_SESSION_TOKEN_ENV_VAR] !== undefined) {
       process.env[AWS_SESSION_TOKEN_ENV_VAR] = awsCredentialsAnswers[AWS_SESSION_TOKEN_ENV_VAR]
     }
   } catch (e) {
     if (e instanceof Error) {
       throw Error(`Couldn't set AWS Credentials. ${e.message}`)
+    }
+  }
+}
+
+export const requestAWSRegion = async (defaultRegion?: string) => {
+  try {
+    const awsRegionAnswer = await prompt(awsRegionQuestion(defaultRegion))
+    process.env[AWS_DEFAULT_REGION_ENV_VAR] = awsRegionAnswer[AWS_DEFAULT_REGION_ENV_VAR]
+  } catch (e) {
+    if (e instanceof Error) {
+      throw Error(`Couldn't set AWS region. ${e.message}`)
     }
   }
 }

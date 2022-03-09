@@ -949,7 +949,10 @@ TagResource -> arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world
         const output = context.stdout.toString()
         expect(code).toBe(0)
         expect(output).toMatchInlineSnapshot(`
-"${bold(yellow('[!]'))} No existing AWS credentials found, let's set them up!
+"${bold(
+          yellow('[!]')
+        )} No AWS credentials found, let's set them up! Or you can re-run the command and supply the AWS credentials in the same way when you invoke the AWS CLI.
+${bold(yellow('[!]'))} Configure AWS region.
 ${bold(yellow('[!]'))} Configure Datadog settings.
 Fetching Lambda functions, this might take a while.
 ${bold(
@@ -1094,7 +1097,10 @@ ${yellow('[!]')} Instrumenting functions.
         const output = context.stdout.toString()
         expect(code).toBe(0)
         expect(output).toMatchInlineSnapshot(`
-"${bold(yellow('[!]'))} No existing AWS credentials found, let's set them up!
+"${bold(
+          yellow('[!]')
+        )} No AWS credentials found, let's set them up! Or you can re-run the command and supply the AWS credentials in the same way when you invoke the AWS CLI.
+${bold(yellow('[!]'))} Configure AWS region.
 ${bold(yellow('[!]'))} Configure Datadog settings.
 ${bold(
   yellow('[Warning]')
@@ -1181,7 +1187,9 @@ ${yellow('[!]')} Instrumenting functions.
         const output = context.stdout.toString()
         expect(code).toBe(1)
         expect(output).toMatchInlineSnapshot(`
-"${bold(yellow('[!]'))} No existing AWS credentials found, let's set them up!
+"${bold(
+          yellow('[!]')
+        )} No AWS credentials found, let's set them up! Or you can re-run the command and supply the AWS credentials in the same way when you invoke the AWS CLI.
 ${red('[Error]')} Unexpected error
 "
 `)
@@ -1201,7 +1209,8 @@ ${red('[Error]')} Unexpected error
         const output = context.stdout.toString()
         expect(code).toBe(1)
         expect(output).toMatchInlineSnapshot(`
-"${bold(yellow('[!]'))} Configure Datadog settings.
+"${bold(yellow('[!]'))} Configure AWS region.
+${bold(yellow('[!]'))} Configure Datadog settings.
 ${red('[Error]')} Unexpected error
 "
 `)
@@ -1223,7 +1232,8 @@ ${red('[Error]')} Unexpected error
         const output = context.stdout.toString()
         expect(code).toBe(1)
         expect(output).toMatchInlineSnapshot(`
-"Fetching Lambda functions, this might take a while.
+"${bold(yellow('[!]'))} Configure AWS region.
+Fetching Lambda functions, this might take a while.
 ${red('[Error]')} Couldn't find any Lambda functions in the specified region.
 "
 `)
@@ -1239,7 +1249,7 @@ ${red('[Error]')} Couldn't find any Lambda functions in the specified region.
         }
         ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({code: 'ENOENT'}))
         ;(Lambda as any).mockImplementation(() => ({
-          listFunctions: jest.fn().mockImplementation(() => ({promise: () => Promise.reject('Lambda failed')})),
+          listFunctions: jest.fn().mockImplementation(() => ({promise: () => Promise.reject('ListFunctionsError')})),
         }))
 
         const cli = makeCli()
@@ -1248,8 +1258,9 @@ ${red('[Error]')} Couldn't find any Lambda functions in the specified region.
         const output = context.stdout.toString()
         expect(code).toBe(1)
         expect(output).toMatchInlineSnapshot(`
-"Fetching Lambda functions, this might take a while.
-${red('[Error]')} Couldn't fetch Lambda functions. Error: Max retry count exceeded.
+"${bold(yellow('[!]'))} Configure AWS region.
+Fetching Lambda functions, this might take a while.
+${red('[Error]')} Couldn't fetch Lambda functions. Error: Max retry count exceeded. ListFunctionsError
 "
 `)
       })

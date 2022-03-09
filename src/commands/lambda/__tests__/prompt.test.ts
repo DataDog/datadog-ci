@@ -3,7 +3,6 @@ import {blueBright} from 'chalk'
 import {prompt} from 'inquirer'
 import {
   AWS_ACCESS_KEY_ID_ENV_VAR,
-  AWS_DEFAULT_REGION_ENV_VAR,
   AWS_SECRET_ACCESS_KEY_ENV_VAR,
   AWS_SESSION_TOKEN_ENV_VAR,
   CI_API_KEY_ENV_VAR,
@@ -98,7 +97,6 @@ describe('prompt', () => {
         Promise.resolve({
           [AWS_ACCESS_KEY_ID_ENV_VAR]: mockAwsAccessKeyId,
           [AWS_SECRET_ACCESS_KEY_ENV_VAR]: mockAwsSecretAccessKey,
-          [AWS_DEFAULT_REGION_ENV_VAR]: 'sa-east-1',
         })
       )
 
@@ -106,7 +104,6 @@ describe('prompt', () => {
 
       expect(process.env[AWS_ACCESS_KEY_ID_ENV_VAR]).toBe(mockAwsAccessKeyId)
       expect(process.env[AWS_SECRET_ACCESS_KEY_ENV_VAR]).toBe(mockAwsSecretAccessKey)
-      expect(process.env[AWS_DEFAULT_REGION_ENV_VAR]).toBe('sa-east-1')
     })
 
     test('sets the AWS credentials with session token as environment variables', async () => {
@@ -114,7 +111,6 @@ describe('prompt', () => {
         Promise.resolve({
           [AWS_ACCESS_KEY_ID_ENV_VAR]: mockAwsAccessKeyId,
           [AWS_SECRET_ACCESS_KEY_ENV_VAR]: mockAwsSecretAccessKey,
-          [AWS_DEFAULT_REGION_ENV_VAR]: 'sa-east-1',
           [AWS_SESSION_TOKEN_ENV_VAR]: 'some-session-token',
         })
       )
@@ -123,7 +119,6 @@ describe('prompt', () => {
 
       expect(process.env[AWS_ACCESS_KEY_ID_ENV_VAR]).toBe(mockAwsAccessKeyId)
       expect(process.env[AWS_SECRET_ACCESS_KEY_ENV_VAR]).toBe(mockAwsSecretAccessKey)
-      expect(process.env[AWS_DEFAULT_REGION_ENV_VAR]).toBe('sa-east-1')
       expect(process.env[AWS_SESSION_TOKEN_ENV_VAR]).toBe('some-session-token')
     })
 
