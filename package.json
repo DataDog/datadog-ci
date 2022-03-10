@@ -32,7 +32,9 @@
   },
   "scripts": {
     "build": "yarn clean; tsc",
+    "build:win": "tsc",
     "check-licenses": "node bin/check-licenses.js",
+    "clean:win": "rm dist -r",
     "clean": "rm -rf dist/*",
     "dist-standalone": "pkg --compress GZip .",
     "dist-standalone:test": "jest --config ./jest.config-standalone.js",

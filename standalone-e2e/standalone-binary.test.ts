@@ -5,7 +5,13 @@ import {version} from '../package.json'
 
 const execPromise = promisify(exec)
 
-const STANDALONE_BINARY_PATH = './datadog-ci-linux-x64'
+const isWin = process.platform === 'win32'
+
+const os = isWin ? 'win' : process.platform === 'darwin' ? 'macos' : 'linux'
+
+const STANDALONE_BINARY = `datadog-ci-${os}`
+
+const STANDALONE_BINARY_PATH = `${isWin ? '.\\' : './'}${STANDALONE_BINARY}${isWin ? '.exe' : ''}`
 
 const sanitizeOutput = (output: string) => output.replace(/(\r\n|\n|\r)/gm, '')
 
