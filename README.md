@@ -31,7 +31,7 @@ yarn global add @datadog/datadog-ci
 
 ### Standalone binary (**beta**)
 
-If installing nodejs in the CI is an issue, a standalone binary is provided with [releases](https://github.com/DataDog/datadog-ci/releases). Only _linux-x64_, _darwin-x64_ (macOS) and _win-x64_ (Windows) are supported at the time. **These standalone binaries are in _beta_ and their stability is not guaranteed**. To install:
+If installing nodejs in the CI is an issue, standalone binaries are provided with [releases](https://github.com/DataDog/datadog-ci/releases). Only _linux-x64_, _darwin-x64_ (macOS) and _win-x64_ (Windows) are supported at the time. **These standalone binaries are in _beta_ and their stability is not guaranteed**. To install:
 
 #### Linux
 
