@@ -163,6 +163,10 @@ describe('utils', () => {
         if (fakeTests[publicId]) {
           return {data: fakeTests[publicId]}
         }
+
+        const error = new Error('Not found')
+        ;((error as unknown) as {status: number}).status = 404
+        throw error
       }) as any)
     })
 

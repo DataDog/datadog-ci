@@ -384,5 +384,7 @@ export class DefaultReporter implements MainReporter {
     this.write(`${idDisplay} ${getMessage()}\n`)
   }
 
-  public testWait(test: Test) {}
+  public testWait(test: Test) {
+    return
+  }
 }

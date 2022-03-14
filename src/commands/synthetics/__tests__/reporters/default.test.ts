@@ -23,7 +23,7 @@ describe('Default reporter', () => {
       ['runEnd', [createSummary()]],
       ['testEnd', [{options: {}}, [], '', []]],
       ['testTrigger', [{}, '', '', {}]],
-      ['testWait', [{}]],
+      ['testsWait', [[{}]]],
     ]
     for (const [fnName, args] of calls) {
       reporter[fnName](...args)
