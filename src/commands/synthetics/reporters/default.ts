@@ -348,8 +348,6 @@ export class DefaultReporter implements MainReporter {
   }
 
   public testsWait(tests: Test[]) {
-    const count = tests.length
-
     const testsList = tests.map((t) => t.public_id)
     if (testsList.length > 10) {
       testsList.splice(10)
@@ -357,7 +355,9 @@ export class DefaultReporter implements MainReporter {
     }
     const testsDisplay = chalk.gray(`(${testsList.join(', ')})`)
 
-    this.write(`\nWaiting for ${chalk.bold.cyan(count)} test result${count > 1 ? 's' : ''} ${testsDisplay}…\n`)
+    this.write(
+      `\nWaiting for ${chalk.bold.cyan(tests.length)} test result${tests.length > 1 ? 's' : ''} ${testsDisplay}…\n`
+    )
   }
 
   public testTrigger(test: Test, testId: string, executionRule: ExecutionRule, config: ConfigOverride) {

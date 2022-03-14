@@ -513,7 +513,9 @@ export const getTestsToTrigger = async (api: APIHelper, triggerConfigs: TriggerC
   }
 
   const waitedTests = tests.filter(definedTypeGuard)
-  reporter.testsWait(waitedTests)
+  if (waitedTests.length > 0) {
+    reporter.testsWait(waitedTests)
+  }
 
   return {tests: waitedTests, overriddenTestsToTrigger, summary}
 }
