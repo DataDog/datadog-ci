@@ -82,8 +82,16 @@ export class RunTestCommand extends Command {
     } catch (error) {
       if (error instanceof CiError) {
         this.reportCiError(error, this.reporter)
-        if (error instanceof CriticalError && this.config.failOnCriticalErrors) {
-          return 1
+        if (error instanceof CriticalError) {
+          if (this.config.failOnCriticalErrors) {
+            return 1
+          } else {
+            this.reporter.error(
+              chalk.yellow(
+                'Because `failOnCriticalErrors` is not set, the command will exit with an error code 0. Use `failOnCriticalErrors: true` to exit with an error code 1.\n'
+              )
+            )
+          }
         }
       }
 

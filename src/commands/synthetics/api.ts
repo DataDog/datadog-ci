@@ -115,10 +115,23 @@ const retryOn5xxErrors = (retries: number, error: AxiosError) => {
   }
 }
 
+const getErrorHttpStatus = (error: AxiosError | EndpointError) =>
+  'status' in error ? error.status : error.response?.status
+
+export const isForbiddenError = (error: AxiosError | EndpointError) => getErrorHttpStatus(error) === 403
+
+export const isNotFoundError = (error: AxiosError | EndpointError) => getErrorHttpStatus(error) === 404
+
 export const is5xxError = (error: AxiosError | EndpointError) => {
-  const statusCode = 'status' in error ? error.status : error.response?.status
+  const statusCode = getErrorHttpStatus(error)
 
   return statusCode && statusCode >= 500 && statusCode <= 599
+}
+
+export const isHttpError = (error: AxiosError | EndpointError) => {
+  const statusCode = getErrorHttpStatus(error)
+
+  return statusCode && statusCode >= 400
 }
 
 const retryRequest = <T>(args: AxiosRequestConfig, request: (args: AxiosRequestConfig) => AxiosPromise<T>) =>
