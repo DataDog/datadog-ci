@@ -9,7 +9,7 @@ import glob from 'glob'
 import {getCIMetadata} from '../../helpers/ci'
 import {pick} from '../../helpers/utils'
 
-import {EndpointError, formatBackendErrors, is5xxError} from './api'
+import {EndpointError, formatBackendErrors, is5xxError, isForbiddenError, isNotFoundError} from './api'
 import {
   APIHelper,
   ConfigOverride,
@@ -456,6 +456,13 @@ export const getReporter = (reporters: Reporter[]): MainReporter => ({
       }
     }
   },
+  testsWait: (tests) => {
+    for (const reporter of reporters) {
+      if (typeof reporter.testsWait === 'function') {
+        reporter.testsWait(tests)
+      }
+    }
+  },
 })
 
 export const getTestsToTrigger = async (api: APIHelper, triggerConfigs: TriggerConfig[], reporter: MainReporter) => {
@@ -472,16 +479,16 @@ export const getTestsToTrigger = async (api: APIHelper, triggerConfigs: TriggerC
           ...(await api.getTest(id)),
           suite,
         }
-      } catch (e) {
-        if (is5xxError(e)) {
-          throw e
+      } catch (error) {
+        if (error instanceof Error && isNotFoundError(error)) {
+          summary.testsNotFound.add(id)
+          const errorMessage = formatBackendErrors(error)
+          errorMessages.push(`[${chalk.bold.dim(id)}] ${chalk.yellow.bold('Test not found')}: ${errorMessage}`)
+
+          return
         }
 
-        summary.testsNotFound.add(id)
-        const errorMessage = formatBackendErrors(e)
-        errorMessages.push(`[${chalk.bold.dim(id)}] ${chalk.yellow.bold('Test not found')}: ${errorMessage}\n`)
-
-        return
+        throw error
       }
 
       const overriddenConfig = handleConfig(test, id, reporter, config)
@@ -505,7 +512,10 @@ export const getTestsToTrigger = async (api: APIHelper, triggerConfigs: TriggerC
     throw new Error('No tests to trigger')
   }
 
-  return {tests: tests.filter(definedTypeGuard), overriddenTestsToTrigger, summary}
+  const waitedTests = tests.filter(definedTypeGuard)
+  reporter.testsWait(waitedTests)
+
+  return {tests: waitedTests, overriddenTestsToTrigger, summary}
 }
 
 export const runTests = async (api: APIHelper, testsToTrigger: TestPayload[]): Promise<Trigger> => {

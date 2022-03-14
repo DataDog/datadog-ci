@@ -347,6 +347,19 @@ export class DefaultReporter implements MainReporter {
     this.write([`${icon} ${idDisplay}${nonBlockingText} | ${nameColor(test.name)}`, testResultsText].join('\n'))
   }
 
+  public testsWait(tests: Test[]) {
+    const count = tests.length
+
+    const testsList = tests.map((t) => t.public_id)
+    if (testsList.length > 10) {
+      testsList.splice(10)
+      testsList.push('…')
+    }
+    const testsDisplay = chalk.gray(`(${testsList.join(', ')})`)
+
+    this.write(`\nWaiting for ${chalk.bold.cyan(count)} test result${count > 1 ? 's' : ''} ${testsDisplay}…\n`)
+  }
+
   public testTrigger(test: Test, testId: string, executionRule: ExecutionRule, config: ConfigOverride) {
     const idDisplay = `[${chalk.bold.dim(testId)}]`
 
@@ -371,9 +384,5 @@ export class DefaultReporter implements MainReporter {
     this.write(`${idDisplay} ${getMessage()}\n`)
   }
 
-  public testWait(test: Test) {
-    const idDisplay = `[${chalk.bold.dim(test.public_id)}]`
-
-    this.write(`${idDisplay} Waiting results for "${chalk.green.bold(test.name)}"\n`)
-  }
+  public testWait(test: Test) {}
 }
