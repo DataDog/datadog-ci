@@ -35,6 +35,7 @@ export const mockReporter: MainReporter = {
   testEnd: jest.fn(),
   testTrigger: jest.fn(),
   testWait: jest.fn(),
+  testsWait: jest.fn(),
 }
 
 export const ciConfig: CommandConfig = {

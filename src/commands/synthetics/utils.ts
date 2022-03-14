@@ -9,7 +9,7 @@ import glob from 'glob'
 import {getCIMetadata} from '../../helpers/ci'
 import {pick} from '../../helpers/utils'
 
-import {EndpointError, formatBackendErrors, is5xxError, isForbiddenError, isNotFoundError} from './api'
+import {EndpointError, formatBackendErrors, is5xxError, isNotFoundError} from './api'
 import {
   APIHelper,
   ConfigOverride,
@@ -480,7 +480,7 @@ export const getTestsToTrigger = async (api: APIHelper, triggerConfigs: TriggerC
           suite,
         }
       } catch (error) {
-        if (error instanceof Error && isNotFoundError(error)) {
+        if (isNotFoundError(error)) {
           summary.testsNotFound.add(id)
           const errorMessage = formatBackendErrors(error)
           errorMessages.push(`[${chalk.bold.dim(id)}] ${chalk.yellow.bold('Test not found')}: ${errorMessage}`)
