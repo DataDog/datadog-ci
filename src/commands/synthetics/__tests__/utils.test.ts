@@ -16,6 +16,7 @@ import {Tunnel} from '../tunnel'
 import * as utils from '../utils'
 
 import {getApiTest, getBrowserResult, mockReporter} from './fixtures'
+import {CiError} from '../errors'
 
 describe('utils', () => {
   const apiConfiguration = {
@@ -204,7 +205,7 @@ describe('utils', () => {
     })
 
     test('no tests triggered throws an error', async () => {
-      await expect(utils.getTestsToTrigger(api, [], mockReporter)).rejects.toEqual(new Error('No tests to trigger'))
+      await expect(utils.getTestsToTrigger(api, [], mockReporter)).rejects.toEqual(new CiError('NO_TESTS_TO_RUN'))
     })
   })
 
