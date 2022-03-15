@@ -82,6 +82,7 @@ export class RunTestCommand extends Command {
     } catch (error) {
       if (error instanceof CiError) {
         this.reportCiError(error, this.reporter)
+
         if (error instanceof CriticalError) {
           if (this.config.failOnCriticalErrors) {
             return 1
@@ -173,12 +174,15 @@ export class RunTestCommand extends Command {
 
   private reportCiError(error: CiError, reporter: MainReporter) {
     switch (error.code) {
+      // Non critical errors
       case 'NO_RESULTS_TO_POLL':
         reporter.log('No results to poll.\n')
         break
       case 'NO_TESTS_TO_RUN':
         reporter.log('No test to run.\n')
         break
+
+      // Critical command errors
       case 'MISSING_APP_KEY':
         reporter.error(`Missing ${chalk.red.bold('DATADOG_APP_KEY')} in your environment.\n`)
         break

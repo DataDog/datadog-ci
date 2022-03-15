@@ -33,8 +33,7 @@ export const executeTests = async (reporter: MainReporter, config: SyntheticsCIC
     try {
       testsToTrigger = await getTestsList(api, config, reporter)
     } catch (error) {
-      const isCriticalError = isHttpError(error as any)
-      throw new (isCriticalError ? CriticalError : CiError)('UNAVAILABLE_TEST_CONFIG')
+      throw new CriticalError('UNAVAILABLE_TEST_CONFIG')
     }
   }
 
@@ -51,8 +50,7 @@ export const executeTests = async (reporter: MainReporter, config: SyntheticsCIC
   try {
     testsToTriggerResult = await getTestsToTrigger(api, testsToTrigger, reporter)
   } catch (error) {
-    const isCriticalError = isHttpError(error as any)
-    throw new (isCriticalError ? CriticalError : CiError)('UNAVAILABLE_TEST_CONFIG')
+    throw error instanceof CiError ? error : new CriticalError('UNAVAILABLE_TEST_CONFIG')
   }
 
   const {tests, overriddenTestsToTrigger, summary} = testsToTriggerResult
@@ -70,8 +68,7 @@ export const executeTests = async (reporter: MainReporter, config: SyntheticsCIC
       // Get the pre-signed URL to connect to the tunnel service
       presignedURL = (await api.getPresignedURL(publicIdsToTrigger)).url
     } catch (error) {
-      const isCriticalError = isHttpError(error as any)
-      throw new (isCriticalError ? CriticalError : CiError)('UNAVAILABLE_TUNNEL_CONFIG')
+      throw new CriticalError('UNAVAILABLE_TUNNEL_CONFIG')
     }
     // Open a tunnel to Datadog
     try {
@@ -81,9 +78,8 @@ export const executeTests = async (reporter: MainReporter, config: SyntheticsCIC
         testToTrigger.tunnel = tunnelInfo
       })
     } catch (error) {
-      const isCriticalError = isHttpError(error as any)
       await stopTunnel()
-      throw new (isCriticalError ? CriticalError : CiError)('TUNNEL_START_FAILED')
+      throw new CriticalError('TUNNEL_START_FAILED')
     }
   }
 
@@ -91,14 +87,13 @@ export const executeTests = async (reporter: MainReporter, config: SyntheticsCIC
   try {
     triggers = await runTests(api, overriddenTestsToTrigger)
   } catch (error) {
-    const isCriticalError = isHttpError(error as any)
     await stopTunnel()
-    throw new (isCriticalError ? CriticalError : CiError)('TRIGGER_TESTS_FAILED')
+    throw new CriticalError('TRIGGER_TESTS_FAILED')
   }
 
   if (!triggers.results) {
     await stopTunnel()
-    throw new CriticalError('NO_RESULTS_TO_POLL')
+    throw new CiError('NO_RESULTS_TO_POLL')
   }
 
   const results: {[key: string]: PollResult[]} = {}
@@ -114,8 +109,7 @@ export const executeTests = async (reporter: MainReporter, config: SyntheticsCIC
     )
     Object.assign(results, resultPolled)
   } catch (error) {
-    const isCriticalError = isHttpError(error as any)
-    throw new (isCriticalError ? CriticalError : CiError)('POLL_RESULTS_FAILED')
+    throw new CriticalError('POLL_RESULTS_FAILED')
   } finally {
     await stopTunnel()
   }
@@ -158,10 +152,10 @@ export const getTestsList = async (api: APIHelper, config: SyntheticsCIConfig, r
 
 export const getApiHelper = (config: SyntheticsCIConfig) => {
   if (!config.appKey) {
-    throw new CiError('MISSING_APP_KEY')
+    throw new CriticalError('MISSING_APP_KEY')
   }
   if (!config.apiKey) {
-    throw new CiError('MISSING_API_KEY')
+    throw new CriticalError('MISSING_API_KEY')
   }
 
   return apiConstructor({

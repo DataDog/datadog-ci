@@ -33,6 +33,7 @@ import {
   TriggerResult,
 } from './interfaces'
 import {Tunnel} from './tunnel'
+import {CiError} from './errors'
 
 const POLLING_INTERVAL = 5000 // In ms
 const PUBLIC_ID_REGEX = /^[\d\w]{3}-[\d\w]{3}-[\d\w]{3}$/
@@ -509,7 +510,7 @@ export const getTestsToTrigger = async (api: APIHelper, triggerConfigs: TriggerC
   reporter.initErrors(errorMessages)
 
   if (!overriddenTestsToTrigger.length) {
-    throw new Error('No tests to trigger')
+    throw new CiError('NO_TESTS_TO_RUN')
   }
 
   const waitedTests = tests.filter(definedTypeGuard)
