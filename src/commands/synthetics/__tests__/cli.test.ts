@@ -321,9 +321,10 @@ describe('run-test', () => {
     })
 
     describe.each([false, true])('%s', (failOnCriticalErrors: boolean) => {
+      const cases: [string, number?][] = [['HTTP 4xx error', 403], ['HTTP 5xx error', 502], ['Unknown error']]
       const expectedExit = failOnCriticalErrors ? 1 : 0
 
-      describe.each([403, 502])('%i error', (errorCode) => {
+      describe.each(cases)('%s', (_, errorCode) => {
         test('unable to obtain test configurations', async () => {
           const command = new RunTestCommand()
           command.context = {stdout: {write: jest.fn()}} as any
@@ -332,7 +333,7 @@ describe('run-test', () => {
 
           const apiHelper = {
             searchTests: jest.fn(() => {
-              throw getAxiosHttpError(errorCode, 'Error')
+              throw errorCode ? getAxiosHttpError(errorCode, 'Error') : new Error('Unknown error')
             }),
           }
           jest.spyOn(runTests, 'getApiHelper').mockImplementation(() => apiHelper as any)
@@ -349,7 +350,7 @@ describe('run-test', () => {
 
           const apiHelper = {
             getTest: jest.fn(() => {
-              throw getAxiosHttpError(errorCode, 'Error')
+              throw errorCode ? getAxiosHttpError(errorCode, 'Error') : new Error('Unknown error')
             }),
           }
           jest.spyOn(runTests, 'getApiHelper').mockImplementation(() => apiHelper as any)
@@ -368,7 +369,7 @@ describe('run-test', () => {
           const apiHelper = {
             getTest: () => getApiTest('123-456-789'),
             triggerTests: jest.fn(() => {
-              throw getAxiosHttpError(errorCode, 'Error')
+              throw errorCode ? getAxiosHttpError(errorCode, 'Error') : new Error('Unknown error')
             }),
           }
           jest.spyOn(runTests, 'getApiHelper').mockImplementation(() => apiHelper as any)
@@ -387,7 +388,7 @@ describe('run-test', () => {
           const apiHelper = {
             getTest: () => getApiTest('123-456-789'),
             pollResults: jest.fn(() => {
-              throw getAxiosHttpError(errorCode, 'Error')
+              throw errorCode ? getAxiosHttpError(errorCode, 'Error') : new Error('Unknown error')
             }),
             triggerTests: () => ({
               ...mockTestTriggerResponse,
