@@ -11,12 +11,12 @@ import {Metadata} from '../../../helpers/interfaces'
 import {ProxyConfiguration} from '../../../helpers/utils'
 
 import {apiConstructor} from '../api'
+import {CiError} from '../errors'
 import {ConfigOverride, ERRORS, ExecutionRule, InternalTest, PollResult, Result, Summary} from '../interfaces'
 import {Tunnel} from '../tunnel'
 import * as utils from '../utils'
 
 import {getApiTest, getBrowserResult, mockReporter} from './fixtures'
-import {CiError} from '../errors'
 
 describe('utils', () => {
   const apiConfiguration = {

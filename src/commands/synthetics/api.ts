@@ -126,12 +126,6 @@ export const is5xxError = (error: AxiosError | EndpointError) => {
   return statusCode && statusCode >= 500 && statusCode <= 599
 }
 
-export const isHttpError = (error: AxiosError | EndpointError) => {
-  const statusCode = getErrorHttpStatus(error)
-
-  return statusCode && statusCode >= 400
-}
-
 const retryRequest = <T>(args: AxiosRequestConfig, request: (args: AxiosRequestConfig) => AxiosPromise<T>) =>
   retry(() => request(args), retryOn5xxErrors)
 

@@ -10,6 +10,7 @@ import {getCIMetadata} from '../../helpers/ci'
 import {pick} from '../../helpers/utils'
 
 import {EndpointError, formatBackendErrors, is5xxError, isNotFoundError} from './api'
+import {CiError} from './errors'
 import {
   APIHelper,
   ConfigOverride,
@@ -33,7 +34,6 @@ import {
   TriggerResult,
 } from './interfaces'
 import {Tunnel} from './tunnel'
-import {CiError} from './errors'
 
 const POLLING_INTERVAL = 5000 // In ms
 const PUBLIC_ID_REGEX = /^[\d\w]{3}-[\d\w]{3}-[\d\w]{3}$/

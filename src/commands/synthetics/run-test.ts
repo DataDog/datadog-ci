@@ -1,4 +1,4 @@
-import {apiConstructor, isHttpError} from './api'
+import {apiConstructor} from './api'
 import {CiError, CriticalError} from './errors'
 import {
   APIHelper,

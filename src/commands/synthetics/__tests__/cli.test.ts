@@ -337,7 +337,7 @@ describe('run-test', () => {
             }),
           }
           jest.spyOn(runTests, 'getApiHelper').mockImplementation(() => apiHelper as any)
-          jest.spyOn(ciUtils, 'parseConfigFile').mockImplementation(async (config, _) => config)
+          jest.spyOn(ciUtils, 'parseConfigFile').mockImplementation(async (config, __) => config)
 
           expect(await command.execute()).toBe(expectedExit)
           expect(apiHelper.searchTests).toHaveBeenCalledTimes(1)
@@ -354,7 +354,7 @@ describe('run-test', () => {
             }),
           }
           jest.spyOn(runTests, 'getApiHelper').mockImplementation(() => apiHelper as any)
-          jest.spyOn(ciUtils, 'parseConfigFile').mockImplementation(async (config, _) => config)
+          jest.spyOn(ciUtils, 'parseConfigFile').mockImplementation(async (config, __) => config)
           jest.spyOn(utils, 'getSuites').mockImplementation((() => [getTestSuite()]) as any)
 
           expect(await command.execute()).toBe(expectedExit)
@@ -373,7 +373,7 @@ describe('run-test', () => {
             }),
           }
           jest.spyOn(runTests, 'getApiHelper').mockImplementation(() => apiHelper as any)
-          jest.spyOn(ciUtils, 'parseConfigFile').mockImplementation(async (config, _) => config)
+          jest.spyOn(ciUtils, 'parseConfigFile').mockImplementation(async (config, __) => config)
           jest.spyOn(utils, 'getSuites').mockImplementation((() => [getTestSuite()]) as any)
 
           expect(await command.execute()).toBe(expectedExit)
@@ -396,7 +396,7 @@ describe('run-test', () => {
             }),
           }
           jest.spyOn(runTests, 'getApiHelper').mockImplementation(() => apiHelper as any)
-          jest.spyOn(ciUtils, 'parseConfigFile').mockImplementation(async (config, _) => config)
+          jest.spyOn(ciUtils, 'parseConfigFile').mockImplementation(async (config, __) => config)
           jest.spyOn(utils, 'getSuites').mockImplementation((() => [getTestSuite()]) as any)
 
           expect(await command.execute()).toBe(expectedExit)
