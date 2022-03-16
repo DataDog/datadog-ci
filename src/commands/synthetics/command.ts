@@ -89,7 +89,8 @@ export class RunTestCommand extends Command {
           } else {
             this.reporter.error(
               chalk.yellow(
-                'Because `failOnCriticalErrors` is not set, the command will exit with an error code 0. Use `failOnCriticalErrors: true` to exit with an error code 1.\n'
+                'Because `failOnCriticalErrors` is not set or disabled, the command will exit with an error code 0. ' +
+                  'Use `failOnCriticalErrors: true` to exit with an error code 1.\n'
               )
             )
           }

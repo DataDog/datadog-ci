@@ -302,7 +302,7 @@ describe('run-test', () => {
   })
 
   describe('exit code respects `failOnCriticalErrors`', () => {
-    test('404 test not found never exit with 1', async () => {
+    test('404 leading to `NO_TESTS_TO_RUN` never exit with 1', async () => {
       const command = new RunTestCommand()
       command.context = {stdout: {write: jest.fn()}} as any
       command['config'].failOnCriticalErrors = true
@@ -318,6 +318,23 @@ describe('run-test', () => {
 
       expect(await command.execute()).toBe(0)
       expect(apiHelper.getTest).toHaveBeenCalledTimes(1)
+    })
+
+    test('`NO_RESULTS_TO_POLL` never exit with 1', async () => {
+      const command = new RunTestCommand()
+      command.context = {stdout: {write: jest.fn()}} as any
+      command['config'].failOnCriticalErrors = true
+
+      const apiHelper = {
+        getTest: () => getApiTest('123-456-789'),
+        triggerTests: jest.fn(() => ({})),
+      }
+      jest.spyOn(runTests, 'getApiHelper').mockImplementation(() => apiHelper as any)
+      jest.spyOn(ciUtils, 'parseConfigFile').mockImplementation(async (config, _) => config)
+      jest.spyOn(utils, 'getSuites').mockImplementation((() => [getTestSuite()]) as any)
+
+      expect(await command.execute()).toBe(0)
+      expect(apiHelper.triggerTests).toHaveBeenCalledTimes(1)
     })
 
     describe.each([false, true])('%s', (failOnCriticalErrors: boolean) => {
