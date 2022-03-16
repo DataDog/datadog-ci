@@ -68,3 +68,6 @@ dist
 
 # JetBrains files
 .idea
+
+# VSC files
+.vscode
