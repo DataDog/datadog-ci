@@ -7,7 +7,7 @@ import path from 'path'
 import {buildPath} from '../../../helpers/utils'
 import {Dsym} from '../interfaces'
 import {UploadCommand} from '../upload'
-import {createTmpDirectory, deleteDirectory} from '../utils'
+import {createUniqueTmpDirectory, deleteDirectory} from '../utils'
 
 /**
  * `dwarfdump` and `lipo` are only available in macOS, so we mock their behaviour when running tests on other platforms.
@@ -167,7 +167,7 @@ describe('upload', () => {
     const command = new UploadCommand()
 
     test('Given fat dSYM, it should extract each arch slice to separate dSYM in target folder', async () => {
-      const tmpDirectory = await createTmpDirectory()
+      const tmpDirectory = await createUniqueTmpDirectory()
 
       // Given
       const inputDSYM = fatDSYMFixture
@@ -197,7 +197,7 @@ describe('upload', () => {
     })
 
     test('Given slim dSYM, it should leave it untouched and not extract anything into target folder', async () => {
-      const tmpDirectory = await createTmpDirectory()
+      const tmpDirectory = await createUniqueTmpDirectory()
 
       // Given
       const inputDSYM = slimDSYMFixture
@@ -219,7 +219,7 @@ describe('upload', () => {
     const command = new UploadCommand()
 
     test('Should archive dSYMs to target directory and name archives by their UUIDs', async () => {
-      const tmpDirectory = await createTmpDirectory()
+      const tmpDirectory = await createUniqueTmpDirectory()
       const dsymFixtures = [fatDSYMFixture, slimDSYMFixture]
 
       // When

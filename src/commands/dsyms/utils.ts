@@ -17,8 +17,9 @@ export const isZipFile = async (filepath: string) => {
   }
 }
 
-export const createTmpDirectory = async (): Promise<string> => {
-  const directoryPath = buildPath(tmpdir(), Date.now().toString())
+export const createUniqueTmpDirectory = async (): Promise<string> => {
+  const uniqueValue = Math.random() * Number.MAX_SAFE_INTEGER
+  const directoryPath = buildPath(tmpdir(), uniqueValue.toString())
   await promises.mkdir(directoryPath, {recursive: true})
 
   return directoryPath

@@ -2,13 +2,13 @@ import fs, {promises} from 'fs'
 import glob from 'glob'
 import {buildPath} from '../../../helpers/utils'
 
-import {createTmpDirectory, deleteDirectory, isZipFile, unzipArchiveToDirectory, zipDirectoryToArchive} from '../utils'
+import {createUniqueTmpDirectory, deleteDirectory, isZipFile, unzipArchiveToDirectory, zipDirectoryToArchive} from '../utils'
 
 describe('utils', () => {
   describe('createTmpDirectory', () => {
     test('Create unique directory', async () => {
-      const tmpDirectory1 = await createTmpDirectory()
-      const tmpDirectory2 = await createTmpDirectory()
+      const tmpDirectory1 = await createUniqueTmpDirectory()
+      const tmpDirectory2 = await createUniqueTmpDirectory()
 
       expect(fs.existsSync(tmpDirectory1)).toBeTruthy()
       expect(fs.existsSync(tmpDirectory2)).toBeTruthy()
@@ -21,7 +21,7 @@ describe('utils', () => {
 
   describe('deleteDirectory', () => {
     test('Delete empty directory', async () => {
-      const tmpDirectory = await createTmpDirectory()
+      const tmpDirectory = await createUniqueTmpDirectory()
 
       await deleteDirectory(tmpDirectory)
 
@@ -29,7 +29,7 @@ describe('utils', () => {
     })
 
     test('Delete non-empty directory', async () => {
-      const tmpDirectory = await createTmpDirectory()
+      const tmpDirectory = await createUniqueTmpDirectory()
       await promises.mkdir(buildPath(tmpDirectory, 'foo'))
       await promises.writeFile(buildPath(tmpDirectory, 'foo', 'bar1'), 'mock1')
       await promises.writeFile(buildPath(tmpDirectory, 'foo', 'bar2'), 'mock2')
@@ -42,7 +42,7 @@ describe('utils', () => {
 
   describe('zipDirectoryToArchive', () => {
     test('Compress folder to archive at given path', async () => {
-      const archiveDirectory = await createTmpDirectory()
+      const archiveDirectory = await createUniqueTmpDirectory()
       const archivePath = buildPath(archiveDirectory, 'archive.zip')
 
       await zipDirectoryToArchive('./src/commands/dsyms/__tests__/fixtures', archivePath)
@@ -55,8 +55,8 @@ describe('utils', () => {
 
   describe('unzipArchiveToDirectory', () => {
     test('Uncompress archive to given destination', async () => {
-      const archiveDirectory = await createTmpDirectory()
-      const destinationDirectory = await createTmpDirectory()
+      const archiveDirectory = await createUniqueTmpDirectory()
+      const destinationDirectory = await createUniqueTmpDirectory()
       const archivePath = buildPath(archiveDirectory, 'archive.zip')
       await zipDirectoryToArchive('./src/commands/dsyms/__tests__/fixtures', archivePath)
 

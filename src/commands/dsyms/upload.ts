@@ -23,7 +23,7 @@ import {
   renderUpload,
 } from './renderer'
 import {
-  createTmpDirectory,
+  createUniqueTmpDirectory,
   deleteDirectory,
   executeDwarfdump,
   executeLipo,
@@ -78,7 +78,7 @@ export class UploadCommand extends Command {
       metricsLogger: metricsLogger.logger,
     })
     const initialTime = Date.now()
-    const tmpDirectory = await createTmpDirectory()
+    const tmpDirectory = await createUniqueTmpDirectory()
     const intermediateDirectory = buildPath(tmpDirectory, 'datadog-ci', 'dsyms', 'intermediate')
     const uploadDirectory = buildPath(tmpDirectory, 'datadog-ci', 'dsyms', 'upload')
 
