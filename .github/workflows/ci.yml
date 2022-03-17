@@ -79,8 +79,8 @@ jobs:
           node-version: '14.18.3'
       - run: yarn install --immutable
       - run: yarn build
-      - name: Bundle standalone binary
-        run: yarn dist-standalone -t node14-linux-x64 -o datadog-ci-linux
+      - name: Create standalone binary
+        run: yarn dist-standalone -t node14-linux-x64 -o datadog-ci_linux-x64
       - name: Remove dist and src folder to check that binary can stand alone
         run: |
           rm -rf dist
@@ -99,8 +99,8 @@ jobs:
           node-version: '14.18.3'
       - run: yarn install --immutable
       - run: yarn build:win
-      - name: Bundle standalone binary
-        run: yarn dist-standalone -t node14-win-x64 -o datadog-ci-win
+      - name: Create standalone binary
+        run: yarn dist-standalone -t node14-win-x64 -o datadog-ci_win-x64
       - name: Remove dist and src folder to check that binary can stand alone
         run: |
           rm dist -r
@@ -119,8 +119,8 @@ jobs:
           node-version: '14.18.3'
       - run: yarn install --immutable
       - run: yarn build
-      - name: Bundle standalone binary
-        run: yarn dist-standalone -t node14-macos-x64 -o datadog-ci-macos
+      - name: Create standalone binary
+        run: yarn dist-standalone -t node14-macos-x64 -o datadog-ci_darwin-x64
       - name: Remove dist and src folder to check that binary can stand alone
         run: |
           rm -rf dist
