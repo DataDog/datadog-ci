@@ -65,7 +65,7 @@ jobs:
         uses: shogo82148/actions-upload-release-asset@v1
         with:
           upload_url: ${{ github.event.release.upload_url }}
-          asset_path: ./datadog-ci_win-x64
+          asset_path: ./datadog-ci_win-x64.exe
 
   build-binary-macos:
     runs-on: macos-latest
