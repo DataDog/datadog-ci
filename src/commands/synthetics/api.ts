@@ -115,8 +115,13 @@ const retryOn5xxErrors = (retries: number, error: AxiosError) => {
   }
 }
 
+const getErrorHttpStatus = (error: AxiosError | EndpointError) =>
+  'status' in error ? error.status : error.response?.status
+
+export const isNotFoundError = (error: AxiosError | EndpointError) => getErrorHttpStatus(error) === 404
+
 export const is5xxError = (error: AxiosError | EndpointError) => {
-  const statusCode = 'status' in error ? error.status : error.response?.status
+  const statusCode = getErrorHttpStatus(error)
 
   return statusCode && statusCode >= 500 && statusCode <= 599
 }

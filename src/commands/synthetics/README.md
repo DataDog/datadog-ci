@@ -17,7 +17,7 @@ export DATADOG_APP_KEY="<APPLICATION KEY>"
 yarn datadog-ci synthetics <command> --apiKey "<API KEY>" --appKey "<APPLICATION KEY>"
 ```
 
-It is possible to configure the tool to use Datadog EU by defining the `DATADOG_SITE` environment variable to `datadoghq.eu`. By defaut the requests are sent to Datadog US.
+It is possible to configure the tool to use Datadog EU by defining the `DATADOG_SITE` environment variable to `datadoghq.eu`. By default the requests are sent to Datadog US.
 
 If the org uses a custom sub-domain to access Datadog app, it needs to be set in the `DATADOG_SUBDOMAIN` environment variable or in the global configuration file under the `subdomain` key to properly display the test results URL. As an example, if the URL used to access Datadog is `myorg.datadoghq.com` then set the environment variable to `myorg`, ie:
 
@@ -37,7 +37,7 @@ By default it runs at the root of the working directory and finds `{,!(node_modu
 
 #### Configuration
 
-Configuration is done via a json file, by default the tool load `datadog-ci.json` which can be overriden through the `--config` argument.
+Configuration is done via a json file, by default the tool load `datadog-ci.json` which can be overridden through the `--config` argument.
 
 The configuration file structure is the following:
 
@@ -106,7 +106,7 @@ yarn datadog-ci synthetics run-tests -s 'tag:e2e-tests' --config global.config.j
 ```
 
 You can use `--files` (shorthand `-f`) to override the global file selector.
-It's particularely useful when you want to run multiple suites in parallel with a single global configuration file.
+It's particularly useful when you want to run multiple suites in parallel with a single global configuration file.
 
 ```bash
 yarn datadog-ci synthetics run-tests -f ./component-1/**/*.synthetics.json -f ./component-2/**/*.synthetics.json
@@ -139,6 +139,7 @@ Your test files must be named with a `.synthetics.json` suffix.
         "defaultStepTimeout": 15,
         "deviceIds": ["laptop_large"],
         "executionRule": "skipped",
+        "failOnCriticalErrors": true,
         "followRedirects": true,
         "headers": {"NEW_HEADER": "NEW VALUE"},
         "locations": ["aws:us-east-1"],
@@ -172,6 +173,7 @@ All options under the `config` key are optional and allow overriding the configu
   - `blocking`: the CLI returns an error if the test fails.
   - `non_blocking`: the CLI only prints a warning if the test fails.
   - `skipped`: the test is not executed at all.
+- `failOnCriticalErrors`: (boolean) exit with an error code 1 if tests were not triggered or results could not be fetched.
 - `followRedirects`: (boolean) indicates whether to follow or not HTTP redirections in API tests.
 - `headers`: (object) headers to replace in the test. This object should contain as keys the name of the header to replace and as values the new value of the header.
 - `locations`: (array) list of locations from which the test should be run.
@@ -261,3 +263,4 @@ Reporters can hook themselves into the `MainReporter` of the command.
 | `testEnd`     | `(test: Test, results: PollResult[], baseUrl: string, locationNames: LocationsMapping)` | called when a test receives its results.                        |
 | `testTrigger` | `(test: Test, testId: string, executionRule: ExecutionRule, config: ConfigOverride)`    | called when a test is triggered.                                |
 | `testWait`    | `(test: Test)`                                                                          | called when a test is waiting to receive its results.           |
+| `testsWait`   | `(tests: Test[])`                                                                       | called when all tests are waiting to receive their results.     |

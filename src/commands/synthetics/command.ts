@@ -82,8 +82,18 @@ export class RunTestCommand extends Command {
     } catch (error) {
       if (error instanceof CiError) {
         this.reportCiError(error, this.reporter)
-        if (error instanceof CriticalError && this.config.failOnCriticalErrors) {
-          return 1
+
+        if (error instanceof CriticalError) {
+          if (this.config.failOnCriticalErrors) {
+            return 1
+          } else {
+            this.reporter.error(
+              chalk.yellow(
+                'Because `failOnCriticalErrors` is not set or disabled, the command will exit with an error code 0. ' +
+                  'Use `failOnCriticalErrors: true` to exit with an error code 1.\n'
+              )
+            )
+          }
         }
       }
 
@@ -165,12 +175,15 @@ export class RunTestCommand extends Command {
 
   private reportCiError(error: CiError, reporter: MainReporter) {
     switch (error.code) {
+      // Non critical errors
       case 'NO_RESULTS_TO_POLL':
         reporter.log('No results to poll.\n')
         break
       case 'NO_TESTS_TO_RUN':
         reporter.log('No test to run.\n')
         break
+
+      // Critical command errors
       case 'MISSING_APP_KEY':
         reporter.error(`Missing ${chalk.red.bold('DATADOG_APP_KEY')} in your environment.\n`)
         break
@@ -181,10 +194,10 @@ export class RunTestCommand extends Command {
         reporter.error(`\n${chalk.bgRed.bold(' ERROR: unable to poll test results ')}\n${error.message}\n\n`)
         break
       case 'TUNNEL_START_FAILED':
-        reporter.error(`\n${chalk.bgRed.bold(' ERROR: unable to start tunnel')}\n${error.message}\n\n`)
+        reporter.error(`\n${chalk.bgRed.bold(' ERROR: unable to start tunnel ')}\n${error.message}\n\n`)
         break
       case 'TRIGGER_TESTS_FAILED':
-        reporter.error(`\n${chalk.bgRed.bold(' ERROR: unable to trigger tests')}\n${error.message}\n\n`)
+        reporter.error(`\n${chalk.bgRed.bold(' ERROR: unable to trigger tests ')}\n${error.message}\n\n`)
         break
       case 'UNAVAILABLE_TEST_CONFIG':
         reporter.error(
@@ -194,7 +207,7 @@ export class RunTestCommand extends Command {
         )
         break
       case 'UNAVAILABLE_TUNNEL_CONFIG':
-        reporter.error(`\n${chalk.bgRed.bold(' ERROR: unable to get tunnel configuration')}\n${error.message}\n\n`)
+        reporter.error(`\n${chalk.bgRed.bold(' ERROR: unable to get tunnel configuration ')}\n${error.message}\n\n`)
     }
   }
 

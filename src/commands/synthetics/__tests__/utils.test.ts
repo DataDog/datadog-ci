@@ -11,6 +11,7 @@ import {Metadata} from '../../../helpers/interfaces'
 import {ProxyConfiguration} from '../../../helpers/utils'
 
 import {apiConstructor} from '../api'
+import {CiError} from '../errors'
 import {ConfigOverride, ERRORS, ExecutionRule, InternalTest, PollResult, Result, Summary} from '../interfaces'
 import {Tunnel} from '../tunnel'
 import * as utils from '../utils'
@@ -163,6 +164,10 @@ describe('utils', () => {
         if (fakeTests[publicId]) {
           return {data: fakeTests[publicId]}
         }
+
+        const error = new Error('Not found')
+        ;((error as unknown) as {status: number}).status = 404
+        throw error
       }) as any)
     })
 
@@ -200,7 +205,7 @@ describe('utils', () => {
     })
 
     test('no tests triggered throws an error', async () => {
-      await expect(utils.getTestsToTrigger(api, [], mockReporter)).rejects.toEqual(new Error('No tests to trigger'))
+      await expect(utils.getTestsToTrigger(api, [], mockReporter)).rejects.toEqual(new CiError('NO_TESTS_TO_RUN'))
     })
   })
 

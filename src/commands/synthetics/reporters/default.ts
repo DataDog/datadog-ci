@@ -279,7 +279,7 @@ export class DefaultReporter implements MainReporter {
   }
 
   public initErrors(errors: string[]) {
-    this.write(errors.join('\n'))
+    this.write(errors.join('\n') + '\n')
   }
 
   public log(log: string) {
@@ -289,7 +289,7 @@ export class DefaultReporter implements MainReporter {
   public reportStart(timings: {startTime: number}) {
     const delay = (Date.now() - timings.startTime).toString()
 
-    this.write(['\n', chalk.bold.cyan('=== REPORT ==='), `Took ${chalk.bold(delay)}ms`, '\n'].join('\n'))
+    this.write(['', chalk.bold.cyan('=== REPORT ==='), `Took ${chalk.bold(delay)}ms`, '\n'].join('\n'))
   }
 
   public runEnd(summary: Summary) {
@@ -347,6 +347,19 @@ export class DefaultReporter implements MainReporter {
     this.write([`${icon} ${idDisplay}${nonBlockingText} | ${nameColor(test.name)}`, testResultsText].join('\n'))
   }
 
+  public testsWait(tests: Test[]) {
+    const testsList = tests.map((t) => t.public_id)
+    if (testsList.length > 10) {
+      testsList.splice(10)
+      testsList.push('…')
+    }
+    const testsDisplay = chalk.gray(`(${testsList.join(', ')})`)
+
+    this.write(
+      `\nWaiting for ${chalk.bold.cyan(tests.length)} test result${tests.length > 1 ? 's' : ''} ${testsDisplay}…\n`
+    )
+  }
+
   public testTrigger(test: Test, testId: string, executionRule: ExecutionRule, config: ConfigOverride) {
     const idDisplay = `[${chalk.bold.dim(testId)}]`
 
@@ -355,25 +368,23 @@ export class DefaultReporter implements MainReporter {
         // Test is either skipped from datadog-ci config or from test config
         const isSkippedByCIConfig = config.executionRule === ExecutionRule.SKIPPED
         if (isSkippedByCIConfig) {
-          return `>> Skipped test "${chalk.yellow.dim(test.name)}"`
+          return `Skipped test "${chalk.yellow.dim(test.name)}"`
         } else {
-          return `>> Skipped test "${chalk.yellow.dim(test.name)}" because of execution rule configuration in Datadog`
+          return `Skipped test "${chalk.yellow.dim(test.name)}" because of execution rule configuration in Datadog`
         }
       }
 
       if (executionRule === ExecutionRule.NON_BLOCKING) {
-        return `Trigger test "${chalk.green.bold(test.name)}" (non-blocking)`
+        return `Found test "${chalk.green.bold(test.name)}" (non-blocking)`
       }
 
-      return `Trigger test "${chalk.green.bold(test.name)}"`
+      return `Found test "${chalk.green.bold(test.name)}"`
     }
 
     this.write(`${idDisplay} ${getMessage()}\n`)
   }
 
   public testWait(test: Test) {
-    const idDisplay = `[${chalk.bold.dim(test.public_id)}]`
-
-    this.write(`${idDisplay} Waiting results for "${chalk.green.bold(test.name)}"\n`)
+    return
   }
 }

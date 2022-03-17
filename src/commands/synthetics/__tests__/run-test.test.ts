@@ -341,11 +341,15 @@ describe('run-test', () => {
     test('should throw an error if API or Application key are undefined', async () => {
       process.env = {}
 
-      expect(() => runTests.getApiHelper(ciConfig)).toThrow(new CiError('MISSING_APP_KEY'))
-      await expect(runTests.executeTests(mockReporter, ciConfig)).rejects.toMatchError(new CiError('MISSING_APP_KEY'))
-      expect(() => runTests.getApiHelper({...ciConfig, appKey: 'fakeappkey'})).toThrow(new CiError('MISSING_API_KEY'))
+      expect(() => runTests.getApiHelper(ciConfig)).toThrow(new CriticalError('MISSING_APP_KEY'))
+      await expect(runTests.executeTests(mockReporter, ciConfig)).rejects.toMatchError(
+        new CriticalError('MISSING_APP_KEY')
+      )
+      expect(() => runTests.getApiHelper({...ciConfig, appKey: 'fakeappkey'})).toThrow(
+        new CriticalError('MISSING_API_KEY')
+      )
       await expect(runTests.executeTests(mockReporter, {...ciConfig, appKey: 'fakeappkey'})).rejects.toMatchError(
-        new CiError('MISSING_API_KEY')
+        new CriticalError('MISSING_API_KEY')
       )
     })
   })

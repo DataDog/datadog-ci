@@ -14,6 +14,7 @@ import {
   MultiStepsTestResult,
   PollResult,
   Step,
+  Suite,
   Test,
   TestResult,
   User,
@@ -35,6 +36,7 @@ export const mockReporter: MainReporter = {
   testEnd: jest.fn(),
   testTrigger: jest.fn(),
   testWait: jest.fn(),
+  testsWait: jest.fn(),
 }
 
 export const ciConfig: CommandConfig = {
@@ -121,6 +123,8 @@ export const getMultiStep = (): MultiStep => ({
     total: 123,
   },
 })
+
+export const getTestSuite = (): Suite => ({content: {tests: [{config: {}, id: '123-456-789'}]}, name: 'Suite 1'})
 
 const getPollResult = () => ({
   dc_id: 1,

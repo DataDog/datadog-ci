@@ -9,7 +9,8 @@ import glob from 'glob'
 import {getCIMetadata} from '../../helpers/ci'
 import {pick} from '../../helpers/utils'
 
-import {EndpointError, formatBackendErrors, is5xxError} from './api'
+import {EndpointError, formatBackendErrors, is5xxError, isNotFoundError} from './api'
+import {CiError} from './errors'
 import {
   APIHelper,
   ConfigOverride,
@@ -456,6 +457,13 @@ export const getReporter = (reporters: Reporter[]): MainReporter => ({
       }
     }
   },
+  testsWait: (tests) => {
+    for (const reporter of reporters) {
+      if (typeof reporter.testsWait === 'function') {
+        reporter.testsWait(tests)
+      }
+    }
+  },
 })
 
 export const getTestsToTrigger = async (api: APIHelper, triggerConfigs: TriggerConfig[], reporter: MainReporter) => {
@@ -472,16 +480,16 @@ export const getTestsToTrigger = async (api: APIHelper, triggerConfigs: TriggerC
           ...(await api.getTest(id)),
           suite,
         }
-      } catch (e) {
-        if (is5xxError(e)) {
-          throw e
+      } catch (error) {
+        if (isNotFoundError(error)) {
+          summary.testsNotFound.add(id)
+          const errorMessage = formatBackendErrors(error)
+          errorMessages.push(`[${chalk.bold.dim(id)}] ${chalk.yellow.bold('Test not found')}: ${errorMessage}`)
+
+          return
         }
 
-        summary.testsNotFound.add(id)
-        const errorMessage = formatBackendErrors(e)
-        errorMessages.push(`[${chalk.bold.dim(id)}] ${chalk.yellow.bold('Test not found')}: ${errorMessage}\n`)
-
-        return
+        throw error
       }
 
       const overriddenConfig = handleConfig(test, id, reporter, config)
@@ -502,10 +510,15 @@ export const getTestsToTrigger = async (api: APIHelper, triggerConfigs: TriggerC
   reporter.initErrors(errorMessages)
 
   if (!overriddenTestsToTrigger.length) {
-    throw new Error('No tests to trigger')
+    throw new CiError('NO_TESTS_TO_RUN')
   }
 
-  return {tests: tests.filter(definedTypeGuard), overriddenTestsToTrigger, summary}
+  const waitedTests = tests.filter(definedTypeGuard)
+  if (waitedTests.length > 0) {
+    reporter.testsWait(waitedTests)
+  }
+
+  return {tests: waitedTests, overriddenTestsToTrigger, summary}
 }
 
 export const runTests = async (api: APIHelper, testsToTrigger: TestPayload[]): Promise<Trigger> => {

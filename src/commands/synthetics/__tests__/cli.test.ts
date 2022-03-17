@@ -6,7 +6,7 @@ import {DEFAULT_COMMAND_CONFIG, RunTestCommand} from '../command'
 import {ExecutionRule} from '../interfaces'
 import * as runTests from '../run-test'
 import * as utils from '../utils'
-import {getApiTest} from './fixtures'
+import {getApiTest, getTestSuite, mockTestTriggerResponse} from './fixtures'
 
 test('all option flags are supported', async () => {
   const options = [
@@ -31,6 +31,14 @@ test('all option flags are supported', async () => {
 
   options.forEach((option) => expect(usage).toContain(`--${option}`))
 })
+
+const getAxiosHttpError = (status: number, error: string) => {
+  const serverError = new Error(error) as AxiosError
+  serverError.response = {data: {errors: [error]}, status} as AxiosResponse
+  serverError.config = {baseURL: 'baseURL', url: 'url'}
+
+  return serverError
+}
 
 describe('run-test', () => {
   beforeEach(() => {
@@ -231,11 +239,8 @@ describe('run-test', () => {
       jest.spyOn(utils, 'getSuites').mockImplementation((() => [conf]) as any)
 
       // Throw to stop the test
-      const serverError = new Error('Server Error') as AxiosError
-      serverError.response = {data: {errors: ['Bad Gateway']}, status: 502} as AxiosResponse
-      serverError.config = {baseURL: 'baseURL', url: 'url'}
       const triggerTests = jest.fn(() => {
-        throw serverError
+        throw getAxiosHttpError(502, 'Bad Gateway')
       })
 
       const apiHelper = {
@@ -293,6 +298,128 @@ describe('run-test', () => {
           tests: [{executionRule: 'blocking', locations: ['aws:us-east-1'], public_id: 'publicId'}],
         })
       )
+    })
+  })
+
+  describe('exit code respects `failOnCriticalErrors`', () => {
+    test('404 leading to `NO_TESTS_TO_RUN` never exit with 1', async () => {
+      const command = new RunTestCommand()
+      command.context = {stdout: {write: jest.fn()}} as any
+      command['config'].failOnCriticalErrors = true
+
+      const apiHelper = {
+        getTest: jest.fn(() => {
+          throw getAxiosHttpError(404, 'Test not found')
+        }),
+      }
+      jest.spyOn(runTests, 'getApiHelper').mockImplementation(() => apiHelper as any)
+      jest.spyOn(ciUtils, 'parseConfigFile').mockImplementation(async (config, _) => config)
+      jest.spyOn(utils, 'getSuites').mockImplementation((() => [getTestSuite()]) as any)
+
+      expect(await command.execute()).toBe(0)
+      expect(apiHelper.getTest).toHaveBeenCalledTimes(1)
+    })
+
+    test('`NO_RESULTS_TO_POLL` never exit with 1', async () => {
+      const command = new RunTestCommand()
+      command.context = {stdout: {write: jest.fn()}} as any
+      command['config'].failOnCriticalErrors = true
+
+      const apiHelper = {
+        getTest: () => getApiTest('123-456-789'),
+        triggerTests: jest.fn(() => ({})),
+      }
+      jest.spyOn(runTests, 'getApiHelper').mockImplementation(() => apiHelper as any)
+      jest.spyOn(ciUtils, 'parseConfigFile').mockImplementation(async (config, _) => config)
+      jest.spyOn(utils, 'getSuites').mockImplementation((() => [getTestSuite()]) as any)
+
+      expect(await command.execute()).toBe(0)
+      expect(apiHelper.triggerTests).toHaveBeenCalledTimes(1)
+    })
+
+    describe.each([false, true])('%s', (failOnCriticalErrors: boolean) => {
+      const cases: [string, number?][] = [['HTTP 4xx error', 403], ['HTTP 5xx error', 502], ['Unknown error']]
+      const expectedExit = failOnCriticalErrors ? 1 : 0
+
+      describe.each(cases)('%s', (_, errorCode) => {
+        test('unable to obtain test configurations', async () => {
+          const command = new RunTestCommand()
+          command.context = {stdout: {write: jest.fn()}} as any
+          command['config'].failOnCriticalErrors = failOnCriticalErrors
+          command['testSearchQuery'] = 'test:search'
+
+          const apiHelper = {
+            searchTests: jest.fn(() => {
+              throw errorCode ? getAxiosHttpError(errorCode, 'Error') : new Error('Unknown error')
+            }),
+          }
+          jest.spyOn(runTests, 'getApiHelper').mockImplementation(() => apiHelper as any)
+          jest.spyOn(ciUtils, 'parseConfigFile').mockImplementation(async (config, __) => config)
+
+          expect(await command.execute()).toBe(expectedExit)
+          expect(apiHelper.searchTests).toHaveBeenCalledTimes(1)
+        })
+
+        test('unavailable test config', async () => {
+          const command = new RunTestCommand()
+          command.context = {stdout: {write: jest.fn()}} as any
+          command['config'].failOnCriticalErrors = failOnCriticalErrors
+
+          const apiHelper = {
+            getTest: jest.fn(() => {
+              throw errorCode ? getAxiosHttpError(errorCode, 'Error') : new Error('Unknown error')
+            }),
+          }
+          jest.spyOn(runTests, 'getApiHelper').mockImplementation(() => apiHelper as any)
+          jest.spyOn(ciUtils, 'parseConfigFile').mockImplementation(async (config, __) => config)
+          jest.spyOn(utils, 'getSuites').mockImplementation((() => [getTestSuite()]) as any)
+
+          expect(await command.execute()).toBe(expectedExit)
+          expect(apiHelper.getTest).toHaveBeenCalledTimes(1)
+        })
+
+        test('unable to trigger tests', async () => {
+          const command = new RunTestCommand()
+          command.context = {stdout: {write: jest.fn()}} as any
+          command['config'].failOnCriticalErrors = failOnCriticalErrors
+
+          const apiHelper = {
+            getTest: () => getApiTest('123-456-789'),
+            triggerTests: jest.fn(() => {
+              throw errorCode ? getAxiosHttpError(errorCode, 'Error') : new Error('Unknown error')
+            }),
+          }
+          jest.spyOn(runTests, 'getApiHelper').mockImplementation(() => apiHelper as any)
+          jest.spyOn(ciUtils, 'parseConfigFile').mockImplementation(async (config, __) => config)
+          jest.spyOn(utils, 'getSuites').mockImplementation((() => [getTestSuite()]) as any)
+
+          expect(await command.execute()).toBe(expectedExit)
+          expect(apiHelper.triggerTests).toHaveBeenCalledTimes(1)
+        })
+
+        test('unable to poll test results', async () => {
+          const command = new RunTestCommand()
+          command.context = {stdout: {write: jest.fn()}} as any
+          command['config'].failOnCriticalErrors = failOnCriticalErrors
+
+          const apiHelper = {
+            getTest: () => getApiTest('123-456-789'),
+            pollResults: jest.fn(() => {
+              throw errorCode ? getAxiosHttpError(errorCode, 'Error') : new Error('Unknown error')
+            }),
+            triggerTests: () => ({
+              ...mockTestTriggerResponse,
+              results: [{location: 1, public_id: '123-456-789', result_id: '1'}],
+            }),
+          }
+          jest.spyOn(runTests, 'getApiHelper').mockImplementation(() => apiHelper as any)
+          jest.spyOn(ciUtils, 'parseConfigFile').mockImplementation(async (config, __) => config)
+          jest.spyOn(utils, 'getSuites').mockImplementation((() => [getTestSuite()]) as any)
+
+          expect(await command.execute()).toBe(expectedExit)
+          expect(apiHelper.pollResults).toHaveBeenCalledTimes(1)
+        })
+      })
     })
   })
 })
