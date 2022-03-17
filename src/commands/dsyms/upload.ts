@@ -13,6 +13,7 @@ import {upload, UploadStatus} from '../../helpers/upload'
 import {buildPath, getRequestBuilder} from '../../helpers/utils'
 import {ArchSlice, CompressedDsym, Dsym} from './interfaces'
 import {
+  renderCommandDetail,
   renderCommandInfo,
   renderConfigurationError,
   renderDSYMSlimmingFailure,
@@ -81,6 +82,8 @@ export class UploadCommand extends Command {
     const tmpDirectory = await createUniqueTmpDirectory()
     const intermediateDirectory = buildPath(tmpDirectory, 'datadog-ci', 'dsyms', 'intermediate')
     const uploadDirectory = buildPath(tmpDirectory, 'datadog-ci', 'dsyms', 'upload')
+
+    this.context.stdout.write(renderCommandDetail(intermediateDirectory, uploadDirectory))
 
     // The CLI input path can be a folder or `.zip` archive with `*.dSYM` files.
     // In case of `.zip`, extract it to temporary location, so it can be handled the same way as folder.

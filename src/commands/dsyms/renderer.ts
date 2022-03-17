@@ -97,10 +97,15 @@ export const renderCommandInfo = (basePath: string, poolLimit: number, dryRun: b
   return fullStr
 }
 
+export const renderCommandDetail = (intermediateDirectory: string, uploadDirectory: string) =>
+  `Will use temporary intermediate directory: ${intermediateDirectory}\n` +
+  `Will use temporary upload directory: ${uploadDirectory}\n`
+
 export const renderUpload = (dSYM: CompressedDsym): string => {
+  const archiveName = path.basename(dSYM.archivePath)
   const objectName = dSYM.dsym.slices.map((slice) => path.basename(slice.objectPath))[0]
   const archs = dSYM.dsym.slices.map((slice) => slice.arch).join()
   const uuids = dSYM.dsym.slices.map((slice) => slice.uuid).join()
 
-  return `Uploading dSYM, UUID: ${uuids} ('${objectName}', ${archs}) from ${dSYM.archivePath}\n`
+  return `Uploading ${archiveName} (${objectName}, arch: ${archs}, UUID: ${uuids})\n`
 }

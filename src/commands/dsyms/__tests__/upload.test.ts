@@ -282,10 +282,18 @@ describe('execute', () => {
     expect(code).toBe(0)
     expect(output[1]).toContain('Starting upload with concurrency 20. ')
     expect(output[2]).toContain('Will look for dSYMs in src/commands/dsyms/__tests__/fixtures/')
-    expect(output[3]).toContain("Uploading dSYM, UUID: C8469F85-B060-3085-B69D-E46C645560EA ('DDTest', armv7) from")
-    expect(output[4]).toContain("Uploading dSYM, UUID: 06EE3D68-D605-3E92-B92D-2F48C02A505E ('DDTest', arm64) from")
-    expect(output[5]).toContain("Uploading dSYM, UUID: 3BC12422-63CC-30E8-B916-E5006CE3286C ('DDTest', arm64) from")
-    expect(output[8]).toContain('Handled 3 dSYMs with success')
+    expect(output[3]).toContain('Will use temporary intermediate directory: ')
+    expect(output[4]).toContain('Will use temporary upload directory: ')
+    expect(output[5]).toContain(
+      'Uploading C8469F85-B060-3085-B69D-E46C645560EA.zip (DDTest, arch: armv7, UUID: C8469F85-B060-3085-B69D-E46C645560EA)'
+    )
+    expect(output[6]).toContain(
+      'Uploading 06EE3D68-D605-3E92-B92D-2F48C02A505E.zip (DDTest, arch: arm64, UUID: 06EE3D68-D605-3E92-B92D-2F48C02A505E)'
+    )
+    expect(output[7]).toContain(
+      'Uploading 3BC12422-63CC-30E8-B916-E5006CE3286C.zip (DDTest, arch: arm64, UUID: 3BC12422-63CC-30E8-B916-E5006CE3286C)'
+    )
+    expect(output[10]).toContain('Handled 3 dSYMs with success')
   })
 
   test('Should succeed with zip file input', async () => {
@@ -297,9 +305,17 @@ describe('execute', () => {
     expect(code).toBe(0)
     expect(output[1]).toContain('Starting upload with concurrency 20. ')
     expect(output[2]).toContain('Will look for dSYMs in src/commands/dsyms/__tests__/fixtures/all.zip')
-    expect(output[3]).toContain("Uploading dSYM, UUID: C8469F85-B060-3085-B69D-E46C645560EA ('DDTest', armv7) from")
-    expect(output[4]).toContain("Uploading dSYM, UUID: 06EE3D68-D605-3E92-B92D-2F48C02A505E ('DDTest', arm64) from")
-    expect(output[5]).toContain("Uploading dSYM, UUID: 3BC12422-63CC-30E8-B916-E5006CE3286C ('DDTest', arm64) from")
-    expect(output[8]).toContain('Handled 3 dSYMs with success')
+    expect(output[3]).toContain('Will use temporary intermediate directory: ')
+    expect(output[4]).toContain('Will use temporary upload directory: ')
+    expect(output[5]).toContain(
+      'Uploading C8469F85-B060-3085-B69D-E46C645560EA.zip (DDTest, arch: armv7, UUID: C8469F85-B060-3085-B69D-E46C645560EA)'
+    )
+    expect(output[6]).toContain(
+      'Uploading 06EE3D68-D605-3E92-B92D-2F48C02A505E.zip (DDTest, arch: arm64, UUID: 06EE3D68-D605-3E92-B92D-2F48C02A505E)'
+    )
+    expect(output[7]).toContain(
+      'Uploading 3BC12422-63CC-30E8-B916-E5006CE3286C.zip (DDTest, arch: arm64, UUID: 3BC12422-63CC-30E8-B916-E5006CE3286C)'
+    )
+    expect(output[10]).toContain('Handled 3 dSYMs with success')
   })
 })

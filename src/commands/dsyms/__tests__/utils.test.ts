@@ -2,7 +2,13 @@ import fs, {promises} from 'fs'
 import glob from 'glob'
 import {buildPath} from '../../../helpers/utils'
 
-import {createUniqueTmpDirectory, deleteDirectory, isZipFile, unzipArchiveToDirectory, zipDirectoryToArchive} from '../utils'
+import {
+  createUniqueTmpDirectory,
+  deleteDirectory,
+  isZipFile,
+  unzipArchiveToDirectory,
+  zipDirectoryToArchive,
+} from '../utils'
 
 describe('utils', () => {
   describe('createTmpDirectory', () => {
