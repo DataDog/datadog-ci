@@ -10,6 +10,7 @@ Component,Origin,Licence,Copyright
 @types/inquirer,dev,MIT,Copyright Microsoft Corporation
 @types/jest,dev,MIT,Copyright Microsoft Corporation
 @types/node,dev,MIT,Copyright Microsoft Corporation
+@types/rimraf,dev,MIT,Copyright Carlos Ballesteros Velasco <https://github.com/soywiz> and contributors
 @types/ssh2,dev,MIT,Copyright Microsoft Corporation
 @types/ssh2-streams,dev,MIT,Copyright Microsoft Corporation
 @types/sshpk,dev,MIT,Copyright Microsoft Corporation
@@ -34,6 +35,7 @@ pkg,dev,MIT,Copyright (c) 2021 Vercel, Inc.
 prettier,dev,MIT,Copyright © James Long and contributors
 proxy,dev,MIT,Copyright (c) 2013 Nathan Rajlich <nathan@tootallnate.net>
 proxy-agent,import,MIT,Copyright (c) 2013 Nathan Rajlich <nathan@tootallnate.net>
+rimraf,import,ISC,Copyright (c) 2011-2022 Isaac Z. Schlueter and Contributors
 simple-git,import,MIT,Copyright (c) 2015 Steve King
 ssh2,import,MIT,Copyright (c) Brian White
 ssh2-streams,import,MIT,Copyright (c) 2014 Brian White
