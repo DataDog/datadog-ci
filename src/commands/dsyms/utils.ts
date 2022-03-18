@@ -2,6 +2,7 @@ import {exec} from 'child_process'
 import {promises} from 'fs'
 import {tmpdir} from 'os'
 import path from 'path'
+import rimraf from 'rimraf'
 import {promisify} from 'util'
 
 import {buildPath} from '../../helpers/utils'
@@ -25,9 +26,8 @@ export const createUniqueTmpDirectory = async (): Promise<string> => {
   return directoryPath
 }
 
-export const deleteDirectory = async (directoryPath: string) => {
-  await execute(`rm -rf '${directoryPath}'`)
-}
+export const deleteDirectory = async (directoryPath: string): Promise<void> =>
+  new Promise((resolve, reject) => rimraf(directoryPath, () => resolve()))
 
 export const zipDirectoryToArchive = async (directoryPath: string, archivePath: string) => {
   const cwd = path.dirname(directoryPath)
