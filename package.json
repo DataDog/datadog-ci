@@ -64,7 +64,7 @@
     "glob": "7.1.4",
     "inquirer": "8.2.0",
     "proxy-agent": "5.0.0",
-    "simple-git": "2.31.0",
+    "simple-git": "3.3.0",
     "ssh2": "1.4.0",
     "ssh2-streams": "0.4.10",
     "sshpk": "1.16.1",
