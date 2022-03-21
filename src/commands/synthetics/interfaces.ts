@@ -269,12 +269,8 @@ export interface ConfigOverride {
 }
 
 export interface Payload {
-  metadata?: SyntheticsMetadata
+  metadata?: Metadata
   tests: TestPayload[]
-}
-
-export type SyntheticsMetadata = Metadata & {
-  trigger_app: string
 }
 
 export interface TestPayload extends ConfigOverride {
