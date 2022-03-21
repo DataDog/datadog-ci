@@ -184,6 +184,10 @@ export class RunTestCommand extends Command {
         break
 
       // Critical command errors
+      case 'AUTHENTICATION_ERROR':
+        reporter.error(`\n${chalk.bgRed.bold(' ERROR: authentication error ')}\n${error.message}\n\n`)
+        reporter.log('Invalid credentials, make sure `apiKey`, `appKey` and `datadogSite` are correct.\n')
+        break
       case 'MISSING_APP_KEY':
         reporter.error(`Missing ${chalk.red.bold('DATADOG_APP_KEY')} in your environment.\n`)
         break
