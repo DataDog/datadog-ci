@@ -1,7 +1,7 @@
 // tslint:disable: no-string-literal
 import {AxiosError, AxiosResponse} from 'axios'
 import * as ciUtils from '../../../helpers/utils'
-import {CiError, CriticalError} from '../errors'
+import {CiError, CriticalCiErrorCode, CriticalError} from '../errors'
 import {ExecutionRule} from '../interfaces'
 import * as runTests from '../run-test'
 import {Tunnel} from '../tunnel'
@@ -167,34 +167,40 @@ describe('run-test', () => {
       expect(stopTunnelSpy).toHaveBeenCalledTimes(1)
     })
 
-    test('getTestsList throws', async () => {
-      const serverError = new Error('Server Error') as AxiosError
-      serverError.response = {data: {errors: ['Bad Gateway']}, status: 502} as AxiosResponse
-      serverError.config = {baseURL: 'baseURL', url: 'url'}
-      const apiHelper = {
-        searchTests: jest.fn(() => {
-          throw serverError
-        }),
-      }
-      jest.spyOn(runTests, 'getApiHelper').mockImplementation(() => apiHelper as any)
-      await expect(
-        runTests.executeTests(mockReporter, {...ciConfig, testSearchQuery: 'a-search-query', tunnel: true})
-      ).rejects.toMatchError(new CriticalError('UNAVAILABLE_TEST_CONFIG'))
-    })
+    const cases: [number, CriticalCiErrorCode][] = [
+      [403, 'AUTHENTICATION_ERROR'],
+      [502, 'UNAVAILABLE_TEST_CONFIG'],
+    ]
+    describe.each(cases)('%s trigger %s', (status, error) => {
+      test(`getTestsList throws - ${status}`, async () => {
+        const serverError = new Error('Server Error') as AxiosError
+        serverError.response = {data: {errors: ['Error']}, status} as AxiosResponse
+        serverError.config = {baseURL: 'baseURL', url: 'url'}
+        const apiHelper = {
+          searchTests: jest.fn(() => {
+            throw serverError
+          }),
+        }
+        jest.spyOn(runTests, 'getApiHelper').mockImplementation(() => apiHelper as any)
+        await expect(
+          runTests.executeTests(mockReporter, {...ciConfig, testSearchQuery: 'a-search-query', tunnel: true})
+        ).rejects.toMatchError(new CriticalError(error))
+      })
 
-    test('getTestsToTrigger throws', async () => {
-      const serverError = new Error('Server Error') as AxiosError
-      serverError.response = {data: {errors: ['Bad Gateway']}, status: 502} as AxiosResponse
-      serverError.config = {baseURL: 'baseURL', url: 'url'}
-      const apiHelper = {
-        getTest: jest.fn(() => {
-          throw serverError
-        }),
-      }
-      jest.spyOn(runTests, 'getApiHelper').mockImplementation(() => apiHelper as any)
-      await expect(
-        runTests.executeTests(mockReporter, {...ciConfig, publicIds: ['public-id-1'], tunnel: true})
-      ).rejects.toMatchError(new CriticalError('UNAVAILABLE_TEST_CONFIG'))
+      test(`getTestsToTrigger throws - ${status}`, async () => {
+        const serverError = new Error('Server Error') as AxiosError
+        serverError.response = {data: {errors: ['Bad Gateway']}, status} as AxiosResponse
+        serverError.config = {baseURL: 'baseURL', url: 'url'}
+        const apiHelper = {
+          getTest: jest.fn(() => {
+            throw serverError
+          }),
+        }
+        jest.spyOn(runTests, 'getApiHelper').mockImplementation(() => apiHelper as any)
+        await expect(
+          runTests.executeTests(mockReporter, {...ciConfig, publicIds: ['public-id-1'], tunnel: true})
+        ).rejects.toMatchError(new CriticalError(error))
+      })
     })
 
     test('getPresignedURL throws', async () => {
