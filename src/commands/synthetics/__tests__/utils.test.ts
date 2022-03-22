@@ -77,14 +77,14 @@ describe('utils', () => {
 
       const payloadMetadataSpy = jest.fn()
       jest.spyOn(axios, 'create').mockImplementation((() => (request: any) => {
-        payloadMetadataSpy(request.data)
+        payloadMetadataSpy(request.data.metadata)
         if (request.url === '/synthetics/tests/trigger/ci') {
           return {data: fakeTrigger}
         }
       }) as any)
 
       await utils.runTests(api, [{public_id: fakeId, executionRule: ExecutionRule.NON_BLOCKING}])
-      expect(payloadMetadataSpy).not.toHaveBeenCalledWith(expect.objectContaining({metadata: expect.anything()}))
+      expect(payloadMetadataSpy).toHaveBeenCalledWith(undefined)
 
       const metadata: Metadata = {
         ci: {job: {name: 'job'}, pipeline: {}, provider: {name: 'jest'}, stage: {}},
@@ -93,7 +93,7 @@ describe('utils', () => {
       jest.spyOn(ciHelpers, 'getCIMetadata').mockImplementation(() => metadata)
 
       await utils.runTests(api, [{public_id: fakeId, executionRule: ExecutionRule.NON_BLOCKING}])
-      expect(payloadMetadataSpy).toHaveBeenCalledWith(expect.objectContaining({metadata}))
+      expect(payloadMetadataSpy).toHaveBeenCalledWith(metadata)
     })
 
     test('runTests api call includes trigger app header', async () => {
