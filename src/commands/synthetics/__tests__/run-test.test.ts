@@ -168,10 +168,10 @@ describe('run-test', () => {
     })
 
     const cases: [number, CriticalCiErrorCode][] = [
-      [403, 'AUTHENTICATION_ERROR'],
+      [403, 'AUTHORIZATION_ERROR'],
       [502, 'UNAVAILABLE_TEST_CONFIG'],
     ]
-    describe.each(cases)('%s trigger %s', (status, error) => {
+    describe.each(cases)('%s triggers %s', (status, error) => {
       test(`getTestsList throws - ${status}`, async () => {
         const serverError = new Error('Server Error') as AxiosError
         serverError.response = {data: {errors: ['Error']}, status} as AxiosResponse

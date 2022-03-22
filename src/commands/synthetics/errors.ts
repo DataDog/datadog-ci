@@ -3,7 +3,7 @@ const nonCriticalErrorCodes = ['NO_TESTS_TO_RUN', 'NO_RESULTS_TO_POLL'] as const
 export type NonCriticalCiErrorCode = typeof nonCriticalErrorCodes[number]
 
 const criticalErrorCodes = [
-  'AUTHENTICATION_ERROR',
+  'AUTHORIZATION_ERROR',
   'MISSING_API_KEY',
   'MISSING_APP_KEY',
   'POLL_RESULTS_FAILED',

@@ -118,7 +118,7 @@ const retryOn5xxErrors = (retries: number, error: AxiosError) => {
 const getErrorHttpStatus = (error: AxiosError | EndpointError) =>
   'status' in error ? error.status : error.response?.status
 
-export const isRefusedError = (error: AxiosError | EndpointError) => getErrorHttpStatus(error) === 403
+export const isForbiddenError = (error: AxiosError | EndpointError) => getErrorHttpStatus(error) === 403
 
 export const isNotFoundError = (error: AxiosError | EndpointError) => getErrorHttpStatus(error) === 404
 

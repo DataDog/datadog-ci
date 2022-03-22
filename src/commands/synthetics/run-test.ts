@@ -1,4 +1,4 @@
-import {apiConstructor, isRefusedError} from './api'
+import {apiConstructor, isForbiddenError} from './api'
 import {CiError, CriticalError} from './errors'
 import {
   APIHelper,
@@ -33,7 +33,7 @@ export const executeTests = async (reporter: MainReporter, config: SyntheticsCIC
     try {
       testsToTrigger = await getTestsList(api, config, reporter)
     } catch (error) {
-      throw new CriticalError(isRefusedError(error) ? 'AUTHENTICATION_ERROR' : 'UNAVAILABLE_TEST_CONFIG')
+      throw new CriticalError(isForbiddenError(error) ? 'AUTHORIZATION_ERROR' : 'UNAVAILABLE_TEST_CONFIG')
     }
   }
 
@@ -54,7 +54,7 @@ export const executeTests = async (reporter: MainReporter, config: SyntheticsCIC
       throw error
     }
 
-    throw new CriticalError(isRefusedError(error) ? 'AUTHENTICATION_ERROR' : 'UNAVAILABLE_TEST_CONFIG')
+    throw new CriticalError(isForbiddenError(error) ? 'AUTHORIZATION_ERROR' : 'UNAVAILABLE_TEST_CONFIG')
   }
 
   const {tests, overriddenTestsToTrigger, summary} = testsToTriggerResult
