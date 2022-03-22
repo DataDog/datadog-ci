@@ -83,8 +83,8 @@ jobs:
         run: yarn dist-standalone -t node14-macos-x64 -o datadog-ci_darwin-x64
       - name: Remove dist folder to check that binary can stand alone
         run: |
-          rm dist -r
-          rm src -r
+          rm -rf dist
+          rm -rf src
       - name: Test generated standalone binary
         run: yarn dist-standalone:test
       - name: Upload binaries to GitHub release
