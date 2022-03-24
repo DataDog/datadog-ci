@@ -76,20 +76,15 @@ describe('utils', () => {
       jest.spyOn(ciHelpers, 'getCIMetadata').mockImplementation(() => undefined)
 
       const payloadMetadataSpy = jest.fn()
-      const axiosMock = jest.spyOn(axios, 'create')
-      axiosMock.mockImplementation((() => (e: any) => {
-        payloadMetadataSpy(e.data.metadata)
-        if (e.url === '/synthetics/tests/trigger/ci') {
+      jest.spyOn(axios, 'create').mockImplementation((() => (request: any) => {
+        payloadMetadataSpy(request.data.metadata)
+        if (request.url === '/synthetics/tests/trigger/ci') {
           return {data: fakeTrigger}
         }
       }) as any)
 
       await utils.runTests(api, [{public_id: fakeId, executionRule: ExecutionRule.NON_BLOCKING}])
-      expect(payloadMetadataSpy).toHaveBeenCalledWith({
-        ci: {job: {}, pipeline: {}, provider: {}, stage: {}},
-        git: {commit: {author: {}, committer: {}}},
-        trigger_app: 'npm_package',
-      })
+      expect(payloadMetadataSpy).toHaveBeenCalledWith(undefined)
 
       const metadata: Metadata = {
         ci: {job: {name: 'job'}, pipeline: {}, provider: {name: 'jest'}, stage: {}},
@@ -97,9 +92,27 @@ describe('utils', () => {
       }
       jest.spyOn(ciHelpers, 'getCIMetadata').mockImplementation(() => metadata)
 
+      await utils.runTests(api, [{public_id: fakeId, executionRule: ExecutionRule.NON_BLOCKING}])
+      expect(payloadMetadataSpy).toHaveBeenCalledWith(metadata)
+    })
+
+    test('runTests api call includes trigger app header', async () => {
+      jest.spyOn(ciHelpers, 'getCIMetadata').mockImplementation(() => undefined)
+
+      const headersMetadataSpy = jest.fn()
+      jest.spyOn(axios, 'create').mockImplementation((() => (request: any) => {
+        headersMetadataSpy(request.headers)
+        if (request.url === '/synthetics/tests/trigger/ci') {
+          return {data: fakeTrigger}
+        }
+      }) as any)
+
+      await utils.runTests(api, [{public_id: fakeId, executionRule: ExecutionRule.NON_BLOCKING}])
+      expect(headersMetadataSpy).toHaveBeenCalledWith(expect.objectContaining({'X-Trigger-App': 'npm_package'}))
+
       utils.setCiTriggerApp('unit_test')
       await utils.runTests(api, [{public_id: fakeId, executionRule: ExecutionRule.NON_BLOCKING}])
-      expect(payloadMetadataSpy).toHaveBeenCalledWith({...metadata, trigger_app: 'unit_test'})
+      expect(headersMetadataSpy).toHaveBeenCalledWith(expect.objectContaining({'X-Trigger-App': 'unit_test'}))
     })
 
     test('should run test with publicId from url', async () => {

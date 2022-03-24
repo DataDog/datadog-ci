@@ -279,7 +279,7 @@ export class DefaultReporter implements MainReporter {
   }
 
   public initErrors(errors: string[]) {
-    this.write(errors.join('\n') + '\n')
+    this.write(errors.join('\n') + '\n\n')
   }
 
   public log(log: string) {
@@ -356,7 +356,7 @@ export class DefaultReporter implements MainReporter {
     const testsDisplay = chalk.gray(`(${testsList.join(', ')})`)
 
     this.write(
-      `\nWaiting for ${chalk.bold.cyan(tests.length)} test result${tests.length > 1 ? 's' : ''} ${testsDisplay}…\n`
+      `Waiting for ${chalk.bold.cyan(tests.length)} test result${tests.length > 1 ? 's' : ''} ${testsDisplay}…\n`
     )
   }
 

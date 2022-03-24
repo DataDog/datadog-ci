@@ -4,8 +4,8 @@ import {AxiosError, AxiosPromise, AxiosRequestConfig} from 'axios'
 
 import {getRequestBuilder} from '../../helpers/utils'
 
-import {APIConfiguration, Payload, PollResult, Test, TestSearchResult, Trigger} from './interfaces'
-import {retry} from './utils'
+import {APIConfiguration, APIHelper, Payload, PollResult, Test, TestSearchResult, Trigger} from './interfaces'
+import {ciTriggerApp, retry} from './utils'
 
 interface BackendError {
   errors: string[]
@@ -40,6 +40,7 @@ const triggerTests = (request: (args: AxiosRequestConfig) => AxiosPromise<Trigge
   const resp = await retryRequest(
     {
       data,
+      headers: {'X-Trigger-App': ciTriggerApp},
       method: 'POST',
       url: '/synthetics/tests/trigger/ci',
     },
@@ -129,7 +130,7 @@ export const is5xxError = (error: AxiosError | EndpointError) => {
 const retryRequest = <T>(args: AxiosRequestConfig, request: (args: AxiosRequestConfig) => AxiosPromise<T>) =>
   retry(() => request(args), retryOn5xxErrors)
 
-export const apiConstructor = (configuration: APIConfiguration) => {
+export const apiConstructor = (configuration: APIConfiguration): APIHelper => {
   const {baseUrl, baseIntakeUrl, apiKey, appKey, proxyOpts} = configuration
   const baseOptions = {apiKey, appKey, proxyOpts}
   const request = getRequestBuilder({...baseOptions, baseUrl})
