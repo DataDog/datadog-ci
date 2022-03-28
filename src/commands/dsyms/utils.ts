@@ -1,19 +1,11 @@
 import {exec} from 'child_process'
-import {BaseContext} from 'clipanion'
 import {promises} from 'fs'
-import glob from 'glob'
 import {tmpdir} from 'os'
 import path from 'path'
+import rimraf from 'rimraf'
 import {promisify} from 'util'
 
-import {Dsym} from './interfaces'
-
 import {buildPath} from '../../helpers/utils'
-import {renderInvalidDsymWarning} from './renderer'
-
-const UUID_REGEX = '[0-9A-F]{8}-([0-9A-F]{4}-){3}[0-9A-F]{12}'
-
-const globAsync = promisify(glob)
 
 export const isZipFile = async (filepath: string) => {
   try {
@@ -26,64 +18,36 @@ export const isZipFile = async (filepath: string) => {
   }
 }
 
-export const getMatchingDSYMFiles = async (
-  absoluteFolderPath: string,
-  context: BaseContext
-): Promise<(Dsym | undefined)[]> => {
-  const dSYMFiles = await globAsync(buildPath(absoluteFolderPath, '**/*.dSYM'), {})
+export const createUniqueTmpDirectory = async (): Promise<string> => {
+  const uniqueValue = Math.random() * Number.MAX_SAFE_INTEGER
+  const directoryPath = buildPath(tmpdir(), uniqueValue.toString())
+  await promises.mkdir(directoryPath, {recursive: true})
 
-  const allDsyms = dSYMFiles.map(async (dSYMPath) => {
-    try {
-      const uuids = await dwarfdumpUUID(dSYMPath)
-
-      return new Dsym(dSYMPath, uuids)
-    } catch {
-      context.stdout.write(renderInvalidDsymWarning(dSYMPath))
-
-      return undefined
-    }
-  })
-
-  return Promise.all(allDsyms)
+  return directoryPath
 }
 
-export const dwarfdumpUUID = async (filePath: string) => {
-  const output = await execute(`dwarfdump --uuid '${filePath}'`)
+export const deleteDirectory = async (directoryPath: string): Promise<void> =>
+  new Promise((resolve, reject) => rimraf(directoryPath, () => resolve()))
 
-  const uuids: string[] = []
-  output.stdout.split('\n').forEach((line: string) => {
-    const regexMatches = line.match(UUID_REGEX)
-    if (regexMatches && regexMatches.length > 0) {
-      uuids.push(regexMatches[0])
-    }
-  })
-
-  return uuids
+export const zipDirectoryToArchive = async (directoryPath: string, archivePath: string) => {
+  const cwd = path.dirname(directoryPath)
+  const directoryName = path.basename(directoryPath)
+  await execute(`zip -r '${archivePath}' '${directoryName}'`, cwd)
 }
 
-const tmpFolder = buildPath(tmpdir(), 'datadog-ci', 'dsyms')
-
-export const zipToTmpDir = async (sourcePath: string, targetFilename: string): Promise<string> => {
-  await promises.mkdir(tmpFolder, {recursive: true})
-  const targetPath = buildPath(tmpFolder, targetFilename)
-  const sourceDir = path.dirname(sourcePath)
-  const sourceFile = path.basename(sourcePath)
-  // `zip -r foo.zip f1/f2/f3/foo.dSYM`
-  // this keeps f1/f2/f3 folders in foo.zip, we don't want this
-  // `cwd: sourceDir` is passed to avoid that
-  await execute(`zip -r '${targetPath}' '${sourceFile}'`, sourceDir)
-
-  return targetPath
+export const unzipArchiveToDirectory = async (archivePath: string, directoryPath: string) => {
+  await promises.mkdir(directoryPath, {recursive: true})
+  await execute(`unzip -o '${archivePath}' -d '${directoryPath}'`)
 }
 
-export const unzipToTmpDir = async (sourcePath: string): Promise<string> => {
-  const targetPath = buildPath(tmpFolder, path.basename(sourcePath, '.zip'), Date.now().toString())
-  const dirPath = path.dirname(targetPath)
-  await promises.mkdir(dirPath, {recursive: true})
-  await execute(`unzip -o '${sourcePath}' -d '${targetPath}'`)
+export const executeDwarfdump = async (dSYMPath: string): Promise<{stderr: string; stdout: string}> =>
+  execute(`dwarfdump --uuid '${dSYMPath}'`)
 
-  return targetPath
-}
+export const executeLipo = async (
+  objectPath: string,
+  arch: string,
+  newObjectPath: string
+): Promise<{stderr: string; stdout: string}> => execute(`lipo '${objectPath}' -thin ${arch} -output '${newObjectPath}'`)
 
 const execProc = promisify(exec)
 const execute = (cmd: string, cwd?: string): Promise<{stderr: string; stdout: string}> =>

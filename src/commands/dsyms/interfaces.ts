@@ -1,22 +1,31 @@
 import fs from 'fs'
 
 import {MultipartPayload} from '../../helpers/upload'
-import {zipToTmpDir} from './utils'
 
-export class Dsym {
-  public path: string
-  public uuids: string[]
+export interface Dsym {
+  bundlePath: string
+  slices: ArchSlice[]
+}
 
-  constructor(path: string, uuids: string[]) {
-    this.path = path
-    this.uuids = uuids
+export interface ArchSlice {
+  arch: string
+  objectPath: string
+  uuid: string
+}
+
+export class CompressedDsym {
+  public archivePath: string
+  public dsym: Dsym
+
+  constructor(archivePath: string, dsym: Dsym) {
+    this.archivePath = archivePath
+    this.dsym = dsym
   }
 
-  public async asMultipartPayload(): Promise<MultipartPayload> {
-    const concatUUIDs = this.uuids.join()
-    const zipFilePath = await zipToTmpDir(this.path, `${concatUUIDs}.zip`)
+  public asMultipartPayload(): MultipartPayload {
+    const concatUUIDs = this.dsym.slices.map((slice) => slice.uuid).join()
     const content = new Map([
-      ['symbols_archive', {value: fs.createReadStream(zipFilePath)}],
+      ['symbols_archive', {value: fs.createReadStream(this.archivePath)}],
       ['type', {value: 'ios_symbols'}],
       ['uuids', {value: concatUUIDs}],
     ])
