@@ -1,4 +1,4 @@
-import {AWSError, CloudWatchLogs, Lambda, STS, config, Credentials} from 'aws-sdk'
+import {CloudWatchLogs, config as aws_sdk_config, Lambda} from 'aws-sdk'
 import {GetFunctionRequest} from 'aws-sdk/clients/lambda'
 import {
   ARM64_ARCHITECTURE,
@@ -172,16 +172,17 @@ export const findLatestLayerVersion = async (layer: LayerKey, region: string) =>
 }
 
 export const isMissingAWSCredentials = () => {
-  // If env vars and config.credentials are not set return true otherwise return false
-  if (process.env[AWS_ACCESS_KEY_ID_ENV_VAR] === undefined || process.env[AWS_SECRET_ACCESS_KEY_ENV_VAR] === undefined){
-    if (config.credentials){
+  // If env vars and aws_sdk_config.credentials are not set return true otherwise return false
+  if (
+    process.env[AWS_ACCESS_KEY_ID_ENV_VAR] === undefined ||
+    process.env[AWS_SECRET_ACCESS_KEY_ENV_VAR] === undefined
+  ) {
+    if (aws_sdk_config.credentials) {
       return false
-    }
-    else{
+    } else {
       return true
     }
-  }
-  else{
+  } else {
     return false
   }
 }

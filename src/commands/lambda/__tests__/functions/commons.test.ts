@@ -1,6 +1,6 @@
 /* tslint:disable:no-string-literal */
-import {config, Credentials} from "aws-sdk"
-jest.mock("aws-sdk")
+import {config as aws_sdk_config, Credentials} from 'aws-sdk'
+jest.mock('aws-sdk')
 import {Lambda} from 'aws-sdk'
 import {
   AWS_ACCESS_KEY_ID_ENV_VAR,
@@ -290,31 +290,30 @@ describe('commons', () => {
     })
     test('returns true when only AWS_SECRET_ACCESS_KEY env var is set and `~/.aws/credentials` are missing', () => {
       process.env[AWS_SECRET_ACCESS_KEY_ENV_VAR] = 'SOME-AWS-SECRET-ACCESS-KEY'
-      config.credentials = null
+      aws_sdk_config.credentials = undefined
       expect(isMissingAWSCredentials()).toBe(true) // We return true since AWS_ACCESS_KEY_ID_ENV_VAR is missing
-
     })
 
     test('returns true when only AWS_ACCESS_KEY_ID environment variable is set and `~/.aws/credentials` are missing', () => {
       process.env[AWS_ACCESS_KEY_ID_ENV_VAR] = 'SOME-AWS-ACCESS-KEY-ID'
-      config.credentials = null
+      aws_sdk_config.credentials = undefined
       expect(isMissingAWSCredentials()).toBe(true) // We return true since AWS_SECRET_ACCESS_KEY_ENV_VAR is missing
     })
 
     test('returns false when AWS credentials via environment variabiables are set', () => {
       process.env[AWS_ACCESS_KEY_ID_ENV_VAR] = 'SOME-AWS-ACCESS-KEY-ID'
       process.env[AWS_SECRET_ACCESS_KEY_ENV_VAR] = 'SOME-AWS-SECRET-ACCESS-KEY'
-      config.credentials = {foo:"bar"} as unknown as Credentials
+      aws_sdk_config.credentials = ({foo: 'bar'} as unknown) as Credentials
       expect(isMissingAWSCredentials()).toBe(false)
     })
 
     test('returns true when both environment variables and `~/.aws/credentials` are missing', () => {
-      config.credentials = null
+      aws_sdk_config.credentials = undefined
       expect(isMissingAWSCredentials()).toBe(true)
     })
 
     test('returns false when AWS credentials via `~/.aws/credentials` are set', () => {
-      config.credentials = {foo:"bar"} as unknown as Credentials
+      aws_sdk_config.credentials = ({foo: 'bar'} as unknown) as Credentials
       expect(isMissingAWSCredentials()).toBe(false)
     })
   })
