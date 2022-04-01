@@ -77,10 +77,10 @@ export class UploadJUnitXMLCommand extends Command {
   }
   private dryRun = false
   private env?: string
+  private logsEnabled = false
   private maxConcurrency = 20
   private service?: string
   private tags?: string[]
-  private logsEnabled = false
 
   public async execute() {
     if (!this.service) {
@@ -102,8 +102,11 @@ export class UploadJUnitXMLCommand extends Command {
       this.config.env = this.env
     }
 
-    if(!this.logsEnabled && process.env.DD_CIVISIBILITY_LOGS_ENABLED &&
-      !['false', '0'].includes(process.env.DD_CIVISIBILITY_LOGS_ENABLED.toLowerCase())) {
+    if (
+      !this.logsEnabled &&
+      process.env.DD_CIVISIBILITY_LOGS_ENABLED &&
+      !['false', '0'].includes(process.env.DD_CIVISIBILITY_LOGS_ENABLED.toLowerCase())
+    ) {
       this.logsEnabled = true
     }
 
@@ -173,10 +176,10 @@ export class UploadJUnitXMLCommand extends Command {
     })
 
     return validUniqueFiles.map((jUnitXMLFilePath) => ({
+      logsEnabled: this.logsEnabled,
       service: this.service!,
       spanTags,
       xmlPath: jUnitXMLFilePath,
-      logsEnabled: this.logsEnabled,
     }))
   }
 

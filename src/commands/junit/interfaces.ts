@@ -4,10 +4,10 @@ import {Writable} from 'stream'
 import {SpanTags} from '../../helpers/interfaces'
 
 export interface Payload {
+  logsEnabled: boolean
   service: string
   spanTags: SpanTags
   xmlPath: string
-  logsEnabled: boolean
 }
 
 export interface APIHelper {
