@@ -4,6 +4,7 @@ import {
   APIHelper,
   MainReporter,
   PollResult,
+  Suite,
   Summary,
   SyntheticsCIConfig,
   Test,
@@ -14,7 +15,7 @@ import {
 import {Tunnel} from './tunnel'
 import {getSuites, getTestsToTrigger, runTests, waitForResults} from './utils'
 
-export const executeTests = async (reporter: MainReporter, config: SyntheticsCIConfig) => {
+export const executeTests = async (reporter: MainReporter, config: SyntheticsCIConfig, suites?: Suite[]) => {
   const api = getApiHelper(config)
 
   const publicIdsFromCli = config.publicIds.map((id) => ({config: config.global, id}))
@@ -31,7 +32,7 @@ export const executeTests = async (reporter: MainReporter, config: SyntheticsCIC
     testsToTrigger = publicIdsFromCli
   } else {
     try {
-      testsToTrigger = await getTestsList(api, config, reporter)
+      testsToTrigger = await getTestsList(api, config, reporter, suites)
     } catch (error) {
       throw new CriticalError(isForbiddenError(error) ? 'AUTHORIZATION_ERROR' : 'UNAVAILABLE_TEST_CONFIG')
     }
@@ -106,10 +107,10 @@ export const executeTests = async (reporter: MainReporter, config: SyntheticsCIC
     const resultPolled = await waitForResults(
       api,
       triggers.results,
-      config.pollingTimeout,
       testsToTrigger,
-      tunnel,
-      config.failOnCriticalErrors
+      {defaultTimeout: config.pollingTimeout, failOnCriticalErrors: config.failOnCriticalErrors},
+      reporter,
+      tunnel
     )
     Object.assign(results, resultPolled)
   } catch (error) {
@@ -121,7 +122,13 @@ export const executeTests = async (reporter: MainReporter, config: SyntheticsCIC
   return {results, summary, tests, triggers}
 }
 
-export const getTestsList = async (api: APIHelper, config: SyntheticsCIConfig, reporter: MainReporter) => {
+export const getTestsList = async (
+  api: APIHelper,
+  config: SyntheticsCIConfig,
+  reporter: MainReporter,
+  suites: Suite[] = []
+) => {
+  // If "testSearchQuery" is provided, always default to running it.
   if (config.testSearchQuery) {
     const testSearchResults = await api.searchTests(config.testSearchQuery)
 
@@ -132,9 +139,11 @@ export const getTestsList = async (api: APIHelper, config: SyntheticsCIConfig, r
     }))
   }
 
-  const suites = (await Promise.all(config.files.map((glob: string) => getSuites(glob, reporter!))))
+  const suitesFromFiles = (await Promise.all(config.files.map((glob: string) => getSuites(glob, reporter!))))
     .reduce((acc, val) => acc.concat(val), [])
     .filter((suite) => !!suite.content.tests)
+
+  suites.push(...suitesFromFiles)
 
   const configFromEnvironment = config.locations?.length ? {locations: config.locations} : {}
   const testsToTrigger = suites

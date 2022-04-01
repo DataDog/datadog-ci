@@ -239,12 +239,15 @@ export const wait = async (duration: number) => new Promise((resolve) => setTime
 export const waitForResults = async (
   api: APIHelper,
   triggerResponses: TriggerResponse[],
-  defaultTimeout: number,
   triggerConfigs: TriggerConfig[],
-  tunnel?: Tunnel,
-  failOnCriticalErrors?: boolean
+  options: {
+    defaultTimeout: number
+    failOnCriticalErrors?: boolean
+  },
+  reporter: MainReporter,
+  tunnel?: Tunnel
 ) => {
-  const triggerResultMap = createTriggerResultMap(triggerResponses, defaultTimeout, triggerConfigs)
+  const triggerResultMap = createTriggerResultMap(triggerResponses, options.defaultTimeout, triggerConfigs)
   const triggerResults = [...triggerResultMap.values()]
 
   const maxPollingTimeout = Math.max(...triggerResults.map((tr) => tr.pollingTimeout))
@@ -295,7 +298,7 @@ export const waitForResults = async (
     try {
       polledResults = (await api.pollResults(triggerResultsSucceed.map((tr) => tr.result_id))).results
     } catch (error) {
-      if (is5xxError(error) && !failOnCriticalErrors) {
+      if (is5xxError(error) && !options.failOnCriticalErrors) {
         polledResults = []
         for (const triggerResult of triggerResultsSucceed) {
           triggerResult.result = createFailingResult(
@@ -316,6 +319,10 @@ export const waitForResults = async (
         const triggeredResult = triggerResultMap.get(polledResult.resultID)
         if (triggeredResult) {
           triggeredResult.result = polledResult
+        }
+        const triggerResponse = triggerResponses.find((res) => res.result_id === polledResult.resultID)
+        if (triggerResponse) {
+          reporter.testResult(triggerResponse, polledResult)
         }
       }
     }
@@ -439,6 +446,13 @@ export const getReporter = (reporters: Reporter[]): MainReporter => ({
     for (const reporter of reporters) {
       if (typeof reporter.testEnd === 'function') {
         reporter.testEnd(test, results, baseUrl, locationNames, failOnCriticalErrors, failOnTimeout)
+      }
+    }
+  },
+  testResult: (response, pollResult) => {
+    for (const reporter of reporters) {
+      if (typeof reporter.testResult === 'function') {
+        reporter.testResult(response, pollResult)
       }
     }
   },
