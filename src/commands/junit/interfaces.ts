@@ -7,6 +7,7 @@ export interface Payload {
   service: string
   spanTags: SpanTags
   xmlPath: string
+  logsEnabled: boolean
 }
 
 export interface APIHelper {
