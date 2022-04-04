@@ -188,7 +188,7 @@ describe('upload', () => {
         basePaths: ['./src/commands/junit/__tests__/fixtures'],
         config: {},
         context,
-        logsEnabled: true,
+        logs: true,
         service: 'service',
       })
       expect(firstFile.logsEnabled).toBe(true)
