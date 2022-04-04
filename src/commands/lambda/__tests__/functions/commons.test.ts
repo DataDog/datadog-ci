@@ -300,7 +300,7 @@ describe('commons', () => {
       expect(isMissingAWSCredentials()).toBe(true) // We return true since AWS_SECRET_ACCESS_KEY_ENV_VAR is missing
     })
 
-    test('returns false when AWS credentials via environment variabiables are set', () => {
+    test('returns false when AWS credentials via environment variables are set', () => {
       process.env[AWS_ACCESS_KEY_ID_ENV_VAR] = 'SOME-AWS-ACCESS-KEY-ID'
       process.env[AWS_SECRET_ACCESS_KEY_ENV_VAR] = 'SOME-AWS-SECRET-ACCESS-KEY'
       aws_sdk_config.credentials = ({foo: 'bar'} as unknown) as Credentials
