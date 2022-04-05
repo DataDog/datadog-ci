@@ -570,6 +570,8 @@ describe('utils', () => {
           mockReporter
         )
       ).toEqual(expectedResults)
+
+      expect(mockReporter.testResult).toHaveBeenCalledWith(triggerResult, passingPollResult)
     })
 
     test('results should be timed-out if global pollingTimeout is exceeded', async () => {
