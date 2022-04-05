@@ -1,13 +1,6 @@
 import {blueBright, bold} from 'chalk'
-import {
-  CheckboxQuestion,
-  ConfirmQuestion,
-  InputQuestion,
-  ListQuestion,
-  prompt,
-  QuestionCollection,
-  Separator,
-} from 'inquirer'
+import {ConfirmQuestion, InputQuestion, ListQuestion, prompt, QuestionCollection, Separator} from 'inquirer'
+import inquirer from 'inquirer'
 import {
   AWS_ACCESS_KEY_ID_ENV_VAR,
   AWS_ACCESS_KEY_ID_REG_EXP,
@@ -24,6 +17,10 @@ import {
 } from './constants'
 import {sentenceMatchesRegEx} from './functions/commons'
 
+// @ts-ignore
+import CheckboxPlusPrompt from 'inquirer-checkbox-plus-prompt'
+inquirer.registerPrompt('checkbox-plus', CheckboxPlusPrompt)
+import {filter} from 'fuzzy'
 const awsCredentialsQuestions: QuestionCollection = [
   {
     // AWS_ACCESS_KEY_ID question
@@ -131,12 +128,25 @@ export const confirmationQuestion = (message: string): ConfirmQuestion => ({
   type: 'confirm',
 })
 
-export const functionSelectionQuestion = (functionNames: string[]): CheckboxQuestion => ({
+export const functionSelectionQuestion = (functionNames: string[]): CheckboxPlusPrompt => ({
   choices: functionNames,
-  message: 'Select the functions to modify',
+  highlight: true,
+  message:
+    'Select the functions to modify (Press <space> to select, p.s. start typing the name instead of manually scrolling)',
   name: 'functions',
-  type: 'checkbox',
-  validate: (selectedFunctions) => {
+  pageSize: 10,
+  searchable: true,
+  source: (answersSoFar: any, input: any) => {
+    input = input || ''
+
+    return new Promise((resolve) => {
+      const fuzzyResult = filter(input, functionNames)
+      const data = fuzzyResult.map((element) => element.original)
+      resolve(data)
+    })
+  },
+  type: 'checkbox-plus',
+  validate: (selectedFunctions: string | any[]) => {
     if (selectedFunctions.length < 1) {
       return 'You must choose at least one function.'
     }
@@ -203,7 +213,7 @@ export const requestChangesConfirmation = async (message: string) => {
 
 export const requestFunctionSelection = async (functionNames: string[]) => {
   try {
-    const selectedFunctionsAnswer = await prompt(functionSelectionQuestion(functionNames))
+    const selectedFunctionsAnswer: any = await prompt(functionSelectionQuestion(functionNames))
 
     return selectedFunctionsAnswer.functions
   } catch (e) {
