@@ -38,6 +38,7 @@ Additionally you might configure the `junit` command with environment variables:
 - `DD_TAGS`: set global tags applied to all spans. The format must be `key1:value1,key2:value2`.
   - The resulting dictionary will be merged with whatever is in the `--tags` parameter. If a `key` appears both in `--tags` and `DD_TAGS`, whatever value is in `DD_TAGS` will take precedence.
 - `DATADOG_SITE`: choose your Datadog site, e.g. datadoghq.com or datadoghq.eu.
+- `DATADOG_JUNIT_INTAKE_URL`: override the full URL for the intake endpoint.
 
 ### Optional dependencies
 
