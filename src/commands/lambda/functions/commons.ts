@@ -1,4 +1,4 @@
-import {CloudWatchLogs, Lambda} from 'aws-sdk'
+import {CloudWatchLogs, config as aws_sdk_config, Lambda} from 'aws-sdk'
 import {GetFunctionRequest} from 'aws-sdk/clients/lambda'
 import {
   ARM64_ARCHITECTURE,
@@ -172,8 +172,9 @@ export const findLatestLayerVersion = async (layer: LayerKey, region: string) =>
 }
 
 export const isMissingAWSCredentials = () =>
-  process.env[AWS_ACCESS_KEY_ID_ENV_VAR] === undefined || process.env[AWS_SECRET_ACCESS_KEY_ENV_VAR] === undefined
-
+  // If env vars and aws_sdk_config.credentials are not set return true otherwise return false
+  (process.env[AWS_ACCESS_KEY_ID_ENV_VAR] === undefined || process.env[AWS_SECRET_ACCESS_KEY_ENV_VAR] === undefined) &&
+  !aws_sdk_config.credentials
 export const isMissingDatadogSiteEnvVar = () => {
   const site = process.env[CI_SITE_ENV_VAR]
   if (site !== undefined) {
