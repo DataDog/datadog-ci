@@ -703,7 +703,7 @@ describe('utils', () => {
           api,
           [triggerResult],
           [],
-          {defaultTimeout: 2000, failOnCriticalErrors: false},
+          {defaultTimeout: 2000, failOnCriticalErrors: true},
           mockReporter,
           mockTunnel
         )
