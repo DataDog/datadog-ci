@@ -226,7 +226,7 @@ export class InstrumentCommand extends Command {
       )
     }
 
-    this.printPlannedActions(configList)
+    this.printPlannedActions(configList) //in order to support user defined tags we need to somehow add it tp the config list
     if (this.dryRun || configList.length === 0) {
       return 0
     }
