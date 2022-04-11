@@ -34,11 +34,16 @@ export const uploadJUnitXML = (request: (args: AxiosRequestConfig) => AxiosPromi
     fileName = 'default_file_name'
   }
 
-  const spanTags = {
+  const spanTags: Record<string, string | undefined> = {
     service: jUnitXML.service,
     ...jUnitXML.spanTags,
     '_dd.cireport_version': '2',
   }
+
+  if (jUnitXML.logsEnabled) {
+    spanTags['_dd.junitxml_logs'] = 'true'
+  }
+
   form.append('event', JSON.stringify(spanTags), {filename: 'event.json'})
 
   let uniqueFileName = `${fileName}-${jUnitXML.service}-${spanTags[GIT_SHA]}`
