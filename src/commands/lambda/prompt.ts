@@ -1,5 +1,4 @@
 import {blueBright, bold} from 'chalk'
-import {ConfirmQuestion, InputQuestion, ListQuestion, prompt, QuestionCollection, Separator} from 'inquirer'
 import inquirer from 'inquirer'
 import {
   AWS_ACCESS_KEY_ID_ENV_VAR,
@@ -21,7 +20,7 @@ import {sentenceMatchesRegEx} from './functions/commons'
 import CheckboxPlusPrompt from 'inquirer-checkbox-plus-prompt'
 inquirer.registerPrompt('checkbox-plus', CheckboxPlusPrompt)
 import {filter} from 'fuzzy'
-const awsCredentialsQuestions: QuestionCollection = [
+const awsCredentialsQuestions: inquirer.QuestionCollection = [
   {
     // AWS_ACCESS_KEY_ID question
     message: 'Enter AWS Access Key ID:',
@@ -58,14 +57,14 @@ const awsCredentialsQuestions: QuestionCollection = [
   },
 ]
 
-const awsRegionQuestion = (defaultRegion?: string): InputQuestion => ({
+const awsRegionQuestion = (defaultRegion?: string): inquirer.InputQuestion => ({
   default: defaultRegion,
   message: 'Which AWS region (e.g., us-east-1) your Lambda functions are deployed?',
   name: AWS_DEFAULT_REGION_ENV_VAR,
   type: 'input',
 })
 
-export const datadogApiKeyTypeQuestion = (datadogSite: string): ListQuestion => ({
+export const datadogApiKeyTypeQuestion = (datadogSite: string): inquirer.ListQuestion => ({
   choices: [
     {
       name: `Plain text ${bold('API Key')} (Recommended for trial users) `,
@@ -74,7 +73,7 @@ export const datadogApiKeyTypeQuestion = (datadogSite: string): ListQuestion => 
         message: 'API Key:',
       },
     },
-    new Separator(),
+    new inquirer.Separator(),
     {
       name: `API key encrypted with AWS Key Management Service ${bold('(KMS) API Key')}`,
       value: {
@@ -97,7 +96,7 @@ export const datadogApiKeyTypeQuestion = (datadogSite: string): ListQuestion => 
   type: 'list',
 })
 
-const datadogSiteQuestion: ListQuestion = {
+const datadogSiteQuestion: inquirer.ListQuestion = {
   // DATADOG SITE
   choices: SITES,
   message: `Select the Datadog site to send data. \nLearn more at ${blueBright(
@@ -107,7 +106,7 @@ const datadogSiteQuestion: ListQuestion = {
   type: 'list',
 }
 
-export const datadogEnvVarsQuestions = (datadogApiKeyType: Record<string, any>): InputQuestion => ({
+export const datadogEnvVarsQuestions = (datadogApiKeyType: Record<string, any>): inquirer.InputQuestion => ({
   // DATADOG API KEY given type
   default: process.env[datadogApiKeyType.envVar],
   message: datadogApiKeyType.message,
@@ -122,7 +121,7 @@ export const datadogEnvVarsQuestions = (datadogApiKeyType: Record<string, any>):
   },
 })
 
-export const confirmationQuestion = (message: string): ConfirmQuestion => ({
+export const confirmationQuestion = (message: string): inquirer.ConfirmQuestion => ({
   message,
   name: 'confirmation',
   type: 'confirm',
@@ -157,7 +156,7 @@ export const functionSelectionQuestion = (functionNames: string[]): CheckboxPlus
 
 export const requestAWSCredentials = async () => {
   try {
-    const awsCredentialsAnswers = await prompt(awsCredentialsQuestions)
+    const awsCredentialsAnswers = await inquirer.prompt(awsCredentialsQuestions)
     process.env[AWS_ACCESS_KEY_ID_ENV_VAR] = awsCredentialsAnswers[AWS_ACCESS_KEY_ID_ENV_VAR]
     process.env[AWS_SECRET_ACCESS_KEY_ENV_VAR] = awsCredentialsAnswers[AWS_SECRET_ACCESS_KEY_ENV_VAR]
     if (awsCredentialsAnswers[AWS_SESSION_TOKEN_ENV_VAR] !== undefined) {
@@ -172,7 +171,7 @@ export const requestAWSCredentials = async () => {
 
 export const requestAWSRegion = async (defaultRegion?: string) => {
   try {
-    const awsRegionAnswer = await prompt(awsRegionQuestion(defaultRegion))
+    const awsRegionAnswer = await inquirer.prompt(awsRegionQuestion(defaultRegion))
     process.env[AWS_DEFAULT_REGION_ENV_VAR] = awsRegionAnswer[AWS_DEFAULT_REGION_ENV_VAR]
   } catch (e) {
     if (e instanceof Error) {
@@ -183,13 +182,13 @@ export const requestAWSRegion = async (defaultRegion?: string) => {
 
 export const requestDatadogEnvVars = async () => {
   try {
-    const datadogSiteAnswer = await prompt(datadogSiteQuestion)
+    const datadogSiteAnswer = await inquirer.prompt(datadogSiteQuestion)
     const selectedDatadogSite = datadogSiteAnswer[CI_SITE_ENV_VAR]
     process.env[CI_SITE_ENV_VAR] = selectedDatadogSite
 
-    const datadogApiKeyTypeAnswer = await prompt(datadogApiKeyTypeQuestion(selectedDatadogSite))
+    const datadogApiKeyTypeAnswer = await inquirer.prompt(datadogApiKeyTypeQuestion(selectedDatadogSite))
     const datadogApiKeyType = datadogApiKeyTypeAnswer.type
-    const datadogEnvVars = await prompt(datadogEnvVarsQuestions(datadogApiKeyType))
+    const datadogEnvVars = await inquirer.prompt(datadogEnvVarsQuestions(datadogApiKeyType))
     const selectedDatadogApiKeyEnvVar = datadogApiKeyType.envVar
     process.env[selectedDatadogApiKeyEnvVar] = datadogEnvVars[selectedDatadogApiKeyEnvVar]
   } catch (e) {
@@ -201,7 +200,7 @@ export const requestDatadogEnvVars = async () => {
 
 export const requestChangesConfirmation = async (message: string) => {
   try {
-    const confirmationAnswer = await prompt(confirmationQuestion(message))
+    const confirmationAnswer = await inquirer.prompt(confirmationQuestion(message))
 
     return confirmationAnswer.confirmation
   } catch (e) {
@@ -213,7 +212,7 @@ export const requestChangesConfirmation = async (message: string) => {
 
 export const requestFunctionSelection = async (functionNames: string[]) => {
   try {
-    const selectedFunctionsAnswer: any = await prompt(functionSelectionQuestion(functionNames))
+    const selectedFunctionsAnswer: any = await inquirer.prompt(functionSelectionQuestion(functionNames))
 
     return selectedFunctionsAnswer.functions
   } catch (e) {
