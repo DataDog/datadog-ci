@@ -24,6 +24,9 @@ Run `datadog-ci lambda instrument` to apply Datadog instrumentation to a Lambda.
 # Instrument multiple functions specified by names
 datadog-ci lambda instrument -f <function-name> -f <another-function-name> -r us-east-1 -v 46 -e 10
 
+# Instrument function(s) in interactive mode
+datadog-ci lambda instrument -i
+
 # Instrument multiple functions that match a regex pattern
 datadog-ci lambda instrument --functions-regex <valid-regex-pattern> -r us-east-1 -v 46 -e 10
 
@@ -38,6 +41,9 @@ Run `datadog-ci lambda uninstrument` to revert Datadog instrumentation in a Lamb
 ```bash
 # Uninstrument multiple functions specified by names
 datadog-ci lambda uninstrument -f <function-name> -f <another-function-name> -r us-east-1
+
+# Uninstrument function(s) in interactive mode
+datadog-ci lambda uninstrument -i
 
 # Instrument multiple functions that match a regex pattern
 datadog-ci lambda uninstrument --functions-regex <valid-regex-pattern> -r us-east-1
@@ -77,6 +83,8 @@ You can pass the following arguments to `instrument` to specify its behavior. Th
 | --- | --- | --- | --- |
 | `--function` | `-f` | The ARN of the Lambda function to be **instrumented**, or the name of the Lambda function (`--region` must be defined). | |
 | `--functions-regex` | | A regex pattern to match with the Lambda function name. | |
+| `--interactive` | `-i` | Allows the user to interactively choose how their function gets instrumented. There is no need to provide any other flags if you choose to use interactive mode as you will be prompted for the information. | |
+
 | `--region` | `-r` | Default region to use, when `--function` is specified by the function name instead of the ARN. | |
 | `--service` | | Use `--service` to group related functions belonging to similar workloads. Learn more about the `service` tag [here][9]. | |
 | `--version` | | Add the `--version` tag to correlate spikes in latency, load or errors to new versions. Learn more about the `version` tag [here][8]. | |
