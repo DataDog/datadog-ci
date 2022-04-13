@@ -20,10 +20,10 @@ import {
   CI_KMS_API_KEY_ENV_VAR,
   CI_SITE_ENV_VAR,
   DATADOG_API_KEY_REG_EXP,
-  ENV_TAG,
-  SERVICE_TAG,
-  VERSION_TAG,
   SITES,
+  ENVIRONMENT_ENV_VAR,
+  SERVICE_ENV_VAR,
+  VERSION_ENV_VAR,
 } from './constants'
 import {sentenceMatchesRegEx} from './functions/commons'
 
@@ -113,24 +113,24 @@ const datadogSiteQuestion: ListQuestion = {
   type: 'list',
 }
 
-const envTagQuestion: InputQuestion = {
+const envQuestion: InputQuestion = {
   default: "",
   message: 'Enter a value for environment (DD_ENV)',
-  name: ENV_TAG,
+  name: ENVIRONMENT_ENV_VAR,
   type: 'input'
 }
 
-const serviceTagQuestion: InputQuestion = {
+const serviceQuestion: InputQuestion = {
   default: "",
   message: 'Enter a value for service (DD_SERVICE)',
-  name: SERVICE_TAG,
+  name: SERVICE_ENV_VAR,
   type: 'input'
 }
 
-const versionTagQuestion: InputQuestion = {
+const versionQuestion: InputQuestion = {
   default: "",
   message: 'Enter a value for the version (DD_VERISON)',
-  name: VERSION_TAG,
+  name: VERSION_ENV_VAR,
   type: 'input',
 }
 
@@ -215,17 +215,17 @@ export const requestDatadogEnvVars = async () => {
 
 export const requestEnvServiceVersion = async () => {
   try {
-    const envTagAnswer = await prompt(envTagQuestion)
-    const inputedEnvTag = envTagAnswer[ENV_TAG]
-    process.env[ENV_TAG] = inputedEnvTag
+    const envQuestionAnswer = await prompt(envQuestion)
+    const inputedEnvQuestionAnswer = envQuestionAnswer[ENVIRONMENT_ENV_VAR]
+    process.env[ENVIRONMENT_ENV_VAR] = inputedEnvQuestionAnswer
 
-    const serviceTagAnswer = await prompt(serviceTagQuestion)
-    const inputedServiceTag = serviceTagAnswer[SERVICE_TAG]
-    process.env[SERVICE_TAG] = inputedServiceTag
+    const serviceQuestionAnswer = await prompt(serviceQuestion)
+    const inputedServiceQuestionAnswer = serviceQuestionAnswer[SERVICE_ENV_VAR]
+    process.env[SERVICE_ENV_VAR] = inputedServiceQuestionAnswer
 
-    const versionTagAnswer = await prompt(versionTagQuestion)
-    const versionEnvTag = versionTagAnswer[VERSION_TAG]
-    process.env[VERSION_TAG] = versionEnvTag
+    const versionQuestionAnswer = await prompt(versionQuestion)
+    const inputedVersionQuestionAnswer = versionQuestionAnswer[VERSION_ENV_VAR]
+    process.env[VERSION_ENV_VAR] = inputedVersionQuestionAnswer
 
 
   } catch (e) {

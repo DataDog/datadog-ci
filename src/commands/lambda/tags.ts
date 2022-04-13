@@ -1,6 +1,6 @@
 import {Lambda} from 'aws-sdk'
-import {ENV_TAG, SERVICE_TAG, TAG_VERSION_NAME, VERSION_TAG} from './constants'
-import {InstrumentationSettings, TagConfiguration} from './interfaces'
+import {TAG_VERSION_NAME} from './constants'
+import {TagConfiguration} from './interfaces'
 
 // tslint:disable-next-line
 const {version} = require('../../../package.json')
@@ -15,33 +15,17 @@ export const applyTagConfig = async (lambda: Lambda, config: TagConfiguration) =
   }
 }
 
-export const calculateTagUpdateRequest = async (lambda: Lambda, functionARN: string, userProvidedEnvironment: string | undefined, userProvidedService: string | undefined, userProvidedVersion: string | undefined) => {
+export const calculateTagUpdateRequest = async (lambda: Lambda, functionARN: string) => {
   const config: TagConfiguration = {}
 
   const versionTagPresent = await hasVersionTag(lambda, functionARN)
-  const userProvidedVersionTagForDeploymentTracking = userProvidedVersion
-  const userProvidedServiceTag = userProvidedService
-  const userProvidedEnvTag = userProvidedEnvironment
 
-
-  if (!versionTagPresent || userProvidedVersionTagForDeploymentTracking !== undefined || userProvidedServiceTag !== undefined || userProvidedEnvTag !== undefined) {
+  if (!versionTagPresent) {
     config.tagResourceRequest = {
       Resource: functionARN,
       Tags: {
+        [TAG_VERSION_NAME]: `v${version}`,
       },
-    }
-    if (!versionTagPresent){
-
-      config.tagResourceRequest.Tags[TAG_VERSION_NAME] = `v${version}`
-    }
-    if (userProvidedVersionTagForDeploymentTracking !== undefined){
-      config.tagResourceRequest.Tags[VERSION_TAG] = userProvidedVersionTagForDeploymentTracking
-    }
-    if (userProvidedServiceTag !== undefined){
-      config.tagResourceRequest.Tags[SERVICE_TAG] = userProvidedServiceTag
-    }
-    if (userProvidedEnvTag !== undefined){
-      config.tagResourceRequest.Tags[ENV_TAG] = userProvidedEnvTag
     }
 
     return config
