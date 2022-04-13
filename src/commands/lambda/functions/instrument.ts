@@ -94,7 +94,7 @@ export const getInstrumentedFunctionConfig = async (
     logGroupConfiguration = await calculateLogGroupUpdateRequest(cloudWatch, logGroupName, settings.forwarderARN)
   }
 
-  const tagConfiguration: TagConfiguration | undefined = await calculateTagUpdateRequest(lambda, functionARN)
+  const tagConfiguration: TagConfiguration | undefined = await calculateTagUpdateRequest(lambda, functionARN, settings.environment,settings.service, settings.version)
 
   return {
     functionARN,

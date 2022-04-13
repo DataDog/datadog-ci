@@ -76,7 +76,7 @@ describe('tags', () => {
           },
         },
       })
-      const result = await calculateTagUpdateRequest(lambda as any, functionARN)
+      const result = await calculateTagUpdateRequest(lambda as any, functionARN, undefined,undefined,undefined)
       expect(result).toEqual({
         tagResourceRequest: {
           Resource: functionARN,
@@ -101,7 +101,7 @@ describe('tags', () => {
 
       lambda.listTags.mockImplementation(() => ({promise: () => Promise.resolve({Tags: {dd_sls_ci: 'v0.0.0'}})}))
 
-      const result = await calculateTagUpdateRequest(lambda as any, functionARN)
+      const result = await calculateTagUpdateRequest(lambda as any, functionARN, undefined, undefined,undefined)
       expect(result).toEqual({
         tagResourceRequest: {
           Resource: functionARN,
@@ -126,7 +126,7 @@ describe('tags', () => {
 
       lambda.listTags.mockImplementation(() => ({promise: () => Promise.resolve({Tags: {dd_sls_ci: `v${version}`}})}))
 
-      const result = await calculateTagUpdateRequest(lambda as any, functionARN)
+      const result = await calculateTagUpdateRequest(lambda as any, functionARN, undefined, undefined, undefined)
       expect(result).toBe(undefined)
       expect(lambda.listTags).toHaveBeenCalledWith({Resource: functionARN})
     })

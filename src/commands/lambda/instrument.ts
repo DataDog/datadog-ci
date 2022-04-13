@@ -4,7 +4,7 @@ import {Cli, Command} from 'clipanion'
 import {parseConfigFile} from '../../helpers/utils'
 import {getCommitInfo, newSimpleGit} from '../git-metadata/git'
 import {UploadCommand} from '../git-metadata/upload'
-import {AWS_DEFAULT_REGION_ENV_VAR, EXTRA_TAGS_REG_EXP} from './constants'
+import {AWS_DEFAULT_REGION_ENV_VAR, ENV_TAG, EXTRA_TAGS_REG_EXP, SERVICE_TAG, VERSION_TAG} from './constants'
 import {
   checkRuntimeTypesAreUniform,
   coerceBoolean,
@@ -23,6 +23,7 @@ import {
   requestAWSRegion,
   requestChangesConfirmation,
   requestDatadogEnvVars,
+  requestEnvServiceVersion,
   requestFunctionSelection,
 } from './prompt'
 
@@ -108,7 +109,44 @@ export class InstrumentCommand extends Command {
           return 1
         }
       }
+
+      try {
+        await requestEnvServiceVersion()
+      } catch (err) {
+        this.context.stdout.write(`${red('[Error]')} Grabbing env, service, and version values from user. ${err}\n`)
+
+        return 1
+      }
+      
+      const environment = process.env[ENV_TAG]
+
+
+      if (environment === ""){
+        this.environment = undefined
+      }
+      else{
+        this.environment = environment
+      }
+
+      const service = process.env[SERVICE_TAG]
+      if (service === ""){
+        this.service = undefined
+      }
+      else{
+        this.service = service
+      }
+
+      const version = process.env[VERSION_TAG]
+      if (version === ""){
+        this.version = undefined
+      }
+      else{
+        this.version = version
+      }
+
     }
+    
+
     const settings = this.getSettings()
     if (settings === undefined) {
       return 1

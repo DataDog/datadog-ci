@@ -20,6 +20,9 @@ import {
   CI_KMS_API_KEY_ENV_VAR,
   CI_SITE_ENV_VAR,
   DATADOG_API_KEY_REG_EXP,
+  ENV_TAG,
+  SERVICE_TAG,
+  VERSION_TAG,
   SITES,
 } from './constants'
 import {sentenceMatchesRegEx} from './functions/commons'
@@ -110,6 +113,27 @@ const datadogSiteQuestion: ListQuestion = {
   type: 'list',
 }
 
+const envTagQuestion: InputQuestion = {
+  default: "",
+  message: 'Enter a value for environment (DD_ENV)',
+  name: ENV_TAG,
+  type: 'input'
+}
+
+const serviceTagQuestion: InputQuestion = {
+  default: "",
+  message: 'Enter a value for service (DD_SERVICE)',
+  name: SERVICE_TAG,
+  type: 'input'
+}
+
+const versionTagQuestion: InputQuestion = {
+  default: "",
+  message: 'Enter a value for the version (DD_VERISON)',
+  name: VERSION_TAG,
+  type: 'input',
+}
+
 export const datadogEnvVarsQuestions = (datadogApiKeyType: Record<string, any>): InputQuestion => ({
   // DATADOG API KEY given type
   default: process.env[datadogApiKeyType.envVar],
@@ -185,6 +209,28 @@ export const requestDatadogEnvVars = async () => {
   } catch (e) {
     if (e instanceof Error) {
       throw Error(`Couldn't set Datadog Environment Variables. ${e.message}`)
+    }
+  }
+}
+
+export const requestEnvServiceVersion = async () => {
+  try {
+    const envTagAnswer = await prompt(envTagQuestion)
+    const inputedEnvTag = envTagAnswer[ENV_TAG]
+    process.env[ENV_TAG] = inputedEnvTag
+
+    const serviceTagAnswer = await prompt(serviceTagQuestion)
+    const inputedServiceTag = serviceTagAnswer[SERVICE_TAG]
+    process.env[SERVICE_TAG] = inputedServiceTag
+
+    const versionTagAnswer = await prompt(versionTagQuestion)
+    const versionEnvTag = versionTagAnswer[VERSION_TAG]
+    process.env[VERSION_TAG] = versionEnvTag
+
+
+  } catch (e) {
+    if (e instanceof Error) {
+      throw Error(`Couldn't set user defined env, service, and version environment variables. ${e.message}`)
     }
   }
 }
