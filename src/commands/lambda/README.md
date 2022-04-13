@@ -1,4 +1,3 @@
-TODO: ADD SECTION FOR INTERTACTIVE MODE
 You can use the CLI to instrument your AWS Lambda functions with Datadog. The CLI enables instrumentation by modifying existing Lambda functions' configuration and hence does *not* require redeployment. It is the quickest way to get started with Datadog serverless monitoring.
 
 You can also add the command to your CI/CD pipelines to enable instrumentation for *all* your serverless applications. Run the command *after* your normal serverless application deployment, so that changes made by the Datadog CLI command do not get overridden.
