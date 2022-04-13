@@ -15,6 +15,9 @@ import {
   CI_API_KEY_ENV_VAR,
   CI_SITE_ENV_VAR,
   DEFAULT_LAYER_AWS_ACCOUNT,
+  ENVIRONMENT_ENV_VAR,
+  SERVICE_ENV_VAR,
+  VERSION_ENV_VAR,
 } from '../constants'
 import {InstrumentCommand} from '../instrument'
 import {InstrumentationSettings, LambdaConfigOptions} from '../interfaces'
@@ -22,6 +25,7 @@ import {
   requestAWSCredentials,
   requestChangesConfirmation,
   requestDatadogEnvVars,
+  requestEnvServiceVersion,
   requestFunctionSelection,
 } from '../prompt'
 import {
@@ -32,6 +36,9 @@ import {
   mockAwsAccessKeyId,
   mockAwsSecretAccessKey,
   mockDatadogApiKey,
+  mockDatadogEnv,
+  mockDatadogService,
+  mockDatadogVersion
 } from './fixtures'
 // tslint:disable-next-line
 const {version} = require(path.join(__dirname, '../../../../package.json'))
@@ -1215,6 +1222,60 @@ ${red('[Error]')} Unexpected error
 "
 `)
       })
+
+      test('when provided it sets DD_ENV, DD_SERVICE, and DD_VERSION tags in interactive mode', async () => {
+        const node12LibraryLayer = `arn:aws:lambda:sa-east-1:${DEFAULT_LAYER_AWS_ACCOUNT}:layer:Datadog-Node12-x`
+        const extensionLayer = `arn:aws:lambda:sa-east-1:${DEFAULT_LAYER_AWS_ACCOUNT}:layer:Datadog-Extension`
+        ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({code: 'ENOENT'}))
+        ;(Lambda as any).mockImplementation(() =>
+          makeMockLambda(
+            {
+              'arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world': {
+                FunctionArn: 'arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world',
+                FunctionName: 'lambda-hello-world',
+                Handler: 'index.handler',
+                Runtime: 'nodejs12.x',
+              }
+            },
+            {
+              [`${node12LibraryLayer}:1`]: {
+                LayerVersionArn: `${node12LibraryLayer}:1`,
+                Version: 1,
+              },
+              [`${extensionLayer}:1`]: {
+                LayerVersionArn: `${extensionLayer}:1`,
+                Version: 1,
+              },
+            }
+          )
+        )
+        ;(requestAWSCredentials as any).mockImplementation(() => {
+          process.env[AWS_ACCESS_KEY_ID_ENV_VAR] = mockAwsAccessKeyId
+          process.env[AWS_SECRET_ACCESS_KEY_ENV_VAR] = mockAwsSecretAccessKey
+          process.env[AWS_DEFAULT_REGION_ENV_VAR] = 'sa-east-1'
+        })
+        ;(requestDatadogEnvVars as any).mockImplementation(() => {
+          process.env[CI_SITE_ENV_VAR] = 'datadoghq.com'
+          process.env[CI_API_KEY_ENV_VAR] = mockDatadogApiKey
+        })
+        ;(requestFunctionSelection as any).mockImplementation(() => [
+          'arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world',
+        ])
+        ;(requestChangesConfirmation as any).mockImplementation(() => true)
+        ;(requestEnvServiceVersion as any).mockImplementation(() => {
+          process.env[ENVIRONMENT_ENV_VAR] = mockDatadogEnv
+          process.env[SERVICE_ENV_VAR] = mockDatadogService
+          process.env[VERSION_ENV_VAR] = mockDatadogVersion
+        })
+
+        const cli = makeCli()
+        const context = createMockContext() as any
+        const code = await cli.run(['lambda', 'instrument', '-i'], context)
+        const output = context.stdout.toString()
+        expect(code).toBe(0)
+        expect(output).toMatchInlineSnapshot()
+      })
+
 
       test('aborts if there are no functions to instrument in the user AWS account', async () => {
         process.env = {

@@ -115,21 +115,21 @@ const datadogSiteQuestion: ListQuestion = {
 
 const envQuestion: InputQuestion = {
   default: "",
-  message: 'Enter a value for environment (DD_ENV)',
+  message: 'Enter a value for the environment variable DD_ENV',
   name: ENVIRONMENT_ENV_VAR,
   type: 'input'
 }
 
 const serviceQuestion: InputQuestion = {
   default: "",
-  message: 'Enter a value for service (DD_SERVICE)',
+  message: 'Enter a value for the environment variable DD_SERVICE',
   name: SERVICE_ENV_VAR,
   type: 'input'
 }
 
 const versionQuestion: InputQuestion = {
   default: "",
-  message: 'Enter a value for the version (DD_VERISON)',
+  message: 'Enter a value for the environment variable DD_VERISON',
   name: VERSION_ENV_VAR,
   type: 'input',
 }
