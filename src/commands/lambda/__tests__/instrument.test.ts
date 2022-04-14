@@ -93,12 +93,14 @@ describe('lambda', () => {
         const output = context.stdout.toString()
         expect(code).toBe(0)
         expect(output).toMatchInlineSnapshot(`
-"[1m[33m[Warning][39m[22m Instrument your [38;2;255;153;0m[1mLambda[22m[39m functions in a dev or staging environment first. Should the instrumentation result be unsatisfactory, run \`[1muninstrument[22m\` with the same arguments to revert the changes.
-
-[1m[33m[!][39m[22m Functions to be updated:
-	- [1marn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world[22m
-
-[1m[36m[Dry Run] [39m[22mWill apply the following updates:
+"${bold(yellow('[Warning]'))} Instrument your ${hex('#FF9900').bold(
+          'Lambda'
+        )} functions in a dev or staging environment first. Should the instrumentation result be unsatisfactory, run \`${bold(
+          'uninstrument'
+        )}\` with the same arguments to revert the changes.
+\n${bold(yellow('[!]'))} Functions to be updated:
+\t- ${bold('arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world')}\n
+${bold(cyan('[Dry Run] '))}Will apply the following updates:
 UpdateFunctionConfiguration -> arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world
 {
   \\"FunctionName\\": \\"arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world\\",
@@ -124,7 +126,7 @@ UpdateFunctionConfiguration -> arn:aws:lambda:us-east-1:123456789012:function:la
 }
 TagResource -> arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world
 {
-  \\"dd_sls_ci\\": \\"v1.2.0\\"
+  \\"dd_sls_ci\\": \\"v${version}\\"
 }
 "
 `)
@@ -1272,48 +1274,48 @@ ${red('[Error]')} Unexpected error
         const output = context.stdout.toString()
         expect(code).toBe(0)
         expect(output).toMatchInlineSnapshot(`
-          "[1m[33m[!][39m[22m No AWS credentials found, let's set them up! Or you can re-run the command and supply the AWS credentials in the same way when you invoke the AWS CLI.
-          [1m[33m[!][39m[22m Configure AWS region.
-          [1m[33m[!][39m[22m Configure Datadog settings.
-          Fetching Lambda functions, this might take a while.
-          [1m[33m[Warning][39m[22m Instrument your [38;2;255;153;0m[1mLambda[22m[39m functions in a dev or staging environment first. Should the instrumentation result be unsatisfactory, run \`[1muninstrument[22m\` with the same arguments to revert the changes.
+"${bold(yellow('[!]'))} No AWS credentials found, let's set them up! Or you can re-run the command and supply the AWS credentials in the same way when you invoke the AWS CLI.
+${bold(yellow('[!]'))} Configure AWS region.
+${bold(yellow('[!]'))} Configure Datadog settings.
+Fetching Lambda functions, this might take a while.
+${bold(yellow('[Warning]'))} Instrument your ${hex('#FF9900').bold('Lambda')} functions in a dev or staging environment first. Should the instrumentation result be unsatisfactory, run \`${bold('uninstrument')}\` with the same arguments to revert the changes.
 
-          [1m[33m[!][39m[22m Functions to be updated:
-          	- [1marn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world[22m
-          	[1m[33m[Warning][39m[22m At least one latest layer version is being used. Ensure to lock in versions for production applications using \`--layerVersion\` and \`--extensionVersion\`.
+${bold(yellow('[!]'))} Functions to be updated:
+\t- ${bold('arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world')}
+\t${bold(yellow('[Warning]'))} At least one latest layer version is being used. Ensure to lock in versions for production applications using \`--layerVersion\` and \`--extensionVersion\`.
 
-          Will apply the following updates:
-          UpdateFunctionConfiguration -> arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world
-          {
-            \\"FunctionName\\": \\"arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world\\",
-            \\"Handler\\": \\"/opt/nodejs/node_modules/datadog-lambda-js/handler.handler\\",
-            \\"Environment\\": {
-              \\"Variables\\": {
-                \\"DD_LAMBDA_HANDLER\\": \\"index.handler\\",
-                \\"DD_API_KEY\\": \\"02aeb762fff59ac0d5ad1536cd9633bd\\",
-                \\"DD_SITE\\": \\"datadoghq.com\\",
-                \\"DD_CAPTURE_LAMBDA_PAYLOAD\\": \\"false\\",
-                \\"DD_ENV\\": \\"sandbox\\",
-                \\"DD_MERGE_XRAY_TRACES\\": \\"false\\",
-                \\"DD_SERVICE\\": \\"testServiceName\\",
-                \\"DD_TRACE_ENABLED\\": \\"true\\",
-                \\"DD_VERSION\\": \\"1.0.0\\",
-                \\"DD_FLUSH_TO_LOG\\": \\"true\\"
-              }
-            },
-            \\"Layers\\": [
-              \\"arn:aws:lambda:sa-east-1:464622532012:layer:Datadog-Extension:1\\",
-              \\"arn:aws:lambda:sa-east-1:464622532012:layer:Datadog-Node12-x:1\\"
-            ]
-          }
-          TagResource -> arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world
-          {
-            \\"dd_sls_ci\\": \\"v1.2.0\\"
-          }
-          [33m[!][39m Confirmation needed.
-          [33m[!][39m Instrumenting functions.
-          "
-        `)
+Will apply the following updates:
+UpdateFunctionConfiguration -> arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world
+{
+  \\"FunctionName\\": \\"arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world\\",
+  \\"Handler\\": \\"/opt/nodejs/node_modules/datadog-lambda-js/handler.handler\\",
+  \\"Environment\\": {
+    \\"Variables\\": {
+      \\"DD_LAMBDA_HANDLER\\": \\"index.handler\\",
+      \\"DD_API_KEY\\": \\"02aeb762fff59ac0d5ad1536cd9633bd\\",
+      \\"DD_SITE\\": \\"datadoghq.com\\",
+      \\"DD_CAPTURE_LAMBDA_PAYLOAD\\": \\"false\\",
+      \\"DD_ENV\\": \\"sandbox\\",
+      \\"DD_MERGE_XRAY_TRACES\\": \\"false\\",
+      \\"DD_SERVICE\\": \\"testServiceName\\",
+      \\"DD_TRACE_ENABLED\\": \\"true\\",
+      \\"DD_VERSION\\": \\"1.0.0\\",
+      \\"DD_FLUSH_TO_LOG\\": \\"true\\"
+    }
+  },
+  \\"Layers\\": [
+    \\"arn:aws:lambda:sa-east-1:464622532012:layer:Datadog-Extension:1\\",
+    \\"arn:aws:lambda:sa-east-1:464622532012:layer:Datadog-Node12-x:1\\"
+  ]
+}
+TagResource -> arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world
+{
+  \\"dd_sls_ci\\": \\"v1.2.0\\"
+}
+${yellow('[!]')} Confirmation needed.
+${yellow('[!]')} Instrumenting functions.
+"
+`)
       })
 
       test('when not provided it does not set DD_ENV, DD_SERVICE, and DD_VERSION tags in interactive mode', async () => {
@@ -1367,16 +1369,16 @@ ${red('[Error]')} Unexpected error
         const output = context.stdout.toString()
         expect(code).toBe(0)
         expect(output).toMatchInlineSnapshot(`
-"[1m[33m[!][39m[22m No AWS credentials found, let's set them up! Or you can re-run the command and supply the AWS credentials in the same way when you invoke the AWS CLI.
-[1m[33m[!][39m[22m Configure AWS region.
-[1m[33m[!][39m[22m Configure Datadog settings.
+"${bold(yellow('[!]'))} No AWS credentials found, let's set them up! Or you can re-run the command and supply the AWS credentials in the same way when you invoke the AWS CLI.
+${bold(yellow('[!]'))} Configure AWS region.
+${bold(yellow('[!]'))} Configure Datadog settings.
 Fetching Lambda functions, this might take a while.
-[1m[33m[Warning][39m[22m The environment, service and version tags have not been configured. Learn more about Datadog unified service tagging: [4m[94mhttps://docs.datadoghq.com/getting_started/tagging/unified_service_tagging/#serverless-environment.[39m[24m
-[1m[33m[Warning][39m[22m Instrument your [38;2;255;153;0m[1mLambda[22m[39m functions in a dev or staging environment first. Should the instrumentation result be unsatisfactory, run \`[1muninstrument[22m\` with the same arguments to revert the changes.
+${bold(yellow('[Warning]'))} The environment, service and version tags have not been configured. Learn more about Datadog unified service tagging: ${underline(blueBright('https://docs.datadoghq.com/getting_started/tagging/unified_service_tagging/#serverless-environment.'))}
+${bold(yellow('[Warning]'))} Instrument your ${hex('#FF9900').bold('Lambda')} functions in a dev or staging environment first. Should the instrumentation result be unsatisfactory, run \`${bold('uninstrument')}\` with the same arguments to revert the changes.
 
-[1m[33m[!][39m[22m Functions to be updated:
-	- [1marn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world[22m
-	[1m[33m[Warning][39m[22m At least one latest layer version is being used. Ensure to lock in versions for production applications using \`--layerVersion\` and \`--extensionVersion\`.
+${bold(yellow('[!]'))} Functions to be updated:
+\t- ${bold('arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world')}
+\t${bold(yellow('[Warning]'))} At least one latest layer version is being used. Ensure to lock in versions for production applications using \`--layerVersion\` and \`--extensionVersion\`.
 
 Will apply the following updates:
 UpdateFunctionConfiguration -> arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world
@@ -1403,8 +1405,8 @@ TagResource -> arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world
 {
   \\"dd_sls_ci\\": \\"v1.2.0\\"
 }
-[33m[!][39m Confirmation needed.
-[33m[!][39m Instrumenting functions.
+${yellow('[!]')} Confirmation needed.
+${yellow('[!]')} Instrumenting functions.
 "
 `)
       })
