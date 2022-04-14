@@ -1274,15 +1274,23 @@ ${red('[Error]')} Unexpected error
         const output = context.stdout.toString()
         expect(code).toBe(0)
         expect(output).toMatchInlineSnapshot(`
-"${bold(yellow('[!]'))} No AWS credentials found, let's set them up! Or you can re-run the command and supply the AWS credentials in the same way when you invoke the AWS CLI.
+"${bold(
+          yellow('[!]')
+        )} No AWS credentials found, let's set them up! Or you can re-run the command and supply the AWS credentials in the same way when you invoke the AWS CLI.
 ${bold(yellow('[!]'))} Configure AWS region.
 ${bold(yellow('[!]'))} Configure Datadog settings.
 Fetching Lambda functions, this might take a while.
-${bold(yellow('[Warning]'))} Instrument your ${hex('#FF9900').bold('Lambda')} functions in a dev or staging environment first. Should the instrumentation result be unsatisfactory, run \`${bold('uninstrument')}\` with the same arguments to revert the changes.
+${bold(yellow('[Warning]'))} Instrument your ${hex('#FF9900').bold(
+          'Lambda'
+        )} functions in a dev or staging environment first. Should the instrumentation result be unsatisfactory, run \`${bold(
+          'uninstrument'
+        )}\` with the same arguments to revert the changes.
 
 ${bold(yellow('[!]'))} Functions to be updated:
 \t- ${bold('arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world')}
-\t${bold(yellow('[Warning]'))} At least one latest layer version is being used. Ensure to lock in versions for production applications using \`--layerVersion\` and \`--extensionVersion\`.
+\t${bold(
+          yellow('[Warning]')
+        )} At least one latest layer version is being used. Ensure to lock in versions for production applications using \`--layerVersion\` and \`--extensionVersion\`.
 
 Will apply the following updates:
 UpdateFunctionConfiguration -> arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world
@@ -1369,16 +1377,30 @@ ${yellow('[!]')} Instrumenting functions.
         const output = context.stdout.toString()
         expect(code).toBe(0)
         expect(output).toMatchInlineSnapshot(`
-"${bold(yellow('[!]'))} No AWS credentials found, let's set them up! Or you can re-run the command and supply the AWS credentials in the same way when you invoke the AWS CLI.
+"${bold(
+          yellow('[!]')
+        )} No AWS credentials found, let's set them up! Or you can re-run the command and supply the AWS credentials in the same way when you invoke the AWS CLI.
 ${bold(yellow('[!]'))} Configure AWS region.
 ${bold(yellow('[!]'))} Configure Datadog settings.
 Fetching Lambda functions, this might take a while.
-${bold(yellow('[Warning]'))} The environment, service and version tags have not been configured. Learn more about Datadog unified service tagging: ${underline(blueBright('https://docs.datadoghq.com/getting_started/tagging/unified_service_tagging/#serverless-environment.'))}
-${bold(yellow('[Warning]'))} Instrument your ${hex('#FF9900').bold('Lambda')} functions in a dev or staging environment first. Should the instrumentation result be unsatisfactory, run \`${bold('uninstrument')}\` with the same arguments to revert the changes.
+${bold(
+  yellow('[Warning]')
+)} The environment, service and version tags have not been configured. Learn more about Datadog unified service tagging: ${underline(
+          blueBright(
+            'https://docs.datadoghq.com/getting_started/tagging/unified_service_tagging/#serverless-environment.'
+          )
+        )}
+${bold(yellow('[Warning]'))} Instrument your ${hex('#FF9900').bold(
+          'Lambda'
+        )} functions in a dev or staging environment first. Should the instrumentation result be unsatisfactory, run \`${bold(
+          'uninstrument'
+        )}\` with the same arguments to revert the changes.
 
 ${bold(yellow('[!]'))} Functions to be updated:
 \t- ${bold('arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world')}
-\t${bold(yellow('[Warning]'))} At least one latest layer version is being used. Ensure to lock in versions for production applications using \`--layerVersion\` and \`--extensionVersion\`.
+\t${bold(
+          yellow('[Warning]')
+        )} At least one latest layer version is being used. Ensure to lock in versions for production applications using \`--layerVersion\` and \`--extensionVersion\`.
 
 Will apply the following updates:
 UpdateFunctionConfiguration -> arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world
