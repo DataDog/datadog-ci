@@ -93,7 +93,41 @@ describe('lambda', () => {
         const output = context.stdout.toString()
         expect(code).toBe(0)
         expect(output).toMatchInlineSnapshot(`
-        "`)
+"[1m[33m[Warning][39m[22m Instrument your [38;2;255;153;0m[1mLambda[22m[39m functions in a dev or staging environment first. Should the instrumentation result be unsatisfactory, run \`[1muninstrument[22m\` with the same arguments to revert the changes.
+
+[1m[33m[!][39m[22m Functions to be updated:
+	- [1marn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world[22m
+
+[1m[36m[Dry Run] [39m[22mWill apply the following updates:
+UpdateFunctionConfiguration -> arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world
+{
+  \\"FunctionName\\": \\"arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world\\",
+  \\"Handler\\": \\"/opt/nodejs/node_modules/datadog-lambda-js/handler.handler\\",
+  \\"Environment\\": {
+    \\"Variables\\": {
+      \\"DD_LAMBDA_HANDLER\\": \\"index.handler\\",
+      \\"DD_SITE\\": \\"datadoghq.com\\",
+      \\"DD_CAPTURE_LAMBDA_PAYLOAD\\": \\"false\\",
+      \\"DD_ENV\\": \\"staging\\",
+      \\"DD_TAGS\\": \\"layer:api,team:intake\\",
+      \\"DD_MERGE_XRAY_TRACES\\": \\"false\\",
+      \\"DD_SERVICE\\": \\"middletier\\",
+      \\"DD_TRACE_ENABLED\\": \\"true\\",
+      \\"DD_VERSION\\": \\"0.2\\",
+      \\"DD_FLUSH_TO_LOG\\": \\"true\\",
+      \\"DD_LOG_LEVEL\\": \\"debug\\"
+    }
+  },
+  \\"Layers\\": [
+    \\"arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Node12-x:10\\"
+  ]
+}
+TagResource -> arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world
+{
+  \\"dd_sls_ci\\": \\"v1.2.0\\"
+}
+"
+`)
       })
 
       test('prints dry run data for lambda library and extension layers using kebab case args', async () => {
@@ -1282,8 +1316,7 @@ ${red('[Error]')} Unexpected error
         `)
       })
 
-      test.only('when not provided it does not set DD_ENV, DD_SERVICE, and DD_VERSION tags in interactive mode', async () => {
-        console.log(process.env[ENVIRONMENT_ENV_VAR])
+      test('when not provided it does not set DD_ENV, DD_SERVICE, and DD_VERSION tags in interactive mode', async () => {
         const node12LibraryLayer = `arn:aws:lambda:sa-east-1:${DEFAULT_LAYER_AWS_ACCOUNT}:layer:Datadog-Node12-x`
         const extensionLayer = `arn:aws:lambda:sa-east-1:${DEFAULT_LAYER_AWS_ACCOUNT}:layer:Datadog-Extension`
         ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({code: 'ENOENT'}))
@@ -1327,8 +1360,6 @@ ${red('[Error]')} Unexpected error
           process.env[SERVICE_ENV_VAR] = undefined
           process.env[VERSION_ENV_VAR] = undefined
         })
-
-        console.log(process.env[ENVIRONMENT_ENV_VAR])
 
         const cli = makeCli()
         const context = createMockContext() as any

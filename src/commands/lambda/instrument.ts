@@ -4,7 +4,13 @@ import {Cli, Command} from 'clipanion'
 import {parseConfigFile} from '../../helpers/utils'
 import {getCommitInfo, newSimpleGit} from '../git-metadata/git'
 import {UploadCommand} from '../git-metadata/upload'
-import {AWS_DEFAULT_REGION_ENV_VAR, ENVIRONMENT_ENV_VAR, EXTRA_TAGS_REG_EXP, SERVICE_ENV_VAR, VERSION_ENV_VAR} from './constants'
+import {
+  AWS_DEFAULT_REGION_ENV_VAR,
+  ENVIRONMENT_ENV_VAR,
+  EXTRA_TAGS_REG_EXP,
+  SERVICE_ENV_VAR,
+  VERSION_ENV_VAR,
+} from './constants'
 import {
   checkRuntimeTypesAreUniform,
   coerceBoolean,
@@ -117,33 +123,9 @@ export class InstrumentCommand extends Command {
 
         return 1
       }
-      
-      const environment = process.env[ENVIRONMENT_ENV_VAR]
-      if (environment === ""){ // If a user doesn't enter something then inquirer will set the answer to an empty string and in that case we don't want to set those environment variables
-        this.environment = undefined
-      }
-      else{
-        this.environment = environment
-      }
 
-      const service = process.env[SERVICE_ENV_VAR]
-      if (service === ""){
-        this.service = undefined
-      }
-      else{
-        this.service = service
-      }
-
-      const version = process.env[VERSION_ENV_VAR]
-      if (version === ""){
-        this.version = undefined
-      }
-      else{
-        this.version = version
-      }
-
+      this.setEnvServiceVersion()
     }
-    
 
     const settings = this.getSettings()
     if (settings === undefined) {
@@ -516,6 +498,30 @@ export class InstrumentCommand extends Command {
           )}\n`
         )
       }
+    }
+  }
+
+  private setEnvServiceVersion() {
+    const environment = process.env[ENVIRONMENT_ENV_VAR]
+    if (environment === '') {
+      // If a user doesn't enter something then inquirer will set the answer to an empty string and in that case we don't want to set these environment variables
+      this.environment = undefined
+    } else {
+      this.environment = environment
+    }
+
+    const service = process.env[SERVICE_ENV_VAR]
+    if (service === '') {
+      this.service = undefined
+    } else {
+      this.service = service
+    }
+
+    const version = process.env[VERSION_ENV_VAR]
+    if (version === '') {
+      this.version = undefined
+    } else {
+      this.version = version
     }
   }
 

@@ -20,9 +20,9 @@ import {
   CI_KMS_API_KEY_ENV_VAR,
   CI_SITE_ENV_VAR,
   DATADOG_API_KEY_REG_EXP,
-  SITES,
   ENVIRONMENT_ENV_VAR,
   SERVICE_ENV_VAR,
+  SITES,
   VERSION_ENV_VAR,
 } from './constants'
 import {sentenceMatchesRegEx} from './functions/commons'
@@ -114,21 +114,21 @@ const datadogSiteQuestion: ListQuestion = {
 }
 
 const envQuestion: InputQuestion = {
-  default: "",
+  default: '',
   message: 'Enter a value for the environment variable DD_ENV',
   name: ENVIRONMENT_ENV_VAR,
-  type: 'input'
+  type: 'input',
 }
 
 const serviceQuestion: InputQuestion = {
-  default: "",
+  default: '',
   message: 'Enter a value for the environment variable DD_SERVICE',
   name: SERVICE_ENV_VAR,
-  type: 'input'
+  type: 'input',
 }
 
 const versionQuestion: InputQuestion = {
-  default: "",
+  default: '',
   message: 'Enter a value for the environment variable DD_VERISON',
   name: VERSION_ENV_VAR,
   type: 'input',
@@ -226,8 +226,6 @@ export const requestEnvServiceVersion = async () => {
     const versionQuestionAnswer = await prompt(versionQuestion)
     const inputedVersionQuestionAnswer = versionQuestionAnswer[VERSION_ENV_VAR]
     process.env[VERSION_ENV_VAR] = inputedVersionQuestionAnswer
-
-
   } catch (e) {
     if (e instanceof Error) {
       throw Error(`Couldn't set user defined env, service, and version environment variables. ${e.message}`)
