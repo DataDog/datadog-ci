@@ -15,10 +15,9 @@ import {
   SITES,
 } from './constants'
 import {sentenceMatchesRegEx} from './functions/commons'
-
-
-const CheckboxPlusPrompt = require('inquirer-checkbox-plus-prompt')
-inquirer.registerPrompt('checkbox-plus', CheckboxPlusPrompt)
+/* tslint:disable-next-line */
+const checkboxPlusPrompt = require('inquirer-checkbox-plus-prompt')
+inquirer.registerPrompt('checkbox-plus', checkboxPlusPrompt)
 import {filter} from 'fuzzy'
 const awsCredentialsQuestions: inquirer.QuestionCollection = [
   {
@@ -127,7 +126,7 @@ export const confirmationQuestion = (message: string): inquirer.ConfirmQuestion 
   type: 'confirm',
 })
 
-export const functionSelectionQuestion = (functionNames: string[]): typeof CheckboxPlusPrompt => ({
+export const functionSelectionQuestion = (functionNames: string[]): typeof checkboxPlusPrompt => ({
   choices: functionNames,
   highlight: true,
   message:
