@@ -16,8 +16,8 @@ import {
 } from './constants'
 import {sentenceMatchesRegEx} from './functions/commons'
 
-// @ts-ignore
-import CheckboxPlusPrompt from 'inquirer-checkbox-plus-prompt'
+
+const CheckboxPlusPrompt = require('inquirer-checkbox-plus-prompt')
 inquirer.registerPrompt('checkbox-plus', CheckboxPlusPrompt)
 import {filter} from 'fuzzy'
 const awsCredentialsQuestions: inquirer.QuestionCollection = [
@@ -127,7 +127,7 @@ export const confirmationQuestion = (message: string): inquirer.ConfirmQuestion 
   type: 'confirm',
 })
 
-export const functionSelectionQuestion = (functionNames: string[]): CheckboxPlusPrompt => ({
+export const functionSelectionQuestion = (functionNames: string[]): typeof CheckboxPlusPrompt => ({
   choices: functionNames,
   highlight: true,
   message:
@@ -135,7 +135,7 @@ export const functionSelectionQuestion = (functionNames: string[]): CheckboxPlus
   name: 'functions',
   pageSize: 10,
   searchable: true,
-  source: (answersSoFar: any, input: any) => {
+  source: (answersSoFar: unknown, input: string) => {
     input = input || ''
 
     return new Promise((resolve) => {
@@ -145,7 +145,7 @@ export const functionSelectionQuestion = (functionNames: string[]): CheckboxPlus
     })
   },
   type: 'checkbox-plus',
-  validate: (selectedFunctions: string | any[]) => {
+  validate: (selectedFunctions: string | string[]) => {
     if (selectedFunctions.length < 1) {
       return 'You must choose at least one function.'
     }
