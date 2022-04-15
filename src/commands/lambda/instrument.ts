@@ -502,27 +502,9 @@ export class InstrumentCommand extends Command {
   }
 
   private setEnvServiceVersion() {
-    const environment = process.env[ENVIRONMENT_ENV_VAR]
-    if (environment === '') {
-      // If a user doesn't enter something then inquirer will set the answer to an empty string and in that case we don't want to set these environment variables
-      this.environment = undefined
-    } else {
-      this.environment = environment
-    }
-
-    const service = process.env[SERVICE_ENV_VAR]
-    if (service === '') {
-      this.service = undefined
-    } else {
-      this.service = service
-    }
-
-    const version = process.env[VERSION_ENV_VAR]
-    if (version === '') {
-      this.version = undefined
-    } else {
-      this.version = version
-    }
+    this.environment = process.env[ENVIRONMENT_ENV_VAR] || undefined
+    this.service = process.env[SERVICE_ENV_VAR] || undefined
+    this.version = process.env[VERSION_ENV_VAR] || undefined
   }
 
   private async uploadGitData() {
