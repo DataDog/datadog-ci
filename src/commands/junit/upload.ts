@@ -62,6 +62,10 @@ export class UploadJUnitXMLCommand extends Command {
         'Upload all jUnit XML test report files in current directory to the datadoghq.eu site',
         'DATADOG_SITE=datadoghq.eu datadog-ci junit upload --service my-service .',
       ],
+      [
+        'Upload all jUnit XML test report files in current directory while also collecting logs',
+        'datadog-ci junit upload --service my-service --logs .',
+      ],
     ],
   })
 
@@ -73,6 +77,7 @@ export class UploadJUnitXMLCommand extends Command {
   }
   private dryRun = false
   private env?: string
+  private logs = false
   private maxConcurrency = 20
   private service?: string
   private tags?: string[]
@@ -95,6 +100,14 @@ export class UploadJUnitXMLCommand extends Command {
 
     if (!this.config.env) {
       this.config.env = this.env
+    }
+
+    if (
+      !this.logs &&
+      process.env.DD_CIVISIBILITY_LOGS_ENABLED &&
+      !['false', '0'].includes(process.env.DD_CIVISIBILITY_LOGS_ENABLED.toLowerCase())
+    ) {
+      this.logs = true
     }
 
     const api = this.getApiHelper()
@@ -163,6 +176,7 @@ export class UploadJUnitXMLCommand extends Command {
     })
 
     return validUniqueFiles.map((jUnitXMLFilePath) => ({
+      logsEnabled: this.logs,
       service: this.service!,
       spanTags,
       xmlPath: jUnitXMLFilePath,
@@ -203,3 +217,4 @@ UploadJUnitXMLCommand.addOption('dryRun', Command.Boolean('--dry-run'))
 UploadJUnitXMLCommand.addOption('tags', Command.Array('--tags'))
 UploadJUnitXMLCommand.addOption('basePaths', Command.Rest({required: 1}))
 UploadJUnitXMLCommand.addOption('maxConcurrency', Command.String('--max-concurrency'))
+UploadJUnitXMLCommand.addOption('logs', Command.Boolean('--logs'))
