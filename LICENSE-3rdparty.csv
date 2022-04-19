@@ -26,8 +26,10 @@ dd-trace,import,Apache-2.0,Copyright 2016-Present Datadog Inc.
 deep-extend,import,MIT,Copyright (c) 2013-2018, Viacheslav Lotsmanov
 fast-xml-parser,import,MIT,Copyright (c) 2017 Amit Kumar Gupta
 form-data,import,MIT,Copyright (c) 2012 Felix Geisendörfer (felix@debuggable.com) and contributors
+fuzzy,import,MIT,Copyright (c) 2012 Matt York
 glob,import,ISC,Copyright (c) Isaac Z. Schlueter and Contributors
 inquirer,import,MIT,Copyright (c) 2012 Simon Boudrias
+inquirer-checkbox-plus-prompt,import,MIT,Copyright (c) 2018 Mohammad Anas Fares
 jest,dev,MIT,Copyright (c) Facebook, Inc. and its affiliates.
 jest-environment-node,dev,MIT,Copyright (c) Facebook, Inc. and its affiliates.
 jest-matcher-specific-error,dev,MIT,Copyright (c) 2020 Daniel Hreben
