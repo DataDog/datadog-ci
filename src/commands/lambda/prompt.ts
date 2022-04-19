@@ -12,7 +12,10 @@ import {
   CI_KMS_API_KEY_ENV_VAR,
   CI_SITE_ENV_VAR,
   DATADOG_API_KEY_REG_EXP,
+  ENVIRONMENT_ENV_VAR,
+  SERVICE_ENV_VAR,
   SITES,
+  VERSION_ENV_VAR,
 } from './constants'
 import {sentenceMatchesRegEx} from './functions/commons'
 /* tslint:disable-next-line */
@@ -105,6 +108,27 @@ const datadogSiteQuestion: inquirer.ListQuestion = {
   type: 'list',
 }
 
+const envQuestion: inquirer.InputQuestion = {
+  default: undefined,
+  message: 'Enter a value for the environment variable DD_ENV',
+  name: ENVIRONMENT_ENV_VAR,
+  type: 'input',
+}
+
+const serviceQuestion: inquirer.InputQuestion = {
+  default: undefined,
+  message: 'Enter a value for the environment variable DD_SERVICE',
+  name: SERVICE_ENV_VAR,
+  type: 'input',
+}
+
+const versionQuestion: inquirer.InputQuestion = {
+  default: undefined,
+  message: 'Enter a value for the environment variable DD_VERISON',
+  name: VERSION_ENV_VAR,
+  type: 'input',
+}
+
 export const datadogEnvVarsQuestions = (datadogApiKeyType: Record<string, any>): inquirer.InputQuestion => ({
   // DATADOG API KEY given type
   default: process.env[datadogApiKeyType.envVar],
@@ -193,6 +217,26 @@ export const requestDatadogEnvVars = async () => {
   } catch (e) {
     if (e instanceof Error) {
       throw Error(`Couldn't set Datadog Environment Variables. ${e.message}`)
+    }
+  }
+}
+
+export const requestEnvServiceVersion = async () => {
+  try {
+    const envQuestionAnswer = await inquirer.prompt(envQuestion)
+    const inputedEnvQuestionAnswer = envQuestionAnswer[ENVIRONMENT_ENV_VAR]
+    process.env[ENVIRONMENT_ENV_VAR] = inputedEnvQuestionAnswer
+
+    const serviceQuestionAnswer = await inquirer.prompt(serviceQuestion)
+    const inputedServiceQuestionAnswer = serviceQuestionAnswer[SERVICE_ENV_VAR]
+    process.env[SERVICE_ENV_VAR] = inputedServiceQuestionAnswer
+
+    const versionQuestionAnswer = await inquirer.prompt(versionQuestion)
+    const inputedVersionQuestionAnswer = versionQuestionAnswer[VERSION_ENV_VAR]
+    process.env[VERSION_ENV_VAR] = inputedVersionQuestionAnswer
+  } catch (e) {
+    if (e instanceof Error) {
+      throw Error(`Couldn't set user defined env, service, and version environment variables. ${e.message}`)
     }
   }
 }
