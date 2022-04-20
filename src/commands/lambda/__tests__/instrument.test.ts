@@ -1318,7 +1318,7 @@ UpdateFunctionConfiguration -> arn:aws:lambda:sa-east-1:123456789012:function:la
 }
 TagResource -> arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world
 {
-  \\"dd_sls_ci\\": \\"v1.2.0\\"
+  \\"dd_sls_ci\\": \\"v1.3.0\\"
 }
 ${yellow('[!]')} Confirmation needed.
 ${yellow('[!]')} Instrumenting functions.
@@ -1425,7 +1425,7 @@ UpdateFunctionConfiguration -> arn:aws:lambda:sa-east-1:123456789012:function:la
 }
 TagResource -> arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world
 {
-  \\"dd_sls_ci\\": \\"v1.2.0\\"
+  \\"dd_sls_ci\\": \\"v1.3.0\\"
 }
 ${yellow('[!]')} Confirmation needed.
 ${yellow('[!]')} Instrumenting functions.
