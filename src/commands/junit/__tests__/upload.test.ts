@@ -180,6 +180,20 @@ describe('upload', () => {
         key2: 'value2',
       })
     })
+    test('should set logsEnabled for each file', async () => {
+      process.env.DD_CIVISIBILITY_LOGS_ENABLED = 'true'
+      const context = createMockContext()
+      const command = new UploadJUnitXMLCommand()
+      const [firstFile, secondFile] = await command['getMatchingJUnitXMLFiles'].call({
+        basePaths: ['./src/commands/junit/__tests__/fixtures'],
+        config: {},
+        context,
+        logs: true,
+        service: 'service',
+      })
+      expect(firstFile.logsEnabled).toBe(true)
+      expect(secondFile.logsEnabled).toBe(true)
+    })
   })
 })
 
@@ -188,7 +202,10 @@ describe('execute', () => {
     const cli = makeCli()
     const context = createMockContext() as any
     process.env = {DATADOG_API_KEY: 'PLACEHOLDER'}
-    const code = await cli.run(['junit', 'upload', '--service', 'test-service', '--dry-run', ...paths], context)
+    const code = await cli.run(
+      ['junit', 'upload', '--service', 'test-service', '--dry-run', '--logs', ...paths],
+      context
+    )
 
     return {context, code}
   }

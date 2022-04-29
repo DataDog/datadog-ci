@@ -27,6 +27,7 @@ datadog-ci junit upload --service my-service --tags key1:value1 --tags key2:valu
 - `--env` (default: `DD_ENV` env var) is a string that represents the environment where you want your tests to appear in.
 - `--max-concurrency` (default: `20`): number of concurrent uploads to the API.
 - `--dry-run` (default: `false`): it will run the command without the final upload step. All other checks are performed.
+- `--logs` (default: `false`): it will enable collecting logs from the content in the XML reports.
 
 #### Environment variables
 
@@ -38,6 +39,7 @@ Additionally you might configure the `junit` command with environment variables:
 - `DD_TAGS`: set global tags applied to all spans. The format must be `key1:value1,key2:value2`.
   - The resulting dictionary will be merged with whatever is in the `--tags` parameter. If a `key` appears both in `--tags` and `DD_TAGS`, whatever value is in `DD_TAGS` will take precedence.
 - `DATADOG_SITE`: choose your Datadog site, e.g. datadoghq.com or datadoghq.eu.
+- `DD_CIVISIBILITY_LOGS_ENABLED`: it will enable collecting logs from the content in the XML reports.
 
 ### Optional dependencies
 
