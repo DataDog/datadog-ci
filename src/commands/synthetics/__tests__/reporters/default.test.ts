@@ -1,6 +1,6 @@
 import {BaseContext} from 'clipanion/lib/advanced'
 
-import {MainReporter} from '../../interfaces'
+import {ConfigOverride, ExecutionRule, MainReporter, Test} from '../../interfaces'
 import {DefaultReporter} from '../../reporters/default'
 import {createSummary} from '../../utils'
 
@@ -31,5 +31,102 @@ describe('Default reporter', () => {
       expect(writeMock).toHaveBeenCalledTimes(1)
       writeMock.mockClear()
     }
+  })
+
+  describe('testTrigger', () => {
+    beforeEach(() => {
+      writeMock.mockClear()
+    })
+
+    const testObject: Pick<Test, 'name'> = {
+      name: 'Request on example.org',
+    }
+    const testId = 'aaa-bbb-ccc'
+
+    const cases: [string, ExecutionRule, ConfigOverride, RegExp][] = [
+      [
+        'Blocking test, without config overwrite',
+        ExecutionRule.BLOCKING,
+        {},
+        /\[.*aaa-bbb-ccc.*\].*Found test.*Request on example\.org.*\n?$/,
+      ],
+      [
+        'Blocking test, with 1 config overridden',
+        ExecutionRule.BLOCKING,
+        {startUrl: 'foo'},
+        /\[.*aaa-bbb-ccc.*\].*Found test.*Request on example\.org.*\(1 config overridden\).*\n?$/,
+      ],
+      [
+        'Blocking test, with 2 configs overridden',
+        ExecutionRule.BLOCKING,
+        {startUrl: 'foo', body: 'hello'},
+        /\[.*aaa-bbb-ccc.*\].*Found test.*Request on example\.org.*\(2 configs overridden\).*\n?$/,
+      ],
+      [
+        'Non-blocking test from Datadog, without config overwrite',
+        ExecutionRule.NON_BLOCKING,
+        {},
+        /\[.*aaa-bbb-ccc.*\].*Found test.*Request on example\.org.*\(non-blocking\)\n?$/,
+      ],
+      [
+        'Non-blocking test from Datadog, with 1 config overridden',
+        ExecutionRule.NON_BLOCKING,
+        {startUrl: 'foo'},
+        /\[.*aaa-bbb-ccc.*\].*Found test.*Request on example\.org.*\(non-blocking\).*\(1 config overridden\).*\n?$/,
+      ],
+      [
+        'Non-blocking test from Datadog, with 2 configs overridden',
+        ExecutionRule.NON_BLOCKING,
+        {startUrl: 'foo', body: 'hello'},
+        /\[.*aaa-bbb-ccc.*\].*Found test.*Request on example\.org.*\(non-blocking\).*\(2 configs overridden\).*\n?$/,
+      ],
+      [
+        'Non-blocking test, with 1 config overridden',
+        ExecutionRule.NON_BLOCKING,
+        {executionRule: ExecutionRule.NON_BLOCKING},
+        /\[.*aaa-bbb-ccc.*\].*Found test.*Request on example\.org.*\(non-blocking\).*\(1 config overridden\).*\n?$/,
+      ],
+      [
+        'Non-blocking test, with 2 configs overridden',
+        ExecutionRule.NON_BLOCKING,
+        {startUrl: 'foo', executionRule: ExecutionRule.NON_BLOCKING},
+        /\[.*aaa-bbb-ccc.*\].*Found test.*Request on example\.org.*\(non-blocking\).*\(2 configs overridden\).*\n?$/,
+      ],
+      [
+        'Skipped test, with 1 config overridden',
+        ExecutionRule.SKIPPED,
+        {executionRule: ExecutionRule.SKIPPED},
+        /\[.*aaa-bbb-ccc.*\].*Skipped test.*Request on example\.org.*.*\(1 config overridden\).*\n?$/,
+      ],
+      [
+        'Skipped test, with 2 configs overridden',
+        ExecutionRule.SKIPPED,
+        {startUrl: 'foo', executionRule: ExecutionRule.SKIPPED},
+        /\[.*aaa-bbb-ccc.*\].*Skipped test.*Request on example\.org.*.*\(2 configs overridden\).*\n?$/,
+      ],
+      [
+        'Skipped test from Datadog, without config overwrite',
+        ExecutionRule.SKIPPED,
+        {},
+        /\[.*aaa-bbb-ccc.*\].*Skipped test.*Request on example\.org.*because of execution rule configuration in Datadog\n?$/,
+      ],
+      [
+        'Skipped test from Datadog, with 1 config overridden',
+        ExecutionRule.SKIPPED,
+        {startUrl: 'foo'},
+        /\[.*aaa-bbb-ccc.*\].*Skipped test.*Request on example\.org.*because of execution rule configuration in Datadog.*\(1 config overridden\).*\n?$/,
+      ],
+      [
+        'Skipped test from Datadog, with 2 configs overridden',
+        ExecutionRule.SKIPPED,
+        {startUrl: 'foo', body: 'hello'},
+        /\[.*aaa-bbb-ccc.*\].*Skipped test.*Request on example\.org.*because of execution rule configuration in Datadog.*\(2 configs overridden\).*\n?$/,
+      ],
+    ]
+
+    test.each(cases)('%s', (title, executionRule, config, expectedOutputPattern) => {
+      reporter.testTrigger(testObject, testId, executionRule, config)
+      expect(writeMock.mock.calls[0][0]).toMatch(expectedOutputPattern)
+    })
   })
 })

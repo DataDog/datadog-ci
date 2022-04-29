@@ -119,12 +119,17 @@ export class RunTestCommand extends Command {
 
     // Rendering the results.
     this.reporter?.reportStart({startTime})
+
     const locationNames = triggers.locations.reduce((mapping, location) => {
       mapping[location.id] = location.display_name
 
       return mapping
     }, {} as LocationsMapping)
+
     let hasSucceeded = true // Determine if all the tests have succeeded
+
+    const testResultsAlreadyDisplayed = new Set<string>()
+
     for (const test of tests) {
       const testResults = results[test.public_id]
       if (!this.config.failOnTimeout) {
@@ -158,14 +163,18 @@ export class RunTestCommand extends Command {
         }
       }
 
-      this.reporter?.testEnd(
-        test,
-        testResults,
-        this.getAppBaseURL(),
-        locationNames,
-        this.config.failOnCriticalErrors,
-        this.config.failOnTimeout
-      )
+      if (!testResultsAlreadyDisplayed.has(test.public_id)) {
+        testResultsAlreadyDisplayed.add(test.public_id)
+
+        this.reporter?.testEnd(
+          test,
+          testResults,
+          this.getAppBaseURL(),
+          locationNames,
+          this.config.failOnCriticalErrors,
+          this.config.failOnTimeout
+        )
+      }
     }
 
     this.reporter?.runEnd(summary)

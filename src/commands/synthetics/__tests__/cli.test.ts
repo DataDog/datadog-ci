@@ -6,7 +6,13 @@ import {DEFAULT_COMMAND_CONFIG, RunTestCommand} from '../command'
 import {ExecutionRule} from '../interfaces'
 import * as runTests from '../run-test'
 import * as utils from '../utils'
-import {getApiTest, getTestSuite, mockTestTriggerResponse} from './fixtures'
+import {
+  getApiTest,
+  getTestSuite,
+  mockSameTestPollResultResponse,
+  mockTestTriggerResponse,
+  mockTriggerTestsResponse,
+} from './fixtures'
 
 test('all option flags are supported', async () => {
   const options = [
@@ -420,6 +426,54 @@ describe('run-test', () => {
           expect(apiHelper.pollResults).toHaveBeenCalledTimes(1)
         })
       })
+    })
+  })
+
+  describe('Tests results output', () => {
+    test('Test results should not be duplicated for the same test with different config overrides', async () => {
+      const conf = {
+        content: {
+          tests: [
+            {config: {startUrl: 'foo'}, id: '123-456-789'},
+            {config: {startUrl: 'bar'}, id: '123-456-789'},
+          ],
+        },
+      }
+
+      jest.spyOn(ciUtils, 'parseConfigFile').mockImplementation(async (config, _) => config)
+      jest.spyOn(utils, 'getSuites').mockImplementation((() => [conf]) as any)
+
+      const apiHelper = {
+        getTest: jest.fn(async () => ({...getApiTest('123-456-789')})),
+        getTestsToTrigger: jest.fn(async () => ({
+          overriddenTestsToTrigger: [],
+          summary: utils.createSummary(),
+          tests: [],
+        })),
+        pollResults: jest.fn(async () => mockSameTestPollResultResponse),
+        triggerTests: jest.fn(async () => {
+          const response: typeof mockTriggerTestsResponse = JSON.parse(JSON.stringify(mockTriggerTestsResponse))
+          response.triggered_check_ids.push('123-456-789')
+          response.results.push({...response.results[0], result_id: '2'})
+
+          return response
+        }),
+      }
+
+      const write = jest.fn()
+      const command = new RunTestCommand()
+      command.context = {stdout: {write}} as any
+      command['config'].global = {locations: ['aws:us-east-2']}
+      jest.spyOn(runTests, 'getApiHelper').mockImplementation(() => apiHelper as any)
+
+      expect(await command.execute()).toBe(0)
+
+      const reporterTestEndOutputs = write.mock.calls.filter((text) => /result url/.test(text))
+
+      expect(reporterTestEndOutputs).toHaveLength(1)
+      const output = reporterTestEndOutputs[0][0]
+      expect(output.split('synthetics/details/123-456-789?resultId=1')).toHaveLength(2)
+      expect(output.split('synthetics/details/123-456-789?resultId=2')).toHaveLength(2)
     })
   })
 })

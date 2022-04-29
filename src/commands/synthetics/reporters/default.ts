@@ -360,7 +360,7 @@ export class DefaultReporter implements MainReporter {
     )
   }
 
-  public testTrigger(test: Test, testId: string, executionRule: ExecutionRule, config: ConfigOverride) {
+  public testTrigger(test: Pick<Test, 'name'>, testId: string, executionRule: ExecutionRule, config: ConfigOverride) {
     const idDisplay = `[${chalk.bold.dim(testId)}]`
 
     const getMessage = () => {
@@ -381,7 +381,16 @@ export class DefaultReporter implements MainReporter {
       return `Found test "${chalk.green.bold(test.name)}"`
     }
 
-    this.write(`${idDisplay} ${getMessage()}\n`)
+    const getConfigOverridesPart = () => {
+      const nbConfigsOverridden = Object.keys(config).length
+      if (nbConfigsOverridden === 0) {
+        return ''
+      }
+
+      return ' ' + chalk.gray(`(${nbConfigsOverridden} config${nbConfigsOverridden !== 1 ? 's' : ''} overridden)`)
+    }
+
+    this.write(`${idDisplay} ${getMessage()}${getConfigOverridesPart()}\n`)
   }
 
   public testWait(test: Test) {

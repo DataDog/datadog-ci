@@ -205,6 +205,37 @@ export const mockTestTriggerResponse = {
 
 export const mockPollResultResponse = {results: [{dc_id: 1, result: mockResult, resultID: '1'}]}
 
+export const mockSameTestPollResultResponse = {
+  results: [
+    {dc_id: 1, result: {...mockResult, eventType: 'finished'}, resultID: '1'},
+    {
+      dc_id: 1,
+      result: {...mockResult, eventType: 'finished', result: {...mockResult.result, result_id: '2'}, result_id: '2'},
+      resultID: '2',
+    },
+  ],
+}
+
+export const mockTriggerTestsResponse = {
+  locations: [
+    {
+      display_name: 'Frankfurt (AWS)',
+      id: 1,
+      is_active: true,
+      name: 'aws:eu-central-1',
+      region: 'EMEA',
+    },
+  ],
+  results: [
+    {
+      location: 1,
+      public_id: '123-456-789',
+      result_id: '1',
+    },
+  ],
+  triggered_check_ids: ['123-456-789'],
+}
+
 const mockTunnelConnectionFirstMessage = {host: 'host', id: 'tunnel-id'}
 
 export const getSyntheticsProxy = () => {
