@@ -1,5 +1,5 @@
 export {CiError, CriticalError} from './errors'
 export * from './interfaces'
 export {DefaultReporter} from './reporters/default'
-export {executeTests, getApiHelper} from './run-test'
+export {executeTests} from './run-test'
 export * as utils from './utils'

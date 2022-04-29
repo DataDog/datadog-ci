@@ -24,8 +24,10 @@ import {
   Result,
   Suite,
   Summary,
+  SyntheticsCIConfig,
   TemplateContext,
   TemplateVariables,
+  Test,
   TestPayload,
   Trigger,
   TriggerConfig,
@@ -33,6 +35,7 @@ import {
   TriggerResult,
 } from './interfaces'
 import {Tunnel} from './tunnel'
+import {getApiHelper} from './run-test'
 
 const POLLING_INTERVAL = 5000 // In ms
 const PUBLIC_ID_REGEX = /^[\d\w]{3}-[\d\w]{3}-[\d\w]{3}$/
@@ -550,6 +553,12 @@ export const runTests = async (api: APIHelper, testsToTrigger: TestPayload[]): P
     // Rewrite error message
     throw new EndpointError(`[${testIds}] Failed to trigger tests: ${errorMessage}\n`, e.response.status)
   }
+}
+
+export const fetchTest = async (publicId: string, config: SyntheticsCIConfig): Promise<Test> => {
+  const apiHelper = getApiHelper(config)
+
+  return apiHelper.getTest(publicId)
 }
 
 const definedTypeGuard = <T>(o: T | undefined): o is T => !!o
