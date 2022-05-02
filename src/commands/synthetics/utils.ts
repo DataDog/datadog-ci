@@ -34,8 +34,8 @@ import {
   TriggerResponse,
   TriggerResult,
 } from './interfaces'
-import {Tunnel} from './tunnel'
 import {getApiHelper} from './run-test'
+import {Tunnel} from './tunnel'
 
 const POLLING_INTERVAL = 5000 // In ms
 const PUBLIC_ID_REGEX = /^[\d\w]{3}-[\d\w]{3}-[\d\w]{3}$/
