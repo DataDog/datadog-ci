@@ -61,6 +61,8 @@ export class TagCommand extends Command {
         )
 
         return 0
+      } else if (exitStatus === 0) {
+        this.context.stdout.write('Tags sent')
       }
 
       return exitStatus
