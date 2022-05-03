@@ -550,7 +550,7 @@ const parsePipelineNumber = (pipelineNumberStr: string | undefined): number | un
 export const getCIEnv = (): {ciEnv: Record<string, string>; provider: string} => {
   if (process.env.CIRCLECI) {
     return {
-      ciEnv: getEnvs('CIRCLECI_'),
+      ciEnv: getEnvs('CIRCLE_'),
       provider: 'circleci',
     }
   }
