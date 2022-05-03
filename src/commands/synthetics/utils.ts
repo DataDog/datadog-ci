@@ -42,7 +42,7 @@ const TEMPLATE_REGEX = /{{\s*([^{}]*?)\s*}}/g
 const template = (st: string, context: any): string =>
   st.replace(TEMPLATE_REGEX, (match: string, p1: string) => (p1 in context ? context[p1] : match))
 
-export let ciTriggerApp = 'npm_package'
+export let ciTriggerApp = process.env.DATADOG_SYNTHETICS_CI_TRIGGER_APP || 'npm_package'
 
 export const handleConfig = (
   test: InternalTest,

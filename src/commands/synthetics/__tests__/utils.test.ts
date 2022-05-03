@@ -6,6 +6,8 @@ import * as fs from 'fs'
 import {AxiosError, AxiosRequestConfig, AxiosResponse, default as axios} from 'axios'
 import glob from 'glob'
 
+process.env.DATADOG_SYNTHETICS_CI_TRIGGER_APP = 'env_default'
+
 import * as ciHelpers from '../../../helpers/ci'
 import {Metadata} from '../../../helpers/interfaces'
 import {ProxyConfiguration} from '../../../helpers/utils'
@@ -108,7 +110,7 @@ describe('utils', () => {
       }) as any)
 
       await utils.runTests(api, [{public_id: fakeId, executionRule: ExecutionRule.NON_BLOCKING}])
-      expect(headersMetadataSpy).toHaveBeenCalledWith(expect.objectContaining({'X-Trigger-App': 'npm_package'}))
+      expect(headersMetadataSpy).toHaveBeenCalledWith(expect.objectContaining({'X-Trigger-App': 'env_default'}))
 
       utils.setCiTriggerApp('unit_test')
       await utils.runTests(api, [{public_id: fakeId, executionRule: ExecutionRule.NON_BLOCKING}])
