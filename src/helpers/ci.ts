@@ -547,40 +547,39 @@ const parsePipelineNumber = (pipelineNumberStr: string | undefined): number | un
   }
 }
 
-export const getCIEnv = (): {provider: string, ci_env: Record<string, string>} => {
+export const getCIEnv = (): {ciEnv: Record<string, string>; provider: string} => {
   if (process.env.CIRCLECI) {
     return {
+      ciEnv: getEnvs('CIRCLECI_'),
       provider: 'circleci',
-      ci_env: getEnvs('CIRCLECI_')
     }
   }
 
   if (process.env.GITLAB_CI) {
     return {
+      ciEnv: getEnvs('CI_'),
       provider: 'gitlab',
-      ci_env: getEnvs('CI_')
     }
   }
 
   if (process.env.GITHUB_ACTIONS || process.env.GITHUB_ACTION) {
     return {
+      ciEnv: getEnvs('GITHUB_'),
       provider: 'github',
-      ci_env: getEnvs('GITHUB_'),
     }
   }
 
   if (process.env.BUILDKITE) {
     return {
+      ciEnv: getEnvs('BUILDKITE_'),
       provider: 'buildkite',
-      ci_env: getEnvs('BUILDKITE_'),
     }
   }
 
-  throw new Error('Only providers [GitHub, GitLab, CircleCI, Buildkite] are supported');
+  throw new Error('Only providers [GitHub, GitLab, CircleCI, Buildkite] are supported')
 }
 
-const getEnvs = (prefix: string): Record<string, string> => {
-  return Object.entries(process.env)
-    .filter(([key, value]) => key.startsWith(prefix) && !(/(PASSWORD)|(TOKEN)|(SECRET)|(KEY)/i).test(key))
-    .reduce((accum, [key, value]) =>({...accum, [key]: value}), {})
-}
+const getEnvs = (prefix: string): Record<string, string> =>
+  Object.entries(process.env)
+    .filter(([key, value]) => key.startsWith(prefix) && !/(PASSWORD)|(TOKEN)|(SECRET)|(KEY)/i.test(key))
+    .reduce((accum, [key, value]) => ({...accum, [key]: value}), {})
