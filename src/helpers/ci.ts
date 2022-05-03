@@ -546,3 +546,41 @@ const parsePipelineNumber = (pipelineNumberStr: string | undefined): number | un
     return isFinite(pipelineNumber) ? pipelineNumber : undefined
   }
 }
+
+export const getCIEnv = (): {provider: string, ci_env: Record<string, string>} => {
+  if (process.env.CIRCLECI) {
+    return {
+      provider: 'circleci',
+      ci_env: getEnvs('CIRCLECI_')
+    }
+  }
+
+  if (process.env.GITLAB_CI) {
+    return {
+      provider: 'gitlab',
+      ci_env: getEnvs('CI_')
+    }
+  }
+
+  if (process.env.GITHUB_ACTIONS || process.env.GITHUB_ACTION) {
+    return {
+      provider: 'github',
+      ci_env: getEnvs('GITHUB_'),
+    }
+  }
+
+  if (process.env.BUILDKITE) {
+    return {
+      provider: 'buildkite',
+      ci_env: getEnvs('BUILDKITE_'),
+    }
+  }
+
+  throw new Error('Only providers [GitHub, GitLab, CircleCI, Buildkite] are supported');
+}
+
+const getEnvs = (prefix: string): Record<string, string> => {
+  return Object.entries(process.env)
+    .filter(([key, value]) => key.startsWith(prefix) && !(/(PASSWORD)|(TOKEN)|(SECRET)|(KEY)/i).test(key))
+    .reduce((accum, [key, value]) =>({...accum, [key]: value}), {})
+}
