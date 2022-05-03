@@ -31,7 +31,7 @@ export class TagCommand extends Command {
 
   public async execute() {
     if (this.level !== 'pipeline' && this.level !== 'job') {
-      this.context.stderr.write('Level must be one of [pipeline, job]')
+      this.context.stderr.write('Level must be one of [pipeline, job]\n')
 
       return 1
     }
@@ -42,7 +42,7 @@ export class TagCommand extends Command {
     }
 
     if (Object.keys(tags).length === 0) {
-      this.context.stderr.write('DD_TAGS environment variable or --tags command line argument is required')
+      this.context.stderr.write('DD_TAGS environment variable or --tags command line argument is required\n')
 
       return 1
     }
@@ -57,7 +57,7 @@ export class TagCommand extends Command {
       const exitStatus = await this.sendTags(ciEnv, this.level === 'pipeline' ? 0 : 1, provider, tags)
       if (exitStatus !== 0 && this.noFail) {
         this.context.stderr.write(
-          `${chalk.yellow.bold('[WARNING]')} sending tags failed but continuing due to --no-fail`
+          `${chalk.yellow.bold('[WARNING]')} sending tags failed but continuing due to --no-fail\n`
         )
 
         return 0
@@ -67,7 +67,7 @@ export class TagCommand extends Command {
 
       return exitStatus
     } catch (error) {
-      this.context.stderr.write(error.message)
+      this.context.stderr.write(`${error.message}\n`)
 
       return 1
     }
@@ -90,26 +90,28 @@ export class TagCommand extends Command {
     const baseAPIURL = `https://${getApiHostForSite(site)}`
     const instance = getRequestBuilder({baseUrl: baseAPIURL, apiKey: this.config.apiKey})
 
-    try {
-      const resp = await retryRequest(
-        async function() {
-          return await instance({
-            url: 'api/v2/ci/pipeline/tags',
-            method: 'post',
-            data: {
-              data: {
-                attributes: {
-                  ci_env: ciEnv,
-                  ci_level: level,
-                  provider,
-                  tags,
-                },
-                type: 'ci_custom_tag',
-              },
+    const doRequest = async () => {
+      const resp = await instance({
+        data: {
+          data: {
+            attributes: {
+              ci_env: ciEnv,
+              ci_level: level,
+              provider,
+              tags,
             },
-          })
-      },
-      {
+            type: 'ci_custom_tag',
+          },
+        },
+        method: 'post',
+        url: 'api/v2/ci/pipeline/tags',
+      })
+
+      return resp
+    }
+
+    try {
+      await retryRequest(doRequest, {
         onRetry: (e, attempt) => {
           this.context.stderr.write(
             chalk.yellow(`[attempt ${attempt}] Could not send tags. Retrying...: ${e.message}\n`)
@@ -118,7 +120,7 @@ export class TagCommand extends Command {
         retries: 5,
       })
     } catch (error) {
-      this.context.stderr.write(`${chalk.red('[ERROR] Could not send tags')} ${error.message}`)
+      this.context.stderr.write(`${chalk.red('[ERROR]')} Could not send tags: ${error.message}\n`)
 
       return 1
     }
