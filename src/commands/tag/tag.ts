@@ -62,7 +62,7 @@ export class TagCommand extends Command {
 
         return 0
       } else if (exitStatus === 0) {
-        this.context.stdout.write('Tags sent')
+        this.context.stdout.write('Tags sent\n')
       }
 
       return exitStatus
@@ -88,12 +88,14 @@ export class TagCommand extends Command {
 
     const site = process.env.DATADOG_SITE || process.env.DD_SITE || 'datadoghq.com'
     const baseAPIURL = `https://${getApiHostForSite(site)}`
+    const instance = getRequestBuilder({baseUrl: baseAPIURL, apiKey: this.config.apiKey})
 
     try {
-      const apiRequest = getRequestBuilder({baseUrl: baseAPIURL, apiKey: this.config.apiKey})
-      await retryRequest(
-        () =>
-          apiRequest({
+      const resp = await retryRequest(
+        async function() {
+          return await instance({
+            url: 'api/v2/ci/pipeline/tags',
+            method: 'post',
             data: {
               data: {
                 attributes: {
@@ -102,23 +104,21 @@ export class TagCommand extends Command {
                   provider,
                   tags,
                 },
-                type: 'ci_app_tag',
+                type: 'ci_custom_tag',
               },
-              method: 'POST',
-              url: 'api/v2/ci/pipeline/tags',
             },
-          }),
-        {
-          onRetry: (e, attempt) => {
-            this.context.stderr.write(
-              chalk.yellow(`[attempt ${attempt}] Could not send tags. Retrying...: ${e.message}\n`)
-            )
-          },
-          retries: 5,
-        }
-      )
+          })
+      },
+      {
+        onRetry: (e, attempt) => {
+          this.context.stderr.write(
+            chalk.yellow(`[attempt ${attempt}] Could not send tags. Retrying...: ${e.message}\n`)
+          )
+        },
+        retries: 5,
+      })
     } catch (error) {
-      this.context.stderr.write(chalk.red(`Failed to report custom span: ${error.message}\n`))
+      this.context.stderr.write(`${chalk.red('[ERROR] Could not send tags')} ${error.message}`)
 
       return 1
     }
