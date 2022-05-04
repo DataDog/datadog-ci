@@ -15,7 +15,7 @@ describe('Default reporter', () => {
   }
   const reporter: any = new DefaultReporter(mockContext as {context: BaseContext})
   it('should log for each hook', () => {
-    // `testWait` is skipped as nothing is logged for the default reporter.
+    // `testWait`/`testResult` is skipped as nothing is logged for the default reporter.
     const calls: [keyof MainReporter, any[]][] = [
       ['error', ['error']],
       ['initErrors', [['error']]],

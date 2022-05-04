@@ -255,12 +255,13 @@ Reporters can hook themselves into the `MainReporter` of the command.
 
 | Hook name     | Parameters                                                                              | Description                                                     |
 | :------------ | :-------------------------------------------------------------------------------------- | :-------------------------------------------------------------- |
+| `log`         | `(log: string)`                                                                         | called for logging.                                             |
 | `error`       | `(error: string)`                                                                       | called whenever an error occurs.                                |
 | `initErrors`  | `(errors: string[])`                                                                    | called whenever an error occurs during the tests parsing phase. |
-| `log`         | `(log: string)`                                                                         | called for logging.                                             |
-| `runEnd`      | `(summary: Summary)`                                                                    | called at the end of the run.                                   |
 | `reportStart` | `(timings: {startTime: number})`                                                        | called at the start of the report.                              |
-| `testEnd`     | `(test: Test, results: PollResult[], baseUrl: string, locationNames: LocationsMapping)` | called when a test receives its results.                        |
 | `testTrigger` | `(test: Test, testId: string, executionRule: ExecutionRule, config: ConfigOverride)`    | called when a test is triggered.                                |
 | `testWait`    | `(test: Test)`                                                                          | called when a test is waiting to receive its results.           |
 | `testsWait`   | `(tests: Test[])`                                                                       | called when all tests are waiting to receive their results.     |
+| `testResult`  | `(trigger: TriggerResponse, result: PollResult)`                                        | called when a test result is received.                          |
+| `testEnd`     | `(test: Test, results: PollResult[], baseUrl: string, locationNames: LocationsMapping)` | called when all results for a test are received.                |
+| `runEnd`      | `(summary: Summary)`                                                                    | called at the end of the run.                                   |
