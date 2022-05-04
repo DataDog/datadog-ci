@@ -31,7 +31,7 @@ export class TagCommand extends Command {
 
   public async execute() {
     if (this.level !== 'pipeline' && this.level !== 'job') {
-      this.context.stderr.write('Level must be one of [pipeline, job]\n')
+      this.context.stderr.write(`${chalk.red.bold('[ERROR]')} Level must be one of [pipeline, job]\n`)
 
       return 1
     }
@@ -42,7 +42,9 @@ export class TagCommand extends Command {
     }
 
     if (Object.keys(tags).length === 0) {
-      this.context.stderr.write('DD_TAGS environment variable or --tags command line argument is required\n')
+      this.context.stderr.write(
+        `${chalk.red.bold('[ERROR]')} DD_TAGS environment variable or --tags command line argument is required\n`
+        )
 
       return 1
     }
@@ -51,7 +53,9 @@ export class TagCommand extends Command {
       const {provider, ciEnv} = getCIEnv()
       // For GitHub only the pipeline level is supported as there is no way to identify the job from the runner.
       if (provider === 'github' && this.level === 'job') {
-        throw new Error('Cannot use level "job" for GitHub Actions.')
+        this.context.stderr.write(`${chalk.red.bold('[ERROR]')} Cannot use level "job" for GitHub Actions.`)
+
+        return 1
       }
 
       const exitStatus = await this.sendTags(ciEnv, this.level === 'pipeline' ? 0 : 1, provider, tags)
@@ -67,7 +71,7 @@ export class TagCommand extends Command {
 
       return exitStatus
     } catch (error) {
-      this.context.stderr.write(`${error.message}\n`)
+      this.context.stderr.write(`${chalk.red.bold('[ERROR]')} ${error.message}\n`)
 
       return 1
     }
@@ -120,7 +124,7 @@ export class TagCommand extends Command {
         retries: 5,
       })
     } catch (error) {
-      this.context.stderr.write(`${chalk.red('[ERROR]')} Could not send tags: ${error.message}\n`)
+      this.context.stderr.write(`${chalk.red.bold('[ERROR]')} Could not send tags: ${error.message}\n`)
 
       return 1
     }
