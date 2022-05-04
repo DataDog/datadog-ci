@@ -15,7 +15,7 @@ export class TagCommand extends Command {
     examples: [
       ['Add a team tag to the current pipeline', 'datadog-ci tag --level pipeline --tags team:backend'],
       [
-        'Tag the current CI job with the current go version',
+        'Tag the current CI job with the go version',
         'datadog-ci tag --level job --tags "go.version:`go version`"',
       ],
     ],
@@ -94,7 +94,7 @@ export class TagCommand extends Command {
     const baseAPIURL = `https://${getApiHostForSite(site)}`
     const request = getRequestBuilder({baseUrl: baseAPIURL, apiKey: this.config.apiKey})
 
-    const doRequest = async () =>
+    const doRequest = () =>
       request({
         data: {
           data: {

@@ -24,7 +24,7 @@ datadog-ci tag --level job --tags "go.version:`go version`
 ### Environment variables
 
 - `DATADOG_API_KEY` or `DD_API_KEY` (**required**): API key used to authenticate the requests.
-- `DD_TAGS`: set global tags applied to all spans. The format must be `key1:value1,key2:value2`.
+- `DD_TAGS`: set tags applied to the pipeline or job span. The format must be `key1:value1,key2:value2`.
 - `DATADOG_SITE`: choose your Datadog site, e.g. datadoghq.com or datadoghq.eu.
 
 ### Supported providers
