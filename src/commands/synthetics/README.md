@@ -46,6 +46,7 @@ The configuration file structure is the following:
   "apiKey": "<DATADOG_API_KEY>",
   "appKey": "<DATADOG_APPLICATION_KEY>",
   "datadogSite": "datadoghq.com",
+  "failOnCriticalErrors": true,
   "failOnTimeout": "true",
   "files": "{,!(node_modules)/**/}*.synthetics.json",
   "global": {
@@ -112,13 +113,17 @@ It's particularly useful when you want to run multiple suites in parallel with a
 yarn datadog-ci synthetics run-tests -f ./component-1/**/*.synthetics.json -f ./component-2/**/*.synthetics.json
 ```
 
-You can use `--failOnTimeout` (--no-failOnTimeout to sets the value to false) to make the CI fail (or pass) if one of the result exceed its test timeout.
-
 Variables can also be passed as arguments using `--variable KEY=VALUE`.
 
 ```bash
 yarn datadog-ci synthetics run-tests -f ./component-1/**/*.synthetics.json -v PASSWORD=$PASSWORD
 ```
+
+#### Failure modes flags
+- `--failOnTimeout` (or `--no-failOnTimeout`) will make the CI fail (or pass) if one of the result exceed its test timeout.
+- `--failOnCriticalErrors` will make the command exit with an error code 1 if tests were not triggered or results could not be fetched.
+
+
 
 ### Test files
 
@@ -139,7 +144,6 @@ Your test files must be named with a `.synthetics.json` suffix.
         "defaultStepTimeout": 15,
         "deviceIds": ["laptop_large"],
         "executionRule": "skipped",
-        "failOnCriticalErrors": true,
         "followRedirects": true,
         "headers": {"NEW_HEADER": "NEW VALUE"},
         "locations": ["aws:us-east-1"],
@@ -173,7 +177,6 @@ All options under the `config` key are optional and allow overriding the configu
   - `blocking`: the CLI returns an error if the test fails.
   - `non_blocking`: the CLI only prints a warning if the test fails.
   - `skipped`: the test is not executed at all.
-- `failOnCriticalErrors`: (boolean) exit with an error code 1 if tests were not triggered or results could not be fetched.
 - `followRedirects`: (boolean) indicates whether to follow or not HTTP redirections in API tests.
 - `headers`: (object) headers to replace in the test. This object should contain as keys the name of the header to replace and as values the new value of the header.
 - `locations`: (array) list of locations from which the test should be run.
