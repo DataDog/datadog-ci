@@ -73,7 +73,7 @@ interface XMLStep {
   warning?: {$: {type: string}; _: string}[]
 }
 
-interface XMLJSON {
+export interface XMLJSON {
   testsuites: {
     $: {name: string}
     testsuite: XMLRun[]
