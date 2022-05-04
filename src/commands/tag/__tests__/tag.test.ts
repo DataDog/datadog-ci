@@ -1,6 +1,6 @@
 import {Cli} from 'clipanion/lib/advanced'
 
-import { TagCommand } from '../tag'
+import {TagCommand} from '../tag'
 
 const makeCLI = () => {
   const cli = new Cli()
@@ -44,10 +44,7 @@ describe('execute', () => {
       tagsList.push(t)
     })
 
-    const code = await cli.run(
-      ['tag', '--level', level, ...tagsList],
-      context
-    )
+    const code = await cli.run(['tag', '--level', level, ...tagsList], context)
 
     return {context, code}
   }
@@ -61,7 +58,9 @@ describe('execute', () => {
   test('should fail if no tags provided', async () => {
     const {context, code} = await runCLI('pipeline', [], {})
     expect(code).toBe(1)
-    expect(context.stderr.toString()).toContain('DD_TAGS environment variable or --tags command line argument is required')
+    expect(context.stderr.toString()).toContain(
+      'DD_TAGS environment variable or --tags command line argument is required'
+    )
   })
 
   test('should fail if not running in a supported provider', async () => {

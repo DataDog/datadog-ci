@@ -44,7 +44,7 @@ export class TagCommand extends Command {
     if (Object.keys(tags).length === 0) {
       this.context.stderr.write(
         `${chalk.red.bold('[ERROR]')} DD_TAGS environment variable or --tags command line argument is required\n`
-        )
+      )
 
       return 1
     }
