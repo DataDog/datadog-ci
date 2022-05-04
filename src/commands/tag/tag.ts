@@ -9,7 +9,7 @@ export class TagCommand extends Command {
   public static usage = Command.Usage({
     description: 'Add tags to a CI Pipeline trace pipeline or job span in Datadog.',
     details: `
-            This command when run from a supported CI provider sends an arbitrary st of key:value
+            This command when run from a supported CI provider sends an arbitrary set of key:value
             tags to Datadog to include in the CI Visibility traces.
     `,
     examples: [
@@ -92,10 +92,10 @@ export class TagCommand extends Command {
 
     const site = process.env.DATADOG_SITE || process.env.DD_SITE || 'datadoghq.com'
     const baseAPIURL = `https://${getApiHostForSite(site)}`
-    const instance = getRequestBuilder({baseUrl: baseAPIURL, apiKey: this.config.apiKey})
+    const request = getRequestBuilder({baseUrl: baseAPIURL, apiKey: this.config.apiKey})
 
-    const doRequest = async () => {
-      const resp = await instance({
+    const doRequest = async () =>
+      request({
         data: {
           data: {
             attributes: {
@@ -110,9 +110,6 @@ export class TagCommand extends Command {
         method: 'post',
         url: 'api/v2/ci/pipeline/tags',
       })
-
-      return resp
-    }
 
     try {
       await retryRequest(doRequest, {
