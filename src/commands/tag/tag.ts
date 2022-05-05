@@ -14,10 +14,7 @@ export class TagCommand extends Command {
     `,
     examples: [
       ['Add a team tag to the current pipeline', 'datadog-ci tag --level pipeline --tags team:backend'],
-      [
-        'Tag the current CI job with the go version',
-        'datadog-ci tag --level job --tags "go.version:`go version`"',
-      ],
+      ['Tag the current CI job with the go version', 'datadog-ci tag --level job --tags "go.version:`go version`"'],
     ],
   })
   private config = {
