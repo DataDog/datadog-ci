@@ -11,10 +11,10 @@ datadog-ci tag [--no-fail] [--level <pipeline|job>] [--tags]
 For example:
 
 ```bash
-datadog-ci tag --level job --tags "go.version:`go version`
+datadog-ci tag --level job --tags "go.version:`go version`"
 ```
 
-- `--level` Has to be on of `[pipeline, job]`. It will determine in what span the tags will be added. If pipeline
+- `--level` Has to be one of `[pipeline, job]`. It will determine in what span the tags will be added. If pipeline
   is selected then the tags will be added to the pipeline trace span. If job is selected it will be added to the
   span for the currently running job.
 - `--no-fail` (default: `false`) will prevent the tag command from failing if there are issues submitting the data.
