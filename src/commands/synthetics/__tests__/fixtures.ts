@@ -1,3 +1,4 @@
+import deepExtend from 'deep-extend'
 import * as http from 'http'
 import {URL} from 'url'
 
@@ -9,14 +10,20 @@ import {
   ApiTestResult,
   BrowserTestResult,
   CommandConfig,
+  ConfigOverride,
+  ExecutionRule,
+  Location,
   MainReporter,
   MultiStep,
   MultiStepsTestResult,
   PollResult,
   Step,
   Suite,
+  Summary,
   Test,
   TestResult,
+  Trigger,
+  TriggerResponse,
   User,
 } from '../interfaces'
 
@@ -25,6 +32,10 @@ const mockUser: User = {
   handle: '',
   id: 42,
   name: '',
+}
+
+export type MockedReporter = {
+  [K in keyof MainReporter]: jest.Mock<void, Parameters<MainReporter[K]>>
 }
 
 export const mockReporter: MainReporter = {
@@ -126,20 +137,21 @@ export const getMultiStep = (): MultiStep => ({
 
 export const getTestSuite = (): Suite => ({content: {tests: [{config: {}, id: '123-456-789'}]}, name: 'Suite 1'})
 
-const getPollResult = () => ({
+const getPollResult = (resultId: string): Omit<PollResult, 'result'> => ({
   dc_id: 1,
-  resultID: '123',
+  enrichment: {},
+  resultID: resultId,
   timestamp: 1,
 })
 
-export const getBrowserPollResult = (): PollResult => ({
-  ...getPollResult(),
-  result: getBrowserResult(),
+export const getBrowserPollResult = (resultId: string, resultOpts: Partial<BrowserTestResult> = {}): PollResult => ({
+  ...getPollResult(resultId),
+  result: getBrowserResult(resultOpts),
 })
 
-export const getApiPollResult = (): PollResult => ({
-  ...getPollResult(),
-  result: getApiResult(),
+export const getApiPollResult = (resultId: string, resultOpts: Partial<ApiTestResult> = {}): PollResult => ({
+  ...getPollResult(resultId),
+  result: getApiResult(resultOpts),
 })
 
 const getResult = (): TestResult => ({
@@ -147,7 +159,7 @@ const getResult = (): TestResult => ({
   passed: true,
 })
 
-export const getBrowserResult = (opts: any = {}): BrowserTestResult => ({
+export const getBrowserResult = (opts: Partial<BrowserTestResult> = {}): BrowserTestResult => ({
   ...getResult(),
   device: {
     height: 1,
@@ -161,7 +173,7 @@ export const getBrowserResult = (opts: any = {}): BrowserTestResult => ({
   ...opts,
 })
 
-export const getApiResult = (): ApiTestResult => ({
+export const getApiResult = (opts: Partial<ApiTestResult> = {}): ApiTestResult => ({
   ...getResult(),
   assertionResults: [
     {
@@ -172,6 +184,7 @@ export const getApiResult = (): ApiTestResult => ({
   timings: {
     total: 123,
   },
+  ...opts,
 })
 
 export const getMultiStepsResult = (): MultiStepsTestResult => ({
@@ -180,59 +193,32 @@ export const getMultiStepsResult = (): MultiStepsTestResult => ({
   steps: [],
 })
 
-const mockResult = {
+const mockTriggerResult: TriggerResponse = {
+  device: 'chrome_laptop.large',
   location: 1,
   public_id: '123-456-789',
-  result: {
-    dc_id: 1,
-    result: {
-      device: 'chrome_laptop.large',
-      passed: true,
-      public_id: '123-456-789',
-    },
-    result_id: '1',
-  },
   result_id: '1',
+}
+
+export const getTriggerResult = (publicId: string, resultId: string): TriggerResponse => ({
+  ...mockTriggerResult,
+  public_id: publicId,
+  result_id: resultId,
+})
+
+export const mockLocation: Location = {
+  display_name: 'Frankfurt (AWS)',
+  id: 1,
+  is_active: true,
+  name: 'aws:eu-central-1',
+  region: 'EMEA',
 }
 
 export const mockSearchResponse = {tests: [{public_id: '123-456-789'}]}
 
-export const mockTestTriggerResponse = {
-  locations: ['location-1'],
-  results: [mockResult],
-  triggered_check_ids: ['123-456-789'],
-}
-
-export const mockPollResultResponse = {results: [{dc_id: 1, result: mockResult, resultID: '1'}]}
-
-export const mockSameTestPollResultResponse = {
-  results: [
-    {dc_id: 1, result: {...mockResult, eventType: 'finished'}, resultID: '1'},
-    {
-      dc_id: 1,
-      result: {...mockResult, eventType: 'finished', result: {...mockResult.result, result_id: '2'}, result_id: '2'},
-      resultID: '2',
-    },
-  ],
-}
-
-export const mockTriggerTestsResponse = {
-  locations: [
-    {
-      display_name: 'Frankfurt (AWS)',
-      id: 1,
-      is_active: true,
-      name: 'aws:eu-central-1',
-      region: 'EMEA',
-    },
-  ],
-  results: [
-    {
-      location: 1,
-      public_id: '123-456-789',
-      result_id: '1',
-    },
-  ],
+export const mockTestTriggerResponse: Trigger = {
+  locations: [mockLocation],
+  results: [mockTriggerResult],
   triggered_check_ids: ['123-456-789'],
 }
 
@@ -280,7 +266,7 @@ export const getSyntheticsProxy = () => {
       return mockResponse(calls.presignedUrl, {url: `ws://127.0.0.1:${port}`})
     }
     if (/\/synthetics\/tests\/poll_results/.test(request.url)) {
-      return mockResponse(calls.poll, mockPollResultResponse)
+      return mockResponse(calls.poll, getApiPollResult('1'))
     }
     if (/\/synthetics\/tests\//.test(request.url)) {
       return mockResponse(calls.get, getApiTest('123-456-789'))
@@ -304,4 +290,108 @@ export const getSyntheticsProxy = () => {
   const close = () => Promise.all([new Promise((res) => server.close(res)), new Promise((res) => wss.close(res))])
 
   return {calls, close, config, server}
+}
+
+export interface RenderResultsTestCase {
+  description: string
+  failOnTimeout: boolean
+  failOnCriticalErrors: boolean
+  summary: Summary
+  fixtures: {
+    tests: Test[]
+    triggers: Trigger
+    results: Record<string, PollResult[]>
+  }
+  expected: {
+    testsOrderList: string[]
+    summary: Summary
+    exitCode: 0 | 1
+  }
+}
+
+interface RenderResultsTestFixtureConfigs {
+  publicId: string
+  executionRule?: ExecutionRule
+  configOverride: ConfigOverride
+  resultPassed: boolean
+  resultError?: string
+  resultIsUnhealthy?: boolean
+}
+
+interface RenderResultsTestFixtures {
+  test: Test
+  triggerResult: TriggerResponse
+  polledResultsByPublicId: Record<string, PollResult[]>
+}
+
+export class RenderResultsHelper {
+  private resultIdCounter: number = 1
+
+  public createFixtures(testFixturesConfigs: RenderResultsTestFixtureConfigs[]): RenderResultsTestCase["fixtures"] {
+    const fixtures = this.combineTestFixtures(testFixturesConfigs.map(c => this.getTestFixtures(c)))
+    this.resetResultIdCounter()
+    return fixtures
+  }
+
+  private getNextTriggerResultAndPolledResults(
+    {publicId, configOverride, resultPassed, resultError, resultIsUnhealthy}: Omit<RenderResultsTestFixtureConfigs, 'executionRule'>
+  ): [triggerResult: TriggerResponse, polledResults: Record<string, PollResult[]>] {
+    const triggerResult = getTriggerResult(publicId, this.resultIdCounter.toString())
+    const polledResults = {
+      [publicId]: [
+        deepExtend(getApiPollResult(this.resultIdCounter.toString()), {
+          enrichment: {config_override: configOverride},
+          result: {passed: resultPassed, error: resultError, unhealthy: resultIsUnhealthy}
+        }),
+      ],
+    }
+
+    this.resultIdCounter++
+
+    return [triggerResult, polledResults]
+  }
+
+  private resetResultIdCounter() {
+    this.resultIdCounter = 1
+  }
+
+  private getTestFixtures(
+    {publicId, executionRule, configOverride, resultPassed, resultError, resultIsUnhealthy}: RenderResultsTestFixtureConfigs
+  ): RenderResultsTestFixtures {
+    const test = executionRule
+      ? deepExtend(getApiTest(publicId), {options: {ci: {executionRule}}})
+      : getApiTest(publicId)
+
+    const [triggerResult, polledResultsByPublicId] = this.getNextTriggerResultAndPolledResults({
+      publicId, configOverride, resultPassed, resultError, resultIsUnhealthy
+    })
+
+    return {test, triggerResult, polledResultsByPublicId}
+  }
+
+  private combineTestFixtures(testFixtures: RenderResultsTestFixtures[]): RenderResultsTestCase["fixtures"] {
+    const mergedPolledResults = testFixtures
+      .map(({polledResultsByPublicId}) => polledResultsByPublicId)
+      .reduce((mergedResults, polledResultsByPublicId) => {
+        for (const [testPublicId, polledResults] of Object.entries(polledResultsByPublicId)) {
+          if (!mergedResults[testPublicId]) {
+            mergedResults[testPublicId] = []
+          }
+          mergedResults[testPublicId] = mergedResults[testPublicId].concat(polledResults)
+        }
+        return mergedResults
+      }, {})
+
+    const triggerResults = testFixtures.map(({triggerResult}) => triggerResult)
+
+    return {
+      tests: testFixtures.map(({test}) => test),
+      results: mergedPolledResults,
+      triggers: {
+        locations: [mockLocation],
+        results: triggerResults,
+        triggered_check_ids: triggerResults.map(({public_id}) => public_id),
+      }
+    }
+  }
 }

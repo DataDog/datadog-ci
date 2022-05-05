@@ -15,9 +15,9 @@ import {
   getStep,
 } from '../fixtures'
 
-const globalTestMock = getApiTest('123')
+const globalTestMock = getApiTest('123-456-789')
 const globalStepMock = getStep()
-const globalResultMock = getBrowserPollResult()
+const globalResultMock = getBrowserPollResult('1')
 
 describe('Junit reporter', () => {
   const writeMock: Writable['write'] = jest.fn()
@@ -166,7 +166,7 @@ describe('Junit reporter', () => {
         result: {...getBrowserResult(), error: ERRORS.TIMEOUT},
       }
       const apiResult = {
-        ...getApiPollResult(),
+        ...getApiPollResult('1'),
         result: {
           ...getMultiStepsResult(),
           steps: [
@@ -221,7 +221,7 @@ describe('Junit reporter', () => {
           },
         },
       }
-      const suite = reporter['getTestCase'](getApiTest('123'), resultMock, {}, true, true)
+      const suite = reporter['getTestCase'](getApiTest('123-456-789'), resultMock, {}, true, true)
       expect(suite.$).toMatchObject({
         ...getDefaultStats(),
         errors: 2,
