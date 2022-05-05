@@ -70,6 +70,7 @@ Available commands:
   - git-metadata
   - junit
   - trace
+  - tag
 ```
 
 Each command allows interacting with a product of the Datadog platform. The commands are defined in the [src/commands](/src/commands) folder.
@@ -83,6 +84,7 @@ Further documentation for each command can be found in its folder, ie:
 - [Git metadata](src/commands/git-metadata)
 - [JUnit XML](src/commands/junit)
 - [Trace](src/commands/trace)
+- [Tag](src/commands/tag)
 
 ## Contributing
 
