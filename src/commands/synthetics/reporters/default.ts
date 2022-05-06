@@ -4,20 +4,19 @@ import {Writable} from 'stream'
 
 import {
   Assertion,
+  CommandConfig,
   ConfigOverride,
-  ERRORS,
   ExecutionRule,
   LocationsMapping,
   MainReporter,
   Operator,
-  PollResult,
   Result,
+  ResultInBatch,
   Step,
   Summary,
   Test,
-  TriggerResponse,
 } from '../interfaces'
-import {getResultDuration, hasResultPassed, hasTestSucceeded} from '../utils'
+import {getResultDuration} from '../utils'
 
 // Step rendering
 
@@ -105,35 +104,33 @@ const renderApiError = (errorCode: string, errorMessage: string, color: chalk.Ch
 }
 
 // Test execution rendering
-const renderResultOutcome = (
-  result: Result,
-  test: Test,
-  icon: string,
-  color: chalk.Chalk,
-  failOnCriticalErrors: boolean,
-  failOnTimeout: boolean
-) => {
-  // Only display critical errors if failure is not filled.
-  if (result.error && !(result.failure || result.errorMessage)) {
-    return `    ${chalk.bold(`${ICONS.FAILED} | ${result.error}`)}`
+const renderResultOutcome = (result: Result, test: Test, icon: string, color: chalk.Chalk) => {
+  if (!result.result) {
+    return
   }
 
-  if (result.unhealthy) {
-    const errorMessage = result.failure ? result.failure.message : result.errorMessage
+  const serverResult = result.result
+  // Only display critical errors if failure is not filled.
+  if (serverResult.error && !(serverResult.failure || serverResult.errorMessage)) {
+    return `    ${chalk.bold(`${ICONS.FAILED} | ${serverResult.error}`)}`
+  }
+
+  if (serverResult.unhealthy) {
+    const errorMessage = serverResult.failure ? serverResult.failure.message : serverResult.errorMessage
     const errorName = errorMessage && errorMessage !== 'Unknown error' ? errorMessage : 'General Error'
 
     return [
       `    ${chalk.yellow(` ${ICONS.SKIPPED} | ${errorName}`)}`,
-      `    ${chalk.yellow('We had an error during the execution of this test. The result will be ignored')}`,
+      `    ${chalk.yellow('We had an error during the execution of this test. The serverResult will be ignored')}`,
     ].join('\n')
   }
 
   if (test.type === 'api') {
     const requestDescription = renderApiRequestDescription(test.subtype, test.config)
 
-    if (result.failure || (result.errorCode && result.errorMessage)) {
-      const errorCode = result.failure ? result.failure.code : result.errorCode
-      const errorMessage = result.failure ? result.failure.message : result.errorMessage
+    if (serverResult.failure || (serverResult.errorCode && serverResult.errorMessage)) {
+      const errorCode = serverResult.failure ? serverResult.failure.code : serverResult.errorCode
+      const errorMessage = serverResult.failure ? serverResult.failure.message : serverResult.errorMessage
 
       return [`    ${icon} ${color(requestDescription)}`, renderApiError(errorCode!, errorMessage!, color)].join('\n')
     }
@@ -142,9 +139,9 @@ const renderResultOutcome = (
   }
 
   if (test.type === 'browser') {
-    if (!hasResultPassed(result, failOnCriticalErrors, failOnTimeout) && 'stepDetails' in result) {
+    if (!result.passed && 'stepDetails' in serverResult) {
       // We render the step only if the test hasn't passed to avoid cluttering the output.
-      return result.stepDetails.map(renderStep).join('\n')
+      return serverResult.stepDetails.map(renderStep).join('\n')
     }
 
     return ''
@@ -199,45 +196,30 @@ const getResultUrl = (baseUrl: string, test: Test, resultId: string) => {
   return `${testDetailUrl}?resultId=${resultId}&${ciQueryParam}`
 }
 
-const renderExecutionResult = (
-  test: Test,
-  execution: PollResult,
-  baseUrl: string,
-  locationNames: LocationsMapping,
-  failOnCriticalErrors: boolean,
-  failOnTimeout: boolean
-) => {
-  const {check: overridedTest, dc_id, resultID, result} = execution
-  const isSuccess = hasResultPassed(result, failOnCriticalErrors, failOnTimeout)
-  const color = getTestResultColor(isSuccess, test.options.ci?.executionRule === ExecutionRule.NON_BLOCKING)
-  const icon = isSuccess ? ICONS.SUCCESS : ICONS.FAILED
+const renderExecutionResult = (test: Test, result: Result, baseUrl: string, locationNames: LocationsMapping) => {
+  const color = getTestResultColor(!!result.passed, test.options.ci?.executionRule === ExecutionRule.NON_BLOCKING)
+  const icon = result.passed ? ICONS.SUCCESS : ICONS.FAILED
 
-  const locationName = !!result.tunnel ? 'Tunneled' : locationNames[dc_id] || dc_id.toString()
-  const device = test.type === 'browser' && 'device' in result ? ` - device: ${chalk.bold(result.device.id)}` : ''
+  const locationName = result.hasTunnel ? 'Tunneled' : locationNames[result.location] || result.location
+  const serverResult = result.result
+  const device = result.device ? ` - device: ${chalk.bold(result.device)}` : ''
   const resultIdentification = color(`  ${icon} location: ${chalk.bold(locationName)}${device}`)
 
   const outputLines = [resultIdentification]
 
   // Unhealthy test results don't have a duration or result URL
-  if (!result.unhealthy) {
+  if (result.result_id && !serverResult?.unhealthy) {
     const duration = getResultDuration(result)
     const durationText = duration ? `  total duration: ${duration} ms -` : ''
 
-    const resultUrl = getResultUrl(baseUrl, test, resultID)
-    const resultUrlStatus = result.error === ERRORS.TIMEOUT ? '(not yet received)' : ''
+    const resultUrl = getResultUrl(baseUrl, test, result.result_id)
+    const resultUrlStatus = result.timed_out ? '(not yet received)' : ''
 
     const resultInfo = `    ⎋${durationText} result url: ${chalk.dim.cyan(resultUrl)} ${resultUrlStatus}`
     outputLines.push(resultInfo)
   }
 
-  const resultOutcome = renderResultOutcome(
-    result,
-    overridedTest || test,
-    icon,
-    color,
-    failOnCriticalErrors,
-    failOnTimeout
-  )
+  const resultOutcome = renderResultOutcome(result, result.test || test, icon, color)
   if (resultOutcome) {
     outputLines.push(resultOutcome)
   }
@@ -323,15 +305,8 @@ export class DefaultReporter implements MainReporter {
     )
   }
 
-  public testEnd(
-    test: Test,
-    results: PollResult[],
-    baseUrl: string,
-    locationNames: LocationsMapping,
-    failOnCriticalErrors: boolean,
-    failOnTimeout: boolean
-  ) {
-    const success = hasTestSucceeded(results, failOnCriticalErrors, failOnTimeout)
+  public testEnd(test: Test, results: Result[], baseUrl: string, locationNames: LocationsMapping) {
+    const success = results.every((r) => r.passed)
     const isNonBlocking = test.options.ci?.executionRule === ExecutionRule.NON_BLOCKING
 
     const icon = renderResultIcon(success, isNonBlocking)
@@ -341,14 +316,14 @@ export class DefaultReporter implements MainReporter {
     const nonBlockingText = !success && isNonBlocking ? '[NON-BLOCKING]' : ''
 
     const testResultsText = results
-      .map((r) => renderExecutionResult(test, r, baseUrl, locationNames, failOnCriticalErrors, failOnTimeout))
+      .map((r) => renderExecutionResult(test, r, baseUrl, locationNames))
       .join('\n\n')
       .concat('\n\n')
 
     this.write([`${icon} ${idDisplay}${nonBlockingText} | ${nameColor(test.name)}`, testResultsText].join('\n'))
   }
 
-  public testResult(response: TriggerResponse, result: PollResult): void {
+  public testResult(result: ResultInBatch): void {
     return
   }
 

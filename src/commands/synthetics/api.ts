@@ -4,7 +4,7 @@ import {AxiosError, AxiosPromise, AxiosRequestConfig} from 'axios'
 
 import {getRequestBuilder} from '../../helpers/utils'
 
-import {APIConfiguration, APIHelper, Payload, PollResult, Test, TestSearchResult, Trigger} from './interfaces'
+import {APIConfiguration, Batch, Location, Payload, ServerResult, Test, TestSearchResult} from './interfaces'
 import {ciTriggerApp, retry} from './utils'
 
 interface BackendError {
@@ -36,7 +36,9 @@ export const formatBackendErrors = (requestError: AxiosError<BackendError>) => {
   return requestError.message
 }
 
-const triggerTests = (request: (args: AxiosRequestConfig) => AxiosPromise<Trigger>) => async (data: Payload) => {
+const triggerTests = (
+  request: (args: AxiosRequestConfig) => AxiosPromise<{batch_id: string; locations: Location[]}>
+) => async (data: Payload) => {
   const resp = await retryRequest(
     {
       data,
@@ -77,9 +79,17 @@ const searchTests = (request: (args: AxiosRequestConfig) => AxiosPromise<TestSea
   return resp.data
 }
 
-const pollResults = (request: (args: AxiosRequestConfig) => AxiosPromise<{results: PollResult[]}>) => async (
-  resultIds: string[]
-) => {
+const getBatch = (request: (args: AxiosRequestConfig) => AxiosPromise<{data: Batch}>) => async (batchId: string) => {
+  const resp = await retryRequest({url: `/synthetics/ci/batch/${batchId}`}, request)
+
+  return resp.data.data
+}
+
+const pollResults = (
+  request: (
+    args: AxiosRequestConfig
+  ) => AxiosPromise<{results: {check: Test; result: ServerResult; resultID: string; timestamp: number}[]}>
+) => async (resultIds: string[]) => {
   const resp = await retryRequest(
     {
       params: {
@@ -132,13 +142,14 @@ export const is5xxError = (error: AxiosError | EndpointError) => {
 const retryRequest = <T>(args: AxiosRequestConfig, request: (args: AxiosRequestConfig) => AxiosPromise<T>) =>
   retry(() => request(args), retryOn5xxErrors)
 
-export const apiConstructor = (configuration: APIConfiguration): APIHelper => {
+export const apiConstructor = (configuration: APIConfiguration) => {
   const {baseUrl, baseIntakeUrl, apiKey, appKey, proxyOpts} = configuration
   const baseOptions = {apiKey, appKey, proxyOpts}
   const request = getRequestBuilder({...baseOptions, baseUrl})
   const requestIntake = getRequestBuilder({...baseOptions, baseUrl: baseIntakeUrl})
 
   return {
+    getBatch: getBatch(request),
     getPresignedURL: getPresignedURL(requestIntake),
     getTest: getTest(request),
     pollResults: pollResults(request),
@@ -146,3 +157,5 @@ export const apiConstructor = (configuration: APIConfiguration): APIHelper => {
     triggerTests: triggerTests(requestIntake),
   }
 }
+
+export type APIHelper = ReturnType<typeof apiConstructor>
