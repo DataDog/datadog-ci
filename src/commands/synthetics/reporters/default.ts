@@ -16,7 +16,14 @@ import {
   Summary,
   Test,
 } from '../interfaces'
-import {getResultDuration, getResultExecutionRule, getResultOutcome, getTestOutcome, hasResultPassed, TestOrResultOutcome} from '../utils'
+import {
+  getResultDuration,
+  getResultExecutionRule,
+  getResultOutcome,
+  getTestOutcome,
+  hasResultPassed,
+  TestOrResultOutcome,
+} from '../utils'
 
 // Step rendering
 
@@ -138,7 +145,10 @@ const renderResultOutcome = (
       const errorCode = result.failure ? result.failure.code : result.errorCode
       const errorMessage = result.failure ? result.failure.message : result.errorMessage
 
-      return [`    ${icon} ${color(executionRuleText)} ${color(requestDescription)}`, renderApiError(errorCode!, errorMessage!, color)].join('\n')
+      return [
+        `    ${icon} ${color(executionRuleText)} ${color(requestDescription)}`,
+        renderApiError(errorCode!, errorMessage!, color),
+      ].join('\n')
     }
 
     return `    ${icon} ${color(requestDescription)}`
@@ -212,7 +222,7 @@ const renderExecutionResult = (
 ) => {
   const {check: overriddenTest, dc_id, resultID, result} = execution
   const resultOutcome = getResultOutcome(overriddenTest ?? test, execution, failOnCriticalErrors, failOnTimeout)
-  const [icon, setColor] = getTestOrResultColorAndIcon(resultOutcome)
+  const [icon, setColor] = getTestOrResultIconAndColor(resultOutcome)
 
   const locationName = !!result.tunnel ? 'Tunneled' : locationNames[dc_id] || dc_id.toString()
   const device = test.type === 'browser' && 'device' in result ? ` - device: ${chalk.bold(result.device.id)}` : ''
@@ -248,9 +258,7 @@ const renderExecutionResult = (
   return outputLines.join('\n')
 }
 
-const getTestOrResultColorAndIcon = (
-  testOrResultOutcome: TestOrResultOutcome
-): [icon: string, setColor: chalk.Chalk] => {
+const getTestOrResultIconAndColor = (testOrResultOutcome: TestOrResultOutcome): [string, chalk.Chalk] => {
   if (testOrResultOutcome === TestOrResultOutcome.Passed) {
     return [ICONS.SUCCESS, chalk.bold.green]
   }
@@ -294,9 +302,7 @@ export class DefaultReporter implements MainReporter {
       chalk.yellow(`${chalk.bold(summary.failedNonBlocking)} failed (non-blocking)`),
     ]
 
-    const testsSummary = [
-      chalk.green(`${chalk.bold(summary.testsFound.size)} found`)
-    ]
+    const testsSummary = [chalk.green(`${chalk.bold(summary.testsFound.size)} found`)]
 
     if (summary.skipped) {
       testsSummary.push(`${chalk.bold(summary.skipped)} skipped`)
@@ -315,10 +321,14 @@ export class DefaultReporter implements MainReporter {
       extraInfo.push(chalk.red(`${chalk.bold(summary.criticalErrors)} critical errors`))
     }
 
-    this.write([
-      `${chalk.bold('Tests summary:')} ${testsSummary.join(', ')}`,
-      `${chalk.bold('Results summary:')} ${resultsSummary.join(', ')}${extraInfo.length ? ' (' + extraInfo.join(', ') + ')' : ''}\n`
-    ].join('\n'))
+    this.write(
+      [
+        `${chalk.bold('Tests summary:')} ${testsSummary.join(', ')}`,
+        `${chalk.bold('Results summary:')} ${resultsSummary.join(', ')}${
+          extraInfo.length ? ' (' + extraInfo.join(', ') + ')' : ''
+        }\n`,
+      ].join('\n')
+    )
   }
 
   public testEnd(
@@ -331,7 +341,7 @@ export class DefaultReporter implements MainReporter {
   ) {
     const testOutcome = getTestOutcome(test, results, failOnCriticalErrors, failOnTimeout)
     const idDisplay = `[${chalk.bold.dim(test.public_id)}]`
-    const [icon, setColor] = getTestOrResultColorAndIcon(testOutcome)
+    const [icon, setColor] = getTestOrResultIconAndColor(testOutcome)
 
     const testResultsText = results
       .map((r) => renderExecutionResult(test, r, baseUrl, locationNames, failOnCriticalErrors, failOnTimeout))

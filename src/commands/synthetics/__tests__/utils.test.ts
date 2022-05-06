@@ -473,7 +473,7 @@ describe('utils', () => {
   })
 
   describe('getResultExecutionRule', () => {
-    const cases: [testRule: ExecutionRule | undefined, resultRule: ExecutionRule | undefined, expectedRule: ExecutionRule][] = [
+    const cases: [ExecutionRule | undefined, ExecutionRule | undefined, ExecutionRule][] = [
       [undefined, undefined, ExecutionRule.BLOCKING],
       [undefined, ExecutionRule.BLOCKING, ExecutionRule.BLOCKING],
       [undefined, ExecutionRule.NON_BLOCKING, ExecutionRule.NON_BLOCKING],
@@ -485,32 +485,40 @@ describe('utils', () => {
       [ExecutionRule.NON_BLOCKING, ExecutionRule.NON_BLOCKING, ExecutionRule.NON_BLOCKING],
     ]
 
-    test.each(cases)('Test execution rule: %s, result execution rule: %s. Expected rule: %s', (testRule, resultRule, expectedRule) => {
-      const test = getApiTest('abc-def-ghi')
-      const pollResult = getApiPollResult('1')
+    test.each(cases)(
+      'Test execution rule: %s, result execution rule: %s. Expected rule: %s',
+      (testRule, resultRule, expectedRule) => {
+        const test = getApiTest('abc-def-ghi')
+        const pollResult = getApiPollResult('1')
 
-      expect(utils.getResultExecutionRule(
-        testRule ? {...test, options: {...test.options, ci: {executionRule: testRule}}} : test,
-        resultRule ? {...pollResult, enrichment: {config_override: {executionRule: resultRule}}} : pollResult,
-      )).toEqual(expectedRule)
-    })
+        expect(
+          utils.getResultExecutionRule(
+            testRule ? {...test, options: {...test.options, ci: {executionRule: testRule}}} : test,
+            resultRule ? {...pollResult, enrichment: {config_override: {executionRule: resultRule}}} : pollResult
+          )
+        ).toEqual(expectedRule)
+      }
+    )
   })
 
   describe('getResultOutcome', () => {
-    const cases: [resultPassed: boolean, resultRule: ExecutionRule, expectedOutcome: utils.TestOrResultOutcome][] = [
+    const cases: [boolean, ExecutionRule, utils.TestOrResultOutcome][] = [
       [true, ExecutionRule.BLOCKING, utils.TestOrResultOutcome.Passed],
       [true, ExecutionRule.NON_BLOCKING, utils.TestOrResultOutcome.PassedNonBlocking],
       [false, ExecutionRule.BLOCKING, utils.TestOrResultOutcome.Failed],
       [false, ExecutionRule.NON_BLOCKING, utils.TestOrResultOutcome.FailedNonBlocking],
     ]
-    test.each(cases)('Result passed: %s, execution rule: %s. Expected outcome: %s', (resultPassed, resultRule, expectedOutcome) => {
-      jest.spyOn(utils, 'getResultExecutionRule').mockReturnValue(resultRule)
-      jest.spyOn(utils, 'hasResultPassed').mockReturnValue(resultPassed)
-      const test = getApiTest('abc-def-ghi')
-      const pollResult = getApiPollResult('1')
+    test.each(cases)(
+      'Result passed: %s, execution rule: %s. Expected outcome: %s',
+      (resultPassed, resultRule, expectedOutcome) => {
+        jest.spyOn(utils, 'getResultExecutionRule').mockReturnValue(resultRule)
+        jest.spyOn(utils, 'hasResultPassed').mockReturnValue(resultPassed)
+        const test = getApiTest('abc-def-ghi')
+        const pollResult = getApiPollResult('1')
 
-      expect(utils.getResultOutcome(test, pollResult, true, true)).toEqual(expectedOutcome)
-    })
+        expect(utils.getResultOutcome(test, pollResult, true, true)).toEqual(expectedOutcome)
+      }
+    )
   })
 
   describe('getTestOutcome', () => {
@@ -519,7 +527,7 @@ describe('utils', () => {
     const failed = utils.TestOrResultOutcome.Failed
     const failedNonBlocking = utils.TestOrResultOutcome.FailedNonBlocking
 
-    const cases: [resultOutcomes: utils.TestOrResultOutcome[], expectedOutcome: utils.TestOrResultOutcome][] = [
+    const cases: [utils.TestOrResultOutcome[], utils.TestOrResultOutcome][] = [
       [[passed, passed, passed], utils.TestOrResultOutcome.Passed],
       [[passed, passedNonBlocking, passed], utils.TestOrResultOutcome.PassedNonBlocking],
       [[passed, failedNonBlocking, passed], utils.TestOrResultOutcome.FailedNonBlocking],

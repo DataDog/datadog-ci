@@ -294,82 +294,47 @@ export const getSyntheticsProxy = () => {
 
 export interface RenderResultsTestCase {
   description: string
-  failOnTimeout: boolean
+  expected: {
+    exitCode: 0 | 1
+    summary: Summary
+    testsOrderList: string[]
+  }
   failOnCriticalErrors: boolean
-  summary: Summary
+  failOnTimeout: boolean
   fixtures: {
+    results: Record<string, PollResult[]>
     tests: Test[]
     triggers: Trigger
-    results: Record<string, PollResult[]>
   }
-  expected: {
-    testsOrderList: string[]
-    summary: Summary
-    exitCode: 0 | 1
-  }
+  summary: Summary
 }
 
 interface RenderResultsTestFixtureConfigs {
-  publicId: string
-  executionRule?: ExecutionRule
   configOverride: ConfigOverride
-  resultPassed: boolean
+  executionRule?: ExecutionRule
+  publicId: string
   resultError?: string
   resultIsUnhealthy?: boolean
+  resultPassed: boolean
 }
 
 interface RenderResultsTestFixtures {
+  polledResultsByPublicId: Record<string, PollResult[]>
   test: Test
   triggerResult: TriggerResponse
-  polledResultsByPublicId: Record<string, PollResult[]>
 }
 
 export class RenderResultsHelper {
-  private resultIdCounter: number = 1
+  private resultIdCounter = 1
 
-  public createFixtures(testFixturesConfigs: RenderResultsTestFixtureConfigs[]): RenderResultsTestCase["fixtures"] {
-    const fixtures = this.combineTestFixtures(testFixturesConfigs.map(c => this.getTestFixtures(c)))
+  public createFixtures(testFixturesConfigs: RenderResultsTestFixtureConfigs[]): RenderResultsTestCase['fixtures'] {
+    const fixtures = this.combineTestFixtures(testFixturesConfigs.map((c) => this.getTestFixtures(c)))
     this.resetResultIdCounter()
+
     return fixtures
   }
 
-  private getNextTriggerResultAndPolledResults(
-    {publicId, configOverride, resultPassed, resultError, resultIsUnhealthy}: Omit<RenderResultsTestFixtureConfigs, 'executionRule'>
-  ): [triggerResult: TriggerResponse, polledResults: Record<string, PollResult[]>] {
-    const triggerResult = getTriggerResult(publicId, this.resultIdCounter.toString())
-    const polledResults = {
-      [publicId]: [
-        deepExtend(getApiPollResult(this.resultIdCounter.toString()), {
-          enrichment: {config_override: configOverride},
-          result: {passed: resultPassed, error: resultError, unhealthy: resultIsUnhealthy}
-        }),
-      ],
-    }
-
-    this.resultIdCounter++
-
-    return [triggerResult, polledResults]
-  }
-
-  private resetResultIdCounter() {
-    this.resultIdCounter = 1
-  }
-
-  private getTestFixtures(
-    {publicId, executionRule, configOverride, resultPassed, resultError, resultIsUnhealthy}: RenderResultsTestFixtureConfigs
-  ): RenderResultsTestFixtures {
-    const test = executionRule
-      ? deepExtend(getApiTest(publicId), {options: {ci: {executionRule}}})
-      : getApiTest(publicId)
-
-    const [triggerResult, polledResultsByPublicId] = this.getNextTriggerResultAndPolledResults({
-      publicId, configOverride, resultPassed, resultError, resultIsUnhealthy
-    })
-
-    return {test, triggerResult, polledResultsByPublicId}
-  }
-
-  private combineTestFixtures(testFixtures: RenderResultsTestFixtures[]): RenderResultsTestCase["fixtures"] {
+  private combineTestFixtures(testFixtures: RenderResultsTestFixtures[]): RenderResultsTestCase['fixtures'] {
     const mergedPolledResults = testFixtures
       .map(({polledResultsByPublicId}) => polledResultsByPublicId)
       .reduce((mergedResults, polledResultsByPublicId) => {
@@ -379,19 +344,69 @@ export class RenderResultsHelper {
           }
           mergedResults[testPublicId] = mergedResults[testPublicId].concat(polledResults)
         }
+
         return mergedResults
       }, {})
 
     const triggerResults = testFixtures.map(({triggerResult}) => triggerResult)
 
     return {
-      tests: testFixtures.map(({test}) => test),
       results: mergedPolledResults,
+      tests: testFixtures.map(({test}) => test),
       triggers: {
         locations: [mockLocation],
         results: triggerResults,
         triggered_check_ids: triggerResults.map(({public_id}) => public_id),
-      }
+      },
     }
+  }
+
+  private getNextTriggerResultAndPolledResults({
+    configOverride,
+    publicId,
+    resultError,
+    resultIsUnhealthy,
+    resultPassed,
+  }: Omit<RenderResultsTestFixtureConfigs, 'executionRule'>): [TriggerResponse, Record<string, PollResult[]>] {
+    const triggerResult = getTriggerResult(publicId, this.resultIdCounter.toString())
+    const polledResults = {
+      [publicId]: [
+        deepExtend(getApiPollResult(this.resultIdCounter.toString()), {
+          enrichment: {config_override: configOverride},
+          result: {passed: resultPassed, error: resultError, unhealthy: resultIsUnhealthy},
+        }),
+      ],
+    }
+
+    this.resultIdCounter++
+
+    return [triggerResult, polledResults]
+  }
+
+  private getTestFixtures({
+    configOverride,
+    executionRule,
+    publicId,
+    resultError,
+    resultIsUnhealthy,
+    resultPassed,
+  }: RenderResultsTestFixtureConfigs): RenderResultsTestFixtures {
+    const test = executionRule
+      ? deepExtend(getApiTest(publicId), {options: {ci: {executionRule}}})
+      : getApiTest(publicId)
+
+    const [triggerResult, polledResultsByPublicId] = this.getNextTriggerResultAndPolledResults({
+      configOverride,
+      publicId,
+      resultError,
+      resultIsUnhealthy,
+      resultPassed,
+    })
+
+    return {test, triggerResult, polledResultsByPublicId}
+  }
+
+  private resetResultIdCounter() {
+    this.resultIdCounter = 1
   }
 }

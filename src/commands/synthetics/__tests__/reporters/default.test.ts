@@ -133,7 +133,9 @@ describe('Default reporter', () => {
     })
   })
 
-  describe('testEnd', () => {})
+  describe('testEnd', () => {
+    // TODO
+  })
 
   describe('runEnd', () => {
     beforeEach(() => {
@@ -168,43 +170,43 @@ describe('Default reporter', () => {
       timedOut: 1,
     }
 
-    const cases: Array<{description: string; summary: Summary; expectedOutput: string}> = [
+    const cases: {description: string; expectedOutput: string; summary: Summary}[] = [
       {
         description: 'Simple case with 1 test with 1 result (passed)',
-        summary: {...baseSummary, passed: 1},
         expectedOutput: [
           `${testsLabel} ${testsFound(1)}`,
           `${resultsLabel} ${passed(1)}, ${failed(0)}, ${failedNonBlocking(0)}`,
-          ``,
+          '',
         ].join('\n'),
+        summary: {...baseSummary, passed: 1},
       },
       {
         description: 'Complex case with all the tests and results outcomes possible',
-        summary: complexSummary,
         expectedOutput: [
           `${testsLabel} ${testsFound(2)}, ${testsSkipped(1)}, ${testsNotFound(1, ['ccc-ccc-ccc'])}`,
           `${resultsLabel} ${passed(2)}, ${failed(1)}, ${failedNonBlocking(3)} (${timedOut(1)}, ${criticaErrors(2)})`,
-          ``,
+          '',
         ].join('\n'),
+        summary: complexSummary,
       },
       {
         description: 'Case where some outcomes are empty or missing',
-        summary: {
-          ...baseSummary,
-          passed: 3,
-          failedNonBlocking: 1,
-          criticalErrors: 1,
-          testsNotFound: new Set(['bbb-bbb-bbb']),
-        },
         expectedOutput: [
           `${testsLabel} ${testsFound(1)}, ${testsNotFound(1, ['bbb-bbb-bbb'])}`,
           `${resultsLabel} ${passed(3)}, ${failed(0)}, ${failedNonBlocking(1)} (${criticaErrors(1)})`,
-          ``,
+          '',
         ].join('\n'),
+        summary: {
+          ...baseSummary,
+          criticalErrors: 1,
+          failedNonBlocking: 1,
+          passed: 3,
+          testsNotFound: new Set(['bbb-bbb-bbb']),
+        },
       },
     ]
 
-    test.each(cases)('bobyland $description', (testCase) => {
+    test.each(cases)('$description', (testCase) => {
       reporter.runEnd(testCase.summary)
       expect(writeMock).toHaveBeenCalledWith(testCase.expectedOutput)
     })

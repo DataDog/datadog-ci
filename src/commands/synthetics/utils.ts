@@ -206,9 +206,8 @@ export const hasResultPassed = (result: Result, failOnCriticalErrors: boolean, f
   return true
 }
 
-const isTestNonBlocking = (test: Pick<Test, 'options'>): boolean => {
-  return test.options.ci?.executionRule === ExecutionRule.NON_BLOCKING
-}
+const isTestNonBlocking = (test: Pick<Test, 'options'>): boolean =>
+  test.options.ci?.executionRule === ExecutionRule.NON_BLOCKING
 
 /**
  * The test's execution rule takes precedence over the result's
@@ -218,12 +217,13 @@ export const getResultExecutionRule = (test: Test, result: PollResult): Executio
   if (isTestNonBlocking(test)) {
     return ExecutionRule.NON_BLOCKING
   }
+
   return result.enrichment.config_override?.executionRule ?? ExecutionRule.BLOCKING
 }
 
 export const enum TestOrResultOutcome {
   Passed = 'passed',
-  PassedNonBlocking = 'passed-non-blocking', // mainly used for sorting tests when rendering results
+  PassedNonBlocking = 'passed-non-blocking', // Mainly used for sorting tests when rendering results
   Failed = 'failed',
   FailedNonBlocking = 'failed-non-blocking',
 }
@@ -241,6 +241,7 @@ export const getResultOutcome = (
     if (executionRule === ExecutionRule.NON_BLOCKING) {
       return TestOrResultOutcome.PassedNonBlocking
     }
+
     return TestOrResultOutcome.Passed
   }
 

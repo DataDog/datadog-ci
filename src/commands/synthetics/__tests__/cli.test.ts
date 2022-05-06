@@ -438,162 +438,162 @@ describe('run-test', () => {
     const emptySummary = utils.createSummary()
 
     const test1 = {
+      configOverride: {executionRule: ExecutionRule.BLOCKING, startUrl: 'foo'},
       publicId: 'aaa-aaa-aaa',
-      configOverride: {startUrl: 'foo', executionRule: ExecutionRule.BLOCKING},
       resultPassed: true,
     }
-    const test1Timeout = {...test1, resultPassed: false, resultError: 'Timeout'}
-    const test1CriticalError = {...test1, resultPassed: false, resultIsUnhealthy: true}
+    const test1Timeout = {...test1, resultError: 'Timeout', resultPassed: false}
+    const test1CriticalError = {...test1, resultIsUnhealthy: true, resultPassed: false}
     const test1FailedNonBlocking = {
       ...test1,
-      configOverride: {...test1.configOverride, startUrl: 'bar', executionRule: ExecutionRule.NON_BLOCKING},
+      configOverride: {...test1.configOverride, executionRule: ExecutionRule.NON_BLOCKING, startUrl: 'bar'},
       resultPassed: false,
     }
     const test1Failed = {
       ...test1,
-      configOverride: {...test1.configOverride, startUrl: 'baz', executionRule: ExecutionRule.BLOCKING},
+      configOverride: {...test1.configOverride, executionRule: ExecutionRule.BLOCKING, startUrl: 'baz'},
       resultPassed: false,
     }
     const test1NonBlocking = {...test1, executionRule: ExecutionRule.NON_BLOCKING}
     const test1NonBlockingFailedNonBlocking = {...test1FailedNonBlocking, executionRule: ExecutionRule.NON_BLOCKING}
     const test1NonBlockingFailed = {...test1Failed, executionRule: ExecutionRule.NON_BLOCKING}
     const test2Failed = {
+      configOverride: {executionRule: ExecutionRule.BLOCKING, startUrl: 'bar'},
       publicId: 'bbb-bbb-bbb',
-      configOverride: {startUrl: 'bar', executionRule: ExecutionRule.BLOCKING},
       resultPassed: false,
     }
     const test3 = {
+      configOverride: {executionRule: ExecutionRule.BLOCKING, startUrl: 'baz'},
       publicId: 'ccc-ccc-ccc',
-      configOverride: {startUrl: 'baz', executionRule: ExecutionRule.BLOCKING},
       resultPassed: true,
     }
 
     const cases: RenderResultsTestCase[] = [
       {
         description: '1 API test with 1 config override, 1 result (passed)',
-        failOnTimeout: false,
-        failOnCriticalErrors: false,
-        summary: {...emptySummary},
-        fixtures: new RenderResultsHelper().createFixtures([test1]),
         expected: {
-          testsOrderList: ['aaa-aaa-aaa'],
-          summary: {...emptySummary, passed: 1, testsFound: new Set(['aaa-aaa-aaa'])},
           exitCode: 0,
+          summary: {...emptySummary, passed: 1, testsFound: new Set(['aaa-aaa-aaa'])},
+          testsOrderList: ['aaa-aaa-aaa'],
         },
+        failOnCriticalErrors: false,
+        failOnTimeout: false,
+        fixtures: new RenderResultsHelper().createFixtures([test1]),
+        summary: {...emptySummary},
       },
       {
         description:
           '1 API test with 1 config override, 1 result (failed timeout), no fail on timeout, no fail on critical errors',
-        failOnTimeout: false,
-        failOnCriticalErrors: false,
-        summary: {...emptySummary},
-        fixtures: new RenderResultsHelper().createFixtures([test1Timeout]),
         expected: {
-          testsOrderList: ['aaa-aaa-aaa'],
-          summary: {...emptySummary, passed: 1, timedOut: 1, testsFound: new Set(['aaa-aaa-aaa'])},
           exitCode: 0,
+          summary: {...emptySummary, passed: 1, timedOut: 1, testsFound: new Set(['aaa-aaa-aaa'])},
+          testsOrderList: ['aaa-aaa-aaa'],
         },
+        failOnCriticalErrors: false,
+        failOnTimeout: false,
+        fixtures: new RenderResultsHelper().createFixtures([test1Timeout]),
+        summary: {...emptySummary},
       },
       {
         description:
           '1 API test with 1 config override, 1 result (failed timeout), fail on timeout, no fail on critical errors',
-        failOnTimeout: true,
-        failOnCriticalErrors: false,
-        summary: {...emptySummary},
-        fixtures: new RenderResultsHelper().createFixtures([test1Timeout]),
         expected: {
-          testsOrderList: ['aaa-aaa-aaa'],
-          summary: {...emptySummary, failed: 1, testsFound: new Set(['aaa-aaa-aaa'])},
           exitCode: 1,
+          summary: {...emptySummary, failed: 1, testsFound: new Set(['aaa-aaa-aaa'])},
+          testsOrderList: ['aaa-aaa-aaa'],
         },
+        failOnCriticalErrors: false,
+        failOnTimeout: true,
+        fixtures: new RenderResultsHelper().createFixtures([test1Timeout]),
+        summary: {...emptySummary},
       },
       {
         description:
           '1 API test with 1 config override, 1 result (failed critical error), no fail on timeout, no fail on critical errors',
-        failOnTimeout: false,
-        failOnCriticalErrors: false,
-        summary: {...emptySummary},
-        fixtures: new RenderResultsHelper().createFixtures([test1CriticalError]),
         expected: {
-          testsOrderList: ['aaa-aaa-aaa'],
-          summary: {...emptySummary, passed: 1, criticalErrors: 1, testsFound: new Set(['aaa-aaa-aaa'])},
           exitCode: 0,
+          summary: {...emptySummary, passed: 1, criticalErrors: 1, testsFound: new Set(['aaa-aaa-aaa'])},
+          testsOrderList: ['aaa-aaa-aaa'],
         },
+        failOnCriticalErrors: false,
+        failOnTimeout: false,
+        fixtures: new RenderResultsHelper().createFixtures([test1CriticalError]),
+        summary: {...emptySummary},
       },
       {
         description:
           '1 API test with 1 config override, 1 result (failed critical error), no fail on timeout, fail on critical errors',
-        failOnTimeout: false,
-        failOnCriticalErrors: true,
-        summary: {...emptySummary},
-        fixtures: new RenderResultsHelper().createFixtures([test1CriticalError]),
         expected: {
-          testsOrderList: ['aaa-aaa-aaa'],
-          summary: {...emptySummary, failed: 1, testsFound: new Set(['aaa-aaa-aaa'])},
           exitCode: 1,
+          summary: {...emptySummary, failed: 1, testsFound: new Set(['aaa-aaa-aaa'])},
+          testsOrderList: ['aaa-aaa-aaa'],
         },
+        failOnCriticalErrors: true,
+        failOnTimeout: false,
+        fixtures: new RenderResultsHelper().createFixtures([test1CriticalError]),
+        summary: {...emptySummary},
       },
       {
         description:
           '1 API test (blocking) with 4 config overrides (1 skipped), 3 results (1 passed, 1 failed, 1 failed non-blocking)',
-        failOnTimeout: false,
-        failOnCriticalErrors: false,
-        summary: {...emptySummary, skipped: 1},
-        fixtures: new RenderResultsHelper().createFixtures([test1, test1FailedNonBlocking, test1Failed]),
         expected: {
-          testsOrderList: ['aaa-aaa-aaa'],
+          exitCode: 1,
           summary: {
             ...emptySummary,
-            passed: 1,
             failed: 1,
             failedNonBlocking: 1,
+            passed: 1,
             skipped: 1,
             testsFound: new Set(['aaa-aaa-aaa']),
           },
-          exitCode: 1,
+          testsOrderList: ['aaa-aaa-aaa'],
         },
+        failOnCriticalErrors: false,
+        failOnTimeout: false,
+        fixtures: new RenderResultsHelper().createFixtures([test1, test1FailedNonBlocking, test1Failed]),
+        summary: {...emptySummary, skipped: 1},
       },
       {
         description:
           '1 API test (non-blocking) with 4 config overrides (1 skipped), 3 results (1 passed, 1 failed, 1 failed non-blocking)',
-        failOnTimeout: false,
+        expected: {
+          exitCode: 0,
+          summary: {
+            ...emptySummary,
+            failedNonBlocking: 2,
+            passed: 1,
+            skipped: 1,
+            testsFound: new Set(['aaa-aaa-aaa']),
+          },
+          testsOrderList: ['aaa-aaa-aaa'],
+        },
         failOnCriticalErrors: false,
-        summary: {...emptySummary, skipped: 1},
+        failOnTimeout: false,
         fixtures: new RenderResultsHelper().createFixtures([
           test1NonBlocking,
           test1NonBlockingFailedNonBlocking,
           test1NonBlockingFailed,
         ]),
-        expected: {
-          testsOrderList: ['aaa-aaa-aaa'],
-          summary: {
-            ...emptySummary,
-            passed: 1,
-            failedNonBlocking: 2,
-            skipped: 1,
-            testsFound: new Set(['aaa-aaa-aaa']),
-          },
-          exitCode: 0,
-        },
+        summary: {...emptySummary, skipped: 1},
       },
       {
         description:
           '3 API tests (blocking) with 1 config override each, 3 results (1 failed non-blocking, 1 failed, 1 passed)',
-        failOnTimeout: false,
-        failOnCriticalErrors: false,
-        summary: {...emptySummary},
-        fixtures: new RenderResultsHelper().createFixtures([test1FailedNonBlocking, test2Failed, test3]),
         expected: {
-          testsOrderList: ['ccc-ccc-ccc', 'aaa-aaa-aaa', 'bbb-bbb-bbb'],
+          exitCode: 1,
           summary: {
             ...emptySummary,
-            passed: 1,
             failed: 1,
             failedNonBlocking: 1,
+            passed: 1,
             testsFound: new Set(['aaa-aaa-aaa', 'bbb-bbb-bbb', 'ccc-ccc-ccc']),
           },
-          exitCode: 1,
+          testsOrderList: ['ccc-ccc-ccc', 'aaa-aaa-aaa', 'bbb-bbb-bbb'],
         },
+        failOnCriticalErrors: false,
+        failOnTimeout: false,
+        fixtures: new RenderResultsHelper().createFixtures([test1FailedNonBlocking, test2Failed, test3]),
+        summary: {...emptySummary},
       },
     ]
 
@@ -618,7 +618,7 @@ describe('run-test', () => {
 
       const command = new RunTestCommand()
       const write = jest.fn()
-      command.context = {stdout: {write}} as any // for the DefaultReporter
+      command.context = {stdout: {write}} as any // For the DefaultReporter constructor
 
       const exitCode = await command.execute()
 
