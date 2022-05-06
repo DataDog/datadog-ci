@@ -84,7 +84,6 @@ Further documentation for each command can be found in its folder, ie:
 - [Git metadata](src/commands/git-metadata)
 - [JUnit XML](src/commands/junit)
 - [Trace](src/commands/trace)
-- [Tag](src/commands/tag)
 
 ## Contributing
 
