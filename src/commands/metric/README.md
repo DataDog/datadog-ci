@@ -5,13 +5,13 @@ Add numeric tags to CI Visibility pipeline and job spans.
 ## Usage
 
 ```bash
-datadog-ci metric [--no-fail] [--level <pipeline|job>] [--tags]
+datadog-ci metric [--no-fail] [--level <pipeline|job>] [--metrics]
 ```
 
 For example:
 
 ```bash
-datadog-ci metric --level job --tags binary.size:1024
+datadog-ci metric --level job --metrics binary.size:1024
 ```
 
 - `--level` Has to be one of `[pipeline, job]`. It will determine in what span the metrics will be added. If pipeline
@@ -42,7 +42,7 @@ export DATADOG_API_KEY='<API key>'
 export BUILDKITE=true
 export BUILDKITE_BUILD_ID=uuid
 
-yarn launch metric --level pipeline --tags foo:1
+yarn launch metric --level pipeline --metrics foo:1
 ```
 
 Successful output should look like this:
