@@ -38,7 +38,10 @@ export const parseTags = (tags: string[]) => {
       if (!keyValuePair.includes(':')) {
         return acc
       }
-      const [key, value] = keyValuePair.split(':')
+      const firstColon = keyValuePair.indexOf(':')
+
+      const key = keyValuePair.substring(0, firstColon)
+      const value = keyValuePair.substring(firstColon + 1)
 
       return {
         ...acc,

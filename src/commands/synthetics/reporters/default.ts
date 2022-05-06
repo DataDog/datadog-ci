@@ -15,6 +15,7 @@ import {
   Step,
   Summary,
   Test,
+  TriggerResponse,
 } from '../interfaces'
 import {getResultDuration, hasResultPassed, hasTestSucceeded} from '../utils'
 
@@ -345,6 +346,10 @@ export class DefaultReporter implements MainReporter {
       .concat('\n\n')
 
     this.write([`${icon} ${idDisplay}${nonBlockingText} | ${nameColor(test.name)}`, testResultsText].join('\n'))
+  }
+
+  public testResult(response: TriggerResponse, result: PollResult): void {
+    return
   }
 
   public testsWait(tests: Test[]) {

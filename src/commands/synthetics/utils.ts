@@ -24,14 +24,17 @@ import {
   Result,
   Suite,
   Summary,
+  SyntheticsCIConfig,
   TemplateContext,
   TemplateVariables,
+  Test,
   TestPayload,
   Trigger,
   TriggerConfig,
   TriggerResponse,
   TriggerResult,
 } from './interfaces'
+import {getApiHelper} from './run-test'
 import {Tunnel} from './tunnel'
 
 const POLLING_INTERVAL = 5000 // In ms
@@ -42,7 +45,7 @@ const TEMPLATE_REGEX = /{{\s*([^{}]*?)\s*}}/g
 const template = (st: string, context: any): string =>
   st.replace(TEMPLATE_REGEX, (match: string, p1: string) => (p1 in context ? context[p1] : match))
 
-export let ciTriggerApp = 'npm_package'
+export let ciTriggerApp = process.env.DATADOG_SYNTHETICS_CI_TRIGGER_APP || 'npm_package'
 
 export const handleConfig = (
   test: InternalTest,
@@ -239,12 +242,15 @@ export const wait = async (duration: number) => new Promise((resolve) => setTime
 export const waitForResults = async (
   api: APIHelper,
   triggerResponses: TriggerResponse[],
-  defaultTimeout: number,
   triggerConfigs: TriggerConfig[],
-  tunnel?: Tunnel,
-  failOnCriticalErrors?: boolean
+  options: {
+    defaultTimeout: number
+    failOnCriticalErrors?: boolean
+  },
+  reporter: MainReporter,
+  tunnel?: Tunnel
 ) => {
-  const triggerResultMap = createTriggerResultMap(triggerResponses, defaultTimeout, triggerConfigs)
+  const triggerResultMap = createTriggerResultMap(triggerResponses, options.defaultTimeout, triggerConfigs)
   const triggerResults = [...triggerResultMap.values()]
 
   const maxPollingTimeout = Math.max(...triggerResults.map((tr) => tr.pollingTimeout))
@@ -295,7 +301,7 @@ export const waitForResults = async (
     try {
       polledResults = (await api.pollResults(triggerResultsSucceed.map((tr) => tr.result_id))).results
     } catch (error) {
-      if (is5xxError(error) && !failOnCriticalErrors) {
+      if (is5xxError(error) && !options.failOnCriticalErrors) {
         polledResults = []
         for (const triggerResult of triggerResultsSucceed) {
           triggerResult.result = createFailingResult(
@@ -316,6 +322,10 @@ export const waitForResults = async (
         const triggeredResult = triggerResultMap.get(polledResult.resultID)
         if (triggeredResult) {
           triggeredResult.result = polledResult
+        }
+        const triggerResponse = triggerResponses.find((res) => res.result_id === polledResult.resultID)
+        if (triggerResponse) {
+          reporter.testResult(triggerResponse, polledResult)
         }
       }
     }
@@ -442,6 +452,13 @@ export const getReporter = (reporters: Reporter[]): MainReporter => ({
       }
     }
   },
+  testResult: (response, pollResult) => {
+    for (const reporter of reporters) {
+      if (typeof reporter.testResult === 'function') {
+        reporter.testResult(response, pollResult)
+      }
+    }
+  },
   testTrigger: (test, testId, executionRule, config) => {
     for (const reporter of reporters) {
       if (typeof reporter.testTrigger === 'function') {
@@ -536,6 +553,12 @@ export const runTests = async (api: APIHelper, testsToTrigger: TestPayload[]): P
     // Rewrite error message
     throw new EndpointError(`[${testIds}] Failed to trigger tests: ${errorMessage}\n`, e.response.status)
   }
+}
+
+export const fetchTest = async (publicId: string, config: SyntheticsCIConfig): Promise<Test> => {
+  const apiHelper = getApiHelper(config)
+
+  return apiHelper.getTest(publicId)
 }
 
 const definedTypeGuard = <T>(o: T | undefined): o is T => !!o

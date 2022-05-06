@@ -135,7 +135,7 @@ describe('upload', () => {
       expect(files.length).toEqual(2)
     })
     test('should parse DD_TAGS and DD_ENV environment variables', async () => {
-      process.env.DD_TAGS = 'key1:value1,key2:value2'
+      process.env.DD_TAGS = 'key1:https://google.com,key2:value2'
       process.env.DD_ENV = 'ci'
       const context = createMockContext()
       const command = new UploadJUnitXMLCommand()
@@ -151,12 +151,12 @@ describe('upload', () => {
 
       expect(firstFile.spanTags).toMatchObject({
         env: 'ci',
-        key1: 'value1',
+        key1: 'https://google.com',
         key2: 'value2',
       })
       expect(secondFile.spanTags).toMatchObject({
         env: 'ci',
-        key1: 'value1',
+        key1: 'https://google.com',
         key2: 'value2',
       })
     })
