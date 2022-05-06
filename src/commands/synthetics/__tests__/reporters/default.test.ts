@@ -1,6 +1,8 @@
+import chalk from 'chalk'
+
 import {BaseContext} from 'clipanion/lib/advanced'
 
-import {ConfigOverride, ExecutionRule, MainReporter, Test} from '../../interfaces'
+import {ConfigOverride, ExecutionRule, MainReporter, Summary, Test} from '../../interfaces'
 import {DefaultReporter} from '../../reporters/default'
 import {createSummary} from '../../utils'
 
@@ -14,6 +16,7 @@ describe('Default reporter', () => {
     },
   }
   const reporter: any = new DefaultReporter(mockContext as {context: BaseContext})
+
   it('should log for each hook', () => {
     // `testWait` is skipped as nothing is logged for the default reporter.
     const calls: [keyof MainReporter, any[]][] = [
@@ -127,6 +130,83 @@ describe('Default reporter', () => {
     test.each(cases)('%s', (title, executionRule, config, expectedOutputPattern) => {
       reporter.testTrigger(testObject, testId, executionRule, config)
       expect(writeMock.mock.calls[0][0]).toMatch(expectedOutputPattern)
+    })
+  })
+
+  describe('testEnd', () => {})
+
+  describe('runEnd', () => {
+    beforeEach(() => {
+      writeMock.mockClear()
+    })
+
+    const testsLabel = chalk.bold('Tests summary:')
+    const resultsLabel = chalk.bold('Results summary:')
+    const testsFound = (n: number) => chalk.green(`${chalk.bold(n)} found`)
+    const testsNotFound = (n: number, publicIds: string[]) =>
+      `${chalk.yellow(`${chalk.bold(n)} not found`)} ${chalk.gray(`(${publicIds.join(', ')})`)}`
+    const testsSkipped = (n: number) => `${chalk.bold(n)} skipped`
+    const passed = (n: number) => chalk.green(`${chalk.bold(n)} passed`)
+    const failed = (n: number) => chalk.red(`${chalk.bold(n)} failed`)
+    const failedNonBlocking = (n: number) => chalk.yellow(`${chalk.bold(n)} failed (non-blocking)`)
+    const timedOut = (n: number) => chalk.yellow(`${chalk.bold(n)} timed out`)
+    const criticaErrors = (n: number) => chalk.red(`${chalk.bold(n)} critical errors`)
+
+    const baseSummary: Summary = {
+      ...createSummary(),
+      testsFound: new Set(['aaa-aaa-aaa']),
+    }
+
+    const complexSummary: Summary = {
+      criticalErrors: 2,
+      failed: 1,
+      failedNonBlocking: 3,
+      passed: 2,
+      skipped: 1,
+      testsFound: new Set(['aaa-aaa-aaa', 'bbb-bbb-bbb']),
+      testsNotFound: new Set(['ccc-ccc-ccc']),
+      timedOut: 1,
+    }
+
+    const cases: Array<{description: string; summary: Summary; expectedOutput: string}> = [
+      {
+        description: 'Simple case with 1 test with 1 result (passed)',
+        summary: {...baseSummary, passed: 1},
+        expectedOutput: [
+          `${testsLabel} ${testsFound(1)}`,
+          `${resultsLabel} ${passed(1)}, ${failed(0)}, ${failedNonBlocking(0)}`,
+          ``,
+        ].join('\n'),
+      },
+      {
+        description: 'Complex case with all the tests and results outcomes possible',
+        summary: complexSummary,
+        expectedOutput: [
+          `${testsLabel} ${testsFound(2)}, ${testsSkipped(1)}, ${testsNotFound(1, ['ccc-ccc-ccc'])}`,
+          `${resultsLabel} ${passed(2)}, ${failed(1)}, ${failedNonBlocking(3)} (${timedOut(1)}, ${criticaErrors(2)})`,
+          ``,
+        ].join('\n'),
+      },
+      {
+        description: 'Case where some outcomes are empty or missing',
+        summary: {
+          ...baseSummary,
+          passed: 3,
+          failedNonBlocking: 1,
+          criticalErrors: 1,
+          testsNotFound: new Set(['bbb-bbb-bbb']),
+        },
+        expectedOutput: [
+          `${testsLabel} ${testsFound(1)}, ${testsNotFound(1, ['bbb-bbb-bbb'])}`,
+          `${resultsLabel} ${passed(3)}, ${failed(0)}, ${failedNonBlocking(1)} (${criticaErrors(1)})`,
+          ``,
+        ].join('\n'),
+      },
+    ]
+
+    test.each(cases)('bobyland $description', (testCase) => {
+      reporter.runEnd(testCase.summary)
+      expect(writeMock).toHaveBeenCalledWith(testCase.expectedOutput)
     })
   })
 })

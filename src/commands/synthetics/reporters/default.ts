@@ -294,11 +294,9 @@ export class DefaultReporter implements MainReporter {
       chalk.yellow(`${chalk.bold(summary.failedNonBlocking)} failed (non-blocking)`),
     ]
 
-    const testsSummary = []
-
-    if (summary.testsFound.size > 0) {
-      testsSummary.push(`${chalk.green(`${chalk.bold(summary.testsFound.size)} found`)}`)
-    }
+    const testsSummary = [
+      chalk.green(`${chalk.bold(summary.testsFound.size)} found`)
+    ]
 
     if (summary.skipped) {
       testsSummary.push(`${chalk.bold(summary.skipped)} skipped`)
