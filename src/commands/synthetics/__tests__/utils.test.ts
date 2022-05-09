@@ -12,11 +12,22 @@ import {ProxyConfiguration} from '../../../helpers/utils'
 
 import {apiConstructor} from '../api'
 import {CiError} from '../errors'
-import {ConfigOverride, ERRORS, ExecutionRule, InternalTest, PollResult, Result, Summary} from '../interfaces'
+import {
+  ConfigOverride,
+  ERRORS,
+  ExecutionRule,
+  InternalTest,
+  PollResult,
+  Result,
+  Summary,
+  Test,
+  TriggerConfig,
+  TriggerResponse,
+} from '../interfaces'
 import {Tunnel} from '../tunnel'
 import * as utils from '../utils'
 
-import {getApiTest, getBrowserResult, mockReporter} from './fixtures'
+import {getApiPollResult, getApiTest, getBrowserResult, mockReporter} from './fixtures'
 
 describe('utils', () => {
   const apiConfiguration = {
@@ -460,6 +471,80 @@ describe('utils', () => {
     expect(utils.hasResultPassed(result, true, true)).toBeFalsy()
   })
 
+  describe('getResultExecutionRule', () => {
+    const cases: [ExecutionRule | undefined, ExecutionRule | undefined, ExecutionRule][] = [
+      [undefined, undefined, ExecutionRule.BLOCKING],
+      [undefined, ExecutionRule.BLOCKING, ExecutionRule.BLOCKING],
+      [undefined, ExecutionRule.NON_BLOCKING, ExecutionRule.NON_BLOCKING],
+      [ExecutionRule.BLOCKING, undefined, ExecutionRule.BLOCKING],
+      [ExecutionRule.BLOCKING, ExecutionRule.BLOCKING, ExecutionRule.BLOCKING],
+      [ExecutionRule.BLOCKING, ExecutionRule.NON_BLOCKING, ExecutionRule.NON_BLOCKING],
+      [ExecutionRule.NON_BLOCKING, undefined, ExecutionRule.NON_BLOCKING],
+      [ExecutionRule.NON_BLOCKING, ExecutionRule.BLOCKING, ExecutionRule.NON_BLOCKING],
+      [ExecutionRule.NON_BLOCKING, ExecutionRule.NON_BLOCKING, ExecutionRule.NON_BLOCKING],
+    ]
+
+    test.each(cases)(
+      'Test execution rule: %s, result execution rule: %s. Expected rule: %s',
+      (testRule, resultRule, expectedRule) => {
+        const test = getApiTest('abc-def-ghi')
+        const pollResult = getApiPollResult('1')
+
+        expect(
+          utils.getResultExecutionRule(
+            testRule ? {...test, options: {...test.options, ci: {executionRule: testRule}}} : test,
+            resultRule ? {...pollResult, enrichment: {config_override: {executionRule: resultRule}}} : pollResult
+          )
+        ).toEqual(expectedRule)
+      }
+    )
+  })
+
+  describe('getResultOutcome', () => {
+    const cases: [boolean, ExecutionRule, utils.TestOrResultOutcome][] = [
+      [true, ExecutionRule.BLOCKING, utils.TestOrResultOutcome.Passed],
+      [true, ExecutionRule.NON_BLOCKING, utils.TestOrResultOutcome.PassedNonBlocking],
+      [false, ExecutionRule.BLOCKING, utils.TestOrResultOutcome.Failed],
+      [false, ExecutionRule.NON_BLOCKING, utils.TestOrResultOutcome.FailedNonBlocking],
+    ]
+    test.each(cases)(
+      'Result passed: %s, execution rule: %s. Expected outcome: %s',
+      (resultPassed, resultRule, expectedOutcome) => {
+        jest.spyOn(utils, 'getResultExecutionRule').mockReturnValue(resultRule)
+        jest.spyOn(utils, 'hasResultPassed').mockReturnValue(resultPassed)
+        const test = getApiTest('abc-def-ghi')
+        const pollResult = getApiPollResult('1')
+
+        expect(utils.getResultOutcome(test, pollResult, true, true)).toEqual(expectedOutcome)
+      }
+    )
+  })
+
+  describe('getTestOutcome', () => {
+    const passed = utils.TestOrResultOutcome.Passed
+    const passedNonBlocking = utils.TestOrResultOutcome.PassedNonBlocking
+    const failed = utils.TestOrResultOutcome.Failed
+    const failedNonBlocking = utils.TestOrResultOutcome.FailedNonBlocking
+
+    const cases: [utils.TestOrResultOutcome[], utils.TestOrResultOutcome][] = [
+      [[passed, passed, passed], utils.TestOrResultOutcome.Passed],
+      [[passed, passedNonBlocking, passed], utils.TestOrResultOutcome.PassedNonBlocking],
+      [[passed, failedNonBlocking, passed], utils.TestOrResultOutcome.FailedNonBlocking],
+      [[passed, passed, failed], utils.TestOrResultOutcome.Failed],
+      [[passed, failedNonBlocking, failed], utils.TestOrResultOutcome.Failed],
+    ]
+    test.each(cases)('Test results: %s. Expected outcome: %s', (resultOutcomes, expectedOutcome) => {
+      let i = 0
+      jest.spyOn(utils, 'getResultOutcome').mockImplementation(() => resultOutcomes[i++])
+      const test = getApiTest('abc-def-ghi')
+      const pollResults = resultOutcomes.map((outcome, index) =>
+        getApiPollResult(index.toString(), {passed: outcome === utils.TestOrResultOutcome.Passed})
+      )
+
+      expect(utils.getTestOutcome(test, pollResults, true, true)).toEqual(expectedOutcome)
+    })
+  })
+
   describe('waitForResults', () => {
     const mockAxiosWithDefaultResult = () => {
       jest.spyOn(axios, 'create').mockImplementation((() => async (r: AxiosRequestConfig) => {
@@ -479,7 +564,7 @@ describe('utils', () => {
 
     const getTestConfig = (publicId = 'abc-def-ghi') => getApiTest(publicId)
 
-    const getPassingPollResult = (resultId: string) => ({
+    const getPassingPollResult = (resultId: string): PollResult => ({
       check: getTestConfig(),
       dc_id: 42,
       result: getBrowserResult({error: ERRORS.TIMEOUT, passed: false}),
@@ -488,19 +573,19 @@ describe('utils', () => {
     })
 
     const getTestAndResult = (publicId = 'abc-def-ghi', resultId = '0123456789') => {
-      const triggerResult = {
+      const triggerResult: TriggerResponse = {
         device: 'laptop_large',
         location: 42,
         public_id: publicId,
         result_id: resultId,
       }
-      const triggerConfig = {
+      const triggerConfig: TriggerConfig = {
         config: {},
         id: publicId,
         suite: 'Suite 1',
       }
 
-      const passingPollResult = getPassingPollResult(resultId)
+      const passingPollResult: PollResult = getPassingPollResult(resultId)
 
       return {passingPollResult, triggerConfig, triggerResult}
     }
