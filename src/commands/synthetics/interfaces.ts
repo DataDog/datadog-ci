@@ -100,7 +100,7 @@ export interface PollResult {
   check?: Test
   check_id?: string
   dc_id: number
-  enrichment: Partial<Enrichment>
+  enrichment?: Partial<Enrichment>
   result: Result
   resultID: string
   timestamp: number

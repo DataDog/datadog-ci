@@ -139,7 +139,6 @@ export const getTestSuite = (): Suite => ({content: {tests: [{config: {}, id: '1
 
 const getPollResult = (resultId: string): Omit<PollResult, 'result'> => ({
   dc_id: 1,
-  enrichment: {},
   resultID: resultId,
   timestamp: 1,
 })

@@ -218,7 +218,7 @@ export const getResultExecutionRule = (test: Test, result: PollResult): Executio
     return ExecutionRule.NON_BLOCKING
   }
 
-  return result.enrichment.config_override?.executionRule ?? ExecutionRule.BLOCKING
+  return result.enrichment?.config_override?.executionRule ?? ExecutionRule.BLOCKING
 }
 
 export const enum TestOrResultOutcome {
@@ -430,7 +430,6 @@ const createFailingResult = (
   tunnel: boolean
 ): PollResult => ({
   dc_id: dcId,
-  enrichment: {},
   result: {
     device: {height: 0, id: deviceId, width: 0},
     duration: 0,

@@ -568,7 +568,6 @@ describe('utils', () => {
     const getPassingPollResult = (resultId: string): PollResult => ({
       check: getTestConfig(),
       dc_id: 42,
-      enrichment: {},
       result: getBrowserResult({error: ERRORS.TIMEOUT, passed: false}),
       resultID: resultId,
       timestamp: 0,
@@ -611,7 +610,6 @@ describe('utils', () => {
       expectedResults[triggerResult.public_id] = [
         {
           dc_id: triggerResult.location,
-          enrichment: {},
           result: getBrowserResult({
             device: {height: 0, id: triggerResult.device, width: 0},
             error: ERRORS.TIMEOUT,
@@ -630,7 +628,6 @@ describe('utils', () => {
       expectedResults[triggerResult.public_id] = [
         {
           dc_id: triggerResult.location,
-          enrichment: {},
           result: getBrowserResult({
             device: {height: 0, id: triggerResult.device, width: 0},
             error: ERRORS.TIMEOUT,
@@ -666,7 +663,6 @@ describe('utils', () => {
         passingPollResult,
         {
           dc_id: triggerResultTimeOut.location,
-          enrichment: {},
           result: getBrowserResult({
             device: {height: 0, id: triggerResultTimeOut.device, width: 0},
             error: ERRORS.TIMEOUT,
@@ -700,7 +696,6 @@ describe('utils', () => {
         [triggerResult.public_id]: [
           {
             dc_id: triggerResult.location,
-            enrichment: {},
             result: getBrowserResult({
               device: {height: 0, id: triggerResult.device, width: 0},
               error: ERRORS.TUNNEL,
@@ -733,7 +728,6 @@ describe('utils', () => {
         [triggerResult.public_id]: [
           {
             dc_id: triggerResult.location,
-            enrichment: {},
             result: getBrowserResult({
               device: {height: 0, id: triggerResult.device, width: 0},
               error: ERRORS.ENDPOINT,

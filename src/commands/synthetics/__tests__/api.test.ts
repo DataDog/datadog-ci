@@ -28,7 +28,6 @@ describe('dd-api', () => {
       {
         check: getApiTest('abc-def-ghi'),
         dc_id: 0,
-        enrichment: {},
         result: {} as Result,
         resultID: RESULT_ID,
         timestamp: 0,
