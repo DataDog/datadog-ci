@@ -259,7 +259,10 @@ const renderExecutionResult = (
 }
 
 const getTestOrResultIconAndColor = (testOrResultOutcome: TestOrResultOutcome): [string, chalk.Chalk] => {
-  if (testOrResultOutcome === TestOrResultOutcome.Passed) {
+  if (
+    testOrResultOutcome === TestOrResultOutcome.Passed ||
+    testOrResultOutcome === TestOrResultOutcome.PassedNonBlocking
+  ) {
     return [ICONS.SUCCESS, chalk.bold.green]
   }
 

@@ -1,10 +1,12 @@
 import chalk from 'chalk'
 
 import {BaseContext} from 'clipanion/lib/advanced'
+import deepExtend from 'deep-extend'
 
-import {ConfigOverride, ExecutionRule, MainReporter, Summary, Test} from '../../interfaces'
+import {ConfigOverride, ExecutionRule, LocationsMapping, MainReporter, Summary, Test} from '../../interfaces'
 import {DefaultReporter} from '../../reporters/default'
 import {createSummary} from '../../utils'
+import {getApiPollResult, getApiTest, mockLocation} from '../fixtures'
 
 describe('Default reporter', () => {
   const writeMock = jest.fn()
@@ -134,7 +136,132 @@ describe('Default reporter', () => {
   })
 
   describe('testEnd', () => {
-    // TODO
+    beforeEach(() => {
+      writeMock.mockClear()
+    })
+
+    const bGreen = (s: string) => chalk.bold.green(s)
+    const bYellow = (s: string) => chalk.bold.yellow(s)
+    const bRed = (s: string) => chalk.bold.red(s)
+    const bDim = (s: string) => chalk.bold.dim(s)
+
+    const testLabelSuccess = (publicId: string) => `${bGreen('✓')} [${bDim(publicId)}] | ${bGreen('Test name')}`
+    const testLabelFailed = (publicId: string) => `${bRed('✖')} [${bDim(publicId)}] | ${bRed('Test name')}`
+    const testLabelFailedNonBlocking = (publicId: string) =>
+      `${bYellow('✖')} [${bDim(publicId)}] | ${bYellow('Test name')}`
+    const locationSuccess = chalk.bold.green(`  ${bGreen('✓')} location: ${chalk.bold(mockLocation.display_name)}`)
+    const locationFailed = chalk.bold.red(`  ${bRed('✖')} location: ${chalk.bold(mockLocation.display_name)}`)
+    const locationFailedNonBlocking = chalk.bold.yellow(
+      `  ${bYellow('✖')} location: ${chalk.bold(mockLocation.display_name)}`
+    )
+
+    const durationWithResultUrl = (resultId: string) =>
+      `    ⎋ total duration: 123 ms - result url: ${chalk.dim.cyan(
+        `https://app.datadoghq.com/synthetics/details/aaa-aaa-aaa?resultId=${resultId}&from_ci=true`
+      )} `
+
+    const apiResultSuccess = `    ${bGreen('✓')} ${bGreen(chalk.bold('GET') + ' - http://fake.url')}`
+    const apiResultFailed = `    ${bRed('✖')} ${bRed(chalk.bold('GET') + ' - http://fake.url')}`
+    const apiResultFailedNonBlocking = `    ${bYellow('✖')} ${bYellow(chalk.bold('GET') + ' - http://fake.url')}`
+
+    const createApiPollResult = (resultId: string, passed: boolean, executionRule = ExecutionRule.BLOCKING) =>
+      deepExtend(getApiPollResult(resultId), {
+        enrichment: {config_override: {executionRule}},
+        result: {passed},
+      })
+
+    const getNonBlockingApiTest = (publicId: string) =>
+      deepExtend(getApiTest(publicId), {options: {ci: {executionRule: ExecutionRule.NON_BLOCKING}}})
+
+    const baseUrlFixture = 'https://app.datadoghq.com/'
+    const locationNamesFixture: LocationsMapping = {1: mockLocation.display_name}
+
+    const cases = [
+      {
+        description: '1 API test, 1 location, 1 result: success',
+        expectedOutput: [
+          testLabelSuccess('aaa-aaa-aaa'),
+          locationSuccess,
+          durationWithResultUrl('1'),
+          apiResultSuccess,
+          '\n',
+        ].join('\n'),
+        fixtures: {
+          baseUrl: baseUrlFixture,
+          failOnCriticalErrors: false,
+          failOnTimeout: false,
+          locationNames: locationNamesFixture,
+          results: [getApiPollResult('1')],
+          test: getApiTest('aaa-aaa-aaa'),
+        },
+      },
+      {
+        description: '1 API test (blocking), 1 location, 3 results: success, failed non-blocking, failed',
+        expectedOutput: [
+          testLabelFailed('aaa-aaa-aaa'),
+          locationSuccess,
+          durationWithResultUrl('1'),
+          apiResultSuccess,
+          '',
+          locationFailedNonBlocking,
+          durationWithResultUrl('2'),
+          apiResultFailedNonBlocking,
+          '',
+          locationFailed,
+          durationWithResultUrl('3'),
+          apiResultFailed,
+          '\n',
+        ].join('\n'),
+        fixtures: {
+          baseUrl: baseUrlFixture,
+          failOnCriticalErrors: false,
+          failOnTimeout: false,
+          locationNames: locationNamesFixture,
+          results: [
+            getApiPollResult('1'),
+            createApiPollResult('2', false, ExecutionRule.NON_BLOCKING),
+            createApiPollResult('3', false),
+          ],
+          test: getApiTest('aaa-aaa-aaa'),
+        },
+      },
+      {
+        description: '1 API test (non-blocking), 1 location, 3 results: success, failed non-blocking, failed',
+        expectedOutput: [
+          testLabelFailedNonBlocking('aaa-aaa-aaa'),
+          locationSuccess,
+          durationWithResultUrl('1'),
+          apiResultSuccess,
+          '',
+          locationFailedNonBlocking,
+          durationWithResultUrl('2'),
+          apiResultFailedNonBlocking,
+          '',
+          locationFailedNonBlocking,
+          durationWithResultUrl('3'),
+          apiResultFailedNonBlocking,
+          '\n',
+        ].join('\n'),
+        fixtures: {
+          baseUrl: baseUrlFixture,
+          failOnCriticalErrors: false,
+          failOnTimeout: false,
+          locationNames: locationNamesFixture,
+          results: [
+            getApiPollResult('1'),
+            createApiPollResult('2', false, ExecutionRule.NON_BLOCKING),
+            createApiPollResult('3', false),
+          ],
+          test: getNonBlockingApiTest('aaa-aaa-aaa'),
+        },
+      },
+    ]
+
+    test.each(cases)('$description', (testCase) => {
+      const {test, results, baseUrl, locationNames, failOnCriticalErrors, failOnTimeout} = testCase.fixtures
+      reporter.testEnd(test, results, baseUrl, locationNames, failOnCriticalErrors, failOnTimeout)
+      expect(writeMock).toHaveBeenCalledWith(testCase.expectedOutput)
+    })
   })
 
   describe('runEnd', () => {
