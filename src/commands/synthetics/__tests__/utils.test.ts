@@ -209,8 +209,10 @@ describe('utils', () => {
       const expectedSummary: Summary = {
         criticalErrors: 0,
         failed: 0,
+        failedNonBlocking: 0,
         passed: 0,
         skipped: 1,
+        testsFound: new Set(),
         testsNotFound: new Set(['987-654-321']),
         timedOut: 0,
       }
@@ -457,55 +459,6 @@ describe('utils', () => {
 
     expect(utils.hasResultPassed(result, false, true)).toBeTruthy()
     expect(utils.hasResultPassed(result, true, true)).toBeFalsy()
-  })
-
-  test('hasTestSucceeded', () => {
-    const testConfiguration = getApiTest('abc-def-ghi')
-    const passingResult = getBrowserResult()
-    const passingPollResult = {
-      check: testConfiguration,
-      dc_id: 42,
-      result: passingResult,
-      resultID: '0123456789',
-      timestamp: 0,
-    }
-    const failingPollResult = {
-      check: testConfiguration,
-      dc_id: 42,
-      result: {...passingResult, passed: false},
-      resultID: '0123456789',
-      timestamp: 0,
-    }
-    const unhealthyPollResult = {
-      check: testConfiguration,
-      dc_id: 42,
-      result: {...passingResult, passed: false, unhealthy: true},
-      resultID: '0123456789',
-      timestamp: 0,
-    }
-    const endpointFailurePollResult = {
-      check: testConfiguration,
-      dc_id: 42,
-      result: {...passingResult, passed: false, error: ERRORS.ENDPOINT},
-      resultID: '0123456789',
-      timestamp: 0,
-    }
-    const timeoutPollResult = {
-      check: testConfiguration,
-      dc_id: 42,
-      result: {...passingResult, passed: false, error: ERRORS.TIMEOUT},
-      resultID: '0123456789',
-      timestamp: 0,
-    }
-
-    expect(utils.hasTestSucceeded([passingPollResult, failingPollResult], false, true)).toBeFalsy()
-    expect(utils.hasTestSucceeded([passingPollResult, unhealthyPollResult], true, true)).toBeFalsy()
-    expect(utils.hasTestSucceeded([passingPollResult, unhealthyPollResult], false, true)).toBeTruthy()
-    expect(utils.hasTestSucceeded([passingPollResult, endpointFailurePollResult], true, true)).toBeFalsy()
-    expect(utils.hasTestSucceeded([passingPollResult, endpointFailurePollResult], false, true)).toBeTruthy()
-    expect(utils.hasTestSucceeded([passingPollResult, passingPollResult], false, true)).toBeTruthy()
-    expect(utils.hasTestSucceeded([passingPollResult, timeoutPollResult], false, true)).toBeFalsy()
-    expect(utils.hasTestSucceeded([passingPollResult, timeoutPollResult], false, false)).toBeTruthy()
   })
 
   describe('waitForResults', () => {

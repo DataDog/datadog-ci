@@ -91,10 +91,16 @@ export interface MultiStepsTestResult extends TestResult {
 
 export type Result = BrowserTestResult | ApiTestResult | MultiStepsTestResult
 
+interface Enrichment {
+  batch_id: string
+  config_override: ConfigOverride & {executionRule: ExecutionRule}
+}
+
 export interface PollResult {
   check?: Test
   check_id?: string
   dc_id: number
+  enrichment?: Partial<Enrichment>
   result: Result
   resultID: string
   timestamp: number
@@ -160,7 +166,7 @@ export interface Test {
     ci?: {
       executionRule: ExecutionRule
     }
-    device_ids: string[]
+    device_ids?: string[]
     min_failure_duration: number
     min_location_failed: number
     tick_every: number
@@ -321,8 +327,10 @@ export interface Suite {
 export interface Summary {
   criticalErrors: number
   failed: number
+  failedNonBlocking: number
   passed: number
   skipped: number
+  testsFound: Set<string>
   testsNotFound: Set<string>
   timedOut: number
 }

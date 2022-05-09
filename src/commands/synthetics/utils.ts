@@ -26,6 +26,7 @@ import {
   Summary,
   TemplateContext,
   TemplateVariables,
+  Test,
   TestPayload,
   Trigger,
   TriggerConfig,
@@ -205,12 +206,76 @@ export const hasResultPassed = (result: Result, failOnCriticalErrors: boolean, f
   return true
 }
 
-export const hasTestSucceeded = (
-  results: PollResult[],
+const isTestNonBlocking = (test: Pick<Test, 'options'>): boolean =>
+  test.options.ci?.executionRule === ExecutionRule.NON_BLOCKING
+
+/**
+ * The test's execution rule takes precedence over the result's
+ * execution rule, when the test's rule is non-blocking.
+ */
+export const getResultExecutionRule = (test: Test, result: PollResult): ExecutionRule => {
+  if (isTestNonBlocking(test)) {
+    return ExecutionRule.NON_BLOCKING
+  }
+
+  return result.enrichment?.config_override?.executionRule ?? ExecutionRule.BLOCKING
+}
+
+export const enum TestOrResultOutcome {
+  Passed = 'passed',
+  PassedNonBlocking = 'passed-non-blocking', // Mainly used for sorting tests when rendering results
+  Failed = 'failed',
+  FailedNonBlocking = 'failed-non-blocking',
+}
+
+export const getResultOutcome = (
+  test: Test,
+  pollResult: PollResult,
   failOnCriticalErrors: boolean,
   failOnTimeout: boolean
-): boolean =>
-  results.every((pollResult: PollResult) => hasResultPassed(pollResult.result, failOnCriticalErrors, failOnTimeout))
+): TestOrResultOutcome => {
+  const executionRule = getResultExecutionRule(test, pollResult)
+  const passed = hasResultPassed(pollResult.result, failOnCriticalErrors, failOnTimeout)
+
+  if (passed) {
+    if (executionRule === ExecutionRule.NON_BLOCKING) {
+      return TestOrResultOutcome.PassedNonBlocking
+    }
+
+    return TestOrResultOutcome.Passed
+  }
+
+  if (executionRule === ExecutionRule.NON_BLOCKING) {
+    return TestOrResultOutcome.FailedNonBlocking
+  }
+
+  return TestOrResultOutcome.Failed
+}
+
+export const getTestOutcome = (
+  test: Test,
+  pollResults: PollResult[],
+  failOnCriticalErrors: boolean,
+  failOnTimeout: boolean
+): TestOrResultOutcome => {
+  const resultsOutcomes = pollResults.map((pollResult) =>
+    getResultOutcome(test, pollResult, failOnCriticalErrors, failOnTimeout)
+  )
+
+  if (resultsOutcomes.some((outcome) => outcome === TestOrResultOutcome.Failed)) {
+    return TestOrResultOutcome.Failed
+  }
+
+  if (resultsOutcomes.some((outcome) => outcome === TestOrResultOutcome.FailedNonBlocking)) {
+    return TestOrResultOutcome.FailedNonBlocking
+  }
+
+  if (resultsOutcomes.some((outcome) => outcome === TestOrResultOutcome.PassedNonBlocking)) {
+    return TestOrResultOutcome.PassedNonBlocking
+  }
+
+  return TestOrResultOutcome.Passed
+}
 
 export const getSuites = async (GLOB: string, reporter: MainReporter): Promise<Suite[]> => {
   reporter.log(`Finding files in ${path.join(process.cwd(), GLOB)}\n`)
@@ -382,8 +447,10 @@ const createFailingResult = (
 export const createSummary = (): Summary => ({
   criticalErrors: 0,
   failed: 0,
+  failedNonBlocking: 0,
   passed: 0,
   skipped: 0,
+  testsFound: new Set(),
   testsNotFound: new Set(),
   timedOut: 0,
 })
