@@ -161,14 +161,43 @@ describe('Default reporter', () => {
       )} `
 
     const apiResultSuccess = `    ${bGreen('✓')} ${bGreen(chalk.bold('GET') + ' - http://fake.url')}`
-    const apiResultFailed = `    ${bRed('✖')} ${bRed(chalk.bold('GET') + ' - http://fake.url')}`
-    const apiResultFailedNonBlocking = `    ${bYellow('✖')} ${bYellow(chalk.bold('GET') + ' - http://fake.url')}`
+    const apiResultFailed = `    ${bRed('✖')} ${bRed('[blocking]')} ${bRed(chalk.bold('GET') + ' - http://fake.url')}`
+    const apiResultFailedNonBlocking = `    ${bYellow('✖')} ${bYellow('[non-blocking]')} ${bYellow(
+      chalk.bold('GET') + ' - http://fake.url'
+    )}`
 
-    const createApiPollResult = (resultId: string, passed: boolean, executionRule = ExecutionRule.BLOCKING) =>
-      deepExtend(getApiPollResult(resultId), {
+    const apiResultFailedAssertions = bRed(
+      [
+        '    - Assertion(s) failed:',
+        `      ▶ responseTime should be less than ${chalk.underline('1000')}. Actual: ${chalk.underline('1234')}`,
+      ].join('\n')
+    )
+    const apiResultFailedNonBlockingAssertions = bYellow(
+      [
+        '    - Assertion(s) failed:',
+        `      ▶ responseTime should be less than ${chalk.underline('1000')}. Actual: ${chalk.underline('1234')}`,
+      ].join('\n')
+    )
+
+    const createApiPollResult = (resultId: string, passed: boolean, executionRule = ExecutionRule.BLOCKING) => {
+      const errorMessage = JSON.stringify([
+        {
+          actual: 1234,
+          operator: 'lessThan',
+          target: 1000,
+          type: 'responseTime',
+        },
+      ])
+      const failure = {code: 'INCORRECT_ASSERTION', message: errorMessage}
+
+      return deepExtend(getApiPollResult(resultId), {
         enrichment: {config_override: {executionRule}},
-        result: {passed},
+        result: {
+          passed,
+          ...(!passed ? {failure} : {}),
+        },
       })
+    }
 
     const getNonBlockingApiTest = (publicId: string) =>
       deepExtend(getApiTest(publicId), {options: {ci: {executionRule: ExecutionRule.NON_BLOCKING}}})
@@ -206,10 +235,12 @@ describe('Default reporter', () => {
           locationFailedNonBlocking,
           durationWithResultUrl('2'),
           apiResultFailedNonBlocking,
+          apiResultFailedNonBlockingAssertions,
           '',
           locationFailed,
           durationWithResultUrl('3'),
           apiResultFailed,
+          apiResultFailedAssertions,
           '\n',
         ].join('\n'),
         fixtures: {
@@ -236,10 +267,12 @@ describe('Default reporter', () => {
           locationFailedNonBlocking,
           durationWithResultUrl('2'),
           apiResultFailedNonBlocking,
+          apiResultFailedNonBlockingAssertions,
           '',
           locationFailedNonBlocking,
           durationWithResultUrl('3'),
           apiResultFailedNonBlocking,
+          apiResultFailedNonBlockingAssertions,
           '\n',
         ].join('\n'),
         fixtures: {
