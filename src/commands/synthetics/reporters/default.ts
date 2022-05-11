@@ -209,7 +209,7 @@ const renderExecutionResult = (
 ) => {
   const {check: overriddenTest, dc_id, resultID, result} = execution
   const resultOutcome = getResultOutcome(overriddenTest ?? test, execution, failOnCriticalErrors, failOnTimeout)
-  const [icon, setColor] = getTestOrResultIconAndColor(resultOutcome)
+  const [icon, setColor] = getResultIconAndColor(resultOutcome)
 
   const executionRule = getResultExecutionRule(test, execution)
   const executionRuleText = [ResultOutcome.Passed, ResultOutcome.PassedNonBlocking].includes(resultOutcome)
@@ -253,12 +253,12 @@ const renderExecutionResult = (
   return outputLines.join('\n')
 }
 
-const getTestOrResultIconAndColor = (testOrResultOutcome: ResultOutcome): [string, chalk.Chalk] => {
-  if (testOrResultOutcome === ResultOutcome.Passed || testOrResultOutcome === ResultOutcome.PassedNonBlocking) {
+const getResultIconAndColor = (resultOutcome: ResultOutcome): [string, chalk.Chalk] => {
+  if (resultOutcome === ResultOutcome.Passed || resultOutcome === ResultOutcome.PassedNonBlocking) {
     return [ICONS.SUCCESS, chalk.bold.green]
   }
 
-  if (testOrResultOutcome === ResultOutcome.FailedNonBlocking) {
+  if (resultOutcome === ResultOutcome.FailedNonBlocking) {
     return [ICONS.FAILED_NON_BLOCKING, chalk.bold.yellow]
   }
 
