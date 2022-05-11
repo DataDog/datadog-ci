@@ -296,7 +296,6 @@ export interface RenderResultsTestCase {
   expected: {
     exitCode: 0 | 1
     summary: Summary
-    testsOrderList: string[]
   }
   failOnCriticalErrors: boolean
   failOnTimeout: boolean

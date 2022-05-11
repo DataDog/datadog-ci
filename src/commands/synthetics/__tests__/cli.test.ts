@@ -113,11 +113,11 @@ describe('run-test', () => {
 
       resultsWithTest.sort((command['sortResultsByOutcome'] as any)())
       expect(resultsWithTest).toStrictEqual([
-        [test3, {result: {passed: true}}],
-        [test1, {result: {passed: true}}],
-        [test2, {result: {passed: true}}],
-        [test5, {result: {passed: false}}],
-        [test4, {result: {passed: false}}],
+        [test3, deepExtend(getApiPollResult('3'), {result: {passed: true}})],
+        [test1, deepExtend(getApiPollResult('1'), {result: {passed: true}})],
+        [test2, deepExtend(getApiPollResult('2'), {result: {passed: true}})],
+        [test5, deepExtend(getApiPollResult('5'), {result: {passed: false}})],
+        [test4, deepExtend(getApiPollResult('4'), {result: {passed: false}})],
       ])
     })
   })
@@ -478,8 +478,7 @@ describe('run-test', () => {
         description: '1 API test with 1 config override, 1 result (passed)',
         expected: {
           exitCode: 0,
-          summary: {...emptySummary, passed: 1, testsFound: new Set(['aaa-aaa-aaa'])},
-          testsOrderList: ['aaa-aaa-aaa'],
+          summary: {...emptySummary, passed: 1},
         },
         failOnCriticalErrors: false,
         failOnTimeout: false,
@@ -491,8 +490,7 @@ describe('run-test', () => {
           '1 API test with 1 config override, 1 result (failed timeout), no fail on timeout, no fail on critical errors',
         expected: {
           exitCode: 0,
-          summary: {...emptySummary, passed: 1, timedOut: 1, testsFound: new Set(['aaa-aaa-aaa'])},
-          testsOrderList: ['aaa-aaa-aaa'],
+          summary: {...emptySummary, passed: 1, timedOut: 1},
         },
         failOnCriticalErrors: false,
         failOnTimeout: false,
@@ -504,8 +502,7 @@ describe('run-test', () => {
           '1 API test with 1 config override, 1 result (failed timeout), fail on timeout, no fail on critical errors',
         expected: {
           exitCode: 1,
-          summary: {...emptySummary, failed: 1, testsFound: new Set(['aaa-aaa-aaa'])},
-          testsOrderList: ['aaa-aaa-aaa'],
+          summary: {...emptySummary, failed: 1},
         },
         failOnCriticalErrors: false,
         failOnTimeout: true,
@@ -517,8 +514,7 @@ describe('run-test', () => {
           '1 API test with 1 config override, 1 result (failed critical error), no fail on timeout, no fail on critical errors',
         expected: {
           exitCode: 0,
-          summary: {...emptySummary, passed: 1, criticalErrors: 1, testsFound: new Set(['aaa-aaa-aaa'])},
-          testsOrderList: ['aaa-aaa-aaa'],
+          summary: {...emptySummary, passed: 1, criticalErrors: 1},
         },
         failOnCriticalErrors: false,
         failOnTimeout: false,
@@ -530,8 +526,7 @@ describe('run-test', () => {
           '1 API test with 1 config override, 1 result (failed critical error), no fail on timeout, fail on critical errors',
         expected: {
           exitCode: 1,
-          summary: {...emptySummary, failed: 1, testsFound: new Set(['aaa-aaa-aaa'])},
-          testsOrderList: ['aaa-aaa-aaa'],
+          summary: {...emptySummary, failed: 1},
         },
         failOnCriticalErrors: true,
         failOnTimeout: false,
@@ -549,9 +544,7 @@ describe('run-test', () => {
             failedNonBlocking: 1,
             passed: 1,
             skipped: 1,
-            testsFound: new Set(['aaa-aaa-aaa']),
           },
-          testsOrderList: ['aaa-aaa-aaa'],
         },
         failOnCriticalErrors: false,
         failOnTimeout: false,
@@ -568,9 +561,7 @@ describe('run-test', () => {
             failedNonBlocking: 2,
             passed: 1,
             skipped: 1,
-            testsFound: new Set(['aaa-aaa-aaa']),
           },
-          testsOrderList: ['aaa-aaa-aaa'],
         },
         failOnCriticalErrors: false,
         failOnTimeout: false,
@@ -591,9 +582,7 @@ describe('run-test', () => {
             failed: 1,
             failedNonBlocking: 1,
             passed: 1,
-            testsFound: new Set(['aaa-aaa-aaa', 'bbb-bbb-bbb', 'ccc-ccc-ccc']),
           },
-          testsOrderList: ['ccc-ccc-ccc', 'aaa-aaa-aaa', 'bbb-bbb-bbb'],
         },
         failOnCriticalErrors: false,
         failOnTimeout: false,
@@ -616,31 +605,26 @@ describe('run-test', () => {
         triggers: testCase.fixtures.triggers,
       })
 
-      const testsProcessedOrder: string[] = []
-      ;(mockReporter as MockedReporter).testEnd.mockImplementation((test) => {
-        testsProcessedOrder.push(test.public_id)
-      })
-
       const command = new RunTestCommand()
       const write = jest.fn()
       command.context = {stdout: {write}} as any // For the DefaultReporter constructor
 
       const exitCode = await command.execute()
 
-      expect(testsProcessedOrder).toEqual(testCase.expected.testsOrderList)
-
-      const nbTests = Object.keys(testCase.fixtures.results).length
-      expect((mockReporter as MockedReporter).testEnd).toHaveBeenCalledTimes(nbTests)
+      const nbResults = Object.values(testCase.fixtures.results).reduce((acc, r) => acc + r.length, 0)
+      expect((mockReporter as MockedReporter).testEnd).toHaveBeenCalledTimes(nbResults)
 
       for (const [testPublicId, results] of Object.entries(testCase.fixtures.results)) {
-        expect((mockReporter as MockedReporter).testEnd).toHaveBeenCalledWith(
-          testCase.fixtures.tests.find((t) => t.public_id === testPublicId),
-          results,
-          `https://${DEFAULT_COMMAND_CONFIG.subdomain}.${DEFAULT_COMMAND_CONFIG.datadogSite}/`,
-          {[mockLocation.id.toString()]: mockLocation.display_name},
-          testCase.failOnCriticalErrors,
-          testCase.failOnTimeout
-        )
+        for (const result of results) {
+          expect((mockReporter as MockedReporter).testEnd).toHaveBeenCalledWith(
+            testCase.fixtures.tests.find((t) => t.public_id === testPublicId),
+            [result],
+            `https://${DEFAULT_COMMAND_CONFIG.subdomain}.${DEFAULT_COMMAND_CONFIG.datadogSite}/`,
+            {[mockLocation.id.toString()]: mockLocation.display_name},
+            testCase.failOnCriticalErrors,
+            testCase.failOnTimeout
+          )
+        }
       }
 
       expect(testCase.summary).toEqual(testCase.expected.summary)
