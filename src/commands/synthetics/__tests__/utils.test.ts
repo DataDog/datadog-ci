@@ -501,11 +501,11 @@ describe('utils', () => {
   })
 
   describe('getResultOutcome', () => {
-    const cases: [boolean, ExecutionRule, utils.TestOrResultOutcome][] = [
-      [true, ExecutionRule.BLOCKING, utils.TestOrResultOutcome.Passed],
-      [true, ExecutionRule.NON_BLOCKING, utils.TestOrResultOutcome.PassedNonBlocking],
-      [false, ExecutionRule.BLOCKING, utils.TestOrResultOutcome.Failed],
-      [false, ExecutionRule.NON_BLOCKING, utils.TestOrResultOutcome.FailedNonBlocking],
+    const cases: [boolean, ExecutionRule, utils.ResultOutcome][] = [
+      [true, ExecutionRule.BLOCKING, utils.ResultOutcome.Passed],
+      [true, ExecutionRule.NON_BLOCKING, utils.ResultOutcome.PassedNonBlocking],
+      [false, ExecutionRule.BLOCKING, utils.ResultOutcome.Failed],
+      [false, ExecutionRule.NON_BLOCKING, utils.ResultOutcome.FailedNonBlocking],
     ]
     test.each(cases)(
       'Result passed: %s, execution rule: %s. Expected outcome: %s',
@@ -518,31 +518,6 @@ describe('utils', () => {
         expect(utils.getResultOutcome(test, pollResult, true, true)).toEqual(expectedOutcome)
       }
     )
-  })
-
-  describe('getTestOutcome', () => {
-    const passed = utils.TestOrResultOutcome.Passed
-    const passedNonBlocking = utils.TestOrResultOutcome.PassedNonBlocking
-    const failed = utils.TestOrResultOutcome.Failed
-    const failedNonBlocking = utils.TestOrResultOutcome.FailedNonBlocking
-
-    const cases: [utils.TestOrResultOutcome[], utils.TestOrResultOutcome][] = [
-      [[passed, passed, passed], utils.TestOrResultOutcome.Passed],
-      [[passed, passedNonBlocking, passed], utils.TestOrResultOutcome.PassedNonBlocking],
-      [[passed, failedNonBlocking, passed], utils.TestOrResultOutcome.FailedNonBlocking],
-      [[passed, passed, failed], utils.TestOrResultOutcome.Failed],
-      [[passed, failedNonBlocking, failed], utils.TestOrResultOutcome.Failed],
-    ]
-    test.each(cases)('Test results: %s. Expected outcome: %s', (resultOutcomes, expectedOutcome) => {
-      let i = 0
-      jest.spyOn(utils, 'getResultOutcome').mockImplementation(() => resultOutcomes[i++])
-      const test = getApiTest('abc-def-ghi')
-      const pollResults = resultOutcomes.map((outcome, index) =>
-        getApiPollResult(index.toString(), {passed: outcome === utils.TestOrResultOutcome.Passed})
-      )
-
-      expect(utils.getTestOutcome(test, pollResults, true, true)).toEqual(expectedOutcome)
-    })
   })
 
   describe('waitForResults', () => {
