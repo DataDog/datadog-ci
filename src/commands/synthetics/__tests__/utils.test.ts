@@ -212,7 +212,6 @@ describe('utils', () => {
         failedNonBlocking: 0,
         passed: 0,
         skipped: 1,
-        testsFound: new Set(),
         testsNotFound: new Set(['987-654-321']),
         timedOut: 0,
       }

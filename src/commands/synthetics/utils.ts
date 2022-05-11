@@ -221,7 +221,7 @@ export const getResultExecutionRule = (test: Test, result: PollResult): Executio
   return result.enrichment?.config_override?.executionRule ?? ExecutionRule.BLOCKING
 }
 
-export const enum TestOrResultOutcome {
+export const enum ResultOutcome {
   Passed = 'passed',
   PassedNonBlocking = 'passed-non-blocking', // Mainly used for sorting tests when rendering results
   Failed = 'failed',
@@ -233,48 +233,23 @@ export const getResultOutcome = (
   pollResult: PollResult,
   failOnCriticalErrors: boolean,
   failOnTimeout: boolean
-): TestOrResultOutcome => {
+): ResultOutcome => {
   const executionRule = getResultExecutionRule(test, pollResult)
   const passed = hasResultPassed(pollResult.result, failOnCriticalErrors, failOnTimeout)
 
   if (passed) {
     if (executionRule === ExecutionRule.NON_BLOCKING) {
-      return TestOrResultOutcome.PassedNonBlocking
+      return ResultOutcome.PassedNonBlocking
     }
 
-    return TestOrResultOutcome.Passed
+    return ResultOutcome.Passed
   }
 
   if (executionRule === ExecutionRule.NON_BLOCKING) {
-    return TestOrResultOutcome.FailedNonBlocking
+    return ResultOutcome.FailedNonBlocking
   }
 
-  return TestOrResultOutcome.Failed
-}
-
-export const getTestOutcome = (
-  test: Test,
-  pollResults: PollResult[],
-  failOnCriticalErrors: boolean,
-  failOnTimeout: boolean
-): TestOrResultOutcome => {
-  const resultsOutcomes = pollResults.map((pollResult) =>
-    getResultOutcome(test, pollResult, failOnCriticalErrors, failOnTimeout)
-  )
-
-  if (resultsOutcomes.some((outcome) => outcome === TestOrResultOutcome.Failed)) {
-    return TestOrResultOutcome.Failed
-  }
-
-  if (resultsOutcomes.some((outcome) => outcome === TestOrResultOutcome.FailedNonBlocking)) {
-    return TestOrResultOutcome.FailedNonBlocking
-  }
-
-  if (resultsOutcomes.some((outcome) => outcome === TestOrResultOutcome.PassedNonBlocking)) {
-    return TestOrResultOutcome.PassedNonBlocking
-  }
-
-  return TestOrResultOutcome.Passed
+  return ResultOutcome.Failed
 }
 
 export const getSuites = async (GLOB: string, reporter: MainReporter): Promise<Suite[]> => {
@@ -450,7 +425,6 @@ export const createSummary = (): Summary => ({
   failedNonBlocking: 0,
   passed: 0,
   skipped: 0,
-  testsFound: new Set(),
   testsNotFound: new Set(),
   timedOut: 0,
 })

@@ -16,14 +16,7 @@ import {
   Summary,
   Test,
 } from '../interfaces'
-import {
-  getResultDuration,
-  getResultExecutionRule,
-  getResultOutcome,
-  getTestOutcome,
-  hasResultPassed,
-  TestOrResultOutcome,
-} from '../utils'
+import {getResultDuration, getResultExecutionRule, getResultOutcome, hasResultPassed, ResultOutcome} from '../utils'
 
 // Step rendering
 
@@ -65,8 +58,8 @@ const renderStep = (step: Step) => {
   const duration = renderStepDuration(step.duration)
   const icon = renderStepIcon(step)
 
-  const value = step.value ? `\n      ${chalk.dim(step.value)}` : ''
-  const error = step.error ? `\n      ${chalk.red.dim(step.error)}` : ''
+  const value = step.value ? `\n    ${chalk.dim(step.value)}` : ''
+  const error = step.error ? `\n    ${chalk.red.dim(step.error)}` : ''
 
   return `    ${icon} | ${duration} - ${step.description}${value}${error}`
 }
@@ -92,7 +85,7 @@ const renderApiError = (errorCode: string, errorMessage: string, color: chalk.Ch
   if (errorCode === 'INCORRECT_ASSERTION') {
     try {
       const assertionsErrors: Assertion[] = JSON.parse(errorMessage)
-      const output = ['    - Assertion(s) failed:']
+      const output = ['  - Assertion(s) failed:']
       output.push(
         ...assertionsErrors.map((error) => {
           const expected = chalk.underline(`${error.target}`)
@@ -102,20 +95,19 @@ const renderApiError = (errorCode: string, errorMessage: string, color: chalk.Ch
         })
       )
 
-      return color(output.join('\n      '))
+      return color(output.join('\n    '))
     } catch (e) {
       // JSON parsing failed, do nothing to return the raw error
     }
   }
 
-  return chalk.red(`      [${chalk.bold(errorCode)}] - ${chalk.dim(errorMessage)}`)
+  return chalk.red(`    [${chalk.bold(errorCode)}] - ${chalk.dim(errorMessage)}`)
 }
 
 // Test execution rendering
 const renderResultOutcome = (
   result: Result,
   test: Test,
-  executionRule: ExecutionRule,
   icon: string,
   color: chalk.Chalk,
   failOnCriticalErrors: boolean,
@@ -123,7 +115,7 @@ const renderResultOutcome = (
 ): string | undefined => {
   // Only display critical errors if failure is not filled.
   if (result.error && !(result.failure || result.errorMessage)) {
-    return `    ${chalk.bold(`${ICONS.FAILED} | ${result.error}`)}`
+    return `  ${chalk.bold(`${ICONS.FAILED} | ${result.error}`)}`
   }
 
   if (result.unhealthy) {
@@ -131,12 +123,10 @@ const renderResultOutcome = (
     const errorName = errorMessage && errorMessage !== 'Unknown error' ? errorMessage : 'General Error'
 
     return [
-      `    ${chalk.yellow(`${ICONS.SKIPPED} | ${errorName}`)}`,
-      `    ${chalk.yellow('We had an error during the execution of this test. The result will be ignored')}`,
+      `  ${chalk.yellow(`${ICONS.SKIPPED} | ${errorName}`)}`,
+      `  ${chalk.yellow('We had an error during the execution of this test. The result will be ignored')}`,
     ].join('\n')
   }
-
-  const executionRuleText = executionRule === ExecutionRule.BLOCKING ? '[blocking]' : '[non-blocking]'
 
   if (test.type === 'api') {
     const requestDescription = renderApiRequestDescription(test.subtype, test.config)
@@ -145,13 +135,10 @@ const renderResultOutcome = (
       const errorCode = result.failure ? result.failure.code : result.errorCode
       const errorMessage = result.failure ? result.failure.message : result.errorMessage
 
-      return [
-        `    ${icon} ${color(executionRuleText)} ${color(requestDescription)}`,
-        renderApiError(errorCode!, errorMessage!, color),
-      ].join('\n')
+      return [`  ${icon} ${color(requestDescription)}`, renderApiError(errorCode!, errorMessage!, color)].join('\n')
     }
 
-    return `    ${icon} ${color(requestDescription)}`
+    return `  ${icon} ${color(requestDescription)}`
   }
 
   if (test.type === 'browser') {
@@ -224,28 +211,36 @@ const renderExecutionResult = (
   const resultOutcome = getResultOutcome(overriddenTest ?? test, execution, failOnCriticalErrors, failOnTimeout)
   const [icon, setColor] = getTestOrResultIconAndColor(resultOutcome)
 
+  const executionRule = getResultExecutionRule(test, execution)
+  const executionRuleText = [ResultOutcome.Passed, ResultOutcome.PassedNonBlocking].includes(resultOutcome)
+    ? ''
+    : `[${setColor(executionRule === ExecutionRule.BLOCKING ? 'blocking' : 'non-blocking')}] `
+
+  const testLabel = `${executionRuleText}[${chalk.bold.dim(test.public_id)}] ${chalk.bold(test.name)}`
+
   const locationName = !!result.tunnel ? 'Tunneled' : locationNames[dc_id] || dc_id.toString()
-  const device = test.type === 'browser' && 'device' in result ? ` - device: ${chalk.bold(result.device.id)}` : ''
-  const resultIdentification = setColor(`  ${icon} location: ${chalk.bold(locationName)}${device}`)
+  const location = setColor(`location: ${chalk.bold(locationName)}`)
+  const device =
+    test.type === 'browser' && 'device' in result ? ` - ${setColor(`device: ${chalk.bold(result.device.id)}`)}` : ''
+  const resultIdentification = `${icon} ${testLabel} - ${location}${device}`
 
   const outputLines = [resultIdentification]
 
   // Unhealthy test results don't have a duration or result URL
   if (!result.unhealthy) {
     const duration = getResultDuration(result)
-    const durationText = duration ? ` total duration: ${duration} ms -` : ''
+    const durationText = duration ? ` Total duration: ${duration} ms -` : ''
 
     const resultUrl = getResultUrl(baseUrl, test, resultID)
     const resultUrlStatus = result.error === ERRORS.TIMEOUT ? '(not yet received)' : ''
 
-    const resultInfo = `    ⎋${durationText} result url: ${chalk.dim.cyan(resultUrl)} ${resultUrlStatus}`
+    const resultInfo = `  ⎋${durationText} Result URL: ${chalk.dim.cyan(resultUrl)} ${resultUrlStatus}`
     outputLines.push(resultInfo)
   }
 
   const resultOutcomeText = renderResultOutcome(
     result,
     overriddenTest || test,
-    getResultExecutionRule(test, execution),
     icon,
     setColor,
     failOnCriticalErrors,
@@ -258,15 +253,12 @@ const renderExecutionResult = (
   return outputLines.join('\n')
 }
 
-const getTestOrResultIconAndColor = (testOrResultOutcome: TestOrResultOutcome): [string, chalk.Chalk] => {
-  if (
-    testOrResultOutcome === TestOrResultOutcome.Passed ||
-    testOrResultOutcome === TestOrResultOutcome.PassedNonBlocking
-  ) {
+const getTestOrResultIconAndColor = (testOrResultOutcome: ResultOutcome): [string, chalk.Chalk] => {
+  if (testOrResultOutcome === ResultOutcome.Passed || testOrResultOutcome === ResultOutcome.PassedNonBlocking) {
     return [ICONS.SUCCESS, chalk.bold.green]
   }
 
-  if (testOrResultOutcome === TestOrResultOutcome.FailedNonBlocking) {
+  if (testOrResultOutcome === ResultOutcome.FailedNonBlocking) {
     return [ICONS.FAILED_NON_BLOCKING, chalk.bold.yellow]
   }
 
@@ -299,59 +291,57 @@ export class DefaultReporter implements MainReporter {
   }
 
   public runEnd(summary: Summary) {
-    const resultsSummary = [
-      chalk.green(`${chalk.bold(summary.passed)} passed`),
-      chalk.red(`${chalk.bold(summary.failed)} failed`),
-      chalk.yellow(`${chalk.bold(summary.failedNonBlocking)} failed (non-blocking)`),
+    const {bold: b, gray, green, red, yellow} = chalk.bold
+
+    const lines: string[] = []
+
+    const runSummary = [
+      green(`${b(summary.passed)} passed`),
+      red(`${b(summary.failed)} failed`),
+      yellow(`${b(summary.failedNonBlocking)} failed (non-blocking)`),
     ]
 
-    const testsSummary = [chalk.green(`${chalk.bold(summary.testsFound.size)} found`)]
-
     if (summary.skipped) {
-      testsSummary.push(`${chalk.bold(summary.skipped)} skipped`)
+      runSummary.push(`${b(summary.skipped)} skipped`)
     }
 
     if (summary.testsNotFound.size > 0) {
-      const testsNotFoundStr = chalk.gray(`(${[...summary.testsNotFound].join(', ')})`)
-      testsSummary.push(`${chalk.yellow(`${chalk.bold(summary.testsNotFound.size)} not found`)} ${testsNotFoundStr}`)
+      const testsNotFoundListStr = gray(`(${[...summary.testsNotFound].join(', ')})`)
+      lines.push(
+        `${yellow(
+          `${b(summary.testsNotFound.size)} ${pluralize('test', summary.testsNotFound.size)} not found`
+        )} ${testsNotFoundListStr}`
+      )
     }
 
     const extraInfo = []
     if (summary.timedOut) {
-      extraInfo.push(chalk.yellow(`${chalk.bold(summary.timedOut)} timed out`))
+      extraInfo.push(yellow(`${b(summary.timedOut)} timed out`))
     }
     if (summary.criticalErrors) {
-      extraInfo.push(chalk.red(`${chalk.bold(summary.criticalErrors)} critical errors`))
+      extraInfo.push(red(`${b(summary.criticalErrors)} critical errors`))
     }
+    const extraInfoStr = extraInfo.length ? ' (' + extraInfo.join(', ') + ')' : ''
 
-    this.write(
-      [
-        `${chalk.bold('Tests summary:')} ${testsSummary.join(', ')}`,
-        `${chalk.bold('Results summary:')} ${resultsSummary.join(', ')}${
-          extraInfo.length ? ' (' + extraInfo.join(', ') + ')' : ''
-        }\n`,
-      ].join('\n')
-    )
+    lines.push(`${b('Run summary:')} ${runSummary.join(', ')}${extraInfoStr}\n\n`)
+
+    this.write(lines.join('\n'))
   }
 
   public testEnd(
     test: Test,
-    results: PollResult[],
+    results: PollResult[], // Will always contain 1 result, as `testEnd` is called for each result
     baseUrl: string,
     locationNames: LocationsMapping,
     failOnCriticalErrors: boolean,
     failOnTimeout: boolean
   ) {
-    const testOutcome = getTestOutcome(test, results, failOnCriticalErrors, failOnTimeout)
-    const idDisplay = `[${chalk.bold.dim(test.public_id)}]`
-    const [icon, setColor] = getTestOrResultIconAndColor(testOutcome)
-
-    const testResultsText = results
-      .map((r) => renderExecutionResult(test, r, baseUrl, locationNames, failOnCriticalErrors, failOnTimeout))
-      .join('\n\n')
-      .concat('\n\n')
-
-    this.write([`${icon} ${idDisplay} | ${setColor(test.name)}`, testResultsText].join('\n'))
+    this.write(
+      results
+        .map((r) => renderExecutionResult(test, r, baseUrl, locationNames, failOnCriticalErrors, failOnTimeout))
+        .join('\n\n')
+        .concat('\n\n')
+    )
   }
 
   public testsWait(tests: Test[]) {
@@ -363,7 +353,7 @@ export class DefaultReporter implements MainReporter {
     const testsDisplay = chalk.gray(`(${testsList.join(', ')})`)
 
     this.write(
-      `Waiting for ${chalk.bold.cyan(tests.length)} test result${tests.length > 1 ? 's' : ''} ${testsDisplay}…\n`
+      `Waiting for ${chalk.bold.cyan(tests.length)} test ${pluralize('result', tests.length)} ${testsDisplay}…\n`
     )
   }
 
@@ -394,7 +384,7 @@ export class DefaultReporter implements MainReporter {
         return ''
       }
 
-      return ' ' + chalk.gray(`(${nbConfigsOverridden} config override${nbConfigsOverridden !== 1 ? 's' : ''})`)
+      return ' ' + chalk.gray(`(${nbConfigsOverridden} config ${pluralize('override', nbConfigsOverridden)})`)
     }
 
     this.write(`${idDisplay} ${getMessage()}${getConfigOverridesPart()}\n`)
@@ -404,3 +394,5 @@ export class DefaultReporter implements MainReporter {
     return
   }
 }
+
+const pluralize = (word: string, count: number): string => (count === 1 ? word : `${word}s`)

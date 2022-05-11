@@ -8,6 +8,7 @@ export interface MainReporter {
   log(log: string): void
   reportStart(timings: {startTime: number}): void
   runEnd(summary: Summary): void
+  // `testEnd` is called for each result
   testEnd(
     test: Test,
     results: PollResult[],
@@ -330,7 +331,6 @@ export interface Summary {
   failedNonBlocking: number
   passed: number
   skipped: number
-  testsFound: Set<string>
   testsNotFound: Set<string>
   timedOut: number
 }
