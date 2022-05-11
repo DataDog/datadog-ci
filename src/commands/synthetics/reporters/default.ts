@@ -291,7 +291,7 @@ export class DefaultReporter implements MainReporter {
   }
 
   public runEnd(summary: Summary) {
-    const {bold: b, gray, green, red, yellow} = chalk.bold
+    const {bold: b, gray, green, red, yellow} = chalk
 
     const lines: string[] = []
 
