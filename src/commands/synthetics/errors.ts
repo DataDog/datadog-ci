@@ -17,13 +17,13 @@ export type CriticalCiErrorCode = typeof criticalErrorCodes[number]
 export type CiErrorCode = NonCriticalCiErrorCode | CriticalCiErrorCode
 
 export class CiError extends Error {
-  constructor(public code: CiErrorCode) {
-    super()
+  constructor(public code: CiErrorCode, message?: string) {
+    super(message)
   }
 }
 
 export class CriticalError extends CiError {
-  constructor(public code: CriticalCiErrorCode) {
-    super(code)
+  constructor(public code: CriticalCiErrorCode, message?: string) {
+    super(code, message)
   }
 }
