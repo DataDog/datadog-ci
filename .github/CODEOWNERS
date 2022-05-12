@@ -1,4 +1,4 @@
-* @m-rousse
+* @DataDog/datadog-ci
 
 src/commands
 src/commands/synthetics  @m-rousse @DataDog/synthetics-worker

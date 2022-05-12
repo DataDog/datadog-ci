@@ -6,6 +6,8 @@ import * as fs from 'fs'
 import {AxiosError, AxiosRequestConfig, AxiosResponse, default as axios} from 'axios'
 import glob from 'glob'
 
+process.env.DATADOG_SYNTHETICS_CI_TRIGGER_APP = 'env_default'
+
 import * as ciHelpers from '../../../helpers/ci'
 import {Metadata} from '../../../helpers/interfaces'
 import {ProxyConfiguration} from '../../../helpers/utils'
@@ -108,7 +110,7 @@ describe('utils', () => {
       }) as any)
 
       await utils.runTests(api, [{public_id: fakeId, executionRule: ExecutionRule.NON_BLOCKING}])
-      expect(headersMetadataSpy).toHaveBeenCalledWith(expect.objectContaining({'X-Trigger-App': 'npm_package'}))
+      expect(headersMetadataSpy).toHaveBeenCalledWith(expect.objectContaining({'X-Trigger-App': 'env_default'}))
 
       utils.setCiTriggerApp('unit_test')
       await utils.runTests(api, [{public_id: fakeId, executionRule: ExecutionRule.NON_BLOCKING}])
@@ -513,9 +515,17 @@ describe('utils', () => {
       const expectedResults: {[key: string]: PollResult[]} = {}
       expectedResults[triggerResult.public_id] = [passingPollResult]
 
-      expect(await utils.waitForResults(api, [triggerResult], 120000, [triggerConfig], undefined, false)).toEqual(
-        expectedResults
-      )
+      expect(
+        await utils.waitForResults(
+          api,
+          [triggerResult],
+          [triggerConfig],
+          {defaultTimeout: 120000, failOnCriticalErrors: false},
+          mockReporter
+        )
+      ).toEqual(expectedResults)
+
+      expect(mockReporter.testResult).toHaveBeenCalledWith(triggerResult, passingPollResult)
     })
 
     test('results should be timed-out if global pollingTimeout is exceeded', async () => {
@@ -533,7 +543,15 @@ describe('utils', () => {
           timestamp: 0,
         },
       ]
-      expect(await utils.waitForResults(api, [triggerResult], 0, [], undefined, false)).toEqual(expectedResults)
+      expect(
+        await utils.waitForResults(
+          api,
+          [triggerResult],
+          [],
+          {defaultTimeout: 0, failOnCriticalErrors: false},
+          mockReporter
+        )
+      ).toEqual(expectedResults)
     })
 
     test('results should be timeout-ed if test pollingTimeout is exceeded', async () => {
@@ -556,9 +574,15 @@ describe('utils', () => {
         id: triggerResult.public_id,
         suite: 'Suite 1',
       }
-      expect(await utils.waitForResults(api, [triggerResult], 120000, [testTriggerConfig], undefined, false)).toEqual(
-        expectedResults
-      )
+      expect(
+        await utils.waitForResults(
+          api,
+          [triggerResult],
+          [testTriggerConfig],
+          {defaultTimeout: 120000, failOnCriticalErrors: false},
+          mockReporter
+        )
+      ).toEqual(expectedResults)
     })
 
     test('correct number of pass and timeout results', async () => {
@@ -587,7 +611,13 @@ describe('utils', () => {
         },
       ]
       expect(
-        await utils.waitForResults(api, [triggerResultPass, triggerResultTimeOut], 2000, [], undefined, false)
+        await utils.waitForResults(
+          api,
+          [triggerResultPass, triggerResultTimeOut],
+          [],
+          {defaultTimeout: 2000, failOnCriticalErrors: false},
+          mockReporter
+        )
       ).toEqual(expectedResults)
     })
 
@@ -622,8 +652,26 @@ describe('utils', () => {
         ],
       }
 
-      expect(await utils.waitForResults(api, [triggerResult], 2000, [], mockTunnel, true)).toEqual(expectedResults)
-      expect(await utils.waitForResults(api, [triggerResult], 2000, [], mockTunnel, false)).toEqual(expectedResults)
+      expect(
+        await utils.waitForResults(
+          api,
+          [triggerResult],
+          [],
+          {defaultTimeout: 2000, failOnCriticalErrors: true},
+          mockReporter,
+          mockTunnel
+        )
+      ).toEqual(expectedResults)
+      expect(
+        await utils.waitForResults(
+          api,
+          [triggerResult],
+          [],
+          {defaultTimeout: 2000, failOnCriticalErrors: false},
+          mockReporter,
+          mockTunnel
+        )
+      ).toEqual(expectedResults)
     })
 
     test('pollResults throws', async () => {
@@ -654,8 +702,26 @@ describe('utils', () => {
         ],
       }
 
-      expect(await utils.waitForResults(api, [triggerResult], 2000, [], mockTunnel, false)).toEqual(expectedResults)
-      await expect(utils.waitForResults(api, [triggerResult], 2000, [], mockTunnel, true)).rejects.toThrow()
+      expect(
+        await utils.waitForResults(
+          api,
+          [triggerResult],
+          [],
+          {defaultTimeout: 2000, failOnCriticalErrors: false},
+          mockReporter,
+          mockTunnel
+        )
+      ).toEqual(expectedResults)
+      await expect(
+        utils.waitForResults(
+          api,
+          [triggerResult],
+          [],
+          {defaultTimeout: 2000, failOnCriticalErrors: true},
+          mockReporter,
+          mockTunnel
+        )
+      ).rejects.toThrow()
     })
   })
 

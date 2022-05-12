@@ -15,6 +15,7 @@ import {
   Step,
   Summary,
   Test,
+  TriggerResponse,
 } from '../interfaces'
 import {getResultDuration, getResultExecutionRule, getResultOutcome, hasResultPassed, ResultOutcome} from '../utils'
 
@@ -342,6 +343,10 @@ export class DefaultReporter implements MainReporter {
         .join('\n\n')
         .concat('\n\n')
     )
+  }
+
+  public testResult(response: TriggerResponse, result: PollResult): void {
+    return
   }
 
   public testsWait(tests: Test[]) {

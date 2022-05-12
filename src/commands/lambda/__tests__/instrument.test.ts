@@ -15,6 +15,9 @@ import {
   CI_API_KEY_ENV_VAR,
   CI_SITE_ENV_VAR,
   DEFAULT_LAYER_AWS_ACCOUNT,
+  ENVIRONMENT_ENV_VAR,
+  SERVICE_ENV_VAR,
+  VERSION_ENV_VAR,
 } from '../constants'
 import {InstrumentCommand} from '../instrument'
 import {InstrumentationSettings, LambdaConfigOptions} from '../interfaces'
@@ -22,6 +25,7 @@ import {
   requestAWSCredentials,
   requestChangesConfirmation,
   requestDatadogEnvVars,
+  requestEnvServiceVersion,
   requestFunctionSelection,
 } from '../prompt'
 import {
@@ -32,6 +36,9 @@ import {
   mockAwsAccessKeyId,
   mockAwsSecretAccessKey,
   mockDatadogApiKey,
+  mockDatadogEnv,
+  mockDatadogService,
+  mockDatadogVersion,
 } from './fixtures'
 // tslint:disable-next-line
 const {version} = require(path.join(__dirname, '../../../../package.json'))
@@ -1212,6 +1219,216 @@ ${red('[Error]')} Unexpected error
 "${bold(yellow('[!]'))} Configure AWS region.
 ${bold(yellow('[!]'))} Configure Datadog settings.
 ${red('[Error]')} Unexpected error
+"
+`)
+      })
+
+      test('when provided it sets DD_ENV, DD_SERVICE, and DD_VERSION environment variables in interactive mode', async () => {
+        const node12LibraryLayer = `arn:aws:lambda:sa-east-1:${DEFAULT_LAYER_AWS_ACCOUNT}:layer:Datadog-Node12-x`
+        const extensionLayer = `arn:aws:lambda:sa-east-1:${DEFAULT_LAYER_AWS_ACCOUNT}:layer:Datadog-Extension`
+        ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({code: 'ENOENT'}))
+        ;(Lambda as any).mockImplementation(() =>
+          makeMockLambda(
+            {
+              'arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world': {
+                FunctionArn: 'arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world',
+                FunctionName: 'lambda-hello-world',
+                Handler: 'index.handler',
+                Runtime: 'nodejs12.x',
+              },
+            },
+            {
+              [`${node12LibraryLayer}:1`]: {
+                LayerVersionArn: `${node12LibraryLayer}:1`,
+                Version: 1,
+              },
+              [`${extensionLayer}:1`]: {
+                LayerVersionArn: `${extensionLayer}:1`,
+                Version: 1,
+              },
+            }
+          )
+        )
+        ;(requestAWSCredentials as any).mockImplementation(() => {
+          process.env[AWS_ACCESS_KEY_ID_ENV_VAR] = mockAwsAccessKeyId
+          process.env[AWS_SECRET_ACCESS_KEY_ENV_VAR] = mockAwsSecretAccessKey
+          process.env[AWS_DEFAULT_REGION_ENV_VAR] = 'sa-east-1'
+        })
+        ;(requestDatadogEnvVars as any).mockImplementation(() => {
+          process.env[CI_SITE_ENV_VAR] = 'datadoghq.com'
+          process.env[CI_API_KEY_ENV_VAR] = mockDatadogApiKey
+        })
+        ;(requestFunctionSelection as any).mockImplementation(() => [
+          'arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world',
+        ])
+        ;(requestChangesConfirmation as any).mockImplementation(() => true)
+        ;(requestEnvServiceVersion as any).mockImplementation(() => {
+          process.env[ENVIRONMENT_ENV_VAR] = mockDatadogEnv
+          process.env[SERVICE_ENV_VAR] = mockDatadogService
+          process.env[VERSION_ENV_VAR] = mockDatadogVersion
+        })
+
+        const cli = makeCli()
+        const context = createMockContext() as any
+        const code = await cli.run(['lambda', 'instrument', '-i'], context)
+        const output = context.stdout.toString()
+        expect(code).toBe(0)
+        expect(output).toMatchInlineSnapshot(`
+"${bold(
+          yellow('[!]')
+        )} No AWS credentials found, let's set them up! Or you can re-run the command and supply the AWS credentials in the same way when you invoke the AWS CLI.
+${bold(yellow('[!]'))} Configure AWS region.
+${bold(yellow('[!]'))} Configure Datadog settings.
+Fetching Lambda functions, this might take a while.
+${bold(yellow('[Warning]'))} Instrument your ${hex('#FF9900').bold(
+          'Lambda'
+        )} functions in a dev or staging environment first. Should the instrumentation result be unsatisfactory, run \`${bold(
+          'uninstrument'
+        )}\` with the same arguments to revert the changes.
+
+${bold(yellow('[!]'))} Functions to be updated:
+\t- ${bold('arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world')}
+\t${bold(
+          yellow('[Warning]')
+        )} At least one latest layer version is being used. Ensure to lock in versions for production applications using \`--layerVersion\` and \`--extensionVersion\`.
+
+Will apply the following updates:
+UpdateFunctionConfiguration -> arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world
+{
+  \\"FunctionName\\": \\"arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world\\",
+  \\"Handler\\": \\"/opt/nodejs/node_modules/datadog-lambda-js/handler.handler\\",
+  \\"Environment\\": {
+    \\"Variables\\": {
+      \\"DD_LAMBDA_HANDLER\\": \\"index.handler\\",
+      \\"DD_API_KEY\\": \\"02aeb762fff59ac0d5ad1536cd9633bd\\",
+      \\"DD_SITE\\": \\"datadoghq.com\\",
+      \\"DD_CAPTURE_LAMBDA_PAYLOAD\\": \\"false\\",
+      \\"DD_ENV\\": \\"sandbox\\",
+      \\"DD_MERGE_XRAY_TRACES\\": \\"false\\",
+      \\"DD_SERVICE\\": \\"testServiceName\\",
+      \\"DD_TRACE_ENABLED\\": \\"true\\",
+      \\"DD_VERSION\\": \\"1.0.0\\",
+      \\"DD_FLUSH_TO_LOG\\": \\"true\\"
+    }
+  },
+  \\"Layers\\": [
+    \\"arn:aws:lambda:sa-east-1:464622532012:layer:Datadog-Extension:1\\",
+    \\"arn:aws:lambda:sa-east-1:464622532012:layer:Datadog-Node12-x:1\\"
+  ]
+}
+TagResource -> arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world
+{
+  \\"dd_sls_ci\\": \\"v${version}\\"
+}
+${yellow('[!]')} Confirmation needed.
+${yellow('[!]')} Instrumenting functions.
+"
+`)
+      })
+
+      test('when not provided it does not set DD_ENV, DD_SERVICE, and DD_VERSION tags in interactive mode', async () => {
+        const node12LibraryLayer = `arn:aws:lambda:sa-east-1:${DEFAULT_LAYER_AWS_ACCOUNT}:layer:Datadog-Node12-x`
+        const extensionLayer = `arn:aws:lambda:sa-east-1:${DEFAULT_LAYER_AWS_ACCOUNT}:layer:Datadog-Extension`
+        ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({code: 'ENOENT'}))
+        ;(Lambda as any).mockImplementation(() =>
+          makeMockLambda(
+            {
+              'arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world': {
+                FunctionArn: 'arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world',
+                FunctionName: 'lambda-hello-world',
+                Handler: 'index.handler',
+                Runtime: 'nodejs12.x',
+              },
+            },
+            {
+              [`${node12LibraryLayer}:1`]: {
+                LayerVersionArn: `${node12LibraryLayer}:1`,
+                Version: 1,
+              },
+              [`${extensionLayer}:1`]: {
+                LayerVersionArn: `${extensionLayer}:1`,
+                Version: 1,
+              },
+            }
+          )
+        )
+        ;(requestAWSCredentials as any).mockImplementation(() => {
+          process.env[AWS_ACCESS_KEY_ID_ENV_VAR] = mockAwsAccessKeyId
+          process.env[AWS_SECRET_ACCESS_KEY_ENV_VAR] = mockAwsSecretAccessKey
+          process.env[AWS_DEFAULT_REGION_ENV_VAR] = 'sa-east-1'
+        })
+        ;(requestDatadogEnvVars as any).mockImplementation(() => {
+          process.env[CI_SITE_ENV_VAR] = 'datadoghq.com'
+          process.env[CI_API_KEY_ENV_VAR] = mockDatadogApiKey
+        })
+        ;(requestFunctionSelection as any).mockImplementation(() => [
+          'arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world',
+        ])
+        ;(requestChangesConfirmation as any).mockImplementation(() => true)
+        ;(requestEnvServiceVersion as any).mockImplementation(() => {
+          process.env[ENVIRONMENT_ENV_VAR] = undefined
+          process.env[SERVICE_ENV_VAR] = undefined
+          process.env[VERSION_ENV_VAR] = undefined
+        })
+
+        const cli = makeCli()
+        const context = createMockContext() as any
+        const code = await cli.run(['lambda', 'instrument', '-i'], context)
+        const output = context.stdout.toString()
+        expect(code).toBe(0)
+        expect(output).toMatchInlineSnapshot(`
+"${bold(
+          yellow('[!]')
+        )} No AWS credentials found, let's set them up! Or you can re-run the command and supply the AWS credentials in the same way when you invoke the AWS CLI.
+${bold(yellow('[!]'))} Configure AWS region.
+${bold(yellow('[!]'))} Configure Datadog settings.
+Fetching Lambda functions, this might take a while.
+${bold(
+  yellow('[Warning]')
+)} The environment, service and version tags have not been configured. Learn more about Datadog unified service tagging: ${underline(
+          blueBright(
+            'https://docs.datadoghq.com/getting_started/tagging/unified_service_tagging/#serverless-environment.'
+          )
+        )}
+${bold(yellow('[Warning]'))} Instrument your ${hex('#FF9900').bold(
+          'Lambda'
+        )} functions in a dev or staging environment first. Should the instrumentation result be unsatisfactory, run \`${bold(
+          'uninstrument'
+        )}\` with the same arguments to revert the changes.
+
+${bold(yellow('[!]'))} Functions to be updated:
+\t- ${bold('arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world')}
+\t${bold(
+          yellow('[Warning]')
+        )} At least one latest layer version is being used. Ensure to lock in versions for production applications using \`--layerVersion\` and \`--extensionVersion\`.
+
+Will apply the following updates:
+UpdateFunctionConfiguration -> arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world
+{
+  \\"FunctionName\\": \\"arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world\\",
+  \\"Handler\\": \\"/opt/nodejs/node_modules/datadog-lambda-js/handler.handler\\",
+  \\"Environment\\": {
+    \\"Variables\\": {
+      \\"DD_LAMBDA_HANDLER\\": \\"index.handler\\",
+      \\"DD_API_KEY\\": \\"02aeb762fff59ac0d5ad1536cd9633bd\\",
+      \\"DD_SITE\\": \\"datadoghq.com\\",
+      \\"DD_CAPTURE_LAMBDA_PAYLOAD\\": \\"false\\",
+      \\"DD_MERGE_XRAY_TRACES\\": \\"false\\",
+      \\"DD_TRACE_ENABLED\\": \\"true\\",
+      \\"DD_FLUSH_TO_LOG\\": \\"true\\"
+    }
+  },
+  \\"Layers\\": [
+    \\"arn:aws:lambda:sa-east-1:464622532012:layer:Datadog-Extension:1\\",
+    \\"arn:aws:lambda:sa-east-1:464622532012:layer:Datadog-Node12-x:1\\"
+  ]
+}
+TagResource -> arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world
+{
+  \\"dd_sls_ci\\": \\"v${version}\\"
+}
+${yellow('[!]')} Confirmation needed.
+${yellow('[!]')} Instrumenting functions.
 "
 `)
       })
