@@ -5,18 +5,8 @@ import path from 'path'
 import {Writable} from 'stream'
 import {Builder} from 'xml2js'
 
-import {
-  ApiTestResult,
-  ERRORS,
-  InternalTest,
-  LocationsMapping,
-  MultiStep,
-  PollResult,
-  Reporter,
-  Step,
-  Vitals,
-} from '../interfaces'
-import {getResultDuration, hasTestSucceeded} from '../utils'
+import {ApiServerResult, InternalTest, LocationsMapping, MultiStep, Reporter, Result, Step, Vitals} from '../interfaces'
+import {getResultDuration} from '../utils'
 
 interface Stats {
   allowfailures: number
@@ -142,14 +132,7 @@ export class JUnitReporter implements Reporter {
     }
   }
 
-  public testEnd(
-    test: InternalTest,
-    results: PollResult[],
-    baseUrl: string,
-    locations: LocationsMapping,
-    failOnCriticalErrors: boolean,
-    failOnTimeout: boolean
-  ) {
+  public testEnd(test: InternalTest, results: Result[], baseUrl: string, locations: LocationsMapping) {
     const suiteRunName = test.suite || 'Undefined suite'
     let suiteRun = this.json.testsuites.testsuite.find((suite: XMLRun) => suite.$.name === suiteRunName)
 
@@ -168,15 +151,18 @@ export class JUnitReporter implements Reporter {
     }
 
     for (const result of results) {
-      const testCase: XMLTestCase = this.getTestCase(test, result, locations, failOnCriticalErrors, failOnTimeout)
+      const testCase: XMLTestCase = this.getTestCase(test, result, locations)
       // Timeout errors are only reported at the top level.
-      if (result.result.error === ERRORS.TIMEOUT) {
+      if (result.timedOut) {
         testCase.error.push({
           $: {type: 'timeout'},
-          _: result.result.error,
+          _: 'Timed out',
         })
       }
-      if ('stepDetails' in result.result) {
+
+      if (!result.result) {
+        // Nothing to do, result was skipped.
+      } else if ('stepDetails' in result.result) {
         // It's a browser test.
         for (const stepDetail of result.result.stepDetails) {
           const {allowed_error, browser_error, error, warning} = this.getBrowserTestStep(stepDetail)
@@ -198,7 +184,7 @@ export class JUnitReporter implements Reporter {
     }
   }
 
-  private getApiStepStats(step: MultiStep | ApiTestResult): Stats {
+  private getApiStepStats(step: MultiStep | ApiServerResult): Stats {
     // TODO use more granular result based on step.assertionResults
     let allowfailures = 0
     let skipped = 0
@@ -299,8 +285,13 @@ export class JUnitReporter implements Reporter {
     }
   }
 
-  private getResultStats(result: PollResult, stats: Stats | undefined = getDefaultStats()): Stats {
+  private getResultStats(result: Result, stats: Stats | undefined = getDefaultStats()): Stats {
     let stepsStats: Stats[] = []
+    if (!result.result) {
+      // Nothing to do, the result was skipped.
+      return stats
+    }
+
     if ('stepDetails' in result.result) {
       // It's a browser test.
       stepsStats = result.result.stepDetails
@@ -332,7 +323,7 @@ export class JUnitReporter implements Reporter {
     return stats
   }
 
-  private getSuiteStats(results: PollResult[], stats: Stats | undefined = getDefaultStats()): Stats {
+  private getSuiteStats(results: Result[], stats: Stats | undefined = getDefaultStats()): Stats {
     for (const result of results) {
       stats = this.getResultStats(result, stats)
     }
@@ -340,21 +331,14 @@ export class JUnitReporter implements Reporter {
     return stats
   }
 
-  private getTestCase(
-    test: InternalTest,
-    result: PollResult,
-    locations: LocationsMapping,
-    failOnCriticalErrors: boolean,
-    failOnTimeout: boolean
-  ): XMLTestCase {
-    const timeout = result.result.error === ERRORS.TIMEOUT
-    const passed = hasTestSucceeded([result], failOnCriticalErrors, failOnTimeout)
+  private getTestCase(test: InternalTest, result: Result, locations: LocationsMapping): XMLTestCase {
+    const serverResult = result.result
 
     return {
       $: {
         name: test.name,
-        time: getResultDuration(result.result) / 1000,
-        timestamp: new Date(result.timestamp).toISOString(),
+        time: getResultDuration(result) / 1000,
+        timestamp: result.timestamp ? new Date(result.timestamp).toISOString() : '',
         ...this.getResultStats(result),
       },
       allowed_error: [],
@@ -362,25 +346,21 @@ export class JUnitReporter implements Reporter {
       error: [],
       properties: {
         property: [
-          {$: {name: 'check_id', value: result.check_id}},
-          ...('device' in result.result
-            ? [
-                {$: {name: 'device', value: result.result.device.id}},
-                {$: {name: 'width', value: result.result.device.width}},
-                {$: {name: 'height', value: result.result.device.height}},
-              ]
-            : []),
+          {$: {name: 'check_id', value: result.testId}},
+          ...(result.device ? [{$: {name: 'device', value: result.device}}] : []),
           {$: {name: 'execution_rule', value: test.options.ci?.executionRule}},
-          {$: {name: 'location', value: locations[result.dc_id]}},
+          {$: {name: 'location', value: locations[result.location]}},
           {$: {name: 'message', value: test.message}},
           {$: {name: 'monitor_id', value: test.monitor_id}},
-          {$: {name: 'passed', value: `${passed}`}},
+          {$: {name: 'passed', value: `${result.passed}`}},
           {$: {name: 'public_id', value: test.public_id}},
-          {$: {name: 'result_id', value: result.resultID}},
-          ...('startUrl' in result.result ? [{$: {name: 'start_url', value: result.result.startUrl}}] : []),
+          {$: {name: 'result_id', value: result.id}},
+          ...(serverResult && 'startUrl' in serverResult
+            ? [{$: {name: 'start_url', value: serverResult.startUrl}}]
+            : []),
           {$: {name: 'status', value: test.status}},
           {$: {name: 'tags', value: test.tags.join(',')}},
-          {$: {name: 'timeout', value: `${timeout}`}},
+          {$: {name: 'timeout', value: `${result.timedOut}`}},
           {$: {name: 'type', value: test.type}},
         ].filter((prop) => prop.$.value),
       },

@@ -9,17 +9,14 @@ import glob from 'glob'
 import {getCIMetadata} from '../../helpers/ci'
 import {pick} from '../../helpers/utils'
 
-import {EndpointError, formatBackendErrors, is5xxError, isNotFoundError} from './api'
+import {APIHelper, EndpointError, formatBackendErrors, is5xxError, isNotFoundError, PollResult} from './api'
 import {CiError} from './errors'
 import {
-  APIHelper,
   ConfigOverride,
-  ERRORS,
   ExecutionRule,
   InternalTest,
   MainReporter,
   Payload,
-  PollResult,
   Reporter,
   Result,
   Suite,
@@ -29,10 +26,7 @@ import {
   TemplateVariables,
   Test,
   TestPayload,
-  Trigger,
   TriggerConfig,
-  TriggerResponse,
-  TriggerResult,
 } from './interfaces'
 import {getApiHelper} from './run-test'
 import {Tunnel} from './tunnel'
@@ -186,34 +180,21 @@ export const getStrictestExecutionRule = (configRule: ExecutionRule, testRule?: 
   return ExecutionRule.BLOCKING
 }
 
-export const isCriticalError = (result: Result): boolean => result.unhealthy || result.error === ERRORS.ENDPOINT
-
-export const hasResultPassed = (result: Result, failOnCriticalErrors: boolean, failOnTimeout: boolean): boolean => {
-  if (isCriticalError(result) && !failOnCriticalErrors) {
+export const hasResultPassed = (result: Result, failOnCriticalErrors?: boolean, failOnTimeout?: boolean): boolean => {
+  if (!result.result) {
     return true
   }
 
-  if (result.error === ERRORS.TIMEOUT && !failOnTimeout) {
+  if (result.result.unhealthy && !failOnCriticalErrors) {
     return true
   }
 
-  if (typeof result.passed !== 'undefined') {
-    return result.passed
+  if (result.timedOut && !failOnTimeout) {
+    return true
   }
 
-  if (typeof result.errorCode !== 'undefined') {
-    return false
-  }
-
-  return true
+  return result.result.passed
 }
-
-export const hasTestSucceeded = (
-  results: PollResult[],
-  failOnCriticalErrors: boolean,
-  failOnTimeout: boolean
-): boolean =>
-  results.every((pollResult: PollResult) => hasResultPassed(pollResult.result, failOnCriticalErrors, failOnTimeout))
 
 export const getSuites = async (GLOB: string, reporter: MainReporter): Promise<Suite[]> => {
   reporter.log(`Finding files in ${path.join(process.cwd(), GLOB)}\n`)
@@ -241,21 +222,12 @@ export const wait = async (duration: number) => new Promise((resolve) => setTime
 
 export const waitForResults = async (
   api: APIHelper,
-  triggerResponses: TriggerResponse[],
-  triggerConfigs: TriggerConfig[],
-  options: {
-    defaultTimeout: number
-    failOnCriticalErrors?: boolean
-  },
+  results: Result[],
+  timeoutByPublicId: {[key: string]: number},
+  options: {failOnCriticalErrors?: boolean; failOnTimeout?: boolean},
   reporter: MainReporter,
   tunnel?: Tunnel
 ) => {
-  const triggerResultMap = createTriggerResultMap(triggerResponses, options.defaultTimeout, triggerConfigs)
-  const triggerResults = [...triggerResultMap.values()]
-
-  const maxPollingTimeout = Math.max(...triggerResults.map((tr) => tr.pollingTimeout))
-  const pollingStartDate = new Date().getTime()
-
   let isTunnelConnected = true
   if (tunnel) {
     tunnel
@@ -264,31 +236,30 @@ export const waitForResults = async (
       .catch(() => (isTunnelConnected = false))
   }
 
-  while (triggerResults.filter((tr) => !tr.result).length) {
+  const resultMap = results.reduce<{[key: string]: Result}>((obj, result) => {
+    obj[result.id] = result
+
+    return obj
+  }, {})
+  const maxPollingTimeout = Math.max(...Object.values(timeoutByPublicId))
+  const pollingStartDate = new Date().getTime()
+  while (results.some((r) => r.isInProgress)) {
     const pollingDuration = new Date().getTime() - pollingStartDate
 
-    // Remove test which exceeded their pollingTimeout
-    for (const triggerResult of triggerResults.filter((tr) => !tr.result)) {
-      if (pollingDuration >= triggerResult.pollingTimeout) {
-        triggerResult.result = createFailingResult(
-          ERRORS.TIMEOUT,
-          triggerResult.result_id,
-          triggerResult.device,
-          triggerResult.location,
-          !!tunnel
-        )
+    const inProgressResults = results.filter((r) => r.isInProgress)
+    // Check for timeout results.
+    for (const result of inProgressResults) {
+      if (pollingDuration >= timeoutByPublicId[result.testId]) {
+        result.error = 'Timeout'
+        result.isInProgress = false
+        result.timedOut = true
       }
     }
 
     if (tunnel && !isTunnelConnected) {
-      for (const triggerResult of triggerResults.filter((tr) => !tr.result)) {
-        triggerResult.result = createFailingResult(
-          ERRORS.TUNNEL,
-          triggerResult.result_id,
-          triggerResult.device,
-          triggerResult.location,
-          !!tunnel
-        )
+      for (const result of inProgressResults) {
+        result.isInProgress = false
+        result.error = 'Tunnel Failure'
       }
     }
 
@@ -296,98 +267,30 @@ export const waitForResults = async (
       break
     }
 
-    let polledResults: PollResult[]
-    const triggerResultsSucceed = triggerResults.filter((tr) => !tr.result)
+    let pollResults: PollResult[] = []
     try {
-      polledResults = (await api.pollResults(triggerResultsSucceed.map((tr) => tr.result_id))).results
+      pollResults = await api.pollResults(inProgressResults.map((r) => r.id))
     } catch (error) {
-      if (is5xxError(error) && !options.failOnCriticalErrors) {
-        polledResults = []
-        for (const triggerResult of triggerResultsSucceed) {
-          triggerResult.result = createFailingResult(
-            ERRORS.ENDPOINT,
-            triggerResult.result_id,
-            triggerResult.device,
-            triggerResult.location,
-            !!tunnel
-          )
-        }
-      } else {
+      if (!is5xxError(error) || options.failOnCriticalErrors) {
         throw error
       }
     }
 
-    for (const polledResult of polledResults) {
-      if (polledResult.result.eventType === 'finished') {
-        const triggeredResult = triggerResultMap.get(polledResult.resultID)
-        if (triggeredResult) {
-          triggeredResult.result = polledResult
-        }
-        const triggerResponse = triggerResponses.find((res) => res.result_id === polledResult.resultID)
-        if (triggerResponse) {
-          reporter.testResult(triggerResponse, polledResult)
-        }
+    for (const pollResult of pollResults) {
+      if (pollResult.result.eventType === 'finished') {
+        const result = resultMap[pollResult.resultID]
+        result.isInProgress = false
+        result.passed = hasResultPassed(result, options.failOnCriticalErrors, options.failOnTimeout)
+        result.test = pollResult.check
+        result.timestamp = pollResult.timestamp
+        result.result = pollResult.result
+        reporter.testResult(result)
       }
-    }
-
-    if (!triggerResults.filter((tr) => !tr.result).length) {
-      break
     }
 
     await wait(POLLING_INTERVAL)
   }
-
-  // Bundle results by public id
-  return triggerResults.reduce((resultsByPublicId, triggerResult) => {
-    const result = triggerResult.result! // The result exists, as either polled or filled with a timeout result
-    resultsByPublicId[triggerResult.public_id] = [...(resultsByPublicId[triggerResult.public_id] || []), result]
-
-    return resultsByPublicId
-  }, {} as {[key: string]: PollResult[]})
 }
-
-export const createTriggerResultMap = (
-  triggerResponses: TriggerResponse[],
-  defaultTimeout: number,
-  triggerConfigs: TriggerConfig[]
-): Map<string, TriggerResult> => {
-  const timeoutByPublicId: {[key: string]: number} = {}
-  for (const trigger of triggerConfigs) {
-    timeoutByPublicId[trigger.id] = trigger.config.pollingTimeout ?? defaultTimeout
-  }
-
-  const triggerResultMap = new Map()
-  for (const triggerResponse of triggerResponses) {
-    triggerResultMap.set(triggerResponse.result_id, {
-      ...triggerResponse,
-      pollingTimeout: timeoutByPublicId[triggerResponse.public_id] ?? defaultTimeout,
-    })
-  }
-
-  return triggerResultMap
-}
-
-const createFailingResult = (
-  errorMessage: ERRORS,
-  resultId: string,
-  deviceId: string,
-  dcId: number,
-  tunnel: boolean
-): PollResult => ({
-  dc_id: dcId,
-  result: {
-    device: {height: 0, id: deviceId, width: 0},
-    duration: 0,
-    error: errorMessage,
-    eventType: 'finished',
-    passed: false,
-    startUrl: '',
-    stepDetails: [],
-    tunnel,
-  },
-  resultID: resultId,
-  timestamp: 0,
-})
 
 export const createSummary = (): Summary => ({
   criticalErrors: 0,
@@ -399,11 +302,12 @@ export const createSummary = (): Summary => ({
 })
 
 export const getResultDuration = (result: Result): number => {
-  if ('duration' in result) {
-    return Math.round(result.duration)
+  if (result.result && 'duration' in result.result) {
+    return Math.round(result.result.duration)
   }
-  if ('timings' in result) {
-    return Math.round(result.timings.total)
+
+  if (result.result && 'timings' in result.result) {
+    return Math.round(result.result.timings.total)
   }
 
   return 0
@@ -445,17 +349,17 @@ export const getReporter = (reporters: Reporter[]): MainReporter => ({
       }
     }
   },
-  testEnd: (test, results, baseUrl, locationNames, failOnCriticalErrors, failOnTimeout) => {
+  testEnd: (test, results, baseUrl, locationNames) => {
     for (const reporter of reporters) {
       if (typeof reporter.testEnd === 'function') {
-        reporter.testEnd(test, results, baseUrl, locationNames, failOnCriticalErrors, failOnTimeout)
+        reporter.testEnd(test, results, baseUrl, locationNames)
       }
     }
   },
-  testResult: (response, pollResult) => {
+  testResult: (result) => {
     for (const reporter of reporters) {
       if (typeof reporter.testResult === 'function') {
-        reporter.testResult(response, pollResult)
+        reporter.testResult(result)
       }
     }
   },
@@ -537,7 +441,7 @@ export const getTestsToTrigger = async (api: APIHelper, triggerConfigs: TriggerC
   return {tests: waitedTests, overriddenTestsToTrigger, summary}
 }
 
-export const runTests = async (api: APIHelper, testsToTrigger: TestPayload[]): Promise<Trigger> => {
+export const runTests = async (api: APIHelper, testsToTrigger: TestPayload[]) => {
   const payload: Payload = {tests: testsToTrigger}
   const ciMetadata = getCIMetadata()
 

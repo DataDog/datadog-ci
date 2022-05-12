@@ -2,10 +2,10 @@ import {AxiosError, AxiosResponse, default as axios} from 'axios'
 
 import {ProxyConfiguration} from '../../../helpers/utils'
 
-import {apiConstructor} from '../api'
-import {APIConfiguration, ExecutionRule, PollResult, Result, TestPayload, Trigger} from '../interfaces'
+import {apiConstructor, PollResult} from '../api'
+import {APIConfiguration, ExecutionRule, ServerResult, TestPayload} from '../interfaces'
 
-import {getApiTest, getSyntheticsProxy, mockSearchResponse, mockTestTriggerResponse} from './fixtures'
+import {getApiTest, getSyntheticsProxy, mockSearchResponse} from './fixtures'
 
 describe('dd-api', () => {
   const apiConfiguration: APIConfiguration = {
@@ -27,15 +27,14 @@ describe('dd-api', () => {
     results: [
       {
         check: getApiTest('abc-def-ghi'),
-        dc_id: 0,
-        result: {} as Result,
+        result: {} as ServerResult,
         resultID: RESULT_ID,
         timestamp: 0,
       },
     ],
   }
   const TRIGGERED_TEST_ID = 'fakeId'
-  const TRIGGER_RESULTS: Trigger = {
+  const TRIGGER_RESULTS = {
     locations: [LOCATION],
     results: [
       {
@@ -55,7 +54,7 @@ describe('dd-api', () => {
     jest.spyOn(axios, 'create').mockImplementation((() => () => ({data: POLL_RESULTS})) as any)
     const api = apiConstructor(apiConfiguration)
     const {pollResults} = api
-    const {results} = await pollResults([RESULT_ID])
+    const results = await pollResults([RESULT_ID])
     expect(results[0].resultID).toBe(RESULT_ID)
   })
 
@@ -64,10 +63,10 @@ describe('dd-api', () => {
     const api = apiConstructor(apiConfiguration)
     const {triggerTests} = api
     const tests: TestPayload[] = [{public_id: TRIGGERED_TEST_ID, executionRule: ExecutionRule.BLOCKING}]
-    const {results, triggered_check_ids} = await triggerTests({tests})
-    expect(triggered_check_ids).toEqual([TRIGGERED_TEST_ID])
-    expect(results[0].public_id).toBe(TRIGGERED_TEST_ID)
-    expect(results[0].result_id).toBe(RESULT_ID)
+    const {locations, results} = await triggerTests({tests})
+    expect(results[0].testId).toBe(TRIGGERED_TEST_ID)
+    expect(results[0].id).toBe(RESULT_ID)
+    expect(locations).toStrictEqual([LOCATION])
   })
 
   test('should retry request that failed with code 5xx', async () => {
@@ -139,7 +138,6 @@ describe('dd-api', () => {
         expect(calls.get).toHaveBeenCalled()
 
         const triggerOutput = await api.triggerTests({tests})
-        expect(triggerOutput).toEqual(mockTestTriggerResponse)
         expect(calls.trigger).toHaveBeenCalledWith({tests})
       } finally {
         await proxyClose()
@@ -158,7 +156,6 @@ describe('dd-api', () => {
         expect(calls.search).toHaveBeenCalled()
 
         const triggerOutput = await api.triggerTests({tests})
-        expect(triggerOutput).toEqual(mockTestTriggerResponse)
         expect(calls.trigger).toHaveBeenCalledWith({tests})
       } finally {
         await proxyClose()
@@ -177,7 +174,6 @@ describe('dd-api', () => {
         const api = apiConstructor(proxyApiConfiguration)
 
         const triggerOutput = await api.triggerTests({tests})
-        expect(triggerOutput).toEqual(mockTestTriggerResponse)
         expect(calls.trigger).toHaveBeenCalledWith({tests})
       } finally {
         await proxyClose()

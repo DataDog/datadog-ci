@@ -5,18 +5,19 @@ import WebSocket, {Server as WebSocketServer} from 'ws'
 
 import {ProxyConfiguration} from '../../../helpers/utils'
 
+import {PollResult} from '../api'
 import {
-  ApiTestResult,
-  BrowserTestResult,
+  ApiServerResult,
+  BrowserServerResult,
   CommandConfig,
   MainReporter,
   MultiStep,
-  MultiStepsTestResult,
-  PollResult,
+  MultiStepsServerResult,
+  Result,
+  ServerResult,
   Step,
   Suite,
   Test,
-  TestResult,
   User,
 } from '../interfaces'
 
@@ -128,7 +129,8 @@ export const getMultiStep = (): MultiStep => ({
 export const getTestSuite = (): Suite => ({content: {tests: [{config: {}, id: '123-456-789'}]}, name: 'Suite 1'})
 
 const getPollResult = () => ({
-  dc_id: 1,
+  check: getApiTest('abc-def-ghi'),
+  result: getBaseServerResult(),
   resultID: '123',
   timestamp: 1,
 })
@@ -143,13 +145,13 @@ export const getApiPollResult = (): PollResult => ({
   result: getApiResult(),
 })
 
-const getResult = (): TestResult => ({
+const getBaseServerResult = () => ({
   eventType: 'finished',
   passed: true,
 })
 
-export const getBrowserResult = (opts: any = {}): BrowserTestResult => ({
-  ...getResult(),
+export const getBrowserResult = (opts: any = {}): BrowserServerResult => ({
+  ...getBaseServerResult(),
   device: {
     height: 1,
     id: 'laptop_large',
@@ -162,8 +164,8 @@ export const getBrowserResult = (opts: any = {}): BrowserTestResult => ({
   ...opts,
 })
 
-export const getApiResult = (): ApiTestResult => ({
-  ...getResult(),
+export const getApiResult = (): ApiServerResult => ({
+  ...getBaseServerResult(),
   assertionResults: [
     {
       actual: 'actual',
@@ -175,13 +177,28 @@ export const getApiResult = (): ApiTestResult => ({
   },
 })
 
-export const getMultiStepsResult = (): MultiStepsTestResult => ({
-  ...getResult(),
+// TODO: rename to include server name
+export const getMultiStepsResult = (): MultiStepsServerResult => ({
+  ...getBaseServerResult(),
   duration: 123,
   steps: [],
 })
 
-const mockResult = {
+export const getResult = (): Result & {result: ServerResult} => ({
+  device: 'chrome.laptop_large',
+  id: 'id',
+  isInProgress: false,
+  location: 3,
+  result: {
+    assertionResults: [],
+    eventType: 'finished',
+    passed: true,
+    timings: {total: 0},
+  },
+  testId: 'tid',
+})
+
+const mockPolledResult = {
   location: 1,
   public_id: '123-456-789',
   result: {
@@ -198,13 +215,13 @@ const mockResult = {
 
 export const mockSearchResponse = {tests: [{public_id: '123-456-789'}]}
 
-export const mockTestTriggerResponse = {
+const mockTestTriggerResponse = {
   locations: ['location-1'],
-  results: [mockResult],
+  results: [mockPolledResult],
   triggered_check_ids: ['123-456-789'],
 }
 
-export const mockPollResultResponse = {results: [{dc_id: 1, result: mockResult, resultID: '1'}]}
+export const mockPollResultResponse = {results: [{dc_id: 1, result: mockPolledResult, resultID: '1'}]}
 
 const mockTunnelConnectionFirstMessage = {host: 'host', id: 'tunnel-id'}
 

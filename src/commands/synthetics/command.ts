@@ -6,20 +6,19 @@ import {parseConfigFile, removeUndefinedValues} from '../../helpers/utils'
 import {CiError, CriticalError} from './errors'
 import {
   CommandConfig,
-  ERRORS,
   ExecutionRule,
+  Location,
   LocationsMapping,
   MainReporter,
-  PollResult,
   Reporter,
+  Result,
   Summary,
   Test,
-  Trigger,
 } from './interfaces'
 import {DefaultReporter} from './reporters/default'
 import {JUnitReporter} from './reporters/junit'
 import {executeTests} from './run-test'
-import {getReporter, hasTestSucceeded, isCriticalError, parseVariablesFromCli} from './utils'
+import {getReporter, parseVariablesFromCli} from './utils'
 
 export const DEFAULT_COMMAND_CONFIG: CommandConfig = {
   apiKey: '',
@@ -72,13 +71,13 @@ export class RunTestCommand extends Command {
       )
     }
 
-    let results: {[key: string]: PollResult[]}
+    let locations: Location[]
+    let results: Result[]
     let summary: Summary
     let tests: Test[]
-    let triggers: Trigger
 
     try {
-      ;({results, summary, tests, triggers} = await executeTests(this.reporter, this.config))
+      ;({locations, results, summary, tests} = await executeTests(this.reporter, this.config))
     } catch (error) {
       if (error instanceof CiError) {
         this.reportCiError(error, this.reporter)
@@ -100,39 +99,45 @@ export class RunTestCommand extends Command {
       return 0
     }
 
-    return this.renderResults(results, summary, tests, triggers, startTime)
+    return this.renderResults(results, summary, tests, locations, startTime)
   }
 
   private getAppBaseURL() {
     return `https://${this.config.subdomain}.${this.config.datadogSite}/`
   }
 
-  private renderResults(
-    results: {[key: string]: PollResult[]},
-    summary: Summary,
-    tests: Test[],
-    triggers: Trigger,
-    startTime: number
-  ) {
+  private renderResults(results: Result[], summary: Summary, tests: Test[], locations: Location[], startTime: number) {
+    // Bundle results by test ids.
+    const resultByTestId: {[key: string]: Result[]} = {}
+
+    for (const result of results) {
+      const testId = result.testId
+      if (!resultByTestId[testId]) {
+        resultByTestId[testId] = []
+      }
+
+      resultByTestId[testId].push(result)
+    }
+
     // Sort tests to show success first then non blocking failures and finally blocking failures.
-    tests.sort(this.sortTestsByOutcome(results))
+    tests.sort(this.sortTestsByOutcome(resultByTestId))
 
     // Rendering the results.
     this.reporter?.reportStart({startTime})
-    const locationNames = triggers.locations.reduce((mapping, location) => {
+    const locationNames = locations.reduce<LocationsMapping>((mapping, location) => {
       mapping[location.id] = location.display_name
 
       return mapping
-    }, {} as LocationsMapping)
+    }, {})
     let hasSucceeded = true // Determine if all the tests have succeeded
     for (const test of tests) {
-      const testResults = results[test.public_id]
+      const testResults = resultByTestId[test.public_id]
       if (!this.config.failOnTimeout) {
         if (!summary.timedOut) {
           summary.timedOut = 0
         }
 
-        const hasTimeout = testResults.some((pollResult) => pollResult.result.error === ERRORS.TIMEOUT)
+        const hasTimeout = testResults.some((result) => result.timedOut)
         if (hasTimeout) {
           summary.timedOut++
         }
@@ -142,14 +147,13 @@ export class RunTestCommand extends Command {
         if (!summary.criticalErrors) {
           summary.criticalErrors = 0
         }
-        const hasCriticalErrors = testResults.some((pollResult) => isCriticalError(pollResult.result))
+        const hasCriticalErrors = testResults.some((result) => result.result?.unhealthy)
         if (hasCriticalErrors) {
           summary.criticalErrors++
         }
       }
 
-      const passed = hasTestSucceeded(testResults, this.config.failOnCriticalErrors, this.config.failOnTimeout)
-      if (passed) {
+      if (results.every((r) => r.passed)) {
         summary.passed++
       } else {
         summary.failed++
@@ -158,14 +162,7 @@ export class RunTestCommand extends Command {
         }
       }
 
-      this.reporter?.testEnd(
-        test,
-        testResults,
-        this.getAppBaseURL(),
-        locationNames,
-        this.config.failOnCriticalErrors,
-        this.config.failOnTimeout
-      )
+      this.reporter?.testEnd(test, testResults, this.getAppBaseURL(), locationNames)
     }
 
     this.reporter?.runEnd(summary)
@@ -271,18 +268,10 @@ export class RunTestCommand extends Command {
     }
   }
 
-  private sortTestsByOutcome(results: {[key: string]: PollResult[]}) {
+  private sortTestsByOutcome(results: {[key: string]: Result[]}) {
     return (t1: Test, t2: Test) => {
-      const success1 = hasTestSucceeded(
-        results[t1.public_id],
-        this.config.failOnCriticalErrors,
-        this.config.failOnTimeout
-      )
-      const success2 = hasTestSucceeded(
-        results[t2.public_id],
-        this.config.failOnCriticalErrors,
-        this.config.failOnTimeout
-      )
+      const success1 = results[t1.public_id].every((r) => r.passed)
+      const success2 = results[t2.public_id].every((r) => r.passed)
       const isNonBlockingTest1 = t1.options.ci?.executionRule === ExecutionRule.NON_BLOCKING
       const isNonBlockingTest2 = t2.options.ci?.executionRule === ExecutionRule.NON_BLOCKING
 

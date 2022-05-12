@@ -4,7 +4,7 @@ import {AxiosError, AxiosPromise, AxiosRequestConfig} from 'axios'
 
 import {getRequestBuilder} from '../../helpers/utils'
 
-import {APIConfiguration, APIHelper, Payload, PollResult, Test, TestSearchResult, Trigger} from './interfaces'
+import {APIConfiguration, Location, Payload, Result, ServerResult, Test, TestSearchResult} from './interfaces'
 import {ciTriggerApp, retry} from './utils'
 
 interface BackendError {
@@ -36,7 +36,19 @@ export const formatBackendErrors = (requestError: AxiosError<BackendError>) => {
   return requestError.message
 }
 
-const triggerTests = (request: (args: AxiosRequestConfig) => AxiosPromise<Trigger>) => async (data: Payload) => {
+interface TriggerResponse {
+  locations: Location[]
+  results: {
+    device: string
+    location: number
+    public_id: string
+    result_id: string
+  }[]
+}
+
+const triggerTests = (request: (args: AxiosRequestConfig) => AxiosPromise<TriggerResponse>) => async (
+  data: Payload
+): Promise<{locations: Location[]; results: Result[]}> => {
   const resp = await retryRequest(
     {
       data,
@@ -47,7 +59,15 @@ const triggerTests = (request: (args: AxiosRequestConfig) => AxiosPromise<Trigge
     request
   )
 
-  return resp.data
+  const results: Result[] = resp.data.results.map((result) => ({
+    device: result.device,
+    id: result.result_id,
+    isInProgress: true,
+    location: result.location,
+    testId: result.public_id,
+  }))
+
+  return {locations: resp.data.locations, results}
 }
 
 const getTest = (request: (args: AxiosRequestConfig) => AxiosPromise<Test>) => async (testId: string) => {
@@ -77,6 +97,13 @@ const searchTests = (request: (args: AxiosRequestConfig) => AxiosPromise<TestSea
   return resp.data
 }
 
+export interface PollResult {
+  check: Test
+  result: ServerResult
+  resultID: string
+  timestamp: number
+}
+
 const pollResults = (request: (args: AxiosRequestConfig) => AxiosPromise<{results: PollResult[]}>) => async (
   resultIds: string[]
 ) => {
@@ -90,7 +117,7 @@ const pollResults = (request: (args: AxiosRequestConfig) => AxiosPromise<{result
     request
   )
 
-  return resp.data
+  return resp.data.results
 }
 
 const getPresignedURL = (request: (args: AxiosRequestConfig) => AxiosPromise<{url: string}>) => async (
@@ -132,7 +159,7 @@ export const is5xxError = (error: AxiosError | EndpointError) => {
 const retryRequest = <T>(args: AxiosRequestConfig, request: (args: AxiosRequestConfig) => AxiosPromise<T>) =>
   retry(() => request(args), retryOn5xxErrors)
 
-export const apiConstructor = (configuration: APIConfiguration): APIHelper => {
+export const apiConstructor = (configuration: APIConfiguration) => {
   const {baseUrl, baseIntakeUrl, apiKey, appKey, proxyOpts} = configuration
   const baseOptions = {apiKey, appKey, proxyOpts}
   const request = getRequestBuilder({...baseOptions, baseUrl})
@@ -146,3 +173,5 @@ export const apiConstructor = (configuration: APIConfiguration): APIHelper => {
     triggerTests: triggerTests(requestIntake),
   }
 }
+
+export type APIHelper = ReturnType<typeof apiConstructor>

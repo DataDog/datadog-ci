@@ -8,29 +8,16 @@ export interface MainReporter {
   log(log: string): void
   reportStart(timings: {startTime: number}): void
   runEnd(summary: Summary): void
-  testEnd(
-    test: Test,
-    results: PollResult[],
-    baseUrl: string,
-    locationNames: LocationsMapping,
-    failOnCriticalErrors: boolean,
-    failOnTimeout: boolean
-  ): void
-  testResult(triggerResponse: TriggerResponse, result: PollResult): void
+  testEnd(test: Test, results: Result[], baseUrl: string, locationNames: LocationsMapping): void
+  testResult(result: Result): void
   testsWait(tests: Test[]): void
   testTrigger(test: Test, testId: string, executionRule: ExecutionRule, config: ConfigOverride): void
   testWait(test: Test): void
 }
 
-export enum ERRORS {
-  TIMEOUT = 'Timeout',
-  ENDPOINT = 'Endpoint Failure',
-  TUNNEL = 'Tunnel Failure',
-}
-
 export type Reporter = Partial<MainReporter>
 
-export interface TestResult {
+interface BaseServerResult {
   error?: string
   errorCode?: string
   errorMessage?: string
@@ -40,18 +27,17 @@ export interface TestResult {
     message: string
   }
   passed: boolean
-  tunnel?: boolean
   unhealthy?: boolean
 }
 
-export interface BrowserTestResult extends TestResult {
+export interface BrowserServerResult extends BaseServerResult {
   device: {
     height: number
     id: string
     width: number
   }
   duration: number
-  error?: string | ERRORS
+  error?: string
   startUrl: string
   stepDetails: Step[]
 }
@@ -62,7 +48,7 @@ interface AssertionResult {
   valid: boolean
 }
 
-export interface ApiTestResult extends TestResult {
+export interface ApiServerResult extends BaseServerResult {
   assertionResults: AssertionResult[]
   timings: {
     total: number
@@ -85,21 +71,12 @@ export interface MultiStep {
   }
 }
 
-export interface MultiStepsTestResult extends TestResult {
+export interface MultiStepsServerResult extends BaseServerResult {
   duration: number
   steps: MultiStep[]
 }
 
-export type Result = BrowserTestResult | ApiTestResult | MultiStepsTestResult
-
-export interface PollResult {
-  check?: Test
-  check_id?: string
-  dc_id: number
-  result: Result
-  resultID: string
-  timestamp: number
-}
+export type ServerResult = BrowserServerResult | ApiServerResult | MultiStepsServerResult
 
 export interface Vitals {
   cls?: number
@@ -214,16 +191,22 @@ export interface User {
   name: string
 }
 
-export interface TriggerResponse {
+export interface Result {
   device: string
+  // Top-level error, if any. `serverResult` may contain the failure of the result itself.
+  error?: string
+  hasTunnel?: boolean
+  id: string
+  isInProgress: boolean
   location: number
-  public_id: string
-  result_id: string
-}
-
-export interface TriggerResult extends TriggerResponse {
-  pollingTimeout: number
-  result?: PollResult
+  // `.passed` takes into account `failOnCriticalErrors` and `failOnTimeout`
+  passed?: boolean
+  // Skipped results won't have a server result and corresponding data.
+  result?: ServerResult
+  test?: Test
+  testId: string
+  timedOut?: boolean
+  timestamp?: number
 }
 
 export interface Location {
@@ -235,13 +218,7 @@ export interface Location {
 }
 
 export interface LocationsMapping {
-  [key: number]: string
-}
-
-export interface Trigger {
-  locations: Location[]
-  results: TriggerResponse[]
-  triggered_check_ids: string[]
+  [key: string]: string
 }
 
 export interface RetryConfig {
@@ -332,14 +309,6 @@ export interface TestSearchResult {
   tests: {
     public_id: string
   }[]
-}
-
-export interface APIHelper {
-  getPresignedURL(testIds: string[]): Promise<{url: string}>
-  getTest(testId: string): Promise<Test>
-  pollResults(resultIds: string[]): Promise<{results: PollResult[]}>
-  searchTests(query: string): Promise<TestSearchResult>
-  triggerTests(payload: Payload): Promise<Trigger>
 }
 
 export interface APIConfiguration {

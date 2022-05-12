@@ -1,21 +1,19 @@
-import {apiConstructor, isForbiddenError} from './api'
+import {apiConstructor, APIHelper, isForbiddenError} from './api'
 import {CiError, CriticalError} from './errors'
 import {
-  APIHelper,
+  CommandConfig,
   MainReporter,
-  PollResult,
   Suite,
   Summary,
   SyntheticsCIConfig,
   Test,
   TestPayload,
-  Trigger,
   TriggerConfig,
 } from './interfaces'
 import {Tunnel} from './tunnel'
 import {getSuites, getTestsToTrigger, runTests, waitForResults} from './utils'
 
-export const executeTests = async (reporter: MainReporter, config: SyntheticsCIConfig, suites?: Suite[]) => {
+export const executeTests = async (reporter: MainReporter, config: CommandConfig, suites?: Suite[]) => {
   const api = getApiHelper(config)
 
   const publicIdsFromCli = config.publicIds.map((id) => ({config: config.global, id}))
@@ -88,38 +86,32 @@ export const executeTests = async (reporter: MainReporter, config: SyntheticsCIC
     }
   }
 
-  let triggers: Trigger
+  let locations
+  let results
   try {
-    triggers = await runTests(api, overriddenTestsToTrigger)
+    ;({locations, results} = await runTests(api, overriddenTestsToTrigger))
   } catch (error) {
     await stopTunnel()
     throw new CriticalError('TRIGGER_TESTS_FAILED')
   }
 
-  if (!triggers.results) {
-    await stopTunnel()
-    throw new CiError('NO_RESULTS_TO_POLL')
+  for (const result of results) {
+    result.hasTunnel = !!tunnel
   }
 
-  const results: {[key: string]: PollResult[]} = {}
   try {
-    // Poll the results.
-    const resultPolled = await waitForResults(
-      api,
-      triggers.results,
-      testsToTrigger,
-      {defaultTimeout: config.pollingTimeout, failOnCriticalErrors: config.failOnCriticalErrors},
-      reporter,
-      tunnel
-    )
-    Object.assign(results, resultPolled)
+    const timeoutByPublicId: {[key: string]: number} = {}
+    for (const trigger of overriddenTestsToTrigger) {
+      timeoutByPublicId[trigger.public_id] = trigger.pollingTimeout ?? config.pollingTimeout
+    }
+    await waitForResults(api, results, timeoutByPublicId, config, reporter, tunnel)
   } catch (error) {
     throw new CriticalError('POLL_RESULTS_FAILED')
   } finally {
     await stopTunnel()
   }
 
-  return {results, summary, tests, triggers}
+  return {locations, results, summary, tests}
 }
 
 export const getTestsList = async (
