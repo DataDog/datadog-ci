@@ -1,6 +1,6 @@
 import {URL} from 'url'
 
-import {Metadata, SpanTags} from './interfaces'
+import {Metadata, SpanTag, SpanTags} from './interfaces'
 import {
   CI_JOB_NAME,
   CI_JOB_URL,
@@ -483,7 +483,7 @@ export const getCISpanTags = (): SpanTags | undefined => {
   return removeEmptyValues(tags)
 }
 
-export const getCIMetadata = (): Metadata | undefined => {
+export const getCIMetadata = (tagSizeLimits?: {[key in keyof SpanTags]?: number}): Metadata | undefined => {
   const tags = {
     ...getCISpanTags(),
     ...getUserCISpanTags(),
@@ -492,6 +492,16 @@ export const getCIMetadata = (): Metadata | undefined => {
 
   if (!tags || !Object.keys(tags).length) {
     return
+  }
+
+  if (tagSizeLimits) {
+    for (const key of Object.keys(tagSizeLimits)) {
+      const tagToLimit = key as SpanTag
+      const originalTag = tags[tagToLimit]
+      if (!!originalTag) {
+        tags[tagToLimit] = originalTag.substring(0, tagSizeLimits[tagToLimit])
+      }
+    }
   }
 
   const metadata: Metadata = {
