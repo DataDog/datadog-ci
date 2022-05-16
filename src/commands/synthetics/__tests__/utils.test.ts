@@ -473,7 +473,7 @@ describe('utils', () => {
     expect(utils.hasResultPassed(result, true, true)).toBeFalsy()
   })
 
-  describe('getResultExecutionRule', () => {
+  describe('getExecutionRule', () => {
     const cases: [ExecutionRule | undefined, ExecutionRule | undefined, ExecutionRule][] = [
       [undefined, undefined, ExecutionRule.BLOCKING],
       [undefined, ExecutionRule.BLOCKING, ExecutionRule.BLOCKING],
@@ -490,12 +490,11 @@ describe('utils', () => {
       'Test execution rule: %s, result execution rule: %s. Expected rule: %s',
       (testRule, resultRule, expectedRule) => {
         const test = getApiTest('abc-def-ghi')
-        const pollResult = getApiPollResult('1')
 
         expect(
-          utils.getResultExecutionRule(
+          utils.getExecutionRule(
             testRule ? {...test, options: {...test.options, ci: {executionRule: testRule}}} : test,
-            resultRule ? {...pollResult, enrichment: {config_override: {executionRule: resultRule}}} : pollResult
+            resultRule ? {executionRule: resultRule} : {}
           )
         ).toEqual(expectedRule)
       }
@@ -512,7 +511,7 @@ describe('utils', () => {
     test.each(cases)(
       'Result passed: %s, execution rule: %s. Expected outcome: %s',
       (resultPassed, resultRule, expectedOutcome) => {
-        jest.spyOn(utils, 'getResultExecutionRule').mockReturnValue(resultRule)
+        jest.spyOn(utils, 'getExecutionRule').mockReturnValue(resultRule)
         jest.spyOn(utils, 'hasResultPassed').mockReturnValue(resultPassed)
         const test = getApiTest('abc-def-ghi')
         const pollResult = getApiPollResult('1')

@@ -323,7 +323,7 @@ describe('Default reporter', () => {
     const cases: {description: string; expectedOutput: string; summary: Summary}[] = [
       {
         description: 'Simple case with 1 test with 1 result (passed)',
-        expectedOutput: `${resultsLabel} ${passed(1)}, ${failed(0)}, ${failedNonBlocking(0)}\n\n`,
+        expectedOutput: `${resultsLabel} ${passed(1)}, ${failed(0)}\n\n`,
         summary: {...baseSummary, passed: 1},
       },
       {
