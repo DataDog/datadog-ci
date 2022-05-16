@@ -116,9 +116,9 @@ export class RunTestCommand extends Command {
     const getTest = (publicId: string) => tests.find((t) => t.public_id === publicId) as Test
 
     const sortedPollResults = Object.entries(results)
-      .reduce(
+      .reduce<[Test, PollResult][]>(
         (accResults, [publicId, pollResults]) => accResults.concat(pollResults.map((r) => [getTest(publicId), r])),
-        [] as [Test, PollResult][]
+        []
       )
       .sort(this.sortResultsByOutcome())
 

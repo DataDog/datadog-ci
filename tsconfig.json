@@ -1,9 +1,10 @@
 {
   "compilerOptions": {
     "target": "es6",
+    "typeRoots": ["./node_modules/@types/", "./src/types"],
     "module": "commonjs",
     "declaration" : true,
-    "sourceMap": false,
+    "sourceMap": true,
     "outDir": "dist",
     "rootDir": "src",
     "strict": true,

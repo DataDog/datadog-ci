@@ -427,5 +427,44 @@ describe('run-test', () => {
       expect(getSuitesMock).toHaveBeenCalledWith('new glob', mockReporter)
       expect(getSuitesMock).toHaveBeenCalledWith('another one', mockReporter)
     })
+
+    test('should return tests from provided suites with overrides', async () => {
+      const getSuitesMock = jest.spyOn(utils, 'getSuites').mockImplementation((() => fakeSuites) as any)
+      const configOverride = {startUrl}
+      const files: string[] = []
+
+      const tests = await runTests.getTestsList(
+        fakeApi,
+        {...ciConfig, global: configOverride, files},
+        mockReporter,
+        fakeSuites
+      )
+      expect(tests).toEqual([
+        {config: {startUrl}, id: conf1.tests[0].id, suite: fakeSuites[0].name},
+        {config: {startUrl}, id: conf2.tests[0].id, suite: fakeSuites[1].name},
+      ])
+      expect(getSuitesMock).not.toHaveBeenCalled()
+    })
+
+    test('should merge getSuites and user provided suites', async () => {
+      const userSuites = [fakeSuites[0]]
+      const globSuites = [fakeSuites[1]]
+
+      const getSuitesMock = jest.spyOn(utils, 'getSuites').mockImplementation((() => globSuites) as any)
+      const configOverride = {startUrl}
+      const files = ['glob']
+
+      const tests = await runTests.getTestsList(
+        fakeApi,
+        {...ciConfig, global: configOverride, files},
+        mockReporter,
+        userSuites
+      )
+      expect(tests).toEqual([
+        {config: {startUrl}, id: conf1.tests[0].id, suite: fakeSuites[0].name},
+        {config: {startUrl}, id: conf2.tests[0].id, suite: fakeSuites[1].name},
+      ])
+      expect(getSuitesMock).toHaveBeenCalled()
+    })
   })
 })

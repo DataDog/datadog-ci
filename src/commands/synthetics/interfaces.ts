@@ -17,6 +17,7 @@ export interface MainReporter {
     failOnCriticalErrors: boolean,
     failOnTimeout: boolean
   ): void
+  testResult(triggerResponse: TriggerResponse, result: PollResult): void
   testsWait(tests: Test[]): void
   testTrigger(test: Test, testId: string, executionRule: ExecutionRule, config: ConfigOverride): void
   testWait(test: Test): void

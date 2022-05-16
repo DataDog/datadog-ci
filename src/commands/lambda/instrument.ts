@@ -4,7 +4,13 @@ import {Cli, Command} from 'clipanion'
 import {parseConfigFile} from '../../helpers/utils'
 import {getCommitInfo, newSimpleGit} from '../git-metadata/git'
 import {UploadCommand} from '../git-metadata/upload'
-import {AWS_DEFAULT_REGION_ENV_VAR, EXTRA_TAGS_REG_EXP} from './constants'
+import {
+  AWS_DEFAULT_REGION_ENV_VAR,
+  ENVIRONMENT_ENV_VAR,
+  EXTRA_TAGS_REG_EXP,
+  SERVICE_ENV_VAR,
+  VERSION_ENV_VAR,
+} from './constants'
 import {
   checkRuntimeTypesAreUniform,
   coerceBoolean,
@@ -23,6 +29,7 @@ import {
   requestAWSRegion,
   requestChangesConfirmation,
   requestDatadogEnvVars,
+  requestEnvServiceVersion,
   requestFunctionSelection,
 } from './prompt'
 
@@ -108,7 +115,18 @@ export class InstrumentCommand extends Command {
           return 1
         }
       }
+
+      try {
+        await requestEnvServiceVersion()
+      } catch (err) {
+        this.context.stdout.write(`${red('[Error]')} Grabbing env, service, and version values from user. ${err}\n`)
+
+        return 1
+      }
+
+      this.setEnvServiceVersion()
     }
+
     const settings = this.getSettings()
     if (settings === undefined) {
       return 1
@@ -481,6 +499,12 @@ export class InstrumentCommand extends Command {
         )
       }
     }
+  }
+
+  private setEnvServiceVersion() {
+    this.environment = process.env[ENVIRONMENT_ENV_VAR] || undefined
+    this.service = process.env[SERVICE_ENV_VAR] || undefined
+    this.version = process.env[VERSION_ENV_VAR] || undefined
   }
 
   private async uploadGitData() {
