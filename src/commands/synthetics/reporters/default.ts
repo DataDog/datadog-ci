@@ -17,7 +17,7 @@ import {
   Test,
   TriggerResponse,
 } from '../interfaces'
-import {getResultDuration, getResultExecutionRule, getResultOutcome, hasResultPassed, ResultOutcome} from '../utils'
+import {getExecutionRule, getResultDuration, getResultOutcome, hasResultPassed, ResultOutcome} from '../utils'
 
 // Step rendering
 
@@ -212,7 +212,7 @@ const renderExecutionResult = (
   const resultOutcome = getResultOutcome(overriddenTest ?? test, execution, failOnCriticalErrors, failOnTimeout)
   const [icon, setColor] = getResultIconAndColor(resultOutcome)
 
-  const executionRule = getResultExecutionRule(test, execution)
+  const executionRule = getExecutionRule(test, execution.enrichment?.config_override)
   const executionRuleText = [ResultOutcome.Passed, ResultOutcome.PassedNonBlocking].includes(resultOutcome)
     ? ''
     : `[${setColor(executionRule === ExecutionRule.BLOCKING ? 'blocking' : 'non-blocking')}] `
@@ -296,11 +296,11 @@ export class DefaultReporter implements MainReporter {
 
     const lines: string[] = []
 
-    const runSummary = [
-      green(`${b(summary.passed)} passed`),
-      red(`${b(summary.failed)} failed`),
-      yellow(`${b(summary.failedNonBlocking)} failed (non-blocking)`),
-    ]
+    const runSummary = [green(`${b(summary.passed)} passed`), red(`${b(summary.failed)} failed`)]
+
+    if (summary.failedNonBlocking) {
+      runSummary.push(yellow(`${b(summary.failedNonBlocking)} failed (non-blocking)`))
+    }
 
     if (summary.skipped) {
       runSummary.push(`${b(summary.skipped)} skipped`)
