@@ -7,6 +7,7 @@ import chalk from 'chalk'
 import glob from 'glob'
 
 import {getCIMetadata} from '../../helpers/ci'
+import {GIT_COMMIT_MESSAGE} from '../../helpers/tags'
 import {pick} from '../../helpers/utils'
 
 import {EndpointError, formatBackendErrors, is5xxError, isNotFoundError} from './api'
@@ -539,7 +540,10 @@ export const getTestsToTrigger = async (api: APIHelper, triggerConfigs: TriggerC
 
 export const runTests = async (api: APIHelper, testsToTrigger: TestPayload[]): Promise<Trigger> => {
   const payload: Payload = {tests: testsToTrigger}
-  const ciMetadata = getCIMetadata()
+  const tagsToLimit = {
+    [GIT_COMMIT_MESSAGE]: 500,
+  }
+  const ciMetadata = getCIMetadata(tagsToLimit)
 
   if (ciMetadata) {
     payload.metadata = ciMetadata

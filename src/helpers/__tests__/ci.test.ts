@@ -79,6 +79,22 @@ describe('getCIMetadata', () => {
     expect(getCIMetadata()?.ci.pipeline.number).toBeUndefined()
   })
 
+  test('tags are properly truncated when required', () => {
+    const bigString = ''.padEnd(1600, 'a')
+    process.env = {GITLAB_CI: 'gitlab'}
+
+    process.env.CI_COMMIT_MESSAGE = bigString
+    process.env.CI_COMMIT_TAG = bigString
+    expect(getCIMetadata()?.git.commit.message).toBe(bigString)
+    expect(getCIMetadata()?.git.tag).toBe(bigString)
+
+    const tagSizeLimits = {
+      'git.commit.message': 500,
+    }
+    expect(getCIMetadata(tagSizeLimits)?.git.commit.message).toBe(bigString.substring(0, 500))
+    expect(getCIMetadata(tagSizeLimits)?.git.tag).toBe(bigString)
+  })
+
   describe.each(CI_PROVIDERS)('%s', (ciProvider) => {
     const assertions = require(path.join(__dirname, 'ci-env', ciProvider))
 
