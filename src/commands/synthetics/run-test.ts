@@ -34,7 +34,10 @@ export const executeTests = async (reporter: MainReporter, config: SyntheticsCIC
     try {
       testsToTrigger = await getTestsList(api, config, reporter, suites)
     } catch (error) {
-      throw new CriticalError(isForbiddenError(error) ? 'AUTHORIZATION_ERROR' : 'UNAVAILABLE_TEST_CONFIG')
+      throw new CriticalError(
+        isForbiddenError(error) ? 'AUTHORIZATION_ERROR' : 'UNAVAILABLE_TEST_CONFIG',
+        error.message
+      )
     }
   }
 
@@ -55,7 +58,7 @@ export const executeTests = async (reporter: MainReporter, config: SyntheticsCIC
       throw error
     }
 
-    throw new CriticalError(isForbiddenError(error) ? 'AUTHORIZATION_ERROR' : 'UNAVAILABLE_TEST_CONFIG')
+    throw new CriticalError(isForbiddenError(error) ? 'AUTHORIZATION_ERROR' : 'UNAVAILABLE_TEST_CONFIG', error.message)
   }
 
   const {tests, overriddenTestsToTrigger, summary} = testsToTriggerResult
@@ -73,7 +76,7 @@ export const executeTests = async (reporter: MainReporter, config: SyntheticsCIC
       // Get the pre-signed URL to connect to the tunnel service
       presignedURL = (await api.getPresignedURL(publicIdsToTrigger)).url
     } catch (error) {
-      throw new CriticalError('UNAVAILABLE_TUNNEL_CONFIG')
+      throw new CriticalError('UNAVAILABLE_TUNNEL_CONFIG', error.message)
     }
     // Open a tunnel to Datadog
     try {
@@ -84,7 +87,7 @@ export const executeTests = async (reporter: MainReporter, config: SyntheticsCIC
       })
     } catch (error) {
       await stopTunnel()
-      throw new CriticalError('TUNNEL_START_FAILED')
+      throw new CriticalError('TUNNEL_START_FAILED', error.message)
     }
   }
 
@@ -93,7 +96,7 @@ export const executeTests = async (reporter: MainReporter, config: SyntheticsCIC
     triggers = await runTests(api, overriddenTestsToTrigger)
   } catch (error) {
     await stopTunnel()
-    throw new CriticalError('TRIGGER_TESTS_FAILED')
+    throw new CriticalError('TRIGGER_TESTS_FAILED', error.message)
   }
 
   if (!triggers.results) {
@@ -114,7 +117,7 @@ export const executeTests = async (reporter: MainReporter, config: SyntheticsCIC
     )
     Object.assign(results, resultPolled)
   } catch (error) {
-    throw new CriticalError('POLL_RESULTS_FAILED')
+    throw new CriticalError('POLL_RESULTS_FAILED', error.message)
   } finally {
     await stopTunnel()
   }

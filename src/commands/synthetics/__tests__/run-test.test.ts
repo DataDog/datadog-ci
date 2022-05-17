@@ -184,7 +184,7 @@ describe('run-test', () => {
         jest.spyOn(runTests, 'getApiHelper').mockImplementation(() => apiHelper as any)
         await expect(
           runTests.executeTests(mockReporter, {...ciConfig, testSearchQuery: 'a-search-query', tunnel: true})
-        ).rejects.toMatchError(new CriticalError(error))
+        ).rejects.toMatchError(new CriticalError(error, 'Server Error'))
       })
 
       test(`getTestsToTrigger throws - ${status}`, async () => {
@@ -199,7 +199,7 @@ describe('run-test', () => {
         jest.spyOn(runTests, 'getApiHelper').mockImplementation(() => apiHelper as any)
         await expect(
           runTests.executeTests(mockReporter, {...ciConfig, publicIds: ['public-id-1'], tunnel: true})
-        ).rejects.toMatchError(new CriticalError(error))
+        ).rejects.toMatchError(new CriticalError(error, 'Server Error'))
       })
     })
 
@@ -224,7 +224,7 @@ describe('run-test', () => {
       jest.spyOn(runTests, 'getApiHelper').mockImplementation(() => apiHelper as any)
       await expect(
         runTests.executeTests(mockReporter, {...ciConfig, publicIds: ['public-id-1', 'public-id-2'], tunnel: true})
-      ).rejects.toMatchError(new CriticalError('UNAVAILABLE_TUNNEL_CONFIG'))
+      ).rejects.toMatchError(new CriticalError('UNAVAILABLE_TUNNEL_CONFIG', 'Server Error'))
     })
 
     test('runTests throws', async () => {
@@ -254,7 +254,12 @@ describe('run-test', () => {
       jest.spyOn(runTests, 'getApiHelper').mockImplementation(() => apiHelper as any)
       await expect(
         runTests.executeTests(mockReporter, {...ciConfig, publicIds: ['public-id-1', 'public-id-2'], tunnel: true})
-      ).rejects.toMatchError(new CriticalError('TRIGGER_TESTS_FAILED'))
+      ).rejects.toMatchError(
+        new CriticalError(
+          'TRIGGER_TESTS_FAILED',
+          '[] Failed to trigger tests: query on baseURLurl returned: "Bad Gateway"\n'
+        )
+      )
       expect(stopTunnelSpy).toHaveBeenCalledTimes(1)
     })
 
@@ -305,7 +310,7 @@ describe('run-test', () => {
           publicIds: ['public-id-1', 'public-id-2'],
           tunnel: true,
         })
-      ).rejects.toMatchError(new CriticalError('POLL_RESULTS_FAILED'))
+      ).rejects.toMatchError(new CriticalError('POLL_RESULTS_FAILED', 'Server Error'))
       expect(stopTunnelSpy).toHaveBeenCalledTimes(1)
     })
   })
