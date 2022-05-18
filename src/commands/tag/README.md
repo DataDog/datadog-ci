@@ -1,6 +1,6 @@
 # tag command
 
-:warning: This command is in alpha stage.
+:warning: This command is in beta stage.
 
 Tag CI Visibility pipeline and job spans.
 
