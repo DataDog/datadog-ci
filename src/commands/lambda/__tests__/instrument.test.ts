@@ -900,6 +900,7 @@ TagResource -> arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world
 
       test('instrument multiple functions interactively', async () => {
         const node14LibraryLayer = `arn:aws:lambda:sa-east-1:${DEFAULT_LAYER_AWS_ACCOUNT}:layer:Datadog-Node14-x`
+        const node16LibraryLayer = `arn:aws:lambda:sa-east-1:${DEFAULT_LAYER_AWS_ACCOUNT}:layer:Datadog-Node16-x`
         const node12LibraryLayer = `arn:aws:lambda:sa-east-1:${DEFAULT_LAYER_AWS_ACCOUNT}:layer:Datadog-Node12-x`
         const extensionLayer = `arn:aws:lambda:sa-east-1:${DEFAULT_LAYER_AWS_ACCOUNT}:layer:Datadog-Extension`
         ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({code: 'ENOENT'}))
@@ -918,6 +919,12 @@ TagResource -> arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world
                 Handler: 'index.handler',
                 Runtime: 'nodejs14.x',
               },
+              'arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world-3': {
+                FunctionArn: 'arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world-3',
+                FunctionName: 'lambda-hello-world-3',
+                Handler: 'index.handler',
+                Runtime: 'nodejs16.x',
+              },
             },
             {
               [`${node14LibraryLayer}:1`]: {
@@ -926,6 +933,10 @@ TagResource -> arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world
               },
               [`${node12LibraryLayer}:1`]: {
                 LayerVersionArn: `${node12LibraryLayer}:1`,
+                Version: 1,
+              },
+              [`${node16LibraryLayer}:1`]: {
+                LayerVersionArn: `${node16LibraryLayer}:1`,
                 Version: 1,
               },
               [`${extensionLayer}:1`]: {
@@ -1040,6 +1051,7 @@ ${yellow('[!]')} Instrumenting functions.
 
       test('instrument multiple specified functions interactively', async () => {
         const node14LibraryLayer = `arn:aws:lambda:sa-east-1:${DEFAULT_LAYER_AWS_ACCOUNT}:layer:Datadog-Node14-x`
+        const node16LibraryLayer = `arn:aws:lambda:sa-east-1:${DEFAULT_LAYER_AWS_ACCOUNT}:layer:Datadog-Node16-x`
         const node12LibraryLayer = `arn:aws:lambda:sa-east-1:${DEFAULT_LAYER_AWS_ACCOUNT}:layer:Datadog-Node12-x`
         const extensionLayer = `arn:aws:lambda:sa-east-1:${DEFAULT_LAYER_AWS_ACCOUNT}:layer:Datadog-Extension`
         ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({code: 'ENOENT'}))
@@ -1058,6 +1070,12 @@ ${yellow('[!]')} Instrumenting functions.
                 Handler: 'index.handler',
                 Runtime: 'nodejs14.x',
               },
+              'arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world-3': {
+                FunctionArn: 'arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world-3',
+                FunctionName: 'lambda-hello-world-3',
+                Handler: 'index.handler',
+                Runtime: 'nodejs16.x',
+              },
             },
             {
               [`${node14LibraryLayer}:1`]: {
@@ -1066,6 +1084,10 @@ ${yellow('[!]')} Instrumenting functions.
               },
               [`${node12LibraryLayer}:1`]: {
                 LayerVersionArn: `${node12LibraryLayer}:1`,
+                Version: 1,
+              },
+              [`${node16LibraryLayer}:1`]: {
+                LayerVersionArn: `${node16LibraryLayer}:1`,
                 Version: 1,
               },
               [`${extensionLayer}:1`]: {

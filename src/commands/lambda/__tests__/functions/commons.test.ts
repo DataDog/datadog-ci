@@ -689,6 +689,14 @@ describe('commons', () => {
             Runtime: 'nodejs12.x',
           },
         },
+        {
+          functionARN: 'arn:aws:lambda:us-east-1:000000000000:function:func3',
+          lambdaConfig: {
+            FunctionArn: 'arn:aws:lambda:us-east-1:000000000000:function:func3',
+            Handler: 'index.handler',
+            Runtime: 'nodejs16.x',
+          },
+        },
       ]
       expect(checkRuntimeTypesAreUniform(configs)).toBe(true)
     })
