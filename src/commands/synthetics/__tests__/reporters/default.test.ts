@@ -6,6 +6,14 @@ import {DefaultReporter} from '../../reporters/default'
 import {createSummary} from '../../utils'
 import {getApiPollResult, getApiTest, mockLocation} from '../fixtures'
 
+/**
+ * A good amount of these tests rely on Jest snapshot assertions.
+ * If you make some changes in the output of the default repoter, chances are you
+ * will also have to update the snapshots from `./__snapshots__/default.test.ts.snap`.
+ * To do that, you can run the following command: `yarn test --updateSnapshot reporters/default.test.ts`.
+ * More information on https://jestjs.io/docs/snapshot-testing.
+ */
+
 describe('Default reporter', () => {
   const writeMock = jest.fn()
   const mockContext: unknown = {
