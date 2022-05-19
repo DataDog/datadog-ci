@@ -44,7 +44,7 @@
     "lint": "(yarn tslint && yarn prettier --check) || (echo \"\nYou can fix this by running ==> yarn format <==\n\" && false)",
     "prepack": "yarn build && node ./bin/make-it-executable.js",
     "prettier": "prettier \"src/**/*.{ts,js,json,yml}\" --ignore-path .gitignore",
-    "test": "jest",
+    "test": "jest --colors",
     "test:debug": "node --inspect-brk `which jest` --runInBand",
     "tslint": "tslint -p tsconfig.json -c tslint.json",
     "typecheck": "bash bin/typecheck.sh",

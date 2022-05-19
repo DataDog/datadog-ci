@@ -209,12 +209,36 @@ export const hasResultPassed = (result: Result, failOnCriticalErrors: boolean, f
   return true
 }
 
-export const hasTestSucceeded = (
-  results: PollResult[],
+export const enum ResultOutcome {
+  Passed = 'passed',
+  PassedNonBlocking = 'passed-non-blocking', // Mainly used for sorting tests when rendering results
+  Failed = 'failed',
+  FailedNonBlocking = 'failed-non-blocking',
+}
+
+export const getResultOutcome = (
+  test: Test,
+  pollResult: PollResult,
   failOnCriticalErrors: boolean,
   failOnTimeout: boolean
-): boolean =>
-  results.every((pollResult: PollResult) => hasResultPassed(pollResult.result, failOnCriticalErrors, failOnTimeout))
+): ResultOutcome => {
+  const executionRule = getExecutionRule(test, pollResult.enrichment?.config_override)
+  const passed = hasResultPassed(pollResult.result, failOnCriticalErrors, failOnTimeout)
+
+  if (passed) {
+    if (executionRule === ExecutionRule.NON_BLOCKING) {
+      return ResultOutcome.PassedNonBlocking
+    }
+
+    return ResultOutcome.Passed
+  }
+
+  if (executionRule === ExecutionRule.NON_BLOCKING) {
+    return ResultOutcome.FailedNonBlocking
+  }
+
+  return ResultOutcome.Failed
+}
 
 export const getSuites = async (GLOB: string, reporter: MainReporter): Promise<Suite[]> => {
   reporter.log(`Finding files in ${path.join(process.cwd(), GLOB)}\n`)
@@ -393,6 +417,7 @@ const createFailingResult = (
 export const createSummary = (): Summary => ({
   criticalErrors: 0,
   failed: 0,
+  failedNonBlocking: 0,
   passed: 0,
   skipped: 0,
   testsNotFound: new Set(),

@@ -6,7 +6,7 @@ import {ExecutionRule} from '../interfaces'
 import * as runTests from '../run-test'
 import {Tunnel} from '../tunnel'
 import * as utils from '../utils'
-import {ciConfig, mockPollResultResponse, mockReporter, mockTestTriggerResponse} from './fixtures'
+import {ciConfig, getApiPollResult, mockReporter, mockTestTriggerResponse} from './fixtures'
 
 describe('run-test', () => {
   beforeEach(() => {
@@ -119,14 +119,6 @@ describe('run-test', () => {
     })
 
     test('open and close tunnel for successful runs', async () => {
-      const location = {
-        display_name: 'us1',
-        id: 1,
-        is_active: true,
-        name: 'us1',
-        region: 'us1',
-      }
-
       jest.spyOn(utils, 'wait').mockImplementation(() => new Promise((res) => setTimeout(res, 10)))
       const startTunnelSpy = jest
         .spyOn(Tunnel.prototype, 'start')
@@ -141,17 +133,11 @@ describe('run-test', () => {
         })
       )
 
-      jest.spyOn(utils, 'runTests').mockReturnValue(
-        Promise.resolve({
-          locations: [location],
-          results: [{device: 'chrome_laptop.large', location: 1, public_id: '123-456-789', result_id: '1'}],
-          triggered_check_ids: [],
-        })
-      )
+      jest.spyOn(utils, 'runTests').mockResolvedValue({...mockTestTriggerResponse, triggered_check_ids: []})
 
       const apiHelper = {
         getPresignedURL: () => ({url: 'url'}),
-        pollResults: () => mockPollResultResponse,
+        pollResults: () => ({results: [getApiPollResult('1')]}),
         triggerTests: () => mockTestTriggerResponse,
       }
 

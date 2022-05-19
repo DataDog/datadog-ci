@@ -16,7 +16,7 @@ import {
   Step,
   Vitals,
 } from '../interfaces'
-import {getResultDuration, hasTestSucceeded} from '../utils'
+import {getResultDuration, getResultOutcome, ResultOutcome} from '../utils'
 
 interface Stats {
   allowfailures: number
@@ -348,7 +348,8 @@ export class JUnitReporter implements Reporter {
     failOnTimeout: boolean
   ): XMLTestCase {
     const timeout = result.result.error === ERRORS.TIMEOUT
-    const passed = hasTestSucceeded([result], failOnCriticalErrors, failOnTimeout)
+    const resultOutcome = getResultOutcome(test, result, failOnCriticalErrors, failOnTimeout)
+    const passed = [ResultOutcome.Passed, ResultOutcome.PassedNonBlocking].includes(resultOutcome)
 
     return {
       $: {

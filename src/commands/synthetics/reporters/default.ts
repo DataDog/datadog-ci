@@ -17,7 +17,7 @@ import {
   Test,
   TriggerResponse,
 } from '../interfaces'
-import {getResultDuration, hasResultPassed, hasTestSucceeded} from '../utils'
+import {getExecutionRule, getResultDuration, getResultOutcome, hasResultPassed, ResultOutcome} from '../utils'
 
 // Step rendering
 
@@ -39,6 +39,7 @@ const renderStepDuration = (duration: number) => {
 
 const ICONS = {
   FAILED: chalk.bold.red('✖'),
+  FAILED_NON_BLOCKING: chalk.bold.yellow('✖'),
   SKIPPED: chalk.bold.yellow('⇢'),
   SUCCESS: chalk.bold.green('✓'),
 }
@@ -58,8 +59,8 @@ const renderStep = (step: Step) => {
   const duration = renderStepDuration(step.duration)
   const icon = renderStepIcon(step)
 
-  const value = step.value ? `\n      ${chalk.dim(step.value)}` : ''
-  const error = step.error ? `\n      ${chalk.red.dim(step.error)}` : ''
+  const value = step.value ? `\n    ${chalk.dim(step.value)}` : ''
+  const error = step.error ? `\n    ${chalk.red.dim(step.error)}` : ''
 
   return `    ${icon} | ${duration} - ${step.description}${value}${error}`
 }
@@ -85,7 +86,7 @@ const renderApiError = (errorCode: string, errorMessage: string, color: chalk.Ch
   if (errorCode === 'INCORRECT_ASSERTION') {
     try {
       const assertionsErrors: Assertion[] = JSON.parse(errorMessage)
-      const output = [' - Assertion(s) failed:']
+      const output = ['  - Assertion(s) failed:']
       output.push(
         ...assertionsErrors.map((error) => {
           const expected = chalk.underline(`${error.target}`)
@@ -95,13 +96,13 @@ const renderApiError = (errorCode: string, errorMessage: string, color: chalk.Ch
         })
       )
 
-      return color(output.join('\n      '))
+      return color(output.join('\n    '))
     } catch (e) {
       // JSON parsing failed, do nothing to return the raw error
     }
   }
 
-  return chalk.red(`      [${chalk.bold(errorCode)}] - ${chalk.dim(errorMessage)}`)
+  return chalk.red(`    [${chalk.bold(errorCode)}] - ${chalk.dim(errorMessage)}`)
 }
 
 // Test execution rendering
@@ -112,10 +113,10 @@ const renderResultOutcome = (
   color: chalk.Chalk,
   failOnCriticalErrors: boolean,
   failOnTimeout: boolean
-) => {
+): string | undefined => {
   // Only display critical errors if failure is not filled.
   if (result.error && !(result.failure || result.errorMessage)) {
-    return `    ${chalk.bold(`${ICONS.FAILED} | ${result.error}`)}`
+    return `  ${chalk.bold(`${ICONS.FAILED} | ${result.error}`)}`
   }
 
   if (result.unhealthy) {
@@ -123,8 +124,8 @@ const renderResultOutcome = (
     const errorName = errorMessage && errorMessage !== 'Unknown error' ? errorMessage : 'General Error'
 
     return [
-      `    ${chalk.yellow(` ${ICONS.SKIPPED} | ${errorName}`)}`,
-      `    ${chalk.yellow('We had an error during the execution of this test. The result will be ignored')}`,
+      `  ${chalk.yellow(`${ICONS.SKIPPED} | ${errorName}`)}`,
+      `  ${chalk.yellow('We had an error during the execution of this test. The result will be ignored')}`,
     ].join('\n')
   }
 
@@ -135,10 +136,10 @@ const renderResultOutcome = (
       const errorCode = result.failure ? result.failure.code : result.errorCode
       const errorMessage = result.failure ? result.failure.message : result.errorMessage
 
-      return [`    ${icon} ${color(requestDescription)}`, renderApiError(errorCode!, errorMessage!, color)].join('\n')
+      return [`  ${icon} ${color(requestDescription)}`, renderApiError(errorCode!, errorMessage!, color)].join('\n')
     }
 
-    return `    ${icon} ${color(requestDescription)}`
+    return `  ${icon} ${color(requestDescription)}`
   }
 
   if (test.type === 'browser') {
@@ -207,65 +208,62 @@ const renderExecutionResult = (
   failOnCriticalErrors: boolean,
   failOnTimeout: boolean
 ) => {
-  const {check: overridedTest, dc_id, resultID, result} = execution
-  const isSuccess = hasResultPassed(result, failOnCriticalErrors, failOnTimeout)
-  const color = getTestResultColor(isSuccess, test.options.ci?.executionRule === ExecutionRule.NON_BLOCKING)
-  const icon = isSuccess ? ICONS.SUCCESS : ICONS.FAILED
+  const {check: overriddenTest, dc_id, resultID, result} = execution
+  const resultOutcome = getResultOutcome(overriddenTest ?? test, execution, failOnCriticalErrors, failOnTimeout)
+  const [icon, setColor] = getResultIconAndColor(resultOutcome)
+
+  const executionRule = getExecutionRule(test, execution.enrichment?.config_override)
+  const executionRuleText = [ResultOutcome.Passed, ResultOutcome.PassedNonBlocking].includes(resultOutcome)
+    ? ''
+    : `[${setColor(executionRule === ExecutionRule.BLOCKING ? 'blocking' : 'non-blocking')}] `
+
+  const testLabel = `${executionRuleText}[${chalk.bold.dim(test.public_id)}] ${chalk.bold(test.name)}`
 
   const locationName = !!result.tunnel ? 'Tunneled' : locationNames[dc_id] || dc_id.toString()
-  const device = test.type === 'browser' && 'device' in result ? ` - device: ${chalk.bold(result.device.id)}` : ''
-  const resultIdentification = color(`  ${icon} location: ${chalk.bold(locationName)}${device}`)
+  const location = setColor(`location: ${chalk.bold(locationName)}`)
+  const device =
+    test.type === 'browser' && 'device' in result ? ` - ${setColor(`device: ${chalk.bold(result.device.id)}`)}` : ''
+  const resultIdentification = `${icon} ${testLabel} - ${location}${device}`
 
   const outputLines = [resultIdentification]
 
   // Unhealthy test results don't have a duration or result URL
   if (!result.unhealthy) {
     const duration = getResultDuration(result)
-    const durationText = duration ? `  total duration: ${duration} ms -` : ''
+    const durationText = duration ? ` Total duration: ${duration} ms -` : ''
 
     const resultUrl = getResultUrl(baseUrl, test, resultID)
     const resultUrlStatus = result.error === ERRORS.TIMEOUT ? '(not yet received)' : ''
 
-    const resultInfo = `    ⎋${durationText} result url: ${chalk.dim.cyan(resultUrl)} ${resultUrlStatus}`
+    const resultInfo = `  ⎋${durationText} Result URL: ${chalk.dim.cyan(resultUrl)} ${resultUrlStatus}`
     outputLines.push(resultInfo)
   }
 
-  const resultOutcome = renderResultOutcome(
+  const resultOutcomeText = renderResultOutcome(
     result,
-    overridedTest || test,
+    overriddenTest || test,
     icon,
-    color,
+    setColor,
     failOnCriticalErrors,
     failOnTimeout
   )
-  if (resultOutcome) {
-    outputLines.push(resultOutcome)
+  if (resultOutcomeText) {
+    outputLines.push(resultOutcomeText)
   }
 
   return outputLines.join('\n')
 }
 
-// Results of all tests rendering
-const renderResultIcon = (success: boolean, isNonBlocking: boolean) => {
-  if (success) {
-    return ICONS.SUCCESS
-  }
-  if (isNonBlocking) {
-    return ICONS.SKIPPED
+const getResultIconAndColor = (resultOutcome: ResultOutcome): [string, chalk.Chalk] => {
+  if (resultOutcome === ResultOutcome.Passed || resultOutcome === ResultOutcome.PassedNonBlocking) {
+    return [ICONS.SUCCESS, chalk.bold.green]
   }
 
-  return ICONS.FAILED
-}
-
-const getTestResultColor = (success: boolean, isNonBlocking: boolean) => {
-  if (success) {
-    return chalk.bold.green
-  }
-  if (isNonBlocking) {
-    return chalk.bold.yellow
+  if (resultOutcome === ResultOutcome.FailedNonBlocking) {
+    return [ICONS.FAILED_NON_BLOCKING, chalk.bold.yellow]
   }
 
-  return chalk.bold.red
+  return [ICONS.FAILED, chalk.bold.red]
 }
 
 export class DefaultReporter implements MainReporter {
@@ -294,58 +292,57 @@ export class DefaultReporter implements MainReporter {
   }
 
   public runEnd(summary: Summary) {
-    const summaries = [
-      chalk.green(`${chalk.bold(summary.passed)} passed`),
-      chalk.red(`${chalk.bold(summary.failed)} failed`),
-    ]
+    const {bold: b, gray, green, red, yellow} = chalk
+
+    const lines: string[] = []
+
+    const runSummary = [green(`${b(summary.passed)} passed`), red(`${b(summary.failed)} failed`)]
+
+    if (summary.failedNonBlocking) {
+      runSummary.push(yellow(`${b(summary.failedNonBlocking)} failed (non-blocking)`))
+    }
 
     if (summary.skipped) {
-      summaries.push(`${chalk.bold(summary.skipped)} skipped`)
+      runSummary.push(`${b(summary.skipped)} skipped`)
     }
 
     if (summary.testsNotFound.size > 0) {
-      const testsNotFoundStr = chalk.gray(`(${[...summary.testsNotFound].join(', ')})`)
-      summaries.push(`${chalk.yellow(`${chalk.bold(summary.testsNotFound.size)} not found`)} ${testsNotFoundStr}`)
+      const testsNotFoundListStr = gray(`(${[...summary.testsNotFound].join(', ')})`)
+      lines.push(
+        `${yellow(
+          `${b(summary.testsNotFound.size)} ${pluralize('test', summary.testsNotFound.size)} not found`
+        )} ${testsNotFoundListStr}`
+      )
     }
 
     const extraInfo = []
     if (summary.timedOut) {
-      extraInfo.push(chalk.yellow(`${chalk.bold(summary.timedOut)} timed out`))
+      extraInfo.push(yellow(`${b(summary.timedOut)} timed out`))
     }
     if (summary.criticalErrors) {
-      extraInfo.push(chalk.red(`${chalk.bold(summary.criticalErrors)} critical errors`))
+      extraInfo.push(red(`${b(summary.criticalErrors)} critical errors`))
     }
+    const extraInfoStr = extraInfo.length ? ' (' + extraInfo.join(', ') + ')' : ''
 
-    this.write(
-      `${chalk.bold('Tests execution summary:')} ${summaries.join(', ')}${
-        extraInfo.length ? ' (' + extraInfo.join(', ') + ')' : ''
-      }\n`
-    )
+    lines.push(`${b('Run summary:')} ${runSummary.join(', ')}${extraInfoStr}\n\n`)
+
+    this.write(lines.join('\n'))
   }
 
   public testEnd(
     test: Test,
-    results: PollResult[],
+    results: PollResult[], // Will always contain 1 result, as `testEnd` is called for each result
     baseUrl: string,
     locationNames: LocationsMapping,
     failOnCriticalErrors: boolean,
     failOnTimeout: boolean
   ) {
-    const success = hasTestSucceeded(results, failOnCriticalErrors, failOnTimeout)
-    const isNonBlocking = test.options.ci?.executionRule === ExecutionRule.NON_BLOCKING
-
-    const icon = renderResultIcon(success, isNonBlocking)
-
-    const idDisplay = `[${chalk.bold.dim(test.public_id)}]`
-    const nameColor = getTestResultColor(success, isNonBlocking)
-    const nonBlockingText = !success && isNonBlocking ? '[NON-BLOCKING]' : ''
-
-    const testResultsText = results
-      .map((r) => renderExecutionResult(test, r, baseUrl, locationNames, failOnCriticalErrors, failOnTimeout))
-      .join('\n\n')
-      .concat('\n\n')
-
-    this.write([`${icon} ${idDisplay}${nonBlockingText} | ${nameColor(test.name)}`, testResultsText].join('\n'))
+    this.write(
+      results
+        .map((r) => renderExecutionResult(test, r, baseUrl, locationNames, failOnCriticalErrors, failOnTimeout))
+        .join('\n\n')
+        .concat('\n\n')
+    )
   }
 
   public testResult(response: TriggerResponse, result: PollResult): void {
@@ -361,11 +358,11 @@ export class DefaultReporter implements MainReporter {
     const testsDisplay = chalk.gray(`(${testsList.join(', ')})`)
 
     this.write(
-      `Waiting for ${chalk.bold.cyan(tests.length)} test result${tests.length > 1 ? 's' : ''} ${testsDisplay}…\n`
+      `Waiting for ${chalk.bold.cyan(tests.length)} test ${pluralize('result', tests.length)} ${testsDisplay}…\n`
     )
   }
 
-  public testTrigger(test: Test, testId: string, executionRule: ExecutionRule, config: ConfigOverride) {
+  public testTrigger(test: Pick<Test, 'name'>, testId: string, executionRule: ExecutionRule, config: ConfigOverride) {
     const idDisplay = `[${chalk.bold.dim(testId)}]`
 
     const getMessage = () => {
@@ -386,10 +383,21 @@ export class DefaultReporter implements MainReporter {
       return `Found test "${chalk.green.bold(test.name)}"`
     }
 
-    this.write(`${idDisplay} ${getMessage()}\n`)
+    const getConfigOverridesPart = () => {
+      const nbConfigsOverridden = Object.keys(config).length
+      if (nbConfigsOverridden === 0) {
+        return ''
+      }
+
+      return ' ' + chalk.gray(`(${nbConfigsOverridden} config ${pluralize('override', nbConfigsOverridden)})`)
+    }
+
+    this.write(`${idDisplay} ${getMessage()}${getConfigOverridesPart()}\n`)
   }
 
   public testWait(test: Test) {
     return
   }
 }
+
+const pluralize = (word: string, count: number): string => (count === 1 ? word : `${word}s`)

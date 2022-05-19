@@ -14,11 +14,22 @@ import {ProxyConfiguration} from '../../../helpers/utils'
 
 import {apiConstructor} from '../api'
 import {CiError} from '../errors'
-import {ConfigOverride, ERRORS, ExecutionRule, InternalTest, PollResult, Result, Summary} from '../interfaces'
+import {
+  ConfigOverride,
+  ERRORS,
+  ExecutionRule,
+  InternalTest,
+  PollResult,
+  Result,
+  Summary,
+  Test,
+  TriggerConfig,
+  TriggerResponse,
+} from '../interfaces'
 import {Tunnel} from '../tunnel'
 import * as utils from '../utils'
 
-import {getApiTest, getBrowserResult, mockReporter} from './fixtures'
+import {getApiPollResult, getApiTest, getBrowserResult, mockReporter} from './fixtures'
 
 describe('utils', () => {
   const apiConfiguration = {
@@ -211,6 +222,7 @@ describe('utils', () => {
       const expectedSummary: Summary = {
         criticalErrors: 0,
         failed: 0,
+        failedNonBlocking: 0,
         passed: 0,
         skipped: 1,
         testsNotFound: new Set(['987-654-321']),
@@ -461,53 +473,52 @@ describe('utils', () => {
     expect(utils.hasResultPassed(result, true, true)).toBeFalsy()
   })
 
-  test('hasTestSucceeded', () => {
-    const testConfiguration = getApiTest('abc-def-ghi')
-    const passingResult = getBrowserResult()
-    const passingPollResult = {
-      check: testConfiguration,
-      dc_id: 42,
-      result: passingResult,
-      resultID: '0123456789',
-      timestamp: 0,
-    }
-    const failingPollResult = {
-      check: testConfiguration,
-      dc_id: 42,
-      result: {...passingResult, passed: false},
-      resultID: '0123456789',
-      timestamp: 0,
-    }
-    const unhealthyPollResult = {
-      check: testConfiguration,
-      dc_id: 42,
-      result: {...passingResult, passed: false, unhealthy: true},
-      resultID: '0123456789',
-      timestamp: 0,
-    }
-    const endpointFailurePollResult = {
-      check: testConfiguration,
-      dc_id: 42,
-      result: {...passingResult, passed: false, error: ERRORS.ENDPOINT},
-      resultID: '0123456789',
-      timestamp: 0,
-    }
-    const timeoutPollResult = {
-      check: testConfiguration,
-      dc_id: 42,
-      result: {...passingResult, passed: false, error: ERRORS.TIMEOUT},
-      resultID: '0123456789',
-      timestamp: 0,
-    }
+  describe('getExecutionRule', () => {
+    const cases: [ExecutionRule | undefined, ExecutionRule | undefined, ExecutionRule][] = [
+      [undefined, undefined, ExecutionRule.BLOCKING],
+      [undefined, ExecutionRule.BLOCKING, ExecutionRule.BLOCKING],
+      [undefined, ExecutionRule.NON_BLOCKING, ExecutionRule.NON_BLOCKING],
+      [ExecutionRule.BLOCKING, undefined, ExecutionRule.BLOCKING],
+      [ExecutionRule.BLOCKING, ExecutionRule.BLOCKING, ExecutionRule.BLOCKING],
+      [ExecutionRule.BLOCKING, ExecutionRule.NON_BLOCKING, ExecutionRule.NON_BLOCKING],
+      [ExecutionRule.NON_BLOCKING, undefined, ExecutionRule.NON_BLOCKING],
+      [ExecutionRule.NON_BLOCKING, ExecutionRule.BLOCKING, ExecutionRule.NON_BLOCKING],
+      [ExecutionRule.NON_BLOCKING, ExecutionRule.NON_BLOCKING, ExecutionRule.NON_BLOCKING],
+    ]
 
-    expect(utils.hasTestSucceeded([passingPollResult, failingPollResult], false, true)).toBeFalsy()
-    expect(utils.hasTestSucceeded([passingPollResult, unhealthyPollResult], true, true)).toBeFalsy()
-    expect(utils.hasTestSucceeded([passingPollResult, unhealthyPollResult], false, true)).toBeTruthy()
-    expect(utils.hasTestSucceeded([passingPollResult, endpointFailurePollResult], true, true)).toBeFalsy()
-    expect(utils.hasTestSucceeded([passingPollResult, endpointFailurePollResult], false, true)).toBeTruthy()
-    expect(utils.hasTestSucceeded([passingPollResult, passingPollResult], false, true)).toBeTruthy()
-    expect(utils.hasTestSucceeded([passingPollResult, timeoutPollResult], false, true)).toBeFalsy()
-    expect(utils.hasTestSucceeded([passingPollResult, timeoutPollResult], false, false)).toBeTruthy()
+    test.each(cases)(
+      'Test execution rule: %s, result execution rule: %s. Expected rule: %s',
+      (testRule, resultRule, expectedRule) => {
+        const test = getApiTest('abc-def-ghi')
+
+        expect(
+          utils.getExecutionRule(
+            testRule ? {...test, options: {...test.options, ci: {executionRule: testRule}}} : test,
+            resultRule ? {executionRule: resultRule} : {}
+          )
+        ).toEqual(expectedRule)
+      }
+    )
+  })
+
+  describe('getResultOutcome', () => {
+    const cases: [boolean, ExecutionRule, utils.ResultOutcome][] = [
+      [true, ExecutionRule.BLOCKING, utils.ResultOutcome.Passed],
+      [true, ExecutionRule.NON_BLOCKING, utils.ResultOutcome.PassedNonBlocking],
+      [false, ExecutionRule.BLOCKING, utils.ResultOutcome.Failed],
+      [false, ExecutionRule.NON_BLOCKING, utils.ResultOutcome.FailedNonBlocking],
+    ]
+    test.each(cases)(
+      'Result passed: %s, execution rule: %s. Expected outcome: %s',
+      (resultPassed, resultRule, expectedOutcome) => {
+        jest.spyOn(utils, 'getExecutionRule').mockReturnValue(resultRule)
+        jest.spyOn(utils, 'hasResultPassed').mockReturnValue(resultPassed)
+        const test = getApiTest('abc-def-ghi')
+        const pollResult = getApiPollResult('1')
+
+        expect(utils.getResultOutcome(test, pollResult, true, true)).toEqual(expectedOutcome)
+      }
+    )
   })
 
   describe('waitForResults', () => {
@@ -529,7 +540,7 @@ describe('utils', () => {
 
     const getTestConfig = (publicId = 'abc-def-ghi') => getApiTest(publicId)
 
-    const getPassingPollResult = (resultId: string) => ({
+    const getPassingPollResult = (resultId: string): PollResult => ({
       check: getTestConfig(),
       dc_id: 42,
       result: getBrowserResult({error: ERRORS.TIMEOUT, passed: false}),
@@ -538,19 +549,19 @@ describe('utils', () => {
     })
 
     const getTestAndResult = (publicId = 'abc-def-ghi', resultId = '0123456789') => {
-      const triggerResult = {
+      const triggerResult: TriggerResponse = {
         device: 'laptop_large',
         location: 42,
         public_id: publicId,
         result_id: resultId,
       }
-      const triggerConfig = {
+      const triggerConfig: TriggerConfig = {
         config: {},
         id: publicId,
         suite: 'Suite 1',
       }
 
-      const passingPollResult = getPassingPollResult(resultId)
+      const passingPollResult: PollResult = getPassingPollResult(resultId)
 
       return {passingPollResult, triggerConfig, triggerResult}
     }

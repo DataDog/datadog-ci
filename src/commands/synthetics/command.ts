@@ -7,7 +7,6 @@ import {CiError, CriticalError} from './errors'
 import {
   CommandConfig,
   ERRORS,
-  ExecutionRule,
   LocationsMapping,
   MainReporter,
   PollResult,
@@ -19,7 +18,7 @@ import {
 import {DefaultReporter} from './reporters/default'
 import {JUnitReporter} from './reporters/junit'
 import {executeTests} from './run-test'
-import {getReporter, hasTestSucceeded, isCriticalError, parseVariablesFromCli} from './utils'
+import {getReporter, getResultOutcome, isCriticalError, parseVariablesFromCli, ResultOutcome} from './utils'
 
 export const DEFAULT_COMMAND_CONFIG: CommandConfig = {
   apiKey: '',
@@ -114,53 +113,66 @@ export class RunTestCommand extends Command {
     triggers: Trigger,
     startTime: number
   ) {
-    // Sort tests to show success first then non blocking failures and finally blocking failures.
-    tests.sort(this.sortTestsByOutcome(results))
+    const getTest = (publicId: string) => tests.find((t) => t.public_id === publicId) as Test
+
+    const sortedPollResults = Object.entries(results)
+      .reduce<[Test, PollResult][]>(
+        (accResults, [publicId, pollResults]) => accResults.concat(pollResults.map((r) => [getTest(publicId), r])),
+        []
+      )
+      .sort(this.sortResultsByOutcome())
 
     // Rendering the results.
     this.reporter?.reportStart({startTime})
+
     const locationNames = triggers.locations.reduce((mapping, location) => {
       mapping[location.id] = location.display_name
 
       return mapping
     }, {} as LocationsMapping)
+
+    if (!this.config.failOnTimeout) {
+      if (!summary.timedOut) {
+        summary.timedOut = 0
+      }
+    }
+
+    if (!this.config.failOnCriticalErrors) {
+      if (!summary.criticalErrors) {
+        summary.criticalErrors = 0
+      }
+    }
+
     let hasSucceeded = true // Determine if all the tests have succeeded
-    for (const test of tests) {
-      const testResults = results[test.public_id]
-      if (!this.config.failOnTimeout) {
-        if (!summary.timedOut) {
-          summary.timedOut = 0
-        }
 
-        const hasTimeout = testResults.some((pollResult) => pollResult.result.error === ERRORS.TIMEOUT)
-        if (hasTimeout) {
-          summary.timedOut++
-        }
+    for (const [test, pollResult] of sortedPollResults) {
+      if (!this.config.failOnTimeout && pollResult.result.error === ERRORS.TIMEOUT) {
+        summary.timedOut++
       }
 
-      if (!this.config.failOnCriticalErrors) {
-        if (!summary.criticalErrors) {
-          summary.criticalErrors = 0
-        }
-        const hasCriticalErrors = testResults.some((pollResult) => isCriticalError(pollResult.result))
-        if (hasCriticalErrors) {
-          summary.criticalErrors++
-        }
+      if (!this.config.failOnCriticalErrors && isCriticalError(pollResult.result)) {
+        summary.criticalErrors++
       }
 
-      const passed = hasTestSucceeded(testResults, this.config.failOnCriticalErrors, this.config.failOnTimeout)
-      if (passed) {
+      const resultOutcome = getResultOutcome(
+        test,
+        pollResult,
+        this.config.failOnCriticalErrors,
+        this.config.failOnTimeout
+      )
+
+      if ([ResultOutcome.Passed, ResultOutcome.PassedNonBlocking].includes(resultOutcome)) {
         summary.passed++
+      } else if (resultOutcome === ResultOutcome.FailedNonBlocking) {
+        summary.failedNonBlocking++
       } else {
         summary.failed++
-        if (test.options.ci?.executionRule !== ExecutionRule.NON_BLOCKING) {
-          hasSucceeded = false
-        }
+        hasSucceeded = false
       }
 
       this.reporter?.testEnd(
         test,
-        testResults,
+        [pollResult],
         this.getAppBaseURL(),
         locationNames,
         this.config.failOnCriticalErrors,
@@ -271,30 +283,25 @@ export class RunTestCommand extends Command {
     }
   }
 
-  private sortTestsByOutcome(results: {[key: string]: PollResult[]}) {
-    return (t1: Test, t2: Test) => {
-      const success1 = hasTestSucceeded(
-        results[t1.public_id],
-        this.config.failOnCriticalErrors,
-        this.config.failOnTimeout
-      )
-      const success2 = hasTestSucceeded(
-        results[t2.public_id],
-        this.config.failOnCriticalErrors,
-        this.config.failOnTimeout
-      )
-      const isNonBlockingTest1 = t1.options.ci?.executionRule === ExecutionRule.NON_BLOCKING
-      const isNonBlockingTest2 = t2.options.ci?.executionRule === ExecutionRule.NON_BLOCKING
+  /**
+   * Sort results with the following rules:
+   * - Passed results come first
+   * - Then non-blocking failed results
+   * - And finally failed results
+   */
+  private sortResultsByOutcome() {
+    const outcomeWeight = {
+      [ResultOutcome.PassedNonBlocking]: 1,
+      [ResultOutcome.Passed]: 2,
+      [ResultOutcome.FailedNonBlocking]: 3,
+      [ResultOutcome.Failed]: 4,
+    }
 
-      if (success1 === success2) {
-        if (isNonBlockingTest1 === isNonBlockingTest2) {
-          return 0
-        }
+    return ([t1, r1]: [Test, PollResult], [t2, r2]: [Test, PollResult]) => {
+      const outcome1 = getResultOutcome(t1, r1, this.config.failOnCriticalErrors, this.config.failOnTimeout)
+      const outcome2 = getResultOutcome(t2, r2, this.config.failOnCriticalErrors, this.config.failOnTimeout)
 
-        return isNonBlockingTest1 ? -1 : 1
-      }
-
-      return success1 ? -1 : 1
+      return outcomeWeight[outcome1] - outcomeWeight[outcome2]
     }
   }
 }
