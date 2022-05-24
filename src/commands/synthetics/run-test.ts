@@ -1,7 +1,6 @@
-import {apiConstructor, isForbiddenError} from './api'
+import {apiConstructor, APIHelper, isForbiddenError} from './api'
 import {CiError, CriticalError} from './errors'
 import {
-  APIHelper,
   MainReporter,
   PollResult,
   Suite,

@@ -10,10 +10,9 @@ import {getCIMetadata} from '../../helpers/ci'
 import {GIT_COMMIT_MESSAGE} from '../../helpers/tags'
 import {pick} from '../../helpers/utils'
 
-import {EndpointError, formatBackendErrors, is5xxError, isNotFoundError} from './api'
+import {APIHelper, EndpointError, formatBackendErrors, is5xxError, isNotFoundError} from './api'
 import {CiError} from './errors'
 import {
-  APIHelper,
   ConfigOverride,
   ERRORS,
   ExecutionRule,

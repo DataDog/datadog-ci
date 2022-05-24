@@ -342,14 +342,6 @@ export interface TestSearchResult {
   }[]
 }
 
-export interface APIHelper {
-  getPresignedURL(testIds: string[]): Promise<{url: string}>
-  getTest(testId: string): Promise<Test>
-  pollResults(resultIds: string[]): Promise<{results: PollResult[]}>
-  searchTests(query: string): Promise<TestSearchResult>
-  triggerTests(payload: Payload): Promise<Trigger>
-}
-
 export interface APIConfiguration {
   apiKey: string
   appKey: string
