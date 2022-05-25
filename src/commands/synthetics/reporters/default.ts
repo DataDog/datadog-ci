@@ -17,7 +17,7 @@ import {
   Test,
   TriggerResponse,
 } from '../interfaces'
-import {getExecutionRule, getResultDuration, getResultOutcome, hasResultPassed, ResultOutcome} from '../utils'
+import {getExecutionRule, getResultDuration, getResultOutcome, ResultOutcome} from '../utils'
 
 // Step rendering
 
@@ -106,14 +106,7 @@ const renderApiError = (errorCode: string, errorMessage: string, color: chalk.Ch
 }
 
 // Test execution rendering
-const renderResultOutcome = (
-  result: Result,
-  test: Test,
-  icon: string,
-  color: chalk.Chalk,
-  failOnCriticalErrors: boolean,
-  failOnTimeout: boolean
-): string | undefined => {
+const renderResultOutcome = (result: Result, test: Test, icon: string, color: chalk.Chalk): string | undefined => {
   // Only display critical errors if failure is not filled.
   if (result.error && !(result.failure || result.errorMessage)) {
     return `  ${chalk.bold(`${ICONS.FAILED} | ${result.error}`)}`
@@ -143,7 +136,7 @@ const renderResultOutcome = (
   }
 
   if (test.type === 'browser') {
-    if (!hasResultPassed(result, failOnCriticalErrors, failOnTimeout) && 'stepDetails' in result) {
+    if (!result.passed && 'stepDetails' in result) {
       // We render the step only if the test hasn't passed to avoid cluttering the output.
       return result.stepDetails.map(renderStep).join('\n')
     }
@@ -200,16 +193,9 @@ const getResultUrl = (baseUrl: string, test: Test, resultId: string) => {
   return `${testDetailUrl}?resultId=${resultId}&${ciQueryParam}`
 }
 
-const renderExecutionResult = (
-  test: Test,
-  execution: PollResult,
-  baseUrl: string,
-  locationNames: LocationsMapping,
-  failOnCriticalErrors: boolean,
-  failOnTimeout: boolean
-) => {
+const renderExecutionResult = (test: Test, execution: PollResult, baseUrl: string, locationNames: LocationsMapping) => {
   const {check: overriddenTest, dc_id, resultID, result} = execution
-  const resultOutcome = getResultOutcome(overriddenTest ?? test, execution, failOnCriticalErrors, failOnTimeout)
+  const resultOutcome = getResultOutcome(overriddenTest ?? test, execution)
   const [icon, setColor] = getResultIconAndColor(resultOutcome)
 
   const executionRule = getExecutionRule(test, execution.enrichment?.config_override)
@@ -239,14 +225,7 @@ const renderExecutionResult = (
     outputLines.push(resultInfo)
   }
 
-  const resultOutcomeText = renderResultOutcome(
-    result,
-    overriddenTest || test,
-    icon,
-    setColor,
-    failOnCriticalErrors,
-    failOnTimeout
-  )
+  const resultOutcomeText = renderResultOutcome(result, overriddenTest || test, icon, setColor)
   if (resultOutcomeText) {
     outputLines.push(resultOutcomeText)
   }
@@ -333,13 +312,11 @@ export class DefaultReporter implements MainReporter {
     test: Test,
     results: PollResult[], // Will always contain 1 result, as `testEnd` is called for each result
     baseUrl: string,
-    locationNames: LocationsMapping,
-    failOnCriticalErrors: boolean,
-    failOnTimeout: boolean
+    locationNames: LocationsMapping
   ) {
     this.write(
       results
-        .map((r) => renderExecutionResult(test, r, baseUrl, locationNames, failOnCriticalErrors, failOnTimeout))
+        .map((r) => renderExecutionResult(test, r, baseUrl, locationNames))
         .join('\n\n')
         .concat('\n\n')
     )

@@ -215,16 +215,10 @@ export const enum ResultOutcome {
   FailedNonBlocking = 'failed-non-blocking',
 }
 
-export const getResultOutcome = (
-  test: Test,
-  pollResult: PollResult,
-  failOnCriticalErrors: boolean,
-  failOnTimeout: boolean
-): ResultOutcome => {
+export const getResultOutcome = (test: Test, pollResult: PollResult): ResultOutcome => {
   const executionRule = getExecutionRule(test, pollResult.enrichment?.config_override)
-  const passed = hasResultPassed(pollResult.result, failOnCriticalErrors, failOnTimeout)
 
-  if (passed) {
+  if (pollResult.passed) {
     if (executionRule === ExecutionRule.NON_BLOCKING) {
       return ResultOutcome.PassedNonBlocking
     }
@@ -270,6 +264,7 @@ export const waitForResults = async (
   options: {
     defaultTimeout: number
     failOnCriticalErrors?: boolean
+    failOnTimeout?: boolean
   },
   reporter: MainReporter,
   tunnel?: Tunnel
@@ -361,6 +356,13 @@ export const waitForResults = async (
     await wait(POLLING_INTERVAL)
   }
 
+  for (const {result} of triggerResults) {
+    if (result) {
+      result.passed = hasResultPassed(result.result, options.failOnCriticalErrors!!, options.failOnTimeout!!)
+    }
+  }
+
+  // TODO: pass a list??
   // Bundle results by public id
   return triggerResults.reduce((resultsByPublicId, triggerResult) => {
     const result = triggerResult.result! // The result exists, as either polled or filled with a timeout result
@@ -399,6 +401,7 @@ const createFailingResult = (
   tunnel: boolean
 ): PollResult => ({
   dc_id: dcId,
+  passed: false,
   result: {
     device: {height: 0, id: deviceId, width: 0},
     duration: 0,
@@ -470,10 +473,10 @@ export const getReporter = (reporters: Reporter[]): MainReporter => ({
       }
     }
   },
-  testEnd: (test, results, baseUrl, locationNames, failOnCriticalErrors, failOnTimeout) => {
+  testEnd: (test, results, baseUrl, locationNames) => {
     for (const reporter of reporters) {
       if (typeof reporter.testEnd === 'function') {
-        reporter.testEnd(test, results, baseUrl, locationNames, failOnCriticalErrors, failOnTimeout)
+        reporter.testEnd(test, results, baseUrl, locationNames)
       }
     }
   },

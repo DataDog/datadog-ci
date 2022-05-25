@@ -154,12 +154,7 @@ export class RunTestCommand extends Command {
         summary.criticalErrors++
       }
 
-      const resultOutcome = getResultOutcome(
-        test,
-        pollResult,
-        this.config.failOnCriticalErrors,
-        this.config.failOnTimeout
-      )
+      const resultOutcome = getResultOutcome(test, pollResult)
 
       if ([ResultOutcome.Passed, ResultOutcome.PassedNonBlocking].includes(resultOutcome)) {
         summary.passed++
@@ -170,14 +165,7 @@ export class RunTestCommand extends Command {
         hasSucceeded = false
       }
 
-      this.reporter?.testEnd(
-        test,
-        [pollResult],
-        this.getAppBaseURL(),
-        locationNames,
-        this.config.failOnCriticalErrors,
-        this.config.failOnTimeout
-      )
+      this.reporter?.testEnd(test, [pollResult], this.getAppBaseURL(), locationNames)
     }
 
     this.reporter?.runEnd(summary)
@@ -298,8 +286,8 @@ export class RunTestCommand extends Command {
     }
 
     return ([t1, r1]: [Test, PollResult], [t2, r2]: [Test, PollResult]) => {
-      const outcome1 = getResultOutcome(t1, r1, this.config.failOnCriticalErrors, this.config.failOnTimeout)
-      const outcome2 = getResultOutcome(t2, r2, this.config.failOnCriticalErrors, this.config.failOnTimeout)
+      const outcome1 = getResultOutcome(t1, r1)
+      const outcome2 = getResultOutcome(t2, r2)
 
       return outcomeWeight[outcome1] - outcomeWeight[outcome2]
     }

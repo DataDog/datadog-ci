@@ -9,14 +9,7 @@ export interface MainReporter {
   reportStart(timings: {startTime: number}): void
   runEnd(summary: Summary): void
   // `testEnd` is called for each result
-  testEnd(
-    test: Test,
-    results: PollResult[],
-    baseUrl: string,
-    locationNames: LocationsMapping,
-    failOnCriticalErrors: boolean,
-    failOnTimeout: boolean
-  ): void
+  testEnd(test: Test, results: PollResult[], baseUrl: string, locationNames: LocationsMapping): void
   testResult(triggerResponse: TriggerResponse, result: PollResult): void
   testsWait(tests: Test[]): void
   testTrigger(test: Test, testId: string, executionRule: ExecutionRule, config: ConfigOverride): void
@@ -103,6 +96,8 @@ export interface PollResult {
   check_id?: string
   dc_id: number
   enrichment?: Partial<Enrichment>
+  // `.passed` here combines `result.passed` and `failOnCriticalErrors` and `failOnTimeout`
+  passed?: boolean
   result: Result
   resultID: string
   timestamp: number

@@ -142,14 +142,7 @@ export class JUnitReporter implements Reporter {
     }
   }
 
-  public testEnd(
-    test: InternalTest,
-    results: PollResult[],
-    baseUrl: string,
-    locations: LocationsMapping,
-    failOnCriticalErrors: boolean,
-    failOnTimeout: boolean
-  ) {
+  public testEnd(test: InternalTest, results: PollResult[], baseUrl: string, locations: LocationsMapping) {
     const suiteRunName = test.suite || 'Undefined suite'
     let suiteRun = this.json.testsuites.testsuite.find((suite: XMLRun) => suite.$.name === suiteRunName)
 
@@ -168,7 +161,7 @@ export class JUnitReporter implements Reporter {
     }
 
     for (const result of results) {
-      const testCase: XMLTestCase = this.getTestCase(test, result, locations, failOnCriticalErrors, failOnTimeout)
+      const testCase: XMLTestCase = this.getTestCase(test, result, locations)
       // Timeout errors are only reported at the top level.
       if (result.result.error === ERRORS.TIMEOUT) {
         testCase.error.push({
@@ -340,15 +333,9 @@ export class JUnitReporter implements Reporter {
     return stats
   }
 
-  private getTestCase(
-    test: InternalTest,
-    result: PollResult,
-    locations: LocationsMapping,
-    failOnCriticalErrors: boolean,
-    failOnTimeout: boolean
-  ): XMLTestCase {
+  private getTestCase(test: InternalTest, result: PollResult, locations: LocationsMapping): XMLTestCase {
     const timeout = result.result.error === ERRORS.TIMEOUT
-    const resultOutcome = getResultOutcome(test, result, failOnCriticalErrors, failOnTimeout)
+    const resultOutcome = getResultOutcome(test, result)
     const passed = [ResultOutcome.Passed, ResultOutcome.PassedNonBlocking].includes(resultOutcome)
 
     return {

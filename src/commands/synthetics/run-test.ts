@@ -1,6 +1,7 @@
 import {apiConstructor, APIHelper, isForbiddenError} from './api'
 import {CiError, CriticalError} from './errors'
 import {
+  CommandConfig,
   MainReporter,
   PollResult,
   Suite,
@@ -14,7 +15,7 @@ import {
 import {Tunnel} from './tunnel'
 import {getSuites, getTestsToTrigger, runTests, waitForResults} from './utils'
 
-export const executeTests = async (reporter: MainReporter, config: SyntheticsCIConfig, suites?: Suite[]) => {
+export const executeTests = async (reporter: MainReporter, config: CommandConfig, suites?: Suite[]) => {
   const api = getApiHelper(config)
 
   const publicIdsFromCli = config.publicIds.map((id) => ({config: config.global, id}))
@@ -110,7 +111,11 @@ export const executeTests = async (reporter: MainReporter, config: SyntheticsCIC
       api,
       triggers.results,
       testsToTrigger,
-      {defaultTimeout: config.pollingTimeout, failOnCriticalErrors: config.failOnCriticalErrors},
+      {
+        defaultTimeout: config.pollingTimeout,
+        failOnCriticalErrors: config.failOnCriticalErrors,
+        failOnTimeout: config.failOnTimeout,
+      },
       reporter,
       tunnel
     )
