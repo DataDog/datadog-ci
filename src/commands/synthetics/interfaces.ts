@@ -9,8 +9,8 @@ export interface MainReporter {
   reportStart(timings: {startTime: number}): void
   runEnd(summary: Summary): void
   // `testEnd` is called for each result
-  testEnd(test: Test, results: PollResult[], baseUrl: string, locationNames: LocationsMapping): void
-  testResult(triggerResponse: TriggerResponse, result: PollResult): void
+  testEnd(test: Test, results: Result[], baseUrl: string, locationNames: LocationsMapping): void
+  testResult(triggerResponse: TriggerResponse, result: Result): void
   testsWait(tests: Test[]): void
   testTrigger(test: Test, testId: string, executionRule: ExecutionRule, config: ConfigOverride): void
   testWait(test: Test): void
@@ -24,7 +24,7 @@ export enum ERRORS {
 
 export type Reporter = Partial<MainReporter>
 
-export interface TestResult {
+export interface BaseServerResult {
   error?: string
   errorCode?: string
   errorMessage?: string
@@ -38,7 +38,7 @@ export interface TestResult {
   unhealthy?: boolean
 }
 
-export interface BrowserTestResult extends TestResult {
+export interface BrowserServerResult extends BaseServerResult {
   device: {
     height: number
     id: string
@@ -56,7 +56,7 @@ interface AssertionResult {
   valid: boolean
 }
 
-export interface ApiTestResult extends TestResult {
+export interface ApiServerResult extends BaseServerResult {
   assertionResults: AssertionResult[]
   timings: {
     total: number
@@ -79,12 +79,12 @@ export interface MultiStep {
   }
 }
 
-export interface MultiStepsTestResult extends TestResult {
+export interface MultiStepsServerResult extends BaseServerResult {
   duration: number
   steps: MultiStep[]
 }
 
-export type Result = BrowserTestResult | ApiTestResult | MultiStepsTestResult
+export type ServerResult = BrowserServerResult | ApiServerResult | MultiStepsServerResult
 
 interface Enrichment {
   batch_id: string
@@ -92,14 +92,23 @@ interface Enrichment {
 }
 
 export interface PollResult {
-  check?: Test
-  check_id?: string
+  check: Pick<Test, 'config' | 'subtype' | 'type'>
   dc_id: number
   enrichment?: Partial<Enrichment>
-  // `.passed` here combines `result.passed` and `failOnCriticalErrors` and `failOnTimeout`
-  passed?: boolean
-  result: Result
+  result: ServerResult
   resultID: string
+  timestamp: number
+}
+
+export interface Result {
+  dcId: number
+  enrichment?: Partial<Enrichment>
+  // `.passed` here combines `result.passed` and `failOnCriticalErrors` and `failOnTimeout`
+  passed: boolean
+  result: ServerResult
+  resultId: string
+  // Original test for this result, including overrides if any.
+  test: Test
   timestamp: number
 }
 
@@ -225,7 +234,6 @@ export interface TriggerResponse {
 
 export interface TriggerResult extends TriggerResponse {
   pollingTimeout: number
-  result?: PollResult
 }
 
 export interface Location {
@@ -243,7 +251,6 @@ export interface LocationsMapping {
 export interface Trigger {
   locations: Location[]
   results: TriggerResponse[]
-  triggered_check_ids: string[]
 }
 
 export interface RetryConfig {

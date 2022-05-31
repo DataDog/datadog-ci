@@ -10,8 +10,8 @@ import {
   LocationsMapping,
   MainReporter,
   Operator,
-  PollResult,
   Result,
+  ServerResult,
   Step,
   Summary,
   Test,
@@ -106,7 +106,12 @@ const renderApiError = (errorCode: string, errorMessage: string, color: chalk.Ch
 }
 
 // Test execution rendering
-const renderResultOutcome = (result: Result, test: Test, icon: string, color: chalk.Chalk): string | undefined => {
+const renderResultOutcome = (
+  result: ServerResult,
+  test: Test,
+  icon: string,
+  color: chalk.Chalk
+): string | undefined => {
   // Only display critical errors if failure is not filled.
   if (result.error && !(result.failure || result.errorMessage)) {
     return `  ${chalk.bold(`${ICONS.FAILED} | ${result.error}`)}`
@@ -193,9 +198,9 @@ const getResultUrl = (baseUrl: string, test: Test, resultId: string) => {
   return `${testDetailUrl}?resultId=${resultId}&${ciQueryParam}`
 }
 
-const renderExecutionResult = (test: Test, execution: PollResult, baseUrl: string, locationNames: LocationsMapping) => {
-  const {check: overriddenTest, dc_id, resultID, result} = execution
-  const resultOutcome = getResultOutcome(overriddenTest ?? test, execution)
+const renderExecutionResult = (test: Test, execution: Result, baseUrl: string, locationNames: LocationsMapping) => {
+  const {test: overriddenTest, dcId, resultId, result} = execution
+  const resultOutcome = getResultOutcome(execution)
   const [icon, setColor] = getResultIconAndColor(resultOutcome)
 
   const executionRule = getExecutionRule(test, execution.enrichment?.config_override)
@@ -205,7 +210,7 @@ const renderExecutionResult = (test: Test, execution: PollResult, baseUrl: strin
 
   const testLabel = `${executionRuleText}[${chalk.bold.dim(test.public_id)}] ${chalk.bold(test.name)}`
 
-  const locationName = !!result.tunnel ? 'Tunneled' : locationNames[dc_id] || dc_id.toString()
+  const locationName = !!result.tunnel ? 'Tunneled' : locationNames[dcId] || dcId.toString()
   const location = setColor(`location: ${chalk.bold(locationName)}`)
   const device =
     test.type === 'browser' && 'device' in result ? ` - ${setColor(`device: ${chalk.bold(result.device.id)}`)}` : ''
@@ -218,7 +223,7 @@ const renderExecutionResult = (test: Test, execution: PollResult, baseUrl: strin
     const duration = getResultDuration(result)
     const durationText = duration ? ` Total duration: ${duration} ms -` : ''
 
-    const resultUrl = getResultUrl(baseUrl, test, resultID)
+    const resultUrl = getResultUrl(baseUrl, test, resultId)
     const resultUrlStatus = result.error === ERRORS.TIMEOUT ? '(not yet received)' : ''
 
     const resultInfo = `  ⎋${durationText} Result URL: ${chalk.dim.cyan(resultUrl)} ${resultUrlStatus}`
@@ -310,7 +315,7 @@ export class DefaultReporter implements MainReporter {
 
   public testEnd(
     test: Test,
-    results: PollResult[], // Will always contain 1 result, as `testEnd` is called for each result
+    results: Result[], // Will always contain 1 result, as `testEnd` is called for each result
     baseUrl: string,
     locationNames: LocationsMapping
   ) {
@@ -322,7 +327,7 @@ export class DefaultReporter implements MainReporter {
     )
   }
 
-  public testResult(response: TriggerResponse, result: PollResult): void {
+  public testResult(response: TriggerResponse, result: Result): void {
     return
   }
 

@@ -3,7 +3,7 @@ import {CiError, CriticalError} from './errors'
 import {
   CommandConfig,
   MainReporter,
-  PollResult,
+  Result,
   Suite,
   Summary,
   SyntheticsCIConfig,
@@ -104,13 +104,13 @@ export const executeTests = async (reporter: MainReporter, config: CommandConfig
     throw new CiError('NO_RESULTS_TO_POLL')
   }
 
-  const results: {[key: string]: PollResult[]} = {}
+  let results: Result[] = []
   try {
-    // Poll the results.
-    const resultPolled = await waitForResults(
+    results = await waitForResults(
       api,
       triggers.results,
       testsToTrigger,
+      tests,
       {
         defaultTimeout: config.pollingTimeout,
         failOnCriticalErrors: config.failOnCriticalErrors,
@@ -119,7 +119,6 @@ export const executeTests = async (reporter: MainReporter, config: CommandConfig
       reporter,
       tunnel
     )
-    Object.assign(results, resultPolled)
   } catch (error) {
     throw new CriticalError('POLL_RESULTS_FAILED', error.message)
   } finally {
