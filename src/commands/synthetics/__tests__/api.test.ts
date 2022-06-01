@@ -3,7 +3,7 @@ import {AxiosError, AxiosResponse, default as axios} from 'axios'
 import {ProxyConfiguration} from '../../../helpers/utils'
 
 import {apiConstructor} from '../api'
-import {APIConfiguration, ExecutionRule, PollResult, Result, TestPayload, Trigger} from '../interfaces'
+import {APIConfiguration, ExecutionRule, PollResult, ServerResult, TestPayload, Trigger} from '../interfaces'
 
 import {getApiTest, getSyntheticsProxy, mockSearchResponse, mockTestTriggerResponse} from './fixtures'
 
@@ -28,7 +28,7 @@ describe('dd-api', () => {
       {
         check: getApiTest('abc-def-ghi'),
         dc_id: 0,
-        result: {} as Result,
+        result: ({} as unknown) as ServerResult,
         resultID: RESULT_ID,
         timestamp: 0,
       },
@@ -45,7 +45,6 @@ describe('dd-api', () => {
         result_id: RESULT_ID,
       },
     ],
-    triggered_check_ids: [TRIGGERED_TEST_ID],
   }
   const PRESIGNED_URL_PAYLOAD = {
     url: 'wss://presigned.url',
@@ -64,8 +63,7 @@ describe('dd-api', () => {
     const api = apiConstructor(apiConfiguration)
     const {triggerTests} = api
     const tests: TestPayload[] = [{public_id: TRIGGERED_TEST_ID, executionRule: ExecutionRule.BLOCKING}]
-    const {results, triggered_check_ids} = await triggerTests({tests})
-    expect(triggered_check_ids).toEqual([TRIGGERED_TEST_ID])
+    const {results} = await triggerTests({tests})
     expect(results[0].public_id).toBe(TRIGGERED_TEST_ID)
     expect(results[0].result_id).toBe(RESULT_ID)
   })

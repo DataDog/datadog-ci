@@ -4,7 +4,7 @@ import deepExtend from 'deep-extend'
 import {ConfigOverride, ExecutionRule, LocationsMapping, MainReporter, Summary, Test} from '../../interfaces'
 import {DefaultReporter} from '../../reporters/default'
 import {createSummary} from '../../utils'
-import {getApiPollResult, getApiTest, mockLocation} from '../fixtures'
+import {getApiResult, getApiTest, mockLocation} from '../fixtures'
 
 /**
  * A good amount of these tests rely on Jest snapshot assertions.
@@ -98,7 +98,7 @@ describe('Default reporter', () => {
       writeMock.mockClear()
     })
 
-    const createApiPollResult = (resultId: string, passed: boolean, executionRule = ExecutionRule.BLOCKING) => {
+    const createApiResult = (resultId: string, passed: boolean, executionRule = ExecutionRule.BLOCKING, test: Test) => {
       const errorMessage = JSON.stringify([
         {
           actual: 1234,
@@ -109,8 +109,9 @@ describe('Default reporter', () => {
       ])
       const failure = {code: 'INCORRECT_ASSERTION', message: errorMessage}
 
-      return deepExtend(getApiPollResult(resultId), {
+      return deepExtend(getApiResult(resultId, test), {
         enrichment: {config_override: {executionRule}},
+        passed,
         result: {
           passed,
           ...(!passed ? {failure} : {}),
@@ -124,6 +125,8 @@ describe('Default reporter', () => {
     const baseUrlFixture = 'https://app.datadoghq.com/'
     const locationNamesFixture: LocationsMapping = {1: mockLocation.display_name}
 
+    const apiTest = getApiTest('aaa-aaa-aaa')
+    const nonBlockingApiTest = getNonBlockingApiTest('aaa-aaa-aaa')
     const cases = [
       {
         description: '1 API test, 1 location, 1 result: success',
@@ -132,8 +135,8 @@ describe('Default reporter', () => {
           failOnCriticalErrors: false,
           failOnTimeout: false,
           locationNames: locationNamesFixture,
-          results: [getApiPollResult('1')],
-          test: getApiTest('aaa-aaa-aaa'),
+          results: [getApiResult('1', apiTest)],
+          test: apiTest,
         },
       },
       {
@@ -144,11 +147,11 @@ describe('Default reporter', () => {
           failOnTimeout: false,
           locationNames: locationNamesFixture,
           results: [
-            getApiPollResult('1'),
-            createApiPollResult('2', false, ExecutionRule.NON_BLOCKING),
-            createApiPollResult('3', false),
+            getApiResult('1', apiTest),
+            createApiResult('2', false, ExecutionRule.NON_BLOCKING, apiTest),
+            createApiResult('3', false, undefined, apiTest),
           ],
-          test: getApiTest('aaa-aaa-aaa'),
+          test: apiTest,
         },
       },
       {
@@ -159,11 +162,11 @@ describe('Default reporter', () => {
           failOnTimeout: false,
           locationNames: locationNamesFixture,
           results: [
-            getApiPollResult('1'),
-            createApiPollResult('2', false, ExecutionRule.NON_BLOCKING),
-            createApiPollResult('3', false),
+            getApiResult('1', nonBlockingApiTest),
+            createApiResult('2', false, ExecutionRule.NON_BLOCKING, nonBlockingApiTest),
+            createApiResult('3', false, undefined, nonBlockingApiTest),
           ],
-          test: getNonBlockingApiTest('aaa-aaa-aaa'),
+          test: nonBlockingApiTest,
         },
       },
     ]
