@@ -3,7 +3,6 @@ import {CiError, CriticalError} from './errors'
 import {
   CommandConfig,
   MainReporter,
-  Result,
   Suite,
   Summary,
   SyntheticsCIConfig,

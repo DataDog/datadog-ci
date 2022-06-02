@@ -139,7 +139,7 @@ export const getTestSuite = (): Suite => ({content: {tests: [{config: {}, id: '1
 
 const getBaseResult = (resultId: string, test: Test): Omit<Result, 'result'> => ({
   dcId: 1,
-  passed: false,
+  passed: true,
   resultId,
   test,
   timestamp: 1,
