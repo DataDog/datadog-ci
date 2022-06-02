@@ -104,9 +104,8 @@ export const executeTests = async (reporter: MainReporter, config: CommandConfig
     throw new CiError('NO_RESULTS_TO_POLL')
   }
 
-  let results: Result[] = []
   try {
-    results = await waitForResults(
+    const results = await waitForResults(
       api,
       triggers.results,
       testsToTrigger,
@@ -119,13 +118,13 @@ export const executeTests = async (reporter: MainReporter, config: CommandConfig
       reporter,
       tunnel
     )
+
+    return {results, summary, tests, triggers}
   } catch (error) {
     throw new CriticalError('POLL_RESULTS_FAILED', error.message)
   } finally {
     await stopTunnel()
   }
-
-  return {results, summary, tests, triggers}
 }
 
 export const getTestsList = async (
