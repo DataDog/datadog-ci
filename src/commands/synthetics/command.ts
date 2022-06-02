@@ -9,8 +9,8 @@ import {
   ERRORS,
   LocationsMapping,
   MainReporter,
-  PollResult,
   Reporter,
+  Result,
   Summary,
   Test,
   Trigger,
@@ -71,7 +71,7 @@ export class RunTestCommand extends Command {
       )
     }
 
-    let results: {[key: string]: PollResult[]}
+    let results: Result[]
     let summary: Summary
     let tests: Test[]
     let triggers: Trigger
@@ -106,22 +106,7 @@ export class RunTestCommand extends Command {
     return `https://${this.config.subdomain}.${this.config.datadogSite}/`
   }
 
-  private renderResults(
-    results: {[key: string]: PollResult[]},
-    summary: Summary,
-    tests: Test[],
-    triggers: Trigger,
-    startTime: number
-  ) {
-    const getTest = (publicId: string) => tests.find((t) => t.public_id === publicId) as Test
-
-    const sortedPollResults = Object.entries(results)
-      .reduce<[Test, PollResult][]>(
-        (accResults, [publicId, pollResults]) => accResults.concat(pollResults.map((r) => [getTest(publicId), r])),
-        []
-      )
-      .sort(this.sortResultsByOutcome())
-
+  private renderResults(results: Result[], summary: Summary, tests: Test[], triggers: Trigger, startTime: number) {
     // Rendering the results.
     this.reporter?.reportStart({startTime})
 
@@ -145,21 +130,18 @@ export class RunTestCommand extends Command {
 
     let hasSucceeded = true // Determine if all the tests have succeeded
 
-    for (const [test, pollResult] of sortedPollResults) {
-      if (!this.config.failOnTimeout && pollResult.result.error === ERRORS.TIMEOUT) {
+    const sortedResults = results.sort(this.sortResultsByOutcome())
+
+    for (const result of sortedResults) {
+      if (!this.config.failOnTimeout && result.result.error === ERRORS.TIMEOUT) {
         summary.timedOut++
       }
 
-      if (!this.config.failOnCriticalErrors && isCriticalError(pollResult.result)) {
+      if (!this.config.failOnCriticalErrors && isCriticalError(result.result)) {
         summary.criticalErrors++
       }
 
-      const resultOutcome = getResultOutcome(
-        test,
-        pollResult,
-        this.config.failOnCriticalErrors,
-        this.config.failOnTimeout
-      )
+      const resultOutcome = getResultOutcome(result)
 
       if ([ResultOutcome.Passed, ResultOutcome.PassedNonBlocking].includes(resultOutcome)) {
         summary.passed++
@@ -170,14 +152,7 @@ export class RunTestCommand extends Command {
         hasSucceeded = false
       }
 
-      this.reporter?.testEnd(
-        test,
-        [pollResult],
-        this.getAppBaseURL(),
-        locationNames,
-        this.config.failOnCriticalErrors,
-        this.config.failOnTimeout
-      )
+      this.reporter?.testEnd(result.test, [result], this.getAppBaseURL(), locationNames)
     }
 
     this.reporter?.runEnd(summary)
@@ -297,12 +272,7 @@ export class RunTestCommand extends Command {
       [ResultOutcome.Failed]: 4,
     }
 
-    return ([t1, r1]: [Test, PollResult], [t2, r2]: [Test, PollResult]) => {
-      const outcome1 = getResultOutcome(t1, r1, this.config.failOnCriticalErrors, this.config.failOnTimeout)
-      const outcome2 = getResultOutcome(t2, r2, this.config.failOnCriticalErrors, this.config.failOnTimeout)
-
-      return outcomeWeight[outcome1] - outcomeWeight[outcome2]
-    }
+    return (r1: Result, r2: Result) => outcomeWeight[getResultOutcome(r1)] - outcomeWeight[getResultOutcome(r2)]
   }
 }
 

@@ -1,9 +1,8 @@
-import {apiConstructor, isForbiddenError} from './api'
+import {apiConstructor, APIHelper, isForbiddenError} from './api'
 import {CiError, CriticalError} from './errors'
 import {
-  APIHelper,
+  CommandConfig,
   MainReporter,
-  PollResult,
   Suite,
   Summary,
   SyntheticsCIConfig,
@@ -15,7 +14,7 @@ import {
 import {Tunnel} from './tunnel'
 import {getSuites, getTestsToTrigger, runTests, waitForResults} from './utils'
 
-export const executeTests = async (reporter: MainReporter, config: SyntheticsCIConfig, suites?: Suite[]) => {
+export const executeTests = async (reporter: MainReporter, config: CommandConfig, suites?: Suite[]) => {
   const api = getApiHelper(config)
 
   const publicIdsFromCli = config.publicIds.map((id) => ({config: config.global, id}))
@@ -104,25 +103,27 @@ export const executeTests = async (reporter: MainReporter, config: SyntheticsCIC
     throw new CiError('NO_RESULTS_TO_POLL')
   }
 
-  const results: {[key: string]: PollResult[]} = {}
   try {
-    // Poll the results.
-    const resultPolled = await waitForResults(
+    const results = await waitForResults(
       api,
       triggers.results,
       testsToTrigger,
-      {defaultTimeout: config.pollingTimeout, failOnCriticalErrors: config.failOnCriticalErrors},
+      tests,
+      {
+        defaultTimeout: config.pollingTimeout,
+        failOnCriticalErrors: config.failOnCriticalErrors,
+        failOnTimeout: config.failOnTimeout,
+      },
       reporter,
       tunnel
     )
-    Object.assign(results, resultPolled)
+
+    return {results, summary, tests, triggers}
   } catch (error) {
     throw new CriticalError('POLL_RESULTS_FAILED', error.message)
   } finally {
     await stopTunnel()
   }
-
-  return {results, summary, tests, triggers}
 }
 
 export const getTestsList = async (

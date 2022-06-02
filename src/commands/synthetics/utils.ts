@@ -1,3 +1,4 @@
+import deepExtend from 'deep-extend'
 import * as fs from 'fs'
 import * as path from 'path'
 import {URL} from 'url'
@@ -10,10 +11,9 @@ import {getCIMetadata} from '../../helpers/ci'
 import {GIT_COMMIT_MESSAGE} from '../../helpers/tags'
 import {pick} from '../../helpers/utils'
 
-import {EndpointError, formatBackendErrors, is5xxError, isNotFoundError} from './api'
+import {APIHelper, EndpointError, formatBackendErrors, is5xxError, isNotFoundError} from './api'
 import {CiError} from './errors'
 import {
-  APIHelper,
   ConfigOverride,
   ERRORS,
   ExecutionRule,
@@ -23,6 +23,7 @@ import {
   PollResult,
   Reporter,
   Result,
+  ServerResult,
   Suite,
   Summary,
   SyntheticsCIConfig,
@@ -163,12 +164,12 @@ const warnOnReservedEnvVarNames = (context: TemplateContext, reporter: MainRepor
   }
 }
 
-export const getExecutionRule = (test: InternalTest, configOverride?: ConfigOverride): ExecutionRule => {
+export const getExecutionRule = (test?: InternalTest, configOverride?: ConfigOverride): ExecutionRule => {
   if (configOverride && configOverride.executionRule) {
-    return getStrictestExecutionRule(configOverride.executionRule, test.options?.ci?.executionRule)
+    return getStrictestExecutionRule(configOverride.executionRule, test?.options?.ci?.executionRule)
   }
 
-  return test.options?.ci?.executionRule || ExecutionRule.BLOCKING
+  return test?.options?.ci?.executionRule || ExecutionRule.BLOCKING
 }
 
 export const getStrictestExecutionRule = (configRule: ExecutionRule, testRule?: ExecutionRule): ExecutionRule => {
@@ -187,9 +188,13 @@ export const getStrictestExecutionRule = (configRule: ExecutionRule, testRule?: 
   return ExecutionRule.BLOCKING
 }
 
-export const isCriticalError = (result: Result): boolean => result.unhealthy || result.error === ERRORS.ENDPOINT
+export const isCriticalError = (result: ServerResult): boolean => result.unhealthy || result.error === ERRORS.ENDPOINT
 
-export const hasResultPassed = (result: Result, failOnCriticalErrors: boolean, failOnTimeout: boolean): boolean => {
+export const hasResultPassed = (
+  result: ServerResult,
+  failOnCriticalErrors: boolean,
+  failOnTimeout: boolean
+): boolean => {
   if (isCriticalError(result) && !failOnCriticalErrors) {
     return true
   }
@@ -216,16 +221,10 @@ export const enum ResultOutcome {
   FailedNonBlocking = 'failed-non-blocking',
 }
 
-export const getResultOutcome = (
-  test: Test,
-  pollResult: PollResult,
-  failOnCriticalErrors: boolean,
-  failOnTimeout: boolean
-): ResultOutcome => {
-  const executionRule = getExecutionRule(test, pollResult.enrichment?.config_override)
-  const passed = hasResultPassed(pollResult.result, failOnCriticalErrors, failOnTimeout)
+export const getResultOutcome = (result: Result): ResultOutcome => {
+  const executionRule = getExecutionRule(result.test, result.enrichment?.config_override)
 
-  if (passed) {
+  if (result.passed) {
     if (executionRule === ExecutionRule.NON_BLOCKING) {
       return ResultOutcome.PassedNonBlocking
     }
@@ -268,17 +267,20 @@ export const waitForResults = async (
   api: APIHelper,
   triggerResponses: TriggerResponse[],
   triggerConfigs: TriggerConfig[],
+  tests: Test[],
   options: {
     defaultTimeout: number
     failOnCriticalErrors?: boolean
+    failOnTimeout?: boolean
   },
   reporter: MainReporter,
   tunnel?: Tunnel
-) => {
-  const triggerResultMap = createTriggerResultMap(triggerResponses, options.defaultTimeout, triggerConfigs)
-  const triggerResults = [...triggerResultMap.values()]
+): Promise<Result[]> => {
+  const inProgressTriggers = createInProgressTriggers(triggerResponses, options.defaultTimeout, triggerConfigs)
+  const results: Result[] = []
 
-  const maxPollingTimeout = Math.max(...triggerResults.map((tr) => tr.pollingTimeout))
+  const maxPollingTimeout = Math.max(...[...inProgressTriggers].map((tr) => tr.pollingTimeout))
+
   const pollingStartDate = new Date().getTime()
 
   let isTunnelConnected = true
@@ -289,30 +291,40 @@ export const waitForResults = async (
       .catch(() => (isTunnelConnected = false))
   }
 
-  while (triggerResults.filter((tr) => !tr.result).length) {
+  const getTest = (id: string): Test => tests.find((t) => t.public_id === id)!
+
+  while (inProgressTriggers.size) {
     const pollingDuration = new Date().getTime() - pollingStartDate
 
     // Remove test which exceeded their pollingTimeout
-    for (const triggerResult of triggerResults.filter((tr) => !tr.result)) {
+    for (const triggerResult of inProgressTriggers) {
       if (pollingDuration >= triggerResult.pollingTimeout) {
-        triggerResult.result = createFailingResult(
+        inProgressTriggers.delete(triggerResult)
+        const result = createFailingResult(
           ERRORS.TIMEOUT,
           triggerResult.result_id,
           triggerResult.device,
           triggerResult.location,
+          getTest(triggerResult.public_id),
           !!tunnel
         )
+        result.passed = hasResultPassed(result.result, options.failOnCriticalErrors!!, options.failOnTimeout!!)
+        results.push(result)
       }
     }
 
     if (tunnel && !isTunnelConnected) {
-      for (const triggerResult of triggerResults.filter((tr) => !tr.result)) {
-        triggerResult.result = createFailingResult(
-          ERRORS.TUNNEL,
-          triggerResult.result_id,
-          triggerResult.device,
-          triggerResult.location,
-          !!tunnel
+      for (const triggerResult of inProgressTriggers) {
+        inProgressTriggers.delete(triggerResult)
+        results.push(
+          createFailingResult(
+            ERRORS.TUNNEL,
+            triggerResult.result_id,
+            triggerResult.device,
+            triggerResult.location,
+            getTest(triggerResult.public_id),
+            !!tunnel
+          )
         )
       }
     }
@@ -322,20 +334,23 @@ export const waitForResults = async (
     }
 
     let polledResults: PollResult[]
-    const triggerResultsSucceed = triggerResults.filter((tr) => !tr.result)
     try {
-      polledResults = (await api.pollResults(triggerResultsSucceed.map((tr) => tr.result_id))).results
+      polledResults = (await api.pollResults([...inProgressTriggers.values()].map((tr) => tr.result_id))).results
     } catch (error) {
       if (is5xxError(error) && !options.failOnCriticalErrors) {
         polledResults = []
-        for (const triggerResult of triggerResultsSucceed) {
-          triggerResult.result = createFailingResult(
+        for (const triggerResult of inProgressTriggers) {
+          inProgressTriggers.delete(triggerResult)
+          const result = createFailingResult(
             ERRORS.ENDPOINT,
             triggerResult.result_id,
             triggerResult.device,
             triggerResult.location,
+            getTest(triggerResult.public_id),
             !!tunnel
           )
+          result.passed = hasResultPassed(result.result, options.failOnCriticalErrors!!, options.failOnTimeout!!)
+          results.push(result)
         }
       } else {
         throw error
@@ -344,52 +359,58 @@ export const waitForResults = async (
 
     for (const polledResult of polledResults) {
       if (polledResult.result.eventType === 'finished') {
-        const triggeredResult = triggerResultMap.get(polledResult.resultID)
+        const triggeredResult = [...inProgressTriggers.values()].find((r) => r.result_id === polledResult.resultID)
         if (triggeredResult) {
-          triggeredResult.result = polledResult
-        }
-        const triggerResponse = triggerResponses.find((res) => res.result_id === polledResult.resultID)
-        if (triggerResponse) {
-          reporter.testResult(triggerResponse, polledResult)
+          inProgressTriggers.delete(triggeredResult)
+          const result: Result = {
+            dcId: polledResult.dc_id,
+            enrichment: polledResult.enrichment,
+            passed: hasResultPassed(polledResult.result, options.failOnCriticalErrors!!, options.failOnTimeout!!),
+            result: polledResult.result,
+            resultId: polledResult.resultID,
+            test: deepExtend(getTest(triggeredResult.public_id), polledResult.check),
+            timestamp: polledResult.timestamp,
+          }
+          results.push(result)
+
+          const triggerResponse = triggerResponses.find((res) => res.result_id === polledResult.resultID)
+          if (triggerResponse) {
+            reporter.testResult(triggerResponse, result)
+          }
         }
       }
     }
 
-    if (!triggerResults.filter((tr) => !tr.result).length) {
+    if (!inProgressTriggers.size) {
       break
     }
 
     await wait(POLLING_INTERVAL)
   }
 
-  // Bundle results by public id
-  return triggerResults.reduce((resultsByPublicId, triggerResult) => {
-    const result = triggerResult.result! // The result exists, as either polled or filled with a timeout result
-    resultsByPublicId[triggerResult.public_id] = [...(resultsByPublicId[triggerResult.public_id] || []), result]
-
-    return resultsByPublicId
-  }, {} as {[key: string]: PollResult[]})
+  return results
 }
 
-export const createTriggerResultMap = (
+const createInProgressTriggers = (
   triggerResponses: TriggerResponse[],
   defaultTimeout: number,
   triggerConfigs: TriggerConfig[]
-): Map<string, TriggerResult> => {
+): Set<TriggerResult> => {
   const timeoutByPublicId: {[key: string]: number} = {}
   for (const trigger of triggerConfigs) {
     timeoutByPublicId[trigger.id] = trigger.config.pollingTimeout ?? defaultTimeout
   }
 
-  const triggerResultMap = new Map()
+  const inProgressTriggers = new Set<TriggerResult>()
+
   for (const triggerResponse of triggerResponses) {
-    triggerResultMap.set(triggerResponse.result_id, {
+    inProgressTriggers.add({
       ...triggerResponse,
       pollingTimeout: timeoutByPublicId[triggerResponse.public_id] ?? defaultTimeout,
     })
   }
 
-  return triggerResultMap
+  return inProgressTriggers
 }
 
 const createFailingResult = (
@@ -397,9 +418,11 @@ const createFailingResult = (
   resultId: string,
   deviceId: string,
   dcId: number,
+  test: Test,
   tunnel: boolean
-): PollResult => ({
-  dc_id: dcId,
+): Result => ({
+  dcId,
+  passed: false,
   result: {
     device: {height: 0, id: deviceId, width: 0},
     duration: 0,
@@ -410,7 +433,8 @@ const createFailingResult = (
     stepDetails: [],
     tunnel,
   },
-  resultID: resultId,
+  resultId,
+  test,
   timestamp: 0,
 })
 
@@ -424,7 +448,7 @@ export const createSummary = (): Summary => ({
   timedOut: 0,
 })
 
-export const getResultDuration = (result: Result): number => {
+export const getResultDuration = (result: ServerResult): number => {
   if ('duration' in result) {
     return Math.round(result.duration)
   }
@@ -471,10 +495,10 @@ export const getReporter = (reporters: Reporter[]): MainReporter => ({
       }
     }
   },
-  testEnd: (test, results, baseUrl, locationNames, failOnCriticalErrors, failOnTimeout) => {
+  testEnd: (test, results, baseUrl, locationNames) => {
     for (const reporter of reporters) {
       if (typeof reporter.testEnd === 'function') {
-        reporter.testEnd(test, results, baseUrl, locationNames, failOnCriticalErrors, failOnTimeout)
+        reporter.testEnd(test, results, baseUrl, locationNames)
       }
     }
   },

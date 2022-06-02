@@ -7,21 +7,20 @@ import WebSocket, {Server as WebSocketServer} from 'ws'
 import {ProxyConfiguration} from '../../../helpers/utils'
 
 import {
-  ApiTestResult,
-  BrowserTestResult,
+  ApiServerResult,
+  BrowserServerResult,
   CommandConfig,
   ConfigOverride,
   ExecutionRule,
   Location,
   MainReporter,
   MultiStep,
-  MultiStepsTestResult,
-  PollResult,
+  MultiStepsServerResult,
+  Result,
   Step,
   Suite,
   Summary,
   Test,
-  TestResult,
   Trigger,
   TriggerResponse,
   User,
@@ -69,7 +68,7 @@ export const ciConfig: CommandConfig = {
   variableStrings: [],
 }
 
-export const getApiTest = (publicId: string): Test => ({
+export const getApiTest = (publicId = 'abc-def-ghi'): Test => ({
   config: {
     assertions: [],
     request: {
@@ -138,58 +137,62 @@ export const getMultiStep = (): MultiStep => ({
 
 export const getTestSuite = (): Suite => ({content: {tests: [{config: {}, id: '123-456-789'}]}, name: 'Suite 1'})
 
-const getPollResult = (resultId: string): Omit<PollResult, 'result'> => ({
-  dc_id: 1,
-  resultID: resultId,
+const getBaseResult = (resultId: string, test: Test): Omit<Result, 'result'> => ({
+  dcId: 1,
+  passed: true,
+  resultId,
+  test,
   timestamp: 1,
 })
 
-export const getBrowserPollResult = (resultId: string, resultOpts: Partial<BrowserTestResult> = {}): PollResult => ({
-  ...getPollResult(resultId),
-  result: getBrowserResult(resultOpts),
+export const getBrowserResult = (
+  resultId: string,
+  test: Test,
+  resultOpts: Partial<BrowserServerResult> = {}
+): Result => ({
+  ...getBaseResult(resultId, test),
+  result: getBrowserServerResult(resultOpts),
 })
 
-export const getApiPollResult = (resultId: string, resultOpts: Partial<ApiTestResult> = {}): PollResult => ({
-  ...getPollResult(resultId),
-  result: getApiResult(resultOpts),
+export const getApiResult = (resultId: string, test: Test, resultOpts: Partial<ApiServerResult> = {}): Result => ({
+  ...getBaseResult(resultId, test),
+  result: getApiServerResult(resultOpts),
 })
 
-const getResult = (): TestResult => ({
-  eventType: 'finished',
-  passed: true,
-})
-
-export const getBrowserResult = (opts: Partial<BrowserTestResult> = {}): BrowserTestResult => ({
-  ...getResult(),
+export const getBrowserServerResult = (opts: Partial<BrowserServerResult> = {}): BrowserServerResult => ({
   device: {
     height: 1,
     id: 'laptop_large',
     width: 1,
   },
   duration: 0,
+  eventType: 'finished',
+  passed: true,
   startUrl: '',
   stepDetails: [],
   tunnel: false,
   ...opts,
 })
 
-export const getApiResult = (opts: Partial<ApiTestResult> = {}): ApiTestResult => ({
-  ...getResult(),
+export const getApiServerResult = (opts: Partial<ApiServerResult> = {}): ApiServerResult => ({
   assertionResults: [
     {
       actual: 'actual',
       valid: true,
     },
   ],
+  eventType: 'finished',
+  passed: true,
   timings: {
     total: 123,
   },
   ...opts,
 })
 
-export const getMultiStepsResult = (): MultiStepsTestResult => ({
-  ...getResult(),
+export const getMultiStepsServerResult = (): MultiStepsServerResult => ({
   duration: 123,
+  eventType: 'finished',
+  passed: true,
   steps: [],
 })
 
@@ -219,7 +222,6 @@ export const mockSearchResponse = {tests: [{public_id: '123-456-789'}]}
 export const mockTestTriggerResponse: Trigger = {
   locations: [mockLocation],
   results: [mockTriggerResult],
-  triggered_check_ids: ['123-456-789'],
 }
 
 const mockTunnelConnectionFirstMessage = {host: 'host', id: 'tunnel-id'}
@@ -266,7 +268,7 @@ export const getSyntheticsProxy = () => {
       return mockResponse(calls.presignedUrl, {url: `ws://127.0.0.1:${port}`})
     }
     if (/\/synthetics\/tests\/poll_results/.test(request.url)) {
-      return mockResponse(calls.poll, getApiPollResult('1'))
+      return mockResponse(calls.poll, getApiResult('1', getApiTest()))
     }
     if (/\/synthetics\/tests\//.test(request.url)) {
       return mockResponse(calls.get, getApiTest('123-456-789'))
@@ -301,7 +303,7 @@ export interface RenderResultsTestCase {
   failOnCriticalErrors: boolean
   failOnTimeout: boolean
   fixtures: {
-    results: Record<string, PollResult[]>
+    results: Result[]
     tests: Test[]
     triggers: Trigger
   }
@@ -318,7 +320,7 @@ interface RenderResultsTestFixtureConfigs {
 }
 
 interface RenderResultsTestFixtures {
-  polledResultsByPublicId: Record<string, PollResult[]>
+  results: Result[]
   test: Test
   triggerResult: TriggerResponse
 }
@@ -334,52 +336,37 @@ export class RenderResultsHelper {
   }
 
   private combineTestFixtures(testFixtures: RenderResultsTestFixtures[]): RenderResultsTestCase['fixtures'] {
-    const mergedPolledResults = testFixtures
-      .map(({polledResultsByPublicId}) => polledResultsByPublicId)
-      .reduce((mergedResults, polledResultsByPublicId) => {
-        for (const [testPublicId, polledResults] of Object.entries(polledResultsByPublicId)) {
-          if (!mergedResults[testPublicId]) {
-            mergedResults[testPublicId] = []
-          }
-          mergedResults[testPublicId] = mergedResults[testPublicId].concat(polledResults)
-        }
-
-        return mergedResults
-      }, {})
-
+    const mergedResults = ([] as Result[]).concat(...testFixtures.map(({results}) => results))
     const triggerResults = testFixtures.map(({triggerResult}) => triggerResult)
 
     return {
-      results: mergedPolledResults,
+      results: mergedResults,
       tests: testFixtures.map(({test}) => test),
       triggers: {
         locations: [mockLocation],
         results: triggerResults,
-        triggered_check_ids: triggerResults.map(({public_id}) => public_id),
       },
     }
   }
 
-  private getNextTriggerResultAndPolledResults({
+  private getNextTriggerResultAndResult({
     configOverride,
     publicId,
     resultError,
     resultIsUnhealthy,
     resultPassed,
-  }: Omit<RenderResultsTestFixtureConfigs, 'executionRule'>): [TriggerResponse, Record<string, PollResult[]>] {
+    test,
+  }: Omit<RenderResultsTestFixtureConfigs, 'executionRule'> & {test: Test}): [TriggerResponse, Result] {
     const triggerResult = getTriggerResult(publicId, this.resultIdCounter.toString())
-    const polledResults = {
-      [publicId]: [
-        deepExtend(getApiPollResult(this.resultIdCounter.toString()), {
-          enrichment: {config_override: configOverride},
-          result: {passed: resultPassed, error: resultError, unhealthy: resultIsUnhealthy},
-        }),
-      ],
-    }
+
+    const result = deepExtend(getApiResult(this.resultIdCounter.toString(), test), {
+      enrichment: {config_override: configOverride},
+      result: {passed: resultPassed, error: resultError, unhealthy: resultIsUnhealthy},
+    })
 
     this.resultIdCounter++
 
-    return [triggerResult, polledResults]
+    return [triggerResult, result]
   }
 
   private getTestFixtures({
@@ -394,15 +381,16 @@ export class RenderResultsHelper {
       ? deepExtend(getApiTest(publicId), {options: {ci: {executionRule}}})
       : getApiTest(publicId)
 
-    const [triggerResult, polledResultsByPublicId] = this.getNextTriggerResultAndPolledResults({
+    const [triggerResult, result] = this.getNextTriggerResultAndResult({
       configOverride,
       publicId,
       resultError,
       resultIsUnhealthy,
       resultPassed,
+      test,
     })
 
-    return {test, triggerResult, polledResultsByPublicId}
+    return {test, triggerResult, results: [result]}
   }
 
   private resetResultIdCounter() {

@@ -4,11 +4,11 @@ import {Cli} from 'clipanion/lib/advanced'
 import deepExtend from 'deep-extend'
 import * as ciUtils from '../../../helpers/utils'
 import {DEFAULT_COMMAND_CONFIG, RunTestCommand} from '../command'
-import {ExecutionRule, PollResult, Test} from '../interfaces'
+import {ExecutionRule, Result, Test} from '../interfaces'
 import * as runTests from '../run-test'
 import * as utils from '../utils'
 import {
-  getApiPollResult,
+  getApiResult,
   getApiTest,
   getTestSuite,
   MockedReporter,
@@ -53,16 +53,11 @@ const getAxiosHttpError = (status: number, error: string) => {
 
 describe('run-test', () => {
   beforeEach(() => {
-    jest.restoreAllMocks()
     jest.spyOn(ciUtils, 'getConfig').mockImplementation(async () => ({}))
     process.env = {}
   })
 
   describe('getAppBaseURL', () => {
-    beforeEach(() => {
-      jest.restoreAllMocks()
-    })
-
     test('should default to datadog us', async () => {
       process.env = {}
       const command = new RunTestCommand()
@@ -91,40 +86,29 @@ describe('run-test', () => {
   })
 
   describe('sortResultsByOutcome', () => {
-    beforeEach(() => {
-      jest.restoreAllMocks()
-    })
-
     const test1 = getApiTest('test1')
     const test2 = deepExtend(getApiTest('test2'), {options: {ci: {executionRule: ExecutionRule.BLOCKING}}})
     const test3 = deepExtend(getApiTest('test3'), {options: {ci: {executionRule: ExecutionRule.NON_BLOCKING}}})
     const test4 = deepExtend(getApiTest('test4'), {options: {ci: {executionRule: ExecutionRule.BLOCKING}}})
     const test5 = deepExtend(getApiTest('test5'), {options: {ci: {executionRule: ExecutionRule.NON_BLOCKING}}})
-    const resultsWithTest: [Test, PollResult][] = [
-      [test1, deepExtend(getApiPollResult('1'), {result: {passed: true}})],
-      [test2, deepExtend(getApiPollResult('2'), {result: {passed: true}})],
-      [test3, deepExtend(getApiPollResult('3'), {result: {passed: true}})],
-      [test4, deepExtend(getApiPollResult('4'), {result: {passed: false}})],
-      [test5, deepExtend(getApiPollResult('5'), {result: {passed: false}})],
+    const results: Result[] = [
+      deepExtend(getApiResult('1', test1), {passed: true}),
+      deepExtend(getApiResult('2', test2), {passed: true}),
+      deepExtend(getApiResult('3', test3), {passed: true}),
+      deepExtend(getApiResult('4', test4), {passed: false}),
+      deepExtend(getApiResult('5', test5), {passed: false}),
     ]
 
     test('should sort tests with success, non_blocking failures then failures', async () => {
       const command = new RunTestCommand()
-
-      resultsWithTest.sort((command['sortResultsByOutcome'] as any)())
-      expect(resultsWithTest).toStrictEqual([
-        [test3, deepExtend(getApiPollResult('3'), {result: {passed: true}})],
-        [test1, deepExtend(getApiPollResult('1'), {result: {passed: true}})],
-        [test2, deepExtend(getApiPollResult('2'), {result: {passed: true}})],
-        [test5, deepExtend(getApiPollResult('5'), {result: {passed: false}})],
-        [test4, deepExtend(getApiPollResult('4'), {result: {passed: false}})],
-      ])
+      const sortedResults = [...results]
+      sortedResults.sort((command['sortResultsByOutcome'] as any)())
+      expect(sortedResults.map((r) => r.resultId)).toStrictEqual(['3', '1', '2', '5', '4'])
     })
   })
 
   describe('resolveConfig', () => {
     beforeEach(() => {
-      jest.restoreAllMocks()
       process.env = {}
       jest.spyOn(ciUtils, 'getConfig').mockImplementation(async () => ({}))
     })
@@ -592,6 +576,11 @@ describe('run-test', () => {
     ]
 
     test.each(cases)('$description', async (testCase) => {
+      testCase.fixtures.results.forEach(
+        (result) =>
+          (result.passed = utils.hasResultPassed(result.result, testCase.failOnCriticalErrors, testCase.failOnTimeout))
+      )
+
       jest.spyOn(ciUtils, 'parseConfigFile').mockImplementation(async () => ({
         ...DEFAULT_COMMAND_CONFIG,
         failOnCriticalErrors: testCase.failOnCriticalErrors,
@@ -611,20 +600,15 @@ describe('run-test', () => {
 
       const exitCode = await command.execute()
 
-      const nbResults = Object.values(testCase.fixtures.results).reduce((acc, r) => acc + r.length, 0)
-      expect((mockReporter as MockedReporter).testEnd).toHaveBeenCalledTimes(nbResults)
+      expect((mockReporter as MockedReporter).testEnd).toHaveBeenCalledTimes(testCase.fixtures.results.length)
 
-      for (const [testPublicId, results] of Object.entries(testCase.fixtures.results)) {
-        for (const result of results) {
-          expect((mockReporter as MockedReporter).testEnd).toHaveBeenCalledWith(
-            testCase.fixtures.tests.find((t) => t.public_id === testPublicId),
-            [result],
-            `https://${DEFAULT_COMMAND_CONFIG.subdomain}.${DEFAULT_COMMAND_CONFIG.datadogSite}/`,
-            {[mockLocation.id.toString()]: mockLocation.display_name},
-            testCase.failOnCriticalErrors,
-            testCase.failOnTimeout
-          )
-        }
+      for (const result of testCase.fixtures.results) {
+        expect((mockReporter as MockedReporter).testEnd).toHaveBeenCalledWith(
+          testCase.fixtures.tests.find((t) => t.public_id === result.test.public_id),
+          [result],
+          `https://${DEFAULT_COMMAND_CONFIG.subdomain}.${DEFAULT_COMMAND_CONFIG.datadogSite}/`,
+          {[mockLocation.id.toString()]: mockLocation.display_name}
+        )
       }
 
       expect(testCase.summary).toEqual(testCase.expected.summary)

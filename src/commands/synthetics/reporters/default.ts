@@ -10,14 +10,14 @@ import {
   LocationsMapping,
   MainReporter,
   Operator,
-  PollResult,
   Result,
+  ServerResult,
   Step,
   Summary,
   Test,
   TriggerResponse,
 } from '../interfaces'
-import {getExecutionRule, getResultDuration, getResultOutcome, hasResultPassed, ResultOutcome} from '../utils'
+import {getExecutionRule, getResultDuration, getResultOutcome, ResultOutcome} from '../utils'
 
 // Step rendering
 
@@ -107,12 +107,10 @@ const renderApiError = (errorCode: string, errorMessage: string, color: chalk.Ch
 
 // Test execution rendering
 const renderResultOutcome = (
-  result: Result,
+  result: ServerResult,
   test: Test,
   icon: string,
-  color: chalk.Chalk,
-  failOnCriticalErrors: boolean,
-  failOnTimeout: boolean
+  color: chalk.Chalk
 ): string | undefined => {
   // Only display critical errors if failure is not filled.
   if (result.error && !(result.failure || result.errorMessage)) {
@@ -143,7 +141,7 @@ const renderResultOutcome = (
   }
 
   if (test.type === 'browser') {
-    if (!hasResultPassed(result, failOnCriticalErrors, failOnTimeout) && 'stepDetails' in result) {
+    if (!result.passed && 'stepDetails' in result) {
       // We render the step only if the test hasn't passed to avoid cluttering the output.
       return result.stepDetails.map(renderStep).join('\n')
     }
@@ -200,16 +198,9 @@ const getResultUrl = (baseUrl: string, test: Test, resultId: string) => {
   return `${testDetailUrl}?resultId=${resultId}&${ciQueryParam}`
 }
 
-const renderExecutionResult = (
-  test: Test,
-  execution: PollResult,
-  baseUrl: string,
-  locationNames: LocationsMapping,
-  failOnCriticalErrors: boolean,
-  failOnTimeout: boolean
-) => {
-  const {check: overriddenTest, dc_id, resultID, result} = execution
-  const resultOutcome = getResultOutcome(overriddenTest ?? test, execution, failOnCriticalErrors, failOnTimeout)
+const renderExecutionResult = (test: Test, execution: Result, baseUrl: string, locationNames: LocationsMapping) => {
+  const {test: overriddenTest, dcId, resultId, result} = execution
+  const resultOutcome = getResultOutcome(execution)
   const [icon, setColor] = getResultIconAndColor(resultOutcome)
 
   const executionRule = getExecutionRule(test, execution.enrichment?.config_override)
@@ -219,7 +210,7 @@ const renderExecutionResult = (
 
   const testLabel = `${executionRuleText}[${chalk.bold.dim(test.public_id)}] ${chalk.bold(test.name)}`
 
-  const locationName = !!result.tunnel ? 'Tunneled' : locationNames[dc_id] || dc_id.toString()
+  const locationName = !!result.tunnel ? 'Tunneled' : locationNames[dcId] || dcId.toString()
   const location = setColor(`location: ${chalk.bold(locationName)}`)
   const device =
     test.type === 'browser' && 'device' in result ? ` - ${setColor(`device: ${chalk.bold(result.device.id)}`)}` : ''
@@ -232,21 +223,14 @@ const renderExecutionResult = (
     const duration = getResultDuration(result)
     const durationText = duration ? ` Total duration: ${duration} ms -` : ''
 
-    const resultUrl = getResultUrl(baseUrl, test, resultID)
+    const resultUrl = getResultUrl(baseUrl, test, resultId)
     const resultUrlStatus = result.error === ERRORS.TIMEOUT ? '(not yet received)' : ''
 
     const resultInfo = `  ⎋${durationText} Result URL: ${chalk.dim.cyan(resultUrl)} ${resultUrlStatus}`
     outputLines.push(resultInfo)
   }
 
-  const resultOutcomeText = renderResultOutcome(
-    result,
-    overriddenTest || test,
-    icon,
-    setColor,
-    failOnCriticalErrors,
-    failOnTimeout
-  )
+  const resultOutcomeText = renderResultOutcome(result, overriddenTest || test, icon, setColor)
   if (resultOutcomeText) {
     outputLines.push(resultOutcomeText)
   }
@@ -331,21 +315,19 @@ export class DefaultReporter implements MainReporter {
 
   public testEnd(
     test: Test,
-    results: PollResult[], // Will always contain 1 result, as `testEnd` is called for each result
+    results: Result[], // Will always contain 1 result, as `testEnd` is called for each result
     baseUrl: string,
-    locationNames: LocationsMapping,
-    failOnCriticalErrors: boolean,
-    failOnTimeout: boolean
+    locationNames: LocationsMapping
   ) {
     this.write(
       results
-        .map((r) => renderExecutionResult(test, r, baseUrl, locationNames, failOnCriticalErrors, failOnTimeout))
+        .map((r) => renderExecutionResult(test, r, baseUrl, locationNames))
         .join('\n\n')
         .concat('\n\n')
     )
   }
 
-  public testResult(response: TriggerResponse, result: PollResult): void {
+  public testResult(response: TriggerResponse, result: Result): void {
     return
   }
 

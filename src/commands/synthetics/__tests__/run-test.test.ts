@@ -6,7 +6,7 @@ import {ExecutionRule} from '../interfaces'
 import * as runTests from '../run-test'
 import {Tunnel} from '../tunnel'
 import * as utils from '../utils'
-import {ciConfig, getApiPollResult, mockReporter, mockTestTriggerResponse} from './fixtures'
+import {ciConfig, getApiResult, getApiTest, mockReporter, mockTestTriggerResponse} from './fixtures'
 
 describe('run-test', () => {
   beforeEach(() => {
@@ -16,9 +16,6 @@ describe('run-test', () => {
   })
 
   describe('execute', () => {
-    beforeEach(() => {
-      jest.restoreAllMocks()
-    })
     test('should apply config override for tests triggered by public id', async () => {
       const getTestsToTriggersMock = jest.spyOn(utils, 'getTestsToTrigger').mockReturnValue(
         Promise.resolve({
@@ -133,11 +130,11 @@ describe('run-test', () => {
         })
       )
 
-      jest.spyOn(utils, 'runTests').mockResolvedValue({...mockTestTriggerResponse, triggered_check_ids: []})
+      jest.spyOn(utils, 'runTests').mockResolvedValue(mockTestTriggerResponse)
 
       const apiHelper = {
         getPresignedURL: () => ({url: 'url'}),
-        pollResults: () => ({results: [getApiPollResult('1')]}),
+        pollResults: () => ({results: [getApiResult('1', getApiTest())]}),
         triggerTests: () => mockTestTriggerResponse,
       }
 
@@ -273,7 +270,6 @@ describe('run-test', () => {
         Promise.resolve({
           locations: [location],
           results: [{device: 'chrome_laptop.large', location: 1, public_id: 'publicId', result_id: '1111'}],
-          triggered_check_ids: [],
         })
       )
 

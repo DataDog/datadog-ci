@@ -1,23 +1,22 @@
 // tslint:disable: no-string-literal
 import {promises as fs} from 'fs'
 import {Writable} from 'stream'
-import {ERRORS, LocationsMapping, PollResult} from '../../interfaces'
+import {ERRORS, LocationsMapping, Result} from '../../interfaces'
 
 import {RunTestCommand} from '../../command'
 import {getDefaultStats, JUnitReporter, XMLTestCase} from '../../reporters/junit'
 import {
-  getApiPollResult,
   getApiTest,
-  getBrowserPollResult,
   getBrowserResult,
+  getBrowserServerResult,
   getMultiStep,
-  getMultiStepsResult,
+  getMultiStepsServerResult,
   getStep,
 } from '../fixtures'
 
 const globalTestMock = getApiTest('123-456-789')
 const globalStepMock = getStep()
-const globalResultMock = getBrowserPollResult('1')
+const globalResultMock = getBrowserResult('1', globalTestMock)
 
 describe('Junit reporter', () => {
   const writeMock: Writable['write'] = jest.fn()
@@ -97,7 +96,7 @@ describe('Junit reporter', () => {
   })
 
   describe('testEnd', () => {
-    const rest: [PollResult[], string, LocationsMapping, boolean, boolean] = [[], '', {}, true, true]
+    const rest: [Result[], string, LocationsMapping] = [[], '', {}]
     beforeEach(() => {
       reporter = new JUnitReporter(commandMock as RunTestCommand)
     })
@@ -128,7 +127,7 @@ describe('Junit reporter', () => {
       const browserResult1 = {
         ...globalResultMock,
         result: {
-          ...getBrowserResult(),
+          ...getBrowserServerResult(),
           stepDetails: [
             {
               ...getStep(),
@@ -159,16 +158,16 @@ describe('Junit reporter', () => {
       }
       const browserResult2 = {
         ...globalResultMock,
-        result: getBrowserResult(),
+        result: getBrowserServerResult(),
       }
       const browserResult3 = {
         ...globalResultMock,
-        result: {...getBrowserResult(), error: ERRORS.TIMEOUT},
+        result: {...getBrowserServerResult(), error: ERRORS.TIMEOUT},
       }
       const apiResult = {
-        ...getApiPollResult('1'),
+        ...globalResultMock,
         result: {
-          ...getMultiStepsResult(),
+          ...getMultiStepsServerResult(),
           steps: [
             {
               ...getMultiStep(),
@@ -180,7 +179,7 @@ describe('Junit reporter', () => {
           ],
         },
       }
-      reporter.testEnd(globalTestMock, [browserResult1, browserResult2, browserResult3, apiResult], '', {}, true, true)
+      reporter.testEnd(globalTestMock, [browserResult1, browserResult2, browserResult3, apiResult], '', {})
       const testsuite = reporter['json'].testsuites.testsuite[0]
       const results = [
         [1, 2, 0, 1],
@@ -221,7 +220,7 @@ describe('Junit reporter', () => {
           },
         },
       }
-      const suite = reporter['getTestCase'](getApiTest('123-456-789'), resultMock, {}, true, true)
+      const suite = reporter['getTestCase'](getApiTest('123-456-789'), resultMock, {})
       expect(suite.$).toMatchObject({
         ...getDefaultStats(),
         errors: 2,

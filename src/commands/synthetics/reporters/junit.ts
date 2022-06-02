@@ -6,13 +6,13 @@ import {Writable} from 'stream'
 import {Builder} from 'xml2js'
 
 import {
-  ApiTestResult,
+  ApiServerResult,
   ERRORS,
   InternalTest,
   LocationsMapping,
   MultiStep,
-  PollResult,
   Reporter,
+  Result,
   Step,
   Vitals,
 } from '../interfaces'
@@ -142,14 +142,7 @@ export class JUnitReporter implements Reporter {
     }
   }
 
-  public testEnd(
-    test: InternalTest,
-    results: PollResult[],
-    baseUrl: string,
-    locations: LocationsMapping,
-    failOnCriticalErrors: boolean,
-    failOnTimeout: boolean
-  ) {
+  public testEnd(test: InternalTest, results: Result[], baseUrl: string, locations: LocationsMapping) {
     const suiteRunName = test.suite || 'Undefined suite'
     let suiteRun = this.json.testsuites.testsuite.find((suite: XMLRun) => suite.$.name === suiteRunName)
 
@@ -168,7 +161,7 @@ export class JUnitReporter implements Reporter {
     }
 
     for (const result of results) {
-      const testCase: XMLTestCase = this.getTestCase(test, result, locations, failOnCriticalErrors, failOnTimeout)
+      const testCase: XMLTestCase = this.getTestCase(test, result, locations)
       // Timeout errors are only reported at the top level.
       if (result.result.error === ERRORS.TIMEOUT) {
         testCase.error.push({
@@ -198,7 +191,7 @@ export class JUnitReporter implements Reporter {
     }
   }
 
-  private getApiStepStats(step: MultiStep | ApiTestResult): Stats {
+  private getApiStepStats(step: MultiStep | ApiServerResult): Stats {
     // TODO use more granular result based on step.assertionResults
     let allowfailures = 0
     let skipped = 0
@@ -299,7 +292,7 @@ export class JUnitReporter implements Reporter {
     }
   }
 
-  private getResultStats(result: PollResult, stats: Stats | undefined = getDefaultStats()): Stats {
+  private getResultStats(result: Result, stats: Stats | undefined = getDefaultStats()): Stats {
     let stepsStats: Stats[] = []
     if ('stepDetails' in result.result) {
       // It's a browser test.
@@ -332,7 +325,7 @@ export class JUnitReporter implements Reporter {
     return stats
   }
 
-  private getSuiteStats(results: PollResult[], stats: Stats | undefined = getDefaultStats()): Stats {
+  private getSuiteStats(results: Result[], stats: Stats | undefined = getDefaultStats()): Stats {
     for (const result of results) {
       stats = this.getResultStats(result, stats)
     }
@@ -340,15 +333,9 @@ export class JUnitReporter implements Reporter {
     return stats
   }
 
-  private getTestCase(
-    test: InternalTest,
-    result: PollResult,
-    locations: LocationsMapping,
-    failOnCriticalErrors: boolean,
-    failOnTimeout: boolean
-  ): XMLTestCase {
+  private getTestCase(test: InternalTest, result: Result, locations: LocationsMapping): XMLTestCase {
     const timeout = result.result.error === ERRORS.TIMEOUT
-    const resultOutcome = getResultOutcome(test, result, failOnCriticalErrors, failOnTimeout)
+    const resultOutcome = getResultOutcome(result)
     const passed = [ResultOutcome.Passed, ResultOutcome.PassedNonBlocking].includes(resultOutcome)
 
     return {
@@ -363,7 +350,7 @@ export class JUnitReporter implements Reporter {
       error: [],
       properties: {
         property: [
-          {$: {name: 'check_id', value: result.check_id}},
+          {$: {name: 'check_id', value: result.test.public_id}},
           ...('device' in result.result
             ? [
                 {$: {name: 'device', value: result.result.device.id}},
@@ -372,12 +359,12 @@ export class JUnitReporter implements Reporter {
               ]
             : []),
           {$: {name: 'execution_rule', value: test.options.ci?.executionRule}},
-          {$: {name: 'location', value: locations[result.dc_id]}},
+          {$: {name: 'location', value: locations[result.dcId]}},
           {$: {name: 'message', value: test.message}},
           {$: {name: 'monitor_id', value: test.monitor_id}},
           {$: {name: 'passed', value: `${passed}`}},
           {$: {name: 'public_id', value: test.public_id}},
-          {$: {name: 'result_id', value: result.resultID}},
+          {$: {name: 'result_id', value: result.resultId}},
           ...('startUrl' in result.result ? [{$: {name: 'start_url', value: result.result.startUrl}}] : []),
           {$: {name: 'status', value: test.status}},
           {$: {name: 'tags', value: test.tags.join(',')}},
