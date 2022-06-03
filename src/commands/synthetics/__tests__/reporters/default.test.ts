@@ -1,10 +1,10 @@
 import {BaseContext} from 'clipanion/lib/advanced'
 import deepExtend from 'deep-extend'
 
-import {ConfigOverride, ExecutionRule, LocationsMapping, MainReporter, Summary, Test} from '../../interfaces'
+import {ConfigOverride, ExecutionRule, MainReporter, Summary, Test} from '../../interfaces'
 import {DefaultReporter} from '../../reporters/default'
 import {createSummary} from '../../utils'
-import {getApiResult, getApiTest, mockLocation} from '../fixtures'
+import {getApiResult, getApiTest} from '../fixtures'
 
 /**
  * A good amount of these tests rely on Jest snapshot assertions.
@@ -23,22 +23,22 @@ describe('Default reporter', () => {
       },
     },
   }
-  const reporter: any = new DefaultReporter(mockContext as {context: BaseContext})
+  const reporter = new DefaultReporter(mockContext as {context: BaseContext})
 
   it('should log for each hook', () => {
-    // `testWait`/`testResult` is skipped as nothing is logged for the default reporter.
+    // `testWait`/`resultReceived` is skipped as nothing is logged for the default reporter.
     const calls: [keyof MainReporter, any[]][] = [
       ['error', ['error']],
       ['initErrors', [['error']]],
       ['log', ['log']],
       ['reportStart', [{startTime: 0}]],
+      ['resultEnd', [getApiResult('1', getApiTest()), '']],
       ['runEnd', [createSummary()]],
-      ['testEnd', [{options: {}}, [], '', []]],
       ['testTrigger', [{}, '', '', {}]],
       ['testsWait', [[{}]]],
     ]
     for (const [fnName, args] of calls) {
-      reporter[fnName](...args)
+      ;(reporter[fnName] as any)(...args)
       expect(writeMock).toHaveBeenCalledTimes(1)
       writeMock.mockClear()
     }
@@ -93,7 +93,7 @@ describe('Default reporter', () => {
     })
   })
 
-  describe('testEnd', () => {
+  describe('resultEnd', () => {
     beforeEach(() => {
       writeMock.mockClear()
     })
@@ -123,7 +123,6 @@ describe('Default reporter', () => {
       deepExtend(getApiTest(publicId), {options: {ci: {executionRule: ExecutionRule.NON_BLOCKING}}})
 
     const baseUrlFixture = 'https://app.datadoghq.com/'
-    const locationNamesFixture: LocationsMapping = {1: mockLocation.display_name}
 
     const apiTest = getApiTest('aaa-aaa-aaa')
     const nonBlockingApiTest = getNonBlockingApiTest('aaa-aaa-aaa')
@@ -132,50 +131,40 @@ describe('Default reporter', () => {
         description: '1 API test, 1 location, 1 result: success',
         fixtures: {
           baseUrl: baseUrlFixture,
-          failOnCriticalErrors: false,
-          failOnTimeout: false,
-          locationNames: locationNamesFixture,
           results: [getApiResult('1', apiTest)],
-          test: apiTest,
         },
       },
       {
         description: '1 API test (blocking), 1 location, 3 results: success, failed non-blocking, failed',
         fixtures: {
           baseUrl: baseUrlFixture,
-          failOnCriticalErrors: false,
-          failOnTimeout: false,
-          locationNames: locationNamesFixture,
           results: [
             getApiResult('1', apiTest),
             createApiResult('2', false, ExecutionRule.NON_BLOCKING, apiTest),
             createApiResult('3', false, undefined, apiTest),
           ],
-          test: apiTest,
         },
       },
       {
         description: '1 API test (non-blocking), 1 location, 3 results: success, failed non-blocking, failed',
         fixtures: {
           baseUrl: baseUrlFixture,
-          failOnCriticalErrors: false,
-          failOnTimeout: false,
-          locationNames: locationNamesFixture,
           results: [
             getApiResult('1', nonBlockingApiTest),
             createApiResult('2', false, ExecutionRule.NON_BLOCKING, nonBlockingApiTest),
             createApiResult('3', false, undefined, nonBlockingApiTest),
           ],
-          test: nonBlockingApiTest,
         },
       },
     ]
 
     test.each(cases)('$description', (testCase) => {
-      const {test, results, baseUrl, locationNames, failOnCriticalErrors, failOnTimeout} = testCase.fixtures
-      reporter.testEnd(test, results, baseUrl, locationNames, failOnCriticalErrors, failOnTimeout)
-      const mostRecentOutput = writeMock.mock.calls[writeMock.mock.calls.length - 1][0]
-      expect(mostRecentOutput).toMatchSnapshot()
+      const {results, baseUrl} = testCase.fixtures
+      for (const result of results) {
+        reporter.resultEnd(result, baseUrl)
+      }
+      const output = writeMock.mock.calls.map((c) => c[0]).join('')
+      expect(output).toMatchSnapshot()
     })
   })
 

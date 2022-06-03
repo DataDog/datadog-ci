@@ -27,7 +27,6 @@ describe('dd-api', () => {
     results: [
       {
         check: getApiTest('abc-def-ghi'),
-        dc_id: 0,
         result: ({} as unknown) as ServerResult,
         resultID: RESULT_ID,
         timestamp: 0,

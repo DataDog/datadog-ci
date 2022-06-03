@@ -12,7 +12,6 @@ import {
   getApiTest,
   getTestSuite,
   MockedReporter,
-  mockLocation,
   mockReporter,
   mockTestTriggerResponse,
   RenderResultsHelper,
@@ -600,14 +599,12 @@ describe('run-test', () => {
 
       const exitCode = await command.execute()
 
-      expect((mockReporter as MockedReporter).testEnd).toHaveBeenCalledTimes(testCase.fixtures.results.length)
+      expect((mockReporter as MockedReporter).resultEnd).toHaveBeenCalledTimes(testCase.fixtures.results.length)
 
       for (const result of testCase.fixtures.results) {
-        expect((mockReporter as MockedReporter).testEnd).toHaveBeenCalledWith(
-          testCase.fixtures.tests.find((t) => t.public_id === result.test.public_id),
-          [result],
-          `https://${DEFAULT_COMMAND_CONFIG.subdomain}.${DEFAULT_COMMAND_CONFIG.datadogSite}/`,
-          {[mockLocation.id.toString()]: mockLocation.display_name}
+        expect((mockReporter as MockedReporter).resultEnd).toHaveBeenCalledWith(
+          result,
+          `https://${DEFAULT_COMMAND_CONFIG.subdomain}.${DEFAULT_COMMAND_CONFIG.datadogSite}/`
         )
       }
 

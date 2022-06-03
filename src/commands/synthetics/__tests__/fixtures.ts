@@ -42,9 +42,9 @@ export const mockReporter: MainReporter = {
   initErrors: jest.fn(),
   log: jest.fn(),
   reportStart: jest.fn(),
+  resultEnd: jest.fn(),
+  resultReceived: jest.fn(),
   runEnd: jest.fn(),
-  testEnd: jest.fn(),
-  testResult: jest.fn(),
   testTrigger: jest.fn(),
   testWait: jest.fn(),
   testsWait: jest.fn(),
@@ -138,7 +138,7 @@ export const getMultiStep = (): MultiStep => ({
 export const getTestSuite = (): Suite => ({content: {tests: [{config: {}, id: '123-456-789'}]}, name: 'Suite 1'})
 
 const getBaseResult = (resultId: string, test: Test): Omit<Result, 'result'> => ({
-  dcId: 1,
+  location: 'Frankfurt (AWS)',
   passed: true,
   resultId,
   test,
@@ -170,7 +170,6 @@ export const getBrowserServerResult = (opts: Partial<BrowserServerResult> = {}):
   passed: true,
   startUrl: '',
   stepDetails: [],
-  tunnel: false,
   ...opts,
 })
 
