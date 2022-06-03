@@ -120,10 +120,9 @@ yarn datadog-ci synthetics run-tests -f ./component-1/**/*.synthetics.json -v PA
 ```
 
 #### Failure modes flags
+
 - `--failOnTimeout` (or `--no-failOnTimeout`) will make the CI fail (or pass) if one of the result exceed its test timeout.
 - `--failOnCriticalErrors` will make the command exit with an error code 1 if tests were not triggered or results could not be fetched.
-
-
 
 ### Test files
 
@@ -256,15 +255,15 @@ Reporters can hook themselves into the `MainReporter` of the command.
 
 #### Available hooks
 
-| Hook name     | Parameters                                                                              | Description                                                     |
-| :------------ | :-------------------------------------------------------------------------------------- | :-------------------------------------------------------------- |
-| `log`         | `(log: string)`                                                                         | called for logging.                                             |
-| `error`       | `(error: string)`                                                                       | called whenever an error occurs.                                |
-| `initErrors`  | `(errors: string[])`                                                                    | called whenever an error occurs during the tests parsing phase. |
-| `reportStart` | `(timings: {startTime: number})`                                                        | called at the start of the report.                              |
-| `testTrigger` | `(test: Test, testId: string, executionRule: ExecutionRule, config: ConfigOverride)`    | called when a test is triggered.                                |
-| `testWait`    | `(test: Test)`                                                                          | called when a test is waiting to receive its results.           |
-| `testsWait`   | `(tests: Test[])`                                                                       | called when all tests are waiting to receive their results.     |
-| `testResult`  | `(trigger: TriggerResponse, result: PollResult)`                                        | called when a test result is received.                          |
-| `testEnd`     | `(test: Test, results: PollResult[], baseUrl: string, locationNames: LocationsMapping)` | called when all results for a test are received.                |
-| `runEnd`      | `(summary: Summary)`                                                                    | called at the end of the run.                                   |
+| Hook name        | Parameters                                                                           | Description                                                     |
+| :--------------- | :----------------------------------------------------------------------------------- | :-------------------------------------------------------------- |
+| `log`            | `(log: string)`                                                                      | called for logging.                                             |
+| `error`          | `(error: string)`                                                                    | called whenever an error occurs.                                |
+| `initErrors`     | `(errors: string[])`                                                                 | called whenever an error occurs during the tests parsing phase. |
+| `reportStart`    | `(timings: {startTime: number})`                                                     | called at the start of the report.                              |
+| `resultEnd`      | `(result: Result, baseUrl: string)`                                                  | called for each result at the end of all results.               |
+| `resultReceived` | `(result: Result)`                                                                   | called when a result is received.                               |
+| `testTrigger`    | `(test: Test, testId: string, executionRule: ExecutionRule, config: ConfigOverride)` | called when a test is triggered.                                |
+| `testWait`       | `(test: Test)`                                                                       | called when a test is waiting to receive its results.           |
+| `testsWait`      | `(tests: Test[])`                                                                    | called when all tests are waiting to receive their results.     |
+| `runEnd`         | `(summary: Summary)`                                                                 | called at the end of the run.                                   |
