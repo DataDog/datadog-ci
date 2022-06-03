@@ -301,11 +301,7 @@ export interface RenderResultsTestCase {
   }
   failOnCriticalErrors: boolean
   failOnTimeout: boolean
-  fixtures: {
-    results: Result[]
-    tests: Test[]
-    triggers: Trigger
-  }
+  results: Result[]
   summary: Summary
 }
 
@@ -319,7 +315,7 @@ interface RenderResultsTestFixtureConfigs {
 }
 
 interface RenderResultsTestFixtures {
-  results: Result[]
+  result: Result
   test: Test
   triggerResult: TriggerResponse
 }
@@ -327,25 +323,16 @@ interface RenderResultsTestFixtures {
 export class RenderResultsHelper {
   private resultIdCounter = 1
 
-  public createFixtures(testFixturesConfigs: RenderResultsTestFixtureConfigs[]): RenderResultsTestCase['fixtures'] {
-    const fixtures = this.combineTestFixtures(testFixturesConfigs.map((c) => this.getTestFixtures(c)))
+  public getResults(testFixturesConfigs: RenderResultsTestFixtureConfigs[]): Result[] {
+    const results: Result[] = []
+    for (const testFixturesConfig of testFixturesConfigs) {
+      const testFixtures = this.getTestFixtures(testFixturesConfig)
+      results.push(testFixtures.result)
+    }
+
     this.resetResultIdCounter()
 
-    return fixtures
-  }
-
-  private combineTestFixtures(testFixtures: RenderResultsTestFixtures[]): RenderResultsTestCase['fixtures'] {
-    const mergedResults = ([] as Result[]).concat(...testFixtures.map(({results}) => results))
-    const triggerResults = testFixtures.map(({triggerResult}) => triggerResult)
-
-    return {
-      results: mergedResults,
-      tests: testFixtures.map(({test}) => test),
-      triggers: {
-        locations: [mockLocation],
-        results: triggerResults,
-      },
-    }
+    return results
   }
 
   private getNextTriggerResultAndResult({
@@ -389,7 +376,7 @@ export class RenderResultsHelper {
       test,
     })
 
-    return {test, triggerResult, results: [result]}
+    return {test, triggerResult, result}
   }
 
   private resetResultIdCounter() {

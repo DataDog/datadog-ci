@@ -118,7 +118,7 @@ export const executeTests = async (reporter: MainReporter, config: CommandConfig
       tunnel
     )
 
-    return {results, summary, tests, triggers}
+    return {results, summary}
   } catch (error) {
     throw new CriticalError('POLL_RESULTS_FAILED', error.message)
   } finally {
