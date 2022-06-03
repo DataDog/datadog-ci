@@ -17,7 +17,7 @@ import {
   ConfigOverride,
   ERRORS,
   ExecutionRule,
-  InternalTest,
+  LocationsMapping,
   MainReporter,
   Payload,
   PollResult,
@@ -265,7 +265,7 @@ export const wait = async (duration: number) => new Promise((resolve) => setTime
 
 export const waitForResults = async (
   api: APIHelper,
-  triggerResponses: TriggerResponse[],
+  trigger: Trigger,
   triggerConfigs: TriggerConfig[],
   tests: Test[],
   options: {
@@ -276,7 +276,7 @@ export const waitForResults = async (
   reporter: MainReporter,
   tunnel?: Tunnel
 ): Promise<Result[]> => {
-  const inProgressTriggers = createInProgressTriggers(triggerResponses, options.defaultTimeout, triggerConfigs)
+  const inProgressTriggers = createInProgressTriggers(trigger.results, options.defaultTimeout, triggerConfigs)
   const results: Result[] = []
 
   const maxPollingTimeout = Math.max(...[...inProgressTriggers].map((tr) => tr.pollingTimeout))
@@ -291,6 +291,13 @@ export const waitForResults = async (
       .catch(() => (isTunnelConnected = false))
   }
 
+  const locationNames = trigger.locations.reduce<LocationsMapping>((mapping, location) => {
+    mapping[location.id] = location.display_name
+
+    return mapping
+  }, {})
+  const getLocation = (dcId: number, hasTunnel: boolean) =>
+    hasTunnel ? 'Tunneled' : locationNames[dcId] || dcId.toString()
   const getTest = (id: string): Test => tests.find((t) => t.public_id === id)!
 
   while (inProgressTriggers.size) {
@@ -302,11 +309,9 @@ export const waitForResults = async (
         inProgressTriggers.delete(triggerResult)
         const result = createFailingResult(
           ERRORS.TIMEOUT,
-          triggerResult.result_id,
-          triggerResult.device,
-          triggerResult.location,
-          getTest(triggerResult.public_id),
-          !!tunnel
+          triggerResult,
+          getLocation(triggerResult.location, !!tunnel),
+          getTest(triggerResult.public_id)
         )
         result.passed = hasResultPassed(result.result, options.failOnCriticalErrors!!, options.failOnTimeout!!)
         results.push(result)
@@ -319,11 +324,9 @@ export const waitForResults = async (
         results.push(
           createFailingResult(
             ERRORS.TUNNEL,
-            triggerResult.result_id,
-            triggerResult.device,
-            triggerResult.location,
-            getTest(triggerResult.public_id),
-            !!tunnel
+            triggerResult,
+            getLocation(triggerResult.location, !!tunnel),
+            getTest(triggerResult.public_id)
           )
         )
       }
@@ -343,11 +346,9 @@ export const waitForResults = async (
           inProgressTriggers.delete(triggerResult)
           const result = createFailingResult(
             ERRORS.ENDPOINT,
-            triggerResult.result_id,
-            triggerResult.device,
-            triggerResult.location,
-            getTest(triggerResult.public_id),
-            !!tunnel
+            triggerResult,
+            getLocation(triggerResult.location, !!tunnel),
+            getTest(triggerResult.public_id)
           )
           result.passed = hasResultPassed(result.result, options.failOnCriticalErrors!!, options.failOnTimeout!!)
           results.push(result)
@@ -363,8 +364,8 @@ export const waitForResults = async (
         if (triggeredResult) {
           inProgressTriggers.delete(triggeredResult)
           const result: Result = {
-            dcId: polledResult.dc_id,
             enrichment: polledResult.enrichment,
+            location: getLocation(triggeredResult.location, !!tunnel),
             passed: hasResultPassed(polledResult.result, options.failOnCriticalErrors!!, options.failOnTimeout!!),
             result: polledResult.result,
             resultId: polledResult.resultID,
@@ -415,25 +416,22 @@ const createInProgressTriggers = (
 
 const createFailingResult = (
   errorMessage: ERRORS,
-  resultId: string,
-  deviceId: string,
-  dcId: number,
-  test: Test,
-  tunnel: boolean
+  triggerResult: TriggerResult,
+  location: string,
+  test: Test
 ): Result => ({
-  dcId,
+  location,
   passed: false,
   result: {
-    device: {height: 0, id: deviceId, width: 0},
+    device: {height: 0, id: triggerResult.device, width: 0},
     duration: 0,
     error: errorMessage,
     eventType: 'finished',
     passed: false,
     startUrl: '',
     stepDetails: [],
-    tunnel,
   },
-  resultId,
+  resultId: triggerResult.result_id,
   test,
   timestamp: 0,
 })

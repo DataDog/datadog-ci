@@ -5,17 +5,7 @@ import path from 'path'
 import {Writable} from 'stream'
 import {Builder} from 'xml2js'
 
-import {
-  ApiServerResult,
-  ERRORS,
-  InternalTest,
-  LocationsMapping,
-  MultiStep,
-  Reporter,
-  Result,
-  Step,
-  Vitals,
-} from '../interfaces'
+import {ApiServerResult, ERRORS, MultiStep, Reporter, Result, Step, Vitals} from '../interfaces'
 import {getResultDuration, getResultOutcome, ResultOutcome} from '../utils'
 
 interface Stats {
@@ -359,7 +349,7 @@ export class JUnitReporter implements Reporter {
               ]
             : []),
           {$: {name: 'execution_rule', value: test.options.ci?.executionRule}},
-          {$: {name: 'location', value: locations[result.dcId]}},
+          {$: {name: 'location', value: result.location}},
           {$: {name: 'message', value: test.message}},
           {$: {name: 'monitor_id', value: test.monitor_id}},
           {$: {name: 'passed', value: `${passed}`}},

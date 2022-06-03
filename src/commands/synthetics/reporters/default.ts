@@ -7,7 +7,6 @@ import {
   ConfigOverride,
   ERRORS,
   ExecutionRule,
-  LocationsMapping,
   MainReporter,
   Operator,
   Result,
@@ -15,7 +14,6 @@ import {
   Step,
   Summary,
   Test,
-  TriggerResponse,
 } from '../interfaces'
 import {getExecutionRule, getResultDuration, getResultOutcome, ResultOutcome} from '../utils'
 
@@ -198,8 +196,8 @@ const getResultUrl = (baseUrl: string, test: Test, resultId: string) => {
   return `${testDetailUrl}?resultId=${resultId}&${ciQueryParam}`
 }
 
-const renderExecutionResult = (test: Test, execution: Result, baseUrl: string, locationNames: LocationsMapping) => {
-  const {test: overriddenTest, dcId, resultId, result} = execution
+const renderExecutionResult = (test: Test, execution: Result, baseUrl: string) => {
+  const {test: overriddenTest, resultId, result} = execution
   const resultOutcome = getResultOutcome(execution)
   const [icon, setColor] = getResultIconAndColor(resultOutcome)
 
@@ -210,8 +208,7 @@ const renderExecutionResult = (test: Test, execution: Result, baseUrl: string, l
 
   const testLabel = `${executionRuleText}[${chalk.bold.dim(test.public_id)}] ${chalk.bold(test.name)}`
 
-  const locationName = !!result.tunnel ? 'Tunneled' : locationNames[dcId] || dcId.toString()
-  const location = setColor(`location: ${chalk.bold(locationName)}`)
+  const location = setColor(`location: ${chalk.bold(execution.location)}`)
   const device =
     test.type === 'browser' && 'device' in result ? ` - ${setColor(`device: ${chalk.bold(result.device.id)}`)}` : ''
   const resultIdentification = `${icon} ${testLabel} - ${location}${device}`

@@ -106,7 +106,7 @@ export const executeTests = async (reporter: MainReporter, config: CommandConfig
   try {
     const results = await waitForResults(
       api,
-      triggers.results,
+      triggers,
       testsToTrigger,
       tests,
       {

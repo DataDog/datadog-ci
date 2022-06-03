@@ -34,7 +34,6 @@ export interface BaseServerResult {
     message: string
   }
   passed: boolean
-  tunnel?: boolean
   unhealthy?: boolean
 }
 
@@ -93,7 +92,6 @@ interface Enrichment {
 
 export interface PollResult {
   check: Pick<Test, 'config' | 'subtype' | 'type'>
-  dc_id: number
   enrichment?: Partial<Enrichment>
   result: ServerResult
   resultID: string
@@ -101,8 +99,8 @@ export interface PollResult {
 }
 
 export interface Result {
-  dcId: number
   enrichment?: Partial<Enrichment>
+  location: string
   // `.passed` here combines `result.passed` and `failOnCriticalErrors` and `failOnTimeout`
   passed: boolean
   result: ServerResult
