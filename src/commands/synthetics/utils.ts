@@ -50,7 +50,7 @@ const template = (st: string, context: any): string =>
 export let ciTriggerApp = process.env.DATADOG_SYNTHETICS_CI_TRIGGER_APP || 'npm_package'
 
 export const handleConfig = (
-  test: InternalTest,
+  test: Test,
   publicId: string,
   reporter: MainReporter,
   config?: ConfigOverride
@@ -164,7 +164,7 @@ const warnOnReservedEnvVarNames = (context: TemplateContext, reporter: MainRepor
   }
 }
 
-export const getExecutionRule = (test?: InternalTest, configOverride?: ConfigOverride): ExecutionRule => {
+export const getExecutionRule = (test?: Test, configOverride?: ConfigOverride): ExecutionRule => {
   if (configOverride && configOverride.executionRule) {
     return getStrictestExecutionRule(configOverride.executionRule, test?.options?.ci?.executionRule)
   }
@@ -539,7 +539,7 @@ export const getTestsToTrigger = async (api: APIHelper, triggerConfigs: TriggerC
 
   const tests = await Promise.all(
     triggerConfigs.map(async ({config, id, suite}) => {
-      let test: InternalTest | undefined
+      let test: Test | undefined
       id = PUBLIC_ID_REGEX.test(id) ? id : id.substr(id.lastIndexOf('/') + 1)
       try {
         test = {

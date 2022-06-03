@@ -145,7 +145,7 @@ export interface Step {
   }[]
 }
 
-export interface Test {
+export interface ServerTest {
   config: {
     assertions: Assertion[]
     request: {
@@ -187,7 +187,7 @@ export interface Test {
   type: string
 }
 
-export interface InternalTest extends Test {
+export interface Test extends ServerTest {
   suite?: string
 }
 
