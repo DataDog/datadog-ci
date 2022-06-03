@@ -373,11 +373,7 @@ export const waitForResults = async (
             timestamp: polledResult.timestamp,
           }
           results.push(result)
-
-          const triggerResponse = triggerResponses.find((res) => res.result_id === polledResult.resultID)
-          if (triggerResponse) {
-            reporter.testResult(triggerResponse, result)
-          }
+          reporter.resultReceived(result)
         }
       }
     }
@@ -486,24 +482,24 @@ export const getReporter = (reporters: Reporter[]): MainReporter => ({
       }
     }
   },
+  resultEnd: (result, baseUrl) => {
+    for (const reporter of reporters) {
+      if (typeof reporter.resultEnd === 'function') {
+        reporter.resultEnd(result, baseUrl)
+      }
+    }
+  },
+  resultReceived: (result) => {
+    for (const reporter of reporters) {
+      if (typeof reporter.resultReceived === 'function') {
+        reporter.resultReceived(result)
+      }
+    }
+  },
   runEnd: (summary) => {
     for (const reporter of reporters) {
       if (typeof reporter.runEnd === 'function') {
         reporter.runEnd(summary)
-      }
-    }
-  },
-  testEnd: (test, results, baseUrl, locationNames) => {
-    for (const reporter of reporters) {
-      if (typeof reporter.testEnd === 'function') {
-        reporter.testEnd(test, results, baseUrl, locationNames)
-      }
-    }
-  },
-  testResult: (response, pollResult) => {
-    for (const reporter of reporters) {
-      if (typeof reporter.testResult === 'function') {
-        reporter.testResult(response, pollResult)
       }
     }
   },

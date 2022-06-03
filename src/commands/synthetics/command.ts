@@ -134,7 +134,7 @@ export class RunTestCommand extends Command {
         hasSucceeded = false
       }
 
-      this.reporter?.testEnd(result.test, [result], this.getAppBaseURL(), locationNames)
+      this.reporter?.resultEnd(result, this.getAppBaseURL())
     }
 
     this.reporter?.runEnd(summary)

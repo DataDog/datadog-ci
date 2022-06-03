@@ -272,6 +272,14 @@ export class DefaultReporter implements MainReporter {
     this.write(['', chalk.bold.cyan('=== REPORT ==='), `Took ${chalk.bold(delay)}ms`, '\n'].join('\n'))
   }
 
+  public resultEnd(result: Result, baseUrl: string) {
+    this.write(renderExecutionResult(result.test, result, baseUrl) + '\n\n')
+  }
+
+  public resultReceived(result: Result): void {
+    return
+  }
+
   public runEnd(summary: Summary) {
     const {bold: b, gray, green, red, yellow} = chalk
 
@@ -308,24 +316,6 @@ export class DefaultReporter implements MainReporter {
     lines.push(`${b('Run summary:')} ${runSummary.join(', ')}${extraInfoStr}\n\n`)
 
     this.write(lines.join('\n'))
-  }
-
-  public testEnd(
-    test: Test,
-    results: Result[], // Will always contain 1 result, as `testEnd` is called for each result
-    baseUrl: string,
-    locationNames: LocationsMapping
-  ) {
-    this.write(
-      results
-        .map((r) => renderExecutionResult(test, r, baseUrl, locationNames))
-        .join('\n\n')
-        .concat('\n\n')
-    )
-  }
-
-  public testResult(response: TriggerResponse, result: Result): void {
-    return
   }
 
   public testsWait(tests: Test[]) {

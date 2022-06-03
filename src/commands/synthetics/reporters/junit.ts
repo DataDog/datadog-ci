@@ -120,20 +120,8 @@ export class JUnitReporter implements Reporter {
     }
   }
 
-  public async runEnd() {
-    // Write the file
-    try {
-      const xml = this.builder.buildObject(this.json)
-      await fs.mkdir(path.dirname(this.destination), {recursive: true})
-      await fs.writeFile(this.destination, xml, 'utf8')
-      this.write(`✅ Created a jUnit report at ${c.bold.green(this.destination)}\n`)
-    } catch (e) {
-      this.write(`❌ Couldn't write the report to ${c.bold.green(this.destination)}:\n${e.toString()}\n`)
-    }
-  }
-
-  public testEnd(test: InternalTest, results: Result[], baseUrl: string, locations: LocationsMapping) {
-    const suiteRunName = test.suite || 'Undefined suite'
+  public resultEnd(result: Result, baseUrl: string) {
+    const suiteRunName = result.test.suite || 'Undefined suite'
     let suiteRun = this.json.testsuites.testsuite.find((suite: XMLRun) => suite.$.name === suiteRunName)
 
     if (!suiteRun) {
@@ -147,37 +135,47 @@ export class JUnitReporter implements Reporter {
     // Update stats for the suite.
     suiteRun.$ = {
       ...suiteRun.$,
-      ...this.getSuiteStats(results, getStats(suiteRun.$)),
+      ...this.getResultStats(result, getStats(suiteRun.$)),
     }
 
-    for (const result of results) {
-      const testCase: XMLTestCase = this.getTestCase(test, result, locations)
-      // Timeout errors are only reported at the top level.
-      if (result.result.error === ERRORS.TIMEOUT) {
-        testCase.error.push({
-          $: {type: 'timeout'},
-          _: result.result.error,
-        })
+    const testCase: XMLTestCase = this.getTestCase(result)
+    // Timeout errors are only reported at the top level.
+    if (result.result.error === ERRORS.TIMEOUT) {
+      testCase.error.push({
+        $: {type: 'timeout'},
+        _: result.result.error,
+      })
+    }
+    if ('stepDetails' in result.result) {
+      // It's a browser test.
+      for (const stepDetail of result.result.stepDetails) {
+        const {allowed_error, browser_error, error, warning} = this.getBrowserTestStep(stepDetail)
+        testCase.allowed_error.push(...allowed_error)
+        testCase.browser_error.push(...browser_error)
+        testCase.error.push(...error)
+        testCase.warning.push(...warning)
       }
-      if ('stepDetails' in result.result) {
-        // It's a browser test.
-        for (const stepDetail of result.result.stepDetails) {
-          const {allowed_error, browser_error, error, warning} = this.getBrowserTestStep(stepDetail)
-          testCase.allowed_error.push(...allowed_error)
-          testCase.browser_error.push(...browser_error)
-          testCase.error.push(...error)
-          testCase.warning.push(...warning)
-        }
-      } else if ('steps' in result.result) {
-        // It's a multistep test.
-        for (const step of result.result.steps) {
-          const {allowed_error, error} = this.getApiTestStep(step)
-          testCase.allowed_error.push(...allowed_error)
-          testCase.error.push(...error)
-        }
+    } else if ('steps' in result.result) {
+      // It's a multistep test.
+      for (const step of result.result.steps) {
+        const {allowed_error, error} = this.getApiTestStep(step)
+        testCase.allowed_error.push(...allowed_error)
+        testCase.error.push(...error)
       }
+    }
 
-      suiteRun.testcase.push(testCase)
+    suiteRun.testcase.push(testCase)
+  }
+
+  public async runEnd() {
+    // Write the file
+    try {
+      const xml = this.builder.buildObject(this.json)
+      await fs.mkdir(path.dirname(this.destination), {recursive: true})
+      await fs.writeFile(this.destination, xml, 'utf8')
+      this.write(`✅ Created a jUnit report at ${c.bold.green(this.destination)}\n`)
+    } catch (e) {
+      this.write(`❌ Couldn't write the report to ${c.bold.green(this.destination)}:\n${e.toString()}\n`)
     }
   }
 
@@ -315,15 +313,8 @@ export class JUnitReporter implements Reporter {
     return stats
   }
 
-  private getSuiteStats(results: Result[], stats: Stats | undefined = getDefaultStats()): Stats {
-    for (const result of results) {
-      stats = this.getResultStats(result, stats)
-    }
-
-    return stats
-  }
-
-  private getTestCase(test: InternalTest, result: Result, locations: LocationsMapping): XMLTestCase {
+  private getTestCase(result: Result): XMLTestCase {
+    const test = result.test
     const timeout = result.result.error === ERRORS.TIMEOUT
     const resultOutcome = getResultOutcome(result)
     const passed = [ResultOutcome.Passed, ResultOutcome.PassedNonBlocking].includes(resultOutcome)

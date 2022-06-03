@@ -7,10 +7,9 @@ export interface MainReporter {
   initErrors(errors: string[]): void
   log(log: string): void
   reportStart(timings: {startTime: number}): void
+  resultEnd(result: Result, baseUrl: string): void
+  resultReceived(result: Result): void
   runEnd(summary: Summary): void
-  // `testEnd` is called for each result
-  testEnd(test: Test, results: Result[], baseUrl: string, locationNames: LocationsMapping): void
-  testResult(triggerResponse: TriggerResponse, result: Result): void
   testsWait(tests: Test[]): void
   testTrigger(test: Test, testId: string, executionRule: ExecutionRule, config: ConfigOverride): void
   testWait(test: Test): void
