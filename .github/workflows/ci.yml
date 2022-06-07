@@ -128,6 +128,30 @@ jobs:
       - name: Test generated standalone binary
         run: yarn dist-standalone:test
 
+  standalone-binary-ubuntu-arm64:
+    name: Test standalone binary in ubuntu arm64
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Install node
+        uses: actions/setup-node@v1
+        with:
+          node-version: '14.18.3'
+      - name: Install QEMU
+        run: sudo apt install qemu binfmt-support qemu-user-static && update-binfmts --display
+      - name: Install project dependencies
+        run: yarn install --immutable
+      - name: Bundle library
+        run: yarn build
+      - name: Create standalone binary
+        run: yarn dist-standalone -t node14-linux-arm64 -o datadog-ci_linux-arm64
+      - name: Remove dist folder to check that binary can stand alone
+        run: |
+          rm -rf dist
+          rm -rf src
+      - name: Test generated standalone binary
+        run: yarn dist-standalone:test
+
   check-licenses:
     name: Check licenses
     runs-on: ubuntu-latest
