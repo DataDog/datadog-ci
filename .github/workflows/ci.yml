@@ -151,6 +151,8 @@ jobs:
           rm -rf src
       - name: Test generated standalone binary
         run: yarn dist-standalone:test
+        env: 
+          IS_ARM64: "true"
 
   check-licenses:
     name: Check licenses
