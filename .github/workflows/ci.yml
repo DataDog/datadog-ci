@@ -138,7 +138,7 @@ jobs:
         with:
           node-version: '14.18.3'
       - name: Install QEMU
-        run: sudo apt install qemu binfmt-support qemu-user-static && update-binfmts --display
+        run: sudo apt install qemu binfmt-support qemu-user-static binfmt-qemu-static && update-binfmts --display
       - name: Install project dependencies
         run: yarn install --immutable
       - name: Bundle library
@@ -153,6 +153,7 @@ jobs:
         run: yarn dist-standalone:test
         env: 
           IS_ARM64: "true"
+          QEMU_LD_PREFIX: /usr/aarch64-linux-gnu/
 
   check-licenses:
     name: Check licenses
