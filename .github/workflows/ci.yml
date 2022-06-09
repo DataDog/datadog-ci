@@ -88,6 +88,35 @@ jobs:
       - name: Test generated standalone binary
         run: yarn dist-standalone:test
 
+  standalone-binary-test-alpine:
+    name: Test standalone binary in alpine
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Setup latest Alpine Linux
+        uses: jirutka/setup-alpine@v1
+        with:
+          branch: v3.13
+      - name: Run script inside Alpine chroot as root
+        run: |
+          apk add nodejs npm
+          npm install --global yarn
+          apk add nodejs npm
+          yarn install --immutable
+          yarn build
+          yarn dist-standalone -t node14-alpine-arm64 -o datadog-ci_linux-musl-x64
+          rm -rf dist
+          rm -rf src
+          yarn dist-standalone:test
+        shell: alpine.sh --root {0}
+        env: 
+          IS_MUSL: true
+      - uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: datadog-ci_linux-musl-x64
+          path: ./datadog-ci_linux-musl-x64
+
   standalone-binary-test-windows:
     name: Test standalone binary in windows
     runs-on: windows-latest
