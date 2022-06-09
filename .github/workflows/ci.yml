@@ -146,6 +146,9 @@ jobs:
             IS_ARM64: "true"
           dockerRunArgs: |
             --volume "${PWD}:/app"
+          install: |
+            curl -fsSL https://deb.nodesource.com/setup_14.x | sudo -E bash -
+            apt-get install -y nodejs
           run: |
             yarn install --immutable
             yarn build
