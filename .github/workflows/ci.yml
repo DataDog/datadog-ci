@@ -133,10 +133,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      - name: Install node
-        uses: actions/setup-node@v1
-        with:
-          node-version: '14.18.3'
       - uses: uraimo/run-on-arch-action@v2
         name: Build and run on arm64
         with:
