@@ -147,7 +147,8 @@ jobs:
           dockerRunArgs: |
             --volume "${PWD}:/app"
           install: |
-            curl -fsSL https://deb.nodesource.com/setup_14.x | sudo -E bash -
+            apt-get install -y curl
+            curl -fsSL https://deb.nodesource.com/setup_14.x | bash -
             apt-get install -y nodejs
           run: |
             yarn install --immutable
