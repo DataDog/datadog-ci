@@ -137,23 +137,22 @@ jobs:
         uses: actions/setup-node@v1
         with:
           node-version: '14.18.3'
-      - name: Install QEMU
-        run: sudo apt install qemu binfmt-support qemu-user-static && update-binfmts --display
-      - name: Install project dependencies
-        run: yarn install --immutable
-      - name: Bundle library
-        run: yarn build
-      - name: Create standalone binary
-        run: yarn dist-standalone -t node14-linux-arm64 -o datadog-ci_linux-arm64
-      - name: Remove dist folder to check that binary can stand alone
-        run: |
-          rm -rf dist
-          rm -rf src
-      - name: Test generated standalone binary
-        run: yarn dist-standalone:test
-        env: 
-          IS_ARM64: "true"
-          QEMU_LD_PREFIX: /usr/aarch64-linux-gnu/
+      - uses: uraimo/run-on-arch-action@v2
+        name: Build and run on arm64
+        with:
+          arch: aarch64
+          distro: ubuntu20.04
+          env: |
+            IS_ARM64: "true"
+          dockerRunArgs: |
+            --volume "${PWD}:/app"
+          run: |
+            yarn install --immutable
+            yarn build
+            yarn dist-standalone -t node14-linux-arm64 -o datadog-ci_linux-arm64
+            rm -rf dist
+            rm -rf src
+            yarn dist-standalone:test
 
   check-licenses:
     name: Check licenses
