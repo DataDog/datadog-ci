@@ -17,7 +17,7 @@ import {
   ConfigOverride,
   ERRORS,
   ExecutionRule,
-  InternalTest,
+  LocationsMapping,
   MainReporter,
   Payload,
   PollResult,
@@ -50,7 +50,7 @@ const template = (st: string, context: any): string =>
 export let ciTriggerApp = process.env.DATADOG_SYNTHETICS_CI_TRIGGER_APP || 'npm_package'
 
 export const handleConfig = (
-  test: InternalTest,
+  test: Test,
   publicId: string,
   reporter: MainReporter,
   config?: ConfigOverride
@@ -164,7 +164,7 @@ const warnOnReservedEnvVarNames = (context: TemplateContext, reporter: MainRepor
   }
 }
 
-export const getExecutionRule = (test?: InternalTest, configOverride?: ConfigOverride): ExecutionRule => {
+export const getExecutionRule = (test?: Test, configOverride?: ConfigOverride): ExecutionRule => {
   if (configOverride && configOverride.executionRule) {
     return getStrictestExecutionRule(configOverride.executionRule, test?.options?.ci?.executionRule)
   }
@@ -265,7 +265,7 @@ export const wait = async (duration: number) => new Promise((resolve) => setTime
 
 export const waitForResults = async (
   api: APIHelper,
-  triggerResponses: TriggerResponse[],
+  trigger: Trigger,
   triggerConfigs: TriggerConfig[],
   tests: Test[],
   options: {
@@ -276,7 +276,7 @@ export const waitForResults = async (
   reporter: MainReporter,
   tunnel?: Tunnel
 ): Promise<Result[]> => {
-  const inProgressTriggers = createInProgressTriggers(triggerResponses, options.defaultTimeout, triggerConfigs)
+  const inProgressTriggers = createInProgressTriggers(trigger.results, options.defaultTimeout, triggerConfigs)
   const results: Result[] = []
 
   const maxPollingTimeout = Math.max(...[...inProgressTriggers].map((tr) => tr.pollingTimeout))
@@ -291,6 +291,18 @@ export const waitForResults = async (
       .catch(() => (isTunnelConnected = false))
   }
 
+  const locationNames = trigger.locations.reduce<LocationsMapping>((mapping, location) => {
+    mapping[location.id] = location.display_name
+
+    return mapping
+  }, {})
+
+  const getLocation = (dcId: number, test: Test) => {
+    const hasTunnel = !!tunnel && (test.type === 'browser' || test.subtype === 'http')
+
+    return hasTunnel ? 'Tunneled' : locationNames[dcId] || dcId.toString()
+  }
+
   const getTest = (id: string): Test => tests.find((t) => t.public_id === id)!
 
   while (inProgressTriggers.size) {
@@ -300,13 +312,12 @@ export const waitForResults = async (
     for (const triggerResult of inProgressTriggers) {
       if (pollingDuration >= triggerResult.pollingTimeout) {
         inProgressTriggers.delete(triggerResult)
+        const test = getTest(triggerResult.public_id)
         const result = createFailingResult(
           ERRORS.TIMEOUT,
-          triggerResult.result_id,
-          triggerResult.device,
-          triggerResult.location,
-          getTest(triggerResult.public_id),
-          !!tunnel
+          triggerResult,
+          getLocation(triggerResult.location, test),
+          test
         )
         result.passed = hasResultPassed(result.result, options.failOnCriticalErrors!!, options.failOnTimeout!!)
         results.push(result)
@@ -316,16 +327,8 @@ export const waitForResults = async (
     if (tunnel && !isTunnelConnected) {
       for (const triggerResult of inProgressTriggers) {
         inProgressTriggers.delete(triggerResult)
-        results.push(
-          createFailingResult(
-            ERRORS.TUNNEL,
-            triggerResult.result_id,
-            triggerResult.device,
-            triggerResult.location,
-            getTest(triggerResult.public_id),
-            !!tunnel
-          )
-        )
+        const test = getTest(triggerResult.public_id)
+        results.push(createFailingResult(ERRORS.TUNNEL, triggerResult, getLocation(triggerResult.location, test), test))
       }
     }
 
@@ -341,13 +344,12 @@ export const waitForResults = async (
         polledResults = []
         for (const triggerResult of inProgressTriggers) {
           inProgressTriggers.delete(triggerResult)
+          const test = getTest(triggerResult.public_id)
           const result = createFailingResult(
             ERRORS.ENDPOINT,
-            triggerResult.result_id,
-            triggerResult.device,
-            triggerResult.location,
-            getTest(triggerResult.public_id),
-            !!tunnel
+            triggerResult,
+            getLocation(triggerResult.location, test),
+            test
           )
           result.passed = hasResultPassed(result.result, options.failOnCriticalErrors!!, options.failOnTimeout!!)
           results.push(result)
@@ -362,21 +364,18 @@ export const waitForResults = async (
         const triggeredResult = [...inProgressTriggers.values()].find((r) => r.result_id === polledResult.resultID)
         if (triggeredResult) {
           inProgressTriggers.delete(triggeredResult)
+          const test = getTest(triggeredResult.public_id)
           const result: Result = {
-            dcId: polledResult.dc_id,
             enrichment: polledResult.enrichment,
+            location: getLocation(triggeredResult.location, test),
             passed: hasResultPassed(polledResult.result, options.failOnCriticalErrors!!, options.failOnTimeout!!),
             result: polledResult.result,
             resultId: polledResult.resultID,
-            test: deepExtend(getTest(triggeredResult.public_id), polledResult.check),
+            test: deepExtend(test, polledResult.check),
             timestamp: polledResult.timestamp,
           }
           results.push(result)
-
-          const triggerResponse = triggerResponses.find((res) => res.result_id === polledResult.resultID)
-          if (triggerResponse) {
-            reporter.testResult(triggerResponse, result)
-          }
+          reporter.resultReceived(result)
         }
       }
     }
@@ -415,25 +414,22 @@ const createInProgressTriggers = (
 
 const createFailingResult = (
   errorMessage: ERRORS,
-  resultId: string,
-  deviceId: string,
-  dcId: number,
-  test: Test,
-  tunnel: boolean
+  triggerResult: TriggerResult,
+  location: string,
+  test: Test
 ): Result => ({
-  dcId,
+  location,
   passed: false,
   result: {
-    device: {height: 0, id: deviceId, width: 0},
+    device: {height: 0, id: triggerResult.device, width: 0},
     duration: 0,
     error: errorMessage,
     eventType: 'finished',
     passed: false,
     startUrl: '',
     stepDetails: [],
-    tunnel,
   },
-  resultId,
+  resultId: triggerResult.result_id,
   test,
   timestamp: 0,
 })
@@ -488,24 +484,24 @@ export const getReporter = (reporters: Reporter[]): MainReporter => ({
       }
     }
   },
+  resultEnd: (result, baseUrl) => {
+    for (const reporter of reporters) {
+      if (typeof reporter.resultEnd === 'function') {
+        reporter.resultEnd(result, baseUrl)
+      }
+    }
+  },
+  resultReceived: (result) => {
+    for (const reporter of reporters) {
+      if (typeof reporter.resultReceived === 'function') {
+        reporter.resultReceived(result)
+      }
+    }
+  },
   runEnd: (summary) => {
     for (const reporter of reporters) {
       if (typeof reporter.runEnd === 'function') {
         reporter.runEnd(summary)
-      }
-    }
-  },
-  testEnd: (test, results, baseUrl, locationNames) => {
-    for (const reporter of reporters) {
-      if (typeof reporter.testEnd === 'function') {
-        reporter.testEnd(test, results, baseUrl, locationNames)
-      }
-    }
-  },
-  testResult: (response, pollResult) => {
-    for (const reporter of reporters) {
-      if (typeof reporter.testResult === 'function') {
-        reporter.testResult(response, pollResult)
       }
     }
   },
@@ -539,7 +535,7 @@ export const getTestsToTrigger = async (api: APIHelper, triggerConfigs: TriggerC
 
   const tests = await Promise.all(
     triggerConfigs.map(async ({config, id, suite}) => {
-      let test: InternalTest | undefined
+      let test: Test | undefined
       id = PUBLIC_ID_REGEX.test(id) ? id : id.substr(id.lastIndexOf('/') + 1)
       try {
         test = {

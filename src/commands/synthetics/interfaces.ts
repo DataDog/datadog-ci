@@ -7,10 +7,9 @@ export interface MainReporter {
   initErrors(errors: string[]): void
   log(log: string): void
   reportStart(timings: {startTime: number}): void
+  resultEnd(result: Result, baseUrl: string): void
+  resultReceived(result: Result): void
   runEnd(summary: Summary): void
-  // `testEnd` is called for each result
-  testEnd(test: Test, results: Result[], baseUrl: string, locationNames: LocationsMapping): void
-  testResult(triggerResponse: TriggerResponse, result: Result): void
   testsWait(tests: Test[]): void
   testTrigger(test: Test, testId: string, executionRule: ExecutionRule, config: ConfigOverride): void
   testWait(test: Test): void
@@ -34,7 +33,6 @@ export interface BaseServerResult {
     message: string
   }
   passed: boolean
-  tunnel?: boolean
   unhealthy?: boolean
 }
 
@@ -93,7 +91,6 @@ interface Enrichment {
 
 export interface PollResult {
   check: Pick<Test, 'config' | 'subtype' | 'type'>
-  dc_id: number
   enrichment?: Partial<Enrichment>
   result: ServerResult
   resultID: string
@@ -101,8 +98,8 @@ export interface PollResult {
 }
 
 export interface Result {
-  dcId: number
   enrichment?: Partial<Enrichment>
+  location: string
   // `.passed` here combines `result.passed` and `failOnCriticalErrors` and `failOnTimeout`
   passed: boolean
   result: ServerResult
@@ -145,7 +142,7 @@ export interface Step {
   }[]
 }
 
-export interface Test {
+export interface ServerTest {
   config: {
     assertions: Assertion[]
     request: {
@@ -187,7 +184,7 @@ export interface Test {
   type: string
 }
 
-export interface InternalTest extends Test {
+export interface Test extends ServerTest {
   suite?: string
 }
 

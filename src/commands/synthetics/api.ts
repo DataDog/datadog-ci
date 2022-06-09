@@ -4,7 +4,7 @@ import {AxiosError, AxiosPromise, AxiosRequestConfig} from 'axios'
 
 import {getRequestBuilder} from '../../helpers/utils'
 
-import {APIConfiguration, Payload, PollResult, Test, TestSearchResult, Trigger} from './interfaces'
+import {APIConfiguration, Payload, PollResult, ServerTest, TestSearchResult, Trigger} from './interfaces'
 import {ciTriggerApp, retry} from './utils'
 
 interface BackendError {
@@ -50,7 +50,7 @@ const triggerTests = (request: (args: AxiosRequestConfig) => AxiosPromise<Trigge
   return resp.data
 }
 
-const getTest = (request: (args: AxiosRequestConfig) => AxiosPromise<Test>) => async (testId: string) => {
+const getTest = (request: (args: AxiosRequestConfig) => AxiosPromise<ServerTest>) => async (testId: string) => {
   const resp = await retryRequest(
     {
       url: `/synthetics/tests/${testId}`,

@@ -4,17 +4,7 @@ import deepExtend from 'deep-extend'
 
 import {parseConfigFile, removeUndefinedValues} from '../../helpers/utils'
 import {CiError, CriticalError} from './errors'
-import {
-  CommandConfig,
-  ERRORS,
-  LocationsMapping,
-  MainReporter,
-  Reporter,
-  Result,
-  Summary,
-  Test,
-  Trigger,
-} from './interfaces'
+import {CommandConfig, ERRORS, MainReporter, Reporter, Result, Summary} from './interfaces'
 import {DefaultReporter} from './reporters/default'
 import {JUnitReporter} from './reporters/junit'
 import {executeTests} from './run-test'
@@ -73,11 +63,9 @@ export class RunTestCommand extends Command {
 
     let results: Result[]
     let summary: Summary
-    let tests: Test[]
-    let triggers: Trigger
 
     try {
-      ;({results, summary, tests, triggers} = await executeTests(this.reporter, this.config))
+      ;({results, summary} = await executeTests(this.reporter, this.config))
     } catch (error) {
       if (error instanceof CiError) {
         this.reportCiError(error, this.reporter)
@@ -99,22 +87,16 @@ export class RunTestCommand extends Command {
       return 0
     }
 
-    return this.renderResults(results, summary, tests, triggers, startTime)
+    return this.renderResults(results, summary, startTime)
   }
 
   private getAppBaseURL() {
     return `https://${this.config.subdomain}.${this.config.datadogSite}/`
   }
 
-  private renderResults(results: Result[], summary: Summary, tests: Test[], triggers: Trigger, startTime: number) {
+  private renderResults(results: Result[], summary: Summary, startTime: number) {
     // Rendering the results.
     this.reporter?.reportStart({startTime})
-
-    const locationNames = triggers.locations.reduce((mapping, location) => {
-      mapping[location.id] = location.display_name
-
-      return mapping
-    }, {} as LocationsMapping)
 
     if (!this.config.failOnTimeout) {
       if (!summary.timedOut) {
@@ -152,7 +134,7 @@ export class RunTestCommand extends Command {
         hasSucceeded = false
       }
 
-      this.reporter?.testEnd(result.test, [result], this.getAppBaseURL(), locationNames)
+      this.reporter?.resultEnd(result, this.getAppBaseURL())
     }
 
     this.reporter?.runEnd(summary)

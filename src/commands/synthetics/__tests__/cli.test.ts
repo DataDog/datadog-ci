@@ -12,7 +12,6 @@ import {
   getApiTest,
   getTestSuite,
   MockedReporter,
-  mockLocation,
   mockReporter,
   mockTestTriggerResponse,
   RenderResultsHelper,
@@ -466,7 +465,7 @@ describe('run-test', () => {
         },
         failOnCriticalErrors: false,
         failOnTimeout: false,
-        fixtures: new RenderResultsHelper().createFixtures([test1]),
+        results: new RenderResultsHelper().getResults([test1]),
         summary: {...emptySummary},
       },
       {
@@ -478,7 +477,7 @@ describe('run-test', () => {
         },
         failOnCriticalErrors: false,
         failOnTimeout: false,
-        fixtures: new RenderResultsHelper().createFixtures([test1Timeout]),
+        results: new RenderResultsHelper().getResults([test1Timeout]),
         summary: {...emptySummary},
       },
       {
@@ -490,7 +489,7 @@ describe('run-test', () => {
         },
         failOnCriticalErrors: false,
         failOnTimeout: true,
-        fixtures: new RenderResultsHelper().createFixtures([test1Timeout]),
+        results: new RenderResultsHelper().getResults([test1Timeout]),
         summary: {...emptySummary},
       },
       {
@@ -502,7 +501,7 @@ describe('run-test', () => {
         },
         failOnCriticalErrors: false,
         failOnTimeout: false,
-        fixtures: new RenderResultsHelper().createFixtures([test1CriticalError]),
+        results: new RenderResultsHelper().getResults([test1CriticalError]),
         summary: {...emptySummary},
       },
       {
@@ -514,7 +513,7 @@ describe('run-test', () => {
         },
         failOnCriticalErrors: true,
         failOnTimeout: false,
-        fixtures: new RenderResultsHelper().createFixtures([test1CriticalError]),
+        results: new RenderResultsHelper().getResults([test1CriticalError]),
         summary: {...emptySummary},
       },
       {
@@ -532,7 +531,7 @@ describe('run-test', () => {
         },
         failOnCriticalErrors: false,
         failOnTimeout: false,
-        fixtures: new RenderResultsHelper().createFixtures([test1, test1FailedNonBlocking, test1Failed]),
+        results: new RenderResultsHelper().getResults([test1, test1FailedNonBlocking, test1Failed]),
         summary: {...emptySummary, skipped: 1},
       },
       {
@@ -549,7 +548,7 @@ describe('run-test', () => {
         },
         failOnCriticalErrors: false,
         failOnTimeout: false,
-        fixtures: new RenderResultsHelper().createFixtures([
+        results: new RenderResultsHelper().getResults([
           test1NonBlocking,
           test1NonBlockingFailedNonBlocking,
           test1NonBlockingFailed,
@@ -570,13 +569,13 @@ describe('run-test', () => {
         },
         failOnCriticalErrors: false,
         failOnTimeout: false,
-        fixtures: new RenderResultsHelper().createFixtures([test1FailedNonBlocking, test2Failed, test3]),
+        results: new RenderResultsHelper().getResults([test1FailedNonBlocking, test2Failed, test3]),
         summary: {...emptySummary},
       },
     ]
 
     test.each(cases)('$description', async (testCase) => {
-      testCase.fixtures.results.forEach(
+      testCase.results.forEach(
         (result) =>
           (result.passed = utils.hasResultPassed(result.result, testCase.failOnCriticalErrors, testCase.failOnTimeout))
       )
@@ -588,10 +587,8 @@ describe('run-test', () => {
       }))
       jest.spyOn(utils, 'getReporter').mockImplementation(() => mockReporter)
       jest.spyOn(runTests, 'executeTests').mockResolvedValue({
-        results: testCase.fixtures.results,
+        results: testCase.results,
         summary: testCase.summary,
-        tests: testCase.fixtures.tests,
-        triggers: testCase.fixtures.triggers,
       })
 
       const command = new RunTestCommand()
@@ -600,14 +597,12 @@ describe('run-test', () => {
 
       const exitCode = await command.execute()
 
-      expect((mockReporter as MockedReporter).testEnd).toHaveBeenCalledTimes(testCase.fixtures.results.length)
+      expect((mockReporter as MockedReporter).resultEnd).toHaveBeenCalledTimes(testCase.results.length)
 
-      for (const result of testCase.fixtures.results) {
-        expect((mockReporter as MockedReporter).testEnd).toHaveBeenCalledWith(
-          testCase.fixtures.tests.find((t) => t.public_id === result.test.public_id),
-          [result],
-          `https://${DEFAULT_COMMAND_CONFIG.subdomain}.${DEFAULT_COMMAND_CONFIG.datadogSite}/`,
-          {[mockLocation.id.toString()]: mockLocation.display_name}
+      for (const result of testCase.results) {
+        expect((mockReporter as MockedReporter).resultEnd).toHaveBeenCalledWith(
+          result,
+          `https://${DEFAULT_COMMAND_CONFIG.subdomain}.${DEFAULT_COMMAND_CONFIG.datadogSite}/`
         )
       }
 

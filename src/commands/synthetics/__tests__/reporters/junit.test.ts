@@ -1,7 +1,7 @@
 // tslint:disable: no-string-literal
 import {promises as fs} from 'fs'
 import {Writable} from 'stream'
-import {ERRORS, LocationsMapping, Result} from '../../interfaces'
+import {ERRORS, Result} from '../../interfaces'
 
 import {RunTestCommand} from '../../command'
 import {getDefaultStats, JUnitReporter, XMLTestCase} from '../../reporters/junit'
@@ -95,30 +95,25 @@ describe('Junit reporter', () => {
     })
   })
 
-  describe('testEnd', () => {
-    const rest: [Result[], string, LocationsMapping] = [[], '', {}]
+  describe('resultEnd', () => {
     beforeEach(() => {
       reporter = new JUnitReporter(commandMock as RunTestCommand)
     })
 
     it('should give a default suite name', () => {
-      reporter.testEnd(globalTestMock, ...rest)
+      reporter.resultEnd(globalResultMock, '')
       const testsuite = reporter['json'].testsuites.testsuite[0]
       expect(testsuite.$.name).toBe('Undefined suite')
     })
 
     it('should use the same report for tests from same suite', () => {
-      const testMock = {
-        suite: 'Suite 1',
-        ...globalTestMock,
-      }
-      reporter.testEnd(testMock, ...rest)
-      reporter.testEnd(testMock, ...rest)
+      const result = {...globalResultMock, test: {suite: 'Suite 1', ...globalTestMock}}
+      reporter.resultEnd(result, '')
       expect(reporter['json'].testsuites.testsuite.length).toBe(1)
     })
 
     it('should add stats to the run', () => {
-      reporter.testEnd(globalTestMock, ...rest)
+      reporter.resultEnd(globalResultMock, '')
       const testsuite = reporter['json'].testsuites.testsuite[0]
       expect(testsuite.$).toMatchObject(getDefaultStats())
     })
@@ -179,7 +174,10 @@ describe('Junit reporter', () => {
           ],
         },
       }
-      reporter.testEnd(globalTestMock, [browserResult1, browserResult2, browserResult3, apiResult], '', {})
+      reporter.resultEnd(browserResult1, '')
+      reporter.resultEnd(browserResult2, '')
+      reporter.resultEnd(browserResult3, '')
+      reporter.resultEnd(apiResult, '')
       const testsuite = reporter['json'].testsuites.testsuite[0]
       const results = [
         [1, 2, 0, 1],
@@ -220,7 +218,7 @@ describe('Junit reporter', () => {
           },
         },
       }
-      const suite = reporter['getTestCase'](getApiTest('123-456-789'), resultMock, {})
+      const suite = reporter['getTestCase'](resultMock)
       expect(suite.$).toMatchObject({
         ...getDefaultStats(),
         errors: 2,

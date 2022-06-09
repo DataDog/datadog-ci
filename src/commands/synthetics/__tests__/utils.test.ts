@@ -18,7 +18,6 @@ import {
   ConfigOverride,
   ERRORS,
   ExecutionRule,
-  InternalTest,
   PollResult,
   Result,
   ServerResult,
@@ -30,7 +29,7 @@ import {
 import {Tunnel} from '../tunnel'
 import * as utils from '../utils'
 
-import {getApiResult, getApiTest, getBrowserServerResult, mockReporter} from './fixtures'
+import {getApiResult, getApiTest, getBrowserServerResult, mockLocation, mockReporter} from './fixtures'
 
 describe('utils', () => {
   const apiConfiguration = {
@@ -240,7 +239,7 @@ describe('utils', () => {
   describe('handleConfig', () => {
     test('empty config returns simple payload', () => {
       const publicId = 'abc-def-ghi'
-      expect(utils.handleConfig({public_id: publicId} as InternalTest, publicId, mockReporter)).toEqual({
+      expect(utils.handleConfig({public_id: publicId} as Test, publicId, mockReporter)).toEqual({
         executionRule: ExecutionRule.BLOCKING,
         public_id: publicId,
       })
@@ -257,7 +256,7 @@ describe('utils', () => {
           config: {request: {url: 'http://example.org/path'}},
           options: {},
           public_id: publicId,
-        } as InternalTest
+        } as Test
 
         if (testExecutionRule) {
           fakeTest.options.ci = {executionRule: testExecutionRule}
@@ -303,7 +302,7 @@ describe('utils', () => {
         config: {request: {url: 'http://example.org/path#target'}},
         public_id: publicId,
         type: 'browser',
-      } as InternalTest
+      } as Test
       const configOverride = {
         startUrl: 'https://{{DOMAIN}}/newPath?oldPath={{ PATHNAME   }}{{HASH}}',
       }
@@ -335,7 +334,7 @@ describe('utils', () => {
         config: {request: {url: 'http://{{ FAKE_VAR }}/path'}},
         public_id: publicId,
         type: 'browser',
-      } as InternalTest
+      } as Test
       const configOverride = {
         startUrl: 'https://{{DOMAIN}}/newPath?oldPath={{CUSTOMVAR}}',
       }
@@ -353,7 +352,7 @@ describe('utils', () => {
         config: {request: {url: 'http://exmaple.org/path'}},
         public_id: publicId,
         type: 'browser',
-      } as InternalTest
+      } as Test
       const configOverride = {
         startUrl: 'http://127.0.0.1/newPath{{PARAMS}}',
       }
@@ -370,7 +369,7 @@ describe('utils', () => {
         config: {request: {url: 'http://example.org/path'}},
         public_id: publicId,
         type: 'browser',
-      } as InternalTest
+      } as Test
       const configOverride: ConfigOverride = {
         allowInsecureCertificates: true,
         basicAuth: {username: 'user', password: 'password'},
@@ -545,7 +544,6 @@ describe('utils', () => {
 
       return {
         check: result.test,
-        dc_id: result.dcId,
         enrichment: result.enrichment,
         result: result.result,
         resultID: result.resultId,
@@ -553,7 +551,7 @@ describe('utils', () => {
       }
     }
     const getPassingResult = (resultId: string): Result => ({
-      dcId: 42,
+      location: mockLocation.display_name,
       passed: true,
       result: getBrowserServerResult({error: ERRORS.TIMEOUT, passed: false}),
       resultId,
@@ -564,7 +562,7 @@ describe('utils', () => {
     const getTestAndResult = (publicId = 'abc-def-ghi', resultId = '0123456789') => {
       const triggerResult: TriggerResponse = {
         device: 'laptop_large',
-        location: 42,
+        location: mockLocation.id,
         public_id: publicId,
         result_id: resultId,
       }
@@ -576,12 +574,18 @@ describe('utils', () => {
 
       const passingResult: Result = getPassingResult(resultId)
 
-      return {passingResult, test: passingResult.test, triggerConfig, triggerResult}
+      return {
+        passingResult,
+        test: passingResult.test,
+        trigger: {locations: [mockLocation], results: [triggerResult]},
+        triggerConfig,
+        triggerResult,
+      }
     }
 
     test('should poll result ids', async () => {
       mockAxiosWithDefaultResult()
-      const {test, triggerResult, passingResult, triggerConfig} = getTestAndResult()
+      const {test, trigger, passingResult, triggerConfig} = getTestAndResult()
       const waitMock = jest.spyOn(utils, 'wait')
       waitMock.mockImplementation()
       const expectedResults: Result[] = [passingResult]
@@ -589,7 +593,7 @@ describe('utils', () => {
       expect(
         await utils.waitForResults(
           api,
-          [triggerResult],
+          trigger,
           [triggerConfig],
           [test],
           {defaultTimeout: 120000, failOnCriticalErrors: false},
@@ -597,14 +601,14 @@ describe('utils', () => {
         )
       ).toEqual(expectedResults)
 
-      expect(mockReporter.testResult).toHaveBeenCalledWith(triggerResult, passingResult)
+      expect(mockReporter.resultReceived).toHaveBeenCalledWith(passingResult)
     })
 
     test('results should be timed-out if global pollingTimeout is exceeded', async () => {
-      const {test, triggerResult} = getTestAndResult()
+      const {test, trigger, triggerResult} = getTestAndResult()
       const expectedResults: Result[] = [
         {
-          dcId: triggerResult.location,
+          location: mockLocation.display_name,
           passed: true,
           result: getBrowserServerResult({
             device: {height: 0, id: triggerResult.device, width: 0},
@@ -619,7 +623,7 @@ describe('utils', () => {
       expect(
         await utils.waitForResults(
           api,
-          [triggerResult],
+          trigger,
           [],
           [test],
           {defaultTimeout: 0, failOnCriticalErrors: false},
@@ -629,10 +633,10 @@ describe('utils', () => {
     })
 
     test('results should be timeout-ed if test pollingTimeout is exceeded', async () => {
-      const {test, triggerResult} = getTestAndResult()
+      const {test, trigger, triggerResult} = getTestAndResult()
       const expectedResults: Result[] = [
         {
-          dcId: triggerResult.location,
+          location: mockLocation.display_name,
           passed: true,
           result: getBrowserServerResult({
             device: {height: 0, id: triggerResult.device, width: 0},
@@ -652,7 +656,7 @@ describe('utils', () => {
       expect(
         await utils.waitForResults(
           api,
-          [triggerResult],
+          trigger,
           [testTriggerConfig],
           [test],
           {defaultTimeout: 120000, failOnCriticalErrors: false},
@@ -663,7 +667,7 @@ describe('utils', () => {
 
     test('correct number of pass and timeout results', async () => {
       mockAxiosWithDefaultResult()
-      const {test, triggerResult, passingResult} = getTestAndResult()
+      const {test, trigger, triggerResult, passingResult} = getTestAndResult()
       const waitMock = jest.spyOn(utils, 'wait')
       waitMock.mockImplementation()
 
@@ -674,7 +678,7 @@ describe('utils', () => {
       const expectedResults = [
         passingResult,
         {
-          dcId: triggerResultTimeOut.location,
+          location: mockLocation.display_name,
           passed: true,
           result: getBrowserServerResult({
             device: {height: 0, id: triggerResultTimeOut.device, width: 0},
@@ -686,10 +690,12 @@ describe('utils', () => {
           timestamp: 0,
         },
       ]
+      trigger.results = [triggerResult, triggerResultTimeOut]
+
       expect(
         await utils.waitForResults(
           api,
-          [triggerResult, triggerResultTimeOut],
+          trigger,
           [],
           [test],
           {defaultTimeout: 2000, failOnCriticalErrors: false},
@@ -701,7 +707,7 @@ describe('utils', () => {
     test('tunnel failure', async () => {
       const waitMock = jest.spyOn(utils, 'wait')
       waitMock.mockImplementation()
-      const {test, triggerResult} = getTestAndResult()
+      const {test, trigger, triggerResult} = getTestAndResult()
 
       // Fake pollResults to not update results and iterate until the isTunnelConnected is equal to false
       jest
@@ -715,13 +721,12 @@ describe('utils', () => {
       } as any
       const expectedResults: Result[] = [
         {
-          dcId: triggerResult.location,
+          location: 'Tunneled',
           passed: false,
           result: getBrowserServerResult({
             device: {height: 0, id: triggerResult.device, width: 0},
             error: ERRORS.TUNNEL,
             passed: false,
-            tunnel: true,
           }),
           resultId: triggerResult.result_id,
           test,
@@ -732,7 +737,7 @@ describe('utils', () => {
       expect(
         await utils.waitForResults(
           api,
-          [triggerResult],
+          trigger,
           [],
           [test],
           {defaultTimeout: 2000, failOnCriticalErrors: true},
@@ -743,7 +748,7 @@ describe('utils', () => {
       expect(
         await utils.waitForResults(
           api,
-          [triggerResult],
+          trigger,
           [],
           [test],
           {defaultTimeout: 2000, failOnCriticalErrors: false},
@@ -753,8 +758,56 @@ describe('utils', () => {
       ).toEqual(expectedResults)
     })
 
+    test('location when tunnel', async () => {
+      const waitMock = jest.spyOn(utils, 'wait')
+      waitMock.mockImplementation()
+      const {test, trigger} = getTestAndResult()
+
+      const mockTunnel = {
+        keepAlive: async () => true,
+      } as any
+
+      let results = await utils.waitForResults(
+        api,
+        trigger,
+        [],
+        [test],
+        {defaultTimeout: 2000, failOnCriticalErrors: true},
+        mockReporter,
+        mockTunnel
+      )
+      expect(results[0].location).toBe('Tunneled')
+
+      const newTest = {...test}
+      newTest.type = 'api'
+      newTest.subtype = 'http'
+      results = await utils.waitForResults(
+        api,
+        trigger,
+        [],
+        [newTest],
+        {defaultTimeout: 2000, failOnCriticalErrors: true},
+        mockReporter,
+        mockTunnel
+      )
+      expect(results[0].location).toBe('Tunneled')
+
+      newTest.type = 'api'
+      newTest.subtype = 'ssl'
+      results = await utils.waitForResults(
+        api,
+        trigger,
+        [],
+        [newTest],
+        {defaultTimeout: 2000, failOnCriticalErrors: true},
+        mockReporter,
+        mockTunnel
+      )
+      expect(results[0].location).toBe('Frankfurt (AWS)')
+    })
+
     test('pollResults throws', async () => {
-      const {test, triggerResult} = getTestAndResult()
+      const {test, trigger, triggerResult} = getTestAndResult()
       jest.spyOn(utils, 'wait').mockImplementation()
       const axiosMock = jest.spyOn(axios, 'create')
       const serverError = new Error('Server Error') as AxiosError
@@ -768,7 +821,7 @@ describe('utils', () => {
       expect(
         await utils.waitForResults(
           api,
-          [triggerResult],
+          trigger,
           [],
           [test],
           {defaultTimeout: 2000, failOnCriticalErrors: false},
@@ -777,13 +830,12 @@ describe('utils', () => {
         )
       ).toEqual([
         {
-          dcId: triggerResult.location,
+          location: 'Tunneled',
           passed: true,
           result: getBrowserServerResult({
             device: {height: 0, id: triggerResult.device, width: 0},
             error: ERRORS.ENDPOINT,
             passed: false,
-            tunnel: true,
           }),
           resultId: triggerResult.result_id,
           test,
@@ -794,7 +846,7 @@ describe('utils', () => {
       await expect(
         utils.waitForResults(
           api,
-          [triggerResult],
+          trigger,
           [],
           [test],
           {defaultTimeout: 2000, failOnCriticalErrors: true},
