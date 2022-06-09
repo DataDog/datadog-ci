@@ -296,8 +296,13 @@ export const waitForResults = async (
 
     return mapping
   }, {})
-  const getLocation = (dcId: number, hasTunnel: boolean) =>
-    hasTunnel ? 'Tunneled' : locationNames[dcId] || dcId.toString()
+
+  const getLocation = (dcId: number, test: Test) => {
+    const hasTunnel = !!tunnel && (test.type === 'browser' || test.subtype === 'http')
+
+    return hasTunnel ? 'Tunneled' : locationNames[dcId] || dcId.toString()
+  }
+
   const getTest = (id: string): Test => tests.find((t) => t.public_id === id)!
 
   while (inProgressTriggers.size) {
@@ -307,11 +312,12 @@ export const waitForResults = async (
     for (const triggerResult of inProgressTriggers) {
       if (pollingDuration >= triggerResult.pollingTimeout) {
         inProgressTriggers.delete(triggerResult)
+        const test = getTest(triggerResult.public_id)
         const result = createFailingResult(
           ERRORS.TIMEOUT,
           triggerResult,
-          getLocation(triggerResult.location, !!tunnel),
-          getTest(triggerResult.public_id)
+          getLocation(triggerResult.location, test),
+          test
         )
         result.passed = hasResultPassed(result.result, options.failOnCriticalErrors!!, options.failOnTimeout!!)
         results.push(result)
@@ -321,14 +327,8 @@ export const waitForResults = async (
     if (tunnel && !isTunnelConnected) {
       for (const triggerResult of inProgressTriggers) {
         inProgressTriggers.delete(triggerResult)
-        results.push(
-          createFailingResult(
-            ERRORS.TUNNEL,
-            triggerResult,
-            getLocation(triggerResult.location, !!tunnel),
-            getTest(triggerResult.public_id)
-          )
-        )
+        const test = getTest(triggerResult.public_id)
+        results.push(createFailingResult(ERRORS.TUNNEL, triggerResult, getLocation(triggerResult.location, test), test))
       }
     }
 
@@ -344,11 +344,12 @@ export const waitForResults = async (
         polledResults = []
         for (const triggerResult of inProgressTriggers) {
           inProgressTriggers.delete(triggerResult)
+          const test = getTest(triggerResult.public_id)
           const result = createFailingResult(
             ERRORS.ENDPOINT,
             triggerResult,
-            getLocation(triggerResult.location, !!tunnel),
-            getTest(triggerResult.public_id)
+            getLocation(triggerResult.location, test),
+            test
           )
           result.passed = hasResultPassed(result.result, options.failOnCriticalErrors!!, options.failOnTimeout!!)
           results.push(result)
@@ -363,13 +364,14 @@ export const waitForResults = async (
         const triggeredResult = [...inProgressTriggers.values()].find((r) => r.result_id === polledResult.resultID)
         if (triggeredResult) {
           inProgressTriggers.delete(triggeredResult)
+          const test = getTest(triggeredResult.public_id)
           const result: Result = {
             enrichment: polledResult.enrichment,
-            location: getLocation(triggeredResult.location, !!tunnel),
+            location: getLocation(triggeredResult.location, test),
             passed: hasResultPassed(polledResult.result, options.failOnCriticalErrors!!, options.failOnTimeout!!),
             result: polledResult.result,
             resultId: polledResult.resultID,
-            test: deepExtend(getTest(triggeredResult.public_id), polledResult.check),
+            test: deepExtend(test, polledResult.check),
             timestamp: polledResult.timestamp,
           }
           results.push(result)

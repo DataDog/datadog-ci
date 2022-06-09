@@ -758,6 +758,54 @@ describe('utils', () => {
       ).toEqual(expectedResults)
     })
 
+    test('location when tunnel', async () => {
+      const waitMock = jest.spyOn(utils, 'wait')
+      waitMock.mockImplementation()
+      const {test, trigger} = getTestAndResult()
+
+      const mockTunnel = {
+        keepAlive: async () => true,
+      } as any
+
+      let results = await utils.waitForResults(
+        api,
+        trigger,
+        [],
+        [test],
+        {defaultTimeout: 2000, failOnCriticalErrors: true},
+        mockReporter,
+        mockTunnel
+      )
+      expect(results[0].location).toBe('Tunneled')
+
+      const newTest = {...test}
+      newTest.type = 'api'
+      newTest.subtype = 'http'
+      results = await utils.waitForResults(
+        api,
+        trigger,
+        [],
+        [newTest],
+        {defaultTimeout: 2000, failOnCriticalErrors: true},
+        mockReporter,
+        mockTunnel
+      )
+      expect(results[0].location).toBe('Tunneled')
+
+      newTest.type = 'api'
+      newTest.subtype = 'ssl'
+      results = await utils.waitForResults(
+        api,
+        trigger,
+        [],
+        [newTest],
+        {defaultTimeout: 2000, failOnCriticalErrors: true},
+        mockReporter,
+        mockTunnel
+      )
+      expect(results[0].location).toBe('Frankfurt (AWS)')
+    })
+
     test('pollResults throws', async () => {
       const {test, trigger, triggerResult} = getTestAndResult()
       jest.spyOn(utils, 'wait').mockImplementation()
