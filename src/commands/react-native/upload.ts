@@ -30,19 +30,19 @@ import {buildPath} from '../../helpers/utils'
 
 export class UploadCommand extends Command {
   public static usage = Command.Usage({
-    description: 'Upload javascript sourcemaps to Datadog.',
+    description: 'Upload React Native sourcemaps to Datadog.',
     details: `
-            This command will upload all javascript sourcemaps and their corresponding javascript file to Datadog in order to un-minify front-end stack traces received by Datadog.
+            This command will upload React Native sourcemaps and their corresponding javascript bundle to Datadog in order to un-minify front-end stack traces received by Datadog.
             See README for details.
         `,
     examples: [
       [
-        'Upload all sourcemaps in current directory',
-        'datadog-ci sourcemaps upload . --service my-service --minified-path-prefix https://static.datadog.com --release-version 1.234',
+        'Upload ios sourcemaps',
+        'datadog-ci react-native upload --platform ios --service com.company.app --bundle ./main.jsbundle --sourcemap ./main.jsbundle.map --release-version 1.23.4',
       ],
       [
-        'Upload all sourcemaps in /home/users/ci with 50 concurrent uploads',
-        'datadog-ci sourcemaps upload . --service my-service --minified-path-prefix https://static.datadog.com --release-version 1.234 --concurency 50',
+        'Upload android sourcemaps',
+        'datadog-ci react-native upload --platform android --service com.company.app --bundle ./index.android.bundle --sourcemap ./index.android.bundle.map --release-version 1.23.4',
       ],
     ],
   })
@@ -312,13 +312,12 @@ export class UploadCommand extends Command {
   }
 }
 
-UploadCommand.addPath('sourcemaps', 'upload')
-UploadCommand.addOption('basePath', Command.String({required: true}))
+UploadCommand.addPath('react-native', 'upload')
 UploadCommand.addOption('releaseVersion', Command.String('--release-version'))
 UploadCommand.addOption('service', Command.String('--service'))
-UploadCommand.addOption('minifiedPathPrefix', Command.String('--minified-path-prefix'))
-UploadCommand.addOption('projectPath', Command.String('--project-path'))
-UploadCommand.addOption('maxConcurrency', Command.String('--max-concurrency'))
+UploadCommand.addOption('bundle', Command.String('--bundle'))
+UploadCommand.addOption('sourcemap', Command.String('--sourcemap'))
+UploadCommand.addOption('platform', Command.String('--platform'))
 UploadCommand.addOption('dryRun', Command.Boolean('--dry-run'))
 UploadCommand.addOption('repositoryURL', Command.String('--repository-url'))
 UploadCommand.addOption('disableGit', Command.Boolean('--disable-git'))
