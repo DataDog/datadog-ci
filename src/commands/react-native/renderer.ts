@@ -97,9 +97,9 @@ export const renderSuccessfulCommand = (statuses: UploadStatus[], duration: numb
 }
 
 export const renderCommandInfo = (
-  basePath: string,
-  minifiedPathPrefix: string,
-  projectPath: string,
+  bundlePath: string,
+  sourcemapPath: string,
+  platform: string,
   releaseVersion: string,
   service: string,
   poolLimit: number,
@@ -111,15 +111,9 @@ export const renderCommandInfo = (
   }
   const startStr = chalk.green(`Starting upload with concurrency ${poolLimit}. \n`)
   fullStr += startStr
-  const basePathStr = chalk.green(`Will look for sourcemaps in ${basePath}\n`)
+  const basePathStr = chalk.green(`Upload of ${sourcemapPath} for bundle ${bundlePath} on platform ${platform}\n`)
   fullStr += basePathStr
-  const minifiedPathPrefixStr = chalk.green(
-    `Will match JS files for errors on files starting with ${minifiedPathPrefix}\n`
-  )
-  fullStr += minifiedPathPrefixStr
-  const serviceVersionProjectPathStr = chalk.green(
-    `version: ${releaseVersion} service: ${service} project path: ${projectPath}\n`
-  )
+  const serviceVersionProjectPathStr = chalk.green(`version: ${releaseVersion} service: ${service}\n`)
   fullStr += serviceVersionProjectPathStr
 
   return fullStr

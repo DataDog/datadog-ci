@@ -97,11 +97,10 @@ export class UploadCommand extends Command {
     }
 
     this.context.stdout.write(
-      // TODO2
       renderCommandInfo(
-        this.basePath!,
-        this.minifiedPathPrefix,
-        this.projectPath,
+        this.bundle,
+        this.sourcemap,
+        this.platform,
         this.releaseVersion,
         this.service,
         this.maxConcurrency,
