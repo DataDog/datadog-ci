@@ -110,8 +110,14 @@ export class UploadCommand extends Command {
     )
     const metricsLogger = getMetricsLogger({
       datadogSite: process.env.DATADOG_SITE,
-      defaultTags: [`version:${this.releaseVersion}`, `service:${this.service}`, `cli_version:${this.cliVersion}`],
-      prefix: 'datadog.ci.sourcemaps.', // TODO1
+      defaultTags: [
+        `version:${this.releaseVersion}`,
+        `service:${this.service}`,
+        `cli_version:${this.cliVersion}`,
+        'react-native:true',
+        `platform:${this.platform}`,
+      ],
+      prefix: 'datadog.ci.sourcemaps.upload.',
     })
     const apiKeyValidator = newApiKeyValidator({
       apiKey: this.config.apiKey,
