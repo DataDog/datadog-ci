@@ -26,7 +26,12 @@ export class RNSourcemap {
     this.gitData = gitData
   }
 
-  public asMultipartPayload(cliVersion: string, service: string, version: string): MultipartPayload {
+  public asMultipartPayload(
+    cliVersion: string,
+    service: string,
+    version: string,
+    projectPath: string
+  ): MultipartPayload {
     const content = new Map<string, MultipartValue>([
       ['cli_version', {value: cliVersion}],
       ['service', {value: service}],
@@ -34,6 +39,7 @@ export class RNSourcemap {
       ['source_map', {value: fs.createReadStream(this.sourcemapPath)}],
       ['minified_file', {value: fs.createReadStream(this.bundlePath)}],
       ['minified_url', {value: this.bundleName}],
+      ['project_path', {value: projectPath}],
       ['type', {value: 'js_sourcemap'}], // TODO?
     ])
     if (this.gitData !== undefined) {

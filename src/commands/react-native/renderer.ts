@@ -99,7 +99,8 @@ export const renderCommandInfo = (
   releaseVersion: string,
   service: string,
   poolLimit: number,
-  dryRun: boolean
+  dryRun: boolean,
+  projectPath: string
 ) => {
   let fullStr = ''
   if (dryRun) {
@@ -107,7 +108,9 @@ export const renderCommandInfo = (
   }
   const startStr = chalk.green(`Starting upload with concurrency ${poolLimit}. \n`)
   fullStr += startStr
-  const basePathStr = chalk.green(`Upload of ${sourcemapPath} for bundle ${bundlePath} on platform ${platform}\n`)
+  const basePathStr = chalk.green(
+    `Upload of ${sourcemapPath} for bundle ${bundlePath} on platform ${platform} with project path ${projectPath}\n`
+  )
   fullStr += basePathStr
   const serviceVersionProjectPathStr = chalk.green(`version: ${releaseVersion} service: ${service}\n`)
   fullStr += serviceVersionProjectPathStr

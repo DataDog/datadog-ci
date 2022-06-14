@@ -55,6 +55,7 @@ export class UploadCommand extends Command {
   private platform?: 'ios' | 'android' | 'unspecified'
   private bundle?: string
   private sourcemap?: string
+  private projectPath: string = process.env.PWD || ''
 
   constructor() {
     super()
@@ -99,7 +100,8 @@ export class UploadCommand extends Command {
         this.releaseVersion,
         this.service,
         this.maxConcurrency,
-        this.dryRun
+        this.dryRun,
+        this.projectPath
       )
     )
     const metricsLogger = getMetricsLogger({
@@ -252,7 +254,12 @@ export class UploadCommand extends Command {
         return UploadStatus.Skipped
       }
 
-      const payload = sourcemap.asMultipartPayload(this.cliVersion, this.service!, this.releaseVersion!)
+      const payload = sourcemap.asMultipartPayload(
+        this.cliVersion,
+        this.service!,
+        this.releaseVersion!,
+        this.projectPath
+      )
       if (this.dryRun) {
         this.context.stdout.write(`[DRYRUN] ${renderUpload(sourcemap)}`)
 
@@ -288,3 +295,4 @@ UploadCommand.addOption('dryRun', Command.Boolean('--dry-run'))
 UploadCommand.addOption('repositoryURL', Command.String('--repository-url'))
 UploadCommand.addOption('disableGit', Command.Boolean('--disable-git'))
 UploadCommand.addOption('maxConcurrency', Command.String('--max-concurrency'))
+UploadCommand.addOption('projectPath', Command.String('--project-path'))
