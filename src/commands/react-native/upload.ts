@@ -127,7 +127,7 @@ export class UploadCommand extends Command {
     const initialTime = Date.now()
     const payloads = await this.getPayloadsToUpload(useGit)
     const requestBuilder = this.getRequestBuilder()
-    const uploadMultipart = this.upload(requestBuilder, metricsLogger, apiKeyValidator) // TODO1
+    const uploadMultipart = this.upload(requestBuilder, metricsLogger, apiKeyValidator)
     try {
       const results = await asyncPool(this.maxConcurrency, payloads, uploadMultipart) // TODO1
       const totalTime = (Date.now() - initialTime) / 1000
@@ -273,12 +273,7 @@ export class UploadCommand extends Command {
         return UploadStatus.Skipped
       }
 
-      const payload = sourcemap.asMultipartPayload(
-        this.cliVersion,
-        this.service!,
-        this.releaseVersion!,
-        this.projectPath
-      )
+      const payload = sourcemap.asMultipartPayload(this.cliVersion, this.service!, this.releaseVersion!)
       if (this.dryRun) {
         this.context.stdout.write(`[DRYRUN] ${renderUpload(sourcemap)}`)
 
