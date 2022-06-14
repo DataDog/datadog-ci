@@ -53,6 +53,7 @@ export class UploadCommand extends Command {
   }
   private disableGit?: boolean
   private dryRun = false
+  private maxConcurrency = 20
   private releaseVersion?: string
   private repositoryURL?: string
   private service?: string
@@ -129,7 +130,7 @@ export class UploadCommand extends Command {
     const requestBuilder = this.getRequestBuilder()
     const uploadMultipart = this.upload(requestBuilder, metricsLogger, apiKeyValidator)
     try {
-      const results = await asyncPool(this.maxConcurrency, payloads, uploadMultipart) // TODO1
+      const results = await asyncPool(this.maxConcurrency, payloads, uploadMultipart)
       const totalTime = (Date.now() - initialTime) / 1000
       this.context.stdout.write(renderSuccessfulCommand(results, totalTime, this.dryRun)) // TODO2
       metricsLogger.logger.gauge('duration', totalTime)
@@ -308,3 +309,4 @@ UploadCommand.addOption('platform', Command.String('--platform'))
 UploadCommand.addOption('dryRun', Command.Boolean('--dry-run'))
 UploadCommand.addOption('repositoryURL', Command.String('--repository-url'))
 UploadCommand.addOption('disableGit', Command.Boolean('--disable-git'))
+UploadCommand.addOption('maxConcurrency', Command.String('--max-concurrency'))
