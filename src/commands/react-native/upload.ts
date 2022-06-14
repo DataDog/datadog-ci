@@ -47,7 +47,6 @@ export class UploadCommand extends Command {
     ],
   })
 
-  private basePath?: string
   private cliVersion: string
   private config = {
     apiKey: process.env.DATADOG_API_KEY,
@@ -55,12 +54,12 @@ export class UploadCommand extends Command {
   }
   private disableGit?: boolean
   private dryRun = false
-  private maxConcurrency = 20
-  private minifiedPathPrefix?: string
-  private projectPath = ''
   private releaseVersion?: string
   private repositoryURL?: string
   private service?: string
+  private platform?: 'ios' | 'android' | 'unspecified'
+  private bundle?: string
+  private sourcemap?: string
 
   constructor() {
     super()
@@ -80,21 +79,23 @@ export class UploadCommand extends Command {
       return 1
     }
 
-    if (!this.minifiedPathPrefix) {
-      this.context.stderr.write('Missing minified path\n')
+    if (!this.bundle) {
+      this.context.stderr.write('Missing bundle path\n')
 
       return 1
     }
 
-    if (!this.isMinifiedPathPrefixValid()) {
-      this.context.stdout.write(renderInvalidPrefix)
+    // Platform is not used for now
+    if (!this.platform) {
+      this.platform = 'unspecified'
+    }
+
+    if (!this.sourcemap) {
+      this.context.stderr.write('Missing sourcemap file path\n')
 
       return 1
     }
 
-    // Normalizing the basePath to resolve .. and .
-    // Always using the posix version to avoid \ on Windows.
-    this.basePath = path.posix.normalize(this.basePath!)
     this.context.stdout.write(
       renderCommandInfo(
         this.basePath!,
