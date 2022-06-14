@@ -1,8 +1,6 @@
 import chalk from 'chalk'
 import {Command} from 'clipanion'
-import glob from 'glob'
 import asyncPool from 'tiny-async-pool'
-import {URL} from 'url'
 
 import {ApiKeyValidator, newApiKeyValidator} from '../../helpers/apikey'
 import {InvalidConfigurationError} from '../../helpers/errors'
@@ -17,15 +15,12 @@ import {
   renderConfigurationError,
   renderFailedUpload,
   renderGitDataNotAttachedWarning,
-  renderInvalidPrefix,
   renderRetriedUpload,
   renderSuccessfulCommand,
   renderUpload,
 } from './renderer'
-import {getBaseIntakeUrl, getMinifiedFilePath} from './utils'
+import {getBaseIntakeUrl} from './utils'
 import {InvalidPayload, validatePayload} from './validation'
-
-import {buildPath} from '../../helpers/utils'
 
 export class UploadCommand extends Command {
   public static usage = Command.Usage({
@@ -230,22 +225,6 @@ export class UploadCommand extends Command {
       ]),
       overrideUrl: 'api/v2/srcmap',
     })
-  }
-
-  private isMinifiedPathPrefixValid(): boolean {
-    let protocol
-    try {
-      const objUrl = new URL(this.minifiedPathPrefix!)
-      protocol = objUrl.protocol
-    } catch {
-      // Do nothing.
-    }
-
-    if (!protocol && !this.minifiedPathPrefix!.startsWith('/')) {
-      return false
-    }
-
-    return true
   }
 
   private upload(

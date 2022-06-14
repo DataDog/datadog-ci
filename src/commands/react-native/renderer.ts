@@ -18,10 +18,6 @@ export const renderSourcesNotFoundWarning = (sourcemap: string) =>
 
 export const renderConfigurationError = (error: Error) => chalk.red(`${ICONS.FAILED} Configuration error: ${error}.\n`)
 
-export const renderInvalidPrefix = chalk.red(
-  `${ICONS.FAILED} --minified-path-prefix should either be an URL (such as "http://example.com/static") or an absolute path starting with a / such as "/static"\n`
-)
-
 export const renderFailedUpload = (sourcemap: RNSourcemap, errorMessage: string) => {
   const sourcemapPathBold = `[${chalk.bold.dim(sourcemap.sourcemapPath)}]`
 
