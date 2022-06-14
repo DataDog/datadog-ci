@@ -97,6 +97,7 @@ export class UploadCommand extends Command {
     }
 
     this.context.stdout.write(
+      // TODO2
       renderCommandInfo(
         this.basePath!,
         this.minifiedPathPrefix,
@@ -110,7 +111,7 @@ export class UploadCommand extends Command {
     const metricsLogger = getMetricsLogger({
       datadogSite: process.env.DATADOG_SITE,
       defaultTags: [`version:${this.releaseVersion}`, `service:${this.service}`, `cli_version:${this.cliVersion}`],
-      prefix: 'datadog.ci.sourcemaps.',
+      prefix: 'datadog.ci.sourcemaps.', // TODO1
     })
     const apiKeyValidator = newApiKeyValidator({
       apiKey: this.config.apiKey,
@@ -119,13 +120,13 @@ export class UploadCommand extends Command {
     })
     const useGit = this.disableGit === undefined || !this.disableGit
     const initialTime = Date.now()
-    const payloads = await this.getPayloadsToUpload(useGit)
+    const payloads = await this.getPayloadsToUpload(useGit) // TODO1
     const requestBuilder = this.getRequestBuilder()
-    const uploadMultipart = this.upload(requestBuilder, metricsLogger, apiKeyValidator)
+    const uploadMultipart = this.upload(requestBuilder, metricsLogger, apiKeyValidator) // TODO1
     try {
-      const results = await asyncPool(this.maxConcurrency, payloads, uploadMultipart)
+      const results = await asyncPool(this.maxConcurrency, payloads, uploadMultipart) // TODO1
       const totalTime = (Date.now() - initialTime) / 1000
-      this.context.stdout.write(renderSuccessfulCommand(results, totalTime, this.dryRun))
+      this.context.stdout.write(renderSuccessfulCommand(results, totalTime, this.dryRun)) // TODO2
       metricsLogger.logger.gauge('duration', totalTime)
 
       return 0
@@ -234,7 +235,7 @@ export class UploadCommand extends Command {
       apiKey: this.config.apiKey!,
       baseUrl: getBaseIntakeUrl(),
       headers: new Map([
-        ['DD-EVP-ORIGIN', 'datadog-ci sourcemaps'],
+        ['DD-EVP-ORIGIN', 'datadog-ci sourcemaps'], //TODO?
         ['DD-EVP-ORIGIN-VERSION', this.cliVersion],
       ]),
       overrideUrl: 'api/v2/srcmap',
