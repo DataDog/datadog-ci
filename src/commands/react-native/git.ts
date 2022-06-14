@@ -131,7 +131,7 @@ export class TrackedFilesMatcher {
   }
 
   // Looks up the sources declared in the sourcemap and return a list of related tracked files.
-  public matchSourcemap(stdout: Writable, srcmapPath: string): string[] | undefined {
+  public matchRNSourcemap(stdout: Writable, srcmapPath: string): string[] | undefined {
     const buff = fs.readFileSync(srcmapPath, 'utf8')
     const srcmapObj = JSON.parse(buff)
     if (!srcmapObj.sources) {

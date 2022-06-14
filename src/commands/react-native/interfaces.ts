@@ -2,37 +2,39 @@ import fs from 'fs'
 
 import {MultipartPayload, MultipartValue} from '../../helpers/upload'
 
-export class Sourcemap {
+export class RNSourcemap {
   public gitData?: GitData
-  public minifiedFilePath: string
-  public minifiedUrl: string
+  public bundlePath: string
   public sourcemapPath: string
+  public bundleName: string
 
-  constructor(minifiedFilePath: string, minifiedUrl: string, sourcemapPath: string) {
-    this.minifiedFilePath = minifiedFilePath
-    this.minifiedUrl = minifiedUrl
+  constructor(bundlePath: string, sourcemapPath: string, bundleName?: string) {
+    this.bundlePath = bundlePath
     this.sourcemapPath = sourcemapPath
+    this.bundleName = this.getBundleName(bundlePath, bundleName)
+  }
+
+  private getBundleName(bundlePath: string, bundleName?: string): string {
+    if (bundleName) return bundleName
+
+    // We return the name of the file on the disk if no bundleName is returned
+    const splitPath = bundlePath.split('/')
+    return splitPath[splitPath.length - 1]
   }
 
   public addRepositoryData(gitData: GitData) {
     this.gitData = gitData
   }
 
-  public asMultipartPayload(
-    cliVersion: string,
-    service: string,
-    version: string,
-    projectPath: string
-  ): MultipartPayload {
+  public asMultipartPayload(cliVersion: string, service: string, version: string): MultipartPayload {
     const content = new Map<string, MultipartValue>([
       ['cli_version', {value: cliVersion}],
       ['service', {value: service}],
       ['version', {value: version}],
       ['source_map', {value: fs.createReadStream(this.sourcemapPath)}],
-      ['minified_file', {value: fs.createReadStream(this.minifiedFilePath)}],
-      ['minified_url', {value: this.minifiedUrl}],
-      ['project_path', {value: projectPath}],
-      ['type', {value: 'js_sourcemap'}],
+      ['minified_file', {value: fs.createReadStream(this.bundlePath)}],
+      ['minified_url', {value: this.bundleName}],
+      ['type', {value: 'js_sourcemap'}], // TODO?
     ])
     if (this.gitData !== undefined) {
       if (this.gitData!.gitRepositoryPayload !== undefined) {

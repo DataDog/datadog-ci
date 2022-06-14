@@ -1,7 +1,6 @@
 import chalk from 'chalk'
 import {Command} from 'clipanion'
 import glob from 'glob'
-import path from 'path'
 import asyncPool from 'tiny-async-pool'
 import {URL} from 'url'
 
@@ -12,7 +11,7 @@ import {getMetricsLogger, MetricsLogger} from '../../helpers/metrics'
 import {upload, UploadStatus} from '../../helpers/upload'
 import {getRequestBuilder} from '../../helpers/utils'
 import {getRepositoryData, newSimpleGit, RepositoryData} from './git'
-import {Sourcemap} from './interfaces'
+import {RNSourcemap} from './interfaces'
 import {
   renderCommandInfo,
   renderConfigurationError,
@@ -126,7 +125,7 @@ export class UploadCommand extends Command {
     })
     const useGit = this.disableGit === undefined || !this.disableGit
     const initialTime = Date.now()
-    const payloads = await this.getPayloadsToUpload(useGit) // TODO1
+    const payloads = await this.getPayloadsToUpload(useGit)
     const requestBuilder = this.getRequestBuilder()
     const uploadMultipart = this.upload(requestBuilder, metricsLogger, apiKeyValidator) // TODO1
     try {
@@ -154,7 +153,7 @@ export class UploadCommand extends Command {
   }
 
   // Fills the 'repository' field of each payload with data gathered using git.
-  private addRepositoryDataToPayloads = async (payloads: Sourcemap[]) => {
+  private addRepositoryDataToPayloads = async (payloads: RNSourcemap[]) => {
     const repositoryData = await getRepositoryData(await newSimpleGit(), this.context.stdout, this.repositoryURL)
     if (repositoryData === undefined) {
       return
@@ -173,27 +172,12 @@ export class UploadCommand extends Command {
 
   // Looks for the sourcemaps and minified files on disk and returns
   // the associated payloads.
-  private getMatchingSourcemapFiles = async (): Promise<Sourcemap[]> => {
-    const sourcemapFiles = glob.sync(buildPath(this.basePath!, '**/*js.map'))
-
-    return Promise.all(
-      sourcemapFiles.map(async (sourcemapPath) => {
-        const minifiedFilePath = getMinifiedFilePath(sourcemapPath)
-        const minifiedURL = this.getMinifiedURL(minifiedFilePath)
-
-        return new Sourcemap(minifiedFilePath, minifiedURL, sourcemapPath)
-      })
-    )
+  private getMatchingRNSourcemapFiles = async (): Promise<RNSourcemap[]> => {
+    return [new RNSourcemap(this.bundle!, this.sourcemap!)]
   }
 
-  private getMinifiedURL(minifiedFilePath: string): string {
-    const relativePath = minifiedFilePath.replace(this.basePath!, '')
-
-    return buildPath(this.minifiedPathPrefix!, relativePath)
-  }
-
-  private getPayloadsToUpload = async (useGit: boolean): Promise<Sourcemap[]> => {
-    const payloads = await this.getMatchingSourcemapFiles()
+  private getPayloadsToUpload = async (useGit: boolean): Promise<RNSourcemap[]> => {
+    const payloads = await this.getMatchingRNSourcemapFiles()
     if (!useGit) {
       return payloads
     }
@@ -209,7 +193,7 @@ export class UploadCommand extends Command {
   private getRepositoryPayload = (repositoryData: RepositoryData, sourcemapPath: string): string | undefined => {
     let repositoryPayload: string | undefined
     try {
-      const files = repositoryData.trackedFilesMatcher.matchSourcemap(this.context.stdout, sourcemapPath)
+      const files = repositoryData.trackedFilesMatcher.matchRNSourcemap(this.context.stdout, sourcemapPath)
       if (files) {
         repositoryPayload = JSON.stringify({
           data: [
@@ -268,8 +252,8 @@ export class UploadCommand extends Command {
     requestBuilder: RequestBuilder,
     metricsLogger: MetricsLogger,
     apiKeyValidator: ApiKeyValidator
-  ): (sourcemap: Sourcemap) => Promise<UploadStatus> {
-    return async (sourcemap: Sourcemap) => {
+  ): (sourcemap: RNSourcemap) => Promise<UploadStatus> {
+    return async (sourcemap: RNSourcemap) => {
       try {
         validatePayload(sourcemap)
       } catch (error) {
