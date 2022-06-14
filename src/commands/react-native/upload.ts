@@ -41,6 +41,7 @@ export class UploadCommand extends Command {
     ],
   })
 
+  private bundle?: string
   private cliVersion: string
   private config = {
     apiKey: process.env.DATADOG_API_KEY,
@@ -49,13 +50,12 @@ export class UploadCommand extends Command {
   private disableGit?: boolean
   private dryRun = false
   private maxConcurrency = 20
+  private platform?: 'ios' | 'android' | 'unspecified'
+  private projectPath: string = process.cwd() || ''
   private releaseVersion?: string
   private repositoryURL?: string
   private service?: string
-  private platform?: 'ios' | 'android' | 'unspecified'
-  private bundle?: string
   private sourcemap?: string
-  private projectPath: string = process.cwd() || ''
 
   constructor() {
     super()
@@ -169,9 +169,9 @@ export class UploadCommand extends Command {
 
   // Looks for the sourcemaps and minified files on disk and returns
   // the associated payloads.
-  private getMatchingRNSourcemapFiles = async (): Promise<RNSourcemap[]> => {
-    return [new RNSourcemap(this.bundle!, this.sourcemap!)]
-  }
+  private getMatchingRNSourcemapFiles = async (): Promise<RNSourcemap[]> => [
+    new RNSourcemap(this.bundle!, this.sourcemap!),
+  ]
 
   private getPayloadsToUpload = async (useGit: boolean): Promise<RNSourcemap[]> => {
     const payloads = await this.getMatchingRNSourcemapFiles()
@@ -222,7 +222,7 @@ export class UploadCommand extends Command {
       apiKey: this.config.apiKey!,
       baseUrl: getBaseIntakeUrl(),
       headers: new Map([
-        ['DD-EVP-ORIGIN', 'datadog-ci sourcemaps'], //TODO?
+        ['DD-EVP-ORIGIN', 'datadog-ci sourcemaps'], // TODO?
         ['DD-EVP-ORIGIN-VERSION', this.cliVersion],
       ]),
       overrideUrl: 'api/v2/srcmap',

@@ -91,15 +91,15 @@ describe('execute', () => {
     const output = context.stdout.toString().split(os.EOL)
     expect(code).toBe(0)
     checkConsoleOutput(output, {
-      sourcemapPath: './src/commands/react-native/__tests__/fixtures/basic-ios/main.jsbundle.map',
       bundlePath: './src/commands/react-native/__tests__/fixtures/basic-ios/main.jsbundle',
       concurrency: 20,
       jsFilesURLs: ['./src/commands/react-native/__tests__/fixtures/basic-ios/main.jsbundle'],
+      platform: 'unspecified',
       projectPath: '',
       service: 'com.company.app',
+      sourcemapPath: './src/commands/react-native/__tests__/fixtures/basic-ios/main.jsbundle.map',
       sourcemapsPaths: ['./src/commands/react-native/__tests__/fixtures/basic-ios/main.jsbundle.map'],
       version: '1.23.4',
-      platform: 'unspecified',
     })
   })
 
@@ -110,15 +110,15 @@ describe('execute', () => {
     const output = context.stdout.toString().split(os.EOL)
     expect(code).toBe(0)
     checkConsoleOutput(output, {
-      sourcemapPath: `${process.cwd()}/src/commands/react-native/__tests__/fixtures/basic-ios/main.jsbundle.map`,
       bundlePath: `${process.cwd()}/src/commands/react-native/__tests__/fixtures/basic-ios/main.jsbundle`,
       concurrency: 20,
       jsFilesURLs: [`${process.cwd()}/src/commands/react-native/__tests__/fixtures/basic-ios/main.jsbundle`],
+      platform: 'unspecified',
       projectPath: '',
       service: 'com.company.app',
+      sourcemapPath: `${process.cwd()}/src/commands/react-native/__tests__/fixtures/basic-ios/main.jsbundle.map`,
       sourcemapsPaths: [`${process.cwd()}/src/commands/react-native/__tests__/fixtures/basic-ios/main.jsbundle.map`],
       version: '1.23.4',
-      platform: 'unspecified',
     })
   })
 })
@@ -144,15 +144,15 @@ const createMockContext = () => {
 }
 
 interface ExpectedOutput {
-  sourcemapPath: string
+  bundlePath: string
   concurrency: number
   jsFilesURLs: string[]
-  bundlePath: string
+  platform: string
   projectPath: string
   service: string
+  sourcemapPath: string
   sourcemapsPaths: string[]
   version: string
-  platform: string
 }
 
 const checkConsoleOutput = (output: string[], expected: ExpectedOutput) => {

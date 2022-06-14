@@ -3,23 +3,15 @@ import fs from 'fs'
 import {MultipartPayload, MultipartValue} from '../../helpers/upload'
 
 export class RNSourcemap {
-  public gitData?: GitData
-  public bundlePath: string
-  public sourcemapPath: string
   public bundleName: string
+  public bundlePath: string
+  public gitData?: GitData
+  public sourcemapPath: string
 
   constructor(bundlePath: string, sourcemapPath: string, bundleName?: string) {
+    this.bundleName = this.getBundleName(bundlePath, bundleName)
     this.bundlePath = bundlePath
     this.sourcemapPath = sourcemapPath
-    this.bundleName = this.getBundleName(bundlePath, bundleName)
-  }
-
-  private getBundleName(bundlePath: string, bundleName?: string): string {
-    if (bundleName) return bundleName
-
-    // We return the name of the file on the disk if no bundleName is returned
-    const splitPath = bundlePath.split('/')
-    return splitPath[splitPath.length - 1]
   }
 
   public addRepositoryData(gitData: GitData) {
@@ -59,6 +51,17 @@ export class RNSourcemap {
     return {
       content,
     }
+  }
+
+  private getBundleName(bundlePath: string, bundleName?: string): string {
+    if (bundleName) {
+      return bundleName
+    }
+
+    // We return the name of the file on the disk if no bundleName is returned
+    const splitPath = bundlePath.split('/')
+
+    return splitPath[splitPath.length - 1]
   }
 }
 
