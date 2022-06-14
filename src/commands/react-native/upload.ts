@@ -55,7 +55,7 @@ export class UploadCommand extends Command {
   private platform?: 'ios' | 'android' | 'unspecified'
   private bundle?: string
   private sourcemap?: string
-  private projectPath: string = process.env.PWD || ''
+  private projectPath: string = process.cwd() || ''
 
   constructor() {
     super()
