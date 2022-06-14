@@ -2,7 +2,7 @@ import chalk from 'chalk'
 
 import {ICONS} from '../../helpers/formatting'
 import {UploadStatus} from '../../helpers/upload'
-import {Sourcemap} from './interfaces'
+import {RNSourcemap} from './interfaces'
 import {pluralize} from './utils'
 
 export const renderGitWarning = (errorMessage: string) =>
@@ -22,13 +22,13 @@ export const renderInvalidPrefix = chalk.red(
   `${ICONS.FAILED} --minified-path-prefix should either be an URL (such as "http://example.com/static") or an absolute path starting with a / such as "/static"\n`
 )
 
-export const renderFailedUpload = (sourcemap: Sourcemap, errorMessage: string) => {
+export const renderFailedUpload = (sourcemap: RNSourcemap, errorMessage: string) => {
   const sourcemapPathBold = `[${chalk.bold.dim(sourcemap.sourcemapPath)}]`
 
   return chalk.red(`${ICONS.FAILED} Failed upload sourcemap for ${sourcemapPathBold}: ${errorMessage}\n`)
 }
 
-export const renderRetriedUpload = (payload: Sourcemap, errorMessage: string, attempt: number) => {
+export const renderRetriedUpload = (payload: RNSourcemap, errorMessage: string, attempt: number) => {
   const sourcemapPathBold = `[${chalk.bold.dim(payload.sourcemapPath)}]`
 
   return chalk.yellow(`[attempt ${attempt}] Retrying sourcemap upload ${sourcemapPathBold}: ${errorMessage}\n`)
@@ -71,7 +71,7 @@ export const renderSuccessfulCommand = (statuses: UploadStatus[], duration: numb
       )
     }
   } else {
-    output.push(chalk.yellow(`${ICONS.WARNING} No sourcemaps detected. Did you specify the correct directory?`))
+    output.push(chalk.yellow(`${ICONS.WARNING} No sourcemaps detected. Did you specify the correct path?`))
   }
 
   if (results.get(UploadStatus.Failure) || results.get(UploadStatus.Skipped)) {
@@ -119,5 +119,5 @@ export const renderCommandInfo = (
   return fullStr
 }
 
-export const renderUpload = (sourcemap: Sourcemap): string =>
-  `Uploading sourcemap ${sourcemap.sourcemapPath} for JS file available at ${sourcemap.minifiedUrl}\n`
+export const renderUpload = (sourcemap: RNSourcemap): string =>
+  `Uploading sourcemap ${sourcemap.sourcemapPath} for JS file available at ${sourcemap.bundlePath}\n`
