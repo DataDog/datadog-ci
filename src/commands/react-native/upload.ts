@@ -9,7 +9,7 @@ import {getMetricsLogger, MetricsLogger} from '../../helpers/metrics'
 import {upload, UploadStatus} from '../../helpers/upload'
 import {getRequestBuilder} from '../../helpers/utils'
 import {getRepositoryData, newSimpleGit, RepositoryData} from './git'
-import {RNSourcemap} from './interfaces'
+import {RN_SUPPORTED_PLATFORMS, RNPlatform, RNSourcemap} from './interfaces'
 import {
   renderCommandInfo,
   renderConfigurationError,
@@ -50,7 +50,7 @@ export class UploadCommand extends Command {
   private disableGit?: boolean
   private dryRun = false
   private maxConcurrency = 20
-  private platform?: 'ios' | 'android' | 'unspecified'
+  private platform?: RNPlatform
   private projectPath: string = process.cwd() || ''
   private releaseVersion?: string
   private repositoryURL?: string
@@ -81,9 +81,18 @@ export class UploadCommand extends Command {
       return 1
     }
 
-    // Platform is not used for now
     if (!this.platform) {
-      this.platform = 'unspecified'
+      this.context.stderr.write('Missing platform\n')
+
+      return 1
+    }
+
+    if (!RN_SUPPORTED_PLATFORMS.includes(this.platform)) {
+      this.context.stderr.write(
+        `Platform ${this.platform} is not supported.\nSupported platforms are ios and android.\n`
+      )
+
+      return 1
     }
 
     if (!this.sourcemap) {
@@ -225,7 +234,7 @@ export class UploadCommand extends Command {
         ['DD-EVP-ORIGIN', 'datadog-ci react-native'],
         ['DD-EVP-ORIGIN-VERSION', this.cliVersion],
       ]),
-      overrideUrl: 'api/v2/srcmap',
+      overrideUrl: `v1/input/${this.config.apiKey}`,
     })
   }
 
@@ -258,7 +267,8 @@ export class UploadCommand extends Command {
         this.cliVersion,
         this.service!,
         this.releaseVersion!,
-        this.projectPath
+        this.projectPath,
+        this.platform!
       )
       if (this.dryRun) {
         this.context.stdout.write(`[DRYRUN] ${renderUpload(sourcemap)}`)

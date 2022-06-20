@@ -22,7 +22,8 @@ export class RNSourcemap {
     cliVersion: string,
     service: string,
     version: string,
-    projectPath: string
+    projectPath: string,
+    platform: RNPlatform
   ): MultipartPayload {
     const content = new Map<string, MultipartValue>([
       ['cli_version', {value: cliVersion}],
@@ -30,9 +31,10 @@ export class RNSourcemap {
       ['version', {value: version}],
       ['source_map', {value: fs.createReadStream(this.sourcemapPath)}],
       ['minified_file', {value: fs.createReadStream(this.bundlePath)}],
-      ['minified_url', {value: this.bundleName}],
+      ['bundle_name', {value: this.bundleName}],
       ['project_path', {value: projectPath}],
-      ['type', {value: 'js_sourcemap'}], // TODO?
+      ['platform', {value: platform}],
+      ['type', {value: 'react_native_sourcemap'}],
     ])
     if (this.gitData !== undefined) {
       if (this.gitData!.gitRepositoryPayload !== undefined) {
@@ -70,3 +72,7 @@ export interface GitData {
   gitRepositoryPayload?: string
   gitRepositoryURL: string
 }
+
+export const RN_SUPPORTED_PLATFORMS = ['ios', 'android'] as const
+// Notice that the array and type can have the same name if you want
+export type RNPlatform = typeof RN_SUPPORTED_PLATFORMS[number]
