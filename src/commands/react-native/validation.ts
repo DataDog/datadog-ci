@@ -23,7 +23,7 @@ export const validatePayload = (sourcemap: RNSourcemap) => {
   // Check existence of bundle file
   const bundleCheck = checkFile(sourcemap.bundlePath)
   if (!bundleCheck.exists) {
-    throw new InvalidPayload('missing_js', `Missing corresponding JS file for sourcemap (${sourcemap.bundlePath})`)
+    throw new InvalidPayload('missing_js', `Missing bundle file (${sourcemap.bundlePath})`)
   }
   if (bundleCheck.empty) {
     throw new InvalidPayload(

@@ -151,7 +151,7 @@ export class UploadCommand extends Command {
       this.context.stdout.write(renderSuccessfulCommand(results, totalTime, this.dryRun))
       metricsLogger.logger.gauge('duration', totalTime)
 
-      return 0
+      return results.some((result) => result !== UploadStatus.Success) ? 1 : 0
     } catch (error) {
       if (error instanceof InvalidConfigurationError) {
         this.context.stdout.write(renderConfigurationError(error))

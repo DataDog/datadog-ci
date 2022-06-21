@@ -293,5 +293,26 @@ describe('xcode', () => {
       const errorOutput = context.stderr.toString()
       expect(errorOutput).toContain('No sourcemap output has been specified')
     })
+
+    test('should provide a clear error message when the upload fails', async () => {
+      process.env = {
+        ...process.env,
+        ...basicEnvironment,
+        BUNDLE_FILE: 'src/commands/react-native/__tests__/fixtures/non-existent/main.jsbundle',
+      }
+
+      const {context, code} = await runCLI(
+        './src/commands/react-native/__tests__/fixtures/bundle-script/successful_script.sh'
+      )
+      // Uncomment these lines for debugging failing script
+      // console.log(context.stdout.toString())
+      // console.log(context.stderr.toString())
+
+      expect(code).not.toBe(0)
+      const output = context.stdout.toString()
+      expect(output).toContain(
+        'Missing bundle file (src/commands/react-native/__tests__/fixtures/non-existent/main.jsbundle)'
+      )
+    })
   })
 })
