@@ -21,22 +21,69 @@ export class XCodeCommand extends Command {
   private dryRun = false
   private force = false
   private scriptPath = '../node_modules/react-native/scripts/react-native-xcode.sh'
-  private service: string = process.env.PRODUCT_BUNDLE_IDENTIFIER!
+  private service?: string = process.env.PRODUCT_BUNDLE_IDENTIFIER
 
   constructor() {
     super()
   }
 
   public async execute() {
-    // Check extra packager args for sourcemaps path
-    // TODO
+    if (!this.service) {
+      this.context.stderr.write(
+        'Environment variable PRODUCT_BUNDLE_IDENTIFIER is missing for Datadog sourcemaps upload.\n'
+      )
+      this.context.stderr.write('Check that a Bundle Identifier is set for your target in XCode.\n')
+      this.context.stderr.write(
+        'If you are not running this script from XCode, use the `--service com.company.app` argument.\n'
+      )
+
+      return 1
+    }
+
+    if (!process.env.CONFIGURATION) {
+      this.context.stderr.write('Environment variable CONFIGURATION is missing for Datadog sourcemaps upload.\n')
+      this.context.stderr.write(
+        'If you are not running this script from XCode, you can force the sourcemaps upload with a --force argument.\n'
+      )
+
+      return 1
+    }
+
+    if (!process.env.MARKETING_VERSION) {
+      this.context.stderr.write('Environment variable MARKETING_VERSION is missing for Datadog sourcemaps upload.\n')
+      this.context.stderr.write('Check that a Version is set for your target in XCode.\n')
+      this.context.stderr.write(
+        'If you are not running this script from XCode, set a MARKETING_VERSION environment variable before running the script.\n'
+      )
+
+      return 1
+    }
+
+    if (!process.env.CURRENT_PROJECT_VERSION) {
+      this.context.stderr.write(
+        'Environment variable CURRENT_PROJECT_VERSION is missing for Datadog sourcemaps upload.\n'
+      )
+      this.context.stderr.write('Check that a Build is set for your target in XCode.\n')
+      this.context.stderr.write(
+        'If you are not running this script from XCode, set a CURRENT_PROJECT_VERSION environment variable before running the script.\n'
+      )
+
+      return 1
+    }
 
     // Run bundle script
     try {
       const bundleJSChildProcess = spawn(this.scriptPath, undefined, {
         env: process.env,
-        stdio: ['inherit', 'inherit', 'pipe'],
+        stdio: ['inherit', 'pipe', 'pipe'],
       })
+      bundleJSChildProcess.stdout.on('data', (data) => {
+        this.context.stdout.write(`[bundle script]: ${data}`)
+      })
+      bundleJSChildProcess.stderr.on('data', (data) => {
+        this.context.stderr.write(`[bundle script]: ${data}`)
+      })
+
       const [status, signal] = await new Promise((resolve, reject) => {
         bundleJSChildProcess.on('error', (error: Error) => {
           reject(error)
@@ -48,10 +95,10 @@ export class XCodeCommand extends Command {
       })
 
       if (status !== 0) {
-        throw new Error(`error ${signal} while running script, see line above`)
+        throw new Error(`error ${signal} while running datadog-ci xcode.`)
       }
     } catch (error) {
-      this.context.stdout.write(`Error running bundle script\n${error}`)
+      this.context.stderr.write(`Error running bundle script from datadog-ci xcode.\n${error}`)
 
       return 1
     }

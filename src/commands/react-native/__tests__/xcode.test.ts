@@ -21,12 +21,19 @@ const makeCli = () => {
 
 const createMockContext = () => {
   let data = ''
+  let errorData = ''
 
   return {
     stdout: {
       toString: () => data,
       write: (input: string) => {
         data += input
+      },
+    },
+    stderr: {
+      toString: () => errorData,
+      write: (input: string) => {
+        errorData += input
       },
     },
   }
@@ -41,13 +48,17 @@ const basicEnvironment = {
   SOURCEMAP_FILE: './src/commands/react-native/__tests__/fixtures/basic-ios/main.jsbundle.map',
 }
 
-const runCLI = async (script: string, options?: {force?: boolean}) => {
+const runCLI = async (script: string, options?: {force?: boolean; service?: string}) => {
   const cli = makeCli()
   const context = createMockContext() as any
   process.env = {...process.env, DATADOG_API_KEY: 'PLACEHOLDER'}
   const command = ['react-native', 'xcode', script, '--dry-run']
   if (options?.force) {
     command.push('--force')
+  }
+  if (options?.service) {
+    command.push('--service')
+    command.push(options.service)
   }
   const code = await cli.run(command, context)
 
@@ -102,8 +113,9 @@ describe('xcode', () => {
       const {context, code} = await runCLI(
         './src/commands/react-native/__tests__/fixtures/bundle-script/successful_script.sh'
       )
-      // Uncomment this line for debugging failing script
+      // Uncomment these lines for debugging failing script
       // console.log(context.stdout.toString())
+      // console.log(context.stderr.toString())
 
       expect(code).toBe(0)
       const output = context.stdout.toString()
@@ -122,8 +134,9 @@ describe('xcode', () => {
       const {context, code} = await runCLI(
         './src/commands/react-native/__tests__/fixtures/bundle-script/successful_script.sh'
       )
-      // Uncomment this line for debugging failing script
+      // Uncomment these lines for debugging failing script
       // console.log(context.stdout.toString())
+      // console.log(context.stderr.toString())
 
       expect(code).toBe(0)
       const output = context.stdout.toString()
@@ -142,8 +155,9 @@ describe('xcode', () => {
           force: true,
         }
       )
-      // Uncomment this line for debugging failing script
+      // Uncomment these lines for debugging failing script
       // console.log(context.stdout.toString())
+      // console.log(context.stderr.toString())
 
       expect(code).toBe(0)
       const output = context.stdout.toString()
@@ -152,6 +166,94 @@ describe('xcode', () => {
         'Upload of ./src/commands/react-native/__tests__/fixtures/basic-ios/main.jsbundle.map for bundle ./src/commands/react-native/__tests__/fixtures/basic-ios/main.jsbundle on platform ios'
       )
       expect(output).toContain('version: 0.0.2 build: 000020 service: com.myapp.test')
+    })
+
+    test('should run the provided script and upload sourcemaps when a custom service is specified', async () => {
+      process.env = {
+        ...process.env,
+        ...basicEnvironment,
+      }
+      const {context, code} = await runCLI(
+        './src/commands/react-native/__tests__/fixtures/bundle-script/successful_script.sh',
+        {
+          service: 'com.custom',
+        }
+      )
+      // Uncomment these lines for debugging failing script
+      // console.log(context.stdout.toString())
+      // console.log(context.stderr.toString())
+
+      expect(code).toBe(0)
+      const output = context.stdout.toString()
+      expect(output).toContain(
+        'Upload of ./src/commands/react-native/__tests__/fixtures/basic-ios/main.jsbundle.map for bundle ./src/commands/react-native/__tests__/fixtures/basic-ios/main.jsbundle on platform ios'
+      )
+      expect(output).toContain('version: 0.0.2 build: 000020 service: com.custom')
+    })
+
+    test.each([['PRODUCT_BUNDLE_IDENTIFIER'], ['CONFIGURATION'], ['MARKETING_VERSION'], ['CURRENT_PROJECT_VERSION']])(
+      'should provide a custom message when %s xcode environment variable is missing',
+      async (variable) => {
+        process.env = {
+          ...process.env,
+          ...basicEnvironment,
+        }
+        delete process.env[variable]
+
+        const {context, code} = await runCLI(
+          './src/commands/react-native/__tests__/fixtures/bundle-script/successful_script.sh'
+        )
+        // Uncomment these lines for debugging failing script
+        // console.log(context.stdout.toString())
+        // console.log(context.stderr.toString())
+
+        expect(code).toBe(1)
+        const output = context.stderr.toString()
+        expect(output).toContain(`Environment variable ${variable} is missing for Datadog sourcemaps upload.`)
+      }
+    )
+
+    test('should provide a clear error message when the script path is incorrect', async () => {
+      process.env = {
+        ...process.env,
+        ...basicEnvironment,
+      }
+
+      const {context, code} = await runCLI(
+        './src/commands/react-native/__tests__/fixtures/bundle-script/non_existent.sh'
+      )
+      // Uncomment these lines for debugging failing script
+      // console.log(context.stdout.toString())
+      // console.log(context.stderr.toString())
+
+      expect(code).toBe(1)
+      const output = context.stderr.toString()
+      expect(output).toContain('Error running bundle script from datadog-ci xcode')
+      expect(output).toContain(
+        'Error: spawn ./src/commands/react-native/__tests__/fixtures/bundle-script/non_existent.sh ENOENT'
+      )
+    })
+
+    test('should forward the error message from the script when the script fails', async () => {
+      process.env = {
+        ...process.env,
+        ...basicEnvironment,
+      }
+
+      const {context, code} = await runCLI(
+        './src/commands/react-native/__tests__/fixtures/bundle-script/failing_script.sh'
+      )
+      // Uncomment these lines for debugging failing script
+      // console.log(context.stdout.toString())
+      // console.log(context.stderr.toString())
+
+      expect(code).toBe(1)
+      const output = context.stdout.toString()
+      expect(output).toContain('[bundle script]: Starting failing script')
+
+      const errorOutput = context.stderr.toString()
+      expect(errorOutput).toContain('Error running bundle script from datadog-ci xcode.')
+      expect(errorOutput).toContain('[bundle script]: Custom error message from script')
     })
   })
 })
