@@ -72,6 +72,8 @@ describe('execute', () => {
         'upload',
         '--release-version',
         '1.23.4',
+        '--build-version',
+        '1023040',
         '--service',
         'com.company.app',
         '--bundle',
@@ -93,6 +95,7 @@ describe('execute', () => {
     const output = context.stdout.toString().split(os.EOL)
     expect(code).toBe(0)
     checkConsoleOutput(output, {
+      build: '1023040',
       bundlePath: './src/commands/react-native/__tests__/fixtures/basic-ios/main.jsbundle',
       concurrency: 20,
       jsFilesURLs: ['./src/commands/react-native/__tests__/fixtures/basic-ios/main.jsbundle'],
@@ -112,6 +115,7 @@ describe('execute', () => {
     const output = context.stdout.toString().split(os.EOL)
     expect(code).toBe(0)
     checkConsoleOutput(output, {
+      build: '1023040',
       bundlePath: `${process.cwd()}/src/commands/react-native/__tests__/fixtures/basic-ios/main.jsbundle`,
       concurrency: 20,
       jsFilesURLs: [`${process.cwd()}/src/commands/react-native/__tests__/fixtures/basic-ios/main.jsbundle`],
@@ -146,6 +150,7 @@ const createMockContext = () => {
 }
 
 interface ExpectedOutput {
+  build: string
   bundlePath: string
   concurrency: number
   jsFilesURLs: string[]
@@ -163,7 +168,7 @@ const checkConsoleOutput = (output: string[], expected: ExpectedOutput) => {
   expect(output[2]).toContain(
     `Upload of ${expected.sourcemapPath} for bundle ${expected.bundlePath} on platform ${expected.platform} with project path ${expected.projectPath}`
   )
-  expect(output[3]).toContain(`version: ${expected.version} service: ${expected.service}`)
+  expect(output[3]).toContain(`version: ${expected.version} build: ${expected.build} service: ${expected.service}`)
   const uploadedFileLines = output.slice(4, -4)
   expect(uploadedFileLines.length).toEqual(expected.sourcemapsPaths.length) // Safety check
   expect(uploadedFileLines.length).toEqual(expected.jsFilesURLs.length) // Safety check

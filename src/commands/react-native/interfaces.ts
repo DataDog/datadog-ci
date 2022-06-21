@@ -23,12 +23,14 @@ export class RNSourcemap {
     service: string,
     version: string,
     projectPath: string,
-    platform: RNPlatform
+    platform: RNPlatform,
+    build: string
   ): MultipartPayload {
     const content = new Map<string, MultipartValue>([
       ['cli_version', {value: cliVersion}],
       ['service', {value: service}],
       ['version', {value: version}],
+      ['build_number', {value: build}],
       ['source_map', {value: fs.createReadStream(this.sourcemapPath)}],
       ['minified_file', {value: fs.createReadStream(this.bundlePath)}],
       ['bundle_name', {value: this.bundleName}],

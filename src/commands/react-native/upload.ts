@@ -41,6 +41,7 @@ export class UploadCommand extends Command {
     ],
   })
 
+  private buildVersion?: string
   private bundle?: string
   private cliVersion: string
   private config = {
@@ -65,6 +66,12 @@ export class UploadCommand extends Command {
   public async execute() {
     if (!this.releaseVersion) {
       this.context.stderr.write('Missing release version\n')
+
+      return 1
+    }
+
+    if (!this.buildVersion) {
+      this.context.stderr.write('Missing build version\n')
 
       return 1
     }
@@ -110,13 +117,15 @@ export class UploadCommand extends Command {
         this.service,
         this.maxConcurrency,
         this.dryRun,
-        this.projectPath
+        this.projectPath,
+        this.buildVersion
       )
     )
     const metricsLogger = getMetricsLogger({
       datadogSite: process.env.DATADOG_SITE,
       defaultTags: [
         `version:${this.releaseVersion}`,
+        `build:${this.buildVersion}`,
         `service:${this.service}`,
         `cli_version:${this.cliVersion}`,
         'react-native:true',
@@ -268,7 +277,8 @@ export class UploadCommand extends Command {
         this.service!,
         this.releaseVersion!,
         this.projectPath,
-        this.platform!
+        this.platform!,
+        this.buildVersion!
       )
       if (this.dryRun) {
         this.context.stdout.write(`[DRYRUN] ${renderUpload(sourcemap)}`)
@@ -297,6 +307,7 @@ export class UploadCommand extends Command {
 
 UploadCommand.addPath('react-native', 'upload')
 UploadCommand.addOption('releaseVersion', Command.String('--release-version'))
+UploadCommand.addOption('buildVersion', Command.String('--build-version'))
 UploadCommand.addOption('service', Command.String('--service'))
 UploadCommand.addOption('bundle', Command.String('--bundle'))
 UploadCommand.addOption('sourcemap', Command.String('--sourcemap'))

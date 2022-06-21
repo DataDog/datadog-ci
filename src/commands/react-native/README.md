@@ -33,17 +33,21 @@ To upload the sourcemaps for android, this command should be run:
 datadog-ci react-native upload --platform android --service com.company.app --bundle ./index.android.bundle --sourcemap ./index.android.bundle.map --release-version 1.23.4
 ```
 
-* `--platform` identifies whether you are uploading ios or android sourcemaps.
-It is not used in most cases. 
+* `--platform` (required) identifies whether you are uploading ios or android sourcemaps.
 
 * `--service` (required) should be set as the name of the service you're uploading sourcemaps for, and Datadog will use this service name to find the corresponding sourcemaps based on the `service` tag set on the RUM SDK.
-It is recommended to set it to your app's bundle identifier.
+By default the React Native SDK uses your app's bundle identifier as service.
 
 * `--bundle` (required) should be set to the path to your generated js bundle file, `main.jsbundle` for iOS or `index.android.bundle` for Android.
 
 * `--sourcemap` (required) should be set to the path to your generated sourcemap file, `main.jsbundle.map` for iOS or `index.android.bundle.map` for Android.
 
-* `--release-version` (required) is similar and will be used to match the `version` tag set on the RUM SDK.
+* `--release-version` (required) will be used to match the `version` tag set on the RUM SDK.
+This should be the "Version" or "MARKETING_VERSION" in XCode for iOS and the "versionName" in your `android/app/build.gradle` for Android.
+
+* `--build-version` (required) is used to avoid overwriting your sourcemaps by accident.
+You cannot upload new sourcemaps for a specific `build-version` and `service` combination.
+This should be the "Build" or "CURRENT_PROJECT_VERSION" in XCode for iOS and the "versionCode" in your `android/app/build.gradle` for Android.
 
 In addition, some optional parameters are available:
 
@@ -98,7 +102,7 @@ export DATADOG_API_KEY='<API key>'
 TEMP_DIR=$(mktemp -d)
 echo '{}' > $TEMP_DIR/fake.js
 echo '{"version":3,"file":"out.js","sourceRoot":"","sources":["fake.js"],"names":["src"],"mappings":"AAgBC"}' > $TEMP_DIR/fake.js.map
-yarn launch react-native upload --platform ios --service com.company.app --bundle $TEMP_DIR/fake.js --sourcemap $TEMP_DIR/fake.js.map --release-version 0.0.1
+yarn launch react-native upload --platform ios --service com.company.app --bundle $TEMP_DIR/fake.js --sourcemap $TEMP_DIR/fake.js.map --release-version 0.0.1 --build-version 000001
 rm -rf $TEMP_DIR
 ```
 

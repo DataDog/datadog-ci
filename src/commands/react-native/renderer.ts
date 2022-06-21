@@ -100,7 +100,8 @@ export const renderCommandInfo = (
   service: string,
   poolLimit: number,
   dryRun: boolean,
-  projectPath: string
+  projectPath: string,
+  buildVersion: string
 ) => {
   let fullStr = ''
   if (dryRun) {
@@ -112,7 +113,9 @@ export const renderCommandInfo = (
     `Upload of ${sourcemapPath} for bundle ${bundlePath} on platform ${platform} with project path ${projectPath}\n`
   )
   fullStr += basePathStr
-  const serviceVersionProjectPathStr = chalk.green(`version: ${releaseVersion} service: ${service}\n`)
+  const serviceVersionProjectPathStr = chalk.green(
+    `version: ${releaseVersion} build: ${buildVersion} service: ${service}\n`
+  )
   fullStr += serviceVersionProjectPathStr
 
   return fullStr
