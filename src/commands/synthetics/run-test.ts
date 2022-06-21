@@ -17,7 +17,13 @@ import {getSuites, getTestsToTrigger, runTests, waitForResults} from './utils'
 export const executeTests = async (reporter: MainReporter, config: CommandConfig, suites?: Suite[]) => {
   const api = getApiHelper(config)
 
-  const publicIdsFromCli = config.publicIds.map((id) => ({config: config.global, id}))
+  const publicIdsFromCli = config.publicIds.map((id) => ({
+    config: {
+      ...config.global,
+      ...(config.locations?.length ? {locations: config.locations} : {}),
+    },
+    id,
+  }))
   let testsToTrigger: TriggerConfig[]
   let tunnel: Tunnel | undefined
 

@@ -2,7 +2,7 @@
 import {AxiosError, AxiosResponse} from 'axios'
 import * as ciUtils from '../../../helpers/utils'
 import {CiError, CriticalCiErrorCode, CriticalError} from '../errors'
-import {ExecutionRule} from '../interfaces'
+import {ConfigOverride, ExecutionRule, SyntheticsCIConfig} from '../interfaces'
 import * as runTests from '../run-test'
 import {Tunnel} from '../tunnel'
 import * as utils from '../utils'
@@ -50,6 +50,54 @@ describe('run-test', () => {
         expect.anything()
       )
     })
+
+    test.each([
+      [
+        'locations in global config only',
+        {global: {locations: ['global-location-1']}},
+        {locations: ['global-location-1']},
+      ],
+      [
+        'locations in env var only',
+        {locations: ['envvar-location-1', 'envvar-location-2']},
+        {locations: ['envvar-location-1', 'envvar-location-2']},
+      ],
+      [
+        'locations in both global config and env var',
+        {global: {locations: ['global-location-1']}, locations: ['envvar-location-1', 'envvar-location-2']},
+        {locations: ['envvar-location-1', 'envvar-location-2']},
+      ],
+    ] as [string, Partial<SyntheticsCIConfig>, ConfigOverride][])(
+      'Use appropriate list of locations for tests triggered by public id: %s',
+      async (text, partialCIConfig, expectedOverriddenConfig) => {
+        const getTestsToTriggersMock = jest.spyOn(utils, 'getTestsToTrigger').mockReturnValue(
+          Promise.resolve({
+            overriddenTestsToTrigger: [],
+            summary: utils.createSummary(),
+            tests: [],
+          })
+        )
+
+        const apiHelper = {}
+
+        jest.spyOn(runTests, 'getApiHelper').mockImplementation(() => ({} as any))
+        await expect(
+          runTests.executeTests(mockReporter, {
+            ...ciConfig,
+            ...partialCIConfig,
+            publicIds: ['public-id-1', 'public-id-2'],
+          })
+        ).rejects.toMatchError(new CiError('NO_TESTS_TO_RUN'))
+        expect(getTestsToTriggersMock).toHaveBeenCalledWith(
+          apiHelper,
+          expect.arrayContaining([
+            expect.objectContaining({id: 'public-id-1', config: expectedOverriddenConfig}),
+            expect.objectContaining({id: 'public-id-2', config: expectedOverriddenConfig}),
+          ]),
+          expect.anything()
+        )
+      }
+    )
 
     test('should not wait for `skipped` only tests batch results', async () => {
       const getTestsToTriggersMock = jest.spyOn(utils, 'getTestsToTrigger').mockReturnValue(
