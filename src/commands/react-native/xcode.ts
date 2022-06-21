@@ -1,3 +1,4 @@
+// tslint:disable: no-null-keyword
 import {spawn} from 'child_process'
 import {Cli, Command} from 'clipanion'
 import {UploadCommand} from './upload'
@@ -70,6 +71,31 @@ export class XCodeCommand extends Command {
 
       return 1
     }
+    const sourcemapsLocation = this.getSourcemapsLocation()
+    if (!sourcemapsLocation) {
+      this.context.stderr.write('No sourcemap output has been specified.\n')
+      this.context.stderr.write(
+        'Check that you either set a SOURCEMAP_FILE or an EXTRA_PACKAGER_ARGS environment variable in your "Bundle React Native code and images" Build Phase in XCode.\n'
+      )
+      this.context.stderr.write(
+        'If you are not running this script from XCode, set a SOURCEMAP_FILE environment variable before running the script.\n'
+      )
+
+      return 1
+    }
+
+    const bundleLocation = this.getBundleLocation()
+    if (!bundleLocation) {
+      this.context.stderr.write('No bundle file output has been specified.\n')
+      this.context.stderr.write(
+        'Check that you either set a BUNDLE_FILE or an EXTRA_PACKAGER_ARGS environment variable in your "Bundle React Native code and images" Build Phase in XCode.\n'
+      )
+      this.context.stderr.write(
+        'If you are not running this script from XCode, set a BUNDLE_FILE environment variable before running the script.\n'
+      )
+
+      return 1
+    }
 
     // Run bundle script
     try {
@@ -113,13 +139,9 @@ export class XCodeCommand extends Command {
     if (this.force) {
       this.context.stdout.write(`Force upload for configuration Debug ${process.env.CONFIGURATION}`)
     }
-    // Check sourcemaps have been generated
-    const sourcemapsLocation = this.getSourcemapsLocation()
-    const bundleLocation = this.getBundleLocation()
-
     // Get values for build
-    const releaseVersion = process.env.MARKETING_VERSION!
-    const buildVersion = process.env.CURRENT_PROJECT_VERSION!
+    const releaseVersion = process.env.MARKETING_VERSION
+    const buildVersion = process.env.CURRENT_PROJECT_VERSION
 
     // Run upload script in the background
     const cli = new Cli()
@@ -157,7 +179,8 @@ export class XCodeCommand extends Command {
 
       return splitArguments[bundleLocationIndex]
     }
-    throw new Error('No bundle location specified')
+
+    return null
   }
 
   private getSourcemapsLocation = () => {
@@ -170,7 +193,8 @@ export class XCodeCommand extends Command {
 
       return splitArguments[sourcemapsLocationIndex]
     }
-    throw new Error('No sourcemap location specified')
+
+    return null
   }
 }
 

@@ -24,16 +24,16 @@ const createMockContext = () => {
   let errorData = ''
 
   return {
-    stdout: {
-      toString: () => data,
-      write: (input: string) => {
-        data += input
-      },
-    },
     stderr: {
       toString: () => errorData,
       write: (input: string) => {
         errorData += input
+      },
+    },
+    stdout: {
+      toString: () => data,
+      write: (input: string) => {
+        data += input
       },
     },
   }
@@ -79,9 +79,9 @@ describe('xcode', () => {
       expect(command['getBundleLocation']()).toBe('./main.jsbundle')
     })
 
-    test('should throw if no bundle specified', () => {
+    test('should return null if no bundle specified', () => {
       const command = new XCodeCommand()
-      expect(() => command['getBundleLocation']()).toThrow('No bundle location specified')
+      expect(command['getBundleLocation']()).toBeNull()
     })
   })
 
@@ -98,9 +98,9 @@ describe('xcode', () => {
       expect(command['getSourcemapsLocation']()).toBe('./main.jsbundle.map')
     })
 
-    test('should throw if no sourcemap specified', () => {
+    test('should return null if no sourcemap specified', () => {
       const command = new XCodeCommand()
-      expect(() => command['getSourcemapsLocation']()).toThrow('No sourcemap location specified')
+      expect(command['getSourcemapsLocation']()).toBeNull()
     })
   })
 
@@ -254,6 +254,44 @@ describe('xcode', () => {
       const errorOutput = context.stderr.toString()
       expect(errorOutput).toContain('Error running bundle script from datadog-ci xcode.')
       expect(errorOutput).toContain('[bundle script]: Custom error message from script')
+    })
+
+    test('should provide a clear error message when no bundle file is present', async () => {
+      process.env = {
+        ...process.env,
+        ...basicEnvironment,
+      }
+      delete process.env.BUNDLE_FILE
+
+      const {context, code} = await runCLI(
+        './src/commands/react-native/__tests__/fixtures/bundle-script/successful_script.sh'
+      )
+      // Uncomment these lines for debugging failing script
+      // console.log(context.stdout.toString())
+      // console.log(context.stderr.toString())
+
+      expect(code).toBe(1)
+      const errorOutput = context.stderr.toString()
+      expect(errorOutput).toContain('No bundle file output has been specified')
+    })
+
+    test('should provide a clear error message when no sourcemap file is present', async () => {
+      process.env = {
+        ...process.env,
+        ...basicEnvironment,
+      }
+      delete process.env.SOURCEMAP_FILE
+
+      const {context, code} = await runCLI(
+        './src/commands/react-native/__tests__/fixtures/bundle-script/successful_script.sh'
+      )
+      // Uncomment these lines for debugging failing script
+      // console.log(context.stdout.toString())
+      // console.log(context.stderr.toString())
+
+      expect(code).toBe(1)
+      const errorOutput = context.stderr.toString()
+      expect(errorOutput).toContain('No sourcemap output has been specified')
     })
   })
 })
