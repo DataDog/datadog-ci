@@ -92,4 +92,26 @@ The only repository URLs supported are the ones whose host contains: `github`, `
 
 To verify this command works as expected, you can trigger a test run and verify it returns 0:
 
-TODO
+```bash
+export DATADOG_API_KEY='<API key>'
+
+TEMP_DIR=$(mktemp -d)
+echo '{}' > $TEMP_DIR/fake.js
+echo '{"version":3,"file":"out.js","sourceRoot":"","sources":["fake.js"],"names":["src"],"mappings":"AAgBC"}' > $TEMP_DIR/fake.js.map
+yarn launch react-native upload --platform ios --service com.company.app --bundle $TEMP_DIR/fake.js --sourcemap $TEMP_DIR/fake.js.map --release-version 0.0.1
+rm -rf $TEMP_DIR
+```
+
+Successful output should look like this:
+
+```bash
+Starting upload with concurrency 20.
+Upload of /var/folders/34/_7q54_lx4nl1cvkjwr3_k4lw0000gq/T/tmp.x0vecv3yFT/fake.js.map for bundle /var/folders/34/_7q54_lx4nl1cvkjwr3_k4lw0000gq/T/tmp.x0vecv3yFT/fake.js on platform ios with project path /Users/me/datadog-ci
+version: 0.0.1 service: com.company.app
+⚠️ No tracked files found for sources contained in /var/folders/34/_7q54_lx4nl1cvkjwr3_k4lw0000gq/T/tmp.x0vecv3yFT/fake.js.map
+Uploading sourcemap /var/folders/34/_7q54_lx4nl1cvkjwr3_k4lw0000gq/T/tmp.x0vecv3yFT/fake.js.map for JS file available at /var/folders/34/_7q54_lx4nl1cvkjwr3_k4lw0000gq/T/tmp.x0vecv3yFT/fake.js
+
+Command summary:
+✅ Uploaded 1 sourcemap in 0.698 seconds.
+✨  Done in 2.50s.
+```
