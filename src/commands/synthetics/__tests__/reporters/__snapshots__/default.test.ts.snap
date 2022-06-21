@@ -1,6 +1,14 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`Default reporter resultEnd 1 API test (blocking), 1 location, 3 results: success, failed non-blocking, failed 1`] = `
+exports[`Default reporter resultEnd 1 API test, 1 location, 1 result: success 1`] = `
+"[1m[32m✓[39m[22m [[1m[2maaa-aaa-aaa[22m[22m] [1mTest name[22m - [1m[32mlocation: [1mFrankfurt (AWS)[22m[1m[39m[22m
+  ⎋ Total duration: 123 ms - Result URL: [2m[36mhttps://app.datadoghq.com/synthetics/details/aaa-aaa-aaa?resultId=1&from_ci=true[39m[22m 
+  [1m[32m✓[39m[22m [1m[32m[1mGET[22m[1m - http://fake.url[39m[22m
+
+"
+`;
+
+exports[`Default reporter resultEnd 1 API test, 1 location, 3 results: success, failed non-blocking, failed blocking 1`] = `
 "[1m[32m✓[39m[22m [[1m[2maaa-aaa-aaa[22m[22m] [1mTest name[22m - [1m[32mlocation: [1mFrankfurt (AWS)[22m[1m[39m[22m
   ⎋ Total duration: 123 ms - Result URL: [2m[36mhttps://app.datadoghq.com/synthetics/details/aaa-aaa-aaa?resultId=1&from_ci=true[39m[22m 
   [1m[32m✓[39m[22m [1m[32m[1mGET[22m[1m - http://fake.url[39m[22m
@@ -16,34 +24,6 @@ exports[`Default reporter resultEnd 1 API test (blocking), 1 location, 3 results
   [1m[31m✖[39m[22m [1m[31m[1mGET[22m[1m - http://fake.url[39m[22m
 [1m[31m  - Assertion(s) failed:[39m[22m
 [1m[31m    ▶ responseTime should be less than [4m1000[24m. Actual: [4m1234[24m[39m[22m
-
-"
-`;
-
-exports[`Default reporter resultEnd 1 API test (non-blocking), 1 location, 3 results: success, failed non-blocking, failed 1`] = `
-"[1m[32m✓[39m[22m [[1m[2maaa-aaa-aaa[22m[22m] [1mTest name[22m - [1m[32mlocation: [1mFrankfurt (AWS)[22m[1m[39m[22m
-  ⎋ Total duration: 123 ms - Result URL: [2m[36mhttps://app.datadoghq.com/synthetics/details/aaa-aaa-aaa?resultId=1&from_ci=true[39m[22m 
-  [1m[32m✓[39m[22m [1m[32m[1mGET[22m[1m - http://fake.url[39m[22m
-
-[1m[33m✖[39m[22m [[1m[33mnon-blocking[39m[22m] [[1m[2maaa-aaa-aaa[22m[22m] [1mTest name[22m - [1m[33mlocation: [1mFrankfurt (AWS)[22m[1m[39m[22m
-  ⎋ Total duration: 123 ms - Result URL: [2m[36mhttps://app.datadoghq.com/synthetics/details/aaa-aaa-aaa?resultId=2&from_ci=true[39m[22m 
-  [1m[33m✖[39m[22m [1m[33m[1mGET[22m[1m - http://fake.url[39m[22m
-[1m[33m  - Assertion(s) failed:[39m[22m
-[1m[33m    ▶ responseTime should be less than [4m1000[24m. Actual: [4m1234[24m[39m[22m
-
-[1m[33m✖[39m[22m [[1m[33mnon-blocking[39m[22m] [[1m[2maaa-aaa-aaa[22m[22m] [1mTest name[22m - [1m[33mlocation: [1mFrankfurt (AWS)[22m[1m[39m[22m
-  ⎋ Total duration: 123 ms - Result URL: [2m[36mhttps://app.datadoghq.com/synthetics/details/aaa-aaa-aaa?resultId=3&from_ci=true[39m[22m 
-  [1m[33m✖[39m[22m [1m[33m[1mGET[22m[1m - http://fake.url[39m[22m
-[1m[33m  - Assertion(s) failed:[39m[22m
-[1m[33m    ▶ responseTime should be less than [4m1000[24m. Actual: [4m1234[24m[39m[22m
-
-"
-`;
-
-exports[`Default reporter resultEnd 1 API test, 1 location, 1 result: success 1`] = `
-"[1m[32m✓[39m[22m [[1m[2maaa-aaa-aaa[22m[22m] [1mTest name[22m - [1m[32mlocation: [1mFrankfurt (AWS)[22m[1m[39m[22m
-  ⎋ Total duration: 123 ms - Result URL: [2m[36mhttps://app.datadoghq.com/synthetics/details/aaa-aaa-aaa?resultId=1&from_ci=true[39m[22m 
-  [1m[32m✓[39m[22m [1m[32m[1mGET[22m[1m - http://fake.url[39m[22m
 
 "
 `;

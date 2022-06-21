@@ -1,7 +1,7 @@
 // tslint:disable: no-string-literal
 import {promises as fs} from 'fs'
 import {Writable} from 'stream'
-import {ERRORS, Result} from '../../interfaces'
+import {Result} from '../../interfaces'
 
 import {RunTestCommand} from '../../command'
 import {getDefaultStats, JUnitReporter, XMLTestCase} from '../../reporters/junit'
@@ -119,7 +119,7 @@ describe('Junit reporter', () => {
     })
 
     it('should report errors', () => {
-      const browserResult1 = {
+      const browserResult1: Result = {
         ...globalResultMock,
         result: {
           ...getBrowserServerResult(),
@@ -151,15 +151,16 @@ describe('Junit reporter', () => {
           ],
         },
       }
-      const browserResult2 = {
+      const browserResult2: Result = {
         ...globalResultMock,
         result: getBrowserServerResult(),
       }
-      const browserResult3 = {
+      const browserResult3: Result = {
         ...globalResultMock,
-        result: {...getBrowserServerResult(), error: ERRORS.TIMEOUT},
+        result: {...getBrowserServerResult(), error: 'Timeout'},
+        timedOut: true,
       }
-      const apiResult = {
+      const apiResult: Result = {
         ...globalResultMock,
         result: {
           ...getMultiStepsServerResult(),

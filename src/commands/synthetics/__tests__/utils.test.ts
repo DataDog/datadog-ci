@@ -3,7 +3,7 @@ jest.mock('fs')
 
 import * as fs from 'fs'
 
-import {AxiosError, AxiosRequestConfig, AxiosResponse, default as axios} from 'axios'
+import {AxiosError, default as axios} from 'axios'
 import glob from 'glob'
 
 process.env.DATADOG_SYNTHETICS_CI_TRIGGER_APP = 'env_default'
@@ -15,21 +15,23 @@ import {ProxyConfiguration} from '../../../helpers/utils'
 import {apiConstructor} from '../api'
 import {CiError} from '../errors'
 import {
+  Batch,
   ConfigOverride,
-  ERRORS,
   ExecutionRule,
   PollResult,
   Result,
   ServerResult,
   Summary,
   Test,
-  TriggerConfig,
-  TriggerResponse,
+  Trigger,
 } from '../interfaces'
-import {Tunnel} from '../tunnel'
 import * as utils from '../utils'
 
-import {getApiResult, getApiTest, getBrowserServerResult, mockLocation, mockReporter} from './fixtures'
+import {getApiResult, getApiTest, getBatch, getBrowserServerResult, mockLocation, mockReporter} from './fixtures'
+
+beforeEach(() => {
+  jest.restoreAllMocks()
+})
 
 describe('utils', () => {
   const apiConfiguration = {
@@ -64,23 +66,13 @@ describe('utils', () => {
 
   describe('runTest', () => {
     const fakeId = '123-456-789'
-    const fakeTrigger = {
-      results: [],
-      triggered_check_ids: [fakeId],
+    const fakeTrigger: Trigger = {
+      batch_id: 'bid',
+      locations: [],
     }
 
-    afterAll(() => {
-      jest.clearAllMocks()
-    })
-
     test('should run test', async () => {
-      const axiosMock = jest.spyOn(axios, 'create')
-      axiosMock.mockImplementation((() => (e: any) => {
-        if (e.url === '/synthetics/tests/trigger/ci') {
-          return {data: fakeTrigger}
-        }
-      }) as any)
-
+      jest.spyOn(api, 'triggerTests').mockImplementation(async () => fakeTrigger)
       const output = await utils.runTests(api, [{public_id: fakeId, executionRule: ExecutionRule.NON_BLOCKING}])
       expect(output).toEqual(fakeTrigger)
     })
@@ -129,12 +121,7 @@ describe('utils', () => {
     })
 
     test('should run test with publicId from url', async () => {
-      const axiosMock = jest.spyOn(axios, 'create')
-      axiosMock.mockImplementation((() => (e: any) => {
-        if (e.url === '/synthetics/tests/trigger/ci') {
-          return {data: fakeTrigger}
-        }
-      }) as any)
+      jest.spyOn(api, 'triggerTests').mockImplementation(async () => fakeTrigger)
       const output = await utils.runTests(api, [
         {
           executionRule: ExecutionRule.NON_BLOCKING,
@@ -154,11 +141,9 @@ describe('utils', () => {
         },
       })
 
-      const requestMock = jest.fn()
-      requestMock.mockImplementation(() => {
+      jest.spyOn(api, 'triggerTests').mockImplementation(() => {
         throw serverError
       })
-      jest.spyOn(axios, 'create').mockImplementation((() => requestMock) as any)
 
       await expect(
         utils.runTests(api, [{public_id: fakeId, executionRule: ExecutionRule.NON_BLOCKING}])
@@ -183,7 +168,7 @@ describe('utils', () => {
       },
     }
 
-    beforeAll(() => {
+    beforeEach(() => {
       const axiosMock = jest.spyOn(axios, 'create')
       axiosMock.mockImplementation((() => (e: any) => {
         const publicId = e.url.slice(18)
@@ -195,10 +180,6 @@ describe('utils', () => {
         ;((error as unknown) as {status: number}).status = 404
         throw error
       }) as any)
-    })
-
-    afterAll(() => {
-      jest.clearAllMocks()
     })
 
     test('only existing tests are returned', async () => {
@@ -402,16 +383,15 @@ describe('utils', () => {
       const result: ServerResult = {
         device: {height: 0, id: 'laptop_large', width: 0},
         duration: 0,
-        eventType: 'finished',
         passed: true,
         startUrl: '',
         stepDetails: [],
       }
-      expect(utils.hasResultPassed(result, false, true)).toBeTruthy()
-      expect(utils.hasResultPassed(result, true, true)).toBeTruthy()
+      expect(utils.hasResultPassed(result, false, false, true)).toBeTruthy()
+      expect(utils.hasResultPassed(result, false, true, true)).toBeTruthy()
       result.passed = false
-      expect(utils.hasResultPassed(result, false, true)).toBeFalsy()
-      expect(utils.hasResultPassed(result, true, true)).toBeFalsy()
+      expect(utils.hasResultPassed(result, false, false, true)).toBeFalsy()
+      expect(utils.hasResultPassed(result, false, true, true)).toBeFalsy()
     })
 
     test('result with error', () => {
@@ -419,13 +399,12 @@ describe('utils', () => {
         device: {height: 0, id: 'laptop_large', width: 0},
         duration: 0,
         errorCode: 'ERRABORTED',
-        eventType: 'finished',
         passed: false,
         startUrl: '',
         stepDetails: [],
       }
-      expect(utils.hasResultPassed(result, false, true)).toBeFalsy()
-      expect(utils.hasResultPassed(result, true, true)).toBeFalsy()
+      expect(utils.hasResultPassed(result, false, false, true)).toBeFalsy()
+      expect(utils.hasResultPassed(result, false, true, true)).toBeFalsy()
     })
 
     test('result with unhealthy result', () => {
@@ -433,44 +412,26 @@ describe('utils', () => {
         device: {height: 0, id: 'laptop_large', width: 0},
         duration: 0,
         errorCode: 'ERRABORTED',
-        eventType: 'finished',
         passed: false,
         startUrl: '',
         stepDetails: [],
         unhealthy: true,
       }
-      expect(utils.hasResultPassed(result, false, true)).toBeTruthy()
-      expect(utils.hasResultPassed(result, true, true)).toBeFalsy()
+      expect(utils.hasResultPassed(result, false, false, true)).toBeTruthy()
+      expect(utils.hasResultPassed(result, false, true, true)).toBeFalsy()
     })
 
     test('result with timeout result', () => {
       const result: ServerResult = {
         device: {height: 0, id: 'laptop_large', width: 0},
         duration: 0,
-        error: ERRORS.TIMEOUT,
-        eventType: 'finished',
         passed: false,
         startUrl: '',
         stepDetails: [],
       }
-      expect(utils.hasResultPassed(result, true, true)).toBeFalsy()
-      expect(utils.hasResultPassed(result, true, false)).toBeTruthy()
+      expect(utils.hasResultPassed(result, true, true, true)).toBeFalsy()
+      expect(utils.hasResultPassed(result, true, true, false)).toBeTruthy()
     })
-  })
-
-  test('result with endpoint failure result', () => {
-    const result: ServerResult = {
-      device: {height: 0, id: 'laptop_large', width: 0},
-      duration: 0,
-      error: ERRORS.ENDPOINT,
-      eventType: 'finished',
-      passed: false,
-      startUrl: '',
-      stepDetails: [],
-    }
-
-    expect(utils.hasResultPassed(result, false, true)).toBeTruthy()
-    expect(utils.hasResultPassed(result, true, true)).toBeFalsy()
   })
 
   describe('getExecutionRule', () => {
@@ -514,6 +475,7 @@ describe('utils', () => {
         jest.spyOn(utils, 'getExecutionRule').mockReturnValue(resultRule)
         const test = getApiTest('abc-def-ghi')
         const result = getApiResult('1', test)
+        result.executionRule = resultRule
         result.passed = resultPassed
 
         expect(utils.getResultOutcome(result)).toEqual(expectedOutcome)
@@ -522,271 +484,206 @@ describe('utils', () => {
   })
 
   describe('waitForResults', () => {
-    const mockAxiosWithDefaultResult = () => {
-      jest.spyOn(axios, 'create').mockImplementation((() => async (r: AxiosRequestConfig) => {
-        await utils.wait(100)
-
-        const results = JSON.parse(r.params.result_ids)
-          .filter((resultId: string) => resultId !== 'timingOutTest')
-          .map((resultId: string) => getPassingPollResult(resultId))
-
-        return {data: {results}}
-      }) as any)
-    }
-
-    afterAll(() => {
-      jest.clearAllMocks()
+    beforeAll(() => {
+      // We still wait a few milliseconds to avoid the test going crazy on a infinite loop
+      // if case of mistakes in the code or test.
+      jest.spyOn(utils, 'wait').mockImplementation(() => new Promise((r) => setTimeout(r, 10)))
     })
 
-    const testConfig = getApiTest('abc-def-ghi')
-    const getPassingPollResult = (resultId: string): PollResult => {
-      const result = getPassingResult(resultId)
-
-      return {
-        check: result.test,
-        enrichment: result.enrichment,
-        result: result.result,
-        resultID: result.resultId,
-        timestamp: result.timestamp,
-      }
-    }
-    const getPassingResult = (resultId: string): Result => ({
+    const batch: Batch = getBatch()
+    const apiTest = getApiTest(batch.results[0].test_public_id)
+    const result: Result = {
+      executionRule: ExecutionRule.BLOCKING,
       location: mockLocation.display_name,
       passed: true,
-      result: getBrowserServerResult({error: ERRORS.TIMEOUT, passed: false}),
-      resultId,
-      test: testConfig,
+      result: getBrowserServerResult({passed: true}),
+      resultId: batch.results[0].result_id,
+      test: apiTest,
+      timedOut: false,
       timestamp: 0,
-    })
+    }
+    const pollResult: PollResult = {
+      check: result.test,
+      result: result.result,
+      resultID: result.resultId,
+      timestamp: result.timestamp,
+    }
+    const trigger = {batch_id: 'bid', locations: [mockLocation]}
 
-    const getTestAndResult = (publicId = 'abc-def-ghi', resultId = '0123456789') => {
-      const triggerResult: TriggerResponse = {
-        device: 'laptop_large',
-        location: mockLocation.id,
-        public_id: publicId,
-        result_id: resultId,
-      }
-      const triggerConfig: TriggerConfig = {
-        config: {},
-        id: publicId,
-        suite: 'Suite 1',
-      }
+    const mockApi = ({
+      getBatchImplementation,
+      pollResultsImplementation,
+    }: {
+      getBatchImplementation?(): Promise<Batch>
+      pollResultsImplementation?(): Promise<PollResult[]>
+    } = {}) => {
+      const getBatchMock = jest
+        .spyOn(api, 'getBatch')
+        .mockImplementation(getBatchImplementation || (async () => JSON.parse(JSON.stringify(batch))))
 
-      const passingResult: Result = getPassingResult(resultId)
+      const pollResultsMock = jest
+        .spyOn(api, 'pollResults')
+        .mockImplementation(pollResultsImplementation || (async () => JSON.parse(JSON.stringify([pollResult]))))
 
-      return {
-        passingResult,
-        test: passingResult.test,
-        trigger: {locations: [mockLocation], results: [triggerResult]},
-        triggerConfig,
-        triggerResult,
-      }
+      return {getBatchMock, pollResultsMock}
     }
 
     test('should poll result ids', async () => {
-      mockAxiosWithDefaultResult()
-      const {test, trigger, passingResult, triggerConfig} = getTestAndResult()
-      const waitMock = jest.spyOn(utils, 'wait')
-      waitMock.mockImplementation()
-      const expectedResults: Result[] = [passingResult]
+      mockApi()
 
       expect(
         await utils.waitForResults(
           api,
           trigger,
-          [triggerConfig],
-          [test],
-          {defaultTimeout: 120000, failOnCriticalErrors: false},
+          [result.test],
+          {maxPollingTimeout: 120000, failOnCriticalErrors: false},
           mockReporter
         )
-      ).toEqual(expectedResults)
+      ).toEqual([result])
 
-      expect(mockReporter.resultReceived).toHaveBeenCalledWith(passingResult)
+      expect(mockReporter.resultReceived).toHaveBeenCalledWith(batch.results[0])
     })
 
-    test('results should be timed-out if global pollingTimeout is exceeded', async () => {
-      const {test, trigger, triggerResult} = getTestAndResult()
-      const expectedResults: Result[] = [
-        {
-          location: mockLocation.display_name,
-          passed: true,
-          result: getBrowserServerResult({
-            device: {height: 0, id: triggerResult.device, width: 0},
-            error: ERRORS.TIMEOUT,
-            passed: false,
-          }),
-          resultId: triggerResult.result_id,
-          test,
-          timestamp: 0,
-        },
-      ]
+    test('results should be timed out if global pollingTimeout is exceeded', async () => {
+      mockApi({getBatchImplementation: async () => ({...batch, status: 'in_progress'})})
+
       expect(
         await utils.waitForResults(
           api,
           trigger,
-          [],
-          [test],
-          {defaultTimeout: 0, failOnCriticalErrors: false},
+          [result.test],
+          {maxPollingTimeout: 0, failOnCriticalErrors: false},
           mockReporter
         )
-      ).toEqual(expectedResults)
+      ).toEqual([
+        {
+          ...result,
+          result: {...result.result, error: 'Timeout', passed: false},
+          timedOut: true,
+        },
+      ])
     })
 
-    test('results should be timeout-ed if test pollingTimeout is exceeded', async () => {
-      const {test, trigger, triggerResult} = getTestAndResult()
-      const expectedResults: Result[] = [
-        {
-          location: mockLocation.display_name,
-          passed: true,
-          result: getBrowserServerResult({
-            device: {height: 0, id: triggerResult.device, width: 0},
-            error: ERRORS.TIMEOUT,
-            passed: false,
-          }),
-          resultId: triggerResult.result_id,
-          test,
-          timestamp: 0,
-        },
-      ]
-      const testTriggerConfig = {
-        config: {pollingTimeout: 0},
-        id: triggerResult.public_id,
-        suite: 'Suite 1',
+    test('results should be timed out if batch result is timed out', async () => {
+      const batchWithTimeoutResult: Batch = {
+        ...batch,
+        results: [{...batch.results[0], timed_out: true}],
       }
+
+      mockApi({getBatchImplementation: async () => batchWithTimeoutResult})
+
       expect(
         await utils.waitForResults(
           api,
           trigger,
-          [testTriggerConfig],
-          [test],
-          {defaultTimeout: 120000, failOnCriticalErrors: false},
+          [result.test],
+          {maxPollingTimeout: 120000, failOnCriticalErrors: false},
           mockReporter
         )
-      ).toEqual(expectedResults)
+      ).toEqual([
+        {
+          ...result,
+          result: {...result.result, error: 'Timeout', passed: false},
+          timedOut: true,
+        },
+      ])
+    })
+
+    test('wait between batch polling', async () => {
+      jest.restoreAllMocks()
+      const waitMock = jest.spyOn(utils, 'wait').mockImplementation(() => new Promise((r) => setTimeout(r, 10)))
+
+      let counter = 0
+
+      mockApi({
+        getBatchImplementation: async () => {
+          counter += 1
+
+          return counter === 3 ? batch : {...batch, status: 'in_progress'}
+        },
+      })
+
+      expect(
+        await utils.waitForResults(
+          api,
+          trigger,
+          [result.test],
+          {maxPollingTimeout: 120000, failOnCriticalErrors: false},
+          mockReporter
+        )
+      ).toEqual([result])
+
+      expect(counter).toBe(3)
+      expect(waitMock).toHaveBeenCalledTimes(2)
     })
 
     test('correct number of pass and timeout results', async () => {
-      mockAxiosWithDefaultResult()
-      const {test, trigger, triggerResult, passingResult} = getTestAndResult()
-      const waitMock = jest.spyOn(utils, 'wait')
-      waitMock.mockImplementation()
-
-      const triggerResultTimeOut = {
-        ...triggerResult,
-        result_id: 'timingOutTest',
+      const pollTimeoutResult: PollResult = {...pollResult, resultID: 'another-id'}
+      const batchWithTimeoutResult: Batch = {
+        ...batch,
+        results: [batch.results[0], {...batch.results[0], timed_out: true, result_id: pollTimeoutResult.resultID}],
       }
-      const expectedResults = [
-        passingResult,
-        {
-          location: mockLocation.display_name,
-          passed: true,
-          result: getBrowserServerResult({
-            device: {height: 0, id: triggerResultTimeOut.device, width: 0},
-            error: ERRORS.TIMEOUT,
-            passed: false,
-          }),
-          resultId: triggerResultTimeOut.result_id,
-          test,
-          timestamp: 0,
-        },
-      ]
-      trigger.results = [triggerResult, triggerResultTimeOut]
+
+      mockApi({
+        getBatchImplementation: async () => batchWithTimeoutResult,
+        pollResultsImplementation: async () => [pollResult, pollTimeoutResult],
+      })
 
       expect(
         await utils.waitForResults(
           api,
           trigger,
-          [],
-          [test],
-          {defaultTimeout: 2000, failOnCriticalErrors: false},
+          [result.test],
+          {maxPollingTimeout: 2000, failOnCriticalErrors: false},
           mockReporter
         )
-      ).toEqual(expectedResults)
+      ).toEqual([result, {...result, resultId: pollTimeoutResult.resultID, timedOut: true}])
     })
 
     test('tunnel failure', async () => {
-      const waitMock = jest.spyOn(utils, 'wait')
-      waitMock.mockImplementation()
-      const {test, trigger, triggerResult} = getTestAndResult()
-
-      // Fake pollResults to not update results and iterate until the isTunnelConnected is equal to false
-      jest
-        .spyOn(axios, 'create')
-        .mockImplementation((() => async (r: AxiosRequestConfig) => ({data: {results: []}})) as any)
+      mockApi()
 
       const mockTunnel = {
         keepAlive: async () => {
           throw new Error('keepAlive failed')
         },
       } as any
-      const expectedResults: Result[] = [
-        {
-          location: 'Tunneled',
-          passed: false,
-          result: getBrowserServerResult({
-            device: {height: 0, id: triggerResult.device, width: 0},
-            error: ERRORS.TUNNEL,
-            passed: false,
-          }),
-          resultId: triggerResult.result_id,
-          test,
-          timestamp: 0,
-        },
-      ]
 
-      expect(
-        await utils.waitForResults(
-          api,
-          trigger,
-          [],
-          [test],
-          {defaultTimeout: 2000, failOnCriticalErrors: true},
-          mockReporter,
-          mockTunnel
-        )
-      ).toEqual(expectedResults)
-      expect(
-        await utils.waitForResults(
-          api,
-          trigger,
-          [],
-          [test],
-          {defaultTimeout: 2000, failOnCriticalErrors: false},
-          mockReporter,
-          mockTunnel
-        )
-      ).toEqual(expectedResults)
+      await utils.waitForResults(
+        api,
+        trigger,
+        [result.test],
+        {maxPollingTimeout: 2000, failOnCriticalErrors: true},
+        mockReporter,
+        mockTunnel
+      )
+
+      expect(mockReporter.error).toBeCalledWith('The tunnel has stopped working, this may have affected the results.')
     })
 
     test('location when tunnel', async () => {
-      const waitMock = jest.spyOn(utils, 'wait')
-      waitMock.mockImplementation()
-      const {test, trigger} = getTestAndResult()
+      mockApi()
 
-      const mockTunnel = {
-        keepAlive: async () => true,
-      } as any
+      const mockTunnel = {keepAlive: async () => true} as any
 
       let results = await utils.waitForResults(
         api,
         trigger,
-        [],
-        [test],
-        {defaultTimeout: 2000, failOnCriticalErrors: true},
+        [result.test],
+        {maxPollingTimeout: 2000, failOnCriticalErrors: true},
         mockReporter,
         mockTunnel
       )
       expect(results[0].location).toBe('Tunneled')
 
-      const newTest = {...test}
+      const newTest = {...result.test}
       newTest.type = 'api'
       newTest.subtype = 'http'
       results = await utils.waitForResults(
         api,
         trigger,
-        [],
         [newTest],
-        {defaultTimeout: 2000, failOnCriticalErrors: true},
+        {maxPollingTimeout: 2000, failOnCriticalErrors: true},
         mockReporter,
         mockTunnel
       )
@@ -797,9 +694,8 @@ describe('utils', () => {
       results = await utils.waitForResults(
         api,
         trigger,
-        [],
         [newTest],
-        {defaultTimeout: 2000, failOnCriticalErrors: true},
+        {failOnCriticalErrors: true, maxPollingTimeout: 2000},
         mockReporter,
         mockTunnel
       )
@@ -807,53 +703,31 @@ describe('utils', () => {
     })
 
     test('pollResults throws', async () => {
-      const {test, trigger, triggerResult} = getTestAndResult()
-      jest.spyOn(utils, 'wait').mockImplementation()
-      const axiosMock = jest.spyOn(axios, 'create')
-      const serverError = new Error('Server Error') as AxiosError
-      serverError.response = {status: 502} as AxiosResponse
-      axiosMock.mockImplementation((() => async (r: AxiosRequestConfig) => {
-        throw serverError
-      }) as any)
-
-      const mockTunnel = {keepAlive: async () => Promise.reject()} as Tunnel
-
-      expect(
-        await utils.waitForResults(
-          api,
-          trigger,
-          [],
-          [test],
-          {defaultTimeout: 2000, failOnCriticalErrors: false},
-          mockReporter,
-          mockTunnel
-        )
-      ).toEqual([
-        {
-          location: 'Tunneled',
-          passed: true,
-          result: getBrowserServerResult({
-            device: {height: 0, id: triggerResult.device, width: 0},
-            error: ERRORS.ENDPOINT,
-            passed: false,
-          }),
-          resultId: triggerResult.result_id,
-          test,
-          timestamp: 0,
+      const {pollResultsMock} = mockApi({
+        pollResultsImplementation: () => {
+          throw new Error('Poll results server error')
         },
-      ])
+      })
 
       await expect(
-        utils.waitForResults(
-          api,
-          trigger,
-          [],
-          [test],
-          {defaultTimeout: 2000, failOnCriticalErrors: true},
-          mockReporter,
-          mockTunnel
-        )
-      ).rejects.toThrow()
+        utils.waitForResults(api, trigger, [result.test], {maxPollingTimeout: 2000}, mockReporter)
+      ).rejects.toThrowError('Failed to poll results: Poll results server error')
+
+      expect(pollResultsMock).toHaveBeenCalledWith([result.resultId])
+    })
+
+    test('getBatch throws', async () => {
+      const {getBatchMock} = mockApi({
+        getBatchImplementation: () => {
+          throw new Error('Get batch server error')
+        },
+      })
+
+      await expect(
+        utils.waitForResults(api, trigger, [result.test], {maxPollingTimeout: 2000}, mockReporter)
+      ).rejects.toThrowError('Failed to get batch: Get batch server error')
+
+      expect(getBatchMock).toHaveBeenCalledWith(trigger.batch_id)
     })
   })
 

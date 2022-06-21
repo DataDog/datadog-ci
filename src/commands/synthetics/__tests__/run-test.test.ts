@@ -181,8 +181,9 @@ describe('run-test', () => {
       jest.spyOn(utils, 'runTests').mockResolvedValue(mockTestTriggerResponse)
 
       const apiHelper = {
+        getBatch: () => ({results: []}),
         getPresignedURL: () => ({url: 'url'}),
-        pollResults: () => ({results: [getApiResult('1', getApiTest())]}),
+        pollResults: () => [getApiResult('1', getApiTest())],
         triggerTests: () => mockTestTriggerResponse,
       }
 
@@ -316,8 +317,8 @@ describe('run-test', () => {
 
       jest.spyOn(utils, 'runTests').mockReturnValue(
         Promise.resolve({
+          batch_id: 'bid',
           locations: [location],
-          results: [{device: 'chrome_laptop.large', location: 1, public_id: 'publicId', result_id: '1111'}],
         })
       )
 
@@ -326,6 +327,7 @@ describe('run-test', () => {
       serverError.config = {baseURL: 'baseURL', url: 'url'}
 
       const apiHelper = {
+        getBatch: () => ({results: []}),
         getPresignedURL: () => ({url: 'url'}),
         pollResults: jest.fn(() => {
           throw serverError
@@ -340,7 +342,12 @@ describe('run-test', () => {
           publicIds: ['public-id-1', 'public-id-2'],
           tunnel: true,
         })
-      ).rejects.toMatchError(new CriticalError('POLL_RESULTS_FAILED', 'Server Error'))
+      ).rejects.toMatchError(
+        new CriticalError(
+          'POLL_RESULTS_FAILED',
+          'Failed to poll results: query on baseURLurl returned: "Bad Gateway"\n'
+        )
+      )
       expect(stopTunnelSpy).toHaveBeenCalledTimes(1)
     })
   })
@@ -394,6 +401,7 @@ describe('run-test', () => {
       )
     })
   })
+
   describe('getTestsList', () => {
     beforeEach(() => {
       jest.restoreAllMocks()

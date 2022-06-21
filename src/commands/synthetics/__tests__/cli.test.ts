@@ -1,20 +1,18 @@
 // tslint:disable: no-string-literal
 import {AxiosError, AxiosResponse} from 'axios'
 import {Cli} from 'clipanion/lib/advanced'
-import deepExtend from 'deep-extend'
 import * as ciUtils from '../../../helpers/utils'
 import {DEFAULT_COMMAND_CONFIG, RunTestCommand} from '../command'
 import {ExecutionRule, Result, Test} from '../interfaces'
 import * as runTests from '../run-test'
 import * as utils from '../utils'
 import {
-  getApiResult,
   getApiTest,
+  getResults,
   getTestSuite,
   MockedReporter,
   mockReporter,
   mockTestTriggerResponse,
-  RenderResultsHelper,
   RenderResultsTestCase,
 } from './fixtures'
 
@@ -85,24 +83,18 @@ describe('run-test', () => {
   })
 
   describe('sortResultsByOutcome', () => {
-    const test1 = getApiTest('test1')
-    const test2 = deepExtend(getApiTest('test2'), {options: {ci: {executionRule: ExecutionRule.BLOCKING}}})
-    const test3 = deepExtend(getApiTest('test3'), {options: {ci: {executionRule: ExecutionRule.NON_BLOCKING}}})
-    const test4 = deepExtend(getApiTest('test4'), {options: {ci: {executionRule: ExecutionRule.BLOCKING}}})
-    const test5 = deepExtend(getApiTest('test5'), {options: {ci: {executionRule: ExecutionRule.NON_BLOCKING}}})
-    const results: Result[] = [
-      deepExtend(getApiResult('1', test1), {passed: true}),
-      deepExtend(getApiResult('2', test2), {passed: true}),
-      deepExtend(getApiResult('3', test3), {passed: true}),
-      deepExtend(getApiResult('4', test4), {passed: false}),
-      deepExtend(getApiResult('5', test5), {passed: false}),
-    ]
+    const results: Result[] = getResults([
+      {executionRule: ExecutionRule.NON_BLOCKING, passed: false},
+      {executionRule: ExecutionRule.BLOCKING, passed: true},
+      {executionRule: ExecutionRule.BLOCKING, passed: false},
+      {executionRule: ExecutionRule.NON_BLOCKING, passed: true},
+    ])
 
     test('should sort tests with success, non_blocking failures then failures', async () => {
       const command = new RunTestCommand()
       const sortedResults = [...results]
       sortedResults.sort((command['sortResultsByOutcome'] as any)())
-      expect(sortedResults.map((r) => r.resultId)).toStrictEqual(['3', '1', '2', '5', '4'])
+      expect(sortedResults.map((r) => r.resultId)).toStrictEqual(['3', '1', '0', '2'])
     })
   })
 
@@ -319,23 +311,6 @@ describe('run-test', () => {
       expect(apiHelper.getTest).toHaveBeenCalledTimes(1)
     })
 
-    test('`NO_RESULTS_TO_POLL` never exit with 1', async () => {
-      const command = new RunTestCommand()
-      command.context = {stdout: {write: jest.fn()}} as any
-      command['config'].failOnCriticalErrors = true
-
-      const apiHelper = {
-        getTest: () => getApiTest('123-456-789'),
-        triggerTests: jest.fn(() => ({})),
-      }
-      jest.spyOn(runTests, 'getApiHelper').mockImplementation(() => apiHelper as any)
-      jest.spyOn(ciUtils, 'parseConfigFile').mockImplementation(async (config, _) => config)
-      jest.spyOn(utils, 'getSuites').mockImplementation((() => [getTestSuite()]) as any)
-
-      expect(await command.execute()).toBe(0)
-      expect(apiHelper.triggerTests).toHaveBeenCalledTimes(1)
-    })
-
     describe.each([false, true])('%s', (failOnCriticalErrors: boolean) => {
       const cases: [string, number?][] = [['HTTP 4xx error', 403], ['HTTP 5xx error', 502], ['Unknown error']]
       const expectedExit = failOnCriticalErrors ? 1 : 0
@@ -402,14 +377,12 @@ describe('run-test', () => {
           command['config'].failOnCriticalErrors = failOnCriticalErrors
 
           const apiHelper = {
+            getBatch: () => ({results: [], status: 'success'}),
             getTest: () => getApiTest('123-456-789'),
             pollResults: jest.fn(() => {
               throw errorCode ? getAxiosHttpError(errorCode, 'Error') : new Error('Unknown error')
             }),
-            triggerTests: () => ({
-              ...mockTestTriggerResponse,
-              results: [{location: 1, public_id: '123-456-789', result_id: '1'}],
-            }),
+            triggerTests: () => mockTestTriggerResponse,
           }
           jest.spyOn(runTests, 'getApiHelper').mockImplementation(() => apiHelper as any)
           jest.spyOn(ciUtils, 'parseConfigFile').mockImplementation(async (config, __) => config)
@@ -425,37 +398,6 @@ describe('run-test', () => {
   describe('Render results', () => {
     const emptySummary = utils.createSummary()
 
-    const test1 = {
-      configOverride: {executionRule: ExecutionRule.BLOCKING, startUrl: 'foo'},
-      publicId: 'aaa-aaa-aaa',
-      resultPassed: true,
-    }
-    const test1Timeout = {...test1, resultError: 'Timeout', resultPassed: false}
-    const test1CriticalError = {...test1, resultIsUnhealthy: true, resultPassed: false}
-    const test1FailedNonBlocking = {
-      ...test1,
-      configOverride: {...test1.configOverride, executionRule: ExecutionRule.NON_BLOCKING, startUrl: 'bar'},
-      resultPassed: false,
-    }
-    const test1Failed = {
-      ...test1,
-      configOverride: {...test1.configOverride, executionRule: ExecutionRule.BLOCKING, startUrl: 'baz'},
-      resultPassed: false,
-    }
-    const test1NonBlocking = {...test1, executionRule: ExecutionRule.NON_BLOCKING}
-    const test1NonBlockingFailedNonBlocking = {...test1FailedNonBlocking, executionRule: ExecutionRule.NON_BLOCKING}
-    const test1NonBlockingFailed = {...test1Failed, executionRule: ExecutionRule.NON_BLOCKING}
-    const test2Failed = {
-      configOverride: {executionRule: ExecutionRule.BLOCKING, startUrl: 'bar'},
-      publicId: 'bbb-bbb-bbb',
-      resultPassed: false,
-    }
-    const test3 = {
-      configOverride: {executionRule: ExecutionRule.BLOCKING, startUrl: 'baz'},
-      publicId: 'ccc-ccc-ccc',
-      resultPassed: true,
-    }
-
     const cases: RenderResultsTestCase[] = [
       {
         description: '1 API test with 1 config override, 1 result (passed)',
@@ -465,7 +407,7 @@ describe('run-test', () => {
         },
         failOnCriticalErrors: false,
         failOnTimeout: false,
-        results: new RenderResultsHelper().getResults([test1]),
+        results: getResults([{passed: true}]),
         summary: {...emptySummary},
       },
       {
@@ -477,7 +419,7 @@ describe('run-test', () => {
         },
         failOnCriticalErrors: false,
         failOnTimeout: false,
-        results: new RenderResultsHelper().getResults([test1Timeout]),
+        results: getResults([{timedOut: true}]),
         summary: {...emptySummary},
       },
       {
@@ -489,7 +431,7 @@ describe('run-test', () => {
         },
         failOnCriticalErrors: false,
         failOnTimeout: true,
-        results: new RenderResultsHelper().getResults([test1Timeout]),
+        results: getResults([{timedOut: true}]),
         summary: {...emptySummary},
       },
       {
@@ -501,7 +443,7 @@ describe('run-test', () => {
         },
         failOnCriticalErrors: false,
         failOnTimeout: false,
-        results: new RenderResultsHelper().getResults([test1CriticalError]),
+        results: getResults([{unhealthy: true}]),
         summary: {...emptySummary},
       },
       {
@@ -509,11 +451,11 @@ describe('run-test', () => {
           '1 API test with 1 config override, 1 result (failed critical error), no fail on timeout, fail on critical errors',
         expected: {
           exitCode: 1,
-          summary: {...emptySummary, failed: 1},
+          summary: {...emptySummary, criticalErrors: 1, failed: 1},
         },
         failOnCriticalErrors: true,
         failOnTimeout: false,
-        results: new RenderResultsHelper().getResults([test1CriticalError]),
+        results: getResults([{unhealthy: true}]),
         summary: {...emptySummary},
       },
       {
@@ -531,7 +473,7 @@ describe('run-test', () => {
         },
         failOnCriticalErrors: false,
         failOnTimeout: false,
-        results: new RenderResultsHelper().getResults([test1, test1FailedNonBlocking, test1Failed]),
+        results: getResults([{passed: true}, {executionRule: ExecutionRule.NON_BLOCKING}, {}]),
         summary: {...emptySummary, skipped: 1},
       },
       {
@@ -548,10 +490,15 @@ describe('run-test', () => {
         },
         failOnCriticalErrors: false,
         failOnTimeout: false,
-        results: new RenderResultsHelper().getResults([
-          test1NonBlocking,
-          test1NonBlockingFailedNonBlocking,
-          test1NonBlockingFailed,
+        results: getResults([
+          {
+            executionRule: ExecutionRule.NON_BLOCKING,
+            testExecutionRule: ExecutionRule.NON_BLOCKING,
+          },
+          {passed: true, testExecutionRule: ExecutionRule.NON_BLOCKING},
+          {
+            testExecutionRule: ExecutionRule.NON_BLOCKING,
+          },
         ]),
         summary: {...emptySummary, skipped: 1},
       },
@@ -569,7 +516,7 @@ describe('run-test', () => {
         },
         failOnCriticalErrors: false,
         failOnTimeout: false,
-        results: new RenderResultsHelper().getResults([test1FailedNonBlocking, test2Failed, test3]),
+        results: getResults([{}, {passed: true}, {executionRule: ExecutionRule.NON_BLOCKING}]),
         summary: {...emptySummary},
       },
     ]
@@ -577,7 +524,12 @@ describe('run-test', () => {
     test.each(cases)('$description', async (testCase) => {
       testCase.results.forEach(
         (result) =>
-          (result.passed = utils.hasResultPassed(result.result, testCase.failOnCriticalErrors, testCase.failOnTimeout))
+          (result.passed = utils.hasResultPassed(
+            result.result,
+            result.timedOut,
+            testCase.failOnCriticalErrors,
+            testCase.failOnTimeout
+          ))
       )
 
       jest.spyOn(ciUtils, 'parseConfigFile').mockImplementation(async () => ({
