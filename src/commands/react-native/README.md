@@ -90,7 +90,41 @@ This allows Datadog to create proper URLs such as:
 | GitHub or GitLab  | https://\<repository-url\>/blob/\<commit-hash\>/\<tracked-file-path\>#L\<line\> |
 | Bitbucket | https://\<repository-url\>/src/\<commit-hash\>/\<tracked-file-path\>#lines-\<line\>  |
 
+
+### `xcode`
+
+This command can be called from an xcode build phase to execute the react-native bundle command and then upload the sourcemaps.
+The upload only happens when your target has a "Release" build configuration to prevent overwriting existing sourcemapss.
+
+First, you need to get the location to your `node` and `yarn` binaries by running in a terminal:
+
+```bash
+$ which node #/path/to/node
+$ which yarn #/path/to/yarn
+```
+
+Then change the "Bundle React Native code and images" build phase in XCode (don't forget to change `/path/to/node` and `/path/to/yarn`):
+
+```bash
+set -e
+export SOURCEMAP_FILE=./build/main.jsbundle.map
+export BUNDLE_FILE=./build/main.jsbundle
+export NODE_BINARY=node
+# Change /path/to/node and /path/to/yarn to your previous values
+(cd .. && /path/to/node /path/to/yarn datadog-ci react-native xcode node_modules/react-native/scripts/react-native-xcode.sh)
+```
+
+* The first positional argument is the React Native bundle script. If you use another tool for sourcemaps upload such as Sentry, it can be the Sentry script itself.
+
+* `--service` should be set as the name of the service you're uploading sourcemaps for if it is not your bundle identifier.
+
+* `--force` (default: `false`): it will force the upload of the sourcemaps, even if the build configuration is not "Release".
+
+* `--dry-run` (default: `false`): it will run the command without the final step of upload. The bundle script is executed and all other checks are performed.
+
 ## End-to-end testing process
+
+### `upload`
 
 To verify this command works as expected, you can trigger a test run and verify that it returns 0:
 
@@ -116,4 +150,25 @@ Uploading sourcemap /var/folders/34/_7q54_lx4nl1cvkjwr3_k4lw0000gq/T/tmp.x0vecv3
 Command summary:
 ✅ Uploaded 1 sourcemap in 0.698 seconds.
 ✨  Done in 2.50s.
+```
+
+### `xcode`
+
+First, you need to get the location to your `node` and `yarn` binaries by running in a terminal:
+
+```bash
+$ which node #/path/to/node
+$ which yarn #/path/to/yarn
+```
+
+Then change the "Bundle React Native code and images" build phase in XCode (don't forget to change `/path/to/node` and `/path/to/yarn`):
+
+```bash
+set -e
+export SOURCEMAP_FILE=./build/main.jsbundle.map
+export BUNDLE_FILE=./build/main.jsbundle
+export NODE_BINARY=node
+# Change /path/to/node and /path/to/yarn to your previous values
+# Change /path/to/datadog-ci and /path/to/project to the relevant values depending on your setup
+(cd ../path/to/datadog-ci && /path/to/node /path/to/yarn launch datadog-ci react-native xcode ../path/to/project/node_modules/react-native/scripts/react-native-xcode.sh)
 ```
