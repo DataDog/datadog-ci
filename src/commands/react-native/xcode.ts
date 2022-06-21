@@ -1,5 +1,6 @@
 import {spawn} from 'child_process'
-import {Command} from 'clipanion'
+import {Cli, Command} from 'clipanion'
+import {UploadCommand} from './upload'
 
 export class XCodeCommand extends Command {
   public static usage = Command.Usage({
@@ -17,6 +18,8 @@ export class XCodeCommand extends Command {
     ],
   })
 
+  private dryRun = false
+  private force = false
   private scriptPath = '../node_modules/react-native/scripts/react-native-xcode.sh'
   private service: string = process.env.PRODUCT_BUNDLE_IDENTIFIER!
 
@@ -53,34 +56,48 @@ export class XCodeCommand extends Command {
       return 1
     }
 
-    if (process.env.CONFIGURATION === 'Release') {
-      // Check sourcemaps have been generated
-      const sourcemapsLocation = this.getSourcemapsLocation()
-      const bundleLocation = this.getBundleLocation()
-      // TODO
+    if (process.env.CONFIGURATION !== 'Release' && !this.force) {
+      this.context.stdout.write(
+        `Build configuration ${process.env.CONFIGURATION} is not Release, skipping sourcemaps upload`
+      )
 
-      // Get values for build
-      const releaseVersion = process.env.MARKETING_VERSION!
-      // TODO const buildVersion = process.env.CURRENT_PROJECT_VERSION!
+      return 0
+    }
+    if (this.force) {
+      this.context.stdout.write(`Force upload for configuration Debug ${process.env.CONFIGURATION}`)
+    }
+    // Check sourcemaps have been generated
+    const sourcemapsLocation = this.getSourcemapsLocation()
+    const bundleLocation = this.getBundleLocation()
 
-      // Run upload script in the background
-      this.cli.run([
+    // Get values for build
+    const releaseVersion = process.env.MARKETING_VERSION!
+    const buildVersion = process.env.CURRENT_PROJECT_VERSION!
+
+    // Run upload script in the background
+    const cli = new Cli()
+    cli.register(UploadCommand)
+
+    return cli.run(
+      [
         'react-native',
         'upload',
         '--platform',
         'ios',
         '--release-version',
         releaseVersion,
+        '--build-version',
+        buildVersion,
         '--service',
         this.service,
         '--bundle',
         bundleLocation,
         '--sourcemap',
         sourcemapsLocation,
-      ])
-    }
-
-    return 0
+        this.dryRun ? '--dry-run' : '',
+      ],
+      this.context
+    )
   }
 
   private getBundleLocation = () => {
@@ -113,3 +130,5 @@ export class XCodeCommand extends Command {
 XCodeCommand.addPath('react-native', 'xcode')
 XCodeCommand.addOption('scriptPath', Command.String({required: false}))
 XCodeCommand.addOption('service', Command.String('--service'))
+XCodeCommand.addOption('dryRun', Command.Boolean('--dry-run'))
+XCodeCommand.addOption('force', Command.Boolean('--force'))
