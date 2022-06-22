@@ -10,13 +10,7 @@ export class XCodeCommand extends Command {
             This command will bundle the react native code and images and then upload React Native sourcemaps and their corresponding javascript bundle to Datadog in order to un-minify front-end stack traces received by Datadog.
             See README for details.
         `,
-    examples: [
-      ['Usage as XCode build phase', 'datadog-ci react-native xcode'],
-      [
-        'Usage as XCode build phase with Sentry',
-        'datadog-ci react-native xcode (../node_modules/@sentry/cli/bin/sentry-cli react-native xcode ../node_modules/react-native/scripts/react-native-xcode.sh)', // TODO check it works
-      ],
-    ],
+    examples: [['Usage as XCode build phase', 'datadog-ci react-native xcode']],
   })
 
   private dryRun = false

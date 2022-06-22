@@ -114,7 +114,8 @@ export NODE_BINARY=node
 (cd .. && /path/to/node /path/to/yarn datadog-ci react-native xcode node_modules/react-native/scripts/react-native-xcode.sh)
 ```
 
-* The first positional argument is the React Native bundle script. If you use another tool for sourcemaps upload such as Sentry, it can be the Sentry script itself.
+* The first positional argument is the React Native bundle script. 
+If you use another script that requires arguments, you will need to put this script in a file (e.g. in `scripts/bundle.sh`), then prrovide the path to this file to the `datadog-ci react-native xcode` command.
 
 * `--service` should be set as the name of the service you're uploading sourcemaps for if it is not your bundle identifier.
 
