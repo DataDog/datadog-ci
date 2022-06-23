@@ -3,8 +3,8 @@ import {Cli} from 'clipanion/lib/advanced'
 import {XCodeCommand} from '../xcode'
 
 beforeEach(() => {
-  delete process.env.BUNDLE_FILE
   delete process.env.CONFIGURATION
+  delete process.env.CONFIGURATION_BUILD_DIR
   delete process.env.CURRENT_PROJECT_VERSION
   delete process.env.EXTRA_PACKAGER_ARGS
   delete process.env.MARKETING_VERSION
@@ -40,8 +40,8 @@ const createMockContext = () => {
 }
 
 const basicEnvironment = {
-  BUNDLE_FILE: './src/commands/react-native/__tests__/fixtures/basic-ios/main.jsbundle',
   CONFIGURATION: 'Release',
+  CONFIGURATION_BUILD_DIR: './src/commands/react-native/__tests__/fixtures/basic-ios',
   CURRENT_PROJECT_VERSION: '000020',
   MARKETING_VERSION: '0.0.2',
   PRODUCT_BUNDLE_IDENTIFIER: 'com.myapp.test',
@@ -67,19 +67,15 @@ const runCLI = async (script: string, options?: {force?: boolean; service?: stri
 
 describe('xcode', () => {
   describe('getBundleLocation', () => {
-    test('should return the location form BUNDLE_LOCATION', () => {
-      process.env.BUNDLE_FILE = './main.jsbundle'
+    test('should return the location from CONFIGURATION_BUILD_DIR', () => {
+      process.env.CONFIGURATION_BUILD_DIR = './src/commands/react-native/__tests__/fixtures/basic-ios'
       const command = new XCodeCommand()
-      expect(command['getBundleLocation']()).toBe('./main.jsbundle')
+      expect(command['getBundleLocation']()).toBe(
+        './src/commands/react-native/__tests__/fixtures/basic-ios/main.jsbundle'
+      )
     })
 
-    test('should return the location form EXTRA_PACKAGER_ARGS', () => {
-      process.env.EXTRA_PACKAGER_ARGS = '--bundle-output ./main.jsbundle --sourcemap-output ./main.jsbundle.map'
-      const command = new XCodeCommand()
-      expect(command['getBundleLocation']()).toBe('./main.jsbundle')
-    })
-
-    test('should return null if no bundle specified', () => {
+    test('should return null if no CONFIGURATION_BUILD_DIR is specified', () => {
       const command = new XCodeCommand()
       expect(command['getBundleLocation']()).toBeNull()
     })
@@ -89,7 +85,7 @@ describe('xcode', () => {
     test('should return the location form SOURCEMAP_FILE', () => {
       process.env.SOURCEMAP_FILE = './main.jsbundle.map'
       const command = new XCodeCommand()
-      expect(command['getSourcemapsLocation']()).toBe('./main.jsbundle.map')
+      expect(command['getSourcemapsLocation']()).toMatch('./main.jsbundle.map')
     })
 
     test('should return the location form EXTRA_PACKAGER_ARGS', () => {
@@ -261,7 +257,7 @@ describe('xcode', () => {
         ...process.env,
         ...basicEnvironment,
       }
-      delete process.env.BUNDLE_FILE
+      delete process.env.CONFIGURATION_BUILD_DIR
 
       const {context, code} = await runCLI(
         './src/commands/react-native/__tests__/fixtures/bundle-script/successful_script.sh'
@@ -298,7 +294,7 @@ describe('xcode', () => {
       process.env = {
         ...process.env,
         ...basicEnvironment,
-        BUNDLE_FILE: 'src/commands/react-native/__tests__/fixtures/non-existent/main.jsbundle',
+        CONFIGURATION_BUILD_DIR: 'src/commands/react-native/__tests__/fixtures/non-existent',
       }
 
       const {context, code} = await runCLI(

@@ -94,9 +94,16 @@ This allows Datadog to create proper URLs such as:
 ### `xcode`
 
 This command can be called from an xcode build phase to execute the react-native bundle command and then upload the sourcemaps.
-The upload only happens when your target has a "Release" build configuration to prevent overwriting existing sourcemapss.
+The upload only happens when your target has a "Release" build configuration to prevent overwriting existing sourcemaps.
 
-First, you need to get the location to your `node` and `yarn` binaries by running in a terminal:
+This command can use the same environment variables as the `upload` command: `DATADOG_API_KEY` (required), `DATADOG_SITE` and `DATADOG_SOURCEMAP_INTAKE_URL`.
+To make these variables available, we recommend to export them in a **gitignored or encrypted** `.datadog.sourcemaps.env` file at the root of your project:
+
+```bash
+export DATADOG_API_KEY=12345678901234567890abcdefabcdef
+```
+
+Then, you need to get the location to your `node` and `yarn` binaries by running in a terminal:
 
 ```bash
 $ which node #/path/to/node
@@ -105,17 +112,67 @@ $ which yarn #/path/to/yarn
 
 Then change the "Bundle React Native code and images" build phase in XCode (don't forget to change `/path/to/node` and `/path/to/yarn`):
 
+#### For React Native >= 0.69:
+
+To ensure environment variables are well propagated in the build phase, you first need to create a new `custom-react-native-xcode.sh` file in your `ios` folder.
+
+```bash
+#!/bin/sh
+
+REACT_NATIVE_XCODE="node_modules/react-native/scripts/react-native-xcode.sh"
+# Replace /opt/homebrew/bin/node (resp. /opt/homebrew/bin/yarn) by the value of $(which node) (resp. $(which yarn))
+DATADOG_XCODE="/opt/homebrew/bin/node /opt/homebrew/bin/yarn datadog-ci react-native xcode"
+
+/bin/sh -c "$DATADOG_XCODE $REACT_NATIVE_XCODE" 
+```
+
+This will allow to pass the file's path as one argument to the `with-environment.sh` script in the "Bundle React Native code and images" build phase:
+
+```bash
+set -e
+export SOURCEMAP_FILE=./main.jsbundle.map
+WITH_ENVIRONMENT="../node_modules/react-native/scripts/xcode/with-environment.sh"
+REACT_NATIVE_XCODE="./custom-react-native-xcode.sh" 
+
+/bin/sh -c "$WITH_ENVIRONMENT $REACT_NATIVE_XCODE" 
+```
+
+Finally, source your `.datadog.sourcemaps.env` file in your `ios/.xcode.env` file:
+
+```bash
+# This `.xcode.env` file is versioned and is used to source the environment
+# used when running script phases inside Xcode.
+# To customize your local environment, you can create an `.xcode.env.local`
+# file that is not versioned.
+
+# NODE_BINARY variable contains the PATH to the node executable.
+#
+# Customize the NODE_BINARY variable here.
+# For example, to use nvm with brew, add the following line
+# . "$(brew --prefix nvm)/nvm.sh" --no-use
+export NODE_BINARY=$(command -v node)
+source ../.datadog.sourcemaps.env
+```
+
+If you don't want to have a `.xcode.env` file, you can direcly add the `../.datadog.sourcemaps.env` at the top of your `custom-react-native-xcode.sh`.
+
+#### For React Native < 0.69:
+
+Simply change the "Bundle React Native code and images" build phase:
+
 ```bash
 set -e
 export SOURCEMAP_FILE=./build/main.jsbundle.map
-export BUNDLE_FILE=./build/main.jsbundle
 export NODE_BINARY=node
-# Change /path/to/node and /path/to/yarn to your previous values
-(cd .. && /path/to/node /path/to/yarn datadog-ci react-native xcode node_modules/react-native/scripts/react-native-xcode.sh)
+source ../.datadog.sourcemaps.env
+# Change /opt/homebrew/bin/node (resp. /opt/homebrew/bin/yarn) by the value of $(which node) (resp. $(which yarn))
+/opt/homebrew/bin/node /opt/homebrew/bin/yarn datadog-ci react-native xcode node_modules/react-native/scripts/react-native-xcode.sh
 ```
 
+#### Customize the command
+
 * The first positional argument is the React Native bundle script. 
-If you use another script that requires arguments, you will need to put this script in a file (e.g. in `scripts/bundle.sh`), then prrovide the path to this file to the `datadog-ci react-native xcode` command.
+If you use another script that requires arguments, you will need to put this script in a file (e.g. in `scripts/bundle.sh`), then provide the path to this file to the `datadog-ci react-native xcode` command.
 
 * `--service` should be set as the name of the service you're uploading sourcemaps for if it is not your bundle identifier.
 
@@ -155,21 +212,24 @@ Command summary:
 
 ### `xcode`
 
-First, you need to get the location to your `node` and `yarn` binaries by running in a terminal:
+First, build and link your local datadog-ci package, by running in this directory:
 
 ```bash
-$ which node #/path/to/node
-$ which yarn #/path/to/yarn
+yarn build
+yarn link
 ```
 
-Then change the "Bundle React Native code and images" build phase in XCode (don't forget to change `/path/to/node` and `/path/to/yarn`):
+Then in your project:
 
 ```bash
-set -e
-export SOURCEMAP_FILE=./build/main.jsbundle.map
-export BUNDLE_FILE=./build/main.jsbundle
-export NODE_BINARY=node
-# Change /path/to/node and /path/to/yarn to your previous values
-# Change /path/to/datadog-ci and /path/to/project to the relevant values depending on your setup
-(cd ../path/to/datadog-ci && /path/to/node /path/to/yarn launch datadog-ci react-native xcode ../path/to/project/node_modules/react-native/scripts/react-native-xcode.sh)
+yarn link @datadog/datadog-ci
 ```
+
+If running `yarn datadog-ci` in your project returns `error Command "datadog-ci" not found.`, you can do the following:
+
+```bash
+chmod +x /path/to/datadog-ci/dist/cli.js
+cp /path/to/datadog-ci/dist/cli.js /path/to/project/node_modules/.bin/datadog-ci
+```
+
+Then you can follow the usual installation steps.

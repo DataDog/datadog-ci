@@ -10,7 +10,16 @@ export class XCodeCommand extends Command {
             This command will bundle the react native code and images and then upload React Native sourcemaps and their corresponding javascript bundle to Datadog in order to un-minify front-end stack traces received by Datadog.
             See README for details.
         `,
-    examples: [['Usage as XCode build phase', 'datadog-ci react-native xcode']],
+    examples: [
+      [
+        'Usage as XCode build phase for RN < 0.69',
+        'set -e\nexport SOURCEMAP_FILE=./build/main.jsbundle.map\nexport NODE_BINARY=node\n# Replace /opt/homebrew/bin/node (resp. /opt/homebrew/bin/yarn) by the value of $(command -v node) (resp. $(command -v yarn))\n/opt/homebrew/bin/node /opt/homebrew/bin/yarn datadog-ci react-native xcode node_modules/react-native/scripts/react-native-xcode.sh\n',
+      ],
+      [
+        'Usage as XCode build phase for RN >= 0.69',
+        'set -e\nexport SOURCEMAP_FILE=./main.jsbundle.map\nWITH_ENVIRONMENT="../node_modules/react-native/scripts/xcode/with-environment.sh"\nREACT_NATIVE_XCODE="node_modules/react-native/scripts/react-native-xcode.sh"\n# Replace /opt/homebrew/bin/node (resp. /opt/homebrew/bin/yarn) by the value of $(command -v node) (resp. $(command -v yarn))\nDATADOG_XCODE="/opt/homebrew/bin/node /opt/homebrew/bin/yarn datadog-ci react-native xcode"\n\n/bin/sh -c "$WITH_ENVIRONMENT;$DATADOG_XCODE $REACT_NATIVE_XCODE" \n',
+      ],
+    ],
   })
 
   private dryRun = false
@@ -82,10 +91,7 @@ export class XCodeCommand extends Command {
     if (!bundleLocation) {
       this.context.stderr.write('No bundle file output has been specified.\n')
       this.context.stderr.write(
-        'Check that you either set a BUNDLE_FILE or an EXTRA_PACKAGER_ARGS environment variable in your "Bundle React Native code and images" Build Phase in XCode.\n'
-      )
-      this.context.stderr.write(
-        'If you are not running this script from XCode, set a BUNDLE_FILE environment variable before running the script.\n'
+        'If you are not running this script from XCode, set a CONFIGURATION_BUILD_DIR (directory containing the generated bundle) environment variable before running the script.\n'
       )
 
       return 1
@@ -165,22 +171,16 @@ export class XCodeCommand extends Command {
   }
 
   private getBundleLocation = () => {
-    if (process.env.BUNDLE_FILE) {
-      return process.env.BUNDLE_FILE
-    }
-    if (process.env.EXTRA_PACKAGER_ARGS) {
-      const splitArguments = process.env.EXTRA_PACKAGER_ARGS.split(' ')
-      const bundleLocationIndex = splitArguments.findIndex((arg) => arg === '--bundle-output') + 1
-
-      return splitArguments[bundleLocationIndex]
+    if (!process.env.CONFIGURATION_BUILD_DIR) {
+      return null
     }
 
-    return null
+    return `${process.env.CONFIGURATION_BUILD_DIR}/main.jsbundle`
   }
 
   private getSourcemapsLocation = () => {
     if (process.env.SOURCEMAP_FILE) {
-      return process.env.SOURCEMAP_FILE
+      return `${process.env.SOURCEMAP_FILE}`
     }
     if (process.env.EXTRA_PACKAGER_ARGS) {
       const splitArguments = process.env.EXTRA_PACKAGER_ARGS.split(' ')
