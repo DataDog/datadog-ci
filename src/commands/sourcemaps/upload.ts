@@ -11,7 +11,7 @@ import {RequestBuilder} from '../../helpers/interfaces'
 import {getMetricsLogger, MetricsLogger} from '../../helpers/metrics'
 import {upload, UploadStatus} from '../../helpers/upload'
 import {getRequestBuilder} from '../../helpers/utils'
-import {getRepositoryData, newSimpleGit, RepositoryData} from './git'
+import {getRepositoryData, newSimpleGit, RepositoryData} from './common/git'
 import {Sourcemap} from './interfaces'
 import {
   renderCommandInfo,
