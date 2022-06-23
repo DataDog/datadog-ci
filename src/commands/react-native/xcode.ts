@@ -46,7 +46,7 @@ export class XCodeCommand extends Command {
 
     if (!process.env.MARKETING_VERSION) {
       this.context.stderr.write('Environment variable MARKETING_VERSION is missing for Datadog sourcemaps upload.\n')
-      this.context.stderr.write('Check that a Version is set for your target in XCode.\n')
+      this.context.stderr.write('Check that a Version is set for your target in XCode. It needs to be changed once.\n')
       this.context.stderr.write(
         'If you are not running this script from XCode, set a MARKETING_VERSION environment variable before running the script.\n'
       )
@@ -58,7 +58,7 @@ export class XCodeCommand extends Command {
       this.context.stderr.write(
         'Environment variable CURRENT_PROJECT_VERSION is missing for Datadog sourcemaps upload.\n'
       )
-      this.context.stderr.write('Check that a Build is set for your target in XCode.\n')
+      this.context.stderr.write('Check that a Build is set for your target in XCode. It needs to be changed once.\n')
       this.context.stderr.write(
         'If you are not running this script from XCode, set a CURRENT_PROJECT_VERSION environment variable before running the script.\n'
       )
