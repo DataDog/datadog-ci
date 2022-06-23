@@ -145,7 +145,7 @@ describe('git', () => {
         fail('data should not be undefined')
       }
 
-      const files = data.trackedFilesMatcher.matchRNSourcemap(
+      const files = data.trackedFilesMatcher.matchSourcemap(
         stdout,
         'src/commands/sourcemaps/__tests__/fixtures/basic/common.min.js.map'
       )
@@ -160,7 +160,7 @@ describe('git', () => {
       if (!data) {
         fail('data should not be undefined')
       }
-      const files = data.trackedFilesMatcher.matchRNSourcemap(
+      const files = data.trackedFilesMatcher.matchSourcemap(
         stdout,
         'src/commands/sourcemaps/__tests__/fixtures/basic/common.min.js.map'
       )

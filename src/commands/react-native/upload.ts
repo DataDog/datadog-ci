@@ -208,7 +208,7 @@ export class UploadCommand extends Command {
   private getRepositoryPayload = (repositoryData: RepositoryData, sourcemapPath: string): string | undefined => {
     let repositoryPayload: string | undefined
     try {
-      const files = repositoryData.trackedFilesMatcher.matchRNSourcemap(this.context.stdout, sourcemapPath)
+      const files = repositoryData.trackedFilesMatcher.matchSourcemap(this.context.stdout, sourcemapPath)
       if (files) {
         repositoryPayload = JSON.stringify({
           data: [
