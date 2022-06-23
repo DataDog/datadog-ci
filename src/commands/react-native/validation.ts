@@ -1,4 +1,4 @@
-import fs from 'fs'
+import {checkFile} from '../sourcemaps/common/validation'
 import {RNSourcemap} from './interfaces'
 
 export class InvalidPayload extends Error {
@@ -8,23 +8,6 @@ export class InvalidPayload extends Error {
     super(message)
     this.reason = reason
   }
-}
-
-const checkFile: (path: string) => {empty: boolean; exists: boolean} = (path: string) => {
-  try {
-    const stats = fs.statSync(path)
-    if (stats.size === 0) {
-      return {exists: true, empty: true}
-    }
-  } catch (error) {
-    if (error.code === 'ENOENT') {
-      return {exists: false, empty: false}
-    }
-    // Other kind of error
-    throw error
-  }
-
-  return {exists: true, empty: false}
 }
 
 export const validatePayload = (sourcemap: RNSourcemap) => {
