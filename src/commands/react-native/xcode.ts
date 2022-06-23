@@ -141,26 +141,27 @@ export class XCodeCommand extends Command {
     const cli = new Cli()
     cli.register(UploadCommand)
 
-    return cli.run(
-      [
-        'react-native',
-        'upload',
-        '--platform',
-        'ios',
-        '--release-version',
-        releaseVersion,
-        '--build-version',
-        buildVersion,
-        '--service',
-        this.service,
-        '--bundle',
-        bundleLocation,
-        '--sourcemap',
-        sourcemapsLocation,
-        this.dryRun ? '--dry-run' : '',
-      ],
-      this.context
-    )
+    const uploadCommand = [
+      'react-native',
+      'upload',
+      '--platform',
+      'ios',
+      '--release-version',
+      releaseVersion,
+      '--build-version',
+      buildVersion,
+      '--service',
+      this.service,
+      '--bundle',
+      bundleLocation,
+      '--sourcemap',
+      sourcemapsLocation,
+    ]
+    if (this.dryRun) {
+      uploadCommand.push('--dry-run')
+    }
+
+    return cli.run(uploadCommand, this.context)
   }
 
   private getBundleLocation = () => {
