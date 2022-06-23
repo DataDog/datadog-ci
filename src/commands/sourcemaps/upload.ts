@@ -12,6 +12,7 @@ import {getMetricsLogger, MetricsLogger} from '../../helpers/metrics'
 import {upload, UploadStatus} from '../../helpers/upload'
 import {getRequestBuilder} from '../../helpers/utils'
 import {getRepositoryData, newSimpleGit, RepositoryData} from './common/git'
+import {getBaseIntakeUrl, getMinifiedFilePath} from './common/utils'
 import {Sourcemap} from './interfaces'
 import {
   renderCommandInfo,
@@ -23,7 +24,6 @@ import {
   renderSuccessfulCommand,
   renderUpload,
 } from './renderer'
-import {getBaseIntakeUrl, getMinifiedFilePath} from './utils'
 import {InvalidPayload, validatePayload} from './validation'
 
 import {buildPath} from '../../helpers/utils'
