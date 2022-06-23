@@ -9,6 +9,7 @@ import {getMetricsLogger, MetricsLogger} from '../../helpers/metrics'
 import {upload, UploadStatus} from '../../helpers/upload'
 import {getRequestBuilder} from '../../helpers/utils'
 import {getRepositoryData, newSimpleGit, RepositoryData} from '../sourcemaps/common/git'
+import {getBaseIntakeUrl} from '../sourcemaps/common/utils'
 import {RN_SUPPORTED_PLATFORMS, RNPlatform, RNSourcemap} from './interfaces'
 import {
   renderCommandInfo,
@@ -19,7 +20,6 @@ import {
   renderSuccessfulCommand,
   renderUpload,
 } from './renderer'
-import {getBaseIntakeUrl} from './utils'
 import {InvalidPayload, validatePayload} from './validation'
 
 export class UploadCommand extends Command {
