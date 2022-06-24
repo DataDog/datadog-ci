@@ -92,7 +92,7 @@ describe('Default reporter', () => {
     })
   })
 
-  describe.only('resultEnd', () => {
+  describe('resultEnd', () => {
     const createApiResult = (
       resultId: string,
       passed: boolean,

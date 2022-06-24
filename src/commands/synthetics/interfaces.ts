@@ -99,24 +99,29 @@ export interface Result {
 
 type Status = 'passed' | 'failed' | 'in_progress'
 
-export interface ServerResultInBatch {
+export interface ResultInBatch {
   execution_rule: ExecutionRule
   location: string
-  // Skipped results do not have a result id.
-  result_id?: string
-  status: Status | 'skipped'
+  result_id: string
+  status: Status
   test_public_id: string
   timed_out: boolean
 }
 
-export interface ServerBatch {
-  results: ServerResultInBatch[]
+export interface Batch {
+  results: ResultInBatch[]
   status: Status
 }
 
-export interface Batch {
-  // We don't care about skipped results internally.
-  results: (ServerResultInBatch & {result_id: string; status: Status})[]
+interface SkippedResultInBatch extends Omit<ResultInBatch, 'result_id' | 'status'> {
+  status: 'skipped'
+}
+type ServerResultInBatch = SkippedResultInBatch | ResultInBatch
+
+export interface ServerBatch {
+  // The batch from the server contains skipped results, which we're going to remove since we don't
+  // care about skipped results internally.
+  results: ServerResultInBatch[]
   status: Status
 }
 
