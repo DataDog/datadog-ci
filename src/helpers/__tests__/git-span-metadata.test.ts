@@ -1,6 +1,6 @@
 import simpleGit from 'simple-git'
 
-import {getGitMetadata} from '../git'
+import {getGitMetadata} from '../git-span-metadata'
 import {
   GIT_BRANCH,
   GIT_COMMIT_AUTHOR_DATE,
