@@ -3,13 +3,13 @@ import {Command} from 'clipanion'
 import asyncPool from 'tiny-async-pool'
 
 import {ApiKeyValidator, newApiKeyValidator} from '../../helpers/apikey'
+import {getBaseSourcemapIntakeUrl} from '../../helpers/base-intake-url'
 import {InvalidConfigurationError} from '../../helpers/errors'
+import {getRepositoryData, newSimpleGit, RepositoryData} from '../../helpers/git-sourcemaps-repository-data'
 import {RequestBuilder} from '../../helpers/interfaces'
 import {getMetricsLogger, MetricsLogger} from '../../helpers/metrics'
 import {upload, UploadStatus} from '../../helpers/upload'
 import {getRequestBuilder} from '../../helpers/utils'
-import {getRepositoryData, newSimpleGit, RepositoryData} from '../sourcemaps/common/git-sourcemaps-repository-data'
-import {getBaseSourcemapIntakeUrl} from '../../helpers/base-intake-url'
 import {RN_SUPPORTED_PLATFORMS, RNPlatform, RNSourcemap} from './interfaces'
 import {
   renderCommandInfo,
