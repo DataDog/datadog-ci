@@ -4,11 +4,11 @@ import deepExtend from 'deep-extend'
 
 import {parseConfigFile, removeUndefinedValues} from '../../helpers/utils'
 import {CiError, CriticalError} from './errors'
-import {CommandConfig, ERRORS, MainReporter, Reporter, Result, Summary} from './interfaces'
+import {CommandConfig, MainReporter, Reporter, Result, Summary} from './interfaces'
 import {DefaultReporter} from './reporters/default'
 import {JUnitReporter} from './reporters/junit'
 import {executeTests} from './run-test'
-import {getReporter, getResultOutcome, isCriticalError, parseVariablesFromCli, ResultOutcome} from './utils'
+import {getReporter, getResultOutcome, parseVariablesFromCli, ResultOutcome} from './utils'
 
 export const DEFAULT_COMMAND_CONFIG: CommandConfig = {
   apiKey: '',
@@ -115,11 +115,11 @@ export class RunTestCommand extends Command {
     const sortedResults = results.sort(this.sortResultsByOutcome())
 
     for (const result of sortedResults) {
-      if (!this.config.failOnTimeout && result.result.error === ERRORS.TIMEOUT) {
+      if (!this.config.failOnTimeout && result.timedOut) {
         summary.timedOut++
       }
 
-      if (!this.config.failOnCriticalErrors && isCriticalError(result.result)) {
+      if (result.result.unhealthy && !this.failOnCriticalErrors) {
         summary.criticalErrors++
       }
 
@@ -144,10 +144,6 @@ export class RunTestCommand extends Command {
 
   private reportCiError(error: CiError, reporter: MainReporter) {
     switch (error.code) {
-      // Non critical errors
-      case 'NO_RESULTS_TO_POLL':
-        reporter.log('No results to poll.\n')
-        break
       case 'NO_TESTS_TO_RUN':
         reporter.log('No test to run.\n')
         break

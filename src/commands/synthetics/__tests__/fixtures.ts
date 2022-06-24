@@ -1,4 +1,3 @@
-import deepExtend from 'deep-extend'
 import * as http from 'http'
 import {URL} from 'url'
 
@@ -8,9 +7,9 @@ import {ProxyConfiguration} from '../../../helpers/utils'
 
 import {
   ApiServerResult,
+  Batch,
   BrowserServerResult,
   CommandConfig,
-  ConfigOverride,
   ExecutionRule,
   Location,
   MainReporter,
@@ -22,7 +21,6 @@ import {
   Summary,
   Test,
   Trigger,
-  TriggerResponse,
   User,
 } from '../interfaces'
 
@@ -138,10 +136,12 @@ export const getMultiStep = (): MultiStep => ({
 export const getTestSuite = (): Suite => ({content: {tests: [{config: {}, id: '123-456-789'}]}, name: 'Suite 1'})
 
 const getBaseResult = (resultId: string, test: Test): Omit<Result, 'result'> => ({
+  executionRule: ExecutionRule.BLOCKING,
   location: 'Frankfurt (AWS)',
   passed: true,
   resultId,
   test,
+  timedOut: false,
   timestamp: 1,
 })
 
@@ -166,7 +166,6 @@ export const getBrowserServerResult = (opts: Partial<BrowserServerResult> = {}):
     width: 1,
   },
   duration: 0,
-  eventType: 'finished',
   passed: true,
   startUrl: '',
   stepDetails: [],
@@ -180,7 +179,6 @@ export const getApiServerResult = (opts: Partial<ApiServerResult> = {}): ApiServ
       valid: true,
     },
   ],
-  eventType: 'finished',
   passed: true,
   timings: {
     total: 123,
@@ -190,22 +188,8 @@ export const getApiServerResult = (opts: Partial<ApiServerResult> = {}): ApiServ
 
 export const getMultiStepsServerResult = (): MultiStepsServerResult => ({
   duration: 123,
-  eventType: 'finished',
   passed: true,
   steps: [],
-})
-
-const mockTriggerResult: TriggerResponse = {
-  device: 'chrome_laptop.large',
-  location: 1,
-  public_id: '123-456-789',
-  result_id: '1',
-}
-
-export const getTriggerResult = (publicId: string, resultId: string): TriggerResponse => ({
-  ...mockTriggerResult,
-  public_id: publicId,
-  result_id: resultId,
 })
 
 export const mockLocation: Location = {
@@ -219,8 +203,8 @@ export const mockLocation: Location = {
 export const mockSearchResponse = {tests: [{public_id: '123-456-789'}]}
 
 export const mockTestTriggerResponse: Trigger = {
+  batch_id: 'bid',
   locations: [mockLocation],
-  results: [mockTriggerResult],
 }
 
 const mockTunnelConnectionFirstMessage = {host: 'host', id: 'tunnel-id'}
@@ -305,81 +289,50 @@ export interface RenderResultsTestCase {
   summary: Summary
 }
 
-interface RenderResultsTestFixtureConfigs {
-  configOverride: ConfigOverride
+interface ResultFixtures {
   executionRule?: ExecutionRule
-  publicId: string
-  resultError?: string
-  resultIsUnhealthy?: boolean
-  resultPassed: boolean
+  passed?: boolean
+  testExecutionRule?: ExecutionRule
+  timedOut?: boolean
+  unhealthy?: boolean
 }
 
-interface RenderResultsTestFixtures {
-  result: Result
-  test: Test
-  triggerResult: TriggerResponse
-}
+export const getResults = (resultsFixtures: ResultFixtures[]): Result[] => {
+  const results: Result[] = []
 
-export class RenderResultsHelper {
-  private resultIdCounter = 1
-
-  public getResults(testFixturesConfigs: RenderResultsTestFixtureConfigs[]): Result[] {
-    const results: Result[] = []
-    for (const testFixturesConfig of testFixturesConfigs) {
-      const testFixtures = this.getTestFixtures(testFixturesConfig)
-      results.push(testFixtures.result)
+  for (const [index, resultFixtures] of resultsFixtures.entries()) {
+    const {executionRule, passed, testExecutionRule, timedOut, unhealthy} = resultFixtures
+    const test = getApiTest()
+    if (testExecutionRule) {
+      test.options.ci = {executionRule: testExecutionRule}
     }
 
-    this.resetResultIdCounter()
+    const result = getApiResult(index.toString(), test)
+    result.executionRule = testExecutionRule || executionRule || ExecutionRule.BLOCKING
+    result.passed = !!passed
+    result.result = {...result.result, passed: !!passed, unhealthy}
 
-    return results
+    if (timedOut) {
+      result.timedOut = true
+      result.result.error = 'Timeout'
+    }
+
+    results.push(result)
   }
 
-  private getNextTriggerResultAndResult({
-    configOverride,
-    publicId,
-    resultError,
-    resultIsUnhealthy,
-    resultPassed,
-    test,
-  }: Omit<RenderResultsTestFixtureConfigs, 'executionRule'> & {test: Test}): [TriggerResponse, Result] {
-    const triggerResult = getTriggerResult(publicId, this.resultIdCounter.toString())
-
-    const result = deepExtend(getApiResult(this.resultIdCounter.toString(), test), {
-      enrichment: {config_override: configOverride},
-      result: {passed: resultPassed, error: resultError, unhealthy: resultIsUnhealthy},
-    })
-
-    this.resultIdCounter++
-
-    return [triggerResult, result]
-  }
-
-  private getTestFixtures({
-    configOverride,
-    executionRule,
-    publicId,
-    resultError,
-    resultIsUnhealthy,
-    resultPassed,
-  }: RenderResultsTestFixtureConfigs): RenderResultsTestFixtures {
-    const test = executionRule
-      ? deepExtend(getApiTest(publicId), {options: {ci: {executionRule}}})
-      : getApiTest(publicId)
-
-    const [triggerResult, result] = this.getNextTriggerResultAndResult({
-      configOverride,
-      publicId,
-      resultError,
-      resultIsUnhealthy,
-      resultPassed,
-      test,
-    })
-
-    return {test, triggerResult, result}
-  }
-
-  private resetResultIdCounter() {
-    this.resultIdCounter = 1
-  }
+  return results
 }
+
+export const getBatch = (): Batch => ({
+  results: [
+    {
+      execution_rule: ExecutionRule.BLOCKING,
+      location: mockLocation.name,
+      result_id: 'rid',
+      status: 'passed',
+      test_public_id: 'pid',
+      timed_out: false,
+    },
+  ],
+  status: 'passed',
+})

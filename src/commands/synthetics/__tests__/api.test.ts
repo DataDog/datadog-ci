@@ -23,6 +23,7 @@ describe('dd-api', () => {
     region: 'fake-region',
   }
   const RESULT_ID = '123'
+  const BATCH_ID = 'bid'
   const POLL_RESULTS: {results: PollResult[]} = {
     results: [
       {
@@ -35,15 +36,8 @@ describe('dd-api', () => {
   }
   const TRIGGERED_TEST_ID = 'fakeId'
   const TRIGGER_RESULTS: Trigger = {
+    batch_id: BATCH_ID,
     locations: [LOCATION],
-    results: [
-      {
-        device: 'laptop_large',
-        location: 42,
-        public_id: TRIGGERED_TEST_ID,
-        result_id: RESULT_ID,
-      },
-    ],
   }
   const PRESIGNED_URL_PAYLOAD = {
     url: 'wss://presigned.url',
@@ -52,8 +46,7 @@ describe('dd-api', () => {
   test('should get results from api', async () => {
     jest.spyOn(axios, 'create').mockImplementation((() => () => ({data: POLL_RESULTS})) as any)
     const api = apiConstructor(apiConfiguration)
-    const {pollResults} = api
-    const {results} = await pollResults([RESULT_ID])
+    const results = await api.pollResults([RESULT_ID])
     expect(results[0].resultID).toBe(RESULT_ID)
   })
 
@@ -62,9 +55,8 @@ describe('dd-api', () => {
     const api = apiConstructor(apiConfiguration)
     const {triggerTests} = api
     const tests: TestPayload[] = [{public_id: TRIGGERED_TEST_ID, executionRule: ExecutionRule.BLOCKING}]
-    const {results} = await triggerTests({tests})
-    expect(results[0].public_id).toBe(TRIGGERED_TEST_ID)
-    expect(results[0].result_id).toBe(RESULT_ID)
+    const {batch_id: batchId} = await triggerTests({tests})
+    expect(batchId).toBe(BATCH_ID)
   })
 
   test('should retry request that failed with code 5xx', async () => {

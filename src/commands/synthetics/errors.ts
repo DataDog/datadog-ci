@@ -1,5 +1,5 @@
 /* tslint:disable:max-classes-per-file */
-const nonCriticalErrorCodes = ['NO_TESTS_TO_RUN', 'NO_RESULTS_TO_POLL'] as const
+const nonCriticalErrorCodes = ['NO_TESTS_TO_RUN'] as const
 export type NonCriticalCiErrorCode = typeof nonCriticalErrorCodes[number]
 
 const criticalErrorCodes = [

@@ -4,8 +4,8 @@ import {Writable} from 'stream'
 
 import {
   Assertion,
+  Batch,
   ConfigOverride,
-  ERRORS,
   ExecutionRule,
   MainReporter,
   Operator,
@@ -15,7 +15,7 @@ import {
   Summary,
   Test,
 } from '../interfaces'
-import {getExecutionRule, getResultDuration, getResultOutcome, ResultOutcome} from '../utils'
+import {getResultDuration, getResultOutcome, ResultOutcome} from '../utils'
 
 // Step rendering
 
@@ -197,11 +197,10 @@ const getResultUrl = (baseUrl: string, test: Test, resultId: string) => {
 }
 
 const renderExecutionResult = (test: Test, execution: Result, baseUrl: string) => {
-  const {test: overriddenTest, resultId, result} = execution
+  const {executionRule, test: overriddenTest, resultId, result, timedOut} = execution
   const resultOutcome = getResultOutcome(execution)
   const [icon, setColor] = getResultIconAndColor(resultOutcome)
 
-  const executionRule = getExecutionRule(test, execution.enrichment?.config_override)
   const executionRuleText = [ResultOutcome.Passed, ResultOutcome.PassedNonBlocking].includes(resultOutcome)
     ? ''
     : `[${setColor(executionRule === ExecutionRule.BLOCKING ? 'blocking' : 'non-blocking')}] `
@@ -221,7 +220,7 @@ const renderExecutionResult = (test: Test, execution: Result, baseUrl: string) =
     const durationText = duration ? ` Total duration: ${duration} ms -` : ''
 
     const resultUrl = getResultUrl(baseUrl, test, resultId)
-    const resultUrlStatus = result.error === ERRORS.TIMEOUT ? '(not yet received)' : ''
+    const resultUrlStatus = timedOut ? '(not yet received)' : ''
 
     const resultInfo = `  ⎋${durationText} Result URL: ${chalk.dim.cyan(resultUrl)} ${resultUrlStatus}`
     outputLines.push(resultInfo)
@@ -276,7 +275,7 @@ export class DefaultReporter implements MainReporter {
     this.write(renderExecutionResult(result.test, result, baseUrl) + '\n\n')
   }
 
-  public resultReceived(result: Result): void {
+  public resultReceived(result: Batch['results'][0]): void {
     return
   }
 

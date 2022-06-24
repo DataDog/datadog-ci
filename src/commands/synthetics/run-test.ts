@@ -104,21 +104,16 @@ export const executeTests = async (reporter: MainReporter, config: CommandConfig
     throw new CriticalError('TRIGGER_TESTS_FAILED', error.message)
   }
 
-  if (!triggers.results) {
-    await stopTunnel()
-    throw new CiError('NO_RESULTS_TO_POLL')
-  }
-
   try {
+    const maxPollingTimeout = Math.max(...testsToTrigger.map((t) => t.config.pollingTimeout || config.pollingTimeout))
     const results = await waitForResults(
       api,
       triggers,
-      testsToTrigger,
       tests,
       {
-        defaultTimeout: config.pollingTimeout,
         failOnCriticalErrors: config.failOnCriticalErrors,
         failOnTimeout: config.failOnTimeout,
+        maxPollingTimeout,
       },
       reporter,
       tunnel
