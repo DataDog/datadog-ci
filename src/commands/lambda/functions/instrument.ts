@@ -3,6 +3,8 @@ import {
   API_KEY_ENV_VAR,
   API_KEY_SECRET_ARN_ENV_VAR,
   ARM64_ARCHITECTURE,
+  AWS_LAMBDA_EXEC_WRAPPER,
+  AWS_LAMBDA_EXEC_WRAPPER_VAR,
   CAPTURE_LAMBDA_PAYLOAD_ENV_VAR,
   CI_API_KEY_ENV_VAR,
   CI_API_KEY_SECRET_ARN_ENV_VAR,
@@ -13,7 +15,6 @@ import {
   CORECLR_PROFILER_PATH,
   DD_DOTNET_TRACER_HOME,
   DD_LAMBDA_EXTENSION_LAYER_NAME,
-  DOTNET_RUNTIME,
   DOTNET_TRACER_HOME_ENV_VAR,
   ENABLE_PROFILING_ENV_VAR,
   ENVIRONMENT_ENV_VAR,
@@ -38,8 +39,6 @@ import {
   SITES,
   TRACE_ENABLED_ENV_VAR,
   VERSION_ENV_VAR,
-  AWS_LAMBDA_EXEC_WRAPPER_VAR,
-  AWS_LAMBDA_EXEC_WRAPPER,
 } from '../constants'
 import {FunctionConfiguration, InstrumentationSettings, LogGroupConfiguration, TagConfiguration} from '../interfaces'
 import {calculateLogGroupUpdateRequest} from '../loggroup'
@@ -149,7 +148,7 @@ export const calculateUpdateRequest = async (
     FunctionName: functionARN,
   }
   let needsUpdate = false
-  let runtimeType = RUNTIME_LOOKUP[runtime]
+  const runtimeType = RUNTIME_LOOKUP[runtime]
 
   if (runtimeType === RuntimeType.CUSTOM || runtimeType === RuntimeType.RUBY) {
     if (settings.layerVersion !== undefined) {
@@ -300,7 +299,7 @@ export const calculateUpdateRequest = async (
   // Special handling for .NET and Java to support universal instrumentation
   if (runtimeType === RuntimeType.DOTNET || runtimeType === RuntimeType.JAVA) {
     if (layerOrTraceVersion && isExtensionSupportUniversalInstrumentation(runtimeType, extensionVersion)) {
-      // if the user configures the trace version and the extension support univeral instrumenation
+      // If the user configures the trace version and the extension support univeral instrumenation
       // Then check whether the trace and extension are compatible with each other
       if (isExtensionCompatibleWithTrace(runtimeType, layerOrTraceVersion)) {
         needsUpdate = true
@@ -311,7 +310,7 @@ export const calculateUpdateRequest = async (
         )
       }
     } else {
-      // if it is an old extension version or the trace version is null, leave it is as the old workflow
+      // If it is an old extension version or the trace version is null, leave it is as the old workflow
       if (runtimeType === RuntimeType.DOTNET) {
         needsUpdate = true
         newEnvVars[ENABLE_PROFILING_ENV_VAR] = CORECLR_ENABLE_PROFILING

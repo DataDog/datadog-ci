@@ -4,26 +4,13 @@ import {
   CI_API_KEY_ENV_VAR,
   CI_API_KEY_SECRET_ARN_ENV_VAR,
   CI_KMS_API_KEY_ENV_VAR,
-  ENVIRONMENT_ENV_VAR,
-  FLUSH_TO_LOG_ENV_VAR,
-  LAMBDA_HANDLER_ENV_VAR,
-  LOG_LEVEL_ENV_VAR,
-  MERGE_XRAY_TRACES_ENV_VAR,
-  SERVICE_ENV_VAR,
-  SITE_ENV_VAR,
-  TRACE_ENABLED_ENV_VAR,
-  VERSION_ENV_VAR,
 } from '../../constants'
 import {
   calculateUpdateRequest,
-  getInstrumentedFunctionConfig,
-  getInstrumentedFunctionConfigs,
-  getInstrumentedFunctionConfigsFromRegEx,
 } from '../../functions/instrument'
 import {InstrumentationSettings} from '../../interfaces'
 
-import * as loggroup from '../../loggroup'
-import {makeMockCloudWatchLogs, makeMockLambda, mockAwsAccount} from '../fixtures'
+import {mockAwsAccount} from '../fixtures'
 
 describe('instrument', () => {
   describe('calculateUpdateRequest', () => {
@@ -483,7 +470,7 @@ describe('instrument', () => {
         test('should throw error when the extension version and trace version are not compatible', async () => {
           process.env[CI_KMS_API_KEY_ENV_VAR] = '5678'
           const badSettings = {...settings, extensionVersion: 24, layerVersion: 3}
-          let error = undefined
+          let error
           try {
             await calculateUpdateRequest(dotNetConfig, badSettings, region, dotnetRuntime)
           } catch (e) {
@@ -547,8 +534,7 @@ describe('instrument', () => {
           ${25}            | ${4}         | ${compatibleTradeAndExtension}
           ${23}            | ${2}         | ${oldExtensionVersion}
           ${15}            | ${undefined} | ${traceUndefined}
-        `(
-          `should the output match the expected if extensionVersion=$extensionVersion and traceVersion=$traceVersion`,
+        `'should the output match the expected if extensionVersion=$extensionVersion and traceVersion=$traceVersion'raceVersion`,
           async ({extensionVersion, traceVersion, outputResult}) => {
             const curSettings = {...settings, extensionVersion, layerVersion: traceVersion}
             process.env[CI_KMS_API_KEY_ENV_VAR] = '5678'
@@ -622,9 +608,7 @@ describe('instrument', () => {
           extensionVersion | traceVersion | outputResult
           ${25}            | ${5}         | ${compatibleTradeAndExtension}
           ${23}            | ${2}         | ${oldExtensionVersion}
-          ${15}            | ${undefined} | ${traceUndefined}
-        `(
-          `should the output match the expected if extensionVersion=$extensionVersion and traceVersion=$traceVersion`,
+          ${15}            | ${undefined} | ${t'should the output match the expected if extensionVersion=$extensionVersion and traceVersion=$traceVersion'sion and traceVersion=$traceVersion`,
           async ({extensionVersion, traceVersion, outputResult}) => {
             const curSettings = {...settings, extensionVersion, layerVersion: traceVersion}
             process.env[CI_KMS_API_KEY_ENV_VAR] = '5678'
@@ -707,8 +691,8 @@ describe('instrument', () => {
       )
       expect(result.updateRequest?.Layers).toMatchInlineSnapshot(`
                       Array [
-                        "arn:aws:lambda:us-east-1:464622532012:layer:AnotherLayer:10",
-                        "arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Node12-x:23",
+                        'arn:aws:lambda:us-east-1:464622532012:layer:AnotherLayer:10',
+                        'arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Node12-x:23',
                       ]
                 `)
     })
@@ -781,7 +765,7 @@ describe('instrument', () => {
       )
       expect(result.updateRequest?.Layers).toMatchInlineSnapshot(`
                       Array [
-                        "arn:aws-us-gov:lambda:us-gov-east-1:002406178527:layer:Datadog-Node12-x:30",
+                        'arn:aws-us-gov:lambda:us-gov-east-1:002406178527:layer:Datadog-Node12-x:30',
                       ]
                 `)
     })
@@ -819,7 +803,7 @@ describe('instrument', () => {
       expect(result).toBeDefined()
       expect(result.logGroupConfiguration).toMatchInlineSnapshot(`
                 Object {
-                  "logGroupName": "/aws/lambda/group",
+                  'logGroupName': '/aws/lambda/group',
                 }
             `)
     })
@@ -863,23 +847,23 @@ describe('instrument', () => {
       expect(result.length).toEqual(1)
       expect(result[0].updateRequest).toMatchInlineSnapshot(`
         Object {
-          "Environment": Object {
-            "Variables": Object {
-              "DD_ENV": "staging",
-              "DD_FLUSH_TO_LOG": "false",
-              "DD_LAMBDA_HANDLER": "index.handler",
-              "DD_LOG_LEVEL": "debug",
-              "DD_MERGE_XRAY_TRACES": "false",
-              "DD_SERVICE": "middletier",
-              "DD_SITE": "datadoghq.com",
-              "DD_TRACE_ENABLED": "false",
-              "DD_VERSION": "0.2",
+          'Environment': Object {
+            'Variables': Object {
+              'DD_ENV': 'staging',
+              'DD_FLUSH_TO_LOG': 'false',
+              'DD_LAMBDA_HANDLER': 'index.handler',
+              'DD_LOG_LEVEL': 'debug',
+              'DD_MERGE_XRAY_TRACES': 'false',
+              'DD_SERVICE': 'middletier',
+              'DD_SITE': 'datadoghq.com',
+              'DD_TRACE_ENABLED': 'false',
+              'DD_VERSION': '0.2',
             },
           },
-          "FunctionName": "arn:aws:lambda:us-east-1:000000000000:function:autoinstrument",
-          "Handler": "/opt/nodejs/node_modules/datadog-lambda-js/handler.handler",
-          "Layers": Array [
-            "arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Node12-x:22",
+          'FunctionName': 'arn:aws:lambda:us-east-1:000000000000:function:autoinstrument',
+          'Handler': '/opt/nodejs/node_modules/datadog-lambda-js/handler.handler',
+          'Layers': Array [
+            'arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Node12-x:22',
           ],
         }
       `)
@@ -975,20 +959,20 @@ describe('instrument', () => {
       expect(result.length).toEqual(1)
       expect(result[0].updateRequest).toMatchInlineSnapshot(`
         Object {
-          "Environment": Object {
-            "Variables": Object {
-              "DD_FLUSH_TO_LOG": "false",
-              "DD_LAMBDA_HANDLER": "index.handler",
-              "DD_LOG_LEVEL": "debug",
-              "DD_MERGE_XRAY_TRACES": "false",
-              "DD_SITE": "datadoghq.com",
-              "DD_TRACE_ENABLED": "false",
+          'Environment': Object {
+            'Variables': Object {
+              'DD_FLUSH_TO_LOG': 'false',
+              'DD_LAMBDA_HANDLER': 'index.handler',
+              'DD_LOG_LEVEL': 'debug',
+              'DD_MERGE_XRAY_TRACES': 'false',
+              'DD_SITE': 'datadoghq.com',
+              'DD_TRACE_ENABLED': 'false',
             },
           },
-          "FunctionName": "arn:aws:lambda:us-east-1:000000000000:function:autoinstrument-scr.",
-          "Handler": "/opt/nodejs/node_modules/datadog-lambda-js/handler.handler",
-          "Layers": Array [
-            "arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Node12-x:22",
+          'FunctionName': 'arn:aws:lambda:us-east-1:000000000000:function:autoinstrument-scr.',
+          'Handler': '/opt/nodejs/node_modules/datadog-lambda-js/handler.handler',
+          'Layers': Array [
+            'arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Node12-x:22',
           ],
         }
       `)

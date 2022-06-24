@@ -4,7 +4,7 @@ import {
   isExtensionSupportUniversalInstrumentation,
 } from '../../functions/versionChecker'
 
-describe(`Test extension and trace version checker`, () => {
+describe('Test extension and trace version checker', () => {
   test.each`
     runtimeType           | extensionVersion | result
     ${RuntimeType.JAVA}   | ${27}            | ${true}
@@ -16,7 +16,7 @@ describe(`Test extension and trace version checker`, () => {
     ${RuntimeType.NODE}   | ${27}            | ${true}
     ${RuntimeType.PYTHON} | ${23}            | ${true}
   `(
-    `should function isExtensionSupportUniversalInstrumentation() return $result if runtimeType=$runtimeType and extensionVersion=$extensionVersion`,
+    'should function isExtensionSupportUniversalInstrumentation() return $result if runtimeType=$runtimeType and extensionVersion=$extensionVersion',
     ({runtimeType, extensionVersion, result}) => {
       expect(isExtensionSupportUniversalInstrumentation(runtimeType, extensionVersion)).toEqual(result)
     }
@@ -33,7 +33,7 @@ describe(`Test extension and trace version checker`, () => {
     ${RuntimeType.NODE}   | ${8}         | ${true}
     ${RuntimeType.PYTHON} | ${2}         | ${true}
   `(
-    `should function isExtensionCompatibleWithTrace() return $result if runtimeType=$runtimeType and traceVersion=$traceVersion`,
+    'should function isExtensionCompatibleWithTrace() return $result if runtimeType=$runtimeType and traceVersion=$traceVersion',
     ({runtimeType, traceVersion, result}) => {
       expect(isExtensionCompatibleWithTrace(runtimeType, traceVersion)).toEqual(result)
     }
