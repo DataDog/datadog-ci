@@ -458,7 +458,187 @@ describe('instrument', () => {
         '`apiKeySecretArn` is not supported for Node runtimes when using Synchronous Metrics. Use either `apiKey` or `apiKmsKey`.'
       )
     })
+
+    describe('test the new universal instrumentation workflow for Java and .Net', () => {
+      const region = 'us-east-1'
+      const config = {
+        FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world',
+        Handler: 'index.handler',
+        Layers: [],
+        Runtime: 'runtime',
+      }
+      const settings = {
+        flushMetricsToLogs: false,
+        layerAWSAccount: mockAwsAccount,
+        layerVersion: 13,
+        mergeXrayTraces: false,
+        tracingEnabled: false,
+      }
+      const dotnetRuntime = 'dotnet6'
+      const javaRuntime = 'java11'
+
+      describe(`test for runtime ${dotnetRuntime}`, () => {
+        const dotNetConfig = {...config, Runtime: dotnetRuntime}
+
+        test('should throw error when the extension version and trace version are not compatible', async () => {
+          process.env[CI_KMS_API_KEY_ENV_VAR] = '5678'
+          const badSettings = {...settings, extensionVersion: 24, layerVersion: 3}
+          let error = undefined
+          try {
+            await calculateUpdateRequest(dotNetConfig, badSettings, region, dotnetRuntime)
+          } catch (e) {
+            if (e instanceof Error) {
+              error = e
+            }
+          }
+          expect(error?.message).toBe(
+            `For the ${dotnetRuntime} runtime, the dd-trace version 3 is not compatible with the dd-extension version 24`
+          )
+        })
+
+        const baseVariables = {
+          DD_MERGE_XRAY_TRACES: 'false',
+          DD_SITE: 'datadoghq.com',
+          DD_TRACE_ENABLED: 'false',
+          DD_KMS_API_KEY: '5678',
+        }
+        const compatibleTradeAndExtension = {
+          Environment: {
+            Variables: {...baseVariables, AWS_LAMBDA_EXEC_WRAPPER: '/opt/datadog_wrapper'},
+          },
+          FunctionName: 'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world',
+          Layers: [
+            'arn:aws:lambda:us-east-1:123456789012:layer:Datadog-Extension:25',
+            'arn:aws:lambda:us-east-1:123456789012:layer:dd-trace-dotnet:4',
+          ],
+        }
+        const oldExtensionVersion = {
+          Environment: {
+            Variables: {
+              ...baseVariables,
+              CORECLR_ENABLE_PROFILING: '1',
+              CORECLR_PROFILER: '{846F5F1C-F9AE-4B07-969E-05C26BC060D8}',
+              CORECLR_PROFILER_PATH: '/opt/datadog/Datadog.Trace.ClrProfiler.Native.so',
+              DD_DOTNET_TRACER_HOME: '/opt/datadog',
+            },
+          },
+          FunctionName: 'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world',
+          Layers: [
+            'arn:aws:lambda:us-east-1:123456789012:layer:Datadog-Extension:23',
+            'arn:aws:lambda:us-east-1:123456789012:layer:dd-trace-dotnet:2',
+          ],
+        }
+        const traceUndefined = {
+          Environment: {
+            Variables: {
+              ...baseVariables,
+              CORECLR_ENABLE_PROFILING: '1',
+              CORECLR_PROFILER: '{846F5F1C-F9AE-4B07-969E-05C26BC060D8}',
+              CORECLR_PROFILER_PATH: '/opt/datadog/Datadog.Trace.ClrProfiler.Native.so',
+              DD_DOTNET_TRACER_HOME: '/opt/datadog',
+            },
+          },
+          FunctionName: 'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world',
+          Layers: ['arn:aws:lambda:us-east-1:123456789012:layer:Datadog-Extension:15'],
+        }
+
+        test.each`
+          extensionVersion | traceVersion | outputResult
+          ${25}            | ${4}         | ${compatibleTradeAndExtension}
+          ${23}            | ${2}         | ${oldExtensionVersion}
+          ${15}            | ${undefined} | ${traceUndefined}
+        `(
+          `should the output match the expected if extensionVersion=$extensionVersion and traceVersion=$traceVersion`,
+          async ({extensionVersion, traceVersion, outputResult}) => {
+            const curSettings = {...settings, extensionVersion, layerVersion: traceVersion}
+            process.env[CI_KMS_API_KEY_ENV_VAR] = '5678'
+            let updateRequest = undefined
+            try {
+              updateRequest = await calculateUpdateRequest(dotNetConfig, curSettings, region, dotnetRuntime)
+            } catch (e) {}
+            expect(updateRequest).toEqual(outputResult)
+          }
+        )
+      })
+
+      describe(`test for runtime ${javaRuntime}`, () => {
+        const javaConfig = {...config, Runtime: javaRuntime}
+
+        test('should throw error when the extension version and trace version are not compatible', async () => {
+          process.env[CI_KMS_API_KEY_ENV_VAR] = '5678'
+          const badSettings = {...settings, extensionVersion: 24, layerVersion: 4}
+          let error = undefined
+          try {
+            await calculateUpdateRequest(javaConfig, badSettings, region, javaRuntime)
+          } catch (e) {
+            if (e instanceof Error) {
+              error = e
+            }
+          }
+          expect(error?.message).toBe(
+            `For the ${javaRuntime} runtime, the dd-trace version 4 is not compatible with the dd-extension version 24`
+          )
+        })
+
+        const baseVariables = {
+          DD_MERGE_XRAY_TRACES: 'false',
+          DD_SITE: 'datadoghq.com',
+          DD_TRACE_ENABLED: 'false',
+          DD_KMS_API_KEY: '5678',
+        }
+        const compatibleTradeAndExtension = {
+          Environment: {
+            Variables: {...baseVariables, AWS_LAMBDA_EXEC_WRAPPER: '/opt/datadog_wrapper'},
+          },
+          FunctionName: 'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world',
+          Layers: [
+            'arn:aws:lambda:us-east-1:123456789012:layer:Datadog-Extension:25',
+            'arn:aws:lambda:us-east-1:123456789012:layer:dd-trace-java:5',
+          ],
+        }
+        const oldExtensionVersion = {
+          Environment: {
+            Variables: {
+              ...baseVariables,
+            },
+          },
+          FunctionName: 'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world',
+          Layers: [
+            'arn:aws:lambda:us-east-1:123456789012:layer:Datadog-Extension:23',
+            'arn:aws:lambda:us-east-1:123456789012:layer:dd-trace-java:2',
+          ],
+        }
+        const traceUndefined = {
+          Environment: {
+            Variables: {
+              ...baseVariables,
+            },
+          },
+          FunctionName: 'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world',
+          Layers: ['arn:aws:lambda:us-east-1:123456789012:layer:Datadog-Extension:15'],
+        }
+
+        test.each`
+          extensionVersion | traceVersion | outputResult
+          ${25}            | ${5}         | ${compatibleTradeAndExtension}
+          ${23}            | ${2}         | ${oldExtensionVersion}
+          ${15}            | ${undefined} | ${traceUndefined}
+        `(
+          `should the output match the expected if extensionVersion=$extensionVersion and traceVersion=$traceVersion`,
+          async ({extensionVersion, traceVersion, outputResult}) => {
+            const curSettings = {...settings, extensionVersion, layerVersion: traceVersion}
+            process.env[CI_KMS_API_KEY_ENV_VAR] = '5678'
+            let updateRequest = undefined
+            try {
+              updateRequest = await calculateUpdateRequest(javaConfig, curSettings, region, javaRuntime)
+            } catch (e) {}
+            expect(updateRequest).toEqual(outputResult)
+          }
+        )
+      })
+    })
   })
+
   describe('getInstrumentedFunctionConfig', () => {
     const OLD_ENV = process.env
     beforeEach(() => {

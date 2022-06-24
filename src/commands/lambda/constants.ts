@@ -4,6 +4,9 @@ export const DOTNET_RUNTIME = 'dotnetcore3.1'
 export const LAYER_LOOKUP = {
   [EXTENSION_LAYER_KEY]: DD_LAMBDA_EXTENSION_LAYER_NAME,
   'dotnetcore3.1': 'dd-trace-dotnet',
+  dotnet6: 'dd-trace-dotnet',
+  java11: 'dd-trace-java',
+  'java8.al2': 'dd-trace-java',
   'nodejs12.x': 'Datadog-Node12-x',
   'nodejs14.x': 'Datadog-Node14-x',
   'nodejs16.x': 'Datadog-Node16-x',
@@ -24,6 +27,7 @@ export enum RuntimeType {
 
 export const RUNTIME_LOOKUP = {
   'dotnetcore3.1': RuntimeType.DOTNET,
+  dotnet6: RuntimeType.DOTNET,
   java11: RuntimeType.JAVA,
   'java8.al2': RuntimeType.JAVA,
   'nodejs12.x': RuntimeType.NODE,
@@ -59,6 +63,10 @@ export const DEFAULT_LAYER_AWS_ACCOUNT = '464622532012'
 export const GOVCLOUD_LAYER_AWS_ACCOUNT = '002406178527'
 export const SUBSCRIPTION_FILTER_NAME = 'datadog-ci-filter'
 export const TAG_VERSION_NAME = 'dd_sls_ci'
+
+// Env variables for Univeral instrument lambda exec wrapper
+export const AWS_LAMBDA_EXEC_WRAPPER_VAR = 'AWS_LAMBDA_EXEC_WRAPPER'
+export const AWS_LAMBDA_EXEC_WRAPPER = '/opt/datadog_wrapper'
 
 // Export const values for .NET tracer
 export const CORECLR_ENABLE_PROFILING = '1'

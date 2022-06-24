@@ -1504,50 +1504,6 @@ ${red('[Error]')} Couldn't fetch Lambda functions. Error: Max retry count exceed
 `)
       })
 
-      test('aborts early when a layer version is set for Java', async () => {
-        ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({code: 'ENOENT'}))
-        ;(Lambda as any).mockImplementation(() =>
-          makeMockLambda({
-            'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world': {
-              FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world',
-              Runtime: 'java8.al2',
-            },
-          })
-        )
-        const cli = makeCli()
-        const context = createMockContext() as any
-        const functionARN = 'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world'
-        process.env.DATADOG_API_KEY = '1234'
-        const code = await cli.run(
-          [
-            'lambda',
-            'instrument',
-            '-f',
-            functionARN,
-            '--dry',
-            '-v',
-            '6',
-            '--extra-tags',
-            'layer:api,team:intake',
-            '--service',
-            'middletier',
-            '--env',
-            'staging',
-            '--version',
-            '0.2',
-          ],
-          context
-        )
-        const output = context.stdout.toString()
-        expect(code).toBe(1)
-        expect(output).toMatchInlineSnapshot(`
-"${red(
-          '[Error]'
-        )} Couldn't fetch Lambda functions. Error: Only the --extension-version argument should be set for the java8.al2 runtime. Please remove the --layer-version argument from the instrument command.
-"
-`)
-      })
-
       test('aborts early when a layer version is set for Ruby', async () => {
         ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({code: 'ENOENT'}))
         ;(Lambda as any).mockImplementation(() =>
