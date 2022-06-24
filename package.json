@@ -42,6 +42,7 @@
     "launch": "ts-node --transpile-only src/cli.ts",
     "launch:debug": "node -r ts-node/register/transpile-only --inspect-brk src/cli.ts",
     "lint": "(yarn tslint && yarn prettier --check) || (echo \"\nYou can fix this by running ==> yarn format <==\n\" && false)",
+    "no-only-in-tests": "grep -R \"\\.only[(\\.]\" $(find src -name '*.ts' | grep '__tests__'); test $? -eq 1 || (echo '.only was found in the tests, please remove it.' && false)",
     "prepack": "yarn build && node ./bin/make-it-executable.js",
     "prettier": "prettier \"src/**/*.{ts,js,json,yml}\" --ignore-path .gitignore",
     "test": "jest --colors",
