@@ -558,7 +558,7 @@ describe('instrument', () => {
         )
       })
 
-      describe('test for runtime ${javaRuntime}', () => {
+      describe(`test for runtime ${javaRuntime}`, () => {
         const javaConfig = {...config, Runtime: javaRuntime}
 
         test('should throw error when the extension version and trace version are not compatible', async () => {
