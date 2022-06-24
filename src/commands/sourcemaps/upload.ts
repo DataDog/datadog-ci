@@ -12,7 +12,7 @@ import {getMetricsLogger, MetricsLogger} from '../../helpers/metrics'
 import {upload, UploadStatus} from '../../helpers/upload'
 import {getRequestBuilder} from '../../helpers/utils'
 import {getRepositoryData, newSimpleGit, RepositoryData} from './common/git'
-import {getBaseIntakeUrl} from './common/utils'
+import {getBaseSourcemapIntakeUrl} from './common/base-intake-url'
 import {Sourcemap} from './interfaces'
 import {
   renderCommandInfo,
@@ -232,7 +232,7 @@ export class UploadCommand extends Command {
 
     return getRequestBuilder({
       apiKey: this.config.apiKey!,
-      baseUrl: getBaseIntakeUrl(),
+      baseUrl: getBaseSourcemapIntakeUrl(),
       headers: new Map([
         ['DD-EVP-ORIGIN', 'datadog-ci sourcemaps'],
         ['DD-EVP-ORIGIN-VERSION', this.cliVersion],

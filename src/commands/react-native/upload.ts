@@ -9,7 +9,7 @@ import {getMetricsLogger, MetricsLogger} from '../../helpers/metrics'
 import {upload, UploadStatus} from '../../helpers/upload'
 import {getRequestBuilder} from '../../helpers/utils'
 import {getRepositoryData, newSimpleGit, RepositoryData} from '../sourcemaps/common/git'
-import {getBaseIntakeUrl} from '../sourcemaps/common/utils'
+import {getBaseSourcemapIntakeUrl} from '../sourcemaps/common/base-intake-url'
 import {RN_SUPPORTED_PLATFORMS, RNPlatform, RNSourcemap} from './interfaces'
 import {
   renderCommandInfo,
@@ -238,7 +238,7 @@ export class UploadCommand extends Command {
 
     return getRequestBuilder({
       apiKey: this.config.apiKey!,
-      baseUrl: getBaseIntakeUrl(),
+      baseUrl: getBaseSourcemapIntakeUrl(),
       headers: new Map([
         ['DD-EVP-ORIGIN', 'datadog-ci react-native'],
         ['DD-EVP-ORIGIN-VERSION', this.cliVersion],

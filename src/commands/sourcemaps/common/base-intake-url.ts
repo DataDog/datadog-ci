@@ -1,4 +1,4 @@
-export const getBaseIntakeUrl = () => {
+export const getBaseSourcemapIntakeUrl = () => {
   if (process.env.DATADOG_SOURCEMAP_INTAKE_URL) {
     return process.env.DATADOG_SOURCEMAP_INTAKE_URL
   } else if (process.env.DATADOG_SITE) {
