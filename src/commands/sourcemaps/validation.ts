@@ -1,4 +1,4 @@
-import {checkFile} from './common/validation'
+import {checkFile} from '../../helpers/validation'
 import {Sourcemap} from './interfaces'
 
 export class InvalidPayload extends Error {
