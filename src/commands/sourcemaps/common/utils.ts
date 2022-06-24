@@ -7,11 +7,3 @@ export const getBaseIntakeUrl = () => {
 
   return 'https://sourcemap-intake.datadoghq.com'
 }
-
-export const pluralize = (nb: number, singular: string, plural: string) => {
-  if (nb >= 2) {
-    return `${nb} ${plural}`
-  }
-
-  return `${nb} ${singular}`
-}
