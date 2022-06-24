@@ -23,7 +23,7 @@ export const isExtensionSupportUniversalInstrumentation = (
 }
 
 export const isExtensionCompatibleWithTrace = (runtimeType: RuntimeType, traceVersion?: number): boolean => {
-  // more complex compatbility rules can be configured for each extension version if necessary
+  // More complex compatbility rules can be configured for each extension version if necessary
   if (traceVersion === undefined) {
     return true
   }

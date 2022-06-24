@@ -497,10 +497,10 @@ describe('instrument', () => {
         })
 
         const baseVariables = {
+          DD_KMS_API_KEY: '5678',
           DD_MERGE_XRAY_TRACES: 'false',
           DD_SITE: 'datadoghq.com',
           DD_TRACE_ENABLED: 'false',
-          DD_KMS_API_KEY: '5678',
         }
         const compatibleTradeAndExtension = {
           Environment: {
@@ -552,10 +552,7 @@ describe('instrument', () => {
           async ({extensionVersion, traceVersion, outputResult}) => {
             const curSettings = {...settings, extensionVersion, layerVersion: traceVersion}
             process.env[CI_KMS_API_KEY_ENV_VAR] = '5678'
-            let updateRequest
-            try {
-              updateRequest = await calculateUpdateRequest(dotNetConfig, curSettings, region, dotnetRuntime)
-            } catch (e) {}
+            let updateRequest = await calculateUpdateRequest(dotNetConfig, curSettings, region, dotnetRuntime)
             expect(updateRequest).toEqual(outputResult)
           }
         )
@@ -581,10 +578,10 @@ describe('instrument', () => {
         })
 
         const baseVariables = {
+          DD_KMS_API_KEY: '5678',
           DD_MERGE_XRAY_TRACES: 'false',
           DD_SITE: 'datadoghq.com',
           DD_TRACE_ENABLED: 'false',
-          DD_KMS_API_KEY: '5678',
         }
         const compatibleTradeAndExtension = {
           Environment: {
@@ -628,10 +625,7 @@ describe('instrument', () => {
           async ({extensionVersion, traceVersion, outputResult}) => {
             const curSettings = {...settings, extensionVersion, layerVersion: traceVersion}
             process.env[CI_KMS_API_KEY_ENV_VAR] = '5678'
-            let updateRequest
-            try {
-              updateRequest = await calculateUpdateRequest(javaConfig, curSettings, region, javaRuntime)
-            } catch (e) {}
+            let updateRequest = await calculateUpdateRequest(javaConfig, curSettings, region, javaRuntime)
             expect(updateRequest).toEqual(outputResult)
           }
         )

@@ -3,8 +3,8 @@ export const EXTENSION_LAYER_KEY = 'extension'
 export const DOTNET_RUNTIME = 'dotnetcore3.1'
 export const LAYER_LOOKUP = {
   [EXTENSION_LAYER_KEY]: DD_LAMBDA_EXTENSION_LAYER_NAME,
-  'dotnetcore3.1': 'dd-trace-dotnet',
   dotnet6: 'dd-trace-dotnet',
+  'dotnetcore3.1': 'dd-trace-dotnet',
   java11: 'dd-trace-java',
   'java8.al2': 'dd-trace-java',
   'nodejs12.x': 'Datadog-Node12-x',
@@ -26,8 +26,8 @@ export enum RuntimeType {
 }
 
 export const RUNTIME_LOOKUP = {
-  'dotnetcore3.1': RuntimeType.DOTNET,
   dotnet6: RuntimeType.DOTNET,
+  'dotnetcore3.1': RuntimeType.DOTNET,
   java11: RuntimeType.JAVA,
   'java8.al2': RuntimeType.JAVA,
   'nodejs12.x': RuntimeType.NODE,
