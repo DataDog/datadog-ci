@@ -51,7 +51,6 @@ This should be the "Build" or "CURRENT_PROJECT_VERSION" in XCode for iOS and the
 
 In addition, some optional parameters are available:
 
-* `--max-concurrency` (default: `20`): number of concurrent upload to the API.
 * `--disable-git` (default: false): prevents the command from invoking git in the current working directory and sending repository related data to Datadog (hash, remote URL and the paths within the repository of the sources referenced in the sourcemap).
 * `--dry-run` (default: `false`): it will run the command without the final step of upload. All other checks are performed.
 * `--repository-url` (default: empty): overrides the repository remote with a custom URL. For example: https://github.com/my-company/my-project
