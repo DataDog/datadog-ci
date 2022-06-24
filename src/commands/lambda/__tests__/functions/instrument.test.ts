@@ -459,7 +459,7 @@ describe('instrument', () => {
       )
     })
 
-    describe('test the new universal instrumentation workflow for Java and .Net', () => {
+    describe('test universal instrumentation workflow for Java and .Net', () => {
       const region = 'us-east-1'
       const config = {
         FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world',
