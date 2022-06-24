@@ -8,7 +8,7 @@ import {RequestBuilder} from '../../helpers/interfaces'
 import {getMetricsLogger, MetricsLogger} from '../../helpers/metrics'
 import {upload, UploadStatus} from '../../helpers/upload'
 import {getRequestBuilder} from '../../helpers/utils'
-import {getRepositoryData, newSimpleGit, RepositoryData} from '../sourcemaps/common/git'
+import {getRepositoryData, newSimpleGit, RepositoryData} from '../sourcemaps/common/git-sourcemaps-repository-data'
 import {getBaseSourcemapIntakeUrl} from '../../helpers/base-intake-url'
 import {RN_SUPPORTED_PLATFORMS, RNPlatform, RNSourcemap} from './interfaces'
 import {

@@ -1,4 +1,4 @@
-import {getRepositoryData, gitRemote, stripCredentials, TrackedFilesMatcher} from '../git'
+import {getRepositoryData, gitRemote, stripCredentials, TrackedFilesMatcher} from '../git-sourcemaps-repository-data'
 
 describe('git', () => {
   describe('gitRemote', () => {
