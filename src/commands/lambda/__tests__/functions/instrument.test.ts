@@ -552,7 +552,7 @@ describe('instrument', () => {
           async ({extensionVersion, traceVersion, outputResult}) => {
             const curSettings = {...settings, extensionVersion, layerVersion: traceVersion}
             process.env[CI_KMS_API_KEY_ENV_VAR] = '5678'
-            let updateRequest = await calculateUpdateRequest(dotNetConfig, curSettings, region, dotnetRuntime)
+            const updateRequest = await calculateUpdateRequest(dotNetConfig, curSettings, region, dotnetRuntime)
             expect(updateRequest).toEqual(outputResult)
           }
         )
@@ -625,7 +625,7 @@ describe('instrument', () => {
           async ({extensionVersion, traceVersion, outputResult}) => {
             const curSettings = {...settings, extensionVersion, layerVersion: traceVersion}
             process.env[CI_KMS_API_KEY_ENV_VAR] = '5678'
-            let updateRequest = await calculateUpdateRequest(javaConfig, curSettings, region, javaRuntime)
+            const updateRequest = await calculateUpdateRequest(javaConfig, curSettings, region, javaRuntime)
             expect(updateRequest).toEqual(outputResult)
           }
         )
