@@ -477,13 +477,13 @@ describe('instrument', () => {
       const dotnetRuntime = 'dotnet6'
       const javaRuntime = 'java11'
 
-      describe(`test for runtime ${dotnetRuntime}`, () => {
+      describe('test for runtime ${dotnetRuntime}', () => {
         const dotNetConfig = {...config, Runtime: dotnetRuntime}
 
         test('should throw error when the extension version and trace version are not compatible', async () => {
           process.env[CI_KMS_API_KEY_ENV_VAR] = '5678'
           const badSettings = {...settings, extensionVersion: 24, layerVersion: 3}
-          let error = undefined
+          let error
           try {
             await calculateUpdateRequest(dotNetConfig, badSettings, region, dotnetRuntime)
           } catch (e) {
@@ -548,11 +548,11 @@ describe('instrument', () => {
           ${23}            | ${2}         | ${oldExtensionVersion}
           ${15}            | ${undefined} | ${traceUndefined}
         `(
-          `should the output match the expected if extensionVersion=$extensionVersion and traceVersion=$traceVersion`,
+          'should the output match the expected if extensionVersion=$extensionVersion and traceVersion=$traceVersion',
           async ({extensionVersion, traceVersion, outputResult}) => {
             const curSettings = {...settings, extensionVersion, layerVersion: traceVersion}
             process.env[CI_KMS_API_KEY_ENV_VAR] = '5678'
-            let updateRequest = undefined
+            let updateRequest
             try {
               updateRequest = await calculateUpdateRequest(dotNetConfig, curSettings, region, dotnetRuntime)
             } catch (e) {}
@@ -561,13 +561,13 @@ describe('instrument', () => {
         )
       })
 
-      describe(`test for runtime ${javaRuntime}`, () => {
+      describe('test for runtime ${javaRuntime}', () => {
         const javaConfig = {...config, Runtime: javaRuntime}
 
         test('should throw error when the extension version and trace version are not compatible', async () => {
           process.env[CI_KMS_API_KEY_ENV_VAR] = '5678'
           const badSettings = {...settings, extensionVersion: 24, layerVersion: 4}
-          let error = undefined
+          let error
           try {
             await calculateUpdateRequest(javaConfig, badSettings, region, javaRuntime)
           } catch (e) {
@@ -624,11 +624,11 @@ describe('instrument', () => {
           ${23}            | ${2}         | ${oldExtensionVersion}
           ${15}            | ${undefined} | ${traceUndefined}
         `(
-          `should the output match the expected if extensionVersion=$extensionVersion and traceVersion=$traceVersion`,
+          'should the output match the expected if extensionVersion=$extensionVersion and traceVersion=$traceVersion',
           async ({extensionVersion, traceVersion, outputResult}) => {
             const curSettings = {...settings, extensionVersion, layerVersion: traceVersion}
             process.env[CI_KMS_API_KEY_ENV_VAR] = '5678'
-            let updateRequest = undefined
+            let updateRequest
             try {
               updateRequest = await calculateUpdateRequest(javaConfig, curSettings, region, javaRuntime)
             } catch (e) {}
