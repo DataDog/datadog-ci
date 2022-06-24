@@ -477,7 +477,7 @@ describe('instrument', () => {
       const dotnetRuntime = 'dotnet6'
       const javaRuntime = 'java11'
 
-      describe('test for runtime ${dotnetRuntime}', () => {
+      describe(`test for runtime ${dotnetRuntime}`, () => {
         const dotNetConfig = {...config, Runtime: dotnetRuntime}
 
         test('should throw error when the extension version and trace version are not compatible', async () => {
