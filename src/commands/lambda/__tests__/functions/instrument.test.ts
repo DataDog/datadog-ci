@@ -459,7 +459,7 @@ describe('instrument', () => {
       )
     })
 
-    describe('test the new universal instrumentation workflow for Java and .Net', () => {
+    describe('test universal instrumentation workflow for Java and .Net', () => {
       const region = 'us-east-1'
       const config = {
         FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world',
@@ -477,7 +477,7 @@ describe('instrument', () => {
       const dotnetRuntime = 'dotnet6'
       const javaRuntime = 'java11'
 
-      describe('test for runtime ${dotnetRuntime}', () => {
+      describe(`test for runtime ${dotnetRuntime}`, () => {
         const dotNetConfig = {...config, Runtime: dotnetRuntime}
 
         test('should throw error when the extension version and trace version are not compatible', async () => {
@@ -558,7 +558,7 @@ describe('instrument', () => {
         )
       })
 
-      describe('test for runtime ${javaRuntime}', () => {
+      describe(`test for runtime ${javaRuntime}`, () => {
         const javaConfig = {...config, Runtime: javaRuntime}
 
         test('should throw error when the extension version and trace version are not compatible', async () => {
