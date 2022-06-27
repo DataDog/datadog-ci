@@ -1,5 +1,6 @@
 // tslint:disable: no-string-literal
 import {Cli} from 'clipanion/lib/advanced'
+import * as Utils from '../utils'
 import {XCodeCommand} from '../xcode'
 
 beforeEach(() => {
@@ -51,6 +52,7 @@ const basicEnvironment = {
 }
 
 const runCLI = async (script: string, options?: {force?: boolean; propertiesPath?: string; service?: string}) => {
+  let importSpy
   const cli = makeCli()
   const context = createMockContext() as any
   if (!options?.propertiesPath) {
@@ -64,6 +66,14 @@ const runCLI = async (script: string, options?: {force?: boolean; propertiesPath
   if (options?.propertiesPath) {
     command.push('--properties-path')
     command.push(options.propertiesPath)
+  } else {
+    // If we don't mock the implementation of this function, the tests will timeout on the CI
+    // when the file does not exist
+    importSpy = jest.spyOn(Utils, 'importEnvironmentFromFile').mockImplementation(() => {
+      process.env = {...process.env, DATADOG_API_KEY: 'PLACEHOLDER'}
+
+      return new Promise((resolve) => resolve())
+    })
   }
   if (options?.service) {
     command.push('--service')
@@ -71,6 +81,9 @@ const runCLI = async (script: string, options?: {force?: boolean; propertiesPath
   }
 
   const code = await cli.run(command, context)
+  if (importSpy) {
+    importSpy.mockRestore()
+  }
 
   return {context, code}
 }
@@ -375,6 +388,9 @@ describe('xcode', () => {
         ...process.env,
         ...basicEnvironment,
       }
+      const importSpy = jest
+        .spyOn(Utils, 'importEnvironmentFromFile')
+        .mockImplementationOnce(() => new Promise((resolve, reject) => reject('Error reading file')))
 
       const {context, code} = await runCLI(
         './src/commands/react-native/__tests__/fixtures/bundle-script/successful_script.sh',
@@ -386,6 +402,7 @@ describe('xcode', () => {
       // console.log(context.stdout.toString())
       // console.log(context.stderr.toString())
 
+      importSpy.mockRestore()
       expect(code).not.toBe(0)
       const output = context.stderr.toString()
       expect(output).toContain('Environment variable DATADOG_API_KEY is missing for Datadog sourcemaps upload.')
