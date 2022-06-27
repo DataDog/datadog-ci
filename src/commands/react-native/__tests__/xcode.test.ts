@@ -6,11 +6,12 @@ beforeEach(() => {
   delete process.env.CONFIGURATION
   delete process.env.CONFIGURATION_BUILD_DIR
   delete process.env.CURRENT_PROJECT_VERSION
+  delete process.env.DATADOG_API_KEY
   delete process.env.EXTRA_PACKAGER_ARGS
   delete process.env.MARKETING_VERSION
   delete process.env.PRODUCT_BUNDLE_IDENTIFIER
+  delete process.env.SERVICE_NAME_IOS
   delete process.env.SOURCEMAP_FILE
-  delete process.env.DATADOG_API_KEY
 })
 
 const makeCli = () => {
@@ -171,6 +172,30 @@ describe('xcode', () => {
         'Upload of ./src/commands/react-native/__tests__/fixtures/basic-ios/main.jsbundle.map for bundle ./src/commands/react-native/__tests__/fixtures/basic-ios/main.jsbundle on platform ios'
       )
       expect(output).toContain('version: 0.0.2 build: 000020 service: com.myapp.test')
+    })
+
+    test('should run the provided script and upload sourcemaps when a custom service is specified in properties file', async () => {
+      process.env = {
+        ...process.env,
+        ...basicEnvironment,
+      }
+      const {context, code} = await runCLI(
+        './src/commands/react-native/__tests__/fixtures/bundle-script/successful_script.sh',
+        {
+          propertiesPath:
+            './src/commands/react-native/__tests__/fixtures/environment-files/properties-with-service.properties',
+        }
+      )
+      // Uncomment these lines for debugging failing script
+      // console.log(context.stdout.toString())
+      // console.log(context.stderr.toString())
+
+      expect(code).toBe(0)
+      const output = context.stdout.toString()
+      expect(output).toContain(
+        'Upload of ./src/commands/react-native/__tests__/fixtures/basic-ios/main.jsbundle.map for bundle ./src/commands/react-native/__tests__/fixtures/basic-ios/main.jsbundle on platform ios'
+      )
+      expect(output).toContain('version: 0.0.2 build: 000020 service: custom.service.from.file')
     })
 
     test('should run the provided script and upload sourcemaps when a custom service is specified', async () => {

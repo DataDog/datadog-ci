@@ -60,11 +60,15 @@ export class XCodeCommand extends Command {
       return 1
     }
 
+    this.service = process.env.SERVICE_NAME_IOS || this.service
     if (!this.service) {
       this.context.stderr.write(
         'Environment variable PRODUCT_BUNDLE_IDENTIFIER is missing for Datadog sourcemaps upload.\n'
       )
       this.context.stderr.write('Check that a Bundle Identifier is set for your target in XCode.\n')
+      this.context.stderr.write(
+        'You can also specify the service as SERVICE_NAME_IOS in datadog-sourcemaps.properties.\n'
+      )
       this.context.stderr.write(
         'If you are not running this script from XCode, use the `--service com.company.app` argument.\n'
       )
