@@ -54,7 +54,7 @@ import {
   isLayerRuntime,
   isSupportedRuntime,
 } from './commons'
-import {isExtensionCompatibleWithTrace, isExtensionSupportUniversalInstrumentation} from './versionChecker'
+import {isTracerCompatibleWithExtension, isExtensionSupportUniversalInstrumentation} from './versionChecker'
 
 export const getInstrumentedFunctionConfigs = async (
   lambda: Lambda,
@@ -154,15 +154,6 @@ export const calculateUpdateRequest = async (
     if (settings.layerVersion !== undefined) {
       throw new Error(
         `Only the --extension-version argument should be set for the ${runtime} runtime. Please remove the --layer-version argument from the instrument command.`
-      )
-    }
-  }
-
-  // We don't support ARM Architecture for .NET at this time. Abort instrumentation if the combination is detected.
-  if (runtimeType === RuntimeType.DOTNET) {
-    if (config.Architectures?.includes(ARM64_ARCHITECTURE)) {
-      throw new Error(
-        'Instrumenting arm64 architecture is not currently supported for .NET. Please only instrument .NET functions using x86_64 architecture.'
       )
     }
   }
@@ -301,7 +292,7 @@ export const calculateUpdateRequest = async (
     if (layerOrTraceVersion && isExtensionSupportUniversalInstrumentation(runtimeType, extensionVersion)) {
       // If the user configures the trace version and the extension support univeral instrumenation
       // Then check whether the trace and extension are compatible with each other
-      if (isExtensionCompatibleWithTrace(runtimeType, layerOrTraceVersion)) {
+      if (isTracerCompatibleWithExtension(runtimeType, layerOrTraceVersion)) {
         needsUpdate = true
         newEnvVars[AWS_LAMBDA_EXEC_WRAPPER_VAR] = AWS_LAMBDA_EXEC_WRAPPER
       } else {
@@ -311,13 +302,20 @@ export const calculateUpdateRequest = async (
       }
     } else {
       // If it is an old extension version or the trace version is null, leave it is as the old workflow
-      if (runtimeType === RuntimeType.DOTNET) {
-        needsUpdate = true
-        newEnvVars[ENABLE_PROFILING_ENV_VAR] = CORECLR_ENABLE_PROFILING
-        newEnvVars[PROFILER_ENV_VAR] = CORECLR_PROFILER
-        newEnvVars[PROFILER_PATH_ENV_VAR] = CORECLR_PROFILER_PATH
-        newEnvVars[DOTNET_TRACER_HOME_ENV_VAR] = DD_DOTNET_TRACER_HOME
+      if (
+        runtimeType === RuntimeType.DOTNET &&
+        !isExtensionSupportUniversalInstrumentation(runtimeType, extensionVersion) &&
+        config.Architectures?.includes(ARM64_ARCHITECTURE)
+      ) {
+        throw new Error(
+          'Instrumenting arm64 architecture is not supported for the given dd-extension version. Please choose the latest dd-extersion version or use x86_64 architecture.'
+        )
       }
+      needsUpdate = true
+      newEnvVars[ENABLE_PROFILING_ENV_VAR] = CORECLR_ENABLE_PROFILING
+      newEnvVars[PROFILER_ENV_VAR] = CORECLR_PROFILER
+      newEnvVars[PROFILER_PATH_ENV_VAR] = CORECLR_PROFILER_PATH
+      newEnvVars[DOTNET_TRACER_HOME_ENV_VAR] = DD_DOTNET_TRACER_HOME
     }
   }
 

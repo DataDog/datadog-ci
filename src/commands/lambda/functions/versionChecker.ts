@@ -1,9 +1,9 @@
 import {RuntimeType} from '../constants'
 
-const UNIVERSAL_INSTRUMENT_JAVA_EXTENSION_VERSION = 24
-const UNIVERSAL_INSTRUMENT_JAVA_TRACE_VERSION = 5
-const UNIVERSAL_INSTRUMENT_DOTNET_EXTENSION_VERSION = 24
-const UNIVERSAL_INSTRUMENT_DOTNET_TRACE_VERSION = 4
+const UNIVERSAL_INSTRUMENTATION_JAVA_EXTENSION_VERSION = 24
+const UNIVERSAL_INSTRUMENTATION_JAVA_TRACER_VERSION = 5
+const UNIVERSAL_INSTRUMENTATION_DOTNET_EXTENSION_VERSION = 24
+const UNIVERSAL_INSTRUMENTATION_DOTNET_TRACER_VERSION = 4
 
 export const isExtensionSupportUniversalInstrumentation = (
   runtimeType: RuntimeType,
@@ -14,24 +14,24 @@ export const isExtensionSupportUniversalInstrumentation = (
   }
   switch (runtimeType) {
     case RuntimeType.JAVA:
-      return extensionVersion >= UNIVERSAL_INSTRUMENT_JAVA_EXTENSION_VERSION
+      return extensionVersion >= UNIVERSAL_INSTRUMENTATION_JAVA_EXTENSION_VERSION
     case RuntimeType.DOTNET:
-      return extensionVersion >= UNIVERSAL_INSTRUMENT_DOTNET_EXTENSION_VERSION
+      return extensionVersion >= UNIVERSAL_INSTRUMENTATION_DOTNET_EXTENSION_VERSION
     default:
       return true
   }
 }
 
-export const isExtensionCompatibleWithTrace = (runtimeType: RuntimeType, traceVersion?: number): boolean => {
+export const isTracerCompatibleWithExtension = (runtimeType: RuntimeType, traceVersion?: number): boolean => {
   // More complex compatbility rules can be configured for each extension version if necessary
   if (traceVersion === undefined) {
     return true
   }
   switch (runtimeType) {
     case RuntimeType.JAVA:
-      return traceVersion >= UNIVERSAL_INSTRUMENT_JAVA_TRACE_VERSION
+      return traceVersion >= UNIVERSAL_INSTRUMENTATION_JAVA_TRACER_VERSION
     case RuntimeType.DOTNET:
-      return traceVersion >= UNIVERSAL_INSTRUMENT_DOTNET_TRACE_VERSION
+      return traceVersion >= UNIVERSAL_INSTRUMENTATION_DOTNET_TRACER_VERSION
     default:
       return true
   }
