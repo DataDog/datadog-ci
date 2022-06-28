@@ -1,7 +1,7 @@
 import {RuntimeType} from '../../constants'
 import {
-  isTracerCompatibleWithExtension,
   isExtensionSupportUniversalInstrumentation,
+  isTracerCompatibleWithExtension,
 } from '../../functions/versionChecker'
 
 describe('Test extension and trace version checker', () => {

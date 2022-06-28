@@ -54,7 +54,7 @@ import {
   isLayerRuntime,
   isSupportedRuntime,
 } from './commons'
-import {isTracerCompatibleWithExtension, isExtensionSupportUniversalInstrumentation} from './versionChecker'
+import {isExtensionSupportUniversalInstrumentation, isTracerCompatibleWithExtension} from './versionChecker'
 
 export const getInstrumentedFunctionConfigs = async (
   lambda: Lambda,
@@ -300,23 +300,22 @@ export const calculateUpdateRequest = async (
           `For the ${runtime} runtime, the dd-trace version ${layerOrTraceVersion} is not compatible with the dd-extension version ${extensionVersion}`
         )
       }
-    } else {
+    } else if (runtimeType === RuntimeType.DOTNET) {
       // If it is an old extension version or the trace version is null, leave it is as the old workflow
-      if (runtimeType === RuntimeType.DOTNET)
-        if (
-          !isExtensionSupportUniversalInstrumentation(runtimeType, extensionVersion) &&
-          config.Architectures?.includes(ARM64_ARCHITECTURE)
-        ) {
-          throw new Error(
-            'Instrumenting arm64 architecture is not supported for the given dd-extension version. Please choose the latest dd-extension version or use x86_64 architecture.'
-          )
-        } else {
-          needsUpdate = true
-          newEnvVars[ENABLE_PROFILING_ENV_VAR] = CORECLR_ENABLE_PROFILING
-          newEnvVars[PROFILER_ENV_VAR] = CORECLR_PROFILER
-          newEnvVars[PROFILER_PATH_ENV_VAR] = CORECLR_PROFILER_PATH
-          newEnvVars[DOTNET_TRACER_HOME_ENV_VAR] = DD_DOTNET_TRACER_HOME
-        }
+      if (
+        !isExtensionSupportUniversalInstrumentation(runtimeType, extensionVersion) &&
+        config.Architectures?.includes(ARM64_ARCHITECTURE)
+      ) {
+        throw new Error(
+          'Instrumenting arm64 architecture is not supported for the given dd-extension version. Please choose the latest dd-extension version or use x86_64 architecture.'
+        )
+      } else {
+        needsUpdate = true
+        newEnvVars[ENABLE_PROFILING_ENV_VAR] = CORECLR_ENABLE_PROFILING
+        newEnvVars[PROFILER_ENV_VAR] = CORECLR_PROFILER
+        newEnvVars[PROFILER_PATH_ENV_VAR] = CORECLR_PROFILER_PATH
+        newEnvVars[DOTNET_TRACER_HOME_ENV_VAR] = DD_DOTNET_TRACER_HOME
+      }
     }
   }
 
