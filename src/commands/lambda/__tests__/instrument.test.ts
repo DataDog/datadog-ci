@@ -1632,7 +1632,7 @@ ${red('[Error]')} Couldn't fetch Lambda functions. Error: Max retry count exceed
         expect(output).toMatchInlineSnapshot(`
 "${red(
           '[Error]'
-        )} Couldn't fetch Lambda functions. Error: Instrumenting arm64 architecture is not supported for the given dd-extension version. Please choose the latest dd-extersion version or use x86_64 architecture.
+        )} Couldn't fetch Lambda functions. Error: Instrumenting arm64 architecture is not supported for the given dd-extension version. Please choose the latest dd-extension version or use x86_64 architecture.
 "
 `)
       })

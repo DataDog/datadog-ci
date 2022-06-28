@@ -1,13 +1,7 @@
 jest.mock('../../loggroup')
 
-import {
-  CI_API_KEY_ENV_VAR,
-  CI_API_KEY_SECRET_ARN_ENV_VAR,
-  CI_KMS_API_KEY_ENV_VAR,
-} from '../../constants'
-import {
-  calculateUpdateRequest,
-} from '../../functions/instrument'
+import {CI_API_KEY_ENV_VAR, CI_API_KEY_SECRET_ARN_ENV_VAR, CI_KMS_API_KEY_ENV_VAR} from '../../constants'
+import {calculateUpdateRequest} from '../../functions/instrument'
 import {InstrumentationSettings} from '../../interfaces'
 
 import {mockAwsAccount} from '../fixtures'
@@ -466,7 +460,7 @@ describe('instrument', () => {
 
       describe(`test for runtime ${dotnetRuntime}`, () => {
         const dotNetConfig = {...config, Runtime: dotnetRuntime}
-
+        const dotNetConfigOnArm86 = {...config, Runtime: dotnetRuntime, Architectures: ['arm64']}
         test('should throw error when the extension version and trace version are not compatible', async () => {
           process.env[CI_KMS_API_KEY_ENV_VAR] = '5678'
           const badSettings = {...settings, extensionVersion: 24, layerVersion: 3}
@@ -480,6 +474,22 @@ describe('instrument', () => {
           }
           expect(error?.message).toBe(
             `For the ${dotnetRuntime} runtime, the dd-trace version 3 is not compatible with the dd-extension version 24`
+          )
+        })
+
+        test('should throw error if it is running on arm64 with an old dd-extension version', async () => {
+          process.env[CI_KMS_API_KEY_ENV_VAR] = '5678'
+          const curSettings = {...settings, extensionVersion: 23}
+          let error
+          try {
+            await calculateUpdateRequest(dotNetConfigOnArm86, curSettings, region, dotnetRuntime)
+          } catch (e) {
+            if (e instanceof Error) {
+              error = e
+            }
+          }
+          expect(error?.message).toBe(
+            'Instrumenting arm64 architecture is not supported for the given dd-extension version. Please choose the latest dd-extension version or use x86_64 architecture.'
           )
         })
 

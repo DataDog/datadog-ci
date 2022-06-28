@@ -308,7 +308,7 @@ export const calculateUpdateRequest = async (
           config.Architectures?.includes(ARM64_ARCHITECTURE)
         ) {
           throw new Error(
-            'Instrumenting arm64 architecture is not supported for the given dd-extension version. Please choose the latest dd-extersion version or use x86_64 architecture.'
+            'Instrumenting arm64 architecture is not supported for the given dd-extension version. Please choose the latest dd-extension version or use x86_64 architecture.'
           )
         } else {
           needsUpdate = true
