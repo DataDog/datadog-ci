@@ -302,20 +302,21 @@ export const calculateUpdateRequest = async (
       }
     } else {
       // If it is an old extension version or the trace version is null, leave it is as the old workflow
-      if (
-        runtimeType === RuntimeType.DOTNET &&
-        !isExtensionSupportUniversalInstrumentation(runtimeType, extensionVersion) &&
-        config.Architectures?.includes(ARM64_ARCHITECTURE)
-      ) {
-        throw new Error(
-          'Instrumenting arm64 architecture is not supported for the given dd-extension version. Please choose the latest dd-extersion version or use x86_64 architecture.'
-        )
-      }
-      needsUpdate = true
-      newEnvVars[ENABLE_PROFILING_ENV_VAR] = CORECLR_ENABLE_PROFILING
-      newEnvVars[PROFILER_ENV_VAR] = CORECLR_PROFILER
-      newEnvVars[PROFILER_PATH_ENV_VAR] = CORECLR_PROFILER_PATH
-      newEnvVars[DOTNET_TRACER_HOME_ENV_VAR] = DD_DOTNET_TRACER_HOME
+      if (runtimeType === RuntimeType.DOTNET)
+        if (
+          !isExtensionSupportUniversalInstrumentation(runtimeType, extensionVersion) &&
+          config.Architectures?.includes(ARM64_ARCHITECTURE)
+        ) {
+          throw new Error(
+            'Instrumenting arm64 architecture is not supported for the given dd-extension version. Please choose the latest dd-extersion version or use x86_64 architecture.'
+          )
+        } else {
+          needsUpdate = true
+          newEnvVars[ENABLE_PROFILING_ENV_VAR] = CORECLR_ENABLE_PROFILING
+          newEnvVars[PROFILER_ENV_VAR] = CORECLR_PROFILER
+          newEnvVars[PROFILER_PATH_ENV_VAR] = CORECLR_PROFILER_PATH
+          newEnvVars[DOTNET_TRACER_HOME_ENV_VAR] = DD_DOTNET_TRACER_HOME
+        }
     }
   }
 
