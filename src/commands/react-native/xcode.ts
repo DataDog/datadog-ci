@@ -18,7 +18,7 @@ export class XCodeCommand extends Command {
       ],
       [
         'Usage as XCode build phase for RN >= 0.69',
-        'set -e\nexport SOURCEMAP_FILE=./main.jsbundle.map\nWITH_ENVIRONMENT="../node_modules/react-native/scripts/xcode/with-environment.sh"\nREACT_NATIVE_XCODE="node_modules/react-native/scripts/react-native-xcode.sh"\n# Replace /opt/homebrew/bin/node (resp. /opt/homebrew/bin/yarn) by the value of $(command -v node) (resp. $(command -v yarn))\nDATADOG_XCODE="/opt/homebrew/bin/node /opt/homebrew/bin/yarn datadog-ci react-native xcode"\n\n/bin/sh -c "$WITH_ENVIRONMENT;$DATADOG_XCODE $REACT_NATIVE_XCODE" \n',
+        'set -e\nexport SOURCEMAP_FILE=./main.jsbundle.map\nWITH_ENVIRONMENT="../node_modules/react-native/scripts/xcode/with-environment.sh"\nREACT_NATIVE_XCODE="./datadog-sourcemaps.sh"\n\n/bin/sh -c "$WITH_ENVIRONMENT $REACT_NATIVE_XCODE"\n',
       ],
     ],
   })
