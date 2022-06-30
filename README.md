@@ -59,7 +59,7 @@ datadog-ci version
 
 ### Container image (**experimental**)
 
-In order to run `datadog-ci` from a container, the following `Dockerfile` can be used:
+In order to run `datadog-ci` from a container, you can use the following `Dockerfile:
 
 ```dockerfile
 ARG VERSION
