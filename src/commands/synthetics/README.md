@@ -266,4 +266,4 @@ Reporters can hook themselves into the `MainReporter` of the command.
 | `testTrigger`    | `(test: Test, testId: string, executionRule: ExecutionRule, config: ConfigOverride)` | called when a test is triggered.                                |
 | `testWait`       | `(test: Test)`                                                                       | called when a test is waiting to receive its results.           |
 | `testsWait`      | `(tests: Test[])`                                                                    | called when all tests are waiting to receive their results.     |
-| `runEnd`         | `(summary: Summary)`                                                                 | called at the end of the run.                                   |
+| `runEnd`         | `(summary: Summary, baseUrl: string)`                                                | called at the end of the run.                                   |
