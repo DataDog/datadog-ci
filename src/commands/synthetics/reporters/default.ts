@@ -63,6 +63,17 @@ const renderStep = (step: Step) => {
   return `    ${icon} | ${duration} - ${step.description}${value}${error}`
 }
 
+const renderSkippedSteps = (steps: Step[]): string | undefined => {
+  if (!steps.length) {
+    return
+  }
+  if (steps.length === 1) {
+    return renderStep(steps[0])
+  }
+
+  return `    ${ICONS.SKIPPED} | ${steps.length} skipped steps`
+}
+
 const readableOperation: {[key in Operator]: string} = {
   [Operator.contains]: 'should contain',
   [Operator.doesNotContain]: 'should not contain',
@@ -139,9 +150,14 @@ const renderResultOutcome = (
   }
 
   if (test.type === 'browser') {
+    // We render the step only if the test hasn't passed to avoid cluttering the output.
     if (!result.passed && 'stepDetails' in result) {
-      // We render the step only if the test hasn't passed to avoid cluttering the output.
-      return result.stepDetails.map(renderStep).join('\n')
+      const criticalFailedStepIndex = result.stepDetails.findIndex((s) => s.error && !s.allowFailure) + 1
+
+      return [
+        ...result.stepDetails.slice(0, criticalFailedStepIndex).map(renderStep),
+        renderSkippedSteps(result.stepDetails.slice(criticalFailedStepIndex)),
+      ].join('\n')
     }
 
     return ''
@@ -353,7 +369,7 @@ export class DefaultReporter implements MainReporter {
 
     const getConfigOverridesPart = () => {
       const nbConfigsOverridden = Object.keys(config).length
-      if (nbConfigsOverridden === 0) {
+      if (nbConfigsOverridden === 0 || executionRule === ExecutionRule.SKIPPED) {
         return ''
       }
 
