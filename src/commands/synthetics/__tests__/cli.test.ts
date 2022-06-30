@@ -551,15 +551,13 @@ describe('run-test', () => {
 
       expect((mockReporter as MockedReporter).resultEnd).toHaveBeenCalledTimes(testCase.results.length)
 
+      const baseUrl = `https://${DEFAULT_COMMAND_CONFIG.subdomain}.${DEFAULT_COMMAND_CONFIG.datadogSite}/`
       for (const result of testCase.results) {
-        expect((mockReporter as MockedReporter).resultEnd).toHaveBeenCalledWith(
-          result,
-          `https://${DEFAULT_COMMAND_CONFIG.subdomain}.${DEFAULT_COMMAND_CONFIG.datadogSite}/`
-        )
+        expect((mockReporter as MockedReporter).resultEnd).toHaveBeenCalledWith(result, baseUrl)
       }
 
       expect(testCase.summary).toEqual(testCase.expected.summary)
-      expect((mockReporter as MockedReporter).runEnd).toHaveBeenCalledWith(testCase.expected.summary)
+      expect((mockReporter as MockedReporter).runEnd).toHaveBeenCalledWith(testCase.expected.summary, baseUrl)
 
       expect(exitCode).toBe(testCase.expected.exitCode)
     })

@@ -28,6 +28,22 @@ exports[`Default reporter resultEnd 1 API test, 1 location, 3 results: success, 
 "
 `;
 
+exports[`Default reporter resultEnd 1 Browser test: failed blocking 1`] = `
+"[1m[31m✖[39m[22m [[1m[31mblocking[39m[22m] [[1m[2mabc-def-hij[22m[22m] [1mTest name[22m - [1m[31mlocation: [1mLocation name[22m[1m[39m[22m - [1m[31mdevice: [1mchrome.laptop_large[22m[1m[39m[22m
+  ⎋ Total duration: 20000 ms - Result URL: [2m[36mhttps://app.datadoghq.com/synthetics/details/abc-def-hij/result/1?from_ci=true[39m[22m 
+    [1m[32m✓[39m[22m | [1m1000[22mms - Navigate to start URL
+    [2mhttps://example.org/[22m
+    [1m[31m✖[39m[22m | [1m1000[22mms - Navigate
+    [2mhttps://example.org/[22m
+    [31m[2mNavigation failure[22m[39m
+    [1m[31m✖[39m[22m | [1m1000[22mms - Assert
+    [2mvalue[22m
+    [31m[2mStep failure[22m[39m
+    [1m[33m⇢[39m[22m | 3 skipped steps
+
+"
+`;
+
 exports[`Default reporter runEnd Case where some outcomes are empty or missing 1`] = `
 "[33m[1m1[22m test not found[39m [90m(bbb-bbb-bbb)[39m
 [1mRun summary:[22m [32m[1m3[22m passed[39m, [31m[1m0[22m failed[39m, [33m[1m1[22m failed (non-blocking)[39m ([31m[1m1[22m critical errors[39m)
@@ -37,6 +53,7 @@ exports[`Default reporter runEnd Case where some outcomes are empty or missing 1
 
 exports[`Default reporter runEnd Complex case with all the tests and results outcomes possible 1`] = `
 "[33m[1m2[22m tests not found[39m [90m(ccc-ccc-ccc, ddd-ddd-ddd)[39m
+Results URL: [2m[36mhttps://app.datadoghq.com/synthetics/explorer/ci?batchResultId=batch-id[39m[22m
 [1mRun summary:[22m [32m[1m2[22m passed[39m, [31m[1m1[22m failed[39m, [33m[1m3[22m failed (non-blocking)[39m, [1m1[22m skipped ([33m[1m1[22m timed out[39m, [31m[1m2[22m critical errors[39m)
 
 "
@@ -89,12 +106,12 @@ exports[`Default reporter testTrigger Non-blocking test, with 2 config overrides
 `;
 
 exports[`Default reporter testTrigger Skipped test from Datadog, with 1 config override 1`] = `
-"[[1m[2maaa-bbb-ccc[22m[22m] Skipped test \\"[33m[2mRequest on example.org[22m[39m\\" because of execution rule configuration in Datadog [90m(1 config override)[39m
+"[[1m[2maaa-bbb-ccc[22m[22m] Skipped test \\"[33m[2mRequest on example.org[22m[39m\\" because of execution rule configuration in Datadog
 "
 `;
 
 exports[`Default reporter testTrigger Skipped test from Datadog, with 2 config overrides 1`] = `
-"[[1m[2maaa-bbb-ccc[22m[22m] Skipped test \\"[33m[2mRequest on example.org[22m[39m\\" because of execution rule configuration in Datadog [90m(2 config overrides)[39m
+"[[1m[2maaa-bbb-ccc[22m[22m] Skipped test \\"[33m[2mRequest on example.org[22m[39m\\" because of execution rule configuration in Datadog
 "
 `;
 
@@ -104,11 +121,11 @@ exports[`Default reporter testTrigger Skipped test from Datadog, without config 
 `;
 
 exports[`Default reporter testTrigger Skipped test, with 1 config override 1`] = `
-"[[1m[2maaa-bbb-ccc[22m[22m] Skipped test \\"[33m[2mRequest on example.org[22m[39m\\" [90m(1 config override)[39m
+"[[1m[2maaa-bbb-ccc[22m[22m] Skipped test \\"[33m[2mRequest on example.org[22m[39m\\"
 "
 `;
 
 exports[`Default reporter testTrigger Skipped test, with 2 config overrides 1`] = `
-"[[1m[2maaa-bbb-ccc[22m[22m] Skipped test \\"[33m[2mRequest on example.org[22m[39m\\" [90m(2 config overrides)[39m
+"[[1m[2maaa-bbb-ccc[22m[22m] Skipped test \\"[33m[2mRequest on example.org[22m[39m\\"
 "
 `;
