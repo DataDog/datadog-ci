@@ -75,7 +75,7 @@ To build and run it, the following commands can be used:
 
 ```sh
 # Build the container
-docker build -t datadog-ci:dev .
+docker build -t datadog-ci:dev --build-arg VERSION=v1.7.2 .
 
 # Run a command using the container
 export DD_API_KEY=$(cat /secret/dd_api_key)
