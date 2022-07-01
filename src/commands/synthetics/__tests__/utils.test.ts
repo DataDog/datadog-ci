@@ -398,7 +398,10 @@ describe('utils', () => {
       const result: ServerResult = {
         device: {height: 0, id: 'laptop_large', width: 0},
         duration: 0,
-        errorCode: 'ERRABORTED',
+        failure: {
+          code: 'ERRABORTED',
+          message: 'Connection aborted',
+        },
         passed: false,
         startUrl: '',
         stepDetails: [],
@@ -411,7 +414,10 @@ describe('utils', () => {
       const result: ServerResult = {
         device: {height: 0, id: 'laptop_large', width: 0},
         duration: 0,
-        errorCode: 'ERRABORTED',
+        failure: {
+          code: 'ERRABORTED',
+          message: 'Connection aborted',
+        },
         passed: false,
         startUrl: '',
         stepDetails: [],

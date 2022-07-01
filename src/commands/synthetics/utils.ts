@@ -204,7 +204,7 @@ export const hasResultPassed = (
     return result.passed
   }
 
-  if (typeof result.errorCode !== 'undefined') {
+  if (typeof result.failure !== 'undefined' || typeof result.error !== 'undefined') {
     return false
   }
 

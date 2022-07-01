@@ -19,8 +19,6 @@ export type Reporter = Partial<MainReporter>
 
 export interface BaseServerResult {
   error?: string
-  errorCode?: string
-  errorMessage?: string
   failure?: {
     code: string
     message: string
