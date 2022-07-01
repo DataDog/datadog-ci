@@ -153,11 +153,14 @@ const renderResultOutcome = (
     // We render the step only if the test hasn't passed to avoid cluttering the output.
     if (!result.passed && 'stepDetails' in result) {
       const criticalFailedStepIndex = result.stepDetails.findIndex((s) => s.error && !s.allowFailure) + 1
+      const stepsDisplay = result.stepDetails.slice(0, criticalFailedStepIndex).map(renderStep)
 
-      return [
-        ...result.stepDetails.slice(0, criticalFailedStepIndex).map(renderStep),
-        renderSkippedSteps(result.stepDetails.slice(criticalFailedStepIndex)),
-      ].join('\n')
+      const skippedStepDisplay = renderSkippedSteps(result.stepDetails.slice(criticalFailedStepIndex))
+      if (skippedStepDisplay) {
+        stepsDisplay.push(skippedStepDisplay)
+      }
+
+      return stepsDisplay.join('\n')
     }
 
     return ''
