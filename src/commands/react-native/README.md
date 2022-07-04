@@ -81,7 +81,11 @@ This behavior can be overriden with links to `https://gitlab.com/Datadog/example
 
 #### Setting the project path
 
-TODO
+By default, paths inside React Native sourcemaps are the absolute paths of the files on the machine where they were bundled (e.g. `/Users/user/MyProject/App.ts`).
+If you are not running the `react-native upload` command from your React Native project root, you need specify the `--project-path` argument with the absolute path to your React Native project root.
+
+<!-- TODO: test this once unminification is on prod -->
+
 #### Supported repositories
 
 The only repository URLs supported are the ones whose host contains: `github`, `gitlab` or `bitbucket`. This allows Datadog to create proper URLs such as:
