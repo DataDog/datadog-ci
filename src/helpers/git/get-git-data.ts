@@ -1,4 +1,5 @@
 import * as simpleGit from 'simple-git'
+import {BranchSummary} from 'simple-git'
 import {URL} from 'url'
 
 // Returns the remote of the current repository.
@@ -41,3 +42,12 @@ export const gitTrackedFiles = async (git: simpleGit.SimpleGit): Promise<string[
 
   return files.split(/\r\n|\r|\n/)
 }
+
+export const gitBranch = async (git: simpleGit.SimpleGit): Promise<BranchSummary> => git.branch()
+
+export const gitMessage = async (git: simpleGit.SimpleGit): Promise<string> => git.show(['-s', '--format=%s'])
+
+export const gitAuthorAndCommitter = async (git: simpleGit.SimpleGit): Promise<string> =>
+  git.show(['-s', '--format=%an,%ae,%aI,%cn,%ce,%cI'])
+
+export const gitRepositoryURL = async (git: simpleGit.SimpleGit): Promise<string> => git.listRemote(['--get-url'])
