@@ -36,7 +36,6 @@ export interface RepositoryData {
 // To obtain the list of tracked files paths tied to a specific sourcemap, invoke the 'matchSourcemap' methid.
 export const getRepositoryData = async (
   git: simpleGit.SimpleGit,
-  stdout: Writable,
   repositoryURL: string | undefined
 ): Promise<RepositoryData> => {
   // Invoke git commands to retrieve the remote, hash and tracked files.
