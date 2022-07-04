@@ -25,31 +25,50 @@ export class Sourcemap {
     projectPath: string
   ): MultipartPayload {
     const content = new Map<string, MultipartValue>([
-      ['cli_version', {value: cliVersion}],
-      ['service', {value: service}],
-      ['version', {value: version}],
-      ['source_map', {value: fs.createReadStream(this.sourcemapPath)}],
-      ['minified_file', {value: fs.createReadStream(this.minifiedFilePath)}],
-      ['minified_url', {value: this.minifiedUrl}],
-      ['project_path', {value: projectPath}],
-      ['type', {value: 'js_sourcemap'}],
+      ['event', this.getMetadataPayload(cliVersion, service, version, projectPath)],
+      ['source_map', {value: fs.createReadStream(this.sourcemapPath), options: {filename: 'source_map'}}],
+      ['minified_file', {value: fs.createReadStream(this.minifiedFilePath), options: {filename: 'minified_file'}}],
     ])
-    if (this.gitData !== undefined) {
-      if (this.gitData!.gitRepositoryPayload !== undefined) {
-        content.set('repository', {
-          options: {
-            contentType: 'application/json',
-            filename: 'repository',
-          },
-          value: this.gitData!.gitRepositoryPayload,
-        })
-      }
-      content.set('git_repository_url', {value: this.gitData!.gitRepositoryURL})
-      content.set('git_commit_sha', {value: this.gitData!.gitCommitSha})
+    if (this.gitData !== undefined && this.gitData!.gitRepositoryPayload !== undefined) {
+      content.set('repository', {
+        options: {
+          contentType: 'application/json',
+          filename: 'repository',
+        },
+        value: this.gitData!.gitRepositoryPayload,
+      })
     }
 
     return {
       content,
+    }
+  }
+
+  private getMetadataPayload(
+    cliVersion: string,
+    service: string,
+    version: string,
+    projectPath: string
+  ): MultipartValue {
+    const metadata: {[k: string]: any} = {
+      cli_version: cliVersion,
+      minified_url: this.minifiedUrl,
+      project_path: projectPath,
+      service,
+      type: 'js_sourcemap',
+      version,
+    }
+    if (this.gitData !== undefined) {
+      metadata.git_repository_url = this.gitData!.gitRepositoryURL
+      metadata.git_commit_sha = this.gitData!.gitRepositoryURL
+    }
+
+    return {
+      options: {
+        contentType: 'application/json',
+        filename: 'event',
+      },
+      value: JSON.stringify(metadata),
     }
   }
 }
