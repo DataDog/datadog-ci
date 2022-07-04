@@ -19,7 +19,7 @@ It is also possible to override the full URL for the intake endpoint by defining
 
 ### `upload`
 
-This command will upload all javascript sourcemaps and their corresponding bundle file to Datadog in order to un-minify front-end stack traces received by Datadog.
+This command will upload your javascript sourcemaps and their corresponding bundle file to Datadog in order to un-minify your application's stack traces received by Datadog.
 
 To upload the sourcemaps for iOS, this command should be run:
 
@@ -46,8 +46,9 @@ By default the React Native SDK uses your app's bundle identifier as service.
 This should be the "Version" or "MARKETING_VERSION" in XCode for iOS and the "versionName" in your `android/app/build.gradle` for Android.
 
 * `--build-version` (required) is used to avoid overwriting your sourcemaps by accident.
-You cannot upload new sourcemaps for a specific `build-version` and `service` combination.
-This should be the "Build" or "CURRENT_PROJECT_VERSION" in XCode for iOS and the "versionCode" in your `android/app/build.gradle` for Android.
+You only do one upload for a specific `build-version` and `service` combination. 
+Subsequent uploads will be ignored until the `build-version` changes.
+This should match the "Build" or "CURRENT_PROJECT_VERSION" in XCode for iOS and the "versionCode" in your `android/app/build.gradle` for Android.
 
 In addition, some optional parameters are available:
 
@@ -64,7 +65,7 @@ Errors in Datadog UI can be enriched with links to GitHub/GitLab/Bitbucket if th
 When these requirements are met, the upload command reports Git information such as:
 - the current commit hash
 - the repository URL
-- for each sourcemap, the list of file paths that are tracked in the repository. Only tracked file paths that could be related to a sourcemap are gathered.
+- the list of file paths that are tracked in the repository. Only tracked file paths that could be related to a sourcemap are gathered.
 <!-- Check this part -->
 For example, for a sourcemap referencing `["/Users/myname/path/to/ReactNativeApp/example.ts"]` inside its `sources` attribute, the command will gather all file paths with `example.ts` as filename.
 
