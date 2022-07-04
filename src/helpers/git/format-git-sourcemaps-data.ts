@@ -2,7 +2,7 @@ import fs from 'fs'
 import * as simpleGit from 'simple-git'
 import {Writable} from 'stream'
 import {gitHash, gitRemote, gitTrackedFiles} from './get-git-data'
-import {renderGitWarning, renderSourcesNotFoundWarning} from '../../commands/sourcemaps/renderer'
+import {renderSourcesNotFoundWarning} from '../../commands/sourcemaps/renderer'
 
 // Returns a configured SimpleGit.
 export const newSimpleGit = async (): Promise<simpleGit.SimpleGit> => {
@@ -38,7 +38,7 @@ export const getRepositoryData = async (
   git: simpleGit.SimpleGit,
   stdout: Writable,
   repositoryURL: string | undefined
-): Promise<RepositoryData | undefined> => {
+): Promise<RepositoryData> => {
   // Invoke git commands to retrieve the remote, hash and tracked files.
   // We're using Promise.all instead of Promive.allSettled since we want to fail early if
   // any of the promises fails.
@@ -53,9 +53,7 @@ export const getRepositoryData = async (
       ;[remote, hash, trackedFiles] = await Promise.all([gitRemote(git), gitHash(git), gitTrackedFiles(git)])
     }
   } catch (e) {
-    stdout.write(renderGitWarning(e))
-
-    return undefined
+    throw e
   }
 
   const data = {

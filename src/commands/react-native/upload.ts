@@ -16,6 +16,7 @@ import {
   renderConfigurationError,
   renderFailedUpload,
   renderGitDataNotAttachedWarning,
+  renderGitWarning,
   renderRetriedUpload,
   renderSuccessfulCommand,
   renderUpload,
@@ -169,20 +170,21 @@ export class UploadCommand extends Command {
 
   // Fills the 'repository' field of each payload with data gathered using git.
   private addRepositoryDataToPayloads = async (payloads: RNSourcemap[]) => {
-    const repositoryData = await getRepositoryData(await newSimpleGit(), this.context.stdout, this.repositoryURL)
-    if (repositoryData === undefined) {
-      return
-    }
-    await Promise.all(
-      payloads.map(async (payload) => {
-        const repositoryPayload = this.getRepositoryPayload(repositoryData!, payload.sourcemapPath)
-        payload.addRepositoryData({
-          gitCommitSha: repositoryData.hash,
-          gitRepositoryPayload: repositoryPayload,
-          gitRepositoryURL: repositoryData.remote,
+    try {
+      const repositoryData = await getRepositoryData(await newSimpleGit(), this.context.stdout, this.repositoryURL)
+      await Promise.all(
+        payloads.map(async (payload) => {
+          const repositoryPayload = this.getRepositoryPayload(repositoryData!, payload.sourcemapPath)
+          payload.addRepositoryData({
+            gitCommitSha: repositoryData.hash,
+            gitRepositoryPayload: repositoryPayload,
+            gitRepositoryURL: repositoryData.remote,
+          })
         })
-      })
-    )
+      )
+    } catch (e) {
+      this.context.stdout.write(renderGitWarning(e))
+    }
   }
 
   // Looks for the sourcemaps and minified files on disk and returns
