@@ -2,7 +2,7 @@ import fs from 'fs'
 import * as simpleGit from 'simple-git'
 import {Writable} from 'stream'
 import {URL} from 'url'
-import {renderGitWarning, renderSourcesNotFoundWarning} from '../commands/sourcemaps/renderer'
+import {renderGitWarning, renderSourcesNotFoundWarning} from '../../commands/sourcemaps/renderer'
 
 // Returns a configured SimpleGit.
 export const newSimpleGit = async (): Promise<simpleGit.SimpleGit> => {

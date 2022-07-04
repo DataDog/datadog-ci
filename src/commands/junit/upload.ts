@@ -19,7 +19,7 @@ import {
 import {getBaseIntakeUrl} from './utils'
 
 import {getCISpanTags} from '../../helpers/ci'
-import {getGitMetadata} from '../../helpers/git-span-metadata'
+import {getGitMetadata} from '../../helpers/git/format-git-span-data'
 import {retryRequest} from '../../helpers/retry'
 import {parseTags} from '../../helpers/tags'
 import {getUserGitSpanTags} from '../../helpers/user-provided-git'

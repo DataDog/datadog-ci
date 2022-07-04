@@ -1,6 +1,6 @@
 import type {AxiosPromise, AxiosRequestConfig, AxiosResponse} from 'axios'
 
-import {getGitMetadata} from '../../helpers/git-span-metadata'
+import {getGitMetadata} from '../../helpers/git/format-git-span-data'
 import {getUserGitSpanTags} from '../../helpers/user-provided-git'
 import {getRequestBuilder} from '../../helpers/utils'
 import {Payload} from './interfaces'
