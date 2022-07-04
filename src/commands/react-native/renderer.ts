@@ -107,7 +107,7 @@ export const renderCommandInfo = (
   if (dryRun) {
     fullStr += chalk.yellow(`${ICONS.WARNING} DRY-RUN MODE ENABLED. WILL NOT UPLOAD SOURCEMAPS\n`)
   }
-  const startStr = chalk.green(`Starting upload with concurrency ${poolLimit}. \n`)
+  const startStr = chalk.green('Starting upload. \n')
   fullStr += startStr
   const basePathStr = chalk.green(
     `Upload of ${sourcemapPath} for bundle ${bundlePath} on platform ${platform} with project path ${projectPath}\n`

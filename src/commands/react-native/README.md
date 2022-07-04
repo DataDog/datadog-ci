@@ -113,7 +113,7 @@ rm -rf $TEMP_DIR
 Successful output should look like this:
 
 ```bash
-Starting upload with concurrency 20.
+Starting upload.
 Upload of /var/folders/34/_7q54_lx4nl1cvkjwr3_k4lw0000gq/T/tmp.x0vecv3yFT/fake.js.map for bundle /var/folders/34/_7q54_lx4nl1cvkjwr3_k4lw0000gq/T/tmp.x0vecv3yFT/fake.js on platform ios with project path /Users/me/datadog-ci
 version: 0.0.1 service: com.company.app
 ⚠️ No tracked files found for sources contained in /var/folders/34/_7q54_lx4nl1cvkjwr3_k4lw0000gq/T/tmp.x0vecv3yFT/fake.js.map

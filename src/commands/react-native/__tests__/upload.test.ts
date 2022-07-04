@@ -164,7 +164,7 @@ interface ExpectedOutput {
 
 const checkConsoleOutput = (output: string[], expected: ExpectedOutput) => {
   expect(output[0]).toContain('DRY-RUN MODE ENABLED. WILL NOT UPLOAD SOURCEMAPS')
-  expect(output[1]).toContain(`Starting upload with concurrency ${expected.concurrency}.`)
+  expect(output[1]).toContain('Starting upload.')
   expect(output[2]).toContain(
     `Upload of ${expected.sourcemapPath} for bundle ${expected.bundlePath} on platform ${expected.platform} with project path ${expected.projectPath}`
   )
