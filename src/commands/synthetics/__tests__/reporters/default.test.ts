@@ -3,7 +3,7 @@ import {BaseContext} from 'clipanion/lib/advanced'
 import {ConfigOverride, ExecutionRule, MainReporter, Result, Summary, Test} from '../../interfaces'
 import {DefaultReporter} from '../../reporters/default'
 import {createSummary} from '../../utils'
-import {getApiResult, getApiTest} from '../fixtures'
+import {getApiResult, getApiTest, getFailedBrowserResult} from '../fixtures'
 
 /**
  * A good amount of these tests rely on Jest snapshot assertions.
@@ -14,6 +14,7 @@ import {getApiResult, getApiTest} from '../fixtures'
  */
 
 describe('Default reporter', () => {
+  const baseUrlFixture = 'https://app.datadoghq.com/'
   const writeMock = jest.fn()
   const mockContext: unknown = {
     context: {
@@ -32,7 +33,7 @@ describe('Default reporter', () => {
       ['log', ['log']],
       ['reportStart', [{startTime: 0}]],
       ['resultEnd', [getApiResult('1', getApiTest()), '']],
-      ['runEnd', [createSummary()]],
+      ['runEnd', [createSummary(), '']],
       ['testTrigger', [{}, '', '', {}]],
       ['testsWait', [[{}]]],
     ]
@@ -118,8 +119,6 @@ describe('Default reporter', () => {
       return result
     }
 
-    const baseUrlFixture = 'https://app.datadoghq.com/'
-
     const apiTest = getApiTest('aaa-aaa-aaa')
     const cases = [
       {
@@ -138,6 +137,13 @@ describe('Default reporter', () => {
             createApiResult('2', false, ExecutionRule.NON_BLOCKING, apiTest),
             createApiResult('3', false, ExecutionRule.BLOCKING, apiTest),
           ],
+        },
+      },
+      {
+        description: '1 Browser test: failed blocking',
+        fixtures: {
+          baseUrl: baseUrlFixture,
+          results: [getFailedBrowserResult()],
         },
       },
     ]
@@ -160,6 +166,7 @@ describe('Default reporter', () => {
     const baseSummary: Summary = createSummary()
 
     const complexSummary: Summary = {
+      batchId: 'batch-id',
       criticalErrors: 2,
       failed: 1,
       failedNonBlocking: 3,
@@ -191,7 +198,7 @@ describe('Default reporter', () => {
     ]
 
     test.each(cases)('$description', (testCase) => {
-      reporter.runEnd(testCase.summary)
+      reporter.runEnd(testCase.summary, baseUrlFixture)
       const mostRecentOutput = writeMock.mock.calls[writeMock.mock.calls.length - 1][0]
       expect(mostRecentOutput).toMatchSnapshot()
     })

@@ -424,10 +424,10 @@ export const getReporter = (reporters: Reporter[]): MainReporter => ({
       }
     }
   },
-  runEnd: (summary) => {
+  runEnd: (summary, baseUrl) => {
     for (const reporter of reporters) {
       if (typeof reporter.runEnd === 'function') {
-        reporter.runEnd(summary)
+        reporter.runEnd(summary, baseUrl)
       }
     }
   },

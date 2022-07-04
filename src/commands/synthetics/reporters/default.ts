@@ -63,6 +63,17 @@ const renderStep = (step: Step) => {
   return `    ${icon} | ${duration} - ${step.description}${value}${error}`
 }
 
+const renderSkippedSteps = (steps: Step[]): string | undefined => {
+  if (!steps.length) {
+    return
+  }
+  if (steps.length === 1) {
+    return renderStep(steps[0])
+  }
+
+  return `    ${ICONS.SKIPPED} | ${steps.length} skipped steps`
+}
+
 const readableOperation: {[key in Operator]: string} = {
   [Operator.contains]: 'should contain',
   [Operator.doesNotContain]: 'should not contain',
@@ -139,9 +150,17 @@ const renderResultOutcome = (
   }
 
   if (test.type === 'browser') {
+    // We render the step only if the test hasn't passed to avoid cluttering the output.
     if (!result.passed && 'stepDetails' in result) {
-      // We render the step only if the test hasn't passed to avoid cluttering the output.
-      return result.stepDetails.map(renderStep).join('\n')
+      const criticalFailedStepIndex = result.stepDetails.findIndex((s) => s.error && !s.allowFailure) + 1
+      const stepsDisplay = result.stepDetails.slice(0, criticalFailedStepIndex).map(renderStep)
+
+      const skippedStepDisplay = renderSkippedSteps(result.stepDetails.slice(criticalFailedStepIndex))
+      if (skippedStepDisplay) {
+        stepsDisplay.push(skippedStepDisplay)
+      }
+
+      return stepsDisplay.join('\n')
     }
 
     return ''
@@ -195,6 +214,8 @@ const getResultUrl = (baseUrl: string, test: Test, resultId: string) => {
 
   return `${testDetailUrl}?resultId=${resultId}&${ciQueryParam}`
 }
+
+const getBatchUrl = (baseUrl: string, batchId: string) => `${baseUrl}synthetics/explorer/ci?batchResultId=${batchId}`
 
 const renderExecutionResult = (test: Test, execution: Result, baseUrl: string) => {
   const {executionRule, test: overriddenTest, resultId, result, timedOut} = execution
@@ -279,7 +300,7 @@ export class DefaultReporter implements MainReporter {
     return
   }
 
-  public runEnd(summary: Summary) {
+  public runEnd(summary: Summary, baseUrl: string) {
     const {bold: b, gray, green, red, yellow} = chalk
 
     const lines: string[] = []
@@ -312,6 +333,9 @@ export class DefaultReporter implements MainReporter {
     }
     const extraInfoStr = extraInfo.length ? ' (' + extraInfo.join(', ') + ')' : ''
 
+    if (summary.batchId) {
+      lines.push('Results URL: ' + chalk.dim.cyan(getBatchUrl(baseUrl, summary.batchId)))
+    }
     lines.push(`${b('Run summary:')} ${runSummary.join(', ')}${extraInfoStr}\n\n`)
 
     this.write(lines.join('\n'))
@@ -353,7 +377,7 @@ export class DefaultReporter implements MainReporter {
 
     const getConfigOverridesPart = () => {
       const nbConfigsOverridden = Object.keys(config).length
-      if (nbConfigsOverridden === 0) {
+      if (nbConfigsOverridden === 0 || executionRule === ExecutionRule.SKIPPED) {
         return ''
       }
 

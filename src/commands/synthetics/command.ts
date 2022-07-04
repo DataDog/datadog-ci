@@ -137,7 +137,7 @@ export class RunTestCommand extends Command {
       this.reporter?.resultEnd(result, this.getAppBaseURL())
     }
 
-    this.reporter?.runEnd(summary)
+    this.reporter?.runEnd(summary, this.getAppBaseURL())
 
     return hasSucceeded ? 0 : 1
   }

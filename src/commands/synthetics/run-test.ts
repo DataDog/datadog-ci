@@ -96,9 +96,10 @@ export const executeTests = async (reporter: MainReporter, config: CommandConfig
     }
   }
 
-  let triggers: Trigger
+  let trigger: Trigger
   try {
-    triggers = await runTests(api, overriddenTestsToTrigger)
+    trigger = await runTests(api, overriddenTestsToTrigger)
+    summary.batchId = trigger.batch_id
   } catch (error) {
     await stopTunnel()
     throw new CriticalError('TRIGGER_TESTS_FAILED', error.message)
@@ -108,7 +109,7 @@ export const executeTests = async (reporter: MainReporter, config: CommandConfig
     const maxPollingTimeout = Math.max(...testsToTrigger.map((t) => t.config.pollingTimeout || config.pollingTimeout))
     const results = await waitForResults(
       api,
-      triggers,
+      trigger,
       tests,
       {
         failOnCriticalErrors: config.failOnCriticalErrors,

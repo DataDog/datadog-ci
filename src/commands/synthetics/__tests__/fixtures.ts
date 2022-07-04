@@ -172,6 +172,84 @@ export const getBrowserServerResult = (opts: Partial<BrowserServerResult> = {}):
   ...opts,
 })
 
+export const getFailedBrowserResult = (): Result => ({
+  executionRule: ExecutionRule.BLOCKING,
+  location: 'Location name',
+  passed: false,
+  result: {
+    device: {height: 1100, id: 'chrome.laptop_large', width: 1440},
+    duration: 20000,
+    error: 'Step failed because it took more than 20 seconds.',
+    failure: {code: 'STEP_TIMEOUT', message: 'Step failed because it took more than 20 seconds.'},
+    passed: false,
+    startUrl: 'https://example.org/',
+    stepDetails: [
+      {
+        ...getStep(),
+        browserErrors: [{description: 'Error', name: 'Console error', type: 'js'}],
+        description: 'Navigate to start URL',
+        duration: 1000,
+        skipped: false,
+        stepId: -1,
+        type: 'goToUrlAndMeasureTti',
+        url: 'https://example.org/',
+        value: 'https://example.org/',
+        vitalsMetrics: [{url: 'https://example.com', lcp: 100, cls: 0}],
+      },
+      {
+        ...getStep(),
+        allowFailure: true,
+        description: 'Navigate',
+        duration: 1000,
+        error: 'Navigation failure',
+        skipped: true,
+        stepId: 2,
+        type: 'goToUrl',
+        url: 'https://example.org/',
+        value: 'https://example.org/',
+        vitalsMetrics: [],
+      },
+      {
+        ...getStep(),
+        description: 'Assert',
+        duration: 1000,
+        error: 'Step failure',
+        publicId: 'abc-def-hij',
+        skipped: true,
+        stepId: 3,
+        type: 'assertElementContent',
+        url: 'https://example.org/',
+        vitalsMetrics: [],
+      },
+      {...getStep(), skipped: true},
+      {...getStep(), skipped: true},
+      {...getStep(), skipped: true},
+    ],
+  },
+  resultId: '1',
+  test: {
+    ...getApiTest(),
+    config: {
+      assertions: [],
+      request: {
+        headers: {},
+        method: 'GET',
+        timeout: 1,
+        url: 'https://example.org/',
+      },
+      variables: [],
+    },
+    locations: [''],
+    message: 'Description.',
+    name: 'Test name',
+    options: {device_ids: ['chrome.laptop_large'], min_failure_duration: 0, min_location_failed: 1, tick_every: 300},
+    public_id: 'abc-def-hij',
+    type: 'browser',
+  },
+  timedOut: false,
+  timestamp: 1,
+})
+
 export const getApiServerResult = (opts: Partial<ApiServerResult> = {}): ApiServerResult => ({
   assertionResults: [
     {
