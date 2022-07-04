@@ -18,6 +18,7 @@ import {
   renderGitDataNotAttachedWarning,
   renderGitWarning,
   renderRetriedUpload,
+  renderSourcesNotFoundWarning,
   renderSuccessfulCommand,
   renderUpload,
 } from './renderer'
@@ -208,9 +209,12 @@ export class UploadCommand extends Command {
   // It specifically looks for the list of tracked files that are associated to the source paths
   // declared inside the sourcemap.
   private getRepositoryPayload = (repositoryData: RepositoryData, sourcemapPath: string): string | undefined => {
+    const onSourcesNotFound = () => {
+      this.context.stdout.write(renderSourcesNotFoundWarning(sourcemapPath))
+    }
     let repositoryPayload: string | undefined
     try {
-      const files = repositoryData.trackedFilesMatcher.matchSourcemap(this.context.stdout, sourcemapPath)
+      const files = repositoryData.trackedFilesMatcher.matchSourcemap(sourcemapPath, onSourcesNotFound)
       if (files) {
         repositoryPayload = JSON.stringify({
           data: [

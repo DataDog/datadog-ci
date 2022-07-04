@@ -67,17 +67,6 @@ describe('git', () => {
   })
 
   describe('GetRepositoryData', () => {
-    const createMockStdout = () => {
-      let data = ''
-
-      return {
-        toString: () => data,
-        write: (input: string) => {
-          data += input
-        },
-      }
-    }
-
     const createMockSimpleGit = () => ({
       getRemotes: (arg: boolean) => [{refs: {push: 'git@github.com:user/repository.git'}}],
       raw: (arg: string) => 'src/commands/sourcemaps/__tests__/git.test.ts',
@@ -85,15 +74,14 @@ describe('git', () => {
     })
 
     test('integration', async () => {
-      const stdout = createMockStdout() as any
-      const data = await getRepositoryData(createMockSimpleGit() as any, stdout, '')
+      const data = await getRepositoryData(createMockSimpleGit() as any, '')
       if (!data) {
         fail('data should not be undefined')
       }
 
       const files = data.trackedFilesMatcher.matchSourcemap(
-        stdout,
-        'src/commands/sourcemaps/__tests__/fixtures/basic/common.min.js.map'
+        'src/commands/sourcemaps/__tests__/fixtures/basic/common.min.js.map',
+        () => undefined
       )
       expect(data.remote).toBe('git@github.com:user/repository.git')
       expect(data.hash).toBe('25da22df90210a40b919debe3f7ebfb0c1811898')
@@ -101,14 +89,13 @@ describe('git', () => {
     })
 
     test('integration: remote override', async () => {
-      const stdout = createMockStdout() as any
-      const data = await getRepositoryData(createMockSimpleGit() as any, stdout, 'git@github.com:user/other.git')
+      const data = await getRepositoryData(createMockSimpleGit() as any, 'git@github.com:user/other.git')
       if (!data) {
         fail('data should not be undefined')
       }
       const files = data.trackedFilesMatcher.matchSourcemap(
-        stdout,
-        'src/commands/sourcemaps/__tests__/fixtures/basic/common.min.js.map'
+        'src/commands/sourcemaps/__tests__/fixtures/basic/common.min.js.map',
+        () => undefined
       )
       expect(data.remote).toBe('git@github.com:user/other.git')
       expect(data.hash).toBe('25da22df90210a40b919debe3f7ebfb0c1811898')

@@ -1,8 +1,6 @@
 import fs from 'fs'
 import * as simpleGit from 'simple-git'
-import {Writable} from 'stream'
 import {gitHash, gitRemote, gitTrackedFiles} from './get-git-data'
-import {renderSourcesNotFoundWarning} from '../../commands/sourcemaps/renderer'
 
 // Returns a configured SimpleGit.
 export const newSimpleGit = async (): Promise<simpleGit.SimpleGit> => {
@@ -87,7 +85,7 @@ export class TrackedFilesMatcher {
   }
 
   // Looks up the sources declared in the sourcemap and return a list of related tracked files.
-  public matchSourcemap(stdout: Writable, srcmapPath: string): string[] | undefined {
+  public matchSourcemap(srcmapPath: string, onSourcesNotFound: () => void): string[] | undefined {
     const buff = fs.readFileSync(srcmapPath, 'utf8')
     const srcmapObj = JSON.parse(buff)
     if (!srcmapObj.sources) {
@@ -99,7 +97,7 @@ export class TrackedFilesMatcher {
     }
     const filtered = this.matchSources(sources)
     if (filtered.length === 0) {
-      stdout.write(renderSourcesNotFoundWarning(srcmapPath))
+      onSourcesNotFound()
 
       return undefined
     }
