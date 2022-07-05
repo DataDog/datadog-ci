@@ -110,11 +110,6 @@ const renderResultOutcome = (
   icon: string,
   color: chalk.Chalk
 ): string | undefined => {
-  // Only display critical errors if failure is not filled.
-  if (result.error && !result.failure) {
-    return `  ${chalk.bold(`${ICONS.FAILED} | ${result.error}`)}`
-  }
-
   if (result.unhealthy) {
     const error =
       result.failure && result.failure.message !== 'Unknown error' ? result.failure.message : 'General Error'

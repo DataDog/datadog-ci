@@ -564,7 +564,7 @@ describe('utils', () => {
       ).toEqual([
         {
           ...result,
-          result: {...result.result, error: 'Timeout', passed: false},
+          result: {...result.result, failure: {code: 'TIMEOUT', message: 'Result timed out'}, passed: false},
           timedOut: true,
         },
       ])
@@ -597,7 +597,7 @@ describe('utils', () => {
       ).toStrictEqual([
         {
           ...result,
-          result: {...result.result, error: 'Timeout', passed: false},
+          result: {...result.result, failure: {code: 'TIMEOUT', message: 'Result timed out'}, passed: false},
           timedOut: true,
         },
       ])
@@ -622,7 +622,7 @@ describe('utils', () => {
       ).toEqual([
         {
           ...result,
-          result: {...result.result, error: 'Timeout', passed: false},
+          result: {...result.result, failure: {code: 'TIMEOUT', message: 'Result timed out'}, passed: false},
           timedOut: true,
         },
       ])
