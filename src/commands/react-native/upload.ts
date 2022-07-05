@@ -173,16 +173,14 @@ export class UploadCommand extends Command {
   private addRepositoryDataToPayloads = async (payloads: RNSourcemap[]) => {
     try {
       const repositoryData = await getRepositoryData(await newSimpleGit(), this.repositoryURL)
-      await Promise.all(
-        payloads.map(async (payload) => {
-          const repositoryPayload = this.getRepositoryPayload(repositoryData!, payload.sourcemapPath)
-          payload.addRepositoryData({
-            gitCommitSha: repositoryData.hash,
-            gitRepositoryPayload: repositoryPayload,
-            gitRepositoryURL: repositoryData.remote,
-          })
+      payloads.forEach((payload) => {
+        const repositoryPayload = this.getRepositoryPayload(repositoryData!, payload.sourcemapPath)
+        payload.addRepositoryData({
+          gitCommitSha: repositoryData.hash,
+          gitRepositoryPayload: repositoryPayload,
+          gitRepositoryURL: repositoryData.remote,
         })
-      )
+      })
     } catch (e) {
       this.context.stdout.write(renderGitWarning(e))
     }
@@ -190,12 +188,10 @@ export class UploadCommand extends Command {
 
   // Looks for the sourcemaps and minified files on disk and returns
   // the associated payloads.
-  private getMatchingRNSourcemapFiles = async (): Promise<RNSourcemap[]> => [
-    new RNSourcemap(this.bundle!, this.sourcemap!),
-  ]
+  private getMatchingRNSourcemapFiles = (): RNSourcemap[] => [new RNSourcemap(this.bundle!, this.sourcemap!)]
 
   private getPayloadsToUpload = async (useGit: boolean): Promise<RNSourcemap[]> => {
-    const payloads = await this.getMatchingRNSourcemapFiles()
+    const payloads = this.getMatchingRNSourcemapFiles()
     if (!useGit) {
       return payloads
     }
