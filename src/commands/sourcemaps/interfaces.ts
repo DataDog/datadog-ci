@@ -60,7 +60,7 @@ export class Sourcemap {
     }
     if (this.gitData !== undefined) {
       metadata.git_repository_url = this.gitData!.gitRepositoryURL
-      metadata.git_commit_sha = this.gitData!.gitRepositoryURL
+      metadata.git_commit_sha = this.gitData!.gitCommitSha
     }
 
     return {
