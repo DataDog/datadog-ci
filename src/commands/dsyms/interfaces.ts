@@ -1,6 +1,6 @@
 import fs from 'fs'
 
-import {MultipartPayload} from '../../helpers/upload'
+import {MultipartPayload, MultipartValue} from '../../helpers/upload'
 
 export interface Dsym {
   bundlePath: string
@@ -23,15 +23,28 @@ export class CompressedDsym {
   }
 
   public asMultipartPayload(): MultipartPayload {
-    const concatUUIDs = this.dsym.slices.map((slice) => slice.uuid).join()
     const content = new Map([
-      ['symbols_archive', {value: fs.createReadStream(this.archivePath)}],
-      ['type', {value: 'ios_symbols'}],
-      ['uuids', {value: concatUUIDs}],
+      ['symbols_archive', {value: fs.createReadStream(this.archivePath), options: {filename: 'ios_symbols_archive'}}],
+      ['event', this.getMetadataPayload()],
     ])
 
     return {
       content,
+    }
+  }
+
+  private getMetadataPayload(): MultipartValue {
+    const concatUUIDs = this.dsym.slices.map((slice) => slice.uuid).join()
+
+    return {
+      options: {
+        contentType: 'application/json',
+        filename: 'event',
+      },
+      value: JSON.stringify({
+        type: 'ios_symbols',
+        uuids: concatUUIDs,
+      }),
     }
   }
 }
