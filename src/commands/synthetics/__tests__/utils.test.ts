@@ -570,6 +570,39 @@ describe('utils', () => {
       ])
     })
 
+    test('results failure should ignore if timed-out', async () => {
+      // The original failure of a result received between timing-out in batch poll
+      // and retrieving it should be ignored in favor of timeout.
+      mockApi({
+        pollResultsImplementation: async () => [
+          {
+            ...pollResult,
+            result: {
+              ...pollResult.result,
+              failure: {code: 'FAILURE', message: 'Original failure, should be ignored'},
+              passed: false,
+            },
+          },
+        ],
+      })
+
+      expect(
+        await utils.waitForResults(
+          api,
+          trigger,
+          [result.test],
+          {maxPollingTimeout: 0, failOnCriticalErrors: false},
+          mockReporter
+        )
+      ).toStrictEqual([
+        {
+          ...result,
+          result: {...result.result, error: 'Timeout', passed: false},
+          timedOut: true,
+        },
+      ])
+    })
+
     test('results should be timed out if batch result is timed out', async () => {
       const batchWithTimeoutResult: Batch = {
         ...batch,
