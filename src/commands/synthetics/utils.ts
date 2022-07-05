@@ -341,6 +341,7 @@ export const waitForResults = async (
     const hasTimeout = resultInBatch.timed_out || hasExceededMaxPollingDate
     if (hasTimeout) {
       pollResult.result.error = 'Timeout'
+      delete pollResult.result.failure
       pollResult.result.passed = false
     }
 
