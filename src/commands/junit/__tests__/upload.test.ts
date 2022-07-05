@@ -1,6 +1,7 @@
 // tslint:disable: no-string-literal
 import {Cli} from 'clipanion/lib/advanced'
 import os from 'os'
+import {SpanTags} from '../../../helpers/interfaces'
 
 import {renderInvalidFile} from '../renderer'
 import {UploadJUnitXMLCommand} from '../upload'
@@ -41,12 +42,15 @@ describe('upload', () => {
     test('should read all xml files and reject invalid ones', async () => {
       const context = createMockContext()
       const command = new UploadJUnitXMLCommand()
-      const [firstFile, secondFile] = await command['getMatchingJUnitXMLFiles'].call({
-        basePaths: ['./src/commands/junit/__tests__/fixtures'],
-        config: {},
-        context,
-        service: 'service',
-      })
+      const [firstFile, secondFile] = await command['getMatchingJUnitXMLFiles'].call(
+        {
+          basePaths: ['./src/commands/junit/__tests__/fixtures'],
+          config: {},
+          context,
+          service: 'service',
+        },
+        {}
+      )
 
       expect(firstFile).toMatchObject({
         service: 'service',
@@ -71,12 +75,15 @@ describe('upload', () => {
     test('should allow single files', async () => {
       const context = createMockContext()
       const command = new UploadJUnitXMLCommand()
-      const files = await command['getMatchingJUnitXMLFiles'].call({
-        basePaths: ['./src/commands/junit/__tests__/fixtures/go-report.xml'],
-        config: {},
-        context,
-        service: 'service',
-      })
+      const files = await command['getMatchingJUnitXMLFiles'].call(
+        {
+          basePaths: ['./src/commands/junit/__tests__/fixtures/go-report.xml'],
+          config: {},
+          context,
+          service: 'service',
+        },
+        {}
+      )
 
       expect(files.length).toEqual(1)
 
@@ -88,27 +95,33 @@ describe('upload', () => {
     test('should not fail for invalid single files', async () => {
       const context = createMockContext()
       const command = new UploadJUnitXMLCommand()
-      const files = await command['getMatchingJUnitXMLFiles'].call({
-        basePaths: ['./src/commands/junit/__tests__/fixtures/does-not-exist.xml'],
-        config: {},
-        context,
-        service: 'service',
-      })
+      const files = await command['getMatchingJUnitXMLFiles'].call(
+        {
+          basePaths: ['./src/commands/junit/__tests__/fixtures/does-not-exist.xml'],
+          config: {},
+          context,
+          service: 'service',
+        },
+        {}
+      )
 
       expect(files.length).toEqual(0)
     })
     test('should allow folder and single unit paths', async () => {
       const context = createMockContext()
       const command = new UploadJUnitXMLCommand()
-      const [firstFile, secondFile, thirdFile] = await command['getMatchingJUnitXMLFiles'].call({
-        basePaths: [
-          './src/commands/junit/__tests__/fixtures',
-          './src/commands/junit/__tests__/fixtures/subfolder/js-report.xml',
-        ],
-        config: {},
-        context,
-        service: 'service',
-      })
+      const [firstFile, secondFile, thirdFile] = await command['getMatchingJUnitXMLFiles'].call(
+        {
+          basePaths: [
+            './src/commands/junit/__tests__/fixtures',
+            './src/commands/junit/__tests__/fixtures/subfolder/js-report.xml',
+          ],
+          config: {},
+          context,
+          service: 'service',
+        },
+        {}
+      )
       expect(firstFile).toMatchObject({
         service: 'service',
         xmlPath: './src/commands/junit/__tests__/fixtures/go-report.xml',
@@ -125,12 +138,18 @@ describe('upload', () => {
     test('should not have repeated files', async () => {
       const context = createMockContext()
       const command = new UploadJUnitXMLCommand()
-      const files = await command['getMatchingJUnitXMLFiles'].call({
-        basePaths: ['./src/commands/junit/__tests__/fixtures', './src/commands/junit/__tests__/fixtures/go-report.xml'],
-        config: {},
-        context,
-        service: 'service',
-      })
+      const files = await command['getMatchingJUnitXMLFiles'].call(
+        {
+          basePaths: [
+            './src/commands/junit/__tests__/fixtures',
+            './src/commands/junit/__tests__/fixtures/go-report.xml',
+          ],
+          config: {},
+          context,
+          service: 'service',
+        },
+        {}
+      )
 
       expect(files.length).toEqual(2)
     })
@@ -139,22 +158,14 @@ describe('upload', () => {
       process.env.DD_ENV = 'ci'
       const context = createMockContext()
       const command = new UploadJUnitXMLCommand()
-      const [firstFile, secondFile] = await command['getMatchingJUnitXMLFiles'].call({
-        basePaths: ['./src/commands/junit/__tests__/fixtures'],
+      const spanTags: SpanTags = await command['getSpanTags'].call({
         config: {
           env: process.env.DD_ENV,
           envVarTags: process.env.DD_TAGS,
         },
         context,
-        service: 'service',
       })
-
-      expect(firstFile.spanTags).toMatchObject({
-        env: 'ci',
-        key1: 'https://google.com',
-        key2: 'value2',
-      })
-      expect(secondFile.spanTags).toMatchObject({
+      expect(spanTags).toMatchObject({
         env: 'ci',
         key1: 'https://google.com',
         key2: 'value2',
@@ -163,19 +174,12 @@ describe('upload', () => {
     test('should parse tags argument', async () => {
       const context = createMockContext()
       const command = new UploadJUnitXMLCommand()
-      const [firstFile, secondFile] = await command['getMatchingJUnitXMLFiles'].call({
-        basePaths: ['./src/commands/junit/__tests__/fixtures'],
+      const spanTags: SpanTags = await command['getSpanTags'].call({
         config: {},
         context,
-        service: 'service',
         tags: ['key1:value1', 'key2:value2'],
       })
-
-      expect(firstFile.spanTags).toMatchObject({
-        key1: 'value1',
-        key2: 'value2',
-      })
-      expect(secondFile.spanTags).toMatchObject({
+      expect(spanTags).toMatchObject({
         key1: 'value1',
         key2: 'value2',
       })
@@ -184,13 +188,16 @@ describe('upload', () => {
       process.env.DD_CIVISIBILITY_LOGS_ENABLED = 'true'
       const context = createMockContext()
       const command = new UploadJUnitXMLCommand()
-      const [firstFile, secondFile] = await command['getMatchingJUnitXMLFiles'].call({
-        basePaths: ['./src/commands/junit/__tests__/fixtures'],
-        config: {},
-        context,
-        logs: true,
-        service: 'service',
-      })
+      const [firstFile, secondFile] = await command['getMatchingJUnitXMLFiles'].call(
+        {
+          basePaths: ['./src/commands/junit/__tests__/fixtures'],
+          config: {},
+          context,
+          logs: true,
+          service: 'service',
+        },
+        {}
+      )
       expect(firstFile.logsEnabled).toBe(true)
       expect(secondFile.logsEnabled).toBe(true)
     })

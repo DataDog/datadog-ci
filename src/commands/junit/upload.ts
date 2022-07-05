@@ -6,6 +6,7 @@ import glob from 'glob'
 import path from 'path'
 import asyncPool from 'tiny-async-pool'
 
+import {SpanTags} from '../../helpers/interfaces'
 import {apiConstructor} from './api'
 import {APIHelper, Payload} from './interfaces'
 import {
@@ -116,7 +117,8 @@ export class UploadJUnitXMLCommand extends Command {
     this.basePaths = this.basePaths.map((basePath) => path.posix.normalize(basePath))
     this.context.stdout.write(renderCommandInfo(this.basePaths!, this.service, this.maxConcurrency, this.dryRun))
 
-    const payloads = await this.getMatchingJUnitXMLFiles()
+    const spanTags = await this.getSpanTags()
+    const payloads = await this.getMatchingJUnitXMLFiles(spanTags)
     const upload = (p: Payload) => this.uploadJUnitXML(api, p)
 
     const initialTime = new Date().getTime()
@@ -124,7 +126,7 @@ export class UploadJUnitXMLCommand extends Command {
     await asyncPool(this.maxConcurrency, payloads, upload)
 
     const totalTimeSeconds = (Date.now() - initialTime) / 1000
-    this.context.stdout.write(renderSuccessfulCommand(payloads.length, totalTimeSeconds))
+    this.context.stdout.write(renderSuccessfulCommand(payloads.length, totalTimeSeconds, spanTags))
   }
 
   private getApiHelper(): APIHelper {
@@ -138,7 +140,7 @@ export class UploadJUnitXMLCommand extends Command {
     return apiConstructor(getBaseIntakeUrl(), this.config.apiKey)
   }
 
-  private async getMatchingJUnitXMLFiles(): Promise<Payload[]> {
+  private async getMatchingJUnitXMLFiles(spanTags: SpanTags): Promise<Payload[]> {
     const jUnitXMLFiles = (this.basePaths || []).reduce((acc: string[], basePath: string) => {
       const isFile = !!path.extname(basePath)
       if (isFile) {
@@ -147,22 +149,6 @@ export class UploadJUnitXMLCommand extends Command {
 
       return acc.concat(glob.sync(buildPath(basePath, '*.xml')))
     }, [])
-
-    const ciSpanTags = getCISpanTags()
-    const gitSpanTags = await getGitMetadata()
-    const userGitSpanTags = getUserGitSpanTags()
-
-    const envVarTags = this.config.envVarTags ? parseTags(this.config.envVarTags.split(',')) : {}
-    const cliTags = this.tags ? parseTags(this.tags) : {}
-
-    const spanTags = {
-      ...gitSpanTags,
-      ...ciSpanTags,
-      ...userGitSpanTags,
-      ...cliTags,
-      ...envVarTags,
-      ...(this.config.env ? {env: this.config.env} : {}),
-    }
 
     const validUniqueFiles = [...new Set(jUnitXMLFiles)].filter((jUnitXMLFilePath) => {
       const validationErrorMessage = validateXml(jUnitXMLFilePath)
@@ -181,6 +167,24 @@ export class UploadJUnitXMLCommand extends Command {
       spanTags,
       xmlPath: jUnitXMLFilePath,
     }))
+  }
+
+  private async getSpanTags(): Promise<SpanTags> {
+    const ciSpanTags = getCISpanTags()
+    const gitSpanTags = await getGitMetadata()
+    const userGitSpanTags = getUserGitSpanTags()
+
+    const envVarTags = this.config.envVarTags ? parseTags(this.config.envVarTags.split(',')) : {}
+    const cliTags = this.tags ? parseTags(this.tags) : {}
+
+    return {
+      ...gitSpanTags,
+      ...ciSpanTags,
+      ...userGitSpanTags,
+      ...cliTags,
+      ...envVarTags,
+      ...(this.config.env ? {env: this.config.env} : {}),
+    }
   }
 
   private async uploadJUnitXML(api: APIHelper, jUnitXML: Payload) {
