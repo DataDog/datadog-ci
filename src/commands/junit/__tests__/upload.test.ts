@@ -160,6 +160,19 @@ describe('upload', () => {
         key2: 'value2',
       })
     })
+    test('should set hostname', async () => {
+      const context = createMockContext()
+      const command = new UploadJUnitXMLCommand()
+      const [firstFile, secondFile] = await command['getMatchingJUnitXMLFiles'].call({
+        basePaths: ['./src/commands/junit/__tests__/fixtures'],
+        config: {},
+        context,
+        service: 'service',
+      })
+
+      expect(firstFile.hostname).toEqual(os.hostname())
+      expect(secondFile.hostname).toEqual(os.hostname())
+    })
     test('should parse tags argument', async () => {
       const context = createMockContext()
       const command = new UploadJUnitXMLCommand()

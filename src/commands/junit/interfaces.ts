@@ -4,6 +4,7 @@ import {Writable} from 'stream'
 import {SpanTags} from '../../helpers/interfaces'
 
 export interface Payload {
+  hostname: string
   logsEnabled: boolean
   service: string
   spanTags: SpanTags
