@@ -179,7 +179,6 @@ export const getFailedBrowserResult = (): Result => ({
   result: {
     device: {height: 1100, id: 'chrome.laptop_large', width: 1440},
     duration: 20000,
-    error: 'Step failed because it took more than 20 seconds.',
     failure: {code: 'STEP_TIMEOUT', message: 'Step failed because it took more than 20 seconds.'},
     passed: false,
     startUrl: 'https://example.org/',
