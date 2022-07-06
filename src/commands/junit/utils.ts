@@ -29,7 +29,7 @@ export const getTestRunsUrl = (spanTags: SpanTags): string => {
     return ''
   }
 
-  let query = '@test.status:fail'
+  let query = ''
   if (spanTags[CI_PIPELINE_URL]) {
     query += ` @ci.pipeline.url:"${spanTags[CI_PIPELINE_URL]}"`
   }
@@ -37,5 +37,5 @@ export const getTestRunsUrl = (spanTags: SpanTags): string => {
     query += ` @ci.job.url:"${spanTags[CI_JOB_URL]}"`
   }
 
-  return `${getBaseUrl()}/ci/test-runs?query=${encodeURIComponent(query)}&index=citest`
+  return `${getBaseUrl()}/ci/test-runs?query=${encodeURIComponent(query)}`
 }
