@@ -2,7 +2,7 @@
 import {AxiosError, AxiosResponse} from 'axios'
 import {Cli} from 'clipanion/lib/advanced'
 import * as ciUtils from '../../../helpers/utils'
-import {DEFAULT_COMMAND_CONFIG, RunTestCommand} from '../command'
+import {DEFAULT_COMMAND_CONFIG, DEFAULT_POLLING_TIMEOUT, RunTestCommand} from '../command'
 import {ExecutionRule, Result, Test} from '../interfaces'
 import * as runTests from '../run-test'
 import * as utils from '../utils'
@@ -121,6 +121,7 @@ describe('run-test', () => {
         apiKey: overrideEnv.DATADOG_API_KEY,
         appKey: overrideEnv.DATADOG_APP_KEY,
         datadogSite: overrideEnv.DATADOG_SITE,
+        global: {pollingTimeout: DEFAULT_POLLING_TIMEOUT},
         subdomain: overrideEnv.DATADOG_SUBDOMAIN,
       })
     })
@@ -134,7 +135,7 @@ describe('run-test', () => {
         failOnCriticalErrors: true,
         failOnTimeout: false,
         files: ['my-new-file'],
-        global: {locations: []},
+        global: {locations: [], pollingTimeout: 2},
         locations: [],
         pollingTimeout: 1,
         proxy: {protocol: 'https'},
@@ -189,6 +190,7 @@ describe('run-test', () => {
         failOnCriticalErrors: true,
         failOnTimeout: false,
         files: ['new-file'],
+        global: {pollingTimeout: DEFAULT_POLLING_TIMEOUT},
         publicIds: ['ran-dom-id'],
         subdomain: 'new-sub-domain',
         testSearchQuery: 'a-search-query',
@@ -217,6 +219,22 @@ describe('run-test', () => {
         apiKey: 'api_key_cli',
         appKey: 'app_key_env',
         datadogSite: 'datadog.config.file',
+        global: {pollingTimeout: DEFAULT_POLLING_TIMEOUT},
+      })
+    })
+
+    test('pass command pollingTimeout as global override if undefined', async () => {
+      jest.spyOn(ciUtils, 'getConfig').mockImplementation(async () => ({
+        global: {followRedirects: false},
+        pollingTimeout: 333,
+      }))
+
+      const command = new RunTestCommand()
+      await command['resolveConfig']()
+      expect(command['config']).toEqual({
+        ...DEFAULT_COMMAND_CONFIG,
+        global: {followRedirects: false, pollingTimeout: 333},
+        pollingTimeout: 333,
       })
     })
 
@@ -248,7 +266,14 @@ describe('run-test', () => {
       expect(await command.execute()).toBe(0)
       expect(triggerTests).toHaveBeenCalledWith(
         expect.objectContaining({
-          tests: [{executionRule: 'blocking', locations: ['aws:us-east-2'], public_id: 'publicId'}],
+          tests: [
+            {
+              executionRule: 'blocking',
+              locations: ['aws:us-east-2'],
+              pollingTimeout: DEFAULT_POLLING_TIMEOUT,
+              public_id: 'publicId',
+            },
+          ],
         })
       )
 
@@ -261,7 +286,14 @@ describe('run-test', () => {
       expect(triggerTests).toHaveBeenNthCalledWith(
         2,
         expect.objectContaining({
-          tests: [{executionRule: 'blocking', locations: ['aws:us-east-3'], public_id: 'publicId'}],
+          tests: [
+            {
+              executionRule: 'blocking',
+              locations: ['aws:us-east-3'],
+              pollingTimeout: DEFAULT_POLLING_TIMEOUT,
+              public_id: 'publicId',
+            },
+          ],
         })
       )
 
@@ -273,7 +305,14 @@ describe('run-test', () => {
       expect(triggerTests).toHaveBeenNthCalledWith(
         3,
         expect.objectContaining({
-          tests: [{executionRule: 'blocking', locations: ['aws:us-east-3', 'aws:us-east-4'], public_id: 'publicId'}],
+          tests: [
+            {
+              executionRule: 'blocking',
+              locations: ['aws:us-east-3', 'aws:us-east-4'],
+              pollingTimeout: DEFAULT_POLLING_TIMEOUT,
+              public_id: 'publicId',
+            },
+          ],
         })
       )
 
@@ -286,7 +325,14 @@ describe('run-test', () => {
       expect(await command.execute()).toBe(0)
       expect(triggerTests).toHaveBeenCalledWith(
         expect.objectContaining({
-          tests: [{executionRule: 'blocking', locations: ['aws:us-east-1'], public_id: 'publicId'}],
+          tests: [
+            {
+              executionRule: 'blocking',
+              locations: ['aws:us-east-1'],
+              pollingTimeout: DEFAULT_POLLING_TIMEOUT,
+              public_id: 'publicId',
+            },
+          ],
         })
       )
     })

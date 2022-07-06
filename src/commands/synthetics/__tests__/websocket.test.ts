@@ -2,7 +2,7 @@
 
 import * as ciUtils from '../../../helpers/utils'
 
-import {RunTestCommand} from '../command'
+import {DEFAULT_POLLING_TIMEOUT, RunTestCommand} from '../command'
 import {ExecutionRule} from '../interfaces'
 import * as runTests from '../run-test'
 
@@ -53,6 +53,7 @@ describe('Proxy configuration', () => {
           tests: [
             {
               executionRule: ExecutionRule.BLOCKING,
+              pollingTimeout: DEFAULT_POLLING_TIMEOUT,
               public_id: '123-456-789',
               tunnel: expect.objectContaining({host: 'host', id: 'tunnel-id', privateKey: expect.any(String)}),
             },
@@ -90,6 +91,7 @@ describe('Proxy configuration', () => {
           tests: [
             {
               executionRule: ExecutionRule.BLOCKING,
+              pollingTimeout: DEFAULT_POLLING_TIMEOUT,
               public_id: '123-456-789',
               tunnel: expect.objectContaining({host: 'host', id: 'tunnel-id', privateKey: expect.any(String)}),
             },
