@@ -3,7 +3,7 @@ import {BaseContext} from 'clipanion/lib/advanced'
 import {ConfigOverride, ExecutionRule, MainReporter, Result, Summary, Test} from '../../interfaces'
 import {DefaultReporter} from '../../reporters/default'
 import {createSummary} from '../../utils'
-import {getApiResult, getApiTest, getFailedBrowserResult} from '../fixtures'
+import {getApiResult, getApiTest, getFailedBrowserResult, getTimedOutBrowserResult} from '../fixtures'
 
 /**
  * A good amount of these tests rely on Jest snapshot assertions.
@@ -140,10 +140,10 @@ describe('Default reporter', () => {
         },
       },
       {
-        description: '1 Browser test: failed blocking',
+        description: '2 Browser test: failed blocking, timed out',
         fixtures: {
           baseUrl: baseUrlFixture,
-          results: [getFailedBrowserResult()],
+          results: [getFailedBrowserResult(), getTimedOutBrowserResult()],
         },
       },
     ]

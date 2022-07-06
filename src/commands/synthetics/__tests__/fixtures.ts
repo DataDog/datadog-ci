@@ -172,6 +172,40 @@ export const getBrowserServerResult = (opts: Partial<BrowserServerResult> = {}):
   ...opts,
 })
 
+export const getTimedOutBrowserResult = (): Result => ({
+  executionRule: ExecutionRule.BLOCKING,
+  location: 'Location name',
+  passed: false,
+  result: {
+    duration: 0,
+    failure: {code: 'TIMEOUT', message: 'Result timed out'},
+    passed: false,
+    steps: [],
+  },
+  resultId: '1',
+  test: {
+    ...getApiTest(),
+    config: {
+      assertions: [],
+      request: {
+        headers: {},
+        method: 'GET',
+        timeout: 1,
+        url: 'https://example.org/',
+      },
+      variables: [],
+    },
+    locations: [''],
+    message: 'Description.',
+    name: 'Test name',
+    options: {device_ids: ['chrome.laptop_large'], min_failure_duration: 0, min_location_failed: 1, tick_every: 300},
+    public_id: 'abc-def-hij',
+    type: 'browser',
+  },
+  timedOut: true,
+  timestamp: 1,
+})
+
 export const getFailedBrowserResult = (): Result => ({
   executionRule: ExecutionRule.BLOCKING,
   location: 'Location name',
