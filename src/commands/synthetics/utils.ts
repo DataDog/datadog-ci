@@ -15,6 +15,7 @@ import {APIHelper, EndpointError, formatBackendErrors, isNotFoundError} from './
 import {CiError} from './errors'
 import {
   Batch,
+  CommandConfig,
   ConfigOverride,
   ExecutionRule,
   LocationsMapping,
@@ -585,4 +586,77 @@ export const parseVariablesFromCli = (
   }
 
   return Object.keys(variables).length > 0 ? variables : undefined
+}
+
+export const getAppBaseURL = ({datadogSite, subdomain}: Pick<CommandConfig, 'datadogSite' | 'subdomain'>) =>
+  `https://${subdomain}.${datadogSite}/`
+
+/**
+ * Sort results with the following rules:
+ * - Passed results come first
+ * - Then non-blocking failed results
+ * - And finally failed results
+ */
+export const sortResultsByOutcome = () => {
+  const outcomeWeight = {
+    [ResultOutcome.PassedNonBlocking]: 1,
+    [ResultOutcome.Passed]: 2,
+    [ResultOutcome.FailedNonBlocking]: 3,
+    [ResultOutcome.Failed]: 4,
+  }
+
+  return (r1: Result, r2: Result) => outcomeWeight[getResultOutcome(r1)] - outcomeWeight[getResultOutcome(r2)]
+}
+
+export const renderResults = (
+  results: Result[],
+  summary: Summary,
+  config: CommandConfig,
+  startTime: number,
+  reporter?: MainReporter
+) => {
+  reporter?.reportStart({startTime})
+
+  if (!config.failOnTimeout) {
+    if (!summary.timedOut) {
+      summary.timedOut = 0
+    }
+  }
+
+  if (!config.failOnCriticalErrors) {
+    if (!summary.criticalErrors) {
+      summary.criticalErrors = 0
+    }
+  }
+
+  let hasSucceeded = true // Determine if all the tests have succeeded
+
+  const sortedResults = results.sort(sortResultsByOutcome())
+
+  for (const result of sortedResults) {
+    if (!config.failOnTimeout && result.timedOut) {
+      summary.timedOut++
+    }
+
+    if (result.result.unhealthy && !config.failOnCriticalErrors) {
+      summary.criticalErrors++
+    }
+
+    const resultOutcome = getResultOutcome(result)
+
+    if ([ResultOutcome.Passed, ResultOutcome.PassedNonBlocking].includes(resultOutcome)) {
+      summary.passed++
+    } else if (resultOutcome === ResultOutcome.FailedNonBlocking) {
+      summary.failedNonBlocking++
+    } else {
+      summary.failed++
+      hasSucceeded = false
+    }
+
+    reporter?.resultEnd(result, getAppBaseURL(config))
+  }
+
+  reporter?.runEnd(summary, getAppBaseURL(config))
+
+  return hasSucceeded ? 0 : 1
 }
