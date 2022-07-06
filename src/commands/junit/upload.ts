@@ -3,6 +3,7 @@ import {Command} from 'clipanion'
 import xmlParser from 'fast-xml-parser'
 import fs from 'fs'
 import glob from 'glob'
+import os from 'os'
 import path from 'path'
 import asyncPool from 'tiny-async-pool'
 
@@ -74,6 +75,7 @@ export class UploadJUnitXMLCommand extends Command {
     apiKey: process.env.DATADOG_API_KEY || process.env.DD_API_KEY,
     env: process.env.DD_ENV,
     envVarTags: process.env.DD_TAGS,
+    hostname: process.env.DD_HOSTNAME,
   }
   private dryRun = false
   private env?: string
@@ -81,6 +83,7 @@ export class UploadJUnitXMLCommand extends Command {
   private maxConcurrency = 20
   private service?: string
   private tags?: string[]
+  private hostname?: string
 
   public async execute() {
     if (!this.service) {
@@ -100,6 +103,10 @@ export class UploadJUnitXMLCommand extends Command {
 
     if (!this.config.env) {
       this.config.env = this.env
+    }
+
+    if (!this.config.hostname) {
+      this.config.hostname = this.hostname
     }
 
     if (
@@ -179,6 +186,8 @@ export class UploadJUnitXMLCommand extends Command {
       logsEnabled: this.logs,
       service: this.service!,
       spanTags,
+      hostname: os.hostname(),
+      hostnameOverride: this.config.hostname,
       xmlPath: jUnitXMLFilePath,
     }))
   }
@@ -212,6 +221,7 @@ export class UploadJUnitXMLCommand extends Command {
 }
 UploadJUnitXMLCommand.addPath('junit', 'upload')
 UploadJUnitXMLCommand.addOption('service', Command.String('--service'))
+UploadJUnitXMLCommand.addOption('hostname', Command.String('--hostname'))
 UploadJUnitXMLCommand.addOption('env', Command.String('--env'))
 UploadJUnitXMLCommand.addOption('dryRun', Command.Boolean('--dry-run'))
 UploadJUnitXMLCommand.addOption('tags', Command.Array('--tags'))

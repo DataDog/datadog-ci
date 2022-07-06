@@ -160,6 +160,38 @@ describe('upload', () => {
         key2: 'value2',
       })
     })
+    test('should set hostname but not hostnameOverride', async () => {
+      const context = createMockContext()
+      const command = new UploadJUnitXMLCommand()
+      const [firstFile, secondFile] = await command['getMatchingJUnitXMLFiles'].call({
+        basePaths: ['./src/commands/junit/__tests__/fixtures'],
+        config: { },
+        context,
+        service: 'service',
+      })
+
+      expect(firstFile.hostname).toEqual(os.hostname())
+      expect(secondFile.hostname).toEqual(os.hostname())
+      expect(firstFile.hostnameOverride).toBeUndefined()
+      expect(secondFile.hostnameOverride).toBeUndefined()
+    })
+    test('should set hostname and hostnameOverride', async () => {
+      const context = createMockContext()
+      const command = new UploadJUnitXMLCommand()
+      const [firstFile, secondFile] = await command['getMatchingJUnitXMLFiles'].call({
+        basePaths: ['./src/commands/junit/__tests__/fixtures'],
+        config: {
+          hostname: 'my-test-hostname',
+        },
+        context,
+        service: 'service',
+      })
+
+      expect(firstFile.hostname).toEqual(os.hostname())
+      expect(secondFile.hostname).toEqual(os.hostname())
+      expect(firstFile.hostnameOverride).toEqual('my-test-hostname')
+      expect(secondFile.hostnameOverride).toEqual('my-test-hostname')
+    })
     test('should parse tags argument', async () => {
       const context = createMockContext()
       const command = new UploadJUnitXMLCommand()
