@@ -143,7 +143,7 @@ export class JUnitReporter implements Reporter {
     if (result.timedOut) {
       testCase.error.push({
         $: {type: 'timeout'},
-        _: String(result.result.error),
+        _: String(result.result.failure?.message),
       })
     }
     if ('stepDetails' in result.result) {

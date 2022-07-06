@@ -392,7 +392,7 @@ export const getResults = (resultsFixtures: ResultFixtures[]): Result[] => {
 
     if (timedOut) {
       result.timedOut = true
-      result.result.error = 'Timeout'
+      result.result.failure = {code: 'TIMEOUT', message: 'Result timed out'}
     }
 
     results.push(result)

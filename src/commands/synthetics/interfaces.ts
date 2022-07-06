@@ -18,9 +18,6 @@ export interface MainReporter {
 export type Reporter = Partial<MainReporter>
 
 export interface BaseServerResult {
-  error?: string
-  errorCode?: string
-  errorMessage?: string
   failure?: {
     code: string
     message: string
@@ -36,7 +33,6 @@ export interface BrowserServerResult extends BaseServerResult {
     width: number
   }
   duration: number
-  error?: string
   startUrl: string
   stepDetails: Step[]
 }

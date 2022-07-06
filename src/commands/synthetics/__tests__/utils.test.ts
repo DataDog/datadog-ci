@@ -398,7 +398,10 @@ describe('utils', () => {
       const result: ServerResult = {
         device: {height: 0, id: 'laptop_large', width: 0},
         duration: 0,
-        errorCode: 'ERRABORTED',
+        failure: {
+          code: 'ERRABORTED',
+          message: 'Connection aborted',
+        },
         passed: false,
         startUrl: '',
         stepDetails: [],
@@ -411,7 +414,10 @@ describe('utils', () => {
       const result: ServerResult = {
         device: {height: 0, id: 'laptop_large', width: 0},
         duration: 0,
-        errorCode: 'ERRABORTED',
+        failure: {
+          code: 'ERRABORTED',
+          message: 'Connection aborted',
+        },
         passed: false,
         startUrl: '',
         stepDetails: [],
@@ -558,7 +564,40 @@ describe('utils', () => {
       ).toEqual([
         {
           ...result,
-          result: {...result.result, error: 'Timeout', passed: false},
+          result: {...result.result, failure: {code: 'TIMEOUT', message: 'Result timed out'}, passed: false},
+          timedOut: true,
+        },
+      ])
+    })
+
+    test('results failure should ignore if timed-out', async () => {
+      // The original failure of a result received between timing-out in batch poll
+      // and retrieving it should be ignored in favor of timeout.
+      mockApi({
+        pollResultsImplementation: async () => [
+          {
+            ...pollResult,
+            result: {
+              ...pollResult.result,
+              failure: {code: 'FAILURE', message: 'Original failure, should be ignored'},
+              passed: false,
+            },
+          },
+        ],
+      })
+
+      expect(
+        await utils.waitForResults(
+          api,
+          trigger,
+          [result.test],
+          {maxPollingTimeout: 0, failOnCriticalErrors: false},
+          mockReporter
+        )
+      ).toStrictEqual([
+        {
+          ...result,
+          result: {...result.result, failure: {code: 'TIMEOUT', message: 'Result timed out'}, passed: false},
           timedOut: true,
         },
       ])
@@ -583,7 +622,7 @@ describe('utils', () => {
       ).toEqual([
         {
           ...result,
-          result: {...result.result, error: 'Timeout', passed: false},
+          result: {...result.result, failure: {code: 'TIMEOUT', message: 'Result timed out'}, passed: false},
           timedOut: true,
         },
       ])
