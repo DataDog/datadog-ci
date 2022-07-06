@@ -204,7 +204,7 @@ export const hasResultPassed = (
     return result.passed
   }
 
-  if (typeof result.errorCode !== 'undefined') {
+  if (typeof result.failure !== 'undefined') {
     return false
   }
 
@@ -340,7 +340,7 @@ export const waitForResults = async (
     const pollResult = pollResultMap[resultInBatch.result_id]
     const hasTimeout = resultInBatch.timed_out || hasExceededMaxPollingDate
     if (hasTimeout) {
-      pollResult.result.error = 'Timeout'
+      pollResult.result.failure = {code: 'TIMEOUT', message: 'Result timed out'}
       pollResult.result.passed = false
     }
 

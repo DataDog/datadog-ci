@@ -157,7 +157,7 @@ describe('Junit reporter', () => {
       }
       const browserResult3: Result = {
         ...globalResultMock,
-        result: {...getBrowserServerResult(), error: 'Timeout'},
+        result: {...getBrowserServerResult(), failure: {code: 'TIMEOUT', message: 'Result timed out'}},
         timedOut: true,
       }
       const apiResult: Result = {
