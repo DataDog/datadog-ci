@@ -10,7 +10,7 @@ process.env.DATADOG_SYNTHETICS_CI_TRIGGER_APP = 'env_default'
 
 import * as ciHelpers from '../../../helpers/ci'
 import {Metadata} from '../../../helpers/interfaces'
-import {ProxyConfiguration} from '../../../helpers/utils'
+import * as ciUtils from '../../../helpers/utils'
 
 import {apiConstructor} from '../api'
 import {CiError} from '../errors'
@@ -27,7 +27,18 @@ import {
 } from '../interfaces'
 import * as utils from '../utils'
 
-import {getApiResult, getApiTest, getBatch, getBrowserServerResult, mockLocation, mockReporter} from './fixtures'
+import {DEFAULT_COMMAND_CONFIG} from '../command'
+import {
+  getApiResult,
+  getApiTest,
+  getBatch,
+  getBrowserServerResult,
+  getResults,
+  MockedReporter,
+  mockLocation,
+  mockReporter,
+  RenderResultsTestCase,
+} from './fixtures'
 
 beforeEach(() => {
   jest.restoreAllMocks()
@@ -39,7 +50,7 @@ describe('utils', () => {
     appKey: '123',
     baseIntakeUrl: 'baseintake',
     baseUrl: 'base',
-    proxyOpts: {protocol: 'http'} as ProxyConfiguration,
+    proxyOpts: {protocol: 'http'} as ciUtils.ProxyConfiguration,
   }
   const api = apiConstructor(apiConfiguration)
 
@@ -841,5 +852,193 @@ describe('utils', () => {
     expect(utils.parseVariablesFromCli(['TEST='], mockLogFunction)).toEqual({TEST: ''})
     expect(utils.parseVariablesFromCli([''], mockLogFunction)).toBeUndefined()
     expect(utils.parseVariablesFromCli(undefined, mockLogFunction)).toBeUndefined()
+  })
+
+  test('getAppBaseURL', () => {
+    expect(utils.getAppBaseURL({datadogSite: 'datadoghq.eu', subdomain: 'custom'})).toBe('https://custom.datadoghq.eu/')
+  })
+
+  describe('sortResultsByOutcome', () => {
+    const results: Result[] = getResults([
+      {executionRule: ExecutionRule.NON_BLOCKING, passed: false},
+      {executionRule: ExecutionRule.BLOCKING, passed: true},
+      {executionRule: ExecutionRule.BLOCKING, passed: false},
+      {executionRule: ExecutionRule.NON_BLOCKING, passed: true},
+    ])
+
+    test('should sort tests with success, non_blocking failures then failures', async () => {
+      const sortedResults = [...results]
+      sortedResults.sort(utils.sortResultsByOutcome())
+      expect(sortedResults.map((r) => r.resultId)).toStrictEqual(['3', '1', '0', '2'])
+    })
+  })
+
+  describe('Render results', () => {
+    const emptySummary = utils.createSummary()
+
+    const cases: RenderResultsTestCase[] = [
+      {
+        description: '1 API test with 1 config override, 1 result (passed)',
+        expected: {
+          exitCode: 0,
+          summary: {...emptySummary, passed: 1},
+        },
+        failOnCriticalErrors: false,
+        failOnTimeout: false,
+        results: getResults([{passed: true}]),
+        summary: {...emptySummary},
+      },
+      {
+        description:
+          '1 API test with 1 config override, 1 result (failed timeout), no fail on timeout, no fail on critical errors',
+        expected: {
+          exitCode: 0,
+          summary: {...emptySummary, passed: 1, timedOut: 1},
+        },
+        failOnCriticalErrors: false,
+        failOnTimeout: false,
+        results: getResults([{timedOut: true}]),
+        summary: {...emptySummary},
+      },
+      {
+        description:
+          '1 API test with 1 config override, 1 result (failed timeout), fail on timeout, no fail on critical errors',
+        expected: {
+          exitCode: 1,
+          summary: {...emptySummary, failed: 1},
+        },
+        failOnCriticalErrors: false,
+        failOnTimeout: true,
+        results: getResults([{timedOut: true}]),
+        summary: {...emptySummary},
+      },
+      {
+        description:
+          '1 API test with 1 config override, 1 result (failed critical error), no fail on timeout, no fail on critical errors',
+        expected: {
+          exitCode: 0,
+          summary: {...emptySummary, passed: 1, criticalErrors: 1},
+        },
+        failOnCriticalErrors: false,
+        failOnTimeout: false,
+        results: getResults([{unhealthy: true}]),
+        summary: {...emptySummary},
+      },
+      {
+        description:
+          '1 API test with 1 config override, 1 result (failed critical error), no fail on timeout, fail on critical errors',
+        expected: {
+          exitCode: 1,
+          summary: {...emptySummary, criticalErrors: 0, failed: 1},
+        },
+        failOnCriticalErrors: true,
+        failOnTimeout: false,
+        results: getResults([{unhealthy: true}]),
+        summary: {...emptySummary},
+      },
+      {
+        description:
+          '1 API test (blocking) with 4 config overrides (1 skipped), 3 results (1 passed, 1 failed, 1 failed non-blocking)',
+        expected: {
+          exitCode: 1,
+          summary: {
+            ...emptySummary,
+            failed: 1,
+            failedNonBlocking: 1,
+            passed: 1,
+            skipped: 1,
+          },
+        },
+        failOnCriticalErrors: false,
+        failOnTimeout: false,
+        results: getResults([{passed: true}, {executionRule: ExecutionRule.NON_BLOCKING}, {}]),
+        summary: {...emptySummary, skipped: 1},
+      },
+      {
+        description:
+          '1 API test (non-blocking) with 4 config overrides (1 skipped), 3 results (1 passed, 1 failed, 1 failed non-blocking)',
+        expected: {
+          exitCode: 0,
+          summary: {
+            ...emptySummary,
+            failedNonBlocking: 2,
+            passed: 1,
+            skipped: 1,
+          },
+        },
+        failOnCriticalErrors: false,
+        failOnTimeout: false,
+        results: getResults([
+          {
+            executionRule: ExecutionRule.NON_BLOCKING,
+            testExecutionRule: ExecutionRule.NON_BLOCKING,
+          },
+          {passed: true, testExecutionRule: ExecutionRule.NON_BLOCKING},
+          {
+            testExecutionRule: ExecutionRule.NON_BLOCKING,
+          },
+        ]),
+        summary: {...emptySummary, skipped: 1},
+      },
+      {
+        description:
+          '3 API tests (blocking) with 1 config override each, 3 results (1 failed non-blocking, 1 failed, 1 passed)',
+        expected: {
+          exitCode: 1,
+          summary: {
+            ...emptySummary,
+            failed: 1,
+            failedNonBlocking: 1,
+            passed: 1,
+          },
+        },
+        failOnCriticalErrors: false,
+        failOnTimeout: false,
+        results: getResults([{}, {passed: true}, {executionRule: ExecutionRule.NON_BLOCKING}]),
+        summary: {...emptySummary},
+      },
+    ]
+
+    test.each(cases)('$description', async (testCase) => {
+      testCase.results.forEach(
+        (result) =>
+          (result.passed = utils.hasResultPassed(
+            result.result,
+            result.timedOut,
+            testCase.failOnCriticalErrors,
+            testCase.failOnTimeout
+          ))
+      )
+
+      const config = {
+        ...DEFAULT_COMMAND_CONFIG,
+        failOnCriticalErrors: testCase.failOnCriticalErrors,
+        failOnTimeout: testCase.failOnTimeout,
+      }
+
+      const startTime = Date.now()
+
+      const exitCode = utils.renderResults({
+        config,
+        reporter: mockReporter,
+        results: testCase.results,
+        startTime,
+        summary: testCase.summary,
+      })
+
+      expect((mockReporter as MockedReporter).reportStart).toHaveBeenCalledWith({startTime})
+
+      expect((mockReporter as MockedReporter).resultEnd).toHaveBeenCalledTimes(testCase.results.length)
+
+      const baseUrl = `https://${DEFAULT_COMMAND_CONFIG.subdomain}.${DEFAULT_COMMAND_CONFIG.datadogSite}/`
+      for (const result of testCase.results) {
+        expect((mockReporter as MockedReporter).resultEnd).toHaveBeenCalledWith(result, baseUrl)
+      }
+
+      expect(testCase.summary).toEqual(testCase.expected.summary)
+      expect((mockReporter as MockedReporter).runEnd).toHaveBeenCalledWith(testCase.expected.summary, baseUrl)
+
+      expect(exitCode).toBe(testCase.expected.exitCode)
+    })
   })
 })
