@@ -979,7 +979,13 @@ describe('utils', () => {
 
       const startTime = Date.now()
 
-      const exitCode = utils.renderResults(testCase.results, testCase.summary, config, startTime, mockReporter)
+      const exitCode = utils.renderResults({
+        config,
+        reporter: mockReporter,
+        results: testCase.results,
+        startTime,
+        summary: testCase.summary,
+      })
 
       expect((mockReporter as MockedReporter).reportStart).toHaveBeenCalledWith({startTime})
 

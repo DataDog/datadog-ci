@@ -87,7 +87,7 @@ export class RunTestCommand extends Command {
       return 0
     }
 
-    return renderResults(results, summary, this.config, startTime, this.reporter)
+    return renderResults({config: this.config, reporter: this.reporter, results, startTime, summary})
   }
 
   private reportCiError(error: CiError, reporter: MainReporter) {

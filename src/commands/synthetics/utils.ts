@@ -608,13 +608,19 @@ export const sortResultsByOutcome = () => {
   return (r1: Result, r2: Result) => outcomeWeight[getResultOutcome(r1)] - outcomeWeight[getResultOutcome(r2)]
 }
 
-export const renderResults = (
-  results: Result[],
-  summary: Summary,
-  config: CommandConfig,
-  startTime: number,
+export const renderResults = ({
+  config,
+  reporter,
+  results,
+  startTime,
+  summary,
+}: {
+  config: CommandConfig
   reporter: MainReporter
-) => {
+  results: Result[]
+  startTime: number
+  summary: Summary
+}) => {
   reporter.reportStart({startTime})
 
   if (!config.failOnTimeout) {
