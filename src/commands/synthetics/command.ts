@@ -8,7 +8,7 @@ import {CommandConfig, MainReporter, Reporter, Result, Summary} from './interfac
 import {DefaultReporter} from './reporters/default'
 import {JUnitReporter} from './reporters/junit'
 import {executeTests} from './run-test'
-import {getReporter, getResultOutcome, parseVariablesFromCli, ResultOutcome} from './utils'
+import {getReporter, parseVariablesFromCli, renderResults} from './utils'
 
 export const DEFAULT_COMMAND_CONFIG: CommandConfig = {
   apiKey: '',
@@ -87,59 +87,7 @@ export class RunTestCommand extends Command {
       return 0
     }
 
-    return this.renderResults(results, summary, startTime)
-  }
-
-  private getAppBaseURL() {
-    return `https://${this.config.subdomain}.${this.config.datadogSite}/`
-  }
-
-  private renderResults(results: Result[], summary: Summary, startTime: number) {
-    // Rendering the results.
-    this.reporter?.reportStart({startTime})
-
-    if (!this.config.failOnTimeout) {
-      if (!summary.timedOut) {
-        summary.timedOut = 0
-      }
-    }
-
-    if (!this.config.failOnCriticalErrors) {
-      if (!summary.criticalErrors) {
-        summary.criticalErrors = 0
-      }
-    }
-
-    let hasSucceeded = true // Determine if all the tests have succeeded
-
-    const sortedResults = results.sort(this.sortResultsByOutcome())
-
-    for (const result of sortedResults) {
-      if (!this.config.failOnTimeout && result.timedOut) {
-        summary.timedOut++
-      }
-
-      if (result.result.unhealthy && !this.failOnCriticalErrors) {
-        summary.criticalErrors++
-      }
-
-      const resultOutcome = getResultOutcome(result)
-
-      if ([ResultOutcome.Passed, ResultOutcome.PassedNonBlocking].includes(resultOutcome)) {
-        summary.passed++
-      } else if (resultOutcome === ResultOutcome.FailedNonBlocking) {
-        summary.failedNonBlocking++
-      } else {
-        summary.failed++
-        hasSucceeded = false
-      }
-
-      this.reporter?.resultEnd(result, this.getAppBaseURL())
-    }
-
-    this.reporter?.runEnd(summary, this.getAppBaseURL())
-
-    return hasSucceeded ? 0 : 1
+    return renderResults({config: this.config, reporter: this.reporter, results, startTime, summary})
   }
 
   private reportCiError(error: CiError, reporter: MainReporter) {
@@ -234,23 +182,6 @@ export class RunTestCommand extends Command {
       this.reporter!.log('[DEPRECATED] "files" should be an array of string instead of a string.\n')
       this.config.files = [this.config.files]
     }
-  }
-
-  /**
-   * Sort results with the following rules:
-   * - Passed results come first
-   * - Then non-blocking failed results
-   * - And finally failed results
-   */
-  private sortResultsByOutcome() {
-    const outcomeWeight = {
-      [ResultOutcome.PassedNonBlocking]: 1,
-      [ResultOutcome.Passed]: 2,
-      [ResultOutcome.FailedNonBlocking]: 3,
-      [ResultOutcome.Failed]: 4,
-    }
-
-    return (r1: Result, r2: Result) => outcomeWeight[getResultOutcome(r1)] - outcomeWeight[getResultOutcome(r2)]
   }
 }
 
