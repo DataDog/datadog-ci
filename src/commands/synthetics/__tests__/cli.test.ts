@@ -2,19 +2,10 @@
 import {AxiosError, AxiosResponse} from 'axios'
 import {Cli} from 'clipanion/lib/advanced'
 import * as ciUtils from '../../../helpers/utils'
-import {DEFAULT_COMMAND_CONFIG, RunTestCommand} from '../command'
-import {ExecutionRule, Result, Test} from '../interfaces'
+import {DEFAULT_COMMAND_CONFIG, DEFAULT_POLLING_TIMEOUT, RunTestCommand} from '../command'
 import * as runTests from '../run-test'
 import * as utils from '../utils'
-import {
-  getApiTest,
-  getResults,
-  getTestSuite,
-  MockedReporter,
-  mockReporter,
-  mockTestTriggerResponse,
-  RenderResultsTestCase,
-} from './fixtures'
+import {getApiTest, getTestSuite, mockTestTriggerResponse} from './fixtures'
 
 test('all option flags are supported', async () => {
   const options = [
@@ -54,50 +45,6 @@ describe('run-test', () => {
     process.env = {}
   })
 
-  describe('getAppBaseURL', () => {
-    test('should default to datadog us', async () => {
-      process.env = {}
-      const command = new RunTestCommand()
-
-      expect(command['getAppBaseURL']()).toBe('https://app.datadoghq.com/')
-    })
-
-    test('subdomain should be overridable', async () => {
-      process.env = {DATADOG_SUBDOMAIN: 'custom'}
-      const command = new RunTestCommand()
-      await command['resolveConfig']()
-
-      expect(command['getAppBaseURL']()).toBe('https://custom.datadoghq.com/')
-    })
-
-    test('should override subdomain and site', async () => {
-      process.env = {
-        DATADOG_SITE: 'datadoghq.eu',
-        DATADOG_SUBDOMAIN: 'custom',
-      }
-      const command = new RunTestCommand()
-      await command['resolveConfig']()
-
-      expect(command['getAppBaseURL']()).toBe('https://custom.datadoghq.eu/')
-    })
-  })
-
-  describe('sortResultsByOutcome', () => {
-    const results: Result[] = getResults([
-      {executionRule: ExecutionRule.NON_BLOCKING, passed: false},
-      {executionRule: ExecutionRule.BLOCKING, passed: true},
-      {executionRule: ExecutionRule.BLOCKING, passed: false},
-      {executionRule: ExecutionRule.NON_BLOCKING, passed: true},
-    ])
-
-    test('should sort tests with success, non_blocking failures then failures', async () => {
-      const command = new RunTestCommand()
-      const sortedResults = [...results]
-      sortedResults.sort((command['sortResultsByOutcome'] as any)())
-      expect(sortedResults.map((r) => r.resultId)).toStrictEqual(['3', '1', '0', '2'])
-    })
-  })
-
   describe('resolveConfig', () => {
     beforeEach(() => {
       process.env = {}
@@ -121,6 +68,7 @@ describe('run-test', () => {
         apiKey: overrideEnv.DATADOG_API_KEY,
         appKey: overrideEnv.DATADOG_APP_KEY,
         datadogSite: overrideEnv.DATADOG_SITE,
+        global: {pollingTimeout: DEFAULT_POLLING_TIMEOUT},
         subdomain: overrideEnv.DATADOG_SUBDOMAIN,
       })
     })
@@ -134,7 +82,7 @@ describe('run-test', () => {
         failOnCriticalErrors: true,
         failOnTimeout: false,
         files: ['my-new-file'],
-        global: {locations: []},
+        global: {locations: [], pollingTimeout: 2},
         locations: [],
         pollingTimeout: 1,
         proxy: {protocol: 'https'},
@@ -189,6 +137,7 @@ describe('run-test', () => {
         failOnCriticalErrors: true,
         failOnTimeout: false,
         files: ['new-file'],
+        global: {pollingTimeout: DEFAULT_POLLING_TIMEOUT},
         publicIds: ['ran-dom-id'],
         subdomain: 'new-sub-domain',
         testSearchQuery: 'a-search-query',
@@ -217,6 +166,22 @@ describe('run-test', () => {
         apiKey: 'api_key_cli',
         appKey: 'app_key_env',
         datadogSite: 'datadog.config.file',
+        global: {pollingTimeout: DEFAULT_POLLING_TIMEOUT},
+      })
+    })
+
+    test('pass command pollingTimeout as global override if undefined', async () => {
+      jest.spyOn(ciUtils, 'getConfig').mockImplementation(async () => ({
+        global: {followRedirects: false},
+        pollingTimeout: 333,
+      }))
+
+      const command = new RunTestCommand()
+      await command['resolveConfig']()
+      expect(command['config']).toEqual({
+        ...DEFAULT_COMMAND_CONFIG,
+        global: {followRedirects: false, pollingTimeout: 333},
+        pollingTimeout: 333,
       })
     })
 
@@ -248,7 +213,14 @@ describe('run-test', () => {
       expect(await command.execute()).toBe(0)
       expect(triggerTests).toHaveBeenCalledWith(
         expect.objectContaining({
-          tests: [{executionRule: 'blocking', locations: ['aws:us-east-2'], public_id: 'publicId'}],
+          tests: [
+            {
+              executionRule: 'blocking',
+              locations: ['aws:us-east-2'],
+              pollingTimeout: DEFAULT_POLLING_TIMEOUT,
+              public_id: 'publicId',
+            },
+          ],
         })
       )
 
@@ -261,7 +233,14 @@ describe('run-test', () => {
       expect(triggerTests).toHaveBeenNthCalledWith(
         2,
         expect.objectContaining({
-          tests: [{executionRule: 'blocking', locations: ['aws:us-east-3'], public_id: 'publicId'}],
+          tests: [
+            {
+              executionRule: 'blocking',
+              locations: ['aws:us-east-3'],
+              pollingTimeout: DEFAULT_POLLING_TIMEOUT,
+              public_id: 'publicId',
+            },
+          ],
         })
       )
 
@@ -273,7 +252,14 @@ describe('run-test', () => {
       expect(triggerTests).toHaveBeenNthCalledWith(
         3,
         expect.objectContaining({
-          tests: [{executionRule: 'blocking', locations: ['aws:us-east-3', 'aws:us-east-4'], public_id: 'publicId'}],
+          tests: [
+            {
+              executionRule: 'blocking',
+              locations: ['aws:us-east-3', 'aws:us-east-4'],
+              pollingTimeout: DEFAULT_POLLING_TIMEOUT,
+              public_id: 'publicId',
+            },
+          ],
         })
       )
 
@@ -286,7 +272,14 @@ describe('run-test', () => {
       expect(await command.execute()).toBe(0)
       expect(triggerTests).toHaveBeenCalledWith(
         expect.objectContaining({
-          tests: [{executionRule: 'blocking', locations: ['aws:us-east-1'], public_id: 'publicId'}],
+          tests: [
+            {
+              executionRule: 'blocking',
+              locations: ['aws:us-east-1'],
+              pollingTimeout: DEFAULT_POLLING_TIMEOUT,
+              public_id: 'publicId',
+            },
+          ],
         })
       )
     })
@@ -392,174 +385,6 @@ describe('run-test', () => {
           expect(apiHelper.pollResults).toHaveBeenCalledTimes(1)
         })
       })
-    })
-  })
-
-  describe('Render results', () => {
-    const emptySummary = utils.createSummary()
-
-    const cases: RenderResultsTestCase[] = [
-      {
-        description: '1 API test with 1 config override, 1 result (passed)',
-        expected: {
-          exitCode: 0,
-          summary: {...emptySummary, passed: 1},
-        },
-        failOnCriticalErrors: false,
-        failOnTimeout: false,
-        results: getResults([{passed: true}]),
-        summary: {...emptySummary},
-      },
-      {
-        description:
-          '1 API test with 1 config override, 1 result (failed timeout), no fail on timeout, no fail on critical errors',
-        expected: {
-          exitCode: 0,
-          summary: {...emptySummary, passed: 1, timedOut: 1},
-        },
-        failOnCriticalErrors: false,
-        failOnTimeout: false,
-        results: getResults([{timedOut: true}]),
-        summary: {...emptySummary},
-      },
-      {
-        description:
-          '1 API test with 1 config override, 1 result (failed timeout), fail on timeout, no fail on critical errors',
-        expected: {
-          exitCode: 1,
-          summary: {...emptySummary, failed: 1},
-        },
-        failOnCriticalErrors: false,
-        failOnTimeout: true,
-        results: getResults([{timedOut: true}]),
-        summary: {...emptySummary},
-      },
-      {
-        description:
-          '1 API test with 1 config override, 1 result (failed critical error), no fail on timeout, no fail on critical errors',
-        expected: {
-          exitCode: 0,
-          summary: {...emptySummary, passed: 1, criticalErrors: 1},
-        },
-        failOnCriticalErrors: false,
-        failOnTimeout: false,
-        results: getResults([{unhealthy: true}]),
-        summary: {...emptySummary},
-      },
-      {
-        description:
-          '1 API test with 1 config override, 1 result (failed critical error), no fail on timeout, fail on critical errors',
-        expected: {
-          exitCode: 1,
-          summary: {...emptySummary, criticalErrors: 1, failed: 1},
-        },
-        failOnCriticalErrors: true,
-        failOnTimeout: false,
-        results: getResults([{unhealthy: true}]),
-        summary: {...emptySummary},
-      },
-      {
-        description:
-          '1 API test (blocking) with 4 config overrides (1 skipped), 3 results (1 passed, 1 failed, 1 failed non-blocking)',
-        expected: {
-          exitCode: 1,
-          summary: {
-            ...emptySummary,
-            failed: 1,
-            failedNonBlocking: 1,
-            passed: 1,
-            skipped: 1,
-          },
-        },
-        failOnCriticalErrors: false,
-        failOnTimeout: false,
-        results: getResults([{passed: true}, {executionRule: ExecutionRule.NON_BLOCKING}, {}]),
-        summary: {...emptySummary, skipped: 1},
-      },
-      {
-        description:
-          '1 API test (non-blocking) with 4 config overrides (1 skipped), 3 results (1 passed, 1 failed, 1 failed non-blocking)',
-        expected: {
-          exitCode: 0,
-          summary: {
-            ...emptySummary,
-            failedNonBlocking: 2,
-            passed: 1,
-            skipped: 1,
-          },
-        },
-        failOnCriticalErrors: false,
-        failOnTimeout: false,
-        results: getResults([
-          {
-            executionRule: ExecutionRule.NON_BLOCKING,
-            testExecutionRule: ExecutionRule.NON_BLOCKING,
-          },
-          {passed: true, testExecutionRule: ExecutionRule.NON_BLOCKING},
-          {
-            testExecutionRule: ExecutionRule.NON_BLOCKING,
-          },
-        ]),
-        summary: {...emptySummary, skipped: 1},
-      },
-      {
-        description:
-          '3 API tests (blocking) with 1 config override each, 3 results (1 failed non-blocking, 1 failed, 1 passed)',
-        expected: {
-          exitCode: 1,
-          summary: {
-            ...emptySummary,
-            failed: 1,
-            failedNonBlocking: 1,
-            passed: 1,
-          },
-        },
-        failOnCriticalErrors: false,
-        failOnTimeout: false,
-        results: getResults([{}, {passed: true}, {executionRule: ExecutionRule.NON_BLOCKING}]),
-        summary: {...emptySummary},
-      },
-    ]
-
-    test.each(cases)('$description', async (testCase) => {
-      testCase.results.forEach(
-        (result) =>
-          (result.passed = utils.hasResultPassed(
-            result.result,
-            result.timedOut,
-            testCase.failOnCriticalErrors,
-            testCase.failOnTimeout
-          ))
-      )
-
-      jest.spyOn(ciUtils, 'parseConfigFile').mockImplementation(async () => ({
-        ...DEFAULT_COMMAND_CONFIG,
-        failOnCriticalErrors: testCase.failOnCriticalErrors,
-        failOnTimeout: testCase.failOnTimeout,
-      }))
-      jest.spyOn(utils, 'getReporter').mockImplementation(() => mockReporter)
-      jest.spyOn(runTests, 'executeTests').mockResolvedValue({
-        results: testCase.results,
-        summary: testCase.summary,
-      })
-
-      const command = new RunTestCommand()
-      const write = jest.fn()
-      command.context = {stdout: {write}} as any // For the DefaultReporter constructor
-
-      const exitCode = await command.execute()
-
-      expect((mockReporter as MockedReporter).resultEnd).toHaveBeenCalledTimes(testCase.results.length)
-
-      const baseUrl = `https://${DEFAULT_COMMAND_CONFIG.subdomain}.${DEFAULT_COMMAND_CONFIG.datadogSite}/`
-      for (const result of testCase.results) {
-        expect((mockReporter as MockedReporter).resultEnd).toHaveBeenCalledWith(result, baseUrl)
-      }
-
-      expect(testCase.summary).toEqual(testCase.expected.summary)
-      expect((mockReporter as MockedReporter).runEnd).toHaveBeenCalledWith(testCase.expected.summary, baseUrl)
-
-      expect(exitCode).toBe(testCase.expected.exitCode)
     })
   })
 })
