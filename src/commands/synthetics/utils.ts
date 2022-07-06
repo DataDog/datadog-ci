@@ -613,9 +613,9 @@ export const renderResults = (
   summary: Summary,
   config: CommandConfig,
   startTime: number,
-  reporter?: MainReporter
+  reporter: MainReporter
 ) => {
-  reporter?.reportStart({startTime})
+  reporter.reportStart({startTime})
 
   if (!config.failOnTimeout) {
     if (!summary.timedOut) {
@@ -653,10 +653,10 @@ export const renderResults = (
       hasSucceeded = false
     }
 
-    reporter?.resultEnd(result, getAppBaseURL(config))
+    reporter.resultEnd(result, getAppBaseURL(config))
   }
 
-  reporter?.runEnd(summary, getAppBaseURL(config))
+  reporter.runEnd(summary, getAppBaseURL(config))
 
   return hasSucceeded ? 0 : 1
 }
