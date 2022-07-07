@@ -2,7 +2,6 @@
 import {spawn} from 'child_process'
 import {Cli, Command} from 'clipanion'
 import {UploadCommand} from './upload'
-import {importEnvironmentFromFile} from './utils'
 
 export class XCodeCommand extends Command {
   public static usage = Command.Usage({
@@ -25,7 +24,6 @@ export class XCodeCommand extends Command {
 
   private dryRun = false
   private force = false
-  private propertiesPath = './datadog-sourcemaps.properties'
   private scriptPath = '../node_modules/react-native/scripts/react-native-xcode.sh'
   private service?: string = process.env.PRODUCT_BUNDLE_IDENTIFIER
 
@@ -34,41 +32,13 @@ export class XCodeCommand extends Command {
   }
 
   public async execute() {
-    try {
-      await importEnvironmentFromFile(this.propertiesPath)
-    } catch (error) {
-      // There was an issue with reading the file, which is not a problem if the DATADOG_API_KEY is set from env (e.g. with fastlane)
-      if (!process.env.DATADOG_API_KEY && this.shouldUploadSourcemaps()) {
-        this.context.stderr.write('Environment variable DATADOG_API_KEY is missing for Datadog sourcemaps upload.\n')
-        this.context.stderr.write(`There was an issue reading the datadog.properties file: ${error.message}\n`)
-        this.context.stderr.write(
-          'If you are running the script from XCode, you can also export this variable in the build phase.\n'
-        )
-        this.context.stderr.write(
-          'If you are not running the script from XCode, you can also export this variable before running the script.\n'
-        )
-
-        return 1
-      }
-    }
-
-    // The variable is missing from the file
-    if (!process.env.DATADOG_API_KEY && this.shouldUploadSourcemaps()) {
-      this.context.stderr.write('Environment variable DATADOG_API_KEY is missing for Datadog sourcemaps upload.\n')
-      this.context.stderr.write('The datadog.properties file exist but it appears to be missing from it.\n')
-
-      return 1
-    }
-
     this.service = process.env.SERVICE_NAME_IOS || this.service
     if (!this.service) {
       this.context.stderr.write(
         'Environment variable PRODUCT_BUNDLE_IDENTIFIER is missing for Datadog sourcemaps upload.\n'
       )
       this.context.stderr.write('Check that a Bundle Identifier is set for your target in XCode.\n')
-      this.context.stderr.write(
-        'You can also specify the service as SERVICE_NAME_IOS in datadog-sourcemaps.properties.\n'
-      )
+      this.context.stderr.write('You can also specify the service as the SERVICE_NAME_IOS environment variable.\n')
       this.context.stderr.write(
         'If you are not running this script from XCode, use the `--service com.company.app` argument.\n'
       )
@@ -232,4 +202,3 @@ XCodeCommand.addOption('scriptPath', Command.String({required: false}))
 XCodeCommand.addOption('service', Command.String('--service'))
 XCodeCommand.addOption('dryRun', Command.Boolean('--dry-run'))
 XCodeCommand.addOption('force', Command.Boolean('--force'))
-XCodeCommand.addOption('propertiesPath', Command.String('--properties-path')) // For testing purposes only
