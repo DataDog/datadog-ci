@@ -37,7 +37,7 @@ export const uploadJUnitXML = (request: (args: AxiosRequestConfig) => AxiosPromi
   const spanTags: Record<string, string | undefined> = {
     service: jUnitXML.service,
     ...jUnitXML.spanTags,
-    '_dd.cireport_version': '3',
+    '_dd.cireport_version': '2',
     '_dd.hostname': jUnitXML.hostname,
   }
 
