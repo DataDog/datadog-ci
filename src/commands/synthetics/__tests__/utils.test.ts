@@ -562,7 +562,12 @@ describe('utils', () => {
     })
 
     test('results should be timed out if global pollingTimeout is exceeded', async () => {
-      mockApi({getBatchImplementation: async () => ({...batch, status: 'in_progress'})})
+      mockApi({
+        getBatchImplementation: async () => ({
+          results: [{...batch.results[0], timed_out: undefined}],
+          status: 'in_progress',
+        }),
+      })
 
       expect(
         await utils.waitForResults(
@@ -585,9 +590,14 @@ describe('utils', () => {
       // The original failure of a result received between timing-out in batch poll
       // and retrieving it should be ignored in favor of timeout.
       mockApi({
+        getBatchImplementation: async () => ({
+          results: [{...batch.results[0], timed_out: undefined}],
+          status: 'in_progress',
+        }),
         pollResultsImplementation: async () => [
           {
             ...pollResult,
+            passed: false,
             result: {
               ...pollResult.result,
               failure: {code: 'FAILURE', message: 'Original failure, should be ignored'},
