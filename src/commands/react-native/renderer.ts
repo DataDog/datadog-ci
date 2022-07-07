@@ -30,6 +30,13 @@ export const renderRetriedUpload = (payload: RNSourcemap, errorMessage: string, 
   return chalk.yellow(`[attempt ${attempt}] Retrying sourcemap upload ${sourcemapPathBold}: ${errorMessage}\n`)
 }
 
+/**
+ * As of now, this command takes an array of one signe UploadStatus element since we only support upload
+ * of a single sourcemap.
+ * We considered it was preferable to leave it this way so it's ready for multiple sourcemaps uploads,
+ * rather than investing into adapting it for this purpose.
+ * This comment should be removed once the multiple file upload is available.
+ */
 export const renderSuccessfulCommand = (statuses: UploadStatus[], duration: number, dryRun: boolean) => {
   const results = new Map<UploadStatus, number>()
   statuses.forEach((status) => {
