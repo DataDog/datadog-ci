@@ -10,6 +10,8 @@ import {JUnitReporter} from './reporters/junit'
 import {executeTests} from './run-test'
 import {getReporter, parseVariablesFromCli, renderResults} from './utils'
 
+export const DEFAULT_POLLING_TIMEOUT = 2 * 60 * 1000
+
 export const DEFAULT_COMMAND_CONFIG: CommandConfig = {
   apiKey: '',
   appKey: '',
@@ -20,7 +22,7 @@ export const DEFAULT_COMMAND_CONFIG: CommandConfig = {
   files: ['{,!(node_modules)/**/}*.synthetics.json'],
   global: {},
   locations: [],
-  pollingTimeout: 2 * 60 * 1000,
+  pollingTimeout: DEFAULT_POLLING_TIMEOUT,
   proxy: {protocol: 'http'},
   publicIds: [],
   subdomain: 'app',
@@ -169,6 +171,9 @@ export class RunTestCommand extends Command {
         tunnel: this.tunnel,
       })
     )
+
+    // Pass root polling timeout to global override to get it applied to all tests if not defined individually
+    this.config.global.pollingTimeout = this.config.global.pollingTimeout ?? this.config.pollingTimeout
 
     // Override with Global CLI parameters
     this.config.global = deepExtend(
