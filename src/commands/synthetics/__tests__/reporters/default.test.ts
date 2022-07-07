@@ -140,10 +140,23 @@ describe('Default reporter', () => {
         },
       },
       {
-        description: '2 Browser test: failed blocking, timed out',
+        description: '3 Browser test: failed blocking, timed out, global failure',
         fixtures: {
           baseUrl: baseUrlFixture,
-          results: [getFailedBrowserResult(), getTimedOutBrowserResult()],
+          results: [
+            getFailedBrowserResult(),
+            getTimedOutBrowserResult(),
+            {
+              ...getTimedOutBrowserResult(),
+              result: {
+                duration: 0,
+                failure: {code: 'FAILURE_CODE', message: 'Failure message'},
+                passed: false,
+                steps: [],
+              },
+              timedOut: false,
+            },
+          ],
         },
       },
     ]
