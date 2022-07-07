@@ -158,6 +158,10 @@ const renderResultOutcome = (
       return stepsDisplay.join('\n')
     }
 
+    if (result.failure) {
+      return chalk.red(`    [${chalk.bold(result.failure.code)}] - ${chalk.dim(result.failure.message)}`)
+    }
+
     return ''
   }
 }
