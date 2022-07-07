@@ -13,6 +13,15 @@ export DATADOG_API_KEY="<API KEY>"
 
 You can configure the tool to use Datadog EU by defining the `DATADOG_SITE` environment variable as `datadoghq.eu`. By default, the requests are sent to Datadog US.
 
+To make these variables available, we recommend to set them in a **encrypted** `datadog-ci.json` file at the root of your project:
+
+```json
+{
+  "apiKey": "<DATADOG_API_KEY>",
+  "datadogSite": "<DATADOG_SITE>"
+}
+```
+
 To override the full URL for the intake endpoint, define the `DATADOG_SOURCEMAP_INTAKE_URL` environment variable.
 
 ## Commands
@@ -97,11 +106,6 @@ This command can be called from an xcode build phase to execute the react-native
 The upload only happens when your target has a "Release" build configuration to prevent overwriting existing sourcemaps.
 
 This command can use the same environment variables as the `upload` command: `DATADOG_API_KEY` (required), `DATADOG_SITE` and `DATADOG_SOURCEMAP_INTAKE_URL`.
-To make these variables available, we recommend to set them in a **gitignored or encrypted** `datadog-sourcemaps.properties` key-value file at the root of your project:
-
-```bash
-DATADOG_API_KEY=12345678901234567890abcdefabcdef
-```
 
 Then, you need to get the location to your `node` and `yarn` binaries by running in a terminal:
 
@@ -155,7 +159,7 @@ export NODE_BINARY=node
 If you use another script that requires arguments, you will need to put this script in a file (e.g. in `scripts/bundle.sh`), then provide the path to this file to the `datadog-ci react-native xcode` command.
 
 * `--service` should be set as the name of the service you're uploading sourcemaps for if it is not your bundle identifier.
-It can also be specified as a SERVICE_NAME_IOS in your env or in your `datadog-sourcemaps.properties` file.
+It can also be specified as a `SERVICE_NAME_IOS` environment variable.
 
 * `--force` (default: `false`): it will force the upload of the sourcemaps, even if the build configuration is not "Release".
 
