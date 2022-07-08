@@ -38,6 +38,7 @@ export const uploadJUnitXML = (request: (args: AxiosRequestConfig) => AxiosPromi
     service: jUnitXML.service,
     ...jUnitXML.spanTags,
     '_dd.cireport_version': '2',
+    '_dd.hostname': jUnitXML.hostname,
   }
 
   if (jUnitXML.logsEnabled) {

@@ -3,6 +3,7 @@ import {Command} from 'clipanion'
 import xmlParser from 'fast-xml-parser'
 import fs from 'fs'
 import glob from 'glob'
+import os from 'os'
 import path from 'path'
 import asyncPool from 'tiny-async-pool'
 
@@ -176,6 +177,7 @@ export class UploadJUnitXMLCommand extends Command {
     })
 
     return validUniqueFiles.map((jUnitXMLFilePath) => ({
+      hostname: os.hostname(),
       logsEnabled: this.logs,
       service: this.service!,
       spanTags,
