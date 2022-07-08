@@ -318,8 +318,8 @@ export const waitForResults = async (
   // let's add a check to ensure it eventually times out.
   let hasExceededMaxPollingDate = Date.now() >= maxPollingDate
   while (batch.status === 'in_progress' && !hasExceededMaxPollingDate) {
-    batch = await processBatch()
     await wait(POLLING_INTERVAL)
+    batch = await processBatch()
     hasExceededMaxPollingDate = Date.now() >= maxPollingDate
   }
 
@@ -339,7 +339,7 @@ export const waitForResults = async (
 
   for (const resultInBatch of batch.results) {
     const pollResult = pollResultMap[resultInBatch.result_id]
-    const hasTimeout = resultInBatch.timed_out || hasExceededMaxPollingDate
+    const hasTimeout = resultInBatch.timed_out || (hasExceededMaxPollingDate && resultInBatch.timed_out !== false)
     if (hasTimeout) {
       pollResult.result.failure = {code: 'TIMEOUT', message: 'Result timed out'}
       pollResult.result.passed = false
