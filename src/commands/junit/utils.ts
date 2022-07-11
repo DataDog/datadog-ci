@@ -1,5 +1,5 @@
 import {SpanTags} from '../../helpers/interfaces'
-import {CI_JOB_URL, CI_PIPELINE_URL} from '../../helpers/tags'
+import {CI_JOB_URL, CI_PIPELINE_URL, GIT_BRANCH, GIT_REPOSITORY_URL, GIT_SHA} from '../../helpers/tags'
 
 export const getBaseIntakeUrl = () => {
   if (process.env.DATADOG_SITE || process.env.DD_SITE) {
@@ -38,4 +38,18 @@ export const getTestRunsUrl = (spanTags: SpanTags): string => {
   }
 
   return `${getBaseUrl()}/ci/test-runs?query=${encodeURIComponent(query)}`
+}
+
+export const getTestCommitRedirectURL = (spanTags: SpanTags, service?: string, env?: string): string => {
+  if (!spanTags[GIT_REPOSITORY_URL] || !spanTags[GIT_BRANCH] || !spanTags[GIT_SHA] || !service || !env) {
+    return ''
+  }
+
+  const encodedRepoUrl = encodeURIComponent(`${spanTags[GIT_REPOSITORY_URL]}`)
+  const encodedService = encodeURIComponent(service)
+  const encodedBranch = encodeURIComponent(`${spanTags[GIT_BRANCH]}`)
+  const commitSha = `${spanTags[GIT_SHA]}`
+  const encodedEnv = encodeURIComponent(`${env}`)
+
+  return `${getBaseUrl()}/ci-redirect/tests/?repository_url=${encodedRepoUrl}&service=${encodedService}&branch=${encodedBranch}&commit_sha=${commitSha}&env=${encodedEnv}`
 }

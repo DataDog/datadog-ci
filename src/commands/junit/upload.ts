@@ -126,7 +126,9 @@ export class UploadJUnitXMLCommand extends Command {
     await asyncPool(this.maxConcurrency, payloads, upload)
 
     const totalTimeSeconds = (Date.now() - initialTime) / 1000
-    this.context.stdout.write(renderSuccessfulCommand(payloads.length, totalTimeSeconds, spanTags))
+    this.context.stdout.write(
+      renderSuccessfulCommand(payloads.length, totalTimeSeconds, spanTags, this.service, this.config.env)
+    )
   }
 
   private getApiHelper(): APIHelper {
