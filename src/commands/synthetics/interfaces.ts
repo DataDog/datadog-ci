@@ -101,7 +101,7 @@ export interface ResultInBatch {
   result_id: string
   status: Status
   test_public_id: string
-  timed_out: boolean
+  timed_out?: boolean
 }
 
 export interface Batch {
