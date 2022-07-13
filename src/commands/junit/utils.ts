@@ -51,5 +51,5 @@ export const getTestCommitRedirectURL = (spanTags: SpanTags, service?: string, e
   const commitSha = `${spanTags[GIT_SHA]}`
   const encodedEnv = encodeURIComponent(`${env}`)
 
-  return `${getBaseUrl()}/ci-redirect/tests/?repository_url=${encodedRepoUrl}&service=${encodedService}&branch=${encodedBranch}&commit_sha=${commitSha}&env=${encodedEnv}`
+  return `${getBaseUrl()}/ci/redirect/tests/${encodedRepoUrl}/-/${encodedService}/-/${encodedBranch}/-/${commitSha}?env=${encodedEnv}`
 }
