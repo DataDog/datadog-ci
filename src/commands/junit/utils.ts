@@ -41,7 +41,7 @@ export const getTestRunsUrl = (spanTags: SpanTags): string => {
 }
 
 export const getTestCommitRedirectURL = (spanTags: SpanTags, service?: string, env?: string): string => {
-  if (!spanTags[GIT_REPOSITORY_URL] || !spanTags[GIT_BRANCH] || !spanTags[GIT_SHA] || !service || !env) {
+  if (!spanTags[GIT_REPOSITORY_URL] || !spanTags[GIT_BRANCH] || !spanTags[GIT_SHA] || !service) {
     return ''
   }
 
@@ -49,7 +49,7 @@ export const getTestCommitRedirectURL = (spanTags: SpanTags, service?: string, e
   const encodedService = encodeURIComponent(service)
   const encodedBranch = encodeURIComponent(`${spanTags[GIT_BRANCH]}`)
   const commitSha = `${spanTags[GIT_SHA]}`
-  const encodedEnv = encodeURIComponent(`${env}`)
+  const encodedEnv = encodeURIComponent(`${env ? env : 'none'}`)
 
   return `${getBaseUrl()}/ci/redirect/tests/${encodedRepoUrl}/-/${encodedService}/-/${encodedBranch}/-/${commitSha}?env=${encodedEnv}`
 }
