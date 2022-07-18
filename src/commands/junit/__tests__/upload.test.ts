@@ -174,12 +174,15 @@ describe('upload', () => {
     test('should set hostname', async () => {
       const context = createMockContext()
       const command = new UploadJUnitXMLCommand()
-      const [firstFile, secondFile] = await command['getMatchingJUnitXMLFiles'].call({
-        basePaths: ['./src/commands/junit/__tests__/fixtures'],
-        config: {},
-        context,
-        service: 'service',
-      })
+      const [firstFile, secondFile] = await command['getMatchingJUnitXMLFiles'].call(
+        {
+          basePaths: ['./src/commands/junit/__tests__/fixtures'],
+          config: {},
+          context,
+          service: 'service',
+        },
+        {}
+      )
 
       expect(firstFile.hostname).toEqual(os.hostname())
       expect(secondFile.hostname).toEqual(os.hostname())
