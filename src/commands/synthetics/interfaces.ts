@@ -18,9 +18,6 @@ export interface MainReporter {
 export type Reporter = Partial<MainReporter>
 
 export interface BaseServerResult {
-  error?: string
-  errorCode?: string
-  errorMessage?: string
   failure?: {
     code: string
     message: string
@@ -36,7 +33,6 @@ export interface BrowserServerResult extends BaseServerResult {
     width: number
   }
   duration: number
-  error?: string
   startUrl: string
   stepDetails: Step[]
 }
@@ -105,7 +101,7 @@ export interface ResultInBatch {
   result_id: string
   status: Status
   test_public_id: string
-  timed_out: boolean
+  timed_out?: boolean
 }
 
 export interface Batch {
