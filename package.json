@@ -8,7 +8,7 @@
     "datadog-ci": "dist/cli.js"
   },
   "engines": {
-    "node": ">=10.24.1"
+    "node": ">=10.21.0"
   },
   "files": [
     "dist/**/*",
