@@ -158,14 +158,12 @@ export NODE_BINARY=node
 * The first positional argument is the React Native bundle script. 
 If you use another script that requires arguments, you will need to put this script in a file (e.g. in `scripts/bundle.sh`), then provide the path to this file to the `datadog-ci react-native xcode` command.
 
-* `--service` should be set as the name of the service you're uploading sourcemaps for if it is not your bundle identifier.
-It can also be specified as a `SERVICE_NAME_IOS` environment variable.
-
-* `--force` (default: `false`): it will force the upload of the sourcemaps, even if the build configuration is not "Release".
-
-* `--dry-run` (default: `false`): it will run the command without the final step of upload. The bundle script is executed and all other checks are performed.
-
-* `--composeSourcemapsPath` (default: `../node_modules/react-native/scripts/compose-source-maps.js`): if you use Hermes, we need to compose the sourcemaps after the bundle phase. Only use this argument if your node modules are not on the same level as the `ios` folder.
+| Parameter                 | Default                                                       | Description                                                                                                                                                               |
+|---------------------------|---------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `--service`               | Required                                                      | Set as the service name you are uploading source maps for (if it is not your bundle identifier). You can also specify a `SERVICE_NAME_IOS` environment variable.          |
+| `--force`                 | False                                                         | Force the upload of the source maps, even if the build configuration is not "Release".                                                                                    |
+| `--dry-run`               | False                                                         | Run the command without the final step of uploading. The bundle script is executed and all other checks are performed.                                                    |
+| `--composeSourcemapsPath` | `../node_modules/react-native/scripts/compose-source-maps.js` | If you use Hermes, you need to compose the source maps after the bundle phase. Only use this argument if your node modules are not on the same level as the `ios` folder. |
 
 ## End-to-end testing process
 
