@@ -22,7 +22,6 @@ export const getMetricsLogger = (opts: MetricsLoggerOptions): MetricsLogger => {
     apiHost: apiUrl,
     defaultTags: opts.defaultTags,
     flushIntervalSeconds: 15,
-    host: 'ci',
     prefix: opts.prefix,
   }
 
