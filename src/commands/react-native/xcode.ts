@@ -1,6 +1,7 @@
 // tslint:disable: no-null-keyword
 import {spawn} from 'child_process'
 import {Cli, Command} from 'clipanion'
+import {existsSync} from 'fs'
 import {UploadCommand} from './upload'
 
 export class XCodeCommand extends Command {
@@ -29,6 +30,42 @@ export class XCodeCommand extends Command {
 
   constructor() {
     super()
+  }
+
+  private composeHermesSourcemaps = async (sourcemapsLocation: string) => {
+    const composeHermesSourcemapsChildProcess = spawn(
+      '../node_modules/react-native/scripts/compose-source-maps.js',
+      [
+        `${process.env.CONFIGURATION_BUILD_DIR}/main.jsbundle.map`,
+        `${process.env.CONFIGURATION_BUILD_DIR}/${process.env.UNLOCALIZED_RESOURCES_FOLDER_PATH}/main.jsbundle.map`,
+        '-o',
+        sourcemapsLocation,
+      ],
+      {
+        env: process.env,
+        stdio: ['inherit', 'pipe', 'pipe'],
+      }
+    )
+    composeHermesSourcemapsChildProcess.stdout.on('data', (data) => {
+      this.context.stdout.write(`[compose sourcemaps script]: ${data}`)
+    })
+    composeHermesSourcemapsChildProcess.stderr.on('data', (data) => {
+      this.context.stderr.write(`[compose sourcemaps script]: ${data}`)
+    })
+
+    const [status, signal] = await new Promise((resolve, reject) => {
+      composeHermesSourcemapsChildProcess.on('error', (error: Error) => {
+        reject(error)
+      })
+
+      composeHermesSourcemapsChildProcess.on('close', (exitStatus: number, exitSignal: string) => {
+        resolve([exitStatus, exitSignal])
+      })
+    })
+
+    if (status !== 0) {
+      throw new Error(`error ${signal} while running datadog-ci xcode.`)
+    }
   }
 
   public async execute() {
@@ -125,6 +162,16 @@ export class XCodeCommand extends Command {
       if (status !== 0) {
         throw new Error(`error ${signal} while running datadog-ci xcode.`)
       }
+
+      /**
+       * Because of a bug in React Native (https://github.com/facebook/react-native/issues/34212), the composition
+       * of the 2 Hermes sourcemaps is not done correctly. Therefore we need to do the composition ourselves to
+       * overwrite the sourcemaps before the upload
+       */
+      if (this.shouldComposeHermesSourcemaps()) {
+        this.context.stdout.write('Hermes detected, composing sourcemaps')
+        await this.composeHermesSourcemaps(sourcemapsLocation)
+      }
     } catch (error) {
       this.context.stderr.write(`Error running bundle script from datadog-ci xcode.\n${error}`)
 
@@ -192,6 +239,18 @@ export class XCodeCommand extends Command {
     }
 
     return null
+  }
+
+  private shouldComposeHermesSourcemaps = (): boolean => {
+    if (process.env.USE_HERMES) {
+      return true
+    }
+    if (process.env.HERMES_CLI_PATH) {
+      return true
+    }
+
+    // Check if hermes pod is present
+    return existsSync(`${process.env.PODS_ROOT}/hermes-engine/destroot/bin/hermesc`)
   }
 
   private shouldUploadSourcemaps = (): boolean => process.env.CONFIGURATION === 'Release' || this.force
