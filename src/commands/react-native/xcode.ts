@@ -23,6 +23,7 @@ export class XCodeCommand extends Command {
     ],
   })
 
+  private composeSourcemapsPath = '../node_modules/react-native/scripts/compose-source-maps.js'
   private dryRun = false
   private force = false
   private scriptPath = '../node_modules/react-native/scripts/react-native-xcode.sh'
@@ -61,7 +62,7 @@ export class XCodeCommand extends Command {
 
   private composeHermesSourcemaps = async (sourcemapsLocation: string) => {
     const composeHermesSourcemapsChildProcess = spawn(
-      '../node_modules/react-native/scripts/compose-source-maps.js',
+      this.composeSourcemapsPath,
       [
         `${process.env.CONFIGURATION_BUILD_DIR}/main.jsbundle.map`,
         `${process.env.CONFIGURATION_BUILD_DIR}/${process.env.UNLOCALIZED_RESOURCES_FOLDER_PATH}/main.jsbundle.map`,
@@ -265,3 +266,4 @@ XCodeCommand.addOption('scriptPath', Command.String({required: false}))
 XCodeCommand.addOption('service', Command.String('--service'))
 XCodeCommand.addOption('dryRun', Command.Boolean('--dry-run'))
 XCodeCommand.addOption('force', Command.Boolean('--force'))
+XCodeCommand.addOption('composeSourcemapsPath', Command.String('--compose-sourcemaps-path'))

@@ -165,6 +165,8 @@ It can also be specified as a `SERVICE_NAME_IOS` environment variable.
 
 * `--dry-run` (default: `false`): it will run the command without the final step of upload. The bundle script is executed and all other checks are performed.
 
+* `--composeSourcemapsPath` (default: `../node_modules/react-native/scripts/compose-source-maps.js`): if you use Hermes, we need to compose the sourcemaps after the bundle phase. Only use this argument if your node modules are not on the same level as the `ios` folder.
+
 ## End-to-end testing process
 
 ### `upload`
