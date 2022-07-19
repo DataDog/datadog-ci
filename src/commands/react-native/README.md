@@ -24,13 +24,13 @@ This command will upload your javascript sourcemaps and their corresponding bund
 To upload the sourcemaps for iOS, this command should be run:
 
 ```bash
-datadog-ci react-native upload --platform ios --service com.company.app --bundle ./main.jsbundle --sourcemap ./main.jsbundle.map --release-version 1.23.4
+datadog-ci react-native upload --platform ios --service com.company.app --bundle ./main.jsbundle --sourcemap ./main.jsbundle.map --release-version 1.23.4 --build-version 1234
 ```
 
 To upload the sourcemaps for android, this command should be run:
 
 ```bash
-datadog-ci react-native upload --platform android --service com.company.app --bundle ./index.android.bundle --sourcemap ./index.android.bundle.map --release-version 1.23.4
+datadog-ci react-native upload --platform android --service com.company.app --bundle ./index.android.bundle --sourcemap ./index.android.bundle.map --release-version 1.23.4 --build-version 1234
 ```
 
 * `--platform` (required) identifies whether you are uploading ios or android sourcemaps.
