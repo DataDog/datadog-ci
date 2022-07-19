@@ -33,82 +33,6 @@ export class XCodeCommand extends Command {
     super()
   }
 
-  private bundleReactNativeCodeAndImages = async () => {
-    const bundleJSChildProcess = spawn(this.scriptPath, undefined, {
-      env: process.env,
-      stdio: ['inherit', 'pipe', 'pipe'],
-    })
-    bundleJSChildProcess.stdout.on('data', (data) => {
-      this.context.stdout.write(`[bundle script]: ${data}`)
-    })
-    bundleJSChildProcess.stderr.on('data', (data) => {
-      this.context.stderr.write(`[bundle script]: ${data}`)
-    })
-
-    const [status, signal] = await new Promise((resolve, reject) => {
-      bundleJSChildProcess.on('error', (error: Error) => {
-        reject(error)
-      })
-
-      bundleJSChildProcess.on('close', (exitStatus: number, exitSignal: string) => {
-        resolve([exitStatus, exitSignal])
-      })
-    })
-
-    if (status !== 0) {
-      throw new Error(`error ${signal} while running datadog-ci xcode.`)
-    }
-  }
-
-  private composeHermesSourcemaps = async (sourcemapsLocation: string) => {
-    if (!process.env.UNLOCALIZED_RESOURCES_FOLDER_PATH) {
-      this.context.stderr.write(
-        'Environment variable UNLOCALIZED_RESOURCES_FOLDER_PATH is missing for Datadog sourcemaps composition.\n'
-      )
-      this.context.stderr.write(
-        'If you are not running this script from XCode, set it to the subfolder containing the hbc sourcemap.\n'
-      )
-
-      throw new Error(
-        'Environment variable UNLOCALIZED_RESOURCES_FOLDER_PATH is missing for Datadog sourcemaps composition.'
-      )
-    }
-
-    const composeHermesSourcemapsChildProcess = spawn(
-      this.composeSourcemapsPath,
-      [
-        `${process.env.CONFIGURATION_BUILD_DIR}/main.jsbundle.map`,
-        `${process.env.CONFIGURATION_BUILD_DIR}/${process.env.UNLOCALIZED_RESOURCES_FOLDER_PATH}/main.jsbundle.map`,
-        '-o',
-        sourcemapsLocation,
-      ],
-      {
-        env: process.env,
-        stdio: ['inherit', 'pipe', 'pipe'],
-      }
-    )
-    composeHermesSourcemapsChildProcess.stdout.on('data', (data) => {
-      this.context.stdout.write(`[compose sourcemaps script]: ${data}`)
-    })
-    composeHermesSourcemapsChildProcess.stderr.on('data', (data) => {
-      this.context.stderr.write(`[compose sourcemaps script]: ${data}`)
-    })
-
-    const [status, signal] = await new Promise((resolve, reject) => {
-      composeHermesSourcemapsChildProcess.on('error', (error: Error) => {
-        reject(error)
-      })
-
-      composeHermesSourcemapsChildProcess.on('close', (exitStatus: number, exitSignal: string) => {
-        resolve([exitStatus, exitSignal])
-      })
-    })
-
-    if (status !== 0) {
-      throw new Error(`error ${signal} while running datadog-ci xcode.`)
-    }
-  }
-
   public async execute() {
     this.service = process.env.SERVICE_NAME_IOS || this.service
     if (!this.service) {
@@ -235,6 +159,82 @@ export class XCodeCommand extends Command {
     }
 
     return cli.run(uploadCommand, this.context)
+  }
+
+  private bundleReactNativeCodeAndImages = async () => {
+    const bundleJSChildProcess = spawn(this.scriptPath, undefined, {
+      env: process.env,
+      stdio: ['inherit', 'pipe', 'pipe'],
+    })
+    bundleJSChildProcess.stdout.on('data', (data) => {
+      this.context.stdout.write(`[bundle script]: ${data}`)
+    })
+    bundleJSChildProcess.stderr.on('data', (data) => {
+      this.context.stderr.write(`[bundle script]: ${data}`)
+    })
+
+    const [status, signal] = await new Promise((resolve, reject) => {
+      bundleJSChildProcess.on('error', (error: Error) => {
+        reject(error)
+      })
+
+      bundleJSChildProcess.on('close', (exitStatus: number, exitSignal: string) => {
+        resolve([exitStatus, exitSignal])
+      })
+    })
+
+    if (status !== 0) {
+      throw new Error(`error ${signal} while running datadog-ci xcode.`)
+    }
+  }
+
+  private composeHermesSourcemaps = async (sourcemapsLocation: string) => {
+    if (!process.env.UNLOCALIZED_RESOURCES_FOLDER_PATH) {
+      this.context.stderr.write(
+        'Environment variable UNLOCALIZED_RESOURCES_FOLDER_PATH is missing for Datadog sourcemaps composition.\n'
+      )
+      this.context.stderr.write(
+        'If you are not running this script from XCode, set it to the subfolder containing the hbc sourcemap.\n'
+      )
+
+      throw new Error(
+        'Environment variable UNLOCALIZED_RESOURCES_FOLDER_PATH is missing for Datadog sourcemaps composition.'
+      )
+    }
+
+    const composeHermesSourcemapsChildProcess = spawn(
+      this.composeSourcemapsPath,
+      [
+        `${process.env.CONFIGURATION_BUILD_DIR}/main.jsbundle.map`,
+        `${process.env.CONFIGURATION_BUILD_DIR}/${process.env.UNLOCALIZED_RESOURCES_FOLDER_PATH}/main.jsbundle.map`,
+        '-o',
+        sourcemapsLocation,
+      ],
+      {
+        env: process.env,
+        stdio: ['inherit', 'pipe', 'pipe'],
+      }
+    )
+    composeHermesSourcemapsChildProcess.stdout.on('data', (data) => {
+      this.context.stdout.write(`[compose sourcemaps script]: ${data}`)
+    })
+    composeHermesSourcemapsChildProcess.stderr.on('data', (data) => {
+      this.context.stderr.write(`[compose sourcemaps script]: ${data}`)
+    })
+
+    const [status, signal] = await new Promise((resolve, reject) => {
+      composeHermesSourcemapsChildProcess.on('error', (error: Error) => {
+        reject(error)
+      })
+
+      composeHermesSourcemapsChildProcess.on('close', (exitStatus: number, exitSignal: string) => {
+        resolve([exitStatus, exitSignal])
+      })
+    })
+
+    if (status !== 0) {
+      throw new Error(`error ${signal} while running datadog-ci xcode.`)
+    }
   }
 
   private getBundleLocation = () => {
