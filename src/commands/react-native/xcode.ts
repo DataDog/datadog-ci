@@ -23,10 +23,10 @@ export class XCodeCommand extends Command {
     ],
   })
 
-  private composeSourcemapsPath = '../node_modules/react-native/scripts/compose-source-maps.js'
+  private composeSourcemapsPath = 'node_modules/react-native/scripts/compose-source-maps.js'
   private dryRun = false
   private force = false
-  private scriptPath = '../node_modules/react-native/scripts/react-native-xcode.sh'
+  private scriptPath = 'node_modules/react-native/scripts/react-native-xcode.sh'
   private service?: string = process.env.PRODUCT_BUNDLE_IDENTIFIER
 
   constructor() {
