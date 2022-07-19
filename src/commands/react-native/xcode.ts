@@ -61,6 +61,19 @@ export class XCodeCommand extends Command {
   }
 
   private composeHermesSourcemaps = async (sourcemapsLocation: string) => {
+    if (!process.env.UNLOCALIZED_RESOURCES_FOLDER_PATH) {
+      this.context.stderr.write(
+        'Environment variable UNLOCALIZED_RESOURCES_FOLDER_PATH is missing for Datadog sourcemaps composition.\n'
+      )
+      this.context.stderr.write(
+        'If you are not running this script from XCode, set it to the subfolder containing the hbc sourcemap.\n'
+      )
+
+      throw new Error(
+        'Environment variable UNLOCALIZED_RESOURCES_FOLDER_PATH is missing for Datadog sourcemaps composition.'
+      )
+    }
+
     const composeHermesSourcemapsChildProcess = spawn(
       this.composeSourcemapsPath,
       [
@@ -246,6 +259,11 @@ export class XCodeCommand extends Command {
     return null
   }
 
+  /**
+   * This function reflects the logic in the react-native-xcode.sh bundle script.
+   * When the composition issue is fixed in React Native, this function should
+   * return false if the React Native version is high enough.
+   */
   private shouldComposeHermesSourcemaps = (): boolean => {
     if (process.env.USE_HERMES) {
       return true
