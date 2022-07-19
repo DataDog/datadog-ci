@@ -32,6 +32,33 @@ export class XCodeCommand extends Command {
     super()
   }
 
+  private bundleReactNativeCodeAndImages = async () => {
+    const bundleJSChildProcess = spawn(this.scriptPath, undefined, {
+      env: process.env,
+      stdio: ['inherit', 'pipe', 'pipe'],
+    })
+    bundleJSChildProcess.stdout.on('data', (data) => {
+      this.context.stdout.write(`[bundle script]: ${data}`)
+    })
+    bundleJSChildProcess.stderr.on('data', (data) => {
+      this.context.stderr.write(`[bundle script]: ${data}`)
+    })
+
+    const [status, signal] = await new Promise((resolve, reject) => {
+      bundleJSChildProcess.on('error', (error: Error) => {
+        reject(error)
+      })
+
+      bundleJSChildProcess.on('close', (exitStatus: number, exitSignal: string) => {
+        resolve([exitStatus, exitSignal])
+      })
+    })
+
+    if (status !== 0) {
+      throw new Error(`error ${signal} while running datadog-ci xcode.`)
+    }
+  }
+
   private composeHermesSourcemaps = async (sourcemapsLocation: string) => {
     const composeHermesSourcemapsChildProcess = spawn(
       '../node_modules/react-native/scripts/compose-source-maps.js',
@@ -138,30 +165,7 @@ export class XCodeCommand extends Command {
 
     // Run bundle script
     try {
-      const bundleJSChildProcess = spawn(this.scriptPath, undefined, {
-        env: process.env,
-        stdio: ['inherit', 'pipe', 'pipe'],
-      })
-      bundleJSChildProcess.stdout.on('data', (data) => {
-        this.context.stdout.write(`[bundle script]: ${data}`)
-      })
-      bundleJSChildProcess.stderr.on('data', (data) => {
-        this.context.stderr.write(`[bundle script]: ${data}`)
-      })
-
-      const [status, signal] = await new Promise((resolve, reject) => {
-        bundleJSChildProcess.on('error', (error: Error) => {
-          reject(error)
-        })
-
-        bundleJSChildProcess.on('close', (exitStatus: number, exitSignal: string) => {
-          resolve([exitStatus, exitSignal])
-        })
-      })
-
-      if (status !== 0) {
-        throw new Error(`error ${signal} while running datadog-ci xcode.`)
-      }
+      await this.bundleReactNativeCodeAndImages()
 
       /**
        * Because of a bug in React Native (https://github.com/facebook/react-native/issues/34212), the composition
