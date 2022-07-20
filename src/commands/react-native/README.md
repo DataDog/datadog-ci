@@ -63,7 +63,6 @@ When these requirements are met, the upload command reports git information such
 - the repository URL
 - the list of file paths that are tracked in the repository. Only tracked file paths related to a source map are gathered.
 
-<!-- Check this part -->
 For example, for a sourcemap referencing `["/Users/myname/path/to/ReactNativeApp/example.ts"]` inside its `sources` attribute, the command gathers all file paths with `example.ts` as the file name.
 
 #### Override repository URL
@@ -79,8 +78,6 @@ You can override this behavior with links to `https://gitlab.com/Datadog/example
 By default, paths inside React Native source maps are the absolute paths of files on the machine where they were bundled (for example: `/Users/user/MyProject/App.ts`).
 
 If you are not running the `react-native upload` command from your React Native project root, you need to specify the `--project-path` argument with the absolute path to your React Native project root.
-
-<!-- TODO: test this once unminification is on prod -->
 
 #### Supported repositories
 
