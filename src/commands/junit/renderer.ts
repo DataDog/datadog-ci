@@ -1,7 +1,9 @@
 import chalk from 'chalk'
 import path from 'path'
 
+import {SpanTags} from '../../helpers/interfaces'
 import {Payload} from './interfaces'
+import {getTestCommitRedirectURL, getTestRunsUrl} from './utils'
 
 const ICONS = {
   FAILED: '❌',
@@ -27,8 +29,37 @@ export const renderRetriedUpload = (payload: Payload, errorMessage: string, atte
   return chalk.yellow(`[attempt ${attempt}] Retrying jUnitXML upload ${jUnitXMLPath}: ${errorMessage}\n`)
 }
 
-export const renderSuccessfulCommand = (fileCount: number, duration: number) =>
-  chalk.green(`${ICONS.SUCCESS} Uploaded ${fileCount} files in ${duration} seconds.\n`)
+export const renderSuccessfulCommand = (
+  fileCount: number,
+  duration: number,
+  spanTags: SpanTags,
+  service: string,
+  env?: string
+) => {
+  let fullStr = ''
+  fullStr += chalk.green(`${ICONS.SUCCESS} Uploaded ${fileCount} files in ${duration} seconds.\n`)
+  fullStr += chalk.green(
+    '=================================================================================================\n'
+  )
+  fullStr += chalk.green('* View detailed reports on Datadog (they can take a few minutes to become available)\n')
+
+  const redirectTestCommitURL = getTestCommitRedirectURL(spanTags, service, env)
+  if (redirectTestCommitURL) {
+    fullStr += chalk.green('* Commit report:\n')
+    fullStr += chalk.green(`* ${redirectTestCommitURL}\n\n`)
+  }
+
+  const testRunsUrl = getTestRunsUrl(spanTags)
+  if (testRunsUrl) {
+    fullStr += chalk.green('* Test runs report:\n')
+    fullStr += chalk.green(`* ${testRunsUrl}\n`)
+  }
+  fullStr += chalk.green(
+    '=================================================================================================\n'
+  )
+
+  return fullStr
+}
 
 export const renderDryRunUpload = (payload: Payload): string => `[DRYRUN] ${renderUpload(payload)}`
 
