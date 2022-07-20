@@ -3,7 +3,7 @@ import chalk from 'chalk'
 import {ICONS} from '../../helpers/formatting'
 import {UploadStatus} from '../../helpers/upload'
 import {pluralize} from '../../helpers/utils'
-import {Sourcemap} from './interfaces'
+import {RNSourcemap} from './interfaces'
 
 export const renderGitWarning = (errorMessage: string) =>
   chalk.yellow(`${ICONS.WARNING} An error occured while invoking git: ${errorMessage}
@@ -18,22 +18,25 @@ export const renderSourcesNotFoundWarning = (sourcemap: string) =>
 
 export const renderConfigurationError = (error: Error) => chalk.red(`${ICONS.FAILED} Configuration error: ${error}.\n`)
 
-export const renderInvalidPrefix = chalk.red(
-  `${ICONS.FAILED} --minified-path-prefix should either be an URL (such as "http://example.com/static") or an absolute path starting with a / such as "/static"\n`
-)
-
-export const renderFailedUpload = (sourcemap: Sourcemap, errorMessage: string) => {
+export const renderFailedUpload = (sourcemap: RNSourcemap, errorMessage: string) => {
   const sourcemapPathBold = `[${chalk.bold.dim(sourcemap.sourcemapPath)}]`
 
   return chalk.red(`${ICONS.FAILED} Failed upload sourcemap for ${sourcemapPathBold}: ${errorMessage}\n`)
 }
 
-export const renderRetriedUpload = (payload: Sourcemap, errorMessage: string, attempt: number) => {
+export const renderRetriedUpload = (payload: RNSourcemap, errorMessage: string, attempt: number) => {
   const sourcemapPathBold = `[${chalk.bold.dim(payload.sourcemapPath)}]`
 
   return chalk.yellow(`[attempt ${attempt}] Retrying sourcemap upload ${sourcemapPathBold}: ${errorMessage}\n`)
 }
 
+/**
+ * As of now, this command takes an array of one signe UploadStatus element since we only support upload
+ * of a single sourcemap.
+ * We considered it was preferable to leave it this way so it's ready for multiple sourcemaps uploads,
+ * rather than investing into adapting it for this purpose.
+ * This comment should be removed once the multiple file upload is available.
+ */
 export const renderSuccessfulCommand = (statuses: UploadStatus[], duration: number, dryRun: boolean) => {
   const results = new Map<UploadStatus, number>()
   statuses.forEach((status) => {
@@ -71,7 +74,7 @@ export const renderSuccessfulCommand = (statuses: UploadStatus[], duration: numb
       )
     }
   } else {
-    output.push(chalk.yellow(`${ICONS.WARNING} No sourcemaps detected. Did you specify the correct directory?`))
+    output.push(chalk.yellow(`${ICONS.WARNING} No sourcemaps detected. Did you specify the correct path?`))
   }
 
   if (results.get(UploadStatus.Failure) || results.get(UploadStatus.Skipped)) {
@@ -97,33 +100,33 @@ export const renderSuccessfulCommand = (statuses: UploadStatus[], duration: numb
 }
 
 export const renderCommandInfo = (
-  basePath: string,
-  minifiedPathPrefix: string,
-  projectPath: string,
+  bundlePath: string,
+  sourcemapPath: string,
+  platform: string,
   releaseVersion: string,
   service: string,
   poolLimit: number,
-  dryRun: boolean
+  dryRun: boolean,
+  projectPath: string,
+  buildVersion: string
 ) => {
   let fullStr = ''
   if (dryRun) {
     fullStr += chalk.yellow(`${ICONS.WARNING} DRY-RUN MODE ENABLED. WILL NOT UPLOAD SOURCEMAPS\n`)
   }
-  const startStr = chalk.green(`Starting upload with concurrency ${poolLimit}. \n`)
+  const startStr = chalk.green('Starting upload. \n')
   fullStr += startStr
-  const basePathStr = chalk.green(`Will look for sourcemaps in ${basePath}\n`)
-  fullStr += basePathStr
-  const minifiedPathPrefixStr = chalk.green(
-    `Will match JS files for errors on files starting with ${minifiedPathPrefix}\n`
+  const basePathStr = chalk.green(
+    `Upload of ${sourcemapPath} for bundle ${bundlePath} on platform ${platform} with project path ${projectPath}\n`
   )
-  fullStr += minifiedPathPrefixStr
+  fullStr += basePathStr
   const serviceVersionProjectPathStr = chalk.green(
-    `version: ${releaseVersion} service: ${service} project path: ${projectPath}\n`
+    `version: ${releaseVersion} build: ${buildVersion} service: ${service}\n`
   )
   fullStr += serviceVersionProjectPathStr
 
   return fullStr
 }
 
-export const renderUpload = (sourcemap: Sourcemap): string =>
-  `Uploading sourcemap ${sourcemap.sourcemapPath} for JS file available at ${sourcemap.minifiedUrl}\n`
+export const renderUpload = (sourcemap: RNSourcemap): string =>
+  `Uploading sourcemap ${sourcemap.sourcemapPath} for JS file available at ${sourcemap.bundlePath}\n`

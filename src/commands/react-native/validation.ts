@@ -1,5 +1,5 @@
 import {checkFile} from '../../helpers/validation'
-import {Sourcemap} from './interfaces'
+import {RNSourcemap} from './interfaces'
 
 export class InvalidPayload extends Error {
   public reason: string
@@ -10,7 +10,7 @@ export class InvalidPayload extends Error {
   }
 }
 
-export const validatePayload = (sourcemap: Sourcemap) => {
+export const validatePayload = (sourcemap: RNSourcemap) => {
   // Check existence of sourcemap file
   const sourcemapCheck = checkFile(sourcemap.sourcemapPath)
   if (!sourcemapCheck.exists) {
@@ -20,18 +20,15 @@ export const validatePayload = (sourcemap: Sourcemap) => {
   if (sourcemapCheck.empty) {
     throw new InvalidPayload('empty_sourcemap', `Skipping empty sourcemap (${sourcemap.sourcemapPath})`)
   }
-  // Check existence of minified file
-  const minifiedFileCheck = checkFile(sourcemap.minifiedFilePath)
-  if (!minifiedFileCheck.exists) {
-    throw new InvalidPayload(
-      'missing_js',
-      `Missing corresponding JS file for sourcemap (${sourcemap.minifiedFilePath})`
-    )
+  // Check existence of bundle file
+  const bundleCheck = checkFile(sourcemap.bundlePath)
+  if (!bundleCheck.exists) {
+    throw new InvalidPayload('missing_js', `Missing corresponding JS file for sourcemap (${sourcemap.bundlePath})`)
   }
-  if (minifiedFileCheck.empty) {
+  if (bundleCheck.empty) {
     throw new InvalidPayload(
       'empty_js',
-      `Skipping sourcemap (${sourcemap.sourcemapPath}) due to ${sourcemap.minifiedFilePath} being empty`
+      `Skipping sourcemap (${sourcemap.sourcemapPath}) due to ${sourcemap.bundlePath} being empty`
     )
   }
 }

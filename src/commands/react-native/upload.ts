@@ -1,9 +1,6 @@
 import chalk from 'chalk'
 import {Command} from 'clipanion'
-import glob from 'glob'
-import path from 'path'
 import asyncPool from 'tiny-async-pool'
-import {URL} from 'url'
 
 import {ApiKeyValidator, newApiKeyValidator} from '../../helpers/apikey'
 import {getBaseSourcemapIntakeUrl} from '../../helpers/base-intake-url'
@@ -13,44 +10,41 @@ import {RequestBuilder} from '../../helpers/interfaces'
 import {getMetricsLogger, MetricsLogger} from '../../helpers/metrics'
 import {upload, UploadStatus} from '../../helpers/upload'
 import {getRequestBuilder} from '../../helpers/utils'
-import {Sourcemap} from './interfaces'
+import {RN_SUPPORTED_PLATFORMS, RNPlatform, RNSourcemap} from './interfaces'
 import {
   renderCommandInfo,
   renderConfigurationError,
   renderFailedUpload,
   renderGitDataNotAttachedWarning,
   renderGitWarning,
-  renderInvalidPrefix,
   renderRetriedUpload,
   renderSourcesNotFoundWarning,
   renderSuccessfulCommand,
   renderUpload,
 } from './renderer'
-import {getMinifiedFilePath} from './utils'
 import {InvalidPayload, validatePayload} from './validation'
-
-import {buildPath} from '../../helpers/utils'
 
 export class UploadCommand extends Command {
   public static usage = Command.Usage({
-    description: 'Upload javascript sourcemaps to Datadog.',
+    description: 'Upload React Native sourcemaps to Datadog.',
     details: `
-            This command will upload all javascript sourcemaps and their corresponding javascript file to Datadog in order to un-minify front-end stack traces received by Datadog.
+            This command will upload React Native sourcemaps and their corresponding javascript bundle to Datadog in order to un-minify front-end stack traces received by Datadog.
             See README for details.
         `,
     examples: [
       [
-        'Upload all sourcemaps in current directory',
-        'datadog-ci sourcemaps upload . --service my-service --minified-path-prefix https://static.datadog.com --release-version 1.234',
+        'Upload ios sourcemaps',
+        'datadog-ci react-native upload --platform ios --service com.company.app --bundle ./main.jsbundle --sourcemap ./main.jsbundle.map --release-version 1.23.4 --build-version 1234',
       ],
       [
-        'Upload all sourcemaps in /home/users/ci with 50 concurrent uploads',
-        'datadog-ci sourcemaps upload . --service my-service --minified-path-prefix https://static.datadog.com --release-version 1.234 --concurency 50',
+        'Upload android sourcemaps',
+        'datadog-ci react-native upload --platform android --service com.company.app --bundle ./index.android.bundle --sourcemap ./index.android.bundle.map --release-version 1.23.4 --build-version 1234',
       ],
     ],
   })
 
-  private basePath?: string
+  private buildVersion?: string
+  private bundle?: string
   private cliVersion: string
   private config = {
     apiKey: process.env.DATADOG_API_KEY,
@@ -59,11 +53,12 @@ export class UploadCommand extends Command {
   private disableGit?: boolean
   private dryRun = false
   private maxConcurrency = 20
-  private minifiedPathPrefix?: string
-  private projectPath = ''
+  private platform?: RNPlatform
+  private projectPath: string = process.cwd() || ''
   private releaseVersion?: string
   private repositoryURL?: string
   private service?: string
+  private sourcemap?: string
 
   constructor() {
     super()
@@ -77,42 +72,68 @@ export class UploadCommand extends Command {
       return 1
     }
 
+    if (!this.buildVersion) {
+      this.context.stderr.write('Missing build version\n')
+
+      return 1
+    }
+
     if (!this.service) {
       this.context.stderr.write('Missing service\n')
 
       return 1
     }
 
-    if (!this.minifiedPathPrefix) {
-      this.context.stderr.write('Missing minified path\n')
+    if (!this.bundle) {
+      this.context.stderr.write('Missing bundle path\n')
 
       return 1
     }
 
-    if (!this.isMinifiedPathPrefixValid()) {
-      this.context.stdout.write(renderInvalidPrefix)
+    if (!this.platform) {
+      this.context.stderr.write('Missing platform\n')
 
       return 1
     }
 
-    // Normalizing the basePath to resolve .. and .
-    // Always using the posix version to avoid \ on Windows.
-    this.basePath = path.posix.normalize(this.basePath!)
+    if (!RN_SUPPORTED_PLATFORMS.includes(this.platform)) {
+      this.context.stderr.write(
+        `Platform ${this.platform} is not supported.\nSupported platforms are ios and android.\n`
+      )
+
+      return 1
+    }
+
+    if (!this.sourcemap) {
+      this.context.stderr.write('Missing sourcemap file path\n')
+
+      return 1
+    }
+
     this.context.stdout.write(
       renderCommandInfo(
-        this.basePath!,
-        this.minifiedPathPrefix,
-        this.projectPath,
+        this.bundle,
+        this.sourcemap,
+        this.platform,
         this.releaseVersion,
         this.service,
         this.maxConcurrency,
-        this.dryRun
+        this.dryRun,
+        this.projectPath,
+        this.buildVersion
       )
     )
     const metricsLogger = getMetricsLogger({
       datadogSite: process.env.DATADOG_SITE,
-      defaultTags: [`version:${this.releaseVersion}`, `service:${this.service}`, `cli_version:${this.cliVersion}`],
-      prefix: 'datadog.ci.sourcemaps.',
+      defaultTags: [
+        `version:${this.releaseVersion}`,
+        `build:${this.buildVersion}`,
+        `service:${this.service}`,
+        `cli_version:${this.cliVersion}`,
+        'react-native:true',
+        `platform:${this.platform}`,
+      ],
+      prefix: 'datadog.ci.sourcemaps.upload.',
     })
     const apiKeyValidator = newApiKeyValidator({
       apiKey: this.config.apiKey,
@@ -149,19 +170,17 @@ export class UploadCommand extends Command {
   }
 
   // Fills the 'repository' field of each payload with data gathered using git.
-  private addRepositoryDataToPayloads = async (payloads: Sourcemap[]) => {
+  private addRepositoryDataToPayloads = async (payloads: RNSourcemap[]) => {
     try {
       const repositoryData = await getRepositoryData(await newSimpleGit(), this.repositoryURL)
-      await Promise.all(
-        payloads.map(async (payload) => {
-          const repositoryPayload = this.getRepositoryPayload(repositoryData!, payload.sourcemapPath)
-          payload.addRepositoryData({
-            gitCommitSha: repositoryData.hash,
-            gitRepositoryPayload: repositoryPayload,
-            gitRepositoryURL: repositoryData.remote,
-          })
+      payloads.forEach((payload) => {
+        const repositoryPayload = this.getRepositoryPayload(repositoryData!, payload.sourcemapPath)
+        payload.addRepositoryData({
+          gitCommitSha: repositoryData.hash,
+          gitRepositoryPayload: repositoryPayload,
+          gitRepositoryURL: repositoryData.remote,
         })
-      )
+      })
     } catch (e) {
       this.context.stdout.write(renderGitWarning(e))
     }
@@ -169,27 +188,10 @@ export class UploadCommand extends Command {
 
   // Looks for the sourcemaps and minified files on disk and returns
   // the associated payloads.
-  private getMatchingSourcemapFiles = async (): Promise<Sourcemap[]> => {
-    const sourcemapFiles = glob.sync(buildPath(this.basePath!, '**/*js.map'))
+  private getMatchingRNSourcemapFiles = (): RNSourcemap[] => [new RNSourcemap(this.bundle!, this.sourcemap!)]
 
-    return Promise.all(
-      sourcemapFiles.map(async (sourcemapPath) => {
-        const minifiedFilePath = getMinifiedFilePath(sourcemapPath)
-        const minifiedURL = this.getMinifiedURL(minifiedFilePath)
-
-        return new Sourcemap(minifiedFilePath, minifiedURL, sourcemapPath)
-      })
-    )
-  }
-
-  private getMinifiedURL(minifiedFilePath: string): string {
-    const relativePath = minifiedFilePath.replace(this.basePath!, '')
-
-    return buildPath(this.minifiedPathPrefix!, relativePath)
-  }
-
-  private getPayloadsToUpload = async (useGit: boolean): Promise<Sourcemap[]> => {
-    const payloads = await this.getMatchingSourcemapFiles()
+  private getPayloadsToUpload = async (useGit: boolean): Promise<RNSourcemap[]> => {
+    const payloads = this.getMatchingRNSourcemapFiles()
     if (!useGit) {
       return payloads
     }
@@ -240,35 +242,19 @@ export class UploadCommand extends Command {
       apiKey: this.config.apiKey!,
       baseUrl: getBaseSourcemapIntakeUrl(),
       headers: new Map([
-        ['DD-EVP-ORIGIN', 'datadog-ci sourcemaps'],
+        ['DD-EVP-ORIGIN', 'datadog-ci react-native'],
         ['DD-EVP-ORIGIN-VERSION', this.cliVersion],
       ]),
-      overrideUrl: 'api/v2/srcmap',
+      overrideUrl: `v1/input/${this.config.apiKey}`,
     })
-  }
-
-  private isMinifiedPathPrefixValid(): boolean {
-    let protocol
-    try {
-      const objUrl = new URL(this.minifiedPathPrefix!)
-      protocol = objUrl.protocol
-    } catch {
-      // Do nothing.
-    }
-
-    if (!protocol && !this.minifiedPathPrefix!.startsWith('/')) {
-      return false
-    }
-
-    return true
   }
 
   private upload(
     requestBuilder: RequestBuilder,
     metricsLogger: MetricsLogger,
     apiKeyValidator: ApiKeyValidator
-  ): (sourcemap: Sourcemap) => Promise<UploadStatus> {
-    return async (sourcemap: Sourcemap) => {
+  ): (sourcemap: RNSourcemap) => Promise<UploadStatus> {
+    return async (sourcemap: RNSourcemap) => {
       try {
         validatePayload(sourcemap)
       } catch (error) {
@@ -292,7 +278,9 @@ export class UploadCommand extends Command {
         this.cliVersion,
         this.service!,
         this.releaseVersion!,
-        this.projectPath
+        this.projectPath,
+        this.platform!,
+        this.buildVersion!
       )
       if (this.dryRun) {
         this.context.stdout.write(`[DRYRUN] ${renderUpload(sourcemap)}`)
@@ -319,13 +307,15 @@ export class UploadCommand extends Command {
   }
 }
 
-UploadCommand.addPath('sourcemaps', 'upload')
-UploadCommand.addOption('basePath', Command.String({required: true}))
+UploadCommand.addPath('react-native', 'upload')
 UploadCommand.addOption('releaseVersion', Command.String('--release-version'))
+UploadCommand.addOption('buildVersion', Command.String('--build-version'))
 UploadCommand.addOption('service', Command.String('--service'))
-UploadCommand.addOption('minifiedPathPrefix', Command.String('--minified-path-prefix'))
-UploadCommand.addOption('projectPath', Command.String('--project-path'))
-UploadCommand.addOption('maxConcurrency', Command.String('--max-concurrency'))
+UploadCommand.addOption('bundle', Command.String('--bundle'))
+UploadCommand.addOption('sourcemap', Command.String('--sourcemap'))
+UploadCommand.addOption('platform', Command.String('--platform'))
 UploadCommand.addOption('dryRun', Command.Boolean('--dry-run'))
 UploadCommand.addOption('repositoryURL', Command.String('--repository-url'))
 UploadCommand.addOption('disableGit', Command.Boolean('--disable-git'))
+UploadCommand.addOption('maxConcurrency', Command.String('--max-concurrency'))
+UploadCommand.addOption('projectPath', Command.String('--project-path'))

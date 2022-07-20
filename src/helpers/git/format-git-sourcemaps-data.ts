@@ -1,8 +1,6 @@
 import fs from 'fs'
 import * as simpleGit from 'simple-git'
-import {Writable} from 'stream'
-import {URL} from 'url'
-import {renderGitWarning, renderSourcesNotFoundWarning} from './renderer'
+import {gitHash, gitRemote, gitTrackedFiles} from './get-git-data'
 
 // Returns a configured SimpleGit.
 export const newSimpleGit = async (): Promise<simpleGit.SimpleGit> => {
@@ -25,47 +23,6 @@ export const newSimpleGit = async (): Promise<simpleGit.SimpleGit> => {
   return simpleGit.gitP(options)
 }
 
-// Returns the remote of the current repository.
-export const gitRemote = async (git: simpleGit.SimpleGit): Promise<string> => {
-  const remotes = await git.getRemotes(true)
-  if (remotes.length === 0) {
-    throw new Error('No git remotes available')
-  }
-
-  for (const remote of remotes) {
-    // We're trying to pick the remote called with the default git name 'origin'.
-    if (remote.name === 'origin') {
-      return stripCredentials(remote.refs.push)
-    }
-  }
-
-  // Falling back to picking the first remote in the list if 'origin' is not found.
-  return stripCredentials(remotes[0].refs.push)
-}
-
-// StripCredentials removes credentials from a remote HTTP url.
-export const stripCredentials = (remote: string) => {
-  try {
-    const url = new URL(remote)
-    url.username = ''
-    url.password = ''
-
-    return url.toString()
-  } catch {
-    return remote
-  }
-}
-
-// Returns the hash of the current repository.
-const gitHash = async (git: simpleGit.SimpleGit): Promise<string> => git.revparse('HEAD')
-
-// Returns the tracked files of the current repository.
-export const gitTrackedFiles = async (git: simpleGit.SimpleGit): Promise<string[]> => {
-  const files = await git.raw('ls-files')
-
-  return files.split(/\r\n|\r|\n/)
-}
-
 export interface RepositoryData {
   hash: string
   remote: string
@@ -77,9 +34,8 @@ export interface RepositoryData {
 // To obtain the list of tracked files paths tied to a specific sourcemap, invoke the 'matchSourcemap' methid.
 export const getRepositoryData = async (
   git: simpleGit.SimpleGit,
-  stdout: Writable,
   repositoryURL: string | undefined
-): Promise<RepositoryData | undefined> => {
+): Promise<RepositoryData> => {
   // Invoke git commands to retrieve the remote, hash and tracked files.
   // We're using Promise.all instead of Promive.allSettled since we want to fail early if
   // any of the promises fails.
@@ -94,9 +50,7 @@ export const getRepositoryData = async (
       ;[remote, hash, trackedFiles] = await Promise.all([gitRemote(git), gitHash(git), gitTrackedFiles(git)])
     }
   } catch (e) {
-    stdout.write(renderGitWarning(e))
-
-    return undefined
+    throw e
   }
 
   const data = {
@@ -131,7 +85,7 @@ export class TrackedFilesMatcher {
   }
 
   // Looks up the sources declared in the sourcemap and return a list of related tracked files.
-  public matchSourcemap(stdout: Writable, srcmapPath: string): string[] | undefined {
+  public matchSourcemap(srcmapPath: string, onSourcesNotFound: () => void): string[] | undefined {
     const buff = fs.readFileSync(srcmapPath, 'utf8')
     const srcmapObj = JSON.parse(buff)
     if (!srcmapObj.sources) {
@@ -143,7 +97,7 @@ export class TrackedFilesMatcher {
     }
     const filtered = this.matchSources(sources)
     if (filtered.length === 0) {
-      stdout.write(renderSourcesNotFoundWarning(srcmapPath))
+      onSourcesNotFound()
 
       return undefined
     }
