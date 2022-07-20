@@ -102,12 +102,12 @@ This allows Datadog to create proper URLs such as:
 
 ### `xcode`
 
-This command can be called from an xcode build phase to execute the react-native bundle command and then upload the sourcemaps.
+This command can be called from an XCode build phase to execute the `react-native bundle` command and upload the source maps.
 The upload only happens when your target has a "Release" build configuration to prevent overwriting existing sourcemaps.
 
-This command can use the same environment variables as the `upload` command: `DATADOG_API_KEY` (required), `DATADOG_SITE` and `DATADOG_SOURCEMAP_INTAKE_URL`.
+You can use the same environment variables as the `upload` command: `DATADOG_API_KEY` (required), `DATADOG_SITE`, and `DATADOG_SOURCEMAP_INTAKE_URL`.
 
-Then, you need to get the location to your `node` and `yarn` binaries by running in a terminal:
+To get the location to your `node` and `yarn` binaries, run the following in a terminal:
 
 ```bash
 $ which node #/path/to/node
@@ -118,7 +118,7 @@ Then change the "Bundle React Native code and images" build phase in XCode (don'
 
 #### For React Native >= 0.69:
 
-To ensure environment variables are well propagated in the build phase, you first need to create a new `custom-react-native-xcode.sh` file in your `ios` folder.
+To ensure environment variables are well propagated in the build phase, you need to create a `custom-react-native-xcode.sh` file in your `ios` folder:
 
 ```bash
 #!/bin/sh
@@ -130,7 +130,7 @@ DATADOG_XCODE="/opt/homebrew/bin/node /opt/homebrew/bin/yarn datadog-ci react-na
 /bin/sh -c "$DATADOG_XCODE $REACT_NATIVE_XCODE" 
 ```
 
-This will allow to pass the file's path as one argument to the `with-environment.sh` script in the "Bundle React Native code and images" build phase:
+This allows the file's path to be passed as one argument to the `with-environment.sh` script in the "Bundle React Native code and images" build phase: 
 
 ```bash
 set -e
@@ -143,7 +143,7 @@ REACT_NATIVE_XCODE="./custom-react-native-xcode.sh"
 
 #### For React Native < 0.69:
 
-Simply change the "Bundle React Native code and images" build phase:
+Change the "Bundle React Native code and images" build phase:
 
 ```bash
 set -e
@@ -155,8 +155,9 @@ export NODE_BINARY=node
 
 #### Customize the command
 
-* The first positional argument is the React Native bundle script. 
-If you use another script that requires arguments, you will need to put this script in a file (e.g. in `scripts/bundle.sh`), then provide the path to this file to the `datadog-ci react-native xcode` command.
+The first positional argument is the React Native bundle script. 
+
+If you use another script that requires arguments, you need to put this script in a file (such as in `scripts/bundle.sh`) and provide this file path in the `datadog-ci react-native xcode` command.
 
 | Parameter                 | Default                                                       | Description                                                                                                                                                               |
 |---------------------------|---------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
@@ -197,24 +198,24 @@ Command summary:
 
 ### `xcode`
 
-First, build and link your local datadog-ci package, by running in this directory:
+Build and link your local `datadog-ci` package by running this in the directory:
 
 ```bash
 yarn build
 yarn link
 ```
 
-Then in your project:
+Run this command in your project:
 
 ```bash
 yarn link @datadog/datadog-ci
 ```
 
-If running `yarn datadog-ci` in your project returns `error Command "datadog-ci" not found.`, you can do the following:
+If running `yarn datadog-ci` in your project returns `error Command "datadog-ci" not found.`, run the following:
 
 ```bash
 chmod +x /path/to/datadog-ci/dist/cli.js
 cp /path/to/datadog-ci/dist/cli.js /path/to/project/node_modules/.bin/datadog-ci
 ```
 
-Then you can follow the usual installation steps.
+Then, follow the usual installation steps.
