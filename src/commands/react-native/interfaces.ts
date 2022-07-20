@@ -76,8 +76,8 @@ export class RNSourcemap {
       version,
     }
     if (this.gitData !== undefined) {
-      metadata.git_repository_url = this.gitData!.gitRepositoryURL
-      metadata.git_commit_sha = this.gitData!.gitCommitSha
+      metadata.git_repository_url = this.gitData.gitRepositoryURL
+      metadata.git_commit_sha = this.gitData.gitCommitSha
     }
 
     return {
