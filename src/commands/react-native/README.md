@@ -13,7 +13,7 @@ export DATADOG_API_KEY="<API KEY>"
 
 You can configure the tool to use Datadog EU by defining the `DATADOG_SITE` environment variable as `datadoghq.eu`. By default, the requests are sent to Datadog US.
 
-To make these variables available, we recommend to set them in a **encrypted** `datadog-ci.json` file at the root of your project:
+To make these variables available, Datadog recommends setting them in an encrypted `datadog-ci.json` file at the root of your project:
 
 ```json
 {
@@ -103,7 +103,8 @@ This allows Datadog to create proper URLs such as:
 ### `xcode`
 
 This command can be called from an XCode build phase to execute the `react-native bundle` command and upload the source maps.
-The upload only happens when your target has a "Release" build configuration to prevent overwriting existing sourcemaps.
+
+The upload only happens when your target has a "Release" build configuration; that prevents overwriting existing source maps when running a build with another configuration such as "Debug".
 
 You can use the same environment variables as the `upload` command: `DATADOG_API_KEY` (required), `DATADOG_SITE`, and `DATADOG_SOURCEMAP_INTAKE_URL`.
 
@@ -114,7 +115,6 @@ $ which node #/path/to/node
 $ which yarn #/path/to/yarn
 ```
 
-Then change the "Bundle React Native code and images" build phase in XCode (don't forget to change `/path/to/node` and `/path/to/yarn`):
 
 #### For React Native >= 0.69:
 
