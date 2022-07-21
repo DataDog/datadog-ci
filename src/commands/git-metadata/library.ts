@@ -16,14 +16,20 @@ export const isGitRepo = async (): Promise<boolean> => {
   }
 }
 
-export const uploadGitCommitHash = async (apiKey: string, datadogSite: string): Promise<string> => {
+// UploadGitCommitHash uploads local git metadata and returns the current [repositoryURL, commitHash].
+// The current repositoryURL can be overriden by specifying the 'repositoryURL' arg.
+export const uploadGitCommitHash = async (
+  apiKey: string,
+  datadogSite: string,
+  repositoryURL?: string
+): Promise<[string, string]> => {
   const apiKeyValidator = newApiKeyValidator({
     apiKey,
     datadogSite,
   })
 
   const simpleGit = await newSimpleGit()
-  const payload = await getCommitInfo(simpleGit)
+  const payload = await getCommitInfo(simpleGit, repositoryURL)
 
   const version = require('../../../package.json').version
 
@@ -55,7 +61,7 @@ export const uploadGitCommitHash = async (apiKey: string, datadogSite: string): 
     throw new Error('Error uploading commit information.')
   }
 
-  return payload.hash
+  return [payload.remote, payload.hash]
 }
 
 export const uploadRepository = (

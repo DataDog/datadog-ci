@@ -43,11 +43,15 @@ describe('library', () => {
       await expect(uploadGitCommitHash('dummy', 'fake.site')).rejects.toThrowError('git is not installed')
     })
 
-    test('source code integration returns the correct hash', async () => {
+    test('source code integration returns the correct hash and url', async () => {
       const simpleGitClient = {checkIsRepo: () => true} as any
       jest.spyOn(git, 'newSimpleGit').mockResolvedValue(simpleGitClient)
 
-      jest.spyOn(git, 'getCommitInfo').mockImplementation(async () => new CommitInfo('hash', 'url', ['file1', 'file2']))
+      jest.spyOn(git, 'getCommitInfo').mockImplementation(async (_, repositoryURL) => {
+        expect(repositoryURL).toEqual(undefined)
+
+        return new CommitInfo('hash', 'url', ['file1', 'file2'])
+      })
       jest.spyOn(upload, 'upload').mockReturnValue((a, b) => {
         {
           return new Promise<upload.UploadStatus>((resolve) => {
@@ -58,7 +62,29 @@ describe('library', () => {
 
       jest.spyOn(apikey, 'newApiKeyValidator').mockReturnValue({} as any)
 
-      expect(await uploadGitCommitHash('dummy', 'fake.site')).toBe('hash')
+      expect(await uploadGitCommitHash('dummy', 'fake.site')).toEqual(['url', 'hash'])
+    })
+
+    test('source code integration returns the correct hash and overriden url', async () => {
+      const simpleGitClient = {checkIsRepo: () => true} as any
+      jest.spyOn(git, 'newSimpleGit').mockResolvedValue(simpleGitClient)
+
+      jest.spyOn(git, 'getCommitInfo').mockImplementation(async (_, repositoryURL) => {
+        expect(repositoryURL).toEqual('customUrl')
+
+        return new CommitInfo('hash', 'customUrl', ['file1', 'file2'])
+      })
+      jest.spyOn(upload, 'upload').mockReturnValue((a, b) => {
+        {
+          return new Promise<upload.UploadStatus>((resolve) => {
+            resolve(upload.UploadStatus.Success)
+          })
+        }
+      })
+
+      jest.spyOn(apikey, 'newApiKeyValidator').mockReturnValue({} as any)
+
+      expect(await uploadGitCommitHash('dummy', 'fake.site', 'customUrl')).toEqual(['customUrl', 'hash'])
     })
   })
 })
