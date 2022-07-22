@@ -9,7 +9,7 @@ import {getRepositoryData, newSimpleGit, RepositoryData} from '../../helpers/git
 import {RequestBuilder} from '../../helpers/interfaces'
 import {getMetricsLogger, MetricsLogger} from '../../helpers/metrics'
 import {upload, UploadStatus} from '../../helpers/upload'
-import {getRequestBuilder, parseConfigFile} from '../../helpers/utils'
+import {getRequestBuilder, parseConfigFile, setApiKeyAndSiteEnvVariablesFromConfig} from '../../helpers/utils'
 import {RNPlatform, RNSourcemap, RN_SUPPORTED_PLATFORMS} from './interfaces'
 import {
   renderCommandInfo,
@@ -258,17 +258,7 @@ export class UploadCommand extends Command {
   private resolveConfig = async () => {
     try {
       this.config = await parseConfigFile(this.config, this.configPath || DEFAULT_CONFIG_PATH)
-
-      /**
-       * Setting the environment variables is mandatory since the metrics
-       * logger reads them from the env
-       */
-      if (this.config.apiKey) {
-        process.env.DATADOG_API_KEY = this.config.apiKey
-      }
-      if (this.config.datadogSite) {
-        process.env.DATADOG_SITE = this.config.datadogSite
-      }
+      setApiKeyAndSiteEnvVariablesFromConfig(this.config)
     } catch (error) {
       if (this.configPath) {
         throw error

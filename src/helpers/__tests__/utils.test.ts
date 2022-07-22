@@ -362,6 +362,29 @@ describe('utils', () => {
       }
     })
   })
+
+  describe('setApiKeyAndSiteEnvVariablesFromConfig', () => {
+    test('sets the API Key and site if provided', () => {
+      delete process.env.DATADOG_API_KEY
+      delete process.env.DATADOG_SITE
+      expect(
+        ciUtils.setApiKeyAndSiteEnvVariablesFromConfig({
+          apiKey: 'test_api_key',
+          datadogSite: 'test_site',
+        })
+      )
+      expect(process.env.DATADOG_API_KEY).toBe('test_api_key')
+      expect(process.env.DATADOG_SITE).toBe('test_site')
+    })
+
+    test('does not crash if config is empty', () => {
+      delete process.env.DATADOG_API_KEY
+      delete process.env.DATADOG_SITE
+      ciUtils.setApiKeyAndSiteEnvVariablesFromConfig({})
+      expect(process.env.DATADOG_API_KEY).not.toBeDefined()
+      expect(process.env.DATADOG_SITE).not.toBeDefined()
+    })
+  })
 })
 
 test('removeUndefinedValues', () => {
