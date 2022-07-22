@@ -516,15 +516,15 @@ export const getTestsToTrigger = async (
 
   if (!overriddenTestsToTrigger.length) {
     throw new CiError('NO_TESTS_TO_RUN')
-  }
-
-  const waitedTests = tests.filter(definedTypeGuard)
-  if (waitedTests.length > MAX_TESTS_TO_TRIGGER) {
+  } else if (overriddenTestsToTrigger.length > MAX_TESTS_TO_TRIGGER) {
     throw new CriticalError(
       'TOO_MANY_TESTS_TO_TRIGGER',
       `Cannot trigger more than ${MAX_TESTS_TO_TRIGGER} tests (received ${triggerConfigs.length})`
     )
-  } else if (waitedTests.length > 0) {
+  }
+
+  const waitedTests = tests.filter(definedTypeGuard)
+  if (waitedTests.length > 0) {
     reporter.testsWait(waitedTests)
   }
 

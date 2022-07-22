@@ -1,6 +1,7 @@
 // tslint:disable: no-string-literal
 import {AxiosError, AxiosResponse} from 'axios'
 import * as ciUtils from '../../../helpers/utils'
+import {MAX_TESTS_TO_TRIGGER} from '../command'
 import {CiError, CriticalCiErrorCode, CriticalError} from '../errors'
 import {ConfigOverride, ExecutionRule, SyntheticsCIConfig} from '../interfaces'
 import * as runTests from '../run-test'
@@ -476,6 +477,21 @@ describe('run-test', () => {
           suite: 'Query: fake search',
         },
       ])
+    })
+
+    test('display warning if too many tests from search', async () => {
+      const api = {
+        searchTests: () => ({
+          tests: Array(MAX_TESTS_TO_TRIGGER + 1).fill({public_id: 'stu-vwx-yza'}),
+        }),
+      } as any
+
+      const searchQuery = 'fake search'
+
+      await runTests.getTestsList(api, {...ciConfig, testSearchQuery: searchQuery}, mockReporter)
+      expect(mockReporter.error).toHaveBeenCalledWith(
+        `More than ${MAX_TESTS_TO_TRIGGER} tests returned by search query, only the first ${MAX_TESTS_TO_TRIGGER} will be fetched.\n`
+      )
     })
 
     test('should use given globs to get tests list', async () => {
