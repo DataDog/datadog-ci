@@ -110,14 +110,14 @@ export class TagCommand extends Command {
 
     try {
       await retryRequest(doRequest, {
+        maxTimeout: 30000,
+        minTimeout: 5000,
         onRetry: (e, attempt) => {
           this.context.stderr.write(
             chalk.yellow(`[attempt ${attempt}] Could not send tags. Retrying...: ${e.message}\n`)
           )
         },
         retries: 5,
-        minTimeout: 5000,
-        maxTimeout: 30000,
       })
     } catch (error) {
       this.context.stderr.write(`${chalk.red.bold('[ERROR]')} Could not send tags: ${error.message}\n`)
