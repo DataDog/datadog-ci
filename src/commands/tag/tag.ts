@@ -116,6 +116,8 @@ export class TagCommand extends Command {
           )
         },
         retries: 5,
+        minTimeout: 5000,
+        maxTimeout: 30000,
       })
     } catch (error) {
       this.context.stderr.write(`${chalk.red.bold('[ERROR]')} Could not send tags: ${error.message}\n`)
