@@ -10,7 +10,12 @@ import {InvalidConfigurationError} from '../../helpers/errors'
 import {RequestBuilder} from '../../helpers/interfaces'
 import {getMetricsLogger, MetricsLogger} from '../../helpers/metrics'
 import {upload, UploadStatus} from '../../helpers/upload'
-import {buildPath, getRequestBuilder} from '../../helpers/utils'
+import {
+  buildPath,
+  getRequestBuilder,
+  parseConfigFile,
+  setApiKeyAndSiteEnvVariablesFromConfig,
+} from '../../helpers/utils'
 import {ArchSlice, CompressedDsym, Dsym} from './interfaces'
 import {
   renderCommandDetail,
@@ -34,6 +39,8 @@ import {
   zipDirectoryToArchive,
 } from './utils'
 
+const DEFAULT_CONFIG_PATH = 'datadog-ci.json'
+
 export class UploadCommand extends Command {
   public static usage = Command.Usage({
     description: 'Upload dSYM files to Datadog.',
@@ -56,6 +63,7 @@ export class UploadCommand extends Command {
     apiKey: process.env.DATADOG_API_KEY,
     datadogSite: process.env.DATADOG_SITE || 'datadoghq.com',
   }
+  private configPath?: string
   private dryRun = false
   private maxConcurrency = 20
 
@@ -68,6 +76,9 @@ export class UploadCommand extends Command {
     // Normalizing the basePath to resolve .. and .
     this.basePath = path.posix.normalize(this.basePath)
     this.context.stdout.write(renderCommandInfo(this.basePath, this.maxConcurrency, this.dryRun))
+
+    await this.resolveConfig()
+
     const metricsLogger = getMetricsLogger({
       datadogSite: process.env.DATADOG_SITE,
       defaultTags: [`cli_version:${this.cliVersion}`],
@@ -190,6 +201,17 @@ export class UploadCommand extends Command {
       .reduce((acc, nextSlice) => acc.concat(nextSlice), [])
   }
 
+  private resolveConfig = async () => {
+    try {
+      this.config = await parseConfigFile(this.config, this.configPath || DEFAULT_CONFIG_PATH)
+      setApiKeyAndSiteEnvVariablesFromConfig(this.config)
+    } catch (error) {
+      if (this.configPath) {
+        throw error
+      }
+    }
+  }
+
   /**
    * It takes fat dSYM as input and returns multiple dSYMs by extracting **each arch**
    * to separate dSYM file. New files are saved to `intermediatePath` and named by their object uuid (`<uuid>.dSYM`).
@@ -287,3 +309,4 @@ UploadCommand.addPath('dsyms', 'upload')
 UploadCommand.addOption('basePath', Command.String({required: true}))
 UploadCommand.addOption('maxConcurrency', Command.String('--max-concurrency'))
 UploadCommand.addOption('dryRun', Command.Boolean('--dry-run'))
+UploadCommand.addOption('configPath', Command.String('--config'))
