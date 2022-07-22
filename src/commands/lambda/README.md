@@ -44,7 +44,7 @@ datadog-ci lambda uninstrument -f <function-name> -f <another-function-name> -r 
 # Uninstrument function(s) in interactive mode
 datadog-ci lambda uninstrument -i
 
-# Instrument multiple functions that match a regex pattern
+# Uninstrument multiple functions that match a regex pattern
 datadog-ci lambda uninstrument --functions-regex <valid-regex-pattern> -r us-east-1
 
 # Dry run of all updates
