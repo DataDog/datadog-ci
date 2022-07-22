@@ -132,6 +132,10 @@ export class RunTestCommand extends Command {
         break
       case 'UNAVAILABLE_TUNNEL_CONFIG':
         reporter.error(`\n${chalk.bgRed.bold(' ERROR: unable to get tunnel configuration ')}\n${error.message}\n\n`)
+        break
+
+      default:
+        reporter.error(`\n${chalk.bgRed.bold(' ERROR ')}\n${error.message}\n\n`)
     }
   }
 

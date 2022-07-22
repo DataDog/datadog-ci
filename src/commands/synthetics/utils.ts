@@ -548,7 +548,7 @@ export const runTests = async (api: APIHelper, testsToTrigger: TestPayload[]): P
     const errorMessage = formatBackendErrors(e)
     const testIds = testsToTrigger.map((t) => t.public_id).join(',')
     // Rewrite error message
-    throw new EndpointError(`[${testIds}] Failed to trigger tests: ${errorMessage}\n`, e.response.status)
+    throw new EndpointError(`[${testIds}] Failed to trigger tests: ${errorMessage}\n`, e.response?.status)
   }
 }
 
