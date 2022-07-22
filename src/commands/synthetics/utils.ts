@@ -455,10 +455,24 @@ export const getReporter = (reporters: Reporter[]): MainReporter => ({
   },
 })
 
-export const getTestsToTrigger = async (api: APIHelper, triggerConfigs: TriggerConfig[], reporter: MainReporter) => {
+export const getTestsToTrigger = async (
+  api: APIHelper,
+  triggerConfigs: TriggerConfig[],
+  reporter: MainReporter,
+  triggerFromSearch?: boolean
+) => {
   const overriddenTestsToTrigger: TestPayload[] = []
   const errorMessages: string[] = []
   const summary = createSummary()
+
+  // When too many tests are triggered, if fetched from a search query: simply trim them and show a warning.
+  if (triggerConfigs.length > MAX_TESTS_TO_TRIGGER && triggerFromSearch) {
+    triggerConfigs.splice(MAX_TESTS_TO_TRIGGER)
+    const maxTests = chalk.bold(MAX_TESTS_TO_TRIGGER)
+    errorMessages.push(
+      chalk.yellow(`More than ${maxTests} tests returned by search query, only the first ${maxTests} were fetched.\n`)
+    )
+  }
 
   const tests = await Promise.all(
     triggerConfigs.map(async ({config, id, suite}) => {
