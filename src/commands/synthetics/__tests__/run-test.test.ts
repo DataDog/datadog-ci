@@ -47,7 +47,8 @@ describe('run-test', () => {
           expect.objectContaining({id: 'public-id-1', config: configOverride}),
           expect.objectContaining({id: 'public-id-2', config: configOverride}),
         ]),
-        expect.anything()
+        expect.anything(),
+        false
       )
     })
 
@@ -94,7 +95,8 @@ describe('run-test', () => {
             expect.objectContaining({id: 'public-id-1', config: expectedOverriddenConfig}),
             expect.objectContaining({id: 'public-id-2', config: expectedOverriddenConfig}),
           ]),
-          expect.anything()
+          expect.anything(),
+          false
         )
       }
     )
@@ -125,7 +127,8 @@ describe('run-test', () => {
           expect.objectContaining({id: 'public-id-1', config: configOverride}),
           expect.objectContaining({id: 'public-id-2', config: configOverride}),
         ]),
-        expect.anything()
+        expect.anything(),
+        false
       )
     })
 
@@ -158,7 +161,8 @@ describe('run-test', () => {
           expect.objectContaining({id: 'public-id-1', config: configOverride}),
           expect.objectContaining({id: 'public-id-2', config: configOverride}),
         ]),
-        expect.anything()
+        expect.anything(),
+        false
       )
       expect(apiHelper.getPresignedURL).not.toHaveBeenCalled()
     })
