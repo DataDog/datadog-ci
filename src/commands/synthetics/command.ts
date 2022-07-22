@@ -117,6 +117,9 @@ export class RunTestCommand extends Command {
       case 'TUNNEL_START_FAILED':
         reporter.error(`\n${chalk.bgRed.bold(' ERROR: unable to start tunnel ')}\n${error.message}\n\n`)
         break
+      case 'TOO_MANY_TESTS_TO_TRIGGER':
+        reporter.error(`\n${chalk.bgRed.bold(' ERROR: too many tests to trigger ')}\n${error.message}\n\n`)
+        break
       case 'TRIGGER_TESTS_FAILED':
         reporter.error(`\n${chalk.bgRed.bold(' ERROR: unable to trigger tests ')}\n${error.message}\n\n`)
         break

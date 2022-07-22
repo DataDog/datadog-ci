@@ -12,7 +12,8 @@ import {GIT_COMMIT_MESSAGE} from '../../helpers/tags'
 import {pick} from '../../helpers/utils'
 
 import {APIHelper, EndpointError, formatBackendErrors, isNotFoundError} from './api'
-import {CiError} from './errors'
+import {MAX_TESTS_TO_TRIGGER} from './command'
+import {CiError, CriticalError} from './errors'
 import {
   Batch,
   CommandConfig,
@@ -465,7 +466,8 @@ export const getTestsToTrigger = async (
   const errorMessages: string[] = []
   const summary = createSummary()
 
-  // When too many tests are triggered, if fetched from a search query: simply trim them and show a warning.
+  // When too many tests are triggered, if fetched from a search query: simply trim them and show a warning,
+  // otherwise: retrieve them and fail later if still exceeding without skipped/missing tests.
   if (triggerConfigs.length > MAX_TESTS_TO_TRIGGER && triggerFromSearch) {
     triggerConfigs.splice(MAX_TESTS_TO_TRIGGER)
     const maxTests = chalk.bold(MAX_TESTS_TO_TRIGGER)
@@ -517,7 +519,12 @@ export const getTestsToTrigger = async (
   }
 
   const waitedTests = tests.filter(definedTypeGuard)
-  if (waitedTests.length > 0) {
+  if (waitedTests.length > MAX_TESTS_TO_TRIGGER) {
+    throw new CriticalError(
+      'TOO_MANY_TESTS_TO_TRIGGER',
+      `Cannot trigger more than ${MAX_TESTS_TO_TRIGGER} tests (received ${triggerConfigs.length})`
+    )
+  } else if (waitedTests.length > 0) {
     reporter.testsWait(waitedTests)
   }
 

@@ -1,4 +1,5 @@
 import {apiConstructor, APIHelper, isForbiddenError} from './api'
+import {MAX_TESTS_TO_TRIGGER} from './command'
 import {CiError, CriticalError} from './errors'
 import {
   CommandConfig,
