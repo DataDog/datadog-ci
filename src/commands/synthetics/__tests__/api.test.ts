@@ -87,7 +87,7 @@ describe('dd-api', () => {
 
   test('should perform search with expected parameters', async () => {
     const requestMock = jest.fn(() => ({status: 200, data: {tests: []}}))
-    jest.spyOn(axios, 'create').mockImplementation((() => requestMock) as any)
+    const spy = jest.spyOn(axios, 'create').mockImplementation((() => requestMock) as any)
 
     const {searchTests} = apiConstructor(apiConfiguration)
 
@@ -100,6 +100,7 @@ describe('dd-api', () => {
         },
       })
     )
+    spy.mockRestore()
   })
 
   describe('proxy configuration', () => {
