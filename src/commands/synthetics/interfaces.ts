@@ -9,7 +9,7 @@ export interface MainReporter {
   reportStart(timings: {startTime: number}): void
   resultEnd(result: Result, baseUrl: string): void
   resultReceived(result: Batch['results'][0]): void
-  runEnd(summary: Summary, baseUrl: string): void
+  runEnd(summary: Summary): void
   testsWait(tests: Test[]): void
   testTrigger(test: Test, testId: string, executionRule: ExecutionRule, config: ConfigOverride): void
   testWait(test: Test): void
@@ -328,6 +328,7 @@ export interface Suite {
 
 export interface Summary {
   batchId?: string
+  batchUrl?: string
   criticalErrors: number
   failed: number
   failedNonBlocking: number

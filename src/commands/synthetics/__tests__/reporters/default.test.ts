@@ -7,7 +7,7 @@ import {getApiResult, getApiTest, getFailedBrowserResult, getTimedOutBrowserResu
 
 /**
  * A good amount of these tests rely on Jest snapshot assertions.
- * If you make some changes in the output of the default repoter, chances are you
+ * If you make some changes in the output of the default reporter, chances are you
  * will also have to update the snapshots from `./__snapshots__/default.test.ts.snap`.
  * To do that, you can run the following command: `yarn test --updateSnapshot reporters/default.test.ts`.
  * More information on https://jestjs.io/docs/snapshot-testing.
@@ -180,6 +180,7 @@ describe('Default reporter', () => {
 
     const complexSummary: Summary = {
       batchId: 'batch-id',
+      batchUrl: 'https://app.datadoghq.com/synthetics/explorer/ci?batchResultId=batch-id',
       criticalErrors: 2,
       failed: 1,
       failedNonBlocking: 3,
@@ -211,7 +212,7 @@ describe('Default reporter', () => {
     ]
 
     test.each(cases)('$description', (testCase) => {
-      reporter.runEnd(testCase.summary, baseUrlFixture)
+      reporter.runEnd(testCase.summary)
       const mostRecentOutput = writeMock.mock.calls[writeMock.mock.calls.length - 1][0]
       expect(mostRecentOutput).toMatchSnapshot()
     })

@@ -12,7 +12,7 @@ import {
   TriggerConfig,
 } from './interfaces'
 import {Tunnel} from './tunnel'
-import {getSuites, getTestsToTrigger, runTests, waitForResults} from './utils'
+import {getAppBaseURL, getBatchUrl, getSuites, getTestsToTrigger, runTests, waitForResults} from './utils'
 
 export const executeTests = async (reporter: MainReporter, config: CommandConfig, suites?: Suite[]) => {
   const api = getApiHelper(config)
@@ -99,6 +99,9 @@ export const executeTests = async (reporter: MainReporter, config: CommandConfig
   let trigger: Trigger
   try {
     trigger = await runTests(api, overriddenTestsToTrigger)
+
+    const baseUrl = getAppBaseURL(config)
+    summary.batchUrl = getBatchUrl(baseUrl, trigger.batch_id)
     summary.batchId = trigger.batch_id
   } catch (error) {
     await stopTunnel()

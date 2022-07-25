@@ -425,10 +425,10 @@ export const getReporter = (reporters: Reporter[]): MainReporter => ({
       }
     }
   },
-  runEnd: (summary, baseUrl) => {
+  runEnd: (summary) => {
     for (const reporter of reporters) {
       if (typeof reporter.runEnd === 'function') {
-        reporter.runEnd(summary, baseUrl)
+        reporter.runEnd(summary)
       }
     }
   },
@@ -591,6 +591,9 @@ export const parseVariablesFromCli = (
 export const getAppBaseURL = ({datadogSite, subdomain}: Pick<CommandConfig, 'datadogSite' | 'subdomain'>) =>
   `https://${subdomain}.${datadogSite}/`
 
+export const getBatchUrl = (baseUrl: string, batchId: string) =>
+  `${baseUrl}synthetics/explorer/ci?batchResultId=${batchId}`
+
 /**
  * Sort results with the following rules:
  * - Passed results come first
@@ -662,7 +665,7 @@ export const renderResults = ({
     reporter.resultEnd(result, getAppBaseURL(config))
   }
 
-  reporter.runEnd(summary, getAppBaseURL(config))
+  reporter.runEnd(summary)
 
   return hasSucceeded ? 0 : 1
 }

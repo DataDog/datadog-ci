@@ -214,8 +214,6 @@ const getResultUrl = (baseUrl: string, test: Test, resultId: string) => {
   return `${testDetailUrl}?resultId=${resultId}&${ciQueryParam}`
 }
 
-const getBatchUrl = (baseUrl: string, batchId: string) => `${baseUrl}synthetics/explorer/ci?batchResultId=${batchId}`
-
 const renderExecutionResult = (test: Test, execution: Result, baseUrl: string) => {
   const {executionRule, test: overriddenTest, resultId, result, timedOut} = execution
   const resultOutcome = getResultOutcome(execution)
@@ -299,7 +297,7 @@ export class DefaultReporter implements MainReporter {
     return
   }
 
-  public runEnd(summary: Summary, baseUrl: string) {
+  public runEnd(summary: Summary) {
     const {bold: b, gray, green, red, yellow} = chalk
 
     const lines: string[] = []
@@ -333,7 +331,7 @@ export class DefaultReporter implements MainReporter {
     const extraInfoStr = extraInfo.length ? ' (' + extraInfo.join(', ') + ')' : ''
 
     if (summary.batchId) {
-      lines.push('Results URL: ' + chalk.dim.cyan(getBatchUrl(baseUrl, summary.batchId)))
+      lines.push('Results URL: ' + chalk.dim.cyan(summary.batchUrl))
     }
     lines.push(`${b('Run summary:')} ${runSummary.join(', ')}${extraInfoStr}\n\n`)
 
