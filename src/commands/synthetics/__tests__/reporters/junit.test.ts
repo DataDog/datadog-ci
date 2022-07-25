@@ -12,11 +12,13 @@ import {
   getMultiStep,
   getMultiStepsServerResult,
   getStep,
+  getSummary,
 } from '../fixtures'
 
 const globalTestMock = getApiTest('123-456-789')
 const globalStepMock = getStep()
 const globalResultMock = getBrowserResult('1', globalTestMock)
+const globalSummaryMock = getSummary()
 
 describe('Junit reporter', () => {
   const writeMock: Writable['write'] = jest.fn()
@@ -53,7 +55,7 @@ describe('Junit reporter', () => {
     })
 
     it('should build the xml', async () => {
-      await reporter.runEnd()
+      await reporter.runEnd(globalSummaryMock)
       expect(reporter['builder'].buildObject).toHaveBeenCalledWith(reporter['json'])
       expect(fs.writeFile).toHaveBeenCalledWith('junit.xml', expect.any(String), 'utf8')
       expect(writeMock).toHaveBeenCalledTimes(1)
@@ -67,7 +69,7 @@ describe('Junit reporter', () => {
         throw new Error('Fail')
       })
 
-      await reporter.runEnd()
+      await reporter.runEnd(globalSummaryMock)
 
       expect(fs.writeFile).not.toHaveBeenCalled()
       expect(writeMock).toHaveBeenCalledTimes(1)
@@ -75,7 +77,7 @@ describe('Junit reporter', () => {
 
     it('should create the file', async () => {
       reporter['destination'] = 'junit/report.xml'
-      await reporter.runEnd()
+      await reporter.runEnd(globalSummaryMock)
       const stat = await fs.stat(reporter['destination'])
       expect(stat).toBeDefined()
 
@@ -87,11 +89,18 @@ describe('Junit reporter', () => {
     it('should not throw on existing directory', async () => {
       await fs.mkdir('junit')
       reporter['destination'] = 'junit/report.xml'
-      await reporter.runEnd()
+      await reporter.runEnd(globalSummaryMock)
 
       // Cleaning
       await fs.unlink(reporter['destination'])
       await fs.rmdir('junit')
+    })
+
+    it('should add the batch_id to the report', async () => {
+      jest.spyOn(fs, 'writeFile').mockResolvedValueOnce()
+
+      await reporter.runEnd(globalSummaryMock)
+      expect(reporter['json'].testsuites.$.batch_id).toBe(globalSummaryMock.batchId)
     })
   })
 

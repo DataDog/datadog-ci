@@ -5,7 +5,7 @@ import path from 'path'
 import {Writable} from 'stream'
 import {Builder} from 'xml2js'
 
-import {ApiServerResult, MultiStep, Reporter, Result, Step, Vitals} from '../interfaces'
+import {ApiServerResult, MultiStep, Reporter, Result, Step, Summary, Vitals} from '../interfaces'
 import {getResultDuration, getResultOutcome, ResultOutcome} from '../utils'
 
 interface Stats {
@@ -65,7 +65,7 @@ interface XMLStep {
 
 export interface XMLJSON {
   testsuites: {
-    $: {name: string}
+    $: {batch_id?: string; name: string}
     testsuite: XMLRun[]
   }
 }
@@ -167,7 +167,9 @@ export class JUnitReporter implements Reporter {
     suiteRun.testcase.push(testCase)
   }
 
-  public async runEnd() {
+  public async runEnd(summary: Summary) {
+    this.json.testsuites.$.batch_id = summary.batchId
+
     // Write the file
     try {
       const xml = this.builder.buildObject(this.json)
