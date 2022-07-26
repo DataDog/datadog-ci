@@ -19,9 +19,15 @@ export const pick = <T extends object, K extends keyof T>(base: T, keys: K[]) =>
 }
 
 export const getConfig = async (configPath: string) => {
-  const configFile = await promisify(fs.readFile)(configPath, 'utf-8')
+  try {
+    const configFile = await promisify(fs.readFile)(configPath, 'utf-8')
 
-  return JSON.parse(configFile)
+    return JSON.parse(configFile)
+  } catch (error) {
+    if (error instanceof SyntaxError) {
+      throw new Error('Config file is not correct JSON')
+    }
+  }
 }
 
 /**
