@@ -30,19 +30,6 @@ export const getConfig = async (configPath: string) => {
   }
 }
 
-/**
- * Setting the API Key and site as environment variables is mandatory to call the metrics
- * logger. Call this function if you read their values from somewhere else (e.g. `datadog-ci.json`).
- */
-export const setApiKeyAndSiteEnvVariablesFromConfig = (config: {apiKey?: string; datadogSite?: string}) => {
-  if (config.apiKey) {
-    process.env.DATADOG_API_KEY = config.apiKey
-  }
-  if (config.datadogSite) {
-    process.env.DATADOG_SITE = config.datadogSite
-  }
-}
-
 const resolveConfigPath = ({
   configPath,
   defaultConfigPath,

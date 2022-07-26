@@ -9,7 +9,7 @@ import {getRepositoryData, newSimpleGit, RepositoryData} from '../../helpers/git
 import {RequestBuilder} from '../../helpers/interfaces'
 import {getMetricsLogger, MetricsLogger} from '../../helpers/metrics'
 import {upload, UploadStatus} from '../../helpers/upload'
-import {getRequestBuilder, resolveConfigFromFile, setApiKeyAndSiteEnvVariablesFromConfig} from '../../helpers/utils'
+import {getRequestBuilder, resolveConfigFromFile} from '../../helpers/utils'
 import {RNPlatform, RNSourcemap, RN_SUPPORTED_PLATFORMS} from './interfaces'
 import {
   renderCommandInfo,
@@ -130,9 +130,9 @@ export class UploadCommand extends Command {
       configPath: this.configPath,
       defaultConfigPath: DEFAULT_CONFIG_PATH,
     })
-    setApiKeyAndSiteEnvVariablesFromConfig(this.config)
 
     const metricsLogger = getMetricsLogger({
+      apiKey: this.config.apiKey,
       datadogSite: this.config.datadogSite,
       defaultTags: [
         `version:${this.releaseVersion}`,
@@ -250,7 +250,7 @@ export class UploadCommand extends Command {
 
     return getRequestBuilder({
       apiKey: this.config.apiKey!,
-      baseUrl: getBaseSourcemapIntakeUrl(),
+      baseUrl: getBaseSourcemapIntakeUrl(this.config.datadogSite),
       headers: new Map([
         ['DD-EVP-ORIGIN', 'datadog-ci react-native'],
         ['DD-EVP-ORIGIN-VERSION', this.cliVersion],

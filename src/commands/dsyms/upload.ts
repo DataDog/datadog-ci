@@ -10,12 +10,7 @@ import {InvalidConfigurationError} from '../../helpers/errors'
 import {RequestBuilder} from '../../helpers/interfaces'
 import {getMetricsLogger, MetricsLogger} from '../../helpers/metrics'
 import {upload, UploadStatus} from '../../helpers/upload'
-import {
-  buildPath,
-  getRequestBuilder,
-  resolveConfigFromFile,
-  setApiKeyAndSiteEnvVariablesFromConfig,
-} from '../../helpers/utils'
+import {buildPath, getRequestBuilder, resolveConfigFromFile} from '../../helpers/utils'
 import {ArchSlice, CompressedDsym, Dsym} from './interfaces'
 import {
   renderCommandDetail,
@@ -81,10 +76,10 @@ export class UploadCommand extends Command {
       configPath: this.configPath,
       defaultConfigPath: DEFAULT_CONFIG_PATH,
     })
-    setApiKeyAndSiteEnvVariablesFromConfig(this.config)
 
     const metricsLogger = getMetricsLogger({
-      datadogSite: process.env.DATADOG_SITE,
+      apiKey: this.config.apiKey,
+      datadogSite: this.config.datadogSite,
       defaultTags: [`cli_version:${this.cliVersion}`],
       prefix: 'datadog.ci.dsyms.',
     })
@@ -177,7 +172,7 @@ export class UploadCommand extends Command {
 
     return getRequestBuilder({
       apiKey: this.config.apiKey!,
-      baseUrl: getBaseIntakeUrl(),
+      baseUrl: getBaseIntakeUrl(this.config.datadogSite),
     })
   }
 
