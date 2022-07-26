@@ -23,6 +23,7 @@ import {
   Trigger,
   User,
 } from '../interfaces'
+import {createSummary} from '../utils'
 
 const mockUser: User = {
   email: '',
@@ -134,6 +135,11 @@ export const getMultiStep = (): MultiStep => ({
 })
 
 export const getTestSuite = (): Suite => ({content: {tests: [{config: {}, id: '123-456-789'}]}, name: 'Suite 1'})
+
+export const getSummary = (): Summary => ({
+  ...createSummary(),
+  batchId: 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
+})
 
 const getBaseResult = (resultId: string, test: Test): Omit<Result, 'result'> => ({
   executionRule: ExecutionRule.BLOCKING,
