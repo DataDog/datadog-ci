@@ -1,0 +1,22 @@
+{
+  "apiKey": "fake_api_key",
+  "appKey": "fake_app_key",
+  "configPath": "fake-datadog-ci.json",
+  "datadogSite": "datadoghq.eu",
+  "failOnCriticalErrors": true,
+  "failOnTimeout": false,
+  "files": ["my-new-file"],
+  "global": {
+    "locations": [],
+    "pollingTimeout": 2
+  },
+  "locations": [],
+  "pollingTimeout": 1,
+  "proxy": {
+    "protocol": "https"
+  },
+  "publicIds": ["ran-dom-id"],
+  "subdomain": "ppa",
+  "tunnel": true,
+  "variableStrings": []
+}

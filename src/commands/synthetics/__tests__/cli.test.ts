@@ -41,14 +41,13 @@ const getAxiosHttpError = (status: number, error: string) => {
 
 describe('run-test', () => {
   beforeEach(() => {
-    jest.spyOn(ciUtils, 'getConfig').mockImplementation(async () => ({}))
     process.env = {}
+    jest.restoreAllMocks()
   })
 
   describe('resolveConfig', () => {
     beforeEach(() => {
       process.env = {}
-      jest.spyOn(ciUtils, 'getConfig').mockImplementation(async () => ({}))
     })
 
     test('override from ENV', async () => {
@@ -77,7 +76,7 @@ describe('run-test', () => {
       const overrideConfigFile = {
         apiKey: 'fake_api_key',
         appKey: 'fake_app_key',
-        configPath: 'fake-datadog-ci.json',
+        configPath: 'src/commands/synthetics/__tests__/config-fixtures/config-with-all-keys.json',
         datadogSite: 'datadoghq.eu',
         failOnCriticalErrors: true,
         failOnTimeout: false,
@@ -92,8 +91,8 @@ describe('run-test', () => {
         variableStrings: [],
       }
 
-      jest.spyOn(ciUtils, 'getConfig').mockImplementation(async () => overrideConfigFile)
       const command = new RunTestCommand()
+      command.configPath = 'src/commands/synthetics/__tests__/config-fixtures/config-with-all-keys.json'
 
       await command['resolveConfig']()
       expect(command['config']).toEqual(overrideConfigFile)
@@ -103,7 +102,7 @@ describe('run-test', () => {
       const overrideCLI = {
         apiKey: 'fake_api_key',
         appKey: 'fake_app_key',
-        configPath: 'fake-datadog-ci.json',
+        configPath: 'src/commands/synthetics/__tests__/config-fixtures/empty-config-file.json',
         datadogSite: 'datadoghq.eu',
         failOnCriticalErrors: true,
         failOnTimeout: false,
@@ -132,7 +131,7 @@ describe('run-test', () => {
         ...DEFAULT_COMMAND_CONFIG,
         apiKey: 'fake_api_key',
         appKey: 'fake_app_key',
-        configPath: 'fake-datadog-ci.json',
+        configPath: 'src/commands/synthetics/__tests__/config-fixtures/empty-config-file.json',
         datadogSite: 'datadoghq.eu',
         failOnCriticalErrors: true,
         failOnTimeout: false,
@@ -146,7 +145,8 @@ describe('run-test', () => {
     })
 
     test('override from config file < ENV < CLI', async () => {
-      jest.spyOn(ciUtils, 'getConfig').mockImplementation(async () => ({
+      jest.spyOn(ciUtils, 'resolveConfigFromFile').mockImplementationOnce(async (config) => ({
+        ...(config as Record<string, unknown>),
         apiKey: 'api_key_config_file',
         appKey: 'app_key_config_file',
         datadogSite: 'datadog.config.file',
@@ -171,15 +171,12 @@ describe('run-test', () => {
     })
 
     test('pass command pollingTimeout as global override if undefined', async () => {
-      jest.spyOn(ciUtils, 'getConfig').mockImplementation(async () => ({
-        global: {followRedirects: false},
-        pollingTimeout: 333,
-      }))
-
       const command = new RunTestCommand()
+      command.configPath = 'src/commands/synthetics/__tests__/config-fixtures/config-with-global-polling-timeout.json'
       await command['resolveConfig']()
       expect(command['config']).toEqual({
         ...DEFAULT_COMMAND_CONFIG,
+        configPath: 'src/commands/synthetics/__tests__/config-fixtures/config-with-global-polling-timeout.json',
         global: {followRedirects: false, pollingTimeout: 333},
         pollingTimeout: 333,
       })
@@ -191,7 +188,7 @@ describe('run-test', () => {
         name: 'Suite 1',
       }
 
-      jest.spyOn(ciUtils, 'parseConfigFile').mockImplementation(async (config, _) => config)
+      jest.spyOn(ciUtils, 'resolveConfigFromFile').mockImplementation(async (config, _) => config)
       jest.spyOn(utils, 'getSuites').mockImplementation((() => [conf]) as any)
 
       // Throw to stop the test
@@ -297,7 +294,7 @@ describe('run-test', () => {
         }),
       }
       jest.spyOn(runTests, 'getApiHelper').mockImplementation(() => apiHelper as any)
-      jest.spyOn(ciUtils, 'parseConfigFile').mockImplementation(async (config, _) => config)
+      jest.spyOn(ciUtils, 'resolveConfigFromFile').mockImplementation(async (config, _) => config)
       jest.spyOn(utils, 'getSuites').mockImplementation((() => [getTestSuite()]) as any)
 
       expect(await command.execute()).toBe(0)
@@ -321,7 +318,7 @@ describe('run-test', () => {
             }),
           }
           jest.spyOn(runTests, 'getApiHelper').mockImplementation(() => apiHelper as any)
-          jest.spyOn(ciUtils, 'parseConfigFile').mockImplementation(async (config, __) => config)
+          jest.spyOn(ciUtils, 'resolveConfigFromFile').mockImplementation(async (config, __) => config)
 
           expect(await command.execute()).toBe(expectedExit)
           expect(apiHelper.searchTests).toHaveBeenCalledTimes(1)
@@ -338,7 +335,7 @@ describe('run-test', () => {
             }),
           }
           jest.spyOn(runTests, 'getApiHelper').mockImplementation(() => apiHelper as any)
-          jest.spyOn(ciUtils, 'parseConfigFile').mockImplementation(async (config, __) => config)
+          jest.spyOn(ciUtils, 'resolveConfigFromFile').mockImplementation(async (config, __) => config)
           jest.spyOn(utils, 'getSuites').mockImplementation((() => [getTestSuite()]) as any)
 
           expect(await command.execute()).toBe(expectedExit)
@@ -357,7 +354,7 @@ describe('run-test', () => {
             }),
           }
           jest.spyOn(runTests, 'getApiHelper').mockImplementation(() => apiHelper as any)
-          jest.spyOn(ciUtils, 'parseConfigFile').mockImplementation(async (config, __) => config)
+          jest.spyOn(ciUtils, 'resolveConfigFromFile').mockImplementation(async (config, __) => config)
           jest.spyOn(utils, 'getSuites').mockImplementation((() => [getTestSuite()]) as any)
 
           expect(await command.execute()).toBe(expectedExit)
@@ -378,7 +375,7 @@ describe('run-test', () => {
             triggerTests: () => mockTestTriggerResponse,
           }
           jest.spyOn(runTests, 'getApiHelper').mockImplementation(() => apiHelper as any)
-          jest.spyOn(ciUtils, 'parseConfigFile').mockImplementation(async (config, __) => config)
+          jest.spyOn(ciUtils, 'resolveConfigFromFile').mockImplementation(async (config, __) => config)
           jest.spyOn(utils, 'getSuites').mockImplementation((() => [getTestSuite()]) as any)
 
           expect(await command.execute()).toBe(expectedExit)

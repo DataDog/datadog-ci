@@ -31,7 +31,11 @@ describe('Proxy configuration', () => {
     const {config: proxyOpts, close: proxyClose, calls: proxyCalls} = getSyntheticsProxy()
 
     try {
-      jest.spyOn(ciUtils, 'getConfig').mockImplementation(async () => ({
+      // Here it is dangerous to create a config file since it would create a link between
+      // the proxy port in the getSyntheticsProxy file and the config file.
+      // Instead we mock the util function that is called in the command.
+      jest.spyOn(ciUtils, 'resolveConfigFromFile').mockImplementationOnce(async (config) => ({
+        ...(config as Record<string, unknown>),
         apiKey: '123',
         appKey: '123',
         proxy: proxyOpts,
@@ -70,14 +74,8 @@ describe('Proxy configuration', () => {
     process.env.HTTP_PROXY = `http://127.0.0.1:${proxyOpts.port}`
 
     try {
-      jest.spyOn(ciUtils, 'getConfig').mockImplementation(async () => ({
-        apiKey: '123',
-        appKey: '123',
-        publicIds: ['123-456-789'],
-        tunnel: true,
-      }))
-
       const command = new RunTestCommand()
+      command.configPath = 'src/commands/synthetics/__tests__/config-fixtures/config-with-tunnel-no-proxy.json'
       command.context = {stdout: {write: jest.fn()}} as any
       jest.spyOn(runTests, 'getDatadogHost').mockImplementation(() => 'http://datadoghq.com/')
 

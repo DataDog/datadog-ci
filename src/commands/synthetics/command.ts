@@ -33,12 +33,12 @@ export const DEFAULT_COMMAND_CONFIG: CommandConfig = {
 }
 
 export class RunTestCommand extends Command {
+  public configPath?: string
   public jUnitReport?: string
   public runName?: string
   private apiKey?: string
   private appKey?: string
   private config: CommandConfig = JSON.parse(JSON.stringify(DEFAULT_COMMAND_CONFIG)) // Deep copy to avoid mutation during unit tests
-  private configPath?: string
   private datadogSite?: string
   private failOnCriticalErrors?: boolean
   private failOnTimeout?: boolean
