@@ -3,6 +3,7 @@ import {AxiosError, AxiosResponse, default as axios} from 'axios'
 import {ProxyConfiguration} from '../../../helpers/utils'
 
 import {apiConstructor} from '../api'
+import {MAX_TESTS_TO_TRIGGER} from '../command'
 import {APIConfiguration, ExecutionRule, PollResult, ServerResult, TestPayload, Trigger} from '../interfaces'
 
 import {getApiTest, getSyntheticsProxy, mockSearchResponse, mockTestTriggerResponse} from './fixtures'
@@ -81,6 +82,24 @@ describe('dd-api', () => {
     const {getPresignedURL} = api
     const {url} = await getPresignedURL([TRIGGERED_TEST_ID])
     expect(url).toEqual(PRESIGNED_URL_PAYLOAD.url)
+    spy.mockRestore()
+  })
+
+  test('should perform search with expected parameters', async () => {
+    const requestMock = jest.fn(() => ({status: 200, data: {tests: []}}))
+    const spy = jest.spyOn(axios, 'create').mockImplementation((() => requestMock) as any)
+
+    const {searchTests} = apiConstructor(apiConfiguration)
+
+    await expect(searchTests('tag:("test") creator:("Me") ???')).resolves.toEqual({tests: []})
+    expect(requestMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        params: {
+          count: MAX_TESTS_TO_TRIGGER + 1,
+          text: 'tag:("test") creator:("Me") ???',
+        },
+      })
+    )
     spy.mockRestore()
   })
 

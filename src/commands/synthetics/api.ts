@@ -4,6 +4,7 @@ import {AxiosError, AxiosPromise, AxiosRequestConfig} from 'axios'
 
 import {getRequestBuilder} from '../../helpers/utils'
 
+import {MAX_TESTS_TO_TRIGGER} from './command'
 import {
   APIConfiguration,
   Batch,
@@ -76,6 +77,8 @@ const searchTests = (request: (args: AxiosRequestConfig) => AxiosPromise<TestSea
   const resp = await retryRequest(
     {
       params: {
+        // Search for one more test than limit to detect if too many tests are returned
+        count: MAX_TESTS_TO_TRIGGER + 1,
         text: query,
       },
       url: '/synthetics/tests/search',

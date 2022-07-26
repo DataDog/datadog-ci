@@ -12,7 +12,8 @@ import {GIT_COMMIT_MESSAGE} from '../../helpers/tags'
 import {pick} from '../../helpers/utils'
 
 import {APIHelper, EndpointError, formatBackendErrors, isNotFoundError} from './api'
-import {CiError} from './errors'
+import {MAX_TESTS_TO_TRIGGER} from './command'
+import {CiError, CriticalError} from './errors'
 import {
   Batch,
   CommandConfig,
@@ -455,10 +456,25 @@ export const getReporter = (reporters: Reporter[]): MainReporter => ({
   },
 })
 
-export const getTestsToTrigger = async (api: APIHelper, triggerConfigs: TriggerConfig[], reporter: MainReporter) => {
+export const getTestsToTrigger = async (
+  api: APIHelper,
+  triggerConfigs: TriggerConfig[],
+  reporter: MainReporter,
+  triggerFromSearch?: boolean
+) => {
   const overriddenTestsToTrigger: TestPayload[] = []
   const errorMessages: string[] = []
   const summary = createSummary()
+
+  // When too many tests are triggered, if fetched from a search query: simply trim them and show a warning,
+  // otherwise: retrieve them and fail later if still exceeding without skipped/missing tests.
+  if (triggerConfigs.length > MAX_TESTS_TO_TRIGGER && triggerFromSearch) {
+    triggerConfigs.splice(MAX_TESTS_TO_TRIGGER)
+    const maxTests = chalk.bold(MAX_TESTS_TO_TRIGGER)
+    errorMessages.push(
+      chalk.yellow(`More than ${maxTests} tests returned by search query, only the first ${maxTests} were fetched.\n`)
+    )
+  }
 
   const tests = await Promise.all(
     triggerConfigs.map(async ({config, id, suite}) => {
@@ -500,6 +516,11 @@ export const getTestsToTrigger = async (api: APIHelper, triggerConfigs: TriggerC
 
   if (!overriddenTestsToTrigger.length) {
     throw new CiError('NO_TESTS_TO_RUN')
+  } else if (overriddenTestsToTrigger.length > MAX_TESTS_TO_TRIGGER) {
+    throw new CriticalError(
+      'TOO_MANY_TESTS_TO_TRIGGER',
+      `Cannot trigger more than ${MAX_TESTS_TO_TRIGGER} tests (received ${triggerConfigs.length})`
+    )
   }
 
   const waitedTests = tests.filter(definedTypeGuard)
@@ -527,7 +548,7 @@ export const runTests = async (api: APIHelper, testsToTrigger: TestPayload[]): P
     const errorMessage = formatBackendErrors(e)
     const testIds = testsToTrigger.map((t) => t.public_id).join(',')
     // Rewrite error message
-    throw new EndpointError(`[${testIds}] Failed to trigger tests: ${errorMessage}\n`, e.response.status)
+    throw new EndpointError(`[${testIds}] Failed to trigger tests: ${errorMessage}\n`, e.response?.status)
   }
 }
 
