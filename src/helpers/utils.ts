@@ -77,6 +77,9 @@ export const resolveConfigFromFile = async <T>(
   return deepExtend(baseConfig, parsedConfig)
 }
 
+/**
+ * @deprecated Use resolveConfigFromFile instead for better error management
+ */
 export const parseConfigFile = async <T>(baseConfig: T, configPath?: string): Promise<T> => {
   try {
     const resolvedConfigPath = configPath ?? 'datadog-ci.json'
