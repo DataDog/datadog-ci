@@ -32,6 +32,8 @@ const mockUser: User = {
   name: '',
 }
 
+export const MOCK_BASE_URL = 'https://app.datadoghq.com/'
+
 export type MockedReporter = {
   [K in keyof MainReporter]: jest.Mock<void, Parameters<MainReporter[K]>>
 }

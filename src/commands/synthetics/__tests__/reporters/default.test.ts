@@ -3,7 +3,7 @@ import {BaseContext} from 'clipanion/lib/advanced'
 import {ConfigOverride, ExecutionRule, MainReporter, Result, Summary, Test} from '../../interfaces'
 import {DefaultReporter} from '../../reporters/default'
 import {createSummary} from '../../utils'
-import {getApiResult, getApiTest, getFailedBrowserResult, getTimedOutBrowserResult} from '../fixtures'
+import {MOCK_BASE_URL, getApiResult, getApiTest, getFailedBrowserResult, getTimedOutBrowserResult} from '../fixtures'
 
 /**
  * A good amount of these tests rely on Jest snapshot assertions.
@@ -180,7 +180,6 @@ describe('Default reporter', () => {
 
     const complexSummary: Summary = {
       batchId: 'batch-id',
-      batchUrl: 'https://app.datadoghq.com/synthetics/explorer/ci?batchResultId=batch-id',
       criticalErrors: 2,
       failed: 1,
       failedNonBlocking: 3,
@@ -212,7 +211,7 @@ describe('Default reporter', () => {
     ]
 
     test.each(cases)('$description', (testCase) => {
-      reporter.runEnd(testCase.summary)
+      reporter.runEnd(testCase.summary, MOCK_BASE_URL)
       const mostRecentOutput = writeMock.mock.calls[writeMock.mock.calls.length - 1][0]
       expect(mostRecentOutput).toMatchSnapshot()
     })

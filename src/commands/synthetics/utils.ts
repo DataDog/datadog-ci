@@ -15,7 +15,6 @@ import {APIHelper, EndpointError, formatBackendErrors, isNotFoundError} from './
 import {MAX_TESTS_TO_TRIGGER} from './command'
 import {CiError, CriticalError} from './errors'
 import {
-  Batch,
   CommandConfig,
   ConfigOverride,
   ExecutionRule,
@@ -426,10 +425,10 @@ export const getReporter = (reporters: Reporter[]): MainReporter => ({
       }
     }
   },
-  runEnd: (summary) => {
+  runEnd: (summary, baseUrl) => {
     for (const reporter of reporters) {
       if (typeof reporter.runEnd === 'function') {
-        reporter.runEnd(summary)
+        reporter.runEnd(summary, baseUrl)
       }
     }
   },
@@ -615,6 +614,16 @@ export const getAppBaseURL = ({datadogSite, subdomain}: Pick<CommandConfig, 'dat
 export const getBatchUrl = (baseUrl: string, batchId: string) =>
   `${baseUrl}synthetics/explorer/ci?batchResultId=${batchId}`
 
+export const getResultUrl = (baseUrl: string, test: Test, resultId: string) => {
+  const ciQueryParam = 'from_ci=true'
+  const testDetailUrl = `${baseUrl}synthetics/details/${test.public_id}`
+  if (test.type === 'browser') {
+    return `${testDetailUrl}/result/${resultId}?${ciQueryParam}`
+  }
+
+  return `${testDetailUrl}?resultId=${resultId}&${ciQueryParam}`
+}
+
 /**
  * Sort results with the following rules:
  * - Passed results come first
@@ -686,7 +695,7 @@ export const renderResults = ({
     reporter.resultEnd(result, getAppBaseURL(config))
   }
 
-  reporter.runEnd(summary)
+  reporter.runEnd(summary, getAppBaseURL(config))
 
   return hasSucceeded ? 0 : 1
 }

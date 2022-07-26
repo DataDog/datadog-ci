@@ -1098,7 +1098,7 @@ describe('utils', () => {
       }
 
       expect(testCase.summary).toEqual(testCase.expected.summary)
-      expect((mockReporter as MockedReporter).runEnd).toHaveBeenCalledWith(testCase.expected.summary)
+      expect((mockReporter as MockedReporter).runEnd).toHaveBeenCalledWith(testCase.expected.summary, baseUrl)
 
       expect(exitCode).toBe(testCase.expected.exitCode)
     })

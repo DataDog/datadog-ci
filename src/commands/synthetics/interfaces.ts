@@ -9,7 +9,7 @@ export interface MainReporter {
   reportStart(timings: {startTime: number}): void
   resultEnd(result: Result, baseUrl: string): void
   resultReceived(result: Batch['results'][0]): void
-  runEnd(summary: Summary): void
+  runEnd(summary: Summary, baseUrl: string): void
   testsWait(tests: Test[]): void
   testTrigger(test: Test, testId: string, executionRule: ExecutionRule, config: ConfigOverride): void
   testWait(test: Test): void
@@ -330,7 +330,6 @@ export interface Summary {
   // The batchId is set later in the process, so it first needs to be undefined ; it will always be defined eventually.
   // Multiple suites will have the same batchId.
   batchId?: string
-  batchUrl?: string
   criticalErrors: number
   failed: number
   failedNonBlocking: number
