@@ -1,4 +1,5 @@
 import {apiConstructor, APIHelper, isForbiddenError} from './api'
+import {MAX_TESTS_TO_TRIGGER} from './command'
 import {CiError, CriticalError} from './errors'
 import {
   CommandConfig,
@@ -57,7 +58,8 @@ export const executeTests = async (reporter: MainReporter, config: CommandConfig
   }
 
   try {
-    testsToTriggerResult = await getTestsToTrigger(api, testsToTrigger, reporter)
+    const triggerFromSearch = !!config.testSearchQuery
+    testsToTriggerResult = await getTestsToTrigger(api, testsToTrigger, reporter, triggerFromSearch)
   } catch (error) {
     if (error instanceof CiError) {
       throw error
@@ -140,6 +142,11 @@ export const getTestsList = async (
   // If "testSearchQuery" is provided, always default to running it.
   if (config.testSearchQuery) {
     const testSearchResults = await api.searchTests(config.testSearchQuery)
+    if (testSearchResults.tests.length > MAX_TESTS_TO_TRIGGER) {
+      reporter.error(
+        `More than ${MAX_TESTS_TO_TRIGGER} tests returned by search query, only the first ${MAX_TESTS_TO_TRIGGER} will be fetched.\n`
+      )
+    }
 
     return testSearchResults.tests.map((test) => ({
       config: config.global,

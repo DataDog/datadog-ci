@@ -10,6 +10,8 @@ import {JUnitReporter} from './reporters/junit'
 import {executeTests} from './run-test'
 import {getReporter, parseVariablesFromCli, renderResults} from './utils'
 
+export const MAX_TESTS_TO_TRIGGER = 100
+
 export const DEFAULT_POLLING_TIMEOUT = 2 * 60 * 1000
 
 export const DEFAULT_COMMAND_CONFIG: CommandConfig = {
@@ -115,6 +117,9 @@ export class RunTestCommand extends Command {
       case 'TUNNEL_START_FAILED':
         reporter.error(`\n${chalk.bgRed.bold(' ERROR: unable to start tunnel ')}\n${error.message}\n\n`)
         break
+      case 'TOO_MANY_TESTS_TO_TRIGGER':
+        reporter.error(`\n${chalk.bgRed.bold(' ERROR: too many tests to trigger ')}\n${error.message}\n\n`)
+        break
       case 'TRIGGER_TESTS_FAILED':
         reporter.error(`\n${chalk.bgRed.bold(' ERROR: unable to trigger tests ')}\n${error.message}\n\n`)
         break
@@ -127,6 +132,10 @@ export class RunTestCommand extends Command {
         break
       case 'UNAVAILABLE_TUNNEL_CONFIG':
         reporter.error(`\n${chalk.bgRed.bold(' ERROR: unable to get tunnel configuration ')}\n${error.message}\n\n`)
+        break
+
+      default:
+        reporter.error(`\n${chalk.bgRed.bold(' ERROR ')}\n${error.message}\n\n`)
     }
   }
 

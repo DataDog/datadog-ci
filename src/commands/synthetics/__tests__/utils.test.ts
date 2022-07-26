@@ -12,7 +12,7 @@ import * as ciHelpers from '../../../helpers/ci'
 import {Metadata} from '../../../helpers/interfaces'
 import * as ciUtils from '../../../helpers/utils'
 
-import {apiConstructor} from '../api'
+import {apiConstructor, APIHelper} from '../api'
 import {CiError} from '../errors'
 import {
   Batch,
@@ -27,7 +27,7 @@ import {
 } from '../interfaces'
 import * as utils from '../utils'
 
-import {DEFAULT_COMMAND_CONFIG} from '../command'
+import {DEFAULT_COMMAND_CONFIG, MAX_TESTS_TO_TRIGGER} from '../command'
 import {
   getApiResult,
   getApiTest,
@@ -225,6 +225,48 @@ describe('utils', () => {
 
     test('no tests triggered throws an error', async () => {
       await expect(utils.getTestsToTrigger(api, [], mockReporter)).rejects.toEqual(new CiError('NO_TESTS_TO_RUN'))
+    })
+
+    describe('too many tests to trigger', () => {
+      const fakeApi: APIHelper = {
+        ...api,
+        getTest: (id: string) => {
+          if (id === 'missing') {
+            throw new Error('Request error')
+          }
+
+          const test = {...getApiTest(id)}
+          if (id === 'skipped') {
+            test.options.ci = {executionRule: ExecutionRule.SKIPPED}
+          }
+
+          return Promise.resolve(test)
+        },
+      }
+
+      test('trim and warn if from search', async () => {
+        const tooManyTests = Array(MAX_TESTS_TO_TRIGGER + 10).fill({id: 'stu-vwx-yza'})
+        const tests = await utils.getTestsToTrigger(fakeApi, tooManyTests, mockReporter, true)
+        expect(tests.tests.length).toBe(MAX_TESTS_TO_TRIGGER)
+        expect(mockReporter.initErrors).toMatchSnapshot()
+      })
+
+      test('fails outside of search', async () => {
+        const tooManyTests = Array(MAX_TESTS_TO_TRIGGER + 10).fill({id: 'stu-vwx-yza'})
+        await expect(utils.getTestsToTrigger(fakeApi, tooManyTests, mockReporter, false)).rejects.toEqual(
+          new Error(`Cannot trigger more than ${MAX_TESTS_TO_TRIGGER} tests (received ${tooManyTests.length})`)
+        )
+      })
+
+      test('does not account for skipped/not found tests outside of search', async () => {
+        const tooManyTests = [
+          ...Array(MAX_TESTS_TO_TRIGGER).fill({id: 'stu-vwx-yza'}),
+          {id: 'skipped'},
+          {id: 'missing'},
+        ]
+        const tests = await utils.getTestsToTrigger(fakeApi, tooManyTests, mockReporter, true)
+        expect(tests.tests.length).toBe(MAX_TESTS_TO_TRIGGER)
+      })
     })
   })
 

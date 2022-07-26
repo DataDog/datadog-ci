@@ -327,6 +327,8 @@ export interface Suite {
 }
 
 export interface Summary {
+  // The batchId is set later in the process, so it first needs to be undefined ; it will always be defined eventually.
+  // Multiple suites will have the same batchId.
   batchId?: string
   batchUrl?: string
   criticalErrors: number
