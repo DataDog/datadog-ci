@@ -13,7 +13,7 @@ import {upload, UploadStatus} from '../../helpers/upload'
 import {
   buildPath,
   getRequestBuilder,
-  parseConfigFile,
+  resolveConfigFromFile,
   setApiKeyAndSiteEnvVariablesFromConfig,
 } from '../../helpers/utils'
 import {ArchSlice, CompressedDsym, Dsym} from './interfaces'
@@ -77,7 +77,11 @@ export class UploadCommand extends Command {
     this.basePath = path.posix.normalize(this.basePath)
     this.context.stdout.write(renderCommandInfo(this.basePath, this.maxConcurrency, this.dryRun))
 
-    await this.resolveConfig()
+    this.config = await resolveConfigFromFile(this.config, {
+      configPath: this.configPath,
+      defaultConfigPath: DEFAULT_CONFIG_PATH,
+    })
+    setApiKeyAndSiteEnvVariablesFromConfig(this.config)
 
     const metricsLogger = getMetricsLogger({
       datadogSite: process.env.DATADOG_SITE,
@@ -199,17 +203,6 @@ export class UploadCommand extends Command {
         return match ? [{arch: match[2], objectPath: match[3], uuid: match[1]}] : []
       })
       .reduce((acc, nextSlice) => acc.concat(nextSlice), [])
-  }
-
-  private resolveConfig = async () => {
-    try {
-      this.config = await parseConfigFile(this.config, this.configPath || DEFAULT_CONFIG_PATH)
-      setApiKeyAndSiteEnvVariablesFromConfig(this.config)
-    } catch (error) {
-      if (this.configPath) {
-        throw error
-      }
-    }
   }
 
   /**

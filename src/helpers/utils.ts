@@ -1,4 +1,4 @@
-import fs from 'fs'
+import fs, {existsSync} from 'fs'
 import {promisify} from 'util'
 
 import {AxiosRequestConfig, default as axios} from 'axios'
@@ -35,6 +35,40 @@ export const setApiKeyAndSiteEnvVariablesFromConfig = (config: {apiKey?: string;
   if (config.datadogSite) {
     process.env.DATADOG_SITE = config.datadogSite
   }
+}
+
+const resolveConfigPath = ({
+  configPath,
+  defaultConfigPath,
+}: {
+  configPath?: string
+  defaultConfigPath?: string
+}): string | undefined => {
+  if (configPath) {
+    if (existsSync(configPath)) {
+      return configPath
+    }
+    throw new Error('Config file not found')
+  }
+
+  if (defaultConfigPath && existsSync(defaultConfigPath)) {
+    return defaultConfigPath
+  }
+
+  return undefined
+}
+
+export const resolveConfigFromFile = async <T>(
+  baseConfig: T,
+  params: {configPath?: string; defaultConfigPath?: string}
+): Promise<T> => {
+  const resolvedConfigPath = resolveConfigPath(params)
+  if (!resolvedConfigPath) {
+    return baseConfig
+  }
+  const parsedConfig = await getConfig(resolvedConfigPath)
+
+  return deepExtend(baseConfig, parsedConfig)
 }
 
 export const parseConfigFile = async <T>(baseConfig: T, configPath?: string): Promise<T> => {
