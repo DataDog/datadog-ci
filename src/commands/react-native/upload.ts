@@ -9,7 +9,7 @@ import {getRepositoryData, newSimpleGit, RepositoryData} from '../../helpers/git
 import {RequestBuilder} from '../../helpers/interfaces'
 import {getMetricsLogger, MetricsLogger} from '../../helpers/metrics'
 import {upload, UploadStatus} from '../../helpers/upload'
-import {getRequestBuilder, parseConfigFile, setApiKeyAndSiteEnvVariablesFromConfig} from '../../helpers/utils'
+import {getRequestBuilder, resolveConfigFromFile, setApiKeyAndSiteEnvVariablesFromConfig} from '../../helpers/utils'
 import {RNPlatform, RNSourcemap, RN_SUPPORTED_PLATFORMS} from './interfaces'
 import {
   renderCommandInfo,
@@ -126,7 +126,11 @@ export class UploadCommand extends Command {
       )
     )
 
-    await this.resolveConfig()
+    this.config = await resolveConfigFromFile(this.config, {
+      configPath: this.configPath,
+      defaultConfigPath: DEFAULT_CONFIG_PATH,
+    })
+    setApiKeyAndSiteEnvVariablesFromConfig(this.config)
 
     const metricsLogger = getMetricsLogger({
       datadogSite: this.config.datadogSite,
@@ -253,17 +257,6 @@ export class UploadCommand extends Command {
       ]),
       overrideUrl: `v1/input/${this.config.apiKey}`,
     })
-  }
-
-  private resolveConfig = async () => {
-    try {
-      this.config = await parseConfigFile(this.config, this.configPath || DEFAULT_CONFIG_PATH)
-      setApiKeyAndSiteEnvVariablesFromConfig(this.config)
-    } catch (error) {
-      if (this.configPath) {
-        throw error
-      }
-    }
   }
 
   private upload(
