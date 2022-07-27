@@ -499,7 +499,7 @@ describe('instrument', () => {
           DD_SITE: 'datadoghq.com',
           DD_TRACE_ENABLED: 'false',
         }
-        const compatibleTradeAndExtension = {
+        const compatibleTracerAndExtension = {
           Environment: {
             Variables: {...baseVariables, AWS_LAMBDA_EXEC_WRAPPER: '/opt/datadog_wrapper'},
           },
@@ -541,7 +541,7 @@ describe('instrument', () => {
 
         test.each`
           extensionVersion | traceVersion | outputResult
-          ${25}            | ${4}         | ${compatibleTradeAndExtension}
+          ${25}            | ${4}         | ${compatibleTracerAndExtension}
           ${23}            | ${2}         | ${oldExtensionVersion}
           ${15}            | ${undefined} | ${traceUndefined}
         `(
@@ -580,7 +580,7 @@ describe('instrument', () => {
           DD_SITE: 'datadoghq.com',
           DD_TRACE_ENABLED: 'false',
         }
-        const compatibleTradeAndExtension = {
+        const compatibleTracerAndExtension = {
           Environment: {
             Variables: {...baseVariables, AWS_LAMBDA_EXEC_WRAPPER: '/opt/datadog_wrapper'},
           },
@@ -614,7 +614,7 @@ describe('instrument', () => {
 
         test.each`
           extensionVersion | traceVersion | outputResult
-          ${25}            | ${5}         | ${compatibleTradeAndExtension}
+          ${25}            | ${5}         | ${compatibleTracerAndExtension}
           ${23}            | ${2}         | ${oldExtensionVersion}
           ${15}            | ${undefined} | ${traceUndefined}
         `(
