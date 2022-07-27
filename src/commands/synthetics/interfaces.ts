@@ -8,26 +8,16 @@ export interface MainReporter {
   log(log: string): void
   reportStart(timings: {startTime: number}): void
   resultEnd(result: Result, baseUrl: string): void
-  resultReceived(result: Result): void
-  runEnd(summary: Summary): void
+  resultReceived(result: Batch['results'][0]): void
+  runEnd(summary: Summary, baseUrl: string): void
   testsWait(tests: Test[]): void
   testTrigger(test: Test, testId: string, executionRule: ExecutionRule, config: ConfigOverride): void
   testWait(test: Test): void
 }
 
-export enum ERRORS {
-  TIMEOUT = 'Timeout',
-  ENDPOINT = 'Endpoint Failure',
-  TUNNEL = 'Tunnel Failure',
-}
-
 export type Reporter = Partial<MainReporter>
 
 export interface BaseServerResult {
-  error?: string
-  errorCode?: string
-  errorMessage?: string
-  eventType: string
   failure?: {
     code: string
     message: string
@@ -43,7 +33,6 @@ export interface BrowserServerResult extends BaseServerResult {
     width: number
   }
   duration: number
-  error?: string | ERRORS
   startUrl: string
   stepDetails: Step[]
 }
@@ -84,21 +73,15 @@ export interface MultiStepsServerResult extends BaseServerResult {
 
 export type ServerResult = BrowserServerResult | ApiServerResult | MultiStepsServerResult
 
-interface Enrichment {
-  batch_id: string
-  config_override: ConfigOverride & {executionRule: ExecutionRule}
-}
-
 export interface PollResult {
   check: Pick<Test, 'config' | 'subtype' | 'type'>
-  enrichment?: Partial<Enrichment>
   result: ServerResult
   resultID: string
   timestamp: number
 }
 
 export interface Result {
-  enrichment?: Partial<Enrichment>
+  executionRule: ExecutionRule
   location: string
   // `.passed` here combines `result.passed` and `failOnCriticalErrors` and `failOnTimeout`
   passed: boolean
@@ -106,7 +89,36 @@ export interface Result {
   resultId: string
   // Original test for this result, including overrides if any.
   test: Test
+  timedOut: boolean
   timestamp: number
+}
+
+type Status = 'passed' | 'failed' | 'in_progress'
+
+export interface ResultInBatch {
+  execution_rule: ExecutionRule
+  location: string
+  result_id: string
+  status: Status
+  test_public_id: string
+  timed_out?: boolean
+}
+
+export interface Batch {
+  results: ResultInBatch[]
+  status: Status
+}
+
+interface SkippedResultInBatch extends Omit<ResultInBatch, 'result_id' | 'status'> {
+  status: 'skipped'
+}
+type ServerResultInBatch = SkippedResultInBatch | ResultInBatch
+
+export interface ServerBatch {
+  // The batch from the server contains skipped results, which we're going to remove since we don't
+  // care about skipped results internally.
+  results: ServerResultInBatch[]
+  status: Status
 }
 
 export interface Vitals {
@@ -222,17 +234,6 @@ export interface User {
   name: string
 }
 
-export interface TriggerResponse {
-  device: string
-  location: number
-  public_id: string
-  result_id: string
-}
-
-export interface TriggerResult extends TriggerResponse {
-  pollingTimeout: number
-}
-
 export interface Location {
   display_name: string
   id: number
@@ -242,12 +243,12 @@ export interface Location {
 }
 
 export interface LocationsMapping {
-  [key: number]: string
+  [key: string]: string
 }
 
 export interface Trigger {
+  batch_id: string
   locations: Location[]
-  results: TriggerResponse[]
 }
 
 export interface RetryConfig {
@@ -326,6 +327,9 @@ export interface Suite {
 }
 
 export interface Summary {
+  // The batchId is set later in the process, so it first needs to be undefined ; it will always be defined eventually.
+  // Multiple suites will have the same batchId.
+  batchId?: string
   criticalErrors: number
   failed: number
   failedNonBlocking: number

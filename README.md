@@ -57,6 +57,32 @@ Then you can run `datadog-ci` commands normally:
 datadog-ci version
 ```
 
+### Container image (**experimental**)
+
+In order to run `datadog-ci` from a container, you can use the following `Dockerfile:
+
+```dockerfile
+ARG VERSION
+FROM ubuntu:20.04
+
+ADD https://github.com/DataDog/datadog-ci/releases/download/$VERSION/datadog-ci_linux-x64 /usr/local/bin/datadog-ci
+RUN chmod +x /usr/local/bin/datadog-ci
+
+ENTRYPOINT ["/usr/local/bin/datadog-ci"]
+```
+
+To build and run it, the following commands can be used:
+
+```sh
+# Build the container
+docker build -t datadog-ci:dev --build-arg VERSION=v1.7.2 .
+
+# Run a command using the container
+export DD_API_KEY=$(cat /secret/dd_api_key)
+export DD_APP_KEY=$(cat /secret/dd_app_key)
+docker run --rm -it --name datadog-ci -e DD_API_KEY -e DD_APP_KEY datadog-ci:dev synthetics run-tests -p pub-lic-id1
+```
+
 ## Usage
 
 ```bash

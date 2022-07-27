@@ -1,10 +1,9 @@
 import {BaseContext} from 'clipanion/lib/advanced'
-import deepExtend from 'deep-extend'
 
-import {ConfigOverride, ExecutionRule, MainReporter, Summary, Test} from '../../interfaces'
+import {ConfigOverride, ExecutionRule, MainReporter, Result, Summary, Test} from '../../interfaces'
 import {DefaultReporter} from '../../reporters/default'
 import {createSummary} from '../../utils'
-import {getApiResult, getApiTest} from '../fixtures'
+import {getApiResult, getApiTest, getFailedBrowserResult, getTimedOutBrowserResult} from '../fixtures'
 
 /**
  * A good amount of these tests rely on Jest snapshot assertions.
@@ -15,6 +14,7 @@ import {getApiResult, getApiTest} from '../fixtures'
  */
 
 describe('Default reporter', () => {
+  const baseUrlFixture = 'https://app.datadoghq.com/'
   const writeMock = jest.fn()
   const mockContext: unknown = {
     context: {
@@ -33,7 +33,7 @@ describe('Default reporter', () => {
       ['log', ['log']],
       ['reportStart', [{startTime: 0}]],
       ['resultEnd', [getApiResult('1', getApiTest()), '']],
-      ['runEnd', [createSummary()]],
+      ['runEnd', [createSummary(), '']],
       ['testTrigger', [{}, '', '', {}]],
       ['testsWait', [[{}]]],
     ]
@@ -94,11 +94,12 @@ describe('Default reporter', () => {
   })
 
   describe('resultEnd', () => {
-    beforeEach(() => {
-      writeMock.mockClear()
-    })
-
-    const createApiResult = (resultId: string, passed: boolean, executionRule = ExecutionRule.BLOCKING, test: Test) => {
+    const createApiResult = (
+      resultId: string,
+      passed: boolean,
+      executionRule = ExecutionRule.BLOCKING,
+      test: Test
+    ): Result => {
       const errorMessage = JSON.stringify([
         {
           actual: 1234,
@@ -109,23 +110,16 @@ describe('Default reporter', () => {
       ])
       const failure = {code: 'INCORRECT_ASSERTION', message: errorMessage}
 
-      return deepExtend(getApiResult(resultId, test), {
-        enrichment: {config_override: {executionRule}},
-        passed,
-        result: {
-          passed,
-          ...(!passed ? {failure} : {}),
-        },
-      })
+      const result = getApiResult(resultId, test)
+
+      result.executionRule = executionRule
+      result.passed = passed
+      result.result = {...result.result, ...(passed ? {} : {failure}), passed}
+
+      return result
     }
 
-    const getNonBlockingApiTest = (publicId: string) =>
-      deepExtend(getApiTest(publicId), {options: {ci: {executionRule: ExecutionRule.NON_BLOCKING}}})
-
-    const baseUrlFixture = 'https://app.datadoghq.com/'
-
     const apiTest = getApiTest('aaa-aaa-aaa')
-    const nonBlockingApiTest = getNonBlockingApiTest('aaa-aaa-aaa')
     const cases = [
       {
         description: '1 API test, 1 location, 1 result: success',
@@ -135,24 +129,33 @@ describe('Default reporter', () => {
         },
       },
       {
-        description: '1 API test (blocking), 1 location, 3 results: success, failed non-blocking, failed',
+        description: '1 API test, 1 location, 3 results: success, failed non-blocking, failed blocking',
         fixtures: {
           baseUrl: baseUrlFixture,
           results: [
-            getApiResult('1', apiTest),
+            createApiResult('1', true, ExecutionRule.BLOCKING, apiTest),
             createApiResult('2', false, ExecutionRule.NON_BLOCKING, apiTest),
-            createApiResult('3', false, undefined, apiTest),
+            createApiResult('3', false, ExecutionRule.BLOCKING, apiTest),
           ],
         },
       },
       {
-        description: '1 API test (non-blocking), 1 location, 3 results: success, failed non-blocking, failed',
+        description: '3 Browser test: failed blocking, timed out, global failure',
         fixtures: {
           baseUrl: baseUrlFixture,
           results: [
-            getApiResult('1', nonBlockingApiTest),
-            createApiResult('2', false, ExecutionRule.NON_BLOCKING, nonBlockingApiTest),
-            createApiResult('3', false, undefined, nonBlockingApiTest),
+            getFailedBrowserResult(),
+            getTimedOutBrowserResult(),
+            {
+              ...getTimedOutBrowserResult(),
+              result: {
+                duration: 0,
+                failure: {code: 'FAILURE_CODE', message: 'Failure message'},
+                passed: false,
+                steps: [],
+              },
+              timedOut: false,
+            },
           ],
         },
       },
@@ -176,6 +179,7 @@ describe('Default reporter', () => {
     const baseSummary: Summary = createSummary()
 
     const complexSummary: Summary = {
+      batchId: 'batch-id',
       criticalErrors: 2,
       failed: 1,
       failedNonBlocking: 3,
@@ -207,7 +211,7 @@ describe('Default reporter', () => {
     ]
 
     test.each(cases)('$description', (testCase) => {
-      reporter.runEnd(testCase.summary)
+      reporter.runEnd(testCase.summary, baseUrlFixture)
       const mostRecentOutput = writeMock.mock.calls[writeMock.mock.calls.length - 1][0]
       expect(mostRecentOutput).toMatchSnapshot()
     })

@@ -1,4 +1,4 @@
-import {MultipartPayload} from '../../helpers/upload'
+import {MultipartPayload, MultipartValue} from '../../helpers/upload'
 
 export class CommitInfo {
   public hash: string
@@ -14,8 +14,7 @@ export class CommitInfo {
   public asMultipartPayload(cliVersion: string): MultipartPayload {
     return {
       content: new Map([
-        ['cli_version', {value: cliVersion}],
-        ['type', {value: 'repository'}],
+        ['event', this.getMetadataPayload(cliVersion)],
         [
           'repository',
           {
@@ -26,9 +25,22 @@ export class CommitInfo {
             value: this.repositoryPayload(),
           },
         ],
-        ['git_repository_url', {value: this.remote}],
-        ['git_commit_sha', {value: this.hash}],
       ]),
+    }
+  }
+
+  private getMetadataPayload(cliVersion: string): MultipartValue {
+    return {
+      options: {
+        contentType: 'application/json',
+        filename: 'event',
+      },
+      value: JSON.stringify({
+        cli_version: cliVersion,
+        git_commit_sha: this.hash,
+        git_repository_url: this.remote,
+        type: 'repository',
+      }),
     }
   }
 

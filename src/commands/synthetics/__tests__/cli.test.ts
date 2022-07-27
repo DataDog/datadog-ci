@@ -1,22 +1,11 @@
 // tslint:disable: no-string-literal
 import {AxiosError, AxiosResponse} from 'axios'
 import {Cli} from 'clipanion/lib/advanced'
-import deepExtend from 'deep-extend'
 import * as ciUtils from '../../../helpers/utils'
-import {DEFAULT_COMMAND_CONFIG, RunTestCommand} from '../command'
-import {ExecutionRule, Result, Test} from '../interfaces'
+import {DEFAULT_COMMAND_CONFIG, DEFAULT_POLLING_TIMEOUT, RunTestCommand} from '../command'
 import * as runTests from '../run-test'
 import * as utils from '../utils'
-import {
-  getApiResult,
-  getApiTest,
-  getTestSuite,
-  MockedReporter,
-  mockReporter,
-  mockTestTriggerResponse,
-  RenderResultsHelper,
-  RenderResultsTestCase,
-} from './fixtures'
+import {getApiTest, getTestSuite, mockTestTriggerResponse} from './fixtures'
 
 test('all option flags are supported', async () => {
   const options = [
@@ -56,56 +45,6 @@ describe('run-test', () => {
     process.env = {}
   })
 
-  describe('getAppBaseURL', () => {
-    test('should default to datadog us', async () => {
-      process.env = {}
-      const command = new RunTestCommand()
-
-      expect(command['getAppBaseURL']()).toBe('https://app.datadoghq.com/')
-    })
-
-    test('subdomain should be overridable', async () => {
-      process.env = {DATADOG_SUBDOMAIN: 'custom'}
-      const command = new RunTestCommand()
-      await command['resolveConfig']()
-
-      expect(command['getAppBaseURL']()).toBe('https://custom.datadoghq.com/')
-    })
-
-    test('should override subdomain and site', async () => {
-      process.env = {
-        DATADOG_SITE: 'datadoghq.eu',
-        DATADOG_SUBDOMAIN: 'custom',
-      }
-      const command = new RunTestCommand()
-      await command['resolveConfig']()
-
-      expect(command['getAppBaseURL']()).toBe('https://custom.datadoghq.eu/')
-    })
-  })
-
-  describe('sortResultsByOutcome', () => {
-    const test1 = getApiTest('test1')
-    const test2 = deepExtend(getApiTest('test2'), {options: {ci: {executionRule: ExecutionRule.BLOCKING}}})
-    const test3 = deepExtend(getApiTest('test3'), {options: {ci: {executionRule: ExecutionRule.NON_BLOCKING}}})
-    const test4 = deepExtend(getApiTest('test4'), {options: {ci: {executionRule: ExecutionRule.BLOCKING}}})
-    const test5 = deepExtend(getApiTest('test5'), {options: {ci: {executionRule: ExecutionRule.NON_BLOCKING}}})
-    const results: Result[] = [
-      deepExtend(getApiResult('1', test1), {passed: true}),
-      deepExtend(getApiResult('2', test2), {passed: true}),
-      deepExtend(getApiResult('3', test3), {passed: true}),
-      deepExtend(getApiResult('4', test4), {passed: false}),
-      deepExtend(getApiResult('5', test5), {passed: false}),
-    ]
-
-    test('should sort tests with success, non_blocking failures then failures', async () => {
-      const command = new RunTestCommand()
-      const sortedResults = [...results]
-      sortedResults.sort((command['sortResultsByOutcome'] as any)())
-      expect(sortedResults.map((r) => r.resultId)).toStrictEqual(['3', '1', '2', '5', '4'])
-    })
-  })
-
   describe('resolveConfig', () => {
     beforeEach(() => {
       process.env = {}
@@ -129,6 +68,7 @@ describe('run-test', () => {
         apiKey: overrideEnv.DATADOG_API_KEY,
         appKey: overrideEnv.DATADOG_APP_KEY,
         datadogSite: overrideEnv.DATADOG_SITE,
+        global: {pollingTimeout: DEFAULT_POLLING_TIMEOUT},
         subdomain: overrideEnv.DATADOG_SUBDOMAIN,
       })
     })
@@ -142,7 +82,7 @@ describe('run-test', () => {
         failOnCriticalErrors: true,
         failOnTimeout: false,
         files: ['my-new-file'],
-        global: {locations: []},
+        global: {locations: [], pollingTimeout: 2},
         locations: [],
         pollingTimeout: 1,
         proxy: {protocol: 'https'},
@@ -197,6 +137,7 @@ describe('run-test', () => {
         failOnCriticalErrors: true,
         failOnTimeout: false,
         files: ['new-file'],
+        global: {pollingTimeout: DEFAULT_POLLING_TIMEOUT},
         publicIds: ['ran-dom-id'],
         subdomain: 'new-sub-domain',
         testSearchQuery: 'a-search-query',
@@ -225,6 +166,22 @@ describe('run-test', () => {
         apiKey: 'api_key_cli',
         appKey: 'app_key_env',
         datadogSite: 'datadog.config.file',
+        global: {pollingTimeout: DEFAULT_POLLING_TIMEOUT},
+      })
+    })
+
+    test('pass command pollingTimeout as global override if undefined', async () => {
+      jest.spyOn(ciUtils, 'getConfig').mockImplementation(async () => ({
+        global: {followRedirects: false},
+        pollingTimeout: 333,
+      }))
+
+      const command = new RunTestCommand()
+      await command['resolveConfig']()
+      expect(command['config']).toEqual({
+        ...DEFAULT_COMMAND_CONFIG,
+        global: {followRedirects: false, pollingTimeout: 333},
+        pollingTimeout: 333,
       })
     })
 
@@ -256,7 +213,14 @@ describe('run-test', () => {
       expect(await command.execute()).toBe(0)
       expect(triggerTests).toHaveBeenCalledWith(
         expect.objectContaining({
-          tests: [{executionRule: 'blocking', locations: ['aws:us-east-2'], public_id: 'publicId'}],
+          tests: [
+            {
+              executionRule: 'blocking',
+              locations: ['aws:us-east-2'],
+              pollingTimeout: DEFAULT_POLLING_TIMEOUT,
+              public_id: 'publicId',
+            },
+          ],
         })
       )
 
@@ -269,7 +233,14 @@ describe('run-test', () => {
       expect(triggerTests).toHaveBeenNthCalledWith(
         2,
         expect.objectContaining({
-          tests: [{executionRule: 'blocking', locations: ['aws:us-east-3'], public_id: 'publicId'}],
+          tests: [
+            {
+              executionRule: 'blocking',
+              locations: ['aws:us-east-3'],
+              pollingTimeout: DEFAULT_POLLING_TIMEOUT,
+              public_id: 'publicId',
+            },
+          ],
         })
       )
 
@@ -281,7 +252,14 @@ describe('run-test', () => {
       expect(triggerTests).toHaveBeenNthCalledWith(
         3,
         expect.objectContaining({
-          tests: [{executionRule: 'blocking', locations: ['aws:us-east-3', 'aws:us-east-4'], public_id: 'publicId'}],
+          tests: [
+            {
+              executionRule: 'blocking',
+              locations: ['aws:us-east-3', 'aws:us-east-4'],
+              pollingTimeout: DEFAULT_POLLING_TIMEOUT,
+              public_id: 'publicId',
+            },
+          ],
         })
       )
 
@@ -294,7 +272,14 @@ describe('run-test', () => {
       expect(await command.execute()).toBe(0)
       expect(triggerTests).toHaveBeenCalledWith(
         expect.objectContaining({
-          tests: [{executionRule: 'blocking', locations: ['aws:us-east-1'], public_id: 'publicId'}],
+          tests: [
+            {
+              executionRule: 'blocking',
+              locations: ['aws:us-east-1'],
+              pollingTimeout: DEFAULT_POLLING_TIMEOUT,
+              public_id: 'publicId',
+            },
+          ],
         })
       )
     })
@@ -317,23 +302,6 @@ describe('run-test', () => {
 
       expect(await command.execute()).toBe(0)
       expect(apiHelper.getTest).toHaveBeenCalledTimes(1)
-    })
-
-    test('`NO_RESULTS_TO_POLL` never exit with 1', async () => {
-      const command = new RunTestCommand()
-      command.context = {stdout: {write: jest.fn()}} as any
-      command['config'].failOnCriticalErrors = true
-
-      const apiHelper = {
-        getTest: () => getApiTest('123-456-789'),
-        triggerTests: jest.fn(() => ({})),
-      }
-      jest.spyOn(runTests, 'getApiHelper').mockImplementation(() => apiHelper as any)
-      jest.spyOn(ciUtils, 'parseConfigFile').mockImplementation(async (config, _) => config)
-      jest.spyOn(utils, 'getSuites').mockImplementation((() => [getTestSuite()]) as any)
-
-      expect(await command.execute()).toBe(0)
-      expect(apiHelper.triggerTests).toHaveBeenCalledTimes(1)
     })
 
     describe.each([false, true])('%s', (failOnCriticalErrors: boolean) => {
@@ -402,14 +370,12 @@ describe('run-test', () => {
           command['config'].failOnCriticalErrors = failOnCriticalErrors
 
           const apiHelper = {
+            getBatch: () => ({results: [], status: 'success'}),
             getTest: () => getApiTest('123-456-789'),
             pollResults: jest.fn(() => {
               throw errorCode ? getAxiosHttpError(errorCode, 'Error') : new Error('Unknown error')
             }),
-            triggerTests: () => ({
-              ...mockTestTriggerResponse,
-              results: [{location: 1, public_id: '123-456-789', result_id: '1'}],
-            }),
+            triggerTests: () => mockTestTriggerResponse,
           }
           jest.spyOn(runTests, 'getApiHelper').mockImplementation(() => apiHelper as any)
           jest.spyOn(ciUtils, 'parseConfigFile').mockImplementation(async (config, __) => config)
@@ -419,197 +385,6 @@ describe('run-test', () => {
           expect(apiHelper.pollResults).toHaveBeenCalledTimes(1)
         })
       })
-    })
-  })
-
-  describe('Render results', () => {
-    const emptySummary = utils.createSummary()
-
-    const test1 = {
-      configOverride: {executionRule: ExecutionRule.BLOCKING, startUrl: 'foo'},
-      publicId: 'aaa-aaa-aaa',
-      resultPassed: true,
-    }
-    const test1Timeout = {...test1, resultError: 'Timeout', resultPassed: false}
-    const test1CriticalError = {...test1, resultIsUnhealthy: true, resultPassed: false}
-    const test1FailedNonBlocking = {
-      ...test1,
-      configOverride: {...test1.configOverride, executionRule: ExecutionRule.NON_BLOCKING, startUrl: 'bar'},
-      resultPassed: false,
-    }
-    const test1Failed = {
-      ...test1,
-      configOverride: {...test1.configOverride, executionRule: ExecutionRule.BLOCKING, startUrl: 'baz'},
-      resultPassed: false,
-    }
-    const test1NonBlocking = {...test1, executionRule: ExecutionRule.NON_BLOCKING}
-    const test1NonBlockingFailedNonBlocking = {...test1FailedNonBlocking, executionRule: ExecutionRule.NON_BLOCKING}
-    const test1NonBlockingFailed = {...test1Failed, executionRule: ExecutionRule.NON_BLOCKING}
-    const test2Failed = {
-      configOverride: {executionRule: ExecutionRule.BLOCKING, startUrl: 'bar'},
-      publicId: 'bbb-bbb-bbb',
-      resultPassed: false,
-    }
-    const test3 = {
-      configOverride: {executionRule: ExecutionRule.BLOCKING, startUrl: 'baz'},
-      publicId: 'ccc-ccc-ccc',
-      resultPassed: true,
-    }
-
-    const cases: RenderResultsTestCase[] = [
-      {
-        description: '1 API test with 1 config override, 1 result (passed)',
-        expected: {
-          exitCode: 0,
-          summary: {...emptySummary, passed: 1},
-        },
-        failOnCriticalErrors: false,
-        failOnTimeout: false,
-        results: new RenderResultsHelper().getResults([test1]),
-        summary: {...emptySummary},
-      },
-      {
-        description:
-          '1 API test with 1 config override, 1 result (failed timeout), no fail on timeout, no fail on critical errors',
-        expected: {
-          exitCode: 0,
-          summary: {...emptySummary, passed: 1, timedOut: 1},
-        },
-        failOnCriticalErrors: false,
-        failOnTimeout: false,
-        results: new RenderResultsHelper().getResults([test1Timeout]),
-        summary: {...emptySummary},
-      },
-      {
-        description:
-          '1 API test with 1 config override, 1 result (failed timeout), fail on timeout, no fail on critical errors',
-        expected: {
-          exitCode: 1,
-          summary: {...emptySummary, failed: 1},
-        },
-        failOnCriticalErrors: false,
-        failOnTimeout: true,
-        results: new RenderResultsHelper().getResults([test1Timeout]),
-        summary: {...emptySummary},
-      },
-      {
-        description:
-          '1 API test with 1 config override, 1 result (failed critical error), no fail on timeout, no fail on critical errors',
-        expected: {
-          exitCode: 0,
-          summary: {...emptySummary, passed: 1, criticalErrors: 1},
-        },
-        failOnCriticalErrors: false,
-        failOnTimeout: false,
-        results: new RenderResultsHelper().getResults([test1CriticalError]),
-        summary: {...emptySummary},
-      },
-      {
-        description:
-          '1 API test with 1 config override, 1 result (failed critical error), no fail on timeout, fail on critical errors',
-        expected: {
-          exitCode: 1,
-          summary: {...emptySummary, failed: 1},
-        },
-        failOnCriticalErrors: true,
-        failOnTimeout: false,
-        results: new RenderResultsHelper().getResults([test1CriticalError]),
-        summary: {...emptySummary},
-      },
-      {
-        description:
-          '1 API test (blocking) with 4 config overrides (1 skipped), 3 results (1 passed, 1 failed, 1 failed non-blocking)',
-        expected: {
-          exitCode: 1,
-          summary: {
-            ...emptySummary,
-            failed: 1,
-            failedNonBlocking: 1,
-            passed: 1,
-            skipped: 1,
-          },
-        },
-        failOnCriticalErrors: false,
-        failOnTimeout: false,
-        results: new RenderResultsHelper().getResults([test1, test1FailedNonBlocking, test1Failed]),
-        summary: {...emptySummary, skipped: 1},
-      },
-      {
-        description:
-          '1 API test (non-blocking) with 4 config overrides (1 skipped), 3 results (1 passed, 1 failed, 1 failed non-blocking)',
-        expected: {
-          exitCode: 0,
-          summary: {
-            ...emptySummary,
-            failedNonBlocking: 2,
-            passed: 1,
-            skipped: 1,
-          },
-        },
-        failOnCriticalErrors: false,
-        failOnTimeout: false,
-        results: new RenderResultsHelper().getResults([
-          test1NonBlocking,
-          test1NonBlockingFailedNonBlocking,
-          test1NonBlockingFailed,
-        ]),
-        summary: {...emptySummary, skipped: 1},
-      },
-      {
-        description:
-          '3 API tests (blocking) with 1 config override each, 3 results (1 failed non-blocking, 1 failed, 1 passed)',
-        expected: {
-          exitCode: 1,
-          summary: {
-            ...emptySummary,
-            failed: 1,
-            failedNonBlocking: 1,
-            passed: 1,
-          },
-        },
-        failOnCriticalErrors: false,
-        failOnTimeout: false,
-        results: new RenderResultsHelper().getResults([test1FailedNonBlocking, test2Failed, test3]),
-        summary: {...emptySummary},
-      },
-    ]
-
-    test.each(cases)('$description', async (testCase) => {
-      testCase.results.forEach(
-        (result) =>
-          (result.passed = utils.hasResultPassed(result.result, testCase.failOnCriticalErrors, testCase.failOnTimeout))
-      )
-
-      jest.spyOn(ciUtils, 'parseConfigFile').mockImplementation(async () => ({
-        ...DEFAULT_COMMAND_CONFIG,
-        failOnCriticalErrors: testCase.failOnCriticalErrors,
-        failOnTimeout: testCase.failOnTimeout,
-      }))
-      jest.spyOn(utils, 'getReporter').mockImplementation(() => mockReporter)
-      jest.spyOn(runTests, 'executeTests').mockResolvedValue({
-        results: testCase.results,
-        summary: testCase.summary,
-      })
-
-      const command = new RunTestCommand()
-      const write = jest.fn()
-      command.context = {stdout: {write}} as any // For the DefaultReporter constructor
-
-      const exitCode = await command.execute()
-
-      expect((mockReporter as MockedReporter).resultEnd).toHaveBeenCalledTimes(testCase.results.length)
-
-      for (const result of testCase.results) {
-        expect((mockReporter as MockedReporter).resultEnd).toHaveBeenCalledWith(
-          result,
-          `https://${DEFAULT_COMMAND_CONFIG.subdomain}.${DEFAULT_COMMAND_CONFIG.datadogSite}/`
-        )
-      }
-
-      expect(testCase.summary).toEqual(testCase.expected.summary)
-      expect((mockReporter as MockedReporter).runEnd).toHaveBeenCalledWith(testCase.expected.summary)
-
-      expect(exitCode).toBe(testCase.expected.exitCode)
     })
   })
 })

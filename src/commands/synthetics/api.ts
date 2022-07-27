@@ -4,7 +4,17 @@ import {AxiosError, AxiosPromise, AxiosRequestConfig} from 'axios'
 
 import {getRequestBuilder} from '../../helpers/utils'
 
-import {APIConfiguration, Payload, PollResult, ServerTest, TestSearchResult, Trigger} from './interfaces'
+import {MAX_TESTS_TO_TRIGGER} from './command'
+import {
+  APIConfiguration,
+  Batch,
+  Payload,
+  PollResult,
+  ServerBatch,
+  ServerTest,
+  TestSearchResult,
+  Trigger,
+} from './interfaces'
 import {ciTriggerApp, retry} from './utils'
 
 interface BackendError {
@@ -19,7 +29,7 @@ export class EndpointError extends Error {
 }
 
 export const formatBackendErrors = (requestError: AxiosError<BackendError>) => {
-  if (requestError.response && requestError.response.data.errors) {
+  if (requestError.response?.data?.errors) {
     const serverHead = `query on ${requestError.config.baseURL}${requestError.config.url} returned:`
     const errors = requestError.response.data.errors
     if (errors.length > 1) {
@@ -29,7 +39,7 @@ export const formatBackendErrors = (requestError: AxiosError<BackendError>) => {
     } else if (errors.length) {
       return `${serverHead} "${errors[0]}"`
     } else {
-      return `error querying ${requestError.config.baseURL}${requestError.config.url}`
+      return `error querying ${requestError.config.baseURL} ${requestError.config.url}`
     }
   }
 
@@ -67,6 +77,8 @@ const searchTests = (request: (args: AxiosRequestConfig) => AxiosPromise<TestSea
   const resp = await retryRequest(
     {
       params: {
+        // Search for one more test than limit to detect if too many tests are returned
+        count: MAX_TESTS_TO_TRIGGER + 1,
         text: query,
       },
       url: '/synthetics/tests/search',
@@ -75,6 +87,19 @@ const searchTests = (request: (args: AxiosRequestConfig) => AxiosPromise<TestSea
   )
 
   return resp.data
+}
+
+const getBatch = (request: (args: AxiosRequestConfig) => AxiosPromise<{data: ServerBatch}>) => async (
+  batchId: string
+): Promise<Batch> => {
+  const resp = await retryRequest({url: `/synthetics/ci/batch/${batchId}`}, request)
+
+  const serverBatch = resp.data.data
+
+  return {
+    results: serverBatch.results.filter((r) => r.status !== 'skipped') as Batch['results'],
+    status: serverBatch.status,
+  }
 }
 
 const pollResults = (request: (args: AxiosRequestConfig) => AxiosPromise<{results: PollResult[]}>) => async (
@@ -90,7 +115,7 @@ const pollResults = (request: (args: AxiosRequestConfig) => AxiosPromise<{result
     request
   )
 
-  return resp.data
+  return resp.data.results
 }
 
 const getPresignedURL = (request: (args: AxiosRequestConfig) => AxiosPromise<{url: string}>) => async (
@@ -139,6 +164,7 @@ export const apiConstructor = (configuration: APIConfiguration) => {
   const requestIntake = getRequestBuilder({...baseOptions, baseUrl: baseIntakeUrl})
 
   return {
+    getBatch: getBatch(request),
     getPresignedURL: getPresignedURL(requestIntake),
     getTest: getTest(request),
     pollResults: pollResults(request),

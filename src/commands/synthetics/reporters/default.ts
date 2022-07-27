@@ -4,8 +4,8 @@ import {Writable} from 'stream'
 
 import {
   Assertion,
+  Batch,
   ConfigOverride,
-  ERRORS,
   ExecutionRule,
   MainReporter,
   Operator,
@@ -15,7 +15,7 @@ import {
   Summary,
   Test,
 } from '../interfaces'
-import {getExecutionRule, getResultDuration, getResultOutcome, ResultOutcome} from '../utils'
+import {getResultDuration, getResultOutcome, ResultOutcome} from '../utils'
 
 // Step rendering
 
@@ -61,6 +61,17 @@ const renderStep = (step: Step) => {
   const error = step.error ? `\n    ${chalk.red.dim(step.error)}` : ''
 
   return `    ${icon} | ${duration} - ${step.description}${value}${error}`
+}
+
+const renderSkippedSteps = (steps: Step[]): string | undefined => {
+  if (!steps.length) {
+    return
+  }
+  if (steps.length === 1) {
+    return renderStep(steps[0])
+  }
+
+  return `    ${ICONS.SKIPPED} | ${steps.length} skipped steps`
 }
 
 const readableOperation: {[key in Operator]: string} = {
@@ -110,17 +121,12 @@ const renderResultOutcome = (
   icon: string,
   color: chalk.Chalk
 ): string | undefined => {
-  // Only display critical errors if failure is not filled.
-  if (result.error && !(result.failure || result.errorMessage)) {
-    return `  ${chalk.bold(`${ICONS.FAILED} | ${result.error}`)}`
-  }
-
   if (result.unhealthy) {
-    const errorMessage = result.failure ? result.failure.message : result.errorMessage
-    const errorName = errorMessage && errorMessage !== 'Unknown error' ? errorMessage : 'General Error'
+    const error =
+      result.failure && result.failure.message !== 'Unknown error' ? result.failure.message : 'General Error'
 
     return [
-      `  ${chalk.yellow(`${ICONS.SKIPPED} | ${errorName}`)}`,
+      `  ${chalk.yellow(`${ICONS.SKIPPED} | ${error}`)}`,
       `  ${chalk.yellow('We had an error during the execution of this test. The result will be ignored')}`,
     ].join('\n')
   }
@@ -128,20 +134,32 @@ const renderResultOutcome = (
   if (test.type === 'api') {
     const requestDescription = renderApiRequestDescription(test.subtype, test.config)
 
-    if (result.failure || (result.errorCode && result.errorMessage)) {
-      const errorCode = result.failure ? result.failure.code : result.errorCode
-      const errorMessage = result.failure ? result.failure.message : result.errorMessage
-
-      return [`  ${icon} ${color(requestDescription)}`, renderApiError(errorCode!, errorMessage!, color)].join('\n')
+    if (result.failure) {
+      return [
+        `  ${icon} ${color(requestDescription)}`,
+        renderApiError(result.failure.code, result.failure.message, color),
+      ].join('\n')
     }
 
     return `  ${icon} ${color(requestDescription)}`
   }
 
   if (test.type === 'browser') {
+    // We render the step only if the test hasn't passed to avoid cluttering the output.
     if (!result.passed && 'stepDetails' in result) {
-      // We render the step only if the test hasn't passed to avoid cluttering the output.
-      return result.stepDetails.map(renderStep).join('\n')
+      const criticalFailedStepIndex = result.stepDetails.findIndex((s) => s.error && !s.allowFailure) + 1
+      const stepsDisplay = result.stepDetails.slice(0, criticalFailedStepIndex).map(renderStep)
+
+      const skippedStepDisplay = renderSkippedSteps(result.stepDetails.slice(criticalFailedStepIndex))
+      if (skippedStepDisplay) {
+        stepsDisplay.push(skippedStepDisplay)
+      }
+
+      return stepsDisplay.join('\n')
+    }
+
+    if (result.failure) {
+      return chalk.red(`    [${chalk.bold(result.failure.code)}] - ${chalk.dim(result.failure.message)}`)
     }
 
     return ''
@@ -196,12 +214,13 @@ const getResultUrl = (baseUrl: string, test: Test, resultId: string) => {
   return `${testDetailUrl}?resultId=${resultId}&${ciQueryParam}`
 }
 
+const getBatchUrl = (baseUrl: string, batchId: string) => `${baseUrl}synthetics/explorer/ci?batchResultId=${batchId}`
+
 const renderExecutionResult = (test: Test, execution: Result, baseUrl: string) => {
-  const {test: overriddenTest, resultId, result} = execution
+  const {executionRule, test: overriddenTest, resultId, result, timedOut} = execution
   const resultOutcome = getResultOutcome(execution)
   const [icon, setColor] = getResultIconAndColor(resultOutcome)
 
-  const executionRule = getExecutionRule(test, execution.enrichment?.config_override)
   const executionRuleText = [ResultOutcome.Passed, ResultOutcome.PassedNonBlocking].includes(resultOutcome)
     ? ''
     : `[${setColor(executionRule === ExecutionRule.BLOCKING ? 'blocking' : 'non-blocking')}] `
@@ -221,7 +240,7 @@ const renderExecutionResult = (test: Test, execution: Result, baseUrl: string) =
     const durationText = duration ? ` Total duration: ${duration} ms -` : ''
 
     const resultUrl = getResultUrl(baseUrl, test, resultId)
-    const resultUrlStatus = result.error === ERRORS.TIMEOUT ? '(not yet received)' : ''
+    const resultUrlStatus = timedOut ? '(not yet received)' : ''
 
     const resultInfo = `  ⎋${durationText} Result URL: ${chalk.dim.cyan(resultUrl)} ${resultUrlStatus}`
     outputLines.push(resultInfo)
@@ -276,11 +295,11 @@ export class DefaultReporter implements MainReporter {
     this.write(renderExecutionResult(result.test, result, baseUrl) + '\n\n')
   }
 
-  public resultReceived(result: Result): void {
+  public resultReceived(result: Batch['results'][0]): void {
     return
   }
 
-  public runEnd(summary: Summary) {
+  public runEnd(summary: Summary, baseUrl: string) {
     const {bold: b, gray, green, red, yellow} = chalk
 
     const lines: string[] = []
@@ -313,6 +332,9 @@ export class DefaultReporter implements MainReporter {
     }
     const extraInfoStr = extraInfo.length ? ' (' + extraInfo.join(', ') + ')' : ''
 
+    if (summary.batchId) {
+      lines.push('Results URL: ' + chalk.dim.cyan(getBatchUrl(baseUrl, summary.batchId)))
+    }
     lines.push(`${b('Run summary:')} ${runSummary.join(', ')}${extraInfoStr}\n\n`)
 
     this.write(lines.join('\n'))
@@ -354,7 +376,7 @@ export class DefaultReporter implements MainReporter {
 
     const getConfigOverridesPart = () => {
       const nbConfigsOverridden = Object.keys(config).length
-      if (nbConfigsOverridden === 0) {
+      if (nbConfigsOverridden === 0 || executionRule === ExecutionRule.SKIPPED) {
         return ''
       }
 

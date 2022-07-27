@@ -1,6 +1,5 @@
 import simpleGit from 'simple-git'
 
-import {getGitMetadata} from '../git'
 import {
   GIT_BRANCH,
   GIT_COMMIT_AUTHOR_DATE,
@@ -12,7 +11,8 @@ import {
   GIT_COMMIT_MESSAGE,
   GIT_REPOSITORY_URL,
   GIT_SHA,
-} from '../tags'
+} from '../../tags'
+import {getGitMetadata} from '../format-git-span-data'
 
 jest.mock('simple-git')
 

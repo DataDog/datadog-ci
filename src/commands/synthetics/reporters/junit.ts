@@ -5,7 +5,7 @@ import path from 'path'
 import {Writable} from 'stream'
 import {Builder} from 'xml2js'
 
-import {ApiServerResult, ERRORS, MultiStep, Reporter, Result, Step, Vitals} from '../interfaces'
+import {ApiServerResult, MultiStep, Reporter, Result, Step, Summary, Vitals} from '../interfaces'
 import {getResultDuration, getResultOutcome, ResultOutcome} from '../utils'
 
 interface Stats {
@@ -65,7 +65,7 @@ interface XMLStep {
 
 export interface XMLJSON {
   testsuites: {
-    $: {name: string}
+    $: {batch_id?: string; name: string}
     testsuite: XMLRun[]
   }
 }
@@ -140,10 +140,10 @@ export class JUnitReporter implements Reporter {
 
     const testCase: XMLTestCase = this.getTestCase(result)
     // Timeout errors are only reported at the top level.
-    if (result.result.error === ERRORS.TIMEOUT) {
+    if (result.timedOut) {
       testCase.error.push({
         $: {type: 'timeout'},
-        _: result.result.error,
+        _: String(result.result.failure?.message),
       })
     }
     if ('stepDetails' in result.result) {
@@ -167,7 +167,9 @@ export class JUnitReporter implements Reporter {
     suiteRun.testcase.push(testCase)
   }
 
-  public async runEnd() {
+  public async runEnd(summary: Summary) {
+    this.json.testsuites.$.batch_id = summary.batchId
+
     // Write the file
     try {
       const xml = this.builder.buildObject(this.json)
@@ -315,7 +317,6 @@ export class JUnitReporter implements Reporter {
 
   private getTestCase(result: Result): XMLTestCase {
     const test = result.test
-    const timeout = result.result.error === ERRORS.TIMEOUT
     const resultOutcome = getResultOutcome(result)
     const passed = [ResultOutcome.Passed, ResultOutcome.PassedNonBlocking].includes(resultOutcome)
 
@@ -349,7 +350,7 @@ export class JUnitReporter implements Reporter {
           ...('startUrl' in result.result ? [{$: {name: 'start_url', value: result.result.startUrl}}] : []),
           {$: {name: 'status', value: test.status}},
           {$: {name: 'tags', value: test.tags.join(',')}},
-          {$: {name: 'timeout', value: `${timeout}`}},
+          {$: {name: 'timeout', value: `${result.timedOut}`}},
           {$: {name: 'type', value: test.type}},
         ].filter((prop) => prop.$.value),
       },

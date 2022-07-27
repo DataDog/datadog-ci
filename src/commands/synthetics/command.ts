@@ -4,11 +4,15 @@ import deepExtend from 'deep-extend'
 
 import {parseConfigFile, removeUndefinedValues} from '../../helpers/utils'
 import {CiError, CriticalError} from './errors'
-import {CommandConfig, ERRORS, MainReporter, Reporter, Result, Summary} from './interfaces'
+import {CommandConfig, MainReporter, Reporter, Result, Summary} from './interfaces'
 import {DefaultReporter} from './reporters/default'
 import {JUnitReporter} from './reporters/junit'
 import {executeTests} from './run-test'
-import {getReporter, getResultOutcome, isCriticalError, parseVariablesFromCli, ResultOutcome} from './utils'
+import {getReporter, parseVariablesFromCli, renderResults} from './utils'
+
+export const MAX_TESTS_TO_TRIGGER = 100
+
+export const DEFAULT_POLLING_TIMEOUT = 2 * 60 * 1000
 
 export const DEFAULT_COMMAND_CONFIG: CommandConfig = {
   apiKey: '',
@@ -20,7 +24,7 @@ export const DEFAULT_COMMAND_CONFIG: CommandConfig = {
   files: ['{,!(node_modules)/**/}*.synthetics.json'],
   global: {},
   locations: [],
-  pollingTimeout: 2 * 60 * 1000,
+  pollingTimeout: DEFAULT_POLLING_TIMEOUT,
   proxy: {protocol: 'http'},
   publicIds: [],
   subdomain: 'app',
@@ -87,67 +91,11 @@ export class RunTestCommand extends Command {
       return 0
     }
 
-    return this.renderResults(results, summary, startTime)
-  }
-
-  private getAppBaseURL() {
-    return `https://${this.config.subdomain}.${this.config.datadogSite}/`
-  }
-
-  private renderResults(results: Result[], summary: Summary, startTime: number) {
-    // Rendering the results.
-    this.reporter?.reportStart({startTime})
-
-    if (!this.config.failOnTimeout) {
-      if (!summary.timedOut) {
-        summary.timedOut = 0
-      }
-    }
-
-    if (!this.config.failOnCriticalErrors) {
-      if (!summary.criticalErrors) {
-        summary.criticalErrors = 0
-      }
-    }
-
-    let hasSucceeded = true // Determine if all the tests have succeeded
-
-    const sortedResults = results.sort(this.sortResultsByOutcome())
-
-    for (const result of sortedResults) {
-      if (!this.config.failOnTimeout && result.result.error === ERRORS.TIMEOUT) {
-        summary.timedOut++
-      }
-
-      if (!this.config.failOnCriticalErrors && isCriticalError(result.result)) {
-        summary.criticalErrors++
-      }
-
-      const resultOutcome = getResultOutcome(result)
-
-      if ([ResultOutcome.Passed, ResultOutcome.PassedNonBlocking].includes(resultOutcome)) {
-        summary.passed++
-      } else if (resultOutcome === ResultOutcome.FailedNonBlocking) {
-        summary.failedNonBlocking++
-      } else {
-        summary.failed++
-        hasSucceeded = false
-      }
-
-      this.reporter?.resultEnd(result, this.getAppBaseURL())
-    }
-
-    this.reporter?.runEnd(summary)
-
-    return hasSucceeded ? 0 : 1
+    return renderResults({config: this.config, reporter: this.reporter, results, startTime, summary})
   }
 
   private reportCiError(error: CiError, reporter: MainReporter) {
     switch (error.code) {
-      // Non critical errors
-      case 'NO_RESULTS_TO_POLL':
-        reporter.log('No results to poll.\n')
-        break
       case 'NO_TESTS_TO_RUN':
         reporter.log('No test to run.\n')
         break
@@ -169,6 +117,9 @@ export class RunTestCommand extends Command {
       case 'TUNNEL_START_FAILED':
         reporter.error(`\n${chalk.bgRed.bold(' ERROR: unable to start tunnel ')}\n${error.message}\n\n`)
         break
+      case 'TOO_MANY_TESTS_TO_TRIGGER':
+        reporter.error(`\n${chalk.bgRed.bold(' ERROR: too many tests to trigger ')}\n${error.message}\n\n`)
+        break
       case 'TRIGGER_TESTS_FAILED':
         reporter.error(`\n${chalk.bgRed.bold(' ERROR: unable to trigger tests ')}\n${error.message}\n\n`)
         break
@@ -181,6 +132,10 @@ export class RunTestCommand extends Command {
         break
       case 'UNAVAILABLE_TUNNEL_CONFIG':
         reporter.error(`\n${chalk.bgRed.bold(' ERROR: unable to get tunnel configuration ')}\n${error.message}\n\n`)
+        break
+
+      default:
+        reporter.error(`\n${chalk.bgRed.bold(' ERROR ')}\n${error.message}\n\n`)
     }
   }
 
@@ -226,6 +181,9 @@ export class RunTestCommand extends Command {
       })
     )
 
+    // Pass root polling timeout to global override to get it applied to all tests if not defined individually
+    this.config.global.pollingTimeout = this.config.global.pollingTimeout ?? this.config.pollingTimeout
+
     // Override with Global CLI parameters
     this.config.global = deepExtend(
       this.config.global,
@@ -238,23 +196,6 @@ export class RunTestCommand extends Command {
       this.reporter!.log('[DEPRECATED] "files" should be an array of string instead of a string.\n')
       this.config.files = [this.config.files]
     }
-  }
-
-  /**
-   * Sort results with the following rules:
-   * - Passed results come first
-   * - Then non-blocking failed results
-   * - And finally failed results
-   */
-  private sortResultsByOutcome() {
-    const outcomeWeight = {
-      [ResultOutcome.PassedNonBlocking]: 1,
-      [ResultOutcome.Passed]: 2,
-      [ResultOutcome.FailedNonBlocking]: 3,
-      [ResultOutcome.Failed]: 4,
-    }
-
-    return (r1: Result, r2: Result) => outcomeWeight[getResultOutcome(r1)] - outcomeWeight[getResultOutcome(r2)]
   }
 }
 

@@ -1,4 +1,3 @@
-import deepExtend from 'deep-extend'
 import * as http from 'http'
 import {URL} from 'url'
 
@@ -8,9 +7,9 @@ import {ProxyConfiguration} from '../../../helpers/utils'
 
 import {
   ApiServerResult,
+  Batch,
   BrowserServerResult,
   CommandConfig,
-  ConfigOverride,
   ExecutionRule,
   Location,
   MainReporter,
@@ -22,9 +21,9 @@ import {
   Summary,
   Test,
   Trigger,
-  TriggerResponse,
   User,
 } from '../interfaces'
+import {createSummary} from '../utils'
 
 const mockUser: User = {
   email: '',
@@ -137,11 +136,18 @@ export const getMultiStep = (): MultiStep => ({
 
 export const getTestSuite = (): Suite => ({content: {tests: [{config: {}, id: '123-456-789'}]}, name: 'Suite 1'})
 
+export const getSummary = (): Summary => ({
+  ...createSummary(),
+  batchId: 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
+})
+
 const getBaseResult = (resultId: string, test: Test): Omit<Result, 'result'> => ({
+  executionRule: ExecutionRule.BLOCKING,
   location: 'Frankfurt (AWS)',
   passed: true,
   resultId,
   test,
+  timedOut: false,
   timestamp: 1,
 })
 
@@ -166,11 +172,121 @@ export const getBrowserServerResult = (opts: Partial<BrowserServerResult> = {}):
     width: 1,
   },
   duration: 0,
-  eventType: 'finished',
   passed: true,
   startUrl: '',
   stepDetails: [],
   ...opts,
+})
+
+export const getTimedOutBrowserResult = (): Result => ({
+  executionRule: ExecutionRule.BLOCKING,
+  location: 'Location name',
+  passed: false,
+  result: {
+    duration: 0,
+    failure: {code: 'TIMEOUT', message: 'Result timed out'},
+    passed: false,
+    steps: [],
+  },
+  resultId: '1',
+  test: {
+    ...getApiTest(),
+    config: {
+      assertions: [],
+      request: {
+        headers: {},
+        method: 'GET',
+        timeout: 1,
+        url: 'https://example.org/',
+      },
+      variables: [],
+    },
+    locations: [''],
+    message: 'Description.',
+    name: 'Test name',
+    options: {device_ids: ['chrome.laptop_large'], min_failure_duration: 0, min_location_failed: 1, tick_every: 300},
+    public_id: 'abc-def-hij',
+    type: 'browser',
+  },
+  timedOut: true,
+  timestamp: 1,
+})
+
+export const getFailedBrowserResult = (): Result => ({
+  executionRule: ExecutionRule.BLOCKING,
+  location: 'Location name',
+  passed: false,
+  result: {
+    device: {height: 1100, id: 'chrome.laptop_large', width: 1440},
+    duration: 20000,
+    failure: {code: 'STEP_TIMEOUT', message: 'Step failed because it took more than 20 seconds.'},
+    passed: false,
+    startUrl: 'https://example.org/',
+    stepDetails: [
+      {
+        ...getStep(),
+        browserErrors: [{description: 'Error', name: 'Console error', type: 'js'}],
+        description: 'Navigate to start URL',
+        duration: 1000,
+        skipped: false,
+        stepId: -1,
+        type: 'goToUrlAndMeasureTti',
+        url: 'https://example.org/',
+        value: 'https://example.org/',
+        vitalsMetrics: [{url: 'https://example.com', lcp: 100, cls: 0}],
+      },
+      {
+        ...getStep(),
+        allowFailure: true,
+        description: 'Navigate',
+        duration: 1000,
+        error: 'Navigation failure',
+        skipped: true,
+        stepId: 2,
+        type: 'goToUrl',
+        url: 'https://example.org/',
+        value: 'https://example.org/',
+        vitalsMetrics: [],
+      },
+      {
+        ...getStep(),
+        description: 'Assert',
+        duration: 1000,
+        error: 'Step failure',
+        publicId: 'abc-def-hij',
+        skipped: true,
+        stepId: 3,
+        type: 'assertElementContent',
+        url: 'https://example.org/',
+        vitalsMetrics: [],
+      },
+      {...getStep(), skipped: true},
+      {...getStep(), skipped: true},
+      {...getStep(), skipped: true},
+    ],
+  },
+  resultId: '1',
+  test: {
+    ...getApiTest(),
+    config: {
+      assertions: [],
+      request: {
+        headers: {},
+        method: 'GET',
+        timeout: 1,
+        url: 'https://example.org/',
+      },
+      variables: [],
+    },
+    locations: [''],
+    message: 'Description.',
+    name: 'Test name',
+    options: {device_ids: ['chrome.laptop_large'], min_failure_duration: 0, min_location_failed: 1, tick_every: 300},
+    public_id: 'abc-def-hij',
+    type: 'browser',
+  },
+  timedOut: false,
+  timestamp: 1,
 })
 
 export const getApiServerResult = (opts: Partial<ApiServerResult> = {}): ApiServerResult => ({
@@ -180,7 +296,6 @@ export const getApiServerResult = (opts: Partial<ApiServerResult> = {}): ApiServ
       valid: true,
     },
   ],
-  eventType: 'finished',
   passed: true,
   timings: {
     total: 123,
@@ -190,22 +305,8 @@ export const getApiServerResult = (opts: Partial<ApiServerResult> = {}): ApiServ
 
 export const getMultiStepsServerResult = (): MultiStepsServerResult => ({
   duration: 123,
-  eventType: 'finished',
   passed: true,
   steps: [],
-})
-
-const mockTriggerResult: TriggerResponse = {
-  device: 'chrome_laptop.large',
-  location: 1,
-  public_id: '123-456-789',
-  result_id: '1',
-}
-
-export const getTriggerResult = (publicId: string, resultId: string): TriggerResponse => ({
-  ...mockTriggerResult,
-  public_id: publicId,
-  result_id: resultId,
 })
 
 export const mockLocation: Location = {
@@ -219,8 +320,8 @@ export const mockLocation: Location = {
 export const mockSearchResponse = {tests: [{public_id: '123-456-789'}]}
 
 export const mockTestTriggerResponse: Trigger = {
+  batch_id: 'bid',
   locations: [mockLocation],
-  results: [mockTriggerResult],
 }
 
 const mockTunnelConnectionFirstMessage = {host: 'host', id: 'tunnel-id'}
@@ -305,81 +406,50 @@ export interface RenderResultsTestCase {
   summary: Summary
 }
 
-interface RenderResultsTestFixtureConfigs {
-  configOverride: ConfigOverride
+interface ResultFixtures {
   executionRule?: ExecutionRule
-  publicId: string
-  resultError?: string
-  resultIsUnhealthy?: boolean
-  resultPassed: boolean
+  passed?: boolean
+  testExecutionRule?: ExecutionRule
+  timedOut?: boolean
+  unhealthy?: boolean
 }
 
-interface RenderResultsTestFixtures {
-  result: Result
-  test: Test
-  triggerResult: TriggerResponse
-}
+export const getResults = (resultsFixtures: ResultFixtures[]): Result[] => {
+  const results: Result[] = []
 
-export class RenderResultsHelper {
-  private resultIdCounter = 1
-
-  public getResults(testFixturesConfigs: RenderResultsTestFixtureConfigs[]): Result[] {
-    const results: Result[] = []
-    for (const testFixturesConfig of testFixturesConfigs) {
-      const testFixtures = this.getTestFixtures(testFixturesConfig)
-      results.push(testFixtures.result)
+  for (const [index, resultFixtures] of resultsFixtures.entries()) {
+    const {executionRule, passed, testExecutionRule, timedOut, unhealthy} = resultFixtures
+    const test = getApiTest()
+    if (testExecutionRule) {
+      test.options.ci = {executionRule: testExecutionRule}
     }
 
-    this.resetResultIdCounter()
+    const result = getApiResult(index.toString(), test)
+    result.executionRule = testExecutionRule || executionRule || ExecutionRule.BLOCKING
+    result.passed = !!passed
+    result.result = {...result.result, passed: !!passed, unhealthy}
 
-    return results
+    if (timedOut) {
+      result.timedOut = true
+      result.result.failure = {code: 'TIMEOUT', message: 'Result timed out'}
+    }
+
+    results.push(result)
   }
 
-  private getNextTriggerResultAndResult({
-    configOverride,
-    publicId,
-    resultError,
-    resultIsUnhealthy,
-    resultPassed,
-    test,
-  }: Omit<RenderResultsTestFixtureConfigs, 'executionRule'> & {test: Test}): [TriggerResponse, Result] {
-    const triggerResult = getTriggerResult(publicId, this.resultIdCounter.toString())
-
-    const result = deepExtend(getApiResult(this.resultIdCounter.toString(), test), {
-      enrichment: {config_override: configOverride},
-      result: {passed: resultPassed, error: resultError, unhealthy: resultIsUnhealthy},
-    })
-
-    this.resultIdCounter++
-
-    return [triggerResult, result]
-  }
-
-  private getTestFixtures({
-    configOverride,
-    executionRule,
-    publicId,
-    resultError,
-    resultIsUnhealthy,
-    resultPassed,
-  }: RenderResultsTestFixtureConfigs): RenderResultsTestFixtures {
-    const test = executionRule
-      ? deepExtend(getApiTest(publicId), {options: {ci: {executionRule}}})
-      : getApiTest(publicId)
-
-    const [triggerResult, result] = this.getNextTriggerResultAndResult({
-      configOverride,
-      publicId,
-      resultError,
-      resultIsUnhealthy,
-      resultPassed,
-      test,
-    })
-
-    return {test, triggerResult, result}
-  }
-
-  private resetResultIdCounter() {
-    this.resultIdCounter = 1
-  }
+  return results
 }
+
+export const getBatch = (): Batch => ({
+  results: [
+    {
+      execution_rule: ExecutionRule.BLOCKING,
+      location: mockLocation.name,
+      result_id: 'rid',
+      status: 'passed',
+      test_public_id: 'pid',
+      timed_out: false,
+    },
+  ],
+  status: 'passed',
+})

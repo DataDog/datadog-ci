@@ -1,5 +1,5 @@
 /* tslint:disable:max-classes-per-file */
-const nonCriticalErrorCodes = ['NO_TESTS_TO_RUN', 'NO_RESULTS_TO_POLL'] as const
+const nonCriticalErrorCodes = ['NO_TESTS_TO_RUN'] as const
 export type NonCriticalCiErrorCode = typeof nonCriticalErrorCodes[number]
 
 const criticalErrorCodes = [
@@ -7,6 +7,7 @@ const criticalErrorCodes = [
   'MISSING_API_KEY',
   'MISSING_APP_KEY',
   'POLL_RESULTS_FAILED',
+  'TOO_MANY_TESTS_TO_TRIGGER',
   'TRIGGER_TESTS_FAILED',
   'TUNNEL_START_FAILED',
   'UNAVAILABLE_TEST_CONFIG',

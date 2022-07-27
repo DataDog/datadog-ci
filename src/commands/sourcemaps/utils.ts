@@ -7,21 +7,3 @@ export const getMinifiedFilePath = (sourcemapPath: string) => {
 
   return sourcemapPath.replace(new RegExp('\\.map$'), '')
 }
-
-export const getBaseIntakeUrl = () => {
-  if (process.env.DATADOG_SOURCEMAP_INTAKE_URL) {
-    return process.env.DATADOG_SOURCEMAP_INTAKE_URL
-  } else if (process.env.DATADOG_SITE) {
-    return 'https://sourcemap-intake.' + process.env.DATADOG_SITE
-  }
-
-  return 'https://sourcemap-intake.datadoghq.com'
-}
-
-export const pluralize = (nb: number, singular: string, plural: string) => {
-  if (nb >= 2) {
-    return `${nb} ${plural}`
-  }
-
-  return `${nb} ${singular}`
-}

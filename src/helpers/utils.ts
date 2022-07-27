@@ -198,3 +198,11 @@ export const normalizeRef = (ref: string | undefined) => {
 
   return ref.replace(/origin\/|refs\/heads\/|tags\//gm, '')
 }
+
+export const pluralize = (nb: number, singular: string, plural: string) => {
+  if (nb >= 2) {
+    return `${nb} ${plural}`
+  }
+
+  return `${nb} ${singular}`
+}

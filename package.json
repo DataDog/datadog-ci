@@ -1,6 +1,6 @@
 {
   "name": "@datadog/datadog-ci",
-  "version": "1.7.1",
+  "version": "1.10.0",
   "description": "Run datadog actions from the CI.",
   "repository": "https://github.com/DataDog/datadog-ci",
   "license": "Apache-2.0",
@@ -8,7 +8,7 @@
     "datadog-ci": "dist/cli.js"
   },
   "engines": {
-    "node": ">=10.24.1"
+    "node": ">=10.21.0"
   },
   "files": [
     "dist/**/*",
@@ -42,6 +42,7 @@
     "launch": "ts-node --transpile-only src/cli.ts",
     "launch:debug": "node -r ts-node/register/transpile-only --inspect-brk src/cli.ts",
     "lint": "(yarn tslint && yarn prettier --check) || (echo \"\nYou can fix this by running ==> yarn format <==\n\" && false)",
+    "no-only-in-tests": "grep -R \"\\.only[(\\.]\" $(find src -name '*.ts' | grep '__tests__'); test $? -eq 1 || (echo '.only was found in the tests, please remove it.' && false)",
     "prepack": "yarn build && node ./bin/make-it-executable.js",
     "prettier": "prettier \"src/**/*.{ts,js,json,yml}\" --ignore-path .gitignore",
     "test": "jest --colors",
@@ -93,7 +94,7 @@
     "@types/tiny-async-pool": "1.0.0",
     "@types/ws": "7.2.9",
     "@types/xml2js": "0.4.9",
-    "dd-trace": "0.36.3",
+    "dd-trace": "0.36.6",
     "jest": "27.0.5",
     "jest-environment-node": "27.0.5",
     "jest-matcher-specific-error": "1.0.0",
@@ -102,7 +103,7 @@
     "proxy": "1.0.2",
     "ts-jest": "27.0.3",
     "ts-node": "8.8.1",
-    "tslint": "5.18.0",
+    "tslint": "6.1.1",
     "tslint-config-prettier": "1.18.0",
     "tslint-lines-between-class-members": "1.3.6",
     "typescript": "4.2.2"

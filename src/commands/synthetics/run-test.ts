@@ -1,4 +1,5 @@
 import {apiConstructor, APIHelper, isForbiddenError} from './api'
+import {MAX_TESTS_TO_TRIGGER} from './command'
 import {CiError, CriticalError} from './errors'
 import {
   CommandConfig,
@@ -17,7 +18,13 @@ import {getSuites, getTestsToTrigger, runTests, waitForResults} from './utils'
 export const executeTests = async (reporter: MainReporter, config: CommandConfig, suites?: Suite[]) => {
   const api = getApiHelper(config)
 
-  const publicIdsFromCli = config.publicIds.map((id) => ({config: config.global, id}))
+  const publicIdsFromCli = config.publicIds.map((id) => ({
+    config: {
+      ...config.global,
+      ...(config.locations?.length ? {locations: config.locations} : {}),
+    },
+    id,
+  }))
   let testsToTrigger: TriggerConfig[]
   let tunnel: Tunnel | undefined
 
@@ -51,7 +58,8 @@ export const executeTests = async (reporter: MainReporter, config: CommandConfig
   }
 
   try {
-    testsToTriggerResult = await getTestsToTrigger(api, testsToTrigger, reporter)
+    const triggerFromSearch = !!config.testSearchQuery
+    testsToTriggerResult = await getTestsToTrigger(api, testsToTrigger, reporter, triggerFromSearch)
   } catch (error) {
     if (error instanceof CiError) {
       throw error
@@ -90,29 +98,25 @@ export const executeTests = async (reporter: MainReporter, config: CommandConfig
     }
   }
 
-  let triggers: Trigger
+  let trigger: Trigger
   try {
-    triggers = await runTests(api, overriddenTestsToTrigger)
+    trigger = await runTests(api, overriddenTestsToTrigger)
+    summary.batchId = trigger.batch_id
   } catch (error) {
     await stopTunnel()
     throw new CriticalError('TRIGGER_TESTS_FAILED', error.message)
   }
 
-  if (!triggers.results) {
-    await stopTunnel()
-    throw new CiError('NO_RESULTS_TO_POLL')
-  }
-
   try {
+    const maxPollingTimeout = Math.max(...testsToTrigger.map((t) => t.config.pollingTimeout || config.pollingTimeout))
     const results = await waitForResults(
       api,
-      triggers,
-      testsToTrigger,
+      trigger,
       tests,
       {
-        defaultTimeout: config.pollingTimeout,
         failOnCriticalErrors: config.failOnCriticalErrors,
         failOnTimeout: config.failOnTimeout,
+        maxPollingTimeout,
       },
       reporter,
       tunnel
@@ -135,6 +139,11 @@ export const getTestsList = async (
   // If "testSearchQuery" is provided, always default to running it.
   if (config.testSearchQuery) {
     const testSearchResults = await api.searchTests(config.testSearchQuery)
+    if (testSearchResults.tests.length > MAX_TESTS_TO_TRIGGER) {
+      reporter.error(
+        `More than ${MAX_TESTS_TO_TRIGGER} tests returned by search query, only the first ${MAX_TESTS_TO_TRIGGER} will be fetched.\n`
+      )
+    }
 
     return testSearchResults.tests.map((test) => ({
       config: config.global,

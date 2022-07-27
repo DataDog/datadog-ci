@@ -1,8 +1,9 @@
 // tslint:disable: no-string-literal
 import {AxiosError, AxiosResponse} from 'axios'
 import * as ciUtils from '../../../helpers/utils'
+import {MAX_TESTS_TO_TRIGGER} from '../command'
 import {CiError, CriticalCiErrorCode, CriticalError} from '../errors'
-import {ExecutionRule} from '../interfaces'
+import {ConfigOverride, ExecutionRule, SyntheticsCIConfig} from '../interfaces'
 import * as runTests from '../run-test'
 import {Tunnel} from '../tunnel'
 import * as utils from '../utils'
@@ -47,9 +48,59 @@ describe('run-test', () => {
           expect.objectContaining({id: 'public-id-1', config: configOverride}),
           expect.objectContaining({id: 'public-id-2', config: configOverride}),
         ]),
-        expect.anything()
+        expect.anything(),
+        false
       )
     })
+
+    test.each([
+      [
+        'locations in global config only',
+        {global: {locations: ['global-location-1']}},
+        {locations: ['global-location-1']},
+      ],
+      [
+        'locations in env var only',
+        {locations: ['envvar-location-1', 'envvar-location-2']},
+        {locations: ['envvar-location-1', 'envvar-location-2']},
+      ],
+      [
+        'locations in both global config and env var',
+        {global: {locations: ['global-location-1']}, locations: ['envvar-location-1', 'envvar-location-2']},
+        {locations: ['envvar-location-1', 'envvar-location-2']},
+      ],
+    ] as [string, Partial<SyntheticsCIConfig>, ConfigOverride][])(
+      'Use appropriate list of locations for tests triggered by public id: %s',
+      async (text, partialCIConfig, expectedOverriddenConfig) => {
+        const getTestsToTriggersMock = jest.spyOn(utils, 'getTestsToTrigger').mockReturnValue(
+          Promise.resolve({
+            overriddenTestsToTrigger: [],
+            summary: utils.createSummary(),
+            tests: [],
+          })
+        )
+
+        const apiHelper = {}
+
+        jest.spyOn(runTests, 'getApiHelper').mockImplementation(() => ({} as any))
+        await expect(
+          runTests.executeTests(mockReporter, {
+            ...ciConfig,
+            ...partialCIConfig,
+            publicIds: ['public-id-1', 'public-id-2'],
+          })
+        ).rejects.toMatchError(new CiError('NO_TESTS_TO_RUN'))
+        expect(getTestsToTriggersMock).toHaveBeenCalledWith(
+          apiHelper,
+          expect.arrayContaining([
+            expect.objectContaining({id: 'public-id-1', config: expectedOverriddenConfig}),
+            expect.objectContaining({id: 'public-id-2', config: expectedOverriddenConfig}),
+          ]),
+          expect.anything(),
+          false
+        )
+      }
+    )
 
     test('should not wait for `skipped` only tests batch results', async () => {
       const getTestsToTriggersMock = jest.spyOn(utils, 'getTestsToTrigger').mockReturnValue(
@@ -77,7 +128,8 @@ describe('run-test', () => {
           expect.objectContaining({id: 'public-id-1', config: configOverride}),
           expect.objectContaining({id: 'public-id-2', config: configOverride}),
         ]),
-        expect.anything()
+        expect.anything(),
+        false
       )
     })
 
@@ -110,7 +162,8 @@ describe('run-test', () => {
           expect.objectContaining({id: 'public-id-1', config: configOverride}),
           expect.objectContaining({id: 'public-id-2', config: configOverride}),
         ]),
-        expect.anything()
+        expect.anything(),
+        false
       )
       expect(apiHelper.getPresignedURL).not.toHaveBeenCalled()
     })
@@ -133,8 +186,9 @@ describe('run-test', () => {
       jest.spyOn(utils, 'runTests').mockResolvedValue(mockTestTriggerResponse)
 
       const apiHelper = {
+        getBatch: () => ({results: []}),
         getPresignedURL: () => ({url: 'url'}),
-        pollResults: () => ({results: [getApiResult('1', getApiTest())]}),
+        pollResults: () => [getApiResult('1', getApiTest())],
         triggerTests: () => mockTestTriggerResponse,
       }
 
@@ -268,8 +322,8 @@ describe('run-test', () => {
 
       jest.spyOn(utils, 'runTests').mockReturnValue(
         Promise.resolve({
+          batch_id: 'bid',
           locations: [location],
-          results: [{device: 'chrome_laptop.large', location: 1, public_id: 'publicId', result_id: '1111'}],
         })
       )
 
@@ -278,6 +332,7 @@ describe('run-test', () => {
       serverError.config = {baseURL: 'baseURL', url: 'url'}
 
       const apiHelper = {
+        getBatch: () => ({results: []}),
         getPresignedURL: () => ({url: 'url'}),
         pollResults: jest.fn(() => {
           throw serverError
@@ -292,7 +347,12 @@ describe('run-test', () => {
           publicIds: ['public-id-1', 'public-id-2'],
           tunnel: true,
         })
-      ).rejects.toMatchError(new CriticalError('POLL_RESULTS_FAILED', 'Server Error'))
+      ).rejects.toMatchError(
+        new CriticalError(
+          'POLL_RESULTS_FAILED',
+          'Failed to poll results: query on baseURLurl returned: "Bad Gateway"\n'
+        )
+      )
       expect(stopTunnelSpy).toHaveBeenCalledTimes(1)
     })
   })
@@ -346,6 +406,7 @@ describe('run-test', () => {
       )
     })
   })
+
   describe('getTestsList', () => {
     beforeEach(() => {
       jest.restoreAllMocks()
@@ -416,6 +477,21 @@ describe('run-test', () => {
           suite: 'Query: fake search',
         },
       ])
+    })
+
+    test('display warning if too many tests from search', async () => {
+      const api = {
+        searchTests: () => ({
+          tests: Array(MAX_TESTS_TO_TRIGGER + 1).fill({public_id: 'stu-vwx-yza'}),
+        }),
+      } as any
+
+      const searchQuery = 'fake search'
+
+      await runTests.getTestsList(api, {...ciConfig, testSearchQuery: searchQuery}, mockReporter)
+      expect(mockReporter.error).toHaveBeenCalledWith(
+        `More than ${MAX_TESTS_TO_TRIGGER} tests returned by search query, only the first ${MAX_TESTS_TO_TRIGGER} will be fetched.\n`
+      )
     })
 
     test('should use given globs to get tests list', async () => {

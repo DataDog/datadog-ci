@@ -2,8 +2,8 @@ import {CloudWatchLogs, config as aws_sdk_config, Lambda} from 'aws-sdk'
 import {GetFunctionRequest} from 'aws-sdk/clients/lambda'
 import {
   ARM64_ARCHITECTURE,
-  ARM_LAYER_SUFFIX,
   ARM_LAYERS,
+  ARM_LAYER_SUFFIX,
   AWS_ACCESS_KEY_ID_ENV_VAR,
   AWS_SECRET_ACCESS_KEY_ENV_VAR,
   CI_API_KEY_ENV_VAR,
@@ -12,8 +12,8 @@ import {
   CI_SITE_ENV_VAR,
   DEFAULT_LAYER_AWS_ACCOUNT,
   GOVCLOUD_LAYER_AWS_ACCOUNT,
-  LAYER_LOOKUP,
   LayerKey,
+  LAYER_LOOKUP,
   LIST_FUNCTIONS_MAX_RETRY_COUNT,
   MAX_LAMBDA_STATE_CHECK_ATTEMPTS,
   Runtime,
