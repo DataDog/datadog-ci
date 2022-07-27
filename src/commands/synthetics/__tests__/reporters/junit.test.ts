@@ -6,7 +6,6 @@ import {Result} from '../../interfaces'
 import {RunTestCommand} from '../../command'
 import {getDefaultStats, JUnitReporter, XMLTestCase} from '../../reporters/junit'
 import {
-  MOCK_BASE_URL,
   getApiTest,
   getBrowserResult,
   getBrowserServerResult,
@@ -14,6 +13,7 @@ import {
   getMultiStepsServerResult,
   getStep,
   getSummary,
+  MOCK_BASE_URL,
 } from '../fixtures'
 
 const globalTestMock = getApiTest('123-456-789')

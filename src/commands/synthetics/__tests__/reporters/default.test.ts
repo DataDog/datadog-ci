@@ -3,7 +3,7 @@ import {BaseContext} from 'clipanion/lib/advanced'
 import {ConfigOverride, ExecutionRule, MainReporter, Result, Summary, Test} from '../../interfaces'
 import {DefaultReporter} from '../../reporters/default'
 import {createSummary} from '../../utils'
-import {MOCK_BASE_URL, getApiResult, getApiTest, getFailedBrowserResult, getTimedOutBrowserResult} from '../fixtures'
+import {getApiResult, getApiTest, getFailedBrowserResult, getTimedOutBrowserResult, MOCK_BASE_URL} from '../fixtures'
 
 /**
  * A good amount of these tests rely on Jest snapshot assertions.
