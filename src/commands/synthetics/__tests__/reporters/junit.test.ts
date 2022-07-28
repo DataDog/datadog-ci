@@ -13,6 +13,7 @@ import {
   getMultiStepsServerResult,
   getStep,
   getSummary,
+  MOCK_BASE_URL,
 } from '../fixtures'
 
 const globalTestMock = getApiTest('123-456-789')
@@ -55,7 +56,7 @@ describe('Junit reporter', () => {
     })
 
     it('should build the xml', async () => {
-      await reporter.runEnd(globalSummaryMock)
+      await reporter.runEnd(globalSummaryMock, MOCK_BASE_URL)
       expect(reporter['builder'].buildObject).toHaveBeenCalledWith(reporter['json'])
       expect(fs.writeFile).toHaveBeenCalledWith('junit.xml', expect.any(String), 'utf8')
       expect(writeMock).toHaveBeenCalledTimes(1)
@@ -69,7 +70,7 @@ describe('Junit reporter', () => {
         throw new Error('Fail')
       })
 
-      await reporter.runEnd(globalSummaryMock)
+      await reporter.runEnd(globalSummaryMock, MOCK_BASE_URL)
 
       expect(fs.writeFile).not.toHaveBeenCalled()
       expect(writeMock).toHaveBeenCalledTimes(1)
@@ -77,7 +78,7 @@ describe('Junit reporter', () => {
 
     it('should create the file', async () => {
       reporter['destination'] = 'junit/report.xml'
-      await reporter.runEnd(globalSummaryMock)
+      await reporter.runEnd(globalSummaryMock, MOCK_BASE_URL)
       const stat = await fs.stat(reporter['destination'])
       expect(stat).toBeDefined()
 
@@ -89,7 +90,7 @@ describe('Junit reporter', () => {
     it('should not throw on existing directory', async () => {
       await fs.mkdir('junit')
       reporter['destination'] = 'junit/report.xml'
-      await reporter.runEnd(globalSummaryMock)
+      await reporter.runEnd(globalSummaryMock, MOCK_BASE_URL)
 
       // Cleaning
       await fs.unlink(reporter['destination'])
@@ -99,7 +100,7 @@ describe('Junit reporter', () => {
     it('should add the batch_id to the report', async () => {
       jest.spyOn(fs, 'writeFile').mockResolvedValueOnce()
 
-      await reporter.runEnd(globalSummaryMock)
+      await reporter.runEnd(globalSummaryMock, MOCK_BASE_URL)
       expect(reporter['json'].testsuites.$.batch_id).toBe(globalSummaryMock.batchId)
     })
   })
@@ -228,7 +229,7 @@ describe('Junit reporter', () => {
           },
         },
       }
-      const suite = reporter['getTestCase'](resultMock)
+      const suite = reporter['getTestCase'](resultMock, MOCK_BASE_URL)
       expect(suite.$).toMatchObject({
         ...getDefaultStats(),
         errors: 2,

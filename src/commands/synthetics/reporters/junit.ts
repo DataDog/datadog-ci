@@ -6,7 +6,7 @@ import {Writable} from 'stream'
 import {Builder} from 'xml2js'
 
 import {ApiServerResult, MultiStep, Reporter, Result, Step, Summary, Vitals} from '../interfaces'
-import {getResultDuration, getResultOutcome, ResultOutcome} from '../utils'
+import {getBatchUrl, getResultDuration, getResultOutcome, getResultUrl, ResultOutcome} from '../utils'
 
 interface Stats {
   allowfailures: number
@@ -65,7 +65,7 @@ interface XMLStep {
 
 export interface XMLJSON {
   testsuites: {
-    $: {batch_id?: string; name: string}
+    $: {batch_id?: string; batch_url?: string; name: string}
     testsuite: XMLRun[]
   }
 }
@@ -138,7 +138,7 @@ export class JUnitReporter implements Reporter {
       ...this.getResultStats(result, getStats(suiteRun.$)),
     }
 
-    const testCase: XMLTestCase = this.getTestCase(result)
+    const testCase: XMLTestCase = this.getTestCase(result, baseUrl)
     // Timeout errors are only reported at the top level.
     if (result.timedOut) {
       testCase.error.push({
@@ -167,8 +167,11 @@ export class JUnitReporter implements Reporter {
     suiteRun.testcase.push(testCase)
   }
 
-  public async runEnd(summary: Summary) {
+  public async runEnd(summary: Summary, baseUrl: string) {
     this.json.testsuites.$.batch_id = summary.batchId
+    if (summary.batchId) {
+      this.json.testsuites.$.batch_url = getBatchUrl(baseUrl, summary.batchId)
+    }
 
     // Write the file
     try {
@@ -315,9 +318,10 @@ export class JUnitReporter implements Reporter {
     return stats
   }
 
-  private getTestCase(result: Result): XMLTestCase {
+  private getTestCase(result: Result, baseUrl: string): XMLTestCase {
     const test = result.test
     const resultOutcome = getResultOutcome(result)
+    const resultUrl = getResultUrl(baseUrl, test, result.resultId)
     const passed = [ResultOutcome.Passed, ResultOutcome.PassedNonBlocking].includes(resultOutcome)
 
     return {
@@ -347,6 +351,7 @@ export class JUnitReporter implements Reporter {
           {$: {name: 'passed', value: `${passed}`}},
           {$: {name: 'public_id', value: test.public_id}},
           {$: {name: 'result_id', value: result.resultId}},
+          {$: {name: 'result_url', value: resultUrl}},
           ...('startUrl' in result.result ? [{$: {name: 'start_url', value: result.result.startUrl}}] : []),
           {$: {name: 'status', value: test.status}},
           {$: {name: 'tags', value: test.tags.join(',')}},

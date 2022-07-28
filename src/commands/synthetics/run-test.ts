@@ -101,6 +101,7 @@ export const executeTests = async (reporter: MainReporter, config: CommandConfig
   let trigger: Trigger
   try {
     trigger = await runTests(api, overriddenTestsToTrigger)
+
     summary.batchId = trigger.batch_id
   } catch (error) {
     await stopTunnel()

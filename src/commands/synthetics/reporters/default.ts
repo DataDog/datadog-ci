@@ -15,7 +15,7 @@ import {
   Summary,
   Test,
 } from '../interfaces'
-import {getResultDuration, getResultOutcome, ResultOutcome} from '../utils'
+import {getBatchUrl, getResultDuration, getResultOutcome, getResultUrl, ResultOutcome} from '../utils'
 
 // Step rendering
 
@@ -204,18 +204,6 @@ const renderApiRequestDescription = (subType: string, config: Test['config']): s
   return `${chalk.bold(subType)} test`
 }
 
-const getResultUrl = (baseUrl: string, test: Test, resultId: string) => {
-  const ciQueryParam = 'from_ci=true'
-  const testDetailUrl = `${baseUrl}synthetics/details/${test.public_id}`
-  if (test.type === 'browser') {
-    return `${testDetailUrl}/result/${resultId}?${ciQueryParam}`
-  }
-
-  return `${testDetailUrl}?resultId=${resultId}&${ciQueryParam}`
-}
-
-const getBatchUrl = (baseUrl: string, batchId: string) => `${baseUrl}synthetics/explorer/ci?batchResultId=${batchId}`
-
 const renderExecutionResult = (test: Test, execution: Result, baseUrl: string) => {
   const {executionRule, test: overriddenTest, resultId, result, timedOut} = execution
   const resultOutcome = getResultOutcome(execution)
@@ -333,7 +321,8 @@ export class DefaultReporter implements MainReporter {
     const extraInfoStr = extraInfo.length ? ' (' + extraInfo.join(', ') + ')' : ''
 
     if (summary.batchId) {
-      lines.push('Results URL: ' + chalk.dim.cyan(getBatchUrl(baseUrl, summary.batchId)))
+      const batchUrl = getBatchUrl(baseUrl, summary.batchId)
+      lines.push('Results URL: ' + chalk.dim.cyan(batchUrl))
     }
     lines.push(`${b('Run summary:')} ${runSummary.join(', ')}${extraInfoStr}\n\n`)
 

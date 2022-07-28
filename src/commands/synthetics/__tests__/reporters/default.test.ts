@@ -3,11 +3,11 @@ import {BaseContext} from 'clipanion/lib/advanced'
 import {ConfigOverride, ExecutionRule, MainReporter, Result, Summary, Test} from '../../interfaces'
 import {DefaultReporter} from '../../reporters/default'
 import {createSummary} from '../../utils'
-import {getApiResult, getApiTest, getFailedBrowserResult, getTimedOutBrowserResult} from '../fixtures'
+import {getApiResult, getApiTest, getFailedBrowserResult, getTimedOutBrowserResult, MOCK_BASE_URL} from '../fixtures'
 
 /**
  * A good amount of these tests rely on Jest snapshot assertions.
- * If you make some changes in the output of the default repoter, chances are you
+ * If you make some changes in the output of the default reporter, chances are you
  * will also have to update the snapshots from `./__snapshots__/default.test.ts.snap`.
  * To do that, you can run the following command: `yarn test --updateSnapshot reporters/default.test.ts`.
  * More information on https://jestjs.io/docs/snapshot-testing.
@@ -211,7 +211,7 @@ describe('Default reporter', () => {
     ]
 
     test.each(cases)('$description', (testCase) => {
-      reporter.runEnd(testCase.summary, baseUrlFixture)
+      reporter.runEnd(testCase.summary, MOCK_BASE_URL)
       const mostRecentOutput = writeMock.mock.calls[writeMock.mock.calls.length - 1][0]
       expect(mostRecentOutput).toMatchSnapshot()
     })

@@ -15,7 +15,6 @@ import {APIHelper, EndpointError, formatBackendErrors, isNotFoundError} from './
 import {MAX_TESTS_TO_TRIGGER} from './command'
 import {CiError, CriticalError} from './errors'
 import {
-  Batch,
   CommandConfig,
   ConfigOverride,
   ExecutionRule,
@@ -611,6 +610,19 @@ export const parseVariablesFromCli = (
 
 export const getAppBaseURL = ({datadogSite, subdomain}: Pick<CommandConfig, 'datadogSite' | 'subdomain'>) =>
   `https://${subdomain}.${datadogSite}/`
+
+export const getBatchUrl = (baseUrl: string, batchId: string) =>
+  `${baseUrl}synthetics/explorer/ci?batchResultId=${batchId}`
+
+export const getResultUrl = (baseUrl: string, test: Test, resultId: string) => {
+  const ciQueryParam = 'from_ci=true'
+  const testDetailUrl = `${baseUrl}synthetics/details/${test.public_id}`
+  if (test.type === 'browser') {
+    return `${testDetailUrl}/result/${resultId}?${ciQueryParam}`
+  }
+
+  return `${testDetailUrl}?resultId=${resultId}&${ciQueryParam}`
+}
 
 /**
  * Sort results with the following rules:
