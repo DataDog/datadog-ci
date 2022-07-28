@@ -252,6 +252,9 @@ export class XCodeCommand extends Command {
     if (process.env.EXTRA_PACKAGER_ARGS) {
       const splitArguments = process.env.EXTRA_PACKAGER_ARGS.split(' ')
       const sourcemapsLocationIndex = splitArguments.findIndex((arg) => arg === '--sourcemap-output') + 1
+      if (sourcemapsLocationIndex === 0) {
+        return null
+      }
 
       return splitArguments[sourcemapsLocationIndex]
     }

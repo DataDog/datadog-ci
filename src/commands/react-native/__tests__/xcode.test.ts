@@ -94,16 +94,27 @@ describe('xcode', () => {
   })
 
   describe('getSourcemapsLocation', () => {
-    test('should return the location form SOURCEMAP_FILE', () => {
+    test('should return the location from SOURCEMAP_FILE', () => {
       process.env.SOURCEMAP_FILE = './main.jsbundle.map'
       const command = new XCodeCommand()
       expect(command['getSourcemapsLocation']()).toMatch('./main.jsbundle.map')
     })
 
-    test('should return the location form EXTRA_PACKAGER_ARGS', () => {
+    test('should return the location from EXTRA_PACKAGER_ARGS', () => {
       process.env.EXTRA_PACKAGER_ARGS = '--bundle-output ./main.jsbundle --sourcemap-output ./main.jsbundle.map'
       const command = new XCodeCommand()
       expect(command['getSourcemapsLocation']()).toBe('./main.jsbundle.map')
+    })
+
+    test('should return null if no location is in EXTRA_PACKAGER_ARGS and SOURCEMAP_FILE is undefined', () => {
+      process.env.EXTRA_PACKAGER_ARGS = '--bundle-output ./main.jsbundle'
+      const command = new XCodeCommand()
+      expect(command['getSourcemapsLocation']()).toBeNull()
+    })
+
+    test('should return null if EXTRA_PACKAGER_ARGS and SOURCEMAP_FILE are undefined', () => {
+      const command = new XCodeCommand()
+      expect(command['getSourcemapsLocation']()).toBeNull()
     })
   })
 
