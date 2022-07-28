@@ -4,6 +4,16 @@ import {Cli, Command} from 'clipanion'
 import {existsSync} from 'fs'
 import {UploadCommand} from './upload'
 
+const reactNativePath = (() => {
+  try {
+    const reactNativeIndexFile = require.resolve('react-native')
+
+    return `${reactNativeIndexFile}/..`
+  } catch (error) {
+    return 'node_modules/react-native'
+  }
+})()
+
 export class XCodeCommand extends Command {
   public static usage = Command.Usage({
     description: 'Bundle React Native code and images in XCode and send sourcemaps to Datadog.',
@@ -23,10 +33,10 @@ export class XCodeCommand extends Command {
     ],
   })
 
-  private composeSourcemapsPath = 'node_modules/react-native/scripts/compose-source-maps.js'
+  private composeSourcemapsPath = `${reactNativePath}/scripts/compose-source-maps.js`
   private dryRun = false
   private force = false
-  private scriptPath = 'node_modules/react-native/scripts/react-native-xcode.sh'
+  private scriptPath = `${reactNativePath}/scripts/react-native-xcode.sh`
   private service?: string = process.env.PRODUCT_BUNDLE_IDENTIFIER
 
   constructor() {
