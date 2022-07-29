@@ -62,30 +62,32 @@ describe('upload', () => {
 })
 
 describe('execute', () => {
-  const runCLI = async (bundle: string) => {
+  const runCLI = async (bundle: string, options?: {configPath?: string}) => {
     const cli = makeCli()
     const context = createMockContext() as any
     process.env = {DATADOG_API_KEY: 'PLACEHOLDER'}
-    const code = await cli.run(
-      [
-        'react-native',
-        'upload',
-        '--release-version',
-        '1.23.4',
-        '--build-version',
-        '1023040',
-        '--service',
-        'com.company.app',
-        '--bundle',
-        bundle,
-        '--sourcemap',
-        `${bundle}.map`,
-        '--platform',
-        'android',
-        '--dry-run',
-      ],
-      context
-    )
+    const command = [
+      'react-native',
+      'upload',
+      '--release-version',
+      '1.23.4',
+      '--build-version',
+      '1023040',
+      '--service',
+      'com.company.app',
+      '--bundle',
+      bundle,
+      '--sourcemap',
+      `${bundle}.map`,
+      '--platform',
+      'android',
+      '--dry-run',
+    ]
+    if (options?.configPath) {
+      command.push('--config', options.configPath)
+      delete process.env.DATADOG_API_KEY
+    }
+    const code = await cli.run(command, context)
 
     return {context, code}
   }
@@ -124,6 +126,27 @@ describe('execute', () => {
       service: 'com.company.app',
       sourcemapPath: `${process.cwd()}/src/commands/react-native/__tests__/fixtures/basic-ios/main.jsbundle.map`,
       sourcemapsPaths: [`${process.cwd()}/src/commands/react-native/__tests__/fixtures/basic-ios/main.jsbundle.map`],
+      version: '1.23.4',
+    })
+  })
+
+  test('reads config from JSON file', async () => {
+    const {context, code} = await runCLI('./src/commands/react-native/__tests__/fixtures/basic-ios/main.jsbundle', {
+      configPath: './src/commands/react-native/__tests__/fixtures/config/config-with-api-key.json',
+    })
+
+    const output = context.stdout.toString().split(os.EOL)
+    expect(code).toBe(0)
+    checkConsoleOutput(output, {
+      build: '1023040',
+      bundlePath: './src/commands/react-native/__tests__/fixtures/basic-ios/main.jsbundle',
+      concurrency: 20,
+      jsFilesURLs: ['./src/commands/react-native/__tests__/fixtures/basic-ios/main.jsbundle'],
+      platform: 'android',
+      projectPath: '',
+      service: 'com.company.app',
+      sourcemapPath: './src/commands/react-native/__tests__/fixtures/basic-ios/main.jsbundle.map',
+      sourcemapsPaths: ['./src/commands/react-native/__tests__/fixtures/basic-ios/main.jsbundle.map'],
       version: '1.23.4',
     })
   })

@@ -9,7 +9,7 @@ import {getRepositoryData, newSimpleGit, RepositoryData} from '../../helpers/git
 import {RequestBuilder} from '../../helpers/interfaces'
 import {getMetricsLogger, MetricsLogger} from '../../helpers/metrics'
 import {upload, UploadStatus} from '../../helpers/upload'
-import {getRequestBuilder} from '../../helpers/utils'
+import {getRequestBuilder, parseConfigFile} from '../../helpers/utils'
 import {RNPlatform, RNSourcemap, RN_SUPPORTED_PLATFORMS} from './interfaces'
 import {
   renderCommandInfo,
@@ -24,6 +24,7 @@ import {
 } from './renderer'
 import {InvalidPayload, validatePayload} from './validation'
 
+const DEFAULT_CONFIG_PATH = 'datadog-ci.json'
 export class UploadCommand extends Command {
   public static usage = Command.Usage({
     description: 'Upload React Native sourcemaps to Datadog.',
@@ -50,6 +51,7 @@ export class UploadCommand extends Command {
     apiKey: process.env.DATADOG_API_KEY,
     datadogSite: process.env.DATADOG_SITE || 'datadoghq.com',
   }
+  private configPath?: string
   private disableGit?: boolean
   private dryRun = false
   private maxConcurrency = 20
@@ -123,8 +125,11 @@ export class UploadCommand extends Command {
         this.buildVersion
       )
     )
+
+    await this.resolveConfig()
+
     const metricsLogger = getMetricsLogger({
-      datadogSite: process.env.DATADOG_SITE,
+      datadogSite: this.config.datadogSite,
       defaultTags: [
         `version:${this.releaseVersion}`,
         `build:${this.buildVersion}`,
@@ -135,6 +140,7 @@ export class UploadCommand extends Command {
       ],
       prefix: 'datadog.ci.sourcemaps.upload.',
     })
+
     const apiKeyValidator = newApiKeyValidator({
       apiKey: this.config.apiKey,
       datadogSite: this.config.datadogSite,
@@ -151,7 +157,7 @@ export class UploadCommand extends Command {
       this.context.stdout.write(renderSuccessfulCommand(results, totalTime, this.dryRun))
       metricsLogger.logger.gauge('duration', totalTime)
 
-      return 0
+      return results.some((result) => result !== UploadStatus.Success) ? 1 : 0
     } catch (error) {
       if (error instanceof InvalidConfigurationError) {
         this.context.stdout.write(renderConfigurationError(error))
@@ -249,6 +255,27 @@ export class UploadCommand extends Command {
     })
   }
 
+  private resolveConfig = async () => {
+    try {
+      this.config = await parseConfigFile(this.config, this.configPath || DEFAULT_CONFIG_PATH)
+
+      /**
+       * Setting the environment variables is mandatory since the metrics
+       * logger reads them from the env
+       */
+      if (this.config.apiKey) {
+        process.env.DATADOG_API_KEY = this.config.apiKey
+      }
+      if (this.config.datadogSite) {
+        process.env.DATADOG_SITE = this.config.datadogSite
+      }
+    } catch (error) {
+      if (this.configPath) {
+        throw error
+      }
+    }
+  }
+
   private upload(
     requestBuilder: RequestBuilder,
     metricsLogger: MetricsLogger,
@@ -319,3 +346,4 @@ UploadCommand.addOption('repositoryURL', Command.String('--repository-url'))
 UploadCommand.addOption('disableGit', Command.Boolean('--disable-git'))
 UploadCommand.addOption('maxConcurrency', Command.String('--max-concurrency'))
 UploadCommand.addOption('projectPath', Command.String('--project-path'))
+UploadCommand.addOption('configPath', Command.String('--config'))
