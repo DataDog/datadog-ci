@@ -2,7 +2,7 @@ import chalk from 'chalk'
 import {Command} from 'clipanion'
 import deepExtend from 'deep-extend'
 
-import {parseConfigFile, removeUndefinedValues} from '../../helpers/utils'
+import {removeUndefinedValues, resolveConfigFromFile} from '../../helpers/utils'
 import {CiError, CriticalError} from './errors'
 import {CommandConfig, MainReporter, Reporter, Result, Summary} from './interfaces'
 import {DefaultReporter} from './reporters/default'
@@ -33,12 +33,12 @@ export const DEFAULT_COMMAND_CONFIG: CommandConfig = {
 }
 
 export class RunTestCommand extends Command {
+  public configPath?: string
   public jUnitReport?: string
   public runName?: string
   private apiKey?: string
   private appKey?: string
   private config: CommandConfig = JSON.parse(JSON.stringify(DEFAULT_COMMAND_CONFIG)) // Deep copy to avoid mutation during unit tests
-  private configPath?: string
   private datadogSite?: string
   private failOnCriticalErrors?: boolean
   private failOnTimeout?: boolean
@@ -144,7 +144,10 @@ export class RunTestCommand extends Command {
 
     // Override with file config variables
     try {
-      this.config = await parseConfigFile(this.config, this.configPath ?? this.config.configPath)
+      this.config = await resolveConfigFromFile(this.config, {
+        configPath: this.configPath,
+        defaultConfigPath: this.config.configPath,
+      })
     } catch (error) {
       if (this.configPath) {
         throw error

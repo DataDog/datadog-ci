@@ -1,7 +1,7 @@
 import {CloudWatchLogs, Lambda} from 'aws-sdk'
 import {bold, cyan, red, yellow} from 'chalk'
 import {Command} from 'clipanion'
-import {parseConfigFile} from '../../helpers/utils'
+import {resolveConfigFromFile} from '../../helpers/utils'
 import {AWS_DEFAULT_REGION_ENV_VAR} from './constants'
 import {
   collectFunctionsByRegion,
@@ -29,7 +29,9 @@ export class UninstrumentCommand extends Command {
 
   public async execute() {
     const lambdaConfig = {lambda: this.config}
-    this.config = (await parseConfigFile(lambdaConfig, this.configPath)).lambda
+    this.config = (
+      await resolveConfigFromFile(lambdaConfig, {configPath: this.configPath, defaultConfigPath: 'datadog-ci.json'})
+    ).lambda
 
     let hasSpecifiedFunctions = this.functions.length !== 0 || this.config.functions.length !== 0
     if (this.interactive) {

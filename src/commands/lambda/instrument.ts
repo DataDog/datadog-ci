@@ -1,7 +1,7 @@
 import {CloudWatchLogs, Lambda} from 'aws-sdk'
 import {blueBright, bold, cyan, hex, red, underline, yellow} from 'chalk'
 import {Cli, Command} from 'clipanion'
-import {parseConfigFile} from '../../helpers/utils'
+import {resolveConfigFromFile} from '../../helpers/utils'
 import {getCommitInfo, newSimpleGit} from '../git-metadata/git'
 import {UploadCommand} from '../git-metadata/upload'
 import {
@@ -62,7 +62,9 @@ export class InstrumentCommand extends Command {
 
   public async execute() {
     const lambdaConfig = {lambda: this.config}
-    this.config = (await parseConfigFile(lambdaConfig, this.configPath)).lambda
+    this.config = (
+      await resolveConfigFromFile(lambdaConfig, {configPath: this.configPath, defaultConfigPath: 'datadog-ci.json'})
+    ).lambda
 
     let hasSpecifiedFunctions = this.functions.length !== 0 || this.config.functions.length !== 0
     if (this.interactive) {

@@ -9,7 +9,7 @@ import {getRepositoryData, newSimpleGit, RepositoryData} from '../../helpers/git
 import {RequestBuilder} from '../../helpers/interfaces'
 import {getMetricsLogger, MetricsLogger} from '../../helpers/metrics'
 import {upload, UploadStatus} from '../../helpers/upload'
-import {getRequestBuilder, parseConfigFile} from '../../helpers/utils'
+import {getRequestBuilder, resolveConfigFromFile} from '../../helpers/utils'
 import {RNPlatform, RNSourcemap, RN_SUPPORTED_PLATFORMS} from './interfaces'
 import {
   renderCommandInfo,
@@ -126,9 +126,13 @@ export class UploadCommand extends Command {
       )
     )
 
-    await this.resolveConfig()
+    this.config = await resolveConfigFromFile(this.config, {
+      configPath: this.configPath,
+      defaultConfigPath: DEFAULT_CONFIG_PATH,
+    })
 
     const metricsLogger = getMetricsLogger({
+      apiKey: this.config.apiKey,
       datadogSite: this.config.datadogSite,
       defaultTags: [
         `version:${this.releaseVersion}`,
@@ -246,34 +250,13 @@ export class UploadCommand extends Command {
 
     return getRequestBuilder({
       apiKey: this.config.apiKey!,
-      baseUrl: getBaseSourcemapIntakeUrl(),
+      baseUrl: getBaseSourcemapIntakeUrl(this.config.datadogSite),
       headers: new Map([
         ['DD-EVP-ORIGIN', 'datadog-ci react-native'],
         ['DD-EVP-ORIGIN-VERSION', this.cliVersion],
       ]),
       overrideUrl: `v1/input/${this.config.apiKey}`,
     })
-  }
-
-  private resolveConfig = async () => {
-    try {
-      this.config = await parseConfigFile(this.config, this.configPath || DEFAULT_CONFIG_PATH)
-
-      /**
-       * Setting the environment variables is mandatory since the metrics
-       * logger reads them from the env
-       */
-      if (this.config.apiKey) {
-        process.env.DATADOG_API_KEY = this.config.apiKey
-      }
-      if (this.config.datadogSite) {
-        process.env.DATADOG_SITE = this.config.datadogSite
-      }
-    } catch (error) {
-      if (this.configPath) {
-        throw error
-      }
-    }
   }
 
   private upload(
