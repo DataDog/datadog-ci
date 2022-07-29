@@ -54,7 +54,7 @@ import {
   isLayerRuntime,
   isSupportedRuntime,
 } from './commons'
-import {isExtensionSupportUniversalInstrumentation, isTracerCompatibleWithExtension} from './versionChecker'
+import {isExtensionCompatibleWithUniversalInstrumentation, isTracerCompatibleWithExtension} from './versionChecker'
 
 export const getInstrumentedFunctionConfigs = async (
   lambda: Lambda,
@@ -289,7 +289,7 @@ export const calculateUpdateRequest = async (
 
   // Special handling for .NET and Java to support universal instrumentation
   if (runtimeType === RuntimeType.DOTNET || runtimeType === RuntimeType.JAVA) {
-    if (layerOrTraceVersion && isExtensionSupportUniversalInstrumentation(runtimeType, extensionVersion)) {
+    if (layerOrTraceVersion && isExtensionCompatibleWithUniversalInstrumentation(runtimeType, extensionVersion)) {
       // If the user configures the trace version and the extension support univeral instrumenation
       // Then check whether the trace and extension are compatible with each other
       if (isTracerCompatibleWithExtension(runtimeType, layerOrTraceVersion)) {
@@ -303,7 +303,7 @@ export const calculateUpdateRequest = async (
     } else if (runtimeType === RuntimeType.DOTNET) {
       // If it is an old extension version or the trace version is null, leave it is as the old workflow
       if (
-        !isExtensionSupportUniversalInstrumentation(runtimeType, extensionVersion) &&
+        !isExtensionCompatibleWithUniversalInstrumentation(runtimeType, extensionVersion) &&
         config.Architectures?.includes(ARM64_ARCHITECTURE)
       ) {
         throw new Error(

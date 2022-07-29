@@ -1,6 +1,6 @@
 import {RuntimeType} from '../../constants'
 import {
-  isExtensionSupportUniversalInstrumentation,
+  isExtensionCompatibleWithUniversalInstrumentation,
   isTracerCompatibleWithExtension,
 } from '../../functions/versionChecker'
 
@@ -18,7 +18,7 @@ describe('Test extension and trace version checker', () => {
   `(
     'should function isExtensionSupportUniversalInstrumentation() return $result if runtimeType=$runtimeType and extensionVersion=$extensionVersion',
     ({runtimeType, extensionVersion, result}) => {
-      expect(isExtensionSupportUniversalInstrumentation(runtimeType, extensionVersion)).toEqual(result)
+      expect(isExtensionCompatibleWithUniversalInstrumentation(runtimeType, extensionVersion)).toEqual(result)
     }
   )
 

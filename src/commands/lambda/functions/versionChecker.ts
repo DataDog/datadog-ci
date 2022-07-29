@@ -5,7 +5,7 @@ const UNIVERSAL_INSTRUMENTATION_JAVA_TRACER_VERSION = 5
 const UNIVERSAL_INSTRUMENTATION_DOTNET_EXTENSION_VERSION = 24
 const UNIVERSAL_INSTRUMENTATION_DOTNET_TRACER_VERSION = 4
 
-export const isExtensionSupportUniversalInstrumentation = (
+export const isExtensionCompatibleWithUniversalInstrumentation = (
   runtimeType: RuntimeType,
   extensionVersion?: number
 ): boolean => {
