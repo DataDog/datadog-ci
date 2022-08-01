@@ -1,7 +1,17 @@
-import {Command} from 'clipanion'
-import {renderArgumentMissingError, renderDartSymbolsLocationRequiredError} from './renderer'
+import fs from 'fs'
+
+import {BaseContext, Command} from 'clipanion'
+import {
+  renderArgumentMissingError,
+  renderDartSymbolsLocationRequiredError,
+  renderMissingAndroidMappingFile,
+} from './renderer'
 
 import * as dsyms from '../dsyms/upload'
+import {buildPath, performSubCommand} from '../../helpers/utils'
+import glob from 'glob'
+import {GitData, MappingMetadata, MAPPING_TYPE_JVM_MAPPING} from './interfaces'
+import {MultipartPayload, MultipartValue} from '../../helpers/upload'
 
 export class UploadCommand extends Command {
   public static usage = Command.Usage({
@@ -17,10 +27,19 @@ export class UploadCommand extends Command {
   private iosDsyms: boolean = false
   private iosDsymsLocation?: string
   private androidMapping: boolean = false
-  private androidMappintLocation?: string
+  private androidMappingLocation?: string
   private serviceName!: string
   private version?: string
   private dryRun: boolean = false
+
+  // Non-arguments
+  private cliVersion: string
+  private gitData?: GitData
+
+  constructor() {
+    super()
+    this.cliVersion = require('../../../package.json').version
+  }
 
   public async execute() {
     if (!this.serviceName) {
@@ -35,6 +54,17 @@ export class UploadCommand extends Command {
       return 1
     }
 
+    if (this.androidMapping && !this.androidMappingLocation) {
+      this.androidMappingLocation = `./build/app/outputs/mapping/${this.flavor}/mapping.txt`
+    }
+
+    if (this.androidMappingLocation) {
+      if (!fs.existsSync(this.androidMappingLocation)) {
+        this.context.stderr.write(renderMissingAndroidMappingFile(this.androidMappingLocation))
+        return 1
+      }
+    }
+
     if (await this.performDsymUpload()) {
       return 1
     }
@@ -42,19 +72,59 @@ export class UploadCommand extends Command {
     return 0
   }
 
-  private async performDsymUpload(): Promise<0 | 1> {
+  private async performDsymUpload(): Promise<number> {
     if (!this.iosDsyms && !this.iosDsymsLocation) {
       // Not asked for. we're done
       return 0
     }
 
-    const dsymsUpload = new dsyms.UploadCommand()
-    dsymsUpload.cli = this.cli
-    dsymsUpload.context = this.context
+    const symbolLocation = this.iosDsymsLocation ?? './build/ios/archive/Runner.xcarchive/dSYMs'
 
-    const exitCode = await dsymsUpload.execute()
+    const dsymUploadCommand = ['dsyms', 'upload', symbolLocation]
+    if (this.dryRun) {
+      dsymUploadCommand.push('--dry-run')
+    }
+
+    const exitCode = await performSubCommand(dsyms.UploadCommand, dsymUploadCommand, this.context)
 
     return exitCode
+  }
+
+  private getFlutterSymbolFiles(dartSymbolLocation: string): string[] {
+    const symbolPaths = glob.sync(buildPath(dartSymbolLocation, '*.symbols'))
+
+    return symbolPaths
+  }
+
+  private getAndroidMetadata(): MappingMetadata {
+    return {
+      cli_version: this.cliVersion,
+      service: this.serviceName,
+      version: this.version!,
+      variant: this.flavor,
+      type: MAPPING_TYPE_JVM_MAPPING,
+    }
+  }
+
+  private createAndroidMappingPayload(mappingFile: string): MultipartPayload {
+    const metadata = this.getAndroidMetadata()
+
+    const content = new Map<string, MultipartValue>([
+      [
+        'event',
+        {
+          options: {
+            contentType: 'application/json',
+            filename: 'event',
+          },
+          value: JSON.stringify(metadata),
+        },
+      ],
+    ])
+
+    return {
+      content,
+    }
   }
 }
 
