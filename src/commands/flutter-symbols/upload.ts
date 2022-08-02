@@ -1,17 +1,24 @@
 import fs from 'fs'
 
-import {BaseContext, Command} from 'clipanion'
+import {Command} from 'clipanion'
 import {
   renderArgumentMissingError,
   renderDartSymbolsLocationRequiredError,
+  renderGitWarning,
+  renderInvalidPubspecError,
   renderMissingAndroidMappingFile,
+  renderMissingPubspecError,
+  renderPubspecMissingVersionError,
 } from './renderer'
+import yaml from 'js-yaml'
 
 import * as dsyms from '../dsyms/upload'
 import {buildPath, performSubCommand} from '../../helpers/utils'
 import glob from 'glob'
-import {GitData, MappingMetadata, MAPPING_TYPE_JVM_MAPPING} from './interfaces'
+import {MappingMetadata, MAPPING_TYPE_JVM_MAPPING} from './interfaces'
 import {MultipartPayload, MultipartValue} from '../../helpers/upload'
+import {getRepositoryData, RepositoryData} from '../../helpers/git/format-git-sourcemaps-data'
+import {newSimpleGit} from '../git-metadata/git'
 
 export class UploadCommand extends Command {
   public static usage = Command.Usage({
@@ -28,13 +35,17 @@ export class UploadCommand extends Command {
   private iosDsymsLocation?: string
   private androidMapping: boolean = false
   private androidMappingLocation?: string
+  private pubspecLocation: string = './pubspec.yaml'
   private serviceName!: string
   private version?: string
   private dryRun: boolean = false
 
+  private disableGit: boolean = false
+  private repositoryUrl?: string
+
   // Non-arguments
   private cliVersion: string
-  private gitData?: GitData
+  private gitData?: RepositoryData
 
   constructor() {
     super()
@@ -65,11 +76,54 @@ export class UploadCommand extends Command {
       }
     }
 
+    if (!this.version && (await this.parsePubspec(this.pubspecLocation))) {
+      return 1
+    }
+
+    if (!this.disableGit) {
+      this.gitData = await this.getGitMetadata()
+    }
+
     if (await this.performDsymUpload()) {
       return 1
     }
 
+    if (await this.performAndroidMappingUpload()) {
+      return 1
+    }
+
     return 0
+  }
+
+  private async parsePubspec(pubspecLocation: string): Promise<number> {
+    if (!fs.existsSync(pubspecLocation)) {
+      this.context.stderr.write(renderMissingPubspecError(pubspecLocation))
+      return 1
+    }
+
+    try {
+      const doc = yaml.load(fs.readFileSync(pubspecLocation, 'utf8')) as any
+      if (doc['version']) {
+        this.version = doc['version']
+      } else {
+        this.context.stderr.write(renderPubspecMissingVersionError(pubspecLocation))
+        return 1
+      }
+    } catch (e) {
+      this.context.stderr.write(renderInvalidPubspecError(pubspecLocation))
+      return 1
+    }
+
+    return 0
+  }
+
+  private async getGitMetadata(): Promise<RepositoryData | undefined> {
+    try {
+      return await getRepositoryData(await newSimpleGit(), this.repositoryUrl)
+    } catch (e) {
+      this.context.stdout.write(renderGitWarning(e))
+    }
+    return undefined
   }
 
   private async performDsymUpload(): Promise<number> {
@@ -88,6 +142,10 @@ export class UploadCommand extends Command {
     const exitCode = await performSubCommand(dsyms.UploadCommand, dsymUploadCommand, this.context)
 
     return exitCode
+  }
+
+  private async performAndroidMappingUpload(): Promise<number> {
+    return 0
   }
 
   private getFlutterSymbolFiles(dartSymbolLocation: string): string[] {
@@ -136,6 +194,9 @@ UploadCommand.addOption('iosDsyms', Command.Boolean('--ios-dsyms'))
 UploadCommand.addOption('iosDsymsLocation', Command.String('--ios-dsyms-location'))
 UploadCommand.addOption('androidMapping', Command.Boolean('--android-mapping'))
 UploadCommand.addOption('androidMappingLocation', Command.String('--android-mapping-location'))
+UploadCommand.addOption('pubspecLocation', Command.String('--pubspec'))
 UploadCommand.addOption('serviceName', Command.String('--service-name'))
 UploadCommand.addOption('version', Command.String('--version'))
 UploadCommand.addOption('dryRun', Command.Boolean('--dry-run'))
+UploadCommand.addOption('disableGit', Command.Boolean('--disable-git'))
+UploadCommand.addOption('repositoryURL', Command.String('--repository-url'))

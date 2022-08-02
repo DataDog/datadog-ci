@@ -2,7 +2,13 @@ import {Cli} from 'clipanion/lib/advanced'
 import {performSubCommand} from '../../../helpers/utils'
 import {UploadCommand} from '../upload'
 import * as dsyms from '../..//dsyms/upload'
-import {renderDartSymbolsLocationRequiredError, renderMissingAndroidMappingFile} from '../renderer'
+import {
+  renderDartSymbolsLocationRequiredError,
+  renderInvalidPubspecError,
+  renderMissingAndroidMappingFile,
+  renderMissingPubspecError,
+  renderPubspecMissingVersionError,
+} from '../renderer'
 
 jest.mock('../../../helpers/utils', () => ({
   ...jest.requireActual('../../../helpers/utils'),
@@ -41,6 +47,7 @@ describe('flutter-symbol upload', () => {
           errString += input
         },
       },
+      stdin: {},
     }
   }
 
@@ -56,10 +63,10 @@ describe('flutter-symbol upload', () => {
   const prepareMockGlobalsForCommand = (command: UploadCommand) => {
     command['serviceName'] = 'fake.service'
     command['version'] = '1.0.0'
-    command['gitData'] = {
-      gitCommitSha: 'fake.commit.sha',
-      gitRepositoryURL: 'fake.git.repo',
-    }
+    // command['gitData'] = {
+    //   gitCommitSha: 'fake.commit.sha',
+    //   gitRepositoryURL: 'fake.git.repo',
+    // }
   }
 
   describe('parameter validation', () => {
@@ -72,6 +79,24 @@ describe('flutter-symbol upload', () => {
       expect(errorOutput).toContain('"service-name" is required')
     })
 
+    test('requires valid pubspec', async () => {
+      // Default location doesn't exist
+      const {context, exitCode} = await runCli(['--service-name', 'fake.service'])
+      const errorOutput = context.stderr.toString()
+
+      expect(exitCode).not.toBe(0)
+      expect(errorOutput).toBe(renderMissingPubspecError('./pubspec.yaml'))
+    })
+
+    test('version bypasses pubspec check', async () => {
+      // Default location doesn't exist
+      const {context, exitCode} = await runCli(['--service-name', 'fake.service', '--version', '1.0.0'])
+      const errorOutput = context.stderr.toString()
+
+      expect(exitCode).toBe(0)
+      expect(errorOutput).toBe('')
+    })
+
     test('dart-symbols requires dart-symbols-location', async () => {
       const {context, exitCode} = await runCli(['--service-name', 'fake.service', '--dart-symbols'])
       const errorOutput = context.stderr.toString()
@@ -79,13 +104,10 @@ describe('flutter-symbol upload', () => {
       expect(exitCode).not.toBe(0)
       expect(errorOutput).toBe(renderDartSymbolsLocationRequiredError())
     })
-
-    // TODO: Validate yaml exists, parse version from .yaml
   })
 
   describe('getFlutterSymbolFiles', () => {
     test('should read all symbol files', async () => {
-      const context = createMockContext()
       const command = new UploadCommand()
       const searchDir = `${fixtureDir}/dart-symbols`
       const files = command['getFlutterSymbolFiles'](searchDir)
@@ -99,9 +121,60 @@ describe('flutter-symbol upload', () => {
     })
   })
 
+  describe('parsePubspec', () => {
+    test('writes error on missing pubspec', async () => {
+      const context = createMockContext() as any
+      const command = new UploadCommand()
+      command['context'] = context
+      const exitCode = await command['parsePubspec']('./pubspec.yaml')
+
+      const errorOutput = context.stderr.toString()
+
+      expect(exitCode).toBe(1)
+      expect(errorOutput).toBe(renderMissingPubspecError('./pubspec.yaml'))
+    })
+
+    test('writes error on invalid pubspec', async () => {
+      const context = createMockContext() as any
+      const command = new UploadCommand()
+      command['context'] = context
+      const exitCode = await command['parsePubspec'](`${fixtureDir}/pubspecs/invalidPubspec.yaml`)
+
+      const errorOutput = context.stderr.toString()
+
+      expect(exitCode).toBe(1)
+      expect(errorOutput).toBe(renderInvalidPubspecError(`${fixtureDir}/pubspecs/invalidPubspec.yaml`))
+    })
+
+    test('writes error on missing version in pubspec', async () => {
+      const context = createMockContext() as any
+      const command = new UploadCommand()
+      command['context'] = context
+      const exitCode = await command['parsePubspec'](`${fixtureDir}/pubspecs/missingVersionPubspec.yaml`)
+
+      const errorOutput = context.stderr.toString()
+
+      expect(exitCode).toBe(1)
+      expect(errorOutput).toBe(renderPubspecMissingVersionError(`${fixtureDir}/pubspecs/missingVersionPubspec.yaml`))
+    })
+
+    test('populates version from valid pubsepct', async () => {
+      const context = createMockContext() as any
+      const command = new UploadCommand()
+      command['context'] = context
+      const exitCode = await command['parsePubspec'](`${fixtureDir}/pubspecs/validPubspec.yaml`)
+
+      const errorOutput = context.stderr.toString()
+
+      expect(exitCode).toBe(0)
+      expect(errorOutput).toBe('')
+      expect(command['version']).toBe('1.2.3-test1')
+    })
+  })
+
   describe('dsyms upload', () => {
     test('calls dsyms sub-command with proper default parameters', async () => {
-      const {context, exitCode} = await runCli(['--service-name', 'fake.service', '--ios-dsyms'])
+      const {context, exitCode} = await runCli(['--service-name', 'fake.service', '--ios-dsyms', '--version', '1.0.0'])
 
       const errorOutput = context.stderr.toString()
 
@@ -119,6 +192,8 @@ describe('flutter-symbol upload', () => {
         'fake.service',
         '--ios-dsyms-location',
         './dsym-location',
+        '--version',
+        '1.0.0',
       ])
 
       const errorOutput = context.stderr.toString()
@@ -162,9 +237,9 @@ describe('flutter-symbol upload', () => {
       const command = new UploadCommand()
       prepareMockGlobalsForCommand(command)
 
-      const metadta = command['getAndroidMetadata']()
+      const metadata = command['getAndroidMetadata']()
 
-      expect(metadta).toStrictEqual({
+      expect(metadata).toStrictEqual({
         cli_version: cliVersion,
         service: 'fake.service',
         version: '1.0.0',
