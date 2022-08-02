@@ -8,7 +8,7 @@ import {Builder} from 'xml2js'
 import {ApiServerResult, MultiStep, Reporter, Result, Step, Summary, Vitals} from '../interfaces'
 import {getBatchUrl, getResultDuration, getResultOutcome, getResultUrl, ResultOutcome} from '../utils'
 
-interface Stats {
+interface StepStats {
   allowfailures: number
   errors: number
   failures: number
@@ -17,7 +17,7 @@ interface Stats {
   warnings: number
 }
 
-interface XMLRunProperties extends Stats {
+interface XMLRunProperties extends StepStats {
   name: string
 }
 
@@ -26,7 +26,7 @@ interface XMLRun {
   testcase: XMLTestCase[]
 }
 
-interface XMLTestCaseProperties extends Stats {
+interface XMLTestCaseProperties extends StepStats {
   name: string
   time: number | undefined
   timestamp: string
@@ -45,7 +45,7 @@ export interface XMLTestCase {
   warning: XMLError[]
 }
 
-interface XMLStepProperties extends Stats {
+interface XMLStepProperties extends StepStats {
   allow_failure: boolean
   is_skipped: boolean
   name: string
@@ -81,7 +81,7 @@ interface Args {
   runName?: string
 }
 
-export const getDefaultStats = (): Stats => ({
+export const getDefaultStats = (): StepStats => ({
   allowfailures: 0,
   errors: 0,
   failures: 0,
@@ -92,10 +92,10 @@ export const getDefaultStats = (): Stats => ({
 
 // Return the stats from a given object
 // based on getDefaultStats
-const getStats = (obj: Stats): Stats => {
+const getStats = (obj: StepStats): StepStats => {
   const baseStats = getDefaultStats()
   for (const entry of Object.entries(baseStats)) {
-    const [key, value] = entry as [keyof Stats, number]
+    const [key, value] = entry as [keyof StepStats, number]
     baseStats[key] = value || baseStats[key]
   }
 
@@ -184,7 +184,7 @@ export class JUnitReporter implements Reporter {
     }
   }
 
-  private getApiStepStats(step: MultiStep | ApiServerResult): Stats {
+  private getApiStepStats(step: MultiStep | ApiServerResult): StepStats {
     // TODO use more granular result based on step.assertionResults
     let allowfailures = 0
     let skipped = 0
@@ -227,7 +227,7 @@ export class JUnitReporter implements Reporter {
     }
   }
 
-  private getBrowserStepStats(step: Step): Stats {
+  private getBrowserStepStats(step: Step): StepStats {
     const errors = step.browserErrors ? step.browserErrors.length : 0
 
     return {
@@ -285,8 +285,8 @@ export class JUnitReporter implements Reporter {
     }
   }
 
-  private getResultStats(result: Result, stats: Stats | undefined = getDefaultStats()): Stats {
-    let stepsStats: Stats[] = []
+  private getResultStats(result: Result, stats: StepStats = getDefaultStats()): StepStats {
+    let stepsStats: StepStats[] = []
     if ('stepDetails' in result.result) {
       // It's a browser test.
       stepsStats = result.result.stepDetails
