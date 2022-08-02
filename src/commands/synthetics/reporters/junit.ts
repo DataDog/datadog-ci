@@ -65,7 +65,18 @@ interface XMLStep {
 
 export interface XMLJSON {
   testsuites: {
-    $: {batch_id?: string; batch_url?: string; name: string}
+    $: {
+      batch_id?: string
+      batch_url?: string
+      name: string
+      tests_critical_error: number
+      tests_failed: number
+      tests_failed_non_blocking: number
+      tests_not_found: number
+      tests_passed: number
+      tests_skipped: number
+      tests_timed_out: number
+    }
     testsuite: XMLRun[]
   }
 }
@@ -75,7 +86,7 @@ interface XMLError {
   _: string
 }
 
-interface Args {
+export interface Args {
   context: BaseContext
   jUnitReport?: string
   runName?: string
@@ -116,7 +127,19 @@ export class JUnitReporter implements Reporter {
     }
     this.builder = new Builder()
     this.json = {
-      testsuites: {$: {name: runName || 'Undefined run'}, testsuite: []},
+      testsuites: {
+        $: {
+          name: runName || 'Undefined run',
+          tests_critical_error: 0,
+          tests_failed: 0,
+          tests_failed_non_blocking: 0,
+          tests_not_found: 0,
+          tests_passed: 0,
+          tests_skipped: 0,
+          tests_timed_out: 0,
+        },
+        testsuite: [],
+      },
     }
   }
 
@@ -168,6 +191,16 @@ export class JUnitReporter implements Reporter {
   }
 
   public async runEnd(summary: Summary, baseUrl: string) {
+    Object.assign(this.json.testsuites.$, {
+      tests_critical_error: summary.criticalErrors,
+      tests_failed: summary.failed,
+      tests_failed_non_blocking: summary.failedNonBlocking,
+      tests_not_found: summary.testsNotFound.size,
+      tests_passed: summary.passed,
+      tests_skipped: summary.skipped,
+      tests_timed_out: summary.timedOut,
+    })
+
     this.json.testsuites.$.batch_id = summary.batchId
     if (summary.batchId) {
       this.json.testsuites.$.batch_url = getBatchUrl(baseUrl, summary.batchId)
