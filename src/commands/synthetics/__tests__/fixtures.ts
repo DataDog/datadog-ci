@@ -138,9 +138,10 @@ export const getMultiStep = (): MultiStep => ({
 
 export const getTestSuite = (): Suite => ({content: {tests: [{config: {}, id: '123-456-789'}]}, name: 'Suite 1'})
 
+export const BATCH_ID = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa'
 export const getSummary = (): Summary => ({
   ...createSummary(),
-  batchId: 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
+  batchId: BATCH_ID,
 })
 
 const getBaseResult = (resultId: string, test: Test): Omit<Result, 'result'> => ({
