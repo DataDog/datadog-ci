@@ -124,7 +124,7 @@ const serviceQuestion: inquirer.InputQuestion = {
 
 const versionQuestion: inquirer.InputQuestion = {
   default: undefined,
-  message: 'Enter a value for the environment variable DD_VERISON',
+  message: 'Enter a value for the environment variable DD_VERSION',
   name: VERSION_ENV_VAR,
   type: 'input',
 }
