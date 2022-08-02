@@ -116,7 +116,7 @@ describe('Junit reporter', () => {
       )
       expect(reporter['json'].testsuites.$).toStrictEqual({
         batch_id: BATCH_ID,
-        batch_url: `https://app.datadoghq.com/synthetics/explorer/ci?batchResultId=${BATCH_ID}`,
+        batch_url: `${MOCK_BASE_URL}synthetics/explorer/ci?batchResultId=${BATCH_ID}`,
         name: 'Test Suite name',
         tests_critical_error: 1,
         tests_failed: 2,
