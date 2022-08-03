@@ -1,11 +1,15 @@
 // tslint:disable: no-string-literal
 import {promises as fs} from 'fs'
 import {Writable} from 'stream'
+
+import {BaseContext} from 'clipanion/lib/advanced'
+
 import {Result} from '../../interfaces'
 
 import {RunTestCommand} from '../../command'
-import {getDefaultStats, JUnitReporter, XMLTestCase} from '../../reporters/junit'
+import {Args, getDefaultStats, JUnitReporter, XMLTestCase} from '../../reporters/junit'
 import {
+  BATCH_ID,
   getApiTest,
   getBrowserResult,
   getBrowserServerResult,
@@ -23,13 +27,10 @@ const globalSummaryMock = getSummary()
 
 describe('Junit reporter', () => {
   const writeMock: Writable['write'] = jest.fn()
-  const commandMock: unknown = {
-    context: {
-      stdout: {
-        write: writeMock,
-      },
-    },
+  const commandMock: Args = {
+    context: ({stdout: {write: writeMock}} as unknown) as BaseContext,
     jUnitReport: 'junit',
+    runName: 'Test Suite name',
   }
 
   let reporter: JUnitReporter
@@ -44,7 +45,7 @@ describe('Junit reporter', () => {
     })
 
     it('should give a default run name', () => {
-      expect(reporter['json'].testsuites.$.name).toBe('Undefined run')
+      expect(new JUnitReporter({...commandMock, runName: undefined})['json'].testsuites.$.name).toBe('Undefined run')
     })
   })
 
@@ -97,11 +98,34 @@ describe('Junit reporter', () => {
       await fs.rmdir('junit')
     })
 
-    it('should add the batch_id to the report', async () => {
+    it('testsuites contains summary properties', async () => {
       jest.spyOn(fs, 'writeFile').mockResolvedValueOnce()
 
-      await reporter.runEnd(globalSummaryMock, MOCK_BASE_URL)
-      expect(reporter['json'].testsuites.$.batch_id).toBe(globalSummaryMock.batchId)
+      await reporter.runEnd(
+        {
+          ...globalSummaryMock,
+          criticalErrors: 1,
+          failed: 2,
+          failedNonBlocking: 3,
+          passed: 4,
+          skipped: 5,
+          testsNotFound: new Set(['a', 'b', 'c']),
+          timedOut: 6,
+        },
+        MOCK_BASE_URL
+      )
+      expect(reporter['json'].testsuites.$).toStrictEqual({
+        batch_id: BATCH_ID,
+        batch_url: `${MOCK_BASE_URL}synthetics/explorer/ci?batchResultId=${BATCH_ID}`,
+        name: 'Test Suite name',
+        tests_critical_error: 1,
+        tests_failed: 2,
+        tests_failed_non_blocking: 3,
+        tests_not_found: 3,
+        tests_passed: 4,
+        tests_skipped: 5,
+        tests_timed_out: 6,
+      })
     })
   })
 
