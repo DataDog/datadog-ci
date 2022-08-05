@@ -14,6 +14,8 @@ export const retryRequest = async (requestPerformer: () => Promise<any>, retryOp
 
         return
       }
+      // If we haven't mocked the requests in tests, retry times out without throwing any error
+      console.warn(error)
       // Other cases are retried: other axios HTTP errors as well as
       // non-axios errors such as DNS resolution errors and connection timeouts
       throw error

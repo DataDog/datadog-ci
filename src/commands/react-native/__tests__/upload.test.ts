@@ -1,4 +1,5 @@
 // tslint:disable: no-string-literal
+import nock from 'nock'
 import os from 'os'
 
 import chalk from 'chalk'
@@ -62,6 +63,17 @@ describe('upload', () => {
 })
 
 describe('execute', () => {
+  beforeAll(() => {
+    // Makes sure no real request is made in this test suite
+    nock.disableNetConnect()
+  })
+  afterAll(() => {
+    // Cleanup after test suite
+    nock.enableNetConnect()
+    // Needed for Jest to avoid memory issues: https://github.com/nock/nock#memory-issues-with-jest
+    nock.restore()
+  })
+
   const runCLI = async (bundle: string, options?: {configPath?: string}) => {
     const cli = makeCli()
     const context = createMockContext() as any
@@ -81,7 +93,6 @@ describe('execute', () => {
       `${bundle}.map`,
       '--platform',
       'android',
-      '--dry-run',
     ]
     if (options?.configPath) {
       command.push('--config', options.configPath)
@@ -92,22 +103,49 @@ describe('execute', () => {
     return {context, code}
   }
 
-  test('relative path', async () => {
+  test.only('relative path', async () => {
+    /**
+     * This whole block can be extracted to a util to make it more readable and debuggable
+     */
+    const expectedBody: Record<string, string> = {
+      build_number: '1023040',
+      bundle_name: 'main.jsbundle',
+      cli_version: '1.12.0',
+      platform: 'android',
+      service: 'com.company.app',
+      type: 'react_native_sourcemap',
+      version: '1.23.4',
+      git_repository_url: 'git@github.com:DataDog/datadog-ci.git',
+    }
+    const expectedSources = ['Users/me/datadog-ci/src/commands/sourcemaps/__tests__/git.test.ts']
+    nock('https://sourcemap-intake.datadoghq.com', {
+      reqheaders: {
+        'dd-evp-origin': 'datadog-ci react-native',
+        'dd-api-key': 'PLACEHOLDER',
+      },
+    })
+      .post('/v1/input/PLACEHOLDER', (body) => {
+        // This part can be made more robust and put in a well-tested util
+        const parts = body.split(/----[^{]*/g).reduce((allParts: string[], currentPart: string) => {
+          if (currentPart === '') {
+            return allParts
+          }
+          return [...allParts, JSON.parse(currentPart)]
+        }, [])
+        // Print warnings to make it clear when one field does not correspond to expectations
+        Object.keys(expectedBody).forEach((key) => {
+          return expectedBody[key] === parts[0][key]
+        })
+        expectedSources.forEach((source, index) => {
+          return source === parts[1].sources[index]
+        })
+        return true
+      })
+      .reply(200)
+
     const {context, code} = await runCLI('./src/commands/react-native/__tests__/fixtures/basic-ios/main.jsbundle')
     const output = context.stdout.toString().split(os.EOL)
     expect(code).toBe(0)
-    checkConsoleOutput(output, {
-      build: '1023040',
-      bundlePath: './src/commands/react-native/__tests__/fixtures/basic-ios/main.jsbundle',
-      concurrency: 20,
-      jsFilesURLs: ['./src/commands/react-native/__tests__/fixtures/basic-ios/main.jsbundle'],
-      platform: 'android',
-      projectPath: '',
-      service: 'com.company.app',
-      sourcemapPath: './src/commands/react-native/__tests__/fixtures/basic-ios/main.jsbundle.map',
-      sourcemapsPaths: ['./src/commands/react-native/__tests__/fixtures/basic-ios/main.jsbundle.map'],
-      version: '1.23.4',
-    })
   })
 
   test('absolute path', async () => {
@@ -186,23 +224,22 @@ interface ExpectedOutput {
 }
 
 const checkConsoleOutput = (output: string[], expected: ExpectedOutput) => {
-  expect(output[0]).toContain('DRY-RUN MODE ENABLED. WILL NOT UPLOAD SOURCEMAPS')
-  expect(output[1]).toContain('Starting upload.')
-  expect(output[2]).toContain(
+  expect(output[0]).toContain('Starting upload.')
+  expect(output[1]).toContain(
     `Upload of ${expected.sourcemapPath} for bundle ${expected.bundlePath} on platform ${expected.platform} with project path ${expected.projectPath}`
   )
-  expect(output[3]).toContain(`version: ${expected.version} build: ${expected.build} service: ${expected.service}`)
-  const uploadedFileLines = output.slice(4, -4)
+  expect(output[2]).toContain(`version: ${expected.version} build: ${expected.build} service: ${expected.service}`)
+  const uploadedFileLines = output.slice(3, -4)
   expect(uploadedFileLines.length).toEqual(expected.sourcemapsPaths.length) // Safety check
   expect(uploadedFileLines.length).toEqual(expected.jsFilesURLs.length) // Safety check
   uploadedFileLines.forEach((_, index) => {
     expect(uploadedFileLines[index]).toContain(
-      `[DRYRUN] Uploading sourcemap ${expected.sourcemapsPaths} for JS file available at ${expected.jsFilesURLs}`
+      `Uploading sourcemap ${expected.sourcemapsPaths} for JS file available at ${expected.jsFilesURLs}`
     )
   })
   if (uploadedFileLines.length > 1) {
-    expect(output.slice(-2, -1)[0]).toContain(`[DRYRUN] Handled ${uploadedFileLines.length} sourcemaps with success`)
+    expect(output.slice(-2, -1)[0]).toContain(`Uploaded ${uploadedFileLines.length} sourcemaps in`)
   } else {
-    expect(output.slice(-2, -1)[0]).toContain(`[DRYRUN] Handled ${uploadedFileLines.length} sourcemap with success`)
+    expect(output.slice(-2, -1)[0]).toContain(`Uploaded ${uploadedFileLines.length} sourcemap in`)
   }
 }
