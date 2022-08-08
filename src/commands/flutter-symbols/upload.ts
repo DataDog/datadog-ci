@@ -1,6 +1,10 @@
+// Disabling no-unused-variable temporarily so certain private methods
+// can remain in while this feature is in progress
+// tslint:disable: no-unused-variable
 import fs from 'fs'
 
 import {Command} from 'clipanion'
+import yaml from 'js-yaml'
 import {
   renderArgumentMissingError,
   renderDartSymbolsLocationRequiredError,
@@ -10,15 +14,14 @@ import {
   renderMissingPubspecError,
   renderPubspecMissingVersionError,
 } from './renderer'
-import yaml from 'js-yaml'
 
-import * as dsyms from '../dsyms/upload'
-import {buildPath, performSubCommand} from '../../helpers/utils'
 import glob from 'glob'
-import {MappingMetadata, MAPPING_TYPE_JVM_MAPPING} from './interfaces'
 import {MultipartPayload, MultipartValue} from '../../helpers/upload'
 import {getRepositoryData, RepositoryData} from '../../helpers/git/format-git-sourcemaps-data'
+import {buildPath, performSubCommand} from '../../helpers/utils'
+import * as dsyms from '../dsyms/upload'
 import {newSimpleGit} from '../git-metadata/git'
+import {MappingMetadata, MAPPING_TYPE_JVM_MAPPING} from './interfaces'
 
 export class UploadCommand extends Command {
   public static usage = Command.Usage({
@@ -28,24 +31,21 @@ export class UploadCommand extends Command {
     examples: [],
   })
 
-  private flavor: string = 'release'
-  private dartSymbols: boolean = false
-  private dartSymbolsLocation?: string
-  private iosDsyms: boolean = false
-  private iosDsymsLocation?: string
-  private androidMapping: boolean = false
+  private androidMapping = false
   private androidMappingLocation?: string
-  private pubspecLocation: string = './pubspec.yaml'
+  private cliVersion: string
+  private dartSymbols = false
+  private dartSymbolsLocation?: string
+  private disableGit = false
+  private dryRun = false
+  private flavor = 'release'
+  private gitData?: RepositoryData
+  private iosDsyms = false
+  private iosDsymsLocation?: string
+  private pubspecLocation = './pubspec.yaml'
+  private repositoryUrl?: string
   private serviceName!: string
   private version?: string
-  private dryRun: boolean = false
-
-  private disableGit: boolean = false
-  private repositoryUrl?: string
-
-  // Non-arguments
-  private cliVersion: string
-  private gitData?: RepositoryData
 
   constructor() {
     super()
@@ -72,6 +72,7 @@ export class UploadCommand extends Command {
     if (this.androidMappingLocation) {
       if (!fs.existsSync(this.androidMappingLocation)) {
         this.context.stderr.write(renderMissingAndroidMappingFile(this.androidMappingLocation))
+
         return 1
       }
     }
@@ -95,75 +96,6 @@ export class UploadCommand extends Command {
     return 0
   }
 
-  private async parsePubspec(pubspecLocation: string): Promise<number> {
-    if (!fs.existsSync(pubspecLocation)) {
-      this.context.stderr.write(renderMissingPubspecError(pubspecLocation))
-      return 1
-    }
-
-    try {
-      const doc = yaml.load(fs.readFileSync(pubspecLocation, 'utf8')) as any
-      if (doc['version']) {
-        this.version = doc['version']
-      } else {
-        this.context.stderr.write(renderPubspecMissingVersionError(pubspecLocation))
-        return 1
-      }
-    } catch (e) {
-      this.context.stderr.write(renderInvalidPubspecError(pubspecLocation))
-      return 1
-    }
-
-    return 0
-  }
-
-  private async getGitMetadata(): Promise<RepositoryData | undefined> {
-    try {
-      return await getRepositoryData(await newSimpleGit(), this.repositoryUrl)
-    } catch (e) {
-      this.context.stdout.write(renderGitWarning(e))
-    }
-    return undefined
-  }
-
-  private async performDsymUpload(): Promise<number> {
-    if (!this.iosDsyms && !this.iosDsymsLocation) {
-      // Not asked for. we're done
-      return 0
-    }
-
-    const symbolLocation = this.iosDsymsLocation ?? './build/ios/archive/Runner.xcarchive/dSYMs'
-
-    const dsymUploadCommand = ['dsyms', 'upload', symbolLocation]
-    if (this.dryRun) {
-      dsymUploadCommand.push('--dry-run')
-    }
-
-    const exitCode = await performSubCommand(dsyms.UploadCommand, dsymUploadCommand, this.context)
-
-    return exitCode
-  }
-
-  private async performAndroidMappingUpload(): Promise<number> {
-    return 0
-  }
-
-  private getFlutterSymbolFiles(dartSymbolLocation: string): string[] {
-    const symbolPaths = glob.sync(buildPath(dartSymbolLocation, '*.symbols'))
-
-    return symbolPaths
-  }
-
-  private getAndroidMetadata(): MappingMetadata {
-    return {
-      cli_version: this.cliVersion,
-      service: this.serviceName,
-      version: this.version!,
-      variant: this.flavor,
-      type: MAPPING_TYPE_JVM_MAPPING,
-    }
-  }
-
   private createAndroidMappingPayload(mappingFile: string): MultipartPayload {
     const metadata = this.getAndroidMetadata()
 
@@ -183,6 +115,81 @@ export class UploadCommand extends Command {
     return {
       content,
     }
+  }
+
+  private getAndroidMetadata(): MappingMetadata {
+    return {
+      cli_version: this.cliVersion,
+      git_commit_sha: this.gitData?.hash,
+      git_repository_url: this.gitData?.remote,
+      service: this.serviceName,
+      type: MAPPING_TYPE_JVM_MAPPING,
+      variant: this.flavor,
+      version: this.version!,
+    }
+  }
+
+  private getFlutterSymbolFiles(dartSymbolLocation: string): string[] {
+    const symbolPaths = glob.sync(buildPath(dartSymbolLocation, '*.symbols'))
+
+    return symbolPaths
+  }
+
+  private async getGitMetadata(): Promise<RepositoryData | undefined> {
+    try {
+      return await getRepositoryData(await newSimpleGit(), this.repositoryUrl)
+    } catch (e) {
+      this.context.stdout.write(renderGitWarning(e))
+    }
+
+    return undefined
+  }
+
+  private async parsePubspec(pubspecLocation: string): Promise<number> {
+    if (!fs.existsSync(pubspecLocation)) {
+      this.context.stderr.write(renderMissingPubspecError(pubspecLocation))
+
+      return 1
+    }
+
+    try {
+      const doc = yaml.load(fs.readFileSync(pubspecLocation, 'utf8')) as any
+      if (doc.version) {
+        this.version = doc.version
+      } else {
+        this.context.stderr.write(renderPubspecMissingVersionError(pubspecLocation))
+
+        return 1
+      }
+    } catch (e) {
+      this.context.stderr.write(renderInvalidPubspecError(pubspecLocation))
+
+      return 1
+    }
+
+    return 0
+  }
+
+  private async performAndroidMappingUpload(): Promise<number> {
+    return 0
+  }
+
+  private async performDsymUpload(): Promise<number> {
+    if (!this.iosDsyms && !this.iosDsymsLocation) {
+      // Not asked for. we're done
+      return 0
+    }
+
+    const symbolLocation = this.iosDsymsLocation ?? './build/ios/archive/Runner.xcarchive/dSYMs'
+
+    const dsymUploadCommand = ['dsyms', 'upload', symbolLocation]
+    if (this.dryRun) {
+      dsymUploadCommand.push('--dry-run')
+    }
+
+    const exitCode = await performSubCommand(dsyms.UploadCommand, dsymUploadCommand, this.context)
+
+    return exitCode
   }
 }
 

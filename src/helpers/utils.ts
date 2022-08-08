@@ -1,13 +1,13 @@
+import {BaseContext, CommandClass} from 'clipanion'
 import fs, {existsSync} from 'fs'
 import {promisify} from 'util'
-import {BaseContext, CommandClass} from 'clipanion'
 
 import {AxiosRequestConfig, default as axios} from 'axios'
 import deepExtend from 'deep-extend'
 import ProxyAgent from 'proxy-agent'
 
-import type {SpanTag, SpanTags} from './interfaces'
 import {Cli} from 'clipanion/lib/advanced'
+import type {SpanTag, SpanTags} from './interfaces'
 
 export const pick = <T extends object, K extends keyof T>(base: T, keys: K[]) => {
   const definedKeys = keys.filter((key) => !!base[key])
