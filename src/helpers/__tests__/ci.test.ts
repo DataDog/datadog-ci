@@ -15,7 +15,7 @@ const ciAppTagsToMetadata = (tags: SpanTags): Metadata => {
 
   Object.entries(tags).forEach(([tag, value]) => {
     // Ignore JSON fixtures pipeline number that can't be parsed to numbers
-    if (!value || tag === 'ci.pipeline.number') {
+    if (!value || tag === 'ci.pipeline.number' || tag === '_dd.ci.env_vars') {
       return
     }
 
