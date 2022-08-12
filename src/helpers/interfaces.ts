@@ -1,6 +1,7 @@
 import {AxiosPromise, AxiosRequestConfig, AxiosResponse} from 'axios'
 
 import {
+  CI_ENV_VARS,
   CI_JOB_NAME,
   CI_JOB_URL,
   CI_PIPELINE_ID,
@@ -85,6 +86,7 @@ export type SpanTag =
   | typeof GIT_COMMIT_COMMITTER_DATE
   | typeof GIT_COMMIT_COMMITTER_EMAIL
   | typeof GIT_COMMIT_COMMITTER_NAME
+  | typeof CI_ENV_VARS
 
 export type SpanTags = Partial<Record<SpanTag, string>>
 
