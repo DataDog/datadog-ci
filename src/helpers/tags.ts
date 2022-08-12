@@ -13,6 +13,7 @@ export const CI_LEVEL = '_dd.ci.level'
 // @deprecated TODO: remove this once backend is updated
 export const CI_BUILD_LEVEL = '_dd.ci.build_level'
 
+export const CI_ENV_VARS = '_dd.ci.env_vars'
 // Git
 export const GIT_BRANCH = 'git.branch'
 export const GIT_COMMIT_AUTHOR_DATE = 'git.commit.author.date'

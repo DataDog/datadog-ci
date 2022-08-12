@@ -2,6 +2,7 @@ import {URL} from 'url'
 
 import {Metadata, SpanTag, SpanTags} from './interfaces'
 import {
+  CI_ENV_VARS,
   CI_JOB_NAME,
   CI_JOB_URL,
   CI_PIPELINE_ID,
@@ -90,6 +91,7 @@ export const getCISpanTags = (): SpanTags | undefined => {
 
   if (env.CIRCLECI) {
     const {
+      CIRCLE_BUILD_NUM,
       CIRCLE_WORKFLOW_ID,
       CIRCLE_PROJECT_REPONAME,
       CIRCLE_BUILD_URL,
@@ -114,6 +116,12 @@ export const getCISpanTags = (): SpanTags | undefined => {
       [GIT_SHA]: CIRCLE_SHA1,
       [GIT_REPOSITORY_URL]: CIRCLE_REPOSITORY_URL,
       [CIRCLE_TAG ? GIT_TAG : GIT_BRANCH]: CIRCLE_TAG || CIRCLE_BRANCH,
+      [CI_ENV_VARS]: JSON.stringify({
+        CIRCLE_WORKFLOW_ID,
+        // Snapshots are generated automatically and are sort sensitive
+        // tslint:disable-next-line
+        CIRCLE_BUILD_NUM,
+      }),
     }
   }
 
@@ -166,6 +174,8 @@ export const getCISpanTags = (): SpanTags | undefined => {
       CI_COMMIT_MESSAGE,
       CI_COMMIT_TIMESTAMP,
       CI_COMMIT_AUTHOR,
+      CI_JOB_ID: GITLAB_CI_JOB_ID,
+      CI_PROJECT_URL: GITLAB_CI_PROJECT_URL,
     } = env
 
     const {name, email} = parseEmailAndName(CI_COMMIT_AUTHOR)
@@ -188,6 +198,13 @@ export const getCISpanTags = (): SpanTags | undefined => {
       [GIT_COMMIT_AUTHOR_NAME]: name,
       [GIT_COMMIT_AUTHOR_EMAIL]: email,
       [GIT_COMMIT_AUTHOR_DATE]: CI_COMMIT_TIMESTAMP,
+      [CI_ENV_VARS]: JSON.stringify({
+        CI_PROJECT_URL: GITLAB_CI_PROJECT_URL,
+        // Snapshots are generated automatically and are sort sensitive
+        // tslint:disable-next-line
+        CI_PIPELINE_ID: GITLAB_CI_PIPELINE_ID,
+        CI_JOB_ID: GITLAB_CI_JOB_ID,
+      }),
     }
   }
 
@@ -202,13 +219,14 @@ export const getCISpanTags = (): SpanTags | undefined => {
       GITHUB_SHA,
       GITHUB_REPOSITORY,
       GITHUB_SERVER_URL,
+      GITHUB_RUN_ATTEMPT,
     } = env
     const repositoryUrl = `${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}.git`
     let pipelineURL = `${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}`
 
     // Some older versions of enterprise might not have this yet.
-    if (env.GITHUB_RUN_ATTEMPT) {
-      pipelineURL += `/attempts/${env.GITHUB_RUN_ATTEMPT}`
+    if (GITHUB_RUN_ATTEMPT) {
+      pipelineURL += `/attempts/${GITHUB_RUN_ATTEMPT}`
     }
 
     const ref = GITHUB_HEAD_REF || GITHUB_REF || ''
@@ -225,6 +243,14 @@ export const getCISpanTags = (): SpanTags | undefined => {
       [GIT_SHA]: GITHUB_SHA,
       [GIT_REPOSITORY_URL]: repositoryUrl,
       [refKey]: ref,
+      [CI_ENV_VARS]: JSON.stringify({
+        GITHUB_SERVER_URL,
+        // Snapshots are generated automatically and are sort sensitive
+        // tslint:disable-next-line
+        GITHUB_REPOSITORY,
+        GITHUB_RUN_ID,
+        GITHUB_RUN_ATTEMPT,
+      }),
     }
   }
 
@@ -239,9 +265,11 @@ export const getCISpanTags = (): SpanTags | undefined => {
       GIT_COMMIT,
       GIT_URL,
       GIT_URL_1,
+      DD_CUSTOM_TRACE_ID,
     } = env
 
     tags = {
+      [CI_ENV_VARS]: JSON.stringify({DD_CUSTOM_TRACE_ID}),
       [CI_PIPELINE_ID]: BUILD_TAG,
       [CI_PIPELINE_NUMBER]: BUILD_NUMBER,
       [CI_PIPELINE_URL]: BUILD_URL,
@@ -303,6 +331,10 @@ export const getCISpanTags = (): SpanTags | undefined => {
       [GIT_COMMIT_AUTHOR_NAME]: BUILDKITE_BUILD_AUTHOR,
       [GIT_COMMIT_AUTHOR_EMAIL]: BUILDKITE_BUILD_AUTHOR_EMAIL,
       [GIT_COMMIT_MESSAGE]: BUILDKITE_MESSAGE,
+      [CI_ENV_VARS]: JSON.stringify({
+        BUILDKITE_BUILD_ID,
+        BUILDKITE_JOB_ID,
+      }),
     }
   }
 
