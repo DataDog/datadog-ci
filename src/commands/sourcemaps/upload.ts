@@ -248,15 +248,15 @@ export class UploadCommand extends Command {
   }
 
   private isMinifiedPathPrefixValid(): boolean {
-    let protocol
+    let host
     try {
       const objUrl = new URL(this.minifiedPathPrefix!)
-      protocol = objUrl.protocol
+      host = objUrl.host
     } catch {
       // Do nothing.
     }
 
-    if (!protocol && !this.minifiedPathPrefix!.startsWith('/')) {
+    if (!host && !this.minifiedPathPrefix!.startsWith('/')) {
       return false
     }
 

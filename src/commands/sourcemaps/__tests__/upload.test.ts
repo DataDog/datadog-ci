@@ -37,7 +37,7 @@ describe('upload', () => {
   })
 
   describe('isMinifiedPathPrefixValid: full URL', () => {
-    test('should return false', () => {
+    test('should return true', () => {
       const command = new UploadCommand()
       command['minifiedPathPrefix'] = 'http://datadog.com/js'
 
@@ -46,7 +46,7 @@ describe('upload', () => {
   })
 
   describe('isMinifiedPathPrefixValid: URL without protocol', () => {
-    test('should return false', () => {
+    test('should return true', () => {
       const command = new UploadCommand()
       command['minifiedPathPrefix'] = '//datadog.com/js'
 
@@ -55,7 +55,7 @@ describe('upload', () => {
   })
 
   describe('isMinifiedPathPrefixValid: leading slash', () => {
-    test('should return false', () => {
+    test('should return true', () => {
       const command = new UploadCommand()
       command['minifiedPathPrefix'] = '/js'
 
@@ -67,6 +67,15 @@ describe('upload', () => {
     test('should return false', () => {
       const command = new UploadCommand()
       command['minifiedPathPrefix'] = 'js'
+
+      expect(command['isMinifiedPathPrefixValid']()).toBe(false)
+    })
+  })
+
+  describe('isMinifiedPathPrefixValid: invalid URL without host', () => {
+    test('should return false', () => {
+      const command = new UploadCommand()
+      command['minifiedPathPrefix'] = 'info: undesired log line\nhttps://example.com/static/js/'
 
       expect(command['isMinifiedPathPrefixValid']()).toBe(false)
     })
