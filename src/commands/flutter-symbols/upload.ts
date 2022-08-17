@@ -8,6 +8,7 @@ import yaml from 'js-yaml'
 import {
   renderArgumentMissingError,
   renderDartSymbolsLocationRequiredError,
+  renderGeneralizedError,
   renderGitWarning,
   renderInvalidPubspecError,
   renderMissingAndroidMappingFile,
@@ -16,11 +17,21 @@ import {
 } from './renderer'
 
 import glob from 'glob'
-import {MultipartPayload, MultipartValue} from '../../helpers/upload'
+import {newApiKeyValidator} from '../../helpers/apikey'
+import {getBaseSourcemapIntakeUrl} from '../../helpers/base-intake-url'
 import {getRepositoryData, RepositoryData} from '../../helpers/git/format-git-sourcemaps-data'
-import {buildPath, performSubCommand} from '../../helpers/utils'
+import {getMetricsLogger} from '../../helpers/metrics'
+import {MultipartPayload, MultipartValue} from '../../helpers/upload'
+import {
+  buildPath,
+  DEFAULT_CONFIG_PATH,
+  getRequestBuilder,
+  performSubCommand,
+  resolveConfigFromFile,
+} from '../../helpers/utils'
 import * as dsyms from '../dsyms/upload'
 import {newSimpleGit} from '../git-metadata/git'
+import {getFlutterRequestBuilder, uploadMultipartHelper} from './helpers'
 import {MappingMetadata, MAPPING_TYPE_JVM_MAPPING} from './interfaces'
 
 export class UploadCommand extends Command {
@@ -34,6 +45,11 @@ export class UploadCommand extends Command {
   private androidMapping = false
   private androidMappingLocation?: string
   private cliVersion: string
+  private config = {
+    apiKey: process.env.DATADOG_API_KEY,
+    datadogSite: process.env.DATADOG_SITE || 'datadoghq.com',
+  }
+  private configPath?: string
   private dartSymbols = false
   private dartSymbolsLocation?: string
   private disableGit = false
@@ -53,47 +69,33 @@ export class UploadCommand extends Command {
   }
 
   public async execute() {
-    if (!this.serviceName) {
-      this.context.stderr.write(renderArgumentMissingError('service-name'))
-
+    if (!(await this.verifyParameters())) {
       return 1
     }
 
-    if (this.dartSymbols && !this.dartSymbolsLocation) {
-      this.context.stderr.write(renderDartSymbolsLocationRequiredError())
-
-      return 1
-    }
-
-    if (this.androidMapping && !this.androidMappingLocation) {
-      this.androidMappingLocation = `./build/app/outputs/mapping/${this.flavor}/mapping.txt`
-    }
-
-    if (this.androidMappingLocation) {
-      if (!fs.existsSync(this.androidMappingLocation)) {
-        this.context.stderr.write(renderMissingAndroidMappingFile(this.androidMappingLocation))
-
-        return 1
-      }
-    }
-
-    if (!this.version && (await this.parsePubspec(this.pubspecLocation))) {
-      return 1
-    }
+    this.config = await resolveConfigFromFile(this.config, {
+      configPath: this.configPath,
+      defaultConfigPath: DEFAULT_CONFIG_PATH,
+    })
 
     if (!this.disableGit) {
       this.gitData = await this.getGitMetadata()
     }
 
-    if (await this.performDsymUpload()) {
-      return 1
+    try {
+      if (this.iosDsyms || this.iosDsymsLocation) {
+        await this.performDsymUpload()
+      }
+      if (this.androidMapping || this.androidMappingLocation) {
+        await this.performAndroidMappingUpload()
+      }
+
+      return 0
+    } catch (e) {
+      renderGeneralizedError(e)
     }
 
-    if (await this.performAndroidMappingUpload()) {
-      return 1
-    }
-
-    return 0
+    return 1
   }
 
   private createAndroidMappingPayload(mappingFile: string): MultipartPayload {
@@ -135,6 +137,29 @@ export class UploadCommand extends Command {
     return symbolPaths
   }
 
+  private getGitDataPayload(): MultipartValue | undefined {
+    if (this.gitData === undefined) {
+      return undefined
+    }
+
+    const files = this.gitData.trackedFilesMatcher.rawTrackedFilesList()
+    const repoPayload = {
+      data: [
+        {
+          files,
+          hash: this.gitData.hash,
+          repository_url: this.gitData.remote,
+        },
+      ],
+      version: 1,
+    }
+
+    return {
+      options: {filename: 'repository', contentType: 'application/json'},
+      value: JSON.stringify(repoPayload),
+    }
+  }
+
   private async getGitMetadata(): Promise<RepositoryData | undefined> {
     try {
       return await getRepositoryData(await newSimpleGit(), this.repositoryUrl)
@@ -171,15 +196,60 @@ export class UploadCommand extends Command {
   }
 
   private async performAndroidMappingUpload(): Promise<number> {
-    return 0
-  }
+    const androidMetadata = this.getAndroidMetadata()
 
-  private async performDsymUpload(): Promise<number> {
-    if (!this.iosDsyms && !this.iosDsymsLocation) {
-      // Not asked for. we're done
+    const metricsLogger = getMetricsLogger({
+      apiKey: this.config.apiKey,
+      datadogSite: this.config.datadogSite,
+      defaultTags: [
+        `version:${this.version}`,
+        `service:${this.serviceName}`,
+        `cli_version:${this.cliVersion}`,
+        'flutter:true',
+        'platform:android',
+      ],
+      prefix: 'datadog.ci.symbols.upload.',
+    })
+
+    const apiKeyValidator = newApiKeyValidator({
+      apiKey: this.config.apiKey,
+      datadogSite: this.config.datadogSite,
+      metricsLogger: metricsLogger.logger,
+    })
+
+    const requestBuilder = getFlutterRequestBuilder(this.config.apiKey!, this.cliVersion, this.config.datadogSite)
+    if (this.dryRun) {
       return 0
     }
 
+    const metadata = this.getAndroidMetadata()
+
+    const payload = {
+      content: new Map<string, MultipartValue>([
+        ['event', {value: JSON.stringify(metadata), options: {filename: 'event', contentType: 'application/json'}}],
+        [
+          'jvm_mapping',
+          {value: fs.createReadStream(this.androidMappingLocation!), options: {filename: 'jvm_mapping_file'}},
+        ],
+      ]),
+    }
+    if (this.gitData !== undefined) {
+      payload.content.set('repository', this.getGitDataPayload()!)
+    }
+
+    return uploadMultipartHelper(requestBuilder, payload, {
+      apiKeyValidator,
+      // tslint:disable-next-line:no-empty
+      onError: (e) => {},
+      // tslint:disable-next-line:no-empty
+      onRetry: (e, attempts) => {},
+      // tslint:disable-next-line:no-empty
+      onUpload: () => {},
+      retries: 5,
+    })
+  }
+
+  private async performDsymUpload() {
     const symbolLocation = this.iosDsymsLocation ?? './build/ios/archive/Runner.xcarchive/dSYMs'
 
     const dsymUploadCommand = ['dsyms', 'upload', symbolLocation]
@@ -188,8 +258,41 @@ export class UploadCommand extends Command {
     }
 
     const exitCode = await performSubCommand(dsyms.UploadCommand, dsymUploadCommand, this.context)
+    if (exitCode && exitCode !== 0) {
+      throw new Error(`recieved exit code ${exitCode} while dsym upload.`)
+    }
+  }
 
-    return exitCode
+  private async verifyParameters(): Promise<boolean> {
+    if (!this.serviceName) {
+      this.context.stderr.write(renderArgumentMissingError('service-name'))
+
+      return false
+    }
+
+    if (this.dartSymbols && !this.dartSymbolsLocation) {
+      this.context.stderr.write(renderDartSymbolsLocationRequiredError())
+
+      return false
+    }
+
+    if (this.androidMapping && !this.androidMappingLocation) {
+      this.androidMappingLocation = `./build/app/outputs/mapping/${this.flavor}/mapping.txt`
+    }
+
+    if (this.androidMappingLocation) {
+      if (!fs.existsSync(this.androidMappingLocation)) {
+        this.context.stderr.write(renderMissingAndroidMappingFile(this.androidMappingLocation))
+
+        return false
+      }
+    }
+
+    if (!this.version && (await this.parsePubspec(this.pubspecLocation))) {
+      return false
+    }
+
+    return true
   }
 }
 

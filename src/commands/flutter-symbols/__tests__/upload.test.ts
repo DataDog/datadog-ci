@@ -1,8 +1,12 @@
 // tslint:disable: no-string-literal
-import {Cli} from 'clipanion/lib/advanced'
+import FormData from 'form-data'
+import {ReadStream} from 'fs'
 import {TrackedFilesMatcher} from '../../../helpers/git/format-git-sourcemaps-data'
+import {getRepositoryData} from '../../../helpers/git/format-git-sourcemaps-data'
+import {MultipartPayload} from '../../../helpers/upload'
 import {performSubCommand} from '../../../helpers/utils'
 import * as dsyms from '../..//dsyms/upload'
+import {uploadMultipartHelper} from '../helpers'
 import {
   renderDartSymbolsLocationRequiredError,
   renderInvalidPubspecError,
@@ -17,21 +21,24 @@ jest.mock('../../../helpers/utils', () => ({
   performSubCommand: jest.fn(),
 }))
 
+jest.mock('../helpers', () => ({
+  ...jest.requireActual('../helpers'),
+  uploadMultipartHelper: jest.fn(),
+}))
+
+jest.mock('../../../helpers/git/format-git-sourcemaps-data', () => ({
+  ...jest.requireActual('../../../helpers/git/format-git-sourcemaps-data'),
+  getRepositoryData: jest.fn(),
+}))
+
 // tslint:disable-next-line:no-var-requires
 const cliVersion = require('../../../../package.json').version
 const fixtureDir = './src/commands/flutter-symbols/__tests__/fixtures'
 
 describe('flutter-symbol upload', () => {
   beforeAll(() => {
-    jest.resetAllMocks()
+    jest.clearAllMocks()
   })
-
-  const makeCli = () => {
-    const cli = new Cli()
-    cli.register(UploadCommand)
-
-    return cli
-  }
 
   const createMockContext = () => {
     let outString = ''
@@ -54,28 +61,21 @@ describe('flutter-symbol upload', () => {
     }
   }
 
-  const runCli = async (args: string[]) => {
-    const cli = makeCli()
+  const runCommand = async (prepFunction: (command: UploadCommand) => void) => {
+    const command = new UploadCommand()
     const context = createMockContext() as any
-    process.env = {DATADOG_API_KEY: 'PLACEHOLDER'}
-    const exitCode = await cli.run(['flutter-symbols', 'upload', ...args, '--dry-run'], context)
+    command.context = context
+    prepFunction(command)
 
-    return {context, exitCode}
-  }
+    const exitCode = await command.execute()
 
-  const prepareMockGlobalsForCommand = (command: UploadCommand) => {
-    command['serviceName'] = 'fake.service'
-    command['version'] = '1.0.0'
-    command['gitData'] = {
-      hash: 'fake-git-hash',
-      remote: 'fake-git-remote',
-      trackedFilesMatcher: new TrackedFilesMatcher([]),
-    }
+    return {exitCode, context}
   }
 
   describe('parameter validation', () => {
     test('fails if no service name given', async () => {
-      const {context, exitCode} = await runCli([])
+      // tslint:disable-next-line:no-empty
+      const {exitCode, context} = await runCommand((_) => {})
       const errorOutput = context.stderr.toString()
 
       expect(exitCode).not.toBe(0)
@@ -84,8 +84,9 @@ describe('flutter-symbol upload', () => {
     })
 
     test('requires valid pubspec', async () => {
-      // Default location doesn't exist
-      const {context, exitCode} = await runCli(['--service-name', 'fake.service'])
+      const {exitCode, context} = await runCommand((cmd) => {
+        cmd['serviceName'] = 'fake.service'
+      })
       const errorOutput = context.stderr.toString()
 
       expect(exitCode).not.toBe(0)
@@ -93,8 +94,10 @@ describe('flutter-symbol upload', () => {
     })
 
     test('version bypasses pubspec check', async () => {
-      // Default location doesn't exist
-      const {context, exitCode} = await runCli(['--service-name', 'fake.service', '--version', '1.0.0'])
+      const {exitCode, context} = await runCommand((cmd) => {
+        cmd['serviceName'] = 'fake.service'
+        cmd['version'] = '1.0.0'
+      })
       const errorOutput = context.stderr.toString()
 
       expect(exitCode).toBe(0)
@@ -102,7 +105,11 @@ describe('flutter-symbol upload', () => {
     })
 
     test('dart-symbols requires dart-symbols-location', async () => {
-      const {context, exitCode} = await runCli(['--service-name', 'fake.service', '--dart-symbols'])
+      const {exitCode, context} = await runCommand((cmd) => {
+        cmd['serviceName'] = 'fake.service'
+        cmd['version'] = '1.0.0'
+        cmd['dartSymbols'] = true
+      })
       const errorOutput = context.stderr.toString()
 
       expect(exitCode).not.toBe(0)
@@ -162,7 +169,7 @@ describe('flutter-symbol upload', () => {
       expect(errorOutput).toBe(renderPubspecMissingVersionError(`${fixtureDir}/pubspecs/missingVersionPubspec.yaml`))
     })
 
-    test('populates version from valid pubsepct', async () => {
+    test('populates version from valid pubspec', async () => {
       const context = createMockContext() as any
       const command = new UploadCommand()
       command.context = context
@@ -178,7 +185,27 @@ describe('flutter-symbol upload', () => {
 
   describe('dsyms upload', () => {
     test('calls dsyms sub-command with proper default parameters', async () => {
-      const {exitCode} = await runCli(['--service-name', 'fake.service', '--ios-dsyms', '--version', '1.0.0'])
+      const {exitCode} = await runCommand((cmd) => {
+        cmd['serviceName'] = 'fake.service'
+        cmd['version'] = '1.0.0'
+        cmd['iosDsyms'] = true
+      })
+
+      expect(exitCode).toBe(0)
+      expect(performSubCommand).toHaveBeenCalledWith(
+        dsyms.UploadCommand,
+        ['dsyms', 'upload', './build/ios/archive/Runner.xcarchive/dSYMs'],
+        expect.anything()
+      )
+    })
+
+    test('calls dsyms sub-command with dry-run on dry-run', async () => {
+      const {exitCode} = await runCommand((cmd) => {
+        cmd['serviceName'] = 'fake.service'
+        cmd['version'] = '1.0.0'
+        cmd['iosDsyms'] = true
+        cmd['dryRun'] = true
+      })
 
       expect(exitCode).toBe(0)
       expect(performSubCommand).toHaveBeenCalledWith(
@@ -189,21 +216,18 @@ describe('flutter-symbol upload', () => {
     })
 
     test('calls dsyms sub-command passing through dsymLocation', async () => {
-      const {context, exitCode} = await runCli([
-        '--service-name',
-        'fake.service',
-        '--ios-dsyms-location',
-        './dsym-location',
-        '--version',
-        '1.0.0',
-      ])
+      const {exitCode, context} = await runCommand((cmd) => {
+        cmd['serviceName'] = 'fake.service'
+        cmd['version'] = '1.0.0'
+        cmd['iosDsymsLocation'] = './dsym-location'
+      })
 
       const errorOutput = context.stderr.toString()
 
       expect(exitCode).toBe(0)
       expect(performSubCommand).toHaveBeenCalledWith(
         dsyms.UploadCommand,
-        ['dsyms', 'upload', './dsym-location', '--dry-run'],
+        ['dsyms', 'upload', './dsym-location'],
         expect.anything()
       )
       expect(errorOutput).toBe('')
@@ -211,13 +235,28 @@ describe('flutter-symbol upload', () => {
   })
 
   describe('android mapping upload', () => {
+    const addDefaultCommandParameters = (command: UploadCommand) => {
+      command['serviceName'] = 'fake.service'
+      command['version'] = '1.0.0'
+    }
+
+    const mockGitRepoParameters = (command: UploadCommand) => {
+      command['gitData'] = {
+        hash: 'fake-git-hash',
+        remote: 'fake-git-remote',
+        trackedFilesMatcher: new TrackedFilesMatcher([
+          './lib/main.dart',
+          './android/app/src/main/kotlin/com/datadoghq/example/flutter/MainActivity.kt',
+          './ios/Runner/AppDelegate.swift',
+        ]),
+      }
+    }
+
     test('errors if mapping file does not exist', async () => {
-      const {context, exitCode} = await runCli([
-        '--service-name',
-        'fake.service',
-        '--android-mapping-location',
-        `${fixtureDir}/android/missing.txt`,
-      ])
+      const {exitCode, context} = await runCommand((cmd) => {
+        addDefaultCommandParameters(cmd)
+        cmd['androidMappingLocation'] = `${fixtureDir}/android/missing.txt`
+      })
 
       const errorOutput = context.stderr.toString()
 
@@ -226,7 +265,10 @@ describe('flutter-symbol upload', () => {
     })
 
     test('errors if default mapping file does not exist', async () => {
-      const {context, exitCode} = await runCli(['--service-name', 'fake.service', '--android-mapping'])
+      const {exitCode, context} = await runCommand((cmd) => {
+        addDefaultCommandParameters(cmd)
+        cmd['androidMapping'] = true
+      })
 
       const errorOutput = context.stderr.toString()
 
@@ -236,7 +278,8 @@ describe('flutter-symbol upload', () => {
 
     test('creates correct metadata payload', () => {
       const command = new UploadCommand()
-      prepareMockGlobalsForCommand(command)
+      addDefaultCommandParameters(command)
+      mockGitRepoParameters(command)
 
       const metadata = command['getAndroidMetadata']()
 
@@ -249,6 +292,84 @@ describe('flutter-symbol upload', () => {
         variant: 'release',
         version: '1.0.0',
       })
+    })
+
+    test('uploads correct multipart payload without repository', async () => {
+      ;(uploadMultipartHelper as jest.Mock).mockResolvedValueOnce('')
+
+      const {exitCode} = await runCommand((cmd) => {
+        addDefaultCommandParameters(cmd)
+        cmd['androidMappingLocation'] = `${fixtureDir}/android/fake-mapping.txt`
+      })
+
+      const expectedMetadata = {
+        cli_version: cliVersion,
+        service: 'fake.service',
+        type: 'jvm_mapping_file',
+        variant: 'release',
+        version: '1.0.0',
+      }
+
+      expect(uploadMultipartHelper).toHaveBeenCalled()
+      const payload = (uploadMultipartHelper as jest.Mock).mock.calls[0][1] as MultipartPayload
+      expect(JSON.parse(payload.content.get('event')?.value as string)).toStrictEqual(expectedMetadata)
+      expect(payload.content.get('jvm_mapping')?.value).toBeInstanceOf(ReadStream)
+      expect((payload.content.get('jvm_mapping')?.value as ReadStream).path).toBe(
+        `${fixtureDir}/android/fake-mapping.txt`
+      )
+      expect(exitCode).toBe(0)
+    })
+
+    test('uploads correct multipart payload with repository', async () => {
+      ;(uploadMultipartHelper as jest.Mock).mockResolvedValueOnce('')
+      ;(getRepositoryData as jest.Mock).mockResolvedValueOnce({
+        hash: 'fake-git-hash',
+        remote: 'fake-git-remote',
+        trackedFilesMatcher: new TrackedFilesMatcher([
+          './lib/main.dart',
+          './android/app/src/main/kotlin/com/datadoghq/example/flutter/MainActivity.kt',
+          './ios/Runner/AppDelegate.swift',
+        ]),
+      })
+
+      const {exitCode} = await runCommand((cmd) => {
+        addDefaultCommandParameters(cmd)
+        cmd['androidMappingLocation'] = `${fixtureDir}/android/fake-mapping.txt`
+      })
+
+      const expectedMetadata = {
+        cli_version: cliVersion,
+        git_commit_sha: 'fake-git-hash',
+        git_repository_url: 'fake-git-remote',
+        service: 'fake.service',
+        type: 'jvm_mapping_file',
+        variant: 'release',
+        version: '1.0.0',
+      }
+
+      const expectedRepository = {
+        data: [
+          {
+            files: [
+              './lib/main.dart',
+              './android/app/src/main/kotlin/com/datadoghq/example/flutter/MainActivity.kt',
+              './ios/Runner/AppDelegate.swift',
+            ],
+            hash: 'fake-git-hash',
+            repository_url: 'fake-git-remote',
+          },
+        ],
+        version: 1,
+      }
+
+      expect(uploadMultipartHelper).toHaveBeenCalled()
+      const payload = (uploadMultipartHelper as jest.Mock).mock.calls[0][1] as MultipartPayload
+      expect(JSON.parse(payload.content.get('event')?.value as string)).toStrictEqual(expectedMetadata)
+      const repoValue = payload.content.get('repository')
+      expect(JSON.parse(repoValue?.value as string)).toStrictEqual(expectedRepository)
+      expect((repoValue?.options as FormData.AppendOptions).filename).toBe('repository')
+      expect((repoValue?.options as FormData.AppendOptions).contentType).toBe('application/json')
+      expect(exitCode).toBe(0)
     })
   })
 

@@ -27,3 +27,5 @@ export const renderDartSymbolsLocationRequiredError = () =>
 
 export const renderMissingAndroidMappingFile = (mappingLocation: string) =>
   chalk.red(`${ICONS.FAILED} Error: Could not locate Android Mapping file at ${mappingLocation}.\n`)
+
+export const renderGeneralizedError = (error: any) => chalk.red(`${ICONS.FAILED} Error: ${error}\n`)

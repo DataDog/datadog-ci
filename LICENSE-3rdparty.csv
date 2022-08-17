@@ -9,6 +9,7 @@ Component,Origin,Licence,Copyright
 @types/glob,dev,MIT,Copyright Microsoft Corporation
 @types/inquirer,dev,MIT,Copyright Microsoft Corporation
 @types/jest,dev,MIT,Copyright Microsoft Corporation
+@types/js-yaml,dev,MIT,Bart van der Schoor
 @types/node,dev,MIT,Copyright Microsoft Corporation
 @types/rimraf,dev,MIT,Copyright Carlos Ballesteros Velasco <https://github.com/soywiz> and contributors
 @types/ssh2,dev,MIT,Copyright Microsoft Corporation
@@ -33,6 +34,7 @@ inquirer-checkbox-plus-prompt,import,MIT,Copyright (c) 2018 Mohammad Anas Fares
 jest,dev,MIT,Copyright (c) Facebook, Inc. and its affiliates.
 jest-environment-node,dev,MIT,Copyright (c) Facebook, Inc. and its affiliates.
 jest-matcher-specific-error,dev,MIT,Copyright (c) 2020 Daniel Hreben
+js-yaml,import,MIT,Copyright (C) 2011-2015 by Vitaly Puzrin
 pkg,dev,MIT,Copyright (c) 2021 Vercel, Inc.
 prettier,dev,MIT,Copyright © James Long and contributors
 proxy,dev,MIT,Copyright (c) 2013 Nathan Rajlich <nathan@tootallnate.net>

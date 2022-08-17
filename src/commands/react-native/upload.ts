@@ -9,7 +9,7 @@ import {getRepositoryData, newSimpleGit, RepositoryData} from '../../helpers/git
 import {RequestBuilder} from '../../helpers/interfaces'
 import {getMetricsLogger, MetricsLogger} from '../../helpers/metrics'
 import {upload, UploadStatus} from '../../helpers/upload'
-import {getRequestBuilder, resolveConfigFromFile} from '../../helpers/utils'
+import {DEFAULT_CONFIG_PATH, getRequestBuilder, resolveConfigFromFile} from '../../helpers/utils'
 import {RNPlatform, RNSourcemap, RN_SUPPORTED_PLATFORMS} from './interfaces'
 import {
   renderCommandInfo,
@@ -24,7 +24,6 @@ import {
 } from './renderer'
 import {InvalidPayload, validatePayload} from './validation'
 
-const DEFAULT_CONFIG_PATH = 'datadog-ci.json'
 export class UploadCommand extends Command {
   public static usage = Command.Usage({
     description: 'Upload React Native sourcemaps to Datadog.',

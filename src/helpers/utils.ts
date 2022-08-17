@@ -9,6 +9,8 @@ import ProxyAgent from 'proxy-agent'
 import {Cli} from 'clipanion/lib/advanced'
 import type {SpanTag, SpanTags} from './interfaces'
 
+export const DEFAULT_CONFIG_PATH = 'datadog-ci.json'
+
 export const pick = <T extends object, K extends keyof T>(base: T, keys: K[]) => {
   const definedKeys = keys.filter((key) => !!base[key])
   const pickedObject: Partial<T> = {}
