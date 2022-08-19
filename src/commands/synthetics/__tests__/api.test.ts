@@ -60,20 +60,73 @@ describe('dd-api', () => {
     expect(batchId).toBe(BATCH_ID)
   })
 
-  test('should retry request that failed with code 5xx', async () => {
-    const serverError = new Error('Server Error') as AxiosError
-    serverError.response = {status: 502} as AxiosResponse
+  describe('Retry policy', () => {
+    const api = apiConstructor(apiConfiguration)
 
-    const requestMock = jest.fn()
-    requestMock.mockImplementation(() => {
-      throw serverError
-    })
-    jest.spyOn(axios, 'create').mockImplementation((() => requestMock) as any)
+    const testCases = [
+      {
+        makeApiRequest: () => api.getBatch('batch-id'),
+        name: 'get batch' as const,
+        shouldBeRetriedOn404: true,
+        shouldBeRetriedOn5xx: true,
+      },
+      {
+        makeApiRequest: () => api.getPresignedURL(['test-id']),
+        name: 'get presigned url' as const,
+        shouldBeRetriedOn404: false,
+        shouldBeRetriedOn5xx: true,
+      },
+      {
+        makeApiRequest: () => api.getTest('public-id'),
+        name: 'get test' as const,
+        shouldBeRetriedOn404: false,
+        shouldBeRetriedOn5xx: true,
+      },
+      {
+        makeApiRequest: () => api.pollResults(['result-id']),
+        name: 'poll results' as const,
+        shouldBeRetriedOn404: true,
+        shouldBeRetriedOn5xx: true,
+      },
+      {
+        makeApiRequest: () => api.searchTests('search query'),
+        name: 'search tests' as const,
+        shouldBeRetriedOn404: false,
+        shouldBeRetriedOn5xx: true,
+      },
+      {
+        makeApiRequest: () =>
+          api.triggerTests({tests: [{public_id: '123-456-789', executionRule: ExecutionRule.NON_BLOCKING}]}),
+        name: 'trigger tests' as const,
+        shouldBeRetriedOn404: false,
+        shouldBeRetriedOn5xx: true,
+      },
+    ]
 
-    const {getTest} = apiConstructor(apiConfiguration)
+    test.each(testCases)(
+      'should retry "$name" request (HTTP 404: $shouldBeRetriedOn404, HTTP 5xx: $shouldBeRetriedOn5xx)',
+      async ({makeApiRequest, shouldBeRetriedOn404, shouldBeRetriedOn5xx}) => {
+        const serverError = new Error('Server Error') as AxiosError
 
-    await expect(getTest('fake-public-id')).rejects.toThrow()
-    expect(requestMock).toHaveBeenCalledTimes(4)
+        const requestMock = jest.fn()
+        requestMock.mockImplementation(() => {
+          throw serverError
+        })
+        jest.spyOn(axios, 'create').mockImplementation((() => requestMock) as any)
+
+        serverError.response = {status: 404} as AxiosResponse
+
+        await expect(makeApiRequest()).rejects.toThrow()
+        expect(requestMock).toHaveBeenCalledTimes(shouldBeRetriedOn404 ? 4 : 1)
+
+        requestMock.mockClear()
+
+        serverError.response = {status: 502} as AxiosResponse
+
+        await expect(makeApiRequest()).rejects.toThrow()
+        expect(requestMock).toHaveBeenCalledTimes(shouldBeRetriedOn5xx ? 4 : 1)
+      }
+    )
   })
 
   test('should get a presigned URL from api', async () => {
