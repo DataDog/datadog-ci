@@ -17,6 +17,9 @@ import {
 } from './interfaces'
 import {ciTriggerApp, retry} from './utils'
 
+const MAX_RETRIES = 3
+const DELAY_BETWEEN_RETRIES = 500 // In ms
+
 interface BackendError {
   errors: string[]
 }
@@ -139,8 +142,8 @@ const getPresignedURL = (request: (args: AxiosRequestConfig) => AxiosPromise<{ur
 type RetryPolicy = (retries: number, error: AxiosError) => number | undefined
 
 const retryOn5xxErrors: RetryPolicy = (retries, error) => {
-  if (retries < 3 && is5xxError(error)) {
-    return 500
+  if (retries < MAX_RETRIES && is5xxError(error)) {
+    return DELAY_BETWEEN_RETRIES
   }
 }
 
@@ -150,8 +153,8 @@ const retryOn5xxOr404Errors: RetryPolicy = (retries, error) => {
     return retryOn5xxDelay
   }
 
-  if (retries < 3 && isNotFoundError(error)) {
-    return 500
+  if (retries < MAX_RETRIES && isNotFoundError(error)) {
+    return DELAY_BETWEEN_RETRIES
   }
 }
 
