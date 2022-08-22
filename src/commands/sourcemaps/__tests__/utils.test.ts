@@ -1,4 +1,4 @@
-import {getMinifiedFilePath} from '../utils'
+import {getMinifiedFilePath, islastFolderRepeated, arelastFoldersRepeated} from '../utils'
 
 describe('utils', () => {
   describe('getMinifiedFilePath', () => {
@@ -12,4 +12,23 @@ describe('utils', () => {
       )
     })
   })
+
+  describe('arelastFoldersRepeated', () => {
+    test('should return true', () => {
+      const minifiedPathPrefix = 'https://subdomain.domain.dev/static/js'
+      const relativePath = '/static/js/1.23.chunk.js'
+
+      expect(arelastFoldersRepeated(minifiedPathPrefix, relativePath)).toBe(true)
+      expect(islastFolderRepeated(minifiedPathPrefix, relativePath)).toBe(true)
+    })
+
+    test('should return false', () => {
+      const minifiedPathPrefix = 'https://subdomain.domain.dev/static/js'
+      const relativePath = '/1.23.chunk.js'
+
+      expect(arelastFoldersRepeated(minifiedPathPrefix, relativePath)).toBe(false)
+      expect(islastFolderRepeated(minifiedPathPrefix, relativePath)).toBe(false)
+    })
+  })
+  
 })
