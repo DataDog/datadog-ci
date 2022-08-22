@@ -101,7 +101,8 @@ describe('upload', () => {
         new Sourcemap(
           'src/commands/sourcemaps/__tests__/fixtures/sourcemap-with-no-files/empty.min.js',
           'http://example/empty.min.js',
-          'src/commands/sourcemaps/__tests__/fixtures/sourcemap-with-no-files/empty.min.js.map'
+          'src/commands/sourcemaps/__tests__/fixtures/sourcemap-with-no-files/empty.min.js.map',
+          ''
         )
       )
       // The command will fetch git metadatas for the current datadog-ci repository.
@@ -121,7 +122,8 @@ describe('upload', () => {
         new Sourcemap(
           'src/commands/sourcemaps/__tests__/fixtures/basic/common.min.js',
           'http://example/common.min.js',
-          'src/commands/sourcemaps/__tests__/fixtures/basic/common.min.js.map'
+          'src/commands/sourcemaps/__tests__/fixtures/basic/common.min.js.map',
+          ''
         )
       )
       // The command will fetch git metadatas for the current datadog-ci repository.

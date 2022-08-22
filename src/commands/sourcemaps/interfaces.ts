@@ -7,11 +7,13 @@ export class Sourcemap {
   public minifiedFilePath: string
   public minifiedUrl: string
   public sourcemapPath: string
+  public minifiedPathPrefix?: string
 
-  constructor(minifiedFilePath: string, minifiedUrl: string, sourcemapPath: string) {
+  constructor(minifiedFilePath: string, minifiedUrl: string, sourcemapPath: string, minifiedPathPrefix?: string) {
     this.minifiedFilePath = minifiedFilePath
     this.minifiedUrl = minifiedUrl
     this.sourcemapPath = sourcemapPath
+    this.minifiedPathPrefix = minifiedPathPrefix
   }
 
   public addRepositoryData(gitData: GitData) {

@@ -8,8 +8,8 @@ export const getMinifiedFilePath = (sourcemapPath: string) => {
   return sourcemapPath.replace(new RegExp('\\.map$'), '')
 }
 
-// arelastFoldersRepeated checks if the last folders of the first arg are found within the second. 
-export const arelastFoldersRepeated = (path1: string, path2: string): boolean => {
+// extractRepeatedPath checks if the last part of paths of the first arg are found at the start of the second arg. 
+export const extractRepeatedPath = (path1: string, path2: string): string | undefined => {
   let splitOnSlashes = new RegExp(/[\/]+|[\\]+/)
   let trimSlashes = new RegExp(/^[\/]+|^[\\]+|[\/]+$|[\\]+$/)
   let path1split = path1.trim().replace(trimSlashes, '').split(splitOnSlashes)
@@ -17,20 +17,9 @@ export const arelastFoldersRepeated = (path1: string, path2: string): boolean =>
   let normalizedpath2 = path2split.join('/')
   for (var i = path1split.length; i > 0; i--) {
     var path1subset = path1split.slice(-i).join('/')
-    console.log(path1subset+' => '+normalizedpath2+'\n')
     if(normalizedpath2.startsWith(path1subset)) {
-      return true;
+      return path1subset;
     }
   }
-  return false
-}
-
-// islastFolderRepeated checks if the last folder of the first arg is found within the second. 
-export const islastFolderRepeated = (path1: string, path2: string): boolean => {
-  let splitOnSlashes = new RegExp(/[\/]+|[\\]+/)
-  let trimSlashes = new RegExp(/^[\/]+|^[\\]+|[\/]+$|[\\]+$/)
-  let path1split = path1.trim().replace(trimSlashes, '').split(splitOnSlashes)
-  let path2split = path2.trim().replace(trimSlashes, '').split(splitOnSlashes)
-  let lastFolder = path1split[path1split.length-1]
-  return path2split.includes(lastFolder)
+  return undefined;
 }
