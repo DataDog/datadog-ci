@@ -17,6 +17,9 @@ import {
 } from './interfaces'
 import {ciTriggerApp, retry} from './utils'
 
+const MAX_RETRIES = 3
+const DELAY_BETWEEN_RETRIES = 500 // In ms
+
 interface BackendError {
   errors: string[]
 }
@@ -92,7 +95,7 @@ const searchTests = (request: (args: AxiosRequestConfig) => AxiosPromise<TestSea
 const getBatch = (request: (args: AxiosRequestConfig) => AxiosPromise<{data: ServerBatch}>) => async (
   batchId: string
 ): Promise<Batch> => {
-  const resp = await retryRequest({url: `/synthetics/ci/batch/${batchId}`}, request)
+  const resp = await retryRequest({url: `/synthetics/ci/batch/${batchId}`}, request, retryOn5xxOr404Errors)
 
   const serverBatch = resp.data.data
 
@@ -112,7 +115,8 @@ const pollResults = (request: (args: AxiosRequestConfig) => AxiosPromise<{result
       },
       url: '/synthetics/tests/poll_results',
     },
-    request
+    request,
+    retryOn5xxOr404Errors
   )
 
   return resp.data.results
@@ -135,9 +139,22 @@ const getPresignedURL = (request: (args: AxiosRequestConfig) => AxiosPromise<{ur
   return resp.data
 }
 
-const retryOn5xxErrors = (retries: number, error: AxiosError) => {
-  if (retries < 3 && is5xxError(error)) {
-    return 500
+type RetryPolicy = (retries: number, error: AxiosError) => number | undefined
+
+const retryOn5xxErrors: RetryPolicy = (retries, error) => {
+  if (retries < MAX_RETRIES && is5xxError(error)) {
+    return DELAY_BETWEEN_RETRIES
+  }
+}
+
+const retryOn5xxOr404Errors: RetryPolicy = (retries, error) => {
+  const retryOn5xxDelay = retryOn5xxErrors(retries, error)
+  if (retryOn5xxDelay) {
+    return retryOn5xxDelay
+  }
+
+  if (retries < MAX_RETRIES && isNotFoundError(error)) {
+    return DELAY_BETWEEN_RETRIES
   }
 }
 
@@ -154,8 +171,11 @@ export const is5xxError = (error: AxiosError | EndpointError) => {
   return statusCode && statusCode >= 500 && statusCode <= 599
 }
 
-const retryRequest = <T>(args: AxiosRequestConfig, request: (args: AxiosRequestConfig) => AxiosPromise<T>) =>
-  retry(() => request(args), retryOn5xxErrors)
+const retryRequest = <T>(
+  args: AxiosRequestConfig,
+  request: (args: AxiosRequestConfig) => AxiosPromise<T>,
+  retryPolicy: RetryPolicy = retryOn5xxErrors
+) => retry(() => request(args), retryPolicy)
 
 export const apiConstructor = (configuration: APIConfiguration) => {
   const {baseUrl, baseIntakeUrl, apiKey, appKey, proxyOpts} = configuration
