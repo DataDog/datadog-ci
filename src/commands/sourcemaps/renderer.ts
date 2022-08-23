@@ -24,7 +24,7 @@ export const renderInvalidPrefix = chalk.red(
 
 export const renderMinifiedPathPrefixMisusage = (sourcemap: Sourcemap, repeated: string) =>
   chalk.yellow(
-    `${ICONS.WARNING} The --minified-path-prefix flag value (${sourcemap.minifiedPathPrefix}) seems to repeat "${repeated}" which is alredy present in the minified filepath ${sourcemap.minifiedFilePath}\n`
+    `${ICONS.WARNING} The --minified-path-prefix flag value "${sourcemap.minifiedPathPrefix}" seems to repeat "${repeated}" which is already present in the path "${sourcemap.relativePath}"\n`
   )
 
 export const renderFailedUpload = (sourcemap: Sourcemap, errorMessage: string) => {

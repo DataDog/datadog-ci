@@ -38,9 +38,9 @@ export const validatePayload = (sourcemap: Sourcemap, stdout: Writable) => {
     )
   }
 
-  // Check that the folders part of the --minified-path-prefix flag are not present within the minifiedFilePath.
+  // Check for --minified-path-prefix flag misuages.
   if (sourcemap.minifiedPathPrefix) {
-    const repeated = extractRepeatedPath(sourcemap.minifiedPathPrefix!, sourcemap.minifiedFilePath)
+    const repeated = extractRepeatedPath(sourcemap.minifiedPathPrefix!, sourcemap.relativePath)
     if (repeated) {
       stdout.write(renderMinifiedPathPrefixMisusage(sourcemap, repeated))
     }
