@@ -290,7 +290,9 @@ interface ExpectedOutput {
 
 const checkConsoleOutput = (output: string[], expected: ExpectedOutput) => {
   expect(output[0]).toContain('DRY-RUN MODE ENABLED. WILL NOT UPLOAD SOURCEMAPS')
-  expect(output[1]).toContain(`Starting upload with concurrency ${expected.concurrency}.`)
+  expect(output[1]).toContain(
+    `Starting upload for service ${expected.service}, version ${expected.version}, with concurrency ${expected.concurrency}.`
+  )
   expect(output[2]).toContain(`Will look for sourcemaps in ${expected.basePath}`)
   expect(output[3]).toContain(`Will match JS files for errors on files starting with ${expected.minifiedPathPrefix}`)
   expect(output[4]).toContain(
