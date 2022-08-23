@@ -176,6 +176,7 @@ export class UploadCommand extends Command {
       sourcemapFiles.map(async (sourcemapPath) => {
         const minifiedFilePath = getMinifiedFilePath(sourcemapPath)
         const minifiedURL = this.getMinifiedURL(minifiedFilePath)
+
         return new Sourcemap(minifiedFilePath, minifiedURL, sourcemapPath, this.minifiedPathPrefix)
       })
     )

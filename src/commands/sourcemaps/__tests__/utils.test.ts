@@ -1,4 +1,4 @@
-import {getMinifiedFilePath, extractRepeatedPath} from '../utils'
+import {extractRepeatedPath, getMinifiedFilePath} from '../utils'
 
 describe('utils', () => {
   describe('getMinifiedFilePath', () => {
@@ -35,5 +35,4 @@ describe('utils', () => {
       expect(extractRepeatedPath(minifiedPathPrefix, relativePath)).toBe(undefined)
     })
   })
-  
 })

@@ -8,18 +8,19 @@ export const getMinifiedFilePath = (sourcemapPath: string) => {
   return sourcemapPath.replace(new RegExp('\\.map$'), '')
 }
 
-// extractRepeatedPath checks if the last part of paths of the first arg are found at the start of the second arg. 
+// ExtractRepeatedPath checks if the last part of paths of the first arg are found at the start of the second arg.
 export const extractRepeatedPath = (path1: string, path2: string): string | undefined => {
-  let splitOnSlashes = new RegExp(/[\/]+|[\\]+/)
-  let trimSlashes = new RegExp(/^[\/]+|^[\\]+|[\/]+$|[\\]+$/)
-  let path1split = path1.trim().replace(trimSlashes, '').split(splitOnSlashes)
-  let path2split = path2.trim().replace(trimSlashes, '').split(splitOnSlashes)
-  let normalizedpath2 = path2split.join('/')
-  for (var i = path1split.length; i > 0; i--) {
-    var path1subset = path1split.slice(-i).join('/')
-    if(normalizedpath2.startsWith(path1subset)) {
-      return path1subset;
+  const splitOnSlashes = new RegExp(/[\/]+|[\\]+/)
+  const trimSlashes = new RegExp(/^[\/]+|^[\\]+|[\/]+$|[\\]+$/)
+  const path1split = path1.trim().replace(trimSlashes, '').split(splitOnSlashes)
+  const path2split = path2.trim().replace(trimSlashes, '').split(splitOnSlashes)
+  const normalizedpath2 = path2split.join('/')
+  for (let i = path1split.length; i > 0; i--) {
+    const path1subset = path1split.slice(-i).join('/')
+    if (normalizedpath2.startsWith(path1subset)) {
+      return path1subset
     }
   }
-  return undefined;
+
+  return undefined
 }
