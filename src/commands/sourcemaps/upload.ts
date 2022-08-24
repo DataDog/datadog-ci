@@ -175,17 +175,17 @@ export class UploadCommand extends Command {
     return Promise.all(
       sourcemapFiles.map(async (sourcemapPath) => {
         const minifiedFilePath = getMinifiedFilePath(sourcemapPath)
-        const minifiedURL = this.getMinifiedURL(minifiedFilePath)
+        const [minifiedURL, relativePath] = this.getMinifiedURLAndRelativePath(minifiedFilePath)
 
-        return new Sourcemap(minifiedFilePath, minifiedURL, sourcemapPath)
+        return new Sourcemap(minifiedFilePath, minifiedURL, sourcemapPath, relativePath, this.minifiedPathPrefix)
       })
     )
   }
 
-  private getMinifiedURL(minifiedFilePath: string): string {
+  private getMinifiedURLAndRelativePath(minifiedFilePath: string): [string, string] {
     const relativePath = minifiedFilePath.replace(this.basePath!, '')
 
-    return buildPath(this.minifiedPathPrefix!, relativePath)
+    return [buildPath(this.minifiedPathPrefix!, relativePath), relativePath]
   }
 
   private getPayloadsToUpload = async (useGit: boolean): Promise<Sourcemap[]> => {
@@ -270,7 +270,7 @@ export class UploadCommand extends Command {
   ): (sourcemap: Sourcemap) => Promise<UploadStatus> {
     return async (sourcemap: Sourcemap) => {
       try {
-        validatePayload(sourcemap)
+        validatePayload(sourcemap, this.context.stdout)
       } catch (error) {
         if (error instanceof InvalidPayload) {
           this.context.stdout.write(renderFailedUpload(sourcemap, error.message))

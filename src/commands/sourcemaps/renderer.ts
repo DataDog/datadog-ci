@@ -22,6 +22,11 @@ export const renderInvalidPrefix = chalk.red(
   `${ICONS.FAILED} --minified-path-prefix should either be an URL (such as "http://example.com/static") or an absolute path starting with a / such as "/static"\n`
 )
 
+export const renderMinifiedPathPrefixMisusage = (sourcemap: Sourcemap, repeated: string) =>
+  chalk.yellow(
+    `${ICONS.WARNING} The --minified-path-prefix flag value "${sourcemap.minifiedPathPrefix}" seems to repeat "${repeated}" which is already present in the path "${sourcemap.relativePath}"\n`
+  )
+
 export const renderFailedUpload = (sourcemap: Sourcemap, errorMessage: string) => {
   const sourcemapPathBold = `[${chalk.bold.dim(sourcemap.sourcemapPath)}]`
 

@@ -12,9 +12,10 @@ describe('upload', () => {
       const command = new UploadCommand()
       command['basePath'] = '/js/sourcemaps'
       command['minifiedPathPrefix'] = 'http://datadog.com/js'
-      expect(command['getMinifiedURL']('/js/sourcemaps/common.min.js.map')).toBe(
-        'http://datadog.com/js/common.min.js.map'
-      )
+      expect(command['getMinifiedURLAndRelativePath']('/js/sourcemaps/common.min.js.map')).toStrictEqual([
+        'http://datadog.com/js/common.min.js.map',
+        '/common.min.js.map',
+      ])
     })
   })
 
@@ -23,7 +24,10 @@ describe('upload', () => {
       const command = new UploadCommand()
       command['basePath'] = '/js/sourcemaps'
       command['minifiedPathPrefix'] = '//datadog.com/js'
-      expect(command['getMinifiedURL']('/js/sourcemaps/common.min.js.map')).toBe('//datadog.com/js/common.min.js.map')
+      expect(command['getMinifiedURLAndRelativePath']('/js/sourcemaps/common.min.js.map')).toStrictEqual([
+        '//datadog.com/js/common.min.js.map',
+        '/common.min.js.map',
+      ])
     })
   })
 
@@ -32,7 +36,10 @@ describe('upload', () => {
       const command = new UploadCommand()
       command['basePath'] = '/js/sourcemaps'
       command['minifiedPathPrefix'] = '/js'
-      expect(command['getMinifiedURL']('/js/sourcemaps/common.min.js.map')).toBe('/js/common.min.js.map')
+      expect(command['getMinifiedURLAndRelativePath']('/js/sourcemaps/common.min.js.map')).toStrictEqual([
+        '/js/common.min.js.map',
+        '/common.min.js.map',
+      ])
     })
   })
 
@@ -101,7 +108,9 @@ describe('upload', () => {
         new Sourcemap(
           'src/commands/sourcemaps/__tests__/fixtures/sourcemap-with-no-files/empty.min.js',
           'http://example/empty.min.js',
-          'src/commands/sourcemaps/__tests__/fixtures/sourcemap-with-no-files/empty.min.js.map'
+          'src/commands/sourcemaps/__tests__/fixtures/sourcemap-with-no-files/empty.min.js.map',
+          '',
+          ''
         )
       )
       // The command will fetch git metadatas for the current datadog-ci repository.
@@ -121,7 +130,9 @@ describe('upload', () => {
         new Sourcemap(
           'src/commands/sourcemaps/__tests__/fixtures/basic/common.min.js',
           'http://example/common.min.js',
-          'src/commands/sourcemaps/__tests__/fixtures/basic/common.min.js.map'
+          'src/commands/sourcemaps/__tests__/fixtures/basic/common.min.js.map',
+          '',
+          ''
         )
       )
       // The command will fetch git metadatas for the current datadog-ci repository.

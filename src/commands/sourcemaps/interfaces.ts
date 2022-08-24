@@ -5,12 +5,22 @@ import {MultipartPayload, MultipartValue} from '../../helpers/upload'
 export class Sourcemap {
   public gitData?: GitData
   public minifiedFilePath: string
+  public minifiedPathPrefix?: string
   public minifiedUrl: string
+  public relativePath: string
   public sourcemapPath: string
 
-  constructor(minifiedFilePath: string, minifiedUrl: string, sourcemapPath: string) {
+  constructor(
+    minifiedFilePath: string,
+    minifiedUrl: string,
+    sourcemapPath: string,
+    relativePath: string,
+    minifiedPathPrefix?: string
+  ) {
     this.minifiedFilePath = minifiedFilePath
+    this.minifiedPathPrefix = minifiedPathPrefix
     this.minifiedUrl = minifiedUrl
+    this.relativePath = relativePath
     this.sourcemapPath = sourcemapPath
   }
 
