@@ -185,8 +185,8 @@ export const apiConstructor = (configuration: APIConfiguration) => {
 
   return {
     getBatch: getBatch(request),
-    getTunnelPresignedURL: getTunnelPresignedURL(requestIntake),
     getTest: getTest(request),
+    getTunnelPresignedURL: getTunnelPresignedURL(requestIntake),
     pollResults: pollResults(request),
     searchTests: searchTests(request),
     triggerTests: triggerTests(requestIntake),
