@@ -71,7 +71,7 @@ describe('dd-api', () => {
         shouldBeRetriedOn5xx: true,
       },
       {
-        makeApiRequest: () => api.getPresignedURL(['test-id']),
+        makeApiRequest: () => api.getTunnelPresignedURL(['test-id']),
         name: 'get presigned url' as const,
         shouldBeRetriedOn404: false,
         shouldBeRetriedOn5xx: true,
@@ -132,8 +132,8 @@ describe('dd-api', () => {
   test('should get a presigned URL from api', async () => {
     const spy = jest.spyOn(axios, 'create').mockImplementation((() => () => ({data: PRESIGNED_URL_PAYLOAD})) as any)
     const api = apiConstructor(apiConfiguration)
-    const {getPresignedURL} = api
-    const {url} = await getPresignedURL([TRIGGERED_TEST_ID])
+    const {getTunnelPresignedURL} = api
+    const {url} = await getTunnelPresignedURL([TRIGGERED_TEST_ID])
     expect(url).toEqual(PRESIGNED_URL_PAYLOAD.url)
     spy.mockRestore()
   })
@@ -191,7 +191,7 @@ describe('dd-api', () => {
         expect(searchOutput).toEqual(mockSearchResponse)
         expect(calls.search).toHaveBeenCalled()
 
-        const tunnelOutput = await api.getPresignedURL(['123-456-789'])
+        const tunnelOutput = await api.getTunnelPresignedURL(['123-456-789'])
         expect(tunnelOutput).toEqual({url: expect.stringContaining('ws://127.0.0.1:')})
         expect(calls.presignedUrl).toHaveBeenCalled()
 

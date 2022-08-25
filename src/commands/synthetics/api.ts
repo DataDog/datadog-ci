@@ -122,7 +122,7 @@ const pollResults = (request: (args: AxiosRequestConfig) => AxiosPromise<{result
   return resp.data.results
 }
 
-const getPresignedURL = (request: (args: AxiosRequestConfig) => AxiosPromise<{url: string}>) => async (
+const getTunnelPresignedURL = (request: (args: AxiosRequestConfig) => AxiosPromise<{url: string}>) => async (
   testIds: string[]
 ) => {
   const resp = await retryRequest(
@@ -185,8 +185,8 @@ export const apiConstructor = (configuration: APIConfiguration) => {
 
   return {
     getBatch: getBatch(request),
-    getPresignedURL: getPresignedURL(requestIntake),
     getTest: getTest(request),
+    getTunnelPresignedURL: getTunnelPresignedURL(requestIntake),
     pollResults: pollResults(request),
     searchTests: searchTests(request),
     triggerTests: triggerTests(requestIntake),
