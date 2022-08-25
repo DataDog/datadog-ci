@@ -143,7 +143,7 @@ describe('run-test', () => {
       )
 
       const apiHelper = {
-        getPresignedURL: jest.fn(),
+        getTunnelPresignedURL: jest.fn(),
       }
       const configOverride = {executionRule: ExecutionRule.SKIPPED}
       jest.spyOn(runTests, 'getApiHelper').mockImplementation(() => apiHelper as any)
@@ -165,7 +165,7 @@ describe('run-test', () => {
         expect.anything(),
         false
       )
-      expect(apiHelper.getPresignedURL).not.toHaveBeenCalled()
+      expect(apiHelper.getTunnelPresignedURL).not.toHaveBeenCalled()
     })
 
     test('open and close tunnel for successful runs', async () => {
@@ -187,7 +187,7 @@ describe('run-test', () => {
 
       const apiHelper = {
         getBatch: () => ({results: []}),
-        getPresignedURL: () => ({url: 'url'}),
+        getTunnelPresignedURL: () => ({url: 'url'}),
         pollResults: () => [getApiResult('1', getApiTest())],
         triggerTests: () => mockTestTriggerResponse,
       }
@@ -240,7 +240,7 @@ describe('run-test', () => {
       })
     })
 
-    test('getPresignedURL throws', async () => {
+    test('getTunnelPresignedURL throws', async () => {
       jest.spyOn(utils, 'getTestsToTrigger').mockReturnValue(
         Promise.resolve({
           overriddenTestsToTrigger: [],
@@ -253,7 +253,7 @@ describe('run-test', () => {
       serverError.response = {data: {errors: ['Bad Gateway']}, status: 502} as AxiosResponse
       serverError.config = {baseURL: 'baseURL', url: 'url'}
       const apiHelper = {
-        getPresignedURL: jest.fn(() => {
+        getTunnelPresignedURL: jest.fn(() => {
           throw serverError
         }),
       }
@@ -282,7 +282,7 @@ describe('run-test', () => {
       serverError.response = {data: {errors: ['Bad Gateway']}, status: 502} as AxiosResponse
       serverError.config = {baseURL: 'baseURL', url: 'url'}
       const apiHelper = {
-        getPresignedURL: () => ({url: 'url'}),
+        getTunnelPresignedURL: () => ({url: 'url'}),
         triggerTests: jest.fn(() => {
           throw serverError
         }),
@@ -333,7 +333,7 @@ describe('run-test', () => {
 
       const apiHelper = {
         getBatch: () => ({results: []}),
-        getPresignedURL: () => ({url: 'url'}),
+        getTunnelPresignedURL: () => ({url: 'url'}),
         pollResults: jest.fn(() => {
           throw serverError
         }),

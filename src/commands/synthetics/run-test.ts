@@ -81,7 +81,7 @@ export const executeTests = async (reporter: MainReporter, config: CommandConfig
     let presignedURL: string
     try {
       // Get the pre-signed URL to connect to the tunnel service
-      presignedURL = (await api.getPresignedURL(publicIdsToTrigger)).url
+      presignedURL = (await api.getTunnelPresignedURL(publicIdsToTrigger)).url
     } catch (error) {
       throw new CriticalError('UNAVAILABLE_TUNNEL_CONFIG', error.message)
     }
