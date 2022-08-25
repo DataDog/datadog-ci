@@ -139,6 +139,25 @@ const getTunnelPresignedURL = (request: (args: AxiosRequestConfig) => AxiosPromi
   return resp.data
 }
 
+const getMobileApplicationPresignedURL = (request: (args: AxiosRequestConfig) => AxiosPromise<{url: string}>) => async (
+  applicationId: string,
+  md5: string
+) => {
+  const resp = await retryRequest(
+    {
+      method: 'POST',
+      params: {
+        md5,
+      },
+      paramsSerializer: (params) => stringify(params),
+      url: `/synthetics/mobile/applications/${applicationId}/presigned-url`,
+    },
+    request
+  )
+
+  return resp.data
+}
+
 type RetryPolicy = (retries: number, error: AxiosError) => number | undefined
 
 const retryOn5xxErrors: RetryPolicy = (retries, error) => {
@@ -185,6 +204,7 @@ export const apiConstructor = (configuration: APIConfiguration) => {
 
   return {
     getBatch: getBatch(request),
+    getMobileApplicationPresignedURL: getMobileApplicationPresignedURL(request),
     getTest: getTest(request),
     getTunnelPresignedURL: getTunnelPresignedURL(requestIntake),
     pollResults: pollResults(request),

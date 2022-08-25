@@ -71,6 +71,12 @@ describe('dd-api', () => {
         shouldBeRetriedOn5xx: true,
       },
       {
+        makeApiRequest: () => api.getMobileApplicationPresignedURL('applicationId', 'md5'),
+        name: 'get presigned url' as const,
+        shouldBeRetriedOn404: false,
+        shouldBeRetriedOn5xx: true,
+      },
+      {
         makeApiRequest: () => api.getTunnelPresignedURL(['test-id']),
         name: 'get presigned url' as const,
         shouldBeRetriedOn404: false,
@@ -129,7 +135,16 @@ describe('dd-api', () => {
     )
   })
 
-  test('should get a presigned URL from api', async () => {
+  test('should get a mobile application presigned URL from api', async () => {
+    const spy = jest.spyOn(axios, 'create').mockImplementation((() => () => ({data: PRESIGNED_URL_PAYLOAD})) as any)
+    const api = apiConstructor(apiConfiguration)
+    const {getMobileApplicationPresignedURL} = api
+    const {url} = await getMobileApplicationPresignedURL('applicationId', 'md5')
+    expect(url).toEqual(PRESIGNED_URL_PAYLOAD.url)
+    spy.mockRestore()
+  })
+
+  test('should get a tunnel presigned URL from api', async () => {
     const spy = jest.spyOn(axios, 'create').mockImplementation((() => () => ({data: PRESIGNED_URL_PAYLOAD})) as any)
     const api = apiConstructor(apiConfiguration)
     const {getTunnelPresignedURL} = api
