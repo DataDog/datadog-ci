@@ -2,13 +2,20 @@
 import {spawn} from 'child_process'
 import {Cli, Command} from 'clipanion'
 import {existsSync} from 'fs'
+import {sep} from 'path'
 import {UploadCommand} from './upload'
 
+/**
+ * Because jest cannot mock require.resolve, reactNativePath cannot
+ * be unit tested. If you make any change to it, make sure to test
+ * it with a real project.
+ */
 const reactNativePath = (() => {
   try {
     const reactNativeIndexFile = require.resolve('react-native')
 
-    return `${reactNativeIndexFile}/..`
+    // We need to remove the trailing "/index.js" at the end of the path
+    return reactNativeIndexFile.split(sep).slice(0, -1).join(sep)
   } catch (error) {
     return 'node_modules/react-native'
   }
