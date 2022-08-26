@@ -270,10 +270,10 @@ describe('utils', () => {
     })
   })
 
-  describe('handleConfig', () => {
+  describe('getOverriddenConfig', () => {
     test('empty config returns simple payload', () => {
       const publicId = 'abc-def-ghi'
-      expect(utils.handleConfig({public_id: publicId} as Test, publicId, mockReporter)).toEqual({
+      expect(utils.getOverriddenConfig({public_id: publicId} as Test, publicId, mockReporter)).toEqual({
         executionRule: ExecutionRule.BLOCKING,
         public_id: publicId,
       })
@@ -300,10 +300,10 @@ describe('utils', () => {
 
         expect(utils.getExecutionRule(fakeTest, configOverride)).toBe(expectedExecutionRule)
 
-        const handledConfig = utils.handleConfig(fakeTest, publicId, mockReporter, configOverride)
+        const overriddenConfig = utils.getOverriddenConfig(fakeTest, publicId, mockReporter, configOverride)
 
-        expect(handledConfig.public_id).toBe(publicId)
-        expect(handledConfig.executionRule).toBe(expectedExecutionRule)
+        expect(overriddenConfig.public_id).toBe(publicId)
+        expect(overriddenConfig.executionRule).toBe(expectedExecutionRule)
       }
 
       const BLOCKING = ExecutionRule.BLOCKING
@@ -342,22 +342,22 @@ describe('utils', () => {
       }
       const expectedUrl = 'https://example.org/newPath?oldPath=/path#target'
 
-      let handledConfig = utils.handleConfig(fakeTest, publicId, mockReporter, configOverride)
-      expect(handledConfig.public_id).toBe(publicId)
-      expect(handledConfig.startUrl).toBe(expectedUrl)
+      let overriddenConfig = utils.getOverriddenConfig(fakeTest, publicId, mockReporter, configOverride)
+      expect(overriddenConfig.public_id).toBe(publicId)
+      expect(overriddenConfig.startUrl).toBe(expectedUrl)
 
       fakeTest.type = 'api'
       fakeTest.subtype = 'http'
 
-      handledConfig = utils.handleConfig(fakeTest, publicId, mockReporter, configOverride)
-      expect(handledConfig.public_id).toBe(publicId)
-      expect(handledConfig.startUrl).toBe(expectedUrl)
+      overriddenConfig = utils.getOverriddenConfig(fakeTest, publicId, mockReporter, configOverride)
+      expect(overriddenConfig.public_id).toBe(publicId)
+      expect(overriddenConfig.startUrl).toBe(expectedUrl)
 
       fakeTest.subtype = 'dns'
 
-      handledConfig = utils.handleConfig(fakeTest, publicId, mockReporter, configOverride)
-      expect(handledConfig.public_id).toBe(publicId)
-      expect(handledConfig.startUrl).toBeUndefined()
+      overriddenConfig = utils.getOverriddenConfig(fakeTest, publicId, mockReporter, configOverride)
+      expect(overriddenConfig.public_id).toBe(publicId)
+      expect(overriddenConfig.startUrl).toBeUndefined()
     })
 
     test('startUrl is not parsable', () => {
@@ -373,10 +373,10 @@ describe('utils', () => {
         startUrl: 'https://{{DOMAIN}}/newPath?oldPath={{CUSTOMVAR}}',
       }
       const expectedUrl = 'https://{{DOMAIN}}/newPath?oldPath=/newPath'
-      const handledConfig = utils.handleConfig(fakeTest, publicId, mockReporter, configOverride)
+      const overriddenConfig = utils.getOverriddenConfig(fakeTest, publicId, mockReporter, configOverride)
 
-      expect(handledConfig.public_id).toBe(publicId)
-      expect(handledConfig.startUrl).toBe(expectedUrl)
+      expect(overriddenConfig.public_id).toBe(publicId)
+      expect(overriddenConfig.startUrl).toBe(expectedUrl)
       process.env = envVars
     })
 
@@ -391,10 +391,10 @@ describe('utils', () => {
         startUrl: 'http://127.0.0.1/newPath{{PARAMS}}',
       }
       const expectedUrl = 'http://127.0.0.1/newPath'
-      const handledConfig = utils.handleConfig(fakeTest, publicId, mockReporter, configOverride)
+      const overriddenConfig = utils.getOverriddenConfig(fakeTest, publicId, mockReporter, configOverride)
 
-      expect(handledConfig.public_id).toBe(publicId)
-      expect(handledConfig.startUrl).toBe(expectedUrl)
+      expect(overriddenConfig.public_id).toBe(publicId)
+      expect(overriddenConfig.startUrl).toBe(expectedUrl)
     })
 
     test('config overrides are applied', () => {
@@ -424,7 +424,7 @@ describe('utils', () => {
         variables: {VAR_1: 'value'},
       }
 
-      expect(utils.handleConfig(fakeTest, publicId, mockReporter, configOverride)).toEqual({
+      expect(utils.getOverriddenConfig(fakeTest, publicId, mockReporter, configOverride)).toEqual({
         ...configOverride,
         public_id: publicId,
       })

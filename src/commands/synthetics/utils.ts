@@ -48,7 +48,7 @@ const template = (st: string, context: any): string =>
 
 export let ciTriggerApp = process.env.DATADOG_SYNTHETICS_CI_TRIGGER_APP || 'npm_package'
 
-export const handleConfig = (
+export const getOverriddenConfig = (
   test: Test,
   publicId: string,
   reporter: MainReporter,
@@ -466,6 +466,7 @@ const getTest = async (api: APIHelper, {id, suite}: TriggerConfig): Promise<{tes
   } catch (error) {
     if (isNotFoundError(error)) {
       const errorMessage = formatBackendErrors(error)
+
       return {errorMessage: `[${chalk.bold.dim(id)}] ${chalk.yellow.bold('Test not found')}: ${errorMessage}`}
     }
 
@@ -484,17 +485,19 @@ const getTestAndOverrideConfig = async (
   const getTestResult = await getTest(api, {config, id, suite})
   if ('errorMessage' in getTestResult) {
     summary.testsNotFound.add(id)
+
     return {errorMessage: getTestResult.errorMessage}
   }
 
   const test = getTestResult.test
-  const overriddenConfig = handleConfig(test, id, reporter, config)
+  const overriddenConfig = getOverriddenConfig(test, id, reporter, config)
 
   reporter.testTrigger(test, id, overriddenConfig.executionRule, config)
   if (overriddenConfig.executionRule === ExecutionRule.SKIPPED) {
     summary.skipped++
   } else {
     reporter.testWait(test)
+
     return {overriddenConfig, test}
   }
 
