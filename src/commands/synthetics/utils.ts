@@ -293,7 +293,7 @@ export const waitForResults = async (
     return hasTunnel ? 'Tunneled' : locationNames[dcId] || dcId
   }
 
-  const getTest = (id: string): Test => tests.find((t) => t.public_id === id)!
+  const getTestWithPublicId = (id: string): Test => tests.find((t) => t.public_id === id)!
 
   const maxPollingDate = Date.now() + options.maxPollingTimeout
   const emittedResultIndexes = new Set<number>()
@@ -345,7 +345,7 @@ export const waitForResults = async (
       pollResult.result.passed = false
     }
 
-    const test = getTest(resultInBatch.test_public_id)
+    const test = getTestWithPublicId(resultInBatch.test_public_id)
     results.push({
       executionRule: resultInBatch.execution_rule,
       location: getLocation(resultInBatch.location, test),
