@@ -48,24 +48,24 @@ const template = (st: string, context: any): string =>
 
 export let ciTriggerApp = process.env.DATADOG_SYNTHETICS_CI_TRIGGER_APP || 'npm_package'
 
-export const handleConfig = (
+export const getOverriddenConfig = (
   test: Test,
   publicId: string,
   reporter: MainReporter,
   config?: ConfigOverride
 ): TestPayload => {
   const executionRule = getExecutionRule(test, config)
-  let handledConfig: TestPayload = {
+  let overriddenConfig: TestPayload = {
     executionRule,
     public_id: publicId,
   }
 
   if (!config || !Object.keys(config).length) {
-    return handledConfig
+    return overriddenConfig
   }
 
-  handledConfig = {
-    ...handledConfig,
+  overriddenConfig = {
+    ...overriddenConfig,
     ...pick(config, [
       'allowInsecureCertificates',
       'basicAuth',
@@ -90,10 +90,10 @@ export const handleConfig = (
     if (URL_VARIABLES.some((v) => config.startUrl?.includes(v))) {
       reporter.error('[DEPRECATION] The usage of URL variables is deprecated, see explanation in the README\n\n')
     }
-    handledConfig.startUrl = template(config.startUrl, context)
+    overriddenConfig.startUrl = template(config.startUrl, context)
   }
 
-  return handledConfig
+  return overriddenConfig
 }
 
 export const setCiTriggerApp = (source: string): void => {
@@ -293,7 +293,7 @@ export const waitForResults = async (
     return hasTunnel ? 'Tunneled' : locationNames[dcId] || dcId
   }
 
-  const getTest = (id: string): Test => tests.find((t) => t.public_id === id)!
+  const getTestWithPublicId = (publicId: string): Test => tests.find((t) => t.public_id === publicId)!
 
   const maxPollingDate = Date.now() + options.maxPollingTimeout
   const emittedResultIndexes = new Set<number>()
@@ -345,7 +345,7 @@ export const waitForResults = async (
       pollResult.result.passed = false
     }
 
-    const test = getTest(resultInBatch.test_public_id)
+    const test = getTestWithPublicId(resultInBatch.test_public_id)
     results.push({
       executionRule: resultInBatch.execution_rule,
       location: getLocation(resultInBatch.location, test),
@@ -455,16 +455,62 @@ export const getReporter = (reporters: Reporter[]): MainReporter => ({
   },
 })
 
+const getTest = async (api: APIHelper, {id, suite}: TriggerConfig): Promise<{test: Test} | {errorMessage: string}> => {
+  try {
+    const test = {
+      ...(await api.getTest(id)),
+      suite,
+    }
+
+    return {test}
+  } catch (error) {
+    if (isNotFoundError(error)) {
+      const errorMessage = formatBackendErrors(error)
+
+      return {errorMessage: `[${chalk.bold.dim(id)}] ${chalk.yellow.bold('Test not found')}: ${errorMessage}`}
+    }
+
+    throw error
+  }
+}
+
+const getTestAndOverrideConfig = async (
+  api: APIHelper,
+  {config, id, suite}: TriggerConfig,
+  reporter: MainReporter,
+  summary: Summary
+) => {
+  const normalizedId = PUBLIC_ID_REGEX.test(id) ? id : id.substr(id.lastIndexOf('/') + 1)
+
+  const testResult = await getTest(api, {config, id: normalizedId, suite})
+  if ('errorMessage' in testResult) {
+    summary.testsNotFound.add(normalizedId)
+
+    return {errorMessage: testResult.errorMessage}
+  }
+
+  const {test} = testResult
+  const overriddenConfig = getOverriddenConfig(test, normalizedId, reporter, config)
+
+  reporter.testTrigger(test, normalizedId, overriddenConfig.executionRule, config)
+  if (overriddenConfig.executionRule === ExecutionRule.SKIPPED) {
+    summary.skipped++
+  } else {
+    reporter.testWait(test)
+
+    return {overriddenConfig, test}
+  }
+
+  return {overriddenConfig}
+}
+
 export const getTestsToTrigger = async (
   api: APIHelper,
   triggerConfigs: TriggerConfig[],
   reporter: MainReporter,
   triggerFromSearch?: boolean
 ) => {
-  const overriddenTestsToTrigger: TestPayload[] = []
   const errorMessages: string[] = []
-  const summary = createSummary()
-
   // When too many tests are triggered, if fetched from a search query: simply trim them and show a warning,
   // otherwise: retrieve them and fail later if still exceeding without skipped/missing tests.
   if (triggerConfigs.length > MAX_TESTS_TO_TRIGGER && triggerFromSearch) {
@@ -475,40 +521,26 @@ export const getTestsToTrigger = async (
     )
   }
 
-  const tests = await Promise.all(
-    triggerConfigs.map(async ({config, id, suite}) => {
-      let test: Test | undefined
-      id = PUBLIC_ID_REGEX.test(id) ? id : id.substr(id.lastIndexOf('/') + 1)
-      try {
-        test = {
-          ...(await api.getTest(id)),
-          suite,
-        }
-      } catch (error) {
-        if (isNotFoundError(error)) {
-          summary.testsNotFound.add(id)
-          const errorMessage = formatBackendErrors(error)
-          errorMessages.push(`[${chalk.bold.dim(id)}] ${chalk.yellow.bold('Test not found')}: ${errorMessage}`)
-
-          return
-        }
-
-        throw error
-      }
-
-      const overriddenConfig = handleConfig(test, id, reporter, config)
-      overriddenTestsToTrigger.push(overriddenConfig)
-
-      reporter.testTrigger(test, id, overriddenConfig.executionRule, config)
-      if (overriddenConfig.executionRule === ExecutionRule.SKIPPED) {
-        summary.skipped++
-      } else {
-        reporter.testWait(test)
-
-        return test
-      }
-    })
+  const summary = createSummary()
+  const testsAndConfigsOverride = await Promise.all(
+    triggerConfigs.map((triggerConfig) => getTestAndOverrideConfig(api, triggerConfig, reporter, summary))
   )
+
+  const overriddenTestsToTrigger: TestPayload[] = []
+  const waitedTests: Test[] = []
+  testsAndConfigsOverride.forEach(({test, errorMessage, overriddenConfig}) => {
+    if (errorMessage) {
+      errorMessages.push(errorMessage)
+    }
+
+    if (overriddenConfig) {
+      overriddenTestsToTrigger.push(overriddenConfig)
+    }
+
+    if (test) {
+      waitedTests.push(test)
+    }
+  })
 
   // Display errors at the end of all tests for better visibility.
   reporter.initErrors(errorMessages)
@@ -522,7 +554,6 @@ export const getTestsToTrigger = async (
     )
   }
 
-  const waitedTests = tests.filter(definedTypeGuard)
   if (waitedTests.length > 0) {
     reporter.testsWait(waitedTests)
   }
@@ -556,8 +587,6 @@ export const fetchTest = async (publicId: string, config: SyntheticsCIConfig): P
 
   return apiHelper.getTest(publicId)
 }
-
-const definedTypeGuard = <T>(o: T | undefined): o is T => !!o
 
 export const retry = async <T, E extends Error>(
   func: () => Promise<T>,
