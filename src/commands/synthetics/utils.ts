@@ -25,6 +25,7 @@ import {
   PollResult,
   Reporter,
   Result,
+  ResultInBatch,
   ServerResult,
   Suite,
   Summary,
@@ -319,6 +320,35 @@ const waitForBatchToFinish = async (
   return {batch, hasExceededMaxPollingDate}
 }
 
+const getResultFromBatch = (
+  getLocation: (dcId: string, test: Test) => string,
+  hasExceededMaxPollingDate: boolean,
+  failOnCriticalErrors: boolean,
+  failOnTimeout: boolean,
+  pollResultMap: {[key: string]: PollResult},
+  resultInBatch: ResultInBatch,
+  tests: Test[]
+): Result => {
+  const pollResult = pollResultMap[resultInBatch.result_id]
+  const hasTimeout = resultInBatch.timed_out || (hasExceededMaxPollingDate && resultInBatch.timed_out !== false)
+  if (hasTimeout) {
+    pollResult.result.failure = {code: 'TIMEOUT', message: 'Result timed out'}
+    pollResult.result.passed = false
+  }
+
+  const test = getTestByPublicId(resultInBatch.test_public_id, tests)
+  return {
+    executionRule: resultInBatch.execution_rule,
+    location: getLocation(resultInBatch.location, test),
+    passed: hasResultPassed(pollResult.result, hasTimeout, failOnCriticalErrors, failOnTimeout),
+    result: pollResult.result,
+    resultId: resultInBatch.result_id,
+    test: deepExtend(test, pollResult.check),
+    timedOut: hasTimeout,
+    timestamp: pollResult.timestamp,
+  }
+}
+
 export const waitForResults = async (
   api: APIHelper,
   trigger: Trigger,
@@ -365,24 +395,17 @@ export const waitForResults = async (
   const pollResultMap = await getPollResultMap(api, batch)
   const results: Result[] = []
   for (const resultInBatch of batch.results) {
-    const pollResult = pollResultMap[resultInBatch.result_id]
-    const hasTimeout = resultInBatch.timed_out || (hasExceededMaxPollingDate && resultInBatch.timed_out !== false)
-    if (hasTimeout) {
-      pollResult.result.failure = {code: 'TIMEOUT', message: 'Result timed out'}
-      pollResult.result.passed = false
-    }
-
-    const test = getTestByPublicId(resultInBatch.test_public_id, tests)
-    results.push({
-      executionRule: resultInBatch.execution_rule,
-      location: getLocation(resultInBatch.location, test),
-      passed: hasResultPassed(pollResult.result, hasTimeout, options.failOnCriticalErrors!!, options.failOnTimeout!!),
-      result: pollResult.result,
-      resultId: resultInBatch.result_id,
-      test: deepExtend(test, pollResult.check),
-      timedOut: hasTimeout,
-      timestamp: pollResult.timestamp,
-    })
+    results.push(
+      getResultFromBatch(
+        getLocation,
+        hasExceededMaxPollingDate,
+        options.failOnCriticalErrors!!,
+        options.failOnTimeout!!,
+        pollResultMap,
+        resultInBatch,
+        tests
+      )
+    )
   }
 
   return results
