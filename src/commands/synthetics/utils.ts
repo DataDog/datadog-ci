@@ -337,6 +337,7 @@ const getResultFromBatch = (
   }
 
   const test = getTestByPublicId(resultInBatch.test_public_id, tests)
+
   return {
     executionRule: resultInBatch.execution_rule,
     location: getLocation(resultInBatch.location, test),
