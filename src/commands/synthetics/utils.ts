@@ -56,17 +56,17 @@ export const getOverriddenConfig = (
   config?: ConfigOverride
 ): TestPayload => {
   const executionRule = getExecutionRule(test, config)
-  let handledConfig: TestPayload = {
+  let overriddenConfig: TestPayload = {
     executionRule,
     public_id: publicId,
   }
 
   if (!config || !Object.keys(config).length) {
-    return handledConfig
+    return overriddenConfig
   }
 
-  handledConfig = {
-    ...handledConfig,
+  overriddenConfig = {
+    ...overriddenConfig,
     ...pick(config, [
       'allowInsecureCertificates',
       'basicAuth',
@@ -91,10 +91,10 @@ export const getOverriddenConfig = (
     if (URL_VARIABLES.some((v) => config.startUrl?.includes(v))) {
       reporter.error('[DEPRECATION] The usage of URL variables is deprecated, see explanation in the README\n\n')
     }
-    handledConfig.startUrl = template(config.startUrl, context)
+    overriddenConfig.startUrl = template(config.startUrl, context)
   }
 
-  return handledConfig
+  return overriddenConfig
 }
 
 export const setCiTriggerApp = (source: string): void => {
@@ -362,6 +362,10 @@ export const waitForResults = async (
     return hasTunnel ? 'Tunneled' : locationNames[dcId] || dcId
   }
 
+  if (tunnel && !isTunnelConnected) {
+    reporter.error('The tunnel has stopped working, this may have affected the results.')
+  }
+
   const pollResultMap = await getPollResultMap(api, batch)
   const results: Result[] = []
   for (const resultInBatch of batch.results) {
@@ -507,19 +511,19 @@ const getTestAndOverrideConfig = async (
   reporter: MainReporter,
   summary: Summary
 ) => {
-  id = PUBLIC_ID_REGEX.test(id) ? id : id.substr(id.lastIndexOf('/') + 1)
+  const normalizedId = PUBLIC_ID_REGEX.test(id) ? id : id.substr(id.lastIndexOf('/') + 1)
 
-  const getTestResult = await getTest(api, {config, id, suite})
-  if ('errorMessage' in getTestResult) {
-    summary.testsNotFound.add(id)
+  const testResult = await getTest(api, {config, id: normalizedId, suite})
+  if ('errorMessage' in testResult) {
+    summary.testsNotFound.add(normalizedId)
 
-    return {errorMessage: getTestResult.errorMessage}
+    return {errorMessage: testResult.errorMessage}
   }
 
-  const test = getTestResult.test
-  const overriddenConfig = getOverriddenConfig(test, id, reporter, config)
+  const {test} = testResult
+  const overriddenConfig = getOverriddenConfig(test, normalizedId, reporter, config)
 
-  reporter.testTrigger(test, id, overriddenConfig.executionRule, config)
+  reporter.testTrigger(test, normalizedId, overriddenConfig.executionRule, config)
   if (overriddenConfig.executionRule === ExecutionRule.SKIPPED) {
     summary.skipped++
   } else {
