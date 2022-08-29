@@ -362,10 +362,6 @@ export const waitForResults = async (
     return hasTunnel ? 'Tunneled' : locationNames[dcId] || dcId
   }
 
-  if (tunnel && !isTunnelConnected) {
-    reporter.error('The tunnel has stopped working, this may have affected the results.')
-  }
-
   const pollResultMap = await getPollResultMap(api, batch)
   const results: Result[] = []
   for (const resultInBatch of batch.results) {
