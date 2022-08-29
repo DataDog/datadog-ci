@@ -261,6 +261,29 @@ export const getSuites = async (GLOB: string, reporter: MainReporter): Promise<S
 
 export const wait = async (duration: number) => new Promise((resolve) => setTimeout(resolve, duration))
 
+const processBatch = async (
+  api: APIHelper,
+  emittedResultIndexes: Set<number>,
+  trigger: Trigger,
+  reporter: MainReporter
+) => {
+  try {
+    const currentBatch = await api.getBatch(trigger.batch_id)
+    for (const [index, result] of currentBatch.results.entries()) {
+      if (result.status !== 'in_progress' && !emittedResultIndexes.has(index)) {
+        emittedResultIndexes.add(index)
+        reporter.resultReceived(result)
+      }
+    }
+
+    return currentBatch
+  } catch (e) {
+    throw new EndpointError(`Failed to get batch: ${formatBackendErrors(e)}\n`, e.response?.status)
+  }
+}
+
+const getTestByPublicId = (id: string, tests: Test[]): Test => tests.find((t) => t.public_id === id)!
+
 export const waitForResults = async (
   api: APIHelper,
   trigger: Trigger,
@@ -293,33 +316,16 @@ export const waitForResults = async (
     return hasTunnel ? 'Tunneled' : locationNames[dcId] || dcId
   }
 
-  const getTestWithPublicId = (id: string): Test => tests.find((t) => t.public_id === id)!
-
   const maxPollingDate = Date.now() + options.maxPollingTimeout
   const emittedResultIndexes = new Set<number>()
-  const processBatch = async () => {
-    try {
-      const currentBatch = await api.getBatch(trigger.batch_id)
-      for (const [index, result] of currentBatch.results.entries()) {
-        if (result.status !== 'in_progress' && !emittedResultIndexes.has(index)) {
-          emittedResultIndexes.add(index)
-          reporter.resultReceived(result)
-        }
-      }
 
-      return currentBatch
-    } catch (e) {
-      throw new EndpointError(`Failed to get batch: ${formatBackendErrors(e)}\n`, e.response?.status)
-    }
-  }
-
-  let batch = await processBatch()
+  let batch = await processBatch(api, emittedResultIndexes, trigger, reporter)
   // In theory polling the batch is enough, but in case something goes wrong backend-side
   // let's add a check to ensure it eventually times out.
   let hasExceededMaxPollingDate = Date.now() >= maxPollingDate
   while (batch.status === 'in_progress' && !hasExceededMaxPollingDate) {
     await wait(POLLING_INTERVAL)
-    batch = await processBatch()
+    batch = await processBatch(api, emittedResultIndexes, trigger, reporter)
     hasExceededMaxPollingDate = Date.now() >= maxPollingDate
   }
 
@@ -345,7 +351,7 @@ export const waitForResults = async (
       pollResult.result.passed = false
     }
 
-    const test = getTestWithPublicId(resultInBatch.test_public_id)
+    const test = getTestByPublicId(resultInBatch.test_public_id, tests)
     results.push({
       executionRule: resultInBatch.execution_rule,
       location: getLocation(resultInBatch.location, test),
