@@ -15,6 +15,7 @@ import {APIHelper, EndpointError, formatBackendErrors, isNotFoundError} from './
 import {MAX_TESTS_TO_TRIGGER} from './command'
 import {CiError, CriticalError} from './errors'
 import {
+  Batch,
   CommandConfig,
   ConfigOverride,
   ExecutionRule,
@@ -284,6 +285,18 @@ const processBatch = async (
 
 const getTestByPublicId = (id: string, tests: Test[]): Test => tests.find((t) => t.public_id === id)!
 
+const getPollResultMap = async (api: APIHelper, batch: Batch) => {
+  try {
+    const pollResults = await api.pollResults(batch.results.map((r) => r.result_id))
+    const pollResultMap: {[key: string]: PollResult} = {}
+    pollResults.forEach((r) => (pollResultMap[r.resultID] = r))
+
+    return pollResultMap
+  } catch (e) {
+    throw new EndpointError(`Failed to poll results: ${formatBackendErrors(e)}\n`, e.response?.status)
+  }
+}
+
 export const waitForResults = async (
   api: APIHelper,
   trigger: Trigger,
@@ -333,16 +346,8 @@ export const waitForResults = async (
     reporter.error('The tunnel has stopped working, this may have affected the results.')
   }
 
+  const pollResultMap = await getPollResultMap(api, batch)
   const results: Result[] = []
-
-  const pollResultMap: {[key: string]: PollResult} = {}
-  try {
-    const pollResults = await api.pollResults(batch.results.map((r) => r.result_id))
-    pollResults.forEach((r) => (pollResultMap[r.resultID] = r))
-  } catch (e) {
-    throw new EndpointError(`Failed to poll results: ${formatBackendErrors(e)}\n`, e.response?.status)
-  }
-
   for (const resultInBatch of batch.results) {
     const pollResult = pollResultMap[resultInBatch.result_id]
     const hasTimeout = resultInBatch.timed_out || (hasExceededMaxPollingDate && resultInBatch.timed_out !== false)
