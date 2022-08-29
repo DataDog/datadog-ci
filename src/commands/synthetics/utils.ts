@@ -297,6 +297,28 @@ const getPollResultMap = async (api: APIHelper, batch: Batch) => {
   }
 }
 
+const waitForBatchToFinish = async (
+  api: APIHelper,
+  maxPollingTimeout: number,
+  trigger: Trigger,
+  reporter: MainReporter
+): Promise<{batch: Batch; hasExceededMaxPollingDate: boolean}> => {
+  const maxPollingDate = Date.now() + maxPollingTimeout
+  const emittedResultIndexes = new Set<number>()
+
+  let batch = await getBatch(api, emittedResultIndexes, trigger, reporter)
+  // In theory polling the batch is enough, but in case something goes wrong backend-side
+  // let's add a check to ensure it eventually times out.
+  let hasExceededMaxPollingDate = Date.now() >= maxPollingDate
+  while (batch.status === 'in_progress' && !hasExceededMaxPollingDate) {
+    await wait(POLLING_INTERVAL)
+    batch = await getBatch(api, emittedResultIndexes, trigger, reporter)
+    hasExceededMaxPollingDate = Date.now() >= maxPollingDate
+  }
+
+  return {batch, hasExceededMaxPollingDate}
+}
+
 export const waitForResults = async (
   api: APIHelper,
   trigger: Trigger,
@@ -317,6 +339,17 @@ export const waitForResults = async (
       .catch(() => (isTunnelConnected = false))
   }
 
+  const {batch, hasExceededMaxPollingDate} = await waitForBatchToFinish(
+    api,
+    options.maxPollingTimeout,
+    trigger,
+    reporter
+  )
+
+  if (tunnel && !isTunnelConnected) {
+    reporter.error('The tunnel has stopped working, this may have affected the results.')
+  }
+
   const locationNames = trigger.locations.reduce<LocationsMapping>((mapping, location) => {
     mapping[location.name] = location.display_name
 
@@ -327,23 +360,6 @@ export const waitForResults = async (
     const hasTunnel = !!tunnel && (test.type === 'browser' || test.subtype === 'http')
 
     return hasTunnel ? 'Tunneled' : locationNames[dcId] || dcId
-  }
-
-  const maxPollingDate = Date.now() + options.maxPollingTimeout
-  const emittedResultIndexes = new Set<number>()
-
-  let batch = await getBatch(api, emittedResultIndexes, trigger, reporter)
-  // In theory polling the batch is enough, but in case something goes wrong backend-side
-  // let's add a check to ensure it eventually times out.
-  let hasExceededMaxPollingDate = Date.now() >= maxPollingDate
-  while (batch.status === 'in_progress' && !hasExceededMaxPollingDate) {
-    await wait(POLLING_INTERVAL)
-    batch = await getBatch(api, emittedResultIndexes, trigger, reporter)
-    hasExceededMaxPollingDate = Date.now() >= maxPollingDate
-  }
-
-  if (tunnel && !isTunnelConnected) {
-    reporter.error('The tunnel has stopped working, this may have affected the results.')
   }
 
   const pollResultMap = await getPollResultMap(api, batch)
