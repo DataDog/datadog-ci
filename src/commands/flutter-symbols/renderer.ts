@@ -29,3 +29,17 @@ export const renderMissingAndroidMappingFile = (mappingLocation: string) =>
   chalk.red(`${ICONS.FAILED} Error: Could not locate Android Mapping file at ${mappingLocation}.\n`)
 
 export const renderGeneralizedError = (error: any) => chalk.red(`${ICONS.FAILED} Error: ${error}\n`)
+
+export const renderFailedUpload = (filePath: string, errorMessage: string) => {
+  const filePathBold = `[${chalk.bold.dim(filePath)}]`
+
+  return chalk.red(`${ICONS.FAILED} Failed upload for ${filePathBold}: ${errorMessage}\n`)
+}
+
+export const renderRetriedUpload = (filePath: string, errorMessage: string, attempt: number) => {
+  const sourcemapPathBold = `[${chalk.bold.dim(filePath)}]`
+
+  return chalk.yellow(`[attempt ${attempt}] Retrying upload ${sourcemapPathBold}: ${errorMessage}\n`)
+}
+
+export const renderUpload = (type: string, filePath: string): string => `Uploading ${type} ${filePath}\n`

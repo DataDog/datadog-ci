@@ -313,10 +313,11 @@ describe('flutter-symbol upload', () => {
       expect(uploadMultipartHelper).toHaveBeenCalled()
       const payload = (uploadMultipartHelper as jest.Mock).mock.calls[0][1] as MultipartPayload
       expect(JSON.parse(payload.content.get('event')?.value as string)).toStrictEqual(expectedMetadata)
-      expect(payload.content.get('jvm_mapping')?.value).toBeInstanceOf(ReadStream)
-      expect((payload.content.get('jvm_mapping')?.value as ReadStream).path).toBe(
-        `${fixtureDir}/android/fake-mapping.txt`
-      )
+      const mappingFileItem = payload.content.get('jvm_mapping_file')
+      expect(mappingFileItem).toBeTruthy()
+      expect((mappingFileItem?.options as FormData.AppendOptions).filename).toBe('mapping.txt')
+      expect(mappingFileItem?.value).toBeInstanceOf(ReadStream)
+      expect((mappingFileItem?.value as ReadStream).path).toBe(`${fixtureDir}/android/fake-mapping.txt`)
       expect(exitCode).toBe(0)
     })
 
@@ -369,6 +370,19 @@ describe('flutter-symbol upload', () => {
       expect(JSON.parse(repoValue?.value as string)).toStrictEqual(expectedRepository)
       expect((repoValue?.options as FormData.AppendOptions).filename).toBe('repository')
       expect((repoValue?.options as FormData.AppendOptions).contentType).toBe('application/json')
+      expect(exitCode).toBe(0)
+    })
+
+    test('skips upload on dry run', async () => {
+      ;(uploadMultipartHelper as jest.Mock).mockResolvedValueOnce('')
+
+      const {exitCode} = await runCommand((cmd) => {
+        addDefaultCommandParameters(cmd)
+        cmd['androidMappingLocation'] = `${fixtureDir}/android/fake-mapping.txt`
+        cmd['dryRun'] = true
+      })
+
+      expect(uploadMultipartHelper).not.toHaveBeenCalled()
       expect(exitCode).toBe(0)
     })
   })

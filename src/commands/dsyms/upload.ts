@@ -10,7 +10,7 @@ import {InvalidConfigurationError} from '../../helpers/errors'
 import {RequestBuilder} from '../../helpers/interfaces'
 import {getMetricsLogger, MetricsLogger} from '../../helpers/metrics'
 import {upload, UploadStatus} from '../../helpers/upload'
-import {buildPath, getRequestBuilder, resolveConfigFromFile} from '../../helpers/utils'
+import {buildPath, DEFAULT_CONFIG_PATH, getRequestBuilder, resolveConfigFromFile} from '../../helpers/utils'
 import {ArchSlice, CompressedDsym, Dsym} from './interfaces'
 import {
   renderCommandDetail,
@@ -33,8 +33,6 @@ import {
   unzipArchiveToDirectory,
   zipDirectoryToArchive,
 } from './utils'
-
-const DEFAULT_CONFIG_PATH = 'datadog-ci.json'
 
 export class UploadCommand extends Command {
   public static usage = Command.Usage({
