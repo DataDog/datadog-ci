@@ -262,12 +262,12 @@ export const getSuites = async (GLOB: string, reporter: MainReporter): Promise<S
 
 export const wait = async (duration: number) => new Promise((resolve) => setTimeout(resolve, duration))
 
-const processBatch = async (
+const getBatch = async (
   api: APIHelper,
   emittedResultIndexes: Set<number>,
   trigger: Trigger,
   reporter: MainReporter
-) => {
+): Promise<Batch> => {
   try {
     const currentBatch = await api.getBatch(trigger.batch_id)
     for (const [index, result] of currentBatch.results.entries()) {
@@ -332,13 +332,13 @@ export const waitForResults = async (
   const maxPollingDate = Date.now() + options.maxPollingTimeout
   const emittedResultIndexes = new Set<number>()
 
-  let batch = await processBatch(api, emittedResultIndexes, trigger, reporter)
+  let batch = await getBatch(api, emittedResultIndexes, trigger, reporter)
   // In theory polling the batch is enough, but in case something goes wrong backend-side
   // let's add a check to ensure it eventually times out.
   let hasExceededMaxPollingDate = Date.now() >= maxPollingDate
   while (batch.status === 'in_progress' && !hasExceededMaxPollingDate) {
     await wait(POLLING_INTERVAL)
-    batch = await processBatch(api, emittedResultIndexes, trigger, reporter)
+    batch = await getBatch(api, emittedResultIndexes, trigger, reporter)
     hasExceededMaxPollingDate = Date.now() >= maxPollingDate
   }
 
