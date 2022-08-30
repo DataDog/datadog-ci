@@ -154,15 +154,15 @@ export const getTestsList = async (
 ) => {
   // If "testSearchQuery" is provided, always default to running it.
   if (config.testSearchQuery) {
-    const testsToTrigger = await getTestListBySearchQuery(api, config.global, config.testSearchQuery)
+    const testsToTriggerBySearchQuery = await getTestListBySearchQuery(api, config.global, config.testSearchQuery)
 
-    if (testsToTrigger.length > MAX_TESTS_TO_TRIGGER) {
+    if (testsToTriggerBySearchQuery.length > MAX_TESTS_TO_TRIGGER) {
       reporter.error(
         `More than ${MAX_TESTS_TO_TRIGGER} tests returned by search query, only the first ${MAX_TESTS_TO_TRIGGER} will be fetched.\n`
       )
     }
 
-    return testsToTrigger
+    return testsToTriggerBySearchQuery
   }
 
   const suitesFromFiles = (await Promise.all(config.files.map((glob: string) => getSuites(glob, reporter!))))
