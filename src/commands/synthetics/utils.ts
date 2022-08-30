@@ -394,20 +394,17 @@ export const waitForResults = async (
   }
 
   const pollResultMap = await getPollResultMap(api, batch)
-  const results: Result[] = []
-  for (const resultInBatch of batch.results) {
-    results.push(
-      getResultFromBatch(
-        getLocation,
-        hasExceededMaxPollingDate,
-        options.failOnCriticalErrors!!,
-        options.failOnTimeout!!,
-        pollResultMap,
-        resultInBatch,
-        tests
-      )
+  const results = batch.results.map((resultInBatch) =>
+    getResultFromBatch(
+      getLocation,
+      hasExceededMaxPollingDate,
+      options.failOnCriticalErrors!!,
+      options.failOnTimeout!!,
+      pollResultMap,
+      resultInBatch,
+      tests
     )
-  }
+  )
 
   return results
 }
