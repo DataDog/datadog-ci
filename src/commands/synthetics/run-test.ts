@@ -3,6 +3,7 @@ import {MAX_TESTS_TO_TRIGGER} from './command'
 import {CiError, CriticalError} from './errors'
 import {
   CommandConfig,
+  ConfigOverride,
   MainReporter,
   Suite,
   Summary,
@@ -131,6 +132,20 @@ export const executeTests = async (reporter: MainReporter, config: CommandConfig
   }
 }
 
+const getTestListBySearchQuery = async (
+  api: APIHelper,
+  globalConfigOverride: ConfigOverride,
+  testSearchQuery: string
+) => {
+  const testSearchResults = await api.searchTests(testSearchQuery)
+
+  return testSearchResults.tests.map((test) => ({
+    config: globalConfigOverride,
+    id: test.public_id,
+    suite: `Query: ${testSearchQuery}`,
+  }))
+}
+
 export const getTestsList = async (
   api: APIHelper,
   config: SyntheticsCIConfig,
@@ -139,18 +154,15 @@ export const getTestsList = async (
 ) => {
   // If "testSearchQuery" is provided, always default to running it.
   if (config.testSearchQuery) {
-    const testSearchResults = await api.searchTests(config.testSearchQuery)
-    if (testSearchResults.tests.length > MAX_TESTS_TO_TRIGGER) {
+    const testsToTriggerBySearchQuery = await getTestListBySearchQuery(api, config.global, config.testSearchQuery)
+
+    if (testsToTriggerBySearchQuery.length > MAX_TESTS_TO_TRIGGER) {
       reporter.error(
         `More than ${MAX_TESTS_TO_TRIGGER} tests returned by search query, only the first ${MAX_TESTS_TO_TRIGGER} will be fetched.\n`
       )
     }
 
-    return testSearchResults.tests.map((test) => ({
-      config: config.global,
-      id: test.public_id,
-      suite: `Query: ${config.testSearchQuery}`,
-    }))
+    return testsToTriggerBySearchQuery
   }
 
   const suitesFromFiles = (await Promise.all(config.files.map((glob: string) => getSuites(glob, reporter!))))
@@ -160,14 +172,19 @@ export const getTestsList = async (
   suites.push(...suitesFromFiles)
 
   const configFromEnvironment = config.locations?.length ? {locations: config.locations} : {}
+
+  const overrideTestConfig = (test: TriggerConfig): ConfigOverride =>
+    // Global < env < test config
+    ({
+      ...config.global,
+      ...configFromEnvironment,
+      ...test.config,
+    })
+
   const testsToTrigger = suites
     .map((suite) =>
       suite.content.tests.map((test) => ({
-        config: {
-          ...config.global,
-          ...configFromEnvironment,
-          ...test.config,
-        },
+        config: overrideTestConfig(test),
         id: test.id,
         suite: suite.name,
       }))
