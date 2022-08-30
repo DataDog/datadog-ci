@@ -135,15 +135,9 @@ export const executeTests = async (reporter: MainReporter, config: CommandConfig
 const getTestListBySearchQuery = async (
   api: APIHelper,
   globalConfigOverride: ConfigOverride,
-  reporter: MainReporter,
   testSearchQuery: string
 ) => {
   const testSearchResults = await api.searchTests(testSearchQuery)
-  if (testSearchResults.tests.length > MAX_TESTS_TO_TRIGGER) {
-    reporter.error(
-      `More than ${MAX_TESTS_TO_TRIGGER} tests returned by search query, only the first ${MAX_TESTS_TO_TRIGGER} will be fetched.\n`
-    )
-  }
 
   return testSearchResults.tests.map((test) => ({
     config: globalConfigOverride,
@@ -160,7 +154,15 @@ export const getTestsList = async (
 ) => {
   // If "testSearchQuery" is provided, always default to running it.
   if (config.testSearchQuery) {
-    return getTestListBySearchQuery(api, config.global, reporter, config.testSearchQuery)
+    const testsToTrigger = await getTestListBySearchQuery(api, config.global, config.testSearchQuery)
+
+    if (testsToTrigger.length > MAX_TESTS_TO_TRIGGER) {
+      reporter.error(
+        `More than ${MAX_TESTS_TO_TRIGGER} tests returned by search query, only the first ${MAX_TESTS_TO_TRIGGER} will be fetched.\n`
+      )
+    }
+
+    return testsToTrigger
   }
 
   const suitesFromFiles = (await Promise.all(config.files.map((glob: string) => getSuites(glob, reporter!))))
