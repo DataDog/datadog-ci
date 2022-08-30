@@ -5,6 +5,7 @@ import {AxiosError, AxiosPromise, AxiosRequestConfig} from 'axios'
 import {getRequestBuilder} from '../../helpers/utils'
 
 import {MAX_TESTS_TO_TRIGGER} from './command'
+import {CriticalError} from './errors'
 import {
   APIConfiguration,
   Batch,
@@ -12,10 +13,11 @@ import {
   PollResult,
   ServerBatch,
   ServerTest,
+  SyntheticsCIConfig,
   TestSearchResult,
   Trigger,
 } from './interfaces'
-import {ciTriggerApp, retry} from './utils'
+import {ciTriggerApp, getDatadogHost, retry} from './utils'
 
 const MAX_RETRIES = 3
 const DELAY_BETWEEN_RETRIES = 500 // In ms
@@ -214,3 +216,20 @@ export const apiConstructor = (configuration: APIConfiguration) => {
 }
 
 export type APIHelper = ReturnType<typeof apiConstructor>
+
+export const getApiHelper = (config: SyntheticsCIConfig): APIHelper => {
+  if (!config.appKey) {
+    throw new CriticalError('MISSING_APP_KEY')
+  }
+  if (!config.apiKey) {
+    throw new CriticalError('MISSING_API_KEY')
+  }
+
+  return apiConstructor({
+    apiKey: config.apiKey!,
+    appKey: config.appKey!,
+    baseIntakeUrl: getDatadogHost(true, config),
+    baseUrl: getDatadogHost(false, config),
+    proxyOpts: config.proxy,
+  })
+}

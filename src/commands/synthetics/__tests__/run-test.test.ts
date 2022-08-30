@@ -2,6 +2,7 @@
 import {AxiosError, AxiosResponse} from 'axios'
 import * as ciUtils from '../../../helpers/utils'
 import {MAX_TESTS_TO_TRIGGER} from '../command'
+import * as api  from '../api'
 import {CiError, CriticalCiErrorCode, CriticalError} from '../errors'
 import {ConfigOverride, ExecutionRule, SyntheticsCIConfig} from '../interfaces'
 import * as runTests from '../run-test'
@@ -33,7 +34,7 @@ describe('run-test', () => {
 
       const apiHelper = {}
 
-      jest.spyOn(runTests, 'getApiHelper').mockImplementation(() => ({} as any))
+      jest.spyOn(api, 'getApiHelper').mockImplementation(() => ({} as any))
 
       await expect(
         runTests.executeTests(mockReporter, {
@@ -82,7 +83,7 @@ describe('run-test', () => {
 
         const apiHelper = {}
 
-        jest.spyOn(runTests, 'getApiHelper').mockImplementation(() => ({} as any))
+        jest.spyOn(api, 'getApiHelper').mockImplementation(() => ({} as any))
         await expect(
           runTests.executeTests(mockReporter, {
             ...ciConfig,
@@ -114,7 +115,7 @@ describe('run-test', () => {
       const apiHelper = {}
       const configOverride = {executionRule: ExecutionRule.SKIPPED}
 
-      jest.spyOn(runTests, 'getApiHelper').mockImplementation(() => ({} as any))
+      jest.spyOn(api, 'getApiHelper').mockImplementation(() => ({} as any))
       await expect(
         runTests.executeTests(mockReporter, {
           ...ciConfig,
@@ -146,7 +147,7 @@ describe('run-test', () => {
         getTunnelPresignedURL: jest.fn(),
       }
       const configOverride = {executionRule: ExecutionRule.SKIPPED}
-      jest.spyOn(runTests, 'getApiHelper').mockImplementation(() => apiHelper as any)
+      jest.spyOn(api, 'getApiHelper').mockImplementation(() => apiHelper as any)
 
       await expect(
         runTests.executeTests(mockReporter, {
@@ -192,7 +193,7 @@ describe('run-test', () => {
         triggerTests: () => mockTestTriggerResponse,
       }
 
-      jest.spyOn(runTests, 'getApiHelper').mockImplementation(() => apiHelper as any)
+      jest.spyOn(api, 'getApiHelper').mockImplementation(() => apiHelper as any)
       await runTests.executeTests(mockReporter, {
         ...ciConfig,
         failOnCriticalErrors: true,
@@ -218,7 +219,7 @@ describe('run-test', () => {
             throw serverError
           }),
         }
-        jest.spyOn(runTests, 'getApiHelper').mockImplementation(() => apiHelper as any)
+        jest.spyOn(api, 'getApiHelper').mockImplementation(() => apiHelper as any)
         await expect(
           runTests.executeTests(mockReporter, {...ciConfig, testSearchQuery: 'a-search-query', tunnel: true})
         ).rejects.toMatchError(new CriticalError(error, 'Server Error'))
@@ -233,7 +234,7 @@ describe('run-test', () => {
             throw serverError
           }),
         }
-        jest.spyOn(runTests, 'getApiHelper').mockImplementation(() => apiHelper as any)
+        jest.spyOn(api, 'getApiHelper').mockImplementation(() => apiHelper as any)
         await expect(
           runTests.executeTests(mockReporter, {...ciConfig, publicIds: ['public-id-1'], tunnel: true})
         ).rejects.toMatchError(new CriticalError(error, 'Server Error'))
@@ -258,7 +259,7 @@ describe('run-test', () => {
         }),
       }
 
-      jest.spyOn(runTests, 'getApiHelper').mockImplementation(() => apiHelper as any)
+      jest.spyOn(api, 'getApiHelper').mockImplementation(() => apiHelper as any)
       await expect(
         runTests.executeTests(mockReporter, {...ciConfig, publicIds: ['public-id-1', 'public-id-2'], tunnel: true})
       ).rejects.toMatchError(new CriticalError('UNAVAILABLE_TUNNEL_CONFIG', 'Server Error'))
@@ -288,7 +289,7 @@ describe('run-test', () => {
         }),
       }
 
-      jest.spyOn(runTests, 'getApiHelper').mockImplementation(() => apiHelper as any)
+      jest.spyOn(api, 'getApiHelper').mockImplementation(() => apiHelper as any)
       await expect(
         runTests.executeTests(mockReporter, {...ciConfig, publicIds: ['public-id-1', 'public-id-2'], tunnel: true})
       ).rejects.toMatchError(
@@ -339,7 +340,7 @@ describe('run-test', () => {
         }),
       }
 
-      jest.spyOn(runTests, 'getApiHelper').mockImplementation(() => apiHelper as any)
+      jest.spyOn(api, 'getApiHelper').mockImplementation(() => apiHelper as any)
       await expect(
         runTests.executeTests(mockReporter, {
           ...ciConfig,
@@ -394,11 +395,11 @@ describe('run-test', () => {
     test('should throw an error if API or Application key are undefined', async () => {
       process.env = {}
 
-      expect(() => runTests.getApiHelper(ciConfig)).toThrow(new CriticalError('MISSING_APP_KEY'))
+      expect(() => api.getApiHelper(ciConfig)).toThrow(new CriticalError('MISSING_APP_KEY'))
       await expect(runTests.executeTests(mockReporter, ciConfig)).rejects.toMatchError(
         new CriticalError('MISSING_APP_KEY')
       )
-      expect(() => runTests.getApiHelper({...ciConfig, appKey: 'fakeappkey'})).toThrow(
+      expect(() => api.getApiHelper({...ciConfig, appKey: 'fakeappkey'})).toThrow(
         new CriticalError('MISSING_API_KEY')
       )
       await expect(runTests.executeTests(mockReporter, {...ciConfig, appKey: 'fakeappkey'})).rejects.toMatchError(

@@ -1,4 +1,4 @@
-import {apiConstructor, APIHelper, isForbiddenError} from './api'
+import {APIHelper, getApiHelper, isForbiddenError} from './api'
 import {MAX_TESTS_TO_TRIGGER} from './command'
 import {CiError, CriticalError} from './errors'
 import {
@@ -192,35 +192,4 @@ export const getTestsList = async (
     .reduce((acc, suiteTests) => acc.concat(suiteTests), [])
 
   return testsToTrigger
-}
-
-export const getApiHelper = (config: SyntheticsCIConfig) => {
-  if (!config.appKey) {
-    throw new CriticalError('MISSING_APP_KEY')
-  }
-  if (!config.apiKey) {
-    throw new CriticalError('MISSING_API_KEY')
-  }
-
-  return apiConstructor({
-    apiKey: config.apiKey!,
-    appKey: config.appKey!,
-    baseIntakeUrl: getDatadogHost(true, config),
-    baseUrl: getDatadogHost(false, config),
-    proxyOpts: config.proxy,
-  })
-}
-
-export const getDatadogHost = (useIntake = false, config: SyntheticsCIConfig) => {
-  const apiPath = 'api/v1'
-  let host = `https://api.${config.datadogSite}`
-  const hostOverride = process.env.DD_API_HOST_OVERRIDE
-
-  if (hostOverride) {
-    host = hostOverride
-  } else if (useIntake && (config.datadogSite === 'datadoghq.com' || config.datadogSite === 'datad0g.com')) {
-    host = `https://intake.synthetics.${config.datadogSite}`
-  }
-
-  return `${host}/${apiPath}`
 }
