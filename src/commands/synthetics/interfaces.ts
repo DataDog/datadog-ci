@@ -257,6 +257,8 @@ export interface RetryConfig {
 }
 
 export interface ConfigOverride {
+  applicationId?: string
+  applicationVersionId?: string
   allowInsecureCertificates?: boolean
   basicAuth?: BasicAuthCredentials
   body?: string
@@ -265,9 +267,14 @@ export interface ConfigOverride {
   defaultStepTimeout?: number
   deviceIds?: string[]
   executionRule?: ExecutionRule
+  fileName?: string
   followRedirects?: boolean
   headers?: {[key: string]: string}
   locations?: string[]
+  mobileAndroidApplicationVersionFilePath?: string
+  mobileAndroidApplicationVersion?: string
+  mobileIOSApplicationVersionFilePath?: string
+  mobileIOSApplicationVersion?: string
   pollingTimeout?: number
   retry?: RetryConfig
   startUrl?: string
