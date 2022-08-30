@@ -29,6 +29,7 @@ import * as utils from '../utils'
 
 import {DEFAULT_COMMAND_CONFIG, MAX_TESTS_TO_TRIGGER} from '../command'
 import {
+  ciConfig,
   getApiResult,
   getApiTest,
   getBatch,
@@ -1101,6 +1102,37 @@ describe('utils', () => {
       expect((mockReporter as MockedReporter).runEnd).toHaveBeenCalledWith(testCase.expected.summary, baseUrl)
 
       expect(exitCode).toBe(testCase.expected.exitCode)
+    })
+  })
+
+  describe('getDatadogHost', () => {
+    beforeEach(() => {
+      jest.restoreAllMocks()
+    })
+
+    test('should default to datadog us api', async () => {
+      process.env = {}
+
+      expect(utils.getDatadogHost(false, ciConfig)).toBe('https://api.datadoghq.com/api/v1')
+      expect(utils.getDatadogHost(true, ciConfig)).toBe('https://intake.synthetics.datadoghq.com/api/v1')
+    })
+
+    test('should use DD_API_HOST_OVERRIDE', async () => {
+      process.env = {DD_API_HOST_OVERRIDE: 'https://foobar'}
+
+      expect(utils.getDatadogHost(true, ciConfig)).toBe('https://foobar/api/v1')
+      expect(utils.getDatadogHost(true, ciConfig)).toBe('https://foobar/api/v1')
+    })
+
+    test('should use Synthetics intake endpoint', async () => {
+      process.env = {}
+
+      expect(utils.getDatadogHost(true, {...ciConfig, datadogSite: 'datadoghq.com' as string})).toBe(
+        'https://intake.synthetics.datadoghq.com/api/v1'
+      )
+      expect(utils.getDatadogHost(true, {...ciConfig, datadogSite: 'datad0g.com' as string})).toBe(
+        'https://intake.synthetics.datad0g.com/api/v1'
+      )
     })
   })
 })

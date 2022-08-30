@@ -4,7 +4,7 @@ import * as ciUtils from '../../../helpers/utils'
 
 import {DEFAULT_POLLING_TIMEOUT, RunTestCommand} from '../command'
 import {ExecutionRule} from '../interfaces'
-import * as runTests from '../run-test'
+import * as utils from '../utils'
 
 import {getSyntheticsProxy} from './fixtures'
 
@@ -45,7 +45,7 @@ describe('Proxy configuration', () => {
 
       const command = new RunTestCommand()
       command.context = {stdout: {write: jest.fn()}} as any
-      jest.spyOn(runTests, 'getDatadogHost').mockImplementation(() => 'http://datadoghq.com/')
+      jest.spyOn(utils, 'getDatadogHost').mockImplementation(() => 'http://datadoghq.com/')
 
       await command.execute()
 
@@ -77,7 +77,7 @@ describe('Proxy configuration', () => {
       const command = new RunTestCommand()
       command.configPath = 'src/commands/synthetics/__tests__/config-fixtures/config-with-tunnel-no-proxy.json'
       command.context = {stdout: {write: jest.fn()}} as any
-      jest.spyOn(runTests, 'getDatadogHost').mockImplementation(() => 'http://datadoghq.com/')
+      jest.spyOn(utils, 'getDatadogHost').mockImplementation(() => 'http://datadoghq.com/')
 
       await command.execute()
 

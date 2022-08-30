@@ -2,11 +2,12 @@ import {AxiosError, AxiosResponse, default as axios} from 'axios'
 
 import {ProxyConfiguration} from '../../../helpers/utils'
 
-import {apiConstructor} from '../api'
+import {apiConstructor, getApiHelper} from '../api'
 import {MAX_TESTS_TO_TRIGGER} from '../command'
+import {CriticalError} from '../errors'
 import {APIConfiguration, ExecutionRule, PollResult, ServerResult, TestPayload, Trigger} from '../interfaces'
 
-import {getApiTest, getSyntheticsProxy, mockSearchResponse, mockTestTriggerResponse} from './fixtures'
+import {ciConfig, getApiTest, getSyntheticsProxy, mockSearchResponse, mockTestTriggerResponse} from './fixtures'
 
 describe('dd-api', () => {
   const apiConfiguration: APIConfiguration = {
@@ -259,5 +260,19 @@ describe('dd-api', () => {
         await proxyClose()
       }
     })
+  })
+})
+
+describe('getApiHelper', () => {
+  beforeEach(() => {
+    jest.restoreAllMocks()
+  })
+
+  test('should throw an error if API or Application key are undefined', async () => {
+    process.env = {}
+
+    expect(() => getApiHelper(ciConfig)).toThrow(new CriticalError('MISSING_APP_KEY'))
+
+    expect(() => getApiHelper({...ciConfig, appKey: 'fakeappkey'})).toThrow(new CriticalError('MISSING_API_KEY'))
   })
 })

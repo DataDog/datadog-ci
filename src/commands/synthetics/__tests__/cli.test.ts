@@ -2,7 +2,7 @@
 import {AxiosError, AxiosResponse} from 'axios'
 import {Cli} from 'clipanion/lib/advanced'
 import * as ciUtils from '../../../helpers/utils'
-import * as api  from '../api'
+import * as api from '../api'
 import {DEFAULT_COMMAND_CONFIG, DEFAULT_POLLING_TIMEOUT, RunTestCommand} from '../command'
 import * as utils from '../utils'
 import {getApiTest, getTestSuite, mockTestTriggerResponse} from './fixtures'

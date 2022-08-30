@@ -1,8 +1,8 @@
 // tslint:disable: no-string-literal
 import {AxiosError, AxiosResponse} from 'axios'
 import * as ciUtils from '../../../helpers/utils'
+import * as api from '../api'
 import {MAX_TESTS_TO_TRIGGER} from '../command'
-import * as api  from '../api'
 import {CiError, CriticalCiErrorCode, CriticalError} from '../errors'
 import {ConfigOverride, ExecutionRule, SyntheticsCIConfig} from '../interfaces'
 import * as runTests from '../run-test'
@@ -358,56 +358,6 @@ describe('run-test', () => {
     })
   })
 
-  describe('getDatadogHost', () => {
-    beforeEach(() => {
-      jest.restoreAllMocks()
-    })
-
-    test('should default to datadog us api', async () => {
-      process.env = {}
-
-      expect(runTests.getDatadogHost(false, ciConfig)).toBe('https://api.datadoghq.com/api/v1')
-      expect(runTests.getDatadogHost(true, ciConfig)).toBe('https://intake.synthetics.datadoghq.com/api/v1')
-    })
-
-    test('should use DD_API_HOST_OVERRIDE', async () => {
-      process.env = {DD_API_HOST_OVERRIDE: 'https://foobar'}
-
-      expect(runTests.getDatadogHost(true, ciConfig)).toBe('https://foobar/api/v1')
-      expect(runTests.getDatadogHost(true, ciConfig)).toBe('https://foobar/api/v1')
-    })
-
-    test('should use Synthetics intake endpoint', async () => {
-      expect(runTests.getDatadogHost(true, {...ciConfig, datadogSite: 'datadoghq.com' as string})).toBe(
-        'https://intake.synthetics.datadoghq.com/api/v1'
-      )
-      expect(runTests.getDatadogHost(true, {...ciConfig, datadogSite: 'datad0g.com' as string})).toBe(
-        'https://intake.synthetics.datad0g.com/api/v1'
-      )
-    })
-  })
-
-  describe('getApiHelper', () => {
-    beforeEach(() => {
-      jest.restoreAllMocks()
-    })
-
-    test('should throw an error if API or Application key are undefined', async () => {
-      process.env = {}
-
-      expect(() => api.getApiHelper(ciConfig)).toThrow(new CriticalError('MISSING_APP_KEY'))
-      await expect(runTests.executeTests(mockReporter, ciConfig)).rejects.toMatchError(
-        new CriticalError('MISSING_APP_KEY')
-      )
-      expect(() => api.getApiHelper({...ciConfig, appKey: 'fakeappkey'})).toThrow(
-        new CriticalError('MISSING_API_KEY')
-      )
-      await expect(runTests.executeTests(mockReporter, {...ciConfig, appKey: 'fakeappkey'})).rejects.toMatchError(
-        new CriticalError('MISSING_API_KEY')
-      )
-    })
-  })
-
   describe('getTestsList', () => {
     beforeEach(() => {
       jest.restoreAllMocks()
@@ -481,7 +431,7 @@ describe('run-test', () => {
     })
 
     test('display warning if too many tests from search', async () => {
-      const api = {
+      const apiHelper = {
         searchTests: () => ({
           tests: Array(MAX_TESTS_TO_TRIGGER + 1).fill({public_id: 'stu-vwx-yza'}),
         }),
@@ -489,7 +439,7 @@ describe('run-test', () => {
 
       const searchQuery = 'fake search'
 
-      await runTests.getTestsList(api, {...ciConfig, testSearchQuery: searchQuery}, mockReporter)
+      await runTests.getTestsList(apiHelper, {...ciConfig, testSearchQuery: searchQuery}, mockReporter)
       expect(mockReporter.error).toHaveBeenCalledWith(
         `More than ${MAX_TESTS_TO_TRIGGER} tests returned by search query, only the first ${MAX_TESTS_TO_TRIGGER} will be fetched.\n`
       )
