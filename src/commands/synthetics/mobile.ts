@@ -5,7 +5,7 @@ import {APIHelper} from './api'
 import {Test, TestPayload} from './interfaces'
 import {getTestByPublicId} from './utils'
 
-const getApplicationToUpload = (test: Test, overrideTest: TestPayload): string | undefined => {
+export const getApplicationToUpload = (test: Test, overrideTest: TestPayload): string | undefined => {
   if (test.type !== 'mobile') {
     return
   }

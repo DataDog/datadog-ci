@@ -141,7 +141,9 @@ describe('dd-api', () => {
   })
 
   test('should get a mobile application presigned URL from api', async () => {
-    const spy = jest.spyOn(axios, 'create').mockImplementation((() => () => ({data: MOBILE_PRESIGNED_URL_PAYLOAD})) as any)
+    const spy = jest
+      .spyOn(axios, 'create')
+      .mockImplementation((() => () => ({data: MOBILE_PRESIGNED_URL_PAYLOAD})) as any)
     const api = apiConstructor(apiConfiguration)
     const {getMobileApplicationPresignedURL} = api
     const {presigned_url_params} = await getMobileApplicationPresignedURL('applicationId', 'md5')
