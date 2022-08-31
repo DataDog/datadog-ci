@@ -2,8 +2,8 @@
 import {AxiosError, AxiosResponse} from 'axios'
 import {Cli} from 'clipanion/lib/advanced'
 import * as ciUtils from '../../../helpers/utils'
+import * as api from '../api'
 import {DEFAULT_COMMAND_CONFIG, DEFAULT_POLLING_TIMEOUT, RunTestCommand} from '../command'
-import * as runTests from '../run-test'
 import * as utils from '../utils'
 import {getApiTest, getTestSuite, mockTestTriggerResponse} from './fixtures'
 
@@ -205,7 +205,7 @@ describe('run-test', () => {
       const command = new RunTestCommand()
       command.context = {stdout: {write}} as any
       command['config'].global = {locations: ['aws:us-east-2']}
-      jest.spyOn(runTests, 'getApiHelper').mockImplementation(() => apiHelper as any)
+      jest.spyOn(api, 'getApiHelper').mockImplementation(() => apiHelper as any)
 
       expect(await command.execute()).toBe(0)
       expect(triggerTests).toHaveBeenCalledWith(
@@ -293,7 +293,7 @@ describe('run-test', () => {
           throw getAxiosHttpError(404, 'Test not found')
         }),
       }
-      jest.spyOn(runTests, 'getApiHelper').mockImplementation(() => apiHelper as any)
+      jest.spyOn(api, 'getApiHelper').mockImplementation(() => apiHelper as any)
       jest.spyOn(ciUtils, 'resolveConfigFromFile').mockImplementation(async (config, _) => config)
       jest.spyOn(utils, 'getSuites').mockImplementation((() => [getTestSuite()]) as any)
 
@@ -317,7 +317,7 @@ describe('run-test', () => {
               throw errorCode ? getAxiosHttpError(errorCode, 'Error') : new Error('Unknown error')
             }),
           }
-          jest.spyOn(runTests, 'getApiHelper').mockImplementation(() => apiHelper as any)
+          jest.spyOn(api, 'getApiHelper').mockImplementation(() => apiHelper as any)
           jest.spyOn(ciUtils, 'resolveConfigFromFile').mockImplementation(async (config, __) => config)
 
           expect(await command.execute()).toBe(expectedExit)
@@ -334,7 +334,7 @@ describe('run-test', () => {
               throw errorCode ? getAxiosHttpError(errorCode, 'Error') : new Error('Unknown error')
             }),
           }
-          jest.spyOn(runTests, 'getApiHelper').mockImplementation(() => apiHelper as any)
+          jest.spyOn(api, 'getApiHelper').mockImplementation(() => apiHelper as any)
           jest.spyOn(ciUtils, 'resolveConfigFromFile').mockImplementation(async (config, __) => config)
           jest.spyOn(utils, 'getSuites').mockImplementation((() => [getTestSuite()]) as any)
 
@@ -353,7 +353,7 @@ describe('run-test', () => {
               throw errorCode ? getAxiosHttpError(errorCode, 'Error') : new Error('Unknown error')
             }),
           }
-          jest.spyOn(runTests, 'getApiHelper').mockImplementation(() => apiHelper as any)
+          jest.spyOn(api, 'getApiHelper').mockImplementation(() => apiHelper as any)
           jest.spyOn(ciUtils, 'resolveConfigFromFile').mockImplementation(async (config, __) => config)
           jest.spyOn(utils, 'getSuites').mockImplementation((() => [getTestSuite()]) as any)
 
@@ -374,7 +374,7 @@ describe('run-test', () => {
             }),
             triggerTests: () => mockTestTriggerResponse,
           }
-          jest.spyOn(runTests, 'getApiHelper').mockImplementation(() => apiHelper as any)
+          jest.spyOn(api, 'getApiHelper').mockImplementation(() => apiHelper as any)
           jest.spyOn(ciUtils, 'resolveConfigFromFile').mockImplementation(async (config, __) => config)
           jest.spyOn(utils, 'getSuites').mockImplementation((() => [getTestSuite()]) as any)
 

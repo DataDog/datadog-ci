@@ -11,7 +11,7 @@ import {getCIMetadata} from '../../helpers/ci'
 import {GIT_COMMIT_MESSAGE} from '../../helpers/tags'
 import {pick} from '../../helpers/utils'
 
-import {APIHelper, EndpointError, formatBackendErrors, isNotFoundError} from './api'
+import {APIHelper, EndpointError, formatBackendErrors, getApiHelper, isNotFoundError} from './api'
 import {MAX_TESTS_TO_TRIGGER} from './command'
 import {CiError, CriticalError} from './errors'
 import {
@@ -37,7 +37,6 @@ import {
   Trigger,
   TriggerConfig,
 } from './interfaces'
-import {getApiHelper} from './run-test'
 import {Tunnel} from './tunnel'
 
 const POLLING_INTERVAL = 5000 // In ms
@@ -775,4 +774,18 @@ export const renderResults = ({
   reporter.runEnd(summary, getAppBaseURL(config))
 
   return hasSucceeded ? 0 : 1
+}
+
+export const getDatadogHost = (useIntake = false, config: SyntheticsCIConfig) => {
+  const apiPath = 'api/v1'
+  let host = `https://api.${config.datadogSite}`
+  const hostOverride = process.env.DD_API_HOST_OVERRIDE
+
+  if (hostOverride) {
+    host = hostOverride
+  } else if (useIntake && (config.datadogSite === 'datadoghq.com' || config.datadogSite === 'datad0g.com')) {
+    host = `https://intake.synthetics.${config.datadogSite}`
+  }
+
+  return `${host}/${apiPath}`
 }
