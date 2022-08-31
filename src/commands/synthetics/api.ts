@@ -1,6 +1,6 @@
 import {stringify} from 'querystring'
 
-import axios, {AxiosError, AxiosPromise, AxiosRequestConfig} from 'axios'
+import {AxiosError, AxiosPromise, AxiosRequestConfig} from 'axios'
 
 import {getRequestBuilder} from '../../helpers/utils'
 
@@ -141,10 +141,9 @@ const getTunnelPresignedURL = (request: (args: AxiosRequestConfig) => AxiosPromi
   return resp.data
 }
 
-const getMobileApplicationPresignedURL = (request: (args: AxiosRequestConfig) => AxiosPromise<{presigned_url_params: string; file_name: string}>) => async (
-  applicationId: string,
-  md5: string
-) => {
+const getMobileApplicationPresignedURL = (
+  request: (args: AxiosRequestConfig) => AxiosPromise<{file_name: string; presigned_url_params: string}>
+) => async (applicationId: string, md5: string) => {
   const resp = await retryRequest(
     {
       method: 'POST',
@@ -166,8 +165,8 @@ const uploadMobileApplication = (request: (args: AxiosRequestConfig) => AxiosPro
 ) => {
   await retryRequest(
     {
-      method: 'POST',
       data: fileBuffer,
+      method: 'POST',
       url: presignedUrl,
     },
     request
@@ -226,7 +225,7 @@ export const apiConstructor = (configuration: APIConfiguration) => {
     pollResults: pollResults(request),
     searchTests: searchTests(request),
     triggerTests: triggerTests(requestIntake),
-    uploadMobileApplication: uploadMobileApplication(request)
+    uploadMobileApplication: uploadMobileApplication(request),
   }
 }
 
