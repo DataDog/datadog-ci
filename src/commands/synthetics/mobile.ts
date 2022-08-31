@@ -42,7 +42,7 @@ const uploadMobileApplications = async (
   return fileName
 }
 
-const overriddenMobileConfig = (
+export const overriddenMobileConfig = (
   test: Test,
   overriddenTest: TestPayload,
   localApplicationOverride?: {applicationId: string; fileName: string}
@@ -70,7 +70,7 @@ const overriddenMobileConfig = (
     test.mobileApplication!.platform === 'ios' &&
     overriddenTest.mobileIOSApplicationVersion
   ) {
-    overriddenTest.applicationVersionId = overriddenTest.mobileAndroidApplicationVersion
+    overriddenTest.applicationVersionId = overriddenTest.mobileIOSApplicationVersion
   }
 
   delete overriddenTest.mobileIOSApplicationVersion
