@@ -8,6 +8,8 @@ import {Command} from 'clipanion'
 import yaml from 'js-yaml'
 import {
   renderArgumentMissingError,
+  renderCommandInfo,
+  renderCommandSummary,
   renderFailedUpload,
   renderGeneralizedError,
   renderGitWarning,
@@ -19,6 +21,7 @@ import {
   renderPubspecMissingVersionError,
   renderRetriedUpload,
   renderUpload,
+  UploadInfo,
 } from './renderer'
 
 import glob from 'glob'
@@ -26,7 +29,7 @@ import asyncPool from 'tiny-async-pool'
 import {ApiKeyValidator, newApiKeyValidator} from '../../helpers/apikey'
 import {getRepositoryData, RepositoryData} from '../../helpers/git/format-git-sourcemaps-data'
 import {getMetricsLogger, MetricsLogger} from '../../helpers/metrics'
-import {MultipartPayload, MultipartValue, UploadStatus} from '../../helpers/upload'
+import {MultipartValue, UploadStatus} from '../../helpers/upload'
 import {buildPath, DEFAULT_CONFIG_PATH, performSubCommand, resolveConfigFromFile} from '../../helpers/utils'
 import * as dsyms from '../dsyms/upload'
 import {newSimpleGit} from '../git-metadata/git'
@@ -64,6 +67,7 @@ export class UploadCommand extends Command {
   private gitData?: RepositoryData
   private iosDsyms = false
   private iosDsymsLocation?: string
+  private maxConcurrency = 5
   private pubspecLocation = './pubspec.yaml'
   private repositoryUrl?: string
   private serviceName!: string
@@ -78,6 +82,31 @@ export class UploadCommand extends Command {
     if (!(await this.verifyParameters())) {
       return 1
     }
+
+    const uploadInfo: UploadInfo[] = []
+    if (this.iosDsymsLocation) {
+      uploadInfo.push({
+        fileType: 'dSYMs',
+        location: this.iosDsymsLocation!,
+        platform: 'ios',
+      })
+    }
+    if (this.androidMappingLocation) {
+      uploadInfo.push({
+        fileType: 'Proguard Mapping File',
+        location: this.androidMappingLocation!,
+        platform: 'Android',
+      })
+    }
+    if (this.dartSymbolsLocation) {
+      uploadInfo.push({
+        fileType: 'Dart Symbol Files',
+        location: this.dartSymbolsLocation!,
+        platform: 'Flutter',
+      })
+    }
+
+    this.context.stdout.write(renderCommandInfo(this.dryRun, this.version!, this.serviceName, this.flavor, uploadInfo))
 
     this.config = await resolveConfigFromFile(this.config, {
       configPath: this.configPath,
@@ -107,19 +136,24 @@ export class UploadCommand extends Command {
       metricsLogger: metricsLogger.logger,
     })
 
-    let callResults: UploadStatus[] = []
+    const initialTime = Date.now()
+
+    const callResults: UploadStatus[] = []
     try {
-      if (this.iosDsyms || this.iosDsymsLocation) {
-        callResults += await this.performDsymUpload()
+      if (this.iosDsymsLocation) {
+        callResults.concat(await this.performDsymUpload())
       }
-      if (this.androidMapping || this.androidMappingLocation) {
-        await this.performAndroidMappingUpload(metricsLogger, apiKeyValidator)
+      if (this.androidMappingLocation) {
+        callResults.concat(await this.performAndroidMappingUpload(metricsLogger, apiKeyValidator))
       }
       if (this.dartSymbolsLocation) {
-        await this.performDartSymbolsUpload(metricsLogger, apiKeyValidator)
+        callResults.concat(await this.performDartSymbolsUpload(metricsLogger, apiKeyValidator))
       }
+
+      const totalTime = (Date.now() - initialTime) / 1000
+      this.context.stdout.write(renderCommandSummary(callResults, totalTime, this.dryRun))
     } catch (e) {
-      renderGeneralizedError(e)
+      this.context.stderr.write(renderGeneralizedError(e))
 
       return 1
     } finally {
@@ -222,7 +256,7 @@ export class UploadCommand extends Command {
   private async performAndroidMappingUpload(
     metricsLogger: MetricsLogger,
     apiKeyValidator: ApiKeyValidator
-  ): Promise<number> {
+  ): Promise<UploadStatus> {
     const requestBuilder = getFlutterRequestBuilder(this.config.apiKey!, this.cliVersion, this.config.datadogSite)
     if (this.dryRun) {
       this.context.stdout.write(`[DRYRUN] ${renderUpload('Android Mapping File', this.androidMappingLocation!)}`)
@@ -265,15 +299,23 @@ export class UploadCommand extends Command {
     return result
   }
 
-  private async performDartSymbolsUpload(metricsLogger: MetricsLogger, apiKeyValidator: ApiKeyValidator) {
+  private async performDartSymbolsUpload(
+    metricsLogger: MetricsLogger,
+    apiKeyValidator: ApiKeyValidator
+  ): Promise<UploadStatus[]> {
     const files = this.getFlutterSymbolFiles(this.dartSymbolsLocation!)
 
     const filesMetadata = files.map((filename) => ({filename, ...getArchInfoFromFilename(filename)}))
 
     const requestBuilder = getFlutterRequestBuilder(this.config.apiKey!, this.cliVersion, this.config.datadogSite)
     try {
-      const results = await asyncPool(5, filesMetadata, async (fileMetadata) => {
+      const results = await asyncPool(this.maxConcurrency, filesMetadata, async (fileMetadata) => {
         if (!fileMetadata.arch || !fileMetadata.platform) {
+          renderFailedUpload(
+            fileMetadata.filename,
+            'Skipped because we could not determine the architecture or platform.'
+          )
+
           return UploadStatus.Skipped
         }
 
@@ -314,7 +356,7 @@ export class UploadCommand extends Command {
         })
       })
 
-      this.context.stdout.write(`Mapping upload finished: ${results}\n`)
+      return results
     } catch (error) {
       throw error
     } finally {
@@ -327,9 +369,7 @@ export class UploadCommand extends Command {
   }
 
   private async performDsymUpload() {
-    const symbolLocation = this.iosDsymsLocation ?? './build/ios/archive/Runner.xcarchive/dSYMs'
-
-    const dsymUploadCommand = ['dsyms', 'upload', symbolLocation]
+    const dsymUploadCommand = ['dsyms', 'upload', this.iosDsymsLocation!]
     if (this.dryRun) {
       dsymUploadCommand.push('--dry-run')
     }
@@ -364,6 +404,10 @@ export class UploadCommand extends Command {
       }
     }
 
+    if (this.iosDsyms && !this.iosDsymsLocation) {
+      this.iosDsymsLocation = './build/ios/archive/Runner.xcarchive/dSYMs'
+    }
+
     if (this.androidMapping && !this.androidMappingLocation) {
       this.androidMappingLocation = `./build/app/outputs/mapping/${this.flavor}/mapping.txt`
     }
@@ -393,6 +437,7 @@ UploadCommand.addOption('androidMapping', Command.Boolean('--android-mapping'))
 UploadCommand.addOption('androidMappingLocation', Command.String('--android-mapping-location'))
 UploadCommand.addOption('pubspecLocation', Command.String('--pubspec'))
 UploadCommand.addOption('serviceName', Command.String('--service-name'))
+UploadCommand.addOption('maxConcurrency', Command.String('--max-concurrency'))
 UploadCommand.addOption('version', Command.String('--version'))
 UploadCommand.addOption('dryRun', Command.Boolean('--dry-run'))
 UploadCommand.addOption('disableGit', Command.Boolean('--disable-git'))

@@ -1,5 +1,77 @@
 import chalk from 'chalk'
 import {ICONS} from '../../helpers/formatting'
+import {UploadStatus} from '../../helpers/upload'
+import {pluralize} from '../../helpers/utils'
+
+export interface UploadInfo {
+  fileType: string
+  location: string
+  platform: string
+}
+
+export const renderCommandInfo = (
+  dryRun: boolean,
+  version: string,
+  service: string,
+  flavor: string,
+  uploadInfo: UploadInfo[]
+) => {
+  let fullString = ''
+  if (dryRun) {
+    fullString += chalk.yellow(`${ICONS.WARNING} DRY-RUN MODE ENABLED. WILL NOT UPLOAD SOURCEMAPS\n`)
+  }
+  const startStr = chalk.green('Starting upload. \n')
+
+  fullString += startStr
+  uploadInfo.forEach((ui) => {
+    fullString += chalk.green(`Uploaing ${ui.platform} ${ui.fileType} at location ${ui.location}\n`)
+  })
+  const serviceVersionProjectPathStr = chalk.green(`  version: ${version} service: ${service}\n flavor: ${flavor}`)
+  fullString += serviceVersionProjectPathStr
+
+  return fullString
+}
+
+export const renderCommandSummary = (statuses: UploadStatus[], duration: number, dryRun: boolean) => {
+  const results = new Map<UploadStatus, number>()
+  statuses.forEach((status) => {
+    if (!results.has(status)) {
+      results.set(status, 0)
+    }
+    results.set(status, results.get(status)! + 1)
+  })
+
+  const output = ['', chalk.bold('Command summary:')]
+  if (results.get(UploadStatus.Failure)) {
+    output.push(chalk.red(`${ICONS.FAILED} Some symbol files may not been uploaded correctly.`))
+  } else if (results.get(UploadStatus.Skipped)) {
+    output.push(chalk.yellow(`${ICONS.WARNING}  Some symbol files have been skipped.`))
+  } else if (results.get(UploadStatus.Success)) {
+    if (dryRun) {
+      output.push(
+        chalk.green(
+          `${ICONS.SUCCESS} [DRYRUN] Handled symbol ${pluralize(
+            results.get(UploadStatus.Success)!,
+            'file',
+            'files'
+          )} with success in ${duration} seconds.`
+        )
+      )
+    } else {
+      output.push(
+        chalk.green(
+          `${ICONS.SUCCESS} Uploaded symbol ${pluralize(
+            results.get(UploadStatus.Success)!,
+            'file',
+            'files'
+          )} in ${duration} seconds.`
+        )
+      )
+    }
+  } else {
+    output.push(chalk.yellow(`${ICONS.WARNING} No actions were taken. Did you specify the correct path?`))
+  }
+}
 
 export const renderGitWarning = (errorMessage: string) =>
   chalk.yellow(`${ICONS.WARNING} An error occured while invoking git: ${errorMessage}
