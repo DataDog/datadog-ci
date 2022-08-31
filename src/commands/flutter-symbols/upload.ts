@@ -8,12 +8,13 @@ import {Command} from 'clipanion'
 import yaml from 'js-yaml'
 import {
   renderArgumentMissingError,
-  renderDartSymbolsLocationRequiredError,
   renderFailedUpload,
   renderGeneralizedError,
   renderGitWarning,
   renderInvalidPubspecError,
+  renderInvalidSymbolsDir,
   renderMissingAndroidMappingFile,
+  renderMissingDartSymbolsDir,
   renderMissingPubspecError,
   renderPubspecMissingVersionError,
   renderRetriedUpload,
@@ -21,15 +22,24 @@ import {
 } from './renderer'
 
 import glob from 'glob'
+import asyncPool from 'tiny-async-pool'
 import {ApiKeyValidator, newApiKeyValidator} from '../../helpers/apikey'
 import {getRepositoryData, RepositoryData} from '../../helpers/git/format-git-sourcemaps-data'
 import {getMetricsLogger, MetricsLogger} from '../../helpers/metrics'
-import {MultipartPayload, MultipartValue} from '../../helpers/upload'
+import {MultipartPayload, MultipartValue, UploadStatus} from '../../helpers/upload'
 import {buildPath, DEFAULT_CONFIG_PATH, performSubCommand, resolveConfigFromFile} from '../../helpers/utils'
 import * as dsyms from '../dsyms/upload'
 import {newSimpleGit} from '../git-metadata/git'
-import {getFlutterRequestBuilder, uploadMultipartHelper} from './helpers'
-import {JVM_MAPPING_FILE_NAME, MappingMetadata, TYPE_JVM_MAPPING, VALUE_NAME_JVM_MAPPING} from './interfaces'
+import {getArchInfoFromFilename, getFlutterRequestBuilder, uploadMultipartHelper} from './helpers'
+import {
+  DART_SYMBOL_FILE_NAME,
+  JVM_MAPPING_FILE_NAME,
+  MappingMetadata,
+  TYPE_DART_SYMBOLS,
+  TYPE_JVM_MAPPING,
+  VALUE_NAME_DART_MAPPING,
+  VALUE_NAME_JVM_MAPPING,
+} from './interfaces'
 
 export class UploadCommand extends Command {
   public static usage = Command.Usage({
@@ -47,7 +57,6 @@ export class UploadCommand extends Command {
     datadogSite: process.env.DATADOG_SITE || 'datadoghq.com',
   }
   private configPath?: string
-  private dartSymbols = false
   private dartSymbolsLocation?: string
   private disableGit = false
   private dryRun = false
@@ -98,9 +107,10 @@ export class UploadCommand extends Command {
       metricsLogger: metricsLogger.logger,
     })
 
+    let callResults: UploadStatus[] = []
     try {
       if (this.iosDsyms || this.iosDsymsLocation) {
-        await this.performDsymUpload()
+        callResults += await this.performDsymUpload()
       }
       if (this.androidMapping || this.androidMappingLocation) {
         await this.performAndroidMappingUpload(metricsLogger, apiKeyValidator)
@@ -123,37 +133,12 @@ export class UploadCommand extends Command {
     return 0
   }
 
-  private createAndroidMappingPayload(mappingFile: string): MultipartPayload {
-    const metadata = this.getAndroidMetadata()
-
-    const content = new Map<string, MultipartValue>([
-      [
-        'event',
-        {
-          options: {
-            contentType: 'application/json',
-            filename: 'event',
-          },
-          value: JSON.stringify(metadata),
-        },
-      ],
-    ])
-
-    return {
-      content,
-    }
+  private getAndroidMetadata(): MappingMetadata {
+    return this.getMappingMetadata(TYPE_JVM_MAPPING)
   }
 
-  private getAndroidMetadata(): MappingMetadata {
-    return {
-      cli_version: this.cliVersion,
-      git_commit_sha: this.gitData?.hash,
-      git_repository_url: this.gitData?.remote,
-      service: this.serviceName,
-      type: TYPE_JVM_MAPPING,
-      variant: this.flavor,
-      version: this.version!,
-    }
+  private getFlutterMetadata(platform: string, arch: string) {
+    return this.getMappingMetadata(TYPE_DART_SYMBOLS, platform, arch)
   }
 
   private getFlutterSymbolFiles(dartSymbolLocation: string): string[] {
@@ -180,7 +165,7 @@ export class UploadCommand extends Command {
     }
 
     return {
-      options: {filename: 'repository.json', contentType: 'application/json'},
+      options: {filename: 'repository', contentType: 'application/json'},
       value: JSON.stringify(repoPayload),
     }
   }
@@ -193,6 +178,20 @@ export class UploadCommand extends Command {
     }
 
     return undefined
+  }
+
+  private getMappingMetadata(type: string, platform?: string, arch?: string): MappingMetadata {
+    return {
+      arch,
+      cli_version: this.cliVersion,
+      git_commit_sha: this.gitData?.hash,
+      git_repository_url: this.gitData?.remote,
+      platform,
+      service: this.serviceName,
+      type,
+      variant: this.flavor,
+      version: this.version!,
+    }
   }
 
   private async parsePubspec(pubspecLocation: string): Promise<number> {
@@ -224,8 +223,6 @@ export class UploadCommand extends Command {
     metricsLogger: MetricsLogger,
     apiKeyValidator: ApiKeyValidator
   ): Promise<number> {
-    const androidMetadata = this.getAndroidMetadata()
-
     const requestBuilder = getFlutterRequestBuilder(this.config.apiKey!, this.cliVersion, this.config.datadogSite)
     if (this.dryRun) {
       this.context.stdout.write(`[DRYRUN] ${renderUpload('Android Mapping File', this.androidMappingLocation!)}`)
@@ -268,7 +265,66 @@ export class UploadCommand extends Command {
     return result
   }
 
-  private async performDartSymbolsUpload(metricsLogger: MetricsLogger, apiKeyValidator: ApiKeyValidator) {}
+  private async performDartSymbolsUpload(metricsLogger: MetricsLogger, apiKeyValidator: ApiKeyValidator) {
+    const files = this.getFlutterSymbolFiles(this.dartSymbolsLocation!)
+
+    const filesMetadata = files.map((filename) => ({filename, ...getArchInfoFromFilename(filename)}))
+
+    const requestBuilder = getFlutterRequestBuilder(this.config.apiKey!, this.cliVersion, this.config.datadogSite)
+    try {
+      const results = await asyncPool(5, filesMetadata, async (fileMetadata) => {
+        if (!fileMetadata.arch || !fileMetadata.platform) {
+          return UploadStatus.Skipped
+        }
+
+        if (this.dryRun) {
+          this.context.stdout.write(`[DRYRUN] ${renderUpload('Dart Symbol File', fileMetadata.filename!)}`)
+
+          return UploadStatus.Success
+        }
+
+        const metadata = this.getFlutterMetadata(fileMetadata.platform, fileMetadata.arch)
+        const payload = {
+          content: new Map<string, MultipartValue>([
+            ['event', {value: JSON.stringify(metadata), options: {filename: 'event', contentType: 'application/json'}}],
+            [
+              VALUE_NAME_DART_MAPPING,
+              {value: fs.createReadStream(fileMetadata.filename), options: {filename: DART_SYMBOL_FILE_NAME}},
+            ],
+          ]),
+        }
+        if (this.gitData !== undefined) {
+          payload.content.set('repository', this.getGitDataPayload()!)
+        }
+
+        return uploadMultipartHelper(requestBuilder, payload, {
+          apiKeyValidator,
+          onError: (e) => {
+            this.context.stdout.write(renderFailedUpload(fileMetadata.filename!, e.message))
+            metricsLogger.logger.increment('failed', 1)
+          },
+          onRetry: (e, attempts) => {
+            this.context.stdout.write(renderRetriedUpload(fileMetadata.filename, e.message, attempts))
+            metricsLogger.logger.increment('retries', 1)
+          },
+          onUpload: () => {
+            this.context.stdout.write(renderUpload('Flutter Symbol File', fileMetadata.filename))
+          },
+          retries: 5,
+        })
+      })
+
+      this.context.stdout.write(`Mapping upload finished: ${results}\n`)
+    } catch (error) {
+      throw error
+    } finally {
+      try {
+        await metricsLogger.flush()
+      } catch (err) {
+        this.context.stdout.write(`WARN: ${err}\n`)
+      }
+    }
+  }
 
   private async performDsymUpload() {
     const symbolLocation = this.iosDsymsLocation ?? './build/ios/archive/Runner.xcarchive/dSYMs'
@@ -280,8 +336,10 @@ export class UploadCommand extends Command {
 
     const exitCode = await performSubCommand(dsyms.UploadCommand, dsymUploadCommand, this.context)
     if (exitCode && exitCode !== 0) {
-      throw new Error(`recieved exit code ${exitCode} while dsym upload.`)
+      return UploadStatus.Failure
     }
+
+    return UploadStatus.Success
   }
 
   private async verifyParameters(): Promise<boolean> {
@@ -291,10 +349,19 @@ export class UploadCommand extends Command {
       return false
     }
 
-    if (this.dartSymbols && !this.dartSymbolsLocation) {
-      this.context.stderr.write(renderDartSymbolsLocationRequiredError())
+    if (this.dartSymbolsLocation) {
+      if (!fs.existsSync(this.dartSymbolsLocation)) {
+        this.context.stderr.write(renderMissingDartSymbolsDir(this.dartSymbolsLocation))
 
-      return false
+        return false
+      }
+
+      const stats = fs.statSync(this.dartSymbolsLocation)
+      if (!stats.isDirectory()) {
+        this.context.stderr.write(renderInvalidSymbolsDir(this.dartSymbolsLocation))
+
+        return false
+      }
     }
 
     if (this.androidMapping && !this.androidMappingLocation) {
@@ -319,7 +386,6 @@ export class UploadCommand extends Command {
 
 UploadCommand.addPath('flutter-symbols', 'upload')
 UploadCommand.addOption('flavor', Command.String('--flavor'))
-UploadCommand.addOption('dartSymbols', Command.Boolean('--dart-symbols'))
 UploadCommand.addOption('dartSymbolsLocation', Command.String('--dart-symbols-location'))
 UploadCommand.addOption('iosDsyms', Command.Boolean('--ios-dsyms'))
 UploadCommand.addOption('iosDsymsLocation', Command.String('--ios-dsyms-location'))

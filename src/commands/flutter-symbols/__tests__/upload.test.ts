@@ -6,11 +6,12 @@ import {getRepositoryData} from '../../../helpers/git/format-git-sourcemaps-data
 import {MultipartPayload} from '../../../helpers/upload'
 import {performSubCommand} from '../../../helpers/utils'
 import * as dsyms from '../..//dsyms/upload'
-import {uploadMultipartHelper} from '../helpers'
+import {getArchInfoFromFilename, uploadMultipartHelper} from '../helpers'
 import {
-  renderDartSymbolsLocationRequiredError,
   renderInvalidPubspecError,
+  renderInvalidSymbolsDir,
   renderMissingAndroidMappingFile,
+  renderMissingDartSymbolsDir,
   renderMissingPubspecError,
   renderPubspecMissingVersionError,
 } from '../renderer'
@@ -102,18 +103,6 @@ describe('flutter-symbol upload', () => {
 
       expect(exitCode).toBe(0)
       expect(errorOutput).toBe('')
-    })
-
-    test('dart-symbols requires dart-symbols-location', async () => {
-      const {exitCode, context} = await runCommand((cmd) => {
-        cmd['serviceName'] = 'fake.service'
-        cmd['version'] = '1.0.0'
-        cmd['dartSymbols'] = true
-      })
-      const errorOutput = context.stderr.toString()
-
-      expect(exitCode).not.toBe(0)
-      expect(errorOutput).toBe(renderDartSymbolsLocationRequiredError())
     })
   })
 
@@ -283,7 +272,7 @@ describe('flutter-symbol upload', () => {
 
       const metadata = command['getAndroidMetadata']()
 
-      expect(metadata).toStrictEqual({
+      expect(metadata).toEqual({
         cli_version: cliVersion,
         git_commit_sha: 'fake-git-hash',
         git_repository_url: 'fake-git-remote',
@@ -315,7 +304,7 @@ describe('flutter-symbol upload', () => {
       expect(JSON.parse(payload.content.get('event')?.value as string)).toStrictEqual(expectedMetadata)
       const mappingFileItem = payload.content.get('jvm_mapping_file')
       expect(mappingFileItem).toBeTruthy()
-      expect((mappingFileItem?.options as FormData.AppendOptions).filename).toBe('mapping.txt')
+      expect((mappingFileItem?.options as FormData.AppendOptions).filename).toBe('jvm_mapping')
       expect(mappingFileItem?.value).toBeInstanceOf(ReadStream)
       expect((mappingFileItem?.value as ReadStream).path).toBe(`${fixtureDir}/android/fake-mapping.txt`)
       expect(exitCode).toBe(0)
@@ -387,7 +376,207 @@ describe('flutter-symbol upload', () => {
     })
   })
 
-  // TODO: describe('flutter symbol upload', () => {})
+  describe('flutter symbol upload', () => {
+    const addDefaultCommandParameters = (command: UploadCommand) => {
+      command['serviceName'] = 'fake.service'
+      command['version'] = '1.0.0'
+    }
 
-  // TODO: describe('combined upload', () => {})
+    const mockGitRepoParameters = (command: UploadCommand) => {
+      command['gitData'] = {
+        hash: 'fake-git-hash',
+        remote: 'fake-git-remote',
+        trackedFilesMatcher: new TrackedFilesMatcher([
+          './lib/main.dart',
+          './android/app/src/main/kotlin/com/datadoghq/example/flutter/MainActivity.kt',
+          './ios/Runner/AppDelegate.swift',
+        ]),
+      }
+    }
+
+    test('errors if symbol directory is missing', async () => {
+      const {exitCode, context} = await runCommand((cmd) => {
+        addDefaultCommandParameters(cmd)
+        cmd['dartSymbolsLocation'] = `${fixtureDir}/missing-dir`
+      })
+
+      const errorOutput = context.stderr.toString()
+
+      expect(exitCode).not.toBe(0)
+      expect(errorOutput).toBe(renderMissingDartSymbolsDir(`${fixtureDir}/missing-dir`))
+    })
+
+    test('errors if symbol directory is a file', async () => {
+      const {exitCode, context} = await runCommand((cmd) => {
+        addDefaultCommandParameters(cmd)
+        cmd['dartSymbolsLocation'] = `${fixtureDir}/dart-symbols/app.android-arm.symbols`
+      })
+
+      const errorOutput = context.stderr.toString()
+
+      expect(exitCode).not.toBe(0)
+      expect(errorOutput).toBe(renderInvalidSymbolsDir(`${fixtureDir}/dart-symbols/app.android-arm.symbols`))
+    })
+
+    test('creates correct metadata payloads', () => {
+      const command = new UploadCommand()
+      addDefaultCommandParameters(command)
+      mockGitRepoParameters(command)
+
+      const metadata = command['getFlutterMetadata']('ios', 'arm64')
+
+      expect(metadata).toEqual({
+        arch: 'arm64',
+        cli_version: cliVersion,
+        git_commit_sha: 'fake-git-hash',
+        git_repository_url: 'fake-git-remote',
+        platform: 'ios',
+        service: 'fake.service',
+        type: 'flutter_symbol_file',
+        variant: 'release',
+        version: '1.0.0',
+      })
+    })
+
+    test('parses symbol filenames into platform / arch', () => {
+      const info1 = getArchInfoFromFilename('app.android-arm.symbols')
+      const info2 = getArchInfoFromFilename('./a/directory/app.android-x64.symbols')
+      const info3 = getArchInfoFromFilename('./a/directory/app.confusing-.ios-arm64.symbols')
+      const info4 = getArchInfoFromFilename('app.bad.symbols')
+
+      expect(info1).toEqual({platform: 'android', arch: 'arm'})
+      expect(info2).toEqual({platform: 'android', arch: 'x64'})
+      expect(info3).toEqual({platform: 'ios', arch: 'arm64'})
+      expect(info4).toBeUndefined()
+    })
+
+    const getExpectedMetadata = (
+      platform: string,
+      arch: string,
+      gitCommitSha?: string,
+      gitRespositoryUrl?: string
+    ) => ({
+      arch,
+      cli_version: cliVersion,
+      ...(gitCommitSha && {git_commit_sha: gitCommitSha}),
+      ...(gitRespositoryUrl && {git_repository_url: gitRespositoryUrl}),
+      platform,
+      service: 'fake.service',
+      type: 'flutter_symbol_file',
+      variant: 'release',
+      version: '1.0.0',
+    })
+
+    test('uploads correct multipart payloads without repository', async () => {
+      ;(uploadMultipartHelper as jest.Mock).mockResolvedValue('')
+
+      const {exitCode} = await runCommand((cmd) => {
+        addDefaultCommandParameters(cmd)
+        cmd['dartSymbolsLocation'] = `${fixtureDir}/dart-symbols`
+      })
+
+      const expectedMetadatas = [
+        getExpectedMetadata('android', 'arm'),
+        getExpectedMetadata('android', 'arm64'),
+        getExpectedMetadata('android', 'x64'),
+        getExpectedMetadata('ios', 'arm64'),
+      ]
+
+      expect(uploadMultipartHelper).toBeCalledTimes(4)
+      expectedMetadatas.forEach((expectedMetadata) => {
+        const mockCalls = (uploadMultipartHelper as jest.Mock).mock.calls
+        const index = mockCalls.findIndex((call) => {
+          const checkPayload = call[1] as MultipartPayload
+          const eventPayload = checkPayload.content.get('event')?.value as string
+
+          return eventPayload === JSON.stringify(expectedMetadata)
+        })
+        // Ensure the metadata matches at least one call
+        expect(index).not.toBe(-1)
+        const payload = mockCalls[index][1] as MultipartPayload
+        const mappingFileItem = payload.content.get('flutter_symbol_file')
+        expect(mappingFileItem).toBeTruthy()
+        expect((mappingFileItem?.options as FormData.AppendOptions).filename).toBe('flutter_symbol_file')
+        expect(mappingFileItem?.value).toBeInstanceOf(ReadStream)
+        const expectedPath = `${fixtureDir}/dart-symbols/app.${expectedMetadata.platform}-${expectedMetadata.arch}.symbols`
+        expect((mappingFileItem?.value as ReadStream).path).toBe(expectedPath)
+      })
+
+      expect(exitCode).toBe(0)
+    })
+
+    test('uploads correct multipart payloads with repository', async () => {
+      ;(uploadMultipartHelper as jest.Mock).mockResolvedValue('')
+      ;(getRepositoryData as jest.Mock).mockResolvedValueOnce({
+        hash: 'fake-git-hash',
+        remote: 'fake-git-remote',
+        trackedFilesMatcher: new TrackedFilesMatcher([
+          './lib/main.dart',
+          './android/app/src/main/kotlin/com/datadoghq/example/flutter/MainActivity.kt',
+          './ios/Runner/AppDelegate.swift',
+        ]),
+      })
+
+      const {exitCode} = await runCommand((cmd) => {
+        addDefaultCommandParameters(cmd)
+        cmd['dartSymbolsLocation'] = `${fixtureDir}/dart-symbols`
+      })
+
+      const expectedMetadatas = [
+        getExpectedMetadata('android', 'arm', 'fake-git-hash', 'fake-git-remote'),
+        getExpectedMetadata('android', 'arm64', 'fake-git-hash', 'fake-git-remote'),
+        getExpectedMetadata('android', 'x64', 'fake-git-hash', 'fake-git-remote'),
+        getExpectedMetadata('ios', 'arm64', 'fake-git-hash', 'fake-git-remote'),
+      ]
+
+      const expectedRepository = {
+        data: [
+          {
+            files: [
+              './lib/main.dart',
+              './android/app/src/main/kotlin/com/datadoghq/example/flutter/MainActivity.kt',
+              './ios/Runner/AppDelegate.swift',
+            ],
+            hash: 'fake-git-hash',
+            repository_url: 'fake-git-remote',
+          },
+        ],
+        version: 1,
+      }
+
+      expect(uploadMultipartHelper).toBeCalledTimes(4)
+      expectedMetadatas.forEach((expectedMetadata) => {
+        const mockCalls = (uploadMultipartHelper as jest.Mock).mock.calls
+        const index = mockCalls.findIndex((call) => {
+          const checkPayload = call[1] as MultipartPayload
+          const eventPayload = checkPayload.content.get('event')?.value as string
+
+          return eventPayload === JSON.stringify(expectedMetadata)
+        })
+        // Ensure the metadata matches at least one call
+        expect(index).not.toBe(-1)
+        const payload = mockCalls[index][1] as MultipartPayload
+        const repoValue = payload.content.get('repository')
+        expect(JSON.parse(repoValue?.value as string)).toStrictEqual(expectedRepository)
+        expect((repoValue?.options as FormData.AppendOptions).filename).toBe('repository')
+        expect((repoValue?.options as FormData.AppendOptions).contentType).toBe('application/json')
+        expect(exitCode).toBe(0)
+      })
+
+      expect(exitCode).toBe(0)
+    })
+
+    test('skips upload on dry run', async () => {
+      ;(uploadMultipartHelper as jest.Mock).mockResolvedValueOnce('')
+
+      const {exitCode} = await runCommand((cmd) => {
+        addDefaultCommandParameters(cmd)
+        cmd['dartSymbolsLocation'] = `${fixtureDir}/dart-symbols`
+        cmd['dryRun'] = true
+      })
+
+      expect(uploadMultipartHelper).not.toHaveBeenCalled()
+      expect(exitCode).toBe(0)
+    })
+  })
 })

@@ -22,8 +22,11 @@ export const renderPubspecMissingVersionError = (pubspecLocation: string) =>
     `${ICONS.FAILED} pubspec at '${pubspecLocation}' does not contain a version. Supply a version in the pubspec or use the --version argument.\n`
   )
 
-export const renderDartSymbolsLocationRequiredError = () =>
-  chalk.red(`${ICONS.FAILED} Error: specifying "--dart-symbols" requires specifying "--dart-symbol-location"\n`)
+export const renderMissingDartSymbolsDir = (symbolsDirectory: string) =>
+  chalk.red(`${ICONS.FAILED} Error: Could not locate Dart Symbols at ${symbolsDirectory}.\n`)
+
+export const renderInvalidSymbolsDir = (symbolsDirectory: string) =>
+  chalk.red(`${ICONS.FAILED} Failed to get symbols files - ${symbolsDirectory} is not a directory.`)
 
 export const renderMissingAndroidMappingFile = (mappingLocation: string) =>
   chalk.red(`${ICONS.FAILED} Error: Could not locate Android Mapping file at ${mappingLocation}.\n`)

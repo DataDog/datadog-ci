@@ -1,3 +1,4 @@
+import * as path from 'path'
 import {upload} from '../..//helpers/upload'
 import {UploadOptions} from '../..//helpers/upload'
 import {getRequestBuilder} from '../..//helpers/utils'
@@ -22,3 +23,23 @@ export const uploadMultipartHelper = async (
   payload: MultipartPayload,
   opts: UploadOptions
 ) => upload(requestBuilder)(payload, opts)
+
+export const getArchInfoFromFilename = (filename: string) => {
+  const parsed = path.parse(filename)
+  const basename = parsed.name
+  const groups = /^.*\.(?<platform>.*)-(?<arch>.*)$/.exec(basename)?.groups
+  if (!groups) {
+    return undefined
+  }
+
+  const value = {
+    arch: groups.arch,
+    platform: groups.platform,
+  }
+
+  if (!value.platform || !value.arch) {
+    return undefined
+  }
+
+  return value
+}
