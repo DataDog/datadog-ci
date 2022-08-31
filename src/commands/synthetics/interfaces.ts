@@ -190,6 +190,14 @@ export interface ServerTest {
   overall_state_modified: string
   public_id: string
   status: string
+  mobileApplication?: {
+    created_at: string
+    id: string
+    description: string
+    name: string,
+    platform: 'ios' | 'android',
+    tags: string[],
+  }
   stepCount: number
   subtype: string
   tags: string[]
