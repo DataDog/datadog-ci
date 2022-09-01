@@ -44,6 +44,10 @@ describe('dd-api', () => {
   const PRESIGNED_URL_PAYLOAD = {
     url: 'wss://presigned.url',
   }
+  const MOBILE_PRESIGNED_URL_PAYLOAD = {
+    file_name: 'fileNameUuid',
+    presigned_url_params: 'https://www.presigned.url',
+  }
 
   test('should get results from api', async () => {
     jest.spyOn(axios, 'create').mockImplementation((() => () => ({data: POLL_RESULTS})) as any)
@@ -151,6 +155,15 @@ describe('dd-api', () => {
     const {getTunnelPresignedURL} = api
     const {url} = await getTunnelPresignedURL([TRIGGERED_TEST_ID])
     expect(url).toEqual(PRESIGNED_URL_PAYLOAD.url)
+    spy.mockRestore()
+  })
+
+  test('should upload a mobile application with a presigned URL', async () => {
+    const spy = jest.spyOn(axios, 'create').mockImplementation((() => () => ({data: PRESIGNED_URL_PAYLOAD})) as any)
+    const api = apiConstructor(apiConfiguration)
+    const {uploadMobileApplication} = api
+    await uploadMobileApplication(Buffer.from(''), MOBILE_PRESIGNED_URL_PAYLOAD.presigned_url_params)
+
     spy.mockRestore()
   })
 
