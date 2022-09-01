@@ -102,25 +102,25 @@ export const overriddenMobileConfig = (
   delete overriddenTest.mobileIOSApplicationVersion
 }
 
-export const uploadMobileApplicationsAndOverrideMobileConfig = async (
+export const uploadApplicationsAndOverrideConfig = async (
   api: APIHelper,
   tests: Test[],
   overriddenTestsToTrigger: TestPayload[]
-) => {
+): Promise<void> => {
   const uploadedApplicationByApplication: {
     [applicationFilePath: string]: {applicationId: string; fileName: string}[]
   } = {}
 
   for (const overriddenTest of overriddenTestsToTrigger) {
     const test = getTestByPublicId(overriddenTest.public_id, tests)
+    if (test.type !== 'mobile') {
+      continue
+    }
 
     const applicationPathToUpload = getApplicationToUpload(test, overriddenTest)
     if (!applicationPathToUpload) {
-      if (test.type === 'mobile') {
-        overriddenMobileConfig(test, overriddenTest)
-      }
-
-      return
+      overriddenMobileConfig(test, overriddenTest)
+      continue
     }
 
     await uploadApplicationIfNeeded(api, applicationPathToUpload, test, uploadedApplicationByApplication)

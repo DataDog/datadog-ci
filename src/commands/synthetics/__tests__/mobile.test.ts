@@ -1,10 +1,7 @@
-import {ProxyConfiguration} from '../../../helpers/utils'
-
-import {apiConstructor} from '../api'
-import {ExecutionRule, TestPayload} from '../interfaces'
+import {ExecutionRule, Test, TestPayload} from '../interfaces'
 import * as mobile from '../mobile'
 
-import {getApiTest, getMobileTest} from './fixtures'
+import {getApiHelper, getApiTest, getMobileTest} from './fixtures'
 
 const getTestPayload = (override?: Partial<TestPayload>) => ({
   executionRule: ExecutionRule.BLOCKING,
@@ -139,15 +136,8 @@ describe('overriddenMobileConfig', () => {
 })
 
 describe('uploadApplicationIfNeeded', () => {
-  const apiConfiguration = {
-    apiKey: '123',
-    appKey: '123',
-    baseIntakeUrl: 'baseintake',
-    baseUrl: 'base',
-    proxyOpts: {protocol: 'http'} as ProxyConfiguration,
-  }
-  const api = apiConstructor(apiConfiguration)
   const uploadApplicationSpy = jest.spyOn(mobile, 'uploadMobileApplications')
+  const api = getApiHelper()
 
   beforeEach(() => {
     uploadApplicationSpy.mockReset()
@@ -301,5 +291,38 @@ describe('uploadApplicationIfNeeded', () => {
     })
 
     expect(uploadApplicationSpy).toHaveBeenCalledTimes(1)
+  })
+})
+
+describe('uploadApplicationsAndOverrideConfig', () => {
+  const uploadApplicationSpy = jest.spyOn(mobile, 'uploadMobileApplications')
+  const api = getApiHelper()
+
+  beforeEach(() => {
+    uploadApplicationSpy.mockReset()
+    uploadApplicationSpy.mockImplementation(async () => 'fileName')
+  })
+
+  test('Upload and override for mobile tests and skip for others', async () => {
+    const tests: Test[] = [getApiTest(), getMobileTest('mob-ile-abc')]
+
+    const overriddenTestsToTrigger: TestPayload[] = [
+      getTestPayload({public_id: tests[0].public_id}),
+      getTestPayload({
+        mobileAndroidApplicationVersionFilePath: 'androidAppPath',
+        public_id: tests[1].public_id,
+      }),
+    ]
+
+    await mobile.uploadApplicationsAndOverrideConfig(api, tests, overriddenTestsToTrigger)
+
+    expect(overriddenTestsToTrigger).toEqual([
+      getTestPayload({public_id: tests[0].public_id}),
+      getTestPayload({
+        applicationId: 'mobileAppUuid',
+        fileName: 'fileName',
+        public_id: tests[1].public_id,
+      }),
+    ])
   })
 })

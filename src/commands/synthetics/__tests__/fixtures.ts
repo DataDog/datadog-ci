@@ -5,6 +5,7 @@ import WebSocket, {Server as WebSocketServer} from 'ws'
 
 import {ProxyConfiguration} from '../../../helpers/utils'
 
+import {apiConstructor} from '../api'
 import {
   ApiServerResult,
   Batch,
@@ -499,3 +500,15 @@ export const getMobileTest = (publicId = 'abc-def-ghi'): Test => ({
   tags: [],
   type: 'mobile',
 })
+
+export const getApiHelper = () => {
+  const apiConfiguration = {
+    apiKey: '123',
+    appKey: '123',
+    baseIntakeUrl: 'baseintake',
+    baseUrl: 'base',
+    proxyOpts: {protocol: 'http'} as ProxyConfiguration,
+  }
+
+  return apiConstructor(apiConfiguration)
+}
