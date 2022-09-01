@@ -201,9 +201,9 @@ describe('uploadApplicationsAndOverrideConfig', () => {
 
     expect(overriddenTestsToTrigger).toEqual([
       getTestPayload({public_id: tests[0].public_id}),
+      // Not override yet
       getTestPayload({
-        applicationId: 'mobileAppUuid',
-        fileName: 'fileName',
+        mobileApplicationVersionFilePath: 'androidAppPath',
         public_id: tests[1].public_id,
       }),
     ])
