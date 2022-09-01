@@ -141,13 +141,13 @@ export class UploadCommand extends Command {
     const callResults: UploadStatus[] = []
     try {
       if (this.iosDsymsLocation) {
-        callResults.concat(await this.performDsymUpload())
+        callResults.push(await this.performDsymUpload())
       }
       if (this.androidMappingLocation) {
-        callResults.concat(await this.performAndroidMappingUpload(metricsLogger, apiKeyValidator))
+        callResults.push(await this.performAndroidMappingUpload(metricsLogger, apiKeyValidator))
       }
       if (this.dartSymbolsLocation) {
-        callResults.concat(await this.performDartSymbolsUpload(metricsLogger, apiKeyValidator))
+        callResults.push(...(await this.performDartSymbolsUpload(metricsLogger, apiKeyValidator)))
       }
 
       const totalTime = (Date.now() - initialTime) / 1000

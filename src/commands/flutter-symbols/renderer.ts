@@ -26,7 +26,7 @@ export const renderCommandInfo = (
   uploadInfo.forEach((ui) => {
     fullString += chalk.green(`Uploaing ${ui.platform} ${ui.fileType} at location ${ui.location}\n`)
   })
-  const serviceVersionProjectPathStr = chalk.green(`  version: ${version} service: ${service}\n flavor: ${flavor}`)
+  const serviceVersionProjectPathStr = chalk.green(`  version: ${version} service: ${service} flavor: ${flavor}\n`)
   fullString += serviceVersionProjectPathStr
 
   return fullString
@@ -71,6 +71,8 @@ export const renderCommandSummary = (statuses: UploadStatus[], duration: number,
   } else {
     output.push(chalk.yellow(`${ICONS.WARNING} No actions were taken. Did you specify the correct path?`))
   }
+
+  return output.join('\n') + '\n'
 }
 
 export const renderGitWarning = (errorMessage: string) =>
@@ -103,7 +105,12 @@ export const renderInvalidSymbolsDir = (symbolsDirectory: string) =>
 export const renderMissingAndroidMappingFile = (mappingLocation: string) =>
   chalk.red(`${ICONS.FAILED} Error: Could not locate Android Mapping file at ${mappingLocation}.\n`)
 
-export const renderGeneralizedError = (error: any) => chalk.red(`${ICONS.FAILED} Error: ${error}\n`)
+export const renderGeneralizedError = (error: any) => {
+  let str = chalk.red(`${ICONS.FAILED} Error: ${error}\n`)
+  str += error.stack
+
+  return str
+}
 
 export const renderFailedUpload = (filePath: string, errorMessage: string) => {
   const filePathBold = `[${chalk.bold.dim(filePath)}]`
