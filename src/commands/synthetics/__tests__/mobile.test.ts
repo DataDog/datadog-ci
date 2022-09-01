@@ -15,58 +15,6 @@ const getTestPayload = (override?: Partial<TestPayload>) => ({
   ...override,
 })
 
-describe('getApplicationToUpload', () => {
-  test('not a mobile test', () => {
-    expect(mobile.getApplicationToUpload(getApiTest(), getTestPayload())).toBeUndefined()
-    expect(
-      mobile.getApplicationToUpload(
-        getApiTest(),
-        getTestPayload({mobileAndroidApplicationVersionFilePath: 'androidAppPath'})
-      )
-    ).toBeUndefined()
-  })
-
-  test('no override', () => {
-    expect(mobile.getApplicationToUpload(getApiTest(), getTestPayload())).toBeUndefined()
-  })
-
-  test('override Android path', () => {
-    expect(
-      mobile.getApplicationToUpload(
-        getMobileTest(),
-        getTestPayload({mobileAndroidApplicationVersionFilePath: 'androidAppPath'})
-      )
-    ).toBe('androidAppPath')
-  })
-
-  test('override iOS with path', () => {
-    const mobileTest = getMobileTest()
-    mobileTest.mobileApplication!.platform = 'ios'
-
-    expect(
-      mobile.getApplicationToUpload(mobileTest, getTestPayload({mobileIOSApplicationVersionFilePath: 'iOSAppPath'}))
-    ).toBe('iOSAppPath')
-  })
-
-  test('override Android with version', () => {
-    expect(
-      mobile.getApplicationToUpload(
-        getMobileTest(),
-        getTestPayload({mobileAndroidApplicationVersion: 'androidVersion'})
-      )
-    ).toBeUndefined()
-  })
-
-  test('override iOS with version', () => {
-    const mobileTest = getMobileTest()
-    mobileTest.mobileApplication!.platform = 'ios'
-
-    expect(
-      mobile.getApplicationToUpload(mobileTest, getTestPayload({mobileIOSApplicationVersion: 'iOSVersion'}))
-    ).toBeUndefined()
-  })
-})
-
 describe('getMD5HashFromFile', () => {
   test('correctly compute md5 of a file', async () => {
     const dir = (await tmp.dir({mode: 0o755, unsafeCleanup: true})).path
@@ -77,76 +25,39 @@ describe('getMD5HashFromFile', () => {
 })
 
 describe('overriddenMobileConfig', () => {
-  test('Android path', () => {
-    const overriddenConfig = getTestPayload({mobileAndroidApplicationVersionFilePath: 'androidAppPath'})
-    mobile.overriddenMobileConfig(getMobileTest(), overriddenConfig, {
+  test('mobileApplicationVersionFilePath', () => {
+    const overriddenConfig = getTestPayload({mobileApplicationVersionFilePath: 'androidAppPath'})
+    mobile.overriddenMobileConfig(overriddenConfig, {
       applicationId: 'applicationId',
       fileName: 'fileName',
     })
 
     expect(overriddenConfig).toEqual(expect.objectContaining({applicationId: 'applicationId', fileName: 'fileName'}))
-    expect(overriddenConfig.mobileAndroidApplicationVersionFilePath).toBeUndefined()
+    expect(overriddenConfig.mobileApplicationVersionFilePath).toBeUndefined()
   })
 
-  test('iOS path', () => {
-    const mobileTest = getMobileTest()
-    mobileTest.mobileApplication!.platform = 'ios'
-    const overriddenConfig = getTestPayload({mobileIOSApplicationVersionFilePath: 'iOSAppPath'})
+  test('mobileApplicationVersion', () => {
+    const overriddenConfig = getTestPayload({mobileApplicationVersion: 'androidVersion'})
 
-    mobile.overriddenMobileConfig(mobileTest, overriddenConfig, {applicationId: 'applicationId', fileName: 'fileName'})
+    mobile.overriddenMobileConfig(overriddenConfig)
 
-    expect(overriddenConfig).toEqual(expect.objectContaining({applicationId: 'applicationId', fileName: 'fileName'}))
-    expect(overriddenConfig.mobileIOSApplicationVersionFilePath).toBeUndefined()
-  })
-
-  test('Android version', () => {
-    const overriddenConfig = getTestPayload({mobileAndroidApplicationVersion: 'androidVersion'})
-
-    mobile.overriddenMobileConfig(getMobileTest(), overriddenConfig)
-
-    expect(overriddenConfig.mobileAndroidApplicationVersion).toBeUndefined()
+    expect(overriddenConfig.mobileApplicationVersion).toBeUndefined()
     expect(overriddenConfig.applicationVersionId).toBe('androidVersion')
   })
 
-  test('iOS version', () => {
-    const mobileTest = getMobileTest()
-    mobileTest.mobileApplication!.platform = 'ios'
-    const overriddenConfig = getTestPayload({mobileIOSApplicationVersion: 'iOSVersion'})
-
-    mobile.overriddenMobileConfig(mobileTest, overriddenConfig)
-
-    expect(overriddenConfig.mobileIOSApplicationVersion).toBeUndefined()
-    expect(overriddenConfig.applicationVersionId).toBe('iOSVersion')
-  })
-
-  test('Android path takes precedence over version', () => {
+  test('Path takes precedence over version', () => {
     const overriddenConfig = getTestPayload({
-      mobileAndroidApplicationVersion: 'androidVersion',
-      mobileAndroidApplicationVersionFilePath: 'androidAppPath',
+      mobileApplicationVersion: 'androidVersion',
+      mobileApplicationVersionFilePath: 'androidAppPath',
     })
-    mobile.overriddenMobileConfig(getMobileTest(), overriddenConfig, {
+    mobile.overriddenMobileConfig(overriddenConfig, {
       applicationId: 'applicationId',
       fileName: 'fileName',
     })
 
     expect(overriddenConfig).toEqual(expect.objectContaining({applicationId: 'applicationId', fileName: 'fileName'}))
-    expect(overriddenConfig.mobileAndroidApplicationVersionFilePath).toBeUndefined()
-    expect(overriddenConfig.mobileAndroidApplicationVersion).toBeUndefined()
-  })
-
-  test('iOS path takes precedence over version', () => {
-    const mobileTest = getMobileTest()
-    mobileTest.mobileApplication!.platform = 'ios'
-
-    const overriddenConfig = getTestPayload({
-      mobileAndroidApplicationVersion: 'iOSVersion',
-      mobileAndroidApplicationVersionFilePath: 'iOSAppPath',
-    })
-    mobile.overriddenMobileConfig(mobileTest, overriddenConfig, {applicationId: 'applicationId', fileName: 'fileName'})
-
-    expect(overriddenConfig).toEqual(expect.objectContaining({applicationId: 'applicationId', fileName: 'fileName'}))
-    expect(overriddenConfig.mobileIOSApplicationVersionFilePath).toBeUndefined()
-    expect(overriddenConfig.mobileIOSApplicationVersion).toBeUndefined()
+    expect(overriddenConfig.mobileApplicationVersionFilePath).toBeUndefined()
+    expect(overriddenConfig.mobileApplicationVersion).toBeUndefined()
   })
 })
 
@@ -324,7 +235,7 @@ describe('uploadApplicationsAndOverrideConfig', () => {
     const overriddenTestsToTrigger: TestPayload[] = [
       getTestPayload({public_id: tests[0].public_id}),
       getTestPayload({
-        mobileAndroidApplicationVersionFilePath: 'androidAppPath',
+        mobileApplicationVersionFilePath: 'androidAppPath',
         public_id: tests[1].public_id,
       }),
     ]

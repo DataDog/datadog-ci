@@ -5,20 +5,6 @@ import {APIHelper} from './api'
 import {Test, TestPayload} from './interfaces'
 import {getTestByPublicId} from './utils'
 
-export const getApplicationToUpload = (test: Test, overrideTest: TestPayload): string | undefined => {
-  if (test.type !== 'mobile') {
-    return
-  }
-
-  if (test.mobileApplication!.platform === 'android') {
-    return overrideTest.mobileAndroidApplicationVersionFilePath
-  }
-
-  if (test.mobileApplication!.platform === 'ios') {
-    return overrideTest.mobileIOSApplicationVersionFilePath
-  }
-}
-
 export const getMD5HashFromFile = async (fileBuffer: Buffer): Promise<string> => {
   const hash = crypto.createHash('md5').update(fileBuffer).digest('base64')
 
@@ -69,7 +55,6 @@ export const uploadApplicationIfNeeded = async (
 }
 
 export const overriddenMobileConfig = (
-  test: Test,
   overriddenTest: TestPayload,
   localApplicationOverride?: {applicationId: string; fileName: string}
 ) => {
@@ -78,28 +63,13 @@ export const overriddenMobileConfig = (
     overriddenTest.fileName = localApplicationOverride.fileName
   }
 
-  delete overriddenTest.mobileAndroidApplicationVersionFilePath
-  delete overriddenTest.mobileIOSApplicationVersionFilePath
+  delete overriddenTest.mobileApplicationVersionFilePath
 
-  if (
-    !localApplicationOverride &&
-    test.mobileApplication!.platform === 'android' &&
-    overriddenTest.mobileAndroidApplicationVersion
-  ) {
-    overriddenTest.applicationVersionId = overriddenTest.mobileAndroidApplicationVersion
+  if (!localApplicationOverride && overriddenTest.mobileApplicationVersion) {
+    overriddenTest.applicationVersionId = overriddenTest.mobileApplicationVersion
   }
 
-  delete overriddenTest.mobileAndroidApplicationVersion
-
-  if (
-    !localApplicationOverride &&
-    test.mobileApplication!.platform === 'ios' &&
-    overriddenTest.mobileIOSApplicationVersion
-  ) {
-    overriddenTest.applicationVersionId = overriddenTest.mobileIOSApplicationVersion
-  }
-
-  delete overriddenTest.mobileIOSApplicationVersion
+  delete overriddenTest.mobileApplicationVersion
 }
 
 export const uploadApplicationsAndOverrideConfig = async (
@@ -117,18 +87,21 @@ export const uploadApplicationsAndOverrideConfig = async (
       continue
     }
 
-    const applicationPathToUpload = getApplicationToUpload(test, overriddenTest)
-    if (!applicationPathToUpload) {
-      overriddenMobileConfig(test, overriddenTest)
+    if (!overriddenTest.mobileApplicationVersionFilePath) {
+      overriddenMobileConfig(overriddenTest)
       continue
     }
 
-    await uploadApplicationIfNeeded(api, applicationPathToUpload, test, uploadedApplicationByApplication)
+    await uploadApplicationIfNeeded(
+      api,
+      overriddenTest.mobileApplicationVersionFilePath,
+      test,
+      uploadedApplicationByApplication
+    )
 
     overriddenMobileConfig(
-      test,
       overriddenTest,
-      uploadedApplicationByApplication[applicationPathToUpload].find(
+      uploadedApplicationByApplication[overriddenTest.mobileApplicationVersionFilePath].find(
         ({applicationId}) => applicationId === test.mobileApplication!.id
       )
     )

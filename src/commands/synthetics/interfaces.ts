@@ -279,10 +279,8 @@ export interface ConfigOverride {
   followRedirects?: boolean
   headers?: {[key: string]: string}
   locations?: string[]
-  mobileAndroidApplicationVersion?: string
-  mobileAndroidApplicationVersionFilePath?: string
-  mobileIOSApplicationVersion?: string
-  mobileIOSApplicationVersionFilePath?: string
+  mobileApplicationVersion?: string
+  mobileApplicationVersionFilePath?: string
   pollingTimeout?: number
   retry?: RetryConfig
   startUrl?: string

@@ -78,6 +78,8 @@ export const getOverriddenConfig = (
       'followRedirects',
       'headers',
       'locations',
+      'mobileApplicationVersion',
+      'mobileApplicationVersionFilePath',
       'pollingTimeout',
       'retry',
       'startUrlSubstitutionRegex',
