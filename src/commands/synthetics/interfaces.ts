@@ -173,6 +173,14 @@ export interface ServerTest {
   created_by: User
   locations: string[]
   message: string
+  mobileApplication?: {
+    created_at: string
+    description: string
+    id: string
+    name: string
+    platform: 'ios' | 'android'
+    tags: string[]
+  }
   modified_at: string
   modified_by: User
   monitor_id: number
@@ -258,6 +266,8 @@ export interface RetryConfig {
 
 export interface ConfigOverride {
   allowInsecureCertificates?: boolean
+  applicationId?: string
+  applicationVersionId?: string
   basicAuth?: BasicAuthCredentials
   body?: string
   bodyType?: string
@@ -265,9 +275,12 @@ export interface ConfigOverride {
   defaultStepTimeout?: number
   deviceIds?: string[]
   executionRule?: ExecutionRule
+  fileName?: string
   followRedirects?: boolean
   headers?: {[key: string]: string}
   locations?: string[]
+  mobileApplicationVersion?: string
+  mobileApplicationVersionFilePath?: string
   pollingTimeout?: number
   retry?: RetryConfig
   startUrl?: string

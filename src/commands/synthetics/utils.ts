@@ -78,6 +78,8 @@ export const getOverriddenConfig = (
       'followRedirects',
       'headers',
       'locations',
+      'mobileApplicationVersion',
+      'mobileApplicationVersionFilePath',
       'pollingTimeout',
       'retry',
       'startUrlSubstitutionRegex',
@@ -283,7 +285,7 @@ const getBatch = async (
   }
 }
 
-const getTestByPublicId = (id: string, tests: Test[]): Test => tests.find((t) => t.public_id === id)!
+export const getTestByPublicId = (id: string, tests: Test[]): Test => tests.find((t) => t.public_id === id)!
 
 const getPollResultMap = async (api: APIHelper, batch: Batch) => {
   try {
