@@ -1,31 +1,35 @@
+import {ProxyConfiguration} from '../../../helpers/utils'
+
+import {apiConstructor} from '../api'
+import {ExecutionRule, TestPayload} from '../interfaces'
+import * as mobile from '../mobile'
+
 import {getApiTest, getMobileTest} from './fixtures'
 
-import {ExecutionRule, TestPayload} from '../interfaces'
-import {getApplicationToUpload, overriddenMobileConfig} from '../mobile'
-
-const getTestPayload = (override?: Partial<TestPayload>) => {
-  return {
-    public_id: 'aaa-aaa-aaa',
-    executionRule: ExecutionRule.BLOCKING,
-    ...override,
-  }
-}
+const getTestPayload = (override?: Partial<TestPayload>) => ({
+  executionRule: ExecutionRule.BLOCKING,
+  public_id: 'aaa-aaa-aaa',
+  ...override,
+})
 
 describe('getApplicationToUpload', () => {
   test('not a mobile test', () => {
-    expect(getApplicationToUpload(getApiTest(), getTestPayload())).toBeUndefined()
+    expect(mobile.getApplicationToUpload(getApiTest(), getTestPayload())).toBeUndefined()
     expect(
-      getApplicationToUpload(getApiTest(), getTestPayload({mobileAndroidApplicationVersionFilePath: 'androidAppPath'}))
+      mobile.getApplicationToUpload(
+        getApiTest(),
+        getTestPayload({mobileAndroidApplicationVersionFilePath: 'androidAppPath'})
+      )
     ).toBeUndefined()
   })
 
   test('no override', () => {
-    expect(getApplicationToUpload(getApiTest(), getTestPayload())).toBeUndefined()
+    expect(mobile.getApplicationToUpload(getApiTest(), getTestPayload())).toBeUndefined()
   })
 
   test('override Android path', () => {
     expect(
-      getApplicationToUpload(
+      mobile.getApplicationToUpload(
         getMobileTest(),
         getTestPayload({mobileAndroidApplicationVersionFilePath: 'androidAppPath'})
       )
@@ -37,13 +41,16 @@ describe('getApplicationToUpload', () => {
     mobileTest.mobileApplication!.platform = 'ios'
 
     expect(
-      getApplicationToUpload(mobileTest, getTestPayload({mobileIOSApplicationVersionFilePath: 'iOSAppPath'}))
+      mobile.getApplicationToUpload(mobileTest, getTestPayload({mobileIOSApplicationVersionFilePath: 'iOSAppPath'}))
     ).toBe('iOSAppPath')
   })
 
   test('override Android with version', () => {
     expect(
-      getApplicationToUpload(getMobileTest(), getTestPayload({mobileAndroidApplicationVersion: 'androidVersion'}))
+      mobile.getApplicationToUpload(
+        getMobileTest(),
+        getTestPayload({mobileAndroidApplicationVersion: 'androidVersion'})
+      )
     ).toBeUndefined()
   })
 
@@ -52,7 +59,7 @@ describe('getApplicationToUpload', () => {
     mobileTest.mobileApplication!.platform = 'ios'
 
     expect(
-      getApplicationToUpload(mobileTest, getTestPayload({mobileIOSApplicationVersion: 'iOSVersion'}))
+      mobile.getApplicationToUpload(mobileTest, getTestPayload({mobileIOSApplicationVersion: 'iOSVersion'}))
     ).toBeUndefined()
   })
 })
@@ -60,7 +67,10 @@ describe('getApplicationToUpload', () => {
 describe('overriddenMobileConfig', () => {
   test('Android path', () => {
     const overriddenConfig = getTestPayload({mobileAndroidApplicationVersionFilePath: 'androidAppPath'})
-    overriddenMobileConfig(getMobileTest(), overriddenConfig, {applicationId: 'applicationId', fileName: 'fileName'})
+    mobile.overriddenMobileConfig(getMobileTest(), overriddenConfig, {
+      applicationId: 'applicationId',
+      fileName: 'fileName',
+    })
 
     expect(overriddenConfig).toEqual(expect.objectContaining({applicationId: 'applicationId', fileName: 'fileName'}))
     expect(overriddenConfig.mobileAndroidApplicationVersionFilePath).toBeUndefined()
@@ -71,7 +81,7 @@ describe('overriddenMobileConfig', () => {
     mobileTest.mobileApplication!.platform = 'ios'
     const overriddenConfig = getTestPayload({mobileIOSApplicationVersionFilePath: 'iOSAppPath'})
 
-    overriddenMobileConfig(mobileTest, overriddenConfig, {applicationId: 'applicationId', fileName: 'fileName'})
+    mobile.overriddenMobileConfig(mobileTest, overriddenConfig, {applicationId: 'applicationId', fileName: 'fileName'})
 
     expect(overriddenConfig).toEqual(expect.objectContaining({applicationId: 'applicationId', fileName: 'fileName'}))
     expect(overriddenConfig.mobileIOSApplicationVersionFilePath).toBeUndefined()
@@ -80,7 +90,7 @@ describe('overriddenMobileConfig', () => {
   test('Android version', () => {
     const overriddenConfig = getTestPayload({mobileAndroidApplicationVersion: 'androidVersion'})
 
-    overriddenMobileConfig(getMobileTest(), overriddenConfig)
+    mobile.overriddenMobileConfig(getMobileTest(), overriddenConfig)
 
     expect(overriddenConfig.mobileAndroidApplicationVersion).toBeUndefined()
     expect(overriddenConfig.applicationVersionId).toBe('androidVersion')
@@ -91,7 +101,7 @@ describe('overriddenMobileConfig', () => {
     mobileTest.mobileApplication!.platform = 'ios'
     const overriddenConfig = getTestPayload({mobileIOSApplicationVersion: 'iOSVersion'})
 
-    overriddenMobileConfig(mobileTest, overriddenConfig)
+    mobile.overriddenMobileConfig(mobileTest, overriddenConfig)
 
     expect(overriddenConfig.mobileIOSApplicationVersion).toBeUndefined()
     expect(overriddenConfig.applicationVersionId).toBe('iOSVersion')
@@ -102,7 +112,10 @@ describe('overriddenMobileConfig', () => {
       mobileAndroidApplicationVersion: 'androidVersion',
       mobileAndroidApplicationVersionFilePath: 'androidAppPath',
     })
-    overriddenMobileConfig(getMobileTest(), overriddenConfig, {applicationId: 'applicationId', fileName: 'fileName'})
+    mobile.overriddenMobileConfig(getMobileTest(), overriddenConfig, {
+      applicationId: 'applicationId',
+      fileName: 'fileName',
+    })
 
     expect(overriddenConfig).toEqual(expect.objectContaining({applicationId: 'applicationId', fileName: 'fileName'}))
     expect(overriddenConfig.mobileAndroidApplicationVersionFilePath).toBeUndefined()
@@ -117,10 +130,176 @@ describe('overriddenMobileConfig', () => {
       mobileAndroidApplicationVersion: 'iOSVersion',
       mobileAndroidApplicationVersionFilePath: 'iOSAppPath',
     })
-    overriddenMobileConfig(mobileTest, overriddenConfig, {applicationId: 'applicationId', fileName: 'fileName'})
+    mobile.overriddenMobileConfig(mobileTest, overriddenConfig, {applicationId: 'applicationId', fileName: 'fileName'})
 
     expect(overriddenConfig).toEqual(expect.objectContaining({applicationId: 'applicationId', fileName: 'fileName'}))
     expect(overriddenConfig.mobileIOSApplicationVersionFilePath).toBeUndefined()
     expect(overriddenConfig.mobileIOSApplicationVersion).toBeUndefined()
+  })
+})
+
+describe('uploadApplicationIfNeeded', () => {
+  const apiConfiguration = {
+    apiKey: '123',
+    appKey: '123',
+    baseIntakeUrl: 'baseintake',
+    baseUrl: 'base',
+    proxyOpts: {protocol: 'http'} as ProxyConfiguration,
+  }
+  const api = apiConstructor(apiConfiguration)
+  const uploadApplicationSpy = jest.spyOn(mobile, 'uploadMobileApplications')
+
+  beforeEach(() => {
+    uploadApplicationSpy.mockReset()
+    uploadApplicationSpy.mockImplementation(async () => 'fileName')
+  })
+
+  test('upload new application file', async () => {
+    const uploadedApplicationByApplication = {}
+    await mobile.uploadApplicationIfNeeded(
+      api,
+      'new-application-path.api',
+      getMobileTest(),
+      uploadedApplicationByApplication
+    )
+
+    expect(uploadedApplicationByApplication).toEqual({
+      'new-application-path.api': [
+        {
+          applicationId: 'mobileAppUuid',
+          fileName: 'fileName',
+        },
+      ],
+    })
+    expect(uploadApplicationSpy).toHaveBeenCalledTimes(1)
+  })
+
+  test('upload same application file with same application id', async () => {
+    const uploadedApplicationByApplication = {
+      'new-application-path.api': [
+        {
+          applicationId: 'mobileAppUuid',
+          fileName: 'fileName',
+        },
+      ],
+    }
+
+    await mobile.uploadApplicationIfNeeded(
+      api,
+      'new-application-path.api',
+      getMobileTest(),
+      uploadedApplicationByApplication
+    )
+
+    expect(uploadedApplicationByApplication).toEqual({
+      'new-application-path.api': [
+        {
+          applicationId: 'mobileAppUuid',
+          fileName: 'fileName',
+        },
+      ],
+    })
+
+    expect(uploadApplicationSpy).not.toHaveBeenCalled()
+  })
+
+  test('upload same application file with different application id', async () => {
+    const uploadedApplicationByApplication = {
+      'new-application-path.api': [
+        {
+          applicationId: 'anotherMobileAppUuid',
+          fileName: 'fileName',
+        },
+      ],
+    }
+    await mobile.uploadApplicationIfNeeded(
+      api,
+      'new-application-path.api',
+      getMobileTest(),
+      uploadedApplicationByApplication
+    )
+
+    expect(uploadedApplicationByApplication).toEqual({
+      'new-application-path.api': [
+        {
+          applicationId: 'anotherMobileAppUuid',
+          fileName: 'fileName',
+        },
+        {
+          applicationId: 'mobileAppUuid',
+          fileName: 'fileName',
+        },
+      ],
+    })
+
+    expect(uploadApplicationSpy).toHaveBeenCalledTimes(1)
+  })
+
+  test('upload different application file with same application id', async () => {
+    const uploadedApplicationByApplication = {
+      'new-application-path.api': [
+        {
+          applicationId: 'mobileAppUuid',
+          fileName: 'fileName',
+        },
+      ],
+    }
+    await mobile.uploadApplicationIfNeeded(
+      api,
+      'another-application-path.api',
+      getMobileTest(),
+      uploadedApplicationByApplication
+    )
+
+    expect(uploadedApplicationByApplication).toEqual({
+      'new-application-path.api': [
+        {
+          applicationId: 'mobileAppUuid',
+          fileName: 'fileName',
+        },
+      ],
+      'another-application-path.api': [
+        {
+          applicationId: 'mobileAppUuid',
+          fileName: 'fileName',
+        },
+      ],
+    })
+
+    expect(uploadApplicationSpy).toHaveBeenCalledTimes(1)
+  })
+
+  test('upload different application file with different application id', async () => {
+    const uploadedApplicationByApplication = {
+      'another-application-path.api': [
+        {
+          applicationId: 'anotherMobileAppUuid',
+          fileName: 'fileName',
+        },
+      ],
+    }
+    await mobile.uploadApplicationIfNeeded(
+      api,
+      'new-application-path.api',
+      getMobileTest(),
+      uploadedApplicationByApplication
+    )
+
+    expect(uploadedApplicationByApplication).toEqual({
+      'another-application-path.api': [
+        {
+          applicationId: 'anotherMobileAppUuid',
+          fileName: 'fileName',
+        },
+      ],
+      'new-application-path.api': [
+        {
+          applicationId: 'mobileAppUuid',
+          fileName: 'fileName',
+        },
+      ],
+    })
+
+    expect(uploadApplicationSpy).toHaveBeenCalledTimes(1)
   })
 })

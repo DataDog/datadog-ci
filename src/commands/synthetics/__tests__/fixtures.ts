@@ -10,7 +10,6 @@ import {
   Batch,
   BrowserServerResult,
   CommandConfig,
-  ConfigOverride,
   ExecutionRule,
   Location,
   MainReporter,
@@ -474,9 +473,9 @@ export const getMobileTest = (publicId = 'abc-def-ghi'): Test => ({
   locations: [],
   message: '',
   mobileApplication: {
-    id: 'mobileAppUuid',
     created_at: '',
     description: 'Description',
+    id: 'mobileAppUuid',
     name: 'App name',
     platform: 'android',
     tags: [],

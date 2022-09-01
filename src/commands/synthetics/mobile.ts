@@ -25,7 +25,7 @@ const getMD5HashFromFile = async (fileBuffer: Buffer): Promise<string> => {
   return hash
 }
 
-const uploadMobileApplications = async (
+export const uploadMobileApplications = async (
   api: APIHelper,
   applicationPathToUpload: string,
   test: Test
@@ -40,6 +40,32 @@ const uploadMobileApplications = async (
   await api.uploadMobileApplication(fileBuffer, presignedUrl)
 
   return fileName
+}
+
+export const uploadApplicationIfNeeded = async (
+  api: APIHelper,
+  applicationPathToUpload: string,
+  test: Test,
+  uploadedApplicationByApplication: {[applicationFilePath: string]: {applicationId: string; fileName: string}[]}
+) => {
+  const isAlreadyUploaded =
+    applicationPathToUpload in uploadedApplicationByApplication &&
+    uploadedApplicationByApplication[applicationPathToUpload].find(
+      ({applicationId}) => applicationId === test.mobileApplication!.id
+    )
+
+  if (!isAlreadyUploaded) {
+    const fileName = await uploadMobileApplications(api, applicationPathToUpload, test)
+
+    if (!(applicationPathToUpload in uploadedApplicationByApplication)) {
+      uploadedApplicationByApplication[applicationPathToUpload] = []
+    }
+
+    uploadedApplicationByApplication[applicationPathToUpload].push({
+      applicationId: test.mobileApplication!.id,
+      fileName,
+    })
+  }
 }
 
 export const overriddenMobileConfig = (
@@ -97,24 +123,7 @@ export const uploadMobileApplicationsAndOverrideMobileConfig = async (
       return
     }
 
-    const isAlreadyUploaded =
-      !(applicationPathToUpload in uploadedApplicationByApplication) &&
-      !uploadedApplicationByApplication[applicationPathToUpload].find(
-        ({applicationId}) => applicationId === test.mobileApplication!.id
-      )
-
-    if (!isAlreadyUploaded) {
-      const fileName = await uploadMobileApplications(api, applicationPathToUpload, test)
-
-      if (!(applicationPathToUpload in uploadedApplicationByApplication)) {
-        uploadedApplicationByApplication[applicationPathToUpload] = []
-      }
-
-      uploadedApplicationByApplication[applicationPathToUpload].push({
-        applicationId: test.mobileApplication!.id,
-        fileName,
-      })
-    }
+    await uploadApplicationIfNeeded(api, applicationPathToUpload, test, uploadedApplicationByApplication)
 
     overriddenMobileConfig(
       test,
