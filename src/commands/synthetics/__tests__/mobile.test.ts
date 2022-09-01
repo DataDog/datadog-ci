@@ -177,6 +177,43 @@ describe('uploadApplicationIfNeeded', () => {
   })
 })
 
+describe('overrideMobileConfig', () => {
+  test('mobileApplicationVersionFilePath', () => {
+    const overriddenConfig = getTestPayload({mobileApplicationVersionFilePath: 'androidAppPath'})
+    mobile.overrideMobileConfig(overriddenConfig, {
+      applicationId: 'applicationId',
+      fileName: 'fileName',
+    })
+
+    expect(overriddenConfig).toEqual(expect.objectContaining({applicationId: 'applicationId', fileName: 'fileName'}))
+    expect(overriddenConfig.mobileApplicationVersionFilePath).toBeUndefined()
+  })
+
+  test('mobileApplicationVersion', () => {
+    const overriddenConfig = getTestPayload({mobileApplicationVersion: 'androidVersion'})
+
+    mobile.overrideMobileConfig(overriddenConfig)
+
+    expect(overriddenConfig.mobileApplicationVersion).toBeUndefined()
+    expect(overriddenConfig.applicationVersionId).toBe('androidVersion')
+  })
+
+  test('Path takes precedence over version', () => {
+    const overriddenConfig = getTestPayload({
+      mobileApplicationVersion: 'androidVersion',
+      mobileApplicationVersionFilePath: 'androidAppPath',
+    })
+    mobile.overrideMobileConfig(overriddenConfig, {
+      applicationId: 'applicationId',
+      fileName: 'fileName',
+    })
+
+    expect(overriddenConfig).toEqual(expect.objectContaining({applicationId: 'applicationId', fileName: 'fileName'}))
+    expect(overriddenConfig.mobileApplicationVersionFilePath).toBeUndefined()
+    expect(overriddenConfig.mobileApplicationVersion).toBeUndefined()
+  })
+})
+
 describe('uploadApplicationsAndOverrideConfig', () => {
   const uploadApplicationSpy = jest.spyOn(mobile, 'uploadMobileApplications')
   const api = getApiHelper()
@@ -201,9 +238,9 @@ describe('uploadApplicationsAndOverrideConfig', () => {
 
     expect(overriddenTestsToTrigger).toEqual([
       getTestPayload({public_id: tests[0].public_id}),
-      // Not override yet
       getTestPayload({
-        mobileApplicationVersionFilePath: 'androidAppPath',
+        applicationId: 'mobileAppUuid',
+        fileName: 'fileName',
         public_id: tests[1].public_id,
       }),
     ])

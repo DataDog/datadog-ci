@@ -54,7 +54,24 @@ export const uploadApplicationIfNeeded = async (
   }
 }
 
-// Override will be implement in a next PR
+export const overrideMobileConfig = (
+  overriddenTest: TestPayload,
+  localApplicationOverride?: {applicationId: string; fileName: string}
+) => {
+  if (localApplicationOverride) {
+    overriddenTest.applicationId = localApplicationOverride.applicationId
+    overriddenTest.fileName = localApplicationOverride.fileName
+  }
+
+  delete overriddenTest.mobileApplicationVersionFilePath
+
+  if (!localApplicationOverride && overriddenTest.mobileApplicationVersion) {
+    overriddenTest.applicationVersionId = overriddenTest.mobileApplicationVersion
+  }
+
+  delete overriddenTest.mobileApplicationVersion
+}
+
 export const uploadApplicationsAndOverrideConfig = async (
   api: APIHelper,
   tests: Test[],
@@ -71,6 +88,7 @@ export const uploadApplicationsAndOverrideConfig = async (
     }
 
     if (!overriddenTest.mobileApplicationVersionFilePath) {
+      overrideMobileConfig(overriddenTest)
       continue
     }
 
@@ -79,6 +97,13 @@ export const uploadApplicationsAndOverrideConfig = async (
       overriddenTest.mobileApplicationVersionFilePath,
       test,
       uploadedApplicationByApplication
+    )
+
+    overrideMobileConfig(
+      overriddenTest,
+      uploadedApplicationByApplication[overriddenTest.mobileApplicationVersionFilePath].find(
+        ({applicationId}) => applicationId === test.mobileApplication!.id
+      )
     )
   }
 }
