@@ -144,8 +144,8 @@ describe('dd-api', () => {
     const spy = jest.spyOn(axios, 'create').mockImplementation((() => () => ({data: PRESIGNED_URL_PAYLOAD})) as any)
     const api = apiConstructor(apiConfiguration)
     const {getMobileApplicationPresignedURL} = api
-    const {url} = await getMobileApplicationPresignedURL('applicationId', 'md5')
-    expect(url).toEqual(PRESIGNED_URL_PAYLOAD.url)
+    const result = await getMobileApplicationPresignedURL('applicationId', 'md5')
+    expect(result).toEqual(PRESIGNED_URL_PAYLOAD)
     spy.mockRestore()
   })
 
