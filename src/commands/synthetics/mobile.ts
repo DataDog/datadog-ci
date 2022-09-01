@@ -54,7 +54,7 @@ export const uploadApplicationIfNeeded = async (
   }
 }
 
-// The current implementation does not override the config
+// Override will be implement in a next PR
 export const uploadApplicationsAndOverrideConfig = async (
   api: APIHelper,
   tests: Test[],

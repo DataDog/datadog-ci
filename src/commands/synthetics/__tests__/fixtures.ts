@@ -5,6 +5,7 @@ import WebSocket, {Server as WebSocketServer} from 'ws'
 
 import {ProxyConfiguration} from '../../../helpers/utils'
 
+import {apiConstructor} from '../api'
 import {
   ApiServerResult,
   Batch,
@@ -20,6 +21,7 @@ import {
   Suite,
   Summary,
   Test,
+  TestPayload,
   Trigger,
   User,
 } from '../interfaces'
@@ -455,4 +457,65 @@ export const getBatch = (): Batch => ({
     },
   ],
   status: 'passed',
+})
+
+export const getMobileTest = (publicId = 'abc-def-ghi'): Test => ({
+  config: {
+    assertions: [],
+    request: {
+      headers: {},
+      method: '',
+      timeout: 60000,
+      url: '',
+    },
+    variables: [],
+  },
+  created_at: '',
+  created_by: mockUser,
+  locations: [],
+  message: '',
+  mobileApplication: {
+    created_at: '',
+    description: 'Description',
+    id: 'mobileAppUuid',
+    name: 'App name',
+    platform: 'android',
+    tags: [],
+  },
+  modified_at: '',
+  modified_by: mockUser,
+  monitor_id: 0,
+  name: 'Mobile Test',
+  options: {
+    device_ids: [],
+    min_failure_duration: 0,
+    min_location_failed: 0,
+    tick_every: 3600,
+  },
+  overall_state: 0,
+  overall_state_modified: '',
+  public_id: publicId,
+  status: '',
+  stepCount: 0,
+  subtype: '',
+  tags: [],
+  type: 'mobile',
+})
+
+export const getApiHelper = () => {
+  const apiConfiguration = {
+    apiKey: '123',
+    appKey: '123',
+    baseIntakeUrl: 'baseintake',
+    baseUrl: 'base',
+    proxyOpts: {protocol: 'http'} as ProxyConfiguration,
+  }
+
+  return apiConstructor(apiConfiguration)
+}
+
+export const getTestPayload = (override?: Partial<TestPayload>) => ({
+  executionRule: ExecutionRule.BLOCKING,
+  public_id: 'aaa-aaa-aaa',
+  ...override,
 })
