@@ -19,7 +19,7 @@ export const getApplicationToUpload = (test: Test, overrideTest: TestPayload): s
   }
 }
 
-const getMD5HashFromFile = async (fileBuffer: Buffer): Promise<string> => {
+export const getMD5HashFromFile = async (fileBuffer: Buffer): Promise<string> => {
   const hash = crypto.createHash('md5').update(fileBuffer).digest('base64')
 
   return hash

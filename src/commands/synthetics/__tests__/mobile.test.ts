@@ -1,7 +1,13 @@
+import {promises as fs} from 'fs'
+import * as path from 'path'
+
 import {ExecutionRule, Test, TestPayload} from '../interfaces'
 import * as mobile from '../mobile'
 
 import {getApiHelper, getApiTest, getMobileTest} from './fixtures'
+
+// tslint:disable-next-line:no-var-requires
+const tmp = require('tmp-promise')
 
 const getTestPayload = (override?: Partial<TestPayload>) => ({
   executionRule: ExecutionRule.BLOCKING,
@@ -58,6 +64,15 @@ describe('getApplicationToUpload', () => {
     expect(
       mobile.getApplicationToUpload(mobileTest, getTestPayload({mobileIOSApplicationVersion: 'iOSVersion'}))
     ).toBeUndefined()
+  })
+})
+
+describe('getMD5HashFromFile', () => {
+  test('correctly compute md5 of a file', async () => {
+    const dir = (await tmp.dir({mode: 0o755, unsafeCleanup: true})).path
+    await fs.writeFile(path.join(dir, 'file.txt'), 'Compute md5')
+    const fileBuffer = await fs.readFile(path.join(dir, 'file.txt'))
+    expect(await mobile.getMD5HashFromFile(fileBuffer)).toBe('odk1EOlpz16oPIgnco2nfg==')
   })
 })
 
@@ -242,13 +257,13 @@ describe('uploadApplicationIfNeeded', () => {
     )
 
     expect(uploadedApplicationByApplication).toEqual({
-      'new-application-path.api': [
+      'another-application-path.api': [
         {
           applicationId: 'mobileAppUuid',
           fileName: 'fileName',
         },
       ],
-      'another-application-path.api': [
+      'new-application-path.api': [
         {
           applicationId: 'mobileAppUuid',
           fileName: 'fileName',
