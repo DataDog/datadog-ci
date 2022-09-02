@@ -280,17 +280,17 @@ describe('run-test', () => {
           overriddenTestsToTrigger: [
             {
               executionRule: ExecutionRule.BLOCKING,
-              public_id: 'publicId',
               mobileApplicationVersionFilePath: 'filePath',
+              public_id: 'publicId',
             },
           ],
           summary: utils.createSummary(),
           tests: [
             {
+              mobileApplication: {id: 'applicationId'},
               options: {ci: {executionRule: ExecutionRule.BLOCKING}},
               public_id: 'publicId',
               type: 'mobile',
-              mobileApplication: {id: 'applicationId'},
             } as any,
           ],
         })
@@ -319,17 +319,17 @@ describe('run-test', () => {
           overriddenTestsToTrigger: [
             {
               executionRule: ExecutionRule.BLOCKING,
-              public_id: 'publicId',
               mobileApplicationVersionFilePath: 'filePath',
+              public_id: 'publicId',
             },
           ],
           summary: utils.createSummary(),
           tests: [
             {
+              mobileApplication: {id: 'applicationId'},
               options: {ci: {executionRule: ExecutionRule.BLOCKING}},
               public_id: 'publicId',
               type: 'mobile',
-              mobileApplication: {id: 'applicationId'},
             } as any,
           ],
         })
