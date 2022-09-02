@@ -13,6 +13,7 @@ import {
   Trigger,
   TriggerConfig,
 } from './interfaces'
+import {uploadApplicationsAndOverrideConfig} from './mobile'
 import {Tunnel} from './tunnel'
 import {getSuites, getTestsToTrigger, runTests, waitForResults} from './utils'
 
@@ -97,6 +98,13 @@ export const executeTests = async (reporter: MainReporter, config: CommandConfig
       await stopTunnel()
       throw new CriticalError('TUNNEL_START_FAILED', error.message)
     }
+  }
+
+  try {
+    await uploadApplicationsAndOverrideConfig(api, tests, overriddenTestsToTrigger)
+  } catch (error) {
+    await stopTunnel()
+    throw new CriticalError('UPLOAD_MOBILE_APPLICATION_TESTS_FAILED', error.message)
   }
 
   let trigger: Trigger
