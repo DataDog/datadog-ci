@@ -5,17 +5,16 @@ import {ProxyConfiguration} from '../../../helpers/utils'
 import {apiConstructor, getApiHelper} from '../api'
 import {MAX_TESTS_TO_TRIGGER} from '../command'
 import {CriticalError} from '../errors'
-import {
-  APIConfiguration,
-  ExecutionRule,
-  PollResult,
-  PresignedUrlResponse,
-  ServerResult,
-  TestPayload,
-  Trigger,
-} from '../interfaces'
+import {APIConfiguration, ExecutionRule, PollResult, ServerResult, TestPayload, Trigger} from '../interfaces'
 
-import {ciConfig, getApiTest, getSyntheticsProxy, mockSearchResponse, mockTestTriggerResponse} from './fixtures'
+import {
+  ciConfig,
+  getApiTest,
+  getSyntheticsProxy,
+  MOBILE_PRESIGNED_URL_PAYLOAD,
+  mockSearchResponse,
+  mockTestTriggerResponse,
+} from './fixtures'
 
 describe('dd-api', () => {
   const apiConfiguration: APIConfiguration = {
@@ -52,10 +51,6 @@ describe('dd-api', () => {
   }
   const PRESIGNED_URL_PAYLOAD = {
     url: 'wss://presigned.url',
-  }
-  const MOBILE_PRESIGNED_URL_PAYLOAD: PresignedUrlResponse = {
-    file_name: 'fileNameUuid',
-    presigned_url_params: {url: 'https://www.presigned.url', fields: {}},
   }
 
   test('should get results from api', async () => {

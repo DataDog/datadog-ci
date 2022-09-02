@@ -16,6 +16,7 @@ import {
   MainReporter,
   MultiStep,
   MultiStepsServerResult,
+  PresignedUrlResponse,
   Result,
   Step,
   Suite,
@@ -35,6 +36,11 @@ const mockUser: User = {
 }
 
 export const MOCK_BASE_URL = 'https://app.datadoghq.com/'
+
+export const MOBILE_PRESIGNED_URL_PAYLOAD: PresignedUrlResponse = {
+  file_name: 'fileNameUuid',
+  presigned_url_params: {url: 'https://www.presigned.url', fields: {}},
+}
 
 export type MockedReporter = {
   [K in keyof MainReporter]: jest.Mock<void, Parameters<MainReporter[K]>>

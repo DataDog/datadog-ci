@@ -1115,6 +1115,7 @@ describe('utils', () => {
       process.env = {}
 
       expect(utils.getDatadogHost(false, false, ciConfig)).toBe('https://api.datadoghq.com/api/v1')
+      expect(utils.getDatadogHost(false, true, ciConfig)).toBe('https://api.datadoghq.com/api/unstable')
       expect(utils.getDatadogHost(true, false, ciConfig)).toBe('https://intake.synthetics.datadoghq.com/api/v1')
     })
 
