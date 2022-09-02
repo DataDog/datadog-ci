@@ -507,6 +507,7 @@ export const getApiHelper = () => {
     apiKey: '123',
     appKey: '123',
     baseIntakeUrl: 'baseintake',
+    baseUnstableUrl: 'baseUnstable',
     baseUrl: 'base',
     proxyOpts: {protocol: 'http'} as ProxyConfiguration,
   }

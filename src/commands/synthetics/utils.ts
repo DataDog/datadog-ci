@@ -778,8 +778,8 @@ export const renderResults = ({
   return hasSucceeded ? 0 : 1
 }
 
-export const getDatadogHost = (useIntake = false, config: SyntheticsCIConfig) => {
-  const apiPath = 'api/v1'
+export const getDatadogHost = (useIntake = false, isUnstableApi = false, config: SyntheticsCIConfig) => {
+  const apiPath = isUnstableApi ? 'api/unstable' : 'api/v1'
   let host = `https://api.${config.datadogSite}`
   const hostOverride = process.env.DD_API_HOST_OVERRIDE
 

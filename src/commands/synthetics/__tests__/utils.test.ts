@@ -50,6 +50,7 @@ describe('utils', () => {
     apiKey: '123',
     appKey: '123',
     baseIntakeUrl: 'baseintake',
+    baseUnstableUrl: 'baseUnstable',
     baseUrl: 'base',
     proxyOpts: {protocol: 'http'} as ciUtils.ProxyConfiguration,
   }
@@ -1113,24 +1114,24 @@ describe('utils', () => {
     test('should default to datadog us api', async () => {
       process.env = {}
 
-      expect(utils.getDatadogHost(false, ciConfig)).toBe('https://api.datadoghq.com/api/v1')
-      expect(utils.getDatadogHost(true, ciConfig)).toBe('https://intake.synthetics.datadoghq.com/api/v1')
+      expect(utils.getDatadogHost(false, false, ciConfig)).toBe('https://api.datadoghq.com/api/v1')
+      expect(utils.getDatadogHost(true, false, ciConfig)).toBe('https://intake.synthetics.datadoghq.com/api/v1')
     })
 
     test('should use DD_API_HOST_OVERRIDE', async () => {
       process.env = {DD_API_HOST_OVERRIDE: 'https://foobar'}
 
-      expect(utils.getDatadogHost(true, ciConfig)).toBe('https://foobar/api/v1')
-      expect(utils.getDatadogHost(true, ciConfig)).toBe('https://foobar/api/v1')
+      expect(utils.getDatadogHost(true, false, ciConfig)).toBe('https://foobar/api/v1')
+      expect(utils.getDatadogHost(true, false, ciConfig)).toBe('https://foobar/api/v1')
     })
 
     test('should use Synthetics intake endpoint', async () => {
       process.env = {}
 
-      expect(utils.getDatadogHost(true, {...ciConfig, datadogSite: 'datadoghq.com' as string})).toBe(
+      expect(utils.getDatadogHost(true, false, {...ciConfig, datadogSite: 'datadoghq.com' as string})).toBe(
         'https://intake.synthetics.datadoghq.com/api/v1'
       )
-      expect(utils.getDatadogHost(true, {...ciConfig, datadogSite: 'datad0g.com' as string})).toBe(
+      expect(utils.getDatadogHost(true, false, {...ciConfig, datadogSite: 'datad0g.com' as string})).toBe(
         'https://intake.synthetics.datad0g.com/api/v1'
       )
     })
