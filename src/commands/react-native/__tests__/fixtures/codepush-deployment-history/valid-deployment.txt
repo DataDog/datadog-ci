@@ -1,0 +1,58 @@
+[
+  [
+    "v1",
+    "Jun 07, 05:35 PM",
+    "0.0.1",
+    "No",
+    null,
+    "\u001b[32mActive: \u001b[39m0% (0 of 5)\n\u001b[32mInstalled: \u001b[39m1"
+  ],
+  [
+    "v2",
+    "Jun 07, 05:41 PM",
+    "0.0.1",
+    "No",
+    null,
+    "\u001b[32mActive: \u001b[39m0% (0 of 5)\n\u001b[32mInstalled: \u001b[39m5"
+  ],
+  [
+    "v3",
+    "Jun 08, 04:28 PM",
+    "0.0.1",
+    "No",
+    null,
+    "\u001b[32mActive: \u001b[39m20% (1 of 5)\n\u001b[32mInstalled: \u001b[39m3"
+  ],
+  [
+    "v4",
+    "Jun 09, 10:30 AM",
+    "0.0.1",
+    "No",
+    null,
+    "\u001b[32mActive: \u001b[39m0% (0 of 5)\n\u001b[32mInstalled: \u001b[39m1\n\u001b[32mRollbacks: \u001b[39m\u001b[31m1\u001b[39m"
+  ],
+  [
+    "v5",
+    "Jun 16, 04:34 PM",
+    "0.0.1",
+    "No",
+    null,
+    "\u001b[32mActive: \u001b[39m100% (5 of 5)\n\u001b[32mInstalled: \u001b[39m17 (18 pending)"
+  ],
+  [
+    "v6",
+    "Sep 05, 02:19 PM",
+    "1.0",
+    "No",
+    null,
+    "\u001b[35mNo installs recorded\u001b[39m"
+  ],
+  [
+    "v7",
+    "Sep 05, 02:27 PM",
+    "1.0",
+    "No",
+    null,
+    "\u001b[35mNo installs recorded\u001b[39m"
+  ]
+]

@@ -1,0 +1,1 @@
+{"succeeded":false,"errorCode":3,"errorMessage":"Command 'codepush deployment history Production --app FakeOrg/NoNetwork --output json' failed with exception \"Cannot read properties of undefined (reading 'body')\"","exception":{}}

@@ -1,0 +1,1 @@
+{"succeeded":false,"errorCode":6,"errorMessage":"The app FakeOrg/WrongAppName does not exist. Please double check the name, and provide it in the form owner/appname. \nRun the command \u001b[1mappcenter apps list\u001b[22m to see what apps you have access to."}
