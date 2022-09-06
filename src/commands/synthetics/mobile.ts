@@ -14,12 +14,12 @@ export const getMD5HashFromFileBuffer = async (fileBuffer: Buffer): Promise<stri
 export const uploadMobileApplications = async (
   api: APIHelper,
   applicationPathToUpload: string,
-  test: Test
+  mobileApplicationId: string
 ): Promise<string> => {
   const fileBuffer = await fs.promises.readFile(applicationPathToUpload)
   const md5 = await getMD5HashFromFileBuffer(fileBuffer)
   const {presigned_url_params: presignedUrl, file_name: fileName} = await api.getMobileApplicationPresignedURL(
-    test.mobileApplication!.id,
+    mobileApplicationId,
     md5
   )
 
@@ -37,18 +37,22 @@ export const uploadApplicationIfNeeded = async (
   const isAlreadyUploaded =
     applicationPathToUpload in uploadedApplicationByApplication &&
     uploadedApplicationByApplication[applicationPathToUpload].find(
-      ({applicationId}) => applicationId === test.mobileApplication!.id
+      ({applicationId}) => applicationId === test.options.mobileApplication!.applicationId
     )
 
   if (!isAlreadyUploaded) {
-    const fileName = await uploadMobileApplications(api, applicationPathToUpload, test)
+    const fileName = await uploadMobileApplications(
+      api,
+      applicationPathToUpload,
+      test.options.mobileApplication!.applicationId
+    )
 
     if (!(applicationPathToUpload in uploadedApplicationByApplication)) {
       uploadedApplicationByApplication[applicationPathToUpload] = []
     }
 
     uploadedApplicationByApplication[applicationPathToUpload].push({
-      applicationId: test.mobileApplication!.id,
+      applicationId: test.options.mobileApplication!.applicationId,
       fileName,
     })
   }
