@@ -85,7 +85,7 @@ export const renderArgumentMissingError = (argumentName: string) =>
 
 export const renderMissingPubspecError = (pubspecLocation: string) =>
   chalk.red(
-    `${ICONS.FAILED} Could not find pubspec at '${pubspecLocation}'. A pubspec.yaml is required or the --version argument must be sepcified.\n`
+    `${ICONS.FAILED} Could not find pubspec at '${pubspecLocation}'. A pubspec.yaml is required or the --version argument must be specified.\n`
   )
 
 export const renderInvalidPubspecError = (pubspecLocation: string) =>
@@ -96,11 +96,25 @@ export const renderPubspecMissingVersionError = (pubspecLocation: string) =>
     `${ICONS.FAILED} pubspec at '${pubspecLocation}' does not contain a version. Supply a version in the pubspec or use the --version argument.\n`
   )
 
+export const renderVersionBuildNumberWarning = (pubspecLocation: string) => {
+  let str = chalk.yellow(
+    `${ICONS.WARNING} Your pubspec at '${pubspecLocation}' specifies a build (a value after a '+') or pre-release (a value after a '-').\n`
+  )
+  str += chalk.yellow(
+    'The Datadog Flutter SDK does not send these by default, so they are removed by the datadog-ci tool.\n'
+  )
+  str += '\n'
+  str +=
+    'If you need to include build or pre-release data in your version number, please use --version and specify a custom version during configuration of the Flutter SDK.'
+
+  return str
+}
+
 export const renderMissingDartSymbolsDir = (symbolsDirectory: string) =>
   chalk.red(`${ICONS.FAILED} Error: Could not locate Dart Symbols at ${symbolsDirectory}.\n`)
 
 export const renderInvalidSymbolsDir = (symbolsDirectory: string) =>
-  chalk.red(`${ICONS.FAILED} Failed to get symbols files - ${symbolsDirectory} is not a directory.`)
+  chalk.red(`${ICONS.FAILED} Failed to get symbols files - ${symbolsDirectory} is not a directory.\n`)
 
 export const renderMissingAndroidMappingFile = (mappingLocation: string) =>
   chalk.red(`${ICONS.FAILED} Error: Could not locate Android Mapping file at ${mappingLocation}.\n`)

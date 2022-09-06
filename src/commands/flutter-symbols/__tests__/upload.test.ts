@@ -14,6 +14,7 @@ import {
   renderMissingDartSymbolsDir,
   renderMissingPubspecError,
   renderPubspecMissingVersionError,
+  renderVersionBuildNumberWarning,
 } from '../renderer'
 import {UploadCommand} from '../upload'
 
@@ -97,7 +98,7 @@ describe('flutter-symbol upload', () => {
     test('version bypasses pubspec check', async () => {
       const {exitCode, context} = await runCommand((cmd) => {
         cmd['serviceName'] = 'fake.service'
-        cmd['version'] = '1.0.0'
+        cmd['version'] = '1.0.0+114'
       })
       const errorOutput = context.stderr.toString()
 
@@ -126,7 +127,7 @@ describe('flutter-symbol upload', () => {
       const context = createMockContext() as any
       const command = new UploadCommand()
       command.context = context
-      const exitCode = await command['parsePubspec']('./pubspec.yaml')
+      const exitCode = await command['parsePubspecVersion']('./pubspec.yaml')
 
       const errorOutput = context.stderr.toString()
 
@@ -138,7 +139,7 @@ describe('flutter-symbol upload', () => {
       const context = createMockContext() as any
       const command = new UploadCommand()
       command.context = context
-      const exitCode = await command['parsePubspec'](`${fixtureDir}/pubspecs/invalidPubspec.yaml`)
+      const exitCode = await command['parsePubspecVersion'](`${fixtureDir}/pubspecs/invalidPubspec.yaml`)
 
       const errorOutput = context.stderr.toString()
 
@@ -150,7 +151,7 @@ describe('flutter-symbol upload', () => {
       const context = createMockContext() as any
       const command = new UploadCommand()
       command.context = context
-      const exitCode = await command['parsePubspec'](`${fixtureDir}/pubspecs/missingVersionPubspec.yaml`)
+      const exitCode = await command['parsePubspecVersion'](`${fixtureDir}/pubspecs/missingVersionPubspec.yaml`)
 
       const errorOutput = context.stderr.toString()
 
@@ -162,13 +163,39 @@ describe('flutter-symbol upload', () => {
       const context = createMockContext() as any
       const command = new UploadCommand()
       command.context = context
-      const exitCode = await command['parsePubspec'](`${fixtureDir}/pubspecs/validPubspec.yaml`)
+      const exitCode = await command['parsePubspecVersion'](`${fixtureDir}/pubspecs/validPubspec.yaml`)
 
       const errorOutput = context.stderr.toString()
 
       expect(exitCode).toBe(0)
       expect(errorOutput).toBe('')
-      expect(command['version']).toBe('1.2.3-test1')
+      expect(command['version']).toBe('1.2.3')
+    })
+
+    test('strips pre-release from pre-release pubspec and shows warning', async () => {
+      const context = createMockContext() as any
+      const command = new UploadCommand()
+      command.context = context
+      const exitCode = await command['parsePubspecVersion'](`${fixtureDir}/pubspecs/prereleasePubspec.yaml`)
+
+      const errorOutput = context.stderr.toString()
+
+      expect(exitCode).toBe(0)
+      expect(errorOutput).toBe(renderVersionBuildNumberWarning(`${fixtureDir}/pubspecs/prereleasePubspec.yaml`))
+      expect(command['version']).toBe('1.2.3')
+    })
+
+    test('strips build from build pubspec and shows warning', async () => {
+      const context = createMockContext() as any
+      const command = new UploadCommand()
+      command.context = context
+      const exitCode = await command['parsePubspecVersion'](`${fixtureDir}/pubspecs/buildPubspec.yaml`)
+
+      const errorOutput = context.stderr.toString()
+
+      expect(exitCode).toBe(0)
+      expect(errorOutput).toBe(renderVersionBuildNumberWarning(`${fixtureDir}/pubspecs/buildPubspec.yaml`))
+      expect(command['version']).toBe('1.2.3')
     })
   })
 

@@ -21,6 +21,7 @@ import {
   renderPubspecMissingVersionError,
   renderRetriedUpload,
   renderUpload,
+  renderVersionBuildNumberWarning,
   UploadInfo,
 } from './renderer'
 
@@ -46,10 +47,18 @@ import {
 
 export class UploadCommand extends Command {
   public static usage = Command.Usage({
-    description: '',
+    description: 'Upload symbol files for Flutter.',
     details: `
+            This command will upload all symbol files for Flutter applications in order to symbolicate errors and
+            crash reports recieved by Datadog. This includes uploading iOS dSYMs, Proguard mapping files, and Dart
+            symbol files.
         `,
-    examples: [],
+    examples: [
+      [
+        'Upload all symbol files from default locations',
+        'datadog-ci flutter-symbols upload --dart-symbols-location ./debug-info --service-name com.datadog.example --ios-dsyms --android-mapping',
+      ],
+    ],
   })
 
   private androidMapping = false
@@ -228,7 +237,7 @@ export class UploadCommand extends Command {
     }
   }
 
-  private async parsePubspec(pubspecLocation: string): Promise<number> {
+  private async parsePubspecVersion(pubspecLocation: string): Promise<number> {
     if (!fs.existsSync(pubspecLocation)) {
       this.context.stderr.write(renderMissingPubspecError(pubspecLocation))
 
@@ -239,6 +248,21 @@ export class UploadCommand extends Command {
       const doc = yaml.load(fs.readFileSync(pubspecLocation, 'utf8')) as any
       if (doc.version) {
         this.version = doc.version
+
+        const buildIndex = this.version!.indexOf('+')
+        let prereleaseIndex = this.version!.indexOf('-')
+        if (buildIndex >= 0 || prereleaseIndex >= 0) {
+          this.context.stderr.write(renderVersionBuildNumberWarning(pubspecLocation))
+
+          if (buildIndex >= 0) {
+            this.version = this.version!.substring(0, buildIndex)
+            // Find the new prerelease index if it still exists
+            prereleaseIndex = this.version!.indexOf('-')
+          }
+          if (prereleaseIndex >= 0) {
+            this.version = this.version!.substring(0, prereleaseIndex)
+          }
+        }
       } else {
         this.context.stderr.write(renderPubspecMissingVersionError(pubspecLocation))
 
@@ -420,7 +444,7 @@ export class UploadCommand extends Command {
       }
     }
 
-    if (!this.version && (await this.parsePubspec(this.pubspecLocation))) {
+    if (!this.version && (await this.parsePubspecVersion(this.pubspecLocation))) {
       return false
     }
 
