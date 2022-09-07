@@ -310,6 +310,25 @@ describe('flutter-symbol upload', () => {
       })
     })
 
+    test('build in version is sanitized in metadata payload', () => {
+      const command = new UploadCommand()
+      addDefaultCommandParameters(command)
+      mockGitRepoParameters(command)
+      command['version'] = '1.2.4+987'
+
+      const metadata = command['getAndroidMetadata']()
+
+      expect(metadata).toEqual({
+        cli_version: cliVersion,
+        git_commit_sha: 'fake-git-hash',
+        git_repository_url: 'fake-git-remote',
+        service: 'fake.service',
+        type: 'jvm_mapping_file',
+        variant: 'release',
+        version: '1.2.4-987',
+      })
+    })
+
     test('uploads correct multipart payload without repository', async () => {
       ;(uploadMultipartHelper as jest.Mock).mockResolvedValueOnce('')
 
@@ -462,6 +481,27 @@ describe('flutter-symbol upload', () => {
         type: 'flutter_symbol_file',
         variant: 'release',
         version: '1.0.0',
+      })
+    })
+
+    test('sanitizes build in version number payload', () => {
+      const command = new UploadCommand()
+      addDefaultCommandParameters(command)
+      mockGitRepoParameters(command)
+      command['version'] = '1.2.4+567'
+
+      const metadata = command['getFlutterMetadata']('ios', 'arm64')
+
+      expect(metadata).toEqual({
+        arch: 'arm64',
+        cli_version: cliVersion,
+        git_commit_sha: 'fake-git-hash',
+        git_repository_url: 'fake-git-remote',
+        platform: 'ios',
+        service: 'fake.service',
+        type: 'flutter_symbol_file',
+        variant: 'release',
+        version: '1.2.4-567',
       })
     })
 

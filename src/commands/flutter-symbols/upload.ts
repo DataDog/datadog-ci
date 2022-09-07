@@ -233,8 +233,12 @@ export class UploadCommand extends Command {
       service: this.serviceName,
       type,
       variant: this.flavor,
-      version: this.version!,
+      version: this.getSanitizedVersion(),
     }
+  }
+
+  private getSanitizedVersion() {
+    return this.version!.replace('+', '-')
   }
 
   private async parsePubspecVersion(pubspecLocation: string): Promise<number> {
