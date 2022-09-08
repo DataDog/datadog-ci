@@ -149,9 +149,9 @@ describe('uploadApplicationIfNeeded', () => {
 
 describe('overrideMobileConfig', () => {
   test('mobileApplicationVersionFilePath', () => {
-    const overriddenConfig = getTestPayload({mobileApplicationVersionFilePath: 'androidAppPath'})
     const test = getMobileTest()
-    mobile.overrideMobileConfig(overriddenConfig, test, {
+    const overriddenConfig = getTestPayload({public_id: test.public_id})
+    mobile.overrideMobileConfig({mobileApplicationVersionFilePath: 'androidAppPath'}, overriddenConfig, test, {
       applicationId: test.options.mobileApplication!.applicationId,
       fileName: 'fileName',
     })
@@ -159,43 +159,43 @@ describe('overrideMobileConfig', () => {
     expect(overriddenConfig.mobileApplication).toEqual({
       applicationId: test.options.mobileApplication!.applicationId,
       referenceId: 'fileName',
-      referenceType: 'TEMPORARY',
+      referenceType: 'temporary',
     })
-    expect(overriddenConfig.mobileApplicationVersionFilePath).toBeUndefined()
   })
 
   test('mobileApplicationVersion', () => {
-    const overriddenConfig = getTestPayload({mobileApplicationVersion: 'newAndroidVersionId'})
     const test = getMobileTest()
-    mobile.overrideMobileConfig(overriddenConfig, test)
+    const overriddenConfig = getTestPayload({public_id: test.public_id})
+    mobile.overrideMobileConfig({mobileApplicationVersion: 'newAndroidVersionId'}, overriddenConfig, test)
 
-    expect(overriddenConfig.mobileApplicationVersion).toBeUndefined()
     expect(overriddenConfig.mobileApplication).toEqual({
       applicationId: test.options.mobileApplication!.applicationId,
       referenceId: 'newAndroidVersionId',
-      referenceType: 'VERSION',
+      referenceType: 'version',
     })
   })
 
   test('Path takes precedence over version', () => {
-    const overriddenConfig = getTestPayload({
-      mobileApplicationVersion: 'androidVersionId',
-      mobileApplicationVersionFilePath: 'androidAppPath',
-    })
-
     const test = getMobileTest()
-    mobile.overrideMobileConfig(overriddenConfig, getMobileTest(), {
-      applicationId: test.options.mobileApplication!.applicationId,
-      fileName: 'fileName',
-    })
+    const overriddenConfig = getTestPayload({public_id: test.public_id})
+    mobile.overrideMobileConfig(
+      {
+        mobileApplicationVersion: 'androidVersionId',
+        mobileApplicationVersionFilePath: 'androidAppPath',
+      },
+      overriddenConfig,
+      getMobileTest(),
+      {
+        applicationId: test.options.mobileApplication!.applicationId,
+        fileName: 'fileName',
+      }
+    )
 
     expect(overriddenConfig.mobileApplication).toEqual({
       applicationId: test.options.mobileApplication!.applicationId,
       referenceId: 'fileName',
-      referenceType: 'TEMPORARY',
+      referenceType: 'temporary',
     })
-    expect(overriddenConfig.mobileApplicationVersionFilePath).toBeUndefined()
-    expect(overriddenConfig.mobileApplicationVersion).toBeUndefined()
   })
 })
 
@@ -231,7 +231,11 @@ describe('uploadApplicationAndOverrideConfig', () => {
       mobileTestConfig,
       uploadedApplicationByPath
     )
-    // Not override yet
-    expect(mobileTestConfig.mobileApplication).toBeUndefined()
+
+    expect(mobileTestConfig.mobileApplication).toEqual({
+      applicationId: 'mobileAppUuid',
+      referenceId: 'fileName',
+      referenceType: 'temporary',
+    })
   })
 })

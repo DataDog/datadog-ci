@@ -54,6 +54,7 @@ export const uploadApplicationIfNeeded = async (
 }
 
 export const overrideMobileConfig = (
+  userConfigOverride: UserConfigOverride,
   overriddenTest: TestPayload,
   test: Test,
   localApplicationOverride?: {applicationId: string; fileName: string}
@@ -62,22 +63,17 @@ export const overrideMobileConfig = (
     overriddenTest.mobileApplication = {
       applicationId: localApplicationOverride.applicationId,
       referenceId: localApplicationOverride.fileName,
-      referenceType: 'TEMPORARY',
+      referenceType: 'temporary',
     }
   }
 
-  delete overriddenTest.mobileApplicationVersionFilePath
-
-  console.log({overriddenTest, test})
-  if (!localApplicationOverride && overriddenTest.mobileApplicationVersion) {
+  if (!localApplicationOverride && userConfigOverride.mobileApplicationVersion) {
     overriddenTest.mobileApplication = {
       applicationId: test.options.mobileApplication!.applicationId,
-      referenceId: overriddenTest.mobileApplicationVersion,
-      referenceType: 'VERSION',
+      referenceId: userConfigOverride.mobileApplicationVersion,
+      referenceType: 'version',
     }
   }
-
-  delete overriddenTest.mobileApplicationVersion
 }
 
 export const uploadApplicationAndOverrideConfig = async (
@@ -104,9 +100,11 @@ export const uploadApplicationAndOverrideConfig = async (
   )
 
   overrideMobileConfig(
+    userConfigOverride,
     overriddenTestsToTrigger,
     test,
     uploadedApplicationByPath[userConfigOverride.mobileApplicationVersionFilePath].find(
       ({applicationId}) => applicationId === testApplicationId
     )
+  )
 }
