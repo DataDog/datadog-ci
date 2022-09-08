@@ -17,7 +17,6 @@ import {CiError, CriticalError} from './errors'
 import {
   Batch,
   CommandConfig,
-  ConfigOverride,
   ExecutionRule,
   LocationsMapping,
   MainReporter,
@@ -36,6 +35,7 @@ import {
   TestPayload,
   Trigger,
   TriggerConfig,
+  UserConfigOverride,
 } from './interfaces'
 import {Tunnel} from './tunnel'
 
@@ -53,7 +53,7 @@ export const getOverriddenConfig = (
   test: Test,
   publicId: string,
   reporter: MainReporter,
-  config?: ConfigOverride
+  config?: UserConfigOverride
 ): TestPayload => {
   const executionRule = getExecutionRule(test, config)
   let overriddenConfig: TestPayload = {
@@ -166,7 +166,7 @@ const warnOnReservedEnvVarNames = (context: TemplateContext, reporter: MainRepor
   }
 }
 
-export const getExecutionRule = (test?: Test, configOverride?: ConfigOverride): ExecutionRule => {
+export const getExecutionRule = (test?: Test, configOverride?: UserConfigOverride): ExecutionRule => {
   if (configOverride && configOverride.executionRule) {
     return getStrictestExecutionRule(configOverride.executionRule, test?.options?.ci?.executionRule)
   }

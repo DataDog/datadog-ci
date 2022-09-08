@@ -1,6 +1,6 @@
 import {BaseContext} from 'clipanion/lib/advanced'
 
-import {ConfigOverride, ExecutionRule, MainReporter, Result, Summary, Test} from '../../interfaces'
+import {ExecutionRule, MainReporter, Result, Summary, Test, UserConfigOverride} from '../../interfaces'
 import {DefaultReporter} from '../../reporters/default'
 import {createSummary} from '../../utils'
 import {getApiResult, getApiTest, getFailedBrowserResult, getTimedOutBrowserResult, MOCK_BASE_URL} from '../fixtures'
@@ -54,7 +54,7 @@ describe('Default reporter', () => {
     }
     const testId = 'aaa-bbb-ccc'
 
-    const cases: [string, ExecutionRule, ConfigOverride][] = [
+    const cases: [string, ExecutionRule, UserConfigOverride][] = [
       ['Blocking test, without config overwrite', ExecutionRule.BLOCKING, {}],
       ['Blocking test, with 1 config override', ExecutionRule.BLOCKING, {startUrl: 'foo'}],
       ['Blocking test, with 2 config overrides', ExecutionRule.BLOCKING, {startUrl: 'foo', body: 'hello'}],
