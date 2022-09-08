@@ -102,9 +102,9 @@ This allows Datadog to create proper URLs such as:
 
 ### `codepush`
 
-This command uploads your JavaScript source maps and their corresponding bundle file to Datadog after an AppCenter Codepush build.
+This command uploads your JavaScript source maps and their corresponding bundle file to Datadog after an AppCenter CodePush build.
 
-To upload the source maps for an iOS app called "AppNameiOS" inside the "Company" organisation after a build for the "Staging" deployment, run:
+To upload the source maps for an iOS app called "AppNameiOS" inside the "Company" organization after a build for the "Staging" deployment, run:
 
 ```bash
 datadog-ci react-native codepush --platform ios --service com.company.app --bundle ./build/main.jsbundle --sourcemap ./build/main.jsbundle.map --app Company/AppNameiOS --deployment Staging
@@ -129,7 +129,7 @@ The following optional parameters are available:
 | `--disable-git`    | False   | Prevents the command from invoking git in the current working directory and sending repository-related data to Datadog (such as the hash, remote URL, and paths within the repository of sources referenced in the source map). |
 | `--dry-run`        | False   | It runs the command without the final step of uploading. All other checks are performed.                                                                                                                                        |
 | `--repository-url` | Empty   | Overrides the remote repository with a custom URL. For example, `https://github.com/my-company/my-project`.                                                                                                                     |
-| `--build-version`  | 1      | Used to avoid overwriting your source maps by accident. Only one upload is needed for a specific `build-version` and `service` combination. Subsequent uploads are ignored until the `build-version` changes. This should not be necessary for codepush unless you uploaded the wrong source maps by mistake.   | 
+| `--build-version`  | 1      | Used to avoid overwriting your source maps by accident. Only one upload is needed for a specific `build-version` and `service` combination. Subsequent uploads are ignored until the `build-version` changes. This should not be necessary for CodePush unless you uploaded the wrong source maps by mistake.   | 
 
 ### `xcode`
 
@@ -231,7 +231,7 @@ Command summary:
 
 You need an AppCenter account to test this command, as it uses the `appcenter codepush deployment history` command.
 
-Generate source maps for your codepush application, then use `yarn launch react-native codepush` from this repository to trigger an upload.
+Generate source maps for your CodePush application, then use `yarn launch react-native codepush` from this repository to trigger an upload.
 
 ### `xcode`
 
