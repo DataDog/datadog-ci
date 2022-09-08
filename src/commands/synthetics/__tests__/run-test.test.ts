@@ -6,7 +6,7 @@ import * as ciUtils from '../../../helpers/utils'
 import * as api from '../api'
 import {MAX_TESTS_TO_TRIGGER} from '../command'
 import {CiError, CriticalCiErrorCode, CriticalError} from '../errors'
-import {ConfigOverride, ExecutionRule, SyntheticsCIConfig} from '../interfaces'
+import {ExecutionRule, SyntheticsCIConfig, UserConfigOverride} from '../interfaces'
 import * as runTests from '../run-test'
 import {Tunnel} from '../tunnel'
 import * as utils from '../utils'
@@ -39,7 +39,7 @@ describe('run-test', () => {
 
       const startUrl = '{{PROTOCOL}}//myhost{{PATHNAME}}{{PARAMS}}'
       const locations = ['location1', 'location2']
-      const configOverride = {locations, startUrl}
+      const userConfigOverride = {locations, startUrl}
 
       const apiHelper = {}
 
@@ -48,15 +48,15 @@ describe('run-test', () => {
       await expect(
         runTests.executeTests(mockReporter, {
           ...ciConfig,
-          global: configOverride,
+          global: userConfigOverride,
           publicIds: ['public-id-1', 'public-id-2'],
         })
       ).rejects.toThrow()
       expect(getTestsToTriggersMock).toHaveBeenCalledWith(
         apiHelper,
         expect.arrayContaining([
-          expect.objectContaining({id: 'public-id-1', config: configOverride}),
-          expect.objectContaining({id: 'public-id-2', config: configOverride}),
+          expect.objectContaining({id: 'public-id-1', config: userConfigOverride}),
+          expect.objectContaining({id: 'public-id-2', config: userConfigOverride}),
         ]),
         expect.anything(),
         false
@@ -79,7 +79,7 @@ describe('run-test', () => {
         {global: {locations: ['global-location-1']}, locations: ['envvar-location-1', 'envvar-location-2']},
         {locations: ['envvar-location-1', 'envvar-location-2']},
       ],
-    ] as [string, Partial<SyntheticsCIConfig>, ConfigOverride][])(
+    ] as [string, Partial<SyntheticsCIConfig>, UserConfigOverride][])(
       'Use appropriate list of locations for tests triggered by public id: %s',
       async (text, partialCIConfig, expectedOverriddenConfig) => {
         const getTestsToTriggersMock = jest.spyOn(utils, 'getTestsToTrigger').mockReturnValue(

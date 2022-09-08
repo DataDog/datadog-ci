@@ -3,7 +3,6 @@ import {MAX_TESTS_TO_TRIGGER} from './command'
 import {CiError, CriticalError} from './errors'
 import {
   CommandConfig,
-  ConfigOverride,
   MainReporter,
   Suite,
   Summary,
@@ -12,6 +11,7 @@ import {
   TestPayload,
   Trigger,
   TriggerConfig,
+  UserConfigOverride,
 } from './interfaces'
 import {uploadApplicationsAndOverrideConfig} from './mobile'
 import {Tunnel} from './tunnel'
@@ -142,7 +142,7 @@ export const executeTests = async (reporter: MainReporter, config: CommandConfig
 
 const getTestListBySearchQuery = async (
   api: APIHelper,
-  globalConfigOverride: ConfigOverride,
+  globalConfigOverride: UserConfigOverride,
   testSearchQuery: string
 ) => {
   const testSearchResults = await api.searchTests(testSearchQuery)
@@ -181,7 +181,7 @@ export const getTestsList = async (
 
   const configFromEnvironment = config.locations?.length ? {locations: config.locations} : {}
 
-  const overrideTestConfig = (test: TriggerConfig): ConfigOverride =>
+  const overrideTestConfig = (test: TriggerConfig): UserConfigOverride =>
     // Global < env < test config
     ({
       ...config.global,

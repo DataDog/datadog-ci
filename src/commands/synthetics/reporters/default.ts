@@ -5,7 +5,6 @@ import {Writable} from 'stream'
 import {
   Assertion,
   Batch,
-  ConfigOverride,
   ExecutionRule,
   MainReporter,
   Operator,
@@ -14,6 +13,7 @@ import {
   Step,
   Summary,
   Test,
+  UserConfigOverride,
 } from '../interfaces'
 import {getBatchUrl, getResultDuration, getResultOutcome, getResultUrl, ResultOutcome} from '../utils'
 
@@ -342,7 +342,12 @@ export class DefaultReporter implements MainReporter {
     )
   }
 
-  public testTrigger(test: Pick<Test, 'name'>, testId: string, executionRule: ExecutionRule, config: ConfigOverride) {
+  public testTrigger(
+    test: Pick<Test, 'name'>,
+    testId: string,
+    executionRule: ExecutionRule,
+    config: UserConfigOverride
+  ) {
     const idDisplay = `[${chalk.bold.dim(testId)}]`
 
     const getMessage = () => {

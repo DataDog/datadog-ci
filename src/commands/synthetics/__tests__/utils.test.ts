@@ -16,7 +16,6 @@ import {apiConstructor, APIHelper} from '../api'
 import {CiError} from '../errors'
 import {
   Batch,
-  ConfigOverride,
   ExecutionRule,
   PollResult,
   Result,
@@ -24,6 +23,7 @@ import {
   Summary,
   Test,
   Trigger,
+  UserConfigOverride,
 } from '../interfaces'
 import * as utils from '../utils'
 
@@ -406,7 +406,7 @@ describe('utils', () => {
         public_id: publicId,
         type: 'browser',
       } as Test
-      const configOverride: ConfigOverride = {
+      const configOverride: UserConfigOverride = {
         allowInsecureCertificates: true,
         basicAuth: {username: 'user', password: 'password'},
         body: 'body',

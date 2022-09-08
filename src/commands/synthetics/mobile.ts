@@ -2,8 +2,7 @@ import * as crypto from 'crypto'
 import * as fs from 'fs'
 
 import {APIHelper} from './api'
-import {Test, TestPayload} from './interfaces'
-import {getTestByPublicId} from './utils'
+import {Test, TestPayload, UserConfigOverride} from './interfaces'
 
 export const getMD5HashFromFileBuffer = async (fileBuffer: Buffer): Promise<string> => {
   const hash = crypto.createHash('md5').update(fileBuffer).digest('base64')
@@ -14,12 +13,12 @@ export const getMD5HashFromFileBuffer = async (fileBuffer: Buffer): Promise<stri
 export const uploadMobileApplications = async (
   api: APIHelper,
   applicationPathToUpload: string,
-  test: Test
+  mobileApplicationId: string
 ): Promise<string> => {
   const fileBuffer = await fs.promises.readFile(applicationPathToUpload)
   const md5 = await getMD5HashFromFileBuffer(fileBuffer)
   const {presigned_url_params: presignedUrl, file_name: fileName} = await api.getMobileApplicationPresignedURL(
-    test.mobileApplication!.id,
+    mobileApplicationId,
     md5
   )
 
@@ -31,79 +30,81 @@ export const uploadMobileApplications = async (
 export const uploadApplicationIfNeeded = async (
   api: APIHelper,
   applicationPathToUpload: string,
-  test: Test,
-  uploadedApplicationByApplication: {[applicationFilePath: string]: {applicationId: string; fileName: string}[]}
+  testApplicationId: string,
+  uploadedApplicationByPath: {[applicationFilePath: string]: {applicationId: string; fileName: string}[]}
 ) => {
   const isAlreadyUploaded =
-    applicationPathToUpload in uploadedApplicationByApplication &&
-    uploadedApplicationByApplication[applicationPathToUpload].find(
-      ({applicationId}) => applicationId === test.mobileApplication!.id
-    )
+    applicationPathToUpload in uploadedApplicationByPath &&
+    uploadedApplicationByPath[applicationPathToUpload].find(({applicationId}) => applicationId === testApplicationId)
 
-  if (!isAlreadyUploaded) {
-    const fileName = await uploadMobileApplications(api, applicationPathToUpload, test)
-
-    if (!(applicationPathToUpload in uploadedApplicationByApplication)) {
-      uploadedApplicationByApplication[applicationPathToUpload] = []
-    }
-
-    uploadedApplicationByApplication[applicationPathToUpload].push({
-      applicationId: test.mobileApplication!.id,
-      fileName,
-    })
+  if (isAlreadyUploaded) {
+    return
   }
+
+  const fileName = await uploadMobileApplications(api, applicationPathToUpload, testApplicationId)
+
+  if (!(applicationPathToUpload in uploadedApplicationByPath)) {
+    uploadedApplicationByPath[applicationPathToUpload] = []
+  }
+
+  uploadedApplicationByPath[applicationPathToUpload].push({
+    applicationId: testApplicationId,
+    fileName,
+  })
 }
 
 export const overrideMobileConfig = (
+  userConfigOverride: UserConfigOverride,
   overriddenTest: TestPayload,
+  test: Test,
   localApplicationOverride?: {applicationId: string; fileName: string}
 ) => {
   if (localApplicationOverride) {
-    overriddenTest.applicationId = localApplicationOverride.applicationId
-    overriddenTest.fileName = localApplicationOverride.fileName
+    overriddenTest.mobileApplication = {
+      applicationId: localApplicationOverride.applicationId,
+      referenceId: localApplicationOverride.fileName,
+      referenceType: 'temporary',
+    }
   }
 
-  delete overriddenTest.mobileApplicationVersionFilePath
-
-  if (!localApplicationOverride && overriddenTest.mobileApplicationVersion) {
-    overriddenTest.applicationVersionId = overriddenTest.mobileApplicationVersion
+  if (!localApplicationOverride && userConfigOverride.mobileApplicationVersion) {
+    overriddenTest.mobileApplication = {
+      applicationId: test.options.mobileApplication!.applicationId,
+      referenceId: userConfigOverride.mobileApplicationVersion,
+      referenceType: 'version',
+    }
   }
-
-  delete overriddenTest.mobileApplicationVersion
 }
 
-export const uploadApplicationsAndOverrideConfig = async (
+export const uploadApplicationAndOverrideConfig = async (
   api: APIHelper,
-  tests: Test[],
-  overriddenTestsToTrigger: TestPayload[]
+  test: Test,
+  userConfigOverride: UserConfigOverride,
+  overriddenTestsToTrigger: TestPayload,
+  uploadedApplicationByPath: {[applicationFilePath: string]: {applicationId: string; fileName: string}[]}
 ): Promise<void> => {
-  const uploadedApplicationByApplication: {
-    [applicationFilePath: string]: {applicationId: string; fileName: string}[]
-  } = {}
-
-  for (const overriddenTest of overriddenTestsToTrigger) {
-    const test = getTestByPublicId(overriddenTest.public_id, tests)
-    if (test.type !== 'mobile') {
-      continue
-    }
-
-    if (!overriddenTest.mobileApplicationVersionFilePath) {
-      overrideMobileConfig(overriddenTest)
-      continue
-    }
-
-    await uploadApplicationIfNeeded(
-      api,
-      overriddenTest.mobileApplicationVersionFilePath,
-      test,
-      uploadedApplicationByApplication
-    )
-
-    overrideMobileConfig(
-      overriddenTest,
-      uploadedApplicationByApplication[overriddenTest.mobileApplicationVersionFilePath].find(
-        ({applicationId}) => applicationId === test.mobileApplication!.id
-      )
-    )
+  if (test.type !== 'mobile') {
+    return
   }
+
+  if (!userConfigOverride.mobileApplicationVersionFilePath) {
+    return
+  }
+
+  const testApplicationId = test.options.mobileApplication!.applicationId
+  await uploadApplicationIfNeeded(
+    api,
+    userConfigOverride.mobileApplicationVersionFilePath,
+    testApplicationId,
+    uploadedApplicationByPath
+  )
+
+  overrideMobileConfig(
+    userConfigOverride,
+    overriddenTestsToTrigger,
+    test,
+    uploadedApplicationByPath[userConfigOverride.mobileApplicationVersionFilePath].find(
+      ({applicationId}) => applicationId === testApplicationId
+    )
+  )
 }

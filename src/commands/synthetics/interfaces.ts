@@ -11,7 +11,7 @@ export interface MainReporter {
   resultReceived(result: Batch['results'][0]): void
   runEnd(summary: Summary, baseUrl: string): void
   testsWait(tests: Test[]): void
-  testTrigger(test: Test, testId: string, executionRule: ExecutionRule, config: ConfigOverride): void
+  testTrigger(test: Test, testId: string, executionRule: ExecutionRule, config: UserConfigOverride): void
   testWait(test: Test): void
 }
 
@@ -173,14 +173,6 @@ export interface ServerTest {
   created_by: User
   locations: string[]
   message: string
-  mobileApplication?: {
-    created_at: string
-    description: string
-    id: string
-    name: string
-    platform: 'ios' | 'android'
-    tags: string[]
-  }
   modified_at: string
   modified_by: User
   monitor_id: number
@@ -192,6 +184,7 @@ export interface ServerTest {
     device_ids?: string[]
     min_failure_duration: number
     min_location_failed: number
+    mobileApplication?: MobileApplication
     tick_every: number
   }
   overall_state: number
@@ -264,10 +257,14 @@ export interface RetryConfig {
   interval: number
 }
 
-export interface ConfigOverride {
+export interface MobileApplication {
+  applicationId: string
+  referenceId: string
+  referenceType: 'latest' | 'version' | 'temporary'
+}
+
+export interface BaseConfigOverride {
   allowInsecureCertificates?: boolean
-  applicationId?: string
-  applicationVersionId?: string
   basicAuth?: BasicAuthCredentials
   body?: string
   bodyType?: string
@@ -275,12 +272,9 @@ export interface ConfigOverride {
   defaultStepTimeout?: number
   deviceIds?: string[]
   executionRule?: ExecutionRule
-  fileName?: string
   followRedirects?: boolean
   headers?: {[key: string]: string}
   locations?: string[]
-  mobileApplicationVersion?: string
-  mobileApplicationVersionFilePath?: string
   pollingTimeout?: number
   retry?: RetryConfig
   startUrl?: string
@@ -289,12 +283,21 @@ export interface ConfigOverride {
   variables?: {[key: string]: string}
 }
 
+export interface UserConfigOverride extends BaseConfigOverride {
+  mobileApplicationVersion?: string
+  mobileApplicationVersionFilePath?: string
+}
+
+export interface ServerConfigOverride extends BaseConfigOverride {
+  mobileApplication?: MobileApplication
+}
+
 export interface Payload {
   metadata?: Metadata
   tests: TestPayload[]
 }
 
-export interface TestPayload extends ConfigOverride {
+export interface TestPayload extends ServerConfigOverride {
   executionRule: ExecutionRule
   public_id: string
 }
@@ -321,7 +324,7 @@ export interface TemplateVariables {
 export interface TemplateContext extends TemplateVariables, NodeJS.ProcessEnv {}
 
 export interface TriggerConfig {
-  config: ConfigOverride
+  config: UserConfigOverride
   id: string
   suite?: string
 }
@@ -374,7 +377,7 @@ export interface SyntheticsCIConfig {
   datadogSite: string
   failOnCriticalErrors: boolean
   files: string[]
-  global: ConfigOverride
+  global: UserConfigOverride
   locations: string[]
   pollingTimeout: number
   proxy: ProxyConfiguration
