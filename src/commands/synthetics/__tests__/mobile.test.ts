@@ -20,7 +20,7 @@ describe('uploadApplicationIfNeeded', () => {
 
   test('upload new application file', async () => {
     const uploadedApplicationByPath = {}
-    await mobile.uploadApplicationIfNeeded(api, 'new-application-path.api', getMobileTest(), uploadedApplicationByPath)
+    await mobile.uploadApplicationIfNeeded(api, 'new-application-path.api', 'mobileAppUuid', uploadedApplicationByPath)
 
     expect(uploadedApplicationByPath).toEqual({
       'new-application-path.api': [
@@ -43,7 +43,7 @@ describe('uploadApplicationIfNeeded', () => {
       ],
     }
 
-    await mobile.uploadApplicationIfNeeded(api, 'new-application-path.api', getMobileTest(), uploadedApplicationByPath)
+    await mobile.uploadApplicationIfNeeded(api, 'new-application-path.api', 'mobileAppUuid', uploadedApplicationByPath)
 
     expect(uploadedApplicationByPath).toEqual({
       'new-application-path.api': [
@@ -66,7 +66,7 @@ describe('uploadApplicationIfNeeded', () => {
         },
       ],
     }
-    await mobile.uploadApplicationIfNeeded(api, 'new-application-path.api', getMobileTest(), uploadedApplicationByPath)
+    await mobile.uploadApplicationIfNeeded(api, 'new-application-path.api', 'mobileAppUuid', uploadedApplicationByPath)
 
     expect(uploadedApplicationByPath).toEqual({
       'new-application-path.api': [
@@ -96,7 +96,7 @@ describe('uploadApplicationIfNeeded', () => {
     await mobile.uploadApplicationIfNeeded(
       api,
       'another-application-path.api',
-      getMobileTest(),
+      'mobileAppUuid',
       uploadedApplicationByPath
     )
 
@@ -127,7 +127,7 @@ describe('uploadApplicationIfNeeded', () => {
         },
       ],
     }
-    await mobile.uploadApplicationIfNeeded(api, 'new-application-path.api', getMobileTest(), uploadedApplicationByPath)
+    await mobile.uploadApplicationIfNeeded(api, 'new-application-path.api', 'mobileAppUuid', uploadedApplicationByPath)
 
     expect(uploadedApplicationByPath).toEqual({
       'another-application-path.api': [

@@ -297,7 +297,7 @@ export interface Payload {
   tests: TestPayload[]
 }
 
-export interface TestPayload extends ServerConfigOverride {
+export interface TestPayload extends UserConfigOverride {
   executionRule: ExecutionRule
   public_id: string
 }
