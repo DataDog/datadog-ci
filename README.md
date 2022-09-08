@@ -96,6 +96,7 @@ Available commands:
   - trace
   - tag
   - metric
+  - flutter-symbols
 ```
 
 Each command allows interacting with a product of the Datadog platform. The commands are defined in the [src/commands](/src/commands) folder.
@@ -111,6 +112,7 @@ Further documentation for each command can be found in its folder, ie:
 - [Trace](src/commands/trace)
 - [Tag](src/commands/tag)
 - [Metric](src/commands/metric)
+- [Flutter Symbols](src/commands/flutter-symbols/)
 
 ## Contributing
 
