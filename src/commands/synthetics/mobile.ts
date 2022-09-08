@@ -2,8 +2,7 @@ import * as crypto from 'crypto'
 import * as fs from 'fs'
 
 import {APIHelper} from './api'
-import {Test, TestPayload} from './interfaces'
-import {getTestByPublicId} from './utils'
+import {Test, TestPayload, UserConfigOverride} from './interfaces'
 
 export const getMD5HashFromFileBuffer = async (fileBuffer: Buffer): Promise<string> => {
   const hash = crypto.createHash('md5').update(fileBuffer).digest('base64')
@@ -81,39 +80,33 @@ export const overrideMobileConfig = (
   delete overriddenTest.mobileApplicationVersion
 }
 
-export const uploadApplicationsAndOverrideConfig = async (
+export const uploadApplicationAndOverrideConfig = async (
   api: APIHelper,
-  tests: Test[],
-  overriddenTestsToTrigger: TestPayload[]
+  test: Test,
+  userConfigOverride: UserConfigOverride,
+  overriddenTestsToTrigger: TestPayload,
+  uploadedApplicationByPath: {[applicationFilePath: string]: {applicationId: string; fileName: string}[]}
 ): Promise<void> => {
-  const uploadedApplicationByPath: {
-    [applicationFilePath: string]: {applicationId: string; fileName: string}[]
-  } = {}
-
-  for (const overriddenTest of overriddenTestsToTrigger) {
-    const test = getTestByPublicId(overriddenTest.public_id, tests)
-    if (test.type !== 'mobile') {
-      continue
-    }
-
-    if (!overriddenTest.mobileApplicationVersionFilePath) {
-      overrideMobileConfig(overriddenTest, test)
-      continue
-    }
-
-    await uploadApplicationIfNeeded(
-      api,
-      overriddenTest.mobileApplicationVersionFilePath,
-      test.options.mobileApplication!.applicationId,
-      uploadedApplicationByPath
-    )
-
-    overrideMobileConfig(
-      overriddenTest,
-      test,
-      uploadedApplicationByApplication[overriddenTest.mobileApplicationVersionFilePath].find(
-        ({applicationId}) => applicationId === test.options.mobileApplication!.applicationId
-      )
-    )
+  if (test.type !== 'mobile') {
+    return
   }
+
+  if (!userConfigOverride.mobileApplicationVersionFilePath) {
+    return
+  }
+
+  const testApplicationId = test.options.mobileApplication!.applicationId
+  await uploadApplicationIfNeeded(
+    api,
+    userConfigOverride.mobileApplicationVersionFilePath,
+    testApplicationId,
+    uploadedApplicationByPath
+  )
+
+  overrideMobileConfig(
+    overriddenTestsToTrigger,
+    test,
+    uploadedApplicationByPath[userConfigOverride.mobileApplicationVersionFilePath].find(
+      ({applicationId}) => applicationId === testApplicationId
+    )
 }
