@@ -31,31 +31,27 @@ export const uploadMobileApplications = async (
 export const uploadApplicationIfNeeded = async (
   api: APIHelper,
   applicationPathToUpload: string,
-  test: Test,
-  uploadedApplicationByApplication: {[applicationFilePath: string]: {applicationId: string; fileName: string}[]}
+  testApplicationId: string,
+  uploadedApplicationByPath: {[applicationFilePath: string]: {applicationId: string; fileName: string}[]}
 ) => {
   const isAlreadyUploaded =
-    applicationPathToUpload in uploadedApplicationByApplication &&
-    uploadedApplicationByApplication[applicationPathToUpload].find(
-      ({applicationId}) => applicationId === test.options.mobileApplication!.applicationId
-    )
+    applicationPathToUpload in uploadedApplicationByPath &&
+    uploadedApplicationByPath[applicationPathToUpload].find(({applicationId}) => applicationId === testApplicationId)
 
-  if (!isAlreadyUploaded) {
-    const fileName = await uploadMobileApplications(
-      api,
-      applicationPathToUpload,
-      test.options.mobileApplication!.applicationId
-    )
-
-    if (!(applicationPathToUpload in uploadedApplicationByApplication)) {
-      uploadedApplicationByApplication[applicationPathToUpload] = []
-    }
-
-    uploadedApplicationByApplication[applicationPathToUpload].push({
-      applicationId: test.options.mobileApplication!.applicationId,
-      fileName,
-    })
+  if (isAlreadyUploaded) {
+    return
   }
+
+  const fileName = await uploadMobileApplications(api, applicationPathToUpload, testApplicationId)
+
+  if (!(applicationPathToUpload in uploadedApplicationByPath)) {
+    uploadedApplicationByPath[applicationPathToUpload] = []
+  }
+
+  uploadedApplicationByPath[applicationPathToUpload].push({
+    applicationId: testApplicationId,
+    fileName,
+  })
 }
 
 export const overrideMobileConfig = (
@@ -90,7 +86,7 @@ export const uploadApplicationsAndOverrideConfig = async (
   tests: Test[],
   overriddenTestsToTrigger: TestPayload[]
 ): Promise<void> => {
-  const uploadedApplicationByApplication: {
+  const uploadedApplicationByPath: {
     [applicationFilePath: string]: {applicationId: string; fileName: string}[]
   } = {}
 
@@ -108,8 +104,8 @@ export const uploadApplicationsAndOverrideConfig = async (
     await uploadApplicationIfNeeded(
       api,
       overriddenTest.mobileApplicationVersionFilePath,
-      test,
-      uploadedApplicationByApplication
+      test.options.mobileApplication!.applicationId,
+      uploadedApplicationByPath
     )
 
     overrideMobileConfig(

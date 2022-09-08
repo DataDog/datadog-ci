@@ -19,15 +19,10 @@ describe('uploadApplicationIfNeeded', () => {
   })
 
   test('upload new application file', async () => {
-    const uploadedApplicationByApplication = {}
-    await mobile.uploadApplicationIfNeeded(
-      api,
-      'new-application-path.api',
-      getMobileTest(),
-      uploadedApplicationByApplication
-    )
+    const uploadedApplicationByPath = {}
+    await mobile.uploadApplicationIfNeeded(api, 'new-application-path.api', 'mobileAppUuid', uploadedApplicationByPath)
 
-    expect(uploadedApplicationByApplication).toEqual({
+    expect(uploadedApplicationByPath).toEqual({
       'new-application-path.api': [
         {
           applicationId: 'mobileAppUuid',
@@ -39,7 +34,7 @@ describe('uploadApplicationIfNeeded', () => {
   })
 
   test('upload same application file with same application id', async () => {
-    const uploadedApplicationByApplication = {
+    const uploadedApplicationByPath = {
       'new-application-path.api': [
         {
           applicationId: 'mobileAppUuid',
@@ -48,14 +43,9 @@ describe('uploadApplicationIfNeeded', () => {
       ],
     }
 
-    await mobile.uploadApplicationIfNeeded(
-      api,
-      'new-application-path.api',
-      getMobileTest(),
-      uploadedApplicationByApplication
-    )
+    await mobile.uploadApplicationIfNeeded(api, 'new-application-path.api', 'mobileAppUuid', uploadedApplicationByPath)
 
-    expect(uploadedApplicationByApplication).toEqual({
+    expect(uploadedApplicationByPath).toEqual({
       'new-application-path.api': [
         {
           applicationId: 'mobileAppUuid',
@@ -68,7 +58,7 @@ describe('uploadApplicationIfNeeded', () => {
   })
 
   test('upload same application file with different application id', async () => {
-    const uploadedApplicationByApplication = {
+    const uploadedApplicationByPath = {
       'new-application-path.api': [
         {
           applicationId: 'anotherMobileAppUuid',
@@ -76,14 +66,9 @@ describe('uploadApplicationIfNeeded', () => {
         },
       ],
     }
-    await mobile.uploadApplicationIfNeeded(
-      api,
-      'new-application-path.api',
-      getMobileTest(),
-      uploadedApplicationByApplication
-    )
+    await mobile.uploadApplicationIfNeeded(api, 'new-application-path.api', 'mobileAppUuid', uploadedApplicationByPath)
 
-    expect(uploadedApplicationByApplication).toEqual({
+    expect(uploadedApplicationByPath).toEqual({
       'new-application-path.api': [
         {
           applicationId: 'anotherMobileAppUuid',
@@ -100,7 +85,7 @@ describe('uploadApplicationIfNeeded', () => {
   })
 
   test('upload different application file with same application id', async () => {
-    const uploadedApplicationByApplication = {
+    const uploadedApplicationByPath = {
       'new-application-path.api': [
         {
           applicationId: 'mobileAppUuid',
@@ -111,11 +96,11 @@ describe('uploadApplicationIfNeeded', () => {
     await mobile.uploadApplicationIfNeeded(
       api,
       'another-application-path.api',
-      getMobileTest(),
-      uploadedApplicationByApplication
+      'mobileAppUuid',
+      uploadedApplicationByPath
     )
 
-    expect(uploadedApplicationByApplication).toEqual({
+    expect(uploadedApplicationByPath).toEqual({
       'another-application-path.api': [
         {
           applicationId: 'mobileAppUuid',
@@ -134,7 +119,7 @@ describe('uploadApplicationIfNeeded', () => {
   })
 
   test('upload different application file with different application id', async () => {
-    const uploadedApplicationByApplication = {
+    const uploadedApplicationByPath = {
       'another-application-path.api': [
         {
           applicationId: 'anotherMobileAppUuid',
@@ -142,14 +127,9 @@ describe('uploadApplicationIfNeeded', () => {
         },
       ],
     }
-    await mobile.uploadApplicationIfNeeded(
-      api,
-      'new-application-path.api',
-      getMobileTest(),
-      uploadedApplicationByApplication
-    )
+    await mobile.uploadApplicationIfNeeded(api, 'new-application-path.api', 'mobileAppUuid', uploadedApplicationByPath)
 
-    expect(uploadedApplicationByApplication).toEqual({
+    expect(uploadedApplicationByPath).toEqual({
       'another-application-path.api': [
         {
           applicationId: 'anotherMobileAppUuid',

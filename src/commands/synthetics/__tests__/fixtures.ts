@@ -485,7 +485,7 @@ export const getMobileTest = (publicId = 'abc-def-ghi'): Test => ({
     mobileApplication: {
       applicationId: 'mobileAppUuid',
       referenceId: 'versionId',
-      referenceType: 'VERSION',
+      referenceType: 'version',
     },
     tick_every: 3600,
   },

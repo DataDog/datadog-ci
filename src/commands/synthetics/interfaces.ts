@@ -11,7 +11,7 @@ export interface MainReporter {
   resultReceived(result: Batch['results'][0]): void
   runEnd(summary: Summary, baseUrl: string): void
   testsWait(tests: Test[]): void
-  testTrigger(test: Test, testId: string, executionRule: ExecutionRule, config: ConfigOverride): void
+  testTrigger(test: Test, testId: string, executionRule: ExecutionRule, config: UserConfigOverride): void
   testWait(test: Test): void
 }
 
@@ -260,10 +260,10 @@ export interface RetryConfig {
 export interface MobileApplication {
   applicationId: string
   referenceId: string
-  referenceType: 'LATEST' | 'VERSION' | 'TEMPORARY'
+  referenceType: 'latest' | 'version' | 'temporary'
 }
 
-export interface ConfigOverride {
+export interface BaseConfigOverride {
   allowInsecureCertificates?: boolean
   basicAuth?: BasicAuthCredentials
   body?: string
@@ -275,9 +275,6 @@ export interface ConfigOverride {
   followRedirects?: boolean
   headers?: {[key: string]: string}
   locations?: string[]
-  mobileApplication?: MobileApplication
-  mobileApplicationVersion?: string
-  mobileApplicationVersionFilePath?: string
   pollingTimeout?: number
   retry?: RetryConfig
   startUrl?: string
@@ -286,12 +283,21 @@ export interface ConfigOverride {
   variables?: {[key: string]: string}
 }
 
+export interface UserConfigOverride extends BaseConfigOverride {
+  mobileApplicationVersion?: string
+  mobileApplicationVersionFilePath?: string
+}
+
+export interface ServerConfigOverride extends BaseConfigOverride {
+  mobileApplication?: MobileApplication
+}
+
 export interface Payload {
   metadata?: Metadata
   tests: TestPayload[]
 }
 
-export interface TestPayload extends ConfigOverride {
+export interface TestPayload extends UserConfigOverride {
   executionRule: ExecutionRule
   public_id: string
 }
@@ -318,7 +324,7 @@ export interface TemplateVariables {
 export interface TemplateContext extends TemplateVariables, NodeJS.ProcessEnv {}
 
 export interface TriggerConfig {
-  config: ConfigOverride
+  config: UserConfigOverride
   id: string
   suite?: string
 }
@@ -370,7 +376,7 @@ export interface SyntheticsCIConfig {
   datadogSite: string
   failOnCriticalErrors: boolean
   files: string[]
-  global: ConfigOverride
+  global: UserConfigOverride
   locations: string[]
   pollingTimeout: number
   proxy: ProxyConfiguration
