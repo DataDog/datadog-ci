@@ -1,7 +1,3 @@
-// Disabling no-unused-variable / no-empty temporarily so certain private methods
-// can remain in while this feature is in progress
-// tslint:disable: no-unused-variable
-// tslint:disable: no-empty
 import fs from 'fs'
 
 import {Command} from 'clipanion'
