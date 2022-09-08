@@ -83,10 +83,13 @@ export const uploadApplicationsAndOverrideConfig = async (
 
   for (const overriddenTest of overriddenTestsToTrigger) {
     const test = getTestByPublicId(overriddenTest.public_id, tests)
+    console.log({test})
     if (test.type !== 'mobile') {
       continue
     }
 
+    test.mobileApplication = {id: 'c361de55-7770-4812-8ac6-ce6fbc6c7a89'} as any
+    console.log({overriddenTest})
     if (!overriddenTest.mobileApplicationVersionFilePath) {
       overrideMobileConfig(overriddenTest)
       continue
@@ -106,4 +109,6 @@ export const uploadApplicationsAndOverrideConfig = async (
       )
     )
   }
+
+  console.log(JSON.stringify({uploadedApplicationByApplication}))
 }
