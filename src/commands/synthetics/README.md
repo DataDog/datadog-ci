@@ -222,7 +222,7 @@ and so on...
 
 ### Testing tunnel
 
-You can run tests within your development environment by combining variable overrides with the [Testing Tunnel](https://docs.datadoghq.com/synthetics/testing_tunnel/#pagetitle). This allows you to run end-to-end at every stage of your software development lifecycle, from pre-production environments through to your production system.
+You can run tests within your development environment by combining variable overrides with the [Testing Tunnel](https://docs.datadoghq.com/synthetics/testing_tunnel/#pagetitle). This allows you to run end-to-end encryption at every stage of your software development lifecycle, from pre-production environments through to your production system.
 
 ### End-to-end testing process
 
@@ -255,10 +255,10 @@ Took 11546ms
 
 Two reporters are supported out-of-the-box:
 
-1. stdout
-2. jUnit
+1. `stdout`
+2. JUnit
 
-To enable the jUnit report, pass the `--jUnitReport` (`-j` shorthand) in your command, specifying a filename for your jUnit XML report. 
+To enable the JUnit report, pass the `--jUnitReport` (`-j` shorthand) in your command, specifying a filename for your JUnit XML report. 
 
 ```bash
 yarn datadog-ci synthetics run-tests -s 'tag:e2e-tests' --config global.config.json --jUnitReport e2e-test-junit
