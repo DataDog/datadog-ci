@@ -1,4 +1,3 @@
-import {Test, TestPayload} from '../interfaces'
 import * as mobile from '../mobile'
 
 import {getApiHelper, getApiTest, getMobileTest, getTestPayload} from './fixtures'
@@ -148,7 +147,7 @@ describe('uploadApplicationIfNeeded', () => {
   })
 })
 
-describe('uploadApplicationsAndOverrideConfig', () => {
+describe('uploadApplicationAndOverrideConfig', () => {
   const uploadApplicationSpy = jest.spyOn(mobile, 'uploadMobileApplications')
   const api = getApiHelper()
 
@@ -158,25 +157,29 @@ describe('uploadApplicationsAndOverrideConfig', () => {
   })
 
   test('Upload and override for mobile tests and skip for others', async () => {
-    const tests: Test[] = [getApiTest(), getMobileTest('mob-ile-abc')]
+    const uploadedApplicationByPath: {[applicationFilePath: string]: {applicationId: string; fileName: string}[]} = {}
+    const apiTest = getApiTest()
+    const apiTestConfig = getTestPayload({public_id: apiTest.public_id})
+    await mobile.uploadApplicationAndOverrideConfig(
+      api,
+      apiTest,
+      {mobileApplicationVersionFilePath: 'androidAppPath'},
+      apiTestConfig,
+      uploadedApplicationByPath
+    )
 
-    const overriddenTestsToTrigger: TestPayload[] = [
-      getTestPayload({public_id: tests[0].public_id}),
-      getTestPayload({
-        mobileApplicationVersionFilePath: 'androidAppPath',
-        public_id: tests[1].public_id,
-      }),
-    ]
+    expect(apiTestConfig.mobileApplication).toBeUndefined()
 
-    await mobile.uploadApplicationsAndOverrideConfig(api, tests, overriddenTestsToTrigger)
-
-    expect(overriddenTestsToTrigger).toEqual([
-      getTestPayload({public_id: tests[0].public_id}),
-      // Not override yet
-      getTestPayload({
-        mobileApplicationVersionFilePath: 'androidAppPath',
-        public_id: tests[1].public_id,
-      }),
-    ])
+    const mobileTest = getMobileTest()
+    const mobileTestConfig = getTestPayload({public_id: apiTest.public_id})
+    await mobile.uploadApplicationAndOverrideConfig(
+      api,
+      mobileTest,
+      {mobileApplicationVersionFilePath: 'androidAppPath'},
+      mobileTestConfig,
+      uploadedApplicationByPath
+    )
+    // Not override yet
+    expect(mobileTestConfig.mobileApplication).toBeUndefined()
   })
 })
