@@ -260,7 +260,7 @@ export interface RetryConfig {
 export interface MobileApplication {
   applicationId: string
   referenceId: string
-  referenceType: 'LATEST' | 'VERSION' | 'TEMPORARY'
+  referenceType: 'latest' | 'version' | 'temporary'
 }
 
 export interface ConfigOverride {
