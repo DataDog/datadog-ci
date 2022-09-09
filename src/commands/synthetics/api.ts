@@ -1,7 +1,7 @@
-import FormData from 'form-data'
 import {stringify} from 'querystring'
 
 import {AxiosError, AxiosPromise, AxiosRequestConfig} from 'axios'
+import FormData from 'form-data'
 
 import {getRequestBuilder} from '../../helpers/utils'
 

@@ -37,6 +37,7 @@ import {
   TriggerConfig,
   UserConfigOverride,
 } from './interfaces'
+import {uploadApplicationAndOverrideConfig} from './mobile'
 import {Tunnel} from './tunnel'
 
 const POLLING_INTERVAL = 5000 // In ms
@@ -572,6 +573,20 @@ export const getTestsToTrigger = async (
   const testsAndConfigsOverride = await Promise.all(
     triggerConfigs.map((triggerConfig) => getTestAndOverrideConfig(api, triggerConfig, reporter, summary))
   )
+
+  const uploadedApplicationByPath: {[applicationFilePath: string]: {applicationId: string; fileName: string}[]} = {}
+  for (const {test, overriddenConfig} of testsAndConfigsOverride) {
+    if (test && test.type === 'mobile' && overriddenConfig) {
+      const {config: userConfigOverride} = triggerConfigs.find(({id}) => id === test.public_id)!
+      await uploadApplicationAndOverrideConfig(
+        api,
+        test,
+        userConfigOverride,
+        overriddenConfig,
+        uploadedApplicationByPath
+      )
+    }
+  }
 
   const overriddenTestsToTrigger: TestPayload[] = []
   const waitedTests: Test[] = []

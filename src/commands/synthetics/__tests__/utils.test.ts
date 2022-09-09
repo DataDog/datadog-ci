@@ -28,6 +28,8 @@ import {
 import * as utils from '../utils'
 
 import {DEFAULT_COMMAND_CONFIG, MAX_TESTS_TO_TRIGGER} from '../command'
+import * as mobile from '../mobile'
+
 import {
   ciConfig,
   getApiResult,
@@ -172,6 +174,13 @@ describe('utils', () => {
         public_id: '123-456-789',
         suite: 'Suite 1',
       },
+      'mob-ile-tes': {
+        config: {},
+        name: 'Fake Mobile Test',
+        public_id: 'mob-ile-tes',
+        suite: 'Suite 3',
+        type: 'mobile',
+      },
       'ski-ppe-d01': {
         config: {request: {url: 'http://example.org/'}},
         name: 'Skipped Fake Test',
@@ -269,6 +278,17 @@ describe('utils', () => {
         const tests = await utils.getTestsToTrigger(fakeApi, tooManyTests, mockReporter, true)
         expect(tests.tests.length).toBe(MAX_TESTS_TO_TRIGGER)
       })
+    })
+
+    test('call uploadApplicationAndOverrideConfig on mobile test', async () => {
+      const spy = jest.spyOn(mobile, 'uploadApplicationAndOverrideConfig').mockImplementation()
+      const triggerConfigs = [
+        {suite: 'Suite 1', config: {}, id: '123-456-789'},
+        {suite: 'Suite 3', config: {}, id: 'mob-ile-tes'},
+      ]
+
+      await utils.getTestsToTrigger(api, triggerConfigs, mockReporter)
+      expect(spy).toBeCalledTimes(1)
     })
   })
 

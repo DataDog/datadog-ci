@@ -1,6 +1,6 @@
 import * as mobile from '../mobile'
 
-import {getApiHelper, getApiTest, getMobileTest, getTestPayload} from './fixtures'
+import {getApiHelper, getMobileTest, getTestPayload} from './fixtures'
 
 describe('getMD5HashFromFileBuffer', () => {
   test('correctly compute md5 of a file', async () => {
@@ -208,22 +208,10 @@ describe('uploadApplicationAndOverrideConfig', () => {
     uploadApplicationSpy.mockImplementation(async () => 'fileName')
   })
 
-  test('Upload and override for mobile tests and skip for others', async () => {
+  test('Upload and override for mobile tests', async () => {
     const uploadedApplicationByPath: {[applicationFilePath: string]: {applicationId: string; fileName: string}[]} = {}
-    const apiTest = getApiTest()
-    const apiTestConfig = getTestPayload({public_id: apiTest.public_id})
-    await mobile.uploadApplicationAndOverrideConfig(
-      api,
-      apiTest,
-      {mobileApplicationVersionFilePath: 'androidAppPath'},
-      apiTestConfig,
-      uploadedApplicationByPath
-    )
-
-    expect(apiTestConfig.mobileApplication).toBeUndefined()
-
     const mobileTest = getMobileTest()
-    const mobileTestConfig = getTestPayload({public_id: apiTest.public_id})
+    const mobileTestConfig = getTestPayload({public_id: mobileTest.public_id})
     await mobile.uploadApplicationAndOverrideConfig(
       api,
       mobileTest,

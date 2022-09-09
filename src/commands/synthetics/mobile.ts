@@ -83,10 +83,6 @@ export const uploadApplicationAndOverrideConfig = async (
   overriddenTestsToTrigger: TestPayload,
   uploadedApplicationByPath: {[applicationFilePath: string]: {applicationId: string; fileName: string}[]}
 ): Promise<void> => {
-  if (test.type !== 'mobile') {
-    return
-  }
-
   if (!userConfigOverride.mobileApplicationVersionFilePath) {
     return
   }
