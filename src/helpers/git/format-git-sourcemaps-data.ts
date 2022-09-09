@@ -125,12 +125,7 @@ export class TrackedFilesMatcher {
 
   // Return a list of all tracked files
   public rawTrackedFilesList() {
-    let rawList: string[] = []
-    this.trackedFilenames.forEach((value) => {
-      rawList = rawList.concat(value)
-    })
-
-    return rawList
+    return [...this.trackedFilenames.values()].flat()
   }
 
   // Extract the filename from a path.

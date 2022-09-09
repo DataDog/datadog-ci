@@ -46,7 +46,7 @@ export class UploadCommand extends Command {
     description: 'Upload symbol files for Flutter.',
     details: `
             This command will upload all symbol files for Flutter applications in order to symbolicate errors and
-            crash reports recieved by Datadog. This includes uploading iOS dSYMs, Proguard mapping files, and Dart
+            crash reports received by Datadog. This includes uploading iOS dSYMs, Proguard mapping files, and Dart
             symbol files.
         `,
     examples: [
