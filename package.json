@@ -90,6 +90,7 @@
     "@types/js-yaml": "^4.0.5",
     "@types/node": "10.17.57",
     "@types/rimraf": "^3.0.2",
+    "@types/semver": "^7.3.12",
     "@types/ssh2": "0.5.46",
     "@types/ssh2-streams": "0.1.8",
     "@types/sshpk": "1.10.5",

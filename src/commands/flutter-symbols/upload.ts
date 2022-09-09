@@ -1,28 +1,11 @@
 import fs from 'fs'
 
 import {Command} from 'clipanion'
-import yaml from 'js-yaml'
-import {
-  renderArgumentMissingError,
-  renderCommandInfo,
-  renderCommandSummary,
-  renderFailedUpload,
-  renderGeneralizedError,
-  renderGitWarning,
-  renderInvalidPubspecError,
-  renderInvalidSymbolsDir,
-  renderMissingAndroidMappingFile,
-  renderMissingDartSymbolsDir,
-  renderMissingPubspecError,
-  renderPubspecMissingVersionError,
-  renderRetriedUpload,
-  renderUpload,
-  renderVersionBuildNumberWarning,
-  UploadInfo,
-} from './renderer'
-
 import glob from 'glob'
+import yaml from 'js-yaml'
+import semver from 'semver'
 import asyncPool from 'tiny-async-pool'
+
 import {ApiKeyValidator, newApiKeyValidator} from '../../helpers/apikey'
 import {getRepositoryData, RepositoryData} from '../../helpers/git/format-git-sourcemaps-data'
 import {getMetricsLogger, MetricsLogger} from '../../helpers/metrics'
@@ -40,6 +23,25 @@ import {
   VALUE_NAME_DART_MAPPING,
   VALUE_NAME_JVM_MAPPING,
 } from './interfaces'
+import {
+  renderArgumentMissingError,
+  renderCommandInfo,
+  renderCommandSummary,
+  renderFailedUpload,
+  renderGeneralizedError,
+  renderGitWarning,
+  renderInvalidPubspecError,
+  renderInvalidSymbolsDir,
+  renderMissingAndroidMappingFile,
+  renderMissingDartSymbolsDir,
+  renderMissingPubspecError,
+  renderPubspecMissingVersionError,
+  renderRetriedUpload,
+  renderUpload,
+  renderVersionBuildNumberWarning,
+  renderVersionNotSemver,
+  UploadInfo,
+} from './renderer'
 
 export class UploadCommand extends Command {
   public static usage = Command.Usage({
@@ -122,25 +124,6 @@ export class UploadCommand extends Command {
       this.gitData = await this.getGitMetadata()
     }
 
-    const metricsLogger = getMetricsLogger({
-      apiKey: this.config.apiKey,
-      datadogSite: this.config.datadogSite,
-      defaultTags: [
-        `version:${this.version}`,
-        `service:${this.serviceName}`,
-        `cli_version:${this.cliVersion}`,
-        'flutter:true',
-        'platform:android',
-      ],
-      prefix: 'datadog.ci.symbols.upload.',
-    })
-
-    const apiKeyValidator = newApiKeyValidator({
-      apiKey: this.config.apiKey,
-      datadogSite: this.config.datadogSite,
-      metricsLogger: metricsLogger.logger,
-    })
-
     const initialTime = Date.now()
 
     const callResults: UploadStatus[] = []
@@ -149,10 +132,10 @@ export class UploadCommand extends Command {
         callResults.push(await this.performDsymUpload())
       }
       if (this.androidMappingLocation) {
-        callResults.push(await this.performAndroidMappingUpload(metricsLogger, apiKeyValidator))
+        callResults.push(await this.performAndroidMappingUpload())
       }
       if (this.dartSymbolsLocation) {
-        callResults.push(...(await this.performDartSymbolsUpload(metricsLogger, apiKeyValidator)))
+        callResults.push(...(await this.performDartSymbolsUpload()))
       }
 
       const totalTime = (Date.now() - initialTime) / 1000
@@ -161,12 +144,6 @@ export class UploadCommand extends Command {
       this.context.stderr.write(renderGeneralizedError(e))
 
       return 1
-    } finally {
-      try {
-        await metricsLogger.flush()
-      } catch (err) {
-        this.context.stdout.write(`WARN: ${err}\n`)
-      }
     }
 
     return 0
@@ -174,6 +151,14 @@ export class UploadCommand extends Command {
 
   private getAndroidMetadata(): MappingMetadata {
     return this.getMappingMetadata(TYPE_JVM_MAPPING)
+  }
+
+  private getApiKeyValidator(metricsLogger: MetricsLogger) {
+    return newApiKeyValidator({
+      apiKey: this.config.apiKey,
+      datadogSite: this.config.datadogSite,
+      metricsLogger: metricsLogger.logger,
+    })
   }
 
   private getFlutterMetadata(platform: string, arch: string) {
@@ -186,18 +171,14 @@ export class UploadCommand extends Command {
     return symbolPaths
   }
 
-  private getGitDataPayload(): MultipartValue | undefined {
-    if (this.gitData === undefined) {
-      return undefined
-    }
-
-    const files = this.gitData.trackedFilesMatcher.rawTrackedFilesList()
+  private getGitDataPayload(gitData: RepositoryData): MultipartValue {
+    const files = gitData.trackedFilesMatcher.rawTrackedFilesList()
     const repoPayload = {
       data: [
         {
           files,
-          hash: this.gitData.hash,
-          repository_url: this.gitData.remote,
+          hash: gitData.hash,
+          repository_url: gitData.remote,
         },
       ],
       version: 1,
@@ -233,6 +214,23 @@ export class UploadCommand extends Command {
     }
   }
 
+  private getMetricsLogger(tags: string[]) {
+    const metricsLogger = getMetricsLogger({
+      apiKey: this.config.apiKey,
+      datadogSite: this.config.datadogSite,
+      defaultTags: [
+        `version:${this.version}`,
+        `service:${this.serviceName}`,
+        `cli_version:${this.cliVersion}`,
+        'platform:flutter',
+        ...tags,
+      ],
+      prefix: 'datadog.ci.symbols.upload.',
+    })
+
+    return metricsLogger
+  }
+
   private getSanitizedVersion() {
     return this.version!.replace('+', '-')
   }
@@ -248,20 +246,15 @@ export class UploadCommand extends Command {
       const doc = yaml.load(fs.readFileSync(pubspecLocation, 'utf8')) as any
       if (doc.version) {
         this.version = doc.version
+        const parsedVersion = semver.parse(this.version)
+        if (parsedVersion) {
+          if (parsedVersion.build.length > 0 || parsedVersion.prerelease.length > 0) {
+            this.context.stderr.write(renderVersionBuildNumberWarning(pubspecLocation))
 
-        const buildIndex = this.version!.indexOf('+')
-        let prereleaseIndex = this.version!.indexOf('-')
-        if (buildIndex >= 0 || prereleaseIndex >= 0) {
-          this.context.stderr.write(renderVersionBuildNumberWarning(pubspecLocation))
-
-          if (buildIndex >= 0) {
-            this.version = this.version!.substring(0, buildIndex)
-            // Find the new prerelease index if it still exists
-            prereleaseIndex = this.version!.indexOf('-')
+            this.version = `${parsedVersion.major}.${parsedVersion.minor}.${parsedVersion.patch}`
           }
-          if (prereleaseIndex >= 0) {
-            this.version = this.version!.substring(0, prereleaseIndex)
-          }
+        } else {
+          this.context.stderr.write(renderVersionNotSemver(pubspecLocation, this.version))
         }
       } else {
         this.context.stderr.write(renderPubspecMissingVersionError(pubspecLocation))
@@ -277,10 +270,10 @@ export class UploadCommand extends Command {
     return 0
   }
 
-  private async performAndroidMappingUpload(
-    metricsLogger: MetricsLogger,
-    apiKeyValidator: ApiKeyValidator
-  ): Promise<UploadStatus> {
+  private async performAndroidMappingUpload(): Promise<UploadStatus> {
+    const metricsLogger = this.getMetricsLogger(['platform:android'])
+    const apiKeyValidator = this.getApiKeyValidator(metricsLogger)
+
     const requestBuilder = getFlutterRequestBuilder(this.config.apiKey!, this.cliVersion, this.config.datadogSite)
     if (this.dryRun) {
       this.context.stdout.write(`[DRYRUN] ${renderUpload('Android Mapping File', this.androidMappingLocation!)}`)
@@ -300,7 +293,7 @@ export class UploadCommand extends Command {
       ]),
     }
     if (this.gitData !== undefined) {
-      payload.content.set('repository', this.getGitDataPayload()!)
+      payload.content.set('repository', this.getGitDataPayload(this.gitData))
     }
 
     const result = await uploadMultipartHelper(requestBuilder, payload, {
@@ -323,10 +316,10 @@ export class UploadCommand extends Command {
     return result
   }
 
-  private async performDartSymbolsUpload(
-    metricsLogger: MetricsLogger,
-    apiKeyValidator: ApiKeyValidator
-  ): Promise<UploadStatus[]> {
+  private async performDartSymbolsUpload(): Promise<UploadStatus[]> {
+    const metricsLogger = this.getMetricsLogger(['platform:android'])
+    const apiKeyValidator = this.getApiKeyValidator(metricsLogger)
+
     const files = this.getFlutterSymbolFiles(this.dartSymbolsLocation!)
 
     const filesMetadata = files.map((filename) => ({filename, ...getArchInfoFromFilename(filename)}))
@@ -360,7 +353,7 @@ export class UploadCommand extends Command {
           ]),
         }
         if (this.gitData !== undefined) {
-          payload.content.set('repository', this.getGitDataPayload()!)
+          payload.content.set('repository', this.getGitDataPayload(this.gitData))
         }
 
         return uploadMultipartHelper(requestBuilder, payload, {
@@ -407,24 +400,23 @@ export class UploadCommand extends Command {
   }
 
   private async verifyParameters(): Promise<boolean> {
+    let parametersOkay = true
+
     if (!this.serviceName) {
       this.context.stderr.write(renderArgumentMissingError('service-name'))
-
-      return false
+      parametersOkay = false
     }
 
     if (this.dartSymbolsLocation) {
-      if (!fs.existsSync(this.dartSymbolsLocation)) {
+      if (fs.existsSync(this.dartSymbolsLocation)) {
+        const stats = fs.statSync(this.dartSymbolsLocation)
+        if (!stats.isDirectory()) {
+          this.context.stderr.write(renderInvalidSymbolsDir(this.dartSymbolsLocation))
+          parametersOkay = false
+        }
+      } else {
         this.context.stderr.write(renderMissingDartSymbolsDir(this.dartSymbolsLocation))
-
-        return false
-      }
-
-      const stats = fs.statSync(this.dartSymbolsLocation)
-      if (!stats.isDirectory()) {
-        this.context.stderr.write(renderInvalidSymbolsDir(this.dartSymbolsLocation))
-
-        return false
+        parametersOkay = false
       }
     }
 
@@ -439,16 +431,15 @@ export class UploadCommand extends Command {
     if (this.androidMappingLocation) {
       if (!fs.existsSync(this.androidMappingLocation)) {
         this.context.stderr.write(renderMissingAndroidMappingFile(this.androidMappingLocation))
-
-        return false
+        parametersOkay = false
       }
     }
 
     if (!this.version && (await this.parsePubspecVersion(this.pubspecLocation))) {
-      return false
+      parametersOkay = false
     }
 
-    return true
+    return parametersOkay
   }
 }
 

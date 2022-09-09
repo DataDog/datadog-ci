@@ -1,7 +1,7 @@
 import * as path from 'path'
 import {getBaseSourcemapIntakeUrl} from '../../helpers/base-intake-url'
 import {RequestBuilder} from '../../helpers/interfaces'
-import {MultipartPayload , UploadOptions, upload} from '../../helpers/upload'
+import {MultipartPayload, upload, UploadOptions} from '../../helpers/upload'
 import {getRequestBuilder} from '../../helpers/utils'
 
 export const getFlutterRequestBuilder = (apiKey: string, cliVersion: string, site: string) =>

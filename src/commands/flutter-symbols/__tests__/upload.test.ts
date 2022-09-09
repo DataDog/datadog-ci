@@ -1,6 +1,8 @@
 // tslint:disable: no-string-literal
-import FormData from 'form-data'
 import {ReadStream} from 'fs'
+
+import FormData from 'form-data'
+
 import {TrackedFilesMatcher} from '../../../helpers/git/format-git-sourcemaps-data'
 import {getRepositoryData} from '../../../helpers/git/format-git-sourcemaps-data'
 import {MultipartPayload} from '../../../helpers/upload'

@@ -96,6 +96,11 @@ export const renderPubspecMissingVersionError = (pubspecLocation: string) =>
     `${ICONS.FAILED} pubspec at '${pubspecLocation}' does not contain a version. Supply a version in the pubspec or use the --version argument.\n`
   )
 
+export const renderVersionNotSemver = (pubspecLocation: string, versionNumber: string | undefined) =>
+  chalk.yellow(
+    `${ICONS.WARNING} Could not parse the version specified in ${pubspecLocation} as a Semantic Version. Version is: "${versionNumber}"`
+  )
+
 export const renderVersionBuildNumberWarning = (pubspecLocation: string) => {
   let str = chalk.yellow(
     `${ICONS.WARNING} Your pubspec at '${pubspecLocation}' specifies a build (a value after a '+') or pre-release (a value after a '-').\n`
