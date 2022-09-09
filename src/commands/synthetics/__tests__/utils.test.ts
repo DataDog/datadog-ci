@@ -1134,27 +1134,41 @@ describe('utils', () => {
     test('should default to datadog us api', async () => {
       process.env = {}
 
-      expect(utils.getDatadogHost(false, false, ciConfig)).toBe('https://api.datadoghq.com/api/v1')
-      expect(utils.getDatadogHost(false, true, ciConfig)).toBe('https://api.datadoghq.com/api/unstable')
-      expect(utils.getDatadogHost(true, false, ciConfig)).toBe('https://intake.synthetics.datadoghq.com/api/v1')
+      expect(utils.getDatadogHost({useIntake: false, apiVersion: 'v1', config: ciConfig})).toBe(
+        'https://api.datadoghq.com/api/v1'
+      )
+      expect(utils.getDatadogHost({useIntake: false, apiVersion: 'unstable', config: ciConfig})).toBe(
+        'https://api.datadoghq.com/api/unstable'
+      )
+      expect(utils.getDatadogHost({useIntake: true, apiVersion: 'v1', config: ciConfig})).toBe(
+        'https://intake.synthetics.datadoghq.com/api/v1'
+      )
     })
 
     test('should use DD_API_HOST_OVERRIDE', async () => {
       process.env = {DD_API_HOST_OVERRIDE: 'https://foobar'}
 
-      expect(utils.getDatadogHost(true, false, ciConfig)).toBe('https://foobar/api/v1')
-      expect(utils.getDatadogHost(true, false, ciConfig)).toBe('https://foobar/api/v1')
+      expect(utils.getDatadogHost({useIntake: true, apiVersion: 'v1', config: ciConfig})).toBe('https://foobar/api/v1')
+      expect(utils.getDatadogHost({useIntake: true, apiVersion: 'v1', config: ciConfig})).toBe('https://foobar/api/v1')
     })
 
     test('should use Synthetics intake endpoint', async () => {
       process.env = {}
 
-      expect(utils.getDatadogHost(true, false, {...ciConfig, datadogSite: 'datadoghq.com' as string})).toBe(
-        'https://intake.synthetics.datadoghq.com/api/v1'
-      )
-      expect(utils.getDatadogHost(true, false, {...ciConfig, datadogSite: 'datad0g.com' as string})).toBe(
-        'https://intake.synthetics.datad0g.com/api/v1'
-      )
+      expect(
+        utils.getDatadogHost({
+          useIntake: true,
+          apiVersion: 'v1',
+          config: {...ciConfig, datadogSite: 'datadoghq.com' as string},
+        })
+      ).toBe('https://intake.synthetics.datadoghq.com/api/v1')
+      expect(
+        utils.getDatadogHost({
+          useIntake: true,
+          apiVersion: 'v1',
+          config: {...ciConfig, datadogSite: 'datad0g.com' as string},
+        })
+      ).toBe('https://intake.synthetics.datad0g.com/api/v1')
     })
   })
 })

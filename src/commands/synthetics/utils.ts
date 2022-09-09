@@ -522,7 +522,7 @@ const getTest = async (api: APIHelper, {id, suite}: TriggerConfig): Promise<{tes
   }
 }
 
-const getTestAndOverrideConfig = async (
+export const getTestAndOverrideConfig = async (
   api: APIHelper,
   {config, id, suite}: TriggerConfig,
   reporter: MainReporter,
@@ -578,13 +578,17 @@ export const getTestsToTrigger = async (
   for (const {test, overriddenConfig} of testsAndConfigsOverride) {
     if (test && test.type === 'mobile' && overriddenConfig) {
       const {config: userConfigOverride} = triggerConfigs.find(({id}) => id === test.public_id)!
-      await uploadApplicationAndOverrideConfig(
-        api,
-        test,
-        userConfigOverride,
-        overriddenConfig,
-        uploadedApplicationByPath
-      )
+      try {
+        await uploadApplicationAndOverrideConfig(
+          api,
+          test,
+          userConfigOverride,
+          overriddenConfig,
+          uploadedApplicationByPath
+        )
+      } catch (e) {
+        throw new CriticalError('UPLOAD_MOBILE_APPLICATION_TESTS_FAILED', e.message)
+      }
     }
   }
 
@@ -791,8 +795,14 @@ export const renderResults = ({
   return hasSucceeded ? 0 : 1
 }
 
-export const getDatadogHost = (useIntake = false, isUnstableApi = false, config: SyntheticsCIConfig) => {
-  const apiPath = isUnstableApi ? 'api/unstable' : 'api/v1'
+export const getDatadogHost = (hostConfig: {
+  apiVersion: 'v1' | 'unstable'
+  config: SyntheticsCIConfig
+  useIntake: boolean
+}) => {
+  const {useIntake, apiVersion, config} = hostConfig
+
+  const apiPath = apiVersion === 'v1' ? 'api/v1' : 'api/unstable'
   let host = `https://api.${config.datadogSite}`
   const hostOverride = process.env.DD_API_HOST_OVERRIDE
 

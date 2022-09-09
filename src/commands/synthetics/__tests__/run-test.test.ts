@@ -14,6 +14,7 @@ import {
   ciConfig,
   getApiResult,
   getApiTest,
+  getMobileTest,
   MOBILE_PRESIGNED_URL_PAYLOAD,
   mockReporter,
   mockTestTriggerResponse,
@@ -275,26 +276,15 @@ describe('run-test', () => {
     })
 
     test('getMobileApplicationPresignedURL throws', async () => {
-      jest.spyOn(utils, 'getTestsToTrigger').mockReturnValue(
-        Promise.resolve({
-          overriddenTestsToTrigger: [
-            {
-              executionRule: ExecutionRule.BLOCKING,
-              mobileApplicationVersionFilePath: 'filePath',
-              public_id: 'publicId',
-            },
-          ],
-          summary: utils.createSummary(),
-          tests: [
-            {
-              mobileApplication: {id: 'applicationId'},
-              options: {ci: {executionRule: ExecutionRule.BLOCKING}},
-              public_id: 'publicId',
-              type: 'mobile',
-            } as any,
-          ],
-        })
-      )
+      const mobileTest = getMobileTest()
+      jest
+        .spyOn(utils, 'getTestAndOverrideConfig')
+        .mockImplementation(async () =>
+          Promise.resolve({
+            overriddenConfig: {executionRule: ExecutionRule.NON_BLOCKING, public_id: mobileTest.public_id},
+            test: mobileTest,
+          })
+        )
 
       jest.spyOn(fs, 'readFile').mockImplementation(async () => Buffer.from('aa'))
 
@@ -309,31 +299,24 @@ describe('run-test', () => {
 
       jest.spyOn(api, 'getApiHelper').mockImplementation(() => apiHelper as any)
       await expect(
-        runTests.executeTests(mockReporter, {...ciConfig, publicIds: ['public-id-1', 'public-id-2']})
+        runTests.executeTests(mockReporter, {
+          ...ciConfig,
+          global: {mobileApplicationVersionFilePath: 'filePath'},
+          publicIds: [mobileTest.public_id],
+        })
       ).rejects.toMatchError(new CriticalError('UPLOAD_MOBILE_APPLICATION_TESTS_FAILED', 'Server Error'))
     })
 
     test('uploadMobileApplication throws', async () => {
-      jest.spyOn(utils, 'getTestsToTrigger').mockReturnValue(
-        Promise.resolve({
-          overriddenTestsToTrigger: [
-            {
-              executionRule: ExecutionRule.BLOCKING,
-              mobileApplicationVersionFilePath: 'filePath',
-              public_id: 'publicId',
-            },
-          ],
-          summary: utils.createSummary(),
-          tests: [
-            {
-              mobileApplication: {id: 'applicationId'},
-              options: {ci: {executionRule: ExecutionRule.BLOCKING}},
-              public_id: 'publicId',
-              type: 'mobile',
-            } as any,
-          ],
-        })
-      )
+      const mobileTest = getMobileTest()
+      jest
+        .spyOn(utils, 'getTestAndOverrideConfig')
+        .mockImplementation(async () =>
+          Promise.resolve({
+            overriddenConfig: {executionRule: ExecutionRule.NON_BLOCKING, public_id: mobileTest.public_id},
+            test: mobileTest,
+          })
+        )
 
       jest.spyOn(fs, 'readFile').mockImplementation(async () => Buffer.from('aa'))
 
@@ -349,7 +332,11 @@ describe('run-test', () => {
 
       jest.spyOn(api, 'getApiHelper').mockImplementation(() => apiHelper as any)
       await expect(
-        runTests.executeTests(mockReporter, {...ciConfig, publicIds: ['public-id-1', 'public-id-2']})
+        runTests.executeTests(mockReporter, {
+          ...ciConfig,
+          global: {mobileApplicationVersionFilePath: 'filePath'},
+          publicIds: [mobileTest.public_id],
+        })
       ).rejects.toMatchError(new CriticalError('UPLOAD_MOBILE_APPLICATION_TESTS_FAILED', 'Server Error'))
     })
 
