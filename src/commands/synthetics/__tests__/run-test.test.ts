@@ -277,14 +277,12 @@ describe('run-test', () => {
 
     test('getMobileApplicationPresignedURL throws', async () => {
       const mobileTest = getMobileTest()
-      jest
-        .spyOn(utils, 'getTestAndOverrideConfig')
-        .mockImplementation(async () =>
-          Promise.resolve({
-            overriddenConfig: {executionRule: ExecutionRule.NON_BLOCKING, public_id: mobileTest.public_id},
-            test: mobileTest,
-          })
-        )
+      jest.spyOn(utils, 'getTestAndOverrideConfig').mockImplementation(async () =>
+        Promise.resolve({
+          overriddenConfig: {executionRule: ExecutionRule.NON_BLOCKING, public_id: mobileTest.public_id},
+          test: mobileTest,
+        })
+      )
 
       jest.spyOn(fs, 'readFile').mockImplementation(async () => Buffer.from('aa'))
 
@@ -309,14 +307,12 @@ describe('run-test', () => {
 
     test('uploadMobileApplication throws', async () => {
       const mobileTest = getMobileTest()
-      jest
-        .spyOn(utils, 'getTestAndOverrideConfig')
-        .mockImplementation(async () =>
-          Promise.resolve({
-            overriddenConfig: {executionRule: ExecutionRule.NON_BLOCKING, public_id: mobileTest.public_id},
-            test: mobileTest,
-          })
-        )
+      jest.spyOn(utils, 'getTestAndOverrideConfig').mockImplementation(async () =>
+        Promise.resolve({
+          overriddenConfig: {executionRule: ExecutionRule.NON_BLOCKING, public_id: mobileTest.public_id},
+          test: mobileTest,
+        })
+      )
 
       jest.spyOn(fs, 'readFile').mockImplementation(async () => Buffer.from('aa'))
 
