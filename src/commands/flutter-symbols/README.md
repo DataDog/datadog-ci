@@ -1,6 +1,6 @@
 ## Overview
 
-To deobfuscate and symbolicate errors and crashes, upload your Flutter Symbols, iOS dSYMs, and Android mapping Files to Datadog
+To deobfuscate and symbolicate errors and crashes, upload your Flutter Symbols, iOS dSYMs, and Android mapping files to Datadog.
 
 ## Setup
 
@@ -38,15 +38,15 @@ datadog-ci flutter-symbols upload --dart-symbols-location ./debug-info --service
 
 | Parameter | Condition | Description |
 |-----------|-----------|-------------|
-| `--service-name` | Required | Set as the service name you are uploading files for. Datadog uses this service name to find corresponding files based on the `service` options set during configuration of the the RUM Flutter SDK.<br>By default, the RUM Flutter SDK uses your application's bundle identifier as the service. |
-| `--flavor` | Optional | The build flavor that was built. Defaults to `release` |
+| `--service-name` | Required | Set as the service name you are uploading files for. Datadog uses this service name to find corresponding files based on the `service` options set when you configured the Datadog Flutter SDK for RUM.<br>By default, the Datadog Flutter SDK for RUM uses your application's bundle identifier as the service. |
+| `--flavor` | Optional | The build flavor that was built. Defaults to `release`. |
 | `--dart-symbols-location`  | Optional  | The locaiton of your Dart symbol files. This should be the same path specified to `--split-debug-info`. |
 | `--ios-dysms` | Optional | Upload iOS dSYM files to Datadog |
 | `--ios-dsyms-location` | Optional | Specify the location of iOS dSYM files. By default, these are located at `./build/ios/archive/Runner.xcarchive/dSYMs`. Adding this parameter automatically sets `--ios-dsyms`. |
 | `--android-mapping` | Optional | Upload Android Proguard mapping file. This is usually only necessary if you specify `--obfuscate` as a parameter to `flutter build` |
-| `--android-mapping-location` | Optional | Specify the location of your Android Proguard mapping file. By default, this is located at `./build/app/outputs/mapping/[flavor]/mapping.txt`. Adding this parameter automatically sets `--android-mapping` |
+| `--android-mapping-location` | Optional | Specify the location of your Android Proguard mapping file. By default, this is located at `./build/app/outputs/mapping/[flavor]/mapping.txt`. Adding this parameter automatically sets `--android-mapping`. |
 | `--pubspec-location` | Optional | The location of the pubspec for this application. The pubspec is used to automatically determine the version number of the application. Defaults to the current directory. |
-| `--version` | Optional | The version of your application. This defaults to the version specified in your pubspec. Note that only one upload is needed for a specific `version` and `service` combination. Subsequent uploads are ignored until the `version` changes. |
+| `--version` | Optional | The version of your application. This defaults to the version specified in your pubspec. Only one upload is needed for a specific `version` and `service` combination. Subsequent uploads are ignored until the `version` changes. |
 | `--dry-run` | Optional | It runs the command without the final step of uploading. All other checks are performed. |
 | `--disable-git`    | Optional   | Prevents the command from invoking git in the current working directory and sending repository-related data to Datadog (such as the hash, remote URL, and paths within the repository of sources referenced in the source map). |
 | `--repository-url` | Optional | Overrides the remote repository with a custom URL. For example, `https://github.com/my-company/my-project`. |
