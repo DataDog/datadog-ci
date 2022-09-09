@@ -573,11 +573,13 @@ export const getTestsToTrigger = async (
   const testsAndConfigsOverride = await Promise.all(
     triggerConfigs.map((triggerConfig) => getTestAndOverrideConfig(api, triggerConfig, reporter, summary))
   )
-
+  console.log(JSON.stringify({testsAndConfigsOverride}))
   const uploadedApplicationByPath: {[applicationFilePath: string]: {applicationId: string; fileName: string}[]} = {}
   for (const {test, overriddenConfig} of testsAndConfigsOverride) {
     if (test && test.type === 'mobile' && overriddenConfig) {
       const {config: userConfigOverride} = triggerConfigs.find(({id}) => id === test.public_id)!
+
+      test.options.mobileApplication!.linkedApplicationId = 'c361de55-7770-4812-8ac6-ce6fbc6c7a89'
       try {
         await uploadApplicationAndOverrideConfig(
           api,
@@ -590,6 +592,8 @@ export const getTestsToTrigger = async (
         throw new CriticalError('UPLOAD_MOBILE_APPLICATION_TESTS_FAILED', e.message)
       }
     }
+    console.log({overriddenConfig})
+    console.log('ici')
   }
 
   const overriddenTestsToTrigger: TestPayload[] = []

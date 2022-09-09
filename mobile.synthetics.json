@@ -1,0 +1,10 @@
+{
+  "tests": [
+    {
+      "id": "rda-rqk-jfd",
+      "config": {
+        "mobileApplicationVersionFilePath": "/Users/kevin.yeramian/Desktop/web-test/mobile-poc/WebView-Tester.v2.2-release.apk"
+      }
+    }
+  ]
+}

@@ -258,7 +258,7 @@ export interface RetryConfig {
 }
 
 export interface MobileApplication {
-  applicationId: string
+  linkedApplicationId: string
   referenceId: string
   referenceType: 'latest' | 'version' | 'temporary'
 }

@@ -61,7 +61,7 @@ export const overrideMobileConfig = (
 ) => {
   if (localApplicationOverride) {
     overriddenTest.mobileApplication = {
-      applicationId: localApplicationOverride.applicationId,
+      linkedApplicationId: localApplicationOverride.applicationId,
       referenceId: localApplicationOverride.fileName,
       referenceType: 'temporary',
     }
@@ -69,7 +69,7 @@ export const overrideMobileConfig = (
 
   if (!localApplicationOverride && userConfigOverride.mobileApplicationVersion) {
     overriddenTest.mobileApplication = {
-      applicationId: test.options.mobileApplication!.applicationId,
+      linkedApplicationId: test.options.mobileApplication!.linkedApplicationId,
       referenceId: userConfigOverride.mobileApplicationVersion,
       referenceType: 'version',
     }
@@ -87,7 +87,7 @@ export const uploadApplicationAndOverrideConfig = async (
     return
   }
 
-  const testApplicationId = test.options.mobileApplication!.applicationId
+  const testApplicationId = test.options.mobileApplication!.linkedApplicationId
   await uploadApplicationIfNeeded(
     api,
     userConfigOverride.mobileApplicationVersionFilePath,
