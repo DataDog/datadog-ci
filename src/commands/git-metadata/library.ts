@@ -2,7 +2,7 @@ import {newApiKeyValidator} from '../../helpers/apikey'
 import {RequestBuilder} from '../../helpers/interfaces'
 import {upload, UploadOptions, UploadStatus} from '../../helpers/upload'
 import {getRequestBuilder} from '../../helpers/utils'
-import {getCommitInfo, newSimpleGit} from './git'
+import {getCommitInfo, newSimpleGit, normalizeRemote} from './git'
 import {CommitInfo} from './interfaces'
 
 export const isGitRepo = async (): Promise<boolean> => {
@@ -61,7 +61,7 @@ export const uploadGitCommitHash = async (
     throw new Error('Error uploading commit information.')
   }
 
-  return [payload.remote, payload.hash]
+  return [normalizeRemote(payload.remote), payload.hash]
 }
 
 export const uploadRepository = (

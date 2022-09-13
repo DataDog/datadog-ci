@@ -503,6 +503,7 @@ TagResource -> arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world
           ahead: 0,
           hash: '1be168ff837f043bde17c0314341c84271047b31',
           isClean: true,
+          remote: 'github.com/DataDog/datadog-ci',
         }))
         const mockUploadFunction = jest.spyOn(instrumentCommand.prototype as any, 'uploadGitData')
         mockUploadFunction.mockImplementation(() => {
@@ -551,7 +552,7 @@ UpdateFunctionConfiguration -> arn:aws:lambda:us-east-1:123456789012:function:la
       \\"DD_SITE\\": \\"datadoghq.com\\",
       \\"DD_CAPTURE_LAMBDA_PAYLOAD\\": \\"false\\",
       \\"DD_ENV\\": \\"dummy\\",
-      \\"DD_TAGS\\": \\"git.commit.sha:1be168ff837f043bde17c0314341c84271047b31\\",
+      \\"DD_TAGS\\": \\"git.commit.sha:1be168ff837f043bde17c0314341c84271047b31,git.repository_url:github.com/DataDog/datadog-ci\\",
       \\"DD_MERGE_XRAY_TRACES\\": \\"false\\",
       \\"DD_SERVICE\\": \\"dummy\\",
       \\"DD_TRACE_ENABLED\\": \\"true\\",

@@ -2,7 +2,7 @@ import {CloudWatchLogs, Lambda} from 'aws-sdk'
 import {blueBright, bold, cyan, hex, red, underline, yellow} from 'chalk'
 import {Cli, Command} from 'clipanion'
 import {resolveConfigFromFile} from '../../helpers/utils'
-import {getCommitInfo, newSimpleGit} from '../git-metadata/git'
+import {getCommitInfo, newSimpleGit, normalizeRemote} from '../git-metadata/git'
 import {UploadCommand} from '../git-metadata/upload'
 import {
   AWS_DEFAULT_REGION_ENV_VAR,
@@ -283,7 +283,13 @@ export class InstrumentCommand extends Command {
     }
     const status = await simpleGit.status()
 
-    return {isClean: status.isClean(), ahead: status.ahead, files: status.files, hash: gitCommitInfo?.hash}
+    return {
+      ahead: status.ahead,
+      files: status.files,
+      hash: gitCommitInfo?.hash,
+      isClean: status.isClean(),
+      remote: normalizeRemote(gitCommitInfo?.remote),
+    }
   }
 
   private async getGitDataAndUpload(settings: InstrumentationSettings) {
@@ -304,10 +310,11 @@ export class InstrumentCommand extends Command {
     }
 
     const commitSha = currentStatus.hash
+    const repoURL = currentStatus.remote
     if (settings.extraTags) {
-      settings.extraTags += `,git.commit.sha:${commitSha}`
+      settings.extraTags += `,git.commit.sha:${commitSha},git.repository_url:${repoURL}`
     } else {
-      settings.extraTags = `git.commit.sha:${commitSha}`
+      settings.extraTags = `git.commit.sha:${commitSha},git.repository_url:${repoURL}`
     }
 
     try {

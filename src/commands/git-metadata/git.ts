@@ -29,12 +29,12 @@ export const gitRemote = async (git: simpleGit.SimpleGit): Promise<string> => {
   for (const remote of remotes) {
     // We're trying to pick the remote called with the default git name 'origin'.
     if (remote.name === 'origin') {
-      return stripCredentials(remote.refs.push)
+      return remote.refs.push
     }
   }
 
   // Falling back to picking the first remote in the list if 'origin' is not found.
-  return stripCredentials(remotes[0].refs.push)
+  return remotes[0].refs.push
 }
 
 // StripCredentials removes credentials from a remote HTTP url.
@@ -46,6 +46,32 @@ export const stripCredentials = (remote: string) => {
 
     return url.toString()
   } catch {
+    return remote
+  }
+}
+
+// NormalizeRemote must be used when tagging git.repository_url.
+// It normalize a remote url by removing the scheme, credentials, port and .git suffix.
+// It avoids colons ending up in the string.
+// The output is akin to: "github.com/DataDog/datadog-ci"
+export const normalizeRemote = (remote: string) => {
+  if (remote.endsWith('.git')) {
+    remote = remote.slice(0, -4)
+  }
+  try {
+    const url = new URL(remote)
+    if (url.protocol === '' || url.hostname === '') {
+      throw Error('empty protocol')
+    }
+
+    return url.hostname + url.pathname
+  } catch {
+    const scpRepo = new RegExp(/^([\w.~-]+@)?(?<host>[\w.-]+):(?<path>[\w.\/-]+)(?:\\?|$)(.*)$/)
+    const matches = remote.match(scpRepo)
+    if (matches && matches.length >= 4) {
+      return matches[2] + '/' + matches[3]
+    }
+
     return remote
   }
 }
@@ -75,5 +101,5 @@ export const getCommitInfo = async (git: simpleGit.SimpleGit, repositoryURL?: st
     ;[remote, hash, trackedFiles] = await Promise.all([gitRemote(git), gitHash(git), gitTrackedFiles(git)])
   }
 
-  return new CommitInfo(hash, remote, trackedFiles)
+  return new CommitInfo(hash, stripCredentials(remote), trackedFiles)
 }
