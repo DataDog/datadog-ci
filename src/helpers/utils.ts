@@ -1,3 +1,4 @@
+import {BaseContext, CommandClass} from 'clipanion'
 import fs, {existsSync} from 'fs'
 import {promisify} from 'util'
 
@@ -5,7 +6,10 @@ import {AxiosRequestConfig, default as axios} from 'axios'
 import deepExtend from 'deep-extend'
 import ProxyAgent from 'proxy-agent'
 
+import {Cli} from 'clipanion/lib/advanced'
 import type {SpanTag, SpanTags} from './interfaces'
+
+export const DEFAULT_CONFIG_PATH = 'datadog-ci.json'
 
 export const pick = <T extends object, K extends keyof T>(base: T, keys: K[]) => {
   const definedKeys = keys.filter((key) => !!base[key])
@@ -248,4 +252,11 @@ export const pluralize = (nb: number, singular: string, plural: string) => {
   }
 
   return `${nb} ${singular}`
+}
+
+export const performSubCommand = (command: CommandClass<BaseContext>, commandArgs: string[], context: BaseContext) => {
+  const cli = new Cli()
+  cli.register(command)
+
+  return cli.run(commandArgs, context)
 }

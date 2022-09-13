@@ -123,6 +123,16 @@ export class TrackedFilesMatcher {
     return filtered
   }
 
+  // Return a list of all tracked files
+  public rawTrackedFilesList() {
+    let rawList: string[] = []
+    this.trackedFilenames.forEach((value) => {
+      rawList = rawList.concat(value)
+    })
+
+    return rawList
+  }
+
   // Extract the filename from a path.
   //
   // We are removing any suffix that is after the character '?'. The only reason this is done
