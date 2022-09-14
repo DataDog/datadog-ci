@@ -104,7 +104,8 @@ Each command allows interacting with a product of the Datadog platform. The comm
 Further documentation for each command can be found in its folder, ie:
 
 - [Lambda](src/commands/lambda)
-- [Sourcemaps](src/commands/sourcemaps/)
+- [Browser sourcemaps](src/commands/sourcemaps/)
+- [React Native sourcemaps](src/commands/react-native/)
 - [Synthetics CI/CD Testing](src/commands/synthetics/)
 - [iOS dSYM Files](src/commands/dsyms/)
 - [Git metadata](src/commands/git-metadata)

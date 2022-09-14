@@ -1,4 +1,5 @@
+import {CodepushCommand} from './codepush'
 import {UploadCommand} from './upload'
 import {XCodeCommand} from './xcode'
 
-module.exports = [UploadCommand, XCodeCommand]
+module.exports = [CodepushCommand, UploadCommand, XCodeCommand]
