@@ -65,9 +65,17 @@ To run `datadog-ci` from a container, you can use the `datadog/ci` image availab
 docker pull datadog/ci
 ```
 
-## Building your own container image
+Here's an example of how to run a command using the container and passing in the API and APP keys:
 
-You can build an image using the provided Dockerfile:
+```
+export DD_API_KEY=$(cat /secret/dd_api_key)
+export DD_APP_KEY=$(cat /secret/dd_app_key)
+docker run --rm -it -v $(pwd):/w -e DD_API_KEY -e DD_APP_KEY datadog/ci synthetics run-tests -p pub-lic-id1
+```
+
+#### Building your own container image
+
+You can build an image using the provided [Dockerfile](https://github.com/DataDog/datadog-ci/blob/master/container/Dockerfile):
 
 ```sh
 cd container
@@ -77,7 +85,6 @@ docker build --tag datadog-ci .
 Optionally you can use the `VERSION` build argument to build an image for a specific version:
 
 ```sh
-cd container
 docker build --build-arg "VERSION=v1.14" --t datadog-ci .
 ```
 
@@ -100,14 +107,6 @@ Available commands:
 ```
 
 Each command allows interacting with a product of the Datadog platform. The commands are defined in the [src/commands](/src/commands) folder.
-
-Some commands need a Datadog API and/or APP key. Here's an example of how to pass them to the container:
-
-```
-export DD_API_KEY=$(cat /secret/dd_api_key)
-export DD_APP_KEY=$(cat /secret/dd_app_key)
-docker run --rm -it -v $(pwd):/w -e DD_API_KEY -e DD_APP_KEY datadog/ci synthetics run-tests -p pub-lic-id1
-```
 
 Further documentation for each command can be found in its folder, ie:
 
@@ -219,7 +218,7 @@ Releasing a new version of `datadog-ci` unfolds as follow:
 - push the branch along with the tag to the upstream (Github), create a Pull Request with the changes introduced detailed in the description and get at least one approval. ([sample Pull Request](https://github.com/DataDog/datadog-ci/pull/78))
 - merge the Pull Request
 - create a Github Release from the [Tags page](https://github.com/DataDog/datadog-ci/tags) with the description of changes introduced
-- Once the release has been created, a Github Action will publish the package
+- Once the release has been created, a Github Action will publish the package and a Gitlab pipeline will publish the Docker image. Make sure they succeed.
 
 ### Pre-Release Process
 
