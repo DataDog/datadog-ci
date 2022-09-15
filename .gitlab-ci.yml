@@ -3,8 +3,7 @@ stages:
   - release
 
 variables:
-  PRIVATE_IMAGE: 486234852809.dkr.ecr.us-east-1.amazonaws.com/ci/datadog-ci:v${CI_PIPELINE_ID}-${CI_COMMIT_SHORT_SHA}
-  PUBLIC_IMAGE: ci:v0.1
+  INTERNAL_REGISTRY: 486234852809.dkr.ecr.us-east-1.amazonaws.com/ci
 
 build-docker-image-amd64:
   stage: build
@@ -12,8 +11,8 @@ build-docker-image-amd64:
   image: 486234852809.dkr.ecr.us-east-1.amazonaws.com/docker:20.10
   script:
     - cd container
-    - docker build --build-arg "VERSION=" --tag "${PRIVATE_IMAGE}-amd64" .
-    - docker push "${PRIVATE_IMAGE}-amd64"
+    - docker build --build-arg "VERSION=" --tag "${INTERNAL_REGISTRY}/datadog-ci:v${CI_PIPELINE_ID}-${CI_COMMIT_SHORT_SHA}-amd64" .
+    - docker push "${INTERNAL_REGISTRY}/datadog-ci:v${CI_PIPELINE_ID}-${CI_COMMIT_SHORT_SHA}-amd64"
 
 build-docker-image-arm64:
   stage: build
@@ -21,8 +20,8 @@ build-docker-image-arm64:
   image: 486234852809.dkr.ecr.us-east-1.amazonaws.com/docker:20.10
   script:
     - cd container
-    - docker build --build-arg "VERSION=" --tag "${PRIVATE_IMAGE}-arm64" .
-    - docker push "${PRIVATE_IMAGE}-arm64"
+    - docker build --build-arg "VERSION=" --tag "${INTERNAL_REGISTRY}/datadog-ci:v${CI_PIPELINE_ID}-${CI_COMMIT_SHORT_SHA}-arm64" .
+    - docker push "${INTERNAL_REGISTRY}/datadog-ci:v${CI_PIPELINE_ID}-${CI_COMMIT_SHORT_SHA}-arm64"
 
 publish-docker-image:
   stage: release
@@ -31,6 +30,6 @@ publish-docker-image:
     branch: main
     strategy: depend
   variables:
-    IMG_SOURCES: ${PRIVATE_IMAGE}-amd64,${PRIVATE_IMAGE}-arm64
-    IMG_DESTINATIONS: ${PUBLIC_IMAGE}
+    IMG_SOURCES: ${INTERNAL_REGISTRY}/datadog-ci:v${CI_PIPELINE_ID}-${CI_COMMIT_SHORT_SHA}-amd64,${INTERNAL_REGISTRY}/datadog-ci:v${CI_PIPELINE_ID}-${CI_COMMIT_SHORT_SHA}-arm64
+    IMG_DESTINATIONS: ci:latest
     IMG_SIGNING: "false"
