@@ -17,6 +17,7 @@ export interface LambdaConfigOptions {
   layerVersion?: string
   logLevel?: string
   mergeXrayTraces?: string
+  profile?: string
   region?: string
   service?: string
   tracing?: string
