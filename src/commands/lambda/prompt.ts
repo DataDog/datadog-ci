@@ -22,6 +22,14 @@ import {sentenceMatchesRegEx} from './functions/commons'
 const checkboxPlusPrompt = require('inquirer-checkbox-plus-prompt')
 inquirer.registerPrompt('checkbox-plus', checkboxPlusPrompt)
 import {filter} from 'fuzzy'
+
+export const awsProfileQuestion = (mfaSerial: string): inquirer.InputQuestion => ({
+  default: undefined,
+  message: `Enter MFA code for ${mfaSerial}: `,
+  name: 'AWS_MFA',
+  type: 'input',
+})
+
 const awsCredentialsQuestions: inquirer.QuestionCollection = [
   {
     // AWS_ACCESS_KEY_ID question
