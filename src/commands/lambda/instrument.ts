@@ -19,6 +19,7 @@ import {
   isMissingAWSCredentials,
   isMissingDatadogEnvVars,
   sentenceMatchesRegEx,
+  updateAWSProfileCredentials,
   updateLambdaFunctionConfigs,
   willUpdateFunctionConfigs,
 } from './functions/commons'
@@ -53,6 +54,7 @@ export class InstrumentCommand extends Command {
   private layerVersion?: string
   private logLevel?: string
   private mergeXrayTraces?: string
+  private profile?: string
   private regExPattern?: string
   private region?: string
   private service?: string
@@ -65,6 +67,17 @@ export class InstrumentCommand extends Command {
     this.config = (
       await resolveConfigFromFile(lambdaConfig, {configPath: this.configPath, defaultConfigPath: 'datadog-ci.json'})
     ).lambda
+
+    const profile = this.profile ?? this.config.profile
+    if (profile) {
+      try {
+        await updateAWSProfileCredentials(profile)
+      } catch (e) {
+        this.context.stdout.write(`${red('[Error]')} ${e}\n`)
+
+        return 1
+      }
+    }
 
     let hasSpecifiedFunctions = this.functions.length !== 0 || this.config.functions.length !== 0
     if (this.interactive) {
@@ -545,3 +558,4 @@ InstrumentCommand.addOption(
 )
 InstrumentCommand.addOption('interactive', Command.Boolean('-i,--interactive'))
 InstrumentCommand.addOption('captureLambdaPayload', Command.String('--capture-lambda-payload,--captureLambdaPayload'))
+InstrumentCommand.addOption('profile', Command.String('--profile,-p'))
