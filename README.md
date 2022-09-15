@@ -57,28 +57,28 @@ Then you can run `datadog-ci` commands normally:
 datadog-ci version
 ```
 
-### Container image (**experimental**)
+### Container image
 
-In order to run `datadog-ci` from a container, you can use the following `Dockerfile`:
+To run `datadog-ci` from a container, you can use the `datadog/ci` image available in Dockerhub as well as the public Amazon ECR and Google GC registries.
 
-```dockerfile
-FROM alpine
-WORKDIR /w
-RUN apk add --update npm git
-RUN npm install -g @datadog/datadog-ci
-ENTRYPOINT ["datadog-ci"]
+```
+docker pull datadog/ci
 ```
 
-To build and run it, the following commands can be used:
+## Building your own container image
+
+You can build an image using the provided Dockerfile:
 
 ```sh
-# Build the container
-docker build -t datadog-ci .
+cd container
+docker build --tag datadog-ci .
+```
 
-# Run a command using the container
-export DD_API_KEY=$(cat /secret/dd_api_key)
-export DD_APP_KEY=$(cat /secret/dd_app_key)
-docker run --rm -it -v $(pwd):/w -e DD_API_KEY -e DD_APP_KEY datadog-ci synthetics run-tests -p pub-lic-id1
+Optionally you can use the `VERSION` build argument to build an image for a specific version:
+
+```sh
+cd container
+docker build --build-arg "VERSION=v1.14" --t datadog-ci .
 ```
 
 ## Usage
@@ -100,6 +100,14 @@ Available commands:
 ```
 
 Each command allows interacting with a product of the Datadog platform. The commands are defined in the [src/commands](/src/commands) folder.
+
+Some commands need a Datadog API and/or APP key. Here's an example of how to pass them to the container:
+
+```
+export DD_API_KEY=$(cat /secret/dd_api_key)
+export DD_APP_KEY=$(cat /secret/dd_app_key)
+docker run --rm -it -v $(pwd):/w -e DD_API_KEY -e DD_APP_KEY datadog/ci synthetics run-tests -p pub-lic-id1
+```
 
 Further documentation for each command can be found in its folder, ie:
 
