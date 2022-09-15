@@ -9,7 +9,7 @@ variables:
 build-docker-image-amd64:
   stage: build
   tags: ["runner:docker"]
-  image: 486234852809.dkr.ecr.us-east-1.amazonaws.com/docker:20.10.3
+  image: 486234852809.dkr.ecr.us-east-1.amazonaws.com/docker:20.10
   script:
     - cd container
     - docker build --build-arg "VERSION=" --tag "${PRIVATE_IMAGE}-amd64" .
@@ -18,7 +18,7 @@ build-docker-image-amd64:
 build-docker-image-arm64:
   stage: build
   tags: ["runner:docker-arm", "platform:arm64"]
-  image: 486234852809.dkr.ecr.us-east-1.amazonaws.com/docker:20.10.3
+  image: 486234852809.dkr.ecr.us-east-1.amazonaws.com/docker:20.10
   script:
     - cd container
     - docker build --build-arg "VERSION=" --tag "${PRIVATE_IMAGE}-arm64" .
