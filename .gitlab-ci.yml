@@ -4,31 +4,28 @@ stages:
 
 variables:
   PRIVATE_IMAGE: 486234852809.dkr.ecr.us-east-1.amazonaws.com/ci/datadog-ci:v${CI_PIPELINE_ID}-${CI_COMMIT_SHORT_SHA}
-  PUBLIC_IMAGE: ci:${CI_COMMIT_TAG}
+  PUBLIC_IMAGE: ci:v0.1
 
 build-docker-image-amd64:
   stage: build
-  only: [ "tags" ]
   tags: ["runner:docker"]
   image: 486234852809.dkr.ecr.us-east-1.amazonaws.com/docker:20.10.3
   script:
     - cd container
-    - docker build --build-arg "VERSION=$CI_COMMIT_TAG" --tag "${PRIVATE_IMAGE}-amd64" .
+    - docker build --build-arg "VERSION=" --tag "${PRIVATE_IMAGE}-amd64" .
     - docker push "${PRIVATE_IMAGE}-amd64"
 
 build-docker-image-arm64:
   stage: build
-  only: [ "tags" ]
   tags: ["runner:docker-arm", "platform:arm64"]
   image: 486234852809.dkr.ecr.us-east-1.amazonaws.com/docker:20.10.3
   script:
     - cd container
-    - docker build --build-arg "VERSION=$CI_COMMIT_TAG" --tag "${PRIVATE_IMAGE}-arm64" .
+    - docker build --build-arg "VERSION=" --tag "${PRIVATE_IMAGE}-arm64" .
     - docker push "${PRIVATE_IMAGE}-arm64"
 
 publish-docker-image:
   stage: release
-  only: [ "tags" ]
   trigger:
     project: DataDog/public-images
     branch: main
