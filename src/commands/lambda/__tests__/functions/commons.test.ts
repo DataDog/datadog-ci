@@ -1,10 +1,11 @@
 /* tslint:disable:no-string-literal */
-import {config as aws_sdk_config, Credentials} from 'aws-sdk'
+import {config as aws_sdk_config, Credentials, SharedIniFileCredentials} from 'aws-sdk'
 jest.mock('aws-sdk')
 import {Lambda} from 'aws-sdk'
 import {
   AWS_ACCESS_KEY_ID_ENV_VAR,
   AWS_SECRET_ACCESS_KEY_ENV_VAR,
+  AWS_SHARED_CREDENTIALS_FILE_ENV_VAR,
   CI_API_KEY_ENV_VAR,
   CI_API_KEY_SECRET_ARN_ENV_VAR,
   CI_KMS_API_KEY_ENV_VAR,
@@ -27,6 +28,7 @@ import {
   coerceBoolean,
   collectFunctionsByRegion,
   findLatestLayerVersion,
+  getAWSFileCredentialsParams,
   getLayerArn,
   getLayerNameWithVersion,
   getRegion,
@@ -35,6 +37,7 @@ import {
   isMissingDatadogEnvVars,
   isMissingDatadogSiteEnvVar,
   sentenceMatchesRegEx,
+  updateAWSProfileCredentials,
   updateLambdaFunctionConfigs,
 } from '../../functions/commons'
 import {InstrumentCommand} from '../../instrument'
@@ -670,7 +673,7 @@ describe('commons', () => {
       })
     })
   })
-  describe('Correctly handles multiple runtimes', () => {
+  describe('checkRuntimeTypesAreUniform', () => {
     test('returns true if all runtimes are uniform', async () => {
       const configs: FunctionConfiguration[] = [
         {
@@ -721,6 +724,88 @@ describe('commons', () => {
         },
       ]
       expect(checkRuntimeTypesAreUniform(configs)).toBe(false)
+    })
+  })
+
+  describe('getAWSFileCredentials', () => {
+    test('check parameters are set as expected', () => {
+      const profileName = 'some-profile'
+      const params = getAWSFileCredentialsParams(profileName)
+
+      expect(params.profile).toBe(profileName)
+      expect(params.filename).toBe(undefined)
+    })
+
+    test('check parameters are received properly when aws shared credentials file env var is set', () => {
+      const awsSharedCredentialsFile = '/some/path'
+      process.env[AWS_SHARED_CREDENTIALS_FILE_ENV_VAR] = awsSharedCredentialsFile
+
+      const profileName = 'some-profile'
+      const params = getAWSFileCredentialsParams(profileName)
+
+      expect(params.profile).toBe(profileName)
+      expect(params.filename).toBe(awsSharedCredentialsFile)
+    })
+  })
+
+  describe('updateAWSProfileCredentials', () => {
+    test('ensure that aws sdk config credentials are set while updating with a profile', async () => {
+      ;(SharedIniFileCredentials as any).mockImplementation(() => ({
+        accessKeyId: 'SOME-AWS-ACCESS-KEY-ID',
+        getPromise: () => Promise.resolve(),
+        needsRefresh: () => false,
+      }))
+
+      const profile = 'some-profile'
+      try {
+        await updateAWSProfileCredentials(profile)
+
+        expect(aws_sdk_config.credentials?.accessKeyId).toBe('SOME-AWS-ACCESS-KEY-ID')
+      } catch (e) {
+        // Do nothing
+      }
+    })
+
+    test('throws error when profile is not configured', async () => {
+      ;(SharedIniFileCredentials as any).mockImplementation(() => ({
+        accessKeyId: undefined,
+        getPromise: () => Promise.resolve(),
+        needsRefresh: () => false,
+        sessionToken: undefined,
+      }))
+
+      const profile = 'some-profile'
+      try {
+        await updateAWSProfileCredentials(profile)
+      } catch (e) {
+        if (e instanceof Error) {
+          expect(e.message).toBe(`Couldn't set AWS profile credentials. Profile '${profile}' is not configured.`)
+        }
+      }
+    })
+
+    test('updates aws sdk config credentials when refresh is needed', async () => {
+      ;(SharedIniFileCredentials as any).mockImplementation(() => ({
+        accessKeyId: undefined,
+        getPromise: () => Promise.resolve(),
+        needsRefresh: () => true,
+        refreshPromise: () => {
+          aws_sdk_config.credentials = {
+            accessKeyId: 'SOME-AWS-ACCESS-KEY-ID',
+          } as any
+
+          return Promise.resolve()
+        },
+        sessionToken: undefined,
+      }))
+
+      const profile = 'some-profile'
+      try {
+        await updateAWSProfileCredentials(profile)
+        expect(aws_sdk_config.credentials?.accessKeyId).toBe('SOME-AWS-ACCESS-KEY-ID')
+      } catch (e) {
+        // Do nothing
+      }
     })
   })
 })

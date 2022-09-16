@@ -175,24 +175,30 @@ export const findLatestLayerVersion = async (layer: LayerKey, region: string) =>
   return latestVersion
 }
 
+export const getAWSFileCredentialsParams = (profile: string): SharedIniFileCredentialsOptions => {
+  const params: SharedIniFileCredentialsOptions = {profile}
+
+  if (process.env[AWS_SHARED_CREDENTIALS_FILE_ENV_VAR] !== undefined) {
+    params.filename = process.env[AWS_SHARED_CREDENTIALS_FILE_ENV_VAR]
+  }
+
+  // If provided profile is temporal and a session token is not set
+  // we must request for the MFA token.
+  params.tokenCodeFn = async (mfaSerial, callback) => {
+    const answer = await inquirer.prompt(awsProfileQuestion(mfaSerial))
+    callback(undefined, answer.AWS_MFA)
+  }
+
+  return params
+}
+
 export const updateAWSProfileCredentials = async (profile: string) => {
   try {
-    const params: SharedIniFileCredentialsOptions = {profile}
-
-    if (process.env[AWS_SHARED_CREDENTIALS_FILE_ENV_VAR] !== undefined) {
-      params.filename = process.env[AWS_SHARED_CREDENTIALS_FILE_ENV_VAR]
-    }
-
-    // If provided profile is temporal and a session token is not set
-    // we must request for the MFA token.
-    params.tokenCodeFn = async (mfaSerial, callback) => {
-      const answer = await inquirer.prompt(awsProfileQuestion(mfaSerial))
-      callback(undefined, answer.AWS_MFA)
-    }
+    const params: SharedIniFileCredentialsOptions = getAWSFileCredentialsParams(profile)
 
     const profileCredentials: SharedIniFileCredentials = new SharedIniFileCredentials(params)
 
-    // Update credentials in the case users has
+    // Update credentials in the case user has
     // MFA set up.
     await profileCredentials.getPromise()
     if (profileCredentials.needsRefresh()) {
@@ -200,7 +206,6 @@ export const updateAWSProfileCredentials = async (profile: string) => {
     }
 
     if (!(profileCredentials.accessKeyId !== undefined || profileCredentials.sessionToken !== undefined)) {
-      console.log(profileCredentials)
       throw new Error(`Profile '${profile}' is not configured.`)
     }
 
