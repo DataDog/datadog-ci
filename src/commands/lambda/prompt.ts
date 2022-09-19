@@ -28,6 +28,13 @@ export const awsProfileQuestion = (mfaSerial: string): inquirer.InputQuestion =>
   message: `Enter MFA code for ${mfaSerial}: `,
   name: 'AWS_MFA',
   type: 'input',
+  validate: (value) => {
+    if (!value || value === undefined || value.length < 6 ) {
+      return 'Enter a valid MFA token. Length must be greater than or equal to 6.'
+    }
+
+    return true
+  },
 })
 
 const awsCredentialsQuestions: inquirer.QuestionCollection = [
