@@ -2,7 +2,7 @@
 jest.mock('fs')
 jest.mock('aws-sdk')
 jest.mock('../prompt')
-import {Lambda, SharedIniFileCredentials} from 'aws-sdk'
+import {config as aws_sdk_config, Lambda, SharedIniFileCredentials} from 'aws-sdk'
 import {blueBright, bold, cyan, hex, red, underline, yellow} from 'chalk'
 import {Cli} from 'clipanion/lib/advanced'
 import * as fs from 'fs'
@@ -1637,6 +1637,33 @@ ${red('[Error]')} Couldn't fetch Lambda functions. Error: Max retry count exceed
 `)
       })
 
+      test('instruments correctly with profile when provided', async () => {
+        const credentials = {
+          accessKeyId: mockAwsAccessKeyId,
+          getPromise: () => Promise.resolve(),
+          needsRefresh: () => false,
+          secretAccessKey: mockAwsSecretAccessKey,
+        } as any
+
+        ;(SharedIniFileCredentials as any).mockImplementation(() => credentials)
+        ;(Lambda as any).mockImplementation(() =>
+          makeMockLambda({
+            'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world': {
+              FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world',
+              Handler: 'index.handler',
+              Runtime: 'nodejs14.x',
+            },
+          })
+        )
+
+        const cli = makeCli()
+        const context = createMockContext() as any
+        const functionARN = 'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world'
+        const code = await cli.run(['lambda', 'instrument', '-f', functionARN, '-p', 'SOME-AWS-PROFILE'], context)
+        expect(code).toBe(0)
+        expect(aws_sdk_config.credentials?.accessKeyId).toBe(mockAwsAccessKeyId)
+      })
+
       test('prints error when updating aws profile credentials fails', async () => {
         ;(SharedIniFileCredentials as any).mockImplementation(() => {
           throw Error('Update failed!')
@@ -1649,14 +1676,10 @@ ${red('[Error]')} Couldn't fetch Lambda functions. Error: Max retry count exceed
         const output = context.stdout.toString()
         expect(code).toBe(1)
         expect(output).toMatchInlineSnapshot(`
-"${red(
-          '[Error]'
-        )} Error: Couldn't set AWS profile credentials. Update failed!
+"${red('[Error]')} Error: Couldn't set AWS profile credentials. Update failed!
 "
 `)
       })
-
-      
     })
 
     describe('getSettings', () => {

@@ -182,7 +182,7 @@ export const getAWSFileCredentialsParams = (profile: string): SharedIniFileCrede
     params.filename = process.env[AWS_SHARED_CREDENTIALS_FILE_ENV_VAR]
   }
 
-  // If provided profile is enforced by MFA and a 
+  // If provided profile is enforced by MFA and a
   // session token is not set we must request for the MFA token.
   params.tokenCodeFn = async (mfaSerial, callback) => {
     const answer = await inquirer.prompt(awsProfileQuestion(mfaSerial))

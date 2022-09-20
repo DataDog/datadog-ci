@@ -42,7 +42,7 @@ import {
 } from '../../functions/commons'
 import {InstrumentCommand} from '../../instrument'
 import {FunctionConfiguration} from '../../interfaces'
-import {createCommand, makeMockCloudWatchLogs, makeMockLambda, mockAwsAccount} from '../fixtures'
+import {createCommand, makeMockCloudWatchLogs, makeMockLambda, mockAwsAccessKeyId, mockAwsAccount} from '../fixtures'
 
 describe('commons', () => {
   describe('addLayerArn', () => {
@@ -751,7 +751,7 @@ describe('commons', () => {
   describe('updateAWSProfileCredentials', () => {
     test('ensure that aws sdk config credentials are set while updating with a profile', async () => {
       ;(SharedIniFileCredentials as any).mockImplementation(() => ({
-        accessKeyId: 'SOME-AWS-ACCESS-KEY-ID',
+        accessKeyId: mockAwsAccessKeyId,
         getPromise: () => Promise.resolve(),
         needsRefresh: () => false,
       }))
@@ -760,7 +760,7 @@ describe('commons', () => {
       try {
         await updateAWSProfileCredentials(profile)
 
-        expect(aws_sdk_config.credentials?.accessKeyId).toBe('SOME-AWS-ACCESS-KEY-ID')
+        expect(aws_sdk_config.credentials?.accessKeyId).toBe(mockAwsAccessKeyId)
       } catch (e) {
         // Do nothing
       }
@@ -791,7 +791,7 @@ describe('commons', () => {
         needsRefresh: () => true,
         refreshPromise: () => {
           aws_sdk_config.credentials = {
-            accessKeyId: 'SOME-AWS-ACCESS-KEY-ID',
+            accessKeyId: mockAwsAccessKeyId,
           } as any
 
           return Promise.resolve()
@@ -802,7 +802,7 @@ describe('commons', () => {
       const profile = 'some-profile'
       try {
         await updateAWSProfileCredentials(profile)
-        expect(aws_sdk_config.credentials?.accessKeyId).toBe('SOME-AWS-ACCESS-KEY-ID')
+        expect(aws_sdk_config.credentials?.accessKeyId).toBe(mockAwsAccessKeyId)
       } catch (e) {
         // Do nothing
       }
