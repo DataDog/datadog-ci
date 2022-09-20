@@ -112,7 +112,7 @@ Any other argument stated on the `instrument` table, but not below, will be igno
 | `--function` | `-f` | The ARN of the Lambda function to be **uninstrumented**, or the name of the Lambda function (`--region` must be defined). | |
 | `--functions-regex` | | A regex pattern to match with the Lambda function name to be **uninstrumented**. | |
 | `--region` | `-r` | Default region to use, when `--function` is specified by the function name instead of the ARN. | |
-| `--profile` | | Specify the AWS named profile credentials to use to instrument. Learn more about AWS named profiles [here][12]. |  | 
+| `--profile` | | Specify the AWS named profile credentials to use to uninstrument. Learn more about AWS named profiles [here][12]. |  | 
 | `--forwarder` | | The ARN of the [datadog forwarder][10] to remove from this function. | |
 | `--dry` | `-d` | Preview changes running command would apply. | `false` |
 
