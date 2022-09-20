@@ -88,6 +88,7 @@ You can pass the following arguments to `instrument` to specify its behavior. Th
 | `--version` | | Add the `--version` tag to correlate spikes in latency, load or errors to new versions. Learn more about the `version` tag [here][8]. | |
 | `--env` | | Use `--env` to separate out your staging, development, and production environments. Learn more about the `env` tag [here][7]. | |
 | `--extra-tags` | | Add custom tags to your Lambda function in Datadog. Must be a list of `<key>:<value>` separated by commas such as: `layer:api,team:intake`. | |
+| `--profile` | | Specify the AWS named profile credentials to use to instrument. Learn more about AWS named profiles [here][12]. |  | 
 | `--layer-version` | `-v` | Version of the Datadog Lambda Library layer to apply. This varies between runtimes. To see the latest layer version check the [JS][3] or [python][4] datadog-lambda-layer repo release notes. | |
 | `--extension-version` | `-e` | Version of the Datadog Lambda Extension layer to apply. When `extension-version` is set, make sure to export `DATADOG_API_KEY` (or if encrypted, `DATADOG_KMS_API_KEY` or `DATADOG_API_KEY_SECRET_ARN`) in your environment as well. While using `extension-version`, leave out `forwarder`. Learn more about the Lambda Extension [here][5]. | |
 | `--tracing` |  | Whether to enable dd-trace tracing on your Lambda. | `true` |
@@ -111,6 +112,7 @@ Any other argument stated on the `instrument` table, but not below, will be igno
 | `--function` | `-f` | The ARN of the Lambda function to be **uninstrumented**, or the name of the Lambda function (`--region` must be defined). | |
 | `--functions-regex` | | A regex pattern to match with the Lambda function name to be **uninstrumented**. | |
 | `--region` | `-r` | Default region to use, when `--function` is specified by the function name instead of the ARN. | |
+| `--profile` | | Specify the AWS named profile credentials to use to instrument. Learn more about AWS named profiles [here][12]. |  | 
 | `--forwarder` | | The ARN of the [datadog forwarder][10] to remove from this function. | |
 | `--dry` | `-d` | Preview changes running command would apply. | `false` |
 
@@ -134,6 +136,7 @@ Instead of supplying arguments, you can create a configuration file in your proj
         "logLevel": "debug",
         "service":"some-service",
         "version":"b17s47h3w1n",
+        "profile": "my-credentials"
         "environment":"staging",
         "extraTags":"layer:api,team:intake"
     }
@@ -154,3 +157,4 @@ For product feedback and questions, join the `#serverless` channel in the [Datad
 [9]: https://docs.datadoghq.com/serverless/troubleshooting/serverless_tagging/#the-service-tag
 [10]: https://docs.datadoghq.com/serverless/forwarder/
 [11]: https://docs.datadoghq.com/serverless/custom_metrics?tab=python#enabling-asynchronous-custom-metrics
+[12]: https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-profiles.html#using-profiles
