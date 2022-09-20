@@ -1659,7 +1659,10 @@ ${red('[Error]')} Couldn't fetch Lambda functions. Error: Max retry count exceed
         const cli = makeCli()
         const context = createMockContext() as any
         const functionARN = 'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world'
-        const code = await cli.run(['lambda', 'instrument', '-f', functionARN, '-p', 'SOME-AWS-PROFILE'], context)
+        const code = await cli.run(
+          ['lambda', 'instrument', '-f', functionARN, '--profile', 'SOME-AWS-PROFILE'],
+          context
+        )
         expect(code).toBe(0)
         expect(aws_sdk_config.credentials?.accessKeyId).toBe(mockAwsAccessKeyId)
       })
@@ -1672,7 +1675,10 @@ ${red('[Error]')} Couldn't fetch Lambda functions. Error: Max retry count exceed
         const cli = makeCli()
         const context = createMockContext() as any
         const functionARN = 'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world'
-        const code = await cli.run(['lambda', 'instrument', '-f', functionARN, '-p', 'SOME-AWS-PROFILE'], context)
+        const code = await cli.run(
+          ['lambda', 'instrument', '-f', functionARN, '--profile', 'SOME-AWS-PROFILE'],
+          context
+        )
         const output = context.stdout.toString()
         expect(code).toBe(1)
         expect(output).toMatchInlineSnapshot(`

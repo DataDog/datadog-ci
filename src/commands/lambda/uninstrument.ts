@@ -7,6 +7,7 @@ import {
   collectFunctionsByRegion,
   getAllLambdaFunctionConfigs,
   isMissingAWSCredentials,
+  updateAWSProfileCredentials,
   updateLambdaFunctionConfigs,
   willUpdateFunctionConfigs,
 } from './functions/commons'
@@ -24,6 +25,7 @@ export class UninstrumentCommand extends Command {
   private forwarder?: string
   private functions: string[] = []
   private interactive = false
+  private profile?: string
   private regExPattern?: string
   private region?: string
 
@@ -32,6 +34,17 @@ export class UninstrumentCommand extends Command {
     this.config = (
       await resolveConfigFromFile(lambdaConfig, {configPath: this.configPath, defaultConfigPath: 'datadog-ci.json'})
     ).lambda
+
+    const profile = this.profile ?? this.config.profile
+    if (profile) {
+      try {
+        await updateAWSProfileCredentials(profile)
+      } catch (e) {
+        this.context.stdout.write(`${red('[Error]')} ${e}\n`)
+
+        return 1
+      }
+    }
 
     let hasSpecifiedFunctions = this.functions.length !== 0 || this.config.functions.length !== 0
     if (this.interactive) {
@@ -246,6 +259,7 @@ UninstrumentCommand.addOption('dryRun', Command.Boolean('-d,--dry'))
 UninstrumentCommand.addOption('forwarder', Command.String('--forwarder'))
 UninstrumentCommand.addOption('regExPattern', Command.String('--functions-regex,--functionsRegex'))
 UninstrumentCommand.addOption('interactive', Command.Boolean('-i,--interactive'))
+UninstrumentCommand.addOption('profile', Command.String('--profile'))
 /**
  * Commands that are not really in use, but to
  * make uninstrumentation easier for the user.

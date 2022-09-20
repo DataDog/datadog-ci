@@ -558,4 +558,4 @@ InstrumentCommand.addOption(
 )
 InstrumentCommand.addOption('interactive', Command.Boolean('-i,--interactive'))
 InstrumentCommand.addOption('captureLambdaPayload', Command.String('--capture-lambda-payload,--captureLambdaPayload'))
-InstrumentCommand.addOption('profile', Command.String('--profile,-p'))
+InstrumentCommand.addOption('profile', Command.String('--profile'))
