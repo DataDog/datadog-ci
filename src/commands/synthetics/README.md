@@ -268,15 +268,15 @@ Reporters can hook themselves into the `MainReporter` of the command.
 
 #### Available hooks
 
-| Hook name        | Parameters                                                                           | Description                                                     |
-| :--------------- | :----------------------------------------------------------------------------------- | :-------------------------------------------------------------- |
-| `log`            | `(log: string)`                                                                      | called for logging.                                             |
-| `error`          | `(error: string)`                                                                    | called whenever an error occurs.                                |
-| `initErrors`     | `(errors: string[])`                                                                 | called whenever an error occurs during the tests parsing phase. |
-| `reportStart`    | `(timings: {startTime: number})`                                                     | called at the start of the report.                              |
-| `resultEnd`      | `(result: Result, baseUrl: string)`                                                  | called for each result at the end of all results.               |
-| `resultReceived` | `(result: Result)`                                                                   | called when a result is received.                               |
-| `testTrigger`    | `(test: Test, testId: string, executionRule: ExecutionRule, config: ConfigOverride)` | called when a test is triggered.                                |
-| `testWait`       | `(test: Test)`                                                                       | called when a test is waiting to receive its results.           |
-| `testsWait`      | `(tests: Test[])`                                                                    | called when all tests are waiting to receive their results.     |
-| `runEnd`         | `(summary: Summary, baseUrl: string)`                                                | called at the end of the run.                                   |
+| Hook name        | Parameters                                                                               | Description                                                     |
+| :--------------- | :--------------------------------------------------------------------------------------- | :-------------------------------------------------------------- |
+| `log`            | `(log: string)`                                                                          | called for logging.                                             |
+| `error`          | `(error: string)`                                                                        | called whenever an error occurs.                                |
+| `initErrors`     | `(errors: string[])`                                                                     | called whenever an error occurs during the tests parsing phase. |
+| `reportStart`    | `(timings: {startTime: number})`                                                         | called at the start of the report.                              |
+| `resultEnd`      | `(result: Result, baseUrl: string)`                                                      | called for each result at the end of all results.               |
+| `resultReceived` | `(result: Result)`                                                                       | called when a result is received.                               |
+| `testTrigger`    | `(test: Test, testId: string, executionRule: ExecutionRule, config: UserConfigOverride)` | called when a test is triggered.                                |
+| `testWait`       | `(test: Test)`                                                                           | called when a test is waiting to receive its results.           |
+| `testsWait`      | `(tests: Test[])`                                                                        | called when all tests are waiting to receive their results.     |
+| `runEnd`         | `(summary: Summary, baseUrl: string)`                                                    | called at the end of the run.                                   |

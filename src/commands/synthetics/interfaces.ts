@@ -11,7 +11,7 @@ export interface MainReporter {
   resultReceived(result: Batch['results'][0]): void
   runEnd(summary: Summary, baseUrl: string): void
   testsWait(tests: Test[]): void
-  testTrigger(test: Test, testId: string, executionRule: ExecutionRule, config: ConfigOverride): void
+  testTrigger(test: Test, testId: string, executionRule: ExecutionRule, config: UserConfigOverride): void
   testWait(test: Test): void
 }
 
@@ -184,6 +184,7 @@ export interface ServerTest {
     device_ids?: string[]
     min_failure_duration: number
     min_location_failed: number
+    mobileApplication?: MobileApplication
     tick_every: number
   }
   overall_state: number
@@ -256,7 +257,13 @@ export interface RetryConfig {
   interval: number
 }
 
-export interface ConfigOverride {
+export interface MobileApplication {
+  applicationId: string
+  referenceId: string
+  referenceType: 'latest' | 'version' | 'temporary'
+}
+
+export interface BaseConfigOverride {
   allowInsecureCertificates?: boolean
   basicAuth?: BasicAuthCredentials
   body?: string
@@ -276,12 +283,21 @@ export interface ConfigOverride {
   variables?: {[key: string]: string}
 }
 
+export interface UserConfigOverride extends BaseConfigOverride {
+  mobileApplicationVersion?: string
+  mobileApplicationVersionFilePath?: string
+}
+
+export interface ServerConfigOverride extends BaseConfigOverride {
+  mobileApplication?: MobileApplication
+}
+
 export interface Payload {
   metadata?: Metadata
   tests: TestPayload[]
 }
 
-export interface TestPayload extends ConfigOverride {
+export interface TestPayload extends ServerConfigOverride {
   executionRule: ExecutionRule
   public_id: string
 }
@@ -308,7 +324,7 @@ export interface TemplateVariables {
 export interface TemplateContext extends TemplateVariables, NodeJS.ProcessEnv {}
 
 export interface TriggerConfig {
-  config: ConfigOverride
+  config: UserConfigOverride
   id: string
   suite?: string
 }
@@ -360,7 +376,7 @@ export interface SyntheticsCIConfig {
   datadogSite: string
   failOnCriticalErrors: boolean
   files: string[]
-  global: ConfigOverride
+  global: UserConfigOverride
   locations: string[]
   pollingTimeout: number
   proxy: ProxyConfiguration
