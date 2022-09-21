@@ -147,6 +147,58 @@ describe('uploadApplicationIfNeeded', () => {
   })
 })
 
+describe('overrideMobileConfig', () => {
+  test('mobileApplicationVersionFilePath', () => {
+    const test = getMobileTest()
+    const overriddenConfig = getTestPayload({public_id: test.public_id})
+    mobile.overrideMobileConfig({mobileApplicationVersionFilePath: 'androidAppPath'}, overriddenConfig, test, {
+      applicationId: test.options.mobileApplication!.applicationId,
+      fileName: 'fileName',
+    })
+
+    expect(overriddenConfig.mobileApplication).toEqual({
+      applicationId: test.options.mobileApplication!.applicationId,
+      referenceId: 'fileName',
+      referenceType: 'temporary',
+    })
+  })
+
+  test('mobileApplicationVersion', () => {
+    const test = getMobileTest()
+    const overriddenConfig = getTestPayload({public_id: test.public_id})
+    mobile.overrideMobileConfig({mobileApplicationVersion: 'newAndroidVersionId'}, overriddenConfig, test)
+
+    expect(overriddenConfig.mobileApplication).toEqual({
+      applicationId: test.options.mobileApplication!.applicationId,
+      referenceId: 'newAndroidVersionId',
+      referenceType: 'version',
+    })
+  })
+
+  test('Path takes precedence over version', () => {
+    const test = getMobileTest()
+    const overriddenConfig = getTestPayload({public_id: test.public_id})
+    mobile.overrideMobileConfig(
+      {
+        mobileApplicationVersion: 'androidVersionId',
+        mobileApplicationVersionFilePath: 'androidAppPath',
+      },
+      overriddenConfig,
+      getMobileTest(),
+      {
+        applicationId: test.options.mobileApplication!.applicationId,
+        fileName: 'fileName',
+      }
+    )
+
+    expect(overriddenConfig.mobileApplication).toEqual({
+      applicationId: test.options.mobileApplication!.applicationId,
+      referenceId: 'fileName',
+      referenceType: 'temporary',
+    })
+  })
+})
+
 describe('uploadApplicationAndOverrideConfig', () => {
   const uploadApplicationSpy = jest.spyOn(mobile, 'uploadMobileApplications')
   const api = getApiHelper()
@@ -179,7 +231,11 @@ describe('uploadApplicationAndOverrideConfig', () => {
       mobileTestConfig,
       uploadedApplicationByPath
     )
-    // Not override yet
-    expect(mobileTestConfig.mobileApplication).toBeUndefined()
+
+    expect(mobileTestConfig.mobileApplication).toEqual({
+      applicationId: 'mobileAppUuid',
+      referenceId: 'fileName',
+      referenceType: 'temporary',
+    })
   })
 })

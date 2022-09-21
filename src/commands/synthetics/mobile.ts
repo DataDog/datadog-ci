@@ -53,7 +53,29 @@ export const uploadApplicationIfNeeded = async (
   })
 }
 
-// Override will be implement in a next PR
+export const overrideMobileConfig = (
+  userConfigOverride: UserConfigOverride,
+  overriddenTest: TestPayload,
+  test: Test,
+  localApplicationOverride?: {applicationId: string; fileName: string}
+) => {
+  if (localApplicationOverride) {
+    overriddenTest.mobileApplication = {
+      applicationId: localApplicationOverride.applicationId,
+      referenceId: localApplicationOverride.fileName,
+      referenceType: 'temporary',
+    }
+  }
+
+  if (!localApplicationOverride && userConfigOverride.mobileApplicationVersion) {
+    overriddenTest.mobileApplication = {
+      applicationId: test.options.mobileApplication!.applicationId,
+      referenceId: userConfigOverride.mobileApplicationVersion,
+      referenceType: 'version',
+    }
+  }
+}
+
 export const uploadApplicationAndOverrideConfig = async (
   api: APIHelper,
   test: Test,
@@ -69,10 +91,20 @@ export const uploadApplicationAndOverrideConfig = async (
     return
   }
 
+  const testApplicationId = test.options.mobileApplication!.applicationId
   await uploadApplicationIfNeeded(
     api,
     userConfigOverride.mobileApplicationVersionFilePath,
-    test.options.mobileApplication!.applicationId,
+    testApplicationId,
     uploadedApplicationByPath
+  )
+
+  overrideMobileConfig(
+    userConfigOverride,
+    overriddenTestsToTrigger,
+    test,
+    uploadedApplicationByPath[userConfigOverride.mobileApplicationVersionFilePath].find(
+      ({applicationId}) => applicationId === testApplicationId
+    )
   )
 }
