@@ -283,7 +283,7 @@ const getBatch = async (
   }
 }
 
-export const getTestByPublicId = (id: string, tests: Test[]): Test => tests.find((t) => t.public_id === id)!
+const getTestByPublicId = (id: string, tests: Test[]): Test => tests.find((t) => t.public_id === id)!
 
 const getPollResultMap = async (api: APIHelper, batch: Batch) => {
   try {
