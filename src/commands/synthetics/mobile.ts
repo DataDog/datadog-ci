@@ -97,14 +97,11 @@ export const uploadApplicationAndOverrideConfig = async (
     )
   }
 
-  const localApplicationOverride = userConfigOverride.mobileApplicationVersionFilePath ? uploadedApplicationByPath[userConfigOverride.mobileApplicationVersionFilePath].find(
-    ({applicationId}) => applicationId === testApplicationId
-  ) : undefined
+  const localApplicationOverride = userConfigOverride.mobileApplicationVersionFilePath
+    ? uploadedApplicationByPath[userConfigOverride.mobileApplicationVersionFilePath].find(
+        ({applicationId}) => applicationId === testApplicationId
+      )
+    : undefined
 
-  overrideMobileConfig(
-    userConfigOverride,
-    overriddenTestsToTrigger,
-    test,
-    localApplicationOverride
-  )
+  overrideMobileConfig(userConfigOverride, overriddenTestsToTrigger, test, localApplicationOverride)
 }
