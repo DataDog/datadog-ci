@@ -47,7 +47,7 @@
     "prettier": "prettier \"src/**/*.{ts,js,json,yml}\" --ignore-path .gitignore",
     "test": "jest --colors",
     "test:debug": "node --inspect-brk `which jest` --runInBand",
-    "test:ci-vis:itr": "jest --config ./jest.config-ci-vis-itr.js",
+    "test:ci-vis:itr": "jest --colors --config ./jest.config-ci-vis-itr.js",
     "tslint": "tslint -p tsconfig.json -c tslint.json",
     "typecheck": "bash bin/typecheck.sh",
     "watch": "tsc -w"
