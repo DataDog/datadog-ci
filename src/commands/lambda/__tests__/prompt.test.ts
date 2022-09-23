@@ -54,6 +54,20 @@ describe('prompt', () => {
       expect(question.name).toBe(CI_API_KEY_ENV_VAR)
     })
 
+    test('validates DATADOG_API_KEY correctly', () => {
+      const datadogApiKeyType = {
+        envVar: CI_API_KEY_ENV_VAR,
+        message: 'API Key:',
+      }
+      const question = datadogEnvVarsQuestions(datadogApiKeyType)
+      expect(question.validate).not.toBeUndefined();
+
+      expect(question.validate!("")).not.toBe(true)
+      expect(question.validate!("123abc")).not.toBe(true)
+     
+      expect(question.validate!("1234567890abcdef1200791a6a0de187")).toBe(true)
+    })
+
     test('returns correct message when user selects DATADOG_KMS_API_KEY', () => {
       const datadogApiKeyType = {
         envVar: CI_KMS_API_KEY_ENV_VAR,
@@ -72,6 +86,22 @@ describe('prompt', () => {
       const question = datadogEnvVarsQuestions(datadogApiKeyType)
       expect(question.message).toBe('API Key Secret ARN:')
       expect(question.name).toBe(CI_API_KEY_SECRET_ARN_ENV_VAR)
+    })
+
+    test('validates DATADOG_API_KEY_SECRET_ARN correctly', () => {
+      const datadogApiKeyType = {
+        envVar: CI_API_KEY_SECRET_ARN_ENV_VAR,
+        message: 'API Key Secret ARN:',
+      }
+      const question = datadogEnvVarsQuestions(datadogApiKeyType)
+      
+      expect(question.validate).not.toBeUndefined();
+
+      expect(question.validate!("")).not.toBe(true)
+      expect(question.validate!("123abc")).not.toBe(true)
+      expect(question.validate!("1234567890abcdef1200791a6a0de187")).not.toBe(true)
+
+      expect(question.validate!("arn:aws:secretsmanager:sa-east-1:123456789012:secret:dd-api-key")).toBe(true)
     })
   })
 

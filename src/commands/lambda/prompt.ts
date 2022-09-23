@@ -6,6 +6,7 @@ import {
   AWS_DEFAULT_REGION_ENV_VAR,
   AWS_SECRET_ACCESS_KEY_ENV_VAR,
   AWS_SECRET_ACCESS_KEY_REG_EXP,
+  AWS_SECRET_ARN_REG_EXP,
   AWS_SESSION_TOKEN_ENV_VAR,
   CI_API_KEY_ENV_VAR,
   CI_API_KEY_SECRET_ARN_ENV_VAR,
@@ -129,6 +130,8 @@ const versionQuestion: inquirer.InputQuestion = {
   type: 'input',
 }
 
+const INVALID_KEY_MESSAGE = 'Enter a valid Datadog API Key.'
+
 export const datadogEnvVarsQuestions = (datadogApiKeyType: Record<string, any>): inquirer.InputQuestion => ({
   // DATADOG API KEY given type
   default: process.env[datadogApiKeyType.envVar],
@@ -136,8 +139,16 @@ export const datadogEnvVarsQuestions = (datadogApiKeyType: Record<string, any>):
   name: datadogApiKeyType.envVar,
   type: 'input',
   validate: (value) => {
-    if (!value || !sentenceMatchesRegEx(value, DATADOG_API_KEY_REG_EXP)) {
-      return 'Enter a valid Datadog API Key.'
+    if (!value) {
+      return INVALID_KEY_MESSAGE
+    }
+
+    if (datadogApiKeyType.envVar === CI_API_KEY_ENV_VAR && !sentenceMatchesRegEx(value, DATADOG_API_KEY_REG_EXP)) {
+      return INVALID_KEY_MESSAGE;
+    }
+
+    if (datadogApiKeyType.envVar === CI_API_KEY_SECRET_ARN_ENV_VAR && !sentenceMatchesRegEx(value, AWS_SECRET_ARN_REG_EXP)) {
+      return INVALID_KEY_MESSAGE;
     }
 
     return true
