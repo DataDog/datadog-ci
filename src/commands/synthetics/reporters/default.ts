@@ -1,5 +1,6 @@
 import chalk from 'chalk'
 import {BaseContext} from 'clipanion'
+import ora from 'ora'
 import {Writable} from 'stream'
 
 import {
@@ -255,9 +256,12 @@ const getResultIconAndColor = (resultOutcome: ResultOutcome): [string, chalk.Cha
 }
 
 export class DefaultReporter implements MainReporter {
+  private testWaitSpinner?: ora.Ora
+  private writable: Writable
   private write: Writable['write']
 
   constructor({context}: {context: BaseContext}) {
+    this.writable = context.stdout
     this.write = context.stdout.write.bind(context.stdout)
   }
 
@@ -276,6 +280,7 @@ export class DefaultReporter implements MainReporter {
   public reportStart(timings: {startTime: number}) {
     const delay = (Date.now() - timings.startTime).toString()
 
+    this.testWaitSpinner?.stopAndPersist()
     this.write(['', chalk.bold.cyan('=== REPORT ==='), `Took ${chalk.bold(delay)}ms`, '\n'].join('\n'))
   }
 
@@ -337,9 +342,10 @@ export class DefaultReporter implements MainReporter {
     }
     const testsDisplay = chalk.gray(`(${testsList.join(', ')})`)
 
-    this.write(
-      `Waiting for ${chalk.bold.cyan(tests.length)} test ${pluralize('result', tests.length)} ${testsDisplay}…\n`
-    )
+    this.testWaitSpinner = ora({
+      stream: this.writable,
+      text: `Waiting for ${chalk.bold.cyan(tests.length)} test ${pluralize('result', tests.length)} ${testsDisplay}…\n`,
+    }).start()
   }
 
   public testTrigger(
