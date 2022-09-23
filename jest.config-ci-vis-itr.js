@@ -8,5 +8,6 @@ module.exports = {
     },
   },
   roots: ['src'],
-  setupFilesAfterEnv: ['jest-matcher-specific-error']
+  setupFilesAfterEnv: ['jest-matcher-specific-error'],
+  collectCoverage: true
 }
