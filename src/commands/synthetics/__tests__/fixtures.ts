@@ -71,7 +71,7 @@ export const ciConfig: CommandConfig = {
   variableStrings: [],
 }
 
-export const getApiTest = (publicId = 'abc-def-ghi'): Test => ({
+export const getApiTest = (publicId = 'abc-def-ghi', opts: Partial<Test> = {}): Test => ({
   config: {
     assertions: [],
     request: {
@@ -104,6 +104,18 @@ export const getApiTest = (publicId = 'abc-def-ghi'): Test => ({
   subtype: 'http',
   tags: [],
   type: 'api',
+  ...opts,
+})
+
+export const getBrowserTest = (
+  publicId = 'abc-def-ghi',
+  deviceIds = ['chrome.laptop_large'],
+  opts: Partial<Test> = {}
+): Test => ({
+  ...getApiTest(publicId),
+  options: {device_ids: deviceIds, min_failure_duration: 0, min_location_failed: 1, tick_every: 300},
+  type: 'browser',
+  ...opts,
 })
 
 export const getStep = (): Step => ({
@@ -171,11 +183,7 @@ export const getApiResult = (resultId: string, test: Test, resultOpts: Partial<A
 })
 
 export const getBrowserServerResult = (opts: Partial<BrowserServerResult> = {}): BrowserServerResult => ({
-  device: {
-    height: 1,
-    id: 'laptop_large',
-    width: 1,
-  },
+  device: {height: 1100, id: 'chrome.laptop_large', width: 1440},
   duration: 0,
   passed: true,
   startUrl: '',
@@ -194,25 +202,7 @@ export const getTimedOutBrowserResult = (): Result => ({
     steps: [],
   },
   resultId: '1',
-  test: {
-    ...getApiTest(),
-    config: {
-      assertions: [],
-      request: {
-        headers: {},
-        method: 'GET',
-        timeout: 1,
-        url: 'https://example.org/',
-      },
-      variables: [],
-    },
-    locations: [''],
-    message: 'Description.',
-    name: 'Test name',
-    options: {device_ids: ['chrome.laptop_large'], min_failure_duration: 0, min_location_failed: 1, tick_every: 300},
-    public_id: 'abc-def-hij',
-    type: 'browser',
-  },
+  test: getBrowserTest(),
   timedOut: true,
   timestamp: 1,
 })
@@ -271,25 +261,7 @@ export const getFailedBrowserResult = (): Result => ({
     ],
   },
   resultId: '1',
-  test: {
-    ...getApiTest(),
-    config: {
-      assertions: [],
-      request: {
-        headers: {},
-        method: 'GET',
-        timeout: 1,
-        url: 'https://example.org/',
-      },
-      variables: [],
-    },
-    locations: [''],
-    message: 'Description.',
-    name: 'Test name',
-    options: {device_ids: ['chrome.laptop_large'], min_failure_duration: 0, min_location_failed: 1, tick_every: 300},
-    public_id: 'abc-def-hij',
-    type: 'browser',
-  },
+  test: getBrowserTest(),
   timedOut: false,
   timestamp: 1,
 })

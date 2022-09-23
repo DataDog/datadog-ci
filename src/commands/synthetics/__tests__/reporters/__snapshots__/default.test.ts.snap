@@ -29,8 +29,8 @@ exports[`Default reporter resultEnd 1 API test, 1 location, 3 results: success, 
 `;
 
 exports[`Default reporter resultEnd 3 Browser test: failed blocking, timed out, global failure 1`] = `
-"[1m[31m✖[39m[22m [[1m[31mblocking[39m[22m] [[1m[2mabc-def-hij[22m[22m] [1mTest name[22m - [1m[31mlocation: [1mLocation name[22m[1m[39m[22m - [1m[31mdevice: [1mchrome.laptop_large[22m[1m[39m[22m
-  ⎋ Total duration: 20000 ms - Result URL: [2m[36mhttps://app.datadoghq.com/synthetics/details/abc-def-hij/result/1?from_ci=true[39m[22m 
+"[1m[31m✖[39m[22m [[1m[31mblocking[39m[22m] [[1m[2mabc-def-ghi[22m[22m] [1mTest name[22m - [1m[31mlocation: [1mLocation name[22m[1m[39m[22m - [1m[31mdevice: [1mchrome.laptop_large[22m[1m[39m[22m
+  ⎋ Total duration: 20000 ms - Result URL: [2m[36mhttps://app.datadoghq.com/synthetics/details/abc-def-ghi/result/1?from_ci=true[39m[22m 
     [1m[32m✓[39m[22m | [1m1000[22mms - Navigate to start URL
     [2mhttps://example.org/[22m
     [1m[31m✖[39m[22m | [1m1000[22mms - Navigate
@@ -41,12 +41,12 @@ exports[`Default reporter resultEnd 3 Browser test: failed blocking, timed out, 
     [31m[2mStep failure[22m[39m
     [1m[33m⇢[39m[22m | 3 skipped steps
 
-[1m[31m✖[39m[22m [[1m[31mblocking[39m[22m] [[1m[2mabc-def-hij[22m[22m] [1mTest name[22m - [1m[31mlocation: [1mLocation name[22m[1m[39m[22m
-  ⎋ Result URL: [2m[36mhttps://app.datadoghq.com/synthetics/details/abc-def-hij/result/1?from_ci=true[39m[22m (not yet received)
+[1m[31m✖[39m[22m [[1m[31mblocking[39m[22m] [[1m[2mabc-def-ghi[22m[22m] [1mTest name[22m - [1m[31mlocation: [1mLocation name[22m[1m[39m[22m
+  ⎋ Result URL: [2m[36mhttps://app.datadoghq.com/synthetics/details/abc-def-ghi/result/1?from_ci=true[39m[22m (not yet received)
 [31m    [[1mTIMEOUT[22m] - [2mResult timed out[22m[39m
 
-[1m[31m✖[39m[22m [[1m[31mblocking[39m[22m] [[1m[2mabc-def-hij[22m[22m] [1mTest name[22m - [1m[31mlocation: [1mLocation name[22m[1m[39m[22m
-  ⎋ Result URL: [2m[36mhttps://app.datadoghq.com/synthetics/details/abc-def-hij/result/1?from_ci=true[39m[22m 
+[1m[31m✖[39m[22m [[1m[31mblocking[39m[22m] [[1m[2mabc-def-ghi[22m[22m] [1mTest name[22m - [1m[31mlocation: [1mLocation name[22m[1m[39m[22m
+  ⎋ Result URL: [2m[36mhttps://app.datadoghq.com/synthetics/details/abc-def-ghi/result/1?from_ci=true[39m[22m 
 [31m    [[1mFAILURE_CODE[22m] - [2mFailure message[22m[39m
 
 "
