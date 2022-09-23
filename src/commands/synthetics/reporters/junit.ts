@@ -6,7 +6,7 @@ import {Writable} from 'stream'
 import {Builder} from 'xml2js'
 
 import {ApiServerResult, MultiStep, Reporter, Result, Step, Summary, Vitals} from '../interfaces'
-import {getBatchUrl, getResultDuration, getResultOutcome, getResultUrl, ResultOutcome} from '../utils'
+import {getBatchUrl, getResultDuration, getResultOutcome, getResultUrl, isDeviceIdSet, ResultOutcome} from '../utils'
 
 interface StepStats {
   allowfailures: number
@@ -370,11 +370,11 @@ export class JUnitReporter implements Reporter {
       properties: {
         property: [
           {$: {name: 'check_id', value: result.test.public_id}},
-          ...('device' in result.result
+          ...(isDeviceIdSet(result.result)
             ? [
-                {$: {name: 'device', value: result.result.device.id}},
-                {$: {name: 'width', value: result.result.device.width}},
-                {$: {name: 'height', value: result.result.device.height}},
+                {$: {name: 'device', value: result.result.device?.id}},
+                {$: {name: 'width', value: result.result.device?.width}},
+                {$: {name: 'height', value: result.result.device?.height}},
               ]
             : []),
           {$: {name: 'execution_rule', value: test.options.ci?.executionRule}},

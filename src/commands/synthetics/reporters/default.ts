@@ -15,7 +15,7 @@ import {
   Test,
   UserConfigOverride,
 } from '../interfaces'
-import {getBatchUrl, getResultDuration, getResultOutcome, getResultUrl, ResultOutcome} from '../utils'
+import {getBatchUrl, getResultDuration, getResultOutcome, getResultUrl, isDeviceIdSet, ResultOutcome} from '../utils'
 
 // Step rendering
 
@@ -216,8 +216,7 @@ const renderExecutionResult = (test: Test, execution: Result, baseUrl: string) =
   const testLabel = `${executionRuleText}[${chalk.bold.dim(test.public_id)}] ${chalk.bold(test.name)}`
 
   const location = setColor(`location: ${chalk.bold(execution.location)}`)
-  const device =
-    test.type === 'browser' && 'device' in result ? ` - ${setColor(`device: ${chalk.bold(result.device.id)}`)}` : ''
+  const device = isDeviceIdSet(result) ? ` - ${setColor(`device: ${chalk.bold(result.device.id)}`)}` : ''
   const resultIdentification = `${icon} ${testLabel} - ${location}${device}`
 
   const outputLines = [resultIdentification]

@@ -26,12 +26,14 @@ export interface BaseServerResult {
   unhealthy?: boolean
 }
 
+export interface Device {
+  height: number
+  id: string
+  width: number
+}
+
 export interface BrowserServerResult extends BaseServerResult {
-  device: {
-    height: number
-    id: string
-    width: number
-  }
+  device?: Device
   duration: number
   startUrl: string
   stepDetails: Step[]
