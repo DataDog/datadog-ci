@@ -225,5 +225,19 @@ describe('uploadApplicationAndOverrideConfig', () => {
       referenceId: 'fileName',
       referenceType: 'temporary',
     })
+
+    await mobile.uploadApplicationAndOverrideConfig(
+      api,
+      mobileTest,
+      {mobileApplicationVersion: 'androidAppVersion'},
+      mobileTestConfig,
+      uploadedApplicationByPath
+    )
+
+    expect(mobileTestConfig.mobileApplication).toEqual({
+      applicationId: 'mobileAppUuid',
+      referenceId: 'androidAppVersion',
+      referenceType: 'version',
+    })
   })
 })

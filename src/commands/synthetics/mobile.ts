@@ -83,24 +83,28 @@ export const uploadApplicationAndOverrideConfig = async (
   overriddenTestsToTrigger: TestPayload,
   uploadedApplicationByPath: {[applicationFilePath: string]: {applicationId: string; fileName: string}[]}
 ): Promise<void> => {
-  if (!userConfigOverride.mobileApplicationVersionFilePath) {
+  if (!(userConfigOverride.mobileApplicationVersionFilePath || userConfigOverride.mobileApplicationVersion)) {
     return
   }
 
   const testApplicationId = test.options.mobileApplication!.applicationId
-  await uploadApplicationIfNeeded(
-    api,
-    userConfigOverride.mobileApplicationVersionFilePath,
-    testApplicationId,
-    uploadedApplicationByPath
-  )
+  if (userConfigOverride.mobileApplicationVersionFilePath) {
+    await uploadApplicationIfNeeded(
+      api,
+      userConfigOverride.mobileApplicationVersionFilePath,
+      testApplicationId,
+      uploadedApplicationByPath
+    )
+  }
+
+  const localApplicationOverride = userConfigOverride.mobileApplicationVersionFilePath ? uploadedApplicationByPath[userConfigOverride.mobileApplicationVersionFilePath].find(
+    ({applicationId}) => applicationId === testApplicationId
+  ) : undefined
 
   overrideMobileConfig(
     userConfigOverride,
     overriddenTestsToTrigger,
     test,
-    uploadedApplicationByPath[userConfigOverride.mobileApplicationVersionFilePath].find(
-      ({applicationId}) => applicationId === testApplicationId
-    )
+    localApplicationOverride
   )
 }
