@@ -57,28 +57,35 @@ Then you can run `datadog-ci` commands normally:
 datadog-ci version
 ```
 
-### Container image (**experimental**)
+### Container image
 
-In order to run `datadog-ci` from a container, you can use the following `Dockerfile`:
+To run `datadog-ci` from a container, you can use the `datadog/ci` image available in Dockerhub as well as the public Amazon ECR and Google GC registries.
 
-```dockerfile
-FROM alpine
-WORKDIR /w
-RUN apk add --update npm git
-RUN npm install -g @datadog/datadog-ci
-ENTRYPOINT ["datadog-ci"]
+```
+docker pull datadog/ci
 ```
 
-To build and run it, the following commands can be used:
+Here's an example of how to run a command using the container and passing in the API and APP keys:
 
-```sh
-# Build the container
-docker build -t datadog-ci .
-
-# Run a command using the container
+```
 export DD_API_KEY=$(cat /secret/dd_api_key)
 export DD_APP_KEY=$(cat /secret/dd_app_key)
-docker run --rm -it -v $(pwd):/w -e DD_API_KEY -e DD_APP_KEY datadog-ci synthetics run-tests -p pub-lic-id1
+docker run --rm -it -v $(pwd):/w -e DD_API_KEY -e DD_APP_KEY datadog/ci synthetics run-tests -p pub-lic-id1
+```
+
+#### Building your own container image
+
+You can build an image using the provided [Dockerfile](https://github.com/DataDog/datadog-ci/blob/master/container/Dockerfile):
+
+```sh
+cd container
+docker build --tag datadog-ci .
+```
+
+Optionally you can use the `VERSION` build argument to build an image for a specific version:
+
+```sh
+docker build --build-arg "VERSION=v1.14" --t datadog-ci .
 ```
 
 ## Usage
@@ -96,6 +103,7 @@ Available commands:
   - trace
   - tag
   - metric
+  - flutter-symbols
 ```
 
 Each command allows interacting with a product of the Datadog platform. The commands are defined in the [src/commands](/src/commands) folder.
@@ -103,7 +111,8 @@ Each command allows interacting with a product of the Datadog platform. The comm
 Further documentation for each command can be found in its folder, ie:
 
 - [Lambda](src/commands/lambda)
-- [Sourcemaps](src/commands/sourcemaps/)
+- [Browser sourcemaps](src/commands/sourcemaps/)
+- [React Native sourcemaps](src/commands/react-native/)
 - [Synthetics CI/CD Testing](src/commands/synthetics/)
 - [iOS dSYM Files](src/commands/dsyms/)
 - [Git metadata](src/commands/git-metadata)
@@ -111,6 +120,7 @@ Further documentation for each command can be found in its folder, ie:
 - [Trace](src/commands/trace)
 - [Tag](src/commands/tag)
 - [Metric](src/commands/metric)
+- [Flutter Symbols](src/commands/flutter-symbols/)
 
 ## Contributing
 
@@ -209,7 +219,7 @@ Releasing a new version of `datadog-ci` unfolds as follow:
 - push the branch along with the tag to the upstream (Github), create a Pull Request with the changes introduced detailed in the description and get at least one approval. ([sample Pull Request](https://github.com/DataDog/datadog-ci/pull/78))
 - merge the Pull Request
 - create a Github Release from the [Tags page](https://github.com/DataDog/datadog-ci/tags) with the description of changes introduced
-- Once the release has been created, a Github Action will publish the package
+- Once the release has been created, a Github Action will publish the package and a Gitlab pipeline will publish the Docker image. Make sure they succeed.
 
 ### Pre-Release Process
 

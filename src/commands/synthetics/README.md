@@ -6,7 +6,7 @@ Run Synthetics tests from your CI.
 
 ### Setup
 
-You need to either have `DATADOG_API_KEY` and `DATADOG_APP_KEY` in your environment or pass them to the CLI.
+You need to have a Datadog API key (`DATADOG_API_KEY`) and application key(`DATADOG_APP_KEY`) available in your environment or pass them to the CLI.
 
 ```bash
 # Environment setup
@@ -17,7 +17,7 @@ export DATADOG_APP_KEY="<APPLICATION KEY>"
 yarn datadog-ci synthetics <command> --apiKey "<API KEY>" --appKey "<APPLICATION KEY>"
 ```
 
-It is possible to configure the tool to use Datadog EU by defining the `DATADOG_SITE` environment variable to `datadoghq.eu`. By default the requests are sent to Datadog US.
+It is possible to configure the tool to use other Datadog sites by defining the `DATADOG_SITE` environment variable. By default the requests are sent to Datadog US1.
 
 If the org uses a custom sub-domain to access Datadog app, it needs to be set in the `DATADOG_SUBDOMAIN` environment variable or in the global configuration file under the `subdomain` key to properly display the test results URL. As an example, if the URL used to access Datadog is `myorg.datadoghq.com` then set the environment variable to `myorg`, ie:
 
@@ -88,9 +88,9 @@ As the [`proxy-agent`](https://github.com/TooTallNate/node-proxy-agent) library 
 
 **Note**: `host` and `port` keys are mandatory arguments and the `protocol` key defaults to `http` if not defined.
 
-#### Commands
+#### Sub-commands
 
-The available command is:
+The available sub-command is:
 
 - `run-tests`: run the tests discovered in the folder according to the `files` configuration key
 
@@ -220,6 +220,10 @@ and so on...
 
 </details>
 
+### Testing tunnel
+
+You can run tests within your development environment by combining variable overrides with the [Testing Tunnel](https://docs.datadoghq.com/synthetics/testing_tunnel/#pagetitle). This allows you to run end-to-end encryption at every stage of your software development lifecycle, from pre-production environments through to your production system.
+
 ### End-to-end testing process
 
 To verify this command works as expected, you can trigger a test run and verify it returns 0:
@@ -249,7 +253,16 @@ Took 11546ms
 
 ### Reporters
 
-We currently only use a default reporter writing in stdout.
+Two reporters are supported out-of-the-box:
+
+1. `stdout`
+2. JUnit
+
+To enable the JUnit report, pass the `--jUnitReport` (`-j` shorthand) in your command, specifying a filename for your JUnit XML report. 
+
+```bash
+yarn datadog-ci synthetics run-tests -s 'tag:e2e-tests' --config global.config.json --jUnitReport e2e-test-junit
+```
 
 Reporters can hook themselves into the `MainReporter` of the command.
 

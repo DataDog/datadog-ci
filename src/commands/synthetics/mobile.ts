@@ -1,5 +1,5 @@
 import * as crypto from 'crypto'
-import * as fs from 'fs'
+import {promises as fs} from 'fs'
 
 import {APIHelper} from './api'
 import {Test, TestPayload, UserConfigOverride} from './interfaces'
@@ -15,7 +15,7 @@ export const uploadMobileApplications = async (
   applicationPathToUpload: string,
   mobileApplicationId: string
 ): Promise<string> => {
-  const fileBuffer = await fs.promises.readFile(applicationPathToUpload)
+  const fileBuffer = await fs.readFile(applicationPathToUpload)
   const md5 = await getMD5HashFromFileBuffer(fileBuffer)
   const {presigned_url_params: presignedUrl, file_name: fileName} = await api.getMobileApplicationPresignedURL(
     mobileApplicationId,

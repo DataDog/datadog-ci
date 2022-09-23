@@ -1,0 +1,1 @@
+{"succeeded":false,"errorCode":5,"errorMessage":"Command 'appcenter codepush deployment history' requires a logged in user. Use the 'appcenter login' command to log in."}

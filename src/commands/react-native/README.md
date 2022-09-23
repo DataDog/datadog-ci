@@ -100,6 +100,37 @@ This allows Datadog to create proper URLs such as:
 | Bitbucket | https://\<repository-url\>/src/\<commit-hash\>/\<tracked-file-path\>#lines-\<line\>  |
 
 
+### `codepush`
+
+This command uploads your JavaScript source maps and their corresponding bundle file to Datadog after an AppCenter CodePush build.
+
+To upload the source maps for an iOS app called "AppNameiOS" inside the "Company" organization after a build for the "Staging" deployment, run:
+
+```bash
+datadog-ci react-native codepush --platform ios --service com.company.app --bundle ./build/main.jsbundle --sourcemap ./build/main.jsbundle.map --app Company/AppNameiOS --deployment Staging
+```
+
+This command calls the `upload` command, setting the release version to `{releaseVersion}-codepush.{codepushLabel}`, such as `1.0.0-codepush.v4` for example.
+
+
+| Parameter           | Condition | Description                                                                                                                                                                                                                                                                                                                                                                 |
+|---------------------|-----------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `--platform`        | Required  | Identifies if you are uploading iOS or Android source maps.                                                                                                                                                                                                                                                                                                                 |
+| `--service`         | Required  | Set as the service name you are uploading source maps for. Datadog uses this service name to find corresponding source maps based on the `service` tag set on the RUM React Native SDK.<br>By default, the RUM React Native SDK uses your application's bundle identifier as the service.                                                                                   |
+| `--bundle`          | Required  | Should be set as the path to your generated JS bundle file, `main.jsbundle` for iOS and `index.android.bundle` for Android.                                                                                                                                                                                                                                                 |
+| `--sourcemap`       | Required  | Should be set to the path to your generated source map file, `main.jsbundle.map` for iOS and `index.android.bundle.map` for Android.                                                                                                                                                                                                                                        |
+| `--app`             | Required  | The name of the target app in AppCenter. Must match the format OrganizationName/AppName.                                           |
+| `--deployment`      | Required  | The name of the deployment in AppCenter.             |
+
+The following optional parameters are available:
+
+| Parameter          | Default | Description                                                                                                                                                                                                                     |
+|--------------------|---------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `--disable-git`    | False   | Prevents the command from invoking git in the current working directory and sending repository-related data to Datadog (such as the hash, remote URL, and paths within the repository of sources referenced in the source map). |
+| `--dry-run`        | False   | It runs the command without the final step of uploading. All other checks are performed.                                                                                                                                        |
+| `--repository-url` | Empty   | Overrides the remote repository with a custom URL. For example, `https://github.com/my-company/my-project`.                                                                                                                     |
+| `--build-version`  | 1      | Used to avoid overwriting your source maps by accident. Only one upload is needed for a specific `build-version` and `service` combination. Subsequent uploads are ignored until the `build-version` changes. This should not be necessary for CodePush unless you uploaded the wrong source maps by mistake.   | 
+
 ### `xcode`
 
 This command can be called from an XCode build phase to execute the `react-native bundle` command and upload the source maps.
@@ -195,6 +226,12 @@ Command summary:
 ✅ Uploaded 1 sourcemap in 0.698 seconds.
 ✨  Done in 2.50s.
 ```
+
+### `codepush`
+
+You need an AppCenter account to test this command, as it uses the `appcenter codepush deployment history` command.
+
+Generate source maps for your CodePush application, then use `yarn launch react-native codepush` from this repository to trigger an upload.
 
 ### `xcode`
 
