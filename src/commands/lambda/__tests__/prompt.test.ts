@@ -60,12 +60,12 @@ describe('prompt', () => {
         message: 'API Key:',
       }
       const question = datadogEnvVarsQuestions(datadogApiKeyType)
-      expect(question.validate).not.toBeUndefined();
+      expect(question.validate).not.toBeUndefined()
 
-      expect(question.validate!("")).not.toBe(true)
-      expect(question.validate!("123abc")).not.toBe(true)
-     
-      expect(question.validate!("1234567890abcdef1200791a6a0de187")).toBe(true)
+      expect(question.validate!('')).not.toBe(true)
+      expect(question.validate!('123abc')).not.toBe(true)
+
+      expect(question.validate!('1234567890abcdef1200791a6a0de187')).toBe(true)
     })
 
     test('returns correct message when user selects DATADOG_KMS_API_KEY', () => {
@@ -94,14 +94,14 @@ describe('prompt', () => {
         message: 'API Key Secret ARN:',
       }
       const question = datadogEnvVarsQuestions(datadogApiKeyType)
-      
-      expect(question.validate).not.toBeUndefined();
 
-      expect(question.validate!("")).not.toBe(true)
-      expect(question.validate!("123abc")).not.toBe(true)
-      expect(question.validate!("1234567890abcdef1200791a6a0de187")).not.toBe(true)
+      expect(question.validate).not.toBeUndefined()
 
-      expect(question.validate!("arn:aws:secretsmanager:sa-east-1:123456789012:secret:dd-api-key")).toBe(true)
+      expect(question.validate!('')).not.toBe(true)
+      expect(question.validate!('123abc')).not.toBe(true)
+      expect(question.validate!('1234567890abcdef1200791a6a0de187')).not.toBe(true)
+
+      expect(question.validate!('arn:aws:secretsmanager:sa-east-1:123456789012:secret:dd-api-key')).toBe(true)
     })
   })
 
