@@ -1,0 +1,40 @@
+# This workflow is used to dogfood CI Visibility's Intelligent Test Runner
+# It is *not* intended to block merges or releases, so steps are marked
+# to continue-on-error
+
+name: CI Visibility ITR
+
+on: push
+
+jobs:
+  build-and-test:
+    name: Build and test with ITR
+    runs-on: ubuntu-latest
+    env:
+      DD_SERVICE: datadog-ci-tests-itr
+      DD_CIVISIBILITY_AGENTLESS_ENABLED: 1
+      DD_API_KEY: ${{ secrets.DATADOG_API_KEY_MAIN_ACCOUNT }}
+      DD_APP_KEY: ${{ secrets.DATADOG_APP_KEY_MAIN_ACCOUNT }}
+      DD_CIVISIBILITY_GIT_UPLOAD_ENABLED: 1
+      DD_CIVISIBILITY_ITR_ENABLED: 1
+      DD_ENV: ci
+
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - name: Install node
+        uses: actions/setup-node@v1
+        with:
+          node-version: '16'
+      - run: yarn install --ignore-engines
+        continue-on-error: true
+      - run: yarn add --dev https://github.com/DataDog/dd-trace-js/tarball/master
+        continue-on-error: true
+      - run: yarn test:ci-vis:itr
+        continue-on-error: true
+        env:
+          CI: true
+          NODE_OPTIONS: -r dd-trace/ci/init
+          DD_TRACE_DEBUG: 1
+          DD_TRACE_LOG_LEVEL: error
