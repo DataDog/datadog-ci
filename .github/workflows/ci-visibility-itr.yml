@@ -4,11 +4,7 @@
 
 name: CI Visibility ITR
 
-# TO BE MODIFIED TO "ON PUSH"
-on:
-  push:
-    branches:
-      - juan-fernandez/create-itr-workflow
+on: push
 
 jobs:
   build-and-test:
