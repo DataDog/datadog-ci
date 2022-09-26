@@ -7,7 +7,6 @@ import {
   Batch,
   ExecutionRule,
   MainReporter,
-  Operator,
   Result,
   ServerResult,
   Step,
@@ -15,7 +14,15 @@ import {
   Test,
   UserConfigOverride,
 } from '../interfaces'
-import {getBatchUrl, getResultDuration, getResultOutcome, getResultUrl, isDeviceIdSet, ResultOutcome} from '../utils'
+import {
+  getBatchUrl,
+  getResultDuration,
+  getResultOutcome,
+  getResultUrl,
+  isDeviceIdSet,
+  readableOperation,
+  ResultOutcome,
+} from '../utils'
 
 // Step rendering
 
@@ -72,23 +79,6 @@ const renderSkippedSteps = (steps: Step[]): string | undefined => {
   }
 
   return `    ${ICONS.SKIPPED} | ${steps.length} skipped steps`
-}
-
-const readableOperation: {[key in Operator]: string} = {
-  [Operator.contains]: 'should contain',
-  [Operator.doesNotContain]: 'should not contain',
-  [Operator.is]: 'should be',
-  [Operator.isNot]: 'should not be',
-  [Operator.lessThan]: 'should be less than',
-  [Operator.matches]: 'should match',
-  [Operator.doesNotMatch]: 'should not match',
-  [Operator.isInLessThan]: 'will expire in less than',
-  [Operator.isInMoreThan]: 'will expire in more than',
-  [Operator.lessThanOrEqual]: 'should be less than or equal to',
-  [Operator.moreThan]: 'should be more than',
-  [Operator.moreThanOrEqual]: 'should be less than or equal to',
-  [Operator.validatesJSONPath]: 'assert on JSONPath extracted value',
-  [Operator.validatesXPath]: 'assert on XPath extracted value',
 }
 
 const renderApiError = (errorCode: string, errorMessage: string, color: chalk.Chalk) => {

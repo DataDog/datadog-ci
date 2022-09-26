@@ -286,6 +286,40 @@ export const getMultiStepsServerResult = (): MultiStepsServerResult => ({
   steps: [],
 })
 
+export const getFailedMultiStepsServerResult = (): MultiStepsServerResult => ({
+  duration: 123,
+  failure: {code: 'INCORRECT_ASSERTION', message: 'incorrect assertion'},
+  passed: false,
+  steps: [
+    {
+      ...getMultiStep(),
+      passed: true,
+    },
+    {
+      ...getMultiStep(),
+      skipped: true,
+    },
+    {
+      ...getMultiStep(),
+      allowFailure: true,
+      failure: {
+        code: 'INCORRECT_ASSERTION',
+        message: 'incorrect assertion',
+      },
+      passed: false,
+    },
+    {
+      ...getMultiStep(),
+      allowFailure: false,
+      failure: {
+        code: 'INCORRECT_ASSERTION',
+        message: 'incorrect assertion',
+      },
+      passed: false,
+    },
+  ],
+})
+
 export const mockLocation: Location = {
   display_name: 'Frankfurt (AWS)',
   id: 1,
