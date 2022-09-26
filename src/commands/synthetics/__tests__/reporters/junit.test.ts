@@ -354,7 +354,7 @@ describe('GitLab test report compatibility', () => {
     reporter = new JUnitReporter(commandMock as RunTestCommand)
   })
 
-  it('all test case names are unique', () => {
+  test('all test case names are unique', () => {
     const locations = ['aws:eu-central-1', 'aws:eu-central-2']
     const devices = {
       chrome: {height: 1100, id: 'chrome.laptop_large', width: 1440},
@@ -438,7 +438,7 @@ describe('GitLab test report compatibility', () => {
     ])
   })
 
-  it('all columns are filled in the test report table', () => {
+  test('all columns are filled in the test report table', () => {
     const baseResult = getFailedBrowserResult()
     const result: Result = {
       ...baseResult,
@@ -466,7 +466,7 @@ describe('GitLab test report compatibility', () => {
     expect(testCase.$).toHaveProperty('time', 20) // Duration
   })
 
-  it('the icon in the Status column is correct (blocking vs. non-blocking)', () => {
+  test('the icon in the Status column is correct (blocking vs. non-blocking)', () => {
     // Mimics how GitLab chooses the Status icon.
     const getStatusIcon = (testCase: XMLTestCase) => {
       if (testCase.failure.length > 0) {
@@ -498,7 +498,7 @@ describe('GitLab test report compatibility', () => {
     expect(getStatusIcon(testCasePassed)).toBe('✅')
   })
 
-  it('api errors are nicely rendered', () => {
+  test('api errors are nicely rendered', () => {
     const errorMessage = JSON.stringify([
       {
         actual: 1234,
