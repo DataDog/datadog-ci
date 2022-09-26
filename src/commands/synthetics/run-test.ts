@@ -4,6 +4,7 @@ import {CiError, CriticalError} from './errors'
 import {
   CommandConfig,
   MainReporter,
+  Result,
   Suite,
   Summary,
   SyntheticsCIConfig,
@@ -14,9 +15,16 @@ import {
   UserConfigOverride,
 } from './interfaces'
 import {Tunnel} from './tunnel'
-import {getSuites, getTestsToTrigger, runTests, waitForResults} from './utils'
+import {getSuites, getTestsToTrigger, InitialSummary, runTests, waitForResults} from './utils'
 
-export const executeTests = async (reporter: MainReporter, config: CommandConfig, suites?: Suite[]) => {
+export const executeTests = async (
+  reporter: MainReporter,
+  config: CommandConfig,
+  suites?: Suite[]
+): Promise<{
+  results: Result[]
+  summary: Summary
+}> => {
   const api = getApiHelper(config)
 
   const publicIdsFromCli = config.publicIds.map((id) => ({
@@ -53,8 +61,8 @@ export const executeTests = async (reporter: MainReporter, config: CommandConfig
   }
 
   let testsToTriggerResult: {
+    initialSummary: InitialSummary
     overriddenTestsToTrigger: TestPayload[]
-    summary: Summary
     tests: Test[]
   }
 
@@ -69,7 +77,7 @@ export const executeTests = async (reporter: MainReporter, config: CommandConfig
     throw new CriticalError(isForbiddenError(error) ? 'AUTHORIZATION_ERROR' : 'UNAVAILABLE_TEST_CONFIG', error.message)
   }
 
-  const {tests, overriddenTestsToTrigger, summary} = testsToTriggerResult
+  const {tests, overriddenTestsToTrigger, initialSummary} = testsToTriggerResult
 
   // All tests have been skipped or are missing.
   if (!tests.length) {
@@ -102,8 +110,6 @@ export const executeTests = async (reporter: MainReporter, config: CommandConfig
   let trigger: Trigger
   try {
     trigger = await runTests(api, overriddenTestsToTrigger)
-
-    summary.batchId = trigger.batch_id
   } catch (error) {
     await stopTunnel()
     throw new CriticalError('TRIGGER_TESTS_FAILED', error.message)
@@ -124,7 +130,13 @@ export const executeTests = async (reporter: MainReporter, config: CommandConfig
       tunnel
     )
 
-    return {results, summary}
+    return {
+      results,
+      summary: {
+        ...initialSummary,
+        batchId: trigger.batch_id,
+      },
+    }
   } catch (error) {
     throw new CriticalError('POLL_RESULTS_FAILED', error.message)
   } finally {

@@ -409,7 +409,9 @@ export const waitForResults = async (
   return results
 }
 
-export const createSummary = (): Summary => ({
+export type InitialSummary = Omit<Summary, 'batchId'>
+
+export const createInitialSummary = (): InitialSummary => ({
   criticalErrors: 0,
   failed: 0,
   failedNonBlocking: 0,
@@ -526,7 +528,7 @@ const getTestAndOverrideConfig = async (
   api: APIHelper,
   {config, id, suite}: TriggerConfig,
   reporter: MainReporter,
-  summary: Summary
+  summary: InitialSummary
 ) => {
   const normalizedId = PUBLIC_ID_REGEX.test(id) ? id : id.substr(id.lastIndexOf('/') + 1)
 
@@ -572,9 +574,9 @@ export const getTestsToTrigger = async (
     )
   }
 
-  const summary = createSummary()
+  const initialSummary = createInitialSummary()
   const testsAndConfigsOverride = await Promise.all(
-    triggerConfigs.map((triggerConfig) => getTestAndOverrideConfig(api, triggerConfig, reporter, summary))
+    triggerConfigs.map((triggerConfig) => getTestAndOverrideConfig(api, triggerConfig, reporter, initialSummary))
   )
 
   const overriddenTestsToTrigger: TestPayload[] = []
@@ -609,7 +611,7 @@ export const getTestsToTrigger = async (
     reporter.testsWait(waitedTests)
   }
 
-  return {tests: waitedTests, overriddenTestsToTrigger, summary}
+  return {tests: waitedTests, overriddenTestsToTrigger, initialSummary}
 }
 
 export const runTests = async (api: APIHelper, testsToTrigger: TestPayload[]): Promise<Trigger> => {

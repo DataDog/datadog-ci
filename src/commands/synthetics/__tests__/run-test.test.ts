@@ -21,8 +21,8 @@ describe('run-test', () => {
     test('should apply config override for tests triggered by public id', async () => {
       const getTestsToTriggersMock = jest.spyOn(utils, 'getTestsToTrigger').mockReturnValue(
         Promise.resolve({
+          initialSummary: utils.createInitialSummary(),
           overriddenTestsToTrigger: [],
-          summary: utils.createSummary(),
           tests: [],
         })
       )
@@ -75,8 +75,8 @@ describe('run-test', () => {
       async (text, partialCIConfig, expectedOverriddenConfig) => {
         const getTestsToTriggersMock = jest.spyOn(utils, 'getTestsToTrigger').mockReturnValue(
           Promise.resolve({
+            initialSummary: utils.createInitialSummary(),
             overriddenTestsToTrigger: [],
-            summary: utils.createSummary(),
             tests: [],
           })
         )
@@ -106,8 +106,8 @@ describe('run-test', () => {
     test('should not wait for `skipped` only tests batch results', async () => {
       const getTestsToTriggersMock = jest.spyOn(utils, 'getTestsToTrigger').mockReturnValue(
         Promise.resolve({
+          initialSummary: utils.createInitialSummary(),
           overriddenTestsToTrigger: [],
-          summary: utils.createSummary(),
           tests: [],
         })
       )
@@ -137,8 +137,8 @@ describe('run-test', () => {
     test('should not open tunnel if no test to run', async () => {
       const getTestsToTriggersMock = jest.spyOn(utils, 'getTestsToTrigger').mockReturnValue(
         Promise.resolve({
+          initialSummary: utils.createInitialSummary(),
           overriddenTestsToTrigger: [],
-          summary: utils.createSummary(),
           tests: [],
         })
       )
@@ -178,8 +178,8 @@ describe('run-test', () => {
 
       jest.spyOn(utils, 'getTestsToTrigger').mockReturnValue(
         Promise.resolve({
+          initialSummary: utils.createInitialSummary(),
           overriddenTestsToTrigger: [],
-          summary: utils.createSummary(),
           tests: [{options: {ci: {executionRule: ExecutionRule.BLOCKING}}, public_id: '123-456-789'} as any],
         })
       )
@@ -244,8 +244,8 @@ describe('run-test', () => {
     test('getTunnelPresignedURL throws', async () => {
       jest.spyOn(utils, 'getTestsToTrigger').mockReturnValue(
         Promise.resolve({
+          initialSummary: utils.createInitialSummary(),
           overriddenTestsToTrigger: [],
-          summary: utils.createSummary(),
           tests: [{options: {ci: {executionRule: ExecutionRule.BLOCKING}}, public_id: 'publicId'} as any],
         })
       )
@@ -273,8 +273,8 @@ describe('run-test', () => {
 
       jest.spyOn(utils, 'getTestsToTrigger').mockReturnValue(
         Promise.resolve({
+          initialSummary: utils.createInitialSummary(),
           overriddenTestsToTrigger: [],
-          summary: utils.createSummary(),
           tests: [{options: {ci: {executionRule: ExecutionRule.BLOCKING}}, public_id: 'publicId'} as any],
         })
       )
@@ -315,8 +315,8 @@ describe('run-test', () => {
       const stopTunnelSpy = jest.spyOn(Tunnel.prototype, 'stop')
       jest.spyOn(utils, 'getTestsToTrigger').mockReturnValue(
         Promise.resolve({
+          initialSummary: utils.createInitialSummary(),
           overriddenTestsToTrigger: [],
-          summary: utils.createSummary(),
           tests: [{options: {ci: {executionRule: ExecutionRule.BLOCKING}}, public_id: 'publicId'} as any],
         })
       )
