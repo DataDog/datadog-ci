@@ -372,9 +372,9 @@ export class JUnitReporter implements Reporter {
           {$: {name: 'check_id', value: result.test.public_id}},
           ...(isDeviceIdSet(result.result)
             ? [
-                {$: {name: 'device', value: result.result.device?.id}},
-                {$: {name: 'width', value: result.result.device?.width}},
-                {$: {name: 'height', value: result.result.device?.height}},
+                {$: {name: 'device', value: result.result.device.id}},
+                {$: {name: 'width', value: result.result.device.width}},
+                {$: {name: 'height', value: result.result.device.height}},
               ]
             : []),
           {$: {name: 'execution_rule', value: test.options.ci?.executionRule}},
