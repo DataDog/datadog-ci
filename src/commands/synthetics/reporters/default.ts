@@ -1,7 +1,8 @@
+import {Writable} from 'stream'
+
 import chalk from 'chalk'
 import {BaseContext} from 'clipanion'
 import ora from 'ora'
-import {Writable} from 'stream'
 
 import {
   Assertion,
