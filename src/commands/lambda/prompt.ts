@@ -144,11 +144,14 @@ export const datadogEnvVarsQuestions = (datadogApiKeyType: Record<string, any>):
     }
 
     if (datadogApiKeyType.envVar === CI_API_KEY_ENV_VAR && !sentenceMatchesRegEx(value, DATADOG_API_KEY_REG_EXP)) {
-      return INVALID_KEY_MESSAGE;
+      return INVALID_KEY_MESSAGE
     }
 
-    if (datadogApiKeyType.envVar === CI_API_KEY_SECRET_ARN_ENV_VAR && !sentenceMatchesRegEx(value, AWS_SECRET_ARN_REG_EXP)) {
-      return INVALID_KEY_MESSAGE;
+    if (
+      datadogApiKeyType.envVar === CI_API_KEY_SECRET_ARN_ENV_VAR &&
+      !sentenceMatchesRegEx(value, AWS_SECRET_ARN_REG_EXP)
+    ) {
+      return INVALID_KEY_MESSAGE
     }
 
     return true
