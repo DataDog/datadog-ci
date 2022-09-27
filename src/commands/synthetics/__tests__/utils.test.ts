@@ -35,6 +35,7 @@ import {
   getBatch,
   getBrowserServerResult,
   getResults,
+  getSummary,
   MockedReporter,
   mockLocation,
   mockReporter,
@@ -200,7 +201,7 @@ describe('utils', () => {
         {suite: 'Suite 2', config: {}, id: '987-654-321'},
         {suite: 'Suite 3', config: {}, id: 'ski-ppe-d01'},
       ]
-      const {tests, overriddenTestsToTrigger, summary} = await utils.getTestsToTrigger(
+      const {tests, overriddenTestsToTrigger, initialSummary} = await utils.getTestsToTrigger(
         api,
         triggerConfigs,
         mockReporter
@@ -212,7 +213,7 @@ describe('utils', () => {
         {executionRule: ExecutionRule.SKIPPED, public_id: 'ski-ppe-d01'},
       ])
 
-      const expectedSummary: Summary = {
+      const expectedSummary: utils.InitialSummary = {
         criticalErrors: 0,
         failed: 0,
         failedNonBlocking: 0,
@@ -221,7 +222,7 @@ describe('utils', () => {
         testsNotFound: new Set(['987-654-321']),
         timedOut: 0,
       }
-      expect(summary).toEqual(expectedSummary)
+      expect(initialSummary).toEqual(expectedSummary)
     })
 
     test('no tests triggered throws an error', async () => {
@@ -937,7 +938,7 @@ describe('utils', () => {
   })
 
   describe('Render results', () => {
-    const emptySummary = utils.createSummary()
+    const emptySummary = getSummary()
 
     const cases: RenderResultsTestCase[] = [
       {

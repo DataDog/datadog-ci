@@ -25,7 +25,7 @@ import {
   Trigger,
   User,
 } from '../interfaces'
-import {createSummary} from '../utils'
+import {createInitialSummary} from '../utils'
 
 const mockUser: User = {
   email: '',
@@ -154,7 +154,7 @@ export const getTestSuite = (): Suite => ({content: {tests: [{config: {}, id: '1
 
 export const BATCH_ID = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa'
 export const getSummary = (): Summary => ({
-  ...createSummary(),
+  ...createInitialSummary(),
   batchId: BATCH_ID,
 })
 

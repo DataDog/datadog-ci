@@ -66,8 +66,8 @@ interface XMLStep {
 export interface XMLJSON {
   testsuites: {
     $: {
-      batch_id?: string
-      batch_url?: string
+      batch_id: string
+      batch_url: string
       name: string
       tests_critical_error: number
       tests_failed: number
@@ -129,6 +129,8 @@ export class JUnitReporter implements Reporter {
     this.json = {
       testsuites: {
         $: {
+          batch_id: '',
+          batch_url: '',
           name: runName || 'Undefined run',
           tests_critical_error: 0,
           tests_failed: 0,
@@ -202,9 +204,7 @@ export class JUnitReporter implements Reporter {
     })
 
     this.json.testsuites.$.batch_id = summary.batchId
-    if (summary.batchId) {
-      this.json.testsuites.$.batch_url = getBatchUrl(baseUrl, summary.batchId)
-    }
+    this.json.testsuites.$.batch_url = getBatchUrl(baseUrl, summary.batchId)
 
     // Write the file
     try {
