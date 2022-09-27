@@ -1,5 +1,6 @@
 jest.mock('glob')
 jest.mock('fs')
+jest.unmock('chalk')
 
 import * as fs from 'fs'
 
