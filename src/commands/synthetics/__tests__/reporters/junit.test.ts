@@ -146,11 +146,17 @@ describe('Junit reporter', () => {
     })
 
     it('should use the same report for tests from same suite', () => {
-      const result = {...globalResultMock, test: {...globalTestMock, suite: 'same suite'}}
-      reporter.resultEnd(result, '')
-      reporter.resultEnd(result, '')
+      const results = [
+        {...globalResultMock, test: {...globalTestMock, suite: 'same suite'}},
+        {...globalResultMock, test: {...globalTestMock, suite: 'same suite'}},
+      ]
 
-      expect(reporter['json'].testsuites.testsuite.length).not.toBe(2)
+      results.forEach((result) => reporter.resultEnd(result, ''))
+
+      // We should have 1 unique report. Not 2 different ones.
+      expect(reporter['json'].testsuites.testsuite.length).toBe(1)
+
+      // And this unique report should include the 2 tests.
       expect(reporter['json'].testsuites.testsuite[0].$).toMatchObject({
         ...getDefaultSuiteStats(),
         tests: 2,
@@ -516,7 +522,7 @@ describe('GitLab test report compatibility', () => {
     expect(testCase.failure).toStrictEqual([
       {
         $: {step: 'Test name', type: 'INCORRECT_ASSERTION'},
-        _: '- Assertion(s) failed:\n    ▶ responseTime should be less than 1000. Actual: 1234',
+        _: '- Assertion failed:\n    ▶ responseTime should be less than 1000. Actual: 1234',
       },
     ])
   })
