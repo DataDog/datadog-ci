@@ -16,6 +16,7 @@ import {MAX_TESTS_TO_TRIGGER} from './command'
 import {CiError, CriticalError} from './errors'
 import {
   Batch,
+  BrowserServerResult,
   CommandConfig,
   ExecutionRule,
   LocationsMapping,
@@ -550,6 +551,9 @@ const getTestAndOverrideConfig = async (
 
   return {overriddenConfig}
 }
+
+export const isDeviceIdSet = (result: ServerResult): result is Required<BrowserServerResult> =>
+  'device' in result && result.device !== undefined
 
 export const getTestsToTrigger = async (
   api: APIHelper,
