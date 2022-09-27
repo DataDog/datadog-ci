@@ -1,9 +1,9 @@
 // tslint:disable: no-string-literal
 jest.mock('fs')
+jest.mock('chalk')
 jest.mock('aws-sdk')
 jest.mock('../prompt')
 import {Lambda} from 'aws-sdk'
-import {blueBright, bold, cyan, hex, red, underline, yellow} from 'chalk'
 import {Cli} from 'clipanion/lib/advanced'
 import * as fs from 'fs'
 import path from 'path'
@@ -65,6 +65,7 @@ describe('lambda', () => {
             },
           })
         )
+
         const cli = makeCli()
         const context = createMockContext() as any
         const functionARN = 'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world'
@@ -93,14 +94,10 @@ describe('lambda', () => {
         const output = context.stdout.toString()
         expect(code).toBe(0)
         expect(output).toMatchInlineSnapshot(`
-"${bold(yellow('[Warning]'))} Instrument your ${hex('#FF9900').bold(
-          'Lambda'
-        )} functions in a dev or staging environment first. Should the instrumentation result be unsatisfactory, run \`${bold(
-          'uninstrument'
-        )}\` with the same arguments to revert the changes.
-\n${bold(yellow('[!]'))} Functions to be updated:
-\t- ${bold('arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world')}\n
-${bold(cyan('[Dry Run] '))}Will apply the following updates:
+"[Warning] Instrument your Lambda functions in a dev or staging environment first. Should the instrumentation result be unsatisfactory, run \`uninstrument\` with the same arguments to revert the changes.
+\n[!] Functions to be updated:
+\t- arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world\n
+[Dry Run] Will apply the following updates:
 UpdateFunctionConfiguration -> arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world
 {
   \\"FunctionName\\": \\"arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world\\",
@@ -178,14 +175,10 @@ TagResource -> arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world
         const output = context.stdout.toString()
         expect(code).toBe(0)
         expect(output).toMatchInlineSnapshot(`
-"${bold(yellow('[Warning]'))} Instrument your ${hex('#FF9900').bold(
-          'Lambda'
-        )} functions in a dev or staging environment first. Should the instrumentation result be unsatisfactory, run \`${bold(
-          'uninstrument'
-        )}\` with the same arguments to revert the changes.
-\n${bold(yellow('[!]'))} Functions to be updated:
-\t- ${bold('arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world')}\n
-${bold(cyan('[Dry Run] '))}Will apply the following updates:
+"[Warning] Instrument your Lambda functions in a dev or staging environment first. Should the instrumentation result be unsatisfactory, run \`uninstrument\` with the same arguments to revert the changes.
+\n[!] Functions to be updated:
+\t- arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world\n
+[Dry Run] Will apply the following updates:
 UpdateFunctionConfiguration -> arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world
 {
   \\"FunctionName\\": \\"arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world\\",
@@ -256,14 +249,10 @@ TagResource -> arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world
         const output = context.stdout.toString()
         expect(code).toBe(0)
         expect(output).toMatchInlineSnapshot(`
-"${bold(yellow('[Warning]'))} Instrument your ${hex('#FF9900').bold(
-          'Lambda'
-        )} functions in a dev or staging environment first. Should the instrumentation result be unsatisfactory, run \`${bold(
-          'uninstrument'
-        )}\` with the same arguments to revert the changes.
-\n${bold(yellow('[!]'))} Functions to be updated:
-\t- ${bold('arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world')}\n
-${bold(cyan('[Dry Run] '))}Will apply the following updates:
+"[Warning] Instrument your Lambda functions in a dev or staging environment first. Should the instrumentation result be unsatisfactory, run \`uninstrument\` with the same arguments to revert the changes.
+\n[!] Functions to be updated:
+\t- arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world\n
+[Dry Run] Will apply the following updates:
 UpdateFunctionConfiguration -> arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world
 {
   \\"FunctionName\\": \\"arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world\\",
@@ -331,14 +320,10 @@ TagResource -> arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world
         const output = context.stdout.toString()
         expect(code).toBe(0)
         expect(output).toMatchInlineSnapshot(`
-"${bold(yellow('[Warning]'))} Instrument your ${hex('#FF9900').bold(
-          'Lambda'
-        )} functions in a dev or staging environment first. Should the instrumentation result be unsatisfactory, run \`${bold(
-          'uninstrument'
-        )}\` with the same arguments to revert the changes.
-\n${bold(yellow('[!]'))} Functions to be updated:
-\t- ${bold('arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world')}\n
-${bold(cyan('[Dry Run] '))}Will apply the following updates:
+"[Warning] Instrument your Lambda functions in a dev or staging environment first. Should the instrumentation result be unsatisfactory, run \`uninstrument\` with the same arguments to revert the changes.
+\n[!] Functions to be updated:
+\t- arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world\n
+[Dry Run] Will apply the following updates:
 UpdateFunctionConfiguration -> arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world
 {
   \\"FunctionName\\": \\"arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world\\",
@@ -532,13 +517,9 @@ TagResource -> arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world
         )
         const output = context.stdout.toString()
         expect(output).toMatchInlineSnapshot(`
-"${bold(yellow('[Warning]'))} Instrument your ${hex('#FF9900').bold(
-          'Lambda'
-        )} functions in a dev or staging environment first. Should the instrumentation result be unsatisfactory, run \`${bold(
-          'uninstrument'
-        )}\` with the same arguments to revert the changes.
-\n${bold(yellow('[!]'))} Functions to be updated:
-\t- ${bold('arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world')}\n
+"[Warning] Instrument your Lambda functions in a dev or staging environment first. Should the instrumentation result be unsatisfactory, run \`uninstrument\` with the same arguments to revert the changes.
+\n[!] Functions to be updated:
+\t- arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world\n
 Will apply the following updates:
 UpdateFunctionConfiguration -> arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world
 {
@@ -691,9 +672,7 @@ TagResource -> arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world
         const output = context.stdout.toString()
         expect(code).toBe(1)
         expect(output).toMatchInlineSnapshot(`
-                                                            "${red(
-                                                              '[Error]'
-                                                            )} No functions specified for instrumentation.
+                                                            "[Error] No functions specified for instrumentation.
                                                             "
                                                 `)
       })
@@ -713,9 +692,7 @@ TagResource -> arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world
         await command['execute']()
         const output = command.context.stdout.toString()
         expect(output).toMatchInlineSnapshot(`
-                                                            "${red(
-                                                              '[Error]'
-                                                            )} No functions specified for instrumentation.
+                                                            "[Error] No functions specified for instrumentation.
                                                             "
                                                 `)
       })
@@ -788,9 +765,7 @@ TagResource -> arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world
         const output = context.stdout.toString()
         expect(code).toBe(1)
         expect(output).toMatchInlineSnapshot(`
-                                                  "${red(
-                                                    '[Error]'
-                                                  )} Couldn't fetch Lambda functions. Error: Can't instrument arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world, as current State is Failed (must be \\"Active\\") and Last Update Status is Unsuccessful (must be \\"Successful\\")
+                                                  "[Error] Couldn't fetch Lambda functions. Error: Can't instrument arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world, as current State is Failed (must be \\"Active\\") and Last Update Status is Unsuccessful (must be \\"Successful\\")
                                                   "
                                         `)
       })
@@ -824,7 +799,7 @@ TagResource -> arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world
         const output = context.stdout.toString()
         expect(code).toBe(1)
         expect(output).toMatchInlineSnapshot(`
-          "${red('[Error]')} \\"extensionVersion\\" and \\"forwarder\\" should not be used at the same time.
+          "[Error] \\"extensionVersion\\" and \\"forwarder\\" should not be used at the same time.
           "
         `)
       })
@@ -881,7 +856,7 @@ TagResource -> arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world
         command['regExPattern'] = 'valid-pattern'
         await command['execute']()
         const output = command.context.stdout.toString()
-        expect(output).toMatch(`${red('[Error]')} No default region specified. Use \`-r\`, \`--region\`.\n`)
+        expect(output).toMatch('[Error] No default region specified. Use `-r`, `--region`.\n')
       })
       test('aborts if the regEx pattern is an ARN', async () => {
         ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({}))
@@ -967,33 +942,17 @@ TagResource -> arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world
         const output = context.stdout.toString()
         expect(code).toBe(0)
         expect(output).toMatchInlineSnapshot(`
-"${bold(
-          yellow('[!]')
-        )} No AWS credentials found, let's set them up! Or you can re-run the command and supply the AWS credentials in the same way when you invoke the AWS CLI.
-${bold(yellow('[!]'))} Configure AWS region.
-${bold(yellow('[!]'))} Configure Datadog settings.
+"[!] No AWS credentials found, let's set them up! Or you can re-run the command and supply the AWS credentials in the same way when you invoke the AWS CLI.
+[!] Configure AWS region.
+[!] Configure Datadog settings.
 Fetching Lambda functions, this might take a while.
-${bold(
-  yellow('[Warning]')
-)} The environment, service and version tags have not been configured. Learn more about Datadog unified service tagging: ${underline(
-          blueBright(
-            'https://docs.datadoghq.com/getting_started/tagging/unified_service_tagging/#serverless-environment.'
-          )
-        )}
-${bold(yellow('[Warning]'))} Instrument your ${hex('#FF9900').bold(
-          'Lambda'
-        )} functions in a dev or staging environment first. Should the instrumentation result be unsatisfactory, run \`${bold(
-          'uninstrument'
-        )}\` with the same arguments to revert the changes.\n
-${bold(yellow('[!]'))} Functions to be updated:
-\t- ${bold('arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world')}
-\t${bold(
-          yellow('[Warning]')
-        )} At least one latest layer version is being used. Ensure to lock in versions for production applications using \`--layerVersion\` and \`--extensionVersion\`.
-\t- ${bold('arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world-2')}
-\t${bold(
-          yellow('[Warning]')
-        )} At least one latest layer version is being used. Ensure to lock in versions for production applications using \`--layerVersion\` and \`--extensionVersion\`.\n
+[Warning] The environment, service and version tags have not been configured. Learn more about Datadog unified service tagging: https://docs.datadoghq.com/getting_started/tagging/unified_service_tagging/#serverless-environment.
+[Warning] Instrument your Lambda functions in a dev or staging environment first. Should the instrumentation result be unsatisfactory, run \`uninstrument\` with the same arguments to revert the changes.\n
+[!] Functions to be updated:
+\t- arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world
+\t[Warning] At least one latest layer version is being used. Ensure to lock in versions for production applications using \`--layerVersion\` and \`--extensionVersion\`.
+\t- arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world-2
+\t[Warning] At least one latest layer version is being used. Ensure to lock in versions for production applications using \`--layerVersion\` and \`--extensionVersion\`.\n
 Will apply the following updates:
 UpdateFunctionConfiguration -> arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world
 {
@@ -1043,8 +1002,8 @@ TagResource -> arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world
 {
   \\"dd_sls_ci\\": \\"v${version}\\"
 }
-${yellow('[!]')} Confirmation needed.
-${yellow('[!]')} Instrumenting functions.
+[!] Confirmation needed.
+[!] Instrumenting functions.
 "
 `)
       })
@@ -1126,32 +1085,16 @@ ${yellow('[!]')} Instrumenting functions.
         const output = context.stdout.toString()
         expect(code).toBe(0)
         expect(output).toMatchInlineSnapshot(`
-"${bold(
-          yellow('[!]')
-        )} No AWS credentials found, let's set them up! Or you can re-run the command and supply the AWS credentials in the same way when you invoke the AWS CLI.
-${bold(yellow('[!]'))} Configure AWS region.
-${bold(yellow('[!]'))} Configure Datadog settings.
-${bold(
-  yellow('[Warning]')
-)} The environment, service and version tags have not been configured. Learn more about Datadog unified service tagging: ${underline(
-          blueBright(
-            'https://docs.datadoghq.com/getting_started/tagging/unified_service_tagging/#serverless-environment.'
-          )
-        )}
-${bold(yellow('[Warning]'))} Instrument your ${hex('#FF9900').bold(
-          'Lambda'
-        )} functions in a dev or staging environment first. Should the instrumentation result be unsatisfactory, run \`${bold(
-          'uninstrument'
-        )}\` with the same arguments to revert the changes.\n
-${bold(yellow('[!]'))} Functions to be updated:
-\t- ${bold('arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world')}
-\t${bold(
-          yellow('[Warning]')
-        )} At least one latest layer version is being used. Ensure to lock in versions for production applications using \`--layerVersion\` and \`--extensionVersion\`.
-\t- ${bold('arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world-2')}
-\t${bold(
-          yellow('[Warning]')
-        )} At least one latest layer version is being used. Ensure to lock in versions for production applications using \`--layerVersion\` and \`--extensionVersion\`.\n
+"[!] No AWS credentials found, let's set them up! Or you can re-run the command and supply the AWS credentials in the same way when you invoke the AWS CLI.
+[!] Configure AWS region.
+[!] Configure Datadog settings.
+[Warning] The environment, service and version tags have not been configured. Learn more about Datadog unified service tagging: https://docs.datadoghq.com/getting_started/tagging/unified_service_tagging/#serverless-environment.
+[Warning] Instrument your Lambda functions in a dev or staging environment first. Should the instrumentation result be unsatisfactory, run \`uninstrument\` with the same arguments to revert the changes.\n
+[!] Functions to be updated:
+\t- arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world
+\t[Warning] At least one latest layer version is being used. Ensure to lock in versions for production applications using \`--layerVersion\` and \`--extensionVersion\`.
+\t- arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world-2
+\t[Warning] At least one latest layer version is being used. Ensure to lock in versions for production applications using \`--layerVersion\` and \`--extensionVersion\`.\n
 Will apply the following updates:
 UpdateFunctionConfiguration -> arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world
 {
@@ -1201,8 +1144,8 @@ TagResource -> arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world
 {
   \\"dd_sls_ci\\": \\"v${version}\\"
 }
-${yellow('[!]')} Confirmation needed.
-${yellow('[!]')} Instrumenting functions.
+[!] Confirmation needed.
+[!] Instrumenting functions.
 "
 `)
       })
@@ -1216,10 +1159,8 @@ ${yellow('[!]')} Instrumenting functions.
         const output = context.stdout.toString()
         expect(code).toBe(1)
         expect(output).toMatchInlineSnapshot(`
-"${bold(
-          yellow('[!]')
-        )} No AWS credentials found, let's set them up! Or you can re-run the command and supply the AWS credentials in the same way when you invoke the AWS CLI.
-${red('[Error]')} Unexpected error
+"[!] No AWS credentials found, let's set them up! Or you can re-run the command and supply the AWS credentials in the same way when you invoke the AWS CLI.
+[Error] Unexpected error
 "
 `)
       })
@@ -1238,9 +1179,9 @@ ${red('[Error]')} Unexpected error
         const output = context.stdout.toString()
         expect(code).toBe(1)
         expect(output).toMatchInlineSnapshot(`
-"${bold(yellow('[!]'))} Configure AWS region.
-${bold(yellow('[!]'))} Configure Datadog settings.
-${red('[Error]')} Unexpected error
+"[!] Configure AWS region.
+[!] Configure Datadog settings.
+[Error] Unexpected error
 "
 `)
       })
@@ -1296,23 +1237,15 @@ ${red('[Error]')} Unexpected error
         const output = context.stdout.toString()
         expect(code).toBe(0)
         expect(output).toMatchInlineSnapshot(`
-"${bold(
-          yellow('[!]')
-        )} No AWS credentials found, let's set them up! Or you can re-run the command and supply the AWS credentials in the same way when you invoke the AWS CLI.
-${bold(yellow('[!]'))} Configure AWS region.
-${bold(yellow('[!]'))} Configure Datadog settings.
+"[!] No AWS credentials found, let's set them up! Or you can re-run the command and supply the AWS credentials in the same way when you invoke the AWS CLI.
+[!] Configure AWS region.
+[!] Configure Datadog settings.
 Fetching Lambda functions, this might take a while.
-${bold(yellow('[Warning]'))} Instrument your ${hex('#FF9900').bold(
-          'Lambda'
-        )} functions in a dev or staging environment first. Should the instrumentation result be unsatisfactory, run \`${bold(
-          'uninstrument'
-        )}\` with the same arguments to revert the changes.
+[Warning] Instrument your Lambda functions in a dev or staging environment first. Should the instrumentation result be unsatisfactory, run \`uninstrument\` with the same arguments to revert the changes.
 
-${bold(yellow('[!]'))} Functions to be updated:
-\t- ${bold('arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world')}
-\t${bold(
-          yellow('[Warning]')
-        )} At least one latest layer version is being used. Ensure to lock in versions for production applications using \`--layerVersion\` and \`--extensionVersion\`.
+[!] Functions to be updated:
+\t- arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world
+\t[Warning] At least one latest layer version is being used. Ensure to lock in versions for production applications using \`--layerVersion\` and \`--extensionVersion\`.
 
 Will apply the following updates:
 UpdateFunctionConfiguration -> arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world
@@ -1342,8 +1275,8 @@ TagResource -> arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world
 {
   \\"dd_sls_ci\\": \\"v${version}\\"
 }
-${yellow('[!]')} Confirmation needed.
-${yellow('[!]')} Instrumenting functions.
+[!] Confirmation needed.
+[!] Instrumenting functions.
 "
 `)
       })
@@ -1399,30 +1332,16 @@ ${yellow('[!]')} Instrumenting functions.
         const output = context.stdout.toString()
         expect(code).toBe(0)
         expect(output).toMatchInlineSnapshot(`
-"${bold(
-          yellow('[!]')
-        )} No AWS credentials found, let's set them up! Or you can re-run the command and supply the AWS credentials in the same way when you invoke the AWS CLI.
-${bold(yellow('[!]'))} Configure AWS region.
-${bold(yellow('[!]'))} Configure Datadog settings.
+"[!] No AWS credentials found, let's set them up! Or you can re-run the command and supply the AWS credentials in the same way when you invoke the AWS CLI.
+[!] Configure AWS region.
+[!] Configure Datadog settings.
 Fetching Lambda functions, this might take a while.
-${bold(
-  yellow('[Warning]')
-)} The environment, service and version tags have not been configured. Learn more about Datadog unified service tagging: ${underline(
-          blueBright(
-            'https://docs.datadoghq.com/getting_started/tagging/unified_service_tagging/#serverless-environment.'
-          )
-        )}
-${bold(yellow('[Warning]'))} Instrument your ${hex('#FF9900').bold(
-          'Lambda'
-        )} functions in a dev or staging environment first. Should the instrumentation result be unsatisfactory, run \`${bold(
-          'uninstrument'
-        )}\` with the same arguments to revert the changes.
+[Warning] The environment, service and version tags have not been configured. Learn more about Datadog unified service tagging: https://docs.datadoghq.com/getting_started/tagging/unified_service_tagging/#serverless-environment.
+[Warning] Instrument your Lambda functions in a dev or staging environment first. Should the instrumentation result be unsatisfactory, run \`uninstrument\` with the same arguments to revert the changes.
 
-${bold(yellow('[!]'))} Functions to be updated:
-\t- ${bold('arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world')}
-\t${bold(
-          yellow('[Warning]')
-        )} At least one latest layer version is being used. Ensure to lock in versions for production applications using \`--layerVersion\` and \`--extensionVersion\`.
+[!] Functions to be updated:
+\t- arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world
+\t[Warning] At least one latest layer version is being used. Ensure to lock in versions for production applications using \`--layerVersion\` and \`--extensionVersion\`.
 
 Will apply the following updates:
 UpdateFunctionConfiguration -> arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world
@@ -1449,8 +1368,8 @@ TagResource -> arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world
 {
   \\"dd_sls_ci\\": \\"v${version}\\"
 }
-${yellow('[!]')} Confirmation needed.
-${yellow('[!]')} Instrumenting functions.
+[!] Confirmation needed.
+[!] Instrumenting functions.
 "
 `)
       })
@@ -1471,9 +1390,9 @@ ${yellow('[!]')} Instrumenting functions.
         const output = context.stdout.toString()
         expect(code).toBe(1)
         expect(output).toMatchInlineSnapshot(`
-"${bold(yellow('[!]'))} Configure AWS region.
+"[!] Configure AWS region.
 Fetching Lambda functions, this might take a while.
-${red('[Error]')} Couldn't find any Lambda functions in the specified region.
+[Error] Couldn't find any Lambda functions in the specified region.
 "
 `)
       })
@@ -1497,9 +1416,9 @@ ${red('[Error]')} Couldn't find any Lambda functions in the specified region.
         const output = context.stdout.toString()
         expect(code).toBe(1)
         expect(output).toMatchInlineSnapshot(`
-"${bold(yellow('[!]'))} Configure AWS region.
+"[!] Configure AWS region.
 Fetching Lambda functions, this might take a while.
-${red('[Error]')} Couldn't fetch Lambda functions. Error: Max retry count exceeded. ListFunctionsError
+[Error] Couldn't fetch Lambda functions. Error: Max retry count exceeded. ListFunctionsError
 "
 `)
       })
@@ -1541,9 +1460,7 @@ ${red('[Error]')} Couldn't fetch Lambda functions. Error: Max retry count exceed
         const output = context.stdout.toString()
         expect(code).toBe(1)
         expect(output).toMatchInlineSnapshot(`
-"${red(
-          '[Error]'
-        )} Couldn't fetch Lambda functions. Error: Only the --extension-version argument should be set for the ruby2.7 runtime. Please remove the --layer-version argument from the instrument command.
+"[Error] Couldn't fetch Lambda functions. Error: Only the --extension-version argument should be set for the ruby2.7 runtime. Please remove the --layer-version argument from the instrument command.
 "
 `)
       })
@@ -1585,9 +1502,7 @@ ${red('[Error]')} Couldn't fetch Lambda functions. Error: Max retry count exceed
         const output = context.stdout.toString()
         expect(code).toBe(1)
         expect(output).toMatchInlineSnapshot(`
-"${red(
-          '[Error]'
-        )} Couldn't fetch Lambda functions. Error: Only the --extension-version argument should be set for the provided.al2 runtime. Please remove the --layer-version argument from the instrument command.
+"[Error] Couldn't fetch Lambda functions. Error: Only the --extension-version argument should be set for the provided.al2 runtime. Please remove the --layer-version argument from the instrument command.
 "
 `)
       })
@@ -1630,9 +1545,7 @@ ${red('[Error]')} Couldn't fetch Lambda functions. Error: Max retry count exceed
         const output = context.stdout.toString()
         expect(code).toBe(1)
         expect(output).toMatchInlineSnapshot(`
-"${red(
-          '[Error]'
-        )} Couldn't fetch Lambda functions. Error: Instrumenting arm64 architecture is not supported for the given dd-extension version. Please choose the latest dd-extension version or use x86_64 architecture.
+"[Error] Couldn't fetch Lambda functions. Error: Instrumenting arm64 architecture is not supported for the given dd-extension version. Please choose the latest dd-extension version or use x86_64 architecture.
 "
 `)
       })
@@ -1804,13 +1717,7 @@ ${red('[Error]')} Couldn't fetch Lambda functions. Error: Max retry count exceed
         await command['getSettings']()
         let output = command.context.stdout.toString()
         expect(output).toMatch(
-          `${bold(
-            yellow('[Warning]')
-          )} The environment, service and version tags have not been configured. Learn more about Datadog unified service tagging: ${underline(
-            blueBright(
-              'https://docs.datadoghq.com/getting_started/tagging/unified_service_tagging/#serverless-environment.'
-            )
-          )}\n`
+          '[Warning] The environment, service and version tags have not been configured. Learn more about Datadog unified service tagging: https://docs.datadoghq.com/getting_started/tagging/unified_service_tagging/#serverless-environment.\n'
         )
 
         command = createCommand(InstrumentCommand)
@@ -1821,13 +1728,7 @@ ${red('[Error]')} Couldn't fetch Lambda functions. Error: Max retry count exceed
         await command['getSettings']()
         output = command.context.stdout.toString()
         expect(output).toMatch(
-          `${bold(
-            yellow('[Warning]')
-          )} The version tag has not been configured. Learn more about Datadog unified service tagging: ${underline(
-            blueBright(
-              'https://docs.datadoghq.com/getting_started/tagging/unified_service_tagging/#serverless-environment.'
-            )
-          )}\n`
+          '[Warning] The version tag has not been configured. Learn more about Datadog unified service tagging: https://docs.datadoghq.com/getting_started/tagging/unified_service_tagging/#serverless-environment.\n'
         )
       })
 
@@ -1879,13 +1780,9 @@ ${red('[Error]')} Couldn't fetch Lambda functions. Error: Max retry count exceed
         ])
         const output = command.context.stdout.toString()
         expect(output).toMatchInlineSnapshot(`
-"${bold(yellow('[Warning]'))} Instrument your ${hex('#FF9900').bold(
-          'Lambda'
-        )} functions in a dev or staging environment first. Should the instrumentation result be unsatisfactory, run \`${bold(
-          'uninstrument'
-        )}\` with the same arguments to revert the changes.
-\n${bold(yellow('[!]'))} Functions to be updated:
-\t- ${bold('my-func')}\n
+"[Warning] Instrument your Lambda functions in a dev or staging environment first. Should the instrumentation result be unsatisfactory, run \`uninstrument\` with the same arguments to revert the changes.
+\n[!] Functions to be updated:
+\t- my-func\n
 Will apply the following updates:
 CreateLogGroup -> my-log-group
 {
