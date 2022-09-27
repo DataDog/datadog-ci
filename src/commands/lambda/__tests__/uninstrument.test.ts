@@ -166,7 +166,7 @@ UpdateFunctionConfiguration -> arn:aws:lambda:us-east-1:000000000000:function:un
       const code = await command['execute']()
       const output = command.context.stdout.toString()
       expect(code).toBe(1)
-      expect(output).toMatch(`[Error] Couldn't fetch Lambda functions. Lambda failed\n`)
+      expect(output).toMatch("[Error] Couldn't fetch Lambda functions. Lambda failed\n")
     })
     test("aborts early when function regions can't be found", async () => {
       ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({code: 'ENOENT'}))
@@ -267,7 +267,7 @@ UpdateFunctionConfiguration -> arn:aws:lambda:us-east-1:000000000000:function:un
       const output = command.context.stdout.toString()
       expect(code).toBe(1)
       expect(output).toMatch(
-        `Fetching Lambda functions, this might take a while.\n[Error] Couldn't fetch Lambda functions. Error: Max retry count exceeded. ListFunctionsError\n`
+        "Fetching Lambda functions, this might take a while.\n[Error] Couldn't fetch Lambda functions. Error: Max retry count exceeded. ListFunctionsError\n"
       )
     })
 
