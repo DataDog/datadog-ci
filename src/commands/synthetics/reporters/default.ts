@@ -20,6 +20,7 @@ import {
   getResultOutcome,
   getResultUrl,
   isDeviceIdSet,
+  pluralize,
   readableOperation,
   ResultOutcome,
 } from '../utils'
@@ -85,7 +86,7 @@ const renderApiError = (errorCode: string, errorMessage: string, color: chalk.Ch
   if (errorCode === 'INCORRECT_ASSERTION') {
     try {
       const assertionsErrors: Assertion[] = JSON.parse(errorMessage)
-      const output = ['  - Assertion(s) failed:']
+      const output = [`  - ${pluralize('Assertion', assertionsErrors.length)} failed:`]
       output.push(
         ...assertionsErrors.map((error) => {
           const expected = chalk.underline(`${error.target}`)
@@ -373,5 +374,3 @@ export class DefaultReporter implements MainReporter {
     return
   }
 }
-
-const pluralize = (word: string, count: number): string => (count === 1 ? word : `${word}s`)

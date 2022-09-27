@@ -813,3 +813,5 @@ export const getDatadogHost = (useIntake = false, config: SyntheticsCIConfig) =>
 
   return `${host}/${apiPath}`
 }
+
+export const pluralize = (word: string, count: number): string => (count === 1 ? word : `${word}s`)

@@ -23,6 +23,7 @@ import {
   getResultOutcome,
   getResultUrl,
   isDeviceIdSet,
+  pluralize,
   readableOperation,
   ResultOutcome,
 } from '../utils'
@@ -118,7 +119,7 @@ const renderApiError = (errorCode: string, errorMessage: string) => {
   if (errorCode === 'INCORRECT_ASSERTION') {
     try {
       const assertionsErrors: Assertion[] = JSON.parse(errorMessage)
-      const output = ['- Assertion(s) failed:']
+      const output = [`- ${pluralize('Assertion', assertionsErrors.length)} failed:`]
       output.push(
         ...assertionsErrors.map((error) => {
           const expected = error.target
