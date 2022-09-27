@@ -154,18 +154,6 @@ export const getDefaultSuiteStats = (): SuiteStats => ({
   tests: 0,
 })
 
-// Return the stats from a given object
-// based on getDefaultSuiteStats
-const getStats = (obj: XMLSuiteProperties): SuiteStats => {
-  const baseStats = getDefaultSuiteStats()
-  for (const entry of Object.entries(obj)) {
-    const [key, value] = entry as [keyof SuiteStats, number]
-    baseStats[key] = value || baseStats[key]
-  }
-
-  return baseStats
-}
-
 export class JUnitReporter implements Reporter {
   private builder: Builder
   private destination: string
@@ -199,29 +187,19 @@ export class JUnitReporter implements Reporter {
   }
 
   public resultEnd(result: Result, baseUrl: string) {
-    const suiteName = result.test.suite || 'Undefined suite'
-    let suite = this.json.testsuites.testsuite.find((element: XMLSuite) => element.$.name === suiteName)
-
-    if (!suite) {
-      suite = {
-        $: {name: suiteName, ...getDefaultSuiteStats()},
-        testcase: [],
-      }
-      this.json.testsuites.testsuite.push(suite as XMLSuite)
-    }
-
+    const suite = this.getSuiteByName(result.test.suite)
     const testCase = this.getTestCase(result, baseUrl)
 
     // Errors and failures cannot co-exist: GitLab will always choose failures over errors.
     // The icon in the Status column will depend on this choice, and only the list of what is chosen will be displayed in the "System output".
-    const errorsOrFailures =
+    const errorOrFailure =
       result.executionRule === ExecutionRule.NON_BLOCKING
         ? testCase.error // ❗️
         : testCase.failure // ❌
 
     // Timeout errors are only reported at the top level.
     if (result.timedOut) {
-      errorsOrFailures.push({
+      errorOrFailure.push({
         $: {type: 'timeout'},
         _: String(result.result.failure?.message),
       })
@@ -229,32 +207,26 @@ export class JUnitReporter implements Reporter {
     if ('stepDetails' in result.result) {
       // It's a browser test.
       for (const stepDetail of result.result.stepDetails) {
-        const {allowed_error, browser_error, error, warning} = this.getBrowserTestErrors(stepDetail)
-        testCase.allowed_error.push(...allowed_error)
-        testCase.browser_error.push(...browser_error)
-        errorsOrFailures.push(...error)
-        testCase.warning.push(...warning)
+        const {allowedErrors, browserErrors, errors, warnings} = this.getBrowserTestErrors(stepDetail)
+        testCase.allowed_error.push(...allowedErrors)
+        testCase.browser_error.push(...browserErrors)
+        errorOrFailure.push(...errors)
+        testCase.warning.push(...warnings)
       }
     } else if ('steps' in result.result) {
       // It's a multistep test.
       for (const step of result.result.steps) {
-        const {allowed_error, error} = this.getMultiStepTestErrors(step)
-        testCase.allowed_error.push(...allowed_error)
-        errorsOrFailures.push(...error)
+        const {allowedErrors, errors} = this.getMultiStepTestErrors(step)
+        testCase.allowed_error.push(...allowedErrors)
+        errorOrFailure.push(...errors)
       }
     } else {
       // It's an api test.
-      const {error} = this.getApiTestErrors(result)
-      errorsOrFailures.push(...error)
+      const {errors} = this.getApiTestErrors(result)
+      errorOrFailure.push(...errors)
     }
 
-    // Update stats for the suite.
-    suite.$ = {
-      ...suite.$,
-      ...this.getSuiteStats(testCase, getStats(suite.$)),
-    }
-
-    suite.testcase.push(testCase)
+    this.addTestCaseToSuite(suite, testCase)
   }
 
   public async runEnd(summary: Summary, baseUrl: string) {
@@ -288,24 +260,21 @@ export class JUnitReporter implements Reporter {
       return
     }
 
-    const suiteName = test.suite || 'Undefined suite'
-    let suite = this.json.testsuites.testsuite.find((element: XMLSuite) => element.$.name === suiteName)
-
-    if (!suite) {
-      suite = {
-        $: {name: suiteName, ...getDefaultSuiteStats()},
-        testcase: [],
-      }
-      this.json.testsuites.testsuite.push(suite as XMLSuite)
-    }
-
+    const suite = this.getSuiteByName(test.suite)
     const testCase = this.getSkippedTestCase(test)
+
     testCase.skipped.push('This test was skipped because of its execution rule configuration in Datadog')
 
-    // Update stats for the suite.
+    this.addTestCaseToSuite(suite, testCase)
+  }
+
+  private addTestCaseToSuite(suite: XMLSuite, testCase: XMLTestCase): void {
     suite.$ = {
-      ...suite.$,
-      ...this.getSuiteStats(testCase, getStats(suite.$)),
+      errors: suite.$.errors + testCase.error.length,
+      failures: suite.$.failures + testCase.failure.length,
+      name: suite.$.name,
+      skipped: suite.$.skipped + testCase.skipped.length,
+      tests: suite.$.tests + 1,
     }
 
     suite.testcase.push(testCase)
@@ -332,20 +301,19 @@ export class JUnitReporter implements Reporter {
     }
   }
 
-  private getApiTestErrors(result: Result): {error: XMLError[]} {
-    const error = []
+  private getApiTestErrors(result: Result): {errors: XMLError[]} {
+    const errors = []
 
     if (result.result.failure) {
       const xmlError = {
         $: {type: result.result.failure.code, step: result.test.name},
         _: renderApiError(result.result.failure.code, result.result.failure.message),
       }
-      error.push(xmlError)
+
+      errors.push(xmlError)
     }
 
-    return {
-      error,
-    }
+    return {errors}
   }
 
   private getBrowserStepStats(step: Step): TestCaseStats {
@@ -363,13 +331,19 @@ export class JUnitReporter implements Reporter {
 
   private getBrowserTestErrors(
     stepDetail: Step
-  ): {allowed_error: XMLError[]; browser_error: XMLError[]; error: XMLError[]; warning: XMLError[]} {
-    const allowedError = []
-    const browserError = []
-    const error = []
-    const warning = []
+  ): {
+    allowedErrors: XMLError[]
+    browserErrors: XMLError[]
+    errors: XMLError[]
+    warnings: XMLError[]
+  } {
+    const allowedErrors = []
+    const browserErrors = []
+    const errors = []
+    const warnings = []
+
     if (stepDetail.browserErrors?.length) {
-      browserError.push(
+      browserErrors.push(
         ...stepDetail.browserErrors.map((e) => ({
           $: {type: e.type, name: e.name, step: stepDetail.description},
           _: e.description,
@@ -382,15 +356,16 @@ export class JUnitReporter implements Reporter {
         $: {type: 'assertion', step: stepDetail.description, allowFailure: `${stepDetail.allowFailure}`},
         _: stepDetail.error,
       }
+
       if (stepDetail.allowFailure) {
-        allowedError.push(xmlError)
+        allowedErrors.push(xmlError)
       } else {
-        error.push(xmlError)
+        errors.push(xmlError)
       }
     }
 
     if (stepDetail.warnings?.length) {
-      warning.push(
+      warnings.push(
         ...stepDetail.warnings.map((w) => ({
           $: {type: w.type, step: stepDetail.description},
           _: w.message,
@@ -398,34 +373,27 @@ export class JUnitReporter implements Reporter {
       )
     }
 
-    return {
-      allowed_error: allowedError,
-      browser_error: browserError,
-      error,
-      warning,
-    }
+    return {allowedErrors, browserErrors, errors, warnings}
   }
 
-  private getMultiStepTestErrors(step: MultiStep): {allowed_error: XMLError[]; error: XMLError[]} {
-    const allowedError = []
-    const error = []
+  private getMultiStepTestErrors(step: MultiStep): {allowedErrors: XMLError[]; errors: XMLError[]} {
+    const allowedErrors = []
+    const errors = []
 
     if (step.failure) {
       const xmlError = {
         $: {type: step.failure.code, step: step.name, allowFailure: `${step.allowFailure}`},
         _: renderApiError(step.failure.code, step.failure.message),
       }
+
       if (step.allowFailure) {
-        allowedError.push(xmlError)
+        allowedErrors.push(xmlError)
       } else {
-        error.push(xmlError)
+        errors.push(xmlError)
       }
     }
 
-    return {
-      allowed_error: allowedError,
-      error,
-    }
+    return {allowedErrors, errors}
   }
 
   private getSkippedTestCase(test: Test): XMLTestCase {
@@ -462,14 +430,21 @@ export class JUnitReporter implements Reporter {
     }
   }
 
-  // Update the current stats of a suite based on the processed test case.
-  private getSuiteStats(testCase: XMLTestCase, current: SuiteStats = getDefaultSuiteStats()): SuiteStats {
-    current.tests += 1
-    current.errors += testCase.error.length
-    current.failures += testCase.failure.length
-    current.skipped += testCase.skipped.length
+  private getSuiteByName(suiteName = 'Undefined suite'): XMLSuite {
+    const existingSuite = this.json.testsuites.testsuite.find((element) => element.$.name === suiteName)
 
-    return current
+    if (!existingSuite) {
+      const suite: XMLSuite = {
+        $: {name: suiteName, ...getDefaultSuiteStats()},
+        testcase: [],
+      }
+
+      this.json.testsuites.testsuite.push(suite)
+
+      return suite
+    }
+
+    return existingSuite
   }
 
   private getTestCase(result: Result, baseUrl: string): XMLTestCase {
@@ -529,8 +504,7 @@ export class JUnitReporter implements Reporter {
     }
   }
 
-  // Update the current stats of a test case based on the processed result.
-  private getTestCaseStats(result: Result, current: TestCaseStats = getDefaultTestCaseStats()): TestCaseStats {
+  private getTestCaseStats(result: Result): TestCaseStats {
     let stepsStats: TestCaseStats[] = []
     if ('stepDetails' in result.result) {
       // It's a browser test.
@@ -551,15 +525,17 @@ export class JUnitReporter implements Reporter {
       stepsStats = [this.getApiStepStats(result.result)]
     }
 
+    const stats = getDefaultTestCaseStats()
+
     for (const stepStats of stepsStats) {
-      current.steps_count += stepStats.steps_count
-      current.steps_errors += stepStats.steps_errors
-      current.steps_failures += stepStats.steps_failures
-      current.steps_skipped = current.steps_skipped + stepStats.steps_skipped
-      current.steps_allowfailures += stepStats.steps_allowfailures
-      current.steps_warnings += stepStats.steps_warnings
+      stats.steps_count += stepStats.steps_count
+      stats.steps_errors += stepStats.steps_errors
+      stats.steps_failures += stepStats.steps_failures
+      stats.steps_skipped += stepStats.steps_skipped
+      stats.steps_allowfailures += stepStats.steps_allowfailures
+      stats.steps_warnings += stepStats.steps_warnings
     }
 
-    return current
+    return stats
   }
 }
