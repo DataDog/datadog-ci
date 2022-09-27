@@ -57,7 +57,7 @@ describe('Junit reporter', () => {
     })
 
     it('should build the xml', async () => {
-      await reporter.runEnd(globalSummaryMock, MOCK_BASE_URL)
+      await reporter.runEnd(globalSummaryMock, '')
       expect(reporter['builder'].buildObject).toHaveBeenCalledWith(reporter['json'])
       expect(fs.writeFile).toHaveBeenCalledWith('junit.xml', expect.any(String), 'utf8')
       expect(writeMock).toHaveBeenCalledTimes(1)
@@ -71,7 +71,7 @@ describe('Junit reporter', () => {
         throw new Error('Fail')
       })
 
-      await reporter.runEnd(globalSummaryMock, MOCK_BASE_URL)
+      await reporter.runEnd(globalSummaryMock, '')
 
       expect(fs.writeFile).not.toHaveBeenCalled()
       expect(writeMock).toHaveBeenCalledTimes(1)
@@ -79,7 +79,7 @@ describe('Junit reporter', () => {
 
     it('should create the file', async () => {
       reporter['destination'] = 'junit/report.xml'
-      await reporter.runEnd(globalSummaryMock, MOCK_BASE_URL)
+      await reporter.runEnd(globalSummaryMock, '')
       const stat = await fs.stat(reporter['destination'])
       expect(stat).toBeDefined()
 
@@ -91,7 +91,7 @@ describe('Junit reporter', () => {
     it('should not throw on existing directory', async () => {
       await fs.mkdir('junit')
       reporter['destination'] = 'junit/report.xml'
-      await reporter.runEnd(globalSummaryMock, MOCK_BASE_URL)
+      await reporter.runEnd(globalSummaryMock, '')
 
       // Cleaning
       await fs.unlink(reporter['destination'])

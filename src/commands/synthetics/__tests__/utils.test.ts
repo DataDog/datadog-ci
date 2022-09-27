@@ -435,7 +435,7 @@ describe('utils', () => {
   describe('hasResultPassed', () => {
     test('complete result', () => {
       const result: ServerResult = {
-        device: {height: 0, id: 'laptop_large', width: 0},
+        device: {height: 1100, id: 'chrome.laptop_large', width: 1440},
         duration: 0,
         passed: true,
         startUrl: '',
@@ -450,7 +450,7 @@ describe('utils', () => {
 
     test('result with error', () => {
       const result: ServerResult = {
-        device: {height: 0, id: 'laptop_large', width: 0},
+        device: {height: 1100, id: 'chrome.laptop_large', width: 1440},
         duration: 0,
         failure: {
           code: 'ERRABORTED',
@@ -466,7 +466,7 @@ describe('utils', () => {
 
     test('result with unhealthy result', () => {
       const result: ServerResult = {
-        device: {height: 0, id: 'laptop_large', width: 0},
+        device: {height: 1100, id: 'chrome.laptop_large', width: 1440},
         duration: 0,
         failure: {
           code: 'ERRABORTED',
@@ -483,7 +483,7 @@ describe('utils', () => {
 
     test('result with timeout result', () => {
       const result: ServerResult = {
-        device: {height: 0, id: 'laptop_large', width: 0},
+        device: {height: 1100, id: 'chrome.laptop_large', width: 1440},
         duration: 0,
         passed: false,
         startUrl: '',
