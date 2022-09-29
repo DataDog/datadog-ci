@@ -1,6 +1,7 @@
 import {stringify} from 'querystring'
 
 import {AxiosError, AxiosPromise, AxiosRequestConfig} from 'axios'
+import FormData from 'form-data'
 
 import {getRequestBuilder} from '../../helpers/utils'
 
@@ -11,6 +12,7 @@ import {
   Batch,
   Payload,
   PollResult,
+  PresignedUrlResponse,
   ServerBatch,
   ServerTest,
   SyntheticsCIConfig,
@@ -142,15 +144,12 @@ const getTunnelPresignedURL = (request: (args: AxiosRequestConfig) => AxiosPromi
 }
 
 const getMobileApplicationPresignedURL = (
-  request: (args: AxiosRequestConfig) => AxiosPromise<{file_name: string; presigned_url_params: string}>
+  request: (args: AxiosRequestConfig) => AxiosPromise<PresignedUrlResponse>
 ) => async (applicationId: string, md5: string) => {
   const resp = await retryRequest(
     {
+      data: {md5},
       method: 'POST',
-      params: {
-        md5,
-      },
-      paramsSerializer: (params) => stringify(params),
       url: `/synthetics/mobile/applications/${applicationId}/presigned-url`,
     },
     request
@@ -161,13 +160,22 @@ const getMobileApplicationPresignedURL = (
 
 const uploadMobileApplication = (request: (args: AxiosRequestConfig) => AxiosPromise<void>) => async (
   fileBuffer: Buffer,
-  presignedUrl: string
+  presignedUrlParams: PresignedUrlResponse['presigned_url_params']
 ) => {
+  const form = new FormData()
+  Object.entries(presignedUrlParams.fields).forEach(([key, value]) => {
+    form.append(key, value)
+  })
+  form.append('file', fileBuffer)
+
   await retryRequest(
     {
-      data: fileBuffer,
+      data: form,
+      headers: {...form.getHeaders(), 'Content-Length': form.getLengthSync()},
+      maxBodyLength: Infinity,
+      maxContentLength: Infinity,
       method: 'POST',
-      url: presignedUrl,
+      url: presignedUrlParams.url,
     },
     request
   )
@@ -212,14 +220,15 @@ const retryRequest = <T>(
 ) => retry(() => request(args), retryPolicy)
 
 export const apiConstructor = (configuration: APIConfiguration) => {
-  const {baseUrl, baseIntakeUrl, apiKey, appKey, proxyOpts} = configuration
+  const {baseUrl, baseIntakeUrl, baseUnstableUrl, apiKey, appKey, proxyOpts} = configuration
   const baseOptions = {apiKey, appKey, proxyOpts}
   const request = getRequestBuilder({...baseOptions, baseUrl})
+  const requestUnstable = getRequestBuilder({...baseOptions, baseUrl: baseUnstableUrl})
   const requestIntake = getRequestBuilder({...baseOptions, baseUrl: baseIntakeUrl})
 
   return {
     getBatch: getBatch(request),
-    getMobileApplicationPresignedURL: getMobileApplicationPresignedURL(request),
+    getMobileApplicationPresignedURL: getMobileApplicationPresignedURL(requestUnstable),
     getTest: getTest(request),
     getTunnelPresignedURL: getTunnelPresignedURL(requestIntake),
     pollResults: pollResults(request),
@@ -242,8 +251,9 @@ export const getApiHelper = (config: SyntheticsCIConfig): APIHelper => {
   return apiConstructor({
     apiKey: config.apiKey!,
     appKey: config.appKey!,
-    baseIntakeUrl: getDatadogHost(true, config),
-    baseUrl: getDatadogHost(false, config),
+    baseIntakeUrl: getDatadogHost({useIntake: true, apiVersion: 'v1', config}),
+    baseUnstableUrl: getDatadogHost({useIntake: false, apiVersion: 'unstable', config}),
+    baseUrl: getDatadogHost({useIntake: false, apiVersion: 'v1', config}),
     proxyOpts: config.proxy,
   })
 }

@@ -366,6 +366,7 @@ export interface APIConfiguration {
   apiKey: string
   appKey: string
   baseIntakeUrl: string
+  baseUnstableUrl: string
   baseUrl: string
   proxyOpts: ProxyConfiguration
 }
@@ -390,4 +391,14 @@ export interface SyntheticsCIConfig {
 
 export interface CommandConfig extends SyntheticsCIConfig {
   failOnTimeout: boolean
+}
+
+export interface PresignedUrlResponse {
+  file_name: string
+  presigned_url_params: {
+    fields: {
+      [key: string]: string
+    }
+    url: string
+  }
 }

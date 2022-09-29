@@ -28,6 +28,8 @@ import {
 import * as utils from '../utils'
 
 import {DEFAULT_COMMAND_CONFIG, MAX_TESTS_TO_TRIGGER} from '../command'
+import * as mobile from '../mobile'
+
 import {
   ciConfig,
   getApiResult,
@@ -51,6 +53,7 @@ describe('utils', () => {
     apiKey: '123',
     appKey: '123',
     baseIntakeUrl: 'baseintake',
+    baseUnstableUrl: 'baseUnstable',
     baseUrl: 'base',
     proxyOpts: {protocol: 'http'} as ciUtils.ProxyConfiguration,
   }
@@ -172,6 +175,13 @@ describe('utils', () => {
         public_id: '123-456-789',
         suite: 'Suite 1',
       },
+      'mob-ile-tes': {
+        config: {},
+        name: 'Fake Mobile Test',
+        public_id: 'mob-ile-tes',
+        suite: 'Suite 3',
+        type: 'mobile',
+      },
       'ski-ppe-d01': {
         config: {request: {url: 'http://example.org/'}},
         name: 'Skipped Fake Test',
@@ -269,6 +279,17 @@ describe('utils', () => {
         const tests = await utils.getTestsToTrigger(fakeApi, tooManyTests, mockReporter, true)
         expect(tests.tests.length).toBe(MAX_TESTS_TO_TRIGGER)
       })
+    })
+
+    test('call uploadApplicationAndOverrideConfig on mobile test', async () => {
+      const spy = jest.spyOn(mobile, 'uploadApplicationAndOverrideConfig').mockImplementation()
+      const triggerConfigs = [
+        {suite: 'Suite 1', config: {}, id: '123-456-789'},
+        {suite: 'Suite 3', config: {}, id: 'mob-ile-tes'},
+      ]
+
+      await utils.getTestsToTrigger(api, triggerConfigs, mockReporter)
+      expect(spy).toBeCalledTimes(1)
     })
   })
 
@@ -1114,26 +1135,41 @@ describe('utils', () => {
     test('should default to datadog us api', async () => {
       process.env = {}
 
-      expect(utils.getDatadogHost(false, ciConfig)).toBe('https://api.datadoghq.com/api/v1')
-      expect(utils.getDatadogHost(true, ciConfig)).toBe('https://intake.synthetics.datadoghq.com/api/v1')
+      expect(utils.getDatadogHost({useIntake: false, apiVersion: 'v1', config: ciConfig})).toBe(
+        'https://api.datadoghq.com/api/v1'
+      )
+      expect(utils.getDatadogHost({useIntake: false, apiVersion: 'unstable', config: ciConfig})).toBe(
+        'https://api.datadoghq.com/api/unstable'
+      )
+      expect(utils.getDatadogHost({useIntake: true, apiVersion: 'v1', config: ciConfig})).toBe(
+        'https://intake.synthetics.datadoghq.com/api/v1'
+      )
     })
 
     test('should use DD_API_HOST_OVERRIDE', async () => {
       process.env = {DD_API_HOST_OVERRIDE: 'https://foobar'}
 
-      expect(utils.getDatadogHost(true, ciConfig)).toBe('https://foobar/api/v1')
-      expect(utils.getDatadogHost(true, ciConfig)).toBe('https://foobar/api/v1')
+      expect(utils.getDatadogHost({useIntake: true, apiVersion: 'v1', config: ciConfig})).toBe('https://foobar/api/v1')
+      expect(utils.getDatadogHost({useIntake: true, apiVersion: 'v1', config: ciConfig})).toBe('https://foobar/api/v1')
     })
 
     test('should use Synthetics intake endpoint', async () => {
       process.env = {}
 
-      expect(utils.getDatadogHost(true, {...ciConfig, datadogSite: 'datadoghq.com' as string})).toBe(
-        'https://intake.synthetics.datadoghq.com/api/v1'
-      )
-      expect(utils.getDatadogHost(true, {...ciConfig, datadogSite: 'datad0g.com' as string})).toBe(
-        'https://intake.synthetics.datad0g.com/api/v1'
-      )
+      expect(
+        utils.getDatadogHost({
+          apiVersion: 'v1',
+          config: {...ciConfig, datadogSite: 'datadoghq.com' as string},
+          useIntake: true,
+        })
+      ).toBe('https://intake.synthetics.datadoghq.com/api/v1')
+      expect(
+        utils.getDatadogHost({
+          apiVersion: 'v1',
+          config: {...ciConfig, datadogSite: 'datad0g.com' as string},
+          useIntake: true,
+        })
+      ).toBe('https://intake.synthetics.datad0g.com/api/v1')
     })
   })
 })

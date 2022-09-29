@@ -1,5 +1,7 @@
 // tslint:disable: no-string-literal
+
 import {AxiosError, AxiosResponse} from 'axios'
+import {promises as fs} from 'fs'
 import * as ciUtils from '../../../helpers/utils'
 import * as api from '../api'
 import {MAX_TESTS_TO_TRIGGER} from '../command'
@@ -8,7 +10,15 @@ import {ExecutionRule, SyntheticsCIConfig, UserConfigOverride} from '../interfac
 import * as runTests from '../run-test'
 import {Tunnel} from '../tunnel'
 import * as utils from '../utils'
-import {ciConfig, getApiResult, getApiTest, mockReporter, mockTestTriggerResponse} from './fixtures'
+import {
+  ciConfig,
+  getApiResult,
+  getApiTest,
+  getMobileTest,
+  MOBILE_PRESIGNED_URL_PAYLOAD,
+  mockReporter,
+  mockTestTriggerResponse,
+} from './fixtures'
 
 describe('run-test', () => {
   beforeEach(() => {
@@ -263,6 +273,67 @@ describe('run-test', () => {
       await expect(
         runTests.executeTests(mockReporter, {...ciConfig, publicIds: ['public-id-1', 'public-id-2'], tunnel: true})
       ).rejects.toMatchError(new CriticalError('UNAVAILABLE_TUNNEL_CONFIG', 'Server Error'))
+    })
+
+    test('getMobileApplicationPresignedURL throws', async () => {
+      const mobileTest = getMobileTest()
+      jest.spyOn(utils, 'getTestAndOverrideConfig').mockImplementation(async () =>
+        Promise.resolve({
+          overriddenConfig: {executionRule: ExecutionRule.NON_BLOCKING, public_id: mobileTest.public_id},
+          test: mobileTest,
+        })
+      )
+
+      jest.spyOn(fs, 'readFile').mockImplementation(async () => Buffer.from('aa'))
+
+      const serverError = new Error('Server Error') as AxiosError
+      serverError.response = {data: {errors: ['Bad Gateway']}, status: 502} as AxiosResponse
+      serverError.config = {baseURL: 'baseURL', url: 'url'}
+      const apiHelper = {
+        getMobileApplicationPresignedURL: jest.fn(() => {
+          throw serverError
+        }),
+      }
+
+      jest.spyOn(api, 'getApiHelper').mockImplementation(() => apiHelper as any)
+      await expect(
+        runTests.executeTests(mockReporter, {
+          ...ciConfig,
+          global: {mobileApplicationVersionFilePath: 'filePath'},
+          publicIds: [mobileTest.public_id],
+        })
+      ).rejects.toMatchError(new CriticalError('UPLOAD_MOBILE_APPLICATION_TESTS_FAILED', 'Server Error'))
+    })
+
+    test('uploadMobileApplication throws', async () => {
+      const mobileTest = getMobileTest()
+      jest.spyOn(utils, 'getTestAndOverrideConfig').mockImplementation(async () =>
+        Promise.resolve({
+          overriddenConfig: {executionRule: ExecutionRule.NON_BLOCKING, public_id: mobileTest.public_id},
+          test: mobileTest,
+        })
+      )
+
+      jest.spyOn(fs, 'readFile').mockImplementation(async () => Buffer.from('aa'))
+
+      const serverError = new Error('Server Error') as AxiosError
+      serverError.response = {data: {errors: ['Bad Gateway']}, status: 502} as AxiosResponse
+      serverError.config = {baseURL: 'baseURL', url: 'url'}
+      const apiHelper = {
+        getMobileApplicationPresignedURL: jest.fn(() => MOBILE_PRESIGNED_URL_PAYLOAD),
+        uploadMobileApplication: jest.fn(() => {
+          throw serverError
+        }),
+      }
+
+      jest.spyOn(api, 'getApiHelper').mockImplementation(() => apiHelper as any)
+      await expect(
+        runTests.executeTests(mockReporter, {
+          ...ciConfig,
+          global: {mobileApplicationVersionFilePath: 'filePath'},
+          publicIds: [mobileTest.public_id],
+        })
+      ).rejects.toMatchError(new CriticalError('UPLOAD_MOBILE_APPLICATION_TESTS_FAILED', 'Server Error'))
     })
 
     test('runTests throws', async () => {

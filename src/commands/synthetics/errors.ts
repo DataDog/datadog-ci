@@ -12,6 +12,7 @@ const criticalErrorCodes = [
   'TUNNEL_START_FAILED',
   'UNAVAILABLE_TEST_CONFIG',
   'UNAVAILABLE_TUNNEL_CONFIG',
+  'UPLOAD_MOBILE_APPLICATION_TESTS_FAILED',
 ] as const
 export type CriticalCiErrorCode = typeof criticalErrorCodes[number]
 

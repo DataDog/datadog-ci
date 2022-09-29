@@ -38,6 +38,7 @@ import {
   TriggerConfig,
   UserConfigOverride,
 } from './interfaces'
+import {uploadApplicationAndOverrideConfig} from './mobile'
 import {Tunnel} from './tunnel'
 
 const POLLING_INTERVAL = 5000 // In ms
@@ -524,7 +525,7 @@ const getTest = async (api: APIHelper, {id, suite}: TriggerConfig): Promise<{tes
   }
 }
 
-const getTestAndOverrideConfig = async (
+export const getTestAndOverrideConfig = async (
   api: APIHelper,
   {config, id, suite}: TriggerConfig,
   reporter: MainReporter,
@@ -578,6 +579,24 @@ export const getTestsToTrigger = async (
   const testsAndConfigsOverride = await Promise.all(
     triggerConfigs.map((triggerConfig) => getTestAndOverrideConfig(api, triggerConfig, reporter, initialSummary))
   )
+
+  const uploadedApplicationByPath: {[applicationFilePath: string]: {applicationId: string; fileName: string}[]} = {}
+  for (const {test, overriddenConfig} of testsAndConfigsOverride) {
+    if (test && test.type === 'mobile' && overriddenConfig) {
+      const {config: userConfigOverride} = triggerConfigs.find(({id}) => id === test.public_id)!
+      try {
+        await uploadApplicationAndOverrideConfig(
+          api,
+          test,
+          userConfigOverride,
+          overriddenConfig,
+          uploadedApplicationByPath
+        )
+      } catch (e) {
+        throw new CriticalError('UPLOAD_MOBILE_APPLICATION_TESTS_FAILED', e.message)
+      }
+    }
+  }
 
   const overriddenTestsToTrigger: TestPayload[] = []
   const waitedTests: Test[] = []
@@ -782,8 +801,14 @@ export const renderResults = ({
   return hasSucceeded ? 0 : 1
 }
 
-export const getDatadogHost = (useIntake = false, config: SyntheticsCIConfig) => {
-  const apiPath = 'api/v1'
+export const getDatadogHost = (hostConfig: {
+  apiVersion: 'v1' | 'unstable'
+  config: SyntheticsCIConfig
+  useIntake: boolean
+}) => {
+  const {useIntake, apiVersion, config} = hostConfig
+
+  const apiPath = apiVersion === 'v1' ? 'api/v1' : 'api/unstable'
   let host = `https://api.${config.datadogSite}`
   const hostOverride = process.env.DD_API_HOST_OVERRIDE
 
