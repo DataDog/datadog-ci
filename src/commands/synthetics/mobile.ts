@@ -27,22 +27,13 @@ export const uploadMobileApplications = async (
   return fileName
 }
 
-export const uploadApplicationIfNeeded = async (
+export const uploadApplication = async (
   api: APIHelper,
   applicationPathToUpload: string,
   testApplicationId: string,
   uploadedApplicationByPath: {[applicationFilePath: string]: {applicationId: string; fileName: string}[]}
 ) => {
-  const isAlreadyUploaded =
-    applicationPathToUpload in uploadedApplicationByPath &&
-    uploadedApplicationByPath[applicationPathToUpload].find(({applicationId}) => applicationId === testApplicationId)
-
-  if (isAlreadyUploaded) {
-    return
-  }
-
   const fileName = await uploadMobileApplications(api, applicationPathToUpload, testApplicationId)
-
   if (!(applicationPathToUpload in uploadedApplicationByPath)) {
     uploadedApplicationByPath[applicationPathToUpload] = []
   }
@@ -76,6 +67,14 @@ export const overrideMobileConfig = (
   }
 }
 
+export const shouldUploadApplication = (
+  applicationPathToUpload: string,
+  testApplicationId: string,
+  uploadedApplicationByPath: {[applicationFilePath: string]: {applicationId: string; fileName: string}[]}
+): boolean =>
+  !(applicationPathToUpload in uploadedApplicationByPath) ||
+  !uploadedApplicationByPath[applicationPathToUpload].some(({applicationId}) => applicationId === testApplicationId)
+
 export const uploadApplicationAndOverrideConfig = async (
   api: APIHelper,
   test: Test,
@@ -84,8 +83,15 @@ export const uploadApplicationAndOverrideConfig = async (
   uploadedApplicationByPath: {[applicationFilePath: string]: {applicationId: string; fileName: string}[]}
 ): Promise<void> => {
   const testApplicationId = test.options.mobileApplication!.applicationId
-  if (userConfigOverride.mobileApplicationVersionFilePath) {
-    await uploadApplicationIfNeeded(
+  if (
+    userConfigOverride.mobileApplicationVersionFilePath &&
+    shouldUploadApplication(
+      userConfigOverride.mobileApplicationVersionFilePath,
+      testApplicationId,
+      uploadedApplicationByPath
+    )
+  ) {
+    await uploadApplication(
       api,
       userConfigOverride.mobileApplicationVersionFilePath,
       testApplicationId,

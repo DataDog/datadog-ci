@@ -8,7 +8,7 @@ describe('getMD5HashFromFileBuffer', () => {
   })
 })
 
-describe('uploadApplicationIfNeeded', () => {
+describe('uploadApplication', () => {
   const uploadApplicationSpy = jest.spyOn(mobile, 'uploadMobileApplications')
   const api = getApiHelper()
 
@@ -19,7 +19,7 @@ describe('uploadApplicationIfNeeded', () => {
 
   test('upload new application file', async () => {
     const uploadedApplicationByPath = {}
-    await mobile.uploadApplicationIfNeeded(api, 'new-application-path.api', 'mobileAppUuid', uploadedApplicationByPath)
+    await mobile.uploadApplication(api, 'new-application-path.api', 'mobileAppUuid', uploadedApplicationByPath)
 
     expect(uploadedApplicationByPath).toEqual({
       'new-application-path.api': [
@@ -32,30 +32,6 @@ describe('uploadApplicationIfNeeded', () => {
     expect(uploadApplicationSpy).toHaveBeenCalledTimes(1)
   })
 
-  test('upload same application file with same application id', async () => {
-    const uploadedApplicationByPath = {
-      'new-application-path.api': [
-        {
-          applicationId: 'mobileAppUuid',
-          fileName: 'fileName',
-        },
-      ],
-    }
-
-    await mobile.uploadApplicationIfNeeded(api, 'new-application-path.api', 'mobileAppUuid', uploadedApplicationByPath)
-
-    expect(uploadedApplicationByPath).toEqual({
-      'new-application-path.api': [
-        {
-          applicationId: 'mobileAppUuid',
-          fileName: 'fileName',
-        },
-      ],
-    })
-
-    expect(uploadApplicationSpy).not.toHaveBeenCalled()
-  })
-
   test('upload same application file with different application id', async () => {
     const uploadedApplicationByPath = {
       'new-application-path.api': [
@@ -65,7 +41,7 @@ describe('uploadApplicationIfNeeded', () => {
         },
       ],
     }
-    await mobile.uploadApplicationIfNeeded(api, 'new-application-path.api', 'mobileAppUuid', uploadedApplicationByPath)
+    await mobile.uploadApplication(api, 'new-application-path.api', 'mobileAppUuid', uploadedApplicationByPath)
 
     expect(uploadedApplicationByPath).toEqual({
       'new-application-path.api': [
@@ -92,12 +68,7 @@ describe('uploadApplicationIfNeeded', () => {
         },
       ],
     }
-    await mobile.uploadApplicationIfNeeded(
-      api,
-      'another-application-path.api',
-      'mobileAppUuid',
-      uploadedApplicationByPath
-    )
+    await mobile.uploadApplication(api, 'another-application-path.api', 'mobileAppUuid', uploadedApplicationByPath)
 
     expect(uploadedApplicationByPath).toEqual({
       'another-application-path.api': [
@@ -126,7 +97,7 @@ describe('uploadApplicationIfNeeded', () => {
         },
       ],
     }
-    await mobile.uploadApplicationIfNeeded(api, 'new-application-path.api', 'mobileAppUuid', uploadedApplicationByPath)
+    await mobile.uploadApplication(api, 'new-application-path.api', 'mobileAppUuid', uploadedApplicationByPath)
 
     expect(uploadedApplicationByPath).toEqual({
       'another-application-path.api': [
@@ -144,6 +115,40 @@ describe('uploadApplicationIfNeeded', () => {
     })
 
     expect(uploadApplicationSpy).toHaveBeenCalledTimes(1)
+  })
+})
+
+describe('shouldUploadApplication', () => {
+  test('New application', () => {
+    expect(mobile.shouldUploadApplication('application-path.api', 'mobileAppUuid', {})).toBe(true)
+  })
+
+  test('Application already uploaded', () => {
+    const uploadedApplicationByPath = {
+      'application-path.api': [
+        {
+          applicationId: 'mobileAppUuid',
+          fileName: 'fileName',
+        },
+      ],
+    }
+    expect(mobile.shouldUploadApplication('application-path.api', 'mobileAppUuid', uploadedApplicationByPath)).toBe(
+      false
+    )
+  })
+
+  test('Application already uploaded but with different applicationId', () => {
+    const uploadedApplicationByPath = {
+      'application-path.api': [
+        {
+          applicationId: 'mobileAppUuid',
+          fileName: 'fileName',
+        },
+      ],
+    }
+    expect(mobile.shouldUploadApplication('application-path.api', 'newMobileAppUuid', uploadedApplicationByPath)).toBe(
+      true
+    )
   })
 })
 
