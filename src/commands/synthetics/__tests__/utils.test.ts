@@ -1,10 +1,48 @@
 jest.mock('glob')
 jest.mock('fs')
+jest.mock('child_process')
+
+jest.mock('path', () => {
+  const actualPath = jest.requireActual('path')
+
+  return {
+    ...actualPath,
+    relative: (from: string, to: string) => {
+      if (from === '/path/to/project' && to === '/path/to/another-project') {
+        return '../another-project'
+      }
+
+      if (from === '/path/to/project' && to === '/other-path/to/project') {
+        return '../../../other-path/to/project'
+      }
+
+      if (from === '/path/to/git/repository' && to === '/path/to/another-project') {
+        return '../../another-project'
+      }
+
+      if (from === '/path/to/git/repository' && to === '/other-path/to/project') {
+        return '../../../../other-path/to/project'
+      }
+
+      if (from.endsWith('subfolder') || to.endsWith('subfolder')) {
+        return 'subfolder'
+      }
+
+      if (to === '..') {
+        return '..'
+      }
+
+      return '.'
+    },
+  }
+})
 
 import * as fs from 'fs'
 
 import {AxiosError, default as axios} from 'axios'
+import child_process from 'child_process'
 import glob from 'glob'
+import process from 'process'
 
 process.env.DATADOG_SYNTHETICS_CI_TRIGGER_APP = 'env_default'
 
@@ -14,17 +52,7 @@ import * as ciUtils from '../../../helpers/utils'
 
 import {apiConstructor, APIHelper} from '../api'
 import {CiError} from '../errors'
-import {
-  Batch,
-  ExecutionRule,
-  PollResult,
-  Result,
-  ServerResult,
-  Summary,
-  Test,
-  Trigger,
-  UserConfigOverride,
-} from '../interfaces'
+import {Batch, ExecutionRule, PollResult, Result, ServerResult, Test, Trigger, UserConfigOverride} from '../interfaces'
 import * as utils from '../utils'
 
 import {DEFAULT_COMMAND_CONFIG, MAX_TESTS_TO_TRIGGER} from '../command'
@@ -71,11 +99,95 @@ describe('utils', () => {
       callback(undefined, FILES_CONTENT[path])
     )
     ;(glob as any).mockImplementation((query: string, callback: (e: any, v: any) => void) => callback(undefined, FILES))
+    ;(child_process.exec as any).mockImplementation(
+      (command: string, callback: (error: any, stdout: string, stderr: string) => void) => callback(undefined, '.', '')
+    )
 
     test('should get suites', async () => {
       const suites = await utils.getSuites(GLOB, mockReporter)
       expect(JSON.stringify(suites)).toBe(
         `[{"name":"file1","content":${FILES_CONTENT.file1}},{"name":"file2","content":${FILES_CONTENT.file2}}]`
+      )
+    })
+  })
+
+  describe('getFilePathRelativeToRepo', () => {
+    afterEach(() => {
+      jest.restoreAllMocks()
+    })
+
+    test('datadog-ci is not run in a git repository', async () => {
+      const pathToProject = '/path/to/project'
+      jest.spyOn(process, 'cwd').mockImplementation(() => pathToProject)
+
+      // Directory without `.git` folder.
+      ;(child_process.exec as any).mockImplementation(
+        (command: string, callback: (error: any, stdout: string, stderr: string) => void) =>
+          callback(Error('Not a git repository'), '', '')
+      )
+
+      // Use the process working directory instead of the git repository's top level.
+      await expect(utils.getFilePathRelativeToRepo('config.json')).resolves.toEqual('config.json')
+      await expect(utils.getFilePathRelativeToRepo('./config.json')).resolves.toEqual('config.json')
+      await expect(utils.getFilePathRelativeToRepo(`${pathToProject}/config.json`)).resolves.toEqual('config.json')
+
+      // Those cases will show a broken hyperlink in the GitLab test report because the file is outside of the project.
+      await expect(utils.getFilePathRelativeToRepo('../config.json')).resolves.toEqual('../config.json')
+      await expect(utils.getFilePathRelativeToRepo('/path/to/another-project/config.json')).resolves.toEqual(
+        '../another-project/config.json'
+      )
+      await expect(utils.getFilePathRelativeToRepo('/other-path/to/project/config.json')).resolves.toEqual(
+        '../../../other-path/to/project/config.json'
+      )
+    })
+
+    test('datadog-ci is run in the root of a git repository', async () => {
+      const pathToGitRepository = '/path/to/git/repository'
+      jest.spyOn(process, 'cwd').mockImplementation(() => pathToGitRepository)
+
+      // Process working directory is the git repository's root.
+      ;(child_process.exec as any).mockImplementation(
+        (command: string, callback: (error: any, stdout: string, stderr: string) => void) =>
+          callback(undefined, pathToGitRepository, '')
+      )
+
+      await expect(utils.getFilePathRelativeToRepo('config.json')).resolves.toEqual('config.json')
+      await expect(utils.getFilePathRelativeToRepo('./config.json')).resolves.toEqual('config.json')
+      await expect(utils.getFilePathRelativeToRepo(`${pathToGitRepository}/config.json`)).resolves.toEqual(
+        'config.json'
+      )
+
+      await expect(utils.getFilePathRelativeToRepo('subfolder/config.json')).resolves.toEqual('subfolder/config.json')
+      await expect(utils.getFilePathRelativeToRepo('./subfolder/config.json')).resolves.toEqual('subfolder/config.json')
+      await expect(utils.getFilePathRelativeToRepo(`${pathToGitRepository}/subfolder/config.json`)).resolves.toEqual(
+        'subfolder/config.json'
+      )
+
+      // Those cases will show a broken hyperlink in the GitLab test report because the file is outside of the repository.
+      await expect(utils.getFilePathRelativeToRepo('../config.json')).resolves.toEqual('../config.json')
+      await expect(utils.getFilePathRelativeToRepo('/path/to/another-project/config.json')).resolves.toEqual(
+        '../../another-project/config.json'
+      )
+      await expect(utils.getFilePathRelativeToRepo('/other-path/to/project/config.json')).resolves.toEqual(
+        '../../../../other-path/to/project/config.json'
+      )
+    })
+
+    test('datadog-ci is run in a subfolder of a git repository', async () => {
+      const pathToGitRepositorySubfolder = '/path/to/git/repository/subfolder'
+      jest.spyOn(process, 'cwd').mockImplementation(() => pathToGitRepositorySubfolder)
+
+      // Process working directory is a subfolder of the git repository...
+      ;(child_process.exec as any).mockImplementation(
+        (command: string, callback: (error: any, stdout: string, stderr: string) => void) =>
+          callback(undefined, '/path/to/git/repository', '')
+      )
+
+      // ...so the relative path must be prefixed with the subfolder.
+      await expect(utils.getFilePathRelativeToRepo('config.json')).resolves.toEqual('subfolder/config.json')
+      await expect(utils.getFilePathRelativeToRepo('./config.json')).resolves.toEqual('subfolder/config.json')
+      await expect(utils.getFilePathRelativeToRepo(`${pathToGitRepositorySubfolder}/config.json`)).resolves.toEqual(
+        'subfolder/config.json'
       )
     })
   })
