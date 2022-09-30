@@ -21,6 +21,7 @@ import {
   ExecutionRule,
   LocationsMapping,
   MainReporter,
+  Operator,
   Payload,
   PollResult,
   Reporter,
@@ -45,6 +46,23 @@ const POLLING_INTERVAL = 5000 // In ms
 const PUBLIC_ID_REGEX = /^[\d\w]{3}-[\d\w]{3}-[\d\w]{3}$/
 const SUBDOMAIN_REGEX = /(.*?)\.(?=[^\/]*\..{2,5})/
 const TEMPLATE_REGEX = /{{\s*([^{}]*?)\s*}}/g
+
+export const readableOperation: {[key in Operator]: string} = {
+  [Operator.contains]: 'should contain',
+  [Operator.doesNotContain]: 'should not contain',
+  [Operator.is]: 'should be',
+  [Operator.isNot]: 'should not be',
+  [Operator.lessThan]: 'should be less than',
+  [Operator.matches]: 'should match',
+  [Operator.doesNotMatch]: 'should not match',
+  [Operator.isInLessThan]: 'will expire in less than',
+  [Operator.isInMoreThan]: 'will expire in more than',
+  [Operator.lessThanOrEqual]: 'should be less than or equal to',
+  [Operator.moreThan]: 'should be more than',
+  [Operator.moreThanOrEqual]: 'should be less than or equal to',
+  [Operator.validatesJSONPath]: 'assert on JSONPath extracted value',
+  [Operator.validatesXPath]: 'assert on XPath extracted value',
+}
 
 const template = (st: string, context: any): string =>
   st.replace(TEMPLATE_REGEX, (match: string, p1: string) => (p1 in context ? context[p1] : match))
@@ -820,3 +838,5 @@ export const getDatadogHost = (hostConfig: {
 
   return `${host}/${apiPath}`
 }
+
+export const pluralize = (word: string, count: number): string => (count === 1 ? word : `${word}s`)
