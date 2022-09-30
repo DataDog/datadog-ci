@@ -1,3 +1,4 @@
+import {exec} from 'child_process'
 import deepExtend from 'deep-extend'
 import * as fs from 'fs'
 import * as path from 'path'
@@ -6,6 +7,7 @@ import {promisify} from 'util'
 
 import chalk from 'chalk'
 import glob from 'glob'
+import process from 'process'
 
 import {getCIMetadata} from '../../helpers/ci'
 import {GIT_COMMIT_MESSAGE} from '../../helpers/tags'
@@ -271,13 +273,32 @@ export const getSuites = async (GLOB: string, reporter: MainReporter): Promise<S
     files.map(async (file) => {
       try {
         const content = await promisify(fs.readFile)(file, 'utf8')
+        const suiteName = await getFilePathRelativeToRepo(file)
 
-        return {name: file, content: JSON.parse(content)}
+        return {name: suiteName, content: JSON.parse(content)}
       } catch (e) {
         throw new Error(`Unable to read and parse the test file ${file}`)
       }
     })
   )
+}
+
+export const getFilePathRelativeToRepo = async (filePath: string) => {
+  const parentDirectory = path.dirname(filePath)
+  const filename = path.basename(filePath)
+
+  let relativeDirectory: string
+
+  try {
+    const {stdout} = await promisify(exec)('git rev-parse --show-toplevel')
+    const repoTopLevel = stdout.trim()
+    relativeDirectory = path.relative(repoTopLevel, parentDirectory)
+  } catch {
+    // We aren't in a git repository: fall back to the given path, relative to the process working directory.
+    relativeDirectory = path.relative(process.cwd(), parentDirectory)
+  }
+
+  return path.join(relativeDirectory, filename)
 }
 
 export const wait = async (duration: number) => new Promise((resolve) => setTimeout(resolve, duration))
