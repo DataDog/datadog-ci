@@ -28,9 +28,9 @@ export class UploadCommand extends Command {
   public static usage = Command.Usage({
     description: 'Upload React Native sourcemaps to Datadog.',
     details: `
-            This command will upload React Native sourcemaps and their corresponding javascript bundle to Datadog in order to un-minify front-end stack traces received by Datadog.
-            See README for details.
-        `,
+      This command will upload React Native sourcemaps and their corresponding javascript bundle to Datadog in order to un-minify front-end stack traces received by Datadog.\n
+      See README for details.
+    `,
     examples: [
       [
         'Upload ios sourcemaps',
