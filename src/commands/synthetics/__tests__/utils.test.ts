@@ -1052,7 +1052,23 @@ describe('utils', () => {
   })
 
   test('getAppBaseURL', () => {
-    expect(utils.getAppBaseURL({datadogSite: 'datadoghq.eu', subdomain: 'custom'})).toBe('https://custom.datadoghq.eu/')
+    // Usual datadog site.
+    expect(utils.getAppBaseURL({datadogSite: 'datadoghq.com', subdomain: ''})).toBe('https://app.datadoghq.com/')
+    expect(utils.getAppBaseURL({datadogSite: 'datadoghq.com', subdomain: 'app'})).toBe('https://app.datadoghq.com/')
+    expect(utils.getAppBaseURL({datadogSite: 'datadoghq.com', subdomain: 'myorg'})).toBe('https://myorg.datadoghq.com/')
+
+    // Different top-level domain.
+    expect(utils.getAppBaseURL({datadogSite: 'datadoghq.eu', subdomain: ''})).toBe('https://app.datadoghq.eu/')
+    expect(utils.getAppBaseURL({datadogSite: 'datadoghq.eu', subdomain: 'app'})).toBe('https://app.datadoghq.eu/')
+    expect(utils.getAppBaseURL({datadogSite: 'datadoghq.eu', subdomain: 'myorg'})).toBe('https://myorg.datadoghq.eu/')
+
+    // US3/US5-type datadog site: the datadog site's subdomain is replaced by `subdomain` when `subdomain` is custom.
+    // The correct Main DC (US3 in this case) is resolved automatically.
+    expect(utils.getAppBaseURL({datadogSite: 'us3.datadoghq.com', subdomain: ''})).toBe('https://us3.datadoghq.com/')
+    expect(utils.getAppBaseURL({datadogSite: 'us3.datadoghq.com', subdomain: 'app'})).toBe('https://us3.datadoghq.com/')
+    expect(utils.getAppBaseURL({datadogSite: 'us3.datadoghq.com', subdomain: 'myorg'})).toBe(
+      'https://myorg.datadoghq.com/'
+    )
   })
 
   describe('sortResultsByOutcome', () => {

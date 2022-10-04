@@ -14,7 +14,7 @@ import {GIT_COMMIT_MESSAGE} from '../../helpers/tags'
 import {pick} from '../../helpers/utils'
 
 import {APIHelper, EndpointError, formatBackendErrors, getApiHelper, isNotFoundError} from './api'
-import {MAX_TESTS_TO_TRIGGER} from './command'
+import {DEFAULT_COMMAND_CONFIG, MAX_TESTS_TO_TRIGGER} from './command'
 import {CiError, CriticalError} from './errors'
 import {
   Batch,
@@ -748,8 +748,27 @@ export const parseVariablesFromCli = (
   return Object.keys(variables).length > 0 ? variables : undefined
 }
 
-export const getAppBaseURL = ({datadogSite, subdomain}: Pick<CommandConfig, 'datadogSite' | 'subdomain'>) =>
-  `https://${subdomain}.${datadogSite}/`
+export const getAppBaseURL = ({datadogSite, subdomain}: Pick<CommandConfig, 'datadogSite' | 'subdomain'>) => {
+  // This function is exported in the API, so we must ensure
+  // the `subdomain` always defaults to `app`, even if called by an end user.
+  subdomain = subdomain || DEFAULT_COMMAND_CONFIG.subdomain
+
+  const datadogSiteThirdLevel = /^(us3|us5)\./
+
+  if (datadogSite.match(datadogSiteThirdLevel)) {
+    if (subdomain === DEFAULT_COMMAND_CONFIG.subdomain) {
+      // Ignore the `app` subdomain: use `(us3|us5).datadoghq.com` directly.
+      return `https://${datadogSite}/`
+    }
+
+    // Replace `(us3|us5)` by the custom subdomain.
+    const rootDatadogSite = datadogSite.replace(datadogSiteThirdLevel, '')
+
+    return `https://${subdomain}.${rootDatadogSite}/`
+  }
+
+  return `https://${subdomain}.${datadogSite}/`
+}
 
 export const getBatchUrl = (baseUrl: string, batchId: string) =>
   `${baseUrl}synthetics/explorer/ci?batchResultId=${batchId}`
