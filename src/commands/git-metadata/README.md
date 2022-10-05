@@ -13,7 +13,7 @@ You need to have `DATADOG_API_KEY` in your environment.
 export DATADOG_API_KEY="<API KEY>"
 ```
 
-It is possible to configure the tool to use Datadog EU by defining the `DATADOG_SITE` environment variable to `datadoghq.eu`. By defaut the requests are sent to Datadog US.
+It is possible to configure the tool to use Datadog EU by defining the `DATADOG_SITE` environment variable to `datadoghq.eu`. By default the requests are sent to Datadog US.
 
 It is also possible to override the full URL for the intake endpoint by defining the `DATADOG_SOURCEMAP_INTAKE_URL` environment variable.
 
@@ -33,7 +33,7 @@ datadog-ci git-metadata upload
 
 #### Limitations
 
-The repository URL is infered from the remote named `origin` (or the first remote if none are named `origin`). The value can be overriden by using the `--repository-url` flag.
+The repository URL is inferred from the remote named `origin` (or the first remote if none are named `origin`). The value can be overridden by using the `--repository-url` flag.
 For example: The remote `git@github.com:DataDog/example.git` will create links that point to `https://github.com/DataDog/example`.
 
 The only repository URLs supported are the ones whose host contains: `github`, `gitlab` or `bitbucket`. This allows DataDog to create proper URLs such as:

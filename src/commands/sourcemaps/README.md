@@ -11,7 +11,7 @@ You need to have `DATADOG_API_KEY` in your environment.
 export DATADOG_API_KEY="<API KEY>"
 ```
 
-It is possible to configure the tool to use Datadog EU by defining the `DATADOG_SITE` environment variable to `datadoghq.eu`. By defaut the requests are sent to Datadog US.
+It is possible to configure the tool to use Datadog EU by defining the `DATADOG_SITE` environment variable to `datadoghq.eu`. By default the requests are sent to Datadog US.
 
 It is also possible to override the full URL for the intake endpoint by defining the `DATADOG_SOURCEMAP_INTAKE_URL` environment variable.
 
@@ -64,10 +64,10 @@ The repository URL is inferred
 - from the remote named `origin` if present
 - from the first remote otherwise
 
-The value can be overriden with `--repository-url`.
+The value can be overridden with `--repository-url`.
 
 Example: With a remote `git@github.com:Datadog/example.git`, links pointing to `https://github.com/Datadog/example` are generated.
-This behavior can be overriden with links to `https://gitlab.com/Datadog/example` with the flag `--repository-url=https://gitlab.com/Datadog/example`.
+This behavior can be overridden with links to `https://gitlab.com/Datadog/example` with the flag `--repository-url=https://gitlab.com/Datadog/example`.
 
 #### Setting the project path
 
