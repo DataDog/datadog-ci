@@ -749,25 +749,24 @@ export const parseVariablesFromCli = (
 }
 
 export const getAppBaseURL = ({datadogSite, subdomain}: Pick<CommandConfig, 'datadogSite' | 'subdomain'>) => {
-  // This function is exported in the API, so we must ensure
-  // the `subdomain` always defaults to `app`, even if called by an end user.
-  subdomain = subdomain || DEFAULT_COMMAND_CONFIG.subdomain
+  const validSubdomain = subdomain || DEFAULT_COMMAND_CONFIG.subdomain
+  const datadogSiteParts = datadogSite.split('.')
 
-  const datadogSiteThirdLevel = /^(us3|us5)\./
+  if (datadogSiteParts.length !== 2 && datadogSiteParts.length !== 3) {
+    throw Error(
+      'The `datadogSite` you provided is incorrect. It must look like `datadoghq.com` or `us3.datadoghq.com`.'
+    )
+  }
 
-  if (datadogSite.match(datadogSiteThirdLevel)) {
-    if (subdomain === DEFAULT_COMMAND_CONFIG.subdomain) {
-      // Ignore the `app` subdomain: use `(us3|us5).datadoghq.com` directly.
+  if (datadogSiteParts.length === 3) {
+    if (validSubdomain === DEFAULT_COMMAND_CONFIG.subdomain) {
       return `https://${datadogSite}/`
     }
 
-    // Replace `(us3|us5)` by the custom subdomain.
-    const rootDatadogSite = datadogSite.replace(datadogSiteThirdLevel, '')
-
-    return `https://${subdomain}.${rootDatadogSite}/`
+    return `https://${validSubdomain}.${datadogSiteParts[1]}.${datadogSiteParts[2]}/`
   }
 
-  return `https://${subdomain}.${datadogSite}/`
+  return `https://${validSubdomain}.${datadogSite}/`
 }
 
 export const getBatchUrl = (baseUrl: string, batchId: string) =>
