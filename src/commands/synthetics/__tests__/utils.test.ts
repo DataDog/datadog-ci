@@ -37,6 +37,7 @@ jest.mock('path', () => {
   }
 })
 
+import deepExtend from 'deep-extend'
 import * as fs from 'fs'
 
 import {AxiosError, default as axios} from 'axios'
@@ -736,6 +737,30 @@ describe('utils', () => {
       ).toEqual([result])
 
       expect(mockReporter.resultReceived).toHaveBeenCalledWith(batch.results[0])
+    })
+
+    test('Test object in each result should be different even if they share the same public ID (config overrides)', async () => {
+      mockApi({
+        getBatchImplementation: async () => ({
+          results: [batch.results[0], {...batch.results[0], result_id: '3'}],
+          status: 'in_progress',
+        }),
+        pollResultsImplementation: async () => [
+          deepExtend({}, pollResult),
+          // The test object from the second result has an overridden start URL
+          deepExtend({}, pollResult, {check: {config: {request: {url: 'https://reddit.com/'}}}, resultID: '3'}),
+        ],
+      })
+
+      const results = await utils.waitForResults(
+        api,
+        trigger,
+        [result.test, result.test],
+        {maxPollingTimeout: 0, failOnCriticalErrors: false},
+        mockReporter
+      )
+
+      expect(results.map(({test}) => test.config.request.url)).toEqual(['http://fake.url', 'https://reddit.com/'])
     })
 
     test('results should be timed out if global pollingTimeout is exceeded', async () => {

@@ -384,7 +384,7 @@ const getResultFromBatch = (
     passed: hasResultPassed(pollResult.result, hasTimeout, failOnCriticalErrors, failOnTimeout),
     result: pollResult.result,
     resultId: resultInBatch.result_id,
-    test: deepExtend(test, pollResult.check),
+    test: deepExtend({}, test, pollResult.check),
     timedOut: hasTimeout,
     timestamp: pollResult.timestamp,
   }
