@@ -321,7 +321,7 @@ export class DefaultReporter implements MainReporter {
   }
 
   public runStart(trigger: Trigger) {
-    this.write(trigger)
+    this.write(`Started batch with id ${trigger.batch_id}`);
   }
 
   public testsWait(tests: Test[]) {
