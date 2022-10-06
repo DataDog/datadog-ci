@@ -126,6 +126,7 @@ export const executeTests = async (
         failOnCriticalErrors: config.failOnCriticalErrors,
         failOnTimeout: config.failOnTimeout,
         maxPollingTimeout,
+        pollingInterval: config.pollingInterval,
       },
       reporter,
       tunnel

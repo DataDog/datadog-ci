@@ -340,6 +340,7 @@ const getPollResultMap = async (api: APIHelper, batch: Batch) => {
 
 const waitForBatchToFinish = async (
   api: APIHelper,
+  pollingInterval: number,
   maxPollingTimeout: number,
   trigger: Trigger,
   reporter: MainReporter
@@ -352,7 +353,7 @@ const waitForBatchToFinish = async (
   // let's add a check to ensure it eventually times out.
   let hasExceededMaxPollingDate = Date.now() >= maxPollingDate
   while (batch.status === 'in_progress' && !hasExceededMaxPollingDate) {
-    await wait(POLLING_INTERVAL)
+    await wait(pollingInterval)
     batch = await getBatch(api, emittedResultIndexes, trigger, reporter)
     hasExceededMaxPollingDate = Date.now() >= maxPollingDate
   }
@@ -398,6 +399,7 @@ export const waitForResults = async (
     failOnCriticalErrors?: boolean
     failOnTimeout?: boolean
     maxPollingTimeout: number
+    pollingInterval?: number
   },
   reporter: MainReporter,
   tunnel?: Tunnel
@@ -412,6 +414,7 @@ export const waitForResults = async (
 
   const {batch, hasExceededMaxPollingDate} = await waitForBatchToFinish(
     api,
+    options.pollingInterval || POLLING_INTERVAL,
     options.maxPollingTimeout,
     trigger,
     reporter

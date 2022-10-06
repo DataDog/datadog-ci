@@ -381,6 +381,7 @@ export interface SyntheticsCIConfig {
   files: string[]
   global: UserConfigOverride
   locations: string[]
+  pollingInterval?: number
   pollingTimeout: number
   proxy: ProxyConfiguration
   publicIds: string[]
