@@ -54,6 +54,7 @@ export const mockReporter: MainReporter = {
   resultEnd: jest.fn(),
   resultReceived: jest.fn(),
   runEnd: jest.fn(),
+  runStart: jest.fn(),
   testTrigger: jest.fn(),
   testWait: jest.fn(),
   testsWait: jest.fn(),

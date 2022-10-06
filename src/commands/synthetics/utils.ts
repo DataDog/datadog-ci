@@ -522,6 +522,13 @@ export const getReporter = (reporters: Reporter[]): MainReporter => ({
       }
     }
   },
+  runStart: (trigger) => {
+    for (const reporter of reporters) {
+      if (typeof reporter.runStart === 'function') {
+        reporter.runStart(trigger)
+      }
+    }
+  },
   testTrigger: (test, testId, executionRule, config) => {
     for (const reporter of reporters) {
       if (typeof reporter.testTrigger === 'function') {

@@ -110,6 +110,7 @@ export const executeTests = async (
   let trigger: Trigger
   try {
     trigger = await runTests(api, overriddenTestsToTrigger)
+    reporter.runStart(trigger)
   } catch (error) {
     await stopTunnel()
     throw new CriticalError('TRIGGER_TESTS_FAILED', error.message)

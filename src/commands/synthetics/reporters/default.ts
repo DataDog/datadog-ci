@@ -12,6 +12,7 @@ import {
   Step,
   Summary,
   Test,
+  Trigger,
   UserConfigOverride,
 } from '../interfaces'
 import {
@@ -317,6 +318,10 @@ export class DefaultReporter implements MainReporter {
     lines.push(`${b('Run summary:')} ${runSummary.join(', ')}${extraInfoStr}\n\n`)
 
     this.write(lines.join('\n'))
+  }
+
+  public runStart(trigger: Trigger) {
+    this.write(trigger)
   }
 
   public testsWait(tests: Test[]) {

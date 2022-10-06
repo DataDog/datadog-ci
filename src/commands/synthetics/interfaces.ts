@@ -10,6 +10,7 @@ export interface MainReporter {
   resultEnd(result: Result, baseUrl: string): void
   resultReceived(result: Batch['results'][0]): void
   runEnd(summary: Summary, baseUrl: string): void
+  runStart(trigger: Trigger): void
   testsWait(tests: Test[]): void
   testTrigger(test: Test, testId: string, executionRule: ExecutionRule, config: UserConfigOverride): void
   testWait(test: Test): void
