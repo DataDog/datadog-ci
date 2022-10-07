@@ -47,7 +47,8 @@ The configuration file structure is the following:
   "appKey": "<DATADOG_APPLICATION_KEY>",
   "datadogSite": "datadoghq.com",
   "failOnCriticalErrors": true,
-  "failOnTimeout": "true",
+  "failOnMissingTests": true,
+  "failOnTimeout": true,
   "files": "{,!(node_modules)/**/}*.synthetics.json",
   "global": {
     "allowInsecureCertificates": true,
@@ -56,7 +57,7 @@ The configuration file structure is the following:
     "bodyType": "application/json",
     "cookies": "name1=value1;name2=value2;",
     "defaultStepTimeout": 15,
-    "deviceIds": ["laptop_large"],
+    "deviceIds": ["chrome.laptop_large"],
     "executionRule": "skipped",
     "followRedirects": true,
     "headers": {"NEW_HEADER": "NEW VALUE"},
@@ -122,7 +123,8 @@ yarn datadog-ci synthetics run-tests -f ./component-1/**/*.synthetics.json -v PA
 #### Failure modes flags
 
 - `--failOnTimeout` (or `--no-failOnTimeout`) will make the CI fail (or pass) if one of the result exceed its test timeout.
-- `--failOnCriticalErrors` will make the command exit with an error code 1 if tests were not triggered or results could not be fetched.
+- `--failOnCriticalErrors` will make the CI fail if tests were not triggered or results could not be fetched.
+- `--failOnMissingTests` will make the CI fail if at least one test is missing.
 
 ### Test files
 
@@ -141,7 +143,7 @@ Your test files must be named with a `.synthetics.json` suffix.
         "bodyType": "application/json",
         "cookies": "name1=value1;name2=value2;",
         "defaultStepTimeout": 15,
-        "deviceIds": ["laptop_large"],
+        "deviceIds": ["chrome.laptop_large"],
         "executionRule": "skipped",
         "followRedirects": true,
         "headers": {"NEW_HEADER": "NEW VALUE"},

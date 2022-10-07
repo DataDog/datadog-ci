@@ -25,9 +25,9 @@ export class UploadCommand extends Command {
   public static usage = Command.Usage({
     description: 'Report the current commit details to Datadog.',
     details: `
-            This command will upload the commit details to Datadog in order to create links to your repositories inside DataDog's UI.
-            See README for details.
-        `,
+      This command will upload the commit details to Datadog in order to create links to your repositories inside Datadog's UI.\n
+      See README for details.
+    `,
     examples: [['Upload the current commit details', 'datadog-ci report-commits upload']],
   })
 

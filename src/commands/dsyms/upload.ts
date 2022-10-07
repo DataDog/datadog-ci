@@ -38,9 +38,9 @@ export class UploadCommand extends Command {
   public static usage = Command.Usage({
     description: 'Upload dSYM files to Datadog.',
     details: `
-            This command will upload all dSYM files to Datadog in order to symbolicate crash reports received by Datadog.
-            See README for details.
-        `,
+      This command will upload all dSYM files to Datadog in order to symbolicate crash reports received by Datadog.\n
+      See README for details.
+    `,
     examples: [
       ['Upload all dSYM files in Derived Data path', 'datadog-ci dsyms upload ~/Library/Developer/Xcode/DerivedData'],
       [

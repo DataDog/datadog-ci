@@ -35,9 +35,9 @@ export class UploadCommand extends Command {
   public static usage = Command.Usage({
     description: 'Upload javascript sourcemaps to Datadog.',
     details: `
-            This command will upload all javascript sourcemaps and their corresponding javascript file to Datadog in order to un-minify front-end stack traces received by Datadog.
-            See README for details.
-        `,
+      This command will upload all javascript sourcemaps and their corresponding javascript file to Datadog in order to un-minify front-end stack traces received by Datadog.\n
+      See README for details.
+    `,
     examples: [
       [
         'Upload all sourcemaps in current directory',
@@ -45,7 +45,7 @@ export class UploadCommand extends Command {
       ],
       [
         'Upload all sourcemaps in /home/users/ci with 50 concurrent uploads',
-        'datadog-ci sourcemaps upload /home/users/ci --service my-service --minified-path-prefix https://static.datadog.com --release-version 1.234 --concurency 50',
+        'datadog-ci sourcemaps upload /home/users/ci --service my-service --minified-path-prefix https://static.datadog.com --release-version 1.234 --max-concurrency 50',
       ],
     ],
   })

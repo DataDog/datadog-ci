@@ -7,13 +7,21 @@ import {MAX_TESTS_TO_TRIGGER} from '../command'
 import {CriticalError} from '../errors'
 import {APIConfiguration, ExecutionRule, PollResult, ServerResult, TestPayload, Trigger} from '../interfaces'
 
-import {ciConfig, getApiTest, getSyntheticsProxy, mockSearchResponse, mockTestTriggerResponse} from './fixtures'
+import {
+  ciConfig,
+  getApiTest,
+  getSyntheticsProxy,
+  MOBILE_PRESIGNED_URL_PAYLOAD,
+  mockSearchResponse,
+  mockTestTriggerResponse,
+} from './fixtures'
 
 describe('dd-api', () => {
   const apiConfiguration: APIConfiguration = {
     apiKey: '123',
     appKey: '123',
     baseIntakeUrl: 'baseintake',
+    baseUnstableUrl: 'baseUnstable',
     baseUrl: 'base',
     proxyOpts: {protocol: 'http'} as ProxyConfiguration,
   }
@@ -43,10 +51,6 @@ describe('dd-api', () => {
   }
   const PRESIGNED_URL_PAYLOAD = {
     url: 'wss://presigned.url',
-  }
-  const MOBILE_PRESIGNED_URL_PAYLOAD = {
-    file_name: 'fileNameUuid',
-    presigned_url_params: 'https://www.presigned.url',
   }
 
   test('should get results from api', async () => {
@@ -141,11 +145,13 @@ describe('dd-api', () => {
   })
 
   test('should get a mobile application presigned URL from api', async () => {
-    const spy = jest.spyOn(axios, 'create').mockImplementation((() => () => ({data: PRESIGNED_URL_PAYLOAD})) as any)
+    const spy = jest
+      .spyOn(axios, 'create')
+      .mockImplementation((() => () => ({data: MOBILE_PRESIGNED_URL_PAYLOAD})) as any)
     const api = apiConstructor(apiConfiguration)
     const {getMobileApplicationPresignedURL} = api
     const result = await getMobileApplicationPresignedURL('applicationId', 'md5')
-    expect(result).toEqual(PRESIGNED_URL_PAYLOAD)
+    expect(result).toEqual(MOBILE_PRESIGNED_URL_PAYLOAD)
     spy.mockRestore()
   })
 
@@ -166,8 +172,7 @@ describe('dd-api', () => {
     await uploadMobileApplication(Buffer.from('Mobile'), MOBILE_PRESIGNED_URL_PAYLOAD.presigned_url_params)
 
     const callArg = mockRequest.mock.calls[0][0]
-    expect(callArg.data).toEqual(Buffer.from('Mobile'))
-    expect(callArg.url).toBe(MOBILE_PRESIGNED_URL_PAYLOAD.presigned_url_params)
+    expect(callArg.url).toBe(MOBILE_PRESIGNED_URL_PAYLOAD.presigned_url_params.url)
     spy.mockRestore()
   })
 

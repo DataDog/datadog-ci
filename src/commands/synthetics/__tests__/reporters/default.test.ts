@@ -2,8 +2,14 @@ import {BaseContext} from 'clipanion/lib/advanced'
 
 import {ExecutionRule, MainReporter, Result, Summary, Test, UserConfigOverride} from '../../interfaces'
 import {DefaultReporter} from '../../reporters/default'
-import {createSummary} from '../../utils'
-import {getApiResult, getApiTest, getFailedBrowserResult, getTimedOutBrowserResult, MOCK_BASE_URL} from '../fixtures'
+import {
+  getApiResult,
+  getApiTest,
+  getFailedBrowserResult,
+  getSummary,
+  getTimedOutBrowserResult,
+  MOCK_BASE_URL,
+} from '../fixtures'
 
 /**
  * A good amount of these tests rely on Jest snapshot assertions.
@@ -26,16 +32,18 @@ describe('Default reporter', () => {
   const reporter = new DefaultReporter(mockContext as {context: BaseContext})
 
   it('should log for each hook', () => {
+    type ReporterCall = {[Fn in keyof MainReporter]: [Fn, Parameters<MainReporter[Fn]>]}[keyof MainReporter]
+
     // `testWait`/`resultReceived` is skipped as nothing is logged for the default reporter.
-    const calls: [keyof MainReporter, any[]][] = [
+    const calls: ReporterCall[] = [
       ['error', ['error']],
       ['initErrors', [['error']]],
       ['log', ['log']],
       ['reportStart', [{startTime: 0}]],
       ['resultEnd', [getApiResult('1', getApiTest()), '']],
-      ['runEnd', [createSummary(), '']],
-      ['testTrigger', [{}, '', '', {}]],
-      ['testsWait', [[{}]]],
+      ['runEnd', [getSummary(), '']],
+      ['testTrigger', [getApiTest(), '', ExecutionRule.BLOCKING, {}]],
+      ['testsWait', [[getApiTest()]]],
     ]
     for (const [fnName, args] of calls) {
       ;(reporter[fnName] as any)(...args)
@@ -182,7 +190,7 @@ describe('Default reporter', () => {
       writeMock.mockClear()
     })
 
-    const baseSummary: Summary = createSummary()
+    const baseSummary: Summary = getSummary()
 
     const complexSummary: Summary = {
       batchId: 'batch-id',
