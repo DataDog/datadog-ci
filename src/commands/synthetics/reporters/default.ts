@@ -247,12 +247,12 @@ const getResultIconAndColor = (resultOutcome: ResultOutcome): [string, chalk.Cha
 }
 
 export class DefaultReporter implements MainReporter {
+  private context: BaseContext
   private testWaitSpinner?: ora.Ora
-  private writable: Writable
   private write: Writable['write']
 
   constructor({context}: {context: BaseContext}) {
-    this.writable = context.stdout
+    this.context = context
     this.write = context.stdout.write.bind(context.stdout)
   }
 
@@ -334,7 +334,7 @@ export class DefaultReporter implements MainReporter {
     const testsDisplay = chalk.gray(`(${testsList.join(', ')})`)
 
     this.testWaitSpinner = ora({
-      stream: this.writable,
+      stream: this.context.stdout,
       text: `Waiting for ${chalk.bold.cyan(tests.length)} test ${pluralize('result', tests.length)} ${testsDisplay}…\n`,
     }).start()
   }
