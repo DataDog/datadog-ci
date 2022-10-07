@@ -101,6 +101,12 @@ describe('Default reporter', () => {
     })
   })
 
+  test('testsWait outputs triggered tests', async () => {
+    reporter.testsWait(new Array(11).fill(getApiTest()))
+    const output = writeMock.mock.calls.map((c) => c[0]).join('\n')
+    expect(output).toMatchSnapshot()
+  })
+
   describe('resultEnd', () => {
     const createApiResult = (
       resultId: string,
