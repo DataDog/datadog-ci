@@ -592,28 +592,28 @@ const parsePipelineNumber = (pipelineNumberStr: string | undefined): number | un
 export const getCIEnv = (): {ciEnv: Record<string, string>; provider: string} => {
   if (process.env.CIRCLECI) {
     return {
-      ciEnv: filterEnv(['CIRCLE_WORKFLOW_ID', 'CIRCLE_BUILD_NUM'], true),
+      ciEnv: filterEnv(['CIRCLE_WORKFLOW_ID', 'CIRCLE_BUILD_NUM']),
       provider: 'circleci',
     }
   }
 
   if (process.env.GITLAB_CI) {
     return {
-      ciEnv: filterEnv(['CI_PROJECT_URL', 'CI_PIPELINE_ID', 'CI_JOB_ID'], true),
+      ciEnv: filterEnv(['CI_PROJECT_URL', 'CI_PIPELINE_ID', 'CI_JOB_ID']),
       provider: 'gitlab',
     }
   }
 
   if (process.env.GITHUB_ACTIONS || process.env.GITHUB_ACTION) {
     return {
-      ciEnv: filterEnv(['GITHUB_SERVER_URL', 'GITHUB_REPOSITORY', 'GITHUB_RUN_ID', 'GITHUB_RUN_ATTEMPT'], true),
+      ciEnv: filterEnv(['GITHUB_SERVER_URL', 'GITHUB_REPOSITORY', 'GITHUB_RUN_ID', 'GITHUB_RUN_ATTEMPT']),
       provider: 'github',
     }
   }
 
   if (process.env.BUILDKITE) {
     return {
-      ciEnv: filterEnv(['BUILDKITE_BUILD_ID', 'BUILDKITE_JOB_ID'], true),
+      ciEnv: filterEnv(['BUILDKITE_BUILD_ID', 'BUILDKITE_JOB_ID']),
       provider: 'buildkite',
     }
   }
@@ -621,7 +621,7 @@ export const getCIEnv = (): {ciEnv: Record<string, string>; provider: string} =>
   throw new Error('Only providers [GitHub, GitLab, CircleCI, Buildkite] are supported')
 }
 
-const filterEnv = (values: string[], allValues: boolean): Record<string, string> => {
+const filterEnv = (values: string[]): Record<string, string> => {
   const ciEnvs: Record<string, string> = {}
   const missing: string[] = []
 
@@ -634,7 +634,7 @@ const filterEnv = (values: string[], allValues: boolean): Record<string, string>
     }
   })
 
-  if (allValues && missing.length > 0) {
+  if (missing.length > 0) {
     // Get the missing values for better error
     throw new Error(`Missing environment variables [${missing.toString()}]`)
   }
