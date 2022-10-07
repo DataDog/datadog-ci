@@ -4,6 +4,7 @@ export type NonCriticalCiErrorCode = typeof nonCriticalErrorCodes[number]
 
 const criticalErrorCodes = [
   'AUTHORIZATION_ERROR',
+  'INVALID_CONFIG',
   'MISSING_API_KEY',
   'MISSING_APP_KEY',
   'POLL_RESULTS_FAILED',
