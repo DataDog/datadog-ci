@@ -1,7 +1,7 @@
 import fs from 'fs'
 import path from 'path'
 
-import {getCIMetadata, getCISpanTags} from '../ci'
+import {getCIEnv, getCIMetadata, getCISpanTags} from '../ci'
 import {Metadata, SpanTags} from '../interfaces'
 import {getUserCISpanTags, getUserGitSpanTags} from '../user-provided-git'
 
@@ -167,6 +167,54 @@ describe('ci spec', () => {
         }
         expect(tags).toEqual(expectedSpanTags)
       })
+    })
+  })
+})
+
+describe('getCIEnv', () => {
+  test('unsupported CI provider', () => {
+    process.env = {APPVEYOR: 'true'}
+    expect(() => {
+      getCIEnv()
+    }).toThrow('Only providers [GitHub, GitLab, CircleCI, Buildkite] are supported')
+  })
+
+  test('buildkite', () => {
+    process.env = {BUILDKITE: 'true'}
+    expect(() => {
+      getCIEnv()
+    }).toThrow()
+
+    process.env = {BUILDKITE: 'true', BUILDKITE_BUILD_ID: 'build-id', BUILDKITE_JOB_ID: 'job-id'}
+    expect(getCIEnv()).toEqual({
+      ciEnv: {BUILDKITE_BUILD_ID: 'build-id', BUILDKITE_JOB_ID: 'job-id'},
+      provider: 'buildkite',
+    })
+  })
+
+  test('circleci', () => {
+    process.env = {CIRCLECI: 'true'}
+    expect(() => {
+      getCIEnv()
+    }).toThrow()
+
+    process.env = {CIRCLECI: 'true', CIRCLE_WORKFLOW_ID: 'build-id', CIRCLE_BUILD_NUM: '10'}
+    expect(getCIEnv()).toEqual({
+      ciEnv: {CIRCLE_WORKFLOW_ID: 'build-id', CIRCLE_BUILD_NUM: '10'},
+      provider: 'circleci',
+    })
+  })
+
+  test('gitlab', () => {
+    process.env = {GITLAB_CI: 'true'}
+    expect(() => {
+      getCIEnv()
+    }).toThrow()
+
+    process.env = {GITLAB_CI: 'true', CI_PIPELINE_ID: 'build-id', CI_JOB_ID: '10', CI_PROJECT_URL: 'url'}
+    expect(getCIEnv()).toEqual({
+      ciEnv: {CI_PIPELINE_ID: 'build-id', CI_JOB_ID: '10', CI_PROJECT_URL: 'url'},
+      provider: 'gitlab',
     })
   })
 })
