@@ -1,6 +1,5 @@
 // tslint:disable: no-string-literal
 jest.mock('fs')
-jest.mock('chalk')
 jest.mock('aws-sdk')
 jest.mock('../prompt')
 import {Lambda} from 'aws-sdk'
