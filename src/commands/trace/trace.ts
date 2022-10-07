@@ -15,9 +15,9 @@ export class TraceCommand extends Command {
   public static usage = Command.Usage({
     description: 'Trace a command with a custom span and report it to Datadog.',
     details: `
-            This command wraps another command, which it will launch, and report a custom span to Datadog.
-            See README for details.
-        `,
+      This command wraps another command, which it will launch, and report a custom span to Datadog.\n
+      See README for details.
+    `,
     examples: [
       [
         'Trace a command with name "Say Hello" and report to Datadog',
