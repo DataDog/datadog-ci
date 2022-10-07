@@ -1,6 +1,7 @@
 jest.mock('glob')
 jest.mock('fs')
 jest.mock('child_process')
+jest.unmock('chalk')
 
 jest.mock('path', () => {
   const actualPath = jest.requireActual('path')
