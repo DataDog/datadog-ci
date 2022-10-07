@@ -76,7 +76,7 @@ For example, for a sourcemap referencing `["/Users/myname/path/to/ReactNativeApp
 
 #### Override repository URL
 
-The repository URL is inferred from the remote named `origin` (if present). Otherwise, it is inferred from the first remote. The value can be overriden with `--repository-url`.
+The repository URL is inferred from the remote named `origin` (if present). Otherwise, it is inferred from the first remote. The value can be overridden with `--repository-url`.
 
 For example, with a remote like `git@github.com:Datadog/example.git`, links pointing to `https://github.com/Datadog/example` are generated.
 
