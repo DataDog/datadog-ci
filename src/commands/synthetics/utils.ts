@@ -601,7 +601,8 @@ export const getTestsToTrigger = async (
   api: APIHelper,
   triggerConfigs: TriggerConfig[],
   reporter: MainReporter,
-  triggerFromSearch?: boolean
+  triggerFromSearch?: boolean,
+  failOnMissingTests?: boolean
 ) => {
   const errorMessages: string[] = []
   // When too many tests are triggered, if fetched from a search query: simply trim them and show a warning,
@@ -655,6 +656,11 @@ export const getTestsToTrigger = async (
 
   // Display errors at the end of all tests for better visibility.
   reporter.initErrors(errorMessages)
+
+  if (failOnMissingTests && initialSummary.testsNotFound.size > 0) {
+    const testsNotFoundListStr = [...initialSummary.testsNotFound].join(', ')
+    throw new CiError('MISSING_TESTS', testsNotFoundListStr)
+  }
 
   if (!overriddenTestsToTrigger.length) {
     throw new CiError('NO_TESTS_TO_RUN')

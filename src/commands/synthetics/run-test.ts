@@ -68,7 +68,13 @@ export const executeTests = async (
 
   try {
     const triggerFromSearch = !!config.testSearchQuery
-    testsToTriggerResult = await getTestsToTrigger(api, testsToTrigger, reporter, triggerFromSearch)
+    testsToTriggerResult = await getTestsToTrigger(
+      api,
+      testsToTrigger,
+      reporter,
+      triggerFromSearch,
+      config.failOnMissingTests
+    )
   } catch (error) {
     if (error instanceof CiError) {
       throw error

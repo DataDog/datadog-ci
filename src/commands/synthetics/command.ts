@@ -20,6 +20,7 @@ export const DEFAULT_COMMAND_CONFIG: CommandConfig = {
   configPath: 'datadog-ci.json',
   datadogSite: 'datadoghq.com',
   failOnCriticalErrors: false,
+  failOnMissingTests: false,
   failOnTimeout: true,
   files: ['{,!(node_modules)/**/}*.synthetics.json'],
   global: {},
@@ -41,6 +42,7 @@ export class RunTestCommand extends Command {
   private config: CommandConfig = JSON.parse(JSON.stringify(DEFAULT_COMMAND_CONFIG)) // Deep copy to avoid mutation during unit tests
   private datadogSite?: string
   private failOnCriticalErrors?: boolean
+  private failOnMissingTests?: boolean
   private failOnTimeout?: boolean
   private files?: string[]
   private publicIds?: string[]
@@ -74,6 +76,10 @@ export class RunTestCommand extends Command {
       if (error instanceof CiError) {
         this.reportCiError(error, this.reporter)
 
+        if (this.config.failOnMissingTests && error.code === 'MISSING_TESTS') {
+          return 1
+        }
+
         if (error instanceof CriticalError) {
           if (this.config.failOnCriticalErrors) {
             return 1
@@ -98,6 +104,9 @@ export class RunTestCommand extends Command {
     switch (error.code) {
       case 'NO_TESTS_TO_RUN':
         reporter.log('No test to run.\n')
+        break
+      case 'MISSING_TESTS':
+        reporter.error(`\n${chalk.bgRed.bold(' ERROR: some tests are missing ')}\n${error.message}\n\n`)
         break
 
       // Critical command errors
@@ -175,6 +184,7 @@ export class RunTestCommand extends Command {
         configPath: this.configPath,
         datadogSite: this.datadogSite,
         failOnCriticalErrors: this.failOnCriticalErrors,
+        failOnMissingTests: this.failOnMissingTests,
         failOnTimeout: this.failOnTimeout,
         files: this.files,
         publicIds: this.publicIds,
@@ -208,6 +218,7 @@ RunTestCommand.addOption('appKey', Command.String('--appKey'))
 RunTestCommand.addOption('configPath', Command.String('--config'))
 RunTestCommand.addOption('datadogSite', Command.String('--datadogSite'))
 RunTestCommand.addOption('failOnCriticalErrors', Command.Boolean('--failOnCriticalErrors'))
+RunTestCommand.addOption('failOnMissingTests', Command.Boolean('--failOnMissingTests'))
 RunTestCommand.addOption('failOnTimeout', Command.Boolean('--failOnTimeout'))
 RunTestCommand.addOption('files', Command.Array('-f,--files'))
 RunTestCommand.addOption('jUnitReport', Command.String('-j,--jUnitReport'))

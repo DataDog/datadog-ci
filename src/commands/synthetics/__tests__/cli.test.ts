@@ -79,6 +79,7 @@ describe('run-test', () => {
         configPath: 'src/commands/synthetics/__tests__/config-fixtures/config-with-all-keys.json',
         datadogSite: 'datadoghq.eu',
         failOnCriticalErrors: true,
+        failOnMissingTests: true,
         failOnTimeout: false,
         files: ['my-new-file'],
         global: {locations: [], pollingTimeout: 2},
@@ -283,7 +284,7 @@ describe('run-test', () => {
   })
 
   describe('exit code respects `failOnCriticalErrors`', () => {
-    test('404 leading to `NO_TESTS_TO_RUN` never exit with 1', async () => {
+    test('404 leading to `NO_TESTS_TO_RUN` never exits with 1', async () => {
       const command = new RunTestCommand()
       command.context = {stdout: {write: jest.fn()}} as any
       command['config'].failOnCriticalErrors = true
@@ -383,5 +384,46 @@ describe('run-test', () => {
         })
       })
     })
+  })
+
+  describe('exit code respects `failOnMissingTests`', () => {
+    const cases: [string, boolean, number, string[]][] = [
+      ['only missing tests', false, 0, ['mis-sin-ggg']],
+      ['only missing tests', true, 1, ['mis-sin-ggg']],
+      ['both missing and available tests', false, 0, ['mis-sin-ggg', 'abc-def-ghi']],
+      ['both missing and available tests', true, 1, ['mis-sin-ggg', 'abc-def-ghi']],
+    ]
+
+    test.each(cases)(
+      '%s with failOnMissingTests=%s exits with %s',
+      async (_: string, failOnMissingTests: boolean, exitCode: number, tests: (string | null)[]) => {
+        const command = new RunTestCommand()
+        command.context = {stdout: {write: jest.fn()}} as any
+        command['config'].failOnMissingTests = failOnMissingTests
+
+        const apiHelper = {
+          getTest: jest.fn((testId: string) => {
+            if (testId === 'mis-sin-ggg') {
+              throw getAxiosHttpError(404, 'Test not found')
+            }
+
+            return {}
+          }),
+        }
+        jest.spyOn(api, 'getApiHelper').mockImplementation(() => apiHelper as any)
+        jest.spyOn(ciUtils, 'resolveConfigFromFile').mockImplementation(async (config, __) => config)
+        jest.spyOn(utils, 'getSuites').mockImplementation((() => [
+          {
+            content: {
+              tests: tests.map((testId) => ({config: {}, id: testId})),
+            },
+            name: 'Suite 1',
+          },
+        ]) as any)
+
+        expect(await command.execute()).toBe(exitCode)
+        expect(apiHelper.getTest).toHaveBeenCalledTimes(tests.length)
+      }
+    )
   })
 })

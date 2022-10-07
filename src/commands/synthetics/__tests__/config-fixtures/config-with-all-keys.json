@@ -4,6 +4,7 @@
   "configPath": "fake-datadog-ci.json",
   "datadogSite": "datadoghq.eu",
   "failOnCriticalErrors": true,
+  "failOnMissingTests": true,
   "failOnTimeout": false,
   "files": ["my-new-file"],
   "global": {

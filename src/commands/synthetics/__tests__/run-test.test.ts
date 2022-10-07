@@ -60,6 +60,7 @@ describe('run-test', () => {
           expect.objectContaining({id: 'public-id-2', config: userConfigOverride}),
         ]),
         expect.anything(),
+        false,
         false
       )
     })
@@ -108,6 +109,7 @@ describe('run-test', () => {
             expect.objectContaining({id: 'public-id-2', config: expectedOverriddenConfig}),
           ]),
           expect.anything(),
+          false,
           false
         )
       }
@@ -140,6 +142,7 @@ describe('run-test', () => {
           expect.objectContaining({id: 'public-id-2', config: configOverride}),
         ]),
         expect.anything(),
+        false,
         false
       )
     })
@@ -174,6 +177,7 @@ describe('run-test', () => {
           expect.objectContaining({id: 'public-id-2', config: configOverride}),
         ]),
         expect.anything(),
+        false,
         false
       )
       expect(apiHelper.getTunnelPresignedURL).not.toHaveBeenCalled()
