@@ -26,12 +26,14 @@ export interface BaseServerResult {
   unhealthy?: boolean
 }
 
+export interface Device {
+  height: number
+  id: string
+  width: number
+}
+
 export interface BrowserServerResult extends BaseServerResult {
-  device: {
-    height: number
-    id: string
-    width: number
-  }
+  device?: Device
   duration: number
   startUrl: string
   stepDetails: Step[]
@@ -343,9 +345,8 @@ export interface Suite {
 }
 
 export interface Summary {
-  // The batchId is set later in the process, so it first needs to be undefined ; it will always be defined eventually.
-  // Multiple suites will have the same batchId.
-  batchId?: string
+  // The batchId is associated to a full run of datadog-ci: multiple suites will be in the same batch.
+  batchId: string
   criticalErrors: number
   failed: number
   failedNonBlocking: number
@@ -365,6 +366,7 @@ export interface APIConfiguration {
   apiKey: string
   appKey: string
   baseIntakeUrl: string
+  baseUnstableUrl: string
   baseUrl: string
   proxyOpts: ProxyConfiguration
 }
@@ -389,4 +391,14 @@ export interface SyntheticsCIConfig {
 
 export interface CommandConfig extends SyntheticsCIConfig {
   failOnTimeout: boolean
+}
+
+export interface PresignedUrlResponse {
+  file_name: string
+  presigned_url_params: {
+    fields: {
+      [key: string]: string
+    }
+    url: string
+  }
 }

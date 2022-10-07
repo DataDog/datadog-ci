@@ -1,3 +1,4 @@
+import {exec} from 'child_process'
 import deepExtend from 'deep-extend'
 import * as fs from 'fs'
 import * as path from 'path'
@@ -6,6 +7,7 @@ import {promisify} from 'util'
 
 import chalk from 'chalk'
 import glob from 'glob'
+import process from 'process'
 
 import {getCIMetadata} from '../../helpers/ci'
 import {GIT_COMMIT_MESSAGE} from '../../helpers/tags'
@@ -16,10 +18,12 @@ import {MAX_TESTS_TO_TRIGGER} from './command'
 import {CiError, CriticalError} from './errors'
 import {
   Batch,
+  BrowserServerResult,
   CommandConfig,
   ExecutionRule,
   LocationsMapping,
   MainReporter,
+  Operator,
   Payload,
   PollResult,
   Reporter,
@@ -37,12 +41,30 @@ import {
   TriggerConfig,
   UserConfigOverride,
 } from './interfaces'
+import {uploadApplicationAndOverrideConfig} from './mobile'
 import {Tunnel} from './tunnel'
 
 const POLLING_INTERVAL = 5000 // In ms
 const PUBLIC_ID_REGEX = /^[\d\w]{3}-[\d\w]{3}-[\d\w]{3}$/
 const SUBDOMAIN_REGEX = /(.*?)\.(?=[^\/]*\..{2,5})/
 const TEMPLATE_REGEX = /{{\s*([^{}]*?)\s*}}/g
+
+export const readableOperation: {[key in Operator]: string} = {
+  [Operator.contains]: 'should contain',
+  [Operator.doesNotContain]: 'should not contain',
+  [Operator.is]: 'should be',
+  [Operator.isNot]: 'should not be',
+  [Operator.lessThan]: 'should be less than',
+  [Operator.matches]: 'should match',
+  [Operator.doesNotMatch]: 'should not match',
+  [Operator.isInLessThan]: 'will expire in less than',
+  [Operator.isInMoreThan]: 'will expire in more than',
+  [Operator.lessThanOrEqual]: 'should be less than or equal to',
+  [Operator.moreThan]: 'should be more than',
+  [Operator.moreThanOrEqual]: 'should be less than or equal to',
+  [Operator.validatesJSONPath]: 'assert on JSONPath extracted value',
+  [Operator.validatesXPath]: 'assert on XPath extracted value',
+}
 
 const template = (st: string, context: any): string =>
   st.replace(TEMPLATE_REGEX, (match: string, p1: string) => (p1 in context ? context[p1] : match))
@@ -251,13 +273,32 @@ export const getSuites = async (GLOB: string, reporter: MainReporter): Promise<S
     files.map(async (file) => {
       try {
         const content = await promisify(fs.readFile)(file, 'utf8')
+        const suiteName = await getFilePathRelativeToRepo(file)
 
-        return {name: file, content: JSON.parse(content)}
+        return {name: suiteName, content: JSON.parse(content)}
       } catch (e) {
         throw new Error(`Unable to read and parse the test file ${file}`)
       }
     })
   )
+}
+
+export const getFilePathRelativeToRepo = async (filePath: string) => {
+  const parentDirectory = path.dirname(filePath)
+  const filename = path.basename(filePath)
+
+  let relativeDirectory: string
+
+  try {
+    const {stdout} = await promisify(exec)('git rev-parse --show-toplevel')
+    const repoTopLevel = stdout.trim()
+    relativeDirectory = path.relative(repoTopLevel, parentDirectory)
+  } catch {
+    // We aren't in a git repository: fall back to the given path, relative to the process working directory.
+    relativeDirectory = path.relative(process.cwd(), parentDirectory)
+  }
+
+  return path.join(relativeDirectory, filename)
 }
 
 export const wait = async (duration: number) => new Promise((resolve) => setTimeout(resolve, duration))
@@ -343,7 +384,7 @@ const getResultFromBatch = (
     passed: hasResultPassed(pollResult.result, hasTimeout, failOnCriticalErrors, failOnTimeout),
     result: pollResult.result,
     resultId: resultInBatch.result_id,
-    test: deepExtend(test, pollResult.check),
+    test: deepExtend({}, test, pollResult.check),
     timedOut: hasTimeout,
     timestamp: pollResult.timestamp,
   }
@@ -408,7 +449,9 @@ export const waitForResults = async (
   return results
 }
 
-export const createSummary = (): Summary => ({
+export type InitialSummary = Omit<Summary, 'batchId'>
+
+export const createInitialSummary = (): InitialSummary => ({
   criticalErrors: 0,
   failed: 0,
   failedNonBlocking: 0,
@@ -521,11 +564,11 @@ const getTest = async (api: APIHelper, {id, suite}: TriggerConfig): Promise<{tes
   }
 }
 
-const getTestAndOverrideConfig = async (
+export const getTestAndOverrideConfig = async (
   api: APIHelper,
   {config, id, suite}: TriggerConfig,
   reporter: MainReporter,
-  summary: Summary
+  summary: InitialSummary
 ) => {
   const normalizedId = PUBLIC_ID_REGEX.test(id) ? id : id.substr(id.lastIndexOf('/') + 1)
 
@@ -551,6 +594,9 @@ const getTestAndOverrideConfig = async (
   return {overriddenConfig}
 }
 
+export const isDeviceIdSet = (result: ServerResult): result is Required<BrowserServerResult> =>
+  'device' in result && result.device !== undefined
+
 export const getTestsToTrigger = async (
   api: APIHelper,
   triggerConfigs: TriggerConfig[],
@@ -568,10 +614,28 @@ export const getTestsToTrigger = async (
     )
   }
 
-  const summary = createSummary()
+  const initialSummary = createInitialSummary()
   const testsAndConfigsOverride = await Promise.all(
-    triggerConfigs.map((triggerConfig) => getTestAndOverrideConfig(api, triggerConfig, reporter, summary))
+    triggerConfigs.map((triggerConfig) => getTestAndOverrideConfig(api, triggerConfig, reporter, initialSummary))
   )
+
+  const uploadedApplicationByPath: {[applicationFilePath: string]: {applicationId: string; fileName: string}[]} = {}
+  for (const {test, overriddenConfig} of testsAndConfigsOverride) {
+    if (test && test.type === 'mobile' && overriddenConfig) {
+      const {config: userConfigOverride} = triggerConfigs.find(({id}) => id === test.public_id)!
+      try {
+        await uploadApplicationAndOverrideConfig(
+          api,
+          test,
+          userConfigOverride,
+          overriddenConfig,
+          uploadedApplicationByPath
+        )
+      } catch (e) {
+        throw new CriticalError('UPLOAD_MOBILE_APPLICATION_TESTS_FAILED', e.message)
+      }
+    }
+  }
 
   const overriddenTestsToTrigger: TestPayload[] = []
   const waitedTests: Test[] = []
@@ -605,7 +669,7 @@ export const getTestsToTrigger = async (
     reporter.testsWait(waitedTests)
   }
 
-  return {tests: waitedTests, overriddenTestsToTrigger, summary}
+  return {tests: waitedTests, overriddenTestsToTrigger, initialSummary}
 }
 
 export const runTests = async (api: APIHelper, testsToTrigger: TestPayload[]): Promise<Trigger> => {
@@ -776,8 +840,14 @@ export const renderResults = ({
   return hasSucceeded ? 0 : 1
 }
 
-export const getDatadogHost = (useIntake = false, config: SyntheticsCIConfig) => {
-  const apiPath = 'api/v1'
+export const getDatadogHost = (hostConfig: {
+  apiVersion: 'v1' | 'unstable'
+  config: SyntheticsCIConfig
+  useIntake: boolean
+}) => {
+  const {useIntake, apiVersion, config} = hostConfig
+
+  const apiPath = apiVersion === 'v1' ? 'api/v1' : 'api/unstable'
   let host = `https://api.${config.datadogSite}`
   const hostOverride = process.env.DD_API_HOST_OVERRIDE
 
@@ -789,3 +859,5 @@ export const getDatadogHost = (useIntake = false, config: SyntheticsCIConfig) =>
 
   return `${host}/${apiPath}`
 }
+
+export const pluralize = (word: string, count: number): string => (count === 1 ? word : `${word}s`)
