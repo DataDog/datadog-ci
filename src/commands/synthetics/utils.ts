@@ -752,12 +752,6 @@ export const getAppBaseURL = ({datadogSite, subdomain}: Pick<CommandConfig, 'dat
   const validSubdomain = subdomain || DEFAULT_COMMAND_CONFIG.subdomain
   const datadogSiteParts = datadogSite.split('.')
 
-  if (datadogSiteParts.length !== 2 && datadogSiteParts.length !== 3) {
-    throw Error(
-      'The `datadogSite` you provided is incorrect. It must look like `datadoghq.com` or `us3.datadoghq.com`.'
-    )
-  }
-
   if (datadogSiteParts.length === 3) {
     if (validSubdomain === DEFAULT_COMMAND_CONFIG.subdomain) {
       return `https://${datadogSite}/`
