@@ -94,7 +94,7 @@ You can pass the following arguments to `instrument` to specify its behavior. Th
 | `--tracing` |  | Whether to enable dd-trace tracing on your Lambda. | `true` |
 | `--merge-xray-traces` | | Whether to join dd-trace traces to AWS X-Ray traces. Useful for tracing API Gateway spans. | `false` |
 | `--flush-metrics-to-logs` | | Whether to send metrics via the Datadog Forwarder [asynchronously][11]. If you disable this parameter, it's required to export `DATADOG_API_KEY` (or if encrypted, `DATADOG_KMS_API_KEY` or `DATADOG_API_KEY_SECRET_ARN`). | `true` |
-| `--capture-lambda-payload` | | Whether to capture and store the payload and reponse of a lambda invocation. | `false` |
+| `--capture-lambda-payload` | | Whether to capture and store the payload and response of a lambda invocation. | `false` |
 | `--forwarder` | | The ARN of the [datadog forwarder][10] to attach this function's LogGroup to. | |
 | `--dry` | `-d` | Preview changes running command would apply. | `false` |
 | `--log-level` | | Set to `debug` to see additional output from the Datadog Lambda Library and/or Lambda Extension for troubleshooting purposes. | |

@@ -10,7 +10,7 @@ import {InvalidConfigurationError} from '../../helpers/errors'
 import {RequestBuilder} from '../../helpers/interfaces'
 import {getMetricsLogger, MetricsLogger} from '../../helpers/metrics'
 import {upload, UploadStatus} from '../../helpers/upload'
-import {buildPath, getRequestBuilder, resolveConfigFromFile} from '../../helpers/utils'
+import {buildPath, DEFAULT_CONFIG_PATH, getRequestBuilder, resolveConfigFromFile} from '../../helpers/utils'
 import {ArchSlice, CompressedDsym, Dsym} from './interfaces'
 import {
   renderCommandDetail,
@@ -34,15 +34,13 @@ import {
   zipDirectoryToArchive,
 } from './utils'
 
-const DEFAULT_CONFIG_PATH = 'datadog-ci.json'
-
 export class UploadCommand extends Command {
   public static usage = Command.Usage({
     description: 'Upload dSYM files to Datadog.',
     details: `
-            This command will upload all dSYM files to Datadog in order to symbolicate crash reports received by Datadog.
-            See README for details.
-        `,
+      This command will upload all dSYM files to Datadog in order to symbolicate crash reports received by Datadog.\n
+      See README for details.
+    `,
     examples: [
       ['Upload all dSYM files in Derived Data path', 'datadog-ci dsyms upload ~/Library/Developer/Xcode/DerivedData'],
       [

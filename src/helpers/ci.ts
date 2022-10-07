@@ -592,28 +592,28 @@ const parsePipelineNumber = (pipelineNumberStr: string | undefined): number | un
 export const getCIEnv = (): {ciEnv: Record<string, string>; provider: string} => {
   if (process.env.CIRCLECI) {
     return {
-      ciEnv: getEnvVars('CIRCLE_'),
+      ciEnv: filterEnv(['CIRCLE_WORKFLOW_ID', 'CIRCLE_BUILD_NUM']),
       provider: 'circleci',
     }
   }
 
   if (process.env.GITLAB_CI) {
     return {
-      ciEnv: getEnvVars('CI_'),
+      ciEnv: filterEnv(['CI_PROJECT_URL', 'CI_PIPELINE_ID', 'CI_JOB_ID']),
       provider: 'gitlab',
     }
   }
 
   if (process.env.GITHUB_ACTIONS || process.env.GITHUB_ACTION) {
     return {
-      ciEnv: getEnvVars('GITHUB_'),
+      ciEnv: filterEnv(['GITHUB_SERVER_URL', 'GITHUB_REPOSITORY', 'GITHUB_RUN_ID', 'GITHUB_RUN_ATTEMPT']),
       provider: 'github',
     }
   }
 
   if (process.env.BUILDKITE) {
     return {
-      ciEnv: getEnvVars('BUILDKITE_'),
+      ciEnv: filterEnv(['BUILDKITE_BUILD_ID', 'BUILDKITE_JOB_ID']),
       provider: 'buildkite',
     }
   }
@@ -621,7 +621,23 @@ export const getCIEnv = (): {ciEnv: Record<string, string>; provider: string} =>
   throw new Error('Only providers [GitHub, GitLab, CircleCI, Buildkite] are supported')
 }
 
-const getEnvVars = (prefix: string): Record<string, string> =>
-  Object.entries(process.env)
-    .filter(([key, value]) => key.startsWith(prefix) && !/(PASS)|(TOKEN)|(SECRET)|(KEY)/i.test(key))
-    .reduce((accum, [key, value]) => ({...accum, [key]: value}), {})
+const filterEnv = (values: string[]): Record<string, string> => {
+  const ciEnvs: Record<string, string> = {}
+  const missing: string[] = []
+
+  values.forEach((envKey) => {
+    const envValue = process.env[envKey]
+    if (envValue) {
+      ciEnvs[envKey] = envValue
+    } else {
+      missing.push(envKey)
+    }
+  })
+
+  if (missing.length > 0) {
+    // Get the missing values for better error
+    throw new Error(`Missing environment variables [${missing.toString()}]`)
+  }
+
+  return ciEnvs
+}

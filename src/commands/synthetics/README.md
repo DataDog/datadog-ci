@@ -6,7 +6,7 @@ Run Synthetics tests from your CI.
 
 ### Setup
 
-You need to either have `DATADOG_API_KEY` and `DATADOG_APP_KEY` in your environment or pass them to the CLI.
+You need to have a Datadog API key (`DATADOG_API_KEY`) and application key(`DATADOG_APP_KEY`) available in your environment or pass them to the CLI.
 
 ```bash
 # Environment setup
@@ -17,7 +17,7 @@ export DATADOG_APP_KEY="<APPLICATION KEY>"
 yarn datadog-ci synthetics <command> --apiKey "<API KEY>" --appKey "<APPLICATION KEY>"
 ```
 
-It is possible to configure the tool to use Datadog EU by defining the `DATADOG_SITE` environment variable to `datadoghq.eu`. By default the requests are sent to Datadog US.
+It is possible to configure the tool to use other Datadog sites by defining the `DATADOG_SITE` environment variable. By default the requests are sent to Datadog US1.
 
 If the org uses a custom sub-domain to access Datadog app, it needs to be set in the `DATADOG_SUBDOMAIN` environment variable or in the global configuration file under the `subdomain` key to properly display the test results URL. As an example, if the URL used to access Datadog is `myorg.datadoghq.com` then set the environment variable to `myorg`, ie:
 
@@ -47,7 +47,8 @@ The configuration file structure is the following:
   "appKey": "<DATADOG_APPLICATION_KEY>",
   "datadogSite": "datadoghq.com",
   "failOnCriticalErrors": true,
-  "failOnTimeout": "true",
+  "failOnMissingTests": true,
+  "failOnTimeout": true,
   "files": "{,!(node_modules)/**/}*.synthetics.json",
   "global": {
     "allowInsecureCertificates": true,
@@ -56,7 +57,7 @@ The configuration file structure is the following:
     "bodyType": "application/json",
     "cookies": "name1=value1;name2=value2;",
     "defaultStepTimeout": 15,
-    "deviceIds": ["laptop_large"],
+    "deviceIds": ["chrome.laptop_large"],
     "executionRule": "skipped",
     "followRedirects": true,
     "headers": {"NEW_HEADER": "NEW VALUE"},
@@ -88,9 +89,9 @@ As the [`proxy-agent`](https://github.com/TooTallNate/node-proxy-agent) library 
 
 **Note**: `host` and `port` keys are mandatory arguments and the `protocol` key defaults to `http` if not defined.
 
-#### Commands
+#### Sub-commands
 
-The available command is:
+The available sub-command is:
 
 - `run-tests`: run the tests discovered in the folder according to the `files` configuration key
 
@@ -122,7 +123,8 @@ yarn datadog-ci synthetics run-tests -f ./component-1/**/*.synthetics.json -v PA
 #### Failure modes flags
 
 - `--failOnTimeout` (or `--no-failOnTimeout`) will make the CI fail (or pass) if one of the result exceed its test timeout.
-- `--failOnCriticalErrors` will make the command exit with an error code 1 if tests were not triggered or results could not be fetched.
+- `--failOnCriticalErrors` will make the CI fail if tests were not triggered or results could not be fetched.
+- `--failOnMissingTests` will make the CI fail if at least one test is missing.
 
 ### Test files
 
@@ -141,7 +143,7 @@ Your test files must be named with a `.synthetics.json` suffix.
         "bodyType": "application/json",
         "cookies": "name1=value1;name2=value2;",
         "defaultStepTimeout": 15,
-        "deviceIds": ["laptop_large"],
+        "deviceIds": ["chrome.laptop_large"],
         "executionRule": "skipped",
         "followRedirects": true,
         "headers": {"NEW_HEADER": "NEW VALUE"},
@@ -220,6 +222,10 @@ and so on...
 
 </details>
 
+### Testing tunnel
+
+You can run tests within your development environment by combining variable overrides with the [Testing Tunnel](https://docs.datadoghq.com/synthetics/testing_tunnel/#pagetitle). This allows you to run end-to-end encryption at every stage of your software development lifecycle, from pre-production environments through to your production system.
+
 ### End-to-end testing process
 
 To verify this command works as expected, you can trigger a test run and verify it returns 0:
@@ -249,21 +255,30 @@ Took 11546ms
 
 ### Reporters
 
-We currently only use a default reporter writing in stdout.
+Two reporters are supported out-of-the-box:
+
+1. `stdout`
+2. JUnit
+
+To enable the JUnit report, pass the `--jUnitReport` (`-j` shorthand) in your command, specifying a filename for your JUnit XML report. 
+
+```bash
+yarn datadog-ci synthetics run-tests -s 'tag:e2e-tests' --config global.config.json --jUnitReport e2e-test-junit
+```
 
 Reporters can hook themselves into the `MainReporter` of the command.
 
 #### Available hooks
 
-| Hook name        | Parameters                                                                           | Description                                                     |
-| :--------------- | :----------------------------------------------------------------------------------- | :-------------------------------------------------------------- |
-| `log`            | `(log: string)`                                                                      | called for logging.                                             |
-| `error`          | `(error: string)`                                                                    | called whenever an error occurs.                                |
-| `initErrors`     | `(errors: string[])`                                                                 | called whenever an error occurs during the tests parsing phase. |
-| `reportStart`    | `(timings: {startTime: number})`                                                     | called at the start of the report.                              |
-| `resultEnd`      | `(result: Result, baseUrl: string)`                                                  | called for each result at the end of all results.               |
-| `resultReceived` | `(result: Result)`                                                                   | called when a result is received.                               |
-| `testTrigger`    | `(test: Test, testId: string, executionRule: ExecutionRule, config: ConfigOverride)` | called when a test is triggered.                                |
-| `testWait`       | `(test: Test)`                                                                       | called when a test is waiting to receive its results.           |
-| `testsWait`      | `(tests: Test[])`                                                                    | called when all tests are waiting to receive their results.     |
-| `runEnd`         | `(summary: Summary, baseUrl: string)`                                                | called at the end of the run.                                   |
+| Hook name        | Parameters                                                                               | Description                                                     |
+| :--------------- | :--------------------------------------------------------------------------------------- | :-------------------------------------------------------------- |
+| `log`            | `(log: string)`                                                                          | called for logging.                                             |
+| `error`          | `(error: string)`                                                                        | called whenever an error occurs.                                |
+| `initErrors`     | `(errors: string[])`                                                                     | called whenever an error occurs during the tests parsing phase. |
+| `reportStart`    | `(timings: {startTime: number})`                                                         | called at the start of the report.                              |
+| `resultEnd`      | `(result: Result, baseUrl: string)`                                                      | called for each result at the end of all results.               |
+| `resultReceived` | `(result: Result)`                                                                       | called when a result is received.                               |
+| `testTrigger`    | `(test: Test, testId: string, executionRule: ExecutionRule, config: UserConfigOverride)` | called when a test is triggered.                                |
+| `testWait`       | `(test: Test)`                                                                           | called when a test is waiting to receive its results.           |
+| `testsWait`      | `(tests: Test[])`                                                                        | called when all tests are waiting to receive their results.     |
+| `runEnd`         | `(summary: Summary, baseUrl: string)`                                                    | called at the end of the run.                                   |

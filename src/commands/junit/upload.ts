@@ -47,9 +47,9 @@ export class UploadJUnitXMLCommand extends Command {
   public static usage = Command.Usage({
     description: 'Upload jUnit XML test reports files to Datadog.',
     details: `
-            This command will upload to jUnit XML test reports files to Datadog.
-            See README for details.
-        `,
+      This command will upload to jUnit XML test reports files to Datadog.\n
+      See README for details.
+    `,
     examples: [
       ['Upload all jUnit XML test report files in current directory', 'datadog-ci junit upload --service my-service .'],
       [

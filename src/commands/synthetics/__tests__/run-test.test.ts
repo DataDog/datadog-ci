@@ -1,14 +1,24 @@
 // tslint:disable: no-string-literal
+
 import {AxiosError, AxiosResponse} from 'axios'
+import {promises as fs} from 'fs'
 import * as ciUtils from '../../../helpers/utils'
 import * as api from '../api'
 import {MAX_TESTS_TO_TRIGGER} from '../command'
 import {CiError, CriticalCiErrorCode, CriticalError} from '../errors'
-import {ConfigOverride, ExecutionRule, SyntheticsCIConfig} from '../interfaces'
+import {ExecutionRule, SyntheticsCIConfig, UserConfigOverride} from '../interfaces'
 import * as runTests from '../run-test'
 import {Tunnel} from '../tunnel'
 import * as utils from '../utils'
-import {ciConfig, getApiResult, getApiTest, mockReporter, mockTestTriggerResponse} from './fixtures'
+import {
+  ciConfig,
+  getApiResult,
+  getApiTest,
+  getMobileTest,
+  MOBILE_PRESIGNED_URL_PAYLOAD,
+  mockReporter,
+  mockTestTriggerResponse,
+} from './fixtures'
 
 describe('run-test', () => {
   beforeEach(() => {
@@ -21,8 +31,8 @@ describe('run-test', () => {
     test('should apply config override for tests triggered by public id', async () => {
       const getTestsToTriggersMock = jest.spyOn(utils, 'getTestsToTrigger').mockReturnValue(
         Promise.resolve({
+          initialSummary: utils.createInitialSummary(),
           overriddenTestsToTrigger: [],
-          summary: utils.createSummary(),
           tests: [],
         })
       )
@@ -30,7 +40,7 @@ describe('run-test', () => {
 
       const startUrl = '{{PROTOCOL}}//myhost{{PATHNAME}}{{PARAMS}}'
       const locations = ['location1', 'location2']
-      const configOverride = {locations, startUrl}
+      const userConfigOverride = {locations, startUrl}
 
       const apiHelper = {}
 
@@ -39,17 +49,18 @@ describe('run-test', () => {
       await expect(
         runTests.executeTests(mockReporter, {
           ...ciConfig,
-          global: configOverride,
+          global: userConfigOverride,
           publicIds: ['public-id-1', 'public-id-2'],
         })
       ).rejects.toThrow()
       expect(getTestsToTriggersMock).toHaveBeenCalledWith(
         apiHelper,
         expect.arrayContaining([
-          expect.objectContaining({id: 'public-id-1', config: configOverride}),
-          expect.objectContaining({id: 'public-id-2', config: configOverride}),
+          expect.objectContaining({id: 'public-id-1', config: userConfigOverride}),
+          expect.objectContaining({id: 'public-id-2', config: userConfigOverride}),
         ]),
         expect.anything(),
+        false,
         false
       )
     })
@@ -70,13 +81,13 @@ describe('run-test', () => {
         {global: {locations: ['global-location-1']}, locations: ['envvar-location-1', 'envvar-location-2']},
         {locations: ['envvar-location-1', 'envvar-location-2']},
       ],
-    ] as [string, Partial<SyntheticsCIConfig>, ConfigOverride][])(
+    ] as [string, Partial<SyntheticsCIConfig>, UserConfigOverride][])(
       'Use appropriate list of locations for tests triggered by public id: %s',
       async (text, partialCIConfig, expectedOverriddenConfig) => {
         const getTestsToTriggersMock = jest.spyOn(utils, 'getTestsToTrigger').mockReturnValue(
           Promise.resolve({
+            initialSummary: utils.createInitialSummary(),
             overriddenTestsToTrigger: [],
-            summary: utils.createSummary(),
             tests: [],
           })
         )
@@ -98,6 +109,7 @@ describe('run-test', () => {
             expect.objectContaining({id: 'public-id-2', config: expectedOverriddenConfig}),
           ]),
           expect.anything(),
+          false,
           false
         )
       }
@@ -106,8 +118,8 @@ describe('run-test', () => {
     test('should not wait for `skipped` only tests batch results', async () => {
       const getTestsToTriggersMock = jest.spyOn(utils, 'getTestsToTrigger').mockReturnValue(
         Promise.resolve({
+          initialSummary: utils.createInitialSummary(),
           overriddenTestsToTrigger: [],
-          summary: utils.createSummary(),
           tests: [],
         })
       )
@@ -130,6 +142,7 @@ describe('run-test', () => {
           expect.objectContaining({id: 'public-id-2', config: configOverride}),
         ]),
         expect.anything(),
+        false,
         false
       )
     })
@@ -137,8 +150,8 @@ describe('run-test', () => {
     test('should not open tunnel if no test to run', async () => {
       const getTestsToTriggersMock = jest.spyOn(utils, 'getTestsToTrigger').mockReturnValue(
         Promise.resolve({
+          initialSummary: utils.createInitialSummary(),
           overriddenTestsToTrigger: [],
-          summary: utils.createSummary(),
           tests: [],
         })
       )
@@ -164,6 +177,7 @@ describe('run-test', () => {
           expect.objectContaining({id: 'public-id-2', config: configOverride}),
         ]),
         expect.anything(),
+        false,
         false
       )
       expect(apiHelper.getTunnelPresignedURL).not.toHaveBeenCalled()
@@ -178,8 +192,8 @@ describe('run-test', () => {
 
       jest.spyOn(utils, 'getTestsToTrigger').mockReturnValue(
         Promise.resolve({
+          initialSummary: utils.createInitialSummary(),
           overriddenTestsToTrigger: [],
-          summary: utils.createSummary(),
           tests: [{options: {ci: {executionRule: ExecutionRule.BLOCKING}}, public_id: '123-456-789'} as any],
         })
       )
@@ -244,8 +258,8 @@ describe('run-test', () => {
     test('getTunnelPresignedURL throws', async () => {
       jest.spyOn(utils, 'getTestsToTrigger').mockReturnValue(
         Promise.resolve({
+          initialSummary: utils.createInitialSummary(),
           overriddenTestsToTrigger: [],
-          summary: utils.createSummary(),
           tests: [{options: {ci: {executionRule: ExecutionRule.BLOCKING}}, public_id: 'publicId'} as any],
         })
       )
@@ -265,6 +279,67 @@ describe('run-test', () => {
       ).rejects.toMatchError(new CriticalError('UNAVAILABLE_TUNNEL_CONFIG', 'Server Error'))
     })
 
+    test('getMobileApplicationPresignedURL throws', async () => {
+      const mobileTest = getMobileTest()
+      jest.spyOn(utils, 'getTestAndOverrideConfig').mockImplementation(async () =>
+        Promise.resolve({
+          overriddenConfig: {executionRule: ExecutionRule.NON_BLOCKING, public_id: mobileTest.public_id},
+          test: mobileTest,
+        })
+      )
+
+      jest.spyOn(fs, 'readFile').mockImplementation(async () => Buffer.from('aa'))
+
+      const serverError = new Error('Server Error') as AxiosError
+      serverError.response = {data: {errors: ['Bad Gateway']}, status: 502} as AxiosResponse
+      serverError.config = {baseURL: 'baseURL', url: 'url'}
+      const apiHelper = {
+        getMobileApplicationPresignedURL: jest.fn(() => {
+          throw serverError
+        }),
+      }
+
+      jest.spyOn(api, 'getApiHelper').mockImplementation(() => apiHelper as any)
+      await expect(
+        runTests.executeTests(mockReporter, {
+          ...ciConfig,
+          global: {mobileApplicationVersionFilePath: 'filePath'},
+          publicIds: [mobileTest.public_id],
+        })
+      ).rejects.toMatchError(new CriticalError('UPLOAD_MOBILE_APPLICATION_TESTS_FAILED', 'Server Error'))
+    })
+
+    test('uploadMobileApplication throws', async () => {
+      const mobileTest = getMobileTest()
+      jest.spyOn(utils, 'getTestAndOverrideConfig').mockImplementation(async () =>
+        Promise.resolve({
+          overriddenConfig: {executionRule: ExecutionRule.NON_BLOCKING, public_id: mobileTest.public_id},
+          test: mobileTest,
+        })
+      )
+
+      jest.spyOn(fs, 'readFile').mockImplementation(async () => Buffer.from('aa'))
+
+      const serverError = new Error('Server Error') as AxiosError
+      serverError.response = {data: {errors: ['Bad Gateway']}, status: 502} as AxiosResponse
+      serverError.config = {baseURL: 'baseURL', url: 'url'}
+      const apiHelper = {
+        getMobileApplicationPresignedURL: jest.fn(() => MOBILE_PRESIGNED_URL_PAYLOAD),
+        uploadMobileApplication: jest.fn(() => {
+          throw serverError
+        }),
+      }
+
+      jest.spyOn(api, 'getApiHelper').mockImplementation(() => apiHelper as any)
+      await expect(
+        runTests.executeTests(mockReporter, {
+          ...ciConfig,
+          global: {mobileApplicationVersionFilePath: 'filePath'},
+          publicIds: [mobileTest.public_id],
+        })
+      ).rejects.toMatchError(new CriticalError('UPLOAD_MOBILE_APPLICATION_TESTS_FAILED', 'Server Error'))
+    })
+
     test('runTests throws', async () => {
       jest
         .spyOn(Tunnel.prototype, 'start')
@@ -273,8 +348,8 @@ describe('run-test', () => {
 
       jest.spyOn(utils, 'getTestsToTrigger').mockReturnValue(
         Promise.resolve({
+          initialSummary: utils.createInitialSummary(),
           overriddenTestsToTrigger: [],
-          summary: utils.createSummary(),
           tests: [{options: {ci: {executionRule: ExecutionRule.BLOCKING}}, public_id: 'publicId'} as any],
         })
       )
@@ -315,8 +390,8 @@ describe('run-test', () => {
       const stopTunnelSpy = jest.spyOn(Tunnel.prototype, 'stop')
       jest.spyOn(utils, 'getTestsToTrigger').mockReturnValue(
         Promise.resolve({
+          initialSummary: utils.createInitialSummary(),
           overriddenTestsToTrigger: [],
-          summary: utils.createSummary(),
           tests: [{options: {ci: {executionRule: ExecutionRule.BLOCKING}}, public_id: 'publicId'} as any],
         })
       )
