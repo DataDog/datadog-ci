@@ -2,7 +2,7 @@
 jest.mock('fs')
 jest.mock('aws-sdk')
 jest.mock('../prompt')
-import {Lambda, SharedIniFileCredentials, config as aws_sdk_config} from 'aws-sdk'
+import {config as aws_sdk_config, Lambda, SharedIniFileCredentials} from 'aws-sdk'
 import {Cli} from 'clipanion/lib/advanced'
 import * as fs from 'fs'
 import path from 'path'
