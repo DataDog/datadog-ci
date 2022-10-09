@@ -2,9 +2,12 @@ import {APIHelper, getApiHelper, isForbiddenError} from './api'
 import {MAX_TESTS_TO_TRIGGER} from './command'
 import {CiError, CriticalError} from './errors'
 import {
+  Batch,
   CommandConfig,
+  ExecutionRule,
   MainReporter,
   Result,
+  ResultInBatch,
   Suite,
   Summary,
   SyntheticsCIConfig,
@@ -17,6 +20,164 @@ import {
 import {Tunnel} from './tunnel'
 import {getSuites, getTestsToTrigger, InitialSummary, runTests, waitForResults} from './utils'
 
+// Tunnel cache?
+
+export interface TestDriver {
+  // Disposes the drivers
+  // Does not throw
+  dispose(): void
+
+  // Rejects batchId is unknown
+  // should dispose any information about the batchId after it's not 'in-progress'
+  refresh(batchId: string): Promise<Batch>
+
+  // Rejects if unsupported config
+  start(config: CommandConfig, suites?: Suite[]): Promise<Trigger>
+
+  // Do not reject for unknown batchId
+  stop(batchId: string): Promise<void>
+}
+
+export const createTestDriver = (): TestDriver => {
+  const batchData: {
+    [batchId: string]: {
+      isTunnelConnected?: boolean
+      startTestResult: StartTestResult
+    }
+  } = {}
+
+  const stopBatch = async (data: typeof batchData['string']) => {
+    if (data) {
+      delete batchData[data.startTestResult.trigger.batch_id]
+
+      const {stopTunnel} = data.startTestResult
+      await stopTunnel()
+    }
+  }
+
+  const reportedErrors: string[] = []
+  const reporter: MainReporter = {
+    error: (error: string) => {
+      reportedErrors.push(error)
+    },
+
+    initErrors: (errors: string[]) => {
+      reportedErrors.push(...errors)
+    },
+
+    log: (log: string) => {
+      // Ignore
+    },
+
+    reportStart: (timings: {startTime: number}) => {
+      // Ignore
+    },
+
+    resultEnd: (result: Result, baseUrl: string) => {
+      // Ignore
+    },
+
+    resultReceived: (result: ResultInBatch) => {
+      // Ignore
+    },
+
+    runEnd: (summary: Summary, baseUrl: string) => {
+      // Ignore
+    },
+
+    testsWait: (tests: Test[]) => {
+      // Ignore
+    },
+
+    testTrigger: (test: Test, testId: string, executionRule: ExecutionRule, config: UserConfigOverride) => {
+      // Ignore
+    },
+
+    testWait: (test: Test) => {
+      // Ignore
+    },
+  }
+
+  return {
+    dispose: () => {
+      const batchIds = Object.keys(batchData)
+      const dataArray = batchIds.map((batchId) => {
+        const data = batchData[batchId]
+        delete batchData[batchId]
+
+        return data
+      })
+
+      dataArray.forEach((data) => {
+        stopBatch(data)
+      })
+    },
+
+    start: async (config: CommandConfig, suites?: Suite[]) => {
+      const startTestResult = await startTest(reporter, config, suites)
+
+      const data: typeof batchData['string'] = {startTestResult}
+
+      if (reportedErrors.length) {
+        stopBatch(data)
+        throw new Error(reportedErrors.join('\n'))
+      }
+
+      batchData[startTestResult.trigger.batch_id] = data
+
+      return startTestResult.trigger
+    },
+
+    refresh: async (batchId: string) => {
+      const data = batchData[batchId]
+      if (!data) {
+        throw new Error(`Unknown batch id '${batchId}`)
+      }
+
+      const {api, tunnel, trigger} = data.startTestResult
+
+      if (data.isTunnelConnected === undefined) {
+        if (tunnel) {
+          data.isTunnelConnected = true
+          tunnel
+            .keepAlive()
+            .then(() => (data.isTunnelConnected = false))
+            .catch(() => (data.isTunnelConnected = false))
+        } else {
+          data.isTunnelConnected = false
+        }
+      }
+
+      let batch: Batch
+
+      try {
+        batch = await api.getBatch(trigger.batch_id)
+      } catch (error) {
+        stopBatch(data)
+        throw error
+      }
+
+      if (reportedErrors.length) {
+        stopBatch(data)
+        throw new Error(reportedErrors.join('\n'))
+      }
+
+      if (batch.status !== 'in_progress') {
+        if (tunnel && !data.isTunnelConnected) {
+          await stopBatch(data)
+          throw new Error('The tunnel has stopped working, this may have affected the results.')
+        }
+      } else {
+        await stopBatch(data)
+      }
+
+      return batch
+    },
+
+    stop: (batchId: string) => stopBatch(batchData[batchId]),
+  }
+}
+
 export const executeTests = async (
   reporter: MainReporter,
   config: CommandConfig,
@@ -25,6 +186,28 @@ export const executeTests = async (
   results: Result[]
   summary: Summary
 }> => {
+  const startTestResult = await startTest(reporter, config, suites)
+
+  return waitForTests(startTestResult)
+}
+
+type StartTestResult = {
+  api: APIHelper
+  config: CommandConfig
+  initialSummary: InitialSummary
+  reporter: MainReporter
+  tests: Test[]
+  testsToTrigger: TriggerConfig[]
+  trigger: Trigger
+  tunnel?: Tunnel
+  stopTunnel(): Promise<void>
+}
+
+export const startTest = async (
+  reporter: MainReporter,
+  config: CommandConfig,
+  suites?: Suite[]
+): Promise<StartTestResult> => {
   const api = getApiHelper(config)
 
   const publicIdsFromCli = config.publicIds.map((id) => ({
@@ -121,6 +304,11 @@ export const executeTests = async (
     throw new CriticalError('TRIGGER_TESTS_FAILED', error.message)
   }
 
+  return {api, config, reporter, tests, testsToTrigger, initialSummary, tunnel, stopTunnel, trigger}
+}
+
+const waitForTests = async (startResult: StartTestResult) => {
+  const {api, config, reporter, tests, testsToTrigger, initialSummary, tunnel, stopTunnel, trigger} = startResult
   try {
     const maxPollingTimeout = Math.max(...testsToTrigger.map((t) => t.config.pollingTimeout || config.pollingTimeout))
     const results = await waitForResults(
