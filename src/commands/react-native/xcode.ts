@@ -45,6 +45,7 @@ export class XCodeCommand extends Command {
   private disableGit?: boolean
   private dryRun = false
   private force = false
+  private removeSourcesContent?: boolean
   private repositoryURL?: string
   private scriptPath = `${reactNativePath}/scripts/react-native-xcode.sh`
   private service?: string = process.env.PRODUCT_BUNDLE_IDENTIFIER
@@ -183,6 +184,9 @@ export class XCodeCommand extends Command {
     if (this.repositoryURL) {
       uploadCommand.push('--repository-url', this.repositoryURL)
     }
+    if (this.removeSourcesContent) {
+      uploadCommand.push('--remove-sources-content')
+    }
     if (this.dryRun) {
       uploadCommand.push('--dry-run')
     }
@@ -320,3 +324,4 @@ XCodeCommand.addOption('composeSourcemapsPath', Command.String('--compose-source
 XCodeCommand.addOption('repositoryURL', Command.String('--repository-url'))
 XCodeCommand.addOption('disableGit', Command.Boolean('--disable-git'))
 XCodeCommand.addOption('configPath', Command.String('--config'))
+XCodeCommand.addOption('removeSourcesContent', Command.Boolean('--remove-sources-content'))
