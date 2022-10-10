@@ -59,6 +59,7 @@ The following optional parameters are available:
 | `--dry-run`                | False   | It runs the command without the final step of uploading. All other checks are performed.                                                                                                                                          |
 | `--repository-url`         | Empty   | Overrides the remote repository with a custom URL. For example, `https://github.com/my-company/my-project`.                                                                                                                       |
 | `--remove-sources-content` | False   | Remove the `"sourcesContent"` part of the source map files. Doing so greatly reduces the size of your files while still keeping the unminification, but it also removes the code snippet next to the unminified error in Datadog. |
+| `--config`                 | Empty   | Path to your `datadog-ci.json` file if not at the root of your project                                                                                                                                                            |
 
 ### Link errors with your source code
 
@@ -123,12 +124,14 @@ This command calls the `upload` command, setting the release version to `{releas
 
 The following optional parameters are available:
 
-| Parameter          | Default | Description                                                                                                                                                                                                                                                                                                   |
-| ------------------ | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `--disable-git`    | False   | Prevents the command from invoking git in the current working directory and sending repository-related data to Datadog (such as the hash, remote URL, and paths within the repository of sources referenced in the source map).                                                                               |
-| `--dry-run`        | False   | It runs the command without the final step of uploading. All other checks are performed.                                                                                                                                                                                                                      |
-| `--repository-url` | Empty   | Overrides the remote repository with a custom URL. For example, `https://github.com/my-company/my-project`.                                                                                                                                                                                                   |
-| `--build-version`  | 1       | Used to avoid overwriting your source maps by accident. Only one upload is needed for a specific `build-version` and `service` combination. Subsequent uploads are ignored until the `build-version` changes. This should not be necessary for CodePush unless you uploaded the wrong source maps by mistake. |
+| Parameter                  | Default | Description                                                                                                                                                                                                                                                                                                   |
+| -------------------------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `--disable-git`            | False   | Prevents the command from invoking git in the current working directory and sending repository-related data to Datadog (such as the hash, remote URL, and paths within the repository of sources referenced in the source map).                                                                               |
+| `--dry-run`                | False   | It runs the command without the final step of uploading. All other checks are performed.                                                                                                                                                                                                                      |
+| `--repository-url`         | Empty   | Overrides the remote repository with a custom URL. For example, `https://github.com/my-company/my-project`.                                                                                                                                                                                                   |
+| `--build-version`          | 1       | Used to avoid overwriting your source maps by accident. Only one upload is needed for a specific `build-version` and `service` combination. Subsequent uploads are ignored until the `build-version` changes. This should not be necessary for CodePush unless you uploaded the wrong source maps by mistake. |
+| `--remove-sources-content` | False   | Remove the `"sourcesContent"` part of the source map files. Doing so greatly reduces the size of your files while still keeping the unminification, but it also removes the code snippet next to the unminified error in Datadog.                                                                             |
+| `--config`                 | Empty   | Path to your `datadog-ci.json` file if not at the root of your project                                                                                                                                                                                                                                        |
 
 ### `xcode`
 
@@ -194,6 +197,15 @@ If you use another script that requires arguments, you need to put this script i
 | `--force`                 | False                                                         | Force the upload of the source maps, even if the build configuration is not "Release".                                                                                    |
 | `--dry-run`               | False                                                         | Run the command without the final step of uploading. The bundle script is executed and all other checks are performed.                                                    |
 | `--composeSourcemapsPath` | `../node_modules/react-native/scripts/compose-source-maps.js` | If you use Hermes, you need to compose the source maps after the bundle phase. Only use this argument if your node modules are not on the same level as the `ios` folder. |
+
+The following optional parameters are available:
+
+| Parameter                  | Default | Description                                                                                                                                                                                                                       |
+| -------------------------- | ------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `--disable-git`            | False   | Prevents the command from invoking git in the current working directory and sending repository-related data to Datadog (such as the hash, remote URL, and paths within the repository of sources referenced in the source map).   |
+| `--repository-url`         | Empty   | Overrides the remote repository with a custom URL. For example, `https://github.com/my-company/my-project`.                                                                                                                       |
+| `--remove-sources-content` | False   | Remove the `"sourcesContent"` part of the source map files. Doing so greatly reduces the size of your files while still keeping the unminification, but it also removes the code snippet next to the unminified error in Datadog. |
+| `--config`                 | Empty   | Path to your `datadog-ci.json` file if not at the root of your project                                                                                                                                                            |
 
 ## End-to-end testing process
 
