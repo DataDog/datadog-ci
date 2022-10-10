@@ -30,6 +30,14 @@ export const renderRetriedUpload = (payload: RNSourcemap, errorMessage: string, 
   return chalk.yellow(`[attempt ${attempt}] Retrying sourcemap upload ${sourcemapPathBold}: ${errorMessage}\n`)
 }
 
+export const renderRemoveSourcesContentWarning = () => `Removing the "sourcesContent" part of the sourcemap file.
+  ${chalk.red('Use the --remove-sources-content only if your sourcemap file is too heavy to upload to Datadog.')}`
+
+export const renderFailedSourcesContentRemovalError = (payload: RNSourcemap, errorMessage: string) => `${chalk.red(
+  `An error occured while removing the "sourcesContent" part of the sourcemap file ${payload.sourcemapPath}": ${errorMessage}`
+)}.
+  Trying to upload the full sourcemap with the "sourcesContent".`
+
 /**
  * As of now, this command takes an array of one signe UploadStatus element since we only support upload
  * of a single sourcemap.
