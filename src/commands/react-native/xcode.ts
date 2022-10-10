@@ -190,7 +190,7 @@ export class XCodeCommand extends Command {
       this.context.stderr.write(`[bundle script]: ${data}`)
     })
 
-    const [status, signal] = await new Promise((resolve, reject) => {
+    const [status, signal] = await new Promise<[number, string]>((resolve, reject) => {
       bundleJSChildProcess.on('error', (error: Error) => {
         reject(error)
       })
@@ -239,7 +239,7 @@ export class XCodeCommand extends Command {
       this.context.stderr.write(`[compose sourcemaps script]: ${data}`)
     })
 
-    const [status, signal] = await new Promise((resolve, reject) => {
+    const [status, signal] = await new Promise<[number, string]>((resolve, reject) => {
       composeHermesSourcemapsChildProcess.on('error', (error: Error) => {
         reject(error)
       })
