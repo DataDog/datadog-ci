@@ -41,8 +41,11 @@ export class XCodeCommand extends Command {
   })
 
   private composeSourcemapsPath = `${reactNativePath}/scripts/compose-source-maps.js`
+  private configPath?: string
+  private disableGit?: boolean
   private dryRun = false
   private force = false
+  private repositoryURL?: string
   private scriptPath = `${reactNativePath}/scripts/react-native-xcode.sh`
   private service?: string = process.env.PRODUCT_BUNDLE_IDENTIFIER
 
@@ -171,6 +174,15 @@ export class XCodeCommand extends Command {
       '--sourcemap',
       sourcemapsLocation,
     ]
+    if (this.configPath) {
+      uploadCommand.push('--config', this.configPath)
+    }
+    if (this.disableGit) {
+      uploadCommand.push('--disable-git')
+    }
+    if (this.repositoryURL) {
+      uploadCommand.push('--repository-url', this.repositoryURL)
+    }
     if (this.dryRun) {
       uploadCommand.push('--dry-run')
     }
@@ -305,3 +317,6 @@ XCodeCommand.addOption('service', Command.String('--service'))
 XCodeCommand.addOption('dryRun', Command.Boolean('--dry-run'))
 XCodeCommand.addOption('force', Command.Boolean('--force'))
 XCodeCommand.addOption('composeSourcemapsPath', Command.String('--compose-sourcemaps-path'))
+XCodeCommand.addOption('repositoryURL', Command.String('--repository-url'))
+XCodeCommand.addOption('disableGit', Command.Boolean('--disable-git'))
+XCodeCommand.addOption('configPath', Command.String('--config'))
