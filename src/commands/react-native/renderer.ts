@@ -20,8 +20,15 @@ export const renderConfigurationError = (error: Error) => chalk.red(`${ICONS.FAI
 
 export const renderFailedUpload = (sourcemap: RNSourcemap, errorMessage: string) => {
   const sourcemapPathBold = `[${chalk.bold.dim(sourcemap.sourcemapPath)}]`
+  let message = chalk.red(`${ICONS.FAILED} Failed upload sourcemap for ${sourcemapPathBold}: ${errorMessage}\n`)
+  if (errorMessage.includes('413 (Request Entity Too Large)')) {
+    message = `${message}\n It looks like your sourcemap is too large. To make it lighter you can:\n
+    - Pass an empty file as --bundle argument to the upload command (no impact on the error explorer as of now)\n
+    - Pass the --remove-sources-content argument to the upload command (you will lose the code snippet next to the unminified error)\n
+    - Try to split your bundle, by using a tool such as repack (https://github.com/callstack/repack)`
+  }
 
-  return chalk.red(`${ICONS.FAILED} Failed upload sourcemap for ${sourcemapPathBold}: ${errorMessage}\n`)
+  return message
 }
 
 export const renderRetriedUpload = (payload: RNSourcemap, errorMessage: string, attempt: number) => {
