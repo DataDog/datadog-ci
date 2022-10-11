@@ -1,5 +1,4 @@
 jest.mock('inquirer')
-import {blueBright} from 'chalk'
 import {prompt} from 'inquirer'
 import {
   AWS_ACCESS_KEY_ID_ENV_VAR,
@@ -36,9 +35,7 @@ describe('prompt', () => {
       const site = 'datadoghq.com'
       const question = datadogApiKeyTypeQuestion(site)
       expect(question.message).toBe(
-        `Which type of Datadog API Key you want to set? \nLearn more at ${blueBright(
-          `https://app.${site}/organization-settings/api-keys`
-        )}`
+        `Which type of Datadog API Key you want to set? \nLearn more at https://app.${site}/organization-settings/api-keys`
       )
     })
   })

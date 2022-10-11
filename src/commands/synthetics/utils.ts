@@ -14,7 +14,7 @@ import {GIT_COMMIT_MESSAGE} from '../../helpers/tags'
 import {pick} from '../../helpers/utils'
 
 import {APIHelper, EndpointError, formatBackendErrors, getApiHelper, isNotFoundError} from './api'
-import {MAX_TESTS_TO_TRIGGER} from './command'
+import {DEFAULT_COMMAND_CONFIG, MAX_TESTS_TO_TRIGGER} from './command'
 import {CiError, CriticalError} from './errors'
 import {
   Batch,
@@ -766,8 +766,20 @@ export const validateDatadogSite = (datadogSite: string) => {
   }
 }
 
-export const getAppBaseURL = ({datadogSite, subdomain}: Pick<CommandConfig, 'datadogSite' | 'subdomain'>) =>
-  `https://${subdomain}.${datadogSite}/`
+export const getAppBaseURL = ({datadogSite, subdomain}: Pick<CommandConfig, 'datadogSite' | 'subdomain'>) => {
+  const validSubdomain = subdomain || DEFAULT_COMMAND_CONFIG.subdomain
+  const datadogSiteParts = datadogSite.split('.')
+
+  if (datadogSiteParts.length === 3) {
+    if (validSubdomain === DEFAULT_COMMAND_CONFIG.subdomain) {
+      return `https://${datadogSite}/`
+    }
+
+    return `https://${validSubdomain}.${datadogSiteParts[1]}.${datadogSiteParts[2]}/`
+  }
+
+  return `https://${validSubdomain}.${datadogSite}/`
+}
 
 export const getBatchUrl = (baseUrl: string, batchId: string) =>
   `${baseUrl}synthetics/explorer/ci?batchResultId=${batchId}`
