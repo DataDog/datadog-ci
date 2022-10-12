@@ -55,7 +55,7 @@ export const makeMockLambda = (
   })),
   getLayerVersion: jest.fn().mockImplementation(({LayerName, VersionNumber}) => ({
     promise: () => {
-      const layer = LayerName + ':' + VersionNumber
+      const layer = `${LayerName}:${VersionNumber}`
 
       return layers && layers[layer] && layers[layer].Version === VersionNumber
         ? Promise.resolve(layers[layer])
