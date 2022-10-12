@@ -1,8 +1,8 @@
-import c from 'chalk'
-import {BaseContext} from 'clipanion'
 import {promises as fs} from 'fs'
 import path from 'path'
 import {Writable} from 'stream'
+import {BaseContext} from 'clipanion'
+import c from 'chalk'
 import {Builder} from 'xml2js'
 
 import {
@@ -105,7 +105,7 @@ export interface XMLJSON {
 }
 
 interface XMLError {
-  $: {type: string; [key: string]: string}
+  $: {[key: string]: string; type: string}
   _: string
 }
 

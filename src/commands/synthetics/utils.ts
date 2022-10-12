@@ -1,13 +1,13 @@
 import {exec} from 'child_process'
-import deepExtend from 'deep-extend'
 import * as fs from 'fs'
 import * as path from 'path'
 import {URL} from 'url'
 import {promisify} from 'util'
 
+import process from 'process'
 import chalk from 'chalk'
 import glob from 'glob'
-import process from 'process'
+import deepExtend from 'deep-extend'
 
 import {getCIMetadata} from '../../helpers/ci'
 import {GIT_COMMIT_MESSAGE} from '../../helpers/tags'
@@ -438,8 +438,8 @@ export const waitForResults = async (
     getResultFromBatch(
       getLocation,
       hasExceededMaxPollingDate,
-      options.failOnCriticalErrors!!,
-      options.failOnTimeout!!,
+      options.failOnCriticalErrors ?? false,
+      options.failOnTimeout ?? false,
       pollResultMap,
       resultInBatch,
       tests

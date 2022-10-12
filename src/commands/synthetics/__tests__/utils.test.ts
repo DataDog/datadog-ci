@@ -38,13 +38,13 @@ jest.mock('path', () => {
   }
 })
 
-import deepExtend from 'deep-extend'
 import * as fs from 'fs'
+import child_process from 'child_process'
+import process from 'process'
+import deepExtend from 'deep-extend'
 
 import {AxiosError, default as axios} from 'axios'
-import child_process from 'child_process'
 import glob from 'glob'
-import process from 'process'
 
 process.env.DATADOG_SYNTHETICS_CI_TRIGGER_APP = 'env_default'
 

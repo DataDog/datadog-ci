@@ -183,7 +183,7 @@ export const getTestsList = async (
     return testsToTriggerBySearchQuery
   }
 
-  const suitesFromFiles = (await Promise.all(config.files.map((glob: string) => getSuites(glob, reporter!))))
+  const suitesFromFiles = (await Promise.all(config.files.map((glob: string) => getSuites(glob, reporter))))
     .reduce((acc, val) => acc.concat(val), [])
     .filter((suite) => !!suite.content.tests)
 
