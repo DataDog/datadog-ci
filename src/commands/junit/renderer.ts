@@ -1,5 +1,5 @@
-import chalk from 'chalk'
 import path from 'path'
+import chalk from 'chalk'
 
 import {SpanTags} from '../../helpers/interfaces'
 import {Payload} from './interfaces'

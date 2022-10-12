@@ -119,7 +119,6 @@ export const getCISpanTags = (): SpanTags | undefined => {
       [CI_ENV_VARS]: JSON.stringify({
         CIRCLE_WORKFLOW_ID,
         // Snapshots are generated automatically and are sort sensitive
-        // tslint:disable-next-line
         CIRCLE_BUILD_NUM,
       }),
     }
@@ -201,7 +200,6 @@ export const getCISpanTags = (): SpanTags | undefined => {
       [CI_ENV_VARS]: JSON.stringify({
         CI_PROJECT_URL: GITLAB_CI_PROJECT_URL,
         // Snapshots are generated automatically and are sort sensitive
-        // tslint:disable-next-line
         CI_PIPELINE_ID: GITLAB_CI_PIPELINE_ID,
         CI_JOB_ID: GITLAB_CI_JOB_ID,
       }),
@@ -246,7 +244,6 @@ export const getCISpanTags = (): SpanTags | undefined => {
       [CI_ENV_VARS]: JSON.stringify({
         GITHUB_SERVER_URL,
         // Snapshots are generated automatically and are sort sensitive
-        // tslint:disable-next-line
         GITHUB_REPOSITORY,
         GITHUB_RUN_ID,
         GITHUB_RUN_ATTEMPT,
@@ -500,16 +497,16 @@ export const getCISpanTags = (): SpanTags | undefined => {
   }
 
   if (tags[CI_WORKSPACE_PATH]) {
-    tags[CI_WORKSPACE_PATH] = resolveTilde(tags[CI_WORKSPACE_PATH]!)
+    tags[CI_WORKSPACE_PATH] = resolveTilde(tags[CI_WORKSPACE_PATH])
   }
   if (tags[GIT_REPOSITORY_URL]) {
     tags[GIT_REPOSITORY_URL] = filterSensitiveInfoFromRepository(tags[GIT_REPOSITORY_URL]!)
   }
   if (tags[GIT_BRANCH]) {
-    tags[GIT_BRANCH] = normalizeRef(tags[GIT_BRANCH]!)
+    tags[GIT_BRANCH] = normalizeRef(tags[GIT_BRANCH])
   }
   if (tags[GIT_TAG]) {
-    tags[GIT_TAG] = normalizeRef(tags[GIT_TAG]!)
+    tags[GIT_TAG] = normalizeRef(tags[GIT_TAG])
   }
 
   return removeEmptyValues(tags)
