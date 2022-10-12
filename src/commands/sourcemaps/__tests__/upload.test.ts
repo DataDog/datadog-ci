@@ -1,4 +1,3 @@
-// tslint:disable: no-string-literal
 import os from 'os'
 
 import chalk from 'chalk'

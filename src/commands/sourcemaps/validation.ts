@@ -40,7 +40,7 @@ export const validatePayload = (sourcemap: Sourcemap, stdout: Writable) => {
 
   // Check for --minified-path-prefix flag misuages.
   if (sourcemap.minifiedPathPrefix) {
-    const repeated = extractRepeatedPath(sourcemap.minifiedPathPrefix!, sourcemap.relativePath)
+    const repeated = extractRepeatedPath(sourcemap.minifiedPathPrefix, sourcemap.relativePath)
     if (repeated) {
       stdout.write(renderMinifiedPathPrefixMisusage(sourcemap, repeated))
     }

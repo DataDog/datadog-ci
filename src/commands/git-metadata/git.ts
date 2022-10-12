@@ -1,5 +1,5 @@
-import * as simpleGit from 'simple-git'
 import {URL} from 'url'
+import * as simpleGit from 'simple-git'
 
 import {CommitInfo} from './interfaces'
 
