@@ -1,9 +1,7 @@
-import inquirer from 'inquirer'
-// @ts-ignore
-import Prompt from '@types/inquirer/lib/prompts/base'
-// @ts-ignore
-import Paginator from '@types/inquirer/lib/utils/paginator'
 import {Interface as ReadLineInterface} from 'readline'
+import inquirer from 'inquirer'
+import Paginator from 'inquirer/lib/utils/paginator'
+import Prompt from 'inquirer/lib/prompts/base'
 
 /**
  * The question-options for the `ChoicePrompt<T>`.
