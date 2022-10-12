@@ -58,8 +58,8 @@ The following optional parameters are available:
 | `--disable-git`            | False   | Prevents the command from invoking git in the current working directory and sending repository-related data to Datadog (such as the hash, remote URL, and paths within the repository of sources referenced in the source map).   |
 | `--dry-run`                | False   | It runs the command without the final step of uploading. All other checks are performed.                                                                                                                                          |
 | `--repository-url`         | Empty   | Overrides the remote repository with a custom URL. For example, `https://github.com/my-company/my-project`.                                                                                                                       |
-| `--remove-sources-content` | False   | Remove the `"sourcesContent"` part of the source map files. Doing so greatly reduces the size of your files while still keeping the unminification, but it also removes the code snippet next to the unminified error in Datadog. |
-| `--config`                 | Empty   | Path to your `datadog-ci.json` file if not at the root of your project                                                                                                                                                            |
+| `--remove-sources-content` | False   | Removes the `"sourcesContent"` part of the source map files. This reduces the size of your files while still keeping the unminification, but it also removes the code snippet next to the unminified error in Datadog. |
+| `--config`                 | Empty   | The path to your `datadog-ci.json` file, if it is not at the root of your project.                                                                                                                                                            |
 
 ### Link errors with your source code
 
@@ -130,8 +130,8 @@ The following optional parameters are available:
 | `--dry-run`                | False   | It runs the command without the final step of uploading. All other checks are performed.                                                                                                                                                                                                                      |
 | `--repository-url`         | Empty   | Overrides the remote repository with a custom URL. For example, `https://github.com/my-company/my-project`.                                                                                                                                                                                                   |
 | `--build-version`          | 1       | Used to avoid overwriting your source maps by accident. Only one upload is needed for a specific `build-version` and `service` combination. Subsequent uploads are ignored until the `build-version` changes. This should not be necessary for CodePush unless you uploaded the wrong source maps by mistake. |
-| `--remove-sources-content` | False   | Remove the `"sourcesContent"` part of the source map files. Doing so greatly reduces the size of your files while still keeping the unminification, but it also removes the code snippet next to the unminified error in Datadog.                                                                             |
-| `--config`                 | Empty   | Path to your `datadog-ci.json` file if not at the root of your project                                                                                                                                                                                                                                        |
+| `--remove-sources-content` | False   | Removes the `"sourcesContent"` part of the source map files. This reduces the size of your files while still keeping the unminification, but it also removes the code snippet next to the unminified error in Datadog.                                                                             |
+| `--config`                 | Empty   | The path to your `datadog-ci.json` file, if it is not at the root of your project.                                                                                                                                                                                                                                        |
 
 ### `xcode`
 
@@ -202,10 +202,10 @@ The following optional parameters are available:
 
 | Parameter                  | Default | Description                                                                                                                                                                                                                       |
 | -------------------------- | ------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `--disable-git`            | False   | Prevents the command from invoking git in the current working directory and sending repository-related data to Datadog (such as the hash, remote URL, and paths within the repository of sources referenced in the source map).   |
+| `--disable-git`            | False   | Prevents the command from invoking git in the current working directory and from sending repository-related data to Datadog (such as the hash, remote URL, and paths within the repository of sources referenced in the source map).   |
 | `--repository-url`         | Empty   | Overrides the remote repository with a custom URL. For example, `https://github.com/my-company/my-project`.                                                                                                                       |
-| `--remove-sources-content` | False   | Remove the `"sourcesContent"` part of the source map files. Doing so greatly reduces the size of your files while still keeping the unminification, but it also removes the code snippet next to the unminified error in Datadog. |
-| `--config`                 | Empty   | Path to your `datadog-ci.json` file if not at the root of your project                                                                                                                                                            |
+| `--remove-sources-content` | False   | Removes the `"sourcesContent"` part of the source map files. This reduces the size of your files while still keeping the unminification, but it also removes the code snippet next to the unminified error in Datadog. |
+| `--config`                 | Empty   | The path to your `datadog-ci.json` file, if it is not at the root of your project.                                                                                                                                                            |
 
 ## End-to-end testing process
 
