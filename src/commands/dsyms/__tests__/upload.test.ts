@@ -1,9 +1,8 @@
-// tslint:disable: no-string-literal
-import {Cli} from 'clipanion/lib/advanced'
 import {existsSync, promises} from 'fs'
-import glob from 'glob'
 import {EOL, platform} from 'os'
 import path from 'path'
+import glob from 'glob'
+import {Cli} from 'clipanion/lib/advanced'
 import {buildPath} from '../../../helpers/utils'
 import {Dsym} from '../interfaces'
 import {UploadCommand} from '../upload'

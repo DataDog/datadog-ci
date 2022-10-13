@@ -1,10 +1,8 @@
-// tslint:disable: no-string-literal
 import {ReadStream} from 'fs'
 
 import FormData from 'form-data'
 
-import {TrackedFilesMatcher} from '../../../helpers/git/format-git-sourcemaps-data'
-import {getRepositoryData} from '../../../helpers/git/format-git-sourcemaps-data'
+import {TrackedFilesMatcher, getRepositoryData} from '../../../helpers/git/format-git-sourcemaps-data'
 import {MultipartPayload} from '../../../helpers/upload'
 import {performSubCommand} from '../../../helpers/utils'
 import * as dsyms from '../..//dsyms/upload'
@@ -35,7 +33,6 @@ jest.mock('../../../helpers/git/format-git-sourcemaps-data', () => ({
   getRepositoryData: jest.fn(),
 }))
 
-// tslint:disable-next-line:no-var-requires
 const cliVersion = require('../../../../package.json').version
 const fixtureDir = './src/commands/flutter-symbols/__tests__/fixtures'
 
@@ -78,7 +75,6 @@ describe('flutter-symbol upload', () => {
 
   describe('parameter validation', () => {
     test('fails if no service name given', async () => {
-      // tslint:disable-next-line:no-empty
       const {exitCode, context} = await runCommand((_) => {})
       const errorOutput = context.stderr.toString()
 

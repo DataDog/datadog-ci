@@ -1,6 +1,6 @@
+import path from 'path'
 import chalk from 'chalk'
 
-import path from 'path'
 import {ICONS} from '../../helpers/formatting'
 import {UploadStatus} from '../../helpers/upload'
 import {ArchSlice, CompressedDsym, Dsym} from './interfaces'

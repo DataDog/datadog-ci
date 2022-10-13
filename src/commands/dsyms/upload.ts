@@ -1,8 +1,8 @@
+import {promises} from 'fs'
+import path from 'path'
 import chalk from 'chalk'
 import {Command} from 'clipanion'
-import {promises} from 'fs'
 import glob from 'glob'
-import path from 'path'
 import asyncPool from 'tiny-async-pool'
 
 import {ApiKeyValidator, newApiKeyValidator} from '../../helpers/apikey'
@@ -169,7 +169,7 @@ export class UploadCommand extends Command {
     }
 
     return getRequestBuilder({
-      apiKey: this.config.apiKey!,
+      apiKey: this.config.apiKey,
       baseUrl: getBaseIntakeUrl(this.config.datadogSite),
     })
   }

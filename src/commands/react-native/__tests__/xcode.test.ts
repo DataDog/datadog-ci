@@ -1,4 +1,3 @@
-// tslint:disable: no-string-literal
 import {Cli} from 'clipanion/lib/advanced'
 import {XCodeCommand} from '../xcode'
 

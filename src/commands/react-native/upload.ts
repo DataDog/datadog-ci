@@ -183,7 +183,7 @@ export class UploadCommand extends Command {
     try {
       const repositoryData = await getRepositoryData(await newSimpleGit(), this.repositoryURL)
       payloads.forEach((payload) => {
-        const repositoryPayload = this.getRepositoryPayload(repositoryData!, payload.sourcemapPath)
+        const repositoryPayload = this.getRepositoryPayload(repositoryData, payload.sourcemapPath)
         payload.addRepositoryData({
           gitCommitSha: repositoryData.hash,
           gitRepositoryPayload: repositoryPayload,
@@ -248,7 +248,7 @@ export class UploadCommand extends Command {
     }
 
     return getRequestBuilder({
-      apiKey: this.config.apiKey!,
+      apiKey: this.config.apiKey,
       baseUrl: getBaseSourcemapIntakeUrl(this.config.datadogSite),
       headers: new Map([
         ['DD-EVP-ORIGIN', 'datadog-ci react-native'],
