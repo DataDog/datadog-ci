@@ -251,7 +251,9 @@ describe('run-test', () => {
         jest.spyOn(api, 'getApiHelper').mockImplementation(() => apiHelper as any)
         await expect(
           runTests.executeTests(mockReporter, {...ciConfig, publicIds: ['public-id-1'], tunnel: true})
-        ).rejects.toMatchError(new CriticalError(error, 'Server Error'))
+        ).rejects.toMatchError(
+          new CriticalError(error, 'Failed to get test: query on baseURLurl returned: "Bad Gateway"\n')
+        )
       })
     })
 

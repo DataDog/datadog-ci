@@ -426,4 +426,54 @@ describe('run-test', () => {
       }
     )
   })
+
+  describe('API errors logging', () => {
+    test('enough context is provided', async () => {
+      const writeMock = jest.fn()
+
+      const command = new RunTestCommand()
+      command.context = {stdout: {write: writeMock}} as any
+      command['config'].failOnCriticalErrors = true
+
+      const apiHelper = {
+        getTest: jest.fn((testId: string) => {
+          if (testId === 'for-bid-den') {
+            const serverError = getAxiosHttpError(403, 'Forbidden')
+            serverError.config.baseURL = 'https://api.example.org/'
+            serverError.config.url = 'tests/for-bid-den'
+            throw serverError
+          }
+
+          return {name: testId}
+        }),
+      }
+      jest.spyOn(api, 'getApiHelper').mockImplementation(() => apiHelper as any)
+      jest.spyOn(ciUtils, 'resolveConfigFromFile').mockImplementation(async (config, __) => config)
+      jest.spyOn(utils, 'getSuites').mockImplementation((() => [
+        {
+          content: {
+            tests: [
+              {config: {}, id: 'aaa-aaa-aaa'},
+              {config: {}, id: 'bbb-bbb-bbb'},
+              {config: {}, id: 'for-bid-den'},
+            ],
+          },
+          name: 'Suite 1',
+        },
+      ]) as any)
+
+      expect(await command.execute()).toBe(1)
+      expect(apiHelper.getTest).toHaveBeenCalledTimes(3)
+
+      expect(writeMock).toHaveBeenCalledTimes(4)
+      expect(writeMock).toHaveBeenCalledWith('[aaa-aaa-aaa] Found test "aaa-aaa-aaa" (1 config override)\n')
+      expect(writeMock).toHaveBeenCalledWith('[bbb-bbb-bbb] Found test "bbb-bbb-bbb" (1 config override)\n')
+      expect(writeMock).toHaveBeenCalledWith(
+        '\n ERROR: authorization error \nFailed to get test: query on https://api.example.org/tests/for-bid-den returned: "Forbidden"\n\n\n'
+      )
+      expect(writeMock).toHaveBeenCalledWith(
+        'Credentials refused, make sure `apiKey`, `appKey` and `datadogSite` are correct.\n'
+      )
+    })
+  })
 })

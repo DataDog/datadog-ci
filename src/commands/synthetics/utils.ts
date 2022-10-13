@@ -560,7 +560,7 @@ const getTest = async (api: APIHelper, {id, suite}: TriggerConfig): Promise<{tes
       return {errorMessage: `[${chalk.bold.dim(id)}] ${chalk.yellow.bold('Test not found')}: ${errorMessage}`}
     }
 
-    throw error
+    throw new EndpointError(`Failed to get test: ${formatBackendErrors(error)}\n`, error.response?.status)
   }
 }
 

@@ -41,7 +41,7 @@ jest.mock('path', () => {
 import deepExtend from 'deep-extend'
 import * as fs from 'fs'
 
-import {AxiosError, default as axios} from 'axios'
+import {AxiosError, AxiosResponse, default as axios} from 'axios'
 import child_process from 'child_process'
 import glob from 'glob'
 import process from 'process'
@@ -262,16 +262,10 @@ describe('utils', () => {
     })
 
     test('triggerTests throws', async () => {
-      const serverError = new Error('Server Error') as AxiosError
-      Object.assign(serverError, {
-        config: {baseURL: 'baseURL', url: 'url'},
-        response: {
-          data: {errors: []},
-          status: 502,
-        },
-      })
-
       jest.spyOn(api, 'triggerTests').mockImplementation(() => {
+        const serverError = new Error('Server Error') as AxiosError
+        serverError.config = {baseURL: 'baseURL', url: 'url'}
+        serverError.response = {status: 502} as AxiosResponse
         throw serverError
       })
 
@@ -313,9 +307,10 @@ describe('utils', () => {
           return {data: fakeTests[publicId]}
         }
 
-        const error = new Error('Not found')
-        ;((error as unknown) as {status: number}).status = 404
-        throw error
+        const serverError = new Error('Not found') as AxiosError
+        serverError.config = {baseURL: 'baseURL', url: 'url'}
+        serverError.response = {status: 404} as AxiosResponse
+        throw serverError
       }) as any)
     })
 
@@ -404,6 +399,26 @@ describe('utils', () => {
 
       await utils.getTestsToTrigger(api, triggerConfigs, mockReporter)
       expect(spy).toBeCalledTimes(1)
+    })
+  })
+
+  describe('getTestAndOverrideConfig', () => {
+    beforeEach(() => {
+      const axiosMock = jest.spyOn(axios, 'create')
+      axiosMock.mockImplementation((() => (e: any) => {
+        const serverError = new Error('Forbidden') as AxiosError
+        serverError.config = {baseURL: 'baseURL', url: 'url'}
+        serverError.response = {status: 403} as AxiosResponse
+        throw serverError
+      }) as any)
+    })
+
+    test('Forbidden error when getting a test', async () => {
+      const triggerConfig = {suite: 'Suite 1', config: {}, id: '123-456-789'}
+
+      expect(() => utils.getTestAndOverrideConfig(api, triggerConfig, mockReporter, getSummary())).rejects.toThrow(
+        'Failed to get test: could not query baseURLurl\nForbidden\n'
+      )
     })
   })
 
@@ -978,13 +993,15 @@ describe('utils', () => {
     test('pollResults throws', async () => {
       const {pollResultsMock} = mockApi({
         pollResultsImplementation: () => {
-          throw new Error('Poll results server error')
+          const serverError = new Error('Poll results server error') as AxiosError
+          serverError.config = {baseURL: 'baseURL', url: 'url'}
+          throw serverError
         },
       })
 
       await expect(
         utils.waitForResults(api, trigger, [result.test], {maxPollingTimeout: 2000}, mockReporter)
-      ).rejects.toThrowError('Failed to poll results: Poll results server error')
+      ).rejects.toThrowError('Failed to poll results: could not query baseURLurl\nPoll results server error\n')
 
       expect(pollResultsMock).toHaveBeenCalledWith([result.resultId])
     })
@@ -992,13 +1009,15 @@ describe('utils', () => {
     test('getBatch throws', async () => {
       const {getBatchMock} = mockApi({
         getBatchImplementation: () => {
-          throw new Error('Get batch server error')
+          const serverError = new Error('Get batch server error') as AxiosError
+          serverError.config = {baseURL: 'baseURL', url: 'url'}
+          throw serverError
         },
       })
 
       await expect(
         utils.waitForResults(api, trigger, [result.test], {maxPollingTimeout: 2000}, mockReporter)
-      ).rejects.toThrowError('Failed to get batch: Get batch server error')
+      ).rejects.toThrowError('Failed to get batch: could not query baseURLurl\nGet batch server error\n')
 
       expect(getBatchMock).toHaveBeenCalledWith(trigger.batch_id)
     })

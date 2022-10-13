@@ -2,7 +2,7 @@ import {AxiosError, AxiosResponse, default as axios} from 'axios'
 
 import {ProxyConfiguration} from '../../../helpers/utils'
 
-import {apiConstructor, getApiHelper} from '../api'
+import {apiConstructor, formatBackendErrors, getApiHelper} from '../api'
 import {MAX_TESTS_TO_TRIGGER} from '../command'
 import {CriticalError} from '../errors'
 import {APIConfiguration, ExecutionRule, PollResult, ServerResult, TestPayload, Trigger} from '../interfaces'
@@ -296,5 +296,44 @@ describe('getApiHelper', () => {
     expect(() => getApiHelper(ciConfig)).toThrow(new CriticalError('MISSING_APP_KEY'))
 
     expect(() => getApiHelper({...ciConfig, appKey: 'fakeappkey'})).toThrow(new CriticalError('MISSING_API_KEY'))
+  })
+})
+
+describe('formatBackendErrors', () => {
+  test('backend error - no error', () => {
+    const backendError = {
+      config: {baseURL: 'baseURL', url: 'url'},
+      response: {data: {errors: []}},
+    } as AxiosError
+
+    expect(formatBackendErrors(backendError)).toBe('error querying baseURLurl')
+  })
+
+  test('backend error - single error', () => {
+    const backendError = {
+      config: {baseURL: 'baseURL', url: 'url'},
+      response: {data: {errors: ['single error']}},
+    } as AxiosError
+
+    expect(formatBackendErrors(backendError)).toBe('query on baseURLurl returned: "single error"')
+  })
+
+  test('backend error - multiple errors', () => {
+    const backendError = {
+      config: {baseURL: 'baseURL', url: 'url'},
+      response: {data: {errors: ['error 1', 'error 2']}},
+    } as AxiosError
+
+    expect(formatBackendErrors(backendError)).toBe('query on baseURLurl returned:\n  - error 1\n  - error 2')
+  })
+
+  test('not a backend error', () => {
+    const requestError = {
+      config: {baseURL: 'baseURL', url: 'url'},
+      message: 'Forbidden',
+      response: {status: 403},
+    } as AxiosError
+
+    expect(formatBackendErrors(requestError)).toBe('could not query baseURLurl\nForbidden')
   })
 })
