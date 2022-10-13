@@ -35,35 +35,21 @@ For more ways to install the CLI, please refer to [this section](#more-ways-to-i
 
 ```bash
 Usage: datadog-ci <command> <subcommand> [options]
-
-Available commands:
-  - lambda
-  - sourcemaps
-  - synthetics
-  - dsyms
-  - git-metadata
-  - junit
-  - trace
-  - tag
-  - metric
-  - flutter-symbols
 ```
 
-Each command allows interacting with a product of the Datadog platform. The commands are defined in the [src/commands](/src/commands) folder.
+Possible values for `<command>` and their documentation:
 
-Further documentation for these commands can be found in their respective folders:
-
-- [Lambda](src/commands/lambda)
-- [Browser sourcemaps](src/commands/sourcemaps/)
-- [React Native sourcemaps](src/commands/react-native/)
-- [Synthetics CI/CD Testing](src/commands/synthetics/)
-- [iOS dSYM Files](src/commands/dsyms/)
-- [Git metadata](src/commands/git-metadata)
-- [JUnit XML](src/commands/junit)
-- [Trace](src/commands/trace)
-- [Tag](src/commands/tag)
-- [Metric](src/commands/metric)
-- [Flutter Symbols](src/commands/flutter-symbols/)
+- `dsyms`: [iOS dSYM Files](src/commands/dsyms/)
+- `flutter-symbols`: [Flutter Symbols](src/commands/flutter-symbols/)
+- `git-metadata`: [Git metadata](src/commands/git-metadata)
+- `junit`: [JUnit XML](src/commands/junit)
+- `lambda`: [Lambda](src/commands/lambda)
+- `metric`: [Metric](src/commands/metric)
+- `react-native`: [React Native sourcemaps](src/commands/react-native/)
+- `sourcemaps`: [Browser sourcemaps](src/commands/sourcemaps/)
+- `synthetics`: [Synthetics CI/CD Testing](src/commands/synthetics/)
+- `tag`: [Tag](src/commands/tag)
+- `trace`: [Trace](src/commands/trace)
 
 ## Contributing
 
