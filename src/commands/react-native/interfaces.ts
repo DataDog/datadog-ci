@@ -46,6 +46,16 @@ export class RNSourcemap {
     }
   }
 
+  public removeSourcesContentFromSourceMap = () => {
+    const newSourcemapFilePath = `${this.sourcemapPath}.no-sources-content`
+    const data = fs.readFileSync(this.sourcemapPath, 'utf8')
+    const sourcemap = JSON.parse(data)
+    delete sourcemap.sourcesContent
+
+    fs.writeFileSync(newSourcemapFilePath, JSON.stringify(sourcemap), 'utf8')
+    this.sourcemapPath = newSourcemapFilePath
+  }
+
   private getBundleName(bundlePath: string, bundleName?: string): string {
     if (bundleName) {
       return bundleName

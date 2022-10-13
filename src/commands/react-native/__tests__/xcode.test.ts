@@ -1,5 +1,6 @@
 // tslint:disable: no-string-literal
 import {Cli} from 'clipanion/lib/advanced'
+import * as formatGitSourcemapsData from '../../../helpers/git/format-git-sourcemaps-data'
 import {XCodeCommand} from '../xcode'
 
 beforeEach(() => {
@@ -54,7 +55,14 @@ const basicEnvironment = {
 
 const runCLI = async (
   script: string,
-  options?: {composeSourcemapsPath?: string; force?: boolean; service?: string}
+  options?: {
+    composeSourcemapsPath?: string
+    configPath?: string
+    disableGit?: boolean
+    force?: boolean
+    repositoryURL?: string
+    service?: string
+  }
 ) => {
   const cli = makeCli()
   const context = createMockContext() as any
@@ -63,6 +71,15 @@ const runCLI = async (
   const command = ['react-native', 'xcode', script, '--dry-run']
   if (options?.force) {
     command.push('--force')
+  }
+  if (options?.disableGit) {
+    command.push('--disable-git')
+  }
+  if (options?.configPath) {
+    command.push('--config', options.configPath)
+  }
+  if (options?.repositoryURL) {
+    command.push('--repository-url', options.repositoryURL)
   }
   if (options?.service) {
     command.push('--service')
@@ -358,6 +375,57 @@ describe('xcode', () => {
       expect(output).toContain(
         'Missing bundle file (src/commands/react-native/__tests__/fixtures/non-existent/main.jsbundle)'
       )
+    })
+
+    test('should forward arguments to upload command', async () => {
+      process.env = {
+        ...process.env,
+        ...basicEnvironment,
+      }
+      const getRepositoryDataSpy = jest.spyOn(formatGitSourcemapsData, 'getRepositoryData')
+      const {context, code} = await runCLI(
+        './src/commands/react-native/__tests__/fixtures/bundle-script/successful_script.sh',
+        {
+          configPath: './src/commands/react-native/__tests__/fixtures/config/config-with-api-key.json',
+          repositoryURL: 'https://example.com',
+        }
+      )
+      // Uncomment these lines for debugging failing script
+      // console.log(context.stdout.toString())
+      // console.log(context.stderr.toString())
+
+      expect(code).toBe(0)
+      const output = context.stdout.toString()
+      expect(output).toContain(
+        'Upload of ./src/commands/react-native/__tests__/fixtures/basic-ios/main.jsbundle.map for bundle ./src/commands/react-native/__tests__/fixtures/basic-ios/main.jsbundle on platform ios'
+      )
+      expect(output).toContain('version: 0.0.2 build: 000020 service: com.myapp.test')
+      expect(getRepositoryDataSpy).toHaveBeenCalledWith(expect.anything(), 'https://example.com')
+    })
+
+    test('should disable git in upload command', async () => {
+      process.env = {
+        ...process.env,
+        ...basicEnvironment,
+      }
+      const getRepositoryDataSpy = jest.spyOn(formatGitSourcemapsData, 'getRepositoryData')
+      const {context, code} = await runCLI(
+        './src/commands/react-native/__tests__/fixtures/bundle-script/successful_script.sh',
+        {
+          disableGit: true,
+        }
+      )
+      // Uncomment these lines for debugging failing script
+      // console.log(context.stdout.toString())
+      // console.log(context.stderr.toString())
+
+      expect(code).toBe(0)
+      const output = context.stdout.toString()
+      expect(output).toContain(
+        'Upload of ./src/commands/react-native/__tests__/fixtures/basic-ios/main.jsbundle.map for bundle ./src/commands/react-native/__tests__/fixtures/basic-ios/main.jsbundle on platform ios'
+      )
+      expect(output).toContain('version: 0.0.2 build: 000020 service: com.myapp.test')
+      expect(getRepositoryDataSpy).not.toHaveBeenCalled()
     })
   })
 })

@@ -41,8 +41,12 @@ export class XCodeCommand extends Command {
   })
 
   private composeSourcemapsPath = `${reactNativePath}/scripts/compose-source-maps.js`
+  private configPath?: string
+  private disableGit?: boolean
   private dryRun = false
   private force = false
+  private removeSourcesContent?: boolean
+  private repositoryURL?: string
   private scriptPath = `${reactNativePath}/scripts/react-native-xcode.sh`
   private service?: string = process.env.PRODUCT_BUNDLE_IDENTIFIER
 
@@ -171,6 +175,18 @@ export class XCodeCommand extends Command {
       '--sourcemap',
       sourcemapsLocation,
     ]
+    if (this.configPath) {
+      uploadCommand.push('--config', this.configPath)
+    }
+    if (this.disableGit) {
+      uploadCommand.push('--disable-git')
+    }
+    if (this.repositoryURL) {
+      uploadCommand.push('--repository-url', this.repositoryURL)
+    }
+    if (this.removeSourcesContent) {
+      uploadCommand.push('--remove-sources-content')
+    }
     if (this.dryRun) {
       uploadCommand.push('--dry-run')
     }
@@ -190,7 +206,7 @@ export class XCodeCommand extends Command {
       this.context.stderr.write(`[bundle script]: ${data}`)
     })
 
-    const [status, signal] = await new Promise((resolve, reject) => {
+    const [status, signal] = await new Promise<[number, string]>((resolve, reject) => {
       bundleJSChildProcess.on('error', (error: Error) => {
         reject(error)
       })
@@ -239,7 +255,7 @@ export class XCodeCommand extends Command {
       this.context.stderr.write(`[compose sourcemaps script]: ${data}`)
     })
 
-    const [status, signal] = await new Promise((resolve, reject) => {
+    const [status, signal] = await new Promise<[number, string]>((resolve, reject) => {
       composeHermesSourcemapsChildProcess.on('error', (error: Error) => {
         reject(error)
       })
@@ -305,3 +321,7 @@ XCodeCommand.addOption('service', Command.String('--service'))
 XCodeCommand.addOption('dryRun', Command.Boolean('--dry-run'))
 XCodeCommand.addOption('force', Command.Boolean('--force'))
 XCodeCommand.addOption('composeSourcemapsPath', Command.String('--compose-sourcemaps-path'))
+XCodeCommand.addOption('repositoryURL', Command.String('--repository-url'))
+XCodeCommand.addOption('disableGit', Command.Boolean('--disable-git'))
+XCodeCommand.addOption('configPath', Command.String('--config'))
+XCodeCommand.addOption('removeSourcesContent', Command.Boolean('--remove-sources-content'))
