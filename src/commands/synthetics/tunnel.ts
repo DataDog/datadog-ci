@@ -72,8 +72,7 @@ export class Tunnel {
    * keepAlive will return a promise that tracks the state of the tunnel (and reject in case of error)
    */
   public async keepAlive() {
-    // eslint-disable-next-line @typescript-eslint/no-misused-promises
-    if (!this.ws || !this.ws.keepAlive()) {
+    if (!this.ws) {
       throw new Error('No WebSocket connection')
     }
 
