@@ -1,6 +1,7 @@
 import chalk from 'chalk'
 import {Command} from 'clipanion'
 import deepExtend from 'deep-extend'
+import {isValidDatadogSite} from '../../helpers/validation'
 
 import {removeUndefinedValues, resolveConfigFromFile} from '../../helpers/utils'
 import {CiError, CriticalError} from './errors'
@@ -8,7 +9,7 @@ import {CommandConfig, MainReporter, Reporter, Result, Summary} from './interfac
 import {DefaultReporter} from './reporters/default'
 import {JUnitReporter} from './reporters/junit'
 import {executeTests} from './run-test'
-import {getReporter, parseVariablesFromCli, renderResults, validateDatadogSite} from './utils'
+import {getReporter, parseVariablesFromCli, renderResults} from './utils'
 
 export const MAX_TESTS_TO_TRIGGER = 100
 
@@ -223,7 +224,14 @@ export class RunTestCommand extends Command {
       this.config.files = [this.config.files]
     }
 
-    validateDatadogSite(this.config.datadogSite)
+    if (!isValidDatadogSite(this.config.datadogSite)) {
+      throw new CiError(
+        'INVALID_CONFIG',
+        `The \`datadogSite\` config property (${JSON.stringify(
+          this.config.datadogSite
+        )}) must match one of the sites supported by Datadog.\nFor more information, see "Site parameter" in our documentation: https://docs.datadoghq.com/getting_started/site/#access-the-datadog-site`
+      )
+    }
   }
 }
 

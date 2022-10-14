@@ -150,7 +150,7 @@ describe('run-test', () => {
         ...(config as Record<string, unknown>),
         apiKey: 'api_key_config_file',
         appKey: 'app_key_config_file',
-        datadogSite: 'datadog.config.file',
+        datadogSite: 'us5.datadoghq.com',
       }))
 
       process.env = {
@@ -166,7 +166,7 @@ describe('run-test', () => {
         ...DEFAULT_COMMAND_CONFIG,
         apiKey: 'api_key_cli',
         appKey: 'app_key_env',
-        datadogSite: 'datadog.config.file',
+        datadogSite: 'us5.datadoghq.com',
         global: {pollingTimeout: DEFAULT_POLLING_TIMEOUT},
       })
     })
