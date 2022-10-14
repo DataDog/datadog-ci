@@ -6,7 +6,7 @@ import {TrackedFilesMatcher, getRepositoryData} from '../../../helpers/git/forma
 import {MultipartPayload} from '../../../helpers/upload'
 import {performSubCommand} from '../../../helpers/utils'
 
-import * as dsyms from '../..//dsyms/upload'
+import * as dsyms from '../../dsyms/upload'
 
 import {getArchInfoFromFilename, uploadMultipartHelper} from '../helpers'
 import {
