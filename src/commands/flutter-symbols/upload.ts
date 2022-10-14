@@ -11,8 +11,10 @@ import {getRepositoryData, RepositoryData} from '../../helpers/git/format-git-so
 import {getMetricsLogger, MetricsLogger} from '../../helpers/metrics'
 import {MultipartValue, UploadStatus} from '../../helpers/upload'
 import {buildPath, DEFAULT_CONFIG_PATH, performSubCommand, resolveConfigFromFile} from '../../helpers/utils'
+
 import * as dsyms from '../dsyms/upload'
 import {newSimpleGit} from '../git-metadata/git'
+
 import {getArchInfoFromFilename, getFlutterRequestBuilder, uploadMultipartHelper} from './helpers'
 import {
   DART_SYMBOL_FILE_NAME,

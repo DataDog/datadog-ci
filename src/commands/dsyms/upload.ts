@@ -1,5 +1,6 @@
 import {promises} from 'fs'
 import path from 'path'
+
 import chalk from 'chalk'
 import {Command} from 'clipanion'
 import glob from 'glob'
@@ -11,6 +12,7 @@ import {RequestBuilder} from '../../helpers/interfaces'
 import {getMetricsLogger, MetricsLogger} from '../../helpers/metrics'
 import {upload, UploadStatus} from '../../helpers/upload'
 import {buildPath, DEFAULT_CONFIG_PATH, getRequestBuilder, resolveConfigFromFile} from '../../helpers/utils'
+
 import {ArchSlice, CompressedDsym, Dsym} from './interfaces'
 import {
   renderCommandDetail,

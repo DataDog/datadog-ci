@@ -167,7 +167,22 @@ module.exports = {
     'guard-for-in': 'error',
     'id-denylist': 'error',
     'id-match': 'error',
-    'import/order': 'error',
+    'import/order': [
+      'error',
+      {
+        alphabetize: { order: 'asc', caseInsensitive: true },
+        'newlines-between': 'always',
+        groups: [['builtin', 'object'], 'type', 'external', 'internal', 'parent', ['sibling', 'index']],
+        // set different groups for 5 different import levels ('../../../../**', '../../../**', ...)
+        pathGroups: [
+          ...Array.from({ length: 5 }).map((_, index) => ({
+            pattern: `${'../'.repeat(5 + 1 - index)}**`,
+            group: 'parent',
+            position: 'before',
+          })),
+        ],
+      },
+    ],
     indent: 'off', // enforced by prettier
     'linebreak-style': ['error', 'unix'],
     'max-classes-per-file': ['error', 3],

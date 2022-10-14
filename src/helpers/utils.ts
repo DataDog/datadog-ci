@@ -1,12 +1,12 @@
 import fs, {existsSync} from 'fs'
 import {promisify} from 'util'
-import {BaseContext, CommandClass, Cli} from 'clipanion'
-
-import {AxiosRequestConfig, default as axios} from 'axios'
-import deepExtend from 'deep-extend'
-import ProxyAgent from 'proxy-agent'
 
 import type {SpanTag, SpanTags} from './interfaces'
+
+import {AxiosRequestConfig, default as axios} from 'axios'
+import {BaseContext, CommandClass, Cli} from 'clipanion'
+import deepExtend from 'deep-extend'
+import ProxyAgent from 'proxy-agent'
 
 export const DEFAULT_CONFIG_PATH = 'datadog-ci.json'
 

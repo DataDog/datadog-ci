@@ -1,7 +1,9 @@
 import {spawn} from 'child_process'
 import {existsSync} from 'fs'
 import {sep} from 'path'
+
 import {Cli, Command} from 'clipanion'
+
 import {UploadCommand} from './upload'
 
 /**

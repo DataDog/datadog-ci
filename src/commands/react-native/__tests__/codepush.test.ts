@@ -1,5 +1,7 @@
 import {readFileSync} from 'fs'
+
 import {Cli} from 'clipanion/lib/advanced'
+
 import {CodepushCommand} from '../codepush'
 
 jest.mock('child_process', () => ({

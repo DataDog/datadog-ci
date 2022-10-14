@@ -1,4 +1,5 @@
 import {Cli} from 'clipanion/lib/advanced'
+
 import {XCodeCommand} from '../xcode'
 
 beforeEach(() => {
