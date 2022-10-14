@@ -18,6 +18,7 @@ module.exports = {
     'eslint-plugin-import',
     'eslint-plugin-prefer-arrow',
     '@typescript-eslint',
+    'no-null',
   ],
   root: true,
   rules: {
@@ -216,6 +217,7 @@ module.exports = {
     'no-unused-vars': 'off',
     'no-use-before-define': 'off',
     'no-var': 'error',
+    "no-null/no-null": 'error',
     'object-shorthand': 'error',
     'one-var': ['error', 'never'],
     'padded-blocks': [

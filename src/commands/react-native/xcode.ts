@@ -1,3 +1,4 @@
+/* eslint-disable no-null/no-null */
 import {spawn} from 'child_process'
 import {existsSync} from 'fs'
 import {sep} from 'path'
