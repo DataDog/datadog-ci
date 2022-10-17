@@ -20,8 +20,15 @@ export const renderConfigurationError = (error: Error) => chalk.red(`${ICONS.FAI
 
 export const renderFailedUpload = (sourcemap: RNSourcemap, errorMessage: string) => {
   const sourcemapPathBold = `[${chalk.bold.dim(sourcemap.sourcemapPath)}]`
+  let message = chalk.red(`${ICONS.FAILED} Failed upload sourcemap for ${sourcemapPathBold}: ${errorMessage}\n`)
+  if (errorMessage.includes('413 (Request Entity Too Large)')) {
+    message = `${message}\n It looks like your sourcemap is too large. To make it lighter you can:
+    - Pass an empty file as --bundle argument to the upload command (no impact on the error explorer as of now)
+    - Pass the --remove-sources-content argument to the upload command (you will lose the code snippet next to the unminified error)
+    - Try to split your bundle, by using a tool such as repack (https://github.com/callstack/repack)\n`
+  }
 
-  return chalk.red(`${ICONS.FAILED} Failed upload sourcemap for ${sourcemapPathBold}: ${errorMessage}\n`)
+  return message
 }
 
 export const renderRetriedUpload = (payload: RNSourcemap, errorMessage: string, attempt: number) => {
@@ -29,6 +36,16 @@ export const renderRetriedUpload = (payload: RNSourcemap, errorMessage: string, 
 
   return chalk.yellow(`[attempt ${attempt}] Retrying sourcemap upload ${sourcemapPathBold}: ${errorMessage}\n`)
 }
+
+export const renderRemoveSourcesContentWarning = () =>
+  `Removing the "sourcesContent" part of the sourcemap file. ${chalk.yellow(
+    'Use the --remove-sources-content only if your sourcemap file is too heavy to upload to Datadog.\n'
+  )}`
+
+export const renderFailedSourcesContentRemovalError = (payload: RNSourcemap, errorMessage: string) => `${chalk.red(
+  `An error occured while removing the "sourcesContent" part of the sourcemap file ${payload.sourcemapPath}": ${errorMessage}`
+)}.
+  Trying to upload the full sourcemap with the "sourcesContent".`
 
 /**
  * As of now, this command takes an array of one signe UploadStatus element since we only support upload

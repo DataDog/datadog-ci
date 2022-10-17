@@ -15,9 +15,11 @@ import {RNPlatform, RNSourcemap, RN_SUPPORTED_PLATFORMS} from './interfaces'
 import {
   renderCommandInfo,
   renderConfigurationError,
+  renderFailedSourcesContentRemovalError,
   renderFailedUpload,
   renderGitDataNotAttachedWarning,
   renderGitWarning,
+  renderRemoveSourcesContentWarning,
   renderRetriedUpload,
   renderSourcesNotFoundWarning,
   renderSuccessfulCommand,
@@ -58,6 +60,7 @@ export class UploadCommand extends Command {
   private platform?: RNPlatform
   private projectPath: string = process.cwd() || ''
   private releaseVersion?: string
+  private removeSourcesContent = false
   private repositoryURL?: string
   private service?: string
   private sourcemap?: string
@@ -284,6 +287,15 @@ export class UploadCommand extends Command {
         return UploadStatus.Skipped
       }
 
+      if (this.removeSourcesContent) {
+        try {
+          this.context.stdout.write(renderRemoveSourcesContentWarning())
+          sourcemap.removeSourcesContentFromSourceMap()
+        } catch (error) {
+          this.context.stdout.write(renderFailedSourcesContentRemovalError(sourcemap, error.message))
+        }
+      }
+
       const payload = sourcemap.asMultipartPayload(
         this.cliVersion,
         this.service!,
@@ -330,3 +342,4 @@ UploadCommand.addOption('disableGit', Command.Boolean('--disable-git'))
 UploadCommand.addOption('maxConcurrency', Command.String('--max-concurrency'))
 UploadCommand.addOption('projectPath', Command.String('--project-path'))
 UploadCommand.addOption('configPath', Command.String('--config'))
+UploadCommand.addOption('removeSourcesContent', Command.Boolean('--remove-sources-content'))

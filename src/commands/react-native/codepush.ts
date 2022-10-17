@@ -39,6 +39,7 @@ export class CodepushCommand extends Command {
   private platform?: RNPlatform
   private projectPath?: string
   private releaseVersion?: string
+  private removeSourcesContent?: boolean
   private repositoryURL?: string
   private service?: string
   private sourcemap?: string
@@ -132,6 +133,9 @@ export class CodepushCommand extends Command {
     if (this.disableGit) {
       uploadCommand.push('--disable-git')
     }
+    if (this.removeSourcesContent) {
+      uploadCommand.push('--remove-sources-content')
+    }
     if (this.dryRun) {
       uploadCommand.push('--dry-run')
     }
@@ -182,3 +186,4 @@ CodepushCommand.addOption('projectPath', Command.String('--project-path'))
 CodepushCommand.addOption('configPath', Command.String('--config'))
 CodepushCommand.addOption('appCenterAppName', Command.String('--app'))
 CodepushCommand.addOption('appCenterDeployment', Command.String('--deployment'))
+CodepushCommand.addOption('removeSourcesContent', Command.Boolean('--remove-sources-content'))
