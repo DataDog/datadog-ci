@@ -754,6 +754,18 @@ export const parseVariablesFromCli = (
   return Object.keys(variables).length > 0 ? variables : undefined
 }
 
+export const validateDatadogSite = (datadogSite: string) => {
+  const datadogSiteParts = datadogSite.split('.')
+
+  if (datadogSiteParts.length !== 2 && datadogSiteParts.length !== 3) {
+    throw new CriticalError(
+      'INVALID_CONFIG',
+      'The `datadogSite` config property must match one of the sites supported by Datadog.\n' +
+        'For more information, see "Site parameter" in our documentation: https://docs.datadoghq.com/getting_started/site/#access-the-datadog-site'
+    )
+  }
+}
+
 export const getAppBaseURL = ({datadogSite, subdomain}: Pick<CommandConfig, 'datadogSite' | 'subdomain'>) => {
   const validSubdomain = subdomain || DEFAULT_COMMAND_CONFIG.subdomain
   const datadogSiteParts = datadogSite.split('.')
