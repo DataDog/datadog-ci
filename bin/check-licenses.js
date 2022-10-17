@@ -16,7 +16,7 @@ async function main() {
     packageJsonPaths.reduce((acc, packageJsonPath) => acc.concat(retrievePackageJsonDependencies(packageJsonPath)), [])
   ).sort()
 
-  const { licenses, hasColumnCountMismatch } = await retrieveLicenses()
+  const {licenses, hasColumnCountMismatch} = await retrieveLicenses()
   const declaredLicenses = licenses.sort()
 
   if (JSON.stringify(declaredDependencies) !== JSON.stringify(declaredLicenses)) {
@@ -42,7 +42,7 @@ async function main() {
 }
 
 async function findPackageJsonPaths() {
-  const { stdout } = await exec('find . -path "*/node_modules/*" -prune -o -name "package.json" -print')
+  const {stdout} = await exec('find . -path "*/node_modules/*" -prune -o -name "package.json" -print')
   return stdout.trim().split('\n')
 }
 
@@ -58,13 +58,13 @@ function withoutDuplicates(a) {
   return [...new Set(a)]
 }
 
-function splitColumns(s) {
-  return s.match(/("[^"]*")|[^,]+/g)
+function parseCSVLine(line) {
+  return line.match(/("[^"]*")|[^,]+/g)
 }
 
 async function retrieveLicenses() {
   const fileStream = fs.createReadStream(path.join(__dirname, '..', LICENSE_FILE))
-  const lines = readline.createInterface({ input: fileStream })
+  const lines = readline.createInterface({input: fileStream})
   const licenses = []
 
   let header = true
@@ -73,7 +73,7 @@ async function retrieveLicenses() {
   let lineNumber = 1
 
   for await (const line of lines) {
-    const csvColumns = splitColumns(line)
+    const csvColumns = parseCSVLine(line)
     if (header) {
       headerColumnCount = csvColumns.length
     }
@@ -81,7 +81,9 @@ async function retrieveLicenses() {
       licenses.push(csvColumns[0])
 
       if (csvColumns.length !== headerColumnCount) {
-        console.log(`${LICENSE_FILE}: Line ${lineNumber} has ${csvColumns.length} columns, but header has ${headerColumnCount}.`)
+        console.warn(
+          `${LICENSE_FILE}: Line ${lineNumber} has ${csvColumns.length} columns, but header has ${headerColumnCount}.`
+        )
         hasColumnCountMismatch = true
       }
     }
@@ -89,7 +91,7 @@ async function retrieveLicenses() {
     lineNumber++
   }
 
-  return { licenses, hasColumnCountMismatch }
+  return {licenses, hasColumnCountMismatch}
 }
 
 main().catch((e) => {
