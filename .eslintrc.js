@@ -18,6 +18,7 @@ module.exports = {
     'eslint-plugin-import',
     'eslint-plugin-prefer-arrow',
     '@typescript-eslint',
+    'no-null',
   ],
   root: true,
   rules: {
@@ -167,7 +168,22 @@ module.exports = {
     'guard-for-in': 'error',
     'id-denylist': 'error',
     'id-match': 'error',
-    'import/order': 'error',
+    'import/order': [
+      'error',
+      {
+        alphabetize: { order: 'asc', caseInsensitive: true },
+        'newlines-between': 'always',
+        groups: [['builtin', 'object'], 'type', 'external', 'internal', 'parent', ['sibling', 'index']],
+        // set different groups for 5 different import levels ('../../../../**', '../../../**', ...)
+        pathGroups: [
+          ...Array.from({ length: 5 }).map((_, index) => ({
+            pattern: `${'../'.repeat(5 + 1 - index)}**`,
+            group: 'parent',
+            position: 'before',
+          })),
+        ],
+      },
+    ],
     indent: 'off', // enforced by prettier
     'linebreak-style': ['error', 'unix'],
     'max-classes-per-file': ['error', 3],
@@ -201,6 +217,7 @@ module.exports = {
     'no-unused-vars': 'off',
     'no-use-before-define': 'off',
     'no-var': 'error',
+    "no-null/no-null": 'error',
     'object-shorthand': 'error',
     'one-var': ['error', 'never'],
     'padded-blocks': [
