@@ -29,7 +29,7 @@ npm install -g @datadog/datadog-ci
 yarn global add @datadog/datadog-ci
 ```
 
-For more ways to install the CLI, please refer to [this section](#more-ways-to-install-the-cli).
+For more ways to install the CLI, see [this section](#more-ways-to-install-the-cli).
 
 ## Usage
 
@@ -37,7 +37,7 @@ For more ways to install the CLI, please refer to [this section](#more-ways-to-i
 Usage: datadog-ci <command> <subcommand> [options]
 ```
 
-Possible values for `<command>` and their documentation:
+Possible values for each `<command>` and corresponding documentation include the following:
 
 - `dsyms`: [iOS dSYM Files](src/commands/dsyms/)
 - `flutter-symbols`: [Flutter Symbols](src/commands/flutter-symbols/)
@@ -114,9 +114,9 @@ The tests can then be launched through the `yarn test` command, it will find all
 
 The CI performs tests to avoid regressions by building the project, running unit tests and running one end-to-end test.
 
-The end-to-end test installs the package in a new project, configures it (using files in the `.github/workflows/e2e` folder) and runs a `synthetics run-tests` command in a Datadog Org (`Synthetics E2E Testing Org`) to verify the command is able to perform a test.
+The end-to-end test installs the package in a new project, configures it by using files in the `.github/workflows/e2e` folder, and runs a `synthetics run-tests` command in a Datadog org (such as `Synthetics E2E Testing Org`) to verify the command is able to perform a test.
 
-The synthetics tests ran are a browser test (id `neg-qw9-eut`) and an API test (id `v5u-56k-hgk`), both loading a page which outputs the headers of the request and verifying the `X-Fake-Header` header is present. This header is configured as an override in the `.github/workflows/e2e/test.synthetics.json` file. The API and Application keys used by the command are stored in GitHub Secrets named `datadog_api_key` and `datadog_app_key`.
+The Synthetic tests that are run include a browser test (with a test ID of `neg-qw9-eut`) and an API test (with a test ID of `v5u-56k-hgk`). Both tests load a page which outputs the headers of the request and verifies the `X-Fake-Header` header is present. This header is configured as an override in the `.github/workflows/e2e/test.synthetics.json` file. The API and application keys used by the command are stored in GitHub Secrets named `datadog_api_key` and `datadog_app_key`.
 
 The goal of this test is to verify the command is able to run tests and wait for their results as expected as well as handling configuration overrides.
 
@@ -141,33 +141,33 @@ yarn prepack
 
 ### Release Process
 
-Releasing a new version of `datadog-ci` unfolds as follow:
+To release a new version of `datadog-ci`:
 
 1. Create a new branch for the version upgrade.
 2. Update the version using `yarn version [--patch|--minor|--major]`, depending on the nature of the changes introduced. You may refer to [Semantic Versioning](https://semver.org/#summary) to determine which to increment.
-3. Push the branch along with the tag to the upstream (GitHub) with `git push --tags origin name-of-the-branch`, then create a Pull-Request with the changes introduced detailed in the description, and get at least one approval. ([sample Pull-Request](https://github.com/DataDog/datadog-ci/pull/78))
-4. Merge the Pull-Request.
+3. Push the branch along with the tag to the upstream (GitHub) with `git push --tags origin name-of-the-branch`, create a Pull Request with the changes introduced in the description details, and get at least one approval. For example, see this [sample pull request](https://github.com/DataDog/datadog-ci/pull/78).
+4. Merge the Pull Request.
 5. Create a GitHub Release from the [Tags page](https://github.com/DataDog/datadog-ci/tags) with the description of changes introduced.
-6. Once the release has been created, a GitHub Action will publish the package, and a Gitlab pipeline will publish the Docker image. Make sure they succeed.
-7. :warning: If the release introduced some **changes in the `synthetics` command**, you have to upgrade `datadog-ci` in the following projects:
+6. Once the release has been created, a GitHub Action publishes the package, and a Gitlab pipeline publishes the Docker image. Make sure these jobs succeed.
+7. If the release introduced some **changes in the** `synthetics` **command**, you have to upgrade `datadog-ci` in the following projects:
    * [GitHub Action](https://github.com/DataDog/synthetics-ci-github-action)
    * [CircleCI Orb](https://github.com/DataDog/synthetics-test-automation-circleci-orb)
    * [Azure DevOps Extension](https://github.com/DataDog/datadog-ci-azure-devops)
 
 ### Pre-Release Process
 
-If you need to create a pre-release or releasing in a different channel here's how it works:
+To create a pre-release or releasing in a different channel:
 
-1. Create a new branch for the channel you want to release to (`alpha`, `beta`, ...).
+1. Create a new branch for the channel you want to release to (`alpha`, `beta`, and more).
 2. Create a PR for your feature branch with the channel branch as a base.
-3. Pick a version following this format: `version-channel`. It can be `0.10.9-alpha`, or `1-beta`, etc.
+3. Pick a version following this format: `version-channel`. For example, `0.10.9-alpha`, `1-beta`, and more.
 4. Update the `version` field in `package.json`.
-5. Merge the Pull Request.
+5. Once you've received at least one approval, merge the Pull Request.
 6. Create a [GitHub Release](https://github.com/DataDog/datadog-ci/releases/new?target=alpha&tag=0.10.9-alpha&prerelease=1&title=Alpha+prerelease):
-   1. Target the channel branch.
-   2. Pick a tag based on your version `version-channel`.
-   3. Check the `This is a pre-release` checkbox.
-7. Publish the release and an action will publish it on npm.
+   - Target the channel branch.
+   - Pick a tag based on your version `version-channel`.
+   - Check the `This is a pre-release` checkbox.
+7. Publish the release and an action publishes it on npm.
 
 <img src="./assets/pre-release.png" width="500"/>
 
@@ -175,7 +175,9 @@ If you need to create a pre-release or releasing in a different channel here's h
 
 ### Standalone binary (**beta**)
 
-If installing nodejs in the CI is an issue, standalone binaries are provided with [releases](https://github.com/DataDog/datadog-ci/releases). Only _linux-x64_, _darwin-x64_ (macOS) and _win-x64_ (Windows) are supported at the time. **These standalone binaries are in _beta_ and their stability is not guaranteed**. To install:
+If installing NodeJS in the CI is an issue, standalone binaries are provided with [releases](https://github.com/DataDog/datadog-ci/releases). _linux-x64_, _darwin-x64_ (macOS), and _win-x64_ (Windows) are supported. **These standalone binaries are in beta and their stability is not guaranteed**. 
+
+To install:
 
 #### Linux
 
@@ -195,7 +197,7 @@ curl -L --fail "https://github.com/DataDog/datadog-ci/releases/latest/download/d
 Invoke-WebRequest -Uri "https://github.com/DataDog/datadog-ci/releases/latest/download/datadog-ci_win-x64.exe" -OutFile "datadog-ci.exe"
 ```
 
-Then you can run `datadog-ci` commands normally:
+Then, you can run `datadog-ci` commands normally:
 
 ```sh
 datadog-ci version
@@ -209,7 +211,7 @@ To run `datadog-ci` from a container, you can use the `datadog/ci` image availab
 docker pull datadog/ci
 ```
 
-Here's an example of how to run a command using the container and passing in the API and APP keys:
+This example demonstrates how to run a command using the container and passing in the API and APP keys:
 
 ```
 export DD_API_KEY=$(cat /secret/dd_api_key)
@@ -226,7 +228,7 @@ cd container
 docker build --tag datadog-ci .
 ```
 
-Optionally you can use the `VERSION` build argument to build an image for a specific version:
+Optionally, you can use the `VERSION` build argument to build an image for a specific version:
 
 ```sh
 docker build --build-arg "VERSION=v1.14" --t datadog-ci .
