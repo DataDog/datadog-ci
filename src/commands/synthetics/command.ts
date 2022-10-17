@@ -1,9 +1,9 @@
 import chalk from 'chalk'
 import {Command} from 'clipanion'
 import deepExtend from 'deep-extend'
-import {isValidDatadogSite} from '../../helpers/validation'
 
 import {removeUndefinedValues, resolveConfigFromFile} from '../../helpers/utils'
+import {isValidDatadogSite} from '../../helpers/validation'
 import {CiError, CriticalError} from './errors'
 import {CommandConfig, MainReporter, Reporter, Result, Summary} from './interfaces'
 import {DefaultReporter} from './reporters/default'
