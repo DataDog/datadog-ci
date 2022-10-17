@@ -1,8 +1,8 @@
-// tslint:disable: no-string-literal
 import os from 'os'
 
 import chalk from 'chalk'
 import {Cli} from 'clipanion/lib/advanced'
+
 import {RNSourcemap} from '../interfaces'
 import {UploadCommand} from '../upload'
 

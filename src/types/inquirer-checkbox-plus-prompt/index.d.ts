@@ -1,7 +1,8 @@
 import {Interface as ReadLineInterface} from 'readline'
+
 import inquirer from 'inquirer'
-import Paginator from 'inquirer/lib/utils/paginator'
 import Prompt from 'inquirer/lib/prompts/base'
+import Paginator from 'inquirer/lib/utils/paginator'
 
 /**
  * The question-options for the `ChoicePrompt<T>`.

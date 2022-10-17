@@ -1,5 +1,6 @@
 import http from 'http'
 import {AddressInfo} from 'net'
+
 import {AxiosPromise, AxiosRequestConfig, default as axios} from 'axios'
 import proxy from 'proxy'
 import ProxyAgent from 'proxy-agent'
@@ -378,5 +379,6 @@ describe('utils', () => {
 })
 
 test('removeUndefinedValues', () => {
+  // eslint-disable-next-line no-null/no-null
   expect(ciUtils.removeUndefinedValues({a: 'b', c: 'd', e: undefined, g: null})).toEqual({a: 'b', c: 'd', g: null})
 })
