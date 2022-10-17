@@ -1,8 +1,9 @@
+import {promises} from 'fs'
+import path from 'path'
+
 import chalk from 'chalk'
 import {Command} from 'clipanion'
-import {promises} from 'fs'
 import glob from 'glob'
-import path from 'path'
 import asyncPool from 'tiny-async-pool'
 
 import {ApiKeyValidator, newApiKeyValidator} from '../../helpers/apikey'
@@ -11,6 +12,7 @@ import {RequestBuilder} from '../../helpers/interfaces'
 import {getMetricsLogger, MetricsLogger} from '../../helpers/metrics'
 import {upload, UploadStatus} from '../../helpers/upload'
 import {buildPath, DEFAULT_CONFIG_PATH, getRequestBuilder, resolveConfigFromFile} from '../../helpers/utils'
+
 import {ArchSlice, CompressedDsym, Dsym} from './interfaces'
 import {
   renderCommandDetail,
@@ -169,7 +171,7 @@ export class UploadCommand extends Command {
     }
 
     return getRequestBuilder({
-      apiKey: this.config.apiKey!,
+      apiKey: this.config.apiKey,
       baseUrl: getBaseIntakeUrl(this.config.datadogSite),
     })
   }
