@@ -1,5 +1,7 @@
 import os from 'os'
+
 import {Cli} from 'clipanion/lib/advanced'
+
 import {SpanTags} from '../../../helpers/interfaces'
 
 import {renderInvalidFile} from '../renderer'

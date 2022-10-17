@@ -1,7 +1,9 @@
 import {CloudWatchLogs, Lambda} from 'aws-sdk'
 import {bold, cyan, red, yellow} from 'chalk'
 import {Command} from 'clipanion'
+
 import {resolveConfigFromFile} from '../../helpers/utils'
+
 import {AWS_DEFAULT_REGION_ENV_VAR} from './constants'
 import {
   collectFunctionsByRegion,

@@ -1,8 +1,9 @@
 import {promises as fs} from 'fs'
 import path from 'path'
 import {Writable} from 'stream'
-import {BaseContext} from 'clipanion'
+
 import c from 'chalk'
+import {BaseContext} from 'clipanion'
 import {Builder} from 'xml2js'
 
 import {

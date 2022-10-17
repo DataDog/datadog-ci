@@ -1,5 +1,6 @@
 import {CloudWatchLogs, Lambda} from 'aws-sdk'
 import {Cli, Command} from 'clipanion/lib/advanced'
+
 import {InstrumentCommand} from '../instrument'
 import {UninstrumentCommand} from '../uninstrument'
 

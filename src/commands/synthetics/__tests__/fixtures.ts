@@ -1,7 +1,7 @@
-import {AxiosError, AxiosResponse} from 'axios'
 import * as http from 'http'
 import {URL} from 'url'
 
+import {AxiosError, AxiosResponse} from 'axios'
 import WebSocket, {Server as WebSocketServer} from 'ws'
 
 import {ProxyConfiguration} from '../../../helpers/utils'

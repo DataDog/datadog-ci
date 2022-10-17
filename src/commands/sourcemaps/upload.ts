@@ -1,5 +1,6 @@
 import path from 'path'
 import {URL} from 'url'
+
 import chalk from 'chalk'
 import {Command} from 'clipanion'
 import glob from 'glob'
@@ -13,6 +14,7 @@ import {RequestBuilder} from '../../helpers/interfaces'
 import {getMetricsLogger, MetricsLogger} from '../../helpers/metrics'
 import {upload, UploadStatus} from '../../helpers/upload'
 import {getRequestBuilder, buildPath} from '../../helpers/utils'
+
 import {Sourcemap} from './interfaces'
 import {
   renderCommandInfo,

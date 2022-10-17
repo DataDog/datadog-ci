@@ -1,4 +1,5 @@
 import {URL} from 'url'
+
 import * as simpleGit from 'simple-git'
 import {BranchSummary} from 'simple-git'
 

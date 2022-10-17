@@ -1,5 +1,7 @@
 import {Writable} from 'stream'
+
 import {checkFile} from '../../helpers/validation'
+
 import {Sourcemap} from './interfaces'
 import {renderMinifiedPathPrefixMisusage} from './renderer'
 import {extractRepeatedPath} from './utils'

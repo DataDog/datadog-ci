@@ -1,9 +1,12 @@
 import {CloudWatchLogs, Lambda} from 'aws-sdk'
 import {blueBright, bold, cyan, hex, red, underline, yellow} from 'chalk'
 import {Cli, Command} from 'clipanion'
+
 import {resolveConfigFromFile} from '../../helpers/utils'
+
 import {getCommitInfo, newSimpleGit} from '../git-metadata/git'
 import {UploadCommand} from '../git-metadata/upload'
+
 import {
   AWS_DEFAULT_REGION_ENV_VAR,
   ENVIRONMENT_ENV_VAR,

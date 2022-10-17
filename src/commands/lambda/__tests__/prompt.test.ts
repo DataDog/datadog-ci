@@ -1,5 +1,6 @@
 jest.mock('inquirer')
 import {prompt} from 'inquirer'
+
 import {
   AWS_ACCESS_KEY_ID_ENV_VAR,
   AWS_SECRET_ACCESS_KEY_ENV_VAR,
@@ -19,6 +20,7 @@ import {
   requestDatadogEnvVars,
   requestFunctionSelection,
 } from '../prompt'
+
 import {mockAwsAccessKeyId, mockAwsSecretAccessKey, mockDatadogApiKey} from './fixtures'
 
 describe('prompt', () => {

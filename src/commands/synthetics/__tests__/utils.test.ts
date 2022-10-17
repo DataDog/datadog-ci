@@ -38,12 +38,12 @@ jest.mock('path', () => {
   }
 })
 
-import * as fs from 'fs'
 import child_process from 'child_process'
+import * as fs from 'fs'
 import process from 'process'
-import deepExtend from 'deep-extend'
 
 import {default as axios} from 'axios'
+import deepExtend from 'deep-extend'
 import glob from 'glob'
 
 process.env.DATADOG_SYNTHETICS_CI_TRIGGER_APP = 'env_default'
@@ -53,12 +53,11 @@ import {Metadata} from '../../../helpers/interfaces'
 import * as ciUtils from '../../../helpers/utils'
 
 import {apiConstructor, APIHelper} from '../api'
+import {DEFAULT_COMMAND_CONFIG, MAX_TESTS_TO_TRIGGER} from '../command'
 import {CiError} from '../errors'
 import {Batch, ExecutionRule, PollResult, Result, ServerResult, Test, Trigger, UserConfigOverride} from '../interfaces'
-import * as utils from '../utils'
-
-import {DEFAULT_COMMAND_CONFIG, MAX_TESTS_TO_TRIGGER} from '../command'
 import * as mobile from '../mobile'
+import * as utils from '../utils'
 
 import {
   ciConfig,
@@ -408,9 +407,9 @@ describe('utils', () => {
     test('Forbidden error when getting a test', async () => {
       const triggerConfig = {suite: 'Suite 1', config: {}, id: '123-456-789'}
 
-      expect(() => utils.getTestAndOverrideConfig(api, triggerConfig, mockReporter, getSummary())).rejects.toThrow(
-        'Failed to get test: could not query https://app.datadoghq.com/example\nForbidden\n'
-      )
+      await expect(() =>
+        utils.getTestAndOverrideConfig(api, triggerConfig, mockReporter, getSummary())
+      ).rejects.toThrow('Failed to get test: could not query https://app.datadoghq.com/example\nForbidden\n')
     })
   })
 

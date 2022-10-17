@@ -3,8 +3,10 @@ jest.mock('aws-sdk')
 jest.mock('../prompt')
 import * as fs from 'fs'
 import path from 'path'
+
 import {Lambda} from 'aws-sdk'
 import {Cli} from 'clipanion/lib/advanced'
+
 import {
   AWS_ACCESS_KEY_ID_ENV_VAR,
   AWS_DEFAULT_REGION_ENV_VAR,
@@ -26,6 +28,7 @@ import {
   requestEnvServiceVersion,
   requestFunctionSelection,
 } from '../prompt'
+
 import {
   createCommand,
   createMockContext,

@@ -1,6 +1,7 @@
 import {blueBright, bold} from 'chalk'
-import inquirer from 'inquirer'
 import {filter} from 'fuzzy'
+import inquirer from 'inquirer'
+
 import {
   AWS_ACCESS_KEY_ID_ENV_VAR,
   AWS_ACCESS_KEY_ID_REG_EXP,

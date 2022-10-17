@@ -1,21 +1,23 @@
 import fs from 'fs'
 import os from 'os'
 import path from 'path'
-import glob from 'glob'
-import xmlParser from 'fast-xml-parser'
-import {Command} from 'clipanion'
-import chalk from 'chalk'
-import asyncPool from 'tiny-async-pool'
 
-import {SpanTags} from '../../helpers/interfaces'
+import chalk from 'chalk'
+import {Command} from 'clipanion'
+import xmlParser from 'fast-xml-parser'
+import glob from 'glob'
+import asyncPool from 'tiny-async-pool'
 
 import {getCISpanTags} from '../../helpers/ci'
 import {getGitMetadata} from '../../helpers/git/format-git-span-data'
+import {SpanTags} from '../../helpers/interfaces'
 import {retryRequest} from '../../helpers/retry'
 import {parseTags} from '../../helpers/tags'
 import {getUserGitSpanTags} from '../../helpers/user-provided-git'
 import {buildPath} from '../../helpers/utils'
-import {getBaseIntakeUrl} from './utils'
+
+import {apiConstructor} from './api'
+import {APIHelper, Payload} from './interfaces'
 import {
   renderCommandInfo,
   renderDryRunUpload,
@@ -24,8 +26,7 @@ import {
   renderRetriedUpload,
   renderSuccessfulCommand,
 } from './renderer'
-import {APIHelper, Payload} from './interfaces'
-import {apiConstructor} from './api'
+import {getBaseIntakeUrl} from './utils'
 
 const errorCodesStopUpload = [400, 403]
 

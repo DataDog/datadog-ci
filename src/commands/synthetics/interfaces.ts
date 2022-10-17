@@ -1,5 +1,6 @@
 import {Metadata} from '../../helpers/interfaces'
 import {ProxyConfiguration} from '../../helpers/utils'
+
 import {TunnelInfo} from './tunnel'
 
 export interface MainReporter {

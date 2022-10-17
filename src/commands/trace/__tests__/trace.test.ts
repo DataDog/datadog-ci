@@ -1,3 +1,4 @@
+/* eslint-disable no-null/no-null */
 import {TraceCommand} from '../trace'
 
 describe('trace', () => {

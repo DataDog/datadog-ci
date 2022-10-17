@@ -1,5 +1,7 @@
 import fs from 'fs'
+
 import {MultipartPayload} from '../../../helpers/upload'
+
 import {RNSourcemap} from '../interfaces'
 
 describe('interfaces', () => {

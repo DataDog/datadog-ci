@@ -1,6 +1,7 @@
 import {PassThrough} from 'stream'
 
 import {mocked} from 'ts-jest/utils'
+
 import {ProxyConfiguration} from '../../../../src/helpers/utils'
 
 import {Tunnel} from '../tunnel'

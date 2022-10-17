@@ -1,5 +1,7 @@
 import fs from 'fs'
+
 import * as simpleGit from 'simple-git'
+
 import {gitHash, gitRemote, gitTrackedFiles} from './get-git-data'
 
 // Returns a configured SimpleGit.

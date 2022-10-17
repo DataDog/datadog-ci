@@ -1,13 +1,13 @@
 import {exec} from 'child_process'
 import * as fs from 'fs'
 import * as path from 'path'
+import process from 'process'
 import {URL} from 'url'
 import {promisify} from 'util'
 
-import process from 'process'
 import chalk from 'chalk'
-import glob from 'glob'
 import deepExtend from 'deep-extend'
+import glob from 'glob'
 
 import {getCIMetadata} from '../../helpers/ci'
 import {GIT_COMMIT_MESSAGE} from '../../helpers/tags'

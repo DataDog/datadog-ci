@@ -1,4 +1,5 @@
 import {CloudWatchLogs, Lambda} from 'aws-sdk'
+
 import {
   API_KEY_ENV_VAR,
   API_KEY_SECRET_ARN_ENV_VAR,
@@ -43,6 +44,7 @@ import {
 import {FunctionConfiguration, InstrumentationSettings, LogGroupConfiguration, TagConfiguration} from '../interfaces'
 import {calculateLogGroupUpdateRequest} from '../loggroup'
 import {calculateTagUpdateRequest} from '../tags'
+
 import {
   addLayerArn,
   findLatestLayerVersion,

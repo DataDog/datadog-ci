@@ -1,5 +1,6 @@
 import chalk from 'chalk'
 import {Command} from 'clipanion'
+
 import {getCIEnv} from '../../helpers/ci'
 import {retryRequest} from '../../helpers/retry'
 import {getApiHostForSite, getRequestBuilder} from '../../helpers/utils'

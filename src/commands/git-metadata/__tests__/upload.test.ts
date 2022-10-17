@@ -2,6 +2,7 @@ import os from 'os'
 
 import chalk from 'chalk'
 import {Cli} from 'clipanion/lib/advanced'
+
 import {UploadCommand} from '../upload'
 
 describe('upload', () => {

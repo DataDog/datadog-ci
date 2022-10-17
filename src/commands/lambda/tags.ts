@@ -1,4 +1,5 @@
 import {Lambda} from 'aws-sdk'
+
 import {TAG_VERSION_NAME} from './constants'
 import {TagConfiguration} from './interfaces'
 

@@ -16,8 +16,8 @@ import {
   getInstrumentedFunctionConfigs,
   getInstrumentedFunctionConfigsFromRegEx,
 } from '../../functions/instrument'
-
 import * as loggroup from '../../loggroup'
+
 import {makeMockCloudWatchLogs, makeMockLambda} from '../fixtures'
 
 describe('instrument', () => {

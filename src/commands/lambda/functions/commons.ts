@@ -1,5 +1,6 @@
 import {CloudWatchLogs, config as aws_sdk_config, Lambda} from 'aws-sdk'
 import {GetFunctionRequest} from 'aws-sdk/clients/lambda'
+
 import {
   ARM64_ARCHITECTURE,
   ARM_LAYERS,

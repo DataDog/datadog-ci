@@ -1,5 +1,7 @@
 import {Cli} from 'clipanion/lib/advanced'
+
 import * as formatGitSourcemapsData from '../../../helpers/git/format-git-sourcemaps-data'
+
 import {XCodeCommand} from '../xcode'
 
 beforeEach(() => {

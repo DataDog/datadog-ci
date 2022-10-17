@@ -20,7 +20,6 @@ import {
   GIT_SHA,
   GIT_TAG,
 } from '../tags'
-
 import {getUserCISpanTags, getUserGitSpanTags} from '../user-provided-git'
 
 describe('getUserGitSpanTags', () => {

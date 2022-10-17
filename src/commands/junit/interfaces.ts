@@ -1,4 +1,5 @@
 import {Writable} from 'stream'
+
 import {AxiosPromise, AxiosResponse} from 'axios'
 
 import {SpanTags} from '../../helpers/interfaces'

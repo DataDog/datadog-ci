@@ -3,6 +3,7 @@ import {Command} from 'clipanion'
 import deepExtend from 'deep-extend'
 
 import {removeUndefinedValues, resolveConfigFromFile} from '../../helpers/utils'
+
 import {CiError, CriticalError} from './errors'
 import {CommandConfig, MainReporter, Reporter, Result, Summary} from './interfaces'
 import {DefaultReporter} from './reporters/default'

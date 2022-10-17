@@ -24,9 +24,9 @@ import {
   getUninstrumentedFunctionConfigs,
   getUninstrumentedFunctionConfigsFromRegEx,
 } from '../../functions/uninstrument'
-import {makeMockCloudWatchLogs, makeMockLambda} from '../fixtures'
-
 import * as loggroup from '../../loggroup'
+
+import {makeMockCloudWatchLogs, makeMockLambda} from '../fixtures'
 
 describe('uninstrument', () => {
   describe('calculateUpdateRequest', () => {

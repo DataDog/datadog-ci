@@ -3,10 +3,10 @@ import {Writable} from 'stream'
 
 import {BaseContext} from 'clipanion/lib/advanced'
 
-import {Device, ExecutionRule, Result, Test} from '../../interfaces'
-
 import {RunTestCommand} from '../../command'
+import {Device, ExecutionRule, Result, Test} from '../../interfaces'
 import {Args, getDefaultSuiteStats, getDefaultTestCaseStats, JUnitReporter, XMLTestCase} from '../../reporters/junit'
+
 import {
   BATCH_ID,
   getApiResult,
