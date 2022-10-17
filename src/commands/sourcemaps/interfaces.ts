@@ -39,13 +39,13 @@ export class Sourcemap {
       ['source_map', {value: fs.createReadStream(this.sourcemapPath), options: {filename: 'source_map'}}],
       ['minified_file', {value: fs.createReadStream(this.minifiedFilePath), options: {filename: 'minified_file'}}],
     ])
-    if (this.gitData !== undefined && this.gitData!.gitRepositoryPayload !== undefined) {
+    if (this.gitData !== undefined && this.gitData.gitRepositoryPayload !== undefined) {
       content.set('repository', {
         options: {
           contentType: 'application/json',
           filename: 'repository',
         },
-        value: this.gitData!.gitRepositoryPayload,
+        value: this.gitData.gitRepositoryPayload,
       })
     }
 
@@ -69,8 +69,8 @@ export class Sourcemap {
       version,
     }
     if (this.gitData !== undefined) {
-      metadata.git_repository_url = this.gitData!.gitRepositoryURL
-      metadata.git_commit_sha = this.gitData!.gitCommitSha
+      metadata.git_repository_url = this.gitData.gitRepositoryURL
+      metadata.git_commit_sha = this.gitData.gitCommitSha
     }
 
     return {
