@@ -64,6 +64,7 @@ import {
   ciConfig,
   getApiResult,
   getApiTest,
+  getAxiosHttpError,
   getBatch,
   getBrowserServerResult,
   getResults,
@@ -263,10 +264,7 @@ describe('utils', () => {
 
     test('triggerTests throws', async () => {
       jest.spyOn(api, 'triggerTests').mockImplementation(() => {
-        const serverError = new Error('Server Error') as AxiosError
-        serverError.config = {baseURL: 'baseURL', url: 'url'}
-        serverError.response = {status: 502} as AxiosResponse
-        throw serverError
+        throw getAxiosHttpError(502, {message: 'Server Error'})
       })
 
       await expect(
@@ -307,10 +305,7 @@ describe('utils', () => {
           return {data: fakeTests[publicId]}
         }
 
-        const serverError = new Error('Not found') as AxiosError
-        serverError.config = {baseURL: 'baseURL', url: 'url'}
-        serverError.response = {status: 404} as AxiosResponse
-        throw serverError
+        throw getAxiosHttpError(404, {errors: ['Not found']})
       }) as any)
     })
 
@@ -406,10 +401,7 @@ describe('utils', () => {
     beforeEach(() => {
       const axiosMock = jest.spyOn(axios, 'create')
       axiosMock.mockImplementation((() => (e: any) => {
-        const serverError = new Error('Forbidden') as AxiosError
-        serverError.config = {baseURL: 'baseURL', url: 'url'}
-        serverError.response = {status: 403} as AxiosResponse
-        throw serverError
+        throw getAxiosHttpError(403, {message: 'Forbidden'})
       }) as any)
     })
 
@@ -417,7 +409,7 @@ describe('utils', () => {
       const triggerConfig = {suite: 'Suite 1', config: {}, id: '123-456-789'}
 
       expect(() => utils.getTestAndOverrideConfig(api, triggerConfig, mockReporter, getSummary())).rejects.toThrow(
-        'Failed to get test: could not query baseURLurl\nForbidden\n'
+        'Failed to get test: could not query https://app.datadoghq.com/example\nForbidden\n'
       )
     })
   })
@@ -993,15 +985,15 @@ describe('utils', () => {
     test('pollResults throws', async () => {
       const {pollResultsMock} = mockApi({
         pollResultsImplementation: () => {
-          const serverError = new Error('Poll results server error') as AxiosError
-          serverError.config = {baseURL: 'baseURL', url: 'url'}
-          throw serverError
+          throw getAxiosHttpError(502, {message: 'Poll results server error'})
         },
       })
 
       await expect(
         utils.waitForResults(api, trigger, [result.test], {maxPollingTimeout: 2000}, mockReporter)
-      ).rejects.toThrowError('Failed to poll results: could not query baseURLurl\nPoll results server error\n')
+      ).rejects.toThrowError(
+        'Failed to poll results: could not query https://app.datadoghq.com/example\nPoll results server error\n'
+      )
 
       expect(pollResultsMock).toHaveBeenCalledWith([result.resultId])
     })
@@ -1009,15 +1001,15 @@ describe('utils', () => {
     test('getBatch throws', async () => {
       const {getBatchMock} = mockApi({
         getBatchImplementation: () => {
-          const serverError = new Error('Get batch server error') as AxiosError
-          serverError.config = {baseURL: 'baseURL', url: 'url'}
-          throw serverError
+          throw getAxiosHttpError(502, {message: 'Get batch server error'})
         },
       })
 
       await expect(
         utils.waitForResults(api, trigger, [result.test], {maxPollingTimeout: 2000}, mockReporter)
-      ).rejects.toThrowError('Failed to get batch: could not query baseURLurl\nGet batch server error\n')
+      ).rejects.toThrowError(
+        'Failed to get batch: could not query https://app.datadoghq.com/example\nGet batch server error\n'
+      )
 
       expect(getBatchMock).toHaveBeenCalledWith(trigger.batch_id)
     })

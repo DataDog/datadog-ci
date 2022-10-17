@@ -1,11 +1,10 @@
 // tslint:disable: no-string-literal
-import {AxiosError, AxiosResponse} from 'axios'
 import {Cli} from 'clipanion/lib/advanced'
 import * as ciUtils from '../../../helpers/utils'
 import * as api from '../api'
 import {DEFAULT_COMMAND_CONFIG, DEFAULT_POLLING_TIMEOUT, RunTestCommand} from '../command'
 import * as utils from '../utils'
-import {getApiTest, getTestSuite, mockTestTriggerResponse} from './fixtures'
+import {getApiTest, getAxiosHttpError, getTestSuite, mockTestTriggerResponse} from './fixtures'
 
 test('all option flags are supported', async () => {
   const options = [
@@ -30,14 +29,6 @@ test('all option flags are supported', async () => {
 
   options.forEach((option) => expect(usage).toContain(`--${option}`))
 })
-
-const getAxiosHttpError = (status: number, error: string) => {
-  const serverError = new Error(error) as AxiosError
-  serverError.response = {data: {errors: [error]}, status} as AxiosResponse
-  serverError.config = {baseURL: 'baseURL', url: 'url'}
-
-  return serverError
-}
 
 describe('run-test', () => {
   beforeEach(() => {
@@ -194,7 +185,7 @@ describe('run-test', () => {
 
       // Throw to stop the test
       const triggerTests = jest.fn(() => {
-        throw getAxiosHttpError(502, 'Bad Gateway')
+        throw getAxiosHttpError(502, {message: 'Bad Gateway'})
       })
 
       const apiHelper = {
@@ -291,7 +282,7 @@ describe('run-test', () => {
 
       const apiHelper = {
         getTest: jest.fn(() => {
-          throw getAxiosHttpError(404, 'Test not found')
+          throw getAxiosHttpError(404, {errors: ['Test not found']})
         }),
       }
       jest.spyOn(api, 'getApiHelper').mockImplementation(() => apiHelper as any)
@@ -315,7 +306,7 @@ describe('run-test', () => {
 
           const apiHelper = {
             searchTests: jest.fn(() => {
-              throw errorCode ? getAxiosHttpError(errorCode, 'Error') : new Error('Unknown error')
+              throw errorCode ? getAxiosHttpError(errorCode, {message: 'Error'}) : new Error('Unknown error')
             }),
           }
           jest.spyOn(api, 'getApiHelper').mockImplementation(() => apiHelper as any)
@@ -332,7 +323,7 @@ describe('run-test', () => {
 
           const apiHelper = {
             getTest: jest.fn(() => {
-              throw errorCode ? getAxiosHttpError(errorCode, 'Error') : new Error('Unknown error')
+              throw errorCode ? getAxiosHttpError(errorCode, {message: 'Error'}) : new Error('Unknown error')
             }),
           }
           jest.spyOn(api, 'getApiHelper').mockImplementation(() => apiHelper as any)
@@ -351,7 +342,7 @@ describe('run-test', () => {
           const apiHelper = {
             getTest: () => getApiTest('123-456-789'),
             triggerTests: jest.fn(() => {
-              throw errorCode ? getAxiosHttpError(errorCode, 'Error') : new Error('Unknown error')
+              throw errorCode ? getAxiosHttpError(errorCode, {message: 'Error'}) : new Error('Unknown error')
             }),
           }
           jest.spyOn(api, 'getApiHelper').mockImplementation(() => apiHelper as any)
@@ -371,7 +362,7 @@ describe('run-test', () => {
             getBatch: () => ({results: [], status: 'success'}),
             getTest: () => getApiTest('123-456-789'),
             pollResults: jest.fn(() => {
-              throw errorCode ? getAxiosHttpError(errorCode, 'Error') : new Error('Unknown error')
+              throw errorCode ? getAxiosHttpError(errorCode, {message: 'Error'}) : new Error('Unknown error')
             }),
             triggerTests: () => mockTestTriggerResponse,
           }
@@ -404,7 +395,7 @@ describe('run-test', () => {
         const apiHelper = {
           getTest: jest.fn((testId: string) => {
             if (testId === 'mis-sin-ggg') {
-              throw getAxiosHttpError(404, 'Test not found')
+              throw getAxiosHttpError(404, {errors: ['Test not found']})
             }
 
             return {}
@@ -438,8 +429,7 @@ describe('run-test', () => {
       const apiHelper = {
         getTest: jest.fn((testId: string) => {
           if (testId === 'for-bid-den') {
-            const serverError = getAxiosHttpError(403, 'Forbidden')
-            serverError.config.baseURL = 'https://api.example.org/'
+            const serverError = getAxiosHttpError(403, {errors: ['Forbidden']})
             serverError.config.url = 'tests/for-bid-den'
             throw serverError
           }
@@ -469,7 +459,7 @@ describe('run-test', () => {
       expect(writeMock).toHaveBeenCalledWith('[aaa-aaa-aaa] Found test "aaa-aaa-aaa" (1 config override)\n')
       expect(writeMock).toHaveBeenCalledWith('[bbb-bbb-bbb] Found test "bbb-bbb-bbb" (1 config override)\n')
       expect(writeMock).toHaveBeenCalledWith(
-        '\n ERROR: authorization error \nFailed to get test: query on https://api.example.org/tests/for-bid-den returned: "Forbidden"\n\n\n'
+        '\n ERROR: authorization error \nFailed to get test: query on https://app.datadoghq.com/tests/for-bid-den returned: "Forbidden"\n\n\n'
       )
       expect(writeMock).toHaveBeenCalledWith(
         'Credentials refused, make sure `apiKey`, `appKey` and `datadogSite` are correct.\n'

@@ -1,3 +1,4 @@
+import {AxiosError, AxiosResponse} from 'axios'
 import * as http from 'http'
 import {URL} from 'url'
 
@@ -76,6 +77,13 @@ export const ciConfig: CommandConfig = {
   subdomain: 'app',
   tunnel: false,
   variableStrings: [],
+}
+
+export const getAxiosHttpError = (status: number, {errors, message}: {errors?: string[]; message?: string}) => {
+  const serverError = new Error(message) as AxiosError
+  serverError.config = {baseURL: MOCK_BASE_URL, url: 'example'}
+  serverError.response = {data: {errors}, status} as AxiosResponse
+  return serverError
 }
 
 export const getApiTest = (publicId = 'abc-def-ghi', opts: Partial<Test> = {}): Test => ({

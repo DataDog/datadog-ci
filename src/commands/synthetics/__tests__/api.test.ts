@@ -10,6 +10,7 @@ import {APIConfiguration, ExecutionRule, PollResult, ServerResult, TestPayload, 
 import {
   ciConfig,
   getApiTest,
+  getAxiosHttpError,
   getSyntheticsProxy,
   MOBILE_PRESIGNED_URL_PAYLOAD,
   mockSearchResponse,
@@ -301,39 +302,26 @@ describe('getApiHelper', () => {
 
 describe('formatBackendErrors', () => {
   test('backend error - no error', () => {
-    const backendError = {
-      config: {baseURL: 'baseURL', url: 'url'},
-      response: {data: {errors: []}},
-    } as AxiosError
-
-    expect(formatBackendErrors(backendError)).toBe('error querying baseURLurl')
+    const backendError = getAxiosHttpError(500, {errors: []})
+    expect(formatBackendErrors(backendError)).toBe('error querying https://app.datadoghq.com/example')
   })
 
   test('backend error - single error', () => {
-    const backendError = {
-      config: {baseURL: 'baseURL', url: 'url'},
-      response: {data: {errors: ['single error']}},
-    } as AxiosError
-
-    expect(formatBackendErrors(backendError)).toBe('query on baseURLurl returned: "single error"')
+    const backendError = getAxiosHttpError(500, {errors: ['single error']})
+    expect(formatBackendErrors(backendError)).toBe(
+      'query on https://app.datadoghq.com/example returned: "single error"'
+    )
   })
 
   test('backend error - multiple errors', () => {
-    const backendError = {
-      config: {baseURL: 'baseURL', url: 'url'},
-      response: {data: {errors: ['error 1', 'error 2']}},
-    } as AxiosError
-
-    expect(formatBackendErrors(backendError)).toBe('query on baseURLurl returned:\n  - error 1\n  - error 2')
+    const backendError = getAxiosHttpError(500, {errors: ['error 1', 'error 2']})
+    expect(formatBackendErrors(backendError)).toBe(
+      'query on https://app.datadoghq.com/example returned:\n  - error 1\n  - error 2'
+    )
   })
 
   test('not a backend error', () => {
-    const requestError = {
-      config: {baseURL: 'baseURL', url: 'url'},
-      message: 'Forbidden',
-      response: {status: 403},
-    } as AxiosError
-
-    expect(formatBackendErrors(requestError)).toBe('could not query baseURLurl\nForbidden')
+    const requestError = getAxiosHttpError(403, {message: 'Forbidden'})
+    expect(formatBackendErrors(requestError)).toBe('could not query https://app.datadoghq.com/example\nForbidden')
   })
 })
