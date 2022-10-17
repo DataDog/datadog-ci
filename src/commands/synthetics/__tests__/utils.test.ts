@@ -41,7 +41,7 @@ jest.mock('path', () => {
 import deepExtend from 'deep-extend'
 import * as fs from 'fs'
 
-import {AxiosError, AxiosResponse, default as axios} from 'axios'
+import {default as axios} from 'axios'
 import child_process from 'child_process'
 import glob from 'glob'
 import process from 'process'

@@ -1,6 +1,5 @@
 // tslint:disable: no-string-literal
 
-import {AxiosError, AxiosResponse} from 'axios'
 import {promises as fs} from 'fs'
 import * as ciUtils from '../../../helpers/utils'
 import * as api from '../api'

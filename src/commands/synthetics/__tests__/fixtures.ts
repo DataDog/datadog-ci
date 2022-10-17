@@ -83,6 +83,7 @@ export const getAxiosHttpError = (status: number, {errors, message}: {errors?: s
   const serverError = new Error(message) as AxiosError
   serverError.config = {baseURL: MOCK_BASE_URL, url: 'example'}
   serverError.response = {data: {errors}, status} as AxiosResponse
+
   return serverError
 }
 
