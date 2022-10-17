@@ -4,7 +4,6 @@ import path from 'path'
 import {Lambda} from 'aws-sdk'
 import {TAG_VERSION_NAME} from '../constants'
 import {applyTagConfig, calculateTagRemoveRequest, calculateTagUpdateRequest, hasVersionTag} from '../tags'
-// tslint:disable-next-line
 const {version} = require(path.join(__dirname, '../../../../package.json'))
 
 const makeMockLambda = (

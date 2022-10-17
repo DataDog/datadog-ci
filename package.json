@@ -48,7 +48,7 @@
     "test": "jest --colors",
     "test:debug": "node --inspect-brk `which jest` --runInBand",
     "test:ci-vis:itr": "jest --colors --config ./jest.config-ci-vis-itr.js --passWithNoTests",
-    "eslint": "eslint $(git diff --name-only 6dba118d780aa19939edf0f52a4a48e6e5e17477..HEAD) --ignore-pattern package.json",
+    "eslint": "eslint --quiet 'src/**/*.ts'",
     "typecheck": "bash bin/typecheck.sh",
     "watch": "tsc -w"
   },
@@ -107,6 +107,7 @@
     "eslint-config-prettier": "^8.5.0",
     "eslint-import-resolver-typescript": "2.7.0",
     "eslint-plugin-import": "^2.26.0",
+    "eslint-plugin-no-null": "^1.0.2",
     "eslint-plugin-prefer-arrow": "^1.2.3",
     "eslint-plugin-prettier": "4.0.0",
     "jest": "27.0.5",

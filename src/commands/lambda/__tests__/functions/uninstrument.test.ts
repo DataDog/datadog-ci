@@ -66,7 +66,7 @@ describe('uninstrument', () => {
         lambda as any,
         'arn:aws:lambda:us-east-1:000000000000:function:uninstrument'
       )
-      const updateRequest = await calculateUpdateRequest(config, config!.Runtime as any)
+      const updateRequest = calculateUpdateRequest(config, config.Runtime as any)
       expect(updateRequest).toMatchInlineSnapshot(`
         Object {
           "Environment": Object {
@@ -97,7 +97,7 @@ describe('uninstrument', () => {
         lambda as any,
         'arn:aws:lambda:us-east-1:000000000000:function:uninstrument'
       )
-      const updateRequest = await calculateUpdateRequest(config, config!.Runtime as any)
+      const updateRequest = calculateUpdateRequest(config, config.Runtime as any)
       expect(updateRequest).toMatchInlineSnapshot(`
         Object {
           "Environment": Object {
@@ -140,7 +140,7 @@ describe('uninstrument', () => {
         lambda as any,
         'arn:aws:lambda:us-east-1:000000000000:function:uninstrument'
       )
-      const updateRequest = await calculateUpdateRequest(config, config!.Runtime as any)
+      const updateRequest = calculateUpdateRequest(config, config.Runtime as any)
       expect(updateRequest).toMatchInlineSnapshot(`
         Object {
           "Environment": Object {

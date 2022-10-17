@@ -120,7 +120,7 @@ export class UninstrumentCommand extends Command {
           lambda,
           cloudWatchLogs,
           this.regExPattern!,
-          this.forwarder!
+          this.forwarder
         )
 
         configGroups.push({configs, lambda, cloudWatchLogs})
@@ -173,9 +173,9 @@ export class UninstrumentCommand extends Command {
     }
 
     // Un-instrument functions.
-    const promises = Object.values(configGroups).map((group) => {
+    const promises = Object.values(configGroups).map((group) =>
       updateLambdaFunctionConfigs(group.lambda, group.cloudWatchLogs, group.configs)
-    })
+    )
 
     try {
       await Promise.all(promises)

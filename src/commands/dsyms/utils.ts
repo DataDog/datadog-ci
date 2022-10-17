@@ -2,8 +2,9 @@ import {exec} from 'child_process'
 import {promises} from 'fs'
 import {tmpdir} from 'os'
 import path from 'path'
-import rimraf from 'rimraf'
 import {promisify} from 'util'
+
+import rimraf from 'rimraf'
 
 import {buildPath} from '../../helpers/utils'
 

@@ -1,7 +1,7 @@
 import fs from 'fs'
-import {CommandClass} from 'clipanion/lib/advanced/Command'
 
 import {Cli} from 'clipanion'
+import {CommandClass} from 'clipanion/lib/advanced/Command'
 
 const onError = (err: any) => {
   console.log(err)
