@@ -1,4 +1,3 @@
-// tslint:disable: no-string-literal
 import {AxiosError, AxiosResponse} from 'axios'
 import {Cli} from 'clipanion/lib/advanced'
 import * as ciUtils from '../../../helpers/utils'

@@ -356,6 +356,7 @@ export const getSyntheticsProxy = () => {
 
   const wss = new WebSocketServer({noServer: true})
 
+  // eslint-disable-next-line prefer-const
   let port: number
   const server = http.createServer({}, (request, response) => {
     const mockResponse = (call: jest.Mock, responseData: any) => {

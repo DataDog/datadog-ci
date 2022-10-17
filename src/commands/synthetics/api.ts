@@ -249,8 +249,8 @@ export const getApiHelper = (config: SyntheticsCIConfig): APIHelper => {
   }
 
   return apiConstructor({
-    apiKey: config.apiKey!,
-    appKey: config.appKey!,
+    apiKey: config.apiKey,
+    appKey: config.appKey,
     baseIntakeUrl: getDatadogHost({useIntake: true, apiVersion: 'v1', config}),
     baseUnstableUrl: getDatadogHost({useIntake: false, apiVersion: 'unstable', config}),
     baseUrl: getDatadogHost({useIntake: false, apiVersion: 'v1', config}),
