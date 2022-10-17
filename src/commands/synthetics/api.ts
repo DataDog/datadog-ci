@@ -46,11 +46,11 @@ export const formatBackendErrors = (requestError: AxiosError<BackendError>) => {
     } else if (errors.length) {
       return `${serverHead} "${errors[0]}"`
     } else {
-      return `error querying ${requestError.config.baseURL} ${requestError.config.url}`
+      return `error querying ${requestError.config.baseURL}${requestError.config.url}`
     }
   }
 
-  return requestError.message
+  return `could not query ${requestError.config.baseURL}${requestError.config.url}\n${requestError.message}`
 }
 
 const triggerTests = (request: (args: AxiosRequestConfig) => AxiosPromise<Trigger>) => async (data: Payload) => {

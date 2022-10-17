@@ -1,6 +1,5 @@
 // tslint:disable: no-string-literal
 
-import {AxiosError, AxiosResponse} from 'axios'
 import {promises as fs} from 'fs'
 import * as ciUtils from '../../../helpers/utils'
 import * as api from '../api'
@@ -14,6 +13,7 @@ import {
   ciConfig,
   getApiResult,
   getApiTest,
+  getAxiosHttpError,
   getMobileTest,
   MOBILE_PRESIGNED_URL_PAYLOAD,
   mockReporter,
@@ -225,12 +225,9 @@ describe('run-test', () => {
     ]
     describe.each(cases)('%s triggers %s', (status, error) => {
       test(`getTestsList throws - ${status}`, async () => {
-        const serverError = new Error('Server Error') as AxiosError
-        serverError.response = {data: {errors: ['Error']}, status} as AxiosResponse
-        serverError.config = {baseURL: 'baseURL', url: 'url'}
         const apiHelper = {
           searchTests: jest.fn(() => {
-            throw serverError
+            throw getAxiosHttpError(status, {message: 'Server Error'})
           }),
         }
         jest.spyOn(api, 'getApiHelper').mockImplementation(() => apiHelper as any)
@@ -240,18 +237,20 @@ describe('run-test', () => {
       })
 
       test(`getTestsToTrigger throws - ${status}`, async () => {
-        const serverError = new Error('Server Error') as AxiosError
-        serverError.response = {data: {errors: ['Bad Gateway']}, status} as AxiosResponse
-        serverError.config = {baseURL: 'baseURL', url: 'url'}
         const apiHelper = {
           getTest: jest.fn(() => {
-            throw serverError
+            throw getAxiosHttpError(status, {errors: ['Bad Gateway']})
           }),
         }
         jest.spyOn(api, 'getApiHelper').mockImplementation(() => apiHelper as any)
         await expect(
           runTests.executeTests(mockReporter, {...ciConfig, publicIds: ['public-id-1'], tunnel: true})
-        ).rejects.toMatchError(new CriticalError(error, 'Server Error'))
+        ).rejects.toMatchError(
+          new CriticalError(
+            error,
+            'Failed to get test: query on https://app.datadoghq.com/example returned: "Bad Gateway"\n'
+          )
+        )
       })
     })
 
@@ -264,12 +263,9 @@ describe('run-test', () => {
         })
       )
 
-      const serverError = new Error('Server Error') as AxiosError
-      serverError.response = {data: {errors: ['Bad Gateway']}, status: 502} as AxiosResponse
-      serverError.config = {baseURL: 'baseURL', url: 'url'}
       const apiHelper = {
         getTunnelPresignedURL: jest.fn(() => {
-          throw serverError
+          throw getAxiosHttpError(502, {message: 'Server Error'})
         }),
       }
 
@@ -290,12 +286,9 @@ describe('run-test', () => {
 
       jest.spyOn(fs, 'readFile').mockImplementation(async () => Buffer.from('aa'))
 
-      const serverError = new Error('Server Error') as AxiosError
-      serverError.response = {data: {errors: ['Bad Gateway']}, status: 502} as AxiosResponse
-      serverError.config = {baseURL: 'baseURL', url: 'url'}
       const apiHelper = {
         getMobileApplicationPresignedURL: jest.fn(() => {
-          throw serverError
+          throw getAxiosHttpError(502, {message: 'Server Error'})
         }),
       }
 
@@ -320,13 +313,10 @@ describe('run-test', () => {
 
       jest.spyOn(fs, 'readFile').mockImplementation(async () => Buffer.from('aa'))
 
-      const serverError = new Error('Server Error') as AxiosError
-      serverError.response = {data: {errors: ['Bad Gateway']}, status: 502} as AxiosResponse
-      serverError.config = {baseURL: 'baseURL', url: 'url'}
       const apiHelper = {
         getMobileApplicationPresignedURL: jest.fn(() => MOBILE_PRESIGNED_URL_PAYLOAD),
         uploadMobileApplication: jest.fn(() => {
-          throw serverError
+          throw getAxiosHttpError(502, {message: 'Server Error'})
         }),
       }
 
@@ -354,13 +344,10 @@ describe('run-test', () => {
         })
       )
 
-      const serverError = new Error('Server Error') as AxiosError
-      serverError.response = {data: {errors: ['Bad Gateway']}, status: 502} as AxiosResponse
-      serverError.config = {baseURL: 'baseURL', url: 'url'}
       const apiHelper = {
         getTunnelPresignedURL: () => ({url: 'url'}),
         triggerTests: jest.fn(() => {
-          throw serverError
+          throw getAxiosHttpError(502, {errors: ['Bad Gateway']})
         }),
       }
 
@@ -370,7 +357,7 @@ describe('run-test', () => {
       ).rejects.toMatchError(
         new CriticalError(
           'TRIGGER_TESTS_FAILED',
-          '[] Failed to trigger tests: query on baseURLurl returned: "Bad Gateway"\n'
+          '[] Failed to trigger tests: query on https://app.datadoghq.com/example returned: "Bad Gateway"\n'
         )
       )
       expect(stopTunnelSpy).toHaveBeenCalledTimes(1)
@@ -403,15 +390,11 @@ describe('run-test', () => {
         })
       )
 
-      const serverError = new Error('Server Error') as AxiosError
-      serverError.response = {data: {errors: ['Bad Gateway']}, status: 502} as AxiosResponse
-      serverError.config = {baseURL: 'baseURL', url: 'url'}
-
       const apiHelper = {
         getBatch: () => ({results: []}),
         getTunnelPresignedURL: () => ({url: 'url'}),
         pollResults: jest.fn(() => {
-          throw serverError
+          throw getAxiosHttpError(502, {errors: ['Bad Gateway']})
         }),
       }
 
@@ -426,7 +409,7 @@ describe('run-test', () => {
       ).rejects.toMatchError(
         new CriticalError(
           'POLL_RESULTS_FAILED',
-          'Failed to poll results: query on baseURLurl returned: "Bad Gateway"\n'
+          'Failed to poll results: query on https://app.datadoghq.com/example returned: "Bad Gateway"\n'
         )
       )
       expect(stopTunnelSpy).toHaveBeenCalledTimes(1)
