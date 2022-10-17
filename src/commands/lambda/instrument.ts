@@ -200,12 +200,12 @@ export class InstrumentCommand extends Command {
         const configs = await getInstrumentedFunctionConfigsFromRegEx(
           lambda,
           cloudWatchLogs,
-          region!,
+          region,
           this.regExPattern!,
           settings
         )
 
-        configGroups.push({configs, lambda, cloudWatchLogs, region: region!})
+        configGroups.push({configs, lambda, cloudWatchLogs, region})
       } catch (err) {
         this.context.stdout.write(`${red('[Error]')} Couldn't fetch Lambda functions. ${err}\n`)
 

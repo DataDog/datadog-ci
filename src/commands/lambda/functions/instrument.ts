@@ -243,7 +243,7 @@ export const calculateUpdateRequest = async (
     oldEnvVars[FLUSH_TO_LOG_ENV_VAR] !== settings.flushMetricsToLogs?.toString()
   ) {
     needsUpdate = true
-    changedEnvVars[FLUSH_TO_LOG_ENV_VAR] = settings.flushMetricsToLogs!.toString()
+    changedEnvVars[FLUSH_TO_LOG_ENV_VAR] = settings.flushMetricsToLogs.toString()
   }
 
   const newEnvVars = {...oldEnvVars, ...changedEnvVars}

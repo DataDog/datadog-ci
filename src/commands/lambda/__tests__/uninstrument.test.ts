@@ -1,9 +1,8 @@
-// tslint:disable: no-string-literal
 jest.mock('fs')
 jest.mock('aws-sdk')
 jest.mock('../prompt')
-import {Lambda} from 'aws-sdk'
 import * as fs from 'fs'
+import {Lambda} from 'aws-sdk'
 
 import {
   AWS_ACCESS_KEY_ID_ENV_VAR,
