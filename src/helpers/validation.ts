@@ -1,4 +1,5 @@
 import fs from 'fs'
+
 import {DATADOG_SITES} from '../constants'
 
 export const checkFile: (path: string) => {empty: boolean; exists: boolean} = (path: string) => {
