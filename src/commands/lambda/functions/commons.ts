@@ -1,5 +1,6 @@
 import {CloudWatchLogs, config as aws_sdk_config, Lambda} from 'aws-sdk'
 import {GetFunctionRequest} from 'aws-sdk/clients/lambda'
+import {isValidDatadogSite} from '../../../helpers/validation'
 import {
   ARM64_ARCHITECTURE,
   ARM_LAYERS,
@@ -18,7 +19,6 @@ import {
   MAX_LAMBDA_STATE_CHECK_ATTEMPTS,
   Runtime,
   RUNTIME_LOOKUP,
-  SITES,
 } from '../constants'
 import {FunctionConfiguration, InstrumentationSettings} from '../interfaces'
 import {applyLogGroupConfig} from '../loggroup'
@@ -175,10 +175,11 @@ export const isMissingAWSCredentials = () =>
   // If env vars and aws_sdk_config.credentials are not set return true otherwise return false
   (process.env[AWS_ACCESS_KEY_ID_ENV_VAR] === undefined || process.env[AWS_SECRET_ACCESS_KEY_ENV_VAR] === undefined) &&
   !aws_sdk_config.credentials
+
 export const isMissingDatadogSiteEnvVar = () => {
   const site = process.env[CI_SITE_ENV_VAR]
   if (site !== undefined) {
-    return !SITES.includes(site)
+    return !isValidDatadogSite(site)
   }
 
   return true

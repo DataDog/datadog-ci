@@ -1,4 +1,5 @@
 import fs from 'fs'
+import {DATADOG_SITES} from '../constants'
 
 export const checkFile: (path: string) => {empty: boolean; exists: boolean} = (path: string) => {
   try {
@@ -16,3 +17,5 @@ export const checkFile: (path: string) => {empty: boolean; exists: boolean} = (p
 
   return {exists: true, empty: false}
 }
+
+export const isValidDatadogSite = (site: string) => DATADOG_SITES.includes(site.toLowerCase())

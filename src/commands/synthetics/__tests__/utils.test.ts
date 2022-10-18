@@ -1088,16 +1088,6 @@ describe('utils', () => {
     expect(utils.parseVariablesFromCli(undefined, mockLogFunction)).toBeUndefined()
   })
 
-  test('validateDatadogSite', () => {
-    expect(() => utils.validateDatadogSite('')).toThrow()
-    expect(() => utils.validateDatadogSite('random')).toThrow()
-    expect(() => utils.validateDatadogSite('myorg.app.datadoghq.com')).toThrow()
-    expect(() => utils.validateDatadogSite('myorg.us3.datadoghq.com')).toThrow()
-
-    expect(() => utils.validateDatadogSite('datadoghq.com')).not.toThrow()
-    expect(() => utils.validateDatadogSite('us3.datadoghq.com')).not.toThrow()
-  })
-
   test('getAppBaseURL', () => {
     // Usual datadog site.
     expect(utils.getAppBaseURL({datadogSite: 'datadoghq.com', subdomain: ''})).toBe('https://app.datadoghq.com/')
