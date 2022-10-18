@@ -1,5 +1,7 @@
 import {CloudWatchLogs, Lambda} from 'aws-sdk'
 
+import {isValidDatadogSite} from '../../../helpers/validation'
+
 import {
   API_KEY_ENV_VAR,
   API_KEY_SECRET_ARN_ENV_VAR,
@@ -36,7 +38,6 @@ import {
   RuntimeType,
   RUNTIME_LOOKUP,
   SERVICE_ENV_VAR,
-  SITES,
   SITE_ENV_VAR,
   TRACE_ENABLED_ENV_VAR,
   VERSION_ENV_VAR,
@@ -206,7 +207,7 @@ export const calculateUpdateRequest = async (
   }
 
   if (site !== undefined && oldEnvVars[SITE_ENV_VAR] !== site) {
-    if (SITES.includes(site.toLowerCase())) {
+    if (isValidDatadogSite(site)) {
       needsUpdate = true
       changedEnvVars[SITE_ENV_VAR] = site
     } else {

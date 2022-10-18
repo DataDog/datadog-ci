@@ -2,6 +2,8 @@ import {blueBright, bold} from 'chalk'
 import {filter} from 'fuzzy'
 import inquirer from 'inquirer'
 
+import {DATADOG_SITES} from '../../constants'
+
 import {
   AWS_ACCESS_KEY_ID_ENV_VAR,
   AWS_ACCESS_KEY_ID_REG_EXP,
@@ -16,7 +18,6 @@ import {
   DATADOG_API_KEY_REG_EXP,
   ENVIRONMENT_ENV_VAR,
   SERVICE_ENV_VAR,
-  SITES,
   VERSION_ENV_VAR,
 } from './constants'
 import {sentenceMatchesRegEx} from './functions/commons'
@@ -102,7 +103,7 @@ export const datadogApiKeyTypeQuestion = (datadogSite: string): inquirer.ListQue
 
 const datadogSiteQuestion: inquirer.ListQuestion = {
   // DATADOG SITE
-  choices: SITES,
+  choices: DATADOG_SITES,
   message: `Select the Datadog site to send data. \nLearn more at ${blueBright(
     'https://docs.datadoghq.com/getting_started/site/'
   )}`,
