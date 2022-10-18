@@ -1,5 +1,3 @@
-// tslint:disable: no-string-literal
-
 import * as ciUtils from '../../../helpers/utils'
 
 import {DEFAULT_POLLING_TIMEOUT, RunTestCommand} from '../command'

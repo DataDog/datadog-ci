@@ -14,7 +14,7 @@ const createMockSimpleGit = (conf: MockConfig) => ({
       throw Error('Unexpected call to getRemotes')
     }
 
-    return conf.remotes!
+    return conf.remotes
   },
   raw: async (command: string) => {
     if (command === 'ls-files' && conf.trackedFiles !== undefined) {
@@ -27,7 +27,7 @@ const createMockSimpleGit = (conf: MockConfig) => ({
       throw Error('Unexpected call to revparse')
     }
 
-    return conf.hash!
+    return conf.hash
   },
 })
 
@@ -95,9 +95,9 @@ describe('git', () => {
       const commitInfo = await getCommitInfo(mock)
 
       expect(commitInfo).toBeDefined()
-      expect(commitInfo!.hash).toBe('abcd')
-      expect(commitInfo!.trackedFiles).toStrictEqual(['myfile.js'])
-      expect(commitInfo!.remote).toBe('https://git-repo/')
+      expect(commitInfo.hash).toBe('abcd')
+      expect(commitInfo.trackedFiles).toStrictEqual(['myfile.js'])
+      expect(commitInfo.remote).toBe('https://git-repo/')
     })
     test('should return commit info with overridden repo name', async () => {
       const mock = createMockSimpleGit({
@@ -107,9 +107,9 @@ describe('git', () => {
       const commitInfo = await getCommitInfo(mock, 'https://overridden')
 
       expect(commitInfo).toBeDefined()
-      expect(commitInfo!.hash).toBe('abcd')
-      expect(commitInfo!.trackedFiles).toStrictEqual(['myfile.js'])
-      expect(commitInfo!.remote).toBe('https://overridden')
+      expect(commitInfo.hash).toBe('abcd')
+      expect(commitInfo.trackedFiles).toStrictEqual(['myfile.js'])
+      expect(commitInfo.remote).toBe('https://overridden')
     })
   })
 

@@ -1,15 +1,17 @@
-import type {AxiosPromise, AxiosRequestConfig, AxiosResponse} from 'axios'
-import FormData from 'form-data'
 import fs from 'fs'
 import path from 'path'
 import {Writable} from 'stream'
 import {createGzip} from 'zlib'
 
-import {getRequestBuilder} from '../../helpers/utils'
-import {Payload} from './interfaces'
-import {renderUpload} from './renderer'
+import type {AxiosPromise, AxiosRequestConfig, AxiosResponse} from 'axios'
+
+import FormData from 'form-data'
 
 import {CI_JOB_URL, CI_PIPELINE_URL, GIT_SHA} from '../../helpers/tags'
+import {getRequestBuilder} from '../../helpers/utils'
+
+import {Payload} from './interfaces'
+import {renderUpload} from './renderer'
 
 // We need a unique file name so we use span tags like the pipeline URL,
 // which can contain dots and other unsafe characters for filenames.

@@ -1,7 +1,7 @@
-// tslint:disable: no-string-literal
-
 import {promises as fs} from 'fs'
+
 import * as ciUtils from '../../../helpers/utils'
+
 import * as api from '../api'
 import {MAX_TESTS_TO_TRIGGER} from '../command'
 import {CiError, CriticalCiErrorCode, CriticalError} from '../errors'
@@ -9,6 +9,7 @@ import {ExecutionRule, SyntheticsCIConfig, UserConfigOverride} from '../interfac
 import * as runTests from '../run-test'
 import {Tunnel} from '../tunnel'
 import * as utils from '../utils'
+
 import {
   ciConfig,
   getApiResult,

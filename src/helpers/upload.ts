@@ -1,5 +1,6 @@
-import FormData from 'form-data'
 import {ReadStream} from 'fs'
+
+import FormData from 'form-data'
 
 import {ApiKeyValidator} from './apikey'
 import {RequestBuilder} from './interfaces'

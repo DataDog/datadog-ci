@@ -1,6 +1,8 @@
 import {CloudWatchLogs, config as aws_sdk_config, Lambda} from 'aws-sdk'
 import {GetFunctionRequest} from 'aws-sdk/clients/lambda'
+
 import {isValidDatadogSite} from '../../../helpers/validation'
+
 import {
   ARM64_ARCHITECTURE,
   ARM_LAYERS,
@@ -137,7 +139,7 @@ export const findLatestLayerVersion = async (layer: LayerKey, region: string) =>
       latestVersion = layerVersion
       // Increase layer version
       layerVersion += searchStep
-    } catch (e) {
+    } catch {
       // Search step is too big, reset target to previous version
       // with a smaller search step
       if (searchStep > 1) {
@@ -160,7 +162,7 @@ export const findLatestLayerVersion = async (layer: LayerKey, region: string) =>
           latestVersion = layerVersion
           // Continue the search if the next version does exist (unlikely event)
           layerVersion += searchStep
-        } catch (e) {
+        } catch {
           // The next version doesn't exist either, so the previous version is indeed the latest
           foundLatestVersion = true
         }

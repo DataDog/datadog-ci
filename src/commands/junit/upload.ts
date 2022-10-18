@@ -1,13 +1,21 @@
+import fs from 'fs'
+import os from 'os'
+import path from 'path'
+
 import chalk from 'chalk'
 import {Command} from 'clipanion'
 import xmlParser from 'fast-xml-parser'
-import fs from 'fs'
 import glob from 'glob'
-import os from 'os'
-import path from 'path'
 import asyncPool from 'tiny-async-pool'
 
+import {getCISpanTags} from '../../helpers/ci'
+import {getGitMetadata} from '../../helpers/git/format-git-span-data'
 import {SpanTags} from '../../helpers/interfaces'
+import {retryRequest} from '../../helpers/retry'
+import {parseTags} from '../../helpers/tags'
+import {getUserGitSpanTags} from '../../helpers/user-provided-git'
+import {buildPath} from '../../helpers/utils'
+
 import {apiConstructor} from './api'
 import {APIHelper, Payload} from './interfaces'
 import {
@@ -19,13 +27,6 @@ import {
   renderSuccessfulCommand,
 } from './renderer'
 import {getBaseIntakeUrl} from './utils'
-
-import {getCISpanTags} from '../../helpers/ci'
-import {getGitMetadata} from '../../helpers/git/format-git-span-data'
-import {retryRequest} from '../../helpers/retry'
-import {parseTags} from '../../helpers/tags'
-import {getUserGitSpanTags} from '../../helpers/user-provided-git'
-import {buildPath} from '../../helpers/utils'
 
 const errorCodesStopUpload = [400, 403]
 
@@ -116,7 +117,7 @@ export class UploadJUnitXMLCommand extends Command {
     // Normalizing the basePath to resolve .. and .
     // Always using the posix version to avoid \ on Windows.
     this.basePaths = this.basePaths.map((basePath) => path.posix.normalize(basePath))
-    this.context.stdout.write(renderCommandInfo(this.basePaths!, this.service, this.maxConcurrency, this.dryRun))
+    this.context.stdout.write(renderCommandInfo(this.basePaths, this.service, this.maxConcurrency, this.dryRun))
 
     const spanTags = await this.getSpanTags()
     const payloads = await this.getMatchingJUnitXMLFiles(spanTags)

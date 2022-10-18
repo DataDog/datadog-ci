@@ -1,6 +1,9 @@
 import {blueBright, bold} from 'chalk'
+import {filter} from 'fuzzy'
 import inquirer from 'inquirer'
+
 import {DATADOG_SITES} from '../../constants'
+
 import {
   AWS_ACCESS_KEY_ID_ENV_VAR,
   AWS_ACCESS_KEY_ID_REG_EXP,
@@ -18,10 +21,10 @@ import {
   VERSION_ENV_VAR,
 } from './constants'
 import {sentenceMatchesRegEx} from './functions/commons'
-/* tslint:disable-next-line */
+
 const checkboxPlusPrompt = require('inquirer-checkbox-plus-prompt')
 inquirer.registerPrompt('checkbox-plus', checkboxPlusPrompt)
-import {filter} from 'fuzzy'
+
 const awsCredentialsQuestions: inquirer.QuestionCollection = [
   {
     // AWS_ACCESS_KEY_ID question

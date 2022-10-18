@@ -1,4 +1,5 @@
 import {AxiosPromise} from 'axios'
+
 import {retryRequest} from '../retry'
 
 describe('retry', () => {

@@ -1,7 +1,7 @@
-import {AxiosError, AxiosResponse} from 'axios'
 import * as http from 'http'
 import {URL} from 'url'
 
+import {AxiosError, AxiosResponse} from 'axios'
 import WebSocket, {Server as WebSocketServer} from 'ws'
 
 import {ProxyConfiguration} from '../../../helpers/utils'
@@ -365,6 +365,7 @@ export const getSyntheticsProxy = () => {
 
   const wss = new WebSocketServer({noServer: true})
 
+  // eslint-disable-next-line prefer-const
   let port: number
   const server = http.createServer({}, (request, response) => {
     const mockResponse = (call: jest.Mock, responseData: any) => {

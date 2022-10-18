@@ -1,5 +1,6 @@
 import {SUBSCRIPTION_FILTER_NAME} from '../constants'
 import {applyLogGroupConfig, calculateLogGroupRemoveRequest, calculateLogGroupUpdateRequest} from '../loggroup'
+
 import {makeMockCloudWatchLogs} from './fixtures'
 
 describe('loggroup', () => {

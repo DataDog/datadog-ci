@@ -12,16 +12,17 @@ import {
 } from 'ssh2'
 import {ParsedKey} from 'ssh2-streams'
 import {Config as MultiplexerConfig, Server as Multiplexer} from 'yamux-js'
-// tslint:disable-next-line:no-var-requires - SW-1310
-const {KexInit} = require('ssh2/lib/protocol/kex')
-// tslint:disable-next-line:no-var-requires - SW-1310
-const SSH_CONSTANTS = require('ssh2/lib/protocol/constants')
 
 import {ProxyConfiguration} from '../../helpers/utils'
 
 import {generateOpenSSHKeys, parseSSHKey} from './crypto'
 import {MainReporter} from './interfaces'
 import {WebSocket} from './websocket'
+
+// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-var-requires -- SW-1310
+const SSH_CONSTANTS = require('ssh2/lib/protocol/constants')
+// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-var-requires -- SW-1310
+const {KexInit} = require('ssh2/lib/protocol/kex')
 
 export interface TunnelInfo {
   host: string
@@ -71,7 +72,7 @@ export class Tunnel {
    * keepAlive will return a promise that tracks the state of the tunnel (and reject in case of error)
    */
   public async keepAlive() {
-    if (!this.ws || !this.ws.keepAlive()) {
+    if (!this.ws) {
       throw new Error('No WebSocket connection')
     }
 
@@ -258,7 +259,7 @@ export class Tunnel {
         this.logError(`Error in multiplexing: ${error}`)
       })
 
-      this.processSSHStream(stream)
+      void this.processSSHStream(stream)
     }, multiplexerConfig)
 
     // Pipe WebSocket to multiplexing

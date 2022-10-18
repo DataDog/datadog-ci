@@ -1,5 +1,7 @@
 import {CloudWatchLogs, Lambda} from 'aws-sdk'
+
 import {isValidDatadogSite} from '../../../helpers/validation'
+
 import {
   API_KEY_ENV_VAR,
   API_KEY_SECRET_ARN_ENV_VAR,
@@ -43,6 +45,7 @@ import {
 import {FunctionConfiguration, InstrumentationSettings, LogGroupConfiguration, TagConfiguration} from '../interfaces'
 import {calculateLogGroupUpdateRequest} from '../loggroup'
 import {calculateTagUpdateRequest} from '../tags'
+
 import {
   addLayerArn,
   findLatestLayerVersion,
@@ -243,7 +246,7 @@ export const calculateUpdateRequest = async (
     oldEnvVars[FLUSH_TO_LOG_ENV_VAR] !== settings.flushMetricsToLogs?.toString()
   ) {
     needsUpdate = true
-    changedEnvVars[FLUSH_TO_LOG_ENV_VAR] = settings.flushMetricsToLogs!.toString()
+    changedEnvVars[FLUSH_TO_LOG_ENV_VAR] = settings.flushMetricsToLogs.toString()
   }
 
   const newEnvVars = {...oldEnvVars, ...changedEnvVars}
