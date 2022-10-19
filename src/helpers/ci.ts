@@ -41,6 +41,11 @@ export const CI_ENGINES = {
   BUDDY: 'buddy',
 }
 
+export const PROVIDER_TO_DISPLAY_NAME = {
+  github: 'GitHub Actions',
+  buddy: 'Buddy',
+}
+
 // Receives a string with the form 'John Doe <john.doe@gmail.com>'
 // and returns { name: 'John Doe', email: 'john.doe@gmail.com' }
 const parseEmailAndName = (emailAndName: string | undefined) => {
