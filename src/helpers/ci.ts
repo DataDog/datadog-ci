@@ -639,6 +639,13 @@ export const getCIEnv = (): {ciEnv: Record<string, string>; provider: string} =>
     }
   }
 
+  if (process.env.BUDDY) {
+    return {
+      ciEnv: filterEnv(['BUDDY_PIPELINE_ID', 'BUDDY_EXECUTION_ID', 'BUDDY_EXECUTION_START_DATE']),
+      provider: 'buddy',
+    }
+  }
+
   throw new Error('Only providers [GitHub, GitLab, CircleCI, Buildkite] are supported')
 }
 
