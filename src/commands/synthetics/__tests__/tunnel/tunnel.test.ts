@@ -2,18 +2,19 @@ import {PassThrough} from 'stream'
 
 import {mocked} from 'ts-jest/utils'
 
-import {ProxyConfiguration} from '../../../../src/helpers/utils'
+import {getProxyAgent} from '../../../../../src/helpers/utils'
 
-import {Tunnel} from '../tunnel'
-import {WebSocket} from '../websocket'
+import {getTunnelReporter} from '../../reporters/default'
+import {Tunnel} from '../../tunnel'
+import {WebSocket} from '../../tunnel/websocket'
+jest.mock('../../tunnel/websocket')
 
-import {mockReporter} from './fixtures'
-
-jest.mock('../websocket')
+import {mockReporter} from '../fixtures'
 
 describe('Tunnel', () => {
   const mockConnect = jest.fn()
   const mockClose = jest.fn()
+  const mockTunnelReporter = getTunnelReporter(mockReporter)
   const mockWebSocket = {
     close: mockClose,
     connect: mockConnect,
@@ -25,8 +26,6 @@ describe('Tunnel', () => {
       }),
     waitForFirstMessage: async () => Promise.resolve(JSON.stringify(mockWebSocket.firstMessage)),
   }
-
-  const defaultProxyOpts: ProxyConfiguration = {protocol: 'http'}
   const testIDs = ['aaa-bbb-ccc']
   const wsPresignedURL = 'wss://tunnel.synthetics'
 
@@ -35,9 +34,9 @@ describe('Tunnel', () => {
   test('starts by connecting over WebSocket and closes the WebSocket when stopping', async () => {
     mockedWebSocket.mockImplementation(() => mockWebSocket as any)
 
-    const tunnel = new Tunnel(wsPresignedURL, testIDs, defaultProxyOpts, mockReporter)
+    const tunnel = new Tunnel(wsPresignedURL, testIDs, undefined, mockTunnelReporter)
     const connectionInfo = await tunnel.start()
-    expect(WebSocket).toHaveBeenCalledWith(wsPresignedURL, expect.any(Object))
+    expect(WebSocket).toHaveBeenCalledWith(wsPresignedURL, undefined)
     expect(mockConnect).toHaveBeenCalled()
     expect(connectionInfo.host).toEqual('host')
     expect(connectionInfo.id).toEqual('tunnel-id')
@@ -63,22 +62,22 @@ describe('Tunnel', () => {
     mockConnect.mockImplementation(() => {
       throw websocketConnectError
     })
-    const tunnel = new Tunnel(wsPresignedURL, testIDs, defaultProxyOpts, mockReporter)
+    const tunnel = new Tunnel(wsPresignedURL, testIDs, undefined, mockTunnelReporter)
     await expect(tunnel.start()).rejects.toThrow(websocketConnectError)
     expect(mockClose).toBeCalled()
     mockConnect.mockRestore()
   })
 
-  test('sets websocket proxy options', async () => {
+  test('use provided proxy agent', async () => {
     mockedWebSocket.mockImplementation(() => mockWebSocket as any)
-    const localProxyOpts: ProxyConfiguration = {
+    const localProxyAgent = getProxyAgent({
       host: '127.0.0.1',
       port: 8080,
       protocol: 'http',
-    }
-    const tunnel = new Tunnel(wsPresignedURL, testIDs, localProxyOpts, mockReporter)
+    })
+    const tunnel = new Tunnel(wsPresignedURL, testIDs, localProxyAgent, mockTunnelReporter)
     await tunnel.start()
-    expect(WebSocket).toHaveBeenCalledWith(wsPresignedURL, localProxyOpts)
+    expect(WebSocket).toHaveBeenCalledWith(wsPresignedURL, localProxyAgent)
 
     // Stop the tunnel
     await tunnel.stop()
