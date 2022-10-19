@@ -38,6 +38,7 @@ export const CI_ENGINES = {
   GITLAB: 'gitlab',
   JENKINS: 'jenkins',
   TRAVIS: 'travisci',
+  BUDDY: 'buddy',
 }
 
 // Receives a string with the form 'John Doe <john.doe@gmail.com>'
@@ -493,6 +494,29 @@ export const getCISpanTags = (): SpanTags | undefined => {
         [GIT_SHA]: APPVEYOR_REPO_COMMIT,
         [refKey]: ref,
       }
+    }
+  }
+
+  if (env.BUDDY) {
+    const {
+      BUDDY_PIPELINE_NAME,
+      BUDDY_EXECUTION_ID,
+      BUDDY_SCM_URL,
+      BUDDY_EXECUTION_BRANCH,
+      BUDDY_EXECUTION_REVISION,
+      BUDDY_EXECUTION_URL,
+      BUDDY_EXECUTION_REVISION_MESSAGE,
+    } = env
+
+    tags = {
+      [CI_PROVIDER_NAME]: CI_ENGINES.BUDDY,
+      [CI_PIPELINE_ID]: BUDDY_EXECUTION_ID,
+      [CI_PIPELINE_URL]: BUDDY_EXECUTION_URL,
+      [CI_PIPELINE_NAME]: BUDDY_PIPELINE_NAME,
+      [GIT_SHA]: BUDDY_EXECUTION_REVISION,
+      [GIT_BRANCH]: BUDDY_EXECUTION_BRANCH,
+      [GIT_REPOSITORY_URL]: BUDDY_SCM_URL,
+      [GIT_COMMIT_MESSAGE]: BUDDY_EXECUTION_REVISION_MESSAGE,
     }
   }
 
