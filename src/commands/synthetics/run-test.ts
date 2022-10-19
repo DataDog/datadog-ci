@@ -1,3 +1,5 @@
+import {getProxyAgent} from '../../helpers/utils'
+
 import {APIHelper, getApiHelper, isForbiddenError} from './api'
 import {MAX_TESTS_TO_TRIGGER} from './command'
 import {CiError, CriticalError} from './errors'
@@ -14,6 +16,7 @@ import {
   TriggerConfig,
   UserConfigOverride,
 } from './interfaces'
+import {getTunnelReporter} from './reporters/default'
 import {Tunnel} from './tunnel'
 import {getSuites, getTestsToTrigger, InitialSummary, runTests, waitForResults} from './utils'
 
@@ -102,7 +105,10 @@ export const executeTests = async (
     }
     // Open a tunnel to Datadog
     try {
-      tunnel = new Tunnel(presignedURL, publicIdsToTrigger, config.proxy, reporter)
+      const tunnelProxyAgent = getProxyAgent(config.proxy)
+      const tunnelReporter = getTunnelReporter(reporter)
+      tunnel = new Tunnel(presignedURL, publicIdsToTrigger, tunnelProxyAgent, tunnelReporter)
+
       const tunnelInfo = await tunnel.start()
       overriddenTestsToTrigger.forEach((testToTrigger) => {
         testToTrigger.tunnel = tunnelInfo
