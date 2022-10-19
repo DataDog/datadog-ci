@@ -1,0 +1,24 @@
+[
+    [
+        {
+            "BUDDY": "1",
+            "BUDDY_EXECUTION_ID": "1",
+            "BUDDY_SCM_URL": "https://github.com/datadog/datadog-ci",
+            "BUDDY_EXECUTION_BRANCH": "main",
+            "BUDDY_EXECUTION_REVISION": "e5e13f8b7f8d5c6096a0501dc09b48eef05fea96",
+            "BUDDY_EXECUTION_URL": "https://app.buddy.works/myworkspace/my-project/pipelines/pipeline/1/execution/5d9dc42c422f5a268b389d08",
+            "BUDDY_EXECUTION_REVISION_MESSAGE": "my message",
+            "BUDDY_PIPELINE_NAME": "pipeline"
+        },
+        {
+            "ci.pipeline.id": "1",
+            "ci.pipeline.name": "pipeline",
+            "ci.pipeline.url": "https://app.buddy.works/myworkspace/my-project/pipelines/pipeline/1/execution/5d9dc42c422f5a268b389d08",
+            "ci.provider.name": "buddy",
+            "git.commit.message": "my message",
+            "git.commit.sha": "e5e13f8b7f8d5c6096a0501dc09b48eef05fea96",
+            "git.repository_url": "https://github.com/datadog/datadog-ci",
+            "git.branch": "main"
+        }
+    ]
+]
