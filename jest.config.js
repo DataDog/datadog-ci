@@ -6,7 +6,6 @@ module.exports = {
   clearMocks: true,
   testMatch: ['**/__tests__/**/*.test.ts'],
   preset: 'ts-jest',
-  testEnvironment: '<rootDir>/testEnvironment.js',
   globals: {
     'ts-jest': {
       tsconfig: 'tsconfig.json',
