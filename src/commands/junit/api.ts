@@ -36,7 +36,7 @@ export const uploadJUnitXML = (request: (args: AxiosRequestConfig) => AxiosPromi
     fileName = 'default_file_name'
   }
 
-  const spanTags: Record<string, string | undefined> = {
+  const metadata: Record<string, any> = {
     service: jUnitXML.service,
     ...jUnitXML.spanTags,
     '_dd.cireport_version': '2',
@@ -44,18 +44,22 @@ export const uploadJUnitXML = (request: (args: AxiosRequestConfig) => AxiosPromi
   }
 
   if (jUnitXML.logsEnabled) {
-    spanTags['_dd.junitxml_logs'] = 'true'
+    metadata['_dd.junitxml_logs'] = true
   }
 
-  form.append('event', JSON.stringify(spanTags), {filename: 'event.json'})
-
-  let uniqueFileName = `${fileName}-${jUnitXML.service}-${spanTags[GIT_SHA]}`
-
-  if (spanTags[CI_PIPELINE_URL]) {
-    uniqueFileName = `${uniqueFileName}-${spanTags[CI_PIPELINE_URL]}`
+  if (jUnitXML.xpathTags) {
+    metadata['_dd.junitxml_xpath_tags'] = jUnitXML.xpathTags
   }
-  if (spanTags[CI_JOB_URL]) {
-    uniqueFileName = `${uniqueFileName}-${spanTags[CI_JOB_URL]}`
+
+  form.append('event', JSON.stringify(metadata), {filename: 'event.json'})
+
+  let uniqueFileName = `${fileName}-${jUnitXML.service}-${metadata[GIT_SHA]}`
+
+  if (metadata[CI_PIPELINE_URL]) {
+    uniqueFileName = `${uniqueFileName}-${metadata[CI_PIPELINE_URL]}`
+  }
+  if (metadata[CI_JOB_URL]) {
+    uniqueFileName = `${uniqueFileName}-${metadata[CI_JOB_URL]}`
   }
 
   form.append('junit_xml_report_file', fs.createReadStream(jUnitXML.xmlPath).pipe(createGzip()), {
