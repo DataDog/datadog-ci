@@ -1,7 +1,5 @@
 import {PassThrough} from 'stream'
 
-import {mocked} from 'ts-jest/utils'
-
 import {getProxyAgent} from '../../../../../src/helpers/utils'
 
 import {getTunnelReporter} from '../../reporters/default'
@@ -29,7 +27,7 @@ describe('Tunnel', () => {
   const testIDs = ['aaa-bbb-ccc']
   const wsPresignedURL = 'wss://tunnel.synthetics'
 
-  const mockedWebSocket = mocked(WebSocket, true)
+  const mockedWebSocket = jest.mocked(WebSocket, true)
 
   test('starts by connecting over WebSocket and closes the WebSocket when stopping', async () => {
     mockedWebSocket.mockImplementation(() => mockWebSocket as any)

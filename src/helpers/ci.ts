@@ -41,6 +41,11 @@ export const CI_ENGINES = {
   BUDDY: 'buddy',
 }
 
+export const PROVIDER_TO_DISPLAY_NAME = {
+  github: 'GitHub Actions',
+  buddy: 'Buddy',
+}
+
 // Receives a string with the form 'John Doe <john.doe@gmail.com>'
 // and returns { name: 'John Doe', email: 'john.doe@gmail.com' }
 const parseEmailAndName = (emailAndName: string | undefined) => {
@@ -636,6 +641,13 @@ export const getCIEnv = (): {ciEnv: Record<string, string>; provider: string} =>
     return {
       ciEnv: filterEnv(['BUILDKITE_BUILD_ID', 'BUILDKITE_JOB_ID']),
       provider: 'buildkite',
+    }
+  }
+
+  if (process.env.BUDDY) {
+    return {
+      ciEnv: filterEnv(['BUDDY_PIPELINE_ID', 'BUDDY_EXECUTION_ID', 'BUDDY_EXECUTION_START_DATE']),
+      provider: 'buddy',
     }
   }
 
