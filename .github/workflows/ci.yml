@@ -100,7 +100,7 @@ jobs:
 
     name: End-to-end test the package
     runs-on: ${{ matrix.os }}
-    needs: build-and-test
+    needs: [build-and-test-ubuntu, build-and-test-windows, build-and-test-macos]
 
     steps:
       - name: Install node
