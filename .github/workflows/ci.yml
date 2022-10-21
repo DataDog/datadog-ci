@@ -7,6 +7,7 @@ on: push
 jobs:
   build-and-test:
     strategy:
+      fail-fast: false
       matrix:
         version: [14, 16, 18]
         os: [ubuntu-latest, windows-latest, macos-latest]
@@ -22,6 +23,11 @@ jobs:
           node-version: ${{ matrix.version }}
       - run: yarn install --immutable
       - run: yarn build
+        if: matrix.os != 'windows-latest'
+      - run: |
+          yarn clean:win
+          yarn build:win
+        if: matrix.os == 'windows-latest'
       - run: yarn lint
       - run: yarn no-only-in-tests
       - run: yarn test

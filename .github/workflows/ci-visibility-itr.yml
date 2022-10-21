@@ -9,6 +9,7 @@ on: push
 jobs:
   build-and-test:
     strategy:
+      fail-fast: false
       matrix:
         version: [14, 16, 18]
         os: [ubuntu-latest, windows-latest, macos-latest]
