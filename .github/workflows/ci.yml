@@ -6,15 +6,20 @@ on: push
 
 jobs:
   build-and-test:
+    strategy:
+      matrix:
+        version: [14, 16, 18]
+        os: [ubuntu-latest, windows-latest, macos-latest]
+
     name: Build and test
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
 
     steps:
       - uses: actions/checkout@v3
       - name: Install node
         uses: actions/setup-node@v3
         with:
-          node-version: '14'
+          node-version: ${{ matrix.version }}
       - run: yarn install --immutable
       - run: yarn build
       - run: yarn lint
@@ -36,15 +41,20 @@ jobs:
           path: artifacts/
 
   e2e-test:
+    strategy:
+      matrix:
+        version: [14, 16, 18]
+        os: [ubuntu-latest, windows-latest, macos-latest]
+
     name: End-to-end test the package
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
     needs: build-and-test
 
     steps:
       - name: Install node
         uses: actions/setup-node@v3
         with:
-          node-version: '14'
+          node-version: ${{ matrix.version }}
       - uses: actions/download-artifact@v1
         with:
           name: artifacts
