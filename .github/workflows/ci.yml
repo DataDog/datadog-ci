@@ -8,26 +8,13 @@ jobs:
   build-and-test:
     name: Build and test
     runs-on: ubuntu-latest
-    services:
-      agent:
-        image: datadog/agent
-        env:
-          DD_API_KEY: ${{ secrets.DATADOG_API_KEY_MAIN_ACCOUNT }}
-          DD_ENV: ci
-          DD_APM_ENABLED: true
-          DD_APM_NON_LOCAL_TRAFFIC: true
-          DD_APM_MAX_TPS: 0
-          DD_APM_MAX_EPS: 0
-          DD_INSIDE_CI: true
-        ports:
-          - 8126:8126
 
     steps:
       - uses: actions/checkout@v2
       - name: Install node
         uses: actions/setup-node@v1
         with:
-          node-version: '10.24.1'
+          node-version: '14'
       - run: yarn install --immutable
       - run: yarn build
       - run: yarn lint
@@ -36,6 +23,10 @@ jobs:
         env:
           CI: true
           DD_SERVICE: datadog-ci-tests
+          DD_CIVISIBILITY_AGENTLESS_ENABLED: 1
+          DD_API_KEY: ${{ secrets.DATADOG_API_KEY_MAIN_ACCOUNT }}
+          DD_ENV: ci
+          NODE_OPTIONS: -r dd-trace/ci/init
       - run: mkdir artifacts
       - run: yarn pack --filename artifacts/datadog-ci.tgz
       - run: cp -r .github/workflows/e2e artifacts/
@@ -53,7 +44,7 @@ jobs:
       - name: Install node
         uses: actions/setup-node@v1
         with:
-          node-version: '12.x'
+          node-version: '14'
       - uses: actions/download-artifact@v1
         with:
           name: artifacts
@@ -138,5 +129,5 @@ jobs:
       - name: Install node
         uses: actions/setup-node@v1
         with:
-          node-version: '12.x'
+          node-version: '14'
       - run: yarn check-licenses

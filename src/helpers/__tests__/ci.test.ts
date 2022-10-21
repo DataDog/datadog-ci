@@ -96,7 +96,10 @@ describe('getCIMetadata', () => {
   })
 
   describe.each(CI_PROVIDERS)('%s', (ciProvider) => {
-    const assertions = require(path.join(__dirname, 'ci-env', ciProvider))
+    const assertions = require(path.join(__dirname, 'ci-env', ciProvider)) as [
+      {[key: string]: string},
+      {[tag: string]: string}
+    ][]
 
     test.each(assertions)('spec %#', (env, tags: SpanTags) => {
       process.env = env
@@ -133,7 +136,10 @@ describe('getCIMetadata', () => {
     const expectedMetadata = ciAppTagsToMetadata(ddMetadataToSpanTags(DD_METADATA))
     delete expectedMetadata.git.branch
 
-    const assertions = require(path.join(__dirname, 'ci-env', ciProvider))
+    const assertions = require(path.join(__dirname, 'ci-env', ciProvider)) as [
+      {[key: string]: string},
+      {[tag: string]: string}
+    ][]
 
     it.each(assertions)('spec %#', (env, tags: SpanTags) => {
       process.env = {...env, ...DD_METADATA}
