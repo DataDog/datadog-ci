@@ -6,8 +6,8 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-node@v1
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
         with:
           node-version: '14'
       - run: yarn
@@ -18,9 +18,9 @@ jobs:
   build-binary-ubuntu:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Install node
-        uses: actions/setup-node@v1
+        uses: actions/setup-node@v3
         with:
           node-version: '14.18.3'
       - name: Install project dependencies
@@ -44,9 +44,9 @@ jobs:
   build-binary-windows:
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Install node
-        uses: actions/setup-node@v1
+        uses: actions/setup-node@v3
         with:
           node-version: '14.18.3'
       - name: Install project dependencies
@@ -70,9 +70,9 @@ jobs:
   build-binary-macos:
     runs-on: macos-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Install node
-        uses: actions/setup-node@v1
+        uses: actions/setup-node@v3
         with:
           node-version: '14.18.3'
       - name: Install project dependencies
