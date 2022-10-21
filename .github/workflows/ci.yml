@@ -5,15 +5,14 @@ name: Continuous Integration
 on: push
 
 jobs:
-  build-and-test:
+  build-and-test-ubuntu:
     strategy:
       fail-fast: false
       matrix:
         version: [14, 16, 18]
-        os: [ubuntu-latest, windows-latest, macos-latest]
 
     name: Build and test
-    runs-on: ${{ matrix.os }}
+    runs-on: ubuntu-latest
 
     steps:
       - uses: actions/checkout@v3
@@ -23,11 +22,6 @@ jobs:
           node-version: ${{ matrix.version }}
       - run: yarn install --immutable
       - run: yarn build
-        if: matrix.os != 'windows-latest'
-      - run: |
-          yarn clean:win
-          yarn build:win
-        if: matrix.os == 'windows-latest'
       - run: yarn lint
       - run: yarn no-only-in-tests
       - run: yarn test
@@ -45,6 +39,58 @@ jobs:
         with:
           name: artifacts
           path: artifacts/
+
+  build-and-test-windows:
+    strategy:
+      fail-fast: false
+      matrix:
+        version: [14, 16, 18]
+
+    name: Build and test
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@v3
+      - name: Install node
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ matrix.version }}
+      - run: yarn install --immutable
+      - run: yarn build:win
+      - run: yarn test
+        env:
+          CI: true
+          DD_SERVICE: datadog-ci-tests
+          DD_CIVISIBILITY_AGENTLESS_ENABLED: 1
+          DD_API_KEY: ${{ secrets.DATADOG_API_KEY_MAIN_ACCOUNT }}
+          DD_ENV: ci
+          NODE_OPTIONS: -r dd-trace/ci/init
+
+  build-and-test-macos:
+    strategy:
+      fail-fast: false
+      matrix:
+        version: [14, 16, 18]
+
+    name: Build and test
+    runs-on: macos-latest
+
+    steps:
+      - uses: actions/checkout@v3
+      - name: Install node
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ matrix.version }}
+      - run: yarn install --immutable
+      - run: yarn build
+      - run: yarn test
+        env:
+          CI: true
+          DD_SERVICE: datadog-ci-tests
+          DD_CIVISIBILITY_AGENTLESS_ENABLED: 1
+          DD_API_KEY: ${{ secrets.DATADOG_API_KEY_MAIN_ACCOUNT }}
+          DD_ENV: ci
+          NODE_OPTIONS: -r dd-trace/ci/init
 
   e2e-test:
     strategy:
