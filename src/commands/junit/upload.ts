@@ -4,7 +4,7 @@ import path from 'path'
 
 import chalk from 'chalk'
 import {Command} from 'clipanion'
-import xmlParser from 'fast-xml-parser'
+import {XMLParser, XMLValidator} from 'fast-xml-parser'
 import glob from 'glob'
 import asyncPool from 'tiny-async-pool'
 
@@ -32,10 +32,11 @@ const errorCodesStopUpload = [400, 403]
 
 const validateXml = (xmlFilePath: string) => {
   const xmlFileContentString = String(fs.readFileSync(xmlFilePath))
-  const validationOutput = xmlParser.validate(xmlFileContentString)
+  const validationOutput = XMLValidator.validate(xmlFileContentString)
   if (validationOutput !== true) {
     return validationOutput.err.msg
   }
+  const xmlParser = new XMLParser()
   const xmlFileJSON = xmlParser.parse(String(xmlFileContentString))
   if (!xmlFileJSON.testsuites && !xmlFileJSON.testsuite) {
     return 'Neither <testsuites> nor <testsuite> are the root tag.'
