@@ -12,9 +12,8 @@ jobs:
       fail-fast: false
       matrix:
         version: [14, 16, 18]
-        os: [ubuntu-latest, windows-latest, macos-latest]
     name: Build and test with ITR
-    runs-on: ${{ matrix.os }}
+    runs-on: ubuntu-latest
     env:
       DD_SERVICE: datadog-ci-tests-itr
       DD_CIVISIBILITY_AGENTLESS_ENABLED: 1
