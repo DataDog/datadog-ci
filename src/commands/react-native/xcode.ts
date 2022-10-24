@@ -80,27 +80,6 @@ export class XCodeCommand extends Command {
       return 1
     }
 
-    if (!process.env.MARKETING_VERSION) {
-      this.context.stderr.write('Environment variable MARKETING_VERSION is missing for Datadog sourcemaps upload.\n')
-      this.context.stderr.write('Check that a Version is set for your target in XCode. It needs to be changed once.\n')
-      this.context.stderr.write(
-        'If you are not running this script from XCode, set a MARKETING_VERSION environment variable before running the script.\n'
-      )
-
-      return 1
-    }
-
-    if (!process.env.CURRENT_PROJECT_VERSION) {
-      this.context.stderr.write(
-        'Environment variable CURRENT_PROJECT_VERSION is missing for Datadog sourcemaps upload.\n'
-      )
-      this.context.stderr.write('Check that a Build is set for your target in XCode. It needs to be changed once.\n')
-      this.context.stderr.write(
-        'If you are not running this script from XCode, set a CURRENT_PROJECT_VERSION environment variable before running the script.\n'
-      )
-
-      return 1
-    }
     const sourcemapsLocation = this.getSourcemapsLocation()
     if (!sourcemapsLocation) {
       this.context.stderr.write('No sourcemap output has been specified.\n')
@@ -121,6 +100,12 @@ export class XCodeCommand extends Command {
         'If you are not running this script from XCode, set a CONFIGURATION_BUILD_DIR (directory containing the generated bundle) environment variable before running the script.\n'
       )
 
+      return 1
+    }
+
+    const releaseVersion = this.getReleaseVersion()
+    const buildVersion = this.getBuildVersion()
+    if (releaseVersion === null || buildVersion === null) {
       return 1
     }
 
@@ -153,9 +138,6 @@ export class XCodeCommand extends Command {
     if (this.force) {
       this.context.stdout.write(`Force upload for configuration Debug ${process.env.CONFIGURATION}`)
     }
-    // Get values for build
-    const releaseVersion = process.env.MARKETING_VERSION
-    const buildVersion = process.env.CURRENT_PROJECT_VERSION
 
     // Run upload script in the background
     const cli = new Cli()
@@ -272,12 +254,42 @@ export class XCodeCommand extends Command {
     }
   }
 
+  private getBuildVersion = (): string | null => {
+    if (!process.env.CURRENT_PROJECT_VERSION) {
+      this.context.stderr.write(
+        'Environment variable CURRENT_PROJECT_VERSION is missing for Datadog sourcemaps upload.\n'
+      )
+      this.context.stderr.write('Check that a Build is set for your target in XCode. It needs to be changed once.\n')
+      this.context.stderr.write(
+        'If you are not running this script from XCode, set a CURRENT_PROJECT_VERSION environment variable before running the script.\n'
+      )
+
+      return null
+    }
+
+    return process.env.CURRENT_PROJECT_VERSION
+  }
+
   private getBundleLocation = () => {
     if (!process.env.CONFIGURATION_BUILD_DIR) {
       return null
     }
 
     return `${process.env.CONFIGURATION_BUILD_DIR}/main.jsbundle`
+  }
+
+  private getReleaseVersion = (): string | null => {
+    if (!process.env.MARKETING_VERSION) {
+      this.context.stderr.write('Environment variable MARKETING_VERSION is missing for Datadog sourcemaps upload.\n')
+      this.context.stderr.write('Check that a Version is set for your target in XCode. It needs to be changed once.\n')
+      this.context.stderr.write(
+        'If you are not running this script from XCode, set a MARKETING_VERSION environment variable before running the script.\n'
+      )
+
+      return null
+    }
+
+    return process.env.MARKETING_VERSION
   }
 
   private getSourcemapsLocation = () => {
