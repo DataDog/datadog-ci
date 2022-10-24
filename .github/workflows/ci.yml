@@ -5,14 +5,15 @@ name: Continuous Integration
 on: push
 
 jobs:
-  build-and-test-ubuntu:
+  build-and-test:
     strategy:
       fail-fast: false
       matrix:
         version: [14, 16, 18]
+        os: [ubuntu-latest, macos-latest, windows-latest]
 
     name: Build and test
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
 
     steps:
       - uses: actions/checkout@v3
@@ -22,8 +23,11 @@ jobs:
           node-version: ${{ matrix.version }}
       - run: yarn install --immutable
       - run: yarn build
-      - run: yarn lint
-      - run: yarn no-only-in-tests
+      - run: |
+          yarn build
+          yarn lint
+          yarn no-only-in-tests
+        if: ${{ matrix.os == 'ubuntu-latest' }}
       - run: yarn test
         env:
           CI: true
@@ -33,64 +37,12 @@ jobs:
           DD_ENV: ci
           NODE_OPTIONS: -r dd-trace/ci/init
       - run: mkdir artifacts
-      - run: yarn pack --filename artifacts/datadog-ci.tgz
+      - run: yarn pack --filename artifacts/datadog-ci-${{ matrix.os }}-${{ matrix.version }}.tgz
       - run: cp -r .github/workflows/e2e artifacts/
       - uses: actions/upload-artifact@v1
         with:
           name: artifacts
           path: artifacts/
-
-  build-and-test-windows:
-    strategy:
-      fail-fast: false
-      matrix:
-        version: [14, 16, 18]
-
-    name: Build and test
-    runs-on: windows-latest
-
-    steps:
-      - uses: actions/checkout@v3
-      - name: Install node
-        uses: actions/setup-node@v3
-        with:
-          node-version: ${{ matrix.version }}
-      - run: yarn install --immutable
-      - run: yarn build:win
-      - run: yarn test
-        env:
-          CI: true
-          DD_SERVICE: datadog-ci-tests
-          DD_CIVISIBILITY_AGENTLESS_ENABLED: 1
-          DD_API_KEY: ${{ secrets.DATADOG_API_KEY_MAIN_ACCOUNT }}
-          DD_ENV: ci
-          NODE_OPTIONS: -r dd-trace/ci/init
-
-  build-and-test-macos:
-    strategy:
-      fail-fast: false
-      matrix:
-        version: [14, 16, 18]
-
-    name: Build and test
-    runs-on: macos-latest
-
-    steps:
-      - uses: actions/checkout@v3
-      - name: Install node
-        uses: actions/setup-node@v3
-        with:
-          node-version: ${{ matrix.version }}
-      - run: yarn install --immutable
-      - run: yarn build
-      - run: yarn test
-        env:
-          CI: true
-          DD_SERVICE: datadog-ci-tests
-          DD_CIVISIBILITY_AGENTLESS_ENABLED: 1
-          DD_API_KEY: ${{ secrets.DATADOG_API_KEY_MAIN_ACCOUNT }}
-          DD_ENV: ci
-          NODE_OPTIONS: -r dd-trace/ci/init
 
   e2e-test:
     strategy:
@@ -100,7 +52,7 @@ jobs:
 
     name: End-to-end test the package
     runs-on: ${{ matrix.os }}
-    needs: [build-and-test-ubuntu, build-and-test-windows, build-and-test-macos]
+    needs: build-and-test
 
     steps:
       - name: Install node
@@ -110,7 +62,7 @@ jobs:
       - uses: actions/download-artifact@v1
         with:
           name: artifacts
-      - run: yarn add ./artifacts/datadog-ci.tgz
+      - run: yarn add ./artifacts/datadog-ci-${{ matrix.os }}-${{ matrix.version }}.tgz
       - name: Run synthetics test
         run: yarn datadog-ci synthetics run-tests --config artifacts/e2e/global.config.json
         env:
