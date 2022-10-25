@@ -5,6 +5,8 @@ import {sep} from 'path'
 
 import {Cli, Command} from 'clipanion'
 
+import {parsePlist} from '../../helpers/plist'
+
 import {UploadCommand} from './upload'
 
 /**
@@ -47,6 +49,10 @@ export class XCodeCommand extends Command {
   private disableGit?: boolean
   private dryRun = false
   private force = false
+  private infoPlistPath =
+    process.env.PROJECT_DIR && process.env.INFOPLIST_FILE
+      ? `${process.env.PROJECT_DIR}/${process.env.INFOPLIST_FILE}`
+      : null
   private removeSourcesContent?: boolean
   private repositoryURL?: string
   private scriptPath = `${reactNativePath}/scripts/react-native-xcode.sh`
@@ -256,10 +262,23 @@ export class XCodeCommand extends Command {
 
   private getBuildVersion = (): string | null => {
     if (!process.env.CURRENT_PROJECT_VERSION) {
+      try {
+        const buildVersion = this.getPlistValue('CFBundleVersion')
+
+        return typeof buildVersion === 'number' ? buildVersion.toString() : buildVersion
+      } catch (error) {
+        // Silent error
+      }
+
+      this.context.stderr.write('Build version could not be found.\n')
       this.context.stderr.write(
-        'Environment variable CURRENT_PROJECT_VERSION is missing for Datadog sourcemaps upload.\n'
+        'Check that a Build is set for your target in XCode. It might need to be changed once.\n'
       )
-      this.context.stderr.write('Check that a Build is set for your target in XCode. It needs to be changed once.\n')
+      if (this.infoPlistPath) {
+        this.context.stderr.write(
+          `You can also check that a CFBundleVersion is defined in your Info.plist at ${this.infoPlistPath}.\n`
+        )
+      }
       this.context.stderr.write(
         'If you are not running this script from XCode, set a CURRENT_PROJECT_VERSION environment variable before running the script.\n'
       )
@@ -278,10 +297,33 @@ export class XCodeCommand extends Command {
     return `${process.env.CONFIGURATION_BUILD_DIR}/main.jsbundle`
   }
 
+  private getPlistValue = (propertyName: string): string | number => {
+    if (!this.infoPlistPath) {
+      throw new Error('Could not find plist path')
+    }
+
+    return parsePlist(this.infoPlistPath).getPropertyValue(propertyName)
+  }
+
   private getReleaseVersion = (): string | null => {
     if (!process.env.MARKETING_VERSION) {
-      this.context.stderr.write('Environment variable MARKETING_VERSION is missing for Datadog sourcemaps upload.\n')
-      this.context.stderr.write('Check that a Version is set for your target in XCode. It needs to be changed once.\n')
+      try {
+        const releaseVersion = this.getPlistValue('CFBundleShortVersionString')
+
+        return typeof releaseVersion === 'number' ? releaseVersion.toString() : releaseVersion
+      } catch (error) {
+        // Silent error
+      }
+
+      this.context.stderr.write('Version could not be found.\n')
+      this.context.stderr.write(
+        'Check that a Version is set for your target in XCode. It might need to be changed once.\n'
+      )
+      if (this.infoPlistPath) {
+        this.context.stderr.write(
+          `You can also check that a CFBundleShortVersionString is defined in your Info.plist at ${this.infoPlistPath}.\n`
+        )
+      }
       this.context.stderr.write(
         'If you are not running this script from XCode, set a MARKETING_VERSION environment variable before running the script.\n'
       )
@@ -339,3 +381,4 @@ XCodeCommand.addOption('repositoryURL', Command.String('--repository-url'))
 XCodeCommand.addOption('disableGit', Command.Boolean('--disable-git'))
 XCodeCommand.addOption('configPath', Command.String('--config'))
 XCodeCommand.addOption('removeSourcesContent', Command.Boolean('--remove-sources-content'))
+XCodeCommand.addOption('infoPlistPath', Command.String('--info-plist-path'))
