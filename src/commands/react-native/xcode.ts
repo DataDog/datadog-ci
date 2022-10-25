@@ -261,29 +261,27 @@ export class XCodeCommand extends Command {
   }
 
   private getBuildVersion = (): string | null => {
-    if (!process.env.CURRENT_PROJECT_VERSION) {
-      try {
-        const buildVersion = this.getPlistValue('CFBundleVersion')
+    try {
+      const buildVersion = this.getPlistValue('CFBundleVersion')
 
-        return typeof buildVersion === 'number' ? buildVersion.toString() : buildVersion
-      } catch (error) {
-        // Silent error
-      }
-
-      this.context.stderr.write('Build version could not be found.\n')
-      this.context.stderr.write(
-        'Check that a Build is set for your target in XCode. It might need to be changed once.\n'
-      )
-      if (this.infoPlistPath) {
+      return typeof buildVersion === 'number' ? buildVersion.toString() : buildVersion
+    } catch (error) {
+      if (!process.env.CURRENT_PROJECT_VERSION) {
+        this.context.stderr.write('Build version could not be found.\n')
         this.context.stderr.write(
-          `You can also check that a CFBundleVersion is defined in your Info.plist at ${this.infoPlistPath}.\n`
+          'Check that a Build is set for your target in XCode. It might need to be changed once.\n'
         )
-      }
-      this.context.stderr.write(
-        'If you are not running this script from XCode, set a CURRENT_PROJECT_VERSION environment variable before running the script.\n'
-      )
+        if (this.infoPlistPath) {
+          this.context.stderr.write(
+            `You can also check that a CFBundleVersion is defined in your Info.plist at ${this.infoPlistPath}.\n`
+          )
+        }
+        this.context.stderr.write(
+          'If you are not running this script from XCode, set a CURRENT_PROJECT_VERSION environment variable before running the script.\n'
+        )
 
-      return null
+        return null
+      }
     }
 
     return process.env.CURRENT_PROJECT_VERSION
@@ -306,29 +304,27 @@ export class XCodeCommand extends Command {
   }
 
   private getReleaseVersion = (): string | null => {
-    if (!process.env.MARKETING_VERSION) {
-      try {
-        const releaseVersion = this.getPlistValue('CFBundleShortVersionString')
+    try {
+      const releaseVersion = this.getPlistValue('CFBundleShortVersionString')
 
-        return typeof releaseVersion === 'number' ? releaseVersion.toString() : releaseVersion
-      } catch (error) {
-        // Silent error
-      }
-
-      this.context.stderr.write('Version could not be found.\n')
-      this.context.stderr.write(
-        'Check that a Version is set for your target in XCode. It might need to be changed once.\n'
-      )
-      if (this.infoPlistPath) {
+      return typeof releaseVersion === 'number' ? releaseVersion.toString() : releaseVersion
+    } catch (error) {
+      if (!process.env.MARKETING_VERSION) {
+        this.context.stderr.write('Version could not be found.\n')
         this.context.stderr.write(
-          `You can also check that a CFBundleShortVersionString is defined in your Info.plist at ${this.infoPlistPath}.\n`
+          'Check that a Version is set for your target in XCode. It might need to be changed once.\n'
         )
-      }
-      this.context.stderr.write(
-        'If you are not running this script from XCode, set a MARKETING_VERSION environment variable before running the script.\n'
-      )
+        if (this.infoPlistPath) {
+          this.context.stderr.write(
+            `You can also check that a CFBundleShortVersionString is defined in your Info.plist at ${this.infoPlistPath}.\n`
+          )
+        }
+        this.context.stderr.write(
+          'If you are not running this script from XCode, set a MARKETING_VERSION environment variable before running the script.\n'
+        )
 
-      return null
+        return null
+      }
     }
 
     return process.env.MARKETING_VERSION

@@ -322,16 +322,13 @@ describe('xcode', () => {
       expect(output).toContain(`Build version could not be found.`)
     })
 
-    test('should get versions from plist file if env variables are not defined', async () => {
+    test('should get versions from plist file even if env variables are defined', async () => {
       process.env = {
         ...process.env,
         ...basicEnvironment,
         PROJECT_DIR: 'src/commands/react-native/__tests__',
         INFOPLIST_FILE: 'fixtures/info-plist/Info.plist',
       }
-
-      delete process.env.CURRENT_PROJECT_VERSION
-      delete process.env.MARKETING_VERSION
 
       const {context, code} = await runCLI(
         './src/commands/react-native/__tests__/fixtures/bundle-script/successful_script.sh'
