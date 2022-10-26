@@ -58,7 +58,7 @@ export class UploadJUnitXMLCommand extends Command {
         'datadog-ci junit upload --service my-service src/unit-test-reports src/acceptance-test-reports',
       ],
       [
-        'Upload all jUnit XML test report files in current directory and add extra tags',
+        'Upload all jUnit XML test report files in current directory and add extra tags globally',
         'datadog-ci junit upload --service my-service --tags key1:value1 --tags key2:value2 .',
       ],
       [
@@ -68,6 +68,14 @@ export class UploadJUnitXMLCommand extends Command {
       [
         'Upload all jUnit XML test report files in current directory while also collecting logs',
         'datadog-ci junit upload --service my-service --logs .',
+      ],
+      [
+        'Upload all jUnit XML test report files in current directory customizing test suite with xpath',
+        'datadog-ci junit upload --service my-service --xpath-tag test.suite=/testcase/@classname .',
+      ],
+      [
+        'Upload all jUnit XML test report files in current directory adding a custom tag from property with xpath',
+        "datadog-ci junit upload --service my-service --xpath-tag custom_tag=/testcase/..//property[@name='property-name'] .",
       ],
     ],
   })
@@ -84,6 +92,8 @@ export class UploadJUnitXMLCommand extends Command {
   private maxConcurrency = 20
   private service?: string
   private tags?: string[]
+  private rawXPathTags?: string[]
+  private xpathTags?: Record<string, string>
 
   public async execute() {
     if (!this.service) {
@@ -113,6 +123,13 @@ export class UploadJUnitXMLCommand extends Command {
       this.logs = true
     }
 
+    if (this.rawXPathTags) {
+      this.xpathTags = this.parseXPathTags(this.rawXPathTags)
+      if (Object.keys(this.xpathTags).length !== this.rawXPathTags.length) {
+        return 1
+      }
+    }
+
     const api = this.getApiHelper()
     // Normalizing the basePath to resolve .. and .
     // Always using the posix version to avoid \ on Windows.
@@ -131,6 +148,23 @@ export class UploadJUnitXMLCommand extends Command {
     this.context.stdout.write(
       renderSuccessfulCommand(payloads.length, totalTimeSeconds, spanTags, this.service, this.config.env)
     )
+  }
+
+  private parseXPathTags(rawXPathTags: string[]): Record<string, string> {
+    return rawXPathTags.reduce((xpathTags: Record<string, string>, rawExpression: string) => {
+      const index = rawExpression.indexOf('=')
+      if (index === -1) {
+        this.context.stderr.write('Invalid xpath-tag: missing =. Value must be <tag>=<xpath-expression>\n')
+
+        return xpathTags
+      }
+
+      const tagName = rawExpression.substring(0, index)
+      const xPath = rawExpression.substring(index + 1)
+      xpathTags[tagName] = xPath
+
+      return xpathTags
+    }, {})
   }
 
   private getApiHelper(): APIHelper {
@@ -168,6 +202,7 @@ export class UploadJUnitXMLCommand extends Command {
     return validUniqueFiles.map((jUnitXMLFilePath) => ({
       hostname: os.hostname(),
       logsEnabled: this.logs,
+      xpathTags: this.xpathTags,
       service: this.service!,
       spanTags,
       xmlPath: jUnitXMLFilePath,
@@ -227,3 +262,4 @@ UploadJUnitXMLCommand.addOption('tags', Command.Array('--tags'))
 UploadJUnitXMLCommand.addOption('basePaths', Command.Rest({required: 1}))
 UploadJUnitXMLCommand.addOption('maxConcurrency', Command.String('--max-concurrency'))
 UploadJUnitXMLCommand.addOption('logs', Command.Boolean('--logs'))
+UploadJUnitXMLCommand.addOption('rawXPathTags', Command.Array('--xpath-tag'))

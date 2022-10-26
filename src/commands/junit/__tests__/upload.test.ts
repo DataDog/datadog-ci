@@ -24,6 +24,12 @@ const createMockContext = () => {
         data += input
       },
     },
+    stderr: {
+      toString: () => data,
+      write: (input: string) => {
+        data += input
+      },
+    },
   }
 }
 
@@ -154,6 +160,41 @@ describe('upload', () => {
 
       expect(files.length).toEqual(2)
     })
+    test('should set hostname', async () => {
+      const context = createMockContext()
+      const command = new UploadJUnitXMLCommand()
+      const [firstFile, secondFile] = await command['getMatchingJUnitXMLFiles'].call(
+        {
+          basePaths: ['./src/commands/junit/__tests__/fixtures'],
+          config: {},
+          context,
+          service: 'service',
+        },
+        {}
+      )
+
+      expect(firstFile.hostname).toEqual(os.hostname())
+      expect(secondFile.hostname).toEqual(os.hostname())
+    })
+    test('should set logsEnabled for each file', async () => {
+      process.env.DD_CIVISIBILITY_LOGS_ENABLED = 'true'
+      const context = createMockContext()
+      const command = new UploadJUnitXMLCommand()
+      const [firstFile, secondFile] = await command['getMatchingJUnitXMLFiles'].call(
+        {
+          basePaths: ['./src/commands/junit/__tests__/fixtures'],
+          config: {},
+          context,
+          logs: true,
+          service: 'service',
+        },
+        {}
+      )
+      expect(firstFile.logsEnabled).toBe(true)
+      expect(secondFile.logsEnabled).toBe(true)
+    })
+  })
+  describe('getSpanTags', () => {
     test('should parse DD_TAGS and DD_ENV environment variables', async () => {
       process.env.DD_TAGS = 'key1:https://google.com,key2:value2'
       process.env.DD_ENV = 'ci'
@@ -172,22 +213,6 @@ describe('upload', () => {
         key2: 'value2',
       })
     })
-    test('should set hostname', async () => {
-      const context = createMockContext()
-      const command = new UploadJUnitXMLCommand()
-      const [firstFile, secondFile] = await command['getMatchingJUnitXMLFiles'].call(
-        {
-          basePaths: ['./src/commands/junit/__tests__/fixtures'],
-          config: {},
-          context,
-          service: 'service',
-        },
-        {}
-      )
-
-      expect(firstFile.hostname).toEqual(os.hostname())
-      expect(secondFile.hostname).toEqual(os.hostname())
-    })
     test('should parse tags argument', async () => {
       const context = createMockContext()
       const command = new UploadJUnitXMLCommand()
@@ -201,22 +226,39 @@ describe('upload', () => {
         key2: 'value2',
       })
     })
-    test('should set logsEnabled for each file', async () => {
-      process.env.DD_CIVISIBILITY_LOGS_ENABLED = 'true'
+  })
+  describe('parseXPathTags', () => {
+    test('should parse xpath assigments', async () => {
       const context = createMockContext()
       const command = new UploadJUnitXMLCommand()
-      const [firstFile, secondFile] = await command['getMatchingJUnitXMLFiles'].call(
+      const xPathTags = command['parseXPathTags'].call(
         {
           basePaths: ['./src/commands/junit/__tests__/fixtures'],
           config: {},
           context,
-          logs: true,
           service: 'service',
         },
-        {}
+        ['test.suite=/testcase/@classname', "custom_tag=/testcase/..//property[@name='property-name']"]
       )
-      expect(firstFile.logsEnabled).toBe(true)
-      expect(secondFile.logsEnabled).toBe(true)
+      expect(xPathTags).toMatchObject({
+        'test.suite': '/testcase/@classname',
+        custom_tag: "/testcase/..//property[@name='property-name']",
+      })
+    })
+    test('should alert of invalid values', async () => {
+      const context = createMockContext()
+      const command = new UploadJUnitXMLCommand()
+      command['parseXPathTags'].call(
+        {
+          basePaths: ['./src/commands/junit/__tests__/fixtures'],
+          config: {},
+          context,
+          service: 'service',
+        },
+        ['test.suite=/testcase/@classname', 'invalid']
+      )
+      const errOutput = context.stderr.toString().split(os.EOL)
+      expect(errOutput[0]).toContain('Invalid xpath')
     })
   })
 })

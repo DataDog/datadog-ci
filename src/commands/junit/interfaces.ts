@@ -10,6 +10,7 @@ export interface Payload {
   service: string
   spanTags: SpanTags
   xmlPath: string
+  xpathTags?: Record<string, string>
 }
 
 export interface APIHelper {
