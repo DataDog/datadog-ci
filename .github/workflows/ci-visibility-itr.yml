@@ -8,6 +8,10 @@ on: push
 
 jobs:
   build-and-test:
+    strategy:
+      fail-fast: false
+      matrix:
+        version: [14, 16, 18]
     name: Build and test with ITR
     runs-on: ubuntu-latest
     env:
@@ -26,10 +30,8 @@ jobs:
       - name: Install node
         uses: actions/setup-node@v3
         with:
-          node-version: '16'
-      - run: yarn install --ignore-engines
-        continue-on-error: true
-      - run: yarn add --dev https://github.com/DataDog/dd-trace-js/tarball/master
+          node-version: ${{ matrix.version }}
+      - run: yarn install --immutable
         continue-on-error: true
       - run: yarn test:ci-vis:itr
         continue-on-error: true

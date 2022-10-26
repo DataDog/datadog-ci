@@ -6,6 +6,11 @@ on: push
 
 jobs:
   build-and-test:
+    strategy:
+      fail-fast: false
+      matrix:
+        version: [14, 16, 18]
+
     name: Build and test
     runs-on: ubuntu-latest
 
@@ -14,7 +19,7 @@ jobs:
       - name: Install node
         uses: actions/setup-node@v3
         with:
-          node-version: '14'
+          node-version: ${{ matrix.version }}
       - run: yarn install --immutable
       - run: yarn build
       - run: yarn lint
@@ -28,7 +33,7 @@ jobs:
           DD_ENV: ci
           NODE_OPTIONS: -r dd-trace/ci/init
       - run: mkdir artifacts
-      - run: yarn pack --filename artifacts/datadog-ci.tgz
+      - run: yarn pack --filename artifacts/datadog-ci-${{ matrix.version }}.tgz
       - run: cp -r .github/workflows/e2e artifacts/
       - uses: actions/upload-artifact@v1
         with:
@@ -36,6 +41,10 @@ jobs:
           path: artifacts/
 
   e2e-test:
+    strategy:
+      matrix:
+        version: [14, 16, 18]
+
     name: End-to-end test the package
     runs-on: ubuntu-latest
     needs: build-and-test
@@ -44,11 +53,11 @@ jobs:
       - name: Install node
         uses: actions/setup-node@v3
         with:
-          node-version: '14'
+          node-version: ${{ matrix.version }}
       - uses: actions/download-artifact@v1
         with:
           name: artifacts
-      - run: yarn add ./artifacts/datadog-ci.tgz
+      - run: yarn add ./artifacts/datadog-ci-${{ matrix.version }}.tgz
       - name: Run synthetics test
         run: yarn datadog-ci synthetics run-tests --config artifacts/e2e/global.config.json
         env:
