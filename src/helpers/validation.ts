@@ -19,4 +19,6 @@ export const checkFile: (path: string) => {empty: boolean; exists: boolean} = (p
   return {exists: true, empty: false}
 }
 
-export const isValidDatadogSite = (site: string) => DATADOG_SITES.includes(site.toLowerCase())
+export const isValidDatadogSite = (site: string): boolean => {
+  return !!process.env.DD_CI_BYPASS_SITE_VALIDATION || DATADOG_SITES.includes(site.toLowerCase())
+}
