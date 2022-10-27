@@ -473,36 +473,6 @@ describe('utils', () => {
       expectHandledConfigToBe(SKIPPED, SKIPPED, NON_BLOCKING)
     })
 
-    test('startUrl template is rendered if correct test type or subtype', () => {
-      const publicId = 'abc-def-ghi'
-      const fakeTest = {
-        config: {request: {url: 'http://example.org/path#target'}},
-        public_id: publicId,
-        type: 'browser',
-      } as Test
-      const configOverride = {
-        startUrl: 'https://{{DOMAIN}}/newPath?oldPath={{ PATHNAME   }}{{HASH}}',
-      }
-      const expectedUrl = 'https://example.org/newPath?oldPath=/path#target'
-
-      let overriddenConfig = utils.getOverriddenConfig(fakeTest, publicId, mockReporter, configOverride)
-      expect(overriddenConfig.public_id).toBe(publicId)
-      expect(overriddenConfig.startUrl).toBe(expectedUrl)
-
-      fakeTest.type = 'api'
-      fakeTest.subtype = 'http'
-
-      overriddenConfig = utils.getOverriddenConfig(fakeTest, publicId, mockReporter, configOverride)
-      expect(overriddenConfig.public_id).toBe(publicId)
-      expect(overriddenConfig.startUrl).toBe(expectedUrl)
-
-      fakeTest.subtype = 'dns'
-
-      overriddenConfig = utils.getOverriddenConfig(fakeTest, publicId, mockReporter, configOverride)
-      expect(overriddenConfig.public_id).toBe(publicId)
-      expect(overriddenConfig.startUrl).toBeUndefined()
-    })
-
     test('startUrl is not parsable', () => {
       const envVars = {...process.env}
       process.env = {CUSTOMVAR: '/newPath'}
@@ -513,31 +483,14 @@ describe('utils', () => {
         type: 'browser',
       } as Test
       const configOverride = {
-        startUrl: 'https://{{DOMAIN}}/newPath?oldPath={{CUSTOMVAR}}',
+        startUrl: 'https://{{FAKE_VAR}}/newPath?oldPath={{CUSTOMVAR}}',
       }
-      const expectedUrl = 'https://{{DOMAIN}}/newPath?oldPath=/newPath'
+      const expectedUrl = 'https://{{FAKE_VAR}}/newPath?oldPath=/newPath'
       const overriddenConfig = utils.getOverriddenConfig(fakeTest, publicId, mockReporter, configOverride)
 
       expect(overriddenConfig.public_id).toBe(publicId)
       expect(overriddenConfig.startUrl).toBe(expectedUrl)
       process.env = envVars
-    })
-
-    test('startUrl with empty variable is replaced', () => {
-      const publicId = 'abc-def-ghi'
-      const fakeTest = {
-        config: {request: {url: 'http://exmaple.org/path'}},
-        public_id: publicId,
-        type: 'browser',
-      } as Test
-      const configOverride = {
-        startUrl: 'http://127.0.0.1/newPath{{PARAMS}}',
-      }
-      const expectedUrl = 'http://127.0.0.1/newPath'
-      const overriddenConfig = utils.getOverriddenConfig(fakeTest, publicId, mockReporter, configOverride)
-
-      expect(overriddenConfig.public_id).toBe(publicId)
-      expect(overriddenConfig.startUrl).toBe(expectedUrl)
     })
 
     test('config overrides are applied', () => {
