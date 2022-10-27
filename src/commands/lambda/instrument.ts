@@ -227,7 +227,7 @@ export class InstrumentCommand extends Command {
         return 1
       }
 
-      const region = this.region || this.config.region
+      const region = this.region ?? this.config.region ?? process.env[AWS_DEFAULT_REGION_ENV_VAR]
       if (!region) {
         this.context.stdout.write(renderNoDefaultRegionSpecifiedError())
 
@@ -258,9 +258,10 @@ export class InstrumentCommand extends Command {
     } else {
       let functionGroups
       try {
+        const region = this.region ?? this.config.region ?? process.env[AWS_DEFAULT_REGION_ENV_VAR]
         functionGroups = collectFunctionsByRegion(
           this.functions.length !== 0 ? this.functions : this.config.functions,
-          this.region || this.config.region
+          region
         )
       } catch (err) {
         this.context.stdout.write(renderCouldntGroupFunctionsError(err))
