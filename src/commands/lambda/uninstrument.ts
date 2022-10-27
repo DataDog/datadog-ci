@@ -1,5 +1,5 @@
 import {CloudWatchLogs, Lambda} from 'aws-sdk'
-import {bold, cyan, red, yellow} from 'chalk'
+import {bold} from 'chalk'
 import {Command} from 'clipanion'
 import {resolveConfigFromFile} from '../../helpers/utils'
 import {AWS_DEFAULT_REGION_ENV_VAR} from './constants'
@@ -13,6 +13,33 @@ import {
 import {getUninstrumentedFunctionConfigs, getUninstrumentedFunctionConfigsFromRegEx} from './functions/uninstrument'
 import {FunctionConfiguration} from './interfaces'
 import {requestAWSCredentials, requestChangesConfirmation, requestFunctionSelection} from './prompt'
+import {
+  fetchingFunctionsConfigSpinner,
+  fetchingFunctionsSpinner,
+  renderConfirmationNeededSoftWarning,
+  renderCouldntFetchLambdaFunctionsError,
+  renderCouldntFindLambdaFunctionsInRegionError,
+  renderCouldntGroupFunctionsError,
+  renderError,
+  renderFailedFetchingLambdaConfigurationsFromRegion,
+  renderFailedFetchingLambdaFunctions,
+  renderFailedUpdatingLambdaFunctions,
+  renderFailureDuringUpdateError,
+  renderFetchedLambdaConfigurationsFromRegion,
+  renderFetchedLambdaFunctions,
+  renderFunctionsAndFunctionsRegexOptionsBothSetError,
+  renderFunctionsToBeUpdated,
+  renderLambdaHeader,
+  renderNoAWSCredentialsFound,
+  renderNoDefaultRegionSpecifiedError,
+  renderNoFunctionsSpecifiedError,
+  renderNoUpdatesApplied,
+  renderRegexSetWithARNError,
+  renderUninstrumentingFunctionsSoftWarning,
+  renderUpdatedLambdaFunctions,
+  renderWillApplyUpdates,
+  updatingFunctionsSpinner,
+} from './renderer'
 
 export class UninstrumentCommand extends Command {
   private config: any = {
@@ -28,6 +55,8 @@ export class UninstrumentCommand extends Command {
   private region?: string
 
   public async execute() {
+    this.context.stdout.write(renderLambdaHeader(Object.getPrototypeOf(this), this.dryRun))
+
     const lambdaConfig = {lambda: this.config}
     this.config = (
       await resolveConfigFromFile(lambdaConfig, {configPath: this.configPath, defaultConfigPath: 'datadog-ci.json'})
@@ -37,15 +66,11 @@ export class UninstrumentCommand extends Command {
     if (this.interactive) {
       try {
         if (isMissingAWSCredentials()) {
-          this.context.stdout.write(
-            `${bold(
-              yellow('[!]')
-            )} No AWS credentials found, let's set them up! Or you can re-run the command and supply the AWS credentials in the same way when you invoke the AWS CLI.\n`
-          )
+          this.context.stdout.write(renderNoAWSCredentialsFound())
           await requestAWSCredentials()
         }
       } catch (e) {
-        this.context.stdout.write(`${red('[Error]')} ${e}\n`)
+        this.context.stdout.write(renderError(e))
 
         return 1
       }
@@ -54,20 +79,24 @@ export class UninstrumentCommand extends Command {
       this.region = region
 
       if (!hasSpecifiedFunctions) {
+        const spinner = fetchingFunctionsSpinner()
         try {
           const lambda = new Lambda({region})
-          this.context.stdout.write('Fetching Lambda functions, this might take a while.\n')
+          spinner.start()
           const functionNames =
             (await getAllLambdaFunctionConfigs(lambda)).map((config) => config.FunctionName!).sort() ?? []
           if (functionNames.length === 0) {
-            this.context.stdout.write(`${red('[Error]')} Couldn't find any Lambda functions in the specified region.\n`)
+            this.context.stdout.write(renderCouldntFindLambdaFunctionsInRegionError())
 
             return 1
           }
+          spinner.succeed(renderFetchedLambdaFunctions(functionNames.length))
+
           const functions = await requestFunctionSelection(functionNames)
           this.functions = functions
         } catch (err) {
-          this.context.stdout.write(`${red('[Error]')} Couldn't fetch Lambda functions. ${err}\n`)
+          spinner.fail(renderFailedFetchingLambdaFunctions())
+          this.context.stdout.write(renderCouldntFetchLambdaFunctionsError(err))
 
           return 1
         }
@@ -77,7 +106,7 @@ export class UninstrumentCommand extends Command {
     hasSpecifiedFunctions = this.functions.length !== 0 || this.config.functions.length !== 0
     const hasSpecifiedRegExPattern = this.regExPattern !== undefined && this.regExPattern !== ''
     if (!hasSpecifiedFunctions && !hasSpecifiedRegExPattern) {
-      this.context.stdout.write(`${red('[Error]')} No functions specified for un-instrumentation.\n`)
+      this.context.stdout.write(renderNoFunctionsSpecifiedError(Object.getPrototypeOf(this)))
 
       return 1
     }
@@ -92,40 +121,40 @@ export class UninstrumentCommand extends Command {
     // available to be un-instrumented.
     if (hasSpecifiedRegExPattern) {
       if (hasSpecifiedFunctions) {
-        const usedCommand = this.functions.length !== 0 ? '"--functions"' : 'Functions in config file'
-        this.context.stdout.write(
-          `${red('[Error]')} ${usedCommand} and "--functions-regex" should not be used at the same time.\n`
-        )
+        this.context.stdout.write(renderFunctionsAndFunctionsRegexOptionsBothSetError(this.functions.length !== 0))
 
         return 1
       }
       if (this.regExPattern!.match(':')) {
-        this.context.stdout.write(`${red('[Error]')} "--functions-regex" isn't meant to be used with ARNs.\n`)
+        this.context.stdout.write(renderRegexSetWithARNError())
 
         return 1
       }
 
       const region = this.region || this.config.region
       if (!region) {
-        this.context.stdout.write(`${red('[Error]')} No default region specified. Use \`-r\`, \`--region\`.`)
+        this.context.stdout.write(renderNoDefaultRegionSpecifiedError())
 
         return 1
       }
 
+      const spinner = fetchingFunctionsSpinner()
       try {
         const cloudWatchLogs = new CloudWatchLogs({region})
         const lambda = new Lambda({region})
-        this.context.stdout.write('Fetching Lambda functions, this might take a while.\n')
+        spinner.start()
         const configs = await getUninstrumentedFunctionConfigsFromRegEx(
           lambda,
           cloudWatchLogs,
           this.regExPattern!,
           this.forwarder!
         )
+        spinner.succeed(renderFetchedLambdaFunctions(configs.length))
 
         configGroups.push({configs, lambda, cloudWatchLogs})
       } catch (err) {
-        this.context.stdout.write(`${red('[Error]')} Couldn't fetch Lambda functions. ${err}\n`)
+        spinner.fail(renderFailedFetchingLambdaFunctions())
+        this.context.stdout.write(renderCouldntFetchLambdaFunctionsError(err))
 
         return 1
       }
@@ -137,19 +166,23 @@ export class UninstrumentCommand extends Command {
           this.region || this.config.region
         )
       } catch (err) {
-        this.context.stdout.write(`${red('[Error]')} Couldn't group functions. ${err}`)
+        this.context.stdout.write(renderCouldntGroupFunctionsError(err))
 
         return 1
       }
 
       for (const [region, functionARNs] of Object.entries(functionGroups)) {
+        const spinner = fetchingFunctionsConfigSpinner(region)
+        spinner.start()
         const lambda = new Lambda({region})
         const cloudWatchLogs = new CloudWatchLogs({region})
         try {
           const configs = await getUninstrumentedFunctionConfigs(lambda, cloudWatchLogs, functionARNs, this.forwarder)
           configGroups.push({configs, lambda, cloudWatchLogs})
+          spinner.succeed(renderFetchedLambdaConfigurationsFromRegion(region, configs.length))
         } catch (err) {
-          this.context.stdout.write(`${red('[Error]')} Couldn't fetch Lambda functions. ${err}\n`)
+          spinner.fail(renderFailedFetchingLambdaConfigurationsFromRegion(region))
+          this.context.stdout.write(renderCouldntFetchLambdaFunctionsError(err))
 
           return 1
         }
@@ -164,23 +197,26 @@ export class UninstrumentCommand extends Command {
 
     const willUpdate = willUpdateFunctionConfigs(configList)
     if (this.interactive && willUpdate) {
-      this.context.stdout.write(`${yellow('[!]')} Confirmation needed.\n`)
+      this.context.stdout.write(renderConfirmationNeededSoftWarning())
       const isConfirmed = await requestChangesConfirmation('Do you want to apply the changes?')
       if (!isConfirmed) {
         return 0
       }
-      this.context.stdout.write(`${yellow('[!]')} Uninstrumenting functions.\n`)
+      this.context.stdout.write(renderUninstrumentingFunctionsSoftWarning())
     }
 
     // Un-instrument functions.
     const promises = Object.values(configGroups).map((group) => {
       updateLambdaFunctionConfigs(group.lambda, group.cloudWatchLogs, group.configs)
     })
-
+    const spinner = updatingFunctionsSpinner(promises.length)
+    spinner.start()
     try {
       await Promise.all(promises)
+      spinner.succeed(renderUpdatedLambdaFunctions(promises.length))
     } catch (err) {
-      this.context.stdout.write(`${red('[Error]')} Failure during un-instrumentation. ${err}`)
+      this.context.stdout.write(renderFailureDuringUpdateError(err))
+      spinner.fail(renderFailedUpdatingLambdaFunctions())
 
       return 1
     }
@@ -189,22 +225,20 @@ export class UninstrumentCommand extends Command {
   }
 
   private printPlannedActions(configs: FunctionConfiguration[]) {
-    const prefix = this.dryRun ? bold(cyan('[Dry Run] ')) : ''
-
     const willUpdate = willUpdateFunctionConfigs(configs)
 
     if (!willUpdate) {
-      this.context.stdout.write(`${prefix}No updates will be applied\n`)
+      this.context.stdout.write(renderNoUpdatesApplied(this.dryRun))
 
       return
     }
 
-    this.context.stdout.write(`\n${bold(yellow('[!]'))} Functions to be updated:\n`)
+    this.context.stdout.write(renderFunctionsToBeUpdated())
     for (const config of configs) {
       this.context.stdout.write(`\t- ${bold(config.functionARN)}\n`)
     }
 
-    this.context.stdout.write(`\n${prefix}Will apply the following updates:\n`)
+    this.context.stdout.write(renderWillApplyUpdates(this.dryRun))
     for (const config of configs) {
       if (config.updateRequest) {
         this.context.stdout.write(
