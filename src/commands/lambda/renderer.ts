@@ -437,7 +437,7 @@ export const fetchingFunctionsSpinner = () =>
   ora({
     color: 'magenta',
     discardStdin: false,
-    text: `Fetching ${hex('#FF9900').bold('Lambda')} functions.\n ${__dirname} ${__filename}`,
+    text: `Fetching ${hex('#FF9900').bold('Lambda')} functions.\n`,
   })
 
 /**
