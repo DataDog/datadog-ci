@@ -89,7 +89,8 @@ describe('uninstrument', () => {
       const output = context.stdout.toString()
       expect(code).toBe(0)
       expect(output).toMatchInlineSnapshot(`
-"\n[!] Functions to be updated:
+"\n[Dry Run] 🐶 Uninstrumenting Lambda function
+\n[!] Functions to be updated:
 \t- arn:aws:lambda:us-east-1:000000000000:function:uninstrument\n
 [Dry Run] Will apply the following updates:
 UpdateFunctionConfiguration -> arn:aws:lambda:us-east-1:000000000000:function:uninstrument
@@ -189,9 +190,10 @@ UpdateFunctionConfiguration -> arn:aws:lambda:us-east-1:000000000000:function:un
       const output = context.stdout.toString()
       expect(code).toBe(1)
       expect(output).toMatchInlineSnapshot(`
-        "[Error] No functions specified for un-instrumentation.
-        "
-      `)
+"\n🐶 Uninstrumenting Lambda function
+[Error] No functions specified to remove instrumentation.
+"
+`)
     })
     test('aborts early when no functions are specified while using config file', async () => {
       ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({}))
@@ -202,9 +204,10 @@ UpdateFunctionConfiguration -> arn:aws:lambda:us-east-1:000000000000:function:un
       await command['execute']()
       const output = command.context.stdout.toString()
       expect(output).toMatchInlineSnapshot(`
-        "[Error] No functions specified for un-instrumentation.
-        "
-      `)
+"\n🐶 Uninstrumenting Lambda function
+[Error] No functions specified to remove instrumentation.
+"
+`)
     })
     test('aborts if functions and a pattern are set at the same time', async () => {
       ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({}))
@@ -267,7 +270,7 @@ UpdateFunctionConfiguration -> arn:aws:lambda:us-east-1:000000000000:function:un
       const output = command.context.stdout.toString()
       expect(code).toBe(1)
       expect(output).toMatch(
-        "Fetching Lambda functions, this might take a while.\n[Error] Couldn't fetch Lambda functions. Error: Max retry count exceeded. ListFunctionsError\n"
+        "\n[Error] Couldn't fetch Lambda functions. Error: Max retry count exceeded. ListFunctionsError\n"
       )
     })
 
@@ -363,9 +366,9 @@ UpdateFunctionConfiguration -> arn:aws:lambda:us-east-1:000000000000:function:un
       const output = context.stdout.toString()
       expect(code).toBe(0)
       expect(output).toMatchInlineSnapshot(`
-"[!] No AWS credentials found, let's set them up! Or you can re-run the command and supply the AWS credentials in the same way when you invoke the AWS CLI.
-Fetching Lambda functions, this might take a while.\n
-[!] Functions to be updated:
+"\n🐶 Uninstrumenting Lambda function
+[!] No AWS credentials found, let's set them up! Or you can re-run the command and supply the AWS credentials in the same way when you invoke the AWS CLI.
+\n[!] Functions to be updated:
 \t- arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world
 \t- arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world-2\n
 Will apply the following updates:
@@ -498,7 +501,8 @@ UpdateFunctionConfiguration -> arn:aws:lambda:sa-east-1:123456789012:function:la
       const output = context.stdout.toString()
       expect(code).toBe(0)
       expect(output).toMatchInlineSnapshot(`
-"[!] No AWS credentials found, let's set them up! Or you can re-run the command and supply the AWS credentials in the same way when you invoke the AWS CLI.\n
+"\n🐶 Uninstrumenting Lambda function
+[!] No AWS credentials found, let's set them up! Or you can re-run the command and supply the AWS credentials in the same way when you invoke the AWS CLI.\n
 [!] Functions to be updated:
 \t- arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world
 \t- arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world-2\n
@@ -538,7 +542,8 @@ UpdateFunctionConfiguration -> arn:aws:lambda:sa-east-1:123456789012:function:la
       const output = context.stdout.toString()
       expect(code).toBe(1)
       expect(output).toMatchInlineSnapshot(`
-"[!] No AWS credentials found, let's set them up! Or you can re-run the command and supply the AWS credentials in the same way when you invoke the AWS CLI.
+"\n🐶 Uninstrumenting Lambda function
+[!] No AWS credentials found, let's set them up! Or you can re-run the command and supply the AWS credentials in the same way when you invoke the AWS CLI.
 [Error] Unexpected error
 "
 `)
@@ -558,7 +563,7 @@ UpdateFunctionConfiguration -> arn:aws:lambda:sa-east-1:123456789012:function:la
       const output = context.stdout.toString()
       expect(code).toBe(1)
       expect(output).toMatchInlineSnapshot(`
-"Fetching Lambda functions, this might take a while.
+"\n🐶 Uninstrumenting Lambda function
 [Error] Couldn't find any Lambda functions in the specified region.
 "
 `)
@@ -581,7 +586,7 @@ UpdateFunctionConfiguration -> arn:aws:lambda:sa-east-1:123456789012:function:la
       const output = context.stdout.toString()
       expect(code).toBe(1)
       expect(output).toMatchInlineSnapshot(`
-"Fetching Lambda functions, this might take a while.
+"\n🐶 Uninstrumenting Lambda function
 [Error] Couldn't fetch Lambda functions. Error: Max retry count exceeded. ListFunctionsError
 "
 `)
@@ -596,7 +601,8 @@ UpdateFunctionConfiguration -> arn:aws:lambda:sa-east-1:123456789012:function:la
       command['printPlannedActions']([])
       const output = command.context.stdout.toString()
       expect(output).toMatchInlineSnapshot(`
-       "No updates will be applied
+       "
+       No updates will be applied.
        "
       `)
     })
