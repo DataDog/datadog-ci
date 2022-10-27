@@ -38,13 +38,13 @@ jest.mock('path', () => {
   }
 })
 
-import deepExtend from 'deep-extend'
-import * as fs from 'fs'
-
-import {AxiosError, default as axios} from 'axios'
 import child_process from 'child_process'
-import glob from 'glob'
+import * as fs from 'fs'
 import process from 'process'
+
+import {default as axios} from 'axios'
+import deepExtend from 'deep-extend'
+import glob from 'glob'
 
 process.env.DATADOG_SYNTHETICS_CI_TRIGGER_APP = 'env_default'
 
@@ -53,17 +53,17 @@ import {Metadata} from '../../../helpers/interfaces'
 import * as ciUtils from '../../../helpers/utils'
 
 import {apiConstructor, APIHelper} from '../api'
+import {DEFAULT_COMMAND_CONFIG, MAX_TESTS_TO_TRIGGER} from '../command'
 import {CiError} from '../errors'
 import {Batch, ExecutionRule, PollResult, Result, ServerResult, Test, Trigger, UserConfigOverride} from '../interfaces'
-import * as utils from '../utils'
-
-import {DEFAULT_COMMAND_CONFIG, MAX_TESTS_TO_TRIGGER} from '../command'
 import * as mobile from '../mobile'
+import * as utils from '../utils'
 
 import {
   ciConfig,
   getApiResult,
   getApiTest,
+  getAxiosHttpError,
   getBatch,
   getBrowserServerResult,
   getResults,
@@ -262,17 +262,8 @@ describe('utils', () => {
     })
 
     test('triggerTests throws', async () => {
-      const serverError = new Error('Server Error') as AxiosError
-      Object.assign(serverError, {
-        config: {baseURL: 'baseURL', url: 'url'},
-        response: {
-          data: {errors: []},
-          status: 502,
-        },
-      })
-
       jest.spyOn(api, 'triggerTests').mockImplementation(() => {
-        throw serverError
+        throw getAxiosHttpError(502, {message: 'Server Error'})
       })
 
       await expect(
@@ -313,9 +304,7 @@ describe('utils', () => {
           return {data: fakeTests[publicId]}
         }
 
-        const error = new Error('Not found')
-        ;((error as unknown) as {status: number}).status = 404
-        throw error
+        throw getAxiosHttpError(404, {errors: ['Not found']})
       }) as any)
     })
 
@@ -407,6 +396,23 @@ describe('utils', () => {
     })
   })
 
+  describe('getTestAndOverrideConfig', () => {
+    beforeEach(() => {
+      const axiosMock = jest.spyOn(axios, 'create')
+      axiosMock.mockImplementation((() => (e: any) => {
+        throw getAxiosHttpError(403, {message: 'Forbidden'})
+      }) as any)
+    })
+
+    test('Forbidden error when getting a test', async () => {
+      const triggerConfig = {suite: 'Suite 1', config: {}, id: '123-456-789'}
+
+      await expect(() =>
+        utils.getTestAndOverrideConfig(api, triggerConfig, mockReporter, getSummary())
+      ).rejects.toThrow('Failed to get test: could not query https://app.datadoghq.com/example\nForbidden\n')
+    })
+  })
+
   describe('getOverriddenConfig', () => {
     test('empty config returns simple payload', () => {
       const publicId = 'abc-def-ghi'
@@ -467,36 +473,6 @@ describe('utils', () => {
       expectHandledConfigToBe(SKIPPED, SKIPPED, NON_BLOCKING)
     })
 
-    test('startUrl template is rendered if correct test type or subtype', () => {
-      const publicId = 'abc-def-ghi'
-      const fakeTest = {
-        config: {request: {url: 'http://example.org/path#target'}},
-        public_id: publicId,
-        type: 'browser',
-      } as Test
-      const configOverride = {
-        startUrl: 'https://{{DOMAIN}}/newPath?oldPath={{ PATHNAME   }}{{HASH}}',
-      }
-      const expectedUrl = 'https://example.org/newPath?oldPath=/path#target'
-
-      let overriddenConfig = utils.getOverriddenConfig(fakeTest, publicId, mockReporter, configOverride)
-      expect(overriddenConfig.public_id).toBe(publicId)
-      expect(overriddenConfig.startUrl).toBe(expectedUrl)
-
-      fakeTest.type = 'api'
-      fakeTest.subtype = 'http'
-
-      overriddenConfig = utils.getOverriddenConfig(fakeTest, publicId, mockReporter, configOverride)
-      expect(overriddenConfig.public_id).toBe(publicId)
-      expect(overriddenConfig.startUrl).toBe(expectedUrl)
-
-      fakeTest.subtype = 'dns'
-
-      overriddenConfig = utils.getOverriddenConfig(fakeTest, publicId, mockReporter, configOverride)
-      expect(overriddenConfig.public_id).toBe(publicId)
-      expect(overriddenConfig.startUrl).toBeUndefined()
-    })
-
     test('startUrl is not parsable', () => {
       const envVars = {...process.env}
       process.env = {CUSTOMVAR: '/newPath'}
@@ -507,31 +483,14 @@ describe('utils', () => {
         type: 'browser',
       } as Test
       const configOverride = {
-        startUrl: 'https://{{DOMAIN}}/newPath?oldPath={{CUSTOMVAR}}',
+        startUrl: 'https://{{FAKE_VAR}}/newPath?oldPath={{CUSTOMVAR}}',
       }
-      const expectedUrl = 'https://{{DOMAIN}}/newPath?oldPath=/newPath'
+      const expectedUrl = 'https://{{FAKE_VAR}}/newPath?oldPath=/newPath'
       const overriddenConfig = utils.getOverriddenConfig(fakeTest, publicId, mockReporter, configOverride)
 
       expect(overriddenConfig.public_id).toBe(publicId)
       expect(overriddenConfig.startUrl).toBe(expectedUrl)
       process.env = envVars
-    })
-
-    test('startUrl with empty variable is replaced', () => {
-      const publicId = 'abc-def-ghi'
-      const fakeTest = {
-        config: {request: {url: 'http://exmaple.org/path'}},
-        public_id: publicId,
-        type: 'browser',
-      } as Test
-      const configOverride = {
-        startUrl: 'http://127.0.0.1/newPath{{PARAMS}}',
-      }
-      const expectedUrl = 'http://127.0.0.1/newPath'
-      const overriddenConfig = utils.getOverriddenConfig(fakeTest, publicId, mockReporter, configOverride)
-
-      expect(overriddenConfig.public_id).toBe(publicId)
-      expect(overriddenConfig.startUrl).toBe(expectedUrl)
     })
 
     test('config overrides are applied', () => {
@@ -978,13 +937,15 @@ describe('utils', () => {
     test('pollResults throws', async () => {
       const {pollResultsMock} = mockApi({
         pollResultsImplementation: () => {
-          throw new Error('Poll results server error')
+          throw getAxiosHttpError(502, {message: 'Poll results server error'})
         },
       })
 
       await expect(
         utils.waitForResults(api, trigger, [result.test], {maxPollingTimeout: 2000}, mockReporter)
-      ).rejects.toThrowError('Failed to poll results: Poll results server error')
+      ).rejects.toThrowError(
+        'Failed to poll results: could not query https://app.datadoghq.com/example\nPoll results server error\n'
+      )
 
       expect(pollResultsMock).toHaveBeenCalledWith([result.resultId])
     })
@@ -992,13 +953,15 @@ describe('utils', () => {
     test('getBatch throws', async () => {
       const {getBatchMock} = mockApi({
         getBatchImplementation: () => {
-          throw new Error('Get batch server error')
+          throw getAxiosHttpError(502, {message: 'Get batch server error'})
         },
       })
 
       await expect(
         utils.waitForResults(api, trigger, [result.test], {maxPollingTimeout: 2000}, mockReporter)
-      ).rejects.toThrowError('Failed to get batch: Get batch server error')
+      ).rejects.toThrowError(
+        'Failed to get batch: could not query https://app.datadoghq.com/example\nGet batch server error\n'
+      )
 
       expect(getBatchMock).toHaveBeenCalledWith(trigger.batch_id)
     })

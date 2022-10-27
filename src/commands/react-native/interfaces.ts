@@ -31,13 +31,13 @@ export class RNSourcemap {
       ['source_map', {value: fs.createReadStream(this.sourcemapPath), options: {filename: 'source_map'}}],
       ['minified_file', {value: fs.createReadStream(this.bundlePath), options: {filename: 'minified_file'}}],
     ])
-    if (this.gitData !== undefined && this.gitData!.gitRepositoryPayload !== undefined) {
+    if (this.gitData !== undefined && this.gitData.gitRepositoryPayload !== undefined) {
       content.set('repository', {
         options: {
           contentType: 'application/json',
           filename: 'repository',
         },
-        value: this.gitData!.gitRepositoryPayload,
+        value: this.gitData.gitRepositoryPayload,
       })
     }
 

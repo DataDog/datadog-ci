@@ -1,5 +1,7 @@
 import {Writable} from 'stream'
 
+import type {TunnelReporter} from '../tunnel/tunnel'
+
 import chalk from 'chalk'
 import {BaseContext} from 'clipanion'
 import ora from 'ora'
@@ -381,3 +383,9 @@ export class DefaultReporter implements MainReporter {
     return
   }
 }
+
+export const getTunnelReporter = (reporter: MainReporter): TunnelReporter => ({
+  log: (message) => reporter.log(`[${chalk.bold.blue('Tunnel')}] ${message}\n`),
+  error: (message) => reporter.error(`[${chalk.bold.yellow('Tunnel')}] ${message}\n`),
+  warn: (message) => reporter.error(`[${chalk.bold.red('Tunnel')}] ${message}\n`),
+})

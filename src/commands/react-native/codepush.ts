@@ -1,7 +1,8 @@
 import {exec} from 'child_process'
-import {Cli, Command} from 'clipanion'
-import {CodepushHistoryCommandError, CodepushHistoryParseError, NoCodepushReleaseError} from './errors'
 
+import {Cli, Command} from 'clipanion'
+
+import {CodepushHistoryCommandError, CodepushHistoryParseError, NoCodepushReleaseError} from './errors'
 import {RNPlatform, RN_SUPPORTED_PLATFORMS} from './interfaces'
 import {UploadCommand} from './upload'
 

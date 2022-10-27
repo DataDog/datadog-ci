@@ -10,6 +10,7 @@ import {RequestBuilder} from '../../helpers/interfaces'
 import {getMetricsLogger, MetricsLogger} from '../../helpers/metrics'
 import {upload, UploadStatus} from '../../helpers/upload'
 import {DEFAULT_CONFIG_PATH, getRequestBuilder, resolveConfigFromFile} from '../../helpers/utils'
+
 import {RNPlatform, RNSourcemap, RN_SUPPORTED_PLATFORMS} from './interfaces'
 import {
   renderCommandInfo,
@@ -186,7 +187,7 @@ export class UploadCommand extends Command {
     try {
       const repositoryData = await getRepositoryData(await newSimpleGit(), this.repositoryURL)
       payloads.forEach((payload) => {
-        const repositoryPayload = this.getRepositoryPayload(repositoryData!, payload.sourcemapPath)
+        const repositoryPayload = this.getRepositoryPayload(repositoryData, payload.sourcemapPath)
         payload.addRepositoryData({
           gitCommitSha: repositoryData.hash,
           gitRepositoryPayload: repositoryPayload,
@@ -251,7 +252,7 @@ export class UploadCommand extends Command {
     }
 
     return getRequestBuilder({
-      apiKey: this.config.apiKey!,
+      apiKey: this.config.apiKey,
       baseUrl: getBaseSourcemapIntakeUrl(this.config.datadogSite),
       headers: new Map([
         ['DD-EVP-ORIGIN', 'datadog-ci react-native'],

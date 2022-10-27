@@ -3,6 +3,8 @@ import {Command} from 'clipanion'
 import deepExtend from 'deep-extend'
 
 import {removeUndefinedValues, resolveConfigFromFile} from '../../helpers/utils'
+import {isValidDatadogSite} from '../../helpers/validation'
+
 import {CiError, CriticalError} from './errors'
 import {CommandConfig, MainReporter, Reporter, Result, Summary} from './interfaces'
 import {DefaultReporter} from './reporters/default'
@@ -59,7 +61,17 @@ export class RunTestCommand extends Command {
     if (this.jUnitReport) {
       reporters.push(new JUnitReporter(this))
     }
-    await this.resolveConfig()
+
+    try {
+      await this.resolveConfig()
+    } catch (error) {
+      if (error instanceof CiError) {
+        this.reportCiError(error, this.reporter)
+      }
+
+      return 1
+    }
+
     const startTime = Date.now()
     if (this.config.tunnel) {
       this.reporter.log(
@@ -113,6 +125,9 @@ export class RunTestCommand extends Command {
       case 'AUTHORIZATION_ERROR':
         reporter.error(`\n${chalk.bgRed.bold(' ERROR: authorization error ')}\n${error.message}\n\n`)
         reporter.log('Credentials refused, make sure `apiKey`, `appKey` and `datadogSite` are correct.\n')
+        break
+      case 'INVALID_CONFIG':
+        reporter.error(`\n${chalk.bgRed.bold(' ERROR: invalid config ')}\n${error.message}\n\n`)
         break
       case 'MISSING_APP_KEY':
         reporter.error(`Missing ${chalk.red.bold('DATADOG_APP_KEY')} in your environment.\n`)
@@ -208,6 +223,15 @@ export class RunTestCommand extends Command {
     if (typeof this.config.files === 'string') {
       this.reporter!.log('[DEPRECATED] "files" should be an array of string instead of a string.\n')
       this.config.files = [this.config.files]
+    }
+
+    if (!isValidDatadogSite(this.config.datadogSite)) {
+      throw new CiError(
+        'INVALID_CONFIG',
+        `The \`datadogSite\` config property (${JSON.stringify(
+          this.config.datadogSite
+        )}) must match one of the sites supported by Datadog.\nFor more information, see "Site parameter" in our documentation: https://docs.datadoghq.com/getting_started/site/#access-the-datadog-site`
+      )
     }
   }
 }

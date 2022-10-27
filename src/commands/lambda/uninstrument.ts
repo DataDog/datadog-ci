@@ -1,7 +1,9 @@
 import {CloudWatchLogs, Lambda} from 'aws-sdk'
 import {bold} from 'chalk'
 import {Command} from 'clipanion'
+
 import {resolveConfigFromFile} from '../../helpers/utils'
+
 import {AWS_DEFAULT_REGION_ENV_VAR} from './constants'
 import {
   collectFunctionsByRegion,
@@ -147,7 +149,7 @@ export class UninstrumentCommand extends Command {
           lambda,
           cloudWatchLogs,
           this.regExPattern!,
-          this.forwarder!
+          this.forwarder
         )
         spinner.succeed(renderFetchedLambdaFunctions(configs.length))
 
@@ -206,9 +208,9 @@ export class UninstrumentCommand extends Command {
     }
 
     // Un-instrument functions.
-    const promises = Object.values(configGroups).map((group) => {
+    const promises = Object.values(configGroups).map((group) =>
       updateLambdaFunctionConfigs(group.lambda, group.cloudWatchLogs, group.configs)
-    })
+    )
     const spinner = updatingFunctionsSpinner(promises.length)
     spinner.start()
     try {

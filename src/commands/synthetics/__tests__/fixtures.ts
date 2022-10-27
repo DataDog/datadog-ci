@@ -1,6 +1,7 @@
 import * as http from 'http'
 import {URL} from 'url'
 
+import {AxiosError, AxiosResponse} from 'axios'
 import WebSocket, {Server as WebSocketServer} from 'ws'
 
 import {ProxyConfiguration} from '../../../helpers/utils'
@@ -76,6 +77,14 @@ export const ciConfig: CommandConfig = {
   subdomain: 'app',
   tunnel: false,
   variableStrings: [],
+}
+
+export const getAxiosHttpError = (status: number, {errors, message}: {errors?: string[]; message?: string}) => {
+  const serverError = new Error(message) as AxiosError
+  serverError.config = {baseURL: MOCK_BASE_URL, url: 'example'}
+  serverError.response = {data: {errors}, status} as AxiosResponse
+
+  return serverError
 }
 
 export const getApiTest = (publicId = 'abc-def-ghi', opts: Partial<Test> = {}): Test => ({
@@ -356,6 +365,7 @@ export const getSyntheticsProxy = () => {
 
   const wss = new WebSocketServer({noServer: true})
 
+  // eslint-disable-next-line prefer-const
   let port: number
   const server = http.createServer({}, (request, response) => {
     const mockResponse = (call: jest.Mock, responseData: any) => {

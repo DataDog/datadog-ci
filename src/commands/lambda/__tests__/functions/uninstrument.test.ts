@@ -1,4 +1,6 @@
 jest.mock('../../loggroup')
+jest.mock('../../renderer')
+
 import {
   API_KEY_ENV_VAR,
   API_KEY_SECRET_ARN_ENV_VAR,
@@ -24,9 +26,9 @@ import {
   getUninstrumentedFunctionConfigs,
   getUninstrumentedFunctionConfigsFromRegEx,
 } from '../../functions/uninstrument'
-import {makeMockCloudWatchLogs, makeMockLambda} from '../fixtures'
-
 import * as loggroup from '../../loggroup'
+
+import {makeMockCloudWatchLogs, makeMockLambda} from '../fixtures'
 
 describe('uninstrument', () => {
   describe('calculateUpdateRequest', () => {
@@ -66,7 +68,7 @@ describe('uninstrument', () => {
         lambda as any,
         'arn:aws:lambda:us-east-1:000000000000:function:uninstrument'
       )
-      const updateRequest = await calculateUpdateRequest(config, config!.Runtime as any)
+      const updateRequest = calculateUpdateRequest(config, config.Runtime as any)
       expect(updateRequest).toMatchInlineSnapshot(`
         Object {
           "Environment": Object {
@@ -97,7 +99,7 @@ describe('uninstrument', () => {
         lambda as any,
         'arn:aws:lambda:us-east-1:000000000000:function:uninstrument'
       )
-      const updateRequest = await calculateUpdateRequest(config, config!.Runtime as any)
+      const updateRequest = calculateUpdateRequest(config, config.Runtime as any)
       expect(updateRequest).toMatchInlineSnapshot(`
         Object {
           "Environment": Object {
@@ -140,7 +142,7 @@ describe('uninstrument', () => {
         lambda as any,
         'arn:aws:lambda:us-east-1:000000000000:function:uninstrument'
       )
-      const updateRequest = await calculateUpdateRequest(config, config!.Runtime as any)
+      const updateRequest = calculateUpdateRequest(config, config.Runtime as any)
       expect(updateRequest).toMatchInlineSnapshot(`
         Object {
           "Environment": Object {

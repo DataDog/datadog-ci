@@ -2,7 +2,7 @@ import {AxiosError, AxiosResponse, default as axios} from 'axios'
 
 import {ProxyConfiguration} from '../../../helpers/utils'
 
-import {apiConstructor, getApiHelper} from '../api'
+import {apiConstructor, formatBackendErrors, getApiHelper} from '../api'
 import {MAX_TESTS_TO_TRIGGER} from '../command'
 import {CriticalError} from '../errors'
 import {APIConfiguration, ExecutionRule, PollResult, ServerResult, TestPayload, Trigger} from '../interfaces'
@@ -10,6 +10,7 @@ import {APIConfiguration, ExecutionRule, PollResult, ServerResult, TestPayload, 
 import {
   ciConfig,
   getApiTest,
+  getAxiosHttpError,
   getSyntheticsProxy,
   MOBILE_PRESIGNED_URL_PAYLOAD,
   mockSearchResponse,
@@ -296,5 +297,31 @@ describe('getApiHelper', () => {
     expect(() => getApiHelper(ciConfig)).toThrow(new CriticalError('MISSING_APP_KEY'))
 
     expect(() => getApiHelper({...ciConfig, appKey: 'fakeappkey'})).toThrow(new CriticalError('MISSING_API_KEY'))
+  })
+})
+
+describe('formatBackendErrors', () => {
+  test('backend error - no error', () => {
+    const backendError = getAxiosHttpError(500, {errors: []})
+    expect(formatBackendErrors(backendError)).toBe('error querying https://app.datadoghq.com/example')
+  })
+
+  test('backend error - single error', () => {
+    const backendError = getAxiosHttpError(500, {errors: ['single error']})
+    expect(formatBackendErrors(backendError)).toBe(
+      'query on https://app.datadoghq.com/example returned: "single error"'
+    )
+  })
+
+  test('backend error - multiple errors', () => {
+    const backendError = getAxiosHttpError(500, {errors: ['error 1', 'error 2']})
+    expect(formatBackendErrors(backendError)).toBe(
+      'query on https://app.datadoghq.com/example returned:\n  - error 1\n  - error 2'
+    )
+  })
+
+  test('not a backend error', () => {
+    const requestError = getAxiosHttpError(403, {message: 'Forbidden'})
+    expect(formatBackendErrors(requestError)).toBe('could not query https://app.datadoghq.com/example\nForbidden')
   })
 })

@@ -1,10 +1,13 @@
-import chalk from 'chalk'
 import {spawn} from 'child_process'
-import {Command} from 'clipanion'
 import crypto from 'crypto'
 import os from 'os'
+
+import chalk from 'chalk'
+import {Command} from 'clipanion'
+
 import {retryRequest} from '../../helpers/retry'
 import {parseTags} from '../../helpers/tags'
+
 import {apiConstructor} from './api'
 import {APIHelper, CIRCLECI, JENKINS, Payload, Provider, SUPPORTED_PROVIDERS} from './interfaces'
 

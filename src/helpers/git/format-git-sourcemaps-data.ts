@@ -1,5 +1,7 @@
 import fs from 'fs'
+
 import * as simpleGit from 'simple-git'
+
 import {gitHash, gitRemote, gitTrackedFiles} from './get-git-data'
 
 // Returns a configured SimpleGit.
@@ -31,13 +33,13 @@ export interface RepositoryData {
 
 // Returns the current hash and remote as well as a TrackedFilesMatcher.
 //
-// To obtain the list of tracked files paths tied to a specific sourcemap, invoke the 'matchSourcemap' methid.
+// To obtain the list of tracked files paths tied to a specific sourcemap, invoke the 'matchSourcemap' method.
 export const getRepositoryData = async (
   git: simpleGit.SimpleGit,
   repositoryURL: string | undefined
 ): Promise<RepositoryData> => {
   // Invoke git commands to retrieve the remote, hash and tracked files.
-  // We're using Promise.all instead of Promive.allSettled since we want to fail early if
+  // We're using Promise.all instead of Promise.allSettled since we want to fail early if
   // any of the promises fails.
   let remote: string
   let hash: string
@@ -106,7 +108,7 @@ export class TrackedFilesMatcher {
   }
 
   public matchSources(sources: string[]): string[] {
-    let filtered: string[] = new Array()
+    let filtered: string[] = []
     const filenameAlreadyMatched = new Set<string>()
     for (const source of sources) {
       const filename = this.getFilename(source)
@@ -136,7 +138,7 @@ export class TrackedFilesMatcher {
   // Extract the filename from a path.
   //
   // We are removing any suffix that is after the character '?'. The only reason this is done
-  // is because we noticed that a non-negligable (~5%) amount of source paths from our customers
+  // is because we noticed that a non-negligible (~5%) amount of source paths from our customers
   // source maps contained query parameters.
   // We are assuming that the files may not actually be named with the interrogation mark but that
   // it is only an artifact of the build process. The query parameters look random. It looks

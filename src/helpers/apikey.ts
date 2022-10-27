@@ -64,7 +64,7 @@ class ApiKeyValidatorImplem {
       this.isValid = await this.validateApiKey()
     }
 
-    return this.isValid!
+    return this.isValid
   }
 
   private async validateApiKey(): Promise<boolean> {

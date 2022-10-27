@@ -2,7 +2,8 @@ import {timingSafeEqual} from 'crypto'
 import {Socket} from 'net'
 import {Duplex, pipeline} from 'stream'
 
-import chalk from 'chalk'
+import type ProxyAgent from 'proxy-agent'
+
 import {
   AuthContext,
   Connection as SSHConnection,
@@ -12,16 +13,14 @@ import {
 } from 'ssh2'
 import {ParsedKey} from 'ssh2-streams'
 import {Config as MultiplexerConfig, Server as Multiplexer} from 'yamux-js'
-// tslint:disable-next-line:no-var-requires - SW-1310
-const {KexInit} = require('ssh2/lib/protocol/kex')
-// tslint:disable-next-line:no-var-requires - SW-1310
-const SSH_CONSTANTS = require('ssh2/lib/protocol/constants')
-
-import {ProxyConfiguration} from '../../helpers/utils'
 
 import {generateOpenSSHKeys, parseSSHKey} from './crypto'
-import {MainReporter} from './interfaces'
 import {WebSocket} from './websocket'
+
+// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-var-requires -- SW-1310
+const SSH_CONSTANTS = require('ssh2/lib/protocol/constants')
+// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-var-requires -- SW-1310
+const {KexInit} = require('ssh2/lib/protocol/kex')
 
 export interface TunnelInfo {
   host: string
@@ -29,24 +28,30 @@ export interface TunnelInfo {
   privateKey: string
 }
 
+export interface TunnelReporter {
+  error(message: string): void
+  log(message: string): void
+  warn(message: string): void
+}
+
 export class Tunnel {
-  private connected = false
-  private forwardedSockets: Set<Socket> = new Set()
   private FORWARDING_TIMEOUT = 40000 as const
-  private log: (message: string) => void
-  private logError: (message: string) => void
-  private logWarning: (message: string) => void
-  private multiplexer?: Multiplexer
+
+  private sshConfig: ServerConfig
   private privateKey: string
   private publicKey: ParsedKey
-  private sshConfig: ServerConfig
+
+  private connected = false
   private ws: WebSocket
+  private multiplexer?: Multiplexer
+  private forwardedSockets: Set<Socket> = new Set()
 
-  constructor(private url: string, private testIDs: string[], proxy: ProxyConfiguration, reporter: MainReporter) {
-    this.log = (message: string) => reporter.log(`[${chalk.bold.blue('Tunnel')}] ${message}\n`)
-    this.logError = (message: string) => reporter.error(`[${chalk.bold.red('Tunnel')}] ${message}\n`)
-    this.logWarning = (message: string) => reporter.log(`[${chalk.bold.yellow('Tunnel')}] ${message}\n`)
-
+  constructor(
+    private url: string,
+    private testIDs: string[],
+    proxyAgent?: ReturnType<typeof ProxyAgent>,
+    private reporter?: TunnelReporter
+  ) {
     // Setup SSH
     const {privateKey: hostPrivateKey} = generateOpenSSHKeys()
     const parsedHostPrivateKey = parseSSHKey(hostPrivateKey)
@@ -64,14 +69,14 @@ export class Tunnel {
       hostKeys: [hostPrivateKey],
     }
 
-    this.ws = new WebSocket(this.url, proxy)
+    this.ws = new WebSocket(this.url, proxyAgent)
   }
 
   /**
    * keepAlive will return a promise that tracks the state of the tunnel (and reject in case of error)
    */
-  public async keepAlive() {
-    if (!this.ws || !this.ws.keepAlive()) {
+  public async keepAlive(): Promise<void> {
+    if (!this.ws) {
       throw new Error('No WebSocket connection')
     }
 
@@ -84,10 +89,10 @@ export class Tunnel {
    *   - Set up SSH
    *   - establish a WebSocket connection to the tunnel service
    */
-  public async start() {
-    this.log(`Opening tunnel for ${chalk.bold.dim(...this.testIDs)}…`)
+  public async start(): Promise<TunnelInfo> {
+    this.reporter?.log(`Opening tunnel for ${this.testIDs.length} tests…`)
 
-    this.log('Generating encryption key, setting up SSH and opening WebSocket connection…')
+    this.reporter?.log('Generating encryption key, setting up SSH and opening WebSocket connection…')
     try {
       // Establish a WebSocket connection to the tunnel service
       await this.ws.connect()
@@ -97,7 +102,7 @@ export class Tunnel {
 
       return connectionInfo
     } catch (err) {
-      this.logError('Tunnel setup failed, cleaning up and exiting…')
+      this.reporter?.error('Tunnel setup failed, cleaning up and exiting…')
       await this.stop() // Clean up
       throw err
     }
@@ -106,8 +111,8 @@ export class Tunnel {
   /**
    * stop the tunnel
    */
-  public async stop() {
-    this.log('Shutting down tunnel…')
+  public async stop(): Promise<void> {
+    this.reporter?.log('Shutting down tunnel…')
 
     this.forwardedSockets.forEach((socket) => {
       if (!!socket) {
@@ -156,7 +161,7 @@ export class Tunnel {
     if (!this.connected) {
       // Limit to one log per tunnel
       this.connected = true
-      this.log('Successfully connected')
+      this.reporter?.log('Successfully connected')
     }
     ctx.accept()
   }
@@ -178,7 +183,7 @@ export class Tunnel {
         this.forwardedSockets.add(dest)
 
         dest.on('timeout', () => {
-          this.logWarning(`Connection timeout (${destIP})`)
+          this.reporter?.warn(`Connection timeout (${destIP})`)
           if (src) {
             src.destroy()
           } else {
@@ -205,13 +210,13 @@ export class Tunnel {
         })
         dest.on('error', (error: NodeJS.ErrnoException) => {
           if (src) {
-            this.logWarning(`Error on opened connection (${destIP}): ${error.code}`)
+            this.reporter?.warn(`Error on opened connection (${destIP}): ${error.code}`)
             src.close()
           } else {
             if ('code' in error && error.code === 'ENOTFOUND') {
-              this.logWarning(`Unable to resolve host (${destIP})`)
+              this.reporter?.warn(`Unable to resolve host (${destIP})`)
             } else {
-              this.logWarning(`Connection error (${destIP}): ${error.code}`)
+              this.reporter?.warn(`Connection error (${destIP}): ${error.code}`)
             }
             reject()
 
@@ -239,7 +244,7 @@ export class Tunnel {
 
   private async forwardWebSocketToSSH(): Promise<TunnelInfo> {
     const connectionInfo = await this.getConnectionInfo()
-    this.log(`Websocket connection to tunnel ${connectionInfo.id} opened, proxy is ready!`)
+    this.reporter?.log(`Websocket connection to tunnel ${connectionInfo.id} opened, proxy is ready!`)
 
     // Stop any existing multiplexing
     if (this.multiplexer) {
@@ -255,25 +260,25 @@ export class Tunnel {
     }
     this.multiplexer = new Multiplexer((stream) => {
       stream.on('error', (error) => {
-        this.logError(`Error in multiplexing: ${error}`)
+        this.reporter?.error(`Error in multiplexing: ${error}`)
       })
 
-      this.processSSHStream(stream)
+      void this.processSSHStream(stream)
     }, multiplexerConfig)
 
     // Pipe WebSocket to multiplexing
     const duplex = this.ws.duplex()
-    this.multiplexer.on('error', (error) => this.logError(`Multiplexer error: ${error.message}`))
-    duplex.on('error', (error) => this.logError(`Websocket error: ${error.message}`))
+    this.multiplexer.on('error', (error) => this.reporter?.error(`Multiplexer error: ${error.message}`))
+    duplex.on('error', (error) => this.reporter?.error(`Websocket error: ${error.message}`))
 
     pipeline([duplex, this.multiplexer], (err) => {
       if (err) {
-        this.logWarning(`Error on duplex connection close: ${err}`)
+        this.reporter?.warn(`Error on duplex connection close: ${err}`)
       }
     })
     pipeline([this.multiplexer, duplex], (err) => {
       if (err) {
-        this.logWarning(`Error on Multiplexer connection close: ${err}`)
+        this.reporter?.warn(`Error on Multiplexer connection close: ${err}`)
       }
     })
 
@@ -345,7 +350,7 @@ export class Tunnel {
         server.close()
       })
       .on('error', (err) => {
-        this.logError(`SSH error in proxy: ${err.message}`)
+        this.reporter?.error(`SSH error in proxy: ${err.message}`)
       })
   }
 }

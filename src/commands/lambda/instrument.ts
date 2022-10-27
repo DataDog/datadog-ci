@@ -1,9 +1,12 @@
 import {CloudWatchLogs, Lambda} from 'aws-sdk'
 import {bold} from 'chalk'
 import {Cli, Command} from 'clipanion'
+
 import {resolveConfigFromFile} from '../../helpers/utils'
+
 import {getCommitInfo, newSimpleGit} from '../git-metadata/git'
 import {UploadCommand} from '../git-metadata/upload'
+
 import {
   AWS_DEFAULT_REGION_ENV_VAR,
   ENVIRONMENT_ENV_VAR,
@@ -239,13 +242,13 @@ export class InstrumentCommand extends Command {
         const configs = await getInstrumentedFunctionConfigsFromRegEx(
           lambda,
           cloudWatchLogs,
-          region!,
+          region,
           this.regExPattern!,
           settings
         )
         spinner.succeed(renderFetchedLambdaFunctions(configs.length))
 
-        configGroups.push({configs, lambda, cloudWatchLogs, region: region!})
+        configGroups.push({configs, lambda, cloudWatchLogs, region})
       } catch (err) {
         spinner.fail(renderFailedFetchingLambdaFunctions())
         this.context.stdout.write(renderCouldntFetchLambdaFunctionsError(err))
@@ -281,7 +284,7 @@ export class InstrumentCommand extends Command {
           return 1
         }
       }
-    } 
+    }
 
     const configList = configGroups.map((group) => group.configs).reduce((a, b) => a.concat(b))
 

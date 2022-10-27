@@ -1,4 +1,5 @@
 import * as path from 'path'
+
 import {getBaseSourcemapIntakeUrl} from '../../helpers/base-intake-url'
 import {RequestBuilder} from '../../helpers/interfaces'
 import {MultipartPayload, upload, UploadOptions} from '../../helpers/upload'

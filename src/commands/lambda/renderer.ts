@@ -1,5 +1,6 @@
 import {blueBright, bold, cyan, hex, red, underline, yellow} from 'chalk'
 import ora from 'ora'
+
 import {InstrumentCommand} from './instrument'
 import {UninstrumentCommand} from './uninstrument'
 
@@ -399,7 +400,8 @@ export const renderUpdatedLambdaFunctions = (functionsLength: number) =>
  * Failed fetching Lambda functions.
  * ```
  */
-export const renderFailedFetchingLambdaFunctions = () => `Failed fetching ${hex('#FF9900').bold('Lambda')} configurations.\n`
+export const renderFailedFetchingLambdaFunctions = () =>
+  `Failed fetching ${hex('#FF9900').bold('Lambda')} configurations.\n`
 
 /**
  * @param region the AWS region where the Lambda configs belong to.
@@ -410,7 +412,8 @@ export const renderFailedFetchingLambdaFunctions = () => `Failed fetching ${hex(
  * [us-east-1] Failed fetching Lambda configurations.
  * ```
  */
-export const renderFailedFetchingLambdaConfigurationsFromRegion = (region: string) => `${bold(`[${region}]`)} Failed fetching ${hex('#FF9900').bold('Lambda')} configurations.\n`
+export const renderFailedFetchingLambdaConfigurationsFromRegion = (region: string) =>
+  `${bold(`[${region}]`)} Failed fetching ${hex('#FF9900').bold('Lambda')} configurations.\n`
 
 /**
  * @returns a message indicating that it failed to update Lambda functions.
@@ -434,7 +437,7 @@ export const fetchingFunctionsSpinner = () =>
   ora({
     color: 'magenta',
     discardStdin: false,
-    text: `Fetching ${hex('#FF9900').bold('Lambda')} functions.\n`,
+    text: `Fetching ${hex('#FF9900').bold('Lambda')} functions.\n ${__dirname} ${__filename}`,
   })
 
 /**

@@ -1,7 +1,6 @@
-/* tslint:disable:no-string-literal */
-import {config as aws_sdk_config, Credentials} from 'aws-sdk'
+import {config as aws_sdk_config, Credentials, Lambda} from 'aws-sdk'
+
 jest.mock('aws-sdk')
-import {Lambda} from 'aws-sdk'
 import {
   AWS_ACCESS_KEY_ID_ENV_VAR,
   AWS_SECRET_ACCESS_KEY_ENV_VAR,
@@ -39,6 +38,7 @@ import {
 } from '../../functions/commons'
 import {InstrumentCommand} from '../../instrument'
 import {FunctionConfiguration} from '../../interfaces'
+
 import {createCommand, makeMockCloudWatchLogs, makeMockLambda, mockAwsAccount} from '../fixtures'
 
 describe('commons', () => {

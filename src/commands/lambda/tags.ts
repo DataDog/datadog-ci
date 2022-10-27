@@ -1,8 +1,8 @@
 import {Lambda} from 'aws-sdk'
+
 import {TAG_VERSION_NAME} from './constants'
 import {TagConfiguration} from './interfaces'
 
-// tslint:disable-next-line
 const {version} = require('../../../package.json')
 
 export const applyTagConfig = async (lambda: Lambda, config: TagConfiguration) => {

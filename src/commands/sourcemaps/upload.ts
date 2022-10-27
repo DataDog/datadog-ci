@@ -1,9 +1,10 @@
+import path from 'path'
+import {URL} from 'url'
+
 import chalk from 'chalk'
 import {Command} from 'clipanion'
 import glob from 'glob'
-import path from 'path'
 import asyncPool from 'tiny-async-pool'
-import {URL} from 'url'
 
 import {ApiKeyValidator, newApiKeyValidator} from '../../helpers/apikey'
 import {getBaseSourcemapIntakeUrl} from '../../helpers/base-intake-url'
@@ -12,7 +13,8 @@ import {getRepositoryData, newSimpleGit, RepositoryData} from '../../helpers/git
 import {RequestBuilder} from '../../helpers/interfaces'
 import {getMetricsLogger, MetricsLogger} from '../../helpers/metrics'
 import {upload, UploadStatus} from '../../helpers/upload'
-import {getRequestBuilder} from '../../helpers/utils'
+import {getRequestBuilder, buildPath} from '../../helpers/utils'
+
 import {Sourcemap} from './interfaces'
 import {
   renderCommandInfo,
@@ -28,8 +30,6 @@ import {
 } from './renderer'
 import {getMinifiedFilePath} from './utils'
 import {InvalidPayload, validatePayload} from './validation'
-
-import {buildPath} from '../../helpers/utils'
 
 export class UploadCommand extends Command {
   public static usage = Command.Usage({
@@ -100,7 +100,7 @@ export class UploadCommand extends Command {
     this.basePath = path.posix.normalize(this.basePath!)
     this.context.stdout.write(
       renderCommandInfo(
-        this.basePath!,
+        this.basePath,
         this.minifiedPathPrefix,
         this.projectPath,
         this.releaseVersion,
@@ -154,7 +154,7 @@ export class UploadCommand extends Command {
       const repositoryData = await getRepositoryData(await newSimpleGit(), this.repositoryURL)
       await Promise.all(
         payloads.map(async (payload) => {
-          const repositoryPayload = this.getRepositoryPayload(repositoryData!, payload.sourcemapPath)
+          const repositoryPayload = this.getRepositoryPayload(repositoryData, payload.sourcemapPath)
           payload.addRepositoryData({
             gitCommitSha: repositoryData.hash,
             gitRepositoryPayload: repositoryPayload,
@@ -237,7 +237,7 @@ export class UploadCommand extends Command {
     }
 
     return getRequestBuilder({
-      apiKey: this.config.apiKey!,
+      apiKey: this.config.apiKey,
       baseUrl: getBaseSourcemapIntakeUrl(this.config.datadogSite),
       headers: new Map([
         ['DD-EVP-ORIGIN', 'datadog-ci sourcemaps'],

@@ -8,6 +8,7 @@ import {RequestBuilder} from '../../helpers/interfaces'
 import {getMetricsLogger} from '../../helpers/metrics'
 import {UploadStatus} from '../../helpers/upload'
 import {getRequestBuilder} from '../../helpers/utils'
+
 import {datadogSite, getBaseIntakeUrl} from './api'
 import {getCommitInfo, newSimpleGit} from './git'
 import {CommitInfo} from './interfaces'
@@ -131,7 +132,7 @@ export class UploadCommand extends Command {
     }
 
     return getRequestBuilder({
-      apiKey: this.config.apiKey!,
+      apiKey: this.config.apiKey,
       baseUrl: getBaseIntakeUrl(),
       headers: new Map([
         ['DD-EVP-ORIGIN', 'datadog-ci git-metadata'],

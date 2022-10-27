@@ -46,11 +46,11 @@ export const formatBackendErrors = (requestError: AxiosError<BackendError>) => {
     } else if (errors.length) {
       return `${serverHead} "${errors[0]}"`
     } else {
-      return `error querying ${requestError.config.baseURL} ${requestError.config.url}`
+      return `error querying ${requestError.config.baseURL}${requestError.config.url}`
     }
   }
 
-  return requestError.message
+  return `could not query ${requestError.config.baseURL}${requestError.config.url}\n${requestError.message}`
 }
 
 const triggerTests = (request: (args: AxiosRequestConfig) => AxiosPromise<Trigger>) => async (data: Payload) => {
@@ -249,8 +249,8 @@ export const getApiHelper = (config: SyntheticsCIConfig): APIHelper => {
   }
 
   return apiConstructor({
-    apiKey: config.apiKey!,
-    appKey: config.appKey!,
+    apiKey: config.apiKey,
+    appKey: config.appKey,
     baseIntakeUrl: getDatadogHost({useIntake: true, apiVersion: 'v1', config}),
     baseUnstableUrl: getDatadogHost({useIntake: false, apiVersion: 'unstable', config}),
     baseUrl: getDatadogHost({useIntake: false, apiVersion: 'v1', config}),

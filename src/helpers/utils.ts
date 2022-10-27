@@ -1,17 +1,16 @@
-import {BaseContext, CommandClass} from 'clipanion'
 import fs, {existsSync} from 'fs'
 import {promisify} from 'util'
 
+import type {SpanTag, SpanTags} from './interfaces'
+
 import {AxiosRequestConfig, default as axios} from 'axios'
+import {BaseContext, CommandClass, Cli} from 'clipanion'
 import deepExtend from 'deep-extend'
 import ProxyAgent from 'proxy-agent'
 
-import {Cli} from 'clipanion/lib/advanced'
-import type {SpanTag, SpanTags} from './interfaces'
-
 export const DEFAULT_CONFIG_PATH = 'datadog-ci.json'
 
-export const pick = <T extends object, K extends keyof T>(base: T, keys: K[]) => {
+export const pick = <T extends Record<any, any>, K extends keyof T>(base: T, keys: K[]) => {
   const definedKeys = keys.filter((key) => !!base[key])
   const pickedObject: Partial<T> = {}
 
