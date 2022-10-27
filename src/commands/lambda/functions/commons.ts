@@ -177,11 +177,8 @@ export const isMissingAWSCredentials = () =>
   !aws_sdk_config.credentials
 export const isMissingDatadogSiteEnvVar = () => {
   const site = process.env[CI_SITE_ENV_VAR]
-  if (site !== undefined) {
-    return !SITES.includes(site)
-  }
 
-  return true
+  return site === undefined || !SITES.includes(site)
 }
 
 export const isMissingAnyDatadogApiKeyEnvVar = () =>
