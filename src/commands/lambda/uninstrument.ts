@@ -208,19 +208,21 @@ export class UninstrumentCommand extends Command {
     }
 
     // Un-instrument functions.
-    const promises = Object.values(configGroups).map((group) =>
-      updateLambdaFunctionConfigs(group.lambda, group.cloudWatchLogs, group.configs)
-    )
-    const spinner = updatingFunctionsSpinner(promises.length)
-    spinner.start()
-    try {
-      await Promise.all(promises)
-      spinner.succeed(renderUpdatedLambdaFunctions(promises.length))
-    } catch (err) {
-      this.context.stdout.write(renderFailureDuringUpdateError(err))
-      spinner.fail(renderFailedUpdatingLambdaFunctions())
+    if (willUpdate) {
+      const promises = Object.values(configGroups).map((group) =>
+        updateLambdaFunctionConfigs(group.lambda, group.cloudWatchLogs, group.configs)
+      )
+      const spinner = updatingFunctionsSpinner(promises.length)
+      spinner.start()
+      try {
+        await Promise.all(promises)
+        spinner.succeed(renderUpdatedLambdaFunctions(promises.length))
+      } catch (err) {
+        this.context.stdout.write(renderFailureDuringUpdateError(err))
+        spinner.fail(renderFailedUpdatingLambdaFunctions())
 
-      return 1
+        return 1
+      }
     }
 
     return 0
