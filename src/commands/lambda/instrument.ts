@@ -35,44 +35,7 @@ import {
   requestEnvServiceVersion,
   requestFunctionSelection,
 } from './prompt'
-import {
-  fetchingFunctionsConfigSpinner,
-  fetchingFunctionsSpinner,
-  renderConfigureAWSRegion,
-  renderConfigureDatadog,
-  renderConfirmationNeededSoftWarning,
-  renderCouldntFetchLambdaFunctionsError,
-  renderCouldntFindLambdaFunctionsInRegionError,
-  renderCouldntGroupFunctionsError,
-  renderEnsureToLockLayerVersionsWarning,
-  renderError,
-  renderExtensionAndForwarderOptionsBothSetError,
-  renderExtraTagsDontComplyError,
-  renderFailedFetchingLambdaConfigurationsFromRegion,
-  renderFailedFetchingLambdaFunctions,
-  renderFailedUpdatingLambdaFunctions,
-  renderFailureDuringUpdateError,
-  renderFetchedLambdaConfigurationsFromRegion,
-  renderFetchedLambdaFunctions,
-  renderFunctionsAndFunctionsRegexOptionsBothSetError,
-  renderFunctionsToBeUpdated,
-  renderInstrumentingFunctionsSoftWarning,
-  renderInstrumentInStagingFirst,
-  renderInvalidExtensionVersionError,
-  renderInvalidLayerVersionError,
-  renderInvalidStringBooleanSpecifiedError,
-  renderLambdaHeader,
-  renderMissingDatadogApiKeyError,
-  renderNoAWSCredentialsFound,
-  renderNoDefaultRegionSpecifiedError,
-  renderNoFunctionsSpecifiedError,
-  renderNoUpdatesApplied,
-  renderRegexSetWithARNError,
-  renderTagsNotConfiguredWarning,
-  renderUpdatedLambdaFunctions,
-  renderWillApplyUpdates,
-  updatingFunctionsSpinner,
-} from './renderer'
+import * as renderer from './renderer'
 
 export class InstrumentCommand extends Command {
   private captureLambdaPayload?: string
@@ -101,7 +64,7 @@ export class InstrumentCommand extends Command {
   private version?: string
 
   public async execute() {
-    this.context.stdout.write(renderLambdaHeader(Object.getPrototypeOf(this), this.dryRun))
+    this.context.stdout.write(renderer.renderLambdaHeader(Object.getPrototypeOf(this), this.dryRun))
 
     const lambdaConfig = {lambda: this.config}
     this.config = (
@@ -112,7 +75,7 @@ export class InstrumentCommand extends Command {
     if (this.interactive) {
       try {
         if (isMissingAWSCredentials()) {
-          this.context.stdout.write(renderNoAWSCredentialsFound())
+          this.context.stdout.write(renderer.renderNoAWSCredentialsFound())
           await requestAWSCredentials()
         }
 
@@ -120,16 +83,16 @@ export class InstrumentCommand extends Command {
         // not want to use the default, nonetheless,
         // we do not ask if `-r|--region` is provided.
         if (this.region === undefined && this.config.region === undefined) {
-          this.context.stdout.write(renderConfigureAWSRegion())
+          this.context.stdout.write(renderer.renderConfigureAWSRegion())
           await requestAWSRegion(process.env[AWS_DEFAULT_REGION_ENV_VAR])
         }
 
         if (isMissingDatadogEnvVars()) {
-          this.context.stdout.write(renderConfigureDatadog())
+          this.context.stdout.write(renderer.renderConfigureDatadog())
           await requestDatadogEnvVars()
         }
       } catch (e) {
-        this.context.stdout.write(renderError(e))
+        this.context.stdout.write(renderer.renderError(e))
 
         return 1
       }
@@ -141,24 +104,24 @@ export class InstrumentCommand extends Command {
       // to select from all of the functions from the
       // requested region.
       if (!hasSpecifiedFunctions) {
-        const spinner = fetchingFunctionsSpinner()
+        const spinner = renderer.fetchingFunctionsSpinner()
         try {
           const lambda = new Lambda({region})
           spinner.start()
           const functionNames =
             (await getAllLambdaFunctionConfigs(lambda)).map((config) => config.FunctionName!).sort() ?? []
           if (functionNames.length === 0) {
-            this.context.stdout.write(renderCouldntFindLambdaFunctionsInRegionError())
+            this.context.stdout.write(renderer.renderCouldntFindLambdaFunctionsInRegionError())
 
             return 1
           }
-          spinner.succeed(renderFetchedLambdaFunctions(functionNames.length))
+          spinner.succeed(renderer.renderFetchedLambdaFunctions(functionNames.length))
 
           const functions = await requestFunctionSelection(functionNames)
           this.functions = functions
         } catch (err) {
-          spinner.fail(renderFailedFetchingLambdaFunctions())
-          this.context.stdout.write(renderCouldntFetchLambdaFunctionsError(err))
+          spinner.fail(renderer.renderFailedFetchingLambdaFunctions())
+          this.context.stdout.write(renderer.renderCouldntFetchLambdaFunctionsError(err))
 
           return 1
         }
@@ -167,7 +130,7 @@ export class InstrumentCommand extends Command {
       try {
         await requestEnvServiceVersion()
       } catch (err) {
-        this.context.stdout.write(renderError(`Grabbing env, service, and version values from user. ${err}`))
+        this.context.stdout.write(renderer.renderError(`Grabbing env, service, and version values from user. ${err}`))
 
         return 1
       }
@@ -183,26 +146,26 @@ export class InstrumentCommand extends Command {
     hasSpecifiedFunctions = this.functions.length !== 0 || this.config.functions.length !== 0
     const hasSpecifiedRegExPattern = this.regExPattern !== undefined && this.regExPattern !== ''
     if (!hasSpecifiedFunctions && !hasSpecifiedRegExPattern) {
-      this.context.stdout.write(renderNoFunctionsSpecifiedError(Object.getPrototypeOf(this)))
+      this.context.stdout.write(renderer.renderNoFunctionsSpecifiedError(Object.getPrototypeOf(this)))
 
       return 1
     }
     if (settings.extensionVersion && settings.forwarderARN) {
-      this.context.stdout.write(renderExtensionAndForwarderOptionsBothSetError())
+      this.context.stdout.write(renderer.renderExtensionAndForwarderOptionsBothSetError())
 
       return 1
     }
 
     if (this.sourceCodeIntegration) {
       if (!process.env.DATADOG_API_KEY) {
-        this.context.stdout.write(renderMissingDatadogApiKeyError())
+        this.context.stdout.write(renderer.renderMissingDatadogApiKeyError())
 
         return 1
       }
       try {
         await this.getGitDataAndUpload(settings)
       } catch (err) {
-        this.context.stdout.write(renderError(err))
+        this.context.stdout.write(renderer.renderError(err))
 
         return 1
       }
@@ -217,24 +180,26 @@ export class InstrumentCommand extends Command {
 
     if (hasSpecifiedRegExPattern) {
       if (hasSpecifiedFunctions) {
-        this.context.stdout.write(renderFunctionsAndFunctionsRegexOptionsBothSetError(this.functions.length !== 0))
+        this.context.stdout.write(
+          renderer.renderFunctionsAndFunctionsRegexOptionsBothSetError(this.functions.length !== 0)
+        )
 
         return 1
       }
       if (this.regExPattern!.match(':')) {
-        this.context.stdout.write(renderRegexSetWithARNError())
+        this.context.stdout.write(renderer.renderRegexSetWithARNError())
 
         return 1
       }
 
       const region = this.region ?? this.config.region ?? process.env[AWS_DEFAULT_REGION_ENV_VAR]
       if (!region) {
-        this.context.stdout.write(renderNoDefaultRegionSpecifiedError())
+        this.context.stdout.write(renderer.renderNoDefaultRegionSpecifiedError())
 
         return 1
       }
 
-      const spinner = fetchingFunctionsSpinner()
+      const spinner = renderer.fetchingFunctionsSpinner()
       try {
         const cloudWatchLogs = new CloudWatchLogs({region})
         const lambda = new Lambda({region})
@@ -246,12 +211,12 @@ export class InstrumentCommand extends Command {
           this.regExPattern!,
           settings
         )
-        spinner.succeed(renderFetchedLambdaFunctions(configs.length))
+        spinner.succeed(renderer.renderFetchedLambdaFunctions(configs.length))
 
         configGroups.push({configs, lambda, cloudWatchLogs, region})
       } catch (err) {
-        spinner.fail(renderFailedFetchingLambdaFunctions())
-        this.context.stdout.write(renderCouldntFetchLambdaFunctionsError(err))
+        spinner.fail(renderer.renderFailedFetchingLambdaFunctions())
+        this.context.stdout.write(renderer.renderCouldntFetchLambdaFunctionsError(err))
 
         return 1
       }
@@ -264,23 +229,23 @@ export class InstrumentCommand extends Command {
           region
         )
       } catch (err) {
-        this.context.stdout.write(renderCouldntGroupFunctionsError(err))
+        this.context.stdout.write(renderer.renderCouldntGroupFunctionsError(err))
 
         return 1
       }
 
       for (const [region, functionList] of Object.entries(functionGroups)) {
-        const spinner = fetchingFunctionsConfigSpinner(region)
+        const spinner = renderer.fetchingFunctionsConfigSpinner(region)
         spinner.start()
         const lambda = new Lambda({region})
         const cloudWatchLogs = new CloudWatchLogs({region})
         try {
           const configs = await getInstrumentedFunctionConfigs(lambda, cloudWatchLogs, region, functionList, settings)
           configGroups.push({configs, lambda, cloudWatchLogs, region})
-          spinner.succeed(renderFetchedLambdaConfigurationsFromRegion(region, configs.length))
+          spinner.succeed(renderer.renderFetchedLambdaConfigurationsFromRegion(region, configs.length))
         } catch (err) {
-          spinner.fail(renderFailedFetchingLambdaConfigurationsFromRegion(region))
-          this.context.stdout.write(renderCouldntFetchLambdaFunctionsError(err))
+          spinner.fail(renderer.renderFailedFetchingLambdaConfigurationsFromRegion(region))
+          this.context.stdout.write(renderer.renderCouldntFetchLambdaFunctionsError(err))
 
           return 1
         }
@@ -302,26 +267,26 @@ export class InstrumentCommand extends Command {
 
     const willUpdate = willUpdateFunctionConfigs(configList)
     if (this.interactive && willUpdate) {
-      this.context.stdout.write(renderConfirmationNeededSoftWarning())
+      this.context.stdout.write(renderer.renderConfirmationNeededSoftWarning())
       const isConfirmed = await requestChangesConfirmation('Do you want to apply the changes?')
       if (!isConfirmed) {
         return 0
       }
-      this.context.stdout.write(renderInstrumentingFunctionsSoftWarning())
+      this.context.stdout.write(renderer.renderInstrumentingFunctionsSoftWarning())
     }
 
     if (willUpdate) {
       const promises = Object.values(configGroups).map((group) =>
         updateLambdaFunctionConfigs(group.lambda, group.cloudWatchLogs, group.configs)
       )
-      const spinner = updatingFunctionsSpinner(promises.length)
+      const spinner = renderer.updatingFunctionsSpinner(promises.length)
       spinner.start()
       try {
         await Promise.all(promises)
-        spinner.succeed(renderUpdatedLambdaFunctions(promises.length))
+        spinner.succeed(renderer.renderUpdatedLambdaFunctions(promises.length))
       } catch (err) {
-        this.context.stdout.write(renderFailureDuringUpdateError(err))
-        spinner.fail(renderFailedUpdatingLambdaFunctions())
+        this.context.stdout.write(renderer.renderFailureDuringUpdateError(err))
+        spinner.fail(renderer.renderFailedUpdatingLambdaFunctions())
 
         return 1
       }
@@ -383,7 +348,7 @@ export class InstrumentCommand extends Command {
       layerVersion = parseInt(layerVersionStr, 10)
     }
     if (Number.isNaN(layerVersion)) {
-      this.context.stdout.write(renderInvalidLayerVersionError(layerVersion?.toString()))
+      this.context.stdout.write(renderer.renderInvalidLayerVersionError(layerVersion?.toString()))
 
       return
     }
@@ -394,7 +359,7 @@ export class InstrumentCommand extends Command {
     }
 
     if (Number.isNaN(extensionVersion)) {
-      this.context.stdout.write(renderInvalidExtensionVersionError(extensionVersion?.toString()))
+      this.context.stdout.write(renderer.renderInvalidExtensionVersionError(extensionVersion?.toString()))
 
       return
     }
@@ -408,7 +373,7 @@ export class InstrumentCommand extends Command {
 
     for (const [stringBoolean, value] of Object.entries(stringBooleansMap)) {
       if (!['true', 'false', undefined].includes(value?.toString().toLowerCase())) {
-        this.context.stdout.write(renderInvalidStringBooleanSpecifiedError(stringBoolean))
+        this.context.stdout.write(renderer.renderInvalidStringBooleanSpecifiedError(stringBoolean))
 
         return
       }
@@ -437,12 +402,12 @@ export class InstrumentCommand extends Command {
       }
     }
     if (tagsMissing.length > 0) {
-      this.context.stdout.write(renderTagsNotConfiguredWarning(tagsMissing))
+      this.context.stdout.write(renderer.renderTagsNotConfiguredWarning(tagsMissing))
     }
 
     const extraTags = this.extraTags?.toLowerCase() ?? this.config.extraTags?.toLowerCase()
     if (extraTags && !sentenceMatchesRegEx(extraTags, EXTRA_TAGS_REG_EXP)) {
-      this.context.stdout.write(renderExtraTagsDontComplyError())
+      this.context.stdout.write(renderer.renderExtraTagsDontComplyError())
 
       return
     }
@@ -468,25 +433,25 @@ export class InstrumentCommand extends Command {
   private printPlannedActions(configs: FunctionConfiguration[]) {
     const willUpdate = willUpdateFunctionConfigs(configs)
     if (!willUpdate) {
-      this.context.stdout.write(renderNoUpdatesApplied(this.dryRun))
+      this.context.stdout.write(renderer.renderNoUpdatesApplied(this.dryRun))
 
       return
     }
-    this.context.stdout.write(renderInstrumentInStagingFirst())
+    this.context.stdout.write(renderer.renderInstrumentInStagingFirst())
 
-    this.context.stdout.write(renderFunctionsToBeUpdated())
+    this.context.stdout.write(renderer.renderFunctionsToBeUpdated())
     for (const config of configs) {
       this.context.stdout.write(`\t- ${bold(config.functionARN)}\n`)
 
       // Later, we should inform which layer is the latest.
       if (this.interactive) {
         if (!this.extensionVersion || !this.extensionVersion) {
-          this.context.stdout.write(renderEnsureToLockLayerVersionsWarning())
+          this.context.stdout.write(renderer.renderEnsureToLockLayerVersionsWarning())
         }
       }
     }
 
-    this.context.stdout.write(renderWillApplyUpdates(this.dryRun))
+    this.context.stdout.write(renderer.renderWillApplyUpdates(this.dryRun))
     for (const config of configs) {
       if (config.updateRequest) {
         this.context.stdout.write(
