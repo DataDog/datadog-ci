@@ -10,8 +10,10 @@ beforeEach(() => {
   delete process.env.CURRENT_PROJECT_VERSION
   delete process.env.DATADOG_API_KEY
   delete process.env.EXTRA_PACKAGER_ARGS
+  delete process.env.INFOPLIST_FILE
   delete process.env.MARKETING_VERSION
   delete process.env.PRODUCT_BUNDLE_IDENTIFIER
+  delete process.env.PROJECT_DIR
   delete process.env.SERVICE_NAME_IOS
   delete process.env.SOURCEMAP_FILE
   delete process.env.UNLOCALIZED_RESOURCES_FOLDER_PATH
@@ -61,6 +63,7 @@ const runCLI = async (
     configPath?: string
     disableGit?: boolean
     force?: boolean
+    infoPlistPath?: string
     repositoryURL?: string
     service?: string
   }
@@ -81,6 +84,9 @@ const runCLI = async (
   }
   if (options?.repositoryURL) {
     command.push('--repository-url', options.repositoryURL)
+  }
+  if (options?.infoPlistPath) {
+    command.push('--info-plist-path', options.infoPlistPath)
   }
   if (options?.service) {
     command.push('--service')
@@ -254,7 +260,7 @@ describe('xcode', () => {
       expect(output).toContain('version: 0.0.2 build: 000020 service: com.custom')
     })
 
-    test.each([['PRODUCT_BUNDLE_IDENTIFIER'], ['CONFIGURATION'], ['MARKETING_VERSION'], ['CURRENT_PROJECT_VERSION']])(
+    test.each([['PRODUCT_BUNDLE_IDENTIFIER'], ['CONFIGURATION']])(
       'should provide a custom message when %s xcode environment variable is missing',
       async (variable) => {
         process.env = {
@@ -275,6 +281,90 @@ describe('xcode', () => {
         expect(output).toContain(`Environment variable ${variable} is missing for Datadog sourcemaps upload.`)
       }
     )
+
+    test('should provide a clear error message when the release version cannot be found', async () => {
+      process.env = {
+        ...process.env,
+        ...basicEnvironment,
+      }
+
+      delete process.env.MARKETING_VERSION
+
+      const {context, code} = await runCLI(
+        './src/commands/react-native/__tests__/fixtures/bundle-script/successful_script.sh'
+      )
+      // Uncomment these lines for debugging failing script
+      // console.log(context.stdout.toString())
+      // console.log(context.stderr.toString())
+
+      expect(code).toBe(1)
+      const output = context.stderr.toString()
+      expect(output).toContain(`Version could not be found.`)
+    })
+
+    test('should provide a clear error message when the build version cannot be found', async () => {
+      process.env = {
+        ...process.env,
+        ...basicEnvironment,
+      }
+
+      delete process.env.CURRENT_PROJECT_VERSION
+
+      const {context, code} = await runCLI(
+        './src/commands/react-native/__tests__/fixtures/bundle-script/successful_script.sh'
+      )
+      // Uncomment these lines for debugging failing script
+      // console.log(context.stdout.toString())
+      // console.log(context.stderr.toString())
+
+      expect(code).toBe(1)
+      const output = context.stderr.toString()
+      expect(output).toContain(`Build version could not be found.`)
+    })
+
+    test('should get versions from plist file even if env variables are defined', async () => {
+      process.env = {
+        ...process.env,
+        ...basicEnvironment,
+        PROJECT_DIR: 'src/commands/react-native/__tests__',
+        INFOPLIST_FILE: 'fixtures/info-plist/Info.plist',
+      }
+
+      const {context, code} = await runCLI(
+        './src/commands/react-native/__tests__/fixtures/bundle-script/successful_script.sh'
+      )
+      // Uncomment these lines for debugging failing script
+      // console.log(context.stdout.toString())
+      // console.log(context.stderr.toString())
+
+      expect(code).toBe(0)
+      const output = context.stdout.toString()
+      expect(output).toContain('version: 1.0.4 build: 12')
+    })
+
+    test('should get versions from plist file through argument if env variables are not defined', async () => {
+      process.env = {
+        ...process.env,
+        ...basicEnvironment,
+      }
+
+      delete process.env.CURRENT_PROJECT_VERSION
+      delete process.env.MARKETING_VERSION
+
+      const {context, code} = await runCLI(
+        './src/commands/react-native/__tests__/fixtures/bundle-script/successful_script.sh',
+        {
+          infoPlistPath: 'src/commands/react-native/__tests__/fixtures/info-plist/Info.plist',
+        }
+      )
+      // Uncomment these lines for debugging failing script
+      // console.log(context.stdout.toString())
+      // console.log(context.stderr.toString())
+
+      expect(code).toBe(0)
+      const output = context.stdout.toString()
+      expect(output).toContain('version: 1.0.4 build: 12')
+    })
 
     test('should provide a clear error message when the script path is incorrect', async () => {
       process.env = {
