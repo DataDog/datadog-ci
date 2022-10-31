@@ -22,7 +22,6 @@ import {
 } from './constants'
 import {isMissingAnyDatadogApiKeyEnvVar, isMissingDatadogSiteEnvVar, sentenceMatchesRegEx} from './functions/commons'
 
-/* tslint:disable-next-line */
 const checkboxPlusPrompt = require('inquirer-checkbox-plus-prompt')
 inquirer.registerPrompt('checkbox-plus', checkboxPlusPrompt)
 
