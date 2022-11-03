@@ -194,7 +194,33 @@ describe('xcode', () => {
       expect(output).toContain('version: 0.0.2 build: 000020 service: com.myapp.test')
     })
 
-    test('should not upload sourcemaps when the build configuration is Debug', async () => {
+    test('should not compose sourcemaps when using hermes and source maps are not uploaded', async () => {
+      process.env = {
+        ...process.env,
+        ...basicEnvironment,
+        CONFIGURATION_BUILD_DIR: './src/commands/react-native/__tests__/fixtures/compose-sourcemaps',
+        UNLOCALIZED_RESOURCES_FOLDER_PATH: 'MyApp.app',
+        USE_HERMES: 'true',
+        CONFIGURATION: 'Debug',
+      }
+      const {context, code} = await runCLI(
+        './src/commands/react-native/__tests__/fixtures/bundle-script/successful_script.sh',
+        {
+          composeSourcemapsPath:
+            './src/commands/react-native/__tests__/fixtures/compose-sourcemaps/compose-sourcemaps.js',
+        }
+      )
+      // Uncomment these lines for debugging failing script
+      // console.log(context.stdout.toString())
+      // console.log(context.stderr.toString())
+
+      expect(code).toBe(0)
+      const output = context.stdout.toString()
+      expect(output).toContain('Build configuration Debug is not Release, skipping sourcemaps upload')
+      expect(output).not.toContain('Hermes detected, composing sourcemaps')
+    })
+
+    test('should not bundle nor upload sourcemaps when the build configuration is Debug', async () => {
       process.env = {
         ...process.env,
         ...basicEnvironment,
@@ -210,6 +236,7 @@ describe('xcode', () => {
       expect(code).toBe(0)
       const output = context.stdout.toString()
       expect(output).toContain('Build configuration Debug is not Release, skipping sourcemaps upload')
+      expect(output).not.toContain('Starting successful script')
     })
 
     test('should run the provided script and upload sourcemaps when the build configuration is Debug with force option', async () => {
