@@ -115,6 +115,14 @@ export class XCodeCommand extends Command {
       return 1
     }
 
+    if (!this.shouldUploadSourcemaps()) {
+      this.context.stdout.write(
+        `Build configuration ${process.env.CONFIGURATION} is not Release, skipping sourcemaps upload`
+      )
+
+      return 0
+    }
+
     // Run bundle script
     try {
       await this.bundleReactNativeCodeAndImages()
@@ -134,15 +142,8 @@ export class XCodeCommand extends Command {
       return 1
     }
 
-    if (!this.shouldUploadSourcemaps()) {
-      this.context.stdout.write(
-        `Build configuration ${process.env.CONFIGURATION} is not Release, skipping sourcemaps upload`
-      )
-
-      return 0
-    }
     if (this.force) {
-      this.context.stdout.write(`Force upload for configuration Debug ${process.env.CONFIGURATION}`)
+      this.context.stdout.write(`Force upload for configuration ${process.env.CONFIGURATION}`)
     }
 
     // Run upload script in the background
