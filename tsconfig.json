@@ -16,7 +16,7 @@
     },
     "allowSyntheticDefaultImports": true,
     "esModuleInterop": true,
-    "lib": ["es2019"],
+    "lib": ["es2020"],
     "resolveJsonModule": true
   },
   "include": ["src/**/*"]
