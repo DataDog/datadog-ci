@@ -1,11 +1,12 @@
-// tslint:disable: no-string-literal
-import {AxiosError, AxiosResponse} from 'axios'
 import {Cli} from 'clipanion/lib/advanced'
+
 import * as ciUtils from '../../../helpers/utils'
+
 import * as api from '../api'
 import {DEFAULT_COMMAND_CONFIG, DEFAULT_POLLING_TIMEOUT, RunTestCommand} from '../command'
 import * as utils from '../utils'
-import {getApiTest, getTestSuite, mockTestTriggerResponse} from './fixtures'
+
+import {getApiTest, getAxiosHttpError, getTestSuite, mockTestTriggerResponse} from './fixtures'
 
 test('all option flags are supported', async () => {
   const options = [
@@ -30,14 +31,6 @@ test('all option flags are supported', async () => {
 
   options.forEach((option) => expect(usage).toContain(`--${option}`))
 })
-
-const getAxiosHttpError = (status: number, error: string) => {
-  const serverError = new Error(error) as AxiosError
-  serverError.response = {data: {errors: [error]}, status} as AxiosResponse
-  serverError.config = {baseURL: 'baseURL', url: 'url'}
-
-  return serverError
-}
 
 describe('run-test', () => {
   beforeEach(() => {
@@ -79,6 +72,7 @@ describe('run-test', () => {
         configPath: 'src/commands/synthetics/__tests__/config-fixtures/config-with-all-keys.json',
         datadogSite: 'datadoghq.eu',
         failOnCriticalErrors: true,
+        failOnMissingTests: true,
         failOnTimeout: false,
         files: ['my-new-file'],
         global: {locations: [], pollingTimeout: 2},
@@ -149,7 +143,7 @@ describe('run-test', () => {
         ...(config as Record<string, unknown>),
         apiKey: 'api_key_config_file',
         appKey: 'app_key_config_file',
-        datadogSite: 'datadog.config.file',
+        datadogSite: 'us5.datadoghq.com',
       }))
 
       process.env = {
@@ -165,7 +159,7 @@ describe('run-test', () => {
         ...DEFAULT_COMMAND_CONFIG,
         apiKey: 'api_key_cli',
         appKey: 'app_key_env',
-        datadogSite: 'datadog.config.file',
+        datadogSite: 'us5.datadoghq.com',
         global: {pollingTimeout: DEFAULT_POLLING_TIMEOUT},
       })
     })
@@ -193,7 +187,7 @@ describe('run-test', () => {
 
       // Throw to stop the test
       const triggerTests = jest.fn(() => {
-        throw getAxiosHttpError(502, 'Bad Gateway')
+        throw getAxiosHttpError(502, {message: 'Bad Gateway'})
       })
 
       const apiHelper = {
@@ -283,14 +277,14 @@ describe('run-test', () => {
   })
 
   describe('exit code respects `failOnCriticalErrors`', () => {
-    test('404 leading to `NO_TESTS_TO_RUN` never exit with 1', async () => {
+    test('404 leading to `NO_TESTS_TO_RUN` never exits with 1', async () => {
       const command = new RunTestCommand()
       command.context = {stdout: {write: jest.fn()}} as any
       command['config'].failOnCriticalErrors = true
 
       const apiHelper = {
         getTest: jest.fn(() => {
-          throw getAxiosHttpError(404, 'Test not found')
+          throw getAxiosHttpError(404, {errors: ['Test not found']})
         }),
       }
       jest.spyOn(api, 'getApiHelper').mockImplementation(() => apiHelper as any)
@@ -314,7 +308,7 @@ describe('run-test', () => {
 
           const apiHelper = {
             searchTests: jest.fn(() => {
-              throw errorCode ? getAxiosHttpError(errorCode, 'Error') : new Error('Unknown error')
+              throw errorCode ? getAxiosHttpError(errorCode, {message: 'Error'}) : new Error('Unknown error')
             }),
           }
           jest.spyOn(api, 'getApiHelper').mockImplementation(() => apiHelper as any)
@@ -331,7 +325,7 @@ describe('run-test', () => {
 
           const apiHelper = {
             getTest: jest.fn(() => {
-              throw errorCode ? getAxiosHttpError(errorCode, 'Error') : new Error('Unknown error')
+              throw errorCode ? getAxiosHttpError(errorCode, {message: 'Error'}) : new Error('Unknown error')
             }),
           }
           jest.spyOn(api, 'getApiHelper').mockImplementation(() => apiHelper as any)
@@ -350,7 +344,7 @@ describe('run-test', () => {
           const apiHelper = {
             getTest: () => getApiTest('123-456-789'),
             triggerTests: jest.fn(() => {
-              throw errorCode ? getAxiosHttpError(errorCode, 'Error') : new Error('Unknown error')
+              throw errorCode ? getAxiosHttpError(errorCode, {message: 'Error'}) : new Error('Unknown error')
             }),
           }
           jest.spyOn(api, 'getApiHelper').mockImplementation(() => apiHelper as any)
@@ -370,7 +364,7 @@ describe('run-test', () => {
             getBatch: () => ({results: [], status: 'success'}),
             getTest: () => getApiTest('123-456-789'),
             pollResults: jest.fn(() => {
-              throw errorCode ? getAxiosHttpError(errorCode, 'Error') : new Error('Unknown error')
+              throw errorCode ? getAxiosHttpError(errorCode, {message: 'Error'}) : new Error('Unknown error')
             }),
             triggerTests: () => mockTestTriggerResponse,
           }
@@ -382,6 +376,96 @@ describe('run-test', () => {
           expect(apiHelper.pollResults).toHaveBeenCalledTimes(1)
         })
       })
+    })
+  })
+
+  describe('exit code respects `failOnMissingTests`', () => {
+    const cases: [string, boolean, number, string[]][] = [
+      ['only missing tests', false, 0, ['mis-sin-ggg']],
+      ['only missing tests', true, 1, ['mis-sin-ggg']],
+      ['both missing and available tests', false, 0, ['mis-sin-ggg', 'abc-def-ghi']],
+      ['both missing and available tests', true, 1, ['mis-sin-ggg', 'abc-def-ghi']],
+    ]
+
+    test.each(cases)(
+      '%s with failOnMissingTests=%s exits with %s',
+      async (_: string, failOnMissingTests: boolean, exitCode: number, tests: (string | null)[]) => {
+        const command = new RunTestCommand()
+        command.context = {stdout: {write: jest.fn()}} as any
+        command['config'].failOnMissingTests = failOnMissingTests
+
+        const apiHelper = {
+          getTest: jest.fn((testId: string) => {
+            if (testId === 'mis-sin-ggg') {
+              throw getAxiosHttpError(404, {errors: ['Test not found']})
+            }
+
+            return {}
+          }),
+        }
+        jest.spyOn(api, 'getApiHelper').mockImplementation(() => apiHelper as any)
+        jest.spyOn(ciUtils, 'resolveConfigFromFile').mockImplementation(async (config, __) => config)
+        jest.spyOn(utils, 'getSuites').mockImplementation((() => [
+          {
+            content: {
+              tests: tests.map((testId) => ({config: {}, id: testId})),
+            },
+            name: 'Suite 1',
+          },
+        ]) as any)
+
+        expect(await command.execute()).toBe(exitCode)
+        expect(apiHelper.getTest).toHaveBeenCalledTimes(tests.length)
+      }
+    )
+  })
+
+  describe('API errors logging', () => {
+    test('enough context is provided', async () => {
+      const writeMock = jest.fn()
+
+      const command = new RunTestCommand()
+      command.context = {stdout: {write: writeMock}} as any
+      command['config'].failOnCriticalErrors = true
+
+      const apiHelper = {
+        getTest: jest.fn((testId: string) => {
+          if (testId === 'for-bid-den') {
+            const serverError = getAxiosHttpError(403, {errors: ['Forbidden']})
+            serverError.config.url = 'tests/for-bid-den'
+            throw serverError
+          }
+
+          return {name: testId}
+        }),
+      }
+      jest.spyOn(api, 'getApiHelper').mockImplementation(() => apiHelper as any)
+      jest.spyOn(ciUtils, 'resolveConfigFromFile').mockImplementation(async (config, __) => config)
+      jest.spyOn(utils, 'getSuites').mockImplementation((() => [
+        {
+          content: {
+            tests: [
+              {config: {}, id: 'aaa-aaa-aaa'},
+              {config: {}, id: 'bbb-bbb-bbb'},
+              {config: {}, id: 'for-bid-den'},
+            ],
+          },
+          name: 'Suite 1',
+        },
+      ]) as any)
+
+      expect(await command.execute()).toBe(1)
+      expect(apiHelper.getTest).toHaveBeenCalledTimes(3)
+
+      expect(writeMock).toHaveBeenCalledTimes(4)
+      expect(writeMock).toHaveBeenCalledWith('[aaa-aaa-aaa] Found test "aaa-aaa-aaa" (1 config override)\n')
+      expect(writeMock).toHaveBeenCalledWith('[bbb-bbb-bbb] Found test "bbb-bbb-bbb" (1 config override)\n')
+      expect(writeMock).toHaveBeenCalledWith(
+        '\n ERROR: authorization error \nFailed to get test: query on https://app.datadoghq.com/tests/for-bid-den returned: "Forbidden"\n\n\n'
+      )
+      expect(writeMock).toHaveBeenCalledWith(
+        'Credentials refused, make sure `apiKey`, `appKey` and `datadogSite` are correct.\n'
+      )
     })
   })
 })

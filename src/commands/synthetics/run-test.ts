@@ -1,10 +1,12 @@
+import {getProxyAgent} from '../../helpers/utils'
+
 import {APIHelper, getApiHelper, isForbiddenError} from './api'
 import {MAX_TESTS_TO_TRIGGER} from './command'
 import {CiError, CriticalError} from './errors'
 import {
   CommandConfig,
-  ConfigOverride,
   MainReporter,
+  Result,
   Suite,
   Summary,
   SyntheticsCIConfig,
@@ -12,11 +14,20 @@ import {
   TestPayload,
   Trigger,
   TriggerConfig,
+  UserConfigOverride,
 } from './interfaces'
+import {getTunnelReporter} from './reporters/default'
 import {Tunnel} from './tunnel'
-import {getSuites, getTestsToTrigger, runTests, waitForResults} from './utils'
+import {getSuites, getTestsToTrigger, InitialSummary, runTests, waitForResults} from './utils'
 
-export const executeTests = async (reporter: MainReporter, config: CommandConfig, suites?: Suite[]) => {
+export const executeTests = async (
+  reporter: MainReporter,
+  config: CommandConfig,
+  suites?: Suite[]
+): Promise<{
+  results: Result[]
+  summary: Summary
+}> => {
   const api = getApiHelper(config)
 
   const publicIdsFromCli = config.publicIds.map((id) => ({
@@ -53,14 +64,20 @@ export const executeTests = async (reporter: MainReporter, config: CommandConfig
   }
 
   let testsToTriggerResult: {
+    initialSummary: InitialSummary
     overriddenTestsToTrigger: TestPayload[]
-    summary: Summary
     tests: Test[]
   }
 
   try {
     const triggerFromSearch = !!config.testSearchQuery
-    testsToTriggerResult = await getTestsToTrigger(api, testsToTrigger, reporter, triggerFromSearch)
+    testsToTriggerResult = await getTestsToTrigger(
+      api,
+      testsToTrigger,
+      reporter,
+      triggerFromSearch,
+      config.failOnMissingTests
+    )
   } catch (error) {
     if (error instanceof CiError) {
       throw error
@@ -69,7 +86,7 @@ export const executeTests = async (reporter: MainReporter, config: CommandConfig
     throw new CriticalError(isForbiddenError(error) ? 'AUTHORIZATION_ERROR' : 'UNAVAILABLE_TEST_CONFIG', error.message)
   }
 
-  const {tests, overriddenTestsToTrigger, summary} = testsToTriggerResult
+  const {tests, overriddenTestsToTrigger, initialSummary} = testsToTriggerResult
 
   // All tests have been skipped or are missing.
   if (!tests.length) {
@@ -88,7 +105,10 @@ export const executeTests = async (reporter: MainReporter, config: CommandConfig
     }
     // Open a tunnel to Datadog
     try {
-      tunnel = new Tunnel(presignedURL, publicIdsToTrigger, config.proxy, reporter)
+      const tunnelProxyAgent = getProxyAgent(config.proxy)
+      const tunnelReporter = getTunnelReporter(reporter)
+      tunnel = new Tunnel(presignedURL, publicIdsToTrigger, tunnelProxyAgent, tunnelReporter)
+
       const tunnelInfo = await tunnel.start()
       overriddenTestsToTrigger.forEach((testToTrigger) => {
         testToTrigger.tunnel = tunnelInfo
@@ -102,8 +122,6 @@ export const executeTests = async (reporter: MainReporter, config: CommandConfig
   let trigger: Trigger
   try {
     trigger = await runTests(api, overriddenTestsToTrigger)
-
-    summary.batchId = trigger.batch_id
   } catch (error) {
     await stopTunnel()
     throw new CriticalError('TRIGGER_TESTS_FAILED', error.message)
@@ -124,7 +142,13 @@ export const executeTests = async (reporter: MainReporter, config: CommandConfig
       tunnel
     )
 
-    return {results, summary}
+    return {
+      results,
+      summary: {
+        ...initialSummary,
+        batchId: trigger.batch_id,
+      },
+    }
   } catch (error) {
     throw new CriticalError('POLL_RESULTS_FAILED', error.message)
   } finally {
@@ -134,7 +158,7 @@ export const executeTests = async (reporter: MainReporter, config: CommandConfig
 
 const getTestListBySearchQuery = async (
   api: APIHelper,
-  globalConfigOverride: ConfigOverride,
+  globalConfigOverride: UserConfigOverride,
   testSearchQuery: string
 ) => {
   const testSearchResults = await api.searchTests(testSearchQuery)
@@ -165,7 +189,7 @@ export const getTestsList = async (
     return testsToTriggerBySearchQuery
   }
 
-  const suitesFromFiles = (await Promise.all(config.files.map((glob: string) => getSuites(glob, reporter!))))
+  const suitesFromFiles = (await Promise.all(config.files.map((glob: string) => getSuites(glob, reporter))))
     .reduce((acc, val) => acc.concat(val), [])
     .filter((suite) => !!suite.content.tests)
 
@@ -173,7 +197,7 @@ export const getTestsList = async (
 
   const configFromEnvironment = config.locations?.length ? {locations: config.locations} : {}
 
-  const overrideTestConfig = (test: TriggerConfig): ConfigOverride =>
+  const overrideTestConfig = (test: TriggerConfig): UserConfigOverride =>
     // Global < env < test config
     ({
       ...config.global,

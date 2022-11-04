@@ -1,6 +1,7 @@
+import type {SpanTags} from '../interfaces'
+
 import simpleGit from 'simple-git'
 
-import type {SpanTags} from '../interfaces'
 import {
   GIT_BRANCH,
   GIT_COMMIT_AUTHOR_DATE,
@@ -13,6 +14,7 @@ import {
   GIT_REPOSITORY_URL,
   GIT_SHA,
 } from '../tags'
+
 import {gitAuthorAndCommitter, gitBranch, gitHash, gitMessage, gitRepositoryURL} from './get-git-data'
 
 export const getGitMetadata = async (): Promise<SpanTags> => {

@@ -1,10 +1,13 @@
-import chalk from 'chalk'
 import {spawn} from 'child_process'
-import {Command} from 'clipanion'
 import crypto from 'crypto'
 import os from 'os'
+
+import chalk from 'chalk'
+import {Command} from 'clipanion'
+
 import {retryRequest} from '../../helpers/retry'
 import {parseTags} from '../../helpers/tags'
+
 import {apiConstructor} from './api'
 import {APIHelper, CIRCLECI, JENKINS, Payload, Provider, SUPPORTED_PROVIDERS} from './interfaces'
 
@@ -15,9 +18,9 @@ export class TraceCommand extends Command {
   public static usage = Command.Usage({
     description: 'Trace a command with a custom span and report it to Datadog.',
     details: `
-            This command wraps another command, which it will launch, and report a custom span to Datadog.
-            See README for details.
-        `,
+      This command wraps another command, which it will launch, and report a custom span to Datadog.\n
+      See README for details.
+    `,
     examples: [
       [
         'Trace a command with name "Say Hello" and report to Datadog',

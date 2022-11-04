@@ -1,9 +1,49 @@
 jest.mock('glob')
 jest.mock('fs')
+jest.mock('child_process')
+jest.unmock('chalk')
 
+jest.mock('path', () => {
+  const actualPath = jest.requireActual('path')
+
+  return {
+    ...actualPath,
+    relative: (from: string, to: string) => {
+      if (from === '/path/to/project' && to === '/path/to/another-project') {
+        return '../another-project'
+      }
+
+      if (from === '/path/to/project' && to === '/other-path/to/project') {
+        return '../../../other-path/to/project'
+      }
+
+      if (from === '/path/to/git/repository' && to === '/path/to/another-project') {
+        return '../../another-project'
+      }
+
+      if (from === '/path/to/git/repository' && to === '/other-path/to/project') {
+        return '../../../../other-path/to/project'
+      }
+
+      if (from.endsWith('subfolder') || to.endsWith('subfolder')) {
+        return 'subfolder'
+      }
+
+      if (to === '..') {
+        return '..'
+      }
+
+      return '.'
+    },
+  }
+})
+
+import child_process from 'child_process'
 import * as fs from 'fs'
+import process from 'process'
 
-import {AxiosError, default as axios} from 'axios'
+import {default as axios} from 'axios'
+import deepExtend from 'deep-extend'
 import glob from 'glob'
 
 process.env.DATADOG_SYNTHETICS_CI_TRIGGER_APP = 'env_default'
@@ -13,28 +53,21 @@ import {Metadata} from '../../../helpers/interfaces'
 import * as ciUtils from '../../../helpers/utils'
 
 import {apiConstructor, APIHelper} from '../api'
+import {DEFAULT_COMMAND_CONFIG, MAX_TESTS_TO_TRIGGER} from '../command'
 import {CiError} from '../errors'
-import {
-  Batch,
-  ConfigOverride,
-  ExecutionRule,
-  PollResult,
-  Result,
-  ServerResult,
-  Summary,
-  Test,
-  Trigger,
-} from '../interfaces'
+import {Batch, ExecutionRule, PollResult, Result, ServerResult, Test, Trigger, UserConfigOverride} from '../interfaces'
+import * as mobile from '../mobile'
 import * as utils from '../utils'
 
-import {DEFAULT_COMMAND_CONFIG, MAX_TESTS_TO_TRIGGER} from '../command'
 import {
   ciConfig,
   getApiResult,
   getApiTest,
+  getAxiosHttpError,
   getBatch,
   getBrowserServerResult,
   getResults,
+  getSummary,
   MockedReporter,
   mockLocation,
   mockReporter,
@@ -50,6 +83,7 @@ describe('utils', () => {
     apiKey: '123',
     appKey: '123',
     baseIntakeUrl: 'baseintake',
+    baseUnstableUrl: 'baseUnstable',
     baseUrl: 'base',
     proxyOpts: {protocol: 'http'} as ciUtils.ProxyConfiguration,
   }
@@ -67,11 +101,95 @@ describe('utils', () => {
       callback(undefined, FILES_CONTENT[path])
     )
     ;(glob as any).mockImplementation((query: string, callback: (e: any, v: any) => void) => callback(undefined, FILES))
+    ;(child_process.exec as any).mockImplementation(
+      (command: string, callback: (error: any, stdout: string, stderr: string) => void) => callback(undefined, '.', '')
+    )
 
     test('should get suites', async () => {
       const suites = await utils.getSuites(GLOB, mockReporter)
       expect(JSON.stringify(suites)).toBe(
         `[{"name":"file1","content":${FILES_CONTENT.file1}},{"name":"file2","content":${FILES_CONTENT.file2}}]`
+      )
+    })
+  })
+
+  describe('getFilePathRelativeToRepo', () => {
+    afterEach(() => {
+      jest.restoreAllMocks()
+    })
+
+    test('datadog-ci is not run in a git repository', async () => {
+      const pathToProject = '/path/to/project'
+      jest.spyOn(process, 'cwd').mockImplementation(() => pathToProject)
+
+      // Directory without `.git` folder.
+      ;(child_process.exec as any).mockImplementation(
+        (command: string, callback: (error: any, stdout: string, stderr: string) => void) =>
+          callback(Error('Not a git repository'), '', '')
+      )
+
+      // Use the process working directory instead of the git repository's top level.
+      await expect(utils.getFilePathRelativeToRepo('config.json')).resolves.toEqual('config.json')
+      await expect(utils.getFilePathRelativeToRepo('./config.json')).resolves.toEqual('config.json')
+      await expect(utils.getFilePathRelativeToRepo(`${pathToProject}/config.json`)).resolves.toEqual('config.json')
+
+      // Those cases will show a broken hyperlink in the GitLab test report because the file is outside of the project.
+      await expect(utils.getFilePathRelativeToRepo('../config.json')).resolves.toEqual('../config.json')
+      await expect(utils.getFilePathRelativeToRepo('/path/to/another-project/config.json')).resolves.toEqual(
+        '../another-project/config.json'
+      )
+      await expect(utils.getFilePathRelativeToRepo('/other-path/to/project/config.json')).resolves.toEqual(
+        '../../../other-path/to/project/config.json'
+      )
+    })
+
+    test('datadog-ci is run in the root of a git repository', async () => {
+      const pathToGitRepository = '/path/to/git/repository'
+      jest.spyOn(process, 'cwd').mockImplementation(() => pathToGitRepository)
+
+      // Process working directory is the git repository's root.
+      ;(child_process.exec as any).mockImplementation(
+        (command: string, callback: (error: any, stdout: string, stderr: string) => void) =>
+          callback(undefined, pathToGitRepository, '')
+      )
+
+      await expect(utils.getFilePathRelativeToRepo('config.json')).resolves.toEqual('config.json')
+      await expect(utils.getFilePathRelativeToRepo('./config.json')).resolves.toEqual('config.json')
+      await expect(utils.getFilePathRelativeToRepo(`${pathToGitRepository}/config.json`)).resolves.toEqual(
+        'config.json'
+      )
+
+      await expect(utils.getFilePathRelativeToRepo('subfolder/config.json')).resolves.toEqual('subfolder/config.json')
+      await expect(utils.getFilePathRelativeToRepo('./subfolder/config.json')).resolves.toEqual('subfolder/config.json')
+      await expect(utils.getFilePathRelativeToRepo(`${pathToGitRepository}/subfolder/config.json`)).resolves.toEqual(
+        'subfolder/config.json'
+      )
+
+      // Those cases will show a broken hyperlink in the GitLab test report because the file is outside of the repository.
+      await expect(utils.getFilePathRelativeToRepo('../config.json')).resolves.toEqual('../config.json')
+      await expect(utils.getFilePathRelativeToRepo('/path/to/another-project/config.json')).resolves.toEqual(
+        '../../another-project/config.json'
+      )
+      await expect(utils.getFilePathRelativeToRepo('/other-path/to/project/config.json')).resolves.toEqual(
+        '../../../../other-path/to/project/config.json'
+      )
+    })
+
+    test('datadog-ci is run in a subfolder of a git repository', async () => {
+      const pathToGitRepositorySubfolder = '/path/to/git/repository/subfolder'
+      jest.spyOn(process, 'cwd').mockImplementation(() => pathToGitRepositorySubfolder)
+
+      // Process working directory is a subfolder of the git repository...
+      ;(child_process.exec as any).mockImplementation(
+        (command: string, callback: (error: any, stdout: string, stderr: string) => void) =>
+          callback(undefined, '/path/to/git/repository', '')
+      )
+
+      // ...so the relative path must be prefixed with the subfolder.
+      await expect(utils.getFilePathRelativeToRepo('config.json')).resolves.toEqual('subfolder/config.json')
+      await expect(utils.getFilePathRelativeToRepo('./config.json')).resolves.toEqual('subfolder/config.json')
+      await expect(utils.getFilePathRelativeToRepo(`${pathToGitRepositorySubfolder}/config.json`)).resolves.toEqual(
+        'subfolder/config.json'
       )
     })
   })
@@ -144,17 +262,8 @@ describe('utils', () => {
     })
 
     test('triggerTests throws', async () => {
-      const serverError = new Error('Server Error') as AxiosError
-      Object.assign(serverError, {
-        config: {baseURL: 'baseURL', url: 'url'},
-        response: {
-          data: {errors: []},
-          status: 502,
-        },
-      })
-
       jest.spyOn(api, 'triggerTests').mockImplementation(() => {
-        throw serverError
+        throw getAxiosHttpError(502, {message: 'Server Error'})
       })
 
       await expect(
@@ -170,6 +279,13 @@ describe('utils', () => {
         name: 'Fake Test',
         public_id: '123-456-789',
         suite: 'Suite 1',
+      },
+      'mob-ile-tes': {
+        config: {},
+        name: 'Fake Mobile Test',
+        public_id: 'mob-ile-tes',
+        suite: 'Suite 3',
+        type: 'mobile',
       },
       'ski-ppe-d01': {
         config: {request: {url: 'http://example.org/'}},
@@ -188,9 +304,7 @@ describe('utils', () => {
           return {data: fakeTests[publicId]}
         }
 
-        const error = new Error('Not found')
-        ;((error as unknown) as {status: number}).status = 404
-        throw error
+        throw getAxiosHttpError(404, {errors: ['Not found']})
       }) as any)
     })
 
@@ -200,7 +314,7 @@ describe('utils', () => {
         {suite: 'Suite 2', config: {}, id: '987-654-321'},
         {suite: 'Suite 3', config: {}, id: 'ski-ppe-d01'},
       ]
-      const {tests, overriddenTestsToTrigger, summary} = await utils.getTestsToTrigger(
+      const {tests, overriddenTestsToTrigger, initialSummary} = await utils.getTestsToTrigger(
         api,
         triggerConfigs,
         mockReporter
@@ -212,7 +326,7 @@ describe('utils', () => {
         {executionRule: ExecutionRule.SKIPPED, public_id: 'ski-ppe-d01'},
       ])
 
-      const expectedSummary: Summary = {
+      const expectedSummary: utils.InitialSummary = {
         criticalErrors: 0,
         failed: 0,
         failedNonBlocking: 0,
@@ -221,7 +335,7 @@ describe('utils', () => {
         testsNotFound: new Set(['987-654-321']),
         timedOut: 0,
       }
-      expect(summary).toEqual(expectedSummary)
+      expect(initialSummary).toEqual(expectedSummary)
     })
 
     test('no tests triggered throws an error', async () => {
@@ -268,6 +382,34 @@ describe('utils', () => {
         const tests = await utils.getTestsToTrigger(fakeApi, tooManyTests, mockReporter, true)
         expect(tests.tests.length).toBe(MAX_TESTS_TO_TRIGGER)
       })
+    })
+
+    test('call uploadApplicationAndOverrideConfig on mobile test', async () => {
+      const spy = jest.spyOn(mobile, 'uploadApplicationAndOverrideConfig').mockImplementation()
+      const triggerConfigs = [
+        {suite: 'Suite 1', config: {}, id: '123-456-789'},
+        {suite: 'Suite 3', config: {}, id: 'mob-ile-tes'},
+      ]
+
+      await utils.getTestsToTrigger(api, triggerConfigs, mockReporter)
+      expect(spy).toBeCalledTimes(1)
+    })
+  })
+
+  describe('getTestAndOverrideConfig', () => {
+    beforeEach(() => {
+      const axiosMock = jest.spyOn(axios, 'create')
+      axiosMock.mockImplementation((() => (e: any) => {
+        throw getAxiosHttpError(403, {message: 'Forbidden'})
+      }) as any)
+    })
+
+    test('Forbidden error when getting a test', async () => {
+      const triggerConfig = {suite: 'Suite 1', config: {}, id: '123-456-789'}
+
+      await expect(() =>
+        utils.getTestAndOverrideConfig(api, triggerConfig, mockReporter, getSummary())
+      ).rejects.toThrow('Failed to get test: could not query https://app.datadoghq.com/example\nForbidden\n')
     })
   })
 
@@ -331,36 +473,6 @@ describe('utils', () => {
       expectHandledConfigToBe(SKIPPED, SKIPPED, NON_BLOCKING)
     })
 
-    test('startUrl template is rendered if correct test type or subtype', () => {
-      const publicId = 'abc-def-ghi'
-      const fakeTest = {
-        config: {request: {url: 'http://example.org/path#target'}},
-        public_id: publicId,
-        type: 'browser',
-      } as Test
-      const configOverride = {
-        startUrl: 'https://{{DOMAIN}}/newPath?oldPath={{ PATHNAME   }}{{HASH}}',
-      }
-      const expectedUrl = 'https://example.org/newPath?oldPath=/path#target'
-
-      let overriddenConfig = utils.getOverriddenConfig(fakeTest, publicId, mockReporter, configOverride)
-      expect(overriddenConfig.public_id).toBe(publicId)
-      expect(overriddenConfig.startUrl).toBe(expectedUrl)
-
-      fakeTest.type = 'api'
-      fakeTest.subtype = 'http'
-
-      overriddenConfig = utils.getOverriddenConfig(fakeTest, publicId, mockReporter, configOverride)
-      expect(overriddenConfig.public_id).toBe(publicId)
-      expect(overriddenConfig.startUrl).toBe(expectedUrl)
-
-      fakeTest.subtype = 'dns'
-
-      overriddenConfig = utils.getOverriddenConfig(fakeTest, publicId, mockReporter, configOverride)
-      expect(overriddenConfig.public_id).toBe(publicId)
-      expect(overriddenConfig.startUrl).toBeUndefined()
-    })
-
     test('startUrl is not parsable', () => {
       const envVars = {...process.env}
       process.env = {CUSTOMVAR: '/newPath'}
@@ -371,31 +483,14 @@ describe('utils', () => {
         type: 'browser',
       } as Test
       const configOverride = {
-        startUrl: 'https://{{DOMAIN}}/newPath?oldPath={{CUSTOMVAR}}',
+        startUrl: 'https://{{FAKE_VAR}}/newPath?oldPath={{CUSTOMVAR}}',
       }
-      const expectedUrl = 'https://{{DOMAIN}}/newPath?oldPath=/newPath'
+      const expectedUrl = 'https://{{FAKE_VAR}}/newPath?oldPath=/newPath'
       const overriddenConfig = utils.getOverriddenConfig(fakeTest, publicId, mockReporter, configOverride)
 
       expect(overriddenConfig.public_id).toBe(publicId)
       expect(overriddenConfig.startUrl).toBe(expectedUrl)
       process.env = envVars
-    })
-
-    test('startUrl with empty variable is replaced', () => {
-      const publicId = 'abc-def-ghi'
-      const fakeTest = {
-        config: {request: {url: 'http://exmaple.org/path'}},
-        public_id: publicId,
-        type: 'browser',
-      } as Test
-      const configOverride = {
-        startUrl: 'http://127.0.0.1/newPath{{PARAMS}}',
-      }
-      const expectedUrl = 'http://127.0.0.1/newPath'
-      const overriddenConfig = utils.getOverriddenConfig(fakeTest, publicId, mockReporter, configOverride)
-
-      expect(overriddenConfig.public_id).toBe(publicId)
-      expect(overriddenConfig.startUrl).toBe(expectedUrl)
     })
 
     test('config overrides are applied', () => {
@@ -405,7 +500,7 @@ describe('utils', () => {
         public_id: publicId,
         type: 'browser',
       } as Test
-      const configOverride: ConfigOverride = {
+      const configOverride: UserConfigOverride = {
         allowInsecureCertificates: true,
         basicAuth: {username: 'user', password: 'password'},
         body: 'body',
@@ -435,7 +530,7 @@ describe('utils', () => {
   describe('hasResultPassed', () => {
     test('complete result', () => {
       const result: ServerResult = {
-        device: {height: 0, id: 'laptop_large', width: 0},
+        device: {height: 1100, id: 'chrome.laptop_large', width: 1440},
         duration: 0,
         passed: true,
         startUrl: '',
@@ -450,7 +545,7 @@ describe('utils', () => {
 
     test('result with error', () => {
       const result: ServerResult = {
-        device: {height: 0, id: 'laptop_large', width: 0},
+        device: {height: 1100, id: 'chrome.laptop_large', width: 1440},
         duration: 0,
         failure: {
           code: 'ERRABORTED',
@@ -466,7 +561,7 @@ describe('utils', () => {
 
     test('result with unhealthy result', () => {
       const result: ServerResult = {
-        device: {height: 0, id: 'laptop_large', width: 0},
+        device: {height: 1100, id: 'chrome.laptop_large', width: 1440},
         duration: 0,
         failure: {
           code: 'ERRABORTED',
@@ -483,7 +578,7 @@ describe('utils', () => {
 
     test('result with timeout result', () => {
       const result: ServerResult = {
-        device: {height: 0, id: 'laptop_large', width: 0},
+        device: {height: 1100, id: 'chrome.laptop_large', width: 1440},
         duration: 0,
         passed: false,
         startUrl: '',
@@ -602,6 +697,30 @@ describe('utils', () => {
       ).toEqual([result])
 
       expect(mockReporter.resultReceived).toHaveBeenCalledWith(batch.results[0])
+    })
+
+    test('Test object in each result should be different even if they share the same public ID (config overrides)', async () => {
+      mockApi({
+        getBatchImplementation: async () => ({
+          results: [batch.results[0], {...batch.results[0], result_id: '3'}],
+          status: 'in_progress',
+        }),
+        pollResultsImplementation: async () => [
+          deepExtend({}, pollResult),
+          // The test object from the second result has an overridden start URL
+          deepExtend({}, pollResult, {check: {config: {request: {url: 'https://reddit.com/'}}}, resultID: '3'}),
+        ],
+      })
+
+      const results = await utils.waitForResults(
+        api,
+        trigger,
+        [result.test, result.test],
+        {maxPollingTimeout: 0, failOnCriticalErrors: false},
+        mockReporter
+      )
+
+      expect(results.map(({test}) => test.config.request.url)).toEqual(['http://fake.url', 'https://reddit.com/'])
     })
 
     test('results should be timed out if global pollingTimeout is exceeded', async () => {
@@ -818,13 +937,15 @@ describe('utils', () => {
     test('pollResults throws', async () => {
       const {pollResultsMock} = mockApi({
         pollResultsImplementation: () => {
-          throw new Error('Poll results server error')
+          throw getAxiosHttpError(502, {message: 'Poll results server error'})
         },
       })
 
       await expect(
         utils.waitForResults(api, trigger, [result.test], {maxPollingTimeout: 2000}, mockReporter)
-      ).rejects.toThrowError('Failed to poll results: Poll results server error')
+      ).rejects.toThrowError(
+        'Failed to poll results: could not query https://app.datadoghq.com/example\nPoll results server error\n'
+      )
 
       expect(pollResultsMock).toHaveBeenCalledWith([result.resultId])
     })
@@ -832,13 +953,15 @@ describe('utils', () => {
     test('getBatch throws', async () => {
       const {getBatchMock} = mockApi({
         getBatchImplementation: () => {
-          throw new Error('Get batch server error')
+          throw getAxiosHttpError(502, {message: 'Get batch server error'})
         },
       })
 
       await expect(
         utils.waitForResults(api, trigger, [result.test], {maxPollingTimeout: 2000}, mockReporter)
-      ).rejects.toThrowError('Failed to get batch: Get batch server error')
+      ).rejects.toThrowError(
+        'Failed to get batch: could not query https://app.datadoghq.com/example\nGet batch server error\n'
+      )
 
       expect(getBatchMock).toHaveBeenCalledWith(trigger.batch_id)
     })
@@ -918,7 +1041,23 @@ describe('utils', () => {
   })
 
   test('getAppBaseURL', () => {
-    expect(utils.getAppBaseURL({datadogSite: 'datadoghq.eu', subdomain: 'custom'})).toBe('https://custom.datadoghq.eu/')
+    // Usual datadog site.
+    expect(utils.getAppBaseURL({datadogSite: 'datadoghq.com', subdomain: ''})).toBe('https://app.datadoghq.com/')
+    expect(utils.getAppBaseURL({datadogSite: 'datadoghq.com', subdomain: 'app'})).toBe('https://app.datadoghq.com/')
+    expect(utils.getAppBaseURL({datadogSite: 'datadoghq.com', subdomain: 'myorg'})).toBe('https://myorg.datadoghq.com/')
+
+    // Different top-level domain.
+    expect(utils.getAppBaseURL({datadogSite: 'datadoghq.eu', subdomain: ''})).toBe('https://app.datadoghq.eu/')
+    expect(utils.getAppBaseURL({datadogSite: 'datadoghq.eu', subdomain: 'app'})).toBe('https://app.datadoghq.eu/')
+    expect(utils.getAppBaseURL({datadogSite: 'datadoghq.eu', subdomain: 'myorg'})).toBe('https://myorg.datadoghq.eu/')
+
+    // US3/US5-type datadog site: the datadog site's subdomain is replaced by `subdomain` when `subdomain` is custom.
+    // The correct Main DC (US3 in this case) is resolved automatically.
+    expect(utils.getAppBaseURL({datadogSite: 'us3.datadoghq.com', subdomain: ''})).toBe('https://us3.datadoghq.com/')
+    expect(utils.getAppBaseURL({datadogSite: 'us3.datadoghq.com', subdomain: 'app'})).toBe('https://us3.datadoghq.com/')
+    expect(utils.getAppBaseURL({datadogSite: 'us3.datadoghq.com', subdomain: 'myorg'})).toBe(
+      'https://myorg.datadoghq.com/'
+    )
   })
 
   describe('sortResultsByOutcome', () => {
@@ -937,7 +1076,7 @@ describe('utils', () => {
   })
 
   describe('Render results', () => {
-    const emptySummary = utils.createSummary()
+    const emptySummary = getSummary()
 
     const cases: RenderResultsTestCase[] = [
       {
@@ -1113,26 +1252,41 @@ describe('utils', () => {
     test('should default to datadog us api', async () => {
       process.env = {}
 
-      expect(utils.getDatadogHost(false, ciConfig)).toBe('https://api.datadoghq.com/api/v1')
-      expect(utils.getDatadogHost(true, ciConfig)).toBe('https://intake.synthetics.datadoghq.com/api/v1')
+      expect(utils.getDatadogHost({useIntake: false, apiVersion: 'v1', config: ciConfig})).toBe(
+        'https://api.datadoghq.com/api/v1'
+      )
+      expect(utils.getDatadogHost({useIntake: false, apiVersion: 'unstable', config: ciConfig})).toBe(
+        'https://api.datadoghq.com/api/unstable'
+      )
+      expect(utils.getDatadogHost({useIntake: true, apiVersion: 'v1', config: ciConfig})).toBe(
+        'https://intake.synthetics.datadoghq.com/api/v1'
+      )
     })
 
     test('should use DD_API_HOST_OVERRIDE', async () => {
       process.env = {DD_API_HOST_OVERRIDE: 'https://foobar'}
 
-      expect(utils.getDatadogHost(true, ciConfig)).toBe('https://foobar/api/v1')
-      expect(utils.getDatadogHost(true, ciConfig)).toBe('https://foobar/api/v1')
+      expect(utils.getDatadogHost({useIntake: true, apiVersion: 'v1', config: ciConfig})).toBe('https://foobar/api/v1')
+      expect(utils.getDatadogHost({useIntake: true, apiVersion: 'v1', config: ciConfig})).toBe('https://foobar/api/v1')
     })
 
     test('should use Synthetics intake endpoint', async () => {
       process.env = {}
 
-      expect(utils.getDatadogHost(true, {...ciConfig, datadogSite: 'datadoghq.com' as string})).toBe(
-        'https://intake.synthetics.datadoghq.com/api/v1'
-      )
-      expect(utils.getDatadogHost(true, {...ciConfig, datadogSite: 'datad0g.com' as string})).toBe(
-        'https://intake.synthetics.datad0g.com/api/v1'
-      )
+      expect(
+        utils.getDatadogHost({
+          apiVersion: 'v1',
+          config: {...ciConfig, datadogSite: 'datadoghq.com' as string},
+          useIntake: true,
+        })
+      ).toBe('https://intake.synthetics.datadoghq.com/api/v1')
+      expect(
+        utils.getDatadogHost({
+          apiVersion: 'v1',
+          config: {...ciConfig, datadogSite: 'datad0g.com' as string},
+          useIntake: true,
+        })
+      ).toBe('https://intake.synthetics.datad0g.com/api/v1')
     })
   })
 })

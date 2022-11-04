@@ -1,6 +1,7 @@
-import {AxiosPromise, AxiosRequestConfig, default as axios} from 'axios'
 import http from 'http'
 import {AddressInfo} from 'net'
+
+import {AxiosPromise, AxiosRequestConfig, default as axios} from 'axios'
 import proxy from 'proxy'
 import ProxyAgent from 'proxy-agent'
 
@@ -43,14 +44,14 @@ describe('utils', () => {
         defaultConfigPath: '/veryuniqueandabsentfile',
       })
 
-      await expect(config).toEqual(originalConfig)
+      expect(config).toEqual(originalConfig)
     })
 
     test('should have no effect if no config path nor default path are provided', async () => {
       const originalConfig = {}
       const config = await ciUtils.resolveConfigFromFile(originalConfig, {})
 
-      await expect(config).toEqual(originalConfig)
+      expect(config).toEqual(originalConfig)
     })
 
     test('should throw an error if JSON parsing fails', async () => {
@@ -378,6 +379,6 @@ describe('utils', () => {
 })
 
 test('removeUndefinedValues', () => {
-  // tslint:disable-next-line: no-null-keyword
+  // eslint-disable-next-line no-null/no-null
   expect(ciUtils.removeUndefinedValues({a: 'b', c: 'd', e: undefined, g: null})).toEqual({a: 'b', c: 'd', g: null})
 })

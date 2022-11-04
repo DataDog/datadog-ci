@@ -15,7 +15,7 @@ You need to have `DATADOG_API_KEY` in your environment.
 export DATADOG_API_KEY="<API KEY>"
 ```
 
-It is possible to configure the tool to use Datadog EU by defining the `DATADOG_SITE` environment variable to `datadoghq.eu`. By defaut the requests are sent to Datadog US.
+It is possible to configure the tool to use Datadog EU by defining the `DATADOG_SITE` environment variable to `datadoghq.eu`. By default the requests are sent to Datadog US.
 
 It is also possible to override the full URL for the intake endpoint by defining the `DATADOG_DSYM_INTAKE_URL` environment variable.
 

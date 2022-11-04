@@ -1,10 +1,9 @@
-// tslint:disable: no-string-literal
 jest.mock('fs')
 jest.mock('aws-sdk')
 jest.mock('../prompt')
-import {Lambda} from 'aws-sdk'
-import {bold, cyan, red, yellow} from 'chalk'
 import * as fs from 'fs'
+
+import {Lambda} from 'aws-sdk'
 
 import {
   AWS_ACCESS_KEY_ID_ENV_VAR,
@@ -22,6 +21,7 @@ import {
 } from '../constants'
 import {requestAWSCredentials, requestChangesConfirmation, requestFunctionSelection} from '../prompt'
 import {UninstrumentCommand} from '../uninstrument'
+
 import {
   createCommand,
   createMockContext,
@@ -90,9 +90,9 @@ describe('uninstrument', () => {
       const output = context.stdout.toString()
       expect(code).toBe(0)
       expect(output).toMatchInlineSnapshot(`
-"\n${bold(yellow('[!]'))} Functions to be updated:
-\t- ${bold('arn:aws:lambda:us-east-1:000000000000:function:uninstrument')}\n
-${bold(cyan('[Dry Run] '))}Will apply the following updates:
+"\n[!] Functions to be updated:
+\t- arn:aws:lambda:us-east-1:000000000000:function:uninstrument\n
+[Dry Run] Will apply the following updates:
 UpdateFunctionConfiguration -> arn:aws:lambda:us-east-1:000000000000:function:uninstrument
 {
   \\"FunctionName\\": \\"arn:aws:lambda:us-east-1:000000000000:function:uninstrument\\",
@@ -167,7 +167,7 @@ UpdateFunctionConfiguration -> arn:aws:lambda:us-east-1:000000000000:function:un
       const code = await command['execute']()
       const output = command.context.stdout.toString()
       expect(code).toBe(1)
-      expect(output).toMatch(`${red('[Error]')} Couldn't fetch Lambda functions. Lambda failed\n`)
+      expect(output).toMatch("[Error] Couldn't fetch Lambda functions. Lambda failed\n")
     })
     test("aborts early when function regions can't be found", async () => {
       ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({code: 'ENOENT'}))
@@ -190,7 +190,7 @@ UpdateFunctionConfiguration -> arn:aws:lambda:us-east-1:000000000000:function:un
       const output = context.stdout.toString()
       expect(code).toBe(1)
       expect(output).toMatchInlineSnapshot(`
-        "${red('[Error]')} No functions specified for un-instrumentation.
+        "[Error] No functions specified for un-instrumentation.
         "
       `)
     })
@@ -203,7 +203,7 @@ UpdateFunctionConfiguration -> arn:aws:lambda:us-east-1:000000000000:function:un
       await command['execute']()
       const output = command.context.stdout.toString()
       expect(output).toMatchInlineSnapshot(`
-        "${red('[Error]')} No functions specified for un-instrumentation.
+        "[Error] No functions specified for un-instrumentation.
         "
       `)
     })
@@ -268,9 +268,7 @@ UpdateFunctionConfiguration -> arn:aws:lambda:us-east-1:000000000000:function:un
       const output = command.context.stdout.toString()
       expect(code).toBe(1)
       expect(output).toMatch(
-        `Fetching Lambda functions, this might take a while.\n${red(
-          '[Error]'
-        )} Couldn't fetch Lambda functions. Error: Max retry count exceeded. ListFunctionsError\n`
+        "Fetching Lambda functions, this might take a while.\n[Error] Couldn't fetch Lambda functions. Error: Max retry count exceeded. ListFunctionsError\n"
       )
     })
 
@@ -366,13 +364,11 @@ UpdateFunctionConfiguration -> arn:aws:lambda:us-east-1:000000000000:function:un
       const output = context.stdout.toString()
       expect(code).toBe(0)
       expect(output).toMatchInlineSnapshot(`
-"${bold(
-        yellow('[!]')
-      )} No AWS credentials found, let's set them up! Or you can re-run the command and supply the AWS credentials in the same way when you invoke the AWS CLI.
+"[!] No AWS credentials found, let's set them up! Or you can re-run the command and supply the AWS credentials in the same way when you invoke the AWS CLI.
 Fetching Lambda functions, this might take a while.\n
-${bold(yellow('[!]'))} Functions to be updated:
-\t- ${bold('arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world')}
-\t- ${bold('arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world-2')}\n
+[!] Functions to be updated:
+\t- arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world
+\t- arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world-2\n
 Will apply the following updates:
 UpdateFunctionConfiguration -> arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world
 {
@@ -394,8 +390,8 @@ UpdateFunctionConfiguration -> arn:aws:lambda:sa-east-1:123456789012:function:la
   },
   \\"Layers\\": []
 }
-${yellow('[!]')} Confirmation needed.
-${yellow('[!]')} Uninstrumenting functions.
+[!] Confirmation needed.
+[!] Uninstrumenting functions.
 "
 `)
     })
@@ -503,12 +499,10 @@ ${yellow('[!]')} Uninstrumenting functions.
       const output = context.stdout.toString()
       expect(code).toBe(0)
       expect(output).toMatchInlineSnapshot(`
-"${bold(
-        yellow('[!]')
-      )} No AWS credentials found, let's set them up! Or you can re-run the command and supply the AWS credentials in the same way when you invoke the AWS CLI.\n
-${bold(yellow('[!]'))} Functions to be updated:
-\t- ${bold('arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world')}
-\t- ${bold('arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world-2')}\n
+"[!] No AWS credentials found, let's set them up! Or you can re-run the command and supply the AWS credentials in the same way when you invoke the AWS CLI.\n
+[!] Functions to be updated:
+\t- arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world
+\t- arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world-2\n
 Will apply the following updates:
 UpdateFunctionConfiguration -> arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world
 {
@@ -530,8 +524,8 @@ UpdateFunctionConfiguration -> arn:aws:lambda:sa-east-1:123456789012:function:la
   },
   \\"Layers\\": []
 }
-${yellow('[!]')} Confirmation needed.
-${yellow('[!]')} Uninstrumenting functions.
+[!] Confirmation needed.
+[!] Uninstrumenting functions.
 "
 `)
     })
@@ -545,10 +539,8 @@ ${yellow('[!]')} Uninstrumenting functions.
       const output = context.stdout.toString()
       expect(code).toBe(1)
       expect(output).toMatchInlineSnapshot(`
-"${bold(
-        yellow('[!]')
-      )} No AWS credentials found, let's set them up! Or you can re-run the command and supply the AWS credentials in the same way when you invoke the AWS CLI.
-${red('[Error]')} Unexpected error
+"[!] No AWS credentials found, let's set them up! Or you can re-run the command and supply the AWS credentials in the same way when you invoke the AWS CLI.
+[Error] Unexpected error
 "
 `)
     })
@@ -568,7 +560,7 @@ ${red('[Error]')} Unexpected error
       expect(code).toBe(1)
       expect(output).toMatchInlineSnapshot(`
 "Fetching Lambda functions, this might take a while.
-${red('[Error]')} Couldn't find any Lambda functions in the specified region.
+[Error] Couldn't find any Lambda functions in the specified region.
 "
 `)
     })
@@ -591,7 +583,7 @@ ${red('[Error]')} Couldn't find any Lambda functions in the specified region.
       expect(code).toBe(1)
       expect(output).toMatchInlineSnapshot(`
 "Fetching Lambda functions, this might take a while.
-${red('[Error]')} Couldn't fetch Lambda functions. Error: Max retry count exceeded. ListFunctionsError
+[Error] Couldn't fetch Lambda functions. Error: Max retry count exceeded. ListFunctionsError
 "
 `)
     })

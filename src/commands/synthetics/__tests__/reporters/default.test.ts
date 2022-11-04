@@ -1,9 +1,18 @@
+jest.unmock('chalk')
+
 import {BaseContext} from 'clipanion/lib/advanced'
 
-import {ConfigOverride, ExecutionRule, MainReporter, Result, Summary, Test} from '../../interfaces'
+import {ExecutionRule, MainReporter, Result, Summary, Test, UserConfigOverride} from '../../interfaces'
 import {DefaultReporter} from '../../reporters/default'
-import {createSummary} from '../../utils'
-import {getApiResult, getApiTest, getFailedBrowserResult, getTimedOutBrowserResult, MOCK_BASE_URL} from '../fixtures'
+
+import {
+  getApiResult,
+  getApiTest,
+  getFailedBrowserResult,
+  getSummary,
+  getTimedOutBrowserResult,
+  MOCK_BASE_URL,
+} from '../fixtures'
 
 /**
  * A good amount of these tests rely on Jest snapshot assertions.
@@ -26,16 +35,18 @@ describe('Default reporter', () => {
   const reporter = new DefaultReporter(mockContext as {context: BaseContext})
 
   it('should log for each hook', () => {
+    type ReporterCall = {[Fn in keyof MainReporter]: [Fn, Parameters<MainReporter[Fn]>]}[keyof MainReporter]
+
     // `testWait`/`resultReceived` is skipped as nothing is logged for the default reporter.
-    const calls: [keyof MainReporter, any[]][] = [
+    const calls: ReporterCall[] = [
       ['error', ['error']],
       ['initErrors', [['error']]],
       ['log', ['log']],
       ['reportStart', [{startTime: 0}]],
       ['resultEnd', [getApiResult('1', getApiTest()), '']],
-      ['runEnd', [createSummary(), '']],
-      ['testTrigger', [{}, '', '', {}]],
-      ['testsWait', [[{}]]],
+      ['runEnd', [getSummary(), '']],
+      ['testTrigger', [getApiTest(), '', ExecutionRule.BLOCKING, {}]],
+      ['testsWait', [[getApiTest()]]],
     ]
     for (const [fnName, args] of calls) {
       ;(reporter[fnName] as any)(...args)
@@ -54,7 +65,7 @@ describe('Default reporter', () => {
     }
     const testId = 'aaa-bbb-ccc'
 
-    const cases: [string, ExecutionRule, ConfigOverride][] = [
+    const cases: [string, ExecutionRule, UserConfigOverride][] = [
       ['Blocking test, without config overwrite', ExecutionRule.BLOCKING, {}],
       ['Blocking test, with 1 config override', ExecutionRule.BLOCKING, {startUrl: 'foo'}],
       ['Blocking test, with 2 config overrides', ExecutionRule.BLOCKING, {startUrl: 'foo', body: 'hello'}],
@@ -91,6 +102,12 @@ describe('Default reporter', () => {
       const mostRecentOutput = writeMock.mock.calls[writeMock.mock.calls.length - 1][0]
       expect(mostRecentOutput).toMatchSnapshot()
     })
+  })
+
+  test('testsWait outputs triggered tests', async () => {
+    reporter.testsWait(new Array(11).fill(getApiTest()))
+    const output = writeMock.mock.calls.map((c) => c[0]).join('\n')
+    expect(output).toMatchSnapshot()
   })
 
   describe('resultEnd', () => {
@@ -176,7 +193,7 @@ describe('Default reporter', () => {
       writeMock.mockClear()
     })
 
-    const baseSummary: Summary = createSummary()
+    const baseSummary: Summary = getSummary()
 
     const complexSummary: Summary = {
       batchId: 'batch-id',

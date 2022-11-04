@@ -1,6 +1,6 @@
 jest.mock('inquirer')
-import {blueBright} from 'chalk'
 import {prompt} from 'inquirer'
+
 import {
   AWS_ACCESS_KEY_ID_ENV_VAR,
   AWS_SECRET_ACCESS_KEY_ENV_VAR,
@@ -20,37 +20,36 @@ import {
   requestDatadogEnvVars,
   requestFunctionSelection,
 } from '../prompt'
+
 import {mockAwsAccessKeyId, mockAwsSecretAccessKey, mockDatadogApiKey} from './fixtures'
 
 describe('prompt', () => {
   describe('confirmationQuestion', () => {
-    test('returns question with provided message', () => {
+    test('returns question with provided message', async () => {
       const message = 'Do you want to continue?'
       const question = confirmationQuestion(message)
-      expect(question.message).toBe(message)
+      expect(await question.message).toBe(message)
     })
   })
 
   describe('datadogApiKeyTypeQuestion', () => {
-    test('returns question with message pointing to the correct given site', () => {
+    test('returns question with message pointing to the correct given site', async () => {
       const site = 'datadoghq.com'
       const question = datadogApiKeyTypeQuestion(site)
-      expect(question.message).toBe(
-        `Which type of Datadog API Key you want to set? \nLearn more at ${blueBright(
-          `https://app.${site}/organization-settings/api-keys`
-        )}`
+      expect(await question.message).toBe(
+        `Which type of Datadog API Key you want to set? \nLearn more at https://app.${site}/organization-settings/api-keys`
       )
     })
   })
 
   describe('datadogEnvVarsQuestions', () => {
-    test('returns correct message when user selects DATADOG_API_KEY', () => {
+    test('returns correct message when user selects DATADOG_API_KEY', async () => {
       const datadogApiKeyType = {
         envVar: CI_API_KEY_ENV_VAR,
         message: 'API Key:',
       }
       const question = datadogEnvVarsQuestions(datadogApiKeyType)
-      expect(question.message).toBe('API Key:')
+      expect(await question.message).toBe('API Key:')
       expect(question.name).toBe(CI_API_KEY_ENV_VAR)
     })
 
@@ -68,23 +67,23 @@ describe('prompt', () => {
       expect(question.validate!('1234567890abcdef1200791a6a0de187')).toBe(true)
     })
 
-    test('returns correct message when user selects DATADOG_KMS_API_KEY', () => {
+    test('returns correct message when user selects DATADOG_KMS_API_KEY', async () => {
       const datadogApiKeyType = {
         envVar: CI_KMS_API_KEY_ENV_VAR,
         message: 'KMS API Key:',
       }
       const question = datadogEnvVarsQuestions(datadogApiKeyType)
-      expect(question.message).toBe('KMS API Key:')
+      expect(await question.message).toBe('KMS API Key:')
       expect(question.name).toBe(CI_KMS_API_KEY_ENV_VAR)
     })
 
-    test('returns correct message when user selects DATADOG_API_KEY_SECRET_ARN', () => {
+    test('returns correct message when user selects DATADOG_API_KEY_SECRET_ARN', async () => {
       const datadogApiKeyType = {
         envVar: CI_API_KEY_SECRET_ARN_ENV_VAR,
         message: 'API Key Secret ARN:',
       }
       const question = datadogEnvVarsQuestions(datadogApiKeyType)
-      expect(question.message).toBe('API Key Secret ARN:')
+      expect(await question.message).toBe('API Key Secret ARN:')
       expect(question.name).toBe(CI_API_KEY_SECRET_ARN_ENV_VAR)
     })
 

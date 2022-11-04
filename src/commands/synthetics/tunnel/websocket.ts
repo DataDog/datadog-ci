@@ -1,15 +1,15 @@
 import {EventEmitter, once} from 'events'
 
-import {createWebSocketStream, default as WebSocketModule} from 'ws'
+import type ProxyAgent from 'proxy-agent'
 
-import {getProxyAgent, ProxyConfiguration} from '../../helpers/utils'
+import {createWebSocketStream, default as WebSocketModule} from 'ws'
 
 export class WebSocket extends EventEmitter {
   private firstMessage?: Promise<WebSocketModule.Data>
   private keepAliveWebsocket?: Promise<void> // Artificial promise that resolves when closing and will reject in case of error
   private websocket?: WebSocketModule
 
-  constructor(private url: string, private proxyOpts: ProxyConfiguration) {
+  constructor(private url: string, private proxyAgent: ReturnType<typeof ProxyAgent> | undefined) {
     super()
   }
 
@@ -103,10 +103,8 @@ export class WebSocket extends EventEmitter {
 
   private establishWebsocketConnection(resolve: (value: void) => void, reject: (error: Error) => void) {
     if (!this.websocket) {
-      const options: WebSocketModule.ClientOptions = {}
-      const proxyAgent = getProxyAgent(this.proxyOpts)
-      if (proxyAgent) {
-        options.agent = proxyAgent
+      const options: WebSocketModule.ClientOptions = {
+        agent: this.proxyAgent,
       }
 
       this.websocket = new WebSocketModule(this.url, options)

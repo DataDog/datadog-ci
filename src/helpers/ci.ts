@@ -38,6 +38,12 @@ export const CI_ENGINES = {
   GITLAB: 'gitlab',
   JENKINS: 'jenkins',
   TRAVIS: 'travisci',
+  BUDDY: 'buddy',
+}
+
+export const PROVIDER_TO_DISPLAY_NAME = {
+  github: 'GitHub Actions',
+  buddy: 'Buddy',
 }
 
 // Receives a string with the form 'John Doe <john.doe@gmail.com>'
@@ -119,7 +125,6 @@ export const getCISpanTags = (): SpanTags | undefined => {
       [CI_ENV_VARS]: JSON.stringify({
         CIRCLE_WORKFLOW_ID,
         // Snapshots are generated automatically and are sort sensitive
-        // tslint:disable-next-line
         CIRCLE_BUILD_NUM,
       }),
     }
@@ -201,7 +206,6 @@ export const getCISpanTags = (): SpanTags | undefined => {
       [CI_ENV_VARS]: JSON.stringify({
         CI_PROJECT_URL: GITLAB_CI_PROJECT_URL,
         // Snapshots are generated automatically and are sort sensitive
-        // tslint:disable-next-line
         CI_PIPELINE_ID: GITLAB_CI_PIPELINE_ID,
         CI_JOB_ID: GITLAB_CI_JOB_ID,
       }),
@@ -246,7 +250,6 @@ export const getCISpanTags = (): SpanTags | undefined => {
       [CI_ENV_VARS]: JSON.stringify({
         GITHUB_SERVER_URL,
         // Snapshots are generated automatically and are sort sensitive
-        // tslint:disable-next-line
         GITHUB_REPOSITORY,
         GITHUB_RUN_ID,
         GITHUB_RUN_ATTEMPT,
@@ -499,17 +502,40 @@ export const getCISpanTags = (): SpanTags | undefined => {
     }
   }
 
+  if (env.BUDDY) {
+    const {
+      BUDDY_PIPELINE_NAME,
+      BUDDY_EXECUTION_ID,
+      BUDDY_SCM_URL,
+      BUDDY_EXECUTION_BRANCH,
+      BUDDY_EXECUTION_REVISION,
+      BUDDY_EXECUTION_URL,
+      BUDDY_EXECUTION_REVISION_MESSAGE,
+    } = env
+
+    tags = {
+      [CI_PROVIDER_NAME]: CI_ENGINES.BUDDY,
+      [CI_PIPELINE_ID]: BUDDY_EXECUTION_ID,
+      [CI_PIPELINE_URL]: BUDDY_EXECUTION_URL,
+      [CI_PIPELINE_NAME]: BUDDY_PIPELINE_NAME,
+      [GIT_SHA]: BUDDY_EXECUTION_REVISION,
+      [GIT_BRANCH]: BUDDY_EXECUTION_BRANCH,
+      [GIT_REPOSITORY_URL]: BUDDY_SCM_URL,
+      [GIT_COMMIT_MESSAGE]: BUDDY_EXECUTION_REVISION_MESSAGE,
+    }
+  }
+
   if (tags[CI_WORKSPACE_PATH]) {
-    tags[CI_WORKSPACE_PATH] = resolveTilde(tags[CI_WORKSPACE_PATH]!)
+    tags[CI_WORKSPACE_PATH] = resolveTilde(tags[CI_WORKSPACE_PATH])
   }
   if (tags[GIT_REPOSITORY_URL]) {
     tags[GIT_REPOSITORY_URL] = filterSensitiveInfoFromRepository(tags[GIT_REPOSITORY_URL]!)
   }
   if (tags[GIT_BRANCH]) {
-    tags[GIT_BRANCH] = normalizeRef(tags[GIT_BRANCH]!)
+    tags[GIT_BRANCH] = normalizeRef(tags[GIT_BRANCH])
   }
   if (tags[GIT_TAG]) {
-    tags[GIT_TAG] = normalizeRef(tags[GIT_TAG]!)
+    tags[GIT_TAG] = normalizeRef(tags[GIT_TAG])
   }
 
   return removeEmptyValues(tags)
@@ -592,36 +618,59 @@ const parsePipelineNumber = (pipelineNumberStr: string | undefined): number | un
 export const getCIEnv = (): {ciEnv: Record<string, string>; provider: string} => {
   if (process.env.CIRCLECI) {
     return {
-      ciEnv: getEnvVars('CIRCLE_'),
+      ciEnv: filterEnv(['CIRCLE_WORKFLOW_ID', 'CIRCLE_BUILD_NUM']),
       provider: 'circleci',
     }
   }
 
   if (process.env.GITLAB_CI) {
     return {
-      ciEnv: getEnvVars('CI_'),
+      ciEnv: filterEnv(['CI_PROJECT_URL', 'CI_PIPELINE_ID', 'CI_JOB_ID']),
       provider: 'gitlab',
     }
   }
 
   if (process.env.GITHUB_ACTIONS || process.env.GITHUB_ACTION) {
     return {
-      ciEnv: getEnvVars('GITHUB_'),
+      ciEnv: filterEnv(['GITHUB_SERVER_URL', 'GITHUB_REPOSITORY', 'GITHUB_RUN_ID', 'GITHUB_RUN_ATTEMPT']),
       provider: 'github',
     }
   }
 
   if (process.env.BUILDKITE) {
     return {
-      ciEnv: getEnvVars('BUILDKITE_'),
+      ciEnv: filterEnv(['BUILDKITE_BUILD_ID', 'BUILDKITE_JOB_ID']),
       provider: 'buildkite',
+    }
+  }
+
+  if (process.env.BUDDY) {
+    return {
+      ciEnv: filterEnv(['BUDDY_PIPELINE_ID', 'BUDDY_EXECUTION_ID', 'BUDDY_EXECUTION_START_DATE']),
+      provider: 'buddy',
     }
   }
 
   throw new Error('Only providers [GitHub, GitLab, CircleCI, Buildkite] are supported')
 }
 
-const getEnvVars = (prefix: string): Record<string, string> =>
-  Object.entries(process.env)
-    .filter(([key, value]) => key.startsWith(prefix) && !/(PASS)|(TOKEN)|(SECRET)|(KEY)/i.test(key))
-    .reduce((accum, [key, value]) => ({...accum, [key]: value}), {})
+const filterEnv = (values: string[]): Record<string, string> => {
+  const ciEnvs: Record<string, string> = {}
+  const missing: string[] = []
+
+  values.forEach((envKey) => {
+    const envValue = process.env[envKey]
+    if (envValue) {
+      ciEnvs[envKey] = envValue
+    } else {
+      missing.push(envKey)
+    }
+  })
+
+  if (missing.length > 0) {
+    // Get the missing values for better error
+    throw new Error(`Missing environment variables [${missing.toString()}]`)
+  }
+
+  return ciEnvs
+}

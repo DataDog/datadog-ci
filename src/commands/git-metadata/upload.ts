@@ -8,6 +8,7 @@ import {RequestBuilder} from '../../helpers/interfaces'
 import {getMetricsLogger} from '../../helpers/metrics'
 import {UploadStatus} from '../../helpers/upload'
 import {getRequestBuilder} from '../../helpers/utils'
+
 import {datadogSite, getBaseIntakeUrl} from './api'
 import {getCommitInfo, newSimpleGit} from './git'
 import {CommitInfo} from './interfaces'
@@ -25,9 +26,9 @@ export class UploadCommand extends Command {
   public static usage = Command.Usage({
     description: 'Report the current commit details to Datadog.',
     details: `
-            This command will upload the commit details to Datadog in order to create links to your repositories inside DataDog's UI.
-            See README for details.
-        `,
+      This command will upload the commit details to Datadog in order to create links to your repositories inside Datadog's UI.\n
+      See README for details.
+    `,
     examples: [['Upload the current commit details', 'datadog-ci report-commits upload']],
   })
 
@@ -131,7 +132,7 @@ export class UploadCommand extends Command {
     }
 
     return getRequestBuilder({
-      apiKey: this.config.apiKey!,
+      apiKey: this.config.apiKey,
       baseUrl: getBaseIntakeUrl(),
       headers: new Map([
         ['DD-EVP-ORIGIN', 'datadog-ci git-metadata'],

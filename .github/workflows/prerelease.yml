@@ -6,10 +6,10 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-node@v1
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
         with:
-          node-version: '10.24.1'
+          node-version: '14'
       - run: |
           # Isolate the tag and exit if none found
           IFS='-' read -ra ARR_TAG <<< $TAG

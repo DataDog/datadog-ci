@@ -1,9 +1,9 @@
-/* tslint:disable:max-classes-per-file */
-const nonCriticalErrorCodes = ['NO_TESTS_TO_RUN'] as const
+const nonCriticalErrorCodes = ['NO_TESTS_TO_RUN', 'MISSING_TESTS'] as const
 export type NonCriticalCiErrorCode = typeof nonCriticalErrorCodes[number]
 
 const criticalErrorCodes = [
   'AUTHORIZATION_ERROR',
+  'INVALID_CONFIG',
   'MISSING_API_KEY',
   'MISSING_APP_KEY',
   'POLL_RESULTS_FAILED',
@@ -12,6 +12,7 @@ const criticalErrorCodes = [
   'TUNNEL_START_FAILED',
   'UNAVAILABLE_TEST_CONFIG',
   'UNAVAILABLE_TUNNEL_CONFIG',
+  'UPLOAD_MOBILE_APPLICATION_TESTS_FAILED',
 ] as const
 export type CriticalCiErrorCode = typeof criticalErrorCodes[number]
 

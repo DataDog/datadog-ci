@@ -1,12 +1,10 @@
-// tslint:disable: no-string-literal
+import * as ciUtils from '../../../../helpers/utils'
 
-import * as ciUtils from '../../../helpers/utils'
+import {DEFAULT_POLLING_TIMEOUT, RunTestCommand} from '../../command'
+import {ExecutionRule} from '../../interfaces'
+import * as utils from '../../utils'
 
-import {DEFAULT_POLLING_TIMEOUT, RunTestCommand} from '../command'
-import {ExecutionRule} from '../interfaces'
-import * as utils from '../utils'
-
-import {getSyntheticsProxy} from './fixtures'
+import {getSyntheticsProxy} from '../fixtures'
 
 describe('Proxy configuration', () => {
   let initialHttpProxyEnv: string | undefined

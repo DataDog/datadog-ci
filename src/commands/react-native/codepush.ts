@@ -1,7 +1,8 @@
 import {exec} from 'child_process'
-import {Cli, Command} from 'clipanion'
-import {CodepushHistoryCommandError, CodepushHistoryParseError, NoCodepushReleaseError} from './errors'
 
+import {Cli, Command} from 'clipanion'
+
+import {CodepushHistoryCommandError, CodepushHistoryParseError, NoCodepushReleaseError} from './errors'
 import {RNPlatform, RN_SUPPORTED_PLATFORMS} from './interfaces'
 import {UploadCommand} from './upload'
 
@@ -9,8 +10,8 @@ export class CodepushCommand extends Command {
   public static usage = Command.Usage({
     description: 'Upload your React Native Codepush bundle and sourcemaps to Datadog.',
     details: `
-    This command will upload React Native Codepush sourcemaps and their corresponding javascript bundle to Datadog in order to un-minify front-end stack traces received by Datadog.
-    See README for details.
+      This command will upload React Native Codepush sourcemaps and their corresponding javascript bundle to Datadog in order to un-minify front-end stack traces received by Datadog.\n
+      See README for details.
     `,
     examples: [
       [
@@ -39,6 +40,7 @@ export class CodepushCommand extends Command {
   private platform?: RNPlatform
   private projectPath?: string
   private releaseVersion?: string
+  private removeSourcesContent?: boolean
   private repositoryURL?: string
   private service?: string
   private sourcemap?: string
@@ -132,6 +134,9 @@ export class CodepushCommand extends Command {
     if (this.disableGit) {
       uploadCommand.push('--disable-git')
     }
+    if (this.removeSourcesContent) {
+      uploadCommand.push('--remove-sources-content')
+    }
     if (this.dryRun) {
       uploadCommand.push('--dry-run')
     }
@@ -182,3 +187,4 @@ CodepushCommand.addOption('projectPath', Command.String('--project-path'))
 CodepushCommand.addOption('configPath', Command.String('--config'))
 CodepushCommand.addOption('appCenterAppName', Command.String('--app'))
 CodepushCommand.addOption('appCenterDeployment', Command.String('--deployment'))
+CodepushCommand.addOption('removeSourcesContent', Command.Boolean('--remove-sources-content'))

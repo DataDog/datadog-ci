@@ -47,7 +47,8 @@ The configuration file structure is the following:
   "appKey": "<DATADOG_APPLICATION_KEY>",
   "datadogSite": "datadoghq.com",
   "failOnCriticalErrors": true,
-  "failOnTimeout": "true",
+  "failOnMissingTests": true,
+  "failOnTimeout": true,
   "files": "{,!(node_modules)/**/}*.synthetics.json",
   "global": {
     "allowInsecureCertificates": true,
@@ -56,7 +57,7 @@ The configuration file structure is the following:
     "bodyType": "application/json",
     "cookies": "name1=value1;name2=value2;",
     "defaultStepTimeout": 15,
-    "deviceIds": ["laptop_large"],
+    "deviceIds": ["chrome.laptop_large"],
     "executionRule": "skipped",
     "followRedirects": true,
     "headers": {"NEW_HEADER": "NEW VALUE"},
@@ -122,7 +123,8 @@ yarn datadog-ci synthetics run-tests -f ./component-1/**/*.synthetics.json -v PA
 #### Failure modes flags
 
 - `--failOnTimeout` (or `--no-failOnTimeout`) will make the CI fail (or pass) if one of the result exceed its test timeout.
-- `--failOnCriticalErrors` will make the command exit with an error code 1 if tests were not triggered or results could not be fetched.
+- `--failOnCriticalErrors` will make the CI fail if tests were not triggered or results could not be fetched.
+- `--failOnMissingTests` will make the CI fail if at least one test is missing.
 
 ### Test files
 
@@ -141,7 +143,7 @@ Your test files must be named with a `.synthetics.json` suffix.
         "bodyType": "application/json",
         "cookies": "name1=value1;name2=value2;",
         "defaultStepTimeout": 15,
-        "deviceIds": ["laptop_large"],
+        "deviceIds": ["chrome.laptop_large"],
         "executionRule": "skipped",
         "followRedirects": true,
         "headers": {"NEW_HEADER": "NEW VALUE"},
@@ -183,42 +185,9 @@ All options under the `config` key are optional and allow overriding the configu
 - `retry`: (object) retry policy for the test.
   - `count`: (integer) number of attempts to perform in case of test failure.
   - `interval`: (integer) interval between the attempts (in milliseconds).
-- `startUrl`: (string) new start URL to provide to the test.
+- `startUrl`: (string) new start URL to provide to the test. Variables specified in brackets (`{{ EXAMPLE }}`) found in environment variables are replaced.
 - `startUrlSubstitutionRegex`: (string) regex to modify the starting URL of the test (browser and HTTP tests only), whether it was given by the original test or by the configuration override `startUrl`. If the URL contains variables, this regex will be applied after the interpolation of the variables. The format is `s/your_regex/your_substitution/modifiers` and follow Javascript regex syntax, for instance `s/(https://www.)(.*)/$1extra-$2/` to transform `https://www.example.com` into `https://www.extra-example.com`.
 - `variables`: (object) variables to replace in the test. This object should contain as keys the name of the variable to replace and as values the new value of the variable.
-
-<details>
-  <summary>(Deprecated) Usage of URL variables</summary>
-
-_The following has been deprecated since 0.18.1 and will be removed in a few versions. You should now use `startUrlSubstitutionRegex` or regular variable overrides._
-
-You can configure on which url your Browser or HTTP test starts by providing a `config.startUrl` to your test object and build your own starting url using any part of your test's original starting url and the following environment variables:
-
-| Environment variable | Description                  | Example                                                       |
-| -------------------- | ---------------------------- | ------------------------------------------------------------- |
-| `URL`                | Test's original starting url | `https://www.example.org:81/path/to/something?abc=123#target` |
-| `DOMAIN`             | Test's domain name           | `example.org`                                                 |
-| `HASH`               | Test's URL hash              | `#target`                                                     |
-| `HOST`               | Test's host                  | `www.example.org:81`                                          |
-| `HOSTNAME`           | Test's hostname              | `www.example.org`                                             |
-| `ORIGIN`             | Test's origin                | `https://www.example.org:81`                                  |
-| `PARAMS`             | Test's query parameters      | `?abc=123`                                                    |
-| `PATHNAME`           | Test's URl path              | `/path/to/something`                                          |
-| `PORT`               | Test's host port             | `81`                                                          |
-| `PROTOCOL`           | Test's protocol              | `https:`                                                      |
-| `SUBDOMAIN`          | Test's sub domain            | `www`                                                         |
-
-For instance, if your test's starting url is `https://www.example.org:81/path/to/something?abc=123#target`
-
-It can be written as :
-
-- `{{PROTOCOL}}//{{SUBDOMAIN}}.{{DOMAIN}}:{{PORT}}{{PATHNAME}}{{PARAMS}}{{HASH}}`
-- `{{PROTOCOL}}//{{HOST}}{{PATHNAME}}{{PARAMS}}{{HASH}}`
-- `{{URL}}`
-
-and so on...
-
-</details>
 
 ### Testing tunnel
 
@@ -258,7 +227,7 @@ Two reporters are supported out-of-the-box:
 1. `stdout`
 2. JUnit
 
-To enable the JUnit report, pass the `--jUnitReport` (`-j` shorthand) in your command, specifying a filename for your JUnit XML report. 
+To enable the JUnit report, pass the `--jUnitReport` (`-j` shorthand) in your command, specifying a filename for your JUnit XML report.
 
 ```bash
 yarn datadog-ci synthetics run-tests -s 'tag:e2e-tests' --config global.config.json --jUnitReport e2e-test-junit
@@ -268,15 +237,15 @@ Reporters can hook themselves into the `MainReporter` of the command.
 
 #### Available hooks
 
-| Hook name        | Parameters                                                                           | Description                                                     |
-| :--------------- | :----------------------------------------------------------------------------------- | :-------------------------------------------------------------- |
-| `log`            | `(log: string)`                                                                      | called for logging.                                             |
-| `error`          | `(error: string)`                                                                    | called whenever an error occurs.                                |
-| `initErrors`     | `(errors: string[])`                                                                 | called whenever an error occurs during the tests parsing phase. |
-| `reportStart`    | `(timings: {startTime: number})`                                                     | called at the start of the report.                              |
-| `resultEnd`      | `(result: Result, baseUrl: string)`                                                  | called for each result at the end of all results.               |
-| `resultReceived` | `(result: Result)`                                                                   | called when a result is received.                               |
-| `testTrigger`    | `(test: Test, testId: string, executionRule: ExecutionRule, config: ConfigOverride)` | called when a test is triggered.                                |
-| `testWait`       | `(test: Test)`                                                                       | called when a test is waiting to receive its results.           |
-| `testsWait`      | `(tests: Test[])`                                                                    | called when all tests are waiting to receive their results.     |
-| `runEnd`         | `(summary: Summary, baseUrl: string)`                                                | called at the end of the run.                                   |
+| Hook name        | Parameters                                                                               | Description                                                     |
+| :--------------- | :--------------------------------------------------------------------------------------- | :-------------------------------------------------------------- |
+| `log`            | `(log: string)`                                                                          | called for logging.                                             |
+| `error`          | `(error: string)`                                                                        | called whenever an error occurs.                                |
+| `initErrors`     | `(errors: string[])`                                                                     | called whenever an error occurs during the tests parsing phase. |
+| `reportStart`    | `(timings: {startTime: number})`                                                         | called at the start of the report.                              |
+| `resultEnd`      | `(result: Result, baseUrl: string)`                                                      | called for each result at the end of all results.               |
+| `resultReceived` | `(result: Result)`                                                                       | called when a result is received.                               |
+| `testTrigger`    | `(test: Test, testId: string, executionRule: ExecutionRule, config: UserConfigOverride)` | called when a test is triggered.                                |
+| `testWait`       | `(test: Test)`                                                                           | called when a test is waiting to receive its results.           |
+| `testsWait`      | `(tests: Test[])`                                                                        | called when all tests are waiting to receive their results.     |
+| `runEnd`         | `(summary: Summary, baseUrl: string)`                                                    | called at the end of the run.                                   |

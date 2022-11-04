@@ -10,8 +10,9 @@ src/commands/tag     @DataDog/ci-app-libraries
 src/commands/trace   @DataDog/ci-app-libraries
 
 ## RUM
-src/commands/dsyms         @DataDog/rum-mobile
-src/commands/react-native  @DataDog/rum-mobile
+src/commands/dsyms            @DataDog/rum-mobile
+src/commands/flutter-symbols  @DataDog/rum-mobile
+src/commands/react-native     @DataDog/rum-mobile
 
 ## Serverless
 src/commands/lambda  @DataDog/serverless
@@ -30,13 +31,13 @@ src/commands/synthetics  @DataDog/synthetics-worker
 src/helpers/git  @DataDog/ci-app-libraries @DataDog/source-code-integration
 
 ## CI
-src/helpers/ci.ts                                @DataDog/ci-app-libraries @Datadog/synthetics-worker
-src/helpers/tags.ts                              @DataDog/ci-app-libraries @Datadog/synthetics-worker
-src/helpers/user-provided-git.ts                 @DataDog/ci-app-libraries @Datadog/synthetics-worker
-src/helpers/**tests**/ci-env                     @DataDog/ci-app-libraries @Datadog/synthetics-worker
-src/helpers/**tests**/ci.test.ts                 @DataDog/ci-app-libraries @Datadog/synthetics-worker
-src/helpers/**tests**/tags.test.ts               @DataDog/ci-app-libraries @Datadog/synthetics-worker
-src/helpers/**tests**/user-provided-git.test.ts  @DataDog/ci-app-libraries @Datadog/synthetics-worker
+src/helpers/ci.ts                                @DataDog/ci-app-libraries @DataDog/synthetics-worker
+src/helpers/tags.ts                              @DataDog/ci-app-libraries @DataDog/synthetics-worker
+src/helpers/user-provided-git.ts                 @DataDog/ci-app-libraries @DataDog/synthetics-worker
+src/helpers/**tests**/ci-env                     @DataDog/ci-app-libraries @DataDog/synthetics-worker
+src/helpers/**tests**/ci.test.ts                 @DataDog/ci-app-libraries @DataDog/synthetics-worker
+src/helpers/**tests**/tags.test.ts               @DataDog/ci-app-libraries @DataDog/synthetics-worker
+src/helpers/**tests**/user-provided-git.test.ts  @DataDog/ci-app-libraries @DataDog/synthetics-worker
 
 
 # Documentation

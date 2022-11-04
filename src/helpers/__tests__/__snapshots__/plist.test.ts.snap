@@ -1,0 +1,415 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`plist util parsePlist parses the content of the info plist file 1`] = `
+Array [
+  Object {
+    "key": Array [
+      Object {
+        "#text": "CFBundleDevelopmentRegion",
+      },
+    ],
+  },
+  Object {
+    "string": Array [
+      Object {
+        "#text": "$(DEVELOPMENT_LANGUAGE)",
+      },
+    ],
+  },
+  Object {
+    "key": Array [
+      Object {
+        "#text": "CFBundleDisplayName",
+      },
+    ],
+  },
+  Object {
+    "string": Array [
+      Object {
+        "#text": "sample-app",
+      },
+    ],
+  },
+  Object {
+    "key": Array [
+      Object {
+        "#text": "CFBundleExecutable",
+      },
+    ],
+  },
+  Object {
+    "string": Array [
+      Object {
+        "#text": "$(EXECUTABLE_NAME)",
+      },
+    ],
+  },
+  Object {
+    "key": Array [
+      Object {
+        "#text": "CFBundleIdentifier",
+      },
+    ],
+  },
+  Object {
+    "string": Array [
+      Object {
+        "#text": "$(PRODUCT_BUNDLE_IDENTIFIER)",
+      },
+    ],
+  },
+  Object {
+    "key": Array [
+      Object {
+        "#text": "CFBundleInfoDictionaryVersion",
+      },
+    ],
+  },
+  Object {
+    "string": Array [
+      Object {
+        "#text": 6,
+      },
+    ],
+  },
+  Object {
+    "key": Array [
+      Object {
+        "#text": "CFBundleName",
+      },
+    ],
+  },
+  Object {
+    "string": Array [
+      Object {
+        "#text": "$(PRODUCT_NAME)",
+      },
+    ],
+  },
+  Object {
+    "key": Array [
+      Object {
+        "#text": "CFBundlePackageType",
+      },
+    ],
+  },
+  Object {
+    "string": Array [
+      Object {
+        "#text": "$(PRODUCT_BUNDLE_PACKAGE_TYPE)",
+      },
+    ],
+  },
+  Object {
+    "key": Array [
+      Object {
+        "#text": "CFBundleShortVersionString",
+      },
+    ],
+  },
+  Object {
+    "string": Array [
+      Object {
+        "#text": "1.0.4",
+      },
+    ],
+  },
+  Object {
+    "key": Array [
+      Object {
+        "#text": "CFBundleSignature",
+      },
+    ],
+  },
+  Object {
+    "string": Array [
+      Object {
+        "#text": "????",
+      },
+    ],
+  },
+  Object {
+    "key": Array [
+      Object {
+        "#text": "CFBundleURLTypes",
+      },
+    ],
+  },
+  Object {
+    "array": Array [
+      Object {
+        "dict": Array [
+          Object {
+            "key": Array [
+              Object {
+                "#text": "CFBundleURLSchemes",
+              },
+            ],
+          },
+          Object {
+            "array": Array [
+              Object {
+                "string": Array [
+                  Object {
+                    "#text": "myapp",
+                  },
+                ],
+              },
+              Object {
+                "string": Array [
+                  Object {
+                    "#text": "com.sample.app",
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      },
+      Object {
+        "dict": Array [
+          Object {
+            "key": Array [
+              Object {
+                "#text": "CFBundleURLSchemes",
+              },
+            ],
+          },
+          Object {
+            "array": Array [
+              Object {
+                "string": Array [
+                  Object {
+                    "#text": "exp+sample-app",
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      },
+    ],
+  },
+  Object {
+    "key": Array [
+      Object {
+        "#text": "CFBundleVersion",
+      },
+    ],
+  },
+  Object {
+    "string": Array [
+      Object {
+        "#text": 12,
+      },
+    ],
+  },
+  Object {
+    "key": Array [
+      Object {
+        "#text": "LSRequiresIPhoneOS",
+      },
+    ],
+  },
+  Object {
+    "true": Array [],
+  },
+  Object {
+    "key": Array [
+      Object {
+        "#text": "NSAppTransportSecurity",
+      },
+    ],
+  },
+  Object {
+    "dict": Array [
+      Object {
+        "key": Array [
+          Object {
+            "#text": "NSAllowsArbitraryLoads",
+          },
+        ],
+      },
+      Object {
+        "true": Array [],
+      },
+      Object {
+        "key": Array [
+          Object {
+            "#text": "NSExceptionDomains",
+          },
+        ],
+      },
+      Object {
+        "dict": Array [
+          Object {
+            "key": Array [
+              Object {
+                "#text": "localhost",
+              },
+            ],
+          },
+          Object {
+            "dict": Array [
+              Object {
+                "key": Array [
+                  Object {
+                    "#text": "NSExceptionAllowsInsecureHTTPLoads",
+                  },
+                ],
+              },
+              Object {
+                "true": Array [],
+              },
+            ],
+          },
+        ],
+      },
+    ],
+  },
+  Object {
+    "key": Array [
+      Object {
+        "#text": "UILaunchStoryboardName",
+      },
+    ],
+  },
+  Object {
+    "string": Array [
+      Object {
+        "#text": "SplashScreen",
+      },
+    ],
+  },
+  Object {
+    "key": Array [
+      Object {
+        "#text": "UIRequiredDeviceCapabilities",
+      },
+    ],
+  },
+  Object {
+    "array": Array [
+      Object {
+        "string": Array [
+          Object {
+            "#text": "armv7",
+          },
+        ],
+      },
+    ],
+  },
+  Object {
+    "key": Array [
+      Object {
+        "#text": "UIRequiresFullScreen",
+      },
+    ],
+  },
+  Object {
+    "false": Array [],
+  },
+  Object {
+    "key": Array [
+      Object {
+        "#text": "UIStatusBarStyle",
+      },
+    ],
+  },
+  Object {
+    "string": Array [
+      Object {
+        "#text": "UIStatusBarStyleDefault",
+      },
+    ],
+  },
+  Object {
+    "key": Array [
+      Object {
+        "#text": "UISupportedInterfaceOrientations",
+      },
+    ],
+  },
+  Object {
+    "array": Array [
+      Object {
+        "string": Array [
+          Object {
+            "#text": "UIInterfaceOrientationPortrait",
+          },
+        ],
+      },
+      Object {
+        "string": Array [
+          Object {
+            "#text": "UIInterfaceOrientationPortraitUpsideDown",
+          },
+        ],
+      },
+    ],
+  },
+  Object {
+    "key": Array [
+      Object {
+        "#text": "UISupportedInterfaceOrientations~ipad",
+      },
+    ],
+  },
+  Object {
+    "array": Array [
+      Object {
+        "string": Array [
+          Object {
+            "#text": "UIInterfaceOrientationPortrait",
+          },
+        ],
+      },
+      Object {
+        "string": Array [
+          Object {
+            "#text": "UIInterfaceOrientationPortraitUpsideDown",
+          },
+        ],
+      },
+      Object {
+        "string": Array [
+          Object {
+            "#text": "UIInterfaceOrientationLandscapeLeft",
+          },
+        ],
+      },
+      Object {
+        "string": Array [
+          Object {
+            "#text": "UIInterfaceOrientationLandscapeRight",
+          },
+        ],
+      },
+    ],
+  },
+  Object {
+    "key": Array [
+      Object {
+        "#text": "UIUserInterfaceStyle",
+      },
+    ],
+  },
+  Object {
+    "string": Array [
+      Object {
+        "#text": "Automatic",
+      },
+    ],
+  },
+  Object {
+    "key": Array [
+      Object {
+        "#text": "UIViewControllerBasedStatusBarAppearance",
+      },
+    ],
+  },
+  Object {
+    "false": Array [],
+  },
+]
+`;

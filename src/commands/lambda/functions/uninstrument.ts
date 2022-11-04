@@ -1,4 +1,5 @@
 import {CloudWatchLogs, Lambda} from 'aws-sdk'
+
 import {
   API_KEY_ENV_VAR,
   API_KEY_SECRET_ARN_ENV_VAR,
@@ -30,6 +31,7 @@ import {
 import {FunctionConfiguration, LogGroupConfiguration, TagConfiguration} from '../interfaces'
 import {calculateLogGroupRemoveRequest} from '../loggroup'
 import {calculateTagRemoveRequest} from '../tags'
+
 import {getLambdaFunctionConfigs, getLambdaFunctionConfigsFromRegex, getLayers, isSupportedRuntime} from './commons'
 
 export const getUninstrumentedFunctionConfigs = async (

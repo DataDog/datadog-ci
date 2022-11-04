@@ -1,10 +1,12 @@
 import * as http from 'http'
 import {URL} from 'url'
 
+import {AxiosError, AxiosResponse} from 'axios'
 import WebSocket, {Server as WebSocketServer} from 'ws'
 
 import {ProxyConfiguration} from '../../../helpers/utils'
 
+import {apiConstructor} from '../api'
 import {
   ApiServerResult,
   Batch,
@@ -15,15 +17,17 @@ import {
   MainReporter,
   MultiStep,
   MultiStepsServerResult,
+  PresignedUrlResponse,
   Result,
   Step,
   Suite,
   Summary,
   Test,
+  TestPayload,
   Trigger,
   User,
 } from '../interfaces'
-import {createSummary} from '../utils'
+import {createInitialSummary} from '../utils'
 
 const mockUser: User = {
   email: '',
@@ -33,6 +37,11 @@ const mockUser: User = {
 }
 
 export const MOCK_BASE_URL = 'https://app.datadoghq.com/'
+
+export const MOBILE_PRESIGNED_URL_PAYLOAD: PresignedUrlResponse = {
+  file_name: 'fileNameUuid',
+  presigned_url_params: {url: 'https://www.presigned.url', fields: {}},
+}
 
 export type MockedReporter = {
   [K in keyof MainReporter]: jest.Mock<void, Parameters<MainReporter[K]>>
@@ -57,6 +66,7 @@ export const ciConfig: CommandConfig = {
   configPath: 'datadog-ci.json',
   datadogSite: 'datadoghq.com',
   failOnCriticalErrors: false,
+  failOnMissingTests: false,
   failOnTimeout: true,
   files: ['{,!(node_modules)/**/}*.synthetics.json'],
   global: {},
@@ -69,7 +79,15 @@ export const ciConfig: CommandConfig = {
   variableStrings: [],
 }
 
-export const getApiTest = (publicId = 'abc-def-ghi'): Test => ({
+export const getAxiosHttpError = (status: number, {errors, message}: {errors?: string[]; message?: string}) => {
+  const serverError = new Error(message) as AxiosError
+  serverError.config = {baseURL: MOCK_BASE_URL, url: 'example'}
+  serverError.response = {data: {errors}, status} as AxiosResponse
+
+  return serverError
+}
+
+export const getApiTest = (publicId = 'abc-def-ghi', opts: Partial<Test> = {}): Test => ({
   config: {
     assertions: [],
     request: {
@@ -102,6 +120,18 @@ export const getApiTest = (publicId = 'abc-def-ghi'): Test => ({
   subtype: 'http',
   tags: [],
   type: 'api',
+  ...opts,
+})
+
+export const getBrowserTest = (
+  publicId = 'abc-def-ghi',
+  deviceIds = ['chrome.laptop_large'],
+  opts: Partial<Test> = {}
+): Test => ({
+  ...getApiTest(publicId),
+  options: {device_ids: deviceIds, min_failure_duration: 0, min_location_failed: 1, tick_every: 300},
+  type: 'browser',
+  ...opts,
 })
 
 export const getStep = (): Step => ({
@@ -140,7 +170,7 @@ export const getTestSuite = (): Suite => ({content: {tests: [{config: {}, id: '1
 
 export const BATCH_ID = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa'
 export const getSummary = (): Summary => ({
-  ...createSummary(),
+  ...createInitialSummary(),
   batchId: BATCH_ID,
 })
 
@@ -169,11 +199,7 @@ export const getApiResult = (resultId: string, test: Test, resultOpts: Partial<A
 })
 
 export const getBrowserServerResult = (opts: Partial<BrowserServerResult> = {}): BrowserServerResult => ({
-  device: {
-    height: 1,
-    id: 'laptop_large',
-    width: 1,
-  },
+  device: {height: 1100, id: 'chrome.laptop_large', width: 1440},
   duration: 0,
   passed: true,
   startUrl: '',
@@ -192,25 +218,7 @@ export const getTimedOutBrowserResult = (): Result => ({
     steps: [],
   },
   resultId: '1',
-  test: {
-    ...getApiTest(),
-    config: {
-      assertions: [],
-      request: {
-        headers: {},
-        method: 'GET',
-        timeout: 1,
-        url: 'https://example.org/',
-      },
-      variables: [],
-    },
-    locations: [''],
-    message: 'Description.',
-    name: 'Test name',
-    options: {device_ids: ['chrome.laptop_large'], min_failure_duration: 0, min_location_failed: 1, tick_every: 300},
-    public_id: 'abc-def-hij',
-    type: 'browser',
-  },
+  test: getBrowserTest(),
   timedOut: true,
   timestamp: 1,
 })
@@ -269,25 +277,7 @@ export const getFailedBrowserResult = (): Result => ({
     ],
   },
   resultId: '1',
-  test: {
-    ...getApiTest(),
-    config: {
-      assertions: [],
-      request: {
-        headers: {},
-        method: 'GET',
-        timeout: 1,
-        url: 'https://example.org/',
-      },
-      variables: [],
-    },
-    locations: [''],
-    message: 'Description.',
-    name: 'Test name',
-    options: {device_ids: ['chrome.laptop_large'], min_failure_duration: 0, min_location_failed: 1, tick_every: 300},
-    public_id: 'abc-def-hij',
-    type: 'browser',
-  },
+  test: getBrowserTest(),
   timedOut: false,
   timestamp: 1,
 })
@@ -310,6 +300,40 @@ export const getMultiStepsServerResult = (): MultiStepsServerResult => ({
   duration: 123,
   passed: true,
   steps: [],
+})
+
+export const getFailedMultiStepsServerResult = (): MultiStepsServerResult => ({
+  duration: 123,
+  failure: {code: 'INCORRECT_ASSERTION', message: 'incorrect assertion'},
+  passed: false,
+  steps: [
+    {
+      ...getMultiStep(),
+      passed: true,
+    },
+    {
+      ...getMultiStep(),
+      skipped: true,
+    },
+    {
+      ...getMultiStep(),
+      allowFailure: true,
+      failure: {
+        code: 'INCORRECT_ASSERTION',
+        message: 'incorrect assertion',
+      },
+      passed: false,
+    },
+    {
+      ...getMultiStep(),
+      allowFailure: false,
+      failure: {
+        code: 'INCORRECT_ASSERTION',
+        message: 'incorrect assertion',
+      },
+      passed: false,
+    },
+  ],
 })
 
 export const mockLocation: Location = {
@@ -341,6 +365,7 @@ export const getSyntheticsProxy = () => {
 
   const wss = new WebSocketServer({noServer: true})
 
+  // eslint-disable-next-line prefer-const
   let port: number
   const server = http.createServer({}, (request, response) => {
     const mockResponse = (call: jest.Mock, responseData: any) => {
@@ -455,4 +480,63 @@ export const getBatch = (): Batch => ({
     },
   ],
   status: 'passed',
+})
+
+export const getMobileTest = (publicId = 'abc-def-ghi'): Test => ({
+  config: {
+    assertions: [],
+    request: {
+      headers: {},
+      method: '',
+      timeout: 60000,
+      url: '',
+    },
+    variables: [],
+  },
+  created_at: '',
+  created_by: mockUser,
+  locations: [],
+  message: '',
+  modified_at: '',
+  modified_by: mockUser,
+  monitor_id: 0,
+  name: 'Mobile Test',
+  options: {
+    device_ids: [],
+    min_failure_duration: 0,
+    min_location_failed: 0,
+    mobileApplication: {
+      applicationId: 'mobileAppUuid',
+      referenceId: 'versionId',
+      referenceType: 'version',
+    },
+    tick_every: 3600,
+  },
+  overall_state: 0,
+  overall_state_modified: '',
+  public_id: publicId,
+  status: '',
+  stepCount: 0,
+  subtype: '',
+  tags: [],
+  type: 'mobile',
+})
+
+export const getApiHelper = () => {
+  const apiConfiguration = {
+    apiKey: '123',
+    appKey: '123',
+    baseIntakeUrl: 'baseintake',
+    baseUnstableUrl: 'baseUnstable',
+    baseUrl: 'base',
+    proxyOpts: {protocol: 'http'} as ProxyConfiguration,
+  }
+
+  return apiConstructor(apiConfiguration)
+}
+
+export const getTestPayload = (override?: Partial<TestPayload>) => ({
+  executionRule: ExecutionRule.BLOCKING,
+  public_id: 'aaa-aaa-aaa',
+  ...override,
 })

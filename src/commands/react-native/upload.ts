@@ -10,13 +10,16 @@ import {RequestBuilder} from '../../helpers/interfaces'
 import {getMetricsLogger, MetricsLogger} from '../../helpers/metrics'
 import {upload, UploadStatus} from '../../helpers/upload'
 import {DEFAULT_CONFIG_PATH, getRequestBuilder, resolveConfigFromFile} from '../../helpers/utils'
+
 import {RNPlatform, RNSourcemap, RN_SUPPORTED_PLATFORMS} from './interfaces'
 import {
   renderCommandInfo,
   renderConfigurationError,
+  renderFailedSourcesContentRemovalError,
   renderFailedUpload,
   renderGitDataNotAttachedWarning,
   renderGitWarning,
+  renderRemoveSourcesContentWarning,
   renderRetriedUpload,
   renderSourcesNotFoundWarning,
   renderSuccessfulCommand,
@@ -28,9 +31,9 @@ export class UploadCommand extends Command {
   public static usage = Command.Usage({
     description: 'Upload React Native sourcemaps to Datadog.',
     details: `
-            This command will upload React Native sourcemaps and their corresponding javascript bundle to Datadog in order to un-minify front-end stack traces received by Datadog.
-            See README for details.
-        `,
+      This command will upload React Native sourcemaps and their corresponding javascript bundle to Datadog in order to un-minify front-end stack traces received by Datadog.\n
+      See README for details.
+    `,
     examples: [
       [
         'Upload ios sourcemaps',
@@ -57,6 +60,7 @@ export class UploadCommand extends Command {
   private platform?: RNPlatform
   private projectPath: string = process.cwd() || ''
   private releaseVersion?: string
+  private removeSourcesContent = false
   private repositoryURL?: string
   private service?: string
   private sourcemap?: string
@@ -183,7 +187,7 @@ export class UploadCommand extends Command {
     try {
       const repositoryData = await getRepositoryData(await newSimpleGit(), this.repositoryURL)
       payloads.forEach((payload) => {
-        const repositoryPayload = this.getRepositoryPayload(repositoryData!, payload.sourcemapPath)
+        const repositoryPayload = this.getRepositoryPayload(repositoryData, payload.sourcemapPath)
         payload.addRepositoryData({
           gitCommitSha: repositoryData.hash,
           gitRepositoryPayload: repositoryPayload,
@@ -248,7 +252,7 @@ export class UploadCommand extends Command {
     }
 
     return getRequestBuilder({
-      apiKey: this.config.apiKey!,
+      apiKey: this.config.apiKey,
       baseUrl: getBaseSourcemapIntakeUrl(this.config.datadogSite),
       headers: new Map([
         ['DD-EVP-ORIGIN', 'datadog-ci react-native'],
@@ -281,6 +285,15 @@ export class UploadCommand extends Command {
         }
 
         return UploadStatus.Skipped
+      }
+
+      if (this.removeSourcesContent) {
+        try {
+          this.context.stdout.write(renderRemoveSourcesContentWarning())
+          sourcemap.removeSourcesContentFromSourceMap()
+        } catch (error) {
+          this.context.stdout.write(renderFailedSourcesContentRemovalError(sourcemap, error.message))
+        }
       }
 
       const payload = sourcemap.asMultipartPayload(
@@ -329,3 +342,4 @@ UploadCommand.addOption('disableGit', Command.Boolean('--disable-git'))
 UploadCommand.addOption('maxConcurrency', Command.String('--max-concurrency'))
 UploadCommand.addOption('projectPath', Command.String('--project-path'))
 UploadCommand.addOption('configPath', Command.String('--config'))
+UploadCommand.addOption('removeSourcesContent', Command.Boolean('--remove-sources-content'))
