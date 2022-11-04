@@ -12,6 +12,7 @@ beforeEach(() => {
   delete process.env.EXTRA_PACKAGER_ARGS
   delete process.env.INFOPLIST_FILE
   delete process.env.MARKETING_VERSION
+  delete process.env.PODS_PODFILE_DIR_PATH
   delete process.env.PRODUCT_BUNDLE_IDENTIFIER
   delete process.env.PROJECT_DIR
   delete process.env.SERVICE_NAME_IOS
@@ -191,6 +192,60 @@ describe('xcode', () => {
       expect(output).toContain(
         'Upload of ./src/commands/react-native/__tests__/fixtures/basic-ios/main.jsbundle.map for bundle ./src/commands/react-native/__tests__/fixtures/compose-sourcemaps/main.jsbundle on platform ios'
       )
+      expect(output).toContain('version: 0.0.2 build: 000020 service: com.myapp.test')
+    })
+
+    test('should set the USE_HERMES env variable for RN 0.70 projects using hermes', async () => {
+      process.env = {
+        ...process.env,
+        ...basicEnvironment,
+        CONFIGURATION_BUILD_DIR: './src/commands/react-native/__tests__/fixtures/compose-sourcemaps',
+        UNLOCALIZED_RESOURCES_FOLDER_PATH: 'MyApp.app',
+        PODS_PODFILE_DIR_PATH: './src/commands/react-native/__tests__/fixtures/podfile-lock/with-hermes',
+      }
+
+      const {context, code} = await runCLI(
+        './src/commands/react-native/__tests__/fixtures/bundle-script/echo_env_script.sh',
+        {
+          composeSourcemapsPath:
+            './src/commands/react-native/__tests__/fixtures/compose-sourcemaps/compose-sourcemaps.js',
+        }
+      )
+      // Uncomment these lines for debugging failing script
+      // console.log(context.stdout.toString())
+      // console.log(context.stderr.toString())
+
+      expect(code).toBe(0)
+      const output = context.stdout.toString()
+      expect(output).toContain('USE_HERMES=true')
+      expect(output).toContain('Hermes detected, composing sourcemaps')
+      expect(output).toContain('version: 0.0.2 build: 000020 service: com.myapp.test')
+    })
+
+    test('should not set the USE_HERMES env variable for RN 0.70 projects not using hermes', async () => {
+      process.env = {
+        ...process.env,
+        ...basicEnvironment,
+        CONFIGURATION_BUILD_DIR: './src/commands/react-native/__tests__/fixtures/compose-sourcemaps',
+        UNLOCALIZED_RESOURCES_FOLDER_PATH: 'MyApp.app',
+        PODS_PODFILE_DIR_PATH: './src/commands/react-native/__tests__/fixtures/podfile-lock/without-hermes',
+      }
+
+      const {context, code} = await runCLI(
+        './src/commands/react-native/__tests__/fixtures/bundle-script/echo_env_script.sh',
+        {
+          composeSourcemapsPath:
+            './src/commands/react-native/__tests__/fixtures/compose-sourcemaps/compose-sourcemaps.js',
+        }
+      )
+      // Uncomment these lines for debugging failing script
+      // console.log(context.stdout.toString())
+      // console.log(context.stderr.toString())
+
+      expect(code).toBe(0)
+      const output = context.stdout.toString()
+      expect(output).not.toContain('USE_HERMES=true')
+      expect(output).not.toContain('Hermes detected, composing sourcemaps')
       expect(output).toContain('version: 0.0.2 build: 000020 service: com.myapp.test')
     })
 

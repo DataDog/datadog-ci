@@ -1,6 +1,6 @@
 /* eslint-disable no-null/no-null */
 import {spawn} from 'child_process'
-import {existsSync} from 'fs'
+import {existsSync, readFileSync} from 'fs'
 import {sep} from 'path'
 
 import {Cli, Command} from 'clipanion'
@@ -187,7 +187,7 @@ export class XCodeCommand extends Command {
 
   private bundleReactNativeCodeAndImages = async () => {
     const bundleJSChildProcess = spawn(this.scriptPath, undefined, {
-      env: process.env,
+      env: this.getBundleReactNativeCodeAndImagesEnvironment(),
       stdio: ['inherit', 'pipe', 'pipe'],
     })
     bundleJSChildProcess.stdout.on('data', (data) => {
@@ -210,6 +210,21 @@ export class XCodeCommand extends Command {
     if (status !== 0) {
       throw new Error(`error ${signal} while running datadog-ci xcode.`)
     }
+  }
+
+  private getBundleReactNativeCodeAndImagesEnvironment = () => {
+    const env = process.env
+
+    /**
+     * On React Native 0.70, we need to explicitely set USE_HERMES to true
+     * if Hermes is used, otherwise the source maps won't be generated.
+     * See the fix for next releases: https://github.com/facebook/react-native/commit/03de19745eec9a0d4d1075bac48639ecf1d41352
+     */
+    if (this.shouldComposeHermesSourcemaps()) {
+      env.USE_HERMES = 'true'
+    }
+
+    return env
   }
 
   private composeHermesSourcemaps = async (sourcemapsLocation: string) => {
@@ -354,15 +369,38 @@ export class XCodeCommand extends Command {
    * return false if the React Native version is high enough.
    */
   private shouldComposeHermesSourcemaps = (): boolean => {
+    /**
+     * This env variable is empty by default.
+     * Before RN 0.70, it had to be set to `true` for Hermes to be used.
+     * Since RN 0.70, Hermes is enabled even if it is empty.
+     */
     if (process.env.USE_HERMES) {
       return true
     }
-    if (process.env.HERMES_CLI_PATH) {
+
+    /**
+     * Check if hermes pod is present in pods.
+     * This is the check used until RN 0.70, but the architecture of the pod might change,
+     * so it's best not to rely on it to detect if Hermes is disabled.
+     */
+    if (existsSync(`${process.env.PODS_ROOT}/hermes-engine/destroot/bin/hermesc`)) {
       return true
     }
 
-    // Check if hermes pod is present
-    return existsSync(`${process.env.PODS_ROOT}/hermes-engine/destroot/bin/hermesc`)
+    /**
+     * Checks if Hermes is in the Podfile.lock.
+     * This is the most recent check for detecting Hermes in the `react-native-xcode.sh` script:
+     * https://github.com/facebook/react-native/commit/8745a148b6d8358702b5300d73f4686c3aedb413
+     *
+     * If the Podfile.lock cannot be found, we assume Hermes is not enabled
+     */
+    const podfileLockPath = `${process.env.PODS_PODFILE_DIR_PATH}/Podfile.lock`
+    if (!existsSync(podfileLockPath)) {
+      return false
+    }
+    const podfileLockContent = readFileSync(podfileLockPath).toString()
+
+    return !!podfileLockContent.match('hermes-engine')
   }
 
   private shouldUploadSourcemaps = (): boolean => process.env.CONFIGURATION === 'Release' || this.force
