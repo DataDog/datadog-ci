@@ -178,19 +178,14 @@ export const isMissingAWSCredentials = () =>
   (process.env[AWS_ACCESS_KEY_ID_ENV_VAR] === undefined || process.env[AWS_SECRET_ACCESS_KEY_ENV_VAR] === undefined) &&
   !aws_sdk_config.credentials
 
-export const isMissingDatadogSiteEnvVar = () => {
-  const site = process.env[CI_SITE_ENV_VAR]
-
-  return site === undefined || !isValidDatadogSite(site)
-}
-
 export const isMissingAnyDatadogApiKeyEnvVar = () =>
   !(
     process.env[CI_API_KEY_ENV_VAR] ||
     process.env[CI_KMS_API_KEY_ENV_VAR] ||
     process.env[CI_API_KEY_SECRET_ARN_ENV_VAR]
   )
-export const isMissingDatadogEnvVars = () => isMissingDatadogSiteEnvVar() || isMissingAnyDatadogApiKeyEnvVar()
+export const isMissingDatadogEnvVars = () =>
+  !isValidDatadogSite(process.env[CI_SITE_ENV_VAR]) || isMissingAnyDatadogApiKeyEnvVar()
 
 export const getAllLambdaFunctionConfigs = async (lambda: Lambda) => getLambdaFunctionConfigsFromRegex(lambda, '.')
 

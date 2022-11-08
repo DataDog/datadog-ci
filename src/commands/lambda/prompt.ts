@@ -3,6 +3,7 @@ import {filter} from 'fuzzy'
 import inquirer from 'inquirer'
 
 import {DATADOG_SITES} from '../../constants'
+import {isValidDatadogSite} from '../../helpers/validation'
 
 import {
   AWS_ACCESS_KEY_ID_ENV_VAR,
@@ -21,7 +22,7 @@ import {
   SERVICE_ENV_VAR,
   VERSION_ENV_VAR,
 } from './constants'
-import {isMissingAnyDatadogApiKeyEnvVar, isMissingDatadogSiteEnvVar, sentenceMatchesRegEx} from './functions/commons'
+import {isMissingAnyDatadogApiKeyEnvVar, sentenceMatchesRegEx} from './functions/commons'
 
 const checkboxPlusPrompt = require('inquirer-checkbox-plus-prompt')
 inquirer.registerPrompt('checkbox-plus', checkboxPlusPrompt)
@@ -227,7 +228,7 @@ export const requestDatadogEnvVars = async () => {
   try {
     const envSite = process.env[CI_SITE_ENV_VAR]
     let selectedDatadogSite = envSite
-    if (isMissingDatadogSiteEnvVar()) {
+    if (!isValidDatadogSite(envSite)) {
       const datadogSiteAnswer = await inquirer.prompt(datadogSiteQuestion)
       selectedDatadogSite = datadogSiteAnswer[CI_SITE_ENV_VAR]
       process.env[CI_SITE_ENV_VAR] = selectedDatadogSite
