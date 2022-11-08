@@ -4,6 +4,7 @@ import {BaseContext} from 'clipanion/lib/advanced'
 
 import {ExecutionRule, MainReporter, Result, Summary, Test, UserConfigOverride} from '../../interfaces'
 import {DefaultReporter} from '../../reporters/default'
+
 import {
   getApiResult,
   getApiTest,

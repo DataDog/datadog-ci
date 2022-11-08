@@ -1,5 +1,6 @@
 import {Metadata} from '../../helpers/interfaces'
 import {ProxyConfiguration} from '../../helpers/utils'
+
 import {TunnelInfo} from './tunnel'
 
 export interface MainReporter {
@@ -308,23 +309,6 @@ export interface BasicAuthCredentials {
   password: string
   username: string
 }
-
-export interface TemplateVariables {
-  DOMAIN?: string
-  HASH?: string
-  HOST?: string
-  HOSTNAME?: string
-  ORIGIN?: string
-  PARAMS?: string
-  PATHNAME?: string
-  PORT?: string
-  PROTOCOL?: string
-  SUBDOMAIN?: string
-  URL: string
-}
-
-export interface TemplateContext extends TemplateVariables, NodeJS.ProcessEnv {}
-
 export interface TriggerConfig {
   config: UserConfigOverride
   id: string

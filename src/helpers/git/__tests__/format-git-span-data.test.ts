@@ -12,6 +12,7 @@ import {
   GIT_REPOSITORY_URL,
   GIT_SHA,
 } from '../../tags'
+
 import {getGitMetadata} from '../format-git-span-data'
 
 jest.mock('simple-git')

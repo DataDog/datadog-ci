@@ -1,20 +1,19 @@
 import {exec} from 'child_process'
-import deepExtend from 'deep-extend'
 import * as fs from 'fs'
 import * as path from 'path'
-import {URL} from 'url'
+import process from 'process'
 import {promisify} from 'util'
 
 import chalk from 'chalk'
+import deepExtend from 'deep-extend'
 import glob from 'glob'
-import process from 'process'
 
 import {getCIMetadata} from '../../helpers/ci'
 import {GIT_COMMIT_MESSAGE} from '../../helpers/tags'
 import {pick} from '../../helpers/utils'
 
 import {APIHelper, EndpointError, formatBackendErrors, getApiHelper, isNotFoundError} from './api'
-import {MAX_TESTS_TO_TRIGGER} from './command'
+import {DEFAULT_COMMAND_CONFIG, MAX_TESTS_TO_TRIGGER} from './command'
 import {CiError, CriticalError} from './errors'
 import {
   Batch,
@@ -33,8 +32,6 @@ import {
   Suite,
   Summary,
   SyntheticsCIConfig,
-  TemplateContext,
-  TemplateVariables,
   Test,
   TestPayload,
   Trigger,
@@ -46,7 +43,6 @@ import {Tunnel} from './tunnel'
 
 const POLLING_INTERVAL = 5000 // In ms
 const PUBLIC_ID_REGEX = /^[\d\w]{3}-[\d\w]{3}-[\d\w]{3}$/
-const SUBDOMAIN_REGEX = /(.*?)\.(?=[^\/]*\..{2,5})/
 const TEMPLATE_REGEX = /{{\s*([^{}]*?)\s*}}/g
 
 export const readableOperation: {[key in Operator]: string} = {
@@ -109,11 +105,7 @@ export const getOverriddenConfig = (
   }
 
   if ((test.type === 'browser' || test.subtype === 'http') && config.startUrl) {
-    const context = parseUrlVariables(test.config.request.url, reporter)
-    if (URL_VARIABLES.some((v) => config.startUrl?.includes(v))) {
-      reporter.error('[DEPRECATION] The usage of URL variables is deprecated, see explanation in the README\n\n')
-    }
-    overriddenConfig.startUrl = template(config.startUrl, context)
+    overriddenConfig.startUrl = template(config.startUrl, {...process.env})
   }
 
   return overriddenConfig
@@ -121,69 +113,6 @@ export const getOverriddenConfig = (
 
 export const setCiTriggerApp = (source: string): void => {
   ciTriggerApp = source
-}
-
-const parseUrlVariables = (url: string, reporter: MainReporter) => {
-  const context: TemplateContext = {
-    ...process.env,
-    URL: url,
-  }
-  let objUrl
-  try {
-    objUrl = new URL(url)
-  } catch {
-    reporter.error(`The start url ${url} contains variables, CI overrides will be ignored\n`)
-
-    return context
-  }
-
-  warnOnReservedEnvVarNames(context, reporter)
-
-  const subdomainMatch = objUrl.hostname.match(SUBDOMAIN_REGEX)
-  const domain = subdomainMatch ? objUrl.hostname.replace(`${subdomainMatch[1]}.`, '') : objUrl.hostname
-
-  context.DOMAIN = domain
-  context.HASH = objUrl.hash
-  context.HOST = objUrl.host
-  context.HOSTNAME = objUrl.hostname
-  context.ORIGIN = objUrl.origin
-  context.PARAMS = objUrl.search
-  context.PATHNAME = objUrl.pathname
-  context.PORT = objUrl.port
-  context.PROTOCOL = objUrl.protocol
-  context.SUBDOMAIN = subdomainMatch ? subdomainMatch[1] : undefined
-
-  return context
-}
-
-const URL_VARIABLES = [
-  'DOMAIN',
-  'HASH',
-  'HOST',
-  'HOSTNAME',
-  'ORIGIN',
-  'PARAMS',
-  'PATHNAME',
-  'PORT',
-  'PROTOCOL',
-  'SUBDOMAIN',
-] as const
-
-const warnOnReservedEnvVarNames = (context: TemplateContext, reporter: MainReporter) => {
-  const reservedVarNames: Set<keyof TemplateVariables> = new Set(URL_VARIABLES)
-
-  const usedEnvVarNames = Object.keys(context).filter((name) => (reservedVarNames as Set<string>).has(name))
-  if (usedEnvVarNames.length > 0) {
-    const names = usedEnvVarNames.join(', ')
-    const plural = usedEnvVarNames.length > 1
-    reporter.log(
-      `Detected ${names} environment variable${plural ? 's' : ''}. ${names} ${plural ? 'are' : 'is a'} Datadog ` +
-        `reserved variable${plural ? 's' : ''} used to parse your original test URL, read more about it on ` +
-        'our documentation https://docs.datadoghq.com/synthetics/ci/?tab=apitest#start-url. ' +
-        'If you want to override your startUrl parameter using environment variables, ' +
-        `use ${plural ? '' : 'a '}different namespace${plural ? 's' : ''}.\n\n`
-    )
-  }
 }
 
 export const getExecutionRule = (test?: Test, configOverride?: UserConfigOverride): ExecutionRule => {
@@ -438,8 +367,8 @@ export const waitForResults = async (
     getResultFromBatch(
       getLocation,
       hasExceededMaxPollingDate,
-      options.failOnCriticalErrors!!,
-      options.failOnTimeout!!,
+      options.failOnCriticalErrors ?? false,
+      options.failOnTimeout ?? false,
       pollResultMap,
       resultInBatch,
       tests
@@ -560,7 +489,7 @@ const getTest = async (api: APIHelper, {id, suite}: TriggerConfig): Promise<{tes
       return {errorMessage: `[${chalk.bold.dim(id)}] ${chalk.yellow.bold('Test not found')}: ${errorMessage}`}
     }
 
-    throw error
+    throw new EndpointError(`Failed to get test: ${formatBackendErrors(error)}\n`, error.response?.status)
   }
 }
 
@@ -754,8 +683,20 @@ export const parseVariablesFromCli = (
   return Object.keys(variables).length > 0 ? variables : undefined
 }
 
-export const getAppBaseURL = ({datadogSite, subdomain}: Pick<CommandConfig, 'datadogSite' | 'subdomain'>) =>
-  `https://${subdomain}.${datadogSite}/`
+export const getAppBaseURL = ({datadogSite, subdomain}: Pick<CommandConfig, 'datadogSite' | 'subdomain'>) => {
+  const validSubdomain = subdomain || DEFAULT_COMMAND_CONFIG.subdomain
+  const datadogSiteParts = datadogSite.split('.')
+
+  if (datadogSiteParts.length === 3) {
+    if (validSubdomain === DEFAULT_COMMAND_CONFIG.subdomain) {
+      return `https://${datadogSite}/`
+    }
+
+    return `https://${validSubdomain}.${datadogSiteParts[1]}.${datadogSiteParts[2]}/`
+  }
+
+  return `https://${validSubdomain}.${datadogSite}/`
+}
 
 export const getBatchUrl = (baseUrl: string, batchId: string) =>
   `${baseUrl}synthetics/explorer/ci?batchResultId=${batchId}`

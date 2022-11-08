@@ -31,19 +31,29 @@ export class RNSourcemap {
       ['source_map', {value: fs.createReadStream(this.sourcemapPath), options: {filename: 'source_map'}}],
       ['minified_file', {value: fs.createReadStream(this.bundlePath), options: {filename: 'minified_file'}}],
     ])
-    if (this.gitData !== undefined && this.gitData!.gitRepositoryPayload !== undefined) {
+    if (this.gitData !== undefined && this.gitData.gitRepositoryPayload !== undefined) {
       content.set('repository', {
         options: {
           contentType: 'application/json',
           filename: 'repository',
         },
-        value: this.gitData!.gitRepositoryPayload,
+        value: this.gitData.gitRepositoryPayload,
       })
     }
 
     return {
       content,
     }
+  }
+
+  public removeSourcesContentFromSourceMap = () => {
+    const newSourcemapFilePath = `${this.sourcemapPath}.no-sources-content`
+    const data = fs.readFileSync(this.sourcemapPath, 'utf8')
+    const sourcemap = JSON.parse(data)
+    delete sourcemap.sourcesContent
+
+    fs.writeFileSync(newSourcemapFilePath, JSON.stringify(sourcemap), 'utf8')
+    this.sourcemapPath = newSourcemapFilePath
   }
 
   private getBundleName(bundlePath: string, bundleName?: string): string {

@@ -1,5 +1,7 @@
 import {Writable} from 'stream'
+
 import {checkFile} from '../../helpers/validation'
+
 import {Sourcemap} from './interfaces'
 import {renderMinifiedPathPrefixMisusage} from './renderer'
 import {extractRepeatedPath} from './utils'
@@ -40,7 +42,7 @@ export const validatePayload = (sourcemap: Sourcemap, stdout: Writable) => {
 
   // Check for --minified-path-prefix flag misuages.
   if (sourcemap.minifiedPathPrefix) {
-    const repeated = extractRepeatedPath(sourcemap.minifiedPathPrefix!, sourcemap.relativePath)
+    const repeated = extractRepeatedPath(sourcemap.minifiedPathPrefix, sourcemap.relativePath)
     if (repeated) {
       stdout.write(renderMinifiedPathPrefixMisusage(sourcemap, repeated))
     }

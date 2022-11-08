@@ -1,0 +1,4 @@
+{
+    "sources": ["Users/me/datadog-ci/src/commands/sourcemaps/__tests__/git.test.ts"],
+    "sourcesContent": ["/* here is some code that includes closing characters ]}\""]
+}

@@ -2,6 +2,9 @@ import {CloudWatchLogs, config as aws_sdk_config, Lambda, SharedIniFileCredentia
 import {GetFunctionRequest} from 'aws-sdk/clients/lambda'
 import {SharedIniFileCredentialsOptions} from 'aws-sdk/lib/credentials/shared_ini_file_credentials'
 import inquirer from 'inquirer'
+
+import {isValidDatadogSite} from '../../../helpers/validation'
+
 import {
   ARM64_ARCHITECTURE,
   ARM_LAYERS,
@@ -21,7 +24,6 @@ import {
   MAX_LAMBDA_STATE_CHECK_ATTEMPTS,
   Runtime,
   RUNTIME_LOOKUP,
-  SITES,
 } from '../constants'
 import {FunctionConfiguration, InstrumentationSettings} from '../interfaces'
 import {applyLogGroupConfig} from '../loggroup'
@@ -141,7 +143,7 @@ export const findLatestLayerVersion = async (layer: LayerKey, region: string) =>
       latestVersion = layerVersion
       // Increase layer version
       layerVersion += searchStep
-    } catch (e) {
+    } catch {
       // Search step is too big, reset target to previous version
       // with a smaller search step
       if (searchStep > 1) {
@@ -164,7 +166,7 @@ export const findLatestLayerVersion = async (layer: LayerKey, region: string) =>
           latestVersion = layerVersion
           // Continue the search if the next version does exist (unlikely event)
           layerVersion += searchStep
-        } catch (e) {
+        } catch {
           // The next version doesn't exist either, so the previous version is indeed the latest
           foundLatestVersion = true
         }
@@ -221,10 +223,11 @@ export const isMissingAWSCredentials = () =>
   // If env vars and aws_sdk_config.credentials are not set return true otherwise return false
   (process.env[AWS_ACCESS_KEY_ID_ENV_VAR] === undefined || process.env[AWS_SECRET_ACCESS_KEY_ENV_VAR] === undefined) &&
   !aws_sdk_config.credentials
+
 export const isMissingDatadogSiteEnvVar = () => {
   const site = process.env[CI_SITE_ENV_VAR]
   if (site !== undefined) {
-    return !SITES.includes(site)
+    return !isValidDatadogSite(site)
   }
 
   return true

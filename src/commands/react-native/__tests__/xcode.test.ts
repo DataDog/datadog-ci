@@ -1,5 +1,7 @@
-// tslint:disable: no-string-literal
 import {Cli} from 'clipanion/lib/advanced'
+
+import * as formatGitSourcemapsData from '../../../helpers/git/format-git-sourcemaps-data'
+
 import {XCodeCommand} from '../xcode'
 
 beforeEach(() => {
@@ -8,8 +10,11 @@ beforeEach(() => {
   delete process.env.CURRENT_PROJECT_VERSION
   delete process.env.DATADOG_API_KEY
   delete process.env.EXTRA_PACKAGER_ARGS
+  delete process.env.INFOPLIST_FILE
   delete process.env.MARKETING_VERSION
+  delete process.env.PODS_PODFILE_DIR_PATH
   delete process.env.PRODUCT_BUNDLE_IDENTIFIER
+  delete process.env.PROJECT_DIR
   delete process.env.SERVICE_NAME_IOS
   delete process.env.SOURCEMAP_FILE
   delete process.env.UNLOCALIZED_RESOURCES_FOLDER_PATH
@@ -54,7 +59,15 @@ const basicEnvironment = {
 
 const runCLI = async (
   script: string,
-  options?: {composeSourcemapsPath?: string; force?: boolean; service?: string}
+  options?: {
+    composeSourcemapsPath?: string
+    configPath?: string
+    disableGit?: boolean
+    force?: boolean
+    infoPlistPath?: string
+    repositoryURL?: string
+    service?: string
+  }
 ) => {
   const cli = makeCli()
   const context = createMockContext() as any
@@ -63,6 +76,18 @@ const runCLI = async (
   const command = ['react-native', 'xcode', script, '--dry-run']
   if (options?.force) {
     command.push('--force')
+  }
+  if (options?.disableGit) {
+    command.push('--disable-git')
+  }
+  if (options?.configPath) {
+    command.push('--config', options.configPath)
+  }
+  if (options?.repositoryURL) {
+    command.push('--repository-url', options.repositoryURL)
+  }
+  if (options?.infoPlistPath) {
+    command.push('--info-plist-path', options.infoPlistPath)
   }
   if (options?.service) {
     command.push('--service')
@@ -170,7 +195,87 @@ describe('xcode', () => {
       expect(output).toContain('version: 0.0.2 build: 000020 service: com.myapp.test')
     })
 
-    test('should not upload sourcemaps when the build configuration is Debug', async () => {
+    test('should set the USE_HERMES env variable for RN 0.70 projects using hermes', async () => {
+      process.env = {
+        ...process.env,
+        ...basicEnvironment,
+        CONFIGURATION_BUILD_DIR: './src/commands/react-native/__tests__/fixtures/compose-sourcemaps',
+        UNLOCALIZED_RESOURCES_FOLDER_PATH: 'MyApp.app',
+        PODS_PODFILE_DIR_PATH: './src/commands/react-native/__tests__/fixtures/podfile-lock/with-hermes',
+      }
+
+      const {context, code} = await runCLI(
+        './src/commands/react-native/__tests__/fixtures/bundle-script/echo_env_script.sh',
+        {
+          composeSourcemapsPath:
+            './src/commands/react-native/__tests__/fixtures/compose-sourcemaps/compose-sourcemaps.js',
+        }
+      )
+      // Uncomment these lines for debugging failing script
+      // console.log(context.stdout.toString())
+      // console.log(context.stderr.toString())
+
+      expect(code).toBe(0)
+      const output = context.stdout.toString()
+      expect(output).toContain('USE_HERMES=true')
+      expect(output).toContain('Hermes detected, composing sourcemaps')
+      expect(output).toContain('version: 0.0.2 build: 000020 service: com.myapp.test')
+    })
+
+    test('should not set the USE_HERMES env variable for RN 0.70 projects not using hermes', async () => {
+      process.env = {
+        ...process.env,
+        ...basicEnvironment,
+        CONFIGURATION_BUILD_DIR: './src/commands/react-native/__tests__/fixtures/compose-sourcemaps',
+        UNLOCALIZED_RESOURCES_FOLDER_PATH: 'MyApp.app',
+        PODS_PODFILE_DIR_PATH: './src/commands/react-native/__tests__/fixtures/podfile-lock/without-hermes',
+      }
+
+      const {context, code} = await runCLI(
+        './src/commands/react-native/__tests__/fixtures/bundle-script/echo_env_script.sh',
+        {
+          composeSourcemapsPath:
+            './src/commands/react-native/__tests__/fixtures/compose-sourcemaps/compose-sourcemaps.js',
+        }
+      )
+      // Uncomment these lines for debugging failing script
+      // console.log(context.stdout.toString())
+      // console.log(context.stderr.toString())
+
+      expect(code).toBe(0)
+      const output = context.stdout.toString()
+      expect(output).not.toContain('USE_HERMES=true')
+      expect(output).not.toContain('Hermes detected, composing sourcemaps')
+      expect(output).toContain('version: 0.0.2 build: 000020 service: com.myapp.test')
+    })
+
+    test('should not compose sourcemaps when using hermes and source maps are not uploaded', async () => {
+      process.env = {
+        ...process.env,
+        ...basicEnvironment,
+        CONFIGURATION_BUILD_DIR: './src/commands/react-native/__tests__/fixtures/compose-sourcemaps',
+        UNLOCALIZED_RESOURCES_FOLDER_PATH: 'MyApp.app',
+        USE_HERMES: 'true',
+        CONFIGURATION: 'Debug',
+      }
+      const {context, code} = await runCLI(
+        './src/commands/react-native/__tests__/fixtures/bundle-script/successful_script.sh',
+        {
+          composeSourcemapsPath:
+            './src/commands/react-native/__tests__/fixtures/compose-sourcemaps/compose-sourcemaps.js',
+        }
+      )
+      // Uncomment these lines for debugging failing script
+      // console.log(context.stdout.toString())
+      // console.log(context.stderr.toString())
+
+      expect(code).toBe(0)
+      const output = context.stdout.toString()
+      expect(output).toContain('Build configuration Debug is not Release, skipping sourcemaps upload')
+      expect(output).not.toContain('Hermes detected, composing sourcemaps')
+    })
+
+    test('should not bundle nor upload sourcemaps when the build configuration is Debug', async () => {
       process.env = {
         ...process.env,
         ...basicEnvironment,
@@ -186,6 +291,7 @@ describe('xcode', () => {
       expect(code).toBe(0)
       const output = context.stdout.toString()
       expect(output).toContain('Build configuration Debug is not Release, skipping sourcemaps upload')
+      expect(output).not.toContain('Starting successful script')
     })
 
     test('should run the provided script and upload sourcemaps when the build configuration is Debug with force option', async () => {
@@ -236,7 +342,7 @@ describe('xcode', () => {
       expect(output).toContain('version: 0.0.2 build: 000020 service: com.custom')
     })
 
-    test.each([['PRODUCT_BUNDLE_IDENTIFIER'], ['CONFIGURATION'], ['MARKETING_VERSION'], ['CURRENT_PROJECT_VERSION']])(
+    test.each([['PRODUCT_BUNDLE_IDENTIFIER'], ['CONFIGURATION']])(
       'should provide a custom message when %s xcode environment variable is missing',
       async (variable) => {
         process.env = {
@@ -257,6 +363,90 @@ describe('xcode', () => {
         expect(output).toContain(`Environment variable ${variable} is missing for Datadog sourcemaps upload.`)
       }
     )
+
+    test('should provide a clear error message when the release version cannot be found', async () => {
+      process.env = {
+        ...process.env,
+        ...basicEnvironment,
+      }
+
+      delete process.env.MARKETING_VERSION
+
+      const {context, code} = await runCLI(
+        './src/commands/react-native/__tests__/fixtures/bundle-script/successful_script.sh'
+      )
+      // Uncomment these lines for debugging failing script
+      // console.log(context.stdout.toString())
+      // console.log(context.stderr.toString())
+
+      expect(code).toBe(1)
+      const output = context.stderr.toString()
+      expect(output).toContain(`Version could not be found.`)
+    })
+
+    test('should provide a clear error message when the build version cannot be found', async () => {
+      process.env = {
+        ...process.env,
+        ...basicEnvironment,
+      }
+
+      delete process.env.CURRENT_PROJECT_VERSION
+
+      const {context, code} = await runCLI(
+        './src/commands/react-native/__tests__/fixtures/bundle-script/successful_script.sh'
+      )
+      // Uncomment these lines for debugging failing script
+      // console.log(context.stdout.toString())
+      // console.log(context.stderr.toString())
+
+      expect(code).toBe(1)
+      const output = context.stderr.toString()
+      expect(output).toContain(`Build version could not be found.`)
+    })
+
+    test('should get versions from plist file even if env variables are defined', async () => {
+      process.env = {
+        ...process.env,
+        ...basicEnvironment,
+        PROJECT_DIR: 'src/commands/react-native/__tests__',
+        INFOPLIST_FILE: 'fixtures/info-plist/Info.plist',
+      }
+
+      const {context, code} = await runCLI(
+        './src/commands/react-native/__tests__/fixtures/bundle-script/successful_script.sh'
+      )
+      // Uncomment these lines for debugging failing script
+      // console.log(context.stdout.toString())
+      // console.log(context.stderr.toString())
+
+      expect(code).toBe(0)
+      const output = context.stdout.toString()
+      expect(output).toContain('version: 1.0.4 build: 12')
+    })
+
+    test('should get versions from plist file through argument if env variables are not defined', async () => {
+      process.env = {
+        ...process.env,
+        ...basicEnvironment,
+      }
+
+      delete process.env.CURRENT_PROJECT_VERSION
+      delete process.env.MARKETING_VERSION
+
+      const {context, code} = await runCLI(
+        './src/commands/react-native/__tests__/fixtures/bundle-script/successful_script.sh',
+        {
+          infoPlistPath: 'src/commands/react-native/__tests__/fixtures/info-plist/Info.plist',
+        }
+      )
+      // Uncomment these lines for debugging failing script
+      // console.log(context.stdout.toString())
+      // console.log(context.stderr.toString())
+
+      expect(code).toBe(0)
+      const output = context.stdout.toString()
+      expect(output).toContain('version: 1.0.4 build: 12')
+    })
 
     test('should provide a clear error message when the script path is incorrect', async () => {
       process.env = {
@@ -358,6 +548,57 @@ describe('xcode', () => {
       expect(output).toContain(
         'Missing bundle file (src/commands/react-native/__tests__/fixtures/non-existent/main.jsbundle)'
       )
+    })
+
+    test('should forward arguments to upload command', async () => {
+      process.env = {
+        ...process.env,
+        ...basicEnvironment,
+      }
+      const getRepositoryDataSpy = jest.spyOn(formatGitSourcemapsData, 'getRepositoryData')
+      const {context, code} = await runCLI(
+        './src/commands/react-native/__tests__/fixtures/bundle-script/successful_script.sh',
+        {
+          configPath: './src/commands/react-native/__tests__/fixtures/config/config-with-api-key.json',
+          repositoryURL: 'https://example.com',
+        }
+      )
+      // Uncomment these lines for debugging failing script
+      // console.log(context.stdout.toString())
+      // console.log(context.stderr.toString())
+
+      expect(code).toBe(0)
+      const output = context.stdout.toString()
+      expect(output).toContain(
+        'Upload of ./src/commands/react-native/__tests__/fixtures/basic-ios/main.jsbundle.map for bundle ./src/commands/react-native/__tests__/fixtures/basic-ios/main.jsbundle on platform ios'
+      )
+      expect(output).toContain('version: 0.0.2 build: 000020 service: com.myapp.test')
+      expect(getRepositoryDataSpy).toHaveBeenCalledWith(expect.anything(), 'https://example.com')
+    })
+
+    test('should disable git in upload command', async () => {
+      process.env = {
+        ...process.env,
+        ...basicEnvironment,
+      }
+      const getRepositoryDataSpy = jest.spyOn(formatGitSourcemapsData, 'getRepositoryData')
+      const {context, code} = await runCLI(
+        './src/commands/react-native/__tests__/fixtures/bundle-script/successful_script.sh',
+        {
+          disableGit: true,
+        }
+      )
+      // Uncomment these lines for debugging failing script
+      // console.log(context.stdout.toString())
+      // console.log(context.stderr.toString())
+
+      expect(code).toBe(0)
+      const output = context.stdout.toString()
+      expect(output).toContain(
+        'Upload of ./src/commands/react-native/__tests__/fixtures/basic-ios/main.jsbundle.map for bundle ./src/commands/react-native/__tests__/fixtures/basic-ios/main.jsbundle on platform ios'
+      )
+      expect(output).toContain('version: 0.0.2 build: 000020 service: com.myapp.test')
+      expect(getRepositoryDataSpy).not.toHaveBeenCalled()
     })
   })
 })

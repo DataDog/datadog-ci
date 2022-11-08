@@ -6,13 +6,15 @@ import yaml from 'js-yaml'
 import semver from 'semver'
 import asyncPool from 'tiny-async-pool'
 
-import {ApiKeyValidator, newApiKeyValidator} from '../../helpers/apikey'
+import {newApiKeyValidator} from '../../helpers/apikey'
 import {getRepositoryData, RepositoryData} from '../../helpers/git/format-git-sourcemaps-data'
 import {getMetricsLogger, MetricsLogger} from '../../helpers/metrics'
 import {MultipartValue, UploadStatus} from '../../helpers/upload'
 import {buildPath, DEFAULT_CONFIG_PATH, performSubCommand, resolveConfigFromFile} from '../../helpers/utils'
+
 import * as dsyms from '../dsyms/upload'
 import {newSimpleGit} from '../git-metadata/git'
+
 import {getArchInfoFromFilename, getFlutterRequestBuilder, uploadMultipartHelper} from './helpers'
 import {
   DART_SYMBOL_FILE_NAME,
@@ -94,21 +96,21 @@ export class UploadCommand extends Command {
     if (this.iosDsymsLocation) {
       uploadInfo.push({
         fileType: 'dSYMs',
-        location: this.iosDsymsLocation!,
+        location: this.iosDsymsLocation,
         platform: 'ios',
       })
     }
     if (this.androidMappingLocation) {
       uploadInfo.push({
         fileType: 'Proguard Mapping File',
-        location: this.androidMappingLocation!,
+        location: this.androidMappingLocation,
         platform: 'Android',
       })
     }
     if (this.dartSymbolsLocation) {
       uploadInfo.push({
         fileType: 'Dart Symbol Files',
-        location: this.dartSymbolsLocation!,
+        location: this.dartSymbolsLocation,
         platform: 'Flutter',
       })
     }
@@ -337,7 +339,7 @@ export class UploadCommand extends Command {
         }
 
         if (this.dryRun) {
-          this.context.stdout.write(`[DRYRUN] ${renderUpload('Dart Symbol File', fileMetadata.filename!)}`)
+          this.context.stdout.write(`[DRYRUN] ${renderUpload('Dart Symbol File', fileMetadata.filename)}`)
 
           return UploadStatus.Success
         }
@@ -359,7 +361,7 @@ export class UploadCommand extends Command {
         return uploadMultipartHelper(requestBuilder, payload, {
           apiKeyValidator,
           onError: (e) => {
-            this.context.stdout.write(renderFailedUpload(fileMetadata.filename!, e.message))
+            this.context.stdout.write(renderFailedUpload(fileMetadata.filename, e.message))
             metricsLogger.logger.increment('failed', 1)
           },
           onRetry: (e, attempts) => {

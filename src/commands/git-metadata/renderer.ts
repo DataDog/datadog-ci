@@ -1,6 +1,7 @@
 import chalk from 'chalk'
 
 import {ICONS} from '../../helpers/formatting'
+
 import {CommitInfo} from './interfaces'
 
 export const renderGitError = (errorMessage: string) =>

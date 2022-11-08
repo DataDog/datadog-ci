@@ -182,7 +182,7 @@ describe('upload', () => {
           retries: 1,
         }
       )
-      expect(result).rejects.toMatch('errorApiKey')
+      await expect(result).rejects.toMatch('errorApiKey')
       expect(mockCreate).toBeCalledTimes(1)
       expect(uploadCallback).toBeCalledTimes(1)
       expect(errorCallback).toBeCalledTimes(0)

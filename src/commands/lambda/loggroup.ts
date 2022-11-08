@@ -1,5 +1,6 @@
 import {CloudWatchLogs} from 'aws-sdk'
 import {DescribeSubscriptionFiltersRequest} from 'aws-sdk/clients/cloudwatchlogs'
+
 import {SUBSCRIPTION_FILTER_NAME} from './constants'
 import {LogGroupConfiguration} from './interfaces'
 

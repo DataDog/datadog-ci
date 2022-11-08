@@ -1,4 +1,4 @@
-import {generateOpenSSHKeys, parseSSHKey} from '../crypto'
+import {generateOpenSSHKeys, parseSSHKey} from '../../tunnel/crypto'
 
 describe('crypto', () => {
   test('should generate ECDSA public/private keys with OpenSSH format', () => {

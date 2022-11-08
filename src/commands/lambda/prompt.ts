@@ -1,11 +1,16 @@
 import {blueBright, bold} from 'chalk'
+import {filter} from 'fuzzy'
 import inquirer from 'inquirer'
+
+import {DATADOG_SITES} from '../../constants'
+
 import {
   AWS_ACCESS_KEY_ID_ENV_VAR,
   AWS_ACCESS_KEY_ID_REG_EXP,
   AWS_DEFAULT_REGION_ENV_VAR,
   AWS_SECRET_ACCESS_KEY_ENV_VAR,
   AWS_SECRET_ACCESS_KEY_REG_EXP,
+  AWS_SECRET_ARN_REG_EXP,
   AWS_SESSION_TOKEN_ENV_VAR,
   CI_API_KEY_ENV_VAR,
   CI_API_KEY_SECRET_ARN_ENV_VAR,
@@ -14,14 +19,12 @@ import {
   DATADOG_API_KEY_REG_EXP,
   ENVIRONMENT_ENV_VAR,
   SERVICE_ENV_VAR,
-  SITES,
   VERSION_ENV_VAR,
 } from './constants'
 import {sentenceMatchesRegEx} from './functions/commons'
-/* tslint:disable-next-line */
+
 const checkboxPlusPrompt = require('inquirer-checkbox-plus-prompt')
 inquirer.registerPrompt('checkbox-plus', checkboxPlusPrompt)
-import {filter} from 'fuzzy'
 
 export const awsProfileQuestion = (mfaSerial: string): inquirer.InputQuestion => ({
   default: undefined,
@@ -115,7 +118,7 @@ export const datadogApiKeyTypeQuestion = (datadogSite: string): inquirer.ListQue
 
 const datadogSiteQuestion: inquirer.ListQuestion = {
   // DATADOG SITE
-  choices: SITES,
+  choices: DATADOG_SITES,
   message: `Select the Datadog site to send data. \nLearn more at ${blueBright(
     'https://docs.datadoghq.com/getting_started/site/'
   )}`,
@@ -144,6 +147,8 @@ const versionQuestion: inquirer.InputQuestion = {
   type: 'input',
 }
 
+const INVALID_KEY_MESSAGE = 'Enter a valid Datadog API Key.'
+
 export const datadogEnvVarsQuestions = (datadogApiKeyType: Record<string, any>): inquirer.InputQuestion => ({
   // DATADOG API KEY given type
   default: process.env[datadogApiKeyType.envVar],
@@ -151,8 +156,19 @@ export const datadogEnvVarsQuestions = (datadogApiKeyType: Record<string, any>):
   name: datadogApiKeyType.envVar,
   type: 'input',
   validate: (value) => {
-    if (!value || !sentenceMatchesRegEx(value, DATADOG_API_KEY_REG_EXP)) {
-      return 'Enter a valid Datadog API Key.'
+    if (!value) {
+      return INVALID_KEY_MESSAGE
+    }
+
+    if (datadogApiKeyType.envVar === CI_API_KEY_ENV_VAR && !sentenceMatchesRegEx(value, DATADOG_API_KEY_REG_EXP)) {
+      return INVALID_KEY_MESSAGE
+    }
+
+    if (
+      datadogApiKeyType.envVar === CI_API_KEY_SECRET_ARN_ENV_VAR &&
+      !sentenceMatchesRegEx(value, AWS_SECRET_ARN_REG_EXP)
+    ) {
+      return INVALID_KEY_MESSAGE
     }
 
     return true

@@ -1,8 +1,12 @@
-// tslint:disable: no-null-keyword
+/* eslint-disable no-null/no-null */
 import {spawn} from 'child_process'
-import {Cli, Command} from 'clipanion'
-import {existsSync} from 'fs'
+import {existsSync, readFileSync} from 'fs'
 import {sep} from 'path'
+
+import {Cli, Command} from 'clipanion'
+
+import {parsePlist} from '../../helpers/plist'
+
 import {UploadCommand} from './upload'
 
 /**
@@ -41,8 +45,16 @@ export class XCodeCommand extends Command {
   })
 
   private composeSourcemapsPath = `${reactNativePath}/scripts/compose-source-maps.js`
+  private configPath?: string
+  private disableGit?: boolean
   private dryRun = false
   private force = false
+  private infoPlistPath =
+    process.env.PROJECT_DIR && process.env.INFOPLIST_FILE
+      ? `${process.env.PROJECT_DIR}/${process.env.INFOPLIST_FILE}`
+      : null
+  private removeSourcesContent?: boolean
+  private repositoryURL?: string
   private scriptPath = `${reactNativePath}/scripts/react-native-xcode.sh`
   private service?: string = process.env.PRODUCT_BUNDLE_IDENTIFIER
 
@@ -74,27 +86,6 @@ export class XCodeCommand extends Command {
       return 1
     }
 
-    if (!process.env.MARKETING_VERSION) {
-      this.context.stderr.write('Environment variable MARKETING_VERSION is missing for Datadog sourcemaps upload.\n')
-      this.context.stderr.write('Check that a Version is set for your target in XCode. It needs to be changed once.\n')
-      this.context.stderr.write(
-        'If you are not running this script from XCode, set a MARKETING_VERSION environment variable before running the script.\n'
-      )
-
-      return 1
-    }
-
-    if (!process.env.CURRENT_PROJECT_VERSION) {
-      this.context.stderr.write(
-        'Environment variable CURRENT_PROJECT_VERSION is missing for Datadog sourcemaps upload.\n'
-      )
-      this.context.stderr.write('Check that a Build is set for your target in XCode. It needs to be changed once.\n')
-      this.context.stderr.write(
-        'If you are not running this script from XCode, set a CURRENT_PROJECT_VERSION environment variable before running the script.\n'
-      )
-
-      return 1
-    }
     const sourcemapsLocation = this.getSourcemapsLocation()
     if (!sourcemapsLocation) {
       this.context.stderr.write('No sourcemap output has been specified.\n')
@@ -118,6 +109,20 @@ export class XCodeCommand extends Command {
       return 1
     }
 
+    const releaseVersion = this.getReleaseVersion()
+    const buildVersion = this.getBuildVersion()
+    if (releaseVersion === null || buildVersion === null) {
+      return 1
+    }
+
+    if (!this.shouldUploadSourcemaps()) {
+      this.context.stdout.write(
+        `Build configuration ${process.env.CONFIGURATION} is not Release, skipping sourcemaps upload`
+      )
+
+      return 0
+    }
+
     // Run bundle script
     try {
       await this.bundleReactNativeCodeAndImages()
@@ -137,19 +142,9 @@ export class XCodeCommand extends Command {
       return 1
     }
 
-    if (!this.shouldUploadSourcemaps()) {
-      this.context.stdout.write(
-        `Build configuration ${process.env.CONFIGURATION} is not Release, skipping sourcemaps upload`
-      )
-
-      return 0
-    }
     if (this.force) {
-      this.context.stdout.write(`Force upload for configuration Debug ${process.env.CONFIGURATION}`)
+      this.context.stdout.write(`Force upload for configuration ${process.env.CONFIGURATION}`)
     }
-    // Get values for build
-    const releaseVersion = process.env.MARKETING_VERSION
-    const buildVersion = process.env.CURRENT_PROJECT_VERSION
 
     // Run upload script in the background
     const cli = new Cli()
@@ -171,6 +166,18 @@ export class XCodeCommand extends Command {
       '--sourcemap',
       sourcemapsLocation,
     ]
+    if (this.configPath) {
+      uploadCommand.push('--config', this.configPath)
+    }
+    if (this.disableGit) {
+      uploadCommand.push('--disable-git')
+    }
+    if (this.repositoryURL) {
+      uploadCommand.push('--repository-url', this.repositoryURL)
+    }
+    if (this.removeSourcesContent) {
+      uploadCommand.push('--remove-sources-content')
+    }
     if (this.dryRun) {
       uploadCommand.push('--dry-run')
     }
@@ -180,7 +187,7 @@ export class XCodeCommand extends Command {
 
   private bundleReactNativeCodeAndImages = async () => {
     const bundleJSChildProcess = spawn(this.scriptPath, undefined, {
-      env: process.env,
+      env: this.getBundleReactNativeCodeAndImagesEnvironment(),
       stdio: ['inherit', 'pipe', 'pipe'],
     })
     bundleJSChildProcess.stdout.on('data', (data) => {
@@ -190,7 +197,7 @@ export class XCodeCommand extends Command {
       this.context.stderr.write(`[bundle script]: ${data}`)
     })
 
-    const [status, signal] = await new Promise((resolve, reject) => {
+    const [status, signal] = await new Promise<[number, string]>((resolve, reject) => {
       bundleJSChildProcess.on('error', (error: Error) => {
         reject(error)
       })
@@ -203,6 +210,21 @@ export class XCodeCommand extends Command {
     if (status !== 0) {
       throw new Error(`error ${signal} while running datadog-ci xcode.`)
     }
+  }
+
+  private getBundleReactNativeCodeAndImagesEnvironment = () => {
+    const env = process.env
+
+    /**
+     * On React Native 0.70, we need to explicitely set USE_HERMES to true
+     * if Hermes is used, otherwise the source maps won't be generated.
+     * See the fix for next releases: https://github.com/facebook/react-native/commit/03de19745eec9a0d4d1075bac48639ecf1d41352
+     */
+    if (this.shouldComposeHermesSourcemaps()) {
+      env.USE_HERMES = 'true'
+    }
+
+    return env
   }
 
   private composeHermesSourcemaps = async (sourcemapsLocation: string) => {
@@ -239,7 +261,7 @@ export class XCodeCommand extends Command {
       this.context.stderr.write(`[compose sourcemaps script]: ${data}`)
     })
 
-    const [status, signal] = await new Promise((resolve, reject) => {
+    const [status, signal] = await new Promise<[number, string]>((resolve, reject) => {
       composeHermesSourcemapsChildProcess.on('error', (error: Error) => {
         reject(error)
       })
@@ -254,12 +276,74 @@ export class XCodeCommand extends Command {
     }
   }
 
+  private getBuildVersion = (): string | null => {
+    try {
+      const buildVersion = this.getPlistValue('CFBundleVersion')
+
+      return typeof buildVersion === 'number' ? buildVersion.toString() : buildVersion
+    } catch (error) {
+      if (!process.env.CURRENT_PROJECT_VERSION) {
+        this.context.stderr.write('Build version could not be found.\n')
+        this.context.stderr.write(
+          'Check that a Build is set for your target in XCode. It might need to be changed once.\n'
+        )
+        if (this.infoPlistPath) {
+          this.context.stderr.write(
+            `You can also check that a CFBundleVersion is defined in your Info.plist at ${this.infoPlistPath}.\n`
+          )
+        }
+        this.context.stderr.write(
+          'If you are not running this script from XCode, set a CURRENT_PROJECT_VERSION environment variable before running the script.\n'
+        )
+
+        return null
+      }
+    }
+
+    return process.env.CURRENT_PROJECT_VERSION
+  }
+
   private getBundleLocation = () => {
     if (!process.env.CONFIGURATION_BUILD_DIR) {
       return null
     }
 
     return `${process.env.CONFIGURATION_BUILD_DIR}/main.jsbundle`
+  }
+
+  private getPlistValue = (propertyName: string): string | number => {
+    if (!this.infoPlistPath) {
+      throw new Error('Could not find plist path')
+    }
+
+    return parsePlist(this.infoPlistPath).getPropertyValue(propertyName)
+  }
+
+  private getReleaseVersion = (): string | null => {
+    try {
+      const releaseVersion = this.getPlistValue('CFBundleShortVersionString')
+
+      return typeof releaseVersion === 'number' ? releaseVersion.toString() : releaseVersion
+    } catch (error) {
+      if (!process.env.MARKETING_VERSION) {
+        this.context.stderr.write('Version could not be found.\n')
+        this.context.stderr.write(
+          'Check that a Version is set for your target in XCode. It might need to be changed once.\n'
+        )
+        if (this.infoPlistPath) {
+          this.context.stderr.write(
+            `You can also check that a CFBundleShortVersionString is defined in your Info.plist at ${this.infoPlistPath}.\n`
+          )
+        }
+        this.context.stderr.write(
+          'If you are not running this script from XCode, set a MARKETING_VERSION environment variable before running the script.\n'
+        )
+
+        return null
+      }
+    }
+
+    return process.env.MARKETING_VERSION
   }
 
   private getSourcemapsLocation = () => {
@@ -285,15 +369,38 @@ export class XCodeCommand extends Command {
    * return false if the React Native version is high enough.
    */
   private shouldComposeHermesSourcemaps = (): boolean => {
+    /**
+     * This env variable is empty by default.
+     * Before RN 0.70, it had to be set to `true` for Hermes to be used.
+     * Since RN 0.70, Hermes is enabled even if it is empty.
+     */
     if (process.env.USE_HERMES) {
       return true
     }
-    if (process.env.HERMES_CLI_PATH) {
+
+    /**
+     * Check if hermes pod is present in pods.
+     * This is the check used until RN 0.70, but the architecture of the pod might change,
+     * so it's best not to rely on it to detect if Hermes is disabled.
+     */
+    if (existsSync(`${process.env.PODS_ROOT}/hermes-engine/destroot/bin/hermesc`)) {
       return true
     }
 
-    // Check if hermes pod is present
-    return existsSync(`${process.env.PODS_ROOT}/hermes-engine/destroot/bin/hermesc`)
+    /**
+     * Checks if Hermes is in the Podfile.lock.
+     * This is the most recent check for detecting Hermes in the `react-native-xcode.sh` script:
+     * https://github.com/facebook/react-native/commit/8745a148b6d8358702b5300d73f4686c3aedb413
+     *
+     * If the Podfile.lock cannot be found, we assume Hermes is not enabled
+     */
+    const podfileLockPath = `${process.env.PODS_PODFILE_DIR_PATH}/Podfile.lock`
+    if (!existsSync(podfileLockPath)) {
+      return false
+    }
+    const podfileLockContent = readFileSync(podfileLockPath).toString()
+
+    return !!podfileLockContent.match('hermes-engine')
   }
 
   private shouldUploadSourcemaps = (): boolean => process.env.CONFIGURATION === 'Release' || this.force
@@ -305,3 +412,8 @@ XCodeCommand.addOption('service', Command.String('--service'))
 XCodeCommand.addOption('dryRun', Command.Boolean('--dry-run'))
 XCodeCommand.addOption('force', Command.Boolean('--force'))
 XCodeCommand.addOption('composeSourcemapsPath', Command.String('--compose-sourcemaps-path'))
+XCodeCommand.addOption('repositoryURL', Command.String('--repository-url'))
+XCodeCommand.addOption('disableGit', Command.Boolean('--disable-git'))
+XCodeCommand.addOption('configPath', Command.String('--config'))
+XCodeCommand.addOption('removeSourcesContent', Command.Boolean('--remove-sources-content'))
+XCodeCommand.addOption('infoPlistPath', Command.String('--info-plist-path'))

@@ -1,11 +1,12 @@
-// tslint:disable: no-string-literal
 jest.mock('fs')
 jest.mock('aws-sdk')
 jest.mock('../prompt')
-import {config as aws_sdk_config, Lambda, SharedIniFileCredentials} from 'aws-sdk'
-import {Cli} from 'clipanion/lib/advanced'
 import * as fs from 'fs'
 import path from 'path'
+
+import {config as aws_sdk_config, Lambda, SharedIniFileCredentials} from 'aws-sdk'
+import {Cli} from 'clipanion/lib/advanced'
+
 import {
   AWS_ACCESS_KEY_ID_ENV_VAR,
   AWS_DEFAULT_REGION_ENV_VAR,
@@ -27,6 +28,7 @@ import {
   requestEnvServiceVersion,
   requestFunctionSelection,
 } from '../prompt'
+
 import {
   createCommand,
   createMockContext,
@@ -39,7 +41,6 @@ import {
   mockDatadogService,
   mockDatadogVersion,
 } from './fixtures'
-// tslint:disable-next-line
 const {version} = require(path.join(__dirname, '../../../../package.json'))
 describe('lambda', () => {
   describe('instrument', () => {
@@ -1763,7 +1764,7 @@ Fetching Lambda functions, this might take a while.
         let command = createCommand(InstrumentCommand)
         command['config']['region'] = 'ap-southeast-1'
         command['config']['functions'] = ['arn:aws:lambda:ap-southeast-1:123456789012:function:lambda-hello-world']
-        await command['getSettings']()
+        command['getSettings']()
         let output = command.context.stdout.toString()
         expect(output).toMatch(
           '[Warning] The environment, service and version tags have not been configured. Learn more about Datadog unified service tagging: https://docs.datadoghq.com/getting_started/tagging/unified_service_tagging/#serverless-environment.\n'
@@ -1774,7 +1775,7 @@ Fetching Lambda functions, this might take a while.
         command['config']['functions'] = ['arn:aws:lambda:ap-southeast-1:123456789012:function:lambda-hello-world']
         command['config']['environment'] = 'b'
         command['config']['service'] = 'middletier'
-        await command['getSettings']()
+        command['getSettings']()
         output = command.context.stdout.toString()
         expect(output).toMatch(
           '[Warning] The version tag has not been configured. Learn more about Datadog unified service tagging: https://docs.datadoghq.com/getting_started/tagging/unified_service_tagging/#serverless-environment.\n'
@@ -1792,7 +1793,7 @@ Fetching Lambda functions, this might take a while.
         command['config']['environment'] = 'staging'
         command['config']['version'] = '0.2'
         command['config']['extraTags'] = 'not-complying:illegal-chars-in-key,complies:valid-pair'
-        await command['getSettings']()
+        command['getSettings']()
         const output = command.context.stdout.toString()
         expect(output).toMatch('Extra tags do not comply with the <key>:<value> array.\n')
       })
