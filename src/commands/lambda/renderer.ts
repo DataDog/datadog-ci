@@ -99,7 +99,7 @@ export const renderNoDefaultRegionSpecifiedError = () =>
   renderError('No default region specified. Use `-r`, `--region`.')
 
 /**
- * @param error an error message or an object of type `unkown`*.
+ * @param error an error message or an object of type `unknown`*.
  * @returns a message indicating that an error occurred while grouping functions.
  *
  * * Using unknown since we're not type guarding.
@@ -110,10 +110,20 @@ export const renderNoDefaultRegionSpecifiedError = () =>
  */
 export const renderCouldntGroupFunctionsError = (error: unknown) => renderError(`Couldn't group functions. ${error}`)
 
+/**
+ * @param error an error message or an object of type `unknown`*.
+ * @returns a message indicating that an error occurred while updating.
+ *
+ * * Using unknown since we're not type guarding.
+ *
+ * ```txt
+ * [Error] Failure during update. The provided error goes here!
+ * ```
+ */
 export const renderFailureDuringUpdateError = (error: unknown) => renderError(`Failure during update. ${error}`)
 
 /**
- * @param error an error message or an object of type `unkown`*.
+ * @param error an error message or an object of type `unknown`*.
  * @returns the provided error prefixed by {@link errorTag}.
  *
  * * Using unknown since we're not type guarding.
@@ -223,7 +233,7 @@ export const renderCouldntFindLambdaFunctionsInRegionError = () =>
   renderError("Couldn't find any Lambda functions in the specified region.")
 
 /**
- * @param error an error message or an object of type `unkown`*.
+ * @param error an error message or an object of type `unknown`*.
  * @returns a message indicating that no Lambda functions were fetched.
  *
  * * Using unknown since we're not type guarding.
