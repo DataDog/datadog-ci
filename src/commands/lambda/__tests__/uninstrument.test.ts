@@ -1,6 +1,8 @@
 jest.mock('fs')
 jest.mock('aws-sdk')
 jest.mock('../prompt')
+jest.mock('../renderer', () => require('../__mocks__/renderer'))
+
 import * as fs from 'fs'
 
 import {Lambda} from 'aws-sdk'
