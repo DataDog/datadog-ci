@@ -2,6 +2,7 @@ import {Cli} from 'clipanion/lib/advanced'
 
 import * as formatGitSourcemapsData from '../../../helpers/git/format-git-sourcemaps-data'
 
+import * as utils from '../utils'
 import {XCodeCommand} from '../xcode'
 
 beforeEach(() => {
@@ -19,6 +20,7 @@ beforeEach(() => {
   delete process.env.SOURCEMAP_FILE
   delete process.env.UNLOCALIZED_RESOURCES_FOLDER_PATH
   delete process.env.USE_HERMES
+  reactNativeVersionSpy.mockClear()
 })
 
 const makeCli = () => {
@@ -27,6 +29,8 @@ const makeCli = () => {
 
   return cli
 }
+
+const reactNativeVersionSpy = jest.spyOn(utils, 'getReactNativeVersion').mockReturnValue(undefined)
 
 const createMockContext = () => {
   let data = ''
@@ -172,6 +176,8 @@ describe('xcode', () => {
         UNLOCALIZED_RESOURCES_FOLDER_PATH: 'MyApp.app',
         USE_HERMES: 'true',
       }
+      reactNativeVersionSpy.mockReturnValue('0.69.0')
+
       const {context, code} = await runCLI(
         './src/commands/react-native/__tests__/fixtures/bundle-script/successful_script.sh',
         {
@@ -203,6 +209,7 @@ describe('xcode', () => {
         UNLOCALIZED_RESOURCES_FOLDER_PATH: 'MyApp.app',
         PODS_PODFILE_DIR_PATH: './src/commands/react-native/__tests__/fixtures/podfile-lock/with-hermes',
       }
+      reactNativeVersionSpy.mockReturnValue('0.70.0')
 
       const {context, code} = await runCLI(
         './src/commands/react-native/__tests__/fixtures/bundle-script/echo_env_script.sh',
@@ -230,6 +237,7 @@ describe('xcode', () => {
         UNLOCALIZED_RESOURCES_FOLDER_PATH: 'MyApp.app',
         PODS_PODFILE_DIR_PATH: './src/commands/react-native/__tests__/fixtures/podfile-lock/without-hermes',
       }
+      reactNativeVersionSpy.mockReturnValue('0.70.0')
 
       const {context, code} = await runCLI(
         './src/commands/react-native/__tests__/fixtures/bundle-script/echo_env_script.sh',
@@ -245,6 +253,33 @@ describe('xcode', () => {
       expect(code).toBe(0)
       const output = context.stdout.toString()
       expect(output).not.toContain('USE_HERMES=true')
+      expect(output).not.toContain('Hermes detected, composing sourcemaps')
+      expect(output).toContain('version: 0.0.2 build: 000020 service: com.myapp.test')
+    })
+
+    test('should not compose hermes sourcemaps for RN 0.71 projects', async () => {
+      process.env = {
+        ...process.env,
+        ...basicEnvironment,
+        CONFIGURATION_BUILD_DIR: './src/commands/react-native/__tests__/fixtures/compose-sourcemaps',
+        UNLOCALIZED_RESOURCES_FOLDER_PATH: 'MyApp.app',
+        PODS_PODFILE_DIR_PATH: './src/commands/react-native/__tests__/fixtures/podfile-lock/with-hermes',
+      }
+      reactNativeVersionSpy.mockReturnValue('0.71.0')
+
+      const {context, code} = await runCLI(
+        './src/commands/react-native/__tests__/fixtures/bundle-script/echo_env_script.sh',
+        {
+          composeSourcemapsPath:
+            './src/commands/react-native/__tests__/fixtures/compose-sourcemaps/compose-sourcemaps.js',
+        }
+      )
+      // Uncomment these lines for debugging failing script
+      // console.log(context.stdout.toString())
+      // console.log(context.stderr.toString())
+
+      expect(code).toBe(0)
+      const output = context.stdout.toString()
       expect(output).not.toContain('Hermes detected, composing sourcemaps')
       expect(output).toContain('version: 0.0.2 build: 000020 service: com.myapp.test')
     })

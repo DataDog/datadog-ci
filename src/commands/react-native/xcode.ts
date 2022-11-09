@@ -8,6 +8,7 @@ import {Cli, Command} from 'clipanion'
 import {parsePlist} from '../../helpers/plist'
 
 import {UploadCommand} from './upload'
+import {getReactNativeVersion} from './utils'
 
 /**
  * Because jest cannot mock require.resolve, reactNativePath cannot
@@ -366,9 +367,22 @@ export class XCodeCommand extends Command {
   /**
    * This function reflects the logic in the react-native-xcode.sh bundle script.
    * When the composition issue is fixed in React Native, this function should
-   * return false if the React Native version is high enough.
+   * return false if the React Native version is at least 0.71 where it was fixed.
    */
   private shouldComposeHermesSourcemaps = (): boolean => {
+    /**
+     * We start by checking if the version is over 0.70, as the bug
+     * is fixed from react-native 0.71.0
+     */
+    const reactNativeVersion = getReactNativeVersion(`${reactNativePath}/package.json`)
+    if (!reactNativeVersion) {
+      return false
+    }
+    const [_, minor] = reactNativeVersion.split('.')
+    if (Number(minor) > 70) {
+      return false
+    }
+
     /**
      * This env variable is empty by default.
      * Before RN 0.70, it had to be set to `true` for Hermes to be used.
