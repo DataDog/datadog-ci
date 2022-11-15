@@ -224,7 +224,7 @@ const renderExecutionResult = (test: Test, execution: Result, baseUrl: string) =
     const resultUrl = getResultUrl(baseUrl, test, resultId)
     const resultUrlStatus = timedOut ? '(not yet received)' : ''
 
-    const resultInfo = `  ⎋${durationText} Result URL: ${chalk.dim.cyan(resultUrl)} ${resultUrlStatus}`
+    const resultInfo = `  ⎋${durationText} View test run details: ${chalk.dim.cyan(resultUrl)} ${resultUrlStatus}`
     outputLines.push(resultInfo)
   }
 
@@ -320,7 +320,7 @@ export class DefaultReporter implements MainReporter {
 
     if (summary.batchId) {
       const batchUrl = getBatchUrl(baseUrl, summary.batchId)
-      lines.push('Results URL: ' + chalk.dim.cyan(batchUrl))
+      lines.push('View test batch in Continuous Testing Explorer: ' + chalk.dim.cyan(batchUrl))
     }
     lines.push(`${b('Run summary:')} ${runSummary.join(', ')}${extraInfoStr}\n\n`)
 
