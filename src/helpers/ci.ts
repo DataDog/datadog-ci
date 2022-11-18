@@ -659,7 +659,14 @@ export const getCIEnv = (): {ciEnv: Record<string, string>; provider: string} =>
     }
   }
 
-  throw new Error('Only providers [GitHub, GitLab, CircleCI, Buildkite] are supported')
+  if (process.env.JENKINS_URL) {
+    return {
+      ciEnv: filterEnv(['DD_CUSTOM_PARENT_ID', 'DD_CUSTOM_TRACE_ID']),
+      provider: 'jenkins',
+    }
+  }
+
+  throw new Error('Only providers [GitHub, GitLab, CircleCI, Buildkite, Buddy, Jenkins] are supported')
 }
 
 const filterEnv = (values: string[]): Record<string, string> => {
