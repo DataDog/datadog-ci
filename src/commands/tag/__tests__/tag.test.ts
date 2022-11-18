@@ -66,7 +66,9 @@ describe('execute', () => {
   test('should fail if not running in a supported provider', async () => {
     const {context, code} = await runCLI('pipeline', ['key:value'], {})
     expect(code).toBe(1)
-    expect(context.stderr.toString()).toContain('Only providers [GitHub, GitLab, CircleCI, Buildkite, Buddy, Jenkins] are supported')
+    expect(context.stderr.toString()).toContain(
+      'Only providers [GitHub, GitLab, CircleCI, Buildkite, Buddy, Jenkins] are supported'
+    )
   })
 
   test('should fail if provider is GitHub and level is job', async () => {
