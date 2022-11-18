@@ -182,7 +182,7 @@ describe('getCIEnv', () => {
     process.env = {APPVEYOR: 'true'}
     expect(() => {
       getCIEnv()
-    }).toThrow('Only providers [GitHub, GitLab, CircleCI, Buildkite] are supported')
+    }).toThrow('Only providers [GitHub, GitLab, CircleCI, Buildkite, Buddy, Jenkins] are supported')
   })
 
   test('buildkite', () => {
@@ -221,6 +221,19 @@ describe('getCIEnv', () => {
     expect(getCIEnv()).toEqual({
       ciEnv: {CI_PIPELINE_ID: 'build-id', CI_JOB_ID: '10', CI_PROJECT_URL: 'url'},
       provider: 'gitlab',
+    })
+  })
+
+  test('jenkins', () => {
+    process.env = {JENKINS_URL: 'something'}
+    expect(() => {
+      getCIEnv()
+    }).toThrow()
+
+    process.env = {JENKINS_URL: 'something', DD_CUSTOM_PARENT_ID: 'span-id', DD_CUSTOM_TRACE_ID: 'trace-id'}
+    expect(getCIEnv()).toEqual({
+      ciEnv: {DD_CUSTOM_PARENT_ID: 'span-id', DD_CUSTOM_TRACE_ID: 'trace-id'},
+      provider: 'jenkins',
     })
   })
 })
