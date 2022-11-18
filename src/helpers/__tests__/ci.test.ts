@@ -224,7 +224,7 @@ describe('getCIEnv', () => {
     })
   })
 
-  test('gitlab', () => {
+  test('jenkins', () => {
     process.env = {JENKINS_URL: 'something'}
     expect(() => {
       getCIEnv()
