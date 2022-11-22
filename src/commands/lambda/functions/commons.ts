@@ -1,5 +1,7 @@
-import {CloudWatchLogs, config as aws_sdk_config, Lambda} from 'aws-sdk'
+import {CloudWatchLogs, config as aws_sdk_config, Lambda, SharedIniFileCredentials} from 'aws-sdk'
 import {GetFunctionRequest} from 'aws-sdk/clients/lambda'
+import {SharedIniFileCredentialsOptions} from 'aws-sdk/lib/credentials/shared_ini_file_credentials'
+import inquirer from 'inquirer'
 
 import {isValidDatadogSite} from '../../../helpers/validation'
 
@@ -9,6 +11,7 @@ import {
   ARM_LAYER_SUFFIX,
   AWS_ACCESS_KEY_ID_ENV_VAR,
   AWS_SECRET_ACCESS_KEY_ENV_VAR,
+  AWS_SHARED_CREDENTIALS_FILE_ENV_VAR,
   CI_API_KEY_ENV_VAR,
   CI_API_KEY_SECRET_ARN_ENV_VAR,
   CI_KMS_API_KEY_ENV_VAR,
@@ -24,6 +27,7 @@ import {
 } from '../constants'
 import {FunctionConfiguration, InstrumentationSettings} from '../interfaces'
 import {applyLogGroupConfig} from '../loggroup'
+import {awsProfileQuestion} from '../prompt'
 import {applyTagConfig} from '../tags'
 
 /**
@@ -171,6 +175,48 @@ export const findLatestLayerVersion = async (layer: LayerKey, region: string) =>
   }
 
   return latestVersion
+}
+
+export const getAWSFileCredentialsParams = (profile: string): SharedIniFileCredentialsOptions => {
+  const params: SharedIniFileCredentialsOptions = {profile}
+
+  if (process.env[AWS_SHARED_CREDENTIALS_FILE_ENV_VAR] !== undefined) {
+    params.filename = process.env[AWS_SHARED_CREDENTIALS_FILE_ENV_VAR]
+  }
+
+  // If provided profile is enforced by MFA and a
+  // session token is not set we must request for the MFA token.
+  params.tokenCodeFn = async (mfaSerial, callback) => {
+    const answer = await inquirer.prompt(awsProfileQuestion(mfaSerial))
+    callback(undefined, answer.AWS_MFA)
+  }
+
+  return params
+}
+
+export const updateAWSProfileCredentials = async (profile: string) => {
+  try {
+    const params: SharedIniFileCredentialsOptions = getAWSFileCredentialsParams(profile)
+
+    const profileCredentials: SharedIniFileCredentials = new SharedIniFileCredentials(params)
+
+    // Update credentials in the case user has
+    // MFA set up.
+    await profileCredentials.getPromise()
+    if (profileCredentials.needsRefresh()) {
+      await profileCredentials.refreshPromise()
+    }
+
+    if (!(profileCredentials.accessKeyId !== undefined || profileCredentials.sessionToken !== undefined)) {
+      throw new Error(`Profile '${profile}' is not configured.`)
+    }
+
+    aws_sdk_config.credentials = profileCredentials
+  } catch (e) {
+    if (e instanceof Error) {
+      throw Error(`Couldn't set AWS profile credentials. ${e.message}`)
+    }
+  }
 }
 
 export const isMissingAWSCredentials = () =>

@@ -3,7 +3,7 @@ jest.mock('aws-sdk')
 jest.mock('../prompt')
 import * as fs from 'fs'
 
-import {Lambda} from 'aws-sdk'
+import {Lambda, SharedIniFileCredentials} from 'aws-sdk'
 
 import {
   AWS_ACCESS_KEY_ID_ENV_VAR,
@@ -584,6 +584,26 @@ UpdateFunctionConfiguration -> arn:aws:lambda:sa-east-1:123456789012:function:la
       expect(output).toMatchInlineSnapshot(`
 "Fetching Lambda functions, this might take a while.
 [Error] Couldn't fetch Lambda functions. Error: Max retry count exceeded. ListFunctionsError
+"
+`)
+    })
+
+    test('prints error when updating aws profile credentials fails', async () => {
+      ;(SharedIniFileCredentials as any).mockImplementation(() => {
+        throw Error('Update failed!')
+      })
+
+      const cli = makeCli()
+      const context = createMockContext() as any
+      const functionARN = 'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world'
+      const code = await cli.run(
+        ['lambda', 'uninstrument', '-f', functionARN, '--profile', 'SOME-AWS-PROFILE'],
+        context
+      )
+      const output = context.stdout.toString()
+      expect(code).toBe(1)
+      expect(output).toMatchInlineSnapshot(`
+"[Error] Error: Couldn't set AWS profile credentials. Update failed!
 "
 `)
     })

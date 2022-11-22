@@ -4,7 +4,7 @@ jest.mock('../prompt')
 import * as fs from 'fs'
 import path from 'path'
 
-import {Lambda} from 'aws-sdk'
+import {config as aws_sdk_config, Lambda, SharedIniFileCredentials} from 'aws-sdk'
 import {Cli} from 'clipanion/lib/advanced'
 
 import {
@@ -1546,6 +1546,56 @@ Fetching Lambda functions, this might take a while.
         expect(code).toBe(1)
         expect(output).toMatchInlineSnapshot(`
 "[Error] Couldn't fetch Lambda functions. Error: Instrumenting arm64 architecture is not supported for the given dd-extension version. Please choose the latest dd-extension version or use x86_64 architecture.
+"
+`)
+      })
+
+      test('instruments correctly with profile when provided', async () => {
+        const credentials = {
+          accessKeyId: mockAwsAccessKeyId,
+          getPromise: () => Promise.resolve(),
+          needsRefresh: () => false,
+          secretAccessKey: mockAwsSecretAccessKey,
+        } as any
+
+        ;(SharedIniFileCredentials as any).mockImplementation(() => credentials)
+        ;(Lambda as any).mockImplementation(() =>
+          makeMockLambda({
+            'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world': {
+              FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world',
+              Handler: 'index.handler',
+              Runtime: 'nodejs14.x',
+            },
+          })
+        )
+
+        const cli = makeCli()
+        const context = createMockContext() as any
+        const functionARN = 'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world'
+        const code = await cli.run(
+          ['lambda', 'instrument', '-f', functionARN, '--profile', 'SOME-AWS-PROFILE'],
+          context
+        )
+        expect(code).toBe(0)
+        expect(aws_sdk_config.credentials?.accessKeyId).toBe(mockAwsAccessKeyId)
+      })
+
+      test('prints error when updating aws profile credentials fails', async () => {
+        ;(SharedIniFileCredentials as any).mockImplementation(() => {
+          throw Error('Update failed!')
+        })
+
+        const cli = makeCli()
+        const context = createMockContext() as any
+        const functionARN = 'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world'
+        const code = await cli.run(
+          ['lambda', 'instrument', '-f', functionARN, '--profile', 'SOME-AWS-PROFILE'],
+          context
+        )
+        const output = context.stdout.toString()
+        expect(code).toBe(1)
+        expect(output).toMatchInlineSnapshot(`
+"[Error] Error: Couldn't set AWS profile credentials. Update failed!
 "
 `)
       })
