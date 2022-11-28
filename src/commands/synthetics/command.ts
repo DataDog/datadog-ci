@@ -14,7 +14,7 @@ import {getReporter, parseVariablesFromCli, renderResults} from './utils'
 
 export const MAX_TESTS_TO_TRIGGER = 100
 
-export const DEFAULT_POLLING_TIMEOUT = 2 * 60 * 1000
+export const DEFAULT_POLLING_TIMEOUT = 30 * 60 * 1000
 
 export const DEFAULT_COMMAND_CONFIG: CommandConfig = {
   apiKey: '',
