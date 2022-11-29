@@ -14,7 +14,7 @@ import {getReporter, parseVariablesFromCli, renderResults} from './utils'
 
 export const MAX_TESTS_TO_TRIGGER = 100
 
-export const DEFAULT_POLLING_TIMEOUT = 2 * 60 * 1000
+export const DEFAULT_POLLING_TIMEOUT = 30 * 60 * 1000
 
 export const DEFAULT_COMMAND_CONFIG: CommandConfig = {
   apiKey: '',
@@ -107,6 +107,15 @@ export class RunTestCommand extends Command {
       }
 
       return 0
+    }
+
+    if (results.some((r) => r.timedOut) && !this.config.failOnTimeout) {
+      this.reporter.error(
+        chalk.yellow(
+          'Because `failOnTimeout` is disabled, the command will exit with an error code 0. ' +
+            'Use `failOnTimeout: true` to exit with an error code 1.\n'
+        )
+      )
     }
 
     return renderResults({config: this.config, reporter: this.reporter, results, startTime, summary})

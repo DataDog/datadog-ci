@@ -259,14 +259,17 @@ export class DefaultReporter implements MainReporter {
   }
 
   public error(error: string) {
+    this.testWaitSpinner?.stopAndPersist()
     this.write(error)
   }
 
   public initErrors(errors: string[]) {
+    this.testWaitSpinner?.stopAndPersist()
     this.write(errors.join('\n') + '\n\n')
   }
 
   public log(log: string) {
+    this.testWaitSpinner?.stopAndPersist()
     this.write(log)
   }
 
