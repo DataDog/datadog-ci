@@ -1,8 +1,9 @@
-import {blueBright, bold} from 'chalk'
+import {blueBright, bold, dim} from 'chalk'
 import {filter} from 'fuzzy'
 import inquirer from 'inquirer'
 
 import {DATADOG_SITES} from '../../constants'
+import {isValidDatadogSite} from '../../helpers/validation'
 
 import {
   AWS_ACCESS_KEY_ID_ENV_VAR,
@@ -21,7 +22,7 @@ import {
   SERVICE_ENV_VAR,
   VERSION_ENV_VAR,
 } from './constants'
-import {sentenceMatchesRegEx} from './functions/commons'
+import {isMissingAnyDatadogApiKeyEnvVar, sentenceMatchesRegEx} from './functions/commons'
 
 const checkboxPlusPrompt = require('inquirer-checkbox-plus-prompt')
 inquirer.registerPrompt('checkbox-plus', checkboxPlusPrompt)
@@ -129,6 +130,7 @@ const datadogSiteQuestion: inquirer.ListQuestion = {
 const envQuestion: inquirer.InputQuestion = {
   default: undefined,
   message: 'Enter a value for the environment variable DD_ENV',
+  suffix: dim(' (recommended)'),
   name: ENVIRONMENT_ENV_VAR,
   type: 'input',
 }
@@ -136,6 +138,7 @@ const envQuestion: inquirer.InputQuestion = {
 const serviceQuestion: inquirer.InputQuestion = {
   default: undefined,
   message: 'Enter a value for the environment variable DD_SERVICE',
+  suffix: dim(' (recommended)'),
   name: SERVICE_ENV_VAR,
   type: 'input',
 }
@@ -143,6 +146,7 @@ const serviceQuestion: inquirer.InputQuestion = {
 const versionQuestion: inquirer.InputQuestion = {
   default: undefined,
   message: 'Enter a value for the environment variable DD_VERSION',
+  suffix: dim(' (recommended)'),
   name: VERSION_ENV_VAR,
   type: 'input',
 }
@@ -236,15 +240,21 @@ export const requestAWSRegion = async (defaultRegion?: string) => {
 
 export const requestDatadogEnvVars = async () => {
   try {
-    const datadogSiteAnswer = await inquirer.prompt(datadogSiteQuestion)
-    const selectedDatadogSite = datadogSiteAnswer[CI_SITE_ENV_VAR]
-    process.env[CI_SITE_ENV_VAR] = selectedDatadogSite
+    const envSite = process.env[CI_SITE_ENV_VAR]
+    let selectedDatadogSite = envSite
+    if (!isValidDatadogSite(envSite)) {
+      const datadogSiteAnswer = await inquirer.prompt(datadogSiteQuestion)
+      selectedDatadogSite = datadogSiteAnswer[CI_SITE_ENV_VAR]
+      process.env[CI_SITE_ENV_VAR] = selectedDatadogSite
+    }
 
-    const datadogApiKeyTypeAnswer = await inquirer.prompt(datadogApiKeyTypeQuestion(selectedDatadogSite))
-    const datadogApiKeyType = datadogApiKeyTypeAnswer.type
-    const datadogEnvVars = await inquirer.prompt(datadogEnvVarsQuestions(datadogApiKeyType))
-    const selectedDatadogApiKeyEnvVar = datadogApiKeyType.envVar
-    process.env[selectedDatadogApiKeyEnvVar] = datadogEnvVars[selectedDatadogApiKeyEnvVar]
+    if (isMissingAnyDatadogApiKeyEnvVar()) {
+      const datadogApiKeyTypeAnswer = await inquirer.prompt(datadogApiKeyTypeQuestion(selectedDatadogSite!))
+      const datadogApiKeyType = datadogApiKeyTypeAnswer.type
+      const datadogEnvVars = await inquirer.prompt(datadogEnvVarsQuestions(datadogApiKeyType))
+      const selectedDatadogApiKeyEnvVar = datadogApiKeyType.envVar
+      process.env[selectedDatadogApiKeyEnvVar] = datadogEnvVars[selectedDatadogApiKeyEnvVar]
+    }
   } catch (e) {
     if (e instanceof Error) {
       throw Error(`Couldn't set Datadog Environment Variables. ${e.message}`)

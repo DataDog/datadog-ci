@@ -32,7 +32,6 @@ import {
   isMissingAnyDatadogApiKeyEnvVar,
   isMissingAWSCredentials,
   isMissingDatadogEnvVars,
-  isMissingDatadogSiteEnvVar,
   sentenceMatchesRegEx,
   updateLambdaFunctionConfigs,
 } from '../../functions/commons'
@@ -361,31 +360,6 @@ describe('commons', () => {
       process.env[CI_API_KEY_SECRET_ARN_ENV_VAR] = 'SOME-AWS-SECRET-ARN-CONTAINING-DATADOG-API-KEY'
       process.env[CI_SITE_ENV_VAR] = 'datadoghq.com'
       expect(isMissingDatadogEnvVars()).toBe(false)
-    })
-  })
-
-  describe('isMissingDatadogSiteEnvVar', () => {
-    const OLD_ENV = process.env
-    beforeEach(() => {
-      jest.resetModules()
-      process.env = {}
-    })
-    afterAll(() => {
-      process.env = OLD_ENV
-    })
-
-    test('returns true when Datadog Site Env Var is missing', () => {
-      expect(isMissingDatadogSiteEnvVar()).toBe(true)
-    })
-
-    test('returns false when Datadog Site Env Var is set', () => {
-      process.env[CI_SITE_ENV_VAR] = 'datadoghq.com'
-      expect(isMissingDatadogSiteEnvVar()).toBe(false)
-    })
-
-    test('returns true when Datadog Site Env Var is set and is not a valid Datadog site', () => {
-      process.env[CI_SITE_ENV_VAR] = 'datacathq.com'
-      expect(isMissingDatadogSiteEnvVar()).toBe(true)
     })
   })
 

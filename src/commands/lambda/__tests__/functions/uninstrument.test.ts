@@ -1,4 +1,6 @@
 jest.mock('../../loggroup')
+jest.mock('../../renderer')
+
 import {
   API_KEY_ENV_VAR,
   API_KEY_SECRET_ARN_ENV_VAR,
