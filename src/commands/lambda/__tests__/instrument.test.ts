@@ -1,6 +1,8 @@
 jest.mock('fs')
 jest.mock('aws-sdk')
 jest.mock('../prompt')
+jest.mock('../renderer', () => require('../__mocks__/renderer'))
+
 import * as fs from 'fs'
 import path from 'path'
 
@@ -94,7 +96,8 @@ describe('lambda', () => {
         const output = context.stdout.toString()
         expect(code).toBe(0)
         expect(output).toMatchInlineSnapshot(`
-"[Warning] Instrument your Lambda functions in a dev or staging environment first. Should the instrumentation result be unsatisfactory, run \`uninstrument\` with the same arguments to revert the changes.
+"\n[Dry Run] 🐶 Instrumenting Lambda function
+\n[Warning] Instrument your Lambda functions in a dev or staging environment first. Should the instrumentation result be unsatisfactory, run \`uninstrument\` with the same arguments to revert the changes.
 \n[!] Functions to be updated:
 \t- arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world\n
 [Dry Run] Will apply the following updates:
@@ -175,7 +178,8 @@ TagResource -> arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world
         const output = context.stdout.toString()
         expect(code).toBe(0)
         expect(output).toMatchInlineSnapshot(`
-"[Warning] Instrument your Lambda functions in a dev or staging environment first. Should the instrumentation result be unsatisfactory, run \`uninstrument\` with the same arguments to revert the changes.
+"\n[Dry Run] 🐶 Instrumenting Lambda function
+\n[Warning] Instrument your Lambda functions in a dev or staging environment first. Should the instrumentation result be unsatisfactory, run \`uninstrument\` with the same arguments to revert the changes.
 \n[!] Functions to be updated:
 \t- arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world\n
 [Dry Run] Will apply the following updates:
@@ -249,7 +253,8 @@ TagResource -> arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world
         const output = context.stdout.toString()
         expect(code).toBe(0)
         expect(output).toMatchInlineSnapshot(`
-"[Warning] Instrument your Lambda functions in a dev or staging environment first. Should the instrumentation result be unsatisfactory, run \`uninstrument\` with the same arguments to revert the changes.
+"\n[Dry Run] 🐶 Instrumenting Lambda function
+\n[Warning] Instrument your Lambda functions in a dev or staging environment first. Should the instrumentation result be unsatisfactory, run \`uninstrument\` with the same arguments to revert the changes.
 \n[!] Functions to be updated:
 \t- arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world\n
 [Dry Run] Will apply the following updates:
@@ -320,7 +325,8 @@ TagResource -> arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world
         const output = context.stdout.toString()
         expect(code).toBe(0)
         expect(output).toMatchInlineSnapshot(`
-"[Warning] Instrument your Lambda functions in a dev or staging environment first. Should the instrumentation result be unsatisfactory, run \`uninstrument\` with the same arguments to revert the changes.
+"\n[Dry Run] 🐶 Instrumenting Lambda function
+\n[Warning] Instrument your Lambda functions in a dev or staging environment first. Should the instrumentation result be unsatisfactory, run \`uninstrument\` with the same arguments to revert the changes.
 \n[!] Functions to be updated:
 \t- arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world\n
 [Dry Run] Will apply the following updates:
@@ -517,7 +523,8 @@ TagResource -> arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world
         )
         const output = context.stdout.toString()
         expect(output).toMatchInlineSnapshot(`
-"[Warning] Instrument your Lambda functions in a dev or staging environment first. Should the instrumentation result be unsatisfactory, run \`uninstrument\` with the same arguments to revert the changes.
+"\n🐶 Instrumenting Lambda function\n
+[Warning] Instrument your Lambda functions in a dev or staging environment first. Should the instrumentation result be unsatisfactory, run \`uninstrument\` with the same arguments to revert the changes.
 \n[!] Functions to be updated:
 \t- arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world\n
 Will apply the following updates:
@@ -672,9 +679,10 @@ TagResource -> arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world
         const output = context.stdout.toString()
         expect(code).toBe(1)
         expect(output).toMatchInlineSnapshot(`
-                                                            "[Error] No functions specified for instrumentation.
-                                                            "
-                                                `)
+"\n🐶 Instrumenting Lambda function
+[Error] No functions specified to instrument.
+"
+`)
       })
 
       test('aborts early when no functions are specified while using config file', async () => {
@@ -692,9 +700,10 @@ TagResource -> arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world
         await command['execute']()
         const output = command.context.stdout.toString()
         expect(output).toMatchInlineSnapshot(`
-                                                            "[Error] No functions specified for instrumentation.
-                                                            "
-                                                `)
+"\n🐶 Instrumenting Lambda function
+[Error] No functions specified to instrument.
+"
+`)
       })
 
       test("aborts early when function regions can't be found", async () => {
@@ -765,9 +774,10 @@ TagResource -> arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world
         const output = context.stdout.toString()
         expect(code).toBe(1)
         expect(output).toMatchInlineSnapshot(`
-                                                  "[Error] Couldn't fetch Lambda functions. Error: Can't instrument arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world, as current State is Failed (must be \\"Active\\") and Last Update Status is Unsuccessful (must be \\"Successful\\")
-                                                  "
-                                        `)
+"\n🐶 Instrumenting Lambda function
+[Error] Couldn't fetch Lambda functions. Error: Can't instrument arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world, as current State is Failed (must be \\"Active\\") and Last Update Status is Unsuccessful (must be \\"Successful\\")
+"
+`)
       })
 
       test('aborts early when extensionVersion and forwarder are set', async () => {
@@ -799,9 +809,10 @@ TagResource -> arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world
         const output = context.stdout.toString()
         expect(code).toBe(1)
         expect(output).toMatchInlineSnapshot(`
-          "[Error] \\"extensionVersion\\" and \\"forwarder\\" should not be used at the same time.
-          "
-        `)
+"\n🐶 Instrumenting Lambda function
+[Error] \\"extensionVersion\\" and \\"forwarder\\" should not be used at the same time.
+"
+`)
       })
 
       test('check if functions are not empty while using config file', async () => {
@@ -942,13 +953,13 @@ TagResource -> arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world
         const output = context.stdout.toString()
         expect(code).toBe(0)
         expect(output).toMatchInlineSnapshot(`
-"[!] No AWS credentials found, let's set them up! Or you can re-run the command and supply the AWS credentials in the same way when you invoke the AWS CLI.
-[!] Configure AWS region.
-[!] Configure Datadog settings.
-Fetching Lambda functions, this might take a while.
-[Warning] The environment, service and version tags have not been configured. Learn more about Datadog unified service tagging: https://docs.datadoghq.com/getting_started/tagging/unified_service_tagging/#serverless-environment.
-[Warning] Instrument your Lambda functions in a dev or staging environment first. Should the instrumentation result be unsatisfactory, run \`uninstrument\` with the same arguments to revert the changes.\n
-[!] Functions to be updated:
+"\n🐶 Instrumenting Lambda function
+[!] No AWS credentials found, let's set them up! Or you can re-run the command and supply the AWS credentials in the same way when you invoke the AWS CLI.
+\n[!] Configure AWS region.
+\n[!] Configure Datadog settings.
+\n[Warning] The environment, service and version tags have not been configured. Learn more about Datadog unified service tagging: https://docs.datadoghq.com/getting_started/tagging/unified_service_tagging/#serverless-environment.
+\n[Warning] Instrument your Lambda functions in a dev or staging environment first. Should the instrumentation result be unsatisfactory, run \`uninstrument\` with the same arguments to revert the changes.
+\n[!] Functions to be updated:
 \t- arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world
 \t[Warning] At least one latest layer version is being used. Ensure to lock in versions for production applications using \`--layerVersion\` and \`--extensionVersion\`.
 \t- arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world-2
@@ -1085,12 +1096,13 @@ TagResource -> arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world
         const output = context.stdout.toString()
         expect(code).toBe(0)
         expect(output).toMatchInlineSnapshot(`
-"[!] No AWS credentials found, let's set them up! Or you can re-run the command and supply the AWS credentials in the same way when you invoke the AWS CLI.
-[!] Configure AWS region.
-[!] Configure Datadog settings.
-[Warning] The environment, service and version tags have not been configured. Learn more about Datadog unified service tagging: https://docs.datadoghq.com/getting_started/tagging/unified_service_tagging/#serverless-environment.
-[Warning] Instrument your Lambda functions in a dev or staging environment first. Should the instrumentation result be unsatisfactory, run \`uninstrument\` with the same arguments to revert the changes.\n
-[!] Functions to be updated:
+"\n🐶 Instrumenting Lambda function
+[!] No AWS credentials found, let's set them up! Or you can re-run the command and supply the AWS credentials in the same way when you invoke the AWS CLI.
+\n[!] Configure AWS region.
+\n[!] Configure Datadog settings.
+\n[Warning] The environment, service and version tags have not been configured. Learn more about Datadog unified service tagging: https://docs.datadoghq.com/getting_started/tagging/unified_service_tagging/#serverless-environment.
+\n[Warning] Instrument your Lambda functions in a dev or staging environment first. Should the instrumentation result be unsatisfactory, run \`uninstrument\` with the same arguments to revert the changes.
+\n[!] Functions to be updated:
 \t- arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world
 \t[Warning] At least one latest layer version is being used. Ensure to lock in versions for production applications using \`--layerVersion\` and \`--extensionVersion\`.
 \t- arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world-2
@@ -1159,7 +1171,8 @@ TagResource -> arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world
         const output = context.stdout.toString()
         expect(code).toBe(1)
         expect(output).toMatchInlineSnapshot(`
-"[!] No AWS credentials found, let's set them up! Or you can re-run the command and supply the AWS credentials in the same way when you invoke the AWS CLI.
+"\n🐶 Instrumenting Lambda function
+[!] No AWS credentials found, let's set them up! Or you can re-run the command and supply the AWS credentials in the same way when you invoke the AWS CLI.
 [Error] Unexpected error
 "
 `)
@@ -1179,8 +1192,9 @@ TagResource -> arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world
         const output = context.stdout.toString()
         expect(code).toBe(1)
         expect(output).toMatchInlineSnapshot(`
-"[!] Configure AWS region.
-[!] Configure Datadog settings.
+"\n🐶 Instrumenting Lambda function
+\n[!] Configure AWS region.
+\n[!] Configure Datadog settings.
 [Error] Unexpected error
 "
 `)
@@ -1237,13 +1251,12 @@ TagResource -> arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world
         const output = context.stdout.toString()
         expect(code).toBe(0)
         expect(output).toMatchInlineSnapshot(`
-"[!] No AWS credentials found, let's set them up! Or you can re-run the command and supply the AWS credentials in the same way when you invoke the AWS CLI.
-[!] Configure AWS region.
-[!] Configure Datadog settings.
-Fetching Lambda functions, this might take a while.
-[Warning] Instrument your Lambda functions in a dev or staging environment first. Should the instrumentation result be unsatisfactory, run \`uninstrument\` with the same arguments to revert the changes.
-
-[!] Functions to be updated:
+"\n🐶 Instrumenting Lambda function
+[!] No AWS credentials found, let's set them up! Or you can re-run the command and supply the AWS credentials in the same way when you invoke the AWS CLI.
+\n[!] Configure AWS region.
+\n[!] Configure Datadog settings.
+\n[Warning] Instrument your Lambda functions in a dev or staging environment first. Should the instrumentation result be unsatisfactory, run \`uninstrument\` with the same arguments to revert the changes.
+\n[!] Functions to be updated:
 \t- arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world
 \t[Warning] At least one latest layer version is being used. Ensure to lock in versions for production applications using \`--layerVersion\` and \`--extensionVersion\`.
 
@@ -1332,14 +1345,13 @@ TagResource -> arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world
         const output = context.stdout.toString()
         expect(code).toBe(0)
         expect(output).toMatchInlineSnapshot(`
-"[!] No AWS credentials found, let's set them up! Or you can re-run the command and supply the AWS credentials in the same way when you invoke the AWS CLI.
-[!] Configure AWS region.
-[!] Configure Datadog settings.
-Fetching Lambda functions, this might take a while.
-[Warning] The environment, service and version tags have not been configured. Learn more about Datadog unified service tagging: https://docs.datadoghq.com/getting_started/tagging/unified_service_tagging/#serverless-environment.
-[Warning] Instrument your Lambda functions in a dev or staging environment first. Should the instrumentation result be unsatisfactory, run \`uninstrument\` with the same arguments to revert the changes.
-
-[!] Functions to be updated:
+"\n🐶 Instrumenting Lambda function
+[!] No AWS credentials found, let's set them up! Or you can re-run the command and supply the AWS credentials in the same way when you invoke the AWS CLI.
+\n[!] Configure AWS region.
+\n[!] Configure Datadog settings.
+\n[Warning] The environment, service and version tags have not been configured. Learn more about Datadog unified service tagging: https://docs.datadoghq.com/getting_started/tagging/unified_service_tagging/#serverless-environment.
+\n[Warning] Instrument your Lambda functions in a dev or staging environment first. Should the instrumentation result be unsatisfactory, run \`uninstrument\` with the same arguments to revert the changes.
+\n[!] Functions to be updated:
 \t- arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world
 \t[Warning] At least one latest layer version is being used. Ensure to lock in versions for production applications using \`--layerVersion\` and \`--extensionVersion\`.
 
@@ -1390,8 +1402,8 @@ TagResource -> arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world
         const output = context.stdout.toString()
         expect(code).toBe(1)
         expect(output).toMatchInlineSnapshot(`
-"[!] Configure AWS region.
-Fetching Lambda functions, this might take a while.
+"\n🐶 Instrumenting Lambda function
+\n[!] Configure AWS region.
 [Error] Couldn't find any Lambda functions in the specified region.
 "
 `)
@@ -1416,8 +1428,8 @@ Fetching Lambda functions, this might take a while.
         const output = context.stdout.toString()
         expect(code).toBe(1)
         expect(output).toMatchInlineSnapshot(`
-"[!] Configure AWS region.
-Fetching Lambda functions, this might take a while.
+"\n🐶 Instrumenting Lambda function
+\n[!] Configure AWS region.
 [Error] Couldn't fetch Lambda functions. Error: Max retry count exceeded. ListFunctionsError
 "
 `)
@@ -1460,7 +1472,8 @@ Fetching Lambda functions, this might take a while.
         const output = context.stdout.toString()
         expect(code).toBe(1)
         expect(output).toMatchInlineSnapshot(`
-"[Error] Couldn't fetch Lambda functions. Error: Only the --extension-version argument should be set for the ruby2.7 runtime. Please remove the --layer-version argument from the instrument command.
+"\n[Dry Run] 🐶 Instrumenting Lambda function
+[Error] Couldn't fetch Lambda functions. Error: Only the --extension-version argument should be set for the ruby2.7 runtime. Please remove the --layer-version argument from the instrument command.
 "
 `)
       })
@@ -1502,7 +1515,8 @@ Fetching Lambda functions, this might take a while.
         const output = context.stdout.toString()
         expect(code).toBe(1)
         expect(output).toMatchInlineSnapshot(`
-"[Error] Couldn't fetch Lambda functions. Error: Only the --extension-version argument should be set for the provided.al2 runtime. Please remove the --layer-version argument from the instrument command.
+"\n[Dry Run] 🐶 Instrumenting Lambda function
+[Error] Couldn't fetch Lambda functions. Error: Only the --extension-version argument should be set for the provided.al2 runtime. Please remove the --layer-version argument from the instrument command.
 "
 `)
       })
@@ -1545,7 +1559,8 @@ Fetching Lambda functions, this might take a while.
         const output = context.stdout.toString()
         expect(code).toBe(1)
         expect(output).toMatchInlineSnapshot(`
-"[Error] Couldn't fetch Lambda functions. Error: Instrumenting arm64 architecture is not supported for the given dd-extension version. Please choose the latest dd-extension version or use x86_64 architecture.
+"\n[Dry Run] 🐶 Instrumenting Lambda function
+[Error] Couldn't fetch Lambda functions. Error: Instrumenting arm64 architecture is not supported for the given dd-extension version. Please choose the latest dd-extension version or use x86_64 architecture.
 "
 `)
       })
@@ -1746,7 +1761,7 @@ Fetching Lambda functions, this might take a while.
           command['getSettings']()
 
           let output = command.context.stdout.toString()
-          expect(output).toMatch(`Invalid boolean specified for ${option}.\n`)
+          expect(output).toMatch(`[Error] Invalid boolean specified for ${option}.\n`)
 
           command = createCommand(InstrumentCommand)
           command[option] = 'NotBoolean'
@@ -1795,7 +1810,7 @@ Fetching Lambda functions, this might take a while.
         command['config']['extraTags'] = 'not-complying:illegal-chars-in-key,complies:valid-pair'
         command['getSettings']()
         const output = command.context.stdout.toString()
-        expect(output).toMatch('Extra tags do not comply with the <key>:<value> array.\n')
+        expect(output).toMatch('[Error] Extra tags do not comply with the <key>:<value> array.\n')
       })
     })
     describe('printPlannedActions', () => {
@@ -1807,7 +1822,7 @@ Fetching Lambda functions, this might take a while.
         const output = command.context.stdout.toString()
         expect(output).toMatchInlineSnapshot(`
                                         "
-                                        No updates will be applied
+                                        No updates will be applied.
                                         "
                                 `)
       })
@@ -1830,7 +1845,7 @@ Fetching Lambda functions, this might take a while.
         ])
         const output = command.context.stdout.toString()
         expect(output).toMatchInlineSnapshot(`
-"[Warning] Instrument your Lambda functions in a dev or staging environment first. Should the instrumentation result be unsatisfactory, run \`uninstrument\` with the same arguments to revert the changes.
+"\n[Warning] Instrument your Lambda functions in a dev or staging environment first. Should the instrumentation result be unsatisfactory, run \`uninstrument\` with the same arguments to revert the changes.
 \n[!] Functions to be updated:
 \t- my-func\n
 Will apply the following updates:
