@@ -78,7 +78,7 @@ export class InstrumentCommand extends Command {
       try {
         await updateAWSProfileCredentials(profile)
       } catch (e) {
-        this.context.stdout.write(`${red('[Error]')} ${e}\n`)
+        this.context.stdout.write(renderer.renderError(e))
 
         return 1
       }
