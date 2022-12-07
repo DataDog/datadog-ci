@@ -1610,7 +1610,8 @@ TagResource -> arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world
         const output = context.stdout.toString()
         expect(code).toBe(1)
         expect(output).toMatchInlineSnapshot(`
-"[Error] Error: Couldn't set AWS profile credentials. Update failed!
+"\n🐶 Instrumenting Lambda function
+[Error] Error: Couldn't set AWS profile credentials. Update failed!
 "
 `)
       })
