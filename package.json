@@ -72,7 +72,7 @@
     "proxy-agent": "5.0.0",
     "rimraf": "^3.0.2",
     "semver": "^7.3.7",
-    "simple-git": "3.5.0",
+    "simple-git": "3.15.0",
     "ssh2": "1.9.0",
     "ssh2-streams": "0.4.10",
     "sshpk": "1.16.1",
