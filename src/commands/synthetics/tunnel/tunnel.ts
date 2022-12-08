@@ -145,7 +145,7 @@ export class Tunnel {
       ctx.key.algo !== this.publicKey.type ||
       ctx.key.data.length !== allowedPubSSHKey.length ||
       !timingSafeEqual(ctx.key.data, allowedPubSSHKey) ||
-      (ctx.signature && ctx.blob && this.publicKey.verify(ctx.blob, ctx.signature) !== true)
+      (ctx.signature && ctx.blob && !this.publicKey.verify(ctx.blob, ctx.signature))
     ) {
       // Invalid key authentication
       return ctx.reject()
