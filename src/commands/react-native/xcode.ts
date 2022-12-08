@@ -187,7 +187,7 @@ export class XCodeCommand extends Command {
   }
 
   private bundleReactNativeCodeAndImages = async () => {
-    const bundleJSChildProcess = spawn(this.scriptPath, undefined, {
+    const bundleJSChildProcess = spawn(this.scriptPath, {
       env: this.getBundleReactNativeCodeAndImagesEnvironment(),
       stdio: ['inherit', 'pipe', 'pipe'],
     })
