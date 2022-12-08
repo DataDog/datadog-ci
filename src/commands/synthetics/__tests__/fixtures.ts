@@ -1,4 +1,5 @@
 import * as http from 'http'
+import * as net from 'net'
 import {URL} from 'url'
 
 import {AxiosError, AxiosResponse} from 'axios'
@@ -406,7 +407,7 @@ export const getSyntheticsProxy = () => {
   })
 
   server.on('upgrade', (request, socket, head) => {
-    wss.handleUpgrade(request, socket, head, (ws: WebSocket) => {
+    wss.handleUpgrade(request, socket as net.Socket, head, (ws: WebSocket) => {
       calls.tunnel()
       ws.send(JSON.stringify(mockTunnelConnectionFirstMessage))
     })
@@ -414,6 +415,10 @@ export const getSyntheticsProxy = () => {
 
   server.listen()
   const address = server.address()
+  if (!address) {
+    throw new Error('Cannot get proxy server address')
+  }
+
   port = typeof address === 'string' ? Number(new URL(address).port) : address.port
   const config: ProxyConfiguration = {host: '127.0.0.1', port, protocol: 'http'}
 

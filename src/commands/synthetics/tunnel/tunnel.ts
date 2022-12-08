@@ -7,11 +7,11 @@ import type ProxyAgent from 'proxy-agent'
 import {
   AuthContext,
   Connection as SSHConnection,
+  ParsedKey,
   Server as SSHServer,
   ServerChannel as SSHServerChannel,
   ServerConfig,
 } from 'ssh2'
-import {ParsedKey} from 'ssh2-streams'
 import {Config as MultiplexerConfig, Server as Multiplexer} from 'yamux-js'
 
 import {generateOpenSSHKeys, parseSSHKey} from './crypto'
@@ -140,13 +140,12 @@ export class Tunnel {
     if (ctx.method !== 'publickey') {
       return ctx.reject()
     }
-
     const allowedPubSSHKey = Buffer.from(this.publicKey.getPublicSSH())
     if (
       ctx.key.algo !== this.publicKey.type ||
       ctx.key.data.length !== allowedPubSSHKey.length ||
       !timingSafeEqual(ctx.key.data, allowedPubSSHKey) ||
-      (ctx.signature && this.publicKey.verify(ctx.blob, ctx.signature) !== true)
+      (ctx.signature && ctx.blob && this.publicKey.verify(ctx.blob, ctx.signature) !== true)
     ) {
       // Invalid key authentication
       return ctx.reject()
