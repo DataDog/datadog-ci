@@ -1760,10 +1760,10 @@
   resolved "https://registry.yarnpkg.com/@types/node/-/node-17.0.38.tgz#f8bb07c371ccb1903f3752872c89f44006132947"
   integrity sha512-5jY9RhV7c0Z4Jy09G+NIDTsCZ5G0L5n+Z+p+Y7t5VJHM30bgwzSjVtlcBxqAj+6L/swIlvtOSzr8rBk/aNyV2g==
 
-"@types/node@10.17.57":
-  version "10.17.57"
-  resolved "https://registry.npmjs.org/@types/node/-/node-10.17.57.tgz"
-  integrity sha512-9ejqfD/nkpl2RTUByUnkhE1xQFw6NWBE/CVsMuKnUvHRGm+HKFvSdHoyuJqKpG/N0hX7i3QHuf+OddN5WIHxMQ==
+"@types/node@14.18.34":
+  version "14.18.34"
+  resolved "https://registry.yarnpkg.com/@types/node/-/node-14.18.34.tgz#cd2e6fa0dbfb08a62582a7b967558e73c32061ec"
+  integrity sha512-hcU9AIQVHmPnmjRK+XUUYlILlr9pQrsqSrwov/JK1pnf3GTQowVBhx54FbvM0AU/VXGH4i3+vgXS5EguR7fysA==
 
 "@types/prettier@^2.1.5":
   version "2.3.0"
@@ -1788,20 +1788,19 @@
   resolved "https://registry.yarnpkg.com/@types/semver/-/semver-7.3.12.tgz#920447fdd78d76b19de0438b7f60df3c4a80bf1c"
   integrity sha512-WwA1MW0++RfXmCr12xeYOOC5baSC9mSb0ZqCquFzKhcoF4TvHu5MKOuXsncgZcpVFhB1pXd5hZmM0ryAoCp12A==
 
-"@types/ssh2-streams@*", "@types/ssh2-streams@0.1.8":
-  version "0.1.8"
-  resolved "https://registry.npmjs.org/@types/ssh2-streams/-/ssh2-streams-0.1.8.tgz"
-  integrity sha512-I7gixRPUvVIyJuCEvnmhr3KvA2dC0639kKswqD4H5b4/FOcnPtNU+qWLiXdKIqqX9twUvi5j0U1mwKE5CUsrfA==
+"@types/ssh2-streams@0.1.9":
+  version "0.1.9"
+  resolved "https://registry.yarnpkg.com/@types/ssh2-streams/-/ssh2-streams-0.1.9.tgz#8ca51b26f08750a780f82ee75ff18d7160c07a87"
+  integrity sha512-I2J9jKqfmvXLR5GomDiCoHrEJ58hAOmFrekfFqmCFd+A6gaEStvWnPykoWUwld1PNg4G5ag1LwdA+Lz1doRJqg==
   dependencies:
     "@types/node" "*"
 
-"@types/ssh2@0.5.46":
-  version "0.5.46"
-  resolved "https://registry.npmjs.org/@types/ssh2/-/ssh2-0.5.46.tgz"
-  integrity sha512-1pC8FHrMPYdkLoUOwTYYifnSEPzAFZRsp3JFC/vokQ+dRrVI+hDBwz0SNmQ3pL6h39OSZlPs0uCG7wKJkftnaA==
+"@types/ssh2@1.11.6":
+  version "1.11.6"
+  resolved "https://registry.yarnpkg.com/@types/ssh2/-/ssh2-1.11.6.tgz#c114d15a3cfd2ba2f7ef219a2020c44f0fb8a01b"
+  integrity sha512-8Mf6bhzYYBLEB/G6COux7DS/F5bCWwojv/qFo2yH/e4cLzAavJnxvFXrYW59iKfXdhG6OmzJcXDasgOb/s0rxw==
   dependencies:
     "@types/node" "*"
-    "@types/ssh2-streams" "*"
 
 "@types/sshpk@1.10.5":
   version "1.10.5"
@@ -2684,7 +2683,7 @@ debug@3.1.0:
   dependencies:
     ms "2.0.0"
 
-debug@4, debug@^4.0.1, debug@^4.1.0, debug@^4.1.1, debug@^4.3.1, debug@^4.3.3, debug@^4.3.4:
+debug@4, debug@^4.0.1, debug@^4.1.0, debug@^4.1.1, debug@^4.3.1, debug@^4.3.4:
   version "4.3.4"
   resolved "https://registry.yarnpkg.com/debug/-/debug-4.3.4.tgz#1319f6579357f2338d3337d2cdd4914bb5dcc865"
   integrity sha512-PRWFHuSU3eDtQJPvnNY7Jcket1j0t5OuOsFzPPzsekD52Zl8qUfFIPEiswXqIvHWGVHOgX+7G/vCNNhehwxfkQ==
@@ -5775,14 +5774,14 @@ simple-get@^3.0.3:
     once "^1.3.1"
     simple-concat "^1.0.0"
 
-simple-git@3.5.0:
-  version "3.5.0"
-  resolved "https://registry.yarnpkg.com/simple-git/-/simple-git-3.5.0.tgz#3c3538f4d7a1b3c8f3904412b12740bdcad9c8b1"
-  integrity sha512-fZsaq5nzdxQRhMNs6ESGLpMUHoL5GRP+boWPhq9pMYMKwOGZV2jHOxi8AbFFA2Y/6u4kR99HoULizSbpzaODkA==
+simple-git@3.15.0:
+  version "3.15.0"
+  resolved "https://registry.yarnpkg.com/simple-git/-/simple-git-3.15.0.tgz#301a95a943c4f9b0a21d051eb6e6d0ffe4c9754f"
+  integrity sha512-FiWoMPlcYHQ+ApRihUsGjC/ZmIlWj62S6MBCwOunczvXcLQt+9ZdrysDrR6QVepkRQfEAaBXrN2QtJKrN6zbtg==
   dependencies:
     "@kwsites/file-exists" "^1.1.1"
     "@kwsites/promise-deferred" "^1.1.1"
-    debug "^4.3.3"
+    debug "^4.3.4"
 
 sisteransi@^1.0.0:
   version "1.0.2"
