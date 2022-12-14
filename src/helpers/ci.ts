@@ -472,6 +472,7 @@ export const getCISpanTags = (): SpanTags | undefined => {
       APPVEYOR_REPO_TAG_NAME,
       APPVEYOR_REPO_COMMIT_AUTHOR,
       APPVEYOR_REPO_COMMIT_AUTHOR_EMAIL,
+      APPVEYOR_REPO_COMMIT_MESSAGE,
       APPVEYOR_REPO_COMMIT_MESSAGE_EXTENDED,
     } = env
 
@@ -487,7 +488,7 @@ export const getCISpanTags = (): SpanTags | undefined => {
       [CI_WORKSPACE_PATH]: APPVEYOR_BUILD_FOLDER,
       [GIT_COMMIT_AUTHOR_NAME]: APPVEYOR_REPO_COMMIT_AUTHOR,
       [GIT_COMMIT_AUTHOR_EMAIL]: APPVEYOR_REPO_COMMIT_AUTHOR_EMAIL,
-      [GIT_COMMIT_MESSAGE]: APPVEYOR_REPO_COMMIT_MESSAGE_EXTENDED,
+      [GIT_COMMIT_MESSAGE]: `${APPVEYOR_REPO_COMMIT_MESSAGE || ''}\n${APPVEYOR_REPO_COMMIT_MESSAGE_EXTENDED || ''}`,
     }
 
     if (APPVEYOR_REPO_PROVIDER === 'github') {
@@ -519,9 +520,10 @@ export const getCISpanTags = (): SpanTags | undefined => {
 
     tags = {
       [CI_PROVIDER_NAME]: CI_ENGINES.BUDDY,
-      [CI_PIPELINE_ID]: `${BUDDY_PIPELINE_ID}/${BUDDY_EXECUTION_ID}`,
+      [CI_PIPELINE_NUMBER]: BUDDY_EXECUTION_ID,
+      [CI_PIPELINE_ID]: `${BUDDY_PIPELINE_ID || ''}/${BUDDY_EXECUTION_ID || ''}`,
       [CI_PIPELINE_NAME]: BUDDY_PIPELINE_NAME,
-      [CI_PIPELINE_NUMBER]: `${BUDDY_EXECUTION_ID}`, // gets parsed to int again later using parsePipelineNumber
+      [CI_PIPELINE_NUMBER]: `${BUDDY_EXECUTION_ID || ''}`, // gets parsed to int again later using parsePipelineNumber
       [CI_PIPELINE_URL]: BUDDY_EXECUTION_URL,
       [GIT_SHA]: BUDDY_EXECUTION_REVISION,
       [GIT_BRANCH]: BUDDY_EXECUTION_BRANCH,
