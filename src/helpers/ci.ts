@@ -520,7 +520,6 @@ export const getCISpanTags = (): SpanTags | undefined => {
 
     tags = {
       [CI_PROVIDER_NAME]: CI_ENGINES.BUDDY,
-      [CI_PIPELINE_NUMBER]: BUDDY_EXECUTION_ID,
       [CI_PIPELINE_ID]: `${BUDDY_PIPELINE_ID || ''}/${BUDDY_EXECUTION_ID || ''}`,
       [CI_PIPELINE_NAME]: BUDDY_PIPELINE_NAME,
       [CI_PIPELINE_NUMBER]: `${BUDDY_EXECUTION_ID || ''}`, // gets parsed to int again later using parsePipelineNumber
