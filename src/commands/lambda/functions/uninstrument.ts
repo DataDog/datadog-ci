@@ -27,6 +27,8 @@ import {
   SITE_ENV_VAR,
   TRACE_ENABLED_ENV_VAR,
   VERSION_ENV_VAR,
+  AWS_LAMBDA_EXEC_WRAPPER_VAR,
+  AWS_LAMBDA_EXEC_WRAPPER,
 } from '../constants'
 import {FunctionConfiguration, LogGroupConfiguration, TagConfiguration} from '../interfaces'
 import {calculateLogGroupRemoveRequest} from '../loggroup'
@@ -112,8 +114,9 @@ export const calculateUpdateRequest = (config: Lambda.FunctionConfiguration, run
   }
   let needsUpdate = false
 
+  const runtimeType = RUNTIME_LOOKUP[runtime]
   // Remove Handler for Python
-  if (RUNTIME_LOOKUP[runtime] === RuntimeType.PYTHON) {
+  if (runtimeType === RuntimeType.PYTHON) {
     const expectedHandler = PYTHON_HANDLER_LOCATION
     if (config.Handler === expectedHandler) {
       needsUpdate = true
@@ -123,12 +126,20 @@ export const calculateUpdateRequest = (config: Lambda.FunctionConfiguration, run
   }
 
   // Remove Handler for Node
-  if (RUNTIME_LOOKUP[runtime] === RuntimeType.NODE) {
+  if (runtimeType === RuntimeType.NODE) {
     const expectedHandler = NODE_HANDLER_LOCATION
     if (config.Handler === expectedHandler) {
       needsUpdate = true
       updateRequest.Handler = oldEnvVars[LAMBDA_HANDLER_ENV_VAR]
       delete oldEnvVars[LAMBDA_HANDLER_ENV_VAR]
+    }
+  }
+
+  // Remove AWS_LAMBDA_EXEC_WRAPPER for .NET and Java
+  if (runtimeType === RuntimeType.DOTNET || runtimeType === RuntimeType.JAVA) {
+    if (oldEnvVars[AWS_LAMBDA_EXEC_WRAPPER_VAR] === AWS_LAMBDA_EXEC_WRAPPER) {
+      needsUpdate = true
+      delete oldEnvVars[AWS_LAMBDA_EXEC_WRAPPER_VAR]
     }
   }
 
