@@ -10,8 +10,7 @@ To configure which URL your test starts on, provide a `startUrl` to your test ob
 
 ### Install the package
 
-{{< tabs >}}
-{{% tab "NPM" %}}
+#### NPM
 
 Install the package through NPM:
 
@@ -19,17 +18,13 @@ Install the package through NPM:
 npm install --save-dev @datadog/datadog-ci
 ```
 
-{{% /tab %}}
-{{% tab "Yarn" %}}
+#### Yarn
 
 Install the package through Yarn:
 
 ```bash
 yarn add --dev @datadog/datadog-ci
 ```
-
-{{% /tab %}}
-{{< /tabs >}}
 
 ### Setup the client
 
