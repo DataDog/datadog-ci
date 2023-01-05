@@ -2,7 +2,7 @@
 
 [![NPM Version](https://img.shields.io/npm/v/@datadog/datadog-ci)](https://www.npmjs.com/package/@datadog/datadog-ci) ![Continuous Integration](https://github.com/DataDog/datadog-ci/workflows/Continuous%20Integration/badge.svg) [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0) ![NodeJS Version](https://img.shields.io/badge/Node.js-14+-green)
 
-Execute commands with Datadog from within your Continuous Integration/Continuous Deployment scripts to perform end-to-end tests of your application before applying your changes or deploying. `datadog-ci` allows you to run Synthetics tests and wait for the results.
+Execute commands with Datadog from within your Continuous Integration/Continuous Deployment scripts to perform end-to-end tests of your application before applying your changes or deploying. `datadog-ci` allows you to run Continuous Testing tests and wait for the results.
 
 ## How to install the CLI
 
