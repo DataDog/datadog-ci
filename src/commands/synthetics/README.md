@@ -106,7 +106,7 @@ As the [`proxy-agent` library][2] is used to configure the proxy, the supported 
 
 For example: 
 
-{{< code-block lang="json" filename="Global Configuration File" disable_copy="false" collapsible="true" >}}
+```json
 {
     "apiKey": "<DATADOG_API_KEY>",
     "appKey": "<DATADOG_APPLICATION_KEY>",
@@ -144,7 +144,7 @@ For example:
     "subdomain": "subdomainname",
     "tunnel": true
 }
-{{< /code-block >}}
+```
 
 ### Command line options
 
@@ -168,7 +168,7 @@ By default, `datadog-ci` runs at the root of the working directory and finds `{,
 
 For example:
 
-{{< code-block lang="json" filename="Configuration File" disable_copy="false" collapsible="true" >}}
+```json
 {
   "apiKey": "<DATADOG_API_KEY>",
   "appKey": "<DATADOG_APPLICATION_KEY>",
@@ -207,7 +207,7 @@ For example:
   "subdomain": "subdomainname",
   "tunnel": true
 }
-{{< /code-block >}}
+```
 
 ## Run tests
 
@@ -397,7 +397,7 @@ You can see results for CI batches by clicking on a batch in the [Continuous Tes
 
 You can also see the outcome of test executions directly in your CI as your tests are being executed. To identify what caused a test to fail, look at the execution logs and search for causes of the failed assertion.
 
-{{< code-block lang="bash" filename="Terminal" disable_copy="true" collapsible="true" >}}
+```bash
   yarn datadog-ci synthetics run-tests --config synthetics.global.json
   yarn run v1.22.4
   $ /Users/demo.user/go/src/github.com/Datadog/tmp/test/testDemo/node_modules/.bin/datadog-ci synthetics run-tests --config synthetics.global.json
@@ -419,7 +419,7 @@ You can also see the outcome of test executions directly in your CI as your test
         [INCORRECT_ASSUMPTION] - [{"index":1,"operator":"is","property":"content-type","type":"header","target":"text/html","valid":false,"actual":"text/html"; charset=utf-8"}] 
   error Command failed with exit code 1.
   info Visit https://yarnpkg.com/en/docs/cli/run for documentation about this command.
-{{< /code-block >}}
+```
 
 ## Further reading
 
