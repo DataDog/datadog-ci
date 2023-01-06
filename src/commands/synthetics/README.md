@@ -244,7 +244,7 @@ yarn datadog-ci synthetics run-tests -f ./component-1/**/*.synthetics.json -v PA
 
 **Note**: If you are launching your tests with a custom global configuration file, append your command with `--config <PATH_TO_GLOBAL_CONFIG_FILE`.
 
-<!-- xxx tab xxx -->
+<!-- xxz tab xxx -->
 <!-- xxx tab "NPM" xxx -->
 
 Add the following to your `package.json`:
