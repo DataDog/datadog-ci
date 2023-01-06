@@ -423,10 +423,16 @@ You can also see the outcome of test executions directly in your CI as your test
 
 ## Further reading
 
-{{< partial name="whats-next/whats-next.html" >}}
+- [Use Datadog's GitHub Action to add continuous testing to your workflows][6]
+- [Learn about Continuous Testing and CI/CD][7]
+- [Learn about the Continuous Testing Explorer][8]
+- [Learn about the Continuous Testing Tunnel][3]
 
 [1]: https://www.npmjs.com/package/@datadog/datadog-ci
 [2]: https://github.com/TooTallNate/node-proxy-agent
 [3]: https://docs.datadoghq.com/continuous_testing/testing_tunnel/
 [4]: https://app.datadoghq.com/synthetics/explorer/
 [5]: https://app.datadoghq.com/synthetics/tests
+[6]: https://www.datadoghq.com/blog/datadog-github-action-synthetics-ci-visibility/
+[7]: https://docs.datadoghq.com/continuous_testing/cicd_integrations/
+[8]: https://docs.datadoghq.com/continous_testing/explorer/
