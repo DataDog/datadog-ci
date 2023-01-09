@@ -215,8 +215,8 @@ You can decide to have the CLI auto-discover all your `**/*.synthetics.json` Syn
 
 Run tests by executing the CLI:
 
-{{< tabs >}}
-{{% tab "Yarn" %}}
+<!-- xxx tabs xxx -->
+<!-- xxx tab "Yarn" xxx -->
 
 The `run-tests` sub-command runs the tests discovered in the folder according to the `files` configuration key. It accepts the `--public-id` (or shorthand `-p`) argument to trigger only the specified test. It can be set multiple times to run multiple tests:
 
@@ -244,8 +244,8 @@ yarn datadog-ci synthetics run-tests -f ./component-1/**/*.synthetics.json -v PA
 
 **Note**: If you are launching your tests with a custom global configuration file, append your command with `--config <PATH_TO_GLOBAL_CONFIG_FILE`.
 
-{{% /tab %}}
-{{% tab "NPM" %}}
+<!-- xxz tab xxx -->
+<!-- xxx tab "NPM" xxx -->
 
 Add the following to your `package.json`:
 
@@ -265,8 +265,8 @@ npm run datadog-ci-synthetics
 
 **Note**: If you are launching your tests with a custom global configuration file, append the command associated to your `datadog-ci-synthetics` script with `--config <PATH_TO_GLOBAL_CONFIG_FILE`.
 
-{{% /tab %}}
-{{< /tabs >}}
+<!-- xxz tab xxx -->
+<!-- xxz tabs xxx -->
 
 ### Failure modes flags
 
@@ -423,10 +423,16 @@ You can also see the outcome of test executions directly in your CI as your test
 
 ## Further reading
 
-{{< partial name="whats-next/whats-next.html" >}}
+- [Use Datadog's GitHub Action to add continuous testing to your workflows][6]
+- [Learn about Continuous Testing and CI/CD][7]
+- [Learn about the Continuous Testing Explorer][8]
+- [Learn about the Continuous Testing Tunnel][3]
 
 [1]: https://www.npmjs.com/package/@datadog/datadog-ci
 [2]: https://github.com/TooTallNate/node-proxy-agent
 [3]: https://docs.datadoghq.com/continuous_testing/testing_tunnel/
 [4]: https://app.datadoghq.com/synthetics/explorer/
 [5]: https://app.datadoghq.com/synthetics/tests
+[6]: https://www.datadoghq.com/blog/datadog-github-action-synthetics-ci-visibility/
+[7]: https://docs.datadoghq.com/continuous_testing/cicd_integrations/
+[8]: https://docs.datadoghq.com/continous_testing/explorer/
