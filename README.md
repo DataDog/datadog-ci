@@ -2,7 +2,7 @@
 
 [![NPM Version](https://img.shields.io/npm/v/@datadog/datadog-ci)](https://www.npmjs.com/package/@datadog/datadog-ci) ![Continuous Integration](https://github.com/DataDog/datadog-ci/workflows/Continuous%20Integration/badge.svg) [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0) ![NodeJS Version](https://img.shields.io/badge/Node.js-14+-green)
 
-Execute commands with Datadog from within your Continuous Integration/Continuous Deployment scripts. A good way to perform end to end tests of your application before applying your changes or deploying. It currently features running synthetics tests and waiting for the results.
+Execute commands with Datadog from within your Continuous Integration/Continuous Deployment scripts to perform end-to-end tests of your application before applying your changes or deploying. `datadog-ci` allows you to run Continuous Testing tests and wait for the results.
 
 ## How to install the CLI
 
@@ -37,7 +37,7 @@ For more ways to install the CLI, see [this section](#more-ways-to-install-the-c
 Usage: datadog-ci <command> <subcommand> [options]
 ```
 
-Possible values for each `<command>` and corresponding documentation include the following:
+The following values are available for each `<command>`. See the corresponding documentation for more details:
 
 - `dsyms`: [iOS dSYM Files](src/commands/dsyms/)
 - `flutter-symbols`: [Flutter Symbols](src/commands/flutter-symbols/)
@@ -47,18 +47,18 @@ Possible values for each `<command>` and corresponding documentation include the
 - `metric`: [Metric](src/commands/metric)
 - `react-native`: [React Native sourcemaps](src/commands/react-native/)
 - `sourcemaps`: [Browser sourcemaps](src/commands/sourcemaps/)
-- `synthetics`: [Synthetics CI/CD Testing](src/commands/synthetics/)
+- `synthetics`: [Continuous Testing](src/commands/synthetics/)
 - `tag`: [Tag](src/commands/tag)
 - `trace`: [Trace](src/commands/trace)
 
 ## Contributing
 
-Pull requests for bug fixes are welcome, but before submitting new features or changes to current functionality [open an issue](https://github.com/DataDog/datadog-ci/issues/new)
-and discuss your ideas or propose the changes you wish to make. After a resolution is reached a PR can be submitted for review.
+Pull requests for bug fixes are welcome, but before submitting new features or changes to current functionality, [open an issue](https://github.com/DataDog/datadog-ci/issues/new)
+and discuss your ideas or propose the changes you wish to make. After a resolution is reached, a PR can be submitted for review.
 
 ### Running command in development environment
 
-When developing the tool it is possible to run commands using `yarn launch`. It relies on `ts-node` so does not need building the project for every new change.
+When developing the tool, it is possible to run commands using `yarn launch`. It relies on `ts-node`, so does not require building the project for every new change.
 
 ```bash
 yarn launch synthetics run-tests --config dev/global.config.json
