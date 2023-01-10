@@ -1,5 +1,3 @@
-import {URL} from 'url'
-
 import {Metadata, SpanTag, SpanTags} from './interfaces'
 import {
   CI_ENV_VARS,
@@ -529,7 +527,7 @@ export const getCISpanTags = (): SpanTags | undefined => {
     tags[CI_WORKSPACE_PATH] = resolveTilde(tags[CI_WORKSPACE_PATH])
   }
   if (tags[GIT_REPOSITORY_URL]) {
-    tags[GIT_REPOSITORY_URL] = filterSensitiveInfoFromRepository(tags[GIT_REPOSITORY_URL]!)
+    tags[GIT_REPOSITORY_URL] = filterSensitiveInfoFromRepository(tags[GIT_REPOSITORY_URL])
   }
   if (tags[GIT_BRANCH]) {
     tags[GIT_BRANCH] = normalizeRef(tags[GIT_BRANCH])
