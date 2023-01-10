@@ -259,3 +259,22 @@ export const performSubCommand = (command: CommandClass<BaseContext>, commandArg
 
   return cli.run(commandArgs, context)
 }
+
+export const filterSensitiveInfoFromRepository = (repositoryUrl: string | undefined) => {
+  try {
+    if (!repositoryUrl) {
+      return repositoryUrl
+    }
+    if (repositoryUrl.startsWith('git@')) {
+      return repositoryUrl
+    }
+    const {protocol, hostname, pathname} = new URL(repositoryUrl)
+    if (!protocol || !hostname) {
+      return repositoryUrl
+    }
+
+    return `${protocol}//${hostname}${pathname}`
+  } catch (e) {
+    return repositoryUrl
+  }
+}

@@ -25,7 +25,7 @@ import {
   GIT_TAG,
 } from './tags'
 import {getUserCISpanTags, getUserGitSpanTags} from './user-provided-git'
-import {normalizeRef, removeEmptyValues, removeUndefinedValues} from './utils'
+import {normalizeRef, removeEmptyValues, removeUndefinedValues, filterSensitiveInfoFromRepository} from './utils'
 
 export const CI_ENGINES = {
   APPVEYOR: 'appveyor',
@@ -73,22 +73,6 @@ const resolveTilde = (filePath: string | undefined) => {
   }
 
   return filePath
-}
-
-const filterSensitiveInfoFromRepository = (repositoryUrl: string) => {
-  if (repositoryUrl.startsWith('git@')) {
-    return repositoryUrl
-  }
-  try {
-    const {protocol, hostname, pathname} = new URL(repositoryUrl)
-    if (!protocol || !hostname) {
-      return repositoryUrl
-    }
-
-    return `${protocol}//${hostname}${pathname}`
-  } catch (e) {
-    return repositoryUrl
-  }
 }
 
 export const getCISpanTags = (): SpanTags | undefined => {
@@ -446,6 +430,11 @@ export const getCISpanTags = (): SpanTags | undefined => {
       [GIT_COMMIT_MESSAGE]: BUILD_SOURCEVERSIONMESSAGE,
       [CI_STAGE_NAME]: SYSTEM_STAGEDISPLAYNAME,
       [CI_JOB_NAME]: SYSTEM_JOBDISPLAYNAME,
+      [CI_ENV_VARS]: JSON.stringify({
+        SYSTEM_TEAMPROJECTID,
+        BUILD_BUILDID,
+        SYSTEM_JOBID,
+      }),
     }
 
     if (SYSTEM_TEAMFOUNDATIONSERVERURI && SYSTEM_TEAMPROJECTID && BUILD_BUILDID) {
