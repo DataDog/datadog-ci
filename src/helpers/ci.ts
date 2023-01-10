@@ -219,6 +219,7 @@ export const getCISpanTags = (): SpanTags | undefined => {
       GITHUB_RUN_NUMBER,
       GITHUB_WORKSPACE,
       GITHUB_HEAD_REF,
+      GITHUB_JOB,
       GITHUB_REF,
       GITHUB_SHA,
       GITHUB_REPOSITORY,
@@ -237,6 +238,7 @@ export const getCISpanTags = (): SpanTags | undefined => {
     const refKey = ref.includes('tags') ? GIT_TAG : GIT_BRANCH
 
     tags = {
+      [CI_JOB_NAME]: GITHUB_JOB,
       [CI_JOB_URL]: `${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/commit/${GITHUB_SHA}/checks`,
       [CI_PIPELINE_ID]: GITHUB_RUN_ID,
       [CI_PIPELINE_NAME]: GITHUB_WORKFLOW,
