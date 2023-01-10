@@ -435,4 +435,4 @@ You can also see the outcome of test executions directly in your CI as your test
 [5]: https://app.datadoghq.com/synthetics/tests
 [6]: https://www.datadoghq.com/blog/datadog-github-action-synthetics-ci-visibility/
 [7]: https://docs.datadoghq.com/continuous_testing/cicd_integrations/
-[8]: https://docs.datadoghq.com/continous_testing/explorer/
+[8]: https://docs.datadoghq.com/continuous_testing/explorer/
