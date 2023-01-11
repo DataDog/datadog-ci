@@ -476,7 +476,7 @@ TagResource -> arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world
         expect(output).toMatch('Error: Local git repository is dirty')
       })
 
-      test ('ensure source code integration git remotes get formatted correctly', async () => {
+      test('ensure source code integration git remotes get formatted correctly', async () => {
         ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({code: 'ENOENT'}))
         const lambda = makeMockLambda({
           'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world': {
@@ -539,7 +539,7 @@ TagResource -> arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world
 
         await cli.run(cliInput, context)
 
-        expect(instrumentCommandSpy).toHaveBeenCalledTimes(3);
+        expect(instrumentCommandSpy).toHaveBeenCalledTimes(3)
         expect(instrumentCommandSpy).toHaveNthReturnedWith(1, 'github.com/datadog/test.git')
         expect(instrumentCommandSpy).toHaveNthReturnedWith(2, 'github.com/datadog/test.git')
         expect(instrumentCommandSpy).toHaveNthReturnedWith(3, 'github.com/datadog/test.git')

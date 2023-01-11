@@ -334,8 +334,9 @@ export class InstrumentCommand extends Command {
     if (!rawRemote) {
       return rawRemote
     }
-    rawRemote = rawRemote.replace("git@github.com:", "github.com/")
-    rawRemote = rawRemote.replace("https://github.com", "github.com")
+    rawRemote = rawRemote.replace('git@github.com:', 'github.com/')
+    rawRemote = rawRemote.replace('https://github.com', 'github.com')
+
     return rawRemote
   }
 
@@ -358,7 +359,7 @@ export class InstrumentCommand extends Command {
 
     const gitRemote = this.filterAndFormatGitRemote(currentStatus.remote)
 
-    return {commitSha: currentStatus.hash, gitRemote: gitRemote}
+    return {commitSha: currentStatus.hash, gitRemote}
   }
 
   private getSettings(): InstrumentationSettings | undefined {
