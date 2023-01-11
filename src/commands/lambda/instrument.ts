@@ -169,11 +169,6 @@ export class InstrumentCommand extends Command {
     }
 
     if (this.sourceCodeIntegration) {
-      if (!process.env.DATADOG_API_KEY) {
-        this.context.stdout.write(renderer.renderMissingDatadogApiKeyError())
-
-        return 1
-      }
       try {
         const gitData = await this.getGitData()
         if (settings.extraTags) {
