@@ -496,10 +496,6 @@ TagResource -> arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world
           remote: 'git.repository_url:git@github.com:datadog/test.git',
           isClean: true,
         }))
-        const mockUploadFunction = jest.spyOn(instrumentCommand.prototype as any, 'uploadGitData')
-        mockUploadFunction.mockImplementation(() => {
-          return
-        })
 
         const cli = new Cli()
         cli.register(instrumentCommand)
@@ -601,7 +597,7 @@ TagResource -> arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world
           context
         )
         const output = context.stdout.toString()
-        expect(output).toMatch('Error: Local changes have not been pushed remotely. Aborting git upload.')
+        expect(output).toMatch('Error: Local changes have not been pushed remotely. Aborting git data tagging.')
       })
 
       test('runs function update command for lambda library layer', async () => {
