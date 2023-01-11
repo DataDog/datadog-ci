@@ -76,7 +76,8 @@ export const executeTests = async (
       testsToTrigger,
       reporter,
       triggerFromSearch,
-      config.failOnMissingTests
+      config.failOnMissingTests,
+      config.tunnel
     )
   } catch (error) {
     if (error instanceof CiError) {

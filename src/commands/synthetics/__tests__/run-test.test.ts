@@ -62,6 +62,7 @@ describe('run-test', () => {
         ]),
         expect.anything(),
         false,
+        false,
         false
       )
     })
@@ -111,6 +112,7 @@ describe('run-test', () => {
           ]),
           expect.anything(),
           false,
+          false,
           false
         )
       }
@@ -143,6 +145,7 @@ describe('run-test', () => {
           expect.objectContaining({id: 'public-id-2', config: configOverride}),
         ]),
         expect.anything(),
+        false,
         false,
         false
       )
@@ -179,7 +182,8 @@ describe('run-test', () => {
         ]),
         expect.anything(),
         false,
-        false
+        false,
+        true
       )
       expect(apiHelper.getTunnelPresignedURL).not.toHaveBeenCalled()
     })
