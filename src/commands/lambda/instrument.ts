@@ -176,7 +176,12 @@ export class InstrumentCommand extends Command {
         return 1
       }
       try {
-        await this.getGitDataAndUpload(settings)
+        const gitData = await this.getGitData()
+        if (settings.extraTags) {
+          settings.extraTags += `,git.commit.sha:${gitData.commitSha},git.repository_url:${gitData.gitRemote}`
+        } else {
+          settings.extraTags = `git.commit.sha:${gitData.commitSha},git.repository_url:${gitData.gitRemote}`
+        }
       } catch (err) {
         this.context.stdout.write(renderer.renderError(err))
 
@@ -316,10 +321,10 @@ export class InstrumentCommand extends Command {
     }
     const status = await simpleGit.status()
 
-    return {isClean: status.isClean(), ahead: status.ahead, files: status.files, hash: gitCommitInfo?.hash}
+    return {isClean: status.isClean(), ahead: status.ahead, files: status.files, hash: gitCommitInfo?.hash, remote: gitCommitInfo?.remote}
   }
 
-  private async getGitDataAndUpload(settings: InstrumentationSettings) {
+  private async getGitData() {
     let currentStatus
 
     try {
@@ -336,19 +341,8 @@ export class InstrumentCommand extends Command {
       throw Error('Local changes have not been pushed remotely. Aborting git upload.')
     }
 
-    const commitSha = currentStatus.hash
-    if (settings.extraTags) {
-      settings.extraTags += `,git.commit.sha:${commitSha}`
-    } else {
-      settings.extraTags = `git.commit.sha:${commitSha}`
-    }
-
-    try {
-      await this.uploadGitData()
-    } catch (err) {
-      throw Error(`Error uploading git data: ${err}\n`)
-    }
-  }
+    return {commitSha: currentStatus.hash, gitRemote: currentStatus.remote}
+  } 
 
   private getSettings(): InstrumentationSettings | undefined {
     const layerVersionStr = this.layerVersion ?? this.config.layerVersion
