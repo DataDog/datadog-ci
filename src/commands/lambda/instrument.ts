@@ -2,7 +2,7 @@ import {CloudWatchLogs, Lambda} from 'aws-sdk'
 import {bold} from 'chalk'
 import {Cli, Command} from 'clipanion'
 
-import {resolveConfigFromFile} from '../../helpers/utils'
+import {resolveConfigFromFile, filterSensitiveInfoFromRepository} from '../../helpers/utils'
 
 import {getCommitInfo, newSimpleGit} from '../git-metadata/git'
 import {UploadCommand} from '../git-metadata/upload'
@@ -341,7 +341,7 @@ export class InstrumentCommand extends Command {
       throw Error('Local changes have not been pushed remotely. Aborting git upload.')
     }
 
-    return {commitSha: currentStatus.hash, gitRemote: currentStatus.remote}
+    return {commitSha: currentStatus.hash, gitRemote: filterSensitiveInfoFromRepository(currentStatus.remote)}
   } 
 
   private getSettings(): InstrumentationSettings | undefined {
