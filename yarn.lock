@@ -1180,10 +1180,10 @@
   dependencies:
     node-gyp-build "^3.9.0"
 
-"@datadog/native-iast-rewriter@1.0.1":
-  version "1.0.1"
-  resolved "https://registry.yarnpkg.com/@datadog/native-iast-rewriter/-/native-iast-rewriter-1.0.1.tgz#92262a2995642e93d844d4a62a3a82b53167ce32"
-  integrity sha512-UBN8Ce4OSiBhMQWY8COD4Zn/TkqIuUyYQgA9tasda73njVqcZ3FZqFhPNow1j5r5Ka3a/PCrGdUs9U5uuod0YA==
+"@datadog/native-iast-rewriter@1.1.2":
+  version "1.1.2"
+  resolved "https://registry.yarnpkg.com/@datadog/native-iast-rewriter/-/native-iast-rewriter-1.1.2.tgz#793cbf92d218ec80d645be0830023656b81018ea"
+  integrity sha512-pigRfRtAjZjMjqIXyXb98S4aDnuHz/EmqpoxAajFZsNjBLM87YonwSY5zoBdCsOyA46ddKOJRoCQd5ZalpOFMQ==
   dependencies:
     node-gyp-build "^4.5.0"
 
@@ -2644,13 +2644,13 @@ datadog-metrics@0.9.3:
     debug "3.1.0"
     dogapi "2.8.4"
 
-dd-trace@3.10.0:
-  version "3.10.0"
-  resolved "https://registry.yarnpkg.com/dd-trace/-/dd-trace-3.10.0.tgz#3b182a4c962627db09c2d87586794157e98dc4c7"
-  integrity sha512-m5xVH4E1meD3W4wLgyIzYFGb7suw6XpDn+h6oDjMIarzgU4yUdz3D5uny0PU3psyE8DUI2nSwCZVF1fulzxPkw==
+dd-trace@3.11.0:
+  version "3.11.0"
+  resolved "https://registry.yarnpkg.com/dd-trace/-/dd-trace-3.11.0.tgz#ebc2106b0d710e0cfe7944b9c142fa6642d51f21"
+  integrity sha512-uR/CKRKI4dImjJLsoOp4WteWuwZu+1g+xqDw6WcUD5PohyCbpy4dskJx5f1lmGeFAgSQTPYI+0u3LrA5X99Faw==
   dependencies:
     "@datadog/native-appsec" "2.0.0"
-    "@datadog/native-iast-rewriter" "1.0.1"
+    "@datadog/native-iast-rewriter" "1.1.2"
     "@datadog/native-iast-taint-tracking" "1.0.0"
     "@datadog/native-metrics" "^1.5.0"
     "@datadog/pprof" "^1.1.1"
@@ -2670,6 +2670,7 @@ dd-trace@3.10.0:
     lru-cache "^7.14.0"
     methods "^1.1.2"
     module-details-from-path "^1.0.3"
+    node-abort-controller "^3.0.1"
     opentracing ">=0.12.1"
     path-to-regexp "^0.1.2"
     protobufjs "^7.1.2"
@@ -4888,6 +4889,11 @@ node-abi@^2.21.0:
   integrity sha512-/2D0wOQPgaUWzVSVgRMx+trKJRC2UG4SUc4oCJoXx9Uxjtp0Vy3/kt7zcbxHF8+Z/pK3UloLWzBISg72brfy1w==
   dependencies:
     semver "^5.4.1"
+
+node-abort-controller@^3.0.1:
+  version "3.0.1"
+  resolved "https://registry.yarnpkg.com/node-abort-controller/-/node-abort-controller-3.0.1.tgz#f91fa50b1dee3f909afabb7e261b1e1d6b0cb74e"
+  integrity sha512-/ujIVxthRs+7q6hsdjHMaj8hRG9NuWmwrz+JdRwZ14jdFoKSkm+vDsCbF9PLpnSqjaWQJuTmVtcWHNLr+vrOFw==
 
 node-fetch@^2.6.6:
   version "2.6.7"
