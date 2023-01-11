@@ -1,6 +1,6 @@
 import {CloudWatchLogs, Lambda} from 'aws-sdk'
 import {bold} from 'chalk'
-import {Cli, Command} from 'clipanion'
+import {Command} from 'clipanion'
 
 import {resolveConfigFromFile, filterSensitiveInfoFromRepository} from '../../helpers/utils'
 
@@ -320,7 +320,13 @@ export class InstrumentCommand extends Command {
     }
     const status = await simpleGit.status()
 
-    return {isClean: status.isClean(), ahead: status.ahead, files: status.files, hash: gitCommitInfo?.hash, remote: gitCommitInfo?.remote}
+    return {
+      isClean: status.isClean(),
+      ahead: status.ahead,
+      files: status.files,
+      hash: gitCommitInfo?.hash,
+      remote: gitCommitInfo?.remote,
+    }
   }
 
   private async getGitData() {
@@ -341,7 +347,7 @@ export class InstrumentCommand extends Command {
     }
 
     return {commitSha: currentStatus.hash, gitRemote: filterSensitiveInfoFromRepository(currentStatus.remote)}
-  } 
+  }
 
   private getSettings(): InstrumentationSettings | undefined {
     const layerVersionStr = this.layerVersion ?? this.config.layerVersion
