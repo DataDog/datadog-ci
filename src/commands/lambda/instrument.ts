@@ -329,6 +329,16 @@ export class InstrumentCommand extends Command {
     }
   }
 
+  private filterAndFormatGitRemote(rawRemote: string | undefined): string | undefined {
+    rawRemote = filterSensitiveInfoFromRepository(rawRemote)
+    if (!rawRemote) {
+      return rawRemote
+    }
+    rawRemote = rawRemote.replace("git@github.com:", "github.com/")
+    rawRemote = rawRemote.replace("https://github.com", "github.com")
+    return rawRemote
+  }
+
   private async getGitData() {
     let currentStatus
 
@@ -346,7 +356,9 @@ export class InstrumentCommand extends Command {
       throw Error('Local changes have not been pushed remotely. Aborting git data tagging.')
     }
 
-    return {commitSha: currentStatus.hash, gitRemote: filterSensitiveInfoFromRepository(currentStatus.remote)}
+    const gitRemote = this.filterAndFormatGitRemote(currentStatus.remote)
+
+    return {commitSha: currentStatus.hash, gitRemote: gitRemote}
   }
 
   private getSettings(): InstrumentationSettings | undefined {
