@@ -329,7 +329,7 @@ export class InstrumentCommand extends Command {
     if (!rawRemote) {
       return rawRemote
     }
-    rawRemote = rawRemote.replace(/git@github.com:|https:\/\/github.com\//, 'github.com/')
+    rawRemote = rawRemote.replace(/git@github\.com:|https:\/\/github\.com\//, 'github.com/')
 
     return rawRemote
   }
