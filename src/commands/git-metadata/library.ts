@@ -17,6 +17,12 @@ export const isGitRepo = async (): Promise<boolean> => {
   }
 }
 
+export const getGitCommitInfo = async (): Promise<[string, string]> => {
+  const simpleGit = await newSimpleGit()
+  const payload = await getCommitInfo(simpleGit)
+  return [payload.remote, payload.hash]
+}
+
 // UploadGitCommitHash uploads local git metadata and returns the current [repositoryURL, commitHash].
 // The current repositoryURL can be overriden by specifying the 'repositoryURL' arg.
 export const uploadGitCommitHash = async (
