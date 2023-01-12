@@ -398,40 +398,6 @@ TagResource -> arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world
         expect(output.replace('\n', '')).toMatch(/.*Error: Couldn't get local git status.*/)
       })
 
-      test('instrumenting with source code integrations fails if DATADOG_API_KEY is not provided', async () => {
-        ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({code: 'ENOENT'}))
-        const lambda = makeMockLambda({
-          'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world': {
-            FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world',
-            Handler: 'index.handler',
-            Runtime: 'nodejs12.x',
-          },
-        })
-        ;(Lambda as any).mockImplementation(() => lambda)
-        const cli = makeCli()
-        const context = createMockContext() as any
-        await cli.run(
-          [
-            'lambda',
-            'instrument',
-            '--function',
-            'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world',
-            '--layerVersion',
-            '10',
-            '-s',
-            '--service',
-            'dummy',
-            '--env',
-            'dummy',
-            '--version',
-            '0.1',
-          ],
-          context
-        )
-        const output = context.stdout.toString()
-        expect(output).toMatch(/.*Missing DATADOG_API_KEY in your environment.*/i)
-      })
-
       test('ensure the instrument command ran from a dirty git repo fails', async () => {
         ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({code: 'ENOENT'}))
         const lambda = makeMockLambda({
@@ -476,6 +442,75 @@ TagResource -> arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world
         expect(output).toMatch('Error: Local git repository is dirty')
       })
 
+      test('ensure source code integration git remotes get formatted correctly', async () => {
+        ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({code: 'ENOENT'}))
+        const lambda = makeMockLambda({
+          'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world': {
+            FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world',
+            Handler: 'index.handler',
+            Runtime: 'nodejs12.x',
+          },
+        })
+        ;(Lambda as any).mockImplementation(() => lambda)
+        process.env.DATADOG_API_KEY = '1234'
+
+        const context = createMockContext() as any
+        const instrumentCommand = InstrumentCommand
+        const instrumentCommandSpy = jest.spyOn(instrumentCommand.prototype as any, 'filterAndFormatGitRemote')
+
+        const mockGitStatus = jest.spyOn(instrumentCommand.prototype as any, 'getCurrentGitStatus')
+        mockGitStatus.mockImplementation(() => ({
+          ahead: 0,
+          hash: '1be168ff837f043bde17c0314341c84271047b31',
+          remote: 'https://github.com/datadog/test.git',
+          isClean: true,
+        }))
+
+        const cli = new Cli()
+        cli.register(instrumentCommand)
+
+        const cliInput = [
+          'lambda',
+          'instrument',
+          '--function',
+          'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world',
+          '--layerVersion',
+          '10',
+          '-s',
+          '--service',
+          'dummy',
+          '--env',
+          'dummy',
+          '--version',
+          '0.1',
+        ]
+
+        await cli.run(cliInput, context)
+
+        mockGitStatus.mockImplementation(() => ({
+          ahead: 0,
+          hash: '1be168ff837f043bde17c0314341c84271047b31',
+          remote: 'git@github.com:datadog/test.git',
+          isClean: true,
+        }))
+
+        await cli.run(cliInput, context)
+
+        mockGitStatus.mockImplementation(() => ({
+          ahead: 0,
+          hash: '1be168ff837f043bde17c0314341c84271047b31',
+          remote: 'github.com/datadog/test.git',
+          isClean: true,
+        }))
+
+        await cli.run(cliInput, context)
+
+        expect(instrumentCommandSpy).toHaveBeenCalledTimes(3)
+        expect(instrumentCommandSpy).toHaveNthReturnedWith(1, 'github.com/datadog/test.git')
+        expect(instrumentCommandSpy).toHaveNthReturnedWith(2, 'github.com/datadog/test.git')
+        expect(instrumentCommandSpy).toHaveNthReturnedWith(3, 'github.com/datadog/test.git')
+      })
+
       test('ensure source code integration flag works from a clean repo', async () => {
         ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({code: 'ENOENT'}))
         const lambda = makeMockLambda({
@@ -493,12 +528,9 @@ TagResource -> arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world
         mockGitStatus.mockImplementation(() => ({
           ahead: 0,
           hash: '1be168ff837f043bde17c0314341c84271047b31',
+          remote: 'git.repository_url:git@github.com:datadog/test.git',
           isClean: true,
         }))
-        const mockUploadFunction = jest.spyOn(instrumentCommand.prototype as any, 'uploadGitData')
-        mockUploadFunction.mockImplementation(() => {
-          return
-        })
 
         const cli = new Cli()
         cli.register(instrumentCommand)
@@ -539,7 +571,7 @@ UpdateFunctionConfiguration -> arn:aws:lambda:us-east-1:123456789012:function:la
       \\"DD_SITE\\": \\"datadoghq.com\\",
       \\"DD_CAPTURE_LAMBDA_PAYLOAD\\": \\"false\\",
       \\"DD_ENV\\": \\"dummy\\",
-      \\"DD_TAGS\\": \\"git.commit.sha:1be168ff837f043bde17c0314341c84271047b31\\",
+      \\"DD_TAGS\\": \\"git.commit.sha:1be168ff837f043bde17c0314341c84271047b31,git.repository_url:git.repository_url:github.com/datadog/test.git\\",
       \\"DD_MERGE_XRAY_TRACES\\": \\"false\\",
       \\"DD_SERVICE\\": \\"dummy\\",
       \\"DD_TRACE_ENABLED\\": \\"true\\",
@@ -600,7 +632,7 @@ TagResource -> arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world
           context
         )
         const output = context.stdout.toString()
-        expect(output).toMatch('Error: Local changes have not been pushed remotely. Aborting git upload.')
+        expect(output).toMatch('Error: Local changes have not been pushed remotely. Aborting git data tagging.')
       })
 
       test('runs function update command for lambda library layer', async () => {

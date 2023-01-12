@@ -1,11 +1,10 @@
 import {CloudWatchLogs, Lambda} from 'aws-sdk'
 import {bold} from 'chalk'
-import {Cli, Command} from 'clipanion'
+import {Command} from 'clipanion'
 
-import {resolveConfigFromFile} from '../../helpers/utils'
+import {resolveConfigFromFile, filterSensitiveInfoFromRepository} from '../../helpers/utils'
 
 import {getCommitInfo, newSimpleGit} from '../git-metadata/git'
-import {UploadCommand} from '../git-metadata/upload'
 
 import {
   AWS_DEFAULT_REGION_ENV_VAR,
@@ -170,13 +169,13 @@ export class InstrumentCommand extends Command {
     }
 
     if (this.sourceCodeIntegration) {
-      if (!process.env.DATADOG_API_KEY) {
-        this.context.stdout.write(renderer.renderMissingDatadogApiKeyError())
-
-        return 1
-      }
       try {
-        await this.getGitDataAndUpload(settings)
+        const gitData = await this.getGitData()
+        if (settings.extraTags) {
+          settings.extraTags += `,git.commit.sha:${gitData.commitSha},git.repository_url:${gitData.gitRemote}`
+        } else {
+          settings.extraTags = `git.commit.sha:${gitData.commitSha},git.repository_url:${gitData.gitRemote}`
+        }
       } catch (err) {
         this.context.stdout.write(renderer.renderError(err))
 
@@ -316,10 +315,26 @@ export class InstrumentCommand extends Command {
     }
     const status = await simpleGit.status()
 
-    return {isClean: status.isClean(), ahead: status.ahead, files: status.files, hash: gitCommitInfo?.hash}
+    return {
+      isClean: status.isClean(),
+      ahead: status.ahead,
+      files: status.files,
+      hash: gitCommitInfo?.hash,
+      remote: gitCommitInfo?.remote,
+    }
   }
 
-  private async getGitDataAndUpload(settings: InstrumentationSettings) {
+  private filterAndFormatGitRemote(rawRemote: string | undefined): string | undefined {
+    rawRemote = filterSensitiveInfoFromRepository(rawRemote)
+    if (!rawRemote) {
+      return rawRemote
+    }
+    rawRemote = rawRemote.replace(/git@github\.com:|https:\/\/github\.com\//, 'github.com/')
+
+    return rawRemote
+  }
+
+  private async getGitData() {
     let currentStatus
 
     try {
@@ -333,21 +348,12 @@ export class InstrumentCommand extends Command {
     }
 
     if (currentStatus.ahead > 0) {
-      throw Error('Local changes have not been pushed remotely. Aborting git upload.')
+      throw Error('Local changes have not been pushed remotely. Aborting git data tagging.')
     }
 
-    const commitSha = currentStatus.hash
-    if (settings.extraTags) {
-      settings.extraTags += `,git.commit.sha:${commitSha}`
-    } else {
-      settings.extraTags = `git.commit.sha:${commitSha}`
-    }
+    const gitRemote = this.filterAndFormatGitRemote(currentStatus.remote)
 
-    try {
-      await this.uploadGitData()
-    } catch (err) {
-      throw Error(`Error uploading git data: ${err}\n`)
-    }
+    return {commitSha: currentStatus.hash, gitRemote}
   }
 
   private getSettings(): InstrumentationSettings | undefined {
@@ -519,16 +525,6 @@ export class InstrumentCommand extends Command {
     this.environment = process.env[ENVIRONMENT_ENV_VAR] || undefined
     this.service = process.env[SERVICE_ENV_VAR] || undefined
     this.version = process.env[VERSION_ENV_VAR] || undefined
-  }
-
-  private async uploadGitData() {
-    const cli = new Cli()
-    cli.register(UploadCommand)
-    if ((await cli.run(['git-metadata', 'upload'], this.context)) !== 0) {
-      throw Error("Couldn't upload git metadata")
-    }
-
-    return
   }
 }
 
