@@ -376,6 +376,16 @@ describe('utils', () => {
       }
     })
   })
+
+  describe('filterAndFormatGitRemote', () => {
+    test('git remotes get formatted correctly', async () => {
+      expect(ciUtils.filterAndFormatGitRemote('https://github.com/datadog/test.git')).toEqual(
+        'github.com/datadog/test.git'
+      )
+      expect(ciUtils.filterAndFormatGitRemote('git@github.com:datadog/test.git')).toEqual('github.com/datadog/test.git')
+      expect(ciUtils.filterAndFormatGitRemote('github.com/datadog/test.git')).toEqual('github.com/datadog/test.git')
+    })
+  })
 })
 
 test('removeUndefinedValues', () => {

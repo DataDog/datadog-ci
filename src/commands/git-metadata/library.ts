@@ -1,7 +1,7 @@
 import {newApiKeyValidator} from '../../helpers/apikey'
 import {RequestBuilder} from '../../helpers/interfaces'
 import {upload, UploadOptions, UploadStatus} from '../../helpers/upload'
-import {getRequestBuilder} from '../../helpers/utils'
+import {getRequestBuilder, filterAndFormatGitRemote} from '../../helpers/utils'
 
 import {getCommitInfo, newSimpleGit} from './git'
 import {CommitInfo} from './interfaces'
@@ -17,10 +17,19 @@ export const isGitRepo = async (): Promise<boolean> => {
   }
 }
 
-export const getGitCommitInfo = async (): Promise<[string, string]> => {
+// getGitCommitInfo returns the current [repositoryURL, commitHash]. If parameter
+// filterAndFormatGitRepoUrl == true, the repositoryURL will have sensitive information filtered and
+// git prefix normalized.
+// ("git@github.com:" and "https://github.com/" prefixes will be normalized into "github.com/")
+export const getGitCommitInfo = async (filterAndFormatGitRepoUrl?: boolean): Promise<[string, string]> => {
   const simpleGit = await newSimpleGit()
   const payload = await getCommitInfo(simpleGit)
-  return [payload.remote, payload.hash]
+
+  const gitRemote = filterAndFormatGitRepoUrl ? filterAndFormatGitRemote(payload.remote) : payload.remote
+
+  // gitRemote will never be undefined, as filterAndFormatGitRemote will ONLY return undefined if it's
+  // parameter value is also undefined. Added the " gitRemote ?? '' " to make the typechecker happy.
+  return [gitRemote ?? '', payload.hash]
 }
 
 // UploadGitCommitHash uploads local git metadata and returns the current [repositoryURL, commitHash].
