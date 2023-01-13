@@ -397,19 +397,55 @@ describe('utils', () => {
   })
 
   describe('getTestAndOverrideConfig', () => {
-    beforeEach(() => {
+    test('Forbidden error when getting a test', async () => {
       const axiosMock = jest.spyOn(axios, 'create')
       axiosMock.mockImplementation((() => (e: any) => {
         throw getAxiosHttpError(403, {message: 'Forbidden'})
       }) as any)
-    })
 
-    test('Forbidden error when getting a test', async () => {
       const triggerConfig = {suite: 'Suite 1', config: {}, id: '123-456-789'}
 
       await expect(() =>
         utils.getTestAndOverrideConfig(api, triggerConfig, mockReporter, getSummary())
       ).rejects.toThrow('Failed to get test: could not query https://app.datadoghq.com/example\nForbidden\n')
+    })
+
+    test('Passes when the tunnel is enabled for HTTP test', async () => {
+      const axiosMock = jest.spyOn(axios, 'create')
+      axiosMock.mockImplementation((() => (e: any) => {
+        return {data: {subtype: 'http', public_id: '123-456-789'}}
+      }) as any)
+
+      const triggerConfig = {suite: 'Suite 1', config: {}, id: '123-456-789'}
+      expect(await utils.getTestAndOverrideConfig(api, triggerConfig, mockReporter, getSummary(), true)).toEqual(
+        expect.objectContaining({test: expect.objectContaining({public_id: '123-456-789', subtype: 'http'})})
+      )
+    })
+
+    test('Passes when the tunnel is enabled for Browser test', async () => {
+      const axiosMock = jest.spyOn(axios, 'create')
+      axiosMock.mockImplementation((() => (e: any) => {
+        return {data: {type: 'browser', public_id: '123-456-789'}}
+      }) as any)
+
+      const triggerConfig = {suite: 'Suite 1', config: {}, id: '123-456-789'}
+      expect(await utils.getTestAndOverrideConfig(api, triggerConfig, mockReporter, getSummary(), true)).toEqual(
+        expect.objectContaining({test: expect.objectContaining({public_id: '123-456-789', type: 'browser'})})
+      )
+    })
+
+    test('Fails when the tunnel is enabled for an unsupported test type', async () => {
+      const axiosMock = jest.spyOn(axios, 'create')
+      axiosMock.mockImplementation((() => (e: any) => {
+        return {data: {subtype: 'grpc', type: 'api', public_id: '123-456-789'}}
+      }) as any)
+
+      const triggerConfig = {suite: 'Suite 1', config: {}, id: '123-456-789'}
+      await expect(() =>
+        utils.getTestAndOverrideConfig(api, triggerConfig, mockReporter, getSummary(), true)
+      ).rejects.toThrow(
+        'The tunnel is only supported with HTTP API tests and Browser tests (public ID: 123-456-789, type: api, sub-type: grpc).'
+      )
     })
   })
 

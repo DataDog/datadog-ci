@@ -497,7 +497,8 @@ export const getTestAndOverrideConfig = async (
   api: APIHelper,
   {config, id, suite}: TriggerConfig,
   reporter: MainReporter,
-  summary: InitialSummary
+  summary: InitialSummary,
+  isTunnelEnabled?: boolean
 ) => {
   const normalizedId = PUBLIC_ID_REGEX.test(id) ? id : id.substr(id.lastIndexOf('/') + 1)
 
@@ -514,13 +515,21 @@ export const getTestAndOverrideConfig = async (
   reporter.testTrigger(test, normalizedId, overriddenConfig.executionRule, config)
   if (overriddenConfig.executionRule === ExecutionRule.SKIPPED) {
     summary.skipped++
-  } else {
-    reporter.testWait(test)
 
-    return {overriddenConfig, test}
+    return {overriddenConfig}
+  }
+  reporter.testWait(test)
+
+  if (isTunnelEnabled && test.type !== 'browser' && test.subtype !== 'http') {
+    throw new CriticalError(
+      'TUNNEL_NOT_SUPPORTED',
+      `The tunnel is only supported with HTTP API tests and Browser tests (public ID: ${test.public_id}, type: ${
+        test.type
+      }${test.subtype ? `, sub-type: ${test.subtype}` : ''}).`
+    )
   }
 
-  return {overriddenConfig}
+  return {overriddenConfig, test}
 }
 
 export const isDeviceIdSet = (result: ServerResult): result is Required<BrowserServerResult> =>
@@ -531,7 +540,8 @@ export const getTestsToTrigger = async (
   triggerConfigs: TriggerConfig[],
   reporter: MainReporter,
   triggerFromSearch?: boolean,
-  failOnMissingTests?: boolean
+  failOnMissingTests?: boolean,
+  isTunnelEnabled?: boolean
 ) => {
   const errorMessages: string[] = []
   // When too many tests are triggered, if fetched from a search query: simply trim them and show a warning,
@@ -546,7 +556,9 @@ export const getTestsToTrigger = async (
 
   const initialSummary = createInitialSummary()
   const testsAndConfigsOverride = await Promise.all(
-    triggerConfigs.map((triggerConfig) => getTestAndOverrideConfig(api, triggerConfig, reporter, initialSummary))
+    triggerConfigs.map((triggerConfig) =>
+      getTestAndOverrideConfig(api, triggerConfig, reporter, initialSummary, isTunnelEnabled)
+    )
   )
 
   const uploadedApplicationByPath: {[applicationFilePath: string]: {applicationId: string; fileName: string}[]} = {}
