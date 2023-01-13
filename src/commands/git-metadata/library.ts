@@ -21,7 +21,7 @@ export const isGitRepo = async (): Promise<boolean> => {
 // filterAndFormatGitRepoUrl == true, the repositoryURL will have sensitive information filtered and
 // git prefix normalized.
 // ("git@github.com:" and "https://github.com/" prefixes will be normalized into "github.com/")
-export const getGitCommitInfo = async (filterAndFormatGitRepoUrl?: boolean): Promise<[string, string]> => {
+export const getGitCommitInfo = async (filterAndFormatGitRepoUrl: boolean = true): Promise<[string, string]> => {
   const simpleGit = await newSimpleGit()
   const payload = await getCommitInfo(simpleGit)
 
