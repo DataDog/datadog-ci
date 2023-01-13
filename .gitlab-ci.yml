@@ -8,6 +8,8 @@ variables:
 build-docker-image-amd64:
   stage: build
   only: [ "tags" ]
+  when: manual
+  allow_failure: false
   tags: ["runner:docker"]
   image: 486234852809.dkr.ecr.us-east-1.amazonaws.com/docker:20.10
   script:
@@ -18,6 +20,8 @@ build-docker-image-amd64:
 build-docker-image-arm64:
   stage: build
   only: [ "tags" ]
+  when: manual
+  allow_failure: false
   tags: ["runner:docker-arm", "platform:arm64"]
   image: 486234852809.dkr.ecr.us-east-1.amazonaws.com/docker:20.10
   script:
@@ -28,6 +32,7 @@ build-docker-image-arm64:
 publish-docker-image:
   stage: release
   only: [ "tags" ]
+  needs: [ "build-docker-image-amd64", "build-docker-image-arm64" ]
   trigger:
     project: DataDog/public-images
     branch: main
