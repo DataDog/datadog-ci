@@ -10,8 +10,8 @@ To configure which URL your test starts on, provide a `startUrl` to your test ob
 
 ### Install the package
 
-{{< tabs >}}
-{{% tab "NPM" %}}
+<!-- xxx tabs xxx -->
+<!-- xxx tab "NPM" xxx -->
 
 Install the package through NPM:
 
@@ -19,8 +19,8 @@ Install the package through NPM:
 npm install --save-dev @datadog/datadog-ci
 ```
 
-{{% /tab %}}
-{{% tab "Yarn" %}}
+<!-- xxz tab xxx -->
+<!-- xxx tab "Yarn" xxx -->
 
 Install the package through Yarn:
 
@@ -28,8 +28,8 @@ Install the package through Yarn:
 yarn add --dev @datadog/datadog-ci
 ```
 
-{{% /tab %}}
-{{< /tabs >}}
+<!-- xxz tab xxx -->
+<!-- xxz tabs xxx -->
 
 ### Setup the client
 
@@ -63,7 +63,7 @@ In the global configuration file, you can set the following advanced options:
 : The application key used to query the Datadog API.
 
 `datadogSite`
-: The Datadog instance to which request is sent. The default is `datadoghq.com`. Your Datadog site is {{< region-param key="dd_site" code="true" >}}.
+: The Datadog instance to which request is sent. The default is `datadoghq.com`.<!-- partial Your Datadog site is {{< region-param key="dd_site" code="true" >}}. partial -->
 
 `failOnCriticalErrors`
 : A boolean flag that fails the CI job if no tests were triggered, or results could not be fetched from Datadog. The default is set to `false`.
