@@ -1,4 +1,5 @@
-import {promises as fs} from 'fs'
+import fs from 'fs'
+import fsp from 'fs/promises'
 import {Writable} from 'stream'
 
 import {BaseContext} from 'clipanion/lib/advanced'
@@ -56,18 +57,18 @@ describe('Junit reporter', () => {
   describe('runEnd', () => {
     beforeEach(() => {
       reporter = new JUnitReporter(commandMock as RunTestCommand)
-      jest.spyOn(fs, 'writeFile')
+      jest.spyOn(fs, 'writeFileSync')
       jest.spyOn(reporter['builder'], 'buildObject')
     })
 
     it('should build the xml', async () => {
-      await reporter.runEnd(globalSummaryMock, '')
+      reporter.runEnd(globalSummaryMock, '')
       expect(reporter['builder'].buildObject).toHaveBeenCalledWith(reporter['json'])
-      expect(fs.writeFile).toHaveBeenCalledWith('junit.xml', expect.any(String), 'utf8')
+      expect(fs.writeFileSync).toHaveBeenCalledWith('junit.xml', expect.any(String), 'utf8')
       expect(writeMock).toHaveBeenCalledTimes(1)
 
       // Cleaning
-      await fs.unlink(reporter['destination'])
+      await fsp.unlink(reporter['destination'])
     })
 
     it('should gracefully fail', async () => {
@@ -75,37 +76,37 @@ describe('Junit reporter', () => {
         throw new Error('Fail')
       })
 
-      await reporter.runEnd(globalSummaryMock, '')
+      reporter.runEnd(globalSummaryMock, '')
 
-      expect(fs.writeFile).not.toHaveBeenCalled()
+      expect(fs.writeFileSync).not.toHaveBeenCalled()
       expect(writeMock).toHaveBeenCalledTimes(1)
     })
 
     it('should create the file', async () => {
       reporter['destination'] = 'junit/report.xml'
-      await reporter.runEnd(globalSummaryMock, '')
-      const stat = await fs.stat(reporter['destination'])
+      reporter.runEnd(globalSummaryMock, '')
+      const stat = await fsp.stat(reporter['destination'])
       expect(stat).toBeDefined()
 
       // Cleaning
-      await fs.unlink(reporter['destination'])
-      await fs.rmdir('junit')
+      await fsp.unlink(reporter['destination'])
+      await fsp.rmdir('junit')
     })
 
     it('should not throw on existing directory', async () => {
-      await fs.mkdir('junit')
+      await fsp.mkdir('junit')
       reporter['destination'] = 'junit/report.xml'
-      await reporter.runEnd(globalSummaryMock, '')
+      reporter.runEnd(globalSummaryMock, '')
 
       // Cleaning
-      await fs.unlink(reporter['destination'])
-      await fs.rmdir('junit')
+      await fsp.unlink(reporter['destination'])
+      await fsp.rmdir('junit')
     })
 
     it('testsuites contains summary properties', async () => {
-      jest.spyOn(fs, 'writeFile').mockResolvedValueOnce()
+      jest.spyOn(fs, 'writeFileSync').mockImplementation(() => {})
 
-      await reporter.runEnd(
+      reporter.runEnd(
         {
           ...globalSummaryMock,
           criticalErrors: 1,

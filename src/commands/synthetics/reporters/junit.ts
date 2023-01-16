@@ -1,4 +1,4 @@
-import {promises as fs} from 'fs'
+import fs from 'fs'
 import path from 'path'
 import {Writable} from 'stream'
 
@@ -230,7 +230,7 @@ export class JUnitReporter implements Reporter {
     this.addTestCaseToSuite(suite, testCase)
   }
 
-  public async runEnd(summary: Summary, baseUrl: string) {
+  public runEnd(summary: Summary, baseUrl: string) {
     Object.assign(this.json.testsuites.$, {
       tests_critical_error: summary.criticalErrors,
       tests_failed: summary.failed,
@@ -247,8 +247,8 @@ export class JUnitReporter implements Reporter {
     // Write the file
     try {
       const xml = this.builder.buildObject(this.json)
-      await fs.mkdir(path.dirname(this.destination), {recursive: true})
-      await fs.writeFile(this.destination, xml, 'utf8')
+      fs.mkdirSync(path.dirname(this.destination), {recursive: true})
+      fs.writeFileSync(this.destination, xml, 'utf8')
       this.write(`✅ Created a jUnit report at ${c.bold.green(this.destination)}\n`)
     } catch (e) {
       this.write(`❌ Couldn't write the report to ${c.bold.green(this.destination)}:\n${e.toString()}\n`)
