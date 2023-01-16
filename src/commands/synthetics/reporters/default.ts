@@ -259,24 +259,24 @@ export class DefaultReporter implements MainReporter {
   }
 
   public error(error: string) {
-    this.testWaitSpinner?.stopAndPersist()
+    this.stopSpinner()
     this.write(error)
   }
 
   public initErrors(errors: string[]) {
-    this.testWaitSpinner?.stopAndPersist()
+    this.stopSpinner()
     this.write(errors.join('\n') + '\n\n')
   }
 
   public log(log: string) {
-    this.testWaitSpinner?.stopAndPersist()
+    this.stopSpinner()
     this.write(log)
   }
 
   public reportStart(timings: {startTime: number}) {
     const delay = (Date.now() - timings.startTime).toString()
 
-    this.testWaitSpinner?.stopAndPersist()
+    this.stopSpinner()
     this.write(['', chalk.bold.cyan('=== REPORT ==='), `Took ${chalk.bold(delay)}ms`, '\n'].join('\n'))
   }
 
@@ -384,6 +384,11 @@ export class DefaultReporter implements MainReporter {
 
   public testWait(test: Test) {
     return
+  }
+
+  private stopSpinner() {
+    this.testWaitSpinner?.stopAndPersist()
+    delete this.testWaitSpinner
   }
 }
 
