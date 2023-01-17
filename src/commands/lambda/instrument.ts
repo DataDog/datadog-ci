@@ -60,7 +60,7 @@ export class InstrumentCommand extends Command {
   private regExPattern?: string
   private region?: string
   private service?: string
-  private sourceCodeIntegration = false
+  private sourceCodeIntegration = true
   private tracing?: string
   private version?: string
 

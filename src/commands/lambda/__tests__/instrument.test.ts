@@ -90,6 +90,7 @@ describe('lambda', () => {
             '0.2',
             '--extra-tags',
             'layer:api,team:intake',
+            '--no-source-code-integration',
           ],
           context
         )
@@ -172,6 +173,7 @@ TagResource -> arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world
             'false',
             '--log-level',
             'debug',
+            '--no-source-code-integration',
           ],
           context
         )
@@ -247,6 +249,7 @@ TagResource -> arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world
             '0.2',
             '--extra-tags',
             'layer:api,team:intake',
+            '--no-source-code-integration',
           ],
           context
         )
@@ -319,6 +322,7 @@ TagResource -> arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world
             'staging',
             '--version',
             '0.2',
+            '--no-source-code-integration',
           ],
           context
         )
@@ -655,6 +659,7 @@ TagResource -> arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world
             'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world',
             '--layerVersion',
             '10',
+            '--no-source-code-integration',
           ],
           context
         )
@@ -682,6 +687,7 @@ TagResource -> arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world
             'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world',
             '--extensionVersion',
             '6',
+            '--no-source-code-integration',
           ],
           context
         )
@@ -758,6 +764,7 @@ TagResource -> arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world
             'staging',
             '--version',
             '0.2',
+            '--no-source-code-integration',
           ],
           context
         )
@@ -799,6 +806,7 @@ TagResource -> arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world
             'staging',
             '--version',
             '0.2',
+            '--no-source-code-integration',
           ],
           context
         )
@@ -870,6 +878,7 @@ TagResource -> arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world
         command['config']['region'] = 'ap-southeast-1'
         command['config']['functions'] = ['arn:aws:lambda:ap-southeast-1:123456789012:function:lambda-hello-world']
         command['regExPattern'] = 'valid-pattern'
+        command['sourceCodeIntegration'] = false
         await command['execute']()
         let output = command.context.stdout.toString()
         expect(output).toMatch(
@@ -883,6 +892,7 @@ TagResource -> arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world
         command['region'] = 'ap-southeast-1'
         command['functions'] = ['arn:aws:lambda:ap-southeast-1:123456789012:function:lambda-hello-world']
         command['regExPattern'] = 'valid-pattern'
+        command['sourceCodeIntegration'] = false
         await command['execute']()
         output = command.context.stdout.toString()
         expect(output).toMatch('"--functions" and "--functions-regex" should not be used at the same time.\n')
@@ -897,6 +907,7 @@ TagResource -> arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world
         command['service'] = 'middletier'
         command['version'] = '2'
         command['regExPattern'] = 'valid-pattern'
+        command['sourceCodeIntegration'] = false
         await command['execute']()
         const output = command.context.stdout.toString()
         expect(output).toMatch('[Error] No default region specified. Use `-r`, `--region`.\n')
@@ -911,6 +922,7 @@ TagResource -> arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world
         command['version'] = '2'
         command['region'] = 'ap-southeast-1'
         command['regExPattern'] = 'arn:aws:lambda:ap-southeast-1:123456789012:function:*'
+        command['sourceCodeIntegration'] = false
         await command['execute']()
         const output = command.context.stdout.toString()
         expect(output).toMatch(`"--functions-regex" isn't meant to be used with ARNs.\n`)
@@ -992,7 +1004,7 @@ TagResource -> arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world
 
         const cli = makeCli()
         const context = createMockContext() as any
-        const code = await cli.run(['lambda', 'instrument', '-i'], context)
+        const code = await cli.run(['lambda', 'instrument', '-i', '--no-source-code-integration'], context)
         const output = context.stdout.toString()
         expect(code).toBe(0)
         expect(output).toMatchInlineSnapshot(`
@@ -1133,6 +1145,7 @@ TagResource -> arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world
             'arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world',
             '-f',
             'arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world-2',
+            '--no-source-code-integration',
           ],
           context
         )
@@ -1290,7 +1303,7 @@ TagResource -> arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world
 
         const cli = makeCli()
         const context = createMockContext() as any
-        const code = await cli.run(['lambda', 'instrument', '-i'], context)
+        const code = await cli.run(['lambda', 'instrument', '-i', '--no-source-code-integration'], context)
         const output = context.stdout.toString()
         expect(code).toBe(0)
         expect(output).toMatchInlineSnapshot(`
@@ -1384,7 +1397,7 @@ TagResource -> arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world
 
         const cli = makeCli()
         const context = createMockContext() as any
-        const code = await cli.run(['lambda', 'instrument', '-i'], context)
+        const code = await cli.run(['lambda', 'instrument', '-i', '--no-source-code-integration'], context)
         const output = context.stdout.toString()
         expect(code).toBe(0)
         expect(output).toMatchInlineSnapshot(`
@@ -1509,6 +1522,7 @@ TagResource -> arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world
             'staging',
             '--version',
             '0.2',
+            '--no-source-code-integration',
           ],
           context
         )
@@ -1552,6 +1566,7 @@ TagResource -> arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world
             'staging',
             '--version',
             '0.2',
+            '--no-source-code-integration',
           ],
           context
         )
@@ -1596,6 +1611,7 @@ TagResource -> arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world
             'staging',
             '--version',
             '0.2',
+            '--no-source-code-integration',
           ],
           context
         )
@@ -1631,7 +1647,7 @@ TagResource -> arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world
         const context = createMockContext() as any
         const functionARN = 'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world'
         const code = await cli.run(
-          ['lambda', 'instrument', '-f', functionARN, '--profile', 'SOME-AWS-PROFILE'],
+          ['lambda', 'instrument', '-f', functionARN, '--profile', 'SOME-AWS-PROFILE', '--no-source-code-integration'],
           context
         )
         expect(code).toBe(0)
