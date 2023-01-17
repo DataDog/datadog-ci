@@ -259,7 +259,7 @@ export class Tunnel {
     }
     this.multiplexer = new Multiplexer((stream) => {
       stream.on('error', (error) => {
-        this.reporter?.error(`Error in multiplexing: ${error}`)
+        this.reporter?.warn(`Error in multiplexing: ${error}`)
       })
 
       void this.processSSHStream(stream)
@@ -267,8 +267,8 @@ export class Tunnel {
 
     // Pipe WebSocket to multiplexing
     const duplex = this.ws.duplex()
-    this.multiplexer.on('error', (error) => this.reporter?.error(`Multiplexer error: ${error.message}`))
-    duplex.on('error', (error) => this.reporter?.error(`Websocket error: ${error.message}`))
+    this.multiplexer.on('error', (error) => this.reporter?.warn(`Multiplexer error: ${error.message}`))
+    duplex.on('error', (error) => this.reporter?.warn(`Websocket error: ${error.message}`))
 
     pipeline([duplex, this.multiplexer], (err) => {
       if (err) {
@@ -349,7 +349,7 @@ export class Tunnel {
         server.close()
       })
       .on('error', (err) => {
-        this.reporter?.error(`SSH error in proxy: ${err.message}`)
+        this.reporter?.warn(`SSH error in proxy: ${err.message}`)
       })
   }
 }
