@@ -1,24 +1,36 @@
 import {getProxyAgent} from '../../helpers/utils'
 
 import {APIHelper, getApiHelper, isForbiddenError} from './api'
-import {MAX_TESTS_TO_TRIGGER} from './command'
+import {DEFAULT_COMMAND_CONFIG, MAX_TESTS_TO_TRIGGER} from './command'
 import {CiError, CriticalError} from './errors'
 import {
   CommandConfig,
   MainReporter,
+  Reporter,
   Result,
   Suite,
   Summary,
+  SupportedReporter,
   SyntheticsCIConfig,
   Test,
   TestPayload,
   Trigger,
   TriggerConfig,
   UserConfigOverride,
+  WrapperConfig,
 } from './interfaces'
-import {getTunnelReporter} from './reporters/default'
+import {DefaultReporter, getTunnelReporter} from './reporters/default'
+import {JUnitReporter} from './reporters/junit'
 import {Tunnel} from './tunnel'
-import {getSuites, getTestsToTrigger, InitialSummary, runTests, waitForResults} from './utils'
+import {
+  getReporter,
+  getSuites,
+  getTestsToTrigger,
+  InitialSummary,
+  renderResults,
+  runTests,
+  waitForResults,
+} from './utils'
 
 export const executeTests = async (
   reporter: MainReporter,
@@ -217,4 +229,62 @@ export const getTestsList = async (
     .reduce((acc, suiteTests) => acc.concat(suiteTests), [])
 
   return testsToTrigger
+}
+
+export const execute = async (
+  runConfig: WrapperConfig,
+  {
+    jUnitReport,
+    reporters,
+    runId,
+    suites,
+  }: {
+    jUnitReport?: string
+    reporters?: (SupportedReporter | Reporter)[]
+    runId?: string
+    suites?: Suite[]
+  }
+): Promise<0 | 1> => {
+  const startTime = Date.now()
+  const localConfig = {
+    ...DEFAULT_COMMAND_CONFIG,
+    ...runConfig,
+  }
+
+  // We don't want to have default globs in case suites are given.
+  if (!runConfig.files && suites?.length) {
+    localConfig.files = []
+  }
+
+  // Handle reporters for the run.
+  const localReporters: Reporter[] = []
+  // If the config asks for specific reporters.
+  if (reporters) {
+    for (const reporter of reporters) {
+      // Add our own reporters if required.
+      if (reporter === 'junit') {
+        localReporters.push(
+          new JUnitReporter({
+            context: process,
+            jUnitReport: jUnitReport || './junit.xml',
+            runName: `Run ${runId || 'undefined'}`,
+          })
+        )
+      }
+      if (reporter === 'default') {
+        localReporters.push(new DefaultReporter({context: process}))
+      }
+      // This is a custom reporter, so simply add it.
+      if (typeof reporter !== 'string') {
+        localReporters.push(reporter)
+      }
+    }
+  } else {
+    localReporters.push(new DefaultReporter({context: process}))
+  }
+
+  const mainReporter = getReporter(localReporters)
+  const {results, summary} = await executeTests(mainReporter, localConfig, suites)
+
+  return renderResults({config: localConfig, reporter: mainReporter, results, startTime, summary})
 }
