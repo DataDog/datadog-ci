@@ -429,11 +429,13 @@ describe('run-test', () => {
       jest.spyOn(runTests, 'executeTests').mockReturnValue(Promise.resolve({results: [], summary: {} as Summary}))
       jest.spyOn(utils, 'renderResults').mockImplementation(jest.fn())
     })
+
     test('should call executeTests and renderResults', async () => {
       await runTests.execute({}, {})
       expect(runTests.executeTests).toHaveBeenCalled()
       expect(utils.renderResults).toHaveBeenCalled()
     })
+
     test('should extend config', async () => {
       const runConfig = {apiKey: 'apiKey', appKey: 'appKey'}
       await runTests.execute(runConfig, {})
@@ -443,6 +445,7 @@ describe('run-test', () => {
         undefined
       )
     })
+
     test('should bypass files if suite is passed', async () => {
       const suites = [{content: {tests: []}}]
       await runTests.execute({}, {suites})
@@ -452,14 +455,17 @@ describe('run-test', () => {
         suites
       )
     })
+
     describe('reporters', () => {
       beforeEach(() => {
         jest.spyOn(utils, 'getReporter').mockImplementation(jest.fn())
       })
+
       test('should use default reporter whith empty config', async () => {
         await runTests.execute({}, {})
         expect(utils.getReporter).toHaveBeenCalledWith(expect.arrayContaining([expect.any(DefaultReporter)]))
       })
+
       test('should use custom reporters', async () => {
         const CustomReporter = {}
         await runTests.execute({}, {reporters: ['junit', CustomReporter]})

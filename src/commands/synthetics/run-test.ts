@@ -244,7 +244,7 @@ export const execute = async (
     runId?: string
     suites?: Suite[]
   }
-) => {
+): Promise<0 | 1> => {
   const startTime = Date.now()
   const localConfig = {
     ...DEFAULT_COMMAND_CONFIG,
@@ -283,8 +283,8 @@ export const execute = async (
     localReporters.push(new DefaultReporter({context: process}))
   }
 
-  const localReporter = getReporter(localReporters)
-  const {results, summary} = await executeTests(localReporter, localConfig, suites)
+  const mainReporter = getReporter(localReporters)
+  const {results, summary} = await executeTests(mainReporter, localConfig, suites)
 
-  return renderResults({config: localConfig, reporter: localReporter, results, startTime, summary})
+  return renderResults({config: localConfig, reporter: mainReporter, results, startTime, summary})
 }
