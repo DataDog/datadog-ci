@@ -5,16 +5,7 @@ import * as ciUtils from '../../../helpers/utils'
 import * as api from '../api'
 import {MAX_TESTS_TO_TRIGGER} from '../command'
 import {CiError, CriticalCiErrorCode, CriticalError} from '../errors'
-import {
-  CommandConfig,
-  ExecutionRule,
-  MainReporter,
-  Result,
-  Suite,
-  Summary,
-  SyntheticsCIConfig,
-  UserConfigOverride,
-} from '../interfaces'
+import {ExecutionRule, Summary, SyntheticsCIConfig, UserConfigOverride} from '../interfaces'
 import {DefaultReporter} from '../reporters/default'
 import {JUnitReporter} from '../reporters/junit'
 import * as runTests from '../run-test'
