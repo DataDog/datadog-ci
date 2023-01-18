@@ -2,7 +2,7 @@ import {CloudWatchLogs, Lambda} from 'aws-sdk'
 import {bold} from 'chalk'
 import {Command} from 'clipanion'
 
-import {resolveConfigFromFile, filterSensitiveInfoFromRepository} from '../../helpers/utils'
+import {resolveConfigFromFile, filterAndFormatGithubRemote} from '../../helpers/utils'
 
 import {getCommitInfo, newSimpleGit} from '../git-metadata/git'
 
@@ -324,16 +324,6 @@ export class InstrumentCommand extends Command {
     }
   }
 
-  private filterAndFormatGitRemote(rawRemote: string | undefined): string | undefined {
-    rawRemote = filterSensitiveInfoFromRepository(rawRemote)
-    if (!rawRemote) {
-      return rawRemote
-    }
-    rawRemote = rawRemote.replace(/git@github\.com:|https:\/\/github\.com\//, 'github.com/')
-
-    return rawRemote
-  }
-
   private async getGitData() {
     let currentStatus
 
@@ -351,7 +341,7 @@ export class InstrumentCommand extends Command {
       throw Error('Local changes have not been pushed remotely. Aborting git data tagging.')
     }
 
-    const gitRemote = this.filterAndFormatGitRemote(currentStatus.remote)
+    const gitRemote = filterAndFormatGithubRemote(currentStatus.remote)
 
     return {commitSha: currentStatus.hash, gitRemote}
   }
