@@ -5,7 +5,18 @@ import * as ciUtils from '../../../helpers/utils'
 import * as api from '../api'
 import {MAX_TESTS_TO_TRIGGER} from '../command'
 import {CiError, CriticalCiErrorCode, CriticalError} from '../errors'
-import {ExecutionRule, SyntheticsCIConfig, UserConfigOverride} from '../interfaces'
+import {
+  CommandConfig,
+  ExecutionRule,
+  MainReporter,
+  Result,
+  Suite,
+  Summary,
+  SyntheticsCIConfig,
+  UserConfigOverride,
+} from '../interfaces'
+import {DefaultReporter} from '../reporters/default'
+import {JUnitReporter} from '../reporters/junit'
 import * as runTests from '../run-test'
 import {Tunnel} from '../tunnel'
 import * as utils from '../utils'
@@ -28,7 +39,7 @@ describe('run-test', () => {
     process.env = {}
   })
 
-  describe('execute', () => {
+  describe('executeTests', () => {
     test('should apply config override for tests triggered by public id', async () => {
       const getTestsToTriggersMock = jest.spyOn(utils, 'getTestsToTrigger').mockReturnValue(
         Promise.resolve({
@@ -418,6 +429,53 @@ describe('run-test', () => {
         )
       )
       expect(stopTunnelSpy).toHaveBeenCalledTimes(1)
+    })
+  })
+
+  describe('execute', () => {
+    beforeEach(() => {
+      jest.restoreAllMocks()
+      jest.spyOn(runTests, 'executeTests').mockReturnValue(Promise.resolve({results: [], summary: {} as Summary}))
+      jest.spyOn(utils, 'renderResults').mockImplementation(jest.fn())
+    })
+    test('should call executeTests and renderResults', async () => {
+      await runTests.execute({}, {})
+      expect(runTests.executeTests).toHaveBeenCalled()
+      expect(utils.renderResults).toHaveBeenCalled()
+    })
+    test('should extend config', async () => {
+      const runConfig = {apiKey: 'apiKey', appKey: 'appKey'}
+      await runTests.execute(runConfig, {})
+      expect(runTests.executeTests).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.objectContaining(runConfig),
+        undefined
+      )
+    })
+    test('should bypass files if suite is passed', async () => {
+      const suites = [{content: {tests: []}}]
+      await runTests.execute({}, {suites})
+      expect(runTests.executeTests).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.objectContaining({files: []}),
+        suites
+      )
+    })
+    describe('reporters', () => {
+      beforeEach(() => {
+        jest.spyOn(utils, 'getReporter').mockImplementation(jest.fn())
+      })
+      test('should use default reporter whith empty config', async () => {
+        await runTests.execute({}, {})
+        expect(utils.getReporter).toHaveBeenCalledWith(expect.arrayContaining([expect.any(DefaultReporter)]))
+      })
+      test('should use custom reporters', async () => {
+        const CustomReporter = {}
+        await runTests.execute({}, {reporters: ['junit', CustomReporter]})
+        expect(utils.getReporter).toHaveBeenCalledWith(
+          expect.arrayContaining([expect.any(JUnitReporter), CustomReporter])
+        )
+      })
     })
   })
 

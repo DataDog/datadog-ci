@@ -3,6 +3,8 @@ import {ProxyConfiguration} from '../../helpers/utils'
 
 import {TunnelInfo} from './tunnel'
 
+export type SupportedReporter = 'junit' | 'default'
+
 export interface MainReporter {
   error(error: string): void
   initErrors(errors: string[]): void
@@ -377,6 +379,8 @@ export interface CommandConfig extends SyntheticsCIConfig {
   failOnMissingTests: boolean
   failOnTimeout: boolean
 }
+
+export type WrapperConfig = Partial<CommandConfig>
 
 export interface PresignedUrlResponse {
   file_name: string
