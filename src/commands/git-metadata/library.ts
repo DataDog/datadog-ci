@@ -1,7 +1,7 @@
 import {newApiKeyValidator} from '../../helpers/apikey'
 import {RequestBuilder} from '../../helpers/interfaces'
 import {upload, UploadOptions, UploadStatus} from '../../helpers/upload'
-import {getRequestBuilder, filterAndFormatGitRemote} from '../../helpers/utils'
+import {getRequestBuilder, filterAndFormatGithubRemote} from '../../helpers/utils'
 
 import {getCommitInfo, newSimpleGit} from './git'
 import {CommitInfo} from './interfaces'
@@ -25,9 +25,9 @@ export const getGitCommitInfo = async (filterAndFormatGitRepoUrl = true): Promis
   const simpleGit = await newSimpleGit()
   const payload = await getCommitInfo(simpleGit)
 
-  const gitRemote = filterAndFormatGitRepoUrl ? filterAndFormatGitRemote(payload.remote) : payload.remote
+  const gitRemote = filterAndFormatGitRepoUrl ? filterAndFormatGithubRemote(payload.remote) : payload.remote
 
-  // gitRemote will never be undefined, as filterAndFormatGitRemote will ONLY return undefined if it's
+  // gitRemote will never be undefined, as filterAndFormatGithubRemote will ONLY return undefined if it's
   // parameter value is also undefined. Added the " gitRemote ?? '' " to make the typechecker happy.
   return [gitRemote ?? '', payload.hash]
 }

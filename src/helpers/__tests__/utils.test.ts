@@ -377,13 +377,15 @@ describe('utils', () => {
     })
   })
 
-  describe('filterAndFormatGitRemote', () => {
+  describe('filterAndFormatGithubRemote', () => {
     test('git remotes get formatted correctly', async () => {
-      expect(ciUtils.filterAndFormatGitRemote('https://github.com/datadog/test.git')).toEqual(
+      expect(ciUtils.filterAndFormatGithubRemote('https://github.com/datadog/test.git')).toEqual(
         'github.com/datadog/test.git'
       )
-      expect(ciUtils.filterAndFormatGitRemote('git@github.com:datadog/test.git')).toEqual('github.com/datadog/test.git')
-      expect(ciUtils.filterAndFormatGitRemote('github.com/datadog/test.git')).toEqual('github.com/datadog/test.git')
+      expect(ciUtils.filterAndFormatGithubRemote('git@github.com:datadog/test.git')).toEqual(
+        'github.com/datadog/test.git'
+      )
+      expect(ciUtils.filterAndFormatGithubRemote('github.com/datadog/test.git')).toEqual('github.com/datadog/test.git')
     })
   })
 })

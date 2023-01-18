@@ -2,7 +2,7 @@ import {CloudWatchLogs, Lambda} from 'aws-sdk'
 import {bold} from 'chalk'
 import {Command} from 'clipanion'
 
-import {resolveConfigFromFile, filterAndFormatGitRemote} from '../../helpers/utils'
+import {resolveConfigFromFile, filterAndFormatGithubRemote} from '../../helpers/utils'
 
 import {getCommitInfo, newSimpleGit} from '../git-metadata/git'
 
@@ -341,7 +341,7 @@ export class InstrumentCommand extends Command {
       throw Error('Local changes have not been pushed remotely. Aborting git data tagging.')
     }
 
-    const gitRemote = filterAndFormatGitRemote(currentStatus.remote)
+    const gitRemote = filterAndFormatGithubRemote(currentStatus.remote)
 
     return {commitSha: currentStatus.hash, gitRemote}
   }
