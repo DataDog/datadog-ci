@@ -148,8 +148,9 @@ To release a new version of `datadog-ci`:
 3. Push the branch along with the tag to the upstream (GitHub) with `git push --tags origin name-of-the-branch`, create a Pull Request with the changes introduced in the description details, and get at least one approval. For example, see this [sample pull request](https://github.com/DataDog/datadog-ci/pull/78).
 4. Merge the Pull Request.
 5. Create a GitHub Release from the [Tags page](https://github.com/DataDog/datadog-ci/tags) with the description of changes introduced.
-6. Once the release has been created, a GitHub Action publishes the package, and a Gitlab pipeline publishes the Docker image. Make sure these jobs succeed.
-7. If the release introduced some **changes in the** `synthetics` **command**, you have to upgrade `datadog-ci` in the following projects:
+6. Once the release has been created, a GitHub Action publishes the package. Make sure the job succeeds.
+7. When the package has been published, go to the [Datadog GitLab pipelines](https://gitlab.ddbuild.io/DataDog/datadog-ci/-/pipelines), find the pipeline for your tag, and start the `build` stage to run the Docker image build jobs. Once the jobs pass, the `release` stage automatically triggers. Make sure all the jobs succeed.
+8. If the release introduced any **changes in the** `synthetics` **command**, you have to upgrade `datadog-ci` in the following projects:
    * [GitHub Action](https://github.com/DataDog/synthetics-ci-github-action)
    * [CircleCI Orb](https://github.com/DataDog/synthetics-test-automation-circleci-orb)
    * [Azure DevOps Extension](https://github.com/DataDog/datadog-ci-azure-devops)
