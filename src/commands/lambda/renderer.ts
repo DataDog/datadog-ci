@@ -159,7 +159,7 @@ export const renderSoftWarning = (warning: string) => `${warningExclamationSignT
  * @returns a warning message, with the source code integration error attached.
  *
  * ```txt
- * [Warning] Couldn't add source code integration. Error: Couldn't get local git status.
+ * [Warning] Couldn't add source code integration. The provided error goes here!
  * ```
  */
 export const renderSourceCodeIntegrationWarning = (sourceCodeIntegrationError: unknown) =>
