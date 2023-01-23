@@ -163,7 +163,7 @@ export const renderSoftWarning = (warning: string) => `${warningExclamationSignT
  * ```
  */
 export const renderSourceCodeIntegrationWarning = (sourceCodeIntegrationError: unknown) =>
-  `\n${renderWarning(`Couldn't add source code integration. ${sourceCodeIntegrationError}.`)}`
+  `\n${renderWarning(`Couldn't add source code integration, continuing without it. ${sourceCodeIntegrationError}.`)}`
 
 /**
  * @returns a message suggesting to instrument in dev or staging environment first.
