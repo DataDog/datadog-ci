@@ -155,6 +155,17 @@ export const renderWarning = (warning: string) => `${warningTag} ${warning}\n`
 export const renderSoftWarning = (warning: string) => `${warningExclamationSignTag} ${warning}\n`
 
 /**
+ * @param sourceCodeIntegrationError the error encountered when trying to enable source code integration.
+ * @returns a warning message, with the source code integration error attached.
+ *
+ * ```txt
+ * [Warning] Couldn't add source code integration. The provided error goes here!
+ * ```
+ */
+export const renderSourceCodeIntegrationWarning = (sourceCodeIntegrationError: unknown) =>
+  `\n${renderWarning(`Couldn't add source code integration, continuing without it. ${sourceCodeIntegrationError}.`)}`
+
+/**
  * @returns a message suggesting to instrument in dev or staging environment first.
  *
  * ```txt
