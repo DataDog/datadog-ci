@@ -177,9 +177,7 @@ export class InstrumentCommand extends Command {
           settings.extraTags = `git.commit.sha:${gitData.commitSha},git.repository_url:${gitData.gitRemote}`
         }
       } catch (err) {
-        this.context.stdout.write(renderer.renderError(err))
-
-        return 1
+        this.context.stdout.write(renderer.renderSourceCodeIntegrationWarning(err))
       }
     }
 
