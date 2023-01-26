@@ -40,10 +40,6 @@ export const getUserGitSpanTags = () => {
   let branch = normalizeRef(DD_GIT_BRANCH)
   let tag = normalizeRef(DD_GIT_TAG)
 
-  if (DD_GIT_TAG) {
-    branch = undefined
-  }
-
   if (DD_GIT_BRANCH?.includes('origin/tags') || DD_GIT_BRANCH?.includes('refs/heads/tags')) {
     branch = undefined
     tag = normalizeRef(DD_GIT_BRANCH)
