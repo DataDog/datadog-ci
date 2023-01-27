@@ -520,7 +520,7 @@ export const getCISpanTags = (): SpanTags | undefined => {
 
   if (tags[GIT_BRANCH]) {
     // Here we handle the case where GIT_BRANCH actually contains a tag
-    let branch = tags[GIT_BRANCH] || ''
+    const branch = tags[GIT_BRANCH] || ''
     if (branch.startsWith('tags/') || branch.includes('/tags/')) {
       if (!tags[GIT_TAG]) {
         tags[GIT_TAG] = normalizeRef(branch)
