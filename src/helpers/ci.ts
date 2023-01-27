@@ -270,7 +270,7 @@ export const getCISpanTags = (): SpanTags | undefined => {
       if (jobNameAndParams.length > 1 && jobNameAndParams[1].includes('=')) {
         finalPipelineName = jobNameAndParams[0]
       } else {
-        let normalizedBranch = normalizeRef(JENKINS_GIT_BRANCH)
+        const normalizedBranch = normalizeRef(JENKINS_GIT_BRANCH)
         finalPipelineName = JOB_NAME.replace(`/${normalizedBranch}`, '')
       }
       tags[CI_PIPELINE_NAME] = finalPipelineName
