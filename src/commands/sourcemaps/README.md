@@ -69,6 +69,14 @@ The value can be overridden with `--repository-url`.
 Example: With a remote `git@github.com:Datadog/example.git`, links pointing to `https://github.com/Datadog/example` are generated.
 This behavior can be overridden with links to `https://gitlab.com/Datadog/example` with the flag `--repository-url=https://gitlab.com/Datadog/example`.
 
+#### Override commit hash
+
+The value can be overridden with `--commit-hash`.
+
+Example: Pass commit hash when there is no `.git/` directory, such as build in Docker.
+
+This behavior can be overridden with links to `36485fb1c5cba61e95bbbf7b30c673f2b96e415d` with the flag `--commit-hash=36485fb1c5cba61e95bbbf7b30c673f2b96e415d`.
+
 #### Setting the project path
 
 If the file paths referenced by your sourcemaps have a prefix before the part relative to the repository root, you need to specify the `--project-path` argument.
