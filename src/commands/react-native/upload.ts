@@ -185,7 +185,7 @@ export class UploadCommand extends Command {
   // Fills the 'repository' field of each payload with data gathered using git.
   private addRepositoryDataToPayloads = async (payloads: RNSourcemap[]) => {
     try {
-      const repositoryData = await getRepositoryData(await newSimpleGit(), this.repositoryURL)
+      const repositoryData = await getRepositoryData(await newSimpleGit(), this.repositoryURL, undefined)
       payloads.forEach((payload) => {
         const repositoryPayload = this.getRepositoryPayload(repositoryData, payload.sourcemapPath)
         payload.addRepositoryData({

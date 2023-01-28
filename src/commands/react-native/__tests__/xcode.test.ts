@@ -608,7 +608,7 @@ describe('xcode', () => {
         'Upload of ./src/commands/react-native/__tests__/fixtures/basic-ios/main.jsbundle.map for bundle ./src/commands/react-native/__tests__/fixtures/basic-ios/main.jsbundle on platform ios'
       )
       expect(output).toContain('version: 0.0.2 build: 000020 service: com.myapp.test')
-      expect(getRepositoryDataSpy).toHaveBeenCalledWith(expect.anything(), 'https://example.com')
+      expect(getRepositoryDataSpy).toHaveBeenCalledWith(expect.anything(), 'https://example.com', undefined)
     })
 
     test('should disable git in upload command', async () => {

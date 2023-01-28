@@ -194,7 +194,7 @@ export class UploadCommand extends Command {
 
   private async getGitMetadata(): Promise<RepositoryData | undefined> {
     try {
-      return await getRepositoryData(await newSimpleGit(), this.repositoryUrl)
+      return await getRepositoryData(await newSimpleGit(), this.repositoryUrl, undefined)
     } catch (e) {
       this.context.stdout.write(renderGitWarning(e))
     }
