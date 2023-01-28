@@ -63,6 +63,7 @@ export class UploadCommand extends Command {
   private projectPath = ''
   private releaseVersion?: string
   private repositoryURL?: string
+  private commitHash?: string
   private service?: string
 
   constructor() {
@@ -151,7 +152,7 @@ export class UploadCommand extends Command {
   // Fills the 'repository' field of each payload with data gathered using git.
   private addRepositoryDataToPayloads = async (payloads: Sourcemap[]) => {
     try {
-      const repositoryData = await getRepositoryData(await newSimpleGit(), this.repositoryURL, undefined)
+      const repositoryData = await getRepositoryData(await newSimpleGit(), this.repositoryURL, this.commitHash)
       await Promise.all(
         payloads.map(async (payload) => {
           const repositoryPayload = this.getRepositoryPayload(repositoryData, payload.sourcemapPath)
@@ -328,4 +329,5 @@ UploadCommand.addOption('projectPath', Command.String('--project-path'))
 UploadCommand.addOption('maxConcurrency', Command.String('--max-concurrency'))
 UploadCommand.addOption('dryRun', Command.Boolean('--dry-run'))
 UploadCommand.addOption('repositoryURL', Command.String('--repository-url'))
+UploadCommand.addOption('commitHash', Command.String('--commit-hash'))
 UploadCommand.addOption('disableGit', Command.Boolean('--disable-git'))
