@@ -36,7 +36,8 @@ export interface RepositoryData {
 // To obtain the list of tracked files paths tied to a specific sourcemap, invoke the 'matchSourcemap' method.
 export const getRepositoryData = async (
   git: simpleGit.SimpleGit,
-  repositoryURL: string | undefined
+  repositoryURL: string | undefined,
+  commitHash: string | undefined
 ): Promise<RepositoryData> => {
   // Invoke git commands to retrieve the remote, hash and tracked files.
   // We're using Promise.all instead of Promise.allSettled since we want to fail early if
@@ -45,12 +46,11 @@ export const getRepositoryData = async (
   let hash: string
   let trackedFiles: string[]
   try {
-    if (repositoryURL) {
-      ;[hash, trackedFiles] = await Promise.all([gitHash(git), gitTrackedFiles(git)])
-      remote = repositoryURL
-    } else {
-      ;[remote, hash, trackedFiles] = await Promise.all([gitRemote(git), gitHash(git), gitTrackedFiles(git)])
-    }
+    ;[remote, hash, trackedFiles] = await Promise.all([
+      repositoryURL ? Promise.resolve(repositoryURL) : gitRemote(git),
+      commitHash ? Promise.resolve(commitHash) : gitHash(git),
+      gitTrackedFiles(git)
+    ])
   } catch (e) {
     throw e
   }
