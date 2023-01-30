@@ -73,7 +73,7 @@ This behavior can be overridden with links to `https://gitlab.com/Datadog/exampl
 
 The value can be overridden with `--commit-hash`.
 
-Example: Pass commit hash when there is no `.git/` directory, such as build in Docker.
+Example: Pass commit hash when there is no `.git/` directory, such as a build in Docker.
 
 This behavior can be overridden with links to `36485fb1c5cba61e95bbbf7b30c673f2b96e415d` with the flag `--commit-hash=36485fb1c5cba61e95bbbf7b30c673f2b96e415d`.
 
