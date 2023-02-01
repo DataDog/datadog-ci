@@ -4,7 +4,6 @@ jest.mock('../prompt')
 jest.mock('../renderer', () => require('../__mocks__/renderer'))
 
 import * as fs from 'fs'
-import path from 'path'
 
 import {config as aws_sdk_config, Lambda, SharedIniFileCredentials} from 'aws-sdk'
 import {Cli} from 'clipanion/lib/advanced'
@@ -43,7 +42,6 @@ import {
   mockDatadogService,
   mockDatadogVersion,
 } from './fixtures'
-const {version} = require(path.join(__dirname, '../../../../package.json'))
 describe('lambda', () => {
   describe('instrument', () => {
     describe('execute', () => {
