@@ -1,0 +1,69 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`uninstrument execute uninstrument multiple functions interactively 1`] = `
+"
+🐶 Uninstrumenting Lambda function
+
+[!] Functions to be updated:
+	- arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world
+	- arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world-2
+
+Will apply the following updates:
+UpdateFunctionConfiguration -> arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world
+{
+  \\"FunctionName\\": \\"arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world\\",
+  \\"Handler\\": \\"lambda_function.lambda_handler\\",
+  \\"Environment\\": {
+    \\"Variables\\": {
+      \\"USER_VARIABLE\\": \\"shouldnt be deleted by uninstrumentation\\"
+    }
+  },
+  \\"Layers\\": []
+}
+UpdateFunctionConfiguration -> arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world-2
+{
+  \\"FunctionName\\": \\"arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world-2\\",
+  \\"Handler\\": \\"lambda_function.lambda_handler\\",
+  \\"Environment\\": {
+    \\"Variables\\": {}
+  },
+  \\"Layers\\": []
+}
+[!] Confirmation needed.
+[!] Uninstrumenting functions.
+"
+`;
+
+exports[`uninstrument execute uninstrument multiple specified functions interactively 1`] = `
+"
+🐶 Uninstrumenting Lambda function
+
+[!] Functions to be updated:
+	- arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world
+	- arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world-2
+
+Will apply the following updates:
+UpdateFunctionConfiguration -> arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world
+{
+  \\"FunctionName\\": \\"arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world\\",
+  \\"Handler\\": \\"lambda_function.lambda_handler\\",
+  \\"Environment\\": {
+    \\"Variables\\": {
+      \\"USER_VARIABLE\\": \\"shouldnt be deleted by uninstrumentation\\"
+    }
+  },
+  \\"Layers\\": []
+}
+UpdateFunctionConfiguration -> arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world-2
+{
+  \\"FunctionName\\": \\"arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world-2\\",
+  \\"Handler\\": \\"lambda_function.lambda_handler\\",
+  \\"Environment\\": {
+    \\"Variables\\": {}
+  },
+  \\"Layers\\": []
+}
+[!] Confirmation needed.
+[!] Uninstrumenting functions.
+"
+`;

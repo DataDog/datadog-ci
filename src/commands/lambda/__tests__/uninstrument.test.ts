@@ -368,37 +368,7 @@ UpdateFunctionConfiguration -> arn:aws:lambda:us-east-1:000000000000:function:un
       const code = await cli.run(['lambda', 'uninstrument', '-i'], context)
       const output = context.stdout.toString()
       expect(code).toBe(0)
-      expect(output).toMatchInlineSnapshot(`
-"\n🐶 Uninstrumenting Lambda function
-[!] No AWS credentials found, let's set them up! Or you can re-run the command and supply the AWS credentials in the same way when you invoke the AWS CLI.
-\n[!] Functions to be updated:
-\t- arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world
-\t- arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world-2\n
-Will apply the following updates:
-UpdateFunctionConfiguration -> arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world
-{
-  \\"FunctionName\\": \\"arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world\\",
-  \\"Handler\\": \\"lambda_function.lambda_handler\\",
-  \\"Environment\\": {
-    \\"Variables\\": {
-      \\"USER_VARIABLE\\": \\"shouldnt be deleted by uninstrumentation\\"
-    }
-  },
-  \\"Layers\\": []
-}
-UpdateFunctionConfiguration -> arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world-2
-{
-  \\"FunctionName\\": \\"arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world-2\\",
-  \\"Handler\\": \\"lambda_function.lambda_handler\\",
-  \\"Environment\\": {
-    \\"Variables\\": {}
-  },
-  \\"Layers\\": []
-}
-[!] Confirmation needed.
-[!] Uninstrumenting functions.
-"
-`)
+      expect(output).toMatchSnapshot()
     })
 
     test('uninstrument multiple specified functions interactively', async () => {
@@ -503,37 +473,7 @@ UpdateFunctionConfiguration -> arn:aws:lambda:sa-east-1:123456789012:function:la
       )
       const output = context.stdout.toString()
       expect(code).toBe(0)
-      expect(output).toMatchInlineSnapshot(`
-"\n🐶 Uninstrumenting Lambda function
-[!] No AWS credentials found, let's set them up! Or you can re-run the command and supply the AWS credentials in the same way when you invoke the AWS CLI.\n
-[!] Functions to be updated:
-\t- arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world
-\t- arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world-2\n
-Will apply the following updates:
-UpdateFunctionConfiguration -> arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world
-{
-  \\"FunctionName\\": \\"arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world\\",
-  \\"Handler\\": \\"lambda_function.lambda_handler\\",
-  \\"Environment\\": {
-    \\"Variables\\": {
-      \\"USER_VARIABLE\\": \\"shouldnt be deleted by uninstrumentation\\"
-    }
-  },
-  \\"Layers\\": []
-}
-UpdateFunctionConfiguration -> arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world-2
-{
-  \\"FunctionName\\": \\"arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world-2\\",
-  \\"Handler\\": \\"lambda_function.lambda_handler\\",
-  \\"Environment\\": {
-    \\"Variables\\": {}
-  },
-  \\"Layers\\": []
-}
-[!] Confirmation needed.
-[!] Uninstrumenting functions.
-"
-`)
+      expect(output).toMatchSnapshot()
     })
 
     test('aborts if a problem occurs while setting the AWS credentials interactively', async () => {

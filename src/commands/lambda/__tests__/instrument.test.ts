@@ -96,41 +96,7 @@ describe('lambda', () => {
         )
         const output = context.stdout.toString()
         expect(code).toBe(0)
-        expect(output).toMatchInlineSnapshot(`
-"\n[Dry Run] 🐶 Instrumenting Lambda function
-\n[Warning] Instrument your Lambda functions in a dev or staging environment first. Should the instrumentation result be unsatisfactory, run \`uninstrument\` with the same arguments to revert the changes.
-\n[!] Functions to be updated:
-\t- arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world\n
-[Dry Run] Will apply the following updates:
-UpdateFunctionConfiguration -> arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world
-{
-  \\"FunctionName\\": \\"arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world\\",
-  \\"Handler\\": \\"/opt/nodejs/node_modules/datadog-lambda-js/handler.handler\\",
-  \\"Environment\\": {
-    \\"Variables\\": {
-      \\"DD_LAMBDA_HANDLER\\": \\"index.handler\\",
-      \\"DD_SITE\\": \\"datadoghq.com\\",
-      \\"DD_CAPTURE_LAMBDA_PAYLOAD\\": \\"false\\",
-      \\"DD_ENV\\": \\"staging\\",
-      \\"DD_TAGS\\": \\"layer:api,team:intake\\",
-      \\"DD_MERGE_XRAY_TRACES\\": \\"false\\",
-      \\"DD_SERVICE\\": \\"middletier\\",
-      \\"DD_TRACE_ENABLED\\": \\"true\\",
-      \\"DD_VERSION\\": \\"0.2\\",
-      \\"DD_FLUSH_TO_LOG\\": \\"true\\",
-      \\"DD_LOG_LEVEL\\": \\"debug\\"
-    }
-  },
-  \\"Layers\\": [
-    \\"arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Node12-x:10\\"
-  ]
-}
-TagResource -> arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world
-{
-  \\"dd_sls_ci\\": \\"v${version}\\"
-}
-"
-`)
+        expect(output).toMatchSnapshot()
       })
 
       test('prints dry run data for lambda library and extension layers using kebab case args', async () => {
@@ -179,42 +145,7 @@ TagResource -> arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world
         )
         const output = context.stdout.toString()
         expect(code).toBe(0)
-        expect(output).toMatchInlineSnapshot(`
-"\n[Dry Run] 🐶 Instrumenting Lambda function
-\n[Warning] Instrument your Lambda functions in a dev or staging environment first. Should the instrumentation result be unsatisfactory, run \`uninstrument\` with the same arguments to revert the changes.
-\n[!] Functions to be updated:
-\t- arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world\n
-[Dry Run] Will apply the following updates:
-UpdateFunctionConfiguration -> arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world
-{
-  \\"FunctionName\\": \\"arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world\\",
-  \\"Handler\\": \\"/opt/nodejs/node_modules/datadog-lambda-js/handler.handler\\",
-  \\"Environment\\": {
-    \\"Variables\\": {
-      \\"DD_LAMBDA_HANDLER\\": \\"index.handler\\",
-      \\"DD_API_KEY\\": \\"1234\\",
-      \\"DD_SITE\\": \\"datadoghq.com\\",
-      \\"DD_CAPTURE_LAMBDA_PAYLOAD\\": \\"false\\",
-      \\"DD_ENV\\": \\"staging\\",
-      \\"DD_TAGS\\": \\"layer:api,team:intake\\",
-      \\"DD_MERGE_XRAY_TRACES\\": \\"true\\",
-      \\"DD_SERVICE\\": \\"middletier\\",
-      \\"DD_TRACE_ENABLED\\": \\"true\\",
-      \\"DD_VERSION\\": \\"0.2\\",
-      \\"DD_LOG_LEVEL\\": \\"debug\\"
-    }
-  },
-  \\"Layers\\": [
-    \\"arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Extension:5\\",
-    \\"arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Node12-x:10\\"
-  ]
-}
-TagResource -> arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world
-{
-  \\"dd_sls_ci\\": \\"v${version}\\"
-}
-"
-`)
+        expect(output).toMatchSnapshot()
       })
 
       test('prints dry run data for lambda extension layer', async () => {
@@ -255,40 +186,7 @@ TagResource -> arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world
         )
         const output = context.stdout.toString()
         expect(code).toBe(0)
-        expect(output).toMatchInlineSnapshot(`
-"\n[Dry Run] 🐶 Instrumenting Lambda function
-\n[Warning] Instrument your Lambda functions in a dev or staging environment first. Should the instrumentation result be unsatisfactory, run \`uninstrument\` with the same arguments to revert the changes.
-\n[!] Functions to be updated:
-\t- arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world\n
-[Dry Run] Will apply the following updates:
-UpdateFunctionConfiguration -> arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world
-{
-  \\"FunctionName\\": \\"arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world\\",
-  \\"Handler\\": \\"/opt/nodejs/node_modules/datadog-lambda-js/handler.handler\\",
-  \\"Environment\\": {
-    \\"Variables\\": {
-      \\"DD_LAMBDA_HANDLER\\": \\"index.handler\\",
-      \\"DD_API_KEY\\": \\"1234\\",
-      \\"DD_SITE\\": \\"datadoghq.com\\",
-      \\"DD_CAPTURE_LAMBDA_PAYLOAD\\": \\"false\\",
-      \\"DD_ENV\\": \\"staging\\",
-      \\"DD_TAGS\\": \\"layer:api,team:intake\\",
-      \\"DD_MERGE_XRAY_TRACES\\": \\"false\\",
-      \\"DD_SERVICE\\": \\"middletier\\",
-      \\"DD_TRACE_ENABLED\\": \\"true\\",
-      \\"DD_VERSION\\": \\"0.2\\"
-    }
-  },
-  \\"Layers\\": [
-    \\"arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Extension:6\\"
-  ]
-}
-TagResource -> arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world
-{
-  \\"dd_sls_ci\\": \\"v${version}\\"
-}
-"
-`)
+        expect(output).toMatchSnapshot()
       })
 
       test('prints dry run data for lambda .NET layer', async () => {
@@ -328,43 +226,7 @@ TagResource -> arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world
         )
         const output = context.stdout.toString()
         expect(code).toBe(0)
-        expect(output).toMatchInlineSnapshot(`
-"\n[Dry Run] 🐶 Instrumenting Lambda function
-\n[Warning] Instrument your Lambda functions in a dev or staging environment first. Should the instrumentation result be unsatisfactory, run \`uninstrument\` with the same arguments to revert the changes.
-\n[!] Functions to be updated:
-\t- arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world\n
-[Dry Run] Will apply the following updates:
-UpdateFunctionConfiguration -> arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world
-{
-  \\"FunctionName\\": \\"arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world\\",
-  \\"Environment\\": {
-    \\"Variables\\": {
-      \\"DD_API_KEY\\": \\"1234\\",
-      \\"DD_SITE\\": \\"datadoghq.com\\",
-      \\"DD_CAPTURE_LAMBDA_PAYLOAD\\": \\"false\\",
-      \\"DD_ENV\\": \\"staging\\",
-      \\"DD_TAGS\\": \\"layer:api,team:intake\\",
-      \\"DD_MERGE_XRAY_TRACES\\": \\"false\\",
-      \\"DD_SERVICE\\": \\"middletier\\",
-      \\"DD_TRACE_ENABLED\\": \\"true\\",
-      \\"DD_VERSION\\": \\"0.2\\",
-      \\"DD_FLUSH_TO_LOG\\": \\"true\\",
-      \\"CORECLR_ENABLE_PROFILING\\": \\"1\\",
-      \\"CORECLR_PROFILER\\": \\"{846F5F1C-F9AE-4B07-969E-05C26BC060D8}\\",
-      \\"CORECLR_PROFILER_PATH\\": \\"/opt/datadog/Datadog.Trace.ClrProfiler.Native.so\\",
-      \\"DD_DOTNET_TRACER_HOME\\": \\"/opt/datadog\\"
-    }
-  },
-  \\"Layers\\": [
-    \\"arn:aws:lambda:us-east-1:464622532012:layer:dd-trace-dotnet:129\\"
-  ]
-}
-TagResource -> arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world
-{
-  \\"dd_sls_ci\\": \\"v${version}\\"
-}
-"
-`)
+        expect(output).toMatchSnapshot()
       })
 
       test('instrumenting with source code integrations fails if not run within a git repo', async () => {
@@ -489,41 +351,7 @@ TagResource -> arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world
           context
         )
         const output = context.stdout.toString()
-        expect(output).toMatchInlineSnapshot(`
-"\n🐶 Instrumenting Lambda function\n
-[Warning] Instrument your Lambda functions in a dev or staging environment first. Should the instrumentation result be unsatisfactory, run \`uninstrument\` with the same arguments to revert the changes.
-\n[!] Functions to be updated:
-\t- arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world\n
-Will apply the following updates:
-UpdateFunctionConfiguration -> arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world
-{
-  \\"FunctionName\\": \\"arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world\\",
-  \\"Handler\\": \\"/opt/nodejs/node_modules/datadog-lambda-js/handler.handler\\",
-  \\"Environment\\": {
-    \\"Variables\\": {
-      \\"DD_LAMBDA_HANDLER\\": \\"index.handler\\",
-      \\"DD_API_KEY\\": \\"1234\\",
-      \\"DD_SITE\\": \\"datadoghq.com\\",
-      \\"DD_CAPTURE_LAMBDA_PAYLOAD\\": \\"false\\",
-      \\"DD_ENV\\": \\"dummy\\",
-      \\"DD_TAGS\\": \\"git.commit.sha:1be168ff837f043bde17c0314341c84271047b31,git.repository_url:git.repository_url:github.com/datadog/test.git\\",
-      \\"DD_MERGE_XRAY_TRACES\\": \\"false\\",
-      \\"DD_SERVICE\\": \\"dummy\\",
-      \\"DD_TRACE_ENABLED\\": \\"true\\",
-      \\"DD_VERSION\\": \\"0.1\\",
-      \\"DD_FLUSH_TO_LOG\\": \\"true\\"
-    }
-  },
-  \\"Layers\\": [
-    \\"arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Node12-x:10\\"
-  ]
-}
-TagResource -> arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world
-{
-  \\"dd_sls_ci\\": \\"v${version}\\"
-}
-"
-`)
+        expect(output).toMatchSnapshot()
       })
 
       test('ensure the instrument command ran from a local git repo ahead of the origin fails', async () => {
@@ -938,71 +766,7 @@ TagResource -> arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world
         const code = await cli.run(['lambda', 'instrument', '-i', '--no-source-code-integration'], context)
         const output = context.stdout.toString()
         expect(code).toBe(0)
-        expect(output).toMatchInlineSnapshot(`
-"\n🐶 Instrumenting Lambda function
-[!] No AWS credentials found, let's set them up! Or you can re-run the command and supply the AWS credentials in the same way when you invoke the AWS CLI.
-\n[!] Configure AWS region.
-\n[!] Configure Datadog settings.
-\n[Warning] The environment, service and version tags have not been configured. Learn more about Datadog unified service tagging: https://docs.datadoghq.com/getting_started/tagging/unified_service_tagging/#serverless-environment.
-\n[Warning] Instrument your Lambda functions in a dev or staging environment first. Should the instrumentation result be unsatisfactory, run \`uninstrument\` with the same arguments to revert the changes.
-\n[!] Functions to be updated:
-\t- arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world
-\t[Warning] At least one latest layer version is being used. Ensure to lock in versions for production applications using \`--layerVersion\` and \`--extensionVersion\`.
-\t- arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world-2
-\t[Warning] At least one latest layer version is being used. Ensure to lock in versions for production applications using \`--layerVersion\` and \`--extensionVersion\`.\n
-Will apply the following updates:
-UpdateFunctionConfiguration -> arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world
-{
-  \\"FunctionName\\": \\"arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world\\",
-  \\"Handler\\": \\"/opt/nodejs/node_modules/datadog-lambda-js/handler.handler\\",
-  \\"Environment\\": {
-    \\"Variables\\": {
-      \\"DD_LAMBDA_HANDLER\\": \\"index.handler\\",
-      \\"DD_API_KEY\\": \\"02aeb762fff59ac0d5ad1536cd9633bd\\",
-      \\"DD_SITE\\": \\"datadoghq.com\\",
-      \\"DD_CAPTURE_LAMBDA_PAYLOAD\\": \\"false\\",
-      \\"DD_MERGE_XRAY_TRACES\\": \\"false\\",
-      \\"DD_TRACE_ENABLED\\": \\"true\\",
-      \\"DD_FLUSH_TO_LOG\\": \\"true\\"
-    }
-  },
-  \\"Layers\\": [
-    \\"arn:aws:lambda:sa-east-1:464622532012:layer:Datadog-Extension:1\\",
-    \\"arn:aws:lambda:sa-east-1:464622532012:layer:Datadog-Node12-x:1\\"
-  ]
-}
-TagResource -> arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world
-{
-  \\"dd_sls_ci\\": \\"v${version}\\"
-}
-UpdateFunctionConfiguration -> arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world-2
-{
-  \\"FunctionName\\": \\"arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world-2\\",
-  \\"Handler\\": \\"/opt/nodejs/node_modules/datadog-lambda-js/handler.handler\\",
-  \\"Environment\\": {
-    \\"Variables\\": {
-      \\"DD_LAMBDA_HANDLER\\": \\"index.handler\\",
-      \\"DD_API_KEY\\": \\"02aeb762fff59ac0d5ad1536cd9633bd\\",
-      \\"DD_SITE\\": \\"datadoghq.com\\",
-      \\"DD_CAPTURE_LAMBDA_PAYLOAD\\": \\"false\\",
-      \\"DD_MERGE_XRAY_TRACES\\": \\"false\\",
-      \\"DD_TRACE_ENABLED\\": \\"true\\",
-      \\"DD_FLUSH_TO_LOG\\": \\"true\\"
-    }
-  },
-  \\"Layers\\": [
-    \\"arn:aws:lambda:sa-east-1:464622532012:layer:Datadog-Extension:1\\",
-    \\"arn:aws:lambda:sa-east-1:464622532012:layer:Datadog-Node14-x:1\\"
-  ]
-}
-TagResource -> arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world-2
-{
-  \\"dd_sls_ci\\": \\"v${version}\\"
-}
-[!] Confirmation needed.
-[!] Instrumenting functions.
-"
-`)
+        expect(output).toMatchSnapshot()
       })
 
       test('instrument multiple specified functions interactively', async () => {
@@ -1082,71 +846,7 @@ TagResource -> arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world
         )
         const output = context.stdout.toString()
         expect(code).toBe(0)
-        expect(output).toMatchInlineSnapshot(`
-"\n🐶 Instrumenting Lambda function
-[!] No AWS credentials found, let's set them up! Or you can re-run the command and supply the AWS credentials in the same way when you invoke the AWS CLI.
-\n[!] Configure AWS region.
-\n[!] Configure Datadog settings.
-\n[Warning] The environment, service and version tags have not been configured. Learn more about Datadog unified service tagging: https://docs.datadoghq.com/getting_started/tagging/unified_service_tagging/#serverless-environment.
-\n[Warning] Instrument your Lambda functions in a dev or staging environment first. Should the instrumentation result be unsatisfactory, run \`uninstrument\` with the same arguments to revert the changes.
-\n[!] Functions to be updated:
-\t- arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world
-\t[Warning] At least one latest layer version is being used. Ensure to lock in versions for production applications using \`--layerVersion\` and \`--extensionVersion\`.
-\t- arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world-2
-\t[Warning] At least one latest layer version is being used. Ensure to lock in versions for production applications using \`--layerVersion\` and \`--extensionVersion\`.\n
-Will apply the following updates:
-UpdateFunctionConfiguration -> arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world
-{
-  \\"FunctionName\\": \\"arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world\\",
-  \\"Handler\\": \\"/opt/nodejs/node_modules/datadog-lambda-js/handler.handler\\",
-  \\"Environment\\": {
-    \\"Variables\\": {
-      \\"DD_LAMBDA_HANDLER\\": \\"index.handler\\",
-      \\"DD_API_KEY\\": \\"02aeb762fff59ac0d5ad1536cd9633bd\\",
-      \\"DD_SITE\\": \\"datadoghq.com\\",
-      \\"DD_CAPTURE_LAMBDA_PAYLOAD\\": \\"false\\",
-      \\"DD_MERGE_XRAY_TRACES\\": \\"false\\",
-      \\"DD_TRACE_ENABLED\\": \\"true\\",
-      \\"DD_FLUSH_TO_LOG\\": \\"true\\"
-    }
-  },
-  \\"Layers\\": [
-    \\"arn:aws:lambda:sa-east-1:464622532012:layer:Datadog-Extension:1\\",
-    \\"arn:aws:lambda:sa-east-1:464622532012:layer:Datadog-Node12-x:1\\"
-  ]
-}
-TagResource -> arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world
-{
-  \\"dd_sls_ci\\": \\"v${version}\\"
-}
-UpdateFunctionConfiguration -> arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world-2
-{
-  \\"FunctionName\\": \\"arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world-2\\",
-  \\"Handler\\": \\"/opt/nodejs/node_modules/datadog-lambda-js/handler.handler\\",
-  \\"Environment\\": {
-    \\"Variables\\": {
-      \\"DD_LAMBDA_HANDLER\\": \\"index.handler\\",
-      \\"DD_API_KEY\\": \\"02aeb762fff59ac0d5ad1536cd9633bd\\",
-      \\"DD_SITE\\": \\"datadoghq.com\\",
-      \\"DD_CAPTURE_LAMBDA_PAYLOAD\\": \\"false\\",
-      \\"DD_MERGE_XRAY_TRACES\\": \\"false\\",
-      \\"DD_TRACE_ENABLED\\": \\"true\\",
-      \\"DD_FLUSH_TO_LOG\\": \\"true\\"
-    }
-  },
-  \\"Layers\\": [
-    \\"arn:aws:lambda:sa-east-1:464622532012:layer:Datadog-Extension:1\\",
-    \\"arn:aws:lambda:sa-east-1:464622532012:layer:Datadog-Node14-x:1\\"
-  ]
-}
-TagResource -> arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world-2
-{
-  \\"dd_sls_ci\\": \\"v${version}\\"
-}
-[!] Confirmation needed.
-[!] Instrumenting functions.
-"
-`)
+        expect(output).toMatchSnapshot()
       })
 
       test('aborts if a problem occurs while setting the AWS credentials interactively', async () => {
@@ -1237,48 +937,7 @@ TagResource -> arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world
         const code = await cli.run(['lambda', 'instrument', '-i', '--no-source-code-integration'], context)
         const output = context.stdout.toString()
         expect(code).toBe(0)
-        expect(output).toMatchInlineSnapshot(`
-"\n🐶 Instrumenting Lambda function
-[!] No AWS credentials found, let's set them up! Or you can re-run the command and supply the AWS credentials in the same way when you invoke the AWS CLI.
-\n[!] Configure AWS region.
-\n[!] Configure Datadog settings.
-\n[Warning] Instrument your Lambda functions in a dev or staging environment first. Should the instrumentation result be unsatisfactory, run \`uninstrument\` with the same arguments to revert the changes.
-\n[!] Functions to be updated:
-\t- arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world
-\t[Warning] At least one latest layer version is being used. Ensure to lock in versions for production applications using \`--layerVersion\` and \`--extensionVersion\`.
-
-Will apply the following updates:
-UpdateFunctionConfiguration -> arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world
-{
-  \\"FunctionName\\": \\"arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world\\",
-  \\"Handler\\": \\"/opt/nodejs/node_modules/datadog-lambda-js/handler.handler\\",
-  \\"Environment\\": {
-    \\"Variables\\": {
-      \\"DD_LAMBDA_HANDLER\\": \\"index.handler\\",
-      \\"DD_API_KEY\\": \\"02aeb762fff59ac0d5ad1536cd9633bd\\",
-      \\"DD_SITE\\": \\"datadoghq.com\\",
-      \\"DD_CAPTURE_LAMBDA_PAYLOAD\\": \\"false\\",
-      \\"DD_ENV\\": \\"sandbox\\",
-      \\"DD_MERGE_XRAY_TRACES\\": \\"false\\",
-      \\"DD_SERVICE\\": \\"testServiceName\\",
-      \\"DD_TRACE_ENABLED\\": \\"true\\",
-      \\"DD_VERSION\\": \\"1.0.0\\",
-      \\"DD_FLUSH_TO_LOG\\": \\"true\\"
-    }
-  },
-  \\"Layers\\": [
-    \\"arn:aws:lambda:sa-east-1:464622532012:layer:Datadog-Extension:1\\",
-    \\"arn:aws:lambda:sa-east-1:464622532012:layer:Datadog-Node12-x:1\\"
-  ]
-}
-TagResource -> arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world
-{
-  \\"dd_sls_ci\\": \\"v${version}\\"
-}
-[!] Confirmation needed.
-[!] Instrumenting functions.
-"
-`)
+        expect(output).toMatchSnapshot()
       })
 
       test('when not provided it does not set DD_ENV, DD_SERVICE, and DD_VERSION tags in interactive mode', async () => {
@@ -1331,46 +990,7 @@ TagResource -> arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world
         const code = await cli.run(['lambda', 'instrument', '-i', '--no-source-code-integration'], context)
         const output = context.stdout.toString()
         expect(code).toBe(0)
-        expect(output).toMatchInlineSnapshot(`
-"\n🐶 Instrumenting Lambda function
-[!] No AWS credentials found, let's set them up! Or you can re-run the command and supply the AWS credentials in the same way when you invoke the AWS CLI.
-\n[!] Configure AWS region.
-\n[!] Configure Datadog settings.
-\n[Warning] The environment, service and version tags have not been configured. Learn more about Datadog unified service tagging: https://docs.datadoghq.com/getting_started/tagging/unified_service_tagging/#serverless-environment.
-\n[Warning] Instrument your Lambda functions in a dev or staging environment first. Should the instrumentation result be unsatisfactory, run \`uninstrument\` with the same arguments to revert the changes.
-\n[!] Functions to be updated:
-\t- arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world
-\t[Warning] At least one latest layer version is being used. Ensure to lock in versions for production applications using \`--layerVersion\` and \`--extensionVersion\`.
-
-Will apply the following updates:
-UpdateFunctionConfiguration -> arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world
-{
-  \\"FunctionName\\": \\"arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world\\",
-  \\"Handler\\": \\"/opt/nodejs/node_modules/datadog-lambda-js/handler.handler\\",
-  \\"Environment\\": {
-    \\"Variables\\": {
-      \\"DD_LAMBDA_HANDLER\\": \\"index.handler\\",
-      \\"DD_API_KEY\\": \\"02aeb762fff59ac0d5ad1536cd9633bd\\",
-      \\"DD_SITE\\": \\"datadoghq.com\\",
-      \\"DD_CAPTURE_LAMBDA_PAYLOAD\\": \\"false\\",
-      \\"DD_MERGE_XRAY_TRACES\\": \\"false\\",
-      \\"DD_TRACE_ENABLED\\": \\"true\\",
-      \\"DD_FLUSH_TO_LOG\\": \\"true\\"
-    }
-  },
-  \\"Layers\\": [
-    \\"arn:aws:lambda:sa-east-1:464622532012:layer:Datadog-Extension:1\\",
-    \\"arn:aws:lambda:sa-east-1:464622532012:layer:Datadog-Node12-x:1\\"
-  ]
-}
-TagResource -> arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world
-{
-  \\"dd_sls_ci\\": \\"v${version}\\"
-}
-[!] Confirmation needed.
-[!] Instrumenting functions.
-"
-`)
+        expect(output).toMatchSnapshot()
       })
 
       test('aborts if there are no functions to instrument in the user AWS account', async () => {
