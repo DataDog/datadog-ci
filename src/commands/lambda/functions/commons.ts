@@ -437,6 +437,29 @@ export const updateLambdaFunctionConfigs = async (
   await Promise.all(results)
 }
 
+
+export const updateLambdaFunctionConfig = async (
+  lambda: Lambda,
+  cloudWatch: CloudWatchLogs,
+  config: FunctionConfiguration
+) => {
+  try {
+    if (config.updateRequest !== undefined) {
+      await lambda.updateFunctionConfiguration(config.updateRequest).promise()
+    }
+    if (config.logGroupConfiguration !== undefined) {
+      await applyLogGroupConfig(cloudWatch, config.logGroupConfiguration)
+    }
+    if (config.tagConfiguration !== undefined) {
+      await applyTagConfig(lambda, config.tagConfiguration)
+    }
+  } catch (e) {
+    if (e instanceof Error) {
+      throw new Error(`${e}`)
+    }
+  }
+}
+
 export const willUpdateFunctionConfigs = (configs: FunctionConfiguration[]) => {
   let willUpdate = false
   for (const config of configs) {
