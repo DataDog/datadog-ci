@@ -1,6 +1,6 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`uninstrument execute uninstrument multiple functions interactively 1`] = `
+exports[`lambda uninstrument execute uninstrument multiple functions interactively 1`] = `
 "
 🐶 Uninstrumenting Lambda function
 
@@ -34,7 +34,7 @@ UpdateFunctionConfiguration -> arn:aws:lambda:sa-east-1:123456789012:function:la
 "
 `;
 
-exports[`uninstrument execute uninstrument multiple specified functions interactively 1`] = `
+exports[`lambda uninstrument execute uninstrument multiple specified functions interactively 1`] = `
 "
 🐶 Uninstrumenting Lambda function
 
