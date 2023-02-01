@@ -43,6 +43,7 @@ TagResource -> arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world
 exports[`lambda instrument execute instrument multiple functions interactively 1`] = `
 "
 🐶 Instrumenting Lambda function
+[!] No AWS credentials found, let's set them up! Or you can re-run the command and supply the AWS credentials in the same way when you invoke the AWS CLI.
 
 [!] Configure AWS region.
 
@@ -115,6 +116,7 @@ TagResource -> arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world
 exports[`lambda instrument execute instrument multiple specified functions interactively 1`] = `
 "
 🐶 Instrumenting Lambda function
+[!] No AWS credentials found, let's set them up! Or you can re-run the command and supply the AWS credentials in the same way when you invoke the AWS CLI.
 
 [!] Configure AWS region.
 
@@ -349,6 +351,7 @@ TagResource -> arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world
 exports[`lambda instrument execute when not provided it does not set DD_ENV, DD_SERVICE, and DD_VERSION tags in interactive mode 1`] = `
 "
 🐶 Instrumenting Lambda function
+[!] No AWS credentials found, let's set them up! Or you can re-run the command and supply the AWS credentials in the same way when you invoke the AWS CLI.
 
 [!] Configure AWS region.
 
@@ -395,6 +398,7 @@ TagResource -> arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world
 exports[`lambda instrument execute when provided it sets DD_ENV, DD_SERVICE, and DD_VERSION environment variables in interactive mode 1`] = `
 "
 🐶 Instrumenting Lambda function
+[!] No AWS credentials found, let's set them up! Or you can re-run the command and supply the AWS credentials in the same way when you invoke the AWS CLI.
 
 [!] Configure AWS region.
 

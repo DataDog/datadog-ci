@@ -3,6 +3,7 @@
 exports[`lambda uninstrument execute uninstrument multiple functions interactively 1`] = `
 "
 🐶 Uninstrumenting Lambda function
+[!] No AWS credentials found, let's set them up! Or you can re-run the command and supply the AWS credentials in the same way when you invoke the AWS CLI.
 
 [!] Functions to be updated:
 	- arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world
@@ -37,6 +38,7 @@ UpdateFunctionConfiguration -> arn:aws:lambda:sa-east-1:123456789012:function:la
 exports[`lambda uninstrument execute uninstrument multiple specified functions interactively 1`] = `
 "
 🐶 Uninstrumenting Lambda function
+[!] No AWS credentials found, let's set them up! Or you can re-run the command and supply the AWS credentials in the same way when you invoke the AWS CLI.
 
 [!] Functions to be updated:
 	- arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world

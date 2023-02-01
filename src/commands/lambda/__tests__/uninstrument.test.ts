@@ -495,11 +495,12 @@ describe('lambda', () => {
         const output = context.stdout.toString()
         expect(code).toBe(1)
         expect(output).toMatchInlineSnapshot(`
-            "\n🐶 Uninstrumenting Lambda function
-            [!] No AWS credentials found, let's set them up! Or you can re-run the command and supply the AWS credentials in the same way when you invoke the AWS CLI.
-            [Error] Unexpected error
-            "
-          `)
+          "
+          🐶 Uninstrumenting Lambda function
+          [!] No AWS credentials found, let's set them up! Or you can re-run the command and supply the AWS credentials in the same way when you invoke the AWS CLI.
+          [Error] Unexpected error
+          "
+        `)
       })
 
       test('aborts if there are no functions to uninstrument in the user AWS account', async () => {
