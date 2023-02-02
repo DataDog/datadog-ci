@@ -47,6 +47,7 @@
     "prettier": "prettier \"src/**/*.{ts,js,json,yml}\" --ignore-path .gitignore",
     "test": "jest --colors",
     "test:debug": "node --inspect-brk `which jest` --runInBand",
+    "test:lambda": "jest src/commands/lambda --colors",
     "eslint": "eslint --quiet 'src/**/*.ts'",
     "typecheck": "bash bin/typecheck.sh",
     "watch": "tsc -w"
