@@ -2,6 +2,7 @@ jest.mock('fs')
 jest.mock('aws-sdk')
 jest.mock('../prompt')
 jest.mock('../renderer', () => require('../__mocks__/renderer'))
+jest.mock('../../../../package.json', () => ({ version: 'XXXX'}))
 
 import * as fs from 'fs'
 
@@ -49,6 +50,7 @@ describe('lambda', () => {
       beforeEach(() => {
         jest.resetModules()
         process.env = {}
+        
       })
       afterAll(() => {
         process.env = OLD_ENV

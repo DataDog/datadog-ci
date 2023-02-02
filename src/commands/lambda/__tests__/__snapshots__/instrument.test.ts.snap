@@ -35,7 +35,7 @@ UpdateFunctionConfiguration -> arn:aws:lambda:us-east-1:123456789012:function:la
 }
 TagResource -> arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world
 {
-  \\"dd_sls_ci\\": \\"v2.4.0\\"
+  \\"dd_sls_ci\\": \\"vXXXX\\"
 }
 "
 `;
@@ -82,7 +82,7 @@ UpdateFunctionConfiguration -> arn:aws:lambda:sa-east-1:123456789012:function:la
 }
 TagResource -> arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world
 {
-  \\"dd_sls_ci\\": \\"v2.4.0\\"
+  \\"dd_sls_ci\\": \\"vXXXX\\"
 }
 UpdateFunctionConfiguration -> arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world-2
 {
@@ -106,7 +106,7 @@ UpdateFunctionConfiguration -> arn:aws:lambda:sa-east-1:123456789012:function:la
 }
 TagResource -> arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world-2
 {
-  \\"dd_sls_ci\\": \\"v2.4.0\\"
+  \\"dd_sls_ci\\": \\"vXXXX\\"
 }
 [!] Confirmation needed.
 [!] Instrumenting functions.
@@ -155,7 +155,7 @@ UpdateFunctionConfiguration -> arn:aws:lambda:sa-east-1:123456789012:function:la
 }
 TagResource -> arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world
 {
-  \\"dd_sls_ci\\": \\"v2.4.0\\"
+  \\"dd_sls_ci\\": \\"vXXXX\\"
 }
 UpdateFunctionConfiguration -> arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world-2
 {
@@ -179,7 +179,7 @@ UpdateFunctionConfiguration -> arn:aws:lambda:sa-east-1:123456789012:function:la
 }
 TagResource -> arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world-2
 {
-  \\"dd_sls_ci\\": \\"v2.4.0\\"
+  \\"dd_sls_ci\\": \\"vXXXX\\"
 }
 [!] Confirmation needed.
 [!] Instrumenting functions.
@@ -223,7 +223,7 @@ UpdateFunctionConfiguration -> arn:aws:lambda:us-east-1:123456789012:function:la
 }
 TagResource -> arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world
 {
-  \\"dd_sls_ci\\": \\"v2.4.0\\"
+  \\"dd_sls_ci\\": \\"vXXXX\\"
 }
 "
 `;
@@ -262,7 +262,7 @@ UpdateFunctionConfiguration -> arn:aws:lambda:us-east-1:123456789012:function:la
 }
 TagResource -> arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world
 {
-  \\"dd_sls_ci\\": \\"v2.4.0\\"
+  \\"dd_sls_ci\\": \\"vXXXX\\"
 }
 "
 `;
@@ -303,7 +303,7 @@ UpdateFunctionConfiguration -> arn:aws:lambda:us-east-1:123456789012:function:la
 }
 TagResource -> arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world
 {
-  \\"dd_sls_ci\\": \\"v2.4.0\\"
+  \\"dd_sls_ci\\": \\"vXXXX\\"
 }
 "
 `;
@@ -343,7 +343,7 @@ UpdateFunctionConfiguration -> arn:aws:lambda:us-east-1:123456789012:function:la
 }
 TagResource -> arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world
 {
-  \\"dd_sls_ci\\": \\"v2.4.0\\"
+  \\"dd_sls_ci\\": \\"vXXXX\\"
 }
 "
 `;
@@ -388,7 +388,7 @@ UpdateFunctionConfiguration -> arn:aws:lambda:sa-east-1:123456789012:function:la
 }
 TagResource -> arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world
 {
-  \\"dd_sls_ci\\": \\"v2.4.0\\"
+  \\"dd_sls_ci\\": \\"vXXXX\\"
 }
 [!] Confirmation needed.
 [!] Instrumenting functions.
@@ -436,7 +436,7 @@ UpdateFunctionConfiguration -> arn:aws:lambda:sa-east-1:123456789012:function:la
 }
 TagResource -> arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world
 {
-  \\"dd_sls_ci\\": \\"v2.4.0\\"
+  \\"dd_sls_ci\\": \\"vXXXX\\"
 }
 [!] Confirmation needed.
 [!] Instrumenting functions.
