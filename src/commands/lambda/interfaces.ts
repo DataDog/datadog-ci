@@ -37,6 +37,13 @@ export interface FunctionConfiguration {
   updateRequest?: Lambda.UpdateFunctionConfigurationRequest
 }
 
+export interface InstrumentedConfigurationGroup {
+  cloudWatchLogs: CloudWatchLogs
+  configs: FunctionConfiguration[]
+  lambda: Lambda
+  region: string
+}
+
 /**
  * Basic settings to use in every specified
  * lambda to be instrumented.
