@@ -32,6 +32,8 @@ UpdateFunctionConfiguration -> arn:aws:lambda:sa-east-1:123456789012:function:la
 }
 [!] Confirmation needed.
 [!] Uninstrumenting functions.
+✔ Updated 2 Lambda functions.
+
 "
 `;
 
@@ -67,5 +69,7 @@ UpdateFunctionConfiguration -> arn:aws:lambda:sa-east-1:123456789012:function:la
 }
 [!] Confirmation needed.
 [!] Uninstrumenting functions.
+✔ Updated 2 Lambda functions.
+
 "
 `;

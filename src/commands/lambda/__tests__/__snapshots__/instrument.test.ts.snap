@@ -37,6 +37,8 @@ TagResource -> arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world
 {
   \\"dd_sls_ci\\": \\"vXXXX\\"
 }
+✔ Updated 1 Lambda function.
+
 "
 `;
 
@@ -110,6 +112,8 @@ TagResource -> arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world
 }
 [!] Confirmation needed.
 [!] Instrumenting functions.
+✔ Updated 2 Lambda functions.
+
 "
 `;
 
@@ -183,6 +187,8 @@ TagResource -> arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world
 }
 [!] Confirmation needed.
 [!] Instrumenting functions.
+✔ Updated 2 Lambda functions.
+
 "
 `;
 
@@ -392,6 +398,8 @@ TagResource -> arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world
 }
 [!] Confirmation needed.
 [!] Instrumenting functions.
+✔ Updated 1 Lambda function.
+
 "
 `;
 
@@ -440,5 +448,7 @@ TagResource -> arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world
 }
 [!] Confirmation needed.
 [!] Instrumenting functions.
+✔ Updated 1 Lambda function.
+
 "
 `;

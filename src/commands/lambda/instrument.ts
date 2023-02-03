@@ -22,7 +22,7 @@ import {
   isMissingDatadogEnvVars,
   sentenceMatchesRegEx,
   updateAWSProfileCredentials,
-  updateLambdaFunctionConfigs,
+  updateLambdaFunctionConfig,
   willUpdateFunctionConfigs,
 } from './functions/commons'
 import {getInstrumentedFunctionConfigs, getInstrumentedFunctionConfigsFromRegEx} from './functions/instrument'
@@ -286,19 +286,53 @@ export class InstrumentCommand extends Command {
     }
 
     if (willUpdate) {
-      const promises = Object.values(configGroups).map((group) =>
-        updateLambdaFunctionConfigs(group.lambda, group.cloudWatchLogs, group.configs)
-      )
-      const spinner = renderer.updatingFunctionsSpinner(promises.length)
-      spinner.start()
-      try {
-        await Promise.all(promises)
-        spinner.succeed(renderer.renderUpdatedLambdaFunctions(promises.length))
-      } catch (err) {
-        this.context.stdout.write(renderer.renderFailureDuringUpdateError(err))
-        spinner.fail(renderer.renderFailedUpdatingLambdaFunctions())
+      const totalFunctions = Object.values(configGroups).reduce((c, group) => (c += group.configs.length), 0)
+      let totalFailedUpdates = 0
+      for (const group of configGroups) {
+        const spinner = renderer.updatingFunctionsConfigFromRegionSpinner(group.region, group.configs.length)
+        spinner.start()
+        const failedUpdates = []
+        for (const config of group.configs) {
+          try {
+            await updateLambdaFunctionConfig(group.lambda, group.cloudWatchLogs, config)
+          } catch (e) {
+            failedUpdates.push({functionARN: config.functionARN, error: e})
+            totalFailedUpdates += 1
+          }
+        }
+
+        if (failedUpdates.length === group.configs.length) {
+          spinner.fail(renderer.renderFailedUpdatingEveryLambdaFunctionFromRegion(group.region))
+        } else if (failedUpdates.length > 0) {
+          spinner.warn(
+            renderer.renderUpdatedLambdaFunctionsFromRegion(group.region, group.configs.length - failedUpdates.length)
+          )
+          for (const failedUpdate of failedUpdates) {
+            this.context.stdout.write(
+              renderer.renderFailedUpdatingLambdaFunction(failedUpdate.functionARN, failedUpdate.error)
+            )
+          }
+        }
+
+        if (failedUpdates.length === 0) {
+          spinner.succeed(renderer.renderUpdatedLambdaFunctionsFromRegion(group.region, group.configs.length))
+        }
+      }
+
+      if (totalFunctions === totalFailedUpdates) {
+        this.context.stdout.write(renderer.renderFailedUpdatingEveryLambdaFunction())
 
         return 1
+      }
+
+      if (totalFailedUpdates > 0) {
+        this.context.stdout.write(
+          renderer.renderSoftWarning(renderer.renderUpdatedLambdaFunctions(totalFunctions - totalFailedUpdates))
+        )
+      }
+
+      if (!totalFailedUpdates) {
+        this.context.stdout.write(renderer.renderSuccess(renderer.renderUpdatedLambdaFunctions(totalFunctions)))
       }
     }
 
