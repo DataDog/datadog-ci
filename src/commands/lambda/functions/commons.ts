@@ -423,20 +423,14 @@ export const updateLambdaFunctionConfig = async (
   cloudWatch: CloudWatchLogs,
   config: FunctionConfiguration
 ) => {
-  try {
-    if (config.updateRequest !== undefined) {
-      await lambda.updateFunctionConfiguration(config.updateRequest).promise()
-    }
-    if (config.logGroupConfiguration !== undefined) {
-      await applyLogGroupConfig(cloudWatch, config.logGroupConfiguration)
-    }
-    if (config.tagConfiguration !== undefined) {
-      await applyTagConfig(lambda, config.tagConfiguration)
-    }
-  } catch (e) {
-    if (e instanceof Error) {
-      throw new Error(`${e}`)
-    }
+  if (config.updateRequest !== undefined) {
+    await lambda.updateFunctionConfiguration(config.updateRequest).promise()
+  }
+  if (config.logGroupConfiguration !== undefined) {
+    await applyLogGroupConfig(cloudWatch, config.logGroupConfiguration)
+  }
+  if (config.tagConfiguration !== undefined) {
+    await applyTagConfig(lambda, config.tagConfiguration)
   }
 }
 
