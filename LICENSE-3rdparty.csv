@@ -62,4 +62,4 @@ eslint-plugin-import,dev,MIT,Copyright (c) 2015 Ben Mosher
 eslint-plugin-prefer-arrow,dev,MIT,Copyright (c) 2018 Triston Jones
 eslint-plugin-prettier,dev,MIT,Copyright © 2017 Andres Suarez and Teddy Katz
 eslint-plugin-no-null,dev,MIT,Copyright (c) 2016 Rene Saarsoo
-eslint-formatter-sarif,dev,MIT,Copyright (c) Microsoft Corporation
+@microsoft/eslint-formatter-sarif,dev,MIT,Copyright (c) Microsoft Corporation
