@@ -135,7 +135,7 @@ export const renderFailureDuringUpdateError = (error: unknown) => renderError(`F
 export const renderError = (error: unknown) => `${errorTag} ${error}\n`
 
 /**
- * @param warning the message to warn about
+ * @param warning the message to warn about.
  * @returns the provided warning prefixed by {@link warningTag}.
  *
  * ```txt
@@ -145,7 +145,7 @@ export const renderError = (error: unknown) => `${errorTag} ${error}\n`
 export const renderWarning = (warning: string) => `${warningTag} ${warning}\n`
 
 /**
- * @param warning the message to warn about
+ * @param warning the message to warn about.
  * @returns the provided warning prefixed by {@link warningExclamationSignTag}.
  *
  * ```txt
@@ -154,7 +154,25 @@ export const renderWarning = (warning: string) => `${warningTag} ${warning}\n`
  */
 export const renderSoftWarning = (warning: string) => `${warningExclamationSignTag} ${warning}\n`
 
+/**
+ * @param message the message to set with the success tag.
+ * @returns the provided message prefixed by {@link successCheckmarkTag}.
+ *
+ * ```txt
+ * [✔] The provided message goes here!
+ * ```
+ */
 export const renderSuccess = (message: string) => `${successCheckmarkTag} ${message}\n`
+
+/**
+ * @param message the message to set with the fail tag.
+ * @returns the provided message prefixed by {@link failCrossTag}.
+ *
+ * ```txt
+ * [✖] The provided message goes here!
+ * ```
+ */
+export const renderFail = (message: string) => `${failCrossTag} ${message}\n`
 
 /**
  * @param sourceCodeIntegrationError the error encountered when trying to enable source code integration.
@@ -576,3 +594,4 @@ export const warningTag = bold(yellow('[Warning]'))
 
 export const warningExclamationSignTag = bold(yellow('[!]'))
 export const successCheckmarkTag = bold(green('✔'))
+export const failCrossTag = bold(red('✖'))
