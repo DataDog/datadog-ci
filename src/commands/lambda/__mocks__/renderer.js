@@ -6,6 +6,7 @@ const makeMockSpinner = () => {
     fail: f,
     start: f,
     succeed: f,
+    warn: f,
   }))
 }
 
