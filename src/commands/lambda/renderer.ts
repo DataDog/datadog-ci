@@ -409,10 +409,10 @@ export const renderUninstrumentingFunctionsSoftWarning = () => renderSoftWarning
  * ```
  */
 export const renderFetchedLambdaFunctions = (functionsLength: number) => {
-  const plural = functionsLength > 1 
+  const plural = functionsLength > 1
+
   return `Fetched ${bold(functionsLength)} ${hex('#FF9900').bold('Lambda')} function${plural ? 's' : ''}.\n`
 }
-  
 
 /**
  * @param region the AWS region where the Lambda configs belong to.
@@ -436,9 +436,9 @@ export const renderFetchedLambdaConfigurationsFromRegion = (region: string, conf
  */
 export const renderUpdatedLambdaFunctions = (functionsLength: number) => {
   const plural = functionsLength > 1
+
   return `Updated ${bold(functionsLength)} ${hex('#FF9900').bold('Lambda')} function${plural ? 's' : ''}.\n`
 }
-  
 
 /**
  * @param region the AWS region where the Lambda functions belong to.
@@ -451,9 +451,11 @@ export const renderUpdatedLambdaFunctions = (functionsLength: number) => {
  */
 export const renderUpdatedLambdaFunctionsFromRegion = (region: string, functionsLength: number) => {
   const plural = functionsLength > 1
-  return `${bold(`[${region}]`)} Updated ${bold(functionsLength)} ${hex('#FF9900').bold('Lambda')} function${plural ? 's' : ''}.\n`
+
+  return `${bold(`[${region}]`)} Updated ${bold(functionsLength)} ${hex('#FF9900').bold('Lambda')} function${
+    plural ? 's' : ''
+  }.\n`
 }
-  
 
 /**
  * @returns a message indicating that it failed to fetch Lambda functions.

@@ -575,69 +575,74 @@ describe('lambda', () => {
         const failingLambdas = [
           'arn:aws:lambda:us-east-1:123456789012:function:lambda-1-us-east-1',
           'arn:aws:lambda:us-east-1:123456789012:function:lambda-2-us-east-1',
-          'arn:aws:lambda:us-east-2:123456789012:function:lambda-1-us-east-2'
+          'arn:aws:lambda:us-east-2:123456789012:function:lambda-1-us-east-2',
         ]
-        ;(Lambda as any).mockImplementation(() =>
-          ({...makeMockLambda(
-            {
-              'arn:aws:lambda:us-east-1:123456789012:function:lambda-1-us-east-1': {
-                FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:lambda-1-us-east-1',
-                FunctionName: 'lambda-1-us-east-1',
-                Handler: 'index.handler',
-                Runtime: 'nodejs12.x',
-              },
-              'arn:aws:lambda:us-east-1:123456789012:function:lambda-2-us-east-1': {
-                FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:lambda-2-us-east-1',
-                FunctionName: 'lambda-2-us-east-1',
-                Handler: 'index.handler',
-                Runtime: 'nodejs12.x',
-              },
-              'arn:aws:lambda:us-east-1:123456789012:function:lambda-3-us-east-1': {
-                FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:lambda-3-us-east-1',
-                FunctionName: 'lambda-3-us-east-1',
-                Handler: 'index.handler',
-                Runtime: 'nodejs12.x',
-              },
-              'arn:aws:lambda:us-east-2:123456789012:function:lambda-1-us-east-2': {
-                FunctionArn: 'arn:aws:lambda:us-east-2:123456789012:function:lambda-1-us-east-2',
-                FunctionName: 'lambda-1-us-east-2',
-                Handler: 'index.handler',
-                Runtime: 'nodejs14.x',
-              },
-              'arn:aws:lambda:us-east-2:123456789012:function:lambda-2-us-east-2': {
-                FunctionArn: 'arn:aws:lambda:us-east-2:123456789012:function:lambda-2-us-east-2',
-                FunctionName: 'lambda-2-us-east-2',
-                Handler: 'index.handler',
-                Runtime: 'nodejs16.x',
-              },
-              'arn:aws:lambda:us-east-2:123456789012:function:lambda-3-us-east-2': {
-                FunctionArn: 'arn:aws:lambda:us-east-2:123456789012:function:lambda-3-us-east-2',
-                FunctionName: 'lambda-3-us-east-2',
-                Handler: 'index.handler',
-                Runtime: 'nodejs18.x',
-              },
-            }),
-            updateFunctionConfiguration: jest.fn().mockImplementation((updateRequest) => {
-              if (failingLambdas.includes(updateRequest['FunctionName'])) {
-                return {promise: () => Promise.reject(Error('Unexpected error updating request'))}
-              }
-              return {promise: () => Promise.resolve()}
-            })
-          })
-        )
-        
+        ;(Lambda as any).mockImplementation(() => ({
+          ...makeMockLambda({
+            'arn:aws:lambda:us-east-1:123456789012:function:lambda-1-us-east-1': {
+              FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:lambda-1-us-east-1',
+              FunctionName: 'lambda-1-us-east-1',
+              Handler: 'index.handler',
+              Runtime: 'nodejs12.x',
+            },
+            'arn:aws:lambda:us-east-1:123456789012:function:lambda-2-us-east-1': {
+              FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:lambda-2-us-east-1',
+              FunctionName: 'lambda-2-us-east-1',
+              Handler: 'index.handler',
+              Runtime: 'nodejs12.x',
+            },
+            'arn:aws:lambda:us-east-1:123456789012:function:lambda-3-us-east-1': {
+              FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:lambda-3-us-east-1',
+              FunctionName: 'lambda-3-us-east-1',
+              Handler: 'index.handler',
+              Runtime: 'nodejs12.x',
+            },
+            'arn:aws:lambda:us-east-2:123456789012:function:lambda-1-us-east-2': {
+              FunctionArn: 'arn:aws:lambda:us-east-2:123456789012:function:lambda-1-us-east-2',
+              FunctionName: 'lambda-1-us-east-2',
+              Handler: 'index.handler',
+              Runtime: 'nodejs14.x',
+            },
+            'arn:aws:lambda:us-east-2:123456789012:function:lambda-2-us-east-2': {
+              FunctionArn: 'arn:aws:lambda:us-east-2:123456789012:function:lambda-2-us-east-2',
+              FunctionName: 'lambda-2-us-east-2',
+              Handler: 'index.handler',
+              Runtime: 'nodejs16.x',
+            },
+            'arn:aws:lambda:us-east-2:123456789012:function:lambda-3-us-east-2': {
+              FunctionArn: 'arn:aws:lambda:us-east-2:123456789012:function:lambda-3-us-east-2',
+              FunctionName: 'lambda-3-us-east-2',
+              Handler: 'index.handler',
+              Runtime: 'nodejs18.x',
+            },
+          }),
+          updateFunctionConfiguration: jest.fn().mockImplementation((updateRequest) => {
+            if (failingLambdas.includes(updateRequest['FunctionName'])) {
+              return {promise: () => Promise.reject(Error('Unexpected error updating request'))}
+            }
+
+            return {promise: () => Promise.resolve()}
+          }),
+        }))
+
         const cli = makeCli()
         const context = createMockContext() as any
         const code = await cli.run(
           [
             'lambda',
             'instrument',
-            '-f', 'arn:aws:lambda:us-east-1:123456789012:function:lambda-1-us-east-1',
-            '-f', 'arn:aws:lambda:us-east-1:123456789012:function:lambda-2-us-east-1',
-            '-f', 'arn:aws:lambda:us-east-1:123456789012:function:lambda-3-us-east-1',
-            '-f', 'arn:aws:lambda:us-east-2:123456789012:function:lambda-1-us-east-2',
-            '-f', 'arn:aws:lambda:us-east-2:123456789012:function:lambda-2-us-east-2',
-            '-f', 'arn:aws:lambda:us-east-2:123456789012:function:lambda-3-us-east-2',
+            '-f',
+            'arn:aws:lambda:us-east-1:123456789012:function:lambda-1-us-east-1',
+            '-f',
+            'arn:aws:lambda:us-east-1:123456789012:function:lambda-2-us-east-1',
+            '-f',
+            'arn:aws:lambda:us-east-1:123456789012:function:lambda-3-us-east-1',
+            '-f',
+            'arn:aws:lambda:us-east-2:123456789012:function:lambda-1-us-east-2',
+            '-f',
+            'arn:aws:lambda:us-east-2:123456789012:function:lambda-2-us-east-2',
+            '-f',
+            'arn:aws:lambda:us-east-2:123456789012:function:lambda-3-us-east-2',
           ],
           context
         )
@@ -650,41 +655,42 @@ describe('lambda', () => {
         ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({code: 'ENOENT'}))
         const failingLambdas = [
           'arn:aws:lambda:us-east-1:123456789012:function:lambda-1-us-east-1',
-          'arn:aws:lambda:us-east-2:123456789012:function:lambda-1-us-east-2'
+          'arn:aws:lambda:us-east-2:123456789012:function:lambda-1-us-east-2',
         ]
-        ;(Lambda as any).mockImplementation(() =>
-          ({...makeMockLambda(
-            {
-              'arn:aws:lambda:us-east-1:123456789012:function:lambda-1-us-east-1': {
-                FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:lambda-1-us-east-1',
-                FunctionName: 'lambda-1-us-east-1',
-                Handler: 'index.handler',
-                Runtime: 'nodejs12.x',
-              },
-              'arn:aws:lambda:us-east-2:123456789012:function:lambda-1-us-east-2': {
-                FunctionArn: 'arn:aws:lambda:us-east-2:123456789012:function:lambda-1-us-east-2',
-                FunctionName: 'lambda-1-us-east-2',
-                Handler: 'index.handler',
-                Runtime: 'nodejs14.x',
-              },
-            }),
-            updateFunctionConfiguration: jest.fn().mockImplementation((updateRequest) => {
-              if (failingLambdas.includes(updateRequest['FunctionName'])) {
-                return {promise: () => Promise.reject(Error('Unexpected error updating request'))}
-              }
-              return {promise: () => Promise.resolve()}
-            })
-          })
-        )
-        
+        ;(Lambda as any).mockImplementation(() => ({
+          ...makeMockLambda({
+            'arn:aws:lambda:us-east-1:123456789012:function:lambda-1-us-east-1': {
+              FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:lambda-1-us-east-1',
+              FunctionName: 'lambda-1-us-east-1',
+              Handler: 'index.handler',
+              Runtime: 'nodejs12.x',
+            },
+            'arn:aws:lambda:us-east-2:123456789012:function:lambda-1-us-east-2': {
+              FunctionArn: 'arn:aws:lambda:us-east-2:123456789012:function:lambda-1-us-east-2',
+              FunctionName: 'lambda-1-us-east-2',
+              Handler: 'index.handler',
+              Runtime: 'nodejs14.x',
+            },
+          }),
+          updateFunctionConfiguration: jest.fn().mockImplementation((updateRequest) => {
+            if (failingLambdas.includes(updateRequest['FunctionName'])) {
+              return {promise: () => Promise.reject(Error('Unexpected error updating request'))}
+            }
+
+            return {promise: () => Promise.resolve()}
+          }),
+        }))
+
         const cli = makeCli()
         const context = createMockContext() as any
         const code = await cli.run(
           [
             'lambda',
             'instrument',
-            '-f', 'arn:aws:lambda:us-east-1:123456789012:function:lambda-1-us-east-1',
-            '-f', 'arn:aws:lambda:us-east-2:123456789012:function:lambda-1-us-east-2',
+            '-f',
+            'arn:aws:lambda:us-east-1:123456789012:function:lambda-1-us-east-1',
+            '-f',
+            'arn:aws:lambda:us-east-2:123456789012:function:lambda-1-us-east-2',
           ],
           context
         )
