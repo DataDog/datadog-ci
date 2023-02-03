@@ -11,6 +11,7 @@ const makeMockSpinner = () => {
 
 renderer['fetchingFunctionsConfigSpinner'] = makeMockSpinner()
 renderer['fetchingFunctionsSpinner'] = makeMockSpinner()
+renderer['updatingFunctionsConfigFromRegionSpinner'] = makeMockSpinner()
 renderer['updatingFunctionsSpinner'] = makeMockSpinner()
 
 module.exports = renderer
