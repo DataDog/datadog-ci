@@ -76,8 +76,8 @@ export class InstrumentCommand extends Command {
     if (profile) {
       try {
         await updateAWSProfileCredentials(profile)
-      } catch (e) {
-        this.context.stdout.write(renderer.renderError(e))
+      } catch (err) {
+        this.context.stdout.write(renderer.renderError(err))
 
         return 1
       }
@@ -103,8 +103,8 @@ export class InstrumentCommand extends Command {
           this.context.stdout.write(renderer.renderConfigureDatadog())
           await requestDatadogEnvVars()
         }
-      } catch (e) {
-        this.context.stdout.write(renderer.renderError(e))
+      } catch (err) {
+        this.context.stdout.write(renderer.renderError(err))
 
         return 1
       }
@@ -295,8 +295,8 @@ export class InstrumentCommand extends Command {
         for (const config of group.configs) {
           try {
             await updateLambdaFunctionConfig(group.lambda, group.cloudWatchLogs, config)
-          } catch (e) {
-            failedUpdates.push({functionARN: config.functionARN, error: e})
+          } catch (err) {
+            failedUpdates.push({functionARN: config.functionARN, error: err})
             totalFailedUpdates += 1
           }
         }
@@ -320,7 +320,7 @@ export class InstrumentCommand extends Command {
       }
 
       if (totalFunctions === totalFailedUpdates) {
-        this.context.stdout.write(renderer.renderFailedUpdatingEveryLambdaFunction())
+        this.context.stdout.write(renderer.renderFail(renderer.renderFailedUpdatingEveryLambdaFunction()))
 
         return 1
       }
