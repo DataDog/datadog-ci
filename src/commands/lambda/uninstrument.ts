@@ -220,11 +220,12 @@ export class UninstrumentCommand extends Command {
           spinner.warn(
             renderer.renderUpdatedLambdaFunctionsFromRegion(group.region, group.configs.length - failedUpdates.length)
           )
-          for (const failedUpdate of failedUpdates) {
-            this.context.stdout.write(
-              renderer.renderFailedUpdatingLambdaFunction(failedUpdate.functionARN, failedUpdate.error)
-            )
-          }
+        }
+
+        for (const failedUpdate of failedUpdates) {
+          this.context.stdout.write(
+            renderer.renderFailedUpdatingLambdaFunction(failedUpdate.functionARN, failedUpdate.error)
+          )
         }
 
         if (failedUpdates.length === 0) {
