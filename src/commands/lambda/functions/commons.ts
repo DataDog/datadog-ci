@@ -1,3 +1,5 @@
+import {Writable} from 'stream'
+
 import {CloudWatchLogs, config as aws_sdk_config, Lambda, SharedIniFileCredentials} from 'aws-sdk'
 import {GetFunctionRequest} from 'aws-sdk/clients/lambda'
 import {SharedIniFileCredentialsOptions} from 'aws-sdk/lib/credentials/shared_ini_file_credentials'
@@ -25,9 +27,10 @@ import {
   Runtime,
   RUNTIME_LOOKUP,
 } from '../constants'
-import {FunctionConfiguration, InstrumentationSettings} from '../interfaces'
+import {FunctionConfiguration, InstrumentationSettings, InstrumentedConfigurationGroup} from '../interfaces'
 import {applyLogGroupConfig} from '../loggroup'
 import {awsProfileQuestion} from '../prompt'
+import * as renderer from '../renderer'
 import {applyTagConfig} from '../tags'
 
 /**
@@ -431,6 +434,55 @@ export const updateLambdaFunctionConfig = async (
   }
   if (config.tagConfiguration !== undefined) {
     await applyTagConfig(lambda, config.tagConfiguration)
+  }
+}
+
+export const handleLambdaFunctionUpdates = async (configGroups: InstrumentedConfigurationGroup[], stdout: Writable) => {
+  let totalFunctions = 0
+  let totalFailedUpdates = 0
+  for (const group of configGroups) {
+    const spinner = renderer.updatingFunctionsConfigFromRegionSpinner(group.region, group.configs.length)
+    spinner.start()
+    const failedUpdates = []
+    for (const config of group.configs) {
+      totalFunctions += 1
+      try {
+        await updateLambdaFunctionConfig(group.lambda, group.cloudWatchLogs, config)
+      } catch (err) {
+        failedUpdates.push({functionARN: config.functionARN, error: err})
+        totalFailedUpdates += 1
+      }
+    }
+
+    if (failedUpdates.length === group.configs.length) {
+      spinner.fail(renderer.renderFailedUpdatingEveryLambdaFunctionFromRegion(group.region))
+    } else if (failedUpdates.length > 0) {
+      spinner.warn(
+        renderer.renderUpdatedLambdaFunctionsFromRegion(group.region, group.configs.length - failedUpdates.length)
+      )
+    }
+
+    for (const failedUpdate of failedUpdates) {
+      stdout.write(renderer.renderFailedUpdatingLambdaFunction(failedUpdate.functionARN, failedUpdate.error))
+    }
+
+    if (failedUpdates.length === 0) {
+      spinner.succeed(renderer.renderUpdatedLambdaFunctionsFromRegion(group.region, group.configs.length))
+    }
+  }
+
+  if (totalFunctions === totalFailedUpdates) {
+    stdout.write(renderer.renderFail(renderer.renderFailedUpdatingEveryLambdaFunction()))
+
+    throw Error()
+  }
+
+  if (totalFailedUpdates > 0) {
+    stdout.write(renderer.renderSoftWarning(renderer.renderUpdatedLambdaFunctions(totalFunctions - totalFailedUpdates)))
+  }
+
+  if (!totalFailedUpdates) {
+    stdout.write(renderer.renderSuccess(renderer.renderUpdatedLambdaFunctions(totalFunctions)))
   }
 }
 
