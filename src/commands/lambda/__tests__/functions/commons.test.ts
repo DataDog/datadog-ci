@@ -1,6 +1,7 @@
 import {config as aws_sdk_config, Credentials, Lambda} from 'aws-sdk'
 
 jest.mock('aws-sdk')
+jest.mock('../../renderer', () => require('../../__mocks__/renderer'))
 import {
   AWS_ACCESS_KEY_ID_ENV_VAR,
   AWS_SECRET_ACCESS_KEY_ENV_VAR,
@@ -29,11 +30,12 @@ import {
   getLayerArn,
   getLayerNameWithVersion,
   getRegion,
+  handleLambdaFunctionUpdates,
   isMissingAnyDatadogApiKeyEnvVar,
   isMissingAWSCredentials,
   isMissingDatadogEnvVars,
   sentenceMatchesRegEx,
-  updateLambdaFunctionConfigs,
+  updateLambdaFunctionConfig,
 } from '../../functions/commons'
 import {InstrumentCommand} from '../../instrument'
 import {FunctionConfiguration} from '../../interfaces'
@@ -592,7 +594,7 @@ describe('commons', () => {
     })
   })
 
-  describe('updateLambdaConfigs', () => {
+  describe('updateLambdaFunctionConfig', () => {
     const OLD_ENV = process.env
     beforeEach(() => {
       jest.resetModules()
@@ -629,7 +631,10 @@ describe('commons', () => {
       ]
       const cloudWatch = makeMockCloudWatchLogs({})
 
-      await updateLambdaFunctionConfigs(lambda as any, cloudWatch as any, configs)
+      await Promise.all(
+        configs.map(async (config) => updateLambdaFunctionConfig(lambda as any, cloudWatch as any, config))
+      )
+
       expect(lambda.updateFunctionConfiguration).toHaveBeenCalledWith({
         Environment: {
           Variables: {
@@ -642,6 +647,118 @@ describe('commons', () => {
         Handler: '/opt/nodejs/node_modules/datadog-lambda-js/handler.handler',
         Layers: ['arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Node12-x:22'],
       })
+    })
+  })
+
+  describe('handleLambdaFunctionUpdates', () => {
+    const OLD_ENV = process.env
+    beforeEach(() => {
+      jest.resetModules()
+      process.env = {}
+    })
+    afterAll(() => {
+      process.env = OLD_ENV
+    })
+    const cloudWatchLogs = makeMockCloudWatchLogs({})
+    const stdout = {write: (_: any) => jest.fn()}
+    const getConfigs = (lambda: any) => [
+      {
+        lambda,
+        cloudWatchLogs,
+        configs: [
+          {
+            functionARN: 'arn:aws:lambda:us-east-1:000000000000:function:autoinstrument',
+            lambdaConfig: {
+              FunctionArn: 'arn:aws:lambda:us-east-1:000000000000:function:autoinstrument',
+              Handler: 'index.handler',
+              Runtime: 'nodejs12.x',
+            },
+            lambdaLibraryLayerArn: 'arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Node12-x',
+            updateRequest: {
+              Environment: {
+                Variables: {
+                  [LAMBDA_HANDLER_ENV_VAR]: 'index.handler',
+                  [MERGE_XRAY_TRACES_ENV_VAR]: 'false',
+                  [TRACE_ENABLED_ENV_VAR]: 'false',
+                },
+              },
+              FunctionName: 'arn:aws:lambda:us-east-1:000000000000:function:autoinstrument',
+              Handler: '/opt/nodejs/node_modules/datadog-lambda-js/handler.handler',
+              Layers: ['arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Node12-x:XX'],
+            },
+          },
+        ],
+        region: 'us-east-1',
+      },
+      {
+        lambda,
+        cloudWatchLogs,
+        configs: [
+          {
+            functionARN: 'arn:aws:lambda:us-east-2:000000000000:function:autoinstrument',
+            lambdaConfig: {
+              FunctionArn: 'arn:aws:lambda:us-east-2:000000000000:function:autoinstrument',
+              Handler: 'index.handler',
+              Runtime: 'nodejs14.x',
+            },
+            lambdaLibraryLayerArn: 'arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Node14-x',
+            updateRequest: {
+              Environment: {
+                Variables: {
+                  [LAMBDA_HANDLER_ENV_VAR]: 'index.handler',
+                  [MERGE_XRAY_TRACES_ENV_VAR]: 'false',
+                  [TRACE_ENABLED_ENV_VAR]: 'false',
+                },
+              },
+              FunctionName: 'arn:aws:lambda:us-east-2:000000000000:function:autoinstrument',
+              Handler: '/opt/nodejs/node_modules/datadog-lambda-js/handler.handler',
+              Layers: ['arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Node14-x:XX'],
+            },
+          },
+        ],
+        region: 'us-east-2',
+      },
+    ]
+
+    test('throws an error when all functions from every region fail to update', async () => {
+      const lambda = {
+        ...makeMockLambda({}),
+        updateFunctionConfiguration: jest.fn().mockImplementation((_) => {
+          return {promise: () => Promise.reject()}
+        }),
+      }
+      const configs = getConfigs(lambda)
+
+      await expect(handleLambdaFunctionUpdates(configs as any, stdout as any)).rejects.toThrow()
+    })
+
+    test('throws an error when all functions from every region fail to update', async () => {
+      const lambda = {
+        ...makeMockLambda({}),
+        updateFunctionConfiguration: jest.fn().mockImplementation((_) => ({promise: () => Promise.reject()})),
+      }
+      const configs = getConfigs(lambda)
+
+      await expect(handleLambdaFunctionUpdates(configs as any, stdout as any)).rejects.toThrow()
+    })
+
+    test('to not throw an error when at least one function is updated', async () => {
+      const lambda = {
+        ...makeMockLambda({}),
+        updateFunctionConfiguration: jest.fn().mockImplementation((updateRequest) => {
+          if (updateRequest['FunctionName'] === 'arn:aws:lambda:us-east-1:000000000000:function:autoinstrument') {
+            return {promise: () => Promise.reject()}
+          }
+
+          return {promise: () => Promise.resolve()}
+        }),
+      }
+      const configs = getConfigs(lambda)
+
+      // when sucessful, the function doesnt do anything
+      const result = await handleLambdaFunctionUpdates(configs as any, stdout as any)
+
+      expect(result).toBe(undefined)
     })
   })
   describe('Correctly handles multiple runtimes', () => {

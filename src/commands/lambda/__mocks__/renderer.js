@@ -6,11 +6,13 @@ const makeMockSpinner = () => {
     fail: f,
     start: f,
     succeed: f,
+    warn: f,
   }))
 }
 
 renderer['fetchingFunctionsConfigSpinner'] = makeMockSpinner()
 renderer['fetchingFunctionsSpinner'] = makeMockSpinner()
+renderer['updatingFunctionsConfigFromRegionSpinner'] = makeMockSpinner()
 renderer['updatingFunctionsSpinner'] = makeMockSpinner()
 
 module.exports = renderer

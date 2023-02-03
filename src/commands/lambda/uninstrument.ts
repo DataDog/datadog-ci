@@ -8,9 +8,9 @@ import {AWS_DEFAULT_REGION_ENV_VAR} from './constants'
 import {
   collectFunctionsByRegion,
   getAllLambdaFunctionConfigs,
+  handleLambdaFunctionUpdates,
   isMissingAWSCredentials,
   updateAWSProfileCredentials,
-  updateLambdaFunctionConfigs,
   willUpdateFunctionConfigs,
 } from './functions/commons'
 import {getUninstrumentedFunctionConfigs, getUninstrumentedFunctionConfigsFromRegEx} from './functions/uninstrument'
@@ -44,8 +44,8 @@ export class UninstrumentCommand extends Command {
     if (profile) {
       try {
         await updateAWSProfileCredentials(profile)
-      } catch (e) {
-        this.context.stdout.write(renderer.renderError(e))
+      } catch (err) {
+        this.context.stdout.write(renderer.renderError(err))
 
         return 1
       }
@@ -58,8 +58,8 @@ export class UninstrumentCommand extends Command {
           this.context.stdout.write(renderer.renderNoAWSCredentialsFound())
           await requestAWSCredentials()
         }
-      } catch (e) {
-        this.context.stdout.write(renderer.renderError(e))
+      } catch (err) {
+        this.context.stdout.write(renderer.renderError(err))
 
         return 1
       }
@@ -104,6 +104,7 @@ export class UninstrumentCommand extends Command {
       cloudWatchLogs: CloudWatchLogs
       configs: FunctionConfiguration[]
       lambda: Lambda
+      region: string
     }[] = []
 
     // Fetch lambda function configurations that are
@@ -142,7 +143,7 @@ export class UninstrumentCommand extends Command {
         )
         spinner.succeed(renderer.renderFetchedLambdaFunctions(configs.length))
 
-        configGroups.push({configs, lambda, cloudWatchLogs})
+        configGroups.push({configs, lambda, cloudWatchLogs, region})
       } catch (err) {
         spinner.fail(renderer.renderFailedFetchingLambdaFunctions())
         this.context.stdout.write(renderer.renderCouldntFetchLambdaFunctionsError(err))
@@ -169,7 +170,7 @@ export class UninstrumentCommand extends Command {
         const cloudWatchLogs = new CloudWatchLogs({region})
         try {
           const configs = await getUninstrumentedFunctionConfigs(lambda, cloudWatchLogs, functionARNs, this.forwarder)
-          configGroups.push({configs, lambda, cloudWatchLogs})
+          configGroups.push({configs, lambda, cloudWatchLogs, region})
           spinner.succeed(renderer.renderFetchedLambdaConfigurationsFromRegion(region, configs.length))
         } catch (err) {
           spinner.fail(renderer.renderFailedFetchingLambdaConfigurationsFromRegion(region))
@@ -198,19 +199,12 @@ export class UninstrumentCommand extends Command {
 
     // Un-instrument functions.
     if (willUpdate) {
-      const promises = Object.values(configGroups).map((group) =>
-        updateLambdaFunctionConfigs(group.lambda, group.cloudWatchLogs, group.configs)
-      )
-      const spinner = renderer.updatingFunctionsSpinner(promises.length)
-      spinner.start()
-      try {
-        await Promise.all(promises)
-        spinner.succeed(renderer.renderUpdatedLambdaFunctions(promises.length))
-      } catch (err) {
-        this.context.stdout.write(renderer.renderFailureDuringUpdateError(err))
-        spinner.fail(renderer.renderFailedUpdatingLambdaFunctions())
-
-        return 1
+      if (willUpdate) {
+        try {
+          await handleLambdaFunctionUpdates(configGroups, this.context.stdout)
+        } catch {
+          return 1
+        }
       }
     }
 

@@ -18,15 +18,20 @@ import {
   coerceBoolean,
   collectFunctionsByRegion,
   getAllLambdaFunctionConfigs,
+  handleLambdaFunctionUpdates,
   isMissingAWSCredentials,
   isMissingDatadogEnvVars,
   sentenceMatchesRegEx,
   updateAWSProfileCredentials,
-  updateLambdaFunctionConfigs,
   willUpdateFunctionConfigs,
 } from './functions/commons'
 import {getInstrumentedFunctionConfigs, getInstrumentedFunctionConfigsFromRegEx} from './functions/instrument'
-import {FunctionConfiguration, InstrumentationSettings, LambdaConfigOptions} from './interfaces'
+import {
+  FunctionConfiguration,
+  InstrumentationSettings,
+  InstrumentedConfigurationGroup,
+  LambdaConfigOptions,
+} from './interfaces'
 import {
   requestAWSCredentials,
   requestAWSRegion,
@@ -76,8 +81,8 @@ export class InstrumentCommand extends Command {
     if (profile) {
       try {
         await updateAWSProfileCredentials(profile)
-      } catch (e) {
-        this.context.stdout.write(renderer.renderError(e))
+      } catch (err) {
+        this.context.stdout.write(renderer.renderError(err))
 
         return 1
       }
@@ -103,8 +108,8 @@ export class InstrumentCommand extends Command {
           this.context.stdout.write(renderer.renderConfigureDatadog())
           await requestDatadogEnvVars()
         }
-      } catch (e) {
-        this.context.stdout.write(renderer.renderError(e))
+      } catch (err) {
+        this.context.stdout.write(renderer.renderError(err))
 
         return 1
       }
@@ -181,12 +186,7 @@ export class InstrumentCommand extends Command {
       }
     }
 
-    const configGroups: {
-      cloudWatchLogs: CloudWatchLogs
-      configs: FunctionConfiguration[]
-      lambda: Lambda
-      region: string
-    }[] = []
+    const configGroups: InstrumentedConfigurationGroup[] = []
 
     if (hasSpecifiedRegExPattern) {
       if (hasSpecifiedFunctions) {
@@ -286,18 +286,9 @@ export class InstrumentCommand extends Command {
     }
 
     if (willUpdate) {
-      const promises = Object.values(configGroups).map((group) =>
-        updateLambdaFunctionConfigs(group.lambda, group.cloudWatchLogs, group.configs)
-      )
-      const spinner = renderer.updatingFunctionsSpinner(promises.length)
-      spinner.start()
       try {
-        await Promise.all(promises)
-        spinner.succeed(renderer.renderUpdatedLambdaFunctions(promises.length))
-      } catch (err) {
-        this.context.stdout.write(renderer.renderFailureDuringUpdateError(err))
-        spinner.fail(renderer.renderFailedUpdatingLambdaFunctions())
-
+        await handleLambdaFunctionUpdates(configGroups, this.context.stdout)
+      } catch {
         return 1
       }
     }
