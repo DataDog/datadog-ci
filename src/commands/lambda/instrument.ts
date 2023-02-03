@@ -18,15 +18,20 @@ import {
   coerceBoolean,
   collectFunctionsByRegion,
   getAllLambdaFunctionConfigs,
+  handleLambdaFunctionUpdates,
   isMissingAWSCredentials,
   isMissingDatadogEnvVars,
   sentenceMatchesRegEx,
   updateAWSProfileCredentials,
-  updateLambdaFunctionConfig,
   willUpdateFunctionConfigs,
 } from './functions/commons'
 import {getInstrumentedFunctionConfigs, getInstrumentedFunctionConfigsFromRegEx} from './functions/instrument'
-import {FunctionConfiguration, InstrumentationSettings, LambdaConfigOptions} from './interfaces'
+import {
+  FunctionConfiguration,
+  InstrumentationSettings,
+  InstrumentedConfigurationGroup,
+  LambdaConfigOptions,
+} from './interfaces'
 import {
   requestAWSCredentials,
   requestAWSRegion,
@@ -181,12 +186,7 @@ export class InstrumentCommand extends Command {
       }
     }
 
-    const configGroups: {
-      cloudWatchLogs: CloudWatchLogs
-      configs: FunctionConfiguration[]
-      lambda: Lambda
-      region: string
-    }[] = []
+    const configGroups: InstrumentedConfigurationGroup[] = []
 
     if (hasSpecifiedRegExPattern) {
       if (hasSpecifiedFunctions) {
@@ -286,54 +286,10 @@ export class InstrumentCommand extends Command {
     }
 
     if (willUpdate) {
-      const totalFunctions = Object.values(configGroups).reduce((c, group) => (c += group.configs.length), 0)
-      let totalFailedUpdates = 0
-      for (const group of configGroups) {
-        const spinner = renderer.updatingFunctionsConfigFromRegionSpinner(group.region, group.configs.length)
-        spinner.start()
-        const failedUpdates = []
-        for (const config of group.configs) {
-          try {
-            await updateLambdaFunctionConfig(group.lambda, group.cloudWatchLogs, config)
-          } catch (err) {
-            failedUpdates.push({functionARN: config.functionARN, error: err})
-            totalFailedUpdates += 1
-          }
-        }
-
-        if (failedUpdates.length === group.configs.length) {
-          spinner.fail(renderer.renderFailedUpdatingEveryLambdaFunctionFromRegion(group.region))
-        } else if (failedUpdates.length > 0) {
-          spinner.warn(
-            renderer.renderUpdatedLambdaFunctionsFromRegion(group.region, group.configs.length - failedUpdates.length)
-          )
-        }
-
-        for (const failedUpdate of failedUpdates) {
-          this.context.stdout.write(
-            renderer.renderFailedUpdatingLambdaFunction(failedUpdate.functionARN, failedUpdate.error)
-          )
-        }
-
-        if (failedUpdates.length === 0) {
-          spinner.succeed(renderer.renderUpdatedLambdaFunctionsFromRegion(group.region, group.configs.length))
-        }
-      }
-
-      if (totalFunctions === totalFailedUpdates) {
-        this.context.stdout.write(renderer.renderFail(renderer.renderFailedUpdatingEveryLambdaFunction()))
-
+      try {
+        await handleLambdaFunctionUpdates(configGroups, this.context.stdout)
+      } catch {
         return 1
-      }
-
-      if (totalFailedUpdates > 0) {
-        this.context.stdout.write(
-          renderer.renderSoftWarning(renderer.renderUpdatedLambdaFunctions(totalFunctions - totalFailedUpdates))
-        )
-      }
-
-      if (!totalFailedUpdates) {
-        this.context.stdout.write(renderer.renderSuccess(renderer.renderUpdatedLambdaFunctions(totalFunctions)))
       }
     }
 
