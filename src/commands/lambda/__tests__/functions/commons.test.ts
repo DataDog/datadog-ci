@@ -33,7 +33,7 @@ import {
   isMissingAWSCredentials,
   isMissingDatadogEnvVars,
   sentenceMatchesRegEx,
-  updateLambdaFunctionConfigs,
+  updateLambdaFunctionConfig,
 } from '../../functions/commons'
 import {InstrumentCommand} from '../../instrument'
 import {FunctionConfiguration} from '../../interfaces'
@@ -592,7 +592,7 @@ describe('commons', () => {
     })
   })
 
-  describe('updateLambdaConfigs', () => {
+  describe('updateLambdaConfig', () => {
     const OLD_ENV = process.env
     beforeEach(() => {
       jest.resetModules()
@@ -629,7 +629,9 @@ describe('commons', () => {
       ]
       const cloudWatch = makeMockCloudWatchLogs({})
 
-      await updateLambdaFunctionConfigs(lambda as any, cloudWatch as any, configs)
+      for (const config of configs) {
+        await updateLambdaFunctionConfig(lambda as any, cloudWatch as any, config)
+      }
       expect(lambda.updateFunctionConfiguration).toHaveBeenCalledWith({
         Environment: {
           Variables: {

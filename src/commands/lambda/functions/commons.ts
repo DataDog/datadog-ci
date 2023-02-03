@@ -418,26 +418,6 @@ export const isLayerRuntime = (runtime: string): runtime is LayerKey => LAYER_LO
 
 export const sentenceMatchesRegEx = (sentence: string, regex: RegExp) => sentence.match(regex)
 
-export const updateLambdaFunctionConfigs = async (
-  lambda: Lambda,
-  cloudWatch: CloudWatchLogs,
-  configs: FunctionConfiguration[]
-) => {
-  const results = configs.map(async (c) => {
-    if (c.updateRequest !== undefined) {
-      await lambda.updateFunctionConfiguration(c.updateRequest).promise()
-    }
-    if (c.logGroupConfiguration !== undefined) {
-      await applyLogGroupConfig(cloudWatch, c.logGroupConfiguration)
-    }
-    if (c.tagConfiguration !== undefined) {
-      await applyTagConfig(lambda, c.tagConfiguration)
-    }
-  })
-  await Promise.all(results)
-}
-
-
 export const updateLambdaFunctionConfig = async (
   lambda: Lambda,
   cloudWatch: CloudWatchLogs,
