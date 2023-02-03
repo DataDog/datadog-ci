@@ -48,7 +48,7 @@
     "test": "jest --colors",
     "test:debug": "node --inspect-brk `which jest` --runInBand",
     "test:lambda": "jest src/commands/lambda --colors",
-    "eslint": "eslint --quiet 'src/**/*.ts'",
+    "eslint": "eslint --quiet -f @microsoft/sarif -o 'sarif-datadog-ci.sarif' 'src/**/*.ts'",
     "typecheck": "bash bin/typecheck.sh",
     "watch": "tsc -w"
   },
@@ -85,6 +85,7 @@
     "@babel/core": "7.8.0",
     "@babel/preset-env": "7.4.5",
     "@babel/preset-typescript": "7.3.3",
+    "@microsoft/eslint-formatter-sarif": "^3.0.0",
     "@types/async-retry": "1.4.2",
     "@types/deep-extend": "0.4.31",
     "@types/glob": "7.1.1",

@@ -42,6 +42,10 @@ jobs:
         with:
           name: artifacts
           path: artifacts/
+      - uses: actions/upload-artifact@v1  
+        with:
+          name: sarif-datadog-ci.sarif
+          path: sarif-datadog-ci.sarif
 
   e2e-test:
     strategy:
