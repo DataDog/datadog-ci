@@ -1,4 +1,4 @@
-import {blueBright, bold, cyan, hex, red, underline, yellow} from 'chalk'
+import {blueBright, bold, cyan, green, hex, red, underline, yellow} from 'chalk'
 import ora from 'ora'
 
 import {InstrumentCommand} from './instrument'
@@ -153,6 +153,8 @@ export const renderWarning = (warning: string) => `${warningTag} ${warning}\n`
  * ```
  */
 export const renderSoftWarning = (warning: string) => `${warningExclamationSignTag} ${warning}\n`
+
+export const renderSuccess = (message: string) => `${successCheckmarkTag} ${message}\n`
 
 /**
  * @param sourceCodeIntegrationError the error encountered when trying to enable source code integration.
@@ -388,8 +390,11 @@ export const renderUninstrumentingFunctionsSoftWarning = () => renderSoftWarning
  * Fetched 42 Lambda functions.
  * ```
  */
-export const renderFetchedLambdaFunctions = (functionsLength: number) =>
-  `Fetched ${bold(functionsLength)} ${hex('#FF9900').bold('Lambda')} functions.\n`
+export const renderFetchedLambdaFunctions = (functionsLength: number) => {
+  const plural = functionsLength > 1 
+  return `Fetched ${bold(functionsLength)} ${hex('#FF9900').bold('Lambda')} function${plural ? 's' : ''}.\n`
+}
+  
 
 /**
  * @param region the AWS region where the Lambda configs belong to.
@@ -411,8 +416,26 @@ export const renderFetchedLambdaConfigurationsFromRegion = (region: string, conf
  * Updated 42 Lambda functions.
  * ```
  */
-export const renderUpdatedLambdaFunctions = (functionsLength: number) =>
-  `Updated ${bold(functionsLength)} ${hex('#FF9900').bold('Lambda')} functions.\n`
+export const renderUpdatedLambdaFunctions = (functionsLength: number) => {
+  const plural = functionsLength > 1
+  return `Updated ${bold(functionsLength)} ${hex('#FF9900').bold('Lambda')} function${plural ? 's' : ''}.\n`
+}
+  
+
+/**
+ * @param region the AWS region where the Lambda functions belong to.
+ * @param functionsLength the number of Lambda functions that were updated.
+ * @returns a message indicating that it updated Lambda functions from a certain region.
+ *
+ * ```txt
+ * [us-east-1] Updated 42 Lambda functions.
+ * ```
+ */
+export const renderUpdatedLambdaFunctionsFromRegion = (region: string, functionsLength: number) => {
+  const plural = functionsLength > 1
+  return `${bold(`[${region}]`)} Updated ${bold(functionsLength)} ${hex('#FF9900').bold('Lambda')} function${plural ? 's' : ''}.\n`
+}
+  
 
 /**
  * @returns a message indicating that it failed to fetch Lambda functions.
@@ -437,6 +460,21 @@ export const renderFailedFetchingLambdaConfigurationsFromRegion = (region: strin
   `${bold(`[${region}]`)} Failed fetching ${hex('#FF9900').bold('Lambda')} configurations.\n`
 
 /**
+ * @param f the Lambda function which failed to update.
+ * @param error an error message or an object of type `unknown`*.
+ * @returns a message indicating that it failed while updating the Lambda function,
+ * and the given error.
+ *
+ * * Using unknown since we're not type guarding.
+ *
+ * ```txt
+ * [us-east-1] Failed updating ARN Provided error goes here..
+ * ```
+ */
+export const renderFailedUpdatingLambdaFunction = (f: string, error: unknown) =>
+  renderError(`Failed updating ${bold(f)} ${error}`)
+
+/**
  * @returns a message indicating that it failed to update Lambda functions.
  *
  * ```txt
@@ -444,6 +482,28 @@ export const renderFailedFetchingLambdaConfigurationsFromRegion = (region: strin
  * ```
  */
 export const renderFailedUpdatingLambdaFunctions = () => `Failed updating ${hex('#FF9900').bold('Lambda')} functions.\n`
+
+/**
+ * @returns a message indicating that it failed to update all Lambda functions.
+ *
+ * ```txt
+ * Failed updating every Lambda function.
+ * ```
+ */
+export const renderFailedUpdatingEveryLambdaFunction = () =>
+  `Failed updating every ${hex('#FF9900').bold('Lambda')} function.\n`
+
+/**
+ * @param region the AWS region where the Lambda configs belong to.
+ * @returns a message indicating that it failed to update all Lambda functions
+ * from the given region.
+ *
+ * ```txt
+ * [us-east-1] Failed updating every Lambda function.
+ * ```
+ */
+export const renderFailedUpdatingEveryLambdaFunctionFromRegion = (region: string) =>
+  `${bold(`[${region}]`)} Failed updating every ${hex('#FF9900').bold('Lambda')} function.\n`
 
 /**
  * Returns a spinner instance with text for lambda functions fetching.
@@ -493,8 +553,26 @@ export const updatingFunctionsSpinner = (functions: number) =>
     text: `Updating ${bold(functions)} ${hex('#FF9900').bold('Lambda')} functions.\n`,
   })
 
+/**
+ * Returns a spinner instance with text for Lambda functions being updated
+ * from the given region.
+ *
+ * @returns an instance of {@link ora} spinner.
+ *
+ * ```txt
+ * ⠋ [us-east-1] Updating Lambda functions.
+ * ```
+ */
+export const updatingFunctionsConfigFromRegionSpinner = (region: string, functions: number) =>
+  ora({
+    color: 'magenta',
+    discardStdin: false,
+    text: `${bold(`[${region}]`)} Updating ${bold(functions)} ${hex('#FF9900').bold('Lambda')} functions.\n`,
+  })
+
 export const dryRunTag = bold(cyan('[Dry Run]'))
 export const errorTag = bold(red('[Error]'))
 export const warningTag = bold(yellow('[Warning]'))
 
 export const warningExclamationSignTag = bold(yellow('[!]'))
+export const successCheckmarkTag = bold(green('✔'))
