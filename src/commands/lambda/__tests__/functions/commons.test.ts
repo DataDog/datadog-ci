@@ -629,9 +629,8 @@ describe('commons', () => {
       ]
       const cloudWatch = makeMockCloudWatchLogs({})
 
-      for (const config of configs) {
-        await updateLambdaFunctionConfig(lambda as any, cloudWatch as any, config)
-      }
+      await Promise.all(configs.map(async config => updateLambdaFunctionConfig(lambda as any, cloudWatch as any, config)))
+
       expect(lambda.updateFunctionConfiguration).toHaveBeenCalledWith({
         Environment: {
           Variables: {
