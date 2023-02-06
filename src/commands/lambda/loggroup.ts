@@ -11,6 +11,8 @@ export enum SubscriptionState {
   WrongDestinationUnowned,
 }
 
+const MAX_LOG_GROUP_SUBSCRIPTIONS = 2
+
 export const applyLogGroupConfig = async (logs: CloudWatchLogs, config: LogGroupConfiguration) => {
   const {createLogGroupRequest, deleteSubscriptionFilterRequest, subscriptionFilterRequest} = config
   if (createLogGroupRequest !== undefined) {
@@ -49,13 +51,16 @@ export const calculateLogGroupUpdateRequest = async (
       logGroupName,
     }
   }
+
   if (subscriptionState === SubscriptionState.CorrectDestination) {
     // All up to date, nothing to be done
     return
   }
   if (subscriptionState === SubscriptionState.WrongDestinationUnowned) {
     // Can't update, don't own the subscription
-    throw Error(`Unknown subscription filter already on log group ${logGroupName}. Only one subscription is allowed.`)
+    throw Error(
+      `Maximum of ${MAX_LOG_GROUP_SUBSCRIPTIONS} subscription filters already exist on log group ${logGroupName}. Cannot add Datadog forwarder subscription.`
+    )
   }
 
   return config
@@ -110,6 +115,12 @@ export const getSubscriptionFilterState = async (logs: CloudWatchLogs, logGroupN
   if (subscriptionFilters.find((sf) => sf.filterName === SUBSCRIPTION_FILTER_NAME)) {
     // Subscription filter was created by this CI tool
     return SubscriptionState.WrongDestinationOwned
+  }
+
+  // If a non-Datadog subscription already exists but we are still under the max
+  // then we have an empty slot to add the Datadog subscription
+  if (subscriptionFilters.length < MAX_LOG_GROUP_SUBSCRIPTIONS) {
+    return SubscriptionState.Empty
   }
 
   return SubscriptionState.WrongDestinationUnowned
