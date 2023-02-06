@@ -75,7 +75,7 @@ describe('loggroup', () => {
                 }
             `)
     })
-    test('throws an exception when an unowned subscription filter exists', async () => {
+    test('adds the DD filter if an unowned filter exists but another slot is still open', async () => {
       const logs = makeMockCloudWatchLogs({
         '/aws/lambda/my-func': {
           config: {
@@ -92,9 +92,44 @@ describe('loggroup', () => {
           },
         },
       })
+      const result = await calculateLogGroupUpdateRequest(logs as any, '/aws/lambda/my-func', 'my-forwarder')
+      expect(result).toEqual({
+        logGroupName: '/aws/lambda/my-func',
+        subscriptionFilterRequest: {
+          destinationArn: 'my-forwarder',
+          filterName: 'datadog-ci-filter',
+          filterPattern: '',
+          logGroupName: '/aws/lambda/my-func',
+        },
+      })
+    })
+    test('throws an exception when unowned subscriptions are already at AWS max', async () => {
+      const logs = makeMockCloudWatchLogs({
+        '/aws/lambda/my-func': {
+          config: {
+            logGroups: [{logGroupName: '/aws/lambda/my-func'}],
+          },
+          filters: {
+            subscriptionFilters: [
+              {
+                destinationArn: 'wrong-destination',
+                filterName: 'wrong-filter-name',
+                logGroupName: '/aws/lambda/my-func',
+              },
+              {
+                destinationArn: 'wrong-destination-2',
+                filterName: 'wrong-filter-name-2',
+                logGroupName: '/aws/lambda/my-func',
+              },
+            ],
+          },
+        },
+      })
       const promise = calculateLogGroupUpdateRequest(logs as any, '/aws/lambda/my-func', 'my-forwarder')
       await expect(promise).rejects.toEqual(
-        Error('Unknown subscription filter already on log group /aws/lambda/my-func. Only one subscription is allowed.')
+        Error(
+          'Maximum of 2 subscription filters already exist on log group /aws/lambda/my-func. Cannot add Datadog forwarder subscription.'
+        )
       )
     })
     test("doesn't update a subscription when filter is already correct", async () => {
