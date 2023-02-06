@@ -103,6 +103,39 @@ describe('loggroup', () => {
         },
       })
     })
+    test('updates the DD filter if it exists alongside an unowned filter', async () => {
+      const logs = makeMockCloudWatchLogs({
+        '/aws/lambda/my-func': {
+          config: {
+            logGroups: [{logGroupName: '/aws/lambda/my-func'}],
+          },
+          filters: {
+            subscriptionFilters: [
+              {
+                destinationArn: 'unowned-wrong-destination',
+                filterName: 'wrong-filter-name',
+                logGroupName: '/aws/lambda/my-func',
+              },
+              {
+                destinationArn: 'wrong-destination',
+                filterName: SUBSCRIPTION_FILTER_NAME,
+                logGroupName: '/aws/lambda/my-func',
+              },
+            ],
+          },
+        },
+      })
+      const result = await calculateLogGroupUpdateRequest(logs as any, '/aws/lambda/my-func', 'my-forwarder')
+      expect(result).toEqual({
+        logGroupName: '/aws/lambda/my-func',
+        subscriptionFilterRequest: {
+          destinationArn: 'my-forwarder',
+          filterName: 'datadog-ci-filter',
+          filterPattern: '',
+          logGroupName: '/aws/lambda/my-func',
+        },
+      })
+    })
     test('throws an exception when unowned subscriptions are already at AWS max', async () => {
       const logs = makeMockCloudWatchLogs({
         '/aws/lambda/my-func': {
