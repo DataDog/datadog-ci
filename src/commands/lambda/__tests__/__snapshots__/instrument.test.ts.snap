@@ -60,6 +60,16 @@ TagResource -> arn:aws:lambda:us-east-2:123456789012:function:lambda-1-us-east-2
 "
 `;
 
+exports[`lambda instrument execute ensure no git metadata upload flag works 1`] = `
+"Unknown Syntax Error: Command not found; did you mean one of:
+
+  0. ... lambda instrument [-f,--function #0] [--functions-regex,--functionsRegex #0] [-r,--region #0] [-e,--extension-version,--extensionVersion #0] [-v,--layer-version,--layerVersion #0] [--tracing #0] [--merge-xray-traces,--mergeXrayTraces #0] [--flush-metrics-to-logs,--flushMetricsToLogs #0] [-d,--dry] [--config #0] [--forwarder #0] [--log-level,--logLevel #0] [--service #0] [--env #0] [--version #0] [--extra-tags,--extraTags #0] [-s,--source-code-integration,--sourceCodeIntegration] [-u,--upload-git-metadata,--uploadGitMetadata] [-i,--interactive] [--capture-lambda-payload,--captureLambdaPayload #0] [--profile #0]
+  1. ... lambda instrument [-f,--function #0] [--functions-regex,--functionsRegex #0] [-r,--region #0] [-e,--extension-version,--extensionVersion #0] [-v,--layer-version,--layerVersion #0] [--tracing #0] [--merge-xray-traces,--mergeXrayTraces #0] [--flush-metrics-to-logs,--flushMetricsToLogs #0] [-d,--dry] [--config #0] [--forwarder #0] [--log-level,--logLevel #0] [--service #0] [--env #0] [--version #0] [--extra-tags,--extraTags #0] [-s,--source-code-integration,--sourceCodeIntegration] [-u,--upload-git-metadata,--uploadGitMetadata] [-i,--interactive] [--capture-lambda-payload,--captureLambdaPayload #0] [--profile #0]
+
+While running lambda instrument --function arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world --layerVersion 10 --no-git-metadata-upload --service dummy --env dummy --version 0.1
+"
+`;
+
 exports[`lambda instrument execute ensure source code integration flag works from a clean repo 1`] = `
 "
 🐶 Instrumenting Lambda function
