@@ -177,7 +177,7 @@ export class InstrumentCommand extends Command {
 
     if (this.sourceCodeIntegration) {
       try {
-        let gitData = await this.getGitData()
+        const gitData = await this.getGitData()
         if (this.uploadGitMetadata) {
           try {
             await this.uploadGitData()
@@ -549,10 +549,7 @@ InstrumentCommand.addOption(
   'sourceCodeIntegration',
   Command.Boolean('-s,--source-code-integration,--sourceCodeIntegration')
 )
-InstrumentCommand.addOption(
-  'uploadGitMetadata',
-  Command.Boolean('-u,--upload-git-metadata,--uploadGitMetadata')
-)
+InstrumentCommand.addOption('uploadGitMetadata', Command.Boolean('-u,--upload-git-metadata,--uploadGitMetadata'))
 InstrumentCommand.addOption('interactive', Command.Boolean('-i,--interactive'))
 InstrumentCommand.addOption('captureLambdaPayload', Command.String('--capture-lambda-payload,--captureLambdaPayload'))
 InstrumentCommand.addOption('profile', Command.String('--profile'))
