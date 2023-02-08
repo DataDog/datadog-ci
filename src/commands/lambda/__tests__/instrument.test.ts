@@ -394,7 +394,7 @@ describe('lambda', () => {
             'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world',
             '--layerVersion',
             '10',
-            '--no-git-metadata-upload',
+            '--no-upload-git-metadata',
             '--service',
             'dummy',
             '--env',
