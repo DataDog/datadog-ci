@@ -100,7 +100,8 @@ You can pass the following arguments to `instrument` to specify its behavior. Th
 | `--log-level` | | Set to `debug` to see additional output from the Datadog Lambda Library and/or Lambda Extension for troubleshooting purposes. | |
 | `--source-code-integration` | `-s` | Whether to enable Datadog Source Code Integration. This will tag your lambda(s) with the Git repository URL and the latest commit of the current local directory. **Note**: Git repository must not be ahead of remote, and must not be dirty. | `true` |
 | `--no-source-code-integration` | | Disables Datadog Source Code Integration. | |
-
+| `--upload-git-metadata` | `-u` | Whether to enable git metadata uploading, as a part of source code integration. Used to enable Datadog Source Code Integration, if the Datadog Github Integration is not installed. | `true` | 
+| `--no-upload-git-metadata` | | Disables git metadata uploading, as a part of source code integration. Use this parameter if you have the Datadog Github Integration installed. ||
 <br />
 
 #### `uninstrument`
