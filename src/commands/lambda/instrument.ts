@@ -1,10 +1,11 @@
 import {CloudWatchLogs, Lambda} from 'aws-sdk'
 import {bold} from 'chalk'
-import {Command} from 'clipanion'
+import {Cli, Command} from 'clipanion'
 
 import {resolveConfigFromFile, filterAndFormatGithubRemote} from '../../helpers/utils'
 
 import {getCommitInfo, newSimpleGit} from '../git-metadata/git'
+import {UploadCommand} from '../git-metadata/upload'
 
 import {
   AWS_DEFAULT_REGION_ENV_VAR,
@@ -66,6 +67,7 @@ export class InstrumentCommand extends Command {
   private region?: string
   private service?: string
   private sourceCodeIntegration = true
+  private uploadGitMetadata = true
   private tracing?: string
   private version?: string
 
@@ -176,6 +178,13 @@ export class InstrumentCommand extends Command {
     if (this.sourceCodeIntegration) {
       try {
         const gitData = await this.getGitData()
+        if (this.uploadGitMetadata) {
+          try {
+            await this.uploadGitData()
+          } catch (err) {
+            throw Error(`Error uploading git data: ${err}\n`)
+          }
+        }
         if (settings.extraTags) {
           settings.extraTags += `,git.commit.sha:${gitData.commitSha},git.repository_url:${gitData.gitRemote}`
         } else {
@@ -333,6 +342,16 @@ export class InstrumentCommand extends Command {
     const gitRemote = filterAndFormatGithubRemote(currentStatus.remote)
 
     return {commitSha: currentStatus.hash, gitRemote}
+  }
+
+  private async uploadGitData() {
+    const cli = new Cli()
+    cli.register(UploadCommand)
+    if ((await cli.run(['git-metadata', 'upload'], this.context)) !== 0) {
+      throw Error("Couldn't upload git metadata")
+    }
+
+    return
   }
 
   private getSettings(): InstrumentationSettings | undefined {
@@ -530,6 +549,7 @@ InstrumentCommand.addOption(
   'sourceCodeIntegration',
   Command.Boolean('-s,--source-code-integration,--sourceCodeIntegration')
 )
+InstrumentCommand.addOption('uploadGitMetadata', Command.Boolean('-u,--upload-git-metadata,--uploadGitMetadata'))
 InstrumentCommand.addOption('interactive', Command.Boolean('-i,--interactive'))
 InstrumentCommand.addOption('captureLambdaPayload', Command.String('--capture-lambda-payload,--captureLambdaPayload'))
 InstrumentCommand.addOption('profile', Command.String('--profile'))

@@ -327,6 +327,10 @@ describe('lambda', () => {
           remote: 'git.repository_url:git@github.com:datadog/test.git',
           isClean: true,
         }))
+        const mockUploadFunction = jest.spyOn(instrumentCommand.prototype as any, 'uploadGitData')
+        mockUploadFunction.mockImplementation(() => {
+          return
+        })
 
         const cli = new Cli()
         cli.register(instrumentCommand)
@@ -350,6 +354,58 @@ describe('lambda', () => {
           context
         )
         const output = context.stdout.toString()
+        expect(output).toMatchSnapshot()
+        expect(mockUploadFunction).toHaveBeenCalledTimes(1)
+      })
+
+      test('ensure no git metadata upload flag works', async () => {
+        ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({code: 'ENOENT'}))
+        const lambda = makeMockLambda({
+          'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world': {
+            FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world',
+            Handler: 'index.handler',
+            Runtime: 'nodejs12.x',
+          },
+        })
+        ;(Lambda as any).mockImplementation(() => lambda)
+        process.env.DATADOG_API_KEY = '1234'
+        const context = createMockContext() as any
+        const instrumentCommand = InstrumentCommand
+        const mockGitStatus = jest.spyOn(instrumentCommand.prototype as any, 'getCurrentGitStatus')
+        mockGitStatus.mockImplementation(() => ({
+          ahead: 0,
+          hash: '1be168ff837f043bde17c0314341c84271047b31',
+          remote: 'git.repository_url:git@github.com:datadog/test.git',
+          isClean: true,
+        }))
+        const mockUploadFunction = jest.spyOn(instrumentCommand.prototype as any, 'uploadGitData')
+        mockUploadFunction.mockImplementation(() => {
+          return
+        })
+
+        const cli = new Cli()
+        cli.register(instrumentCommand)
+
+        await cli.run(
+          [
+            'lambda',
+            'instrument',
+            '--function',
+            'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world',
+            '--layerVersion',
+            '10',
+            '--no-upload-git-metadata',
+            '--service',
+            'dummy',
+            '--env',
+            'dummy',
+            '--version',
+            '0.1',
+          ],
+          context
+        )
+        const output = context.stdout.toString()
+        expect(mockUploadFunction).toHaveBeenCalledTimes(0)
         expect(output).toMatchSnapshot()
       })
 
