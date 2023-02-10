@@ -1,0 +1,21 @@
+name: Issue labeler
+on:
+  issues:
+    types: [opened]
+permissions:
+  contents: read
+jobs:
+  label-component:
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+    steps:
+      - uses: actions/checkout@v3
+      - name: Parse issue form
+        uses: stefanbuck/github-issue-parser@v3
+        id: issue-parser
+      - name: Set labels based on command
+        uses: redhat-plumbers-in-action/advanced-issue-labeler@v2
+        with:
+          issue-form: ${{ steps.issue-parser.outputs.jsonString }}
+          token: ${{ secrets.GITHUB_TOKEN }}
