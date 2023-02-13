@@ -2,7 +2,7 @@ policy:
   - section:
       - id: [command]
         label:
-          - name: 'ci-visibility'
+          - name: 'ci-app'
             keys: ['junit', 'metric', 'tag', 'trace']
           - name: 'rum'
             keys: ['dsyms', 'flutter-symbols', 'react-native']
