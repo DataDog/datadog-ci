@@ -2,6 +2,7 @@ import fs from 'fs'
 import path from 'path'
 
 import Ajv from 'ajv'
+import addFormats from 'ajv-formats'
 import chalk from 'chalk'
 import {Command} from 'clipanion'
 import glob from 'glob'
@@ -17,6 +18,7 @@ import {buildPath} from '../../helpers/utils'
 
 import {apiConstructor} from './api'
 import {APIHelper, Payload} from './interfaces'
+import sarifJsonSchema from './json-schema/sarif-schema-2.1.0.json'
 import {
   renderCommandInfo,
   renderSuccessfulCommand,
@@ -28,16 +30,20 @@ import {
 import {getBaseIntakeUrl} from './utils'
 
 const errorCodesStopUpload = [400, 403]
+
 const ajv = new Ajv()
+addFormats(ajv)
 
 const validateSarif = (sarifReportPath: string) => {
-  const sarifJsonSchemaValidate = ajv.compile(
-    JSON.parse(String(fs.readFileSync('./json-schema/sarif-schema-2.1.0.json')))
-  )
-  const sarifReportContentString = String(fs.readFileSync(sarifReportPath))
-  const valid = sarifJsonSchemaValidate(sarifReportContentString)
-  if (!valid) {
-    return (sarifJsonSchemaValidate.errors || []).toString()
+  const sarifJsonSchemaValidate = ajv.compile(sarifJsonSchema)
+  try {
+    const sarifReportContent = JSON.parse(String(fs.readFileSync(sarifReportPath)))
+    const valid = sarifJsonSchemaValidate(sarifReportContent)
+    if (!valid) {
+      return sarifJsonSchemaValidate.errors
+    }
+  } catch (error) {
+    return error.message
   }
 
   return undefined
@@ -184,3 +190,10 @@ export class UploadSarifReportCommand extends Command {
     }))
   }
 }
+UploadSarifReportCommand.addPath('sarif', 'upload')
+UploadSarifReportCommand.addOption('service', Command.String('--service'))
+UploadSarifReportCommand.addOption('env', Command.String('--env'))
+UploadSarifReportCommand.addOption('dryRun', Command.Boolean('--dry-run'))
+UploadSarifReportCommand.addOption('tags', Command.Array('--tags'))
+UploadSarifReportCommand.addOption('basePaths', Command.Rest({required: 1}))
+UploadSarifReportCommand.addOption('maxConcurrency', Command.String('--max-concurrency'))

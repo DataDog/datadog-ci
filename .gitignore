@@ -77,3 +77,4 @@ src/commands/react-native/__tests__/fixtures/with-sources-content/main.jsbundle.
 
 # ESLint reports (SARIF format)
 *.sarif
+!src/commands/sarif/__tests__/fixtures/*.sarif
