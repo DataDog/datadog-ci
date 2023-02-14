@@ -209,7 +209,7 @@ export const buildPath = (...args: string[]) =>
         return part.trim().replace(/(^[\/]*|[\/]*$)/g, '')
       }
     })
-    // Filter out emtpy parts
+    // Filter out empty parts
     .filter((x) => x.length)
     // Join all these parts with /
     .join('/')
@@ -226,7 +226,7 @@ export const removeEmptyValues = (tags: SpanTags) =>
     }
   }, {})
 
-export const removeUndefinedValues = <T extends {[key: string]: any}>(object: T): T => {
+export const removeUndefinedValues = <T extends {[key: string]: unknown}>(object: T): T => {
   const newObject = {...object}
   for (const [key, value] of Object.entries(newObject)) {
     if (value === undefined) {
