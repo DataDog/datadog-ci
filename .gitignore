@@ -74,3 +74,6 @@ dist
 
 # Test generated files
 src/commands/react-native/__tests__/fixtures/with-sources-content/main.jsbundle.map.no-sources-content
+
+# ESLint reports (SARIF format)
+*.sarif
