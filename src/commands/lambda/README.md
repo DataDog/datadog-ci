@@ -101,7 +101,7 @@ You can pass the following arguments to `instrument` to specify its behavior. Th
 | `--source-code-integration` | `-s` | Whether to enable [Datadog Source Code Integration][13]. This will tag your lambda(s) with the Git repository URL and the latest commit hash of the current local directory. **Note**: Git repository must not be ahead of remote, and must not be dirty. | `true` |
 | `--no-source-code-integration` | | Disables Datadog Source Code Integration. | |
 | `--upload-git-metadata` | `-u` | Whether to enable Git metadata uploading, as a part of source code integration. Git metadata uploading is only required if you don't have the Datadog Github Integration installed. | `true` | 
-| `--no-upload-git-metadata` | | Disables Git metadata uploading, as a part of source code integration. Use this flag if you have the Datadog Github Integration installed, as this renders Git metadata uploading unnecessary. ||
+| `--no-upload-git-metadata` | | Disables Git metadata uploading, as a part of source code integration. Use this flag if you have the Datadog Github Integration installed, as it renders Git metadata uploading unnecessary. ||
 <br />
 
 #### `uninstrument`
