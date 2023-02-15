@@ -64,3 +64,4 @@ eslint-plugin-prettier,dev,MIT,Copyright © 2017 Andres Suarez and Teddy Katz
 eslint-plugin-no-null,dev,MIT,Copyright (c) 2016 Rene Saarsoo
 @microsoft/eslint-formatter-sarif,dev,MIT,Copyright (c) Microsoft Corporation
 ajv,import,MIT,Copyright (c) 2015-2021 Evgeny Poberezkin
+ajv-formats,import,MIT,Copyright (c) 2020 Evgeny Poberezkin
