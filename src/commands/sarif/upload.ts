@@ -31,10 +31,9 @@ import {getBaseIntakeUrl} from './utils'
 
 const errorCodesStopUpload = [400, 403]
 
-const ajv = new Ajv()
-addFormats(ajv)
-
 const validateSarif = (sarifReportPath: string) => {
+  const ajv = new Ajv()
+  addFormats(ajv)
   const sarifJsonSchemaValidate = ajv.compile(sarifJsonSchema)
   try {
     const sarifReportContent = JSON.parse(String(fs.readFileSync(sarifReportPath)))
