@@ -75,7 +75,7 @@ describe('upload', () => {
       expect(output).toContain(
         renderInvalidFile(
           './src/commands/sarif/__tests__/fixtures/invalid.sarif',
-          'Unexpected token \'h\', "this is an "... is not valid JSON'
+          'Unexpected token h in JSON at position 1'
         )
       )
     })
