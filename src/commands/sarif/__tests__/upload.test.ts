@@ -70,13 +70,13 @@ describe('upload', () => {
 
       const output = context.stdout.toString()
       expect(output).toContain(
+        renderInvalidFile('./src/commands/sarif/__tests__/fixtures/empty.sarif', 'Unexpected end of JSON input')
+      )
+      expect(output).toContain(
         renderInvalidFile(
           './src/commands/sarif/__tests__/fixtures/invalid.sarif',
           'Unexpected token \'h\', "this is an "... is not valid JSON'
         )
-      )
-      expect(output).toContain(
-        renderInvalidFile('./src/commands/sarif/__tests__/fixtures/empty.sarif', 'Unexpected end of JSON input')
       )
     })
     test('should allow single files', async () => {
