@@ -179,7 +179,7 @@ export class RunTestCommand extends Command {
     try {
       this.config = await resolveConfigFromFile(this.config, {
         configPath: this.configPath,
-        defaultConfigPath: this.config.configPath,
+        defaultConfigPaths: [this.config.configPath],
       })
     } catch (error) {
       if (this.configPath) {
