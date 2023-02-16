@@ -39,7 +39,9 @@ const validateSarif = (sarifReportPath: string) => {
     const sarifReportContent = JSON.parse(String(fs.readFileSync(sarifReportPath)))
     const valid = sarifJsonSchemaValidate(sarifReportContent)
     if (!valid) {
-      return sarifJsonSchemaValidate.errors
+      const errors = sarifJsonSchemaValidate.errors || []
+
+      return errors.toString()
     }
   } catch (error) {
     return error.message
