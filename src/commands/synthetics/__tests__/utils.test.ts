@@ -43,6 +43,7 @@ import * as fs from 'fs'
 import process from 'process'
 
 import {default as axios} from 'axios'
+import chalk from 'chalk'
 import deepExtend from 'deep-extend'
 import glob from 'glob'
 
@@ -1256,8 +1257,10 @@ describe('utils', () => {
 
       const startTime = Date.now()
 
+      const orgMaxConcurrencyCap = 1
       const exitCode = utils.renderResults({
         config,
+        orgMaxConcurrencyCap,
         reporter: mockReporter,
         results: testCase.results,
         startTime,
@@ -1275,6 +1278,17 @@ describe('utils', () => {
 
       expect(testCase.summary).toEqual(testCase.expected.summary)
       expect((mockReporter as MockedReporter).runEnd).toHaveBeenCalledWith(testCase.expected.summary, baseUrl)
+
+      // console.log((mockReporter as MockedReporter).log.mock.calls[1][0])
+      expect((mockReporter as MockedReporter).log.mock.calls[0][0]).toBe(
+        `Max parallelization configured: ${orgMaxConcurrencyCap} tests running at the same time\n\n`
+      )
+
+      expect((mockReporter as MockedReporter).log.mock.calls[1][0]).toBe(
+        `Increase your parallelization to reduce your total duration: ${chalk.dim.cyan(
+          baseUrl + 'synthetics/settings/continuous-testing'
+        )}\n\n`
+      )
 
       expect(exitCode).toBe(testCase.expected.exitCode)
     })

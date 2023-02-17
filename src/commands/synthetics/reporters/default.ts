@@ -323,9 +323,10 @@ export class DefaultReporter implements MainReporter {
 
     if (summary.batchId) {
       const batchUrl = getBatchUrl(baseUrl, summary.batchId)
-      lines.push('View test batch in Continuous Testing Explorer: ' + chalk.dim.cyan(batchUrl))
+      lines.push('View full summary in Datadog: ' + chalk.dim.cyan(batchUrl))
     }
-    lines.push(`${b('Run summary:')} ${runSummary.join(', ')}${extraInfoStr}\n\n`)
+    lines.push(`\n${b('Continuous Testing Summary:')}`)
+    lines.push(`Test Results: ${runSummary.join(', ')}${extraInfoStr}\n`)
 
     this.write(lines.join('\n'))
   }

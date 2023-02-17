@@ -391,3 +391,8 @@ export interface PresignedUrlResponse {
     url: string
   }
 }
+
+// not the entire response, but only the slice needed
+export interface SyntheticsSettings {
+  orgMaxConcurrencyCap: number
+}

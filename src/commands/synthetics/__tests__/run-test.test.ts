@@ -206,6 +206,7 @@ describe('run-test', () => {
       )
 
       jest.spyOn(utils, 'runTests').mockResolvedValue(mockTestTriggerResponse)
+      jest.spyOn(utils, 'getSettings').mockResolvedValue({orgMaxConcurrencyCap: 1})
 
       const apiHelper = {
         getBatch: () => ({results: []}),
@@ -426,7 +427,9 @@ describe('run-test', () => {
   describe('execute', () => {
     beforeEach(() => {
       jest.restoreAllMocks()
-      jest.spyOn(runTests, 'executeTests').mockReturnValue(Promise.resolve({results: [], summary: {} as Summary}))
+      jest
+        .spyOn(runTests, 'executeTests')
+        .mockReturnValue(Promise.resolve({orgMaxConcurrencyCap: 0, results: [], summary: {} as Summary}))
       jest.spyOn(utils, 'renderResults').mockImplementation(jest.fn())
     })
 

@@ -32,6 +32,7 @@ import {
   Suite,
   Summary,
   SyntheticsCIConfig,
+  SyntheticsSettings,
   Test,
   TestPayload,
   Trigger,
@@ -264,6 +265,14 @@ const getPollResultMap = async (api: APIHelper, batch: Batch) => {
     return pollResultMap
   } catch (e) {
     throw new EndpointError(`Failed to poll results: ${formatBackendErrors(e)}\n`, e.response?.status)
+  }
+}
+
+export const getSettings = async (api: APIHelper): Promise<SyntheticsSettings> => {
+  try {
+    return await api.getSettings()
+  } catch (e) {
+    throw new EndpointError(`Failed to get settings: ${formatBackendErrors(e)}\n`, e.response?.status)
   }
 }
 
@@ -742,12 +751,14 @@ export const sortResultsByOutcome = () => {
 
 export const renderResults = ({
   config,
+  orgMaxConcurrencyCap,
   reporter,
   results,
   startTime,
   summary,
 }: {
   config: CommandConfig
+  orgMaxConcurrencyCap: number
   reporter: MainReporter
   results: Result[]
   startTime: number
@@ -795,6 +806,14 @@ export const renderResults = ({
   }
 
   reporter.runEnd(summary, getAppBaseURL(config))
+
+  reporter.log(`Max parallelization configured: ${orgMaxConcurrencyCap} tests running at the same time\n\n`)
+
+  reporter.log(
+    `Increase your parallelization to reduce your total duration: ${chalk.dim.cyan(
+      getAppBaseURL(config) + 'synthetics/settings/continuous-testing'
+    )}\n\n`
+  )
 
   return hasSucceeded ? 0 : 1
 }

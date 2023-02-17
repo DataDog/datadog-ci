@@ -25,6 +25,7 @@ import {Tunnel} from './tunnel'
 import {
   getReporter,
   getSuites,
+  getSettings,
   getTestsToTrigger,
   InitialSummary,
   renderResults,
@@ -37,6 +38,7 @@ export const executeTests = async (
   config: CommandConfig,
   suites?: Suite[]
 ): Promise<{
+  orgMaxConcurrencyCap: number
   results: Result[]
   summary: Summary
 }> => {
@@ -155,8 +157,11 @@ export const executeTests = async (
       tunnel
     )
 
+    const {orgMaxConcurrencyCap} = await getSettings(api)
+
     return {
       results,
+      orgMaxConcurrencyCap,
       summary: {
         ...initialSummary,
         batchId: trigger.batch_id,
@@ -284,7 +289,14 @@ export const execute = async (
   }
 
   const mainReporter = getReporter(localReporters)
-  const {results, summary} = await executeTests(mainReporter, localConfig, suites)
+  const {orgMaxConcurrencyCap, results, summary} = await executeTests(mainReporter, localConfig, suites)
 
-  return renderResults({config: localConfig, reporter: mainReporter, results, startTime, summary})
+  return renderResults({
+    config: localConfig,
+    orgMaxConcurrencyCap,
+    reporter: mainReporter,
+    results,
+    startTime,
+    summary,
+  })
 }
