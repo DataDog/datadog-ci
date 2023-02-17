@@ -242,7 +242,7 @@ You can also pass variables as arguments using `--variable KEY=VALUE`.
 yarn datadog-ci synthetics run-tests -f ./component-1/**/*.synthetics.json -v PASSWORD=$PASSWORD
 ```
 
-**Note**: If you are launching your tests with a custom global configuration file, append your command with `--config <PATH_TO_GLOBAL_CONFIG_FILE`.
+**Note**: If you are launching your tests with a custom global configuration file, append your command with `--config <PATH_TO_GLOBAL_CONFIG_FILE>`.
 
 <!-- xxz tab xxx -->
 <!-- xxx tab "NPM" xxx -->
@@ -263,7 +263,7 @@ Then, run:
 npm run datadog-ci-synthetics
 ```
 
-**Note**: If you are launching your tests with a custom global configuration file, append the command associated to your `datadog-ci-synthetics` script with `--config <PATH_TO_GLOBAL_CONFIG_FILE`.
+**Note**: If you are launching your tests with a custom global configuration file, append the command associated to your `datadog-ci-synthetics` script with `--config <PATH_TO_GLOBAL_CONFIG_FILE>`.
 
 <!-- xxz tab xxx -->
 <!-- xxz tabs xxx -->
@@ -339,8 +339,8 @@ You can combine variable overrides with the [Continuous Testing Tunnel][3] to ru
 To verify the Synthetics command works as expected, trigger a test run and verify it returns 0:
 
 ```bash
-export DATADOG_API_KEY='<API key>'
-export DATADOG_APP_KEY='<application key>'
+export DATADOG_API_KEY='<API_KEY>'
+export DATADOG_APP_KEY='<APPLICATION_KEY>'
 
 yarn datadog-ci synthetics run-tests --public-id abc-def-ghi
 ```
