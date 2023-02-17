@@ -13,6 +13,7 @@ export const getFlutterRequestBuilder = (apiKey: string, cliVersion: string, sit
       ['DD-EVP-ORIGIN', 'datadog-ci flutter-symbols'],
       ['DD-EVP-ORIGIN-VERSION', cliVersion],
     ]),
+    overrideUrl: 'api/v2/srcmap',
   })
 
 // This function exists partially just to make mocking networkc calls easier.
