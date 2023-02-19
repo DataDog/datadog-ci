@@ -118,7 +118,7 @@ describe('dd-api', () => {
         shouldBeRetriedOn5xx: true,
       },
       {
-        makeApiRequest: () => api.getSettings(),
+        makeApiRequest: () => api.getSyntheticsOrgSettings(),
         name: 'get settings' as const,
         shouldBeRetriedOn404: false,
         shouldBeRetriedOn5xx: true,
@@ -206,7 +206,7 @@ describe('dd-api', () => {
     const requestMock = jest.fn(() => ({status: 200, data: settings}))
     const spy = jest.spyOn(axios, 'create').mockImplementation((() => requestMock) as any)
 
-    const {getSettings} = apiConstructor(apiConfiguration)
+    const {getSyntheticsOrgSettings: getSettings} = apiConstructor(apiConfiguration)
 
     await expect(getSettings()).resolves.toEqual(settings)
     spy.mockRestore()

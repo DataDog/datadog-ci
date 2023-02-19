@@ -32,7 +32,7 @@ import {
   Suite,
   Summary,
   SyntheticsCIConfig,
-  SyntheticsSettings,
+  SyntheticsOrgSettings,
   Test,
   TestPayload,
   Trigger,
@@ -268,12 +268,18 @@ const getPollResultMap = async (api: APIHelper, batch: Batch) => {
   }
 }
 
-export const getSettings = async (api: APIHelper): Promise<SyntheticsSettings> => {
+export const getOrgSettings = async (
+  api: APIHelper,
+  reporter: MainReporter
+): Promise<SyntheticsOrgSettings | undefined> => {
+  let settings
   try {
-    return await api.getSettings()
+    settings = await api.getSyntheticsOrgSettings()
   } catch (e) {
-    throw new EndpointError(`Failed to get settings: ${formatBackendErrors(e)}\n`, e.response?.status)
+    reporter.error(`Failed to get settings: ${formatBackendErrors(e)}`)
   }
+
+  return settings
 }
 
 const waitForBatchToFinish = async (
@@ -453,10 +459,10 @@ export const getReporter = (reporters: Reporter[]): MainReporter => ({
       }
     }
   },
-  runEnd: (summary, baseUrl) => {
+  runEnd: (summary, baseUrl, orgSettings) => {
     for (const reporter of reporters) {
       if (typeof reporter.runEnd === 'function') {
-        reporter.runEnd(summary, baseUrl)
+        reporter.runEnd(summary, baseUrl, orgSettings)
       }
     }
   },
@@ -749,16 +755,14 @@ export const sortResultsByOutcome = () => {
   return (r1: Result, r2: Result) => outcomeWeight[getResultOutcome(r1)] - outcomeWeight[getResultOutcome(r2)]
 }
 
-export const renderResults = ({
+export const renderResults = async ({
   config,
-  orgMaxConcurrencyCap,
   reporter,
   results,
   startTime,
   summary,
 }: {
   config: CommandConfig
-  orgMaxConcurrencyCap: number
   reporter: MainReporter
   results: Result[]
   startTime: number
@@ -804,16 +808,8 @@ export const renderResults = ({
 
     reporter.resultEnd(result, getAppBaseURL(config))
   }
-
-  reporter.runEnd(summary, getAppBaseURL(config))
-
-  reporter.log(`Max parallelization configured: ${orgMaxConcurrencyCap} tests running at the same time\n\n`)
-
-  reporter.log(
-    `Increase your parallelization to reduce your total duration: ${chalk.dim.cyan(
-      getAppBaseURL(config) + 'synthetics/settings/continuous-testing'
-    )}\n\n`
-  )
+  const settings = await getOrgSettings(getApiHelper(config), reporter)
+  reporter.runEnd(summary, getAppBaseURL(config), settings)
 
   return hasSucceeded ? 0 : 1
 }

@@ -81,10 +81,9 @@ export class RunTestCommand extends Command {
 
     let results: Result[]
     let summary: Summary
-    let orgMaxConcurrencyCap = 0
 
     try {
-      ;({orgMaxConcurrencyCap, results, summary} = await executeTests(this.reporter, this.config))
+      ;({results, summary} = await executeTests(this.reporter, this.config))
     } catch (error) {
       if (error instanceof CiError) {
         this.reportCiError(error, this.reporter)
@@ -121,7 +120,6 @@ export class RunTestCommand extends Command {
 
     return renderResults({
       config: this.config,
-      orgMaxConcurrencyCap,
       reporter: this.reporter,
       results,
       startTime,

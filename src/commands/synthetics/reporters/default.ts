@@ -13,6 +13,7 @@ import {
   MainReporter,
   Result,
   ServerResult,
+  SyntheticsOrgSettings,
   Step,
   Summary,
   Test,
@@ -252,6 +253,7 @@ export class DefaultReporter implements MainReporter {
   private context: BaseContext
   private testWaitSpinner?: ora.Ora
   private write: Writable['write']
+  private totalDuration?: number
 
   constructor({context}: {context: BaseContext}) {
     this.context = context
@@ -274,10 +276,12 @@ export class DefaultReporter implements MainReporter {
   }
 
   public reportStart(timings: {startTime: number}) {
-    const delay = (Date.now() - timings.startTime).toString()
+    this.totalDuration = Date.now() - timings.startTime
 
     this.stopSpinner()
-    this.write(['', chalk.bold.cyan('=== REPORT ==='), `Took ${chalk.bold(delay)}ms`, '\n'].join('\n'))
+    this.write(
+      ['', chalk.bold.cyan('=== REPORT ==='), `Took ${chalk.bold(this.totalDuration).toString()}ms`, '\n'].join('\n')
+    )
   }
 
   public resultEnd(result: Result, baseUrl: string) {
@@ -288,7 +292,7 @@ export class DefaultReporter implements MainReporter {
     return
   }
 
-  public runEnd(summary: Summary, baseUrl: string) {
+  public runEnd(summary: Summary, baseUrl: string, orgSettings?: SyntheticsOrgSettings) {
     const {bold: b, gray, green, red, yellow} = chalk
 
     const lines: string[] = []
@@ -326,7 +330,35 @@ export class DefaultReporter implements MainReporter {
       lines.push('View full summary in Datadog: ' + chalk.dim.cyan(batchUrl))
     }
     lines.push(`\n${b('Continuous Testing Summary:')}`)
-    lines.push(`Test Results: ${runSummary.join(', ')}${extraInfoStr}\n`)
+    lines.push(`Test Results: ${runSummary.join(', ')}${extraInfoStr}`)
+
+    if (orgSettings && orgSettings.orgMaxConcurrencyCap > 0) {
+      lines.push(
+        `Max parallelization configured: ${orgSettings.orgMaxConcurrencyCap} test${
+          orgSettings.orgMaxConcurrencyCap > 1 ? 's' : ''
+        } running at the same time`
+      )
+    }
+
+    if (this.totalDuration) {
+      const min = Math.floor(this.totalDuration / (60 * 1000))
+      const sec = Math.round((this.totalDuration % (60 * 1000)) / 1000)
+      lines.push(
+        `Total Duration:${min > 0 ? ' ' + min.toString() + 'm' : ''}${sec > 0 ? ' ' + sec.toString() + 's' : ''}`
+      )
+    }
+
+    if (
+      orgSettings &&
+      typeof orgSettings.orgMaxConcurrencyCap !== 'undefined' &&
+      orgSettings.orgMaxConcurrencyCap !== 1
+    ) {
+      lines.push(
+        `\nIncrease your parallelization to reduce your total duration: ${chalk.dim.cyan(
+          baseUrl + 'synthetics/settings/continuous-testing'
+        )}\n`
+      )
+    }
 
     this.write(lines.join('\n'))
   }

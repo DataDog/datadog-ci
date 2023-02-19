@@ -191,6 +191,7 @@ describe('Default reporter', () => {
   describe('runEnd', () => {
     beforeEach(() => {
       writeMock.mockClear()
+      reporter.reportStart({startTime: Date.now() - 567890}) // 9m 28s
     })
 
     const baseSummary: Summary = getSummary()
@@ -229,6 +230,18 @@ describe('Default reporter', () => {
 
     test.each(cases)('$description', (testCase) => {
       reporter.runEnd(testCase.summary, MOCK_BASE_URL)
+      const mostRecentOutput = writeMock.mock.calls[writeMock.mock.calls.length - 1][0]
+      expect(mostRecentOutput).toMatchSnapshot()
+    })
+
+    const orgMaxConcurrencyCaps: {description: string; cap: number}[] = [
+      {cap: 0, description: 'communicates 0 parallelization'},
+      {cap: 1, description: 'communicates no (1 test at a time) parallelization'},
+      {cap: 2, description: 'communicates 2 tests parallelization'},
+    ]
+
+    test.each(orgMaxConcurrencyCaps)('$description', (testCase) => {
+      reporter.runEnd({...baseSummary, passed: 1}, MOCK_BASE_URL, {orgMaxConcurrencyCap: testCase.cap})
       const mostRecentOutput = writeMock.mock.calls[writeMock.mock.calls.length - 1][0]
       expect(mostRecentOutput).toMatchSnapshot()
     })

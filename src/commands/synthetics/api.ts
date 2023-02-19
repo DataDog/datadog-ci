@@ -16,7 +16,7 @@ import {
   ServerBatch,
   ServerTest,
   SyntheticsCIConfig,
-  SyntheticsSettings,
+  SyntheticsOrgSettings,
   TestSearchResult,
   Trigger,
 } from './interfaces'
@@ -97,7 +97,9 @@ const searchTests = (request: (args: AxiosRequestConfig) => AxiosPromise<TestSea
   return resp.data
 }
 
-const getSettings = (request: (args: AxiosRequestConfig) => AxiosPromise<SyntheticsSettings>) => async () => {
+const getSyntheticsOrgSettings = (
+  request: (args: AxiosRequestConfig) => AxiosPromise<SyntheticsOrgSettings>
+) => async () => {
   const resp = await retryRequest(
     {
       url: '/synthetics/settings',
@@ -242,7 +244,7 @@ export const apiConstructor = (configuration: APIConfiguration) => {
     getBatch: getBatch(request),
     getMobileApplicationPresignedURL: getMobileApplicationPresignedURL(requestUnstable),
     getTest: getTest(request),
-    getSettings: getSettings(request),
+    getSyntheticsOrgSettings: getSyntheticsOrgSettings(request),
     getTunnelPresignedURL: getTunnelPresignedURL(requestIntake),
     pollResults: pollResults(request),
     searchTests: searchTests(request),
