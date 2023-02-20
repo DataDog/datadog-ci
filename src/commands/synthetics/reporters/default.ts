@@ -351,7 +351,7 @@ export class DefaultReporter implements MainReporter {
     if (
       orgSettings &&
       typeof orgSettings.orgMaxConcurrencyCap !== 'undefined' &&
-      orgSettings.orgMaxConcurrencyCap !== 1
+      orgSettings.orgMaxConcurrencyCap > 0
     ) {
       lines.push(
         `\nIncrease your parallelization to reduce your total duration: ${chalk.dim.cyan(

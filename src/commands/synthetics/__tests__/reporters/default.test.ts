@@ -191,6 +191,7 @@ describe('Default reporter', () => {
   describe('runEnd', () => {
     beforeEach(() => {
       writeMock.mockClear()
+      jest.useFakeTimers()
       reporter.reportStart({startTime: Date.now() - 567890}) // 9m 28s
     })
 

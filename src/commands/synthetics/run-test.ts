@@ -24,6 +24,7 @@ import {JUnitReporter} from './reporters/junit'
 import {Tunnel} from './tunnel'
 import {
   getReporter,
+  getOrgSettings,
   getSuites,
   getTestsToTrigger,
   InitialSummary,
@@ -286,10 +287,13 @@ export const execute = async (
   const mainReporter = getReporter(localReporters)
   const {results, summary} = await executeTests(mainReporter, localConfig, suites)
 
+  const orgSettings = await getOrgSettings(getApiHelper(localConfig), mainReporter)
+
   return renderResults({
     config: localConfig,
     reporter: mainReporter,
     results,
+    orgSettings,
     startTime,
     summary,
   })

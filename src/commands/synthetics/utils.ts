@@ -272,14 +272,11 @@ export const getOrgSettings = async (
   api: APIHelper,
   reporter: MainReporter
 ): Promise<SyntheticsOrgSettings | undefined> => {
-  let settings
   try {
-    settings = await api.getSyntheticsOrgSettings()
+    return await api.getSyntheticsOrgSettings()
   } catch (e) {
     reporter.error(`Failed to get settings: ${formatBackendErrors(e)}`)
   }
-
-  return settings
 }
 
 const waitForBatchToFinish = async (
@@ -755,14 +752,16 @@ export const sortResultsByOutcome = () => {
   return (r1: Result, r2: Result) => outcomeWeight[getResultOutcome(r1)] - outcomeWeight[getResultOutcome(r2)]
 }
 
-export const renderResults = async ({
+export const renderResults = ({
   config,
+  orgSettings,
   reporter,
   results,
   startTime,
   summary,
 }: {
   config: CommandConfig
+  orgSettings: SyntheticsOrgSettings | undefined
   reporter: MainReporter
   results: Result[]
   startTime: number
@@ -808,8 +807,7 @@ export const renderResults = async ({
 
     reporter.resultEnd(result, getAppBaseURL(config))
   }
-  const settings = await getOrgSettings(getApiHelper(config), reporter)
-  reporter.runEnd(summary, getAppBaseURL(config), settings)
+  reporter.runEnd(summary, getAppBaseURL(config), orgSettings)
 
   return hasSucceeded ? 0 : 1
 }

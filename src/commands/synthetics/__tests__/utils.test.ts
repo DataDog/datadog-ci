@@ -1260,10 +1260,9 @@ describe('utils', () => {
 
       const startTime = Date.now()
 
-      jest.spyOn(utils, 'getOrgSettings').mockResolvedValue({orgMaxConcurrencyCap: 1})
-
-      const exitCode = await utils.renderResults({
+      const exitCode = utils.renderResults({
         config,
+        orgSettings: {orgMaxConcurrencyCap: 1},
         reporter: mockReporter,
         results: testCase.results,
         startTime,
