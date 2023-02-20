@@ -49,8 +49,8 @@ export const uploadSarifReport = (request: (args: AxiosRequestConfig) => AxiosPr
     uniqueFileName = `${uniqueFileName}-${metadata[CI_JOB_URL]}`
   }
 
-  form.append('junit_xml_report_file', fs.createReadStream(sarifReport.reportPath).pipe(createGzip()), {
-    filename: `${getSafeFileName(uniqueFileName)}.xml.gz`,
+  form.append('sarif_report_file', fs.createReadStream(sarifReport.reportPath).pipe(createGzip()), {
+    filename: `${getSafeFileName(uniqueFileName)}.json.gz`,
   })
 
   return request({
