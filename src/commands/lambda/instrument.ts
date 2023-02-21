@@ -2,7 +2,7 @@ import {CloudWatchLogs, Lambda} from 'aws-sdk'
 import {bold} from 'chalk'
 import {Cli, Command} from 'clipanion'
 
-import {resolveConfigFromFile, filterAndFormatGithubRemote} from '../../helpers/utils'
+import {resolveConfigFromFile, filterAndFormatGithubRemote, DEFAULT_CONFIG_PATHS} from '../../helpers/utils'
 
 import {getCommitInfo, newSimpleGit} from '../git-metadata/git'
 import {UploadCommand} from '../git-metadata/upload'
@@ -76,7 +76,7 @@ export class InstrumentCommand extends Command {
 
     const lambdaConfig = {lambda: this.config}
     this.config = (
-      await resolveConfigFromFile(lambdaConfig, {configPath: this.configPath, defaultConfigPath: 'datadog-ci.json'})
+      await resolveConfigFromFile(lambdaConfig, {configPath: this.configPath, defaultConfigPaths: DEFAULT_CONFIG_PATHS})
     ).lambda
 
     const profile = this.profile ?? this.config.profile

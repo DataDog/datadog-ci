@@ -10,7 +10,7 @@ import {newApiKeyValidator} from '../../helpers/apikey'
 import {getRepositoryData, RepositoryData} from '../../helpers/git/format-git-sourcemaps-data'
 import {getMetricsLogger, MetricsLogger} from '../../helpers/metrics'
 import {MultipartValue, UploadStatus} from '../../helpers/upload'
-import {buildPath, DEFAULT_CONFIG_PATH, performSubCommand, resolveConfigFromFile} from '../../helpers/utils'
+import {buildPath, DEFAULT_CONFIG_PATHS, performSubCommand, resolveConfigFromFile} from '../../helpers/utils'
 
 import * as dsyms from '../dsyms/upload'
 import {newSimpleGit} from '../git-metadata/git'
@@ -119,7 +119,7 @@ export class UploadCommand extends Command {
 
     this.config = await resolveConfigFromFile(this.config, {
       configPath: this.configPath,
-      defaultConfigPath: DEFAULT_CONFIG_PATH,
+      defaultConfigPaths: DEFAULT_CONFIG_PATHS,
     })
 
     if (!this.disableGit) {

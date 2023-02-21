@@ -9,7 +9,7 @@ import {getRepositoryData, newSimpleGit, RepositoryData} from '../../helpers/git
 import {RequestBuilder} from '../../helpers/interfaces'
 import {getMetricsLogger, MetricsLogger} from '../../helpers/metrics'
 import {upload, UploadStatus} from '../../helpers/upload'
-import {DEFAULT_CONFIG_PATH, getRequestBuilder, resolveConfigFromFile} from '../../helpers/utils'
+import {getRequestBuilder, resolveConfigFromFile} from '../../helpers/utils'
 
 import {RNPlatform, RNSourcemap, RN_SUPPORTED_PLATFORMS} from './interfaces'
 import {
@@ -131,7 +131,7 @@ export class UploadCommand extends Command {
 
     this.config = await resolveConfigFromFile(this.config, {
       configPath: this.configPath,
-      defaultConfigPath: DEFAULT_CONFIG_PATH,
+      defaultConfigPaths: ['datadog-ci.json', '../datadog-ci.json'],
     })
 
     const metricsLogger = getMetricsLogger({
