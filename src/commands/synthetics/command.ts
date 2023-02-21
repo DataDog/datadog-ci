@@ -5,12 +5,13 @@ import deepExtend from 'deep-extend'
 import {removeUndefinedValues, resolveConfigFromFile} from '../../helpers/utils'
 import {isValidDatadogSite} from '../../helpers/validation'
 
+import {getApiHelper} from './api'
 import {CiError, CriticalError} from './errors'
 import {CommandConfig, MainReporter, Reporter, Result, Summary} from './interfaces'
 import {DefaultReporter} from './reporters/default'
 import {JUnitReporter} from './reporters/junit'
 import {executeTests} from './run-test'
-import {getReporter, parseVariablesFromCli, renderResults} from './utils'
+import {getOrgSettings, getReporter, parseVariablesFromCli, renderResults} from './utils'
 
 export const MAX_TESTS_TO_TRIGGER = 100
 
@@ -118,7 +119,16 @@ export class RunTestCommand extends Command {
       )
     }
 
-    return renderResults({config: this.config, reporter: this.reporter, results, startTime, summary})
+    const orgSettings = await getOrgSettings(getApiHelper(this.config), this.reporter)
+
+    return renderResults({
+      config: this.config,
+      orgSettings,
+      reporter: this.reporter,
+      results,
+      startTime,
+      summary,
+    })
   }
 
   private reportCiError(error: CiError, reporter: MainReporter) {

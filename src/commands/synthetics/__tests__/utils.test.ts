@@ -1248,16 +1248,21 @@ describe('utils', () => {
           ))
       )
 
+      jest.spyOn(api, 'getSyntheticsOrgSettings').mockResolvedValue({orgMaxConcurrencyCap: 1})
+
       const config = {
         ...DEFAULT_COMMAND_CONFIG,
         failOnCriticalErrors: testCase.failOnCriticalErrors,
         failOnTimeout: testCase.failOnTimeout,
+        appKey: 'appKey',
+        apiKey: 'apiKey',
       }
 
       const startTime = Date.now()
 
       const exitCode = utils.renderResults({
         config,
+        orgSettings: {orgMaxConcurrencyCap: 1},
         reporter: mockReporter,
         results: testCase.results,
         startTime,
@@ -1274,7 +1279,9 @@ describe('utils', () => {
       }
 
       expect(testCase.summary).toEqual(testCase.expected.summary)
-      expect((mockReporter as MockedReporter).runEnd).toHaveBeenCalledWith(testCase.expected.summary, baseUrl)
+      expect((mockReporter as MockedReporter).runEnd).toHaveBeenCalledWith(testCase.expected.summary, baseUrl, {
+        orgMaxConcurrencyCap: 1,
+      })
 
       expect(exitCode).toBe(testCase.expected.exitCode)
     })
@@ -1324,5 +1331,12 @@ describe('utils', () => {
         })
       ).toBe('https://intake.synthetics.datad0g.com/api/v1')
     })
+  })
+
+  test('getOrgSettings is not that important to throw', async () => {
+    jest.spyOn(api, 'getSyntheticsOrgSettings').mockImplementation(() => {
+      throw getAxiosHttpError(502, {message: 'Server Error'})
+    })
+    expect(await utils.getOrgSettings(api, mockReporter)).toBeUndefined()
   })
 })
