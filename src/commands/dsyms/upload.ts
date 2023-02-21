@@ -173,6 +173,7 @@ export class UploadCommand extends Command {
     return getRequestBuilder({
       apiKey: this.config.apiKey,
       baseUrl: getBaseIntakeUrl(this.config.datadogSite),
+      overrideUrl: 'api/v2/srcmap',
     })
   }
 

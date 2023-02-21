@@ -258,7 +258,7 @@ export class UploadCommand extends Command {
         ['DD-EVP-ORIGIN', 'datadog-ci react-native'],
         ['DD-EVP-ORIGIN-VERSION', this.cliVersion],
       ]),
-      overrideUrl: `v1/input/${this.config.apiKey}`,
+      overrideUrl: 'api/v2/srcmap',
     })
   }
 
