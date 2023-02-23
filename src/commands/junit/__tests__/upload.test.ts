@@ -213,6 +213,21 @@ describe('upload', () => {
         key2: 'value2',
       })
     })
+    test('should parse DD_METRICS environment variable', async () => {
+      process.env.DD_METRICS = 'key1:321,key2:123'
+      const context = createMockContext()
+      const command = new UploadJUnitXMLCommand()
+      const spanTags: SpanTags = await command['getSpanTags'].call({
+        config: {
+          envVarMetrics: process.env.DD_METRICS,
+        },
+        context,
+      })
+      expect(spanTags).toMatchObject({
+        key1: 321,
+        key2: 123,
+      })
+    })
     test('should parse tags argument', async () => {
       const context = createMockContext()
       const command = new UploadJUnitXMLCommand()

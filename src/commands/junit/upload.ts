@@ -14,7 +14,7 @@ import {SpanTags} from '../../helpers/interfaces'
 import {RequestBuilder} from '../../helpers/interfaces'
 import {Logger, LogLevel} from '../../helpers/logger'
 import {retryRequest} from '../../helpers/retry'
-import {parseTags} from '../../helpers/tags'
+import {parseTags, parseMetrics} from '../../helpers/tags'
 import {getUserGitSpanTags} from '../../helpers/user-provided-git'
 import {buildPath, getRequestBuilder, timedExecAsync} from '../../helpers/utils'
 
@@ -71,6 +71,10 @@ export class UploadJUnitXMLCommand extends Command {
         'datadog-ci junit upload --service my-service --tags key1:value1 --tags key2:value2 .',
       ],
       [
+        'Upload all jUnit XML test report files in current directory and add extra metrics globally',
+        'datadog-ci junit upload --service my-service --metrics key1:123 --metrics key2:321 .',
+      ],
+      [
         'Upload all jUnit XML test report files in current directory to the datadoghq.eu site',
         'DATADOG_SITE=datadoghq.eu datadog-ci junit upload --service my-service .',
       ],
@@ -94,11 +98,13 @@ export class UploadJUnitXMLCommand extends Command {
     apiKey: process.env.DATADOG_API_KEY || process.env.DD_API_KEY,
     env: process.env.DD_ENV,
     envVarTags: process.env.DD_TAGS,
+    envVarMetrics: process.env.DD_METRICS,
   }
   private dryRun = false
   private env?: string
   private logs = false
   private maxConcurrency = 20
+  private metrics?: string[]
   private service?: string
   private tags?: string[]
   private rawXPathTags?: string[]
@@ -249,7 +255,9 @@ export class UploadJUnitXMLCommand extends Command {
     const userGitSpanTags = getUserGitSpanTags()
 
     const envVarTags = this.config.envVarTags ? parseTags(this.config.envVarTags.split(',')) : {}
+    const envVarMetrics = this.config.envVarMetrics ? parseMetrics(this.config.envVarMetrics.split(',')) : {}
     const cliTags = this.tags ? parseTags(this.tags) : {}
+    const cliMetrics = this.metrics ? parseMetrics(this.metrics) : {}
 
     return {
       ...gitSpanTags,
@@ -257,6 +265,8 @@ export class UploadJUnitXMLCommand extends Command {
       ...userGitSpanTags,
       ...cliTags,
       ...envVarTags,
+      ...cliMetrics,
+      ...envVarMetrics,
       ...(this.config.env ? {env: this.config.env} : {}),
     }
   }
@@ -293,6 +303,7 @@ UploadJUnitXMLCommand.addOption('service', Command.String('--service'))
 UploadJUnitXMLCommand.addOption('env', Command.String('--env'))
 UploadJUnitXMLCommand.addOption('dryRun', Command.Boolean('--dry-run'))
 UploadJUnitXMLCommand.addOption('tags', Command.Array('--tags'))
+UploadJUnitXMLCommand.addOption('metrics', Command.Array('--metrics'))
 UploadJUnitXMLCommand.addOption('basePaths', Command.Rest({required: 1}))
 UploadJUnitXMLCommand.addOption('maxConcurrency', Command.String('--max-concurrency'))
 UploadJUnitXMLCommand.addOption('logs', Command.Boolean('--logs'))
