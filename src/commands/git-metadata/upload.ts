@@ -159,12 +159,12 @@ export class UploadCommand extends Command {
       }
     }
 
-    const sendPayload = async (payload: CommitInfo) => {
+    const sendPayload = async (commit: CommitInfo) => {
       let status
       if (this.dryRun) {
         status = UploadStatus.Success
       } else {
-        status = await uploadRepository(opts.requestBuilder, this.cliVersion)(payload, {
+        status = await uploadRepository(opts.requestBuilder, this.cliVersion)(commit, {
           apiKeyValidator: opts.apiKeyValidator,
           onError: (e) => {
             this.logger.error(renderFailedUpload(e.message))

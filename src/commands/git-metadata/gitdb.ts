@@ -131,7 +131,7 @@ const getKnownCommits = async (log: Logger, request: RequestBuilder, repoURL: st
   }
 
   return commits.data.map((c) => {
-    if (c.type !== 'commit') {
+    if (c.type !== 'commit' || c.id === undefined) {
       throw new Error('Invalid commit type response')
     }
 
@@ -140,7 +140,7 @@ const getKnownCommits = async (log: Logger, request: RequestBuilder, repoURL: st
 }
 
 const sanitizeCommit = (sha: string) => {
-  const isValidSha = (sha: string) => /[0-9a-f]{40}/.test(sha)
+  const isValidSha = (s: string) => /[0-9a-f]{40}/.test(s)
 
   const sanitizedCommit = sha.replace(/[^0-9a-f]+/g, '')
   if (sanitizedCommit !== sha) {
@@ -170,15 +170,15 @@ const generatePackFilesForCommits = (log: Logger, commits: string[]) => {
     return []
   }
 
-  const generatePackfiles = (path: string) => {
+  const generatePackfiles = (packfilePath: string) => {
     const packObjectResults = child_process
-      .execSync(`git pack-objects --compression=9 --max-pack-size=3m ${path}`, {
+      .execSync(`git pack-objects --compression=9 --max-pack-size=3m ${packfilePath}`, {
         input: commits.join('\n'),
       })
       .toString()
       .split('\n')
       .filter((sha) => sha)
-      .map((sha) => `${path}-${sha}.pack`)
+      .map((sha) => `${packfilePath}-${sha}.pack`)
 
     return packObjectResults
   }
@@ -253,7 +253,7 @@ export const uploadPackfile = async (
     contentType: 'application/octet-stream',
   })
 
-  return await runRequest(log, 'pakfile', () =>
+  return runRequest(log, 'pakfile', () =>
     request({
       url: '/api/v2/git/repository/packfile',
       headers: {
@@ -267,7 +267,7 @@ export const uploadPackfile = async (
 }
 
 const runRequest = async <T>(log: Logger, reqName: string, request: () => Promise<AxiosResponse<T>>) => {
-  return await retryRequest(request, {
+  return retryRequest(request, {
     retries: 2,
     onRetry: (e, attempt) => {
       let errorMessage = `${e}`

@@ -3,23 +3,11 @@ import fs from 'fs'
 import os from 'os'
 
 import {default as axios} from 'axios'
-import * as simpleGit from 'simple-git'
 
 import {getRequestBuilder} from '../../../helpers/utils'
 
-import {newSimpleGit} from '../git'
 import {uploadToGitDB} from '../gitdb'
 import {Logger, LogLevel} from '../utils'
-
-let gitInstance: simpleGit.SimpleGit | undefined
-
-const getGitInstance = async () => {
-  if (gitInstance === undefined) {
-    gitInstance = await newSimpleGit()
-  }
-
-  return gitInstance
-}
 
 describe('gitdb', () => {
   const tmpdir = os.tmpdir()
@@ -53,16 +41,16 @@ describe('gitdb', () => {
     output: O | Error
   }
   interface MockParams {
-    getRemotes: MockParam<void, Object>[]
-    log: MockParam<string[], Object>[]
+    getRemotes: MockParam<void, any>[]
+    log: MockParam<string[], any>[]
     raw: MockParam<string[], string>[]
     execSync: MockParam<string, Buffer>[]
     axios: MockParam<
       {
         url: string
-        data: object | undefined
+        data: any | undefined
       },
-      object
+      any
     >[]
   }
 
@@ -74,13 +62,6 @@ describe('gitdb', () => {
     }
     public execSync: jest.Mock
     public axios: jest.Mock
-    public expectCalls() {
-      this.getRemotesMetExpectations()
-      this.logMetExpectations()
-      this.rawMetExpectations()
-      this.execSyncMetExpectations()
-      this.axiosMetExpectations()
-    }
 
     private getRemotesMetExpectations: () => void
     private logMetExpectations: () => void
@@ -93,7 +74,7 @@ describe('gitdb', () => {
       data: string | undefined
     }[]
 
-    constructor(params: MockParams) {
+    constructor(mockParams: MockParams) {
       this.simpleGit = {
         getRemotes: jest.fn(),
         log: jest.fn(),
@@ -129,17 +110,17 @@ describe('gitdb', () => {
         }
       }
 
-      this.getRemotesMetExpectations = initMockWithParams(this.simpleGit.getRemotes, params.getRemotes, true)
-      this.logMetExpectations = initMockWithParams(this.simpleGit.log, params.log, true)
-      this.rawMetExpectations = initMockWithParams(this.simpleGit.raw, params.raw, true)
-      this.execSyncMetExpectations = initMockWithParams(this.execSync, params.execSync, false)
+      this.getRemotesMetExpectations = initMockWithParams(this.simpleGit.getRemotes, mockParams.getRemotes, true)
+      this.logMetExpectations = initMockWithParams(this.simpleGit.log, mockParams.log, true)
+      this.rawMetExpectations = initMockWithParams(this.simpleGit.raw, mockParams.raw, true)
+      this.execSyncMetExpectations = initMockWithParams(this.execSync, mockParams.execSync, false)
 
       this.axiosCalls = []
 
       // custom way of handling axios
-      params.axios.forEach((param) => {
-        this.axios = this.axios.mockImplementationOnce(() => (request: any) => {
-          this.axiosCalls.push({url: request.url, data: request.data})
+      mockParams.axios.forEach((param) => {
+        this.axios = this.axios.mockImplementationOnce(() => (req: any) => {
+          this.axiosCalls.push({url: req.url, data: req.data})
           if (param.output instanceof Error) {
             throw param.output
           }
@@ -148,8 +129,8 @@ describe('gitdb', () => {
         })
       })
       this.axiosMetExpectations = () => {
-        expect(this.axios.mock.calls).toHaveLength(params.axios.length)
-        params.axios.forEach((param, i) => {
+        expect(this.axios.mock.calls).toHaveLength(mockParams.axios.length)
+        mockParams.axios.forEach((param, i) => {
           if (param.input !== undefined) {
             expect(this.axiosCalls[i].url).toBe(param.input.url)
             if (param.input.data !== undefined) {
@@ -159,6 +140,14 @@ describe('gitdb', () => {
           }
         })
       }
+    }
+
+    public expectCalls() {
+      this.getRemotesMetExpectations()
+      this.logMetExpectations()
+      this.rawMetExpectations()
+      this.execSyncMetExpectations()
+      this.axiosMetExpectations()
     }
   }
 
@@ -171,10 +160,7 @@ describe('gitdb', () => {
       axios: [],
     })
     const upload = uploadToGitDB(logger, request, mocks.simpleGit as any, false)
-    expect(upload).rejects.toThrow(testError)
-    try {
-      await upload
-    } catch (e) {}
+    await expect(upload).rejects.toThrow(testError)
     mocks.expectCalls()
   })
 
@@ -252,8 +238,7 @@ describe('gitdb', () => {
       ],
     })
     const upload = uploadToGitDB(logger, request, mocks.simpleGit as any, false)
-    expect(upload).resolves
-    await upload
+    await expect(upload).resolves.toBe(undefined)
     mocks.expectCalls()
   })
 
@@ -341,8 +326,7 @@ describe('gitdb', () => {
       ],
     })
     const upload = uploadToGitDB(logger, request, mocks.simpleGit as any, false)
-    expect(upload).resolves
-    await upload
+    await expect(upload).resolves.toBe(undefined)
     mocks.expectCalls()
   })
 
@@ -451,8 +435,7 @@ describe('gitdb', () => {
       ],
     })
     const upload = uploadToGitDB(logger, request, mocks.simpleGit as any, false)
-    expect(upload).resolves
-    await upload
+    await expect(upload).resolves.toBe(undefined)
     mocks.expectCalls()
   })
 
@@ -548,10 +531,7 @@ describe('gitdb', () => {
       ],
     })
     const upload = uploadToGitDB(logger, request, mocks.simpleGit as any, false)
-    expect(upload).rejects
-    try {
-      await upload
-    } catch (e) {}
+    await expect(upload).rejects.toThrow('http error')
     mocks.expectCalls()
   })
 
@@ -616,10 +596,7 @@ describe('gitdb', () => {
       ],
     })
     const upload = uploadToGitDB(logger, request, mocks.simpleGit as any, false)
-    expect(upload).rejects
-    try {
-      await upload
-    } catch (e) {}
+    await expect(upload).rejects.toThrow('Invalid commit type response')
     mocks.expectCalls()
   })
 
@@ -700,8 +677,7 @@ describe('gitdb', () => {
       ],
     })
     const upload = uploadToGitDB(logger, request, mocks.simpleGit as any, false)
-    expect(upload).resolves
-    await upload
+    await expect(upload).resolves.toBe(undefined)
     mocks.expectCalls()
   })
 })
