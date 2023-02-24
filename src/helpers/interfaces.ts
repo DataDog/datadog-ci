@@ -1,4 +1,4 @@
-import {AxiosPromise, AxiosRequestConfig, AxiosResponse} from 'axios'
+import {AxiosPromise, AxiosRequestConfig} from 'axios'
 
 import {
   CI_ENV_VARS,
