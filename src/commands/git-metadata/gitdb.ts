@@ -53,10 +53,12 @@ export const uploadToGitDB = async (
     throw err
   }
 
-  let commitsToUpload
+  // Get the list of all objects (commits, trees) to upload. This list can be quite long
+  // so quite memory intensive (multiple MBs).
+  let objectsToUpload
   try {
-    commitsToUpload = await getCommitsToUpload(git, commitsToExclude)
-    log.debug(`${commitsToUpload.length} commits to upload.`)
+    objectsToUpload = await getObjectsToUpload(git, commitsToExclude)
+    log.debug(`${objectsToUpload.length} commits to upload.`)
   } catch (err) {
     log.warn(`Failed getting commits to upload: ${err}`)
     throw err
@@ -64,7 +66,7 @@ export const uploadToGitDB = async (
 
   let packfiles
   try {
-    packfiles = generatePackFilesForCommits(log, commitsToUpload)
+    packfiles = generatePackFilesForCommits(log, objectsToUpload)
     log.debug(`${packfiles.length} packfiles generated.`)
   } catch (err) {
     log.warn(`Failed generating packfiles: ${err}`)
@@ -153,7 +155,7 @@ const sanitizeCommit = (sha: string) => {
   return sanitizedCommit
 }
 
-const getCommitsToUpload = async (git: simpleGit.SimpleGit, commitsToExclude: string[]) => {
+const getObjectsToUpload = async (git: simpleGit.SimpleGit, commitsToExclude: string[]) => {
   const rawResponse = await git.raw(
     ['rev-list', '--objects', '--no-object-names', '--filter=blob:none', '--since="1 month ago"', 'HEAD'].concat(
       commitsToExclude.map((sha) => '^' + sha)
@@ -253,7 +255,7 @@ export const uploadPackfile = async (
     contentType: 'application/octet-stream',
   })
 
-  return runRequest(log, 'pakfile', () =>
+  return runRequest(log, 'packfile', () =>
     request({
       url: '/api/v2/git/repository/packfile',
       headers: {
@@ -266,6 +268,7 @@ export const uploadPackfile = async (
   )
 }
 
+// runRequest will run the passed request, with retries of retriable errors + logging of any retry attempt.
 const runRequest = async <T>(log: Logger, reqName: string, request: () => Promise<AxiosResponse<T>>) => {
   return retryRequest(request, {
     retries: 2,
