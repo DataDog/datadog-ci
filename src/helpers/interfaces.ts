@@ -90,4 +90,4 @@ export type SpanTag =
 
 export type SpanTags = Partial<Record<SpanTag, string>>
 
-export type RequestBuilder = (args: AxiosRequestConfig) => AxiosPromise<AxiosResponse>
+export type RequestBuilder = (args: AxiosRequestConfig) => AxiosPromise
