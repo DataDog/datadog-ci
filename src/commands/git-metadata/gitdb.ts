@@ -1,19 +1,26 @@
-import * as simpleGit from 'simple-git'
-import FormData from 'form-data'
-import os from 'os'
-import fs from 'fs'
-import path from 'path'
 import child_process from 'child_process'
-import {AxiosResponse} from 'axios'
+import fs from 'fs'
+import os from 'os'
+import path from 'path'
 
-import {gitRemote} from './git'
-import {Logger} from './utils'
+import {AxiosResponse} from 'axios'
+import FormData from 'form-data'
+import * as simpleGit from 'simple-git'
+
 import {RequestBuilder} from '../../helpers/interfaces'
 import {retryRequest} from '../../helpers/retry'
 
+import {gitRemote} from './git'
+import {Logger} from './utils'
+
 const API_TIMEOUT = 15000
 
-export const uploadToGitDB = async (log: Logger, request: RequestBuilder, git: simpleGit.SimpleGit, dryRun: boolean) => {
+export const uploadToGitDB = async (
+  log: Logger,
+  request: RequestBuilder,
+  git: simpleGit.SimpleGit,
+  dryRun: boolean
+) => {
   let repoURL
   try {
     repoURL = await getRepoURL(git)
@@ -28,6 +35,7 @@ export const uploadToGitDB = async (log: Logger, request: RequestBuilder, git: s
     latestCommits = await getLatestLocalCommits(git)
     if (latestCommits.length === 0) {
       log.debug('No local commits found.')
+
       return
     }
     log.debug(`${latestCommits.length} commits found, asking GitDB which ones are missing.`)
@@ -65,6 +73,7 @@ export const uploadToGitDB = async (log: Logger, request: RequestBuilder, git: s
 
   if (dryRun) {
     log.debug(`Dry-run enabled, not uploading anything.`)
+
     return
   }
   log.debug(`Uploading packfiles...`)
@@ -81,12 +90,12 @@ const getRepoURL = gitRemote
 
 const getLatestLocalCommits = async (git: simpleGit.SimpleGit) => {
   const logResult = await git.log(['-n 1000', '--since="1 month ago"'])
-  return logResult.all.map(c => c.hash)
+
+  return logResult.all.map((c) => c.hash)
 }
 
 // getKnownCommits asks the backend which of the given commits are already known
 const getKnownCommits = async (log: Logger, request: RequestBuilder, repoURL: string, latestCommits: string[]) => {
-
   interface SearchCommitResponse {
     data: Commit[]
   }
@@ -100,28 +109,32 @@ const getKnownCommits = async (log: Logger, request: RequestBuilder, repoURL: st
     meta: {
       repository_url: repoURL,
     },
-    data: latestCommits.map(commit => ({
+    data: latestCommits.map((commit) => ({
       id: commit,
-      type: 'commit'
-    }))
+      type: 'commit',
+    })),
   })
-  const response = await runRequest(log, "search_commits", () => request({
-    url: '/api/v2/git/repository/search_commits',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    data: localCommitData,
-    method: 'POST',
-    timeout: API_TIMEOUT,
-  }))
-  const commits = (response.data as SearchCommitResponse)
+  const response = await runRequest(log, 'search_commits', () =>
+    request({
+      url: '/api/v2/git/repository/search_commits',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      data: localCommitData,
+      method: 'POST',
+      timeout: API_TIMEOUT,
+    })
+  )
+  const commits = response.data as SearchCommitResponse
   if (!commits || commits.data === undefined) {
     throw new Error(`Invalid API response: ${response}`)
   }
-  return commits.data.map(c => {
+
+  return commits.data.map((c) => {
     if (c.type !== 'commit') {
       throw new Error('Invalid commit type response')
     }
+
     return sanitizeCommit(c.id)
   })
 }
@@ -136,19 +149,18 @@ const sanitizeCommit = (sha: string) => {
   if (!isValidSha(sanitizedCommit)) {
     throw new Error(`Invalid commit format: ${sanitizedCommit}`)
   }
+
   return sanitizedCommit
 }
 
 const getCommitsToUpload = async (git: simpleGit.SimpleGit, commitsToExclude: string[]) => {
-  const rawResponse = await git.raw([
-    'rev-list',
-    '--objects',
-    '--no-object-names',
-    '--filter=blob:none',
-    '--since="1 month ago"',
-    'HEAD',
-  ].concat(commitsToExclude.map(sha => '^' + sha)))
-  const commitsToInclude = rawResponse.split('\n').filter(c => c !== "")
+  const rawResponse = await git.raw(
+    ['rev-list', '--objects', '--no-object-names', '--filter=blob:none', '--since="1 month ago"', 'HEAD'].concat(
+      commitsToExclude.map((sha) => '^' + sha)
+    )
+  )
+  const commitsToInclude = rawResponse.split('\n').filter((c) => c !== '')
+
   return commitsToInclude
 }
 
@@ -159,9 +171,15 @@ const generatePackFilesForCommits = (log: Logger, commits: string[]) => {
   }
 
   const generatePackfiles = (path: string) => {
-    const packObjectResults = child_process.execSync(`git pack-objects --compression=9 --max-pack-size=3m ${path}`, {
-      input: commits.join('\n')
-    }).toString().split('\n').filter(sha => sha).map(sha => `${path}-${sha}.pack`)
+    const packObjectResults = child_process
+      .execSync(`git pack-objects --compression=9 --max-pack-size=3m ${path}`, {
+        input: commits.join('\n'),
+      })
+      .toString()
+      .split('\n')
+      .filter((sha) => sha)
+      .map((sha) => `${path}-${sha}.pack`)
+
     return packObjectResults
   }
 
@@ -170,6 +188,7 @@ const generatePackFilesForCommits = (log: Logger, commits: string[]) => {
     const tmpFolder = os.tmpdir()
     const randomPrefix = String(Math.floor(Math.random() * 10000))
     const tmpPath = path.join(tmpFolder, randomPrefix)
+
     return generatePackfiles(tmpPath)
   } catch (err) {
     /**
@@ -188,26 +207,39 @@ const generatePackFilesForCommits = (log: Logger, commits: string[]) => {
     log.warn(`Generating them in ${process.cwd()} instead`)
     const randomPrefix = String(Math.floor(Math.random() * 10000))
     const cwdPath = path.join(process.cwd(), randomPrefix)
+
     return generatePackfiles(cwdPath)
   }
 }
 
-export const uploadPackfiles = async (log: Logger, request: RequestBuilder, repoURL: string, headCommit: string, packfilePaths: string[]) => {
+export const uploadPackfiles = async (
+  log: Logger,
+  request: RequestBuilder,
+  repoURL: string,
+  headCommit: string,
+  packfilePaths: string[]
+) => {
   // this loop makes sure requests are performed sequentially
   for (const pack of packfilePaths) {
     await uploadPackfile(log, request, repoURL, headCommit, pack)
   }
 }
 
-export const uploadPackfile = async (log: Logger, request: RequestBuilder, repoURL: string, headCommit: string, packfilePath: string) => {
+export const uploadPackfile = async (
+  log: Logger,
+  request: RequestBuilder,
+  repoURL: string,
+  headCommit: string,
+  packfilePath: string
+) => {
   const pushedSha = JSON.stringify({
     data: {
       id: headCommit,
-      type: 'commit'
+      type: 'commit',
     },
     meta: {
-      repository_url: repoURL
-    }
+      repository_url: repoURL,
+    },
   })
 
   const form = new FormData()
@@ -218,24 +250,26 @@ export const uploadPackfile = async (log: Logger, request: RequestBuilder, repoU
   const [, filename] = path.basename(packfilePath).split('-')
   form.append('packfile', packFileContent, {
     filename,
-    contentType: 'application/octet-stream'
+    contentType: 'application/octet-stream',
   })
 
-  return await runRequest(log, 'pakfile', () => request({
-    url: '/api/v2/git/repository/packfile',
-    headers: {
-      ...form.getHeaders(),
-    },
-    timeout: API_TIMEOUT,
-    data: form,
-    method: 'POST',
-  }))
+  return await runRequest(log, 'pakfile', () =>
+    request({
+      url: '/api/v2/git/repository/packfile',
+      headers: {
+        ...form.getHeaders(),
+      },
+      timeout: API_TIMEOUT,
+      data: form,
+      method: 'POST',
+    })
+  )
 }
 
 const runRequest = async <T>(log: Logger, reqName: string, request: () => Promise<AxiosResponse<T>>) => {
   return await retryRequest(request, {
     retries: 2,
-    onRetry: (e, attempt) => { // todo better type than any
+    onRetry: (e, attempt) => {
       let errorMessage = `${e}`
       const maybeHttpError = e as any
       if (maybeHttpError.response && maybeHttpError.response.statusText) {

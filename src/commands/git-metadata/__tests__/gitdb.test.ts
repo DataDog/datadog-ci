@@ -1,25 +1,27 @@
 import child_process from 'child_process'
-import {default as axios} from 'axios'
 import fs from 'fs'
 import os from 'os'
-import {newSimpleGit} from '../git'
-import {Logger, LogLevel} from '../utils'
+
+import {default as axios} from 'axios'
 import * as simpleGit from 'simple-git'
 
-import {uploadToGitDB} from '../gitdb'
 import {getRequestBuilder} from '../../../helpers/utils'
+
+import {newSimpleGit} from '../git'
+import {uploadToGitDB} from '../gitdb'
+import {Logger, LogLevel} from '../utils'
 
 let gitInstance: simpleGit.SimpleGit | undefined
 
 const getGitInstance = async () => {
   if (gitInstance === undefined) {
-    gitInstance = await (newSimpleGit())
+    gitInstance = await newSimpleGit()
   }
+
   return gitInstance
 }
 
 describe('gitdb', () => {
-
   const tmpdir = os.tmpdir()
 
   const temporaryPackFile = `${tmpdir}/1000-87ce64f636853fbebc05edfcefe9cccc28a7968b.pack`
@@ -39,7 +41,7 @@ describe('gitdb', () => {
     fs.unlinkSync(secondTemporaryPackFile)
   })
 
-  const logger = new Logger(_ => {}, LogLevel.INFO)
+  const logger = new Logger((_) => {}, LogLevel.INFO)
   const request = getRequestBuilder({
     apiKey: 'api-key',
     baseUrl: 'https://api.datadoghq.com',
@@ -55,10 +57,13 @@ describe('gitdb', () => {
     log: MockParam<string[], Object>[]
     raw: MockParam<string[], string>[]
     execSync: MockParam<string, Buffer>[]
-    axios: MockParam<{
-      url: string
-      data: object | undefined
-    }, object>[]
+    axios: MockParam<
+      {
+        url: string
+        data: object | undefined
+      },
+      object
+    >[]
   }
 
   class MockAll {
@@ -84,7 +89,7 @@ describe('gitdb', () => {
     private axiosMetExpectations: () => void
 
     private axiosCalls: {
-      url: string,
+      url: string
       data: string | undefined
     }[]
 
@@ -100,9 +105,11 @@ describe('gitdb', () => {
       this.axios = jest.spyOn(axios, 'create').mockImplementation(() => ((_: any) => {}) as any) as jest.Mock
 
       const initMockWithParams = <I, O>(mock: jest.Mock, params: MockParam<I, O>[], promise: boolean) => {
-        params.forEach(param => {
+        params.forEach((param) => {
           if (param.output instanceof Error) {
-            mock = mock.mockImplementationOnce((..._: any) => {throw param.output})
+            mock = mock.mockImplementationOnce((..._: any) => {
+              throw param.output
+            })
           } else {
             if (promise) {
               mock = mock.mockResolvedValueOnce(param.output)
@@ -111,6 +118,7 @@ describe('gitdb', () => {
             }
           }
         })
+
         return () => {
           expect(mock.mock.calls).toHaveLength(params.length)
           params.forEach((param, i) => {
@@ -129,16 +137,15 @@ describe('gitdb', () => {
       this.axiosCalls = []
 
       // custom way of handling axios
-      params.axios.forEach(param => {
-        this.axios = this.axios.mockImplementationOnce(
-          () => (request: any) => {
-            this.axiosCalls.push({url: request.url, data: request.data})
-            if (param.output instanceof Error) {
-              throw param.output
-            }
-            return param.output
+      params.axios.forEach((param) => {
+        this.axios = this.axios.mockImplementationOnce(() => (request: any) => {
+          this.axiosCalls.push({url: request.url, data: request.data})
+          if (param.output instanceof Error) {
+            throw param.output
           }
-        )
+
+          return param.output
+        })
       })
       this.axiosMetExpectations = () => {
         expect(this.axios.mock.calls).toHaveLength(params.axios.length)
@@ -167,8 +174,7 @@ describe('gitdb', () => {
     expect(upload).rejects.toThrow(testError)
     try {
       await upload
-    } catch (e) {
-    }
+    } catch (e) {}
     mocks.expectCalls()
   })
 
@@ -177,29 +183,36 @@ describe('gitdb', () => {
       getRemotes: [
         {
           input: undefined,
-          output: [
-            {name: 'origin', refs: {push: 'https://github.com/DataDog/datadog-ci'}},
-          ]
+          output: [{name: 'origin', refs: {push: 'https://github.com/DataDog/datadog-ci'}}],
         },
       ],
-      log: [{
-        input: ['-n 1000', '--since="1 month ago"'],
-        output: {
-          all: [{
-            hash: '87ce64f636853fbebc05edfcefe9cccc28a7968b',
-          }, {
-            hash: 'cc424c261da5e261b76d982d5d361a023556e2aa',
-          }],
-        }
-      }],
-      raw: [{
-        input: ['rev-list', '--objects', '--no-object-names', '--filter=blob:none', '--since="1 month ago"', 'HEAD'],
-        output: '87ce64f636853fbebc05edfcefe9cccc28a7968b\ncc424c261da5e261b76d982d5d361a023556e2aa\n'
-      }],
-      execSync: [{
-        input: `git pack-objects --compression=9 --max-pack-size=3m ${tmpdir}/1000`,
-        output: Buffer.from('87ce64f636853fbebc05edfcefe9cccc28a7968b\ncc424c261da5e261b76d982d5d361a023556e2aa\n'),
-      }],
+      log: [
+        {
+          input: ['-n 1000', '--since="1 month ago"'],
+          output: {
+            all: [
+              {
+                hash: '87ce64f636853fbebc05edfcefe9cccc28a7968b',
+              },
+              {
+                hash: 'cc424c261da5e261b76d982d5d361a023556e2aa',
+              },
+            ],
+          },
+        },
+      ],
+      raw: [
+        {
+          input: ['rev-list', '--objects', '--no-object-names', '--filter=blob:none', '--since="1 month ago"', 'HEAD'],
+          output: '87ce64f636853fbebc05edfcefe9cccc28a7968b\ncc424c261da5e261b76d982d5d361a023556e2aa\n',
+        },
+      ],
+      execSync: [
+        {
+          input: `git pack-objects --compression=9 --max-pack-size=3m ${tmpdir}/1000`,
+          output: Buffer.from('87ce64f636853fbebc05edfcefe9cccc28a7968b\ncc424c261da5e261b76d982d5d361a023556e2aa\n'),
+        },
+      ],
       axios: [
         {
           input: {
@@ -249,31 +262,44 @@ describe('gitdb', () => {
       getRemotes: [
         {
           input: undefined,
-          output: [
-            {name: 'origin', refs: {push: 'https://github.com/DataDog/datadog-ci'}},
-          ]
+          output: [{name: 'origin', refs: {push: 'https://github.com/DataDog/datadog-ci'}}],
         },
       ],
-      log: [{
-        input: ['-n 1000', '--since="1 month ago"'],
-        output: {
-          all: [{
-            hash: '87ce64f636853fbebc05edfcefe9cccc28a7968b',
-          }, {
-            hash: 'cc424c261da5e261b76d982d5d361a023556e2aa',
-          }],
-        }
-      }],
-      raw: [{
-        input: ['rev-list', '--objects', '--no-object-names', '--filter=blob:none', '--since="1 month ago"', 'HEAD',
-          '^87ce64f636853fbebc05edfcefe9cccc28a7968b',
-        ],
-        output: 'cc424c261da5e261b76d982d5d361a023556e2aa\n'
-      }],
-      execSync: [{
-        input: `git pack-objects --compression=9 --max-pack-size=3m ${tmpdir}/1000`,
-        output: Buffer.from('cc424c261da5e261b76d982d5d361a023556e2aa\n'),
-      }],
+      log: [
+        {
+          input: ['-n 1000', '--since="1 month ago"'],
+          output: {
+            all: [
+              {
+                hash: '87ce64f636853fbebc05edfcefe9cccc28a7968b',
+              },
+              {
+                hash: 'cc424c261da5e261b76d982d5d361a023556e2aa',
+              },
+            ],
+          },
+        },
+      ],
+      raw: [
+        {
+          input: [
+            'rev-list',
+            '--objects',
+            '--no-object-names',
+            '--filter=blob:none',
+            '--since="1 month ago"',
+            'HEAD',
+            '^87ce64f636853fbebc05edfcefe9cccc28a7968b',
+          ],
+          output: 'cc424c261da5e261b76d982d5d361a023556e2aa\n',
+        },
+      ],
+      execSync: [
+        {
+          input: `git pack-objects --compression=9 --max-pack-size=3m ${tmpdir}/1000`,
+          output: Buffer.from('cc424c261da5e261b76d982d5d361a023556e2aa\n'),
+        },
+      ],
       axios: [
         {
           input: {
@@ -296,11 +322,13 @@ describe('gitdb', () => {
           },
           output: {
             data: {
-              data: [{
-                id: '87ce64f636853fbebc05edfcefe9cccc28a7968b',
-                type: 'commit',
-              }]
-            }
+              data: [
+                {
+                  id: '87ce64f636853fbebc05edfcefe9cccc28a7968b',
+                  type: 'commit',
+                },
+              ],
+            },
           },
         },
         {
@@ -323,31 +351,44 @@ describe('gitdb', () => {
       getRemotes: [
         {
           input: undefined,
-          output: [
-            {name: 'origin', refs: {push: 'https://github.com/DataDog/datadog-ci'}},
-          ]
+          output: [{name: 'origin', refs: {push: 'https://github.com/DataDog/datadog-ci'}}],
         },
       ],
-      log: [{
-        input: ['-n 1000', '--since="1 month ago"'],
-        output: {
-          all: [{
-            hash: '87ce64f636853fbebc05edfcefe9cccc28a7968b',
-          }, {
-            hash: 'cc424c261da5e261b76d982d5d361a023556e2aa',
-          }],
-        }
-      }],
-      raw: [{
-        input: ['rev-list', '--objects', '--no-object-names', '--filter=blob:none', '--since="1 month ago"', 'HEAD',
-          '^87ce64f636853fbebc05edfcefe9cccc28a7968b',
-        ],
-        output: 'cc424c261da5e261b76d982d5d361a023556e2aa\n'
-      }],
-      execSync: [{
-        input: `git pack-objects --compression=9 --max-pack-size=3m ${tmpdir}/1000`,
-        output: Buffer.from('cc424c261da5e261b76d982d5d361a023556e2aa\n'),
-      }],
+      log: [
+        {
+          input: ['-n 1000', '--since="1 month ago"'],
+          output: {
+            all: [
+              {
+                hash: '87ce64f636853fbebc05edfcefe9cccc28a7968b',
+              },
+              {
+                hash: 'cc424c261da5e261b76d982d5d361a023556e2aa',
+              },
+            ],
+          },
+        },
+      ],
+      raw: [
+        {
+          input: [
+            'rev-list',
+            '--objects',
+            '--no-object-names',
+            '--filter=blob:none',
+            '--since="1 month ago"',
+            'HEAD',
+            '^87ce64f636853fbebc05edfcefe9cccc28a7968b',
+          ],
+          output: 'cc424c261da5e261b76d982d5d361a023556e2aa\n',
+        },
+      ],
+      execSync: [
+        {
+          input: `git pack-objects --compression=9 --max-pack-size=3m ${tmpdir}/1000`,
+          output: Buffer.from('cc424c261da5e261b76d982d5d361a023556e2aa\n'),
+        },
+      ],
       axios: [
         {
           input: {
@@ -391,11 +432,13 @@ describe('gitdb', () => {
           },
           output: {
             data: {
-              data: [{
-                id: '87ce64f636853fbebc05edfcefe9cccc28a7968b',
-                type: 'commit',
-              }]
-            }
+              data: [
+                {
+                  id: '87ce64f636853fbebc05edfcefe9cccc28a7968b',
+                  type: 'commit',
+                },
+              ],
+            },
           },
         },
         {
@@ -418,21 +461,24 @@ describe('gitdb', () => {
       getRemotes: [
         {
           input: undefined,
-          output: [
-            {name: 'origin', refs: {push: 'https://github.com/DataDog/datadog-ci'}},
-          ]
+          output: [{name: 'origin', refs: {push: 'https://github.com/DataDog/datadog-ci'}}],
         },
       ],
-      log: [{
-        input: ['-n 1000', '--since="1 month ago"'],
-        output: {
-          all: [{
-            hash: '87ce64f636853fbebc05edfcefe9cccc28a7968b',
-          }, {
-            hash: 'cc424c261da5e261b76d982d5d361a023556e2aa',
-          }],
-        }
-      }],
+      log: [
+        {
+          input: ['-n 1000', '--since="1 month ago"'],
+          output: {
+            all: [
+              {
+                hash: '87ce64f636853fbebc05edfcefe9cccc28a7968b',
+              },
+              {
+                hash: 'cc424c261da5e261b76d982d5d361a023556e2aa',
+              },
+            ],
+          },
+        },
+      ],
       raw: [],
       execSync: [],
       axios: [
@@ -505,8 +551,7 @@ describe('gitdb', () => {
     expect(upload).rejects
     try {
       await upload
-    } catch (e) {
-    }
+    } catch (e) {}
     mocks.expectCalls()
   })
 
@@ -515,21 +560,24 @@ describe('gitdb', () => {
       getRemotes: [
         {
           input: undefined,
-          output: [
-            {name: 'origin', refs: {push: 'https://github.com/DataDog/datadog-ci'}},
-          ]
+          output: [{name: 'origin', refs: {push: 'https://github.com/DataDog/datadog-ci'}}],
         },
       ],
-      log: [{
-        input: ['-n 1000', '--since="1 month ago"'],
-        output: {
-          all: [{
-            hash: '87ce64f636853fbebc05edfcefe9cccc28a7968b',
-          }, {
-            hash: 'cc424c261da5e261b76d982d5d361a023556e2aa',
-          }],
-        }
-      }],
+      log: [
+        {
+          input: ['-n 1000', '--since="1 month ago"'],
+          output: {
+            all: [
+              {
+                hash: '87ce64f636853fbebc05edfcefe9cccc28a7968b',
+              },
+              {
+                hash: 'cc424c261da5e261b76d982d5d361a023556e2aa',
+              },
+            ],
+          },
+        },
+      ],
       raw: [],
       execSync: [],
       axios: [
@@ -557,13 +605,12 @@ describe('gitdb', () => {
               data: [
                 {
                   type: 'commit',
-
                 },
                 {
                   type: 'commit',
                 },
-              ]
-            }
+              ],
+            },
           },
         },
       ],
@@ -572,8 +619,7 @@ describe('gitdb', () => {
     expect(upload).rejects
     try {
       await upload
-    } catch (e) {
-    }
+    } catch (e) {}
     mocks.expectCalls()
   })
 
@@ -582,27 +628,39 @@ describe('gitdb', () => {
       getRemotes: [
         {
           input: undefined,
-          output: [
-            {name: 'origin', refs: {push: 'https://github.com/DataDog/datadog-ci'}},
-          ]
+          output: [{name: 'origin', refs: {push: 'https://github.com/DataDog/datadog-ci'}}],
         },
       ],
-      log: [{
-        input: ['-n 1000', '--since="1 month ago"'],
-        output: {
-          all: [{
-            hash: '87ce64f636853fbebc05edfcefe9cccc28a7968b',
-          }, {
-            hash: 'cc424c261da5e261b76d982d5d361a023556e2aa',
-          }],
-        }
-      }],
-      raw: [{
-        input: ['rev-list', '--objects', '--no-object-names', '--filter=blob:none', '--since="1 month ago"', 'HEAD',
-          '^87ce64f636853fbebc05edfcefe9cccc28a7968b', '^cc424c261da5e261b76d982d5d361a023556e2aa',
-        ],
-        output: '\n'
-      }],
+      log: [
+        {
+          input: ['-n 1000', '--since="1 month ago"'],
+          output: {
+            all: [
+              {
+                hash: '87ce64f636853fbebc05edfcefe9cccc28a7968b',
+              },
+              {
+                hash: 'cc424c261da5e261b76d982d5d361a023556e2aa',
+              },
+            ],
+          },
+        },
+      ],
+      raw: [
+        {
+          input: [
+            'rev-list',
+            '--objects',
+            '--no-object-names',
+            '--filter=blob:none',
+            '--since="1 month ago"',
+            'HEAD',
+            '^87ce64f636853fbebc05edfcefe9cccc28a7968b',
+            '^cc424c261da5e261b76d982d5d361a023556e2aa',
+          ],
+          output: '\n',
+        },
+      ],
       execSync: [],
       axios: [
         {
@@ -630,14 +688,13 @@ describe('gitdb', () => {
                 {
                   id: '87ce64f636853fbebc05edfcefe9cccc28a7968b',
                   type: 'commit',
-
                 },
                 {
                   id: 'cc424c261da5e261b76d982d5d361a023556e2aa',
                   type: 'commit',
                 },
-              ]
-            }
+              ],
+            },
           },
         },
       ],

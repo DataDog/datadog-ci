@@ -3,6 +3,7 @@ import chalk from 'chalk'
 export const timedExecAsync = async <I, O>(f: (input: I) => Promise<O>, input: I): Promise<number> => {
   const initialTime = Date.now()
   await f(input)
+
   return (Date.now() - initialTime) / 1000
 }
 

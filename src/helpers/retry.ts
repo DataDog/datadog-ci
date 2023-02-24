@@ -11,6 +11,7 @@ export const retryRequest = async <T>(requestPerformer: () => Promise<T>, retryO
       if (error.response && errorCodesNoRetry.includes(error.response.status)) {
         // If it's an axios error with a status code that is excluded from retries, we bail to avoid retrying
         bail(error)
+
         // bail interrupt the flow by throwing an exception, the code below is not executed
         return {} as T
       }

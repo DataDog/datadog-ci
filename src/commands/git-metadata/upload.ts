@@ -11,7 +11,6 @@ import {getRequestBuilder} from '../../helpers/utils'
 
 import {apiHost, datadogSite, getBaseIntakeUrl} from './api'
 import {getCommitInfo, newSimpleGit} from './git'
-import {Logger, LogLevel, timedExecAsync} from './utils'
 import {uploadToGitDB} from './gitdb'
 import {CommitInfo} from './interfaces'
 import {uploadRepository} from './library'
@@ -23,6 +22,7 @@ import {
   renderRetriedUpload,
   renderSuccessfulCommand,
 } from './renderer'
+import {Logger, LogLevel, timedExecAsync} from './utils'
 
 export class UploadCommand extends Command {
   public static usage = Command.Usage({
@@ -43,8 +43,10 @@ export class UploadCommand extends Command {
   private dryRun = false
   private verbose = false
   private gitSync = false
-  private directory = ""
-  private logger: Logger = new Logger((s: string) => {this.context.stdout.write(s)}, LogLevel.INFO)
+  private directory = ''
+  private logger: Logger = new Logger((s: string) => {
+    this.context.stdout.write(s)
+  }, LogLevel.INFO)
 
   constructor() {
     super()
@@ -54,7 +56,9 @@ export class UploadCommand extends Command {
   public async execute() {
     const initialTime = Date.now()
     if (this.verbose) {
-      this.logger = new Logger((s: string) => {this.context.stdout.write(s)}, LogLevel.DEBUG)
+      this.logger = new Logger((s: string) => {
+        this.context.stdout.write(s)
+      }, LogLevel.DEBUG)
     }
     if (this.dryRun) {
       this.logger.warn(renderDryRunWarning())
@@ -71,6 +75,7 @@ export class UploadCommand extends Command {
           new InvalidConfigurationError(`Missing ${chalk.bold('DATADOG_API_KEY')} in your environment`)
         )
       )
+
       return 1
     }
 
@@ -93,11 +98,11 @@ export class UploadCommand extends Command {
       this.logger.info('Uploading list of tracked files...')
       const elapsed = await timedExecAsync(this.uploadToSrcmapTrack.bind(this), {
         requestBuilder: srcmapRequestBuilder,
-        apiKeyValidator: apiKeyValidator,
-        metricsLogger: metricsLogger,
+        apiKeyValidator,
+        metricsLogger,
       })
       metricsLogger.logger.increment('sci.success', 1)
-      this.logger.info(`${(this.dryRun ? '[DRYRUN] ' : '')}Successfully uploaded tracked files in ${elapsed} seconds.`)
+      this.logger.info(`${this.dryRun ? '[DRYRUN] ' : ''}Successfully uploaded tracked files in ${elapsed} seconds.`)
     } catch (err) {
       this.logger.error(`Failed upload of tracked files: ${err}`)
       inError = true
@@ -109,10 +114,10 @@ export class UploadCommand extends Command {
         const elapsed = await timedExecAsync(this.uploadToGitDB.bind(this), {
           requestBuilder: apiRequestBuilder,
           verbose: this.verbose,
-          dryRun: this.dryRun
+          dryRun: this.dryRun,
         })
         metricsLogger.logger.increment('gitdb.success', 1)
-        this.logger.info(`${(this.dryRun ? '[DRYRUN] ' : '')}Successfully synced git DB in ${elapsed} seconds.`)
+        this.logger.info(`${this.dryRun ? '[DRYRUN] ' : ''}Successfully synced git DB in ${elapsed} seconds.`)
       } catch (err) {
         console.log('error writing to git db')
         this.logger.warn(`Could not write to GitDB: ${err}`)
@@ -125,23 +130,23 @@ export class UploadCommand extends Command {
       this.logger.warn(`WARN: ${err}`)
     }
     if (inError) {
-      this.logger.error("Command failed. See messages above for more details.")
+      this.logger.error('Command failed. See messages above for more details.')
+
       return 1
     }
     this.logger.info(renderSuccessfulCommand((Date.now() - initialTime) / 1000, this.dryRun))
+
     return 0
   }
 
-  private async uploadToGitDB(opts: {
-    requestBuilder: RequestBuilder,
-  }) {
+  private async uploadToGitDB(opts: {requestBuilder: RequestBuilder}) {
     await uploadToGitDB(this.logger, opts.requestBuilder, await newSimpleGit(), this.dryRun)
   }
 
   private async uploadToSrcmapTrack(opts: {
-    requestBuilder: RequestBuilder,
-    apiKeyValidator: ApiKeyValidator,
-    metricsLogger: MetricsLogger,
+    requestBuilder: RequestBuilder
+    apiKeyValidator: ApiKeyValidator
+    metricsLogger: MetricsLogger
   }) {
     const generatePayload = async () => {
       try {
@@ -188,7 +193,7 @@ export class UploadCommand extends Command {
 
   private getSrcmapRequestBuilder(apiKey: string): RequestBuilder {
     return getRequestBuilder({
-      apiKey: apiKey,
+      apiKey,
       baseUrl: getBaseIntakeUrl(),
       headers: new Map([
         ['DD-EVP-ORIGIN', 'datadog-ci git-metadata'],
@@ -200,7 +205,7 @@ export class UploadCommand extends Command {
 
   private getApiRequestBuilder(apiKey: string): RequestBuilder {
     return getRequestBuilder({
-      apiKey: apiKey,
+      apiKey,
       baseUrl: 'https://' + apiHost,
     })
   }

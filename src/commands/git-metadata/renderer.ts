@@ -6,8 +6,7 @@ import {CommitInfo} from './interfaces'
 
 export const renderConfigurationError = (error: Error) => `${ICONS.FAILED} Configuration error: ${error}.`
 
-export const renderFailedUpload = (errorMessage: string) =>
-  `${ICONS.FAILED} Failed upload: ${errorMessage}`
+export const renderFailedUpload = (errorMessage: string) => `${ICONS.FAILED} Failed upload: ${errorMessage}`
 
 export const renderRetriedUpload = (errorMessage: string, attempt: number) =>
   `[attempt ${attempt}] Retrying upload: ${errorMessage}`
