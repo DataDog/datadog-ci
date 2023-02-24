@@ -58,9 +58,9 @@ export const uploadToGitDB = async (
   let objectsToUpload
   try {
     objectsToUpload = await getObjectsToUpload(git, commitsToExclude)
-    log.debug(`${objectsToUpload.length} commits to upload.`)
+    log.debug(`${objectsToUpload.length} objects to upload.`)
   } catch (err) {
-    log.warn(`Failed getting commits to upload: ${err}`)
+    log.warn(`Failed getting objects to upload: ${err}`)
     throw err
   }
 
