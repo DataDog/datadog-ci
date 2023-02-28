@@ -8,6 +8,7 @@ src/commands/junit   @DataDog/ci-app-libraries
 src/commands/metric  @DataDog/ci-app-libraries
 src/commands/tag     @DataDog/ci-app-libraries
 src/commands/trace   @DataDog/ci-app-libraries
+src/commands/sbom    @DataDog/ci-app-libraries
 
 ## RUM
 src/commands/dsyms            @DataDog/rum-mobile
