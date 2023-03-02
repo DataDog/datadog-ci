@@ -74,3 +74,12 @@ dist
 
 # Test generated files
 src/commands/react-native/__tests__/fixtures/with-sources-content/main.jsbundle.map.no-sources-content
+
+# Yarn non zero-install. See: https://yarnpkg.com/getting-started/qa#which-files-should-be-gitignored
+.pnp.*
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/sdks
+!.yarn/versions
