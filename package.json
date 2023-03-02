@@ -4,9 +4,7 @@
   "description": "Run datadog actions from the CI.",
   "repository": "https://github.com/DataDog/datadog-ci",
   "license": "Apache-2.0",
-  "bin": {
-    "datadog-ci": "dist/cli.js"
-  },
+  "bin": "dist/cli.js",
   "engines": {
     "node": ">=14"
   },
@@ -71,7 +69,7 @@
     "inquirer-checkbox-plus-prompt": "^1.4.2",
     "js-yaml": "3.13.1",
     "ora": "5.4.1",
-    "protobufjs": "7.2.2",
+    "protobufjs": "^7.2.2",
     "proxy-agent": "5.0.0",
     "rimraf": "^3.0.2",
     "semver": "^7.3.7",
