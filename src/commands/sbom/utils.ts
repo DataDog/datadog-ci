@@ -5,5 +5,4 @@ export const getBaseIntakeUrl = () => {
 
   // return 'https://sbom-intake.datadoghq.com'
   return 'https://sbom-intake.datad0g.com'
-  // return 'https://webhook.site'
 }

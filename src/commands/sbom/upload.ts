@@ -17,8 +17,10 @@ import {parseTags} from '../../helpers/tags'
 import {getUserGitSpanTags} from '../../helpers/user-provided-git'
 import {buildPath} from '../../helpers/utils'
 
-// import {apiConstructor} from './api'
+import {apiConstructor} from './api'
+import {getBaseIntakeUrl} from './utils'
 import {APIHelper, SBomFileObject} from './interfaces'
+
 import cycloneDxJsonSchema from './json-schema/cyclonedx/bom-1.4.schema.json'
 import spdxJsonSchema from './json-schema/spdx/spdx.schema.json'
 import jsfJsonSchema from './json-schema/jsf-0.82.schema.json'
@@ -30,8 +32,6 @@ import {
   renderFailedUpload,
   renderInvalidFile,
 } from './renderer'
-import {apiConstructor} from './api'
-import {getBaseIntakeUrl} from './utils'
 
 import { SBOMEntity, SBOMPayload, SBOMSourceType } from './pb/sbom_intake'
 import { Bom } from './pb/bom-1.4'
@@ -91,26 +91,6 @@ export class UploadSBomFileCommand extends Command {
         const spanTagsAsStringArray = Object.keys(spanTags)
             .map(key => `${key}:${spanTags[key as keyof SpanTags]}`)
 
-            /*
-        const sbomEntities = this.getMatchingSBomFiles().map(sbomFile => {
-            const sbomEntity = SBOMEntity.create({
-                id: sbomFile.filePath,
-                type: SBOMSourceType.UNSPECIFIED,
-                generatedAt: initialDate,
-                tags: spanTagsAsStringArray,
-                cyclonedx: Bom.fromJSON(sbomFile.content)
-            })
-            return sbomEntity
-        })
-
-        const sbomPayload = SBOMPayload.create({ 
-            host: os.hostname(),
-            source: "CI",
-            entities: sbomEntities
-        })
-
-        */
-
         const sbomPayloads = this.getMatchingSBomFiles().map(sbomFile => {
           return SBOMPayload.create({ 
             host: os.hostname(),
@@ -128,7 +108,6 @@ export class UploadSBomFileCommand extends Command {
         const api = this.getApiHelper()
         const upload = (payload: SBOMPayload) => this.uploadSBomPayload(api, payload)
 
-        // await asyncPool(this.maxConcurrency, [ sbomPayload ], upload)
         await asyncPool(this.maxConcurrency, sbomPayloads, upload)
 
         const initialTime = initialDate.getTime()
@@ -136,12 +115,6 @@ export class UploadSBomFileCommand extends Command {
         this.context.stdout.write(
             renderSuccessfulCommand(sbomPayloads.length, totalTimeSeconds, spanTags, this.service, this.config.env)
         )
-
-        // var buffer = SBOMPayload.encode(sbomPayload).finish();
-        // fs.writeFileSync("/var/tmp/sbompayload.pbytes", buffer);
-
-        // var sbomPayloadJson = SBOMPayload.toJSON(sbomPayload)
-        // fs.writeFileSync("/var/tmp/sbompayload.json", JSON.stringify(sbomPayloadJson, null, "  "))
     }
 
     private async getSpanTags(): Promise<SpanTags> {

@@ -21,12 +21,13 @@ export const uploadSBomPayload = (request: (args: AxiosRequestConfig) => AxiosPr
   return request({
     data: buffer,
     headers: {
-      'Content-Type': 'application/x-protobuf'
+      'Content-Type': 'application/x-protobuf',
+      'DD-EVP-ORIGIN': 'datadog-ci',
+      'DD-EVP-ORIGIN-VERSION': '0.0.1',
     },
     maxBodyLength: maxBodyLength,
     method: 'POST',
     url: 'api/v2/sbom',
-    // url: 'ca31f1bc-7978-43c0-b918-89ee0bf5e0df',
   })
 }
 
