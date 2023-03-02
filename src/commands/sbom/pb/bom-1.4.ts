@@ -4,6 +4,16 @@ import { Timestamp } from "./google/protobuf/timestamp";
 
 export const protobufPackage = "cyclonedx.v1_4";
 
+interface CustomMessage<T> {
+  encode(message: T) : _m0.Writer
+  encode(message: T, writer: _m0.Writer) : _m0.Writer
+  decode(input: _m0.Reader | Uint8Array, length?: number) : T
+  fromJSON(object: any): T
+  toJSON(message: T) : unknown
+  create<I extends Exact<DeepPartial<T>, I>>(base?: I): T
+  fromPartial<I extends Exact<DeepPartial<T>, I>>(object: I): T
+}
+
 export enum Classification {
   CLASSIFICATION_NULL = 0,
   /** CLASSIFICATION_APPLICATION - A software application. Refer to https://en.wikipedia.org/wiki/Application_software for information about applications. */
@@ -1668,7 +1678,7 @@ function createBaseBom(): Bom {
   };
 }
 
-export const Bom = {
+export const Bom : CustomMessage<Bom> = {
   encode(message: Bom, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
     if (message.specVersion !== "") {
       writer.uint32(10).string(message.specVersion);
@@ -1956,7 +1966,7 @@ function createBaseComponent(): Component {
   };
 }
 
-export const Component = {
+export const Component : CustomMessage<Component> = {
   encode(message: Component, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
     if (message.type !== 0) {
       writer.uint32(8).int32(message.type);
@@ -2982,7 +2992,7 @@ function createBaseMetadata(): Metadata {
   };
 }
 
-export const Metadata = {
+export const Metadata : CustomMessage<Metadata> = {
   encode(message: Metadata, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
     if (message.timestamp !== undefined) {
       Timestamp.encode(toTimestamp(message.timestamp), writer.uint32(10).fork()).ldelim();
@@ -3347,7 +3357,7 @@ function createBasePedigree(): Pedigree {
   return { ancestors: [], descendants: [], variants: [], commits: [], patches: [], notes: undefined };
 }
 
-export const Pedigree = {
+export const Pedigree : CustomMessage<Pedigree> = {
   encode(message: Pedigree, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
     for (const v of message.ancestors) {
       Component.encode(v!, writer.uint32(10).fork()).ldelim();

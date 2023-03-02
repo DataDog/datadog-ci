@@ -6,6 +6,16 @@ import { Timestamp } from "./google/protobuf/timestamp";
 
 export const protobufPackage = "appsecpb";
 
+interface CustomMessage<T> {
+  encode(message: T) : _m0.Writer
+  encode(message: T, writer: _m0.Writer) : _m0.Writer
+  decode(input: _m0.Reader | Uint8Array, length?: number) : T
+  fromJSON(object: any): T
+  toJSON(message: T) : unknown
+  create<I extends Exact<DeepPartial<T>, I>>(base?: I): T
+  fromPartial<I extends Exact<DeepPartial<T>, I>>(object: I): T
+}
+
 export enum SBOMSourceType {
   UNSPECIFIED = 0,
   CONTAINER_IMAGE_LAYERS = 1,
@@ -84,7 +94,7 @@ function createBaseSBOMPayload(): SBOMPayload {
   return { version: 0, host: "", source: undefined, entities: [] };
 }
 
-export const SBOMPayload = {
+export const SBOMPayload : CustomMessage<SBOMPayload> = {
   encode(message: SBOMPayload, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
     if (message.version !== 0) {
       writer.uint32(8).int32(message.version);
@@ -176,7 +186,7 @@ function createBaseSBOMEntity(): SBOMEntity {
   };
 }
 
-export const SBOMEntity = {
+export const SBOMEntity : CustomMessage<SBOMEntity> = {
   encode(message: SBOMEntity, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
     if (message.type !== 0) {
       writer.uint32(8).int32(message.type);
