@@ -40,9 +40,9 @@ export const renderSuccessfulCommand = (
   return fullStr
 }
 
-export const renderDryRunUpload = (payload: Payload): string => `[DRYRUN] ${renderUpload(payload)}`
+export const renderDryRunUpload = (): string => `[DRYRUN] ${renderUpload()}`
 
-export const renderUpload = (payload: Payload): string => `Uploading SBOM report in ${payload.reportPath}\n`
+export const renderUpload = (): string => `Uploading SBOM reports\n`
 
 export const renderCommandInfo = (basePaths: string[], service: string, concurrency: number, dryRun: boolean) => {
   let fullStr = ''

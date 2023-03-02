@@ -18,7 +18,7 @@ import {getUserGitSpanTags} from '../../helpers/user-provided-git'
 import {buildPath} from '../../helpers/utils'
 
 // import {apiConstructor} from './api'
-import {APIHelper, Payload, SBomFileObject} from './interfaces'
+import {APIHelper, SBomFileObject} from './interfaces'
 import cycloneDxJsonSchema from './json-schema/cyclonedx/bom-1.4.schema.json'
 import spdxJsonSchema from './json-schema/spdx/spdx.schema.json'
 import jsfJsonSchema from './json-schema/jsf-0.82.schema.json'
@@ -30,18 +30,18 @@ import {
   renderFailedUpload,
   renderInvalidFile,
 } from './renderer'
+import {apiConstructor} from './api'
 import {getBaseIntakeUrl} from './utils'
 
 import { SBOMEntity, SBOMPayload, SBOMSourceType } from './pb/sbom_intake'
 import { Bom } from './pb/bom-1.4'
-import { Message } from 'protobufjs'
+
+const errorCodesStopUpload = [400, 403]
 
 export class UploadSBomFileCommand extends Command {
     public static usage = Command.Usage({})
 
-    // private const errorCodesStopUpload = [400, 403]
     private ajv: Ajv
-
     private basePaths?: string[]
     private config = {
       apiKey: process.env.DATADOG_API_KEY || process.env.DD_API_KEY,
@@ -83,7 +83,6 @@ export class UploadSBomFileCommand extends Command {
             this.config.env = this.env
         }
 
-        // const api = this.getApiHelper()
         this.basePaths = this.basePaths.map((basePath) => path.posix.normalize(basePath))
         this.context.stdout.write(renderCommandInfo(this.basePaths, this.service, this.maxConcurrency, this.dryRun))
 
@@ -92,6 +91,7 @@ export class UploadSBomFileCommand extends Command {
         const spanTagsAsStringArray = Object.keys(spanTags)
             .map(key => `${key}:${spanTags[key as keyof SpanTags]}`)
 
+            /*
         const sbomEntities = this.getMatchingSBomFiles().map(sbomFile => {
             const sbomEntity = SBOMEntity.create({
                 id: sbomFile.filePath,
@@ -109,22 +109,39 @@ export class UploadSBomFileCommand extends Command {
             entities: sbomEntities
         })
 
-        // const upload = (p: Payload) => this.uploadSarifReport(api, p)
+        */
+
+        const sbomPayloads = this.getMatchingSBomFiles().map(sbomFile => {
+          return SBOMPayload.create({ 
+            host: os.hostname(),
+            source: "CI",
+            entities: [ SBOMEntity.create({
+              id: sbomFile.filePath,
+              type: SBOMSourceType.UNSPECIFIED,
+              generatedAt: initialDate,
+              tags: spanTagsAsStringArray,
+              cyclonedx: Bom.fromJSON(sbomFile.content)
+            }) ]
+          })
+        })
+
+        const api = this.getApiHelper()
+        const upload = (payload: SBOMPayload) => this.uploadSBomPayload(api, payload)
+
+        // await asyncPool(this.maxConcurrency, [ sbomPayload ], upload)
+        await asyncPool(this.maxConcurrency, sbomPayloads, upload)
 
         const initialTime = initialDate.getTime()
-
-        // await asyncPool(this.maxConcurrency, payloads, upload)
-
         const totalTimeSeconds = (Date.now() - initialTime) / 1000
-        // this.context.stdout.write(
-        //     renderSuccessfulCommand(payloads.length, totalTimeSeconds, spanTags, this.service, this.config.env)
-        // )
+        this.context.stdout.write(
+            renderSuccessfulCommand(sbomPayloads.length, totalTimeSeconds, spanTags, this.service, this.config.env)
+        )
 
-        var buffer = SBOMPayload.encode(sbomPayload).finish();
-        fs.writeFileSync("/var/tmp/sbompayload.pbytes", buffer);
+        // var buffer = SBOMPayload.encode(sbomPayload).finish();
+        // fs.writeFileSync("/var/tmp/sbompayload.pbytes", buffer);
 
-        var sbomPayloadJson = SBOMPayload.toJSON(sbomPayload)
-        fs.writeFileSync("/var/tmp/sbompayload.json", JSON.stringify(sbomPayloadJson, null, "  "))
+        // var sbomPayloadJson = SBOMPayload.toJSON(sbomPayload)
+        // fs.writeFileSync("/var/tmp/sbompayload.json", JSON.stringify(sbomPayloadJson, null, "  "))
     }
 
     private async getSpanTags(): Promise<SpanTags> {
@@ -180,6 +197,44 @@ export class UploadSBomFileCommand extends Command {
         } catch (error) {
             return { filePath: sbomPath, content: undefined, err: (error as any).message }
         }
+    }
+
+    private getApiHelper(): APIHelper {
+      if (!this.config.apiKey) {
+        this.context.stdout.write(
+          `Neither ${chalk.red.bold('DATADOG_API_KEY')} nor ${chalk.red.bold('DD_API_KEY')} is in your environment.\n`
+        )
+        throw new Error('API key is missing')
+      }
+  
+      return apiConstructor(getBaseIntakeUrl(), this.config.apiKey)
+    }
+
+    private async uploadSBomPayload(api: APIHelper, sbomPayload: SBOMPayload) {
+      if (this.dryRun) {
+        this.context.stdout.write(renderDryRunUpload())
+
+        return
+      }
+
+      try {
+        await retryRequest(() => api.uploadSBomPayload(sbomPayload, this.context.stdout.write.bind(this.context.stdout)), {
+          onRetry: (e, attempt) => {
+            this.context.stderr.write(renderRetriedUpload(sbomPayload, e.message, attempt))
+          },
+          retries: 5,
+        })
+      } catch (error) {
+        this.context.stderr.write(renderFailedUpload(sbomPayload, error))
+        if (error.response) {
+          // If it's an axios error
+          if (!errorCodesStopUpload.includes(error.response.status)) {
+            // And a status code that should not stop the whole upload, just return
+            return
+          }
+        }
+        throw error
+      }
     }
 }
 

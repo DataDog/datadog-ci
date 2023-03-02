@@ -11,5 +11,5 @@ export interface SBomFileObject {
 }
 
 export interface APIHelper {
-  uploadSbom(sbomPayload: SBOMPayload, write: Writable['write']): AxiosPromise<AxiosResponse>
+  uploadSBomPayload(payload: SBOMPayload, write: Writable['write']): AxiosPromise<AxiosResponse>
 }
