@@ -36,6 +36,7 @@ export const CI_ENGINES = {
   GITLAB: 'gitlab',
   JENKINS: 'jenkins',
   TRAVIS: 'travisci',
+  TEAMCITY: 'teamcity',
   BUDDY: 'buddy',
 }
 
@@ -376,6 +377,21 @@ export const getCISpanTags = (): SpanTags | undefined => {
     }
   }
 
+  if (env.TEAMCITY_VERSION) {
+    const {
+      BUILD_URL,
+      TEAMCITY_BUILDCONF_NAME,
+      DATADOG_BUILD_ID,
+    } = env
+
+    tags = {
+      [CI_PROVIDER_NAME]: CI_ENGINES.TEAMCITY,
+      [CI_JOB_URL]: BUILD_URL,
+      [CI_JOB_NAME]: TEAMCITY_BUILDCONF_NAME,
+      [CI_ENV_VARS]: JSON.stringify({DATADOG_BUILD_ID}),
+    }
+  }
+
   if (env.TF_BUILD) {
     const {
       BUILD_SOURCESDIRECTORY,
@@ -644,6 +660,13 @@ export const getCIEnv = (): {ciEnv: Record<string, string>; provider: string} =>
     }
   }
 
+  if (process.env.TEAMCITY_VERSION) {
+    return {
+      ciEnv: filterEnv(['DATADOG_BUILD_ID']),
+      provider: 'jenkins',
+    }
+  }
+
   if (process.env.JENKINS_URL) {
     return {
       ciEnv: filterEnv(['DD_CUSTOM_PARENT_ID', 'DD_CUSTOM_TRACE_ID']),
@@ -651,7 +674,7 @@ export const getCIEnv = (): {ciEnv: Record<string, string>; provider: string} =>
     }
   }
 
-  throw new Error('Only providers [GitHub, GitLab, CircleCI, Buildkite, Buddy, Jenkins] are supported')
+  throw new Error('Only providers [GitHub, GitLab, CircleCI, Buildkite, Buddy, Jenkins, TeamCity] are supported')
 }
 
 const filterEnv = (values: string[]): Record<string, string> => {
