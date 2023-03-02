@@ -91,7 +91,7 @@ export class UploadSBomFileCommand extends Command {
     const spanTagsAsStringArray = Object.keys(spanTags).map((key) => `${key}:${spanTags[key as keyof SpanTags]}`)
 
     const sbomPayloads = this.getMatchingSBomFiles().map((sbomFile) => {
-      return SBOMPayload.create({
+      var sbom = SBOMPayload.create({
         host: os.hostname(),
         source: 'CI',
         entities: [
@@ -104,6 +104,8 @@ export class UploadSBomFileCommand extends Command {
           }),
         ],
       })
+      fs.writeFileSync(sbomFile.filePath + ".payload.json", JSON.stringify(SBOMPayload.toJSON(sbom), "", "  "))
+      return sbom
     })
 
     const api = this.getApiHelper()
