@@ -4,9 +4,7 @@
   "description": "Run datadog actions from the CI.",
   "repository": "https://github.com/DataDog/datadog-ci",
   "license": "Apache-2.0",
-  "bin": {
-    "datadog-ci": "dist/cli.js"
-  },
+  "bin": "dist/cli.js",
   "engines": {
     "node": ">=14"
   },
@@ -122,5 +120,6 @@
     "ts-jest": "28.0.8",
     "ts-node": "8.8.1",
     "typescript": "4.3.5"
-  }
+  },
+  "packageManager": "yarn@3.4.1"
 }
