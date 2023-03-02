@@ -477,7 +477,7 @@ describe('commons', () => {
       expect(layerArn).toEqual(`arn:aws:lambda:${region}:${mockAwsAccount}:layer:Datadog-Node12-x`)
     })
 
-    test('gets sa-east-1 Python3.9 arm64 Lambda Library layer ARN', async () => {
+    test('gets sa-east-1 Python39 arm64 Lambda Library layer ARN', async () => {
       const runtime = 'python3.9'
       const config = {
         Architectures: ['arm64'],
@@ -525,6 +525,22 @@ describe('commons', () => {
       expect(layerArn).toEqual(
         `arn:aws-us-gov:lambda:${region}:${GOVCLOUD_LAYER_AWS_ACCOUNT}:layer:Datadog-Python39-ARM`
       )
+    })
+    test('gets dotnet6 arm64 Lambda Library layer ARN', async () => {
+      const runtime = 'dotnet6'
+      const config = {
+        Runtime: runtime,
+        Architectures: ['arm64'],
+      }
+      const settings = {
+        flushMetricsToLogs: false,
+        layerAWSAccount: mockAwsAccount,
+        mergeXrayTraces: false,
+        tracingEnabled: false,
+      }
+      const region = 'us-east-1'
+      const layerArn = getLayerArn(config, config.Runtime as LayerKey, region, settings)
+      expect(layerArn).toEqual(`arn:aws:lambda:${region}:${mockAwsAccount}:layer:dd-trace-dotnet-ARM`)
     })
   })
 
