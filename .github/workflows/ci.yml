@@ -95,6 +95,10 @@ jobs:
           rm -rf src
       - name: Test generated standalone binary
         run: yarn dist-standalone:test
+      - uses: actions/upload-artifact@v1
+        with:
+          name: datadog-ci_linux-x64
+          path: ./datadog-ci_linux-x64
 
   standalone-binary-test-windows:
     name: Test standalone binary in windows
@@ -115,6 +119,10 @@ jobs:
           rm src -r
       - name: Test generated standalone binary
         run: yarn dist-standalone:test
+      - uses: actions/upload-artifact@v1
+        with:
+          name: datadog-ci_win-x64
+          path: ./datadog-ci_win-x64.exe
 
   standalone-binary-test-macos:
     name: Test standalone binary in macOS
@@ -135,6 +143,10 @@ jobs:
           rm -rf src
       - name: Test generated standalone binary
         run: yarn dist-standalone:test
+      - uses: actions/upload-artifact@v1
+        with:
+          name: datadog-ci_darwin-x64
+          path: ./datadog-ci_darwin-x64
 
   check-licenses:
     name: Check licenses
