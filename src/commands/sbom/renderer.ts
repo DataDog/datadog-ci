@@ -1,7 +1,10 @@
 import path from 'path'
+
 import chalk from 'chalk'
+
 import {SpanTags} from '../../helpers/interfaces'
-import { SBOMPayload } from './pb/sbom_intake'
+
+import {SBOMPayload} from './pb/sbom_intake'
 
 const ICONS = {
   FAILED: '❌',
@@ -11,16 +14,19 @@ const ICONS = {
 
 export const renderInvalidFile = (sbomPath: string, errorMessage: string) => {
   const reportPath = `[${chalk.bold.dim(sbomPath)}]`
+
   return chalk.red(`${ICONS.FAILED} Invalid SBOM report file ${reportPath}: ${errorMessage}\n`)
 }
 
 export const renderFailedUpload = (sbomPayload: SBOMPayload, errorMessage: string) => {
   const reportPath = `[${chalk.bold.dim(sbomPayload.entities[0].id)}]`
+
   return chalk.red(`${ICONS.FAILED} Failed upload SBOM report file ${reportPath}: ${errorMessage}\n`)
 }
 
 export const renderRetriedUpload = (sbomPayload: SBOMPayload, errorMessage: string, attempt: number) => {
   const reportPath = `[${chalk.bold.dim(sbomPayload.entities[0].id)}]`
+
   return chalk.yellow(`[attempt ${attempt}] Retrying SBOM report upload ${reportPath}: ${errorMessage}\n`)
 }
 

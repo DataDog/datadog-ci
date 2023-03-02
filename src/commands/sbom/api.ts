@@ -1,9 +1,10 @@
-import { Writable } from "stream";
+import {Writable} from 'stream'
+
 import type {AxiosPromise, AxiosRequestConfig, AxiosResponse} from 'axios'
+
 import {getRequestBuilder} from '../../helpers/utils'
 
-import { SBOMPayload } from './pb/sbom_intake'
-
+import {SBOMPayload} from './pb/sbom_intake'
 import {renderUpload} from './renderer'
 
 // Dependency follows-redirects sets a default maxBodyLength of 10 MB https://github.com/follow-redirects/follow-redirects/blob/b774a77e582b97174813b3eaeb86931becba69db/index.js#L391
@@ -16,7 +17,7 @@ export const uploadSBomPayload = (request: (args: AxiosRequestConfig) => AxiosPr
 ) => {
   write(renderUpload())
 
-  var buffer = SBOMPayload.encode(payload).finish().buffer
+  const buffer = SBOMPayload.encode(payload).finish().buffer
 
   return request({
     data: buffer,
@@ -25,7 +26,7 @@ export const uploadSBomPayload = (request: (args: AxiosRequestConfig) => AxiosPr
       'DD-EVP-ORIGIN': 'datadog-ci',
       'DD-EVP-ORIGIN-VERSION': '0.0.1',
     },
-    maxBodyLength: maxBodyLength,
+    maxBodyLength,
     method: 'POST',
     url: 'api/v2/sbom',
   })
