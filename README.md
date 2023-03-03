@@ -66,10 +66,10 @@ yarn launch synthetics run-tests --config dev/global.config.json
 
 ### Framework and libraries used
 
-- [clipanion](https://github.com/arcanis/clipanion): CLI library to handle the different commands
+- [clipanion](https://github.com/arcanis/clipanion): CLI library to handle the different commands.
 - [eslint](https://github.com/eslint/eslint): Linting ([.eslintrc.js](/.eslintrc.js)).
-- [jest](https://github.com/facebook/jest): Testing
-- [volta](https://github.com/volta-cli/volta): NodeJS and yarn versioning
+- [jest](https://github.com/facebook/jest): Tests are written in Jest.
+- [volta](https://github.com/volta-cli/volta): NodeJS and yarn versioning.
 
 ### Repository structure
 
