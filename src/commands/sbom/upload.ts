@@ -97,7 +97,7 @@ export class UploadSBomFileCommand extends Command {
         entities: [
           SBOMEntity.create({
             id: sbomFile.filePath,
-            type: SBOMSourceType.UNSPECIFIED,
+            type: SBOMSourceType.CI,
             generatedAt: initialDate,
             tags: spanTagsAsStringArray,
             cyclonedx: Bom.fromJSON(sbomFile.content),
@@ -106,6 +106,8 @@ export class UploadSBomFileCommand extends Command {
       })
       fs.writeFileSync(sbomFile.filePath + '.payload.json', JSON.stringify(SBOMPayload.toJSON(sbom), null, '  '))
       const sbomPB = SBOMPayload.encode(sbom).finish()
+      // const sbomCopy = SBOMPayload.decode(sbomPB);
+      // this.context.stdout.write(JSON.stringify(SBOMPayload.toJSON(sbomCopy), null, '  '));
       fs.writeFileSync(sbomFile.filePath + '.payload.pbytes', sbomPB)
 
       return sbom

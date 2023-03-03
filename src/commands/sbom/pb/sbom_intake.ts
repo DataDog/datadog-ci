@@ -21,6 +21,7 @@ export enum SBOMSourceType {
   CONTAINER_IMAGE_LAYERS = 1,
   CONTAINER_FILE_SYSTEM = 2,
   HOST_FILE_SYSTEM = 3,
+  CI = 4,
   UNRECOGNIZED = -1,
 }
 
@@ -38,6 +39,9 @@ export function sBOMSourceTypeFromJSON(object: any): SBOMSourceType {
     case 3:
     case "HOST_FILE_SYSTEM":
       return SBOMSourceType.HOST_FILE_SYSTEM;
+    case 4:
+    case "CI":
+      return SBOMSourceType.CI;
     case -1:
     case "UNRECOGNIZED":
     default:
@@ -55,6 +59,8 @@ export function sBOMSourceTypeToJSON(object: SBOMSourceType): string {
       return "CONTAINER_FILE_SYSTEM";
     case SBOMSourceType.HOST_FILE_SYSTEM:
       return "HOST_FILE_SYSTEM";
+    case SBOMSourceType.CI:
+      return "CI";
     case SBOMSourceType.UNRECOGNIZED:
     default:
       return "UNRECOGNIZED";

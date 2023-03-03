@@ -17,7 +17,7 @@ export const uploadSBomPayload = (request: (args: AxiosRequestConfig) => AxiosPr
 ) => {
   write(renderUpload())
 
-  const buffer = SBOMPayload.encode(payload).finish().buffer
+  const buffer = SBOMPayload.encode(payload).finish()
 
   return request({
     data: buffer,
@@ -29,6 +29,7 @@ export const uploadSBomPayload = (request: (args: AxiosRequestConfig) => AxiosPr
     maxBodyLength,
     method: 'POST',
     url: 'api/v2/sbom',
+    // url: 'ca31f1bc-7978-43c0-b918-89ee0bf5e0df',
   })
 }
 
