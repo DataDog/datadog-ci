@@ -39,30 +39,39 @@ export function classificationFromJSON(object: any): Classification {
   switch (object) {
     case 0:
     case "CLASSIFICATION_NULL":
+    case "null":
       return Classification.CLASSIFICATION_NULL;
     case 1:
     case "CLASSIFICATION_APPLICATION":
+    case "application":
       return Classification.CLASSIFICATION_APPLICATION;
     case 2:
     case "CLASSIFICATION_FRAMEWORK":
+    case "framework":
       return Classification.CLASSIFICATION_FRAMEWORK;
     case 3:
     case "CLASSIFICATION_LIBRARY":
+    case "library":
       return Classification.CLASSIFICATION_LIBRARY;
     case 4:
     case "CLASSIFICATION_OPERATING_SYSTEM":
+    case "operating-system":
       return Classification.CLASSIFICATION_OPERATING_SYSTEM;
     case 5:
     case "CLASSIFICATION_DEVICE":
+    case "device":
       return Classification.CLASSIFICATION_DEVICE;
     case 6:
     case "CLASSIFICATION_FILE":
+    case "file":
       return Classification.CLASSIFICATION_FILE;
     case 7:
     case "CLASSIFICATION_CONTAINER":
+    case "container":
       return Classification.CLASSIFICATION_CONTAINER;
     case 8:
     case "CLASSIFICATION_FIRMWARE":
+    case "firmware":
       return Classification.CLASSIFICATION_FIRMWARE;
     case -1:
     case "UNRECOGNIZED":
@@ -74,23 +83,23 @@ export function classificationFromJSON(object: any): Classification {
 export function classificationToJSON(object: Classification): string {
   switch (object) {
     case Classification.CLASSIFICATION_NULL:
-      return "CLASSIFICATION_NULL";
+      return "null";
     case Classification.CLASSIFICATION_APPLICATION:
-      return "CLASSIFICATION_APPLICATION";
+      return "application";
     case Classification.CLASSIFICATION_FRAMEWORK:
-      return "CLASSIFICATION_FRAMEWORK";
+      return "framework";
     case Classification.CLASSIFICATION_LIBRARY:
-      return "CLASSIFICATION_LIBRARY";
+      return "library";
     case Classification.CLASSIFICATION_OPERATING_SYSTEM:
-      return "CLASSIFICATION_OPERATING_SYSTEM";
+      return "operating-system";
     case Classification.CLASSIFICATION_DEVICE:
-      return "CLASSIFICATION_DEVICE";
+      return "device";
     case Classification.CLASSIFICATION_FILE:
-      return "CLASSIFICATION_FILE";
+      return "file";
     case Classification.CLASSIFICATION_CONTAINER:
-      return "CLASSIFICATION_CONTAINER";
+      return "container";
     case Classification.CLASSIFICATION_FIRMWARE:
-      return "CLASSIFICATION_FIRMWARE";
+      return "firmware";
     case Classification.UNRECOGNIZED:
     default:
       return "UNRECOGNIZED";
@@ -114,15 +123,19 @@ export function dataFlowFromJSON(object: any): DataFlow {
       return DataFlow.DATA_FLOW_NULL;
     case 1:
     case "DATA_FLOW_INBOUND":
+    case "inbound":
       return DataFlow.DATA_FLOW_INBOUND;
     case 2:
     case "DATA_FLOW_OUTBOUND":
+    case "outbound":
       return DataFlow.DATA_FLOW_OUTBOUND;
     case 3:
     case "DATA_FLOW_BI_DIRECTIONAL":
+    case "bi-directional":
       return DataFlow.DATA_FLOW_BI_DIRECTIONAL;
     case 4:
     case "DATA_FLOW_UNKNOWN":
+    case "unknown":
       return DataFlow.DATA_FLOW_UNKNOWN;
     case -1:
     case "UNRECOGNIZED":
@@ -136,13 +149,13 @@ export function dataFlowToJSON(object: DataFlow): string {
     case DataFlow.DATA_FLOW_NULL:
       return "DATA_FLOW_NULL";
     case DataFlow.DATA_FLOW_INBOUND:
-      return "DATA_FLOW_INBOUND";
+      return "inbound";
     case DataFlow.DATA_FLOW_OUTBOUND:
-      return "DATA_FLOW_OUTBOUND";
+      return "outbound";
     case DataFlow.DATA_FLOW_BI_DIRECTIONAL:
-      return "DATA_FLOW_BI_DIRECTIONAL";
+      return "bi-directional";
     case DataFlow.DATA_FLOW_UNKNOWN:
-      return "DATA_FLOW_UNKNOWN";
+      return "unknown";
     case DataFlow.UNRECOGNIZED:
     default:
       return "UNRECOGNIZED";
@@ -187,48 +200,63 @@ export function externalReferenceTypeFromJSON(object: any): ExternalReferenceTyp
   switch (object) {
     case 0:
     case "EXTERNAL_REFERENCE_TYPE_OTHER":
+    case "other":
       return ExternalReferenceType.EXTERNAL_REFERENCE_TYPE_OTHER;
     case 1:
     case "EXTERNAL_REFERENCE_TYPE_VCS":
+    case "vcs":
       return ExternalReferenceType.EXTERNAL_REFERENCE_TYPE_VCS;
     case 2:
     case "EXTERNAL_REFERENCE_TYPE_ISSUE_TRACKER":
+    case "issue-tracker":
       return ExternalReferenceType.EXTERNAL_REFERENCE_TYPE_ISSUE_TRACKER;
     case 3:
     case "EXTERNAL_REFERENCE_TYPE_WEBSITE":
+    case "website":
       return ExternalReferenceType.EXTERNAL_REFERENCE_TYPE_WEBSITE;
     case 4:
     case "EXTERNAL_REFERENCE_TYPE_ADVISORIES":
+    case "advisories":
       return ExternalReferenceType.EXTERNAL_REFERENCE_TYPE_ADVISORIES;
     case 5:
     case "EXTERNAL_REFERENCE_TYPE_BOM":
+    case "bom":
       return ExternalReferenceType.EXTERNAL_REFERENCE_TYPE_BOM;
     case 6:
     case "EXTERNAL_REFERENCE_TYPE_MAILING_LIST":
+    case "mailing-list":
       return ExternalReferenceType.EXTERNAL_REFERENCE_TYPE_MAILING_LIST;
     case 7:
     case "EXTERNAL_REFERENCE_TYPE_SOCIAL":
+    case "social":
       return ExternalReferenceType.EXTERNAL_REFERENCE_TYPE_SOCIAL;
     case 8:
     case "EXTERNAL_REFERENCE_TYPE_CHAT":
+    case "chat":
       return ExternalReferenceType.EXTERNAL_REFERENCE_TYPE_CHAT;
     case 9:
     case "EXTERNAL_REFERENCE_TYPE_DOCUMENTATION":
+    case "documentation":
       return ExternalReferenceType.EXTERNAL_REFERENCE_TYPE_DOCUMENTATION;
     case 10:
     case "EXTERNAL_REFERENCE_TYPE_SUPPORT":
+    case "support":
       return ExternalReferenceType.EXTERNAL_REFERENCE_TYPE_SUPPORT;
     case 11:
     case "EXTERNAL_REFERENCE_TYPE_DISTRIBUTION":
+    case "distribution":
       return ExternalReferenceType.EXTERNAL_REFERENCE_TYPE_DISTRIBUTION;
     case 12:
     case "EXTERNAL_REFERENCE_TYPE_LICENSE":
+    case "license":
       return ExternalReferenceType.EXTERNAL_REFERENCE_TYPE_LICENSE;
     case 13:
     case "EXTERNAL_REFERENCE_TYPE_BUILD_META":
+    case "build-meta":
       return ExternalReferenceType.EXTERNAL_REFERENCE_TYPE_BUILD_META;
     case 14:
     case "EXTERNAL_REFERENCE_TYPE_BUILD_SYSTEM":
+    case "build-system":
       return ExternalReferenceType.EXTERNAL_REFERENCE_TYPE_BUILD_SYSTEM;
     case -1:
     case "UNRECOGNIZED":
@@ -240,35 +268,35 @@ export function externalReferenceTypeFromJSON(object: any): ExternalReferenceTyp
 export function externalReferenceTypeToJSON(object: ExternalReferenceType): string {
   switch (object) {
     case ExternalReferenceType.EXTERNAL_REFERENCE_TYPE_OTHER:
-      return "EXTERNAL_REFERENCE_TYPE_OTHER";
+      return "other";
     case ExternalReferenceType.EXTERNAL_REFERENCE_TYPE_VCS:
-      return "EXTERNAL_REFERENCE_TYPE_VCS";
+      return "vcs";
     case ExternalReferenceType.EXTERNAL_REFERENCE_TYPE_ISSUE_TRACKER:
-      return "EXTERNAL_REFERENCE_TYPE_ISSUE_TRACKER";
+      return "issue-tracker";
     case ExternalReferenceType.EXTERNAL_REFERENCE_TYPE_WEBSITE:
-      return "EXTERNAL_REFERENCE_TYPE_WEBSITE";
+      return "website";
     case ExternalReferenceType.EXTERNAL_REFERENCE_TYPE_ADVISORIES:
-      return "EXTERNAL_REFERENCE_TYPE_ADVISORIES";
+      return "advisories";
     case ExternalReferenceType.EXTERNAL_REFERENCE_TYPE_BOM:
-      return "EXTERNAL_REFERENCE_TYPE_BOM";
+      return "bom";
     case ExternalReferenceType.EXTERNAL_REFERENCE_TYPE_MAILING_LIST:
-      return "EXTERNAL_REFERENCE_TYPE_MAILING_LIST";
+      return "mailing-list";
     case ExternalReferenceType.EXTERNAL_REFERENCE_TYPE_SOCIAL:
-      return "EXTERNAL_REFERENCE_TYPE_SOCIAL";
+      return "social";
     case ExternalReferenceType.EXTERNAL_REFERENCE_TYPE_CHAT:
-      return "EXTERNAL_REFERENCE_TYPE_CHAT";
+      return "chat";
     case ExternalReferenceType.EXTERNAL_REFERENCE_TYPE_DOCUMENTATION:
-      return "EXTERNAL_REFERENCE_TYPE_DOCUMENTATION";
+      return "documentation";
     case ExternalReferenceType.EXTERNAL_REFERENCE_TYPE_SUPPORT:
-      return "EXTERNAL_REFERENCE_TYPE_SUPPORT";
+      return "support";
     case ExternalReferenceType.EXTERNAL_REFERENCE_TYPE_DISTRIBUTION:
-      return "EXTERNAL_REFERENCE_TYPE_DISTRIBUTION";
+      return "distribution";
     case ExternalReferenceType.EXTERNAL_REFERENCE_TYPE_LICENSE:
-      return "EXTERNAL_REFERENCE_TYPE_LICENSE";
+      return "license";
     case ExternalReferenceType.EXTERNAL_REFERENCE_TYPE_BUILD_META:
-      return "EXTERNAL_REFERENCE_TYPE_BUILD_META";
+      return "build-meta";
     case ExternalReferenceType.EXTERNAL_REFERENCE_TYPE_BUILD_SYSTEM:
-      return "EXTERNAL_REFERENCE_TYPE_BUILD_SYSTEM";
+      return "build-system";
     case ExternalReferenceType.UNRECOGNIZED:
     default:
       return "UNRECOGNIZED";
@@ -299,39 +327,51 @@ export function hashAlgFromJSON(object: any): HashAlg {
       return HashAlg.HASH_ALG_NULL;
     case 1:
     case "HASH_ALG_MD_5":
+    case "MD5":
       return HashAlg.HASH_ALG_MD_5;
     case 2:
     case "HASH_ALG_SHA_1":
+    case "SHA-1":
       return HashAlg.HASH_ALG_SHA_1;
     case 3:
     case "HASH_ALG_SHA_256":
+    case "SHA-256":
       return HashAlg.HASH_ALG_SHA_256;
     case 4:
     case "HASH_ALG_SHA_384":
+    case "SHA-384":
       return HashAlg.HASH_ALG_SHA_384;
     case 5:
     case "HASH_ALG_SHA_512":
+    case "SHA-512":
       return HashAlg.HASH_ALG_SHA_512;
     case 6:
     case "HASH_ALG_SHA_3_256":
+    case "SHA3-256":
       return HashAlg.HASH_ALG_SHA_3_256;
     case 7:
     case "HASH_ALG_SHA_3_384":
+    case "SHA3-384":
       return HashAlg.HASH_ALG_SHA_3_384;
     case 8:
     case "HASH_ALG_SHA_3_512":
+    case "SHA3-512":
       return HashAlg.HASH_ALG_SHA_3_512;
     case 9:
     case "HASH_ALG_BLAKE_2_B_256":
+    case "BLAKE2b-256":
       return HashAlg.HASH_ALG_BLAKE_2_B_256;
     case 10:
     case "HASH_ALG_BLAKE_2_B_384":
+    case "BLAKE2b-384":
       return HashAlg.HASH_ALG_BLAKE_2_B_384;
     case 11:
     case "HASH_ALG_BLAKE_2_B_512":
+    case "BLAKE2b-512":
       return HashAlg.HASH_ALG_BLAKE_2_B_512;
     case 12:
     case "HASH_ALG_BLAKE_3":
+    case "BLAKE3":
       return HashAlg.HASH_ALG_BLAKE_3;
     case -1:
     case "UNRECOGNIZED":
@@ -345,29 +385,29 @@ export function hashAlgToJSON(object: HashAlg): string {
     case HashAlg.HASH_ALG_NULL:
       return "HASH_ALG_NULL";
     case HashAlg.HASH_ALG_MD_5:
-      return "HASH_ALG_MD_5";
+      return "MD5";
     case HashAlg.HASH_ALG_SHA_1:
-      return "HASH_ALG_SHA_1";
+      return "SHA-1";
     case HashAlg.HASH_ALG_SHA_256:
-      return "HASH_ALG_SHA_256";
+      return "SHA-256";
     case HashAlg.HASH_ALG_SHA_384:
-      return "HASH_ALG_SHA_384";
+      return "SHA-384";
     case HashAlg.HASH_ALG_SHA_512:
-      return "HASH_ALG_SHA_512";
+      return "SHA-512";
     case HashAlg.HASH_ALG_SHA_3_256:
-      return "HASH_ALG_SHA_3_256";
+      return "SHA3-256";
     case HashAlg.HASH_ALG_SHA_3_384:
-      return "HASH_ALG_SHA_3_384";
+      return "SHA3-384";
     case HashAlg.HASH_ALG_SHA_3_512:
-      return "HASH_ALG_SHA_3_512";
+      return "SHA3-512";
     case HashAlg.HASH_ALG_BLAKE_2_B_256:
-      return "HASH_ALG_BLAKE_2_B_256";
+      return "BLAKE2b-256";
     case HashAlg.HASH_ALG_BLAKE_2_B_384:
-      return "HASH_ALG_BLAKE_2_B_384";
+      return "BLAKE2b-384";
     case HashAlg.HASH_ALG_BLAKE_2_B_512:
-      return "HASH_ALG_BLAKE_2_B_512";
+      return "BLAKE2b-512";
     case HashAlg.HASH_ALG_BLAKE_3:
-      return "HASH_ALG_BLAKE_3";
+      return "BLAKE3";
     case HashAlg.UNRECOGNIZED:
     default:
       return "UNRECOGNIZED";
@@ -392,12 +432,15 @@ export function issueClassificationFromJSON(object: any): IssueClassification {
       return IssueClassification.ISSUE_CLASSIFICATION_NULL;
     case 1:
     case "ISSUE_CLASSIFICATION_DEFECT":
+    case "defect":
       return IssueClassification.ISSUE_CLASSIFICATION_DEFECT;
     case 2:
     case "ISSUE_CLASSIFICATION_ENHANCEMENT":
+    case "enhancement":
       return IssueClassification.ISSUE_CLASSIFICATION_ENHANCEMENT;
     case 3:
     case "ISSUE_CLASSIFICATION_SECURITY":
+    case "security":
       return IssueClassification.ISSUE_CLASSIFICATION_SECURITY;
     case -1:
     case "UNRECOGNIZED":
@@ -411,11 +454,11 @@ export function issueClassificationToJSON(object: IssueClassification): string {
     case IssueClassification.ISSUE_CLASSIFICATION_NULL:
       return "ISSUE_CLASSIFICATION_NULL";
     case IssueClassification.ISSUE_CLASSIFICATION_DEFECT:
-      return "ISSUE_CLASSIFICATION_DEFECT";
+      return "defect";
     case IssueClassification.ISSUE_CLASSIFICATION_ENHANCEMENT:
-      return "ISSUE_CLASSIFICATION_ENHANCEMENT";
+      return "enhancement";
     case IssueClassification.ISSUE_CLASSIFICATION_SECURITY:
-      return "ISSUE_CLASSIFICATION_SECURITY";
+      return "security";
     case IssueClassification.UNRECOGNIZED:
     default:
       return "UNRECOGNIZED";
@@ -442,15 +485,19 @@ export function patchClassificationFromJSON(object: any): PatchClassification {
       return PatchClassification.PATCH_CLASSIFICATION_NULL;
     case 1:
     case "PATCH_CLASSIFICATION_UNOFFICIAL":
+    case "unofficial":
       return PatchClassification.PATCH_CLASSIFICATION_UNOFFICIAL;
     case 2:
     case "PATCH_CLASSIFICATION_MONKEY":
+    case "monkey":
       return PatchClassification.PATCH_CLASSIFICATION_MONKEY;
     case 3:
     case "PATCH_CLASSIFICATION_BACKPORT":
+    case "backport":
       return PatchClassification.PATCH_CLASSIFICATION_BACKPORT;
     case 4:
     case "PATCH_CLASSIFICATION_CHERRY_PICK":
+    case "cherry-pick":
       return PatchClassification.PATCH_CLASSIFICATION_CHERRY_PICK;
     case -1:
     case "UNRECOGNIZED":
@@ -464,13 +511,13 @@ export function patchClassificationToJSON(object: PatchClassification): string {
     case PatchClassification.PATCH_CLASSIFICATION_NULL:
       return "PATCH_CLASSIFICATION_NULL";
     case PatchClassification.PATCH_CLASSIFICATION_UNOFFICIAL:
-      return "PATCH_CLASSIFICATION_UNOFFICIAL";
+      return "unofficial";
     case PatchClassification.PATCH_CLASSIFICATION_MONKEY:
-      return "PATCH_CLASSIFICATION_MONKEY";
+      return "monkey";
     case PatchClassification.PATCH_CLASSIFICATION_BACKPORT:
-      return "PATCH_CLASSIFICATION_BACKPORT";
+      return "backport";
     case PatchClassification.PATCH_CLASSIFICATION_CHERRY_PICK:
-      return "PATCH_CLASSIFICATION_CHERRY_PICK";
+      return "cherry-pick";
     case PatchClassification.UNRECOGNIZED:
     default:
       return "UNRECOGNIZED";
@@ -496,12 +543,15 @@ export function scopeFromJSON(object: any): Scope {
       return Scope.SCOPE_UNSPECIFIED;
     case 1:
     case "SCOPE_REQUIRED":
+    case "required":
       return Scope.SCOPE_REQUIRED;
     case 2:
     case "SCOPE_OPTIONAL":
+    case "optional":
       return Scope.SCOPE_OPTIONAL;
     case 3:
     case "SCOPE_EXCLUDED":
+    case "excluded":
       return Scope.SCOPE_EXCLUDED;
     case -1:
     case "UNRECOGNIZED":
@@ -515,11 +565,11 @@ export function scopeToJSON(object: Scope): string {
     case Scope.SCOPE_UNSPECIFIED:
       return "SCOPE_UNSPECIFIED";
     case Scope.SCOPE_REQUIRED:
-      return "SCOPE_REQUIRED";
+      return "required";
     case Scope.SCOPE_OPTIONAL:
-      return "SCOPE_OPTIONAL";
+      return "optional";
     case Scope.SCOPE_EXCLUDED:
-      return "SCOPE_EXCLUDED";
+      return "excluded";
     case Scope.UNRECOGNIZED:
     default:
       return "UNRECOGNIZED";
@@ -546,21 +596,27 @@ export function aggregateFromJSON(object: any): Aggregate {
   switch (object) {
     case 0:
     case "AGGREGATE_NOT_SPECIFIED":
+    case "not_specified":
       return Aggregate.AGGREGATE_NOT_SPECIFIED;
     case 1:
     case "AGGREGATE_COMPLETE":
+    case "complete":
       return Aggregate.AGGREGATE_COMPLETE;
     case 2:
     case "AGGREGATE_INCOMPLETE":
+    case "incomplete":
       return Aggregate.AGGREGATE_INCOMPLETE;
     case 3:
     case "AGGREGATE_INCOMPLETE_FIRST_PARTY_ONLY":
+    case "incomplete_first_party_only":
       return Aggregate.AGGREGATE_INCOMPLETE_FIRST_PARTY_ONLY;
     case 4:
     case "AGGREGATE_INCOMPLETE_THIRD_PARTY_ONLY":
+    case "incomplete_third_party_only":
       return Aggregate.AGGREGATE_INCOMPLETE_THIRD_PARTY_ONLY;
     case 5:
     case "AGGREGATE_UNKNOWN":
+    case "unknown":
       return Aggregate.AGGREGATE_UNKNOWN;
     case -1:
     case "UNRECOGNIZED":
@@ -572,17 +628,17 @@ export function aggregateFromJSON(object: any): Aggregate {
 export function aggregateToJSON(object: Aggregate): string {
   switch (object) {
     case Aggregate.AGGREGATE_NOT_SPECIFIED:
-      return "AGGREGATE_NOT_SPECIFIED";
+      return "not_specified";
     case Aggregate.AGGREGATE_COMPLETE:
-      return "AGGREGATE_COMPLETE";
+      return "complete";
     case Aggregate.AGGREGATE_INCOMPLETE:
-      return "AGGREGATE_INCOMPLETE";
+      return "incomplete";
     case Aggregate.AGGREGATE_INCOMPLETE_FIRST_PARTY_ONLY:
-      return "AGGREGATE_INCOMPLETE_FIRST_PARTY_ONLY";
+      return "incomplete_first_party_only";
     case Aggregate.AGGREGATE_INCOMPLETE_THIRD_PARTY_ONLY:
-      return "AGGREGATE_INCOMPLETE_THIRD_PARTY_ONLY";
+      return "incomplete_third_party_only";
     case Aggregate.AGGREGATE_UNKNOWN:
-      return "AGGREGATE_UNKNOWN";
+      return "unknown";
     case Aggregate.UNRECOGNIZED:
     default:
       return "UNRECOGNIZED";
@@ -604,24 +660,31 @@ export function severityFromJSON(object: any): Severity {
   switch (object) {
     case 0:
     case "SEVERITY_UNKNOWN":
+    case "unknown":
       return Severity.SEVERITY_UNKNOWN;
     case 1:
     case "SEVERITY_CRITICAL":
+    case "critical":
       return Severity.SEVERITY_CRITICAL;
     case 2:
     case "SEVERITY_HIGH":
+    case "high":
       return Severity.SEVERITY_HIGH;
     case 3:
     case "SEVERITY_MEDIUM":
+    case "medium":
       return Severity.SEVERITY_MEDIUM;
     case 4:
     case "SEVERITY_LOW":
+    case "low":
       return Severity.SEVERITY_LOW;
     case 5:
     case "SEVERITY_INFO":
+    case "info":
       return Severity.SEVERITY_INFO;
     case 6:
     case "SEVERITY_NONE":
+    case "none":
       return Severity.SEVERITY_NONE;
     case -1:
     case "UNRECOGNIZED":
@@ -633,19 +696,19 @@ export function severityFromJSON(object: any): Severity {
 export function severityToJSON(object: Severity): string {
   switch (object) {
     case Severity.SEVERITY_UNKNOWN:
-      return "SEVERITY_UNKNOWN";
+      return "unknown";
     case Severity.SEVERITY_CRITICAL:
-      return "SEVERITY_CRITICAL";
+      return "critical";
     case Severity.SEVERITY_HIGH:
-      return "SEVERITY_HIGH";
+      return "high";
     case Severity.SEVERITY_MEDIUM:
-      return "SEVERITY_MEDIUM";
+      return "medium";
     case Severity.SEVERITY_LOW:
-      return "SEVERITY_LOW";
+      return "low";
     case Severity.SEVERITY_INFO:
-      return "SEVERITY_INFO";
+      return "info";
     case Severity.SEVERITY_NONE:
-      return "SEVERITY_NONE";
+      return "none";
     case Severity.UNRECOGNIZED:
     default:
       return "UNRECOGNIZED";
@@ -675,18 +738,23 @@ export function scoreMethodFromJSON(object: any): ScoreMethod {
       return ScoreMethod.SCORE_METHOD_NULL;
     case 1:
     case "SCORE_METHOD_CVSSV2":
+    case "CVSSv2":
       return ScoreMethod.SCORE_METHOD_CVSSV2;
     case 2:
     case "SCORE_METHOD_CVSSV3":
+    case "CVSSv3":
       return ScoreMethod.SCORE_METHOD_CVSSV3;
     case 3:
     case "SCORE_METHOD_CVSSV31":
+    case "CVSSv31":
       return ScoreMethod.SCORE_METHOD_CVSSV31;
     case 4:
     case "SCORE_METHOD_OWASP":
+    case "OWASP":
       return ScoreMethod.SCORE_METHOD_OWASP;
     case 5:
     case "SCORE_METHOD_OTHER":
+    case "other":
       return ScoreMethod.SCORE_METHOD_OTHER;
     case -1:
     case "UNRECOGNIZED":
@@ -700,15 +768,15 @@ export function scoreMethodToJSON(object: ScoreMethod): string {
     case ScoreMethod.SCORE_METHOD_NULL:
       return "SCORE_METHOD_NULL";
     case ScoreMethod.SCORE_METHOD_CVSSV2:
-      return "SCORE_METHOD_CVSSV2";
+      return "CVSSv2";
     case ScoreMethod.SCORE_METHOD_CVSSV3:
-      return "SCORE_METHOD_CVSSV3";
+      return "CVSSv3";
     case ScoreMethod.SCORE_METHOD_CVSSV31:
-      return "SCORE_METHOD_CVSSV31";
+      return "CVSSv31";
     case ScoreMethod.SCORE_METHOD_OWASP:
-      return "SCORE_METHOD_OWASP";
+      return "OWASP";
     case ScoreMethod.SCORE_METHOD_OTHER:
-      return "SCORE_METHOD_OTHER";
+      return "other";
     case ScoreMethod.UNRECOGNIZED:
     default:
       return "UNRECOGNIZED";
@@ -740,21 +808,27 @@ export function impactAnalysisStateFromJSON(object: any): ImpactAnalysisState {
       return ImpactAnalysisState.IMPACT_ANALYSIS_STATE_NULL;
     case 1:
     case "IMPACT_ANALYSIS_STATE_RESOLVED":
+    case "resolved":
       return ImpactAnalysisState.IMPACT_ANALYSIS_STATE_RESOLVED;
     case 2:
     case "IMPACT_ANALYSIS_STATE_RESOLVED_WITH_PEDIGREE":
+    case "resolved_with_pedigree":
       return ImpactAnalysisState.IMPACT_ANALYSIS_STATE_RESOLVED_WITH_PEDIGREE;
     case 3:
     case "IMPACT_ANALYSIS_STATE_EXPLOITABLE":
+    case "exploitable":
       return ImpactAnalysisState.IMPACT_ANALYSIS_STATE_EXPLOITABLE;
     case 4:
     case "IMPACT_ANALYSIS_STATE_IN_TRIAGE":
+    case "in_triage":
       return ImpactAnalysisState.IMPACT_ANALYSIS_STATE_IN_TRIAGE;
     case 5:
     case "IMPACT_ANALYSIS_STATE_FALSE_POSITIVE":
+    case "false_positive":
       return ImpactAnalysisState.IMPACT_ANALYSIS_STATE_FALSE_POSITIVE;
     case 6:
     case "IMPACT_ANALYSIS_STATE_NOT_AFFECTED":
+    case "not_affected":
       return ImpactAnalysisState.IMPACT_ANALYSIS_STATE_NOT_AFFECTED;
     case -1:
     case "UNRECOGNIZED":
@@ -768,17 +842,17 @@ export function impactAnalysisStateToJSON(object: ImpactAnalysisState): string {
     case ImpactAnalysisState.IMPACT_ANALYSIS_STATE_NULL:
       return "IMPACT_ANALYSIS_STATE_NULL";
     case ImpactAnalysisState.IMPACT_ANALYSIS_STATE_RESOLVED:
-      return "IMPACT_ANALYSIS_STATE_RESOLVED";
+      return "resolved";
     case ImpactAnalysisState.IMPACT_ANALYSIS_STATE_RESOLVED_WITH_PEDIGREE:
-      return "IMPACT_ANALYSIS_STATE_RESOLVED_WITH_PEDIGREE";
+      return "resolved_with_pedigree";
     case ImpactAnalysisState.IMPACT_ANALYSIS_STATE_EXPLOITABLE:
-      return "IMPACT_ANALYSIS_STATE_EXPLOITABLE";
+      return "exploitable";
     case ImpactAnalysisState.IMPACT_ANALYSIS_STATE_IN_TRIAGE:
-      return "IMPACT_ANALYSIS_STATE_IN_TRIAGE";
+      return "in_triage";
     case ImpactAnalysisState.IMPACT_ANALYSIS_STATE_FALSE_POSITIVE:
-      return "IMPACT_ANALYSIS_STATE_FALSE_POSITIVE";
+      return "false_positive";
     case ImpactAnalysisState.IMPACT_ANALYSIS_STATE_NOT_AFFECTED:
-      return "IMPACT_ANALYSIS_STATE_NOT_AFFECTED";
+      return "not_affected";
     case ImpactAnalysisState.UNRECOGNIZED:
     default:
       return "UNRECOGNIZED";
@@ -816,30 +890,39 @@ export function impactAnalysisJustificationFromJSON(object: any): ImpactAnalysis
       return ImpactAnalysisJustification.IMPACT_ANALYSIS_JUSTIFICATION_NULL;
     case 1:
     case "IMPACT_ANALYSIS_JUSTIFICATION_CODE_NOT_PRESENT":
+    case "code_not_present":
       return ImpactAnalysisJustification.IMPACT_ANALYSIS_JUSTIFICATION_CODE_NOT_PRESENT;
     case 2:
     case "IMPACT_ANALYSIS_JUSTIFICATION_CODE_NOT_REACHABLE":
+    case "code_not_reachable":
       return ImpactAnalysisJustification.IMPACT_ANALYSIS_JUSTIFICATION_CODE_NOT_REACHABLE;
     case 3:
     case "IMPACT_ANALYSIS_JUSTIFICATION_REQUIRES_CONFIGURATION":
+    case "requires_configuration":
       return ImpactAnalysisJustification.IMPACT_ANALYSIS_JUSTIFICATION_REQUIRES_CONFIGURATION;
     case 4:
     case "IMPACT_ANALYSIS_JUSTIFICATION_REQUIRES_DEPENDENCY":
+    case "requires_dependency":
       return ImpactAnalysisJustification.IMPACT_ANALYSIS_JUSTIFICATION_REQUIRES_DEPENDENCY;
     case 5:
     case "IMPACT_ANALYSIS_JUSTIFICATION_REQUIRES_ENVIRONMENT":
+    case "requires_environment":
       return ImpactAnalysisJustification.IMPACT_ANALYSIS_JUSTIFICATION_REQUIRES_ENVIRONMENT;
     case 6:
     case "IMPACT_ANALYSIS_JUSTIFICATION_PROTECTED_BY_COMPILER":
+    case "protected_by_compiler":
       return ImpactAnalysisJustification.IMPACT_ANALYSIS_JUSTIFICATION_PROTECTED_BY_COMPILER;
     case 7:
     case "IMPACT_ANALYSIS_JUSTIFICATION_PROTECTED_AT_RUNTIME":
+    case "protected_at_runtime":
       return ImpactAnalysisJustification.IMPACT_ANALYSIS_JUSTIFICATION_PROTECTED_AT_RUNTIME;
     case 8:
     case "IMPACT_ANALYSIS_JUSTIFICATION_PROTECTED_AT_PERIMETER":
+    case "protected_at_perimeter":
       return ImpactAnalysisJustification.IMPACT_ANALYSIS_JUSTIFICATION_PROTECTED_AT_PERIMETER;
     case 9:
     case "IMPACT_ANALYSIS_JUSTIFICATION_PROTECTED_BY_MITIGATING_CONTROL":
+    case "protected_by_mitigating_control":
       return ImpactAnalysisJustification.IMPACT_ANALYSIS_JUSTIFICATION_PROTECTED_BY_MITIGATING_CONTROL;
     case -1:
     case "UNRECOGNIZED":
@@ -853,23 +936,23 @@ export function impactAnalysisJustificationToJSON(object: ImpactAnalysisJustific
     case ImpactAnalysisJustification.IMPACT_ANALYSIS_JUSTIFICATION_NULL:
       return "IMPACT_ANALYSIS_JUSTIFICATION_NULL";
     case ImpactAnalysisJustification.IMPACT_ANALYSIS_JUSTIFICATION_CODE_NOT_PRESENT:
-      return "IMPACT_ANALYSIS_JUSTIFICATION_CODE_NOT_PRESENT";
+      return "code_not_present";
     case ImpactAnalysisJustification.IMPACT_ANALYSIS_JUSTIFICATION_CODE_NOT_REACHABLE:
-      return "IMPACT_ANALYSIS_JUSTIFICATION_CODE_NOT_REACHABLE";
+      return "code_not_reachable";
     case ImpactAnalysisJustification.IMPACT_ANALYSIS_JUSTIFICATION_REQUIRES_CONFIGURATION:
-      return "IMPACT_ANALYSIS_JUSTIFICATION_REQUIRES_CONFIGURATION";
+      return "requires_configuration";
     case ImpactAnalysisJustification.IMPACT_ANALYSIS_JUSTIFICATION_REQUIRES_DEPENDENCY:
-      return "IMPACT_ANALYSIS_JUSTIFICATION_REQUIRES_DEPENDENCY";
+      return "requires_dependency";
     case ImpactAnalysisJustification.IMPACT_ANALYSIS_JUSTIFICATION_REQUIRES_ENVIRONMENT:
-      return "IMPACT_ANALYSIS_JUSTIFICATION_REQUIRES_ENVIRONMENT";
+      return "requires_environment";
     case ImpactAnalysisJustification.IMPACT_ANALYSIS_JUSTIFICATION_PROTECTED_BY_COMPILER:
-      return "IMPACT_ANALYSIS_JUSTIFICATION_PROTECTED_BY_COMPILER";
+      return "protected_by_compiler";
     case ImpactAnalysisJustification.IMPACT_ANALYSIS_JUSTIFICATION_PROTECTED_AT_RUNTIME:
-      return "IMPACT_ANALYSIS_JUSTIFICATION_PROTECTED_AT_RUNTIME";
+      return "protected_at_runtime";
     case ImpactAnalysisJustification.IMPACT_ANALYSIS_JUSTIFICATION_PROTECTED_AT_PERIMETER:
-      return "IMPACT_ANALYSIS_JUSTIFICATION_PROTECTED_AT_PERIMETER";
+      return "protected_at_perimeter";
     case ImpactAnalysisJustification.IMPACT_ANALYSIS_JUSTIFICATION_PROTECTED_BY_MITIGATING_CONTROL:
-      return "IMPACT_ANALYSIS_JUSTIFICATION_PROTECTED_BY_MITIGATING_CONTROL";
+      return "protected_by_mitigating_control";
     case ImpactAnalysisJustification.UNRECOGNIZED:
     default:
       return "UNRECOGNIZED";
@@ -893,18 +976,23 @@ export function vulnerabilityResponseFromJSON(object: any): VulnerabilityRespons
       return VulnerabilityResponse.VULNERABILITY_RESPONSE_NULL;
     case 1:
     case "VULNERABILITY_RESPONSE_CAN_NOT_FIX":
+    case "can_not_fix":
       return VulnerabilityResponse.VULNERABILITY_RESPONSE_CAN_NOT_FIX;
     case 2:
     case "VULNERABILITY_RESPONSE_WILL_NOT_FIX":
+    case "will_not_fix":
       return VulnerabilityResponse.VULNERABILITY_RESPONSE_WILL_NOT_FIX;
     case 3:
     case "VULNERABILITY_RESPONSE_UPDATE":
+    case "update":
       return VulnerabilityResponse.VULNERABILITY_RESPONSE_UPDATE;
     case 4:
     case "VULNERABILITY_RESPONSE_ROLLBACK":
+    case "rollback":
       return VulnerabilityResponse.VULNERABILITY_RESPONSE_ROLLBACK;
     case 5:
     case "VULNERABILITY_RESPONSE_WORKAROUND_AVAILABLE":
+    case "workaround_available":
       return VulnerabilityResponse.VULNERABILITY_RESPONSE_WORKAROUND_AVAILABLE;
     case -1:
     case "UNRECOGNIZED":
@@ -918,15 +1006,15 @@ export function vulnerabilityResponseToJSON(object: VulnerabilityResponse): stri
     case VulnerabilityResponse.VULNERABILITY_RESPONSE_NULL:
       return "VULNERABILITY_RESPONSE_NULL";
     case VulnerabilityResponse.VULNERABILITY_RESPONSE_CAN_NOT_FIX:
-      return "VULNERABILITY_RESPONSE_CAN_NOT_FIX";
+      return "can_not_fix";
     case VulnerabilityResponse.VULNERABILITY_RESPONSE_WILL_NOT_FIX:
-      return "VULNERABILITY_RESPONSE_WILL_NOT_FIX";
+      return "will_not_fix";
     case VulnerabilityResponse.VULNERABILITY_RESPONSE_UPDATE:
-      return "VULNERABILITY_RESPONSE_UPDATE";
+      return "update";
     case VulnerabilityResponse.VULNERABILITY_RESPONSE_ROLLBACK:
-      return "VULNERABILITY_RESPONSE_ROLLBACK";
+      return "rollback";
     case VulnerabilityResponse.VULNERABILITY_RESPONSE_WORKAROUND_AVAILABLE:
-      return "VULNERABILITY_RESPONSE_WORKAROUND_AVAILABLE";
+      return "workaround_available";
     case VulnerabilityResponse.UNRECOGNIZED:
     default:
       return "UNRECOGNIZED";
@@ -945,12 +1033,15 @@ export function vulnerabilityAffectedStatusFromJSON(object: any): VulnerabilityA
   switch (object) {
     case 0:
     case "VULNERABILITY_AFFECTED_STATUS_UNKNOWN":
+    case "unknown":
       return VulnerabilityAffectedStatus.VULNERABILITY_AFFECTED_STATUS_UNKNOWN;
     case 1:
     case "VULNERABILITY_AFFECTED_STATUS_AFFECTED":
+    case "affected":
       return VulnerabilityAffectedStatus.VULNERABILITY_AFFECTED_STATUS_AFFECTED;
     case 2:
     case "VULNERABILITY_AFFECTED_STATUS_NOT_AFFECTED":
+    case "unaffected":
       return VulnerabilityAffectedStatus.VULNERABILITY_AFFECTED_STATUS_NOT_AFFECTED;
     case -1:
     case "UNRECOGNIZED":
@@ -962,11 +1053,11 @@ export function vulnerabilityAffectedStatusFromJSON(object: any): VulnerabilityA
 export function vulnerabilityAffectedStatusToJSON(object: VulnerabilityAffectedStatus): string {
   switch (object) {
     case VulnerabilityAffectedStatus.VULNERABILITY_AFFECTED_STATUS_UNKNOWN:
-      return "VULNERABILITY_AFFECTED_STATUS_UNKNOWN";
+      return "unknown";
     case VulnerabilityAffectedStatus.VULNERABILITY_AFFECTED_STATUS_AFFECTED:
-      return "VULNERABILITY_AFFECTED_STATUS_AFFECTED";
+      return "affected";
     case VulnerabilityAffectedStatus.VULNERABILITY_AFFECTED_STATUS_NOT_AFFECTED:
-      return "VULNERABILITY_AFFECTED_STATUS_NOT_AFFECTED";
+      return "unaffected";
     case VulnerabilityAffectedStatus.UNRECOGNIZED:
     default:
       return "UNRECOGNIZED";
@@ -1596,7 +1687,7 @@ function createBaseAttachedText(): AttachedText {
   return { contentType: undefined, encoding: undefined, value: "" };
 }
 
-export const AttachedText = {
+export const AttachedText : CustomMessage<AttachedText>  = {
   encode(message: AttachedText, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
     if (message.contentType !== undefined) {
       writer.uint32(10).string(message.contentType);
@@ -1846,7 +1937,7 @@ function createBaseCommit(): Commit {
   return { uid: undefined, url: undefined, author: undefined, committer: undefined, message: undefined };
 }
 
-export const Commit = {
+export const Commit : CustomMessage<Commit> = {
   encode(message: Commit, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
     if (message.uid !== undefined) {
       writer.uint32(10).string(message.uid);
@@ -2133,8 +2224,8 @@ export const Component : CustomMessage<Component> = {
   fromJSON(object: any): Component {
     return {
       type: isSet(object.type) ? classificationFromJSON(object.type) : 0,
-      mimeType: isSet(object.mimeType) ? String(object.mimeType) : undefined,
-      bomRef: isSet(object.bomRef) ? String(object.bomRef) : undefined,
+      mimeType: isSet(object['mime-type']) ? String(object['mime-type']) : undefined,
+      bomRef: isSet(object['bom-ref']) ? String(object['bom-ref']) : undefined,
       supplier: isSet(object.supplier) ? OrganizationalEntity.fromJSON(object.supplier) : undefined,
       author: isSet(object.author) ? String(object.author) : undefined,
       publisher: isSet(object.publisher) ? String(object.publisher) : undefined,
@@ -2164,8 +2255,8 @@ export const Component : CustomMessage<Component> = {
   toJSON(message: Component): unknown {
     const obj: any = {};
     message.type !== undefined && (obj.type = classificationToJSON(message.type));
-    message.mimeType !== undefined && (obj.mimeType = message.mimeType);
-    message.bomRef !== undefined && (obj.bomRef = message.bomRef);
+    message.mimeType !== undefined && (obj['mime-type'] = message.mimeType);
+    message.bomRef !== undefined && (obj['bom-ref'] = message.bomRef);
     message.supplier !== undefined &&
       (obj.supplier = message.supplier ? OrganizationalEntity.toJSON(message.supplier) : undefined);
     message.author !== undefined && (obj.author = message.author);
@@ -2260,7 +2351,7 @@ function createBaseDataClassification(): DataClassification {
   return { flow: 0, value: "" };
 }
 
-export const DataClassification = {
+export const DataClassification : CustomMessage<DataClassification> = {
   encode(message: DataClassification, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
     if (message.flow !== 0) {
       writer.uint32(8).int32(message.flow);
@@ -2295,14 +2386,14 @@ export const DataClassification = {
   fromJSON(object: any): DataClassification {
     return {
       flow: isSet(object.flow) ? dataFlowFromJSON(object.flow) : 0,
-      value: isSet(object.value) ? String(object.value) : "",
+      value: isSet(object['classification']) ? String(object['classification']) : "",
     };
   },
 
   toJSON(message: DataClassification): unknown {
     const obj: any = {};
     message.flow !== undefined && (obj.flow = dataFlowToJSON(message.flow));
-    message.value !== undefined && (obj.value = message.value);
+    message.value !== undefined && (obj['classification'] = message.value);
     return obj;
   },
 
@@ -2322,7 +2413,7 @@ function createBaseDependency(): Dependency {
   return { ref: "", dependencies: [] };
 }
 
-export const Dependency = {
+export const Dependency : CustomMessage<Dependency> = {
   encode(message: Dependency, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
     if (message.ref !== "") {
       writer.uint32(10).string(message.ref);
@@ -2355,11 +2446,16 @@ export const Dependency = {
   },
 
   fromJSON(object: any): Dependency {
+    let dependencies : Dependency[] = []
+    if (Array.isArray(object?.dependencies)) {
+      dependencies = object.dependencies.map((e: any) => Dependency.fromJSON(e))
+    }
+    if (Array.isArray(object?.dependsOn)) {
+      dependencies = object.dependsOn.map((e: any) => Dependency.create({ ref: String(e) }))
+    }
     return {
       ref: isSet(object.ref) ? String(object.ref) : "",
-      dependencies: Array.isArray(object?.dependencies)
-        ? object.dependencies.map((e: any) => Dependency.fromJSON(e))
-        : [],
+      dependencies: dependencies,
     };
   },
 
@@ -2367,9 +2463,9 @@ export const Dependency = {
     const obj: any = {};
     message.ref !== undefined && (obj.ref = message.ref);
     if (message.dependencies) {
-      obj.dependencies = message.dependencies.map((e) => e ? Dependency.toJSON(e) : undefined);
+      obj.dependsOn = message.dependencies.map((e) => e ? Dependency.toJSON(e) : undefined);
     } else {
-      obj.dependencies = [];
+      obj.dependsOn = [];
     }
     return obj;
   },
@@ -2390,7 +2486,7 @@ function createBaseDiff(): Diff {
   return { text: undefined, url: undefined };
 }
 
-export const Diff = {
+export const Diff : CustomMessage<Diff> = {
   encode(message: Diff, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
     if (message.text !== undefined) {
       AttachedText.encode(message.text, writer.uint32(10).fork()).ldelim();
@@ -2454,7 +2550,7 @@ function createBaseExternalReference(): ExternalReference {
   return { type: 0, url: "", comment: undefined, hashes: [] };
 }
 
-export const ExternalReference = {
+export const ExternalReference : CustomMessage<ExternalReference> = {
   encode(message: ExternalReference, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
     if (message.type !== 0) {
       writer.uint32(8).int32(message.type);
@@ -2538,7 +2634,7 @@ function createBaseHash(): Hash {
   return { alg: 0, value: "" };
 }
 
-export const Hash = {
+export const Hash : CustomMessage<Hash> = {
   encode(message: Hash, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
     if (message.alg !== 0) {
       writer.uint32(8).int32(message.alg);
@@ -2573,14 +2669,14 @@ export const Hash = {
   fromJSON(object: any): Hash {
     return {
       alg: isSet(object.alg) ? hashAlgFromJSON(object.alg) : 0,
-      value: isSet(object.value) ? String(object.value) : "",
+      value: isSet(object['content']) ? String(object['content']) : "",
     };
   },
 
   toJSON(message: Hash): unknown {
     const obj: any = {};
     message.alg !== undefined && (obj.alg = hashAlgToJSON(message.alg));
-    message.value !== undefined && (obj.value = message.value);
+    message.value !== undefined && (obj.content = message.value);
     return obj;
   },
 
@@ -2600,7 +2696,7 @@ function createBaseIdentifiableAction(): IdentifiableAction {
   return { timestamp: undefined, name: undefined, email: undefined };
 }
 
-export const IdentifiableAction = {
+export const IdentifiableAction : CustomMessage<IdentifiableAction> = {
   encode(message: IdentifiableAction, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
     if (message.timestamp !== undefined) {
       Timestamp.encode(toTimestamp(message.timestamp), writer.uint32(10).fork()).ldelim();
@@ -2671,7 +2767,7 @@ function createBaseIssue(): Issue {
   return { type: 0, id: undefined, name: undefined, description: undefined, source: undefined, references: [] };
 }
 
-export const Issue = {
+export const Issue : CustomMessage<Issue> = {
   encode(message: Issue, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
     if (message.type !== 0) {
       writer.uint32(8).int32(message.type);
@@ -2775,7 +2871,7 @@ function createBaseSource(): Source {
   return { name: undefined, url: undefined };
 }
 
-export const Source = {
+export const Source : CustomMessage<Source> = {
   encode(message: Source, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
     if (message.name !== undefined) {
       writer.uint32(10).string(message.name);
@@ -2837,7 +2933,7 @@ function createBaseLicenseChoice(): LicenseChoice {
   return { license: undefined, expression: undefined };
 }
 
-export const LicenseChoice = {
+export const LicenseChoice : CustomMessage<LicenseChoice> = {
   encode(message: LicenseChoice, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
     if (message.license !== undefined) {
       License.encode(message.license, writer.uint32(10).fork()).ldelim();
@@ -2901,7 +2997,7 @@ function createBaseLicense(): License {
   return { id: undefined, name: undefined, text: undefined, url: undefined };
 }
 
-export const License = {
+export const License : CustomMessage<License> = {
   encode(message: License, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
     if (message.id !== undefined) {
       writer.uint32(10).string(message.id);
@@ -3132,7 +3228,7 @@ function createBaseOrganizationalContact(): OrganizationalContact {
   return { name: undefined, email: undefined, phone: undefined };
 }
 
-export const OrganizationalContact = {
+export const OrganizationalContact : CustomMessage<OrganizationalContact> = {
   encode(message: OrganizationalContact, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
     if (message.name !== undefined) {
       writer.uint32(10).string(message.name);
@@ -3203,7 +3299,7 @@ function createBaseOrganizationalEntity(): OrganizationalEntity {
   return { name: undefined, url: [], contact: [] };
 }
 
-export const OrganizationalEntity = {
+export const OrganizationalEntity : CustomMessage<OrganizationalEntity> = {
   encode(message: OrganizationalEntity, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
     if (message.name !== undefined) {
       writer.uint32(10).string(message.name);
@@ -3282,7 +3378,7 @@ function createBasePatch(): Patch {
   return { type: 0, diff: undefined, resolves: [] };
 }
 
-export const Patch = {
+export const Patch : CustomMessage<Patch> = {
   encode(message: Patch, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
     if (message.type !== 0) {
       writer.uint32(8).int32(message.type);
@@ -3491,7 +3587,7 @@ function createBaseService(): Service {
   };
 }
 
-export const Service = {
+export const Service : CustomMessage<Service> = {
   encode(message: Service, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
     if (message.bomRef !== undefined) {
       writer.uint32(10).string(message.bomRef);
@@ -3603,7 +3699,7 @@ export const Service = {
 
   fromJSON(object: any): Service {
     return {
-      bomRef: isSet(object.bomRef) ? String(object.bomRef) : undefined,
+      bomRef: isSet(object['bom-ref']) ? String(object['bom-ref']) : undefined,
       provider: isSet(object.provider) ? OrganizationalEntity.fromJSON(object.provider) : undefined,
       group: isSet(object.group) ? String(object.group) : undefined,
       name: isSet(object.name) ? String(object.name) : "",
@@ -3611,7 +3707,7 @@ export const Service = {
       description: isSet(object.description) ? String(object.description) : undefined,
       endpoints: Array.isArray(object?.endpoints) ? object.endpoints.map((e: any) => String(e)) : [],
       authenticated: isSet(object.authenticated) ? Boolean(object.authenticated) : undefined,
-      xTrustBoundary: isSet(object.xTrustBoundary) ? Boolean(object.xTrustBoundary) : undefined,
+      xTrustBoundary: isSet(object['x-trust-boundary']) ? Boolean(object['x-trust-boundary']) : undefined,
       data: Array.isArray(object?.data) ? object.data.map((e: any) => DataClassification.fromJSON(e)) : [],
       licenses: Array.isArray(object?.licenses) ? object.licenses.map((e: any) => LicenseChoice.fromJSON(e)) : [],
       externalReferences: Array.isArray(object?.externalReferences)
@@ -3625,7 +3721,7 @@ export const Service = {
 
   toJSON(message: Service): unknown {
     const obj: any = {};
-    message.bomRef !== undefined && (obj.bomRef = message.bomRef);
+    message.bomRef !== undefined && (obj['bom-ref'] = message.bomRef);
     message.provider !== undefined &&
       (obj.provider = message.provider ? OrganizationalEntity.toJSON(message.provider) : undefined);
     message.group !== undefined && (obj.group = message.group);
@@ -3638,7 +3734,7 @@ export const Service = {
       obj.endpoints = [];
     }
     message.authenticated !== undefined && (obj.authenticated = message.authenticated);
-    message.xTrustBoundary !== undefined && (obj.xTrustBoundary = message.xTrustBoundary);
+    message.xTrustBoundary !== undefined && (obj['x-trust-boundary'] = message.xTrustBoundary);
     if (message.data) {
       obj.data = message.data.map((e) => e ? DataClassification.toJSON(e) : undefined);
     } else {
@@ -3710,7 +3806,7 @@ function createBaseSwid(): Swid {
   };
 }
 
-export const Swid = {
+export const Swid : CustomMessage<Swid> = {
   encode(message: Swid, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
     if (message.tagId !== "") {
       writer.uint32(10).string(message.tagId);
@@ -3819,7 +3915,7 @@ function createBaseTool(): Tool {
   return { vendor: undefined, name: undefined, version: undefined, hashes: [], externalReferences: [] };
 }
 
-export const Tool = {
+export const Tool : CustomMessage<Tool> = {
   encode(message: Tool, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
     if (message.vendor !== undefined) {
       writer.uint32(10).string(message.vendor);
@@ -3918,7 +4014,7 @@ function createBaseProperty(): Property {
   return { name: "", value: undefined };
 }
 
-export const Property = {
+export const Property : CustomMessage<Property> = {
   encode(message: Property, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
     if (message.name !== "") {
       writer.uint32(10).string(message.name);
@@ -3980,7 +4076,7 @@ function createBaseComposition(): Composition {
   return { aggregate: 0, assemblies: [], dependencies: [] };
 }
 
-export const Composition = {
+export const Composition : CustomMessage<Composition> = {
   encode(message: Composition, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
     if (message.aggregate !== 0) {
       writer.uint32(8).int32(message.aggregate);
@@ -4059,7 +4155,7 @@ function createBaseEvidenceCopyright(): EvidenceCopyright {
   return { text: "" };
 }
 
-export const EvidenceCopyright = {
+export const EvidenceCopyright : CustomMessage<EvidenceCopyright> = {
   encode(message: EvidenceCopyright, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
     if (message.text !== "") {
       writer.uint32(10).string(message.text);
@@ -4110,7 +4206,7 @@ function createBaseEvidence(): Evidence {
   return { licenses: [], copyright: [] };
 }
 
-export const Evidence = {
+export const Evidence : CustomMessage<Evidence> = {
   encode(message: Evidence, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
     for (const v of message.licenses) {
       LicenseChoice.encode(v!, writer.uint32(10).fork()).ldelim();
@@ -4182,7 +4278,7 @@ function createBaseNote(): Note {
   return { locale: undefined, text: undefined };
 }
 
-export const Note = {
+export const Note : CustomMessage<Note> = {
   encode(message: Note, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
     if (message.locale !== undefined) {
       writer.uint32(10).string(message.locale);
@@ -4258,7 +4354,7 @@ function createBaseReleaseNotes(): ReleaseNotes {
   };
 }
 
-export const ReleaseNotes = {
+export const ReleaseNotes : CustomMessage<ReleaseNotes> = {
   encode(message: ReleaseNotes, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
     if (message.type !== "") {
       writer.uint32(10).string(message.type);
@@ -4440,7 +4536,7 @@ function createBaseVulnerability(): Vulnerability {
   };
 }
 
-export const Vulnerability = {
+export const Vulnerability : CustomMessage<Vulnerability> = {
   encode(message: Vulnerability, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
     if (message.bomRef !== undefined) {
       writer.uint32(10).string(message.bomRef);
@@ -4579,7 +4675,7 @@ export const Vulnerability = {
 
   fromJSON(object: any): Vulnerability {
     return {
-      bomRef: isSet(object.bomRef) ? String(object.bomRef) : undefined,
+      bomRef: isSet(object['bom-ref']) ? String(object['bom-ref']) : undefined,
       id: isSet(object.id) ? String(object.id) : undefined,
       source: isSet(object.source) ? Source.fromJSON(object.source) : undefined,
       references: Array.isArray(object?.references)
@@ -4604,7 +4700,7 @@ export const Vulnerability = {
 
   toJSON(message: Vulnerability): unknown {
     const obj: any = {};
-    message.bomRef !== undefined && (obj.bomRef = message.bomRef);
+    message.bomRef !== undefined && (obj['bom-ref'] = message.bomRef);
     message.id !== undefined && (obj.id = message.id);
     message.source !== undefined && (obj.source = message.source ? Source.toJSON(message.source) : undefined);
     if (message.references) {
@@ -4693,7 +4789,7 @@ function createBaseVulnerabilityReference(): VulnerabilityReference {
   return { id: undefined, source: undefined };
 }
 
-export const VulnerabilityReference = {
+export const VulnerabilityReference : CustomMessage<VulnerabilityReference> = {
   encode(message: VulnerabilityReference, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
     if (message.id !== undefined) {
       writer.uint32(10).string(message.id);
@@ -4764,7 +4860,7 @@ function createBaseVulnerabilityRating(): VulnerabilityRating {
   };
 }
 
-export const VulnerabilityRating = {
+export const VulnerabilityRating : CustomMessage<VulnerabilityRating> = {
   encode(message: VulnerabilityRating, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
     if (message.source !== undefined) {
       Source.encode(message.source, writer.uint32(10).fork()).ldelim();
@@ -4866,7 +4962,7 @@ function createBaseAdvisory(): Advisory {
   return { title: undefined, url: "" };
 }
 
-export const Advisory = {
+export const Advisory : CustomMessage<Advisory> = {
   encode(message: Advisory, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
     if (message.title !== undefined) {
       writer.uint32(10).string(message.title);
@@ -4928,7 +5024,7 @@ function createBaseVulnerabilityCredits(): VulnerabilityCredits {
   return { organizations: [], individuals: [] };
 }
 
-export const VulnerabilityCredits = {
+export const VulnerabilityCredits : CustomMessage<VulnerabilityCredits> = {
   encode(message: VulnerabilityCredits, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
     for (const v of message.organizations) {
       OrganizationalEntity.encode(v!, writer.uint32(10).fork()).ldelim();
@@ -5002,7 +5098,7 @@ function createBaseVulnerabilityAnalysis(): VulnerabilityAnalysis {
   return { state: undefined, justification: undefined, response: [], detail: undefined };
 }
 
-export const VulnerabilityAnalysis = {
+export const VulnerabilityAnalysis : CustomMessage<VulnerabilityAnalysis> = {
   encode(message: VulnerabilityAnalysis, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
     if (message.state !== undefined) {
       writer.uint32(8).int32(message.state);
@@ -5102,7 +5198,7 @@ function createBaseVulnerabilityAffects(): VulnerabilityAffects {
   return { ref: "", versions: [] };
 }
 
-export const VulnerabilityAffects = {
+export const VulnerabilityAffects : CustomMessage<VulnerabilityAffects> = {
   encode(message: VulnerabilityAffects, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
     if (message.ref !== "") {
       writer.uint32(10).string(message.ref);
@@ -5170,7 +5266,7 @@ function createBaseVulnerabilityAffectedVersions(): VulnerabilityAffectedVersion
   return { version: undefined, range: undefined, status: undefined };
 }
 
-export const VulnerabilityAffectedVersions = {
+export const VulnerabilityAffectedVersions : CustomMessage<VulnerabilityAffectedVersions> = {
   encode(message: VulnerabilityAffectedVersions, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
     if (message.version !== undefined) {
       writer.uint32(10).string(message.version);

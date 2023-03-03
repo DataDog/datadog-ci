@@ -105,6 +105,8 @@ export class UploadSBomFileCommand extends Command {
         ],
       })
       fs.writeFileSync(sbomFile.filePath + ".payload.json", JSON.stringify(SBOMPayload.toJSON(sbom), "", "  "))
+      const sbomPB = SBOMPayload.encode(sbom).finish()
+      fs.writeFileSync(sbomFile.filePath + ".payload.pbytes", sbomPB)
       return sbom
     })
 
