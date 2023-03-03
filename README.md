@@ -66,11 +66,10 @@ yarn launch synthetics run-tests --config dev/global.config.json
 
 ### Framework and libraries used
 
-This tool uses [clipanion](https://github.com/arcanis/clipanion) to handle the different commands.
-
-The tests are written using [jest](https://github.com/facebook/jest).
-
-The coding style is checked with [tslint](https://github.com/palantir/tslint) and the configuration can be found in the [tslint.json](/tslint.json) file.
+- [clipanion](https://github.com/arcanis/clipanion): CLI library to handle the different commands.
+- [eslint](https://github.com/eslint/eslint): Linting ([.eslintrc.js](/.eslintrc.js)).
+- [jest](https://github.com/facebook/jest): Tests are written in Jest.
+- [volta](https://github.com/volta-cli/volta): NodeJS and yarn versioning.
 
 ### Repository structure
 
@@ -127,19 +126,19 @@ The goal of this test is to verify the command is able to run tests and wait for
 yarn watch
 
 # Run the tests
-yarn jest
+yarn test
 
 # Build code
 yarn build
-
-# Format code
-yarn format
 
 # Make bin executable
 yarn prepack
 ```
 
-### Release Process
+#### Release Process
+
+<details>
+  <summary>Instructions</summary>
 
 To release a new version of `datadog-ci`:
 
@@ -151,11 +150,16 @@ To release a new version of `datadog-ci`:
 6. Once the release has been created, a GitHub Action publishes the package. Make sure the job succeeds.
 7. When the package has been published, go to the [Datadog GitLab pipelines](https://gitlab.ddbuild.io/DataDog/datadog-ci/-/pipelines), find the pipeline for your tag, and start the `build` stage to run the Docker image build jobs. Once the jobs pass, the `release` stage automatically triggers. Make sure all the jobs succeed.
 8. If the release introduced any **changes in the** `synthetics` **command**, you have to upgrade `datadog-ci` in the following projects:
-   * [GitHub Action](https://github.com/DataDog/synthetics-ci-github-action)
-   * [CircleCI Orb](https://github.com/DataDog/synthetics-test-automation-circleci-orb)
-   * [Azure DevOps Extension](https://github.com/DataDog/datadog-ci-azure-devops)
+   - [GitHub Action](https://github.com/DataDog/synthetics-ci-github-action)
+   - [CircleCI Orb](https://github.com/DataDog/synthetics-test-automation-circleci-orb)
+   - [Azure DevOps Extension](https://github.com/DataDog/datadog-ci-azure-devops)
 
-### Pre-Release Process
+</details>
+
+#### Pre-Release Process
+
+<details>
+  <summary>Instructions</summary>
 
 To create a pre-release or releasing in a different channel:
 
@@ -172,11 +176,13 @@ To create a pre-release or releasing in a different channel:
 
 <img src="./assets/pre-release.png" width="500"/>
 
+</details>
+
 ## More ways to install the CLI
 
 ### Standalone binary (**beta**)
 
-If installing NodeJS in the CI is an issue, standalone binaries are provided with [releases](https://github.com/DataDog/datadog-ci/releases). _linux-x64_, _darwin-x64_ (macOS), and _win-x64_ (Windows) are supported. **These standalone binaries are in beta and their stability is not guaranteed**. 
+If installing NodeJS in the CI is an issue, standalone binaries are provided with [releases](https://github.com/DataDog/datadog-ci/releases). _linux-x64_, _darwin-x64_ (macOS), and _win-x64_ (Windows) are supported. **These standalone binaries are in beta and their stability is not guaranteed**.
 
 To install:
 
@@ -206,7 +212,7 @@ datadog-ci version
 
 ### Container image
 
-To run `datadog-ci` from a container, you can use the `datadog/ci` image available in Dockerhub as well as the public Amazon ECR and Google GC registries.
+To run `datadog-ci` from a container, you can use the `datadog/ci` image available in [Dockerhub](https://hub.docker.com/r/datadog/ci) as well as the public [Amazon ECR](https://gallery.ecr.aws/datadog/ci) and [Google GC](https://console.cloud.google.com/gcr/images/datadoghq/global/ci) registries.
 
 ```
 docker pull datadog/ci

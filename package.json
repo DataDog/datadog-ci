@@ -8,6 +8,11 @@
   "engines": {
     "node": ">=14"
   },
+  "volta": {
+    "node": "14.20.1",
+    "yarn": "3.4.1"
+  },
+  "packageManager": "yarn@3.4.1",
   "files": [
     "dist/**/*",
     "README",
@@ -117,6 +122,5 @@
     "ts-jest": "28.0.8",
     "ts-node": "8.8.1",
     "typescript": "4.3.5"
-  },
-  "packageManager": "yarn@3.4.1"
+  }
 }
