@@ -35,7 +35,9 @@ export const uploadSarifReport = (request: (args: AxiosRequestConfig) => AxiosPr
   const metadata: Record<string, any> = {
     service: sarifReport.service,
     ...sarifReport.spanTags,
-    '_dd.ci.static_analysis.format': 'sarif',
+    event_type: 'static_analysis',
+    event_format_name: 'sarif',
+    event_format_version: '2.1.0',
   }
 
   form.append('event', JSON.stringify(metadata), {filename: 'event.json'})
@@ -50,7 +52,7 @@ export const uploadSarifReport = (request: (args: AxiosRequestConfig) => AxiosPr
   }
 
   form.append('sarif_report_file', fs.createReadStream(sarifReport.reportPath).pipe(createGzip()), {
-    filename: `${getSafeFileName(uniqueFileName)}.json.gz`,
+    filename: `${getSafeFileName(uniqueFileName)}.sarif.gz`,
   })
 
   return request({
