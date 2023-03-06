@@ -81,7 +81,7 @@ export const uploadToGitDB = async (
   log.debug(`Uploading packfiles...`)
   try {
     await uploadPackfiles(log, request, repoURL, latestCommits[0], packfiles)
-    log.debug(`Successfully uploaded packfiles.`)
+    log.debug('Successfully uploaded packfiles.')
   } catch (err) {
     log.warn(`Failed to upload packfiles: ${err}`)
     throw err
