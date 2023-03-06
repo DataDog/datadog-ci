@@ -117,6 +117,12 @@ describe('dd-api', () => {
         shouldBeRetriedOn404: false,
         shouldBeRetriedOn5xx: true,
       },
+      {
+        makeApiRequest: () => api.getSyntheticsOrgSettings(),
+        name: 'get settings' as const,
+        shouldBeRetriedOn404: false,
+        shouldBeRetriedOn5xx: true,
+      },
     ]
 
     test.each(testCases)(
@@ -192,6 +198,17 @@ describe('dd-api', () => {
         },
       })
     )
+    spy.mockRestore()
+  })
+
+  test('should receive settings', async () => {
+    const settings = {orgMaxConcurrencyCap: 100}
+    const requestMock = jest.fn(() => ({status: 200, data: settings}))
+    const spy = jest.spyOn(axios, 'create').mockImplementation((() => requestMock) as any)
+
+    const {getSyntheticsOrgSettings: getSettings} = apiConstructor(apiConfiguration)
+
+    await expect(getSettings()).resolves.toEqual(settings)
     spy.mockRestore()
   })
 

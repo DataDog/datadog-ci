@@ -41,7 +41,7 @@ describe('utils', () => {
     test('should have no effect if no config path is provided and default file is absent', async () => {
       const originalConfig = {}
       const config = await ciUtils.resolveConfigFromFile(originalConfig, {
-        defaultConfigPath: '/veryuniqueandabsentfile',
+        defaultConfigPaths: ['/veryuniqueandabsentfile'],
       })
 
       expect(config).toEqual(originalConfig)

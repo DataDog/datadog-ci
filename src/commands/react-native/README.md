@@ -141,23 +141,14 @@ The upload only happens when your target has a "Release" build configuration; th
 
 You can use the same environment variables as the `upload` command: `DATADOG_API_KEY` (required), `DATADOG_SITE`, and `DATADOG_SOURCEMAP_INTAKE_URL`.
 
-To get the location to your `node` and `yarn` binaries, run the following in a terminal:
-
-```bash
-$ which node #/path/to/node
-$ which yarn #/path/to/yarn
-```
-
 #### For React Native >= 0.69:
 
 To ensure environment variables are well propagated in the build phase, you need to create a `custom-react-native-xcode.sh` file in your `ios` folder:
 
 ```bash
 #!/bin/sh
-
-REACT_NATIVE_XCODE="node_modules/react-native/scripts/react-native-xcode.sh"
-# Replace /opt/homebrew/bin/node (resp. /opt/homebrew/bin/yarn) by the value of $(which node) (resp. $(which yarn))
-DATADOG_XCODE="/opt/homebrew/bin/node /opt/homebrew/bin/yarn datadog-ci react-native xcode"
+REACT_NATIVE_XCODE="../node_modules/react-native/scripts/react-native-xcode.sh"
+DATADOG_XCODE="../node_modules/.bin/datadog-ci react-native xcode"
 
 /bin/sh -c "$DATADOG_XCODE $REACT_NATIVE_XCODE"
 ```
@@ -166,7 +157,7 @@ This allows the file's path to be passed as one argument to the `with-environmen
 
 ```bash
 set -e
-export SOURCEMAP_FILE=./main.jsbundle.map
+export SOURCEMAP_FILE=$DERIVED_FILE_DIR/main.jsbundle.map
 WITH_ENVIRONMENT="../node_modules/react-native/scripts/xcode/with-environment.sh"
 REACT_NATIVE_XCODE="./custom-react-native-xcode.sh"
 
@@ -179,10 +170,7 @@ Change the "Bundle React Native code and images" build phase:
 
 ```bash
 set -e
-export SOURCEMAP_FILE=./build/main.jsbundle.map
-export NODE_BINARY=node
-# Change /opt/homebrew/bin/node (resp. /opt/homebrew/bin/yarn) by the value of $(which node) (resp. $(which yarn))
-/opt/homebrew/bin/node /opt/homebrew/bin/yarn datadog-ci react-native xcode node_modules/react-native/scripts/react-native-xcode.sh
+../node_modules/.bin/datadog-ci react-native xcode ../node_modules/react-native/scripts/react-native-xcode.sh
 ```
 
 #### Customize the command

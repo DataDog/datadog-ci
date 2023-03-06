@@ -426,6 +426,14 @@ describe('run-test', () => {
   describe('execute', () => {
     beforeEach(() => {
       jest.restoreAllMocks()
+      jest.spyOn(api, 'getApiHelper').mockImplementation(
+        () =>
+          ({
+            getSyntheticsOrgSettings: () => ({
+              orgMaxConcurrencyCap: 1,
+            }),
+          } as any)
+      )
       jest.spyOn(runTests, 'executeTests').mockReturnValue(Promise.resolve({results: [], summary: {} as Summary}))
       jest.spyOn(utils, 'renderResults').mockImplementation(jest.fn())
     })

@@ -79,3 +79,12 @@ src/commands/react-native/__tests__/fixtures/with-sources-content/main.jsbundle.
 *.sarif
 !src/commands/sarif/__tests__/fixtures/*.sarif
 !src/commands/sarif/__tests__/fixtures/subfolder/*.sarif
+
+# Yarn non zero-install. See: https://yarnpkg.com/getting-started/qa#which-files-should-be-gitignored
+.pnp.*
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/sdks
+!.yarn/versions

@@ -1,6 +1,5 @@
 export const DD_LAMBDA_EXTENSION_LAYER_NAME = 'Datadog-Extension'
 export const EXTENSION_LAYER_KEY = 'extension'
-export const DOTNET_RUNTIME = 'dotnetcore3.1'
 export const LAYER_LOOKUP = {
   [EXTENSION_LAYER_KEY]: DD_LAMBDA_EXTENSION_LAYER_NAME,
   dotnet6: 'dd-trace-dotnet',
@@ -46,7 +45,7 @@ export const RUNTIME_LOOKUP = {
 
 export type Runtime = keyof typeof RUNTIME_LOOKUP
 export type LayerKey = keyof typeof LAYER_LOOKUP
-export const ARM_LAYERS = [EXTENSION_LAYER_KEY, 'python3.8', 'python3.9']
+export const ARM_LAYERS = [EXTENSION_LAYER_KEY, 'dotnet6', 'python3.8', 'python3.9']
 export const ARM64_ARCHITECTURE = 'arm64'
 export const ARM_LAYER_SUFFIX = '-ARM'
 

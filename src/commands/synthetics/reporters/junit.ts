@@ -15,6 +15,7 @@ import {
   Result,
   Step,
   Summary,
+  SyntheticsOrgSettings,
   Test,
   UserConfigOverride,
 } from '../interfaces'
@@ -230,7 +231,7 @@ export class JUnitReporter implements Reporter {
     this.addTestCaseToSuite(suite, testCase)
   }
 
-  public runEnd(summary: Summary, baseUrl: string) {
+  public runEnd(summary: Summary, baseUrl: string, orgSettings?: SyntheticsOrgSettings) {
     Object.assign(this.json.testsuites.$, {
       tests_critical_error: summary.criticalErrors,
       tests_failed: summary.failed,
