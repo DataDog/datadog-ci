@@ -168,8 +168,6 @@ export class XCodeCommand extends Command {
       buildVersion,
       '--service',
       this.service,
-      '--bundle',
-      bundleLocation,
       '--sourcemap',
       sourcemapsLocation,
     ]
