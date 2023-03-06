@@ -51,7 +51,28 @@ const validateSarif = (sarifReportPath: string) => {
 }
 
 export class UploadSarifReportCommand extends Command {
-  public static usage = Command.Usage({})
+  public static usage = Command.Usage({
+    description: 'Upload SARIF reports files to Datadog.',
+    details: `
+      This command will upload SARIF reports files to Datadog.\n
+      See README for details.
+    `,
+    examples: [
+      ['Upload all SARIF report files in current directory', 'datadog-ci sarif upload --service my-service .'],
+      [
+        'Upload all SARIF report files in src/sarif-go-reports and src/sarif-java-reports',
+        'datadog-ci sarif upload --service my-service src/sarif-go-reports src/sarif-java-reports',
+      ],
+      [
+        'Upload all SARIF report files in current directory and add extra tags globally',
+        'datadog-ci sarif upload --service my-service --tags key1:value1 --tags key2:value2 .',
+      ],
+      [
+        'Upload all SARIF report files in current directory to the datadoghq.eu site',
+        'DATADOG_SITE=datadoghq.eu datadog-ci sarif upload --service my-service .',
+      ],
+    ],
+  })
 
   private basePaths?: string[]
   private config = {
@@ -64,6 +85,7 @@ export class UploadSarifReportCommand extends Command {
   private maxConcurrency = 20
   private service?: string
   private tags?: string[]
+  private noVerify = false
 
   public async execute() {
     if (!this.service) {
@@ -88,7 +110,9 @@ export class UploadSarifReportCommand extends Command {
     // Normalizing the basePath to resolve .. and .
     // Always using the posix version to avoid \ on Windows.
     this.basePaths = this.basePaths.map((basePath) => path.posix.normalize(basePath))
-    this.context.stdout.write(renderCommandInfo(this.basePaths, this.service, this.maxConcurrency, this.dryRun))
+    this.context.stdout.write(
+      renderCommandInfo(this.basePaths, this.service, this.maxConcurrency, this.dryRun, this.noVerify)
+    )
 
     const spanTags = await this.getSpanTags()
     const payloads = await this.getMatchingSarifReports(spanTags)
@@ -174,6 +198,10 @@ export class UploadSarifReportCommand extends Command {
     }, [])
 
     const validUniqueFiles = [...new Set(sarifReports)].filter((sarifReport) => {
+      if (this.noVerify) {
+        return true
+      }
+
       const validationErrorMessage = validateSarif(sarifReport)
       if (validationErrorMessage) {
         this.context.stdout.write(renderInvalidFile(sarifReport, validationErrorMessage))
@@ -195,6 +223,7 @@ UploadSarifReportCommand.addPath('sarif', 'upload')
 UploadSarifReportCommand.addOption('service', Command.String('--service'))
 UploadSarifReportCommand.addOption('env', Command.String('--env'))
 UploadSarifReportCommand.addOption('dryRun', Command.Boolean('--dry-run'))
+UploadSarifReportCommand.addOption('noVerify', Command.Boolean('--no-verify'))
 UploadSarifReportCommand.addOption('tags', Command.Array('--tags'))
 UploadSarifReportCommand.addOption('basePaths', Command.Rest({required: 1}))
 UploadSarifReportCommand.addOption('maxConcurrency', Command.String('--max-concurrency'))

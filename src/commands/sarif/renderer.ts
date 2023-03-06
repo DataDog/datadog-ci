@@ -10,6 +10,7 @@ const ICONS = {
   FAILED: '❌',
   SUCCESS: '✅',
   WARNING: '⚠️',
+  INFO: 'ℹ️',
 }
 
 export const renderInvalidFile = (sarifReport: string, errorMessage: string) => {
@@ -50,10 +51,21 @@ export const renderDryRunUpload = (payload: Payload): string => `[DRYRUN] ${rend
 
 export const renderUpload = (payload: Payload): string => `Uploading SARIF report in ${payload.reportPath}\n`
 
-export const renderCommandInfo = (basePaths: string[], service: string, concurrency: number, dryRun: boolean) => {
+export const renderCommandInfo = (
+  basePaths: string[],
+  service: string,
+  concurrency: number,
+  dryRun: boolean,
+  noVerify: boolean
+) => {
   let fullStr = ''
   if (dryRun) {
     fullStr += chalk.yellow(`${ICONS.WARNING} DRY-RUN MODE ENABLED. WILL NOT UPLOAD SARIF REPORT\n`)
+  }
+  if (noVerify) {
+    fullStr += chalk.yellow(
+      `${ICONS.INFO} --no-verify enabled. The reports will be uploaded without client validation.\n`
+    )
   }
   fullStr += chalk.green(`Starting upload with concurrency ${concurrency}. \n`)
   if (basePaths.length === 1 && !!path.extname(basePaths[0])) {
