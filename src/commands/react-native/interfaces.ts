@@ -3,14 +3,10 @@ import fs from 'fs'
 import {MultipartPayload, MultipartValue} from '../../helpers/upload'
 
 export class RNSourcemap {
-  public bundleName: string
-  public bundlePath: string
   public gitData?: GitData
   public sourcemapPath: string
 
-  constructor(bundlePath: string, sourcemapPath: string, bundleName?: string) {
-    this.bundleName = this.getBundleName(bundlePath, bundleName)
-    this.bundlePath = bundlePath
+  constructor(sourcemapPath: string) {
     this.sourcemapPath = sourcemapPath
   }
 
@@ -29,7 +25,6 @@ export class RNSourcemap {
     const content = new Map<string, MultipartValue>([
       ['event', this.getMetadataPayload(cliVersion, service, version, projectPath, platform, build)],
       ['source_map', {value: fs.createReadStream(this.sourcemapPath), options: {filename: 'source_map'}}],
-      ['minified_file', {value: fs.createReadStream(this.bundlePath), options: {filename: 'minified_file'}}],
     ])
     if (this.gitData !== undefined && this.gitData.gitRepositoryPayload !== undefined) {
       content.set('repository', {
@@ -56,17 +51,6 @@ export class RNSourcemap {
     this.sourcemapPath = newSourcemapFilePath
   }
 
-  private getBundleName(bundlePath: string, bundleName?: string): string {
-    if (bundleName) {
-      return bundleName
-    }
-
-    // We return the name of the file on the disk if no bundleName is returned
-    const splitPath = bundlePath.split('/')
-
-    return splitPath[splitPath.length - 1]
-  }
-
   private getMetadataPayload(
     cliVersion: string,
     service: string,
@@ -77,7 +61,6 @@ export class RNSourcemap {
   ): MultipartValue {
     const metadata: {[k: string]: any} = {
       build_number: build,
-      bundle_name: this.bundleName,
       cli_version: cliVersion,
       platform,
       project_path: projectPath,

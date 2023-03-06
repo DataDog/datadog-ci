@@ -21,15 +21,4 @@ export const validatePayload = (sourcemap: RNSourcemap) => {
   if (sourcemapCheck.empty) {
     throw new InvalidPayload('empty_sourcemap', `Skipping empty sourcemap (${sourcemap.sourcemapPath})`)
   }
-  // Check existence of bundle file
-  const bundleCheck = checkFile(sourcemap.bundlePath)
-  if (!bundleCheck.exists) {
-    throw new InvalidPayload('missing_js', `Missing bundle file (${sourcemap.bundlePath})`)
-  }
-  if (bundleCheck.empty) {
-    throw new InvalidPayload(
-      'empty_js',
-      `Skipping sourcemap (${sourcemap.sourcemapPath}) due to ${sourcemap.bundlePath} being empty`
-    )
-  }
 }
