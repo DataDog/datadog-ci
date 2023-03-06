@@ -166,7 +166,6 @@ const getObjectsToUpload = async (git: simpleGit.SimpleGit, commitsToExclude: st
   return commitsToInclude
 }
 
-// need to transform into async here.
 const generatePackFilesForCommits = (log: Logger, commits: string[]) => {
   if (commits.length <= 0) {
     return []
