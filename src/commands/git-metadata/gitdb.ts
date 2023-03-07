@@ -10,10 +10,17 @@ import * as simpleGit from 'simple-git'
 import {RequestBuilder} from '../../helpers/interfaces'
 import {retryRequest} from '../../helpers/retry'
 
-import {gitRemote} from './git'
+import {gitRemote as getRepoURL} from './git'
 import {Logger} from './utils'
 
 const API_TIMEOUT = 15000
+
+// we only consider recent commits to avoid uploading the whole repository
+// at most 1000 commits or > 1 month of data is considered.
+const MAX_HISTORY = {
+  maxCommits: 1000,
+  oldestCommits: '1 month ago',
+}
 
 export const uploadToGitDB = async (
   log: Logger,
@@ -90,10 +97,9 @@ export const uploadToGitDB = async (
   }
 }
 
-const getRepoURL = gitRemote
-
 const getLatestLocalCommits = async (git: simpleGit.SimpleGit) => {
-  const logResult = await git.log(['-n 1000', '--since="1 month ago"'])
+  // we add some boundaries to avoid retrieving ALL commits here.
+  const logResult = await git.log([`-n ${MAX_HISTORY.maxCommits}`, `--since="${MAX_HISTORY.oldestCommits}"`])
 
   return logResult.all.map((c) => c.hash)
 }
@@ -104,8 +110,8 @@ const unshallowRepositoryWhenNeeded = async (log: Logger, git: simpleGit.SimpleG
     log.info('[unshallow] Git repository is a shallow clone., unshallowing it...')
     log.info('[unshallow] Setting remote.origin.partialclonefilter to "blob:none" to avoid fetching file content')
     await git.addConfig('remote.origin.partialclonefilter', 'blob:none')
-    log.info('[unshallow] Running git fetch --shallow-since="1 month ago" --update-shallow --refetch')
-    await git.fetch(['--shallow-since="1 month ago"', '--update-shallow', '--refetch'])
+    log.info(`[unshallow] Running git fetch --shallow-since="${MAX_HISTORY.oldestCommits}" --update-shallow --refetch`)
+    await git.fetch([`--shallow-since="${MAX_HISTORY.oldestCommits}"`, '--update-shallow', '--refetch'])
     log.info('[unshallow] Fetch completed.')
   }
 }
@@ -151,30 +157,31 @@ const getKnownCommits = async (log: Logger, request: RequestBuilder, repoURL: st
       throw new Error('Invalid commit type response')
     }
 
-    return sanitizeCommit(c.id)
+    return validateCommit(c.id)
   })
 }
 
-const sanitizeCommit = (sha: string) => {
+const validateCommit = (sha: string) => {
   const isValidSha1 = (s: string) => /^[0-9a-f]{40}$/.test(s)
   const isValidSha256 = (s: string) => /^[0-9a-f]{64}$/.test(s)
 
-  const sanitizedCommit = sha.replace(/[^0-9a-f]+/g, '')
-  if (sanitizedCommit !== sha) {
-    throw new Error(`Invalid commit format: ${sha} (different from sanitized ${sanitizedCommit})`)
-  }
-  if (!isValidSha1(sanitizedCommit) && !isValidSha256(sanitizedCommit)) {
-    throw new Error(`Invalid commit format: ${sanitizedCommit}`)
+  if (!isValidSha1(sha) && !isValidSha256(sha)) {
+    throw new Error(`Invalid commit format: ${sha}`)
   }
 
-  return sanitizedCommit
+  return sha
 }
 
 const getObjectsToUpload = async (git: simpleGit.SimpleGit, commitsToExclude: string[]) => {
   const rawResponse = await git.raw(
-    ['rev-list', '--objects', '--no-object-names', '--filter=blob:none', '--since="1 month ago"', 'HEAD'].concat(
-      commitsToExclude.map((sha) => '^' + sha)
-    )
+    [
+      'rev-list',
+      '--objects',
+      '--no-object-names',
+      '--filter=blob:none',
+      `--since="${MAX_HISTORY.oldestCommits}"`,
+      'HEAD',
+    ].concat(commitsToExclude.map((sha) => '^' + sha))
   )
   const commitsToInclude = rawResponse.split('\n').filter((c) => c !== '')
 
@@ -182,7 +189,7 @@ const getObjectsToUpload = async (git: simpleGit.SimpleGit, commitsToExclude: st
 }
 
 const generatePackFilesForCommits = (log: Logger, commits: string[]) => {
-  if (commits.length <= 0) {
+  if (commits.length === 0) {
     return []
   }
 
@@ -193,7 +200,7 @@ const generatePackFilesForCommits = (log: Logger, commits: string[]) => {
       })
       .toString()
       .split('\n')
-      .filter((sha) => sha)
+      .filter((sha) => sha.length > 0)
       .map((sha) => `${packfilePath}-${sha}.pack`)
 
     return packObjectResults
