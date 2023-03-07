@@ -1,6 +1,8 @@
 import child_process from 'child_process'
 import fs from 'fs'
+import fspromises from 'fs/promises'
 import os from 'os'
+import path from 'path'
 
 import {default as axios} from 'axios'
 
@@ -10,7 +12,7 @@ import {uploadToGitDB} from '../gitdb'
 import {Logger, LogLevel} from '../utils'
 
 describe('gitdb', () => {
-  const tmpdir = os.tmpdir()
+  const tmpdir = path.join(os.tmpdir(), 'random')
 
   const temporaryPackFile = `${tmpdir}/1000-87ce64f636853fbebc05edfcefe9cccc28a7968b.pack`
   const secondTemporaryPackFile = `${tmpdir}/1000-cc424c261da5e261b76d982d5d361a023556e2aa.pack`
@@ -18,15 +20,24 @@ describe('gitdb', () => {
   beforeAll(() => {
     process.env.DD_API_KEY = 'api-key'
     jest.spyOn(global.Math, 'random').mockReturnValue(0.1)
+  })
+
+  beforeEach(() => {
+    fs.mkdirSync(tmpdir, {
+      recursive: true,
+    })
+    jest.spyOn(fspromises, 'mkdtemp').mockResolvedValue(tmpdir)
     fs.writeFileSync(temporaryPackFile, '')
     fs.writeFileSync(secondTemporaryPackFile, '')
+  })
+
+  afterEach(() => {
+    jest.spyOn(fspromises, 'mkdtemp').mockRestore()
   })
 
   afterAll(() => {
     delete process.env.DD_API_KEY
     jest.spyOn(global.Math, 'random').mockRestore()
-    fs.unlinkSync(temporaryPackFile)
-    fs.unlinkSync(secondTemporaryPackFile)
   })
 
   const logger = new Logger((_) => {}, LogLevel.INFO)

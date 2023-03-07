@@ -1,5 +1,6 @@
 import child_process from 'child_process'
 import fs from 'fs'
+import {mkdtemp} from 'fs/promises'
 import os from 'os'
 import path from 'path'
 
@@ -74,26 +75,31 @@ export const uploadToGitDB = async (
   }
 
   let packfiles
+  let tmpDir
   try {
-    packfiles = generatePackFilesForCommits(log, objectsToUpload)
+    ;[packfiles, tmpDir] = await generatePackFilesForCommits(log, objectsToUpload)
     log.debug(`${packfiles.length} packfiles generated.`)
   } catch (err) {
     log.warn(`Failed generating packfiles: ${err}`)
     throw err
   }
 
-  if (dryRun) {
-    log.debug(`Dry-run enabled, not uploading anything.`)
-
-    return
-  }
-  log.debug(`Uploading packfiles...`)
   try {
+    if (dryRun) {
+      log.debug(`Dry-run enabled, not uploading anything.`)
+
+      return
+    }
+    log.debug(`Uploading packfiles...`)
     await uploadPackfiles(log, request, repoURL, latestCommits[0], packfiles)
     log.debug('Successfully uploaded packfiles.')
   } catch (err) {
     log.warn(`Failed to upload packfiles: ${err}`)
     throw err
+  } finally {
+    if (tmpDir !== undefined) {
+      fs.rmSync(tmpDir, {recursive: true})
+    }
   }
 }
 
@@ -188,12 +194,15 @@ const getObjectsToUpload = async (git: simpleGit.SimpleGit, commitsToExclude: st
   return commitsToInclude
 }
 
-const generatePackFilesForCommits = (log: Logger, commits: string[]) => {
+const generatePackFilesForCommits = async (log: Logger, commits: string[]): Promise<[string[], string | undefined]> => {
   if (commits.length === 0) {
-    return []
+    return [[], undefined]
   }
 
-  const generatePackfiles = (packfilePath: string) => {
+  const generatePackfiles = async (baseTmpPath: string): Promise<[string[], string | undefined]> => {
+    const randomPrefix = String(Math.floor(Math.random() * 10000))
+    const tmpPath = await mkdtemp(path.join(baseTmpPath, 'dd-packfiles-'))
+    const packfilePath = path.join(tmpPath, randomPrefix)
     const packObjectResults = child_process
       .execSync(`git pack-objects --compression=9 --max-pack-size=3m ${packfilePath}`, {
         input: commits.join('\n'),
@@ -203,16 +212,12 @@ const generatePackFilesForCommits = (log: Logger, commits: string[]) => {
       .filter((sha) => sha.length > 0)
       .map((sha) => `${packfilePath}-${sha}.pack`)
 
-    return packObjectResults
+    return [packObjectResults, tmpPath]
   }
 
   // Try using tmp folder first:
   try {
-    const tmpFolder = os.tmpdir()
-    const randomPrefix = String(Math.floor(Math.random() * 10000))
-    const tmpPath = path.join(tmpFolder, randomPrefix)
-
-    return generatePackfiles(tmpPath)
+    return generatePackfiles(os.tmpdir())
   } catch (err) {
     /**
      * The generation of pack files in the temporary folder (from `os.tmpdir()`)
@@ -228,10 +233,8 @@ const generatePackFilesForCommits = (log: Logger, commits: string[]) => {
      */
     log.warn(`Failed generation of packfiles in tmpdir: ${err}`)
     log.warn(`Generating them in ${process.cwd()} instead`)
-    const randomPrefix = String(Math.floor(Math.random() * 10000))
-    const cwdPath = path.join(process.cwd(), randomPrefix)
 
-    return generatePackfiles(cwdPath)
+    return generatePackfiles(process.cwd())
   }
 }
 
