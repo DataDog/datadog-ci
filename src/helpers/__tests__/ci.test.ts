@@ -182,7 +182,7 @@ describe('getCIEnv', () => {
     process.env = {APPVEYOR: 'true'}
     expect(() => {
       getCIEnv()
-    }).toThrow('Only providers [GitHub, GitLab, CircleCI, Buildkite, Buddy, Jenkins] are supported')
+    }).toThrow('Only providers [GitHub, GitLab, CircleCI, Buildkite, Buddy, Jenkins, TeamCity] are supported')
   })
 
   test('buildkite', () => {
@@ -234,6 +234,19 @@ describe('getCIEnv', () => {
     expect(getCIEnv()).toEqual({
       ciEnv: {DD_CUSTOM_PARENT_ID: 'span-id', DD_CUSTOM_TRACE_ID: 'trace-id'},
       provider: 'jenkins',
+    })
+  })
+
+  test('teamcity', () => {
+    process.env = {TEAMCITY_VERSION: 'something'}
+    expect(() => {
+      getCIEnv()
+    }).toThrow()
+
+    process.env = {TEAMCITY_VERSION: 'something', DATADOG_BUILD_ID: 'build-id'}
+    expect(getCIEnv()).toEqual({
+      ciEnv: {DATADOG_BUILD_ID: 'build-id'},
+      provider: 'teamcity',
     })
   })
 })
