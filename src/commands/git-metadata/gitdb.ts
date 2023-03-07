@@ -156,13 +156,14 @@ const getKnownCommits = async (log: Logger, request: RequestBuilder, repoURL: st
 }
 
 const sanitizeCommit = (sha: string) => {
-  const isValidSha = (s: string) => /[0-9a-f]{40}/.test(s)
+  const isValidSha1 = (s: string) => /^[0-9a-f]{40}$/.test(s)
+  const isValidSha256 = (s: string) => /^[0-9a-f]{64}$/.test(s)
 
   const sanitizedCommit = sha.replace(/[^0-9a-f]+/g, '')
   if (sanitizedCommit !== sha) {
     throw new Error(`Invalid commit format: ${sha} (different from sanitized ${sanitizedCommit})`)
   }
-  if (!isValidSha(sanitizedCommit)) {
+  if (!isValidSha1(sanitizedCommit) && !isValidSha256(sanitizedCommit)) {
     throw new Error(`Invalid commit format: ${sanitizedCommit}`)
   }
 
