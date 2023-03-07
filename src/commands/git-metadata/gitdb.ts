@@ -30,6 +30,8 @@ export const uploadToGitDB = async (
     throw err
   }
 
+  await unshallowRepositoryWhenNeeded(log, git)
+
   let latestCommits
   try {
     latestCommits = await getLatestLocalCommits(git)
@@ -94,6 +96,18 @@ const getLatestLocalCommits = async (git: simpleGit.SimpleGit) => {
   const logResult = await git.log(['-n 1000', '--since="1 month ago"'])
 
   return logResult.all.map((c) => c.hash)
+}
+
+const unshallowRepositoryWhenNeeded = async (log: Logger, git: simpleGit.SimpleGit) => {
+  const isShallow = (await git.revparse('--is-shallow-repository')) === 'true'
+  if (isShallow) {
+    log.info('[unshallow] Git repository is a shallow clone., unshallowing it...')
+    log.info('[unshallow] Setting remote.origin.partialclonefilter to "blob:none" to avoid fetching file content')
+    await git.addConfig('remote.origin.partialclonefilter', 'blob:none')
+    log.info('[unshallow] Running git fetch --shallow-since="1 month ago" --update-shallow --refetch')
+    await git.fetch(['--shallow-since="1 month ago"', '--update-shallow', '--refetch'])
+    log.info('[unshallow] Fetch completed.')
+  }
 }
 
 // getKnownCommits asks the backend which of the given commits are already known

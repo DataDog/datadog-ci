@@ -41,9 +41,12 @@ describe('gitdb', () => {
     output: O | Error
   }
   interface MockParams {
+    addConfig: MockParam<[string, string], string>[]
+    fetch: MockParam<string[], any>[]
     getRemotes: MockParam<void, any>[]
     log: MockParam<string[], any>[]
     raw: MockParam<string[], string>[]
+    revparse: MockParam<string, any>[]
     execSync: MockParam<string, Buffer>[]
     axios: MockParam<
       {
@@ -56,16 +59,22 @@ describe('gitdb', () => {
 
   class MockAll {
     public simpleGit: {
+      addConfig: jest.Mock
+      fetch: jest.Mock
       getRemotes: jest.Mock
       log: jest.Mock
       raw: jest.Mock
+      revparse: jest.Mock
     }
     public execSync: jest.Mock
     public axios: jest.Mock
 
+    private addConfigMetExpectations: () => void
+    private fetchMetExpectations: () => void
     private getRemotesMetExpectations: () => void
     private logMetExpectations: () => void
     private rawMetExpectations: () => void
+    private revparseMetExpectations: () => void
     private execSyncMetExpectations: () => void
     private axiosMetExpectations: () => void
 
@@ -76,9 +85,12 @@ describe('gitdb', () => {
 
     constructor(mockParams: MockParams) {
       this.simpleGit = {
+        addConfig: jest.fn(),
+        fetch: jest.fn(),
         getRemotes: jest.fn(),
         log: jest.fn(),
         raw: jest.fn(),
+        revparse: jest.fn(),
       }
       // call spyOn on these two mocks to make sure the underlying implementation is never called
       // as the default behavior of spyOn is to actually call the initial implem if not overridden
@@ -110,9 +122,36 @@ describe('gitdb', () => {
         }
       }
 
+      // use dedicated function to initialize addConfig mock as I don't know how to use initMockWithParams
+      // with a multi-args mock function
+      const initAddConfigWithParams = (mock: jest.Mock, params: MockParam<[string, string], string>[]) => {
+        params.forEach((param) => {
+          if (param.output instanceof Error) {
+            mock = mock.mockImplementationOnce((..._: any) => {
+              throw param.output
+            })
+          } else {
+            mock = mock.mockResolvedValueOnce(param.output)
+          }
+        })
+
+        return () => {
+          expect(mock.mock.calls).toHaveLength(params.length)
+          params.forEach((param, i) => {
+            if (param.input !== undefined) {
+              expect(mock.mock.calls[i][0]).toStrictEqual(param.input[0])
+              expect(mock.mock.calls[i][1]).toStrictEqual(param.input[1])
+            }
+          })
+        }
+      }
+
+      this.addConfigMetExpectations = initAddConfigWithParams(this.simpleGit.addConfig, mockParams.addConfig)
+      this.fetchMetExpectations = initMockWithParams(this.simpleGit.fetch, mockParams.fetch, true)
       this.getRemotesMetExpectations = initMockWithParams(this.simpleGit.getRemotes, mockParams.getRemotes, true)
       this.logMetExpectations = initMockWithParams(this.simpleGit.log, mockParams.log, true)
       this.rawMetExpectations = initMockWithParams(this.simpleGit.raw, mockParams.raw, true)
+      this.revparseMetExpectations = initMockWithParams(this.simpleGit.revparse, mockParams.revparse, true)
       this.execSyncMetExpectations = initMockWithParams(this.execSync, mockParams.execSync, false)
 
       this.axiosCalls = []
@@ -143,9 +182,12 @@ describe('gitdb', () => {
     }
 
     public expectCalls() {
+      this.addConfigMetExpectations()
+      this.fetchMetExpectations()
       this.getRemotesMetExpectations()
       this.logMetExpectations()
       this.rawMetExpectations()
+      this.revparseMetExpectations()
       this.execSyncMetExpectations()
       this.axiosMetExpectations()
     }
@@ -153,9 +195,35 @@ describe('gitdb', () => {
 
   test('should not work when remote is not present', async () => {
     const mocks = new MockAll({
+      addConfig: [],
+      fetch: [],
       getRemotes: [{input: undefined, output: testError}],
       log: [],
       raw: [],
+      revparse: [],
+      execSync: [],
+      axios: [],
+    })
+    const upload = uploadToGitDB(logger, request, mocks.simpleGit as any, false)
+    await expect(upload).rejects.toThrow(testError)
+    mocks.expectCalls()
+  })
+
+  test('should unshallow repository', async () => {
+    const mocks = new MockAll({
+      addConfig: [{input: ['remote.origin.partialclonefilter', 'blob:none'], output: ''}],
+      fetch: [{input: ['--shallow-since="1 month ago"', '--update-shallow', '--refetch'], output: ''}],
+      getRemotes: [
+        {
+          input: undefined,
+          output: [{name: 'origin', refs: {push: 'https://github.com/DataDog/datadog-ci'}}],
+        },
+      ],
+      // throw an exception after the update shallow to shortcut the rest of the test as we only
+      // care about updating the shallow clone, not about the rest of the process for this test
+      log: [{input: undefined, output: testError}],
+      raw: [],
+      revparse: [{input: '--is-shallow-repository', output: 'true'}],
       execSync: [],
       axios: [],
     })
@@ -166,6 +234,8 @@ describe('gitdb', () => {
 
   test('should send packfiles', async () => {
     const mocks = new MockAll({
+      addConfig: [],
+      fetch: [],
       getRemotes: [
         {
           input: undefined,
@@ -193,6 +263,7 @@ describe('gitdb', () => {
           output: '87ce64f636853fbebc05edfcefe9cccc28a7968b\ncc424c261da5e261b76d982d5d361a023556e2aa\n',
         },
       ],
+      revparse: [{input: '--is-shallow-repository', output: 'false'}],
       execSync: [
         {
           input: `git pack-objects --compression=9 --max-pack-size=3m ${tmpdir}/1000`,
@@ -244,6 +315,8 @@ describe('gitdb', () => {
 
   test('should omit known commits', async () => {
     const mocks = new MockAll({
+      addConfig: [],
+      fetch: [],
       getRemotes: [
         {
           input: undefined,
@@ -279,6 +352,7 @@ describe('gitdb', () => {
           output: 'cc424c261da5e261b76d982d5d361a023556e2aa\n',
         },
       ],
+      revparse: [{input: '--is-shallow-repository', output: 'false'}],
       execSync: [
         {
           input: `git pack-objects --compression=9 --max-pack-size=3m ${tmpdir}/1000`,
@@ -332,6 +406,8 @@ describe('gitdb', () => {
 
   test('retries http requests', async () => {
     const mocks = new MockAll({
+      addConfig: [],
+      fetch: [],
       getRemotes: [
         {
           input: undefined,
@@ -367,6 +443,7 @@ describe('gitdb', () => {
           output: 'cc424c261da5e261b76d982d5d361a023556e2aa\n',
         },
       ],
+      revparse: [{input: '--is-shallow-repository', output: 'false'}],
       execSync: [
         {
           input: `git pack-objects --compression=9 --max-pack-size=3m ${tmpdir}/1000`,
@@ -441,6 +518,8 @@ describe('gitdb', () => {
 
   test('fails after 3 http requests', async () => {
     const mocks = new MockAll({
+      addConfig: [],
+      fetch: [],
       getRemotes: [
         {
           input: undefined,
@@ -463,6 +542,7 @@ describe('gitdb', () => {
         },
       ],
       raw: [],
+      revparse: [{input: '--is-shallow-repository', output: 'false'}],
       execSync: [],
       axios: [
         {
@@ -537,6 +617,8 @@ describe('gitdb', () => {
 
   test('fail immediately if returned format is incorrect', async () => {
     const mocks = new MockAll({
+      addConfig: [],
+      fetch: [],
       getRemotes: [
         {
           input: undefined,
@@ -559,6 +641,7 @@ describe('gitdb', () => {
         },
       ],
       raw: [],
+      revparse: [{input: '--is-shallow-repository', output: 'false'}],
       execSync: [],
       axios: [
         {
@@ -602,6 +685,8 @@ describe('gitdb', () => {
 
   test('all commits are known, no packfile upload', async () => {
     const mocks = new MockAll({
+      addConfig: [],
+      fetch: [],
       getRemotes: [
         {
           input: undefined,
@@ -638,6 +723,7 @@ describe('gitdb', () => {
           output: '\n',
         },
       ],
+      revparse: [{input: '--is-shallow-repository', output: 'false'}],
       execSync: [],
       axios: [
         {
