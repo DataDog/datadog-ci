@@ -1,0 +1,41 @@
+import {AWSError, Request as AWSRequest, CloudWatchLogs, StepFunctions} from 'aws-sdk'
+
+export interface Request {
+  operation: string
+}
+
+export interface CreateLogGroupRequest extends Request {
+  function: AWSRequest<Record<string, unknown>, AWSError>
+  params: CloudWatchLogs.CreateLogGroupRequest
+}
+
+export interface DeleteSubscriptionFilterRequest extends Request {
+  function: AWSRequest<Record<string, unknown>, AWSError>
+  params: CloudWatchLogs.DeleteSubscriptionFilterRequest
+}
+
+export interface PutSubscriptionFilterRequest extends Request {
+  function: AWSRequest<Record<string, unknown>, AWSError>
+  params: CloudWatchLogs.PutSubscriptionFilterRequest
+}
+
+export interface TagLogGroupRequest extends Request {
+  function: AWSRequest<Record<string, unknown>, AWSError>
+  params: CloudWatchLogs.TagLogGroupRequest
+}
+
+export interface TagStepFunctionRequest extends Request {
+  function: AWSRequest<StepFunctions.TagResourceOutput, AWSError>
+  params: StepFunctions.TagResourceInput
+}
+
+export interface UntagLogGroupRequest extends Request {
+  function: AWSRequest<Record<string, unknown>, AWSError>
+  params: CloudWatchLogs.UntagLogGroupRequest
+}
+
+export interface UpdateStepFunctionRequest extends Request {
+  function: AWSRequest<StepFunctions.UpdateStateMachineOutput, AWSError>
+  params: StepFunctions.UpdateStateMachineInput
+  previousParams: StepFunctions.UpdateStateMachineInput
+}

@@ -59,6 +59,18 @@ describe('standalone binary', () => {
       expect(sourceMapsHelpText).toContain('datadog-ci sourcemaps upload')
     })
   })
+  describe('step-functions', () => {
+    it('can be called', async () => {
+      const {stdout} = await execPromise(`${STANDALONE_BINARY_PATH} step-functions instrument --help`)
+      const stepFunctionsHelpText = sanitizeOutput(stdout)
+      expect(stepFunctionsHelpText).toContain('datadog-ci step-functions instrument')
+    })
+    it('can be called', async () => {
+      const {stdout} = await execPromise(`${STANDALONE_BINARY_PATH} step-functions uninstrument --help`)
+      const stepFunctionsHelpText = sanitizeOutput(stdout)
+      expect(stepFunctionsHelpText).toContain('datadog-ci step-functions uninstrument')
+    })
+  })
   describe('synthetics', () => {
     it('can be called', async () => {
       const {stdout} = await execPromise(`${STANDALONE_BINARY_PATH} synthetics run-tests --help`)

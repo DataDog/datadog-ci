@@ -64,6 +64,7 @@
     "clipanion": "2.2.2",
     "datadog-metrics": "0.9.3",
     "deep-extend": "0.6.0",
+    "deep-object-diff": "^1.1.9",
     "fast-xml-parser": "^4.1.2",
     "form-data": "3.0.0",
     "fuzzy": "^0.1.3",

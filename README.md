@@ -47,6 +47,7 @@ The following values are available for each `<command>`. See the corresponding d
 - `metric`: [Metric](src/commands/metric)
 - `react-native`: [React Native sourcemaps](src/commands/react-native/)
 - `sourcemaps`: [Browser sourcemaps](src/commands/sourcemaps/)
+- `step-functions`: [Step Functions](src/commands/step-functions)
 - `synthetics`: [Continuous Testing](src/commands/synthetics/)
 - `tag`: [Tag](src/commands/tag)
 - `trace`: [Trace](src/commands/trace)
