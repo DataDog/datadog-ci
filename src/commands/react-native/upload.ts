@@ -47,6 +47,7 @@ export class UploadCommand extends Command {
   })
 
   private buildVersion?: string
+  // bundle is only kept for backwards compatibility but never used
   private bundle?: string
   private cliVersion: string
   private config = {
@@ -85,12 +86,6 @@ export class UploadCommand extends Command {
 
     if (!this.service) {
       this.context.stderr.write('Missing service\n')
-
-      return 1
-    }
-
-    if (!this.bundle) {
-      this.context.stderr.write('Missing bundle path\n')
 
       return 1
     }
@@ -201,7 +196,7 @@ export class UploadCommand extends Command {
 
   // Looks for the sourcemaps and minified files on disk and returns
   // the associated payloads.
-  private getMatchingRNSourcemapFiles = (): RNSourcemap[] => [new RNSourcemap(this.bundle!, this.sourcemap!)]
+  private getMatchingRNSourcemapFiles = (): RNSourcemap[] => [new RNSourcemap(this.sourcemap!)]
 
   private getPayloadsToUpload = async (useGit: boolean): Promise<RNSourcemap[]> => {
     const payloads = this.getMatchingRNSourcemapFiles()
