@@ -8,7 +8,7 @@ export const buildArn = (
   resourceType: string,
   resourceId: string
 ): string => {
-  return `arn:${partition || 'aws'}:${service}:${region}:${accountId}:${resourceType}:${resourceId}`
+  return `arn:${partition}:${service}:${region}:${accountId}:${resourceType}:${resourceId}`
 }
 
 export const buildLogGroupName = (stepFunctionName: string, env: string | undefined): string => {
@@ -19,8 +19,10 @@ export const buildSubscriptionFilterName = (stepFunctionName: string): string =>
   return `${stepFunctionName}LogGroupSubscription`
 }
 
-export const isValidArn = (str: string | undefined): boolean => {
-  return typeof str === 'string' && str.indexOf('arn:') === 0 && str.split(':').length >= 6
+export const isValidArn = (str: string): boolean => {
+  const arnFields = str.split(':')
+
+  return arnFields.length >= 6 && arnFields[0] === 'arn'
 }
 
 export const getStepFunctionLogGroupArn = (stepFunction: StepFunctions.DescribeStateMachineOutput): string => {
@@ -33,20 +35,16 @@ export const parseArn = (
   arn: string
 ): {
   partition: string
-  service: string
   region: string
   accountId: string
-  resourceType: string
   resourceName: string
 } => {
-  const matched = arn.split(':')
+  const [, partition, , region, accountId, , resourceName] = arn.split(':')
 
   return {
-    partition: matched[1],
-    service: matched[2],
-    region: matched[3],
-    accountId: matched[4],
-    resourceType: matched[5],
-    resourceName: matched[6],
+    partition,
+    region,
+    accountId,
+    resourceName,
   }
 }

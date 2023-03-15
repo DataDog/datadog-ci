@@ -1,7 +1,9 @@
 import {AWSError, Request as AWSRequest, CloudWatchLogs, StepFunctions} from 'aws-sdk'
 
+import {Operation} from './constants'
+
 export interface Request {
-  operation: string
+  operation: Operation
 }
 
 export interface CreateLogGroupRequest extends Request {

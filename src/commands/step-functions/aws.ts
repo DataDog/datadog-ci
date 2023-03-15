@@ -1,5 +1,6 @@
 import {CloudWatchLogs, StepFunctions} from 'aws-sdk'
 
+import {instrumentationSourceTagKey, instrumentationSourceTagValue, Operation} from './constants'
 import {
   CreateLogGroupRequest,
   DeleteSubscriptionFilterRequest,
@@ -14,13 +15,13 @@ export const createLogGroup = (cloudWatchLogsClient: CloudWatchLogs, logGroupNam
   const params = {
     logGroupName,
     tags: {
-      DD_INSTRUMENTATION_SOURCE: 'datadog-ci',
+      [instrumentationSourceTagKey]: instrumentationSourceTagValue,
     },
   }
 
   return {
     function: cloudWatchLogsClient.createLogGroup(params),
-    operation: 'createLogGroup',
+    operation: Operation.CreateLogGroup,
     params,
   }
 }
@@ -37,7 +38,7 @@ export const deleteSubscriptionFilter = (
 
   return {
     function: cloudWatchLogsClient.deleteSubscriptionFilter(params),
-    operation: 'deleteSubscriptionFilter',
+    operation: Operation.DeleteSubscriptionFilter,
     params,
   }
 }
@@ -58,7 +59,7 @@ export const enableStepFunctionLogs = (
 
   return {
     function: stepFunctionsClient.updateStateMachine(params),
-    operation: 'updateStateMachine',
+    operation: Operation.UpdateStateMachine,
     params,
     previousParams: {
       stateMachineArn: stepFunction.stateMachineArn,
@@ -103,7 +104,7 @@ export const putSubscriptionFilter = (
 
   return {
     function: cloudWatchLogsClient.putSubscriptionFilter(params),
-    operation: 'putSubscriptionFilter',
+    operation: Operation.PutSubscriptionFilter,
     params,
   }
 }
@@ -112,13 +113,13 @@ export const tagLogGroup = (cloudWatchLogsClient: CloudWatchLogs, logGroupName: 
   const params = {
     logGroupName,
     tags: {
-      DD_INSTRUMENTATION_SOURCE: 'datadog-ci',
+      [instrumentationSourceTagKey]: instrumentationSourceTagValue,
     },
   }
 
   return {
     function: cloudWatchLogsClient.tagLogGroup(params), // changed to tagResource in AWS SDK for JavaScript v3
-    operation: 'tagLogGroup',
+    operation: Operation.TagLogGroup,
     params,
   }
 }
@@ -135,7 +136,7 @@ export const tagStepFunction = (
 
   return {
     function: stepFunctionsClient.tagResource(params),
-    operation: 'tagResource',
+    operation: Operation.TagResource,
     params,
   }
 }
@@ -143,12 +144,12 @@ export const tagStepFunction = (
 export const untagLogGroup = (cloudWatchLogsClient: CloudWatchLogs, logGroupName: string): UntagLogGroupRequest => {
   const params = {
     logGroupName,
-    tags: ['DD_INSTRUMENTATION_SOURCE'],
+    tags: [instrumentationSourceTagKey],
   }
 
   return {
     function: cloudWatchLogsClient.untagLogGroup(params), // changed to untagResource in AWS SDK for JavaScript v3
-    operation: 'untagLogGroup',
+    operation: Operation.UntagLogGroup,
     params,
   }
 }

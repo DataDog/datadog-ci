@@ -67,7 +67,7 @@ export const applyChanges = async (
             throw err
           }
         } else {
-          throw new Error(`[Error] ${String(err)}\n`)
+          throw new Error(`[Error] ${err}\n`)
         }
       }
     }

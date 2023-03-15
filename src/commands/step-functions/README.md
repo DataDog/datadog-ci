@@ -1,19 +1,19 @@
 # step-functions commands
 
-You can use the `step-functions instrument` command to instrument your Step Functions with Datadog. This command enables instrumentation by subscribing step function logs to a [Datadog Forwarder](https://docs.datadoghq.com/logs/guide/forwarder/).
+You can use the `step-functions instrument` command to instrument your Step Functions with Datadog. This command enables instrumentation by subscribing Step Function logs to a [Datadog Forwarder](https://docs.datadoghq.com/logs/guide/forwarder/).
 
-You can also add the `step-functions instrument` command to your CI/CD pipelines to enable Datadog instrumentation for all of your step functions. Run the command after your normal serverless application deployment, so that changes made by this command do not get overridden by changes in the CI/CD pipeline.
+You can also add the `step-functions instrument` command to your CI/CD pipelines to enable Datadog instrumentation for all of your Step Functions. Run the command after your normal serverless application deployment, so that changes made by this command do not get overridden by changes in the CI/CD pipeline.
 
 ## Usage
 
 ### instrument
 
-Run the `instrument` command to subscribe a Step Function log group to the specified Datadog Forwarder. If either `logLevel: ALL` or `includeExecutionData: true` is not set, then the Step Function logging configuration will be updated to use those settings.
+Run the `instrument` command to subscribe a Step Function log group to the specified Datadog Forwarder. In the Step Function logging configuration, if either `logLevel: ALL` or `includeExecutionData: true` is not set, then the Step Function logging configuration will be updated to use those settings.
 
 If logging is not enabled on a Step Function, a log group will be created and the Step Function will be updated to log to it with `logLevel: ALL` and `includeExecutionData: true`. Note that the Step Function needs permission to log to CloudWatch logs. See [Step Function Logging using CloudWatch Logs](https://docs.aws.amazon.com/step-functions/latest/dg/cw-logs.html) for the specific permissions needed.
 
 ```bash
-datadog-ci step-functions instrument --step-function-arn [--step-function-arn]... --forwarder-arn [--service] [--env] [--dry-run]
+datadog-ci step-functions instrument --step-function [--step-function]... --forwarder [--service] [--env] [--dry-run]
 ```
 
 Run the `uninstrument` command to unsubscribe a Step Function log group from the specified Datadog Forwarder.
@@ -21,7 +21,7 @@ Run the `uninstrument` command to unsubscribe a Step Function log group from the
 ### uninstrument
 
 ```bash
-datadog-ci step-functions uninstrument --step-function-arn [--step-function-arn]... --forwarder-arn [--dry-run]
+datadog-ci step-functions uninstrument --step-function [--step-function]... --forwarder [--dry-run]
 ```
 
 ## Arguments
@@ -30,8 +30,8 @@ datadog-ci step-functions uninstrument --step-function-arn [--step-function-arn]
 
 | Argument | Shorthand | Required | Description | Default |
 | --- | --- | --- | --- | --- |
-| `--step-function-arn` | `-s` |:white_check_mark: | The ARN of the Step Function to be instrumented. | |
-| `--forwarder-arn` | | :white_check_mark: | The ARN of the [Datadog Forwarder](https://docs.datadoghq.com/logs/guide/forwarder/) to subscribe Step Function log groups. | |
+| `--step-function` | `-s` |:white_check_mark: | The ARN of the Step Function to be instrumented. | |
+| `--forwarder` | | :white_check_mark: | The ARN of the [Datadog Forwarder](https://docs.datadoghq.com/logs/guide/forwarder/) to subscribe Step Function log groups. | |
 | `--env` | `-e` | :white_check_mark: ** | Separate your staging, development, and production environments by `env`. Learn more about [Serverless Tagging](https://docs.datadoghq.com/serverless/guide/serverless_tagging/#the-env-tag). ** **Optional if env tag is already set on Step Functions** | |
 | `--service` | | | Group Step Functions belonging to similar workloads by `service`. Learn more about [Serverless Tagging](https://docs.datadoghq.com/serverless/guide/serverless_tagging/#the-env-tag). | |
 | `--dry-run` | `-d` | | Preview changes without applying them. | `false` |
@@ -40,8 +40,8 @@ datadog-ci step-functions uninstrument --step-function-arn [--step-function-arn]
 
 | Argument | Shorthand | Required | Description | Default |
 | --- | --- | --- | --- | --- |
-| `--step-function-arn` | `-s` |:white_check_mark: | The ARN of the Step Function to be instrumented. | |
-| `--forwarder-arn` | | :white_check_mark: | The ARN of the [Datadog Forwarder](https://docs.datadoghq.com/logs/guide/forwarder/) to subscribe Step Function log groups. | |
+| `--step-function` | `-s` |:white_check_mark: | The ARN of the Step Function to be instrumented. | |
+| `--forwarder` | | :white_check_mark: | The ARN of the [Datadog Forwarder](https://docs.datadoghq.com/logs/guide/forwarder/) to subscribe Step Function log groups. | |
 | `--dry-run` | `-d` | | Preview changes without applying them. | `false` |
 
 ## Installation

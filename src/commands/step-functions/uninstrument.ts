@@ -12,42 +12,42 @@ export class UninstrumentStepFunctionsCommand extends Command {
     examples: [
       [
         'View and apply changes to unsubscribe a Step Function Log Group from a Datadog Forwarder',
-        'datadog-ci step-functions uninstrument --step-function-arn arn:aws:states:us-east-1:000000000000:stateMachine:ExampleStepFunction --forwarder-arn arn:aws:lambda:us-east-1:000000000000:function:ExampleDatadogForwarder',
+        'datadog-ci step-functions uninstrument --step-function arn:aws:states:us-east-1:000000000000:stateMachine:ExampleStepFunction --forwarder arn:aws:lambda:us-east-1:000000000000:function:ExampleDatadogForwarder',
       ],
       [
         'View changes to unsubscribe a Step Function Log Group from a Datadog Forwarder',
-        'datadog-ci step-functions uninstrument --step-function-arn arn:aws:states:us-east-1:000000000000:stateMachine:ExampleStepFunction --forwarder-arn arn:aws:lambda:us-east-1:000000000000:function:ExampleDatadogForwarder --dry-run',
+        'datadog-ci step-functions uninstrument --step-function arn:aws:states:us-east-1:000000000000:stateMachine:ExampleStepFunction --forwarder arn:aws:lambda:us-east-1:000000000000:function:ExampleDatadogForwarder --dry-run',
       ],
       [
         'View and apply changes to unsubscribe multiple Step Function Log Groups from a Datadog Forwarder',
-        'datadog-ci step-functions uninstrument --step-function-arn arn:aws:states:us-east-1:000000000000:stateMachine:ExampleStepFunction1 --step-function-arn arn:aws:states:us-east-1:000000000000:stateMachine:ExampleStepFunction2 --forwarder-arn arn:aws:lambda:us-east-1:000000000000:function:ExampleDatadogForwarder',
+        'datadog-ci step-functions uninstrument --step-function arn:aws:states:us-east-1:000000000000:stateMachine:ExampleStepFunction1 --step-function arn:aws:states:us-east-1:000000000000:stateMachine:ExampleStepFunction2 --forwarder arn:aws:lambda:us-east-1:000000000000:function:ExampleDatadogForwarder',
       ],
     ],
   })
 
   private dryRun = false
-  private forwarderArn?: string
+  private forwarderArn!: string
   private stepFunctionArns: string[] = []
 
   public async execute() {
     let validationError = false
     if (typeof this.forwarderArn !== 'string') {
-      this.context.stdout.write('[Error] --forwarder-arn is required\n')
+      this.context.stdout.write('[Error] --forwarder is required\n')
 
       return 1
     } else if (!isValidArn(this.forwarderArn)) {
-      this.context.stdout.write(`[Error] invalid arn format for --forwarder-arn ${this.forwarderArn}\n`)
+      this.context.stdout.write(`[Error] invalid arn format for --forwarder ${this.forwarderArn}\n`)
       validationError = true
     }
 
     if (this.stepFunctionArns.length === 0) {
-      this.context.stdout.write(`[Error] must specify at least one --step-function-arn\n`)
+      this.context.stdout.write(`[Error] must specify at least one --step-function\n`)
       validationError = true
     }
 
     for (const stepFunctionArn of this.stepFunctionArns) {
       if (!isValidArn(stepFunctionArn)) {
-        this.context.stdout.write(`[Error] invalid arn format for --step-function-arn ${stepFunctionArn}\n`)
+        this.context.stdout.write(`[Error] invalid arn format for --step-function ${stepFunctionArn}\n`)
         validationError = true
       }
     }
@@ -111,5 +111,5 @@ export class UninstrumentStepFunctionsCommand extends Command {
 UninstrumentStepFunctionsCommand.addPath('step-functions', 'uninstrument')
 
 UninstrumentStepFunctionsCommand.addOption('dryRun', Command.Boolean('-d,--dry-run'))
-UninstrumentStepFunctionsCommand.addOption('forwarderArn', Command.String('--forwarder-arn'))
-UninstrumentStepFunctionsCommand.addOption('stepFunctionArns', Command.Array('-s,--step-function-arn'))
+UninstrumentStepFunctionsCommand.addOption('forwarderArn', Command.String('--forwarder'))
+UninstrumentStepFunctionsCommand.addOption('stepFunctionArns', Command.Array('-s,--step-function'))
