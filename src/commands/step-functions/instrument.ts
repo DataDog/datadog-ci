@@ -62,12 +62,15 @@ export class InstrumentStepFunctionsCommand extends Command {
       validationError = true
     }
 
-    if (this.stepFunctionArns.length === 0) {
+    // remove duplicate step function arns
+    const stepFunctionArns = [...new Set(this.stepFunctionArns)]
+
+    if (stepFunctionArns.length === 0) {
       this.context.stdout.write(`[Error] must specify at least one --step-function\n`)
       validationError = true
     }
 
-    for (const stepFunctionArn of this.stepFunctionArns) {
+    for (const stepFunctionArn of stepFunctionArns) {
       if (!isValidArn(stepFunctionArn)) {
         this.context.stdout.write(`[Error] invalid arn format for --step-function ${stepFunctionArn}\n`)
         validationError = true
@@ -88,21 +91,46 @@ export class InstrumentStepFunctionsCommand extends Command {
     } = {}
 
     // loop over step functions passed as parameters and generate a list of requests to make to AWS for each step function
-    for (const stepFunctionArn of this.stepFunctionArns) {
-      requestsByStepFunction[stepFunctionArn] = []
-
+    for (const stepFunctionArn of stepFunctionArns) {
       // use region from the step function arn to make requests to AWS
       const arnObject = parseArn(stepFunctionArn)
       const region = arnObject.region
       const cloudWatchLogsClient = new CloudWatchLogs({region})
       const stepFunctionsClient = new StepFunctions({region})
 
-      const stepFunction = await getStepFunction(stepFunctionsClient, stepFunctionArn)
-      const listStepFunctionTagsResponse = await listStepFunctionTags(stepFunctionsClient, stepFunctionArn)
+      let stepFunction
+      try {
+        stepFunction = await getStepFunction(stepFunctionsClient, stepFunctionArn)
+      } catch (err) {
+        if (err instanceof Error) {
+          this.context.stdout.write(`\n[Error] ${err.message}\n`)
+        } else {
+          this.context.stdout.write(`\n[Error] ${err}\n`)
+        }
+
+        return 1
+      }
+
+      requestsByStepFunction[stepFunctionArn] = []
+
+      let listStepFunctionTagsResponse: StepFunctions.ListTagsForResourceOutput | undefined
+      try {
+        listStepFunctionTagsResponse = await listStepFunctionTags(stepFunctionsClient, stepFunctionArn)
+      } catch (err) {
+        if (err instanceof Error) {
+          this.context.stdout.write(
+            `\n[Error] ${err.message}. Unable to fetch tags for Step Function ${stepFunctionArn}\n`
+          )
+        } else {
+          this.context.stdout.write(`\n[Error] ${err}. Unable to fetch tags for Step Function ${stepFunctionArn}\n`)
+        }
+
+        return 1
+      }
 
       // if env and service tags are not already set on step function, set these tags using the values passed as parameters
       const stepFunctionTagsToAdd: {key: string; value: string}[] = []
-      const hasEnvTag = listStepFunctionTagsResponse.tags?.some((tag) => tag.key === 'env')
+      const hasEnvTag = listStepFunctionTagsResponse?.tags?.some((tag) => tag.key === 'env')
       if (!hasEnvTag && typeof this.environment === 'string') {
         stepFunctionTagsToAdd.push({
           key: 'env',
@@ -115,7 +143,7 @@ export class InstrumentStepFunctionsCommand extends Command {
       }
 
       if (
-        !listStepFunctionTagsResponse.tags?.some((tag) => tag.key === 'service') &&
+        !listStepFunctionTagsResponse?.tags?.some((tag) => tag.key === 'service') &&
         typeof this.service === 'string'
       ) {
         stepFunctionTagsToAdd.push({
@@ -188,8 +216,13 @@ export class InstrumentStepFunctionsCommand extends Command {
 
     // if dry run mode is disabled, apply changes by making requests to AWS
     if (!this.dryRun) {
-      await applyChanges(requestsByStepFunction, this.context)
+      const error = await applyChanges(requestsByStepFunction, this.context)
+      if (error) {
+        return 1
+      }
     }
+
+    return 0
   }
 }
 

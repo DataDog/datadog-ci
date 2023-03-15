@@ -40,12 +40,15 @@ export class UninstrumentStepFunctionsCommand extends Command {
       validationError = true
     }
 
-    if (this.stepFunctionArns.length === 0) {
+    // remove duplicate step function arns
+    const stepFunctionArns = [...new Set(this.stepFunctionArns)]
+
+    if (stepFunctionArns.length === 0) {
       this.context.stdout.write(`[Error] must specify at least one --step-function\n`)
       validationError = true
     }
 
-    for (const stepFunctionArn of this.stepFunctionArns) {
+    for (const stepFunctionArn of stepFunctionArns) {
       if (!isValidArn(stepFunctionArn)) {
         this.context.stdout.write(`[Error] invalid arn format for --step-function ${stepFunctionArn}\n`)
         validationError = true
@@ -70,17 +73,41 @@ export class UninstrumentStepFunctionsCommand extends Command {
       const cloudWatchLogsClient = new CloudWatchLogs({region})
       const stepFunctionsClient = new StepFunctions({region})
 
-      const stepFunction = await getStepFunction(stepFunctionsClient, stepFunctionArn)
+      let stepFunction
+      try {
+        stepFunction = await getStepFunction(stepFunctionsClient, stepFunctionArn)
+      } catch (err) {
+        if (err instanceof Error) {
+          this.context.stdout.write(`\n[Error] ${err.message}\n`)
+        } else {
+          this.context.stdout.write(`\n[Error] ${err}\n`)
+        }
+
+        return 1
+      }
 
       // the log group that should be unsubscribed from the forwarder is parsed from the step function logging config
       const logGroupArn = getStepFunctionLogGroupArn(stepFunction)
       const logGroupName = parseArn(logGroupArn).resourceName
 
-      const untagLogGroupRequest = untagLogGroup(cloudWatchLogsClient, logGroupName)
-      requestsByStepFunction[stepFunctionArn].push(untagLogGroupRequest)
-
       // delete subscription filters that are subscribed to the specified forwarder
-      const listSubscriptionFiltersResponse = await listSubscriptionFilters(cloudWatchLogsClient, logGroupName)
+      let listSubscriptionFiltersResponse: CloudWatchLogs.DescribeSubscriptionFiltersResponse | undefined
+      try {
+        listSubscriptionFiltersResponse = await listSubscriptionFilters(cloudWatchLogsClient, logGroupName)
+      } catch (err) {
+        if (err instanceof Error) {
+          this.context.stdout.write(
+            `\n[Error] ${err.message}. Unable to fetch subscription filter to delete for Log Group ${logGroupName}\n`
+          )
+        } else {
+          this.context.stdout.write(
+            `\n[Error] ${err}. Unable to fetch subscription filter to delete for Log Group ${logGroupName}\n`
+          )
+        }
+
+        return 1
+      }
+
       const subscriptionFilters =
         listSubscriptionFiltersResponse.subscriptionFilters?.filter(
           (subscriptionFilter) => subscriptionFilter.destinationArn === this.forwarderArn
@@ -96,6 +123,9 @@ export class UninstrumentStepFunctionsCommand extends Command {
           requestsByStepFunction[stepFunctionArn].push(deleteSubscriptionFilterRequest)
         }
       }
+
+      const untagLogGroupRequest = untagLogGroup(cloudWatchLogsClient, logGroupName)
+      requestsByStepFunction[stepFunctionArn].push(untagLogGroupRequest)
     }
 
     // display changes that will be applied if dry run mode is disabled
@@ -103,8 +133,13 @@ export class UninstrumentStepFunctionsCommand extends Command {
 
     // if dry run mode is disabled, apply changes by making requests to AWS
     if (!this.dryRun) {
-      await applyChanges(requestsByStepFunction, this.context)
+      const error = await applyChanges(requestsByStepFunction, this.context)
+      if (error) {
+        return 1
+      }
     }
+
+    return 0
   }
 }
 

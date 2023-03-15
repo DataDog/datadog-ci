@@ -55,24 +55,33 @@ export const applyChanges = async (
     )[]
   },
   context: BaseContext
-): Promise<void> => {
+): Promise<boolean> => {
+  let error = false
   for (const [stepFunctionArn, requests] of Object.entries(requestsByStepFunction)) {
     context.stdout.write(`\nApplying changes for ${stepFunctionArn}\n`)
     for (const request of requests) {
-      context.stdout.write(`${request.operation}\n`)
+      context.stdout.write(`${request.operation}`)
       try {
         await request.function.promise()
+        context.stdout.write(' -> success')
       } catch (err) {
         if (err instanceof Error) {
-          if (err.name === 'ResourceAlreadyExistsException' && 'logGroupName' in request.params) {
-            context.stdout.write(`[Warning] The log group ${request.params.logGroupName} already exists\n`)
+          // if a resource already exists it's a warning since we can use that resource instead of creating it
+          if (err.name === 'ResourceAlreadyExistsException') {
+            context.stdout.write(` -> [Warning] ${err.message}`)
+            // otherwise it's an error we don't expect that could affect later requests
           } else {
-            throw err
+            error = true
+            context.stdout.write(` -> [Error] ${err.message}`)
           }
         } else {
-          throw new Error(`[Error] ${err}\n`)
+          error = true
+          context.stdout.write(` -> [Error] ${err}`)
         }
       }
+      context.stdout.write('\n')
     }
   }
+
+  return error
 }
