@@ -7,10 +7,10 @@ import {
   getStepFunction,
   listStepFunctionTags,
   putSubscriptionFilter,
-  tagLogGroup,
   tagStepFunction,
 } from './aws'
 import {displayChanges, applyChanges} from './changes'
+import {TAG_VERSION_NAME} from './constants'
 import {
   buildArn,
   buildLogGroupName,
@@ -25,6 +25,8 @@ import {
   TagStepFunctionRequest,
   UpdateStepFunctionRequest,
 } from './interfaces'
+
+const cliVersion = require('../../../package.json').version
 
 export class InstrumentStepFunctionsCommand extends Command {
   public static usage = Command.Usage({
@@ -128,8 +130,9 @@ export class InstrumentStepFunctionsCommand extends Command {
         return 1
       }
 
-      // if env and service tags are not already set on step function, set these tags using the values passed as parameters
       const stepFunctionTagsToAdd: {key: string; value: string}[] = []
+
+      // if env and service tags are not already set on step function, set these tags using the values passed as parameters
       const hasEnvTag = listStepFunctionTagsResponse?.tags?.some((tag) => tag.key === 'env')
       if (!hasEnvTag && typeof this.environment === 'string') {
         stepFunctionTagsToAdd.push({
@@ -150,6 +153,15 @@ export class InstrumentStepFunctionsCommand extends Command {
           key: 'service',
           value: this.service,
         })
+      }
+
+      // set version tag if it changed
+      if (
+        !listStepFunctionTagsResponse?.tags?.some(
+          (tag) => tag.key === TAG_VERSION_NAME && tag.value === `v${cliVersion}`
+        )
+      ) {
+        stepFunctionTagsToAdd.push({key: TAG_VERSION_NAME, value: `v${cliVersion}`})
       }
 
       if (stepFunctionTagsToAdd.length > 0) {
@@ -197,9 +209,6 @@ export class InstrumentStepFunctionsCommand extends Command {
           const enableStepFunctionLogsRequest = enableStepFunctionLogs(stepFunctionsClient, stepFunction, logGroupArn)
           requestsByStepFunction[stepFunctionArn].push(enableStepFunctionLogsRequest)
         }
-
-        const tagLogGroupRequest = tagLogGroup(cloudWatchLogsClient, logGroupName)
-        requestsByStepFunction[stepFunctionArn].push(tagLogGroupRequest)
 
         const putSubscriptionFilterRequest = putSubscriptionFilter(
           cloudWatchLogsClient,

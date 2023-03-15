@@ -1,10 +1,11 @@
 import {CloudWatchLogs, StepFunctions} from 'aws-sdk'
 import {Command} from 'clipanion'
 
-import {deleteSubscriptionFilter, getStepFunction, listSubscriptionFilters, untagLogGroup} from './aws'
+import {deleteSubscriptionFilter, getStepFunction, listSubscriptionFilters, untagStepFunction} from './aws'
 import {displayChanges, applyChanges} from './changes'
+import {TAG_VERSION_NAME} from './constants'
 import {getStepFunctionLogGroupArn, isValidArn, parseArn} from './helpers'
-import {DeleteSubscriptionFilterRequest, UntagLogGroupRequest, UpdateStepFunctionRequest} from './interfaces'
+import {DeleteSubscriptionFilterRequest, UntagStepFunctionRequest} from './interfaces'
 
 export class UninstrumentStepFunctionsCommand extends Command {
   public static usage = Command.Usage({
@@ -60,7 +61,7 @@ export class UninstrumentStepFunctionsCommand extends Command {
     }
 
     const requestsByStepFunction: {
-      [stepFunctionArn: string]: (DeleteSubscriptionFilterRequest | UntagLogGroupRequest | UpdateStepFunctionRequest)[]
+      [stepFunctionArn: string]: (DeleteSubscriptionFilterRequest | UntagStepFunctionRequest)[]
     } = {}
 
     // loop over step functions passed as parameters and generate a list of requests to make to AWS for each step function
@@ -124,8 +125,9 @@ export class UninstrumentStepFunctionsCommand extends Command {
         }
       }
 
-      const untagLogGroupRequest = untagLogGroup(cloudWatchLogsClient, logGroupName)
-      requestsByStepFunction[stepFunctionArn].push(untagLogGroupRequest)
+      const tagKeystoRemove = [TAG_VERSION_NAME]
+      const untagStepFunctionRequest = untagStepFunction(stepFunctionsClient, stepFunctionArn, tagKeystoRemove)
+      requestsByStepFunction[stepFunctionArn].push(untagStepFunctionRequest)
     }
 
     // display changes that will be applied if dry run mode is disabled

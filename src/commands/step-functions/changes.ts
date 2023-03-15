@@ -6,7 +6,7 @@ import {
   DeleteSubscriptionFilterRequest,
   PutSubscriptionFilterRequest,
   TagStepFunctionRequest,
-  UntagLogGroupRequest,
+  UntagStepFunctionRequest,
   UpdateStepFunctionRequest,
 } from './interfaces'
 
@@ -17,7 +17,7 @@ export const displayChanges = (
       | DeleteSubscriptionFilterRequest
       | PutSubscriptionFilterRequest
       | TagStepFunctionRequest
-      | UntagLogGroupRequest
+      | UntagStepFunctionRequest
       | UpdateStepFunctionRequest
     )[]
   },
@@ -50,7 +50,7 @@ export const applyChanges = async (
       | DeleteSubscriptionFilterRequest
       | PutSubscriptionFilterRequest
       | TagStepFunctionRequest
-      | UntagLogGroupRequest
+      | UntagStepFunctionRequest
       | UpdateStepFunctionRequest
     )[]
   },

@@ -21,19 +21,14 @@ export interface PutSubscriptionFilterRequest extends Request {
   params: CloudWatchLogs.PutSubscriptionFilterRequest
 }
 
-export interface TagLogGroupRequest extends Request {
-  function: AWSRequest<Record<string, unknown>, AWSError>
-  params: CloudWatchLogs.TagLogGroupRequest
-}
-
 export interface TagStepFunctionRequest extends Request {
   function: AWSRequest<StepFunctions.TagResourceOutput, AWSError>
   params: StepFunctions.TagResourceInput
 }
 
-export interface UntagLogGroupRequest extends Request {
-  function: AWSRequest<Record<string, unknown>, AWSError>
-  params: CloudWatchLogs.UntagLogGroupRequest
+export interface UntagStepFunctionRequest extends Request {
+  function: AWSRequest<StepFunctions.UntagResourceOutput, AWSError>
+  params: StepFunctions.UntagResourceInput
 }
 
 export interface UpdateStepFunctionRequest extends Request {

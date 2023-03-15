@@ -2,11 +2,9 @@ export enum Operation {
   CreateLogGroup = 'createLogGroup',
   DeleteSubscriptionFilter = 'deleteSubscriptionFilter',
   PutSubscriptionFilter = 'putSubscriptionFilter',
-  TagLogGroup = 'tagLogGroup',
   TagResource = 'tagResource',
-  UntagLogGroup = 'untagLogGroup',
+  UntagResource = 'untagResource',
   UpdateStateMachine = 'updateStateMachine',
 }
 
-export const instrumentationSourceTagKey = 'DD_INSTRUMENTATION_SOURCE'
-export const instrumentationSourceTagValue = 'datadog-ci'
+export const TAG_VERSION_NAME = 'dd_sls_ci'

@@ -1,22 +1,18 @@
 import {CloudWatchLogs, StepFunctions} from 'aws-sdk'
 
-import {instrumentationSourceTagKey, instrumentationSourceTagValue, Operation} from './constants'
+import {Operation} from './constants'
 import {
   CreateLogGroupRequest,
   DeleteSubscriptionFilterRequest,
   PutSubscriptionFilterRequest,
-  TagLogGroupRequest,
   TagStepFunctionRequest,
-  UntagLogGroupRequest,
+  UntagStepFunctionRequest,
   UpdateStepFunctionRequest,
 } from './interfaces'
 
 export const createLogGroup = (cloudWatchLogsClient: CloudWatchLogs, logGroupName: string): CreateLogGroupRequest => {
   const params = {
     logGroupName,
-    tags: {
-      [instrumentationSourceTagKey]: instrumentationSourceTagValue,
-    },
   }
 
   return {
@@ -109,21 +105,6 @@ export const putSubscriptionFilter = (
   }
 }
 
-export const tagLogGroup = (cloudWatchLogsClient: CloudWatchLogs, logGroupName: string): TagLogGroupRequest => {
-  const params = {
-    logGroupName,
-    tags: {
-      [instrumentationSourceTagKey]: instrumentationSourceTagValue,
-    },
-  }
-
-  return {
-    function: cloudWatchLogsClient.tagLogGroup(params), // changed to tagResource in AWS SDK for JavaScript v3
-    operation: Operation.TagLogGroup,
-    params,
-  }
-}
-
 export const tagStepFunction = (
   stepFunctionsClient: StepFunctions,
   stepFunctionArn: string,
@@ -141,15 +122,19 @@ export const tagStepFunction = (
   }
 }
 
-export const untagLogGroup = (cloudWatchLogsClient: CloudWatchLogs, logGroupName: string): UntagLogGroupRequest => {
+export const untagStepFunction = (
+  stepFunctionsClient: StepFunctions,
+  stepFunctionArn: string,
+  tagKeys: string[]
+): UntagStepFunctionRequest => {
   const params = {
-    logGroupName,
-    tags: [instrumentationSourceTagKey],
+    resourceArn: stepFunctionArn,
+    tagKeys,
   }
 
   return {
-    function: cloudWatchLogsClient.untagLogGroup(params), // changed to untagResource in AWS SDK for JavaScript v3
-    operation: Operation.UntagLogGroup,
+    function: stepFunctionsClient.untagResource(params),
+    operation: Operation.UntagResource,
     params,
   }
 }
