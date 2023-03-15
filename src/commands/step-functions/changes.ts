@@ -24,16 +24,20 @@ export const displayChanges = (
   dryRun: boolean,
   context: BaseContext
 ): void => {
+  context.stdout.write(`\n${dryRun ? '[Dry Run] ' : ''}Will apply the following changes:\n`)
   for (const [stepFunctionArn, requests] of Object.entries(requestsByStepFunction)) {
-    context.stdout.write(`${dryRun ? '[Dry Run] ' : ''}Will apply the following updates for ${stepFunctionArn}\n`)
+    context.stdout.write(`\nChanges for ${stepFunctionArn}\n`)
     for (const request of requests) {
       if ('previousParams' in request) {
         context.stdout.write(
-          `${request.operation} -> ${JSON.stringify(diff(request.params, request.previousParams), undefined, 2)}`
+          `${request.operation} ->\n${JSON.stringify(
+            diff(request.params, request.previousParams),
+            undefined,
+            2
+          )}\n--->\n${JSON.stringify(diff(request.previousParams, request.params), undefined, 2)}\n`
         )
-        context.stdout.write(` --> ${JSON.stringify(diff(request.previousParams, request.params), undefined, 2)}\n`)
       } else {
-        context.stdout.write(`${request.operation} -> ${JSON.stringify(request.params, undefined, 2)}\n`)
+        context.stdout.write(`${request.operation} ->\n${JSON.stringify(request.params, undefined, 2)}\n`)
       }
     }
   }
@@ -53,12 +57,11 @@ export const applyChanges = async (
   context: BaseContext
 ): Promise<void> => {
   for (const [stepFunctionArn, requests] of Object.entries(requestsByStepFunction)) {
-    context.stdout.write(`Updating resources for ${stepFunctionArn}\n`)
+    context.stdout.write(`\nApplying changes for ${stepFunctionArn}\n`)
     for (const request of requests) {
-      context.stdout.write(`Calling ${request.operation}\n`)
+      context.stdout.write(`${request.operation}\n`)
       try {
         await request.function.promise()
-        context.stdout.write(`${request.operation} succeeded\n`)
       } catch (err) {
         if (err instanceof Error) {
           if (err.name === 'ResourceAlreadyExistsException' && 'logGroupName' in request.params) {
