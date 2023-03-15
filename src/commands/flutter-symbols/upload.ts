@@ -312,6 +312,7 @@ export class UploadCommand extends Command {
         this.context.stdout.write(renderUpload('Android Mapping File', this.androidMappingLocation!))
       },
       retries: 5,
+      useGzip: true,
     })
     this.context.stdout.write(`Mapping upload finished: ${result}\n`)
 
@@ -372,6 +373,7 @@ export class UploadCommand extends Command {
             this.context.stdout.write(renderUpload('Flutter Symbol File', fileMetadata.filename))
           },
           retries: 5,
+          useGzip: true,
         })
       })
 
