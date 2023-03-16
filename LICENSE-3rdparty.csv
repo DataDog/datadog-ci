@@ -19,6 +19,7 @@ Component,Origin,Licence,Copyright
 @types/xml2js,dev,MIT,Copyright Microsoft Corporation
 @types/ws,dev,MIT,Copyright Microsoft Corporation
 aws-sdk,import,Apache-2.0,Copyright Amazon Web Services
+aws-sdk-mock,dev,Apache-2.0, Copyright 2012-2018 dwyl.com 
 async-retry,import,MIT,"Copyright (c) 2017 ZEIT, Inc."
 axios,import,MIT,Copyright (c) 2014-present Matt Zabriskie
 chalk,import,MIT,Copyright (c) Sindre Sorhus <sindresorhus@gmail.com> (sindresorhus.com)
