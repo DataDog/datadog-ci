@@ -319,6 +319,7 @@ export class UploadCommand extends Command {
           this.context.stdout.write(renderUpload(sourcemap))
         },
         retries: 5,
+        useGzip: true,
       })
     }
   }
