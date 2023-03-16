@@ -19,12 +19,7 @@ import {
   isValidArn,
   parseArn,
 } from './helpers'
-import {
-  CreateLogGroupRequest,
-  PutSubscriptionFilterRequest,
-  TagStepFunctionRequest,
-  UpdateStepFunctionRequest,
-} from './interfaces'
+import {RequestsByStepFunction} from './interfaces'
 
 const cliVersion = require('../../../package.json').version
 
@@ -83,14 +78,7 @@ export class InstrumentStepFunctionsCommand extends Command {
       return 1
     }
 
-    const requestsByStepFunction: {
-      [stepFunctionArn: string]: (
-        | CreateLogGroupRequest
-        | PutSubscriptionFilterRequest
-        | TagStepFunctionRequest
-        | UpdateStepFunctionRequest
-      )[]
-    } = {}
+    const requestsByStepFunction: RequestsByStepFunction = {}
 
     // loop over step functions passed as parameters and generate a list of requests to make to AWS for each step function
     for (const stepFunctionArn of stepFunctionArns) {

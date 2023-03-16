@@ -1,26 +1,10 @@
 import {BaseContext} from 'clipanion'
 import {diff} from 'deep-object-diff'
 
-import {
-  CreateLogGroupRequest,
-  DeleteSubscriptionFilterRequest,
-  PutSubscriptionFilterRequest,
-  TagStepFunctionRequest,
-  UntagStepFunctionRequest,
-  UpdateStepFunctionRequest,
-} from './interfaces'
+import {AWSRequestMetadata, RequestsByStepFunction} from './interfaces'
 
 export const displayChanges = (
-  requestsByStepFunction: {
-    [stepFunctionArn: string]: (
-      | CreateLogGroupRequest
-      | DeleteSubscriptionFilterRequest
-      | PutSubscriptionFilterRequest
-      | TagStepFunctionRequest
-      | UntagStepFunctionRequest
-      | UpdateStepFunctionRequest
-    )[]
-  },
+  requestsByStepFunction: RequestsByStepFunction,
   dryRun: boolean,
   context: BaseContext
 ): void => {
@@ -28,39 +12,32 @@ export const displayChanges = (
   for (const [stepFunctionArn, requests] of Object.entries(requestsByStepFunction)) {
     context.stdout.write(`\nChanges for ${stepFunctionArn}\n`)
     for (const request of requests) {
-      if ('previousParams' in request) {
+      const func = request.function.valueOf() as AWSRequestMetadata
+      if (request.previousParams !== undefined) {
         context.stdout.write(
-          `${request.operation} ->\n${JSON.stringify(
-            diff(request.params, request.previousParams),
+          `${func.operation} ->\n${JSON.stringify(
+            diff(func.params, request.previousParams),
             undefined,
             2
-          )}\n--->\n${JSON.stringify(diff(request.previousParams, request.params), undefined, 2)}\n`
+          )}\n--->\n${JSON.stringify(diff(request.previousParams, func.params), undefined, 2)}\n`
         )
       } else {
-        context.stdout.write(`${request.operation} ->\n${JSON.stringify(request.params, undefined, 2)}\n`)
+        context.stdout.write(`${func.operation} ->\n${JSON.stringify(func.params, undefined, 2)}\n`)
       }
     }
   }
 }
 
 export const applyChanges = async (
-  requestsByStepFunction: {
-    [stepFunctionArn: string]: (
-      | CreateLogGroupRequest
-      | DeleteSubscriptionFilterRequest
-      | PutSubscriptionFilterRequest
-      | TagStepFunctionRequest
-      | UntagStepFunctionRequest
-      | UpdateStepFunctionRequest
-    )[]
-  },
+  requestsByStepFunction: RequestsByStepFunction,
   context: BaseContext
 ): Promise<boolean> => {
   let error = false
   for (const [stepFunctionArn, requests] of Object.entries(requestsByStepFunction)) {
     context.stdout.write(`\nApplying changes for ${stepFunctionArn}\n`)
     for (const request of requests) {
-      context.stdout.write(`${request.operation}`)
+      const func = request.function.valueOf() as AWSRequestMetadata
+      context.stdout.write(`${func.operation}`)
       try {
         await request.function.promise()
         context.stdout.write(' -> success')

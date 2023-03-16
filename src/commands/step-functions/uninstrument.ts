@@ -5,7 +5,7 @@ import {deleteSubscriptionFilter, getStepFunction, listSubscriptionFilters, unta
 import {displayChanges, applyChanges} from './changes'
 import {TAG_VERSION_NAME} from './constants'
 import {getStepFunctionLogGroupArn, isValidArn, parseArn} from './helpers'
-import {DeleteSubscriptionFilterRequest, UntagStepFunctionRequest} from './interfaces'
+import {RequestsByStepFunction} from './interfaces'
 
 export class UninstrumentStepFunctionsCommand extends Command {
   public static usage = Command.Usage({
@@ -60,9 +60,7 @@ export class UninstrumentStepFunctionsCommand extends Command {
       return 1
     }
 
-    const requestsByStepFunction: {
-      [stepFunctionArn: string]: (DeleteSubscriptionFilterRequest | UntagStepFunctionRequest)[]
-    } = {}
+    const requestsByStepFunction: RequestsByStepFunction = {}
 
     // loop over step functions passed as parameters and generate a list of requests to make to AWS for each step function
     for (const stepFunctionArn of this.stepFunctionArns) {

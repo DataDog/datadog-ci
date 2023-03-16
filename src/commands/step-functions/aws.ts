@@ -1,24 +1,14 @@
 import {CloudWatchLogs, StepFunctions} from 'aws-sdk'
 
-import {Operation} from './constants'
-import {
-  CreateLogGroupRequest,
-  DeleteSubscriptionFilterRequest,
-  PutSubscriptionFilterRequest,
-  TagStepFunctionRequest,
-  UntagStepFunctionRequest,
-  UpdateStepFunctionRequest,
-} from './interfaces'
+import {AWSRequest} from './interfaces'
 
-export const createLogGroup = (cloudWatchLogsClient: CloudWatchLogs, logGroupName: string): CreateLogGroupRequest => {
+export const createLogGroup = (cloudWatchLogsClient: CloudWatchLogs, logGroupName: string): AWSRequest => {
   const params = {
     logGroupName,
   }
 
   return {
     function: cloudWatchLogsClient.createLogGroup(params),
-    operation: Operation.CreateLogGroup,
-    params,
   }
 }
 
@@ -26,7 +16,7 @@ export const deleteSubscriptionFilter = (
   cloudWatchLogsClient: CloudWatchLogs,
   filterName: string,
   logGroupName: string
-): DeleteSubscriptionFilterRequest => {
+): AWSRequest => {
   const params = {
     filterName,
     logGroupName,
@@ -34,8 +24,6 @@ export const deleteSubscriptionFilter = (
 
   return {
     function: cloudWatchLogsClient.deleteSubscriptionFilter(params),
-    operation: Operation.DeleteSubscriptionFilter,
-    params,
   }
 }
 
@@ -43,7 +31,7 @@ export const enableStepFunctionLogs = (
   stepFunctionsClient: StepFunctions,
   stepFunction: StepFunctions.DescribeStateMachineOutput,
   logGroupArn: string
-): UpdateStepFunctionRequest => {
+): AWSRequest => {
   const params = {
     stateMachineArn: stepFunction.stateMachineArn,
     loggingConfiguration: {
@@ -55,8 +43,6 @@ export const enableStepFunctionLogs = (
 
   return {
     function: stepFunctionsClient.updateStateMachine(params),
-    operation: Operation.UpdateStateMachine,
-    params,
     previousParams: {
       stateMachineArn: stepFunction.stateMachineArn,
       loggingConfiguration: stepFunction.loggingConfiguration,
@@ -90,7 +76,7 @@ export const putSubscriptionFilter = (
   forwarderArn: string,
   filterName: string,
   logGroupName: string
-): PutSubscriptionFilterRequest => {
+): AWSRequest => {
   const params = {
     destinationArn: forwarderArn,
     filterName,
@@ -100,8 +86,6 @@ export const putSubscriptionFilter = (
 
   return {
     function: cloudWatchLogsClient.putSubscriptionFilter(params),
-    operation: Operation.PutSubscriptionFilter,
-    params,
   }
 }
 
@@ -109,7 +93,7 @@ export const tagStepFunction = (
   stepFunctionsClient: StepFunctions,
   stepFunctionArn: string,
   tags: {key: string; value: string}[]
-): TagStepFunctionRequest => {
+): AWSRequest => {
   const params = {
     resourceArn: stepFunctionArn,
     tags,
@@ -117,8 +101,6 @@ export const tagStepFunction = (
 
   return {
     function: stepFunctionsClient.tagResource(params),
-    operation: Operation.TagResource,
-    params,
   }
 }
 
@@ -126,7 +108,7 @@ export const untagStepFunction = (
   stepFunctionsClient: StepFunctions,
   stepFunctionArn: string,
   tagKeys: string[]
-): UntagStepFunctionRequest => {
+): AWSRequest => {
   const params = {
     resourceArn: stepFunctionArn,
     tagKeys,
@@ -134,7 +116,5 @@ export const untagStepFunction = (
 
   return {
     function: stepFunctionsClient.untagResource(params),
-    operation: Operation.UntagResource,
-    params,
   }
 }
