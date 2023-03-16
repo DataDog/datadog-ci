@@ -30,14 +30,15 @@ export const CI_ENGINES = {
   AZURE: 'azurepipelines',
   BITBUCKET: 'bitbucket',
   BITRISE: 'bitrise',
+  BUDDY: 'buddy',
   BUILDKITE: 'buildkite',
   CIRCLECI: 'circleci',
+  CODEFRESH: 'codefresh',
   GITHUB: 'github',
   GITLAB: 'gitlab',
   JENKINS: 'jenkins',
   TRAVIS: 'travisci',
   TEAMCITY: 'teamcity',
-  BUDDY: 'buddy',
 }
 
 export const PROVIDER_TO_DISPLAY_NAME = {
@@ -374,6 +375,20 @@ export const getCISpanTags = (): SpanTags | undefined => {
       [GIT_REPOSITORY_URL]: BITBUCKET_GIT_SSH_ORIGIN,
       [CI_WORKSPACE_PATH]: BITBUCKET_CLONE_DIR,
       [CI_PIPELINE_ID]: BITBUCKET_PIPELINE_UUID && BITBUCKET_PIPELINE_UUID.replace(/{|}/gm, ''),
+    }
+  }
+
+  if (env.CF_BUILD_ID) {
+    const {CF_BUILD_ID, CF_PIPELINE_NAME, CF_BUILD_URL, CF_STEP_NAME, CF_BRANCH} = env
+
+    tags = {
+      [CI_PROVIDER_NAME]: CI_ENGINES.CODEFRESH,
+      [CI_PIPELINE_ID]: CF_BUILD_ID,
+      [CI_PIPELINE_URL]: CF_BUILD_URL,
+      [CI_PIPELINE_NAME]: CF_PIPELINE_NAME,
+      [CI_JOB_NAME]: CF_STEP_NAME,
+      [GIT_BRANCH]: CF_BRANCH,
+      [CI_ENV_VARS]: JSON.stringify({CF_BUILD_ID}),
     }
   }
 
