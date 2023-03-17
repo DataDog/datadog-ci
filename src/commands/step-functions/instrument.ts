@@ -4,10 +4,10 @@ import {Command} from 'clipanion'
 import {
   createLogGroup,
   enableStepFunctionLogs,
-  getStepFunction,
-  listStepFunctionTags,
+  describeStateMachine,
+  listTagsForResource,
   putSubscriptionFilter,
-  tagStepFunction,
+  tagResource,
 } from './aws'
 import {displayChanges, applyChanges} from './changes'
 import {TAG_VERSION_NAME} from './constants'
@@ -26,6 +26,7 @@ const cliVersion = require('../../../package.json').version
 export class InstrumentStepFunctionsCommand extends Command {
   public static usage = Command.Usage({
     description: 'Subscribe Step Function Log Groups to a Datadog Forwarder',
+    details: '--step-function expects a Step Function ARN\n--forwarder expects a Lambda ARN',
     examples: [
       [
         'View and apply changes to subscribe a Step Function Log Group to a Datadog Forwarder',
@@ -52,8 +53,7 @@ export class InstrumentStepFunctionsCommand extends Command {
     let validationError = false
     if (typeof this.forwarderArn !== 'string') {
       this.context.stdout.write('[Error] --forwarder is required\n')
-
-      return 1
+      validationError = true
     } else if (!isValidArn(this.forwarderArn)) {
       this.context.stdout.write(`[Error] invalid arn format for --forwarder ${this.forwarderArn}\n`)
       validationError = true
@@ -90,12 +90,12 @@ export class InstrumentStepFunctionsCommand extends Command {
 
       let stepFunction
       try {
-        stepFunction = await getStepFunction(stepFunctionsClient, stepFunctionArn)
+        stepFunction = await describeStateMachine(stepFunctionsClient, stepFunctionArn)
       } catch (err) {
         if (err instanceof Error) {
-          this.context.stdout.write(`\n[Error] ${err.message}\n`)
+          this.context.stdout.write(`\n[Error] ${err.message}. Unable to fetch Step Function ${stepFunctionArn}\n`)
         } else {
-          this.context.stdout.write(`\n[Error] ${err}\n`)
+          this.context.stdout.write(`\n[Error] ${err}. Unable to fetch Step Function ${stepFunctionArn}\n`)
         }
 
         return 1
@@ -105,7 +105,7 @@ export class InstrumentStepFunctionsCommand extends Command {
 
       let listStepFunctionTagsResponse: StepFunctions.ListTagsForResourceOutput | undefined
       try {
-        listStepFunctionTagsResponse = await listStepFunctionTags(stepFunctionsClient, stepFunctionArn)
+        listStepFunctionTagsResponse = await listTagsForResource(stepFunctionsClient, stepFunctionArn)
       } catch (err) {
         if (err instanceof Error) {
           this.context.stdout.write(
@@ -128,7 +128,7 @@ export class InstrumentStepFunctionsCommand extends Command {
           value: this.environment,
         })
       } else if (!hasEnvTag && this.environment === undefined) {
-        this.context.stdout.write('[Error] --env is required when a Step Function has no env tag\n')
+        this.context.stdout.write('\n[Error] --env is required when a Step Function has no env tag\n')
 
         return 1
       }
@@ -153,7 +153,7 @@ export class InstrumentStepFunctionsCommand extends Command {
       }
 
       if (stepFunctionTagsToAdd.length > 0) {
-        const tagStepFunctionRequest = tagStepFunction(stepFunctionsClient, stepFunctionArn, stepFunctionTagsToAdd)
+        const tagStepFunctionRequest = tagResource(stepFunctionsClient, stepFunctionArn, stepFunctionTagsToAdd)
         requestsByStepFunction[stepFunctionArn].push(tagStepFunctionRequest)
       }
 
@@ -189,6 +189,11 @@ export class InstrumentStepFunctionsCommand extends Command {
       } else {
         // if step function logging is enabled, subscribe the forwarder to the log group in the step function logging config
         const logGroupArn = getStepFunctionLogGroupArn(stepFunction)
+        if (logGroupArn === undefined) {
+          this.context.stdout.write('\n[Error] Unable to get log group arn from Step Function logging configuration\n')
+
+          return 1
+        }
         const logGroupName = parseArn(logGroupArn).resourceName
 
         // update step function logging config to have logLevel `ALL` and includeExecutionData `true` if not already configured
@@ -206,6 +211,12 @@ export class InstrumentStepFunctionsCommand extends Command {
         )
         requestsByStepFunction[stepFunctionArn].push(putSubscriptionFilterRequest)
       }
+    }
+
+    if (Object.keys(requestsByStepFunction).length === 0) {
+      this.context.stdout.write('No changes to apply')
+
+      return 0
     }
 
     // display changes that will be applied if dry run mode is disabled

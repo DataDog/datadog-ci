@@ -6,12 +6,12 @@ import {
   createLogGroup,
   deleteSubscriptionFilter,
   enableStepFunctionLogs,
-  getStepFunction,
-  listStepFunctionTags,
-  listSubscriptionFilters,
+  describeStateMachine,
+  listTagsForResource,
+  describeSubscriptionFilters,
   putSubscriptionFilter,
-  tagStepFunction,
-  untagStepFunction,
+  tagResource,
+  untagResource,
 } from '../aws'
 
 import {
@@ -65,8 +65,8 @@ describe('aws', () => {
       })
     })
 
-    describe('listSubscriptionFilters', () => {
-      test('gets list of subscription filters', async () => {
+    describe('describeSubscriptionFilters', () => {
+      test('gets subscription filters', async () => {
         AWSMock.setSDKInstance(AWS)
         AWSMock.mock(
           'CloudWatchLogs',
@@ -81,9 +81,12 @@ describe('aws', () => {
 
         const cloudWatchLogsClient = cloudWatchLogsClientFixture()
         const logGroupName = '/aws/vendedlogs/states/ExampleStepFunction-Logs-test-Mock'
-        const listSubscriptionFiltersResponse = await listSubscriptionFilters(cloudWatchLogsClient, logGroupName)
+        const describeSubscriptionFiltersResponse = await describeSubscriptionFilters(
+          cloudWatchLogsClient,
+          logGroupName
+        )
 
-        expect(listSubscriptionFiltersResponse.subscriptionFilters).toMatchObject([
+        expect(describeSubscriptionFiltersResponse.subscriptionFilters).toMatchObject([
           {
             destinationArn: 'arn:aws:lambda:us-east-1:000000000000:function:DatadogForwarder',
             filterName: 'ExampleStepFunctionLogGroupSubscription',
@@ -166,7 +169,7 @@ describe('aws', () => {
       })
     })
 
-    describe('getStepFunction', () => {
+    describe('describeStateMachine', () => {
       test('gets step function', async () => {
         AWSMock.setSDKInstance(AWS)
         AWSMock.mock(
@@ -182,7 +185,7 @@ describe('aws', () => {
 
         const stepFunctionsClient = stepFunctionsClientFixture()
         const stepFunctionArn = 'arn:aws:states:us-east-1:000000000000:stateMachine:ExampleStepFunctionMock'
-        const stepFunction = await getStepFunction(stepFunctionsClient, stepFunctionArn)
+        const stepFunction = await describeStateMachine(stepFunctionsClient, stepFunctionArn)
 
         expect(stepFunction).toMatchObject({
           stateMachineArn: 'arn:aws:states:us-east-1:000000000000:stateMachine:ExampleStepFunctionMock',
@@ -209,8 +212,8 @@ describe('aws', () => {
       })
     })
 
-    describe('listStepFunctionTags', () => {
-      test('gets list of step function tags', async () => {
+    describe('listTagsForResource', () => {
+      test('gets a list of step function tags', async () => {
         AWSMock.setSDKInstance(AWS)
         AWSMock.mock(
           'StepFunctions',
@@ -225,7 +228,7 @@ describe('aws', () => {
 
         const stepFunctionsClient = stepFunctionsClientFixture()
         const stepFunction = stepFunctionFixture()
-        const listStepFunctionTagsResponse = await listStepFunctionTags(
+        const listStepFunctionTagsResponse = await listTagsForResource(
           stepFunctionsClient,
           stepFunction.stateMachineArn
         )
@@ -241,12 +244,12 @@ describe('aws', () => {
       })
     })
 
-    describe('tagStepFunction', () => {
+    describe('tagResource', () => {
       test('creates tagStepFunction request', () => {
         const stepFunctionsClient = stepFunctionsClientFixture()
         const stepFunction = stepFunctionFixture()
         const tagsToAdd = [{key: 'dd_sls_ci', value: 'v0.0.0'}]
-        const tagStepFunctionRequest = tagStepFunction(stepFunctionsClient, stepFunction.stateMachineArn, tagsToAdd)
+        const tagStepFunctionRequest = tagResource(stepFunctionsClient, stepFunction.stateMachineArn, tagsToAdd)
 
         expect(tagStepFunctionRequest).toMatchObject({
           function: expect.objectContaining({
@@ -260,12 +263,12 @@ describe('aws', () => {
       })
     })
 
-    describe('untagStepFunction', () => {
+    describe('untagResource', () => {
       test('creates untagStepFunction request', () => {
         const stepFunctionsClient = stepFunctionsClientFixture()
         const stepFunction = stepFunctionFixture()
         const tagKeystoRemove = ['dd_sls_ci']
-        const unTagStepFunctionRequest = untagStepFunction(
+        const unTagStepFunctionRequest = untagResource(
           stepFunctionsClient,
           stepFunction.stateMachineArn,
           tagKeystoRemove

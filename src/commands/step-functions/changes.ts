@@ -45,7 +45,9 @@ export const applyChanges = async (
         if (err instanceof Error) {
           // if a resource already exists it's a warning since we can use that resource instead of creating it
           if (err.name === 'ResourceAlreadyExistsException') {
-            context.stdout.write(` -> [Warning] ${err.message}`)
+            context.stdout.write(
+              ` -> [Info] ${err.message}. Skipping resource creation and continuing with instrumentation`
+            )
             // otherwise it's an error we don't expect that could affect later requests
           } else {
             error = true

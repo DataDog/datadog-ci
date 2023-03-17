@@ -22,13 +22,15 @@ export const buildSubscriptionFilterName = (stepFunctionName: string): string =>
 export const isValidArn = (str: string): boolean => {
   const arnFields = str.split(':')
 
-  return arnFields.length >= 6 && arnFields[0] === 'arn'
+  return arnFields.length >= 7 && arnFields[0] === 'arn'
 }
 
-export const getStepFunctionLogGroupArn = (stepFunction: StepFunctions.DescribeStateMachineOutput): string => {
+export const getStepFunctionLogGroupArn = (
+  stepFunction: StepFunctions.DescribeStateMachineOutput
+): string | undefined => {
   const [logDestinations] = stepFunction.loggingConfiguration?.destinations ?? [{cloudWatchLogsLogGroup: {}}]
 
-  return logDestinations.cloudWatchLogsLogGroup?.logGroupArn ?? ''
+  return logDestinations.cloudWatchLogsLogGroup?.logGroupArn
 }
 
 export const parseArn = (

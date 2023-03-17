@@ -14,7 +14,7 @@ tagResource -> success
 exports[`changes applyChanges applies changes with a warning 1`] = `
 "
 Applying changes for arn:aws:states:us-east-1:000000000000:stateMachine:ExampleStepFunction
-createLogGroup -> [Warning] The specified log group already exists
+createLogGroup -> [Info] The specified log group already exists. Skipping resource creation and continuing with instrumentation
 "
 `;
 
@@ -36,7 +36,7 @@ exports[`changes applyChanges continues applying changes after a warning or erro
 "
 Applying changes for arn:aws:states:us-east-1:000000000000:stateMachine:ExampleStepFunction
 tagResource -> success
-createLogGroup -> [Warning] The specified log group already exists
+createLogGroup -> [Info] The specified log group already exists. Skipping resource creation and continuing with instrumentation
 putSubscriptionFilter -> [Error] Resource limit exceeded.
 updateStateMachine -> success
 "

@@ -1,4 +1,4 @@
-import {createLogGroup, enableStepFunctionLogs, putSubscriptionFilter, tagStepFunction} from '../aws'
+import {createLogGroup, enableStepFunctionLogs, putSubscriptionFilter, tagResource} from '../aws'
 import {displayChanges, applyChanges} from '../changes'
 
 import {
@@ -9,26 +9,26 @@ import {
   stepFunctionTagListFixture,
   subscriptionFilterFixture,
 } from './fixtures/aws-resources'
-import {contextFixture} from './fixtures/cli'
+import {contextFixture, testContext} from './fixtures/cli'
 
 describe('changes', () => {
+  let context: testContext
+  beforeEach(() => {
+    context = contextFixture()
+  })
+
   describe('displayChanges', () => {
     test('displays changes for dry run true', () => {
       const stepFunctionsClient = stepFunctionsClientFixture()
       const stepFunction = stepFunctionFixture()
       const stepFunctionTagList = stepFunctionTagListFixture()
 
-      const tagStepFunctionRequest = tagStepFunction(
-        stepFunctionsClient,
-        stepFunction.stateMachineArn,
-        stepFunctionTagList
-      )
+      const tagStepFunctionRequest = tagResource(stepFunctionsClient, stepFunction.stateMachineArn, stepFunctionTagList)
 
       const requestsByStepFunction = {
         [stepFunction.stateMachineArn]: [tagStepFunctionRequest],
       }
       const dryRun = true
-      const context = contextFixture()
       displayChanges(requestsByStepFunction, dryRun, context)
 
       expect(context.toString()).toMatchSnapshot()
@@ -39,17 +39,12 @@ describe('changes', () => {
       const stepFunction = stepFunctionFixture()
       const stepFunctionTagList = stepFunctionTagListFixture()
 
-      const tagStepFunctionRequest = tagStepFunction(
-        stepFunctionsClient,
-        stepFunction.stateMachineArn,
-        stepFunctionTagList
-      )
+      const tagStepFunctionRequest = tagResource(stepFunctionsClient, stepFunction.stateMachineArn, stepFunctionTagList)
 
       const requestsByStepFunction = {
         [stepFunction.stateMachineArn]: [tagStepFunctionRequest],
       }
       const dryRun = false
-      const context = contextFixture()
       displayChanges(requestsByStepFunction, dryRun, context)
 
       expect(context.toString()).toMatchSnapshot()
@@ -72,7 +67,6 @@ describe('changes', () => {
         [stepFunction.stateMachineArn]: [enableStepFunctionLogsRequest],
       }
       const dryRun = false
-      const context = contextFixture()
       displayChanges(requestsByStepFunction, dryRun, context)
 
       expect(context.toString()).toMatchSnapshot()
@@ -96,12 +90,12 @@ describe('changes', () => {
       const logGroupArn =
         'arn:aws:logs:us-east-1:000000000000:log-group:/aws/vendedlogs/states/ExampleStepFunction-Logs-test:*'
 
-      const tagStepFunctionRequest1 = tagStepFunction(
+      const tagStepFunctionRequest1 = tagResource(
         stepFunctionsClient,
         stepFunction1.stateMachineArn,
         stepFunctionTagList
       )
-      const tagStepFunctionRequest2 = tagStepFunction(
+      const tagStepFunctionRequest2 = tagResource(
         stepFunctionsClient,
         stepFunction2.stateMachineArn,
         stepFunctionTagList
@@ -113,7 +107,6 @@ describe('changes', () => {
         [stepFunction2.stateMachineArn]: [tagStepFunctionRequest2],
       }
       const dryRun = false
-      const context = contextFixture()
       displayChanges(requestsByStepFunction, dryRun, context)
 
       expect(context.toString()).toMatchSnapshot()
@@ -124,7 +117,7 @@ describe('changes', () => {
     beforeAll(() => {
       const aws = require('../aws')
 
-      aws.tagStepFunction = jest.fn().mockImplementation(() => ({
+      aws.tagResource = jest.fn().mockImplementation(() => ({
         function: {operation: 'tagResource', promise: () => Promise.resolve()},
       }))
 
@@ -163,7 +156,7 @@ describe('changes', () => {
       const stepFunctionsClient = stepFunctionsClientFixture()
       const stepFunction = stepFunctionFixture()
 
-      const tagStepFunctionRequest = tagStepFunction(
+      const tagStepFunctionRequest = tagResource(
         stepFunctionsClient,
         stepFunction.stateMachineArn,
         stepFunctionTagListFixture()
@@ -172,7 +165,6 @@ describe('changes', () => {
       const requestsByStepFunction = {
         [stepFunction.stateMachineArn]: [tagStepFunctionRequest],
       }
-      const context = contextFixture()
       await applyChanges(requestsByStepFunction, context)
 
       expect(context.toString()).toMatchSnapshot()
@@ -188,7 +180,6 @@ describe('changes', () => {
       const requestsByStepFunction = {
         [stepFunction.stateMachineArn]: [createLogGroupRequest],
       }
-      const context = contextFixture()
       await applyChanges(requestsByStepFunction, context)
 
       expect(context.toString()).toMatchSnapshot()
@@ -210,7 +201,6 @@ describe('changes', () => {
       const requestsByStepFunction = {
         [stepFunction.stateMachineArn]: [putSubscriptionFilterRequest],
       }
-      const context = contextFixture()
       await applyChanges(requestsByStepFunction, context)
 
       expect(context.toString()).toMatchSnapshot()
@@ -234,12 +224,12 @@ describe('changes', () => {
       const logGroupArn =
         'arn:aws:logs:us-east-1:000000000000:log-group:/aws/vendedlogs/states/ExampleStepFunction-Logs-test:*'
 
-      const tagStepFunctionRequest1 = tagStepFunction(
+      const tagStepFunctionRequest1 = tagResource(
         stepFunctionsClient,
         stepFunction1.stateMachineArn,
         stepFunctionTagList
       )
-      const tagStepFunctionRequest2 = tagStepFunction(
+      const tagStepFunctionRequest2 = tagResource(
         stepFunctionsClient,
         stepFunction2.stateMachineArn,
         stepFunctionTagList
@@ -251,7 +241,6 @@ describe('changes', () => {
         [stepFunction2.stateMachineArn]: [tagStepFunctionRequest2],
       }
 
-      const context = contextFixture()
       await applyChanges(requestsByStepFunction, context)
 
       expect(context.toString()).toMatchSnapshot()
@@ -267,7 +256,7 @@ describe('changes', () => {
       const logGroupArn =
         'arn:aws:logs:us-east-1:000000000000:log-group:/aws/vendedlogs/states/ExampleStepFunction-Logs-test:*'
 
-      const tagStepFunctionRequest = tagStepFunction(
+      const tagStepFunctionRequest = tagResource(
         stepFunctionsClient,
         stepFunction.stateMachineArn,
         stepFunctionTagListFixture()
@@ -288,7 +277,6 @@ describe('changes', () => {
           enableStepFunctionLogsRequest,
         ],
       }
-      const context = contextFixture()
       await applyChanges(requestsByStepFunction, context)
 
       expect(context.toString()).toMatchSnapshot()

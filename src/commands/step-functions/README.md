@@ -16,7 +16,7 @@ If logging is not enabled on a Step Function, a log group will be created and th
 datadog-ci step-functions instrument --step-function [--step-function]... --forwarder [--service] [--env] [--dry-run]
 ```
 
-Run the `uninstrument` command to unsubscribe a Step Function log group from the specified Datadog Forwarder.
+Run the `uninstrument` command to unsubscribe a Step Function log group from the specified Datadog Forwarder. The log group will not be deleted and the Step Function will continue to log to the AWS log group.
 
 ### uninstrument
 
@@ -33,7 +33,7 @@ datadog-ci step-functions uninstrument --step-function [--step-function]... --fo
 | `--step-function` | `-s` |:white_check_mark: | The ARN of the Step Function to be instrumented. | |
 | `--forwarder` | | :white_check_mark: | The ARN of the [Datadog Forwarder](https://docs.datadoghq.com/logs/guide/forwarder/) to subscribe Step Function log groups. | |
 | `--env` | `-e` | :white_check_mark: ** | Separate your staging, development, and production environments by `env`. Learn more about [Serverless Tagging](https://docs.datadoghq.com/serverless/guide/serverless_tagging/#the-env-tag). ** **Optional if env tag is already set on Step Functions** | |
-| `--service` | | | Group Step Functions belonging to similar workloads by `service`. Learn more about [Serverless Tagging](https://docs.datadoghq.com/serverless/guide/serverless_tagging/#the-env-tag). | |
+| `--service` | | | Group Step Functions belonging to similar workloads by `service`. Learn more about [Serverless Tagging](https://docs.datadoghq.com/serverless/guide/serverless_tagging/#the-service-tag). | |
 | `--dry-run` | `-d` | | Preview changes without applying them. | `false` |
 
 ### uninstrument

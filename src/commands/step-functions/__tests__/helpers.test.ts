@@ -82,7 +82,7 @@ describe('helpers', () => {
       )
     })
 
-    test('returns empty string when step function logging is off', () => {
+    test('returns undefined when step function logging is off', () => {
       const loggingConfiguration = {
         level: 'OFF',
         includeExecutionData: false,
@@ -90,7 +90,7 @@ describe('helpers', () => {
       const stepFunction = stepFunctionFixture({loggingConfiguration})
       const logGroupArn = getStepFunctionLogGroupArn(stepFunction)
 
-      expect(logGroupArn).toBe('')
+      expect(logGroupArn).toBe(undefined)
     })
   })
 

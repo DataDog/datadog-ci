@@ -50,25 +50,31 @@ export const enableStepFunctionLogs = (
   }
 }
 
-export const getStepFunction = async (
+export const describeStateMachine = async (
   stepFunctionsClient: StepFunctions,
   stepFunctionArn: string
 ): Promise<StepFunctions.DescribeStateMachineOutput> => {
-  return stepFunctionsClient.describeStateMachine({stateMachineArn: stepFunctionArn}).promise()
+  const params = {stateMachineArn: stepFunctionArn}
+
+  return stepFunctionsClient.describeStateMachine(params).promise()
 }
 
-export const listSubscriptionFilters = (
+export const describeSubscriptionFilters = (
   cloudWatchLogsClient: CloudWatchLogs,
   logGroupName: string
 ): Promise<CloudWatchLogs.DescribeSubscriptionFiltersResponse> => {
-  return cloudWatchLogsClient.describeSubscriptionFilters({logGroupName}).promise()
+  const params = {logGroupName}
+
+  return cloudWatchLogsClient.describeSubscriptionFilters(params).promise()
 }
 
-export const listStepFunctionTags = async (
+export const listTagsForResource = async (
   stepFunctionsClient: StepFunctions,
   stepFunctionArn: string
 ): Promise<StepFunctions.ListTagsForResourceOutput> => {
-  return stepFunctionsClient.listTagsForResource({resourceArn: stepFunctionArn}).promise()
+  const params = {resourceArn: stepFunctionArn}
+
+  return stepFunctionsClient.listTagsForResource(params).promise()
 }
 
 export const putSubscriptionFilter = (
@@ -89,7 +95,7 @@ export const putSubscriptionFilter = (
   }
 }
 
-export const tagStepFunction = (
+export const tagResource = (
   stepFunctionsClient: StepFunctions,
   stepFunctionArn: string,
   tags: StepFunctions.TagList
@@ -104,7 +110,7 @@ export const tagStepFunction = (
   }
 }
 
-export const untagStepFunction = (
+export const untagResource = (
   stepFunctionsClient: StepFunctions,
   stepFunctionArn: string,
   tagKeys: StepFunctions.TagKeyList

@@ -1,7 +1,7 @@
 import {CloudWatchLogs, StepFunctions} from 'aws-sdk'
 import {Command} from 'clipanion'
 
-import {deleteSubscriptionFilter, getStepFunction, listSubscriptionFilters, untagStepFunction} from './aws'
+import {deleteSubscriptionFilter, describeStateMachine, describeSubscriptionFilters, untagResource} from './aws'
 import {displayChanges, applyChanges} from './changes'
 import {TAG_VERSION_NAME} from './constants'
 import {getStepFunctionLogGroupArn, isValidArn, parseArn} from './helpers'
@@ -10,6 +10,7 @@ import {RequestsByStepFunction} from './interfaces'
 export class UninstrumentStepFunctionsCommand extends Command {
   public static usage = Command.Usage({
     description: 'Unubscribe Step Function Log Groups from a Datadog Forwarder',
+    details: '--step-function expects a Step Function ARN\n--forwarder expects a Lambda ARN',
     examples: [
       [
         'View and apply changes to unsubscribe a Step Function Log Group from a Datadog Forwarder',
@@ -34,8 +35,7 @@ export class UninstrumentStepFunctionsCommand extends Command {
     let validationError = false
     if (typeof this.forwarderArn !== 'string') {
       this.context.stdout.write('[Error] --forwarder is required\n')
-
-      return 1
+      validationError = true
     } else if (!isValidArn(this.forwarderArn)) {
       this.context.stdout.write(`[Error] invalid arn format for --forwarder ${this.forwarderArn}\n`)
       validationError = true
@@ -74,12 +74,12 @@ export class UninstrumentStepFunctionsCommand extends Command {
 
       let stepFunction
       try {
-        stepFunction = await getStepFunction(stepFunctionsClient, stepFunctionArn)
+        stepFunction = await describeStateMachine(stepFunctionsClient, stepFunctionArn)
       } catch (err) {
         if (err instanceof Error) {
-          this.context.stdout.write(`\n[Error] ${err.message}\n`)
+          this.context.stdout.write(`\n[Error] ${err.message}. Unable to fetch Step Function ${stepFunctionArn}\n`)
         } else {
-          this.context.stdout.write(`\n[Error] ${err}\n`)
+          this.context.stdout.write(`\n[Error] ${err}. Unable to fetch Step Function ${stepFunctionArn}\n`)
         }
 
         return 1
@@ -87,12 +87,17 @@ export class UninstrumentStepFunctionsCommand extends Command {
 
       // the log group that should be unsubscribed from the forwarder is parsed from the step function logging config
       const logGroupArn = getStepFunctionLogGroupArn(stepFunction)
+      if (logGroupArn === undefined) {
+        this.context.stdout.write('\n[Error] Unable to get log group arn from Step Function logging configuration\n')
+
+        return 1
+      }
       const logGroupName = parseArn(logGroupArn).resourceName
 
       // delete subscription filters that are subscribed to the specified forwarder
-      let listSubscriptionFiltersResponse: CloudWatchLogs.DescribeSubscriptionFiltersResponse | undefined
+      let describeSubscriptionFiltersResponse: CloudWatchLogs.DescribeSubscriptionFiltersResponse | undefined
       try {
-        listSubscriptionFiltersResponse = await listSubscriptionFilters(cloudWatchLogsClient, logGroupName)
+        describeSubscriptionFiltersResponse = await describeSubscriptionFilters(cloudWatchLogsClient, logGroupName)
       } catch (err) {
         if (err instanceof Error) {
           this.context.stdout.write(
@@ -108,7 +113,7 @@ export class UninstrumentStepFunctionsCommand extends Command {
       }
 
       const subscriptionFilters =
-        listSubscriptionFiltersResponse.subscriptionFilters?.filter(
+        describeSubscriptionFiltersResponse.subscriptionFilters?.filter(
           (subscriptionFilter) => subscriptionFilter.destinationArn === this.forwarderArn
         ) ?? []
 
@@ -124,8 +129,14 @@ export class UninstrumentStepFunctionsCommand extends Command {
       }
 
       const tagKeystoRemove: StepFunctions.TagKeyList = [TAG_VERSION_NAME]
-      const untagStepFunctionRequest = untagStepFunction(stepFunctionsClient, stepFunctionArn, tagKeystoRemove)
+      const untagStepFunctionRequest = untagResource(stepFunctionsClient, stepFunctionArn, tagKeystoRemove)
       requestsByStepFunction[stepFunctionArn].push(untagStepFunctionRequest)
+    }
+
+    if (Object.keys(requestsByStepFunction).length === 0) {
+      this.context.stdout.write('No changes to apply')
+
+      return 0
     }
 
     // display changes that will be applied if dry run mode is disabled
