@@ -190,7 +190,7 @@ export class InstrumentStepFunctionsCommand extends Command {
         // if step function logging is enabled, subscribe the forwarder to the log group in the step function logging config
         const logGroupArn = getStepFunctionLogGroupArn(stepFunction)
         if (logGroupArn === undefined) {
-          this.context.stdout.write('\n[Error] Unable to get log group arn from Step Function logging configuration\n')
+          this.context.stdout.write('\n[Error] Unable to get Log Group arn from Step Function logging configuration\n')
 
           return 1
         }

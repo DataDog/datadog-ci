@@ -1,0 +1,21 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`step-functions uninstrument step function logging enabled unsubscribes log group in step function logging config from forwarder and removes dd_sls_ci tag 1`] = `
+"
+Will apply the following changes:
+
+Changes for arn:aws:states:us-east-1:000000000000:stateMachine:ExampleStepFunction
+deleteSubscriptionFilter ->
+{
+  \\"filterName\\": \\"ExampleStepFunctionLogGroupSubscription\\",
+  \\"logGroupName\\": \\"/aws/vendedlogs/states/ExampleStepFunction-Logs-test\\"
+}
+untagResource ->
+{
+  \\"resourceArn\\": \\"arn:aws:states:us-east-1:000000000000:stateMachine:ExampleStepFunction\\",
+  \\"tagKeys\\": [
+    \\"dd_sls_ci\\"
+  ]
+}
+"
+`;

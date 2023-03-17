@@ -63,7 +63,7 @@ export class UninstrumentStepFunctionsCommand extends Command {
     const requestsByStepFunction: RequestsByStepFunction = {}
 
     // loop over step functions passed as parameters and generate a list of requests to make to AWS for each step function
-    for (const stepFunctionArn of this.stepFunctionArns) {
+    for (const stepFunctionArn of stepFunctionArns) {
       requestsByStepFunction[stepFunctionArn] = []
 
       // use region from the step function arn to make requests to AWS
@@ -88,7 +88,7 @@ export class UninstrumentStepFunctionsCommand extends Command {
       // the log group that should be unsubscribed from the forwarder is parsed from the step function logging config
       const logGroupArn = getStepFunctionLogGroupArn(stepFunction)
       if (logGroupArn === undefined) {
-        this.context.stdout.write('\n[Error] Unable to get log group arn from Step Function logging configuration\n')
+        this.context.stdout.write('\n[Error] Unable to get Log Group arn from Step Function logging configuration\n')
 
         return 1
       }
@@ -101,11 +101,11 @@ export class UninstrumentStepFunctionsCommand extends Command {
       } catch (err) {
         if (err instanceof Error) {
           this.context.stdout.write(
-            `\n[Error] ${err.message}. Unable to fetch subscription filter to delete for Log Group ${logGroupName}\n`
+            `\n[Error] ${err.message}. Unable to fetch Subscription Filter to delete for Log Group ${logGroupName}\n`
           )
         } else {
           this.context.stdout.write(
-            `\n[Error] ${err}. Unable to fetch subscription filter to delete for Log Group ${logGroupName}\n`
+            `\n[Error] ${err}. Unable to fetch Subscription Filter to delete for Log Group ${logGroupName}\n`
           )
         }
 
