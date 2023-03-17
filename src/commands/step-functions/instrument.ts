@@ -118,7 +118,7 @@ export class InstrumentStepFunctionsCommand extends Command {
         return 1
       }
 
-      const stepFunctionTagsToAdd: {key: string; value: string}[] = []
+      const stepFunctionTagsToAdd: StepFunctions.TagList = []
 
       // if env and service tags are not already set on step function, set these tags using the values passed as parameters
       const hasEnvTag = listStepFunctionTagsResponse?.tags?.some((tag) => tag.key === 'env')

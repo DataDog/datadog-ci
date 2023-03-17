@@ -123,7 +123,7 @@ export class UninstrumentStepFunctionsCommand extends Command {
         }
       }
 
-      const tagKeystoRemove = [TAG_VERSION_NAME]
+      const tagKeystoRemove: StepFunctions.TagKeyList = [TAG_VERSION_NAME]
       const untagStepFunctionRequest = untagStepFunction(stepFunctionsClient, stepFunctionArn, tagKeystoRemove)
       requestsByStepFunction[stepFunctionArn].push(untagStepFunctionRequest)
     }

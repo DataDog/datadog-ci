@@ -92,7 +92,7 @@ export const putSubscriptionFilter = (
 export const tagStepFunction = (
   stepFunctionsClient: StepFunctions,
   stepFunctionArn: string,
-  tags: {key: string; value: string}[]
+  tags: StepFunctions.TagList
 ): AWSRequest => {
   const params = {
     resourceArn: stepFunctionArn,
@@ -107,7 +107,7 @@ export const tagStepFunction = (
 export const untagStepFunction = (
   stepFunctionsClient: StepFunctions,
   stepFunctionArn: string,
-  tagKeys: string[]
+  tagKeys: StepFunctions.TagKeyList
 ): AWSRequest => {
   const params = {
     resourceArn: stepFunctionArn,

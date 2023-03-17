@@ -1,0 +1,159 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`changes applyChanges applies changes for multiple step functions 1`] = `
+"
+Applying changes for arn:aws:states:us-east-1:000000000000:stateMachine:ExampleStepFunction1
+tagResource -> success
+updateStateMachine -> success
+
+Applying changes for arn:aws:states:us-east-1:000000000000:stateMachine:ExampleStepFunction2
+tagResource -> success
+"
+`;
+
+exports[`changes applyChanges applies changes with a warning 1`] = `
+"
+Applying changes for arn:aws:states:us-east-1:000000000000:stateMachine:ExampleStepFunction
+createLogGroup -> [Warning] The specified log group already exists
+"
+`;
+
+exports[`changes applyChanges applies changes with an error 1`] = `
+"
+Applying changes for arn:aws:states:us-east-1:000000000000:stateMachine:ExampleStepFunction
+putSubscriptionFilter -> [Error] Resource limit exceeded.
+"
+`;
+
+exports[`changes applyChanges applies changes with no warnings or errors 1`] = `
+"
+Applying changes for arn:aws:states:us-east-1:000000000000:stateMachine:ExampleStepFunction
+tagResource -> success
+"
+`;
+
+exports[`changes applyChanges continues applying changes after a warning or error 1`] = `
+"
+Applying changes for arn:aws:states:us-east-1:000000000000:stateMachine:ExampleStepFunction
+tagResource -> success
+createLogGroup -> [Warning] The specified log group already exists
+putSubscriptionFilter -> [Error] Resource limit exceeded.
+updateStateMachine -> success
+"
+`;
+
+exports[`changes displayChanges displays changes for an update request 1`] = `
+"
+Will apply the following changes:
+
+Changes for arn:aws:states:us-east-1:000000000000:stateMachine:ExampleStepFunction
+updateStateMachine ->
+{
+  \\"loggingConfiguration\\": {
+    \\"level\\": \\"OFF\\",
+    \\"includeExecutionData\\": false
+  }
+}
+--->
+{
+  \\"loggingConfiguration\\": {
+    \\"destinations\\": [
+      {
+        \\"cloudWatchLogsLogGroup\\": {
+          \\"logGroupArn\\": \\"arn:aws:logs:us-east-1:000000000000:log-group:/aws/vendedlogs/states/ExampleStepFunction-Logs-test:*\\"
+        }
+      }
+    ],
+    \\"level\\": \\"ALL\\",
+    \\"includeExecutionData\\": true
+  }
+}
+"
+`;
+
+exports[`changes displayChanges displays changes for dry run false 1`] = `
+"
+Will apply the following changes:
+
+Changes for arn:aws:states:us-east-1:000000000000:stateMachine:ExampleStepFunction
+tagResource ->
+{
+  \\"resourceArn\\": \\"arn:aws:states:us-east-1:000000000000:stateMachine:ExampleStepFunction\\",
+  \\"tags\\": [
+    {
+      \\"key\\": \\"env\\",
+      \\"value\\": \\"test\\"
+    }
+  ]
+}
+"
+`;
+
+exports[`changes displayChanges displays changes for dry run true 1`] = `
+"
+[Dry Run] Will apply the following changes:
+
+Changes for arn:aws:states:us-east-1:000000000000:stateMachine:ExampleStepFunction
+tagResource ->
+{
+  \\"resourceArn\\": \\"arn:aws:states:us-east-1:000000000000:stateMachine:ExampleStepFunction\\",
+  \\"tags\\": [
+    {
+      \\"key\\": \\"env\\",
+      \\"value\\": \\"test\\"
+    }
+  ]
+}
+"
+`;
+
+exports[`changes displayChanges displays changes for multiple step functions with multiple requests 1`] = `
+"
+Will apply the following changes:
+
+Changes for arn:aws:states:us-east-1:000000000000:stateMachine:ExampleStepFunction1
+tagResource ->
+{
+  \\"resourceArn\\": \\"arn:aws:states:us-east-1:000000000000:stateMachine:ExampleStepFunction1\\",
+  \\"tags\\": [
+    {
+      \\"key\\": \\"env\\",
+      \\"value\\": \\"test\\"
+    }
+  ]
+}
+updateStateMachine ->
+{
+  \\"loggingConfiguration\\": {
+    \\"level\\": \\"OFF\\",
+    \\"includeExecutionData\\": false
+  }
+}
+--->
+{
+  \\"loggingConfiguration\\": {
+    \\"destinations\\": [
+      {
+        \\"cloudWatchLogsLogGroup\\": {
+          \\"logGroupArn\\": \\"arn:aws:logs:us-east-1:000000000000:log-group:/aws/vendedlogs/states/ExampleStepFunction-Logs-test:*\\"
+        }
+      }
+    ],
+    \\"level\\": \\"ALL\\",
+    \\"includeExecutionData\\": true
+  }
+}
+
+Changes for arn:aws:states:us-east-1:000000000000:stateMachine:ExampleStepFunction2
+tagResource ->
+{
+  \\"resourceArn\\": \\"arn:aws:states:us-east-1:000000000000:stateMachine:ExampleStepFunction2\\",
+  \\"tags\\": [
+    {
+      \\"key\\": \\"env\\",
+      \\"value\\": \\"test\\"
+    }
+  ]
+}
+"
+`;
