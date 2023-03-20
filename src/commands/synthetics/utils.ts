@@ -32,6 +32,7 @@ import {
   Suite,
   Summary,
   SyntheticsCIConfig,
+  SyntheticsOrgSettings,
   Test,
   TestPayload,
   Trigger,
@@ -267,6 +268,17 @@ const getPollResultMap = async (api: APIHelper, batch: Batch) => {
   }
 }
 
+export const getOrgSettings = async (
+  api: APIHelper,
+  reporter: MainReporter
+): Promise<SyntheticsOrgSettings | undefined> => {
+  try {
+    return await api.getSyntheticsOrgSettings()
+  } catch (e) {
+    reporter.error(`Failed to get settings: ${formatBackendErrors(e)}`)
+  }
+}
+
 const waitForBatchToFinish = async (
   api: APIHelper,
   maxPollingTimeout: number,
@@ -444,10 +456,10 @@ export const getReporter = (reporters: Reporter[]): MainReporter => ({
       }
     }
   },
-  runEnd: (summary, baseUrl) => {
+  runEnd: (summary, baseUrl, orgSettings) => {
     for (const reporter of reporters) {
       if (typeof reporter.runEnd === 'function') {
-        reporter.runEnd(summary, baseUrl)
+        reporter.runEnd(summary, baseUrl, orgSettings)
       }
     }
   },
@@ -742,12 +754,14 @@ export const sortResultsByOutcome = () => {
 
 export const renderResults = ({
   config,
+  orgSettings,
   reporter,
   results,
   startTime,
   summary,
 }: {
   config: CommandConfig
+  orgSettings: SyntheticsOrgSettings | undefined
   reporter: MainReporter
   results: Result[]
   startTime: number
@@ -793,8 +807,7 @@ export const renderResults = ({
 
     reporter.resultEnd(result, getAppBaseURL(config))
   }
-
-  reporter.runEnd(summary, getAppBaseURL(config))
+  reporter.runEnd(summary, getAppBaseURL(config), orgSettings)
 
   return hasSucceeded ? 0 : 1
 }

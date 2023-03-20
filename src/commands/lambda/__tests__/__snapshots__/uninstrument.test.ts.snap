@@ -32,7 +32,7 @@ UpdateFunctionConfiguration -> arn:aws:lambda:us-east-1:123456789012:function:la
 }
 TagResource -> arn:aws:lambda:us-east-1:123456789012:function:lambda-1-us-east-1
 {
-  \\"dd_sls_ci\\": \\"v2.4.0\\"
+  \\"dd_sls_ci\\": \\"vXXXX\\"
 }
 UpdateFunctionConfiguration -> arn:aws:lambda:us-east-2:123456789012:function:lambda-1-us-east-2
 {
@@ -51,7 +51,7 @@ UpdateFunctionConfiguration -> arn:aws:lambda:us-east-2:123456789012:function:la
 }
 TagResource -> arn:aws:lambda:us-east-2:123456789012:function:lambda-1-us-east-2
 {
-  \\"dd_sls_ci\\": \\"v2.4.0\\"
+  \\"dd_sls_ci\\": \\"vXXXX\\"
 }
 [Error] Failed updating arn:aws:lambda:us-east-1:123456789012:function:lambda-1-us-east-1 Error: Unexpected error updating request
 [Error] Failed updating arn:aws:lambda:us-east-2:123456789012:function:lambda-1-us-east-2 Error: Unexpected error updating request
@@ -96,7 +96,7 @@ UpdateFunctionConfiguration -> arn:aws:lambda:us-east-1:123456789012:function:la
 }
 TagResource -> arn:aws:lambda:us-east-1:123456789012:function:lambda-1-us-east-1
 {
-  \\"dd_sls_ci\\": \\"v2.4.0\\"
+  \\"dd_sls_ci\\": \\"vXXXX\\"
 }
 UpdateFunctionConfiguration -> arn:aws:lambda:us-east-1:123456789012:function:lambda-2-us-east-1
 {
@@ -115,7 +115,7 @@ UpdateFunctionConfiguration -> arn:aws:lambda:us-east-1:123456789012:function:la
 }
 TagResource -> arn:aws:lambda:us-east-1:123456789012:function:lambda-2-us-east-1
 {
-  \\"dd_sls_ci\\": \\"v2.4.0\\"
+  \\"dd_sls_ci\\": \\"vXXXX\\"
 }
 UpdateFunctionConfiguration -> arn:aws:lambda:us-east-1:123456789012:function:lambda-3-us-east-1
 {
@@ -134,7 +134,7 @@ UpdateFunctionConfiguration -> arn:aws:lambda:us-east-1:123456789012:function:la
 }
 TagResource -> arn:aws:lambda:us-east-1:123456789012:function:lambda-3-us-east-1
 {
-  \\"dd_sls_ci\\": \\"v2.4.0\\"
+  \\"dd_sls_ci\\": \\"vXXXX\\"
 }
 UpdateFunctionConfiguration -> arn:aws:lambda:us-east-2:123456789012:function:lambda-1-us-east-2
 {
@@ -153,7 +153,7 @@ UpdateFunctionConfiguration -> arn:aws:lambda:us-east-2:123456789012:function:la
 }
 TagResource -> arn:aws:lambda:us-east-2:123456789012:function:lambda-1-us-east-2
 {
-  \\"dd_sls_ci\\": \\"v2.4.0\\"
+  \\"dd_sls_ci\\": \\"vXXXX\\"
 }
 UpdateFunctionConfiguration -> arn:aws:lambda:us-east-2:123456789012:function:lambda-2-us-east-2
 {
@@ -172,7 +172,7 @@ UpdateFunctionConfiguration -> arn:aws:lambda:us-east-2:123456789012:function:la
 }
 TagResource -> arn:aws:lambda:us-east-2:123456789012:function:lambda-2-us-east-2
 {
-  \\"dd_sls_ci\\": \\"v2.4.0\\"
+  \\"dd_sls_ci\\": \\"vXXXX\\"
 }
 UpdateFunctionConfiguration -> arn:aws:lambda:us-east-2:123456789012:function:lambda-3-us-east-2
 {
@@ -191,7 +191,7 @@ UpdateFunctionConfiguration -> arn:aws:lambda:us-east-2:123456789012:function:la
 }
 TagResource -> arn:aws:lambda:us-east-2:123456789012:function:lambda-3-us-east-2
 {
-  \\"dd_sls_ci\\": \\"v2.4.0\\"
+  \\"dd_sls_ci\\": \\"vXXXX\\"
 }
 [Error] Failed updating arn:aws:lambda:us-east-1:123456789012:function:lambda-1-us-east-1 Error: Unexpected error updating request
 [Error] Failed updating arn:aws:lambda:us-east-1:123456789012:function:lambda-2-us-east-1 Error: Unexpected error updating request

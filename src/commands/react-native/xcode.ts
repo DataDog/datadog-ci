@@ -22,6 +22,12 @@ const reactNativePath = (() => {
     // We need to remove the trailing "/index.js" at the end of the path
     return reactNativeIndexFile.split(sep).slice(0, -1).join(sep)
   } catch (error) {
+    // When the command is ran from XCode with `../node_modules/.bin/datadog-ci react-native xcode`
+    if (existsSync('../node_modules/react-native/package.json')) {
+      return '../node_modules/react-native'
+    }
+
+    // When the command is ran from XCode with yarn react-native xcode` (legacy)
     return 'node_modules/react-native'
   }
 })()
@@ -162,8 +168,6 @@ export class XCodeCommand extends Command {
       buildVersion,
       '--service',
       this.service,
-      '--bundle',
-      bundleLocation,
       '--sourcemap',
       sourcemapsLocation,
     ]

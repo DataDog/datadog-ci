@@ -30,13 +30,15 @@ export const CI_ENGINES = {
   AZURE: 'azurepipelines',
   BITBUCKET: 'bitbucket',
   BITRISE: 'bitrise',
+  BUDDY: 'buddy',
   BUILDKITE: 'buildkite',
   CIRCLECI: 'circleci',
+  CODEFRESH: 'codefresh',
   GITHUB: 'github',
   GITLAB: 'gitlab',
   JENKINS: 'jenkins',
   TRAVIS: 'travisci',
-  BUDDY: 'buddy',
+  TEAMCITY: 'teamcity',
 }
 
 export const PROVIDER_TO_DISPLAY_NAME = {
@@ -376,6 +378,30 @@ export const getCISpanTags = (): SpanTags | undefined => {
     }
   }
 
+  if (env.CF_BUILD_ID) {
+    const {CF_BUILD_ID, CF_PIPELINE_NAME, CF_BUILD_URL, CF_STEP_NAME, CF_BRANCH} = env
+
+    tags = {
+      [CI_PROVIDER_NAME]: CI_ENGINES.CODEFRESH,
+      [CI_PIPELINE_ID]: CF_BUILD_ID,
+      [CI_PIPELINE_URL]: CF_BUILD_URL,
+      [CI_PIPELINE_NAME]: CF_PIPELINE_NAME,
+      [CI_JOB_NAME]: CF_STEP_NAME,
+      [GIT_BRANCH]: CF_BRANCH,
+      [CI_ENV_VARS]: JSON.stringify({CF_BUILD_ID}),
+    }
+  }
+
+  if (env.TEAMCITY_VERSION) {
+    const {BUILD_URL, TEAMCITY_BUILDCONF_NAME} = env
+
+    tags = {
+      [CI_PROVIDER_NAME]: CI_ENGINES.TEAMCITY,
+      [CI_JOB_URL]: BUILD_URL,
+      [CI_JOB_NAME]: TEAMCITY_BUILDCONF_NAME,
+    }
+  }
+
   if (env.TF_BUILD) {
     const {
       BUILD_SOURCESDIRECTORY,
@@ -644,6 +670,13 @@ export const getCIEnv = (): {ciEnv: Record<string, string>; provider: string} =>
     }
   }
 
+  if (process.env.TEAMCITY_VERSION) {
+    return {
+      ciEnv: filterEnv(['DATADOG_BUILD_ID']),
+      provider: 'teamcity',
+    }
+  }
+
   if (process.env.JENKINS_URL) {
     return {
       ciEnv: filterEnv(['DD_CUSTOM_PARENT_ID', 'DD_CUSTOM_TRACE_ID']),
@@ -651,7 +684,7 @@ export const getCIEnv = (): {ciEnv: Record<string, string>; provider: string} =>
     }
   }
 
-  throw new Error('Only providers [GitHub, GitLab, CircleCI, Buildkite, Buddy, Jenkins] are supported')
+  throw new Error('Only providers [GitHub, GitLab, CircleCI, Buildkite, Buddy, Jenkins, TeamCity] are supported')
 }
 
 const filterEnv = (values: string[]): Record<string, string> => {

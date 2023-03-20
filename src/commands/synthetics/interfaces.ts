@@ -12,7 +12,7 @@ export interface MainReporter {
   reportStart(timings: {startTime: number}): void
   resultEnd(result: Result, baseUrl: string): void
   resultReceived(result: Batch['results'][0]): void
-  runEnd(summary: Summary, baseUrl: string): void
+  runEnd(summary: Summary, baseUrl: string, orgSettings?: SyntheticsOrgSettings): void
   testsWait(tests: Test[]): void
   testTrigger(test: Test, testId: string, executionRule: ExecutionRule, config: UserConfigOverride): void
   testWait(test: Test): void
@@ -390,4 +390,9 @@ export interface PresignedUrlResponse {
     }
     url: string
   }
+}
+
+// not the entire response, but only the slice needed
+export interface SyntheticsOrgSettings {
+  orgMaxConcurrencyCap: number
 }

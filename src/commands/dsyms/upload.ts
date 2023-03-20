@@ -11,7 +11,7 @@ import {InvalidConfigurationError} from '../../helpers/errors'
 import {RequestBuilder} from '../../helpers/interfaces'
 import {getMetricsLogger, MetricsLogger} from '../../helpers/metrics'
 import {upload, UploadStatus} from '../../helpers/upload'
-import {buildPath, DEFAULT_CONFIG_PATH, getRequestBuilder, resolveConfigFromFile} from '../../helpers/utils'
+import {buildPath, getRequestBuilder, resolveConfigFromFile} from '../../helpers/utils'
 
 import {ArchSlice, CompressedDsym, Dsym} from './interfaces'
 import {
@@ -74,7 +74,7 @@ export class UploadCommand extends Command {
 
     this.config = await resolveConfigFromFile(this.config, {
       configPath: this.configPath,
-      defaultConfigPath: DEFAULT_CONFIG_PATH,
+      defaultConfigPaths: ['datadog-ci.json', '../datadog-ci.json'],
     })
 
     const metricsLogger = getMetricsLogger({
@@ -173,6 +173,7 @@ export class UploadCommand extends Command {
     return getRequestBuilder({
       apiKey: this.config.apiKey,
       baseUrl: getBaseIntakeUrl(this.config.datadogSite),
+      overrideUrl: 'api/v2/srcmap',
     })
   }
 

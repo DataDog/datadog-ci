@@ -9,7 +9,7 @@ import {getRepositoryData, newSimpleGit, RepositoryData} from '../../helpers/git
 import {RequestBuilder} from '../../helpers/interfaces'
 import {getMetricsLogger, MetricsLogger} from '../../helpers/metrics'
 import {upload, UploadStatus} from '../../helpers/upload'
-import {DEFAULT_CONFIG_PATH, getRequestBuilder, resolveConfigFromFile} from '../../helpers/utils'
+import {getRequestBuilder, resolveConfigFromFile} from '../../helpers/utils'
 
 import {RNPlatform, RNSourcemap, RN_SUPPORTED_PLATFORMS} from './interfaces'
 import {
@@ -47,6 +47,7 @@ export class UploadCommand extends Command {
   })
 
   private buildVersion?: string
+  // bundle is only kept for backwards compatibility but never used
   private bundle?: string
   private cliVersion: string
   private config = {
@@ -89,12 +90,6 @@ export class UploadCommand extends Command {
       return 1
     }
 
-    if (!this.bundle) {
-      this.context.stderr.write('Missing bundle path\n')
-
-      return 1
-    }
-
     if (!this.platform) {
       this.context.stderr.write('Missing platform\n')
 
@@ -131,7 +126,7 @@ export class UploadCommand extends Command {
 
     this.config = await resolveConfigFromFile(this.config, {
       configPath: this.configPath,
-      defaultConfigPath: DEFAULT_CONFIG_PATH,
+      defaultConfigPaths: ['datadog-ci.json', '../datadog-ci.json'],
     })
 
     const metricsLogger = getMetricsLogger({
@@ -201,7 +196,7 @@ export class UploadCommand extends Command {
 
   // Looks for the sourcemaps and minified files on disk and returns
   // the associated payloads.
-  private getMatchingRNSourcemapFiles = (): RNSourcemap[] => [new RNSourcemap(this.bundle!, this.sourcemap!)]
+  private getMatchingRNSourcemapFiles = (): RNSourcemap[] => [new RNSourcemap(this.sourcemap!)]
 
   private getPayloadsToUpload = async (useGit: boolean): Promise<RNSourcemap[]> => {
     const payloads = this.getMatchingRNSourcemapFiles()
@@ -258,7 +253,7 @@ export class UploadCommand extends Command {
         ['DD-EVP-ORIGIN', 'datadog-ci react-native'],
         ['DD-EVP-ORIGIN-VERSION', this.cliVersion],
       ]),
-      overrideUrl: `v1/input/${this.config.apiKey}`,
+      overrideUrl: 'api/v2/srcmap',
     })
   }
 
@@ -324,6 +319,7 @@ export class UploadCommand extends Command {
           this.context.stdout.write(renderUpload(sourcemap))
         },
         retries: 5,
+        useGzip: true,
       })
     }
   }

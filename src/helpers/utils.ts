@@ -8,7 +8,7 @@ import {BaseContext, CommandClass, Cli} from 'clipanion'
 import deepExtend from 'deep-extend'
 import ProxyAgent from 'proxy-agent'
 
-export const DEFAULT_CONFIG_PATH = 'datadog-ci.json'
+export const DEFAULT_CONFIG_PATHS = ['datadog-ci.json']
 
 export const pick = <T extends Record<any, any>, K extends keyof T>(base: T, keys: K[]) => {
   const definedKeys = keys.filter((key) => !!base[key])
@@ -35,10 +35,10 @@ export const getConfig = async (configPath: string) => {
 
 const resolveConfigPath = ({
   configPath,
-  defaultConfigPath,
+  defaultConfigPaths,
 }: {
   configPath?: string
-  defaultConfigPath?: string
+  defaultConfigPaths?: string[]
 }): string | undefined => {
   if (configPath) {
     if (existsSync(configPath)) {
@@ -47,8 +47,12 @@ const resolveConfigPath = ({
     throw new Error('Config file not found')
   }
 
-  if (defaultConfigPath && existsSync(defaultConfigPath)) {
-    return defaultConfigPath
+  if (defaultConfigPaths) {
+    for (const path of defaultConfigPaths) {
+      if (existsSync(path)) {
+        return path
+      }
+    }
   }
 
   return undefined
@@ -56,7 +60,7 @@ const resolveConfigPath = ({
 
 export const resolveConfigFromFile = async <T>(
   baseConfig: T,
-  params: {configPath?: string; defaultConfigPath?: string}
+  params: {configPath?: string; defaultConfigPaths?: string[]}
 ): Promise<T> => {
   const resolvedConfigPath = resolveConfigPath(params)
   if (!resolvedConfigPath) {
@@ -209,7 +213,7 @@ export const buildPath = (...args: string[]) =>
         return part.trim().replace(/(^[\/]*|[\/]*$)/g, '')
       }
     })
-    // Filter out emtpy parts
+    // Filter out empty parts
     .filter((x) => x.length)
     // Join all these parts with /
     .join('/')
@@ -226,7 +230,7 @@ export const removeEmptyValues = (tags: SpanTags) =>
     }
   }, {})
 
-export const removeUndefinedValues = <T extends {[key: string]: any}>(object: T): T => {
+export const removeUndefinedValues = <T extends {[key: string]: unknown}>(object: T): T => {
   const newObject = {...object}
   for (const [key, value] of Object.entries(newObject)) {
     if (value === undefined) {

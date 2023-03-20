@@ -46,20 +46,19 @@ datadog-ci react-native upload --platform android --service com.company.app --bu
 | ------------------- | --------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `--platform`        | Required  | Identifies if you are uploading iOS or Android source maps.                                                                                                                                                                                                                                                                                                     |
 | `--service`         | Required  | Set as the service name you are uploading source maps for. Datadog uses this service name to find corresponding source maps based on the `service` tag set on the RUM React Native SDK.<br>By default, the RUM React Native SDK uses your application's bundle identifier as the service.                                                                       |
-| `--bundle`          | Required  | Should be set as the path to your generated JS bundle file, `main.jsbundle` for iOS and `index.android.bundle` for Android.                                                                                                                                                                                                                                     |
 | `--sourcemap`       | Required  | Should be set to the path to your generated source map file, `main.jsbundle.map` for iOS and `index.android.bundle.map` for Android.                                                                                                                                                                                                                            |
 | `--release-version` | Required  | Used to match the `version` tag set on the RUM React Native SDK. This should be the "Version" or "MARKETING_VERSION" in XCode for iOS and the "versionName" in your `android/app/build.gradle` for Android.                                                                                                                                                     |
 | `--build-version`   | Required  | Used to avoid overwriting your source maps by accident. Only one upload is needed for a specific `build-version` and `service` combination. Subsequent uploads are ignored until the `build-version` changes. This should match the "Build" or "CURRENT_PROJECT_VERSION" in XCode for iOS and the "versionCode" in your `android/app/build.gradle` for Android. |
 
 The following optional parameters are available:
 
-| Parameter                  | Default | Description                                                                                                                                                                                                                       |
-| -------------------------- | ------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `--disable-git`            | False   | Prevents the command from invoking git in the current working directory and sending repository-related data to Datadog (such as the hash, remote URL, and paths within the repository of sources referenced in the source map).   |
-| `--dry-run`                | False   | It runs the command without the final step of uploading. All other checks are performed.                                                                                                                                          |
-| `--repository-url`         | Empty   | Overrides the remote repository with a custom URL. For example, `https://github.com/my-company/my-project`.                                                                                                                       |
-| `--remove-sources-content` | False   | Removes the `"sourcesContent"` part of the source map files. This reduces the size of your files while still keeping the unminification, but it also removes the code snippet next to the unminified error in Datadog. |
-| `--config`                 | Empty   | The path to your `datadog-ci.json` file, if it is not at the root of your project.                                                                                                                                                            |
+| Parameter                  | Default | Description                                                                                                                                                                                                                     |
+| -------------------------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `--disable-git`            | False   | Prevents the command from invoking git in the current working directory and sending repository-related data to Datadog (such as the hash, remote URL, and paths within the repository of sources referenced in the source map). |
+| `--dry-run`                | False   | It runs the command without the final step of uploading. All other checks are performed.                                                                                                                                        |
+| `--repository-url`         | Empty   | Overrides the remote repository with a custom URL. For example, `https://github.com/my-company/my-project`.                                                                                                                     |
+| `--remove-sources-content` | False   | Removes the `"sourcesContent"` part of the source map files. This reduces the size of your files while retaining the unminification, but it also removes the code snippet next to the unminified error in Datadog.          |
+| `--config`                 | Empty   | The path to your `datadog-ci.json` file, if it is not at the root of your project.                                                                                                                                              |
 
 ### Link errors with your source code
 
@@ -117,7 +116,6 @@ This command calls the `upload` command, setting the release version to `{releas
 | -------------- | --------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `--platform`   | Required  | Identifies if you are uploading iOS or Android source maps.                                                                                                                                                                                                                               |
 | `--service`    | Required  | Set as the service name you are uploading source maps for. Datadog uses this service name to find corresponding source maps based on the `service` tag set on the RUM React Native SDK.<br>By default, the RUM React Native SDK uses your application's bundle identifier as the service. |
-| `--bundle`     | Required  | Should be set as the path to your generated JS bundle file, `main.jsbundle` for iOS and `index.android.bundle` for Android.                                                                                                                                                               |
 | `--sourcemap`  | Required  | Should be set to the path to your generated source map file, `main.jsbundle.map` for iOS and `index.android.bundle.map` for Android.                                                                                                                                                      |
 | `--app`        | Required  | The name of the target app in AppCenter. Must match the format OrganizationName/AppName.                                                                                                                                                                                                  |
 | `--deployment` | Required  | The name of the deployment in AppCenter.                                                                                                                                                                                                                                                  |
@@ -130,8 +128,8 @@ The following optional parameters are available:
 | `--dry-run`                | False   | It runs the command without the final step of uploading. All other checks are performed.                                                                                                                                                                                                                      |
 | `--repository-url`         | Empty   | Overrides the remote repository with a custom URL. For example, `https://github.com/my-company/my-project`.                                                                                                                                                                                                   |
 | `--build-version`          | 1       | Used to avoid overwriting your source maps by accident. Only one upload is needed for a specific `build-version` and `service` combination. Subsequent uploads are ignored until the `build-version` changes. This should not be necessary for CodePush unless you uploaded the wrong source maps by mistake. |
-| `--remove-sources-content` | False   | Removes the `"sourcesContent"` part of the source map files. This reduces the size of your files while still keeping the unminification, but it also removes the code snippet next to the unminified error in Datadog.                                                                             |
-| `--config`                 | Empty   | The path to your `datadog-ci.json` file, if it is not at the root of your project.                                                                                                                                                                                                                                        |
+| `--remove-sources-content` | False   | Removes the `"sourcesContent"` part of the source map files. This reduces the size of your files while retaining the unminification, but it also removes the code snippet next to the unminified error in Datadog.                                                                                        |
+| `--config`                 | Empty   | The path to your `datadog-ci.json` file, if it is not at the root of your project.                                                                                                                                                                                                                            |
 
 ### `xcode`
 
@@ -141,23 +139,14 @@ The upload only happens when your target has a "Release" build configuration; th
 
 You can use the same environment variables as the `upload` command: `DATADOG_API_KEY` (required), `DATADOG_SITE`, and `DATADOG_SOURCEMAP_INTAKE_URL`.
 
-To get the location to your `node` and `yarn` binaries, run the following in a terminal:
-
-```bash
-$ which node #/path/to/node
-$ which yarn #/path/to/yarn
-```
-
 #### For React Native >= 0.69:
 
 To ensure environment variables are well propagated in the build phase, you need to create a `custom-react-native-xcode.sh` file in your `ios` folder:
 
 ```bash
 #!/bin/sh
-
-REACT_NATIVE_XCODE="node_modules/react-native/scripts/react-native-xcode.sh"
-# Replace /opt/homebrew/bin/node (resp. /opt/homebrew/bin/yarn) by the value of $(which node) (resp. $(which yarn))
-DATADOG_XCODE="/opt/homebrew/bin/node /opt/homebrew/bin/yarn datadog-ci react-native xcode"
+REACT_NATIVE_XCODE="../node_modules/react-native/scripts/react-native-xcode.sh"
+DATADOG_XCODE="../node_modules/.bin/datadog-ci react-native xcode"
 
 /bin/sh -c "$DATADOG_XCODE $REACT_NATIVE_XCODE"
 ```
@@ -166,7 +155,7 @@ This allows the file's path to be passed as one argument to the `with-environmen
 
 ```bash
 set -e
-export SOURCEMAP_FILE=./main.jsbundle.map
+export SOURCEMAP_FILE=$DERIVED_FILE_DIR/main.jsbundle.map
 WITH_ENVIRONMENT="../node_modules/react-native/scripts/xcode/with-environment.sh"
 REACT_NATIVE_XCODE="./custom-react-native-xcode.sh"
 
@@ -179,10 +168,7 @@ Change the "Bundle React Native code and images" build phase:
 
 ```bash
 set -e
-export SOURCEMAP_FILE=./build/main.jsbundle.map
-export NODE_BINARY=node
-# Change /opt/homebrew/bin/node (resp. /opt/homebrew/bin/yarn) by the value of $(which node) (resp. $(which yarn))
-/opt/homebrew/bin/node /opt/homebrew/bin/yarn datadog-ci react-native xcode node_modules/react-native/scripts/react-native-xcode.sh
+../node_modules/.bin/datadog-ci react-native xcode ../node_modules/react-native/scripts/react-native-xcode.sh
 ```
 
 #### Customize the command
@@ -200,12 +186,12 @@ If you use another script that requires arguments, you need to put this script i
 
 The following optional parameters are available:
 
-| Parameter                  | Default | Description                                                                                                                                                                                                                       |
-| -------------------------- | ------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `--disable-git`            | False   | Prevents the command from invoking git in the current working directory and from sending repository-related data to Datadog (such as the hash, remote URL, and paths within the repository of sources referenced in the source map).   |
-| `--repository-url`         | Empty   | Overrides the remote repository with a custom URL. For example, `https://github.com/my-company/my-project`.                                                                                                                       |
-| `--remove-sources-content` | False   | Removes the `"sourcesContent"` part of the source map files. This reduces the size of your files while still keeping the unminification, but it also removes the code snippet next to the unminified error in Datadog. |
-| `--config`                 | Empty   | The path to your `datadog-ci.json` file, if it is not at the root of your project.                                                                                                                                                            |
+| Parameter                  | Default | Description                                                                                                                                                                                                                          |
+| -------------------------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `--disable-git`            | False   | Prevents the command from invoking git in the current working directory and from sending repository-related data to Datadog (such as the hash, remote URL, and paths within the repository of sources referenced in the source map). |
+| `--repository-url`         | Empty   | Overrides the remote repository with a custom URL. For example, `https://github.com/my-company/my-project`.                                                                                                                          |
+| `--remove-sources-content` | False   | Removes the `"sourcesContent"` part of the source map files. This reduces the size of your files while retaining the unminification, but it also removes the code snippet next to the unminified error in Datadog.               |
+| `--config`                 | Empty   | The path to your `datadog-ci.json` file, if it is not at the root of your project.                                                                                                                                                   |
 
 ## End-to-end testing process
 
