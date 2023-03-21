@@ -10,7 +10,12 @@ import {newApiKeyValidator} from '../../helpers/apikey'
 import {getRepositoryData, RepositoryData} from '../../helpers/git/format-git-sourcemaps-data'
 import {getMetricsLogger, MetricsLogger} from '../../helpers/metrics'
 import {MultipartValue, UploadStatus} from '../../helpers/upload'
-import {buildPath, DEFAULT_CONFIG_PATHS, performSubCommand, resolveConfigFromFile} from '../../helpers/utils'
+import {
+  buildPath,
+  DEFAULT_CONFIG_PATHS,
+  performSubCommand,
+  resolveConfigFromFileAndEnvironment,
+} from '../../helpers/utils'
 
 import * as dsyms from '../dsyms/upload'
 import {newSimpleGit} from '../git-metadata/git'
@@ -64,9 +69,8 @@ export class UploadCommand extends Command {
   private androidMapping = false
   private androidMappingLocation?: string
   private cliVersion: string
-  private config = {
-    apiKey: process.env.DATADOG_API_KEY,
-    datadogSite: process.env.DATADOG_SITE || 'datadoghq.com',
+  private config: Record<string, string> = {
+    datadogSite: 'datadoghq.com',
   }
   private configPath?: string
   private dartSymbolsLocation?: string
@@ -117,10 +121,17 @@ export class UploadCommand extends Command {
 
     this.context.stdout.write(renderCommandInfo(this.dryRun, this.version!, this.serviceName, this.flavor, uploadInfo))
 
-    this.config = await resolveConfigFromFile(this.config, {
-      configPath: this.configPath,
-      defaultConfigPaths: DEFAULT_CONFIG_PATHS,
-    })
+    this.config = await resolveConfigFromFileAndEnvironment(
+      this.config,
+      {
+        configPath: this.configPath,
+        defaultConfigPaths: DEFAULT_CONFIG_PATHS,
+      },
+      {
+        apiKey: process.env.DATADOG_API_KEY,
+        datadogSite: process.env.DATADOG_SITE,
+      }
+    )
 
     if (!this.disableGit) {
       this.gitData = await this.getGitMetadata()

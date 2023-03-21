@@ -11,7 +11,7 @@ import {InvalidConfigurationError} from '../../helpers/errors'
 import {RequestBuilder} from '../../helpers/interfaces'
 import {getMetricsLogger, MetricsLogger} from '../../helpers/metrics'
 import {upload, UploadStatus} from '../../helpers/upload'
-import {buildPath, getRequestBuilder, resolveConfigFromFile} from '../../helpers/utils'
+import {buildPath, getRequestBuilder, resolveConfigFromFileAndEnvironment} from '../../helpers/utils'
 
 import {ArchSlice, CompressedDsym, Dsym} from './interfaces'
 import {
@@ -54,9 +54,8 @@ export class UploadCommand extends Command {
 
   private basePath!: string
   private cliVersion: string
-  private config = {
-    apiKey: process.env.DATADOG_API_KEY,
-    datadogSite: process.env.DATADOG_SITE || 'datadoghq.com',
+  private config: Record<string, string> = {
+    datadogSite: 'datadoghq.com',
   }
   private configPath?: string
   private dryRun = false
@@ -72,10 +71,17 @@ export class UploadCommand extends Command {
     this.basePath = path.posix.normalize(this.basePath)
     this.context.stdout.write(renderCommandInfo(this.basePath, this.maxConcurrency, this.dryRun))
 
-    this.config = await resolveConfigFromFile(this.config, {
-      configPath: this.configPath,
-      defaultConfigPaths: ['datadog-ci.json', '../datadog-ci.json'],
-    })
+    this.config = await resolveConfigFromFileAndEnvironment(
+      this.config,
+      {
+        configPath: this.configPath,
+        defaultConfigPaths: ['datadog-ci.json', '../datadog-ci.json'],
+      },
+      {
+        apiKey: process.env.DATADOG_API_KEY,
+        datadogSite: process.env.DATADOG_SITE,
+      }
+    )
 
     const metricsLogger = getMetricsLogger({
       apiKey: this.config.apiKey,
