@@ -3,6 +3,8 @@ import os from 'os'
 import chalk from 'chalk'
 import {Cli} from 'clipanion/lib/advanced'
 
+import * as APIKeyHelpers from '../../../helpers/apikey'
+
 import {RNSourcemap} from '../interfaces'
 import {UploadCommand} from '../upload'
 
@@ -56,7 +58,10 @@ describe('upload', () => {
 })
 
 describe('execute', () => {
-  const runCLI = async (bundle: string, options?: {configPath?: string; uploadBundle?: boolean}) => {
+  const runCLI = async (
+    bundle: string,
+    options?: {configPath?: string; uploadBundle?: boolean; env?: Record<string, string>}
+  ) => {
     const cli = makeCli()
     const context = createMockContext() as any
     process.env = {DATADOG_API_KEY: 'PLACEHOLDER'}
@@ -81,6 +86,12 @@ describe('execute', () => {
     if (options?.configPath) {
       command.push('--config', options.configPath)
       delete process.env.DATADOG_API_KEY
+    }
+    if (options?.env) {
+      process.env = {
+        ...process.env,
+        ...options.env,
+      }
     }
     const code = await cli.run(command, context)
 
@@ -126,6 +137,7 @@ describe('execute', () => {
   })
 
   test('reads config from JSON file', async () => {
+    const apiKeyValidatorSpy = jest.spyOn(APIKeyHelpers, 'newApiKeyValidator')
     const {context, code} = await runCLI('./src/commands/react-native/__tests__/fixtures/basic-ios/main.jsbundle', {
       configPath: './src/commands/react-native/__tests__/fixtures/config/config-with-api-key.json',
     })
@@ -143,6 +155,42 @@ describe('execute', () => {
       sourcemapPath: './src/commands/react-native/__tests__/fixtures/basic-ios/main.jsbundle.map',
       sourcemapsPaths: ['./src/commands/react-native/__tests__/fixtures/basic-ios/main.jsbundle.map'],
       version: '1.23.4',
+    })
+    expect(apiKeyValidatorSpy).toHaveBeenCalledWith({
+      apiKey: '12345678900987654321aabbccddeeff',
+      datadogSite: expect.anything(),
+      metricsLogger: expect.anything(),
+    })
+  })
+
+  test('uses API Key from env over config from JSON file', async () => {
+    const apiKeyValidatorSpy = jest.spyOn(APIKeyHelpers, 'newApiKeyValidator')
+
+    const {context, code} = await runCLI('./src/commands/react-native/__tests__/fixtures/basic-ios/main.jsbundle', {
+      configPath: './src/commands/react-native/__tests__/fixtures/config/config-with-api-key.json',
+      env: {
+        DATADOG_API_KEY: 'env_API_key',
+      },
+    })
+
+    const output = context.stdout.toString().split(os.EOL)
+    expect(code).toBe(0)
+    checkConsoleOutput(output, {
+      build: '1023040',
+      bundlePath: './src/commands/react-native/__tests__/fixtures/basic-ios/main.jsbundle',
+      concurrency: 20,
+      jsFilesURLs: ['./src/commands/react-native/__tests__/fixtures/basic-ios/main.jsbundle'],
+      platform: 'android',
+      projectPath: '',
+      service: 'com.company.app',
+      sourcemapPath: './src/commands/react-native/__tests__/fixtures/basic-ios/main.jsbundle.map',
+      sourcemapsPaths: ['./src/commands/react-native/__tests__/fixtures/basic-ios/main.jsbundle.map'],
+      version: '1.23.4',
+    })
+    expect(apiKeyValidatorSpy).toHaveBeenCalledWith({
+      apiKey: 'env_API_key',
+      datadogSite: expect.anything(),
+      metricsLogger: expect.anything(),
     })
   })
 
