@@ -145,3 +145,9 @@ export const renderRetriedUpload = (filePath: string, errorMessage: string, atte
 }
 
 export const renderUpload = (type: string, filePath: string): string => `Uploading ${type} ${filePath}\n`
+
+export const renderDuplicateAPIKey = (environmentAPIKey: string) => {
+  return `API keys were specified both in a configuration file and in the environment.\nThe environment API key ending in ${environmentAPIKey.slice(
+    -4
+  )} will be used.\n`
+}

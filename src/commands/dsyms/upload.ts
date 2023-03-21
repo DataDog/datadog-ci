@@ -19,6 +19,7 @@ import {
   renderCommandInfo,
   renderConfigurationError,
   renderDSYMSlimmingFailure,
+  renderDuplicateAPIKey,
   renderFailedUpload,
   renderInvalidDsymWarning,
   renderRetriedUpload,
@@ -80,6 +81,15 @@ export class UploadCommand extends Command {
       {
         configPath: this.configPath,
         defaultConfigPaths: ['datadog-ci.json', '../datadog-ci.json'],
+        configFromFileCallback: (configFromFile: any) => {
+          if (
+            configFromFile.apiKey &&
+            process.env.DATADOG_API_KEY &&
+            configFromFile.apiKey !== process.env.DATADOG_API_KEY
+          ) {
+            this.context.stdout.write(renderDuplicateAPIKey(process.env.DATADOG_API_KEY))
+          }
+        },
       }
     )
 
