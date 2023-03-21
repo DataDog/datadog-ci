@@ -175,23 +175,13 @@ describe('execute', () => {
 
     const output = context.stdout.toString().split(os.EOL)
     expect(code).toBe(0)
-    checkConsoleOutput(output, {
-      build: '1023040',
-      bundlePath: './src/commands/react-native/__tests__/fixtures/basic-ios/main.jsbundle',
-      concurrency: 20,
-      jsFilesURLs: ['./src/commands/react-native/__tests__/fixtures/basic-ios/main.jsbundle'],
-      platform: 'android',
-      projectPath: '',
-      service: 'com.company.app',
-      sourcemapPath: './src/commands/react-native/__tests__/fixtures/basic-ios/main.jsbundle.map',
-      sourcemapsPaths: ['./src/commands/react-native/__tests__/fixtures/basic-ios/main.jsbundle.map'],
-      version: '1.23.4',
-    })
     expect(apiKeyValidatorSpy).toHaveBeenCalledWith({
       apiKey: 'env_API_key',
       datadogSite: expect.anything(),
       metricsLogger: expect.anything(),
     })
+    expect(output).toContain('API keys were specified both in a configuration file and in the environment.')
+    expect(output).toContain('The environment API key ending in _key will be used.')
   })
 
   test('prints warning when bundle file is specified', async () => {
