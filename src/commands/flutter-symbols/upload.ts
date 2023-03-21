@@ -124,12 +124,12 @@ export class UploadCommand extends Command {
     this.config = await resolveConfigFromFileAndEnvironment(
       this.config,
       {
-        configPath: this.configPath,
-        defaultConfigPaths: DEFAULT_CONFIG_PATHS,
-      },
-      {
         apiKey: process.env.DATADOG_API_KEY,
         datadogSite: process.env.DATADOG_SITE,
+      },
+      {
+        configPath: this.configPath,
+        defaultConfigPaths: DEFAULT_CONFIG_PATHS,
       }
     )
 

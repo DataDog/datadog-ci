@@ -67,10 +67,10 @@ export const resolveConfigFromFileAndEnvironment = async <
   U extends Record<string, unknown>
 >(
   baseConfig: T,
-  fileParams: {configPath?: string; defaultConfigPaths?: string[]},
-  environment: U
+  environment: U,
+  params: {configPath?: string; defaultConfigPaths?: string[]}
 ): Promise<T & U> => {
-  const configFromFile = await resolveConfigFromFile(baseConfig, fileParams)
+  const configFromFile = await resolveConfigFromFile(baseConfig, params)
 
   return deepExtend(configFromFile, removeUndefinedValues(environment))
 }
