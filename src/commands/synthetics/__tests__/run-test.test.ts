@@ -1,4 +1,5 @@
-import {promises as fs} from 'fs'
+import fs from 'fs'
+import {Readable} from 'stream'
 
 import * as ciUtils from '../../../helpers/utils'
 
@@ -291,7 +292,9 @@ describe('run-test', () => {
         })
       )
 
-      jest.spyOn(fs, 'readFile').mockImplementation(async () => Buffer.from('aa'))
+      // use /dev/null to create a valid empty fs.ReadStream
+      const testStream = fs.createReadStream('/dev/null')
+      jest.spyOn(fs, 'createReadStream').mockReturnValue(testStream)
 
       const apiHelper = {
         getMobileApplicationPresignedURL: jest.fn(() => {
@@ -318,7 +321,11 @@ describe('run-test', () => {
         })
       )
 
-      jest.spyOn(fs, 'readFile').mockImplementation(async () => Buffer.from('aa'))
+      // use /dev/null to create a valid empty fs.ReadStream
+      const testStream = fs.createReadStream('/dev/null')
+      jest.spyOn(fs, 'createReadStream').mockReturnValue(testStream)
+
+      jest.spyOn(fs.promises, 'readFile').mockImplementation(async () => Buffer.from('aa'))
 
       const apiHelper = {
         getMobileApplicationPresignedURL: jest.fn(() => MOBILE_PRESIGNED_URL_PAYLOAD),

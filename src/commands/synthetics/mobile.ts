@@ -1,13 +1,24 @@
 import * as crypto from 'crypto'
-import {promises as fs} from 'fs'
+import fs from 'fs'
 
 import {APIHelper} from './api'
 import {Test, TestPayload, UserConfigOverride} from './interfaces'
 
-export const getMD5HashFromFileBuffer = async (fileBuffer: Buffer): Promise<string> => {
-  const hash = crypto.createHash('md5').update(fileBuffer).digest('base64')
+/**
+ * Create an md5 hash of a file at a given path. This is done incrementally so
+ * entire file does not need to fit in memory.
 
-  return hash
+ * @param file path to the file that will be hashed
+ * @returns md5 hash of file as string
+ */
+export const getMD5HashFromFile = async (file: string): Promise<string> => {
+  const hash = crypto.createHash('md5')
+  const input = fs.createReadStream(file)
+  for await (const chunk of input) {
+    hash.update(chunk)
+  }
+
+  return hash.digest('base64')
 }
 
 export const uploadMobileApplications = async (
@@ -15,13 +26,13 @@ export const uploadMobileApplications = async (
   applicationPathToUpload: string,
   mobileApplicationId: string
 ): Promise<string> => {
-  const fileBuffer = await fs.readFile(applicationPathToUpload)
-  const md5 = await getMD5HashFromFileBuffer(fileBuffer)
+  const md5 = await getMD5HashFromFile(applicationPathToUpload)
   const {presigned_url_params: presignedUrl, file_name: fileName} = await api.getMobileApplicationPresignedURL(
     mobileApplicationId,
     md5
   )
 
+  const fileBuffer = await fs.promises.readFile(applicationPathToUpload)
   await api.uploadMobileApplication(fileBuffer, presignedUrl)
 
   return fileName
