@@ -8,20 +8,19 @@ export const getMinifiedFilePath = (sourcemapPath: string) => {
   return sourcemapPath.replace(new RegExp('\\.map$'), '')
 }
 
-export const getBaseIntakeUrl = () => {
-  if (process.env.DATADOG_SOURCEMAP_INTAKE_URL) {
-    return process.env.DATADOG_SOURCEMAP_INTAKE_URL
-  } else if (process.env.DATADOG_SITE) {
-    return 'https://sourcemap-intake.' + process.env.DATADOG_SITE
+// ExtractRepeatedPath checks if the last part of paths of the first arg are repeated at the start of the second arg.
+export const extractRepeatedPath = (path1: string, path2: string): string | undefined => {
+  const splitOnSlashes = new RegExp(/[\/]+|[\\]+/)
+  const trimSlashes = new RegExp(/^[\/]+|^[\\]+|[\/]+$|[\\]+$/)
+  const path1split = path1.trim().replace(trimSlashes, '').split(splitOnSlashes)
+  const path2split = path2.trim().replace(trimSlashes, '').split(splitOnSlashes)
+  const normalizedpath2 = path2split.join('/')
+  for (let i = path1split.length; i > 0; i--) {
+    const path1subset = path1split.slice(-i).join('/')
+    if (normalizedpath2.startsWith(path1subset)) {
+      return path1subset
+    }
   }
 
-  return 'https://sourcemap-intake.datadoghq.com'
-}
-
-export const pluralize = (nb: number, singular: string, plural: string) => {
-  if (nb >= 2) {
-    return `${nb} ${plural}`
-  }
-
-  return `${nb} ${singular}`
+  return undefined
 }

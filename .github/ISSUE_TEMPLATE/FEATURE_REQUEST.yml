@@ -1,0 +1,40 @@
+name: Feature Request
+description: Suggest an idea or request a feature
+labels: ['enhancement']
+body:
+  - type: textarea
+    id: feature-description
+    attributes:
+      label: Feature request description
+      description: Is your feature request related to a problem? Please describe
+      placeholder: A clear and concise description of what the problem is.
+    validations:
+      required: true
+  - type: textarea
+    id: solution
+    attributes:
+      label: Solution
+      description: Describe the solution you'd like
+      placeholder: A clear and concise description of what you want to happen.
+  - type: textarea
+    id: additional-context
+    attributes:
+      label: Additional context
+      placeholder: Add any other context, screenshots, or alternative solutions about the feature request here.
+  - type: dropdown
+    id: command
+    attributes:
+      label: Command
+      description: Which datadog-ci command does this relate to?
+      options:
+        - dsyms
+        - flutter-symbols
+        - git-metadata
+        - junit
+        - lambda
+        - metric
+        - react-native
+        - sourcemaps
+        - synthetics
+        - tag
+        - trace

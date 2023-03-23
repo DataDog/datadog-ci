@@ -1,11 +1,17 @@
-import {blueBright, bold} from 'chalk'
+import {blueBright, bold, dim} from 'chalk'
+import {filter} from 'fuzzy'
 import inquirer from 'inquirer'
+
+import {DATADOG_SITES} from '../../constants'
+import {isValidDatadogSite} from '../../helpers/validation'
+
 import {
   AWS_ACCESS_KEY_ID_ENV_VAR,
   AWS_ACCESS_KEY_ID_REG_EXP,
   AWS_DEFAULT_REGION_ENV_VAR,
   AWS_SECRET_ACCESS_KEY_ENV_VAR,
   AWS_SECRET_ACCESS_KEY_REG_EXP,
+  AWS_SECRET_ARN_REG_EXP,
   AWS_SESSION_TOKEN_ENV_VAR,
   CI_API_KEY_ENV_VAR,
   CI_API_KEY_SECRET_ARN_ENV_VAR,
@@ -14,14 +20,27 @@ import {
   DATADOG_API_KEY_REG_EXP,
   ENVIRONMENT_ENV_VAR,
   SERVICE_ENV_VAR,
-  SITES,
   VERSION_ENV_VAR,
 } from './constants'
-import {sentenceMatchesRegEx} from './functions/commons'
-/* tslint:disable-next-line */
+import {isMissingAnyDatadogApiKeyEnvVar, sentenceMatchesRegEx} from './functions/commons'
+
 const checkboxPlusPrompt = require('inquirer-checkbox-plus-prompt')
 inquirer.registerPrompt('checkbox-plus', checkboxPlusPrompt)
-import {filter} from 'fuzzy'
+
+export const awsProfileQuestion = (mfaSerial: string): inquirer.InputQuestion => ({
+  default: undefined,
+  message: `Enter MFA code for ${mfaSerial}: `,
+  name: 'AWS_MFA',
+  type: 'input',
+  validate: (value) => {
+    if (!value || value === undefined || value.length < 6) {
+      return 'Enter a valid MFA token. Length must be greater than or equal to 6.'
+    }
+
+    return true
+  },
+})
+
 const awsCredentialsQuestions: inquirer.QuestionCollection = [
   {
     // AWS_ACCESS_KEY_ID question
@@ -100,7 +119,7 @@ export const datadogApiKeyTypeQuestion = (datadogSite: string): inquirer.ListQue
 
 const datadogSiteQuestion: inquirer.ListQuestion = {
   // DATADOG SITE
-  choices: SITES,
+  choices: DATADOG_SITES,
   message: `Select the Datadog site to send data. \nLearn more at ${blueBright(
     'https://docs.datadoghq.com/getting_started/site/'
   )}`,
@@ -111,6 +130,7 @@ const datadogSiteQuestion: inquirer.ListQuestion = {
 const envQuestion: inquirer.InputQuestion = {
   default: undefined,
   message: 'Enter a value for the environment variable DD_ENV',
+  suffix: dim(' (recommended)'),
   name: ENVIRONMENT_ENV_VAR,
   type: 'input',
 }
@@ -118,16 +138,20 @@ const envQuestion: inquirer.InputQuestion = {
 const serviceQuestion: inquirer.InputQuestion = {
   default: undefined,
   message: 'Enter a value for the environment variable DD_SERVICE',
+  suffix: dim(' (recommended)'),
   name: SERVICE_ENV_VAR,
   type: 'input',
 }
 
 const versionQuestion: inquirer.InputQuestion = {
   default: undefined,
-  message: 'Enter a value for the environment variable DD_VERISON',
+  message: 'Enter a value for the environment variable DD_VERSION',
+  suffix: dim(' (recommended)'),
   name: VERSION_ENV_VAR,
   type: 'input',
 }
+
+const INVALID_KEY_MESSAGE = 'Enter a valid Datadog API Key.'
 
 export const datadogEnvVarsQuestions = (datadogApiKeyType: Record<string, any>): inquirer.InputQuestion => ({
   // DATADOG API KEY given type
@@ -136,8 +160,19 @@ export const datadogEnvVarsQuestions = (datadogApiKeyType: Record<string, any>):
   name: datadogApiKeyType.envVar,
   type: 'input',
   validate: (value) => {
-    if (!value || !sentenceMatchesRegEx(value, DATADOG_API_KEY_REG_EXP)) {
-      return 'Enter a valid Datadog API Key.'
+    if (!value) {
+      return INVALID_KEY_MESSAGE
+    }
+
+    if (datadogApiKeyType.envVar === CI_API_KEY_ENV_VAR && !sentenceMatchesRegEx(value, DATADOG_API_KEY_REG_EXP)) {
+      return INVALID_KEY_MESSAGE
+    }
+
+    if (
+      datadogApiKeyType.envVar === CI_API_KEY_SECRET_ARN_ENV_VAR &&
+      !sentenceMatchesRegEx(value, AWS_SECRET_ARN_REG_EXP)
+    ) {
+      return INVALID_KEY_MESSAGE
     }
 
     return true
@@ -205,15 +240,21 @@ export const requestAWSRegion = async (defaultRegion?: string) => {
 
 export const requestDatadogEnvVars = async () => {
   try {
-    const datadogSiteAnswer = await inquirer.prompt(datadogSiteQuestion)
-    const selectedDatadogSite = datadogSiteAnswer[CI_SITE_ENV_VAR]
-    process.env[CI_SITE_ENV_VAR] = selectedDatadogSite
+    const envSite = process.env[CI_SITE_ENV_VAR]
+    let selectedDatadogSite = envSite
+    if (!isValidDatadogSite(envSite)) {
+      const datadogSiteAnswer = await inquirer.prompt(datadogSiteQuestion)
+      selectedDatadogSite = datadogSiteAnswer[CI_SITE_ENV_VAR]
+      process.env[CI_SITE_ENV_VAR] = selectedDatadogSite
+    }
 
-    const datadogApiKeyTypeAnswer = await inquirer.prompt(datadogApiKeyTypeQuestion(selectedDatadogSite))
-    const datadogApiKeyType = datadogApiKeyTypeAnswer.type
-    const datadogEnvVars = await inquirer.prompt(datadogEnvVarsQuestions(datadogApiKeyType))
-    const selectedDatadogApiKeyEnvVar = datadogApiKeyType.envVar
-    process.env[selectedDatadogApiKeyEnvVar] = datadogEnvVars[selectedDatadogApiKeyEnvVar]
+    if (isMissingAnyDatadogApiKeyEnvVar()) {
+      const datadogApiKeyTypeAnswer = await inquirer.prompt(datadogApiKeyTypeQuestion(selectedDatadogSite!))
+      const datadogApiKeyType = datadogApiKeyTypeAnswer.type
+      const datadogEnvVars = await inquirer.prompt(datadogEnvVarsQuestions(datadogApiKeyType))
+      const selectedDatadogApiKeyEnvVar = datadogApiKeyType.envVar
+      process.env[selectedDatadogApiKeyEnvVar] = datadogEnvVars[selectedDatadogApiKeyEnvVar]
+    }
   } catch (e) {
     if (e instanceof Error) {
       throw Error(`Couldn't set Datadog Environment Variables. ${e.message}`)

@@ -1,5 +1,10 @@
-import fs from 'fs'
+import {Writable} from 'stream'
+
+import {checkFile} from '../../helpers/validation'
+
 import {Sourcemap} from './interfaces'
+import {renderMinifiedPathPrefixMisusage} from './renderer'
+import {extractRepeatedPath} from './utils'
 
 export class InvalidPayload extends Error {
   public reason: string
@@ -10,24 +15,7 @@ export class InvalidPayload extends Error {
   }
 }
 
-const checkFile: (path: string) => {empty: boolean; exists: boolean} = (path: string) => {
-  try {
-    const stats = fs.statSync(path)
-    if (stats.size === 0) {
-      return {exists: true, empty: true}
-    }
-  } catch (error) {
-    if (error.code === 'ENOENT') {
-      return {exists: false, empty: false}
-    }
-    // Other kind of error
-    throw error
-  }
-
-  return {exists: true, empty: false}
-}
-
-export const validatePayload = (sourcemap: Sourcemap) => {
+export const validatePayload = (sourcemap: Sourcemap, stdout: Writable) => {
   // Check existence of sourcemap file
   const sourcemapCheck = checkFile(sourcemap.sourcemapPath)
   if (!sourcemapCheck.exists) {
@@ -50,5 +38,13 @@ export const validatePayload = (sourcemap: Sourcemap) => {
       'empty_js',
       `Skipping sourcemap (${sourcemap.sourcemapPath}) due to ${sourcemap.minifiedFilePath} being empty`
     )
+  }
+
+  // Check for --minified-path-prefix flag misuages.
+  if (sourcemap.minifiedPathPrefix) {
+    const repeated = extractRepeatedPath(sourcemap.minifiedPathPrefix, sourcemap.relativePath)
+    if (repeated) {
+      stdout.write(renderMinifiedPathPrefixMisusage(sourcemap, repeated))
+    }
   }
 }

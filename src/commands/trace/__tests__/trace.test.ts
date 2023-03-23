@@ -1,4 +1,4 @@
-// tslint:disable: no-string-literal no-null-keyword
+/* eslint-disable no-null/no-null */
 import {TraceCommand} from '../trace'
 
 describe('trace', () => {

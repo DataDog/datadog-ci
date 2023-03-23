@@ -1,0 +1,45 @@
+name: Bug Report
+description: Report a bug
+labels: ['bug']
+body:
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: Bug description
+      description: Describe what happened
+      placeholder: Include any error message or stack trace if available.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Describe what you expected
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps to reproduce the issue
+  - type: textarea
+    id: additional-context
+    attributes:
+      label: Additional context
+      placeholder: |
+        - OS version
+        - Node version
+        - Package manager
+  - type: dropdown
+    id: command
+    attributes:
+      label: Command
+      description: Which datadog-ci command are you running?
+      options:
+        - dsyms
+        - flutter-symbols
+        - git-metadata
+        - junit
+        - lambda
+        - metric
+        - react-native
+        - sourcemaps
+        - synthetics
+        - tag
+        - trace

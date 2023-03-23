@@ -1,27 +1,36 @@
-import {CloudWatchLogs, config as aws_sdk_config, Lambda} from 'aws-sdk'
+import {Writable} from 'stream'
+
+import {CloudWatchLogs, config as aws_sdk_config, Lambda, SharedIniFileCredentials} from 'aws-sdk'
 import {GetFunctionRequest} from 'aws-sdk/clients/lambda'
+import {SharedIniFileCredentialsOptions} from 'aws-sdk/lib/credentials/shared_ini_file_credentials'
+import inquirer from 'inquirer'
+
+import {isValidDatadogSite} from '../../../helpers/validation'
+
 import {
   ARM64_ARCHITECTURE,
-  ARM_LAYER_SUFFIX,
   ARM_LAYERS,
+  ARM_LAYER_SUFFIX,
   AWS_ACCESS_KEY_ID_ENV_VAR,
   AWS_SECRET_ACCESS_KEY_ENV_VAR,
+  AWS_SHARED_CREDENTIALS_FILE_ENV_VAR,
   CI_API_KEY_ENV_VAR,
   CI_API_KEY_SECRET_ARN_ENV_VAR,
   CI_KMS_API_KEY_ENV_VAR,
   CI_SITE_ENV_VAR,
   DEFAULT_LAYER_AWS_ACCOUNT,
   GOVCLOUD_LAYER_AWS_ACCOUNT,
-  LAYER_LOOKUP,
   LayerKey,
+  LAYER_LOOKUP,
   LIST_FUNCTIONS_MAX_RETRY_COUNT,
   MAX_LAMBDA_STATE_CHECK_ATTEMPTS,
   Runtime,
   RUNTIME_LOOKUP,
-  SITES,
 } from '../constants'
-import {FunctionConfiguration, InstrumentationSettings} from '../interfaces'
+import {FunctionConfiguration, InstrumentationSettings, InstrumentedConfigurationGroup} from '../interfaces'
 import {applyLogGroupConfig} from '../loggroup'
+import {awsProfileQuestion} from '../prompt'
+import * as renderer from '../renderer'
 import {applyTagConfig} from '../tags'
 
 /**
@@ -137,7 +146,7 @@ export const findLatestLayerVersion = async (layer: LayerKey, region: string) =>
       latestVersion = layerVersion
       // Increase layer version
       layerVersion += searchStep
-    } catch (e) {
+    } catch {
       // Search step is too big, reset target to previous version
       // with a smaller search step
       if (searchStep > 1) {
@@ -160,7 +169,7 @@ export const findLatestLayerVersion = async (layer: LayerKey, region: string) =>
           latestVersion = layerVersion
           // Continue the search if the next version does exist (unlikely event)
           layerVersion += searchStep
-        } catch (e) {
+        } catch {
           // The next version doesn't exist either, so the previous version is indeed the latest
           foundLatestVersion = true
         }
@@ -171,18 +180,52 @@ export const findLatestLayerVersion = async (layer: LayerKey, region: string) =>
   return latestVersion
 }
 
+export const getAWSFileCredentialsParams = (profile: string): SharedIniFileCredentialsOptions => {
+  const params: SharedIniFileCredentialsOptions = {profile}
+
+  if (process.env[AWS_SHARED_CREDENTIALS_FILE_ENV_VAR] !== undefined) {
+    params.filename = process.env[AWS_SHARED_CREDENTIALS_FILE_ENV_VAR]
+  }
+
+  // If provided profile is enforced by MFA and a
+  // session token is not set we must request for the MFA token.
+  params.tokenCodeFn = async (mfaSerial, callback) => {
+    const answer = await inquirer.prompt(awsProfileQuestion(mfaSerial))
+    callback(undefined, answer.AWS_MFA)
+  }
+
+  return params
+}
+
+export const updateAWSProfileCredentials = async (profile: string) => {
+  try {
+    const params: SharedIniFileCredentialsOptions = getAWSFileCredentialsParams(profile)
+
+    const profileCredentials: SharedIniFileCredentials = new SharedIniFileCredentials(params)
+
+    // Update credentials in the case user has
+    // MFA set up.
+    await profileCredentials.getPromise()
+    if (profileCredentials.needsRefresh()) {
+      await profileCredentials.refreshPromise()
+    }
+
+    if (!(profileCredentials.accessKeyId !== undefined || profileCredentials.sessionToken !== undefined)) {
+      throw new Error(`Profile '${profile}' is not configured.`)
+    }
+
+    aws_sdk_config.credentials = profileCredentials
+  } catch (e) {
+    if (e instanceof Error) {
+      throw Error(`Couldn't set AWS profile credentials. ${e.message}`)
+    }
+  }
+}
+
 export const isMissingAWSCredentials = () =>
   // If env vars and aws_sdk_config.credentials are not set return true otherwise return false
   (process.env[AWS_ACCESS_KEY_ID_ENV_VAR] === undefined || process.env[AWS_SECRET_ACCESS_KEY_ENV_VAR] === undefined) &&
   !aws_sdk_config.credentials
-export const isMissingDatadogSiteEnvVar = () => {
-  const site = process.env[CI_SITE_ENV_VAR]
-  if (site !== undefined) {
-    return !SITES.includes(site)
-  }
-
-  return true
-}
 
 export const isMissingAnyDatadogApiKeyEnvVar = () =>
   !(
@@ -190,7 +233,8 @@ export const isMissingAnyDatadogApiKeyEnvVar = () =>
     process.env[CI_KMS_API_KEY_ENV_VAR] ||
     process.env[CI_API_KEY_SECRET_ARN_ENV_VAR]
   )
-export const isMissingDatadogEnvVars = () => isMissingDatadogSiteEnvVar() || isMissingAnyDatadogApiKeyEnvVar()
+export const isMissingDatadogEnvVars = () =>
+  !isValidDatadogSite(process.env[CI_SITE_ENV_VAR]) || isMissingAnyDatadogApiKeyEnvVar()
 
 export const getAllLambdaFunctionConfigs = async (lambda: Lambda) => getLambdaFunctionConfigsFromRegex(lambda, '.')
 
@@ -377,23 +421,69 @@ export const isLayerRuntime = (runtime: string): runtime is LayerKey => LAYER_LO
 
 export const sentenceMatchesRegEx = (sentence: string, regex: RegExp) => sentence.match(regex)
 
-export const updateLambdaFunctionConfigs = async (
+export const updateLambdaFunctionConfig = async (
   lambda: Lambda,
   cloudWatch: CloudWatchLogs,
-  configs: FunctionConfiguration[]
+  config: FunctionConfiguration
 ) => {
-  const results = configs.map(async (c) => {
-    if (c.updateRequest !== undefined) {
-      await lambda.updateFunctionConfiguration(c.updateRequest).promise()
+  if (config.updateRequest !== undefined) {
+    await lambda.updateFunctionConfiguration(config.updateRequest).promise()
+  }
+  if (config.logGroupConfiguration !== undefined) {
+    await applyLogGroupConfig(cloudWatch, config.logGroupConfiguration)
+  }
+  if (config.tagConfiguration !== undefined) {
+    await applyTagConfig(lambda, config.tagConfiguration)
+  }
+}
+
+export const handleLambdaFunctionUpdates = async (configGroups: InstrumentedConfigurationGroup[], stdout: Writable) => {
+  let totalFunctions = 0
+  let totalFailedUpdates = 0
+  for (const group of configGroups) {
+    const spinner = renderer.updatingFunctionsConfigFromRegionSpinner(group.region, group.configs.length)
+    spinner.start()
+    const failedUpdates = []
+    for (const config of group.configs) {
+      totalFunctions += 1
+      try {
+        await updateLambdaFunctionConfig(group.lambda, group.cloudWatchLogs, config)
+      } catch (err) {
+        failedUpdates.push({functionARN: config.functionARN, error: err})
+        totalFailedUpdates += 1
+      }
     }
-    if (c.logGroupConfiguration !== undefined) {
-      await applyLogGroupConfig(cloudWatch, c.logGroupConfiguration)
+
+    if (failedUpdates.length === group.configs.length) {
+      spinner.fail(renderer.renderFailedUpdatingEveryLambdaFunctionFromRegion(group.region))
+    } else if (failedUpdates.length > 0) {
+      spinner.warn(
+        renderer.renderUpdatedLambdaFunctionsFromRegion(group.region, group.configs.length - failedUpdates.length)
+      )
     }
-    if (c.tagConfiguration !== undefined) {
-      await applyTagConfig(lambda, c.tagConfiguration)
+
+    for (const failedUpdate of failedUpdates) {
+      stdout.write(renderer.renderFailedUpdatingLambdaFunction(failedUpdate.functionARN, failedUpdate.error))
     }
-  })
-  await Promise.all(results)
+
+    if (failedUpdates.length === 0) {
+      spinner.succeed(renderer.renderUpdatedLambdaFunctionsFromRegion(group.region, group.configs.length))
+    }
+  }
+
+  if (totalFunctions === totalFailedUpdates) {
+    stdout.write(renderer.renderFail(renderer.renderFailedUpdatingEveryLambdaFunction()))
+
+    throw Error()
+  }
+
+  if (totalFailedUpdates > 0) {
+    stdout.write(renderer.renderSoftWarning(renderer.renderUpdatedLambdaFunctions(totalFunctions - totalFailedUpdates)))
+  }
+
+  if (!totalFailedUpdates) {
+    stdout.write(renderer.renderSuccess(renderer.renderUpdatedLambdaFunctions(totalFunctions)))
+  }
 }
 
 export const willUpdateFunctionConfigs = (configs: FunctionConfiguration[]) => {

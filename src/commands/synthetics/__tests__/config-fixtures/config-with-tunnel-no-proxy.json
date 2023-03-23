@@ -1,0 +1,6 @@
+{
+  "apiKey": "123",
+  "appKey": "123",
+  "publicIds": ["123-456-789"],
+  "tunnel": true
+}

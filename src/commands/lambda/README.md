@@ -44,7 +44,7 @@ datadog-ci lambda uninstrument -f <function-name> -f <another-function-name> -r 
 # Uninstrument function(s) in interactive mode
 datadog-ci lambda uninstrument -i
 
-# Instrument multiple functions that match a regex pattern
+# Uninstrument multiple functions that match a regex pattern
 datadog-ci lambda uninstrument --functions-regex <valid-regex-pattern> -r us-east-1
 
 # Dry run of all updates
@@ -88,17 +88,20 @@ You can pass the following arguments to `instrument` to specify its behavior. Th
 | `--version` | | Add the `--version` tag to correlate spikes in latency, load or errors to new versions. Learn more about the `version` tag [here][8]. | |
 | `--env` | | Use `--env` to separate out your staging, development, and production environments. Learn more about the `env` tag [here][7]. | |
 | `--extra-tags` | | Add custom tags to your Lambda function in Datadog. Must be a list of `<key>:<value>` separated by commas such as: `layer:api,team:intake`. | |
+| `--profile` | | Specify the AWS named profile credentials to use to instrument. Learn more about AWS named profiles [here][12]. |  | 
 | `--layer-version` | `-v` | Version of the Datadog Lambda Library layer to apply. This varies between runtimes. To see the latest layer version check the [JS][3] or [python][4] datadog-lambda-layer repo release notes. | |
 | `--extension-version` | `-e` | Version of the Datadog Lambda Extension layer to apply. When `extension-version` is set, make sure to export `DATADOG_API_KEY` (or if encrypted, `DATADOG_KMS_API_KEY` or `DATADOG_API_KEY_SECRET_ARN`) in your environment as well. While using `extension-version`, leave out `forwarder`. Learn more about the Lambda Extension [here][5]. | |
 | `--tracing` |  | Whether to enable dd-trace tracing on your Lambda. | `true` |
 | `--merge-xray-traces` | | Whether to join dd-trace traces to AWS X-Ray traces. Useful for tracing API Gateway spans. | `false` |
 | `--flush-metrics-to-logs` | | Whether to send metrics via the Datadog Forwarder [asynchronously][11]. If you disable this parameter, it's required to export `DATADOG_API_KEY` (or if encrypted, `DATADOG_KMS_API_KEY` or `DATADOG_API_KEY_SECRET_ARN`). | `true` |
-| `--capture-lambda-payload` | | Whether to capture and store the payload and reponse of a lambda invocation. | `false` |
+| `--capture-lambda-payload` | | Whether to capture and store the payload and response of a lambda invocation. | `false` |
 | `--forwarder` | | The ARN of the [datadog forwarder][10] to attach this function's LogGroup to. | |
 | `--dry` | `-d` | Preview changes running command would apply. | `false` |
 | `--log-level` | | Set to `debug` to see additional output from the Datadog Lambda Library and/or Lambda Extension for troubleshooting purposes. | |
-| `--source-code-integration` | `-s` | Whether to enable Datadog Source Code Integration. This will send Datadog the Git metadata in the current local directory and tag your lambda(s) with the latest commit. Provide `DATADOG_API_KEY` if using this feature. **Note**: Git repository must not be ahead of remote, and must not be dirty. | `false` |
-
+| `--source-code-integration` | `-s` | Whether to enable [Datadog Source Code Integration][13]. This will tag your lambda(s) with the Git repository URL and the latest commit hash of the current local directory. **Note**: Git repository must not be ahead of remote, and must not be dirty. | `true` |
+| `--no-source-code-integration` | | Disables Datadog Source Code Integration. | |
+| `--upload-git-metadata` | `-u` | Whether to enable Git metadata uploading, as a part of source code integration. Git metadata uploading is only required if you don't have the Datadog Github Integration installed. | `true` | 
+| `--no-upload-git-metadata` | | Disables Git metadata uploading, as a part of source code integration. Use this flag if you have the Datadog Github Integration installed, as it renders Git metadata uploading unnecessary. ||
 <br />
 
 #### `uninstrument`
@@ -111,6 +114,7 @@ Any other argument stated on the `instrument` table, but not below, will be igno
 | `--function` | `-f` | The ARN of the Lambda function to be **uninstrumented**, or the name of the Lambda function (`--region` must be defined). | |
 | `--functions-regex` | | A regex pattern to match with the Lambda function name to be **uninstrumented**. | |
 | `--region` | `-r` | Default region to use, when `--function` is specified by the function name instead of the ARN. | |
+| `--profile` | | Specify the AWS named profile credentials to use to uninstrument. Learn more about AWS named profiles [here][12]. |  | 
 | `--forwarder` | | The ARN of the [datadog forwarder][10] to remove from this function. | |
 | `--dry` | `-d` | Preview changes running command would apply. | `false` |
 
@@ -134,6 +138,7 @@ Instead of supplying arguments, you can create a configuration file in your proj
         "logLevel": "debug",
         "service":"some-service",
         "version":"b17s47h3w1n",
+        "profile": "my-credentials"
         "environment":"staging",
         "extraTags":"layer:api,team:intake"
     }
@@ -154,3 +159,5 @@ For product feedback and questions, join the `#serverless` channel in the [Datad
 [9]: https://docs.datadoghq.com/serverless/troubleshooting/serverless_tagging/#the-service-tag
 [10]: https://docs.datadoghq.com/serverless/forwarder/
 [11]: https://docs.datadoghq.com/serverless/custom_metrics?tab=python#enabling-asynchronous-custom-metrics
+[12]: https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-profiles.html#using-profiles
+[13]: https://docs.datadoghq.com/integrations/guide/source-code-integration

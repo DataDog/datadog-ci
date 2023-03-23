@@ -1,8 +1,9 @@
+import {promises} from 'fs'
+import path from 'path'
+
 import chalk from 'chalk'
 import {Command} from 'clipanion'
-import {promises} from 'fs'
 import glob from 'glob'
-import path from 'path'
 import asyncPool from 'tiny-async-pool'
 
 import {ApiKeyValidator, newApiKeyValidator} from '../../helpers/apikey'
@@ -10,7 +11,8 @@ import {InvalidConfigurationError} from '../../helpers/errors'
 import {RequestBuilder} from '../../helpers/interfaces'
 import {getMetricsLogger, MetricsLogger} from '../../helpers/metrics'
 import {upload, UploadStatus} from '../../helpers/upload'
-import {buildPath, getRequestBuilder} from '../../helpers/utils'
+import {buildPath, getRequestBuilder, resolveConfigFromFile} from '../../helpers/utils'
+
 import {ArchSlice, CompressedDsym, Dsym} from './interfaces'
 import {
   renderCommandDetail,
@@ -38,9 +40,9 @@ export class UploadCommand extends Command {
   public static usage = Command.Usage({
     description: 'Upload dSYM files to Datadog.',
     details: `
-            This command will upload all dSYM files to Datadog in order to symbolicate crash reports received by Datadog.
-            See README for details.
-        `,
+      This command will upload all dSYM files to Datadog in order to symbolicate crash reports received by Datadog.\n
+      See README for details.
+    `,
     examples: [
       ['Upload all dSYM files in Derived Data path', 'datadog-ci dsyms upload ~/Library/Developer/Xcode/DerivedData'],
       [
@@ -56,6 +58,7 @@ export class UploadCommand extends Command {
     apiKey: process.env.DATADOG_API_KEY,
     datadogSite: process.env.DATADOG_SITE || 'datadoghq.com',
   }
+  private configPath?: string
   private dryRun = false
   private maxConcurrency = 20
 
@@ -68,8 +71,15 @@ export class UploadCommand extends Command {
     // Normalizing the basePath to resolve .. and .
     this.basePath = path.posix.normalize(this.basePath)
     this.context.stdout.write(renderCommandInfo(this.basePath, this.maxConcurrency, this.dryRun))
+
+    this.config = await resolveConfigFromFile(this.config, {
+      configPath: this.configPath,
+      defaultConfigPaths: ['datadog-ci.json', '../datadog-ci.json'],
+    })
+
     const metricsLogger = getMetricsLogger({
-      datadogSite: process.env.DATADOG_SITE,
+      apiKey: this.config.apiKey,
+      datadogSite: this.config.datadogSite,
       defaultTags: [`cli_version:${this.cliVersion}`],
       prefix: 'datadog.ci.dsyms.',
     })
@@ -161,8 +171,9 @@ export class UploadCommand extends Command {
     }
 
     return getRequestBuilder({
-      apiKey: this.config.apiKey!,
-      baseUrl: getBaseIntakeUrl(),
+      apiKey: this.config.apiKey,
+      baseUrl: getBaseIntakeUrl(this.config.datadogSite),
+      overrideUrl: 'api/v2/srcmap',
     })
   }
 
@@ -287,3 +298,4 @@ UploadCommand.addPath('dsyms', 'upload')
 UploadCommand.addOption('basePath', Command.String({required: true}))
 UploadCommand.addOption('maxConcurrency', Command.String('--max-concurrency'))
 UploadCommand.addOption('dryRun', Command.Boolean('--dry-run'))
+UploadCommand.addOption('configPath', Command.String('--config'))

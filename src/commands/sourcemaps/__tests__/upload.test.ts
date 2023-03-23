@@ -1,8 +1,8 @@
-// tslint:disable: no-string-literal
 import os from 'os'
 
 import chalk from 'chalk'
 import {Cli} from 'clipanion/lib/advanced'
+
 import {Sourcemap} from '../interfaces'
 import {UploadCommand} from '../upload'
 
@@ -12,9 +12,10 @@ describe('upload', () => {
       const command = new UploadCommand()
       command['basePath'] = '/js/sourcemaps'
       command['minifiedPathPrefix'] = 'http://datadog.com/js'
-      expect(command['getMinifiedURL']('/js/sourcemaps/common.min.js.map')).toBe(
-        'http://datadog.com/js/common.min.js.map'
-      )
+      expect(command['getMinifiedURLAndRelativePath']('/js/sourcemaps/common.min.js.map')).toStrictEqual([
+        'http://datadog.com/js/common.min.js.map',
+        '/common.min.js.map',
+      ])
     })
   })
 
@@ -23,7 +24,10 @@ describe('upload', () => {
       const command = new UploadCommand()
       command['basePath'] = '/js/sourcemaps'
       command['minifiedPathPrefix'] = '//datadog.com/js'
-      expect(command['getMinifiedURL']('/js/sourcemaps/common.min.js.map')).toBe('//datadog.com/js/common.min.js.map')
+      expect(command['getMinifiedURLAndRelativePath']('/js/sourcemaps/common.min.js.map')).toStrictEqual([
+        '//datadog.com/js/common.min.js.map',
+        '/common.min.js.map',
+      ])
     })
   })
 
@@ -32,12 +36,15 @@ describe('upload', () => {
       const command = new UploadCommand()
       command['basePath'] = '/js/sourcemaps'
       command['minifiedPathPrefix'] = '/js'
-      expect(command['getMinifiedURL']('/js/sourcemaps/common.min.js.map')).toBe('/js/common.min.js.map')
+      expect(command['getMinifiedURLAndRelativePath']('/js/sourcemaps/common.min.js.map')).toStrictEqual([
+        '/js/common.min.js.map',
+        '/common.min.js.map',
+      ])
     })
   })
 
   describe('isMinifiedPathPrefixValid: full URL', () => {
-    test('should return false', () => {
+    test('should return true', () => {
       const command = new UploadCommand()
       command['minifiedPathPrefix'] = 'http://datadog.com/js'
 
@@ -46,7 +53,7 @@ describe('upload', () => {
   })
 
   describe('isMinifiedPathPrefixValid: URL without protocol', () => {
-    test('should return false', () => {
+    test('should return true', () => {
       const command = new UploadCommand()
       command['minifiedPathPrefix'] = '//datadog.com/js'
 
@@ -55,7 +62,7 @@ describe('upload', () => {
   })
 
   describe('isMinifiedPathPrefixValid: leading slash', () => {
-    test('should return false', () => {
+    test('should return true', () => {
       const command = new UploadCommand()
       command['minifiedPathPrefix'] = '/js'
 
@@ -67,6 +74,15 @@ describe('upload', () => {
     test('should return false', () => {
       const command = new UploadCommand()
       command['minifiedPathPrefix'] = 'js'
+
+      expect(command['isMinifiedPathPrefixValid']()).toBe(false)
+    })
+  })
+
+  describe('isMinifiedPathPrefixValid: invalid URL without host', () => {
+    test('should return false', () => {
+      const command = new UploadCommand()
+      command['minifiedPathPrefix'] = 'info: undesired log line\nhttps://example.com/static/js/'
 
       expect(command['isMinifiedPathPrefixValid']()).toBe(false)
     })
@@ -92,7 +108,9 @@ describe('upload', () => {
         new Sourcemap(
           'src/commands/sourcemaps/__tests__/fixtures/sourcemap-with-no-files/empty.min.js',
           'http://example/empty.min.js',
-          'src/commands/sourcemaps/__tests__/fixtures/sourcemap-with-no-files/empty.min.js.map'
+          'src/commands/sourcemaps/__tests__/fixtures/sourcemap-with-no-files/empty.min.js.map',
+          '',
+          ''
         )
       )
       // The command will fetch git metadatas for the current datadog-ci repository.
@@ -112,7 +130,9 @@ describe('upload', () => {
         new Sourcemap(
           'src/commands/sourcemaps/__tests__/fixtures/basic/common.min.js',
           'http://example/common.min.js',
-          'src/commands/sourcemaps/__tests__/fixtures/basic/common.min.js.map'
+          'src/commands/sourcemaps/__tests__/fixtures/basic/common.min.js.map',
+          '',
+          ''
         )
       )
       // The command will fetch git metadatas for the current datadog-ci repository.

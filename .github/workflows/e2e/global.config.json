@@ -1,6 +1,7 @@
 {
   "files": "{,!(node_modules)/**/}*.synthetics.json",
+  "failOnCriticalErrors": true,
+  "failOnMissingTests": true,
   "global": {},
   "timeout": 240000
 }
-

@@ -1,13 +1,16 @@
-import fs from 'fs'
+import fs, {existsSync} from 'fs'
 import {promisify} from 'util'
-
-import {AxiosRequestConfig, default as axios} from 'axios'
-import deepExtend from 'deep-extend'
-import ProxyAgent from 'proxy-agent'
 
 import type {SpanTag, SpanTags} from './interfaces'
 
-export const pick = <T extends object, K extends keyof T>(base: T, keys: K[]) => {
+import {AxiosRequestConfig, default as axios} from 'axios'
+import {BaseContext, CommandClass, Cli} from 'clipanion'
+import deepExtend from 'deep-extend'
+import ProxyAgent from 'proxy-agent'
+
+export const DEFAULT_CONFIG_PATHS = ['datadog-ci.json']
+
+export const pick = <T extends Record<any, any>, K extends keyof T>(base: T, keys: K[]) => {
   const definedKeys = keys.filter((key) => !!base[key])
   const pickedObject: Partial<T> = {}
 
@@ -19,11 +22,58 @@ export const pick = <T extends object, K extends keyof T>(base: T, keys: K[]) =>
 }
 
 export const getConfig = async (configPath: string) => {
-  const configFile = await promisify(fs.readFile)(configPath, 'utf-8')
+  try {
+    const configFile = await promisify(fs.readFile)(configPath, 'utf-8')
 
-  return JSON.parse(configFile)
+    return JSON.parse(configFile)
+  } catch (error) {
+    if (error instanceof SyntaxError) {
+      throw new Error('Config file is not correct JSON')
+    }
+  }
 }
 
+const resolveConfigPath = ({
+  configPath,
+  defaultConfigPaths,
+}: {
+  configPath?: string
+  defaultConfigPaths?: string[]
+}): string | undefined => {
+  if (configPath) {
+    if (existsSync(configPath)) {
+      return configPath
+    }
+    throw new Error('Config file not found')
+  }
+
+  if (defaultConfigPaths) {
+    for (const path of defaultConfigPaths) {
+      if (existsSync(path)) {
+        return path
+      }
+    }
+  }
+
+  return undefined
+}
+
+export const resolveConfigFromFile = async <T>(
+  baseConfig: T,
+  params: {configPath?: string; defaultConfigPaths?: string[]}
+): Promise<T> => {
+  const resolvedConfigPath = resolveConfigPath(params)
+  if (!resolvedConfigPath) {
+    return baseConfig
+  }
+  const parsedConfig = await getConfig(resolvedConfigPath)
+
+  return deepExtend(baseConfig, parsedConfig)
+}
+
+/**
+ * @deprecated Use resolveConfigFromFile instead for better error management
+ */
 export const parseConfigFile = async <T>(baseConfig: T, configPath?: string): Promise<T> => {
   try {
     const resolvedConfigPath = configPath ?? 'datadog-ci.json'
@@ -163,7 +213,7 @@ export const buildPath = (...args: string[]) =>
         return part.trim().replace(/(^[\/]*|[\/]*$)/g, '')
       }
     })
-    // Filter out emtpy parts
+    // Filter out empty parts
     .filter((x) => x.length)
     // Join all these parts with /
     .join('/')
@@ -180,7 +230,7 @@ export const removeEmptyValues = (tags: SpanTags) =>
     }
   }, {})
 
-export const removeUndefinedValues = <T extends {[key: string]: any}>(object: T): T => {
+export const removeUndefinedValues = <T extends {[key: string]: unknown}>(object: T): T => {
   const newObject = {...object}
   for (const [key, value] of Object.entries(newObject)) {
     if (value === undefined) {
@@ -197,4 +247,50 @@ export const normalizeRef = (ref: string | undefined) => {
   }
 
   return ref.replace(/origin\/|refs\/heads\/|tags\//gm, '')
+}
+
+export const pluralize = (nb: number, singular: string, plural: string) => {
+  if (nb >= 2) {
+    return `${nb} ${plural}`
+  }
+
+  return `${nb} ${singular}`
+}
+
+export const performSubCommand = (command: CommandClass<BaseContext>, commandArgs: string[], context: BaseContext) => {
+  const cli = new Cli()
+  cli.register(command)
+
+  return cli.run(commandArgs, context)
+}
+
+export const filterSensitiveInfoFromRepository = (repositoryUrl: string | undefined) => {
+  try {
+    if (!repositoryUrl) {
+      return repositoryUrl
+    }
+    if (repositoryUrl.startsWith('git@')) {
+      return repositoryUrl
+    }
+    const {protocol, hostname, pathname} = new URL(repositoryUrl)
+    if (!protocol || !hostname) {
+      return repositoryUrl
+    }
+
+    return `${protocol}//${hostname}${pathname}`
+  } catch (e) {
+    return repositoryUrl
+  }
+}
+
+// Removes sensitive info from the given git remote url and normalizes the url prefix.
+// "git@github.com:" and "https://github.com/" prefixes will be normalized into "github.com/"
+export const filterAndFormatGithubRemote = (rawRemote: string | undefined): string | undefined => {
+  rawRemote = filterSensitiveInfoFromRepository(rawRemote)
+  if (!rawRemote) {
+    return rawRemote
+  }
+  rawRemote = rawRemote.replace(/git@github\.com:|https:\/\/github\.com\//, 'github.com/')
+
+  return rawRemote
 }

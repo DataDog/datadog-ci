@@ -20,7 +20,7 @@ import {
   GIT_SHA,
   GIT_TAG,
 } from './tags'
-import {normalizeRef, removeEmptyValues} from './utils'
+import {normalizeRef, removeEmptyValues, filterSensitiveInfoFromRepository} from './utils'
 
 export const getUserGitSpanTags = () => {
   const {
@@ -40,17 +40,13 @@ export const getUserGitSpanTags = () => {
   let branch = normalizeRef(DD_GIT_BRANCH)
   let tag = normalizeRef(DD_GIT_TAG)
 
-  if (DD_GIT_TAG) {
-    branch = undefined
-  }
-
   if (DD_GIT_BRANCH?.includes('origin/tags') || DD_GIT_BRANCH?.includes('refs/heads/tags')) {
     branch = undefined
     tag = normalizeRef(DD_GIT_BRANCH)
   }
 
   return removeEmptyValues({
-    [GIT_REPOSITORY_URL]: DD_GIT_REPOSITORY_URL,
+    [GIT_REPOSITORY_URL]: filterSensitiveInfoFromRepository(DD_GIT_REPOSITORY_URL),
     [GIT_BRANCH]: branch,
     [GIT_SHA]: DD_GIT_COMMIT_SHA,
     [GIT_TAG]: tag,

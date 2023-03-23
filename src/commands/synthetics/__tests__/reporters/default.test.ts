@@ -1,13 +1,22 @@
+jest.unmock('chalk')
+
 import {BaseContext} from 'clipanion/lib/advanced'
 
-import {ConfigOverride, ExecutionRule, MainReporter, Result, Summary, Test} from '../../interfaces'
+import {ExecutionRule, MainReporter, Result, Summary, Test, UserConfigOverride} from '../../interfaces'
 import {DefaultReporter} from '../../reporters/default'
-import {createSummary} from '../../utils'
-import {getApiResult, getApiTest, getFailedBrowserResult, getTimedOutBrowserResult} from '../fixtures'
+
+import {
+  getApiResult,
+  getApiTest,
+  getFailedBrowserResult,
+  getSummary,
+  getTimedOutBrowserResult,
+  MOCK_BASE_URL,
+} from '../fixtures'
 
 /**
  * A good amount of these tests rely on Jest snapshot assertions.
- * If you make some changes in the output of the default repoter, chances are you
+ * If you make some changes in the output of the default reporter, chances are you
  * will also have to update the snapshots from `./__snapshots__/default.test.ts.snap`.
  * To do that, you can run the following command: `yarn test --updateSnapshot reporters/default.test.ts`.
  * More information on https://jestjs.io/docs/snapshot-testing.
@@ -26,16 +35,18 @@ describe('Default reporter', () => {
   const reporter = new DefaultReporter(mockContext as {context: BaseContext})
 
   it('should log for each hook', () => {
+    type ReporterCall = {[Fn in keyof MainReporter]: [Fn, Parameters<MainReporter[Fn]>]}[keyof MainReporter]
+
     // `testWait`/`resultReceived` is skipped as nothing is logged for the default reporter.
-    const calls: [keyof MainReporter, any[]][] = [
+    const calls: ReporterCall[] = [
       ['error', ['error']],
       ['initErrors', [['error']]],
       ['log', ['log']],
       ['reportStart', [{startTime: 0}]],
       ['resultEnd', [getApiResult('1', getApiTest()), '']],
-      ['runEnd', [createSummary(), '']],
-      ['testTrigger', [{}, '', '', {}]],
-      ['testsWait', [[{}]]],
+      ['runEnd', [getSummary(), '']],
+      ['testTrigger', [getApiTest(), '', ExecutionRule.BLOCKING, {}]],
+      ['testsWait', [[getApiTest()]]],
     ]
     for (const [fnName, args] of calls) {
       ;(reporter[fnName] as any)(...args)
@@ -54,7 +65,7 @@ describe('Default reporter', () => {
     }
     const testId = 'aaa-bbb-ccc'
 
-    const cases: [string, ExecutionRule, ConfigOverride][] = [
+    const cases: [string, ExecutionRule, UserConfigOverride][] = [
       ['Blocking test, without config overwrite', ExecutionRule.BLOCKING, {}],
       ['Blocking test, with 1 config override', ExecutionRule.BLOCKING, {startUrl: 'foo'}],
       ['Blocking test, with 2 config overrides', ExecutionRule.BLOCKING, {startUrl: 'foo', body: 'hello'}],
@@ -91,6 +102,12 @@ describe('Default reporter', () => {
       const mostRecentOutput = writeMock.mock.calls[writeMock.mock.calls.length - 1][0]
       expect(mostRecentOutput).toMatchSnapshot()
     })
+  })
+
+  test('testsWait outputs triggered tests', async () => {
+    reporter.testsWait(new Array(11).fill(getApiTest()))
+    const output = writeMock.mock.calls.map((c) => c[0]).join('\n')
+    expect(output).toMatchSnapshot()
   })
 
   describe('resultEnd', () => {
@@ -140,10 +157,23 @@ describe('Default reporter', () => {
         },
       },
       {
-        description: '2 Browser test: failed blocking, timed out',
+        description: '3 Browser test: failed blocking, timed out, global failure',
         fixtures: {
           baseUrl: baseUrlFixture,
-          results: [getFailedBrowserResult(), getTimedOutBrowserResult()],
+          results: [
+            getFailedBrowserResult(),
+            getTimedOutBrowserResult(),
+            {
+              ...getTimedOutBrowserResult(),
+              result: {
+                duration: 0,
+                failure: {code: 'FAILURE_CODE', message: 'Failure message'},
+                passed: false,
+                steps: [],
+              },
+              timedOut: false,
+            },
+          ],
         },
       },
     ]
@@ -161,9 +191,11 @@ describe('Default reporter', () => {
   describe('runEnd', () => {
     beforeEach(() => {
       writeMock.mockClear()
+      jest.useFakeTimers()
+      reporter.reportStart({startTime: Date.now() - 567890}) // 9m 28s
     })
 
-    const baseSummary: Summary = createSummary()
+    const baseSummary: Summary = getSummary()
 
     const complexSummary: Summary = {
       batchId: 'batch-id',
@@ -198,7 +230,19 @@ describe('Default reporter', () => {
     ]
 
     test.each(cases)('$description', (testCase) => {
-      reporter.runEnd(testCase.summary, baseUrlFixture)
+      reporter.runEnd(testCase.summary, MOCK_BASE_URL)
+      const mostRecentOutput = writeMock.mock.calls[writeMock.mock.calls.length - 1][0]
+      expect(mostRecentOutput).toMatchSnapshot()
+    })
+
+    const orgMaxConcurrencyCaps: {description: string; cap: number}[] = [
+      {cap: 0, description: 'communicates 0 parallelization'},
+      {cap: 1, description: 'communicates no (1 test at a time) parallelization'},
+      {cap: 2, description: 'communicates 2 tests parallelization'},
+    ]
+
+    test.each(orgMaxConcurrencyCaps)('$description', (testCase) => {
+      reporter.runEnd({...baseSummary, passed: 1}, MOCK_BASE_URL, {orgMaxConcurrencyCap: testCase.cap})
       const mostRecentOutput = writeMock.mock.calls[writeMock.mock.calls.length - 1][0]
       expect(mostRecentOutput).toMatchSnapshot()
     })

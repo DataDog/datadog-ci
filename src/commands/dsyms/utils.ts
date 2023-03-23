@@ -2,8 +2,9 @@ import {exec} from 'child_process'
 import {promises} from 'fs'
 import {tmpdir} from 'os'
 import path from 'path'
-import rimraf from 'rimraf'
 import {promisify} from 'util'
+
+import rimraf from 'rimraf'
 
 import {buildPath} from '../../helpers/utils'
 
@@ -56,11 +57,11 @@ const execute = (cmd: string, cwd?: string): Promise<{stderr: string; stdout: st
     maxBuffer: 5 * 1024 * 5000,
   })
 
-export const getBaseIntakeUrl = () => {
+export const getBaseIntakeUrl = (datadogSite?: string) => {
   if (process.env.DATADOG_DSYM_INTAKE_URL) {
     return process.env.DATADOG_DSYM_INTAKE_URL
-  } else if (process.env.DATADOG_SITE) {
-    return 'https://sourcemap-intake.' + process.env.DATADOG_SITE
+  } else if (datadogSite) {
+    return 'https://sourcemap-intake.' + datadogSite
   }
 
   return 'https://sourcemap-intake.datadoghq.com'

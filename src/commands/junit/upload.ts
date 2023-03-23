@@ -1,10 +1,20 @@
+import fs from 'fs'
+import os from 'os'
+import path from 'path'
+
 import chalk from 'chalk'
 import {Command} from 'clipanion'
-import xmlParser from 'fast-xml-parser'
-import fs from 'fs'
+import {XMLParser, XMLValidator} from 'fast-xml-parser'
 import glob from 'glob'
-import path from 'path'
 import asyncPool from 'tiny-async-pool'
+
+import {getCISpanTags} from '../../helpers/ci'
+import {getGitMetadata} from '../../helpers/git/format-git-span-data'
+import {SpanTags} from '../../helpers/interfaces'
+import {retryRequest} from '../../helpers/retry'
+import {parseTags} from '../../helpers/tags'
+import {getUserGitSpanTags} from '../../helpers/user-provided-git'
+import {buildPath} from '../../helpers/utils'
 
 import {apiConstructor} from './api'
 import {APIHelper, Payload} from './interfaces'
@@ -18,21 +28,15 @@ import {
 } from './renderer'
 import {getBaseIntakeUrl} from './utils'
 
-import {getCISpanTags} from '../../helpers/ci'
-import {getGitMetadata} from '../../helpers/git'
-import {retryRequest} from '../../helpers/retry'
-import {parseTags} from '../../helpers/tags'
-import {getUserGitSpanTags} from '../../helpers/user-provided-git'
-import {buildPath} from '../../helpers/utils'
-
 const errorCodesStopUpload = [400, 403]
 
 const validateXml = (xmlFilePath: string) => {
   const xmlFileContentString = String(fs.readFileSync(xmlFilePath))
-  const validationOutput = xmlParser.validate(xmlFileContentString)
+  const validationOutput = XMLValidator.validate(xmlFileContentString)
   if (validationOutput !== true) {
     return validationOutput.err.msg
   }
+  const xmlParser = new XMLParser()
   const xmlFileJSON = xmlParser.parse(String(xmlFileContentString))
   if (!xmlFileJSON.testsuites && !xmlFileJSON.testsuite) {
     return 'Neither <testsuites> nor <testsuite> are the root tag.'
@@ -45,9 +49,9 @@ export class UploadJUnitXMLCommand extends Command {
   public static usage = Command.Usage({
     description: 'Upload jUnit XML test reports files to Datadog.',
     details: `
-            This command will upload to jUnit XML test reports files to Datadog.
-            See README for details.
-        `,
+      This command will upload to jUnit XML test reports files to Datadog.\n
+      See README for details.
+    `,
     examples: [
       ['Upload all jUnit XML test report files in current directory', 'datadog-ci junit upload --service my-service .'],
       [
@@ -55,7 +59,7 @@ export class UploadJUnitXMLCommand extends Command {
         'datadog-ci junit upload --service my-service src/unit-test-reports src/acceptance-test-reports',
       ],
       [
-        'Upload all jUnit XML test report files in current directory and add extra tags',
+        'Upload all jUnit XML test report files in current directory and add extra tags globally',
         'datadog-ci junit upload --service my-service --tags key1:value1 --tags key2:value2 .',
       ],
       [
@@ -65,6 +69,14 @@ export class UploadJUnitXMLCommand extends Command {
       [
         'Upload all jUnit XML test report files in current directory while also collecting logs',
         'datadog-ci junit upload --service my-service --logs .',
+      ],
+      [
+        'Upload all jUnit XML test report files in current directory customizing test suite with xpath',
+        'datadog-ci junit upload --service my-service --xpath-tag test.suite=/testcase/@classname .',
+      ],
+      [
+        'Upload all jUnit XML test report files in current directory adding a custom tag from property with xpath',
+        "datadog-ci junit upload --service my-service --xpath-tag custom_tag=/testcase/..//property[@name='property-name'] .",
       ],
     ],
   })
@@ -81,6 +93,8 @@ export class UploadJUnitXMLCommand extends Command {
   private maxConcurrency = 20
   private service?: string
   private tags?: string[]
+  private rawXPathTags?: string[]
+  private xpathTags?: Record<string, string>
 
   public async execute() {
     if (!this.service) {
@@ -110,13 +124,21 @@ export class UploadJUnitXMLCommand extends Command {
       this.logs = true
     }
 
+    if (this.rawXPathTags) {
+      this.xpathTags = this.parseXPathTags(this.rawXPathTags)
+      if (Object.keys(this.xpathTags).length !== this.rawXPathTags.length) {
+        return 1
+      }
+    }
+
     const api = this.getApiHelper()
     // Normalizing the basePath to resolve .. and .
     // Always using the posix version to avoid \ on Windows.
     this.basePaths = this.basePaths.map((basePath) => path.posix.normalize(basePath))
-    this.context.stdout.write(renderCommandInfo(this.basePaths!, this.service, this.maxConcurrency, this.dryRun))
+    this.context.stdout.write(renderCommandInfo(this.basePaths, this.service, this.maxConcurrency, this.dryRun))
 
-    const payloads = await this.getMatchingJUnitXMLFiles()
+    const spanTags = await this.getSpanTags()
+    const payloads = await this.getMatchingJUnitXMLFiles(spanTags)
     const upload = (p: Payload) => this.uploadJUnitXML(api, p)
 
     const initialTime = new Date().getTime()
@@ -124,7 +146,26 @@ export class UploadJUnitXMLCommand extends Command {
     await asyncPool(this.maxConcurrency, payloads, upload)
 
     const totalTimeSeconds = (Date.now() - initialTime) / 1000
-    this.context.stdout.write(renderSuccessfulCommand(payloads.length, totalTimeSeconds))
+    this.context.stdout.write(
+      renderSuccessfulCommand(payloads.length, totalTimeSeconds, spanTags, this.service, this.config.env)
+    )
+  }
+
+  private parseXPathTags(rawXPathTags: string[]): Record<string, string> {
+    return rawXPathTags.reduce((xpathTags: Record<string, string>, rawExpression: string) => {
+      const index = rawExpression.indexOf('=')
+      if (index === -1) {
+        this.context.stderr.write('Invalid xpath-tag: missing =. Value must be <tag>=<xpath-expression>\n')
+
+        return xpathTags
+      }
+
+      const tagName = rawExpression.substring(0, index)
+      const xPath = rawExpression.substring(index + 1)
+      xpathTags[tagName] = xPath
+
+      return xpathTags
+    }, {})
   }
 
   private getApiHelper(): APIHelper {
@@ -138,7 +179,7 @@ export class UploadJUnitXMLCommand extends Command {
     return apiConstructor(getBaseIntakeUrl(), this.config.apiKey)
   }
 
-  private async getMatchingJUnitXMLFiles(): Promise<Payload[]> {
+  private async getMatchingJUnitXMLFiles(spanTags: SpanTags): Promise<Payload[]> {
     const jUnitXMLFiles = (this.basePaths || []).reduce((acc: string[], basePath: string) => {
       const isFile = !!path.extname(basePath)
       if (isFile) {
@@ -147,22 +188,6 @@ export class UploadJUnitXMLCommand extends Command {
 
       return acc.concat(glob.sync(buildPath(basePath, '*.xml')))
     }, [])
-
-    const ciSpanTags = getCISpanTags()
-    const gitSpanTags = await getGitMetadata()
-    const userGitSpanTags = getUserGitSpanTags()
-
-    const envVarTags = this.config.envVarTags ? parseTags(this.config.envVarTags.split(',')) : {}
-    const cliTags = this.tags ? parseTags(this.tags) : {}
-
-    const spanTags = {
-      ...gitSpanTags,
-      ...ciSpanTags,
-      ...userGitSpanTags,
-      ...cliTags,
-      ...envVarTags,
-      ...(this.config.env ? {env: this.config.env} : {}),
-    }
 
     const validUniqueFiles = [...new Set(jUnitXMLFiles)].filter((jUnitXMLFilePath) => {
       const validationErrorMessage = validateXml(jUnitXMLFilePath)
@@ -176,11 +201,31 @@ export class UploadJUnitXMLCommand extends Command {
     })
 
     return validUniqueFiles.map((jUnitXMLFilePath) => ({
+      hostname: os.hostname(),
       logsEnabled: this.logs,
+      xpathTags: this.xpathTags,
       service: this.service!,
       spanTags,
       xmlPath: jUnitXMLFilePath,
     }))
+  }
+
+  private async getSpanTags(): Promise<SpanTags> {
+    const ciSpanTags = getCISpanTags()
+    const gitSpanTags = await getGitMetadata()
+    const userGitSpanTags = getUserGitSpanTags()
+
+    const envVarTags = this.config.envVarTags ? parseTags(this.config.envVarTags.split(',')) : {}
+    const cliTags = this.tags ? parseTags(this.tags) : {}
+
+    return {
+      ...gitSpanTags,
+      ...ciSpanTags,
+      ...userGitSpanTags,
+      ...cliTags,
+      ...envVarTags,
+      ...(this.config.env ? {env: this.config.env} : {}),
+    }
   }
 
   private async uploadJUnitXML(api: APIHelper, jUnitXML: Payload) {
@@ -218,3 +263,4 @@ UploadJUnitXMLCommand.addOption('tags', Command.Array('--tags'))
 UploadJUnitXMLCommand.addOption('basePaths', Command.Rest({required: 1}))
 UploadJUnitXMLCommand.addOption('maxConcurrency', Command.String('--max-concurrency'))
 UploadJUnitXMLCommand.addOption('logs', Command.Boolean('--logs'))
+UploadJUnitXMLCommand.addOption('rawXPathTags', Command.Array('--xpath-tag'))

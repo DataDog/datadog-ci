@@ -1,6 +1,7 @@
 import chalk from 'chalk'
 import {Command} from 'clipanion'
-import {getCIEnv} from '../../helpers/ci'
+
+import {getCIEnv, PROVIDER_TO_DISPLAY_NAME} from '../../helpers/ci'
 import {retryRequest} from '../../helpers/retry'
 import {parseTags} from '../../helpers/tags'
 import {getApiHostForSite, getRequestBuilder} from '../../helpers/utils'
@@ -48,9 +49,11 @@ export class TagCommand extends Command {
 
     try {
       const {provider, ciEnv} = getCIEnv()
-      // For GitHub only the pipeline level is supported as there is no way to identify the job from the runner.
-      if (provider === 'github' && this.level === 'job') {
-        this.context.stderr.write(`${chalk.red.bold('[ERROR]')} Cannot use level "job" for GitHub Actions.`)
+      // For GitHub and Buddy only the pipeline level is supported as there is no way to identify the job from the runner.
+      if ((provider === 'github' || provider === 'buddy') && this.level === 'job') {
+        this.context.stderr.write(
+          `${chalk.red.bold('[ERROR]')} Cannot use level "job" for ${PROVIDER_TO_DISPLAY_NAME[provider]}.`
+        )
 
         return 1
       }
@@ -110,6 +113,8 @@ export class TagCommand extends Command {
 
     try {
       await retryRequest(doRequest, {
+        maxTimeout: 30000,
+        minTimeout: 5000,
         onRetry: (e, attempt) => {
           this.context.stderr.write(
             chalk.yellow(`[attempt ${attempt}] Could not send tags. Retrying...: ${e.message}\n`)

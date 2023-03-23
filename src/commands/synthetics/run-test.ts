@@ -1,20 +1,46 @@
-import {apiConstructor, APIHelper, isForbiddenError} from './api'
+import {getProxyAgent} from '../../helpers/utils'
+
+import {APIHelper, getApiHelper, isForbiddenError} from './api'
+import {DEFAULT_COMMAND_CONFIG, MAX_TESTS_TO_TRIGGER} from './command'
 import {CiError, CriticalError} from './errors'
 import {
   CommandConfig,
   MainReporter,
+  Reporter,
+  Result,
   Suite,
   Summary,
+  SupportedReporter,
   SyntheticsCIConfig,
   Test,
   TestPayload,
   Trigger,
   TriggerConfig,
+  UserConfigOverride,
+  WrapperConfig,
 } from './interfaces'
+import {DefaultReporter, getTunnelReporter} from './reporters/default'
+import {JUnitReporter} from './reporters/junit'
 import {Tunnel} from './tunnel'
-import {getSuites, getTestsToTrigger, runTests, waitForResults} from './utils'
+import {
+  getReporter,
+  getOrgSettings,
+  getSuites,
+  getTestsToTrigger,
+  InitialSummary,
+  renderResults,
+  runTests,
+  waitForResults,
+} from './utils'
 
-export const executeTests = async (reporter: MainReporter, config: CommandConfig, suites?: Suite[]) => {
+export const executeTests = async (
+  reporter: MainReporter,
+  config: CommandConfig,
+  suites?: Suite[]
+): Promise<{
+  results: Result[]
+  summary: Summary
+}> => {
   const api = getApiHelper(config)
 
   const publicIdsFromCli = config.publicIds.map((id) => ({
@@ -51,13 +77,21 @@ export const executeTests = async (reporter: MainReporter, config: CommandConfig
   }
 
   let testsToTriggerResult: {
+    initialSummary: InitialSummary
     overriddenTestsToTrigger: TestPayload[]
-    summary: Summary
     tests: Test[]
   }
 
   try {
-    testsToTriggerResult = await getTestsToTrigger(api, testsToTrigger, reporter)
+    const triggerFromSearch = !!config.testSearchQuery
+    testsToTriggerResult = await getTestsToTrigger(
+      api,
+      testsToTrigger,
+      reporter,
+      triggerFromSearch,
+      config.failOnMissingTests,
+      config.tunnel
+    )
   } catch (error) {
     if (error instanceof CiError) {
       throw error
@@ -66,7 +100,7 @@ export const executeTests = async (reporter: MainReporter, config: CommandConfig
     throw new CriticalError(isForbiddenError(error) ? 'AUTHORIZATION_ERROR' : 'UNAVAILABLE_TEST_CONFIG', error.message)
   }
 
-  const {tests, overriddenTestsToTrigger, summary} = testsToTriggerResult
+  const {tests, overriddenTestsToTrigger, initialSummary} = testsToTriggerResult
 
   // All tests have been skipped or are missing.
   if (!tests.length) {
@@ -79,13 +113,16 @@ export const executeTests = async (reporter: MainReporter, config: CommandConfig
     let presignedURL: string
     try {
       // Get the pre-signed URL to connect to the tunnel service
-      presignedURL = (await api.getPresignedURL(publicIdsToTrigger)).url
+      presignedURL = (await api.getTunnelPresignedURL(publicIdsToTrigger)).url
     } catch (error) {
       throw new CriticalError('UNAVAILABLE_TUNNEL_CONFIG', error.message)
     }
     // Open a tunnel to Datadog
     try {
-      tunnel = new Tunnel(presignedURL, publicIdsToTrigger, config.proxy, reporter)
+      const tunnelProxyAgent = getProxyAgent(config.proxy)
+      const tunnelReporter = getTunnelReporter(reporter)
+      tunnel = new Tunnel(presignedURL, publicIdsToTrigger, tunnelProxyAgent, tunnelReporter)
+
       const tunnelInfo = await tunnel.start()
       overriddenTestsToTrigger.forEach((testToTrigger) => {
         testToTrigger.tunnel = tunnelInfo
@@ -99,7 +136,6 @@ export const executeTests = async (reporter: MainReporter, config: CommandConfig
   let trigger: Trigger
   try {
     trigger = await runTests(api, overriddenTestsToTrigger)
-    summary.batchId = trigger.batch_id
   } catch (error) {
     await stopTunnel()
     throw new CriticalError('TRIGGER_TESTS_FAILED', error.message)
@@ -120,12 +156,32 @@ export const executeTests = async (reporter: MainReporter, config: CommandConfig
       tunnel
     )
 
-    return {results, summary}
+    return {
+      results,
+      summary: {
+        ...initialSummary,
+        batchId: trigger.batch_id,
+      },
+    }
   } catch (error) {
     throw new CriticalError('POLL_RESULTS_FAILED', error.message)
   } finally {
     await stopTunnel()
   }
+}
+
+const getTestListBySearchQuery = async (
+  api: APIHelper,
+  globalConfigOverride: UserConfigOverride,
+  testSearchQuery: string
+) => {
+  const testSearchResults = await api.searchTests(testSearchQuery)
+
+  return testSearchResults.tests.map((test) => ({
+    config: globalConfigOverride,
+    id: test.public_id,
+    suite: `Query: ${testSearchQuery}`,
+  }))
 }
 
 export const getTestsList = async (
@@ -136,30 +192,37 @@ export const getTestsList = async (
 ) => {
   // If "testSearchQuery" is provided, always default to running it.
   if (config.testSearchQuery) {
-    const testSearchResults = await api.searchTests(config.testSearchQuery)
+    const testsToTriggerBySearchQuery = await getTestListBySearchQuery(api, config.global, config.testSearchQuery)
 
-    return testSearchResults.tests.map((test) => ({
-      config: config.global,
-      id: test.public_id,
-      suite: `Query: ${config.testSearchQuery}`,
-    }))
+    if (testsToTriggerBySearchQuery.length > MAX_TESTS_TO_TRIGGER) {
+      reporter.error(
+        `More than ${MAX_TESTS_TO_TRIGGER} tests returned by search query, only the first ${MAX_TESTS_TO_TRIGGER} will be fetched.\n`
+      )
+    }
+
+    return testsToTriggerBySearchQuery
   }
 
-  const suitesFromFiles = (await Promise.all(config.files.map((glob: string) => getSuites(glob, reporter!))))
+  const suitesFromFiles = (await Promise.all(config.files.map((glob: string) => getSuites(glob, reporter))))
     .reduce((acc, val) => acc.concat(val), [])
     .filter((suite) => !!suite.content.tests)
 
   suites.push(...suitesFromFiles)
 
   const configFromEnvironment = config.locations?.length ? {locations: config.locations} : {}
+
+  const overrideTestConfig = (test: TriggerConfig): UserConfigOverride =>
+    // Global < env < test config
+    ({
+      ...config.global,
+      ...configFromEnvironment,
+      ...test.config,
+    })
+
   const testsToTrigger = suites
     .map((suite) =>
       suite.content.tests.map((test) => ({
-        config: {
-          ...config.global,
-          ...configFromEnvironment,
-          ...test.config,
-        },
+        config: overrideTestConfig(test),
         id: test.id,
         suite: suite.name,
       }))
@@ -169,33 +232,69 @@ export const getTestsList = async (
   return testsToTrigger
 }
 
-export const getApiHelper = (config: SyntheticsCIConfig) => {
-  if (!config.appKey) {
-    throw new CriticalError('MISSING_APP_KEY')
+export const execute = async (
+  runConfig: WrapperConfig,
+  {
+    jUnitReport,
+    reporters,
+    runId,
+    suites,
+  }: {
+    jUnitReport?: string
+    reporters?: (SupportedReporter | Reporter)[]
+    runId?: string
+    suites?: Suite[]
   }
-  if (!config.apiKey) {
-    throw new CriticalError('MISSING_API_KEY')
+): Promise<0 | 1> => {
+  const startTime = Date.now()
+  const localConfig = {
+    ...DEFAULT_COMMAND_CONFIG,
+    ...runConfig,
   }
 
-  return apiConstructor({
-    apiKey: config.apiKey!,
-    appKey: config.appKey!,
-    baseIntakeUrl: getDatadogHost(true, config),
-    baseUrl: getDatadogHost(false, config),
-    proxyOpts: config.proxy,
+  // We don't want to have default globs in case suites are given.
+  if (!runConfig.files && suites?.length) {
+    localConfig.files = []
+  }
+
+  // Handle reporters for the run.
+  const localReporters: Reporter[] = []
+  // If the config asks for specific reporters.
+  if (reporters) {
+    for (const reporter of reporters) {
+      // Add our own reporters if required.
+      if (reporter === 'junit') {
+        localReporters.push(
+          new JUnitReporter({
+            context: process,
+            jUnitReport: jUnitReport || './junit.xml',
+            runName: `Run ${runId || 'undefined'}`,
+          })
+        )
+      }
+      if (reporter === 'default') {
+        localReporters.push(new DefaultReporter({context: process}))
+      }
+      // This is a custom reporter, so simply add it.
+      if (typeof reporter !== 'string') {
+        localReporters.push(reporter)
+      }
+    }
+  } else {
+    localReporters.push(new DefaultReporter({context: process}))
+  }
+
+  const mainReporter = getReporter(localReporters)
+  const {results, summary} = await executeTests(mainReporter, localConfig, suites)
+
+  const orgSettings = await getOrgSettings(getApiHelper(localConfig), mainReporter)
+
+  return renderResults({
+    config: localConfig,
+    reporter: mainReporter,
+    results,
+    orgSettings,
+    startTime,
+    summary,
   })
-}
-
-export const getDatadogHost = (useIntake = false, config: SyntheticsCIConfig) => {
-  const apiPath = 'api/v1'
-  let host = `https://api.${config.datadogSite}`
-  const hostOverride = process.env.DD_API_HOST_OVERRIDE
-
-  if (hostOverride) {
-    host = hostOverride
-  } else if (useIntake && (config.datadogSite === 'datadoghq.com' || config.datadogSite === 'datad0g.com')) {
-    host = `https://intake.synthetics.${config.datadogSite}`
-  }
-
-  return `${host}/${apiPath}`
 }
