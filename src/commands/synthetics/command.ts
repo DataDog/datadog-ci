@@ -2,15 +2,20 @@ import chalk from 'chalk'
 import {Command} from 'clipanion'
 import deepExtend from 'deep-extend'
 
-import {parseConfigFile, removeUndefinedValues} from '../../helpers/utils'
+import {removeUndefinedValues, resolveConfigFromFile} from '../../helpers/utils'
+import {isValidDatadogSite} from '../../helpers/validation'
+
+import {getApiHelper} from './api'
 import {CiError, CriticalError} from './errors'
 import {CommandConfig, MainReporter, Reporter, Result, Summary} from './interfaces'
 import {DefaultReporter} from './reporters/default'
 import {JUnitReporter} from './reporters/junit'
 import {executeTests} from './run-test'
-import {getReporter, parseVariablesFromCli, renderResults} from './utils'
+import {getOrgSettings, getReporter, parseVariablesFromCli, renderResults} from './utils'
 
-export const DEFAULT_POLLING_TIMEOUT = 2 * 60 * 1000
+export const MAX_TESTS_TO_TRIGGER = 100
+
+export const DEFAULT_POLLING_TIMEOUT = 30 * 60 * 1000
 
 export const DEFAULT_COMMAND_CONFIG: CommandConfig = {
   apiKey: '',
@@ -18,6 +23,7 @@ export const DEFAULT_COMMAND_CONFIG: CommandConfig = {
   configPath: 'datadog-ci.json',
   datadogSite: 'datadoghq.com',
   failOnCriticalErrors: false,
+  failOnMissingTests: false,
   failOnTimeout: true,
   files: ['{,!(node_modules)/**/}*.synthetics.json'],
   global: {},
@@ -31,14 +37,15 @@ export const DEFAULT_COMMAND_CONFIG: CommandConfig = {
 }
 
 export class RunTestCommand extends Command {
+  public configPath?: string
   public jUnitReport?: string
   public runName?: string
   private apiKey?: string
   private appKey?: string
   private config: CommandConfig = JSON.parse(JSON.stringify(DEFAULT_COMMAND_CONFIG)) // Deep copy to avoid mutation during unit tests
-  private configPath?: string
   private datadogSite?: string
   private failOnCriticalErrors?: boolean
+  private failOnMissingTests?: boolean
   private failOnTimeout?: boolean
   private files?: string[]
   private publicIds?: string[]
@@ -55,7 +62,17 @@ export class RunTestCommand extends Command {
     if (this.jUnitReport) {
       reporters.push(new JUnitReporter(this))
     }
-    await this.resolveConfig()
+
+    try {
+      await this.resolveConfig()
+    } catch (error) {
+      if (error instanceof CiError) {
+        this.reportCiError(error, this.reporter)
+      }
+
+      return 1
+    }
+
     const startTime = Date.now()
     if (this.config.tunnel) {
       this.reporter.log(
@@ -71,6 +88,10 @@ export class RunTestCommand extends Command {
     } catch (error) {
       if (error instanceof CiError) {
         this.reportCiError(error, this.reporter)
+
+        if (this.config.failOnMissingTests && error.code === 'MISSING_TESTS') {
+          return 1
+        }
 
         if (error instanceof CriticalError) {
           if (this.config.failOnCriticalErrors) {
@@ -89,7 +110,25 @@ export class RunTestCommand extends Command {
       return 0
     }
 
-    return renderResults({config: this.config, reporter: this.reporter, results, startTime, summary})
+    if (results.some((r) => r.timedOut) && !this.config.failOnTimeout) {
+      this.reporter.error(
+        chalk.yellow(
+          'Because `failOnTimeout` is disabled, the command will exit with an error code 0. ' +
+            'Use `failOnTimeout: true` to exit with an error code 1.\n'
+        )
+      )
+    }
+
+    const orgSettings = await getOrgSettings(getApiHelper(this.config), this.reporter)
+
+    return renderResults({
+      config: this.config,
+      orgSettings,
+      reporter: this.reporter,
+      results,
+      startTime,
+      summary,
+    })
   }
 
   private reportCiError(error: CiError, reporter: MainReporter) {
@@ -97,11 +136,17 @@ export class RunTestCommand extends Command {
       case 'NO_TESTS_TO_RUN':
         reporter.log('No test to run.\n')
         break
+      case 'MISSING_TESTS':
+        reporter.error(`\n${chalk.bgRed.bold(' ERROR: some tests are missing ')}\n${error.message}\n\n`)
+        break
 
       // Critical command errors
       case 'AUTHORIZATION_ERROR':
         reporter.error(`\n${chalk.bgRed.bold(' ERROR: authorization error ')}\n${error.message}\n\n`)
         reporter.log('Credentials refused, make sure `apiKey`, `appKey` and `datadogSite` are correct.\n')
+        break
+      case 'INVALID_CONFIG':
+        reporter.error(`\n${chalk.bgRed.bold(' ERROR: invalid config ')}\n${error.message}\n\n`)
         break
       case 'MISSING_APP_KEY':
         reporter.error(`Missing ${chalk.red.bold('DATADOG_APP_KEY')} in your environment.\n`)
@@ -115,6 +160,9 @@ export class RunTestCommand extends Command {
       case 'TUNNEL_START_FAILED':
         reporter.error(`\n${chalk.bgRed.bold(' ERROR: unable to start tunnel ')}\n${error.message}\n\n`)
         break
+      case 'TOO_MANY_TESTS_TO_TRIGGER':
+        reporter.error(`\n${chalk.bgRed.bold(' ERROR: too many tests to trigger ')}\n${error.message}\n\n`)
+        break
       case 'TRIGGER_TESTS_FAILED':
         reporter.error(`\n${chalk.bgRed.bold(' ERROR: unable to trigger tests ')}\n${error.message}\n\n`)
         break
@@ -127,6 +175,10 @@ export class RunTestCommand extends Command {
         break
       case 'UNAVAILABLE_TUNNEL_CONFIG':
         reporter.error(`\n${chalk.bgRed.bold(' ERROR: unable to get tunnel configuration ')}\n${error.message}\n\n`)
+        break
+
+      default:
+        reporter.error(`\n${chalk.bgRed.bold(' ERROR ')}\n${error.message}\n\n`)
     }
   }
 
@@ -135,7 +187,10 @@ export class RunTestCommand extends Command {
 
     // Override with file config variables
     try {
-      this.config = await parseConfigFile(this.config, this.configPath ?? this.config.configPath)
+      this.config = await resolveConfigFromFile(this.config, {
+        configPath: this.configPath,
+        defaultConfigPaths: [this.config.configPath],
+      })
     } catch (error) {
       if (this.configPath) {
         throw error
@@ -163,6 +218,7 @@ export class RunTestCommand extends Command {
         configPath: this.configPath,
         datadogSite: this.datadogSite,
         failOnCriticalErrors: this.failOnCriticalErrors,
+        failOnMissingTests: this.failOnMissingTests,
         failOnTimeout: this.failOnTimeout,
         files: this.files,
         publicIds: this.publicIds,
@@ -187,6 +243,15 @@ export class RunTestCommand extends Command {
       this.reporter!.log('[DEPRECATED] "files" should be an array of string instead of a string.\n')
       this.config.files = [this.config.files]
     }
+
+    if (!isValidDatadogSite(this.config.datadogSite)) {
+      throw new CiError(
+        'INVALID_CONFIG',
+        `The \`datadogSite\` config property (${JSON.stringify(
+          this.config.datadogSite
+        )}) must match one of the sites supported by Datadog.\nFor more information, see "Site parameter" in our documentation: https://docs.datadoghq.com/getting_started/site/#access-the-datadog-site`
+      )
+    }
   }
 }
 
@@ -196,6 +261,7 @@ RunTestCommand.addOption('appKey', Command.String('--appKey'))
 RunTestCommand.addOption('configPath', Command.String('--config'))
 RunTestCommand.addOption('datadogSite', Command.String('--datadogSite'))
 RunTestCommand.addOption('failOnCriticalErrors', Command.Boolean('--failOnCriticalErrors'))
+RunTestCommand.addOption('failOnMissingTests', Command.Boolean('--failOnMissingTests'))
 RunTestCommand.addOption('failOnTimeout', Command.Boolean('--failOnTimeout'))
 RunTestCommand.addOption('files', Command.Array('-f,--files'))
 RunTestCommand.addOption('jUnitReport', Command.String('-j,--jUnitReport'))

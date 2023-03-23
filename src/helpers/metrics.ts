@@ -7,6 +7,7 @@ export interface MetricsLogger {
 }
 
 export interface MetricsLoggerOptions {
+  apiKey?: string
   datadogSite?: string
   defaultTags?: string[]
   prefix: string
@@ -20,9 +21,9 @@ export const getMetricsLogger = (opts: MetricsLoggerOptions): MetricsLogger => {
     // agent is not in the type definitions file but has been introduced in datadog-metrics 0.8.x
     agent: new ProxyAgent(),
     apiHost: apiUrl,
+    apiKey: opts.apiKey,
     defaultTags: opts.defaultTags,
     flushIntervalSeconds: 15,
-    host: 'ci',
     prefix: opts.prefix,
   }
 

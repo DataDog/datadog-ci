@@ -20,7 +20,6 @@ import {
   GIT_SHA,
   GIT_TAG,
 } from '../tags'
-
 import {getUserCISpanTags, getUserGitSpanTags} from '../user-provided-git'
 
 describe('getUserGitSpanTags', () => {
@@ -68,11 +67,12 @@ describe('getUserGitSpanTags', () => {
       [GIT_COMMIT_AUTHOR_NAME]: 'DD_GIT_COMMIT_AUTHOR_NAME',
     })
   })
-  it('overwrites branch when tag is available', () => {
+  it('has both branch and tag when available', () => {
     process.env = {...DD_GIT_METADATA, DD_GIT_TAG: 'DD_GIT_TAG'}
     const result = getUserGitSpanTags()
     expect(result).toEqual({
       [GIT_TAG]: 'DD_GIT_TAG',
+      [GIT_BRANCH]: 'DD_GIT_BRANCH',
       [GIT_REPOSITORY_URL]: 'DD_GIT_REPOSITORY_URL',
       [GIT_SHA]: 'DD_GIT_COMMIT_SHA',
       [GIT_COMMIT_MESSAGE]: 'DD_GIT_COMMIT_MESSAGE',

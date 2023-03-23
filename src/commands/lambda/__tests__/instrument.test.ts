@@ -1,12 +1,14 @@
-// tslint:disable: no-string-literal
 jest.mock('fs')
 jest.mock('aws-sdk')
 jest.mock('../prompt')
-import {Lambda} from 'aws-sdk'
-import {blueBright, bold, cyan, hex, red, underline, yellow} from 'chalk'
-import {Cli} from 'clipanion/lib/advanced'
+jest.mock('../renderer', () => require('../__mocks__/renderer'))
+jest.mock('../../../../package.json', () => ({version: 'XXXX'}))
+
 import * as fs from 'fs'
-import path from 'path'
+
+import {config as aws_sdk_config, Lambda, SharedIniFileCredentials} from 'aws-sdk'
+import {Cli} from 'clipanion/lib/advanced'
+
 import {
   AWS_ACCESS_KEY_ID_ENV_VAR,
   AWS_DEFAULT_REGION_ENV_VAR,
@@ -28,6 +30,7 @@ import {
   requestEnvServiceVersion,
   requestFunctionSelection,
 } from '../prompt'
+
 import {
   createCommand,
   createMockContext,
@@ -40,8 +43,6 @@ import {
   mockDatadogService,
   mockDatadogVersion,
 } from './fixtures'
-// tslint:disable-next-line
-const {version} = require(path.join(__dirname, '../../../../package.json'))
 describe('lambda', () => {
   describe('instrument', () => {
     describe('execute', () => {
@@ -65,6 +66,7 @@ describe('lambda', () => {
             },
           })
         )
+
         const cli = makeCli()
         const context = createMockContext() as any
         const functionARN = 'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world'
@@ -87,49 +89,13 @@ describe('lambda', () => {
             '0.2',
             '--extra-tags',
             'layer:api,team:intake',
+            '--no-source-code-integration',
           ],
           context
         )
         const output = context.stdout.toString()
         expect(code).toBe(0)
-        expect(output).toMatchInlineSnapshot(`
-"${bold(yellow('[Warning]'))} Instrument your ${hex('#FF9900').bold(
-          'Lambda'
-        )} functions in a dev or staging environment first. Should the instrumentation result be unsatisfactory, run \`${bold(
-          'uninstrument'
-        )}\` with the same arguments to revert the changes.
-\n${bold(yellow('[!]'))} Functions to be updated:
-\t- ${bold('arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world')}\n
-${bold(cyan('[Dry Run] '))}Will apply the following updates:
-UpdateFunctionConfiguration -> arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world
-{
-  \\"FunctionName\\": \\"arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world\\",
-  \\"Handler\\": \\"/opt/nodejs/node_modules/datadog-lambda-js/handler.handler\\",
-  \\"Environment\\": {
-    \\"Variables\\": {
-      \\"DD_LAMBDA_HANDLER\\": \\"index.handler\\",
-      \\"DD_SITE\\": \\"datadoghq.com\\",
-      \\"DD_CAPTURE_LAMBDA_PAYLOAD\\": \\"false\\",
-      \\"DD_ENV\\": \\"staging\\",
-      \\"DD_TAGS\\": \\"layer:api,team:intake\\",
-      \\"DD_MERGE_XRAY_TRACES\\": \\"false\\",
-      \\"DD_SERVICE\\": \\"middletier\\",
-      \\"DD_TRACE_ENABLED\\": \\"true\\",
-      \\"DD_VERSION\\": \\"0.2\\",
-      \\"DD_FLUSH_TO_LOG\\": \\"true\\",
-      \\"DD_LOG_LEVEL\\": \\"debug\\"
-    }
-  },
-  \\"Layers\\": [
-    \\"arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Node12-x:10\\"
-  ]
-}
-TagResource -> arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world
-{
-  \\"dd_sls_ci\\": \\"v${version}\\"
-}
-"
-`)
+        expect(output).toMatchSnapshot()
       })
 
       test('prints dry run data for lambda library and extension layers using kebab case args', async () => {
@@ -172,50 +138,13 @@ TagResource -> arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world
             'false',
             '--log-level',
             'debug',
+            '--no-source-code-integration',
           ],
           context
         )
         const output = context.stdout.toString()
         expect(code).toBe(0)
-        expect(output).toMatchInlineSnapshot(`
-"${bold(yellow('[Warning]'))} Instrument your ${hex('#FF9900').bold(
-          'Lambda'
-        )} functions in a dev or staging environment first. Should the instrumentation result be unsatisfactory, run \`${bold(
-          'uninstrument'
-        )}\` with the same arguments to revert the changes.
-\n${bold(yellow('[!]'))} Functions to be updated:
-\t- ${bold('arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world')}\n
-${bold(cyan('[Dry Run] '))}Will apply the following updates:
-UpdateFunctionConfiguration -> arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world
-{
-  \\"FunctionName\\": \\"arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world\\",
-  \\"Handler\\": \\"/opt/nodejs/node_modules/datadog-lambda-js/handler.handler\\",
-  \\"Environment\\": {
-    \\"Variables\\": {
-      \\"DD_LAMBDA_HANDLER\\": \\"index.handler\\",
-      \\"DD_API_KEY\\": \\"1234\\",
-      \\"DD_SITE\\": \\"datadoghq.com\\",
-      \\"DD_CAPTURE_LAMBDA_PAYLOAD\\": \\"false\\",
-      \\"DD_ENV\\": \\"staging\\",
-      \\"DD_TAGS\\": \\"layer:api,team:intake\\",
-      \\"DD_MERGE_XRAY_TRACES\\": \\"true\\",
-      \\"DD_SERVICE\\": \\"middletier\\",
-      \\"DD_TRACE_ENABLED\\": \\"true\\",
-      \\"DD_VERSION\\": \\"0.2\\",
-      \\"DD_LOG_LEVEL\\": \\"debug\\"
-    }
-  },
-  \\"Layers\\": [
-    \\"arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Extension:5\\",
-    \\"arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Node12-x:10\\"
-  ]
-}
-TagResource -> arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world
-{
-  \\"dd_sls_ci\\": \\"v${version}\\"
-}
-"
-`)
+        expect(output).toMatchSnapshot()
       })
 
       test('prints dry run data for lambda extension layer', async () => {
@@ -250,48 +179,13 @@ TagResource -> arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world
             '0.2',
             '--extra-tags',
             'layer:api,team:intake',
+            '--no-source-code-integration',
           ],
           context
         )
         const output = context.stdout.toString()
         expect(code).toBe(0)
-        expect(output).toMatchInlineSnapshot(`
-"${bold(yellow('[Warning]'))} Instrument your ${hex('#FF9900').bold(
-          'Lambda'
-        )} functions in a dev or staging environment first. Should the instrumentation result be unsatisfactory, run \`${bold(
-          'uninstrument'
-        )}\` with the same arguments to revert the changes.
-\n${bold(yellow('[!]'))} Functions to be updated:
-\t- ${bold('arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world')}\n
-${bold(cyan('[Dry Run] '))}Will apply the following updates:
-UpdateFunctionConfiguration -> arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world
-{
-  \\"FunctionName\\": \\"arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world\\",
-  \\"Handler\\": \\"/opt/nodejs/node_modules/datadog-lambda-js/handler.handler\\",
-  \\"Environment\\": {
-    \\"Variables\\": {
-      \\"DD_LAMBDA_HANDLER\\": \\"index.handler\\",
-      \\"DD_API_KEY\\": \\"1234\\",
-      \\"DD_SITE\\": \\"datadoghq.com\\",
-      \\"DD_CAPTURE_LAMBDA_PAYLOAD\\": \\"false\\",
-      \\"DD_ENV\\": \\"staging\\",
-      \\"DD_TAGS\\": \\"layer:api,team:intake\\",
-      \\"DD_MERGE_XRAY_TRACES\\": \\"false\\",
-      \\"DD_SERVICE\\": \\"middletier\\",
-      \\"DD_TRACE_ENABLED\\": \\"true\\",
-      \\"DD_VERSION\\": \\"0.2\\"
-    }
-  },
-  \\"Layers\\": [
-    \\"arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Extension:6\\"
-  ]
-}
-TagResource -> arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world
-{
-  \\"dd_sls_ci\\": \\"v${version}\\"
-}
-"
-`)
+        expect(output).toMatchSnapshot()
       })
 
       test('prints dry run data for lambda .NET layer', async () => {
@@ -325,51 +219,13 @@ TagResource -> arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world
             'staging',
             '--version',
             '0.2',
+            '--no-source-code-integration',
           ],
           context
         )
         const output = context.stdout.toString()
         expect(code).toBe(0)
-        expect(output).toMatchInlineSnapshot(`
-"${bold(yellow('[Warning]'))} Instrument your ${hex('#FF9900').bold(
-          'Lambda'
-        )} functions in a dev or staging environment first. Should the instrumentation result be unsatisfactory, run \`${bold(
-          'uninstrument'
-        )}\` with the same arguments to revert the changes.
-\n${bold(yellow('[!]'))} Functions to be updated:
-\t- ${bold('arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world')}\n
-${bold(cyan('[Dry Run] '))}Will apply the following updates:
-UpdateFunctionConfiguration -> arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world
-{
-  \\"FunctionName\\": \\"arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world\\",
-  \\"Environment\\": {
-    \\"Variables\\": {
-      \\"DD_API_KEY\\": \\"1234\\",
-      \\"DD_SITE\\": \\"datadoghq.com\\",
-      \\"DD_CAPTURE_LAMBDA_PAYLOAD\\": \\"false\\",
-      \\"DD_ENV\\": \\"staging\\",
-      \\"DD_TAGS\\": \\"layer:api,team:intake\\",
-      \\"DD_MERGE_XRAY_TRACES\\": \\"false\\",
-      \\"DD_SERVICE\\": \\"middletier\\",
-      \\"DD_TRACE_ENABLED\\": \\"true\\",
-      \\"DD_VERSION\\": \\"0.2\\",
-      \\"DD_FLUSH_TO_LOG\\": \\"true\\",
-      \\"CORECLR_ENABLE_PROFILING\\": \\"1\\",
-      \\"CORECLR_PROFILER\\": \\"{846F5F1C-F9AE-4B07-969E-05C26BC060D8}\\",
-      \\"CORECLR_PROFILER_PATH\\": \\"/opt/datadog/Datadog.Trace.ClrProfiler.Native.so\\",
-      \\"DD_DOTNET_TRACER_HOME\\": \\"/opt/datadog\\"
-    }
-  },
-  \\"Layers\\": [
-    \\"arn:aws:lambda:us-east-1:464622532012:layer:dd-trace-dotnet:129\\"
-  ]
-}
-TagResource -> arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world
-{
-  \\"dd_sls_ci\\": \\"v${version}\\"
-}
-"
-`)
+        expect(output).toMatchSnapshot()
       })
 
       test('instrumenting with source code integrations fails if not run within a git repo', async () => {
@@ -405,40 +261,6 @@ TagResource -> arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world
         )
         const output = context.stdout.toString()
         expect(output.replace('\n', '')).toMatch(/.*Error: Couldn't get local git status.*/)
-      })
-
-      test('instrumenting with source code integrations fails if DATADOG_API_KEY is not provided', async () => {
-        ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({code: 'ENOENT'}))
-        const lambda = makeMockLambda({
-          'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world': {
-            FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world',
-            Handler: 'index.handler',
-            Runtime: 'nodejs12.x',
-          },
-        })
-        ;(Lambda as any).mockImplementation(() => lambda)
-        const cli = makeCli()
-        const context = createMockContext() as any
-        await cli.run(
-          [
-            'lambda',
-            'instrument',
-            '--function',
-            'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world',
-            '--layerVersion',
-            '10',
-            '-s',
-            '--service',
-            'dummy',
-            '--env',
-            'dummy',
-            '--version',
-            '0.1',
-          ],
-          context
-        )
-        const output = context.stdout.toString()
-        expect(output).toMatch(/.*Missing DATADOG_API_KEY in your environment.*/i)
       })
 
       test('ensure the instrument command ran from a dirty git repo fails', async () => {
@@ -502,6 +324,7 @@ TagResource -> arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world
         mockGitStatus.mockImplementation(() => ({
           ahead: 0,
           hash: '1be168ff837f043bde17c0314341c84271047b31',
+          remote: 'git.repository_url:git@github.com:datadog/test.git',
           isClean: true,
         }))
         const mockUploadFunction = jest.spyOn(instrumentCommand.prototype as any, 'uploadGitData')
@@ -531,44 +354,59 @@ TagResource -> arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world
           context
         )
         const output = context.stdout.toString()
-        expect(output).toMatchInlineSnapshot(`
-"${bold(yellow('[Warning]'))} Instrument your ${hex('#FF9900').bold(
-          'Lambda'
-        )} functions in a dev or staging environment first. Should the instrumentation result be unsatisfactory, run \`${bold(
-          'uninstrument'
-        )}\` with the same arguments to revert the changes.
-\n${bold(yellow('[!]'))} Functions to be updated:
-\t- ${bold('arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world')}\n
-Will apply the following updates:
-UpdateFunctionConfiguration -> arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world
-{
-  \\"FunctionName\\": \\"arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world\\",
-  \\"Handler\\": \\"/opt/nodejs/node_modules/datadog-lambda-js/handler.handler\\",
-  \\"Environment\\": {
-    \\"Variables\\": {
-      \\"DD_LAMBDA_HANDLER\\": \\"index.handler\\",
-      \\"DD_API_KEY\\": \\"1234\\",
-      \\"DD_SITE\\": \\"datadoghq.com\\",
-      \\"DD_CAPTURE_LAMBDA_PAYLOAD\\": \\"false\\",
-      \\"DD_ENV\\": \\"dummy\\",
-      \\"DD_TAGS\\": \\"git.commit.sha:1be168ff837f043bde17c0314341c84271047b31\\",
-      \\"DD_MERGE_XRAY_TRACES\\": \\"false\\",
-      \\"DD_SERVICE\\": \\"dummy\\",
-      \\"DD_TRACE_ENABLED\\": \\"true\\",
-      \\"DD_VERSION\\": \\"0.1\\",
-      \\"DD_FLUSH_TO_LOG\\": \\"true\\"
-    }
-  },
-  \\"Layers\\": [
-    \\"arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Node12-x:10\\"
-  ]
-}
-TagResource -> arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world
-{
-  \\"dd_sls_ci\\": \\"v${version}\\"
-}
-"
-`)
+        expect(output).toMatchSnapshot()
+        expect(mockUploadFunction).toHaveBeenCalledTimes(1)
+      })
+
+      test('ensure no git metadata upload flag works', async () => {
+        ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({code: 'ENOENT'}))
+        const lambda = makeMockLambda({
+          'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world': {
+            FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world',
+            Handler: 'index.handler',
+            Runtime: 'nodejs12.x',
+          },
+        })
+        ;(Lambda as any).mockImplementation(() => lambda)
+        process.env.DATADOG_API_KEY = '1234'
+        const context = createMockContext() as any
+        const instrumentCommand = InstrumentCommand
+        const mockGitStatus = jest.spyOn(instrumentCommand.prototype as any, 'getCurrentGitStatus')
+        mockGitStatus.mockImplementation(() => ({
+          ahead: 0,
+          hash: '1be168ff837f043bde17c0314341c84271047b31',
+          remote: 'git.repository_url:git@github.com:datadog/test.git',
+          isClean: true,
+        }))
+        const mockUploadFunction = jest.spyOn(instrumentCommand.prototype as any, 'uploadGitData')
+        mockUploadFunction.mockImplementation(() => {
+          return
+        })
+
+        const cli = new Cli()
+        cli.register(instrumentCommand)
+
+        await cli.run(
+          [
+            'lambda',
+            'instrument',
+            '--function',
+            'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world',
+            '--layerVersion',
+            '10',
+            '--no-upload-git-metadata',
+            '--service',
+            'dummy',
+            '--env',
+            'dummy',
+            '--version',
+            '0.1',
+          ],
+          context
+        )
+        const output = context.stdout.toString()
+        expect(mockUploadFunction).toHaveBeenCalledTimes(0)
+        expect(output).toMatchSnapshot()
       })
 
       test('ensure the instrument command ran from a local git repo ahead of the origin fails', async () => {
@@ -612,7 +450,7 @@ TagResource -> arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world
           context
         )
         const output = context.stdout.toString()
-        expect(output).toMatch('Error: Local changes have not been pushed remotely. Aborting git upload.')
+        expect(output).toMatch('Error: Local changes have not been pushed remotely. Aborting git data tagging.')
       })
 
       test('runs function update command for lambda library layer', async () => {
@@ -635,6 +473,7 @@ TagResource -> arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world
             'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world',
             '--layerVersion',
             '10',
+            '--no-source-code-integration',
           ],
           context
         )
@@ -662,6 +501,7 @@ TagResource -> arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world
             'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world',
             '--extensionVersion',
             '6',
+            '--no-source-code-integration',
           ],
           context
         )
@@ -691,11 +531,10 @@ TagResource -> arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world
         const output = context.stdout.toString()
         expect(code).toBe(1)
         expect(output).toMatchInlineSnapshot(`
-                                                            "${red(
-                                                              '[Error]'
-                                                            )} No functions specified for instrumentation.
-                                                            "
-                                                `)
+"\n🐶 Instrumenting Lambda function
+[Error] No functions specified to instrument.
+"
+`)
       })
 
       test('aborts early when no functions are specified while using config file', async () => {
@@ -713,11 +552,10 @@ TagResource -> arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world
         await command['execute']()
         const output = command.context.stdout.toString()
         expect(output).toMatchInlineSnapshot(`
-                                                            "${red(
-                                                              '[Error]'
-                                                            )} No functions specified for instrumentation.
-                                                            "
-                                                `)
+"\n🐶 Instrumenting Lambda function
+[Error] No functions specified to instrument.
+"
+`)
       })
 
       test("aborts early when function regions can't be found", async () => {
@@ -740,6 +578,7 @@ TagResource -> arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world
             'staging',
             '--version',
             '0.2',
+            '--no-source-code-integration',
           ],
           context
         )
@@ -781,6 +620,7 @@ TagResource -> arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world
             'staging',
             '--version',
             '0.2',
+            '--no-source-code-integration',
           ],
           context
         )
@@ -788,11 +628,10 @@ TagResource -> arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world
         const output = context.stdout.toString()
         expect(code).toBe(1)
         expect(output).toMatchInlineSnapshot(`
-                                                  "${red(
-                                                    '[Error]'
-                                                  )} Couldn't fetch Lambda functions. Error: Can't instrument arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world, as current State is Failed (must be \\"Active\\") and Last Update Status is Unsuccessful (must be \\"Successful\\")
-                                                  "
-                                        `)
+"\n🐶 Instrumenting Lambda function
+[Error] Couldn't fetch Lambda functions. Error: Can't instrument arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world, as current State is Failed (must be \\"Active\\") and Last Update Status is Unsuccessful (must be \\"Successful\\")
+"
+`)
       })
 
       test('aborts early when extensionVersion and forwarder are set', async () => {
@@ -824,9 +663,10 @@ TagResource -> arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world
         const output = context.stdout.toString()
         expect(code).toBe(1)
         expect(output).toMatchInlineSnapshot(`
-          "${red('[Error]')} \\"extensionVersion\\" and \\"forwarder\\" should not be used at the same time.
-          "
-        `)
+"\n🐶 Instrumenting Lambda function
+[Error] \\"extensionVersion\\" and \\"forwarder\\" should not be used at the same time.
+"
+`)
       })
 
       test('check if functions are not empty while using config file', async () => {
@@ -852,6 +692,7 @@ TagResource -> arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world
         command['config']['region'] = 'ap-southeast-1'
         command['config']['functions'] = ['arn:aws:lambda:ap-southeast-1:123456789012:function:lambda-hello-world']
         command['regExPattern'] = 'valid-pattern'
+        command['sourceCodeIntegration'] = false
         await command['execute']()
         let output = command.context.stdout.toString()
         expect(output).toMatch(
@@ -865,6 +706,7 @@ TagResource -> arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world
         command['region'] = 'ap-southeast-1'
         command['functions'] = ['arn:aws:lambda:ap-southeast-1:123456789012:function:lambda-hello-world']
         command['regExPattern'] = 'valid-pattern'
+        command['sourceCodeIntegration'] = false
         await command['execute']()
         output = command.context.stdout.toString()
         expect(output).toMatch('"--functions" and "--functions-regex" should not be used at the same time.\n')
@@ -879,9 +721,10 @@ TagResource -> arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world
         command['service'] = 'middletier'
         command['version'] = '2'
         command['regExPattern'] = 'valid-pattern'
+        command['sourceCodeIntegration'] = false
         await command['execute']()
         const output = command.context.stdout.toString()
-        expect(output).toMatch(`${red('[Error]')} No default region specified. Use \`-r\`, \`--region\`.\n`)
+        expect(output).toMatch('[Error] No default region specified. Use `-r`, `--region`.\n')
       })
       test('aborts if the regEx pattern is an ARN', async () => {
         ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({}))
@@ -893,14 +736,16 @@ TagResource -> arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world
         command['version'] = '2'
         command['region'] = 'ap-southeast-1'
         command['regExPattern'] = 'arn:aws:lambda:ap-southeast-1:123456789012:function:*'
+        command['sourceCodeIntegration'] = false
         await command['execute']()
         const output = command.context.stdout.toString()
         expect(output).toMatch(`"--functions-regex" isn't meant to be used with ARNs.\n`)
       })
 
       test('instrument multiple functions interactively', async () => {
-        const node14LibraryLayer = `arn:aws:lambda:sa-east-1:${DEFAULT_LAYER_AWS_ACCOUNT}:layer:Datadog-Node14-x`
+        const node18LibraryLayer = `arn:aws:lambda:sa-east-1:${DEFAULT_LAYER_AWS_ACCOUNT}:layer:Datadog-Node18-x`
         const node16LibraryLayer = `arn:aws:lambda:sa-east-1:${DEFAULT_LAYER_AWS_ACCOUNT}:layer:Datadog-Node16-x`
+        const node14LibraryLayer = `arn:aws:lambda:sa-east-1:${DEFAULT_LAYER_AWS_ACCOUNT}:layer:Datadog-Node14-x`
         const node12LibraryLayer = `arn:aws:lambda:sa-east-1:${DEFAULT_LAYER_AWS_ACCOUNT}:layer:Datadog-Node12-x`
         const extensionLayer = `arn:aws:lambda:sa-east-1:${DEFAULT_LAYER_AWS_ACCOUNT}:layer:Datadog-Extension`
         ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({code: 'ENOENT'}))
@@ -925,6 +770,12 @@ TagResource -> arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world
                 Handler: 'index.handler',
                 Runtime: 'nodejs16.x',
               },
+              'arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world-4': {
+                FunctionArn: 'arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world-3',
+                FunctionName: 'lambda-hello-world-4',
+                Handler: 'index.handler',
+                Runtime: 'nodejs18.x',
+              },
             },
             {
               [`${node14LibraryLayer}:1`]: {
@@ -937,6 +788,10 @@ TagResource -> arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world
               },
               [`${node16LibraryLayer}:1`]: {
                 LayerVersionArn: `${node16LibraryLayer}:1`,
+                Version: 1,
+              },
+              [`${node18LibraryLayer}:1`]: {
+                LayerVersionArn: `${node18LibraryLayer}:1`,
                 Version: 1,
               },
               [`${extensionLayer}:1`]: {
@@ -963,90 +818,10 @@ TagResource -> arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world
 
         const cli = makeCli()
         const context = createMockContext() as any
-        const code = await cli.run(['lambda', 'instrument', '-i'], context)
+        const code = await cli.run(['lambda', 'instrument', '-i', '--no-source-code-integration'], context)
         const output = context.stdout.toString()
         expect(code).toBe(0)
-        expect(output).toMatchInlineSnapshot(`
-"${bold(
-          yellow('[!]')
-        )} No AWS credentials found, let's set them up! Or you can re-run the command and supply the AWS credentials in the same way when you invoke the AWS CLI.
-${bold(yellow('[!]'))} Configure AWS region.
-${bold(yellow('[!]'))} Configure Datadog settings.
-Fetching Lambda functions, this might take a while.
-${bold(
-  yellow('[Warning]')
-)} The environment, service and version tags have not been configured. Learn more about Datadog unified service tagging: ${underline(
-          blueBright(
-            'https://docs.datadoghq.com/getting_started/tagging/unified_service_tagging/#serverless-environment.'
-          )
-        )}
-${bold(yellow('[Warning]'))} Instrument your ${hex('#FF9900').bold(
-          'Lambda'
-        )} functions in a dev or staging environment first. Should the instrumentation result be unsatisfactory, run \`${bold(
-          'uninstrument'
-        )}\` with the same arguments to revert the changes.\n
-${bold(yellow('[!]'))} Functions to be updated:
-\t- ${bold('arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world')}
-\t${bold(
-          yellow('[Warning]')
-        )} At least one latest layer version is being used. Ensure to lock in versions for production applications using \`--layerVersion\` and \`--extensionVersion\`.
-\t- ${bold('arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world-2')}
-\t${bold(
-          yellow('[Warning]')
-        )} At least one latest layer version is being used. Ensure to lock in versions for production applications using \`--layerVersion\` and \`--extensionVersion\`.\n
-Will apply the following updates:
-UpdateFunctionConfiguration -> arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world
-{
-  \\"FunctionName\\": \\"arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world\\",
-  \\"Handler\\": \\"/opt/nodejs/node_modules/datadog-lambda-js/handler.handler\\",
-  \\"Environment\\": {
-    \\"Variables\\": {
-      \\"DD_LAMBDA_HANDLER\\": \\"index.handler\\",
-      \\"DD_API_KEY\\": \\"02aeb762fff59ac0d5ad1536cd9633bd\\",
-      \\"DD_SITE\\": \\"datadoghq.com\\",
-      \\"DD_CAPTURE_LAMBDA_PAYLOAD\\": \\"false\\",
-      \\"DD_MERGE_XRAY_TRACES\\": \\"false\\",
-      \\"DD_TRACE_ENABLED\\": \\"true\\",
-      \\"DD_FLUSH_TO_LOG\\": \\"true\\"
-    }
-  },
-  \\"Layers\\": [
-    \\"arn:aws:lambda:sa-east-1:464622532012:layer:Datadog-Extension:1\\",
-    \\"arn:aws:lambda:sa-east-1:464622532012:layer:Datadog-Node12-x:1\\"
-  ]
-}
-TagResource -> arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world
-{
-  \\"dd_sls_ci\\": \\"v${version}\\"
-}
-UpdateFunctionConfiguration -> arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world-2
-{
-  \\"FunctionName\\": \\"arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world-2\\",
-  \\"Handler\\": \\"/opt/nodejs/node_modules/datadog-lambda-js/handler.handler\\",
-  \\"Environment\\": {
-    \\"Variables\\": {
-      \\"DD_LAMBDA_HANDLER\\": \\"index.handler\\",
-      \\"DD_API_KEY\\": \\"02aeb762fff59ac0d5ad1536cd9633bd\\",
-      \\"DD_SITE\\": \\"datadoghq.com\\",
-      \\"DD_CAPTURE_LAMBDA_PAYLOAD\\": \\"false\\",
-      \\"DD_MERGE_XRAY_TRACES\\": \\"false\\",
-      \\"DD_TRACE_ENABLED\\": \\"true\\",
-      \\"DD_FLUSH_TO_LOG\\": \\"true\\"
-    }
-  },
-  \\"Layers\\": [
-    \\"arn:aws:lambda:sa-east-1:464622532012:layer:Datadog-Extension:1\\",
-    \\"arn:aws:lambda:sa-east-1:464622532012:layer:Datadog-Node14-x:1\\"
-  ]
-}
-TagResource -> arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world-2
-{
-  \\"dd_sls_ci\\": \\"v${version}\\"
-}
-${yellow('[!]')} Confirmation needed.
-${yellow('[!]')} Instrumenting functions.
-"
-`)
+        expect(output).toMatchSnapshot()
       })
 
       test('instrument multiple specified functions interactively', async () => {
@@ -1120,91 +895,13 @@ ${yellow('[!]')} Instrumenting functions.
             'arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world',
             '-f',
             'arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world-2',
+            '--no-source-code-integration',
           ],
           context
         )
         const output = context.stdout.toString()
         expect(code).toBe(0)
-        expect(output).toMatchInlineSnapshot(`
-"${bold(
-          yellow('[!]')
-        )} No AWS credentials found, let's set them up! Or you can re-run the command and supply the AWS credentials in the same way when you invoke the AWS CLI.
-${bold(yellow('[!]'))} Configure AWS region.
-${bold(yellow('[!]'))} Configure Datadog settings.
-${bold(
-  yellow('[Warning]')
-)} The environment, service and version tags have not been configured. Learn more about Datadog unified service tagging: ${underline(
-          blueBright(
-            'https://docs.datadoghq.com/getting_started/tagging/unified_service_tagging/#serverless-environment.'
-          )
-        )}
-${bold(yellow('[Warning]'))} Instrument your ${hex('#FF9900').bold(
-          'Lambda'
-        )} functions in a dev or staging environment first. Should the instrumentation result be unsatisfactory, run \`${bold(
-          'uninstrument'
-        )}\` with the same arguments to revert the changes.\n
-${bold(yellow('[!]'))} Functions to be updated:
-\t- ${bold('arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world')}
-\t${bold(
-          yellow('[Warning]')
-        )} At least one latest layer version is being used. Ensure to lock in versions for production applications using \`--layerVersion\` and \`--extensionVersion\`.
-\t- ${bold('arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world-2')}
-\t${bold(
-          yellow('[Warning]')
-        )} At least one latest layer version is being used. Ensure to lock in versions for production applications using \`--layerVersion\` and \`--extensionVersion\`.\n
-Will apply the following updates:
-UpdateFunctionConfiguration -> arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world
-{
-  \\"FunctionName\\": \\"arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world\\",
-  \\"Handler\\": \\"/opt/nodejs/node_modules/datadog-lambda-js/handler.handler\\",
-  \\"Environment\\": {
-    \\"Variables\\": {
-      \\"DD_LAMBDA_HANDLER\\": \\"index.handler\\",
-      \\"DD_API_KEY\\": \\"02aeb762fff59ac0d5ad1536cd9633bd\\",
-      \\"DD_SITE\\": \\"datadoghq.com\\",
-      \\"DD_CAPTURE_LAMBDA_PAYLOAD\\": \\"false\\",
-      \\"DD_MERGE_XRAY_TRACES\\": \\"false\\",
-      \\"DD_TRACE_ENABLED\\": \\"true\\",
-      \\"DD_FLUSH_TO_LOG\\": \\"true\\"
-    }
-  },
-  \\"Layers\\": [
-    \\"arn:aws:lambda:sa-east-1:464622532012:layer:Datadog-Extension:1\\",
-    \\"arn:aws:lambda:sa-east-1:464622532012:layer:Datadog-Node12-x:1\\"
-  ]
-}
-TagResource -> arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world
-{
-  \\"dd_sls_ci\\": \\"v${version}\\"
-}
-UpdateFunctionConfiguration -> arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world-2
-{
-  \\"FunctionName\\": \\"arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world-2\\",
-  \\"Handler\\": \\"/opt/nodejs/node_modules/datadog-lambda-js/handler.handler\\",
-  \\"Environment\\": {
-    \\"Variables\\": {
-      \\"DD_LAMBDA_HANDLER\\": \\"index.handler\\",
-      \\"DD_API_KEY\\": \\"02aeb762fff59ac0d5ad1536cd9633bd\\",
-      \\"DD_SITE\\": \\"datadoghq.com\\",
-      \\"DD_CAPTURE_LAMBDA_PAYLOAD\\": \\"false\\",
-      \\"DD_MERGE_XRAY_TRACES\\": \\"false\\",
-      \\"DD_TRACE_ENABLED\\": \\"true\\",
-      \\"DD_FLUSH_TO_LOG\\": \\"true\\"
-    }
-  },
-  \\"Layers\\": [
-    \\"arn:aws:lambda:sa-east-1:464622532012:layer:Datadog-Extension:1\\",
-    \\"arn:aws:lambda:sa-east-1:464622532012:layer:Datadog-Node14-x:1\\"
-  ]
-}
-TagResource -> arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world-2
-{
-  \\"dd_sls_ci\\": \\"v${version}\\"
-}
-${yellow('[!]')} Confirmation needed.
-${yellow('[!]')} Instrumenting functions.
-"
-`)
+        expect(output).toMatchSnapshot()
       })
 
       test('aborts if a problem occurs while setting the AWS credentials interactively', async () => {
@@ -1216,10 +913,9 @@ ${yellow('[!]')} Instrumenting functions.
         const output = context.stdout.toString()
         expect(code).toBe(1)
         expect(output).toMatchInlineSnapshot(`
-"${bold(
-          yellow('[!]')
-        )} No AWS credentials found, let's set them up! Or you can re-run the command and supply the AWS credentials in the same way when you invoke the AWS CLI.
-${red('[Error]')} Unexpected error
+"\n🐶 Instrumenting Lambda function
+[!] No AWS credentials found, let's set them up! Or you can re-run the command and supply the AWS credentials in the same way when you invoke the AWS CLI.
+[Error] Unexpected error
 "
 `)
       })
@@ -1238,9 +934,10 @@ ${red('[Error]')} Unexpected error
         const output = context.stdout.toString()
         expect(code).toBe(1)
         expect(output).toMatchInlineSnapshot(`
-"${bold(yellow('[!]'))} Configure AWS region.
-${bold(yellow('[!]'))} Configure Datadog settings.
-${red('[Error]')} Unexpected error
+"\n🐶 Instrumenting Lambda function
+\n[!] Configure AWS region.
+\n[!] Configure Datadog settings.
+[Error] Unexpected error
 "
 `)
       })
@@ -1292,60 +989,10 @@ ${red('[Error]')} Unexpected error
 
         const cli = makeCli()
         const context = createMockContext() as any
-        const code = await cli.run(['lambda', 'instrument', '-i'], context)
+        const code = await cli.run(['lambda', 'instrument', '-i', '--no-source-code-integration'], context)
         const output = context.stdout.toString()
         expect(code).toBe(0)
-        expect(output).toMatchInlineSnapshot(`
-"${bold(
-          yellow('[!]')
-        )} No AWS credentials found, let's set them up! Or you can re-run the command and supply the AWS credentials in the same way when you invoke the AWS CLI.
-${bold(yellow('[!]'))} Configure AWS region.
-${bold(yellow('[!]'))} Configure Datadog settings.
-Fetching Lambda functions, this might take a while.
-${bold(yellow('[Warning]'))} Instrument your ${hex('#FF9900').bold(
-          'Lambda'
-        )} functions in a dev or staging environment first. Should the instrumentation result be unsatisfactory, run \`${bold(
-          'uninstrument'
-        )}\` with the same arguments to revert the changes.
-
-${bold(yellow('[!]'))} Functions to be updated:
-\t- ${bold('arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world')}
-\t${bold(
-          yellow('[Warning]')
-        )} At least one latest layer version is being used. Ensure to lock in versions for production applications using \`--layerVersion\` and \`--extensionVersion\`.
-
-Will apply the following updates:
-UpdateFunctionConfiguration -> arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world
-{
-  \\"FunctionName\\": \\"arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world\\",
-  \\"Handler\\": \\"/opt/nodejs/node_modules/datadog-lambda-js/handler.handler\\",
-  \\"Environment\\": {
-    \\"Variables\\": {
-      \\"DD_LAMBDA_HANDLER\\": \\"index.handler\\",
-      \\"DD_API_KEY\\": \\"02aeb762fff59ac0d5ad1536cd9633bd\\",
-      \\"DD_SITE\\": \\"datadoghq.com\\",
-      \\"DD_CAPTURE_LAMBDA_PAYLOAD\\": \\"false\\",
-      \\"DD_ENV\\": \\"sandbox\\",
-      \\"DD_MERGE_XRAY_TRACES\\": \\"false\\",
-      \\"DD_SERVICE\\": \\"testServiceName\\",
-      \\"DD_TRACE_ENABLED\\": \\"true\\",
-      \\"DD_VERSION\\": \\"1.0.0\\",
-      \\"DD_FLUSH_TO_LOG\\": \\"true\\"
-    }
-  },
-  \\"Layers\\": [
-    \\"arn:aws:lambda:sa-east-1:464622532012:layer:Datadog-Extension:1\\",
-    \\"arn:aws:lambda:sa-east-1:464622532012:layer:Datadog-Node12-x:1\\"
-  ]
-}
-TagResource -> arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world
-{
-  \\"dd_sls_ci\\": \\"v${version}\\"
-}
-${yellow('[!]')} Confirmation needed.
-${yellow('[!]')} Instrumenting functions.
-"
-`)
+        expect(output).toMatchSnapshot()
       })
 
       test('when not provided it does not set DD_ENV, DD_SERVICE, and DD_VERSION tags in interactive mode', async () => {
@@ -1395,64 +1042,10 @@ ${yellow('[!]')} Instrumenting functions.
 
         const cli = makeCli()
         const context = createMockContext() as any
-        const code = await cli.run(['lambda', 'instrument', '-i'], context)
+        const code = await cli.run(['lambda', 'instrument', '-i', '--no-source-code-integration'], context)
         const output = context.stdout.toString()
         expect(code).toBe(0)
-        expect(output).toMatchInlineSnapshot(`
-"${bold(
-          yellow('[!]')
-        )} No AWS credentials found, let's set them up! Or you can re-run the command and supply the AWS credentials in the same way when you invoke the AWS CLI.
-${bold(yellow('[!]'))} Configure AWS region.
-${bold(yellow('[!]'))} Configure Datadog settings.
-Fetching Lambda functions, this might take a while.
-${bold(
-  yellow('[Warning]')
-)} The environment, service and version tags have not been configured. Learn more about Datadog unified service tagging: ${underline(
-          blueBright(
-            'https://docs.datadoghq.com/getting_started/tagging/unified_service_tagging/#serverless-environment.'
-          )
-        )}
-${bold(yellow('[Warning]'))} Instrument your ${hex('#FF9900').bold(
-          'Lambda'
-        )} functions in a dev or staging environment first. Should the instrumentation result be unsatisfactory, run \`${bold(
-          'uninstrument'
-        )}\` with the same arguments to revert the changes.
-
-${bold(yellow('[!]'))} Functions to be updated:
-\t- ${bold('arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world')}
-\t${bold(
-          yellow('[Warning]')
-        )} At least one latest layer version is being used. Ensure to lock in versions for production applications using \`--layerVersion\` and \`--extensionVersion\`.
-
-Will apply the following updates:
-UpdateFunctionConfiguration -> arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world
-{
-  \\"FunctionName\\": \\"arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world\\",
-  \\"Handler\\": \\"/opt/nodejs/node_modules/datadog-lambda-js/handler.handler\\",
-  \\"Environment\\": {
-    \\"Variables\\": {
-      \\"DD_LAMBDA_HANDLER\\": \\"index.handler\\",
-      \\"DD_API_KEY\\": \\"02aeb762fff59ac0d5ad1536cd9633bd\\",
-      \\"DD_SITE\\": \\"datadoghq.com\\",
-      \\"DD_CAPTURE_LAMBDA_PAYLOAD\\": \\"false\\",
-      \\"DD_MERGE_XRAY_TRACES\\": \\"false\\",
-      \\"DD_TRACE_ENABLED\\": \\"true\\",
-      \\"DD_FLUSH_TO_LOG\\": \\"true\\"
-    }
-  },
-  \\"Layers\\": [
-    \\"arn:aws:lambda:sa-east-1:464622532012:layer:Datadog-Extension:1\\",
-    \\"arn:aws:lambda:sa-east-1:464622532012:layer:Datadog-Node12-x:1\\"
-  ]
-}
-TagResource -> arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world
-{
-  \\"dd_sls_ci\\": \\"v${version}\\"
-}
-${yellow('[!]')} Confirmation needed.
-${yellow('[!]')} Instrumenting functions.
-"
-`)
+        expect(output).toMatchSnapshot()
       })
 
       test('aborts if there are no functions to instrument in the user AWS account', async () => {
@@ -1471,9 +1064,9 @@ ${yellow('[!]')} Instrumenting functions.
         const output = context.stdout.toString()
         expect(code).toBe(1)
         expect(output).toMatchInlineSnapshot(`
-"${bold(yellow('[!]'))} Configure AWS region.
-Fetching Lambda functions, this might take a while.
-${red('[Error]')} Couldn't find any Lambda functions in the specified region.
+"\n🐶 Instrumenting Lambda function
+\n[!] Configure AWS region.
+[Error] Couldn't find any Lambda functions in the specified region.
 "
 `)
       })
@@ -1497,53 +1090,9 @@ ${red('[Error]')} Couldn't find any Lambda functions in the specified region.
         const output = context.stdout.toString()
         expect(code).toBe(1)
         expect(output).toMatchInlineSnapshot(`
-"${bold(yellow('[!]'))} Configure AWS region.
-Fetching Lambda functions, this might take a while.
-${red('[Error]')} Couldn't fetch Lambda functions. Error: Max retry count exceeded. ListFunctionsError
-"
-`)
-      })
-
-      test('aborts early when a layer version is set for Java', async () => {
-        ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({code: 'ENOENT'}))
-        ;(Lambda as any).mockImplementation(() =>
-          makeMockLambda({
-            'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world': {
-              FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world',
-              Runtime: 'java8.al2',
-            },
-          })
-        )
-        const cli = makeCli()
-        const context = createMockContext() as any
-        const functionARN = 'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world'
-        process.env.DATADOG_API_KEY = '1234'
-        const code = await cli.run(
-          [
-            'lambda',
-            'instrument',
-            '-f',
-            functionARN,
-            '--dry',
-            '-v',
-            '6',
-            '--extra-tags',
-            'layer:api,team:intake',
-            '--service',
-            'middletier',
-            '--env',
-            'staging',
-            '--version',
-            '0.2',
-          ],
-          context
-        )
-        const output = context.stdout.toString()
-        expect(code).toBe(1)
-        expect(output).toMatchInlineSnapshot(`
-"${red(
-          '[Error]'
-        )} Couldn't fetch Lambda functions. Error: Only the --extension-version argument should be set for the java8.al2 runtime. Please remove the --layer-version argument from the instrument command.
+"\n🐶 Instrumenting Lambda function
+\n[!] Configure AWS region.
+[Error] Couldn't fetch Lambda functions. Error: Max retry count exceeded. ListFunctionsError
 "
 `)
       })
@@ -1579,15 +1128,15 @@ ${red('[Error]')} Couldn't fetch Lambda functions. Error: Max retry count exceed
             'staging',
             '--version',
             '0.2',
+            '--no-source-code-integration',
           ],
           context
         )
         const output = context.stdout.toString()
         expect(code).toBe(1)
         expect(output).toMatchInlineSnapshot(`
-"${red(
-          '[Error]'
-        )} Couldn't fetch Lambda functions. Error: Only the --extension-version argument should be set for the ruby2.7 runtime. Please remove the --layer-version argument from the instrument command.
+"\n[Dry Run] 🐶 Instrumenting Lambda function
+[Error] Couldn't fetch Lambda functions. Error: Only the --extension-version argument should be set for the ruby2.7 runtime. Please remove the --layer-version argument from the instrument command.
 "
 `)
       })
@@ -1623,15 +1172,15 @@ ${red('[Error]')} Couldn't fetch Lambda functions. Error: Max retry count exceed
             'staging',
             '--version',
             '0.2',
+            '--no-source-code-integration',
           ],
           context
         )
         const output = context.stdout.toString()
         expect(code).toBe(1)
         expect(output).toMatchInlineSnapshot(`
-"${red(
-          '[Error]'
-        )} Couldn't fetch Lambda functions. Error: Only the --extension-version argument should be set for the provided.al2 runtime. Please remove the --layer-version argument from the instrument command.
+"\n[Dry Run] 🐶 Instrumenting Lambda function
+[Error] Couldn't fetch Lambda functions. Error: Only the --extension-version argument should be set for the provided.al2 runtime. Please remove the --layer-version argument from the instrument command.
 "
 `)
       })
@@ -1668,17 +1217,197 @@ ${red('[Error]')} Couldn't fetch Lambda functions. Error: Max retry count exceed
             'staging',
             '--version',
             '0.2',
+            '--no-source-code-integration',
           ],
           context
         )
         const output = context.stdout.toString()
         expect(code).toBe(1)
         expect(output).toMatchInlineSnapshot(`
-"${red(
-          '[Error]'
-        )} Couldn't fetch Lambda functions. Error: Instrumenting arm64 architecture is not currently supported for .NET. Please only instrument .NET functions using x86_64 architecture.
+"\n[Dry Run] 🐶 Instrumenting Lambda function
+[Error] Couldn't fetch Lambda functions. Error: Instrumenting arm64 architecture is not supported for the given dd-extension version. Please choose the latest dd-extension version or use x86_64 architecture.
 "
 `)
+      })
+
+      test('instruments correctly with profile when provided', async () => {
+        const credentials = {
+          accessKeyId: mockAwsAccessKeyId,
+          getPromise: () => Promise.resolve(),
+          needsRefresh: () => false,
+          secretAccessKey: mockAwsSecretAccessKey,
+        } as any
+
+        ;(SharedIniFileCredentials as any).mockImplementation(() => credentials)
+        ;(Lambda as any).mockImplementation(() =>
+          makeMockLambda({
+            'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world': {
+              FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world',
+              Handler: 'index.handler',
+              Runtime: 'nodejs14.x',
+            },
+          })
+        )
+
+        const cli = makeCli()
+        const context = createMockContext() as any
+        const functionARN = 'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world'
+        const code = await cli.run(
+          ['lambda', 'instrument', '-f', functionARN, '--profile', 'SOME-AWS-PROFILE', '--no-source-code-integration'],
+          context
+        )
+        expect(code).toBe(0)
+        expect(aws_sdk_config.credentials?.accessKeyId).toBe(mockAwsAccessKeyId)
+      })
+
+      test('prints error when updating aws profile credentials fails', async () => {
+        ;(SharedIniFileCredentials as any).mockImplementation(() => {
+          throw Error('Update failed!')
+        })
+
+        const cli = makeCli()
+        const context = createMockContext() as any
+        const functionARN = 'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world'
+        const code = await cli.run(
+          ['lambda', 'instrument', '-f', functionARN, '--profile', 'SOME-AWS-PROFILE'],
+          context
+        )
+        const output = context.stdout.toString()
+        expect(code).toBe(1)
+        expect(output).toMatchInlineSnapshot(`
+"\n🐶 Instrumenting Lambda function
+[Error] Error: Couldn't set AWS profile credentials. Update failed!
+"
+`)
+      })
+
+      test('prints which functions failed to instrument without aborting when at least one function was instrumented correctly', async () => {
+        ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({code: 'ENOENT'}))
+        const failingLambdas = [
+          'arn:aws:lambda:us-east-1:123456789012:function:lambda-1-us-east-1',
+          'arn:aws:lambda:us-east-1:123456789012:function:lambda-2-us-east-1',
+          'arn:aws:lambda:us-east-2:123456789012:function:lambda-1-us-east-2',
+        ]
+        ;(Lambda as any).mockImplementation(() => ({
+          ...makeMockLambda({
+            'arn:aws:lambda:us-east-1:123456789012:function:lambda-1-us-east-1': {
+              FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:lambda-1-us-east-1',
+              FunctionName: 'lambda-1-us-east-1',
+              Handler: 'index.handler',
+              Runtime: 'nodejs12.x',
+            },
+            'arn:aws:lambda:us-east-1:123456789012:function:lambda-2-us-east-1': {
+              FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:lambda-2-us-east-1',
+              FunctionName: 'lambda-2-us-east-1',
+              Handler: 'index.handler',
+              Runtime: 'nodejs12.x',
+            },
+            'arn:aws:lambda:us-east-1:123456789012:function:lambda-3-us-east-1': {
+              FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:lambda-3-us-east-1',
+              FunctionName: 'lambda-3-us-east-1',
+              Handler: 'index.handler',
+              Runtime: 'nodejs12.x',
+            },
+            'arn:aws:lambda:us-east-2:123456789012:function:lambda-1-us-east-2': {
+              FunctionArn: 'arn:aws:lambda:us-east-2:123456789012:function:lambda-1-us-east-2',
+              FunctionName: 'lambda-1-us-east-2',
+              Handler: 'index.handler',
+              Runtime: 'nodejs14.x',
+            },
+            'arn:aws:lambda:us-east-2:123456789012:function:lambda-2-us-east-2': {
+              FunctionArn: 'arn:aws:lambda:us-east-2:123456789012:function:lambda-2-us-east-2',
+              FunctionName: 'lambda-2-us-east-2',
+              Handler: 'index.handler',
+              Runtime: 'nodejs16.x',
+            },
+            'arn:aws:lambda:us-east-2:123456789012:function:lambda-3-us-east-2': {
+              FunctionArn: 'arn:aws:lambda:us-east-2:123456789012:function:lambda-3-us-east-2',
+              FunctionName: 'lambda-3-us-east-2',
+              Handler: 'index.handler',
+              Runtime: 'nodejs18.x',
+            },
+          }),
+          updateFunctionConfiguration: jest.fn().mockImplementation((updateRequest) => {
+            if (failingLambdas.includes(updateRequest['FunctionName'])) {
+              return {promise: () => Promise.reject(Error('Unexpected error updating request'))}
+            }
+
+            return {promise: () => Promise.resolve()}
+          }),
+        }))
+
+        const cli = makeCli()
+        const context = createMockContext() as any
+        const code = await cli.run(
+          [
+            'lambda',
+            'instrument',
+            '-f',
+            'arn:aws:lambda:us-east-1:123456789012:function:lambda-1-us-east-1',
+            '-f',
+            'arn:aws:lambda:us-east-1:123456789012:function:lambda-2-us-east-1',
+            '-f',
+            'arn:aws:lambda:us-east-1:123456789012:function:lambda-3-us-east-1',
+            '-f',
+            'arn:aws:lambda:us-east-2:123456789012:function:lambda-1-us-east-2',
+            '-f',
+            'arn:aws:lambda:us-east-2:123456789012:function:lambda-2-us-east-2',
+            '-f',
+            'arn:aws:lambda:us-east-2:123456789012:function:lambda-3-us-east-2',
+          ],
+          context
+        )
+        const output = context.stdout.toString()
+        expect(code).toBe(0)
+        expect(output).toMatchSnapshot()
+      })
+
+      test('aborts when every lambda function fails to update on instrument', async () => {
+        ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({code: 'ENOENT'}))
+        const failingLambdas = [
+          'arn:aws:lambda:us-east-1:123456789012:function:lambda-1-us-east-1',
+          'arn:aws:lambda:us-east-2:123456789012:function:lambda-1-us-east-2',
+        ]
+        ;(Lambda as any).mockImplementation(() => ({
+          ...makeMockLambda({
+            'arn:aws:lambda:us-east-1:123456789012:function:lambda-1-us-east-1': {
+              FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:lambda-1-us-east-1',
+              FunctionName: 'lambda-1-us-east-1',
+              Handler: 'index.handler',
+              Runtime: 'nodejs12.x',
+            },
+            'arn:aws:lambda:us-east-2:123456789012:function:lambda-1-us-east-2': {
+              FunctionArn: 'arn:aws:lambda:us-east-2:123456789012:function:lambda-1-us-east-2',
+              FunctionName: 'lambda-1-us-east-2',
+              Handler: 'index.handler',
+              Runtime: 'nodejs14.x',
+            },
+          }),
+          updateFunctionConfiguration: jest.fn().mockImplementation((updateRequest) => {
+            if (failingLambdas.includes(updateRequest['FunctionName'])) {
+              return {promise: () => Promise.reject(Error('Unexpected error updating request'))}
+            }
+
+            return {promise: () => Promise.resolve()}
+          }),
+        }))
+
+        const cli = makeCli()
+        const context = createMockContext() as any
+        const code = await cli.run(
+          [
+            'lambda',
+            'instrument',
+            '-f',
+            'arn:aws:lambda:us-east-1:123456789012:function:lambda-1-us-east-1',
+            '-f',
+            'arn:aws:lambda:us-east-2:123456789012:function:lambda-1-us-east-2',
+          ],
+          context
+        )
+        const output = context.stdout.toString()
+        expect(code).toBe(1)
+        expect(output).toMatchSnapshot()
       })
     })
 
@@ -1827,7 +1556,7 @@ ${red('[Error]')} Couldn't fetch Lambda functions. Error: Max retry count exceed
           command['getSettings']()
 
           let output = command.context.stdout.toString()
-          expect(output).toMatch(`Invalid boolean specified for ${option}.\n`)
+          expect(output).toMatch(`[Error] Invalid boolean specified for ${option}.\n`)
 
           command = createCommand(InstrumentCommand)
           command[option] = 'NotBoolean'
@@ -1845,16 +1574,10 @@ ${red('[Error]')} Couldn't fetch Lambda functions. Error: Max retry count exceed
         let command = createCommand(InstrumentCommand)
         command['config']['region'] = 'ap-southeast-1'
         command['config']['functions'] = ['arn:aws:lambda:ap-southeast-1:123456789012:function:lambda-hello-world']
-        await command['getSettings']()
+        command['getSettings']()
         let output = command.context.stdout.toString()
         expect(output).toMatch(
-          `${bold(
-            yellow('[Warning]')
-          )} The environment, service and version tags have not been configured. Learn more about Datadog unified service tagging: ${underline(
-            blueBright(
-              'https://docs.datadoghq.com/getting_started/tagging/unified_service_tagging/#serverless-environment.'
-            )
-          )}\n`
+          '[Warning] The environment, service and version tags have not been configured. Learn more about Datadog unified service tagging: https://docs.datadoghq.com/getting_started/tagging/unified_service_tagging/#serverless-environment.\n'
         )
 
         command = createCommand(InstrumentCommand)
@@ -1862,16 +1585,10 @@ ${red('[Error]')} Couldn't fetch Lambda functions. Error: Max retry count exceed
         command['config']['functions'] = ['arn:aws:lambda:ap-southeast-1:123456789012:function:lambda-hello-world']
         command['config']['environment'] = 'b'
         command['config']['service'] = 'middletier'
-        await command['getSettings']()
+        command['getSettings']()
         output = command.context.stdout.toString()
         expect(output).toMatch(
-          `${bold(
-            yellow('[Warning]')
-          )} The version tag has not been configured. Learn more about Datadog unified service tagging: ${underline(
-            blueBright(
-              'https://docs.datadoghq.com/getting_started/tagging/unified_service_tagging/#serverless-environment.'
-            )
-          )}\n`
+          '[Warning] The version tag has not been configured. Learn more about Datadog unified service tagging: https://docs.datadoghq.com/getting_started/tagging/unified_service_tagging/#serverless-environment.\n'
         )
       })
 
@@ -1886,9 +1603,9 @@ ${red('[Error]')} Couldn't fetch Lambda functions. Error: Max retry count exceed
         command['config']['environment'] = 'staging'
         command['config']['version'] = '0.2'
         command['config']['extraTags'] = 'not-complying:illegal-chars-in-key,complies:valid-pair'
-        await command['getSettings']()
+        command['getSettings']()
         const output = command.context.stdout.toString()
-        expect(output).toMatch('Extra tags do not comply with the <key>:<value> array.\n')
+        expect(output).toMatch('[Error] Extra tags do not comply with the <key>:<value> array.\n')
       })
     })
     describe('printPlannedActions', () => {
@@ -1900,7 +1617,7 @@ ${red('[Error]')} Couldn't fetch Lambda functions. Error: Max retry count exceed
         const output = command.context.stdout.toString()
         expect(output).toMatchInlineSnapshot(`
                                         "
-                                        No updates will be applied
+                                        No updates will be applied.
                                         "
                                 `)
       })
@@ -1923,13 +1640,9 @@ ${red('[Error]')} Couldn't fetch Lambda functions. Error: Max retry count exceed
         ])
         const output = command.context.stdout.toString()
         expect(output).toMatchInlineSnapshot(`
-"${bold(yellow('[Warning]'))} Instrument your ${hex('#FF9900').bold(
-          'Lambda'
-        )} functions in a dev or staging environment first. Should the instrumentation result be unsatisfactory, run \`${bold(
-          'uninstrument'
-        )}\` with the same arguments to revert the changes.
-\n${bold(yellow('[!]'))} Functions to be updated:
-\t- ${bold('my-func')}\n
+"\n[Warning] Instrument your Lambda functions in a dev or staging environment first. Should the instrumentation result be unsatisfactory, run \`uninstrument\` with the same arguments to revert the changes.
+\n[!] Functions to be updated:
+\t- my-func\n
 Will apply the following updates:
 CreateLogGroup -> my-log-group
 {

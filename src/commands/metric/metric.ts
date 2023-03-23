@@ -1,6 +1,7 @@
 import chalk from 'chalk'
 import {Command} from 'clipanion'
-import {getCIEnv} from '../../helpers/ci'
+
+import {getCIEnv, PROVIDER_TO_DISPLAY_NAME} from '../../helpers/ci'
 import {retryRequest} from '../../helpers/retry'
 import {getApiHostForSite, getRequestBuilder} from '../../helpers/utils'
 
@@ -58,9 +59,11 @@ export class MetricCommand extends Command {
     try {
       const metrics = parseMetrics(this.metrics)
       const {provider, ciEnv} = getCIEnv()
-      // For GitHub only the pipeline level is supported as there is no way to identify the job from the runner.
-      if (provider === 'github' && this.level === 'job') {
-        this.context.stderr.write(`${chalk.red.bold('[ERROR]')} Cannot use level "job" for GitHub Actions.`)
+      // For GitHub and Buddy only the pipeline level is supported as there is no way to identify the job from the runner.
+      if ((provider === 'github' || provider === 'buddy') && this.level === 'job') {
+        this.context.stderr.write(
+          `${chalk.red.bold('[ERROR]')} Cannot use level "job" for ${PROVIDER_TO_DISPLAY_NAME[provider]}.`
+        )
 
         return 1
       }

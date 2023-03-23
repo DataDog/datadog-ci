@@ -1,20 +1,29 @@
 import {stringify} from 'querystring'
 
 import {AxiosError, AxiosPromise, AxiosRequestConfig} from 'axios'
+import FormData from 'form-data'
 
 import {getRequestBuilder} from '../../helpers/utils'
 
+import {MAX_TESTS_TO_TRIGGER} from './command'
+import {CriticalError} from './errors'
 import {
   APIConfiguration,
   Batch,
   Payload,
   PollResult,
+  PresignedUrlResponse,
   ServerBatch,
   ServerTest,
+  SyntheticsCIConfig,
+  SyntheticsOrgSettings,
   TestSearchResult,
   Trigger,
 } from './interfaces'
-import {ciTriggerApp, retry} from './utils'
+import {ciTriggerApp, getDatadogHost, retry} from './utils'
+
+const MAX_RETRIES = 3
+const DELAY_BETWEEN_RETRIES = 500 // In ms
 
 interface BackendError {
   errors: string[]
@@ -38,11 +47,11 @@ export const formatBackendErrors = (requestError: AxiosError<BackendError>) => {
     } else if (errors.length) {
       return `${serverHead} "${errors[0]}"`
     } else {
-      return `error querying ${requestError.config.baseURL} ${requestError.config.url}`
+      return `error querying ${requestError.config.baseURL}${requestError.config.url}`
     }
   }
 
-  return requestError.message
+  return `could not query ${requestError.config.baseURL}${requestError.config.url}\n${requestError.message}`
 }
 
 const triggerTests = (request: (args: AxiosRequestConfig) => AxiosPromise<Trigger>) => async (data: Payload) => {
@@ -76,6 +85,8 @@ const searchTests = (request: (args: AxiosRequestConfig) => AxiosPromise<TestSea
   const resp = await retryRequest(
     {
       params: {
+        // Search for one more test than limit to detect if too many tests are returned
+        count: MAX_TESTS_TO_TRIGGER + 1,
         text: query,
       },
       url: '/synthetics/tests/search',
@@ -86,10 +97,23 @@ const searchTests = (request: (args: AxiosRequestConfig) => AxiosPromise<TestSea
   return resp.data
 }
 
+const getSyntheticsOrgSettings = (
+  request: (args: AxiosRequestConfig) => AxiosPromise<SyntheticsOrgSettings>
+) => async () => {
+  const resp = await retryRequest(
+    {
+      url: '/synthetics/settings',
+    },
+    request
+  )
+
+  return resp.data
+}
+
 const getBatch = (request: (args: AxiosRequestConfig) => AxiosPromise<{data: ServerBatch}>) => async (
   batchId: string
 ): Promise<Batch> => {
-  const resp = await retryRequest({url: `/synthetics/ci/batch/${batchId}`}, request)
+  const resp = await retryRequest({url: `/synthetics/ci/batch/${batchId}`}, request, retryOn5xxOr404Errors)
 
   const serverBatch = resp.data.data
 
@@ -109,13 +133,14 @@ const pollResults = (request: (args: AxiosRequestConfig) => AxiosPromise<{result
       },
       url: '/synthetics/tests/poll_results',
     },
-    request
+    request,
+    retryOn5xxOr404Errors
   )
 
   return resp.data.results
 }
 
-const getPresignedURL = (request: (args: AxiosRequestConfig) => AxiosPromise<{url: string}>) => async (
+const getTunnelPresignedURL = (request: (args: AxiosRequestConfig) => AxiosPromise<{url: string}>) => async (
   testIds: string[]
 ) => {
   const resp = await retryRequest(
@@ -132,9 +157,60 @@ const getPresignedURL = (request: (args: AxiosRequestConfig) => AxiosPromise<{ur
   return resp.data
 }
 
-const retryOn5xxErrors = (retries: number, error: AxiosError) => {
-  if (retries < 3 && is5xxError(error)) {
-    return 500
+const getMobileApplicationPresignedURL = (
+  request: (args: AxiosRequestConfig) => AxiosPromise<PresignedUrlResponse>
+) => async (applicationId: string, md5: string) => {
+  const resp = await retryRequest(
+    {
+      data: {md5},
+      method: 'POST',
+      url: `/synthetics/mobile/applications/${applicationId}/presigned-url`,
+    },
+    request
+  )
+
+  return resp.data
+}
+
+const uploadMobileApplication = (request: (args: AxiosRequestConfig) => AxiosPromise<void>) => async (
+  fileBuffer: Buffer,
+  presignedUrlParams: PresignedUrlResponse['presigned_url_params']
+) => {
+  const form = new FormData()
+  Object.entries(presignedUrlParams.fields).forEach(([key, value]) => {
+    form.append(key, value)
+  })
+  form.append('file', fileBuffer)
+
+  await retryRequest(
+    {
+      data: form,
+      headers: {...form.getHeaders(), 'Content-Length': form.getLengthSync()},
+      maxBodyLength: Infinity,
+      maxContentLength: Infinity,
+      method: 'POST',
+      url: presignedUrlParams.url,
+    },
+    request
+  )
+}
+
+type RetryPolicy = (retries: number, error: AxiosError) => number | undefined
+
+const retryOn5xxErrors: RetryPolicy = (retries, error) => {
+  if (retries < MAX_RETRIES && is5xxError(error)) {
+    return DELAY_BETWEEN_RETRIES
+  }
+}
+
+const retryOn5xxOr404Errors: RetryPolicy = (retries, error) => {
+  const retryOn5xxDelay = retryOn5xxErrors(retries, error)
+  if (retryOn5xxDelay) {
+    return retryOn5xxDelay
+  }
+
+  if (retries < MAX_RETRIES && isNotFoundError(error)) {
+    return DELAY_BETWEEN_RETRIES
   }
 }
 
@@ -151,23 +227,48 @@ export const is5xxError = (error: AxiosError | EndpointError) => {
   return statusCode && statusCode >= 500 && statusCode <= 599
 }
 
-const retryRequest = <T>(args: AxiosRequestConfig, request: (args: AxiosRequestConfig) => AxiosPromise<T>) =>
-  retry(() => request(args), retryOn5xxErrors)
+const retryRequest = <T>(
+  args: AxiosRequestConfig,
+  request: (args: AxiosRequestConfig) => AxiosPromise<T>,
+  retryPolicy: RetryPolicy = retryOn5xxErrors
+) => retry(() => request(args), retryPolicy)
 
 export const apiConstructor = (configuration: APIConfiguration) => {
-  const {baseUrl, baseIntakeUrl, apiKey, appKey, proxyOpts} = configuration
+  const {baseUrl, baseIntakeUrl, baseUnstableUrl, apiKey, appKey, proxyOpts} = configuration
   const baseOptions = {apiKey, appKey, proxyOpts}
   const request = getRequestBuilder({...baseOptions, baseUrl})
+  const requestUnstable = getRequestBuilder({...baseOptions, baseUrl: baseUnstableUrl})
   const requestIntake = getRequestBuilder({...baseOptions, baseUrl: baseIntakeUrl})
 
   return {
     getBatch: getBatch(request),
-    getPresignedURL: getPresignedURL(requestIntake),
+    getMobileApplicationPresignedURL: getMobileApplicationPresignedURL(requestUnstable),
     getTest: getTest(request),
+    getSyntheticsOrgSettings: getSyntheticsOrgSettings(request),
+    getTunnelPresignedURL: getTunnelPresignedURL(requestIntake),
     pollResults: pollResults(request),
     searchTests: searchTests(request),
     triggerTests: triggerTests(requestIntake),
+    uploadMobileApplication: uploadMobileApplication(request),
   }
 }
 
 export type APIHelper = ReturnType<typeof apiConstructor>
+
+export const getApiHelper = (config: SyntheticsCIConfig): APIHelper => {
+  if (!config.appKey) {
+    throw new CriticalError('MISSING_APP_KEY')
+  }
+  if (!config.apiKey) {
+    throw new CriticalError('MISSING_API_KEY')
+  }
+
+  return apiConstructor({
+    apiKey: config.apiKey,
+    appKey: config.appKey,
+    baseIntakeUrl: getDatadogHost({useIntake: true, apiVersion: 'v1', config}),
+    baseUnstableUrl: getDatadogHost({useIntake: false, apiVersion: 'unstable', config}),
+    baseUrl: getDatadogHost({useIntake: false, apiVersion: 'v1', config}),
+    proxyOpts: config.proxy,
+  })
+}

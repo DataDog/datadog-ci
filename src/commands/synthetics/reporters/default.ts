@@ -1,21 +1,34 @@
+import {Writable} from 'stream'
+
+import type {TunnelReporter} from '../tunnel/tunnel'
+
 import chalk from 'chalk'
 import {BaseContext} from 'clipanion'
-import {Writable} from 'stream'
+import ora from 'ora'
 
 import {
   Assertion,
   Batch,
-  ConfigOverride,
   ExecutionRule,
   MainReporter,
-  Operator,
   Result,
   ServerResult,
+  SyntheticsOrgSettings,
   Step,
   Summary,
   Test,
+  UserConfigOverride,
 } from '../interfaces'
-import {getResultDuration, getResultOutcome, ResultOutcome} from '../utils'
+import {
+  getBatchUrl,
+  getResultDuration,
+  getResultOutcome,
+  getResultUrl,
+  isDeviceIdSet,
+  pluralize,
+  readableOperation,
+  ResultOutcome,
+} from '../utils'
 
 // Step rendering
 
@@ -74,28 +87,11 @@ const renderSkippedSteps = (steps: Step[]): string | undefined => {
   return `    ${ICONS.SKIPPED} | ${steps.length} skipped steps`
 }
 
-const readableOperation: {[key in Operator]: string} = {
-  [Operator.contains]: 'should contain',
-  [Operator.doesNotContain]: 'should not contain',
-  [Operator.is]: 'should be',
-  [Operator.isNot]: 'should not be',
-  [Operator.lessThan]: 'should be less than',
-  [Operator.matches]: 'should match',
-  [Operator.doesNotMatch]: 'should not match',
-  [Operator.isInLessThan]: 'will expire in less than',
-  [Operator.isInMoreThan]: 'will expire in more than',
-  [Operator.lessThanOrEqual]: 'should be less than or equal to',
-  [Operator.moreThan]: 'should be more than',
-  [Operator.moreThanOrEqual]: 'should be less than or equal to',
-  [Operator.validatesJSONPath]: 'assert on JSONPath extracted value',
-  [Operator.validatesXPath]: 'assert on XPath extracted value',
-}
-
 const renderApiError = (errorCode: string, errorMessage: string, color: chalk.Chalk) => {
   if (errorCode === 'INCORRECT_ASSERTION') {
     try {
       const assertionsErrors: Assertion[] = JSON.parse(errorMessage)
-      const output = ['  - Assertion(s) failed:']
+      const output = [`  - ${pluralize('Assertion', assertionsErrors.length)} failed:`]
       output.push(
         ...assertionsErrors.map((error) => {
           const expected = chalk.underline(`${error.target}`)
@@ -204,18 +200,6 @@ const renderApiRequestDescription = (subType: string, config: Test['config']): s
   return `${chalk.bold(subType)} test`
 }
 
-const getResultUrl = (baseUrl: string, test: Test, resultId: string) => {
-  const ciQueryParam = 'from_ci=true'
-  const testDetailUrl = `${baseUrl}synthetics/details/${test.public_id}`
-  if (test.type === 'browser') {
-    return `${testDetailUrl}/result/${resultId}?${ciQueryParam}`
-  }
-
-  return `${testDetailUrl}?resultId=${resultId}&${ciQueryParam}`
-}
-
-const getBatchUrl = (baseUrl: string, batchId: string) => `${baseUrl}synthetics/explorer/ci?batchResultId=${batchId}`
-
 const renderExecutionResult = (test: Test, execution: Result, baseUrl: string) => {
   const {executionRule, test: overriddenTest, resultId, result, timedOut} = execution
   const resultOutcome = getResultOutcome(execution)
@@ -228,8 +212,7 @@ const renderExecutionResult = (test: Test, execution: Result, baseUrl: string) =
   const testLabel = `${executionRuleText}[${chalk.bold.dim(test.public_id)}] ${chalk.bold(test.name)}`
 
   const location = setColor(`location: ${chalk.bold(execution.location)}`)
-  const device =
-    test.type === 'browser' && 'device' in result ? ` - ${setColor(`device: ${chalk.bold(result.device.id)}`)}` : ''
+  const device = isDeviceIdSet(result) ? ` - ${setColor(`device: ${chalk.bold(result.device.id)}`)}` : ''
   const resultIdentification = `${icon} ${testLabel} - ${location}${device}`
 
   const outputLines = [resultIdentification]
@@ -242,7 +225,7 @@ const renderExecutionResult = (test: Test, execution: Result, baseUrl: string) =
     const resultUrl = getResultUrl(baseUrl, test, resultId)
     const resultUrlStatus = timedOut ? '(not yet received)' : ''
 
-    const resultInfo = `  ⎋${durationText} Result URL: ${chalk.dim.cyan(resultUrl)} ${resultUrlStatus}`
+    const resultInfo = `  ⎋${durationText} View test run details: ${chalk.dim.cyan(resultUrl)} ${resultUrlStatus}`
     outputLines.push(resultInfo)
   }
 
@@ -267,28 +250,38 @@ const getResultIconAndColor = (resultOutcome: ResultOutcome): [string, chalk.Cha
 }
 
 export class DefaultReporter implements MainReporter {
+  private context: BaseContext
+  private testWaitSpinner?: ora.Ora
   private write: Writable['write']
+  private totalDuration?: number
 
   constructor({context}: {context: BaseContext}) {
+    this.context = context
     this.write = context.stdout.write.bind(context.stdout)
   }
 
   public error(error: string) {
+    this.stopSpinner()
     this.write(error)
   }
 
   public initErrors(errors: string[]) {
+    this.stopSpinner()
     this.write(errors.join('\n') + '\n\n')
   }
 
   public log(log: string) {
+    this.stopSpinner()
     this.write(log)
   }
 
   public reportStart(timings: {startTime: number}) {
-    const delay = (Date.now() - timings.startTime).toString()
+    this.totalDuration = Date.now() - timings.startTime
 
-    this.write(['', chalk.bold.cyan('=== REPORT ==='), `Took ${chalk.bold(delay)}ms`, '\n'].join('\n'))
+    this.stopSpinner()
+    this.write(
+      ['', chalk.bold.cyan('=== REPORT ==='), `Took ${chalk.bold(this.totalDuration).toString()}ms`, '\n'].join('\n')
+    )
   }
 
   public resultEnd(result: Result, baseUrl: string) {
@@ -299,7 +292,7 @@ export class DefaultReporter implements MainReporter {
     return
   }
 
-  public runEnd(summary: Summary, baseUrl: string) {
+  public runEnd(summary: Summary, baseUrl: string, orgSettings?: SyntheticsOrgSettings) {
     const {bold: b, gray, green, red, yellow} = chalk
 
     const lines: string[] = []
@@ -333,9 +326,39 @@ export class DefaultReporter implements MainReporter {
     const extraInfoStr = extraInfo.length ? ' (' + extraInfo.join(', ') + ')' : ''
 
     if (summary.batchId) {
-      lines.push('Results URL: ' + chalk.dim.cyan(getBatchUrl(baseUrl, summary.batchId)))
+      const batchUrl = getBatchUrl(baseUrl, summary.batchId)
+      lines.push('View full summary in Datadog: ' + chalk.dim.cyan(batchUrl))
     }
-    lines.push(`${b('Run summary:')} ${runSummary.join(', ')}${extraInfoStr}\n\n`)
+    lines.push(`\n${b('Continuous Testing Summary:')}`)
+    lines.push(`Test Results: ${runSummary.join(', ')}${extraInfoStr}`)
+
+    if (orgSettings && orgSettings.orgMaxConcurrencyCap > 0) {
+      lines.push(
+        `Max parallelization configured: ${orgSettings.orgMaxConcurrencyCap} test${
+          orgSettings.orgMaxConcurrencyCap > 1 ? 's' : ''
+        } running at the same time`
+      )
+    }
+
+    if (this.totalDuration) {
+      const min = Math.floor(this.totalDuration / (60 * 1000))
+      const sec = Math.round((this.totalDuration % (60 * 1000)) / 1000)
+      lines.push(
+        `Total Duration:${min > 0 ? ' ' + min.toString() + 'm' : ''}${sec > 0 ? ' ' + sec.toString() + 's' : ''}`
+      )
+    }
+
+    if (
+      orgSettings &&
+      typeof orgSettings.orgMaxConcurrencyCap !== 'undefined' &&
+      orgSettings.orgMaxConcurrencyCap > 0
+    ) {
+      lines.push(
+        `\nIncrease your parallelization to reduce your total duration: ${chalk.dim.cyan(
+          baseUrl + 'synthetics/settings/continuous-testing'
+        )}\n`
+      )
+    }
 
     this.write(lines.join('\n'))
   }
@@ -348,12 +371,18 @@ export class DefaultReporter implements MainReporter {
     }
     const testsDisplay = chalk.gray(`(${testsList.join(', ')})`)
 
-    this.write(
-      `Waiting for ${chalk.bold.cyan(tests.length)} test ${pluralize('result', tests.length)} ${testsDisplay}…\n`
-    )
+    this.testWaitSpinner = ora({
+      stream: this.context.stdout,
+      text: `Waiting for ${chalk.bold.cyan(tests.length)} test ${pluralize('result', tests.length)} ${testsDisplay}…\n`,
+    }).start()
   }
 
-  public testTrigger(test: Pick<Test, 'name'>, testId: string, executionRule: ExecutionRule, config: ConfigOverride) {
+  public testTrigger(
+    test: Pick<Test, 'name'>,
+    testId: string,
+    executionRule: ExecutionRule,
+    config: UserConfigOverride
+  ) {
     const idDisplay = `[${chalk.bold.dim(testId)}]`
 
     const getMessage = () => {
@@ -389,6 +418,15 @@ export class DefaultReporter implements MainReporter {
   public testWait(test: Test) {
     return
   }
+
+  private stopSpinner() {
+    this.testWaitSpinner?.stopAndPersist()
+    delete this.testWaitSpinner
+  }
 }
 
-const pluralize = (word: string, count: number): string => (count === 1 ? word : `${word}s`)
+export const getTunnelReporter = (reporter: MainReporter): TunnelReporter => ({
+  log: (message) => reporter.log(`[${chalk.bold.blue('Tunnel')}] ${message}\n`),
+  error: (message) => reporter.error(`[${chalk.bold.yellow('Tunnel')}] ${message}\n`),
+  warn: (message) => reporter.error(`[${chalk.bold.red('Tunnel')}] ${message}\n`),
+})

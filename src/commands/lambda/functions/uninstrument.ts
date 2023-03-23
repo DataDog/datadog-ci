@@ -1,4 +1,5 @@
 import {CloudWatchLogs, Lambda} from 'aws-sdk'
+
 import {
   API_KEY_ENV_VAR,
   API_KEY_SECRET_ARN_ENV_VAR,
@@ -11,8 +12,8 @@ import {
   FLUSH_TO_LOG_ENV_VAR,
   KMS_API_KEY_ENV_VAR,
   LAMBDA_HANDLER_ENV_VAR,
-  LAYER_LOOKUP,
   LayerKey,
+  LAYER_LOOKUP,
   LOG_LEVEL_ENV_VAR,
   MERGE_XRAY_TRACES_ENV_VAR,
   NODE_HANDLER_LOCATION,
@@ -20,16 +21,19 @@ import {
   PROFILER_PATH_ENV_VAR,
   PYTHON_HANDLER_LOCATION,
   Runtime,
-  RUNTIME_LOOKUP,
   RuntimeType,
+  RUNTIME_LOOKUP,
   SERVICE_ENV_VAR,
   SITE_ENV_VAR,
   TRACE_ENABLED_ENV_VAR,
   VERSION_ENV_VAR,
+  AWS_LAMBDA_EXEC_WRAPPER_VAR,
+  AWS_LAMBDA_EXEC_WRAPPER,
 } from '../constants'
 import {FunctionConfiguration, LogGroupConfiguration, TagConfiguration} from '../interfaces'
 import {calculateLogGroupRemoveRequest} from '../loggroup'
 import {calculateTagRemoveRequest} from '../tags'
+
 import {getLambdaFunctionConfigs, getLambdaFunctionConfigsFromRegex, getLayers, isSupportedRuntime} from './commons'
 
 export const getUninstrumentedFunctionConfigs = async (
@@ -110,8 +114,9 @@ export const calculateUpdateRequest = (config: Lambda.FunctionConfiguration, run
   }
   let needsUpdate = false
 
+  const runtimeType = RUNTIME_LOOKUP[runtime]
   // Remove Handler for Python
-  if (RUNTIME_LOOKUP[runtime] === RuntimeType.PYTHON) {
+  if (runtimeType === RuntimeType.PYTHON) {
     const expectedHandler = PYTHON_HANDLER_LOCATION
     if (config.Handler === expectedHandler) {
       needsUpdate = true
@@ -121,12 +126,20 @@ export const calculateUpdateRequest = (config: Lambda.FunctionConfiguration, run
   }
 
   // Remove Handler for Node
-  if (RUNTIME_LOOKUP[runtime] === RuntimeType.NODE) {
+  if (runtimeType === RuntimeType.NODE) {
     const expectedHandler = NODE_HANDLER_LOCATION
     if (config.Handler === expectedHandler) {
       needsUpdate = true
       updateRequest.Handler = oldEnvVars[LAMBDA_HANDLER_ENV_VAR]
       delete oldEnvVars[LAMBDA_HANDLER_ENV_VAR]
+    }
+  }
+
+  // Remove AWS_LAMBDA_EXEC_WRAPPER for .NET and Java
+  if (runtimeType === RuntimeType.DOTNET || runtimeType === RuntimeType.JAVA) {
+    if (oldEnvVars[AWS_LAMBDA_EXEC_WRAPPER_VAR] === AWS_LAMBDA_EXEC_WRAPPER) {
+      needsUpdate = true
+      delete oldEnvVars[AWS_LAMBDA_EXEC_WRAPPER_VAR]
     }
   }
 

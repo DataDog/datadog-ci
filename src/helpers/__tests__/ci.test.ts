@@ -1,7 +1,7 @@
 import fs from 'fs'
 import path from 'path'
 
-import {getCIMetadata, getCISpanTags} from '../ci'
+import {getCIEnv, getCIMetadata, getCISpanTags} from '../ci'
 import {Metadata, SpanTags} from '../interfaces'
 import {getUserCISpanTags, getUserGitSpanTags} from '../user-provided-git'
 
@@ -15,7 +15,7 @@ const ciAppTagsToMetadata = (tags: SpanTags): Metadata => {
 
   Object.entries(tags).forEach(([tag, value]) => {
     // Ignore JSON fixtures pipeline number that can't be parsed to numbers
-    if (!value || tag === 'ci.pipeline.number') {
+    if (!value || tag === 'ci.pipeline.number' || tag === '_dd.ci.env_vars') {
       return
     }
 
@@ -96,7 +96,10 @@ describe('getCIMetadata', () => {
   })
 
   describe.each(CI_PROVIDERS)('%s', (ciProvider) => {
-    const assertions = require(path.join(__dirname, 'ci-env', ciProvider))
+    const assertions = require(path.join(__dirname, 'ci-env', ciProvider)) as [
+      {[key: string]: string},
+      {[tag: string]: string}
+    ][]
 
     test.each(assertions)('spec %#', (env, tags: SpanTags) => {
       process.env = env
@@ -133,7 +136,10 @@ describe('getCIMetadata', () => {
     const expectedMetadata = ciAppTagsToMetadata(ddMetadataToSpanTags(DD_METADATA))
     delete expectedMetadata.git.branch
 
-    const assertions = require(path.join(__dirname, 'ci-env', ciProvider))
+    const assertions = require(path.join(__dirname, 'ci-env', ciProvider)) as [
+      {[key: string]: string},
+      {[tag: string]: string}
+    ][]
 
     it.each(assertions)('spec %#', (env, tags: SpanTags) => {
       process.env = {...env, ...DD_METADATA}
@@ -167,6 +173,80 @@ describe('ci spec', () => {
         }
         expect(tags).toEqual(expectedSpanTags)
       })
+    })
+  })
+})
+
+describe('getCIEnv', () => {
+  test('unsupported CI provider', () => {
+    process.env = {APPVEYOR: 'true'}
+    expect(() => {
+      getCIEnv()
+    }).toThrow('Only providers [GitHub, GitLab, CircleCI, Buildkite, Buddy, Jenkins, TeamCity] are supported')
+  })
+
+  test('buildkite', () => {
+    process.env = {BUILDKITE: 'true'}
+    expect(() => {
+      getCIEnv()
+    }).toThrow()
+
+    process.env = {BUILDKITE: 'true', BUILDKITE_BUILD_ID: 'build-id', BUILDKITE_JOB_ID: 'job-id'}
+    expect(getCIEnv()).toEqual({
+      ciEnv: {BUILDKITE_BUILD_ID: 'build-id', BUILDKITE_JOB_ID: 'job-id'},
+      provider: 'buildkite',
+    })
+  })
+
+  test('circleci', () => {
+    process.env = {CIRCLECI: 'true'}
+    expect(() => {
+      getCIEnv()
+    }).toThrow()
+
+    process.env = {CIRCLECI: 'true', CIRCLE_WORKFLOW_ID: 'build-id', CIRCLE_BUILD_NUM: '10'}
+    expect(getCIEnv()).toEqual({
+      ciEnv: {CIRCLE_WORKFLOW_ID: 'build-id', CIRCLE_BUILD_NUM: '10'},
+      provider: 'circleci',
+    })
+  })
+
+  test('gitlab', () => {
+    process.env = {GITLAB_CI: 'true'}
+    expect(() => {
+      getCIEnv()
+    }).toThrow()
+
+    process.env = {GITLAB_CI: 'true', CI_PIPELINE_ID: 'build-id', CI_JOB_ID: '10', CI_PROJECT_URL: 'url'}
+    expect(getCIEnv()).toEqual({
+      ciEnv: {CI_PIPELINE_ID: 'build-id', CI_JOB_ID: '10', CI_PROJECT_URL: 'url'},
+      provider: 'gitlab',
+    })
+  })
+
+  test('jenkins', () => {
+    process.env = {JENKINS_URL: 'something'}
+    expect(() => {
+      getCIEnv()
+    }).toThrow()
+
+    process.env = {JENKINS_URL: 'something', DD_CUSTOM_PARENT_ID: 'span-id', DD_CUSTOM_TRACE_ID: 'trace-id'}
+    expect(getCIEnv()).toEqual({
+      ciEnv: {DD_CUSTOM_PARENT_ID: 'span-id', DD_CUSTOM_TRACE_ID: 'trace-id'},
+      provider: 'jenkins',
+    })
+  })
+
+  test('teamcity', () => {
+    process.env = {TEAMCITY_VERSION: 'something'}
+    expect(() => {
+      getCIEnv()
+    }).toThrow()
+
+    process.env = {TEAMCITY_VERSION: 'something', DATADOG_BUILD_ID: 'build-id'}
+    expect(getCIEnv()).toEqual({
+      ciEnv: {DATADOG_BUILD_ID: 'build-id'},
+      provider: 'teamcity',
     })
   })
 })

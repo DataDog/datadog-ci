@@ -1,7 +1,8 @@
 import {newApiKeyValidator} from '../../helpers/apikey'
 import {RequestBuilder} from '../../helpers/interfaces'
 import {upload, UploadOptions, UploadStatus} from '../../helpers/upload'
-import {getRequestBuilder} from '../../helpers/utils'
+import {getRequestBuilder, filterAndFormatGithubRemote} from '../../helpers/utils'
+
 import {getCommitInfo, newSimpleGit} from './git'
 import {CommitInfo} from './interfaces'
 
@@ -16,14 +17,35 @@ export const isGitRepo = async (): Promise<boolean> => {
   }
 }
 
-export const uploadGitCommitHash = async (apiKey: string, datadogSite: string): Promise<string> => {
+// getGitCommitInfo returns the current [repositoryURL, commitHash]. If parameter
+// filterAndFormatGitRepoUrl == true, the repositoryURL will have sensitive information filtered and
+// git prefix normalized.
+// ("git@github.com:" and "https://github.com/" prefixes will be normalized into "github.com/")
+export const getGitCommitInfo = async (filterAndFormatGitRepoUrl = true): Promise<[string, string]> => {
+  const simpleGit = await newSimpleGit()
+  const payload = await getCommitInfo(simpleGit)
+
+  const gitRemote = filterAndFormatGitRepoUrl ? filterAndFormatGithubRemote(payload.remote) : payload.remote
+
+  // gitRemote will never be undefined, as filterAndFormatGithubRemote will ONLY return undefined if it's
+  // parameter value is also undefined. Added the " gitRemote ?? '' " to make the typechecker happy.
+  return [gitRemote ?? '', payload.hash]
+}
+
+// UploadGitCommitHash uploads local git metadata and returns the current [repositoryURL, commitHash].
+// The current repositoryURL can be overriden by specifying the 'repositoryURL' arg.
+export const uploadGitCommitHash = async (
+  apiKey: string,
+  datadogSite: string,
+  repositoryURL?: string
+): Promise<[string, string]> => {
   const apiKeyValidator = newApiKeyValidator({
     apiKey,
     datadogSite,
   })
 
   const simpleGit = await newSimpleGit()
-  const payload = await getCommitInfo(simpleGit)
+  const payload = await getCommitInfo(simpleGit, repositoryURL)
 
   const version = require('../../../package.json').version
 
@@ -55,7 +77,7 @@ export const uploadGitCommitHash = async (apiKey: string, datadogSite: string): 
     throw new Error('Error uploading commit information.')
   }
 
-  return payload.hash
+  return [payload.remote, payload.hash]
 }
 
 export const uploadRepository = (

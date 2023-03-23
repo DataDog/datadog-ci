@@ -1,14 +1,11 @@
-jest.mock('fs')
-import {AxiosPromise, AxiosRequestConfig, default as axios} from 'axios'
-import fs from 'fs'
 import http from 'http'
 import {AddressInfo} from 'net'
+
+import {AxiosPromise, AxiosRequestConfig, default as axios} from 'axios'
 import proxy from 'proxy'
 import ProxyAgent from 'proxy-agent'
 
 import * as ciUtils from '../utils'
-
-jest.useFakeTimers()
 
 describe('utils', () => {
   beforeEach(() => {
@@ -26,31 +23,48 @@ describe('utils', () => {
     expect(Object.keys(resultHash).length).toBe(0)
   })
 
-  describe('parseConfigFile', () => {
+  describe('resolveConfigFromFile', () => {
     test('should read a config file', async () => {
-      jest.spyOn(ciUtils, 'getConfig').mockImplementation(async () => ({newconfigkey: 'newconfigvalue'}))
-
-      const config: any = await ciUtils.parseConfigFile({})
-      expect(config.newconfigkey).toBe('newconfigvalue')
+      const config: any = await ciUtils.resolveConfigFromFile(
+        {},
+        {configPath: 'src/helpers/__tests__/config-file-fixtures/dummy-config-file.json'}
+      )
+      expect(config.configKey).toBe('newconfigvalue')
     })
 
     test('should throw an error if path is provided and config file is not found', async () => {
-      jest.spyOn(fs, 'readFile' as any).mockImplementation((a, b, cb: any) => cb({code: 'ENOENT'}))
-      const config = ciUtils.parseConfigFile({}, '/veryuniqueandabsentfile')
+      const config = ciUtils.resolveConfigFromFile({}, {configPath: '/veryuniqueandabsentfile'})
 
       await expect(config).rejects.toEqual(Error('Config file not found'))
     })
 
-    test('should throw an error if JSON parsing fails', async () => {
-      jest.spyOn(fs, 'readFile' as any).mockImplementation((a, b, cb: any) => cb(undefined, 'thisisnoJSON'))
+    test('should have no effect if no config path is provided and default file is absent', async () => {
+      const originalConfig = {}
+      const config = await ciUtils.resolveConfigFromFile(originalConfig, {
+        defaultConfigPaths: ['/veryuniqueandabsentfile'],
+      })
 
-      await expect(ciUtils.parseConfigFile({})).rejects.toEqual(Error('Config file is not correct JSON'))
+      expect(config).toEqual(originalConfig)
+    })
+
+    test('should have no effect if no config path nor default path are provided', async () => {
+      const originalConfig = {}
+      const config = await ciUtils.resolveConfigFromFile(originalConfig, {})
+
+      expect(config).toEqual(originalConfig)
+    })
+
+    test('should throw an error if JSON parsing fails', async () => {
+      await expect(
+        ciUtils.resolveConfigFromFile({}, {configPath: 'src/helpers/__tests__/config-file-fixtures/bad-json.json'})
+      ).rejects.toEqual(Error('Config file is not correct JSON'))
     })
 
     test('config file should overwrite default configuration', async () => {
-      jest.spyOn(ciUtils, 'getConfig').mockImplementation(async () => ({configKey: 'newconfigvalue'}))
-
-      const config = await ciUtils.parseConfigFile({configKey: 'configvalue'})
+      const config: any = await ciUtils.resolveConfigFromFile(
+        {configKey: 'oldValue'},
+        {configPath: 'src/helpers/__tests__/config-file-fixtures/dummy-config-file.json'}
+      )
       expect(config.configKey).toBe('newconfigvalue')
     })
   })
@@ -362,9 +376,21 @@ describe('utils', () => {
       }
     })
   })
+
+  describe('filterAndFormatGithubRemote', () => {
+    test('git remotes get formatted correctly', async () => {
+      expect(ciUtils.filterAndFormatGithubRemote('https://github.com/datadog/test.git')).toEqual(
+        'github.com/datadog/test.git'
+      )
+      expect(ciUtils.filterAndFormatGithubRemote('git@github.com:datadog/test.git')).toEqual(
+        'github.com/datadog/test.git'
+      )
+      expect(ciUtils.filterAndFormatGithubRemote('github.com/datadog/test.git')).toEqual('github.com/datadog/test.git')
+    })
+  })
 })
 
 test('removeUndefinedValues', () => {
-  // tslint:disable-next-line: no-null-keyword
+  // eslint-disable-next-line no-null/no-null
   expect(ciUtils.removeUndefinedValues({a: 'b', c: 'd', e: undefined, g: null})).toEqual({a: 'b', c: 'd', g: null})
 })

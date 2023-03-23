@@ -1,7 +1,11 @@
 jest.mock('../../loggroup')
+jest.mock('../../renderer')
+
 import {
   API_KEY_ENV_VAR,
   API_KEY_SECRET_ARN_ENV_VAR,
+  AWS_LAMBDA_EXEC_WRAPPER,
+  AWS_LAMBDA_EXEC_WRAPPER_VAR,
   DOTNET_TRACER_HOME_ENV_VAR,
   ENABLE_PROFILING_ENV_VAR,
   ENVIRONMENT_ENV_VAR,
@@ -24,9 +28,9 @@ import {
   getUninstrumentedFunctionConfigs,
   getUninstrumentedFunctionConfigsFromRegEx,
 } from '../../functions/uninstrument'
-import {makeMockCloudWatchLogs, makeMockLambda} from '../fixtures'
-
 import * as loggroup from '../../loggroup'
+
+import {makeMockCloudWatchLogs, makeMockLambda} from '../fixtures'
 
 describe('uninstrument', () => {
   describe('calculateUpdateRequest', () => {
@@ -66,7 +70,7 @@ describe('uninstrument', () => {
         lambda as any,
         'arn:aws:lambda:us-east-1:000000000000:function:uninstrument'
       )
-      const updateRequest = await calculateUpdateRequest(config, config!.Runtime as any)
+      const updateRequest = calculateUpdateRequest(config, config.Runtime as any)
       expect(updateRequest).toMatchInlineSnapshot(`
         Object {
           "Environment": Object {
@@ -97,7 +101,7 @@ describe('uninstrument', () => {
         lambda as any,
         'arn:aws:lambda:us-east-1:000000000000:function:uninstrument'
       )
-      const updateRequest = await calculateUpdateRequest(config, config!.Runtime as any)
+      const updateRequest = calculateUpdateRequest(config, config.Runtime as any)
       expect(updateRequest).toMatchInlineSnapshot(`
         Object {
           "Environment": Object {
@@ -140,7 +144,7 @@ describe('uninstrument', () => {
         lambda as any,
         'arn:aws:lambda:us-east-1:000000000000:function:uninstrument'
       )
-      const updateRequest = await calculateUpdateRequest(config, config!.Runtime as any)
+      const updateRequest = calculateUpdateRequest(config, config.Runtime as any)
       expect(updateRequest).toMatchInlineSnapshot(`
         Object {
           "Environment": Object {
@@ -152,7 +156,90 @@ describe('uninstrument', () => {
         }
       `)
     })
+
+    describe('calculates update request with handlers using lambda exec wrapper', () => {
+      const lambda = makeMockLambda({
+        'arn:aws:lambda:us-east-1:000000000000:function:dotnet': {
+          Environment: {
+            Variables: {
+              [AWS_LAMBDA_EXEC_WRAPPER_VAR]: AWS_LAMBDA_EXEC_WRAPPER,
+            },
+          },
+          FunctionArn: 'arn:aws:lambda:us-east-1:000000000000:function:dotnet',
+          Runtime: 'dotnetcore3.1',
+        },
+        'arn:aws:lambda:us-east-1:000000000000:function:dotnet-custom': {
+          Environment: {
+            Variables: {
+              [AWS_LAMBDA_EXEC_WRAPPER_VAR]: 'my-custom-wrapper',
+              [SITE_ENV_VAR]: 'datadoghq.com', // to trigger an update request
+            },
+          },
+          FunctionArn: 'arn:aws:lambda:us-east-1:000000000000:function:dotnet-custom',
+          Runtime: 'dotnet6',
+        },
+        'arn:aws:lambda:us-east-1:000000000000:function:java': {
+          Environment: {
+            Variables: {
+              [AWS_LAMBDA_EXEC_WRAPPER_VAR]: AWS_LAMBDA_EXEC_WRAPPER,
+            },
+          },
+          FunctionArn: 'arn:aws:lambda:us-east-1:000000000000:function:java',
+          Runtime: 'java11',
+        },
+      })
+      test('removes lambda exec wrapper for .NET', async () => {
+        const config = await getLambdaFunctionConfig(
+          lambda as any,
+          'arn:aws:lambda:us-east-1:000000000000:function:dotnet'
+        )
+        const updateRequest = calculateUpdateRequest(config, config.Runtime as any)
+        expect(updateRequest).toMatchInlineSnapshot(`
+          Object {
+            "Environment": Object {
+              "Variables": Object {},
+            },
+            "FunctionName": "arn:aws:lambda:us-east-1:000000000000:function:dotnet",
+          }
+        `)
+      })
+
+      test('removes lambda exec wrapper for Java', async () => {
+        const config = await getLambdaFunctionConfig(
+          lambda as any,
+          'arn:aws:lambda:us-east-1:000000000000:function:java'
+        )
+        const updateRequest = calculateUpdateRequest(config, config.Runtime as any)
+        expect(updateRequest).toMatchInlineSnapshot(`
+          Object {
+            "Environment": Object {
+              "Variables": Object {},
+            },
+            "FunctionName": "arn:aws:lambda:us-east-1:000000000000:function:java",
+          }
+        `)
+      })
+
+      test('doesnt remove variable when it doesnt match datadog instrumentation', async () => {
+        const config = await getLambdaFunctionConfig(
+          lambda as any,
+          'arn:aws:lambda:us-east-1:000000000000:function:dotnet-custom'
+        )
+        const updateRequest = calculateUpdateRequest(config, config.Runtime as any)
+        expect(updateRequest).toMatchInlineSnapshot(`
+          Object {
+            "Environment": Object {
+              "Variables": Object {
+                "AWS_LAMBDA_EXEC_WRAPPER": "my-custom-wrapper",
+              },
+            },
+            "FunctionName": "arn:aws:lambda:us-east-1:000000000000:function:dotnet-custom",
+          }
+        `)
+      })
+    })
   })
+
   describe('getUninstrumentedFunctionConfigs', () => {
     const OLD_ENV = process.env
     beforeEach(() => {

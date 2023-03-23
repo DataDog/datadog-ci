@@ -1,15 +1,17 @@
-import type {AxiosPromise, AxiosRequestConfig, AxiosResponse} from 'axios'
-import FormData from 'form-data'
 import fs from 'fs'
 import path from 'path'
 import {Writable} from 'stream'
 import {createGzip} from 'zlib'
 
-import {getRequestBuilder} from '../../helpers/utils'
-import {Payload} from './interfaces'
-import {renderUpload} from './renderer'
+import type {AxiosPromise, AxiosRequestConfig, AxiosResponse} from 'axios'
+
+import FormData from 'form-data'
 
 import {CI_JOB_URL, CI_PIPELINE_URL, GIT_SHA} from '../../helpers/tags'
+import {getRequestBuilder} from '../../helpers/utils'
+
+import {Payload} from './interfaces'
+import {renderUpload} from './renderer'
 
 // We need a unique file name so we use span tags like the pipeline URL,
 // which can contain dots and other unsafe characters for filenames.
@@ -34,25 +36,30 @@ export const uploadJUnitXML = (request: (args: AxiosRequestConfig) => AxiosPromi
     fileName = 'default_file_name'
   }
 
-  const spanTags: Record<string, string | undefined> = {
+  const metadata: Record<string, any> = {
     service: jUnitXML.service,
     ...jUnitXML.spanTags,
     '_dd.cireport_version': '2',
+    '_dd.hostname': jUnitXML.hostname,
   }
 
   if (jUnitXML.logsEnabled) {
-    spanTags['_dd.junitxml_logs'] = 'true'
+    metadata['_dd.junitxml_logs'] = true
   }
 
-  form.append('event', JSON.stringify(spanTags), {filename: 'event.json'})
-
-  let uniqueFileName = `${fileName}-${jUnitXML.service}-${spanTags[GIT_SHA]}`
-
-  if (spanTags[CI_PIPELINE_URL]) {
-    uniqueFileName = `${uniqueFileName}-${spanTags[CI_PIPELINE_URL]}`
+  if (jUnitXML.xpathTags) {
+    metadata['_dd.junitxml_xpath_tags'] = jUnitXML.xpathTags
   }
-  if (spanTags[CI_JOB_URL]) {
-    uniqueFileName = `${uniqueFileName}-${spanTags[CI_JOB_URL]}`
+
+  form.append('event', JSON.stringify(metadata), {filename: 'event.json'})
+
+  let uniqueFileName = `${fileName}-${jUnitXML.service}-${metadata[GIT_SHA]}`
+
+  if (metadata[CI_PIPELINE_URL]) {
+    uniqueFileName = `${uniqueFileName}-${metadata[CI_PIPELINE_URL]}`
+  }
+  if (metadata[CI_JOB_URL]) {
+    uniqueFileName = `${uniqueFileName}-${metadata[CI_JOB_URL]}`
   }
 
   form.append('junit_xml_report_file', fs.createReadStream(jUnitXML.xmlPath).pipe(createGzip()), {

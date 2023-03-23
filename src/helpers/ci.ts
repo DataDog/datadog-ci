@@ -1,7 +1,6 @@
-import {URL} from 'url'
-
 import {Metadata, SpanTag, SpanTags} from './interfaces'
 import {
+  CI_ENV_VARS,
   CI_JOB_NAME,
   CI_JOB_URL,
   CI_PIPELINE_ID,
@@ -24,19 +23,27 @@ import {
   GIT_TAG,
 } from './tags'
 import {getUserCISpanTags, getUserGitSpanTags} from './user-provided-git'
-import {normalizeRef, removeEmptyValues, removeUndefinedValues} from './utils'
+import {normalizeRef, removeEmptyValues, removeUndefinedValues, filterSensitiveInfoFromRepository} from './utils'
 
 export const CI_ENGINES = {
   APPVEYOR: 'appveyor',
   AZURE: 'azurepipelines',
   BITBUCKET: 'bitbucket',
   BITRISE: 'bitrise',
+  BUDDY: 'buddy',
   BUILDKITE: 'buildkite',
   CIRCLECI: 'circleci',
+  CODEFRESH: 'codefresh',
   GITHUB: 'github',
   GITLAB: 'gitlab',
   JENKINS: 'jenkins',
   TRAVIS: 'travisci',
+  TEAMCITY: 'teamcity',
+}
+
+export const PROVIDER_TO_DISPLAY_NAME = {
+  github: 'GitHub Actions',
+  buddy: 'Buddy',
 }
 
 // Receives a string with the form 'John Doe <john.doe@gmail.com>'
@@ -68,28 +75,13 @@ const resolveTilde = (filePath: string | undefined) => {
   return filePath
 }
 
-const filterSensitiveInfoFromRepository = (repositoryUrl: string) => {
-  if (repositoryUrl.startsWith('git@')) {
-    return repositoryUrl
-  }
-  try {
-    const {protocol, hostname, pathname} = new URL(repositoryUrl)
-    if (!protocol || !hostname) {
-      return repositoryUrl
-    }
-
-    return `${protocol}//${hostname}${pathname}`
-  } catch (e) {
-    return repositoryUrl
-  }
-}
-
 export const getCISpanTags = (): SpanTags | undefined => {
   const env = process.env
   let tags: SpanTags = {}
 
   if (env.CIRCLECI) {
     const {
+      CIRCLE_BUILD_NUM,
       CIRCLE_WORKFLOW_ID,
       CIRCLE_PROJECT_REPONAME,
       CIRCLE_BUILD_URL,
@@ -113,7 +105,13 @@ export const getCISpanTags = (): SpanTags | undefined => {
       [CI_WORKSPACE_PATH]: CIRCLE_WORKING_DIRECTORY,
       [GIT_SHA]: CIRCLE_SHA1,
       [GIT_REPOSITORY_URL]: CIRCLE_REPOSITORY_URL,
-      [CIRCLE_TAG ? GIT_TAG : GIT_BRANCH]: CIRCLE_TAG || CIRCLE_BRANCH,
+      [GIT_TAG]: CIRCLE_TAG,
+      [GIT_BRANCH]: CIRCLE_BRANCH,
+      [CI_ENV_VARS]: JSON.stringify({
+        CIRCLE_WORKFLOW_ID,
+        // Snapshots are generated automatically and are sort sensitive
+        CIRCLE_BUILD_NUM,
+      }),
     }
   }
 
@@ -140,13 +138,11 @@ export const getCISpanTags = (): SpanTags | undefined => {
       [CI_PROVIDER_NAME]: CI_ENGINES.TRAVIS,
       [CI_WORKSPACE_PATH]: TRAVIS_BUILD_DIR,
       [GIT_SHA]: TRAVIS_COMMIT,
+      [GIT_TAG]: TRAVIS_TAG,
+      [GIT_BRANCH]: TRAVIS_PULL_REQUEST_BRANCH || TRAVIS_BRANCH,
       [GIT_REPOSITORY_URL]: `https://github.com/${TRAVIS_REPO_SLUG}.git`,
       [GIT_COMMIT_MESSAGE]: TRAVIS_COMMIT_MESSAGE,
     }
-    const isTag = !!TRAVIS_TAG
-    const ref = TRAVIS_TAG || TRAVIS_PULL_REQUEST_BRANCH || TRAVIS_BRANCH
-    const refKey = isTag ? GIT_TAG : GIT_BRANCH
-    tags[refKey] = ref
   }
 
   if (env.GITLAB_CI) {
@@ -166,6 +162,8 @@ export const getCISpanTags = (): SpanTags | undefined => {
       CI_COMMIT_MESSAGE,
       CI_COMMIT_TIMESTAMP,
       CI_COMMIT_AUTHOR,
+      CI_JOB_ID: GITLAB_CI_JOB_ID,
+      CI_PROJECT_URL: GITLAB_CI_PROJECT_URL,
     } = env
 
     const {name, email} = parseEmailAndName(CI_COMMIT_AUTHOR)
@@ -188,6 +186,12 @@ export const getCISpanTags = (): SpanTags | undefined => {
       [GIT_COMMIT_AUTHOR_NAME]: name,
       [GIT_COMMIT_AUTHOR_EMAIL]: email,
       [GIT_COMMIT_AUTHOR_DATE]: CI_COMMIT_TIMESTAMP,
+      [CI_ENV_VARS]: JSON.stringify({
+        CI_PROJECT_URL: GITLAB_CI_PROJECT_URL,
+        // Snapshots are generated automatically and are sort sensitive
+        CI_PIPELINE_ID: GITLAB_CI_PIPELINE_ID,
+        CI_JOB_ID: GITLAB_CI_JOB_ID,
+      }),
     }
   }
 
@@ -198,23 +202,23 @@ export const getCISpanTags = (): SpanTags | undefined => {
       GITHUB_RUN_NUMBER,
       GITHUB_WORKSPACE,
       GITHUB_HEAD_REF,
+      GITHUB_JOB,
       GITHUB_REF,
       GITHUB_SHA,
       GITHUB_REPOSITORY,
       GITHUB_SERVER_URL,
+      GITHUB_RUN_ATTEMPT,
     } = env
     const repositoryUrl = `${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}.git`
     let pipelineURL = `${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}`
 
     // Some older versions of enterprise might not have this yet.
-    if (env.GITHUB_RUN_ATTEMPT) {
-      pipelineURL += `/attempts/${env.GITHUB_RUN_ATTEMPT}`
+    if (GITHUB_RUN_ATTEMPT) {
+      pipelineURL += `/attempts/${GITHUB_RUN_ATTEMPT}`
     }
 
-    const ref = GITHUB_HEAD_REF || GITHUB_REF || ''
-    const refKey = ref.includes('tags') ? GIT_TAG : GIT_BRANCH
-
     tags = {
+      [CI_JOB_NAME]: GITHUB_JOB,
       [CI_JOB_URL]: `${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/commit/${GITHUB_SHA}/checks`,
       [CI_PIPELINE_ID]: GITHUB_RUN_ID,
       [CI_PIPELINE_NAME]: GITHUB_WORKFLOW,
@@ -224,7 +228,14 @@ export const getCISpanTags = (): SpanTags | undefined => {
       [CI_WORKSPACE_PATH]: GITHUB_WORKSPACE,
       [GIT_SHA]: GITHUB_SHA,
       [GIT_REPOSITORY_URL]: repositoryUrl,
-      [refKey]: ref,
+      [GIT_BRANCH]: GITHUB_HEAD_REF || GITHUB_REF || '',
+      [CI_ENV_VARS]: JSON.stringify({
+        GITHUB_SERVER_URL,
+        // Snapshots are generated automatically and are sort sensitive
+        GITHUB_REPOSITORY,
+        GITHUB_RUN_ID,
+        GITHUB_RUN_ATTEMPT,
+      }),
     }
   }
 
@@ -239,9 +250,11 @@ export const getCISpanTags = (): SpanTags | undefined => {
       GIT_COMMIT,
       GIT_URL,
       GIT_URL_1,
+      DD_CUSTOM_TRACE_ID,
     } = env
 
     tags = {
+      [CI_ENV_VARS]: JSON.stringify({DD_CUSTOM_TRACE_ID}),
       [CI_PIPELINE_ID]: BUILD_TAG,
       [CI_PIPELINE_NUMBER]: BUILD_NUMBER,
       [CI_PIPELINE_URL]: BUILD_URL,
@@ -249,12 +262,8 @@ export const getCISpanTags = (): SpanTags | undefined => {
       [CI_WORKSPACE_PATH]: WORKSPACE,
       [GIT_SHA]: GIT_COMMIT,
       [GIT_REPOSITORY_URL]: GIT_URL || GIT_URL_1,
+      [GIT_BRANCH]: JENKINS_GIT_BRANCH,
     }
-    const isTag = JENKINS_GIT_BRANCH && JENKINS_GIT_BRANCH.includes('tags')
-    const refKey = isTag ? GIT_TAG : GIT_BRANCH
-    const ref = normalizeRef(JENKINS_GIT_BRANCH)
-
-    tags[refKey] = ref
 
     let finalPipelineName = ''
     if (JOB_NAME) {
@@ -263,7 +272,8 @@ export const getCISpanTags = (): SpanTags | undefined => {
       if (jobNameAndParams.length > 1 && jobNameAndParams[1].includes('=')) {
         finalPipelineName = jobNameAndParams[0]
       } else {
-        finalPipelineName = JOB_NAME.replace(`/${ref}`, '')
+        const normalizedBranch = normalizeRef(JENKINS_GIT_BRANCH)
+        finalPipelineName = JOB_NAME.replace(`/${normalizedBranch}`, '')
       }
       tags[CI_PIPELINE_NAME] = finalPipelineName
     }
@@ -286,9 +296,6 @@ export const getCISpanTags = (): SpanTags | undefined => {
       BUILDKITE_MESSAGE,
     } = env
 
-    const ref = BUILDKITE_TAG || BUILDKITE_BRANCH
-    const refKey = BUILDKITE_TAG ? GIT_TAG : GIT_BRANCH
-
     tags = {
       [CI_PROVIDER_NAME]: CI_ENGINES.BUILDKITE,
       [CI_PIPELINE_ID]: BUILDKITE_BUILD_ID,
@@ -299,10 +306,15 @@ export const getCISpanTags = (): SpanTags | undefined => {
       [GIT_SHA]: BUILDKITE_COMMIT,
       [CI_WORKSPACE_PATH]: BUILDKITE_BUILD_CHECKOUT_PATH,
       [GIT_REPOSITORY_URL]: BUILDKITE_REPO,
-      [refKey]: ref,
+      [GIT_TAG]: BUILDKITE_TAG,
+      [GIT_BRANCH]: BUILDKITE_BRANCH,
       [GIT_COMMIT_AUTHOR_NAME]: BUILDKITE_BUILD_AUTHOR,
       [GIT_COMMIT_AUTHOR_EMAIL]: BUILDKITE_BUILD_AUTHOR_EMAIL,
       [GIT_COMMIT_MESSAGE]: BUILDKITE_MESSAGE,
+      [CI_ENV_VARS]: JSON.stringify({
+        BUILDKITE_BUILD_ID,
+        BUILDKITE_JOB_ID,
+      }),
     }
   }
 
@@ -322,10 +334,6 @@ export const getCISpanTags = (): SpanTags | undefined => {
       BITRISE_GIT_MESSAGE,
     } = env
 
-    const isTag = !!BITRISE_GIT_TAG
-    const refKey = isTag ? GIT_TAG : GIT_BRANCH
-    const ref = BITRISE_GIT_TAG || BITRISEIO_GIT_BRANCH_DEST || BITRISE_GIT_BRANCH
-
     tags = {
       [CI_PROVIDER_NAME]: CI_ENGINES.BITRISE,
       [CI_PIPELINE_ID]: BITRISE_BUILD_SLUG,
@@ -335,7 +343,8 @@ export const getCISpanTags = (): SpanTags | undefined => {
       [GIT_SHA]: BITRISE_GIT_COMMIT || GIT_CLONE_COMMIT_HASH,
       [GIT_REPOSITORY_URL]: BITRISE_GIT_REPOSITORY_URL,
       [CI_WORKSPACE_PATH]: BITRISE_SOURCE_DIR,
-      [refKey]: ref,
+      [GIT_TAG]: BITRISE_GIT_TAG,
+      [GIT_BRANCH]: BITRISEIO_GIT_BRANCH_DEST || BITRISE_GIT_BRANCH,
       [GIT_COMMIT_MESSAGE]: BITRISE_GIT_MESSAGE,
     }
   }
@@ -369,6 +378,30 @@ export const getCISpanTags = (): SpanTags | undefined => {
     }
   }
 
+  if (env.CF_BUILD_ID) {
+    const {CF_BUILD_ID, CF_PIPELINE_NAME, CF_BUILD_URL, CF_STEP_NAME, CF_BRANCH} = env
+
+    tags = {
+      [CI_PROVIDER_NAME]: CI_ENGINES.CODEFRESH,
+      [CI_PIPELINE_ID]: CF_BUILD_ID,
+      [CI_PIPELINE_URL]: CF_BUILD_URL,
+      [CI_PIPELINE_NAME]: CF_PIPELINE_NAME,
+      [CI_JOB_NAME]: CF_STEP_NAME,
+      [GIT_BRANCH]: CF_BRANCH,
+      [CI_ENV_VARS]: JSON.stringify({CF_BUILD_ID}),
+    }
+  }
+
+  if (env.TEAMCITY_VERSION) {
+    const {BUILD_URL, TEAMCITY_BUILDCONF_NAME} = env
+
+    tags = {
+      [CI_PROVIDER_NAME]: CI_ENGINES.TEAMCITY,
+      [CI_JOB_URL]: BUILD_URL,
+      [CI_JOB_NAME]: TEAMCITY_BUILDCONF_NAME,
+    }
+  }
+
   if (env.TF_BUILD) {
     const {
       BUILD_SOURCESDIRECTORY,
@@ -392,9 +425,6 @@ export const getCISpanTags = (): SpanTags | undefined => {
       SYSTEM_JOBDISPLAYNAME,
     } = env
 
-    const ref = SYSTEM_PULLREQUEST_SOURCEBRANCH || BUILD_SOURCEBRANCH || BUILD_SOURCEBRANCHNAME
-    const refKey = (ref || '').includes('tags') ? GIT_TAG : GIT_BRANCH
-
     tags = {
       [CI_PROVIDER_NAME]: CI_ENGINES.AZURE,
       [CI_PIPELINE_ID]: BUILD_BUILDID,
@@ -403,12 +433,17 @@ export const getCISpanTags = (): SpanTags | undefined => {
       [GIT_SHA]: SYSTEM_PULLREQUEST_SOURCECOMMITID || BUILD_SOURCEVERSION,
       [CI_WORKSPACE_PATH]: BUILD_SOURCESDIRECTORY,
       [GIT_REPOSITORY_URL]: SYSTEM_PULLREQUEST_SOURCEREPOSITORYURI || BUILD_REPOSITORY_URI,
-      [refKey]: ref,
+      [GIT_BRANCH]: SYSTEM_PULLREQUEST_SOURCEBRANCH || BUILD_SOURCEBRANCH || BUILD_SOURCEBRANCHNAME,
       [GIT_COMMIT_AUTHOR_NAME]: BUILD_REQUESTEDFORID,
       [GIT_COMMIT_AUTHOR_EMAIL]: BUILD_REQUESTEDFOREMAIL,
       [GIT_COMMIT_MESSAGE]: BUILD_SOURCEVERSIONMESSAGE,
       [CI_STAGE_NAME]: SYSTEM_STAGEDISPLAYNAME,
       [CI_JOB_NAME]: SYSTEM_JOBDISPLAYNAME,
+      [CI_ENV_VARS]: JSON.stringify({
+        SYSTEM_TEAMPROJECTID,
+        BUILD_BUILDID,
+        SYSTEM_JOBID,
+      }),
     }
 
     if (SYSTEM_TEAMFOUNDATIONSERVERURI && SYSTEM_TEAMPROJECTID && BUILD_BUILDID) {
@@ -437,6 +472,7 @@ export const getCISpanTags = (): SpanTags | undefined => {
       APPVEYOR_REPO_TAG_NAME,
       APPVEYOR_REPO_COMMIT_AUTHOR,
       APPVEYOR_REPO_COMMIT_AUTHOR_EMAIL,
+      APPVEYOR_REPO_COMMIT_MESSAGE,
       APPVEYOR_REPO_COMMIT_MESSAGE_EXTENDED,
     } = env
 
@@ -452,32 +488,73 @@ export const getCISpanTags = (): SpanTags | undefined => {
       [CI_WORKSPACE_PATH]: APPVEYOR_BUILD_FOLDER,
       [GIT_COMMIT_AUTHOR_NAME]: APPVEYOR_REPO_COMMIT_AUTHOR,
       [GIT_COMMIT_AUTHOR_EMAIL]: APPVEYOR_REPO_COMMIT_AUTHOR_EMAIL,
-      [GIT_COMMIT_MESSAGE]: APPVEYOR_REPO_COMMIT_MESSAGE_EXTENDED,
+      [GIT_COMMIT_MESSAGE]: `${APPVEYOR_REPO_COMMIT_MESSAGE || ''}\n${APPVEYOR_REPO_COMMIT_MESSAGE_EXTENDED || ''}`,
     }
 
     if (APPVEYOR_REPO_PROVIDER === 'github') {
-      const refKey = APPVEYOR_REPO_TAG_NAME ? GIT_TAG : GIT_BRANCH
-      const ref = APPVEYOR_REPO_TAG_NAME || APPVEYOR_PULL_REQUEST_HEAD_REPO_BRANCH || APPVEYOR_REPO_BRANCH
       tags = {
         ...tags,
         [GIT_REPOSITORY_URL]: `https://github.com/${APPVEYOR_REPO_NAME}.git`,
         [GIT_SHA]: APPVEYOR_REPO_COMMIT,
-        [refKey]: ref,
+        [GIT_TAG]: APPVEYOR_REPO_TAG_NAME,
+        [GIT_BRANCH]: APPVEYOR_PULL_REQUEST_HEAD_REPO_BRANCH || APPVEYOR_REPO_BRANCH,
       }
     }
   }
 
+  if (env.BUDDY) {
+    const {
+      BUDDY_PIPELINE_NAME,
+      BUDDY_PIPELINE_ID,
+      BUDDY_EXECUTION_ID,
+      BUDDY_SCM_URL,
+      BUDDY_EXECUTION_BRANCH,
+      BUDDY_EXECUTION_TAG,
+      BUDDY_EXECUTION_REVISION,
+      BUDDY_EXECUTION_URL,
+      BUDDY_EXECUTION_REVISION_MESSAGE,
+      BUDDY_EXECUTION_REVISION_COMMITTER_NAME,
+      BUDDY_EXECUTION_REVISION_COMMITTER_EMAIL,
+    } = env
+
+    tags = {
+      [CI_PROVIDER_NAME]: CI_ENGINES.BUDDY,
+      [CI_PIPELINE_ID]: `${BUDDY_PIPELINE_ID || ''}/${BUDDY_EXECUTION_ID || ''}`,
+      [CI_PIPELINE_NAME]: BUDDY_PIPELINE_NAME,
+      [CI_PIPELINE_NUMBER]: `${BUDDY_EXECUTION_ID || ''}`, // gets parsed to int again later using parsePipelineNumber
+      [CI_PIPELINE_URL]: BUDDY_EXECUTION_URL,
+      [GIT_SHA]: BUDDY_EXECUTION_REVISION,
+      [GIT_BRANCH]: BUDDY_EXECUTION_BRANCH,
+      [GIT_TAG]: BUDDY_EXECUTION_TAG,
+      [GIT_REPOSITORY_URL]: BUDDY_SCM_URL,
+      [GIT_COMMIT_MESSAGE]: BUDDY_EXECUTION_REVISION_MESSAGE,
+      [GIT_COMMIT_COMMITTER_EMAIL]: BUDDY_EXECUTION_REVISION_COMMITTER_EMAIL,
+      [GIT_COMMIT_COMMITTER_NAME]: BUDDY_EXECUTION_REVISION_COMMITTER_NAME,
+    }
+  }
+
   if (tags[CI_WORKSPACE_PATH]) {
-    tags[CI_WORKSPACE_PATH] = resolveTilde(tags[CI_WORKSPACE_PATH]!)
+    tags[CI_WORKSPACE_PATH] = resolveTilde(tags[CI_WORKSPACE_PATH])
   }
   if (tags[GIT_REPOSITORY_URL]) {
-    tags[GIT_REPOSITORY_URL] = filterSensitiveInfoFromRepository(tags[GIT_REPOSITORY_URL]!)
+    tags[GIT_REPOSITORY_URL] = filterSensitiveInfoFromRepository(tags[GIT_REPOSITORY_URL])
   }
-  if (tags[GIT_BRANCH]) {
-    tags[GIT_BRANCH] = normalizeRef(tags[GIT_BRANCH]!)
-  }
+
   if (tags[GIT_TAG]) {
-    tags[GIT_TAG] = normalizeRef(tags[GIT_TAG]!)
+    tags[GIT_TAG] = normalizeRef(tags[GIT_TAG])
+  }
+
+  if (tags[GIT_BRANCH]) {
+    // Here we handle the case where GIT_BRANCH actually contains a tag
+    const branch = tags[GIT_BRANCH] || ''
+    if (branch.startsWith('tags/') || branch.includes('/tags/')) {
+      if (!tags[GIT_TAG]) {
+        tags[GIT_TAG] = normalizeRef(branch)
+      }
+      tags[GIT_BRANCH] = ''
+    } else {
+      tags[GIT_BRANCH] = normalizeRef(branch)
+    }
   }
 
   return removeEmptyValues(tags)
@@ -560,36 +637,73 @@ const parsePipelineNumber = (pipelineNumberStr: string | undefined): number | un
 export const getCIEnv = (): {ciEnv: Record<string, string>; provider: string} => {
   if (process.env.CIRCLECI) {
     return {
-      ciEnv: getEnvVars('CIRCLE_'),
+      ciEnv: filterEnv(['CIRCLE_WORKFLOW_ID', 'CIRCLE_BUILD_NUM']),
       provider: 'circleci',
     }
   }
 
   if (process.env.GITLAB_CI) {
     return {
-      ciEnv: getEnvVars('CI_'),
+      ciEnv: filterEnv(['CI_PROJECT_URL', 'CI_PIPELINE_ID', 'CI_JOB_ID']),
       provider: 'gitlab',
     }
   }
 
   if (process.env.GITHUB_ACTIONS || process.env.GITHUB_ACTION) {
     return {
-      ciEnv: getEnvVars('GITHUB_'),
+      ciEnv: filterEnv(['GITHUB_SERVER_URL', 'GITHUB_REPOSITORY', 'GITHUB_RUN_ID', 'GITHUB_RUN_ATTEMPT']),
       provider: 'github',
     }
   }
 
   if (process.env.BUILDKITE) {
     return {
-      ciEnv: getEnvVars('BUILDKITE_'),
+      ciEnv: filterEnv(['BUILDKITE_BUILD_ID', 'BUILDKITE_JOB_ID']),
       provider: 'buildkite',
     }
   }
 
-  throw new Error('Only providers [GitHub, GitLab, CircleCI, Buildkite] are supported')
+  if (process.env.BUDDY) {
+    return {
+      ciEnv: filterEnv(['BUDDY_PIPELINE_ID', 'BUDDY_EXECUTION_ID', 'BUDDY_EXECUTION_START_DATE']),
+      provider: 'buddy',
+    }
+  }
+
+  if (process.env.TEAMCITY_VERSION) {
+    return {
+      ciEnv: filterEnv(['DATADOG_BUILD_ID']),
+      provider: 'teamcity',
+    }
+  }
+
+  if (process.env.JENKINS_URL) {
+    return {
+      ciEnv: filterEnv(['DD_CUSTOM_PARENT_ID', 'DD_CUSTOM_TRACE_ID']),
+      provider: 'jenkins',
+    }
+  }
+
+  throw new Error('Only providers [GitHub, GitLab, CircleCI, Buildkite, Buddy, Jenkins, TeamCity] are supported')
 }
 
-const getEnvVars = (prefix: string): Record<string, string> =>
-  Object.entries(process.env)
-    .filter(([key, value]) => key.startsWith(prefix) && !/(PASS)|(TOKEN)|(SECRET)|(KEY)/i.test(key))
-    .reduce((accum, [key, value]) => ({...accum, [key]: value}), {})
+const filterEnv = (values: string[]): Record<string, string> => {
+  const ciEnvs: Record<string, string> = {}
+  const missing: string[] = []
+
+  values.forEach((envKey) => {
+    const envValue = process.env[envKey]
+    if (envValue) {
+      ciEnvs[envKey] = envValue
+    } else {
+      missing.push(envKey)
+    }
+  })
+
+  if (missing.length > 0) {
+    // Get the missing values for better error
+    throw new Error(`Missing environment variables [${missing.toString()}]`)
+  }
+
+  return ciEnvs
+}

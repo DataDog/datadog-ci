@@ -1,0 +1,5 @@
+{
+  "apiKey": "api_key_config_file",
+  "appKey": "app_key_config_file",
+  "datadogSite": "us5.datadoghq.com"
+}

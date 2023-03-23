@@ -66,11 +66,19 @@ describe('execute', () => {
   test('should fail if not running in a supported provider', async () => {
     const {context, code} = await runCLI('pipeline', ['key:value'], {})
     expect(code).toBe(1)
-    expect(context.stderr.toString()).toContain('Only providers [GitHub, GitLab, CircleCI, Buildkite] are supported')
+    expect(context.stderr.toString()).toContain(
+      'Only providers [GitHub, GitLab, CircleCI, Buildkite, Buddy, Jenkins, TeamCity] are supported'
+    )
   })
 
   test('should fail if provider is GitHub and level is job', async () => {
-    const {context, code} = await runCLI('job', ['key:value'], {GITHUB_ACTIONS: 'true', GITHUB_RUN_ID: '40'})
+    const {context, code} = await runCLI('job', ['key:value'], {
+      GITHUB_ACTIONS: 'true',
+      GITHUB_REPOSITORY: 'example/example',
+      GITHUB_RUN_ATTEMPT: '10',
+      GITHUB_RUN_ID: '40',
+      GITHUB_SERVER_URL: 'github.com',
+    })
     expect(code).toBe(1)
     expect(context.stderr.toString()).toContain('Cannot use level "job" for GitHub Actions.')
   })

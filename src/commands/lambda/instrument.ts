@@ -1,9 +1,12 @@
 import {CloudWatchLogs, Lambda} from 'aws-sdk'
-import {blueBright, bold, cyan, hex, red, underline, yellow} from 'chalk'
+import {bold} from 'chalk'
 import {Cli, Command} from 'clipanion'
-import {parseConfigFile} from '../../helpers/utils'
+
+import {resolveConfigFromFile, filterAndFormatGithubRemote, DEFAULT_CONFIG_PATHS} from '../../helpers/utils'
+
 import {getCommitInfo, newSimpleGit} from '../git-metadata/git'
 import {UploadCommand} from '../git-metadata/upload'
+
 import {
   AWS_DEFAULT_REGION_ENV_VAR,
   ENVIRONMENT_ENV_VAR,
@@ -16,14 +19,20 @@ import {
   coerceBoolean,
   collectFunctionsByRegion,
   getAllLambdaFunctionConfigs,
+  handleLambdaFunctionUpdates,
   isMissingAWSCredentials,
   isMissingDatadogEnvVars,
   sentenceMatchesRegEx,
-  updateLambdaFunctionConfigs,
+  updateAWSProfileCredentials,
   willUpdateFunctionConfigs,
 } from './functions/commons'
 import {getInstrumentedFunctionConfigs, getInstrumentedFunctionConfigsFromRegEx} from './functions/instrument'
-import {FunctionConfiguration, InstrumentationSettings, LambdaConfigOptions} from './interfaces'
+import {
+  FunctionConfiguration,
+  InstrumentationSettings,
+  InstrumentedConfigurationGroup,
+  LambdaConfigOptions,
+} from './interfaces'
 import {
   requestAWSCredentials,
   requestAWSRegion,
@@ -32,12 +41,12 @@ import {
   requestEnvServiceVersion,
   requestFunctionSelection,
 } from './prompt'
+import * as renderer from './renderer'
 
 export class InstrumentCommand extends Command {
   private captureLambdaPayload?: string
   private config: LambdaConfigOptions = {
     functions: [],
-    region: process.env[AWS_DEFAULT_REGION_ENV_VAR],
     tracing: 'true',
   }
   private configPath?: string
@@ -53,39 +62,56 @@ export class InstrumentCommand extends Command {
   private layerVersion?: string
   private logLevel?: string
   private mergeXrayTraces?: string
+  private profile?: string
   private regExPattern?: string
   private region?: string
   private service?: string
-  private sourceCodeIntegration = false
+  private sourceCodeIntegration = true
+  private uploadGitMetadata = true
   private tracing?: string
   private version?: string
 
   public async execute() {
+    this.context.stdout.write(renderer.renderLambdaHeader(Object.getPrototypeOf(this), this.dryRun))
+
     const lambdaConfig = {lambda: this.config}
-    this.config = (await parseConfigFile(lambdaConfig, this.configPath)).lambda
+    this.config = (
+      await resolveConfigFromFile(lambdaConfig, {configPath: this.configPath, defaultConfigPaths: DEFAULT_CONFIG_PATHS})
+    ).lambda
+
+    const profile = this.profile ?? this.config.profile
+    if (profile) {
+      try {
+        await updateAWSProfileCredentials(profile)
+      } catch (err) {
+        this.context.stdout.write(renderer.renderError(err))
+
+        return 1
+      }
+    }
 
     let hasSpecifiedFunctions = this.functions.length !== 0 || this.config.functions.length !== 0
     if (this.interactive) {
       try {
         if (isMissingAWSCredentials()) {
-          this.context.stdout.write(
-            `${bold(
-              yellow('[!]')
-            )} No AWS credentials found, let's set them up! Or you can re-run the command and supply the AWS credentials in the same way when you invoke the AWS CLI.\n`
-          )
+          this.context.stdout.write(renderer.renderNoAWSCredentialsFound())
           await requestAWSCredentials()
         }
 
-        // Always ask for region since the user may not want to use the default
-        this.context.stdout.write(`${bold(yellow('[!]'))} Configure AWS region.\n`)
-        await requestAWSRegion(process.env[AWS_DEFAULT_REGION_ENV_VAR])
+        // Always ask for region since the user may
+        // not want to use the default, nonetheless,
+        // we do not ask if `-r|--region` is provided.
+        if (this.region === undefined && this.config.region === undefined) {
+          this.context.stdout.write(renderer.renderConfigureAWSRegion())
+          await requestAWSRegion(process.env[AWS_DEFAULT_REGION_ENV_VAR])
+        }
 
         if (isMissingDatadogEnvVars()) {
-          this.context.stdout.write(`${bold(yellow('[!]'))} Configure Datadog settings.\n`)
+          this.context.stdout.write(renderer.renderConfigureDatadog())
           await requestDatadogEnvVars()
         }
-      } catch (e) {
-        this.context.stdout.write(`${red('[Error]')} ${e}\n`)
+      } catch (err) {
+        this.context.stdout.write(renderer.renderError(err))
 
         return 1
       }
@@ -97,20 +123,24 @@ export class InstrumentCommand extends Command {
       // to select from all of the functions from the
       // requested region.
       if (!hasSpecifiedFunctions) {
+        const spinner = renderer.fetchingFunctionsSpinner()
         try {
           const lambda = new Lambda({region})
-          this.context.stdout.write('Fetching Lambda functions, this might take a while.\n')
+          spinner.start()
           const functionNames =
             (await getAllLambdaFunctionConfigs(lambda)).map((config) => config.FunctionName!).sort() ?? []
           if (functionNames.length === 0) {
-            this.context.stdout.write(`${red('[Error]')} Couldn't find any Lambda functions in the specified region.\n`)
+            this.context.stdout.write(renderer.renderCouldntFindLambdaFunctionsInRegionError())
 
             return 1
           }
+          spinner.succeed(renderer.renderFetchedLambdaFunctions(functionNames.length))
+
           const functions = await requestFunctionSelection(functionNames)
           this.functions = functions
         } catch (err) {
-          this.context.stdout.write(`${red('[Error]')} Couldn't fetch Lambda functions. ${err}\n`)
+          spinner.fail(renderer.renderFailedFetchingLambdaFunctions())
+          this.context.stdout.write(renderer.renderCouldntFetchLambdaFunctionsError(err))
 
           return 1
         }
@@ -119,7 +149,7 @@ export class InstrumentCommand extends Command {
       try {
         await requestEnvServiceVersion()
       } catch (err) {
-        this.context.stdout.write(`${red('[Error]')} Grabbing env, service, and version values from user. ${err}\n`)
+        this.context.stdout.write(renderer.renderError(`Grabbing env, service, and version values from user. ${err}`))
 
         return 1
       }
@@ -135,101 +165,106 @@ export class InstrumentCommand extends Command {
     hasSpecifiedFunctions = this.functions.length !== 0 || this.config.functions.length !== 0
     const hasSpecifiedRegExPattern = this.regExPattern !== undefined && this.regExPattern !== ''
     if (!hasSpecifiedFunctions && !hasSpecifiedRegExPattern) {
-      this.context.stdout.write(`${red('[Error]')} No functions specified for instrumentation.\n`)
+      this.context.stdout.write(renderer.renderNoFunctionsSpecifiedError(Object.getPrototypeOf(this)))
 
       return 1
     }
     if (settings.extensionVersion && settings.forwarderARN) {
-      this.context.stdout.write(
-        `${red('[Error]')} "extensionVersion" and "forwarder" should not be used at the same time.\n`
-      )
+      this.context.stdout.write(renderer.renderExtensionAndForwarderOptionsBothSetError())
 
       return 1
     }
 
     if (this.sourceCodeIntegration) {
-      if (!process.env.DATADOG_API_KEY) {
-        this.context.stdout.write(`${red('[Error]')} Missing DATADOG_API_KEY in your environment\n`)
-
-        return 1
-      }
       try {
-        await this.getGitDataAndUpload(settings)
+        const gitData = await this.getGitData()
+        if (this.uploadGitMetadata) {
+          try {
+            await this.uploadGitData()
+          } catch (err) {
+            throw Error(`Error uploading git data: ${err}\n`)
+          }
+        }
+        if (settings.extraTags) {
+          settings.extraTags += `,git.commit.sha:${gitData.commitSha},git.repository_url:${gitData.gitRemote}`
+        } else {
+          settings.extraTags = `git.commit.sha:${gitData.commitSha},git.repository_url:${gitData.gitRemote}`
+        }
       } catch (err) {
-        this.context.stdout.write(`${red('[Error]')} ${err}\n`)
-
-        return 1
+        this.context.stdout.write(renderer.renderSourceCodeIntegrationWarning(err))
       }
     }
 
-    const configGroups: {
-      cloudWatchLogs: CloudWatchLogs
-      configs: FunctionConfiguration[]
-      lambda: Lambda
-      region: string
-    }[] = []
+    const configGroups: InstrumentedConfigurationGroup[] = []
 
     if (hasSpecifiedRegExPattern) {
       if (hasSpecifiedFunctions) {
-        const usedCommand = this.functions.length !== 0 ? '"--functions"' : 'Functions in config file'
         this.context.stdout.write(
-          `${red('[Error]')} ${usedCommand} and "--functions-regex" should not be used at the same time.\n`
+          renderer.renderFunctionsAndFunctionsRegexOptionsBothSetError(this.functions.length !== 0)
         )
 
         return 1
       }
       if (this.regExPattern!.match(':')) {
-        this.context.stdout.write(`${red('[Error]')} "--functions-regex" isn't meant to be used with ARNs.\n`)
+        this.context.stdout.write(renderer.renderRegexSetWithARNError())
 
         return 1
       }
 
-      const region = this.region || this.config.region
+      const region = this.region ?? this.config.region ?? process.env[AWS_DEFAULT_REGION_ENV_VAR]
       if (!region) {
-        this.context.stdout.write(`${red('[Error]')} No default region specified. Use \`-r\`, \`--region\`.\n`)
+        this.context.stdout.write(renderer.renderNoDefaultRegionSpecifiedError())
 
         return 1
       }
 
+      const spinner = renderer.fetchingFunctionsSpinner()
       try {
         const cloudWatchLogs = new CloudWatchLogs({region})
         const lambda = new Lambda({region})
-        this.context.stdout.write('Fetching Lambda functions, this might take a while.\n')
+        spinner.start()
         const configs = await getInstrumentedFunctionConfigsFromRegEx(
           lambda,
           cloudWatchLogs,
-          region!,
+          region,
           this.regExPattern!,
           settings
         )
+        spinner.succeed(renderer.renderFetchedLambdaFunctions(configs.length))
 
-        configGroups.push({configs, lambda, cloudWatchLogs, region: region!})
+        configGroups.push({configs, lambda, cloudWatchLogs, region})
       } catch (err) {
-        this.context.stdout.write(`${red('[Error]')} Couldn't fetch Lambda functions. ${err}\n`)
+        spinner.fail(renderer.renderFailedFetchingLambdaFunctions())
+        this.context.stdout.write(renderer.renderCouldntFetchLambdaFunctionsError(err))
 
         return 1
       }
     } else {
       let functionGroups
       try {
+        const region = this.region ?? this.config.region ?? process.env[AWS_DEFAULT_REGION_ENV_VAR]
         functionGroups = collectFunctionsByRegion(
           this.functions.length !== 0 ? this.functions : this.config.functions,
-          this.region || this.config.region
+          region
         )
       } catch (err) {
-        this.context.stdout.write(`${red('[Error]')} Couldn't group functions. ${err}`)
+        this.context.stdout.write(renderer.renderCouldntGroupFunctionsError(err))
 
         return 1
       }
 
       for (const [region, functionList] of Object.entries(functionGroups)) {
+        const spinner = renderer.fetchingFunctionsConfigSpinner(region)
+        spinner.start()
         const lambda = new Lambda({region})
         const cloudWatchLogs = new CloudWatchLogs({region})
         try {
           const configs = await getInstrumentedFunctionConfigs(lambda, cloudWatchLogs, region, functionList, settings)
           configGroups.push({configs, lambda, cloudWatchLogs, region})
+          spinner.succeed(renderer.renderFetchedLambdaConfigurationsFromRegion(region, configs.length))
         } catch (err) {
-          this.context.stdout.write(`${red('[Error]')} Couldn't fetch Lambda functions. ${err}\n`)
+          spinner.fail(renderer.renderFailedFetchingLambdaConfigurationsFromRegion(region))
+          this.context.stdout.write(renderer.renderCouldntFetchLambdaFunctionsError(err))
 
           return 1
         }
@@ -251,23 +286,20 @@ export class InstrumentCommand extends Command {
 
     const willUpdate = willUpdateFunctionConfigs(configList)
     if (this.interactive && willUpdate) {
-      this.context.stdout.write(`${yellow('[!]')} Confirmation needed.\n`)
+      this.context.stdout.write(renderer.renderConfirmationNeededSoftWarning())
       const isConfirmed = await requestChangesConfirmation('Do you want to apply the changes?')
       if (!isConfirmed) {
         return 0
       }
-      this.context.stdout.write(`${yellow('[!]')} Instrumenting functions.\n`)
+      this.context.stdout.write(renderer.renderInstrumentingFunctionsSoftWarning())
     }
 
-    const promises = Object.values(configGroups).map((group) =>
-      updateLambdaFunctionConfigs(group.lambda, group.cloudWatchLogs, group.configs)
-    )
-    try {
-      await Promise.all(promises)
-    } catch (err) {
-      this.context.stdout.write(`${red('[Error]')} Failure during update. ${err}\n`)
-
-      return 1
+    if (willUpdate) {
+      try {
+        await handleLambdaFunctionUpdates(configGroups, this.context.stdout)
+      } catch {
+        return 1
+      }
     }
 
     return 0
@@ -281,10 +313,16 @@ export class InstrumentCommand extends Command {
     }
     const status = await simpleGit.status()
 
-    return {isClean: status.isClean(), ahead: status.ahead, files: status.files, hash: gitCommitInfo?.hash}
+    return {
+      isClean: status.isClean(),
+      ahead: status.ahead,
+      files: status.files,
+      hash: gitCommitInfo?.hash,
+      remote: gitCommitInfo?.remote,
+    }
   }
 
-  private async getGitDataAndUpload(settings: InstrumentationSettings) {
+  private async getGitData() {
     let currentStatus
 
     try {
@@ -298,21 +336,22 @@ export class InstrumentCommand extends Command {
     }
 
     if (currentStatus.ahead > 0) {
-      throw Error('Local changes have not been pushed remotely. Aborting git upload.')
+      throw Error('Local changes have not been pushed remotely. Aborting git data tagging.')
     }
 
-    const commitSha = currentStatus.hash
-    if (settings.extraTags) {
-      settings.extraTags += `,git.commit.sha:${commitSha}`
-    } else {
-      settings.extraTags = `git.commit.sha:${commitSha}`
+    const gitRemote = filterAndFormatGithubRemote(currentStatus.remote)
+
+    return {commitSha: currentStatus.hash, gitRemote}
+  }
+
+  private async uploadGitData() {
+    const cli = new Cli()
+    cli.register(UploadCommand)
+    if ((await cli.run(['git-metadata', 'upload'], this.context)) !== 0) {
+      throw Error("Couldn't upload git metadata")
     }
 
-    try {
-      await this.uploadGitData()
-    } catch (err) {
-      throw Error(`Error uploading git data: ${err}\n`)
-    }
+    return
   }
 
   private getSettings(): InstrumentationSettings | undefined {
@@ -326,7 +365,7 @@ export class InstrumentCommand extends Command {
       layerVersion = parseInt(layerVersionStr, 10)
     }
     if (Number.isNaN(layerVersion)) {
-      this.context.stdout.write(`Invalid layer version ${layerVersion}.\n`)
+      this.context.stdout.write(renderer.renderInvalidLayerVersionError(layerVersion?.toString()))
 
       return
     }
@@ -337,7 +376,7 @@ export class InstrumentCommand extends Command {
     }
 
     if (Number.isNaN(extensionVersion)) {
-      this.context.stdout.write(`Invalid extension version ${extensionVersion}.\n`)
+      this.context.stdout.write(renderer.renderInvalidExtensionVersionError(extensionVersion?.toString()))
 
       return
     }
@@ -351,7 +390,7 @@ export class InstrumentCommand extends Command {
 
     for (const [stringBoolean, value] of Object.entries(stringBooleansMap)) {
       if (!['true', 'false', undefined].includes(value?.toString().toLowerCase())) {
-        this.context.stdout.write(`Invalid boolean specified for ${stringBoolean}.\n`)
+        this.context.stdout.write(renderer.renderInvalidStringBooleanSpecifiedError(stringBoolean))
 
         return
       }
@@ -380,22 +419,12 @@ export class InstrumentCommand extends Command {
       }
     }
     if (tagsMissing.length > 0) {
-      const tags = tagsMissing.join(', ').replace(/, ([^,]*)$/, ' and $1')
-      const plural = tagsMissing.length > 1
-      this.context.stdout.write(
-        `${bold(yellow('[Warning]'))} The ${tags} tag${
-          plural ? 's have' : ' has'
-        } not been configured. Learn more about Datadog unified service tagging: ${underline(
-          blueBright(
-            'https://docs.datadoghq.com/getting_started/tagging/unified_service_tagging/#serverless-environment.'
-          )
-        )}\n`
-      )
+      this.context.stdout.write(renderer.renderTagsNotConfiguredWarning(tagsMissing))
     }
 
     const extraTags = this.extraTags?.toLowerCase() ?? this.config.extraTags?.toLowerCase()
     if (extraTags && !sentenceMatchesRegEx(extraTags, EXTRA_TAGS_REG_EXP)) {
-      this.context.stdout.write('Extra tags do not comply with the <key>:<value> array.\n')
+      this.context.stdout.write(renderer.renderExtraTagsDontComplyError())
 
       return
     }
@@ -419,38 +448,27 @@ export class InstrumentCommand extends Command {
   }
 
   private printPlannedActions(configs: FunctionConfiguration[]) {
-    const prefix = this.dryRun ? bold(cyan('[Dry Run] ')) : ''
     const willUpdate = willUpdateFunctionConfigs(configs)
     if (!willUpdate) {
-      this.context.stdout.write(`\n${prefix}No updates will be applied\n`)
+      this.context.stdout.write(renderer.renderNoUpdatesApplied(this.dryRun))
 
       return
     }
-    this.context.stdout.write(
-      `${bold(yellow('[Warning]'))} Instrument your ${hex('#FF9900').bold(
-        'Lambda'
-      )} functions in a dev or staging environment first. Should the instrumentation result be unsatisfactory, run \`${bold(
-        'uninstrument'
-      )}\` with the same arguments to revert the changes.\n`
-    )
+    this.context.stdout.write(renderer.renderInstrumentInStagingFirst())
 
-    this.context.stdout.write(`\n${bold(yellow('[!]'))} Functions to be updated:\n`)
+    this.context.stdout.write(renderer.renderFunctionsToBeUpdated())
     for (const config of configs) {
       this.context.stdout.write(`\t- ${bold(config.functionARN)}\n`)
 
       // Later, we should inform which layer is the latest.
       if (this.interactive) {
         if (!this.extensionVersion || !this.extensionVersion) {
-          this.context.stdout.write(
-            `\t${bold(
-              yellow('[Warning]')
-            )} At least one latest layer version is being used. Ensure to lock in versions for production applications using \`--layerVersion\` and \`--extensionVersion\`.\n`
-          )
+          this.context.stdout.write(renderer.renderEnsureToLockLayerVersionsWarning())
         }
       }
     }
 
-    this.context.stdout.write(`\n${prefix}Will apply the following updates:\n`)
+    this.context.stdout.write(renderer.renderWillApplyUpdates(this.dryRun))
     for (const config of configs) {
       if (config.updateRequest) {
         this.context.stdout.write(
@@ -506,16 +524,6 @@ export class InstrumentCommand extends Command {
     this.service = process.env[SERVICE_ENV_VAR] || undefined
     this.version = process.env[VERSION_ENV_VAR] || undefined
   }
-
-  private async uploadGitData() {
-    const cli = new Cli()
-    cli.register(UploadCommand)
-    if ((await cli.run(['git-metadata', 'upload'], this.context)) !== 0) {
-      throw Error("Couldn't upload git metadata")
-    }
-
-    return
-  }
 }
 
 InstrumentCommand.addPath('lambda', 'instrument')
@@ -541,5 +549,7 @@ InstrumentCommand.addOption(
   'sourceCodeIntegration',
   Command.Boolean('-s,--source-code-integration,--sourceCodeIntegration')
 )
+InstrumentCommand.addOption('uploadGitMetadata', Command.Boolean('-u,--upload-git-metadata,--uploadGitMetadata'))
 InstrumentCommand.addOption('interactive', Command.Boolean('-i,--interactive'))
 InstrumentCommand.addOption('captureLambdaPayload', Command.String('--capture-lambda-payload,--captureLambdaPayload'))
+InstrumentCommand.addOption('profile', Command.String('--profile'))

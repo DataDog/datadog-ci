@@ -1,12 +1,15 @@
 export const DD_LAMBDA_EXTENSION_LAYER_NAME = 'Datadog-Extension'
 export const EXTENSION_LAYER_KEY = 'extension'
-export const DOTNET_RUNTIME = 'dotnetcore3.1'
 export const LAYER_LOOKUP = {
   [EXTENSION_LAYER_KEY]: DD_LAMBDA_EXTENSION_LAYER_NAME,
+  dotnet6: 'dd-trace-dotnet',
   'dotnetcore3.1': 'dd-trace-dotnet',
+  java11: 'dd-trace-java',
+  'java8.al2': 'dd-trace-java',
   'nodejs12.x': 'Datadog-Node12-x',
   'nodejs14.x': 'Datadog-Node14-x',
   'nodejs16.x': 'Datadog-Node16-x',
+  'nodejs18.x': 'Datadog-Node18-x',
   'python3.6': 'Datadog-Python36',
   'python3.7': 'Datadog-Python37',
   'python3.8': 'Datadog-Python38',
@@ -23,12 +26,14 @@ export enum RuntimeType {
 }
 
 export const RUNTIME_LOOKUP = {
+  dotnet6: RuntimeType.DOTNET,
   'dotnetcore3.1': RuntimeType.DOTNET,
   java11: RuntimeType.JAVA,
   'java8.al2': RuntimeType.JAVA,
   'nodejs12.x': RuntimeType.NODE,
   'nodejs14.x': RuntimeType.NODE,
   'nodejs16.x': RuntimeType.NODE,
+  'nodejs18.x': RuntimeType.NODE,
   'provided.al2': RuntimeType.CUSTOM,
   'python3.6': RuntimeType.PYTHON,
   'python3.7': RuntimeType.PYTHON,
@@ -40,25 +45,21 @@ export const RUNTIME_LOOKUP = {
 
 export type Runtime = keyof typeof RUNTIME_LOOKUP
 export type LayerKey = keyof typeof LAYER_LOOKUP
-export const ARM_LAYERS = [EXTENSION_LAYER_KEY, 'python3.8', 'python3.9']
+export const ARM_LAYERS = [EXTENSION_LAYER_KEY, 'dotnet6', 'python3.8', 'python3.9']
 export const ARM64_ARCHITECTURE = 'arm64'
 export const ARM_LAYER_SUFFIX = '-ARM'
 
 export const PYTHON_HANDLER_LOCATION = 'datadog_lambda.handler.handler'
 export const NODE_HANDLER_LOCATION = '/opt/nodejs/node_modules/datadog-lambda-js/handler.handler'
 
-export const SITES: string[] = [
-  'datadoghq.com',
-  'datadoghq.eu',
-  'us3.datadoghq.com',
-  'us5.datadoghq.com',
-  'ddog-gov.com',
-]
-
 export const DEFAULT_LAYER_AWS_ACCOUNT = '464622532012'
 export const GOVCLOUD_LAYER_AWS_ACCOUNT = '002406178527'
 export const SUBSCRIPTION_FILTER_NAME = 'datadog-ci-filter'
 export const TAG_VERSION_NAME = 'dd_sls_ci'
+
+// Env variables for Univeral instrument lambda exec wrapper
+export const AWS_LAMBDA_EXEC_WRAPPER_VAR = 'AWS_LAMBDA_EXEC_WRAPPER'
+export const AWS_LAMBDA_EXEC_WRAPPER = '/opt/datadog_wrapper'
 
 // Export const values for .NET tracer
 export const CORECLR_ENABLE_PROFILING = '1'
@@ -96,6 +97,7 @@ export const AWS_ACCESS_KEY_ID_ENV_VAR = 'AWS_ACCESS_KEY_ID'
 export const AWS_SECRET_ACCESS_KEY_ENV_VAR = 'AWS_SECRET_ACCESS_KEY'
 export const AWS_DEFAULT_REGION_ENV_VAR = 'AWS_DEFAULT_REGION'
 export const AWS_SESSION_TOKEN_ENV_VAR = 'AWS_SESSION_TOKEN'
+export const AWS_SHARED_CREDENTIALS_FILE_ENV_VAR = 'AWS_SHARED_CREDENTIALS_FILE'
 
 export const LIST_FUNCTIONS_MAX_RETRY_COUNT = 2
 export const MAX_LAMBDA_STATE_CHECK_ATTEMPTS = 3
@@ -104,8 +106,9 @@ export const MAX_LAMBDA_STATE_CHECK_ATTEMPTS = 3
 // This RegExp ensures that the --extra-tags string
 // matches a list of <key>:<value> separated by commas
 // such as: layer:api,team:intake
-export const EXTRA_TAGS_REG_EXP: RegExp = /^(([a-zA-Z]+)\w+:[\w\-/\.]+)+((\,)([a-zA-Z]+)\w+:[\w\-/\.]+)*$/g
-export const AWS_ACCESS_KEY_ID_REG_EXP: RegExp = /(?<![A-Z0-9])[A-Z0-9]{20}(?![A-Z0-9])/g
-export const AWS_SECRET_ACCESS_KEY_REG_EXP: RegExp = /(?<![A-Za-z0-9/+=])[A-Za-z0-9/+=]{40}(?![A-Za-z0-9/+=])/g
-export const DATADOG_API_KEY_REG_EXP: RegExp = /(?<![a-f0-9])[a-f0-9]{32}(?![a-f0-9])/g
-export const DATADOG_APP_KEY_REG_EXP: RegExp = /(?<![a-f0-9])[a-f0-9]{40}(?![a-f0-9])/g
+export const EXTRA_TAGS_REG_EXP = /^(([a-zA-Z]+)\w+:[\w\-/\.]+)+((\,)([a-zA-Z]+)\w+:[\w\-/\.]+)*$/g
+export const AWS_ACCESS_KEY_ID_REG_EXP = /(?<![A-Z0-9])[A-Z0-9]{20}(?![A-Z0-9])/g
+export const AWS_SECRET_ACCESS_KEY_REG_EXP = /(?<![A-Za-z0-9/+=])[A-Za-z0-9/+=]{40}(?![A-Za-z0-9/+=])/g
+export const AWS_SECRET_ARN_REG_EXP = /arn:aws:secretsmanager:[\w-]+:\d{12}:secret:.+/
+export const DATADOG_API_KEY_REG_EXP = /(?<![a-f0-9])[a-f0-9]{32}(?![a-f0-9])/g
+export const DATADOG_APP_KEY_REG_EXP = /(?<![a-f0-9])[a-f0-9]{40}(?![a-f0-9])/g

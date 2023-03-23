@@ -1,6 +1,9 @@
 import {Metadata} from '../../helpers/interfaces'
 import {ProxyConfiguration} from '../../helpers/utils'
+
 import {TunnelInfo} from './tunnel'
+
+export type SupportedReporter = 'junit' | 'default'
 
 export interface MainReporter {
   error(error: string): void
@@ -9,9 +12,9 @@ export interface MainReporter {
   reportStart(timings: {startTime: number}): void
   resultEnd(result: Result, baseUrl: string): void
   resultReceived(result: Batch['results'][0]): void
-  runEnd(summary: Summary, baseUrl: string): void
+  runEnd(summary: Summary, baseUrl: string, orgSettings?: SyntheticsOrgSettings): void
   testsWait(tests: Test[]): void
-  testTrigger(test: Test, testId: string, executionRule: ExecutionRule, config: ConfigOverride): void
+  testTrigger(test: Test, testId: string, executionRule: ExecutionRule, config: UserConfigOverride): void
   testWait(test: Test): void
 }
 
@@ -26,12 +29,14 @@ export interface BaseServerResult {
   unhealthy?: boolean
 }
 
+export interface Device {
+  height: number
+  id: string
+  width: number
+}
+
 export interface BrowserServerResult extends BaseServerResult {
-  device: {
-    height: number
-    id: string
-    width: number
-  }
+  device?: Device
   duration: number
   startUrl: string
   stepDetails: Step[]
@@ -184,6 +189,7 @@ export interface ServerTest {
     device_ids?: string[]
     min_failure_duration: number
     min_location_failed: number
+    mobileApplication?: MobileApplication
     tick_every: number
   }
   overall_state: number
@@ -256,7 +262,13 @@ export interface RetryConfig {
   interval: number
 }
 
-export interface ConfigOverride {
+export interface MobileApplication {
+  applicationId: string
+  referenceId: string
+  referenceType: 'latest' | 'version' | 'temporary'
+}
+
+export interface BaseConfigOverride {
   allowInsecureCertificates?: boolean
   basicAuth?: BasicAuthCredentials
   body?: string
@@ -276,12 +288,21 @@ export interface ConfigOverride {
   variables?: {[key: string]: string}
 }
 
+export interface UserConfigOverride extends BaseConfigOverride {
+  mobileApplicationVersion?: string
+  mobileApplicationVersionFilePath?: string
+}
+
+export interface ServerConfigOverride extends BaseConfigOverride {
+  mobileApplication?: MobileApplication
+}
+
 export interface Payload {
   metadata?: Metadata
   tests: TestPayload[]
 }
 
-export interface TestPayload extends ConfigOverride {
+export interface TestPayload extends ServerConfigOverride {
   executionRule: ExecutionRule
   public_id: string
 }
@@ -290,25 +311,8 @@ export interface BasicAuthCredentials {
   password: string
   username: string
 }
-
-export interface TemplateVariables {
-  DOMAIN?: string
-  HASH?: string
-  HOST?: string
-  HOSTNAME?: string
-  ORIGIN?: string
-  PARAMS?: string
-  PATHNAME?: string
-  PORT?: string
-  PROTOCOL?: string
-  SUBDOMAIN?: string
-  URL: string
-}
-
-export interface TemplateContext extends TemplateVariables, NodeJS.ProcessEnv {}
-
 export interface TriggerConfig {
-  config: ConfigOverride
+  config: UserConfigOverride
   id: string
   suite?: string
 }
@@ -327,7 +331,8 @@ export interface Suite {
 }
 
 export interface Summary {
-  batchId?: string
+  // The batchId is associated to a full run of datadog-ci: multiple suites will be in the same batch.
+  batchId: string
   criticalErrors: number
   failed: number
   failedNonBlocking: number
@@ -347,6 +352,7 @@ export interface APIConfiguration {
   apiKey: string
   appKey: string
   baseIntakeUrl: string
+  baseUnstableUrl: string
   baseUrl: string
   proxyOpts: ProxyConfiguration
 }
@@ -356,9 +362,8 @@ export interface SyntheticsCIConfig {
   appKey: string
   configPath: string
   datadogSite: string
-  failOnCriticalErrors: boolean
   files: string[]
-  global: ConfigOverride
+  global: UserConfigOverride
   locations: string[]
   pollingTimeout: number
   proxy: ProxyConfiguration
@@ -370,5 +375,24 @@ export interface SyntheticsCIConfig {
 }
 
 export interface CommandConfig extends SyntheticsCIConfig {
+  failOnCriticalErrors: boolean
+  failOnMissingTests: boolean
   failOnTimeout: boolean
+}
+
+export type WrapperConfig = Partial<CommandConfig>
+
+export interface PresignedUrlResponse {
+  file_name: string
+  presigned_url_params: {
+    fields: {
+      [key: string]: string
+    }
+    url: string
+  }
+}
+
+// not the entire response, but only the slice needed
+export interface SyntheticsOrgSettings {
+  orgMaxConcurrencyCap: number
 }

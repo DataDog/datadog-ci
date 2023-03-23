@@ -17,6 +17,7 @@ export interface LambdaConfigOptions {
   layerVersion?: string
   logLevel?: string
   mergeXrayTraces?: string
+  profile?: string
   region?: string
   service?: string
   tracing?: string
@@ -34,6 +35,13 @@ export interface FunctionConfiguration {
   logGroupConfiguration?: LogGroupConfiguration
   tagConfiguration?: TagConfiguration
   updateRequest?: Lambda.UpdateFunctionConfigurationRequest
+}
+
+export interface InstrumentedConfigurationGroup {
+  cloudWatchLogs: CloudWatchLogs
+  configs: FunctionConfiguration[]
+  lambda: Lambda
+  region: string
 }
 
 /**

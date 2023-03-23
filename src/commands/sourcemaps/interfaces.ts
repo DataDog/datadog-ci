@@ -5,12 +5,22 @@ import {MultipartPayload, MultipartValue} from '../../helpers/upload'
 export class Sourcemap {
   public gitData?: GitData
   public minifiedFilePath: string
+  public minifiedPathPrefix?: string
   public minifiedUrl: string
+  public relativePath: string
   public sourcemapPath: string
 
-  constructor(minifiedFilePath: string, minifiedUrl: string, sourcemapPath: string) {
+  constructor(
+    minifiedFilePath: string,
+    minifiedUrl: string,
+    sourcemapPath: string,
+    relativePath: string,
+    minifiedPathPrefix?: string
+  ) {
     this.minifiedFilePath = minifiedFilePath
+    this.minifiedPathPrefix = minifiedPathPrefix
     this.minifiedUrl = minifiedUrl
+    this.relativePath = relativePath
     this.sourcemapPath = sourcemapPath
   }
 
@@ -29,13 +39,13 @@ export class Sourcemap {
       ['source_map', {value: fs.createReadStream(this.sourcemapPath), options: {filename: 'source_map'}}],
       ['minified_file', {value: fs.createReadStream(this.minifiedFilePath), options: {filename: 'minified_file'}}],
     ])
-    if (this.gitData !== undefined && this.gitData!.gitRepositoryPayload !== undefined) {
+    if (this.gitData !== undefined && this.gitData.gitRepositoryPayload !== undefined) {
       content.set('repository', {
         options: {
           contentType: 'application/json',
           filename: 'repository',
         },
-        value: this.gitData!.gitRepositoryPayload,
+        value: this.gitData.gitRepositoryPayload,
       })
     }
 
@@ -59,8 +69,8 @@ export class Sourcemap {
       version,
     }
     if (this.gitData !== undefined) {
-      metadata.git_repository_url = this.gitData!.gitRepositoryURL
-      metadata.git_commit_sha = this.gitData!.gitRepositoryURL
+      metadata.git_repository_url = this.gitData.gitRepositoryURL
+      metadata.git_commit_sha = this.gitData.gitCommitSha
     }
 
     return {

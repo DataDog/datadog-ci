@@ -1,7 +1,7 @@
-/* tslint:disable:no-string-literal */
-import {config as aws_sdk_config, Credentials} from 'aws-sdk'
+import {config as aws_sdk_config, Credentials, Lambda} from 'aws-sdk'
+
 jest.mock('aws-sdk')
-import {Lambda} from 'aws-sdk'
+jest.mock('../../renderer', () => require('../../__mocks__/renderer'))
 import {
   AWS_ACCESS_KEY_ID_ENV_VAR,
   AWS_SECRET_ACCESS_KEY_ENV_VAR,
@@ -15,8 +15,8 @@ import {
   EXTRA_TAGS_REG_EXP,
   GOVCLOUD_LAYER_AWS_ACCOUNT,
   LAMBDA_HANDLER_ENV_VAR,
-  LAYER_LOOKUP,
   LayerKey,
+  LAYER_LOOKUP,
   MERGE_XRAY_TRACES_ENV_VAR,
   Runtime,
   TRACE_ENABLED_ENV_VAR,
@@ -30,15 +30,16 @@ import {
   getLayerArn,
   getLayerNameWithVersion,
   getRegion,
+  handleLambdaFunctionUpdates,
   isMissingAnyDatadogApiKeyEnvVar,
   isMissingAWSCredentials,
   isMissingDatadogEnvVars,
-  isMissingDatadogSiteEnvVar,
   sentenceMatchesRegEx,
-  updateLambdaFunctionConfigs,
+  updateLambdaFunctionConfig,
 } from '../../functions/commons'
 import {InstrumentCommand} from '../../instrument'
 import {FunctionConfiguration} from '../../interfaces'
+
 import {createCommand, makeMockCloudWatchLogs, makeMockLambda, mockAwsAccount} from '../fixtures'
 
 describe('commons', () => {
@@ -364,31 +365,6 @@ describe('commons', () => {
     })
   })
 
-  describe('isMissingDatadogSiteEnvVar', () => {
-    const OLD_ENV = process.env
-    beforeEach(() => {
-      jest.resetModules()
-      process.env = {}
-    })
-    afterAll(() => {
-      process.env = OLD_ENV
-    })
-
-    test('returns true when Datadog Site Env Var is missing', () => {
-      expect(isMissingDatadogSiteEnvVar()).toBe(true)
-    })
-
-    test('returns false when Datadog Site Env Var is set', () => {
-      process.env[CI_SITE_ENV_VAR] = 'datadoghq.com'
-      expect(isMissingDatadogSiteEnvVar()).toBe(false)
-    })
-
-    test('returns true when Datadog Site Env Var is set and is not a valid Datadog site', () => {
-      process.env[CI_SITE_ENV_VAR] = 'datacathq.com'
-      expect(isMissingDatadogSiteEnvVar()).toBe(true)
-    })
-  })
-
   describe('isMissingAnyDatadogApiKeyEnvVar', () => {
     const OLD_ENV = process.env
     beforeEach(() => {
@@ -501,7 +477,7 @@ describe('commons', () => {
       expect(layerArn).toEqual(`arn:aws:lambda:${region}:${mockAwsAccount}:layer:Datadog-Node12-x`)
     })
 
-    test('gets sa-east-1 Python3.9 arm64 Lambda Library layer ARN', async () => {
+    test('gets sa-east-1 Python39 arm64 Lambda Library layer ARN', async () => {
       const runtime = 'python3.9'
       const config = {
         Architectures: ['arm64'],
@@ -549,6 +525,22 @@ describe('commons', () => {
       expect(layerArn).toEqual(
         `arn:aws-us-gov:lambda:${region}:${GOVCLOUD_LAYER_AWS_ACCOUNT}:layer:Datadog-Python39-ARM`
       )
+    })
+    test('gets dotnet6 arm64 Lambda Library layer ARN', async () => {
+      const runtime = 'dotnet6'
+      const config = {
+        Runtime: runtime,
+        Architectures: ['arm64'],
+      }
+      const settings = {
+        flushMetricsToLogs: false,
+        layerAWSAccount: mockAwsAccount,
+        mergeXrayTraces: false,
+        tracingEnabled: false,
+      }
+      const region = 'us-east-1'
+      const layerArn = getLayerArn(config, config.Runtime as LayerKey, region, settings)
+      expect(layerArn).toEqual(`arn:aws:lambda:${region}:${mockAwsAccount}:layer:dd-trace-dotnet-ARM`)
     })
   })
 
@@ -618,7 +610,7 @@ describe('commons', () => {
     })
   })
 
-  describe('updateLambdaConfigs', () => {
+  describe('updateLambdaFunctionConfig', () => {
     const OLD_ENV = process.env
     beforeEach(() => {
       jest.resetModules()
@@ -655,7 +647,10 @@ describe('commons', () => {
       ]
       const cloudWatch = makeMockCloudWatchLogs({})
 
-      await updateLambdaFunctionConfigs(lambda as any, cloudWatch as any, configs)
+      await Promise.all(
+        configs.map(async (config) => updateLambdaFunctionConfig(lambda as any, cloudWatch as any, config))
+      )
+
       expect(lambda.updateFunctionConfiguration).toHaveBeenCalledWith({
         Environment: {
           Variables: {
@@ -668,6 +663,118 @@ describe('commons', () => {
         Handler: '/opt/nodejs/node_modules/datadog-lambda-js/handler.handler',
         Layers: ['arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Node12-x:22'],
       })
+    })
+  })
+
+  describe('handleLambdaFunctionUpdates', () => {
+    const OLD_ENV = process.env
+    beforeEach(() => {
+      jest.resetModules()
+      process.env = {}
+    })
+    afterAll(() => {
+      process.env = OLD_ENV
+    })
+    const cloudWatchLogs = makeMockCloudWatchLogs({})
+    const stdout = {write: (_: any) => jest.fn()}
+    const getConfigs = (lambda: any) => [
+      {
+        lambda,
+        cloudWatchLogs,
+        configs: [
+          {
+            functionARN: 'arn:aws:lambda:us-east-1:000000000000:function:autoinstrument',
+            lambdaConfig: {
+              FunctionArn: 'arn:aws:lambda:us-east-1:000000000000:function:autoinstrument',
+              Handler: 'index.handler',
+              Runtime: 'nodejs12.x',
+            },
+            lambdaLibraryLayerArn: 'arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Node12-x',
+            updateRequest: {
+              Environment: {
+                Variables: {
+                  [LAMBDA_HANDLER_ENV_VAR]: 'index.handler',
+                  [MERGE_XRAY_TRACES_ENV_VAR]: 'false',
+                  [TRACE_ENABLED_ENV_VAR]: 'false',
+                },
+              },
+              FunctionName: 'arn:aws:lambda:us-east-1:000000000000:function:autoinstrument',
+              Handler: '/opt/nodejs/node_modules/datadog-lambda-js/handler.handler',
+              Layers: ['arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Node12-x:XX'],
+            },
+          },
+        ],
+        region: 'us-east-1',
+      },
+      {
+        lambda,
+        cloudWatchLogs,
+        configs: [
+          {
+            functionARN: 'arn:aws:lambda:us-east-2:000000000000:function:autoinstrument',
+            lambdaConfig: {
+              FunctionArn: 'arn:aws:lambda:us-east-2:000000000000:function:autoinstrument',
+              Handler: 'index.handler',
+              Runtime: 'nodejs14.x',
+            },
+            lambdaLibraryLayerArn: 'arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Node14-x',
+            updateRequest: {
+              Environment: {
+                Variables: {
+                  [LAMBDA_HANDLER_ENV_VAR]: 'index.handler',
+                  [MERGE_XRAY_TRACES_ENV_VAR]: 'false',
+                  [TRACE_ENABLED_ENV_VAR]: 'false',
+                },
+              },
+              FunctionName: 'arn:aws:lambda:us-east-2:000000000000:function:autoinstrument',
+              Handler: '/opt/nodejs/node_modules/datadog-lambda-js/handler.handler',
+              Layers: ['arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Node14-x:XX'],
+            },
+          },
+        ],
+        region: 'us-east-2',
+      },
+    ]
+
+    test('throws an error when all functions from every region fail to update', async () => {
+      const lambda = {
+        ...makeMockLambda({}),
+        updateFunctionConfiguration: jest.fn().mockImplementation((_) => {
+          return {promise: () => Promise.reject()}
+        }),
+      }
+      const configs = getConfigs(lambda)
+
+      await expect(handleLambdaFunctionUpdates(configs as any, stdout as any)).rejects.toThrow()
+    })
+
+    test('throws an error when all functions from every region fail to update', async () => {
+      const lambda = {
+        ...makeMockLambda({}),
+        updateFunctionConfiguration: jest.fn().mockImplementation((_) => ({promise: () => Promise.reject()})),
+      }
+      const configs = getConfigs(lambda)
+
+      await expect(handleLambdaFunctionUpdates(configs as any, stdout as any)).rejects.toThrow()
+    })
+
+    test('to not throw an error when at least one function is updated', async () => {
+      const lambda = {
+        ...makeMockLambda({}),
+        updateFunctionConfiguration: jest.fn().mockImplementation((updateRequest) => {
+          if (updateRequest['FunctionName'] === 'arn:aws:lambda:us-east-1:000000000000:function:autoinstrument') {
+            return {promise: () => Promise.reject()}
+          }
+
+          return {promise: () => Promise.resolve()}
+        }),
+      }
+      const configs = getConfigs(lambda)
+
+      // when sucessful, the function doesnt do anything
+      const result = await handleLambdaFunctionUpdates(configs as any, stdout as any)
+
+      expect(result).toBe(undefined)
     })
   })
   describe('Correctly handles multiple runtimes', () => {
@@ -695,6 +802,14 @@ describe('commons', () => {
             FunctionArn: 'arn:aws:lambda:us-east-1:000000000000:function:func3',
             Handler: 'index.handler',
             Runtime: 'nodejs16.x',
+          },
+        },
+        {
+          functionARN: 'arn:aws:lambda:us-east-1:000000000000:function:func4',
+          lambdaConfig: {
+            FunctionArn: 'arn:aws:lambda:us-east-1:000000000000:function:func4',
+            Handler: 'index.handler',
+            Runtime: 'nodejs18.x',
           },
         },
       ]

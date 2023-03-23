@@ -1,8 +1,13 @@
 import {CloudWatchLogs, Lambda} from 'aws-sdk'
+
+import {isValidDatadogSite} from '../../../helpers/validation'
+
 import {
   API_KEY_ENV_VAR,
   API_KEY_SECRET_ARN_ENV_VAR,
   ARM64_ARCHITECTURE,
+  AWS_LAMBDA_EXEC_WRAPPER,
+  AWS_LAMBDA_EXEC_WRAPPER_VAR,
   CAPTURE_LAMBDA_PAYLOAD_ENV_VAR,
   CI_API_KEY_ENV_VAR,
   CI_API_KEY_SECRET_ARN_ENV_VAR,
@@ -13,7 +18,6 @@ import {
   CORECLR_PROFILER_PATH,
   DD_DOTNET_TRACER_HOME,
   DD_LAMBDA_EXTENSION_LAYER_NAME,
-  DOTNET_RUNTIME,
   DOTNET_TRACER_HOME_ENV_VAR,
   ENABLE_PROFILING_ENV_VAR,
   ENVIRONMENT_ENV_VAR,
@@ -22,8 +26,8 @@ import {
   FLUSH_TO_LOG_ENV_VAR,
   KMS_API_KEY_ENV_VAR,
   LAMBDA_HANDLER_ENV_VAR,
-  LAYER_LOOKUP,
   LayerKey,
+  LAYER_LOOKUP,
   LOG_LEVEL_ENV_VAR,
   MERGE_XRAY_TRACES_ENV_VAR,
   NODE_HANDLER_LOCATION,
@@ -31,17 +35,17 @@ import {
   PROFILER_PATH_ENV_VAR,
   PYTHON_HANDLER_LOCATION,
   Runtime,
-  RUNTIME_LOOKUP,
   RuntimeType,
+  RUNTIME_LOOKUP,
   SERVICE_ENV_VAR,
   SITE_ENV_VAR,
-  SITES,
   TRACE_ENABLED_ENV_VAR,
   VERSION_ENV_VAR,
 } from '../constants'
 import {FunctionConfiguration, InstrumentationSettings, LogGroupConfiguration, TagConfiguration} from '../interfaces'
 import {calculateLogGroupUpdateRequest} from '../loggroup'
 import {calculateTagUpdateRequest} from '../tags'
+
 import {
   addLayerArn,
   findLatestLayerVersion,
@@ -53,6 +57,7 @@ import {
   isLayerRuntime,
   isSupportedRuntime,
 } from './commons'
+import {isExtensionCompatibleWithUniversalInstrumentation, isTracerCompatibleWithExtension} from './versionChecker'
 
 export const getInstrumentedFunctionConfigs = async (
   lambda: Lambda,
@@ -146,12 +151,9 @@ export const calculateUpdateRequest = async (
     FunctionName: functionARN,
   }
   let needsUpdate = false
+  const runtimeType = RUNTIME_LOOKUP[runtime]
 
-  if (
-    RUNTIME_LOOKUP[runtime] === RuntimeType.JAVA ||
-    RUNTIME_LOOKUP[runtime] === RuntimeType.CUSTOM ||
-    RUNTIME_LOOKUP[runtime] === RuntimeType.RUBY
-  ) {
+  if (runtimeType === RuntimeType.CUSTOM || runtimeType === RuntimeType.RUBY) {
     if (settings.layerVersion !== undefined) {
       throw new Error(
         `Only the --extension-version argument should be set for the ${runtime} runtime. Please remove the --layer-version argument from the instrument command.`
@@ -159,17 +161,8 @@ export const calculateUpdateRequest = async (
     }
   }
 
-  // We don't support ARM Architecture for .NET at this time. Abort instrumentation if the combination is detected.
-  if (RUNTIME_LOOKUP[runtime] === RuntimeType.DOTNET) {
-    if (config.Architectures?.includes(ARM64_ARCHITECTURE)) {
-      throw new Error(
-        'Instrumenting arm64 architecture is not currently supported for .NET. Please only instrument .NET functions using x86_64 architecture.'
-      )
-    }
-  }
-
   // Update Python Handler
-  if (RUNTIME_LOOKUP[runtime] === RuntimeType.PYTHON) {
+  if (runtimeType === RuntimeType.PYTHON) {
     const expectedHandler = PYTHON_HANDLER_LOCATION
     if (config.Handler !== expectedHandler) {
       needsUpdate = true
@@ -178,7 +171,7 @@ export const calculateUpdateRequest = async (
   }
 
   // Update Node Handler
-  if (RUNTIME_LOOKUP[runtime] === RuntimeType.NODE) {
+  if (runtimeType === RuntimeType.NODE) {
     const expectedHandler = NODE_HANDLER_LOCATION
     if (config.Handler !== expectedHandler) {
       needsUpdate = true
@@ -187,7 +180,7 @@ export const calculateUpdateRequest = async (
   }
 
   // Update Env Vars
-  if (RUNTIME_LOOKUP[runtime] === RuntimeType.PYTHON || RUNTIME_LOOKUP[runtime] === RuntimeType.NODE) {
+  if (runtimeType === RuntimeType.PYTHON || runtimeType === RuntimeType.NODE) {
     if (oldEnvVars[LAMBDA_HANDLER_ENV_VAR] === undefined) {
       needsUpdate = true
       changedEnvVars[LAMBDA_HANDLER_ENV_VAR] = config.Handler ?? ''
@@ -199,7 +192,7 @@ export const calculateUpdateRequest = async (
     needsUpdate = true
     changedEnvVars[KMS_API_KEY_ENV_VAR] = apiKmsKey
   } else if (apiKeySecretArn !== undefined && oldEnvVars[API_KEY_SECRET_ARN_ENV_VAR] !== apiKeySecretArn) {
-    const isNode = RUNTIME_LOOKUP[runtime] === RuntimeType.NODE
+    const isNode = runtimeType === RuntimeType.NODE
     const isSendingSynchronousMetrics = settings.extensionVersion === undefined && !settings.flushMetricsToLogs
     if (isSendingSynchronousMetrics && isNode) {
       throw new Error(
@@ -214,7 +207,7 @@ export const calculateUpdateRequest = async (
   }
 
   if (site !== undefined && oldEnvVars[SITE_ENV_VAR] !== site) {
-    if (SITES.includes(site.toLowerCase())) {
+    if (isValidDatadogSite(site)) {
       needsUpdate = true
       changedEnvVars[SITE_ENV_VAR] = site
     } else {
@@ -253,7 +246,7 @@ export const calculateUpdateRequest = async (
     oldEnvVars[FLUSH_TO_LOG_ENV_VAR] !== settings.flushMetricsToLogs?.toString()
   ) {
     needsUpdate = true
-    changedEnvVars[FLUSH_TO_LOG_ENV_VAR] = settings.flushMetricsToLogs!.toString()
+    changedEnvVars[FLUSH_TO_LOG_ENV_VAR] = settings.flushMetricsToLogs.toString()
   }
 
   const newEnvVars = {...oldEnvVars, ...changedEnvVars}
@@ -267,46 +260,71 @@ export const calculateUpdateRequest = async (
     }
   }
 
-  if (runtime === DOTNET_RUNTIME) {
-    needsUpdate = true
-    newEnvVars[ENABLE_PROFILING_ENV_VAR] = CORECLR_ENABLE_PROFILING
-    newEnvVars[PROFILER_ENV_VAR] = CORECLR_PROFILER
-    newEnvVars[PROFILER_PATH_ENV_VAR] = CORECLR_PROFILER_PATH
-    newEnvVars[DOTNET_TRACER_HOME_ENV_VAR] = DD_DOTNET_TRACER_HOME
-  }
-
-  updateRequest.Environment = {
-    Variables: newEnvVars,
-  }
-
   let layerARNs = getLayers(config)
   const originalLayerARNs = layerARNs
   let needsLayerUpdate = false
+  let layerOrTraceVersion: number | undefined
   if (isLayerRuntime(runtime)) {
     const lambdaLibraryLayerArn = getLayerArn(config, config.Runtime as LayerKey, region, settings)
     const lambdaLibraryLayerName = LAYER_LOOKUP[runtime as LayerKey]
     let fullLambdaLibraryLayerARN: string | undefined
     if (settings.layerVersion !== undefined || settings.interactive) {
-      let layerVersion = settings.layerVersion
+      layerOrTraceVersion = settings.layerVersion
       if (settings.interactive && !settings.layerVersion) {
-        layerVersion = await findLatestLayerVersion(config.Runtime as LayerKey, region)
+        layerOrTraceVersion = await findLatestLayerVersion(config.Runtime as LayerKey, region)
       }
-      fullLambdaLibraryLayerARN = `${lambdaLibraryLayerArn}:${layerVersion}`
+      fullLambdaLibraryLayerARN = `${lambdaLibraryLayerArn}:${layerOrTraceVersion}`
     }
     layerARNs = addLayerArn(fullLambdaLibraryLayerARN, lambdaLibraryLayerName, layerARNs)
   }
 
   const lambdaExtensionLayerArn = getLayerArn(config, EXTENSION_LAYER_KEY as LayerKey, region, settings)
   let fullExtensionLayerARN: string | undefined
+  let extensionVersion: number | undefined
   if (settings.extensionVersion !== undefined || settings.interactive) {
-    let extensionVersion = settings.extensionVersion
+    extensionVersion = settings.extensionVersion
     if (settings.interactive && !settings.extensionVersion) {
       extensionVersion = await findLatestLayerVersion(EXTENSION_LAYER_KEY as LayerKey, region)
     }
     fullExtensionLayerARN = `${lambdaExtensionLayerArn}:${extensionVersion}`
   }
-
   layerARNs = addLayerArn(fullExtensionLayerARN, DD_LAMBDA_EXTENSION_LAYER_NAME, layerARNs)
+
+  // Special handling for .NET and Java to support universal instrumentation
+  if (runtimeType === RuntimeType.DOTNET || runtimeType === RuntimeType.JAVA) {
+    if (layerOrTraceVersion && isExtensionCompatibleWithUniversalInstrumentation(runtimeType, extensionVersion)) {
+      // If the user configures the trace version and the extension support univeral instrumenation
+      // Then check whether the trace and extension are compatible with each other
+      if (isTracerCompatibleWithExtension(runtimeType, layerOrTraceVersion)) {
+        needsUpdate = true
+        newEnvVars[AWS_LAMBDA_EXEC_WRAPPER_VAR] = AWS_LAMBDA_EXEC_WRAPPER
+      } else {
+        throw new Error(
+          `For the ${runtime} runtime, the dd-trace version ${layerOrTraceVersion} is not compatible with the dd-extension version ${extensionVersion}`
+        )
+      }
+    } else if (runtimeType === RuntimeType.DOTNET) {
+      // If it is an old extension version or the trace version is null, leave it is as the old workflow
+      if (
+        !isExtensionCompatibleWithUniversalInstrumentation(runtimeType, extensionVersion) &&
+        config.Architectures?.includes(ARM64_ARCHITECTURE)
+      ) {
+        throw new Error(
+          'Instrumenting arm64 architecture is not supported for the given dd-extension version. Please choose the latest dd-extension version or use x86_64 architecture.'
+        )
+      } else {
+        needsUpdate = true
+        newEnvVars[ENABLE_PROFILING_ENV_VAR] = CORECLR_ENABLE_PROFILING
+        newEnvVars[PROFILER_ENV_VAR] = CORECLR_PROFILER
+        newEnvVars[PROFILER_PATH_ENV_VAR] = CORECLR_PROFILER_PATH
+        newEnvVars[DOTNET_TRACER_HOME_ENV_VAR] = DD_DOTNET_TRACER_HOME
+      }
+    }
+  }
+
+  updateRequest.Environment = {
+    Variables: newEnvVars,
+  }
 
   if (originalLayerARNs.sort().join(',') !== layerARNs.sort().join(',')) {
     needsLayerUpdate = true

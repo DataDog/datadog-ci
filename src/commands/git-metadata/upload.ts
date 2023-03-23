@@ -1,15 +1,17 @@
 import chalk from 'chalk'
 import {Command} from 'clipanion'
 
-import {newApiKeyValidator} from '../../helpers/apikey'
+import {ApiKeyValidator, newApiKeyValidator} from '../../helpers/apikey'
 import {InvalidConfigurationError} from '../../helpers/errors'
 import {ICONS} from '../../helpers/formatting'
 import {RequestBuilder} from '../../helpers/interfaces'
-import {getMetricsLogger} from '../../helpers/metrics'
+import {MetricsLogger, getMetricsLogger} from '../../helpers/metrics'
 import {UploadStatus} from '../../helpers/upload'
 import {getRequestBuilder} from '../../helpers/utils'
-import {datadogSite, getBaseIntakeUrl} from './api'
+
+import {apiHost, datadogSite, getBaseIntakeUrl} from './api'
 import {getCommitInfo, newSimpleGit} from './git'
+import {uploadToGitDB} from './gitdb'
 import {CommitInfo} from './interfaces'
 import {uploadRepository} from './library'
 import {
@@ -20,14 +22,15 @@ import {
   renderRetriedUpload,
   renderSuccessfulCommand,
 } from './renderer'
+import {Logger, LogLevel, timedExecAsync} from './utils'
 
 export class UploadCommand extends Command {
   public static usage = Command.Usage({
     description: 'Report the current commit details to Datadog.',
     details: `
-            This command will upload the commit details to Datadog in order to create links to your repositories inside DataDog's UI.
-            See README for details.
-        `,
+      This command will upload the commit details to Datadog in order to create links to your repositories inside Datadog's UI.\n
+      See README for details.
+    `,
     examples: [['Upload the current commit details', 'datadog-ci report-commits upload']],
   })
 
@@ -38,6 +41,12 @@ export class UploadCommand extends Command {
     apiKey: process.env.DATADOG_API_KEY,
   }
   private dryRun = false
+  private verbose = false
+  private gitSync = false
+  private directory = ''
+  private logger: Logger = new Logger((s: string) => {
+    this.context.stdout.write(s)
+  }, LogLevel.INFO)
 
   constructor() {
     super()
@@ -45,9 +54,29 @@ export class UploadCommand extends Command {
   }
 
   public async execute() {
-    const initialTime = new Date().getTime()
+    const initialTime = Date.now()
+    if (this.verbose) {
+      this.logger = new Logger((s: string) => {
+        this.context.stdout.write(s)
+      }, LogLevel.DEBUG)
+    }
     if (this.dryRun) {
-      this.context.stdout.write(renderDryRunWarning())
+      this.logger.warn(renderDryRunWarning())
+    }
+
+    if (this.directory) {
+      // change working dir
+      process.chdir(this.directory)
+    }
+
+    if (!this.config.apiKey) {
+      this.logger.error(
+        renderConfigurationError(
+          new InvalidConfigurationError(`Missing ${chalk.bold('DATADOG_API_KEY')} in your environment`)
+        )
+      )
+
+      return 1
     }
 
     const metricsLogger = getMetricsLogger({
@@ -61,33 +90,89 @@ export class UploadCommand extends Command {
       metricsLogger: metricsLogger.logger,
     })
 
-    let payload: CommitInfo
-    try {
-      payload = await getCommitInfo(await newSimpleGit(), this.repositoryURL)
-    } catch (e) {
-      if (e instanceof Error) {
-        this.context.stdout.write(renderFailedUpload(e.message))
-      }
+    const apiRequestBuilder = this.getApiRequestBuilder(this.config.apiKey)
+    const srcmapRequestBuilder = this.getSrcmapRequestBuilder(this.config.apiKey)
 
-      return
+    let inError = false
+    try {
+      this.logger.info('Uploading list of tracked files...')
+      const elapsed = await timedExecAsync(this.uploadToSrcmapTrack.bind(this), {
+        requestBuilder: srcmapRequestBuilder,
+        apiKeyValidator,
+        metricsLogger,
+      })
+      metricsLogger.logger.increment('sci.success', 1)
+      this.logger.info(`${this.dryRun ? '[DRYRUN] ' : ''}Successfully uploaded tracked files in ${elapsed} seconds.`)
+    } catch (err) {
+      this.logger.error(`Failed upload of tracked files: ${err}`)
+      inError = true
     }
 
-    this.context.stdout.write(renderCommandInfo(payload))
-    let status
+    if (this.gitSync) {
+      try {
+        this.logger.info('Syncing GitDB...')
+        const elapsed = await timedExecAsync(this.uploadToGitDB.bind(this), {
+          requestBuilder: apiRequestBuilder,
+          verbose: this.verbose,
+          dryRun: this.dryRun,
+        })
+        metricsLogger.logger.increment('gitdb.success', 1)
+        this.logger.info(`${this.dryRun ? '[DRYRUN] ' : ''}Successfully synced git DB in ${elapsed} seconds.`)
+      } catch (err) {
+        console.log('error writing to git db')
+        this.logger.warn(`Could not write to GitDB: ${err}`)
+      }
+    }
+
     try {
-      const requestBuilder = this.getRequestBuilder()
+      await metricsLogger.flush()
+    } catch (err) {
+      this.logger.warn(`WARN: ${err}`)
+    }
+    if (inError) {
+      this.logger.error('Command failed. See messages above for more details.')
+
+      return 1
+    }
+    this.logger.info(renderSuccessfulCommand((Date.now() - initialTime) / 1000, this.dryRun))
+
+    return 0
+  }
+
+  private async uploadToGitDB(opts: {requestBuilder: RequestBuilder}) {
+    await uploadToGitDB(this.logger, opts.requestBuilder, await newSimpleGit(), this.dryRun)
+  }
+
+  private async uploadToSrcmapTrack(opts: {
+    requestBuilder: RequestBuilder
+    apiKeyValidator: ApiKeyValidator
+    metricsLogger: MetricsLogger
+  }) {
+    const generatePayload = async () => {
+      try {
+        return await getCommitInfo(await newSimpleGit(), this.repositoryURL)
+      } catch (e) {
+        if (e instanceof Error) {
+          this.logger.error(renderFailedUpload(e.message))
+        }
+        throw e
+      }
+    }
+
+    const sendPayload = async (commit: CommitInfo) => {
+      let status
       if (this.dryRun) {
         status = UploadStatus.Success
       } else {
-        status = await uploadRepository(requestBuilder, this.cliVersion)(payload, {
-          apiKeyValidator,
+        status = await uploadRepository(opts.requestBuilder, this.cliVersion)(commit, {
+          apiKeyValidator: opts.apiKeyValidator,
           onError: (e) => {
-            this.context.stdout.write(renderFailedUpload(e.message))
-            metricsLogger.logger.increment('failed', 1)
+            this.logger.error(renderFailedUpload(e.message))
+            opts.metricsLogger.logger.increment('sci.failed', 1)
           },
           onRetry: (e, attempt) => {
-            this.context.stdout.write(renderRetriedUpload(e.message, attempt))
-            metricsLogger.logger.increment('retries', 1)
+            this.logger.warn(renderRetriedUpload(e.message, attempt))
+            opts.metricsLogger.logger.increment('sci.retries', 1)
           },
           onUpload: () => {
             return
@@ -95,43 +180,20 @@ export class UploadCommand extends Command {
           retries: 5,
         })
       }
-      metricsLogger.logger.increment('success', 1)
-
-      const totalTime = (Date.now() - initialTime) / 1000
-
       if (status !== UploadStatus.Success) {
-        this.context.stdout.write(chalk.red(`${ICONS.FAILED} Error uploading commit information.`))
-
-        return 1
-      }
-      this.context.stdout.write(renderSuccessfulCommand(totalTime, this.dryRun))
-      metricsLogger.logger.gauge('duration', totalTime)
-
-      return 0
-    } catch (error) {
-      if (error instanceof InvalidConfigurationError) {
-        this.context.stdout.write(renderConfigurationError(error))
-
-        return 1
-      }
-      // Otherwise unknown error, let's propagate the exception
-      throw error
-    } finally {
-      try {
-        await metricsLogger.flush()
-      } catch (err) {
-        this.context.stdout.write(`WARN: ${err}\n`)
+        this.logger.error(`${ICONS.FAILED} Error uploading commit information.`)
+        throw new Error('Could not upload commit information')
       }
     }
+
+    const payload = await generatePayload()
+    this.logger.info(renderCommandInfo(payload))
+    await sendPayload(payload)
   }
 
-  private getRequestBuilder(): RequestBuilder {
-    if (!this.config.apiKey) {
-      throw new InvalidConfigurationError(`Missing ${chalk.bold('DATADOG_API_KEY')} in your environment.`)
-    }
-
+  private getSrcmapRequestBuilder(apiKey: string): RequestBuilder {
     return getRequestBuilder({
-      apiKey: this.config.apiKey!,
+      apiKey,
       baseUrl: getBaseIntakeUrl(),
       headers: new Map([
         ['DD-EVP-ORIGIN', 'datadog-ci git-metadata'],
@@ -140,8 +202,18 @@ export class UploadCommand extends Command {
       overrideUrl: 'api/v2/srcmap',
     })
   }
+
+  private getApiRequestBuilder(apiKey: string): RequestBuilder {
+    return getRequestBuilder({
+      apiKey,
+      baseUrl: 'https://' + apiHost,
+    })
+  }
 }
 
 UploadCommand.addPath('git-metadata', 'upload')
 UploadCommand.addOption('dryRun', Command.Boolean('--dry-run'))
+UploadCommand.addOption('verbose', Command.Boolean('--verbose'))
+UploadCommand.addOption('directory', Command.String('--directory'))
+UploadCommand.addOption('gitSync', Command.Boolean('--git-sync'))
 UploadCommand.addOption('repositoryURL', Command.String('--repository-url'))

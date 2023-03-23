@@ -1,10 +1,12 @@
-// tslint:disable: no-string-literal
-import {Cli} from 'clipanion/lib/advanced'
 import {existsSync, promises} from 'fs'
-import glob from 'glob'
 import {EOL, platform} from 'os'
 import path from 'path'
+
+import {Cli} from 'clipanion/lib/advanced'
+import glob from 'glob'
+
 import {buildPath} from '../../../helpers/utils'
+
 import {Dsym} from '../interfaces'
 import {UploadCommand} from '../upload'
 import {createUniqueTmpDirectory, deleteDirectory} from '../utils'
@@ -260,17 +262,28 @@ describe('execute', () => {
     }
   }
 
-  const runCLI = async (dsymPath: string) => {
+  const runCLI = async (dsymPath: string, options?: {configPath?: string}) => {
     const cli = makeCli()
     const context = createMockContext() as any
-    process.env = {DATADOG_API_KEY: 'PLACEHOLDER'}
-    const code = await cli.run(['dsyms', 'upload', dsymPath, '--dry-run'], context)
+    const command = ['dsyms', 'upload', dsymPath, '--dry-run']
+    if (options?.configPath) {
+      command.push('--config')
+      command.push(options.configPath)
+    } else {
+      process.env = {DATADOG_API_KEY: 'PLACEHOLDER'}
+    }
+    const code = await cli.run(command, context)
 
     return {context, code}
   }
 
   beforeAll(() => {
     mockDwarfdumpAndLipoIfNotMacOS()
+  })
+
+  afterEach(() => {
+    delete process.env.DATADOG_API_KEY
+    delete process.env.DATADOG_SITE
   })
 
   test('Should succeed with folder input', async () => {
@@ -305,6 +318,31 @@ describe('execute', () => {
     expect(code).toBe(0)
     expect(output[1]).toContain('Starting upload with concurrency 20. ')
     expect(output[2]).toContain('Will look for dSYMs in src/commands/dsyms/__tests__/fixtures/all.zip')
+    expect(output[3]).toContain('Will use temporary intermediate directory: ')
+    expect(output[4]).toContain('Will use temporary upload directory: ')
+    expect(output[5]).toContain(
+      'Uploading C8469F85-B060-3085-B69D-E46C645560EA.zip (DDTest, arch: armv7, UUID: C8469F85-B060-3085-B69D-E46C645560EA)'
+    )
+    expect(output[6]).toContain(
+      'Uploading 06EE3D68-D605-3E92-B92D-2F48C02A505E.zip (DDTest, arch: arm64, UUID: 06EE3D68-D605-3E92-B92D-2F48C02A505E)'
+    )
+    expect(output[7]).toContain(
+      'Uploading 3BC12422-63CC-30E8-B916-E5006CE3286C.zip (DDTest, arch: arm64, UUID: 3BC12422-63CC-30E8-B916-E5006CE3286C)'
+    )
+    expect(output[10]).toContain('Handled 3 dSYMs with success')
+  })
+
+  test('Should succeed with API key and site from datadog.json file', async () => {
+    const {context, code} = await runCLI('src/commands/dsyms/__tests__/fixtures/', {
+      configPath: 'src/commands/dsyms/__tests__/fixtures/datadog-ci.json',
+    })
+    const outputString = context.stdout.toString()
+    const output = outputString.split(EOL)
+
+    expect(outputString).not.toContain('Error')
+    expect(code).toBe(0)
+    expect(output[1]).toContain('Starting upload with concurrency 20. ')
+    expect(output[2]).toContain('Will look for dSYMs in src/commands/dsyms/__tests__/fixtures/')
     expect(output[3]).toContain('Will use temporary intermediate directory: ')
     expect(output[4]).toContain('Will use temporary upload directory: ')
     expect(output[5]).toContain(

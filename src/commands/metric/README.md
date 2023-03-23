@@ -1,7 +1,5 @@
 # metric command
 
-:warning: This command is in beta stage.
-
 Add numeric tags to CI Visibility pipeline and job spans.
 
 ## Usage
