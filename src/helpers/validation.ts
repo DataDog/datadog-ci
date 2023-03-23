@@ -35,3 +35,19 @@ export const isValidDatadogSite = (site?: string): boolean => {
 
   return !!process.env.DD_CI_BYPASS_SITE_VALIDATION || DATADOG_SITES.includes(site.toLowerCase())
 }
+
+const renderDuplicateAPIKey = (environmentAPIKey: string) => {
+  return `API keys were specified both in a configuration file and in the environment.\nThe environment API key ending in ${environmentAPIKey.slice(
+    -4
+  )} will be used.\n`
+}
+
+export const checkAPIKeyOverride = (
+  environmentAPIKey: string | undefined,
+  configFileAPIKey: string | undefined,
+  stdout: {write: (message: string) => void}
+): void => {
+  if (configFileAPIKey && environmentAPIKey && configFileAPIKey !== environmentAPIKey) {
+    stdout.write(renderDuplicateAPIKey(environmentAPIKey))
+  }
+}

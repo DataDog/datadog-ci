@@ -16,6 +16,7 @@ import {
   performSubCommand,
   resolveConfigFromFileAndEnvironment,
 } from '../../helpers/utils'
+import {checkAPIKeyOverride} from '../../helpers/validation'
 
 import * as dsyms from '../dsyms/upload'
 import {newSimpleGit} from '../git-metadata/git'
@@ -34,7 +35,6 @@ import {
   renderArgumentMissingError,
   renderCommandInfo,
   renderCommandSummary,
-  renderDuplicateAPIKey,
   renderFailedUpload,
   renderGeneralizedError,
   renderGitWarning,
@@ -132,13 +132,7 @@ export class UploadCommand extends Command {
         configPath: this.configPath,
         defaultConfigPaths: DEFAULT_CONFIG_PATHS,
         configFromFileCallback: (configFromFile: any) => {
-          if (
-            configFromFile.apiKey &&
-            process.env.DATADOG_API_KEY &&
-            configFromFile.apiKey !== process.env.DATADOG_API_KEY
-          ) {
-            this.context.stdout.write(renderDuplicateAPIKey(process.env.DATADOG_API_KEY))
-          }
+          checkAPIKeyOverride(process.env.DATADOG_API_KEY, configFromFile.apiKey, this.context.stdout)
         },
       }
     )

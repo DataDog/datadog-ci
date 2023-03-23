@@ -111,9 +111,3 @@ export const renderUpload = (dSYM: CompressedDsym): string => {
 
   return `Uploading ${archiveName} (${objectName}, arch: ${archs}, UUID: ${uuids})\n`
 }
-
-export const renderDuplicateAPIKey = (environmentAPIKey: string) => {
-  return `API keys were specified both in a configuration file and in the environment.\nThe environment API key ending in ${environmentAPIKey.slice(
-    -4
-  )} will be used.\n`
-}

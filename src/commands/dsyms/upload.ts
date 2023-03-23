@@ -12,6 +12,7 @@ import {RequestBuilder} from '../../helpers/interfaces'
 import {getMetricsLogger, MetricsLogger} from '../../helpers/metrics'
 import {upload, UploadStatus} from '../../helpers/upload'
 import {buildPath, getRequestBuilder, resolveConfigFromFileAndEnvironment} from '../../helpers/utils'
+import {checkAPIKeyOverride} from '../../helpers/validation'
 
 import {ArchSlice, CompressedDsym, Dsym} from './interfaces'
 import {
@@ -19,7 +20,6 @@ import {
   renderCommandInfo,
   renderConfigurationError,
   renderDSYMSlimmingFailure,
-  renderDuplicateAPIKey,
   renderFailedUpload,
   renderInvalidDsymWarning,
   renderRetriedUpload,
@@ -82,13 +82,7 @@ export class UploadCommand extends Command {
         configPath: this.configPath,
         defaultConfigPaths: ['datadog-ci.json', '../datadog-ci.json'],
         configFromFileCallback: (configFromFile: any) => {
-          if (
-            configFromFile.apiKey &&
-            process.env.DATADOG_API_KEY &&
-            configFromFile.apiKey !== process.env.DATADOG_API_KEY
-          ) {
-            this.context.stdout.write(renderDuplicateAPIKey(process.env.DATADOG_API_KEY))
-          }
+          checkAPIKeyOverride(process.env.DATADOG_API_KEY, configFromFile.apiKey, this.context.stdout)
         },
       }
     )
