@@ -1,5 +1,4 @@
 import fs from 'fs'
-import {Readable} from 'stream'
 
 import * as ciUtils from '../../../helpers/utils'
 
