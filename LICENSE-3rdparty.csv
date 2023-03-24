@@ -1,4 +1,8 @@
 Component,Origin,Licence,Copyright
+@aws-sdk/client-cloudwatch-logs',import,Apache-2.0,Copyright (c) 2018 Amazon.com, Inc. or its affiliates.
+@aws-sdk/client-lambda',import,Apache-2.0,Copyright (c) 2018 Amazon.com, Inc. or its affiliates.
+@aws-sdk/credential-providers',import,Apache-2.0,Copyright (c) 2018 Amazon.com, Inc. or its affiliates.
+@aws-sdk/types',dev,Apache-2.0,Copyright (c) 2018 Amazon.com, Inc. or its affiliates.
 @babel/core,dev,MIT,Copyright (c) 2014-present Sebastian McKenzie and other contributors
 @babel/preset-env,dev,MIT,Copyright (c) 2014-present Sebastian McKenzie and other contributors
 @babel/preset-typescript,dev,MIT,Copyright (c) 2014-present Sebastian McKenzie and other contributors
@@ -18,8 +22,9 @@ Component,Origin,Licence,Copyright
 @types/sshpk,dev,MIT,Copyright Microsoft Corporation
 @types/xml2js,dev,MIT,Copyright Microsoft Corporation
 @types/ws,dev,MIT,Copyright Microsoft Corporation
-aws-sdk,import,Apache-2.0,Copyright Amazon Web Services
 async-retry,import,MIT,"Copyright (c) 2017 ZEIT, Inc."
+aws-sdk-client-mock,dev,MIT,Copyright (c) 2021 Maciej Radzikowski
+aws-sdk-client-mock-jest,dev,MIT,Copyright (c) 2021 Maciej Radzikowski
 axios,import,MIT,Copyright (c) 2014-present Matt Zabriskie
 chalk,import,MIT,Copyright (c) Sindre Sorhus <sindresorhus@gmail.com> (sindresorhus.com)
 clipanion,import,MIT,Copyright (c) 2019 Mael Nison
