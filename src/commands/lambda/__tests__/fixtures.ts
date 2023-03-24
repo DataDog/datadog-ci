@@ -1,4 +1,28 @@
-import {CloudWatchLogs, Lambda} from 'aws-sdk'
+import {
+  DescribeSubscriptionFiltersCommand,
+  DescribeLogGroupsResponse,
+  DescribeSubscriptionFiltersResponse,
+  ServiceInputTypes as CWLServiceInputTypes,
+  ServiceOutputTypes as CWLServiceOutputTypes,
+  DescribeLogGroupsCommand,
+  CreateLogGroupCommand,
+  DeleteSubscriptionFilterCommand,
+  PutSubscriptionFilterCommand,
+} from '@aws-sdk/client-cloudwatch-logs'
+import {
+  FunctionConfiguration as LFunctionConfiguration,
+  ServiceInputTypes as LServiceInputTypes,
+  ServiceOutputTypes as LServiceOutputTypes,
+  GetLayerVersionCommand,
+  GetFunctionCommand,
+  ListFunctionsCommand,
+  UpdateFunctionConfigurationCommand,
+  TagResourceCommand,
+  ListTagsCommand,
+  ListTagsResponse,
+  GetLayerVersionCommandInput,
+} from '@aws-sdk/client-lambda'
+import {AwsStub} from 'aws-sdk-client-mock'
 import {Cli, Command} from 'clipanion/lib/advanced'
 
 import {InstrumentCommand} from '../instrument'
@@ -47,58 +71,104 @@ export const createCommand = <T extends Command>(commandClass: ConstructorOf<T>,
   return command
 }
 
-export const makeMockLambda = (
-  functionConfigs: Record<string, Lambda.FunctionConfiguration>,
-  layers?: Record<string, Lambda.LayerVersionsListItem>
-) => ({
-  getFunction: jest.fn().mockImplementation(({FunctionName}) => ({
-    promise: () => Promise.resolve({Configuration: functionConfigs[FunctionName]}),
-  })),
-  getLayerVersion: jest.fn().mockImplementation(({LayerName, VersionNumber}) => ({
-    promise: () => {
-      const layer = `${LayerName}:${VersionNumber}`
+export const mockLambdaClientCommands = (lambdaClientMock: AwsStub<LServiceInputTypes, LServiceOutputTypes>) => {
+  lambdaClientMock.on(UpdateFunctionConfigurationCommand).resolves({})
+  lambdaClientMock.on(TagResourceCommand).resolves({})
+  lambdaClientMock.on(GetLayerVersionCommand).rejects()
+}
 
-      return layers && layers[layer] && layers[layer].Version === VersionNumber
-        ? Promise.resolve(layers[layer])
-        : Promise.reject()
-    },
-  })),
-  listFunctions: jest.fn().mockImplementation(() => ({
-    promise: () => Promise.resolve({Functions: Object.values(functionConfigs)}),
-  })),
-  listTags: jest.fn().mockImplementation(() => ({promise: () => Promise.resolve({Tags: {}})})),
-  tagResource: jest.fn().mockImplementation(() => ({promise: () => Promise.resolve()})),
-  updateFunctionConfiguration: jest.fn().mockImplementation(() => ({promise: () => Promise.resolve()})),
-})
+export const mockLambdaConfigurations = (
+  lambdaClientMock: AwsStub<LServiceInputTypes, LServiceOutputTypes>,
+  functionConfigurations: Record<string, {config: LFunctionConfiguration; tags?: ListTagsResponse}>
+) => {
+  const functions: LFunctionConfiguration[] = []
+  for (const functionArn in functionConfigurations) {
+    const functionConfiguration = functionConfigurations[functionArn]
+    functions.push(functionConfiguration.config)
 
-export const makeMockCloudWatchLogs = (
+    lambdaClientMock
+      .on(GetFunctionCommand, {
+        FunctionName: functionArn,
+      })
+      .resolves({
+        Configuration: functionConfiguration.config,
+      })
+
+    lambdaClientMock
+      .on(ListTagsCommand, {
+        Resource: functionArn,
+      })
+      .resolves({
+        Tags: functionConfiguration.tags?.Tags ?? {},
+      })
+  }
+
+  lambdaClientMock.on(ListFunctionsCommand).resolves({
+    Functions: functions,
+  })
+}
+
+export const mockLambdaLayers = (
+  lambdaClientMock: AwsStub<LServiceInputTypes, LServiceOutputTypes>,
+  layers: Record<string, GetLayerVersionCommandInput>
+) => {
+  for (const layerName in layers) {
+    const layer = layers[layerName]
+
+    lambdaClientMock
+      .on(GetLayerVersionCommand, {
+        LayerName: layer.LayerName,
+        VersionNumber: layer.VersionNumber,
+      })
+      .resolves({
+        LayerArn: layerName,
+      })
+  }
+}
+
+export const mockLogGroups = (
+  cloudWatchLogsClientMock: AwsStub<CWLServiceInputTypes, CWLServiceOutputTypes>,
   logGroups: Record<
     string,
-    {config: CloudWatchLogs.DescribeLogGroupsResponse; filters?: CloudWatchLogs.DescribeSubscriptionFiltersResponse}
+    {
+      config: DescribeLogGroupsResponse
+      filters?: DescribeSubscriptionFiltersResponse
+    }
   >
-) => ({
-  createLogGroup: jest.fn().mockImplementation(() => ({promise: () => Promise.resolve()})),
-  deleteSubscriptionFilter: jest.fn().mockImplementation(() => ({promise: () => Promise.resolve()})),
-  describeLogGroups: jest.fn().mockImplementation(({logGroupNamePrefix}) => {
-    const groups = logGroups[logGroupNamePrefix]?.config ?? {logGroups: []}
+) => {
+  for (const logGroupName in logGroups) {
+    const logGroup = logGroups[logGroupName]
 
-    return {
-      promise: () => Promise.resolve(groups),
+    cloudWatchLogsClientMock.on(DescribeLogGroupsCommand, {logGroupNamePrefix: logGroupName}).resolves(logGroup.config)
+    if (logGroup.filters !== undefined) {
+      cloudWatchLogsClientMock
+        .on(DescribeSubscriptionFiltersCommand, {
+          logGroupName,
+        })
+        .resolves(logGroup.filters)
     }
-  }),
-  describeSubscriptionFilters: jest.fn().mockImplementation(({logGroupName}) => {
-    const groups = logGroups[logGroupName]?.filters ?? {subscriptionFilters: []}
+  }
+}
 
-    return {
-      promise: () => Promise.resolve(groups),
-    }
-  }),
-  putSubscriptionFilter: jest.fn().mockImplementation(() => ({promise: () => Promise.resolve()})),
-})
+export const mockCloudWatchLogsClientCommands = (
+  cloudWatchLogsClientMock: AwsStub<CWLServiceInputTypes, CWLServiceOutputTypes>
+) => {
+  cloudWatchLogsClientMock.on(DescribeLogGroupsCommand).resolves({})
+  cloudWatchLogsClientMock.on(DescribeSubscriptionFiltersCommand).resolves({})
+  cloudWatchLogsClientMock.on(CreateLogGroupCommand).resolves({})
+  cloudWatchLogsClientMock.on(DeleteSubscriptionFilterCommand).resolves({})
+  cloudWatchLogsClientMock.on(PutSubscriptionFilterCommand).resolves({})
+}
 
 export const mockAwsAccount = '123456789012'
 export const mockAwsAccessKeyId = 'M0CKAWS4CC3SSK3Y1DSL'
 export const mockAwsSecretAccessKey = 'M0CKAWSs3cR3T4cC3SSK3YS3rv3rL3SSD4tad0g0'
+export const mockAwsCredentials = {
+  accessKeyId: mockAwsAccessKeyId,
+  secretAccessKey: mockAwsSecretAccessKey,
+  sessionToken: undefined,
+}
+
 export const mockDatadogApiKey = '02aeb762fff59ac0d5ad1536cd9633bd'
 export const mockDatadogEnv = 'sandbox'
 export const mockDatadogService = 'testServiceName'
