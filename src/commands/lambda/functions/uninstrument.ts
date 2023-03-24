@@ -1,4 +1,9 @@
-import {CloudWatchLogs, Lambda} from 'aws-sdk'
+import {CloudWatchLogsClient} from '@aws-sdk/client-cloudwatch-logs'
+import {
+  LambdaClient,
+  FunctionConfiguration as LFunctionConfiguration,
+  UpdateFunctionConfigurationRequest,
+} from '@aws-sdk/client-lambda'
 
 import {
   API_KEY_ENV_VAR,
@@ -37,16 +42,21 @@ import {calculateTagRemoveRequest} from '../tags'
 import {getLambdaFunctionConfigs, getLambdaFunctionConfigsFromRegex, getLayers, isSupportedRuntime} from './commons'
 
 export const getUninstrumentedFunctionConfigs = async (
-  lambda: Lambda,
-  cloudWatch: CloudWatchLogs,
+  lambdaClient: LambdaClient,
+  cloudWatchLogsClient: CloudWatchLogsClient,
   functionARNs: string[],
   forwarderARN: string | undefined
 ): Promise<FunctionConfiguration[]> => {
-  const lambdaFunctionConfigs = await getLambdaFunctionConfigs(lambda, functionARNs)
+  const lambdaFunctionConfigs = await getLambdaFunctionConfigs(lambdaClient, functionARNs)
 
   const configs: FunctionConfiguration[] = []
   for (const config of lambdaFunctionConfigs) {
-    const functionConfig = await getUninstrumentedFunctionConfig(lambda, cloudWatch, config, forwarderARN)
+    const functionConfig = await getUninstrumentedFunctionConfig(
+      lambdaClient,
+      cloudWatchLogsClient,
+      config,
+      forwarderARN
+    )
 
     configs.push(functionConfig)
   }
@@ -55,9 +65,9 @@ export const getUninstrumentedFunctionConfigs = async (
 }
 
 export const getUninstrumentedFunctionConfig = async (
-  lambda: Lambda,
-  cloudWatch: CloudWatchLogs,
-  config: Lambda.FunctionConfiguration,
+  lambdaClient: LambdaClient,
+  cloudWatchLogsClient: CloudWatchLogsClient,
+  config: LFunctionConfiguration,
   forwarderARN: string | undefined
 ): Promise<FunctionConfiguration> => {
   const functionARN = config.FunctionArn!
@@ -68,40 +78,46 @@ export const getUninstrumentedFunctionConfig = async (
 
   const updateRequest = calculateUpdateRequest(config, runtime)
   let logGroupConfiguration: LogGroupConfiguration | undefined
+
   if (forwarderARN) {
     const logGroupName = `/aws/lambda/${config.FunctionName}`
-    logGroupConfiguration = await calculateLogGroupRemoveRequest(cloudWatch, logGroupName, forwarderARN)
+    logGroupConfiguration = await calculateLogGroupRemoveRequest(cloudWatchLogsClient, logGroupName, forwarderARN)
   }
 
-  const tagConfiguration: TagConfiguration | undefined = await calculateTagRemoveRequest(lambda, functionARN)
+  const tagConfiguration: TagConfiguration | undefined = await calculateTagRemoveRequest(lambdaClient, functionARN)
 
   return {
     functionARN,
     lambdaConfig: config,
     logGroupConfiguration,
     tagConfiguration,
-    updateRequest,
+    updateFunctionConfigurationCommandInput: updateRequest,
   }
 }
 
 export const getUninstrumentedFunctionConfigsFromRegEx = async (
-  lambda: Lambda,
-  cloudWatch: CloudWatchLogs,
+  lambdaClient: LambdaClient,
+  cloudWatchLogsClient: CloudWatchLogsClient,
   pattern: string,
   forwarderArn: string | undefined
 ): Promise<FunctionConfiguration[]> => {
-  const matchedFunctions = await getLambdaFunctionConfigsFromRegex(lambda, pattern)
+  const matchedFunctions = await getLambdaFunctionConfigsFromRegex(lambdaClient, pattern)
   const functionsToUpdate: FunctionConfiguration[] = []
 
   for (const config of matchedFunctions) {
-    const functionConfig = await getUninstrumentedFunctionConfig(lambda, cloudWatch, config, forwarderArn)
+    const functionConfig = await getUninstrumentedFunctionConfig(
+      lambdaClient,
+      cloudWatchLogsClient,
+      config,
+      forwarderArn
+    )
     functionsToUpdate.push(functionConfig)
   }
 
   return functionsToUpdate
 }
 
-export const calculateUpdateRequest = (config: Lambda.FunctionConfiguration, runtime: Runtime) => {
+export const calculateUpdateRequest = (config: LFunctionConfiguration, runtime: Runtime) => {
   const oldEnvVars: Record<string, string> = {...config.Environment?.Variables}
   const functionARN = config.FunctionArn
 
@@ -109,7 +125,7 @@ export const calculateUpdateRequest = (config: Lambda.FunctionConfiguration, run
     return undefined
   }
 
-  const updateRequest: Lambda.UpdateFunctionConfigurationRequest = {
+  const updateRequest: UpdateFunctionConfigurationRequest = {
     FunctionName: functionARN,
   }
   let needsUpdate = false
