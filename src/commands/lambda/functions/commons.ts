@@ -1,8 +1,19 @@
 import {Writable} from 'stream'
 
-import {CloudWatchLogs, config as aws_sdk_config, Lambda, SharedIniFileCredentials} from 'aws-sdk'
-import {GetFunctionRequest} from 'aws-sdk/clients/lambda'
-import {SharedIniFileCredentialsOptions} from 'aws-sdk/lib/credentials/shared_ini_file_credentials'
+import {CloudWatchLogsClient} from '@aws-sdk/client-cloudwatch-logs'
+import {
+  LambdaClient,
+  FunctionConfiguration as LFunctionConfiguration,
+  GetFunctionCommandInput,
+  ListFunctionsCommandOutput,
+  GetLayerVersionCommand,
+  ListFunctionsCommand,
+  GetFunctionCommand,
+  UpdateFunctionConfigurationCommand,
+  UpdateFunctionConfigurationCommandInput,
+} from '@aws-sdk/client-lambda'
+import {FromIniInit, fromIni, fromNodeProviderChain, fromNodeProviderChainInit} from '@aws-sdk/credential-providers'
+import {AwsCredentialIdentity, AwsCredentialIdentityProvider} from '@aws-sdk/types'
 import inquirer from 'inquirer'
 
 import {isValidDatadogSite} from '../../../helpers/validation'
@@ -23,7 +34,6 @@ import {
   LayerKey,
   LAYER_LOOKUP,
   LIST_FUNCTIONS_MAX_RETRY_COUNT,
-  MAX_LAMBDA_STATE_CHECK_ATTEMPTS,
   Runtime,
   RUNTIME_LOOKUP,
 } from '../constants'
@@ -133,16 +143,15 @@ export const findLatestLayerVersion = async (layer: LayerKey, region: string) =>
   const account = region.startsWith('us-gov') ? GOVCLOUD_LAYER_AWS_ACCOUNT : DEFAULT_LAYER_AWS_ACCOUNT
   const layerName = LAYER_LOOKUP[layer]
   let foundLatestVersion = false
-  const lambda = new Lambda({region})
+  const lambdaClient = new LambdaClient({region})
   while (!foundLatestVersion) {
     try {
       // Search next version
-      await lambda
-        .getLayerVersion({
-          LayerName: `arn:aws:lambda:${region}:${account}:layer:${layerName}`,
-          VersionNumber: layerVersion,
-        })
-        .promise()
+      const command = new GetLayerVersionCommand({
+        LayerName: `arn:aws:lambda:${region}:${account}:layer:${layerName}`,
+        VersionNumber: layerVersion,
+      })
+      await lambdaClient.send(command)
       latestVersion = layerVersion
       // Increase layer version
       layerVersion += searchStep
@@ -160,12 +169,12 @@ export const findLatestLayerVersion = async (layer: LayerKey, region: string) =>
         // current version could've been deleted by accident.
         try {
           layerVersion += searchStep
-          await lambda
-            .getLayerVersion({
-              LayerName: `arn:aws:lambda:${region}:${account}:layer:${layerName}`,
-              VersionNumber: layerVersion,
-            })
-            .promise()
+          const command = new GetLayerVersionCommand({
+            LayerName: `arn:aws:lambda:${region}:${account}:layer:${layerName}`,
+            VersionNumber: layerVersion,
+          })
+          await lambdaClient.send(command)
+
           latestVersion = layerVersion
           // Continue the search if the next version does exist (unlikely event)
           layerVersion += searchStep
@@ -180,52 +189,59 @@ export const findLatestLayerVersion = async (layer: LayerKey, region: string) =>
   return latestVersion
 }
 
-export const getAWSFileCredentialsParams = (profile: string): SharedIniFileCredentialsOptions => {
-  const params: SharedIniFileCredentialsOptions = {profile}
+export const getAWSFileCredentialsParams = (profile: string): FromIniInit => {
+  const init: FromIniInit = {profile}
 
   if (process.env[AWS_SHARED_CREDENTIALS_FILE_ENV_VAR] !== undefined) {
-    params.filename = process.env[AWS_SHARED_CREDENTIALS_FILE_ENV_VAR]
+    init.filepath = process.env[AWS_SHARED_CREDENTIALS_FILE_ENV_VAR]
   }
 
-  // If provided profile is enforced by MFA and a
-  // session token is not set we must request for the MFA token.
-  params.tokenCodeFn = async (mfaSerial, callback) => {
+  // If provided profile is enforced by MFA and a session
+  // token is not set we must request for the MFA token.
+  init.mfaCodeProvider = async (mfaSerial) => {
     const answer = await inquirer.prompt(awsProfileQuestion(mfaSerial))
-    callback(undefined, answer.AWS_MFA)
+
+    return answer.AWS_MFA
   }
 
-  return params
+  return init
 }
 
-export const updateAWSProfileCredentials = async (profile: string) => {
+/**
+ * Returns the loaded AWS Credentials.
+ * If `profile` is defined in `init`, the credentials will be loaded
+ * from the provider `fromIni`.
+ *
+ * @param {fromNodeProviderChainInit} init AWS Credential Provider options.
+ * @returns {AwsCredentialIdentity} credentials object.
+ */
+export const getAWSCredentials = async (init?: fromNodeProviderChainInit) => {
+  let _init = init
+  let _provider = fromNodeProviderChain
+
+  if (init?.profile) {
+    console.log(init.profile)
+    _init = getAWSFileCredentialsParams(init?.profile)
+    _provider = fromIni
+  }
+
   try {
-    const params: SharedIniFileCredentialsOptions = getAWSFileCredentialsParams(profile)
+    const credentialsProvider: AwsCredentialIdentityProvider = _provider(_init)
+    const credentials: AwsCredentialIdentity = await credentialsProvider()
 
-    const profileCredentials: SharedIniFileCredentials = new SharedIniFileCredentials(params)
-
-    // Update credentials in the case user has
-    // MFA set up.
-    await profileCredentials.getPromise()
-    if (profileCredentials.needsRefresh()) {
-      await profileCredentials.refreshPromise()
-    }
-
-    if (!(profileCredentials.accessKeyId !== undefined || profileCredentials.sessionToken !== undefined)) {
-      throw new Error(`Profile '${profile}' is not configured.`)
-    }
-
-    aws_sdk_config.credentials = profileCredentials
-  } catch (e) {
-    if (e instanceof Error) {
-      throw Error(`Couldn't set AWS profile credentials. ${e.message}`)
+    return credentials
+  } catch (err) {
+    if (err instanceof Error) {
+      throw Error(`Couldn't set AWS credentials. ${err.message}`)
     }
   }
 }
 
-export const isMissingAWSCredentials = () =>
-  // If env vars and aws_sdk_config.credentials are not set return true otherwise return false
-  (process.env[AWS_ACCESS_KEY_ID_ENV_VAR] === undefined || process.env[AWS_SECRET_ACCESS_KEY_ENV_VAR] === undefined) &&
-  !aws_sdk_config.credentials
+export const isMissingAWSCredentials = () => {
+  return (
+    process.env[AWS_ACCESS_KEY_ID_ENV_VAR] === undefined || process.env[AWS_SECRET_ACCESS_KEY_ENV_VAR] === undefined
+  )
+}
 
 export const isMissingAnyDatadogApiKeyEnvVar = () =>
   !(
@@ -236,7 +252,8 @@ export const isMissingAnyDatadogApiKeyEnvVar = () =>
 export const isMissingDatadogEnvVars = () =>
   !isValidDatadogSite(process.env[CI_SITE_ENV_VAR]) || isMissingAnyDatadogApiKeyEnvVar()
 
-export const getAllLambdaFunctionConfigs = async (lambda: Lambda) => getLambdaFunctionConfigsFromRegex(lambda, '.')
+export const getAllLambdaFunctionConfigs = async (lambdaClient: LambdaClient) =>
+  getLambdaFunctionConfigsFromRegex(lambdaClient, '.')
 
 // Returns false if not all runtimes are of the same RuntimeType across multiple functions
 export const checkRuntimeTypesAreUniform = (configList: FunctionConfiguration[]) =>
@@ -255,20 +272,21 @@ export const checkRuntimeTypesAreUniform = (configList: FunctionConfiguration[])
  * @returns an array of Lambda FunctionConfiguration's that match the pattern above.
  */
 export const getLambdaFunctionConfigsFromRegex = async (
-  lambda: Lambda,
+  lambdaClient: LambdaClient,
   pattern: string
-): Promise<Lambda.FunctionConfiguration[]> => {
+): Promise<LFunctionConfiguration[]> => {
   const regEx = new RegExp(pattern)
-  const matchedFunctions: Lambda.FunctionConfiguration[] = []
+  const matchedFunctions: LFunctionConfiguration[] = []
   let retryCount = 0
-  let listFunctionsResponse: Lambda.ListFunctionsResponse
+  let response: ListFunctionsCommandOutput
   let nextMarker: string | undefined
 
   while (true) {
     try {
-      listFunctionsResponse = await lambda.listFunctions({Marker: nextMarker}).promise()
-      listFunctionsResponse.Functions?.map((fn) => fn.FunctionName?.match(regEx) && matchedFunctions.push(fn))
-      nextMarker = listFunctionsResponse.NextMarker
+      const command = new ListFunctionsCommand({Marker: nextMarker})
+      response = await lambdaClient.send(command)
+      response.Functions?.map((fn) => fn.FunctionName?.match(regEx) && matchedFunctions.push(fn))
+      nextMarker = response.NextMarker
       if (!nextMarker) {
         break
       }
@@ -294,10 +312,10 @@ export const getLambdaFunctionConfigsFromRegex = async (
  * @returns an array of Lambda FunctionConfiguration's.
  */
 export const getLambdaFunctionConfigs = (
-  lambda: Lambda,
+  lambdaClient: LambdaClient,
   functionARNs: string[]
-): Promise<Lambda.FunctionConfiguration[]> => {
-  const promises = functionARNs.map((fn) => getLambdaFunctionConfig(lambda, fn))
+): Promise<LFunctionConfiguration[]> => {
+  const promises = functionARNs.map((fn) => getLambdaFunctionConfig(lambdaClient, fn))
 
   return Promise.all(promises)
 }
@@ -312,7 +330,7 @@ export const getLambdaFunctionConfigs = (
  * @returns the ARN of a **Specific Runtime Layer** with the correct region, account, architecture, and name.
  */
 export const getLayerArn = (
-  config: Lambda.FunctionConfiguration,
+  config: LFunctionConfiguration,
   layer: LayerKey,
   region: string,
   settings?: InstrumentationSettings
@@ -336,27 +354,28 @@ export const getLayerNameWithVersion = (layerArn: string): string | undefined =>
   return name && version ? `${name}:${version}` : undefined
 }
 
-export const getLayers = (config: Lambda.FunctionConfiguration) => (config.Layers ?? []).map((layer) => layer.Arn!)
+export const getLayers = (config: LFunctionConfiguration) => (config.Layers ?? []).map((layer) => layer.Arn!)
 
 /**
  * Call the aws-sdk Lambda api to get a Function given
  * an ARN and then return its Configuration.
  *
- * @param lambda an instance of Lambda from aws-sdk.
+ * @param lambdaClient an instance of LambdaClient.
  * @param functionARN a string, can be Function ARN, Partial ARN, or a Function Name.
  * @returns the Lambda FunctionConfiguration of the given ARN.
  */
 export const getLambdaFunctionConfig = async (
-  lambda: Lambda,
+  lambdaClient: LambdaClient,
   functionARN: string
-): Promise<Lambda.FunctionConfiguration> => {
-  const params: GetFunctionRequest = {
+): Promise<LFunctionConfiguration> => {
+  const params: GetFunctionCommandInput = {
     FunctionName: functionARN,
   }
-  const result = await lambda.getFunction(params).promise()
+  const command = new GetFunctionCommand(params)
+  const response = await lambdaClient.send(command)
   // AWS typescript API is slightly mistyped, adds undefineds where
   // there shouldn't be.
-  const config = result.Configuration!
+  const config = response.Configuration!
 
   return config
 }
@@ -375,40 +394,6 @@ export const getRegion = (functionARN: string): string | undefined => {
 }
 
 /**
- * Returns whether a Lambda Function is active or throws an error if
- * the FunctionConfiguration does not comply with `Successful` or `Active`.
- *
- * @param lambda an instance of Lambda from aws-sdk.
- * @param config a Lambda FunctionConfiguration.
- * @param functionArn a string, can be Function ARN, Partial ARN, or a Function Name.
- * @param attempts the number of attemps that have passed since the last retry.
- * @returns if a Lambda Function is active.
- */
-export const isLambdaActive = async (
-  lambda: Lambda,
-  config: Lambda.FunctionConfiguration,
-  functionArn: string,
-  attempts = 0
-): Promise<boolean> => {
-  // TODO remove 1 Oct 2021 https://aws.amazon.com/blogs/compute/tracking-the-state-of-lambda-functions/
-  if (!config.State || !config.LastUpdateStatus) {
-    return true
-  }
-  if (config.LastUpdateStatus === 'Successful' && config.State === 'Active') {
-    return true
-  }
-  if (config.State === 'Pending' && attempts <= MAX_LAMBDA_STATE_CHECK_ATTEMPTS) {
-    await wait(2 ** attempts * 1000)
-    const refetchedConfig = await getLambdaFunctionConfig(lambda, functionArn)
-
-    return isLambdaActive(lambda, refetchedConfig, functionArn, (attempts += 1))
-  }
-  throw Error(
-    `Can't instrument ${functionArn}, as current State is ${config.State} (must be "Active") and Last Update Status is ${config.LastUpdateStatus} (must be "Successful")`
-  )
-}
-
-/**
  * Returns whether the runtime given is supported by the Datadog CI Lambda.
  *
  * @param runtime a string representing a Lambda FunctionConfiguration Runtime.
@@ -422,19 +407,27 @@ export const isLayerRuntime = (runtime: string): runtime is LayerKey => LAYER_LO
 export const sentenceMatchesRegEx = (sentence: string, regex: RegExp) => sentence.match(regex)
 
 export const updateLambdaFunctionConfig = async (
-  lambda: Lambda,
-  cloudWatch: CloudWatchLogs,
+  lambdaClient: LambdaClient,
+  cloudWatchLogsClient: CloudWatchLogsClient,
   config: FunctionConfiguration
 ) => {
-  if (config.updateRequest !== undefined) {
-    await lambda.updateFunctionConfiguration(config.updateRequest).promise()
+  if (config.updateFunctionConfigurationCommandInput !== undefined) {
+    await updateFunctionConfiguration(lambdaClient, config.updateFunctionConfigurationCommandInput)
   }
   if (config.logGroupConfiguration !== undefined) {
-    await applyLogGroupConfig(cloudWatch, config.logGroupConfiguration)
+    await applyLogGroupConfig(cloudWatchLogsClient, config.logGroupConfiguration)
   }
   if (config.tagConfiguration !== undefined) {
-    await applyTagConfig(lambda, config.tagConfiguration)
+    await applyTagConfig(lambdaClient, config.tagConfiguration)
   }
+}
+
+export const updateFunctionConfiguration = async (
+  client: LambdaClient,
+  input: UpdateFunctionConfigurationCommandInput
+) => {
+  const command = new UpdateFunctionConfigurationCommand(input)
+  await client.send(command)
 }
 
 export const handleLambdaFunctionUpdates = async (configGroups: InstrumentedConfigurationGroup[], stdout: Writable) => {
@@ -447,7 +440,7 @@ export const handleLambdaFunctionUpdates = async (configGroups: InstrumentedConf
     for (const config of group.configs) {
       totalFunctions += 1
       try {
-        await updateLambdaFunctionConfig(group.lambda, group.cloudWatchLogs, config)
+        await updateLambdaFunctionConfig(group.lambdaClient, group.cloudWatchLogsClient, config)
       } catch (err) {
         failedUpdates.push({functionARN: config.functionARN, error: err})
         totalFailedUpdates += 1
@@ -490,10 +483,10 @@ export const willUpdateFunctionConfigs = (configs: FunctionConfiguration[]) => {
   let willUpdate = false
   for (const config of configs) {
     if (
-      config.updateRequest !== undefined ||
-      config.logGroupConfiguration?.createLogGroupRequest !== undefined ||
-      config.logGroupConfiguration?.deleteSubscriptionFilterRequest !== undefined ||
-      config.logGroupConfiguration?.subscriptionFilterRequest !== undefined ||
+      config.updateFunctionConfigurationCommandInput !== undefined ||
+      config.logGroupConfiguration?.createLogGroupCommandInput !== undefined ||
+      config.logGroupConfiguration?.deleteSubscriptionFilterCommandInput !== undefined ||
+      config.logGroupConfiguration?.putSubscriptionFilterCommandInput !== undefined ||
       config?.tagConfiguration !== undefined
     ) {
       willUpdate = true
