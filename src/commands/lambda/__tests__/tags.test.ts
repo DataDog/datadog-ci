@@ -1,254 +1,321 @@
 jest.mock('../loggroup')
-import path from 'path'
+jest.mock('../../../../package.json', () => ({version: 'XXXX'}))
 
-import {Lambda} from 'aws-sdk'
+import {
+  LambdaClient,
+  ListTagsCommand,
+  TagResourceCommand,
+  TagResourceCommandInput,
+  UntagResourceCommand,
+  UntagResourceCommandInput,
+} from '@aws-sdk/client-lambda'
+import {mockClient} from 'aws-sdk-client-mock'
+import 'aws-sdk-client-mock-jest'
 
 import {TAG_VERSION_NAME} from '../constants'
-import {applyTagConfig, calculateTagRemoveRequest, calculateTagUpdateRequest, hasVersionTag} from '../tags'
-const {version} = require(path.join(__dirname, '../../../../package.json'))
+import {TagConfiguration} from '../interfaces'
+import {
+  applyTagConfig,
+  calculateTagRemoveRequest,
+  calculateTagUpdateRequest,
+  hasVersionTag,
+  tagResource,
+  untagResource,
+} from '../tags'
 
-const makeMockLambda = (
-  functions: Record<string, {config: Lambda.FunctionConfiguration; tagsResponse?: Lambda.ListTagsResponse}>
-) => ({
-  listTags: jest.fn().mockImplementation(({Resource}: Lambda.ListTagsRequest) => {
-    const tags = functions[Resource]?.tagsResponse ?? {Tags: {}}
-
-    return {
-      promise: () => Promise.resolve(tags),
-    }
-  }),
-  tagResource: jest.fn().mockImplementation(() => ({promise: () => Promise.resolve()})),
-})
-
-const VERSION_REGEX = /^v(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(-(0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(\.(0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*)?(\+[0-9a-zA-Z-]+(\.[0-9a-zA-Z-]+)*)?$/
+import {mockLambdaClientCommands, mockLambdaConfigurations} from './fixtures'
 
 describe('tags', () => {
+  const lambdaClientMock = mockClient(LambdaClient)
+
+  beforeEach(() => {
+    lambdaClientMock.reset()
+    mockLambdaClientCommands(lambdaClientMock)
+  })
   describe('applyTagConfig', () => {
-    test('Calls tagResource with config data', async () => {
-      const lambda = makeMockLambda({
-        'arn:aws:lambda:us-east-1:000000000000:function:autoinstrument': {
+    test('tags resources with config', async () => {
+      const functionArn = 'arn:aws:lambda:us-east-1:000000000000:function:autoinstrument'
+      mockLambdaConfigurations(lambdaClientMock, {
+        [functionArn]: {
           config: {
-            FunctionArn: 'arn:aws:lambda:us-east-1:000000000000:function:autoinstrument',
+            FunctionArn: functionArn,
             Handler: 'index.handler',
             Runtime: 'nodejs12.x',
           },
         },
       })
-      const config = {
-        tagResourceRequest: {
-          Resource: 'arn:aws:lambda:us-east-1:000000000000:function:autoinstrument',
+      const config: TagConfiguration = {
+        tagResourceCommandInput: {
+          Resource: functionArn,
           Tags: {
-            dd_sls_ci: 'v0.0.0',
+            [TAG_VERSION_NAME]: 'vXXXX',
           },
         },
       }
-      const result = await applyTagConfig(lambda as any, config)
-      expect(result).toEqual(undefined)
-      expect(lambda.tagResource).toHaveBeenCalledWith(config.tagResourceRequest)
+      await applyTagConfig(lambdaClientMock as any, config)
+      expect(lambdaClientMock).toHaveReceivedCommandWith(TagResourceCommand, config.tagResourceCommandInput!)
     })
-    test('Handles undefined config', async () => {
-      const lambda = makeMockLambda({
-        'arn:aws:lambda:us-east-1:000000000000:function:autoinstrument': {
+    test('doesnt tag resources when config is undefined', async () => {
+      const functionArn = 'arn:aws:lambda:us-east-1:000000000000:function:autoinstrument'
+      mockLambdaConfigurations(lambdaClientMock, {
+        [functionArn]: {
           config: {
-            FunctionArn: 'arn:aws:lambda:us-east-1:000000000000:function:autoinstrument',
+            FunctionArn: functionArn,
             Handler: 'index.handler',
             Runtime: 'nodejs12.x',
           },
         },
       })
-      const config = {
-        tagResourceRequest: undefined,
+      const config: TagConfiguration = {
+        tagResourceCommandInput: undefined,
       }
-      const result = await applyTagConfig(lambda as any, config)
-      expect(result).toEqual(undefined)
-      expect(lambda.tagResource).not.toHaveBeenCalled()
+      await applyTagConfig(lambdaClientMock as any, config)
+      expect(lambdaClientMock).toHaveReceivedCommandTimes(TagResourceCommand, 0)
+    })
+    test('untags resources with config', async () => {
+      const functionArn = 'arn:aws:lambda:us-east-1:000000000000:function:autoinstrument'
+      mockLambdaConfigurations(lambdaClientMock, {
+        [functionArn]: {
+          config: {
+            FunctionArn: functionArn,
+            Handler: 'index.handler',
+            Runtime: 'nodejs12.x',
+          },
+          tags: {
+            Tags: {
+              [TAG_VERSION_NAME]: 'vXXXX',
+            },
+          },
+        },
+      })
+      const config: TagConfiguration = {
+        untagResourceCommandInput: {
+          Resource: functionArn,
+          TagKeys: [TAG_VERSION_NAME],
+        },
+      }
+      await applyTagConfig(lambdaClientMock as any, config)
+      expect(lambdaClientMock).toHaveReceivedCommandWith(UntagResourceCommand, config.untagResourceCommandInput!)
     })
   })
   describe('calculateTagUpdateRequest', () => {
-    test('Handles no existing tags', async () => {
-      const functionARN = 'arn:aws:lambda:us-east-1:000000000000:function:autoinstrument'
-      const lambda = makeMockLambda({
-        'arn:aws:lambda:us-east-1:000000000000:function:autoinstrument': {
+    test('when no tags are present', async () => {
+      const functionArn = 'arn:aws:lambda:us-east-1:000000000000:function:autoinstrument'
+      mockLambdaConfigurations(lambdaClientMock, {
+        [functionArn]: {
           config: {
-            FunctionArn: functionARN,
+            FunctionArn: functionArn,
             Handler: 'index.handler',
             Runtime: 'nodejs12.x',
           },
         },
       })
-      const result = await calculateTagUpdateRequest(lambda as any, functionARN)
+      const result = await calculateTagUpdateRequest(lambdaClientMock as any, functionArn)
       expect(result).toEqual({
-        tagResourceRequest: {
-          Resource: functionARN,
+        tagResourceCommandInput: {
+          Resource: functionArn,
           Tags: {
-            dd_sls_ci: expect.stringMatching(VERSION_REGEX),
+            [TAG_VERSION_NAME]: 'vXXXX',
           },
         },
       })
-      expect(lambda.listTags).toHaveBeenCalledWith({Resource: functionARN})
+      expect(lambdaClientMock).toHaveReceivedCommandWith(ListTagsCommand, {Resource: functionArn})
     })
     test('Handles different version tag', async () => {
-      const functionARN = 'arn:aws:lambda:us-east-1:000000000000:function:autoinstrument'
-      const lambda = makeMockLambda({
-        'arn:aws:lambda:us-east-1:000000000000:function:autoinstrument': {
+      const functionArn = 'arn:aws:lambda:us-east-1:000000000000:function:autoinstrument'
+      mockLambdaConfigurations(lambdaClientMock, {
+        [functionArn]: {
           config: {
-            FunctionArn: functionARN,
+            FunctionArn: functionArn,
             Handler: 'index.handler',
             Runtime: 'nodejs12.x',
           },
-        },
-      })
-
-      lambda.listTags.mockImplementation(() => ({promise: () => Promise.resolve({Tags: {dd_sls_ci: 'v0.0.0'}})}))
-
-      const result = await calculateTagUpdateRequest(lambda as any, functionARN)
-      expect(result).toEqual({
-        tagResourceRequest: {
-          Resource: functionARN,
-          Tags: {
-            dd_sls_ci: expect.stringMatching(VERSION_REGEX),
+          tags: {
+            Tags: {
+              [TAG_VERSION_NAME]: 'v0.0.0',
+            },
           },
         },
       })
-      expect(lambda.listTags).toHaveBeenCalledWith({Resource: functionARN})
+
+      const result = await calculateTagUpdateRequest(lambdaClientMock as any, functionArn)
+      expect(result).toEqual({
+        tagResourceCommandInput: {
+          Resource: functionArn,
+          Tags: {
+            [TAG_VERSION_NAME]: 'vXXXX',
+          },
+        },
+      })
+      expect(lambdaClientMock).toHaveReceivedCommandWith(ListTagsCommand, {Resource: functionArn})
     })
     test('Handles sam version tag', async () => {
-      const functionARN = 'arn:aws:lambda:us-east-1:000000000000:function:autoinstrument'
-      const lambda = makeMockLambda({
-        'arn:aws:lambda:us-east-1:000000000000:function:autoinstrument': {
+      const functionArn = 'arn:aws:lambda:us-east-1:000000000000:function:autoinstrument'
+      mockLambdaConfigurations(lambdaClientMock, {
+        [functionArn]: {
           config: {
-            FunctionArn: functionARN,
+            FunctionArn: functionArn,
             Handler: 'index.handler',
             Runtime: 'nodejs12.x',
+          },
+          tags: {
+            Tags: {
+              [TAG_VERSION_NAME]: 'vXXXX',
+            },
           },
         },
       })
 
-      lambda.listTags.mockImplementation(() => ({promise: () => Promise.resolve({Tags: {dd_sls_ci: `v${version}`}})}))
-
-      const result = await calculateTagUpdateRequest(lambda as any, functionARN)
-      expect(result).toBe(undefined)
-      expect(lambda.listTags).toHaveBeenCalledWith({Resource: functionARN})
+      await calculateTagUpdateRequest(lambdaClientMock as any, functionArn)
+      expect(lambdaClientMock).toHaveReceivedCommandWith(ListTagsCommand, {Resource: functionArn})
     })
   })
   describe('calculateTagRemoveRequest', () => {
     test('returns untag resource configuration with the keys to delete', async () => {
-      const functionARN = 'arn:aws:lambda:us-east-1:000000000000:function:autoinstrument'
-      const lambda = makeMockLambda({
-        'arn:aws:lambda:us-east-1:000000000000:function:autoinstrument': {
+      const functionArn = 'arn:aws:lambda:us-east-1:000000000000:function:autoinstrument'
+      mockLambdaConfigurations(lambdaClientMock, {
+        [functionArn]: {
           config: {
-            FunctionArn: functionARN,
+            FunctionArn: functionArn,
             Handler: 'index.handler',
             Runtime: 'nodejs12.x',
           },
-          tagsResponse: {
-            Tags: {dd_sls_ci: `v${version}`},
+          tags: {
+            Tags: {[TAG_VERSION_NAME]: 'vXXXX'},
           },
         },
       })
-      const result = await calculateTagRemoveRequest(lambda as any, functionARN)
+      const result = await calculateTagRemoveRequest(lambdaClientMock as any, functionArn)
       expect(result).toMatchInlineSnapshot(`
         Object {
-          "untagResourceRequest": Object {
-            "Resource": "${functionARN}",
+          "untagResourceCommandInput": Object {
+            "Resource": "${functionArn}",
             "TagKeys": Array [
               "${TAG_VERSION_NAME}",
             ],
           },
         }
       `)
-      expect(lambda.listTags).toHaveBeenCalledWith({Resource: functionARN})
+      expect(lambdaClientMock).toHaveReceivedCommandWith(ListTagsCommand, {Resource: functionArn})
     })
 
     test('returns undefined when no tags need to be removed', async () => {
-      const functionARN = 'arn:aws:lambda:us-east-1:000000000000:function:autoinstrument'
-      const lambda = makeMockLambda({
-        'arn:aws:lambda:us-east-1:000000000000:function:autoinstrument': {
+      const functionArn = 'arn:aws:lambda:us-east-1:000000000000:function:autoinstrument'
+      mockLambdaConfigurations(lambdaClientMock, {
+        [functionArn]: {
           config: {
-            FunctionArn: functionARN,
+            FunctionArn: functionArn,
             Handler: 'index.handler',
             Runtime: 'nodejs12.x',
           },
-          tagsResponse: {
+          tags: {
             Tags: {not_datadog: 'some-tag'},
           },
         },
       })
-      const result = await calculateTagRemoveRequest(lambda as any, functionARN)
+      const result = await calculateTagRemoveRequest(lambdaClientMock as any, functionArn)
       expect(result).toBeUndefined()
-      expect(lambda.listTags).toHaveBeenCalledWith({Resource: functionARN})
+      expect(lambdaClientMock).toHaveReceivedCommandWith(ListTagsCommand, {Resource: functionArn})
     })
   })
   describe('hasVersionTag', () => {
     test('handles no tags', async () => {
-      const functionARN = 'arn:aws:lambda:us-east-1:000000000000:function:autoinstrument'
-      const lambda = makeMockLambda({
-        'arn:aws:lambda:us-east-1:000000000000:function:autoinstrument': {
+      const functionArn = 'arn:aws:lambda:us-east-1:000000000000:function:autoinstrument'
+      mockLambdaConfigurations(lambdaClientMock, {
+        [functionArn]: {
           config: {
-            FunctionArn: functionARN,
+            FunctionArn: functionArn,
             Handler: 'index.handler',
             Runtime: 'nodejs12.x',
           },
         },
       })
 
-      const result = await hasVersionTag(lambda as any, functionARN)
+      const result = await hasVersionTag(lambdaClientMock as any, functionArn)
       expect(result).toBe(false)
-      expect(lambda.listTags).toHaveBeenCalledWith({Resource: functionARN})
+      expect(lambdaClientMock).toHaveReceivedCommandWith(ListTagsCommand, {Resource: functionArn})
     })
     test('handles no version tag', async () => {
-      const functionARN = 'arn:aws:lambda:us-east-1:000000000000:function:autoinstrument'
-      const lambda = makeMockLambda({
-        'arn:aws:lambda:us-east-1:000000000000:function:autoinstrument': {
+      const functionArn = 'arn:aws:lambda:us-east-1:000000000000:function:autoinstrument'
+      mockLambdaConfigurations(lambdaClientMock, {
+        [functionArn]: {
           config: {
-            FunctionArn: functionARN,
+            FunctionArn: functionArn,
             Handler: 'index.handler',
             Runtime: 'nodejs12.x',
+          },
+          tags: {
+            Tags: {
+              foo: 'bar',
+            },
           },
         },
       })
 
-      lambda.listTags.mockImplementation(() => ({promise: () => Promise.resolve({Tags: {foo: 'bar'}})}))
-
-      const result = await hasVersionTag(lambda as any, functionARN)
+      const result = await hasVersionTag(lambdaClientMock as any, functionArn)
       expect(result).toBe(false)
-      expect(lambda.listTags).toHaveBeenCalledWith({Resource: functionARN})
+      expect(lambdaClientMock).toHaveReceivedCommandWith(ListTagsCommand, {Resource: functionArn})
     })
     test('handles different version tag', async () => {
-      const functionARN = 'arn:aws:lambda:us-east-1:000000000000:function:autoinstrument'
-      const lambda = makeMockLambda({
-        'arn:aws:lambda:us-east-1:000000000000:function:autoinstrument': {
+      const functionArn = 'arn:aws:lambda:us-east-1:000000000000:function:autoinstrument'
+      mockLambdaConfigurations(lambdaClientMock, {
+        [functionArn]: {
           config: {
-            FunctionArn: functionARN,
+            FunctionArn: functionArn,
             Handler: 'index.handler',
             Runtime: 'nodejs12.x',
           },
-          tagsResponse: {
-            Tags: {dd_sls_ci: 'v0.0.0'},
+          tags: {
+            Tags: {[TAG_VERSION_NAME]: 'v0.0.0'},
           },
         },
       })
-      const result = await hasVersionTag(lambda as any, functionARN)
+      const result = await hasVersionTag(lambdaClientMock as any, functionArn)
       expect(result).toBe(false)
-      expect(lambda.listTags).toHaveBeenCalledWith({Resource: functionARN})
+      expect(lambdaClientMock).toHaveReceivedCommandWith(ListTagsCommand, {Resource: functionArn})
     })
     test('handles same version tag', async () => {
-      const functionARN = 'arn:aws:lambda:us-east-1:000000000000:function:autoinstrument'
-      const lambda = makeMockLambda({
-        'arn:aws:lambda:us-east-1:000000000000:function:autoinstrument': {
+      const functionArn = 'arn:aws:lambda:us-east-1:000000000000:function:autoinstrument'
+      mockLambdaConfigurations(lambdaClientMock, {
+        [functionArn]: {
           config: {
-            FunctionArn: functionARN,
+            FunctionArn: functionArn,
             Handler: 'index.handler',
             Runtime: 'nodejs12.x',
           },
-          tagsResponse: {
-            Tags: {dd_sls_ci: `v${version}`},
+          tags: {
+            Tags: {[TAG_VERSION_NAME]: 'vXXXX'},
           },
         },
       })
-      const result = await hasVersionTag(lambda as any, functionARN)
+      const result = await hasVersionTag(lambdaClientMock as any, functionArn)
       expect(result).toBe(true)
-      expect(lambda.listTags).toHaveBeenCalledWith({Resource: functionARN})
+      expect(lambdaClientMock).toHaveReceivedCommandWith(ListTagsCommand, {Resource: functionArn})
+    })
+  })
+  describe('tagResource', () => {
+    test('call is sent correctly', async () => {
+      const input: TagResourceCommandInput = {
+        Resource: 'some-arn',
+        Tags: {
+          foo: 'bar',
+        },
+      }
+      await tagResource(lambdaClientMock as any, input)
+
+      expect(lambdaClientMock).toHaveReceivedCommandWith(TagResourceCommand, input)
+    })
+  })
+
+  describe('untagResource', () => {
+    test('call is sent correctly', async () => {
+      const input: UntagResourceCommandInput = {
+        Resource: 'some-arn',
+        TagKeys: ['foo'],
+      }
+      await untagResource(lambdaClientMock as any, input)
+
+      expect(lambdaClientMock).toHaveReceivedCommandWith(UntagResourceCommand, input)
     })
   })
 })
