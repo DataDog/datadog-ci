@@ -50,11 +50,11 @@ To setup the client, your Datadog API and application keys need to be configured
 
 3. Or defined in a [global JSON configuration file](#global-configuration-file-options):
 
-   Specify the path to this file using the `--config` flag [when launching your tests](#run-tests). If you set the name of your global configuration file to `datadog-ci.json`, that name is the default.
+   Specify the path to this file using the `--config` flag [when launching your tests](#run-tests). If you set the name of your [global configuration file][9] to `datadog-ci.json`, that name is the default.
 
 ### Global configuration file options
 
-In the global configuration file, you can set the following advanced options: 
+In the [global configuration file][9], you can set the following advanced options: 
 
 `apiKey`
 : The API key used to query the Datadog API.
@@ -98,9 +98,9 @@ The duration (in milliseconds) after which `datadog-ci` stops polling for test r
 
 #### Use a proxy
 
-It is possible to configure a proxy to be used for outgoing connections to Datadog using the `proxy` key of the global configuration file.
+It is possible to configure a proxy to be used for outgoing connections to Datadog using the `proxy` key of the [global configuration file][9].
 
-As the [`proxy-agent` library][2] is used to configure the proxy, the supported protocols include `http`, `https`, `socks`, `socks4`, `socks4a`, `socks5`, `socks5h`, `pac+data`, `pac+file`, `pac+ftp`, `pac+http`, and `pac+https`. The `proxy` key of the global configuration file is passed to a new `proxy-agent` instance, which means the same configuration for the library is supported.
+As the [`proxy-agent` library][2] is used to configure the proxy, the supported protocols include `http`, `https`, `socks`, `socks4`, `socks4a`, `socks5`, `socks5h`, `pac+data`, `pac+file`, `pac+ftp`, `pac+http`, and `pac+https`. The `proxy` key of the [global configuration file][9] is passed to a new `proxy-agent` instance, which means the same configuration for the library is supported.
 
 **Note**: `host` and `port` keys are mandatory arguments and the `protocol` key defaults to `http` if not defined.
 
@@ -148,7 +148,7 @@ For example:
 
 ### Command line options
 
-If the organization uses a custom sub-domain to access Datadog, this needs to be set in the `DATADOG_SUBDOMAIN` environment variable or in the global configuration file under the `subdomain` key in order to properly display the test results URL. 
+If the organization uses a custom sub-domain to access Datadog, this needs to be set in the `DATADOG_SUBDOMAIN` environment variable or in the [global configuration file][9] under the `subdomain` key in order to properly display the test results URL. 
 
 For example, if the URL used to access Datadog is `myorg.datadoghq.com`, set the environment variable to `myorg`:
 
@@ -230,7 +230,7 @@ It is also possible to trigger tests corresponding to a search query by using th
 yarn datadog-ci synthetics run-tests -s 'tag:e2e-tests' --config global.config.json
 ```
 
-You can use `--files` (shorthand `-f`) to override the global file selector when you want to run multiple suites in parallel with a single global configuration file.
+You can use `--files` (shorthand `-f`) to override the global file selector when you want to run multiple suites in parallel with a single [global configuration file][9].
 
 ```bash
 yarn datadog-ci synthetics run-tests -f ./component-1/**/*.synthetics.json -f ./component-2/**/*.synthetics.json
@@ -242,7 +242,7 @@ You can also pass variables as arguments using `--variable KEY=VALUE`.
 yarn datadog-ci synthetics run-tests -f ./component-1/**/*.synthetics.json -v PASSWORD=$PASSWORD
 ```
 
-**Note**: If you are launching your tests with a custom global configuration file, append your command with `--config <PATH_TO_GLOBAL_CONFIG_FILE>`.
+**Note**: If you are launching your tests with a custom [global configuration file][9], append your command with `--config <PATH_TO_GLOBAL_CONFIG_FILE>`.
 
 <!-- xxz tab xxx -->
 <!-- xxx tab "NPM" xxx -->
@@ -263,7 +263,7 @@ Then, run:
 npm run datadog-ci-synthetics
 ```
 
-**Note**: If you are launching your tests with a custom global configuration file, append the command associated to your `datadog-ci-synthetics` script with `--config <PATH_TO_GLOBAL_CONFIG_FILE>`.
+**Note**: If you are launching your tests with a custom [global configuration file][9], append the command associated to your `datadog-ci-synthetics` script with `--config <PATH_TO_GLOBAL_CONFIG_FILE>`.
 
 <!-- xxz tab xxx -->
 <!-- xxz tabs xxx -->
@@ -332,7 +332,9 @@ All options under the `config` key are optional and allow overriding of the test
 
 ## Use the testing tunnel
 
-You can combine variable overrides with the [Continuous Testing Tunnel][3] to run tests within your development environment. The testing tunnel creates an end-to-end encrypted HTTP proxy between your infrastructure and Datadog that allows all test requests sent through the CLI to be automatically routed through the `datadog-ci` client. This allows you to run tests with end-to-end encryption at every stage of your software development lifecycle, from pre-production environments to your production system.
+You can combine variable overrides with the [Continuous Testing Tunnel][3] to run tests within your development environment. The testing tunnel creates an end-to-end encrypted HTTP proxy between your infrastructure and Datadog that allows all test requests sent through the CLI to be automatically routed through the `datadog-ci` client. 
+
+This allows you to run tests with end-to-end encryption at every stage of your software development lifecycle, from pre-production environments to your production system.
 
 ## End-to-end testing process
 
@@ -393,7 +395,7 @@ Reporters can hook themselves into the `MainReporter` of the command.
 
 ## View test results
 
-You can see results for CI batches by clicking on a batch in the [Continuous Testing Explorer][4], or by clicking on a test in the [Synthetic Tests page][5].
+You can see results for CI batches by clicking on a batch in the [Synthetic Monitoring & Continuous Testing Explorer][4] or clicking on a test in the [**Synthetic Tests** page][5].
 
 You can also see the outcome of test executions directly in your CI as your tests are being executed. To identify what caused a test to fail, look at the execution logs and search for causes of the failed assertion.
 
@@ -423,6 +425,8 @@ You can also see the outcome of test executions directly in your CI as your test
 
 ## Further reading
 
+Additional helpful documentation, links, and articles:
+
 - [Use Datadog's GitHub Action to add continuous testing to your workflows][6]
 - [Learn about Continuous Testing and CI/CD][7]
 - [Learn about the Continuous Testing Explorer][8]
@@ -436,3 +440,4 @@ You can also see the outcome of test executions directly in your CI as your test
 [6]: https://www.datadoghq.com/blog/datadog-github-action-synthetics-ci-visibility/
 [7]: https://docs.datadoghq.com/continuous_testing/cicd_integrations/
 [8]: https://docs.datadoghq.com/continuous_testing/explorer/
+[9]: https://github.com/DataDog/datadog-ci/blob/master/.github/workflows/e2e/global.config.json
