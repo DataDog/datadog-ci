@@ -11,9 +11,9 @@ jobs:
         with:
           node-version: '14'
       - run: yarn
-      - run: yarn publish
+      - run: yarn npm publish
         env:
-          NPM_AUTH_TOKEN: ${{ secrets.YARN_NPM_AUTH_TOKEN }}
+          YARN_NPM_AUTH_TOKEN: ${{ secrets.YARN_NPM_AUTH_TOKEN }}
 
   build-binary-ubuntu:
     runs-on: ubuntu-latest
