@@ -4,13 +4,6 @@ import fs from 'fs'
 import {APIHelper} from './api'
 import {Test, TestPayload, UserConfigOverride} from './interfaces'
 
-/**
- * Create an md5 hash of a file at a given path. This is done incrementally so
- * entire file does not need to fit in memory.
-
- * @param file path to the file that will be hashed
- * @returns md5 hash of file as string
- */
 export const getMD5HashFromFile = async (file: string): Promise<string> => {
   const hash = crypto.createHash('md5')
   const input = fs.createReadStream(file)
