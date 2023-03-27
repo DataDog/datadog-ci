@@ -21,5 +21,5 @@ jobs:
           echo "Publishing on $TAG_TO_PUBLISH channel."
           yarn npm publish --tag=$TAG_TO_PUBLISH
         env:
-          NPM_AUTH_TOKEN: ${{ secrets.YARN_NPM_AUTH_TOKEN }}
+          YARN_NPM_AUTH_TOKEN: ${{ secrets.YARN_NPM_AUTH_TOKEN }}
           TAG: ${{ github.event.release.tag_name }}
