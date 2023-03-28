@@ -24,10 +24,7 @@ describe('upload', () => {
       const write = jest.fn()
       command.context = {stdout: {write}} as any
       const sourcemaps = new Array<RNSourcemap>(
-        new RNSourcemap(
-          'src/commands/react-native/__tests__/fixtures/sourcemap-with-no-files/empty.min.js',
-          'src/commands/react-native/__tests__/fixtures/sourcemap-with-no-files/empty.min.js.map'
-        )
+        new RNSourcemap('src/commands/react-native/__tests__/fixtures/sourcemap-with-no-files/empty.min.js.map')
       )
       // The command will fetch git metadatas for the current datadog-ci repository.
       // The `empty.min.js.map` contains no files, therefore no file payload should be set.
@@ -43,10 +40,7 @@ describe('upload', () => {
       const write = jest.fn()
       command.context = {stdout: {write}} as any
       const sourcemaps = new Array<RNSourcemap>(
-        new RNSourcemap(
-          'src/commands/react-native/__tests__/fixtures/basic-ios/main.jsbundle',
-          'src/commands/react-native/__tests__/fixtures/basic-ios/main.jsbundle.map'
-        )
+        new RNSourcemap('src/commands/react-native/__tests__/fixtures/basic-ios/main.jsbundle.map')
       )
       // The command will fetch git metadatas for the current datadog-ci repository.
       // The `main.jsbundle.map` contains the "git.test.ts" filename which matches a tracked filename,
@@ -62,7 +56,7 @@ describe('upload', () => {
 })
 
 describe('execute', () => {
-  const runCLI = async (bundle: string, options?: {configPath?: string}) => {
+  const runCLI = async (bundle: string, options?: {configPath?: string; uploadBundle?: boolean}) => {
     const cli = makeCli()
     const context = createMockContext() as any
     process.env = {DATADOG_API_KEY: 'PLACEHOLDER'}
@@ -75,14 +69,15 @@ describe('execute', () => {
       '1023040',
       '--service',
       'com.company.app',
-      '--bundle',
-      bundle,
       '--sourcemap',
       `${bundle}.map`,
       '--platform',
       'android',
       '--dry-run',
     ]
+    if (options?.uploadBundle) {
+      command.push('--bundle', bundle)
+    }
     if (options?.configPath) {
       command.push('--config', options.configPath)
       delete process.env.DATADOG_API_KEY
@@ -150,6 +145,19 @@ describe('execute', () => {
       version: '1.23.4',
     })
   })
+
+  test('prints warning when bundle file is specified', async () => {
+    const {context, code} = await runCLI('./src/commands/react-native/__tests__/fixtures/basic-ios/main.jsbundle', {
+      configPath: './src/commands/react-native/__tests__/fixtures/config/config-with-api-key.json',
+      uploadBundle: true,
+    })
+
+    const output = context.stdout.toString().split(os.EOL)
+    expect(code).toBe(0)
+    expect(output[1]).toContain(
+      "--bundle option has been deprecated. The js bundle won't be sent. This will not affect the error tracking of your app."
+    )
+  })
 })
 
 const makeCli = () => {
@@ -174,9 +182,9 @@ const createMockContext = () => {
 
 interface ExpectedOutput {
   build: string
-  bundlePath: string
+  bundlePath?: string
   concurrency: number
-  jsFilesURLs: string[]
+  jsFilesURLs?: string[]
   platform: string
   projectPath: string
   service: string
@@ -189,16 +197,14 @@ const checkConsoleOutput = (output: string[], expected: ExpectedOutput) => {
   expect(output[0]).toContain('DRY-RUN MODE ENABLED. WILL NOT UPLOAD SOURCEMAPS')
   expect(output[1]).toContain('Starting upload.')
   expect(output[2]).toContain(
-    `Upload of ${expected.sourcemapPath} for bundle ${expected.bundlePath} on platform ${expected.platform} with project path ${expected.projectPath}`
+    `Upload of ${expected.sourcemapPath} on platform ${expected.platform} with project path ${expected.projectPath}`
   )
   expect(output[3]).toContain(`version: ${expected.version} build: ${expected.build} service: ${expected.service}`)
   const uploadedFileLines = output.slice(4, -4)
   expect(uploadedFileLines.length).toEqual(expected.sourcemapsPaths.length) // Safety check
-  expect(uploadedFileLines.length).toEqual(expected.jsFilesURLs.length) // Safety check
+  expect(uploadedFileLines.length).toEqual(expected.jsFilesURLs?.length || 1) // Safety check
   uploadedFileLines.forEach((_, index) => {
-    expect(uploadedFileLines[index]).toContain(
-      `[DRYRUN] Uploading sourcemap ${expected.sourcemapsPaths} for JS file available at ${expected.jsFilesURLs}`
-    )
+    expect(uploadedFileLines[index]).toContain(`[DRYRUN] Uploading sourcemap ${expected.sourcemapsPaths}`)
   })
   if (uploadedFileLines.length > 1) {
     expect(output.slice(-2, -1)[0]).toContain(`[DRYRUN] Handled ${uploadedFileLines.length} sourcemaps with success`)

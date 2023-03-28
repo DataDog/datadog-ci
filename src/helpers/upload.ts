@@ -1,4 +1,5 @@
 import {ReadStream} from 'fs'
+import {createGzip} from 'zlib'
 
 import FormData from 'form-data'
 
@@ -29,6 +30,9 @@ export interface UploadOptions {
    */
   retries: number
 
+  /** Whether to gzip the request */
+  useGzip?: boolean
+
   /** Callback when upload fails (retries are not considered as failure)
    */
   onError(error: Error): void
@@ -58,7 +62,7 @@ export const upload = (requestBuilder: RequestBuilder) => async (
 ): Promise<UploadStatus> => {
   opts.onUpload()
   try {
-    await retryRequest(() => uploadMultipart(requestBuilder, payload), {
+    await retryRequest(() => uploadMultipart(requestBuilder, payload, opts.useGzip ?? false), {
       onRetry: opts.onRetry,
       retries: opts.retries,
     })
@@ -85,15 +89,26 @@ export const upload = (requestBuilder: RequestBuilder) => async (
 // We don't want any hard limit enforced by the CLI, the backend will enforce a max size by returning 413 errors.
 const maxBodyLength = Infinity
 
-const uploadMultipart = async (request: RequestBuilder, payload: MultipartPayload) => {
+const uploadMultipart = async (request: RequestBuilder, payload: MultipartPayload, useGzip: boolean) => {
   const form = new FormData()
   payload.content.forEach((value: MultipartValue, key: string) => {
     form.append(key, value.value, value.options)
   })
 
+  let data: any = form
+  let headers = form.getHeaders()
+  if (useGzip) {
+    const gz = createGzip()
+    data = data.pipe(gz)
+    headers = {
+      'Content-Encoding': 'gzip',
+      ...headers,
+    }
+  }
+
   return request({
-    data: form,
-    headers: form.getHeaders(),
+    data,
+    headers,
     maxBodyLength,
     method: 'POST',
     url: 'v1/input',

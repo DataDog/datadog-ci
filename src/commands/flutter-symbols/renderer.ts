@@ -25,7 +25,7 @@ export const renderCommandInfo = (
 
   fullString += startStr
   uploadInfo.forEach((ui) => {
-    fullString += chalk.green(`Uploaing ${ui.platform} ${ui.fileType} at location ${ui.location}\n`)
+    fullString += chalk.green(`Uploading ${ui.platform} ${ui.fileType} at location ${ui.location}\n`)
   })
   const serviceVersionProjectPathStr = chalk.green(`  version: ${version} service: ${service} flavor: ${flavor}\n`)
   fullString += serviceVersionProjectPathStr
