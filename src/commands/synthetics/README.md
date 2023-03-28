@@ -50,11 +50,13 @@ To setup the client, your Datadog API and application keys need to be configured
 
 3. Or defined in a [global JSON configuration file](#global-configuration-file-options):
 
-   Specify the path to this file using the `--config` flag [when launching your tests](#run-tests). If you set the name of your [global configuration file][9] to `datadog-ci.json`, that name is the default.
+   Create a JSON configuration file on your system. Specify the path to the file using the `--config` flag [when launching your tests](#run-tests). If you don't specify a file path, Datadog uses the default filename of `datadog-ci.json`. 
 
 ### Global configuration file options
 
-In the [global configuration file][9], you can set the following advanced options: 
+When you run your tests, use the `--config` flag on the command line to specify the path to the global configuration file.
+
+See below for the list of advanced options in the global configuration file. For an example configuration file, see this [`global.config.json` file][9].
 
 `apiKey`
 : The API key used to query the Datadog API.
@@ -98,9 +100,9 @@ The duration (in milliseconds) after which `datadog-ci` stops polling for test r
 
 #### Use a proxy
 
-It is possible to configure a proxy to be used for outgoing connections to Datadog using the `proxy` key of the [global configuration file][9].
+It is possible to configure a proxy to be used for outgoing connections to Datadog using the `proxy` key of the global configuration file.
 
-As the [`proxy-agent` library][2] is used to configure the proxy, the supported protocols include `http`, `https`, `socks`, `socks4`, `socks4a`, `socks5`, `socks5h`, `pac+data`, `pac+file`, `pac+ftp`, `pac+http`, and `pac+https`. The `proxy` key of the [global configuration file][9] is passed to a new `proxy-agent` instance, which means the same configuration for the library is supported.
+As the [`proxy-agent` library][2] is used to configure the proxy, the supported protocols include `http`, `https`, `socks`, `socks4`, `socks4a`, `socks5`, `socks5h`, `pac+data`, `pac+file`, `pac+ftp`, `pac+http`, and `pac+https`. The `proxy` key of the global configuration file is passed to a new `proxy-agent` instance, which means the same configuration for the library is supported.
 
 **Note**: `host` and `port` keys are mandatory arguments and the `protocol` key defaults to `http` if not defined.
 
@@ -148,7 +150,7 @@ For example:
 
 ### Command line options
 
-If the organization uses a custom sub-domain to access Datadog, this needs to be set in the `DATADOG_SUBDOMAIN` environment variable or in the [global configuration file][9] under the `subdomain` key in order to properly display the test results URL. 
+If the organization uses a custom sub-domain to access Datadog, this needs to be set in the `DATADOG_SUBDOMAIN` environment variable or in the global configuration file under the `subdomain` key in order to properly display the test results URL. 
 
 For example, if the URL used to access Datadog is `myorg.datadoghq.com`, set the environment variable to `myorg`:
 
@@ -230,7 +232,7 @@ It is also possible to trigger tests corresponding to a search query by using th
 yarn datadog-ci synthetics run-tests -s 'tag:e2e-tests' --config global.config.json
 ```
 
-You can use `--files` (shorthand `-f`) to override the global file selector when you want to run multiple suites in parallel with a single [global configuration file][9].
+You can use `--files` (shorthand `-f`) to override the global file selector when you want to run multiple suites in parallel with a single global configuration file.
 
 ```bash
 yarn datadog-ci synthetics run-tests -f ./component-1/**/*.synthetics.json -f ./component-2/**/*.synthetics.json
@@ -242,7 +244,7 @@ You can also pass variables as arguments using `--variable KEY=VALUE`.
 yarn datadog-ci synthetics run-tests -f ./component-1/**/*.synthetics.json -v PASSWORD=$PASSWORD
 ```
 
-**Note**: If you are launching your tests with a custom [global configuration file][9], append your command with `--config <PATH_TO_GLOBAL_CONFIG_FILE>`.
+**Note**: If you are launching your tests with a custom global configuration file, append your command with `--config <PATH_TO_GLOBAL_CONFIG_FILE>`.
 
 <!-- xxz tab xxx -->
 <!-- xxx tab "NPM" xxx -->
@@ -263,7 +265,7 @@ Then, run:
 npm run datadog-ci-synthetics
 ```
 
-**Note**: If you are launching your tests with a custom [global configuration file][9], append the command associated to your `datadog-ci-synthetics` script with `--config <PATH_TO_GLOBAL_CONFIG_FILE>`.
+**Note**: If you are launching your tests with a custom global configuration file, append the command associated to your `datadog-ci-synthetics` script with `--config <PATH_TO_GLOBAL_CONFIG_FILE>`.
 
 <!-- xxz tab xxx -->
 <!-- xxz tabs xxx -->
