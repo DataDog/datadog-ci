@@ -1,9 +1,11 @@
-jest.mock('fs')
+jest.mock('fs', () => ({
+  ...jest.requireActual('fs'),
+  readFile: (a: any, b: any, callback: any) => callback({code: 'ENOENT'}),
+}))
+jest.mock('@aws-sdk/credential-providers')
 jest.mock('../prompt')
 jest.mock('../renderer', () => require('../__mocks__/renderer'))
 jest.mock('../../../../package.json', () => ({version: 'XXXX'}))
-
-import * as fs from 'fs'
 
 import {
   GetFunctionCommand,
@@ -11,7 +13,7 @@ import {
   ListFunctionsCommand,
   UpdateFunctionConfigurationCommand,
 } from '@aws-sdk/client-lambda'
-import {fromIni, fromNodeProviderChain} from '@aws-sdk/credential-providers'
+import {fromIni} from '@aws-sdk/credential-providers'
 import {mockClient} from 'aws-sdk-client-mock'
 import 'aws-sdk-client-mock-jest'
 
@@ -58,7 +60,6 @@ describe('lambda', () => {
       })
 
       test('prints dry run data for a valid uninstrumentation', async () => {
-        ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({code: 'ENOENT'}))
         mockLambdaConfigurations(lambdaClientMock, {
           'arn:aws:lambda:us-east-1:000000000000:function:uninstrument': {
             config: {
@@ -128,7 +129,6 @@ describe('lambda', () => {
         `)
       })
       test('runs function update command for valid uninstrumentation', async () => {
-        ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({code: 'ENOENT'}))
         mockLambdaConfigurations(lambdaClientMock, {
           'arn:aws:lambda:us-east-1:000000000000:function:uninstrument': {
             config: {
@@ -175,7 +175,6 @@ describe('lambda', () => {
         expect(lambdaClientMock).toHaveReceivedCommand(UpdateFunctionConfigurationCommand)
       })
       test('aborts early when the aws-sdk throws an error', async () => {
-        ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({code: 'ENOENT'}))
         lambdaClientMock.on(GetFunctionCommand).rejects('Lambda Failed')
 
         process.env = {}
@@ -186,11 +185,14 @@ describe('lambda', () => {
         const code = await command['execute']()
         const output = command.context.stdout.toString()
         expect(code).toBe(1)
-        expect(output).toMatch("[Error] Couldn't fetch Lambda functions. Lambda failed\n")
+        expect(output).toMatchInlineSnapshot(`
+          "
+          🐶 Uninstrumenting Lambda function
+          [Error] Couldn't fetch Lambda functions. Error: Lambda Failed
+          "
+        `)
       })
       test("aborts early when function regions can't be found", async () => {
-        ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({code: 'ENOENT'}))
-
         const cli = makeCli()
         const context = createMockContext() as any
         const code = await cli.run(['lambda', 'uninstrument', '--function', 'my-func'], context)
@@ -202,7 +204,6 @@ describe('lambda', () => {
         )
       })
       test('aborts early when no functions are specified', async () => {
-        ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({code: 'ENOENT'}))
         const cli = makeCli()
         const context = createMockContext() as any
         const code = await cli.run(['lambda', 'uninstrument'], context)
@@ -216,8 +217,6 @@ describe('lambda', () => {
         `)
       })
       test('aborts early when no functions are specified while using config file', async () => {
-        ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({}))
-
         process.env = {}
         const command = createCommand(UninstrumentCommand)
         command['config']['region'] = 'ap-southeast-1'
@@ -231,8 +230,6 @@ describe('lambda', () => {
         `)
       })
       test('aborts if functions and a pattern are set at the same time', async () => {
-        ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({}))
-
         process.env = {}
         let command = createCommand(UninstrumentCommand)
         command['config']['region'] = 'ap-southeast-1'
@@ -253,8 +250,6 @@ describe('lambda', () => {
         expect(output).toMatch('"--functions" and "--functions-regex" should not be used at the same time.\n')
       })
       test('aborts if the regEx pattern is an ARN', async () => {
-        ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({}))
-
         process.env = {}
         const command = createCommand(UninstrumentCommand)
         command['region'] = 'ap-southeast-1'
@@ -266,8 +261,6 @@ describe('lambda', () => {
       })
 
       test('aborts if the regEx pattern is set but no region is specified', async () => {
-        ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({}))
-
         process.env = {}
         const command = createCommand(UninstrumentCommand)
         command['regExPattern'] = 'my-function'
@@ -278,7 +271,6 @@ describe('lambda', () => {
       })
 
       test('aborts if the the aws-sdk fails', async () => {
-        ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({}))
         process.env = {}
         lambdaClientMock.on(ListFunctionsCommand).rejects('ListFunctionsError')
         const command = createCommand(UninstrumentCommand)
@@ -287,13 +279,15 @@ describe('lambda', () => {
         const code = await command['execute']()
         const output = command.context.stdout.toString()
         expect(code).toBe(1)
-        expect(output).toMatch(
-          "\n[Error] Couldn't fetch Lambda functions. Error: Max retry count exceeded. ListFunctionsError\n"
-        )
+        expect(output).toMatchInlineSnapshot(`
+          "
+          🐶 Uninstrumenting Lambda function
+          [Error] Couldn't fetch Lambda functions. Error: Max retry count exceeded. Error: ListFunctionsError
+          "
+        `)
       })
 
       test('uninstrument multiple functions interactively', async () => {
-        ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({code: 'ENOENT'}))
         mockLambdaConfigurations(lambdaClientMock, {
           'arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world': {
             config: {
@@ -389,7 +383,6 @@ describe('lambda', () => {
       })
 
       test('uninstrument multiple specified functions interactively', async () => {
-        ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({code: 'ENOENT'}))
         mockLambdaConfigurations(lambdaClientMock, {
           'arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world': {
             config: {
@@ -496,7 +489,6 @@ describe('lambda', () => {
       })
 
       test('aborts if a problem occurs while setting the AWS credentials interactively', async () => {
-        ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({code: 'ENOENT'}))
         ;(requestAWSCredentials as any).mockImplementation(() => Promise.reject('Unexpected error'))
         const cli = makeCli()
         const context = createMockContext() as any
@@ -518,7 +510,7 @@ describe('lambda', () => {
           [AWS_SECRET_ACCESS_KEY_ENV_VAR]: mockAwsSecretAccessKey,
           [AWS_DEFAULT_REGION_ENV_VAR]: 'sa-east-1',
         }
-        ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({code: 'ENOENT'}))
+
         const cli = makeCli()
         const context = createMockContext() as any
         const code = await cli.run(['lambda', 'uninstrument', '-i'], context)
@@ -538,7 +530,7 @@ describe('lambda', () => {
           [AWS_SECRET_ACCESS_KEY_ENV_VAR]: mockAwsSecretAccessKey,
           [AWS_DEFAULT_REGION_ENV_VAR]: 'sa-east-1',
         }
-        ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({code: 'ENOENT'}))
+
         lambdaClientMock.on(ListFunctionsCommand).rejects('ListFunctionsError')
 
         const cli = makeCli()
@@ -549,7 +541,7 @@ describe('lambda', () => {
         expect(output).toMatchInlineSnapshot(`
           "
           🐶 Uninstrumenting Lambda function
-          [Error] Couldn't fetch Lambda functions. Error: Max retry count exceeded. ListFunctionsError
+          [Error] Couldn't fetch Lambda functions. Error: Max retry count exceeded. Error: ListFunctionsError
           "
         `)
       })
@@ -577,7 +569,6 @@ describe('lambda', () => {
       })
 
       test('prints which functions failed to uninstrument without aborting when at least one function was uninstrumented correctly', async () => {
-        ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({code: 'ENOENT'}))
         const failingLambdas = [
           'arn:aws:lambda:us-east-1:123456789012:function:lambda-1-us-east-1',
           'arn:aws:lambda:us-east-1:123456789012:function:lambda-2-us-east-1',
@@ -667,7 +658,6 @@ describe('lambda', () => {
       })
 
       test('aborts when every lambda function fails to update on uninstrument', async () => {
-        ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({code: 'ENOENT'}))
         const failingLambdas = [
           'arn:aws:lambda:us-east-1:123456789012:function:lambda-1-us-east-1',
           'arn:aws:lambda:us-east-2:123456789012:function:lambda-1-us-east-2',

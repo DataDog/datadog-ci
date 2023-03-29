@@ -42,8 +42,8 @@ import {
 } from '../../functions/commons'
 import {InstrumentCommand} from '../../instrument'
 import {FunctionConfiguration} from '../../interfaces'
-import {createCommand, mockAwsAccount, mockLambdaClientCommands, mockLambdaLayers} from '../fixtures'
 
+import {createCommand, mockAwsAccount, mockLambdaClientCommands, mockLambdaLayers} from '../fixtures'
 
 describe('commons', () => {
   const cloudWatchLogsClientMock = mockClient(CloudWatchLogsClient)

@@ -11,7 +11,7 @@ import {AWS_DEFAULT_REGION_ENV_VAR} from './constants'
 import {
   collectFunctionsByRegion,
   getAllLambdaFunctionConfigs,
-  getAWSCredentials,
+  getAWSProfileCredentials,
   handleLambdaFunctionUpdates,
   isMissingAWSCredentials,
   willUpdateFunctionConfigs,
@@ -36,7 +36,6 @@ export class UninstrumentCommand extends Command {
   private region?: string
 
   private credentials?: AwsCredentialIdentity
-  private credentialsConfig: fromNodeProviderChainInit = {}
 
   public async execute() {
     this.context.stdout.write(renderer.renderLambdaHeader(Object.getPrototypeOf(this), this.dryRun))
@@ -46,13 +45,15 @@ export class UninstrumentCommand extends Command {
       await resolveConfigFromFile(lambdaConfig, {configPath: this.configPath, defaultConfigPaths: DEFAULT_CONFIG_PATHS})
     ).lambda
 
-    this.credentialsConfig.profile = this.profile ?? this.config.profile
-    try {
-      this.credentials = await getAWSCredentials(this.credentialsConfig)
-    } catch (err) {
-      this.context.stdout.write(renderer.renderError(err))
+    const profile = this.profile ?? this.config.profile
+    if (profile) {
+      try {
+        this.credentials = await getAWSProfileCredentials(profile)
+      } catch (err) {
+        this.context.stdout.write(renderer.renderError(err))
 
-      return 1
+        return 1
+      }
     }
 
     let hasSpecifiedFunctions = this.functions.length !== 0 || this.config.functions.length !== 0
