@@ -1,11 +1,13 @@
 jest.mock('fs', () => ({
   ...jest.requireActual('fs'),
-  readFile: (a: any, b: any, callback: any) => callback({code: 'ENOENT'}),
+  readFile: jest.fn()
 }))
 jest.mock('@aws-sdk/credential-providers')
 jest.mock('../prompt')
 jest.mock('../renderer', () => require('../__mocks__/renderer'))
 jest.mock('../../../../package.json', () => ({version: 'XXXX'}))
+
+import * as fs from 'fs'
 
 import {LambdaClient, ListFunctionsCommand, UpdateFunctionConfigurationCommand} from '@aws-sdk/client-lambda'
 import {fromIni} from '@aws-sdk/credential-providers'
@@ -69,6 +71,7 @@ describe('lambda', () => {
       })
 
       test('prints dry run data for lambda library layer', async () => {
+        ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({code: 'ENOENT'}))
         mockLambdaConfigurations(lambdaClientMock, {
           'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world': {
             config: {
@@ -111,6 +114,7 @@ describe('lambda', () => {
       })
 
       test('prints dry run data for lambda library and extension layers using kebab case args', async () => {
+        ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({code: 'ENOENT'}))
         mockLambdaConfigurations(lambdaClientMock, {
           'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world': {
             config: {
@@ -159,6 +163,7 @@ describe('lambda', () => {
       })
 
       test('prints dry run data for lambda extension layer', async () => {
+        ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({code: 'ENOENT'}))
         mockLambdaConfigurations(lambdaClientMock, {
           'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world': {
             config: {
@@ -199,6 +204,7 @@ describe('lambda', () => {
       })
 
       test('prints dry run data for lambda .NET layer', async () => {
+        ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({code: 'ENOENT'}))
         mockLambdaConfigurations(lambdaClientMock, {
           'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world': {
             config: {
@@ -238,6 +244,7 @@ describe('lambda', () => {
       })
 
       test('instrumenting with source code integrations fails if not run within a git repo', async () => {
+        ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({code: 'ENOENT'}))
         mockLambdaConfigurations(lambdaClientMock, {
           'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world': {
             config: {
@@ -273,6 +280,7 @@ describe('lambda', () => {
       })
 
       test('ensure the instrument command ran from a dirty git repo fails', async () => {
+        ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({code: 'ENOENT'}))
         mockLambdaConfigurations(lambdaClientMock, {
           'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world': {
             config: {
@@ -317,6 +325,7 @@ describe('lambda', () => {
       })
 
       test('ensure source code integration flag works from a clean repo', async () => {
+        ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({code: 'ENOENT'}))
         mockLambdaConfigurations(lambdaClientMock, {
           'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world': {
             config: {
@@ -368,6 +377,7 @@ describe('lambda', () => {
       })
 
       test('ensure no git metadata upload flag works', async () => {
+        ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({code: 'ENOENT'}))
         mockLambdaConfigurations(lambdaClientMock, {
           'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world': {
             config: {
@@ -419,6 +429,7 @@ describe('lambda', () => {
       })
 
       test('ensure the instrument command ran from a local git repo ahead of the origin fails', async () => {
+        ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({code: 'ENOENT'}))
         mockLambdaConfigurations(lambdaClientMock, {
           'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world': {
             config: {
@@ -463,6 +474,7 @@ describe('lambda', () => {
       })
 
       test('runs function update command for lambda library layer', async () => {
+        ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({code: 'ENOENT'}))
         mockLambdaConfigurations(lambdaClientMock, {
           'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world': {
             config: {
@@ -490,6 +502,7 @@ describe('lambda', () => {
       })
 
       test('runs function update command for lambda extension layer', async () => {
+        ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({code: 'ENOENT'}))
         mockLambdaConfigurations(lambdaClientMock, {
           'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world': {
             config: {
@@ -519,6 +532,7 @@ describe('lambda', () => {
       })
 
       test('aborts early when no functions are specified', async () => {
+        ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({code: 'ENOENT'}))
         const cli = makeCli()
         const context = createMockContext() as any
         const code = await cli.run(
@@ -546,6 +560,7 @@ describe('lambda', () => {
       })
 
       test('aborts early when no functions are specified while using config file', async () => {
+        ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({code: 'ENOENT'}))
         process.env = {}
         const command = createCommand(InstrumentCommand)
         command['config']['layerVersion'] = '60'
@@ -565,6 +580,7 @@ describe('lambda', () => {
       })
 
       test("aborts early when function regions can't be found", async () => {
+        ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({code: 'ENOENT'}))
         const cli = makeCli()
         const context = createMockContext() as any
         const code = await cli.run(
@@ -593,6 +609,7 @@ describe('lambda', () => {
         )
       })
       test('aborts early when extensionVersion and forwarder are set', async () => {
+        ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({code: 'ENOENT'}))
         const cli = makeCli()
         const context = createMockContext() as any
         const code = await cli.run(
@@ -626,6 +643,7 @@ describe('lambda', () => {
       })
 
       test('check if functions are not empty while using config file', async () => {
+        ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({code: 'ENOENT'}))
         process.env = {}
         const command = createCommand(InstrumentCommand)
         command['config']['layerVersion'] = '60'
@@ -636,6 +654,7 @@ describe('lambda', () => {
         expect(command['config']['functions']).toHaveLength(1)
       })
       test('aborts if functions and a pattern are set at the same time', async () => {
+        ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({code: 'ENOENT'}))
         process.env = {}
         let command = createCommand(InstrumentCommand)
         command['config']['environment'] = 'staging'
@@ -664,6 +683,7 @@ describe('lambda', () => {
         expect(output).toMatch('"--functions" and "--functions-regex" should not be used at the same time.\n')
       })
       test('aborts if pattern is set and no default region is specified', async () => {
+        ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({code: 'ENOENT'}))
         process.env = {}
 
         const command = createCommand(InstrumentCommand)
@@ -677,6 +697,7 @@ describe('lambda', () => {
         expect(output).toMatch('[Error] No default region specified. Use `-r`, `--region`.\n')
       })
       test('aborts if the regEx pattern is an ARN', async () => {
+        ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({code: 'ENOENT'}))
         process.env = {}
         const command = createCommand(InstrumentCommand)
         command['environment'] = 'staging'
@@ -691,6 +712,7 @@ describe('lambda', () => {
       })
 
       test('instrument multiple functions interactively', async () => {
+        ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({code: 'ENOENT'}))
         const node18LibraryLayer = `arn:aws:lambda:sa-east-1:${DEFAULT_LAYER_AWS_ACCOUNT}:layer:Datadog-Node18-x`
         const node16LibraryLayer = `arn:aws:lambda:sa-east-1:${DEFAULT_LAYER_AWS_ACCOUNT}:layer:Datadog-Node16-x`
         const node14LibraryLayer = `arn:aws:lambda:sa-east-1:${DEFAULT_LAYER_AWS_ACCOUNT}:layer:Datadog-Node14-x`
@@ -777,6 +799,7 @@ describe('lambda', () => {
       })
 
       test('instrument multiple specified functions interactively', async () => {
+        ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({code: 'ENOENT'}))
         const node14LibraryLayer = `arn:aws:lambda:sa-east-1:${DEFAULT_LAYER_AWS_ACCOUNT}:layer:Datadog-Node14-x`
         const node16LibraryLayer = `arn:aws:lambda:sa-east-1:${DEFAULT_LAYER_AWS_ACCOUNT}:layer:Datadog-Node16-x`
         const node12LibraryLayer = `arn:aws:lambda:sa-east-1:${DEFAULT_LAYER_AWS_ACCOUNT}:layer:Datadog-Node12-x`
@@ -859,6 +882,7 @@ describe('lambda', () => {
       })
 
       test('aborts if a problem occurs while setting the AWS credentials interactively', async () => {
+        ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({code: 'ENOENT'}))
         ;(requestAWSCredentials as any).mockImplementation(() => Promise.reject('Unexpected error'))
         const cli = makeCli()
         const context = createMockContext() as any
@@ -874,6 +898,7 @@ describe('lambda', () => {
       })
 
       test('aborts if a problem occurs while setting the Datadog Environment Variables interactively', async () => {
+        ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({code: 'ENOENT'}))
         process.env = {
           [AWS_ACCESS_KEY_ID_ENV_VAR]: mockAwsAccessKeyId,
           [AWS_SECRET_ACCESS_KEY_ENV_VAR]: mockAwsSecretAccessKey,
@@ -895,6 +920,7 @@ describe('lambda', () => {
       })
 
       test('when provided it sets DD_ENV, DD_SERVICE, and DD_VERSION environment variables in interactive mode', async () => {
+        ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({code: 'ENOENT'}))
         const node12LibraryLayer = `arn:aws:lambda:sa-east-1:${DEFAULT_LAYER_AWS_ACCOUNT}:layer:Datadog-Node12-x`
         const extensionLayer = `arn:aws:lambda:sa-east-1:${DEFAULT_LAYER_AWS_ACCOUNT}:layer:Datadog-Extension`
 
@@ -947,6 +973,7 @@ describe('lambda', () => {
       })
 
       test('when not provided it does not set DD_ENV, DD_SERVICE, and DD_VERSION tags in interactive mode', async () => {
+        ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({code: 'ENOENT'}))
         const node12LibraryLayer = `arn:aws:lambda:sa-east-1:${DEFAULT_LAYER_AWS_ACCOUNT}:layer:Datadog-Node12-x`
         const extensionLayer = `arn:aws:lambda:sa-east-1:${DEFAULT_LAYER_AWS_ACCOUNT}:layer:Datadog-Extension`
 
@@ -998,6 +1025,7 @@ describe('lambda', () => {
       })
 
       test('aborts if there are no functions to instrument in the user AWS account', async () => {
+        ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({code: 'ENOENT'}))
         process.env = {
           [AWS_ACCESS_KEY_ID_ENV_VAR]: mockAwsAccessKeyId,
           [AWS_SECRET_ACCESS_KEY_ENV_VAR]: mockAwsSecretAccessKey,
@@ -1020,6 +1048,7 @@ describe('lambda', () => {
       })
 
       test('aborts early when the aws-sdk throws an error while instrumenting interactively', async () => {
+        ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({code: 'ENOENT'}))
         process.env = {
           [AWS_ACCESS_KEY_ID_ENV_VAR]: mockAwsAccessKeyId,
           [AWS_SECRET_ACCESS_KEY_ENV_VAR]: mockAwsSecretAccessKey,
@@ -1044,6 +1073,7 @@ describe('lambda', () => {
       })
 
       test('aborts early when a layer version is set for Ruby', async () => {
+        ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({code: 'ENOENT'}))
         mockLambdaConfigurations(lambdaClientMock, {
           'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world': {
             config: {
@@ -1087,6 +1117,7 @@ describe('lambda', () => {
       })
 
       test('aborts early when a layer version is set for a Custom runtime', async () => {
+        ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({code: 'ENOENT'}))
         mockLambdaConfigurations(lambdaClientMock, {
           'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world': {
             config: {
@@ -1130,6 +1161,7 @@ describe('lambda', () => {
       })
 
       test('aborts early when .NET is using ARM64 architecture', async () => {
+        ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({code: 'ENOENT'}))
         mockLambdaConfigurations(lambdaClientMock, {
           'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world': {
             config: {
@@ -1225,6 +1257,7 @@ describe('lambda', () => {
           'arn:aws:lambda:us-east-1:123456789012:function:lambda-2-us-east-1',
           'arn:aws:lambda:us-east-2:123456789012:function:lambda-1-us-east-2',
         ]
+        ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({code: 'ENOENT'}))
         mockLambdaConfigurations(lambdaClientMock, {
           'arn:aws:lambda:us-east-1:123456789012:function:lambda-1-us-east-1': {
             config: {
@@ -1309,6 +1342,7 @@ describe('lambda', () => {
       })
 
       test('aborts when every lambda function fails to update on instrument', async () => {
+        ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({code: 'ENOENT'}))
         mockLambdaConfigurations(lambdaClientMock, {
           'arn:aws:lambda:us-east-1:123456789012:function:lambda-1-us-east-1': {
             config: {
@@ -1510,6 +1544,7 @@ describe('lambda', () => {
       })
 
       test('warns if any of environment, service or version tags are not set', async () => {
+        ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({code: 'ENOENT'}))
         process.env = {}
         let command = createCommand(InstrumentCommand)
         command['config']['region'] = 'ap-southeast-1'
@@ -1533,6 +1568,7 @@ describe('lambda', () => {
       })
 
       test('aborts early if extraTags do not comply with expected key:value list', async () => {
+        ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({code: 'ENOENT'}))
         process.env = {}
         const command = createCommand(InstrumentCommand)
         command['config']['region'] = 'ap-southeast-1'
