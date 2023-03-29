@@ -1,7 +1,9 @@
 jest.mock('../../renderer', () => require('../../__mocks__/renderer'))
+
 import {CloudWatchLogsClient} from '@aws-sdk/client-cloudwatch-logs'
 import {LambdaClient, UpdateFunctionConfigurationCommand} from '@aws-sdk/client-lambda'
 import {mockClient} from 'aws-sdk-client-mock'
+import 'aws-sdk-client-mock-jest'
 
 import {
   AWS_ACCESS_KEY_ID_ENV_VAR,
@@ -40,10 +42,8 @@ import {
 } from '../../functions/commons'
 import {InstrumentCommand} from '../../instrument'
 import {FunctionConfiguration} from '../../interfaces'
-
 import {createCommand, mockAwsAccount, mockLambdaClientCommands, mockLambdaLayers} from '../fixtures'
 
-import 'aws-sdk-client-mock-jest'
 
 describe('commons', () => {
   const cloudWatchLogsClientMock = mockClient(CloudWatchLogsClient)

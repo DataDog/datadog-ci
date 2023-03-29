@@ -208,31 +208,25 @@ export const getAWSFileCredentialsParams = (profile: string): FromIniInit => {
 }
 
 /**
- * Returns the loaded AWS Credentials.
- * If `profile` is defined in `init`, the credentials will be loaded
- * from the provider `fromIni`.
+ * Returns the loaded AWS Credentials from the given profile.
  *
- * @param {fromNodeProviderChainInit} init AWS Credential Provider options.
+ * Note: the AWS SDK loads credentials automatically in
+ * node environments.
+ *
+ * @param {string} profile the AWS Credentials profile
  * @returns {AwsCredentialIdentity} credentials object.
  */
-export const getAWSCredentials = async (init?: fromNodeProviderChainInit) => {
-  let _init = init
-  let _provider = fromNodeProviderChain
-
-  if (init?.profile) {
-    console.log(init.profile)
-    _init = getAWSFileCredentialsParams(init?.profile)
-    _provider = fromIni
-  }
+export const getAWSProfileCredentials = async (profile: string) => {
+  const init = getAWSFileCredentialsParams(profile)
 
   try {
-    const credentialsProvider: AwsCredentialIdentityProvider = _provider(_init)
+    const credentialsProvider: AwsCredentialIdentityProvider = fromIni(init)
     const credentials: AwsCredentialIdentity = await credentialsProvider()
 
     return credentials
   } catch (err) {
     if (err instanceof Error) {
-      throw Error(`Couldn't set AWS credentials. ${err.message}`)
+      throw Error(`Couldn't set AWS profile credentials. ${err.message}`)
     }
   }
 }
