@@ -1,6 +1,6 @@
 jest.mock('fs', () => ({
   ...jest.requireActual('fs'),
-  readFile: jest.fn()
+  readFile: jest.fn(),
 }))
 jest.mock('@aws-sdk/credential-providers')
 jest.mock('../prompt')
