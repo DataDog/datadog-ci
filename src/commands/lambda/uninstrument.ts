@@ -1,6 +1,5 @@
 import {CloudWatchLogsClient} from '@aws-sdk/client-cloudwatch-logs'
-import {LambdaClient, FunctionConfiguration as LFunctionConfiguration} from '@aws-sdk/client-lambda'
-import {fromNodeProviderChainInit} from '@aws-sdk/credential-providers'
+import {LambdaClient, LambdaClientConfig} from '@aws-sdk/client-lambda'
 import {AwsCredentialIdentity} from '@aws-sdk/types'
 import {bold} from 'chalk'
 import {Command} from 'clipanion'
@@ -75,7 +74,12 @@ export class UninstrumentCommand extends Command {
       if (!hasSpecifiedFunctions) {
         const spinner = renderer.fetchingFunctionsSpinner()
         try {
-          const lambdaClient = new LambdaClient({region})
+          const lambdaClientConfig: LambdaClientConfig = {
+            region,
+            credentials: this.credentials,
+          }
+
+          const lambdaClient = new LambdaClient(lambdaClientConfig)
           spinner.start()
           const functionNames =
             (await getAllLambdaFunctionConfigs(lambdaClient)).map((config) => config.FunctionName!).sort() ?? []
@@ -138,7 +142,13 @@ export class UninstrumentCommand extends Command {
       const spinner = renderer.fetchingFunctionsSpinner()
       try {
         const cloudWatchLogsClient = new CloudWatchLogsClient({region})
-        const lambdaClient = new LambdaClient({region})
+
+        const lambdaClientConfig: LambdaClientConfig = {
+          region,
+          credentials: this.credentials,
+        }
+
+        const lambdaClient = new LambdaClient(lambdaClientConfig)
         spinner.start()
         const configs = await getUninstrumentedFunctionConfigsFromRegEx(
           lambdaClient,
@@ -171,7 +181,12 @@ export class UninstrumentCommand extends Command {
       for (const [region, functionARNs] of Object.entries(functionGroups)) {
         const spinner = renderer.fetchingFunctionsConfigSpinner(region)
         spinner.start()
-        const lambdaClient = new LambdaClient({region})
+        const lambdaClientConfig: LambdaClientConfig = {
+          region,
+          credentials: this.credentials,
+        }
+
+        const lambdaClient = new LambdaClient(lambdaClientConfig)
         const cloudWatchLogsClient = new CloudWatchLogsClient({region})
         try {
           const configs = await getUninstrumentedFunctionConfigs(

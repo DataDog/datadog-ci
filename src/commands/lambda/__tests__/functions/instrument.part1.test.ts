@@ -149,7 +149,7 @@ describe('instrument', () => {
         settings
       )
 
-      await expect(instrumentedConfig.updateFunctionConfigurationCommandInput).toBeUndefined()
+      expect(instrumentedConfig.updateFunctionConfigurationCommandInput).toBeUndefined()
     })
 
     test('uses the GovCloud lambda layer when a GovCloud region is detected', async () => {

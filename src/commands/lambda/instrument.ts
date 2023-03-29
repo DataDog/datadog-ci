@@ -1,6 +1,5 @@
 import {CloudWatchLogsClient} from '@aws-sdk/client-cloudwatch-logs'
 import {LambdaClient, LambdaClientConfig} from '@aws-sdk/client-lambda'
-import {fromNodeProviderChainInit} from '@aws-sdk/credential-providers'
 import {AwsCredentialIdentity} from '@aws-sdk/types'
 import {bold} from 'chalk'
 import {Cli, Command} from 'clipanion'

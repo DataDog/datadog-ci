@@ -84,24 +84,26 @@ export const mockLambdaConfigurations = (
 ) => {
   const functions: LFunctionConfiguration[] = []
   for (const functionArn in functionConfigurations) {
-    const functionConfiguration = functionConfigurations[functionArn]
-    functions.push(functionConfiguration.config)
+    if (Object.prototype.hasOwnProperty.call(functionConfigurations, functionArn)) {
+      const functionConfiguration = functionConfigurations[functionArn]
+      functions.push(functionConfiguration.config)
 
-    lambdaClientMock
-      .on(GetFunctionCommand, {
-        FunctionName: functionArn,
-      })
-      .resolves({
-        Configuration: functionConfiguration.config,
-      })
+      lambdaClientMock
+        .on(GetFunctionCommand, {
+          FunctionName: functionArn,
+        })
+        .resolves({
+          Configuration: functionConfiguration.config,
+        })
 
-    lambdaClientMock
-      .on(ListTagsCommand, {
-        Resource: functionArn,
-      })
-      .resolves({
-        Tags: functionConfiguration.tags?.Tags ?? {},
-      })
+      lambdaClientMock
+        .on(ListTagsCommand, {
+          Resource: functionArn,
+        })
+        .resolves({
+          Tags: functionConfiguration.tags?.Tags ?? {},
+        })
+    }
   }
 
   lambdaClientMock.on(ListFunctionsCommand).resolves({
@@ -114,16 +116,18 @@ export const mockLambdaLayers = (
   layers: Record<string, GetLayerVersionCommandInput>
 ) => {
   for (const layerName in layers) {
-    const layer = layers[layerName]
+    if (Object.prototype.hasOwnProperty.call(layers, layerName)) {
+      const layer = layers[layerName]
 
-    lambdaClientMock
-      .on(GetLayerVersionCommand, {
-        LayerName: layer.LayerName,
-        VersionNumber: layer.VersionNumber,
-      })
-      .resolves({
-        LayerArn: layerName,
-      })
+      lambdaClientMock
+        .on(GetLayerVersionCommand, {
+          LayerName: layer.LayerName,
+          VersionNumber: layer.VersionNumber,
+        })
+        .resolves({
+          LayerArn: layerName,
+        })
+    }
   }
 }
 
@@ -138,15 +142,19 @@ export const mockLogGroups = (
   >
 ) => {
   for (const logGroupName in logGroups) {
-    const logGroup = logGroups[logGroupName]
+    if (Object.prototype.hasOwnProperty.call(logGroups, logGroupName)) {
+      const logGroup = logGroups[logGroupName]
 
-    cloudWatchLogsClientMock.on(DescribeLogGroupsCommand, {logGroupNamePrefix: logGroupName}).resolves(logGroup.config)
-    if (logGroup.filters !== undefined) {
       cloudWatchLogsClientMock
-        .on(DescribeSubscriptionFiltersCommand, {
-          logGroupName,
-        })
-        .resolves(logGroup.filters)
+        .on(DescribeLogGroupsCommand, {logGroupNamePrefix: logGroupName})
+        .resolves(logGroup.config)
+      if (logGroup.filters !== undefined) {
+        cloudWatchLogsClientMock
+          .on(DescribeSubscriptionFiltersCommand, {
+            logGroupName,
+          })
+          .resolves(logGroup.filters)
+      }
     }
   }
 }

@@ -256,7 +256,6 @@ describe('uninstrument', () => {
   })
 
   describe('getUninstrumentedFunctionConfigs', () => {
-    const OLD_ENV = process.env
     beforeEach(() => {
       cloudWatchLogsClientMock.reset()
       lambdaClientMock.reset()
@@ -411,7 +410,6 @@ describe('uninstrument', () => {
   })
 
   describe('getUninstrumentedFunctionConfig', () => {
-    const OLD_ENV = process.env
     beforeEach(() => {
       cloudWatchLogsClientMock.reset()
       lambdaClientMock.reset()
@@ -506,7 +504,6 @@ describe('uninstrument', () => {
   })
 
   describe('getUninstrumentedFunctionConfigsFromRegEx', () => {
-    const OLD_ENV = process.env
     beforeEach(() => {
       cloudWatchLogsClientMock.reset()
       lambdaClientMock.reset()

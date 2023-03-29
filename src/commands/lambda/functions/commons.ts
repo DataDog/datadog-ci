@@ -12,7 +12,7 @@ import {
   UpdateFunctionConfigurationCommand,
   UpdateFunctionConfigurationCommandInput,
 } from '@aws-sdk/client-lambda'
-import {FromIniInit, fromIni, fromNodeProviderChain, fromNodeProviderChainInit} from '@aws-sdk/credential-providers'
+import {FromIniInit, fromIni} from '@aws-sdk/credential-providers'
 import {AwsCredentialIdentity, AwsCredentialIdentityProvider} from '@aws-sdk/types'
 import inquirer from 'inquirer'
 
@@ -491,10 +491,3 @@ export const willUpdateFunctionConfigs = (configs: FunctionConfiguration[]) => {
 
   return willUpdate
 }
-
-/**
- * Waits for n ms
- *
- * @param ms
- */
-const wait = (ms: number): Promise<void> => new Promise((res) => setTimeout(res, ms))

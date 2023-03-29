@@ -11,7 +11,6 @@ import {LambdaClient, ListFunctionsCommand, UpdateFunctionConfigurationCommand} 
 import {fromIni} from '@aws-sdk/credential-providers'
 import {mockClient} from 'aws-sdk-client-mock'
 import 'aws-sdk-client-mock-jest'
-
 import {Cli} from 'clipanion/lib/advanced'
 
 import {
@@ -1310,10 +1309,6 @@ describe('lambda', () => {
       })
 
       test('aborts when every lambda function fails to update on instrument', async () => {
-        const failingLambdas = [
-          'arn:aws:lambda:us-east-1:123456789012:function:lambda-1-us-east-1',
-          'arn:aws:lambda:us-east-2:123456789012:function:lambda-1-us-east-2',
-        ]
         mockLambdaConfigurations(lambdaClientMock, {
           'arn:aws:lambda:us-east-1:123456789012:function:lambda-1-us-east-1': {
             config: {
