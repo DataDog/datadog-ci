@@ -75,6 +75,7 @@ export const mockLambdaClientCommands = (lambdaClientMock: AwsStub<LServiceInput
   lambdaClientMock.on(UpdateFunctionConfigurationCommand).resolves({})
   lambdaClientMock.on(TagResourceCommand).resolves({})
   lambdaClientMock.on(GetLayerVersionCommand).rejects()
+  lambdaClientMock.on(ListFunctionsCommand).resolves({Functions: []})
 }
 
 export const mockLambdaConfigurations = (
