@@ -5,6 +5,7 @@ import path from 'path'
 import {Cli} from 'clipanion/lib/advanced'
 import glob from 'glob'
 
+import * as APIKeyHelpers from '../../../helpers/apikey'
 import {buildPath} from '../../../helpers/utils'
 
 import {Dsym} from '../interfaces'
@@ -262,7 +263,7 @@ describe('execute', () => {
     }
   }
 
-  const runCLI = async (dsymPath: string, options?: {configPath?: string}) => {
+  const runCLI = async (dsymPath: string, options?: {configPath?: string; env?: Record<string, string>}) => {
     const cli = makeCli()
     const context = createMockContext() as any
     const command = ['dsyms', 'upload', dsymPath, '--dry-run']
@@ -271,6 +272,12 @@ describe('execute', () => {
       command.push(options.configPath)
     } else {
       process.env = {DATADOG_API_KEY: 'PLACEHOLDER'}
+    }
+    if (options?.env) {
+      process.env = {
+        ...process.env,
+        ...options.env,
+      }
     }
     const code = await cli.run(command, context)
 
@@ -355,5 +362,28 @@ describe('execute', () => {
       'Uploading 3BC12422-63CC-30E8-B916-E5006CE3286C.zip (DDTest, arch: arm64, UUID: 3BC12422-63CC-30E8-B916-E5006CE3286C)'
     )
     expect(output[10]).toContain('Handled 3 dSYMs with success')
+  })
+
+  test('Should use API Key from env over config from JSON file', async () => {
+    const apiKeyValidatorSpy = jest.spyOn(APIKeyHelpers, 'newApiKeyValidator')
+
+    const {context, code} = await runCLI('src/commands/dsyms/__tests__/fixtures/', {
+      configPath: 'src/commands/dsyms/__tests__/fixtures/datadog-ci.json',
+      env: {
+        DATADOG_API_KEY: 'env_API_key',
+      },
+    })
+
+    const outputString = context.stdout.toString()
+    const output = outputString.split(EOL)
+    expect(code).toBe(0)
+
+    expect(apiKeyValidatorSpy).toHaveBeenCalledWith({
+      apiKey: 'env_API_key',
+      datadogSite: expect.anything(),
+      metricsLogger: expect.anything(),
+    })
+    expect(output).toContain('API keys were specified both in a configuration file and in the environment.')
+    expect(output).toContain('The environment API key ending in _key will be used.')
   })
 })

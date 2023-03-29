@@ -58,6 +58,31 @@ const resolveConfigPath = ({
   return undefined
 }
 
+/**
+ * Applies configurations in this order of priority:
+ * environment > config file > base config
+ */
+export const resolveConfigFromFileAndEnvironment = async <
+  T extends Record<string, unknown>,
+  U extends Record<string, unknown>
+>(
+  baseConfig: T,
+  environment: U,
+  params: {
+    configPath?: string
+    defaultConfigPaths?: string[]
+    configFromFileCallback?: (configFromFile: any) => void
+  }
+): Promise<T & U> => {
+  const configFromFile = await resolveConfigFromFile(baseConfig, params)
+
+  if (params.configFromFileCallback) {
+    params.configFromFileCallback(configFromFile)
+  }
+
+  return deepExtend(configFromFile, removeUndefinedValues(environment))
+}
+
 export const resolveConfigFromFile = async <T>(
   baseConfig: T,
   params: {configPath?: string; defaultConfigPaths?: string[]}
