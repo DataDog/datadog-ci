@@ -217,7 +217,7 @@ const generatePackFilesForCommits = async (log: Logger, commits: string[]): Prom
 
   // Try using tmp folder first:
   try {
-    return generatePackfiles(os.tmpdir())
+    return await generatePackfiles(os.tmpdir())
   } catch (err) {
     /**
      * The generation of pack files in the temporary folder (from `os.tmpdir()`)
