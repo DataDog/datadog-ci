@@ -5,6 +5,7 @@
 
 ## CI Visibility
 src/commands/junit   @DataDog/ci-app-libraries
+src/commands/sarif   @DataDog/ci-app-libraries
 src/commands/metric  @DataDog/ci-app-libraries
 src/commands/tag     @DataDog/ci-app-libraries
 src/commands/trace   @DataDog/ci-app-libraries
@@ -31,6 +32,7 @@ src/commands/synthetics  @DataDog/synthetics-ct
 src/helpers/git  @DataDog/ci-app-libraries @DataDog/source-code-integration
 
 ## CI
+src/helpers/file.ts                              @DataDog/ci-app-libraries
 src/helpers/ci.ts                                @DataDog/ci-app-libraries @DataDog/synthetics-ct
 src/helpers/tags.ts                              @DataDog/ci-app-libraries @DataDog/synthetics-ct
 src/helpers/user-provided-git.ts                 @DataDog/ci-app-libraries @DataDog/synthetics-ct
