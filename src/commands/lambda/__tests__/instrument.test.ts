@@ -1,5 +1,14 @@
 jest.mock('fs', () => ({
   ...jest.requireActual('fs'),
+  promises: {
+    readFile: (path: string) => {
+      if (path.match('/.*aws*/')) {
+        return Promise.resolve(mockAwsCredentials)
+      }
+
+      return Promise.resolve()
+    },
+  },
   readFile: jest.fn(),
 }))
 jest.mock('@aws-sdk/credential-providers')
