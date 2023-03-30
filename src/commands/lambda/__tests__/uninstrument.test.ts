@@ -1,16 +1,4 @@
-jest.mock('fs', () => ({
-  ...jest.requireActual('fs'),
-  promises: {
-    readFile: (path: string) => {
-      if (path.match('/.*aws*/')) {
-        return Promise.resolve(mockAwsCredentials)
-      }
-
-      return Promise.resolve()
-    },
-  },
-  readFile: jest.fn(),
-}))
+jest.mock('fs')
 jest.mock('@aws-sdk/credential-providers')
 jest.mock('../prompt')
 jest.mock('../renderer', () => require('../__mocks__/renderer'))
@@ -50,7 +38,6 @@ import {
   createMockContext,
   makeCli,
   mockAwsAccessKeyId,
-  mockAwsCredentials,
   mockAwsSecretAccessKey,
   mockLambdaClientCommands,
   mockLambdaConfigurations,

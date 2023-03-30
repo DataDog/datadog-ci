@@ -1,16 +1,4 @@
-jest.mock('fs', () => ({
-  ...jest.requireActual('fs'),
-  promises: {
-    readFile: (path: string) => {
-      if (path.match('/.*aws*/')) {
-        return Promise.resolve(mockAwsCredentials)
-      }
-
-      return Promise.resolve()
-    },
-  },
-  readFile: jest.fn(),
-}))
+jest.mock('fs')
 jest.mock('@aws-sdk/credential-providers')
 jest.mock('../prompt')
 jest.mock('../renderer', () => require('../__mocks__/renderer'))
@@ -81,6 +69,7 @@ describe('lambda', () => {
 
       test('prints dry run data for lambda library layer', async () => {
         ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({code: 'ENOENT'}))
+
         mockLambdaConfigurations(lambdaClientMock, {
           'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world': {
             config: {
