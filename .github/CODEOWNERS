@@ -5,6 +5,7 @@
 
 ## CI Visibility
 src/commands/junit   @DataDog/ci-app-libraries
+src/commands/sarif   @DataDog/ci-app-libraries
 src/commands/metric  @DataDog/ci-app-libraries
 src/commands/tag     @DataDog/ci-app-libraries
 src/commands/trace   @DataDog/ci-app-libraries
@@ -22,7 +23,7 @@ src/commands/git-metadata  @DataDog/source-code-integration
 src/commands/sourcemaps    @DataDog/source-code-integration
 
 ## Synthetics
-src/commands/synthetics  @DataDog/synthetics-worker
+src/commands/synthetics  @DataDog/synthetics-ct
 
 
 # Shared utilities
@@ -31,13 +32,14 @@ src/commands/synthetics  @DataDog/synthetics-worker
 src/helpers/git  @DataDog/ci-app-libraries @DataDog/source-code-integration
 
 ## CI
-src/helpers/ci.ts                                @DataDog/ci-app-libraries @DataDog/synthetics-worker
-src/helpers/tags.ts                              @DataDog/ci-app-libraries @DataDog/synthetics-worker
-src/helpers/user-provided-git.ts                 @DataDog/ci-app-libraries @DataDog/synthetics-worker
-src/helpers/**tests**/ci-env                     @DataDog/ci-app-libraries @DataDog/synthetics-worker
-src/helpers/**tests**/ci.test.ts                 @DataDog/ci-app-libraries @DataDog/synthetics-worker
-src/helpers/**tests**/tags.test.ts               @DataDog/ci-app-libraries @DataDog/synthetics-worker
-src/helpers/**tests**/user-provided-git.test.ts  @DataDog/ci-app-libraries @DataDog/synthetics-worker
+src/helpers/file.ts                              @DataDog/ci-app-libraries
+src/helpers/ci.ts                                @DataDog/ci-app-libraries @DataDog/synthetics-ct
+src/helpers/tags.ts                              @DataDog/ci-app-libraries @DataDog/synthetics-ct
+src/helpers/user-provided-git.ts                 @DataDog/ci-app-libraries @DataDog/synthetics-ct
+src/helpers/**tests**/ci-env                     @DataDog/ci-app-libraries @DataDog/synthetics-ct
+src/helpers/**tests**/ci.test.ts                 @DataDog/ci-app-libraries @DataDog/synthetics-ct
+src/helpers/**tests**/tags.test.ts               @DataDog/ci-app-libraries @DataDog/synthetics-ct
+src/helpers/**tests**/user-provided-git.test.ts  @DataDog/ci-app-libraries @DataDog/synthetics-ct
 
 
 # Documentation

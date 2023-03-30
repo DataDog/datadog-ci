@@ -18,38 +18,31 @@ import {renderUpload} from './renderer'
 // We don't want any hard limit enforced by the CLI, the backend will enforce a max size by returning 413 errors.
 const maxBodyLength = Infinity
 
-export const uploadJUnitXML = (request: (args: AxiosRequestConfig) => AxiosPromise<AxiosResponse>) => async (
-  jUnitXML: Payload,
+export const uploadSarifReport = (request: (args: AxiosRequestConfig) => AxiosPromise<AxiosResponse>) => async (
+  sarifReport: Payload,
   write: Writable['write']
 ) => {
   const form = new FormData()
-  write(renderUpload(jUnitXML))
+  write(renderUpload(sarifReport))
 
   let fileName
   try {
-    fileName = path.parse(jUnitXML.xmlPath).name
+    fileName = path.parse(sarifReport.reportPath).name
   } catch (e) {
     fileName = 'default_file_name'
   }
 
   const metadata: Record<string, any> = {
-    service: jUnitXML.service,
-    ...jUnitXML.spanTags,
-    '_dd.cireport_version': '2',
-    '_dd.hostname': jUnitXML.hostname,
-  }
-
-  if (jUnitXML.logsEnabled) {
-    metadata['_dd.junitxml_logs'] = true
-  }
-
-  if (jUnitXML.xpathTags) {
-    metadata['_dd.junitxml_xpath_tags'] = jUnitXML.xpathTags
+    service: sarifReport.service,
+    ...sarifReport.spanTags,
+    event_type: 'static_analysis',
+    event_format_name: 'sarif',
+    event_format_version: '2.1.0',
   }
 
   form.append('event', JSON.stringify(metadata), {filename: 'event.json'})
 
-  let uniqueFileName = `${fileName}-${jUnitXML.service}-${metadata[GIT_SHA]}`
+  let uniqueFileName = `${fileName}-${sarifReport.service}-${metadata[GIT_SHA]}`
 
   if (metadata[CI_PIPELINE_URL]) {
     uniqueFileName = `${uniqueFileName}-${metadata[CI_PIPELINE_URL]}`
@@ -58,8 +51,8 @@ export const uploadJUnitXML = (request: (args: AxiosRequestConfig) => AxiosPromi
     uniqueFileName = `${uniqueFileName}-${metadata[CI_JOB_URL]}`
   }
 
-  form.append('junit_xml_report_file', fs.createReadStream(jUnitXML.xmlPath).pipe(createGzip()), {
-    filename: `${getSafeFileName(uniqueFileName)}.xml.gz`,
+  form.append('sarif_report_file', fs.createReadStream(sarifReport.reportPath).pipe(createGzip()), {
+    filename: `${getSafeFileName(uniqueFileName)}.sarif.gz`,
   })
 
   return request({
@@ -67,7 +60,7 @@ export const uploadJUnitXML = (request: (args: AxiosRequestConfig) => AxiosPromi
     headers: form.getHeaders(),
     maxBodyLength,
     method: 'POST',
-    url: 'api/v2/cireport',
+    url: 'api/v2/cicodescan',
   })
 }
 
@@ -75,6 +68,6 @@ export const apiConstructor = (baseIntakeUrl: string, apiKey: string) => {
   const requestIntake = getRequestBuilder({baseUrl: baseIntakeUrl, apiKey})
 
   return {
-    uploadJUnitXML: uploadJUnitXML(requestIntake),
+    uploadSarifReport: uploadSarifReport(requestIntake),
   }
 }

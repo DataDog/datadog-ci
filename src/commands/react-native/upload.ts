@@ -9,7 +9,8 @@ import {getRepositoryData, newSimpleGit, RepositoryData} from '../../helpers/git
 import {RequestBuilder} from '../../helpers/interfaces'
 import {getMetricsLogger, MetricsLogger} from '../../helpers/metrics'
 import {upload, UploadStatus} from '../../helpers/upload'
-import {getRequestBuilder, resolveConfigFromFile} from '../../helpers/utils'
+import {getRequestBuilder, resolveConfigFromFileAndEnvironment} from '../../helpers/utils'
+import {checkAPIKeyOverride} from '../../helpers/validation'
 
 import {RNPlatform, RNSourcemap, RN_SUPPORTED_PLATFORMS} from './interfaces'
 import {
@@ -50,9 +51,8 @@ export class UploadCommand extends Command {
   // bundle is only kept for backwards compatibility but never used
   private bundle?: string
   private cliVersion: string
-  private config = {
-    apiKey: process.env.DATADOG_API_KEY,
-    datadogSite: process.env.DATADOG_SITE || 'datadoghq.com',
+  private config: Record<string, string> = {
+    datadogSite: 'datadoghq.com',
   }
   private configPath?: string
   private disableGit?: boolean
@@ -124,10 +124,20 @@ export class UploadCommand extends Command {
       )
     )
 
-    this.config = await resolveConfigFromFile(this.config, {
-      configPath: this.configPath,
-      defaultConfigPaths: ['datadog-ci.json', '../datadog-ci.json'],
-    })
+    this.config = await resolveConfigFromFileAndEnvironment(
+      this.config,
+      {
+        apiKey: process.env.DATADOG_API_KEY,
+        datadogSite: process.env.DATADOG_SITE,
+      },
+      {
+        configPath: this.configPath,
+        defaultConfigPaths: ['datadog-ci.json', '../datadog-ci.json'],
+        configFromFileCallback: (configFromFile: any) => {
+          checkAPIKeyOverride(process.env.DATADOG_API_KEY, configFromFile.apiKey, this.context.stdout)
+        },
+      }
+    )
 
     const metricsLogger = getMetricsLogger({
       apiKey: this.config.apiKey,

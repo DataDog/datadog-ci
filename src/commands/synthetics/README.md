@@ -50,11 +50,13 @@ To setup the client, your Datadog API and application keys need to be configured
 
 3. Or defined in a [global JSON configuration file](#global-configuration-file-options):
 
-   Specify the path to this file using the `--config` flag [when launching your tests](#run-tests). If you set the name of your global configuration file to `datadog-ci.json`, that name is the default.
+   Create a JSON configuration file on your system. Specify the path to the file using the `--config` flag [when launching your tests](#run-tests). If you don't specify a file path, Datadog uses the default filename of `datadog-ci.json`. 
 
 ### Global configuration file options
 
-In the global configuration file, you can set the following advanced options: 
+When you run your tests, use the `--config` flag on the command line to specify the path to the global configuration file.
+
+See below for the list of advanced options in the global configuration file. For an example configuration file, see this [`global.config.json` file][9].
 
 `apiKey`
 : The API key used to query the Datadog API.
@@ -332,7 +334,9 @@ All options under the `config` key are optional and allow overriding of the test
 
 ## Use the testing tunnel
 
-You can combine variable overrides with the [Continuous Testing Tunnel][3] to run tests within your development environment. The testing tunnel creates an end-to-end encrypted HTTP proxy between your infrastructure and Datadog that allows all test requests sent through the CLI to be automatically routed through the `datadog-ci` client. This allows you to run tests with end-to-end encryption at every stage of your software development lifecycle, from pre-production environments to your production system.
+You can combine variable overrides with the [Continuous Testing Tunnel][3] to run tests within your development environment. The testing tunnel creates an end-to-end encrypted HTTP proxy between your infrastructure and Datadog that allows all test requests sent through the CLI to be automatically routed through the `datadog-ci` client. 
+
+This allows you to run tests with end-to-end encryption at every stage of your software development lifecycle, from pre-production environments to your production system.
 
 ## End-to-end testing process
 
@@ -393,7 +397,7 @@ Reporters can hook themselves into the `MainReporter` of the command.
 
 ## View test results
 
-You can see results for CI batches by clicking on a batch in the [Continuous Testing Explorer][4], or by clicking on a test in the [Synthetic Tests page][5].
+You can see results for CI batches by clicking on a batch in the [Synthetic Monitoring & Continuous Testing Explorer][4] or clicking on a test in the [**Synthetic Tests** page][5].
 
 You can also see the outcome of test executions directly in your CI as your tests are being executed. To identify what caused a test to fail, look at the execution logs and search for causes of the failed assertion.
 
@@ -423,6 +427,8 @@ You can also see the outcome of test executions directly in your CI as your test
 
 ## Further reading
 
+Additional helpful documentation, links, and articles:
+
 - [Use Datadog's GitHub Action to add continuous testing to your workflows][6]
 - [Learn about Continuous Testing and CI/CD][7]
 - [Learn about the Continuous Testing Explorer][8]
@@ -436,3 +442,4 @@ You can also see the outcome of test executions directly in your CI as your test
 [6]: https://www.datadoghq.com/blog/datadog-github-action-synthetics-ci-visibility/
 [7]: https://docs.datadoghq.com/continuous_testing/cicd_integrations/
 [8]: https://docs.datadoghq.com/continuous_testing/explorer/
+[9]: https://github.com/DataDog/datadog-ci/blob/master/.github/workflows/e2e/global.config.json
