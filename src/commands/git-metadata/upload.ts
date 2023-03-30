@@ -113,8 +113,6 @@ export class UploadCommand extends Command {
         this.logger.info('Syncing GitDB...')
         const elapsed = await timedExecAsync(this.uploadToGitDB.bind(this), {
           requestBuilder: apiRequestBuilder,
-          verbose: this.verbose,
-          dryRun: this.dryRun,
         })
         metricsLogger.logger.increment('gitdb.success', 1)
         this.logger.info(`${this.dryRun ? '[DRYRUN] ' : ''}Successfully synced git DB in ${elapsed} seconds.`)
@@ -140,7 +138,7 @@ export class UploadCommand extends Command {
   }
 
   private async uploadToGitDB(opts: {requestBuilder: RequestBuilder}) {
-    await uploadToGitDB(this.logger, opts.requestBuilder, await newSimpleGit(), this.dryRun)
+    await uploadToGitDB(this.logger, opts.requestBuilder, await newSimpleGit(), this.dryRun, this.repositoryURL)
   }
 
   private async uploadToSrcmapTrack(opts: {

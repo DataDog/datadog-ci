@@ -27,15 +27,20 @@ export const uploadToGitDB = async (
   log: Logger,
   request: RequestBuilder,
   git: simpleGit.SimpleGit,
-  dryRun: boolean
+  dryRun: boolean,
+  repositoryURL?: string
 ) => {
   let repoURL
-  try {
-    repoURL = await getRepoURL(git)
-    log.debug(`Syncing repository ${repoURL}`)
-  } catch (err) {
-    log.warn(`Failed getting repository URL: ${err}`)
-    throw err
+  if (repositoryURL) {
+    repoURL = repositoryURL
+  } else {
+    try {
+      repoURL = await getRepoURL(git)
+      log.debug(`Syncing repository ${repoURL}`)
+    } catch (err) {
+      log.warn(`Failed getting repository URL: ${err}`)
+      throw err
+    }
   }
 
   await unshallowRepositoryWhenNeeded(log, git)

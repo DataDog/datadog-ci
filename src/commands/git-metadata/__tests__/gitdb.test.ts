@@ -324,6 +324,88 @@ describe('gitdb', () => {
     mocks.expectCalls()
   })
 
+  test('should override repository URL when specified', async () => {
+    const mocks = new MockAll({
+      addConfig: [],
+      fetch: [],
+      getRemotes: [],
+      log: [
+        {
+          input: ['-n 1000', '--since="1 month ago"'],
+          output: {
+            all: [
+              {
+                hash: '87ce64f636853fbebc05edfcefe9cccc28a7968b',
+              },
+              {
+                hash: 'cc424c261da5e261b76d982d5d361a023556e2aa',
+              },
+            ],
+          },
+        },
+      ],
+      raw: [
+        {
+          input: ['rev-list', '--objects', '--no-object-names', '--filter=blob:none', '--since="1 month ago"', 'HEAD'],
+          output: '87ce64f636853fbebc05edfcefe9cccc28a7968b\ncc424c261da5e261b76d982d5d361a023556e2aa\n',
+        },
+      ],
+      revparse: [{input: '--is-shallow-repository', output: 'false'}],
+      execSync: [
+        {
+          input: `git pack-objects --compression=9 --max-pack-size=3m ${tmpdir}/1000`,
+          output: Buffer.from('87ce64f636853fbebc05edfcefe9cccc28a7968b\ncc424c261da5e261b76d982d5d361a023556e2aa\n'),
+        },
+      ],
+      axios: [
+        {
+          input: {
+            url: '/api/v2/git/repository/search_commits',
+            data: {
+              meta: {
+                repository_url: 'https://github.com/DataDog/mycustomrepo',
+              },
+              data: [
+                {
+                  id: '87ce64f636853fbebc05edfcefe9cccc28a7968b',
+                  type: 'commit',
+                },
+                {
+                  id: 'cc424c261da5e261b76d982d5d361a023556e2aa',
+                  type: 'commit',
+                },
+              ],
+            },
+          },
+          output: {data: {data: []}},
+        },
+        {
+          input: {
+            url: '/api/v2/git/repository/packfile',
+            data: undefined,
+          },
+          output: {},
+        },
+        {
+          input: {
+            url: '/api/v2/git/repository/packfile',
+            data: undefined,
+          },
+          output: {},
+        },
+      ],
+    })
+    const upload = uploadToGitDB(
+      logger,
+      request,
+      mocks.simpleGit as any,
+      false,
+      'https://github.com/DataDog/mycustomrepo'
+    )
+    await expect(upload).resolves.toBe(undefined)
+    mocks.expectCalls()
+  })
+
   test('should omit known commits', async () => {
     const mocks = new MockAll({
       addConfig: [],
