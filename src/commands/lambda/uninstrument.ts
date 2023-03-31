@@ -290,6 +290,7 @@ UninstrumentCommand.addOption('logLevel', Command.String('--log-level,--logLevel
 UninstrumentCommand.addOption('service', Command.String('--service', {hidden: true}))
 UninstrumentCommand.addOption('environment', Command.String('--env', {hidden: true}))
 UninstrumentCommand.addOption('version', Command.String('--version', {hidden: true}))
+UninstrumentCommand.addOption('apmFlushDeadline', Command.String('--apm-flush-deadline', {hidden: true}))
 UninstrumentCommand.addOption('extraTags', Command.String('--extra-tags,--extraTags', {hidden: true}))
 UninstrumentCommand.addOption(
   'captureLambdaPayload',
