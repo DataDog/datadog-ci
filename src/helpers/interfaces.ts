@@ -1,4 +1,4 @@
-import {AxiosPromise, AxiosRequestConfig, AxiosResponse} from 'axios'
+import {AxiosPromise, AxiosRequestConfig} from 'axios'
 
 import {
   CI_ENV_VARS,
@@ -90,4 +90,4 @@ export type SpanTag =
 
 export type SpanTags = Partial<Record<SpanTag, string>>
 
-export type RequestBuilder = (args: AxiosRequestConfig) => AxiosPromise<AxiosResponse>
+export type RequestBuilder = (args: AxiosRequestConfig) => AxiosPromise
