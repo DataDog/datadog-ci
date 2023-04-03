@@ -516,7 +516,7 @@ export const getTestAndOverrideConfig = async (
   summary: InitialSummary,
   isTunnelEnabled?: boolean
 ): Promise<NotFound | Skipped | TestWithOverride> => {
-  const normalizedId = PUBLIC_ID_REGEX.test(id) ? id : id.substr(id.lastIndexOf('/') + 1)
+  const normalizedId = PUBLIC_ID_REGEX.test(id) ? id : id.substring(id.lastIndexOf('/') + 1)
 
   const testResult = await getTest(api, {config, id: normalizedId, suite})
   if ('errorMessage' in testResult) {
