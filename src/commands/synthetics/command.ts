@@ -54,6 +54,7 @@ export class RunTestCommand extends Command {
   private testSearchQuery?: string
   private tunnel?: boolean
   private variableStrings?: string[]
+  private mobileApplicationVersionFilePath?: string
 
   public async execute() {
     const reporters: Reporter[] = [new DefaultReporter(this)]
@@ -235,6 +236,7 @@ export class RunTestCommand extends Command {
     this.config.global = deepExtend(
       this.config.global,
       removeUndefinedValues({
+        mobileApplicationVersionFilePath: this.mobileApplicationVersionFilePath,
         variables: parseVariablesFromCli(this.variableStrings, (log) => this.reporter?.log(log)),
       })
     )
@@ -265,6 +267,7 @@ RunTestCommand.addOption('failOnMissingTests', Command.Boolean('--failOnMissingT
 RunTestCommand.addOption('failOnTimeout', Command.Boolean('--failOnTimeout'))
 RunTestCommand.addOption('files', Command.Array('-f,--files'))
 RunTestCommand.addOption('jUnitReport', Command.String('-j,--jUnitReport'))
+RunTestCommand.addOption('mobileApplicationVersionFilePath', Command.String('--mobileApplicationVersionFilePath'))
 RunTestCommand.addOption('publicIds', Command.Array('-p,--public-id'))
 RunTestCommand.addOption('runName', Command.String('-n,--runName'))
 RunTestCommand.addOption('subdomain', Command.Boolean('--subdomain'))
