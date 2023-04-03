@@ -184,9 +184,9 @@ export class RunTestCommand extends Command {
   }
 
   private async resolveConfig() {
-    // Default < file < ENV < CLI
+    // Defaults < file < ENV < CLI
 
-    // Override with file config variables
+    // Override with config file variables (e.g. datadog-ci.json)
     try {
       this.config = await resolveConfigFromFile(this.config, {
         configPath: this.configPath,
