@@ -1,4 +1,4 @@
-import {Cli} from 'clipanion/lib/advanced'
+import {BaseContext, Cli} from 'clipanion/lib/advanced'
 
 import * as ciUtils from '../../../helpers/utils'
 
@@ -179,6 +179,91 @@ describe('run-test', () => {
       })
     })
 
+    test('override from global < ENV < test file', async () => {
+      const suites = {
+        name: 'Suite 1',
+        content: {
+          tests: [
+            {
+              id: 'publicId',
+              config: {
+                mobileApplicationVersionFilePath: './path/to/application-for-publicId.apk',
+              },
+            },
+          ],
+        },
+      }
+
+      jest.spyOn(utils, 'getSuites').mockImplementation((() => [suites]) as any)
+
+      const getTestsToTriggerMock = jest.spyOn(utils, 'getTestsToTrigger')
+
+      // Throw to stop the test
+      const triggerTests = jest.fn(() => {
+        throw getAxiosHttpError(502, {message: 'Bad Gateway'})
+      })
+
+      const apiHelper = {
+        getTest: jest.fn(() => ({...getApiTest('publicId')})),
+        triggerTests,
+      }
+
+      // Env > global
+      process.env = {
+        DATADOG_SYNTHETICS_LOCATIONS: 'aws:us-east-3',
+      }
+
+      // Global == CLI
+      const write = jest.fn()
+      const command = new RunTestCommand()
+      command.context = ({stdout: {write}} as unknown) as BaseContext
+      command['config'].global = {locations: ['aws:us-east-2']}
+      command['mobileApplicationVersionFilePath'] = './path/to/application.apk'
+
+      jest.spyOn(api, 'getApiHelper').mockImplementation(() => apiHelper as any)
+
+      expect(await command.execute()).toBe(0)
+      expect(triggerTests).toHaveBeenCalledWith(
+        expect.objectContaining({
+          tests: [
+            {
+              executionRule: 'blocking',
+              locations: ['aws:us-east-3'],
+              pollingTimeout: DEFAULT_POLLING_TIMEOUT,
+              public_id: 'publicId',
+            },
+          ],
+        })
+      )
+
+      // resolveConfig updated `global` with the appropriate CLI arguments
+      expect(command['config'].global).toStrictEqual(
+        expect.objectContaining({
+          mobileApplicationVersionFilePath: './path/to/application.apk',
+        })
+      )
+
+      // Test file > global
+      expect(getTestsToTriggerMock).toHaveBeenCalledWith(
+        apiHelper,
+        [
+          {
+            suite: 'Suite 1',
+            id: 'publicId',
+            config: {
+              locations: ['aws:us-east-3'],
+              mobileApplicationVersionFilePath: './path/to/application-for-publicId.apk',
+              pollingTimeout: DEFAULT_POLLING_TIMEOUT,
+            },
+          },
+        ],
+        expect.anything(),
+        false,
+        false,
+        false
+      )
+    })
+
     test('pass command pollingTimeout as global override if undefined', async () => {
       const command = new RunTestCommand()
       command.configPath = 'src/commands/synthetics/__tests__/config-fixtures/config-with-global-polling-timeout.json'
@@ -192,13 +277,13 @@ describe('run-test', () => {
     })
 
     test('override locations with ENV variable', async () => {
-      const conf = {
+      const suites = {
         content: {tests: [{config: {}, id: 'publicId'}]},
         name: 'Suite 1',
       }
 
       jest.spyOn(ciUtils, 'resolveConfigFromFile').mockImplementation(async (config, _) => config)
-      jest.spyOn(utils, 'getSuites').mockImplementation((() => [conf]) as any)
+      jest.spyOn(utils, 'getSuites').mockImplementation((() => [suites]) as any)
 
       // Throw to stop the test
       const triggerTests = jest.fn(() => {
@@ -212,7 +297,7 @@ describe('run-test', () => {
 
       const write = jest.fn()
       const command = new RunTestCommand()
-      command.context = {stdout: {write}} as any
+      command.context = ({stdout: {write}} as unknown) as BaseContext
       command['config'].global = {locations: ['aws:us-east-2']}
       jest.spyOn(api, 'getApiHelper').mockImplementation(() => apiHelper as any)
 
@@ -270,10 +355,10 @@ describe('run-test', () => {
       )
 
       // Test > env
-      const confWithLocation = {
+      const configWithLocation = {
         content: {tests: [{config: {locations: ['aws:us-east-1']}, id: 'publicId'}]},
       }
-      jest.spyOn(utils, 'getSuites').mockImplementation((() => [confWithLocation]) as any)
+      jest.spyOn(utils, 'getSuites').mockImplementation((() => [configWithLocation]) as any)
 
       expect(await command.execute()).toBe(0)
       expect(triggerTests).toHaveBeenCalledWith(
