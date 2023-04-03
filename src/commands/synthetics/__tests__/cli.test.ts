@@ -78,7 +78,11 @@ describe('run-test', () => {
         failOnMissingTests: true,
         failOnTimeout: false,
         files: ['my-new-file'],
-        global: {locations: [], pollingTimeout: 2},
+        global: {
+          locations: [],
+          pollingTimeout: 2,
+          mobileApplicationVersionFilePath: './path/to/application.apk',
+        },
         locations: [],
         pollingTimeout: 1,
         proxy: {protocol: 'https'},
@@ -102,8 +106,10 @@ describe('run-test', () => {
         configPath: 'src/commands/synthetics/__tests__/config-fixtures/empty-config-file.json',
         datadogSite: 'datadoghq.eu',
         failOnCriticalErrors: true,
+        failOnMissingTests: true,
         failOnTimeout: false,
         files: ['new-file'],
+        mobileApplicationVersionFilePath: './path/to/application.apk',
         publicIds: ['ran-dom-id'],
         subdomain: 'new-sub-domain',
         testSearchQuery: 'a-search-query',
@@ -116,8 +122,10 @@ describe('run-test', () => {
       command['configPath'] = overrideCLI.configPath
       command['datadogSite'] = overrideCLI.datadogSite
       command['failOnCriticalErrors'] = overrideCLI.failOnCriticalErrors
+      command['failOnMissingTests'] = overrideCLI.failOnMissingTests
       command['failOnTimeout'] = overrideCLI.failOnTimeout
       command['files'] = overrideCLI.files
+      command['mobileApplicationVersionFilePath'] = overrideCLI.mobileApplicationVersionFilePath
       command['publicIds'] = overrideCLI.publicIds
       command['subdomain'] = overrideCLI.subdomain
       command['tunnel'] = overrideCLI.tunnel
@@ -131,9 +139,13 @@ describe('run-test', () => {
         configPath: 'src/commands/synthetics/__tests__/config-fixtures/empty-config-file.json',
         datadogSite: 'datadoghq.eu',
         failOnCriticalErrors: true,
+        failOnMissingTests: true,
         failOnTimeout: false,
         files: ['new-file'],
-        global: {pollingTimeout: DEFAULT_POLLING_TIMEOUT},
+        global: {
+          pollingTimeout: DEFAULT_POLLING_TIMEOUT,
+          mobileApplicationVersionFilePath: './path/to/application.apk',
+        },
         publicIds: ['ran-dom-id'],
         subdomain: 'new-sub-domain',
         testSearchQuery: 'a-search-query',
