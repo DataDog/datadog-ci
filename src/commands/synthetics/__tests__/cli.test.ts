@@ -12,17 +12,20 @@ test('all option flags are supported', async () => {
   const options = [
     'apiKey',
     'appKey',
-    'failOnCriticalErrors',
     'config',
     'datadogSite',
-    'files',
+    'failOnCriticalErrors',
+    'failOnMissingTests',
     'failOnTimeout',
+    'files',
+    'jUnitReport',
+    'mobileApplicationVersionFilePath',
     'public-id',
+    'runName',
     'search',
     'subdomain',
     'tunnel',
-    'jUnitReport',
-    'runName',
+    'variable',
   ]
 
   const cli = new Cli()
