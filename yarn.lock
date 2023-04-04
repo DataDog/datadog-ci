@@ -1625,7 +1625,7 @@ __metadata:
     chalk: 3.0.0
     clipanion: 2.2.2
     datadog-metrics: 0.9.3
-    dd-trace: 3.13.2
+    dd-trace: 3.16.0
     deep-extend: 0.6.0
     eslint: ^7.32.0
     eslint-config-prettier: ^8.5.0
@@ -1676,22 +1676,22 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@datadog/native-iast-rewriter@npm:1.1.2":
-  version: 1.1.2
-  resolution: "@datadog/native-iast-rewriter@npm:1.1.2"
+"@datadog/native-iast-rewriter@npm:2.0.1":
+  version: 2.0.1
+  resolution: "@datadog/native-iast-rewriter@npm:2.0.1"
   dependencies:
     node-gyp-build: ^4.5.0
-  checksum: 3d080a8f5aaebc9759f8976e916358fdf0e1bcb532f7f0f5b3d4a11893f33d95b86b0477d64dbe9b1a84d9dd4bf167f3622b54f407e2a584256e31ec9eccae43
+  checksum: 89da5ad70fb49081ee6cdc4dd067206fb448eb3e6442e8f366b8448220920efd940133416d5549ff577f8dc453528fbc3f3907a226f97054527d30f471d66228
   languageName: node
   linkType: hard
 
-"@datadog/native-iast-taint-tracking@npm:1.1.0":
-  version: 1.1.0
-  resolution: "@datadog/native-iast-taint-tracking@npm:1.1.0"
+"@datadog/native-iast-taint-tracking@npm:1.1.1":
+  version: 1.1.1
+  resolution: "@datadog/native-iast-taint-tracking@npm:1.1.1"
   dependencies:
     node-gyp: latest
     node-gyp-build: ^3.9.0
-  checksum: 5d5cfdc90395f9d9339989eaf3f72429943d79b300c99de4d27dbabdab3f4896735d1690f4d6254ff39e7b84ac55928a398f8e89c0adc31d321a28664ab2d899
+  checksum: e2b9c247543fad5c3a4cf04aa70ba5ed4b5445e6b285326ee99e939ed03ce307d6c1b0ae310d2d11807b9f3b5ce9e1f34c6b518f34f04554837fca59a21551d3
   languageName: node
   linkType: hard
 
@@ -1705,20 +1705,19 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@datadog/pprof@npm:^1.1.1":
-  version: 1.1.1
-  resolution: "@datadog/pprof@npm:1.1.1"
+"@datadog/pprof@npm:^2.1.0":
+  version: 2.1.0
+  resolution: "@datadog/pprof@npm:2.1.0"
   dependencies:
     delay: ^5.0.0
-    findit2: ^2.2.3
     node-gyp: latest
     node-gyp-build: ^3.9.0
     p-limit: ^3.1.0
     pify: ^5.0.0
-    protobufjs: ^7.0.0
+    pprof-format: ^2.0.6
     source-map: ^0.7.3
     split: ^1.0.1
-  checksum: b2b68de84a9857cfbcb7c1e50e0b65062240ec1b7c68fd02e20cbbeb234fc2341c0f3fdc02ec584dccbc18136b502f650d68578ded1940f60757ab307df001d9
+  checksum: f76eb1b815c11934db0a3c7f2b889a5c0ed2aaf8db3afa054001ecf105be17906ea776052f48df4c3b84ae283f131609c91407c0055e9d0e3c591eab9e1bf901
   languageName: node
   linkType: hard
 
@@ -3777,15 +3776,15 @@ __metadata:
   languageName: node
   linkType: hard
 
-"dd-trace@npm:3.13.2":
-  version: 3.13.2
-  resolution: "dd-trace@npm:3.13.2"
+"dd-trace@npm:3.16.0":
+  version: 3.16.0
+  resolution: "dd-trace@npm:3.16.0"
   dependencies:
     "@datadog/native-appsec": 2.0.0
-    "@datadog/native-iast-rewriter": 1.1.2
-    "@datadog/native-iast-taint-tracking": 1.1.0
+    "@datadog/native-iast-rewriter": 2.0.1
+    "@datadog/native-iast-taint-tracking": 1.1.1
     "@datadog/native-metrics": ^1.5.0
-    "@datadog/pprof": ^1.1.1
+    "@datadog/pprof": ^2.1.0
     "@datadog/sketches-js": ^2.1.0
     crypto-randomuuid: ^1.0.0
     diagnostics_channel: ^1.1.0
@@ -3808,7 +3807,7 @@ __metadata:
     protobufjs: ^7.1.2
     retry: ^0.10.1
     semver: ^5.5.0
-  checksum: 1b431a98efc8744cfd9591a503bd683e0bbe3f6818dc3edc79b1bb463905d75ecd9fc1f14bf3a7af222d1b93aab8a9d3d66bcf303e2ad8c43857301eaf172188
+  checksum: 1ee7c005d6ad3403f762284e272ed6038736a1b4e9177f074f2d29e78d95125bc0f56e66f2f8e5e79e4823123b7066c29d963e7592baaa53b5cf87aeb589bf26
   languageName: node
   linkType: hard
 
@@ -4826,13 +4825,6 @@ __metadata:
     locate-path: ^6.0.0
     path-exists: ^4.0.0
   checksum: 07955e357348f34660bde7920783204ff5a26ac2cafcaa28bace494027158a97b9f56faaf2d89a6106211a8174db650dd9f503f9c0d526b1202d5554a00b9095
-  languageName: node
-  linkType: hard
-
-"findit2@npm:^2.2.3":
-  version: 2.2.3
-  resolution: "findit2@npm:2.2.3"
-  checksum: 70738b5610b44a101baa9b55b0b023851641357ca673e0dd6f3bb3e836369aed7eda9ee93953ce633dacbdd8fde5a1ec3341556de5beaf7853f1cb5649a93918
   languageName: node
   linkType: hard
 
@@ -7590,6 +7582,13 @@ jschardet@latest:
   languageName: node
   linkType: hard
 
+"pprof-format@npm:^2.0.6":
+  version: 2.0.7
+  resolution: "pprof-format@npm:2.0.7"
+  checksum: 0033740ba5ffb9a0d684e7fc3a616d2932d21b908a62a095e88a0091fcd1ef9af379060b303429d9df8698c9f48a789202cc38ba1c71b3c4a6084a5604647367
+  languageName: node
+  linkType: hard
+
 "prebuild-install@npm:6.1.4":
   version: 6.1.4
   resolution: "prebuild-install@npm:6.1.4"
@@ -7705,7 +7704,7 @@ jschardet@latest:
   languageName: node
   linkType: hard
 
-"protobufjs@npm:^7.0.0, protobufjs@npm:^7.1.2":
+"protobufjs@npm:^7.1.2":
   version: 7.1.2
   resolution: "protobufjs@npm:7.1.2"
   dependencies:
