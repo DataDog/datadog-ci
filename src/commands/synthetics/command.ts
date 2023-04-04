@@ -267,7 +267,10 @@ RunTestCommand.addOption('failOnMissingTests', Command.Boolean('--failOnMissingT
 RunTestCommand.addOption('failOnTimeout', Command.Boolean('--failOnTimeout'))
 RunTestCommand.addOption('files', Command.Array('-f,--files'))
 RunTestCommand.addOption('jUnitReport', Command.String('-j,--jUnitReport'))
-RunTestCommand.addOption('mobileApplicationVersionFilePath', Command.String('--mobileApplicationVersionFilePath'))
+RunTestCommand.addOption(
+  'mobileApplicationVersionFilePath',
+  Command.String('--mobileApp,--mobileApplicationVersionFilePath')
+)
 RunTestCommand.addOption('publicIds', Command.Array('-p,--public-id'))
 RunTestCommand.addOption('runName', Command.String('-n,--runName'))
 RunTestCommand.addOption('subdomain', Command.Boolean('--subdomain'))
