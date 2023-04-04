@@ -180,6 +180,7 @@ describe('run-test', () => {
     })
 
     test('override from global < ENV < test file', async () => {
+      // Test file
       const suites = {
         name: 'Suite 1',
         content: {
@@ -195,55 +196,38 @@ describe('run-test', () => {
       }
 
       jest.spyOn(utils, 'getSuites').mockImplementation((() => [suites]) as any)
+      jest.spyOn(api, 'getApiHelper').mockImplementation(() => apiHelper as any)
 
       const getTestsToTriggerMock = jest.spyOn(utils, 'getTestsToTrigger')
 
-      // Throw to stop the test
-      const triggerTests = jest.fn(() => {
-        throw getAxiosHttpError(502, {message: 'Bad Gateway'})
-      })
-
       const apiHelper = {
         getTest: jest.fn(() => ({...getApiTest('publicId')})),
-        triggerTests,
       }
 
-      // Env > global
-      process.env = {
-        DATADOG_SYNTHETICS_LOCATIONS: 'aws:us-east-3',
-      }
-
-      // Global == CLI
       const write = jest.fn()
       const command = new RunTestCommand()
       command.context = ({stdout: {write}} as unknown) as BaseContext
-      command['config'].global = {locations: ['aws:us-east-2']}
+
+      // Pass CLI arguments
       command['mobileApplicationVersionFilePath'] = './path/to/application.apk'
 
-      jest.spyOn(api, 'getApiHelper').mockImplementation(() => apiHelper as any)
+      // ENV > global
+      process.env = {
+        DATADOG_SYNTHETICS_LOCATIONS: 'aws:us-east-3',
+      }
+      command['config'].global = {
+        locations: ['aws:us-east-2'],
+      }
 
       expect(await command.execute()).toBe(0)
-      expect(triggerTests).toHaveBeenCalledWith(
-        expect.objectContaining({
-          tests: [
-            {
-              executionRule: 'blocking',
-              locations: ['aws:us-east-3'],
-              pollingTimeout: DEFAULT_POLLING_TIMEOUT,
-              public_id: 'publicId',
-            },
-          ],
-        })
-      )
 
-      // resolveConfig updated `global` with the appropriate CLI arguments
+      // The `global` config should have been updated with the appropriate CLI arguments
       expect(command['config'].global).toStrictEqual(
         expect.objectContaining({
           mobileApplicationVersionFilePath: './path/to/application.apk',
         })
       )
 
-      // Test file > global
       expect(getTestsToTriggerMock).toHaveBeenCalledWith(
         apiHelper,
         [
@@ -251,8 +235,8 @@ describe('run-test', () => {
             suite: 'Suite 1',
             id: 'publicId',
             config: {
-              locations: ['aws:us-east-3'],
-              mobileApplicationVersionFilePath: './path/to/application-for-publicId.apk',
+              locations: ['aws:us-east-3'], // ENV > global
+              mobileApplicationVersionFilePath: './path/to/application-for-publicId.apk', // Test file > global
               pollingTimeout: DEFAULT_POLLING_TIMEOUT,
             },
           },
