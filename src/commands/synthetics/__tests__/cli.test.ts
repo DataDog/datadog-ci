@@ -248,18 +248,6 @@ describe('run-test', () => {
       )
     })
 
-    test('pass command pollingTimeout as global override if undefined', async () => {
-      const command = new RunTestCommand()
-      command.configPath = 'src/commands/synthetics/__tests__/config-fixtures/config-with-global-polling-timeout.json'
-      await command['resolveConfig']()
-      expect(command['config']).toEqual({
-        ...DEFAULT_COMMAND_CONFIG,
-        configPath: 'src/commands/synthetics/__tests__/config-fixtures/config-with-global-polling-timeout.json',
-        global: {followRedirects: false, pollingTimeout: 333},
-        pollingTimeout: 333,
-      })
-    })
-
     test('override locations with ENV variable', async () => {
       const suites = {
         content: {tests: [{config: {}, id: 'publicId'}]},
@@ -357,6 +345,18 @@ describe('run-test', () => {
           ],
         })
       )
+    })
+
+    test('pass command pollingTimeout as global override if undefined', async () => {
+      const command = new RunTestCommand()
+      command.configPath = 'src/commands/synthetics/__tests__/config-fixtures/config-with-global-polling-timeout.json'
+      await command['resolveConfig']()
+      expect(command['config']).toEqual({
+        ...DEFAULT_COMMAND_CONFIG,
+        configPath: 'src/commands/synthetics/__tests__/config-fixtures/config-with-global-polling-timeout.json',
+        global: {followRedirects: false, pollingTimeout: 333},
+        pollingTimeout: 333,
+      })
     })
   })
 
