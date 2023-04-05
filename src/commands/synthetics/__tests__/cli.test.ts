@@ -154,11 +154,14 @@ describe('run-test', () => {
     })
 
     test('override from config file < ENV < CLI', async () => {
-      jest.spyOn(ciUtils, 'resolveConfigFromFile').mockImplementationOnce(async (config) => ({
-        ...(config as Record<string, unknown>),
+      jest.spyOn(ciUtils, 'resolveConfigFromFile').mockImplementationOnce(async <T>(baseConfig: T) => ({
+        ...baseConfig,
         apiKey: 'api_key_config_file',
         appKey: 'app_key_config_file',
         datadogSite: 'us5.datadoghq.com',
+        global: {
+          mobileApplicationVersionFilePath: './path/to/application_config_file.apk',
+        },
       }))
 
       process.env = {
@@ -168,6 +171,7 @@ describe('run-test', () => {
 
       const command = new RunTestCommand()
       command['apiKey'] = 'api_key_cli'
+      command['mobileApplicationVersionFilePath'] = './path/to/application_cli.apk'
 
       await command['resolveConfig']()
       expect(command['config']).toEqual({
@@ -175,7 +179,10 @@ describe('run-test', () => {
         apiKey: 'api_key_cli',
         appKey: 'app_key_env',
         datadogSite: 'us5.datadoghq.com',
-        global: {pollingTimeout: DEFAULT_POLLING_TIMEOUT},
+        global: {
+          pollingTimeout: DEFAULT_POLLING_TIMEOUT,
+          mobileApplicationVersionFilePath: './path/to/application_cli.apk',
+        },
       })
     })
 
