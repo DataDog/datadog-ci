@@ -154,6 +154,20 @@ describe('run-test', () => {
       })
     })
 
+    // We have 2 code paths that handle different levels of configuration overrides:
+    //  1)  config file (configuration of datadog-ci)             <   ENV (environment variables)   <   CLI (command flags)
+    //  2)  global (global config object, aka. `config.global`)   <   ENV (environment variables)   <   test file (test configuration)
+    //
+    // First, 1) configures datadog-ci itself and `config.global`,
+    // Then, 2) configures the Synthetic tests to execute.
+    //
+    // So the bigger picture is:
+    //
+    // (config file < ENV < CLI < test file) => execute tests
+
+    // TODO: Since we have "n choose k" = "4 choose 2" = ⁴C₂ = 6 possible combinations of "A < B",
+    //       we should refactor the following 2 tests into 6 smaller tests, each testing a single override behavior.
+
     test('override from config file < ENV < CLI', async () => {
       jest.spyOn(ciUtils, 'resolveConfigFromFile').mockImplementationOnce(async <T>(baseConfig: T) => ({
         ...baseConfig,
