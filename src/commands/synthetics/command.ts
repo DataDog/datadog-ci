@@ -1,4 +1,3 @@
-import chalk from 'chalk'
 import {Command} from 'clipanion'
 import deepExtend from 'deep-extend'
 
@@ -6,12 +5,20 @@ import {removeUndefinedValues, resolveConfigFromFile} from '../../helpers/utils'
 import {isValidDatadogSite} from '../../helpers/validation'
 
 import {getApiHelper} from './api'
-import {CiError, CriticalError} from './errors'
+import {CiError} from './errors'
 import {CommandConfig, MainReporter, Reporter, Result, Summary} from './interfaces'
 import {DefaultReporter} from './reporters/default'
 import {JUnitReporter} from './reporters/junit'
 import {executeTests} from './run-test'
-import {getOrgSettings, getReporter, parseVariablesFromCli, renderResults, reportCiError} from './utils'
+import {
+  handleExit,
+  handleExitOnError,
+  getOrgSettings,
+  getReporter,
+  parseVariablesFromCli,
+  renderResults,
+  reportCiError,
+} from './utils'
 
 export const MAX_TESTS_TO_TRIGGER = 100
 
@@ -87,42 +94,12 @@ export class RunTestCommand extends Command {
     try {
       ;({results, summary} = await executeTests(this.reporter, this.config))
     } catch (error) {
-      if (error instanceof CiError) {
-        reportCiError(error, this.reporter)
-
-        if (this.config.failOnMissingTests && error.code === 'MISSING_TESTS') {
-          return 1
-        }
-
-        if (error instanceof CriticalError) {
-          if (this.config.failOnCriticalErrors) {
-            return 1
-          } else {
-            this.reporter.error(
-              chalk.yellow(
-                'Because `failOnCriticalErrors` is not set or disabled, the command will exit with an error code 0. ' +
-                  'Use `failOnCriticalErrors: true` to exit with an error code 1.\n'
-              )
-            )
-          }
-        }
-      }
-
-      return 0
-    }
-
-    if (results.some((r) => r.timedOut) && !this.config.failOnTimeout) {
-      this.reporter.error(
-        chalk.yellow(
-          'Because `failOnTimeout` is disabled, the command will exit with an error code 0. ' +
-            'Use `failOnTimeout: true` to exit with an error code 1.\n'
-        )
-      )
+      return handleExitOnError(this.reporter, this.config, error)
     }
 
     const orgSettings = await getOrgSettings(getApiHelper(this.config), this.reporter)
 
-    return renderResults({
+    renderResults({
       config: this.config,
       orgSettings,
       reporter: this.reporter,
@@ -130,6 +107,8 @@ export class RunTestCommand extends Command {
       startTime,
       summary,
     })
+
+    return handleExit(this.reporter, this.config, results)
   }
 
   private async resolveConfig() {

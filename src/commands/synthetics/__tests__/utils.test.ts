@@ -1270,7 +1270,7 @@ describe('utils', () => {
 
       const startTime = Date.now()
 
-      const exitCode = utils.renderResults({
+      utils.renderResults({
         config,
         orgSettings: {orgMaxConcurrencyCap: 1},
         reporter: mockReporter,
@@ -1279,8 +1279,9 @@ describe('utils', () => {
         summary: testCase.summary,
       })
 
-      expect((mockReporter as MockedReporter).reportStart).toHaveBeenCalledWith({startTime})
+      const exitCode = utils.handleExit(mockReporter, config, testCase.results)
 
+      expect((mockReporter as MockedReporter).reportStart).toHaveBeenCalledWith({startTime})
       expect((mockReporter as MockedReporter).resultEnd).toHaveBeenCalledTimes(testCase.results.length)
 
       const baseUrl = `https://${DEFAULT_COMMAND_CONFIG.subdomain}.${DEFAULT_COMMAND_CONFIG.datadogSite}/`

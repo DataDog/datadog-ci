@@ -31,6 +31,7 @@ import {
   renderResults,
   runTests,
   waitForResults,
+  handleExit,
 } from './utils'
 
 export const executeTests = async (
@@ -289,7 +290,7 @@ export const execute = async (
 
   const orgSettings = await getOrgSettings(getApiHelper(localConfig), mainReporter)
 
-  return renderResults({
+  renderResults({
     config: localConfig,
     reporter: mainReporter,
     results,
@@ -297,4 +298,6 @@ export const execute = async (
     startTime,
     summary,
   })
+
+  return handleExit(mainReporter, localConfig, results)
 }

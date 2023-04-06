@@ -794,8 +794,6 @@ export const renderResults = ({
     }
   }
 
-  let hasSucceeded = true // Determine if all the tests have succeeded
-
   const sortedResults = results.sort(sortResultsByOutcome())
 
   for (const result of sortedResults) {
@@ -815,14 +813,63 @@ export const renderResults = ({
       summary.failedNonBlocking++
     } else {
       summary.failed++
-      hasSucceeded = false
     }
 
     reporter.resultEnd(result, getAppBaseURL(config))
   }
-  reporter.runEnd(summary, getAppBaseURL(config), orgSettings)
 
-  return hasSucceeded ? 0 : 1
+  reporter.runEnd(summary, getAppBaseURL(config), orgSettings)
+}
+
+export const handleExit = (
+  reporter: MainReporter,
+  config: Pick<CommandConfig, 'failOnTimeout'>,
+  results: Result[]
+): 0 | 1 => {
+  if (!config.failOnTimeout && results.some((result) => result.timedOut)) {
+    reporter.error(
+      chalk.yellow(
+        'Because `failOnTimeout` is disabled, the command will exit with an error code 0. ' +
+          'Use `failOnTimeout: true` to exit with an error code 1.\n'
+      )
+    )
+  }
+
+  const hasFailedTests = results.some((result) => getResultOutcome(result) === ResultOutcome.Failed)
+  if (hasFailedTests) {
+    return 1
+  }
+
+  return 0
+}
+
+export const handleExitOnError = (
+  reporter: MainReporter,
+  config: Pick<CommandConfig, 'failOnCriticalErrors' | 'failOnMissingTests'>,
+  error: unknown
+): 0 | 1 => {
+  if (error instanceof CiError) {
+    reportCiError(error, reporter)
+
+    if (config.failOnMissingTests && error.code === 'MISSING_TESTS') {
+      return 1
+    }
+
+    if (error instanceof CriticalError) {
+      if (config.failOnCriticalErrors) {
+        return 1
+      }
+
+      reporter.error(
+        chalk.yellow(
+          'Because `failOnCriticalErrors` is not set or disabled, the command will exit with an error code 0. ' +
+            'Use `failOnCriticalErrors: true` to exit with an error code 1.\n'
+        )
+      )
+    }
+  }
+
+  return 0
 }
 
 export const getDatadogHost = (hostConfig: {
