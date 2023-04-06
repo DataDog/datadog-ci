@@ -269,11 +269,13 @@ const getPollResultMap = async (api: APIHelper, batch: Batch) => {
 }
 
 export const getOrgSettings = async (
-  api: APIHelper,
-  reporter: MainReporter
+  reporter: MainReporter,
+  config: SyntheticsCIConfig
 ): Promise<SyntheticsOrgSettings | undefined> => {
+  const apiHelper = getApiHelper(config)
+
   try {
-    return await api.getSyntheticsOrgSettings()
+    return await apiHelper.getSyntheticsOrgSettings()
   } catch (e) {
     reporter.error(`Failed to get settings: ${formatBackendErrors(e)}`)
   }
@@ -331,6 +333,7 @@ const getResultFromBatch = (
   }
 }
 
+// XXX: We shouldn't export functions that take an `APIHelper` because the `utils` module is exported while `api` is not.
 export const waitForResults = async (
   api: APIHelper,
   trigger: Trigger,
@@ -509,6 +512,7 @@ type NotFound = {errorMessage: string}
 type Skipped = {overriddenConfig: TestPayload}
 type TestWithOverride = {test: Test; overriddenConfig: TestPayload}
 
+// XXX: We shouldn't export functions that take an `APIHelper` because the `utils` module is exported while `api` is not.
 export const getTestAndOverrideConfig = async (
   api: APIHelper,
   {config, id, suite}: TriggerConfig,
@@ -551,6 +555,7 @@ export const getTestAndOverrideConfig = async (
 export const isDeviceIdSet = (result: ServerResult): result is Required<BrowserServerResult> =>
   'device' in result && result.device !== undefined
 
+// XXX: We shouldn't export functions that take an `APIHelper` because the `utils` module is exported while `api` is not.
 export const getTestsToTrigger = async (
   api: APIHelper,
   triggerConfigs: TriggerConfig[],
@@ -644,6 +649,7 @@ export const getTestsToTrigger = async (
   return {tests: waitedTests, overriddenTestsToTrigger, initialSummary}
 }
 
+// XXX: We shouldn't export functions that take an `APIHelper` because the `utils` module is exported while `api` is not.
 export const runTests = async (api: APIHelper, testsToTrigger: TestPayload[]): Promise<Trigger> => {
   const payload: Payload = {tests: testsToTrigger}
   const tagsToLimit = {
@@ -720,6 +726,8 @@ export const parseVariablesFromCli = (
   return Object.keys(variables).length > 0 ? variables : undefined
 }
 
+// XXX: `CommandConfig` should be replaced by `SyntheticsCIConfig` here because it's the smallest
+//      interface that we need, and it's better semantically.
 export const getAppBaseURL = ({datadogSite, subdomain}: Pick<CommandConfig, 'datadogSite' | 'subdomain'>) => {
   const validSubdomain = subdomain || DEFAULT_COMMAND_CONFIG.subdomain
   const datadogSiteParts = datadogSite.split('.')

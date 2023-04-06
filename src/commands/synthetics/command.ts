@@ -4,7 +4,6 @@ import deepExtend from 'deep-extend'
 import {removeUndefinedValues, resolveConfigFromFile} from '../../helpers/utils'
 import {isValidDatadogSite} from '../../helpers/validation'
 
-import {getApiHelper} from './api'
 import {CiError} from './errors'
 import {CommandConfig, MainReporter, Reporter, Result, Summary} from './interfaces'
 import {DefaultReporter} from './reporters/default'
@@ -97,7 +96,7 @@ export class RunTestCommand extends Command {
       return handleExitOnError(this.reporter, this.config, error)
     }
 
-    const orgSettings = await getOrgSettings(getApiHelper(this.config), this.reporter)
+    const orgSettings = await getOrgSettings(this.reporter, this.config)
 
     renderResults({
       config: this.config,

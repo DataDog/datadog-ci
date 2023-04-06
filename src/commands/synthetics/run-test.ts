@@ -288,7 +288,7 @@ export const execute = async (
   const mainReporter = getReporter(localReporters)
   const {results, summary} = await executeTests(mainReporter, localConfig, suites)
 
-  const orgSettings = await getOrgSettings(getApiHelper(localConfig), mainReporter)
+  const orgSettings = await getOrgSettings(mainReporter, localConfig)
 
   renderResults({
     config: localConfig,
