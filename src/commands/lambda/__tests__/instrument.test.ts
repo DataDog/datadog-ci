@@ -1425,6 +1425,7 @@ describe('lambda', () => {
         command['config']['logLevel'] = 'debug'
 
         expect(command['getSettings']()).toEqual({
+          apmFlushDeadline: undefined,
           captureLambdaPayload: false,
           environment: undefined,
           extensionVersion: 6,
@@ -1459,8 +1460,11 @@ describe('lambda', () => {
         command['config']['tracing'] = 'false'
         command['logLevel'] = 'debug'
         command['config']['logLevel'] = 'info'
+        command['apmFlushDeadline'] = '20'
+        command['config']['apmFlushDeadline'] = '50'
 
         expect(command['getSettings']()).toEqual({
+          apmFlushDeadline: '20',
           captureLambdaPayload: false,
           flushMetricsToLogs: false,
           forwarderARN: 'my-forwarder',

@@ -44,6 +44,7 @@ import {
 import * as renderer from './renderer'
 
 export class InstrumentCommand extends Command {
+  private apmFlushDeadline?: string
   private captureLambdaPayload?: string
   private config: LambdaConfigOptions = {
     functions: [],
@@ -402,6 +403,7 @@ export class InstrumentCommand extends Command {
     const tracingEnabled = coerceBoolean(true, this.tracing, this.config.tracing)
     const interactive = coerceBoolean(false, this.interactive, this.config.interactive)
     const logLevel = this.logLevel ?? this.config.logLevel
+    const apmFlushDeadline = this.apmFlushDeadline ?? this.config.apmFlushDeadline
 
     const service = this.service ?? this.config.service
     const environment = this.environment ?? this.config.environment
@@ -430,6 +432,7 @@ export class InstrumentCommand extends Command {
     }
 
     return {
+      apmFlushDeadline,
       captureLambdaPayload,
       environment,
       extensionVersion,
@@ -540,6 +543,7 @@ InstrumentCommand.addOption('dryRun', Command.Boolean('-d,--dry'))
 InstrumentCommand.addOption('configPath', Command.String('--config'))
 InstrumentCommand.addOption('forwarder', Command.String('--forwarder'))
 InstrumentCommand.addOption('logLevel', Command.String('--log-level,--logLevel'))
+InstrumentCommand.addOption('apmFlushDeadline', Command.String('--apm-flush-deadline'))
 
 InstrumentCommand.addOption('service', Command.String('--service'))
 InstrumentCommand.addOption('environment', Command.String('--env'))
