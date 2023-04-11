@@ -63,7 +63,7 @@ The following optional parameters are available:
 
 ### Link errors with your source code
 
-You can enrich errors in Datadog with context links to GitHub, GitLab, and Bitbucket if the following requirements are met:
+You can enrich errors in Datadog with context links to GitHub, GitLab, Bitbucket, and Azure DevOps if the following requirements are met:
 
 - You have installed the `git` executable
 - You can run `datadog-ci` in the git repository
@@ -92,7 +92,7 @@ If you are not running the `react-native upload` command from your React Native 
 
 #### Supported repositories
 
-The supported repository URLs are ones whose host contains `github`, `gitlab`, or `bitbucket`.
+The supported repository URLs are ones whose host contains `github`, `gitlab`, `bitbucket`, or `dev.azure`.
 
 This allows Datadog to create proper URLs such as:
 
@@ -100,6 +100,7 @@ This allows Datadog to create proper URLs such as:
 | ---------------- | ----------------------------------------------------------------------------------- |
 | GitHub or GitLab | https://\<repository-url\>/blob/\<commit-hash\>/\<tracked-file-path\>#L\<line\>     |
 | Bitbucket        | https://\<repository-url\>/src/\<commit-hash\>/\<tracked-file-path\>#lines-\<line\> |
+| Azure DevOps | https://\<repository-url\>?version=GC\<commit-hash\>&path=\<tracked-file-path\>&line=\<line\>&lineEnd=\<line + 1>&lineStartColumn=1&lineEndColumn=1 |
 
 ### `codepush`
 

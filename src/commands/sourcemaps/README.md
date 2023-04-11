@@ -48,7 +48,7 @@ In addition, some optional parameters are available:
 
 ### Link errors with your source code
 
-Errors in Datadog UI can be enriched with links to GitHub/GitLab/Bitbucket if these requirements are met:
+Errors in Datadog UI can be enriched with links to GitHub/GitLab/Bitbucket/Azure DevOps if these requirements are met:
 - `git` executable is installed
 - `datadog-ci` is run within the git repository
 
@@ -79,12 +79,13 @@ For example, if your repository contains a file at `src/foo/example.js`, then:
 
 #### Supported repositories
 
-The only repository URLs supported are the ones whose host contains: `github`, `gitlab` or `bitbucket`. This allows Datadog to create proper URLs such as:
+The only repository URLs supported are the ones whose host contains: `github`, `gitlab`, `bitbucket`, or `dev.azure`. This allows Datadog to create proper URLs such as:
 
 | Provider  | URL |
 | --- | --- |
 | GitHub / GitLab  | https://\<repository-url\>/blob/\<commit-hash\>/\<tracked-file-path\>#L\<line\> |
 | Bitbucket | https://\<repository-url\>/src/\<commit-hash\>/\<tracked-file-path\>#lines-\<line\>  |
+| Azure DevOps | https://\<repository-url\>?version=GC\<commit-hash\>&path=\<tracked-file-path\>&line=\<line\>&lineEnd=\<line + 1>&lineStartColumn=1&lineEndColumn=1 |
 
 ## End-to-end testing process
 
