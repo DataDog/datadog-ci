@@ -213,14 +213,19 @@ describe('run-test', () => {
 
       const getExpectedTestsToTriggerArguments = (
         config: Partial<UserConfigOverride>
-      ): Parameters<typeof utils['getTestsToTrigger']> => [
-        (apiHelper as unknown) as api.APIHelper,
-        [{suite: 'Suite 1', id: 'publicId', config}],
-        expect.anything(),
-        false,
-        false,
-        false,
-      ]
+      ): Parameters<typeof utils['getTestsToTrigger']> => {
+        return [
+          // Parameters we care about.
+          (apiHelper as unknown) as api.APIHelper,
+          [{suite: 'Suite 1', id: 'publicId', config}],
+
+          // Ignore the rest of the parameters.
+          expect.anything(),
+          expect.anything(),
+          expect.anything(),
+          expect.anything(),
+        ]
+      }
 
       const getTestsToTriggerMock = jest.spyOn(utils, 'getTestsToTrigger')
 
