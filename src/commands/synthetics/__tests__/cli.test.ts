@@ -201,12 +201,17 @@ describe('run-test', () => {
       })
     })
 
-    test('override from global < ENV < test file', async () => {
+    test('parameters override precedence: global < ENV < test file', async () => {
+      const triggerTests = jest.fn(() => {
+        throw getAxiosHttpError(502, {message: 'Bad Gateway'})
+      })
+
       const apiHelper = {
         getTest: jest.fn(() => ({...getApiTest('publicId')})),
+        triggerTests,
       }
 
-      const expectTestWithConfig = (
+      const getExpectedTestsToTriggerArguments = (
         config: Partial<UserConfigOverride>
       ): Parameters<typeof utils['getTestsToTrigger']> => [
         (apiHelper as unknown) as api.APIHelper,
@@ -224,8 +229,8 @@ describe('run-test', () => {
       command.context = ({stdout: {write}} as unknown) as BaseContext
 
       // Test file (empty config for now)
-      const suite = {name: 'Suite 1', content: {tests: [{id: 'publicId', config: {}}]}}
-      jest.spyOn(utils, 'getSuites').mockImplementation((() => [suite]) as any)
+      const testFile = {name: 'Suite 1', content: {tests: [{id: 'publicId', config: {}}]}}
+      jest.spyOn(utils, 'getSuites').mockImplementation((() => [testFile]) as any)
       jest.spyOn(ciUtils, 'resolveConfigFromFile').mockImplementation(async (config, _) => config)
       jest.spyOn(api, 'getApiHelper').mockImplementation(() => apiHelper as any)
 
@@ -238,7 +243,7 @@ describe('run-test', () => {
       expect(await command.execute()).toBe(0)
       expect(getTestsToTriggerMock).toHaveBeenNthCalledWith(
         1,
-        ...expectTestWithConfig({
+        ...getExpectedTestsToTriggerArguments({
           locations: ['aws:us-east-2'],
           mobileApplicationVersionFilePath: './path/to/application_global.apk',
           pollingTimeout: DEFAULT_POLLING_TIMEOUT,
@@ -252,7 +257,7 @@ describe('run-test', () => {
       expect(await command.execute()).toBe(0)
       expect(getTestsToTriggerMock).toHaveBeenNthCalledWith(
         2,
-        ...expectTestWithConfig({
+        ...getExpectedTestsToTriggerArguments({
           locations: ['aws:us-east-3'],
           mobileApplicationVersionFilePath: './path/to/application_global.apk',
           pollingTimeout: DEFAULT_POLLING_TIMEOUT,
@@ -265,7 +270,7 @@ describe('run-test', () => {
       expect(await command.execute()).toBe(0)
       expect(getTestsToTriggerMock).toHaveBeenNthCalledWith(
         3,
-        ...expectTestWithConfig({
+        ...getExpectedTestsToTriggerArguments({
           locations: ['aws:us-east-3', 'aws:us-east-4'],
           mobileApplicationVersionFilePath: './path/to/application_global.apk',
           pollingTimeout: DEFAULT_POLLING_TIMEOUT,
@@ -273,14 +278,14 @@ describe('run-test', () => {
       )
 
       // ENV < test file
-      suite.content.tests[0].config = {
+      testFile.content.tests[0].config = {
         locations: ['aws:us-east-1'],
         mobileApplicationVersionFilePath: './path/to/application_test_file.apk',
       }
       expect(await command.execute()).toBe(0)
       expect(getTestsToTriggerMock).toHaveBeenNthCalledWith(
         4,
-        ...expectTestWithConfig({
+        ...getExpectedTestsToTriggerArguments({
           locations: ['aws:us-east-1'],
           mobileApplicationVersionFilePath: './path/to/application_test_file.apk',
           pollingTimeout: DEFAULT_POLLING_TIMEOUT,
