@@ -273,7 +273,7 @@ RunTestCommand.addOption(
 )
 RunTestCommand.addOption('publicIds', Command.Array('-p,--public-id'))
 RunTestCommand.addOption('runName', Command.String('-n,--runName'))
-RunTestCommand.addOption('subdomain', Command.Boolean('--subdomain'))
+RunTestCommand.addOption('subdomain', Command.String('--subdomain'))
 RunTestCommand.addOption('testSearchQuery', Command.String('-s,--search'))
 RunTestCommand.addOption('tunnel', Command.Boolean('-t,--tunnel'))
 RunTestCommand.addOption('variableStrings', Command.Array('-v,--variable'))
