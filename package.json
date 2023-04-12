@@ -56,11 +56,13 @@
     "watch": "tsc -w"
   },
   "dependencies": {
+    "@aws-sdk/client-cloudwatch-logs": "^3.293.0",
+    "@aws-sdk/client-lambda": "^3.293.0",
+    "@aws-sdk/credential-providers": "^3.296.0",
     "@types/datadog-metrics": "0.6.1",
     "ajv": "^8.12.0",
     "ajv-formats": "^2.1.1",
     "async-retry": "1.3.1",
-    "aws-sdk": "^2.1012.0",
     "axios": "0.21.4",
     "chalk": "3.0.0",
     "clipanion": "2.2.2",
@@ -87,6 +89,7 @@
     "yamux-js": "0.1.2"
   },
   "devDependencies": {
+    "@aws-sdk/types": "^3.292.0",
     "@babel/core": "7.8.0",
     "@babel/preset-env": "7.4.5",
     "@babel/preset-typescript": "7.3.3",
@@ -108,6 +111,8 @@
     "@types/xml2js": "0.4.9",
     "@typescript-eslint/eslint-plugin": "^4.33.0",
     "@typescript-eslint/parser": "^4.33.0",
+    "aws-sdk-client-mock": "^2.1.1",
+    "aws-sdk-client-mock-jest": "^2.1.1",
     "dd-trace": "3.16.0",
     "eslint": "^7.32.0",
     "eslint-config-prettier": "^8.5.0",

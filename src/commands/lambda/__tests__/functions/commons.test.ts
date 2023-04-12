@@ -1,7 +1,10 @@
-import {config as aws_sdk_config, Credentials, Lambda} from 'aws-sdk'
-
-jest.mock('aws-sdk')
 jest.mock('../../renderer', () => require('../../__mocks__/renderer'))
+
+import {CloudWatchLogsClient} from '@aws-sdk/client-cloudwatch-logs'
+import {LambdaClient, UpdateFunctionConfigurationCommand} from '@aws-sdk/client-lambda'
+import {mockClient} from 'aws-sdk-client-mock'
+import 'aws-sdk-client-mock-jest'
+
 import {
   AWS_ACCESS_KEY_ID_ENV_VAR,
   AWS_SECRET_ACCESS_KEY_ENV_VAR,
@@ -40,9 +43,17 @@ import {
 import {InstrumentCommand} from '../../instrument'
 import {FunctionConfiguration} from '../../interfaces'
 
-import {createCommand, makeMockCloudWatchLogs, makeMockLambda, mockAwsAccount} from '../fixtures'
+import {createCommand, mockAwsAccount, mockLambdaClientCommands, mockLambdaLayers} from '../fixtures'
 
 describe('commons', () => {
+  const cloudWatchLogsClientMock = mockClient(CloudWatchLogsClient)
+  const lambdaClientMock = mockClient(LambdaClient)
+
+  beforeEach(() => {
+    cloudWatchLogsClientMock.reset()
+    lambdaClientMock.reset()
+    mockLambdaClientCommands(lambdaClientMock)
+  })
   describe('addLayerArn', () => {
     test('adds layers and removes previous versions', () => {
       const runtime: Runtime = 'python3.9'
@@ -186,43 +197,43 @@ describe('commons', () => {
   })
 
   describe('findLatestLayerVersion', () => {
+    beforeEach(() => {
+      lambdaClientMock.reset()
+      mockLambdaClientCommands(lambdaClientMock)
+    })
     test('finds latests version for Python39', async () => {
       const layer = `arn:aws:lambda:sa-east-1:${DEFAULT_LAYER_AWS_ACCOUNT}:layer:Datadog-Python39`
-      ;(Lambda as any).mockImplementation(() =>
-        makeMockLambda(
-          {},
-          {
-            [`${layer}:1`]: {
-              LayerVersionArn: `${layer}:1`,
-              Version: 1,
-            },
-            [`${layer}:2`]: {
-              LayerVersionArn: `${layer}:2`,
-              Version: 2,
-            },
-            [`${layer}:10`]: {
-              LayerVersionArn: `${layer}:10`,
-              Version: 10,
-            },
-            [`${layer}:20`]: {
-              LayerVersionArn: `${layer}:20`,
-              Version: 20,
-            },
-            [`${layer}:30`]: {
-              LayerVersionArn: `${layer}:30`,
-              Version: 30,
-            },
-            [`${layer}:31`]: {
-              LayerVersionArn: `${layer}:31`,
-              Version: 31,
-            },
-            [`${layer}:32`]: {
-              LayerVersionArn: `${layer}:32`,
-              Version: 32,
-            },
-          }
-        )
-      )
+      mockLambdaLayers(lambdaClientMock, {
+        [`${layer}:1`]: {
+          LayerName: layer,
+          VersionNumber: 1,
+        },
+        [`${layer}:2`]: {
+          LayerName: layer,
+          VersionNumber: 2,
+        },
+        [`${layer}:10`]: {
+          LayerName: layer,
+          VersionNumber: 10,
+        },
+        [`${layer}:20`]: {
+          LayerName: layer,
+          VersionNumber: 20,
+        },
+        [`${layer}:30`]: {
+          LayerName: layer,
+          VersionNumber: 30,
+        },
+        [`${layer}:31`]: {
+          LayerName: layer,
+          VersionNumber: 31,
+        },
+        [`${layer}:32`]: {
+          LayerName: layer,
+          VersionNumber: 32,
+        },
+      })
+
       const runtime: Runtime = 'python3.9'
       const region = 'sa-east-1'
       const expectedLatestVersion = 32
@@ -232,37 +243,36 @@ describe('commons', () => {
 
     test('finds latests version for Node14', async () => {
       const layer = `arn:aws:lambda:us-east-1:${DEFAULT_LAYER_AWS_ACCOUNT}:layer:Datadog-Node14-x`
-      ;(Lambda as any).mockImplementation(() =>
-        makeMockLambda(
-          {},
-          {
-            [`${layer}:1`]: {
-              LayerVersionArn: `${layer}:1`,
-              Version: 1,
-            },
-            [`${layer}:10`]: {
-              LayerVersionArn: `${layer}:10`,
-              Version: 10,
-            },
-            [`${layer}:20`]: {
-              LayerVersionArn: `${layer}:20`,
-              Version: 20,
-            },
-            [`${layer}:30`]: {
-              LayerVersionArn: `${layer}:30`,
-              Version: 30,
-            },
-            [`${layer}:40`]: {
-              LayerVersionArn: `${layer}:40`,
-              Version: 40,
-            },
-            [`${layer}:41`]: {
-              LayerVersionArn: `${layer}:41`,
-              Version: 41,
-            },
-          }
-        )
-      )
+      mockLambdaLayers(lambdaClientMock, {
+        [`${layer}:1`]: {
+          LayerName: layer,
+          VersionNumber: 1,
+        },
+        [`${layer}:2`]: {
+          LayerName: layer,
+          VersionNumber: 2,
+        },
+        [`${layer}:10`]: {
+          LayerName: layer,
+          VersionNumber: 10,
+        },
+        [`${layer}:20`]: {
+          LayerName: layer,
+          VersionNumber: 20,
+        },
+        [`${layer}:30`]: {
+          LayerName: layer,
+          VersionNumber: 30,
+        },
+        [`${layer}:40`]: {
+          LayerName: layer,
+          VersionNumber: 40,
+        },
+        [`${layer}:41`]: {
+          LayerName: layer,
+          VersionNumber: 41,
+        },
+      })
       const runtime: Runtime = 'nodejs14.x'
       const region = 'us-east-1'
       const expectedLatestVersion = 41
@@ -271,7 +281,6 @@ describe('commons', () => {
     })
 
     test('returns 0 when no layer can be found', async () => {
-      ;(Lambda as any).mockImplementation(() => makeMockLambda({}, {}))
       const runtime: Runtime = 'python3.7'
       const region = 'us-east-1'
       const expectedLatestVersion = 0
@@ -291,30 +300,17 @@ describe('commons', () => {
     })
     test('returns true when only AWS_SECRET_ACCESS_KEY env var is set and `~/.aws/credentials` are missing', () => {
       process.env[AWS_SECRET_ACCESS_KEY_ENV_VAR] = 'SOME-AWS-SECRET-ACCESS-KEY'
-      aws_sdk_config.credentials = undefined
-      expect(isMissingAWSCredentials()).toBe(true) // We return true since AWS_ACCESS_KEY_ID_ENV_VAR is missing
+      expect(isMissingAWSCredentials()).toBe(true) // AWS_ACCESS_KEY_ID_ENV_VAR is missing
     })
 
     test('returns true when only AWS_ACCESS_KEY_ID environment variable is set and `~/.aws/credentials` are missing', () => {
       process.env[AWS_ACCESS_KEY_ID_ENV_VAR] = 'SOME-AWS-ACCESS-KEY-ID'
-      aws_sdk_config.credentials = undefined
       expect(isMissingAWSCredentials()).toBe(true) // We return true since AWS_SECRET_ACCESS_KEY_ENV_VAR is missing
     })
 
     test('returns false when AWS credentials via environment variables are set', () => {
       process.env[AWS_ACCESS_KEY_ID_ENV_VAR] = 'SOME-AWS-ACCESS-KEY-ID'
       process.env[AWS_SECRET_ACCESS_KEY_ENV_VAR] = 'SOME-AWS-SECRET-ACCESS-KEY'
-      aws_sdk_config.credentials = ({foo: 'bar'} as unknown) as Credentials
-      expect(isMissingAWSCredentials()).toBe(false)
-    })
-
-    test('returns true when both environment variables and `~/.aws/credentials` are missing', () => {
-      aws_sdk_config.credentials = undefined
-      expect(isMissingAWSCredentials()).toBe(true)
-    })
-
-    test('returns false when AWS credentials via `~/.aws/credentials` are set', () => {
-      aws_sdk_config.credentials = ({foo: 'bar'} as unknown) as Credentials
       expect(isMissingAWSCredentials()).toBe(false)
     })
   })
@@ -613,6 +609,8 @@ describe('commons', () => {
   describe('updateLambdaFunctionConfig', () => {
     const OLD_ENV = process.env
     beforeEach(() => {
+      cloudWatchLogsClientMock.reset()
+      lambdaClientMock.reset()
       jest.resetModules()
       process.env = {}
     })
@@ -621,7 +619,6 @@ describe('commons', () => {
     })
 
     test('updates every lambda', async () => {
-      const lambda = makeMockLambda({})
       const configs = [
         {
           functionARN: 'arn:aws:lambda:us-east-1:000000000000:function:autoinstrument',
@@ -631,7 +628,7 @@ describe('commons', () => {
             Runtime: 'nodejs12.x',
           },
           lambdaLibraryLayerArn: 'arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Node12-x',
-          updateRequest: {
+          updateFunctionConfigurationCommandInput: {
             Environment: {
               Variables: {
                 [LAMBDA_HANDLER_ENV_VAR]: 'index.handler',
@@ -645,13 +642,13 @@ describe('commons', () => {
           },
         },
       ]
-      const cloudWatch = makeMockCloudWatchLogs({})
 
       await Promise.all(
-        configs.map(async (config) => updateLambdaFunctionConfig(lambda as any, cloudWatch as any, config))
+        configs.map(async (config) =>
+          updateLambdaFunctionConfig(lambdaClientMock as any, cloudWatchLogsClientMock as any, config)
+        )
       )
-
-      expect(lambda.updateFunctionConfiguration).toHaveBeenCalledWith({
+      expect(lambdaClientMock).toHaveReceivedCommandWith(UpdateFunctionConfigurationCommand, {
         Environment: {
           Variables: {
             [LAMBDA_HANDLER_ENV_VAR]: 'index.handler',
@@ -669,18 +666,20 @@ describe('commons', () => {
   describe('handleLambdaFunctionUpdates', () => {
     const OLD_ENV = process.env
     beforeEach(() => {
+      cloudWatchLogsClientMock.reset()
+      lambdaClientMock.reset()
       jest.resetModules()
       process.env = {}
     })
     afterAll(() => {
       process.env = OLD_ENV
     })
-    const cloudWatchLogs = makeMockCloudWatchLogs({})
+
     const stdout = {write: (_: any) => jest.fn()}
-    const getConfigs = (lambda: any) => [
+    const getConfigs = (lambdaClient: any) => [
       {
-        lambda,
-        cloudWatchLogs,
+        lambdaClient,
+        cloudWatchLogsClientMock,
         configs: [
           {
             functionARN: 'arn:aws:lambda:us-east-1:000000000000:function:autoinstrument',
@@ -690,7 +689,7 @@ describe('commons', () => {
               Runtime: 'nodejs12.x',
             },
             lambdaLibraryLayerArn: 'arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Node12-x',
-            updateRequest: {
+            updateFunctionConfigurationCommandInput: {
               Environment: {
                 Variables: {
                   [LAMBDA_HANDLER_ENV_VAR]: 'index.handler',
@@ -707,8 +706,8 @@ describe('commons', () => {
         region: 'us-east-1',
       },
       {
-        lambda,
-        cloudWatchLogs,
+        lambdaClient,
+        cloudWatchLogsClientMock,
         configs: [
           {
             functionARN: 'arn:aws:lambda:us-east-2:000000000000:function:autoinstrument',
@@ -718,7 +717,7 @@ describe('commons', () => {
               Runtime: 'nodejs14.x',
             },
             lambdaLibraryLayerArn: 'arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Node14-x',
-            updateRequest: {
+            updateFunctionConfigurationCommandInput: {
               Environment: {
                 Variables: {
                   [LAMBDA_HANDLER_ENV_VAR]: 'index.handler',
@@ -737,39 +736,21 @@ describe('commons', () => {
     ]
 
     test('throws an error when all functions from every region fail to update', async () => {
-      const lambda = {
-        ...makeMockLambda({}),
-        updateFunctionConfiguration: jest.fn().mockImplementation((_) => {
-          return {promise: () => Promise.reject()}
-        }),
-      }
-      const configs = getConfigs(lambda)
+      lambdaClientMock.on(UpdateFunctionConfigurationCommand).rejects()
 
-      await expect(handleLambdaFunctionUpdates(configs as any, stdout as any)).rejects.toThrow()
-    })
-
-    test('throws an error when all functions from every region fail to update', async () => {
-      const lambda = {
-        ...makeMockLambda({}),
-        updateFunctionConfiguration: jest.fn().mockImplementation((_) => ({promise: () => Promise.reject()})),
-      }
-      const configs = getConfigs(lambda)
+      const configs = getConfigs(lambdaClientMock)
 
       await expect(handleLambdaFunctionUpdates(configs as any, stdout as any)).rejects.toThrow()
     })
 
     test('to not throw an error when at least one function is updated', async () => {
-      const lambda = {
-        ...makeMockLambda({}),
-        updateFunctionConfiguration: jest.fn().mockImplementation((updateRequest) => {
-          if (updateRequest['FunctionName'] === 'arn:aws:lambda:us-east-1:000000000000:function:autoinstrument') {
-            return {promise: () => Promise.reject()}
-          }
+      lambdaClientMock
+        .on(UpdateFunctionConfigurationCommand, {
+          FunctionName: 'arn:aws:lambda:us-east-1:000000000000:function:autoinstrument',
+        })
+        .rejects()
 
-          return {promise: () => Promise.resolve()}
-        }),
-      }
-      const configs = getConfigs(lambda)
+      const configs = getConfigs(lambdaClientMock)
 
       // when sucessful, the function doesnt do anything
       const result = await handleLambdaFunctionUpdates(configs as any, stdout as any)
@@ -777,7 +758,7 @@ describe('commons', () => {
       expect(result).toBe(undefined)
     })
   })
-  describe('Correctly handles multiple runtimes', () => {
+  describe('handles multiple runtimes', () => {
     test('returns true if all runtimes are uniform', async () => {
       const configs: FunctionConfiguration[] = [
         {

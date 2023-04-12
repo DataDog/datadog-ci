@@ -1,5 +1,16 @@
-import {CloudWatchLogs} from 'aws-sdk'
-import {DescribeSubscriptionFiltersRequest} from 'aws-sdk/clients/cloudwatchlogs'
+import {
+  CloudWatchLogsClient,
+  CreateLogGroupCommand,
+  CreateLogGroupCommandInput,
+  DeleteSubscriptionFilterCommand,
+  DeleteSubscriptionFilterCommandInput,
+  DescribeLogGroupsCommand,
+  DescribeLogGroupsCommandInput,
+  DescribeSubscriptionFiltersCommand,
+  DescribeSubscriptionFiltersCommandInput,
+  PutSubscriptionFilterCommand,
+  PutSubscriptionFilterCommandInput,
+} from '@aws-sdk/client-cloudwatch-logs'
 
 import {SUBSCRIPTION_FILTER_NAME} from './constants'
 import {LogGroupConfiguration} from './interfaces'
@@ -13,27 +24,45 @@ export enum SubscriptionState {
 
 const MAX_LOG_GROUP_SUBSCRIPTIONS = 2
 
-export const applyLogGroupConfig = async (logs: CloudWatchLogs, config: LogGroupConfiguration) => {
-  const {createLogGroupRequest, deleteSubscriptionFilterRequest, subscriptionFilterRequest} = config
-  if (createLogGroupRequest !== undefined) {
-    await logs.createLogGroup(createLogGroupRequest).promise()
+export const applyLogGroupConfig = async (client: CloudWatchLogsClient, config: LogGroupConfiguration) => {
+  const {createLogGroupCommandInput, deleteSubscriptionFilterCommandInput, putSubscriptionFilterCommandInput} = config
+  if (createLogGroupCommandInput !== undefined) {
+    await createLogGroup(client, createLogGroupCommandInput)
   }
-  if (deleteSubscriptionFilterRequest !== undefined) {
-    await logs.deleteSubscriptionFilter(deleteSubscriptionFilterRequest).promise()
+  if (deleteSubscriptionFilterCommandInput !== undefined) {
+    await deleteSubscriptionFilter(client, deleteSubscriptionFilterCommandInput)
   }
-  if (subscriptionFilterRequest !== undefined) {
-    await logs.putSubscriptionFilter(subscriptionFilterRequest).promise()
+  if (putSubscriptionFilterCommandInput !== undefined) {
+    await putSubscriptionFilter(client, putSubscriptionFilterCommandInput)
   }
 }
 
+export const createLogGroup = async (client: CloudWatchLogsClient, input: CreateLogGroupCommandInput) => {
+  const command = new CreateLogGroupCommand(input)
+  await client.send(command)
+}
+
+export const deleteSubscriptionFilter = async (
+  client: CloudWatchLogsClient,
+  input: DeleteSubscriptionFilterCommandInput
+) => {
+  const command = new DeleteSubscriptionFilterCommand(input)
+  await client.send(command)
+}
+
+export const putSubscriptionFilter = async (client: CloudWatchLogsClient, input: PutSubscriptionFilterCommandInput) => {
+  const command = new PutSubscriptionFilterCommand(input)
+  await client.send(command)
+}
+
 export const calculateLogGroupUpdateRequest = async (
-  logs: CloudWatchLogs,
+  client: CloudWatchLogsClient,
   logGroupName: string,
   forwarderARN: string
 ) => {
   const config: LogGroupConfiguration = {
     logGroupName,
-    subscriptionFilterRequest: {
+    putSubscriptionFilterCommandInput: {
       destinationArn: forwarderARN,
       filterName: SUBSCRIPTION_FILTER_NAME,
       filterPattern: '',
@@ -41,13 +70,13 @@ export const calculateLogGroupUpdateRequest = async (
     },
   }
 
-  const logGroupPresent = await hasLogGroup(logs, logGroupName)
+  const logGroupPresent = await hasLogGroup(client, logGroupName)
 
   let subscriptionState = SubscriptionState.Empty
   if (logGroupPresent) {
-    subscriptionState = await getSubscriptionFilterState(logs, logGroupName, forwarderARN)
+    subscriptionState = await getSubscriptionFilterState(client, logGroupName, forwarderARN)
   } else {
-    config.createLogGroupRequest = {
+    config.createLogGroupCommandInput = {
       logGroupName,
     }
   }
@@ -67,7 +96,7 @@ export const calculateLogGroupUpdateRequest = async (
 }
 
 export const calculateLogGroupRemoveRequest = async (
-  logs: CloudWatchLogs,
+  client: CloudWatchLogsClient,
   logGroupName: string,
   forwarderARN: string
 ) => {
@@ -75,14 +104,14 @@ export const calculateLogGroupRemoveRequest = async (
     logGroupName,
   }
 
-  const subscriptionFilters = await getSubscriptionFilters(logs, logGroupName)
+  const subscriptionFilters = await getSubscriptionFilters(client, logGroupName)
   const subscriptionToRemove = subscriptionFilters?.find(
     (subscription) =>
       subscription.destinationArn === forwarderARN || subscription.filterName === SUBSCRIPTION_FILTER_NAME
   )
 
   if (subscriptionToRemove) {
-    config.deleteSubscriptionFilterRequest = {
+    config.deleteSubscriptionFilterCommandInput = {
       filterName: subscriptionToRemove.filterName!,
       logGroupName,
     }
@@ -91,12 +120,15 @@ export const calculateLogGroupRemoveRequest = async (
   return config
 }
 
-export const hasLogGroup = async (logs: CloudWatchLogs, logGroupName: string): Promise<boolean> => {
-  const args = {
+export const hasLogGroup = async (client: CloudWatchLogsClient, logGroupName: string): Promise<boolean> => {
+  const input: DescribeLogGroupsCommandInput = {
     logGroupNamePrefix: logGroupName,
   }
-  const result = await logs.describeLogGroups(args).promise()
-  const {logGroups} = result
+
+  const command = new DescribeLogGroupsCommand(input)
+  const response = await client.send(command)
+  const {logGroups} = response
+
   if (logGroups === undefined || logGroups.length === 0) {
     return false
   }
@@ -104,8 +136,12 @@ export const hasLogGroup = async (logs: CloudWatchLogs, logGroupName: string): P
   return logGroups.find((lg) => lg.logGroupName === logGroupName) !== undefined
 }
 
-export const getSubscriptionFilterState = async (logs: CloudWatchLogs, logGroupName: string, forwarderARN: string) => {
-  const subscriptionFilters = await getSubscriptionFilters(logs, logGroupName)
+export const getSubscriptionFilterState = async (
+  client: CloudWatchLogsClient,
+  logGroupName: string,
+  forwarderARN: string
+) => {
+  const subscriptionFilters = await getSubscriptionFilters(client, logGroupName)
   if (subscriptionFilters === undefined || subscriptionFilters.length === 0) {
     return SubscriptionState.Empty
   }
@@ -126,12 +162,14 @@ export const getSubscriptionFilterState = async (logs: CloudWatchLogs, logGroupN
   return SubscriptionState.WrongDestinationUnowned
 }
 
-export const getSubscriptionFilters = async (logs: CloudWatchLogs, logGroupName: string) => {
-  const subscriptionFiltersRequest: DescribeSubscriptionFiltersRequest = {
+export const getSubscriptionFilters = async (client: CloudWatchLogsClient, logGroupName: string) => {
+  const input: DescribeSubscriptionFiltersCommandInput = {
     logGroupName,
   }
+  const command = new DescribeSubscriptionFiltersCommand(input)
+  const response = await client.send(command)
 
-  const {subscriptionFilters} = await logs.describeSubscriptionFilters(subscriptionFiltersRequest).promise()
+  const {subscriptionFilters} = response
 
   return subscriptionFilters
 }

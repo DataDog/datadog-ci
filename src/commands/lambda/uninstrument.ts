@@ -1,4 +1,6 @@
-import {CloudWatchLogs, Lambda} from 'aws-sdk'
+import {CloudWatchLogsClient} from '@aws-sdk/client-cloudwatch-logs'
+import {LambdaClient, LambdaClientConfig} from '@aws-sdk/client-lambda'
+import {AwsCredentialIdentity} from '@aws-sdk/types'
 import {bold} from 'chalk'
 import {Command} from 'clipanion'
 
@@ -8,9 +10,9 @@ import {AWS_DEFAULT_REGION_ENV_VAR} from './constants'
 import {
   collectFunctionsByRegion,
   getAllLambdaFunctionConfigs,
+  getAWSProfileCredentials,
   handleLambdaFunctionUpdates,
   isMissingAWSCredentials,
-  updateAWSProfileCredentials,
   willUpdateFunctionConfigs,
 } from './functions/commons'
 import {getUninstrumentedFunctionConfigs, getUninstrumentedFunctionConfigsFromRegEx} from './functions/uninstrument'
@@ -32,6 +34,8 @@ export class UninstrumentCommand extends Command {
   private regExPattern?: string
   private region?: string
 
+  private credentials?: AwsCredentialIdentity
+
   public async execute() {
     this.context.stdout.write(renderer.renderLambdaHeader(Object.getPrototypeOf(this), this.dryRun))
 
@@ -43,7 +47,7 @@ export class UninstrumentCommand extends Command {
     const profile = this.profile ?? this.config.profile
     if (profile) {
       try {
-        await updateAWSProfileCredentials(profile)
+        this.credentials = await getAWSProfileCredentials(profile)
       } catch (err) {
         this.context.stdout.write(renderer.renderError(err))
 
@@ -70,10 +74,15 @@ export class UninstrumentCommand extends Command {
       if (!hasSpecifiedFunctions) {
         const spinner = renderer.fetchingFunctionsSpinner()
         try {
-          const lambda = new Lambda({region})
+          const lambdaClientConfig: LambdaClientConfig = {
+            region,
+            credentials: this.credentials,
+          }
+
+          const lambdaClient = new LambdaClient(lambdaClientConfig)
           spinner.start()
           const functionNames =
-            (await getAllLambdaFunctionConfigs(lambda)).map((config) => config.FunctionName!).sort() ?? []
+            (await getAllLambdaFunctionConfigs(lambdaClient)).map((config) => config.FunctionName!).sort() ?? []
           if (functionNames.length === 0) {
             this.context.stdout.write(renderer.renderCouldntFindLambdaFunctionsInRegionError())
 
@@ -101,9 +110,9 @@ export class UninstrumentCommand extends Command {
     }
 
     const configGroups: {
-      cloudWatchLogs: CloudWatchLogs
+      cloudWatchLogsClient: CloudWatchLogsClient
       configs: FunctionConfiguration[]
-      lambda: Lambda
+      lambdaClient: LambdaClient
       region: string
     }[] = []
 
@@ -132,18 +141,24 @@ export class UninstrumentCommand extends Command {
 
       const spinner = renderer.fetchingFunctionsSpinner()
       try {
-        const cloudWatchLogs = new CloudWatchLogs({region})
-        const lambda = new Lambda({region})
+        const cloudWatchLogsClient = new CloudWatchLogsClient({region})
+
+        const lambdaClientConfig: LambdaClientConfig = {
+          region,
+          credentials: this.credentials,
+        }
+
+        const lambdaClient = new LambdaClient(lambdaClientConfig)
         spinner.start()
         const configs = await getUninstrumentedFunctionConfigsFromRegEx(
-          lambda,
-          cloudWatchLogs,
+          lambdaClient,
+          cloudWatchLogsClient,
           this.regExPattern!,
           this.forwarder
         )
         spinner.succeed(renderer.renderFetchedLambdaFunctions(configs.length))
 
-        configGroups.push({configs, lambda, cloudWatchLogs, region})
+        configGroups.push({configs, lambdaClient, cloudWatchLogsClient, region})
       } catch (err) {
         spinner.fail(renderer.renderFailedFetchingLambdaFunctions())
         this.context.stdout.write(renderer.renderCouldntFetchLambdaFunctionsError(err))
@@ -166,11 +181,21 @@ export class UninstrumentCommand extends Command {
       for (const [region, functionARNs] of Object.entries(functionGroups)) {
         const spinner = renderer.fetchingFunctionsConfigSpinner(region)
         spinner.start()
-        const lambda = new Lambda({region})
-        const cloudWatchLogs = new CloudWatchLogs({region})
+        const lambdaClientConfig: LambdaClientConfig = {
+          region,
+          credentials: this.credentials,
+        }
+
+        const lambdaClient = new LambdaClient(lambdaClientConfig)
+        const cloudWatchLogsClient = new CloudWatchLogsClient({region})
         try {
-          const configs = await getUninstrumentedFunctionConfigs(lambda, cloudWatchLogs, functionARNs, this.forwarder)
-          configGroups.push({configs, lambda, cloudWatchLogs, region})
+          const configs = await getUninstrumentedFunctionConfigs(
+            lambdaClient,
+            cloudWatchLogsClient,
+            functionARNs,
+            this.forwarder
+          )
+          configGroups.push({configs, lambdaClient, cloudWatchLogsClient, region})
           spinner.succeed(renderer.renderFetchedLambdaConfigurationsFromRegion(region, configs.length))
         } catch (err) {
           spinner.fail(renderer.renderFailedFetchingLambdaConfigurationsFromRegion(region))
@@ -227,29 +252,29 @@ export class UninstrumentCommand extends Command {
 
     this.context.stdout.write(renderer.renderWillApplyUpdates(this.dryRun))
     for (const config of configs) {
-      if (config.updateRequest) {
+      if (config.updateFunctionConfigurationCommandInput) {
         this.context.stdout.write(
           `UpdateFunctionConfiguration -> ${config.functionARN}\n${JSON.stringify(
-            config.updateRequest,
+            config.updateFunctionConfigurationCommandInput,
             undefined,
             2
           )}\n`
         )
       }
       const {logGroupConfiguration, tagConfiguration} = config
-      if (tagConfiguration?.untagResourceRequest) {
+      if (tagConfiguration?.untagResourceCommandInput) {
         this.context.stdout.write(
-          `UntagResource -> ${tagConfiguration.untagResourceRequest.Resource}\n${JSON.stringify(
-            tagConfiguration.untagResourceRequest.TagKeys,
+          `UntagResource -> ${tagConfiguration.untagResourceCommandInput.Resource}\n${JSON.stringify(
+            tagConfiguration.untagResourceCommandInput.TagKeys,
             undefined,
             2
           )}\n`
         )
       }
-      if (logGroupConfiguration?.deleteSubscriptionFilterRequest) {
+      if (logGroupConfiguration?.deleteSubscriptionFilterCommandInput) {
         this.context.stdout.write(
           `DeleteSubscriptionFilter -> ${logGroupConfiguration.logGroupName}\n${JSON.stringify(
-            logGroupConfiguration.deleteSubscriptionFilterRequest,
+            logGroupConfiguration.deleteSubscriptionFilterCommandInput,
             undefined,
             2
           )}\n`
