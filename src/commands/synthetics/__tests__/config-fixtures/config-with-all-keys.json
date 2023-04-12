@@ -9,7 +9,8 @@
   "files": ["my-new-file"],
   "global": {
     "locations": [],
-    "pollingTimeout": 2
+    "pollingTimeout": 2,
+    "mobileApplicationVersionFilePath": "./path/to/application.apk"
   },
   "locations": [],
   "pollingTimeout": 1,

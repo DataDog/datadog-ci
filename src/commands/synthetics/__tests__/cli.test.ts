@@ -1,9 +1,10 @@
-import {Cli} from 'clipanion/lib/advanced'
+import {BaseContext, Cli} from 'clipanion/lib/advanced'
 
 import * as ciUtils from '../../../helpers/utils'
 
 import * as api from '../api'
 import {DEFAULT_COMMAND_CONFIG, DEFAULT_POLLING_TIMEOUT, RunTestCommand} from '../command'
+import {UserConfigOverride} from '../interfaces'
 import * as utils from '../utils'
 
 import {getApiTest, getAxiosHttpError, getTestSuite, mockTestTriggerResponse} from './fixtures'
@@ -12,17 +13,20 @@ test('all option flags are supported', async () => {
   const options = [
     'apiKey',
     'appKey',
-    'failOnCriticalErrors',
     'config',
     'datadogSite',
-    'files',
+    'failOnCriticalErrors',
+    'failOnMissingTests',
     'failOnTimeout',
+    'files',
+    'jUnitReport',
+    'mobileApplicationVersionFilePath',
     'public-id',
+    'runName',
     'search',
     'subdomain',
     'tunnel',
-    'jUnitReport',
-    'runName',
+    'variable',
   ]
 
   const cli = new Cli()
@@ -75,7 +79,11 @@ describe('run-test', () => {
         failOnMissingTests: true,
         failOnTimeout: false,
         files: ['my-new-file'],
-        global: {locations: [], pollingTimeout: 2},
+        global: {
+          locations: [],
+          pollingTimeout: 2,
+          mobileApplicationVersionFilePath: './path/to/application.apk',
+        },
         locations: [],
         pollingTimeout: 1,
         proxy: {protocol: 'https'},
@@ -99,8 +107,10 @@ describe('run-test', () => {
         configPath: 'src/commands/synthetics/__tests__/config-fixtures/empty-config-file.json',
         datadogSite: 'datadoghq.eu',
         failOnCriticalErrors: true,
+        failOnMissingTests: true,
         failOnTimeout: false,
         files: ['new-file'],
+        mobileApplicationVersionFilePath: './path/to/application.apk',
         publicIds: ['ran-dom-id'],
         subdomain: 'new-sub-domain',
         testSearchQuery: 'a-search-query',
@@ -113,8 +123,10 @@ describe('run-test', () => {
       command['configPath'] = overrideCLI.configPath
       command['datadogSite'] = overrideCLI.datadogSite
       command['failOnCriticalErrors'] = overrideCLI.failOnCriticalErrors
+      command['failOnMissingTests'] = overrideCLI.failOnMissingTests
       command['failOnTimeout'] = overrideCLI.failOnTimeout
       command['files'] = overrideCLI.files
+      command['mobileApplicationVersionFilePath'] = overrideCLI.mobileApplicationVersionFilePath
       command['publicIds'] = overrideCLI.publicIds
       command['subdomain'] = overrideCLI.subdomain
       command['tunnel'] = overrideCLI.tunnel
@@ -128,9 +140,13 @@ describe('run-test', () => {
         configPath: 'src/commands/synthetics/__tests__/config-fixtures/empty-config-file.json',
         datadogSite: 'datadoghq.eu',
         failOnCriticalErrors: true,
+        failOnMissingTests: true,
         failOnTimeout: false,
         files: ['new-file'],
-        global: {pollingTimeout: DEFAULT_POLLING_TIMEOUT},
+        global: {
+          pollingTimeout: DEFAULT_POLLING_TIMEOUT,
+          mobileApplicationVersionFilePath: './path/to/application.apk',
+        },
         publicIds: ['ran-dom-id'],
         subdomain: 'new-sub-domain',
         testSearchQuery: 'a-search-query',
@@ -138,12 +154,29 @@ describe('run-test', () => {
       })
     })
 
+    // We have 2 code paths that handle different levels of configuration overrides:
+    //  1)  config file (configuration of datadog-ci)             <   ENV (environment variables)   <   CLI (command flags)
+    //  2)  global (global config object, aka. `config.global`)   <   ENV (environment variables)   <   test file (test configuration)
+    //
+    // First, 1) configures datadog-ci itself and `config.global`,
+    // Then, 2) configures the Synthetic tests to execute.
+    //
+    // So the bigger picture is:
+    //
+    // (config file < ENV < CLI < test file) => execute tests
+
+    // TODO: Since we have "n choose k" = "4 choose 2" = ⁴C₂ = 6 possible combinations of "A < B",
+    //       we should refactor the following 2 tests into 6 smaller tests, each testing a single override behavior.
+
     test('override from config file < ENV < CLI', async () => {
-      jest.spyOn(ciUtils, 'resolveConfigFromFile').mockImplementationOnce(async (config) => ({
-        ...(config as Record<string, unknown>),
+      jest.spyOn(ciUtils, 'resolveConfigFromFile').mockImplementationOnce(async <T>(baseConfig: T) => ({
+        ...baseConfig,
         apiKey: 'api_key_config_file',
         appKey: 'app_key_config_file',
         datadogSite: 'us5.datadoghq.com',
+        global: {
+          mobileApplicationVersionFilePath: './path/to/application_config_file.apk',
+        },
       }))
 
       process.env = {
@@ -153,6 +186,7 @@ describe('run-test', () => {
 
       const command = new RunTestCommand()
       command['apiKey'] = 'api_key_cli'
+      command['mobileApplicationVersionFilePath'] = './path/to/application_cli.apk'
 
       await command['resolveConfig']()
       expect(command['config']).toEqual({
@@ -160,8 +194,108 @@ describe('run-test', () => {
         apiKey: 'api_key_cli',
         appKey: 'app_key_env',
         datadogSite: 'us5.datadoghq.com',
-        global: {pollingTimeout: DEFAULT_POLLING_TIMEOUT},
+        global: {
+          pollingTimeout: DEFAULT_POLLING_TIMEOUT,
+          mobileApplicationVersionFilePath: './path/to/application_cli.apk',
+        },
       })
+    })
+
+    test('parameters override precedence: global < ENV < test file', async () => {
+      const triggerTests = jest.fn(() => {
+        throw getAxiosHttpError(502, {message: 'Bad Gateway'})
+      })
+
+      const apiHelper = {
+        getTest: jest.fn(() => ({...getApiTest('publicId')})),
+        triggerTests,
+      }
+
+      const getExpectedTestsToTriggerArguments = (
+        config: Partial<UserConfigOverride>
+      ): Parameters<typeof utils['getTestsToTrigger']> => {
+        return [
+          // Parameters we care about.
+          (apiHelper as unknown) as api.APIHelper,
+          [{suite: 'Suite 1', id: 'publicId', config}],
+
+          // Ignore the rest of the parameters.
+          expect.anything(),
+          expect.anything(),
+          expect.anything(),
+          expect.anything(),
+        ]
+      }
+
+      const getTestsToTriggerMock = jest.spyOn(utils, 'getTestsToTrigger')
+
+      const write = jest.fn()
+      const command = new RunTestCommand()
+      command.context = ({stdout: {write}} as unknown) as BaseContext
+
+      // Test file (empty config for now)
+      const testFile = {name: 'Suite 1', content: {tests: [{id: 'publicId', config: {}}]}}
+      jest.spyOn(utils, 'getSuites').mockImplementation((() => [testFile]) as any)
+      jest.spyOn(ciUtils, 'resolveConfigFromFile').mockImplementation(async (config, _) => config)
+      jest.spyOn(api, 'getApiHelper').mockImplementation(() => apiHelper as any)
+
+      // Global
+      command['config'].global = {
+        locations: ['aws:us-east-2'],
+        mobileApplicationVersionFilePath: './path/to/application_global.apk',
+      }
+
+      expect(await command.execute()).toBe(0)
+      expect(getTestsToTriggerMock).toHaveBeenNthCalledWith(
+        1,
+        ...getExpectedTestsToTriggerArguments({
+          locations: ['aws:us-east-2'],
+          mobileApplicationVersionFilePath: './path/to/application_global.apk',
+          pollingTimeout: DEFAULT_POLLING_TIMEOUT,
+        })
+      )
+
+      // Global < ENV
+      process.env = {
+        DATADOG_SYNTHETICS_LOCATIONS: 'aws:us-east-3',
+      }
+      expect(await command.execute()).toBe(0)
+      expect(getTestsToTriggerMock).toHaveBeenNthCalledWith(
+        2,
+        ...getExpectedTestsToTriggerArguments({
+          locations: ['aws:us-east-3'],
+          mobileApplicationVersionFilePath: './path/to/application_global.apk',
+          pollingTimeout: DEFAULT_POLLING_TIMEOUT,
+        })
+      )
+      // Same, but with 2 locations.
+      process.env = {
+        DATADOG_SYNTHETICS_LOCATIONS: 'aws:us-east-3;aws:us-east-4',
+      }
+      expect(await command.execute()).toBe(0)
+      expect(getTestsToTriggerMock).toHaveBeenNthCalledWith(
+        3,
+        ...getExpectedTestsToTriggerArguments({
+          locations: ['aws:us-east-3', 'aws:us-east-4'],
+          mobileApplicationVersionFilePath: './path/to/application_global.apk',
+          pollingTimeout: DEFAULT_POLLING_TIMEOUT,
+        })
+      )
+
+      // ENV < test file
+      testFile.content.tests[0].config = {
+        locations: ['aws:us-east-1'],
+        mobileApplicationVersionFilePath: './path/to/application_test_file.apk',
+      }
+      expect(await command.execute()).toBe(0)
+      expect(getTestsToTriggerMock).toHaveBeenNthCalledWith(
+        4,
+        ...getExpectedTestsToTriggerArguments({
+          locations: ['aws:us-east-1'],
+          mobileApplicationVersionFilePath: './path/to/application_test_file.apk',
+          pollingTimeout: DEFAULT_POLLING_TIMEOUT,
+        })
+      )
     })
 
     test('pass command pollingTimeout as global override if undefined', async () => {
@@ -174,105 +308,6 @@ describe('run-test', () => {
         global: {followRedirects: false, pollingTimeout: 333},
         pollingTimeout: 333,
       })
-    })
-
-    test('override locations with ENV variable', async () => {
-      const conf = {
-        content: {tests: [{config: {}, id: 'publicId'}]},
-        name: 'Suite 1',
-      }
-
-      jest.spyOn(ciUtils, 'resolveConfigFromFile').mockImplementation(async (config, _) => config)
-      jest.spyOn(utils, 'getSuites').mockImplementation((() => [conf]) as any)
-
-      // Throw to stop the test
-      const triggerTests = jest.fn(() => {
-        throw getAxiosHttpError(502, {message: 'Bad Gateway'})
-      })
-
-      const apiHelper = {
-        getTest: jest.fn(() => ({...getApiTest('publicId')})),
-        triggerTests,
-      }
-
-      const write = jest.fn()
-      const command = new RunTestCommand()
-      command.context = {stdout: {write}} as any
-      command['config'].global = {locations: ['aws:us-east-2']}
-      jest.spyOn(api, 'getApiHelper').mockImplementation(() => apiHelper as any)
-
-      expect(await command.execute()).toBe(0)
-      expect(triggerTests).toHaveBeenCalledWith(
-        expect.objectContaining({
-          tests: [
-            {
-              executionRule: 'blocking',
-              locations: ['aws:us-east-2'],
-              pollingTimeout: DEFAULT_POLLING_TIMEOUT,
-              public_id: 'publicId',
-            },
-          ],
-        })
-      )
-
-      // Env > global
-      process.env = {
-        DATADOG_SYNTHETICS_LOCATIONS: 'aws:us-east-3',
-      }
-      expect(await command.execute()).toBe(0)
-      expect(triggerTests).toHaveBeenCalledTimes(2)
-      expect(triggerTests).toHaveBeenNthCalledWith(
-        2,
-        expect.objectContaining({
-          tests: [
-            {
-              executionRule: 'blocking',
-              locations: ['aws:us-east-3'],
-              pollingTimeout: DEFAULT_POLLING_TIMEOUT,
-              public_id: 'publicId',
-            },
-          ],
-        })
-      )
-
-      process.env = {
-        DATADOG_SYNTHETICS_LOCATIONS: 'aws:us-east-3;aws:us-east-4',
-      }
-      expect(await command.execute()).toBe(0)
-      expect(triggerTests).toHaveBeenCalledTimes(3)
-      expect(triggerTests).toHaveBeenNthCalledWith(
-        3,
-        expect.objectContaining({
-          tests: [
-            {
-              executionRule: 'blocking',
-              locations: ['aws:us-east-3', 'aws:us-east-4'],
-              pollingTimeout: DEFAULT_POLLING_TIMEOUT,
-              public_id: 'publicId',
-            },
-          ],
-        })
-      )
-
-      // Test > env
-      const confWithLocation = {
-        content: {tests: [{config: {locations: ['aws:us-east-1']}, id: 'publicId'}]},
-      }
-      jest.spyOn(utils, 'getSuites').mockImplementation((() => [confWithLocation]) as any)
-
-      expect(await command.execute()).toBe(0)
-      expect(triggerTests).toHaveBeenCalledWith(
-        expect.objectContaining({
-          tests: [
-            {
-              executionRule: 'blocking',
-              locations: ['aws:us-east-1'],
-              pollingTimeout: DEFAULT_POLLING_TIMEOUT,
-              public_id: 'publicId',
-            },
-          ],
-        })
-      )
     })
   })
 

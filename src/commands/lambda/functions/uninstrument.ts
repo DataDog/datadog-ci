@@ -34,6 +34,7 @@ import {
   VERSION_ENV_VAR,
   AWS_LAMBDA_EXEC_WRAPPER_VAR,
   AWS_LAMBDA_EXEC_WRAPPER,
+  APM_FLUSH_DEADLINE_MILLISECONDS_ENV_VAR,
 } from '../constants'
 import {FunctionConfiguration, LogGroupConfiguration, TagConfiguration} from '../interfaces'
 import {calculateLogGroupRemoveRequest} from '../loggroup'
@@ -168,6 +169,7 @@ export const calculateUpdateRequest = (config: LFunctionConfiguration, runtime: 
     API_KEY_SECRET_ARN_ENV_VAR,
     KMS_API_KEY_ENV_VAR,
     SITE_ENV_VAR,
+    APM_FLUSH_DEADLINE_MILLISECONDS_ENV_VAR,
     CAPTURE_LAMBDA_PAYLOAD_ENV_VAR,
     ENVIRONMENT_ENV_VAR,
     EXTRA_TAGS_ENV_VAR,

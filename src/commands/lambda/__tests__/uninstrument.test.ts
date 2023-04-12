@@ -17,6 +17,7 @@ import {mockClient} from 'aws-sdk-client-mock'
 import 'aws-sdk-client-mock-jest'
 
 import {
+  APM_FLUSH_DEADLINE_MILLISECONDS_ENV_VAR,
   AWS_ACCESS_KEY_ID_ENV_VAR,
   AWS_DEFAULT_REGION_ENV_VAR,
   AWS_SECRET_ACCESS_KEY_ENV_VAR,
@@ -75,6 +76,7 @@ describe('lambda', () => {
                   [SITE_ENV_VAR]: 'datadoghq.com',
                   [TRACE_ENABLED_ENV_VAR]: 'true',
                   [VERSION_ENV_VAR]: '0.2',
+                  [APM_FLUSH_DEADLINE_MILLISECONDS_ENV_VAR]: '42',
                   USER_VARIABLE: 'shouldnt be deleted by uninstrumentation',
                 },
               },

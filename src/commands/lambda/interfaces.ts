@@ -17,6 +17,7 @@ import {
  * the CLI in order to instrument properly.
  */
 export interface LambdaConfigOptions {
+  apmFlushDeadline?: string
   captureLambdaPayload?: string
   environment?: string
   extensionVersion?: string
@@ -61,6 +62,7 @@ export interface InstrumentedConfigurationGroup {
  * lambda to be instrumented.
  */
 export interface InstrumentationSettings extends InstrumentationTags {
+  apmFlushDeadline?: string
   captureLambdaPayload?: boolean
   extensionVersion?: number
   flushMetricsToLogs: boolean
