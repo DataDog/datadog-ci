@@ -6,10 +6,10 @@ import path from 'path'
 
 import {default as axios} from 'axios'
 
+import {Logger, LogLevel} from '../../../helpers/logger'
 import {getRequestBuilder} from '../../../helpers/utils'
 
 import {uploadToGitDB} from '../gitdb'
-import {Logger, LogLevel} from '../utils'
 
 describe('gitdb', () => {
   const tmpdir = path.join(os.tmpdir(), 'random')

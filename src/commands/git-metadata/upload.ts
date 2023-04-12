@@ -5,9 +5,10 @@ import {ApiKeyValidator, newApiKeyValidator} from '../../helpers/apikey'
 import {InvalidConfigurationError} from '../../helpers/errors'
 import {ICONS} from '../../helpers/formatting'
 import {RequestBuilder} from '../../helpers/interfaces'
+import {Logger, LogLevel} from '../../helpers/logger'
 import {MetricsLogger, getMetricsLogger} from '../../helpers/metrics'
 import {UploadStatus} from '../../helpers/upload'
-import {getRequestBuilder} from '../../helpers/utils'
+import {getRequestBuilder, timedExecAsync} from '../../helpers/utils'
 
 import {apiHost, datadogSite, getBaseIntakeUrl} from './api'
 import {getCommitInfo, newSimpleGit} from './git'
@@ -22,7 +23,6 @@ import {
   renderRetriedUpload,
   renderSuccessfulCommand,
 } from './renderer'
-import {Logger, LogLevel, timedExecAsync} from './utils'
 
 export class UploadCommand extends Command {
   public static usage = Command.Usage({
