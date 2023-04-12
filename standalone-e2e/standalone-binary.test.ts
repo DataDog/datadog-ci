@@ -16,6 +16,20 @@ const STANDALONE_BINARY_PATH = `${isWin ? '.\\' : './'}${STANDALONE_BINARY}${isW
 const sanitizeOutput = (output: string) => output.replace(/(\r\n|\n|\r)/gm, '')
 
 describe('standalone binary', () => {
+  beforeAll(
+    async () => {
+      await expect(execPromise(`${STANDALONE_BINARY_PATH}`, {})).rejects.toThrow(
+        expect.objectContaining({
+          code: 1,
+          stdout: expect.stringContaining('Unknown Syntax Error'),
+        })
+      )
+    },
+    // The cold start of the binary sometimes takes >5s on macOS, resulting in a flaky CI for this OS.
+    // This `beforeAll` is here to warm up the binary.
+    6 * 1000
+  )
+
   describe('version', () => {
     it('can be called', async () => {
       const {stdout} = await execPromise(`${STANDALONE_BINARY_PATH} version`)
