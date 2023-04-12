@@ -40,10 +40,12 @@ jobs:
         with:
           name: artifacts
           path: artifacts/
-      - uses: actions/upload-artifact@v1  
+      - uses: actions/upload-artifact@v3
+        if: always()
         with:
           name: sarif-datadog-ci.sarif
           path: sarif-datadog-ci.sarif
+          if-no-files-found: error
 
   e2e-test:
     strategy:
