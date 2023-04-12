@@ -60,9 +60,7 @@ export const overrideMobileConfig = (
       referenceId: localApplicationOverride.fileName,
       referenceType: 'temporary',
     }
-  }
-
-  if (!localApplicationOverride && userConfigOverride.mobileApplicationVersion) {
+  } else if (userConfigOverride.mobileApplicationVersion) {
     overriddenTest.mobileApplication = {
       applicationId: test.options.mobileApplication!.applicationId,
       referenceId: userConfigOverride.mobileApplicationVersion,
