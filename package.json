@@ -83,7 +83,7 @@
     "sshpk": "1.16.1",
     "tiny-async-pool": "1.2.0",
     "ws": "7.4.6",
-    "xml2js": "0.4.23",
+    "xml2js": "0.5.0",
     "yamux-js": "0.1.2"
   },
   "devDependencies": {
