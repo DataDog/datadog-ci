@@ -1,0 +1,9 @@
+{
+  "failOnCriticalErrors": true,
+  "failOnTimeout": true,
+  "global": {
+    "locations": ["pl:synthetics-ci-mobile-cad73709fb063dca857b3bc31612de7a"],
+    "retry": {"count": 2, "interval": 500}
+  },
+  "pollingTimeout": 300000
+}

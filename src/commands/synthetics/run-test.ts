@@ -101,6 +101,9 @@ export const executeTests = async (
   }
 
   const {tests, overriddenTestsToTrigger, initialSummary} = testsToTriggerResult
+  console.log({tests:JSON.stringify(tests, null, 2)})
+  console.log({overriddenTestsToTrigger:JSON.stringify(overriddenTestsToTrigger, null, 2)})
+  console.log({initialSummary:JSON.stringify(initialSummary, null, 2)})
 
   // All tests have been skipped or are missing.
   if (!tests.length) {
@@ -133,6 +136,7 @@ export const executeTests = async (
     }
   }
 
+  console.log('before runtests')
   let trigger: Trigger
   try {
     trigger = await runTests(api, overriddenTestsToTrigger)

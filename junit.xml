@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<testsuites batch_id="e6453704-503a-4bb5-a342-5162293223f0" batch_url="https://app.datadoghq.com/synthetics/explorer/ci?batchResultId=e6453704-503a-4bb5-a342-5162293223f0" name="Undefined run" tests_critical_error="0" tests_failed="1" tests_failed_non_blocking="0" tests_not_found="0" tests_passed="0" tests_skipped="0" tests_timed_out="0">
+  <testsuite errors="0" failures="2" name="Undefined suite" skipped="0" tests="1">
+    <testcase name="test PL - id: qkv-mj4-xa6 - location: Synthetics CI - Mobile - result id: 3363318122710967629 (not yet received)" time="0" timestamp="2023-04-12T09:14:12.561Z" steps_allowfailures="0" steps_count="1" steps_errors="1" steps_failures="1" steps_skipped="0" steps_warnings="0">
+      <failure type="timeout">Result timed out</failure>
+      <failure type="TIMEOUT" step="test PL">  [TIMEOUT] - Result timed out</failure>
+      <properties>
+        <property name="check_id" value="qkv-mj4-xa6"/>
+        <property name="location" value="Synthetics CI - Mobile"/>
+        <property name="monitor_id" value="116151702"/>
+        <property name="passed" value="false"/>
+        <property name="public_id" value="qkv-mj4-xa6"/>
+        <property name="result_id" value="3363318122710967629"/>
+        <property name="result_url" value="https://app.datadoghq.com/synthetics/details/qkv-mj4-xa6?resultId=3363318122710967629&amp;from_ci=true"/>
+        <property name="status" value="paused"/>
+        <property name="tags" value="testing:mobile"/>
+        <property name="timeout" value="true"/>
+        <property name="type" value="mobile"/>
+      </properties>
+    </testcase>
+  </testsuite>
+</testsuites>

@@ -55,6 +55,9 @@ export const formatBackendErrors = (requestError: AxiosError<BackendError>) => {
 }
 
 const triggerTests = (request: (args: AxiosRequestConfig) => AxiosPromise<Trigger>) => async (data: Payload) => {
+  console.log('data :')
+  console.log({data:JSON.stringify(data, null, 2)})
+  console.log('After printing data')
   const resp = await retryRequest(
     {
       data,
@@ -65,6 +68,8 @@ const triggerTests = (request: (args: AxiosRequestConfig) => AxiosPromise<Trigge
     request
   )
 
+  console.log({resp:JSON.stringify(resp.data, null, 2)})
+  console.log('buffer')
   return resp.data
 }
 

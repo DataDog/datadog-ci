@@ -642,6 +642,7 @@ export const runTests = async (api: APIHelper, testsToTrigger: TestPayload[]): P
     payload.metadata = ciMetadata
   }
 
+  console.log('before triggertests')
   try {
     return await api.triggerTests(payload)
   } catch (e) {
