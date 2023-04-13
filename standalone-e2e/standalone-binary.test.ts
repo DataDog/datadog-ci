@@ -18,6 +18,7 @@ const sanitizeOutput = (output: string) => output.replace(/(\r\n|\n|\r)/gm, '')
 describe('standalone binary', () => {
   beforeAll(
     async () => {
+      // Run the binary with no CLI arguments.
       await expect(execPromise(`${STANDALONE_BINARY_PATH}`, {})).rejects.toThrow(
         expect.objectContaining({
           code: 1,
