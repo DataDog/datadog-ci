@@ -11,6 +11,7 @@ import asyncPool from 'tiny-async-pool'
 import {getCISpanTags} from '../../helpers/ci'
 import {getGitMetadata} from '../../helpers/git/format-git-span-data'
 import {SpanTags} from '../../helpers/interfaces'
+import {MetricsLogger, getMetricsLogger} from '../../helpers/metrics'
 import {retryRequest} from '../../helpers/retry'
 import {parseTags} from '../../helpers/tags'
 import {getUserGitSpanTags} from '../../helpers/user-provided-git'
@@ -95,6 +96,12 @@ export class UploadJUnitXMLCommand extends Command {
   private tags?: string[]
   private rawXPathTags?: string[]
   private xpathTags?: Record<string, string>
+  private cliVersion: string
+
+  constructor() {
+    super()
+    this.cliVersion = require('../../../package.json').version
+  }
 
   public async execute() {
     if (!this.service) {
@@ -116,12 +123,19 @@ export class UploadJUnitXMLCommand extends Command {
       this.config.env = this.env
     }
 
+    const metricsLogger = getMetricsLogger({
+      datadogSite: process.env.DATADOG_SITE,
+      defaultTags: [`cli_version:${this.cliVersion}`],
+      prefix: 'datadog.ci.junit.',
+    })
+
     if (
       !this.logs &&
       process.env.DD_CIVISIBILITY_LOGS_ENABLED &&
       !['false', '0'].includes(process.env.DD_CIVISIBILITY_LOGS_ENABLED.toLowerCase())
     ) {
       this.logs = true
+      metricsLogger.logger.increment('logs.enabled', 1)
     }
 
     if (this.rawXPathTags) {
@@ -129,9 +143,18 @@ export class UploadJUnitXMLCommand extends Command {
       if (Object.keys(this.xpathTags).length !== this.rawXPathTags.length) {
         return 1
       }
+      metricsLogger.logger.increment('xpath_tags.enabled', 1)
     }
 
-    const api = this.getApiHelper()
+    if (!this.config.apiKey) {
+      this.context.stdout.write(
+        `Neither ${chalk.red.bold('DATADOG_API_KEY')} nor ${chalk.red.bold('DD_API_KEY')} is in your environment.\n`
+      )
+      throw new Error('API key is missing')
+    }
+
+    const api = apiConstructor(getBaseIntakeUrl(), this.config.apiKey)
+
     // Normalizing the basePath to resolve .. and .
     // Always using the posix version to avoid \ on Windows.
     this.basePaths = this.basePaths.map((basePath) => path.posix.normalize(basePath))
@@ -139,7 +162,7 @@ export class UploadJUnitXMLCommand extends Command {
 
     const spanTags = await this.getSpanTags()
     const payloads = await this.getMatchingJUnitXMLFiles(spanTags)
-    const upload = (p: Payload) => this.uploadJUnitXML(api, p)
+    const upload = (p: Payload) => this.uploadJUnitXML(api, p, metricsLogger)
 
     const initialTime = new Date().getTime()
 
@@ -149,6 +172,13 @@ export class UploadJUnitXMLCommand extends Command {
     this.context.stdout.write(
       renderSuccessfulCommand(payloads.length, totalTimeSeconds, spanTags, this.service, this.config.env)
     )
+
+    metricsLogger.logger.increment('success', 1)
+    try {
+      await metricsLogger.flush()
+    } catch (err) {
+      this.logger.warn(`WARN: ${err}`)
+    }
   }
 
   private parseXPathTags(rawXPathTags: string[]): Record<string, string> {
@@ -166,17 +196,6 @@ export class UploadJUnitXMLCommand extends Command {
 
       return xpathTags
     }, {})
-  }
-
-  private getApiHelper(): APIHelper {
-    if (!this.config.apiKey) {
-      this.context.stdout.write(
-        `Neither ${chalk.red.bold('DATADOG_API_KEY')} nor ${chalk.red.bold('DD_API_KEY')} is in your environment.\n`
-      )
-      throw new Error('API key is missing')
-    }
-
-    return apiConstructor(getBaseIntakeUrl(), this.config.apiKey)
   }
 
   private async getMatchingJUnitXMLFiles(spanTags: SpanTags): Promise<Payload[]> {
@@ -228,7 +247,7 @@ export class UploadJUnitXMLCommand extends Command {
     }
   }
 
-  private async uploadJUnitXML(api: APIHelper, jUnitXML: Payload) {
+  private async uploadJUnitXML(api: APIHelper, jUnitXML: Payload, metricsLogger: MetricsLogger) {
     if (this.dryRun) {
       this.context.stdout.write(renderDryRunUpload(jUnitXML))
 
@@ -250,6 +269,12 @@ export class UploadJUnitXMLCommand extends Command {
           // And a status code that should not stop the whole upload, just return
           return
         }
+      }
+      metricsLogger.logger.increment('failed', 1)
+      try {
+        await metricsLogger.flush()
+      } catch (err) {
+        this.logger.warn(`WARN: ${err}`)
       }
       throw error
     }
