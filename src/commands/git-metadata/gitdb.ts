@@ -9,10 +9,10 @@ import FormData from 'form-data'
 import * as simpleGit from 'simple-git'
 
 import {RequestBuilder} from '../../helpers/interfaces'
+import {Logger} from '../../helpers/logger'
 import {retryRequest} from '../../helpers/retry'
 
 import {gitRemote as getRepoURL} from './git'
-import {Logger} from './utils'
 
 const API_TIMEOUT = 15000
 
