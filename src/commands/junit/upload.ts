@@ -11,12 +11,17 @@ import asyncPool from 'tiny-async-pool'
 import {getCISpanTags} from '../../helpers/ci'
 import {getGitMetadata} from '../../helpers/git/format-git-span-data'
 import {SpanTags} from '../../helpers/interfaces'
+import {RequestBuilder} from '../../helpers/interfaces'
+import {Logger, LogLevel} from '../../helpers/logger'
 import {retryRequest} from '../../helpers/retry'
 import {parseTags} from '../../helpers/tags'
 import {getUserGitSpanTags} from '../../helpers/user-provided-git'
-import {buildPath} from '../../helpers/utils'
+import {buildPath, getRequestBuilder, timedExecAsync} from '../../helpers/utils'
 
-import {apiConstructor} from './api'
+import {newSimpleGit} from '../git-metadata/git'
+import {uploadToGitDB} from '../git-metadata/gitdb'
+
+import {apiConstructor, apiUrl, intakeUrl} from './api'
 import {APIHelper, Payload} from './interfaces'
 import {
   renderCommandInfo,
@@ -26,7 +31,6 @@ import {
   renderRetriedUpload,
   renderSuccessfulCommand,
 } from './renderer'
-import {getBaseIntakeUrl} from './utils'
 
 const errorCodesStopUpload = [400, 403]
 
@@ -95,6 +99,11 @@ export class UploadJUnitXMLCommand extends Command {
   private tags?: string[]
   private rawXPathTags?: string[]
   private xpathTags?: Record<string, string>
+  private gitRepositoryURL?: string
+  private skipGitMetadataUpload?: boolean
+  private logger: Logger = new Logger((s: string) => {
+    this.context.stdout.write(s)
+  }, LogLevel.INFO)
 
   public async execute() {
     if (!this.service) {
@@ -132,6 +141,7 @@ export class UploadJUnitXMLCommand extends Command {
     }
 
     const api = this.getApiHelper()
+
     // Normalizing the basePath to resolve .. and .
     // Always using the posix version to avoid \ on Windows.
     this.basePaths = this.basePaths.map((basePath) => path.posix.normalize(basePath))
@@ -145,10 +155,36 @@ export class UploadJUnitXMLCommand extends Command {
 
     await asyncPool(this.maxConcurrency, payloads, upload)
 
+    if (!this.skipGitMetadataUpload) {
+      const requestBuilder = getRequestBuilder({baseUrl: apiUrl, apiKey: this.config.apiKey!})
+      try {
+        this.logger.info('Syncing GitDB...')
+        const elapsed = await timedExecAsync(this.uploadToGitDB.bind(this), {requestBuilder})
+        this.logger.info(`${this.dryRun ? '[DRYRUN] ' : ''}Successfully synced git DB in ${elapsed} seconds.`)
+      } catch (err) {
+        this.logger.warn(`Could not write to GitDB: ${err}`)
+      }
+    }
+
     const totalTimeSeconds = (Date.now() - initialTime) / 1000
     this.context.stdout.write(
       renderSuccessfulCommand(payloads.length, totalTimeSeconds, spanTags, this.service, this.config.env)
     )
+  }
+
+  private async uploadToGitDB(opts: {requestBuilder: RequestBuilder}) {
+    await uploadToGitDB(this.logger, opts.requestBuilder, await newSimpleGit(), this.dryRun, this.gitRepositoryURL)
+  }
+
+  private getApiHelper(): APIHelper {
+    if (!this.config.apiKey) {
+      this.context.stdout.write(
+        `Neither ${chalk.red.bold('DATADOG_API_KEY')} nor ${chalk.red.bold('DD_API_KEY')} is in your environment.\n`
+      )
+      throw new Error('API key is missing')
+    }
+
+    return apiConstructor(intakeUrl, this.config.apiKey)
   }
 
   private parseXPathTags(rawXPathTags: string[]): Record<string, string> {
@@ -166,17 +202,6 @@ export class UploadJUnitXMLCommand extends Command {
 
       return xpathTags
     }, {})
-  }
-
-  private getApiHelper(): APIHelper {
-    if (!this.config.apiKey) {
-      this.context.stdout.write(
-        `Neither ${chalk.red.bold('DATADOG_API_KEY')} nor ${chalk.red.bold('DD_API_KEY')} is in your environment.\n`
-      )
-      throw new Error('API key is missing')
-    }
-
-    return apiConstructor(getBaseIntakeUrl(), this.config.apiKey)
   }
 
   private async getMatchingJUnitXMLFiles(spanTags: SpanTags): Promise<Payload[]> {
@@ -264,3 +289,5 @@ UploadJUnitXMLCommand.addOption('basePaths', Command.Rest({required: 1}))
 UploadJUnitXMLCommand.addOption('maxConcurrency', Command.String('--max-concurrency'))
 UploadJUnitXMLCommand.addOption('logs', Command.Boolean('--logs'))
 UploadJUnitXMLCommand.addOption('rawXPathTags', Command.Array('--xpath-tag'))
+UploadJUnitXMLCommand.addOption('skipGitMetadataUpload', Command.Boolean('--skip-git-metadata-upload'))
+UploadJUnitXMLCommand.addOption('gitRepositoryURL', Command.String('--git-repository-url'))
