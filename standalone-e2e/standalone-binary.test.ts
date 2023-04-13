@@ -19,7 +19,7 @@ describe('standalone binary', () => {
   beforeAll(
     async () => {
       // Run the binary with no CLI arguments.
-      await expect(execPromise(`${STANDALONE_BINARY_PATH}`, {})).rejects.toThrow(
+      await expect(execPromise(`${STANDALONE_BINARY_PATH}`)).rejects.toThrow(
         expect.objectContaining({
           code: 1,
           stdout: expect.stringContaining('Unknown Syntax Error'),
