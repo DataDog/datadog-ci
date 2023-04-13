@@ -22,7 +22,15 @@ jobs:
           node-version: ${{ matrix.version }}
       - run: yarn install --immutable
       - run: yarn build
-      - run: yarn lint
+      - name: Run yarn lint:ci
+        run: |
+          if ! yarn lint:ci ; then
+            echo ""
+            echo "Find the SARIF report in the Artifacts section here: https://github.com/DataDog/datadog-ci/actions/runs/${{ github.run_id }}"
+            echo "You can fix this by running ==> yarn format <=="
+            echo ""
+            exit 1
+          fi
       - run: yarn no-only-in-tests
       - run: yarn test
         env:
