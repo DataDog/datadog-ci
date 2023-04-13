@@ -27,6 +27,7 @@ jobs:
       - run: yarn test
         env:
           CI: true
+          DD_TRACE_DEBUG: 1
           DD_SERVICE: datadog-ci-tests
           DD_CIVISIBILITY_AGENTLESS_ENABLED: 1
           DD_API_KEY: ${{ secrets.DATADOG_API_KEY_MAIN_ACCOUNT }}
