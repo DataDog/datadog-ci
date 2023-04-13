@@ -1,4 +1,7 @@
+jest.mock('fs')
 jest.mock('../../renderer', () => require('../../__mocks__/renderer'))
+
+import * as fs from 'fs'
 
 import {CloudWatchLogsClient} from '@aws-sdk/client-cloudwatch-logs'
 import {LambdaClient, UpdateFunctionConfigurationCommand} from '@aws-sdk/client-lambda'
@@ -35,7 +38,7 @@ import {
   getRegion,
   handleLambdaFunctionUpdates,
   isMissingAnyDatadogApiKeyEnvVar,
-  isMissingAWSCredentials,
+  getAWSCredentials,
   isMissingDatadogEnvVars,
   sentenceMatchesRegEx,
   updateLambdaFunctionConfig,
@@ -43,7 +46,14 @@ import {
 import {InstrumentCommand} from '../../instrument'
 import {FunctionConfiguration} from '../../interfaces'
 
-import {createCommand, mockAwsAccount, mockLambdaClientCommands, mockLambdaLayers} from '../fixtures'
+import {
+  createCommand,
+  mockAwsAccessKeyId,
+  mockAwsAccount,
+  mockAwsSecretAccessKey,
+  mockLambdaClientCommands,
+  mockLambdaLayers,
+} from '../fixtures'
 
 describe('commons', () => {
   const cloudWatchLogsClientMock = mockClient(CloudWatchLogsClient)
@@ -289,29 +299,41 @@ describe('commons', () => {
     })
   })
 
-  describe('isMissingAWSCredentials', () => {
+  describe('getAWSCredentials', () => {
     const OLD_ENV = process.env
-    beforeEach(() => {
-      jest.resetModules()
-      process.env = {}
-    })
-    afterAll(() => {
-      process.env = OLD_ENV
-    })
-    test('returns true when only AWS_SECRET_ACCESS_KEY env var is set and `~/.aws/credentials` are missing', () => {
-      process.env[AWS_SECRET_ACCESS_KEY_ENV_VAR] = 'SOME-AWS-SECRET-ACCESS-KEY'
-      expect(isMissingAWSCredentials()).toBe(true) // AWS_ACCESS_KEY_ID_ENV_VAR is missing
-    })
 
-    test('returns true when only AWS_ACCESS_KEY_ID environment variable is set and `~/.aws/credentials` are missing', () => {
-      process.env[AWS_ACCESS_KEY_ID_ENV_VAR] = 'SOME-AWS-ACCESS-KEY-ID'
-      expect(isMissingAWSCredentials()).toBe(true) // We return true since AWS_SECRET_ACCESS_KEY_ENV_VAR is missing
-    })
+    describe('fromEnv', () => {
+      beforeEach(() => {
+        jest.resetModules()
+        process.env = {}
+      })
+      afterAll(() => {
+        process.env = OLD_ENV
+      })
+      // ignore reading `.aws/config` `.aws/credentials` files
+      ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({code: 'ENOENT'}))
 
-    test('returns false when AWS credentials via environment variables are set', () => {
-      process.env[AWS_ACCESS_KEY_ID_ENV_VAR] = 'SOME-AWS-ACCESS-KEY-ID'
-      process.env[AWS_SECRET_ACCESS_KEY_ENV_VAR] = 'SOME-AWS-SECRET-ACCESS-KEY'
-      expect(isMissingAWSCredentials()).toBe(false)
+      test('returns `undefined` when only AWS_SECRET_ACCESS_KEY env var is set and `~/.aws/credentials` are missing', async () => {
+        process.env[AWS_SECRET_ACCESS_KEY_ENV_VAR] = mockAwsAccessKeyId
+        const credentials = await getAWSCredentials()
+        expect(credentials).toBe(undefined) // AWS_ACCESS_KEY_ID_ENV_VAR is missing
+      })
+
+      test('returns `undefined` when only AWS_ACCESS_KEY_ID environment variable is set and `~/.aws/credentials` are missing', async () => {
+        process.env[AWS_ACCESS_KEY_ID_ENV_VAR] = mockAwsSecretAccessKey
+        const credentials = await getAWSCredentials()
+        expect(credentials).toBe(undefined) // AWS_SECRET_ACCESS_KEY_ENV_VAR is missing
+      })
+
+      test('returns credentials when environment variables are set', async () => {
+        process.env[AWS_ACCESS_KEY_ID_ENV_VAR] = mockAwsAccessKeyId
+        process.env[AWS_SECRET_ACCESS_KEY_ENV_VAR] = mockAwsSecretAccessKey
+        const credentials = await getAWSCredentials()
+        expect(credentials).toStrictEqual({
+          accessKeyId: mockAwsAccessKeyId,
+          secretAccessKey: mockAwsSecretAccessKey,
+        })
+      })
     })
   })
 
