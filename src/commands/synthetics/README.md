@@ -221,8 +221,29 @@ You can decide to have the CLI auto-discover all your `**/*.synthetics.json` Syn
 
 Run tests by executing the CLI:
 
-<!-- xxx tabs xxx -->
-<!-- xxx tab "Yarn" xxx -->
+{{< tabs >}}
+{{% tab "NPM" %}}
+
+Add the following to your `package.json`:
+
+```json
+{
+  "scripts": {
+    "datadog-ci-synthetics": "datadog-ci synthetics run-tests"
+  }
+}
+```
+
+Then, run:
+
+```bash
+npm run datadog-ci-synthetics
+```
+
+**Note**: If you are launching your tests with a custom global configuration file, append the command associated to your `datadog-ci-synthetics` script with `--config <PATH_TO_GLOBAL_CONFIG_FILE>`.
+
+{{% /tab %}}
+{{% tab "Yarn" %}}
 
 The `run-tests` sub-command runs the tests discovered in the folder according to the `files` configuration key. It accepts the `--public-id` (or shorthand `-p`) argument to trigger only the specified test. It can be set multiple times to run multiple tests:
 
@@ -250,29 +271,8 @@ yarn datadog-ci synthetics run-tests -f ./component-1/**/*.synthetics.json -v PA
 
 **Note**: If you are launching your tests with a custom global configuration file, append your command with `--config <PATH_TO_GLOBAL_CONFIG_FILE>`.
 
-<!-- xxz tab xxx -->
-<!-- xxx tab "NPM" xxx -->
-
-Add the following to your `package.json`:
-
-```json
-{
-  "scripts": {
-    "datadog-ci-synthetics": "datadog-ci synthetics run-tests"
-  }
-}
-```
-
-Then, run:
-
-```bash
-npm run datadog-ci-synthetics
-```
-
-**Note**: If you are launching your tests with a custom global configuration file, append the command associated to your `datadog-ci-synthetics` script with `--config <PATH_TO_GLOBAL_CONFIG_FILE>`.
-
-<!-- xxz tab xxx -->
-<!-- xxz tabs xxx -->
+{{% /tab %}}
+{{< /tabs >}}
 
 ### Failure modes flags
 
