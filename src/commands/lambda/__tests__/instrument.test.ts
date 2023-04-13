@@ -1,5 +1,8 @@
 jest.mock('fs')
-jest.mock('@aws-sdk/credential-providers')
+jest.mock('@aws-sdk/credential-providers', () => ({
+  ...jest.requireActual('@aws-sdk/credential-providers'),
+  fromIni: jest.fn(),
+}))
 jest.mock('../prompt')
 jest.mock('../renderer', () => require('../__mocks__/renderer'))
 jest.mock('../../../../package.json', () => ({version: 'XXXX'}))

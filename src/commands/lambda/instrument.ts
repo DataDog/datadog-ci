@@ -23,7 +23,7 @@ import {
   getAWSProfileCredentials,
   getAllLambdaFunctionConfigs,
   handleLambdaFunctionUpdates,
-  isMissingAWSCredentials,
+  getAWSCredentials,
   isMissingDatadogEnvVars,
   sentenceMatchesRegEx,
   willUpdateFunctionConfigs,
@@ -98,9 +98,12 @@ export class InstrumentCommand extends Command {
     let hasSpecifiedFunctions = this.functions.length !== 0 || this.config.functions.length !== 0
     if (this.interactive) {
       try {
-        if (isMissingAWSCredentials()) {
+        const credentials = await getAWSCredentials()
+        if (credentials === undefined) {
           this.context.stdout.write(renderer.renderNoAWSCredentialsFound())
           await requestAWSCredentials()
+        } else {
+          this.credentials = credentials
         }
 
         // Always ask for region since the user may
