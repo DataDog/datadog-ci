@@ -118,7 +118,7 @@ export const renderSuccessfulCommand = (statuses: UploadStatus[], duration: numb
 }
 
 export const renderCommandInfo = (
-  bundlePath: string | undefined,
+  bundlePath: string,
   sourcemapPath: string,
   platform: string,
   releaseVersion: string,
@@ -132,17 +132,10 @@ export const renderCommandInfo = (
   if (dryRun) {
     fullStr += chalk.yellow(`${ICONS.WARNING} DRY-RUN MODE ENABLED. WILL NOT UPLOAD SOURCEMAPS\n`)
   }
-  if (bundlePath) {
-    fullStr += chalk.yellow(
-      `${ICONS.WARNING} ${chalk.bold(
-        '--bundle'
-      )} option has been deprecated. The js bundle won't be sent. This will not affect the error tracking of your app.\n`
-    )
-  }
   const startStr = chalk.green('Starting upload. \n')
   fullStr += startStr
   const basePathStr = chalk.green(
-    `Upload of ${sourcemapPath} on platform ${platform} with project path ${projectPath}\n`
+    `Upload of ${sourcemapPath} for bundle ${bundlePath} on platform ${platform} with project path ${projectPath}\n`
   )
   fullStr += basePathStr
   const serviceVersionProjectPathStr = chalk.green(
@@ -153,4 +146,5 @@ export const renderCommandInfo = (
   return fullStr
 }
 
-export const renderUpload = (sourcemap: RNSourcemap): string => `Uploading sourcemap ${sourcemap.sourcemapPath}\n`
+export const renderUpload = (sourcemap: RNSourcemap): string =>
+  `Uploading sourcemap ${sourcemap.sourcemapPath} for JS file available at ${sourcemap.bundlePath}\n`

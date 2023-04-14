@@ -77,7 +77,7 @@ const createMockContext = () => {
   }
 }
 
-const runCLI = async (appName: string, options?: {uploadBundle?: boolean}) => {
+const runCLI = async (appName: string) => {
   const cli = makeCli()
   const context = createMockContext() as any
   process.env = {...process.env, DATADOG_API_KEY: 'PLACEHOLDER'}
@@ -89,6 +89,8 @@ const runCLI = async (appName: string, options?: {uploadBundle?: boolean}) => {
     'ios',
     '--service',
     'com.myapp',
+    '--bundle',
+    './src/commands/react-native/__tests__/fixtures/basic-ios/main.jsbundle',
     '--sourcemap',
     './src/commands/react-native/__tests__/fixtures/basic-ios/main.jsbundle.map',
     '--app',
@@ -98,9 +100,6 @@ const runCLI = async (appName: string, options?: {uploadBundle?: boolean}) => {
     '--disable-git',
     '--dry-run',
   ]
-  if (options?.uploadBundle !== false) {
-    command.push('--bundle', './src/commands/react-native/__tests__/fixtures/basic-ios/main.jsbundle')
-  }
 
   const code = await cli.run(command, context)
 
@@ -118,21 +117,7 @@ describe('codepush', () => {
       expect(code).toBe(0)
       const output = context.stdout.toString()
       expect(output).toContain(
-        'Upload of ./src/commands/react-native/__tests__/fixtures/basic-ios/main.jsbundle.map on platform ios'
-      )
-      expect(output).toContain('version: 1.0-codepush.v7 build: 1 service: com.myapp')
-    })
-
-    it('calls the upload command with a correct version number from the codepush history without bundle', async () => {
-      const {context, code} = await runCLI('FakeOrg/FakeApp', {uploadBundle: false})
-      // Uncomment these lines for debugging failing script
-      // console.log(context.stdout.toString())
-      // console.log(context.stderr.toString())
-
-      expect(code).toBe(0)
-      const output = context.stdout.toString()
-      expect(output).toContain(
-        'Upload of ./src/commands/react-native/__tests__/fixtures/basic-ios/main.jsbundle.map on platform ios'
+        'Upload of ./src/commands/react-native/__tests__/fixtures/basic-ios/main.jsbundle.map for bundle ./src/commands/react-native/__tests__/fixtures/basic-ios/main.jsbundle on platform ios'
       )
       expect(output).toContain('version: 1.0-codepush.v7 build: 1 service: com.myapp')
     })

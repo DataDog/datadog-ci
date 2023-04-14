@@ -163,7 +163,7 @@ describe('xcode', () => {
       expect(code).toBe(0)
       const output = context.stdout.toString()
       expect(output).toContain(
-        'Upload of ./src/commands/react-native/__tests__/fixtures/basic-ios/main.jsbundle.map on platform ios'
+        'Upload of ./src/commands/react-native/__tests__/fixtures/basic-ios/main.jsbundle.map for bundle ./src/commands/react-native/__tests__/fixtures/basic-ios/main.jsbundle on platform ios'
       )
       expect(output).toContain('version: 0.0.2 build: 000020 service: com.myapp.test')
     })
@@ -196,7 +196,7 @@ describe('xcode', () => {
         'Successfully ran the compose script for ./src/commands/react-native/__tests__/fixtures/compose-sourcemaps/main.jsbundle.map ./src/commands/react-native/__tests__/fixtures/compose-sourcemaps/MyApp.app/main.jsbundle.map ./src/commands/react-native/__tests__/fixtures/basic-ios/main.jsbundle.map'
       )
       expect(output).toContain(
-        'Upload of ./src/commands/react-native/__tests__/fixtures/basic-ios/main.jsbundle.map on platform ios'
+        'Upload of ./src/commands/react-native/__tests__/fixtures/basic-ios/main.jsbundle.map for bundle ./src/commands/react-native/__tests__/fixtures/compose-sourcemaps/main.jsbundle on platform ios'
       )
       expect(output).toContain('version: 0.0.2 build: 000020 service: com.myapp.test')
     })
@@ -349,7 +349,7 @@ describe('xcode', () => {
       const output = context.stdout.toString()
       expect(output).toContain('Force upload for configuration Debug')
       expect(output).toContain(
-        'Upload of ./src/commands/react-native/__tests__/fixtures/basic-ios/main.jsbundle.map on platform ios'
+        'Upload of ./src/commands/react-native/__tests__/fixtures/basic-ios/main.jsbundle.map for bundle ./src/commands/react-native/__tests__/fixtures/basic-ios/main.jsbundle on platform ios'
       )
       expect(output).toContain('version: 0.0.2 build: 000020 service: com.myapp.test')
     })
@@ -372,7 +372,7 @@ describe('xcode', () => {
       expect(code).toBe(0)
       const output = context.stdout.toString()
       expect(output).toContain(
-        'Upload of ./src/commands/react-native/__tests__/fixtures/basic-ios/main.jsbundle.map on platform ios'
+        'Upload of ./src/commands/react-native/__tests__/fixtures/basic-ios/main.jsbundle.map for bundle ./src/commands/react-native/__tests__/fixtures/basic-ios/main.jsbundle on platform ios'
       )
       expect(output).toContain('version: 0.0.2 build: 000020 service: com.custom')
     })
@@ -564,6 +564,27 @@ describe('xcode', () => {
       expect(errorOutput).toContain('No sourcemap output has been specified')
     })
 
+    test('should provide a clear error message when the upload fails', async () => {
+      process.env = {
+        ...process.env,
+        ...basicEnvironment,
+        CONFIGURATION_BUILD_DIR: 'src/commands/react-native/__tests__/fixtures/non-existent',
+      }
+
+      const {context, code} = await runCLI(
+        './src/commands/react-native/__tests__/fixtures/bundle-script/successful_script.sh'
+      )
+      // Uncomment these lines for debugging failing script
+      // console.log(context.stdout.toString())
+      // console.log(context.stderr.toString())
+
+      expect(code).not.toBe(0)
+      const output = context.stdout.toString()
+      expect(output).toContain(
+        'Missing bundle file (src/commands/react-native/__tests__/fixtures/non-existent/main.jsbundle)'
+      )
+    })
+
     test('should forward arguments to upload command', async () => {
       process.env = {
         ...process.env,
@@ -584,7 +605,7 @@ describe('xcode', () => {
       expect(code).toBe(0)
       const output = context.stdout.toString()
       expect(output).toContain(
-        'Upload of ./src/commands/react-native/__tests__/fixtures/basic-ios/main.jsbundle.map on platform ios'
+        'Upload of ./src/commands/react-native/__tests__/fixtures/basic-ios/main.jsbundle.map for bundle ./src/commands/react-native/__tests__/fixtures/basic-ios/main.jsbundle on platform ios'
       )
       expect(output).toContain('version: 0.0.2 build: 000020 service: com.myapp.test')
       expect(getRepositoryDataSpy).toHaveBeenCalledWith(expect.anything(), 'https://example.com')
@@ -609,7 +630,7 @@ describe('xcode', () => {
       expect(code).toBe(0)
       const output = context.stdout.toString()
       expect(output).toContain(
-        'Upload of ./src/commands/react-native/__tests__/fixtures/basic-ios/main.jsbundle.map on platform ios'
+        'Upload of ./src/commands/react-native/__tests__/fixtures/basic-ios/main.jsbundle.map for bundle ./src/commands/react-native/__tests__/fixtures/basic-ios/main.jsbundle on platform ios'
       )
       expect(output).toContain('version: 0.0.2 build: 000020 service: com.myapp.test')
       expect(getRepositoryDataSpy).not.toHaveBeenCalled()
