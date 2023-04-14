@@ -147,4 +147,4 @@ export const renderCommandInfo = (
 }
 
 export const renderUpload = (sourcemap: RNSourcemap): string =>
-  `Uploading sourcemap ${sourcemap.sourcemapPath} for JS file available at ${sourcemap.bundlePath}\n`
+  `Uploading sourcemap ${sourcemap.sourcemapPath} for JS file ${sourcemap.bundleName}\n`

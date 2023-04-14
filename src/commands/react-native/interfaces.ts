@@ -4,13 +4,11 @@ import {MultipartPayload, MultipartValue} from '../../helpers/upload'
 
 export class RNSourcemap {
   public bundleName: string
-  public bundlePath: string
   public gitData?: GitData
   public sourcemapPath: string
 
   constructor(bundlePath: string, sourcemapPath: string, bundleName?: string) {
     this.bundleName = this.getBundleName(bundlePath, bundleName)
-    this.bundlePath = bundlePath
     this.sourcemapPath = sourcemapPath
   }
 
@@ -29,7 +27,6 @@ export class RNSourcemap {
     const content = new Map<string, MultipartValue>([
       ['event', this.getMetadataPayload(cliVersion, service, version, projectPath, platform, build)],
       ['source_map', {value: fs.createReadStream(this.sourcemapPath), options: {filename: 'source_map'}}],
-      ['minified_file', {value: fs.createReadStream(this.bundlePath), options: {filename: 'minified_file'}}],
     ])
     if (this.gitData !== undefined && this.gitData.gitRepositoryPayload !== undefined) {
       content.set('repository', {

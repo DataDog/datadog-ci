@@ -27,7 +27,7 @@ describe('upload', () => {
       command.context = {stdout: {write}} as any
       const sourcemaps = new Array<RNSourcemap>(
         new RNSourcemap(
-          'src/commands/react-native/__tests__/fixtures/sourcemap-with-no-files/empty.min.js',
+          'empty.min.js',
           'src/commands/react-native/__tests__/fixtures/sourcemap-with-no-files/empty.min.js.map'
         )
       )
@@ -45,10 +45,7 @@ describe('upload', () => {
       const write = jest.fn()
       command.context = {stdout: {write}} as any
       const sourcemaps = new Array<RNSourcemap>(
-        new RNSourcemap(
-          'src/commands/react-native/__tests__/fixtures/basic-ios/main.jsbundle',
-          'src/commands/react-native/__tests__/fixtures/basic-ios/main.jsbundle.map'
-        )
+        new RNSourcemap('main.jsbundle', 'src/commands/react-native/__tests__/fixtures/basic-ios/main.jsbundle.map')
       )
       // The command will fetch git metadatas for the current datadog-ci repository.
       // The `main.jsbundle.map` contains the "git.test.ts" filename which matches a tracked filename,
@@ -108,7 +105,7 @@ describe('execute', () => {
       build: '1023040',
       bundlePath: './src/commands/react-native/__tests__/fixtures/basic-ios/main.jsbundle',
       concurrency: 20,
-      jsFilesURLs: ['./src/commands/react-native/__tests__/fixtures/basic-ios/main.jsbundle'],
+      bundleName: 'main.jsbundle',
       platform: 'android',
       projectPath: '',
       service: 'com.company.app',
@@ -128,7 +125,7 @@ describe('execute', () => {
       build: '1023040',
       bundlePath: `${process.cwd()}/src/commands/react-native/__tests__/fixtures/basic-ios/main.jsbundle`,
       concurrency: 20,
-      jsFilesURLs: [`${process.cwd()}/src/commands/react-native/__tests__/fixtures/basic-ios/main.jsbundle`],
+      bundleName: 'main.jsbundle',
       platform: 'android',
       projectPath: '',
       service: 'com.company.app',
@@ -150,7 +147,7 @@ describe('execute', () => {
       build: '1023040',
       bundlePath: './src/commands/react-native/__tests__/fixtures/basic-ios/main.jsbundle',
       concurrency: 20,
-      jsFilesURLs: ['./src/commands/react-native/__tests__/fixtures/basic-ios/main.jsbundle'],
+      bundleName: 'main.jsbundle',
       platform: 'android',
       projectPath: '',
       service: 'com.company.app',
@@ -211,7 +208,7 @@ interface ExpectedOutput {
   build: string
   bundlePath: string
   concurrency: number
-  jsFilesURLs: string[]
+  bundleName: string
   platform: string
   projectPath: string
   service: string
@@ -229,10 +226,9 @@ const checkConsoleOutput = (output: string[], expected: ExpectedOutput) => {
   expect(output[3]).toContain(`version: ${expected.version} build: ${expected.build} service: ${expected.service}`)
   const uploadedFileLines = output.slice(4, -4)
   expect(uploadedFileLines.length).toEqual(expected.sourcemapsPaths.length) // Safety check
-  expect(uploadedFileLines.length).toEqual(expected.jsFilesURLs.length) // Safety check
   uploadedFileLines.forEach((_, index) => {
     expect(uploadedFileLines[index]).toContain(
-      `[DRYRUN] Uploading sourcemap ${expected.sourcemapsPaths} for JS file available at ${expected.jsFilesURLs}`
+      `[DRYRUN] Uploading sourcemap ${expected.sourcemapsPaths} for JS file ${expected.bundleName}`
     )
   })
   if (uploadedFileLines.length > 1) {
