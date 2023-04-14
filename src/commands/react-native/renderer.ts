@@ -118,7 +118,7 @@ export const renderSuccessfulCommand = (statuses: UploadStatus[], duration: numb
 }
 
 export const renderCommandInfo = (
-  bundlePath: string,
+  bundlePath: string | undefined,
   sourcemapPath: string,
   platform: string,
   releaseVersion: string,
@@ -126,7 +126,8 @@ export const renderCommandInfo = (
   poolLimit: number,
   dryRun: boolean,
   projectPath: string,
-  buildVersion: string
+  buildVersion: string,
+  bundleName: string
 ) => {
   let fullStr = ''
   if (dryRun) {
@@ -134,10 +135,15 @@ export const renderCommandInfo = (
   }
   const startStr = chalk.green('Starting upload. \n')
   fullStr += startStr
-  const basePathStr = chalk.green(
-    `Upload of ${sourcemapPath} for bundle ${bundlePath} on platform ${platform} with project path ${projectPath}\n`
+  if (!bundlePath) {
+    fullStr += chalk.red(
+      `${ICONS.WARNING} --bundle option was not provided. A default bundle name will be used. Please update @datadog/mobile-react-native or pass a --bundle option.\n`
+    )
+  }
+  fullStr += chalk.green(
+    `Upload of ${sourcemapPath} for bundle ${bundleName} on platform ${platform} with project path ${projectPath}\n`
   )
-  fullStr += basePathStr
+
   const serviceVersionProjectPathStr = chalk.green(
     `version: ${releaseVersion} build: ${buildVersion} service: ${service}\n`
   )

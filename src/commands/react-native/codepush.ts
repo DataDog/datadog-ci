@@ -52,12 +52,6 @@ export class CodepushCommand extends Command {
       return 1
     }
 
-    if (!this.bundle) {
-      this.context.stderr.write('Missing bundle path\n')
-
-      return 1
-    }
-
     if (!this.platform) {
       this.context.stderr.write('Missing platform\n')
 
@@ -110,11 +104,12 @@ export class CodepushCommand extends Command {
       this.buildVersion,
       '--service',
       this.service,
-      '--bundle',
-      this.bundle,
       '--sourcemap',
       this.sourcemap,
     ]
+    if (this.bundle) {
+      uploadCommand.push('--bundle', this.bundle)
+    }
     if (this.configPath) {
       uploadCommand.push('--config')
       uploadCommand.push(this.configPath)

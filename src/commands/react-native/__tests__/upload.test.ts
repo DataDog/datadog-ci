@@ -61,7 +61,10 @@ describe('upload', () => {
 })
 
 describe('execute', () => {
-  const runCLI = async (bundle: string, options?: {configPath?: string; env?: Record<string, string>}) => {
+  const runCLI = async (
+    bundle: string,
+    options?: {configPath?: string; uploadBundle?: boolean; env?: Record<string, string>}
+  ) => {
     const cli = makeCli()
     const context = createMockContext() as any
     process.env = {DATADOG_API_KEY: 'PLACEHOLDER'}
@@ -74,14 +77,15 @@ describe('execute', () => {
       '1023040',
       '--service',
       'com.company.app',
-      '--bundle',
-      bundle,
       '--sourcemap',
       `${bundle}.map`,
       '--platform',
       'android',
       '--dry-run',
     ]
+    if (options?.uploadBundle !== false) {
+      command.push('--bundle', bundle)
+    }
     if (options?.configPath) {
       command.push('--config', options.configPath)
       delete process.env.DATADOG_API_KEY
@@ -103,7 +107,7 @@ describe('execute', () => {
     expect(code).toBe(0)
     checkConsoleOutput(output, {
       build: '1023040',
-      bundlePath: './src/commands/react-native/__tests__/fixtures/basic-ios/main.jsbundle',
+      bundlePath: 'main.jsbundle',
       concurrency: 20,
       bundleName: 'main.jsbundle',
       platform: 'android',
@@ -123,7 +127,7 @@ describe('execute', () => {
     expect(code).toBe(0)
     checkConsoleOutput(output, {
       build: '1023040',
-      bundlePath: `${process.cwd()}/src/commands/react-native/__tests__/fixtures/basic-ios/main.jsbundle`,
+      bundlePath: `main.jsbundle`,
       concurrency: 20,
       bundleName: 'main.jsbundle',
       platform: 'android',
@@ -145,7 +149,7 @@ describe('execute', () => {
     expect(code).toBe(0)
     checkConsoleOutput(output, {
       build: '1023040',
-      bundlePath: './src/commands/react-native/__tests__/fixtures/basic-ios/main.jsbundle',
+      bundlePath: 'main.jsbundle',
       concurrency: 20,
       bundleName: 'main.jsbundle',
       platform: 'android',
@@ -181,6 +185,19 @@ describe('execute', () => {
     })
     expect(output).toContain('API keys were specified both in a configuration file and in the environment.')
     expect(output).toContain('The environment API key ending in _key will be used.')
+  })
+
+  test('prints warning when no bundle file is specified', async () => {
+    const {context, code} = await runCLI('./src/commands/react-native/__tests__/fixtures/basic-ios/main.jsbundle', {
+      configPath: './src/commands/react-native/__tests__/fixtures/config/config-with-api-key.json',
+      uploadBundle: false,
+    })
+
+    const output = context.stdout.toString().split(os.EOL)
+    expect(code).toBe(0)
+    expect(output[2]).toContain(
+      '⚠️ --bundle option was not provided. A default bundle name will be used. Please update @datadog/mobile-react-native or pass a --bundle option.'
+    )
   })
 })
 

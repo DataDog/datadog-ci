@@ -7,8 +7,8 @@ export class RNSourcemap {
   public gitData?: GitData
   public sourcemapPath: string
 
-  constructor(bundlePath: string, sourcemapPath: string, bundleName?: string) {
-    this.bundleName = this.getBundleName(bundlePath, bundleName)
+  constructor(bundleName: string, sourcemapPath: string) {
+    this.bundleName = bundleName
     this.sourcemapPath = sourcemapPath
   }
 
@@ -51,17 +51,6 @@ export class RNSourcemap {
 
     fs.writeFileSync(newSourcemapFilePath, JSON.stringify(sourcemap), 'utf8')
     this.sourcemapPath = newSourcemapFilePath
-  }
-
-  private getBundleName(bundlePath: string, bundleName?: string): string {
-    if (bundleName) {
-      return bundleName
-    }
-
-    // We return the name of the file on the disk if no bundleName is returned
-    const splitPath = bundlePath.split('/')
-
-    return splitPath[splitPath.length - 1]
   }
 
   private getMetadataPayload(

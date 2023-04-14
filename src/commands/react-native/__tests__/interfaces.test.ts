@@ -1,46 +1,16 @@
 import fs from 'fs'
 
-import {MultipartPayload} from '../../../helpers/upload'
-
 import {RNSourcemap} from '../interfaces'
 
 describe('interfaces', () => {
   beforeEach(() => {
     jest.restoreAllMocks()
   })
-  describe('getBundleName', () => {
-    beforeEach(() => {
-      jest.spyOn(fs, 'createReadStream').mockImplementation(() => undefined as any)
-    })
-    test('should return the bundle name when specified', () => {
-      const sourcemap = new RNSourcemap('./custom.bundle', './custom.bundle.map', 'index.android.bundle')
-      expect(
-        getMetadataFromPayload(sourcemap.asMultipartPayload('1.0', 'com.myapp', '1.2.3', '', 'android', '102030'))
-          .bundle_name
-      ).toBe('index.android.bundle')
-    })
-
-    test('should extract the bundle name from the file when not specified', () => {
-      const sourcemap = new RNSourcemap('./index.android.bundle', './index.android.bundle.map')
-      expect(
-        getMetadataFromPayload(sourcemap.asMultipartPayload('1.0', 'com.myapp', '1.2.3', '', 'android', '102030'))
-          .bundle_name
-      ).toBe('index.android.bundle')
-    })
-
-    test('should extract the bundle name from the file when not specified and no slash in path', () => {
-      const sourcemap = new RNSourcemap('index.android.bundle', 'index.android.bundle.map')
-      expect(
-        getMetadataFromPayload(sourcemap.asMultipartPayload('1.0', 'com.myapp', '1.2.3', '', 'android', '102030'))
-          .bundle_name
-      ).toBe('index.android.bundle')
-    })
-  })
 
   describe('removeSourcesContentFromSourceMap', () => {
     test('should remove the sources content part of sourcemaps', (done) => {
       const sourcemap = new RNSourcemap(
-        './src/commands/react-native/__tests__/fixtures/basic-ios/main.jsbundle',
+        'main.jsbundle',
         './src/commands/react-native/__tests__/fixtures/with-sources-content/main.jsbundle.map'
       )
       sourcemap.removeSourcesContentFromSourceMap()
@@ -59,6 +29,3 @@ describe('interfaces', () => {
     })
   })
 })
-
-const getMetadataFromPayload = (payload: MultipartPayload): {[k: string]: any} =>
-  JSON.parse(payload.content.get('event')!.value.toString())
