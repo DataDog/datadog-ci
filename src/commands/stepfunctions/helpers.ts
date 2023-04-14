@@ -15,8 +15,9 @@ export const buildLogGroupName = (stepFunctionName: string, env: string | undefi
   return `/aws/vendedlogs/states/${stepFunctionName}-Logs${env !== undefined ? '-' + env : ''}`
 }
 
+export const DD_CI_IDENTIFING_STRING = 'DdCiLogGroupSubscription'
 export const buildSubscriptionFilterName = (stepFunctionName: string): string => {
-  return `${stepFunctionName}LogGroupSubscription`
+  return `${stepFunctionName}-${DD_CI_IDENTIFING_STRING}`
 }
 
 export const isValidArn = (str: string): boolean => {

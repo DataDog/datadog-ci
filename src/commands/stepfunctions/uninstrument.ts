@@ -4,42 +4,34 @@ import {Command} from 'clipanion'
 import {deleteSubscriptionFilter, describeStateMachine, describeSubscriptionFilters, untagResource} from './aws'
 import {displayChanges, applyChanges} from './changes'
 import {TAG_VERSION_NAME} from './constants'
-import {getStepFunctionLogGroupArn, isValidArn, parseArn} from './helpers'
+import {DD_CI_IDENTIFING_STRING, getStepFunctionLogGroupArn, isValidArn, parseArn} from './helpers'
 import {RequestsByStepFunction} from './interfaces'
 
 export class UninstrumentStepFunctionsCommand extends Command {
   public static usage = Command.Usage({
-    description: 'Unubscribe Step Function Log Groups from a Datadog Forwarder',
-    details: '--step-function expects a Step Function ARN\n--forwarder expects a Lambda ARN',
+    description: 'Remove Step Functions log groups subscription filter created by Datadog-CI',
+    details: '--stepfunction expects a Step Function ARN',
     examples: [
       [
-        'View and apply changes to unsubscribe a Step Function Log Group from a Datadog Forwarder',
-        'datadog-ci step-functions uninstrument --step-function arn:aws:states:us-east-1:000000000000:stateMachine:ExampleStepFunction --forwarder arn:aws:lambda:us-east-1:000000000000:function:ExampleDatadogForwarder',
+        'View and apply changes to remove Step Functions log groups subscription filters created by Datadog-CI',
+        'datadog-ci stepfunctions uninstrument --step-function arn:aws:states:us-east-1:000000000000:stateMachine:ExampleStepFunction',
       ],
       [
-        'View changes to unsubscribe a Step Function Log Group from a Datadog Forwarder',
-        'datadog-ci step-functions uninstrument --step-function arn:aws:states:us-east-1:000000000000:stateMachine:ExampleStepFunction --forwarder arn:aws:lambda:us-east-1:000000000000:function:ExampleDatadogForwarder --dry-run',
+        'View changes to remove Step Functions log groups subscription filters created by Datadog-CI',
+        'datadog-ci stepfunctions uninstrument --step-function arn:aws:states:us-east-1:000000000000:stateMachine:ExampleStepFunction --dry-run',
       ],
       [
-        'View and apply changes to unsubscribe multiple Step Function Log Groups from a Datadog Forwarder',
-        'datadog-ci step-functions uninstrument --step-function arn:aws:states:us-east-1:000000000000:stateMachine:ExampleStepFunction1 --step-function arn:aws:states:us-east-1:000000000000:stateMachine:ExampleStepFunction2 --forwarder arn:aws:lambda:us-east-1:000000000000:function:ExampleDatadogForwarder',
+        'View and apply changes to remove Step Functions log groups subscription filters created by Datadog-CI',
+        'datadog-ci stepfunctions uninstrument --step-function arn:aws:states:us-east-1:000000000000:stateMachine:ExampleStepFunction1 --step-function arn:aws:states:us-east-1:000000000000:stateMachine:ExampleStepFunction2',
       ],
     ],
   })
 
   private dryRun = false
-  private forwarderArn!: string
   private stepFunctionArns: string[] = []
 
   public async execute() {
     let validationError = false
-    if (typeof this.forwarderArn !== 'string') {
-      this.context.stdout.write('[Error] --forwarder is required\n')
-      validationError = true
-    } else if (!isValidArn(this.forwarderArn)) {
-      this.context.stdout.write(`[Error] invalid arn format for --forwarder ${this.forwarderArn}\n`)
-      validationError = true
-    }
 
     // remove duplicate step function arns
     const stepFunctionArns = [...new Set(this.stepFunctionArns)]
@@ -85,7 +77,6 @@ export class UninstrumentStepFunctionsCommand extends Command {
         return 1
       }
 
-      // the log group that should be unsubscribed from the forwarder is parsed from the step function logging config
       const logGroupArn = getStepFunctionLogGroupArn(stepFunction)
       if (logGroupArn === undefined) {
         this.context.stdout.write('\n[Error] Unable to get Log Group arn from Step Function logging configuration\n')
@@ -94,7 +85,7 @@ export class UninstrumentStepFunctionsCommand extends Command {
       }
       const logGroupName = parseArn(logGroupArn).resourceName
 
-      // delete subscription filters that are subscribed to the specified forwarder
+      // delete subscription filters that are created by Datadog-CI
       let describeSubscriptionFiltersResponse: CloudWatchLogs.DescribeSubscriptionFiltersResponse | undefined
       try {
         describeSubscriptionFiltersResponse = await describeSubscriptionFilters(cloudWatchLogsClient, logGroupName)
@@ -111,10 +102,9 @@ export class UninstrumentStepFunctionsCommand extends Command {
 
         return 1
       }
-
       const subscriptionFilters =
-        describeSubscriptionFiltersResponse.subscriptionFilters?.filter(
-          (subscriptionFilter) => subscriptionFilter.destinationArn === this.forwarderArn
+        describeSubscriptionFiltersResponse.subscriptionFilters?.filter((subscriptionFilter) =>
+          subscriptionFilter.filterName?.includes(DD_CI_IDENTIFING_STRING)
         ) ?? []
 
       for (const subscriptionFilter of subscriptionFilters) {
@@ -154,8 +144,7 @@ export class UninstrumentStepFunctionsCommand extends Command {
   }
 }
 
-UninstrumentStepFunctionsCommand.addPath('step-functions', 'uninstrument')
+UninstrumentStepFunctionsCommand.addPath('stepfunctions', 'uninstrument')
 
 UninstrumentStepFunctionsCommand.addOption('dryRun', Command.Boolean('-d,--dry-run'))
-UninstrumentStepFunctionsCommand.addOption('forwarderArn', Command.String('--forwarder'))
 UninstrumentStepFunctionsCommand.addOption('stepFunctionArns', Command.Array('-s,--step-function'))

@@ -7,7 +7,7 @@ import {contextFixture, testContext} from './fixtures/cli'
 
 jest.mock('../../../../package.json', () => ({version: '2.0.0'}))
 
-describe('step-functions instrument', () => {
+describe('stepfunctions instrument', () => {
   let cli: Cli
   let aws: any
   let changes: any
@@ -35,14 +35,14 @@ describe('step-functions instrument', () => {
 
   describe('paramater validation', () => {
     test('errors if forwarder arn is not set', async () => {
-      const exitCode = await cli.run(['step-functions', 'instrument'], context)
+      const exitCode = await cli.run(['stepfunctions', 'instrument'], context)
 
       expect(exitCode).toBe(1)
       expect(context.toString()).toMatch('[Error] --forwarder is required')
     })
 
     test('errors if forwarder arn is invalid', async () => {
-      const exitCode = await cli.run(['step-functions', 'instrument', '--forwarder', 'arn:'], context)
+      const exitCode = await cli.run(['stepfunctions', 'instrument', '--forwarder', 'arn:'], context)
 
       expect(exitCode).toBe(1)
       expect(context.toString()).toMatch('[Error] invalid arn format for --forwarder arn:')
@@ -51,7 +51,7 @@ describe('step-functions instrument', () => {
     test('removes duplicate step function arns', async () => {
       const exitCode = await cli.run(
         [
-          'step-functions',
+          'stepfunctions',
           'instrument',
           '--forwarder',
           'arn:aws:lambda:us-east-1:000000000000:function:DatadogForwarder',
@@ -68,14 +68,14 @@ describe('step-functions instrument', () => {
     })
 
     test('errors if no step function arn', async () => {
-      const exitCode = await cli.run(['step-functions', 'instrument'], context)
+      const exitCode = await cli.run(['stepfunctions', 'instrument'], context)
 
       expect(exitCode).toBe(1)
       expect(context.toString()).toMatch('[Error] must specify at least one --step-function')
     })
 
     test('errors if any step function arn is invalid', async () => {
-      const exitCode = await cli.run(['step-functions', 'instrument', '--step-function', 'arn:'], context)
+      const exitCode = await cli.run(['stepfunctions', 'instrument', '--step-function', 'arn:'], context)
 
       expect(exitCode).toBe(1)
       expect(context.toString()).toMatch('[Error] invalid arn format for --step-function')
@@ -86,7 +86,7 @@ describe('step-functions instrument', () => {
 
       const exitCode = await cli.run(
         [
-          'step-functions',
+          'stepfunctions',
           'instrument',
           '--forwarder',
           'arn:aws:lambda:us-east-1:000000000000:function:DatadogForwarder',
@@ -105,7 +105,7 @@ describe('step-functions instrument', () => {
     test('sets dd_sls_ci tag if not already set', async () => {
       const exitCode = await cli.run(
         [
-          'step-functions',
+          'stepfunctions',
           'instrument',
           '--forwarder',
           'arn:aws:lambda:us-east-1:000000000000:function:DatadogForwarder',
@@ -127,7 +127,7 @@ describe('step-functions instrument', () => {
 
       const exitCode = await cli.run(
         [
-          'step-functions',
+          'stepfunctions',
           'instrument',
           '--forwarder',
           'arn:aws:lambda:us-east-1:000000000000:function:DatadogForwarder',
@@ -148,7 +148,7 @@ describe('step-functions instrument', () => {
 
       const exitCode = await cli.run(
         [
-          'step-functions',
+          'stepfunctions',
           'instrument',
           '--forwarder',
           'arn:aws:lambda:us-east-1:000000000000:function:DatadogForwarder',
@@ -170,7 +170,7 @@ describe('step-functions instrument', () => {
 
       const exitCode = await cli.run(
         [
-          'step-functions',
+          'stepfunctions',
           'instrument',
           '--forwarder',
           'arn:aws:lambda:us-east-1:000000000000:function:DatadogForwarder',
@@ -200,7 +200,7 @@ describe('step-functions instrument', () => {
 
       const exitCode = await cli.run(
         [
-          'step-functions',
+          'stepfunctions',
           'instrument',
           '--forwarder',
           'arn:aws:lambda:us-east-1:000000000000:function:DatadogForwarder',
@@ -219,7 +219,7 @@ describe('step-functions instrument', () => {
     test('subscribes log group in step function logging config to forwarder', async () => {
       const exitCode = await cli.run(
         [
-          'step-functions',
+          'stepfunctions',
           'instrument',
           '--forwarder',
           'arn:aws:lambda:us-east-1:000000000000:function:DatadogForwarder',
@@ -242,7 +242,7 @@ describe('step-functions instrument', () => {
 
       const exitCode = await cli.run(
         [
-          'step-functions',
+          'stepfunctions',
           'instrument',
           '--forwarder',
           'arn:aws:lambda:us-east-1:000000000000:function:DatadogForwarder',
@@ -265,7 +265,7 @@ describe('step-functions instrument', () => {
 
       const exitCode = await cli.run(
         [
-          'step-functions',
+          'stepfunctions',
           'instrument',
           '--forwarder',
           'arn:aws:lambda:us-east-1:000000000000:function:DatadogForwarder',

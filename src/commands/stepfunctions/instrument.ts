@@ -7,7 +7,9 @@ import {
   describeStateMachine,
   listTagsForResource,
   putSubscriptionFilter,
-  tagResource, attachPolicyToStateMachineIamRole, createLogsAccessPolicy,
+  tagResource,
+  attachPolicyToStateMachineIamRole,
+  createLogsAccessPolicy,
 } from './aws'
 import {displayChanges, applyChanges} from './changes'
 import {TAG_VERSION_NAME} from './constants'
@@ -30,15 +32,15 @@ export class InstrumentStepFunctionsCommand extends Command {
     examples: [
       [
         'View and apply changes to subscribe a Step Function Log Group to a Datadog Forwarder',
-        'datadog-ci step-functions instrument --step-function arn:aws:states:us-east-1:000000000000:stateMachine:ExampleStepFunction --forwarder arn:aws:lambda:us-east-1:000000000000:function:ExampleDatadogForwarder --env dev --service example-service',
+        'datadog-ci stepfunctions instrument --step-function arn:aws:states:us-east-1:000000000000:stateMachine:ExampleStepFunction --forwarder arn:aws:lambda:us-east-1:000000000000:function:ExampleDatadogForwarder --env dev --service example-service',
       ],
       [
         'View changes to subscribe a Step Function Log Group to a Datadog Forwarder',
-        'datadog-ci step-functions instrument --step-function arn:aws:states:us-east-1:000000000000:stateMachine:ExampleStepFunction --forwarder arn:aws:lambda:us-east-1:000000000000:function:ExampleDatadogForwarder --env dev --service example-service --dry-run',
+        'datadog-ci stepfunctions instrument --step-function arn:aws:states:us-east-1:000000000000:stateMachine:ExampleStepFunction --forwarder arn:aws:lambda:us-east-1:000000000000:function:ExampleDatadogForwarder --env dev --service example-service --dry-run',
       ],
       [
         'View and apply changes to subscribe multiple Step Function Log Groups to a Datadog Forwarder',
-        'datadog-ci step-functions instrument --step-function arn:aws:states:us-east-1:000000000000:stateMachine:ExampleStepFunction1 --step-function arn:aws:states:us-east-1:000000000000:stateMachine:ExampleStepFunction2 --forwarder arn:aws:lambda:us-east-1:000000000000:function:ExampleDatadogForwarder --env dev --service example-service',
+        'datadog-ci stepfunctions instrument --step-function arn:aws:states:us-east-1:000000000000:stateMachine:ExampleStepFunction1 --step-function arn:aws:states:us-east-1:000000000000:stateMachine:ExampleStepFunction2 --forwarder arn:aws:lambda:us-east-1:000000000000:function:ExampleDatadogForwarder --env dev --service example-service',
       ],
     ],
   })
@@ -247,7 +249,7 @@ export class InstrumentStepFunctionsCommand extends Command {
   }
 }
 
-InstrumentStepFunctionsCommand.addPath('step-functions', 'instrument')
+InstrumentStepFunctionsCommand.addPath('stepfunctions', 'instrument')
 
 InstrumentStepFunctionsCommand.addOption('dryRun', Command.Boolean('-d,--dry-run'))
 InstrumentStepFunctionsCommand.addOption('environment', Command.String('-e,--env'))

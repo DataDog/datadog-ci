@@ -7,7 +7,7 @@ import {contextFixture, testContext} from './fixtures/cli'
 
 jest.mock('../../../../package.json', () => ({version: '2.0.0'}))
 
-describe('step-functions uninstrument', () => {
+describe('stepfunctions uninstrument', () => {
   let cli: Cli
   let aws: any
   let changes: any
@@ -36,27 +36,11 @@ describe('step-functions uninstrument', () => {
   })
 
   describe('paramater validation', () => {
-    test('errors if forwarder arn is not set', async () => {
-      const exitCode = await cli.run(['step-functions', 'uninstrument'], context)
-
-      expect(exitCode).toBe(1)
-      expect(context.toString()).toMatch('[Error] --forwarder is required')
-    })
-
-    test('errors if forwarder arn is invalid', async () => {
-      const exitCode = await cli.run(['step-functions', 'uninstrument', '--forwarder', 'arn:'], context)
-
-      expect(exitCode).toBe(1)
-      expect(context.toString()).toMatch('[Error] invalid arn format for --forwarder arn:')
-    })
-
     test('removes duplicate step function arns', async () => {
       const exitCode = await cli.run(
         [
-          'step-functions',
+          'stepfunctions',
           'uninstrument',
-          '--forwarder',
-          'arn:aws:lambda:us-east-1:000000000000:function:DatadogForwarder',
           '--step-function',
           'arn:aws:states:us-east-1:000000000000:stateMachine:ExampleStepFunction',
           '--step-function',
@@ -70,14 +54,14 @@ describe('step-functions uninstrument', () => {
     })
 
     test('errors if no step function arn', async () => {
-      const exitCode = await cli.run(['step-functions', 'uninstrument'], context)
+      const exitCode = await cli.run(['stepfunctions', 'uninstrument'], context)
 
       expect(exitCode).toBe(1)
       expect(context.toString()).toMatch('[Error] must specify at least one --step-function')
     })
 
     test('errors if any step function arn is invalid', async () => {
-      const exitCode = await cli.run(['step-functions', 'uninstrument', '--step-function', 'arn:'], context)
+      const exitCode = await cli.run(['stepfunctions', 'uninstrument', '--step-function', 'arn:'], context)
 
       expect(exitCode).toBe(1)
       expect(context.toString()).toMatch('[Error] invalid arn format for --step-function')
@@ -95,10 +79,8 @@ describe('step-functions uninstrument', () => {
 
       const exitCode = await cli.run(
         [
-          'step-functions',
+          'stepfunctions',
           'uninstrument',
-          '--forwarder',
-          'arn:aws:lambda:us-east-1:000000000000:function:DatadogForwarder',
           '--step-function',
           'arn:aws:states:us-east-1:000000000000:stateMachine:ExampleStepFunction',
         ],
@@ -114,10 +96,8 @@ describe('step-functions uninstrument', () => {
     test('unsubscribes log group in step function logging config from forwarder and removes dd_sls_ci tag', async () => {
       const exitCode = await cli.run(
         [
-          'step-functions',
+          'stepfunctions',
           'uninstrument',
-          '--forwarder',
-          'arn:aws:lambda:us-east-1:000000000000:function:DatadogForwarder',
           '--step-function',
           'arn:aws:states:us-east-1:000000000000:stateMachine:ExampleStepFunction',
         ],
@@ -137,10 +117,8 @@ describe('step-functions uninstrument', () => {
 
       const exitCode = await cli.run(
         [
-          'step-functions',
+          'stepfunctions',
           'uninstrument',
-          '--forwarder',
-          'arn:aws:lambda:us-east-1:000000000000:function:DatadogForwarder',
           '--step-function',
           'arn:aws:states:us-east-1:000000000000:stateMachine:ExampleStepFunction',
         ],
@@ -160,10 +138,8 @@ describe('step-functions uninstrument', () => {
 
       const exitCode = await cli.run(
         [
-          'step-functions',
+          'stepfunctions',
           'uninstrument',
-          '--forwarder',
-          'arn:aws:lambda:us-east-1:000000000000:function:DatadogForwarder',
           '--step-function',
           'arn:aws:states:us-east-1:000000000000:stateMachine:ExampleStepFunction',
         ],

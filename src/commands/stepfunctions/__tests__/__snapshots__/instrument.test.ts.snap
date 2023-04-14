@@ -1,6 +1,6 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`step-functions instrument step function logging disabled creates step function log group, subscribes it to forwarder, and adds it to step function logging config 1`] = `
+exports[`stepfunctions instrument step function logging disabled creates step function log group, subscribes it to forwarder, and adds it to step function logging config 1`] = `
 "
 Will apply the following changes:
 
@@ -50,7 +50,7 @@ updateStateMachine ->
 "
 `;
 
-exports[`step-functions instrument step function logging enabled subscribes log group in step function logging config to forwarder 1`] = `
+exports[`stepfunctions instrument step function logging enabled subscribes log group in step function logging config to forwarder 1`] = `
 "
 Will apply the following changes:
 
@@ -75,7 +75,7 @@ putSubscriptionFilter ->
 "
 `;
 
-exports[`step-functions instrument step function tags sets dd_sls_ci tag if changed 1`] = `
+exports[`stepfunctions instrument step function tags sets dd_sls_ci tag if changed 1`] = `
 "
 Will apply the following changes:
 
@@ -100,7 +100,7 @@ putSubscriptionFilter ->
 "
 `;
 
-exports[`step-functions instrument step function tags sets dd_sls_ci tag if not already set 1`] = `
+exports[`stepfunctions instrument step function tags sets dd_sls_ci tag if not already set 1`] = `
 "
 Will apply the following changes:
 
@@ -125,7 +125,7 @@ putSubscriptionFilter ->
 "
 `;
 
-exports[`step-functions instrument step function tags sets env tag if not already set 1`] = `
+exports[`stepfunctions instrument step function tags sets env tag if not already set 1`] = `
 "
 Will apply the following changes:
 
@@ -150,7 +150,7 @@ putSubscriptionFilter ->
 "
 `;
 
-exports[`step-functions instrument step function tags sets service tag if not already set 1`] = `
+exports[`stepfunctions instrument step function tags sets service tag if not already set 1`] = `
 "
 Will apply the following changes:
 
