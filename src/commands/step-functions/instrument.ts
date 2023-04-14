@@ -1,4 +1,4 @@
-import {CloudWatchLogs, StepFunctions} from 'aws-sdk'
+import {CloudWatchLogs, IAM, StepFunctions} from 'aws-sdk'
 import {Command} from 'clipanion'
 
 import {
@@ -7,7 +7,7 @@ import {
   describeStateMachine,
   listTagsForResource,
   putSubscriptionFilter,
-  tagResource,
+  tagResource, attachPolicyToStateMachineIamRole, createLogsAccessPolicy,
 } from './aws'
 import {displayChanges, applyChanges} from './changes'
 import {TAG_VERSION_NAME} from './constants'
@@ -87,6 +87,7 @@ export class InstrumentStepFunctionsCommand extends Command {
       const region = arnObject.region
       const cloudWatchLogsClient = new CloudWatchLogs({region})
       const stepFunctionsClient = new StepFunctions({region})
+      const iamClient = new IAM({region})
 
       let stepFunction
       try {
@@ -183,7 +184,19 @@ export class InstrumentStepFunctionsCommand extends Command {
           `${logGroupName}:*`
         )
 
-        // IAM policy on step function role should already include log permissions
+        // Create Logs Access policy
+        const createLogsAccessPolicyRequest = createLogsAccessPolicy(iamClient, stepFunction)
+        requestsByStepFunction[stepFunctionArn].push(createLogsAccessPolicyRequest)
+
+        // Attach policy to state machine IAM role
+        const attachPolicyToStateMachineIamRoleRequest = attachPolicyToStateMachineIamRole(
+          iamClient,
+          stepFunction,
+          arnObject.accountId
+        )
+        requestsByStepFunction[stepFunctionArn].push(attachPolicyToStateMachineIamRoleRequest)
+
+        // IAM policy on step function role should include log permissions now
         const enableStepFunctionLogsRequest = enableStepFunctionLogs(stepFunctionsClient, stepFunction, logGroupArn)
         requestsByStepFunction[stepFunctionArn].push(enableStepFunctionLogsRequest)
       } else {
