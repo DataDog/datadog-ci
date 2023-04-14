@@ -7,7 +7,7 @@ Will apply the following changes:
 Changes for arn:aws:states:us-east-1:000000000000:stateMachine:ExampleStepFunction
 deleteSubscriptionFilter ->
 {
-  \\"filterName\\": \\"ExampleStepFunctionLogGroupSubscription\\",
+  \\"filterName\\": \\"ExampleStepFunction-DdCiLogGroupSubscription\\",
   \\"logGroupName\\": \\"/aws/vendedlogs/states/ExampleStepFunction-Logs-test\\"
 }
 untagResource ->

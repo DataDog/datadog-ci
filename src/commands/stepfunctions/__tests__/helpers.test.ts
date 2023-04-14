@@ -48,7 +48,7 @@ describe('helpers', () => {
       const stepFunction = stepFunctionFixture()
       const subscriptionFilterName = buildSubscriptionFilterName(stepFunction.name)
 
-      expect(subscriptionFilterName).toBe('ExampleStepFunctionLogGroupSubscription')
+      expect(subscriptionFilterName).toBe('ExampleStepFunction-DdCiLogGroupSubscription')
     })
   })
 

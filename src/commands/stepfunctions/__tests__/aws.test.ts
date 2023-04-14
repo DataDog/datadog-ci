@@ -57,7 +57,7 @@ describe('aws', () => {
           function: expect.objectContaining({
             operation: 'deleteSubscriptionFilter',
             params: {
-              filterName: 'ExampleStepFunctionLogGroupSubscription',
+              filterName: 'ExampleStepFunction-DdCiLogGroupSubscription',
               logGroupName: '/aws/vendedlogs/states/ExampleStepFunction-Logs-test',
             },
           }),
@@ -89,7 +89,7 @@ describe('aws', () => {
         expect(describeSubscriptionFiltersResponse.subscriptionFilters).toMatchObject([
           {
             destinationArn: 'arn:aws:lambda:us-east-1:000000000000:function:DatadogForwarder',
-            filterName: 'ExampleStepFunctionLogGroupSubscription',
+            filterName: 'ExampleStepFunction-DdCiLogGroupSubscription',
             filterPattern: '',
             logGroupName: '/aws/vendedlogs/states/ExampleStepFunction-Logs-test-Mock',
           },
@@ -116,7 +116,7 @@ describe('aws', () => {
             operation: 'putSubscriptionFilter',
             params: {
               destinationArn: 'arn:aws:lambda:us-east-1:000000000000:function:DatadogForwarder',
-              filterName: 'ExampleStepFunctionLogGroupSubscription',
+              filterName: 'ExampleStepFunction-DdCiLogGroupSubscription',
               filterPattern: '',
               logGroupName: '/aws/vendedlogs/states/ExampleStepFunction-Logs-test',
             },
