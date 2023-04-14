@@ -26,8 +26,8 @@ import {
   renderSuccessfulCommand,
   renderUpload,
 } from './renderer'
-import {InvalidPayload, validatePayload} from './validation'
 import {getBundleName} from './utils'
+import {InvalidPayload, validatePayload} from './validation'
 
 export class UploadCommand extends Command {
   public static usage = Command.Usage({

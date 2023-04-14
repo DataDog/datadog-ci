@@ -1,4 +1,5 @@
 import fs from 'fs'
+
 import {getBundleName} from '../utils'
 
 describe('react-native utils', () => {

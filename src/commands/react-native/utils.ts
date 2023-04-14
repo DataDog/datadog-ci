@@ -1,4 +1,5 @@
 import {existsSync} from 'fs'
+
 import {RNPlatform} from './interfaces'
 
 export const getReactNativeVersion = (packageJsonPath: string): undefined | string => {
