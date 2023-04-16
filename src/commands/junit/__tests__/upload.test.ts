@@ -264,12 +264,12 @@ describe('upload', () => {
 })
 
 describe('execute', () => {
-  const runCLI = async (paths: string[]) => {
+  const runCLI = async (extraArgs: string[]) => {
     const cli = makeCli()
     const context = createMockContext() as any
     process.env = {DATADOG_API_KEY: 'PLACEHOLDER'}
     const code = await cli.run(
-      ['junit', 'upload', '--service', 'test-service', '--dry-run', '--logs', ...paths],
+      ['junit', 'upload', '--service', 'test-service', '--dry-run', '--logs', ...extraArgs],
       context
     )
 
@@ -316,6 +316,20 @@ describe('execute', () => {
     expect(output[1]).toContain('Starting upload with concurrency 20.')
     expect(output[2]).toContain(`Will upload jUnit XML file ${path}`)
     expect(output[3]).toContain('service: test-service')
+  })
+
+  test('with git metadata', async () => {
+    const {context, code} = await runCLI([process.cwd() + '/src/commands/junit/__tests__/fixtures/single_file.xml'])
+    const output = context.stdout.toString().split(os.EOL)
+    expect(code).toBe(0)
+    expect(output[5]).toContain('Syncing git metadata')
+  })
+
+  test('without git metadata', async () => {
+    const {context, code} = await runCLI(['--skip-git-metadata-upload', process.cwd() + '/src/commands/junit/__tests__/fixtures/single_file.xml'])
+    const output = context.stdout.toString().split(os.EOL)
+    expect(code).toBe(0)
+    expect(output[5]).not.toContain('Syncing git metadata')
   })
 })
 
