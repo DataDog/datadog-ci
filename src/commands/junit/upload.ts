@@ -20,6 +20,7 @@ import {buildPath, getRequestBuilder, timedExecAsync} from '../../helpers/utils'
 
 import {newSimpleGit} from '../git-metadata/git'
 import {uploadToGitDB} from '../git-metadata/gitdb'
+import {isGitRepo} from '../git-metadata/library'
 
 import {apiConstructor, apiUrl, intakeUrl} from './api'
 import {APIHelper, Payload} from './interfaces'
@@ -27,9 +28,12 @@ import {
   renderCommandInfo,
   renderDryRunUpload,
   renderFailedUpload,
+  renderFailedGitDBSync,
   renderInvalidFile,
   renderRetriedUpload,
   renderSuccessfulCommand,
+  renderSuccessfulGitDBSync,
+  renderSuccessfulUpload,
 } from './renderer'
 
 const errorCodesStopUpload = [400, 403]
@@ -155,21 +159,25 @@ export class UploadJUnitXMLCommand extends Command {
 
     await asyncPool(this.maxConcurrency, payloads, upload)
 
+    const totalTimeSeconds = (Date.now() - initialTime) / 1000
+    this.context.stdout.write(renderSuccessfulUpload(this.dryRun, payloads.length, totalTimeSeconds))
+
     if (!this.skipGitMetadataUpload) {
-      const requestBuilder = getRequestBuilder({baseUrl: apiUrl, apiKey: this.config.apiKey!})
-      try {
-        this.logger.info('Syncing GitDB...')
-        const elapsed = await timedExecAsync(this.uploadToGitDB.bind(this), {requestBuilder})
-        this.logger.info(`${this.dryRun ? '[DRYRUN] ' : ''}Successfully synced git DB in ${elapsed} seconds.`)
-      } catch (err) {
-        this.logger.warn(`Could not write to GitDB: ${err}`)
+      if (await isGitRepo()) {
+        const requestBuilder = getRequestBuilder({baseUrl: apiUrl, apiKey: this.config.apiKey!})
+        try {
+          this.context.stdout.write(`${this.dryRun ? '[DRYRUN] ' : ''}Syncing git metadata...\n`)
+          const elapsed = await timedExecAsync(this.uploadToGitDB.bind(this), {requestBuilder})
+          this.context.stdout.write(renderSuccessfulGitDBSync(this.dryRun, elapsed))
+        } catch (err) {
+          this.context.stdout.write(renderFailedGitDBSync(err))
+        }
+      } else {
+        this.context.stdout.write(`${this.dryRun ? '[DRYRUN] ' : ''}Not syncing git metadata (not a git repo)\n`)
       }
     }
 
-    const totalTimeSeconds = (Date.now() - initialTime) / 1000
-    this.context.stdout.write(
-      renderSuccessfulCommand(payloads.length, totalTimeSeconds, spanTags, this.service, this.config.env)
-    )
+    this.context.stdout.write(renderSuccessfulCommand(spanTags, this.service, this.config.env))
   }
 
   private async uploadToGitDB(opts: {requestBuilder: RequestBuilder}) {
