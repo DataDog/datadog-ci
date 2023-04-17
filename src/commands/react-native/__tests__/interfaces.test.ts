@@ -10,6 +10,7 @@ describe('interfaces', () => {
   describe('removeSourcesContentFromSourceMap', () => {
     test('should remove the sources content part of sourcemaps', (done) => {
       const sourcemap = new RNSourcemap(
+        'main.jsbundle',
         './src/commands/react-native/__tests__/fixtures/with-sources-content/main.jsbundle.map'
       )
       sourcemap.removeSourcesContentFromSourceMap()

@@ -26,6 +26,7 @@ import {
   renderSuccessfulCommand,
   renderUpload,
 } from './renderer'
+import {getBundleName} from './utils'
 import {InvalidPayload, validatePayload} from './validation'
 
 export class UploadCommand extends Command {
@@ -48,7 +49,6 @@ export class UploadCommand extends Command {
   })
 
   private buildVersion?: string
-  // bundle is only kept for backwards compatibility but never used
   private bundle?: string
   private cliVersion: string
   private config: Record<string, string> = {
@@ -110,6 +110,8 @@ export class UploadCommand extends Command {
       return 1
     }
 
+    const bundleName = getBundleName(this.bundle, this.platform)
+
     this.context.stdout.write(
       renderCommandInfo(
         this.bundle,
@@ -120,7 +122,8 @@ export class UploadCommand extends Command {
         this.maxConcurrency,
         this.dryRun,
         this.projectPath,
-        this.buildVersion
+        this.buildVersion,
+        bundleName
       )
     )
 
@@ -160,7 +163,7 @@ export class UploadCommand extends Command {
     })
     const useGit = this.disableGit === undefined || !this.disableGit
     const initialTime = Date.now()
-    const payloads = await this.getPayloadsToUpload(useGit)
+    const payloads = await this.getPayloadsToUpload(useGit, bundleName)
     const requestBuilder = this.getRequestBuilder()
     const uploadMultipart = this.upload(requestBuilder, metricsLogger, apiKeyValidator)
     try {
@@ -204,12 +207,13 @@ export class UploadCommand extends Command {
     }
   }
 
-  // Looks for the sourcemaps and minified files on disk and returns
-  // the associated payloads.
-  private getMatchingRNSourcemapFiles = (): RNSourcemap[] => [new RNSourcemap(this.sourcemap!)]
+  // Looks for the sourcemaps on disk and returns the associated payloads.
+  private getMatchingRNSourcemapFiles = (bundleName: string): RNSourcemap[] => [
+    new RNSourcemap(bundleName, this.sourcemap!),
+  ]
 
-  private getPayloadsToUpload = async (useGit: boolean): Promise<RNSourcemap[]> => {
-    const payloads = this.getMatchingRNSourcemapFiles()
+  private getPayloadsToUpload = async (useGit: boolean, bundleName: string): Promise<RNSourcemap[]> => {
+    const payloads = this.getMatchingRNSourcemapFiles(bundleName)
     if (!useGit) {
       return payloads
     }

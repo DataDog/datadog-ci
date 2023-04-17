@@ -118,7 +118,7 @@ describe('codepush', () => {
       expect(code).toBe(0)
       const output = context.stdout.toString()
       expect(output).toContain(
-        'Upload of ./src/commands/react-native/__tests__/fixtures/basic-ios/main.jsbundle.map on platform ios'
+        'Upload of ./src/commands/react-native/__tests__/fixtures/basic-ios/main.jsbundle.map for bundle main.jsbundle on platform ios'
       )
       expect(output).toContain('version: 1.0-codepush.v7 build: 1 service: com.myapp')
     })
@@ -132,7 +132,7 @@ describe('codepush', () => {
       expect(code).toBe(0)
       const output = context.stdout.toString()
       expect(output).toContain(
-        'Upload of ./src/commands/react-native/__tests__/fixtures/basic-ios/main.jsbundle.map on platform ios'
+        'Upload of ./src/commands/react-native/__tests__/fixtures/basic-ios/main.jsbundle.map for bundle main.jsbundle on platform ios'
       )
       expect(output).toContain('version: 1.0-codepush.v7 build: 1 service: com.myapp')
     })
