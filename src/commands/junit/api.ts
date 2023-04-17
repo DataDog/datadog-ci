@@ -18,6 +18,10 @@ import {renderUpload} from './renderer'
 // We don't want any hard limit enforced by the CLI, the backend will enforce a max size by returning 413 errors.
 const maxBodyLength = Infinity
 
+export const datadogSite = process.env.DATADOG_SITE || process.env.DD_SITE || 'datadoghq.com'
+export const intakeUrl = `https://cireport-intake.${datadogSite}`
+export const apiUrl = `https://api.${datadogSite}`
+
 export const uploadJUnitXML = (request: (args: AxiosRequestConfig) => AxiosPromise<AxiosResponse>) => async (
   jUnitXML: Payload,
   write: Writable['write']
