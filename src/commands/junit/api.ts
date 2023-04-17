@@ -20,7 +20,7 @@ const maxBodyLength = Infinity
 
 export const datadogSite = process.env.DATADOG_SITE || process.env.DD_SITE || 'datadoghq.com'
 export const intakeUrl = `https://cireport-intake.${datadogSite}`
-export const apiUrl = 'https://api.' + datadogSite
+export const apiUrl = `https://api.${datadogSite}`
 
 export const uploadJUnitXML = (request: (args: AxiosRequestConfig) => AxiosPromise<AxiosResponse>) => async (
   jUnitXML: Payload,
