@@ -213,7 +213,7 @@ export const calculateUpdateRequest = async (
       changedEnvVars[SITE_ENV_VAR] = site
     } else {
       throw new Error(
-        'Warning: Invalid site URL. Must be either datadoghq.com, datadoghq.eu, us3.datadoghq.com, us5.datadoghq.com, or ddog-gov.com.'
+        'Warning: Invalid site URL. Must be either datadoghq.com, datadoghq.eu, us3.datadoghq.com, us5.datadoghq.com, ap1.datadoghq.com, or ddog-gov.com.'
       )
     }
   }
