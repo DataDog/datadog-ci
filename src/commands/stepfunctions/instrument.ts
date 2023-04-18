@@ -1,27 +1,33 @@
-import {CloudWatchLogs, IAM, StepFunctions} from 'aws-sdk'
+import {SFNClient} from '@aws-sdk/client-sfn'
+// import {CloudWatchLogs, IAM, StepFunctions} from 'aws-sdk'
 import {Command} from 'clipanion'
 
 import {
   createLogGroup,
-  enableStepFunctionLogs,
+  // enableStepFunctionLogs,
   describeStateMachine,
   listTagsForResource,
   putSubscriptionFilter,
   tagResource,
-  attachPolicyToStateMachineIamRole,
-  createLogsAccessPolicy,
-} from './aws'
-import {displayChanges, applyChanges} from './changes'
+  // attachPolicyToStateMachineIamRole,
+  // createLogsAccessPolicy,
+} from './awsCommands'
+import {displayChanges} from './changes'
 import {TAG_VERSION_NAME} from './constants'
 import {
-  buildArn,
   buildLogGroupName,
+  buildArn,
+  // buildLogGroupName,
   buildSubscriptionFilterName,
-  getStepFunctionLogGroupArn,
+  // getStepFunctionLogGroupArn,
   isValidArn,
   parseArn,
 } from './helpers'
 import {RequestsByStepFunction} from './interfaces'
+import {CloudWatchLogsClient} from "@aws-sdk/client-cloudwatch-logs";
+import {IAMClient} from "@aws-sdk/client-iam";
+
+// import {DescribeStateMachineCommandOutput} from "@aws-sdk/client-sfn/dist-types/ts3.4";
 
 const cliVersion = require('../../../package.json').version
 
@@ -87,13 +93,14 @@ export class InstrumentStepFunctionsCommand extends Command {
       // use region from the step function arn to make requests to AWS
       const arnObject = parseArn(stepFunctionArn)
       const region = arnObject.region
-      const cloudWatchLogsClient = new CloudWatchLogs({region})
-      const stepFunctionsClient = new StepFunctions({region})
-      const iamClient = new IAM({region})
+      const cloudWatchLogsClient = new CloudWatchLogsClient({region})
+      const stepFunctionsClient = new SFNClient({region})
+      const iamClient = new IAMClient({region})
 
-      let stepFunction
+      let describeStateMachineCommandOutput
       try {
-        stepFunction = await describeStateMachine(stepFunctionsClient, stepFunctionArn)
+        describeStateMachineCommandOutput = await describeStateMachine(stepFunctionsClient, stepFunctionArn, this.context, this.dryRun)
+        console.log(describeStateMachineCommandOutput)
       } catch (err) {
         if (err instanceof Error) {
           this.context.stdout.write(`\n[Error] ${err.message}. Unable to fetch Step Function ${stepFunctionArn}\n`)
@@ -104,11 +111,10 @@ export class InstrumentStepFunctionsCommand extends Command {
         return 1
       }
 
-      requestsByStepFunction[stepFunctionArn] = []
-
-      let listStepFunctionTagsResponse: StepFunctions.ListTagsForResourceOutput | undefined
+      let listStepFunctionTagsResponse
       try {
-        listStepFunctionTagsResponse = await listTagsForResource(stepFunctionsClient, stepFunctionArn)
+        listStepFunctionTagsResponse = await listTagsForResource(stepFunctionsClient, stepFunctionArn, this.context, this.dryRun)
+        console.log(listStepFunctionTagsResponse)
       } catch (err) {
         if (err instanceof Error) {
           this.context.stdout.write(
@@ -121,7 +127,7 @@ export class InstrumentStepFunctionsCommand extends Command {
         return 1
       }
 
-      const stepFunctionTagsToAdd: StepFunctions.TagList = []
+      const stepFunctionTagsToAdd = []
 
       // if env and service tags are not already set on step function, set these tags using the values passed as parameters
       const hasEnvTag = listStepFunctionTagsResponse?.tags?.some((tag) => tag.key === 'env')
@@ -140,10 +146,7 @@ export class InstrumentStepFunctionsCommand extends Command {
         !listStepFunctionTagsResponse?.tags?.some((tag) => tag.key === 'service') &&
         typeof this.service === 'string'
       ) {
-        stepFunctionTagsToAdd.push({
-          key: 'service',
-          value: this.service,
-        })
+        stepFunctionTagsToAdd.push({key: 'service', value: this.service})
       }
 
       // set version tag if it changed
@@ -156,26 +159,28 @@ export class InstrumentStepFunctionsCommand extends Command {
       }
 
       if (stepFunctionTagsToAdd.length > 0) {
-        const tagStepFunctionRequest = tagResource(stepFunctionsClient, stepFunctionArn, stepFunctionTagsToAdd)
-        requestsByStepFunction[stepFunctionArn].push(tagStepFunctionRequest)
+        requestsByStepFunction[stepFunctionArn] = []
+        tagResource(stepFunctionsClient, stepFunctionArn, stepFunctionTagsToAdd, this.context, this.dryRun)
       }
 
-      const subscriptionFilterName = buildSubscriptionFilterName(stepFunction.name)
+      const stateMachineName = describeStateMachineCommandOutput.name!
+      const subscriptionFilterName = buildSubscriptionFilterName(stateMachineName)
 
-      const logLevel = stepFunction.loggingConfiguration?.level
+      const logLevel = describeStateMachineCommandOutput.loggingConfiguration?.level
       if (logLevel === 'OFF') {
         // if step function logging is disabled, create a log group, subscribe the forwarder to it, and enable step function logging to the created log group
-        const logGroupName = buildLogGroupName(stepFunction.name, this.environment)
-        const createLogGroupRequest = createLogGroup(cloudWatchLogsClient, logGroupName)
-        requestsByStepFunction[stepFunctionArn].push(createLogGroupRequest)
+        const logGroupName = buildLogGroupName(stateMachineName, this.environment)
+        createLogGroup(cloudWatchLogsClient, logGroupName, stepFunctionArn, this.context, this.dryRun)
 
-        const putSubscriptionFilterRequest = putSubscriptionFilter(
+        putSubscriptionFilter(
           cloudWatchLogsClient,
           this.forwarderArn,
           subscriptionFilterName,
-          logGroupName
+          logGroupName,
+          stepFunctionArn,
+          this.context,
+          this.dryRun
         )
-        requestsByStepFunction[stepFunctionArn].push(putSubscriptionFilterRequest)
 
         const logGroupArn = buildArn(
           arnObject.partition,
@@ -185,47 +190,49 @@ export class InstrumentStepFunctionsCommand extends Command {
           'log-group',
           `${logGroupName}:*`
         )
-
-        // Create Logs Access policy
-        const createLogsAccessPolicyRequest = createLogsAccessPolicy(iamClient, stepFunction)
-        requestsByStepFunction[stepFunctionArn].push(createLogsAccessPolicyRequest)
-
-        // Attach policy to state machine IAM role
-        const attachPolicyToStateMachineIamRoleRequest = attachPolicyToStateMachineIamRole(
-          iamClient,
-          stepFunction,
-          arnObject.accountId
-        )
-        requestsByStepFunction[stepFunctionArn].push(attachPolicyToStateMachineIamRoleRequest)
-
-        // IAM policy on step function role should include log permissions now
-        const enableStepFunctionLogsRequest = enableStepFunctionLogs(stepFunctionsClient, stepFunction, logGroupArn)
-        requestsByStepFunction[stepFunctionArn].push(enableStepFunctionLogsRequest)
-      } else {
-        // if step function logging is enabled, subscribe the forwarder to the log group in the step function logging config
-        const logGroupArn = getStepFunctionLogGroupArn(stepFunction)
-        if (logGroupArn === undefined) {
-          this.context.stdout.write('\n[Error] Unable to get Log Group arn from Step Function logging configuration\n')
-
-          return 1
-        }
-        const logGroupName = parseArn(logGroupArn).resourceName
-
-        // update step function logging config to have logLevel `ALL` and includeExecutionData `true` if not already configured
-        const includeExecutionData = stepFunction.loggingConfiguration?.includeExecutionData
-        if (logLevel !== 'ALL' || !includeExecutionData) {
-          const enableStepFunctionLogsRequest = enableStepFunctionLogs(stepFunctionsClient, stepFunction, logGroupArn)
-          requestsByStepFunction[stepFunctionArn].push(enableStepFunctionLogsRequest)
-        }
-
-        const putSubscriptionFilterRequest = putSubscriptionFilter(
-          cloudWatchLogsClient,
-          this.forwarderArn,
-          subscriptionFilterName,
-          logGroupName
-        )
-        requestsByStepFunction[stepFunctionArn].push(putSubscriptionFilterRequest)
+        console.log(logGroupArn)
       }
+
+      //   // Create Logs Access policy
+      //   const createLogsAccessPolicyRequest = createLogsAccessPolicy(iamClient, describeStateMachineCommandOutput)
+      //   requestsByStepFunction[stepFunctionArn].push(createLogsAccessPolicyRequest)
+      //
+      //   // Attach policy to state machine IAM role
+      //   const attachPolicyToStateMachineIamRoleRequest = attachPolicyToStateMachineIamRole(
+      //     iamClient,
+      //     describeStateMachineCommandOutput,
+      //     arnObject.accountId
+      //   )
+      //   requestsByStepFunction[stepFunctionArn].push(attachPolicyToStateMachineIamRoleRequest)
+      //
+      //   // IAM policy on step function role should include log permissions now
+      //   const enableStepFunctionLogsRequest = enableStepFunctionLogs(stepFunctionsClient, describeStateMachineCommandOutput, logGroupArn)
+      //   requestsByStepFunction[stepFunctionArn].push(enableStepFunctionLogsRequest)
+      // } else {
+      //   // if step function logging is enabled, subscribe the forwarder to the log group in the step function logging config
+      //   const logGroupArn = getStepFunctionLogGroupArn(describeStateMachineCommandOutput)
+      //   if (logGroupArn === undefined) {
+      //     this.context.stdout.write('\n[Error] Unable to get Log Group arn from Step Function logging configuration\n')
+      //
+      //     return 1
+      //   }
+      //   const logGroupName = parseArn(logGroupArn).resourceName
+      //
+      //   // update step function logging config to have logLevel `ALL` and includeExecutionData `true` if not already configured
+      //   const includeExecutionData = describeStateMachineCommandOutput.loggingConfiguration?.includeExecutionData
+      //   if (logLevel !== 'ALL' || !includeExecutionData) {
+      //     const enableStepFunctionLogsRequest = enableStepFunctionLogs(stepFunctionsClient, describeStateMachineCommandOutput, logGroupArn)
+      //     requestsByStepFunction[stepFunctionArn].push(enableStepFunctionLogsRequest)
+      //   }
+      //
+      //   const putSubscriptionFilterRequest = putSubscriptionFilter(
+      //     cloudWatchLogsClient,
+      //     this.forwarderArn,
+      //     subscriptionFilterName,
+      //     logGroupName
+      //   )
+      //   requestsByStepFunction[stepFunctionArn].push(putSubscriptionFilterRequest)
+      // }
     }
 
     if (Object.keys(requestsByStepFunction).length === 0) {
@@ -238,12 +245,12 @@ export class InstrumentStepFunctionsCommand extends Command {
     displayChanges(requestsByStepFunction, this.dryRun, this.context)
 
     // if dry run mode is disabled, apply changes by making requests to AWS
-    if (!this.dryRun) {
-      const error = await applyChanges(requestsByStepFunction, this.context)
-      if (error) {
-        return 1
-      }
-    }
+    // if (!this.dryRun) {
+    //   const error = await applyChanges(requestsByStepFunction, this.context)
+    //   if (error) {
+    //     return 1
+    //   }
+    // }
 
     return 0
   }
