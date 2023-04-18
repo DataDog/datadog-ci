@@ -115,7 +115,7 @@ For example:
 {
     "apiKey": "<DATADOG_API_KEY>",
     "appKey": "<DATADOG_APPLICATION_KEY>",
-    "datadogSite": "{{< region-param key="dd_site" code="true" >}}", // You can use another Datadog site. By default, requests are sent to Datadog US1. 
+    "datadogSite": "datadoghq.com", // You can use another Datadog site in https://docs.datadoghq.com/getting_started/site/. By default, requests are sent to Datadog US1. 
     "files": "{,!(node_modules)/**/}*.synthetics.json",
     "failOnCriticalErrors": false,
     "failOnMissingTests": false,
@@ -177,7 +177,7 @@ For example:
 {
   "apiKey": "<DATADOG_API_KEY>",
   "appKey": "<DATADOG_APPLICATION_KEY>",
-  "datadogSite": "{{< region-param key="dd_site" code="true" >}}",
+  "datadogSite": "datadoghq.com", // You can use another Datadog site in https://docs.datadoghq.com/getting_started/site/. By default, requests are sent to Datadog US1. 
   "failOnCriticalErrors": true,
   "failOnMissingTests": true,
   "failOnTimeout": true,
