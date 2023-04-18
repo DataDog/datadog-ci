@@ -182,7 +182,9 @@ describe('getCIEnv', () => {
     process.env = {APPVEYOR: 'true'}
     expect(() => {
       getCIEnv()
-    }).toThrow('Only providers [GitHub, GitLab, CircleCI, Buildkite, Buddy, Jenkins, TeamCity] are supported')
+    }).toThrow(
+      'Only providers [GitHub, GitLab, CircleCI, Buildkite, Buddy, Jenkins, TeamCity, AzurePipelines] are supported'
+    )
   })
 
   test('buildkite', () => {
@@ -247,6 +249,24 @@ describe('getCIEnv', () => {
     expect(getCIEnv()).toEqual({
       ciEnv: {DATADOG_BUILD_ID: 'build-id'},
       provider: 'teamcity',
+    })
+  })
+
+  test('azurepipelines', () => {
+    process.env = {TF_BUILD: 'something'}
+    expect(() => {
+      getCIEnv()
+    }).toThrow()
+
+    process.env = {
+      TF_BUILD: 'something',
+      SYSTEM_TEAMPROJECTID: 'project-id',
+      BUILD_BUILDID: '55',
+      SYSTEM_JOBID: 'job-id',
+    }
+    expect(getCIEnv()).toEqual({
+      ciEnv: {SYSTEM_TEAMPROJECTID: 'project-id', BUILD_BUILDID: '55', SYSTEM_JOBID: 'job-id'},
+      provider: 'azurepipelines',
     })
   })
 })
