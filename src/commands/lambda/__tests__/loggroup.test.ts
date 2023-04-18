@@ -1,52 +1,80 @@
+import {
+  CloudWatchLogsClient,
+  CreateLogGroupCommand,
+  DeleteSubscriptionFilterCommand,
+  PutSubscriptionFilterCommand,
+} from '@aws-sdk/client-cloudwatch-logs'
+import {mockClient} from 'aws-sdk-client-mock'
+import 'aws-sdk-client-mock-jest'
+
 import {SUBSCRIPTION_FILTER_NAME} from '../constants'
+import {LogGroupConfiguration} from '../interfaces'
 import {applyLogGroupConfig, calculateLogGroupRemoveRequest, calculateLogGroupUpdateRequest} from '../loggroup'
 
-import {makeMockCloudWatchLogs} from './fixtures'
+import {mockCloudWatchLogsClientCommands, mockLogGroups} from './fixtures'
 
 describe('loggroup', () => {
+  const cloudWatchLogsClientMock = mockClient(CloudWatchLogsClient)
+
+  beforeEach(() => {
+    cloudWatchLogsClientMock.reset()
+    mockCloudWatchLogsClientCommands(cloudWatchLogsClientMock)
+  })
+
   describe('calculateLogGroupUpdateRequest', () => {
     test("creates a new log group when one doesn't exist", async () => {
-      const logs = makeMockCloudWatchLogs({})
-      const result = await calculateLogGroupUpdateRequest(logs as any, '/aws/lambda/my-func', 'my-forwarder')
+      const result = await calculateLogGroupUpdateRequest(
+        cloudWatchLogsClientMock as any,
+        '/aws/lambda/my-func',
+        'my-forwarder'
+      )
       expect(result).toMatchInlineSnapshot(`
-                        Object {
-                          "createLogGroupRequest": Object {
-                            "logGroupName": "/aws/lambda/my-func",
-                          },
-                          "logGroupName": "/aws/lambda/my-func",
-                          "subscriptionFilterRequest": Object {
-                            "destinationArn": "my-forwarder",
-                            "filterName": "datadog-ci-filter",
-                            "filterPattern": "",
-                            "logGroupName": "/aws/lambda/my-func",
-                          },
-                        }
-                  `)
+        Object {
+          "createLogGroupCommandInput": Object {
+            "logGroupName": "/aws/lambda/my-func",
+          },
+          "logGroupName": "/aws/lambda/my-func",
+          "putSubscriptionFilterCommandInput": Object {
+            "destinationArn": "my-forwarder",
+            "filterName": "datadog-ci-filter",
+            "filterPattern": "",
+            "logGroupName": "/aws/lambda/my-func",
+          },
+        }
+      `)
     })
     test("adds a subscription filter when one doesn't exist", async () => {
-      const logs = makeMockCloudWatchLogs({
-        '/aws/lambda/my-func': {
+      mockLogGroups(cloudWatchLogsClientMock, {
+        'aws/lambda/my-func': {
           config: {
             logGroups: [{logGroupName: '/aws/lambda/my-func'}],
           },
           filters: {},
         },
       })
-      const result = await calculateLogGroupUpdateRequest(logs as any, '/aws/lambda/my-func', 'my-forwarder')
+
+      const result = await calculateLogGroupUpdateRequest(
+        cloudWatchLogsClientMock as any,
+        '/aws/lambda/my-func',
+        'my-forwarder'
+      )
       expect(result).toMatchInlineSnapshot(`
-                Object {
-                  "logGroupName": "/aws/lambda/my-func",
-                  "subscriptionFilterRequest": Object {
-                    "destinationArn": "my-forwarder",
-                    "filterName": "datadog-ci-filter",
-                    "filterPattern": "",
-                    "logGroupName": "/aws/lambda/my-func",
-                  },
-                }
-            `)
+        Object {
+          "createLogGroupCommandInput": Object {
+            "logGroupName": "/aws/lambda/my-func",
+          },
+          "logGroupName": "/aws/lambda/my-func",
+          "putSubscriptionFilterCommandInput": Object {
+            "destinationArn": "my-forwarder",
+            "filterName": "datadog-ci-filter",
+            "filterPattern": "",
+            "logGroupName": "/aws/lambda/my-func",
+          },
+        }
+      `)
     })
     test('updates a subscription filter when an owned one already exists', async () => {
-      const logs = makeMockCloudWatchLogs({
+      mockLogGroups(cloudWatchLogsClientMock, {
         '/aws/lambda/my-func': {
           config: {
             logGroups: [{logGroupName: '/aws/lambda/my-func'}],
@@ -62,21 +90,26 @@ describe('loggroup', () => {
           },
         },
       })
-      const result = await calculateLogGroupUpdateRequest(logs as any, '/aws/lambda/my-func', 'my-forwarder')
+
+      const result = await calculateLogGroupUpdateRequest(
+        cloudWatchLogsClientMock as any,
+        '/aws/lambda/my-func',
+        'my-forwarder'
+      )
       expect(result).toMatchInlineSnapshot(`
-                Object {
-                  "logGroupName": "/aws/lambda/my-func",
-                  "subscriptionFilterRequest": Object {
-                    "destinationArn": "my-forwarder",
-                    "filterName": "datadog-ci-filter",
-                    "filterPattern": "",
-                    "logGroupName": "/aws/lambda/my-func",
-                  },
-                }
-            `)
+        Object {
+          "logGroupName": "/aws/lambda/my-func",
+          "putSubscriptionFilterCommandInput": Object {
+            "destinationArn": "my-forwarder",
+            "filterName": "datadog-ci-filter",
+            "filterPattern": "",
+            "logGroupName": "/aws/lambda/my-func",
+          },
+        }
+      `)
     })
     test('adds the DD filter if an unowned filter exists but another slot is still open', async () => {
-      const logs = makeMockCloudWatchLogs({
+      mockLogGroups(cloudWatchLogsClientMock, {
         '/aws/lambda/my-func': {
           config: {
             logGroups: [{logGroupName: '/aws/lambda/my-func'}],
@@ -92,10 +125,14 @@ describe('loggroup', () => {
           },
         },
       })
-      const result = await calculateLogGroupUpdateRequest(logs as any, '/aws/lambda/my-func', 'my-forwarder')
+      const result = await calculateLogGroupUpdateRequest(
+        cloudWatchLogsClientMock as any,
+        '/aws/lambda/my-func',
+        'my-forwarder'
+      )
       expect(result).toEqual({
         logGroupName: '/aws/lambda/my-func',
-        subscriptionFilterRequest: {
+        putSubscriptionFilterCommandInput: {
           destinationArn: 'my-forwarder',
           filterName: 'datadog-ci-filter',
           filterPattern: '',
@@ -104,7 +141,7 @@ describe('loggroup', () => {
       })
     })
     test('updates the DD filter if it exists alongside an unowned filter', async () => {
-      const logs = makeMockCloudWatchLogs({
+      mockLogGroups(cloudWatchLogsClientMock, {
         '/aws/lambda/my-func': {
           config: {
             logGroups: [{logGroupName: '/aws/lambda/my-func'}],
@@ -125,10 +162,14 @@ describe('loggroup', () => {
           },
         },
       })
-      const result = await calculateLogGroupUpdateRequest(logs as any, '/aws/lambda/my-func', 'my-forwarder')
+      const result = await calculateLogGroupUpdateRequest(
+        cloudWatchLogsClientMock as any,
+        '/aws/lambda/my-func',
+        'my-forwarder'
+      )
       expect(result).toEqual({
         logGroupName: '/aws/lambda/my-func',
-        subscriptionFilterRequest: {
+        putSubscriptionFilterCommandInput: {
           destinationArn: 'my-forwarder',
           filterName: 'datadog-ci-filter',
           filterPattern: '',
@@ -137,7 +178,7 @@ describe('loggroup', () => {
       })
     })
     test('throws an exception when unowned subscriptions are already at AWS max', async () => {
-      const logs = makeMockCloudWatchLogs({
+      mockLogGroups(cloudWatchLogsClientMock, {
         '/aws/lambda/my-func': {
           config: {
             logGroups: [{logGroupName: '/aws/lambda/my-func'}],
@@ -158,7 +199,11 @@ describe('loggroup', () => {
           },
         },
       })
-      const promise = calculateLogGroupUpdateRequest(logs as any, '/aws/lambda/my-func', 'my-forwarder')
+      const promise = calculateLogGroupUpdateRequest(
+        cloudWatchLogsClientMock as any,
+        '/aws/lambda/my-func',
+        'my-forwarder'
+      )
       await expect(promise).rejects.toEqual(
         Error(
           'Maximum of 2 subscription filters already exist on log group /aws/lambda/my-func. Cannot add Datadog forwarder subscription.'
@@ -166,7 +211,7 @@ describe('loggroup', () => {
       )
     })
     test("doesn't update a subscription when filter is already correct", async () => {
-      const logs = makeMockCloudWatchLogs({
+      mockLogGroups(cloudWatchLogsClientMock, {
         '/aws/lambda/my-func': {
           config: {
             logGroups: [{logGroupName: '/aws/lambda/my-func'}],
@@ -182,13 +227,17 @@ describe('loggroup', () => {
           },
         },
       })
-      const result = await calculateLogGroupUpdateRequest(logs as any, '/aws/lambda/my-func', 'my-forwarder')
-      expect(result).toMatchInlineSnapshot('undefined')
+      const result = await calculateLogGroupUpdateRequest(
+        cloudWatchLogsClientMock as any,
+        '/aws/lambda/my-func',
+        'my-forwarder'
+      )
+      expect(result).toMatchInlineSnapshot(`undefined`)
     })
   })
   describe('calculateLogGroupRemoveRequest', () => {
     test('deletes the subscription filter that matches the forwarder', async () => {
-      const logs = makeMockCloudWatchLogs({
+      mockLogGroups(cloudWatchLogsClientMock, {
         '/aws/lambda/my-func': {
           config: {
             logGroups: [{logGroupName: '/aws/lambda/my-func'}],
@@ -204,8 +253,12 @@ describe('loggroup', () => {
           },
         },
       })
-      const result = await calculateLogGroupRemoveRequest(logs as any, '/aws/lambda/my-func', 'my-forwarder')
-      expect(result.deleteSubscriptionFilterRequest).toMatchInlineSnapshot(`
+      const result = await calculateLogGroupRemoveRequest(
+        cloudWatchLogsClientMock as any,
+        '/aws/lambda/my-func',
+        'my-forwarder'
+      )
+      expect(result.deleteSubscriptionFilterCommandInput).toMatchInlineSnapshot(`
         Object {
           "filterName": "datadog-ci-filter",
           "logGroupName": "/aws/lambda/my-func",
@@ -213,7 +266,7 @@ describe('loggroup', () => {
       `)
     })
     test('deletes the subscription filter that matches the datadog subscription filter constant name', async () => {
-      const logs = makeMockCloudWatchLogs({
+      mockLogGroups(cloudWatchLogsClientMock, {
         '/aws/lambda/my-func': {
           config: {
             logGroups: [{logGroupName: '/aws/lambda/my-func'}],
@@ -229,8 +282,12 @@ describe('loggroup', () => {
           },
         },
       })
-      const result = await calculateLogGroupRemoveRequest(logs as any, '/aws/lambda/my-func', 'my-forwarder')
-      expect(result.deleteSubscriptionFilterRequest).toMatchInlineSnapshot(`
+      const result = await calculateLogGroupRemoveRequest(
+        cloudWatchLogsClientMock as any,
+        '/aws/lambda/my-func',
+        'my-forwarder'
+      )
+      expect(result.deleteSubscriptionFilterCommandInput).toMatchInlineSnapshot(`
         Object {
           "filterName": "datadog-ci-filter",
           "logGroupName": "/aws/lambda/my-func",
@@ -238,7 +295,7 @@ describe('loggroup', () => {
       `)
     })
     test('returns log group configuration without delete request when forwarder and filter name does not match', async () => {
-      const logs = makeMockCloudWatchLogs({
+      mockLogGroups(cloudWatchLogsClientMock, {
         '/aws/lambda/my-func': {
           config: {
             logGroups: [{logGroupName: '/aws/lambda/my-func'}],
@@ -259,7 +316,11 @@ describe('loggroup', () => {
           },
         },
       })
-      const result = await calculateLogGroupRemoveRequest(logs as any, '/aws/lambda/my-func', 'my-forwarder')
+      const result = await calculateLogGroupRemoveRequest(
+        cloudWatchLogsClientMock as any,
+        '/aws/lambda/my-func',
+        'my-forwarder'
+      )
       expect(result).toMatchInlineSnapshot(`
         Object {
           "logGroupName": "/aws/lambda/my-func",
@@ -269,18 +330,16 @@ describe('loggroup', () => {
   })
   describe('applyLogGroupConfiguration', () => {
     test('applies specified changes', async () => {
-      const logs = makeMockCloudWatchLogs({})
-
-      const config = {
-        createLogGroupRequest: {
+      const config: LogGroupConfiguration = {
+        createLogGroupCommandInput: {
           logGroupName: '/aws/lambda/my-func',
         },
-        deleteSubscriptionFilterRequest: {
+        deleteSubscriptionFilterCommandInput: {
           filterName: SUBSCRIPTION_FILTER_NAME,
           logGroupName: '/aws/lambda/my-func',
         },
         logGroupName: '/aws/lambda/my-func',
-        subscriptionFilterRequest: {
+        putSubscriptionFilterCommandInput: {
           destinationArn: 'my-forwarder',
           filterName: SUBSCRIPTION_FILTER_NAME,
           filterPattern: '',
@@ -288,15 +347,15 @@ describe('loggroup', () => {
         },
       }
 
-      await applyLogGroupConfig(logs as any, config)
-      expect(logs.createLogGroup).toHaveBeenCalledWith({
+      await applyLogGroupConfig(cloudWatchLogsClientMock as any, config)
+      expect(cloudWatchLogsClientMock).toHaveReceivedCommandWith(CreateLogGroupCommand, {
         logGroupName: '/aws/lambda/my-func',
       })
-      expect(logs.deleteSubscriptionFilter).toHaveBeenCalledWith({
+      expect(cloudWatchLogsClientMock).toHaveReceivedCommandWith(DeleteSubscriptionFilterCommand, {
         filterName: SUBSCRIPTION_FILTER_NAME,
         logGroupName: '/aws/lambda/my-func',
       })
-      expect(logs.putSubscriptionFilter).toHaveBeenCalledWith({
+      expect(cloudWatchLogsClientMock).toHaveReceivedCommandWith(PutSubscriptionFilterCommand, {
         destinationArn: 'my-forwarder',
         filterName: SUBSCRIPTION_FILTER_NAME,
         filterPattern: '',
@@ -304,11 +363,9 @@ describe('loggroup', () => {
       })
     })
     test("doesn't apply unspecified changes", async () => {
-      const logs = makeMockCloudWatchLogs({})
-
-      const config = {
+      const config: LogGroupConfiguration = {
         logGroupName: '/aws/lambda/my-func',
-        subscriptionFilterRequest: {
+        putSubscriptionFilterCommandInput: {
           destinationArn: 'my-forwarder',
           filterName: SUBSCRIPTION_FILTER_NAME,
           filterPattern: '',
@@ -316,10 +373,10 @@ describe('loggroup', () => {
         },
       }
 
-      await applyLogGroupConfig(logs as any, config)
-      expect(logs.createLogGroup).not.toHaveBeenCalled()
-      expect(logs.deleteSubscriptionFilter).not.toHaveBeenCalled()
-      expect(logs.putSubscriptionFilter).toHaveBeenCalledWith({
+      await applyLogGroupConfig(cloudWatchLogsClientMock as any, config)
+      expect(cloudWatchLogsClientMock).toHaveReceivedCommandTimes(CreateLogGroupCommand, 0)
+      expect(cloudWatchLogsClientMock).toHaveReceivedCommandTimes(DeleteSubscriptionFilterCommand, 0)
+      expect(cloudWatchLogsClientMock).toHaveReceivedCommandWith(PutSubscriptionFilterCommand, {
         destinationArn: 'my-forwarder',
         filterName: SUBSCRIPTION_FILTER_NAME,
         filterPattern: '',

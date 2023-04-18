@@ -75,6 +75,11 @@ dist
 # Test generated files
 src/commands/react-native/__tests__/fixtures/with-sources-content/main.jsbundle.map.no-sources-content
 
+# ESLint reports (SARIF format)
+*.sarif
+!src/commands/sarif/__tests__/fixtures/*.sarif
+!src/commands/sarif/__tests__/fixtures/subfolder/*.sarif
+
 # Yarn non zero-install. See: https://yarnpkg.com/getting-started/qa#which-files-should-be-gitignored
 .pnp.*
 .yarn/*

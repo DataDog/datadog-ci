@@ -1,10 +1,23 @@
-import {CloudWatchLogs, Lambda} from 'aws-sdk'
+import {
+  CloudWatchLogsClient,
+  CreateLogGroupCommandInput,
+  DeleteSubscriptionFilterCommandInput,
+  PutSubscriptionFilterCommandInput,
+} from '@aws-sdk/client-cloudwatch-logs'
+import {
+  FunctionConfiguration as LFunctionConfiguration,
+  LambdaClient,
+  TagResourceCommandInput,
+  UpdateFunctionConfigurationCommandInput,
+  UntagResourceCommandInput,
+} from '@aws-sdk/client-lambda'
 
 /**
  * Configuration options provided by the user through
  * the CLI in order to instrument properly.
  */
 export interface LambdaConfigOptions {
+  apmFlushDeadline?: string
   captureLambdaPayload?: string
   environment?: string
   extensionVersion?: string
@@ -31,16 +44,16 @@ export interface LambdaConfigOptions {
  */
 export interface FunctionConfiguration {
   functionARN: string
-  lambdaConfig: Lambda.FunctionConfiguration
+  lambdaConfig: LFunctionConfiguration
   logGroupConfiguration?: LogGroupConfiguration
   tagConfiguration?: TagConfiguration
-  updateRequest?: Lambda.UpdateFunctionConfigurationRequest
+  updateFunctionConfigurationCommandInput?: UpdateFunctionConfigurationCommandInput
 }
 
 export interface InstrumentedConfigurationGroup {
-  cloudWatchLogs: CloudWatchLogs
+  cloudWatchLogsClient: CloudWatchLogsClient
   configs: FunctionConfiguration[]
-  lambda: Lambda
+  lambdaClient: LambdaClient
   region: string
 }
 
@@ -49,6 +62,7 @@ export interface InstrumentedConfigurationGroup {
  * lambda to be instrumented.
  */
 export interface InstrumentationSettings extends InstrumentationTags {
+  apmFlushDeadline?: string
   captureLambdaPayload?: boolean
   extensionVersion?: number
   flushMetricsToLogs: boolean
@@ -74,13 +88,13 @@ interface InstrumentationTags {
 }
 
 export interface LogGroupConfiguration {
-  createLogGroupRequest?: CloudWatchLogs.CreateLogGroupRequest
-  deleteSubscriptionFilterRequest?: CloudWatchLogs.DeleteSubscriptionFilterRequest
+  createLogGroupCommandInput?: CreateLogGroupCommandInput
+  deleteSubscriptionFilterCommandInput?: DeleteSubscriptionFilterCommandInput
   logGroupName: string
-  subscriptionFilterRequest?: CloudWatchLogs.PutSubscriptionFilterRequest
+  putSubscriptionFilterCommandInput?: PutSubscriptionFilterCommandInput
 }
 
 export interface TagConfiguration {
-  tagResourceRequest?: Lambda.TagResourceRequest
-  untagResourceRequest?: Lambda.UntagResourceRequest
+  tagResourceCommandInput?: TagResourceCommandInput
+  untagResourceCommandInput?: UntagResourceCommandInput
 }

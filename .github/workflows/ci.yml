@@ -22,15 +22,24 @@ jobs:
           node-version: ${{ matrix.version }}
       - run: yarn install --immutable
       - run: yarn build
-      - run: yarn lint
+      - name: Run yarn lint:ci
+        run: |
+          if ! yarn lint:ci ; then
+            echo "ESLint failed with the following errors:"
+            jq '.runs[].results' sarif-datadog-ci.sarif
+
+            echo ""
+            echo "Find the full SARIF report in the Artifacts section here: https://github.com/DataDog/datadog-ci/actions/runs/${{ github.run_id }}"
+            echo "You can fix this by running ==> yarn format <=="
+            echo ""
+            exit 1
+          fi
       - run: yarn no-only-in-tests
       - run: yarn test
         env:
           CI: true
           DD_SERVICE: datadog-ci-tests
           DD_CIVISIBILITY_AGENTLESS_ENABLED: 1
-          DD_CIVISIBILITY_GIT_UPLOAD_ENABLED: 1
-          DD_CIVISIBILITY_ITR_ENABLED: 1
           DD_API_KEY: ${{ secrets.DATADOG_API_KEY_MAIN_ACCOUNT }}
           DD_APP_KEY: ${{ secrets.DATADOG_APP_KEY_MAIN_ACCOUNT }}
           DD_ENV: ci
@@ -42,10 +51,12 @@ jobs:
         with:
           name: artifacts
           path: artifacts/
-      - uses: actions/upload-artifact@v1  
+      - uses: actions/upload-artifact@v3
+        if: always()
         with:
           name: sarif-datadog-ci.sarif
           path: sarif-datadog-ci.sarif
+          if-no-files-found: error
 
   e2e-test:
     strategy:

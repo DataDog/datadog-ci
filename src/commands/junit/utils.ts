@@ -1,14 +1,6 @@
 import {SpanTags} from '../../helpers/interfaces'
 import {CI_JOB_URL, CI_PIPELINE_URL, GIT_BRANCH, GIT_REPOSITORY_URL, GIT_SHA} from '../../helpers/tags'
 
-export const getBaseIntakeUrl = () => {
-  if (process.env.DATADOG_SITE || process.env.DD_SITE) {
-    return `https://cireport-intake.${process.env.DATADOG_SITE || process.env.DD_SITE}`
-  }
-
-  return 'https://cireport-intake.datadoghq.com'
-}
-
 export const getBaseUrl = () => {
   if (process.env.DATADOG_SITE || process.env.DD_SITE) {
     let site = process.env.DATADOG_SITE || process.env.DD_SITE

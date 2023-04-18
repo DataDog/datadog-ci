@@ -25,21 +25,28 @@ export const renderFailedUpload = (payload: Payload, errorMessage: string) => {
   return chalk.red(`${ICONS.FAILED} Failed upload jUnitXML for ${jUnitXMLPath}: ${errorMessage}\n`)
 }
 
+export const renderFailedGitDBSync = (err: any) => {
+  return chalk.red.bold(`${ICONS.FAILED} Could not sync git metadata: ${err}\n`)
+}
+
 export const renderRetriedUpload = (payload: Payload, errorMessage: string, attempt: number) => {
   const jUnitXMLPath = `[${chalk.bold.dim(payload.xmlPath)}]`
 
   return chalk.yellow(`[attempt ${attempt}] Retrying jUnitXML upload ${jUnitXMLPath}: ${errorMessage}\n`)
 }
 
-export const renderSuccessfulCommand = (
-  fileCount: number,
-  duration: number,
-  spanTags: SpanTags,
-  service: string,
-  env?: string
-) => {
+export const renderSuccessfulUpload = (dryRun: boolean, fileCount: number, duration: number) => {
+  return chalk.green(
+    `${dryRun ? '[DRYRUN] ' : ''}${ICONS.SUCCESS} Uploaded ${fileCount} files in ${duration} seconds.\n`
+  )
+}
+
+export const renderSuccessfulGitDBSync = (dryRun: boolean, elapsed: number) => {
+  return chalk.green(`${dryRun ? '[DRYRUN] ' : ''}${ICONS.SUCCESS} Synced git metadata in ${elapsed} seconds.\n`)
+}
+
+export const renderSuccessfulCommand = (spanTags: SpanTags, service: string, env?: string) => {
   let fullStr = ''
-  fullStr += chalk.green(`${ICONS.SUCCESS} Uploaded ${fileCount} files in ${duration} seconds.\n`)
   fullStr += chalk.green(
     '=================================================================================================\n'
   )
@@ -48,7 +55,7 @@ export const renderSuccessfulCommand = (
   const redirectTestCommitURL = getTestCommitRedirectURL(spanTags, service, env)
   if (redirectTestCommitURL) {
     fullStr += chalk.green('* Commit report:\n')
-    fullStr += chalk.green(`* ${redirectTestCommitURL}\n\n`)
+    fullStr += chalk.green(`* ${redirectTestCommitURL}\n`)
   }
 
   const testRunsUrl = getTestRunsUrl(spanTags)

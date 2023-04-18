@@ -505,14 +505,18 @@ const getTest = async (api: APIHelper, {id, suite}: TriggerConfig): Promise<{tes
   }
 }
 
+type NotFound = {errorMessage: string}
+type Skipped = {overriddenConfig: TestPayload}
+type TestWithOverride = {test: Test; overriddenConfig: TestPayload}
+
 export const getTestAndOverrideConfig = async (
   api: APIHelper,
   {config, id, suite}: TriggerConfig,
   reporter: MainReporter,
   summary: InitialSummary,
   isTunnelEnabled?: boolean
-) => {
-  const normalizedId = PUBLIC_ID_REGEX.test(id) ? id : id.substr(id.lastIndexOf('/') + 1)
+): Promise<NotFound | Skipped | TestWithOverride> => {
+  const normalizedId = PUBLIC_ID_REGEX.test(id) ? id : id.substring(id.lastIndexOf('/') + 1)
 
   const testResult = await getTest(api, {config, id: normalizedId, suite})
   if ('errorMessage' in testResult) {
@@ -573,9 +577,18 @@ export const getTestsToTrigger = async (
     )
   )
 
+  // Keep track of uploaded applications to avoid uploading them twice.
   const uploadedApplicationByPath: {[applicationFilePath: string]: {applicationId: string; fileName: string}[]} = {}
-  for (const {test, overriddenConfig} of testsAndConfigsOverride) {
-    if (test && test.type === 'mobile' && overriddenConfig) {
+
+  for (const item of testsAndConfigsOverride) {
+    // Ignore not found and skipped tests.
+    if ('errorMessage' in item || !('test' in item)) {
+      continue
+    }
+
+    const {test, overriddenConfig} = item
+
+    if (test.type === 'mobile') {
       const {config: userConfigOverride} = triggerConfigs.find(({id}) => id === test.public_id)!
       try {
         await uploadApplicationAndOverrideConfig(
@@ -593,17 +606,17 @@ export const getTestsToTrigger = async (
 
   const overriddenTestsToTrigger: TestPayload[] = []
   const waitedTests: Test[] = []
-  testsAndConfigsOverride.forEach(({test, errorMessage, overriddenConfig}) => {
-    if (errorMessage) {
-      errorMessages.push(errorMessage)
+  testsAndConfigsOverride.forEach((item) => {
+    if ('errorMessage' in item) {
+      errorMessages.push(item.errorMessage)
     }
 
-    if (overriddenConfig) {
-      overriddenTestsToTrigger.push(overriddenConfig)
+    if ('overriddenConfig' in item) {
+      overriddenTestsToTrigger.push(item.overriddenConfig)
     }
 
-    if (test) {
-      waitedTests.push(test)
+    if ('test' in item) {
+      waitedTests.push(item.test)
     }
   })
 

@@ -1,4 +1,5 @@
 import {ReadStream} from 'fs'
+import os from 'os'
 
 import FormData from 'form-data'
 
@@ -93,6 +94,22 @@ describe('flutter-symbol upload', () => {
 
       expect(exitCode).not.toBe(0)
       expect(errorOutput).toBe(renderMissingPubspecError('./pubspec.yaml'))
+    })
+
+    test('uses API Key from env over config from JSON file', async () => {
+      const {exitCode, context} = await runCommand((cmd) => {
+        cmd['configPath'] = 'src/commands/flutter-symbols/__tests__/fixtures/config/datadog-ci.json'
+        cmd['serviceName'] = 'fake.service'
+        cmd['version'] = '1.0.0+114'
+
+        process.env.DATADOG_API_KEY = 'fake_api_key'
+      })
+      const output = context.stdout.toString().split(os.EOL)
+
+      expect(exitCode).toBe(0)
+
+      expect(output).toContain('API keys were specified both in a configuration file and in the environment.')
+      expect(output).toContain('The environment API key ending in _key will be used.')
     })
 
     test('version bypasses pubspec check', async () => {

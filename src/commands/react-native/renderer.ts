@@ -126,25 +126,24 @@ export const renderCommandInfo = (
   poolLimit: number,
   dryRun: boolean,
   projectPath: string,
-  buildVersion: string
+  buildVersion: string,
+  bundleName: string
 ) => {
   let fullStr = ''
   if (dryRun) {
     fullStr += chalk.yellow(`${ICONS.WARNING} DRY-RUN MODE ENABLED. WILL NOT UPLOAD SOURCEMAPS\n`)
   }
-  if (bundlePath) {
-    fullStr += chalk.yellow(
-      `${ICONS.WARNING} ${chalk.bold(
-        '--bundle'
-      )} option has been deprecated. The js bundle won't be sent. This will not affect the error tracking of your app.\n`
-    )
-  }
   const startStr = chalk.green('Starting upload. \n')
   fullStr += startStr
-  const basePathStr = chalk.green(
-    `Upload of ${sourcemapPath} on platform ${platform} with project path ${projectPath}\n`
+  if (!bundlePath) {
+    fullStr += chalk.red(
+      `${ICONS.WARNING} --bundle option was not provided. A default bundle name will be used. Please update @datadog/mobile-react-native or pass a --bundle option.\n`
+    )
+  }
+  fullStr += chalk.green(
+    `Upload of ${sourcemapPath} for bundle ${bundleName} on platform ${platform} with project path ${projectPath}\n`
   )
-  fullStr += basePathStr
+
   const serviceVersionProjectPathStr = chalk.green(
     `version: ${releaseVersion} build: ${buildVersion} service: ${service}\n`
   )
@@ -153,4 +152,5 @@ export const renderCommandInfo = (
   return fullStr
 }
 
-export const renderUpload = (sourcemap: RNSourcemap): string => `Uploading sourcemap ${sourcemap.sourcemapPath}\n`
+export const renderUpload = (sourcemap: RNSourcemap): string =>
+  `Uploading sourcemap ${sourcemap.sourcemapPath} for JS file ${sourcemap.bundleName}\n`

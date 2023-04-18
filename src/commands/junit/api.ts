@@ -7,20 +7,20 @@ import type {AxiosPromise, AxiosRequestConfig, AxiosResponse} from 'axios'
 
 import FormData from 'form-data'
 
+import {getSafeFileName} from '../../helpers/file'
 import {CI_JOB_URL, CI_PIPELINE_URL, GIT_SHA} from '../../helpers/tags'
 import {getRequestBuilder} from '../../helpers/utils'
 
 import {Payload} from './interfaces'
 import {renderUpload} from './renderer'
 
-// We need a unique file name so we use span tags like the pipeline URL,
-// which can contain dots and other unsafe characters for filenames.
-// We filter them out here.
-export const getSafeFileName = (unsafeFileName: string) => unsafeFileName.replace(/[^a-z0-9]/gi, '_')
-
 // Dependency follows-redirects sets a default maxBodyLength of 10 MB https://github.com/follow-redirects/follow-redirects/blob/b774a77e582b97174813b3eaeb86931becba69db/index.js#L391
 // We don't want any hard limit enforced by the CLI, the backend will enforce a max size by returning 413 errors.
 const maxBodyLength = Infinity
+
+export const datadogSite = process.env.DATADOG_SITE || process.env.DD_SITE || 'datadoghq.com'
+export const intakeUrl = `https://cireport-intake.${datadogSite}`
+export const apiUrl = `https://api.${datadogSite}`
 
 export const uploadJUnitXML = (request: (args: AxiosRequestConfig) => AxiosPromise<AxiosResponse>) => async (
   jUnitXML: Payload,

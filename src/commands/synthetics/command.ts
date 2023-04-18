@@ -54,6 +54,7 @@ export class RunTestCommand extends Command {
   private testSearchQuery?: string
   private tunnel?: boolean
   private variableStrings?: string[]
+  private mobileApplicationVersionFilePath?: string
 
   public async execute() {
     const reporters: Reporter[] = [new DefaultReporter(this)]
@@ -183,9 +184,9 @@ export class RunTestCommand extends Command {
   }
 
   private async resolveConfig() {
-    // Default < file < ENV < CLI
+    // Defaults < file < ENV < CLI
 
-    // Override with file config variables
+    // Override with config file variables (e.g. datadog-ci.json)
     try {
       this.config = await resolveConfigFromFile(this.config, {
         configPath: this.configPath,
@@ -235,6 +236,7 @@ export class RunTestCommand extends Command {
     this.config.global = deepExtend(
       this.config.global,
       removeUndefinedValues({
+        mobileApplicationVersionFilePath: this.mobileApplicationVersionFilePath,
         variables: parseVariablesFromCli(this.variableStrings, (log) => this.reporter?.log(log)),
       })
     )
@@ -265,9 +267,13 @@ RunTestCommand.addOption('failOnMissingTests', Command.Boolean('--failOnMissingT
 RunTestCommand.addOption('failOnTimeout', Command.Boolean('--failOnTimeout'))
 RunTestCommand.addOption('files', Command.Array('-f,--files'))
 RunTestCommand.addOption('jUnitReport', Command.String('-j,--jUnitReport'))
+RunTestCommand.addOption(
+  'mobileApplicationVersionFilePath',
+  Command.String('--mobileApp,--mobileApplicationVersionFilePath')
+)
 RunTestCommand.addOption('publicIds', Command.Array('-p,--public-id'))
 RunTestCommand.addOption('runName', Command.String('-n,--runName'))
-RunTestCommand.addOption('subdomain', Command.Boolean('--subdomain'))
+RunTestCommand.addOption('subdomain', Command.String('--subdomain'))
 RunTestCommand.addOption('testSearchQuery', Command.String('-s,--search'))
 RunTestCommand.addOption('tunnel', Command.Boolean('-t,--tunnel'))
 RunTestCommand.addOption('variableStrings', Command.Array('-v,--variable'))

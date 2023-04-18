@@ -1,4 +1,9 @@
-import {CloudWatchLogs, Lambda} from 'aws-sdk'
+import {CloudWatchLogsClient} from '@aws-sdk/client-cloudwatch-logs'
+import {
+  LambdaClient,
+  FunctionConfiguration as LFunctionConfiguration,
+  UpdateFunctionConfigurationCommandInput,
+} from '@aws-sdk/client-lambda'
 
 import {isValidDatadogSite} from '../../../helpers/validation'
 
@@ -41,6 +46,7 @@ import {
   SITE_ENV_VAR,
   TRACE_ENABLED_ENV_VAR,
   VERSION_ENV_VAR,
+  APM_FLUSH_DEADLINE_MILLISECONDS_ENV_VAR,
 } from '../constants'
 import {FunctionConfiguration, InstrumentationSettings, LogGroupConfiguration, TagConfiguration} from '../interfaces'
 import {calculateLogGroupUpdateRequest} from '../loggroup'
@@ -53,24 +59,29 @@ import {
   getLambdaFunctionConfigsFromRegex,
   getLayerArn,
   getLayers,
-  isLambdaActive,
   isLayerRuntime,
   isSupportedRuntime,
 } from './commons'
 import {isExtensionCompatibleWithUniversalInstrumentation, isTracerCompatibleWithExtension} from './versionChecker'
 
 export const getInstrumentedFunctionConfigs = async (
-  lambda: Lambda,
-  cloudWatch: CloudWatchLogs,
+  lambdaClient: LambdaClient,
+  cloudWatchLogsClient: CloudWatchLogsClient,
   region: string,
   functionARNs: string[],
   settings: InstrumentationSettings
 ): Promise<FunctionConfiguration[]> => {
-  const lambdaFunctionConfigs = await getLambdaFunctionConfigs(lambda, functionARNs)
+  const lambdaFunctionConfigs = await getLambdaFunctionConfigs(lambdaClient, functionARNs)
 
   const configs: FunctionConfiguration[] = []
   for (const config of lambdaFunctionConfigs) {
-    const functionConfig = await getInstrumentedFunctionConfig(lambda, cloudWatch, config, region, settings)
+    const functionConfig = await getInstrumentedFunctionConfig(
+      lambdaClient,
+      cloudWatchLogsClient,
+      config,
+      region,
+      settings
+    )
 
     configs.push(functionConfig)
   }
@@ -79,9 +90,9 @@ export const getInstrumentedFunctionConfigs = async (
 }
 
 export const getInstrumentedFunctionConfig = async (
-  lambda: Lambda,
-  cloudWatch: CloudWatchLogs,
-  config: Lambda.FunctionConfiguration,
+  lambdaClient: LambdaClient,
+  cloudWatchLogsClient: CloudWatchLogsClient,
+  config: LFunctionConfiguration,
   region: string,
   settings: InstrumentationSettings
 ): Promise<FunctionConfiguration> => {
@@ -91,37 +102,46 @@ export const getInstrumentedFunctionConfig = async (
     throw Error(`Can't instrument ${functionARN}, runtime ${runtime} not supported`)
   }
 
-  await isLambdaActive(lambda, config, functionARN)
   const updateRequest = await calculateUpdateRequest(config, settings, region, runtime)
   let logGroupConfiguration: LogGroupConfiguration | undefined
   if (settings.forwarderARN !== undefined) {
     const logGroupName = `/aws/lambda/${config.FunctionName}`
-    logGroupConfiguration = await calculateLogGroupUpdateRequest(cloudWatch, logGroupName, settings.forwarderARN)
+    logGroupConfiguration = await calculateLogGroupUpdateRequest(
+      cloudWatchLogsClient,
+      logGroupName,
+      settings.forwarderARN
+    )
   }
 
-  const tagConfiguration: TagConfiguration | undefined = await calculateTagUpdateRequest(lambda, functionARN)
+  const tagConfiguration: TagConfiguration | undefined = await calculateTagUpdateRequest(lambdaClient, functionARN)
 
   return {
     functionARN,
     lambdaConfig: config,
     logGroupConfiguration,
     tagConfiguration,
-    updateRequest,
+    updateFunctionConfigurationCommandInput: updateRequest,
   }
 }
 
 export const getInstrumentedFunctionConfigsFromRegEx = async (
-  lambda: Lambda,
-  cloudWatch: CloudWatchLogs,
+  lambdaClient: LambdaClient,
+  cloudWatchLogsClient: CloudWatchLogsClient,
   region: string,
   pattern: string,
   settings: InstrumentationSettings
 ): Promise<FunctionConfiguration[]> => {
-  const matchedFunctions = await getLambdaFunctionConfigsFromRegex(lambda, pattern)
+  const matchedFunctions = await getLambdaFunctionConfigsFromRegex(lambdaClient, pattern)
   const functionsToUpdate: FunctionConfiguration[] = []
 
   for (const config of matchedFunctions) {
-    const functionConfig = await getInstrumentedFunctionConfig(lambda, cloudWatch, config, region, settings)
+    const functionConfig = await getInstrumentedFunctionConfig(
+      lambdaClient,
+      cloudWatchLogsClient,
+      config,
+      region,
+      settings
+    )
     functionsToUpdate.push(functionConfig)
   }
 
@@ -129,7 +149,7 @@ export const getInstrumentedFunctionConfigsFromRegEx = async (
 }
 
 export const calculateUpdateRequest = async (
-  config: Lambda.FunctionConfiguration,
+  config: LFunctionConfiguration,
   settings: InstrumentationSettings,
   region: string,
   runtime: Runtime
@@ -147,7 +167,7 @@ export const calculateUpdateRequest = async (
     return undefined
   }
 
-  const updateRequest: Lambda.UpdateFunctionConfigurationRequest = {
+  const updateRequest: UpdateFunctionConfigurationCommandInput = {
     FunctionName: functionARN,
   }
   let needsUpdate = false
@@ -222,6 +242,7 @@ export const calculateUpdateRequest = async (
   }
 
   const environmentVarsTupleArray: [keyof InstrumentationSettings, string][] = [
+    ['apmFlushDeadline', APM_FLUSH_DEADLINE_MILLISECONDS_ENV_VAR],
     ['captureLambdaPayload', CAPTURE_LAMBDA_PAYLOAD_ENV_VAR],
     ['environment', ENVIRONMENT_ENV_VAR],
     ['extraTags', EXTRA_TAGS_ENV_VAR],

@@ -212,7 +212,7 @@ export const getTestsList = async (
   const configFromEnvironment = config.locations?.length ? {locations: config.locations} : {}
 
   const overrideTestConfig = (test: TriggerConfig): UserConfigOverride =>
-    // Global < env < test config
+    // {} < global < ENV < test file
     ({
       ...config.global,
       ...configFromEnvironment,

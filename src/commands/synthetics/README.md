@@ -50,11 +50,13 @@ To setup the client, your Datadog API and application keys need to be configured
 
 3. Or defined in a [global JSON configuration file](#global-configuration-file-options):
 
-   Specify the path to this file using the `--config` flag [when launching your tests](#run-tests). If you set the name of your global configuration file to `datadog-ci.json`, that name is the default.
+   Create a JSON configuration file on your system. Specify the path to the file using the `--config` flag [when launching your tests](#run-tests). If you don't specify a file path, Datadog uses the default filename of `datadog-ci.json`. 
 
 ### Global configuration file options
 
-In the global configuration file, you can set the following advanced options: 
+When you run your tests, use the `--config` flag on the command line to specify the path to the global configuration file.
+
+See below for the list of advanced options in the global configuration file. For an example configuration file, see this [`global.config.json` file][9].
 
 `apiKey`
 : The API key used to query the Datadog API.
@@ -79,6 +81,9 @@ In the global configuration file, you can set the following advanced options:
 
 `global`
 : Overrides for Synthetic tests applied to all tests.
+
+`mobileApplicationVersionFilePath`
+: Override the application version for all Synthetic mobile application tests.
 
 `pollingTimeout`
 : **Type**: integer<br>
@@ -189,6 +194,7 @@ For example:
     "followRedirects": true,
     "headers": {"NEW_HEADER": "NEW VALUE"},
     "locations": ["aws:us-east-1"],
+    "mobileApplicationVersionFilePath": "path/to/application.apk",
     "retry": {"count": 2, "interval": 300},
     "startUrl": "{{URL}}?static_hash={{STATIC_HASH}}",
     "startUrlSubstitutionRegex": "s/(https://www.)(.*)/$1extra-$2/",
@@ -215,8 +221,29 @@ You can decide to have the CLI auto-discover all your `**/*.synthetics.json` Syn
 
 Run tests by executing the CLI:
 
-<!-- xxx tabs xxx -->
-<!-- xxx tab "Yarn" xxx -->
+{{< tabs >}}
+{{% tab "NPM" %}}
+
+Add the following to your `package.json`:
+
+```json
+{
+  "scripts": {
+    "datadog-ci-synthetics": "datadog-ci synthetics run-tests"
+  }
+}
+```
+
+Then, run:
+
+```bash
+npm run datadog-ci-synthetics
+```
+
+**Note**: If you are launching your tests with a custom global configuration file, append the command associated to your `datadog-ci-synthetics` script with `--config <PATH_TO_GLOBAL_CONFIG_FILE>`.
+
+{{% /tab %}}
+{{% tab "Yarn" %}}
 
 The `run-tests` sub-command runs the tests discovered in the folder according to the `files` configuration key. It accepts the `--public-id` (or shorthand `-p`) argument to trigger only the specified test. It can be set multiple times to run multiple tests:
 
@@ -244,29 +271,8 @@ yarn datadog-ci synthetics run-tests -f ./component-1/**/*.synthetics.json -v PA
 
 **Note**: If you are launching your tests with a custom global configuration file, append your command with `--config <PATH_TO_GLOBAL_CONFIG_FILE>`.
 
-<!-- xxz tab xxx -->
-<!-- xxx tab "NPM" xxx -->
-
-Add the following to your `package.json`:
-
-```json
-{
-  "scripts": {
-    "datadog-ci-synthetics": "datadog-ci synthetics run-tests"
-  }
-}
-```
-
-Then, run:
-
-```bash
-npm run datadog-ci-synthetics
-```
-
-**Note**: If you are launching your tests with a custom global configuration file, append the command associated to your `datadog-ci-synthetics` script with `--config <PATH_TO_GLOBAL_CONFIG_FILE>`.
-
-<!-- xxz tab xxx -->
-<!-- xxz tabs xxx -->
+{{% /tab %}}
+{{< /tabs >}}
 
 ### Failure modes flags
 
@@ -296,6 +302,7 @@ Your test files must be named with a `.synthetics.json` suffix.
         "followRedirects": true,
         "headers": {"NEW_HEADER": "NEW VALUE"},
         "locations": ["aws:us-east-1"],
+        "mobileApplicationVersionFilePath": "path/to/application.apk",
         "pollingTimeout": 30000,
         "retry": {"count": 2, "interval": 300},
         "startUrl": "{{URL}}?static_hash={{STATIC_HASH}}",
@@ -311,28 +318,31 @@ The `<TEST_PUBLIC_ID>` can be either the identifier of the test found in the URL
 
 All options under the `config` key are optional and allow overriding of the test configuration as stored in Datadog.
 
-| Options                     | Type             | Definition                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
-|-----------------------------|------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `allowInsecureCertificates` | Boolean          | Disable certificate checks in Synthetic API tests.                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
-| `basicAuth`                 | Object           | Credentials to provide if basic authentication is required.<br><br>- `username` (String): The username for basic authentication.<br>- `password` (String): The password for basic authentication.                                                                                                                                                                                                                                                                                                      |
-| `body`                      | String           | Data to send in an API test.                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
-| `bodyType`                  | String           | Type of data sent in an API test.                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
-| `cookies`                   | String or object | Use the provided string as a cookie header in an API or browser test (in addition or as a replacement).<br><br>- If this is a string, it is used to replace the original cookies.<br>- If this is an object, the format must be `{append?: boolean, value: string}`, and depending on the value of the `append`, it is appended or replaces the original cookies.                                                                                                                                      |
-| `defaultStepTimeout`        | Number           | The maximum duration of steps in seconds for browser tests, which does not override individually set step timeouts.                                                                                                                                                                                                                                                                                                                                                                                    |
-| `deviceIds`                 | Array            | A list of devices to run the browser test on.                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
-| `executionRule`             | String           | The execution rule for the test defines the behavior of the CLI in case of a failing test.<br><br>- `blocking`: The CLI returns an error if the test fails.<br>- `non_blocking`: The CLI only prints a warning if the test fails.<br>- `skipped`: The test is not executed at all.                                                                                                                                                                                                                     |
-| `followRedirects`           | Boolean          | Indicates whether or not to follow HTTP redirections in Synthetic API tests.                                                                                                                                                                                                                                                                                                                                                                                                                           |
-| `headers`                   | Object           | The headers to replace in the test. This object should contain keys as the name of the header to replace and values as the new value of the header to replace.                                                                                                                                                                                                                                                                                                                                         |
-| `locations`                 | Array            | A list of locations to run the test from.                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
-| `pollingTimeout`            | Integer          | The maximum duration in milliseconds of a test. If the execution exceeds this value, it is considered failed.                                                                                                                                                                                                                                                                                                                                                                                          |
-| `retry`                     | Object           | The retry policy for the test.<br><br>- `count` (Integer): The number of attempts to perform in case of test failure.<br>- `interval` (Integer): The interval between attempts in milliseconds.                                                                                                                                                                                                                                                                                                        |
-| `startUrl`                  | String           | The new start URL to provide to the test. Variables specified in brackets (for example, `{{ EXAMPLE }}`) found in environment variables are replaced.                                                                                                                                                                                                                                                                                                                                                  |
-| `startUrlSubstitutionRegex` | String           | The regex to modify the starting URL of the test (for browser and HTTP tests only), whether it was given by the original test or the configuration override `startUrl`. <br><br>If the URL contains variables, this regex applies after the interpolation of the variables. There are two possible formats: <br>- `your_regex\|your_substitution`: A pipe-based regular expression. For example, `https://example.com(.*)\|http://subdomain.example.com$1` to transform `https://example.com/test` to `http://subdomain.example.com/test`. <br>- `s/your_regex/your_substitution/modifiers`: The JavaScript regex syntax for more complex transformations. For example, `s/(https://www.)(.*)/$1extra-$2/` to transform `https://www.example.com` into `https://www.extra-example.com`. |
-| `variables`                 | Object           | The variables to replace in the test. This object should contain key as the name of the variable to replace and values as the new value of the variable to replace.                                                                                                                                                                                                                                                                                                                                    |
+| Options                            | Type             | Definition                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+|------------------------------------|------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `allowInsecureCertificates`        | Boolean          | Disable certificate checks in Synthetic API tests.                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| `basicAuth`                        | Object           | Credentials to provide if basic authentication is required.<br><br>- `username` (String): The username for basic authentication.<br>- `password` (String): The password for basic authentication.                                                                                                                                                                                                                                                                                                      |
+| `body`                             | String           | Data to send in an API test.                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| `bodyType`                         | String           | Type of data sent in an API test.                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| `cookies`                          | String or object | Use the provided string as a cookie header in an API or browser test (in addition or as a replacement).<br><br>- If this is a string, it is used to replace the original cookies.<br>- If this is an object, the format must be `{append?: boolean, value: string}`, and depending on the value of the `append`, it is appended or replaces the original cookies.                                                                                                                                      |
+| `defaultStepTimeout`               | Number           | The maximum duration of steps in seconds for browser tests, which does not override individually set step timeouts.                                                                                                                                                                                                                                                                                                                                                                                    |
+| `deviceIds`                        | Array            | A list of devices to run the browser test on.                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
+| `executionRule`                    | String           | The execution rule for the test defines the behavior of the CLI in case of a failing test.<br><br>- `blocking`: The CLI returns an error if the test fails.<br>- `non_blocking`: The CLI only prints a warning if the test fails.<br>- `skipped`: The test is not executed at all.                                                                                                                                                                                                                     |
+| `followRedirects`                  | Boolean          | Indicates whether or not to follow HTTP redirections in Synthetic API tests.                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| `headers`                          | Object           | The headers to replace in the test. This object should contain keys as the name of the header to replace and values as the new value of the header to replace.                                                                                                                                                                                                                                                                                                                                         |
+| `locations`                        | Array            | A list of locations to run the test from.                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| `mobileApplicationVersionFilePath` | String           | Override the application version for a Synthetic mobile application test.                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| `pollingTimeout`                   | Integer          | The maximum duration in milliseconds of a test. If the execution exceeds this value, it is considered failed.                                                                                                                                                                                                                                                                                                                                                                                          |
+| `retry`                            | Object           | The retry policy for the test.<br><br>- `count` (Integer): The number of attempts to perform in case of test failure.<br>- `interval` (Integer): The interval between attempts in milliseconds.                                                                                                                                                                                                                                                                                                        |
+| `startUrl`                         | String           | The new start URL to provide to the test. Variables specified in brackets (for example, `{{ EXAMPLE }}`) found in environment variables are replaced.                                                                                                                                                                                                                                                                                                                                                  |
+| `startUrlSubstitutionRegex`        | String           | The regex to modify the starting URL of the test (for browser and HTTP tests only), whether it was given by the original test or the configuration override `startUrl`. <br><br>If the URL contains variables, this regex applies after the interpolation of the variables. There are two possible formats: <br>- `your_regex\|your_substitution`: The pipe-based syntax, to avoid any conflicts with `/` characters in URLs. For example, `https://example.com(.*)\|http://subdomain.example.com$1` to transform `https://example.com/test` to `http://subdomain.example.com/test`. <br>- `s/your_regex/your_substitution/modifiers`: The slash syntax, which supports modifiers. For example, `s/(https://www.)(.*)/$1extra-$2/` to transform `https://www.example.com` into `https://www.extra-example.com`. |
+| `variables`                        | Object           | The variables to replace in the test. This object should contain key as the name of the variable to replace and values as the new value of the variable to replace.                                                                                                                                                                                                                                                                                                                                    |
 
 ## Use the testing tunnel
 
-You can combine variable overrides with the [Continuous Testing Tunnel][3] to run tests within your development environment. The testing tunnel creates an end-to-end encrypted HTTP proxy between your infrastructure and Datadog that allows all test requests sent through the CLI to be automatically routed through the `datadog-ci` client. This allows you to run tests with end-to-end encryption at every stage of your software development lifecycle, from pre-production environments to your production system.
+You can combine variable overrides with the [Continuous Testing Tunnel][3] to run tests within your development environment. The testing tunnel creates an end-to-end encrypted HTTP proxy between your infrastructure and Datadog that allows all test requests sent through the CLI to be automatically routed through the `datadog-ci` client. 
+
+This allows you to run tests with end-to-end encryption at every stage of your software development lifecycle, from pre-production environments to your production system.
 
 ## End-to-end testing process
 
@@ -393,7 +403,7 @@ Reporters can hook themselves into the `MainReporter` of the command.
 
 ## View test results
 
-You can see results for CI batches by clicking on a batch in the [Continuous Testing Explorer][4], or by clicking on a test in the [Synthetic Tests page][5].
+You can see results for CI batches by clicking on a batch in the [Synthetic Monitoring & Continuous Testing Explorer][4] or clicking on a test in the [**Synthetic Tests** page][5].
 
 You can also see the outcome of test executions directly in your CI as your tests are being executed. To identify what caused a test to fail, look at the execution logs and search for causes of the failed assertion.
 
@@ -423,6 +433,8 @@ You can also see the outcome of test executions directly in your CI as your test
 
 ## Further reading
 
+Additional helpful documentation, links, and articles:
+
 - [Use Datadog's GitHub Action to add continuous testing to your workflows][6]
 - [Learn about Continuous Testing and CI/CD][7]
 - [Learn about the Continuous Testing Explorer][8]
@@ -436,3 +448,4 @@ You can also see the outcome of test executions directly in your CI as your test
 [6]: https://www.datadoghq.com/blog/datadog-github-action-synthetics-ci-visibility/
 [7]: https://docs.datadoghq.com/continuous_testing/cicd_integrations/
 [8]: https://docs.datadoghq.com/continuous_testing/explorer/
+[9]: https://github.com/DataDog/datadog-ci/blob/master/.github/workflows/e2e/global.config.json

@@ -3,10 +3,12 @@ import fs from 'fs'
 import {MultipartPayload, MultipartValue} from '../../helpers/upload'
 
 export class RNSourcemap {
+  public bundleName: string
   public gitData?: GitData
   public sourcemapPath: string
 
-  constructor(sourcemapPath: string) {
+  constructor(bundleName: string, sourcemapPath: string) {
+    this.bundleName = bundleName
     this.sourcemapPath = sourcemapPath
   }
 
@@ -61,6 +63,7 @@ export class RNSourcemap {
   ): MultipartValue {
     const metadata: {[k: string]: any} = {
       build_number: build,
+      bundle_name: this.bundleName,
       cli_version: cliVersion,
       platform,
       project_path: projectPath,

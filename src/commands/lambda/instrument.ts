@@ -1,4 +1,6 @@
-import {CloudWatchLogs, Lambda} from 'aws-sdk'
+import {CloudWatchLogsClient} from '@aws-sdk/client-cloudwatch-logs'
+import {LambdaClient, LambdaClientConfig} from '@aws-sdk/client-lambda'
+import {AwsCredentialIdentity} from '@aws-sdk/types'
 import {bold} from 'chalk'
 import {Cli, Command} from 'clipanion'
 
@@ -18,12 +20,12 @@ import {
   checkRuntimeTypesAreUniform,
   coerceBoolean,
   collectFunctionsByRegion,
+  getAWSProfileCredentials,
   getAllLambdaFunctionConfigs,
   handleLambdaFunctionUpdates,
   isMissingAWSCredentials,
   isMissingDatadogEnvVars,
   sentenceMatchesRegEx,
-  updateAWSProfileCredentials,
   willUpdateFunctionConfigs,
 } from './functions/commons'
 import {getInstrumentedFunctionConfigs, getInstrumentedFunctionConfigsFromRegEx} from './functions/instrument'
@@ -44,6 +46,7 @@ import {
 import * as renderer from './renderer'
 
 export class InstrumentCommand extends Command {
+  private apmFlushDeadline?: string
   private captureLambdaPayload?: string
   private config: LambdaConfigOptions = {
     functions: [],
@@ -71,6 +74,8 @@ export class InstrumentCommand extends Command {
   private tracing?: string
   private version?: string
 
+  private credentials?: AwsCredentialIdentity
+
   public async execute() {
     this.context.stdout.write(renderer.renderLambdaHeader(Object.getPrototypeOf(this), this.dryRun))
 
@@ -82,7 +87,7 @@ export class InstrumentCommand extends Command {
     const profile = this.profile ?? this.config.profile
     if (profile) {
       try {
-        await updateAWSProfileCredentials(profile)
+        this.credentials = await getAWSProfileCredentials(profile)
       } catch (err) {
         this.context.stdout.write(renderer.renderError(err))
 
@@ -125,10 +130,15 @@ export class InstrumentCommand extends Command {
       if (!hasSpecifiedFunctions) {
         const spinner = renderer.fetchingFunctionsSpinner()
         try {
-          const lambda = new Lambda({region})
+          const lambdaClientConfig: LambdaClientConfig = {
+            region,
+            credentials: this.credentials,
+          }
+
+          const lambdaClient = new LambdaClient(lambdaClientConfig)
           spinner.start()
           const functionNames =
-            (await getAllLambdaFunctionConfigs(lambda)).map((config) => config.FunctionName!).sort() ?? []
+            (await getAllLambdaFunctionConfigs(lambdaClient)).map((config) => config.FunctionName!).sort() ?? []
           if (functionNames.length === 0) {
             this.context.stdout.write(renderer.renderCouldntFindLambdaFunctionsInRegionError())
 
@@ -220,19 +230,25 @@ export class InstrumentCommand extends Command {
 
       const spinner = renderer.fetchingFunctionsSpinner()
       try {
-        const cloudWatchLogs = new CloudWatchLogs({region})
-        const lambda = new Lambda({region})
+        const cloudWatchLogsClient = new CloudWatchLogsClient({region})
+
+        const lambdaClientConfig: LambdaClientConfig = {
+          region,
+          credentials: this.credentials,
+        }
+
+        const lambdaClient = new LambdaClient(lambdaClientConfig)
         spinner.start()
         const configs = await getInstrumentedFunctionConfigsFromRegEx(
-          lambda,
-          cloudWatchLogs,
+          lambdaClient,
+          cloudWatchLogsClient,
           region,
           this.regExPattern!,
           settings
         )
         spinner.succeed(renderer.renderFetchedLambdaFunctions(configs.length))
 
-        configGroups.push({configs, lambda, cloudWatchLogs, region})
+        configGroups.push({configs, lambdaClient, cloudWatchLogsClient, region})
       } catch (err) {
         spinner.fail(renderer.renderFailedFetchingLambdaFunctions())
         this.context.stdout.write(renderer.renderCouldntFetchLambdaFunctionsError(err))
@@ -256,11 +272,22 @@ export class InstrumentCommand extends Command {
       for (const [region, functionList] of Object.entries(functionGroups)) {
         const spinner = renderer.fetchingFunctionsConfigSpinner(region)
         spinner.start()
-        const lambda = new Lambda({region})
-        const cloudWatchLogs = new CloudWatchLogs({region})
+        const lambdaClientConfig: LambdaClientConfig = {
+          region,
+          credentials: this.credentials,
+        }
+
+        const lambdaClient = new LambdaClient(lambdaClientConfig)
+        const cloudWatchLogsClient = new CloudWatchLogsClient({region})
         try {
-          const configs = await getInstrumentedFunctionConfigs(lambda, cloudWatchLogs, region, functionList, settings)
-          configGroups.push({configs, lambda, cloudWatchLogs, region})
+          const configs = await getInstrumentedFunctionConfigs(
+            lambdaClient,
+            cloudWatchLogsClient,
+            region,
+            functionList,
+            settings
+          )
+          configGroups.push({configs, lambdaClient, cloudWatchLogsClient, region})
           spinner.succeed(renderer.renderFetchedLambdaConfigurationsFromRegion(region, configs.length))
         } catch (err) {
           spinner.fail(renderer.renderFailedFetchingLambdaConfigurationsFromRegion(region))
@@ -402,6 +429,7 @@ export class InstrumentCommand extends Command {
     const tracingEnabled = coerceBoolean(true, this.tracing, this.config.tracing)
     const interactive = coerceBoolean(false, this.interactive, this.config.interactive)
     const logLevel = this.logLevel ?? this.config.logLevel
+    const apmFlushDeadline = this.apmFlushDeadline ?? this.config.apmFlushDeadline
 
     const service = this.service ?? this.config.service
     const environment = this.environment ?? this.config.environment
@@ -430,6 +458,7 @@ export class InstrumentCommand extends Command {
     }
 
     return {
+      apmFlushDeadline,
       captureLambdaPayload,
       environment,
       extensionVersion,
@@ -470,47 +499,47 @@ export class InstrumentCommand extends Command {
 
     this.context.stdout.write(renderer.renderWillApplyUpdates(this.dryRun))
     for (const config of configs) {
-      if (config.updateRequest) {
+      if (config.updateFunctionConfigurationCommandInput) {
         this.context.stdout.write(
           `UpdateFunctionConfiguration -> ${config.functionARN}\n${JSON.stringify(
-            config.updateRequest,
+            config.updateFunctionConfigurationCommandInput,
             undefined,
             2
           )}\n`
         )
       }
       const {logGroupConfiguration, tagConfiguration} = config
-      if (tagConfiguration?.tagResourceRequest) {
+      if (tagConfiguration?.tagResourceCommandInput) {
         this.context.stdout.write(
-          `TagResource -> ${tagConfiguration.tagResourceRequest.Resource}\n${JSON.stringify(
-            tagConfiguration.tagResourceRequest.Tags,
+          `TagResource -> ${tagConfiguration.tagResourceCommandInput.Resource}\n${JSON.stringify(
+            tagConfiguration.tagResourceCommandInput.Tags,
             undefined,
             2
           )}\n`
         )
       }
-      if (logGroupConfiguration?.createLogGroupRequest) {
+      if (logGroupConfiguration?.createLogGroupCommandInput) {
         this.context.stdout.write(
           `CreateLogGroup -> ${logGroupConfiguration.logGroupName}\n${JSON.stringify(
-            logGroupConfiguration.createLogGroupRequest,
+            logGroupConfiguration.createLogGroupCommandInput,
             undefined,
             2
           )}\n`
         )
       }
-      if (logGroupConfiguration?.deleteSubscriptionFilterRequest) {
+      if (logGroupConfiguration?.deleteSubscriptionFilterCommandInput) {
         this.context.stdout.write(
           `DeleteSubscriptionFilter -> ${logGroupConfiguration.logGroupName}\n${JSON.stringify(
-            logGroupConfiguration.deleteSubscriptionFilterRequest,
+            logGroupConfiguration.deleteSubscriptionFilterCommandInput,
             undefined,
             2
           )}\n`
         )
       }
-      if (logGroupConfiguration?.subscriptionFilterRequest) {
+      if (logGroupConfiguration?.putSubscriptionFilterCommandInput) {
         this.context.stdout.write(
           `PutSubscriptionFilter -> ${logGroupConfiguration.logGroupName}\n${JSON.stringify(
-            logGroupConfiguration.subscriptionFilterRequest,
+            logGroupConfiguration.putSubscriptionFilterCommandInput,
             undefined,
             2
           )}\n`
@@ -540,6 +569,7 @@ InstrumentCommand.addOption('dryRun', Command.Boolean('-d,--dry'))
 InstrumentCommand.addOption('configPath', Command.String('--config'))
 InstrumentCommand.addOption('forwarder', Command.String('--forwarder'))
 InstrumentCommand.addOption('logLevel', Command.String('--log-level,--logLevel'))
+InstrumentCommand.addOption('apmFlushDeadline', Command.String('--apm-flush-deadline'))
 
 InstrumentCommand.addOption('service', Command.String('--service'))
 InstrumentCommand.addOption('environment', Command.String('--env'))
