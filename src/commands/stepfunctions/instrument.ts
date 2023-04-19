@@ -106,10 +106,7 @@ export class InstrumentStepFunctionsCommand extends Command {
 
       let listStepFunctionTagsResponse
       try {
-        listStepFunctionTagsResponse = await listTagsForResource(
-          stepFunctionsClient,
-          stepFunctionArn
-        )
+        listStepFunctionTagsResponse = await listTagsForResource(stepFunctionsClient, stepFunctionArn)
       } catch (err) {
         if (err instanceof Error) {
           this.context.stdout.write(

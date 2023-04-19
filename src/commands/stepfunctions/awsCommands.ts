@@ -26,7 +26,7 @@ import {displayChanges} from './helpers'
 
 export const listTagsForResource = async (
   stepFunctionsClient: SFNClient,
-  stepFunctionArn: string,
+  stepFunctionArn: string
 ): Promise<ListTagsForResourceCommandOutput> => {
   const params = {resourceArn: stepFunctionArn}
   const command = new ListTagsForResourceCommand(params)
@@ -60,7 +60,7 @@ export const putSubscriptionFilter = async (
     // Even if the same filter name is created before, the response is still 200.
     // there are no way to tell
     context.stdout.write(
-      `Subscription filter ${filterName} is created or the original filter ${filterName} is overwritten.`
+      `Subscription filter ${filterName} is created or the original filter ${filterName} is overwritten.\nt`
     )
   }
 }
@@ -292,7 +292,7 @@ export const untagResource = async (
     tagKeys,
   }
   const command = new UntagResourceCommand(params)
-  const commandName = 'UpdateStateMachine'
+  const commandName = 'UntagResource'
   displayChanges(stepFunctionArn, context, commandName, dryRun, params)
   if (!dryRun) {
     await stepFunctionsClient.send(command)

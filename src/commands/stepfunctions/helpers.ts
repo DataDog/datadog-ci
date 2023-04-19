@@ -2,6 +2,8 @@ import {DescribeStateMachineCommandOutput} from '@aws-sdk/client-sfn'
 import {BaseContext} from 'clipanion'
 import {diff} from 'deep-object-diff'
 
+import {DD_CI_IDENTIFING_STRING} from './constants'
+
 export const displayChanges = (
   stepFunctionArn: string,
   context: BaseContext,
@@ -15,14 +17,14 @@ export const displayChanges = (
   context.stdout.write(`\nChanges for ${stepFunctionArn}\n`)
   if (previousParams !== undefined) {
     context.stdout.write(
-      `\n${commandName}:\n From:\n${JSON.stringify(diff(params, previousParams), undefined, 2)}\nTo: \n${JSON.stringify(
+      `\n${commandName}:\nFrom:\n${JSON.stringify(diff(params, previousParams), undefined, 2)}\nTo: \n${JSON.stringify(
         diff(previousParams, params),
         undefined,
         2
       )}\n`
     )
   } else {
-    context.stdout.write(`${commandName} ->\n${JSON.stringify(params, undefined, 2)}\n`)
+    context.stdout.write(`\n${commandName}: \n${JSON.stringify(params, undefined, 2)}\n`)
   }
 }
 
@@ -41,7 +43,6 @@ export const buildLogGroupName = (stepFunctionName: string, env: string | undefi
   return `/aws/vendedlogs/states/${stepFunctionName}-Logs${env !== undefined ? '-' + env : ''}`
 }
 
-export const DD_CI_IDENTIFING_STRING = 'DdCiLogGroupSubscription'
 export const buildSubscriptionFilterName = (stepFunctionName: string): string => {
   return `${stepFunctionName}-${DD_CI_IDENTIFING_STRING}`
 }

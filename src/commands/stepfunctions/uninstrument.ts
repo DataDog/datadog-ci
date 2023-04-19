@@ -3,8 +3,8 @@ import {SFNClient} from '@aws-sdk/client-sfn'
 import {Command} from 'clipanion'
 
 import {deleteSubscriptionFilter, describeStateMachine, describeSubscriptionFilters, untagResource} from './awsCommands'
-import {TAG_VERSION_NAME} from './constants'
-import {DD_CI_IDENTIFING_STRING, getStepFunctionLogGroupArn, isValidArn, parseArn} from './helpers'
+import {DD_CI_IDENTIFING_STRING, TAG_VERSION_NAME} from './constants'
+import {getStepFunctionLogGroupArn, isValidArn, parseArn} from './helpers'
 
 export class UninstrumentStepFunctionsCommand extends Command {
   public static usage = Command.Usage({
@@ -53,16 +53,15 @@ export class UninstrumentStepFunctionsCommand extends Command {
 
     // loop over step functions passed as parameters and generate a list of requests to make to AWS for each step function
     for (const stepFunctionArn of stepFunctionArns) {
-
       // use region from the step function arn to make requests to AWS
       const arnObject = parseArn(stepFunctionArn)
       const region = arnObject.region
       const cloudWatchLogsClient = new CloudWatchLogsClient({region})
       const stepFunctionsClient = new SFNClient({region})
 
-      let stepFunction
+      let describeStateMachineCommandOutput
       try {
-        stepFunction = await describeStateMachine(stepFunctionsClient, stepFunctionArn)
+        describeStateMachineCommandOutput = await describeStateMachine(stepFunctionsClient, stepFunctionArn)
       } catch (err) {
         if (err instanceof Error) {
           this.context.stdout.write(`\n[Error] ${err.message}. Unable to fetch Step Function ${stepFunctionArn}\n`)
@@ -73,7 +72,7 @@ export class UninstrumentStepFunctionsCommand extends Command {
         return 1
       }
 
-      const logGroupArn = getStepFunctionLogGroupArn(stepFunction)
+      const logGroupArn = getStepFunctionLogGroupArn(describeStateMachineCommandOutput)
       if (logGroupArn === undefined) {
         this.context.stdout.write('\n[Error] Unable to get Log Group arn from Step Function logging configuration\n')
 
@@ -117,6 +116,7 @@ export class UninstrumentStepFunctionsCommand extends Command {
       }
 
       const tagKeystoRemove: string[] = [TAG_VERSION_NAME]
+      // Untag resouce command is idempotent, no need to verify if the tag exist by making an additional api call to get tags
       await untagResource(stepFunctionsClient, tagKeystoRemove, stepFunctionArn, this.context, this.dryRun)
     }
 

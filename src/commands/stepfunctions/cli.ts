@@ -1,5 +1,4 @@
 import {InstrumentStepFunctionsCommand} from './instrument'
-// import {UninstrumentStepFunctionsCommand} from './uninstrument'
+import {UninstrumentStepFunctionsCommand} from './uninstrument'
 
-// module.exports = [InstrumentStepFunctionsCommand, UninstrumentStepFunctionsCommand]
-module.exports = [InstrumentStepFunctionsCommand]
+module.exports = [InstrumentStepFunctionsCommand, UninstrumentStepFunctionsCommand]
