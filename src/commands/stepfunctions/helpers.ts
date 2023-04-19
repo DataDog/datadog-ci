@@ -1,7 +1,6 @@
-import {StepFunctions} from 'aws-sdk'
+import {DescribeStateMachineCommandOutput} from '@aws-sdk/client-sfn'
 import {BaseContext} from 'clipanion'
 import {diff} from 'deep-object-diff'
-import {DescribeStateMachineCommandOutput} from "@aws-sdk/client-sfn";
 
 export const displayChanges = (
   stepFunctionArn: string,
@@ -11,12 +10,12 @@ export const displayChanges = (
   params: any,
   previousParams?: any
 ): void => {
-  context.stdout.write(`\n${dryRun ? '[Dry Run] ' : ''}Will apply the following changes:\n`)
-  context.stdout.write(`\n${'='.repeat(30)}`)
+  context.stdout.write(`\n${dryRun ? '[Dry Run] ' : ''}Will apply the following change:\n`)
+  context.stdout.write(`${'='.repeat(30)}`)
   context.stdout.write(`\nChanges for ${stepFunctionArn}\n`)
   if (previousParams !== undefined) {
     context.stdout.write(
-      `\n${commandName} ->\n${JSON.stringify(diff(params, previousParams), undefined, 2)}\n--->\n${JSON.stringify(
+      `\n${commandName}:\n From:\n${JSON.stringify(diff(params, previousParams), undefined, 2)}\nTo: \n${JSON.stringify(
         diff(previousParams, params),
         undefined,
         2

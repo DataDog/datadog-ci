@@ -17,15 +17,11 @@ import {TAG_VERSION_NAME} from './constants'
 import {
   buildLogGroupName,
   buildArn,
-  // buildLogGroupName,
   buildSubscriptionFilterName,
-  // getStepFunctionLogGroupArn,
   isValidArn,
-  parseArn, getStepFunctionLogGroupArn,
+  parseArn,
+  getStepFunctionLogGroupArn,
 } from './helpers'
-import {RequestsByStepFunction} from './interfaces'
-
-// import {DescribeStateMachineCommandOutput} from "@aws-sdk/client-sfn/dist-types/ts3.4";
 
 const cliVersion = require('../../../package.json').version
 
@@ -255,16 +251,6 @@ export class InstrumentStepFunctionsCommand extends Command {
     if (!hasChanges) {
       this.context.stdout.write(`\nNo change is applied.\n `)
     }
-    // display changes that will be applied if dry run mode is disabled
-    // displayChanges(requestsByStepFunction, this.dryRun, this.context)
-
-    // if dry run mode is disabled, apply changes by making requests to AWS
-    // if (!this.dryRun) {
-    //   const error = await applyChanges(requestsByStepFunction, this.context)
-    //   if (error) {
-    //     return 1
-    //   }
-    // }
 
     return 0
   }

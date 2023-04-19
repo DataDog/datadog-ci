@@ -55,11 +55,14 @@ export const putSubscriptionFilter = async (
   const command = new PutSubscriptionFilterCommand(params)
   const commandName = 'PutSubscriptionFilter'
   displayChanges(stepFunctionArn, context, commandName, dryRun, params)
-
-  await cloudWatchLogsClient.send(command)
-  // Even if the same filter name is created before, the response is still 200.
-  // there are no way to tell
-  context.stdout.write(`Subscription filter ${filterName} is created or the original ${filterName} is overwritten.`)
+  if (!dryRun) {
+    await cloudWatchLogsClient.send(command)
+    // Even if the same filter name is created before, the response is still 200.
+    // there are no way to tell
+    context.stdout.write(
+      `Subscription filter ${filterName} is created or the original filter ${filterName} is overwritten.`
+    )
+  }
 }
 
 export const tagResource = (
@@ -77,8 +80,10 @@ export const tagResource = (
   const command = new TagResourceCommand(params)
   const commandName = 'TagResource'
   displayChanges(stepFunctionArn, context, commandName, dryRun, params)
-  void stepFunctionsClient.send(command)
-  printSuccessfulMessage(commandName, context)
+  if (!dryRun) {
+    void stepFunctionsClient.send(command)
+    printSuccessfulMessage(commandName, context)
+  }
 }
 
 export const createLogGroup = async (
@@ -95,8 +100,10 @@ export const createLogGroup = async (
   const commandName = 'CreateLogGroup'
   displayChanges(stepFunctionArn, context, commandName, dryRun, params)
   try {
-    await cloudWatchLogsClient.send(command)
-    printSuccessfulMessage(commandName, context)
+    if (!dryRun) {
+      await cloudWatchLogsClient.send(command)
+      printSuccessfulMessage(commandName, context)
+    }
   } catch (err) {
     // if a resource already exists it's a warning since we can use that resource instead of creating it
     if (err instanceof Error) {
@@ -149,8 +156,10 @@ export const createLogsAccessPolicy = async (
   const commandName = 'CreatePolicy'
   displayChanges(stepFunctionArn, context, commandName, dryRun, params)
   try {
-    await iamClient.send(command)
-    printSuccessfulMessage(commandName, context)
+    if (!dryRun) {
+      await iamClient.send(command)
+      printSuccessfulMessage(commandName, context)
+    }
   } catch (err) {
     // if a resource already exists it's a warning since we can use that resource instead of creating it
     if (err instanceof Error) {
@@ -184,8 +193,10 @@ export const attachPolicyToStateMachineIamRole = (
   const command = new AttachRolePolicyCommand(params)
   const commandName = 'AttachRolePolicy'
   displayChanges(stepFunctionArn, context, commandName, dryRun, params)
-  void iamClient.send(command)
-  printSuccessfulMessage(commandName, context)
+  if (!dryRun) {
+    void iamClient.send(command)
+    printSuccessfulMessage(commandName, context)
+  }
 }
 
 export const enableStepFunctionLogs = async (
@@ -213,18 +224,20 @@ export const enableStepFunctionLogs = async (
   const command = new UpdateStateMachineCommand(params)
   const commandName = 'UpdateStateMachine'
   displayChanges(stepFunctionArn, context, commandName, dryRun, params, previousParams)
-  await stepFunctionsClient.send(command)
-  printSuccessfulMessage(commandName, context)
+  if (!dryRun) {
+    await stepFunctionsClient.send(command)
+    printSuccessfulMessage(commandName, context)
+  }
 }
 
-export const deleteSubscriptionFilter = (
+export const deleteSubscriptionFilter = async (
   cloudWatchLogsClient: CloudWatchLogsClient,
   filterName: string,
   logGroupName: string,
   stepFunctionArn: string,
   context: BaseContext,
   dryRun: boolean
-): void => {
+): Promise<void> => {
   const params = {
     filterName,
     logGroupName,
@@ -233,8 +246,10 @@ export const deleteSubscriptionFilter = (
   const command = new DeleteSubscriptionFilterCommand(params)
   const commandName = 'DeleteSubscriptionFilter'
   displayChanges(stepFunctionArn, context, commandName, dryRun, params)
-  void cloudWatchLogsClient.send(command)
-  printSuccessfulMessage(commandName, context)
+  if (!dryRun) {
+    await cloudWatchLogsClient.send(command)
+    printSuccessfulMessage(commandName, context)
+  }
 }
 
 const buildLogAccessPolicyName = (stepFunction: DescribeStateMachineCommandOutput): string => {
@@ -265,13 +280,13 @@ const printSuccessfulMessage = (commandName: string, context: BaseContext): void
   context.stdout.write(`${commandName} finished successfully \n\n`)
 }
 
-export const untagResource = (
+export const untagResource = async (
   stepFunctionsClient: SFNClient,
   tagKeys: string[],
   stepFunctionArn: string,
   context: BaseContext,
   dryRun: boolean
-): void => {
+): Promise<void> => {
   const params = {
     resourceArn: stepFunctionArn,
     tagKeys,
@@ -279,6 +294,8 @@ export const untagResource = (
   const command = new UntagResourceCommand(params)
   const commandName = 'UpdateStateMachine'
   displayChanges(stepFunctionArn, context, commandName, dryRun, params)
-  void stepFunctionsClient.send(command)
-  printSuccessfulMessage(commandName, context)
+  if (!dryRun) {
+    await stepFunctionsClient.send(command)
+    printSuccessfulMessage(commandName, context)
+  }
 }
