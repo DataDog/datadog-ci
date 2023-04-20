@@ -33,8 +33,8 @@ export const listTagsForResource = async (
   stepFunctionsClient: SFNClient,
   stepFunctionArn: string
 ): Promise<ListTagsForResourceCommandOutput> => {
-  const params = {resourceArn: stepFunctionArn}
-  const command = new ListTagsForResourceCommand(params)
+  const input = {resourceArn: stepFunctionArn}
+  const command = new ListTagsForResourceCommand(input)
 
   return stepFunctionsClient.send(command)
 }
@@ -51,15 +51,15 @@ export const putSubscriptionFilter = async (
   // Running this function multiple times would not create duplicate filters (old filter with the same name would be overwritten).
   // However, two filters with the same destination forwarder can exist when the filter names are different.
 
-  const params = {
+  const input = {
     destinationArn: forwarderArn,
     filterName,
     filterPattern: '',
     logGroupName,
   }
-  const command = new PutSubscriptionFilterCommand(params)
+  const command = new PutSubscriptionFilterCommand(input)
   const commandName = 'PutSubscriptionFilter'
-  displayChanges(stepFunctionArn, context, commandName, dryRun, params)
+  displayChanges(stepFunctionArn, context, commandName, dryRun, input)
   if (!dryRun) {
     const data = await cloudWatchLogsClient.send(command)
     // Even if the same filter name is created before, the response is still 200.
@@ -79,14 +79,14 @@ export const tagResource = async (
   context: BaseContext,
   dryRun: boolean
 ): Promise<TagResourceCommandOutput | undefined> => {
-  const params = {
+  const input = {
     resourceArn: stepFunctionArn,
     tags,
   }
 
-  const command = new TagResourceCommand(params)
+  const command = new TagResourceCommand(input)
   const commandName = 'TagResource'
-  displayChanges(stepFunctionArn, context, commandName, dryRun, params)
+  displayChanges(stepFunctionArn, context, commandName, dryRun, input)
   if (!dryRun) {
     const data = stepFunctionsClient.send(command)
     printSuccessfulMessage(commandName, context)
@@ -102,12 +102,12 @@ export const createLogGroup = async (
   context: BaseContext,
   dryRun: boolean
 ): Promise<CreateLogGroupCommandOutput | undefined> => {
-  const params = {
+  const input = {
     logGroupName,
   }
-  const command = new CreateLogGroupCommand(params)
+  const command = new CreateLogGroupCommand(input)
   const commandName = 'CreateLogGroup'
-  displayChanges(stepFunctionArn, context, commandName, dryRun, params)
+  displayChanges(stepFunctionArn, context, commandName, dryRun, input)
   try {
     if (!dryRun) {
       const data = await cloudWatchLogsClient.send(command)
@@ -159,13 +159,13 @@ export const createLogsAccessPolicy = async (
     ],
   }
 
-  const params = {
+  const input = {
     PolicyDocument: JSON.stringify(logsAccessPolicy),
     PolicyName: buildLogAccessPolicyName(describeStateMachineCommandOutput),
   }
-  const command = new CreatePolicyCommand(params)
+  const command = new CreatePolicyCommand(input)
   const commandName = 'CreatePolicy'
-  displayChanges(stepFunctionArn, context, commandName, dryRun, params)
+  displayChanges(stepFunctionArn, context, commandName, dryRun, input)
   try {
     if (!dryRun) {
       const data = await iamClient.send(command)
@@ -198,14 +198,14 @@ export const attachPolicyToStateMachineIamRole = async (
   const roleName = describeStateMachineCommandOutput?.roleArn?.split('/')[1]
   const policyArn = `arn:aws:iam::${accountId}:policy/${buildLogAccessPolicyName(describeStateMachineCommandOutput)}`
 
-  const params = {
+  const input = {
     PolicyArn: policyArn,
     RoleName: roleName,
   }
 
-  const command = new AttachRolePolicyCommand(params)
+  const command = new AttachRolePolicyCommand(input)
   const commandName = 'AttachRolePolicy'
-  displayChanges(stepFunctionArn, context, commandName, dryRun, params)
+  displayChanges(stepFunctionArn, context, commandName, dryRun, input)
   if (!dryRun) {
     const data = await iamClient.send(command)
     printSuccessfulMessage(commandName, context)
@@ -222,7 +222,7 @@ export const enableStepFunctionLogs = async (
   context: BaseContext,
   dryRun: boolean
 ): Promise<void> => {
-  const params = {
+  const input = {
     stateMachineArn: stepFunction.stateMachineArn,
     loggingConfiguration: {
       destinations: [{cloudWatchLogsLogGroup: {logGroupArn}}],
@@ -236,9 +236,9 @@ export const enableStepFunctionLogs = async (
     loggingConfiguration: stepFunction.loggingConfiguration,
   }
 
-  const command = new UpdateStateMachineCommand(params)
+  const command = new UpdateStateMachineCommand(input)
   const commandName = 'UpdateStateMachine'
-  displayChanges(stepFunctionArn, context, commandName, dryRun, params, previousParams)
+  displayChanges(stepFunctionArn, context, commandName, dryRun, input, previousParams)
   if (!dryRun) {
     await stepFunctionsClient.send(command)
     printSuccessfulMessage(commandName, context)
@@ -253,14 +253,14 @@ export const deleteSubscriptionFilter = async (
   context: BaseContext,
   dryRun: boolean
 ): Promise<void> => {
-  const params = {
+  const input = {
     filterName,
     logGroupName,
   }
 
-  const command = new DeleteSubscriptionFilterCommand(params)
+  const command = new DeleteSubscriptionFilterCommand(input)
   const commandName = 'DeleteSubscriptionFilter'
-  displayChanges(stepFunctionArn, context, commandName, dryRun, params)
+  displayChanges(stepFunctionArn, context, commandName, dryRun, input)
   if (!dryRun) {
     await cloudWatchLogsClient.send(command)
     printSuccessfulMessage(commandName, context)
@@ -275,8 +275,8 @@ export const describeStateMachine = async (
   stepFunctionsClient: SFNClient,
   stepFunctionArn: string
 ): Promise<DescribeStateMachineCommandOutput> => {
-  const params = {stateMachineArn: stepFunctionArn}
-  const command = new DescribeStateMachineCommand(params)
+  const input = {stateMachineArn: stepFunctionArn}
+  const command = new DescribeStateMachineCommand(input)
 
   return stepFunctionsClient.send(command)
 }
@@ -285,8 +285,8 @@ export const describeSubscriptionFilters = (
   cloudWatchLogsClient: CloudWatchLogsClient,
   logGroupName: string
 ): Promise<DescribeSubscriptionFiltersCommandOutput> => {
-  const params = {logGroupName}
-  const command = new DescribeSubscriptionFiltersCommand(params)
+  const input = {logGroupName}
+  const command = new DescribeSubscriptionFiltersCommand(input)
 
   return cloudWatchLogsClient.send(command)
 }
@@ -302,13 +302,13 @@ export const untagResource = async (
   context: BaseContext,
   dryRun: boolean
 ): Promise<void> => {
-  const params = {
+  const input = {
     resourceArn: stepFunctionArn,
     tagKeys,
   }
-  const command = new UntagResourceCommand(params)
+  const command = new UntagResourceCommand(input)
   const commandName = 'UntagResource'
-  displayChanges(stepFunctionArn, context, commandName, dryRun, params)
+  displayChanges(stepFunctionArn, context, commandName, dryRun, input)
   if (!dryRun) {
     await stepFunctionsClient.send(command)
     printSuccessfulMessage(commandName, context)
