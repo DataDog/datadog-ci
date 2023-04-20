@@ -22,6 +22,7 @@ describe('stepfunctions instrument test', () => {
   })
   beforeEach(() => {
     context = contextFixture()
+
     const describeStateMachineCommandOutput = describeStateMachineFixture()
     aws.describeStateMachine = jest.fn().mockImplementation(() => describeStateMachineCommandOutput)
 
@@ -49,25 +50,6 @@ describe('stepfunctions instrument test', () => {
 
       expect(exitCode).toBe(1)
       expect(context.toString()).toMatch('[Error] invalid arn format for --forwarder arn:')
-    })
-
-    test('removes duplicate step function arns', async () => {
-      const exitCode = await cli.run(
-        [
-          'stepfunctions',
-          'instrument',
-          '--forwarder',
-          'arn:aws:lambda:us-east-1:000000000000:function:DatadogForwarder',
-          '--step-function',
-          'arn:aws:states:us-east-1:000000000000:stateMachine:ExampleStepFunction',
-          '--step-function',
-          'arn:aws:states:us-east-1:000000000000:stateMachine:ExampleStepFunction',
-        ],
-        context
-      )
-
-      expect(exitCode).toBe(0)
-      expect(aws.describeStateMachine).toHaveBeenCalledTimes(1)
     })
 
     test('errors if no step function arn', async () => {
@@ -104,6 +86,97 @@ describe('stepfunctions instrument test', () => {
     })
   })
 
+  describe('stepfunctions command overall test', () => {
+    test('all aws commands are called when log level is OFF', async () => {
+      const loggingConfiguration = {
+        level: 'OFF',
+        includeExecutionData: false,
+      }
+      const describeStateMachineCommandOutput = describeStateMachineFixture({loggingConfiguration})
+      aws.describeStateMachine = jest.fn().mockImplementation(() => describeStateMachineCommandOutput)
+
+      const exitCode = await cli.run(
+        [
+          'stepfunctions',
+          'instrument',
+          '--forwarder',
+          'arn:aws:lambda:us-east-1:000000000000:function:DatadogForwarder',
+          '--step-function',
+          'arn:aws:states:us-east-1:000000000000:stateMachine:ExampleStepFunction',
+          '--env',
+          'test',
+        ],
+        context
+      )
+
+      expect(aws.describeStateMachine).toHaveBeenCalledTimes(1)
+      expect(aws.listTagsForResource).toHaveBeenCalledTimes(1)
+      expect(aws.tagResource).toHaveBeenCalledTimes(1)
+      expect(aws.putSubscriptionFilter).toHaveBeenCalledTimes(1)
+      expect(aws.createLogsAccessPolicy).toHaveBeenCalledTimes(1)
+      expect(aws.attachPolicyToStateMachineIamRole).toHaveBeenCalledTimes(1)
+      expect(aws.enableStepFunctionLogs).toHaveBeenCalledTimes(1)
+      expect(aws.putSubscriptionFilter).toHaveBeenCalledTimes(1)
+
+      expect(exitCode).toBe(0)
+    })
+
+    test('all aws commands are called the same times when as log-level-off state machines', async () => {
+      const loggingConfiguration = {
+        level: 'OFF',
+        includeExecutionData: false,
+      }
+      const describeStateMachineCommandOutput = describeStateMachineFixture({loggingConfiguration})
+      aws.describeStateMachine = jest.fn().mockImplementation(() => describeStateMachineCommandOutput)
+
+      const exitCode = await cli.run(
+        [
+          'stepfunctions',
+          'instrument',
+          '--forwarder',
+          'arn:aws:lambda:us-east-1:000000000000:function:DatadogForwarder',
+          '--step-function',
+          'arn:aws:states:us-east-1:000000000000:stateMachine:ExampleStepFunction',
+          '--step-function',
+          'arn:aws:states:us-east-1:000000000000:stateMachine:ExampleStepFunction222',
+          '--env',
+          'test',
+        ],
+        context
+      )
+
+      expect(aws.describeStateMachine).toHaveBeenCalledTimes(2)
+      expect(aws.listTagsForResource).toHaveBeenCalledTimes(2)
+      expect(aws.tagResource).toHaveBeenCalledTimes(2)
+      expect(aws.putSubscriptionFilter).toHaveBeenCalledTimes(2)
+      expect(aws.createLogsAccessPolicy).toHaveBeenCalledTimes(2)
+      expect(aws.attachPolicyToStateMachineIamRole).toHaveBeenCalledTimes(2)
+      expect(aws.enableStepFunctionLogs).toHaveBeenCalledTimes(2)
+      expect(aws.putSubscriptionFilter).toHaveBeenCalledTimes(2)
+
+      expect(exitCode).toBe(0)
+    })
+
+    test('removes duplicate step function arns', async () => {
+      const exitCode = await cli.run(
+        [
+          'stepfunctions',
+          'instrument',
+          '--forwarder',
+          'arn:aws:lambda:us-east-1:000000000000:function:DatadogForwarder',
+          '--step-function',
+          'arn:aws:states:us-east-1:000000000000:stateMachine:ExampleStepFunction',
+          '--step-function',
+          'arn:aws:states:us-east-1:000000000000:stateMachine:ExampleStepFunction',
+        ],
+        context
+      )
+
+      expect(exitCode).toBe(0)
+      expect(aws.describeStateMachine).toHaveBeenCalledTimes(1)
+    })
+  })
+
   describe('step function tags', () => {
     test('sets dd_sls_ci tag if not already set', async () => {
       const exitCode = await cli.run(
@@ -121,7 +194,7 @@ describe('stepfunctions instrument test', () => {
       )
 
       expect(exitCode).toBe(0)
-      expect(context.toString()).toMatchSnapshot()
+      expect(aws.tagResource).toHaveBeenCalledTimes(1)
     })
 
     test('sets dd_sls_ci tag if changed', async () => {
@@ -143,7 +216,7 @@ describe('stepfunctions instrument test', () => {
       )
 
       expect(exitCode).toBe(0)
-      expect(context.toString()).toMatchSnapshot()
+      expect(aws.tagResource).toHaveBeenCalledTimes(1)
     })
 
     test('sets env tag if not already set', async () => {
@@ -164,7 +237,7 @@ describe('stepfunctions instrument test', () => {
       )
 
       expect(exitCode).toBe(0)
-      expect(context.toString()).toMatchSnapshot()
+      expect(aws.tagResource).toHaveBeenCalledTimes(1)
     })
 
     test('sets service tag if not already set', async () => {
@@ -188,7 +261,7 @@ describe('stepfunctions instrument test', () => {
       )
 
       expect(exitCode).toBe(0)
-      expect(context.toString()).toMatchSnapshot()
+      expect(aws.tagResource).toHaveBeenCalledTimes(1)
     })
   })
 
@@ -213,8 +286,15 @@ describe('stepfunctions instrument test', () => {
         context
       )
 
+      expect(aws.describeStateMachine).toHaveBeenCalledTimes(1)
+      expect(aws.listTagsForResource).toHaveBeenCalledTimes(1)
+      expect(aws.tagResource).toHaveBeenCalledTimes(1)
+      expect(aws.putSubscriptionFilter).toHaveBeenCalledTimes(1)
+      expect(aws.createLogsAccessPolicy).toHaveBeenCalledTimes(1)
+      expect(aws.attachPolicyToStateMachineIamRole).toHaveBeenCalledTimes(1)
+      expect(aws.enableStepFunctionLogs).toHaveBeenCalledTimes(1)
+      expect(aws.putSubscriptionFilter).toHaveBeenCalledTimes(1)
       expect(exitCode).toBe(0)
-      expect(context.toString()).toMatchSnapshot()
     })
   })
 
@@ -232,8 +312,128 @@ describe('stepfunctions instrument test', () => {
         context
       )
 
+      expect(aws.describeStateMachine).toHaveBeenCalledTimes(1)
+      expect(aws.listTagsForResource).toHaveBeenCalledTimes(1)
+      expect(aws.tagResource).toHaveBeenCalledTimes(1)
+      expect(aws.createLogsAccessPolicy).toHaveBeenCalledTimes(0)
+      expect(aws.attachPolicyToStateMachineIamRole).toHaveBeenCalledTimes(0)
+      expect(aws.enableStepFunctionLogs).toHaveBeenCalledTimes(0) // already has logging properly set
+      expect(aws.putSubscriptionFilter).toHaveBeenCalledTimes(1)
       expect(exitCode).toBe(0)
-      expect(context.toString()).toMatchSnapshot()
+    })
+
+    test('log level is not ALL, should call enableStepFunctionLogs', async () => {
+      const loggingConfiguration = {
+        level: 'DEBUG',
+        includeExecutionData: true,
+        destinations: [
+          {
+            cloudWatchLogsLogGroup: {
+              logGroupArn:
+                'arn:aws:logs:us-east-1:000000000000:log-group:/aws/vendedlogs/states/ExampleStepFunction-Logs-test:*',
+            },
+          },
+        ],
+      }
+      const describeStateMachineCommandOutput = describeStateMachineFixture({loggingConfiguration})
+      aws.describeStateMachine = jest.fn().mockImplementation(() => describeStateMachineCommandOutput)
+
+      const exitCode = await cli.run(
+        [
+          'stepfunctions',
+          'instrument',
+          '--forwarder',
+          'arn:aws:lambda:us-east-1:000000000000:function:DatadogForwarder',
+          '--step-function',
+          'arn:aws:states:us-east-1:000000000000:stateMachine:ExampleStepFunction',
+        ],
+        context
+      )
+
+      expect(aws.describeStateMachine).toHaveBeenCalledTimes(1)
+      expect(aws.listTagsForResource).toHaveBeenCalledTimes(1)
+      expect(aws.tagResource).toHaveBeenCalledTimes(1)
+      expect(aws.createLogsAccessPolicy).toHaveBeenCalledTimes(0)
+      expect(aws.attachPolicyToStateMachineIamRole).toHaveBeenCalledTimes(0)
+      expect(aws.enableStepFunctionLogs).toHaveBeenCalledTimes(1)
+      expect(aws.putSubscriptionFilter).toHaveBeenCalledTimes(1)
+      expect(exitCode).toBe(0)
+    })
+
+    test('log level is ALL but includeExecutionData is false. Should call enableStepFunctionLogs', async () => {
+      const loggingConfiguration = {
+        level: 'ALL',
+        includeExecutionData: false,
+        destinations: [
+          {
+            cloudWatchLogsLogGroup: {
+              logGroupArn:
+                'arn:aws:logs:us-east-1:000000000000:log-group:/aws/vendedlogs/states/ExampleStepFunction-Logs-test:*',
+            },
+          },
+        ],
+      }
+      const describeStateMachineCommandOutput = describeStateMachineFixture({loggingConfiguration})
+      aws.describeStateMachine = jest.fn().mockImplementation(() => describeStateMachineCommandOutput)
+
+      const exitCode = await cli.run(
+        [
+          'stepfunctions',
+          'instrument',
+          '--forwarder',
+          'arn:aws:lambda:us-east-1:000000000000:function:DatadogForwarder',
+          '--step-function',
+          'arn:aws:states:us-east-1:000000000000:stateMachine:ExampleStepFunction',
+        ],
+        context
+      )
+
+      expect(aws.describeStateMachine).toHaveBeenCalledTimes(1)
+      expect(aws.listTagsForResource).toHaveBeenCalledTimes(1)
+      expect(aws.tagResource).toHaveBeenCalledTimes(1)
+      expect(aws.createLogsAccessPolicy).toHaveBeenCalledTimes(0)
+      expect(aws.attachPolicyToStateMachineIamRole).toHaveBeenCalledTimes(0)
+      expect(aws.enableStepFunctionLogs).toHaveBeenCalledTimes(1)
+      expect(aws.putSubscriptionFilter).toHaveBeenCalledTimes(1)
+      expect(exitCode).toBe(0)
+    })
+
+    test('log level is not ALL but includeExecutionData is false. Should call enableStepFunctionLogs', async () => {
+      const loggingConfiguration = {
+        level: 'FATAL',
+        includeExecutionData: false,
+        destinations: [
+          {
+            cloudWatchLogsLogGroup: {
+              logGroupArn:
+                'arn:aws:logs:us-east-1:000000000000:log-group:/aws/vendedlogs/states/ExampleStepFunction-Logs-test:*',
+            },
+          },
+        ],
+      }
+      const describeStateMachineCommandOutput = describeStateMachineFixture({loggingConfiguration})
+      aws.describeStateMachine = jest.fn().mockImplementation(() => describeStateMachineCommandOutput)
+
+      const exitCode = await cli.run(
+        [
+          'stepfunctions',
+          'instrument',
+          '--forwarder',
+          'arn:aws:lambda:us-east-1:000000000000:function:DatadogForwarder',
+          '--step-function',
+          'arn:aws:states:us-east-1:000000000000:stateMachine:ExampleStepFunction',
+        ],
+        context
+      )
+
+      expect(aws.describeStateMachine).toHaveBeenCalledTimes(1)
+      expect(aws.listTagsForResource).toHaveBeenCalledTimes(1)
+      expect(aws.tagResource).toHaveBeenCalledTimes(1)
+      expect(aws.createLogsAccessPolicy).toHaveBeenCalledTimes(0)
+      expect(aws.attachPolicyToStateMachineIamRole).toHaveBeenCalledTimes(0)
+      expect(aws.enableStepFunctionLogs).toHaveBeenCalledTimes(1)
+      expect(aws.putSubscriptionFilter).toHaveBeenCalledTimes(1)
+      expect(exitCode).toBe(0)
     })
   })
 

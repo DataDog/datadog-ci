@@ -151,7 +151,7 @@ export class InstrumentStepFunctionsCommand extends Command {
       }
 
       if (stepFunctionTagsToAdd.length > 0) {
-        void tagResource(stepFunctionsClient, stepFunctionArn, stepFunctionTagsToAdd, this.context, this.dryRun)
+        await tagResource(stepFunctionsClient, stepFunctionArn, stepFunctionTagsToAdd, this.context, this.dryRun)
         hasChanges = true
       }
 
@@ -163,7 +163,7 @@ export class InstrumentStepFunctionsCommand extends Command {
       if (logLevel === 'OFF') {
         // if step function logging is disabled, create a log group, subscribe the forwarder to it, and enable step function logging to the created log group
         const logGroupName = buildLogGroupName(stateMachineName, this.environment)
-        void createLogGroup(cloudWatchLogsClient, logGroupName, stepFunctionArn, this.context, this.dryRun)
+        await createLogGroup(cloudWatchLogsClient, logGroupName, stepFunctionArn, this.context, this.dryRun)
 
         await putSubscriptionFilter(
           cloudWatchLogsClient,
