@@ -3,7 +3,7 @@ import {Cli} from 'clipanion/lib/advanced'
 
 import {UninstrumentStepFunctionsCommand} from '../uninstrument'
 
-import {describeStateMachineFixture} from './fixtures/aws-resources'
+import {describeStateMachineFixture, subscriptionFilterFixture} from './fixtures/aws-resources'
 import {contextFixture, testContext} from './fixtures/cli'
 
 jest.mock('../../../../package.json', () => ({version: '2.0.0'}))
@@ -31,8 +31,8 @@ describe('stepfunctions uninstrument', () => {
     describeStateMachineCommandOutput = describeStateMachineFixture()
     aws.describeStateMachine = jest.fn().mockImplementation(() => describeStateMachineCommandOutput)
 
-    // const subscriptionFilter = subscriptionFilterFixture()
-    // aws.describeSubscriptionFilters = jest.fn().mockImplementation(() => ({subscriptionFilters: [subscriptionFilter]}))
+    const subscriptionFilter = subscriptionFilterFixture()
+    aws.describeSubscriptionFilters = jest.fn().mockImplementation(() => ({subscriptionFilters: [subscriptionFilter]}))
     aws.deleteSubscriptionFilter = jest.fn().mockImplementation(() => ({}))
     aws.untagResource = jest.fn().mockImplementation(() => ({}))
   })
