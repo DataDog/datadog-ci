@@ -1,23 +1,10 @@
+import {
+  CloudWatchLogs,
+  DescribeSubscriptionFiltersCommandOutput
+} from '@aws-sdk/client-cloudwatch-logs'
 import {DescribeStateMachineCommandOutput} from '@aws-sdk/client-sfn'
-import {CloudWatchLogs, StepFunctions} from 'aws-sdk'
-
-export const cloudWatchLogsClientFixture = (
-  props: Partial<CloudWatchLogs.ClientConfiguration> = {}
-): CloudWatchLogs => {
-  const defaults: CloudWatchLogs.ClientConfiguration = {
-    region: 'us-east-1',
-  }
-
-  return new CloudWatchLogs({...defaults, ...props})
-}
-
-export const stepFunctionsClientFixture = (props: Partial<StepFunctions.ClientConfiguration> = {}): StepFunctions => {
-  const defaults: StepFunctions.ClientConfiguration = {
-    region: 'us-east-1',
-  }
-
-  return new StepFunctions({...defaults, ...props})
-}
+import {SubscriptionFilter} from "@aws-sdk/client-cloudwatch-logs/dist-types/models/models_0";
+import {Tag} from "@aws-sdk/client-sfn/dist-types/ts3.4/models/models_0";
 
 export const createMockContext = () => {
   let data = ''
@@ -30,14 +17,6 @@ export const createMockContext = () => {
       },
     },
   }
-}
-
-export const logGroupFixture = (props: Partial<CloudWatchLogs.LogGroup> = {}): CloudWatchLogs.LogGroup => {
-  const defaults: CloudWatchLogs.LogGroup = {
-    logGroupName: '/aws/vendedlogs/states/ExampleStepFunction-Logs-test',
-  }
-
-  return {...defaults, ...props}
 }
 
 export const describeStateMachineFixture = (
@@ -68,16 +47,15 @@ export const describeStateMachineFixture = (
   return {...defaults, ...props}
 }
 
-export const stepFunctionTagListFixture = (props: Partial<StepFunctions.Tag>[] = []): StepFunctions.TagList => {
-  const defaults: StepFunctions.TagList = [{key: 'env', value: 'test'}]
+export const stepFunctionTagListFixture = (props: Tag[] = []): Tag[] => {
+  const defaults: Tag[] = [{key: 'env', value: 'test'}]
+  defaults.push(...props)
 
-  return defaults.concat(props)
+  return defaults
 }
 
-export const subscriptionFilterFixture = (
-  props: Partial<CloudWatchLogs.SubscriptionFilter> = {}
-): CloudWatchLogs.SubscriptionFilter => {
-  const defaults: CloudWatchLogs.SubscriptionFilter = {
+export const subscriptionFilterFixture = (props: Partial<SubscriptionFilter> = {}): SubscriptionFilter => {
+  const defaults: SubscriptionFilter = {
     destinationArn: 'arn:aws:lambda:us-east-1:000000000000:function:DatadogForwarder',
     filterName: 'ExampleStepFunction-DdCiLogGroupSubscription',
     filterPattern: '',
