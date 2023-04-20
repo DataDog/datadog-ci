@@ -684,7 +684,16 @@ export const getCIEnv = (): {ciEnv: Record<string, string>; provider: string} =>
     }
   }
 
-  throw new Error('Only providers [GitHub, GitLab, CircleCI, Buildkite, Buddy, Jenkins, TeamCity] are supported')
+  if (process.env.TF_BUILD) {
+    return {
+      ciEnv: filterEnv(['SYSTEM_TEAMPROJECTID', 'BUILD_BUILDID', 'SYSTEM_JOBID']),
+      provider: 'azurepipelines',
+    }
+  }
+
+  throw new Error(
+    'Only providers [GitHub, GitLab, CircleCI, Buildkite, Buddy, Jenkins, TeamCity, AzurePipelines] are supported'
+  )
 }
 
 const filterEnv = (values: string[]): Record<string, string> => {
