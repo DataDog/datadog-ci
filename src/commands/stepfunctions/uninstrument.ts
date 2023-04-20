@@ -31,6 +31,7 @@ export class UninstrumentStepFunctionsCommand extends Command {
 
   public async execute() {
     let validationError = false
+    let hasChanges = false
 
     // remove duplicate step function arns
     const stepFunctionArns = [...new Set(this.stepFunctionArns)]
@@ -89,7 +90,9 @@ export class UninstrumentStepFunctionsCommand extends Command {
       try {
         describeSubscriptionFiltersResponse = await describeSubscriptionFilters(cloudWatchLogsClient, logGroupName)
         this.context.stdout.write(`\n${'4'.repeat(22)}`)
-        this.context.stdout.write(`\n describeSubscriptionFiltersResponse: ${JSON.stringify(describeSubscriptionFiltersResponse)}`)
+        this.context.stdout.write(
+          `\n describeSubscriptionFiltersResponse: ${JSON.stringify(describeSubscriptionFiltersResponse)}`
+        )
       } catch (err) {
         if (err instanceof Error) {
           this.context.stdout.write(
@@ -112,7 +115,7 @@ export class UninstrumentStepFunctionsCommand extends Command {
 
       for (const subscriptionFilter of subscriptionFilters) {
         if (typeof subscriptionFilter.filterName === 'string') {
-          void deleteSubscriptionFilter(
+          await deleteSubscriptionFilter(
             cloudWatchLogsClient,
             subscriptionFilter.filterName,
             logGroupName,
@@ -120,12 +123,17 @@ export class UninstrumentStepFunctionsCommand extends Command {
             this.context,
             this.dryRun
           )
+          hasChanges = true
         }
       }
 
       const tagKeystoRemove: string[] = [TAG_VERSION_NAME]
       // Untag resource command is idempotent, no need to verify if the tag exist by making an additional api call to get tags
-      void untagResource(stepFunctionsClient, tagKeystoRemove, stepFunctionArn, this.context, this.dryRun)
+      await untagResource(stepFunctionsClient, tagKeystoRemove, stepFunctionArn, this.context, this.dryRun)
+    }
+
+    if (!hasChanges) {
+      this.context.stdout.write(`\nNo change is applied.\n `)
     }
 
     return 0

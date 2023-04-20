@@ -152,6 +152,7 @@ export class InstrumentStepFunctionsCommand extends Command {
 
       if (stepFunctionTagsToAdd.length > 0) {
         void tagResource(stepFunctionsClient, stepFunctionArn, stepFunctionTagsToAdd, this.context, this.dryRun)
+        hasChanges = true
       }
 
       const stateMachineName = describeStateMachineCommandOutput.name!
@@ -164,7 +165,7 @@ export class InstrumentStepFunctionsCommand extends Command {
         const logGroupName = buildLogGroupName(stateMachineName, this.environment)
         void createLogGroup(cloudWatchLogsClient, logGroupName, stepFunctionArn, this.context, this.dryRun)
 
-        void putSubscriptionFilter(
+        await putSubscriptionFilter(
           cloudWatchLogsClient,
           this.forwarderArn,
           subscriptionFilterName,
@@ -184,7 +185,7 @@ export class InstrumentStepFunctionsCommand extends Command {
         )
 
         // Create Logs Access policy
-        void createLogsAccessPolicy(
+        await createLogsAccessPolicy(
           iamClient,
           describeStateMachineCommandOutput,
           stepFunctionArn,
@@ -193,7 +194,7 @@ export class InstrumentStepFunctionsCommand extends Command {
         )
 
         // Attach policy to state machine IAM role
-        void attachPolicyToStateMachineIamRole(
+        await attachPolicyToStateMachineIamRole(
           iamClient,
           describeStateMachineCommandOutput,
           arnObject.accountId,
@@ -225,7 +226,7 @@ export class InstrumentStepFunctionsCommand extends Command {
         // update step function logging config to have logLevel `ALL` and includeExecutionData `true` if not already configured
         const includeExecutionData = describeStateMachineCommandOutput.loggingConfiguration?.includeExecutionData
         if (logLevel !== 'ALL' || !includeExecutionData) {
-          void enableStepFunctionLogs(
+          await enableStepFunctionLogs(
             stepFunctionsClient,
             describeStateMachineCommandOutput,
             logGroupArn,
@@ -235,7 +236,7 @@ export class InstrumentStepFunctionsCommand extends Command {
           )
           hasChanges = true
         }
-        void putSubscriptionFilter(
+        await putSubscriptionFilter(
           cloudWatchLogsClient,
           this.forwarderArn,
           subscriptionFilterName,
@@ -244,6 +245,7 @@ export class InstrumentStepFunctionsCommand extends Command {
           this.context,
           this.dryRun
         )
+        hasChanges = true
       }
     }
     if (!hasChanges) {

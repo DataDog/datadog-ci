@@ -1,9 +1,9 @@
-import {DescribeStateMachineCommandOutput} from '@aws-sdk/client-sfn';
+import {DescribeStateMachineCommandOutput} from '@aws-sdk/client-sfn'
 import {Cli} from 'clipanion/lib/advanced'
 
 import {UninstrumentStepFunctionsCommand} from '../uninstrument'
 
-import {describeStateMachineFixture, subscriptionFilterFixture} from './fixtures/aws-resources'
+import {describeStateMachineFixture} from './fixtures/aws-resources'
 import {contextFixture, testContext} from './fixtures/cli'
 
 jest.mock('../../../../package.json', () => ({version: '2.0.0'}))
@@ -12,8 +12,6 @@ describe('stepfunctions uninstrument', () => {
   let cli: Cli
   let aws: any
   let helpers: any
-  const fakeLogGroupArn =
-    'arn:aws:logs:us-east-1:000000000000:log-group:/aws/vendedlogs/states/ExampleStepFunction-Logs-test:*'
 
   beforeAll(() => {
     helpers = require('../helpers')
@@ -162,7 +160,7 @@ describe('stepfunctions uninstrument', () => {
       )
     })
 
-    test('all aws commands are called once for one step function', async () => {
+    test('all aws commands are called once for one ci-instrumented step function', async () => {
       const exitCode = await cli.run(
         [
           'stepfunctions',
@@ -181,7 +179,7 @@ describe('stepfunctions uninstrument', () => {
       expect(aws.untagResource).toHaveBeenCalledTimes(1)
     })
 
-    test('all aws commands are called twice for two step functions', async () => {
+    test('all aws commands are called twice for two ci-instrumented step functions', async () => {
       const exitCode = await cli.run(
         [
           'stepfunctions',
