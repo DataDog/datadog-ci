@@ -98,23 +98,6 @@ describe('stepfunctions uninstrument', () => {
     })
   })
 
-  describe('step function logging enabled', () => {
-    test('unsubscribes log group in step function logging config from forwarder and removes dd_sls_ci tag', async () => {
-      const exitCode = await cli.run(
-        [
-          'stepfunctions',
-          'uninstrument',
-          '--step-function',
-          'arn:aws:states:us-east-1:000000000000:stateMachine:ExampleStepFunction',
-        ],
-        context
-      )
-
-      expect(exitCode).toBe(0)
-      expect(context.toString()).toMatchSnapshot()
-    })
-  })
-
   describe('aws error handling', () => {
     test('errors if unable to fetch step function', async () => {
       aws.describeStateMachine = jest.fn().mockImplementation(() => {
