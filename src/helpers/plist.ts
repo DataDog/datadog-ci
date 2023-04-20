@@ -4,6 +4,22 @@ import {XMLParser, XMLValidator} from 'fast-xml-parser'
 
 type PlistNode = {[tagName: string]: [{[valueType: string]: string | number | PlistNode}]}
 
+const parseIfEnvVariable = (propertyValue: string | number): string | number => {
+  if (typeof propertyValue !== 'string') {
+    return propertyValue
+  }
+
+  // Matches "$(ANY_VARIABLE_NAME)", capturing "ANY_VARIABLE_NAME"
+  const matchedEnvVariable = propertyValue.match(/^\$\((.*)\)$/)
+  if (!matchedEnvVariable) {
+    return propertyValue
+  }
+
+  // matchedEnvVariable[0] is the matched string, i.e. "$(VARIABLE_NAME)"
+  // matchedEnvVariable[1] is the captured group, i.e. "VARIABLE_NAME"
+  return process.env[matchedEnvVariable[1]] || ''
+}
+
 class PlistContent {
   private content: PlistNode[]
   constructor(content: PlistNode[]) {
@@ -35,7 +51,7 @@ class PlistContent {
       throw new Error('Property is not a string, this is not supported yet')
     }
 
-    return valueNode.string[0]['#text']
+    return parseIfEnvVariable(valueNode.string[0]['#text'])
   }
 
   /**
