@@ -1,5 +1,21 @@
-import AWS from 'aws-sdk'
-import mockClient from 'aws-sdk-client-mock'
+import {
+  CloudWatchLogsClient,
+  CreateLogGroupCommand,
+  CreateLogGroupCommandOutput,
+  DeleteSubscriptionFilterCommand,
+  DescribeSubscriptionFiltersCommand,
+  PutSubscriptionFilterCommand,
+} from '@aws-sdk/client-cloudwatch-logs'
+import {AttachRolePolicyCommand, CreatePolicyCommand, IAMClient} from '@aws-sdk/client-iam'
+import {
+  DescribeStateMachineCommand,
+  ListTagsForResourceCommand,
+  TagResourceCommand,
+  UntagResourceCommand,
+  UpdateStateMachineCommand,
+  SFNClient, DescribeStateMachineCommandOutput,
+} from '@aws-sdk/client-sfn'
+import {mockClient} from 'aws-sdk-client-mock'
 
 import {
   createLogGroup,
@@ -11,6 +27,9 @@ import {
   putSubscriptionFilter,
   tagResource,
   untagResource,
+  createLogsAccessPolicy,
+  buildLogAccessPolicyName,
+  attachPolicyToStateMachineIamRole,
 } from '../awsCommands'
 
 import {
@@ -20,269 +39,176 @@ import {
   stepFunctionFixture,
   stepFunctionTagListFixture,
   subscriptionFilterFixture,
+  createMockContext,
 } from './fixtures/aws-resources'
 
-describe('aws', () => {
-  describe('cloudwatch logs', () => {
-    describe('createLogGroup', () => {
-      test('creates createLogGroup request', () => {
-        const cloudWatchLogsClient = cloudWatchLogsClientFixture()
-        const logGroup = logGroupFixture()
-        const createLogGroupRequest = createLogGroup(cloudWatchLogsClient, logGroup.logGroupName ?? '')
+describe('awsCommands test', () => {
+  const expectedResp = {fakeKey: 'fakeValue'} as any
+  const fakeForwarderArn = 'fakeForwarderArn'
+  const fakeFilterName = 'fakeFilterName'
+  const fakeLogGroupName = 'fakeLogGroupName'
+  const fakeStepFunctionArn = 'arn:aws:states:sa-east-1:1234567890:stateMachine:UnitTestStateMachineName'
+  const fakeStateMachineName = 'UnitTestStateMachineName'
+  const fakeAccountId = '123456789012'
+  const fakeRoleArn = `arn:aws:iam::${fakeAccountId}:role/unit-test-fake-role-name`
 
-        expect(createLogGroupRequest).toMatchObject({
-          function: expect.objectContaining({
-            operation: 'createLogGroup',
-            params: {
-              logGroupName: '/aws/vendedlogs/states/ExampleStepFunction-Logs-test',
-            },
-          }),
-        })
-      })
-    })
+  const mockedCloudWatchLogsClient = mockClient(CloudWatchLogsClient)
+  const mockedIamClient = mockClient(IAMClient)
+  const mockedStepFunctionsClient = mockClient(SFNClient)
+  let mockedContext: any
 
-    describe('deleteSubscriptionFilter', () => {
-      test('creates deleteSubscriptionFilter request', () => {
-        const cloudWatchLogsClient = cloudWatchLogsClientFixture()
-        const logGroup = logGroupFixture()
-        const subscriptionFilter = subscriptionFilterFixture()
-        const deleteSubscriptionFilterRequest = deleteSubscriptionFilter(
-          cloudWatchLogsClient,
-          subscriptionFilter.filterName ?? '',
-          logGroup.logGroupName ?? ''
-        )
+  beforeEach(() => {
+    mockedStepFunctionsClient.reset()
+    mockedCloudWatchLogsClient.reset()
+    mockedIamClient.reset()
+    jest.resetModules()
+    process.env = {}
 
-        expect(deleteSubscriptionFilterRequest).toMatchObject({
-          function: expect.objectContaining({
-            operation: 'deleteSubscriptionFilter',
-            params: {
-              filterName: 'ExampleStepFunctionLogGroupSubscription',
-              logGroupName: '/aws/vendedlogs/states/ExampleStepFunction-Logs-test',
-            },
-          }),
-        })
-      })
-    })
+    mockedContext = createMockContext()
+    // mockedStepFunctionsClient.on(DescribeStateMachineCommand).resolves({})
+    // mockedStepFunctionsClient.on(ListTagsForResourceCommand).resolves({})
+    // mockedStepFunctionsClient.on(TagResourceCommand).resolves({})
+    // mockedStepFunctionsClient.on(UntagResourceCommand).resolves({})
+    // mockedStepFunctionsClient.on(UpdateStateMachineCommand).resolves({})
+    //
+    // mockedCloudWatchLogsClient.on(CreateLogGroupCommand).resolves({})
+    // mockedCloudWatchLogsClient.on(DeleteSubscriptionFilterCommand).resolves({})
+    // mockedCloudWatchLogsClient.on(DescribeSubscriptionFiltersCommand).resolves({})
+    // mockedCloudWatchLogsClient.on(PutSubscriptionFilterCommand).resolves({})
 
-    describe('describeSubscriptionFilters', () => {
-      test('gets subscription filters', async () => {
-        mockClient.setSDKInstance(AWS)
-        mockClient.mock(
-          'CloudWatchLogs',
-          'describeSubscriptionFilters',
-          (
-            params: CloudWatchLogs.DescribeSubscriptionFiltersRequest,
-            callback: (arg0: undefined, arg1: CloudWatchLogs.DescribeSubscriptionFiltersResponse) => void
-          ) => {
-            callback(undefined, {subscriptionFilters: [subscriptionFilterFixture({logGroupName: params.logGroupName})]})
-          }
-        )
-
-        const cloudWatchLogsClient = cloudWatchLogsClientFixture()
-        const logGroupName = '/aws/vendedlogs/states/ExampleStepFunction-Logs-test-Mock'
-        const describeSubscriptionFiltersResponse = await describeSubscriptionFilters(
-          cloudWatchLogsClient,
-          logGroupName
-        )
-
-        expect(describeSubscriptionFiltersResponse.subscriptionFilters).toMatchObject([
-          {
-            destinationArn: 'arn:aws:lambda:us-east-1:000000000000:function:DatadogForwarder',
-            filterName: 'ExampleStepFunctionLogGroupSubscription',
-            filterPattern: '',
-            logGroupName: '/aws/vendedlogs/states/ExampleStepFunction-Logs-test-Mock',
-          },
-        ])
-
-        mockClient.restore('CloudWatchLogs')
-      })
-    })
-
-    describe('putSubscriptionFilter', () => {
-      test('creates putSubscriptionFilter request', () => {
-        const cloudWatchLogsClient = cloudWatchLogsClientFixture()
-        const logGroup = logGroupFixture()
-        const subscriptionFilter = subscriptionFilterFixture()
-        const putSubscriptionFilterRequest = putSubscriptionFilter(
-          cloudWatchLogsClient,
-          subscriptionFilter.destinationArn ?? '',
-          subscriptionFilter.filterName ?? '',
-          logGroup.logGroupName ?? ''
-        )
-
-        expect(putSubscriptionFilterRequest).toMatchObject({
-          function: expect.objectContaining({
-            operation: 'putSubscriptionFilter',
-            params: {
-              destinationArn: 'arn:aws:lambda:us-east-1:000000000000:function:DatadogForwarder',
-              filterName: 'ExampleStepFunctionLogGroupSubscription',
-              filterPattern: '',
-              logGroupName: '/aws/vendedlogs/states/ExampleStepFunction-Logs-test',
-            },
-          }),
-        })
-      })
-    })
+    mockedIamClient.on(AttachRolePolicyCommand).resolves({})
+    mockedIamClient.on(CreatePolicyCommand).resolves({})
+  })
+  test('listTagsForResource test', async () => {
+    mockedStepFunctionsClient.on(ListTagsForResourceCommand, {resourceArn: fakeStepFunctionArn}).resolves(expectedResp)
+    const actual = await listTagsForResource(new SFNClient({}), fakeStepFunctionArn)
+    expect(actual).toEqual(expectedResp)
   })
 
-  describe('step functions', () => {
-    describe('enableStepFunctionLogs', () => {
-      test('creates enableStepFunctionLogs request', () => {
-        const stepFunctionsClient = stepFunctionsClientFixture()
-        const loggingConfiguration = {
-          level: 'OFF',
-          includeExecutionData: false,
-        }
-        const stepFunction = stepFunctionFixture({loggingConfiguration})
-        const logGroupArn =
-          'arn:aws:logs:us-east-1:000000000000:log-group:/aws/vendedlogs/states/ExampleStepFunction-Logs-test:*'
-        const enableStepFunctionLogsRequest = enableStepFunctionLogs(stepFunctionsClient, stepFunction, logGroupArn)
+  test('putSubscriptionFilter test', async () => {
+    const input = {
+      destinationArn: fakeForwarderArn,
+      filterName: fakeFilterName,
+      filterPattern: '',
+      logGroupName: fakeLogGroupName,
+    }
+    mockedCloudWatchLogsClient.on(PutSubscriptionFilterCommand, input).resolves(expectedResp)
+    const actual = await putSubscriptionFilter(
+      new CloudWatchLogsClient({}),
+      fakeForwarderArn,
+      fakeFilterName,
+      fakeLogGroupName,
+      fakeStepFunctionArn,
+      mockedContext,
+      false
+    )
+    expect(actual).toEqual(expectedResp)
+  })
 
-        expect(enableStepFunctionLogsRequest).toMatchObject({
-          function: expect.objectContaining({
-            operation: 'updateStateMachine',
-            params: {
-              stateMachineArn: 'arn:aws:states:us-east-1:000000000000:stateMachine:ExampleStepFunction',
-              loggingConfiguration: {
-                destinations: [
-                  {
-                    cloudWatchLogsLogGroup: {
-                      logGroupArn:
-                        'arn:aws:logs:us-east-1:000000000000:log-group:/aws/vendedlogs/states/ExampleStepFunction-Logs-test:*',
-                    },
-                  },
-                ],
-                level: 'ALL',
-                includeExecutionData: true,
-              },
-            },
-          }),
-          previousParams: {
-            stateMachineArn: 'arn:aws:states:us-east-1:000000000000:stateMachine:ExampleStepFunction',
-            loggingConfiguration: {
-              level: 'OFF',
-              includeExecutionData: false,
-            },
-          },
-        })
-      })
-    })
+  test('tagResource test', async () => {
+    const fakeTags = [{key: 'key1', val: 'val1'}]
+    const input = {
+      resourceArn: fakeStepFunctionArn,
+      tags: fakeTags,
+    }
 
-    describe('describeStateMachine', () => {
-      test('gets step function', async () => {
-        mockClient.setSDKInstance(AWS)
-        mockClient.mock(
-          'StepFunctions',
-          'describeStateMachine',
-          (
-            params: StepFunctions.DescribeStateMachineInput,
-            callback: (arg0: undefined, arg1: StepFunctions.DescribeStateMachineOutput) => void
-          ) => {
-            callback(undefined, stepFunctionFixture({stateMachineArn: params.stateMachineArn}))
-          }
-        )
+    mockedStepFunctionsClient.on(TagResourceCommand, input).resolves(expectedResp)
 
-        const stepFunctionsClient = stepFunctionsClientFixture()
-        const stepFunctionArn = 'arn:aws:states:us-east-1:000000000000:stateMachine:ExampleStepFunctionMock'
-        const stepFunction = await describeStateMachine(stepFunctionsClient, stepFunctionArn)
+    const actual = await tagResource(new SFNClient({}), fakeStepFunctionArn, fakeTags, mockedContext, false)
 
-        expect(stepFunction).toMatchObject({
-          stateMachineArn: 'arn:aws:states:us-east-1:000000000000:stateMachine:ExampleStepFunctionMock',
-          name: 'ExampleStepFunction',
-          definition: '',
-          loggingConfiguration: {
-            level: 'ALL',
-            includeExecutionData: true,
-            destinations: [
-              {
-                cloudWatchLogsLogGroup: {
-                  logGroupArn:
-                    'arn:aws:logs:us-east-1:000000000000:log-group:/aws/vendedlogs/states/ExampleStepFunction-Logs-test:*',
-                },
-              },
-            ],
-          },
-          roleArn: `arn:aws:iam::000000000000:role/ExampleStepFunctionRole`,
-          type: 'STANDARD',
-          creationDate: new Date('2023-03-08T00:00:00Z'),
-        })
+    expect(actual).toEqual(expectedResp)
+  })
 
-        mockClient.restore('StepFunctions')
-      })
-    })
+  test('createLogGroup test', async () => {
+    mockedCloudWatchLogsClient.on(CreateLogGroupCommand, {logGroupName: fakeLogGroupName}).resolves(expectedResp)
+    const actual = await createLogGroup(
+      new CloudWatchLogsClient({}),
+      fakeLogGroupName,
+      'fakeStepFunctionArn',
+      mockedContext,
+      false
+    )
+    expect(actual).toEqual(expectedResp)
+  })
 
-    describe('listTagsForResource', () => {
-      test('gets a list of step function tags', async () => {
-        mockClient.setSDKInstance(AWS)
-        mockClient.mock(
-          'StepFunctions',
-          'listTagsForResource',
-          (
-            params: StepFunctions.ListTagsForResourceInput,
-            callback: (arg0: undefined, arg1: StepFunctions.ListTagsForResourceOutput) => void
-          ) => {
-            callback(undefined, {tags: stepFunctionTagListFixture([{key: 'dd_sls_ci', value: 'v0.0.0'}])})
-          }
-        )
+  test('createLogsAccessPolicy test', async () => {
+    const describeStateMachineCommandOutput: DescribeStateMachineCommandOutput = {
+      $metadata: {},
+      creationDate: undefined,
+      definition: undefined,
+      roleArn: undefined,
+      type: undefined,
+      stateMachineArn: fakeStepFunctionArn,
+      name: fakeStateMachineName,
+    }
 
-        const stepFunctionsClient = stepFunctionsClientFixture()
-        const stepFunction = stepFunctionFixture()
-        const listStepFunctionTagsResponse = await listTagsForResource(
-          stepFunctionsClient,
-          stepFunction.stateMachineArn
-        )
-
-        expect(listStepFunctionTagsResponse).toMatchObject({
-          tags: [
-            {key: 'env', value: 'test'},
-            {key: 'dd_sls_ci', value: 'v0.0.0'},
+    const logsAccessPolicy = {
+      Version: '2012-10-17',
+      Statement: [
+        {
+          Effect: 'Allow',
+          Action: [
+            'logs:CreateLogDelivery',
+            'logs:CreateLogStream',
+            'logs:GetLogDelivery',
+            'logs:UpdateLogDelivery',
+            'logs:DeleteLogDelivery',
+            'logs:ListLogDeliveries',
+            'logs:PutLogEvents',
+            'logs:PutResourcePolicy',
+            'logs:DescribeResourcePolicies',
+            'logs:DescribeLogGroups',
           ],
-        })
+          Resource: '*',
+        },
+      ],
+    }
 
-        mockClient.restore('StepFunctions')
-      })
-    })
+    const input = {
+      PolicyDocument: JSON.stringify(logsAccessPolicy),
+      PolicyName: buildLogAccessPolicyName(describeStateMachineCommandOutput),
+    }
 
-    describe('tagResource', () => {
-      test('creates tagStepFunction request', () => {
-        const stepFunctionsClient = stepFunctionsClientFixture()
-        const stepFunction = stepFunctionFixture()
-        const tagsToAdd = [{key: 'dd_sls_ci', value: 'v0.0.0'}]
-        const tagStepFunctionRequest = tagResource(stepFunctionsClient, stepFunction.stateMachineArn, tagsToAdd)
+    mockedIamClient.on(CreatePolicyCommand, input).resolves(expectedResp)
 
-        expect(tagStepFunctionRequest).toMatchObject({
-          function: expect.objectContaining({
-            operation: 'tagResource',
-            params: {
-              resourceArn: 'arn:aws:states:us-east-1:000000000000:stateMachine:ExampleStepFunction',
-              tags: [{key: 'dd_sls_ci', value: `v0.0.0`}],
-            },
-          }),
-        })
-      })
-    })
-
-    describe('untagResource', () => {
-      test('creates untagStepFunction request', () => {
-        const stepFunctionsClient = stepFunctionsClientFixture()
-        const stepFunction = stepFunctionFixture()
-        const tagKeystoRemove = ['dd_sls_ci']
-        const unTagStepFunctionRequest = untagResource(
-          stepFunctionsClient,
-          stepFunction.stateMachineArn,
-          tagKeystoRemove
-        )
-
-        expect(unTagStepFunctionRequest).toMatchObject({
-          function: expect.objectContaining({
-            operation: 'untagResource',
-            params: {
-              resourceArn: 'arn:aws:states:us-east-1:000000000000:stateMachine:ExampleStepFunction',
-              tagKeys: ['dd_sls_ci'],
-            },
-          }),
-        })
-      })
-    })
+    const actual = await createLogsAccessPolicy(
+      new IAMClient({}),
+      describeStateMachineCommandOutput,
+      fakeStepFunctionArn,
+      mockedContext,
+      false
+    )
+    expect(actual).toEqual(expectedResp)
   })
+
+  test('createLogsAccessPolicy test', async () => {
+    const describeStateMachineCommandOutput: DescribeStateMachineCommandOutput = {
+      $metadata: {},
+      creationDate: undefined,
+      definition: undefined,
+      roleArn: fakeRoleArn,
+      type: undefined,
+      stateMachineArn: fakeStepFunctionArn,
+      name: fakeStateMachineName,
+    }
+
+    const input = {
+      PolicyArn: `arn:aws:iam::${fakeAccountId}:policy/LogsDeliveryAccessPolicy-${fakeStateMachineName}`,
+      RoleName: 'unit-test-fake-role-name',
+    }
+
+    mockedIamClient.on(AttachRolePolicyCommand, input).resolves(expectedResp)
+
+    const actual = await attachPolicyToStateMachineIamRole(
+      new IAMClient({}),
+      describeStateMachineCommandOutput,
+      fakeAccountId,
+      fakeStepFunctionArn,
+      mockedContext,
+      false
+    )
+    expect(actual).toEqual(expectedResp)
+  })
+
+  // todo: next is enableStepFunctionLogs
 })

@@ -19,6 +19,19 @@ export const stepFunctionsClientFixture = (props: Partial<StepFunctions.ClientCo
   return new StepFunctions({...defaults, ...props})
 }
 
+export const createMockContext = () => {
+  let data = ''
+
+  return {
+    stdout: {
+      toString: () => data,
+      write: (input: string) => {
+        data += input
+      },
+    },
+  }
+}
+
 export const logGroupFixture = (props: Partial<CloudWatchLogs.LogGroup> = {}): CloudWatchLogs.LogGroup => {
   const defaults: CloudWatchLogs.LogGroup = {
     logGroupName: '/aws/vendedlogs/states/ExampleStepFunction-Logs-test',

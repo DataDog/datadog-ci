@@ -1,16 +1,21 @@
 import {
   CloudWatchLogsClient,
-  CreateLogGroupCommand,
+  CreateLogGroupCommand, CreateLogGroupCommandOutput,
   DeleteSubscriptionFilterCommand,
   DescribeSubscriptionFiltersCommand,
   DescribeSubscriptionFiltersCommandOutput,
-  PutSubscriptionFilterCommand,
+  PutSubscriptionFilterCommand, PutSubscriptionFilterCommandOutput,
 } from '@aws-sdk/client-cloudwatch-logs'
-import {AttachRolePolicyCommand, CreatePolicyCommand, IAMClient} from '@aws-sdk/client-iam'
+import {
+  AttachRolePolicyCommand, AttachRolePolicyCommandOutput,
+  CreatePolicyCommand,
+  CreatePolicyCommandOutput,
+  IAMClient
+} from '@aws-sdk/client-iam'
 import {
   DescribeStateMachineCommand,
   ListTagsForResourceCommand,
-  TagResourceCommand,
+  TagResourceCommand, TagResourceCommandOutput,
   UntagResourceCommand,
   UpdateStateMachineCommand,
 } from '@aws-sdk/client-sfn'
@@ -42,7 +47,7 @@ export const putSubscriptionFilter = async (
   stepFunctionArn: string,
   context: BaseContext,
   dryRun: boolean
-): Promise<void> => {
+): Promise<PutSubscriptionFilterCommandOutput | undefined> => {
   // Running this function multiple times would not create duplicate filters (old filter with the same name would be overwritten).
   // However, two filters with the same destination forwarder can exist when the filter names are different.
 
@@ -56,22 +61,24 @@ export const putSubscriptionFilter = async (
   const commandName = 'PutSubscriptionFilter'
   displayChanges(stepFunctionArn, context, commandName, dryRun, params)
   if (!dryRun) {
-    await cloudWatchLogsClient.send(command)
+    const data = await cloudWatchLogsClient.send(command)
     // Even if the same filter name is created before, the response is still 200.
     // there are no way to tell
     context.stdout.write(
       `Subscription filter ${filterName} is created or the original filter ${filterName} is overwritten.\nt`
     )
+
+    return data
   }
 }
 
-export const tagResource = (
+export const tagResource = async (
   stepFunctionsClient: SFNClient,
   stepFunctionArn: string,
   tags: Tag[],
   context: BaseContext,
   dryRun: boolean
-): void => {
+): Promise<TagResourceCommandOutput | undefined> => {
   const params = {
     resourceArn: stepFunctionArn,
     tags,
@@ -81,8 +88,10 @@ export const tagResource = (
   const commandName = 'TagResource'
   displayChanges(stepFunctionArn, context, commandName, dryRun, params)
   if (!dryRun) {
-    void stepFunctionsClient.send(command)
+    const data = stepFunctionsClient.send(command)
     printSuccessfulMessage(commandName, context)
+
+    return data
   }
 }
 
@@ -92,7 +101,7 @@ export const createLogGroup = async (
   stepFunctionArn: string,
   context: BaseContext,
   dryRun: boolean
-): Promise<void> => {
+): Promise<CreateLogGroupCommandOutput | undefined> => {
   const params = {
     logGroupName,
   }
@@ -101,8 +110,10 @@ export const createLogGroup = async (
   displayChanges(stepFunctionArn, context, commandName, dryRun, params)
   try {
     if (!dryRun) {
-      await cloudWatchLogsClient.send(command)
+      const data = await cloudWatchLogsClient.send(command)
       printSuccessfulMessage(commandName, context)
+
+      return data
     }
   } catch (err) {
     // if a resource already exists it's a warning since we can use that resource instead of creating it
@@ -120,11 +131,11 @@ export const createLogGroup = async (
 
 export const createLogsAccessPolicy = async (
   iamClient: IAMClient,
-  stepFunction: DescribeStateMachineCommandOutput,
+  describeStateMachineCommandOutput: DescribeStateMachineCommandOutput,
   stepFunctionArn: string,
   context: BaseContext,
   dryRun: boolean
-): Promise<void> => {
+): Promise<CreatePolicyCommandOutput | undefined> => {
   // according to https://docs.aws.amazon.com/step-functions/latest/dg/cw-logs.html#cloudwatch-iam-policy
   const logsAccessPolicy = {
     Version: '2012-10-17',
@@ -150,15 +161,17 @@ export const createLogsAccessPolicy = async (
 
   const params = {
     PolicyDocument: JSON.stringify(logsAccessPolicy),
-    PolicyName: buildLogAccessPolicyName(stepFunction),
+    PolicyName: buildLogAccessPolicyName(describeStateMachineCommandOutput),
   }
   const command = new CreatePolicyCommand(params)
   const commandName = 'CreatePolicy'
   displayChanges(stepFunctionArn, context, commandName, dryRun, params)
   try {
     if (!dryRun) {
-      await iamClient.send(command)
+      const data = await iamClient.send(command)
       printSuccessfulMessage(commandName, context)
+
+      return data
     }
   } catch (err) {
     // if a resource already exists it's a warning since we can use that resource instead of creating it
@@ -174,16 +187,16 @@ export const createLogsAccessPolicy = async (
   }
 }
 
-export const attachPolicyToStateMachineIamRole = (
+export const attachPolicyToStateMachineIamRole = async (
   iamClient: IAMClient,
-  stepFunction: DescribeStateMachineCommandOutput,
+  describeStateMachineCommandOutput: DescribeStateMachineCommandOutput,
   accountId: string,
   stepFunctionArn: string,
   context: BaseContext,
   dryRun: boolean
-): void => {
-  const roleName = stepFunction?.roleArn?.split('/')[1]
-  const policyArn = `arn:aws:iam::${accountId}:policy/${buildLogAccessPolicyName(stepFunction)}`
+): Promise<AttachRolePolicyCommandOutput | undefined> => {
+  const roleName = describeStateMachineCommandOutput?.roleArn?.split('/')[1]
+  const policyArn = `arn:aws:iam::${accountId}:policy/${buildLogAccessPolicyName(describeStateMachineCommandOutput)}`
 
   const params = {
     PolicyArn: policyArn,
@@ -194,8 +207,10 @@ export const attachPolicyToStateMachineIamRole = (
   const commandName = 'AttachRolePolicy'
   displayChanges(stepFunctionArn, context, commandName, dryRun, params)
   if (!dryRun) {
-    void iamClient.send(command)
+    const data = await iamClient.send(command)
     printSuccessfulMessage(commandName, context)
+
+    return data
   }
 }
 
@@ -252,7 +267,7 @@ export const deleteSubscriptionFilter = async (
   }
 }
 
-const buildLogAccessPolicyName = (stepFunction: DescribeStateMachineCommandOutput): string => {
+export const buildLogAccessPolicyName = (stepFunction: DescribeStateMachineCommandOutput): string => {
   return `LogsDeliveryAccessPolicy-${stepFunction.name}`
 }
 

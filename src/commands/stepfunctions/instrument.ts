@@ -151,7 +151,7 @@ export class InstrumentStepFunctionsCommand extends Command {
       }
 
       if (stepFunctionTagsToAdd.length > 0) {
-        tagResource(stepFunctionsClient, stepFunctionArn, stepFunctionTagsToAdd, this.context, this.dryRun)
+        await tagResource(stepFunctionsClient, stepFunctionArn, stepFunctionTagsToAdd, this.context, this.dryRun)
       }
 
       const stateMachineName = describeStateMachineCommandOutput.name!
