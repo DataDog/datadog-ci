@@ -158,12 +158,13 @@ export class InstrumentStepFunctionsCommand extends Command {
       const subscriptionFilterName = buildSubscriptionFilterName(stateMachineName)
 
       const logLevel = describeStateMachineCommandOutput.loggingConfiguration?.level
+
       if (logLevel === 'OFF') {
         // if step function logging is disabled, create a log group, subscribe the forwarder to it, and enable step function logging to the created log group
         const logGroupName = buildLogGroupName(stateMachineName, this.environment)
-        await createLogGroup(cloudWatchLogsClient, logGroupName, stepFunctionArn, this.context, this.dryRun)
+        void createLogGroup(cloudWatchLogsClient, logGroupName, stepFunctionArn, this.context, this.dryRun)
 
-        await putSubscriptionFilter(
+        void putSubscriptionFilter(
           cloudWatchLogsClient,
           this.forwarderArn,
           subscriptionFilterName,
@@ -183,7 +184,7 @@ export class InstrumentStepFunctionsCommand extends Command {
         )
 
         // Create Logs Access policy
-        await createLogsAccessPolicy(
+        void createLogsAccessPolicy(
           iamClient,
           describeStateMachineCommandOutput,
           stepFunctionArn,
@@ -224,7 +225,7 @@ export class InstrumentStepFunctionsCommand extends Command {
         // update step function logging config to have logLevel `ALL` and includeExecutionData `true` if not already configured
         const includeExecutionData = describeStateMachineCommandOutput.loggingConfiguration?.includeExecutionData
         if (logLevel !== 'ALL' || !includeExecutionData) {
-          await enableStepFunctionLogs(
+          void enableStepFunctionLogs(
             stepFunctionsClient,
             describeStateMachineCommandOutput,
             logGroupArn,
@@ -234,7 +235,7 @@ export class InstrumentStepFunctionsCommand extends Command {
           )
           hasChanges = true
         }
-        await putSubscriptionFilter(
+        void putSubscriptionFilter(
           cloudWatchLogsClient,
           this.forwarderArn,
           subscriptionFilterName,

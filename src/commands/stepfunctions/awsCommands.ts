@@ -36,14 +36,26 @@ import {BaseContext} from 'clipanion'
 
 import {buildLogAccessPolicyName, displayChanges} from './helpers'
 
+export const describeStateMachine = async (
+  stepFunctionsClient: SFNClient,
+  stepFunctionArn: string
+): Promise<DescribeStateMachineCommandOutput> => {
+  const input = {stateMachineArn: stepFunctionArn}
+  const command = new DescribeStateMachineCommand(input)
+  const data = await stepFunctionsClient.send(command)
+
+  return data
+}
+
 export const listTagsForResource = async (
   stepFunctionsClient: SFNClient,
   stepFunctionArn: string
 ): Promise<ListTagsForResourceCommandOutput> => {
   const input = {resourceArn: stepFunctionArn}
   const command = new ListTagsForResourceCommand(input)
+  const data = await stepFunctionsClient.send(command)
 
-  return stepFunctionsClient.send(command)
+  return data
 }
 
 export const putSubscriptionFilter = async (
@@ -95,7 +107,7 @@ export const tagResource = async (
   const commandName = 'TagResource'
   displayChanges(stepFunctionArn, context, commandName, dryRun, input)
   if (!dryRun) {
-    const data = stepFunctionsClient.send(command)
+    const data = await stepFunctionsClient.send(command)
     printSuccessfulMessage(commandName, context)
 
     return data
@@ -276,17 +288,6 @@ export const deleteSubscriptionFilter = async (
 
     return data
   }
-}
-
-export const describeStateMachine = async (
-  stepFunctionsClient: SFNClient,
-  stepFunctionArn: string
-): Promise<DescribeStateMachineCommandOutput> => {
-  const input = {stateMachineArn: stepFunctionArn}
-  const command = new DescribeStateMachineCommand(input)
-  const data = await stepFunctionsClient.send(command)
-
-  return data
 }
 
 export const describeSubscriptionFilters = (

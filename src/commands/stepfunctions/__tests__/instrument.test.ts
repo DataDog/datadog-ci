@@ -31,6 +31,13 @@ describe('stepfunctions instrument test', () => {
 
     const stepFunctionTagList = [{key: 'env', value: 'test'}]
     aws.listTagsForResource = jest.fn().mockImplementation(() => ({tags: stepFunctionTagList}))
+
+    aws.tagResource = jest.fn().mockImplementation(() => ({}))
+    aws.putSubscriptionFilter = jest.fn().mockImplementation(() => ({}))
+    aws.createLogsAccessPolicy = jest.fn().mockImplementation(() => ({}))
+    aws.attachPolicyToStateMachineIamRole = jest.fn().mockImplementation(() => ({}))
+    aws.enableStepFunctionLogs = jest.fn().mockImplementation(() => ({}))
+    aws.putSubscriptionFilter = jest.fn().mockImplementation(() => ({}))
   })
 
   describe('paramater validation', () => {
@@ -63,10 +70,8 @@ describe('stepfunctions instrument test', () => {
         context
       )
 
-      console.log(context.toString())
-
-      // expect(exitCode).toBe(0)
-      // expect(aws.describeStateMachine).toHaveBeenCalledTimes(1)
+      expect(exitCode).toBe(0)
+      expect(aws.describeStateMachine).toHaveBeenCalledTimes(1)
     })
 
     test('errors if no step function arn', async () => {
@@ -256,7 +261,7 @@ describe('stepfunctions instrument test', () => {
 
       expect(exitCode).toBe(1)
       expect(context.toString()).toMatch(
-        '[Error] mock describeStateMachine error. Unable to fetch Step Function arn:aws:states:us-east-1:000000000000:stateMachine:ExampleStepFunction'
+        '[Error] mock describeStateMachine error. Unable to describe state machine arn:aws:states:us-east-1:000000000000:stateMachine:ExampleStepFunction'
       )
     })
 
