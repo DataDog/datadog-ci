@@ -199,16 +199,10 @@ describe('stepfunctions uninstrument', () => {
     })
 
     test('no subscription filters are created by ci, so deleteSubscriptionFilter is not called', async () => {
-      aws.describeSubscriptionFilters = jest.fn().mockImplementation(() => ({
-        subscriptionFilters: [
-          {
-            destinationArn: 'arn:aws:lambda:us-east-1:000000000000:function:DatadogForwarder',
-            filterName: 'test-filter-name-that-does-not-have-DD_CI_IDENTIFING_STRING-string',
-            filterPattern: '',
-            logGroupName: '/aws/vendedlogs/states/ExampleStepFunction-Logs-test',
-          },
-        ],
-      }))
+      const subscriptionFilter = subscriptionFilterFixture({
+        filterName: 'test-filter-name-that-does-not-have-DD_CI_IDENTIFING_STRING-string',
+      })
+      aws.describeSubscriptionFilters = jest.fn().mockImplementation(() => ({subscriptionFilters: [subscriptionFilter]}))
 
       const exitCode = await cli.run(
         [
