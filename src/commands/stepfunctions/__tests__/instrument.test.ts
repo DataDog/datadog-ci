@@ -8,25 +8,20 @@ import {contextFixture, testContext} from './fixtures/cli'
 jest.mock('../../../../package.json', () => ({version: '2.0.0'}))
 
 describe('stepfunctions instrument test', () => {
-  let cli: Cli
   let aws: any
+  let cli: Cli
+  let context: testContext
   let helpers: any
 
   beforeAll(() => {
+    aws = require('../awsCommands')
     helpers = require('../helpers')
     helpers.applyChanges = jest.fn().mockImplementation(() => false)
-
     cli = new Cli()
     cli.register(InstrumentStepFunctionsCommand)
   })
-
-  let context: testContext
-
   beforeEach(() => {
-    aws = require('../awsCommands')
     context = contextFixture()
-
-    // different function responses may be needed depending on the test
     const describeStateMachineCommandOutput = describeStateMachineFixture()
     aws.describeStateMachine = jest.fn().mockImplementation(() => describeStateMachineCommandOutput)
 
@@ -41,7 +36,7 @@ describe('stepfunctions instrument test', () => {
     aws.putSubscriptionFilter = jest.fn().mockImplementation(() => ({}))
   })
 
-  describe('paramater validation', () => {
+  describe('parameter validation', () => {
     test('errors if forwarder arn is not set', async () => {
       const exitCode = await cli.run(['stepfunctions', 'instrument'], context)
 

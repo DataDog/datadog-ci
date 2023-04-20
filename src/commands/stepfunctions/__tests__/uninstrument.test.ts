@@ -9,23 +9,21 @@ import {contextFixture, testContext} from './fixtures/cli'
 jest.mock('../../../../package.json', () => ({version: '2.0.0'}))
 
 describe('stepfunctions uninstrument', () => {
-  let cli: Cli
   let aws: any
+  let cli: Cli
+  let context: testContext
+  let describeStateMachineCommandOutput: DescribeStateMachineCommandOutput
   let helpers: any
 
   beforeAll(() => {
+    aws = require('../awsCommands')
     helpers = require('../helpers')
     helpers.applyChanges = jest.fn().mockImplementation(() => false)
-
     cli = new Cli()
     cli.register(UninstrumentStepFunctionsCommand)
   })
 
-  let context: testContext
-  let describeStateMachineCommandOutput: DescribeStateMachineCommandOutput
-
   beforeEach(() => {
-    aws = require('../awsCommands')
     context = contextFixture()
 
     describeStateMachineCommandOutput = describeStateMachineFixture()
