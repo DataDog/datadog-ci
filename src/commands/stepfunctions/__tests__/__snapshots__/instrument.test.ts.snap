@@ -181,7 +181,7 @@ Will apply the following change:
 ==============================
 Changes for arn:aws:states:us-east-1:000000000000:stateMachine:ExampleStepFunction
 
-CreateLogGroup:
+CreateLogGroup: 
 {
   \\"logGroupName\\": \\"/aws/vendedlogs/states/ExampleStepFunction-Logs\\"
 }
