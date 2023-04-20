@@ -1,10 +1,6 @@
-import {
-  CloudWatchLogs,
-  DescribeSubscriptionFiltersCommandOutput
-} from '@aws-sdk/client-cloudwatch-logs'
+import {SubscriptionFilter} from '@aws-sdk/client-cloudwatch-logs/dist-types/models/models_0'
 import {DescribeStateMachineCommandOutput} from '@aws-sdk/client-sfn'
-import {SubscriptionFilter} from "@aws-sdk/client-cloudwatch-logs/dist-types/models/models_0";
-import {Tag} from "@aws-sdk/client-sfn/dist-types/ts3.4/models/models_0";
+import {Tag} from '@aws-sdk/client-sfn/dist-types/ts3.4/models/models_0'
 
 export const createMockContext = () => {
   let data = ''

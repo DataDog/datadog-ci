@@ -185,7 +185,9 @@ describe('stepfunctions uninstrument', () => {
       const subscriptionFilter = subscriptionFilterFixture({
         filterName: 'test-filter-name-that-does-not-have-DD_CI_IDENTIFING_STRING-string',
       })
-      aws.describeSubscriptionFilters = jest.fn().mockImplementation(() => ({subscriptionFilters: [subscriptionFilter]}))
+      aws.describeSubscriptionFilters = jest
+        .fn()
+        .mockImplementation(() => ({subscriptionFilters: [subscriptionFilter]}))
 
       const exitCode = await cli.run(
         [
