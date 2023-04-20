@@ -76,3 +76,6 @@ export const parseArn = (
     resourceName,
   }
 }
+export const buildLogAccessPolicyName = (stepFunction: DescribeStateMachineCommandOutput): string => {
+  return `LogsDeliveryAccessPolicy-${stepFunction.name}`
+}

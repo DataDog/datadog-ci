@@ -4,10 +4,11 @@ import {
   buildSubscriptionFilterName,
   isValidArn,
   getStepFunctionLogGroupArn,
-  parseArn,
+  parseArn, buildLogAccessPolicyName,
 } from '../helpers'
 
 import {stepFunctionFixture} from './fixtures/aws-resources'
+import {DescribeStateMachineCommandOutput} from "@aws-sdk/client-sfn";
 
 describe('helpers', () => {
   describe('buildArn', () => {
@@ -104,5 +105,20 @@ describe('helpers', () => {
       expect(arnObject.accountId).toBe('000000000000')
       expect(arnObject.resourceName).toBe('ExampleStepFunction')
     })
+  })
+
+  test('buildLogAccessPolicyName test', () => {
+    const fakeStateMachineName = 'fakeStateMachineName'
+    const describeStateMachineCommandOutput: DescribeStateMachineCommandOutput = {
+      $metadata: {},
+      creationDate: undefined,
+      definition: undefined,
+      roleArn: undefined,
+      type: undefined,
+      stateMachineArn: 'fakeStepFunctionArn',
+      name: fakeStateMachineName,
+    }
+    const actual = buildLogAccessPolicyName(describeStateMachineCommandOutput)
+    expect(actual).toEqual(`LogsDeliveryAccessPolicy-${fakeStateMachineName}`)
   })
 })

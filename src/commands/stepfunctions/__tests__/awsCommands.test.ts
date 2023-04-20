@@ -13,7 +13,8 @@ import {
   TagResourceCommand,
   UntagResourceCommand,
   UpdateStateMachineCommand,
-  SFNClient, DescribeStateMachineCommandOutput,
+  SFNClient,
+  DescribeStateMachineCommandOutput,
 } from '@aws-sdk/client-sfn'
 import {mockClient} from 'aws-sdk-client-mock'
 
@@ -28,9 +29,9 @@ import {
   tagResource,
   untagResource,
   createLogsAccessPolicy,
-  buildLogAccessPolicyName,
   attachPolicyToStateMachineIamRole,
 } from '../awsCommands'
+import {buildLogAccessPolicyName} from '../helpers'
 
 import {
   cloudWatchLogsClientFixture,
@@ -47,6 +48,7 @@ describe('awsCommands test', () => {
   const fakeForwarderArn = 'fakeForwarderArn'
   const fakeFilterName = 'fakeFilterName'
   const fakeLogGroupName = 'fakeLogGroupName'
+  const fakeLogGroupArn = 'fakeLogGroupArn'
   const fakeStepFunctionArn = 'arn:aws:states:sa-east-1:1234567890:stateMachine:UnitTestStateMachineName'
   const fakeStateMachineName = 'UnitTestStateMachineName'
   const fakeAccountId = '123456789012'
@@ -55,6 +57,7 @@ describe('awsCommands test', () => {
   const mockedCloudWatchLogsClient = mockClient(CloudWatchLogsClient)
   const mockedIamClient = mockClient(IAMClient)
   const mockedStepFunctionsClient = mockClient(SFNClient)
+  let describeStateMachineCommandOutput: DescribeStateMachineCommandOutput
   let mockedContext: any
 
   beforeEach(() => {
@@ -66,9 +69,17 @@ describe('awsCommands test', () => {
 
     mockedContext = createMockContext()
 
-    mockedIamClient.on(AttachRolePolicyCommand).resolves({})
-    mockedIamClient.on(CreatePolicyCommand).resolves({})
+    describeStateMachineCommandOutput = {
+      $metadata: {},
+      creationDate: undefined,
+      definition: undefined,
+      roleArn: undefined,
+      type: undefined,
+      stateMachineArn: fakeStepFunctionArn,
+      name: fakeStateMachineName,
+    }
   })
+
   test('listTagsForResource test', async () => {
     mockedStepFunctionsClient.on(ListTagsForResourceCommand, {resourceArn: fakeStepFunctionArn}).resolves(expectedResp)
     const actual = await listTagsForResource(new SFNClient({}), fakeStepFunctionArn)
@@ -116,7 +127,24 @@ describe('awsCommands test', () => {
     const actual = await createLogGroup(
       new CloudWatchLogsClient({}),
       fakeLogGroupName,
-      'fakeStepFunctionArn',
+      fakeStepFunctionArn,
+      mockedContext,
+      false
+    )
+    expect(actual).toEqual(expectedResp)
+  })
+
+  test('deleteSubscriptionFilter test', async () => {
+    const input = {
+      filterName: fakeFilterName,
+      logGroupName: fakeLogGroupName,
+    }
+    mockedCloudWatchLogsClient.on(DeleteSubscriptionFilterCommand, input).resolves(expectedResp)
+    const actual = await deleteSubscriptionFilter(
+      new CloudWatchLogsClient({}),
+      fakeFilterName,
+      fakeLogGroupName,
+      fakeStepFunctionArn,
       mockedContext,
       false
     )
@@ -124,7 +152,7 @@ describe('awsCommands test', () => {
   })
 
   test('createLogsAccessPolicy test', async () => {
-    const describeStateMachineCommandOutput: DescribeStateMachineCommandOutput = {
+    describeStateMachineCommandOutput = {
       $metadata: {},
       creationDate: undefined,
       definition: undefined,
@@ -173,8 +201,8 @@ describe('awsCommands test', () => {
     expect(actual).toEqual(expectedResp)
   })
 
-  test('createLogsAccessPolicy test', async () => {
-    const describeStateMachineCommandOutput: DescribeStateMachineCommandOutput = {
+  test('attachPolicyToStateMachineIamRole test', async () => {
+    describeStateMachineCommandOutput = {
       $metadata: {},
       creationDate: undefined,
       definition: undefined,
@@ -202,5 +230,57 @@ describe('awsCommands test', () => {
     expect(actual).toEqual(expectedResp)
   })
 
-  // todo: next is enableStepFunctionLogs
+  test('enableStepFunctionLogs test', async () => {
+    const input = {
+      stateMachineArn: fakeStepFunctionArn,
+      loggingConfiguration: {
+        destinations: [{cloudWatchLogsLogGroup: {logGroupArn: fakeLogGroupArn}}],
+        level: 'ALL',
+        includeExecutionData: true,
+      },
+    }
+
+    mockedStepFunctionsClient.on(UpdateStateMachineCommand, input).resolves(expectedResp)
+
+    const actual = await enableStepFunctionLogs(
+      new SFNClient({}),
+      describeStateMachineCommandOutput,
+      fakeLogGroupArn,
+      fakeStepFunctionArn,
+      mockedContext,
+      false
+    )
+
+    expect(actual).toEqual(expectedResp)
+  })
+
+  test('describeStateMachine test', async () => {
+    const input = {stateMachineArn: fakeStepFunctionArn}
+
+    mockedStepFunctionsClient.on(DescribeStateMachineCommand, input).resolves(expectedResp)
+
+    const actual = await describeStateMachine(new SFNClient({}), fakeStepFunctionArn)
+
+    expect(actual).toEqual(expectedResp)
+  })
+
+  test('untagResource test', async () => {
+    const fakeTagKeys = ['tagKey1', 'tagKey2']
+    const input = {
+      resourceArn: fakeStepFunctionArn,
+      tagKeys: fakeTagKeys,
+    }
+
+    mockedStepFunctionsClient.on(UntagResourceCommand, input).resolves(expectedResp)
+
+    const actual = await untagResource(
+      new SFNClient({}),
+      fakeTagKeys,
+      fakeStepFunctionArn,
+      mockedContext,
+      false
+    )
+
+    expect(actual).toEqual(expectedResp)
+  })
 })

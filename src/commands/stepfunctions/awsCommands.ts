@@ -1,13 +1,17 @@
 import {
   CloudWatchLogsClient,
-  CreateLogGroupCommand, CreateLogGroupCommandOutput,
+  CreateLogGroupCommand,
+  CreateLogGroupCommandOutput,
   DeleteSubscriptionFilterCommand,
+  DeleteSubscriptionFilterCommandOutput,
   DescribeSubscriptionFiltersCommand,
   DescribeSubscriptionFiltersCommandOutput,
-  PutSubscriptionFilterCommand, PutSubscriptionFilterCommandOutput,
+  PutSubscriptionFilterCommand,
+  PutSubscriptionFilterCommandOutput,
 } from '@aws-sdk/client-cloudwatch-logs'
 import {
-  AttachRolePolicyCommand, AttachRolePolicyCommandOutput,
+  AttachRolePolicyCommand,
+  AttachRolePolicyCommandOutput,
   CreatePolicyCommand,
   CreatePolicyCommandOutput,
   IAMClient
@@ -17,7 +21,7 @@ import {
   ListTagsForResourceCommand,
   TagResourceCommand,
   TagResourceCommandOutput,
-  UntagResourceCommand,
+  UntagResourceCommand, UntagResourceCommandOutput,
   UpdateStateMachineCommand,
   UpdateStateMachineCommandOutput,
 } from '@aws-sdk/client-sfn'
@@ -29,7 +33,7 @@ import {
 } from '@aws-sdk/client-sfn/dist-types/ts3.4'
 import {BaseContext} from 'clipanion'
 
-import {displayChanges} from './helpers'
+import {buildLogAccessPolicyName, displayChanges} from './helpers'
 
 export const listTagsForResource = async (
   stepFunctionsClient: SFNClient,
@@ -256,7 +260,7 @@ export const deleteSubscriptionFilter = async (
   stepFunctionArn: string,
   context: BaseContext,
   dryRun: boolean
-): Promise<void> => {
+): Promise<DeleteSubscriptionFilterCommandOutput | undefined> => {
   const input = {
     filterName,
     logGroupName,
@@ -266,23 +270,22 @@ export const deleteSubscriptionFilter = async (
   const commandName = 'DeleteSubscriptionFilter'
   displayChanges(stepFunctionArn, context, commandName, dryRun, input)
   if (!dryRun) {
-    await cloudWatchLogsClient.send(command)
+    const data = await cloudWatchLogsClient.send(command)
     printSuccessfulMessage(commandName, context)
-  }
-}
 
-export const buildLogAccessPolicyName = (stepFunction: DescribeStateMachineCommandOutput): string => {
-  return `LogsDeliveryAccessPolicy-${stepFunction.name}`
+    return data
+  }
 }
 
 export const describeStateMachine = async (
   stepFunctionsClient: SFNClient,
   stepFunctionArn: string
-): Promise<DescribeStateMachineCommandOutput> => {
+): Promise<DescribeStateMachineCommandOutput | undefined> => {
   const input = {stateMachineArn: stepFunctionArn}
   const command = new DescribeStateMachineCommand(input)
+  const data = await stepFunctionsClient.send(command)
 
-  return stepFunctionsClient.send(command)
+  return data
 }
 
 export const describeSubscriptionFilters = (
@@ -305,7 +308,7 @@ export const untagResource = async (
   stepFunctionArn: string,
   context: BaseContext,
   dryRun: boolean
-): Promise<void> => {
+): Promise<UntagResourceCommandOutput | undefined> => {
   const input = {
     resourceArn: stepFunctionArn,
     tagKeys,
@@ -314,7 +317,9 @@ export const untagResource = async (
   const commandName = 'UntagResource'
   displayChanges(stepFunctionArn, context, commandName, dryRun, input)
   if (!dryRun) {
-    await stepFunctionsClient.send(command)
+    const data = await stepFunctionsClient.send(command)
     printSuccessfulMessage(commandName, context)
+
+    return data
   }
 }
