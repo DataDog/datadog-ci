@@ -14,14 +14,15 @@ import {
   AttachRolePolicyCommandOutput,
   CreatePolicyCommand,
   CreatePolicyCommandOutput,
-  IAMClient
+  IAMClient,
 } from '@aws-sdk/client-iam'
 import {
   DescribeStateMachineCommand,
   ListTagsForResourceCommand,
   TagResourceCommand,
   TagResourceCommandOutput,
-  UntagResourceCommand, UntagResourceCommandOutput,
+  UntagResourceCommand,
+  UntagResourceCommandOutput,
   UpdateStateMachineCommand,
   UpdateStateMachineCommandOutput,
 } from '@aws-sdk/client-sfn'
@@ -280,7 +281,7 @@ export const deleteSubscriptionFilter = async (
 export const describeStateMachine = async (
   stepFunctionsClient: SFNClient,
   stepFunctionArn: string
-): Promise<DescribeStateMachineCommandOutput | undefined> => {
+): Promise<DescribeStateMachineCommandOutput> => {
   const input = {stateMachineArn: stepFunctionArn}
   const command = new DescribeStateMachineCommand(input)
   const data = await stepFunctionsClient.send(command)

@@ -1,9 +1,7 @@
 import {
   CloudWatchLogsClient,
   CreateLogGroupCommand,
-  CreateLogGroupCommandOutput,
   DeleteSubscriptionFilterCommand,
-  DescribeSubscriptionFiltersCommand,
   PutSubscriptionFilterCommand,
 } from '@aws-sdk/client-cloudwatch-logs'
 import {AttachRolePolicyCommand, CreatePolicyCommand, IAMClient} from '@aws-sdk/client-iam'
@@ -24,7 +22,6 @@ import {
   enableStepFunctionLogs,
   describeStateMachine,
   listTagsForResource,
-  describeSubscriptionFilters,
   putSubscriptionFilter,
   tagResource,
   untagResource,
@@ -33,15 +30,7 @@ import {
 } from '../awsCommands'
 import {buildLogAccessPolicyName} from '../helpers'
 
-import {
-  cloudWatchLogsClientFixture,
-  logGroupFixture,
-  stepFunctionsClientFixture,
-  stepFunctionFixture,
-  stepFunctionTagListFixture,
-  subscriptionFilterFixture,
-  createMockContext,
-} from './fixtures/aws-resources'
+import {createMockContext} from './fixtures/aws-resources'
 
 describe('awsCommands test', () => {
   const expectedResp = {fakeKey: 'fakeValue'} as any
@@ -123,7 +112,8 @@ describe('awsCommands test', () => {
   })
 
   test('createLogGroup test', async () => {
-    mockedCloudWatchLogsClient.on(CreateLogGroupCommand, {logGroupName: fakeLogGroupName}).resolves(expectedResp)
+    const input = {logGroupName: fakeLogGroupName}
+    mockedCloudWatchLogsClient.on(CreateLogGroupCommand, input).resolves(expectedResp)
     const actual = await createLogGroup(
       new CloudWatchLogsClient({}),
       fakeLogGroupName,
@@ -273,13 +263,7 @@ describe('awsCommands test', () => {
 
     mockedStepFunctionsClient.on(UntagResourceCommand, input).resolves(expectedResp)
 
-    const actual = await untagResource(
-      new SFNClient({}),
-      fakeTagKeys,
-      fakeStepFunctionArn,
-      mockedContext,
-      false
-    )
+    const actual = await untagResource(new SFNClient({}), fakeTagKeys, fakeStepFunctionArn, mockedContext, false)
 
     expect(actual).toEqual(expectedResp)
   })

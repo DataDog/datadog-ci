@@ -1,14 +1,16 @@
+import {DescribeStateMachineCommandOutput} from '@aws-sdk/client-sfn'
+
 import {
   buildArn,
   buildLogGroupName,
   buildSubscriptionFilterName,
   isValidArn,
   getStepFunctionLogGroupArn,
-  parseArn, buildLogAccessPolicyName,
+  parseArn,
+  buildLogAccessPolicyName,
 } from '../helpers'
 
 import {stepFunctionFixture} from './fixtures/aws-resources'
-import {DescribeStateMachineCommandOutput} from "@aws-sdk/client-sfn";
 
 describe('helpers', () => {
   describe('buildArn', () => {

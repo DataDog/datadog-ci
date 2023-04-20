@@ -192,7 +192,7 @@ export class InstrumentStepFunctionsCommand extends Command {
         )
 
         // Attach policy to state machine IAM role
-        attachPolicyToStateMachineIamRole(
+        void attachPolicyToStateMachineIamRole(
           iamClient,
           describeStateMachineCommandOutput,
           arnObject.accountId,

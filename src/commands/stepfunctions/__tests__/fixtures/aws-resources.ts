@@ -1,5 +1,5 @@
+import {DescribeStateMachineCommandOutput} from '@aws-sdk/client-sfn'
 import {CloudWatchLogs, StepFunctions} from 'aws-sdk'
-import {DescribeStateMachineCommandOutput} from "@aws-sdk/client-sfn";
 
 export const cloudWatchLogsClientFixture = (
   props: Partial<CloudWatchLogs.ClientConfiguration> = {}
