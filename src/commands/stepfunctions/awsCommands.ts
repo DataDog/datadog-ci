@@ -290,14 +290,15 @@ export const deleteSubscriptionFilter = async (
   }
 }
 
-export const describeSubscriptionFilters = (
+export const describeSubscriptionFilters = async (
   cloudWatchLogsClient: CloudWatchLogsClient,
   logGroupName: string
 ): Promise<DescribeSubscriptionFiltersCommandOutput> => {
   const input = {logGroupName}
   const command = new DescribeSubscriptionFiltersCommand(input)
+  const data = await cloudWatchLogsClient.send(command)
 
-  return cloudWatchLogsClient.send(command)
+  return data
 }
 
 const printSuccessfulMessage = (commandName: string, context: BaseContext): void => {

@@ -21,6 +21,7 @@ describe('stepfunctions instrument test', () => {
   })
 
   let context: testContext
+
   beforeEach(() => {
     aws = require('../awsCommands')
     context = contextFixture()

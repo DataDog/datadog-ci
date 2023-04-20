@@ -51,6 +51,9 @@ export class UninstrumentStepFunctionsCommand extends Command {
       return 1
     }
 
+    this.context.stdout.write(`\n${'1'.repeat(22)}`)
+    this.context.stdout.write(`\n stepFunctionArns: ${stepFunctionArns}`)
+
     // loop over step functions passed as parameters and generate a list of requests to make to AWS for each step function
     for (const stepFunctionArn of stepFunctionArns) {
       // use region from the step function arn to make requests to AWS
@@ -62,6 +65,7 @@ export class UninstrumentStepFunctionsCommand extends Command {
       let describeStateMachineCommandOutput
       try {
         describeStateMachineCommandOutput = await describeStateMachine(stepFunctionsClient, stepFunctionArn)
+        this.context.stdout.write(`\n ${JSON.stringify(describeStateMachineCommandOutput)}`)
       } catch (err) {
         if (err instanceof Error) {
           this.context.stdout.write(`\n[Error] ${err.message}. Unable to fetch Step Function ${stepFunctionArn}\n`)
@@ -84,6 +88,8 @@ export class UninstrumentStepFunctionsCommand extends Command {
       let describeSubscriptionFiltersResponse: DescribeSubscriptionFiltersCommandOutput | undefined
       try {
         describeSubscriptionFiltersResponse = await describeSubscriptionFilters(cloudWatchLogsClient, logGroupName)
+        this.context.stdout.write(`\n${'4'.repeat(22)}`)
+        this.context.stdout.write(`\n describeSubscriptionFiltersResponse: ${JSON.stringify(describeSubscriptionFiltersResponse)}`)
       } catch (err) {
         if (err instanceof Error) {
           this.context.stdout.write(
@@ -101,10 +107,12 @@ export class UninstrumentStepFunctionsCommand extends Command {
         describeSubscriptionFiltersResponse.subscriptionFilters?.filter((subscriptionFilter) =>
           subscriptionFilter.filterName?.includes(DD_CI_IDENTIFING_STRING)
         ) ?? []
+      this.context.stdout.write(`\n${'5'.repeat(22)}`)
+      this.context.stdout.write(`\n subscriptionFilters: ${JSON.stringify(subscriptionFilters)}`)
 
       for (const subscriptionFilter of subscriptionFilters) {
         if (typeof subscriptionFilter.filterName === 'string') {
-          await deleteSubscriptionFilter(
+          void deleteSubscriptionFilter(
             cloudWatchLogsClient,
             subscriptionFilter.filterName,
             logGroupName,
@@ -116,8 +124,8 @@ export class UninstrumentStepFunctionsCommand extends Command {
       }
 
       const tagKeystoRemove: string[] = [TAG_VERSION_NAME]
-      // Untag resouce command is idempotent, no need to verify if the tag exist by making an additional api call to get tags
-      await untagResource(stepFunctionsClient, tagKeystoRemove, stepFunctionArn, this.context, this.dryRun)
+      // Untag resource command is idempotent, no need to verify if the tag exist by making an additional api call to get tags
+      void untagResource(stepFunctionsClient, tagKeystoRemove, stepFunctionArn, this.context, this.dryRun)
     }
 
     return 0

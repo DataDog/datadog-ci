@@ -79,7 +79,7 @@ export const subscriptionFilterFixture = (
 ): CloudWatchLogs.SubscriptionFilter => {
   const defaults: CloudWatchLogs.SubscriptionFilter = {
     destinationArn: 'arn:aws:lambda:us-east-1:000000000000:function:DatadogForwarder',
-    filterName: 'ExampleStepFunctionLogGroupSubscription',
+    filterName: 'ExampleStepFunction-DdCiLogGroupSubscription',
     filterPattern: '',
     logGroupName: '/aws/vendedlogs/states/ExampleStepFunction-Logs-test',
   }
