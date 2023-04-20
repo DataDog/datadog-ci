@@ -24,7 +24,9 @@ describe('plist util', () => {
 
     it('returns an empty string for an env variable that is not declared', () => {
       const plist = parsePlist('src/helpers/__tests__/plist-fixtures/Info.plist')
-      expect(plist.getPropertyValue('CFBundleExecutable')).toBe('')
+      expect(() => plist.getPropertyValue('CFBundleExecutable')).toThrowError(
+        "Environment variable EXECUTABLE_NAME for property value $(EXECUTABLE_NAME) wasn't found."
+      )
     })
 
     it('throws an error if a property does not exist', () => {

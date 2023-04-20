@@ -17,7 +17,14 @@ const parseIfEnvVariable = (propertyValue: string | number): string | number => 
 
   // matchedEnvVariable[0] is the matched string, i.e. "$(VARIABLE_NAME)"
   // matchedEnvVariable[1] is the captured group, i.e. "VARIABLE_NAME"
-  return process.env[matchedEnvVariable[1]] || ''
+  const value = process.env[matchedEnvVariable[1]]
+  if (value !== undefined) {
+    return value
+  }
+
+  throw new Error(
+    `Environment variable ${matchedEnvVariable[1]} for property value ${matchedEnvVariable[0]} wasn't found.`
+  )
 }
 
 class PlistContent {
