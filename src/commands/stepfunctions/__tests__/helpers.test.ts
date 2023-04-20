@@ -10,7 +10,7 @@ import {
   buildLogAccessPolicyName,
 } from '../helpers'
 
-import {stepFunctionFixture} from './fixtures/aws-resources'
+import {describeStateMachineFixture} from './fixtures/aws-resources'
 
 describe('helpers', () => {
   describe('buildArn', () => {
@@ -31,7 +31,7 @@ describe('helpers', () => {
 
   describe('buildLogGroupName', () => {
     test('builds log group name from step function name with env', () => {
-      const stepFunction = stepFunctionFixture()
+      const stepFunction = describeStateMachineFixture()
       const env = 'test'
       const logGroupName = buildLogGroupName(stepFunction.name!, env)
 
@@ -39,7 +39,7 @@ describe('helpers', () => {
     })
 
     test('builds log group name from step function name without env', () => {
-      const stepFunction = stepFunctionFixture()
+      const stepFunction = describeStateMachineFixture()
       let env
       const logGroupName = buildLogGroupName(stepFunction.name!, env)
       expect(logGroupName).toBe('/aws/vendedlogs/states/ExampleStepFunction-Logs')
@@ -48,7 +48,7 @@ describe('helpers', () => {
 
   describe('buildSubscriptionFilterName', () => {
     test('builds subscription filter name from step function name', () => {
-      const stepFunction = stepFunctionFixture()
+      const stepFunction = describeStateMachineFixture()
       const subscriptionFilterName = buildSubscriptionFilterName(stepFunction.name!)
 
       expect(subscriptionFilterName).toBe('ExampleStepFunction-DdCiLogGroupSubscription')
@@ -57,7 +57,7 @@ describe('helpers', () => {
 
   describe('isValidArn', () => {
     test('returns true for valid step function arn', () => {
-      const stepFunction = stepFunctionFixture()
+      const stepFunction = describeStateMachineFixture()
 
       expect(isValidArn(stepFunction.stateMachineArn!)).toBe(true)
     })
@@ -77,7 +77,7 @@ describe('helpers', () => {
 
   describe('getStepFunctionLogGroupArn', () => {
     test('returns step function log group arn when it is set', () => {
-      const stepFunction = stepFunctionFixture()
+      const stepFunction = describeStateMachineFixture()
       const logGroupArn = getStepFunctionLogGroupArn(stepFunction)
 
       expect(logGroupArn).toBe(
@@ -90,7 +90,7 @@ describe('helpers', () => {
         level: 'OFF',
         includeExecutionData: false,
       }
-      const stepFunction = stepFunctionFixture({loggingConfiguration})
+      const stepFunction = describeStateMachineFixture({loggingConfiguration})
       const logGroupArn = getStepFunctionLogGroupArn(stepFunction)
 
       expect(logGroupArn).toBe(undefined)
@@ -99,7 +99,7 @@ describe('helpers', () => {
 
   describe('parseArn', () => {
     test('parses step function arn', () => {
-      const stepFunction = stepFunctionFixture()
+      const stepFunction = describeStateMachineFixture()
       const arnObject = parseArn(stepFunction.stateMachineArn!)
 
       expect(arnObject.partition).toBe('aws')

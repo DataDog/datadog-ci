@@ -2,7 +2,7 @@ import {Cli} from 'clipanion/lib/advanced'
 
 import {UninstrumentStepFunctionsCommand} from '../uninstrument'
 
-import {stepFunctionFixture, subscriptionFilterFixture} from './fixtures/aws-resources'
+import {describeStateMachineFixture, subscriptionFilterFixture} from './fixtures/aws-resources'
 import {contextFixture, testContext} from './fixtures/cli'
 
 jest.mock('../../../../package.json', () => ({version: '2.0.0'}))
@@ -28,7 +28,7 @@ describe('step-functions uninstrument', () => {
     context = contextFixture()
 
     // different function responses may be needed depending on the test
-    const stepFunction = stepFunctionFixture()
+    const stepFunction = describeStateMachineFixture()
     aws.describeStateMachine = jest.fn().mockImplementation(() => stepFunction)
 
     const subscriptionFilter = subscriptionFilterFixture()
@@ -90,7 +90,7 @@ describe('step-functions uninstrument', () => {
         level: 'OFF',
         includeExecutionData: false,
       }
-      const stepFunction = stepFunctionFixture({loggingConfiguration})
+      const stepFunction = describeStateMachineFixture({loggingConfiguration})
       aws.describeStateMachine = jest.fn().mockImplementation(() => stepFunction)
 
       const exitCode = await cli.run(

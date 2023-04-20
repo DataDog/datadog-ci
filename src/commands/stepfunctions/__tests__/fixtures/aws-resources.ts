@@ -40,7 +40,7 @@ export const logGroupFixture = (props: Partial<CloudWatchLogs.LogGroup> = {}): C
   return {...defaults, ...props}
 }
 
-export const stepFunctionFixture = (
+export const describeStateMachineFixture = (
   props: Partial<DescribeStateMachineCommandOutput> = {}
 ): DescribeStateMachineCommandOutput => {
   const defaults: DescribeStateMachineCommandOutput = {
