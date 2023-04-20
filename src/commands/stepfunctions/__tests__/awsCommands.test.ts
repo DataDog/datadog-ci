@@ -65,16 +65,6 @@ describe('awsCommands test', () => {
     process.env = {}
 
     mockedContext = createMockContext()
-    // mockedStepFunctionsClient.on(DescribeStateMachineCommand).resolves({})
-    // mockedStepFunctionsClient.on(ListTagsForResourceCommand).resolves({})
-    // mockedStepFunctionsClient.on(TagResourceCommand).resolves({})
-    // mockedStepFunctionsClient.on(UntagResourceCommand).resolves({})
-    // mockedStepFunctionsClient.on(UpdateStateMachineCommand).resolves({})
-    //
-    // mockedCloudWatchLogsClient.on(CreateLogGroupCommand).resolves({})
-    // mockedCloudWatchLogsClient.on(DeleteSubscriptionFilterCommand).resolves({})
-    // mockedCloudWatchLogsClient.on(DescribeSubscriptionFiltersCommand).resolves({})
-    // mockedCloudWatchLogsClient.on(PutSubscriptionFilterCommand).resolves({})
 
     mockedIamClient.on(AttachRolePolicyCommand).resolves({})
     mockedIamClient.on(CreatePolicyCommand).resolves({})
@@ -93,6 +83,7 @@ describe('awsCommands test', () => {
       logGroupName: fakeLogGroupName,
     }
     mockedCloudWatchLogsClient.on(PutSubscriptionFilterCommand, input).resolves(expectedResp)
+
     const actual = await putSubscriptionFilter(
       new CloudWatchLogsClient({}),
       fakeForwarderArn,
@@ -102,6 +93,7 @@ describe('awsCommands test', () => {
       mockedContext,
       false
     )
+
     expect(actual).toEqual(expectedResp)
   })
 

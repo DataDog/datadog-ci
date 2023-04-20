@@ -15,9 +15,11 @@ import {
 import {
   DescribeStateMachineCommand,
   ListTagsForResourceCommand,
-  TagResourceCommand, TagResourceCommandOutput,
+  TagResourceCommand,
+  TagResourceCommandOutput,
   UntagResourceCommand,
   UpdateStateMachineCommand,
+  UpdateStateMachineCommandOutput,
 } from '@aws-sdk/client-sfn'
 import {SFNClient} from '@aws-sdk/client-sfn/dist-types/SFNClient'
 import {
@@ -221,7 +223,7 @@ export const enableStepFunctionLogs = async (
   stepFunctionArn: string,
   context: BaseContext,
   dryRun: boolean
-): Promise<void> => {
+): Promise<UpdateStateMachineCommandOutput | undefined> => {
   const input = {
     stateMachineArn: stepFunction.stateMachineArn,
     loggingConfiguration: {
@@ -240,8 +242,10 @@ export const enableStepFunctionLogs = async (
   const commandName = 'UpdateStateMachine'
   displayChanges(stepFunctionArn, context, commandName, dryRun, input, previousParams)
   if (!dryRun) {
-    await stepFunctionsClient.send(command)
+    const data = await stepFunctionsClient.send(command)
     printSuccessfulMessage(commandName, context)
+
+    return data
   }
 }
 
