@@ -829,55 +829,61 @@ export const renderResults = ({
   reporter.runEnd(summary, getAppBaseURL(config), orgSettings)
 }
 
-export const handleExit = (
+export const reportExitLogs = (
   reporter: MainReporter,
-  config: Pick<CommandConfig, 'failOnTimeout'>,
-  results: Result[]
-): 0 | 1 => {
-  if (!config.failOnTimeout && results.some((result) => result.timedOut)) {
+  config: Pick<CommandConfig, 'failOnTimeout' | 'failOnCriticalErrors'>,
+  {results, error}: {results?: Result[]; error?: unknown}
+) => {
+  if (!config.failOnTimeout && results?.some((result) => result.timedOut)) {
     reporter.error(
       chalk.yellow(
-        'Because `failOnTimeout` is disabled, the command will exit with an error code 0. ' +
-          'Use `failOnTimeout: true` to exit with an error code 1.\n'
+        'Because `failOnTimeout` is disabled, the command will succeed. ' +
+          'Use `failOnTimeout: true` to make it fail instead.\n'
       )
     )
   }
 
-  const hasFailedTests = results.some((result) => getResultOutcome(result) === ResultOutcome.Failed)
-  if (hasFailedTests) {
-    return 1
+  if (!config.failOnCriticalErrors && error instanceof CriticalError) {
+    reporter.error(
+      chalk.yellow(
+        'Because `failOnCriticalErrors` is not set or disabled, the command will succeed. ' +
+          'Use `failOnCriticalErrors: true` to make it fail instead.\n'
+      )
+    )
   }
 
-  return 0
-}
-
-export const handleExitOnError = (
-  reporter: MainReporter,
-  config: Pick<CommandConfig, 'failOnCriticalErrors' | 'failOnMissingTests'>,
-  error: unknown
-): 0 | 1 => {
   if (error instanceof CiError) {
     reportCiError(error, reporter)
+  }
+}
 
+export const getExitReason = (
+  config: Pick<CommandConfig, 'failOnCriticalErrors' | 'failOnMissingTests'>,
+  {results, error}: {results?: Result[]; error?: unknown}
+) => {
+  if (results?.some((result) => getResultOutcome(result) === ResultOutcome.Failed)) {
+    return 'failing-tests'
+  }
+
+  if (error instanceof CiError) {
     if (config.failOnMissingTests && error.code === 'MISSING_TESTS') {
-      return 1
+      return 'missing-tests'
     }
 
     if (error instanceof CriticalError) {
       if (config.failOnCriticalErrors) {
-        return 1
+        return 'critical-error'
       }
-
-      reporter.error(
-        chalk.yellow(
-          'Because `failOnCriticalErrors` is not set or disabled, the command will exit with an error code 0. ' +
-            'Use `failOnCriticalErrors: true` to exit with an error code 1.\n'
-        )
-      )
     }
   }
 
-  return 0
+  return 'passed'
+}
+
+export type ExitReason = ReturnType<typeof getExitReason>
+
+export const toExitCode = (reason: ExitReason) => {
+  return reason === 'passed' ? 0 : 1
 }
 
 export const getDatadogHost = (hostConfig: {

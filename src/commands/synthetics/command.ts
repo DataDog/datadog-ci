@@ -10,13 +10,14 @@ import {DefaultReporter} from './reporters/default'
 import {JUnitReporter} from './reporters/junit'
 import {executeTests} from './run-test'
 import {
-  handleExit,
-  handleExitOnError,
+  getExitReason,
   getOrgSettings,
   getReporter,
   parseVariablesFromCli,
   renderResults,
   reportCiError,
+  toExitCode,
+  reportExitLogs,
 } from './utils'
 
 export const MAX_TESTS_TO_TRIGGER = 100
@@ -93,7 +94,9 @@ export class RunTestCommand extends Command {
     try {
       ;({results, summary} = await executeTests(this.reporter, this.config))
     } catch (error) {
-      return handleExitOnError(this.reporter, this.config, error)
+      reportExitLogs(this.reporter, this.config, {error})
+
+      return toExitCode(getExitReason(this.config, {error}))
     }
 
     const orgSettings = await getOrgSettings(this.reporter, this.config)
@@ -107,7 +110,9 @@ export class RunTestCommand extends Command {
       summary,
     })
 
-    return handleExit(this.reporter, this.config, results)
+    reportExitLogs(this.reporter, this.config, {results})
+
+    return toExitCode(getExitReason(this.config, {results}))
   }
 
   private async resolveConfig() {

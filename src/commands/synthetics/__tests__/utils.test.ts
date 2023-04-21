@@ -1289,7 +1289,7 @@ describe('utils', () => {
         summary: testCase.summary,
       })
 
-      const exitCode = utils.handleExit(mockReporter, config, testCase.results)
+      const exitCode = utils.toExitCode(utils.getExitReason(config, {results: testCase.results}))
 
       expect((mockReporter as MockedReporter).reportStart).toHaveBeenCalledWith({startTime})
       expect((mockReporter as MockedReporter).resultEnd).toHaveBeenCalledTimes(testCase.results.length)

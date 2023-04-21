@@ -31,7 +31,9 @@ import {
   renderResults,
   runTests,
   waitForResults,
-  handleExit,
+  getExitReason,
+  toExitCode,
+  reportExitLogs,
 } from './utils'
 
 export const executeTests = async (
@@ -299,5 +301,7 @@ export const execute = async (
     summary,
   })
 
-  return handleExit(mainReporter, localConfig, results)
+  reportExitLogs(mainReporter, localConfig, {results})
+
+  return toExitCode(getExitReason(localConfig, {results}))
 }
