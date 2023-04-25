@@ -42,7 +42,7 @@ export class UploadCommand extends Command {
   }
   private dryRun = false
   private verbose = false
-  private gitSync = false
+  private noGitSync = false
   private directory = ''
   private logger: Logger = new Logger((s: string) => {
     this.context.stdout.write(s)
@@ -108,7 +108,7 @@ export class UploadCommand extends Command {
       inError = true
     }
 
-    if (this.gitSync) {
+    if (!this.noGitSync) {
       try {
         this.logger.info('Syncing GitDB...')
         const elapsed = await timedExecAsync(this.uploadToGitDB.bind(this), {
@@ -213,5 +213,5 @@ UploadCommand.addPath('git-metadata', 'upload')
 UploadCommand.addOption('dryRun', Command.Boolean('--dry-run'))
 UploadCommand.addOption('verbose', Command.Boolean('--verbose'))
 UploadCommand.addOption('directory', Command.String('--directory'))
-UploadCommand.addOption('gitSync', Command.Boolean('--git-sync'))
+UploadCommand.addOption('noGitSync', Command.Boolean('--no-git-sync'))
 UploadCommand.addOption('repositoryURL', Command.String('--repository-url'))
