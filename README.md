@@ -143,7 +143,7 @@ yarn prepack
 To release a new version of `datadog-ci`:
 
 1. Create a new branch for the version upgrade.
-2. Update the version using `yarn version [--patch|--minor|--major]`, depending on the nature of the changes introduced. You may refer to [Semantic Versioning](https://semver.org/#summary) to determine which to increment.
+2. Update the `package.json` version, commit the change `vX.X.X` and tag it with `git tag vX.X.X`, based on the version you are upgrading to. You may refer to [Semantic Versioning](https://semver.org/#summary) to determine what level to increment.
 3. Push the branch along with the tag to the upstream (GitHub) with `git push --tags origin name-of-the-branch`, create a Pull Request with the changes introduced in the description details, and get at least one approval. For example, see this [sample pull request](https://github.com/DataDog/datadog-ci/pull/78).
 4. Merge the Pull Request.
 5. Create a GitHub Release from the [Tags page](https://github.com/DataDog/datadog-ci/tags) with the description of changes introduced.
