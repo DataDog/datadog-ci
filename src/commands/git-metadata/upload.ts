@@ -42,6 +42,7 @@ export class UploadCommand extends Command {
   }
   private dryRun = false
   private verbose = false
+  private gitSync = false
   private noGitSync = false
   private directory = ''
   private logger: Logger = new Logger((s: string) => {
@@ -77,6 +78,10 @@ export class UploadCommand extends Command {
       )
 
       return 1
+    }
+
+    if (this.gitSync) {
+      this.logger.warn('option --git-sync is deprecated as it is now the default behavior')
     }
 
     const metricsLogger = getMetricsLogger({
@@ -212,6 +217,7 @@ export class UploadCommand extends Command {
 UploadCommand.addPath('git-metadata', 'upload')
 UploadCommand.addOption('dryRun', Command.Boolean('--dry-run'))
 UploadCommand.addOption('verbose', Command.Boolean('--verbose'))
+UploadCommand.addOption('gitSync', Command.Boolean('--git-sync'))
+UploadCommand.addOption('noGitSync', Command.Boolean('--no-gitsync'))
 UploadCommand.addOption('directory', Command.String('--directory'))
-UploadCommand.addOption('noGitSync', Command.Boolean('--no-git-sync'))
 UploadCommand.addOption('repositoryURL', Command.String('--repository-url'))
