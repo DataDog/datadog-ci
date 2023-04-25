@@ -1,6 +1,7 @@
 import chalk from 'chalk'
 import {Command} from 'clipanion'
 
+import {DATADOG_SITE_GOV} from '../../constants'
 import {ApiKeyValidator, newApiKeyValidator} from '../../helpers/apikey'
 import {InvalidConfigurationError} from '../../helpers/errors'
 import {ICONS} from '../../helpers/formatting'
@@ -30,6 +31,8 @@ export class UploadCommand extends Command {
     details: `
       This command will upload the commit details to Datadog in order to create links to your repositories inside Datadog's UI.\n
       See README for details.
+
+      Option --git-sync is DEPRECATED and will be removed in a future version.
     `,
     examples: [['Upload the current commit details', 'datadog-ci report-commits upload']],
   })
@@ -122,8 +125,13 @@ export class UploadCommand extends Command {
         metricsLogger.logger.increment('gitdb.success', 1)
         this.logger.info(`${this.dryRun ? '[DRYRUN] ' : ''}Successfully synced git DB in ${elapsed} seconds.`)
       } catch (err) {
-        console.log('error writing to git db')
-        this.logger.warn(`Could not write to GitDB: ${err}`)
+        if (!this.isTargetingGov()) {
+          console.log('error writing to git db')
+          this.logger.warn(`Could not write to GitDB: ${err}`)
+        } else {
+          // Skip the warning for Gov DC since git sync is not available there yet.
+          this.logger.warn(`not writing to GitDB: not available for gov`)
+        }
       }
     }
 
@@ -211,6 +219,10 @@ export class UploadCommand extends Command {
       apiKey,
       baseUrl: 'https://' + apiHost,
     })
+  }
+
+  private isTargetingGov(): boolean {
+    return process.env.DATADOG_SITE === DATADOG_SITE_GOV
   }
 }
 
