@@ -269,11 +269,13 @@ const getPollResultMap = async (api: APIHelper, batch: Batch) => {
 }
 
 export const getOrgSettings = async (
-  api: APIHelper,
-  reporter: MainReporter
+  reporter: MainReporter,
+  config: SyntheticsCIConfig
 ): Promise<SyntheticsOrgSettings | undefined> => {
+  const apiHelper = getApiHelper(config)
+
   try {
-    return await api.getSyntheticsOrgSettings()
+    return await apiHelper.getSyntheticsOrgSettings()
   } catch (e) {
     reporter.error(`Failed to get settings: ${formatBackendErrors(e)}`)
   }
@@ -331,6 +333,7 @@ const getResultFromBatch = (
   }
 }
 
+// XXX: We shouldn't export functions that take an `APIHelper` because the `utils` module is exported while `api` is not.
 export const waitForResults = async (
   api: APIHelper,
   trigger: Trigger,
@@ -509,6 +512,7 @@ type NotFound = {errorMessage: string}
 type Skipped = {overriddenConfig: TestPayload}
 type TestWithOverride = {test: Test; overriddenConfig: TestPayload}
 
+// XXX: We shouldn't export functions that take an `APIHelper` because the `utils` module is exported while `api` is not.
 export const getTestAndOverrideConfig = async (
   api: APIHelper,
   {config, id, suite}: TriggerConfig,
@@ -551,6 +555,7 @@ export const getTestAndOverrideConfig = async (
 export const isDeviceIdSet = (result: ServerResult): result is Required<BrowserServerResult> =>
   'device' in result && result.device !== undefined
 
+// XXX: We shouldn't export functions that take an `APIHelper` because the `utils` module is exported while `api` is not.
 export const getTestsToTrigger = async (
   api: APIHelper,
   triggerConfigs: TriggerConfig[],
@@ -644,6 +649,7 @@ export const getTestsToTrigger = async (
   return {tests: waitedTests, overriddenTestsToTrigger, initialSummary}
 }
 
+// XXX: We shouldn't export functions that take an `APIHelper` because the `utils` module is exported while `api` is not.
 export const runTests = async (api: APIHelper, testsToTrigger: TestPayload[]): Promise<Trigger> => {
   const payload: Payload = {tests: testsToTrigger}
   const tagsToLimit = {
@@ -720,6 +726,8 @@ export const parseVariablesFromCli = (
   return Object.keys(variables).length > 0 ? variables : undefined
 }
 
+// XXX: `CommandConfig` should be replaced by `SyntheticsCIConfig` here because it's the smallest
+//      interface that we need, and it's better semantically.
 export const getAppBaseURL = ({datadogSite, subdomain}: Pick<CommandConfig, 'datadogSite' | 'subdomain'>) => {
   const validSubdomain = subdomain || DEFAULT_COMMAND_CONFIG.subdomain
   const datadogSiteParts = datadogSite.split('.')
@@ -794,8 +802,6 @@ export const renderResults = ({
     }
   }
 
-  let hasSucceeded = true // Determine if all the tests have succeeded
-
   const sortedResults = results.sort(sortResultsByOutcome())
 
   for (const result of sortedResults) {
@@ -815,14 +821,69 @@ export const renderResults = ({
       summary.failedNonBlocking++
     } else {
       summary.failed++
-      hasSucceeded = false
     }
 
     reporter.resultEnd(result, getAppBaseURL(config))
   }
-  reporter.runEnd(summary, getAppBaseURL(config), orgSettings)
 
-  return hasSucceeded ? 0 : 1
+  reporter.runEnd(summary, getAppBaseURL(config), orgSettings)
+}
+
+export const reportExitLogs = (
+  reporter: MainReporter,
+  config: Pick<CommandConfig, 'failOnTimeout' | 'failOnCriticalErrors'>,
+  {results, error}: {results?: Result[]; error?: unknown}
+) => {
+  if (!config.failOnTimeout && results?.some((result) => result.timedOut)) {
+    reporter.error(
+      chalk.yellow(
+        'Because `failOnTimeout` is disabled, the command will succeed. ' +
+          'Use `failOnTimeout: true` to make it fail instead.\n'
+      )
+    )
+  }
+
+  if (!config.failOnCriticalErrors && error instanceof CriticalError) {
+    reporter.error(
+      chalk.yellow(
+        'Because `failOnCriticalErrors` is not set or disabled, the command will succeed. ' +
+          'Use `failOnCriticalErrors: true` to make it fail instead.\n'
+      )
+    )
+  }
+
+  if (error instanceof CiError) {
+    reportCiError(error, reporter)
+  }
+}
+
+export const getExitReason = (
+  config: Pick<CommandConfig, 'failOnCriticalErrors' | 'failOnMissingTests'>,
+  {results, error}: {results?: Result[]; error?: unknown}
+) => {
+  if (results?.some((result) => getResultOutcome(result) === ResultOutcome.Failed)) {
+    return 'failing-tests'
+  }
+
+  if (error instanceof CiError) {
+    if (config.failOnMissingTests && error.code === 'MISSING_TESTS') {
+      return 'missing-tests'
+    }
+
+    if (error instanceof CriticalError) {
+      if (config.failOnCriticalErrors) {
+        return 'critical-error'
+      }
+    }
+  }
+
+  return 'passed'
+}
+
+export type ExitReason = ReturnType<typeof getExitReason>
+
+export const toExitCode = (reason: ExitReason) => {
+  return reason === 'passed' ? 0 : 1
 }
 
 export const getDatadogHost = (hostConfig: {
@@ -846,3 +907,52 @@ export const getDatadogHost = (hostConfig: {
 }
 
 export const pluralize = (word: string, count: number): string => (count === 1 ? word : `${word}s`)
+
+export const reportCiError = (error: CiError, reporter: MainReporter) => {
+  switch (error.code) {
+    case 'NO_TESTS_TO_RUN':
+      reporter.log('No test to run.\n')
+      break
+    case 'MISSING_TESTS':
+      reporter.error(`\n${chalk.bgRed.bold(' ERROR: some tests are missing ')}\n${error.message}\n\n`)
+      break
+
+    // Critical command errors
+    case 'AUTHORIZATION_ERROR':
+      reporter.error(`\n${chalk.bgRed.bold(' ERROR: authorization error ')}\n${error.message}\n\n`)
+      reporter.log('Credentials refused, make sure `apiKey`, `appKey` and `datadogSite` are correct.\n')
+      break
+    case 'INVALID_CONFIG':
+      reporter.error(`\n${chalk.bgRed.bold(' ERROR: invalid config ')}\n${error.message}\n\n`)
+      break
+    case 'MISSING_APP_KEY':
+      reporter.error(`Missing ${chalk.red.bold('DATADOG_APP_KEY')} in your environment.\n`)
+      break
+    case 'MISSING_API_KEY':
+      reporter.error(`Missing ${chalk.red.bold('DATADOG_API_KEY')} in your environment.\n`)
+      break
+    case 'POLL_RESULTS_FAILED':
+      reporter.error(`\n${chalk.bgRed.bold(' ERROR: unable to poll test results ')}\n${error.message}\n\n`)
+      break
+    case 'TUNNEL_START_FAILED':
+      reporter.error(`\n${chalk.bgRed.bold(' ERROR: unable to start tunnel ')}\n${error.message}\n\n`)
+      break
+    case 'TOO_MANY_TESTS_TO_TRIGGER':
+      reporter.error(`\n${chalk.bgRed.bold(' ERROR: too many tests to trigger ')}\n${error.message}\n\n`)
+      break
+    case 'TRIGGER_TESTS_FAILED':
+      reporter.error(`\n${chalk.bgRed.bold(' ERROR: unable to trigger tests ')}\n${error.message}\n\n`)
+      break
+    case 'UNAVAILABLE_TEST_CONFIG':
+      reporter.error(
+        `\n${chalk.bgRed.bold(' ERROR: unable to obtain test configurations with search query ')}\n${error.message}\n\n`
+      )
+      break
+    case 'UNAVAILABLE_TUNNEL_CONFIG':
+      reporter.error(`\n${chalk.bgRed.bold(' ERROR: unable to get tunnel configuration ')}\n${error.message}\n\n`)
+      break
+
+    default:
+      reporter.error(`\n${chalk.bgRed.bold(' ERROR ')}\n${error.message}\n\n`)
+  }
+}
