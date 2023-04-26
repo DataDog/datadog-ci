@@ -4,7 +4,7 @@ import {XMLParser, XMLValidator} from 'fast-xml-parser'
 
 type PlistNode = {[tagName: string]: [{[valueType: string]: string | number | PlistNode}]}
 
-const parseIfEnvVariable = (propertyValue: string | number): string | number => {
+const parseIfEnvVariable = (propertyValue: string | number, metadata: {propertyName: string}): string | number => {
   if (typeof propertyValue !== 'string') {
     return propertyValue
   }
@@ -18,13 +18,12 @@ const parseIfEnvVariable = (propertyValue: string | number): string | number => 
   // matchedEnvVariable[0] is the matched string, i.e. "$(VARIABLE_NAME)"
   // matchedEnvVariable[1] is the captured group, i.e. "VARIABLE_NAME"
   const value = process.env[matchedEnvVariable[1]]
+  // If we haven't captured, the value is not an env variable and we should return it directly
   if (value !== undefined) {
     return value
   }
 
-  throw new Error(
-    `Environment variable ${matchedEnvVariable[1]} for property value ${matchedEnvVariable[0]} wasn't found.`
-  )
+  throw new Error(`Environment variable ${matchedEnvVariable[0]} for key ${metadata.propertyName} wasn't found.`)
 }
 
 class PlistContent {
@@ -58,7 +57,7 @@ class PlistContent {
       throw new Error('Property is not a string, this is not supported yet')
     }
 
-    return parseIfEnvVariable(valueNode.string[0]['#text'])
+    return parseIfEnvVariable(valueNode.string[0]['#text'], {propertyName})
   }
 
   /**
