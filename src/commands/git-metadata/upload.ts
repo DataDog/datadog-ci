@@ -84,7 +84,7 @@ export class UploadCommand extends Command {
     }
 
     if (this.gitSync) {
-      this.logger.warn('option --git-sync is deprecated as it is now the default behavior')
+      this.logger.warn('Option --git-sync is deprecated as it is now the default behavior')
     }
 
     const metricsLogger = getMetricsLogger({
@@ -126,11 +126,10 @@ export class UploadCommand extends Command {
         this.logger.info(`${this.dryRun ? '[DRYRUN] ' : ''}Successfully synced git DB in ${elapsed} seconds.`)
       } catch (err) {
         if (!this.isTargetingGov()) {
-          console.log('error writing to git db')
           this.logger.warn(`Could not write to GitDB: ${err}`)
         } else {
           // Skip the warning for Gov DC since git sync is not available there yet.
-          this.logger.warn(`not writing to GitDB: not available for gov`)
+          this.logger.warn(`Not writing to GitDB: not available for gov`)
         }
       }
     }
