@@ -6,6 +6,7 @@ import * as api from '../api'
 import {MAX_TESTS_TO_TRIGGER} from '../command'
 import {CiError, CriticalCiErrorCode, CriticalError} from '../errors'
 import {ExecutionRule, Summary, SyntheticsCIConfig, UserConfigOverride} from '../interfaces'
+import {MIN_APPLICATION_SIZE} from '../mobile'
 import {DefaultReporter} from '../reporters/default'
 import {JUnitReporter} from '../reporters/junit'
 import * as runTests from '../run-test'
@@ -323,8 +324,7 @@ describe('run-test', () => {
       // use /dev/null to create a valid empty fs.ReadStream
       const testStream = fs.createReadStream('/dev/null')
       jest.spyOn(fs, 'createReadStream').mockReturnValue(testStream)
-
-      jest.spyOn(fs.promises, 'readFile').mockImplementation(async () => Buffer.from('aa'))
+      jest.spyOn(fs.promises, 'readFile').mockImplementation(async () => Buffer.alloc(MIN_APPLICATION_SIZE))
 
       const apiHelper = {
         getMobileApplicationPresignedURL: jest.fn(() => MOBILE_PRESIGNED_URL_PAYLOAD),
