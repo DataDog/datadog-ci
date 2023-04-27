@@ -151,7 +151,7 @@ describe('uploadMobileApplications', () => {
     })
 
     await expect(mobile.uploadMobileApplications(api, 'new-application-path.api', 'mobileAppUuid')).rejects.toThrow(
-      'Invalid Mobile Application size. Expect a size between 1024B and 1073741824B, got 7B.'
+      `Invalid Mobile Application size. Expect a size between 1 KiB and 1 GiB, got 7 byte(s).`
     )
   })
 })
@@ -194,7 +194,7 @@ describe('shouldUploadApplication', () => {
   })
 })
 
-describe('overrideMobileConfig 1', () => {
+describe('overrideMobileConfig', () => {
   afterAll(() => {
     jest.restoreAllMocks()
   })
@@ -250,7 +250,7 @@ describe('overrideMobileConfig 1', () => {
   })
 })
 
-describe('uploadApplicationAndOverrideConfig 1', () => {
+describe('uploadApplicationAndOverrideConfig', () => {
   const api = getApiHelper()
 
   test('Upload and override for mobile tests', async () => {

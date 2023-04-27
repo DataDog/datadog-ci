@@ -34,7 +34,7 @@ export const uploadMobileApplications = async (
   if (fileBufferBytesSize < MIN_APPLICATION_SIZE || MAX_APPLICATION_SIZE < fileBufferBytesSize) {
     throw new CriticalError(
       'INVALID_MOBILE_APPLICATION_SIZE',
-      `Invalid Mobile Application size. Expect a size between ${MIN_APPLICATION_SIZE}B and ${MAX_APPLICATION_SIZE}B, got ${fileBufferBytesSize}B.`
+      `Invalid Mobile Application size. Expect a size between 1 KiB and 1 GiB, got ${fileBufferBytesSize} byte(s).`
     )
   }
 
