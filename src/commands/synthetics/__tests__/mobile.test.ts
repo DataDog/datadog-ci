@@ -1,9 +1,12 @@
 import fs from 'fs'
+import {promises as fsPromise} from 'fs'
 import path from 'path'
+
+import {default as axios} from 'axios'
 
 import * as mobile from '../mobile'
 
-import {getApiHelper, getMobileTest, getTestPayload} from './fixtures'
+import {getApiHelper, getMobileTest, getTestPayload, MOBILE_PRESIGNED_URL_PAYLOAD} from './fixtures'
 
 describe('getMD5HashFromFileBuffer', () => {
   test('correctly compute md5 of a file', async () => {
@@ -26,8 +29,11 @@ describe('uploadApplication', () => {
   const api = getApiHelper()
 
   beforeEach(() => {
-    uploadApplicationSpy.mockReset()
     uploadApplicationSpy.mockImplementation(async () => 'fileName')
+  })
+
+  afterAll(() => {
+    jest.restoreAllMocks()
   })
 
   test('upload new application file', async () => {
@@ -131,7 +137,30 @@ describe('uploadApplication', () => {
   })
 })
 
+describe('uploadMobileApplications', () => {
+  afterAll(() => {
+    jest.restoreAllMocks()
+  })
+
+  test('throws if the size of the application is invalid', async () => {
+    const api = getApiHelper()
+    jest.spyOn(axios, 'create').mockImplementation((() => () => ({data: MOBILE_PRESIGNED_URL_PAYLOAD})) as any)
+    jest.spyOn(mobile, 'getMD5HashFromFile').mockImplementation(async () => '0cc175b9c0f1b6a831c399e269772661')
+    jest.spyOn(fsPromise, 'readFile').mockImplementation(async () => {
+      return Buffer.from('7 bytes') // one bytes file
+    })
+
+    await expect(mobile.uploadMobileApplications(api, 'new-application-path.api', 'mobileAppUuid')).rejects.toThrow(
+      'Invalid Mobile Application size. Expect a size between 1024B and 1073741824B, got 7B.'
+    )
+  })
+})
+
 describe('shouldUploadApplication', () => {
+  afterAll(() => {
+    jest.restoreAllMocks()
+  })
+
   test('New application', () => {
     expect(mobile.shouldUploadApplication('application-path.api', 'mobileAppUuid', {})).toBe(true)
   })
@@ -165,7 +194,11 @@ describe('shouldUploadApplication', () => {
   })
 })
 
-describe('overrideMobileConfig', () => {
+describe('overrideMobileConfig 1', () => {
+  afterAll(() => {
+    jest.restoreAllMocks()
+  })
+
   test('mobileApplicationVersionFilePath', () => {
     const test = getMobileTest()
     const overriddenConfig = getTestPayload({public_id: test.public_id})
@@ -217,19 +250,15 @@ describe('overrideMobileConfig', () => {
   })
 })
 
-describe('uploadApplicationAndOverrideConfig', () => {
-  const uploadApplicationSpy = jest.spyOn(mobile, 'uploadMobileApplications')
+describe('uploadApplicationAndOverrideConfig 1', () => {
   const api = getApiHelper()
 
-  beforeEach(() => {
-    uploadApplicationSpy.mockReset()
-    uploadApplicationSpy.mockImplementation(async () => 'fileName')
-  })
-
   test('Upload and override for mobile tests', async () => {
+    jest.spyOn(mobile, 'uploadMobileApplications').mockImplementation(async () => 'fileName')
     const uploadedApplicationByPath: {[applicationFilePath: string]: {applicationId: string; fileName: string}[]} = {}
     const mobileTest = getMobileTest()
     const mobileTestConfig = getTestPayload({public_id: mobileTest.public_id})
+
     await mobile.uploadApplicationAndOverrideConfig(
       api,
       mobileTest,

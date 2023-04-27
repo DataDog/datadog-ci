@@ -2,7 +2,11 @@ import * as crypto from 'crypto'
 import fs from 'fs'
 
 import {APIHelper} from './api'
+import {CriticalError} from './errors'
 import {Test, TestPayload, UserConfigOverride} from './interfaces'
+
+export const MAX_APPLICATION_SIZE = 1 * 1024 * 1024 * 1024 // 1 GiB
+export const MIN_APPLICATION_SIZE = 1 * 1024 // 1 KiB
 
 export const getMD5HashFromFile = async (file: string): Promise<string> => {
   const hash = crypto.createHash('md5')
@@ -26,6 +30,14 @@ export const uploadMobileApplications = async (
   )
 
   const fileBuffer = await fs.promises.readFile(applicationPathToUpload)
+  const fileBufferBytesSize = fileBuffer.byteLength
+  if (fileBufferBytesSize < MIN_APPLICATION_SIZE || MAX_APPLICATION_SIZE < fileBufferBytesSize) {
+    throw new CriticalError(
+      'INVALID_MOBILE_APPLICATION_SIZE',
+      `Invalid Mobile Application size. Expect a size between ${MIN_APPLICATION_SIZE}B and ${MAX_APPLICATION_SIZE}B, got ${fileBufferBytesSize}B.`
+    )
+  }
+
   await api.uploadMobileApplication(fileBuffer, presignedUrl)
 
   return fileName
