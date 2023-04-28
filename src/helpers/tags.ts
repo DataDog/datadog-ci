@@ -31,7 +31,7 @@ export const SPAN_TYPE = 'span.type'
 
 const parseNumericTag = (numericTag: string | undefined): number | undefined => {
   if (numericTag) {
-    const number = parseInt(numericTag, 10)
+    const number = parseFloat(numericTag)
 
     return isFinite(number) ? number : undefined
   }
