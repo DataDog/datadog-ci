@@ -22,7 +22,10 @@ describe('parseMetrics', () => {
   })
   test('returns an object with the tags with well formatted numbers', () => {
     expect(parseMetrics(['key1:123', 'key2:321', 'key3:321.1', 'key4:-123.1'])).toEqual({
-      key1: 123, key2: 321, key3: 321.1, key4: -123.1,
+      key1: 123,
+      key2: 321,
+      key3: 321.1,
+      key4: -123.1,
     })
   })
   test('should not include invalid key:value pairs', () => {
