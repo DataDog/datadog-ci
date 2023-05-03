@@ -308,7 +308,7 @@ describe('run-test', () => {
           global: {mobileApplicationVersionFilePath: 'filePath'},
           publicIds: [mobileTest.public_id],
         })
-      ).rejects.toMatchError(new CriticalError('UPLOAD_MOBILE_APPLICATION_TESTS_FAILED', 'Server Error'))
+      ).rejects.toThrow('Failed to get presigned URL: could not query https://app.datadoghq.com/example')
     })
 
     test('uploadMobileApplication throws', async () => {
@@ -340,7 +340,7 @@ describe('run-test', () => {
           global: {mobileApplicationVersionFilePath: 'filePath'},
           publicIds: [mobileTest.public_id],
         })
-      ).rejects.toMatchError(new CriticalError('UPLOAD_MOBILE_APPLICATION_TESTS_FAILED', 'Server Error'))
+      ).rejects.toThrow('Failed to upload mobile application: could not query https://app.datadoghq.com/example')
     })
 
     test('runTests throws', async () => {

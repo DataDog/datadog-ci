@@ -81,7 +81,7 @@ describe('dd-api', () => {
         shouldBeRetriedOn5xx: true,
       },
       {
-        makeApiRequest: () => api.getMobileApplicationPresignedURL('applicationId', 'md5'),
+        makeApiRequest: () => api.getMobileApplicationPresignedURL('applicationId', 1025, 'md5'),
         name: 'get presigned url' as const,
         shouldBeRetriedOn404: false,
         shouldBeRetriedOn5xx: true,
@@ -157,7 +157,7 @@ describe('dd-api', () => {
       .mockImplementation((() => () => ({data: MOBILE_PRESIGNED_URL_PAYLOAD})) as any)
     const api = apiConstructor(apiConfiguration)
     const {getMobileApplicationPresignedURL} = api
-    const result = await getMobileApplicationPresignedURL('applicationId', 'md5')
+    const result = await getMobileApplicationPresignedURL('applicationId', 1025, 'md5')
     expect(result).toEqual(MOBILE_PRESIGNED_URL_PAYLOAD)
     spy.mockRestore()
   })
