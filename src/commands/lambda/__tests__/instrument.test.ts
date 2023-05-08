@@ -1578,7 +1578,7 @@ describe('lambda', () => {
         command['config']['service'] = 'middletier'
         command['config']['environment'] = 'staging'
         command['config']['version'] = '0.2'
-        command['config']['extraTags'] = 'not-complying:illegal-chars-in-key,complies:valid-pair'
+        command['config']['extraTags'] = 'not@complying:illegal-chars-in-key,complies:valid-pair'
         command['getSettings']()
         const output = command.context.stdout.toString()
         expect(output).toMatch('[Error] Extra tags do not comply with the <key>:<value> array.\n')

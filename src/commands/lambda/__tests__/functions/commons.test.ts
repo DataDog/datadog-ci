@@ -589,7 +589,7 @@ describe('commons', () => {
   })
   describe('sentenceMatchesRegEx', () => {
     const tags: [string, boolean][] = [
-      ['not-complying:regex-should-fail', false],
+      ['not@complying:regex-should-fail', false],
       ['1first-char-is-number:should-fail', false],
       ['_also-not-complying:should-fail', false],
       ['complying_tag:accepted/with/slashes.and.dots,but-empty-tag', false],
@@ -599,6 +599,9 @@ describe('commons', () => {
       ['complying:alone', true],
       ['one_divided_by_two:1/2,one_divided_by_four:0.25,three_minus_one_half:3-1/2', true],
       ['this_is_a_valid_t4g:yes/it.is-42', true],
+      // multiple colons, periods in tag, slashes in tag
+      ['env-staging:east:staging,version.minor:1,version.major:3.4/v3,category/service:not/defined', true],
+      ['email:user@email.com,numb3r:t', true],
     ]
     test.each(tags)('check if the tags match the expected result from the regex', (tag, expectedResult) => {
       const result = !!sentenceMatchesRegEx(tag, EXTRA_TAGS_REG_EXP)
