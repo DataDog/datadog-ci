@@ -3,6 +3,7 @@ import path from 'path'
 
 import {getCIEnv, getCIMetadata, getCISpanTags} from '../ci'
 import {Metadata, SpanTags} from '../interfaces'
+import {CI_NODE_LABELS, CI_ENV_VARS} from '../tags'
 import {getUserCISpanTags, getUserGitSpanTags} from '../user-provided-git'
 
 const CI_PROVIDERS = fs.readdirSync(path.join(__dirname, 'ci-env'))
@@ -171,7 +172,23 @@ describe('ci spec', () => {
           ...getCISpanTags(),
           ...getUserGitSpanTags(),
         }
-        expect(tags).toEqual(expectedSpanTags)
+
+        const {[CI_ENV_VARS]: envVars, [CI_NODE_LABELS]: nodeLabels, ...restOfTags} = tags
+        const {
+          [CI_ENV_VARS]: expectedEnvVars,
+          [CI_NODE_LABELS]: expectedNodeLabels,
+          ...restOfExpectedTags
+        } = expectedSpanTags
+        expect(restOfTags).toEqual(restOfExpectedTags)
+
+        // `CI_ENV_VARS` key contains a dictionary, so we JSON parse it
+        if (envVars && expectedEnvVars) {
+          expect(JSON.parse(envVars)).toEqual(JSON.parse(expectedEnvVars))
+        }
+        // `CI_NODE_LABELS` key contains an array, so we JSON parse it
+        if (nodeLabels && expectedNodeLabels) {
+          expect(JSON.parse(nodeLabels)).toEqual(expect.arrayContaining(JSON.parse(expectedNodeLabels)))
+        }
       })
     })
   })

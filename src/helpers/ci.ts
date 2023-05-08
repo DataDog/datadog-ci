@@ -3,6 +3,8 @@ import {
   CI_ENV_VARS,
   CI_JOB_NAME,
   CI_JOB_URL,
+  CI_NODE_NAME,
+  CI_NODE_LABELS,
   CI_PIPELINE_ID,
   CI_PIPELINE_NAME,
   CI_PIPELINE_NUMBER,
@@ -164,6 +166,8 @@ export const getCISpanTags = (): SpanTags | undefined => {
       CI_COMMIT_AUTHOR,
       CI_JOB_ID: GITLAB_CI_JOB_ID,
       CI_PROJECT_URL: GITLAB_CI_PROJECT_URL,
+      CI_RUNNER_ID,
+      CI_RUNNER_TAGS,
     } = env
 
     const {name, email} = parseEmailAndName(CI_COMMIT_AUTHOR)
@@ -192,6 +196,8 @@ export const getCISpanTags = (): SpanTags | undefined => {
         CI_PIPELINE_ID: GITLAB_CI_PIPELINE_ID,
         CI_JOB_ID: GITLAB_CI_JOB_ID,
       }),
+      [CI_NODE_LABELS]: CI_RUNNER_TAGS,
+      [CI_NODE_NAME]: CI_RUNNER_ID,
     }
   }
 
@@ -251,6 +257,8 @@ export const getCISpanTags = (): SpanTags | undefined => {
       GIT_URL,
       GIT_URL_1,
       DD_CUSTOM_TRACE_ID,
+      NODE_NAME,
+      NODE_LABELS,
     } = env
 
     tags = {
@@ -263,6 +271,17 @@ export const getCISpanTags = (): SpanTags | undefined => {
       [GIT_SHA]: GIT_COMMIT,
       [GIT_REPOSITORY_URL]: GIT_URL || GIT_URL_1,
       [GIT_BRANCH]: JENKINS_GIT_BRANCH,
+      [CI_NODE_NAME]: NODE_NAME,
+    }
+
+    if (NODE_LABELS) {
+      let nodeLabels
+      try {
+        nodeLabels = JSON.stringify(NODE_LABELS.split(' '))
+        tags[CI_NODE_LABELS] = nodeLabels
+      } catch (e) {
+        // ignore errors
+      }
     }
 
     let finalPipelineName = ''
@@ -281,6 +300,7 @@ export const getCISpanTags = (): SpanTags | undefined => {
 
   if (env.BUILDKITE) {
     const {
+      BUILDKITE_AGENT_ID,
       BUILDKITE_BRANCH,
       BUILDKITE_COMMIT,
       BUILDKITE_REPO,
@@ -296,7 +316,16 @@ export const getCISpanTags = (): SpanTags | undefined => {
       BUILDKITE_MESSAGE,
     } = env
 
+    const extraTags = Object.keys(env)
+      .filter((envVar) => envVar.startsWith('BUILDKITE_AGENT_META_DATA_'))
+      .map((metadataKey) => {
+        const key = metadataKey.replace('BUILDKITE_AGENT_META_DATA_', '').toLowerCase()
+
+        return `${key}:${env[metadataKey]}`
+      })
+
     tags = {
+      [CI_NODE_NAME]: BUILDKITE_AGENT_ID,
       [CI_PROVIDER_NAME]: CI_ENGINES.BUILDKITE,
       [CI_PIPELINE_ID]: BUILDKITE_BUILD_ID,
       [CI_PIPELINE_NAME]: BUILDKITE_PIPELINE_SLUG,
@@ -315,6 +344,9 @@ export const getCISpanTags = (): SpanTags | undefined => {
         BUILDKITE_BUILD_ID,
         BUILDKITE_JOB_ID,
       }),
+    }
+    if (extraTags.length) {
+      tags[CI_NODE_LABELS] = JSON.stringify(extraTags)
     }
   }
 
@@ -531,6 +563,24 @@ export const getCISpanTags = (): SpanTags | undefined => {
       [GIT_COMMIT_COMMITTER_EMAIL]: BUDDY_EXECUTION_REVISION_COMMITTER_EMAIL,
       [GIT_COMMIT_COMMITTER_NAME]: BUDDY_EXECUTION_REVISION_COMMITTER_NAME,
     }
+  }
+
+  if (env.CF_BUILD_ID) {
+    const {CF_BUILD_ID, CF_PIPELINE_NAME, CF_BUILD_URL, CF_STEP_NAME, CF_BRANCH} = env
+    tags = {
+      [CI_PROVIDER_NAME]: 'codefresh',
+      [CI_PIPELINE_ID]: CF_BUILD_ID,
+      [CI_PIPELINE_NAME]: CF_PIPELINE_NAME,
+      [CI_PIPELINE_URL]: CF_BUILD_URL,
+      [CI_JOB_NAME]: CF_STEP_NAME,
+      [CI_ENV_VARS]: JSON.stringify({CF_BUILD_ID}),
+    }
+
+    const isTag = CF_BRANCH && CF_BRANCH.includes('tags/')
+    const refKey = isTag ? GIT_TAG : GIT_BRANCH
+    const ref = normalizeRef(CF_BRANCH)
+
+    tags[refKey] = ref
   }
 
   if (tags[CI_WORKSPACE_PATH]) {
