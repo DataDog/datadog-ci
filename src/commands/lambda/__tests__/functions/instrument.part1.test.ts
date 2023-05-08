@@ -45,6 +45,37 @@ describe('instrument', () => {
     afterAll(() => {
       process.env = OLD_ENV
     })
+
+    test('does not redirect handler when no version is specified', async () => {
+      const functionConfiguration: LFunctionConfiguration = {
+        FunctionArn: 'arn:aws:lambda:us-east-1:000000000000:function:autoinstrument',
+        Handler: 'index.handler',
+        Runtime: 'nodejs12.x',
+      }
+      mockLambdaConfigurations(lambdaClientMock, {
+        'arn:aws:lambda:us-east-1:000000000000:function:autoinstrument': {
+          config: functionConfiguration,
+        },
+      })
+
+      const settings = {
+        flushMetricsToLogs: false,
+        // No layerVersion specified
+        mergeXrayTraces: false,
+        tracingEnabled: false,
+      }
+
+      const result = await getInstrumentedFunctionConfig(
+        lambdaClientMock as any,
+        cloudWatchLogsClientMock as any,
+        functionConfiguration,
+        'us-east-1',
+        settings
+      )
+
+      expect(result.updateFunctionConfigurationCommandInput?.Handler).toEqual('index.handler')
+    })
+
     test('throws an error when it encounters an unsupported runtime', async () => {
       mockLambdaConfigurations(lambdaClientMock, {
         'arn:aws:lambda:us-east-1:000000000000:function:autoinstrument': {
