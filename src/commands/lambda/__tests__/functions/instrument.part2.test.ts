@@ -279,7 +279,6 @@ describe('instrument', () => {
             },
           },
           "FunctionName": "arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world",
-          "Handler": "datadog_lambda.handler.handler",
         }
       `)
     })
@@ -313,7 +312,6 @@ describe('instrument', () => {
             },
           },
           "FunctionName": "arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world",
-          "Handler": "datadog_lambda.handler.handler",
           "Layers": Array [
             "arn:aws:lambda:sa-east-1:464622532012:layer:Datadog-Extension:13",
           ],
@@ -350,7 +348,6 @@ describe('instrument', () => {
             },
           },
           "FunctionName": "arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world",
-          "Handler": "datadog_lambda.handler.handler",
         }
       `)
     })
@@ -384,7 +381,6 @@ describe('instrument', () => {
             },
           },
           "FunctionName": "arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world",
-          "Handler": "datadog_lambda.handler.handler",
         }
       `)
     })
