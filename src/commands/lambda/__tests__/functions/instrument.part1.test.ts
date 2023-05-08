@@ -73,7 +73,8 @@ describe('instrument', () => {
         settings
       )
 
-      expect(result.updateFunctionConfigurationCommandInput?.Handler).toEqual('index.handler')
+      // No change to Handler needed so it's not in the update params
+      expect(result.updateFunctionConfigurationCommandInput?.Handler).toBeUndefined()
     })
 
     test('throws an error when it encounters an unsupported runtime', async () => {
