@@ -182,7 +182,7 @@ export const calculateUpdateRequest = async (
   }
 
   // Update Python Handler
-  if (runtimeType === RuntimeType.PYTHON) {
+  if (runtimeType === RuntimeType.PYTHON && settings.layerVersion !== undefined) {
     const expectedHandler = PYTHON_HANDLER_LOCATION
     if (config.Handler !== expectedHandler) {
       needsUpdate = true
@@ -191,7 +191,7 @@ export const calculateUpdateRequest = async (
   }
 
   // Update Node Handler
-  if (runtimeType === RuntimeType.NODE) {
+  if (runtimeType === RuntimeType.NODE && settings.layerVersion !== undefined) {
     const expectedHandler = NODE_HANDLER_LOCATION
     if (config.Handler !== expectedHandler) {
       needsUpdate = true
