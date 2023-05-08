@@ -109,7 +109,7 @@ export const MAX_LAMBDA_STATE_CHECK_ATTEMPTS = 3
 // This RegExp ensures that the --extra-tags string
 // matches a list of <key>:<value> separated by commas
 // such as: layer:api,team:intake
-export const EXTRA_TAGS_REG_EXP = /^(([a-zA-Z]+)[\w\-\/\.]*:[^,]+)+((\,)([a-zA-Z]+)[\w\-\/\.]*:[^,]+)*$/g
+export const EXTRA_TAGS_REG_EXP = /^(([a-zA-Z]+)[\w\-/\.]*:[^,]+)+((\,)([a-zA-Z]+)[\w\-/\.]*:[^,]+)*$/g
 export const AWS_ACCESS_KEY_ID_REG_EXP = /(?<![A-Z0-9])[A-Z0-9]{20}(?![A-Z0-9])/g
 export const AWS_SECRET_ACCESS_KEY_REG_EXP = /(?<![A-Za-z0-9/+=])[A-Za-z0-9/+=]{40}(?![A-Za-z0-9/+=])/g
 export const AWS_SECRET_ARN_REG_EXP = /arn:aws:secretsmanager:[\w-]+:\d{12}:secret:.+/
