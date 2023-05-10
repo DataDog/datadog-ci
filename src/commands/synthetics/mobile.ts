@@ -4,7 +4,7 @@ import fs from 'fs'
 import {APIHelper, EndpointError, formatBackendErrors} from './api'
 import {PresignedUrlResponse, Test, TestPayload, UserConfigOverride} from './interfaces'
 
-export const getFileAndMD5HashFromFile = async (filePath: string): Promise<{appSize: number; md5: string}> => {
+export const getSizeAndMD5HashFromFile = async (filePath: string): Promise<{appSize: number; md5: string}> => {
   const hash = crypto.createHash('md5')
   const fileStream = fs.createReadStream(filePath)
   for await (const chunk of fileStream) {
@@ -19,7 +19,7 @@ export const uploadMobileApplications = async (
   applicationPathToUpload: string,
   mobileApplicationId: string
 ): Promise<string> => {
-  const {appSize, md5} = await getFileAndMD5HashFromFile(applicationPathToUpload)
+  const {appSize, md5} = await getSizeAndMD5HashFromFile(applicationPathToUpload)
 
   let presignedUrlResponse: PresignedUrlResponse
   try {
