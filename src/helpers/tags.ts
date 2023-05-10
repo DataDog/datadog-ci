@@ -14,6 +14,9 @@ export const CI_LEVEL = '_dd.ci.level'
 export const CI_BUILD_LEVEL = '_dd.ci.build_level'
 
 export const CI_ENV_VARS = '_dd.ci.env_vars'
+export const CI_NODE_NAME = 'ci.node.name'
+export const CI_NODE_LABELS = 'ci.node.labels'
+
 // Git
 export const GIT_BRANCH = 'git.branch'
 export const GIT_COMMIT_AUTHOR_DATE = 'git.commit.author.date'
