@@ -30,6 +30,8 @@ datadog-ci junit upload --service my-service --tags key1:value1 --tags key2:valu
 - `--max-concurrency` (default: `20`): number of concurrent uploads to the API.
 - `--dry-run` (default: `false`): it will run the command without the final upload step. All other checks are performed.
 - `--logs` (default: `false`): it will enable collecting logs from the content in the XML reports.
+- `--skip-git-metadata-upload` (default: `false`): it will run the command without uploading git metadata.
+- `--git-repository-url` : is a string with the url of the repository to use to retrieve git metadata. If missing the url will be retrieved from the local git repository.
 
 #### Environment variables
 
