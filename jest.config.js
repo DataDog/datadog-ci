@@ -12,5 +12,6 @@ module.exports = {
     },
   },
   roots: ['src'],
-  setupFilesAfterEnv: ['jest-matcher-specific-error']
+  setupFilesAfterEnv: ['jest-matcher-specific-error'],
+  reporters: ['default', 'jest-junit']
 }

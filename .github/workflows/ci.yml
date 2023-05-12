@@ -161,3 +161,21 @@ jobs:
       # by the script `check-licenses` below.
       - run: yarn install --immutable
       - run: yarn check-licenses
+
+  upload-junit:
+    name: Upload junit
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+      - name: Install node
+        uses: actions/setup-node@v3
+        with:
+          node-version: 16
+      - run: yarn install --immutable
+      - run: yarn test
+      - uses: datadog/junit-upload-github-action@v1
+        with:
+            api-key: ${{ secrets.DATADOG_API_KEY_MAIN_ACCOUNT }}
+            service: datadog-ci-tests-junit-test
+            files: ./junit.xml
