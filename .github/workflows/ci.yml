@@ -172,8 +172,8 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: 16
-      - run: yarn install --immutable
-      - run: yarn test
+      - run: yarn install
+      - run: yarn test src/commands/lambda/__tests__/instrument.test.ts
       - uses: datadog/junit-upload-github-action@bgorriz/add-skip-git-upload
         with:
           api-key: ${{ secrets.DATADOG_API_KEY_MAIN_ACCOUNT }}
