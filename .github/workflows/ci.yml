@@ -179,4 +179,3 @@ jobs:
           api-key: ${{ secrets.DATADOG_API_KEY_MAIN_ACCOUNT }}
           service: datadog-ci-tests-junit-test
           files: ./junit.xml
-          extra-args: --skip-git-metadata-upload
