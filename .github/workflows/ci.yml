@@ -174,8 +174,8 @@ jobs:
           node-version: 16
       - run: yarn install --immutable
       - run: yarn test
-      - uses: datadog/junit-upload-github-action@v1
+      - uses: datadog/junit-upload-github-action@bgorriz/add-skip-git-upload
         with:
-            api-key: ${{ secrets.DATADOG_API_KEY_MAIN_ACCOUNT }}
-            service: datadog-ci-tests-junit-test
-            files: ./junit.xml
+          api-key: ${{ secrets.DATADOG_API_KEY_MAIN_ACCOUNT }}
+          service: datadog-ci-tests-junit-test
+          files: ./junit.xml
