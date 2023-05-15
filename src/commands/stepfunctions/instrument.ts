@@ -54,7 +54,7 @@ export class InstrumentStepFunctionsCommand extends Command {
   public async execute() {
     let validationError = false
     if (typeof this.forwarderArn !== 'string') {
-      this.context.stdout.write('[Error] --forwarder is required\n')
+      this.context.stdout.write('[Error] `--forwarder` is required\n')
       validationError = true
     } else if (!isValidArn(this.forwarderArn)) {
       this.context.stdout.write(`[Error] invalid arn format for --forwarder ${this.forwarderArn}\n`)
