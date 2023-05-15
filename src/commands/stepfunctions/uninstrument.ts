@@ -5,7 +5,6 @@ import {Command} from 'clipanion'
 import {deleteSubscriptionFilter, describeStateMachine, describeSubscriptionFilters, untagResource} from './awsCommands'
 import {DD_CI_IDENTIFING_STRING, TAG_VERSION_NAME} from './constants'
 import {getStepFunctionLogGroupArn, isValidArn, parseArn} from './helpers'
-import {InstrumentStepFunctionsCommand} from "./instrument";
 
 export class UninstrumentStepFunctionsCommand extends Command {
   public static usage = Command.Usage({

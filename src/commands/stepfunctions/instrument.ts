@@ -151,7 +151,16 @@ export class InstrumentStepFunctionsCommand extends Command {
       }
 
       if (stepFunctionTagsToAdd.length > 0) {
-        await tagResource(stepFunctionsClient, stepFunctionArn, stepFunctionTagsToAdd, this.context, this.dryRun)
+        try {
+          await tagResource(stepFunctionsClient, stepFunctionArn, stepFunctionTagsToAdd, this.context, this.dryRun)
+        } catch (err) {
+          if (err instanceof Error) {
+            this.context.stdout.write(`\n[Error] ${err.message}. Failed to tag resource for ${stepFunctionArn}\n`)
+          }
+
+          return 1
+        }
+
         hasChanges = true
       }
 
@@ -163,17 +172,37 @@ export class InstrumentStepFunctionsCommand extends Command {
       if (logLevel === 'OFF') {
         // if step function logging is disabled, create a log group, subscribe the forwarder to it, and enable step function logging to the created log group
         const logGroupName = buildLogGroupName(stateMachineName, this.environment)
-        await createLogGroup(cloudWatchLogsClient, logGroupName, stepFunctionArn, this.context, this.dryRun)
+        try {
+          await createLogGroup(cloudWatchLogsClient, logGroupName, stepFunctionArn, this.context, this.dryRun)
+        } catch (err) {
+          if (err instanceof Error) {
+            this.context.stdout.write(
+              `\n[Error] ${err.message}. Failed to Create Log Group ${logGroupName} for ${stepFunctionArn}\n`
+            )
+          }
 
-        await putSubscriptionFilter(
-          cloudWatchLogsClient,
-          this.forwarderArn,
-          subscriptionFilterName,
-          logGroupName,
-          stepFunctionArn,
-          this.context,
-          this.dryRun
-        )
+          return 1
+        }
+
+        try {
+          await putSubscriptionFilter(
+            cloudWatchLogsClient,
+            this.forwarderArn,
+            subscriptionFilterName,
+            logGroupName,
+            stepFunctionArn,
+            this.context,
+            this.dryRun
+          )
+        } catch (err) {
+          if (err instanceof Error) {
+            this.context.stdout.write(
+              `\n[Error] ${err.message}. Failed to put subscription filter ${subscriptionFilterName} for Log Group ${logGroupName}\n`
+            )
+          }
+
+          return 1
+        }
 
         const logGroupArn = buildArn(
           arnObject.partition,
@@ -185,33 +214,64 @@ export class InstrumentStepFunctionsCommand extends Command {
         )
 
         // Create Logs Access policy
-        await createLogsAccessPolicy(
-          iamClient,
-          describeStateMachineCommandOutput,
-          stepFunctionArn,
-          this.context,
-          this.dryRun
-        )
+        try {
+          await createLogsAccessPolicy(
+            iamClient,
+            describeStateMachineCommandOutput,
+            stepFunctionArn,
+            this.context,
+            this.dryRun
+          )
+        } catch (err) {
+          if (err instanceof Error) {
+            this.context.stdout.write(
+              `\n[Error] ${err.message}. Failed to create logs access policy for ${stepFunctionArn}\n`
+            )
+          }
+
+          return 1
+        }
 
         // Attach policy to state machine IAM role
-        await attachPolicyToStateMachineIamRole(
-          iamClient,
-          describeStateMachineCommandOutput,
-          arnObject.accountId,
-          stepFunctionArn,
-          this.context,
-          this.dryRun
-        )
+        try {
+          await attachPolicyToStateMachineIamRole(
+            iamClient,
+            describeStateMachineCommandOutput,
+            arnObject.accountId,
+            stepFunctionArn,
+            this.context,
+            this.dryRun
+          )
+        } catch (err) {
+          if (err instanceof Error) {
+            this.context.stdout.write(
+              `\n[Error] ${err.message}. Failed to attach policy to state machine iam role for ${stepFunctionArn}\n`
+            )
+          }
+
+          return 1
+        }
 
         // IAM policy on step function role should include log permissions now
-        await enableStepFunctionLogs(
-          stepFunctionsClient,
-          describeStateMachineCommandOutput,
-          logGroupArn,
-          stepFunctionArn,
-          this.context,
-          this.dryRun
-        )
+        try {
+          await enableStepFunctionLogs(
+            stepFunctionsClient,
+            describeStateMachineCommandOutput,
+            logGroupArn,
+            stepFunctionArn,
+            this.context,
+            this.dryRun
+          )
+        } catch (err) {
+          if (err instanceof Error) {
+            this.context.stdout.write(
+              `\n[Error] ${err.message}. Failed to enable log group ${logGroupArn} for ${stepFunctionArn}\n`
+            )
+          }
+
+          return 1
+        }
+
         hasChanges = true
       } else {
         // if step function logging is enabled, subscribe the forwarder to the log group in the step function logging config
@@ -226,25 +286,46 @@ export class InstrumentStepFunctionsCommand extends Command {
         // update step function logging config to have logLevel `ALL` and includeExecutionData `true` if not already configured
         const includeExecutionData = describeStateMachineCommandOutput.loggingConfiguration?.includeExecutionData
         if (logLevel !== 'ALL' || !includeExecutionData) {
-          await enableStepFunctionLogs(
-            stepFunctionsClient,
-            describeStateMachineCommandOutput,
-            logGroupArn,
+          try {
+            await enableStepFunctionLogs(
+              stepFunctionsClient,
+              describeStateMachineCommandOutput,
+              logGroupArn,
+              stepFunctionArn,
+              this.context,
+              this.dryRun
+            )
+          } catch (err) {
+            if (err instanceof Error) {
+              this.context.stdout.write(
+                `\n[Error] ${err.message}. Failed to enable step function logs for ${stepFunctionArn} when logLevel is not ALL or includeExecutionData is not true\n`
+              )
+            }
+
+            return 1
+          }
+          hasChanges = true
+        }
+
+        try {
+          await putSubscriptionFilter(
+            cloudWatchLogsClient,
+            this.forwarderArn,
+            subscriptionFilterName,
+            logGroupName,
             stepFunctionArn,
             this.context,
             this.dryRun
           )
-          hasChanges = true
+        } catch (err) {
+          if (err instanceof Error) {
+            this.context.stdout.write(
+              `\n[Error] ${err.message}. Failed to put subscription filter ${subscriptionFilterName} for ${stepFunctionArn}\n`
+            )
+          }
+
+          return 1
         }
-        await putSubscriptionFilter(
-          cloudWatchLogsClient,
-          this.forwarderArn,
-          subscriptionFilterName,
-          logGroupName,
-          stepFunctionArn,
-          this.context,
-          this.dryRun
-        )
         hasChanges = true
       }
     }
