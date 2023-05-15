@@ -20,8 +20,7 @@ Run the `uninstrument` command to unsubscribe a Step Function log group from the
 ### uninstrument
 
 ```bash
-datadog-ci stepfunctions uninstrument --step-function [--step-function]... --forwarder [--dry-run]
-```
+datadog-ci stepfunctions uninstrument --step-function <step-function-arn> --forwarder <forwarder-arn> [--dry-run]
 
 ## Arguments
 
