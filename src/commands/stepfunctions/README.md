@@ -13,8 +13,7 @@ Run the `instrument` command to subscribe a Step Function log group to the speci
 If logging is not enabled on a Step Function, a log group will be created and the Step Function will be updated to log to it with `logLevel: ALL` and `includeExecutionData: true`. Note that the Step Function needs permission to log to CloudWatch logs. See [Step Function Logging using CloudWatch Logs](https://docs.aws.amazon.com/step-functions/latest/dg/cw-logs.html) for the specific permissions needed.
 
 ```bash
-datadog-ci stepfunctions instrument --step-function [--step-function]... --forwarder [--service] [--env] [--dry-run]
-```
+datadog-ci stepfunctions instrument --step-function <step-function-arn> --forwarder <forwarder-arn> [--service] [--env] [--dry-run]
 
 Run the `uninstrument` command to unsubscribe a Step Function log group from the specified Datadog Forwarder. The log group will not be deleted and the Step Function will continue to log to the AWS log group.
 
