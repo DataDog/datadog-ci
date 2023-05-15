@@ -5,6 +5,7 @@ import {Command} from 'clipanion'
 import {deleteSubscriptionFilter, describeStateMachine, describeSubscriptionFilters, untagResource} from './awsCommands'
 import {DD_CI_IDENTIFING_STRING, TAG_VERSION_NAME} from './constants'
 import {getStepFunctionLogGroupArn, isValidArn, parseArn} from './helpers'
+import {InstrumentStepFunctionsCommand} from "./instrument";
 
 export class UninstrumentStepFunctionsCommand extends Command {
   public static usage = Command.Usage({
@@ -37,13 +38,13 @@ export class UninstrumentStepFunctionsCommand extends Command {
     const stepFunctionArns = [...new Set(this.stepFunctionArns)]
 
     if (stepFunctionArns.length === 0) {
-      this.context.stdout.write(`[Error] must specify at least one --step-function\n`)
+      this.context.stdout.write(`[Error] must specify at least one \`--step-function\`\n`)
       validationError = true
     }
 
     for (const stepFunctionArn of stepFunctionArns) {
       if (!isValidArn(stepFunctionArn)) {
-        this.context.stdout.write(`[Error] invalid arn format for --step-function ${stepFunctionArn}\n`)
+        this.context.stdout.write(`[Error] invalid arn format for \`--step-function\` ${stepFunctionArn}\n`)
         validationError = true
       }
     }
@@ -66,8 +67,6 @@ export class UninstrumentStepFunctionsCommand extends Command {
       } catch (err) {
         if (err instanceof Error) {
           this.context.stdout.write(`\n[Error] ${err.message}. Unable to fetch Step Function ${stepFunctionArn}\n`)
-        } else {
-          this.context.stdout.write(`\n[Error] ${err}. Unable to fetch Step Function ${stepFunctionArn}\n`)
         }
 
         return 1
@@ -89,10 +88,6 @@ export class UninstrumentStepFunctionsCommand extends Command {
         if (err instanceof Error) {
           this.context.stdout.write(
             `\n[Error] ${err.message}. Unable to fetch Subscription Filter to delete for Log Group ${logGroupName}\n`
-          )
-        } else {
-          this.context.stdout.write(
-            `\n[Error] ${err}. Unable to fetch Subscription Filter to delete for Log Group ${logGroupName}\n`
           )
         }
 
@@ -134,3 +129,9 @@ UninstrumentStepFunctionsCommand.addPath('stepfunctions', 'uninstrument')
 
 UninstrumentStepFunctionsCommand.addOption('dryRun', Command.Boolean('-d,--dry-run'))
 UninstrumentStepFunctionsCommand.addOption('stepFunctionArns', Command.Array('-s,--step-function'))
+
+// The options below is to match what InstrumentStepFunctionsCommand has so that customers can switch from instrument to uninstrument.
+// Lambda command adopts the same approach as well.
+UninstrumentStepFunctionsCommand.addOption('environment', Command.String('-e,--env'))
+UninstrumentStepFunctionsCommand.addOption('forwarderArn', Command.String('--forwarder'))
+UninstrumentStepFunctionsCommand.addOption('service', Command.String('--service'))

@@ -61,11 +61,15 @@ export class InstrumentStepFunctionsCommand extends Command {
       validationError = true
     }
 
+    if (validationError) {
+      return 1
+    }
+
     // remove duplicate step function arns
     const stepFunctionArns = [...new Set(this.stepFunctionArns)]
 
     if (stepFunctionArns.length === 0) {
-      this.context.stdout.write(`[Error] must specify at least one --step-function\n`)
+      this.context.stdout.write(`[Error] must specify at least one \`--step-function\`\n`)
       validationError = true
     }
 
@@ -97,8 +101,6 @@ export class InstrumentStepFunctionsCommand extends Command {
       } catch (err) {
         if (err instanceof Error) {
           this.context.stdout.write(`\n[Error] ${err.message}. Unable to describe state machine ${stepFunctionArn}\n`)
-        } else {
-          this.context.stdout.write(`\n[Error] ${err}. Unable to describe state machine ${stepFunctionArn}\n`)
         }
 
         return 1
@@ -112,8 +114,6 @@ export class InstrumentStepFunctionsCommand extends Command {
           this.context.stdout.write(
             `\n[Error] ${err.message}. Unable to fetch tags for Step Function ${stepFunctionArn}\n`
           )
-        } else {
-          this.context.stdout.write(`\n[Error] ${err}. Unable to fetch tags for Step Function ${stepFunctionArn}\n`)
         }
 
         return 1
