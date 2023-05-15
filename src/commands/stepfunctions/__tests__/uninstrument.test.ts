@@ -40,7 +40,7 @@ describe('stepfunctions uninstrument', () => {
       const exitCode = await cli.run(['stepfunctions', 'uninstrument'], context)
 
       expect(exitCode).toBe(1)
-      expect(context.toString()).toMatch('[Error] must specify at least one --step-function\n')
+      expect(context.toString()).toMatch('[Error] must specify at least one `--step-function`\n')
     })
 
     test('removes duplicate step function arns', async () => {
@@ -63,14 +63,14 @@ describe('stepfunctions uninstrument', () => {
       const exitCode = await cli.run(['stepfunctions', 'uninstrument'], context)
 
       expect(exitCode).toBe(1)
-      expect(context.toString()).toMatch('[Error] must specify at least one --step-function')
+      expect(context.toString()).toMatch('[Error] must specify at least one `--step-function`')
     })
 
     test('errors if any step function arn is invalid', async () => {
       const exitCode = await cli.run(['stepfunctions', 'uninstrument', '--step-function', 'arn:'], context)
 
       expect(exitCode).toBe(1)
-      expect(context.toString()).toMatch('[Error] invalid arn format for --step-function')
+      expect(context.toString()).toMatch('[Error] invalid arn format for `--step-function`')
     })
   })
 

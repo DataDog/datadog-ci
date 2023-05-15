@@ -46,24 +46,24 @@ describe('stepfunctions instrument test', () => {
     })
 
     test('errors if forwarder arn is invalid', async () => {
-      const exitCode = await cli.run(['stepfunctions', 'instrument', '--forwarder', 'arn:'], context)
+      const exitCode = await cli.run(['stepfunctions', 'instrument', '--forwarder', 'bla:'], context)
 
       expect(exitCode).toBe(1)
-      expect(context.toString()).toMatch('[Error] invalid arn format for --forwarder arn:')
+      expect(context.toString()).toMatch('[Error] invalid arn format for `--forwarder` bla:')
     })
 
     test('errors if no step function arn', async () => {
       const exitCode = await cli.run(['stepfunctions', 'instrument'], context)
 
       expect(exitCode).toBe(1)
-      expect(context.toString()).toMatch('[Error] must specify at least one --step-function')
+      expect(context.toString()).toMatch('[Error] must specify at least one `--step-function`')
     })
 
     test('errors if any step function arn is invalid', async () => {
       const exitCode = await cli.run(['stepfunctions', 'instrument', '--step-function', 'arn:'], context)
 
       expect(exitCode).toBe(1)
-      expect(context.toString()).toMatch('[Error] invalid arn format for --step-function')
+      expect(context.toString()).toMatch('[Error] invalid arn format for `--step-function`')
     })
 
     test('errors if no env tag on step function and env parameter not set', async () => {
