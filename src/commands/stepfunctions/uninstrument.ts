@@ -99,21 +99,40 @@ export class UninstrumentStepFunctionsCommand extends Command {
 
       for (const subscriptionFilter of subscriptionFilters) {
         if (typeof subscriptionFilter.filterName === 'string') {
-          await deleteSubscriptionFilter(
-            cloudWatchLogsClient,
-            subscriptionFilter.filterName,
-            logGroupName,
-            stepFunctionArn,
-            this.context,
-            this.dryRun
-          )
+          try {
+            await deleteSubscriptionFilter(
+              cloudWatchLogsClient,
+              subscriptionFilter.filterName,
+              logGroupName,
+              stepFunctionArn,
+              this.context,
+              this.dryRun
+            )
+          } catch (err) {
+            if (err instanceof Error) {
+              this.context.stdout.write(
+                `\n[Error] ${err.message}. Failed to delete subscription filter ${subscriptionFilter.filterName}\n`
+              )
+            }
+
+            return 1
+          }
+
           hasChanges = true
         }
       }
 
       const tagKeystoRemove: string[] = [TAG_VERSION_NAME]
       // Untag resource command is idempotent, no need to verify if the tag exist by making an additional api call to get tags
-      await untagResource(stepFunctionsClient, tagKeystoRemove, stepFunctionArn, this.context, this.dryRun)
+      try {
+        await untagResource(stepFunctionsClient, tagKeystoRemove, stepFunctionArn, this.context, this.dryRun)
+      } catch (err) {
+        if (err instanceof Error) {
+          this.context.stdout.write(`\n[Error] ${err.message}. Failed to untag resource for ${stepFunctionArn}\n`)
+        }
+
+        return 1
+      }
     }
 
     if (!hasChanges) {

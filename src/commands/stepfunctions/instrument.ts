@@ -69,7 +69,7 @@ export class InstrumentStepFunctionsCommand extends Command {
     const stepFunctionArns = [...new Set(this.stepFunctionArns)]
 
     if (stepFunctionArns.length === 0) {
-      this.context.stdout.write(`[Error] must specify at least one \`--step-function\`\n`)
+      this.context.stdout.write(`[Error] Must specify at least one \`--step-function\`\n`)
       validationError = true
     }
 
