@@ -73,6 +73,7 @@ export class InstrumentCommand extends Command {
   private uploadGitMetadata = true
   private tracing?: string
   private version?: string
+  private withAppSec = false
 
   private credentials?: AwsCredentialIdentity
 
@@ -430,6 +431,7 @@ export class InstrumentCommand extends Command {
     const interactive = coerceBoolean(false, this.interactive, this.config.interactive)
     const logLevel = this.logLevel ?? this.config.logLevel
     const apmFlushDeadline = this.apmFlushDeadline ?? this.config.apmFlushDeadline
+    const withAppSec = coerceBoolean(false, this.withAppSec, this.config.withAppSec)
 
     const service = this.service ?? this.config.service
     const environment = this.environment ?? this.config.environment
@@ -473,6 +475,7 @@ export class InstrumentCommand extends Command {
       service,
       tracingEnabled,
       version,
+      withAppSec,
     }
   }
 
@@ -583,3 +586,4 @@ InstrumentCommand.addOption('uploadGitMetadata', Command.Boolean('-u,--upload-gi
 InstrumentCommand.addOption('interactive', Command.Boolean('-i,--interactive'))
 InstrumentCommand.addOption('captureLambdaPayload', Command.String('--capture-lambda-payload,--captureLambdaPayload'))
 InstrumentCommand.addOption('profile', Command.String('--profile'))
+InstrumentCommand.addOption('withAppSec', Command.String('--with-appsec'))

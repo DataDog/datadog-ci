@@ -47,6 +47,9 @@ import {
   TRACE_ENABLED_ENV_VAR,
   VERSION_ENV_VAR,
   APM_FLUSH_DEADLINE_MILLISECONDS_ENV_VAR,
+  SERVERLESS_APPSEC_ENABLED_ENV_VAR,
+  EXPERIMENTAL_ENABLE_PROXY_ENV_VAR,
+  UNIVERSAL_INSTRUMENTATION,
 } from '../constants'
 import {FunctionConfiguration, InstrumentationSettings, LogGroupConfiguration, TagConfiguration} from '../interfaces'
 import {calculateLogGroupUpdateRequest} from '../loggroup'
@@ -340,6 +343,40 @@ export const calculateUpdateRequest = async (
         newEnvVars[PROFILER_PATH_ENV_VAR] = CORECLR_PROFILER_PATH
         newEnvVars[DOTNET_TRACER_HOME_ENV_VAR] = DD_DOTNET_TRACER_HOME
       }
+    }
+  }
+
+  if (settings.withAppSec) {
+    if (settings.tracingEnabled) {
+      switch (runtimeType) {
+        case RuntimeType.NODE:
+        case RuntimeType.PYTHON:
+          needsUpdate = true
+          newEnvVars[SERVERLESS_APPSEC_ENABLED_ENV_VAR] = "true"
+          newEnvVars[EXPERIMENTAL_ENABLE_PROXY_ENV_VAR] = "true"
+          newEnvVars[AWS_LAMBDA_EXEC_WRAPPER_VAR] = AWS_LAMBDA_EXEC_WRAPPER
+          break;
+
+        case RuntimeType.DOTNET:
+        case RuntimeType.JAVA:
+          needsUpdate = true
+          newEnvVars[SERVERLESS_APPSEC_ENABLED_ENV_VAR] = "true"
+          break;
+
+        case RuntimeType.GO:
+          needsUpdate = true
+          newEnvVars[SERVERLESS_APPSEC_ENABLED_ENV_VAR] = "true"
+          newEnvVars[UNIVERSAL_INSTRUMENTATION] = "true"
+          break;
+
+        default:
+
+      }
+    } else {
+      // TODO: ASM for Infra
+      throw new Error(
+        'Instrumenting appsec is not supported without enabling tracing. Please enable tracing with the corresponding option.'
+        )
     }
   }
 

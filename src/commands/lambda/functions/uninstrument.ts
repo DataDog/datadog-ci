@@ -35,6 +35,9 @@ import {
   AWS_LAMBDA_EXEC_WRAPPER_VAR,
   AWS_LAMBDA_EXEC_WRAPPER,
   APM_FLUSH_DEADLINE_MILLISECONDS_ENV_VAR,
+  SERVERLESS_APPSEC_ENABLED_ENV_VAR,
+  EXPERIMENTAL_ENABLE_PROXY_ENV_VAR,
+  UNIVERSAL_INSTRUMENTATION,
 } from '../constants'
 import {FunctionConfiguration, LogGroupConfiguration, TagConfiguration} from '../interfaces'
 import {calculateLogGroupRemoveRequest} from '../loggroup'
@@ -183,6 +186,9 @@ export const calculateUpdateRequest = (config: LFunctionConfiguration, runtime: 
     PROFILER_ENV_VAR,
     PROFILER_PATH_ENV_VAR,
     DOTNET_TRACER_HOME_ENV_VAR,
+    SERVERLESS_APPSEC_ENABLED_ENV_VAR,
+    UNIVERSAL_INSTRUMENTATION,
+    EXPERIMENTAL_ENABLE_PROXY_ENV_VAR,
   ]
   // Remove Environment Variables
   for (const environmentVar of environmentVarsArray) {

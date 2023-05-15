@@ -24,6 +24,7 @@ export enum RuntimeType {
   NODE,
   PYTHON,
   RUBY,
+  GO,
 }
 
 export const RUNTIME_LOOKUP = {
@@ -43,6 +44,7 @@ export const RUNTIME_LOOKUP = {
   'python3.10': RuntimeType.PYTHON,
   'ruby2.5': RuntimeType.RUBY,
   'ruby2.7': RuntimeType.RUBY,
+  'go1.x': RuntimeType.GO,
 }
 
 export type Runtime = keyof typeof RUNTIME_LOOKUP
@@ -89,6 +91,9 @@ export const ENABLE_PROFILING_ENV_VAR = 'CORECLR_ENABLE_PROFILING'
 export const PROFILER_ENV_VAR = 'CORECLR_PROFILER'
 export const PROFILER_PATH_ENV_VAR = 'CORECLR_PROFILER_PATH'
 export const DOTNET_TRACER_HOME_ENV_VAR = 'DD_DOTNET_TRACER_HOME'
+export const SERVERLESS_APPSEC_ENABLED_ENV_VAR = 'DD_SERVERLESS_APPSEC_ENABLED'
+export const EXPERIMENTAL_ENABLE_PROXY_ENV_VAR = 'DD_EXPERIMENTAL_ENABLE_PROXY'
+export const UNIVERSAL_INSTRUMENTATION = 'DD_UNIVERSAL_INSTRUMENTATION'
 
 // Environment variables used by Datadog CI
 export const CI_SITE_ENV_VAR = 'DATADOG_SITE'

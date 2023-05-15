@@ -321,3 +321,4 @@ UninstrumentCommand.addOption(
   'captureLambdaPayload',
   Command.String('--capture-lambda-payload,--captureLambdaPayload', {hidden: true})
 )
+UninstrumentCommand.addOption('withAppSec', Command.String('--with-appsec'), {hidden: true})

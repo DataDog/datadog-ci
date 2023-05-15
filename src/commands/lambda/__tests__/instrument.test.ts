@@ -1414,6 +1414,7 @@ describe('lambda', () => {
           service: undefined,
           tracingEnabled: false,
           version: undefined,
+          withAppSec: false,
         })
       })
 
@@ -1436,6 +1437,8 @@ describe('lambda', () => {
         command['config']['logLevel'] = 'info'
         command['apmFlushDeadline'] = '20'
         command['config']['apmFlushDeadline'] = '50'
+        command['withAppSec'] = true
+        command['config']['withAppSec'] = false
 
         expect(command['getSettings']()).toEqual({
           apmFlushDeadline: '20',
@@ -1448,6 +1451,7 @@ describe('lambda', () => {
           logLevel: 'debug',
           mergeXrayTraces: true,
           tracingEnabled: true,
+          withAppSec: true,
         })
       })
 

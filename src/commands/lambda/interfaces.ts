@@ -35,6 +35,7 @@ export interface LambdaConfigOptions {
   service?: string
   tracing?: string
   version?: string
+  withAppSec: boolean
 }
 
 /**
@@ -73,6 +74,7 @@ export interface InstrumentationSettings extends InstrumentationTags {
   logLevel?: string
   mergeXrayTraces: boolean
   tracingEnabled: boolean
+  withAppSec: boolean
 }
 
 /**
