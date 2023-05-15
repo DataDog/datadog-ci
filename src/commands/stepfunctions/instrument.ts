@@ -71,7 +71,7 @@ export class InstrumentStepFunctionsCommand extends Command {
 
     for (const stepFunctionArn of stepFunctionArns) {
       if (!isValidArn(stepFunctionArn)) {
-        this.context.stdout.write(`[Error] invalid arn format for --step-function ${stepFunctionArn}\n`)
+        this.context.stdout.write(`[Error] Invalid arn format for \`--step-function\` ${stepFunctionArn}\n`)
         validationError = true
       }
     }
