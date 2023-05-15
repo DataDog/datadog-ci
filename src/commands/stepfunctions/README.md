@@ -46,7 +46,7 @@ datadog-ci stepfunctions uninstrument --step-function <step-function-arn> --forw
 
 1. Install the Datadog CLI
 
-See [How to install the CLI](https://github.com/DataDog/datadog-ci/tree/duncan-harvey/add-step-function-command#how-to-install-the-cli) for instructions to install the Datadog CLI
+See [How to install the CLI](https://github.com/DataDog/datadog-ci/tree/duncan-harvey/add-step-function-command#how-to-install-the-cli) for instructions to install the Datadog CLI.
 
 2. Configure your AWS Credentials
 
