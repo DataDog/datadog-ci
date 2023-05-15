@@ -5,15 +5,15 @@ import * as mobile from '../mobile'
 
 import {getApiHelper, getMobileTest, getTestPayload} from './fixtures'
 
-describe('getMD5HashFromFileBuffer', () => {
-  test('correctly compute md5 of a file', async () => {
-    const tmpdir = fs.mkdtempSync('getMD5HashFromFileBuffer')
+describe('getSizeAndMD5HashFromFile', () => {
+  test('correctly get size and md5 of a file', async () => {
+    const tmpdir = fs.mkdtempSync('getSizeAndMD5HashFromFile')
     try {
       // write test content to a file in the temporary directory
       const filename = path.join(tmpdir, 'compute_md5_test')
-      fs.writeFileSync(filename, 'Compute md5')
+      fs.writeFileSync(filename, '7 bytes')
 
-      expect(await mobile.getMD5HashFromFile(filename)).toBe('odk1EOlpz16oPIgnco2nfg==')
+      expect(await mobile.getSizeAndMD5HashFromFile(filename)).toEqual({appSize: 7, md5: 'QCi9PCxLLuyHmU0aRshoeA=='})
     } finally {
       // always clean up created tmpdir
       fs.rmSync(tmpdir, {recursive: true, force: true})
