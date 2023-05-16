@@ -78,6 +78,12 @@ describe('upload', () => {
           'Unexpected token h in JSON at position 1'
         )
       )
+      expect(output).toContain(
+        renderInvalidFile(
+          './src/commands/sarif/__tests__/fixtures/invalid-result.sarif',
+          "/runs/0/results/0: must have required property 'message'"
+        )
+      )
     })
     test('should allow single files', async () => {
       const context = createMockContext()
