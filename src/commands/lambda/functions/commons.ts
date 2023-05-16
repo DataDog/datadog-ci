@@ -12,7 +12,8 @@ import {
   UpdateFunctionConfigurationCommand,
   UpdateFunctionConfigurationCommandInput,
 } from '@aws-sdk/client-lambda'
-import {FromIniInit, fromIni} from '@aws-sdk/credential-providers'
+import {FromIniInit, fromIni, fromNodeProviderChain} from '@aws-sdk/credential-providers'
+import {CredentialsProviderError} from '@aws-sdk/property-provider'
 import {AwsCredentialIdentity, AwsCredentialIdentityProvider} from '@aws-sdk/types'
 import inquirer from 'inquirer'
 
@@ -22,8 +23,6 @@ import {
   ARM64_ARCHITECTURE,
   ARM_LAYERS,
   ARM_LAYER_SUFFIX,
-  AWS_ACCESS_KEY_ID_ENV_VAR,
-  AWS_SECRET_ACCESS_KEY_ENV_VAR,
   AWS_SHARED_CREDENTIALS_FILE_ENV_VAR,
   CI_API_KEY_ENV_VAR,
   CI_API_KEY_SECRET_ARN_ENV_VAR,
@@ -231,10 +230,21 @@ export const getAWSProfileCredentials = async (profile: string) => {
   }
 }
 
-export const isMissingAWSCredentials = () => {
-  return (
-    process.env[AWS_ACCESS_KEY_ID_ENV_VAR] === undefined || process.env[AWS_SECRET_ACCESS_KEY_ENV_VAR] === undefined
-  )
+export const getAWSCredentials = async () => {
+  const provider = fromNodeProviderChain()
+
+  try {
+    const credentials = await provider()
+
+    return credentials
+  } catch (err) {
+    if (err instanceof Error) {
+      if (err.name === CredentialsProviderError.name) {
+        return undefined
+      }
+      throw Error(`Couldn't fetch AWS credentials. ${err.message}`)
+    }
+  }
 }
 
 export const isMissingAnyDatadogApiKeyEnvVar = () =>
