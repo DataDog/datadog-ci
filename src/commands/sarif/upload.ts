@@ -1,6 +1,8 @@
 import fs from 'fs'
 import path from 'path'
 
+import type {ErrorObject} from 'ajv'
+
 import Ajv from 'ajv'
 import addFormats from 'ajv-formats'
 import chalk from 'chalk'
@@ -32,7 +34,7 @@ import {getBaseIntakeUrl} from './utils'
 const errorCodesStopUpload = [400, 403]
 
 const validateSarif = (sarifReportPath: string) => {
-  const ajv = new Ajv()
+  const ajv = new Ajv({allErrors: true})
   addFormats(ajv)
   const sarifJsonSchemaValidate = ajv.compile(sarifJsonSchema)
   try {
@@ -40,8 +42,11 @@ const validateSarif = (sarifReportPath: string) => {
     const valid = sarifJsonSchemaValidate(sarifReportContent)
     if (!valid) {
       const errors = sarifJsonSchemaValidate.errors || []
+      const errorMessages = errors.map((error: ErrorObject) => {
+        return `${error.instancePath}: ${error.message}`
+      })
 
-      return errors.toString()
+      return '\n' + errorMessages.join('\n')
     }
   } catch (error) {
     return error.message
