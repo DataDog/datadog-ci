@@ -46,7 +46,7 @@ const validateSarif = (sarifReportPath: string) => {
         return `${error.instancePath}: ${error.message}`
       })
 
-      return '\n' + errorMessages.join('\n')
+      return errorMessages.join('\n')
     }
   } catch (error) {
     return error.message
