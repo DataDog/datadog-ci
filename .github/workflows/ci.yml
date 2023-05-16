@@ -174,7 +174,7 @@ jobs:
           node-version: 16
       - run: yarn install
       - run: yarn test src/commands/lambda/__tests__/instrument.test.ts
-      - uses: datadog/junit-upload-github-action@bgorriz/add-skip-git-upload
+      - uses: datadog/junit-upload-github-action@v1.2.0
         with:
           api-key: ${{ secrets.DATADOG_API_KEY_MAIN_ACCOUNT }}
           service: datadog-ci-tests-junit-test
