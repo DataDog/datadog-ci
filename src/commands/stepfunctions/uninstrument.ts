@@ -150,6 +150,6 @@ UninstrumentStepFunctionsCommand.addOption('stepFunctionArns', Command.Array('-s
 
 // The options below is to match what InstrumentStepFunctionsCommand has so that customers can switch from instrument to uninstrument.
 // Lambda command adopts the same approach as well.
-UninstrumentStepFunctionsCommand.addOption('environment', Command.String('-e,--env'))
-UninstrumentStepFunctionsCommand.addOption('forwarderArn', Command.String('--forwarder'))
-UninstrumentStepFunctionsCommand.addOption('service', Command.String('--service'))
+UninstrumentStepFunctionsCommand.addOption('environment', Command.String('-e,--env', {hidden: true}))
+UninstrumentStepFunctionsCommand.addOption('forwarderArn', Command.String('--forwarder', {hidden: true}))
+UninstrumentStepFunctionsCommand.addOption('service', Command.String('--service', {hidden: true}))
