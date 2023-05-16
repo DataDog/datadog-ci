@@ -74,6 +74,6 @@ export class GateEvaluateCommand extends Command {
   }
 }
 
-//TODO commented out for now to not expose anything to customers.
+// TODO commented out for now to not expose anything to customers.
 // GateEvaluateCommand.addPath('gate', 'evaluate')
 // GateEvaluateCommand.addOption('dryRun', Command.Boolean('--dry-run'))
