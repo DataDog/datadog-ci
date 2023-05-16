@@ -10,7 +10,6 @@ export const evaluateGateRules = (request: (args: AxiosRequestConfig) => AxiosPr
   evaluateRequest: Payload,
   write: Writable['write']
 ) => {
-  // Converting the payload to the format expected from Rapid
   const payload = JSON.stringify({
     data: {
       type: 'gate_evaluation',
