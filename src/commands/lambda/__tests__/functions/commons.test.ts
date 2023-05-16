@@ -1,16 +1,16 @@
 jest.mock('fs')
 jest.mock('../../renderer', () => require('../../__mocks__/renderer'))
+jest.mock('@aws-sdk/credential-providers')
 
 import * as fs from 'fs'
 
 import {CloudWatchLogsClient} from '@aws-sdk/client-cloudwatch-logs'
 import {LambdaClient, UpdateFunctionConfigurationCommand} from '@aws-sdk/client-lambda'
+import {fromNodeProviderChain} from '@aws-sdk/credential-providers'
 import {mockClient} from 'aws-sdk-client-mock'
 import 'aws-sdk-client-mock-jest'
 
 import {
-  AWS_ACCESS_KEY_ID_ENV_VAR,
-  AWS_SECRET_ACCESS_KEY_ENV_VAR,
   CI_API_KEY_ENV_VAR,
   CI_API_KEY_SECRET_ARN_ENV_VAR,
   CI_KMS_API_KEY_ENV_VAR,
@@ -302,38 +302,44 @@ describe('commons', () => {
   describe('getAWSCredentials', () => {
     const OLD_ENV = process.env
 
-    describe('fromEnv', () => {
-      beforeEach(() => {
-        jest.resetModules()
-        process.env = {}
-      })
-      afterAll(() => {
-        process.env = OLD_ENV
-      })
-      // ignore reading `.aws/config` `.aws/credentials` files
-      ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({code: 'ENOENT'}))
+    beforeEach(() => {
+      jest.resetModules()
+      process.env = {}
+    })
+    afterEach(() => {
+      process.env = OLD_ENV
+    })
 
-      test('returns `undefined` when only AWS_SECRET_ACCESS_KEY env var is set and `~/.aws/credentials` are missing', async () => {
-        process.env[AWS_SECRET_ACCESS_KEY_ENV_VAR] = mockAwsAccessKeyId
-        const credentials = await getAWSCredentials()
-        expect(credentials).toBe(undefined) // AWS_ACCESS_KEY_ID_ENV_VAR is missing
-      })
+    // ignore reading `.aws/config` `.aws/credentials` files
+    ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({code: 'ENOENT'}))
 
-      test('returns `undefined` when only AWS_ACCESS_KEY_ID environment variable is set and `~/.aws/credentials` are missing', async () => {
-        process.env[AWS_ACCESS_KEY_ID_ENV_VAR] = mockAwsSecretAccessKey
-        const credentials = await getAWSCredentials()
-        expect(credentials).toBe(undefined) // AWS_SECRET_ACCESS_KEY_ENV_VAR is missing
-      })
-
-      test('returns credentials when environment variables are set', async () => {
-        process.env[AWS_ACCESS_KEY_ID_ENV_VAR] = mockAwsAccessKeyId
-        process.env[AWS_SECRET_ACCESS_KEY_ENV_VAR] = mockAwsSecretAccessKey
-        const credentials = await getAWSCredentials()
-        expect(credentials).toStrictEqual({
+    test('returns credentials when `fromNodeProviderChain` returns a succesful promise', async () => {
+      ;(fromNodeProviderChain as any).mockImplementation(() => () =>
+        Promise.resolve({
           accessKeyId: mockAwsAccessKeyId,
           secretAccessKey: mockAwsSecretAccessKey,
         })
+      )
+
+      const credentials = await getAWSCredentials()
+      expect(credentials).toStrictEqual({
+        accessKeyId: mockAwsAccessKeyId,
+        secretAccessKey: mockAwsSecretAccessKey,
       })
+    })
+
+    test('throws an error when `fromNodeProviderChain` fails when fetching credentials', async () => {
+      ;(fromNodeProviderChain as any).mockImplementation(() => () => Promise.reject(new Error('Unexpected error')))
+      let error
+      try {
+        await getAWSCredentials()
+      } catch (e) {
+        if (e instanceof Error) {
+          error = e
+        }
+      }
+
+      expect(error?.message).toBe("Couldn't fetch AWS credentials. Unexpected error")
     })
   })
 
