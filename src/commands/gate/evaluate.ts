@@ -8,6 +8,12 @@ import {getUserGitSpanTags} from '../../helpers/user-provided-git'
 
 import {apiConstructor} from './api'
 import {APIHelper, Payload} from './interfaces'
+import {
+  renderDryRunEvaluation,
+  renderEvaluationResponse,
+  renderGateEvaluation,
+  renderGateEvaluationError,
+} from './renderer'
 import {getBaseIntakeUrl} from './utils'
 
 export class GateEvaluateCommand extends Command {
@@ -58,19 +64,22 @@ export class GateEvaluateCommand extends Command {
   }
 
   private async evaluateRules(api: APIHelper, evaluateRequest: Payload) {
+    this.context.stderr.write(renderGateEvaluation(evaluateRequest.spanTags))
     if (this.dryRun) {
-      // TODO All writes will be moved to renderer in next iterations
-      this.context.stderr.write('Dry run mode is enabled. Not evaluating the rules.')
+      this.context.stderr.write(renderDryRunEvaluation())
 
       return
     }
 
-    // To be extended
-    try {
-      await api.evaluateGateRules(evaluateRequest, this.context.stdout.write.bind(this.context.stdout))
-    } catch (error) {
-      this.context.stderr.write(error)
-    }
+    // To be extended with retries, error handling, etc.
+    await api
+      .evaluateGateRules(evaluateRequest, this.context.stdout.write.bind(this.context.stdout))
+      .then((response) => {
+        this.context.stdout.write(renderEvaluationResponse(response.data.data.attributes))
+      })
+      .catch((error) => {
+        this.context.stdout.write(renderGateEvaluationError(error))
+      })
   }
 }
 
