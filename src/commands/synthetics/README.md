@@ -77,7 +77,7 @@ See below for the list of advanced options in the global configuration file. For
 : A boolean flag that fails the CI job if at least one test exceeds the default test timeout. The default is set to `true`.
 
 `files`
-: Glob pattern to detect Synthetic tests configuration files.
+: Glob pattern to detect Synthetic test [configuration files](#test-files).
 
 `global`
 : Overrides for Synthetic tests applied to all tests.
@@ -161,7 +161,7 @@ For example, if the URL used to access Datadog is `myorg.datadoghq.com`, set the
 export DATADOG_SUBDOMAIN="myorg"
 ```
 
-You can use `DATADOG_SYNTHETICS_LOCATIONS` to override the locations where your tests run. Locations should be separated with `;`. The configuration in test files takes precedence over other overrides.
+You can use `DATADOG_SYNTHETICS_LOCATIONS` to override the locations where your tests run. Locations should be separated with `;`. The configuration in [test files](#test-files) takes precedence over other overrides.
 
 ```bash
 export DATADOG_SYNTHETICS_LOCATIONS="aws:us-east-1;aws:us-east-2"
@@ -282,7 +282,7 @@ yarn datadog-ci synthetics run-tests -f ./component-1/**/*.synthetics.json -v PA
 
 ### Test files
 
-Your test files must be named with a `.synthetics.json` suffix.
+Your test files must be named with a `.synthetics.json` suffix. For an example test file, see this [`test.synthetics.json` file][10].
 
 ```json
 // myTest.synthetics.json
@@ -449,3 +449,4 @@ Additional helpful documentation, links, and articles:
 [7]: https://docs.datadoghq.com/continuous_testing/cicd_integrations/
 [8]: https://docs.datadoghq.com/continuous_testing/explorer/
 [9]: https://github.com/DataDog/datadog-ci/blob/master/.github/workflows/e2e/global.config.json
+[10]: https://github.com/DataDog/datadog-ci/blob/master/.github/workflows/e2e/test.synthetics.json
