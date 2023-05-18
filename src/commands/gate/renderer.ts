@@ -17,7 +17,7 @@ export const renderEvaluationResponse = (evaluationResponse: EvaluationResponse)
   }
 
   let fullStr = ''
-  fullStr += chalk.green(`Successfully evaluated rules for the current pipeline.\n`)
+  fullStr += chalk.green('Successfully evaluated rules for the current pipeline.\n')
   fullStr += `Overall result: ${renderStatus(evaluationResponse.status)}\n`
   fullStr += `Number of rules evaluated: ${chalk.bold(evaluationResponse.rule_evaluations.length)}\n`
 
@@ -29,7 +29,7 @@ export const renderEvaluationResponse = (evaluationResponse: EvaluationResponse)
 }
 
 export const renderEmptyEvaluation = (): string => {
-  return chalk.yellow(`No matching rules were found in Datadog for the current pipeline.\n`)
+  return chalk.yellow('No matching rules were found in Datadog for the current pipeline.\n')
 }
 
 export const renderStatus = (result: string): string => {
@@ -62,7 +62,7 @@ export const renderRuleEvaluation = (ruleEvaluation: RuleEvaluation): string => 
 }
 
 export const renderDryRunEvaluation = (): string => {
-  return chalk.yellow(`Dry run mode is enabled. Not evaluating the rules.`)
+  return chalk.yellow('Dry run mode is enabled. Not evaluating the rules.')
 }
 
 export const renderGateEvaluation = (spanTags: SpanTags): string => {
