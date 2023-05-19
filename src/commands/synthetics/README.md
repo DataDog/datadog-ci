@@ -282,7 +282,7 @@ yarn datadog-ci synthetics run-tests -f ./component-1/**/*.synthetics.json -v PA
 
 ### Test files
 
-Your test files must be named with a `.synthetics.json` suffix. For an example test file, see this [`test.synthetics.json` file][10].
+Your test files must be named with a `.synthetics.json` suffix. 
 
 ```json
 // myTest.synthetics.json
@@ -449,4 +449,3 @@ Additional helpful documentation, links, and articles:
 [7]: https://docs.datadoghq.com/continuous_testing/cicd_integrations/
 [8]: https://docs.datadoghq.com/continuous_testing/explorer/
 [9]: https://github.com/DataDog/datadog-ci/blob/master/.github/workflows/e2e/global.config.json
-[10]: https://docs.datadoghq.com/continuous_testing/cicd_integrations/configuration/?tab=npm#test-files
