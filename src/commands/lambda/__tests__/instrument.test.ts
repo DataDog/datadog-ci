@@ -1073,7 +1073,7 @@ describe('lambda', () => {
 `)
       })
 
-      test('aborts early when a layer version is set for Ruby', async () => {
+      test('instruments Ruby application properly', async () => {
         ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({code: 'ENOENT'}))
         mockLambdaConfigurations(lambdaClientMock, {
           'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world': {
@@ -1094,8 +1094,10 @@ describe('lambda', () => {
             '-f',
             functionARN,
             '--dry',
-            '-v',
+            '-e',
             '40',
+            '-v',
+            '19',
             '--extra-tags',
             'layer:api,team:intake',
             '--service',
@@ -1109,12 +1111,8 @@ describe('lambda', () => {
           context
         )
         const output = context.stdout.toString()
-        expect(code).toBe(1)
-        expect(output).toMatchInlineSnapshot(`
-"\n[Dry Run] 🐶 Instrumenting Lambda function
-[Error] Couldn't fetch Lambda functions. Error: Only the --extension-version argument should be set for the ruby2.7 runtime. Please remove the --layer-version argument from the instrument command.
-"
-`)
+        expect(code).toBe(0)
+        expect(output).toMatchSnapshot()
       })
 
       test('aborts early when a layer version is set for a Custom runtime', async () => {

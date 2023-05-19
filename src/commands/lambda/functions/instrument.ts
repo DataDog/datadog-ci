@@ -173,7 +173,7 @@ export const calculateUpdateRequest = async (
   let needsUpdate = false
   const runtimeType = RUNTIME_LOOKUP[runtime]
 
-  if (runtimeType === RuntimeType.CUSTOM || runtimeType === RuntimeType.RUBY) {
+  if (runtimeType === RuntimeType.CUSTOM) {
     if (settings.layerVersion !== undefined) {
       throw new Error(
         `Only the --extension-version argument should be set for the ${runtime} runtime. Please remove the --layer-version argument from the instrument command.`

@@ -16,6 +16,7 @@ export const LAYER_LOOKUP = {
   'python3.8': 'Datadog-Python38',
   'python3.9': 'Datadog-Python39',
   'python3.10': 'Datadog-Python310',
+  'ruby2.7': 'Datadog-Ruby2-7',
 } as const
 
 export enum RuntimeType {
@@ -49,7 +50,7 @@ export const RUNTIME_LOOKUP = {
 
 export type Runtime = keyof typeof RUNTIME_LOOKUP
 export type LayerKey = keyof typeof LAYER_LOOKUP
-export const ARM_LAYERS = [EXTENSION_LAYER_KEY, 'dotnet6', 'python3.8', 'python3.9', 'python3.10']
+export const ARM_LAYERS = [EXTENSION_LAYER_KEY, 'dotnet6', 'python3.8', 'python3.9', 'python3.10', 'ruby2.']
 export const ARM64_ARCHITECTURE = 'arm64'
 export const ARM_LAYER_SUFFIX = '-ARM'
 
