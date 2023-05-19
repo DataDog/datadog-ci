@@ -16,7 +16,7 @@ export const LAYER_LOOKUP = {
   'python3.8': 'Datadog-Python38',
   'python3.9': 'Datadog-Python39',
   'python3.10': 'Datadog-Python310',
-  'ruby2.7': 'Datadog-Ruby2-7'
+  'ruby2.7': 'Datadog-Ruby2-7',
 } as const
 
 export enum RuntimeType {
