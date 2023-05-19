@@ -44,7 +44,6 @@ export const RUNTIME_LOOKUP = {
   'python3.8': RuntimeType.PYTHON,
   'python3.9': RuntimeType.PYTHON,
   'python3.10': RuntimeType.PYTHON,
-  'ruby2.5': RuntimeType.RUBY,
   'ruby2.7': RuntimeType.RUBY,
 }
 
