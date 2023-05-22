@@ -1,15 +1,14 @@
 import {Writable} from 'stream'
 
-import {AxiosPromise, AxiosRequestConfig, AxiosResponse} from 'axios'
+import {AxiosPromise, AxiosRequestConfig} from 'axios'
 
 import {getRequestBuilder} from '../../helpers/utils'
 
-import {Payload} from './interfaces'
+import {EvaluationResponsePayload, Payload} from './interfaces'
 
-export const evaluateGateRules = (request: (args: AxiosRequestConfig) => AxiosPromise<AxiosResponse>) => async (
-  evaluateRequest: Payload,
-  write: Writable['write']
-) => {
+export const evaluateGateRules = (
+  request: (args: AxiosRequestConfig) => AxiosPromise<EvaluationResponsePayload>
+) => async (evaluateRequest: Payload, write: Writable['write']) => {
   const payload = JSON.stringify({
     data: {
       type: 'gate_evaluation',
