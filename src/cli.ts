@@ -3,6 +3,8 @@ import fs from 'fs'
 import {Cli} from 'clipanion'
 import {CommandClass} from 'clipanion/lib/advanced/Command'
 
+const BETA_COMMANDS = ['gate']
+
 const onError = (err: any) => {
   console.log(err)
   process.exitCode = 1
@@ -19,6 +21,9 @@ const cli = new Cli({
 
 const commandsPath = `${__dirname}/commands`
 for (const commandFolder of fs.readdirSync(commandsPath)) {
+  if (BETA_COMMANDS.includes(commandFolder)) {
+    continue
+  }
   const commandPath = `${commandsPath}/${commandFolder}`
   if (fs.statSync(commandPath).isDirectory()) {
     require(`${commandPath}/cli`).forEach((command: CommandClass) => cli.register(command))
