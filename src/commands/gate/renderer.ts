@@ -29,7 +29,9 @@ export const renderEvaluationResponse = (evaluationResponse: EvaluationResponse)
 }
 
 export const renderEmptyEvaluation = (): string => {
-  return chalk.yellow('No matching rules were found in Datadog for the current pipeline.\n')
+  return chalk.yellow(
+    `${ICONS.WARNING} No matching rules were found in Datadog. Use the '--fail-on-empty' option to fail the command in this situation.\n`
+  )
 }
 
 export const renderStatus = (result: string): string => {
@@ -65,7 +67,7 @@ export const renderDryRunEvaluation = (): string => {
   return chalk.yellow('Dry run mode is enabled. Not evaluating the rules.')
 }
 
-export const renderGateEvaluation = (spanTags: SpanTags): string => {
+export const renderGateEvaluationInput = (spanTags: SpanTags): string => {
   let fullStr = chalk.bold(`${ICONS.INFO} Evaluating rules matching the following information:\n`)
   fullStr += `Repository: ${spanTags['git.repository_url']}\n`
   fullStr += `Branch: ${spanTags['git.branch']}\n`
