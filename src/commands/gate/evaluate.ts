@@ -7,11 +7,11 @@ import {SpanTags} from '../../helpers/interfaces'
 import {getUserGitSpanTags} from '../../helpers/user-provided-git'
 
 import {apiConstructor} from './api'
-import {APIHelper, Payload} from './interfaces'
+import {APIHelper, EvaluationResponse, Payload} from './interfaces'
 import {
   renderDryRunEvaluation,
   renderEvaluationResponse,
-  renderGateEvaluation,
+  renderGateEvaluationInput,
   renderGateEvaluationError,
 } from './renderer'
 import {getBaseIntakeUrl} from './utils'
@@ -23,7 +23,9 @@ export class GateEvaluateCommand extends Command {
     apiKey: process.env.DATADOG_API_KEY || process.env.DD_API_KEY,
     appKey: process.env.DATADOG_APP_KEY,
   }
+
   private dryRun = false
+  private failOnEmpty = false
 
   public async execute() {
     const api = this.getApiHelper()
@@ -32,7 +34,7 @@ export class GateEvaluateCommand extends Command {
       spanTags,
     }
 
-    await this.evaluateRules(api, payload)
+    return this.evaluateRules(api, payload)
   }
 
   private getApiHelper(): APIHelper {
@@ -63,25 +65,39 @@ export class GateEvaluateCommand extends Command {
     }
   }
 
-  private async evaluateRules(api: APIHelper, evaluateRequest: Payload) {
-    this.context.stderr.write(renderGateEvaluation(evaluateRequest.spanTags))
+  private async evaluateRules(api: APIHelper, evaluateRequest: Payload): Promise<number> {
+    this.context.stdout.write(renderGateEvaluationInput(evaluateRequest.spanTags))
     if (this.dryRun) {
-      this.context.stderr.write(renderDryRunEvaluation())
+      this.context.stdout.write(renderDryRunEvaluation())
 
-      return
+      return 0
     }
 
     // To be extended with retries, error handling, etc.
-    await api
+    return api
       .evaluateGateRules(evaluateRequest, this.context.stdout.write.bind(this.context.stdout))
       .then((response) => {
-        this.context.stdout.write(renderEvaluationResponse(response.data.data.attributes))
+        return this.handleEvaluationResponse(response.data.data.attributes)
       })
       .catch((error) => {
-        this.context.stdout.write(renderGateEvaluationError(error))
+        // TODO Handle unavailability etc.
+        this.context.stderr.write(renderGateEvaluationError(error))
+
+        return 1
       })
+  }
+
+  private handleEvaluationResponse(evaluationResponse: EvaluationResponse): number {
+    this.context.stdout.write(renderEvaluationResponse(evaluationResponse))
+
+    if (evaluationResponse.status === 'failed' || (evaluationResponse.status === 'empty' && this.failOnEmpty)) {
+      return 1
+    } else {
+      return 0
+    }
   }
 }
 
 GateEvaluateCommand.addPath('gate', 'evaluate')
 GateEvaluateCommand.addOption('dryRun', Command.Boolean('--dry-run'))
+GateEvaluateCommand.addOption('failOnEmpty', Command.Boolean('--fail-on-empty'))
