@@ -23,7 +23,7 @@ describe('evaluate', () => {
     })
   })
   describe('handleEvaluationResponse', () => {
-    test('Should fail the command if gate evaluation failed', () => {
+    test('should fail the command if gate evaluation failed', () => {
       const write = jest.fn()
       const command = new GateEvaluateCommand()
       command.context = {stdout: {write}} as any
@@ -34,7 +34,7 @@ describe('evaluate', () => {
       }
       expect(command['handleEvaluationResponse'].bind(command).call({}, response)).toEqual(1)
     })
-    test('Should pass the command if gate evaluation passed', () => {
+    test('should pass the command if gate evaluation passed', () => {
       const write = jest.fn()
       const command = new GateEvaluateCommand()
       command.context = {stdout: {write}} as any
@@ -45,7 +45,7 @@ describe('evaluate', () => {
       }
       expect(command['handleEvaluationResponse'].bind(command).call({}, response)).toEqual(0)
     })
-    test('Should pass the command on empty evaluation status by default', () => {
+    test('should pass the command on empty evaluation status by default', () => {
       const write = jest.fn()
       const command = new GateEvaluateCommand()
       command.context = {stdout: {write}} as any
@@ -57,7 +57,7 @@ describe('evaluate', () => {
       expect(command['handleEvaluationResponse'].bind(command).call({}, response)).toEqual(0)
       expect(write.mock.calls[0][0]).toContain('No matching rules were found in Datadog')
     })
-    test('Should fail the command on empty result if the override option is provided', () => {
+    test('should fail the command on empty result if the override option is provided', () => {
       const write = jest.fn()
       const command = new GateEvaluateCommand()
       command['failOnEmpty'] = true
