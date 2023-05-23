@@ -199,10 +199,10 @@ export const createLogsAccessPolicy = async (
         context.stdout.write(
           ` -> [Info] ${err.message}. Skipping resource creation and continuing with instrumentation.\n`
         )
+      } else {
+        context.stdout.write(` -> [Error] ${err.message}`)
       }
-    } else {
-      context.stdout.write(` -> [Error] ${err.message}`)
-    }
+    } 
   }
 }
 
