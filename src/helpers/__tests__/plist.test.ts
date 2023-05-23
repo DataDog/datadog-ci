@@ -2,6 +2,9 @@ import {parsePlist} from '../plist'
 
 describe('plist util', () => {
   describe('parsePlist', () => {
+    afterEach(() => {
+      delete process.env.EXECUTABLE_NAME
+    })
     it('parses the content of the info plist file', () => {
       const plist = parsePlist('src/helpers/__tests__/plist-fixtures/Info.plist')
       expect(plist.getContent()).toMatchSnapshot()
@@ -11,6 +14,19 @@ describe('plist util', () => {
       const plist = parsePlist('src/helpers/__tests__/plist-fixtures/Info.plist')
       expect(plist.getPropertyValue('CFBundleShortVersionString')).toBe('1.0.4')
       expect(plist.getPropertyValue('CFBundleVersion')).toBe(12)
+    })
+
+    it('returns the value for an env variable', () => {
+      process.env.EXECUTABLE_NAME = 'executable name'
+      const plist = parsePlist('src/helpers/__tests__/plist-fixtures/Info.plist')
+      expect(plist.getPropertyValue('CFBundleExecutable')).toBe('executable name')
+    })
+
+    it('returns an empty string for an env variable that is not declared', () => {
+      const plist = parsePlist('src/helpers/__tests__/plist-fixtures/Info.plist')
+      expect(() => plist.getPropertyValue('CFBundleExecutable')).toThrowError(
+        "Environment variable $(EXECUTABLE_NAME) for key CFBundleExecutable wasn't found."
+      )
     })
 
     it('throws an error if a property does not exist', () => {

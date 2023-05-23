@@ -12,7 +12,7 @@ import {
   getAllLambdaFunctionConfigs,
   getAWSProfileCredentials,
   handleLambdaFunctionUpdates,
-  isMissingAWSCredentials,
+  getAWSCredentials,
   willUpdateFunctionConfigs,
 } from './functions/commons'
 import {getUninstrumentedFunctionConfigs, getUninstrumentedFunctionConfigsFromRegEx} from './functions/uninstrument'
@@ -58,9 +58,12 @@ export class UninstrumentCommand extends Command {
     let hasSpecifiedFunctions = this.functions.length !== 0 || this.config.functions.length !== 0
     if (this.interactive) {
       try {
-        if (isMissingAWSCredentials()) {
+        const credentials = await getAWSCredentials()
+        if (credentials === undefined) {
           this.context.stdout.write(renderer.renderNoAWSCredentialsFound())
           await requestAWSCredentials()
+        } else {
+          this.credentials = credentials
         }
       } catch (err) {
         this.context.stdout.write(renderer.renderError(err))

@@ -55,7 +55,17 @@ import * as ciUtils from '../../../helpers/utils'
 import {apiConstructor, APIHelper} from '../api'
 import {DEFAULT_COMMAND_CONFIG, MAX_TESTS_TO_TRIGGER} from '../command'
 import {CiError} from '../errors'
-import {Batch, ExecutionRule, PollResult, Result, ServerResult, Test, Trigger, UserConfigOverride} from '../interfaces'
+import {
+  Batch,
+  ExecutionRule,
+  PollResult,
+  Result,
+  ServerResult,
+  SyntheticsCIConfig,
+  Test,
+  Trigger,
+  UserConfigOverride,
+} from '../interfaces'
 import * as mobile from '../mobile'
 import * as utils from '../utils'
 
@@ -1270,7 +1280,7 @@ describe('utils', () => {
 
       const startTime = Date.now()
 
-      const exitCode = utils.renderResults({
+      utils.renderResults({
         config,
         orgSettings: {orgMaxConcurrencyCap: 1},
         reporter: mockReporter,
@@ -1279,8 +1289,9 @@ describe('utils', () => {
         summary: testCase.summary,
       })
 
-      expect((mockReporter as MockedReporter).reportStart).toHaveBeenCalledWith({startTime})
+      const exitCode = utils.toExitCode(utils.getExitReason(config, {results: testCase.results}))
 
+      expect((mockReporter as MockedReporter).reportStart).toHaveBeenCalledWith({startTime})
       expect((mockReporter as MockedReporter).resultEnd).toHaveBeenCalledTimes(testCase.results.length)
 
       const baseUrl = `https://${DEFAULT_COMMAND_CONFIG.subdomain}.${DEFAULT_COMMAND_CONFIG.datadogSite}/`
@@ -1343,10 +1354,12 @@ describe('utils', () => {
     })
   })
 
-  test('getOrgSettings is not that important to throw', async () => {
+  test('getOrgSettings is not important enough to throw', async () => {
     jest.spyOn(api, 'getSyntheticsOrgSettings').mockImplementation(() => {
       throw getAxiosHttpError(502, {message: 'Server Error'})
     })
-    expect(await utils.getOrgSettings(api, mockReporter)).toBeUndefined()
+
+    const config = (apiConfiguration as unknown) as SyntheticsCIConfig
+    expect(await utils.getOrgSettings(mockReporter, config)).toBeUndefined()
   })
 })

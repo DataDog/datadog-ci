@@ -159,10 +159,10 @@ const getTunnelPresignedURL = (request: (args: AxiosRequestConfig) => AxiosPromi
 
 const getMobileApplicationPresignedURL = (
   request: (args: AxiosRequestConfig) => AxiosPromise<PresignedUrlResponse>
-) => async (applicationId: string, md5: string) => {
+) => async (applicationId: string, appSize: number, md5: string) => {
   const resp = await retryRequest(
     {
-      data: {md5},
+      data: {appSize, md5},
       method: 'POST',
       url: `/synthetics/mobile/applications/${applicationId}/presigned-url`,
     },

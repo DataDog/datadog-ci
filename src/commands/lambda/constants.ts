@@ -5,6 +5,7 @@ export const LAYER_LOOKUP = {
   dotnet6: 'dd-trace-dotnet',
   'dotnetcore3.1': 'dd-trace-dotnet',
   java11: 'dd-trace-java',
+  java17: 'dd-trace-java',
   'java8.al2': 'dd-trace-java',
   'nodejs12.x': 'Datadog-Node12-x',
   'nodejs14.x': 'Datadog-Node14-x',
@@ -14,6 +15,8 @@ export const LAYER_LOOKUP = {
   'python3.7': 'Datadog-Python37',
   'python3.8': 'Datadog-Python38',
   'python3.9': 'Datadog-Python39',
+  'python3.10': 'Datadog-Python310',
+  'ruby2.7': 'Datadog-Ruby2-7',
 } as const
 
 export enum RuntimeType {
@@ -29,6 +32,7 @@ export const RUNTIME_LOOKUP = {
   dotnet6: RuntimeType.DOTNET,
   'dotnetcore3.1': RuntimeType.DOTNET,
   java11: RuntimeType.JAVA,
+  java17: RuntimeType.JAVA,
   'java8.al2': RuntimeType.JAVA,
   'nodejs12.x': RuntimeType.NODE,
   'nodejs14.x': RuntimeType.NODE,
@@ -39,13 +43,14 @@ export const RUNTIME_LOOKUP = {
   'python3.7': RuntimeType.PYTHON,
   'python3.8': RuntimeType.PYTHON,
   'python3.9': RuntimeType.PYTHON,
+  'python3.10': RuntimeType.PYTHON,
   'ruby2.5': RuntimeType.RUBY,
   'ruby2.7': RuntimeType.RUBY,
 }
 
 export type Runtime = keyof typeof RUNTIME_LOOKUP
 export type LayerKey = keyof typeof LAYER_LOOKUP
-export const ARM_LAYERS = [EXTENSION_LAYER_KEY, 'dotnet6', 'python3.8', 'python3.9']
+export const ARM_LAYERS = [EXTENSION_LAYER_KEY, 'dotnet6', 'python3.8', 'python3.9', 'python3.10', 'ruby2.']
 export const ARM64_ARCHITECTURE = 'arm64'
 export const ARM_LAYER_SUFFIX = '-ARM'
 
@@ -107,7 +112,7 @@ export const MAX_LAMBDA_STATE_CHECK_ATTEMPTS = 3
 // This RegExp ensures that the --extra-tags string
 // matches a list of <key>:<value> separated by commas
 // such as: layer:api,team:intake
-export const EXTRA_TAGS_REG_EXP = /^(([a-zA-Z]+)\w+:[\w\-/\.]+)+((\,)([a-zA-Z]+)\w+:[\w\-/\.]+)*$/g
+export const EXTRA_TAGS_REG_EXP = /^(([a-zA-Z]+)[\w\-/\.]*:[^,]+)+((\,)([a-zA-Z]+)[\w\-/\.]*:[^,]+)*$/g
 export const AWS_ACCESS_KEY_ID_REG_EXP = /(?<![A-Z0-9])[A-Z0-9]{20}(?![A-Z0-9])/g
 export const AWS_SECRET_ACCESS_KEY_REG_EXP = /(?<![A-Za-z0-9/+=])[A-Za-z0-9/+=]{40}(?![A-Za-z0-9/+=])/g
 export const AWS_SECRET_ARN_REG_EXP = /arn:aws:secretsmanager:[\w-]+:\d{12}:secret:.+/

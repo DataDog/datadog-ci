@@ -1,13 +1,16 @@
+jest.mock('fs')
 jest.mock('../../renderer', () => require('../../__mocks__/renderer'))
+jest.mock('@aws-sdk/credential-providers')
+
+import * as fs from 'fs'
 
 import {CloudWatchLogsClient} from '@aws-sdk/client-cloudwatch-logs'
 import {LambdaClient, UpdateFunctionConfigurationCommand} from '@aws-sdk/client-lambda'
+import {fromNodeProviderChain} from '@aws-sdk/credential-providers'
 import {mockClient} from 'aws-sdk-client-mock'
 import 'aws-sdk-client-mock-jest'
 
 import {
-  AWS_ACCESS_KEY_ID_ENV_VAR,
-  AWS_SECRET_ACCESS_KEY_ENV_VAR,
   CI_API_KEY_ENV_VAR,
   CI_API_KEY_SECRET_ARN_ENV_VAR,
   CI_KMS_API_KEY_ENV_VAR,
@@ -35,7 +38,7 @@ import {
   getRegion,
   handleLambdaFunctionUpdates,
   isMissingAnyDatadogApiKeyEnvVar,
-  isMissingAWSCredentials,
+  getAWSCredentials,
   isMissingDatadogEnvVars,
   sentenceMatchesRegEx,
   updateLambdaFunctionConfig,
@@ -43,7 +46,14 @@ import {
 import {InstrumentCommand} from '../../instrument'
 import {FunctionConfiguration} from '../../interfaces'
 
-import {createCommand, mockAwsAccount, mockLambdaClientCommands, mockLambdaLayers} from '../fixtures'
+import {
+  createCommand,
+  mockAwsAccessKeyId,
+  mockAwsAccount,
+  mockAwsSecretAccessKey,
+  mockLambdaClientCommands,
+  mockLambdaLayers,
+} from '../fixtures'
 
 describe('commons', () => {
   const cloudWatchLogsClientMock = mockClient(CloudWatchLogsClient)
@@ -289,29 +299,47 @@ describe('commons', () => {
     })
   })
 
-  describe('isMissingAWSCredentials', () => {
+  describe('getAWSCredentials', () => {
     const OLD_ENV = process.env
+
     beforeEach(() => {
       jest.resetModules()
       process.env = {}
     })
-    afterAll(() => {
+    afterEach(() => {
       process.env = OLD_ENV
     })
-    test('returns true when only AWS_SECRET_ACCESS_KEY env var is set and `~/.aws/credentials` are missing', () => {
-      process.env[AWS_SECRET_ACCESS_KEY_ENV_VAR] = 'SOME-AWS-SECRET-ACCESS-KEY'
-      expect(isMissingAWSCredentials()).toBe(true) // AWS_ACCESS_KEY_ID_ENV_VAR is missing
+
+    // ignore reading `.aws/config` `.aws/credentials` files
+    ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({code: 'ENOENT'}))
+
+    test('returns credentials when `fromNodeProviderChain` returns a succesful promise', async () => {
+      ;(fromNodeProviderChain as any).mockImplementation(() => () =>
+        Promise.resolve({
+          accessKeyId: mockAwsAccessKeyId,
+          secretAccessKey: mockAwsSecretAccessKey,
+        })
+      )
+
+      const credentials = await getAWSCredentials()
+      expect(credentials).toStrictEqual({
+        accessKeyId: mockAwsAccessKeyId,
+        secretAccessKey: mockAwsSecretAccessKey,
+      })
     })
 
-    test('returns true when only AWS_ACCESS_KEY_ID environment variable is set and `~/.aws/credentials` are missing', () => {
-      process.env[AWS_ACCESS_KEY_ID_ENV_VAR] = 'SOME-AWS-ACCESS-KEY-ID'
-      expect(isMissingAWSCredentials()).toBe(true) // We return true since AWS_SECRET_ACCESS_KEY_ENV_VAR is missing
-    })
+    test('throws an error when `fromNodeProviderChain` fails when fetching credentials', async () => {
+      ;(fromNodeProviderChain as any).mockImplementation(() => () => Promise.reject(new Error('Unexpected error')))
+      let error
+      try {
+        await getAWSCredentials()
+      } catch (e) {
+        if (e instanceof Error) {
+          error = e
+        }
+      }
 
-    test('returns false when AWS credentials via environment variables are set', () => {
-      process.env[AWS_ACCESS_KEY_ID_ENV_VAR] = 'SOME-AWS-ACCESS-KEY-ID'
-      process.env[AWS_SECRET_ACCESS_KEY_ENV_VAR] = 'SOME-AWS-SECRET-ACCESS-KEY'
-      expect(isMissingAWSCredentials()).toBe(false)
+      expect(error?.message).toBe("Couldn't fetch AWS credentials. Unexpected error")
     })
   })
 
@@ -589,7 +617,7 @@ describe('commons', () => {
   })
   describe('sentenceMatchesRegEx', () => {
     const tags: [string, boolean][] = [
-      ['not-complying:regex-should-fail', false],
+      ['not@complying:regex-should-fail', false],
       ['1first-char-is-number:should-fail', false],
       ['_also-not-complying:should-fail', false],
       ['complying_tag:accepted/with/slashes.and.dots,but-empty-tag', false],
@@ -599,6 +627,9 @@ describe('commons', () => {
       ['complying:alone', true],
       ['one_divided_by_two:1/2,one_divided_by_four:0.25,three_minus_one_half:3-1/2', true],
       ['this_is_a_valid_t4g:yes/it.is-42', true],
+      // multiple colons, periods in tag, slashes in tag
+      ['env-staging:east:staging,version.minor:1,version.major:3.4/v3,category/service:not/defined', true],
+      ['email:user@email.com,numb3r:t', true],
     ]
     test.each(tags)('check if the tags match the expected result from the regex', (tag, expectedResult) => {
       const result = !!sentenceMatchesRegEx(tag, EXTRA_TAGS_REG_EXP)

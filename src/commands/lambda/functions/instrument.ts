@@ -173,7 +173,7 @@ export const calculateUpdateRequest = async (
   let needsUpdate = false
   const runtimeType = RUNTIME_LOOKUP[runtime]
 
-  if (runtimeType === RuntimeType.CUSTOM || runtimeType === RuntimeType.RUBY) {
+  if (runtimeType === RuntimeType.CUSTOM) {
     if (settings.layerVersion !== undefined) {
       throw new Error(
         `Only the --extension-version argument should be set for the ${runtime} runtime. Please remove the --layer-version argument from the instrument command.`
@@ -182,7 +182,7 @@ export const calculateUpdateRequest = async (
   }
 
   // Update Python Handler
-  if (runtimeType === RuntimeType.PYTHON) {
+  if (runtimeType === RuntimeType.PYTHON && settings.layerVersion !== undefined) {
     const expectedHandler = PYTHON_HANDLER_LOCATION
     if (config.Handler !== expectedHandler) {
       needsUpdate = true
@@ -191,7 +191,7 @@ export const calculateUpdateRequest = async (
   }
 
   // Update Node Handler
-  if (runtimeType === RuntimeType.NODE) {
+  if (runtimeType === RuntimeType.NODE && settings.layerVersion !== undefined) {
     const expectedHandler = NODE_HANDLER_LOCATION
     if (config.Handler !== expectedHandler) {
       needsUpdate = true
@@ -232,7 +232,7 @@ export const calculateUpdateRequest = async (
       changedEnvVars[SITE_ENV_VAR] = site
     } else {
       throw new Error(
-        'Warning: Invalid site URL. Must be either datadoghq.com, datadoghq.eu, us3.datadoghq.com, us5.datadoghq.com, or ddog-gov.com.'
+        'Warning: Invalid site URL. Must be either datadoghq.com, datadoghq.eu, us3.datadoghq.com, us5.datadoghq.com, ap1.datadoghq.com, or ddog-gov.com.'
       )
     }
   }

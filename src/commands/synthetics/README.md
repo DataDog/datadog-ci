@@ -77,7 +77,7 @@ See below for the list of advanced options in the global configuration file. For
 : A boolean flag that fails the CI job if at least one test exceeds the default test timeout. The default is set to `true`.
 
 `files`
-: Glob pattern to detect Synthetic tests configuration files.
+: Glob pattern to detect Synthetic test [configuration files](#test-files).
 
 `global`
 : Overrides for Synthetic tests applied to all tests.
@@ -96,7 +96,7 @@ The duration (in milliseconds) after which `datadog-ci` stops polling for test r
 : The name of the custom subdomain set to access your Datadog application. If the URL used to access Datadog is `myorg.datadoghq.com`, the `subdomain` value needs to be set to `myorg`.
 
 `tunnel`
-: Use the [testing tunnel][3] to execute your test batch.
+: Use the [Continuous Testing Tunnel](#use-the-testing-tunnel) to execute your test batch.
 
 `testSearchQuery`
 : Pass a query to select which Synthetic tests to run. If you are running tests in the CLI, use the `-s` flag.
@@ -115,7 +115,7 @@ For example:
 {
     "apiKey": "<DATADOG_API_KEY>",
     "appKey": "<DATADOG_APPLICATION_KEY>",
-    "datadogSite": "datadoghq.com", // You can use another Datadog site. By default, requests are sent to Datadog US1. 
+    "datadogSite": "datadoghq.com", // You can use another Datadog site in https://docs.datadoghq.com/getting_started/site/. By default, requests are sent to Datadog US1. 
     "files": "{,!(node_modules)/**/}*.synthetics.json",
     "failOnCriticalErrors": false,
     "failOnMissingTests": false,
@@ -161,7 +161,7 @@ For example, if the URL used to access Datadog is `myorg.datadoghq.com`, set the
 export DATADOG_SUBDOMAIN="myorg"
 ```
 
-You can use `DATADOG_SYNTHETICS_LOCATIONS` to override the locations where your tests run. Locations should be separated with `;`. The configuration in test files takes precedence over other overrides.
+You can use `DATADOG_SYNTHETICS_LOCATIONS` to override the locations where your tests run. Locations should be separated with `;`. The configuration in [test files](#test-files) takes precedence over other overrides.
 
 ```bash
 export DATADOG_SYNTHETICS_LOCATIONS="aws:us-east-1;aws:us-east-2"
@@ -177,7 +177,7 @@ For example:
 {
   "apiKey": "<DATADOG_API_KEY>",
   "appKey": "<DATADOG_APPLICATION_KEY>",
-  "datadogSite": "datadoghq.com",
+  "datadogSite": "datadoghq.com", // You can use another Datadog site in https://docs.datadoghq.com/getting_started/site/. By default, requests are sent to Datadog US1. 
   "failOnCriticalErrors": true,
   "failOnMissingTests": true,
   "failOnTimeout": true,
@@ -282,7 +282,7 @@ yarn datadog-ci synthetics run-tests -f ./component-1/**/*.synthetics.json -v PA
 
 ### Test files
 
-Your test files must be named with a `.synthetics.json` suffix.
+Your test files must be named with a `.synthetics.json` suffix. 
 
 ```json
 // myTest.synthetics.json

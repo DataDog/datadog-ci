@@ -88,7 +88,7 @@ describe('execute', () => {
     const {context, code} = await runCLI('pipeline', ['key:1'], {})
     expect(code).toBe(1)
     expect(context.stderr.toString()).toContain(
-      'Only providers [GitHub, GitLab, CircleCI, Buildkite, Buddy, Jenkins, TeamCity] are supported'
+      'Only providers [GitHub, GitLab, CircleCI, Buildkite, Buddy, Jenkins, TeamCity, AzurePipelines] are supported'
     )
   })
 

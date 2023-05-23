@@ -1,17 +1,24 @@
-import chalk from 'chalk'
 import {Command} from 'clipanion'
 import deepExtend from 'deep-extend'
 
 import {removeUndefinedValues, resolveConfigFromFile} from '../../helpers/utils'
 import {isValidDatadogSite} from '../../helpers/validation'
 
-import {getApiHelper} from './api'
-import {CiError, CriticalError} from './errors'
+import {CiError} from './errors'
 import {CommandConfig, MainReporter, Reporter, Result, Summary} from './interfaces'
 import {DefaultReporter} from './reporters/default'
 import {JUnitReporter} from './reporters/junit'
 import {executeTests} from './run-test'
-import {getOrgSettings, getReporter, parseVariablesFromCli, renderResults} from './utils'
+import {
+  getExitReason,
+  getOrgSettings,
+  getReporter,
+  parseVariablesFromCli,
+  renderResults,
+  reportCiError,
+  toExitCode,
+  reportExitLogs,
+} from './utils'
 
 export const MAX_TESTS_TO_TRIGGER = 100
 
@@ -68,7 +75,7 @@ export class RunTestCommand extends Command {
       await this.resolveConfig()
     } catch (error) {
       if (error instanceof CiError) {
-        this.reportCiError(error, this.reporter)
+        reportCiError(error, this.reporter)
       }
 
       return 1
@@ -87,42 +94,14 @@ export class RunTestCommand extends Command {
     try {
       ;({results, summary} = await executeTests(this.reporter, this.config))
     } catch (error) {
-      if (error instanceof CiError) {
-        this.reportCiError(error, this.reporter)
+      reportExitLogs(this.reporter, this.config, {error})
 
-        if (this.config.failOnMissingTests && error.code === 'MISSING_TESTS') {
-          return 1
-        }
-
-        if (error instanceof CriticalError) {
-          if (this.config.failOnCriticalErrors) {
-            return 1
-          } else {
-            this.reporter.error(
-              chalk.yellow(
-                'Because `failOnCriticalErrors` is not set or disabled, the command will exit with an error code 0. ' +
-                  'Use `failOnCriticalErrors: true` to exit with an error code 1.\n'
-              )
-            )
-          }
-        }
-      }
-
-      return 0
+      return toExitCode(getExitReason(this.config, {error}))
     }
 
-    if (results.some((r) => r.timedOut) && !this.config.failOnTimeout) {
-      this.reporter.error(
-        chalk.yellow(
-          'Because `failOnTimeout` is disabled, the command will exit with an error code 0. ' +
-            'Use `failOnTimeout: true` to exit with an error code 1.\n'
-        )
-      )
-    }
+    const orgSettings = await getOrgSettings(this.reporter, this.config)
 
-    const orgSettings = await getOrgSettings(getApiHelper(this.config), this.reporter)
-
-    return renderResults({
+    renderResults({
       config: this.config,
       orgSettings,
       reporter: this.reporter,
@@ -130,57 +109,10 @@ export class RunTestCommand extends Command {
       startTime,
       summary,
     })
-  }
 
-  private reportCiError(error: CiError, reporter: MainReporter) {
-    switch (error.code) {
-      case 'NO_TESTS_TO_RUN':
-        reporter.log('No test to run.\n')
-        break
-      case 'MISSING_TESTS':
-        reporter.error(`\n${chalk.bgRed.bold(' ERROR: some tests are missing ')}\n${error.message}\n\n`)
-        break
+    reportExitLogs(this.reporter, this.config, {results})
 
-      // Critical command errors
-      case 'AUTHORIZATION_ERROR':
-        reporter.error(`\n${chalk.bgRed.bold(' ERROR: authorization error ')}\n${error.message}\n\n`)
-        reporter.log('Credentials refused, make sure `apiKey`, `appKey` and `datadogSite` are correct.\n')
-        break
-      case 'INVALID_CONFIG':
-        reporter.error(`\n${chalk.bgRed.bold(' ERROR: invalid config ')}\n${error.message}\n\n`)
-        break
-      case 'MISSING_APP_KEY':
-        reporter.error(`Missing ${chalk.red.bold('DATADOG_APP_KEY')} in your environment.\n`)
-        break
-      case 'MISSING_API_KEY':
-        reporter.error(`Missing ${chalk.red.bold('DATADOG_API_KEY')} in your environment.\n`)
-        break
-      case 'POLL_RESULTS_FAILED':
-        reporter.error(`\n${chalk.bgRed.bold(' ERROR: unable to poll test results ')}\n${error.message}\n\n`)
-        break
-      case 'TUNNEL_START_FAILED':
-        reporter.error(`\n${chalk.bgRed.bold(' ERROR: unable to start tunnel ')}\n${error.message}\n\n`)
-        break
-      case 'TOO_MANY_TESTS_TO_TRIGGER':
-        reporter.error(`\n${chalk.bgRed.bold(' ERROR: too many tests to trigger ')}\n${error.message}\n\n`)
-        break
-      case 'TRIGGER_TESTS_FAILED':
-        reporter.error(`\n${chalk.bgRed.bold(' ERROR: unable to trigger tests ')}\n${error.message}\n\n`)
-        break
-      case 'UNAVAILABLE_TEST_CONFIG':
-        reporter.error(
-          `\n${chalk.bgRed.bold(' ERROR: unable to obtain test configurations with search query ')}\n${
-            error.message
-          }\n\n`
-        )
-        break
-      case 'UNAVAILABLE_TUNNEL_CONFIG':
-        reporter.error(`\n${chalk.bgRed.bold(' ERROR: unable to get tunnel configuration ')}\n${error.message}\n\n`)
-        break
-
-      default:
-        reporter.error(`\n${chalk.bgRed.bold(' ERROR ')}\n${error.message}\n\n`)
-    }
+    return toExitCode(getExitReason(this.config, {results}))
   }
 
   private async resolveConfig() {

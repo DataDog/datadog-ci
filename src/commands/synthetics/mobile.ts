@@ -1,17 +1,17 @@
 import * as crypto from 'crypto'
 import fs from 'fs'
 
-import {APIHelper} from './api'
-import {Test, TestPayload, UserConfigOverride} from './interfaces'
+import {APIHelper, EndpointError, formatBackendErrors} from './api'
+import {PresignedUrlResponse, Test, TestPayload, UserConfigOverride} from './interfaces'
 
-export const getMD5HashFromFile = async (file: string): Promise<string> => {
+export const getSizeAndMD5HashFromFile = async (filePath: string): Promise<{appSize: number; md5: string}> => {
   const hash = crypto.createHash('md5')
-  const input = fs.createReadStream(file)
-  for await (const chunk of input) {
+  const fileStream = fs.createReadStream(filePath)
+  for await (const chunk of fileStream) {
     hash.update(chunk)
   }
 
-  return hash.digest('base64')
+  return {appSize: fileStream.bytesRead, md5: hash.digest('base64')}
 }
 
 export const uploadMobileApplications = async (
@@ -19,16 +19,23 @@ export const uploadMobileApplications = async (
   applicationPathToUpload: string,
   mobileApplicationId: string
 ): Promise<string> => {
-  const md5 = await getMD5HashFromFile(applicationPathToUpload)
-  const {presigned_url_params: presignedUrl, file_name: fileName} = await api.getMobileApplicationPresignedURL(
-    mobileApplicationId,
-    md5
-  )
+  const {appSize, md5} = await getSizeAndMD5HashFromFile(applicationPathToUpload)
+
+  let presignedUrlResponse: PresignedUrlResponse
+  try {
+    presignedUrlResponse = await api.getMobileApplicationPresignedURL(mobileApplicationId, appSize, md5)
+  } catch (e) {
+    throw new EndpointError(`Failed to get presigned URL: ${formatBackendErrors(e)}\n`, e.response?.status)
+  }
 
   const fileBuffer = await fs.promises.readFile(applicationPathToUpload)
-  await api.uploadMobileApplication(fileBuffer, presignedUrl)
+  try {
+    await api.uploadMobileApplication(fileBuffer, presignedUrlResponse.presigned_url_params)
+  } catch (e) {
+    throw new EndpointError(`Failed to upload mobile application: ${formatBackendErrors(e)}\n`, e.response?.status)
+  }
 
-  return fileName
+  return presignedUrlResponse.file_name
 }
 
 export const uploadApplication = async (

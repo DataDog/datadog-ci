@@ -4,6 +4,8 @@ import {
   CI_ENV_VARS,
   CI_JOB_NAME,
   CI_JOB_URL,
+  CI_NODE_LABELS,
+  CI_NODE_NAME,
   CI_PIPELINE_ID,
   CI_PIPELINE_NAME,
   CI_PIPELINE_NUMBER,
@@ -87,6 +89,8 @@ export type SpanTag =
   | typeof GIT_COMMIT_COMMITTER_EMAIL
   | typeof GIT_COMMIT_COMMITTER_NAME
   | typeof CI_ENV_VARS
+  | typeof CI_NODE_NAME
+  | typeof CI_NODE_LABELS
 
 export type SpanTags = Partial<Record<SpanTag, string>>
 

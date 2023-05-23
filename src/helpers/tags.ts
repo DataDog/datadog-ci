@@ -14,6 +14,9 @@ export const CI_LEVEL = '_dd.ci.level'
 export const CI_BUILD_LEVEL = '_dd.ci.build_level'
 
 export const CI_ENV_VARS = '_dd.ci.env_vars'
+export const CI_NODE_NAME = 'ci.node.name'
+export const CI_NODE_LABELS = 'ci.node.labels'
+
 // Git
 export const GIT_BRANCH = 'git.branch'
 export const GIT_COMMIT_AUTHOR_DATE = 'git.commit.author.date'
@@ -28,6 +31,14 @@ export const GIT_TAG = 'git.tag'
 
 // General
 export const SPAN_TYPE = 'span.type'
+
+const parseNumericTag = (numericTag: string | undefined): number | undefined => {
+  if (numericTag) {
+    const number = parseFloat(numericTag)
+
+    return isFinite(number) ? number : undefined
+  }
+}
 
 /**
  * Receives an array of the form ['key:value', 'key2:value2']
@@ -48,6 +59,38 @@ export const parseTags = (tags: string[]) => {
         ...acc,
         [key]: value,
       }
+    }, {})
+  } catch (e) {
+    return {}
+  }
+}
+
+/**
+ * Similar to `parseTags` but it's assumed that numbers are received
+ * Receives an array of the form ['key:123', 'key2:321']
+ * and returns an object of the form {key: 123, key2: 321}
+ */
+export const parseMetrics = (tags: string[]) => {
+  try {
+    return tags.reduce((acc, keyValuePair) => {
+      if (!keyValuePair.includes(':')) {
+        return acc
+      }
+      const firstColon = keyValuePair.indexOf(':')
+
+      const key = keyValuePair.substring(0, firstColon)
+      const value = keyValuePair.substring(firstColon + 1)
+
+      const number = parseNumericTag(value)
+
+      if (number !== undefined) {
+        return {
+          ...acc,
+          [key]: number,
+        }
+      }
+
+      return acc
     }, {})
   } catch (e) {
     return {}

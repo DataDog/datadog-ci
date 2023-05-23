@@ -3,6 +3,7 @@ import path from 'path'
 
 import {getCIEnv, getCIMetadata, getCISpanTags} from '../ci'
 import {Metadata, SpanTags} from '../interfaces'
+import {CI_NODE_LABELS, CI_ENV_VARS} from '../tags'
 import {getUserCISpanTags, getUserGitSpanTags} from '../user-provided-git'
 
 const CI_PROVIDERS = fs.readdirSync(path.join(__dirname, 'ci-env'))
@@ -15,7 +16,13 @@ const ciAppTagsToMetadata = (tags: SpanTags): Metadata => {
 
   Object.entries(tags).forEach(([tag, value]) => {
     // Ignore JSON fixtures pipeline number that can't be parsed to numbers
-    if (!value || tag === 'ci.pipeline.number' || tag === '_dd.ci.env_vars') {
+    if (
+      !value ||
+      tag === 'ci.pipeline.number' ||
+      tag === '_dd.ci.env_vars' ||
+      tag === 'ci.node.labels' ||
+      tag === 'ci.node.name'
+    ) {
       return
     }
 
@@ -171,7 +178,23 @@ describe('ci spec', () => {
           ...getCISpanTags(),
           ...getUserGitSpanTags(),
         }
-        expect(tags).toEqual(expectedSpanTags)
+
+        const {[CI_ENV_VARS]: envVars, [CI_NODE_LABELS]: nodeLabels, ...restOfTags} = tags
+        const {
+          [CI_ENV_VARS]: expectedEnvVars,
+          [CI_NODE_LABELS]: expectedNodeLabels,
+          ...restOfExpectedTags
+        } = expectedSpanTags
+        expect(restOfTags).toEqual(restOfExpectedTags)
+
+        // `CI_ENV_VARS` key contains a dictionary, so we JSON parse it
+        if (envVars && expectedEnvVars) {
+          expect(JSON.parse(envVars)).toEqual(JSON.parse(expectedEnvVars))
+        }
+        // `CI_NODE_LABELS` key contains an array, so we JSON parse it
+        if (nodeLabels && expectedNodeLabels) {
+          expect(JSON.parse(nodeLabels)).toEqual(expect.arrayContaining(JSON.parse(expectedNodeLabels)))
+        }
       })
     })
   })
@@ -182,7 +205,9 @@ describe('getCIEnv', () => {
     process.env = {APPVEYOR: 'true'}
     expect(() => {
       getCIEnv()
-    }).toThrow('Only providers [GitHub, GitLab, CircleCI, Buildkite, Buddy, Jenkins, TeamCity] are supported')
+    }).toThrow(
+      'Only providers [GitHub, GitLab, CircleCI, Buildkite, Buddy, Jenkins, TeamCity, AzurePipelines] are supported'
+    )
   })
 
   test('buildkite', () => {
@@ -247,6 +272,24 @@ describe('getCIEnv', () => {
     expect(getCIEnv()).toEqual({
       ciEnv: {DATADOG_BUILD_ID: 'build-id'},
       provider: 'teamcity',
+    })
+  })
+
+  test('azurepipelines', () => {
+    process.env = {TF_BUILD: 'something'}
+    expect(() => {
+      getCIEnv()
+    }).toThrow()
+
+    process.env = {
+      TF_BUILD: 'something',
+      SYSTEM_TEAMPROJECTID: 'project-id',
+      BUILD_BUILDID: '55',
+      SYSTEM_JOBID: 'job-id',
+    }
+    expect(getCIEnv()).toEqual({
+      ciEnv: {SYSTEM_TEAMPROJECTID: 'project-id', BUILD_BUILDID: '55', SYSTEM_JOBID: 'job-id'},
+      provider: 'azurepipelines',
     })
   })
 })
