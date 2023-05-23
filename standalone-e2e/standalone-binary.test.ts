@@ -28,7 +28,7 @@ describe('standalone binary', () => {
     },
     // The cold start of the binary sometimes takes >5s on macOS, resulting in a flaky CI for this OS.
     // This `beforeAll` is here to warm up the binary.
-    6 * 1000
+    10 * 1000
   )
 
   describe('version', () => {
