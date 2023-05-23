@@ -26,12 +26,8 @@ import {
   UpdateStateMachineCommand,
   UpdateStateMachineCommandOutput,
 } from '@aws-sdk/client-sfn'
+import {DescribeStateMachineCommandOutput, ListTagsForResourceCommandOutput, Tag} from '@aws-sdk/client-sfn'
 import {SFNClient} from '@aws-sdk/client-sfn/dist-types/SFNClient'
-import {
-  DescribeStateMachineCommandOutput,
-  ListTagsForResourceCommandOutput,
-  Tag,
-} from '@aws-sdk/client-sfn/dist-types/ts3.4'
 import {BaseContext} from 'clipanion'
 
 import {buildLogAccessPolicyName, displayChanges} from './helpers'
@@ -136,14 +132,10 @@ export const createLogGroup = async (
     }
   } catch (err) {
     // if a resource already exists it's a warning since we can use that resource instead of creating it
-    if (err instanceof Error) {
-      if (err.name === 'ResourceAlreadyExistsException') {
-        context.stdout.write(
-          ` -> [Info] ${err.message}. Skipping resource creation and continuing with instrumentation.\n`
-        )
-      }
-    } else {
-      context.stdout.write(` -> [Error] ${err.message}`)
+    if (err instanceof Error && err.name === 'ResourceAlreadyExistsException') {
+      context.stdout.write(
+        ` -> [Info] ${err.message}. Skipping resource creation and continuing with instrumentation.\n`
+      )
     }
   }
 }
@@ -194,15 +186,11 @@ export const createLogsAccessPolicy = async (
     }
   } catch (err) {
     // if a resource already exists it's a warning since we can use that resource instead of creating it
-    if (err instanceof Error) {
-      if (err.name === 'ResourceAlreadyExistsException') {
-        context.stdout.write(
-          ` -> [Info] ${err.message}. Skipping resource creation and continuing with instrumentation.\n`
-        )
-      } else {
-        context.stdout.write(` -> [Error] ${err.message}`)
-      }
-    } 
+    if (err instanceof Error && err.name === 'ResourceAlreadyExistsException') {
+      context.stdout.write(
+        ` -> [Info] ${err.message}. Skipping resource creation and continuing with instrumentation.\n`
+      )
+    }
   }
 }
 
