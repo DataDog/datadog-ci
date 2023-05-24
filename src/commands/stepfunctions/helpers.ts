@@ -24,7 +24,7 @@ export const displayChanges = (
       )}\n`
     )
   } else {
-    context.stdout.write(`\n${commandName}: \n${JSON.stringify(params, undefined, 2)}\n`)
+    context.stdout.write(`\n${commandName}:\n${JSON.stringify(params, undefined, 2)}\n`)
   }
 }
 
