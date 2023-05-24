@@ -136,7 +136,7 @@ export class UninstrumentStepFunctionsCommand extends Command {
     }
 
     if (!hasChanges) {
-      this.context.stdout.write(`\nNo change is applied.\n `)
+      this.context.stdout.write(`\nNo change is applied.\n`)
     }
 
     return 0
