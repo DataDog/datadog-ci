@@ -14,12 +14,10 @@ If logging is not enabled on a Step Function, a log group will be created and th
 
 ```bash
 datadog-ci stepfunctions instrument --step-function <step-function-arn> --forwarder <forwarder-arn> [--service] [--env] [--dry-run]
-
-Run the `uninstrument` command to unsubscribe a Step Function log group from the specified Datadog Forwarder. The log group will not be deleted and the Step Function will continue to log to the AWS log group.
 ```
 
 ### `uninstrument`
-Run `uninstrument` command to remove Step Functions log groups subscription filter created by Datadog-CI.
+Run the `uninstrument` command to unsubscribe a Step Function log group from the specified Datadog Forwarder. The log group will not be deleted and the Step Function will continue to log to the AWS log group.
 
 ```bash
 datadog-ci stepfunctions uninstrument --step-function <step-function-arn> --forwarder <forwarder-arn> [--dry-run]
