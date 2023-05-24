@@ -18,7 +18,10 @@ import {
 } from '@aws-sdk/client-iam'
 import {
   DescribeStateMachineCommand,
+  DescribeStateMachineCommandOutput,
   ListTagsForResourceCommand,
+  ListTagsForResourceCommandOutput,
+  Tag,
   TagResourceCommand,
   TagResourceCommandOutput,
   UntagResourceCommand,
@@ -26,7 +29,6 @@ import {
   UpdateStateMachineCommand,
   UpdateStateMachineCommandOutput,
 } from '@aws-sdk/client-sfn'
-import {DescribeStateMachineCommandOutput, ListTagsForResourceCommandOutput, Tag} from '@aws-sdk/client-sfn'
 import {SFNClient} from '@aws-sdk/client-sfn/dist-types/SFNClient'
 import {BaseContext} from 'clipanion'
 
