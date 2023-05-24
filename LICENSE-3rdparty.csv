@@ -1,6 +1,8 @@
 Component,Origin,Licence,Copyright
 @aws-sdk/client-cloudwatch-logs,import,Apache-2.0,Copyright (c) 2018 Amazon.com Inc. or its affiliates.
+@aws-sdk/client-iam,import,Apache-2.0,Copyright (c) 2018 Amazon.com Inc. or its affiliates.
 @aws-sdk/client-lambda,import,Apache-2.0,Copyright (c) 2018 Amazon.com Inc. or its affiliates.
+@aws-sdk/client-sfn,import,Apache-2.0,Copyright (c) 2018 Amazon.com Inc. or its affiliates.
 @aws-sdk/credential-providers,import,Apache-2.0,Copyright (c) 2018 Amazon.com Inc. or its affiliates.
 @aws-sdk/types,dev,Apache-2.0,Copyright (c) 2018 Amazon.com Inc. or its affiliates.
 @babel/core,dev,MIT,Copyright (c) 2014-present Sebastian McKenzie and other contributors
@@ -31,6 +33,7 @@ clipanion,import,MIT,Copyright (c) 2019 Mael Nison
 datadog-metrics,import,MIT,Copyright (c) 2014 Daniel Bader
 dd-trace,import,Apache-2.0,Copyright 2016-Present Datadog Inc.
 deep-extend,import,MIT,"Copyright (c) 2013-2018, Viacheslav Lotsmanov"
+deep-object-diff,import,MIT,Copyright (c) 2016-present Matt Phillips
 fast-xml-parser,import,MIT,Copyright (c) 2017 Amit Kumar Gupta
 form-data,import,MIT,Copyright (c) 2012 Felix Geisendörfer (felix@debuggable.com) and contributors
 fuzzy,import,MIT,Copyright (c) 2012 Matt York
