@@ -290,7 +290,7 @@ export const describeSubscriptionFilters = async (
 }
 
 const printSuccessfulMessage = (commandName: string, context: BaseContext): void => {
-  context.stdout.write(`${commandName} finished successfully \n\n`)
+  context.stdout.write(`${commandName} finished successfully!\n\n`)
 }
 
 export const untagResource = async (
