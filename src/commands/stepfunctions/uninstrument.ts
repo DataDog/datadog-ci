@@ -122,7 +122,7 @@ export class UninstrumentStepFunctionsCommand extends Command {
         }
       }
 
-      const tagKeystoRemove: string[] = [TAG_VERSION_NAME]
+      const tagKeysToRemove: string[] = [TAG_VERSION_NAME]
       // Untag resource command is idempotent, no need to verify if the tag exist by making an additional api call to get tags
       try {
         await untagResource(stepFunctionsClient, tagKeystoRemove, stepFunctionArn, this.context, this.dryRun)
