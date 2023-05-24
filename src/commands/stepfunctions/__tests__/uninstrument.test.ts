@@ -183,7 +183,7 @@ describe('stepfunctions uninstrument', () => {
 
     test('no subscription filters are created by ci, so deleteSubscriptionFilter is not called', async () => {
       const subscriptionFilter = subscriptionFilterFixture({
-        filterName: 'test-filter-name-that-does-not-have-DD_CI_IDENTIFING_STRING-string',
+        filterName: 'test-filter-name-that-does-not-have-DD_CI_IDENTIFYING_STRING-string',
       })
       aws.describeSubscriptionFilters = jest
         .fn()

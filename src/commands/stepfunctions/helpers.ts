@@ -2,7 +2,7 @@ import {DescribeStateMachineCommandOutput} from '@aws-sdk/client-sfn'
 import {BaseContext} from 'clipanion'
 import {diff} from 'deep-object-diff'
 
-import {DD_CI_IDENTIFING_STRING} from './constants'
+import {DD_CI_IDENTIFYING_STRING} from './constants'
 
 export const displayChanges = (
   stepFunctionArn: string,
@@ -44,7 +44,7 @@ export const buildLogGroupName = (stepFunctionName: string, env: string | undefi
 }
 
 export const buildSubscriptionFilterName = (stepFunctionName: string): string => {
-  return `${stepFunctionName}-${DD_CI_IDENTIFING_STRING}`
+  return `${stepFunctionName}-${DD_CI_IDENTIFYING_STRING}`
 }
 
 export const isValidArn = (str: string): boolean => {

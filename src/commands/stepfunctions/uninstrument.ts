@@ -3,7 +3,7 @@ import {SFNClient} from '@aws-sdk/client-sfn'
 import {Command} from 'clipanion'
 
 import {deleteSubscriptionFilter, describeStateMachine, describeSubscriptionFilters, untagResource} from './awsCommands'
-import {DD_CI_IDENTIFING_STRING, TAG_VERSION_NAME} from './constants'
+import {DD_CI_IDENTIFYING_STRING, TAG_VERSION_NAME} from './constants'
 import {getStepFunctionLogGroupArn, isValidArn, parseArn} from './helpers'
 
 export class UninstrumentStepFunctionsCommand extends Command {
@@ -94,7 +94,7 @@ export class UninstrumentStepFunctionsCommand extends Command {
       }
       const subscriptionFilters =
         describeSubscriptionFiltersResponse.subscriptionFilters?.filter((subscriptionFilter) =>
-          subscriptionFilter.filterName?.includes(DD_CI_IDENTIFING_STRING)
+          subscriptionFilter.filterName?.includes(DD_CI_IDENTIFYING_STRING)
         ) ?? []
 
       for (const subscriptionFilter of subscriptionFilters) {
@@ -125,7 +125,7 @@ export class UninstrumentStepFunctionsCommand extends Command {
       const tagKeysToRemove: string[] = [TAG_VERSION_NAME]
       // Untag resource command is idempotent, no need to verify if the tag exist by making an additional api call to get tags
       try {
-        await untagResource(stepFunctionsClient, tagKeystoRemove, stepFunctionArn, this.context, this.dryRun)
+        await untagResource(stepFunctionsClient, tagKeysToRemove, stepFunctionArn, this.context, this.dryRun)
       } catch (err) {
         if (err instanceof Error) {
           this.context.stdout.write(`\n[Error] ${err.message}. Failed to untag resource for ${stepFunctionArn}\n`)
