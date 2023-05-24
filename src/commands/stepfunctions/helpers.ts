@@ -17,7 +17,7 @@ export const displayChanges = (
   context.stdout.write(`\nChanges for ${stepFunctionArn}\n`)
   if (previousParams !== undefined) {
     context.stdout.write(
-      `\n${commandName}:\nFrom:\n${JSON.stringify(diff(params, previousParams), undefined, 2)}\nTo: \n${JSON.stringify(
+      `\n${commandName}:\nFrom:\n${JSON.stringify(diff(params, previousParams), undefined, 2)}\nTo:\n${JSON.stringify(
         diff(previousParams, params),
         undefined,
         2
