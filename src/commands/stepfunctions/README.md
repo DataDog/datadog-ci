@@ -6,7 +6,7 @@ You can also add the `stepfunctions instrument` command to your CI/CD pipelines 
 
 ## Usage
 
-### instrument
+### `instrument`
 
 Run the `instrument` command to subscribe a Step Function log group to the specified Datadog Forwarder. In the Step Function logging configuration, if either `logLevel: ALL` or `includeExecutionData: true` is not set, then the Step Function logging configuration will be updated to use those settings.
 
@@ -18,7 +18,8 @@ datadog-ci stepfunctions instrument --step-function <step-function-arn> --forwar
 Run the `uninstrument` command to unsubscribe a Step Function log group from the specified Datadog Forwarder. The log group will not be deleted and the Step Function will continue to log to the AWS log group.
 ```
 
-### uninstrument
+### `uninstrument`
+Run `uninstrument` command to remove Step Functions log groups subscription filter created by Datadog-CI.
 
 ```bash
 datadog-ci stepfunctions uninstrument --step-function <step-function-arn> --forwarder <forwarder-arn> [--dry-run]
