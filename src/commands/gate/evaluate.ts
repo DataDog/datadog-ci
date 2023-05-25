@@ -4,6 +4,7 @@ import {Command} from 'clipanion'
 import {getCISpanTags} from '../../helpers/ci'
 import {getGitMetadata} from '../../helpers/git/format-git-span-data'
 import {SpanTags} from '../../helpers/interfaces'
+import {CI_PIPELINE_NAME, GIT_BRANCH, GIT_REPOSITORY_URL} from '../../helpers/tags'
 import {getUserGitSpanTags} from '../../helpers/user-provided-git'
 
 import {apiConstructor} from './api'
@@ -13,6 +14,8 @@ import {
   renderEvaluationResponse,
   renderGateEvaluationInput,
   renderGateEvaluationError,
+  renderMissingRequiredTag,
+  renderMissingTagsError,
 } from './renderer'
 import {getBaseIntakeUrl} from './utils'
 
@@ -26,10 +29,18 @@ export class GateEvaluateCommand extends Command {
 
   private dryRun = false
   private failOnEmpty = false
+  private allowPartialEvaluation = false
 
   public async execute() {
     const api = this.getApiHelper()
     const spanTags = await this.getSpanTags()
+
+    if (!this.allowPartialEvaluation && !this.hasRequiredTags(spanTags)) {
+      this.context.stderr.write(renderMissingTagsError())
+
+      return 1
+    }
+
     const payload = {
       spanTags,
     }
@@ -63,6 +74,27 @@ export class GateEvaluateCommand extends Command {
       ...ciSpanTags,
       ...userGitSpanTags,
     }
+  }
+
+  private hasRequiredTags(spanTags: SpanTags): boolean {
+    let result = true
+
+    if (!spanTags[GIT_BRANCH]) {
+      this.context.stderr.write(renderMissingRequiredTag('Branch Name'))
+      result = false
+    }
+
+    if (!spanTags[GIT_REPOSITORY_URL]) {
+      this.context.stderr.write(renderMissingRequiredTag('Repository URL'))
+      result = false
+    }
+
+    if (!spanTags[CI_PIPELINE_NAME]) {
+      this.context.stderr.write(renderMissingRequiredTag('Pipeline Name'))
+      result = false
+    }
+
+    return result
   }
 
   private async evaluateRules(api: APIHelper, evaluateRequest: Payload): Promise<number> {
@@ -101,3 +133,4 @@ export class GateEvaluateCommand extends Command {
 GateEvaluateCommand.addPath('gate', 'evaluate')
 GateEvaluateCommand.addOption('dryRun', Command.Boolean('--dry-run'))
 GateEvaluateCommand.addOption('failOnEmpty', Command.Boolean('--fail-on-empty'))
+GateEvaluateCommand.addOption('allowPartialEvaluation', Command.Boolean('--allow-partial-evaluation'))

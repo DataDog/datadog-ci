@@ -64,7 +64,7 @@ export const renderRuleEvaluation = (ruleEvaluation: RuleEvaluation): string => 
 }
 
 export const renderDryRunEvaluation = (): string => {
-  return chalk.yellow('Dry run mode is enabled. Not evaluating the rules.')
+  return chalk.yellow('Dry run mode is enabled. Not evaluating the rules.\n')
 }
 
 export const renderGateEvaluationInput = (spanTags: SpanTags): string => {
@@ -86,4 +86,15 @@ export const renderGateEvaluationError = (error: any): string => {
   fullStr += '\n'
 
   return fullStr
+}
+
+export const renderMissingRequiredTag = (tag: string): string => {
+  return chalk.red(`ERROR: the following information could not be retrieved: "${tag}".\n`)
+}
+
+export const renderMissingTagsError = (): string => {
+  // TODO include link to documentation
+  return chalk.red(`Could not retrieve all the required information needed to evaluate the rules. 
+Use the "--allow-partial-evaluation" option in order to evaluate results only based on current information. 
+See the documentation for more details.`)
 }

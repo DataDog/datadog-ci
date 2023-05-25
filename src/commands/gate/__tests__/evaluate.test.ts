@@ -1,3 +1,5 @@
+import {CI_PIPELINE_NAME, GIT_BRANCH, GIT_REPOSITORY_URL} from '../../../helpers/tags'
+
 import {GateEvaluateCommand} from '../evaluate'
 import {EvaluationResponse} from '../interfaces'
 
@@ -69,6 +71,60 @@ describe('evaluate', () => {
       }
       expect(command['handleEvaluationResponse'].bind(command).call({}, response)).toEqual(1)
       expect(write.mock.calls[0][0]).toContain('No matching rules were found in Datadog')
+    })
+  })
+  describe('hasRequiredTags', () => {
+    test('should return true if all required tags are present', () => {
+      const write = jest.fn()
+      const command = new GateEvaluateCommand()
+      command.context = {stderr: {write}} as any
+      const spanTags = {
+        [CI_PIPELINE_NAME]: 'pipeline name',
+        [GIT_REPOSITORY_URL]: 'repo_URL',
+        [GIT_BRANCH]: 'branch',
+      }
+
+      expect(command['hasRequiredTags'].bind(command).call({}, spanTags)).toEqual(true)
+    })
+    test('should return false if repository is missing', () => {
+      const write = jest.fn()
+      const command = new GateEvaluateCommand()
+      command.context = {stderr: {write}} as any
+      const spanTags = {
+        [CI_PIPELINE_NAME]: 'pipeline name',
+        [GIT_BRANCH]: 'branch',
+      }
+
+      expect(command['hasRequiredTags'].bind(command).call({}, spanTags)).toEqual(false)
+      expect(write.mock.calls[0][0]).toContain(
+        'ERROR: the following information could not be retrieved: "Repository URL"'
+      )
+    })
+    test('should return false if branch is missing', () => {
+      const write = jest.fn()
+      const command = new GateEvaluateCommand()
+      command.context = {stderr: {write}} as any
+      const spanTags = {
+        [CI_PIPELINE_NAME]: 'pipeline name',
+        [GIT_REPOSITORY_URL]: 'repo_URL',
+      }
+
+      expect(command['hasRequiredTags'].bind(command).call({}, spanTags)).toEqual(false)
+      expect(write.mock.calls[0][0]).toContain('ERROR: the following information could not be retrieved: "Branch Name"')
+    })
+    test('should return false if pipeline name is missing', () => {
+      const write = jest.fn()
+      const command = new GateEvaluateCommand()
+      command.context = {stderr: {write}} as any
+      const spanTags = {
+        [GIT_REPOSITORY_URL]: 'repo_URL',
+        [GIT_BRANCH]: 'branch',
+      }
+
+      expect(command['hasRequiredTags'].bind(command).call({}, spanTags)).toEqual(false)
+      expect(write.mock.calls[0][0]).toContain(
+        'ERROR: the following information could not be retrieved: "Pipeline Name"'
+      )
     })
   })
 })
