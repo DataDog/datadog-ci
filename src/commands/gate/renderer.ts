@@ -95,6 +95,6 @@ export const renderMissingRequiredTag = (tag: string): string => {
 export const renderMissingTagsError = (): string => {
   // TODO include link to documentation
   return chalk.red(`Could not retrieve all the required information needed to evaluate the rules. 
-Use the "--allow-partial-evaluation" option in order to evaluate results only based on current information. 
+Use the "--allow-partial-evaluation" option to evaluate results based only on current information. 
 See the documentation for more details.`)
 }
