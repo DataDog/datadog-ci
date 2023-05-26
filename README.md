@@ -173,7 +173,7 @@ To create a pre-release or releasing in a different channel:
    - Target the channel branch.
    - Pick a tag based on your version `<version>-<channel>`.
    - Check the `This is a pre-release` checkbox.
-7. Publish the release and an action will publish it on npm.
+7. Publish the release and an action publishes it on npm.
 
 <img src="./assets/pre-release.png" width="500"/>
 
