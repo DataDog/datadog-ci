@@ -16,20 +16,11 @@ const STANDALONE_BINARY_PATH = `${isWin ? '.\\' : './'}${STANDALONE_BINARY}${isW
 const sanitizeOutput = (output: string) => output.replace(/(\r\n|\n|\r)/gm, '')
 
 describe('standalone binary', () => {
-  beforeAll(
-    async () => {
-      // Run the binary with no CLI arguments.
-      await expect(execPromise(`${STANDALONE_BINARY_PATH}`)).rejects.toThrow(
-        expect.objectContaining({
-          code: 1,
-          stdout: expect.stringContaining('Unknown Syntax Error'),
-        })
-      )
-    },
-    // The cold start of the binary sometimes takes >5s on macOS, resulting in a flaky CI for this OS.
-    // This `beforeAll` is here to warm up the binary.
-    6 * 1000
-  )
+  if (os === 'darwin') {
+    // Some macOS agents sometimes run slower, making this test suite flaky on macOS only.
+    // The issue is tracked here: https://github.com/actions/runner-images/issues/3885
+    jest.setTimeout(10 * 1000)
+  }
 
   describe('version', () => {
     it('can be called', async () => {
