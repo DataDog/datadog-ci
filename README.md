@@ -146,7 +146,7 @@ To release a new version of `datadog-ci`:
 1. Create a new branch for the version upgrade.
 2. Update the `package.json` version, commit the change `vX.X.X` and tag it with `git tag vX.X.X`, based on the version you are upgrading to. You may refer to [Semantic Versioning](https://semver.org/#summary) to determine what level to increment.
 3. Push the branch along with the tag to the upstream (GitHub) with `git push --tags origin name-of-the-branch`, create a Pull Request with the changes introduced in the description details, and get at least one approval. For example, see this [sample pull request](https://github.com/DataDog/datadog-ci/pull/78).
-4. Merge the Pull Request **with the rebase and merge strategy**.
+4. Once you've received at least one approval, merge the Pull Request **with the "Create a merge commit" strategy**.
 5. Create a GitHub Release from the [Tags page](https://github.com/DataDog/datadog-ci/tags) with the description of changes introduced.
 6. Once the release has been created, a GitHub Action publishes the package. Make sure the job succeeds.
 7. When the package has been published, go to the [Datadog GitLab pipelines](https://gitlab.ddbuild.io/DataDog/datadog-ci/-/pipelines), find the pipeline for your tag, and start the `build` stage to run the Docker image build jobs. Once the jobs pass, the `release` stage automatically triggers. Make sure all the jobs succeed.
@@ -166,12 +166,12 @@ To create a pre-release or releasing in a different channel:
 
 1. Create a new branch for the channel you want to release to (`alpha`, `beta`, and more).
 2. Create a PR for your feature branch with the channel branch as a base.
-3. Pick a version following this format: `version-channel`. For example, `0.10.9-alpha`, `1-beta`, and more.
+3. Pick a version following this format: `<version>-<channel>`. For example, `0.10.9-alpha`, `1-beta`, and more.
 4. Update the `version` field in `package.json`.
-5. Once you've received at least one approval, merge the Pull Request **with the rebase and merge strategy**.
+5. Once you've received at least one approval, merge the Pull Request **with the "Create a merge commit" strategy**.
 6. Create a [GitHub Release](https://github.com/DataDog/datadog-ci/releases/new?target=alpha&tag=0.10.9-alpha&prerelease=1&title=Alpha+prerelease):
    - Target the channel branch.
-   - Pick a tag based on your version `version-channel`.
+   - Pick a tag based on your version `<version>-<channel>`.
    - Check the `This is a pre-release` checkbox.
 7. Publish the release and an action publishes it on npm.
 
