@@ -1,6 +1,5 @@
 import fs from 'fs'
 import path from 'path'
-import {Writable} from 'stream'
 import {createGzip} from 'zlib'
 
 import type {AxiosPromise, AxiosRequestConfig, AxiosResponse} from 'axios'
@@ -12,7 +11,6 @@ import {CI_JOB_URL, CI_PIPELINE_URL, GIT_SHA} from '../../helpers/tags'
 import {getRequestBuilder} from '../../helpers/utils'
 
 import {Payload} from './interfaces'
-import {renderUpload} from './renderer'
 
 // Dependency follows-redirects sets a default maxBodyLength of 10 MB https://github.com/follow-redirects/follow-redirects/blob/b774a77e582b97174813b3eaeb86931becba69db/index.js#L391
 // We don't want any hard limit enforced by the CLI, the backend will enforce a max size by returning 413 errors.
@@ -23,11 +21,9 @@ export const intakeUrl = `https://cireport-intake.${datadogSite}`
 export const apiUrl = `https://api.${datadogSite}`
 
 export const uploadJUnitXML = (request: (args: AxiosRequestConfig) => AxiosPromise<AxiosResponse>) => async (
-  jUnitXML: Payload,
-  write: Writable['write']
+  jUnitXML: Payload
 ) => {
   const form = new FormData()
-  write(renderUpload(jUnitXML))
 
   let fileName
   try {

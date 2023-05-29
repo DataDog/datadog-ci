@@ -48,7 +48,7 @@ export const renderSuccessfulGitDBSync = (dryRun: boolean, elapsed: number) => {
 export const renderSuccessfulCommand = (spanTags: SpanTags, service: string, env?: string) => {
   let fullStr = ''
   fullStr += chalk.green(
-    '=================================================================================================\n'
+    '\n=================================================================================================\n'
   )
   fullStr += chalk.green('* View detailed reports on Datadog (they can take a few minutes to become available)\n')
 
