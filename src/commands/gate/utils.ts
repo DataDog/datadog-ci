@@ -22,7 +22,9 @@ export const parseScope = (scope: string[]) => {
       const value = keyValuePair.substring(firstColon + 1)
 
       if (acc.hasOwnProperty(key)) {
-        acc[key].push(value)
+        if (!acc[key].includes(value)) {
+          acc[key].push(value)
+        }
       } else {
         acc[key] = [value]
       }

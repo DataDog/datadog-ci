@@ -18,4 +18,10 @@ describe('parseScope', () => {
       team: ['backend', 'frontend'],
     })
   })
+  test('should remove duplicated values', () => {
+    expect(parseScope(['key1:value1', 'team:backend', 'team:backend'])).toEqual({
+      key1: ['value1'],
+      team: ['backend'],
+    })
+  })
 })
