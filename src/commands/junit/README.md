@@ -32,6 +32,7 @@ datadog-ci junit upload --service my-service --tags key1:value1 --tags key2:valu
 - `--logs` (default: `false`): it will enable collecting logs from the content in the XML reports.
 - `--skip-git-metadata-upload` (default: `false`): it will run the command without uploading git metadata.
 - `--git-repository-url` is a string with the repository URL to retrieve git metadata from. If this is missing, the URL is retrieved from the local git repository.
+- `--verbose` (default: `false`): it will add extra verbosity to the output of the command.
 
 #### Environment variables
 

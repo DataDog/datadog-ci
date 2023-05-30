@@ -10,12 +10,12 @@ export enum LogLevel {
 export class Logger {
   private loglevel: LogLevel
   private writeMessage: (s: string) => void
-  private shouldIncludeTime: boolean
+  private shouldIncludeTimestamp: boolean
 
-  constructor(writeMessage: (s: string) => void, loglevel: LogLevel, shouldIncludeTime?: boolean) {
-    this.shouldIncludeTime = shouldIncludeTime ?? false
+  constructor(writeMessage: (s: string) => void, loglevel: LogLevel, shouldIncludeTimestamp?: boolean) {
+    this.shouldIncludeTimestamp = shouldIncludeTimestamp ?? false
     this.writeMessage = (s: string) => {
-      const message = this.shouldIncludeTime ? `${new Date().toISOString()}: ${s}` : s
+      const message = this.shouldIncludeTimestamp ? `${new Date().toISOString()}: ${s}` : s
 
       return writeMessage(message)
     }
@@ -26,8 +26,8 @@ export class Logger {
     this.loglevel = newLogLevel
   }
 
-  public setShouldIncludeTime(newShouldIncludeTime: boolean) {
-    this.shouldIncludeTime = newShouldIncludeTime
+  public setShouldIncludeTime(newShouldIncludeTimestamp: boolean) {
+    this.shouldIncludeTimestamp = newShouldIncludeTimestamp
   }
 
   public error(s: string) {

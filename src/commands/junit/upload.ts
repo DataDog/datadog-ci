@@ -91,6 +91,10 @@ export class UploadJUnitXMLCommand extends Command {
         'Upload all jUnit XML test report files in current directory adding a custom tag from property with xpath',
         "datadog-ci junit upload --service my-service --xpath-tag custom_tag=/testcase/..//property[@name='property-name'] .",
       ],
+      [
+        'Upload all jUnit XML test report files in current directory with extra verbosity',
+        'datadog-ci junit upload --verbose --service my-service .',
+      ],
     ],
   })
 
