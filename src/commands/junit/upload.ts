@@ -179,7 +179,10 @@ export class UploadJUnitXMLCommand extends Command {
         const requestBuilder = getRequestBuilder({baseUrl: apiUrl, apiKey: this.config.apiKey!})
         try {
           this.logger.info(`${this.dryRun ? '[DRYRUN] ' : ''}Syncing git metadata...\n`)
-          const elapsed = await timedExecAsync(this.uploadToGitDB.bind(this), {requestBuilder})
+          let elapsed = 0
+          if (!this.dryRun) {
+            elapsed = await timedExecAsync(this.uploadToGitDB.bind(this), {requestBuilder})
+          }
           this.logger.info(renderSuccessfulGitDBSync(this.dryRun, elapsed))
         } catch (err) {
           this.logger.info(renderFailedGitDBSync(err))
@@ -187,6 +190,8 @@ export class UploadJUnitXMLCommand extends Command {
       } else {
         this.logger.info(`${this.dryRun ? '[DRYRUN] ' : ''}Not syncing git metadata (not a git repo)\n`)
       }
+    } else {
+      this.logger.info('Not syncing git metadata (skip git upload flag detected)\n')
     }
 
     this.logger.info(renderSuccessfulCommand(spanTags, this.service, this.config.env))

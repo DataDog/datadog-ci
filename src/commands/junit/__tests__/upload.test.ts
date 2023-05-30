@@ -339,7 +339,7 @@ describe('execute', () => {
     const {context, code} = await runCLI([process.cwd() + '/src/commands/junit/__tests__/fixtures/single_file.xml'])
     const output = context.stdout.toString().split(os.EOL)
     expect(code).toBe(0)
-    expect(output[5]).toContain('Syncing git metadata')
+    expect(output[7]).toContain('Syncing git metadata')
   })
 
   test('without git metadata', async () => {
@@ -349,7 +349,7 @@ describe('execute', () => {
     ])
     const output = context.stdout.toString().split(os.EOL)
     expect(code).toBe(0)
-    expect(output[5]).not.toContain('Syncing git metadata')
+    expect(output[7]).toContain('Not syncing git metadata (skip git upload flag detected)')
   })
 })
 
