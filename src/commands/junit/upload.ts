@@ -178,7 +178,7 @@ export class UploadJUnitXMLCommand extends Command {
       if (await isGitRepo()) {
         const requestBuilder = getRequestBuilder({baseUrl: apiUrl, apiKey: this.config.apiKey!})
         try {
-          this.logger.info(`${this.dryRun ? '[DRYRUN] ' : ''}Syncing git metadata...\n`)
+          this.logger.info(`${this.dryRun ? '[DRYRUN] ' : ''}Syncing git metadata...`)
           let elapsed = 0
           if (!this.dryRun) {
             elapsed = await timedExecAsync(this.uploadToGitDB.bind(this), {requestBuilder})
@@ -188,13 +188,15 @@ export class UploadJUnitXMLCommand extends Command {
           this.logger.info(renderFailedGitDBSync(err))
         }
       } else {
-        this.logger.info(`${this.dryRun ? '[DRYRUN] ' : ''}Not syncing git metadata (not a git repo)\n`)
+        this.logger.info(`${this.dryRun ? '[DRYRUN] ' : ''}Not syncing git metadata (not a git repo)`)
       }
     } else {
-      this.logger.info('Not syncing git metadata (skip git upload flag detected)\n')
+      this.logger.debug('Not syncing git metadata (skip git upload flag detected)')
     }
 
-    this.logger.info(renderSuccessfulCommand(spanTags, this.service, this.config.env))
+    if (!this.dryRun) {
+      this.context.stdout.write(renderSuccessfulCommand(spanTags, this.service, this.config.env))
+    }
   }
 
   private async uploadToGitDB(opts: {requestBuilder: RequestBuilder}) {
@@ -204,7 +206,7 @@ export class UploadJUnitXMLCommand extends Command {
   private getApiHelper(): APIHelper {
     if (!this.config.apiKey) {
       this.logger.error(
-        `Neither ${chalk.red.bold('DATADOG_API_KEY')} nor ${chalk.red.bold('DD_API_KEY')} is in your environment.\n`
+        `Neither ${chalk.red.bold('DATADOG_API_KEY')} nor ${chalk.red.bold('DD_API_KEY')} is in your environment.`
       )
       throw new Error('API key is missing')
     }

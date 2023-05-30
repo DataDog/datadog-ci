@@ -36,19 +36,17 @@ export const renderRetriedUpload = (payload: Payload, errorMessage: string, atte
 }
 
 export const renderSuccessfulUpload = (dryRun: boolean, fileCount: number, duration: number) => {
-  return chalk.green(
-    `${dryRun ? '[DRYRUN] ' : ''}${ICONS.SUCCESS} Uploaded ${fileCount} files in ${duration} seconds.\n`
-  )
+  return chalk.green(`${dryRun ? '[DRYRUN] ' : ''}${ICONS.SUCCESS} Uploaded ${fileCount} files in ${duration} seconds.`)
 }
 
 export const renderSuccessfulGitDBSync = (dryRun: boolean, elapsed: number) => {
-  return chalk.green(`${dryRun ? '[DRYRUN] ' : ''}${ICONS.SUCCESS} Synced git metadata in ${elapsed} seconds.\n`)
+  return chalk.green(`${dryRun ? '[DRYRUN] ' : ''}${ICONS.SUCCESS} Synced git metadata in ${elapsed} seconds.`)
 }
 
 export const renderSuccessfulCommand = (spanTags: SpanTags, service: string, env?: string) => {
   let fullStr = ''
   fullStr += chalk.green(
-    '\n=================================================================================================\n'
+    '=================================================================================================\n'
   )
   fullStr += chalk.green('* View detailed reports on Datadog (they can take a few minutes to become available)\n')
 
@@ -72,7 +70,7 @@ export const renderSuccessfulCommand = (spanTags: SpanTags, service: string, env
 
 export const renderDryRunUpload = (payload: Payload): string => `[DRYRUN] ${renderUpload(payload)}`
 
-export const renderUpload = (payload: Payload): string => `Uploading jUnit XML test report file in ${payload.xmlPath}\n`
+export const renderUpload = (payload: Payload): string => `Uploading jUnit XML test report file in ${payload.xmlPath}`
 
 export const renderCommandInfo = (basePaths: string[], service: string, concurrency: number, dryRun: boolean) => {
   let fullStr = ''
@@ -85,7 +83,7 @@ export const renderCommandInfo = (basePaths: string[], service: string, concurre
   } else {
     fullStr += chalk.green(`Will look for jUnit XML files in ${basePaths.join(', ')}\n`)
   }
-  fullStr += chalk.green(`service: ${service}\n`)
+  fullStr += chalk.green(`service: ${service}`)
 
   return fullStr
 }
