@@ -72,11 +72,9 @@ export const renderGateEvaluationInput = (evaluateRequest: Payload): string => {
   fullStr += `Repository: ${evaluateRequest.spanTags[GIT_REPOSITORY_URL]}\n`
   fullStr += `Branch: ${evaluateRequest.spanTags[GIT_BRANCH]}\n`
 
-  for (const scopeKey in evaluateRequest.userScope) {
-    if (evaluateRequest.userScope.hasOwnProperty(scopeKey)) {
-      const scopeValue = evaluateRequest.userScope[scopeKey].join(' OR ')
-      fullStr += `${scopeKey}: ${scopeValue}\n`
-    }
+  for (const [scopeKey, scopeValue] of Object.entries(evaluateRequest.userScope)) {
+    const valueString = scopeValue.join(' OR ')
+    fullStr += `${scopeKey}: ${valueString}\n`
   }
 
   fullStr += '\n'
