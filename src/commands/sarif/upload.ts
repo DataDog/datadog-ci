@@ -28,6 +28,7 @@ import {
   renderRetriedUpload,
   renderFailedUpload,
   renderInvalidFile,
+  renderFilesNotFound,
 } from './renderer'
 import {getBaseIntakeUrl} from './utils'
 
@@ -115,12 +116,19 @@ export class UploadSarifReportCommand extends Command {
     // Normalizing the basePath to resolve .. and .
     // Always using the posix version to avoid \ on Windows.
     this.basePaths = this.basePaths.map((basePath) => path.posix.normalize(basePath))
-    this.context.stdout.write(
-      renderCommandInfo(this.basePaths, this.service, this.maxConcurrency, this.dryRun, this.noVerify)
-    )
 
     const spanTags = await this.getSpanTags()
     const payloads = await this.getMatchingSarifReports(spanTags)
+
+    if (payloads.length === 0) {
+      this.context.stdout.write(renderFilesNotFound(this.basePaths, this.service))
+
+      return 1
+    }
+
+    this.context.stdout.write(
+      renderCommandInfo(this.basePaths, this.service, this.maxConcurrency, this.dryRun, this.noVerify)
+    )
     const upload = (p: Payload) => this.uploadSarifReport(api, p)
 
     const initialTime = new Date().getTime()

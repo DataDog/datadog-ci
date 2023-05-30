@@ -212,46 +212,61 @@ describe('execute', () => {
     return {context, code}
   }
   test('relative path with double dots', async () => {
-    const {context, code} = await runCLI(['./src/commands/sarif/__tests__/doesnotexist/../fixtures'])
+    const {context, code} = await runCLI(['./src/commands/sarif/__tests__/doesnotexist/../fixtures/subfolder'])
     const output = context.stdout.toString().split(os.EOL)
     expect(code).toBe(0)
     checkConsoleOutput(output, {
-      basePaths: ['src/commands/sarif/__tests__/fixtures'],
+      basePaths: ['src/commands/sarif/__tests__/fixtures/subfolder'],
       concurrency: 20,
       service: 'test-service',
     })
   })
   test('multiple paths', async () => {
-    const {context, code} = await runCLI(['./src/commands/sarif/first/', './src/commands/sarif/second/'])
+    const {context, code} = await runCLI([
+      './src/commands/sarif/__tests__/fixtures/subfolder/',
+      './src/commands/sarif/__tests__/fixtures/another_subfolder/',
+    ])
     const output = context.stdout.toString().split(os.EOL)
     expect(code).toBe(0)
     checkConsoleOutput(output, {
-      basePaths: ['src/commands/sarif/first/', 'src/commands/sarif/second/'],
+      basePaths: [
+        'src/commands/sarif/__tests__/fixtures/subfolder/',
+        'src/commands/sarif/__tests__/fixtures/another_subfolder/',
+      ],
       concurrency: 20,
       service: 'test-service',
     })
   })
 
   test('absolute path', async () => {
-    const {context, code} = await runCLI([process.cwd() + '/src/commands/sarif/__tests__/fixtures'])
+    const {context, code} = await runCLI([process.cwd() + '/src/commands/sarif/__tests__/fixtures/subfolder'])
     const output = context.stdout.toString().split(os.EOL)
     expect(code).toBe(0)
     checkConsoleOutput(output, {
-      basePaths: [`${process.cwd()}/src/commands/sarif/__tests__/fixtures`],
+      basePaths: [`${process.cwd()}/src/commands/sarif/__tests__/fixtures/subfolder`],
       concurrency: 20,
       service: 'test-service',
     })
   })
 
   test('single file', async () => {
-    const {context, code} = await runCLI([process.cwd() + '/src/commands/sarif/__tests__/fixtures/single_file.sarif'])
+    const {context, code} = await runCLI([process.cwd() + '/src/commands/sarif/__tests__/fixtures/valid-results.sarif'])
     const output = context.stdout.toString().split(os.EOL)
-    const path = `${process.cwd()}/src/commands/sarif/__tests__/fixtures/single_file.sarif`
+    const path = `${process.cwd()}/src/commands/sarif/__tests__/fixtures/valid-results.sarif`
     expect(code).toBe(0)
     expect(output[0]).toContain('DRY-RUN MODE ENABLED. WILL NOT UPLOAD SARIF REPORT')
     expect(output[1]).toContain('Starting upload with concurrency 20.')
     expect(output[2]).toContain(`Will upload SARIF report file ${path}`)
     expect(output[3]).toContain('service: test-service')
+  })
+
+  test('not found file', async () => {
+    const {context, code} = await runCLI([process.cwd() + '/src/commands/sarif/__tests__/fixtures/not-found.sarif'])
+    const output = context.stdout.toString().split(os.EOL)
+    const path = `${process.cwd()}/src/commands/sarif/__tests__/fixtures/not-found.sarif`
+    expect(code).toBe(1)
+    expect(output[0]).toContain(`Cannot find valid SARIF report files to upload in ${path} for service test-service`)
+    expect(output[1]).toContain('Check the files exist and are valid.')
   })
 })
 
