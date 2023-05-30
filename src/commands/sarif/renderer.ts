@@ -14,9 +14,14 @@ const ICONS = {
 }
 
 export const renderInvalidFile = (sarifReport: string, errorMessage: string) => {
+  let fullStr = ''
   const reportPath = `[${chalk.bold.dim(sarifReport)}]`
 
-  return chalk.red(`${ICONS.FAILED} Invalid SARIF report file ${reportPath}: ${errorMessage}\n`)
+  fullStr += chalk.red(`${ICONS.FAILED} Invalid SARIF report file ${reportPath}.\n`)
+  fullStr += chalk.red(`The report is not a valid JSON or is not compliant with the SARIF json schema v2.1.0.\n`)
+  fullStr += chalk.red(`Errors: ${errorMessage}\n`)
+
+  return fullStr
 }
 
 export const renderFailedUpload = (sarifReport: Payload, errorMessage: string) => {
@@ -74,6 +79,18 @@ export const renderCommandInfo = (
     fullStr += chalk.green(`Will look for SARIF report files in ${basePaths.join(', ')}\n`)
   }
   fullStr += chalk.green(`service: ${service}\n`)
+
+  return fullStr
+}
+
+export const renderFilesNotFound = (basePaths: string[], service: string) => {
+  let fullStr = ''
+  const paths = basePaths.length === 1 && !!path.extname(basePaths[0]) ? basePaths[0] : basePaths.join(', ')
+
+  fullStr += chalk.yellow(
+    `${ICONS.WARNING} Cannot find valid SARIF report files to upload in ${paths} for service ${service}.\n`
+  )
+  fullStr += chalk.yellow(`Check the files exist and are valid.\n`)
 
   return fullStr
 }
