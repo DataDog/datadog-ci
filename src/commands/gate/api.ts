@@ -14,6 +14,7 @@ export const evaluateGateRules = (
       type: 'gate_evaluation',
       attributes: {
         tags: evaluateRequest.spanTags,
+        user_scope: evaluateRequest.userScope,
       },
     },
   })
