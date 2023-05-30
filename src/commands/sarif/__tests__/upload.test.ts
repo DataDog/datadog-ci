@@ -260,13 +260,13 @@ describe('execute', () => {
     expect(output[3]).toContain('service: test-service')
   })
 
-  test('not-found file', async () => {
+  test('not found file', async () => {
     const {context, code} = await runCLI([process.cwd() + '/src/commands/sarif/__tests__/fixtures/not-found.sarif'])
     const output = context.stdout.toString().split(os.EOL)
     const path = `${process.cwd()}/src/commands/sarif/__tests__/fixtures/not-found.sarif`
     expect(code).toBe(1)
     expect(output[0]).toContain(`Cannot find valid SARIF report files to upload in ${path} for service test-service`)
-    expect(output[1]).toContain(`Check the files exist and are valid.`)
+    expect(output[1]).toContain('Check the files exist and are valid.')
   })
 })
 
