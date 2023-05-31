@@ -34,6 +34,7 @@ import {
   renderSuccessfulCommand,
   renderSuccessfulGitDBSync,
   renderSuccessfulUpload,
+  renderUpload,
 } from './renderer'
 
 const errorCodesStopUpload = [400, 403]
@@ -90,6 +91,10 @@ export class UploadJUnitXMLCommand extends Command {
         'Upload all jUnit XML test report files in current directory adding a custom tag from property with xpath',
         "datadog-ci junit upload --service my-service --xpath-tag custom_tag=/testcase/..//property[@name='property-name'] .",
       ],
+      [
+        'Upload all jUnit XML test report files in current directory with extra verbosity',
+        'datadog-ci junit upload --verbose --service my-service .',
+      ],
     ],
   })
 
@@ -100,6 +105,7 @@ export class UploadJUnitXMLCommand extends Command {
     envVarTags: process.env.DD_TAGS,
     envVarMetrics: process.env.DD_METRICS,
   }
+  private verbose = false
   private dryRun = false
   private env?: string
   private logs = false
@@ -111,11 +117,11 @@ export class UploadJUnitXMLCommand extends Command {
   private xpathTags?: Record<string, string>
   private gitRepositoryURL?: string
   private skipGitMetadataUpload?: boolean
-  private logger: Logger = new Logger((s: string) => {
-    this.context.stdout.write(s)
-  }, LogLevel.INFO)
+  private logger: Logger = new Logger((s: string) => this.context.stdout.write(s), LogLevel.INFO)
 
   public async execute() {
+    this.logger.setLogLevel(this.verbose ? LogLevel.DEBUG : LogLevel.INFO)
+    this.logger.setShouldIncludeTime(this.verbose)
     if (!this.service) {
       this.service = process.env.DD_SERVICE
     }
@@ -155,7 +161,7 @@ export class UploadJUnitXMLCommand extends Command {
     // Normalizing the basePath to resolve .. and .
     // Always using the posix version to avoid \ on Windows.
     this.basePaths = this.basePaths.map((basePath) => path.posix.normalize(basePath))
-    this.context.stdout.write(renderCommandInfo(this.basePaths, this.service, this.maxConcurrency, this.dryRun))
+    this.logger.info(renderCommandInfo(this.basePaths, this.service, this.maxConcurrency, this.dryRun))
 
     const spanTags = await this.getSpanTags()
     const payloads = await this.getMatchingJUnitXMLFiles(spanTags)
@@ -166,24 +172,31 @@ export class UploadJUnitXMLCommand extends Command {
     await asyncPool(this.maxConcurrency, payloads, upload)
 
     const totalTimeSeconds = (Date.now() - initialTime) / 1000
-    this.context.stdout.write(renderSuccessfulUpload(this.dryRun, payloads.length, totalTimeSeconds))
+    this.logger.info(renderSuccessfulUpload(this.dryRun, payloads.length, totalTimeSeconds))
 
     if (!this.skipGitMetadataUpload) {
       if (await isGitRepo()) {
         const requestBuilder = getRequestBuilder({baseUrl: apiUrl, apiKey: this.config.apiKey!})
         try {
-          this.context.stdout.write(`${this.dryRun ? '[DRYRUN] ' : ''}Syncing git metadata...\n`)
-          const elapsed = await timedExecAsync(this.uploadToGitDB.bind(this), {requestBuilder})
-          this.context.stdout.write(renderSuccessfulGitDBSync(this.dryRun, elapsed))
+          this.logger.info(`${this.dryRun ? '[DRYRUN] ' : ''}Syncing git metadata...`)
+          let elapsed = 0
+          if (!this.dryRun) {
+            elapsed = await timedExecAsync(this.uploadToGitDB.bind(this), {requestBuilder})
+          }
+          this.logger.info(renderSuccessfulGitDBSync(this.dryRun, elapsed))
         } catch (err) {
-          this.context.stdout.write(renderFailedGitDBSync(err))
+          this.logger.info(renderFailedGitDBSync(err))
         }
       } else {
-        this.context.stdout.write(`${this.dryRun ? '[DRYRUN] ' : ''}Not syncing git metadata (not a git repo)\n`)
+        this.logger.info(`${this.dryRun ? '[DRYRUN] ' : ''}Not syncing git metadata (not a git repo)`)
       }
+    } else {
+      this.logger.debug('Not syncing git metadata (skip git upload flag detected)')
     }
 
-    this.context.stdout.write(renderSuccessfulCommand(spanTags, this.service, this.config.env))
+    if (!this.dryRun) {
+      this.context.stdout.write(renderSuccessfulCommand(spanTags, this.service, this.config.env))
+    }
   }
 
   private async uploadToGitDB(opts: {requestBuilder: RequestBuilder}) {
@@ -192,8 +205,8 @@ export class UploadJUnitXMLCommand extends Command {
 
   private getApiHelper(): APIHelper {
     if (!this.config.apiKey) {
-      this.context.stdout.write(
-        `Neither ${chalk.red.bold('DATADOG_API_KEY')} nor ${chalk.red.bold('DD_API_KEY')} is in your environment.\n`
+      this.logger.error(
+        `Neither ${chalk.red.bold('DATADOG_API_KEY')} nor ${chalk.red.bold('DD_API_KEY')} is in your environment.`
       )
       throw new Error('API key is missing')
     }
@@ -273,13 +286,14 @@ export class UploadJUnitXMLCommand extends Command {
 
   private async uploadJUnitXML(api: APIHelper, jUnitXML: Payload) {
     if (this.dryRun) {
-      this.context.stdout.write(renderDryRunUpload(jUnitXML))
+      this.logger.info(renderDryRunUpload(jUnitXML))
 
       return
     }
 
     try {
-      await retryRequest(() => api.uploadJUnitXML(jUnitXML, this.context.stdout.write.bind(this.context.stdout)), {
+      this.logger.info(renderUpload(jUnitXML))
+      await retryRequest(() => api.uploadJUnitXML(jUnitXML), {
         onRetry: (e, attempt) => {
           this.context.stderr.write(renderRetriedUpload(jUnitXML, e.message, attempt))
         },
@@ -310,3 +324,4 @@ UploadJUnitXMLCommand.addOption('logs', Command.Boolean('--logs'))
 UploadJUnitXMLCommand.addOption('rawXPathTags', Command.Array('--xpath-tag'))
 UploadJUnitXMLCommand.addOption('skipGitMetadataUpload', Command.Boolean('--skip-git-metadata-upload'))
 UploadJUnitXMLCommand.addOption('gitRepositoryURL', Command.String('--git-repository-url'))
+UploadJUnitXMLCommand.addOption('verbose', Command.Boolean('--verbose'))

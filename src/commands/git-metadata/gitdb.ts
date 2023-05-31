@@ -118,7 +118,7 @@ const getLatestLocalCommits = async (git: simpleGit.SimpleGit) => {
 const unshallowRepositoryWhenNeeded = async (log: Logger, git: simpleGit.SimpleGit) => {
   const isShallow = (await git.revparse('--is-shallow-repository')) === 'true'
   if (isShallow) {
-    log.info('[unshallow] Git repository is a shallow clone., unshallowing it...')
+    log.info('[unshallow] Git repository is a shallow clone, unshallowing it...')
     log.info('[unshallow] Setting remote.origin.partialclonefilter to "blob:none" to avoid fetching file content')
     await git.addConfig('remote.origin.partialclonefilter', 'blob:none')
     log.info(`[unshallow] Running git fetch --shallow-since="${MAX_HISTORY.oldestCommits}" --update-shallow --refetch`)
