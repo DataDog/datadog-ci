@@ -1,8 +1,8 @@
 import chalk from 'chalk'
 
-import {SpanTags} from '../../helpers/interfaces'
+import {GIT_BRANCH, GIT_REPOSITORY_URL} from '../../helpers/tags'
 
-import {EvaluationResponse, RuleEvaluation} from './interfaces'
+import {EvaluationResponse, Payload, RuleEvaluation} from './interfaces'
 
 const ICONS = {
   FAILED: '❌',
@@ -67,11 +67,16 @@ export const renderDryRunEvaluation = (): string => {
   return chalk.yellow('Dry run mode is enabled. Not evaluating the rules.')
 }
 
-export const renderGateEvaluationInput = (spanTags: SpanTags): string => {
+export const renderGateEvaluationInput = (evaluateRequest: Payload): string => {
   let fullStr = chalk.bold(`${ICONS.INFO} Evaluating rules matching the following information:\n`)
-  fullStr += `Repository: ${spanTags['git.repository_url']}\n`
-  fullStr += `Branch: ${spanTags['git.branch']}\n`
-  fullStr += `Pipeline Name: ${spanTags['ci.pipeline.name']}\n`
+  fullStr += `Repository: ${evaluateRequest.spanTags[GIT_REPOSITORY_URL]}\n`
+  fullStr += `Branch: ${evaluateRequest.spanTags[GIT_BRANCH]}\n`
+
+  for (const [scopeKey, scopeValue] of Object.entries(evaluateRequest.userScope)) {
+    const valueString = scopeValue.join(' OR ')
+    fullStr += `${scopeKey}: ${valueString}\n`
+  }
+
   fullStr += '\n'
 
   return fullStr

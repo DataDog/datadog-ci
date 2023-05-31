@@ -6,6 +6,7 @@ import {SpanTags} from '../../helpers/interfaces'
 
 export interface Payload {
   spanTags: SpanTags
+  userScope: Record<string, string[]>
 }
 
 export interface EvaluationResponsePayload {

@@ -4,6 +4,7 @@ import {Command} from 'clipanion'
 import {getCISpanTags} from '../../helpers/ci'
 import {getGitMetadata} from '../../helpers/git/format-git-span-data'
 import {SpanTags} from '../../helpers/interfaces'
+import {parseTags} from '../../helpers/tags'
 import {getUserGitSpanTags} from '../../helpers/user-provided-git'
 
 import {apiConstructor} from './api'
@@ -14,7 +15,7 @@ import {
   renderGateEvaluationInput,
   renderGateEvaluationError,
 } from './renderer'
-import {getBaseIntakeUrl} from './utils'
+import {getBaseIntakeUrl, parseScope} from './utils'
 
 export class GateEvaluateCommand extends Command {
   // TODO add usage
@@ -22,16 +23,22 @@ export class GateEvaluateCommand extends Command {
   private config = {
     apiKey: process.env.DATADOG_API_KEY || process.env.DD_API_KEY,
     appKey: process.env.DATADOG_APP_KEY,
+    envVarTags: process.env.DD_TAGS,
   }
 
   private dryRun = false
   private failOnEmpty = false
+  private userScope?: string[]
+  private tags?: string[]
 
   public async execute() {
     const api = this.getApiHelper()
     const spanTags = await this.getSpanTags()
+    const userScope = this.userScope ? parseScope(this.userScope) : {}
+
     const payload = {
       spanTags,
+      userScope,
     }
 
     return this.evaluateRules(api, payload)
@@ -58,15 +65,20 @@ export class GateEvaluateCommand extends Command {
     const gitSpanTags = await getGitMetadata()
     const userGitSpanTags = getUserGitSpanTags()
 
+    const envVarTags = this.config.envVarTags ? parseTags(this.config.envVarTags.split(',')) : {}
+    const cliTags = this.tags ? parseTags(this.tags) : {}
+
     return {
       ...gitSpanTags,
       ...ciSpanTags,
       ...userGitSpanTags,
+      ...cliTags,
+      ...envVarTags,
     }
   }
 
   private async evaluateRules(api: APIHelper, evaluateRequest: Payload): Promise<number> {
-    this.context.stdout.write(renderGateEvaluationInput(evaluateRequest.spanTags))
+    this.context.stdout.write(renderGateEvaluationInput(evaluateRequest))
     if (this.dryRun) {
       this.context.stdout.write(renderDryRunEvaluation())
 
@@ -101,3 +113,5 @@ export class GateEvaluateCommand extends Command {
 GateEvaluateCommand.addPath('gate', 'evaluate')
 GateEvaluateCommand.addOption('dryRun', Command.Boolean('--dry-run'))
 GateEvaluateCommand.addOption('failOnEmpty', Command.Boolean('--fail-on-empty'))
+GateEvaluateCommand.addOption('userScope', Command.Array('--scope'))
+GateEvaluateCommand.addOption('tags', Command.Array('--tags'))
