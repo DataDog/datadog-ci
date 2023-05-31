@@ -215,7 +215,7 @@ describe('instrument', () => {
 
     test('calculates an update request with a lambda library, extension, and DATADOG_KMS_API_KEY', async () => {
       process.env[CI_KMS_API_KEY_ENV_VAR] = '5678'
-      const runtime = 'python3.6'
+      const runtime = 'python3.9'
       const config = {
         FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world',
         Handler: 'index.handler',
@@ -248,7 +248,7 @@ describe('instrument', () => {
           "Handler": "datadog_lambda.handler.handler",
           "Layers": Array [
             "arn:aws:lambda:sa-east-1:123456789012:layer:Datadog-Extension:6",
-            "arn:aws:lambda:sa-east-1:123456789012:layer:Datadog-Python36:5",
+            "arn:aws:lambda:sa-east-1:123456789012:layer:Datadog-Python39:5",
           ],
         }
       `)
@@ -320,7 +320,7 @@ describe('instrument', () => {
     })
 
     test('by default calculates an update request with DATADOG_SITE being set to datadoghq.com', async () => {
-      const runtime = 'python3.6'
+      const runtime = 'python3.9'
       const config = {
         FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world',
         Handler: 'index.handler',
@@ -366,7 +366,7 @@ describe('instrument', () => {
         tracingEnabled: false,
       }
       const region = 'sa-east-1'
-      const runtime = 'python3.6'
+      const runtime = 'python3.9'
 
       const updateRequest = await calculateUpdateRequest(config, settings, region, runtime)
       expect(updateRequest).toMatchInlineSnapshot(`
@@ -401,7 +401,7 @@ describe('instrument', () => {
         tracingEnabled: false,
       }
       const region = 'us-east-1'
-      const runtime = 'python3.6'
+      const runtime = 'python3.9'
       let error
       try {
         await calculateUpdateRequest(config, settings, region, runtime)
@@ -430,7 +430,7 @@ describe('instrument', () => {
         tracingEnabled: false,
       }
       const region = 'us-east-1'
-      const runtime = 'python3.6'
+      const runtime = 'python3.9'
       let error
       try {
         await calculateUpdateRequest(config, settings, region, runtime)
