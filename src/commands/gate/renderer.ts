@@ -86,6 +86,7 @@ export const renderGateEvaluationInput = (evaluateRequest: Payload): string => {
 export const renderGateEvaluationError = (error: any): string => {
   if (error.response && is4xxError(error)) {
     const errorMessage = error.response.data.errors[0].detail
+
     return chalk.red(`ERROR: Could not evaluate the rules. Error is "${errorMessage}".`)
   }
 
@@ -102,7 +103,8 @@ export const renderGateEvaluationError = (error: any): string => {
 
 export const renderEvaluationRetry = (attempt: number, error: any): string => {
   if (is5xxError(error)) {
-    let errorStatus = getStatus(error);
+    const errorStatus = getStatus(error)
+
     return chalk.yellow(`[attempt ${attempt}] Gate evaluation failed with status code ${errorStatus}, retrying.\n`)
   }
 
