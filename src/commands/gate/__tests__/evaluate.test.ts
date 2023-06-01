@@ -22,7 +22,7 @@ describe('evaluate', () => {
       expect(write.mock.calls[0][0]).toContain('DATADOG_APP_KEY')
     })
   })
-  describe('handleEvaluationResponse', () => {
+  describe('handleSuccessfulEvaluation', () => {
     test('should fail the command if gate evaluation failed', () => {
       const write = jest.fn()
       const command = new GateEvaluateCommand()
@@ -32,7 +32,7 @@ describe('evaluate', () => {
         status: 'failed',
         rule_evaluations: [],
       }
-      expect(command['handleEvaluationResponse'].bind(command).call({}, response)).toEqual(1)
+      expect(command['handleSuccessfulEvaluation'].bind(command).call({}, response)).toEqual(1)
     })
     test('should pass the command if gate evaluation passed', () => {
       const write = jest.fn()
@@ -43,7 +43,7 @@ describe('evaluate', () => {
         status: 'passed',
         rule_evaluations: [],
       }
-      expect(command['handleEvaluationResponse'].bind(command).call({}, response)).toEqual(0)
+      expect(command['handleSuccessfulEvaluation'].bind(command).call({}, response)).toEqual(0)
     })
     test('should pass the command on empty evaluation status by default', () => {
       const write = jest.fn()
@@ -54,7 +54,7 @@ describe('evaluate', () => {
         status: 'empty',
         rule_evaluations: [],
       }
-      expect(command['handleEvaluationResponse'].bind(command).call({}, response)).toEqual(0)
+      expect(command['handleSuccessfulEvaluation'].bind(command).call({}, response)).toEqual(0)
       expect(write.mock.calls[0][0]).toContain('No matching rules were found in Datadog')
     })
     test('should fail the command on empty result if the override option is provided', () => {
@@ -67,8 +67,63 @@ describe('evaluate', () => {
         status: 'empty',
         rule_evaluations: [],
       }
-      expect(command['handleEvaluationResponse'].bind(command).call({}, response)).toEqual(1)
+      expect(command['handleSuccessfulEvaluation'].bind(command).call({}, response)).toEqual(1)
       expect(write.mock.calls[0][0]).toContain('No matching rules were found in Datadog')
     })
   })
+  describe('handleEvaluationError', () => {
+    test('should fail the command if the error is 4xx', () => {
+      const write = jest.fn()
+      const command = new GateEvaluateCommand()
+      command.context = {stderr: {write}} as any
+
+      let error = createError(400, "validation failure");
+      expect(command['handleEvaluationError'].bind(command).call({}, error)).toEqual(1)
+
+      let stdErrLog = write.mock.calls[0][0];
+      expect(stdErrLog).toContain('ERROR: Could not evaluate the rules. Error is "validation failure".')
+    })
+    test('should fail the command if the error is 5xx and fail-if-unavailable option is enabled', () => {
+      const write = jest.fn()
+      const command = new GateEvaluateCommand()
+      command['failIfUnavailable'] = true
+      command.context = {stderr: {write}} as any
+
+      let error = createError(500, "internal issue");
+      expect(command['handleEvaluationError'].bind(command).call({}, error)).toEqual(1)
+
+      let stdErrLog = write.mock.calls[0][0];
+      expect(stdErrLog).toContain('ERROR: Could not evaluate the rules. Status code: 500')
+      expect(stdErrLog).toContain("Use the '--fail-if-unavailable' option to fail the command in this situation.")
+      expect(stdErrLog).not.toContain('internal issue')
+    })
+    test('should pass the command if the error is 5xx and fail-if-unavailable option not enabled', () => {
+      const write = jest.fn()
+      const command = new GateEvaluateCommand()
+      command.context = {stderr: {write}} as any
+
+      let error = createError(500, "internal issue");
+      expect(command['handleEvaluationError'].bind(command).call({}, error)).toEqual(0)
+
+      let stdErrLog = write.mock.calls[0][0];
+      expect(stdErrLog).toContain('ERROR: Could not evaluate the rules. Status code: 500')
+      expect(stdErrLog).toContain("Use the '--fail-if-unavailable' option to fail the command in this situation.")
+      expect(stdErrLog).not.toContain('internal issue')
+    })
+  })
 })
+
+const createError = (statusCode: number, message: string): any => {
+  return {
+    response: {
+      status: statusCode,
+      data: {
+        errors: [
+          {
+            detail: message
+          }
+        ]
+      }
+    }
+  };
+}

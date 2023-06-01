@@ -35,3 +35,19 @@ export const parseScope = (scope: string[]) => {
     return {}
   }
 }
+
+export const getStatus = (error: any) => {
+  return error.response?.status
+}
+
+export const is4xxError = (error: any) => {
+  const status = getStatus(error)
+
+  return status && status >= 400 && status <= 499
+}
+
+export const is5xxError = (error: any) => {
+  const status = getStatus(error)
+
+  return status && status >= 500 && status <= 599
+}

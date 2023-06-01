@@ -3,6 +3,7 @@ import chalk from 'chalk'
 import {GIT_BRANCH, GIT_REPOSITORY_URL} from '../../helpers/tags'
 
 import {EvaluationResponse, Payload, RuleEvaluation} from './interfaces'
+import {getStatus, is4xxError, is5xxError} from './utils'
 
 const ICONS = {
   FAILED: '❌',
@@ -17,7 +18,7 @@ export const renderEvaluationResponse = (evaluationResponse: EvaluationResponse)
   }
 
   let fullStr = ''
-  fullStr += chalk.green('Successfully evaluated rules for the current pipeline.\n')
+  fullStr += chalk.green('Successfully evaluated all matching rules.\n')
   fullStr += `Overall result: ${renderStatus(evaluationResponse.status)}\n`
   fullStr += `Number of rules evaluated: ${chalk.bold(evaluationResponse.rule_evaluations.length)}\n`
 
@@ -83,12 +84,27 @@ export const renderGateEvaluationInput = (evaluateRequest: Payload): string => {
 }
 
 export const renderGateEvaluationError = (error: any): string => {
-  let fullStr = chalk.red('ERROR: Could not evaluate the rules.')
-  if (error.response) {
-    fullStr += chalk.red(` Error Status: ${error.response.status}`)
+  if (error.response && is4xxError(error)) {
+    const errorMessage = error.response.data.errors[0].detail
+    return chalk.red(`ERROR: Could not evaluate the rules. Error is "${errorMessage}".`)
   }
 
-  fullStr += '\n'
+  let fullStr = chalk.red('ERROR: Could not evaluate the rules.')
+  if (error.response) {
+    fullStr += chalk.red(` Status code: ${error.response.status}\n`)
+    if (is5xxError(error)) {
+      fullStr += chalk.red("Use the '--fail-if-unavailable' option to fail the command in this situation.\n")
+    }
+  }
 
   return fullStr
+}
+
+export const renderEvaluationRetry = (attempt: number, error: any): string => {
+  if (is5xxError(error)) {
+    let errorStatus = getStatus(error);
+    return chalk.yellow(`[attempt ${attempt}] Gate evaluation failed with status code ${errorStatus}, retrying.\n`)
+  }
+
+  return chalk.yellow(`[attempt ${attempt}] Gate evaluation failed, retrying.\n`)
 }

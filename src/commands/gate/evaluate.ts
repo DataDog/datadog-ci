@@ -4,6 +4,7 @@ import {Command} from 'clipanion'
 import {getCISpanTags} from '../../helpers/ci'
 import {getGitMetadata} from '../../helpers/git/format-git-span-data'
 import {SpanTags} from '../../helpers/interfaces'
+import {retryRequest} from '../../helpers/retry'
 import {parseTags} from '../../helpers/tags'
 import {getUserGitSpanTags} from '../../helpers/user-provided-git'
 
@@ -14,8 +15,9 @@ import {
   renderEvaluationResponse,
   renderGateEvaluationInput,
   renderGateEvaluationError,
+  renderEvaluationRetry,
 } from './renderer'
-import {getBaseIntakeUrl, parseScope} from './utils'
+import {getBaseIntakeUrl, is4xxError, is5xxError, parseScope} from './utils'
 
 export class GateEvaluateCommand extends Command {
   // TODO add usage
@@ -28,6 +30,7 @@ export class GateEvaluateCommand extends Command {
 
   private dryRun = false
   private failOnEmpty = false
+  private failIfUnavailable = false
   private userScope?: string[]
   private tags?: string[]
 
@@ -85,33 +88,46 @@ export class GateEvaluateCommand extends Command {
       return 0
     }
 
-    // To be extended with retries, error handling, etc.
-    return api
-      .evaluateGateRules(evaluateRequest, this.context.stdout.write.bind(this.context.stdout))
+    return retryRequest(
+      () => api.evaluateGateRules(evaluateRequest, this.context.stdout.write.bind(this.context.stdout)),
+      {
+        onRetry: (e, attempt) => {
+          this.context.stderr.write(renderEvaluationRetry(attempt, e))
+        },
+        retries: 5,
+      }
+    )
       .then((response) => {
-        return this.handleEvaluationResponse(response.data.data.attributes)
+        return this.handleSuccessfulEvaluation(response.data.data.attributes)
       })
       .catch((error) => {
-        // TODO Handle unavailability etc.
-        this.context.stderr.write(renderGateEvaluationError(error))
-
-        return 1
+        return this.handleEvaluationError(error)
       })
   }
 
-  private handleEvaluationResponse(evaluationResponse: EvaluationResponse): number {
+  private handleSuccessfulEvaluation(evaluationResponse: EvaluationResponse): number {
     this.context.stdout.write(renderEvaluationResponse(evaluationResponse))
 
     if (evaluationResponse.status === 'failed' || (evaluationResponse.status === 'empty' && this.failOnEmpty)) {
       return 1
-    } else {
-      return 0
     }
+
+    return 0
+  }
+
+  private handleEvaluationError(error: any): number {
+    this.context.stderr.write(renderGateEvaluationError(error))
+    if (is4xxError(error) || (is5xxError(error) && this.failIfUnavailable)) {
+      return 1
+    }
+
+    return 0
   }
 }
 
 GateEvaluateCommand.addPath('gate', 'evaluate')
 GateEvaluateCommand.addOption('dryRun', Command.Boolean('--dry-run'))
 GateEvaluateCommand.addOption('failOnEmpty', Command.Boolean('--fail-on-empty'))
+GateEvaluateCommand.addOption('failIfUnavailable', Command.Boolean('--fail-if-unavailable'))
 GateEvaluateCommand.addOption('userScope', Command.Array('--scope'))
 GateEvaluateCommand.addOption('tags', Command.Array('--tags'))
