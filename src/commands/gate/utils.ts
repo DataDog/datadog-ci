@@ -46,6 +46,12 @@ export const is4xxError = (error: any) => {
   return status && status >= 400 && status <= 499
 }
 
+export const isBadRequestError = (error: any) => {
+  const status = getStatus(error)
+
+  return status && status === 400
+}
+
 export const is5xxError = (error: any) => {
   const status = getStatus(error)
 

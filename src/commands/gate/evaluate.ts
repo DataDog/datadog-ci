@@ -116,7 +116,7 @@ export class GateEvaluateCommand extends Command {
   }
 
   private handleEvaluationError(error: any): number {
-    this.context.stderr.write(renderGateEvaluationError(error))
+    this.context.stderr.write(renderGateEvaluationError(error, this.failIfUnavailable))
     if (is4xxError(error) || (is5xxError(error) && this.failIfUnavailable)) {
       return 1
     }

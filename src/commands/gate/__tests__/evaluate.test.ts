@@ -81,7 +81,8 @@ describe('evaluate', () => {
       expect(command['handleEvaluationError'].bind(command).call({}, error)).toEqual(1)
 
       const stdErrLog = write.mock.calls[0][0]
-      expect(stdErrLog).toContain('ERROR: Could not evaluate the rules. Error is "validation failure".')
+      expect(stdErrLog).toContain('ERROR: Could not evaluate the rules. Status code: 400.')
+      expect(stdErrLog).toContain('Error is "validation failure"')
     })
     test('should fail the command if the error is 5xx and fail-if-unavailable option is enabled', () => {
       const write = jest.fn()
@@ -94,7 +95,7 @@ describe('evaluate', () => {
 
       const stdErrLog = write.mock.calls[0][0]
       expect(stdErrLog).toContain('ERROR: Could not evaluate the rules. Status code: 500')
-      expect(stdErrLog).toContain("Use the '--fail-if-unavailable' option to fail the command in this situation.")
+      expect(stdErrLog).not.toContain('--fail-if-unavailable')
       expect(stdErrLog).not.toContain('internal issue')
     })
     test('should pass the command if the error is 5xx and fail-if-unavailable option is not enabled', () => {
