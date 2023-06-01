@@ -98,14 +98,14 @@ export class GateEvaluateCommand extends Command {
       }
     )
       .then((response) => {
-        return this.handleSuccessfulEvaluation(response.data.data.attributes)
+        return this.handleEvaluationSuccess(response.data.data.attributes)
       })
       .catch((error) => {
         return this.handleEvaluationError(error)
       })
   }
 
-  private handleSuccessfulEvaluation(evaluationResponse: EvaluationResponse): number {
+  private handleEvaluationSuccess(evaluationResponse: EvaluationResponse): number {
     this.context.stdout.write(renderEvaluationResponse(evaluationResponse))
 
     if (evaluationResponse.status === 'failed' || (evaluationResponse.status === 'empty' && this.failOnEmpty)) {

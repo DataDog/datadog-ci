@@ -32,7 +32,7 @@ describe('evaluate', () => {
         status: 'failed',
         rule_evaluations: [],
       }
-      expect(command['handleSuccessfulEvaluation'].bind(command).call({}, response)).toEqual(1)
+      expect(command['handleEvaluationSuccess'].bind(command).call({}, response)).toEqual(1)
     })
     test('should pass the command if gate evaluation passed', () => {
       const write = jest.fn()
@@ -43,7 +43,7 @@ describe('evaluate', () => {
         status: 'passed',
         rule_evaluations: [],
       }
-      expect(command['handleSuccessfulEvaluation'].bind(command).call({}, response)).toEqual(0)
+      expect(command['handleEvaluationSuccess'].bind(command).call({}, response)).toEqual(0)
     })
     test('should pass the command on empty evaluation status by default', () => {
       const write = jest.fn()
@@ -54,7 +54,7 @@ describe('evaluate', () => {
         status: 'empty',
         rule_evaluations: [],
       }
-      expect(command['handleSuccessfulEvaluation'].bind(command).call({}, response)).toEqual(0)
+      expect(command['handleEvaluationSuccess'].bind(command).call({}, response)).toEqual(0)
       expect(write.mock.calls[0][0]).toContain('No matching rules were found in Datadog')
     })
     test('should fail the command on empty result if the override option is provided', () => {
@@ -67,7 +67,7 @@ describe('evaluate', () => {
         status: 'empty',
         rule_evaluations: [],
       }
-      expect(command['handleSuccessfulEvaluation'].bind(command).call({}, response)).toEqual(1)
+      expect(command['handleEvaluationSuccess'].bind(command).call({}, response)).toEqual(1)
       expect(write.mock.calls[0][0]).toContain('No matching rules were found in Datadog')
     })
   })
