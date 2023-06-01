@@ -97,7 +97,7 @@ describe('evaluate', () => {
       expect(stdErrLog).toContain("Use the '--fail-if-unavailable' option to fail the command in this situation.")
       expect(stdErrLog).not.toContain('internal issue')
     })
-    test('should pass the command if the error is 5xx and fail-if-unavailable option not enabled', () => {
+    test('should pass the command if the error is 5xx and fail-if-unavailable option is not enabled', () => {
       const write = jest.fn()
       const command = new GateEvaluateCommand()
       command.context = {stderr: {write}} as any
