@@ -71,10 +71,10 @@ See below for the list of advanced options in the global configuration file. For
 : A boolean flag that fails the CI job if no tests were triggered, or results could not be fetched from Datadog. The default is set to `false`.
 
 `failOnMissingTests`
-: A boolean flag that fails the CI job if at least one specified test with a public ID (a `--public-id` CLI argument or listed in a [test file](#test-files) is missing in a run (for example, if it has been deleted programmatically or on the Datadog site). The default is set to `false`.
+: A boolean flag that fails the CI job if at least one specified test with a public ID (a `--public-id` CLI argument or listed in a [test file](#test-files)) is missing in a run (for example, if it has been deleted programmatically or on the Datadog site). The default is set to `false`.
 
 `failOnTimeout`
-: A boolean flag that fails the CI job if at least one specified test with a public ID (a `--public-id` CLI argument or listed in a [test file](#test-files) exceeds the default test timeout. The default is set to `true`.
+: A boolean flag that fails the CI job if at least one test exceeds the default test timeout. The default is set to `true`.
 
 `files`
 : Glob pattern to detect Synthetic test [configuration files](#test-files).
