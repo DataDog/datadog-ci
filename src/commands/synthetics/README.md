@@ -71,7 +71,7 @@ See below for the list of advanced options in the global configuration file. For
 : A boolean flag that fails the CI job if no tests were triggered, or results could not be fetched from Datadog. The default is set to `false`.
 
 `failOnMissingTests`
-: A boolean flag that fails the CI job if at least one test is missing in a run (for example, if it has been removed or deleted). The default is set to `false`.
+: A boolean flag that fails the CI job if at least one specified test with a public ID (a `--public-id` CLI argument or listed in a [test file](#test-files)) is missing in a run (for example, if it has been deleted programmatically or on the Datadog site). The default is set to `false`.
 
 `failOnTimeout`
 : A boolean flag that fails the CI job if at least one test exceeds the default test timeout. The default is set to `true`.
@@ -278,7 +278,7 @@ yarn datadog-ci synthetics run-tests -f ./component-1/**/*.synthetics.json -v PA
 
 - `--failOnTimeout` (or `--no-failOnTimeout`) makes the CI fail (or pass) if one of the results exceeds its test timeout.
 - `--failOnCriticalErrors` makes the CI fail if tests were not triggered or if results could not be fetched.
-- `--failOnMissingTests` makes the CI fail if at least one test is missing.
+- `--failOnMissingTests` makes the CI fail if at least one specified test with a public ID (a `--public-id` CLI argument or listed in a test file) is missing in a run (for example, if it has been deleted programmatically or on the Datadog site).
 
 ### Test files
 
