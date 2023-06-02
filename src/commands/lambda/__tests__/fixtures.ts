@@ -25,6 +25,7 @@ import {
 import {AwsStub} from 'aws-sdk-client-mock'
 import {Cli, Command} from 'clipanion/lib/advanced'
 
+import {LambdaFlareCommand} from '../flare'
 import {InstrumentCommand} from '../instrument'
 import {UninstrumentCommand} from '../uninstrument'
 
@@ -45,6 +46,7 @@ export const makeCli = () => {
   const cli = new Cli()
   cli.register(InstrumentCommand)
   cli.register(UninstrumentCommand)
+  cli.register(LambdaFlareCommand)
 
   return cli
 }
