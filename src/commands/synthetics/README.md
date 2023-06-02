@@ -219,7 +219,7 @@ For example:
 
 You can decide to have the CLI auto-discover all your `**/*.synthetics.json` Synthetic tests (or all the tests associated to the path specified in your [global configuration file](#global-configuration-file-options)) or specify the tests you want to run using the `-p,--public-id` flag.
 
-Run tests by executing the CLI with either NPM or Yarn:
+Run tests by executing the CLI with either **NPM** or **Yarn**:
 
 <!-- xxx tabs xxx -->
 <!-- xxx tab "NPM" xxx -->
