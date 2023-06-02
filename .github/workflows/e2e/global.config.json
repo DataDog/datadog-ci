@@ -2,6 +2,7 @@
   "files": "{,!(node_modules)/**/}*.synthetics.json",
   "failOnCriticalErrors": true,
   "failOnMissingTests": true,
-  "global": {},
-  "timeout": 240000
+  "global": {
+    "pollingTimeout": 240000
+  }
 }
