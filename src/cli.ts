@@ -3,7 +3,7 @@ import fs from 'fs'
 import {Cli} from 'clipanion'
 import {CommandClass} from 'clipanion/lib/advanced/Command'
 
-const BETA_COMMANDS = ['gate']
+const BETA_COMMANDS = ['']
 
 const onError = (err: any) => {
   console.log(err)
