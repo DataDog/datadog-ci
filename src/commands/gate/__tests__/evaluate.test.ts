@@ -22,7 +22,7 @@ describe('evaluate', () => {
       expect(write.mock.calls[0][0]).toContain('DATADOG_APP_KEY')
     })
   })
-  describe('handleSuccessfulEvaluation', () => {
+  describe('handleEvaluationSuccess', () => {
     test('should fail the command if gate evaluation failed', () => {
       const write = jest.fn()
       const command = new GateEvaluateCommand()
