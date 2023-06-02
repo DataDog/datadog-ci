@@ -39,7 +39,7 @@ import {
 import {FunctionConfiguration, InstrumentationSettings, InstrumentedConfigurationGroup} from '../interfaces'
 import {applyLogGroupConfig} from '../loggroup'
 import {awsProfileQuestion} from '../prompt'
-import * as renderer from '../renderer'
+import * as renderer from '../renderers/instrument-uninstrument-renderer'
 import {applyTagConfig} from '../tags'
 
 /**

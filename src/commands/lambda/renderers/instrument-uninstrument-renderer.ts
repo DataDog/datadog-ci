@@ -1,8 +1,17 @@
-import {blueBright, bold, cyan, green, hex, red, underline, yellow} from 'chalk'
+import {blueBright, bold, hex, underline} from 'chalk'
 import ora from 'ora'
 
-import {InstrumentCommand} from './instrument'
-import {UninstrumentCommand} from './uninstrument'
+import {InstrumentCommand} from '../instrument'
+import {UninstrumentCommand} from '../uninstrument'
+
+import {
+  dryRunTag,
+  errorTag,
+  warningTag,
+  warningExclamationSignTag,
+  successCheckmarkTag,
+  failCrossTag,
+} from './common-renderer'
 
 /**
  * @returns a header indicating which `lambda` subcommand is running.
@@ -589,11 +598,3 @@ export const updatingFunctionsConfigFromRegionSpinner = (region: string, functio
     discardStdin: false,
     text: `${bold(`[${region}]`)} Updating ${bold(functions)} ${hex('#FF9900').bold('Lambda')} functions.\n`,
   })
-
-export const dryRunTag = bold(cyan('[Dry Run]'))
-export const errorTag = bold(red('[Error]'))
-export const warningTag = bold(yellow('[Warning]'))
-
-export const warningExclamationSignTag = bold(yellow('[!]'))
-export const successCheckmarkTag = bold(green('✔'))
-export const failCrossTag = bold(red('✖'))
