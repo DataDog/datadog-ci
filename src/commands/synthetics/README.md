@@ -219,10 +219,10 @@ For example:
 
 You can decide to have the CLI auto-discover all your `**/*.synthetics.json` Synthetic tests (or all the tests associated to the path specified in your [global configuration file](#global-configuration-file-options)) or specify the tests you want to run using the `-p,--public-id` flag.
 
-Run tests by executing the CLI with either **NPM** or **Yarn**:
-
 <!-- xxx tabs xxx -->
 <!-- xxx tab "NPM" xxx -->
+
+Run tests by executing the CLI through **NPM**:
 
 Add the following to your `package.json`:
 
@@ -244,6 +244,8 @@ npm run datadog-ci-synthetics
 
 <!-- xxz tab xxx -->
 <!-- xxx tab "Yarn" xxx -->
+
+Run tests by executing the CLI through **Yarn**:
 
 The `run-tests` sub-command runs the tests discovered in the folder according to the `files` configuration key. It accepts the `--public-id` (or shorthand `-p`) argument to trigger only the specified test. It can be set multiple times to run multiple tests:
 
