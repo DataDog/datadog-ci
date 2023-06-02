@@ -43,7 +43,7 @@ import {
   requestEnvServiceVersion,
   requestFunctionSelection,
 } from './prompt'
-import * as renderer from './renderer'
+import * as renderer from './renderers/instrument-uninstrument-renderer'
 
 export class InstrumentCommand extends Command {
   private apmFlushDeadline?: string
