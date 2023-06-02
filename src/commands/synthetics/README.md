@@ -77,7 +77,7 @@ See below for the list of advanced options in the global configuration file. For
 : A boolean flag that fails the CI job if at least one test exceeds the default test timeout. The default is set to `true`.
 
 `files`
-: Glob pattern to detect Synthetic test [configuration files](#test-files).
+: Glob patterns to detect Synthetic test [configuration files](#test-files).
 
 `global`
 : Overrides for Synthetic tests applied to all tests.
@@ -116,7 +116,7 @@ For example:
     "apiKey": "<DATADOG_API_KEY>",
     "appKey": "<DATADOG_APPLICATION_KEY>",
     "datadogSite": "datadoghq.com", // You can use another Datadog site in https://docs.datadoghq.com/getting_started/site/. By default, requests are sent to Datadog US1. 
-    "files": "{,!(node_modules)/**/}*.synthetics.json",
+    "files": ["{,!(node_modules)/**/}*.synthetics.json"],
     "failOnCriticalErrors": false,
     "failOnMissingTests": false,
     "failOnTimeout": true,
@@ -181,7 +181,7 @@ For example:
   "failOnCriticalErrors": true,
   "failOnMissingTests": true,
   "failOnTimeout": true,
-  "files": "{,!(node_modules)/**/}*.synthetics.json",
+  "files": ["{,!(node_modules)/**/}*.synthetics.json"],
   "global": {
     "allowInsecureCertificates": true,
     "basicAuth": {"username": "test", "password": "test"},

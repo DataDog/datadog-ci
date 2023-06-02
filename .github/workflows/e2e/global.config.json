@@ -1,5 +1,5 @@
 {
-  "files": "{,!(node_modules)/**/}*.synthetics.json",
+  "files": ["{,!(node_modules)/**/}*.synthetics.json"],
   "failOnCriticalErrors": true,
   "failOnMissingTests": true,
   "global": {
