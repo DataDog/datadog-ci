@@ -1,7 +1,8 @@
-const renderer = jest.requireActual('../renderer')
+const renderer = jest.requireActual('../renderers/instrument-uninstrument-renderer')
 
 const makeMockSpinner = () => {
   const f = jest.fn()
+
   return jest.fn(() => ({
     fail: f,
     start: f,
