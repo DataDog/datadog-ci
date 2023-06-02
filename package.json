@@ -34,7 +34,7 @@
     ]
   },
   "scripts": {
-    "preinstall": "yarn prepack",
+    "preinstall": "yarn && yarn prepack",
     "build": "yarn clean; tsc",
     "build:win": "tsc",
     "check-licenses": "node bin/check-licenses.js",
