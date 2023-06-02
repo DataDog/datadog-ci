@@ -1,5 +1,5 @@
 jest.mock('../../loggroup')
-jest.mock('../../renderer')
+jest.mock('../../renderers/instrument-uninstrument-renderer')
 
 import {CloudWatchLogsClient} from '@aws-sdk/client-cloudwatch-logs'
 import {LambdaClient, ListFunctionsCommand} from '@aws-sdk/client-lambda'
