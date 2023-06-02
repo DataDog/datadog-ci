@@ -21,7 +21,9 @@ const cli = new Cli({
 
 const commandsPath = `${__dirname}/commands`
 for (const commandFolder of fs.readdirSync(commandsPath)) {
-  if (BETA_COMMANDS.includes(commandFolder)) {
+  const betaCommandsEnabled =
+    process.env.DD_BETA_COMMANDS_ENABLED === '1' || process.env.DD_BETA_COMMANDS_ENABLED === 'true'
+  if (BETA_COMMANDS.includes(commandFolder) && !betaCommandsEnabled) {
     continue
   }
   const commandPath = `${commandsPath}/${commandFolder}`
