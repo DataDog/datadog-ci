@@ -18,7 +18,7 @@ import {
 import {getUninstrumentedFunctionConfigs, getUninstrumentedFunctionConfigsFromRegEx} from './functions/uninstrument'
 import {FunctionConfiguration} from './interfaces'
 import {requestAWSCredentials, requestChangesConfirmation, requestFunctionSelection} from './prompt'
-import * as renderer from './renderer'
+import * as renderer from './renderers/instrument-uninstrument-renderer'
 
 export class UninstrumentCommand extends Command {
   private config: any = {
