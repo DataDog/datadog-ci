@@ -1,0 +1,13 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`lambda flare prints dry-run header 1`] = `
+"
+[Dry Run] 🐶 Generating Lambda flare to send your configuration to Datadog
+"
+`;
+
+exports[`lambda flare prints non-dry-run header 1`] = `
+"
+🐶 Generating Lambda flare to send your configuration to Datadog
+"
+`;
