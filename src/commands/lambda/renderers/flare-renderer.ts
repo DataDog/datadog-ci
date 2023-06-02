@@ -1,5 +1,3 @@
-import {LambdaFlareCommand} from '../flare'
-
 import {dryRunTag} from './common-renderer'
 
 /**
