@@ -21,19 +21,19 @@ datadog-ci gate evaluate --scope team:backend --scope team:frontend --fail-on-em
 ```
 
 - `--scope` is an array of key value pairs of the form `key:value`. This parameter sets additional scope when retrieving matching rules. Only the rules matching the scope provided will be evaluated.
-- `--tags` is an array of key value pairs of the form `key:value`. This parameter sets global tags applied to all results. The upload process merges the tags passed on the command line with the tags in the `DD_TAGS` environment variable. If a key appears in both `--tags` and `DD_TAGS`, the value in `DD_TAGS` takes precedence.
-- `--dry-run` (default: `false`): runs the command without the final evaluation step. All other checks are performed.
-- `--fail-if-unavailable` (default: `false`): fails the command if there is unavailability on the Datadog side.
-- `--fail-on-empty` (default: `false`): fails the command if no matching rules were found in Datadog.
+- `--tags` is an array of key value pairs of the form `key:value`. This parameter sets global tags that are applied to all results. The upload process merges the tags passed on the command line with the tags in the `DD_TAGS` environment variable. If a key appears in both `--tags` and `DD_TAGS`, the value in `DD_TAGS` takes precedence.
+- `--dry-run` runs the command without the final evaluation step. All other checks are performed. The default value is `false`.
+- `--fail-if-unavailable` fails the command if Datadog is unavailable. The default value is `false`.
+- `--fail-on-empty` fails the command if no matching rules are found in Datadog. The default value is `false`.
 
 ### Environment variables
 
-Additionally, you may configure the `gate` command with environment variables:
+Additionally, you can configure the `gate` command with the following environment variables:
 
-- `DATADOG_API_KEY` or `DD_API_KEY` (**required**): API key used to authenticate the requests.
-- `DATADOG_APP_KEY` (**required**): APP key used to authenticate the requests.
-- `DD_TAGS`: Set global tags applied to all spans. The format must be `key1:value1,key2:value2`. The upload process merges the tags passed on the command line with the tags in the `--tags` parameter. If a key appears in both `--tags` and `DD_TAGS`, the value in `DD_TAGS` takes precedence.
-- `DATADOG_SITE`: choose your Datadog site, for example, datadoghq.com or datadoghq.eu.
+- `DATADOG_API_KEY` or `DD_API_KEY` (**required**): The API key used to authenticate the requests.
+- `DATADOG_APP_KEY` (**required**): The application key used to authenticate the requests.
+- `DD_TAGS`: Sets global tags applied to all spans. The format must be `key1:value1,key2:value2`. The upload process merges the tags passed on the command line with the tags in the `--tags` parameter. If a key appears in both `--tags` and `DD_TAGS`, the value in `DD_TAGS` takes precedence.
+- `DATADOG_SITE`: Your Datadog site, for example, datadoghq.com or datadoghq.eu.
 
 ### Optional dependencies
 
