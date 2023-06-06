@@ -10,6 +10,7 @@ import {CriticalError} from './errors'
 import {
   APIConfiguration,
   Batch,
+  MobileApplicationVersion,
   Payload,
   PollResult,
   PresignedUrlResponse,
@@ -195,6 +196,31 @@ const uploadMobileApplication = (request: (args: AxiosRequestConfig) => AxiosPro
   )
 }
 
+const createMobileVersion = (request: (args: AxiosRequestConfig) => AxiosPromise<MobileApplicationVersion>) => async (
+  fileName: string,
+  mobileApplicationId: string,
+  originalFileName: string,
+  versionName: string,
+  latest: boolean
+) => {
+  const resp = await retryRequest(
+    {
+      data: {
+        file_name: fileName,
+        original_file_name: originalFileName,
+        application_id: mobileApplicationId,
+        version_name: versionName,
+        is_latest: latest,
+      },
+      method: 'POST',
+      url: `/synthetics/mobile/applications/versions`,
+    },
+    request
+  )
+
+  return resp.data
+}
+
 type RetryPolicy = (retries: number, error: AxiosError) => number | undefined
 
 const retryOn5xxErrors: RetryPolicy = (retries, error) => {
@@ -250,6 +276,7 @@ export const apiConstructor = (configuration: APIConfiguration) => {
     searchTests: searchTests(request),
     triggerTests: triggerTests(requestIntake),
     uploadMobileApplication: uploadMobileApplication(request),
+    createMobileVersion: createMobileVersion(requestUnstable),
   }
 }
 

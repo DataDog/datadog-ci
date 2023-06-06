@@ -396,3 +396,13 @@ export interface PresignedUrlResponse {
 export interface SyntheticsOrgSettings {
   orgMaxConcurrencyCap: number
 }
+
+export interface MobileApplicationVersion {
+  id: string
+  application_id: string
+  created_at: string
+  file_name: string
+  original_file_name: string
+  is_latest: boolean
+  version_name: string
+}
