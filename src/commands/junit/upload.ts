@@ -13,6 +13,7 @@ import {getGitMetadata} from '../../helpers/git/format-git-span-data'
 import {SpanTags} from '../../helpers/interfaces'
 import {RequestBuilder} from '../../helpers/interfaces'
 import {Logger, LogLevel} from '../../helpers/logger'
+import {getMetricsLogger} from '../../helpers/metrics'
 import {retryRequest} from '../../helpers/retry'
 import {parseTags, parseMetrics} from '../../helpers/tags'
 import {getUserGitSpanTags} from '../../helpers/user-provided-git'
@@ -118,6 +119,13 @@ export class UploadJUnitXMLCommand extends Command {
   private gitRepositoryURL?: string
   private skipGitMetadataUpload?: boolean
   private logger: Logger = new Logger((s: string) => this.context.stdout.write(s), LogLevel.INFO)
+  private cliVersion: string
+
+  constructor() {
+    super()
+    this.cliVersion = require('../../../package.json').version
+  }
+
 
   public async execute() {
     this.logger.setLogLevel(this.verbose ? LogLevel.DEBUG : LogLevel.INFO)
@@ -156,6 +164,13 @@ export class UploadJUnitXMLCommand extends Command {
       }
     }
 
+    const metricsLogger = getMetricsLogger({
+      apiKey: this.config.apiKey,
+      datadogSite: process.env.DATADOG_SITE,
+      defaultTags: [`service:${this.service}`, `cli_version:${this.cliVersion}`],
+      prefix: 'datadog.ci.junit.upload.',
+    })
+
     const api = this.getApiHelper()
 
     // Normalizing the basePath to resolve .. and .
@@ -174,6 +189,8 @@ export class UploadJUnitXMLCommand extends Command {
     const totalTimeSeconds = (Date.now() - initialTime) / 1000
     this.logger.info(renderSuccessfulUpload(this.dryRun, payloads.length, totalTimeSeconds))
 
+    metricsLogger.logger.gauge('junit.xml.upload.duration', totalTimeSeconds)
+
     if (!this.skipGitMetadataUpload) {
       if (await isGitRepo()) {
         const requestBuilder = getRequestBuilder({baseUrl: apiUrl, apiKey: this.config.apiKey!})
@@ -184,6 +201,7 @@ export class UploadJUnitXMLCommand extends Command {
             elapsed = await timedExecAsync(this.uploadToGitDB.bind(this), {requestBuilder})
           }
           this.logger.info(renderSuccessfulGitDBSync(this.dryRun, elapsed))
+          metricsLogger.logger.gauge('junit.git.upload.duration', elapsed)
         } catch (err) {
           this.logger.info(renderFailedGitDBSync(err))
         }
@@ -197,6 +215,7 @@ export class UploadJUnitXMLCommand extends Command {
     if (!this.dryRun) {
       this.context.stdout.write(renderSuccessfulCommand(spanTags, this.service, this.config.env))
     }
+    await metricsLogger.flush()
   }
 
   private async uploadToGitDB(opts: {requestBuilder: RequestBuilder}) {
