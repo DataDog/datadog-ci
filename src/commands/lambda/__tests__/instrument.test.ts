@@ -1077,10 +1077,10 @@ describe('lambda', () => {
         interface FunctionConfigType {
           FunctionArn: string
           Runtime: string
-          Architecture?: string
+          Architectures?: string[]
         }
 
-        const runInstrumentationTest = async (architecture?: string) => {
+        const runInstrumentationTest = async (architectures?: string[]) => {
           ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({code: 'ENOENT'}))
 
           const functionConfig: FunctionConfigType = {
@@ -1088,8 +1088,8 @@ describe('lambda', () => {
             Runtime: 'ruby2.7',
           }
 
-          if (architecture) {
-            functionConfig.Architecture = architecture
+          if (architectures) {
+            functionConfig.Architectures = architectures
           }
 
           mockLambdaConfigurations(lambdaClientMock, {
@@ -1136,7 +1136,7 @@ describe('lambda', () => {
         })
 
         test('instruments Ruby application properly for ARM architecture', async () => {
-          await runInstrumentationTest('arm64')
+          await runInstrumentationTest(['arm64'])
         })
       })
 
