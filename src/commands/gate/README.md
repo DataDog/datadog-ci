@@ -1,6 +1,6 @@
 # GATE command
 
-Evaluate Quality Gates rules in Datadog.
+Evaluate Quality Gates rules in Datadog. The exit status of the command will change depending on the result of the gate evaluation.
 
 ## Usage
 
