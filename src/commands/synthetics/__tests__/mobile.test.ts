@@ -3,7 +3,7 @@ import path from 'path'
 
 import * as mobile from '../mobile'
 
-import {getApiHelper, getMobileTest, getTestPayload} from './fixtures'
+import {getApiHelper, getMobileTest, getMobileVersion, getTestPayload} from './fixtures'
 
 describe('getSizeAndMD5HashFromFile', () => {
   test('correctly get size and md5 of a file', async () => {
@@ -257,5 +257,39 @@ describe('uploadApplicationAndOverrideConfig', () => {
       referenceId: 'androidAppVersion',
       referenceType: 'version',
     })
+  })
+})
+
+describe('uploadMobileApplicationVersion', () => {
+  const uploadMobileApplicationSpy = jest.spyOn(mobile, 'uploadMobileApplications')
+  const api = getApiHelper()
+  const createNewMobileVersionSpy = jest.spyOn(api, 'createMobileVersion')
+
+  beforeEach(() => {
+    uploadMobileApplicationSpy.mockReset()
+    uploadMobileApplicationSpy.mockImplementation(async () => 'fileName')
+    createNewMobileVersionSpy.mockImplementation(async () => {
+      return getMobileVersion()
+    })
+  })
+
+  test('upload new application file', async () => {
+    const version = getMobileVersion()
+    await mobile.uploadMobileApplicationVersion(
+      api,
+      version.original_file_name,
+      version.application_id,
+      version.version_name,
+      true
+    )
+
+    expect(uploadMobileApplicationSpy).toHaveBeenCalledTimes(1)
+    expect(createNewMobileVersionSpy).toBeCalledWith(
+      'fileName',
+      version.application_id,
+      version.original_file_name,
+      version.version_name,
+      version.is_latest
+    )
   })
 })

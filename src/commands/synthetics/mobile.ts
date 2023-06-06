@@ -3,7 +3,14 @@ import fs from 'fs'
 
 import {APIHelper, EndpointError, formatBackendErrors, getApiHelper} from './api'
 import {CiError} from './errors'
-import {CommandConfig, MobileApplicationVersion, PresignedUrlResponse, Test, TestPayload, UserConfigOverride} from './interfaces'
+import {
+  CommandConfig,
+  MobileApplicationVersion,
+  PresignedUrlResponse,
+  Test,
+  TestPayload,
+  UserConfigOverride,
+} from './interfaces'
 
 export const getSizeAndMD5HashFromFile = async (filePath: string): Promise<{appSize: number; md5: string}> => {
   const hash = crypto.createHash('md5')
@@ -119,13 +126,12 @@ export const uploadApplicationAndOverrideConfig = async (
 }
 
 export const uploadMobileApplicationVersion = async (
-  config: CommandConfig,
+  api: APIHelper,
   applicationPathToUpload?: string,
   mobileApplicationId?: string,
   versionName?: string,
   latest?: boolean
 ): Promise<MobileApplicationVersion> => {
-  const api = getApiHelper(config)
 
   latest = latest ?? true
 

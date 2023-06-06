@@ -8,6 +8,7 @@ import {CommandConfig, MainReporter, Reporter} from './interfaces'
 import {uploadMobileApplicationVersion} from './mobile'
 import {DefaultReporter} from './reporters/default'
 import {getReporter, reportCiError} from './utils'
+import { getApiHelper } from './api'
 
 export const DEFAULT_UPLOAD_COMMAND_CONFIG: CommandConfig = {
   apiKey: '',
@@ -63,9 +64,10 @@ export class UploadApplicationCommand extends Command {
       })
     )
 
+    const api = getApiHelper(this.config)
     try {
       const version = await uploadMobileApplicationVersion(
-        this.config,
+        api,
         this.mobileApplicationVersionFilePath,
         this.mobileApplicationId,
         this.versionName,

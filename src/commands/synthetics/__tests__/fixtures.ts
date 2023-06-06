@@ -16,6 +16,7 @@ import {
   ExecutionRule,
   Location,
   MainReporter,
+  MobileApplicationVersion,
   MultiStep,
   MultiStepsServerResult,
   PresignedUrlResponse,
@@ -543,5 +544,16 @@ export const getApiHelper = () => {
 export const getTestPayload = (override?: Partial<TestPayload>) => ({
   executionRule: ExecutionRule.BLOCKING,
   public_id: 'aaa-aaa-aaa',
+  ...override,
+})
+
+export const getMobileVersion = (override?: Partial<MobileApplicationVersion>) => ({
+  id: '123-abc-456',
+  application_id: '789-dfg-987',
+  file_name: 'bla.',
+  original_file_name: 'test.apk',
+  is_latest: true,
+  version_name: 'test version',
+  created_at: '22-09-2022',
   ...override,
 })
