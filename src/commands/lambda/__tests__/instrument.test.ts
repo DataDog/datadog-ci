@@ -1094,40 +1094,36 @@ describe('lambda', () => {
 
         const cli = makeCli()
         const context = createMockContext() as any
-        const functionARNs = [
-          'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world',
-          'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world-2',
-        ]
         process.env.DATADOG_API_KEY = '1234'
-        for (let i = 0; i < 2; i++) {
-          const code = await cli.run(
-            [
-              'lambda',
-              'instrument',
-              '-f',
-              functionARNs[i],
-              '--dry',
-              '-e',
-              '40',
-              '-v',
-              '19',
-              '--extra-tags',
-              'layer:api,team:intake',
-              '--service',
-              'middletier',
-              '--env',
-              'staging',
-              '--version',
-              '0.2',
-              '--no-source-code-integration',
-            ],
-            context
-          )
+        const code = await cli.run(
+          [
+            'lambda',
+            'instrument',
+            '-f',
+            'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world',
+            '-f',
+            'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world-2',
+            '--dry',
+            '-e',
+            '40',
+            '-v',
+            '19',
+            '--extra-tags',
+            'layer:api,team:intake',
+            '--service',
+            'middletier',
+            '--env',
+            'staging',
+            '--version',
+            '0.2',
+            '--no-source-code-integration',
+          ],
+          context
+        )
 
-          const output = context.stdout.toString()
-          expect(code).toBe(0)
-          expect(output).toMatchSnapshot()
-        }
+        const output = context.stdout.toString()
+        expect(code).toBe(0)
+        expect(output).toMatchSnapshot()
       })
 
       test('aborts early when a layer version is set for a Custom runtime', async () => {

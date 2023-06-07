@@ -296,80 +296,34 @@ exports[`lambda instrument execute instruments Ruby application properly 1`] = `
 
 [!] Functions to be updated:
 	- arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world
-
-[Dry Run] Will apply the following updates:
-UpdateFunctionConfiguration -> arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world
-{
-  \\"FunctionName\\": \\"arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world\\",
-  \\"Environment\\": {
-    \\"Variables\\": {
-      \\"DD_API_KEY\\": \\"1234\\",
-      \\"DD_SITE\\": \\"datadoghq.com\\",
-      \\"DD_CAPTURE_LAMBDA_PAYLOAD\\": \\"false\\",
-      \\"DD_ENV\\": \\"staging\\",
-      \\"DD_TAGS\\": \\"layer:api,team:intake\\",
-      \\"DD_MERGE_XRAY_TRACES\\": \\"false\\",
-      \\"DD_SERVICE\\": \\"middletier\\",
-      \\"DD_TRACE_ENABLED\\": \\"true\\",
-      \\"DD_VERSION\\": \\"0.2\\"
-    }
-  },
-  \\"Layers\\": [
-    \\"arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Extension:40\\",
-    \\"arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Ruby2-7:19\\"
-  ]
-}
-TagResource -> arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world
-{
-  \\"dd_sls_ci\\": \\"vXXXX\\"
-}
-"
-`;
-
-exports[`lambda instrument execute instruments Ruby application properly 2`] = `
-"
-[Dry Run] 🐶 Instrumenting Lambda function
-
-[Warning] Instrument your Lambda functions in a dev or staging environment first. Should the instrumentation result be unsatisfactory, run \`uninstrument\` with the same arguments to revert the changes.
-
-[!] Functions to be updated:
-	- arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world
-
-[Dry Run] Will apply the following updates:
-UpdateFunctionConfiguration -> arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world
-{
-  \\"FunctionName\\": \\"arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world\\",
-  \\"Environment\\": {
-    \\"Variables\\": {
-      \\"DD_API_KEY\\": \\"1234\\",
-      \\"DD_SITE\\": \\"datadoghq.com\\",
-      \\"DD_CAPTURE_LAMBDA_PAYLOAD\\": \\"false\\",
-      \\"DD_ENV\\": \\"staging\\",
-      \\"DD_TAGS\\": \\"layer:api,team:intake\\",
-      \\"DD_MERGE_XRAY_TRACES\\": \\"false\\",
-      \\"DD_SERVICE\\": \\"middletier\\",
-      \\"DD_TRACE_ENABLED\\": \\"true\\",
-      \\"DD_VERSION\\": \\"0.2\\"
-    }
-  },
-  \\"Layers\\": [
-    \\"arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Extension:40\\",
-    \\"arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Ruby2-7:19\\"
-  ]
-}
-TagResource -> arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world
-{
-  \\"dd_sls_ci\\": \\"vXXXX\\"
-}
-
-[Dry Run] 🐶 Instrumenting Lambda function
-
-[Warning] Instrument your Lambda functions in a dev or staging environment first. Should the instrumentation result be unsatisfactory, run \`uninstrument\` with the same arguments to revert the changes.
-
-[!] Functions to be updated:
 	- arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world-2
 
 [Dry Run] Will apply the following updates:
+UpdateFunctionConfiguration -> arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world
+{
+  \\"FunctionName\\": \\"arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world\\",
+  \\"Environment\\": {
+    \\"Variables\\": {
+      \\"DD_API_KEY\\": \\"1234\\",
+      \\"DD_SITE\\": \\"datadoghq.com\\",
+      \\"DD_CAPTURE_LAMBDA_PAYLOAD\\": \\"false\\",
+      \\"DD_ENV\\": \\"staging\\",
+      \\"DD_TAGS\\": \\"layer:api,team:intake\\",
+      \\"DD_MERGE_XRAY_TRACES\\": \\"false\\",
+      \\"DD_SERVICE\\": \\"middletier\\",
+      \\"DD_TRACE_ENABLED\\": \\"true\\",
+      \\"DD_VERSION\\": \\"0.2\\"
+    }
+  },
+  \\"Layers\\": [
+    \\"arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Extension:40\\",
+    \\"arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Ruby2-7:19\\"
+  ]
+}
+TagResource -> arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world
+{
+  \\"dd_sls_ci\\": \\"vXXXX\\"
+}
 UpdateFunctionConfiguration -> arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world-2
 {
   \\"FunctionName\\": \\"arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world-2\\",
