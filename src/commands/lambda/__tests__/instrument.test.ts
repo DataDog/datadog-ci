@@ -1090,6 +1090,19 @@ describe('lambda', () => {
               Architectures: ['arm64'],
             },
           },
+          'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world-3': {
+            config: {
+              FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world-3',
+              Runtime: 'ruby3.2',
+            },
+          },
+          'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world-4': {
+            config: {
+              FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world-4',
+              Runtime: 'ruby3.2',
+              Architectures: ['arm64'],
+            },
+          },
         })
 
         const cli = makeCli()
@@ -1103,6 +1116,10 @@ describe('lambda', () => {
             'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world',
             '-f',
             'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world-2',
+            '-f',
+            'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world-3',
+            '-f',
+            'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world-4',
             '--dry',
             '-e',
             '40',
