@@ -33,7 +33,11 @@ export const isValidDatadogSite = (site?: string): boolean => {
     return false
   }
 
-  return !!process.env.DD_CI_BYPASS_SITE_VALIDATION || DATADOG_SITES.includes(site.toLowerCase())
+  return (
+    !!process.env.DD_CI_BYPASS_SITE_VALIDATION ||
+    DATADOG_SITES.includes(site.toLowerCase()) ||
+    site.toLowerCase() === 'datad0g.com'
+  )
 }
 
 const renderDuplicateAPIKey = (environmentAPIKey: string) => {
