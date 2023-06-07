@@ -1096,7 +1096,7 @@ describe('lambda', () => {
         const context = createMockContext() as any
         const functionARNs = [
           'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world',
-          'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world-2'
+          'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world-2',
         ]
         process.env.DATADOG_API_KEY = '1234'
         for (let i = 0; i < 2; i++) {
