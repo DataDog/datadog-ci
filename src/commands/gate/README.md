@@ -35,7 +35,7 @@ Additionally, you can configure the `gate` command with the following environmen
 - `DD_TAGS`: Sets global tags applied to all spans. The format must be `key1:value1,key2:value2`. The upload process merges the tags passed on the command line with the tags in the `--tags` parameter. If a key appears in both `--tags` and `DD_TAGS`, the value in `DD_TAGS` takes precedence.
 - `DATADOG_SITE`: Your Datadog site, for example, datadoghq.com or datadoghq.eu.
 
-### Optional dependencies
+### Dependencies
 
 - [`git`](https://git-scm.com/downloads) is used for extracting repository metadata.
 
