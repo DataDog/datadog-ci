@@ -1075,6 +1075,7 @@ describe('lambda', () => {
 
       test('instruments Ruby application properly', async () => {
         ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({code: 'ENOENT'}))
+
         mockLambdaConfigurations(lambdaClientMock, {
           'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world': {
             config: {
@@ -1082,17 +1083,26 @@ describe('lambda', () => {
               Runtime: 'ruby2.7',
             },
           },
+          'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world-2': {
+            config: {
+              FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world-2',
+              Runtime: 'ruby2.7',
+              Architectures: ['arm64'],
+            },
+          },
         })
+
         const cli = makeCli()
         const context = createMockContext() as any
-        const functionARN = 'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world'
         process.env.DATADOG_API_KEY = '1234'
         const code = await cli.run(
           [
             'lambda',
             'instrument',
             '-f',
-            functionARN,
+            'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world',
+            '-f',
+            'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world-2',
             '--dry',
             '-e',
             '40',
@@ -1110,6 +1120,7 @@ describe('lambda', () => {
           ],
           context
         )
+
         const output = context.stdout.toString()
         expect(code).toBe(0)
         expect(output).toMatchSnapshot()
