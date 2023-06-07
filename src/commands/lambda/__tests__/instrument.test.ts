@@ -1073,41 +1073,39 @@ describe('lambda', () => {
 `)
       })
 
-      describe('instruments Ruby application properly', () => {
-        interface FunctionConfigType {
-          FunctionArn: string
-          Runtime: string
-          Architectures?: string[]
-        }
+      test('instruments Ruby application properly', async () => {
+        ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({code: 'ENOENT'}))
 
-        const runInstrumentationTest = async (architectures?: string[]) => {
-          ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({code: 'ENOENT'}))
-
-          const functionConfig: FunctionConfigType = {
-            FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world',
-            Runtime: 'ruby2.7',
-          }
-
-          if (architectures) {
-            functionConfig.Architectures = architectures
-          }
-
-          mockLambdaConfigurations(lambdaClientMock, {
-            'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world': {
-              config: functionConfig,
+        mockLambdaConfigurations(lambdaClientMock, {
+          'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world': {
+            config: {
+              FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world',
+              Runtime: 'ruby2.7',
             },
-          })
+          },
+          'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world-2': {
+            config: {
+              FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world-2',
+              Runtime: 'ruby2.7',
+              Architectures: ['arm64'],
+            },
+          },
+        })
 
-          const cli = makeCli()
-          const context = createMockContext() as any
-          const functionARN = 'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world'
-          process.env.DATADOG_API_KEY = '1234'
+        const cli = makeCli()
+        const context = createMockContext() as any
+        const functionARNs = [
+          'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world',
+          'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world-2'
+        ]
+        process.env.DATADOG_API_KEY = '1234'
+        for (let i = 0; i < 2; i++) {
           const code = await cli.run(
             [
               'lambda',
               'instrument',
               '-f',
-              functionARN,
+              functionARNs[i],
               '--dry',
               '-e',
               '40',
@@ -1130,14 +1128,6 @@ describe('lambda', () => {
           expect(code).toBe(0)
           expect(output).toMatchSnapshot()
         }
-
-        test('instruments Ruby application properly for default architecture', async () => {
-          await runInstrumentationTest()
-        })
-
-        test('instruments Ruby application properly for ARM architecture', async () => {
-          await runInstrumentationTest(['arm64'])
-        })
       })
 
       test('aborts early when a layer version is set for a Custom runtime', async () => {
