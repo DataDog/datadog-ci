@@ -30,7 +30,9 @@ export class LambdaFlareCommand extends Command {
    * Prints an error message if the command is invalid.
    */
   private validateCommand = () => {
-    if (this.functions.length === 0 && !this.allFunctions) {
+    if (this.isInteractive) {
+      return true
+    } else if (this.functions.length === 0 && !this.allFunctions) {
       this.context.stdout.write(renderError('No functions specified. [-f,--function] or [--allFunctions]'))
     } else if (this.region === '') {
       this.context.stdout.write(renderError('No region specified. [-r,--region]'))
