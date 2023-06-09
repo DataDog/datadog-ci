@@ -11,7 +11,7 @@ Evaluate Quality Gates rules in Datadog. The exit status of the command will cha
 The `evaluate` command evaluates the matching Quality Gates rules in Datadog.
 
 ```bash
-datadog-ci gate evaluate [--scope] [--tags] [--dry-run] [--fail-if-unavailable] [--fail-on-empty]
+datadog-ci gate evaluate [--scope] [--tags] [--dry-run] [--fail-if-unavailable] [--fail-on-empty] [--no-wait]
 ```
 
 For example:
@@ -25,6 +25,8 @@ datadog-ci gate evaluate --scope team:backend --scope team:frontend --fail-on-em
 - `--dry-run` runs the command without the final evaluation step. All other checks are performed. The default value is `false`.
 - `--fail-if-unavailable` fails the command if Datadog is unavailable. The default value is `false`.
 - `--fail-on-empty` fails the command if no matching rules are found in Datadog. The default value is `false`.
+- `--no-wait` can be used in order to remove the default waiting time (30s) that the command has to ensure that the events (e.g. tests) can be properly queried by the rules. This mechanism avoids that rules are incorrectly evaluated due to the absence of the events. Read more on the quality gates documentation before enabling this. The default value is `false`.
+
 
 ### Environment variables
 

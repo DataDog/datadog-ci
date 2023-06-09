@@ -16,6 +16,7 @@ import {
   renderGateEvaluationInput,
   renderGateEvaluationError,
   renderEvaluationRetry,
+  renderWaiting,
 } from './renderer'
 import {getBaseIntakeUrl, is4xxError, is5xxError, parseScope} from './utils'
 
@@ -48,6 +49,7 @@ export class GateEvaluateCommand extends Command {
         'Evaluate matching quality gate rules in Datadog from the datadoghq.eu site',
         'DATADOG_SITE=datadoghq.eu datadog-ci gate evaluate',
       ],
+      ['Evaluate matching quality gate rules in Datadog without waiting', 'datadog-ci gate evaluate --no-wait'],
     ],
   })
 
@@ -60,8 +62,11 @@ export class GateEvaluateCommand extends Command {
   private dryRun = false
   private failOnEmpty = false
   private failIfUnavailable = false
+  private noWait = false
   private userScope?: string[]
   private tags?: string[]
+
+  private waitingTime = 30000 // 30 seconds
 
   public async execute() {
     const api = this.getApiHelper()
@@ -110,6 +115,11 @@ export class GateEvaluateCommand extends Command {
   }
 
   private async evaluateRules(api: APIHelper, evaluateRequest: Payload): Promise<number> {
+    if (this.shouldWait()) {
+      this.context.stdout.write(renderWaiting())
+      await this.delay(this.waitingTime)
+    }
+
     this.context.stdout.write(renderGateEvaluationInput(evaluateRequest))
     if (this.dryRun) {
       this.context.stdout.write(renderDryRunEvaluation())
@@ -152,11 +162,20 @@ export class GateEvaluateCommand extends Command {
 
     return 0
   }
+
+  private async delay(ms: number) {
+    await new Promise((resolve) => setTimeout(resolve, ms))
+  }
+
+  private shouldWait(): boolean {
+    return !this.dryRun && !this.noWait
+  }
 }
 
 GateEvaluateCommand.addPath('gate', 'evaluate')
 GateEvaluateCommand.addOption('dryRun', Command.Boolean('--dry-run'))
 GateEvaluateCommand.addOption('failOnEmpty', Command.Boolean('--fail-on-empty'))
 GateEvaluateCommand.addOption('failIfUnavailable', Command.Boolean('--fail-if-unavailable'))
+GateEvaluateCommand.addOption('noWait', Command.Boolean('--no-wait'))
 GateEvaluateCommand.addOption('userScope', Command.Array('--scope'))
 GateEvaluateCommand.addOption('tags', Command.Array('--tags'))

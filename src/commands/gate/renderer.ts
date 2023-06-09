@@ -109,3 +109,7 @@ export const renderEvaluationRetry = (attempt: number, error: any): string => {
 
   return chalk.yellow(`[attempt ${attempt}] Gate evaluation failed, retrying.\n`)
 }
+
+export const renderWaiting = (): string => {
+  return 'Waiting for events to arrive...\n'
+}
