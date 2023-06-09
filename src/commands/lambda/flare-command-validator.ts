@@ -1,71 +1,90 @@
-// Uses the Chain of Responsibility design pattern to validate the command
 // eslint-disable-next-line max-classes-per-file
-abstract class RequestHandler {
-  private nextHandler: RequestHandler | undefined
+abstract class FlagsValidatorHandler {
+  // Uses the Chain of Responsibility design pattern to validate the command
+  private nextHandler: FlagsValidatorHandler | undefined
 
-  public setNext(handler: RequestHandler): RequestHandler {
+  public setNext(handler: FlagsValidatorHandler): FlagsValidatorHandler {
     this.nextHandler = handler
 
     return handler
   }
 
-  public handle(request: {[key: string]: any}): string | undefined {
+  public handle(flags: {[key: string]: any}): string | undefined {
     if (this.nextHandler) {
-      return this.nextHandler.handle(request)
+      return this.nextHandler.handle(flags)
     }
 
     return undefined
   }
 }
 
-// Concrete handlers
-class InteractiveCheckHandler extends RequestHandler {
-  public handle(request: {[key: string]: any}): string | undefined {
-    if (request.isInteractive) {
+/**
+ * Concrete handler for the interactive flag.
+ * If the interactive flag is set, the other flags are not required.
+ */
+export class InteractiveCheckHandler extends FlagsValidatorHandler {
+  public handle(flags: {[key: string]: any}): string | undefined {
+    if (flags.isInteractive) {
       return undefined
     }
 
-    return super.handle(request)
+    return super.handle(flags)
   }
 }
 
-class FunctionsCheckHandler extends RequestHandler {
-  public handle(request: {[key: string]: any}): string | undefined {
-    if (request.functions.length === 0) {
+/**
+ * Concrete handler for the functions flag.
+ * Requires at least one function to be specified.
+ */
+export class FunctionsCheckHandler extends FlagsValidatorHandler {
+  public handle(flags: {[key: string]: any}): string | undefined {
+    if (flags.functions.length === 0) {
       return 'No functions specified. [-f,--function]'
     }
 
-    return super.handle(request)
+    return super.handle(flags)
   }
 }
 
-class RegionCheckHandler extends RequestHandler {
-  public handle(request: {[key: string]: any}): string | undefined {
-    if (request.region === undefined) {
+/**
+ * Concrete handler for the region flag.
+ * Requires a region to be specified.
+ */
+export class RegionCheckHandler extends FlagsValidatorHandler {
+  public handle(flags: {[key: string]: any}): string | undefined {
+    if (flags.region === undefined) {
       return 'No region specified. [-r,--region]'
     }
 
-    return super.handle(request)
+    return super.handle(flags)
   }
 }
 
-class ApiKeyCheckHandler extends RequestHandler {
-  public handle(request: {[key: string]: any}): string | undefined {
-    if (request.apiKey === undefined) {
+/**
+ * Concrete handler for the API key flag.
+ * Requires an API key to be specified.
+ */
+export class ApiKeyCheckHandler extends FlagsValidatorHandler {
+  public handle(flags: {[key: string]: any}): string | undefined {
+    if (flags.apiKey === undefined) {
       return 'No API key specified. [--api-key]'
     }
 
-    return super.handle(request)
+    return super.handle(flags)
   }
 }
 
-class EmailCheckHandler extends RequestHandler {
-  public handle(request: {[key: string]: any}): string | undefined {
-    if (request.email === undefined) {
+/**
+ * Concrete handler for the email flag.
+ * Requires an email to be specified.
+ */
+export class EmailCheckHandler extends FlagsValidatorHandler {
+  public handle(flags: {[key: string]: any}): string | undefined {
+    if (flags.email === undefined) {
       return 'No email specified. [-e,--email]'
     }
 
-    return super.handle(request)
+    return super.handle(flags)
   }
 }
 
@@ -84,6 +103,6 @@ interactiveCheckHandler
 /**
  * @returns undefined if the command is valid, an error message otherwise.
  */
-export const validateCommand = (request: {[key: string]: any}): string | undefined => {
-  return interactiveCheckHandler.handle(request)
+export const validateFlags = (flags: {[key: string]: any}): string | undefined => {
+  return interactiveCheckHandler.handle(flags)
 }
