@@ -1,5 +1,6 @@
 import {Command} from 'clipanion'
 
+import {validateCommand} from './flare-validator'
 import {renderError, renderLambdaFlareHeader} from './renderers/flare-renderer'
 
 export class LambdaFlareCommand extends Command {
@@ -18,33 +19,14 @@ export class LambdaFlareCommand extends Command {
   public async execute() {
     this.context.stdout.write(renderLambdaFlareHeader(this.isDryRun))
 
-    if (!this.validateCommand()) {
+    const errors = validateCommand(this)
+    if (errors) {
+      this.context.stdout.write(renderError(errors))
+
       return 1
     }
 
     return 0
-  }
-
-  /**
-   * @returns true if the command is valid, false otherwise.
-   * Prints an error message if the command is invalid.
-   */
-  private validateCommand = () => {
-    if (this.isInteractive) {
-      return true
-    } else if (this.functions.length === 0) {
-      this.context.stdout.write(renderError('No functions specified. [-f,--function]'))
-    } else if (this.region === undefined) {
-      this.context.stdout.write(renderError('No region specified. [-r,--region]'))
-    } else if (this.apiKey === undefined) {
-      this.context.stdout.write(renderError('No API key specified. [--api-key]'))
-    } else if (this.email === undefined) {
-      this.context.stdout.write(renderError('No email specified. [-e,--email]'))
-    } else {
-      return true
-    }
-
-    return false
   }
 }
 
