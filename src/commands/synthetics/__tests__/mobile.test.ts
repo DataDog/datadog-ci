@@ -1,11 +1,11 @@
 import fs from 'fs'
 import path from 'path'
 
+import {EndpointError} from '../api'
+import {CiError} from '../errors'
 import * as mobile from '../mobile'
 
 import {getApiHelper, getMobileTest, getMobileVersion, getTestPayload, uploadCommandCongif} from './fixtures'
-import { EndpointError } from '../api'
-import { CiError } from '../errors'
 
 describe('getSizeAndMD5HashFromFile', () => {
   test('correctly get size and md5 of a file', async () => {

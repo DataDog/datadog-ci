@@ -576,5 +576,5 @@ export const uploadCommandCongif: UploadApplicationCommandConfig = {
   publicIds: [],
   subdomain: '',
   tunnel: false,
-  variableStrings: []
+  variableStrings: [],
 }
