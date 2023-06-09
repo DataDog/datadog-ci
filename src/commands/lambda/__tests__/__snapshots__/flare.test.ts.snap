@@ -3,11 +3,15 @@
 exports[`lambda flare prints dry-run header 1`] = `
 "
 [Dry Run] 🐶 Generating Lambda flare to send your configuration to Datadog
+
+[Error] No functions specified. [-f,--function] or [--allFunctions]
 "
 `;
 
 exports[`lambda flare prints non-dry-run header 1`] = `
 "
 🐶 Generating Lambda flare to send your configuration to Datadog
+
+[Error] No functions specified. [-f,--function] or [--allFunctions]
 "
 `;
