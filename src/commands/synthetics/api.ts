@@ -197,20 +197,16 @@ const uploadMobileApplication = (request: (args: AxiosRequestConfig) => AxiosPro
 }
 
 const createMobileVersion = (request: (args: AxiosRequestConfig) => AxiosPromise<MobileApplicationVersion>) => async (
-  fileName: string,
-  mobileApplicationId: string,
-  originalFileName: string,
-  versionName: string,
-  latest: boolean
+  version: MobileApplicationVersion
 ) => {
   const resp = await retryRequest(
     {
       data: {
-        file_name: fileName,
-        original_file_name: originalFileName,
-        application_id: mobileApplicationId,
-        version_name: versionName,
-        is_latest: latest,
+        file_name: version.fileName,
+        original_file_name: version.originalFileName,
+        application_id: version.mobileApplicationId,
+        version_name: version.versionName,
+        is_latest: version.isLatest,
       },
       method: 'POST',
       url: `/synthetics/mobile/applications/versions`,

@@ -4,11 +4,11 @@ import fs from 'fs'
 import {APIHelper, EndpointError, formatBackendErrors, getApiHelper} from './api'
 import {CiError} from './errors'
 import {
-  CommandConfig,
   MobileApplicationVersion,
   PresignedUrlResponse,
   Test,
   TestPayload,
+  UploadApplicationCommandConfig,
   UserConfigOverride,
 } from './interfaces'
 
@@ -126,32 +126,48 @@ export const uploadApplicationAndOverrideConfig = async (
 }
 
 export const uploadMobileApplicationVersion = async (
-  api: APIHelper,
-  applicationPathToUpload?: string,
-  mobileApplicationId?: string,
-  versionName?: string,
-  latest?: boolean
+  config: UploadApplicationCommandConfig
 ): Promise<MobileApplicationVersion> => {
+  const api = getApiHelper(config)
 
-  latest = latest ?? true
-
-  if (!applicationPathToUpload) {
+  if (!config.mobileApplicationVersionFilePath) {
     throw new CiError('MISSING_MOBILE_APPLICATION_PATH')
   }
-  if (!mobileApplicationId) {
+  if (!config.mobileApplicationId) {
     throw new CiError('MISSING_MOBILE_APPLICATION_ID')
   }
-  if (!versionName) {
+  if (!config.versionName) {
     throw new CiError('MISSING_MOBILE_VERSION_NAME')
   }
-  const fileName = await uploadMobileApplications(api, applicationPathToUpload, mobileApplicationId)
-  const version = await api.createMobileVersion(
-    fileName,
-    mobileApplicationId,
-    applicationPathToUpload,
-    versionName,
-    latest
+  config.latest = config.latest ?? true
+
+  const fileName = await uploadMobileApplications(
+    api,
+    config.mobileApplicationVersionFilePath,
+    config.mobileApplicationId
   )
+  console.log('App uploaded, creating new')
+  const version = await createNewMobileVersion(api, {
+    fileName,
+    mobileApplicationId: config.mobileApplicationId,
+    originalFileName: config.mobileApplicationVersionFilePath,
+    versionName: config.versionName,
+    isLatest: config.latest,
+  })
 
   return version
+}
+
+export const createNewMobileVersion = async (
+  api: APIHelper,
+  version: MobileApplicationVersion
+): Promise<MobileApplicationVersion> => {
+  let newVersion: MobileApplicationVersion
+  try {
+    newVersion = await api.createMobileVersion(version)
+  } catch (e) {
+    throw new EndpointError(`Failed create new Mobile Version: ${formatBackendErrors(e)}\n`, e.response?.status)
+  }
+
+  return newVersion
 }

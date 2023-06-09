@@ -11,13 +11,11 @@ import {
   ciConfig,
   getApiTest,
   getAxiosHttpError,
-  getMobileVersion,
   getSyntheticsProxy,
   MOBILE_PRESIGNED_URL_PAYLOAD,
   mockSearchResponse,
   mockTestTriggerResponse,
 } from './fixtures'
-import { create } from 'domain'
 
 describe('dd-api', () => {
   const apiConfiguration: APIConfiguration = {
@@ -301,25 +299,6 @@ describe('dd-api', () => {
       } finally {
         await proxyClose()
       }
-    })
-
-    test('should create a new mobile application version from api', async () => {
-      const mockRequest = jest.fn(() => ({status: 200, data: getMobileVersion()}))
-      const spy = jest.spyOn(axios, 'create').mockImplementation((() => mockRequest) as any)
-      const version = getMobileVersion()
-      const api = apiConstructor(apiConfiguration)
-      const {createMobileVersion} = api
-      await createMobileVersion(
-        version.file_name,
-        version.application_id,
-        version.original_file_name,
-        version.version_name,
-        version.is_latest
-      )
-
-      const callArg = mockRequest.mock.calls[0]
-      expect(callArg.url).toBe(MOBILE_PRESIGNED_URL_PAYLOAD.presigned_url_params.url)
-      spy.mockRestore()
     })
   })
 })

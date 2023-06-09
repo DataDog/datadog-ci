@@ -27,6 +27,7 @@ import {
   Test,
   TestPayload,
   Trigger,
+  UploadApplicationCommandConfig,
   User,
 } from '../interfaces'
 import {createInitialSummary} from '../utils'
@@ -548,12 +549,32 @@ export const getTestPayload = (override?: Partial<TestPayload>) => ({
 })
 
 export const getMobileVersion = (override?: Partial<MobileApplicationVersion>) => ({
-  id: '123-abc-456',
-  application_id: '789-dfg-987',
-  file_name: 'bla.',
-  original_file_name: 'test.apk',
-  is_latest: true,
-  version_name: 'test version',
+  versionId: '123-abc-456',
+  mobileApplicationId: '789-dfg-987',
+  fileName: 'bla.',
+  originalFileName: 'test.apk',
+  isLatest: true,
+  versionName: 'test version',
   created_at: '22-09-2022',
   ...override,
 })
+
+export const uploadCommandCongif: UploadApplicationCommandConfig = {
+  apiKey: 'foo',
+  appKey: 'bar',
+  configPath: 'datadog-ci.json',
+  datadogSite: 'datadoghq.com',
+  mobileApplicationVersionFilePath: 'test.apk',
+  mobileApplicationId: 'abc-123-def',
+  versionName: 'new version',
+  latest: true,
+  proxy: {protocol: 'http'},
+  files: [],
+  global: {},
+  locations: [],
+  pollingTimeout: 0,
+  publicIds: [],
+  subdomain: '',
+  tunnel: false,
+  variableStrings: []
+}

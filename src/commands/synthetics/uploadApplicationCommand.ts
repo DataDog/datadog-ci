@@ -4,36 +4,36 @@ import deepExtend from 'deep-extend'
 import {removeUndefinedValues} from '../../helpers/utils'
 
 import {CiError} from './errors'
-import {CommandConfig, MainReporter, Reporter} from './interfaces'
+import {UploadApplicationCommandConfig, MainReporter, Reporter} from './interfaces'
 import {uploadMobileApplicationVersion} from './mobile'
 import {DefaultReporter} from './reporters/default'
 import {getReporter, reportCiError} from './utils'
-import { getApiHelper } from './api'
 
-export const DEFAULT_UPLOAD_COMMAND_CONFIG: CommandConfig = {
+export const DEFAULT_UPLOAD_COMMAND_CONFIG: UploadApplicationCommandConfig = {
   apiKey: '',
   appKey: '',
   configPath: 'datadog-ci.json',
   datadogSite: 'datadoghq.com',
-  files: ['{,!(node_modules)/**/}*.synthetics.json'],
-  subdomain: 'app',
-  failOnCriticalErrors: false,
-  failOnMissingTests: false,
-  failOnTimeout: false,
+  mobileApplicationVersionFilePath: '',
+  mobileApplicationId: '',
+  versionName: '',
+  latest: false,
+  files: [],
   global: {},
   locations: [],
   pollingTimeout: 0,
-  proxy: {protocol: 'http'},
   publicIds: [],
+  subdomain: '',
   tunnel: false,
   variableStrings: [],
+  proxy: {protocol: 'http'},
 }
 
 export class UploadApplicationCommand extends Command {
   public configPath?: string
   private apiKey?: string
   private appKey?: string
-  private config: CommandConfig = JSON.parse(JSON.stringify(DEFAULT_UPLOAD_COMMAND_CONFIG)) // Deep copy to avoid mutation during unit tests
+  private config: UploadApplicationCommandConfig = JSON.parse(JSON.stringify(DEFAULT_UPLOAD_COMMAND_CONFIG)) // Deep copy to avoid mutation during unit tests
   private datadogSite?: string
   private reporter?: MainReporter
   private mobileApplicationVersionFilePath?: string
@@ -61,19 +61,16 @@ export class UploadApplicationCommand extends Command {
         apiKey: this.apiKey,
         appKey: this.appKey,
         datadogSite: this.datadogSite,
+        mobileApplicationVersionFilePath: this.mobileApplicationVersionFilePath,
+        mobileApplicationId: this.mobileApplicationId,
+        versionName: this.versionName,
+        latest: this.latest,
       })
     )
 
-    const api = getApiHelper(this.config)
     try {
-      const version = await uploadMobileApplicationVersion(
-        api,
-        this.mobileApplicationVersionFilePath,
-        this.mobileApplicationId,
-        this.versionName,
-        this.latest
-      )
-      this.reporter.log(`Created new version: ${version.version_name}, with version ID: ${version.id}`)
+      const version = await uploadMobileApplicationVersion(this.config)
+      this.reporter.log(`Created new version: ${version.versionName}, with version ID: ${version.versionId}`)
     } catch (error) {
       if (error instanceof CiError) {
         reportCiError(error, this.reporter)

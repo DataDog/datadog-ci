@@ -380,6 +380,13 @@ export interface CommandConfig extends SyntheticsCIConfig {
   failOnTimeout: boolean
 }
 
+export interface UploadApplicationCommandConfig extends SyntheticsCIConfig {
+  mobileApplicationVersionFilePath?: string
+  mobileApplicationId?: string
+  versionName?: string
+  latest?: boolean
+}
+
 export type WrapperConfig = Partial<CommandConfig>
 
 export interface PresignedUrlResponse {
@@ -398,11 +405,11 @@ export interface SyntheticsOrgSettings {
 }
 
 export interface MobileApplicationVersion {
-  id: string
-  application_id: string
-  created_at: string
-  file_name: string
-  original_file_name: string
-  is_latest: boolean
-  version_name: string
+  versionId?: string
+  mobileApplicationId: string
+  fileName: string
+  originalFileName: string
+  isLatest: boolean
+  versionName: string
+  createdAt?: string
 }
