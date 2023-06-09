@@ -1,6 +1,6 @@
 import {Command} from 'clipanion'
 
-import {validateCommand} from './flare-validator'
+import {validateCommand} from './flare-command-validator'
 import {renderError, renderLambdaFlareHeader} from './renderers/flare-renderer'
 
 export class LambdaFlareCommand extends Command {

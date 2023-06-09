@@ -1,8 +1,12 @@
-abstract class AbstractHandler {
-  private nextHandler: AbstractHandler | undefined
+// Uses the Chain of Responsibility design pattern to validate the command
+// eslint-disable-next-line max-classes-per-file
+abstract class RequestHandler {
+  private nextHandler: RequestHandler | undefined
 
-  public setNext(handler: AbstractHandler) {
+  public setNext(handler: RequestHandler): RequestHandler {
     this.nextHandler = handler
+
+    return handler
   }
 
   public handle(request: {[key: string]: any}): string | undefined {
@@ -14,7 +18,8 @@ abstract class AbstractHandler {
   }
 }
 
-class InteractiveHandler extends AbstractHandler {
+// Concrete handlers
+class InteractiveCheckHandler extends RequestHandler {
   public handle(request: {[key: string]: any}): string | undefined {
     if (request.isInteractive) {
       return undefined
@@ -24,7 +29,7 @@ class InteractiveHandler extends AbstractHandler {
   }
 }
 
-class FunctionsHandler extends AbstractHandler {
+class FunctionsCheckHandler extends RequestHandler {
   public handle(request: {[key: string]: any}): string | undefined {
     if (request.functions.length === 0) {
       return 'No functions specified. [-f,--function]'
@@ -34,7 +39,7 @@ class FunctionsHandler extends AbstractHandler {
   }
 }
 
-class RegionHandler extends AbstractHandler {
+class RegionCheckHandler extends RequestHandler {
   public handle(request: {[key: string]: any}): string | undefined {
     if (request.region === undefined) {
       return 'No region specified. [-r,--region]'
@@ -44,7 +49,7 @@ class RegionHandler extends AbstractHandler {
   }
 }
 
-class ApiKeyHandler extends AbstractHandler {
+class ApiKeyCheckHandler extends RequestHandler {
   public handle(request: {[key: string]: any}): string | undefined {
     if (request.apiKey === undefined) {
       return 'No API key specified. [--api-key]'
@@ -54,7 +59,7 @@ class ApiKeyHandler extends AbstractHandler {
   }
 }
 
-class EmailHandler extends AbstractHandler {
+class EmailCheckHandler extends RequestHandler {
   public handle(request: {[key: string]: any}): string | undefined {
     if (request.email === undefined) {
       return 'No email specified. [-e,--email]'
@@ -64,17 +69,21 @@ class EmailHandler extends AbstractHandler {
   }
 }
 
-const interactiveHandler = new InteractiveHandler()
-const functionsHandler = new FunctionsHandler()
-const regionHandler = new RegionHandler()
-const apiKeyHandler = new ApiKeyHandler()
-const emailHandler = new EmailHandler()
+const interactiveCheckHandler = new InteractiveCheckHandler()
+const functionsCheckHandler = new FunctionsCheckHandler()
+const regionCheckHandler = new RegionCheckHandler()
+const apiKeyCheckHandler = new ApiKeyCheckHandler()
+const emailCheckHandler = new EmailCheckHandler()
 
-interactiveHandler.setNext(functionsHandler)
-functionsHandler.setNext(regionHandler)
-regionHandler.setNext(apiKeyHandler)
-apiKeyHandler.setNext(emailHandler)
+interactiveCheckHandler
+  .setNext(functionsCheckHandler)
+  .setNext(regionCheckHandler)
+  .setNext(apiKeyCheckHandler)
+  .setNext(emailCheckHandler)
 
+/**
+ * @returns undefined if the command is valid, an error message otherwise.
+ */
 export const validateCommand = (request: {[key: string]: any}): string | undefined => {
-  return interactiveHandler.handle(request)
+  return interactiveCheckHandler.handle(request)
 }
