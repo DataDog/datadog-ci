@@ -951,15 +951,6 @@ export const reportCiError = (error: CiError, reporter: MainReporter) => {
     case 'UNAVAILABLE_TUNNEL_CONFIG':
       reporter.error(`\n${chalk.bgRed.bold(' ERROR: unable to get tunnel configuration ')}\n${error.message}\n\n`)
       break
-    case 'MISSING_MOBILE_APPLICATION_PATH':
-      reporter.error(`${chalk.red.bold('mobileApplicationPath')} is required.\n`)
-      break
-    case 'MISSING_MOBILE_APPLICATION_ID':
-      reporter.error(`${chalk.red.bold('mobileApplicationID')} is required.\n`)
-      break
-    case 'MISSING_MOBILE_VERSION_NAME':
-      reporter.error(`${chalk.red.bold('versionName')} is required.\n`)
-      break
 
     default:
       reporter.error(`\n${chalk.bgRed.bold(' ERROR ')}\n${error.message}\n\n`)

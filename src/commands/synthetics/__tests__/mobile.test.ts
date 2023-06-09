@@ -274,13 +274,13 @@ describe('uploadMobileApplicationVersion', () => {
 
   test('upload new application file', async () => {
     uploadMobileApplicationSpy.mockImplementation(async () => 'abc-123')
-    createNewMobileVersionSpy.mockImplementation(async () => getMobileVersion({versionId: 'def-456'}))
+    createNewMobileVersionSpy.mockImplementation(async () => getMobileVersion({id: 'def-456'}))
 
     await mobile.uploadMobileApplicationVersion(config)
 
     expect(uploadMobileApplicationSpy).toHaveBeenCalledTimes(1)
     const callArg = createNewMobileVersionSpy.mock.calls[0][1]
-    expect(callArg.fileName).toBe('abc-123')
+    expect(callArg.file_name).toBe('abc-123')
   })
 
   test('get pre-signe URL fails', async () => {

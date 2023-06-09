@@ -405,11 +405,11 @@ export interface SyntheticsOrgSettings {
 }
 
 export interface MobileApplicationVersion {
-  versionId?: string
-  mobileApplicationId: string
-  fileName: string
-  originalFileName: string
-  isLatest: boolean
-  versionName: string
-  createdAt?: string
+  id?: string
+  application_id: string
+  file_name: string
+  original_file_name: string
+  is_latest: boolean
+  version_name: string
+  created_at?: string
 }

@@ -1,13 +1,13 @@
 import {Command} from 'clipanion'
 import deepExtend from 'deep-extend'
 
+import {LogLevel, Logger} from '../../helpers/logger'
 import {removeUndefinedValues} from '../../helpers/utils'
 
+import {EndpointError} from './api'
 import {CiError} from './errors'
-import {UploadApplicationCommandConfig, MainReporter, Reporter} from './interfaces'
+import {UploadApplicationCommandConfig} from './interfaces'
 import {uploadMobileApplicationVersion} from './mobile'
-import {DefaultReporter} from './reporters/default'
-import {getReporter, reportCiError} from './utils'
 
 export const DEFAULT_UPLOAD_COMMAND_CONFIG: UploadApplicationCommandConfig = {
   apiKey: '',
@@ -35,16 +35,15 @@ export class UploadApplicationCommand extends Command {
   private appKey?: string
   private config: UploadApplicationCommandConfig = JSON.parse(JSON.stringify(DEFAULT_UPLOAD_COMMAND_CONFIG)) // Deep copy to avoid mutation during unit tests
   private datadogSite?: string
-  private reporter?: MainReporter
   private mobileApplicationVersionFilePath?: string
   private mobileApplicationId?: string
   private versionName?: string
   private latest?: boolean
+  private logger: Logger = new Logger((s: string) => {
+    this.context.stdout.write(s)
+  }, LogLevel.INFO)
 
   public async execute() {
-    const reporters: Reporter[] = [new DefaultReporter(this)]
-    this.reporter = getReporter(reporters)
-
     this.config = deepExtend(
       this.config,
       removeUndefinedValues({
@@ -70,10 +69,10 @@ export class UploadApplicationCommand extends Command {
 
     try {
       const version = await uploadMobileApplicationVersion(this.config)
-      this.reporter.log(`Created new version: ${version.versionName}, with version ID: ${version.versionId}`)
+      this.logger.info(`Created new version ${version.version_name}, with version ID: ${version.id}`)
     } catch (error) {
-      if (error instanceof CiError) {
-        reportCiError(error, this.reporter)
+      if (error instanceof CiError || error instanceof EndpointError) {
+        this.logger.error(`Error: ${error.message}`)
       }
 
       return 1

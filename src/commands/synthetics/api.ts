@@ -201,18 +201,13 @@ const createMobileVersion = (request: (args: AxiosRequestConfig) => AxiosPromise
 ) => {
   const resp = await retryRequest(
     {
-      data: {
-        file_name: version.fileName,
-        original_file_name: version.originalFileName,
-        application_id: version.mobileApplicationId,
-        version_name: version.versionName,
-        is_latest: version.isLatest,
-      },
+      data: version,
       method: 'POST',
       url: `/synthetics/mobile/applications/versions`,
     },
     request
   )
+  console.log(`${JSON.stringify(resp.data)}`)
 
   return resp.data
 }

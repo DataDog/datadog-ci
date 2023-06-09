@@ -125,39 +125,6 @@ export const uploadApplicationAndOverrideConfig = async (
   overrideMobileConfig(userConfigOverride, overriddenTestsToTrigger, test, localApplicationOverride)
 }
 
-export const uploadMobileApplicationVersion = async (
-  config: UploadApplicationCommandConfig
-): Promise<MobileApplicationVersion> => {
-  const api = getApiHelper(config)
-
-  if (!config.mobileApplicationVersionFilePath) {
-    throw new CiError('MISSING_MOBILE_APPLICATION_PATH')
-  }
-  if (!config.mobileApplicationId) {
-    throw new CiError('MISSING_MOBILE_APPLICATION_ID')
-  }
-  if (!config.versionName) {
-    throw new CiError('MISSING_MOBILE_VERSION_NAME')
-  }
-  config.latest = config.latest ?? true
-
-  const fileName = await uploadMobileApplications(
-    api,
-    config.mobileApplicationVersionFilePath,
-    config.mobileApplicationId
-  )
-  console.log('App uploaded, creating new')
-  const version = await createNewMobileVersion(api, {
-    fileName,
-    mobileApplicationId: config.mobileApplicationId,
-    originalFileName: config.mobileApplicationVersionFilePath,
-    versionName: config.versionName,
-    isLatest: config.latest,
-  })
-
-  return version
-}
-
 export const createNewMobileVersion = async (
   api: APIHelper,
   version: MobileApplicationVersion
@@ -170,4 +137,37 @@ export const createNewMobileVersion = async (
   }
 
   return newVersion
+}
+
+export const uploadMobileApplicationVersion = async (
+  config: UploadApplicationCommandConfig
+): Promise<MobileApplicationVersion> => {
+  const api = getApiHelper(config)
+
+  if (!config.mobileApplicationVersionFilePath) {
+    throw new CiError('MISSING_MOBILE_APPLICATION_PATH', 'Mobile application path is required.')
+  }
+  if (!config.mobileApplicationId) {
+    throw new CiError('MISSING_MOBILE_APPLICATION_ID', 'Mobile application id is required.')
+  }
+  if (!config.versionName) {
+    throw new CiError('MISSING_MOBILE_VERSION_NAME', 'Version name is required')
+  }
+  config.latest = config.latest ?? true
+
+  const fileName = await uploadMobileApplications(
+    api,
+    config.mobileApplicationVersionFilePath,
+    config.mobileApplicationId
+  )
+
+  const version = await createNewMobileVersion(api, {
+    file_name: fileName,
+    application_id: config.mobileApplicationId,
+    original_file_name: config.mobileApplicationVersionFilePath,
+    version_name: config.versionName,
+    is_latest: config.latest,
+  })
+
+  return version
 }

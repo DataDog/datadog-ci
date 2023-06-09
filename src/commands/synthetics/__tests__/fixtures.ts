@@ -549,12 +549,12 @@ export const getTestPayload = (override?: Partial<TestPayload>) => ({
 })
 
 export const getMobileVersion = (override?: Partial<MobileApplicationVersion>) => ({
-  versionId: '123-abc-456',
-  mobileApplicationId: '789-dfg-987',
-  fileName: 'bla.',
-  originalFileName: 'test.apk',
-  isLatest: true,
-  versionName: 'test version',
+  id: '123-abc-456',
+  application_id: '789-dfg-987',
+  file_name: 'bla.',
+  original_file_name: 'test.apk',
+  is_latest: true,
+  version_name: 'test version',
   created_at: '22-09-2022',
   ...override,
 })
