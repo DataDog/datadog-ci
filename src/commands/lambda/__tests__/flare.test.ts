@@ -28,7 +28,7 @@ describe('lambda flare', () => {
     )
     expect(code).toBe(1)
     const output = context.stdout.toString()
-    expect(output).toContain('No functions specified. [-f,--function] or [--allFunctions]')
+    expect(output).toContain('No functions specified. [-f,--function]')
   })
 
   it('prints error when no region specified', async () => {

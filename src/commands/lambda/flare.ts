@@ -5,12 +5,12 @@ import {renderError, renderLambdaFlareHeader} from './renderers/flare-renderer'
 export class LambdaFlareCommand extends Command {
   private isDryRun = false
   private isInteractive = false
-  private allFunctions = false
+  // private allFunctions = false
   private functions: string[] = []
-  private region = ''
-  private apiKey = ''
-  private caseID = ''
-  private email = ''
+  private region?: string
+  private apiKey?: string
+  private caseId?: string
+  private email?: string
 
   /**
    * @returns 0 if the command ran successfully, 1 otherwise.
@@ -32,13 +32,13 @@ export class LambdaFlareCommand extends Command {
   private validateCommand = () => {
     if (this.isInteractive) {
       return true
-    } else if (this.functions.length === 0 && !this.allFunctions) {
-      this.context.stdout.write(renderError('No functions specified. [-f,--function] or [--allFunctions]'))
-    } else if (this.region === '') {
+    } else if (this.functions.length === 0) {
+      this.context.stdout.write(renderError('No functions specified. [-f,--function]'))
+    } else if (this.region === undefined) {
       this.context.stdout.write(renderError('No region specified. [-r,--region]'))
-    } else if (this.apiKey === '') {
+    } else if (this.apiKey === undefined) {
       this.context.stdout.write(renderError('No API key specified. [--api-key]'))
-    } else if (this.email === '') {
+    } else if (this.email === undefined) {
       this.context.stdout.write(renderError('No email specified. [-e,--email]'))
     } else {
       return true
@@ -51,9 +51,9 @@ export class LambdaFlareCommand extends Command {
 LambdaFlareCommand.addPath('lambda', 'flare')
 LambdaFlareCommand.addOption('isDryRun', Command.Boolean('-d,--dry'))
 LambdaFlareCommand.addOption('isInteractive', Command.Boolean('-i,--interactive'))
-LambdaFlareCommand.addOption('allFunctions', Command.Boolean('--allFunctions'))
+// LambdaFlareCommand.addOption('allFunctions', Command.Boolean('--all-functions'))
 LambdaFlareCommand.addOption('functions', Command.Array('-f,--function'))
 LambdaFlareCommand.addOption('region', Command.String('-r,--region'))
 LambdaFlareCommand.addOption('apiKey', Command.String('--api-key'))
-LambdaFlareCommand.addOption('caseID', Command.String('-c,--case-id'))
+LambdaFlareCommand.addOption('caseId', Command.String('-c,--case-id'))
 LambdaFlareCommand.addOption('email', Command.String('-e,--email'))
