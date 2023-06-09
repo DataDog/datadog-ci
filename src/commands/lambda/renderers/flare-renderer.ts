@@ -1,11 +1,4 @@
-import {
-  dryRunTag,
-  errorTag,
-  warningTag,
-  warningExclamationSignTag,
-  successCheckmarkTag,
-  failCrossTag,
-} from './common-renderer'
+import {dryRunTag, errorTag} from './common-renderer'
 
 /**
  * @returns a header indicating which `lambda` subcommand is running.
@@ -30,43 +23,3 @@ export const renderLambdaFlareHeader = (isDryRun: boolean) => {
  * ```
  */
 export const renderError = (error: string) => `\n${errorTag} ${error}\n`
-
-/**
- * @param warning the message to warn about.
- * @returns the provided warning prefixed by {@link warningTag}.
- *
- * ```txt
- * [Warning] The provided warning goes here!
- * ```
- */
-export const renderWarning = (warning: string) => `${warningTag} ${warning}\n`
-
-/**
- * @param warning the message to warn about.
- * @returns the provided warning prefixed by {@link warningExclamationSignTag}.
- *
- * ```txt
- * [!] The provided warning goes here!
- * ```
- */
-export const renderSoftWarning = (warning: string) => `${warningExclamationSignTag} ${warning}\n`
-
-/**
- * @param message the message to set with the success tag.
- * @returns the provided message prefixed by {@link successCheckmarkTag}.
- *
- * ```txt
- * [✔] The provided message goes here!
- * ```
- */
-export const renderSuccess = (message: string) => `${successCheckmarkTag} ${message}\n`
-
-/**
- * @param message the message to set with the fail tag.
- * @returns the provided message prefixed by {@link failCrossTag}.
- *
- * ```txt
- * [✖] The provided message goes here!
- * ```
- */
-export const renderFail = (message: string) => `${failCrossTag} ${message}\n`

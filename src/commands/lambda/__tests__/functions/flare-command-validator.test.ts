@@ -1,41 +1,41 @@
 import {
   validateFlags,
-  InteractiveCheckHandler,
-  FunctionsCheckHandler,
-  RegionCheckHandler,
-  ApiKeyCheckHandler,
-  EmailCheckHandler,
+  InteractiveCheckValidator,
+  FunctionsCheckValidator,
+  RegionCheckValidator,
+  ApiKeyCheckValidator,
+  EmailCheckValidator,
 } from '../../flare-command-validator'
 
 describe('FlagValidators', () => {
-  test('InteractiveCheckHandler does not return an error message', () => {
-    const handler = new InteractiveCheckHandler()
-    expect(handler.handle({isInteractive: true})).toBeUndefined()
-    expect(handler.handle({isInteractive: false, functions: []})).toBeUndefined()
+  test('InteractiveCheckValidator does not return an error message', () => {
+    const validator = new InteractiveCheckValidator()
+    expect(validator.validate({isInteractive: true})).toBeUndefined()
+    expect(validator.validate({isInteractive: false, functions: []})).toBeUndefined()
   })
 
-  test('FunctionsCheckHandler returns error if no functions are specified', () => {
-    const handler = new FunctionsCheckHandler()
-    expect(handler.handle({functions: []})).toBe('No functions specified. [-f,--function]')
-    expect(handler.handle({functions: ['func1']})).toBeUndefined()
+  test('FunctionsCheckValidator returns error if no functions are specified', () => {
+    const validator = new FunctionsCheckValidator()
+    expect(validator.validate({functions: []})).toBe('No functions specified. [-f,--function]')
+    expect(validator.validate({functions: ['func1']})).toBeUndefined()
   })
 
-  test('RegionCheckHandler returns error if no region is specified', () => {
-    const handler = new RegionCheckHandler()
-    expect(handler.handle({})).toBe('No region specified. [-r,--region]')
-    expect(handler.handle({region: 'us-east-1'})).toBeUndefined()
+  test('RegionCheckValidator returns error if no region is specified', () => {
+    const validator = new RegionCheckValidator()
+    expect(validator.validate({})).toBe('No region specified. [-r,--region]')
+    expect(validator.validate({region: 'us-east-1'})).toBeUndefined()
   })
 
-  test('ApiKeyCheckHandler returns error if no API key is specified', () => {
-    const handler = new ApiKeyCheckHandler()
-    expect(handler.handle({})).toBe('No API key specified. [--api-key]')
-    expect(handler.handle({apiKey: 'someKey'})).toBeUndefined()
+  test('ApiKeyCheckValidator returns error if no API key is specified', () => {
+    const validator = new ApiKeyCheckValidator()
+    expect(validator.validate({})).toBe('No API key specified. [--api-key]')
+    expect(validator.validate({apiKey: 'someKey'})).toBeUndefined()
   })
 
-  test('EmailCheckHandler returns error if no email is specified', () => {
-    const handler = new EmailCheckHandler()
-    expect(handler.handle({})).toBe('No email specified. [-e,--email]')
-    expect(handler.handle({email: 'test@example.com'})).toBeUndefined()
+  test('EmailCheckValidator returns error if no email is specified', () => {
+    const validator = new EmailCheckValidator()
+    expect(validator.validate({})).toBe('No email specified. [-e,--email]')
+    expect(validator.validate({email: 'test@example.com'})).toBeUndefined()
   })
 
   describe('validateFlags', () => {

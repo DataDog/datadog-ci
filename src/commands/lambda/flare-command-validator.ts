@@ -1,17 +1,17 @@
 // eslint-disable-next-line max-classes-per-file
-abstract class FlagsValidatorHandler {
+abstract class FlagsValidatorValidator {
   // Uses the Chain of Responsibility design pattern to validate the command
-  private nextHandler: FlagsValidatorHandler | undefined
+  private nextValidator: FlagsValidatorValidator | undefined
 
-  public setNext(handler: FlagsValidatorHandler): FlagsValidatorHandler {
-    this.nextHandler = handler
+  public setNext(validator: FlagsValidatorValidator): FlagsValidatorValidator {
+    this.nextValidator = validator
 
-    return handler
+    return validator
   }
 
-  public handle(flags: {[key: string]: any}): string | undefined {
-    if (this.nextHandler) {
-      return this.nextHandler.handle(flags)
+  public validate(flags: {[key: string]: any}): string | undefined {
+    if (this.nextValidator) {
+      return this.nextValidator.validate(flags)
     }
 
     return undefined
@@ -19,90 +19,90 @@ abstract class FlagsValidatorHandler {
 }
 
 /**
- * Concrete handler for the interactive flag.
+ * Concrete validator for the interactive flag.
  * If the interactive flag is set, the other flags are not required.
  */
-export class InteractiveCheckHandler extends FlagsValidatorHandler {
-  public handle(flags: {[key: string]: any}): string | undefined {
+export class InteractiveCheckValidator extends FlagsValidatorValidator {
+  public validate(flags: {[key: string]: any}): string | undefined {
     if (flags.isInteractive) {
       return undefined
     }
 
-    return super.handle(flags)
+    return super.validate(flags)
   }
 }
 
 /**
- * Concrete handler for the functions flag.
+ * Concrete validator for the functions flag.
  * Requires at least one function to be specified.
  */
-export class FunctionsCheckHandler extends FlagsValidatorHandler {
-  public handle(flags: {[key: string]: any}): string | undefined {
+export class FunctionsCheckValidator extends FlagsValidatorValidator {
+  public validate(flags: {[key: string]: any}): string | undefined {
     if (flags.functions.length === 0) {
       return 'No functions specified. [-f,--function]'
     }
 
-    return super.handle(flags)
+    return super.validate(flags)
   }
 }
 
 /**
- * Concrete handler for the region flag.
+ * Concrete validator for the region flag.
  * Requires a region to be specified.
  */
-export class RegionCheckHandler extends FlagsValidatorHandler {
-  public handle(flags: {[key: string]: any}): string | undefined {
+export class RegionCheckValidator extends FlagsValidatorValidator {
+  public validate(flags: {[key: string]: any}): string | undefined {
     if (flags.region === undefined) {
       return 'No region specified. [-r,--region]'
     }
 
-    return super.handle(flags)
+    return super.validate(flags)
   }
 }
 
 /**
- * Concrete handler for the API key flag.
+ * Concrete validator for the API key flag.
  * Requires an API key to be specified.
  */
-export class ApiKeyCheckHandler extends FlagsValidatorHandler {
-  public handle(flags: {[key: string]: any}): string | undefined {
+export class ApiKeyCheckValidator extends FlagsValidatorValidator {
+  public validate(flags: {[key: string]: any}): string | undefined {
     if (flags.apiKey === undefined) {
       return 'No API key specified. [--api-key]'
     }
 
-    return super.handle(flags)
+    return super.validate(flags)
   }
 }
 
 /**
- * Concrete handler for the email flag.
+ * Concrete validator for the email flag.
  * Requires an email to be specified.
  */
-export class EmailCheckHandler extends FlagsValidatorHandler {
-  public handle(flags: {[key: string]: any}): string | undefined {
+export class EmailCheckValidator extends FlagsValidatorValidator {
+  public validate(flags: {[key: string]: any}): string | undefined {
     if (flags.email === undefined) {
       return 'No email specified. [-e,--email]'
     }
 
-    return super.handle(flags)
+    return super.validate(flags)
   }
 }
 
-const interactiveCheckHandler = new InteractiveCheckHandler()
-const functionsCheckHandler = new FunctionsCheckHandler()
-const regionCheckHandler = new RegionCheckHandler()
-const apiKeyCheckHandler = new ApiKeyCheckHandler()
-const emailCheckHandler = new EmailCheckHandler()
+const interactiveCheckValidator = new InteractiveCheckValidator()
+const functionsCheckValidator = new FunctionsCheckValidator()
+const regionCheckValidator = new RegionCheckValidator()
+const apiKeyCheckValidator = new ApiKeyCheckValidator()
+const emailCheckValidator = new EmailCheckValidator()
 
-interactiveCheckHandler
-  .setNext(functionsCheckHandler)
-  .setNext(regionCheckHandler)
-  .setNext(apiKeyCheckHandler)
-  .setNext(emailCheckHandler)
+interactiveCheckValidator
+  .setNext(functionsCheckValidator)
+  .setNext(regionCheckValidator)
+  .setNext(apiKeyCheckValidator)
+  .setNext(emailCheckValidator)
 
 /**
  * @returns undefined if the command is valid, an error message otherwise.
  */
 export const validateFlags = (flags: {[key: string]: any}): string | undefined => {
-  return interactiveCheckHandler.handle(flags)
+  return interactiveCheckValidator.validate(flags)
 }
