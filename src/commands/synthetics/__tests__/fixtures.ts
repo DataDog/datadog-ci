@@ -12,7 +12,6 @@ import {
   ApiServerResult,
   Batch,
   BrowserServerResult,
-  CommandConfig,
   ExecutionRule,
   Location,
   MainReporter,
@@ -21,6 +20,7 @@ import {
   MultiStepsServerResult,
   PresignedUrlResponse,
   Result,
+  RunTestsCommandConfig,
   Step,
   Suite,
   Summary,
@@ -63,7 +63,7 @@ export const mockReporter: MainReporter = {
   testsWait: jest.fn(),
 }
 
-export const ciConfig: CommandConfig = {
+export const ciConfig: RunTestsCommandConfig = {
   apiKey: '',
   appKey: '',
   configPath: 'datadog-ci.json',
@@ -562,19 +562,10 @@ export const getMobileVersion = (override?: Partial<MobileApplicationVersion>) =
 export const uploadCommandCongif: UploadApplicationCommandConfig = {
   apiKey: 'foo',
   appKey: 'bar',
-  configPath: 'datadog-ci.json',
   datadogSite: 'datadoghq.com',
+  proxy: {protocol: 'http'},
   mobileApplicationVersionFilePath: 'test.apk',
   mobileApplicationId: 'abc-123-def',
   versionName: 'new version',
   latest: true,
-  proxy: {protocol: 'http'},
-  files: [],
-  global: {},
-  locations: [],
-  pollingTimeout: 0,
-  publicIds: [],
-  subdomain: '',
-  tunnel: false,
-  variableStrings: [],
 }

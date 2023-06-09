@@ -3,12 +3,12 @@ import fs from 'fs'
 import * as ciUtils from '../../../helpers/utils'
 
 import * as api from '../api'
-import {MAX_TESTS_TO_TRIGGER} from '../command'
 import {CiError, CriticalCiErrorCode, CriticalError} from '../errors'
-import {ExecutionRule, Summary, SyntheticsCIConfig, UserConfigOverride} from '../interfaces'
+import {ExecutionRule, RunTestsCommandConfig, Summary, UserConfigOverride} from '../interfaces'
 import {DefaultReporter} from '../reporters/default'
 import {JUnitReporter} from '../reporters/junit'
 import * as runTests from '../run-test'
+import {MAX_TESTS_TO_TRIGGER} from '../run-tests-command'
 import {Tunnel} from '../tunnel'
 import * as utils from '../utils'
 
@@ -85,7 +85,7 @@ describe('run-test', () => {
         {global: {locations: ['global-location-1']}, locations: ['envvar-location-1', 'envvar-location-2']},
         {locations: ['envvar-location-1', 'envvar-location-2']},
       ],
-    ] as [string, Partial<SyntheticsCIConfig>, UserConfigOverride][])(
+    ] as [string, Partial<RunTestsCommandConfig>, UserConfigOverride][])(
       'Use appropriate list of locations for tests triggered by public id: %s',
       async (text, partialCIConfig, expectedOverriddenConfig) => {
         const getTestsToTriggersMock = jest.spyOn(utils, 'getTestsToTrigger').mockReturnValue(

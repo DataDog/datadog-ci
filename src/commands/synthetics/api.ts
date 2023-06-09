@@ -5,10 +5,10 @@ import FormData from 'form-data'
 
 import {getRequestBuilder} from '../../helpers/utils'
 
-import {MAX_TESTS_TO_TRIGGER} from './command'
 import {CriticalError} from './errors'
 import {
   APIConfiguration,
+  APIHelperConfig,
   Batch,
   MobileApplicationVersion,
   Payload,
@@ -16,11 +16,11 @@ import {
   PresignedUrlResponse,
   ServerBatch,
   ServerTest,
-  SyntheticsCIConfig,
   SyntheticsOrgSettings,
   TestSearchResult,
   Trigger,
 } from './interfaces'
+import {MAX_TESTS_TO_TRIGGER} from './run-tests-command'
 import {ciTriggerApp, getDatadogHost, retry} from './utils'
 
 const MAX_RETRIES = 3
@@ -207,7 +207,6 @@ const createMobileVersion = (request: (args: AxiosRequestConfig) => AxiosPromise
     },
     request
   )
-  console.log(`${JSON.stringify(resp.data)}`)
 
   return resp.data
 }
@@ -273,7 +272,7 @@ export const apiConstructor = (configuration: APIConfiguration) => {
 
 export type APIHelper = ReturnType<typeof apiConstructor>
 
-export const getApiHelper = (config: SyntheticsCIConfig): APIHelper => {
+export const getApiHelper = (config: APIHelperConfig): APIHelper => {
   if (!config.appKey) {
     throw new CriticalError('MISSING_APP_KEY')
   }

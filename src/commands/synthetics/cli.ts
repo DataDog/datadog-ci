@@ -1,4 +1,4 @@
-import {RunTestCommand} from './command'
+import {RunTestsCommand} from './run-tests-command'
 import {UploadApplicationCommand} from './uploadApplicationCommand'
 
-module.exports = [RunTestCommand, UploadApplicationCommand]
+module.exports = [RunTestsCommand, UploadApplicationCommand]

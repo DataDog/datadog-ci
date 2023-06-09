@@ -5,7 +5,7 @@ import {removeUndefinedValues, resolveConfigFromFile} from '../../helpers/utils'
 import {isValidDatadogSite} from '../../helpers/validation'
 
 import {CiError} from './errors'
-import {CommandConfig, MainReporter, Reporter, Result, Summary} from './interfaces'
+import {MainReporter, Reporter, Result, RunTestsCommandConfig, Summary} from './interfaces'
 import {DefaultReporter} from './reporters/default'
 import {JUnitReporter} from './reporters/junit'
 import {executeTests} from './run-test'
@@ -24,7 +24,7 @@ export const MAX_TESTS_TO_TRIGGER = 100
 
 export const DEFAULT_POLLING_TIMEOUT = 30 * 60 * 1000
 
-export const DEFAULT_COMMAND_CONFIG: CommandConfig = {
+export const DEFAULT_COMMAND_CONFIG: RunTestsCommandConfig = {
   apiKey: '',
   appKey: '',
   configPath: 'datadog-ci.json',
@@ -43,13 +43,13 @@ export const DEFAULT_COMMAND_CONFIG: CommandConfig = {
   variableStrings: [],
 }
 
-export class RunTestCommand extends Command {
+export class RunTestsCommand extends Command {
   public configPath?: string
   public jUnitReport?: string
   public runName?: string
   private apiKey?: string
   private appKey?: string
-  private config: CommandConfig = JSON.parse(JSON.stringify(DEFAULT_COMMAND_CONFIG)) // Deep copy to avoid mutation during unit tests
+  private config: RunTestsCommandConfig = JSON.parse(JSON.stringify(DEFAULT_COMMAND_CONFIG)) // Deep copy to avoid mutation during unit tests
   private datadogSite?: string
   private failOnCriticalErrors?: boolean
   private failOnMissingTests?: boolean
@@ -189,23 +189,23 @@ export class RunTestCommand extends Command {
   }
 }
 
-RunTestCommand.addPath('synthetics', 'run-tests')
-RunTestCommand.addOption('apiKey', Command.String('--apiKey'))
-RunTestCommand.addOption('appKey', Command.String('--appKey'))
-RunTestCommand.addOption('configPath', Command.String('--config'))
-RunTestCommand.addOption('datadogSite', Command.String('--datadogSite'))
-RunTestCommand.addOption('failOnCriticalErrors', Command.Boolean('--failOnCriticalErrors'))
-RunTestCommand.addOption('failOnMissingTests', Command.Boolean('--failOnMissingTests'))
-RunTestCommand.addOption('failOnTimeout', Command.Boolean('--failOnTimeout'))
-RunTestCommand.addOption('files', Command.Array('-f,--files'))
-RunTestCommand.addOption('jUnitReport', Command.String('-j,--jUnitReport'))
-RunTestCommand.addOption(
+RunTestsCommand.addPath('synthetics', 'run-tests')
+RunTestsCommand.addOption('apiKey', Command.String('--apiKey'))
+RunTestsCommand.addOption('appKey', Command.String('--appKey'))
+RunTestsCommand.addOption('configPath', Command.String('--config'))
+RunTestsCommand.addOption('datadogSite', Command.String('--datadogSite'))
+RunTestsCommand.addOption('failOnCriticalErrors', Command.Boolean('--failOnCriticalErrors'))
+RunTestsCommand.addOption('failOnMissingTests', Command.Boolean('--failOnMissingTests'))
+RunTestsCommand.addOption('failOnTimeout', Command.Boolean('--failOnTimeout'))
+RunTestsCommand.addOption('files', Command.Array('-f,--files'))
+RunTestsCommand.addOption('jUnitReport', Command.String('-j,--jUnitReport'))
+RunTestsCommand.addOption(
   'mobileApplicationVersionFilePath',
   Command.String('--mobileApp,--mobileApplicationVersionFilePath')
 )
-RunTestCommand.addOption('publicIds', Command.Array('-p,--public-id'))
-RunTestCommand.addOption('runName', Command.String('-n,--runName'))
-RunTestCommand.addOption('subdomain', Command.String('--subdomain'))
-RunTestCommand.addOption('testSearchQuery', Command.String('-s,--search'))
-RunTestCommand.addOption('tunnel', Command.Boolean('-t,--tunnel'))
-RunTestCommand.addOption('variableStrings', Command.Array('-v,--variable'))
+RunTestsCommand.addOption('publicIds', Command.Array('-p,--public-id'))
+RunTestsCommand.addOption('runName', Command.String('-n,--runName'))
+RunTestsCommand.addOption('subdomain', Command.String('--subdomain'))
+RunTestsCommand.addOption('testSearchQuery', Command.String('-s,--search'))
+RunTestsCommand.addOption('tunnel', Command.Boolean('-t,--tunnel'))
+RunTestsCommand.addOption('variableStrings', Command.Array('-v,--variable'))

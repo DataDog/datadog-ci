@@ -13,12 +13,11 @@ import {GIT_COMMIT_MESSAGE} from '../../helpers/tags'
 import {pick} from '../../helpers/utils'
 
 import {APIHelper, EndpointError, formatBackendErrors, getApiHelper, isNotFoundError} from './api'
-import {DEFAULT_COMMAND_CONFIG, MAX_TESTS_TO_TRIGGER} from './command'
 import {CiError, CriticalError} from './errors'
 import {
+  APIHelperConfig,
   Batch,
   BrowserServerResult,
-  CommandConfig,
   ExecutionRule,
   LocationsMapping,
   MainReporter,
@@ -28,6 +27,7 @@ import {
   Reporter,
   Result,
   ResultInBatch,
+  RunTestsCommandConfig,
   ServerResult,
   Suite,
   Summary,
@@ -40,6 +40,7 @@ import {
   UserConfigOverride,
 } from './interfaces'
 import {uploadApplicationAndOverrideConfig} from './mobile'
+import {DEFAULT_COMMAND_CONFIG, MAX_TESTS_TO_TRIGGER} from './run-tests-command'
 import {Tunnel} from './tunnel'
 
 const POLLING_INTERVAL = 5000 // In ms
@@ -728,7 +729,7 @@ export const parseVariablesFromCli = (
 
 // XXX: `CommandConfig` should be replaced by `SyntheticsCIConfig` here because it's the smallest
 //      interface that we need, and it's better semantically.
-export const getAppBaseURL = ({datadogSite, subdomain}: Pick<CommandConfig, 'datadogSite' | 'subdomain'>) => {
+export const getAppBaseURL = ({datadogSite, subdomain}: Pick<RunTestsCommandConfig, 'datadogSite' | 'subdomain'>) => {
   const validSubdomain = subdomain || DEFAULT_COMMAND_CONFIG.subdomain
   const datadogSiteParts = datadogSite.split('.')
 
@@ -781,7 +782,7 @@ export const renderResults = ({
   startTime,
   summary,
 }: {
-  config: CommandConfig
+  config: RunTestsCommandConfig
   orgSettings: SyntheticsOrgSettings | undefined
   reporter: MainReporter
   results: Result[]
@@ -831,7 +832,7 @@ export const renderResults = ({
 
 export const reportExitLogs = (
   reporter: MainReporter,
-  config: Pick<CommandConfig, 'failOnTimeout' | 'failOnCriticalErrors'>,
+  config: Pick<RunTestsCommandConfig, 'failOnTimeout' | 'failOnCriticalErrors'>,
   {results, error}: {results?: Result[]; error?: unknown}
 ) => {
   if (!config.failOnTimeout && results?.some((result) => result.timedOut)) {
@@ -858,7 +859,7 @@ export const reportExitLogs = (
 }
 
 export const getExitReason = (
-  config: Pick<CommandConfig, 'failOnCriticalErrors' | 'failOnMissingTests'>,
+  config: Pick<RunTestsCommandConfig, 'failOnCriticalErrors' | 'failOnMissingTests'>,
   {results, error}: {results?: Result[]; error?: unknown}
 ) => {
   if (results?.some((result) => getResultOutcome(result) === ResultOutcome.Failed)) {
@@ -888,7 +889,7 @@ export const toExitCode = (reason: ExitReason) => {
 
 export const getDatadogHost = (hostConfig: {
   apiVersion: 'v1' | 'unstable'
-  config: SyntheticsCIConfig
+  config: APIHelperConfig
   useIntake: boolean
 }) => {
   const {useIntake, apiVersion, config} = hostConfig

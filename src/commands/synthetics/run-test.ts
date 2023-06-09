@@ -1,17 +1,15 @@
 import {getProxyAgent} from '../../helpers/utils'
 
 import {APIHelper, getApiHelper, isForbiddenError} from './api'
-import {DEFAULT_COMMAND_CONFIG, MAX_TESTS_TO_TRIGGER} from './command'
 import {CiError, CriticalError} from './errors'
 import {
-  CommandConfig,
   MainReporter,
   Reporter,
   Result,
+  RunTestsCommandConfig,
   Suite,
   Summary,
   SupportedReporter,
-  SyntheticsCIConfig,
   Test,
   TestPayload,
   Trigger,
@@ -21,6 +19,7 @@ import {
 } from './interfaces'
 import {DefaultReporter, getTunnelReporter} from './reporters/default'
 import {JUnitReporter} from './reporters/junit'
+import {DEFAULT_COMMAND_CONFIG, MAX_TESTS_TO_TRIGGER} from './run-tests-command'
 import {Tunnel} from './tunnel'
 import {
   getReporter,
@@ -38,7 +37,7 @@ import {
 
 export const executeTests = async (
   reporter: MainReporter,
-  config: CommandConfig,
+  config: RunTestsCommandConfig,
   suites?: Suite[]
 ): Promise<{
   results: Result[]
@@ -189,7 +188,7 @@ const getTestListBySearchQuery = async (
 
 export const getTestsList = async (
   api: APIHelper,
-  config: SyntheticsCIConfig,
+  config: RunTestsCommandConfig,
   reporter: MainReporter,
   suites: Suite[] = []
 ) => {

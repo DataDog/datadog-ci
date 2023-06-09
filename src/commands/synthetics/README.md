@@ -10,8 +10,8 @@ To configure which URL your test starts on, provide a `startUrl` to your test ob
 
 ### Install the package
 
-{{< tabs >}}
-{{% tab "NPM" %}}
+<!-- xxx tabs xxx -->
+<!-- xxx tab "NPM" xxx -->
 
 Install the package through NPM:
 
@@ -19,8 +19,8 @@ Install the package through NPM:
 npm install --save-dev @datadog/datadog-ci
 ```
 
-{{% /tab %}}
-{{% tab "Yarn" %}}
+<!-- xxz tab xxx -->
+<!-- xxx tab "Yarn" xxx -->
 
 Install the package through Yarn:
 
@@ -28,8 +28,8 @@ Install the package through Yarn:
 yarn add --dev @datadog/datadog-ci
 ```
 
-{{% /tab %}}
-{{< /tabs >}}
+<!-- xxz tab xxx -->
+<!-- xxz tabs xxx -->
 
 ### Setup the client
 
@@ -65,13 +65,13 @@ See below for the list of advanced options in the global configuration file. For
 : The application key used to query the Datadog API.
 
 `datadogSite`
-: The Datadog instance to which request is sent. The default is `datadoghq.com`. Your Datadog site is {{< region-param key="dd_site" code="true" >}}.
+: The Datadog instance to which request is sent. The default is `datadoghq.com`.<!-- partial Your Datadog site is {{< region-param key="dd_site" code="true" >}}. partial -->
 
 `failOnCriticalErrors`
 : A boolean flag that fails the CI job if no tests were triggered, or results could not be fetched from Datadog. The default is set to `false`.
 
 `failOnMissingTests`
-: A boolean flag that fails the CI job if at least one test is missing in a run (for example, if it has been removed or deleted). The default is set to `false`.
+: A boolean flag that fails the CI job if at least one specified test with a public ID (a `--public-id` CLI argument or listed in a [test file](#test-files)) is missing in a run (for example, if it has been deleted programmatically or on the Datadog site). The default is set to `false`.
 
 `failOnTimeout`
 : A boolean flag that fails the CI job if at least one test exceeds the default test timeout. The default is set to `true`.
@@ -217,12 +217,12 @@ For example:
 
 ## Run tests
 
-You can decide to have the CLI auto-discover all your `**/*.synthetics.json` Synthetic tests (or all the tests associated to the path specified in your [global configuration file](#global-configuration-file-options)) or to specify the tests you want to run using the `-p,--public-id` flag.
+You can decide to have the CLI auto-discover all your `**/*.synthetics.json` Synthetic tests (or all the tests associated to the path specified in your [global configuration file](#global-configuration-file-options)) or specify the tests you want to run using the `-p,--public-id` flag.
 
-Run tests by executing the CLI:
+<!-- xxx tabs xxx -->
+<!-- xxx tab "NPM" xxx -->
 
-{{< tabs >}}
-{{% tab "NPM" %}}
+Run tests by executing the CLI through **NPM**:
 
 Add the following to your `package.json`:
 
@@ -242,8 +242,10 @@ npm run datadog-ci-synthetics
 
 **Note**: If you are launching your tests with a custom global configuration file, append the command associated to your `datadog-ci-synthetics` script with `--config <PATH_TO_GLOBAL_CONFIG_FILE>`.
 
-{{% /tab %}}
-{{% tab "Yarn" %}}
+<!-- xxz tab xxx -->
+<!-- xxx tab "Yarn" xxx -->
+
+Run tests by executing the CLI through **Yarn**:
 
 The `run-tests` sub-command runs the tests discovered in the folder according to the `files` configuration key. It accepts the `--public-id` (or shorthand `-p`) argument to trigger only the specified test. It can be set multiple times to run multiple tests:
 
@@ -271,14 +273,14 @@ yarn datadog-ci synthetics run-tests -f ./component-1/**/*.synthetics.json -v PA
 
 **Note**: If you are launching your tests with a custom global configuration file, append your command with `--config <PATH_TO_GLOBAL_CONFIG_FILE>`.
 
-{{% /tab %}}
-{{< /tabs >}}
+<!-- xxz tab xxx -->
+<!-- xxz tabs xxx -->
 
 ### Failure modes flags
 
 - `--failOnTimeout` (or `--no-failOnTimeout`) makes the CI fail (or pass) if one of the results exceeds its test timeout.
 - `--failOnCriticalErrors` makes the CI fail if tests were not triggered or if results could not be fetched.
-- `--failOnMissingTests` makes the CI fail if at least one test is missing.
+- `--failOnMissingTests` makes the CI fail if at least one specified test with a public ID (a `--public-id` CLI argument or listed in a test file) is missing in a run (for example, if it has been deleted programmatically or on the Datadog site).
 
 ### Test files
 

@@ -12,21 +12,12 @@ import {uploadMobileApplicationVersion} from './mobile'
 export const DEFAULT_UPLOAD_COMMAND_CONFIG: UploadApplicationCommandConfig = {
   apiKey: '',
   appKey: '',
-  configPath: 'datadog-ci.json',
   datadogSite: 'datadoghq.com',
+  proxy: {protocol: 'http'},
   mobileApplicationVersionFilePath: '',
   mobileApplicationId: '',
   versionName: '',
   latest: false,
-  files: [],
-  global: {},
-  locations: [],
-  pollingTimeout: 0,
-  publicIds: [],
-  subdomain: '',
-  tunnel: false,
-  variableStrings: [],
-  proxy: {protocol: 'http'},
 }
 
 export class UploadApplicationCommand extends Command {

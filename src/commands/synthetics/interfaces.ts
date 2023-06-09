@@ -357,16 +357,25 @@ export interface APIConfiguration {
   proxyOpts: ProxyConfiguration
 }
 
-export interface SyntheticsCIConfig {
+export interface APIHelperConfig {
   apiKey: string
   appKey: string
-  configPath: string
   datadogSite: string
+  proxy: ProxyConfiguration
+}
+
+// eslint-disable-next-line @typescript-eslint/no-empty-interface
+export interface SyntheticsCIConfig extends APIHelperConfig {}
+
+export interface RunTestsCommandConfig extends SyntheticsCIConfig {
+  configPath: string
+  failOnCriticalErrors: boolean
+  failOnMissingTests: boolean
+  failOnTimeout: boolean
   files: string[]
   global: UserConfigOverride
   locations: string[]
   pollingTimeout: number
-  proxy: ProxyConfiguration
   publicIds: string[]
   subdomain: string
   testSearchQuery?: string
@@ -374,11 +383,7 @@ export interface SyntheticsCIConfig {
   variableStrings: string[]
 }
 
-export interface CommandConfig extends SyntheticsCIConfig {
-  failOnCriticalErrors: boolean
-  failOnMissingTests: boolean
-  failOnTimeout: boolean
-}
+export type WrapperConfig = Partial<RunTestsCommandConfig>
 
 export interface UploadApplicationCommandConfig extends SyntheticsCIConfig {
   mobileApplicationVersionFilePath?: string
@@ -386,9 +391,6 @@ export interface UploadApplicationCommandConfig extends SyntheticsCIConfig {
   versionName?: string
   latest?: boolean
 }
-
-export type WrapperConfig = Partial<CommandConfig>
-
 export interface PresignedUrlResponse {
   file_name: string
   presigned_url_params: {
