@@ -8,7 +8,7 @@ import {CiError, CriticalCiErrorCode, CriticalError} from '../errors'
 import {ExecutionRule, Summary, SyntheticsCIConfig, UserConfigOverride} from '../interfaces'
 import {DefaultReporter} from '../reporters/default'
 import {JUnitReporter} from '../reporters/junit'
-import * as runTests from '../run-test'
+import * as runTests from '../run-tests-lib'
 import {Tunnel} from '../tunnel'
 import * as utils from '../utils'
 
