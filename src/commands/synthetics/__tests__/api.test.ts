@@ -3,9 +3,9 @@ import {AxiosError, AxiosResponse, default as axios} from 'axios'
 import {ProxyConfiguration} from '../../../helpers/utils'
 
 import {apiConstructor, formatBackendErrors, getApiHelper} from '../api'
-import {MAX_TESTS_TO_TRIGGER} from '../command'
 import {CriticalError} from '../errors'
 import {APIConfiguration, ExecutionRule, PollResult, ServerResult, TestPayload, Trigger} from '../interfaces'
+import {MAX_TESTS_TO_TRIGGER} from '../run-tests-command'
 
 import {
   ciConfig,

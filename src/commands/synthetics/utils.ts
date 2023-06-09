@@ -13,7 +13,6 @@ import {GIT_COMMIT_MESSAGE} from '../../helpers/tags'
 import {pick} from '../../helpers/utils'
 
 import {APIHelper, EndpointError, formatBackendErrors, getApiHelper, isNotFoundError} from './api'
-import {DEFAULT_COMMAND_CONFIG, MAX_TESTS_TO_TRIGGER} from './command'
 import {CiError, CriticalError} from './errors'
 import {
   Batch,
@@ -40,6 +39,7 @@ import {
   UserConfigOverride,
 } from './interfaces'
 import {uploadApplicationAndOverrideConfig} from './mobile'
+import {DEFAULT_COMMAND_CONFIG, MAX_TESTS_TO_TRIGGER} from './run-tests-command'
 import {Tunnel} from './tunnel'
 
 const POLLING_INTERVAL = 5000 // In ms

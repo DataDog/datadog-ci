@@ -53,7 +53,6 @@ import {Metadata} from '../../../helpers/interfaces'
 import * as ciUtils from '../../../helpers/utils'
 
 import {apiConstructor, APIHelper} from '../api'
-import {DEFAULT_COMMAND_CONFIG, MAX_TESTS_TO_TRIGGER} from '../command'
 import {CiError} from '../errors'
 import {
   Batch,
@@ -67,6 +66,7 @@ import {
   UserConfigOverride,
 } from '../interfaces'
 import * as mobile from '../mobile'
+import {DEFAULT_COMMAND_CONFIG, MAX_TESTS_TO_TRIGGER} from '../run-tests-command'
 import * as utils from '../utils'
 
 import {

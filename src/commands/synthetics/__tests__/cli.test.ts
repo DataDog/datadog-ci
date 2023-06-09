@@ -3,8 +3,8 @@ import {BaseContext, Cli} from 'clipanion/lib/advanced'
 import * as ciUtils from '../../../helpers/utils'
 
 import * as api from '../api'
-import {DEFAULT_COMMAND_CONFIG, DEFAULT_POLLING_TIMEOUT, RunTestCommand} from '../command'
 import {UserConfigOverride} from '../interfaces'
+import {DEFAULT_COMMAND_CONFIG, DEFAULT_POLLING_TIMEOUT, RunTestsCommand} from '../run-tests-command'
 import * as utils from '../utils'
 
 import {getApiTest, getAxiosHttpError, getTestSuite, mockTestTriggerResponse} from './fixtures'
@@ -30,8 +30,8 @@ test('all option flags are supported', async () => {
   ]
 
   const cli = new Cli()
-  cli.register(RunTestCommand)
-  const usage = cli.usage(RunTestCommand)
+  cli.register(RunTestsCommand)
+  const usage = cli.usage(RunTestsCommand)
 
   options.forEach((option) => expect(usage).toContain(`--${option}`))
 })
@@ -56,7 +56,7 @@ describe('run-test', () => {
       }
 
       process.env = overrideEnv
-      const command = new RunTestCommand()
+      const command = new RunTestsCommand()
 
       await command['resolveConfig']()
       expect(command['config']).toEqual({
@@ -93,7 +93,7 @@ describe('run-test', () => {
         variableStrings: [],
       }
 
-      const command = new RunTestCommand()
+      const command = new RunTestsCommand()
       command.configPath = 'src/commands/synthetics/__tests__/config-fixtures/config-with-all-keys.json'
 
       await command['resolveConfig']()
@@ -117,7 +117,7 @@ describe('run-test', () => {
         tunnel: true,
       }
 
-      const command = new RunTestCommand()
+      const command = new RunTestsCommand()
       command['apiKey'] = overrideCLI.apiKey
       command['appKey'] = overrideCLI.appKey
       command['configPath'] = overrideCLI.configPath
@@ -184,7 +184,7 @@ describe('run-test', () => {
         DATADOG_APP_KEY: 'app_key_env',
       }
 
-      const command = new RunTestCommand()
+      const command = new RunTestsCommand()
       command['apiKey'] = 'api_key_cli'
       command['mobileApplicationVersionFilePath'] = './path/to/application_cli.apk'
 
@@ -230,7 +230,7 @@ describe('run-test', () => {
       const getTestsToTriggerMock = jest.spyOn(utils, 'getTestsToTrigger')
 
       const write = jest.fn()
-      const command = new RunTestCommand()
+      const command = new RunTestsCommand()
       command.context = ({stdout: {write}} as unknown) as BaseContext
 
       // Test file (empty config for now)
@@ -299,7 +299,7 @@ describe('run-test', () => {
     })
 
     test('pass command pollingTimeout as global override if undefined', async () => {
-      const command = new RunTestCommand()
+      const command = new RunTestsCommand()
       command.configPath = 'src/commands/synthetics/__tests__/config-fixtures/config-with-global-polling-timeout.json'
       await command['resolveConfig']()
       expect(command['config']).toEqual({
@@ -313,7 +313,7 @@ describe('run-test', () => {
 
   describe('exit code respects `failOnCriticalErrors`', () => {
     test('404 leading to `NO_TESTS_TO_RUN` never exits with 1', async () => {
-      const command = new RunTestCommand()
+      const command = new RunTestsCommand()
       command.context = {stdout: {write: jest.fn()}} as any
       command['config'].failOnCriticalErrors = true
 
@@ -336,7 +336,7 @@ describe('run-test', () => {
 
       describe.each(cases)('%s', (_, errorCode) => {
         test('unable to obtain test configurations', async () => {
-          const command = new RunTestCommand()
+          const command = new RunTestsCommand()
           command.context = {stdout: {write: jest.fn()}} as any
           command['config'].failOnCriticalErrors = failOnCriticalErrors
           command['testSearchQuery'] = 'test:search'
@@ -354,7 +354,7 @@ describe('run-test', () => {
         })
 
         test('unavailable test config', async () => {
-          const command = new RunTestCommand()
+          const command = new RunTestsCommand()
           command.context = {stdout: {write: jest.fn()}} as any
           command['config'].failOnCriticalErrors = failOnCriticalErrors
 
@@ -372,7 +372,7 @@ describe('run-test', () => {
         })
 
         test('unable to trigger tests', async () => {
-          const command = new RunTestCommand()
+          const command = new RunTestsCommand()
           command.context = {stdout: {write: jest.fn()}} as any
           command['config'].failOnCriticalErrors = failOnCriticalErrors
 
@@ -391,7 +391,7 @@ describe('run-test', () => {
         })
 
         test('unable to poll test results', async () => {
-          const command = new RunTestCommand()
+          const command = new RunTestsCommand()
           command.context = {stdout: {write: jest.fn()}} as any
           command['config'].failOnCriticalErrors = failOnCriticalErrors
 
@@ -425,7 +425,7 @@ describe('run-test', () => {
     test.each(cases)(
       '%s with failOnMissingTests=%s exits with %s',
       async (_: string, failOnMissingTests: boolean, exitCode: number, tests: (string | null)[]) => {
-        const command = new RunTestCommand()
+        const command = new RunTestsCommand()
         command.context = {stdout: {write: jest.fn()}} as any
         command['config'].failOnMissingTests = failOnMissingTests
 
@@ -459,7 +459,7 @@ describe('run-test', () => {
     test('enough context is provided', async () => {
       const writeMock = jest.fn()
 
-      const command = new RunTestCommand()
+      const command = new RunTestsCommand()
       command.context = {stdout: {write: writeMock}} as any
       command['config'].failOnCriticalErrors = true
 
