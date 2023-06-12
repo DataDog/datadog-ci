@@ -1,4 +1,6 @@
-import util from 'util'
+import * as fs from 'fs'
+import * as path from 'path'
+import util, { promisify } from "util";
 
 import {LambdaClient, LambdaClientConfig} from '@aws-sdk/client-lambda'
 import {AwsCredentialIdentity} from '@aws-sdk/types'
@@ -8,6 +10,7 @@ import {API_KEY_ENV_VAR, AWS_DEFAULT_REGION_ENV_VAR, CI_API_KEY_ENV_VAR} from '.
 import {getAWSCredentials, getLambdaFunctionConfig} from './functions/commons'
 import {requestAWSCredentials} from './prompt'
 import {renderError, renderLambdaFlareHeader, renderSoftWarning} from './renderers/flare-renderer'
+import { exec } from "child_process";
 
 export class LambdaFlareCommand extends Command {
   private isDryRun = false
@@ -68,8 +71,27 @@ export class LambdaFlareCommand extends Command {
     }
     const lambdaClient = new LambdaClient(lambdaClientConfig)
     const config = await getLambdaFunctionConfig(lambdaClient, this.functionName)
-    const configStr = util.inspect(config, false, undefined, true)
-    this.context.stdout.write(configStr)
+    const configStrColored = util.inspect(config, false, undefined, true)
+    const configStrUncolored = JSON.stringify(config, undefined, 2)
+
+    // Write config to file
+    const folderPath = path.join(process.cwd(), 'lambda-flare-output')
+    if (!fs.existsSync(folderPath)) {
+      fs.mkdirSync(folderPath)
+    }
+    const filePath = path.join(folderPath, 'function_config.json')
+    fs.writeFileSync(filePath, configStrUncolored)
+
+    // Zip folder
+    const zipPath = path.join(folderPath, 'lambda-flare-output.zip')
+    const zipCommand = `zip -r '${zipPath}' .`
+    await promisify(exec)(zipCommand, {cwd: folderPath})
+
+    // Print config
+    this.context.stdout.write(`\n${configStrColored}\n`)
+
+    // Send to Datadog
+    this.context.stdout.write('\n🚀 Sending to Datadog Support...\n')
 
     return 0
   }
