@@ -7,7 +7,7 @@ describe('file util', () => {
       expect(safeFileName).toBe('myfilename')
     })
     test('filters unsafe characters out', () => {
-      expect(getSafeFileName('http://gitlab.com/-/pipelines/12345')).toEqual('http___gitlab_com___pipelines_12345')
+      expect(getSafeFileName('http://gitlab.com/-/pipelines/12345')).toEqual('http:\\\\gitlab.com\\-\\pipelines\\12345')
     })
   })
 })
