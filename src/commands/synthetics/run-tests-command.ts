@@ -8,7 +8,7 @@ import {CiError} from './errors'
 import {MainReporter, Reporter, Result, RunTestsCommandConfig, Summary} from './interfaces'
 import {DefaultReporter} from './reporters/default'
 import {JUnitReporter} from './reporters/junit'
-import {executeTests} from './run-test'
+import {executeTests} from './run-tests-lib'
 import {
   getExitReason,
   getOrgSettings,
