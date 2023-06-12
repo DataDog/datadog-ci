@@ -45,7 +45,7 @@ export const renderStatus = (result: string): string => {
       return chalk.yellow(`No Data ${ICONS.WARNING} `)
   }
 
-  return 'Unknown Status: ' + result.toLowerCase()
+  return result.toLowerCase()
 }
 
 export const renderRuleEvaluation = (ruleEvaluation: RuleEvaluation): string => {
