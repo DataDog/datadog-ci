@@ -559,7 +559,7 @@ export const getMobileVersion = (override?: Partial<MobileApplicationVersion>) =
   ...override,
 })
 
-export const uploadCommandCongif: UploadApplicationCommandConfig = {
+export const uploadCommandConfig: UploadApplicationCommandConfig = {
   apiKey: 'foo',
   appKey: 'bar',
   datadogSite: 'datadoghq.com',

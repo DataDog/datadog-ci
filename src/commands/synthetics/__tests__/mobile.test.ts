@@ -5,7 +5,7 @@ import {EndpointError} from '../api'
 import {CiError} from '../errors'
 import * as mobile from '../mobile'
 
-import {getApiHelper, getMobileTest, getMobileVersion, getTestPayload, uploadCommandCongif} from './fixtures'
+import {getApiHelper, getMobileTest, getMobileVersion, getTestPayload, uploadCommandConfig} from './fixtures'
 
 describe('getSizeAndMD5HashFromFile', () => {
   test('correctly get size and md5 of a file', async () => {
@@ -265,7 +265,7 @@ describe('uploadApplicationAndOverrideConfig', () => {
 describe('uploadMobileApplicationVersion', () => {
   const uploadMobileApplicationSpy = jest.spyOn(mobile, 'uploadMobileApplications')
   const createNewMobileVersionSpy = jest.spyOn(mobile, 'createNewMobileVersion')
-  const config = uploadCommandCongif
+  const config = uploadCommandConfig
 
   beforeEach(() => {
     uploadMobileApplicationSpy.mockReset()
