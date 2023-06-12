@@ -15,22 +15,17 @@ export interface EvaluationResponsePayload {
   }
 }
 
-type GateStatus = 'passed' | 'failed' | 'empty'
-
 export interface EvaluationResponse {
-  status: GateStatus
+  status: string
   rule_evaluations: RuleEvaluation[]
 }
-
-type RuleStatus = 'passed' | 'failed' | 'no_data'
 
 export interface RuleEvaluation {
   rule_id: string
   rule_name: string
-  status: RuleStatus
+  status: string
   is_blocking: boolean
   failure_reason: string
-  events_count: number
 }
 
 export interface APIHelper {

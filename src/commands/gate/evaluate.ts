@@ -20,7 +20,36 @@ import {
 import {getBaseIntakeUrl, is4xxError, is5xxError, parseScope} from './utils'
 
 export class GateEvaluateCommand extends Command {
-  // TODO add usage
+  public static usage = Command.Usage({
+    description: 'Evaluate Quality Gates rules in Datadog.',
+    details: `
+      This command will evaluate the matching quality gate rules in Datadog.\n
+      See README for details.
+    `,
+    examples: [
+      ['Evaluate matching quality gate rules in Datadog', 'datadog-ci gate evaluate'],
+      [
+        'Evaluate matching quality gate rules in Datadog, failing if no rules were found',
+        'datadog-ci gate evaluate --fail-on-empty',
+      ],
+      [
+        'Evaluate matching quality gate rules in Datadog, failing if Datadog is not available',
+        'datadog-ci gate evaluate --fail-if-unavailable',
+      ],
+      [
+        'Evaluate matching quality gate rules in Datadog and add extra scope',
+        'datadog-ci gate evaluate --scope team:backend',
+      ],
+      [
+        'Evaluate matching quality gate rules in Datadog and add extra tags',
+        'datadog-ci gate evaluate --tags team:frontend',
+      ],
+      [
+        'Evaluate matching quality gate rules in Datadog from the datadoghq.eu site',
+        'DATADOG_SITE=datadoghq.eu datadog-ci gate evaluate',
+      ],
+    ],
+  })
 
   private config = {
     apiKey: process.env.DATADOG_API_KEY || process.env.DD_API_KEY,
