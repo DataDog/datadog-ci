@@ -20,7 +20,7 @@ const timeoutPerPlatform: Record<typeof os, number> = {
   // Keep the default timeout for Linux.
   linux: 5 * 1000,
   // Running the binary on Windows is also slower than on Linux, and sometimes times out by a very small margin.
-  win: 6 * 1000,
+  win: 10 * 1000,
 }
 
 describe('standalone binary', () => {
