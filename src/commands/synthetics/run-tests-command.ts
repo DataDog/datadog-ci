@@ -5,7 +5,7 @@ import {removeUndefinedValues, resolveConfigFromFile} from '../../helpers/utils'
 import {isValidDatadogSite} from '../../helpers/validation'
 
 import {CiError} from './errors'
-import {CommandConfig, MainReporter, Reporter, Result, Summary} from './interfaces'
+import {MainReporter, Reporter, Result, RunTestsCommandConfig, Summary} from './interfaces'
 import {DefaultReporter} from './reporters/default'
 import {JUnitReporter} from './reporters/junit'
 import {executeTests} from './run-tests-lib'
@@ -24,7 +24,7 @@ export const MAX_TESTS_TO_TRIGGER = 100
 
 export const DEFAULT_POLLING_TIMEOUT = 30 * 60 * 1000
 
-export const DEFAULT_COMMAND_CONFIG: CommandConfig = {
+export const DEFAULT_COMMAND_CONFIG: RunTestsCommandConfig = {
   apiKey: '',
   appKey: '',
   configPath: 'datadog-ci.json',
@@ -49,7 +49,7 @@ export class RunTestsCommand extends Command {
   public runName?: string
   private apiKey?: string
   private appKey?: string
-  private config: CommandConfig = JSON.parse(JSON.stringify(DEFAULT_COMMAND_CONFIG)) // Deep copy to avoid mutation during unit tests
+  private config: RunTestsCommandConfig = JSON.parse(JSON.stringify(DEFAULT_COMMAND_CONFIG)) // Deep copy to avoid mutation during unit tests
   private datadogSite?: string
   private failOnCriticalErrors?: boolean
   private failOnMissingTests?: boolean

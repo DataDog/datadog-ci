@@ -3,14 +3,13 @@ import {getProxyAgent} from '../../helpers/utils'
 import {APIHelper, getApiHelper, isForbiddenError} from './api'
 import {CiError, CriticalError} from './errors'
 import {
-  CommandConfig,
   MainReporter,
   Reporter,
   Result,
+  RunTestsCommandConfig,
   Suite,
   Summary,
   SupportedReporter,
-  SyntheticsCIConfig,
   Test,
   TestPayload,
   Trigger,
@@ -38,7 +37,7 @@ import {
 
 export const executeTests = async (
   reporter: MainReporter,
-  config: CommandConfig,
+  config: RunTestsCommandConfig,
   suites?: Suite[]
 ): Promise<{
   results: Result[]
@@ -189,7 +188,7 @@ const getTestListBySearchQuery = async (
 
 export const getTestsList = async (
   api: APIHelper,
-  config: SyntheticsCIConfig,
+  config: RunTestsCommandConfig,
   reporter: MainReporter,
   suites: Suite[] = []
 ) => {

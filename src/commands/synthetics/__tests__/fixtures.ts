@@ -12,7 +12,6 @@ import {
   ApiServerResult,
   Batch,
   BrowserServerResult,
-  CommandConfig,
   ExecutionRule,
   Location,
   MainReporter,
@@ -20,6 +19,7 @@ import {
   MultiStepsServerResult,
   PresignedUrlResponse,
   Result,
+  RunTestsCommandConfig,
   Step,
   Suite,
   Summary,
@@ -61,7 +61,7 @@ export const mockReporter: MainReporter = {
   testsWait: jest.fn(),
 }
 
-export const ciConfig: CommandConfig = {
+export const ciConfig: RunTestsCommandConfig = {
   apiKey: '',
   appKey: '',
   configPath: 'datadog-ci.json',

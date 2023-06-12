@@ -8,13 +8,13 @@ import {getRequestBuilder} from '../../helpers/utils'
 import {CriticalError} from './errors'
 import {
   APIConfiguration,
+  APIHelperConfig,
   Batch,
   Payload,
   PollResult,
   PresignedUrlResponse,
   ServerBatch,
   ServerTest,
-  SyntheticsCIConfig,
   SyntheticsOrgSettings,
   TestSearchResult,
   Trigger,
@@ -255,7 +255,7 @@ export const apiConstructor = (configuration: APIConfiguration) => {
 
 export type APIHelper = ReturnType<typeof apiConstructor>
 
-export const getApiHelper = (config: SyntheticsCIConfig): APIHelper => {
+export const getApiHelper = (config: APIHelperConfig): APIHelper => {
   if (!config.appKey) {
     throw new CriticalError('MISSING_APP_KEY')
   }
