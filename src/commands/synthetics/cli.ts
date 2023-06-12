@@ -1,3 +1,3 @@
-import {RunTestCommand} from './command'
+import {RunTestsCommand} from './run-tests-command'
 
-module.exports = [RunTestCommand]
+module.exports = [RunTestsCommand]

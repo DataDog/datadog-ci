@@ -5,7 +5,6 @@ import FormData from 'form-data'
 
 import {getRequestBuilder} from '../../helpers/utils'
 
-import {MAX_TESTS_TO_TRIGGER} from './command'
 import {CriticalError} from './errors'
 import {
   APIConfiguration,
@@ -20,6 +19,7 @@ import {
   TestSearchResult,
   Trigger,
 } from './interfaces'
+import {MAX_TESTS_TO_TRIGGER} from './run-tests-command'
 import {ciTriggerApp, getDatadogHost, retry} from './utils'
 
 const MAX_RETRIES = 3
