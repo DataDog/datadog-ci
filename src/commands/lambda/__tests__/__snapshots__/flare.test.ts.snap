@@ -2,16 +2,16 @@
 
 exports[`lambda flare prints dry-run header 1`] = `
 "
-[Dry Run] 🐶 Generating Lambda flare to send your configuration to Datadog
+[Dry Run] 🐶 Generating Lambda flare to send your configuration to Datadog.
 
-[Error] No functions specified. [-f,--function]
+[Error] No function name specified. [-f,--function]
 "
 `;
 
 exports[`lambda flare prints non-dry-run header 1`] = `
 "
-🐶 Generating Lambda flare to send your configuration to Datadog
+🐶 Generating Lambda flare to send your configuration to Datadog.
 
-[Error] No functions specified. [-f,--function]
+[Error] No function name specified. [-f,--function]
 "
 `;

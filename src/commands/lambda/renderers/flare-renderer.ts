@@ -1,4 +1,4 @@
-import {dryRunTag, errorTag} from './common-renderer'
+import {dryRunTag, errorTag, warningExclamationSignTag} from './common-renderer'
 
 /**
  * @returns a header indicating which `lambda` subcommand is running.
@@ -11,7 +11,7 @@ import {dryRunTag, errorTag} from './common-renderer'
 export const renderLambdaFlareHeader = (isDryRun: boolean) => {
   const prefix = isDryRun ? `${dryRunTag} ` : ''
 
-  return `\n${prefix}🐶 Generating Lambda flare to send your configuration to Datadog\n`
+  return `\n${prefix}🐶 Generating Lambda flare to send your configuration to Datadog.\n`
 }
 
 /**
@@ -23,3 +23,13 @@ export const renderLambdaFlareHeader = (isDryRun: boolean) => {
  * ```
  */
 export const renderError = (error: string) => `\n${errorTag} ${error}\n`
+
+/**
+ * @param warning the message to warn about.
+ * @returns the provided warning prefixed by {@link warningExclamationSignTag}.
+ *
+ * ```txt
+ * [!] The provided warning goes here!
+ * ```
+ */
+export const renderSoftWarning = (warning: string) => `${warningExclamationSignTag} ${warning}\n`
