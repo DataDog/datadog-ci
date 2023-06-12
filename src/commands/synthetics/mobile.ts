@@ -147,9 +147,11 @@ export const uploadMobileApplicationVersion = async (
   if (!config.mobileApplicationVersionFilePath) {
     throw new CiError('MISSING_MOBILE_APPLICATION_PATH', 'Mobile application path is required.')
   }
+
   if (!config.mobileApplicationId) {
     throw new CiError('MISSING_MOBILE_APPLICATION_ID', 'Mobile application id is required.')
   }
+
   if (!config.versionName) {
     throw new CiError('MISSING_MOBILE_VERSION_NAME', 'Version name is required')
   }
