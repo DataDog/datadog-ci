@@ -136,6 +136,18 @@ describe('flutter-symbol upload', () => {
       expect(exitCode).toBe(1)
       expect(errorOutput).toBe(renderMinifiedPathPrefixRequired())
     })
+
+    test('minified-path-prefix required if web-sourcemaps-location is specified', async () => {
+      const {exitCode, context} = await runCommand((cmd) => {
+        cmd['serviceName'] = 'fake.service'
+        cmd['version'] = '1.0.0+114'
+        cmd['webSourceMapsLocation'] = './fake/location'
+      })
+      const errorOutput = context.stderr.toString()
+
+      expect(exitCode).toBe(1)
+      expect(errorOutput).toBe(renderMinifiedPathPrefixRequired())
+    })
   })
 
   describe('getFlutterSymbolFiles', () => {
@@ -482,6 +494,29 @@ describe('flutter-symbol upload', () => {
         cmd['serviceName'] = 'fake.service'
         cmd['version'] = '1.2.3'
         cmd['webSourceMaps'] = true
+        cmd['webSourceMapsLocation'] = './other/location'
+        cmd['minifiedPathPrefix'] = 'https://localhost'
+      })
+
+      expect(exitCode).toBe(0)
+      expect(performSubCommand).toHaveBeenCalledWith(
+        sourcemaps.UploadCommand,
+        [
+          'sourcemaps',
+          'upload',
+          './other/location',
+          '--service=fake.service',
+          '--release-version=1.2.3',
+          '--minified-path-prefix=https://localhost',
+        ],
+        expect.anything()
+      )
+    })
+
+    test('calls sourcemap sub-command with location only', async () => {
+      const {exitCode} = await runCommand((cmd) => {
+        cmd['serviceName'] = 'fake.service'
+        cmd['version'] = '1.2.3'
         cmd['webSourceMapsLocation'] = './other/location'
         cmd['minifiedPathPrefix'] = 'https://localhost'
       })

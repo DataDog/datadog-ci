@@ -166,7 +166,7 @@ export class UploadCommand extends Command {
       if (this.dartSymbolsLocation) {
         callResults.push(...(await this.performDartSymbolsUpload()))
       }
-      if (this.webSourceMaps) {
+      if (this.webSourceMapsLocation) {
         callResults.push(await this.performSourceMapUpload())
       }
 
@@ -490,13 +490,14 @@ export class UploadCommand extends Command {
       }
     }
 
-    if (this.webSourceMaps) {
+    if (this.webSourceMaps && !this.webSourceMapsLocation) {
+      this.webSourceMapsLocation = './build/web'
+    }
+
+    if (this.webSourceMapsLocation) {
       if (!this.minifiedPathPrefix) {
         this.context.stderr.write(renderMinifiedPathPrefixRequired())
         parametersOkay = false
-      }
-      if (!this.webSourceMapsLocation) {
-        this.webSourceMapsLocation = './build/web'
       }
     }
 
