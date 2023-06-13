@@ -154,7 +154,7 @@ export class LambdaFlareCommand extends Command {
       })
       .catch((err) => {
         this.context.stderr.write(
-          '\n❌ Failed to send function config to Datadog Support. Is your email and case ID correct?\n'
+          renderError('Failed to send function config to Datadog Support. Is your email and case ID correct?')
         )
         this.context.stderr.write(renderError(err))
       })

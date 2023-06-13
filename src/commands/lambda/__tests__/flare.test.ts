@@ -288,7 +288,7 @@ describe('lambda flare', () => {
     )
     const output = context.stderr.toString()
     expect(output).toContain(
-      '\n❌ Failed to send function config to Datadog Support. Is your email and case ID correct?\n'
+      'Failed to send function config to Datadog Support. Is your email and case ID correct?'
     )
   })
 })
