@@ -25,7 +25,7 @@ datadog-ci gate evaluate --scope team:backend --scope team:frontend --fail-on-em
 - `--dry-run` runs the command without the final evaluation step. All other checks are performed. The default value is `false`.
 - `--fail-if-unavailable` fails the command if Datadog is unavailable. The default value is `false`.
 - `--fail-on-empty` fails the command if no matching rules are found in Datadog. The default value is `false`.
-- `--no-wait` removes the waiting time (30s) that is in place to ensure that events (e.g. tests) can be properly queried by the rules. This mechanism avoids that rules are incorrectly evaluated due to the absence of events. Read more on the quality gates documentation before passing this flag. The default value is `false`.
+- `--no-wait` removes the waiting time (30s) that is in place to ensure that events (for example: tests) can be properly queried by the rules. This mechanism prevents rules from being incorrectly evaluated due to the absence of events. Read more on the quality gates documentation before passing this flag. The default value is `false`.
 
 
 ### Environment variables
