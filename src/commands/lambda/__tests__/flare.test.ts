@@ -4,6 +4,7 @@ import * as stream from 'stream'
 import util from 'util'
 
 import axios from 'axios'
+import FormData from 'form-data'
 
 import {API_KEY_ENV_VAR, AWS_DEFAULT_REGION_ENV_VAR, CI_API_KEY_ENV_VAR} from '../constants'
 import {requestAWSCredentials} from '../prompt'
@@ -215,22 +216,17 @@ describe('lambda flare', () => {
     expect(output).toContain(util.inspect(mockConfig, false, undefined, true))
   })
 
-  // it('successfully creates and adds zip file to FormData', async () => {
-  //   const appendSpy = jest.spyOn(FormData.prototype, 'append')
-  //   const cli = makeCli()
-  //   const context = createMockContext()
-  //   await cli.run(
-  //     ['lambda', 'flare', '-f', 'func', '-r', 'us-west-2', '--api-key', 'abc', '-c', '123', '-e', 'test@test.com'],
-  //     context as any
-  //   )
-  //   expect(mockChildProcess.exec).toHaveBeenCalledWith(
-  //     expect.stringContaining('zip'),
-  //     expect.objectContaining({cwd: expect.any(String) as string}),
-  //     expect.any(Function)
-  //   )
-  //   expect(appendSpy).toHaveBeenCalledWith('flare_file', expect.anything())
-  //   appendSpy.mockRestore()
-  // })
+  it('successfully adds zip file to FormData', async () => {
+    const appendSpy = jest.spyOn(FormData.prototype, 'append')
+    const cli = makeCli()
+    const context = createMockContext()
+    await cli.run(
+      ['lambda', 'flare', '-f', 'func', '-r', 'us-west-2', '--api-key', 'abc', '-c', '123', '-e', 'test@test.com'],
+      context as any
+    )
+    expect(appendSpy).toHaveBeenCalledWith('flare_file', expect.anything())
+    appendSpy.mockRestore()
+  })
 
   it('successfully sends request to Datadog', async () => {
     const postSpy = jest.spyOn(axios, 'post').mockResolvedValue({status: 200})
