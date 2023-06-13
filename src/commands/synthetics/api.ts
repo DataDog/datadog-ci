@@ -10,6 +10,7 @@ import {
   APIConfiguration,
   APIHelperConfig,
   Batch,
+  MobileApplicationVersion,
   Payload,
   PollResult,
   PresignedUrlResponse,
@@ -195,6 +196,21 @@ const uploadMobileApplication = (request: (args: AxiosRequestConfig) => AxiosPro
   )
 }
 
+const createMobileVersion = (request: (args: AxiosRequestConfig) => AxiosPromise<MobileApplicationVersion>) => async (
+  version: MobileApplicationVersion
+) => {
+  const resp = await retryRequest(
+    {
+      data: version,
+      method: 'POST',
+      url: `/synthetics/mobile/applications/versions`,
+    },
+    request
+  )
+
+  return resp.data
+}
+
 type RetryPolicy = (retries: number, error: AxiosError) => number | undefined
 
 const retryOn5xxErrors: RetryPolicy = (retries, error) => {
@@ -250,6 +266,7 @@ export const apiConstructor = (configuration: APIConfiguration) => {
     searchTests: searchTests(request),
     triggerTests: triggerTests(requestIntake),
     uploadMobileApplication: uploadMobileApplication(request),
+    createMobileVersion: createMobileVersion(requestUnstable),
   }
 }
 

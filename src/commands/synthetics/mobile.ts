@@ -1,8 +1,16 @@
 import * as crypto from 'crypto'
 import fs from 'fs'
 
-import {APIHelper, EndpointError, formatBackendErrors} from './api'
-import {PresignedUrlResponse, Test, TestPayload, UserConfigOverride} from './interfaces'
+import {APIHelper, EndpointError, formatBackendErrors, getApiHelper} from './api'
+import {CiError} from './errors'
+import {
+  MobileApplicationVersion,
+  PresignedUrlResponse,
+  Test,
+  TestPayload,
+  UploadApplicationCommandConfig,
+  UserConfigOverride,
+} from './interfaces'
 
 export const getSizeAndMD5HashFromFile = async (filePath: string): Promise<{appSize: number; md5: string}> => {
   const hash = crypto.createHash('md5')
@@ -115,4 +123,53 @@ export const uploadApplicationAndOverrideConfig = async (
     : undefined
 
   overrideMobileConfig(userConfigOverride, overriddenTestsToTrigger, test, localApplicationOverride)
+}
+
+export const createNewMobileVersion = async (
+  api: APIHelper,
+  version: MobileApplicationVersion
+): Promise<MobileApplicationVersion> => {
+  let newVersion: MobileApplicationVersion
+  try {
+    newVersion = await api.createMobileVersion(version)
+  } catch (e) {
+    throw new EndpointError(`Failed create new Mobile Version: ${formatBackendErrors(e)}\n`, e.response?.status)
+  }
+
+  return newVersion
+}
+
+export const uploadMobileApplicationVersion = async (
+  config: UploadApplicationCommandConfig
+): Promise<MobileApplicationVersion> => {
+  const api = getApiHelper(config)
+
+  if (!config.mobileApplicationVersionFilePath) {
+    throw new CiError('MISSING_MOBILE_APPLICATION_PATH', 'Mobile application path is required.')
+  }
+
+  if (!config.mobileApplicationId) {
+    throw new CiError('MISSING_MOBILE_APPLICATION_ID', 'Mobile application id is required.')
+  }
+
+  if (!config.versionName) {
+    throw new CiError('MISSING_MOBILE_VERSION_NAME', 'Version name is required')
+  }
+  config.latest = config.latest ?? true
+
+  const fileName = await uploadMobileApplications(
+    api,
+    config.mobileApplicationVersionFilePath,
+    config.mobileApplicationId
+  )
+
+  const version = await createNewMobileVersion(api, {
+    file_name: fileName,
+    application_id: config.mobileApplicationId,
+    original_file_name: config.mobileApplicationVersionFilePath,
+    version_name: config.versionName,
+    is_latest: config.latest,
+  })
+
+  return version
 }

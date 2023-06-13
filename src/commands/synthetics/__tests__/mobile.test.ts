@@ -1,9 +1,11 @@
 import fs from 'fs'
 import path from 'path'
 
+import {EndpointError} from '../api'
+import {CiError} from '../errors'
 import * as mobile from '../mobile'
 
-import {getApiHelper, getMobileTest, getTestPayload} from './fixtures'
+import {getApiHelper, getMobileTest, getMobileVersion, getTestPayload, uploadCommandConfig} from './fixtures'
 
 describe('getSizeAndMD5HashFromFile', () => {
   test('correctly get size and md5 of a file', async () => {
@@ -257,5 +259,61 @@ describe('uploadApplicationAndOverrideConfig', () => {
       referenceId: 'androidAppVersion',
       referenceType: 'version',
     })
+  })
+})
+
+describe('uploadMobileApplicationVersion', () => {
+  const uploadMobileApplicationSpy = jest.spyOn(mobile, 'uploadMobileApplications')
+  const createNewMobileVersionSpy = jest.spyOn(mobile, 'createNewMobileVersion')
+  const config = uploadCommandConfig
+
+  beforeEach(() => {
+    uploadMobileApplicationSpy.mockReset()
+    createNewMobileVersionSpy.mockReset()
+  })
+
+  test('upload new application file', async () => {
+    uploadMobileApplicationSpy.mockImplementation(async () => 'abc-123')
+    createNewMobileVersionSpy.mockImplementation(async () => getMobileVersion({id: 'def-456'}))
+
+    await mobile.uploadMobileApplicationVersion(config)
+
+    expect(uploadMobileApplicationSpy).toHaveBeenCalledTimes(1)
+    const callArg = createNewMobileVersionSpy.mock.calls[0][1]
+    expect(callArg.file_name).toBe('abc-123')
+  })
+
+  test('get pre-signe URL fails', async () => {
+    uploadMobileApplicationSpy.mockImplementation(() => {
+      throw new EndpointError('mock fail', 1)
+    })
+
+    await expect(mobile.uploadMobileApplicationVersion(config)).rejects.toThrow(EndpointError)
+
+    expect(createNewMobileVersionSpy).toHaveBeenCalledTimes(0)
+  })
+
+  test('missing mobile application ID', async () => {
+    delete config.mobileApplicationId
+    await expect(mobile.uploadMobileApplicationVersion(config)).rejects.toThrow(CiError)
+
+    expect(uploadMobileApplicationSpy).toHaveBeenCalledTimes(0)
+    expect(createNewMobileVersionSpy).toHaveBeenCalledTimes(0)
+  })
+
+  test('missing mobile application file', async () => {
+    delete config.mobileApplicationVersionFilePath
+    await expect(mobile.uploadMobileApplicationVersion(config)).rejects.toThrow(CiError)
+
+    expect(uploadMobileApplicationSpy).toHaveBeenCalledTimes(0)
+    expect(createNewMobileVersionSpy).toHaveBeenCalledTimes(0)
+  })
+
+  test('missing version name', async () => {
+    delete config.versionName
+    await expect(mobile.uploadMobileApplicationVersion(config)).rejects.toThrow(CiError)
+
+    expect(uploadMobileApplicationSpy).toHaveBeenCalledTimes(0)
+    expect(createNewMobileVersionSpy).toHaveBeenCalledTimes(0)
   })
 })

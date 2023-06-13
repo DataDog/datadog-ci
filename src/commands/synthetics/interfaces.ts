@@ -385,6 +385,12 @@ export interface RunTestsCommandConfig extends SyntheticsCIConfig {
 
 export type WrapperConfig = Partial<RunTestsCommandConfig>
 
+export interface UploadApplicationCommandConfig extends SyntheticsCIConfig {
+  mobileApplicationVersionFilePath?: string
+  mobileApplicationId?: string
+  versionName?: string
+  latest?: boolean
+}
 export interface PresignedUrlResponse {
   file_name: string
   presigned_url_params: {
@@ -398,4 +404,14 @@ export interface PresignedUrlResponse {
 // not the entire response, but only the slice needed
 export interface SyntheticsOrgSettings {
   orgMaxConcurrencyCap: number
+}
+
+export interface MobileApplicationVersion {
+  id?: string
+  application_id: string
+  file_name: string
+  original_file_name: string
+  is_latest: boolean
+  version_name: string
+  created_at?: string
 }

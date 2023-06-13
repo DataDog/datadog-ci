@@ -15,6 +15,7 @@ import {
   ExecutionRule,
   Location,
   MainReporter,
+  MobileApplicationVersion,
   MultiStep,
   MultiStepsServerResult,
   PresignedUrlResponse,
@@ -26,6 +27,7 @@ import {
   Test,
   TestPayload,
   Trigger,
+  UploadApplicationCommandConfig,
   User,
 } from '../interfaces'
 import {createInitialSummary} from '../utils'
@@ -545,3 +547,25 @@ export const getTestPayload = (override?: Partial<TestPayload>) => ({
   public_id: 'aaa-aaa-aaa',
   ...override,
 })
+
+export const getMobileVersion = (override?: Partial<MobileApplicationVersion>) => ({
+  id: '123-abc-456',
+  application_id: '789-dfg-987',
+  file_name: 'bla.',
+  original_file_name: 'test.apk',
+  is_latest: true,
+  version_name: 'test version',
+  created_at: '22-09-2022',
+  ...override,
+})
+
+export const uploadCommandConfig: UploadApplicationCommandConfig = {
+  apiKey: 'foo',
+  appKey: 'bar',
+  datadogSite: 'datadoghq.com',
+  proxy: {protocol: 'http'},
+  mobileApplicationVersionFilePath: 'test.apk',
+  mobileApplicationId: 'abc-123-def',
+  versionName: 'new version',
+  latest: true,
+}
