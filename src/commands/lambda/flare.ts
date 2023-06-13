@@ -1,16 +1,18 @@
+import {exec} from 'child_process'
 import * as fs from 'fs'
 import * as path from 'path'
-import util, { promisify } from "util";
+import util, {promisify} from 'util'
 
 import {LambdaClient, LambdaClientConfig} from '@aws-sdk/client-lambda'
 import {AwsCredentialIdentity} from '@aws-sdk/types'
+import axios from 'axios'
 import {Command} from 'clipanion'
+import FormData from 'form-data'
 
 import {API_KEY_ENV_VAR, AWS_DEFAULT_REGION_ENV_VAR, CI_API_KEY_ENV_VAR} from './constants'
 import {getAWSCredentials, getLambdaFunctionConfig} from './functions/commons'
 import {requestAWSCredentials} from './prompt'
 import {renderError, renderLambdaFlareHeader, renderSoftWarning} from './renderers/flare-renderer'
-import { exec } from "child_process";
 
 export class LambdaFlareCommand extends Command {
   private isDryRun = false
@@ -28,28 +30,46 @@ export class LambdaFlareCommand extends Command {
     this.context.stdout.write(renderLambdaFlareHeader(this.isDryRun))
 
     // Validate function name
+    let errorFound = false
     if (this.functionName === undefined) {
       this.context.stderr.write(renderError('No function name specified. [-f,--function]'))
-
-      return 1
+      errorFound = true
     }
 
     // Validate region
-    if (this.region === undefined && this.functionName.startsWith('arn:aws:lambda')) {
+    if (
+      this.region === undefined &&
+      this.functionName !== undefined &&
+      this.functionName.startsWith('arn:aws:lambda')
+    ) {
       this.region = this.functionName.split(':')[3]
     }
     this.region = this.region ?? process.env[AWS_DEFAULT_REGION_ENV_VAR]
     if (this.region === undefined) {
       this.context.stderr.write(renderError('No region specified. [-r,--region]'))
-
-      return 1
+      errorFound = true
     }
 
     // Validate Datadog API key
     this.apiKey = this.apiKey ?? process.env[CI_API_KEY_ENV_VAR] ?? process.env[API_KEY_ENV_VAR]
     if (this.apiKey === undefined) {
       this.context.stderr.write(renderError('No Datadog API key specified. [--api-key]'))
+      errorFound = true
+    }
 
+    // Validate case ID
+    if (this.caseId === undefined) {
+      this.context.stderr.write(renderError('No case ID specified. [-c,--case-id]'))
+      errorFound = true
+    }
+
+    // Validate email
+    if (this.email === undefined) {
+      this.context.stderr.write(renderError('No email specified. [-e,--email]'))
+      errorFound = true
+    }
+
+    if (errorFound) {
       return 1
     }
 
@@ -70,12 +90,15 @@ export class LambdaFlareCommand extends Command {
       credentials: this.credentials,
     }
     const lambdaClient = new LambdaClient(lambdaClientConfig)
+    if (this.functionName === undefined) {
+      throw new Error('Function name is undefined')
+    }
     const config = await getLambdaFunctionConfig(lambdaClient, this.functionName)
     const configStrColored = util.inspect(config, false, undefined, true)
     const configStrUncolored = JSON.stringify(config, undefined, 2)
 
     // Write config to file
-    const folderPath = path.join(process.cwd(), 'lambda-flare-output')
+    const folderPath = path.join(process.cwd(), '.lambda-flare-output')
     if (!fs.existsSync(folderPath)) {
       fs.mkdirSync(folderPath)
     }
@@ -91,7 +114,50 @@ export class LambdaFlareCommand extends Command {
     this.context.stdout.write(`\n${configStrColored}\n`)
 
     // Send to Datadog
-    this.context.stdout.write('\n🚀 Sending to Datadog Support...\n')
+    if (this.isDryRun) {
+      this.context.stdout.write('\n🚫 Configuration not sent because running as a dry run.\n')
+    } else {
+      this.context.stdout.write('\n🚀 Sending to Datadog Support...\n')
+      const form = new FormData()
+      form.append('case_id', this.caseId)
+      form.append('flare_file', fs.createReadStream(zipPath))
+      form.append('operator_version', 7)
+      form.append('email', this.email)
+      const requestConfig = {
+        headers: {
+          ...form.getHeaders(),
+          'DD-API-KEY': this.apiKey,
+        },
+      }
+      axios
+        .post('https://datad0g.com/api/ui/support/serverless/flare', form, requestConfig)
+        .then(() => {
+          this.context.stdout.write('\n✅ Successfully sent function config to Datadog Support!\n')
+        })
+        .catch(() => {
+          this.context.stderr.write('\n❌ Failed to send function config to Datadog Support!\n')
+        })
+    }
+
+    // Remove file
+    const deleteFolderContents = (dir: string) => {
+      if (fs.existsSync(dir)) {
+        fs.readdirSync(dir).forEach((file) => {
+          const currentPath = path.join(dir, file)
+          if (fs.lstatSync(currentPath).isDirectory()) {
+            deleteFolderContents(currentPath)
+          } else {
+            fs.unlinkSync(currentPath)
+          }
+        })
+      }
+    }
+    deleteFolderContents(folderPath)
+    try {
+      fs.rmdirSync(folderPath)
+    } catch (e) {
+      this.context.stderr.write(renderSoftWarning('Failed to delete log files located at .lambda-flare-output'))
+    }
 
     return 0
   }
