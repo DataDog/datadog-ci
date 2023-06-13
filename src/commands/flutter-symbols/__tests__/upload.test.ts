@@ -126,15 +126,15 @@ describe('flutter-symbol upload', () => {
     })
 
     test('minified-path-prefix required if web-sourcemaps is specified', async () => {
-      const { exitCode, context } = await runCommand((cmd) => {
-        cmd['serviceName'] = 'fake.service' 
+      const {exitCode, context} = await runCommand((cmd) => {
+        cmd['serviceName'] = 'fake.service'
         cmd['version'] = '1.0.0+114'
         cmd['webSourceMaps'] = true
       })
       const errorOutput = context.stderr.toString()
 
       expect(exitCode).toBe(1)
-      expect(errorOutput).toBe(renderMinifiedPathPrefixRequired());
+      expect(errorOutput).toBe(renderMinifiedPathPrefixRequired())
     })
   })
 
@@ -465,7 +465,14 @@ describe('flutter-symbol upload', () => {
       expect(exitCode).toBe(0)
       expect(performSubCommand).toHaveBeenCalledWith(
         sourcemaps.UploadCommand,
-        ['sourcemaps', 'upload', './build/web', '--service=fake.service', '--release-version=1.2.3', '--minified-path-prefix=https://localhost'],
+        [
+          'sourcemaps',
+          'upload',
+          './build/web',
+          '--service=fake.service',
+          '--release-version=1.2.3',
+          '--minified-path-prefix=https://localhost',
+        ],
         expect.anything()
       )
     })
@@ -482,7 +489,14 @@ describe('flutter-symbol upload', () => {
       expect(exitCode).toBe(0)
       expect(performSubCommand).toHaveBeenCalledWith(
         sourcemaps.UploadCommand,
-        ['sourcemaps', 'upload', './other/location', '--service=fake.service', '--release-version=1.2.3', '--minified-path-prefix=https://localhost'],
+        [
+          'sourcemaps',
+          'upload',
+          './other/location',
+          '--service=fake.service',
+          '--release-version=1.2.3',
+          '--minified-path-prefix=https://localhost',
+        ],
         expect.anything()
       )
     })
@@ -499,7 +513,15 @@ describe('flutter-symbol upload', () => {
       expect(exitCode).toBe(0)
       expect(performSubCommand).toHaveBeenCalledWith(
         sourcemaps.UploadCommand,
-        ['sourcemaps', 'upload', './build/web', '--service=fake.service', '--release-version=1.2.3', '--minified-path-prefix=https://localhost', '--dry-run'],
+        [
+          'sourcemaps',
+          'upload',
+          './build/web',
+          '--service=fake.service',
+          '--release-version=1.2.3',
+          '--minified-path-prefix=https://localhost',
+          '--dry-run',
+        ],
         expect.anything()
       )
     })

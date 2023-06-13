@@ -19,8 +19,8 @@ import {
 import {checkAPIKeyOverride} from '../../helpers/validation'
 
 import * as dsyms from '../dsyms/upload'
-import * as sourcemaps from '../sourcemaps/upload'
 import {newSimpleGit} from '../git-metadata/git'
+import * as sourcemaps from '../sourcemaps/upload'
 
 import {getArchInfoFromFilename, getFlutterRequestBuilder, uploadMultipartHelper} from './helpers'
 import {
@@ -128,7 +128,7 @@ export class UploadCommand extends Command {
       uploadInfo.push({
         fileType: 'JavaScript Source Maps',
         location: this.webSourceMapsLocation,
-        platform: 'Browser'
+        platform: 'Browser',
       })
     }
 
@@ -435,12 +435,12 @@ export class UploadCommand extends Command {
 
   private async performSourceMapUpload() {
     const sourceMapUploadCommand = [
-      'sourcemaps', 
-      'upload', 
+      'sourcemaps',
+      'upload',
       this.webSourceMapsLocation!,
       `--service=${this.serviceName}`,
       `--release-version=${this.version}`,
-      `--minified-path-prefix=${this.minifiedPathPrefix}`
+      `--minified-path-prefix=${this.minifiedPathPrefix}`,
     ]
     if (this.dryRun) {
       sourceMapUploadCommand.push('--dry-run')
@@ -491,12 +491,12 @@ export class UploadCommand extends Command {
     }
 
     if (this.webSourceMaps) {
-      if(!this.minifiedPathPrefix) {
+      if (!this.minifiedPathPrefix) {
         this.context.stderr.write(renderMinifiedPathPrefixRequired())
         parametersOkay = false
       }
       if (!this.webSourceMapsLocation) {
-        this.webSourceMapsLocation = './build/web';
+        this.webSourceMapsLocation = './build/web'
       }
     }
 
