@@ -116,7 +116,7 @@ export class UploadJUnitXMLCommand extends Command {
   private rawXPathTags?: string[]
   private xpathTags?: Record<string, string>
   private gitRepositoryURL?: string
-  private skipGitMetadataUpload?: boolean
+  private enableGitMetadataUpload?: boolean
   private logger: Logger = new Logger((s: string) => this.context.stdout.write(s), LogLevel.INFO)
 
   public async execute() {
@@ -174,7 +174,7 @@ export class UploadJUnitXMLCommand extends Command {
     const totalTimeSeconds = (Date.now() - initialTime) / 1000
     this.logger.info(renderSuccessfulUpload(this.dryRun, payloads.length, totalTimeSeconds))
 
-    if (!this.skipGitMetadataUpload) {
+    if (this.enableGitMetadataUpload) {
       if (await isGitRepo()) {
         const requestBuilder = getRequestBuilder({baseUrl: apiUrl, apiKey: this.config.apiKey!})
         try {
@@ -191,7 +191,7 @@ export class UploadJUnitXMLCommand extends Command {
         this.logger.info(`${this.dryRun ? '[DRYRUN] ' : ''}Not syncing git metadata (not a git repo)`)
       }
     } else {
-      this.logger.debug('Not syncing git metadata (skip git upload flag detected)')
+      this.logger.debug('Not syncing git metadata (no enable git upload flag detected)')
     }
 
     if (!this.dryRun) {
@@ -322,6 +322,6 @@ UploadJUnitXMLCommand.addOption('basePaths', Command.Rest({required: 1}))
 UploadJUnitXMLCommand.addOption('maxConcurrency', Command.String('--max-concurrency'))
 UploadJUnitXMLCommand.addOption('logs', Command.Boolean('--logs'))
 UploadJUnitXMLCommand.addOption('rawXPathTags', Command.Array('--xpath-tag'))
-UploadJUnitXMLCommand.addOption('skipGitMetadataUpload', Command.Boolean('--skip-git-metadata-upload'))
+UploadJUnitXMLCommand.addOption('enableGitMetadataUpload', Command.Boolean('--enable-git-metadata-upload'))
 UploadJUnitXMLCommand.addOption('gitRepositoryURL', Command.String('--git-repository-url'))
 UploadJUnitXMLCommand.addOption('verbose', Command.Boolean('--verbose'))
