@@ -84,6 +84,9 @@ To ignore this warning use the --disable-git flag.\n`)
 export const renderArgumentMissingError = (argumentName: string) =>
   chalk.red(`${ICONS.FAILED} Error: parameter "${argumentName}" is required.\n`)
 
+export const renderMinifiedPathPrefixRequired = () =>
+  chalk.red(`${ICONS.FAILED} Error: --minified-path-prefix is required when using --web-sourcemaps`)
+
 export const renderMissingPubspecError = (pubspecLocation: string) =>
   chalk.red(
     `${ICONS.FAILED} Could not find pubspec at '${pubspecLocation}'. A pubspec.yaml is required or the --version argument must be specified.\n`

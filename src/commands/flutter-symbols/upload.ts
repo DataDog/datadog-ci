@@ -20,6 +20,7 @@ import {checkAPIKeyOverride} from '../../helpers/validation'
 
 import * as dsyms from '../dsyms/upload'
 import {newSimpleGit} from '../git-metadata/git'
+import * as sourcemaps from '../sourcemaps/upload'
 
 import {getArchInfoFromFilename, getFlutterRequestBuilder, uploadMultipartHelper} from './helpers'
 import {
@@ -40,6 +41,7 @@ import {
   renderGitWarning,
   renderInvalidPubspecError,
   renderInvalidSymbolsDir,
+  renderMinifiedPathPrefixRequired,
   renderMissingAndroidMappingFile,
   renderMissingDartSymbolsDir,
   renderMissingPubspecError,
@@ -69,6 +71,9 @@ export class UploadCommand extends Command {
 
   private androidMapping = false
   private androidMappingLocation?: string
+  private webSourceMaps = false
+  private webSourceMapsLocation?: string
+  private minifiedPathPrefix?: string
   private cliVersion: string
   private config: Record<string, string> = {
     datadogSite: 'datadoghq.com',
@@ -119,6 +124,13 @@ export class UploadCommand extends Command {
         platform: 'Flutter',
       })
     }
+    if (this.webSourceMapsLocation) {
+      uploadInfo.push({
+        fileType: 'JavaScript Source Maps',
+        location: this.webSourceMapsLocation,
+        platform: 'Browser',
+      })
+    }
 
     this.context.stdout.write(renderCommandInfo(this.dryRun, this.version!, this.serviceName, this.flavor, uploadInfo))
 
@@ -153,6 +165,9 @@ export class UploadCommand extends Command {
       }
       if (this.dartSymbolsLocation) {
         callResults.push(...(await this.performDartSymbolsUpload()))
+      }
+      if (this.webSourceMapsLocation) {
+        callResults.push(await this.performSourceMapUpload())
       }
 
       const totalTime = (Date.now() - initialTime) / 1000
@@ -418,6 +433,27 @@ export class UploadCommand extends Command {
     return UploadStatus.Success
   }
 
+  private async performSourceMapUpload() {
+    const sourceMapUploadCommand = [
+      'sourcemaps',
+      'upload',
+      this.webSourceMapsLocation!,
+      `--service=${this.serviceName}`,
+      `--release-version=${this.version}`,
+      `--minified-path-prefix=${this.minifiedPathPrefix}`,
+    ]
+    if (this.dryRun) {
+      sourceMapUploadCommand.push('--dry-run')
+    }
+
+    const exitCode = await performSubCommand(sourcemaps.UploadCommand, sourceMapUploadCommand, this.context)
+    if (exitCode && exitCode !== 0) {
+      return UploadStatus.Failure
+    }
+
+    return UploadStatus.Success
+  }
+
   private async verifyParameters(): Promise<boolean> {
     let parametersOkay = true
 
@@ -454,6 +490,17 @@ export class UploadCommand extends Command {
       }
     }
 
+    if (this.webSourceMaps && !this.webSourceMapsLocation) {
+      this.webSourceMapsLocation = './build/web'
+    }
+
+    if (this.webSourceMapsLocation) {
+      if (!this.minifiedPathPrefix) {
+        this.context.stderr.write(renderMinifiedPathPrefixRequired())
+        parametersOkay = false
+      }
+    }
+
     if (!this.version && (await this.parsePubspecVersion(this.pubspecLocation))) {
       parametersOkay = false
     }
@@ -469,6 +516,9 @@ UploadCommand.addOption('iosDsyms', Command.Boolean('--ios-dsyms'))
 UploadCommand.addOption('iosDsymsLocation', Command.String('--ios-dsyms-location'))
 UploadCommand.addOption('androidMapping', Command.Boolean('--android-mapping'))
 UploadCommand.addOption('androidMappingLocation', Command.String('--android-mapping-location'))
+UploadCommand.addOption('webSourceMaps', Command.Boolean('--web-sourcemaps'))
+UploadCommand.addOption('webSourceMapsLocation', Command.String('--web-sourcemaps-location'))
+UploadCommand.addOption('minifiedPathPrefix', Command.String('--minified-path-prefix'))
 UploadCommand.addOption('pubspecLocation', Command.String('--pubspec'))
 UploadCommand.addOption('serviceName', Command.String('--service-name'))
 UploadCommand.addOption('maxConcurrency', Command.String('--max-concurrency'))
