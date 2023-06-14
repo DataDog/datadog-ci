@@ -39,6 +39,7 @@ import {
 import {FunctionConfiguration, InstrumentationSettings, InstrumentedConfigurationGroup} from '../interfaces'
 import {applyLogGroupConfig} from '../loggroup'
 import {awsProfileQuestion} from '../prompt'
+import {renderSoftWarning} from '../renderers/common-renderer'
 import * as renderer from '../renderers/instrument-uninstrument-renderer'
 import {applyTagConfig} from '../tags'
 
@@ -386,7 +387,7 @@ export const getLambdaFunctionConfig = async (
 
 /**
  * Given a Function ARN, return its region by splitting the string,
- * can return undefined if it is doesn't exist.
+ * can return undefined if it doesn't exist.
  *
  * @param functionARN a string, can be Function ARN, Partial ARN, or a Function Name.
  * @returns the region of an ARN.
@@ -475,7 +476,7 @@ export const handleLambdaFunctionUpdates = async (configGroups: InstrumentedConf
   }
 
   if (totalFailedUpdates > 0) {
-    stdout.write(renderer.renderSoftWarning(renderer.renderUpdatedLambdaFunctions(totalFunctions - totalFailedUpdates)))
+    stdout.write(renderSoftWarning(renderer.renderUpdatedLambdaFunctions(totalFunctions - totalFailedUpdates)))
   }
 
   if (!totalFailedUpdates) {

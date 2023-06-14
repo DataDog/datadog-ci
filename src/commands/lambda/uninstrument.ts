@@ -18,6 +18,11 @@ import {
 import {getUninstrumentedFunctionConfigs, getUninstrumentedFunctionConfigsFromRegEx} from './functions/uninstrument'
 import {FunctionConfiguration} from './interfaces'
 import {requestAWSCredentials, requestChangesConfirmation, requestFunctionSelection} from './prompt'
+import {
+  renderError,
+  renderNoAWSCredentialsFound,
+  renderNoDefaultRegionSpecifiedError,
+} from './renderers/common-renderer'
 import * as renderer from './renderers/instrument-uninstrument-renderer'
 
 export class UninstrumentCommand extends Command {
@@ -49,7 +54,7 @@ export class UninstrumentCommand extends Command {
       try {
         this.credentials = await getAWSProfileCredentials(profile)
       } catch (err) {
-        this.context.stdout.write(renderer.renderError(err))
+        this.context.stdout.write(renderError(err))
 
         return 1
       }
@@ -60,13 +65,13 @@ export class UninstrumentCommand extends Command {
       try {
         const credentials = await getAWSCredentials()
         if (credentials === undefined) {
-          this.context.stdout.write(renderer.renderNoAWSCredentialsFound())
+          this.context.stdout.write(renderNoAWSCredentialsFound())
           await requestAWSCredentials()
         } else {
           this.credentials = credentials
         }
       } catch (err) {
-        this.context.stdout.write(renderer.renderError(err))
+        this.context.stdout.write(renderError(err))
 
         return 1
       }
@@ -137,7 +142,7 @@ export class UninstrumentCommand extends Command {
 
       const region = this.region || this.config.region
       if (!region) {
-        this.context.stdout.write(renderer.renderNoDefaultRegionSpecifiedError())
+        this.context.stdout.write(renderNoDefaultRegionSpecifiedError())
 
         return 1
       }

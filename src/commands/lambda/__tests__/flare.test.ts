@@ -26,6 +26,7 @@ const mockConfig = {
 jest.mock('../functions/commons', () => ({
   getAWSCredentials: jest.fn(),
   getLambdaFunctionConfig: jest.fn().mockImplementation(() => Promise.resolve(mockConfig)),
+  getRegion: jest.requireActual('../functions/commons').getRegion as () => string | undefined,
 }))
 
 jest.mock('../prompt', () => ({
@@ -91,7 +92,7 @@ describe('lambda flare', () => {
     )
     expect(code).toBe(1)
     const output = context.stderr.toString()
-    expect(output).toContain('No region specified. [-r,--region]')
+    expect(output).toContain('No default region specified. [-r,--region]')
   })
 
   it('extracts region from function name when given a function ARN', async () => {
@@ -274,7 +275,7 @@ describe('lambda flare', () => {
     )
     expect(postSpy).not.toHaveBeenCalled()
     const output = context.stdout.toString()
-    expect(output).toContain('\n🚫 Configuration not sent because the command was ran as a dry run.\n')
+    expect(output).toContain('\n🚫 The configuration was not sent as it was executed in dry run mode.\n')
     postSpy.mockRestore()
   })
 
@@ -287,6 +288,6 @@ describe('lambda flare', () => {
       context as any
     )
     const output = context.stderr.toString()
-    expect(output).toContain('Failed to send function config to Datadog Support. Is your email and case ID correct?')
+    expect(output).toContain('Failed to send function config to Datadog Support:')
   })
 })

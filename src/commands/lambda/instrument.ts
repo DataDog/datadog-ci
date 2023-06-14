@@ -43,6 +43,11 @@ import {
   requestEnvServiceVersion,
   requestFunctionSelection,
 } from './prompt'
+import {
+  renderError,
+  renderNoAWSCredentialsFound,
+  renderNoDefaultRegionSpecifiedError,
+} from './renderers/common-renderer'
 import * as renderer from './renderers/instrument-uninstrument-renderer'
 
 export class InstrumentCommand extends Command {
@@ -89,7 +94,7 @@ export class InstrumentCommand extends Command {
       try {
         this.credentials = await getAWSProfileCredentials(profile)
       } catch (err) {
-        this.context.stdout.write(renderer.renderError(err))
+        this.context.stdout.write(renderError(err))
 
         return 1
       }
@@ -100,7 +105,7 @@ export class InstrumentCommand extends Command {
       try {
         const credentials = await getAWSCredentials()
         if (credentials === undefined) {
-          this.context.stdout.write(renderer.renderNoAWSCredentialsFound())
+          this.context.stdout.write(renderNoAWSCredentialsFound())
           await requestAWSCredentials()
         } else {
           this.credentials = credentials
@@ -119,7 +124,7 @@ export class InstrumentCommand extends Command {
           await requestDatadogEnvVars()
         }
       } catch (err) {
-        this.context.stdout.write(renderer.renderError(err))
+        this.context.stdout.write(renderError(err))
 
         return 1
       }
@@ -162,7 +167,7 @@ export class InstrumentCommand extends Command {
       try {
         await requestEnvServiceVersion()
       } catch (err) {
-        this.context.stdout.write(renderer.renderError(`Grabbing env, service, and version values from user. ${err}`))
+        this.context.stdout.write(renderError(`Grabbing env, service, and version values from user. ${err}`))
 
         return 1
       }
@@ -226,7 +231,7 @@ export class InstrumentCommand extends Command {
 
       const region = this.region ?? this.config.region ?? process.env[AWS_DEFAULT_REGION_ENV_VAR]
       if (!region) {
-        this.context.stdout.write(renderer.renderNoDefaultRegionSpecifiedError())
+        this.context.stdout.write(renderNoDefaultRegionSpecifiedError())
 
         return 1
       }
