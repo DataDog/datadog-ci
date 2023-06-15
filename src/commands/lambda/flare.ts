@@ -135,7 +135,7 @@ export class LambdaFlareCommand extends Command {
       await this.zipContents(filePath, zipPath)
       this.context.stdout.write('\n🚀 Sending to Datadog Support...\n')
       await this.sendToDatadog(zipPath)
-      this.deleteFolderContents(folderPath)
+      this.deleteFolder(folderPath)
     } catch (err) {
       this.context.stderr.write(err.message)
 
@@ -222,27 +222,15 @@ export class LambdaFlareCommand extends Command {
   }
 
   /**
-   * Delete the contents of a folder
+   * Delete a folder and all its contents
    * @param folderPath the folder to delete
    * @throws Error if the deletion fails
    */
-  private deleteFolderContents = (folderPath: string) => {
+  private deleteFolder = (folderPath: string) => {
     try {
-      if (fs.existsSync(folderPath)) {
-        fs.readdirSync(folderPath).forEach((file) => {
-          const currentPath = path.join(folderPath, file)
-          if (fs.lstatSync(currentPath).isDirectory()) {
-            this.deleteFolderContents(currentPath)
-          } else {
-            fs.unlinkSync(currentPath)
-          }
-        })
-      }
-      fs.rmdirSync(folderPath)
+      fs.rmSync(folderPath, {recursive: true, force: true})
     } catch (err) {
-      throw Error(
-        commonRenderer.renderSoftWarning(`Failed to delete flare files located at ${folderPath}: ${err.message}`)
-      )
+      throw new Error(`Failed to delete files located at ${folderPath}: ${err.message}`)
     }
   }
 }
