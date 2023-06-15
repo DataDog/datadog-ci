@@ -15,6 +15,7 @@ import {requestAWSCredentials} from './prompt'
 import * as commonRenderer from './renderers/common-renderer'
 import * as flareRenderer from './renderers/flare-renderer'
 
+const ENDPOINT_URL = 'https://datad0g.com/api/ui/support/serverless/flare'
 const FLARE_OUTPUT_DIRECTORY = '.datadog-ci'
 const FUNCTION_CONFIG_FILE_NAME = 'function_config.json'
 const ZIP_FILE_NAME = 'lambda-flare-output.zip'
@@ -193,11 +194,7 @@ export class LambdaFlareCommand extends Command {
   private sendToDatadog = async (zipPath: string) => {
     const form = new FormData()
     form.append('case_id', this.caseId)
-    try {
-      form.append('flare_file', fs.createReadStream(zipPath))
-    } catch (err) {
-      throw Error(commonRenderer.renderError(`Unable to read the flare file: ${err.message}`))
-    }
+    form.append('flare_file', fs.createReadStream(zipPath))
     form.append('operator_version', 7)
     form.append('email', this.email)
     const headerConfig = {
@@ -206,11 +203,10 @@ export class LambdaFlareCommand extends Command {
         'DD-API-KEY': this.apiKey,
       },
     }
-    const ENDPOINT_URL = 'https://datad0g.com/api/ui/support/serverless/flare'
+
     try {
-      await axios.post(ENDPOINT_URL, form, headerConfig).then(() => {
-        this.context.stdout.write('\n✅ Successfully sent function config to Datadog Support!\n')
-      })
+      await axios.post(ENDPOINT_URL, form, headerConfig)
+      this.context.stdout.write('\n✅ Successfully sent function config to Datadog Support!\n')
     } catch (err) {
       const errResponse: string = err.response?.data?.error
       throw Error(
