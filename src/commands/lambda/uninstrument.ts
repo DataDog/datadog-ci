@@ -18,12 +18,8 @@ import {
 import {getUninstrumentedFunctionConfigs, getUninstrumentedFunctionConfigsFromRegEx} from './functions/uninstrument'
 import {FunctionConfiguration} from './interfaces'
 import {requestAWSCredentials, requestChangesConfirmation, requestFunctionSelection} from './prompt'
-import {
-  renderError,
-  renderNoAWSCredentialsFound,
-  renderNoDefaultRegionSpecifiedError,
-} from './renderers/common-renderer'
-import * as renderer from './renderers/instrument-uninstrument-renderer'
+import * as commonRenderer from './renderers/common-renderer'
+import * as instrumentRenderer from './renderers/instrument-uninstrument-renderer'
 
 export class UninstrumentCommand extends Command {
   private config: any = {
@@ -42,7 +38,7 @@ export class UninstrumentCommand extends Command {
   private credentials?: AwsCredentialIdentity
 
   public async execute() {
-    this.context.stdout.write(renderer.renderLambdaHeader(Object.getPrototypeOf(this), this.dryRun))
+    this.context.stdout.write(instrumentRenderer.renderLambdaHeader(Object.getPrototypeOf(this), this.dryRun))
 
     const lambdaConfig = {lambda: this.config}
     this.config = (
@@ -54,7 +50,7 @@ export class UninstrumentCommand extends Command {
       try {
         this.credentials = await getAWSProfileCredentials(profile)
       } catch (err) {
-        this.context.stdout.write(renderError(err))
+        this.context.stdout.write(commonRenderer.renderError(err))
 
         return 1
       }
@@ -65,13 +61,13 @@ export class UninstrumentCommand extends Command {
       try {
         const credentials = await getAWSCredentials()
         if (credentials === undefined) {
-          this.context.stdout.write(renderNoAWSCredentialsFound())
+          this.context.stdout.write(commonRenderer.renderNoAWSCredentialsFound())
           await requestAWSCredentials()
         } else {
           this.credentials = credentials
         }
       } catch (err) {
-        this.context.stdout.write(renderError(err))
+        this.context.stdout.write(commonRenderer.renderError(err))
 
         return 1
       }
@@ -80,7 +76,7 @@ export class UninstrumentCommand extends Command {
       this.region = region
 
       if (!hasSpecifiedFunctions) {
-        const spinner = renderer.fetchingFunctionsSpinner()
+        const spinner = instrumentRenderer.fetchingFunctionsSpinner()
         try {
           const lambdaClientConfig: LambdaClientConfig = {
             region,
@@ -92,17 +88,17 @@ export class UninstrumentCommand extends Command {
           const functionNames =
             (await getAllLambdaFunctionConfigs(lambdaClient)).map((config) => config.FunctionName!).sort() ?? []
           if (functionNames.length === 0) {
-            this.context.stdout.write(renderer.renderCouldntFindLambdaFunctionsInRegionError())
+            this.context.stdout.write(instrumentRenderer.renderCouldntFindLambdaFunctionsInRegionError())
 
             return 1
           }
-          spinner.succeed(renderer.renderFetchedLambdaFunctions(functionNames.length))
+          spinner.succeed(instrumentRenderer.renderFetchedLambdaFunctions(functionNames.length))
 
           const functions = await requestFunctionSelection(functionNames)
           this.functions = functions
         } catch (err) {
-          spinner.fail(renderer.renderFailedFetchingLambdaFunctions())
-          this.context.stdout.write(renderer.renderCouldntFetchLambdaFunctionsError(err))
+          spinner.fail(instrumentRenderer.renderFailedFetchingLambdaFunctions())
+          this.context.stdout.write(instrumentRenderer.renderCouldntFetchLambdaFunctionsError(err))
 
           return 1
         }
@@ -112,7 +108,7 @@ export class UninstrumentCommand extends Command {
     hasSpecifiedFunctions = this.functions.length !== 0 || this.config.functions.length !== 0
     const hasSpecifiedRegExPattern = this.regExPattern !== undefined && this.regExPattern !== ''
     if (!hasSpecifiedFunctions && !hasSpecifiedRegExPattern) {
-      this.context.stdout.write(renderer.renderNoFunctionsSpecifiedError(Object.getPrototypeOf(this)))
+      this.context.stdout.write(instrumentRenderer.renderNoFunctionsSpecifiedError(Object.getPrototypeOf(this)))
 
       return 1
     }
@@ -129,25 +125,25 @@ export class UninstrumentCommand extends Command {
     if (hasSpecifiedRegExPattern) {
       if (hasSpecifiedFunctions) {
         this.context.stdout.write(
-          renderer.renderFunctionsAndFunctionsRegexOptionsBothSetError(this.functions.length !== 0)
+          instrumentRenderer.renderFunctionsAndFunctionsRegexOptionsBothSetError(this.functions.length !== 0)
         )
 
         return 1
       }
       if (this.regExPattern!.match(':')) {
-        this.context.stdout.write(renderer.renderRegexSetWithARNError())
+        this.context.stdout.write(instrumentRenderer.renderRegexSetWithARNError())
 
         return 1
       }
 
       const region = this.region || this.config.region
       if (!region) {
-        this.context.stdout.write(renderNoDefaultRegionSpecifiedError())
+        this.context.stdout.write(commonRenderer.renderNoDefaultRegionSpecifiedError())
 
         return 1
       }
 
-      const spinner = renderer.fetchingFunctionsSpinner()
+      const spinner = instrumentRenderer.fetchingFunctionsSpinner()
       try {
         const cloudWatchLogsClient = new CloudWatchLogsClient({region})
 
@@ -164,12 +160,12 @@ export class UninstrumentCommand extends Command {
           this.regExPattern!,
           this.forwarder
         )
-        spinner.succeed(renderer.renderFetchedLambdaFunctions(configs.length))
+        spinner.succeed(instrumentRenderer.renderFetchedLambdaFunctions(configs.length))
 
         configGroups.push({configs, lambdaClient, cloudWatchLogsClient, region})
       } catch (err) {
-        spinner.fail(renderer.renderFailedFetchingLambdaFunctions())
-        this.context.stdout.write(renderer.renderCouldntFetchLambdaFunctionsError(err))
+        spinner.fail(instrumentRenderer.renderFailedFetchingLambdaFunctions())
+        this.context.stdout.write(instrumentRenderer.renderCouldntFetchLambdaFunctionsError(err))
 
         return 1
       }
@@ -181,13 +177,13 @@ export class UninstrumentCommand extends Command {
           this.region || this.config.region
         )
       } catch (err) {
-        this.context.stdout.write(renderer.renderCouldntGroupFunctionsError(err))
+        this.context.stdout.write(instrumentRenderer.renderCouldntGroupFunctionsError(err))
 
         return 1
       }
 
       for (const [region, functionARNs] of Object.entries(functionGroups)) {
-        const spinner = renderer.fetchingFunctionsConfigSpinner(region)
+        const spinner = instrumentRenderer.fetchingFunctionsConfigSpinner(region)
         spinner.start()
         const lambdaClientConfig: LambdaClientConfig = {
           region,
@@ -204,10 +200,10 @@ export class UninstrumentCommand extends Command {
             this.forwarder
           )
           configGroups.push({configs, lambdaClient, cloudWatchLogsClient, region})
-          spinner.succeed(renderer.renderFetchedLambdaConfigurationsFromRegion(region, configs.length))
+          spinner.succeed(instrumentRenderer.renderFetchedLambdaConfigurationsFromRegion(region, configs.length))
         } catch (err) {
-          spinner.fail(renderer.renderFailedFetchingLambdaConfigurationsFromRegion(region))
-          this.context.stdout.write(renderer.renderCouldntFetchLambdaFunctionsError(err))
+          spinner.fail(instrumentRenderer.renderFailedFetchingLambdaConfigurationsFromRegion(region))
+          this.context.stdout.write(instrumentRenderer.renderCouldntFetchLambdaFunctionsError(err))
 
           return 1
         }
@@ -222,12 +218,12 @@ export class UninstrumentCommand extends Command {
 
     const willUpdate = willUpdateFunctionConfigs(configList)
     if (this.interactive && willUpdate) {
-      this.context.stdout.write(renderer.renderConfirmationNeededSoftWarning())
+      this.context.stdout.write(instrumentRenderer.renderConfirmationNeededSoftWarning())
       const isConfirmed = await requestChangesConfirmation('Do you want to apply the changes?')
       if (!isConfirmed) {
         return 0
       }
-      this.context.stdout.write(renderer.renderUninstrumentingFunctionsSoftWarning())
+      this.context.stdout.write(instrumentRenderer.renderUninstrumentingFunctionsSoftWarning())
     }
 
     // Un-instrument functions.
@@ -248,17 +244,17 @@ export class UninstrumentCommand extends Command {
     const willUpdate = willUpdateFunctionConfigs(configs)
 
     if (!willUpdate) {
-      this.context.stdout.write(renderer.renderNoUpdatesApplied(this.dryRun))
+      this.context.stdout.write(instrumentRenderer.renderNoUpdatesApplied(this.dryRun))
 
       return
     }
 
-    this.context.stdout.write(renderer.renderFunctionsToBeUpdated())
+    this.context.stdout.write(instrumentRenderer.renderFunctionsToBeUpdated())
     for (const config of configs) {
       this.context.stdout.write(`\t- ${bold(config.functionARN)}\n`)
     }
 
-    this.context.stdout.write(renderer.renderWillApplyUpdates(this.dryRun))
+    this.context.stdout.write(instrumentRenderer.renderWillApplyUpdates(this.dryRun))
     for (const config of configs) {
       if (config.updateFunctionConfigurationCommandInput) {
         this.context.stdout.write(

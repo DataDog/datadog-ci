@@ -1,0 +1,156 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`lambda flare does not sends request to Datadog when a dry run 1`] = `
+"
+[Dry Run] 🐶 Generating Lambda flare to send your configuration to Datadog...
+
+🔑 Getting AWS credentials...
+[!] No AWS credentials found, let's set them up! Or you can re-run the command and supply the AWS credentials in the same way when you invoke the AWS CLI.
+
+🔍 Getting Lambda function configuration...
+
+{
+  Environment: {
+    Variables: {
+      DD_API_KEY: [32m'some-api-key'[39m,
+      DD_SITE: [32m'datadoghq.com'[39m,
+      DD_LOG_LEVEL: [32m'debug'[39m
+    }
+  },
+  FunctionArn: [32m'arn:aws:lambda:us-east-1:123456789012:function:some-function'[39m,
+  FunctionName: [32m'some-function'[39m
+}
+
+🚫 The configuration was not sent as it was executed in dry run mode.
+"
+`;
+
+exports[`lambda flare fails to send request to Datadog 1`] = `
+"
+🐶 Generating Lambda flare to send your configuration to Datadog...
+
+🔑 Getting AWS credentials...
+[!] No AWS credentials found, let's set them up! Or you can re-run the command and supply the AWS credentials in the same way when you invoke the AWS CLI.
+
+🔍 Getting Lambda function configuration...
+
+{
+  Environment: {
+    Variables: {
+      DD_API_KEY: [32m'some-api-key'[39m,
+      DD_SITE: [32m'datadoghq.com'[39m,
+      DD_LOG_LEVEL: [32m'debug'[39m
+    }
+  },
+  FunctionArn: [32m'arn:aws:lambda:us-east-1:123456789012:function:some-function'[39m,
+  FunctionName: [32m'some-function'[39m
+}
+
+🚀 Sending to Datadog Support...
+[Error] Failed to send function config to Datadog Support: undefined. 
+
+"
+`;
+
+exports[`lambda flare prints dry-run header 1`] = `
+"
+[Dry Run] 🐶 Generating Lambda flare to send your configuration to Datadog...
+[Error] No function name specified. [-f,--function]
+"
+`;
+
+exports[`lambda flare prints error when no API key specified 1`] = `
+"
+🐶 Generating Lambda flare to send your configuration to Datadog...
+[Error] No Datadog API key specified. Set an API key with the DATADOG_API_KEY environment variable.
+"
+`;
+
+exports[`lambda flare prints error when no case ID specified 1`] = `
+"
+🐶 Generating Lambda flare to send your configuration to Datadog...
+[Error] No case ID specified. [-c,--case-id]
+"
+`;
+
+exports[`lambda flare prints error when no email specified 1`] = `
+"
+🐶 Generating Lambda flare to send your configuration to Datadog...
+[Error] No email specified. [-e,--email]
+"
+`;
+
+exports[`lambda flare prints error when no function specified 1`] = `
+"
+🐶 Generating Lambda flare to send your configuration to Datadog...
+[Error] No function name specified. [-f,--function]
+"
+`;
+
+exports[`lambda flare prints error when no region specified 1`] = `
+"
+🐶 Generating Lambda flare to send your configuration to Datadog...
+[Error] No default region specified. [-r,--region]
+"
+`;
+
+exports[`lambda flare prints non-dry-run header 1`] = `
+"
+🐶 Generating Lambda flare to send your configuration to Datadog...
+[Error] No function name specified. [-f,--function]
+"
+`;
+
+exports[`lambda flare requests AWS credentials when none are found and logs output correctly 1`] = `
+"
+🐶 Generating Lambda flare to send your configuration to Datadog...
+
+🔑 Getting AWS credentials...
+[!] No AWS credentials found, let's set them up! Or you can re-run the command and supply the AWS credentials in the same way when you invoke the AWS CLI.
+
+🔍 Getting Lambda function configuration...
+
+{
+  Environment: {
+    Variables: {
+      DD_API_KEY: [32m'some-api-key'[39m,
+      DD_SITE: [32m'datadoghq.com'[39m,
+      DD_LOG_LEVEL: [32m'debug'[39m
+    }
+  },
+  FunctionArn: [32m'arn:aws:lambda:us-east-1:123456789012:function:some-function'[39m,
+  FunctionName: [32m'some-function'[39m
+}
+
+🚀 Sending to Datadog Support...
+
+✅ Successfully sent function config to Datadog Support!
+"
+`;
+
+exports[`lambda flare successfully sends request to Datadog 1`] = `
+"
+🐶 Generating Lambda flare to send your configuration to Datadog...
+
+🔑 Getting AWS credentials...
+[!] No AWS credentials found, let's set them up! Or you can re-run the command and supply the AWS credentials in the same way when you invoke the AWS CLI.
+
+🔍 Getting Lambda function configuration...
+
+{
+  Environment: {
+    Variables: {
+      DD_API_KEY: [32m'some-api-key'[39m,
+      DD_SITE: [32m'datadoghq.com'[39m,
+      DD_LOG_LEVEL: [32m'debug'[39m
+    }
+  },
+  FunctionArn: [32m'arn:aws:lambda:us-east-1:123456789012:function:some-function'[39m,
+  FunctionName: [32m'some-function'[39m
+}
+
+🚀 Sending to Datadog Support...
+
+✅ Successfully sent function config to Datadog Support!
+"
+`;

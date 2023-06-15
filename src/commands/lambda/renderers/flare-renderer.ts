@@ -11,5 +11,5 @@ import {dryRunTag} from './common-renderer'
 export const renderLambdaFlareHeader = (isDryRun: boolean) => {
   const prefix = isDryRun ? `${dryRunTag} ` : ''
 
-  return `\n${prefix}🐶 Generating Lambda flare to send your configuration to Datadog.\n`
+  return `\n${prefix}🐶 Generating Lambda flare to send your configuration to Datadog...\n`
 }

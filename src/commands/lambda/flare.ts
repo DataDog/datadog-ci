@@ -12,13 +12,12 @@ import JSZip from 'jszip'
 import {API_KEY_ENV_VAR, AWS_DEFAULT_REGION_ENV_VAR, CI_API_KEY_ENV_VAR} from './constants'
 import {getAWSCredentials, getLambdaFunctionConfig, getRegion} from './functions/commons'
 import {requestAWSCredentials} from './prompt'
-import {
-  renderError,
-  renderNoAWSCredentialsFound,
-  renderNoDefaultRegionSpecifiedError,
-  renderSoftWarning,
-} from './renderers/common-renderer'
-import {renderLambdaFlareHeader} from './renderers/flare-renderer'
+import * as commonRenderer from './renderers/common-renderer'
+import * as flareRenderer from './renderers/flare-renderer'
+
+const FLARE_OUTPUT_DIRECTORY = '.datadog-ci'
+const FUNCTION_CONFIG_FILE_NAME = 'function_config.json'
+const ZIP_FILE_NAME = 'lambda-flare-output.zip'
 
 export class LambdaFlareCommand extends Command {
   private isDryRun = false
@@ -35,39 +34,43 @@ export class LambdaFlareCommand extends Command {
    * @returns 0 if the command ran successfully, 1 otherwise.
    */
   public async execute() {
-    this.context.stdout.write(renderLambdaFlareHeader(this.isDryRun))
+    this.context.stdout.write(flareRenderer.renderLambdaFlareHeader(this.isDryRun))
 
     // Validate function name
-    let errorFound = false
     if (this.functionName === undefined) {
-      this.context.stderr.write(renderError('No function name specified. [-f,--function]'))
-      errorFound = true
+      this.context.stderr.write(commonRenderer.renderError('No function name specified. [-f,--function]'))
+
+      return 1
     }
 
     // Validate region
-    this.region = this.region ?? getRegion(this.functionName ?? '')
-    this.region = this.region ?? process.env[AWS_DEFAULT_REGION_ENV_VAR]
-    if (this.region === undefined) {
-      this.context.stderr.write(renderNoDefaultRegionSpecifiedError())
+    let errorFound = false
+    const region = getRegion(this.functionName) ?? this.region ?? process.env[AWS_DEFAULT_REGION_ENV_VAR]
+    if (region === undefined) {
+      this.context.stderr.write(commonRenderer.renderNoDefaultRegionSpecifiedError())
       errorFound = true
     }
 
     // Validate Datadog API key
-    this.apiKey = this.apiKey ?? process.env[CI_API_KEY_ENV_VAR] ?? process.env[API_KEY_ENV_VAR]
+    this.apiKey = process.env[CI_API_KEY_ENV_VAR] ?? process.env[API_KEY_ENV_VAR]
     if (this.apiKey === undefined) {
-      this.context.stderr.write(renderError('No Datadog API key specified. [--api-key]'))
+      this.context.stderr.write(
+        commonRenderer.renderError(
+          'No Datadog API key specified. Set an API key with the DATADOG_API_KEY environment variable.'
+        )
+      )
       errorFound = true
     }
 
     // Validate case ID
     if (this.caseId === undefined) {
-      this.context.stderr.write(renderError('No case ID specified. [-c,--case-id]'))
+      this.context.stderr.write(commonRenderer.renderError('No case ID specified. [-c,--case-id]'))
       errorFound = true
     }
 
     // Validate email
     if (this.email === undefined) {
-      this.context.stderr.write(renderError('No email specified. [-e,--email]'))
+      this.context.stderr.write(commonRenderer.renderError('No email specified. [-e,--email]'))
       errorFound = true
     }
 
@@ -77,36 +80,28 @@ export class LambdaFlareCommand extends Command {
 
     // Get AWS credentials
     this.context.stdout.write('\n🔑 Getting AWS credentials...\n')
-    let credentials
     try {
-      credentials = await getAWSCredentials()
+      this.credentials = await getAWSCredentials()
     } catch (err) {
-      this.context.stderr.write(renderError(err))
+      this.context.stderr.write(commonRenderer.renderError(err))
 
       return 1
     }
-    if (credentials === undefined) {
-      this.context.stdout.write(renderNoAWSCredentialsFound())
+    if (this.credentials === undefined) {
+      this.context.stdout.write(commonRenderer.renderNoAWSCredentialsFound())
       try {
         await requestAWSCredentials()
       } catch (err) {
-        this.context.stderr.write(renderError(err))
+        this.context.stderr.write(commonRenderer.renderError(err))
 
         return 1
       }
-    } else {
-      this.credentials = credentials
     }
 
     // Get Lambda function configuration
-    if (this.functionName === undefined) {
-      this.context.stderr.write(renderError('Function name is undefined.'))
-
-      return 1
-    }
-    this.context.stdout.write('🔍 Getting Lambda function configuration...\n')
+    this.context.stdout.write('\n🔍 Getting Lambda function configuration...\n')
     const lambdaClientConfig: LambdaClientConfig = {
-      region: this.region,
+      region,
       credentials: this.credentials,
     }
     const lambdaClient = new LambdaClient(lambdaClientConfig)
@@ -114,14 +109,15 @@ export class LambdaFlareCommand extends Command {
     try {
       config = await getLambdaFunctionConfig(lambdaClient, this.functionName ?? '')
     } catch (err) {
-      this.context.stderr.write(renderError(`Unable to get Lambda function configuration: ${err}`))
+      this.context.stderr.write(
+        commonRenderer.renderError(`Unable to get Lambda function configuration: ${err.message}`)
+      )
 
       return 1
     }
-    const configStrColored = util.inspect(config, false, undefined, true)
-    const configStrUncolored = JSON.stringify(config, undefined, 2)
 
     // Print config
+    const configStrColored = util.inspect(config, false, undefined, true)
     this.context.stdout.write(`\n${configStrColored}\n`)
     if (this.isDryRun) {
       this.context.stdout.write('\n🚫 The configuration was not sent as it was executed in dry run mode.\n')
@@ -129,30 +125,55 @@ export class LambdaFlareCommand extends Command {
       return 0
     }
 
-    // Write config to file
-    const FLARE_OUTPUT_DIRECTORY = '.datadog-ci'
+    // Send data to Datadog
     const folderPath = path.join(process.cwd(), FLARE_OUTPUT_DIRECTORY)
-    if (!fs.existsSync(folderPath)) {
-      try {
-        fs.mkdirSync(folderPath)
-      } catch (err) {
-        this.context.stderr.write(renderError(`Unable to create flare folder: ${err}`))
-
-        return 1
-      }
-    }
-    const FUNCTION_CONFIG_FILE_NAME = 'function_config.json'
     const filePath = path.join(folderPath, FUNCTION_CONFIG_FILE_NAME)
+    const zipPath = path.join(folderPath, ZIP_FILE_NAME)
+    const configStrUncolored = JSON.stringify(config, undefined, 2)
     try {
-      fs.writeFileSync(filePath, configStrUncolored)
+      await this.writeFile(folderPath, filePath, configStrUncolored)
+      await this.zipContents(filePath, zipPath)
+      this.context.stdout.write('\n🚀 Sending to Datadog Support...\n')
+      await this.sendToDatadog(zipPath)
+      this.deleteFolderContents(folderPath)
     } catch (err) {
-      this.context.stderr.write(renderError(`Unable to write the flare output file: ${err}`))
+      this.context.stderr.write(err.message)
 
       return 1
     }
 
-    // Zip folder
-    const zipPath = path.join(folderPath, 'lambda-flare-output.zip')
+    return 0
+  }
+
+  /**
+   * Write the function config to a file
+   * @param folderPath
+   * @param filePath
+   * @param data
+   * @throws Error if the file cannot be written
+   */
+  private writeFile = async (folderPath: string, filePath: string, data: string) => {
+    if (!fs.existsSync(folderPath)) {
+      try {
+        fs.mkdirSync(folderPath)
+      } catch (err) {
+        throw Error(commonRenderer.renderError(`Unable to create flare folder: ${err.message}`))
+      }
+    }
+    try {
+      fs.writeFileSync(filePath, data)
+    } catch (err) {
+      throw Error(commonRenderer.renderError(`Unable to write the flare output file: ${err.message}`))
+    }
+  }
+
+  /**
+   * Zip the contents of the flare folder
+   * @param filePath
+   * @param zipPath
+   * @throws Error if the zip fails
+   */
+  private zipContents = async (filePath: string, zipPath: string) => {
     try {
       const data = await fs.promises.readFile(filePath, 'utf8')
       const zip = new JSZip()
@@ -160,21 +181,22 @@ export class LambdaFlareCommand extends Command {
       const content = await zip.generateAsync({type: 'nodebuffer'})
       await fs.promises.writeFile(zipPath, content)
     } catch (err) {
-      this.context.stderr.write(renderError(`Unable to zip the flare file: ${err}`))
-
-      return 1
+      throw Error(commonRenderer.renderError(`Unable to zip the flare file: ${err.message}`))
     }
+  }
 
-    // Send to Datadog
-    this.context.stdout.write('\n🚀 Sending to Datadog Support...\n')
+  /**
+   * Send the zip file to Datadog support
+   * @param zipPath
+   * @throws Error if the request fails
+   */
+  private sendToDatadog = async (zipPath: string) => {
     const form = new FormData()
     form.append('case_id', this.caseId)
     try {
       form.append('flare_file', fs.createReadStream(zipPath))
     } catch (err) {
-      this.context.stderr.write(renderError(`Unable to read the flare file: ${err}`))
-
-      return 1
+      throw Error(commonRenderer.renderError(`Unable to read the flare file: ${err.message}`))
     }
     form.append('operator_version', 7)
     form.append('email', this.email)
@@ -190,33 +212,38 @@ export class LambdaFlareCommand extends Command {
         this.context.stdout.write('\n✅ Successfully sent function config to Datadog Support!\n')
       })
     } catch (err) {
-      this.context.stderr.write(renderError(`Failed to send function config to Datadog Support: ${err}`))
+      const errResponse: string = err.response?.data?.error
+      throw Error(
+        commonRenderer.renderError(
+          `Failed to send function config to Datadog Support: ${err.message}. ${errResponse ?? ''}\n`
+        )
+      )
     }
+  }
 
-    // Remove file
+  /**
+   * Delete the contents of a folder
+   * @param folderPath the folder to delete
+   * @throws Error if the deletion fails
+   */
+  private deleteFolderContents = (folderPath: string) => {
     try {
-      deleteFolderContents(folderPath)
+      if (fs.existsSync(folderPath)) {
+        fs.readdirSync(folderPath).forEach((file) => {
+          const currentPath = path.join(folderPath, file)
+          if (fs.lstatSync(currentPath).isDirectory()) {
+            this.deleteFolderContents(currentPath)
+          } else {
+            fs.unlinkSync(currentPath)
+          }
+        })
+      }
       fs.rmdirSync(folderPath)
     } catch (err) {
-      this.context.stderr.write(renderSoftWarning(`Failed to delete flare files located at ${folderPath}: ${err}`))
-
-      return 1
+      throw Error(
+        commonRenderer.renderSoftWarning(`Failed to delete flare files located at ${folderPath}: ${err.message}`)
+      )
     }
-
-    return 0
-  }
-}
-
-const deleteFolderContents = (dir: string) => {
-  if (fs.existsSync(dir)) {
-    fs.readdirSync(dir).forEach((file) => {
-      const currentPath = path.join(dir, file)
-      if (fs.lstatSync(currentPath).isDirectory()) {
-        deleteFolderContents(currentPath)
-      } else {
-        fs.unlinkSync(currentPath)
-      }
-    })
   }
 }
 
@@ -224,6 +251,5 @@ LambdaFlareCommand.addPath('lambda', 'flare')
 LambdaFlareCommand.addOption('isDryRun', Command.Boolean('-d,--dry'))
 LambdaFlareCommand.addOption('functionName', Command.String('-f,--function'))
 LambdaFlareCommand.addOption('region', Command.String('-r,--region'))
-LambdaFlareCommand.addOption('apiKey', Command.String('--api-key'))
 LambdaFlareCommand.addOption('caseId', Command.String('-c,--case-id'))
 LambdaFlareCommand.addOption('email', Command.String('-e,--email'))

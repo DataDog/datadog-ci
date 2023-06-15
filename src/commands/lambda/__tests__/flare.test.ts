@@ -1,7 +1,6 @@
 import fs from 'fs'
 import process from 'process'
 import * as stream from 'stream'
-import util from 'util'
 
 import axios from 'axios'
 import FormData from 'form-data'
@@ -37,6 +36,8 @@ jest.mock('fs')
 
 describe('lambda flare', () => {
   beforeEach(() => {
+    process.env = {}
+    process.env[CI_API_KEY_ENV_VAR] = 'test-api-key'
     const mockReadStream = new stream.Readable({
       read() {
         this.push('mock file content')
@@ -58,7 +59,7 @@ describe('lambda flare', () => {
     const code = await cli.run(['lambda', 'flare'], context as any)
     const output = context.stdout.toString()
     expect(code).toBe(1)
-    expect(output).toContain('🐶 Generating Lambda flare to send your configuration to Datadog.')
+    expect(output).toMatchSnapshot()
   })
 
   it('prints dry-run header', async () => {
@@ -67,32 +68,28 @@ describe('lambda flare', () => {
     const code = await cli.run(['lambda', 'flare', '-d'], context as any)
     const output = context.stdout.toString()
     expect(code).toBe(1)
-    expect(output).toContain('[Dry Run] 🐶 Generating Lambda flare to send your configuration to Datadog.')
+    expect(output).toMatchSnapshot()
   })
 
   it('prints error when no function specified', async () => {
     const cli = makeCli()
     const context = createMockContext()
     const code = await cli.run(
-      ['lambda', 'flare', '-r', 'us-west-2', '--api-key', 'abc', '-c', '123', '-e', 'test@test.com'],
+      ['lambda', 'flare', '-r', 'us-west-2', '-c', '123', '-e', 'test@test.com'],
       context as any
     )
     expect(code).toBe(1)
     const output = context.stderr.toString()
-    expect(output).toContain('No function name specified. [-f,--function]')
+    expect(output).toMatchSnapshot()
   })
 
   it('prints error when no region specified', async () => {
-    process.env = {}
     const cli = makeCli()
     const context = createMockContext()
-    const code = await cli.run(
-      ['lambda', 'flare', '-f', 'func', '--api-key', 'abc', '-c', '123', '-e', 'test@test.com'],
-      context as any
-    )
+    const code = await cli.run(['lambda', 'flare', '-f', 'func', '-c', '123', '-e', 'test@test.com'], context as any)
     expect(code).toBe(1)
     const output = context.stderr.toString()
-    expect(output).toContain('No default region specified. [-r,--region]')
+    expect(output).toMatchSnapshot()
   })
 
   it('extracts region from function name when given a function ARN', async () => {
@@ -104,8 +101,6 @@ describe('lambda flare', () => {
         'flare',
         '-f',
         'arn:aws:lambda:us-west-2:123456789012:function:my-function',
-        '--api-key',
-        'abc',
         '-c',
         '123',
         '-e',
@@ -120,10 +115,7 @@ describe('lambda flare', () => {
     process.env[AWS_DEFAULT_REGION_ENV_VAR] = 'test-region'
     const cli = makeCli()
     const context = createMockContext()
-    const code = await cli.run(
-      ['lambda', 'flare', '-f', 'func', '--api-key', 'abc', '-c', '123', '-e', 'test@test.com'],
-      context as any
-    )
+    const code = await cli.run(['lambda', 'flare', '-f', 'func', '-c', '123', '-e', 'test@test.com'], context as any)
     expect(code).toBe(0)
   })
 
@@ -137,10 +129,11 @@ describe('lambda flare', () => {
     )
     expect(code).toBe(1)
     const output = context.stderr.toString()
-    expect(output).toContain('No Datadog API key specified. [--api-key]')
+    expect(output).toMatchSnapshot()
   })
 
-  it('uses API key ENV variable when no API key specified', async () => {
+  it('uses API key ENV variable', async () => {
+    process.env = {}
     process.env[CI_API_KEY_ENV_VAR] = 'test-api-key'
     process.env[API_KEY_ENV_VAR] = undefined
     const cli = makeCli()
@@ -164,35 +157,32 @@ describe('lambda flare', () => {
     const cli = makeCli()
     const context = createMockContext()
     const code = await cli.run(
-      ['lambda', 'flare', '-f', 'func', '-r', 'us-west-2', '-e', 'test@test.com', '--api-key', 'abc'],
+      ['lambda', 'flare', '-f', 'func', '-r', 'us-west-2', '-e', 'test@test.com'],
       context as any
     )
     expect(code).toBe(1)
     const output = context.stderr.toString()
-    expect(output).toContain('No case ID specified. [-c,--case-id]')
+    expect(output).toMatchSnapshot()
   })
 
   it('prints error when no email specified', async () => {
     const cli = makeCli()
     const context = createMockContext()
-    const code = await cli.run(
-      ['lambda', 'flare', '-f', 'func', '-r', 'us-west-2', '-c', '123', '--api-key', 'abc'],
-      context as any
-    )
+    const code = await cli.run(['lambda', 'flare', '-f', 'func', '-r', 'us-west-2', '-c', '123'], context as any)
     expect(code).toBe(1)
     const output = context.stderr.toString()
-    expect(output).toContain('No email specified. [-e,--email]')
+    expect(output).toMatchSnapshot()
   })
 
-  it('requests AWS credentials when none are found', async () => {
+  it('requests AWS credentials when none are found and logs output correctly', async () => {
     const cli = makeCli()
     const context = createMockContext()
     await cli.run(
-      ['lambda', 'flare', '-f', 'func', '-r', 'us-west-2', '--api-key', 'abc', '-c', '123', '-e', 'test@test.com'],
+      ['lambda', 'flare', '-f', 'func', '-r', 'us-west-2', '-c', '123', '-e', 'test@test.com'],
       context as any
     )
     const output = context.stdout.toString()
-    expect(output).toContain("No AWS credentials found, let's set them up!")
+    expect(output).toMatchSnapshot()
     expect(requestAWSCredentials).toHaveBeenCalled()
   })
 
@@ -200,21 +190,10 @@ describe('lambda flare', () => {
     const cli = makeCli()
     const context = createMockContext()
     const code = await cli.run(
-      ['lambda', 'flare', '-f', 'func', '-r', 'us-west-2', '--api-key', 'abc', '-c', '123', '-e', 'test@test.com'],
+      ['lambda', 'flare', '-f', 'func', '-r', 'us-west-2', '-c', '123', '-e', 'test@test.com'],
       context as any
     )
     expect(code).toBe(0)
-  })
-
-  it('gets and logs the Lambda function configuration', async () => {
-    const cli = makeCli()
-    const context = createMockContext()
-    await cli.run(
-      ['lambda', 'flare', '-f', 'func', '-r', 'us-west-2', '--api-key', 'abc', '-c', '123', '-e', 'test@test.com'],
-      context as any
-    )
-    const output = context.stdout.toString()
-    expect(output).toContain(util.inspect(mockConfig, false, undefined, true))
   })
 
   it('successfully adds zip file to FormData', async () => {
@@ -222,7 +201,7 @@ describe('lambda flare', () => {
     const cli = makeCli()
     const context = createMockContext()
     await cli.run(
-      ['lambda', 'flare', '-f', 'func', '-r', 'us-west-2', '--api-key', 'abc', '-c', '123', '-e', 'test@test.com'],
+      ['lambda', 'flare', '-f', 'func', '-r', 'us-west-2', '-c', '123', '-e', 'test@test.com'],
       context as any
     )
     expect(appendSpy).toHaveBeenCalledWith('flare_file', expect.anything())
@@ -234,7 +213,7 @@ describe('lambda flare', () => {
     const cli = makeCli()
     const context = createMockContext()
     await cli.run(
-      ['lambda', 'flare', '-f', 'func', '-r', 'us-west-2', '--api-key', 'abc', '-c', '123', '-e', 'test@test.com'],
+      ['lambda', 'flare', '-f', 'func', '-r', 'us-west-2', '-c', '123', '-e', 'test@test.com'],
       context as any
     )
     expect(postSpy).toHaveBeenCalledWith(
@@ -242,12 +221,12 @@ describe('lambda flare', () => {
       expect.anything(),
       expect.objectContaining({
         headers: expect.objectContaining({
-          'DD-API-KEY': 'abc',
+          'DD-API-KEY': 'test-api-key',
         }) as Record<string, string>,
       })
     )
     const output = context.stdout.toString()
-    expect(output).toContain('\n✅ Successfully sent function config to Datadog Support!\n')
+    expect(output).toMatchSnapshot()
     postSpy.mockRestore()
   })
 
@@ -256,26 +235,12 @@ describe('lambda flare', () => {
     const cli = makeCli()
     const context = createMockContext()
     await cli.run(
-      [
-        'lambda',
-        'flare',
-        '-f',
-        'func',
-        '-r',
-        'us-west-2',
-        '--api-key',
-        'abc',
-        '-c',
-        '123',
-        '-e',
-        'test@test.com',
-        '-d',
-      ],
+      ['lambda', 'flare', '-f', 'func', '-r', 'us-west-2', '-c', '123', '-e', 'test@test.com', '-d'],
       context as any
     )
     expect(postSpy).not.toHaveBeenCalled()
     const output = context.stdout.toString()
-    expect(output).toContain('\n🚫 The configuration was not sent as it was executed in dry run mode.\n')
+    expect(output).toMatchSnapshot()
     postSpy.mockRestore()
   })
 
@@ -284,10 +249,10 @@ describe('lambda flare', () => {
     const cli = makeCli()
     const context = createMockContext()
     await cli.run(
-      ['lambda', 'flare', '-f', 'func', '-r', 'us-west-2', '--api-key', 'abc', '-c', '123', '-e', 'test@test.com'],
+      ['lambda', 'flare', '-f', 'func', '-r', 'us-west-2', '-c', '123', '-e', 'test@test.com'],
       context as any
     )
     const output = context.stderr.toString()
-    expect(output).toContain('Failed to send function config to Datadog Support:')
+    expect(output).toMatchSnapshot()
   })
 })
