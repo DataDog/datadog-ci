@@ -342,7 +342,7 @@ describe('execute', () => {
     ])
     const output = context.stdout.toString().split(os.EOL)
     expect(code).toBe(0)
-    expect(output[5]).toContain('Not syncing git metadata (no enable git upload flag detected)')
+    expect(output[5]).toContain('Not syncing git metadata (skip git upload flag detected)')
   })
 
   test('with git metadata', async () => {

@@ -198,7 +198,7 @@ export class UploadJUnitXMLCommand extends Command {
         this.logger.info(`${this.dryRun ? '[DRYRUN] ' : ''}Not syncing git metadata (not a git repo)`)
       }
     } else {
-      this.logger.debug('Not syncing git metadata (no enable git upload flag detected)')
+      this.logger.debug('Not syncing git metadata (skip git upload flag detected)')
     }
 
     if (!this.dryRun) {
