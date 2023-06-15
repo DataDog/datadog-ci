@@ -48,3 +48,9 @@ export const getTestCommitRedirectURL = (spanTags: SpanTags, service?: string, e
 
   return url
 }
+
+export const isFalse = (value: string | boolean) => {
+  const lowerCaseValue = String(value).toLowerCase()
+
+  return lowerCaseValue === '0' || lowerCaseValue === 'false'
+}

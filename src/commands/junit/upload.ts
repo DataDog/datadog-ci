@@ -36,6 +36,7 @@ import {
   renderSuccessfulUpload,
   renderUpload,
 } from './renderer'
+import {isFalse} from './utils'
 
 const errorCodesStopUpload = [400, 403]
 
@@ -116,7 +117,7 @@ export class UploadJUnitXMLCommand extends Command {
   private rawXPathTags?: string[]
   private xpathTags?: Record<string, string>
   private gitRepositoryURL?: string
-  private skipGitMetadataUpload?: boolean
+  private skipGitMetadataUpload = true
   private logger: Logger = new Logger((s: string) => this.context.stdout.write(s), LogLevel.INFO)
 
   public async execute() {
@@ -124,6 +125,12 @@ export class UploadJUnitXMLCommand extends Command {
     this.logger.setShouldIncludeTime(this.verbose)
     if (!this.service) {
       this.service = process.env.DD_SERVICE
+    }
+    // Unless the user explicitly passes '0' or 'false'
+    // by `--skip-git-metadata-upload=0` or `--skip-git-metadata-upload=false` respectively,
+    // this will be true, so git metadata won't be uploaded
+    if (this.skipGitMetadataUpload) {
+      this.skipGitMetadataUpload = !isFalse(this.skipGitMetadataUpload)
     }
 
     if (!this.service) {
