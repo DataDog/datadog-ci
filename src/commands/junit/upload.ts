@@ -36,6 +36,7 @@ import {
   renderSuccessfulUpload,
   renderUpload,
 } from './renderer'
+import {isFalse} from './utils'
 
 const errorCodesStopUpload = [400, 403]
 
@@ -116,7 +117,7 @@ export class UploadJUnitXMLCommand extends Command {
   private rawXPathTags?: string[]
   private xpathTags?: Record<string, string>
   private gitRepositoryURL?: string
-  private enableGitMetadataUpload?: boolean
+  private skipGitMetadataUpload = true
   private logger: Logger = new Logger((s: string) => this.context.stdout.write(s), LogLevel.INFO)
 
   public async execute() {
@@ -124,6 +125,12 @@ export class UploadJUnitXMLCommand extends Command {
     this.logger.setShouldIncludeTime(this.verbose)
     if (!this.service) {
       this.service = process.env.DD_SERVICE
+    }
+    // Unless the user explicitly passes '0' or 'false'
+    // by `--skip-git-metadata-upload=0` or `--skip-git-metadata-upload=false` respectively,
+    // this will be true, so git metadata won't be uploaded
+    if (this.skipGitMetadataUpload) {
+      this.skipGitMetadataUpload = !isFalse(this.skipGitMetadataUpload)
     }
 
     if (!this.service) {
@@ -174,7 +181,7 @@ export class UploadJUnitXMLCommand extends Command {
     const totalTimeSeconds = (Date.now() - initialTime) / 1000
     this.logger.info(renderSuccessfulUpload(this.dryRun, payloads.length, totalTimeSeconds))
 
-    if (this.enableGitMetadataUpload) {
+    if (!this.skipGitMetadataUpload) {
       if (await isGitRepo()) {
         const requestBuilder = getRequestBuilder({baseUrl: apiUrl, apiKey: this.config.apiKey!})
         try {
@@ -322,6 +329,6 @@ UploadJUnitXMLCommand.addOption('basePaths', Command.Rest({required: 1}))
 UploadJUnitXMLCommand.addOption('maxConcurrency', Command.String('--max-concurrency'))
 UploadJUnitXMLCommand.addOption('logs', Command.Boolean('--logs'))
 UploadJUnitXMLCommand.addOption('rawXPathTags', Command.Array('--xpath-tag'))
-UploadJUnitXMLCommand.addOption('enableGitMetadataUpload', Command.Boolean('--enable-git-metadata-upload'))
+UploadJUnitXMLCommand.addOption('skipGitMetadataUpload', Command.Boolean('--skip-git-metadata-upload'))
 UploadJUnitXMLCommand.addOption('gitRepositoryURL', Command.String('--git-repository-url'))
 UploadJUnitXMLCommand.addOption('verbose', Command.Boolean('--verbose'))
