@@ -138,7 +138,7 @@ export class LambdaFlareCommand extends Command {
       await this.sendToDatadog(zipPath)
       this.deleteFolder(folderPath)
     } catch (err) {
-      this.context.stderr.write(err.message)
+      this.context.stderr.write(commonRenderer.renderError(err.message))
 
       return 1
     }
@@ -154,17 +154,15 @@ export class LambdaFlareCommand extends Command {
    * @throws Error if the file cannot be written
    */
   private writeFile = async (folderPath: string, filePath: string, data: string) => {
-    if (!fs.existsSync(folderPath)) {
-      try {
-        fs.mkdirSync(folderPath)
-      } catch (err) {
-        throw Error(commonRenderer.renderError(`Unable to create flare folder: ${err.message}`))
-      }
+    if (fs.existsSync(filePath)) {
+      this.deleteFolder(folderPath)
     }
+
     try {
+      fs.mkdirSync(folderPath)
       fs.writeFileSync(filePath, data)
     } catch (err) {
-      throw Error(commonRenderer.renderError(`Unable to write the flare output file: ${err.message}`))
+      throw Error(`Unable to save function config: ${err.message}`)
     }
   }
 
@@ -182,7 +180,7 @@ export class LambdaFlareCommand extends Command {
       const content = await zip.generateAsync({type: 'nodebuffer'})
       await fs.promises.writeFile(zipPath, content)
     } catch (err) {
-      throw Error(commonRenderer.renderError(`Unable to zip the flare file: ${err.message}`))
+      throw Error(`Unable to zip the flare file: ${err.message}`)
     }
   }
 
@@ -209,11 +207,7 @@ export class LambdaFlareCommand extends Command {
       this.context.stdout.write('\n✅ Successfully sent function config to Datadog Support!\n')
     } catch (err) {
       const errResponse: string = err.response?.data?.error
-      throw Error(
-        commonRenderer.renderError(
-          `Failed to send function config to Datadog Support: ${err.message}. ${errResponse ?? ''}\n`
-        )
-      )
+      throw Error(`Failed to send function config to Datadog Support: ${err.message}. ${errResponse ?? ''}\n`)
     }
   }
 
@@ -226,7 +220,9 @@ export class LambdaFlareCommand extends Command {
     try {
       fs.rmSync(folderPath, {recursive: true, force: true})
     } catch (err) {
-      throw new Error(`Failed to delete files located at ${folderPath}: ${err.message}`)
+      this.context.stdout.write(
+        commonRenderer.renderSoftWarning(`Failed to delete files located at ${folderPath}: ${err.message}`)
+      )
     }
   }
 }
