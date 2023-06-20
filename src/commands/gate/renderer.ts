@@ -59,7 +59,7 @@ export const renderRuleEvaluation = (ruleEvaluation: RuleEvaluation): string => 
   }
 
   fullStr += `${chalk.yellow('Blocking')}: ${ruleEvaluation.is_blocking}\n`
-  if (ruleEvaluation.details_url && ruleEvaluation.details_url.length > 0) {
+  if (ruleEvaluation.details_url) {
     fullStr += `Details: ${ruleEvaluation.details_url}\n`
   }
 
