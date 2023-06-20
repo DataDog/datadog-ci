@@ -7,7 +7,7 @@ import type {AxiosPromise, AxiosRequestConfig, AxiosResponse} from 'axios'
 import FormData from 'form-data'
 
 import {getSafeFileName} from '../../helpers/file'
-import {CI_JOB_URL, CI_PIPELINE_URL, GIT_SHA} from '../../helpers/tags'
+import {CI_JOB_URL, CI_PIPELINE_URL, GIT_SHA, SERVICE} from '../../helpers/tags'
 import {getRequestBuilder} from '../../helpers/utils'
 
 import {Payload} from './interfaces'
@@ -32,10 +32,17 @@ export const uploadJUnitXML = (request: (args: AxiosRequestConfig) => AxiosPromi
     fileName = 'default_file_name'
   }
 
+  const reportTagsAndMetrics: Record<string, any> = { 
+    tags: jUnitXML.reportTags,
+    metrics: jUnitXML.reportMetrics
+  };
+
   const metadata: Record<string, any> = {
-    service: jUnitXML.service,
-    ...jUnitXML.spanTags,
-    '_dd.cireport_version': '2',
+    metadata: jUnitXML.spanTags,
+    tags: jUnitXML.customTags,
+    metrics: jUnitXML.customMetrics,
+    session: reportTagsAndMetrics,
+    '_dd.cireport_version': '3',
     '_dd.hostname': jUnitXML.hostname,
   }
 
