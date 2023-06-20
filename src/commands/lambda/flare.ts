@@ -5,7 +5,7 @@ import util from 'util'
 import {LambdaClient, LambdaClientConfig} from '@aws-sdk/client-lambda'
 import {AwsCredentialIdentity} from '@aws-sdk/types'
 import axios from 'axios'
-import {Command} from 'clipanion'
+import {BaseContext, Command} from 'clipanion'
 import FormData from 'form-data'
 import JSZip from 'jszip'
 
@@ -132,11 +132,11 @@ export class LambdaFlareCommand extends Command {
     const zipPath = path.join(folderPath, ZIP_FILE_NAME)
     const configStrUncolored = JSON.stringify(config, undefined, 2)
     try {
-      await this.writeFile(folderPath, filePath, configStrUncolored)
-      await this.zipContents(filePath, zipPath)
+      await writeFile(folderPath, filePath, configStrUncolored, this.context)
+      await zipContents(filePath, zipPath)
       this.context.stdout.write('\n🚀 Sending to Datadog Support...\n')
-      await this.sendToDatadog(zipPath)
-      this.deleteFolder(folderPath)
+      await sendToDatadog(zipPath, this.caseId!, this.email!, this.apiKey!, this.context)
+      deleteFolder(folderPath, this.context)
     } catch (err) {
       this.context.stderr.write(commonRenderer.renderError(err.message))
 
@@ -145,85 +145,97 @@ export class LambdaFlareCommand extends Command {
 
     return 0
   }
+}
 
-  /**
-   * Write the function config to a file
-   * @param folderPath
-   * @param filePath
-   * @param data
-   * @throws Error if the file cannot be written
-   */
-  private writeFile = async (folderPath: string, filePath: string, data: string) => {
-    if (fs.existsSync(filePath)) {
-      this.deleteFolder(folderPath)
-    }
-
-    try {
-      fs.mkdirSync(folderPath)
-      fs.writeFileSync(filePath, data)
-    } catch (err) {
-      throw Error(`Unable to save function config: ${err.message}`)
-    }
+/**
+ * Write the function config to a file
+ * @param folderPath
+ * @param filePath
+ * @param data
+ * @param context used for logging
+ * @throws Error if the file cannot be written
+ */
+export const writeFile = async (folderPath: string, filePath: string, data: string, context: BaseContext) => {
+  if (fs.existsSync(folderPath)) {
+    deleteFolder(folderPath, context)
   }
 
-  /**
-   * Zip the contents of the flare folder
-   * @param filePath
-   * @param zipPath
-   * @throws Error if the zip fails
-   */
-  private zipContents = async (filePath: string, zipPath: string) => {
-    try {
-      const data = await fs.promises.readFile(filePath, 'utf8')
-      const zip = new JSZip()
-      zip.file(FUNCTION_CONFIG_FILE_NAME, data)
-      const content = await zip.generateAsync({type: 'nodebuffer'})
-      await fs.promises.writeFile(zipPath, content)
-    } catch (err) {
-      throw Error(`Unable to zip the flare file: ${err.message}`)
-    }
+  try {
+    fs.mkdirSync(folderPath)
+    fs.writeFileSync(filePath, data)
+  } catch (err) {
+    throw Error(`Unable to save function config: ${err.message}`)
+  }
+}
+
+/**
+ * Zip the contents of the flare folder
+ * @param filePath
+ * @param zipPath
+ * @throws Error if the zip fails
+ */
+export const zipContents = async (filePath: string, zipPath: string) => {
+  try {
+    const data = fs.readFileSync(filePath, 'utf8')
+    const zip = new JSZip()
+    zip.file(FUNCTION_CONFIG_FILE_NAME, data)
+    const content = await zip.generateAsync({type: 'nodebuffer'})
+    fs.writeFileSync(zipPath, content)
+  } catch (err) {
+    throw Error(`Unable to zip the flare file: ${err.message}`)
+  }
+}
+
+/**
+ * Send the zip file to Datadog support
+ * @param zipPath
+ * @param caseId
+ * @param email
+ * @param apiKey
+ * @param context used for logging
+ * @throws Error if the request fails
+ */
+export const sendToDatadog = async (
+  zipPath: string,
+  caseId: string,
+  email: string,
+  apiKey: string,
+  context: BaseContext
+) => {
+  const form = new FormData()
+  form.append('case_id', caseId)
+  form.append('flare_file', fs.createReadStream(zipPath))
+  form.append('operator_version', 7)
+  form.append('email', email)
+  const headerConfig = {
+    headers: {
+      ...form.getHeaders(),
+      'DD-API-KEY': apiKey,
+    },
   }
 
-  /**
-   * Send the zip file to Datadog support
-   * @param zipPath
-   * @throws Error if the request fails
-   */
-  private sendToDatadog = async (zipPath: string) => {
-    const form = new FormData()
-    form.append('case_id', this.caseId)
-    form.append('flare_file', fs.createReadStream(zipPath))
-    form.append('operator_version', 7)
-    form.append('email', this.email)
-    const headerConfig = {
-      headers: {
-        ...form.getHeaders(),
-        'DD-API-KEY': this.apiKey,
-      },
-    }
-
-    try {
-      await axios.post(ENDPOINT_URL, form, headerConfig)
-      this.context.stdout.write('\n✅ Successfully sent function config to Datadog Support!\n')
-    } catch (err) {
-      const errResponse: string = err.response?.data?.error
-      throw Error(`Failed to send function config to Datadog Support: ${err.message}. ${errResponse ?? ''}\n`)
-    }
+  try {
+    await axios.post(ENDPOINT_URL, form, headerConfig)
+    context.stdout.write('\n✅ Successfully sent function config to Datadog Support!\n')
+  } catch (err) {
+    const errResponse: string = err.response?.data?.error
+    throw Error(`Failed to send function config to Datadog Support: ${err.message}. ${errResponse ?? ''}\n`)
   }
+}
 
-  /**
-   * Delete a folder and all its contents
-   * @param folderPath the folder to delete
-   * @throws Error if the deletion fails
-   */
-  private deleteFolder = (folderPath: string) => {
-    try {
-      fs.rmSync(folderPath, {recursive: true, force: true})
-    } catch (err) {
-      this.context.stdout.write(
-        commonRenderer.renderSoftWarning(`Failed to delete files located at ${folderPath}: ${err.message}`)
-      )
-    }
+/**
+ * Delete a folder and all its contents
+ * @param folderPath the folder to delete
+ * @param context used for logging
+ * @throws Error if the deletion fails
+ */
+export const deleteFolder = (folderPath: string, context: BaseContext) => {
+  try {
+    fs.rmSync(folderPath, {recursive: true, force: true})
+  } catch (err) {
+    context.stdout.write(
+      commonRenderer.renderSoftWarning(`Failed to delete files located at ${folderPath}: ${err.message}`)
+    )
   }
 }
 
