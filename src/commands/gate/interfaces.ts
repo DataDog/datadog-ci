@@ -26,6 +26,7 @@ export interface RuleEvaluation {
   status: string
   is_blocking: boolean
   failure_reason: string
+  details_url: string
 }
 
 export interface APIHelper {
