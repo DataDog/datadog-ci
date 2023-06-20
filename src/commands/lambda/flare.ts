@@ -17,7 +17,7 @@ import * as flareRenderer from './renderers/flare-renderer'
 
 const {version} = require('../../../package.json')
 
-const ENDPOINT_URL = 'https://dd.datad0g.com/api/ui/support/serverless/flare'
+const ENDPOINT_URL = 'https://datad0g.com/api/ui/support/serverless/flare'
 const FLARE_OUTPUT_DIRECTORY = '.datadog-ci'
 const FUNCTION_CONFIG_FILE_NAME = 'function_config.json'
 const ZIP_FILE_NAME = 'lambda-flare-output.zip'
