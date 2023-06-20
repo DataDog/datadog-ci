@@ -49,17 +49,8 @@ export const uploadJUnitXML = (request: (args: AxiosRequestConfig) => AxiosPromi
 
   form.append('event', JSON.stringify(metadata), {filename: 'event.json'})
 
-  let uniqueFileName = `${fileName}-${jUnitXML.service}-${metadata[GIT_SHA]}`
-
-  if (metadata[CI_PIPELINE_URL]) {
-    uniqueFileName = `${uniqueFileName}-${metadata[CI_PIPELINE_URL]}`
-  }
-  if (metadata[CI_JOB_URL]) {
-    uniqueFileName = `${uniqueFileName}-${metadata[CI_JOB_URL]}`
-  }
-
   form.append('junit_xml_report_file', fs.createReadStream(jUnitXML.xmlPath).pipe(createGzip()), {
-    filename: `${getSafeFileName(uniqueFileName)}.xml.gz`,
+    filename: `${getSafeFileName(fileName)}.xml.gz`,
   })
 
   return request({
