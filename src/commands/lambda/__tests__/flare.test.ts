@@ -33,9 +33,9 @@ const MOCK_CONFIG = {
 
 // Commons mocks
 jest.mock('../functions/commons', () => ({
+  ...jest.requireActual('../functions/commons'),
   getAWSCredentials: jest.fn(),
   getLambdaFunctionConfig: jest.fn().mockImplementation(() => Promise.resolve(MOCK_CONFIG)),
-  getRegion: jest.requireActual('../functions/commons').getRegion as () => string | undefined,
 }))
 jest.mock('../prompt')
 jest.mock('util')
@@ -244,8 +244,8 @@ describe('lambda flare', () => {
 
   describe('zipContents', () => {
     beforeEach(() => {
-      fs.writeFileSync = jest.fn().mockImplementation(() => {})
-      fs.readFileSync = jest.fn().mockResolvedValue(JSON.stringify(MOCK_CONFIG, undefined, 2))
+      ;(fs.writeFileSync as jest.Mock).mockImplementation(() => {})
+      ;(fs.readFileSync as jest.Mock).mockResolvedValue(JSON.stringify(MOCK_CONFIG, undefined, 2))
       mockJSZip.file = jest.fn().mockImplementation(() => {})
       mockJSZip.generateAsync = jest.fn().mockImplementation(() => {})
     })
@@ -260,7 +260,7 @@ describe('lambda flare', () => {
     })
 
     it('throws error when unable to read file', async () => {
-      fs.readFileSync = jest.fn().mockImplementation(() => {
+      ;(fs.readFileSync as any).mockImplementation(() => {
         throw new Error('MOCK ERROR: Unable to read file')
       })
 
@@ -273,7 +273,7 @@ describe('lambda flare', () => {
     })
 
     it('throws error when unable to write file', async () => {
-      mockJSZip.file = jest.fn().mockImplementation(() => {
+      ;(mockJSZip.file as any).mockImplementation(() => {
         throw new Error('MOCK ERROR: Unable to write file')
       })
 
