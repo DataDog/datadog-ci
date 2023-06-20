@@ -15,6 +15,8 @@ import {requestAWSCredentials} from './prompt'
 import * as commonRenderer from './renderers/common-renderer'
 import * as flareRenderer from './renderers/flare-renderer'
 
+const {version} = require('../../../package.json')
+
 const ENDPOINT_URL = 'https://datad0g.com/api/ui/support/serverless/flare'
 const FLARE_OUTPUT_DIRECTORY = '.datadog-ci'
 const FUNCTION_CONFIG_FILE_NAME = 'function_config.json'
@@ -205,7 +207,7 @@ export const sendToDatadog = async (
   const form = new FormData()
   form.append('case_id', caseId)
   form.append('flare_file', fs.createReadStream(zipPath))
-  form.append('operator_version', 7)
+  form.append('operator_version', version)
   form.append('email', email)
   const headerConfig = {
     headers: {
