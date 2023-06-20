@@ -166,7 +166,7 @@ export const writeFile = async (folderPath: string, filePath: string, data: stri
     fs.mkdirSync(folderPath)
     fs.writeFileSync(filePath, data)
   } catch (err) {
-    throw Error(`Unable to save function config: ${err.message}`)
+    throw Error(`Unable to create function configuration file: ${err.message}`)
   }
 }
 
@@ -218,10 +218,10 @@ export const sendToDatadog = async (
 
   try {
     await axios.post(ENDPOINT_URL, form, headerConfig)
-    context.stdout.write('\n✅ Successfully sent function config to Datadog Support!\n')
+    context.stdout.write('\n✅ Successfully sent flare file to Datadog Support!\n')
   } catch (err) {
     const errResponse: string = err.response?.data?.error
-    throw Error(`Failed to send function config to Datadog Support: ${err.message}. ${errResponse ?? ''}\n`)
+    throw Error(`Failed to send flare file to Datadog Support: ${err.message}. ${errResponse ?? ''}\n`)
   }
 }
 

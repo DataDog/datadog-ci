@@ -12,7 +12,7 @@ exports[`lambda flare AWS Lambda configuration prints config when running as a d
 {
   Environment: {
     Variables: {
-      DD_API_KEY: 'test-api-key',
+      DD_API_KEY: '02aeb762fff59ac0d5ad1536cd9633bd',
       DD_SITE: 'datadoghq.com',
       DD_LOG_LEVEL: 'debug'
     }
@@ -48,7 +48,7 @@ exports[`lambda flare AWS credentials continues when getAWSCredentials() returns
 {
   Environment: {
     Variables: {
-      DD_API_KEY: 'test-api-key',
+      DD_API_KEY: '02aeb762fff59ac0d5ad1536cd9633bd',
       DD_SITE: 'datadoghq.com',
       DD_LOG_LEVEL: 'debug'
     }
@@ -59,7 +59,7 @@ exports[`lambda flare AWS credentials continues when getAWSCredentials() returns
 
 🚀 Sending to Datadog Support...
 
-✅ Successfully sent function config to Datadog Support!
+✅ Successfully sent flare file to Datadog Support!
 "
 `;
 
@@ -75,7 +75,7 @@ exports[`lambda flare AWS credentials requests AWS credentials when none are fou
 {
   Environment: {
     Variables: {
-      DD_API_KEY: 'test-api-key',
+      DD_API_KEY: '02aeb762fff59ac0d5ad1536cd9633bd',
       DD_SITE: 'datadoghq.com',
       DD_LOG_LEVEL: 'debug'
     }
@@ -86,7 +86,7 @@ exports[`lambda flare AWS credentials requests AWS credentials when none are fou
 
 🚀 Sending to Datadog Support...
 
-✅ Successfully sent function config to Datadog Support!
+✅ Successfully sent flare file to Datadog Support!
 "
 `;
 
@@ -135,7 +135,7 @@ exports[`lambda flare send to Datadog does not send request to Datadog when a dr
 {
   Environment: {
     Variables: {
-      DD_API_KEY: 'test-api-key',
+      DD_API_KEY: '02aeb762fff59ac0d5ad1536cd9633bd',
       DD_SITE: 'datadoghq.com',
       DD_LOG_LEVEL: 'debug'
     }
@@ -160,7 +160,7 @@ exports[`lambda flare send to Datadog successfully adds zip file to FormData 1`]
 {
   Environment: {
     Variables: {
-      DD_API_KEY: 'test-api-key',
+      DD_API_KEY: '02aeb762fff59ac0d5ad1536cd9633bd',
       DD_SITE: 'datadoghq.com',
       DD_LOG_LEVEL: 'debug'
     }
@@ -171,7 +171,7 @@ exports[`lambda flare send to Datadog successfully adds zip file to FormData 1`]
 
 🚀 Sending to Datadog Support...
 
-✅ Successfully sent function config to Datadog Support!
+✅ Successfully sent flare file to Datadog Support!
 "
 `;
 
@@ -187,7 +187,7 @@ exports[`lambda flare send to Datadog successfully sends request to Datadog 1`] 
 {
   Environment: {
     Variables: {
-      DD_API_KEY: 'test-api-key',
+      DD_API_KEY: '02aeb762fff59ac0d5ad1536cd9633bd',
       DD_SITE: 'datadoghq.com',
       DD_LOG_LEVEL: 'debug'
     }
@@ -198,7 +198,7 @@ exports[`lambda flare send to Datadog successfully sends request to Datadog 1`] 
 
 🚀 Sending to Datadog Support...
 
-✅ Successfully sent function config to Datadog Support!
+✅ Successfully sent flare file to Datadog Support!
 "
 `;
 
@@ -214,7 +214,7 @@ exports[`lambda flare validates required flags extracts region from function nam
 {
   Environment: {
     Variables: {
-      DD_API_KEY: 'test-api-key',
+      DD_API_KEY: '02aeb762fff59ac0d5ad1536cd9633bd',
       DD_SITE: 'datadoghq.com',
       DD_LOG_LEVEL: 'debug'
     }
@@ -225,7 +225,7 @@ exports[`lambda flare validates required flags extracts region from function nam
 
 🚀 Sending to Datadog Support...
 
-✅ Successfully sent function config to Datadog Support!
+✅ Successfully sent flare file to Datadog Support!
 "
 `;
 
@@ -276,7 +276,7 @@ exports[`lambda flare validates required flags runs successfully with all requir
 {
   Environment: {
     Variables: {
-      DD_API_KEY: 'test-api-key',
+      DD_API_KEY: '02aeb762fff59ac0d5ad1536cd9633bd',
       DD_SITE: 'datadoghq.com',
       DD_LOG_LEVEL: 'debug'
     }
@@ -287,7 +287,7 @@ exports[`lambda flare validates required flags runs successfully with all requir
 
 🚀 Sending to Datadog Support...
 
-✅ Successfully sent function config to Datadog Support!
+✅ Successfully sent flare file to Datadog Support!
 "
 `;
 
@@ -303,7 +303,7 @@ exports[`lambda flare validates required flags uses API key ENV variable and run
 {
   Environment: {
     Variables: {
-      DD_API_KEY: 'test-api-key',
+      DD_API_KEY: '02aeb762fff59ac0d5ad1536cd9633bd',
       DD_SITE: 'datadoghq.com',
       DD_LOG_LEVEL: 'debug'
     }
@@ -314,7 +314,7 @@ exports[`lambda flare validates required flags uses API key ENV variable and run
 
 🚀 Sending to Datadog Support...
 
-✅ Successfully sent function config to Datadog Support!
+✅ Successfully sent flare file to Datadog Support!
 "
 `;
 
@@ -330,7 +330,7 @@ exports[`lambda flare validates required flags uses API key ENV variable and run
 {
   Environment: {
     Variables: {
-      DD_API_KEY: 'test-api-key',
+      DD_API_KEY: '02aeb762fff59ac0d5ad1536cd9633bd',
       DD_SITE: 'datadoghq.com',
       DD_LOG_LEVEL: 'debug'
     }
@@ -341,7 +341,7 @@ exports[`lambda flare validates required flags uses API key ENV variable and run
 
 🚀 Sending to Datadog Support...
 
-✅ Successfully sent function config to Datadog Support!
+✅ Successfully sent flare file to Datadog Support!
 
 🐶 Generating Lambda flare to send your configuration to Datadog...
 
@@ -353,7 +353,7 @@ exports[`lambda flare validates required flags uses API key ENV variable and run
 {
   Environment: {
     Variables: {
-      DD_API_KEY: 'test-api-key',
+      DD_API_KEY: '02aeb762fff59ac0d5ad1536cd9633bd',
       DD_SITE: 'datadoghq.com',
       DD_LOG_LEVEL: 'debug'
     }
@@ -364,7 +364,7 @@ exports[`lambda flare validates required flags uses API key ENV variable and run
 
 🚀 Sending to Datadog Support...
 
-✅ Successfully sent function config to Datadog Support!
+✅ Successfully sent flare file to Datadog Support!
 "
 `;
 
@@ -380,7 +380,7 @@ exports[`lambda flare validates required flags uses region ENV variable when no 
 {
   Environment: {
     Variables: {
-      DD_API_KEY: 'test-api-key',
+      DD_API_KEY: '02aeb762fff59ac0d5ad1536cd9633bd',
       DD_SITE: 'datadoghq.com',
       DD_LOG_LEVEL: 'debug'
     }
@@ -391,13 +391,13 @@ exports[`lambda flare validates required flags uses region ENV variable when no 
 
 🚀 Sending to Datadog Support...
 
-✅ Successfully sent function config to Datadog Support!
+✅ Successfully sent flare file to Datadog Support!
 "
 `;
 
-exports[`lambda flare writeFile throws error when unable to create folder 1`] = `[Error: Unable to save function config: MOCK ERROR: Unable to create folder]`;
+exports[`lambda flare writeFile throws error when unable to create folder 1`] = `[Error: Unable to create function configuration file: MOCK ERROR: Unable to create folder]`;
 
-exports[`lambda flare writeFile throws error when unable to write data to a file 1`] = `[Error: Unable to save function config: MOCK ERROR: Unable to write file]`;
+exports[`lambda flare writeFile throws error when unable to write data to a file 1`] = `[Error: Unable to create function configuration file: MOCK ERROR: Unable to write file]`;
 
 exports[`lambda flare zipContents throws error when unable to generate zip 1`] = `[Error: Unable to zip the flare file: MOCK ERROR: Unable to generate zip]`;
 

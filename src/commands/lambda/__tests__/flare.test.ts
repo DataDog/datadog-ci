@@ -1,28 +1,28 @@
 import fs from 'fs'
 import process from 'process'
 import * as stream from 'stream'
-import util, {InspectOptions} from 'util'
 
 import axios from 'axios'
+import {BaseContext} from 'clipanion'
 import FormData from 'form-data'
 import JSZip from 'jszip'
 
 import {API_KEY_ENV_VAR, AWS_DEFAULT_REGION_ENV_VAR, CI_API_KEY_ENV_VAR} from '../constants'
-import {LambdaFlareCommand, writeFile, zipContents} from '../flare'
+import {writeFile, zipContents} from '../flare'
+import {getAWSCredentials, getLambdaFunctionConfig} from '../functions/commons'
 import {requestAWSCredentials} from '../prompt'
 
-import {createMockContext, makeCli, mockAwsCredentials} from './fixtures'
+import {createMockContext, makeCli, mockAwsCredentials, mockDatadogApiKey} from './fixtures'
 
 // Constants
 const MOCK_FOLDER_PATH = './mock_folder'
 const MOCK_FILE_PATH = 'function_config.json'
 const MOCK_ZIP_PATH = 'output.zip'
-const MOCK_API_KEY = 'test-api-key'
-const VALID_INPUT = ['lambda', 'flare', '-f', 'func', '-r', 'us-west-2', '-c', '123', '-e', 'test@test.com']
+const MOCK_REQUIRED_FLAGS = ['lambda', 'flare', '-f', 'func', '-r', 'us-west-2', '-c', '123', '-e', 'test@test.com']
 const MOCK_CONFIG = {
   Environment: {
     Variables: {
-      DD_API_KEY: MOCK_API_KEY,
+      DD_API_KEY: mockDatadogApiKey,
       DD_SITE: 'datadoghq.com',
       DD_LOG_LEVEL: 'debug',
     },
@@ -31,12 +31,6 @@ const MOCK_CONFIG = {
   FunctionName: 'some-function',
 }
 
-// Mock util.inspect to remove color codes
-const originalInspect = util.inspect
-jest.spyOn(util, 'inspect').mockImplementation((object: any, options?: InspectOptions) => {
-  return originalInspect(object, {...options, colors: false})
-})
-
 // Commons mocks
 jest.mock('../functions/commons', () => ({
   getAWSCredentials: jest.fn(),
@@ -44,6 +38,7 @@ jest.mock('../functions/commons', () => ({
   getRegion: jest.requireActual('../functions/commons').getRegion as () => string | undefined,
 }))
 jest.mock('../prompt')
+jest.mock('util')
 
 // File system mocks
 jest.mock('fs')
@@ -85,7 +80,7 @@ describe('lambda flare', () => {
 
   describe('validates required flags', () => {
     beforeEach(() => {
-      process.env = {[CI_API_KEY_ENV_VAR]: MOCK_API_KEY}
+      process.env = {[CI_API_KEY_ENV_VAR]: mockDatadogApiKey}
     })
 
     it('prints error when no function specified', async () => {
@@ -155,7 +150,7 @@ describe('lambda flare', () => {
 
     it('uses API key ENV variable and runs as expected', async () => {
       process.env = {}
-      process.env[CI_API_KEY_ENV_VAR] = MOCK_API_KEY
+      process.env[CI_API_KEY_ENV_VAR] = mockDatadogApiKey
       process.env[API_KEY_ENV_VAR] = undefined
       const cli = makeCli()
       const context = createMockContext()
@@ -168,7 +163,7 @@ describe('lambda flare', () => {
       expect(output).toMatchSnapshot()
 
       process.env[CI_API_KEY_ENV_VAR] = undefined
-      process.env[API_KEY_ENV_VAR] = MOCK_API_KEY
+      process.env[API_KEY_ENV_VAR] = mockDatadogApiKey
       code = await cli.run(
         ['lambda', 'flare', '-f', 'func', '-r', 'test-region', '-c', '123', '-e', 'test@test.com'],
         context as any
@@ -202,7 +197,7 @@ describe('lambda flare', () => {
     it('runs successfully with all required options specified', async () => {
       const cli = makeCli()
       const context = createMockContext()
-      const code = await cli.run(VALID_INPUT, context as any)
+      const code = await cli.run(MOCK_REQUIRED_FLAGS, context as any)
       expect(code).toBe(0)
       const output = context.stdout.toString()
       expect(output).toMatchSnapshot()
@@ -211,11 +206,11 @@ describe('lambda flare', () => {
 
   describe('writeFile', () => {
     const MOCK_DATA = 'mock data'
-    const instance = new LambdaFlareCommand()
+    const context = createMockContext() as BaseContext
     ;(fs.existsSync as jest.Mock).mockReturnValue(false)
 
     it('successfully writes data to a file with no error', async () => {
-      await writeFile(MOCK_FOLDER_PATH, MOCK_FILE_PATH, MOCK_DATA, instance.context)
+      await writeFile(MOCK_FOLDER_PATH, MOCK_FILE_PATH, MOCK_DATA, context)
 
       expect(fs.existsSync).toHaveBeenCalledWith(MOCK_FOLDER_PATH)
       expect(fs.mkdirSync).toHaveBeenCalledWith(MOCK_FOLDER_PATH)
@@ -227,7 +222,7 @@ describe('lambda flare', () => {
         throw new Error('MOCK ERROR: Unable to create folder')
       })
 
-      await expect(writeFile(MOCK_FOLDER_PATH, MOCK_FILE_PATH, MOCK_DATA, instance.context)).rejects.toMatchSnapshot()
+      await expect(writeFile(MOCK_FOLDER_PATH, MOCK_FILE_PATH, MOCK_DATA, context)).rejects.toMatchSnapshot()
 
       expect(fs.existsSync).toHaveBeenCalledWith(MOCK_FOLDER_PATH)
       expect(fs.mkdirSync).toHaveBeenCalledWith(MOCK_FOLDER_PATH)
@@ -239,7 +234,7 @@ describe('lambda flare', () => {
         throw new Error('MOCK ERROR: Unable to write file')
       })
 
-      await expect(writeFile(MOCK_FOLDER_PATH, MOCK_FILE_PATH, MOCK_DATA, instance.context)).rejects.toMatchSnapshot()
+      await expect(writeFile(MOCK_FOLDER_PATH, MOCK_FILE_PATH, MOCK_DATA, context)).rejects.toMatchSnapshot()
 
       expect(fs.existsSync).toHaveBeenCalledWith(MOCK_FOLDER_PATH)
       expect(fs.mkdirSync).toHaveBeenCalledWith(MOCK_FOLDER_PATH)
@@ -323,13 +318,13 @@ describe('lambda flare', () => {
       fs.writeFileSync = jest.fn().mockImplementation(() => {})
       fs.mkdirSync = jest.fn().mockImplementation(() => {})
     })
-    process.env = {['DATADOG_API_KEY']: MOCK_API_KEY}
+    process.env = {['DATADOG_API_KEY']: mockDatadogApiKey}
 
     it('successfully adds zip file to FormData', async () => {
       const appendSpy = jest.spyOn(FormData.prototype, 'append')
       const cli = makeCli()
       const context = createMockContext()
-      await cli.run(VALID_INPUT, context as any)
+      await cli.run(MOCK_REQUIRED_FLAGS, context as any)
       expect(appendSpy).toHaveBeenCalled()
       appendSpy.mockRestore()
       const output = context.stdout.toString()
@@ -340,13 +335,13 @@ describe('lambda flare', () => {
       const postSpy = jest.spyOn(axios, 'post').mockResolvedValue({status: 200})
       const cli = makeCli()
       const context = createMockContext()
-      await cli.run(VALID_INPUT, context as any)
+      await cli.run(MOCK_REQUIRED_FLAGS, context as any)
       expect(postSpy).toHaveBeenCalledWith(
         expect.any(String),
         expect.any(FormData),
         expect.objectContaining({
           headers: expect.objectContaining({
-            'DD-API-KEY': MOCK_API_KEY,
+            'DD-API-KEY': mockDatadogApiKey,
           }),
         })
       )
@@ -359,7 +354,7 @@ describe('lambda flare', () => {
       const postSpy = (axios.post = jest.fn().mockRejectedValue({status: 500}))
       const cli = makeCli()
       const context = createMockContext()
-      const code = await cli.run([...VALID_INPUT, '-d'], context as any)
+      const code = await cli.run([...MOCK_REQUIRED_FLAGS, '-d'], context as any)
       expect(code).toBe(0)
       expect(postSpy).not.toHaveBeenCalled()
       const output = context.stdout.toString()
@@ -370,22 +365,22 @@ describe('lambda flare', () => {
 
   describe('AWS Lambda configuration', () => {
     it('stops and prints error when getLambdaFunctionConfig fails', async () => {
-      require('../functions/commons').getLambdaFunctionConfig.mockImplementation(() => {
+      ;(getLambdaFunctionConfig as any).mockImplementation(() => {
         throw new Error('MOCK ERROR: Some API error')
       })
       const cli = makeCli()
       const context = createMockContext()
-      const code = await cli.run(VALID_INPUT, context as any)
+      const code = await cli.run(MOCK_REQUIRED_FLAGS, context as any)
       expect(code).toBe(1)
       const output = context.stderr.toString()
       expect(output).toMatchSnapshot()
     })
 
     it('prints config when running as a dry run', async () => {
-      require('../functions/commons').getLambdaFunctionConfig.mockImplementation(() => Promise.resolve(MOCK_CONFIG))
+      ;(getLambdaFunctionConfig as any).mockImplementation(() => Promise.resolve(MOCK_CONFIG))
       const cli = makeCli()
       const context = createMockContext()
-      const code = await cli.run([...VALID_INPUT, '-d'], context as any)
+      const code = await cli.run([...MOCK_REQUIRED_FLAGS, '-d'], context as any)
       expect(code).toBe(0)
       const output = context.stdout.toString()
       expect(output).toMatchSnapshot()
@@ -394,10 +389,10 @@ describe('lambda flare', () => {
 
   describe('AWS credentials', () => {
     it('continues when getAWSCredentials() returns valid credentials', async () => {
-      require('../functions/commons').getAWSCredentials.mockResolvedValue(mockAwsCredentials)
+      ;(getAWSCredentials as any).mockResolvedValue(mockAwsCredentials)
       const cli = makeCli()
       const context = createMockContext()
-      const code = await cli.run(VALID_INPUT, context as any)
+      const code = await cli.run(MOCK_REQUIRED_FLAGS, context as any)
       expect(code).toBe(0)
       const output = context.stdout.toString()
       expect(output).toMatchSnapshot()
@@ -405,10 +400,10 @@ describe('lambda flare', () => {
     })
 
     it('requests AWS credentials when none are found by getAWSCredentials()', async () => {
-      require('../functions/commons').getAWSCredentials.mockResolvedValue(undefined)
+      ;(getAWSCredentials as any).mockResolvedValue(undefined)
       const cli = makeCli()
       const context = createMockContext()
-      const code = await cli.run(VALID_INPUT, context as any)
+      const code = await cli.run(MOCK_REQUIRED_FLAGS, context as any)
       expect(code).toBe(0)
       const output = context.stdout.toString()
       expect(output).toMatchSnapshot()
@@ -416,25 +411,25 @@ describe('lambda flare', () => {
     })
 
     it('stops and prints error when getAWSCredentials() fails', async () => {
-      require('../functions/commons').getAWSCredentials.mockImplementation(() => {
+      ;(getAWSCredentials as any).mockImplementation(() => {
         throw new Error('MOCK ERROR: Error getting AWS credentials')
       })
       const cli = makeCli()
       const context = createMockContext()
-      const code = await cli.run(VALID_INPUT, context as any)
+      const code = await cli.run(MOCK_REQUIRED_FLAGS, context as any)
       expect(code).toBe(1)
       const output = context.stderr.toString()
       expect(output).toMatchSnapshot()
     })
 
     it('stops and prints error when requestAWSCredentials() fails', async () => {
-      require('../functions/commons').getAWSCredentials.mockResolvedValue(undefined)
-      require('../prompt').requestAWSCredentials.mockImplementation(() => {
+      ;(getAWSCredentials as any).mockResolvedValue(undefined)
+      ;(requestAWSCredentials as any).mockImplementation(() => {
         throw new Error('MOCK ERROR: Error requesting AWS credentials')
       })
       const cli = makeCli()
       const context = createMockContext()
-      const code = await cli.run(VALID_INPUT, context as any)
+      const code = await cli.run(MOCK_REQUIRED_FLAGS, context as any)
       expect(requestAWSCredentials).toHaveBeenCalled()
       expect(code).toBe(1)
       const output = context.stderr.toString()
