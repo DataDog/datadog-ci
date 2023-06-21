@@ -1,3 +1,4 @@
+import {randomBytes} from 'crypto'
 import fs from 'fs'
 import os from 'os'
 import path from 'path'
@@ -183,7 +184,16 @@ export class UploadJUnitXMLCommand extends Command {
 
     if (!this.skipGitMetadataUpload) {
       if (await isGitRepo()) {
-        const requestBuilder = getRequestBuilder({baseUrl: apiUrl, apiKey: this.config.apiKey!})
+        const traceId = randomBytes(8).toString('hex')
+
+        const requestBuilder = getRequestBuilder({
+          baseUrl: apiUrl,
+          apiKey: this.config.apiKey!,
+          headers: new Map([
+            ['x-datadog-trace-id', traceId],
+            ['x-datadog-parent-id', traceId],
+          ]),
+        })
         try {
           this.logger.info(`${this.dryRun ? '[DRYRUN] ' : ''}Syncing git metadata...`)
           let elapsed = 0
