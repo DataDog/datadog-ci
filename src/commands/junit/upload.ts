@@ -1,4 +1,3 @@
-import {randomBytes} from 'crypto'
 import fs from 'fs'
 import os from 'os'
 import path from 'path'
@@ -24,6 +23,7 @@ import {uploadToGitDB} from '../git-metadata/gitdb'
 import {isGitRepo} from '../git-metadata/library'
 
 import {apiConstructor, apiUrl, intakeUrl} from './api'
+import id from './id'
 import {APIHelper, Payload} from './interfaces'
 import {
   renderCommandInfo,
@@ -184,7 +184,7 @@ export class UploadJUnitXMLCommand extends Command {
 
     if (!this.skipGitMetadataUpload) {
       if (await isGitRepo()) {
-        const traceId = randomBytes(8).toString('hex')
+        const traceId = id()
 
         const requestBuilder = getRequestBuilder({
           baseUrl: apiUrl,
