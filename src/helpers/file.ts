@@ -1,1 +1,1 @@
-export const getSafeFileName = (unsafeFileName: string) => unsafeFileName.replace(/\//g, '\\')
+export const replaceForwardSlashes = (unsafeFileName: string) => unsafeFileName.replace(/\//g, '\\')

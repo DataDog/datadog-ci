@@ -6,7 +6,7 @@ import type {AxiosPromise, AxiosRequestConfig, AxiosResponse} from 'axios'
 
 import FormData from 'form-data'
 
-import {getSafeFileName} from '../../helpers/file'
+import {replaceForwardSlashes} from '../../helpers/file'
 import {getRequestBuilder} from '../../helpers/utils'
 
 import {Payload} from './interfaces'
@@ -36,7 +36,7 @@ export const uploadJUnitXML = (request: (args: AxiosRequestConfig) => AxiosPromi
     metrics: jUnitXML.reportMetrics,
   }
 
-  const metadata: Record<string, any> = {
+  const custom: Record<string, any> = {
     metadata: jUnitXML.spanTags,
     tags: jUnitXML.customTags,
     metrics: jUnitXML.customMetrics,
@@ -46,17 +46,17 @@ export const uploadJUnitXML = (request: (args: AxiosRequestConfig) => AxiosPromi
   }
 
   if (jUnitXML.logsEnabled) {
-    metadata['_dd.junitxml_logs'] = true
+    custom['_dd.junitxml_logs'] = true
   }
 
   if (jUnitXML.xpathTags) {
-    metadata['_dd.junitxml_xpath_tags'] = jUnitXML.xpathTags
+    custom['_dd.junitxml_xpath_tags'] = jUnitXML.xpathTags
   }
 
-  form.append('event', JSON.stringify(metadata), {filename: 'event.json'})
+  form.append('event', JSON.stringify(custom), {filename: 'event.json'})
 
   form.append('junit_xml_report_file', fs.createReadStream(jUnitXML.xmlPath).pipe(createGzip()), {
-    filename: `${getSafeFileName(fileName)}.xml.gz`,
+    filename: `${replaceForwardSlashes(fileName)}.xml.gz`,
   })
 
   return request({
