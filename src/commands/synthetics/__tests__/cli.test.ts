@@ -506,6 +506,10 @@ describe('run-test', () => {
 })
 
 describe('upload-application', () => {
+  beforeEach(() => {
+    process.env = {}
+    jest.restoreAllMocks()
+  })
   describe('resolveConfig', () => {
     beforeEach(() => {
       process.env = {}

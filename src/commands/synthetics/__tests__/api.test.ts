@@ -311,9 +311,11 @@ describe('getApiHelper', () => {
   test('should throw an error if API or Application key are undefined', async () => {
     process.env = {}
 
-    expect(() => getApiHelper(ciConfig)).toThrow(new CriticalError('MISSING_APP_KEY'))
+    expect(() => getApiHelper(ciConfig)).toThrow(new CriticalError('MISSING_APP_KEY', 'App key is required'))
 
-    expect(() => getApiHelper({...ciConfig, appKey: 'fakeappkey'})).toThrow(new CriticalError('MISSING_API_KEY'))
+    expect(() => getApiHelper({...ciConfig, appKey: 'fakeappkey'})).toThrow(
+      new CriticalError('MISSING_API_KEY', 'API key is required')
+    )
   })
 })
 
