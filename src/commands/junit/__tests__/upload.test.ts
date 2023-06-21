@@ -4,8 +4,11 @@ import {Cli} from 'clipanion/lib/advanced'
 
 import {SpanTags} from '../../../helpers/interfaces'
 
+import id from '../id'
 import {renderInvalidFile} from '../renderer'
 import {UploadJUnitXMLCommand} from '../upload'
+
+jest.mock('../id', () => jest.fn())
 
 const makeCli = () => {
   const cli = new Cli()
@@ -341,6 +344,7 @@ describe('execute', () => {
       process.cwd() + '/src/commands/junit/__tests__/fixtures/single_file.xml',
     ])
     const output = context.stdout.toString().split(os.EOL)
+    expect(id).not.toHaveBeenCalled()
     expect(code).toBe(0)
     expect(output[5]).toContain('Not syncing git metadata (skip git upload flag detected)')
   })
@@ -354,6 +358,14 @@ describe('execute', () => {
     expect(code).toBe(0)
     expect(output[5]).toContain('Syncing git metadata')
   })
+
+  test('id headers are added when git metadata is uploaded', async () => {
+    await runCLI([
+      '--skip-git-metadata-upload=0',
+      process.cwd() + '/src/commands/junit/__tests__/fixtures/single_file.xml',
+    ])
+    expect(id).toHaveBeenCalled()
+  }, 10000000)
 })
 
 interface ExpectedOutput {

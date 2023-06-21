@@ -39,6 +39,8 @@ import {
 } from './renderer'
 import {isFalse} from './utils'
 
+const TRACE_ID_HTTP_HEADER = 'x-datadog-trace-id'
+const PARENT_ID_HTTP_HEADER = 'x-datadog-parent-id'
 const errorCodesStopUpload = [400, 403]
 
 const validateXml = (xmlFilePath: string) => {
@@ -190,8 +192,8 @@ export class UploadJUnitXMLCommand extends Command {
           baseUrl: apiUrl,
           apiKey: this.config.apiKey!,
           headers: new Map([
-            ['x-datadog-trace-id', traceId],
-            ['x-datadog-parent-id', traceId],
+            [TRACE_ID_HTTP_HEADER, traceId],
+            [PARENT_ID_HTTP_HEADER, traceId],
           ]),
         })
         try {
