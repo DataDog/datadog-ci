@@ -43,6 +43,9 @@
     "dist-standalone": "pkg --compress GZip .",
     "dist-standalone:test": "jest --config ./jest.config-standalone.js --colors",
     "format": "yarn eslint --fix",
+    "generate-json-schemas:synthetics": "yarn generate-json-schemas-synthetics-global-config-file && yarn generate-json-schemas-synthetics-test-file",
+    "generate-json-schemas-synthetics-global-config-file": "typescript-json-schema --ignoreErrors tsconfig.json RunTestsLibConfig > src/commands/synthetics/schemas/global-configuration-file.json",
+    "generate-json-schemas-synthetics-test-file": "typescript-json-schema --ignoreErrors tsconfig.json TestFile > src/commands/synthetics/schemas/test-file.json",
     "launch": "ts-node --transpile-only src/cli.ts",
     "launch:debug": "node -r ts-node/register/transpile-only --inspect-brk src/cli.ts",
     "lint": "yarn eslint || (echo \"\nYou can fix this by running ==> yarn format <==\n\" && false)",
@@ -160,6 +163,7 @@
     "rimraf": "^5.0.0",
     "ts-jest": "29.1.1",
     "ts-node": "8.8.1",
-    "typescript": "5.1.6"
+    "typescript": "5.1.6",
+    "typescript-json-schema": "^0.57.0"
   }
 }

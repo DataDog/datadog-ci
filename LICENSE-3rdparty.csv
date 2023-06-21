@@ -73,6 +73,7 @@ ts-jest,dev,MIT,Copyright (c) 2016-2018
 ts-node,import,MIT,Copyright (c) 2014 Blake Embrey (hello@blakeembrey.com)
 typescript,dev,Apache-2.0,Copyright (c) Microsoft Corporation.
 typanion,import,MIT,Copyright (c) Mael Nison
+typescript-json-schema,dev,BSD 3-Clause,"Copyright (c) 2016, typescript-json-schema contributors"
 upath,import,MIT,Copyright (c) 2010-2020 Robert Kieffer and other contributors
 uuid,import,MIT,Copyright (c) 2010-2020 Robert Kieffer and other contributors
 xml2js,import,MIT,Copyright (c) Marek Kubica <marek@xivilization.net> (https://xivilization.net)
