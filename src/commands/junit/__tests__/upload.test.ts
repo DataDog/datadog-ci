@@ -56,7 +56,7 @@ describe('upload', () => {
           context,
           service: 'service',
         },
-        {}
+        {},{},{},{},{}
       )
 
       expect(firstFile).toMatchObject({
@@ -89,7 +89,7 @@ describe('upload', () => {
           context,
           service: 'service',
         },
-        {}
+        {},{},{},{},{}
       )
 
       expect(files.length).toEqual(1)
@@ -109,7 +109,7 @@ describe('upload', () => {
           context,
           service: 'service',
         },
-        {}
+        {},{},{},{},{}
       )
 
       expect(files.length).toEqual(0)
@@ -127,7 +127,7 @@ describe('upload', () => {
           context,
           service: 'service',
         },
-        {}
+        {},{},{},{},{}
       )
       expect(firstFile).toMatchObject({
         service: 'service',
@@ -155,7 +155,7 @@ describe('upload', () => {
           context,
           service: 'service',
         },
-        {}
+        {},{},{},{},{}
       )
 
       expect(files.length).toEqual(2)
@@ -170,7 +170,7 @@ describe('upload', () => {
           context,
           service: 'service',
         },
-        {}
+        {},{},{},{},{}
       )
 
       expect(firstFile.hostname).toEqual(os.hostname())
@@ -188,7 +188,7 @@ describe('upload', () => {
           logs: true,
           service: 'service',
         },
-        {}
+        {},{},{},{},{}
       )
       expect(firstFile.logsEnabled).toBe(true)
       expect(secondFile.logsEnabled).toBe(true)
