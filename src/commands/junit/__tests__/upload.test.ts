@@ -2,11 +2,10 @@ import os from 'os'
 
 import {Cli} from 'clipanion/lib/advanced'
 
-import { SpanTags, SpanTag } from '../../../helpers/interfaces';
+import {SpanTags} from '../../../helpers/interfaces'
 
 import {renderInvalidFile} from '../renderer'
 import {UploadJUnitXMLCommand} from '../upload'
-import { GIT_BRANCH } from '../../../helpers/tags';
 
 const makeCli = () => {
   const cli = new Cli()
@@ -261,7 +260,7 @@ describe('upload', () => {
       const spanTags: SpanTags = await command['getCustomTags'].call({
         config: {},
         context,
-        tags: ['key1:value1', 'key2:value2']
+        tags: ['key1:value1', 'key2:value2'],
       })
 
       expect(spanTags).toMatchObject({
@@ -275,7 +274,7 @@ describe('upload', () => {
       const spanTags: SpanTags = await command['getCustomMetrics'].call({
         config: {},
         context,
-        metrics: ['key1:10', 'key2:20']
+        metrics: ['key1:10', 'key2:20'],
       })
 
       expect(spanTags).toMatchObject({
@@ -289,7 +288,7 @@ describe('upload', () => {
       const spanTags: SpanTags = await command['getReportTags'].call({
         config: {},
         context,
-        reportTags: ['key1:value1', 'key2:value2']
+        reportTags: ['key1:value1', 'key2:value2'],
       })
 
       expect(spanTags).toMatchObject({
@@ -303,7 +302,7 @@ describe('upload', () => {
       const spanTags: SpanTags = await command['getReportMetrics'].call({
         config: {},
         context,
-        reportMetrics: ['key1:20', 'key2:30']
+        reportMetrics: ['key1:20', 'key2:30'],
       })
 
       expect(spanTags).toMatchObject({
