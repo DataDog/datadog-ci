@@ -294,7 +294,7 @@ describe('uploadMobileApplicationVersion', () => {
   })
 
   test('missing mobile application ID', async () => {
-    delete config.mobileApplicationId
+    config.mobileApplicationId = ''
     await expect(mobile.uploadMobileApplicationVersion(config)).rejects.toThrow(CiError)
 
     expect(uploadMobileApplicationSpy).toHaveBeenCalledTimes(0)

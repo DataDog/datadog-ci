@@ -433,6 +433,41 @@ You can also see the outcome of test executions directly in your CI as your test
   info Visit https://yarnpkg.com/en/docs/cli/run for documentation about this command.
 ```
 
+## Upload Application Command
+
+To upload a new version to an **existing application**, you can use the `synthetics upload-application` command. To use it:
+
+`--mobileApplicationId` - string - the ID of the application you want to upload the new version to
+`--mobileApplicationVersionFilePath` - string - path to the mobile app (.apk/.ipa)
+`--versionName` - string - name of the new version
+`--latest` - bool - if present, marks the application as 'latest'. Any tests that run on the latest version will use this version on their next run 
+ 
+Example:
+```
+datadog-ci synthetics upload-application              \
+--mobileApplicationId '123-123-123'                   \
+--mobileApplicationVersionFilePath 'example/test.apk' \
+--versionName 'example 1.0'                           \
+--latest
+```   
+
+You can also pass these options in a configuration file
+```
+{
+  "apiKey": <YOUR API KEY>,
+  "appKey": <YOUR APP KEY>,
+  "mobileApplicationVersionFilePath": "example_path/example_app.apk",
+  "mobileApplicationId": "example-abc",
+  "versionName": "example",
+  "latest": true
+}
+```
+
+And pass it to the command with the `--config` flag, example:
+```
+datadog-ci synthetics upload-application --config 'datadog-ci.config'
+```
+
 ## Further reading
 
 Additional helpful documentation, links, and articles:

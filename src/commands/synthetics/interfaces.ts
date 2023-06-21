@@ -386,6 +386,7 @@ export interface RunTestsCommandConfig extends SyntheticsCIConfig {
 export type WrapperConfig = Partial<RunTestsCommandConfig>
 
 export interface UploadApplicationCommandConfig extends SyntheticsCIConfig {
+  configPath: string
   mobileApplicationVersionFilePath?: string
   mobileApplicationId?: string
   versionName?: string

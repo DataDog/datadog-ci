@@ -2,16 +2,17 @@ import {Command} from 'clipanion'
 import deepExtend from 'deep-extend'
 
 import {LogLevel, Logger} from '../../helpers/logger'
-import {removeUndefinedValues} from '../../helpers/utils'
+import {removeUndefinedValues, resolveConfigFromFile} from '../../helpers/utils'
 
 import {EndpointError} from './api'
-import {CiError} from './errors'
+import {CiError, CriticalError} from './errors'
 import {UploadApplicationCommandConfig} from './interfaces'
 import {uploadMobileApplicationVersion} from './mobile'
 
 export const DEFAULT_UPLOAD_COMMAND_CONFIG: UploadApplicationCommandConfig = {
   apiKey: '',
   appKey: '',
+  configPath: 'datadog-ci.json',
   datadogSite: 'datadoghq.com',
   proxy: {protocol: 'http'},
   mobileApplicationVersionFilePath: '',
@@ -35,6 +36,41 @@ export class UploadApplicationCommand extends Command {
   }, LogLevel.INFO)
 
   public async execute() {
+    try {
+      await this.resolveConfig()
+    } catch (error) {
+      this.logger.error(`Error: invalid config`)
+
+      return 1
+    }
+
+    try {
+      const version = await uploadMobileApplicationVersion(this.config)
+      this.logger.info(`Created new version ${version.version_name}, with version ID: ${version.id}`)
+    } catch (error) {
+      if (error instanceof CiError || error instanceof EndpointError || error instanceof CriticalError) {
+        this.logger.error(`Error: ${error.message}`)
+      } else {
+        this.logger.error(`Error:F`)
+      }
+
+      return 1
+    }
+  }
+
+  private async resolveConfig() {
+    // Defaults < file < ENV < CLI
+    try {
+      this.config = await resolveConfigFromFile(this.config, {
+        configPath: this.configPath,
+        defaultConfigPaths: [this.config.configPath],
+      })
+    } catch (error) {
+      if (this.configPath) {
+        throw error
+      }
+    }
+
     this.config = deepExtend(
       this.config,
       removeUndefinedValues({
@@ -50,6 +86,7 @@ export class UploadApplicationCommand extends Command {
       removeUndefinedValues({
         apiKey: this.apiKey,
         appKey: this.appKey,
+        configPath: this.configPath,
         datadogSite: this.datadogSite,
         mobileApplicationVersionFilePath: this.mobileApplicationVersionFilePath,
         mobileApplicationId: this.mobileApplicationId,
@@ -57,17 +94,6 @@ export class UploadApplicationCommand extends Command {
         latest: this.latest,
       })
     )
-
-    try {
-      const version = await uploadMobileApplicationVersion(this.config)
-      this.logger.info(`Created new version ${version.version_name}, with version ID: ${version.id}`)
-    } catch (error) {
-      if (error instanceof CiError || error instanceof EndpointError) {
-        this.logger.error(`Error: ${error.message}`)
-      }
-
-      return 1
-    }
   }
 }
 
@@ -82,4 +108,4 @@ UploadApplicationCommand.addOption(
 )
 UploadApplicationCommand.addOption('mobileApplicationId', Command.String('--mobileApplicationId'))
 UploadApplicationCommand.addOption('versionName', Command.String('--versionName'))
-UploadApplicationCommand.addOption('latest', Command.String('--latest'))
+UploadApplicationCommand.addOption('latest', Command.Boolean('--latest'))
