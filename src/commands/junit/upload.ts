@@ -14,7 +14,7 @@ import {SpanTags} from '../../helpers/interfaces'
 import {RequestBuilder} from '../../helpers/interfaces'
 import {Logger, LogLevel} from '../../helpers/logger'
 import {retryRequest} from '../../helpers/retry'
-import { parseTags, parseMetrics, SERVICE } from '../../helpers/tags';
+import {parseTags, parseMetrics} from '../../helpers/tags'
 import {getUserGitSpanTags} from '../../helpers/user-provided-git'
 import {buildPath, getRequestBuilder, timedExecAsync} from '../../helpers/utils'
 
@@ -244,8 +244,13 @@ export class UploadJUnitXMLCommand extends Command {
     }, {})
   }
 
-  private async getMatchingJUnitXMLFiles(spanTags: SpanTags, customTags: Record<string, string>, customMetrics: Record<string, number>, 
-    reportTags: Record<string, string>, reportMetrics: Record<string, number>): Promise<Payload[]> {
+  private async getMatchingJUnitXMLFiles(
+    spanTags: SpanTags,
+    customTags: Record<string, string>,
+    customMetrics: Record<string, number>,
+    reportTags: Record<string, string>,
+    reportMetrics: Record<string, number>
+  ): Promise<Payload[]> {
     const jUnitXMLFiles = (this.basePaths || []).reduce((acc: string[], basePath: string) => {
       const isFile = !!path.extname(basePath)
       if (isFile) {
@@ -271,10 +276,10 @@ export class UploadJUnitXMLCommand extends Command {
       logsEnabled: this.logs,
       xpathTags: this.xpathTags,
       spanTags,
-      customTags: customTags,
-      customMetrics: customMetrics,
-      reportTags: reportTags,
-      reportMetrics: reportMetrics,
+      customTags,
+      customMetrics,
+      reportTags,
+      reportMetrics,
       xmlPath: jUnitXMLFilePath,
     }))
   }
