@@ -5,10 +5,10 @@ import * as ciUtils from '../../../helpers/utils'
 import * as api from '../api'
 import {UserConfigOverride} from '../interfaces'
 import {DEFAULT_COMMAND_CONFIG, DEFAULT_POLLING_TIMEOUT, RunTestsCommand} from '../run-tests-command'
+import {DEFAULT_UPLOAD_COMMAND_CONFIG, UploadApplicationCommand} from '../upload-application-command'
 import * as utils from '../utils'
 
 import {getApiTest, getAxiosHttpError, getTestSuite, mockTestTriggerResponse} from './fixtures'
-
 test('all option flags are supported', async () => {
   const options = [
     'apiKey',
@@ -501,6 +501,109 @@ describe('run-test', () => {
       expect(writeMock).toHaveBeenCalledWith(
         'Credentials refused, make sure `apiKey`, `appKey` and `datadogSite` are correct.\n'
       )
+    })
+  })
+})
+
+describe('upload-application', () => {
+  beforeEach(() => {
+    process.env = {}
+    jest.restoreAllMocks()
+  })
+
+  describe('resolveConfig', () => {
+    beforeEach(() => {
+      process.env = {}
+    })
+
+    test('override from config file', async () => {
+      const overrideConfigFile = {
+        apiKey: 'fake_api_key',
+        appKey: 'fake_app_key',
+        configPath: 'src/commands/synthetics/__tests__/config-fixtures/upload-app-config-with-all-keys.json',
+        datadogSite: 'datadoghq.eu',
+        proxy: {protocol: 'http'},
+        mobileApplicationVersionFilePath: 'fake_path/fake_app.apk',
+        mobileApplicationId: 'fake-abc',
+        versionName: 'new',
+        latest: true,
+      }
+
+      const command = new UploadApplicationCommand()
+      command.configPath = 'src/commands/synthetics/__tests__/config-fixtures/upload-app-config-with-all-keys.json'
+
+      await command['resolveConfig']()
+      expect(command['config']).toEqual(overrideConfigFile)
+    })
+
+    test('override from CLI', async () => {
+      const overrideCLI = {
+        apiKey: 'fake_api_key_cli',
+        appKey: 'fake_app_key_cli',
+        configPath: 'src/commands/synthetics/__tests__/config-fixtures/empty-config-file.json',
+        datadogSite: 'datadoghq.cli',
+        mobileApplicationVersionFilePath: 'fake_path/cli_fake_app.apk',
+        mobileApplicationId: 'fake-abc-cli',
+        versionName: 'new cli',
+        latest: true,
+      }
+
+      const command = new UploadApplicationCommand()
+      command['apiKey'] = overrideCLI.apiKey
+      command['appKey'] = overrideCLI.appKey
+      command['configPath'] = overrideCLI.configPath
+      command['datadogSite'] = overrideCLI.datadogSite
+      command['mobileApplicationVersionFilePath'] = overrideCLI.mobileApplicationVersionFilePath
+      command['mobileApplicationId'] = overrideCLI.mobileApplicationId
+      command['versionName'] = overrideCLI.versionName
+      command['latest'] = overrideCLI.latest
+
+      await command['resolveConfig']()
+      expect(command['config']).toEqual({
+        ...DEFAULT_UPLOAD_COMMAND_CONFIG,
+        apiKey: 'fake_api_key_cli',
+        appKey: 'fake_app_key_cli',
+        configPath: 'src/commands/synthetics/__tests__/config-fixtures/empty-config-file.json',
+        datadogSite: 'datadoghq.cli',
+        mobileApplicationVersionFilePath: 'fake_path/cli_fake_app.apk',
+        mobileApplicationId: 'fake-abc-cli',
+        versionName: 'new cli',
+        latest: true,
+      })
+    })
+
+    test('override from config file < ENV < CLI', async () => {
+      jest.spyOn(ciUtils, 'resolveConfigFromFile').mockImplementationOnce(async <T>(baseConfig: T) => ({
+        ...baseConfig,
+        apiKey: 'api_key_config_file',
+        appKey: 'app_key_config_file',
+        datadogSite: 'us5.datadoghq.com',
+        mobileApplicationVersionFilePath: 'fake_path/fake_app.apk',
+        mobileApplicationId: 'fake-abc',
+        versionName: 'new',
+        latest: true,
+      }))
+
+      process.env = {
+        DATADOG_API_KEY: 'api_key_env',
+        DATADOG_APP_KEY: 'app_key_env',
+      }
+
+      const command = new UploadApplicationCommand()
+      command['apiKey'] = 'api_key_cli'
+      command['mobileApplicationVersionFilePath'] = './path/to/application_cli.apk'
+
+      await command['resolveConfig']()
+      expect(command['config']).toEqual({
+        ...DEFAULT_UPLOAD_COMMAND_CONFIG,
+        apiKey: 'api_key_cli',
+        appKey: 'app_key_env',
+        datadogSite: 'us5.datadoghq.com',
+        mobileApplicationVersionFilePath: './path/to/application_cli.apk',
+        mobileApplicationId: 'fake-abc',
+        versionName: 'new',
+        latest: true,
+      })
     })
   })
 })

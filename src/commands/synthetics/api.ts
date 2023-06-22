@@ -274,10 +274,10 @@ export type APIHelper = ReturnType<typeof apiConstructor>
 
 export const getApiHelper = (config: APIHelperConfig): APIHelper => {
   if (!config.appKey) {
-    throw new CriticalError('MISSING_APP_KEY')
+    throw new CriticalError('MISSING_APP_KEY', 'App key is required')
   }
   if (!config.apiKey) {
-    throw new CriticalError('MISSING_API_KEY')
+    throw new CriticalError('MISSING_API_KEY', 'API key is required')
   }
 
   return apiConstructor({

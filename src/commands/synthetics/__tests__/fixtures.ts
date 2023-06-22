@@ -562,6 +562,7 @@ export const getMobileVersion = (override?: Partial<MobileApplicationVersion>) =
 export const uploadCommandConfig: UploadApplicationCommandConfig = {
   apiKey: 'foo',
   appKey: 'bar',
+  configPath: 'datadog-ci.json',
   datadogSite: 'datadoghq.com',
   proxy: {protocol: 'http'},
   mobileApplicationVersionFilePath: 'test.apk',
