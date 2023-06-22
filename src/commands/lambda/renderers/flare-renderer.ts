@@ -2,7 +2,7 @@ import {dryRunTag} from './common-renderer'
 
 /**
  * @returns a header indicating which `lambda` subcommand is running.
- * @param command current selected lambda subcommand.
+ * @param isDryRun whether or not the command is a dry run.
  *
  * ```txt
  * [Dry Run] 🐶 Instrumenting Lambda function
@@ -11,5 +11,5 @@ import {dryRunTag} from './common-renderer'
 export const renderLambdaFlareHeader = (isDryRun: boolean) => {
   const prefix = isDryRun ? `${dryRunTag} ` : ''
 
-  return `\n${prefix}🐶 Generating Lambda flare to send your configuration to Datadog\n`
+  return `\n${prefix}🐶 Generating Lambda flare to send your configuration to Datadog...\n`
 }
