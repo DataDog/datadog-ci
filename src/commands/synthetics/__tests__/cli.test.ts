@@ -510,6 +510,7 @@ describe('upload-application', () => {
     process.env = {}
     jest.restoreAllMocks()
   })
+
   describe('resolveConfig', () => {
     beforeEach(() => {
       process.env = {}

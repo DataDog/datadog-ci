@@ -50,8 +50,6 @@ export class UploadApplicationCommand extends Command {
     } catch (error) {
       if (error instanceof CiError || error instanceof EndpointError || error instanceof CriticalError) {
         this.logger.error(`Error: ${error.message}`)
-      } else {
-        this.logger.error(`Error:F`)
       }
 
       return 1
