@@ -39,6 +39,12 @@ export const createMockContext = () => {
         data += input
       },
     },
+    stderr: {
+      toString: () => data,
+      write: (input: string) => {
+        data += input
+      },
+    },
   }
 }
 

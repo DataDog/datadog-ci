@@ -288,7 +288,7 @@ describe('lambda', () => {
         const code = await command['execute']()
         const output = command.context.stdout.toString()
         expect(code).toBe(1)
-        expect(output).toMatch('No default region specified. Use `-r`, `--region`.')
+        expect(output).toMatch('No default region specified. [-r,--region]')
       })
 
       test('aborts if the the aws-sdk fails', async () => {

@@ -39,7 +39,8 @@ import {
 import {FunctionConfiguration, InstrumentationSettings, InstrumentedConfigurationGroup} from '../interfaces'
 import {applyLogGroupConfig} from '../loggroup'
 import {awsProfileQuestion} from '../prompt'
-import * as renderer from '../renderers/instrument-uninstrument-renderer'
+import * as commonRenderer from '../renderers/common-renderer'
+import * as instrumentRenderer from '../renderers/instrument-uninstrument-renderer'
 import {applyTagConfig} from '../tags'
 
 /**
@@ -386,7 +387,7 @@ export const getLambdaFunctionConfig = async (
 
 /**
  * Given a Function ARN, return its region by splitting the string,
- * can return undefined if it is doesn't exist.
+ * can return undefined if it doesn't exist.
  *
  * @param functionARN a string, can be Function ARN, Partial ARN, or a Function Name.
  * @returns the region of an ARN.
@@ -438,7 +439,7 @@ export const handleLambdaFunctionUpdates = async (configGroups: InstrumentedConf
   let totalFunctions = 0
   let totalFailedUpdates = 0
   for (const group of configGroups) {
-    const spinner = renderer.updatingFunctionsConfigFromRegionSpinner(group.region, group.configs.length)
+    const spinner = instrumentRenderer.updatingFunctionsConfigFromRegionSpinner(group.region, group.configs.length)
     spinner.start()
     const failedUpdates = []
     for (const config of group.configs) {
@@ -452,34 +453,41 @@ export const handleLambdaFunctionUpdates = async (configGroups: InstrumentedConf
     }
 
     if (failedUpdates.length === group.configs.length) {
-      spinner.fail(renderer.renderFailedUpdatingEveryLambdaFunctionFromRegion(group.region))
+      spinner.fail(instrumentRenderer.renderFailedUpdatingEveryLambdaFunctionFromRegion(group.region))
     } else if (failedUpdates.length > 0) {
       spinner.warn(
-        renderer.renderUpdatedLambdaFunctionsFromRegion(group.region, group.configs.length - failedUpdates.length)
+        instrumentRenderer.renderUpdatedLambdaFunctionsFromRegion(
+          group.region,
+          group.configs.length - failedUpdates.length
+        )
       )
     }
 
     for (const failedUpdate of failedUpdates) {
-      stdout.write(renderer.renderFailedUpdatingLambdaFunction(failedUpdate.functionARN, failedUpdate.error))
+      stdout.write(instrumentRenderer.renderFailedUpdatingLambdaFunction(failedUpdate.functionARN, failedUpdate.error))
     }
 
     if (failedUpdates.length === 0) {
-      spinner.succeed(renderer.renderUpdatedLambdaFunctionsFromRegion(group.region, group.configs.length))
+      spinner.succeed(instrumentRenderer.renderUpdatedLambdaFunctionsFromRegion(group.region, group.configs.length))
     }
   }
 
   if (totalFunctions === totalFailedUpdates) {
-    stdout.write(renderer.renderFail(renderer.renderFailedUpdatingEveryLambdaFunction()))
+    stdout.write(instrumentRenderer.renderFail(instrumentRenderer.renderFailedUpdatingEveryLambdaFunction()))
 
     throw Error()
   }
 
   if (totalFailedUpdates > 0) {
-    stdout.write(renderer.renderSoftWarning(renderer.renderUpdatedLambdaFunctions(totalFunctions - totalFailedUpdates)))
+    stdout.write(
+      commonRenderer.renderSoftWarning(
+        instrumentRenderer.renderUpdatedLambdaFunctions(totalFunctions - totalFailedUpdates)
+      )
+    )
   }
 
   if (!totalFailedUpdates) {
-    stdout.write(renderer.renderSuccess(renderer.renderUpdatedLambdaFunctions(totalFunctions)))
+    stdout.write(instrumentRenderer.renderSuccess(instrumentRenderer.renderUpdatedLambdaFunctions(totalFunctions)))
   }
 }
 
