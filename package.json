@@ -82,7 +82,7 @@
     "inquirer-checkbox-plus-prompt": "^1.4.2",
     "js-yaml": "3.13.1",
     "ora": "5.4.1",
-    "proxy-agent": "5.0.0",
+    "proxy-agent": "^6.2.1",
     "rimraf": "^3.0.2",
     "semver": "^7.5.3",
     "simple-git": "3.16.0",
