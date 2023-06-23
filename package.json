@@ -58,11 +58,11 @@
     "watch": "tsc -w"
   },
   "dependencies": {
-    "@aws-sdk/client-cloudwatch-logs": "^3.315.0",
-    "@aws-sdk/client-iam": "^3.315.0",
-    "@aws-sdk/client-lambda": "^3.293.0",
-    "@aws-sdk/client-sfn": "^3.315.0",
-    "@aws-sdk/credential-providers": "^3.296.0",
+    "@aws-sdk/client-cloudwatch-logs": "^3.358.0",
+    "@aws-sdk/client-iam": "^3.358.0",
+    "@aws-sdk/client-lambda": "^3.358.0",
+    "@aws-sdk/client-sfn": "^3.358.0",
+    "@aws-sdk/credential-providers": "^3.358.0",
     "@types/datadog-metrics": "0.6.1",
     "ajv": "^8.12.0",
     "ajv-formats": "^2.1.1",
@@ -94,7 +94,7 @@
     "yamux-js": "0.1.2"
   },
   "devDependencies": {
-    "@aws-sdk/types": "^3.292.0",
+    "@aws-sdk/types": "^3.357.0",
     "@babel/core": "7.8.0",
     "@babel/preset-env": "7.4.5",
     "@babel/preset-typescript": "7.3.3",
