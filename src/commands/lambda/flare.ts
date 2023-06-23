@@ -145,7 +145,7 @@ export class LambdaFlareCommand extends Command {
       }
       if (logStreamNames === undefined) {
         this.context.stdout.write(
-          commonRenderer.renderSoftWarning('No CloudWatch logs were found. Logs will not be retrieved or sent.\n')
+          commonRenderer.renderSoftWarning('No CloudWatch streams were found. Logs will not be retrieved or sent.\n')
         )
       } else {
         this.context.stdout.write(`\n✅ Found log streams:\n• ${logStreamNames.join('\n• ')}\n\n`)
@@ -162,7 +162,7 @@ export class LambdaFlareCommand extends Command {
           }
           if (logEvents === undefined) {
             this.context.stdout.write(
-              commonRenderer.renderSoftWarning(`No CloudWatch logs found for stream ${logStreamName}. Skipping...`)
+              commonRenderer.renderSoftWarning(`No CloudWatch logs found in stream ${logStreamName}. Skipping...`)
             )
             continue
           }
