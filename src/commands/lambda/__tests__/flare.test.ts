@@ -1,22 +1,35 @@
 import fs from 'fs'
+import path from 'path'
 import process from 'process'
 import * as stream from 'stream'
 
+import {CloudWatchLogsClient, OutputLogEvent} from '@aws-sdk/client-cloudwatch-logs'
 import axios from 'axios'
-import {BaseContext} from 'clipanion'
 import FormData from 'form-data'
 import JSZip from 'jszip'
 
 import {API_KEY_ENV_VAR, AWS_DEFAULT_REGION_ENV_VAR, CI_API_KEY_ENV_VAR} from '../constants'
-import {writeFile, zipContents} from '../flare'
+import {
+  convertToCSV,
+  createDirectories,
+  deleteFolder,
+  getLogEvents,
+  getLogStreamNames,
+  writeFile,
+  zipContents,
+} from '../flare'
+import * as flareModule from '../flare'
 import {getAWSCredentials, getLambdaFunctionConfig} from '../functions/commons'
 import {requestAWSCredentials} from '../prompt'
 
 import {createMockContext, makeCli, mockAwsCredentials, mockDatadogApiKey} from './fixtures'
 
 // Constants
-const MOCK_FOLDER_PATH = './mock_folder'
-const MOCK_FILE_PATH = 'function_config.json'
+const MOCK_CWD = 'mock-folder'
+const MOCK_FOLDER_NAME = '.datadog-ci'
+const MOCK_FOLDER_PATH = path.join(MOCK_CWD, MOCK_FOLDER_NAME)
+const MOCK_FILE_NAME = 'function_config.json'
+const MOCK_FILES = new Set([MOCK_FILE_NAME, 'file1.csv', 'file2.csv', 'file3.csv'])
 const MOCK_ZIP_PATH = 'output.zip'
 const MOCK_REQUIRED_FLAGS = ['lambda', 'flare', '-f', 'func', '-r', 'us-west-2', '-c', '123', '-e', 'test@test.com']
 const MOCK_CONFIG = {
@@ -30,6 +43,7 @@ const MOCK_CONFIG = {
   FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:some-function',
   FunctionName: 'some-function',
 }
+const MOCK_LOG_GROUP = 'mockLogGroup'
 
 // Commons mocks
 jest.mock('../functions/commons', () => ({
@@ -41,6 +55,7 @@ jest.mock('../prompt')
 jest.mock('util')
 
 // File system mocks
+process.cwd = jest.fn().mockReturnValue(MOCK_CWD)
 jest.mock('fs')
 fs.writeFileSync = jest.fn().mockImplementation(() => {})
 fs.readFileSync = jest.fn().mockReturnValue(JSON.stringify(MOCK_CONFIG, undefined, 2))
@@ -51,11 +66,17 @@ const mockReadStream = new stream.Readable({
   },
 })
 fs.createReadStream = jest.fn().mockReturnValue(mockReadStream)
+;(fs.statSync as jest.Mock).mockImplementation((file_path: string) => ({
+  isDirectory: () => file_path === MOCK_FOLDER_PATH || file_path === MOCK_CWD,
+}))
 
 // Zip mocks
 jest.mock('jszip')
-const mockJSZip = new JSZip()
-require('jszip').mockImplementation(() => mockJSZip)
+const mockJSZip = {
+  file: jest.fn(),
+  generateAsync: jest.fn().mockResolvedValue('zip content'),
+}
+;(JSZip as any).mockImplementation(() => mockJSZip)
 
 describe('lambda flare', () => {
   describe('prints correct headers', () => {
@@ -91,7 +112,7 @@ describe('lambda flare', () => {
         context as any
       )
       expect(code).toBe(1)
-      const output = context.stderr.toString()
+      const output = context.stdout.toString()
       expect(output).toMatchSnapshot()
     })
 
@@ -100,7 +121,7 @@ describe('lambda flare', () => {
       const context = createMockContext()
       const code = await cli.run(['lambda', 'flare', '-f', 'func', '-c', '123', '-e', 'test@test.com'], context as any)
       expect(code).toBe(1)
-      const output = context.stderr.toString()
+      const output = context.stdout.toString()
       expect(output).toMatchSnapshot()
     })
 
@@ -144,7 +165,7 @@ describe('lambda flare', () => {
         context as any
       )
       expect(code).toBe(1)
-      const output = context.stderr.toString()
+      const output = context.stdout.toString()
       expect(output).toMatchSnapshot()
     })
 
@@ -181,7 +202,7 @@ describe('lambda flare', () => {
         context as any
       )
       expect(code).toBe(1)
-      const output = context.stderr.toString()
+      const output = context.stdout.toString()
       expect(output).toMatchSnapshot()
     })
 
@@ -190,7 +211,7 @@ describe('lambda flare', () => {
       const context = createMockContext()
       const code = await cli.run(['lambda', 'flare', '-f', 'func', '-r', 'us-west-2', '-c', '123'], context as any)
       expect(code).toBe(1)
-      const output = context.stderr.toString()
+      const output = context.stdout.toString()
       expect(output).toMatchSnapshot()
     })
 
@@ -204,29 +225,228 @@ describe('lambda flare', () => {
     })
   })
 
-  describe('writeFile', () => {
-    const MOCK_DATA = 'mock data'
-    const context = createMockContext() as BaseContext
-    ;(fs.existsSync as jest.Mock).mockReturnValue(false)
+  describe('deleteFolder', () => {
+    it('successfully deletes a folder', async () => {
+      deleteFolder(MOCK_FOLDER_PATH)
 
-    it('successfully writes data to a file with no error', async () => {
-      await writeFile(MOCK_FOLDER_PATH, MOCK_FILE_PATH, MOCK_DATA, context)
-
-      expect(fs.existsSync).toHaveBeenCalledWith(MOCK_FOLDER_PATH)
-      expect(fs.mkdirSync).toHaveBeenCalledWith(MOCK_FOLDER_PATH)
-      expect(fs.writeFileSync).toHaveBeenCalledWith(MOCK_FILE_PATH, MOCK_DATA)
+      expect(fs.rmSync).toHaveBeenCalledWith(MOCK_FOLDER_PATH, {recursive: true, force: true})
     })
 
-    it('throws error when unable to create folder', async () => {
+    it('throws error when unable to delete a folder', async () => {
+      ;(fs.rmSync as jest.Mock).mockImplementation(() => {
+        throw new Error('MOCK ERROR: Unable to delete folder')
+      })
+
+      expect(() => deleteFolder(MOCK_FOLDER_PATH)).toThrowErrorMatchingSnapshot()
+      expect(fs.rmSync).toHaveBeenCalledWith(MOCK_FOLDER_PATH, {recursive: true, force: true})
+      ;(fs.rmSync as jest.Mock).mockRestore()
+    })
+  })
+
+  describe('createDirectories', () => {
+    const MOCK_LOG_PATH = path.join(MOCK_FOLDER_PATH, 'logs')
+    it('successfully creates a root folder', async () => {
+      createDirectories(MOCK_FOLDER_PATH, MOCK_LOG_PATH, false)
+
+      expect(fs.mkdirSync).toHaveBeenCalledWith(MOCK_FOLDER_PATH)
+    })
+
+    it('successfully creates a root and logs folder', async () => {
+      createDirectories(MOCK_FOLDER_PATH, MOCK_LOG_PATH, true)
+
+      expect(fs.mkdirSync).toHaveBeenCalledWith(MOCK_FOLDER_PATH)
+      expect(fs.mkdirSync).toHaveBeenCalledWith(MOCK_LOG_PATH)
+    })
+
+    it('throws error when unable to create a folder', async () => {
       ;(fs.mkdirSync as jest.Mock).mockImplementation(() => {
         throw new Error('MOCK ERROR: Unable to create folder')
       })
 
-      await expect(writeFile(MOCK_FOLDER_PATH, MOCK_FILE_PATH, MOCK_DATA, context)).rejects.toMatchSnapshot()
-
-      expect(fs.existsSync).toHaveBeenCalledWith(MOCK_FOLDER_PATH)
+      expect(() => createDirectories(MOCK_FOLDER_PATH, MOCK_LOG_PATH, false)).toThrowErrorMatchingSnapshot()
       expect(fs.mkdirSync).toHaveBeenCalledWith(MOCK_FOLDER_PATH)
-      ;(fs.mkdirSync as jest.Mock).mockRestore()
+      fs.mkdirSync = jest.fn().mockImplementation(() => {})
+    })
+  })
+
+  describe('getLogStreamNames', () => {
+    it('returns the 3 latest log stream names sorted by last event time', async () => {
+      const mockCwlClient = {
+        send: jest.fn().mockResolvedValue({
+          logStreams: [{logStreamName: 'Stream3'}, {logStreamName: 'Stream2'}, {logStreamName: 'Stream1'}],
+        }),
+      }
+
+      const expectedLogStreams = ['Stream1', 'Stream2', 'Stream3']
+      const logStreams = await getLogStreamNames((mockCwlClient as unknown) as CloudWatchLogsClient, MOCK_LOG_GROUP)
+
+      expect(logStreams).toEqual(expectedLogStreams)
+      expect(mockCwlClient.send).toHaveBeenCalled()
+    })
+
+    it('returns undefined when no log streams are found', async () => {
+      const mockCwlClient = {
+        send: jest.fn().mockResolvedValue({}),
+      }
+
+      const logStreams = await getLogStreamNames((mockCwlClient as unknown) as CloudWatchLogsClient, MOCK_LOG_GROUP)
+
+      expect(logStreams).toBeUndefined()
+      expect(mockCwlClient.send).toHaveBeenCalled()
+    })
+
+    it('throws error when log streams cannot be retrieved', async () => {
+      const mockCwlClient = {
+        send: jest.fn().mockRejectedValue(new Error('Cannot retrieve log streams')),
+      }
+
+      await expect(
+        getLogStreamNames((mockCwlClient as unknown) as CloudWatchLogsClient, MOCK_LOG_GROUP)
+      ).rejects.toThrow('Cannot retrieve log streams')
+      expect(mockCwlClient.send).toHaveBeenCalled()
+    })
+  })
+
+  describe('getLogEvents', () => {
+    const MOCK_LOG_STREAM = 'mockLogStream'
+    it('returns the log events for a log stream', async () => {
+      const mockCwlClient = {
+        send: jest.fn().mockResolvedValue({
+          events: [
+            {timestamp: 123, message: 'Log1'},
+            {timestamp: 456, message: 'Log2'},
+          ],
+        }),
+      }
+
+      const expectedEvents = [
+        {timestamp: 123, message: 'Log1'},
+        {timestamp: 456, message: 'Log2'},
+      ]
+
+      const logEvents = await getLogEvents(
+        (mockCwlClient as unknown) as CloudWatchLogsClient,
+        MOCK_LOG_GROUP,
+        MOCK_LOG_STREAM
+      )
+
+      expect(logEvents).toEqual(expectedEvents)
+      expect(mockCwlClient.send).toHaveBeenCalled()
+    })
+
+    it('returns undefined when no log events are found', async () => {
+      const mockCwlClient = {
+        send: jest.fn().mockResolvedValue({}),
+      }
+
+      const logEvents = await getLogEvents(
+        (mockCwlClient as unknown) as CloudWatchLogsClient,
+        MOCK_LOG_GROUP,
+        MOCK_LOG_STREAM
+      )
+
+      expect(logEvents).toBeUndefined()
+      expect(mockCwlClient.send).toHaveBeenCalled()
+    })
+
+    it('throws error when log events cannot be retrieved', async () => {
+      const mockCwlClient = {
+        send: jest.fn().mockRejectedValue(new Error('Cannot retrieve log events')),
+      }
+
+      await expect(
+        getLogEvents((mockCwlClient as unknown) as CloudWatchLogsClient, MOCK_LOG_GROUP, MOCK_LOG_STREAM)
+      ).rejects.toThrow('Cannot retrieve log events')
+      expect(mockCwlClient.send).toHaveBeenCalled()
+    })
+  })
+
+  describe('gets CloudWatch Logs', () => {
+    process.env = {[CI_API_KEY_ENV_VAR]: mockDatadogApiKey}
+    const FLAGS_WITH_LOGS = [...MOCK_REQUIRED_FLAGS, '--with-logs']
+
+    const mockLogStreamNames = ['Stream1', 'Stream2', 'Stream3']
+    const mockLogEvents = [
+      {timestamp: 123, message: 'Log1'},
+      {timestamp: 456, message: 'Log2'},
+    ]
+
+    beforeEach(() => {
+      jest.spyOn(flareModule, 'getLogStreamNames').mockResolvedValue(mockLogStreamNames)
+      jest.spyOn(flareModule, 'getLogEvents').mockResolvedValue(mockLogEvents)
+    })
+
+    it('gets logs, saves, and sends correctly when --with-logs is included', async () => {
+      const cli = makeCli()
+      const context = createMockContext()
+      const code = await cli.run(FLAGS_WITH_LOGS, context as any)
+      expect(code).toBe(0)
+      const output = context.stdout.toString()
+      expect(output).toMatchSnapshot()
+    })
+
+    it('does not get logs when --with-logs is not included', async () => {
+      const cli = makeCli()
+      const context = createMockContext()
+      const code = await cli.run(MOCK_REQUIRED_FLAGS, context as any)
+      expect(code).toBe(0)
+      const output = context.stdout.toString()
+      expect(output).toMatchSnapshot()
+    })
+
+    it('prints error when getLogStreamNames throws error', async () => {
+      jest.spyOn(flareModule, 'getLogStreamNames').mockImplementation(() => {
+        throw new Error('MOCK ERROR: Unable to get log stream names')
+      })
+      const cli = makeCli()
+      const context = createMockContext()
+      const code = await cli.run(FLAGS_WITH_LOGS, context as any)
+      expect(code).toBe(1)
+      const output = context.stdout.toString()
+      expect(output).toMatchSnapshot()
+    })
+
+    it('warns and skips getting logs when getLogStreamNames returns undefined', async () => {
+      jest.spyOn(flareModule, 'getLogStreamNames').mockResolvedValue(undefined)
+      const cli = makeCli()
+      const context = createMockContext()
+      const code = await cli.run(FLAGS_WITH_LOGS, context as any)
+      expect(code).toBe(0)
+      const output = context.stdout.toString()
+      expect(output).toMatchSnapshot()
+    })
+
+    it('prints error when getLogEvents throws error', async () => {
+      jest.spyOn(flareModule, 'getLogEvents').mockImplementation(() => {
+        throw new Error('MOCK ERROR: Unable to get log events')
+      })
+      const cli = makeCli()
+      const context = createMockContext()
+      const code = await cli.run(FLAGS_WITH_LOGS, context as any)
+      expect(code).toBe(1)
+      const output = context.stdout.toString()
+      expect(output).toMatchSnapshot()
+    })
+
+    it('warns and skips log when getLogEvents returns undefined', async () => {
+      jest.spyOn(flareModule, 'getLogEvents').mockResolvedValue(undefined)
+      const cli = makeCli()
+      const context = createMockContext()
+      const code = await cli.run(FLAGS_WITH_LOGS, context as any)
+      expect(code).toBe(0)
+      const output = context.stdout.toString()
+      expect(output).toMatchSnapshot()
+    })
+  })
+
+  describe('writeFile', () => {
+    const MOCK_DATA = 'mock data'
+    ;(fs.existsSync as jest.Mock).mockReturnValue(false)
+
+    it('successfully writes data to a file with no error', async () => {
+      writeFile(MOCK_FILE_NAME, MOCK_DATA)
+
+      expect(fs.writeFileSync).toHaveBeenCalledWith(MOCK_FILE_NAME, MOCK_DATA)
     })
 
     it('throws error when unable to write data to a file', async () => {
@@ -234,29 +454,81 @@ describe('lambda flare', () => {
         throw new Error('MOCK ERROR: Unable to write file')
       })
 
-      await expect(writeFile(MOCK_FOLDER_PATH, MOCK_FILE_PATH, MOCK_DATA, context)).rejects.toMatchSnapshot()
+      expect(() => writeFile(MOCK_FILE_NAME, MOCK_DATA)).toThrowErrorMatchingSnapshot()
+      expect(fs.writeFileSync).toHaveBeenCalledWith(MOCK_FILE_NAME, MOCK_DATA)
+      fs.writeFileSync = jest.fn().mockImplementation(() => {})
+    })
+  })
 
-      expect(fs.existsSync).toHaveBeenCalledWith(MOCK_FOLDER_PATH)
-      expect(fs.mkdirSync).toHaveBeenCalledWith(MOCK_FOLDER_PATH)
-      expect(fs.writeFileSync).toHaveBeenCalledWith(MOCK_FILE_PATH, MOCK_DATA)
+  describe('convertToCSV', () => {
+    it('returns a CSV string from an array of log events', () => {
+      const mockLogEvents: OutputLogEvent[] = [
+        {timestamp: 123, message: 'Log 1'},
+        {timestamp: 456, message: 'Log 2'},
+      ]
+
+      const expectedCSV = 'timestamp,message\n"123","Log 1"\n"456","Log 2"'
+      expect(convertToCSV(mockLogEvents)).toBe(expectedCSV)
+    })
+
+    it('handles missing timestamp and message in log events', () => {
+      const mockLogEvents: OutputLogEvent[] = [
+        {timestamp: undefined, message: 'Log 1'},
+        {timestamp: 456, message: undefined},
+      ]
+
+      const expectedCSV = 'timestamp,message\n"","Log 1"\n"456",""'
+      expect(convertToCSV(mockLogEvents)).toBe(expectedCSV)
+    })
+
+    it('returns a CSV string with only headers when given an empty array', () => {
+      const mockLogEvents: OutputLogEvent[] = []
+      const expectedCSV = 'timestamp,message'
+      expect(convertToCSV(mockLogEvents)).toBe(expectedCSV)
     })
   })
 
   describe('zipContents', () => {
-    beforeEach(() => {
-      ;(fs.writeFileSync as jest.Mock).mockImplementation(() => {})
-      ;(fs.readFileSync as jest.Mock).mockResolvedValue(JSON.stringify(MOCK_CONFIG, undefined, 2))
-      mockJSZip.file = jest.fn().mockImplementation(() => {})
-      mockJSZip.generateAsync = jest.fn().mockImplementation(() => {})
-    })
+    ;(fs.existsSync as jest.Mock).mockReturnValue(true)
+    ;(fs.readdirSync as jest.Mock).mockImplementation((file_path: string) =>
+      file_path === MOCK_FOLDER_PATH ? Array.from(MOCK_FILES) : []
+    )
 
     it('successfully zips the contents of a file', async () => {
-      await zipContents(MOCK_FILE_PATH, MOCK_ZIP_PATH)
+      await zipContents(MOCK_FOLDER_PATH, MOCK_ZIP_PATH)
 
-      expect(fs.readFileSync).toHaveBeenCalledWith(MOCK_FILE_PATH, 'utf8')
-      expect(mockJSZip.file).toHaveBeenCalled()
+      expect(fs.existsSync).toHaveBeenCalledWith(MOCK_FOLDER_PATH)
+      expect(fs.statSync).toHaveBeenCalledWith(MOCK_FOLDER_PATH)
+      expect(fs.readdirSync).toHaveBeenCalledWith(MOCK_FOLDER_PATH)
+      expect(fs.readFileSync).toHaveBeenCalledTimes(MOCK_FILES.size)
+      expect(mockJSZip.file).toHaveBeenCalledTimes(MOCK_FILES.size)
       expect(mockJSZip.generateAsync).toHaveBeenCalledWith({type: 'nodebuffer'})
-      expect(fs.writeFileSync).toHaveBeenCalled()
+      expect(fs.writeFileSync).toHaveBeenCalledWith(MOCK_ZIP_PATH, 'zip content')
+    })
+
+    it('throws error when path is not found', async () => {
+      ;(fs.existsSync as any).mockReturnValue(false)
+
+      await expect(zipContents(MOCK_FOLDER_PATH, MOCK_ZIP_PATH)).rejects.toMatchSnapshot()
+      expect(fs.existsSync).toHaveBeenCalledWith(MOCK_FOLDER_PATH)
+      expect(fs.statSync).not.toHaveBeenCalled()
+
+      // Reset mock
+      ;(fs.existsSync as any).mockReturnValue(true)
+    })
+
+    it('throws error when path is not a directory', async () => {
+      ;(fs.statSync as any).mockReturnValue({isDirectory: () => false})
+
+      await expect(zipContents(MOCK_FOLDER_PATH, MOCK_ZIP_PATH)).rejects.toMatchSnapshot()
+      expect(fs.existsSync).toHaveBeenCalledWith(MOCK_FOLDER_PATH)
+      expect(fs.statSync).toHaveBeenCalled()
+      expect(fs.writeFileSync).not.toHaveBeenCalled()
+
+      // Reset mock
+      ;(fs.statSync as jest.Mock).mockImplementation((file_path: string) => ({
+        isDirectory: () => file_path === MOCK_FOLDER_PATH || file_path === MOCK_CWD,
+      }))
     })
 
     it('throws error when unable to read file', async () => {
@@ -264,12 +536,15 @@ describe('lambda flare', () => {
         throw new Error('MOCK ERROR: Unable to read file')
       })
 
-      await expect(zipContents(MOCK_FILE_PATH, MOCK_ZIP_PATH)).rejects.toMatchSnapshot()
+      await expect(zipContents(MOCK_FOLDER_PATH, MOCK_ZIP_PATH)).rejects.toMatchSnapshot()
 
-      expect(fs.readFileSync).toHaveBeenCalledWith(MOCK_FILE_PATH, 'utf8')
+      expect(fs.readFileSync).toHaveBeenCalled()
       expect(mockJSZip.file).not.toHaveBeenCalled()
       expect(mockJSZip.generateAsync).not.toHaveBeenCalled()
       expect(fs.writeFileSync).not.toHaveBeenCalled()
+
+      // Reset mock
+      ;(fs.readFileSync as any).mockReturnValue(JSON.stringify(MOCK_CONFIG, undefined, 2))
     })
 
     it('throws error when unable to write file', async () => {
@@ -277,12 +552,15 @@ describe('lambda flare', () => {
         throw new Error('MOCK ERROR: Unable to write file')
       })
 
-      await expect(zipContents(MOCK_FILE_PATH, MOCK_ZIP_PATH)).rejects.toMatchSnapshot()
+      await expect(zipContents(MOCK_FOLDER_PATH, MOCK_ZIP_PATH)).rejects.toMatchSnapshot()
 
-      expect(fs.readFileSync).toHaveBeenCalledWith(MOCK_FILE_PATH, 'utf8')
-      expect(mockJSZip.file).toHaveBeenCalledWith(MOCK_FILE_PATH, expect.anything())
+      expect(fs.readFileSync).toHaveBeenCalled()
+      expect(mockJSZip.file).toHaveBeenCalled()
       expect(mockJSZip.generateAsync).not.toHaveBeenCalled()
       expect(fs.writeFileSync).not.toHaveBeenCalled()
+
+      // Reset mock
+      ;(mockJSZip.file as any).mockImplementation(() => {})
     })
 
     it('throws error when unable to generate zip', async () => {
@@ -290,12 +568,15 @@ describe('lambda flare', () => {
         throw new Error('MOCK ERROR: Unable to generate zip')
       })
 
-      await expect(zipContents(MOCK_FILE_PATH, MOCK_ZIP_PATH)).rejects.toMatchSnapshot()
+      await expect(zipContents(MOCK_FOLDER_PATH, MOCK_ZIP_PATH)).rejects.toMatchSnapshot()
 
-      expect(fs.readFileSync).toHaveBeenCalledWith(MOCK_FILE_PATH, 'utf8')
-      expect(mockJSZip.file).toHaveBeenCalledWith(MOCK_FILE_PATH, expect.anything())
+      expect(fs.readFileSync).toHaveBeenCalledTimes(MOCK_FILES.size)
+      expect(mockJSZip.file).toHaveBeenCalled()
       expect(mockJSZip.generateAsync).toHaveBeenCalledWith({type: 'nodebuffer'})
       expect(fs.writeFileSync).not.toHaveBeenCalled()
+
+      // Reset mock
+      mockJSZip.generateAsync = jest.fn().mockImplementation(() => 'zip content')
     })
 
     it('throws error when unable to save zip', async () => {
@@ -303,12 +584,15 @@ describe('lambda flare', () => {
         throw new Error('MOCK ERROR: Unable to save zip')
       })
 
-      await expect(zipContents(MOCK_FILE_PATH, MOCK_ZIP_PATH)).rejects.toMatchSnapshot()
+      await expect(zipContents(MOCK_FOLDER_PATH, MOCK_ZIP_PATH)).rejects.toMatchSnapshot()
 
-      expect(fs.readFileSync).toHaveBeenCalledWith(MOCK_FILE_PATH, 'utf8')
-      expect(mockJSZip.file).toHaveBeenCalledWith(MOCK_FILE_PATH, expect.anything())
+      expect(fs.readFileSync).toHaveBeenCalledTimes(MOCK_FILES.size)
+      expect(mockJSZip.file).toHaveBeenCalledTimes(MOCK_FILES.size)
       expect(mockJSZip.generateAsync).toHaveBeenCalledWith({type: 'nodebuffer'})
       expect(fs.writeFileSync).toHaveBeenCalled()
+
+      // Reset mock
+      fs.writeFileSync = jest.fn().mockImplementation(() => {})
     })
   })
 
@@ -372,7 +656,7 @@ describe('lambda flare', () => {
       const context = createMockContext()
       const code = await cli.run(MOCK_REQUIRED_FLAGS, context as any)
       expect(code).toBe(1)
-      const output = context.stderr.toString()
+      const output = context.stdout.toString()
       expect(output).toMatchSnapshot()
     })
 
@@ -418,7 +702,7 @@ describe('lambda flare', () => {
       const context = createMockContext()
       const code = await cli.run(MOCK_REQUIRED_FLAGS, context as any)
       expect(code).toBe(1)
-      const output = context.stderr.toString()
+      const output = context.stdout.toString()
       expect(output).toMatchSnapshot()
     })
 
@@ -432,7 +716,7 @@ describe('lambda flare', () => {
       const code = await cli.run(MOCK_REQUIRED_FLAGS, context as any)
       expect(requestAWSCredentials).toHaveBeenCalled()
       expect(code).toBe(1)
-      const output = context.stderr.toString()
+      const output = context.stdout.toString()
       expect(output).toMatchSnapshot()
     })
   })
