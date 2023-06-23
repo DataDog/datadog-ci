@@ -295,7 +295,9 @@ export const getLogEvents = async (cwlClient: CloudWatchLogsClient, logGroupName
     logStreamName,
   })
   try {
-    return (await cwlClient.send(params)).events
+    const logEvents = (await cwlClient.send(params)).events
+
+    return logEvents === undefined || logEvents.length === 0 ? undefined : logEvents
   } catch (err) {
     throw Error(err.message)
   }
