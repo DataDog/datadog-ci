@@ -345,6 +345,7 @@ exports[`lambda flare prints correct headers prints dry-run header 1`] = `
 [Error] No default region specified. [-r,--region]
 [Error] No case ID specified. [-c,--case-id]
 [Error] No email specified. [-e,--email]
+
 "
 `;
 
@@ -355,6 +356,7 @@ exports[`lambda flare prints correct headers prints non-dry-run header 1`] = `
 [Error] No default region specified. [-r,--region]
 [Error] No case ID specified. [-c,--case-id]
 [Error] No email specified. [-e,--email]
+
 "
 `;
 
@@ -486,6 +488,7 @@ exports[`lambda flare validates required flags prints error when no API key in e
 "
 🐶 Generating Lambda flare to send your configuration to Datadog...
 [Error] No Datadog API key specified. Set an API key with the DATADOG_API_KEY environment variable.
+
 "
 `;
 
@@ -493,6 +496,7 @@ exports[`lambda flare validates required flags prints error when no case ID spec
 "
 🐶 Generating Lambda flare to send your configuration to Datadog...
 [Error] No case ID specified. [-c,--case-id]
+
 "
 `;
 
@@ -500,6 +504,7 @@ exports[`lambda flare validates required flags prints error when no email specif
 "
 🐶 Generating Lambda flare to send your configuration to Datadog...
 [Error] No email specified. [-e,--email]
+
 "
 `;
 
@@ -507,6 +512,7 @@ exports[`lambda flare validates required flags prints error when no function spe
 "
 🐶 Generating Lambda flare to send your configuration to Datadog...
 [Error] No function name specified. [-f,--function]
+
 "
 `;
 
@@ -514,6 +520,7 @@ exports[`lambda flare validates required flags prints error when no region speci
 "
 🐶 Generating Lambda flare to send your configuration to Datadog...
 [Error] No default region specified. [-r,--region]
+
 "
 `;
 
