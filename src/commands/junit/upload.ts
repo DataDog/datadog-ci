@@ -303,8 +303,8 @@ export class UploadJUnitXMLCommand extends Command {
     const cliTags = this.tags ? parseTags(this.tags) : {}
 
     return {
-      ...envVarTags,
       ...cliTags,
+      ...envVarTags,
     }
   }
 
@@ -313,8 +313,8 @@ export class UploadJUnitXMLCommand extends Command {
     const cliMetrics = this.metrics ? parseMetrics(this.metrics) : {}
 
     return {
-      ...envVarMetrics,
       ...cliMetrics,
+      ...envVarMetrics,
     }
   }
 
