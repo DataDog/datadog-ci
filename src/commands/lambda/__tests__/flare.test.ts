@@ -245,14 +245,16 @@ describe('lambda flare', () => {
 
   describe('createDirectories', () => {
     const MOCK_LOG_PATH = path.join(MOCK_FOLDER_PATH, 'logs')
+    const mockOutputEvent: OutputLogEvent[] = [{timestamp: 123, message: 'Log 1'}]
+    const mockLogs: [string, OutputLogEvent[]][] = [['log1', mockOutputEvent]]
     it('successfully creates a root folder', async () => {
-      createDirectories(MOCK_FOLDER_PATH, MOCK_LOG_PATH, false)
+      createDirectories(MOCK_FOLDER_PATH, MOCK_LOG_PATH, [])
 
       expect(fs.mkdirSync).toHaveBeenCalledWith(MOCK_FOLDER_PATH)
     })
 
     it('successfully creates a root and logs folder', async () => {
-      createDirectories(MOCK_FOLDER_PATH, MOCK_LOG_PATH, true)
+      createDirectories(MOCK_FOLDER_PATH, MOCK_LOG_PATH, mockLogs)
 
       expect(fs.mkdirSync).toHaveBeenCalledWith(MOCK_FOLDER_PATH)
       expect(fs.mkdirSync).toHaveBeenCalledWith(MOCK_LOG_PATH)
@@ -263,7 +265,7 @@ describe('lambda flare', () => {
         throw new Error('MOCK ERROR: Unable to create folder')
       })
 
-      expect(() => createDirectories(MOCK_FOLDER_PATH, MOCK_LOG_PATH, false)).toThrowErrorMatchingSnapshot()
+      expect(() => createDirectories(MOCK_FOLDER_PATH, MOCK_LOG_PATH, [])).toThrowErrorMatchingSnapshot()
       expect(fs.mkdirSync).toHaveBeenCalledWith(MOCK_FOLDER_PATH)
       fs.mkdirSync = jest.fn().mockImplementation(() => {})
     })

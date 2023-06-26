@@ -284,7 +284,7 @@ exports[`lambda flare gets CloudWatch Logs warns and skips getting logs when get
 }
 
 ☁️ Getting CloudWatch logs...
-[!] No CloudWatch streams were found. Logs will not be retrieved or sent.
+[!] No CloudWatch log streams were found. Logs will not be retrieved or sent.
 
 
 💾 Saving files...

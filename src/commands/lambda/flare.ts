@@ -145,7 +145,9 @@ export class LambdaFlareCommand extends Command {
       }
       if (logStreamNames === undefined) {
         this.context.stdout.write(
-          commonRenderer.renderSoftWarning('No CloudWatch streams were found. Logs will not be retrieved or sent.\n')
+          commonRenderer.renderSoftWarning(
+            'No CloudWatch log streams were found. Logs will not be retrieved or sent.\n'
+          )
         )
       } else {
         this.context.stdout.write(`\n✅ Found log streams:\n• ${logStreamNames.join('\n• ')}\n\n`)
@@ -179,7 +181,7 @@ export class LambdaFlareCommand extends Command {
       if (fs.existsSync(rootFolderPath)) {
         deleteFolder(rootFolderPath)
       }
-      createDirectories(rootFolderPath, logsFolderPath, logs.length > 0)
+      createDirectories(rootFolderPath, logsFolderPath, logs)
 
       // Write files
       const configFilePath = path.join(rootFolderPath, FUNCTION_CONFIG_FILE_NAME)
@@ -240,13 +242,17 @@ export const deleteFolder = (folderPath: string) => {
  * Creates the root folder and the logs sub-folder
  * @param rootFolderPath path to the root folder
  * @param logsFolderPath path to the logs folder
- * @param createLogsFolder whether to create the logs folder
+ * @param logs array of logs
  * @throws Error if the root folder cannot be deleted or folders cannot be created
  */
-export const createDirectories = (rootFolderPath: string, logsFolderPath: string, createLogsFolder: boolean) => {
+export const createDirectories = (
+  rootFolderPath: string,
+  logsFolderPath: string,
+  logs: [string, OutputLogEvent[]][]
+) => {
   try {
     fs.mkdirSync(rootFolderPath)
-    if (createLogsFolder) {
+    if (logs.length > 0) {
       fs.mkdirSync(logsFolderPath)
     }
   } catch (err) {
@@ -262,20 +268,21 @@ export const createDirectories = (rootFolderPath: string, logsFolderPath: string
  * @throws Error if the log streams cannot be retrieved
  */
 export const getLogStreamNames = async (cwlClient: CloudWatchLogsClient, logGroupName: string) => {
-  const getLogStreamsCommand = new DescribeLogStreamsCommand({
+  const command = new DescribeLogStreamsCommand({
     logGroupName,
     limit: 3,
     descending: true,
     orderBy: 'LastEventTime',
   })
-  const logStreams = (await cwlClient.send(getLogStreamsCommand)).logStreams
+  const response = await cwlClient.send(command)
+  const logStreams = response.logStreams
   if (logStreams === undefined) {
     return undefined
   }
-  const output: string[] = logStreams
-    .filter((logStream) => logStream !== undefined)
-    .map((logStream) => logStream.logStreamName)
-    .filter((logStreamName): logStreamName is string => logStreamName !== undefined && logStreamName.length > 0)
+  const logStreamNames = logStreams.map((logStream) => logStream.logStreamName)
+  const output = logStreamNames.filter(
+    (logStreamName): logStreamName is string => logStreamName !== undefined && logStreamName.length > 0
+  )
 
   return output.length === 0 ? undefined : output.reverse()
   // Reverse array so the oldest log is created first, so Support Staff can sort by creation time
@@ -290,12 +297,14 @@ export const getLogStreamNames = async (cwlClient: CloudWatchLogsClient, logGrou
  * @throws Error if the log events cannot be retrieved
  */
 export const getLogEvents = async (cwlClient: CloudWatchLogsClient, logGroupName: string, logStreamName: string) => {
-  const params = new GetLogEventsCommand({
+  const command = new GetLogEventsCommand({
     logGroupName,
     logStreamName,
   })
+
   try {
-    const logEvents = (await cwlClient.send(params)).events
+    const response = await cwlClient.send(command)
+    const logEvents = response.events
 
     return logEvents === undefined || logEvents.length === 0 ? undefined : logEvents
   } catch (err) {
