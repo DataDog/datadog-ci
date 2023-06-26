@@ -128,6 +128,10 @@ exports[`lambda flare createDirectories throws error when unable to create a fol
 
 exports[`lambda flare deleteFolder throws error when unable to delete a folder 1`] = `"Failed to delete files located at mock-folder/.datadog-ci: MOCK ERROR: Unable to delete folder"`;
 
+exports[`lambda flare getAllLogs throws an error when unable to get log events 1`] = `[Error: Unable to get log events for stream streamName: Error getting log events]`;
+
+exports[`lambda flare getAllLogs throws an error when unable to get log streams 1`] = `[Error: Unable to get log streams: Error getting log streams]`;
+
 exports[`lambda flare gets CloudWatch Logs does not get logs when --with-logs is not included 1`] = `
 "
 🐶 Generating Lambda flare to send your configuration to Datadog...

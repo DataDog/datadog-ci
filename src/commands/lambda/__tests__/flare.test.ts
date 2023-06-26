@@ -13,6 +13,7 @@ import {
   convertToCSV,
   createDirectories,
   deleteFolder,
+  getAllLogs,
   getLogEvents,
   getLogStreamNames,
   writeFile,
@@ -359,6 +360,38 @@ describe('lambda flare', () => {
         getLogEvents((mockCwlClient as unknown) as CloudWatchLogsClient, MOCK_LOG_GROUP, MOCK_LOG_STREAM)
       ).rejects.toThrow('Cannot retrieve log events')
       expect(mockCwlClient.send).toHaveBeenCalled()
+    })
+  })
+
+  describe('getAllLogs', () => {
+    const region = 'us-east-1'
+    const functionName = 'testFunction'
+    const mockStreamName = 'streamName'
+
+    it('returns a map of log streams and their events', async () => {
+      const mockLogs = [
+        {timestamp: 123, message: 'log message 1'},
+        {timestamp: 124, message: 'log message 2'},
+      ] as OutputLogEvent[]
+
+      jest.spyOn(flareModule, 'getLogStreamNames').mockResolvedValue([mockStreamName])
+      jest.spyOn(flareModule, 'getLogEvents').mockResolvedValue(mockLogs)
+
+      const result = await getAllLogs(region, functionName)
+      expect(result.get(mockStreamName)).toEqual(mockLogs)
+    })
+
+    it('throws an error when unable to get log streams', async () => {
+      jest.spyOn(flareModule, 'getLogStreamNames').mockRejectedValueOnce(new Error('Error getting log streams'))
+
+      await expect(getAllLogs(region, functionName)).rejects.toMatchSnapshot()
+    })
+
+    it('throws an error when unable to get log events', async () => {
+      jest.spyOn(flareModule, 'getLogStreamNames').mockResolvedValueOnce([mockStreamName])
+      jest.spyOn(flareModule, 'getLogEvents').mockRejectedValueOnce(new Error('Error getting log events'))
+
+      await expect(getAllLogs(region, functionName)).rejects.toMatchSnapshot()
     })
   })
 
