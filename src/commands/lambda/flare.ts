@@ -1,4 +1,3 @@
-import assert from 'assert'
 import * as fs from 'fs'
 import * as path from 'path'
 import util from 'util'
@@ -49,51 +48,56 @@ export class LambdaFlareCommand extends Command {
     this.context.stdout.write(flareRenderer.renderLambdaFlareHeader(this.isDryRun))
 
     // Validate function name
-    const errorMessages = []
     if (this.functionName === undefined) {
-      errorMessages.push(commonRenderer.renderError('No function name specified. [-f,--function]'))
+      this.context.stderr.write(commonRenderer.renderError('No function name specified. [-f,--function]'))
+
+      return 1
     }
 
     // Validate region
-    const region = getRegion(this.functionName ?? '') ?? this.region ?? process.env[AWS_DEFAULT_REGION_ENV_VAR]
+    let errorFound = false
+    const region = getRegion(this.functionName) ?? this.region ?? process.env[AWS_DEFAULT_REGION_ENV_VAR]
     if (region === undefined) {
-      errorMessages.push(commonRenderer.renderNoDefaultRegionSpecifiedError())
+      this.context.stderr.write(commonRenderer.renderNoDefaultRegionSpecifiedError())
+      errorFound = true
     }
 
     // Validate Datadog API key
     this.apiKey = process.env[CI_API_KEY_ENV_VAR] ?? process.env[API_KEY_ENV_VAR]
     if (this.apiKey === undefined) {
-      errorMessages.push(
+      this.context.stderr.write(
         commonRenderer.renderError(
           'No Datadog API key specified. Set an API key with the DATADOG_API_KEY environment variable.'
         )
       )
+      errorFound = true
     }
 
     // Validate case ID
     if (this.caseId === undefined) {
-      errorMessages.push(commonRenderer.renderError('No case ID specified. [-c,--case-id]'))
+      this.context.stderr.write(commonRenderer.renderError('No case ID specified. [-c,--case-id]'))
+      errorFound = true
     }
 
     // Validate email
     if (this.email === undefined) {
-      errorMessages.push(commonRenderer.renderError('No email specified. [-e,--email]'))
+      this.context.stderr.write(commonRenderer.renderError('No email specified. [-e,--email]'))
+      errorFound = true
     }
 
     // Exit if there are errors
-    if (errorMessages.length > 0) {
-      this.context.stderr.write(errorMessages.join('') + '\n')
-
+    if (errorFound) {
       return 1
     }
-    assert(this.functionName !== undefined)
 
     // Get AWS credentials
     this.context.stdout.write('\n🔑 Getting AWS credentials...\n')
     try {
       this.credentials = await getAWSCredentials()
     } catch (err) {
-      this.context.stderr.write(commonRenderer.renderError(err.message))
+      if (err instanceof Error) {
+        this.context.stderr.write(commonRenderer.renderError(err.message))
+      }
 
       return 1
     }
@@ -102,7 +106,9 @@ export class LambdaFlareCommand extends Command {
       try {
         await requestAWSCredentials()
       } catch (err) {
-        this.context.stderr.write(commonRenderer.renderError(err.message))
+        if (err instanceof Error) {
+          this.context.stderr.write(commonRenderer.renderError(err.message))
+        }
 
         return 1
       }
@@ -119,9 +125,11 @@ export class LambdaFlareCommand extends Command {
     try {
       config = await getLambdaFunctionConfig(lambdaClient, this.functionName)
     } catch (err) {
-      this.context.stderr.write(
-        commonRenderer.renderError(`Unable to get Lambda function configuration: ${err.message}`)
-      )
+      if (err instanceof Error) {
+        this.context.stderr.write(
+          commonRenderer.renderError(`Unable to get Lambda function configuration: ${err.message}`)
+        )
+      }
 
       return 1
     }
@@ -129,53 +137,43 @@ export class LambdaFlareCommand extends Command {
     this.context.stdout.write(`\n${configStr}\n`)
 
     // Get CloudWatch logs
-    const logs: [string, OutputLogEvent[]][] = []
+    let logs: Map<string, OutputLogEvent[]> = new Map()
     if (this.withLogs) {
       this.context.stdout.write('\n☁️ Getting CloudWatch logs...\n')
-      const cwlClient = new CloudWatchLogsClient({region})
-      const functionName = this.functionName.startsWith('arn:aws') ? this.functionName.split(':')[6] : this.functionName
-      const logGroupName = `/aws/lambda/${functionName}`
-      let logStreamNames
       try {
-        logStreamNames = await getLogStreamNames(cwlClient, logGroupName)
+        logs = await getAllLogs(region!, this.functionName)
       } catch (err) {
-        this.context.stderr.write(commonRenderer.renderError(`Unable to get log streams: ${err.message}`))
+        if (err instanceof Error) {
+          this.context.stderr.write(commonRenderer.renderError(err.message))
+        }
 
         return 1
       }
-      if (logStreamNames === undefined) {
-        this.context.stdout.write(
-          commonRenderer.renderSoftWarning(
-            'No CloudWatch log streams were found. Logs will not be retrieved or sent.\n'
-          )
-        )
-      } else {
-        this.context.stdout.write(`\n✅ Found log streams:\n• ${logStreamNames.join('\n• ')}\n\n`)
-        for (const logStreamName of logStreamNames) {
-          let logEvents
-          try {
-            logEvents = await getLogEvents(cwlClient, logGroupName, logStreamName)
-          } catch (err) {
-            this.context.stderr.write(
-              commonRenderer.renderError(`Unable to get log events for stream ${logStreamName}: ${err.message}`)
-            )
-
-            return 1
-          }
-          if (logEvents === undefined) {
-            this.context.stdout.write(
-              commonRenderer.renderSoftWarning(`No CloudWatch logs found in stream ${logStreamName}. Skipping...`)
-            )
-            continue
-          }
-          logs.push([logStreamName, logEvents])
-        }
-      }
     }
 
-    this.context.stdout.write('\n💾 Saving files...\n')
     try {
+      // CloudWatch messages
+      if (this.withLogs) {
+        if (logs.size === 0) {
+          this.context.stdout.write(
+            commonRenderer.renderSoftWarning(
+              'No CloudWatch log streams were found. Logs will not be retrieved or sent.'
+            )
+          )
+        } else {
+          this.context.stdout.write('\n✅ Found log streams:\n')
+          for (const [logStreamName, logEvents] of logs) {
+            const warningMessage =
+              logEvents && logEvents.length > 0
+                ? '\n'
+                : ' - ' + commonRenderer.renderSoftWarning('No log events found in this stream')
+            this.context.stdout.write(`• ${logStreamName}${warningMessage}`)
+          }
+        }
+      }
+
       // Create folders
+      this.context.stdout.write('\n💾 Saving files...\n')
       const rootFolderPath = path.join(process.cwd(), FLARE_OUTPUT_DIRECTORY)
       const logsFolderPath = path.join(rootFolderPath, LOGS_DIRECTORY)
       if (fs.existsSync(rootFolderPath)) {
@@ -186,14 +184,18 @@ export class LambdaFlareCommand extends Command {
       // Write files
       const configFilePath = path.join(rootFolderPath, FUNCTION_CONFIG_FILE_NAME)
       writeFile(configFilePath, JSON.stringify(config, undefined, 2))
-      this.context.stdout.write(`${logs.length > 0 ? '• ' : ''}Saved function config to ${configFilePath}\n`)
+      this.context.stdout.write(`• Saved function config to ${configFilePath}\n`)
       for (const [logStreamName, logEvents] of logs) {
+        if (logEvents.length === 0) {
+          continue
+        }
         const logFilePath = path.join(logsFolderPath, `${logStreamName.split('/').join('-')}.csv`)
         const data = convertToCSV(logEvents)
         writeFile(logFilePath, data)
         this.context.stdout.write(`• Saved logs to ${logFilePath}\n`)
-        // Sleep for 1 millisecond so OS can sort files by creation time
-        await new Promise((resolve) => setTimeout(resolve, 1))
+        // Sleep for 1 millisecond so creation times are different
+        // This allows the logs to be sorted by creation time by the support team
+        await sleep(1)
       }
 
       // Exit if dry run
@@ -216,7 +218,9 @@ export class LambdaFlareCommand extends Command {
       // Delete contents
       deleteFolder(rootFolderPath)
     } catch (err) {
-      this.context.stderr.write(commonRenderer.renderError(err.message))
+      if (err instanceof Error) {
+        this.context.stderr.write(commonRenderer.renderError(err.message))
+      }
 
       return 1
     }
@@ -234,7 +238,9 @@ export const deleteFolder = (folderPath: string) => {
   try {
     fs.rmSync(folderPath, {recursive: true, force: true})
   } catch (err) {
-    throw Error(`Failed to delete files located at ${folderPath}: ${err.message}`)
+    if (err instanceof Error) {
+      throw Error(`Failed to delete files located at ${folderPath}: ${err.message}`)
+    }
   }
 }
 
@@ -248,15 +254,17 @@ export const deleteFolder = (folderPath: string) => {
 export const createDirectories = (
   rootFolderPath: string,
   logsFolderPath: string,
-  logs: [string, OutputLogEvent[]][]
+  logs: Map<string, OutputLogEvent[]>
 ) => {
   try {
     fs.mkdirSync(rootFolderPath)
-    if (logs.length > 0) {
+    if (logs.size > 0) {
       fs.mkdirSync(logsFolderPath)
     }
   } catch (err) {
-    throw Error(`Unable to create directories: ${err.message}`)
+    if (err instanceof Error) {
+      throw Error(`Unable to create directories: ${err.message}`)
+    }
   }
 }
 
@@ -264,7 +272,7 @@ export const createDirectories = (
  * Gets the 3 latest log stream names, sorted by last event time
  * @param cwlClient CloudWatch Logs client
  * @param logGroupName name of the log group
- * @returns an array of the last 3 log stream names or undefined if no log streams are found
+ * @returns an array of the last 3 log stream names or an empty array if no log streams are found
  * @throws Error if the log streams cannot be retrieved
  */
 export const getLogStreamNames = async (cwlClient: CloudWatchLogsClient, logGroupName: string) => {
@@ -276,16 +284,20 @@ export const getLogStreamNames = async (cwlClient: CloudWatchLogsClient, logGrou
   })
   const response = await cwlClient.send(command)
   const logStreams = response.logStreams
-  if (logStreams === undefined) {
-    return undefined
+  if (logStreams === undefined || logStreams.length === 0) {
+    return []
   }
-  const logStreamNames = logStreams.map((logStream) => logStream.logStreamName)
-  const output = logStreamNames.filter(
-    (logStreamName): logStreamName is string => logStreamName !== undefined && logStreamName.length > 0
-  )
 
-  return output.length === 0 ? undefined : output.reverse()
+  const output: string[] = []
+  for (const logStream of logStreams) {
+    const logStreamName = logStream.logStreamName
+    if (logStreamName) {
+      output.push(logStreamName)
+    }
+  }
+
   // Reverse array so the oldest log is created first, so Support Staff can sort by creation time
+  return output.reverse()
 }
 
 /**
@@ -293,7 +305,7 @@ export const getLogStreamNames = async (cwlClient: CloudWatchLogsClient, logGrou
  * @param cwlClient
  * @param logGroupName
  * @param logStreamName
- * @returns the log events or undefined if no log events are found
+ * @returns the log events or an empty array if no log events are found
  * @throws Error if the log events cannot be retrieved
  */
 export const getLogEvents = async (cwlClient: CloudWatchLogsClient, logGroupName: string, logStreamName: string) => {
@@ -302,14 +314,49 @@ export const getLogEvents = async (cwlClient: CloudWatchLogsClient, logGroupName
     logStreamName,
   })
 
-  try {
-    const response = await cwlClient.send(command)
-    const logEvents = response.events
+  const response = await cwlClient.send(command)
+  const logEvents = response.events
 
-    return logEvents === undefined || logEvents.length === 0 ? undefined : logEvents
-  } catch (err) {
-    throw Error(err.message)
+  if (logEvents === undefined) {
+    return []
   }
+
+  return logEvents
+}
+
+/**
+ * Gets all CloudWatch logs for a function
+ * @param region
+ * @param functionName
+ * @returns a map of log stream names to log events or an empty map if no logs are found
+ */
+export const getAllLogs = async (region: string, functionName: string) => {
+  const logs = new Map<string, OutputLogEvent[]>()
+  const cwlClient = new CloudWatchLogsClient({region})
+  if (functionName.startsWith('arn:aws')) {
+    functionName = functionName.split(':')[6]
+  }
+  const logGroupName = `/aws/lambda/${functionName}`
+  let logStreamNames: string[]
+  try {
+    logStreamNames = await getLogStreamNames(cwlClient, logGroupName)
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : ''
+    throw new Error(`Unable to get log streams: ${msg}`)
+  }
+
+  for (const logStreamName of logStreamNames) {
+    let logEvents
+    try {
+      logEvents = await getLogEvents(cwlClient, logGroupName, logStreamName)
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : ''
+      throw new Error(`Unable to get log events for stream ${logStreamName}: ${msg}`)
+    }
+    logs.set(logStreamName, logEvents)
+  }
+
+  return logs
 }
 
 /**
@@ -322,7 +369,9 @@ export const writeFile = (filePath: string, data: string) => {
   try {
     fs.writeFileSync(filePath, data)
   } catch (err) {
-    throw Error(`Unable to create function configuration file: ${err.message}`)
+    if (err instanceof Error) {
+      throw Error(`Unable to create function configuration file: ${err.message}`)
+    }
   }
 }
 
@@ -340,6 +389,13 @@ export const convertToCSV = (logEvents: OutputLogEvent[]) => {
   }
 
   return rows.join('\n')
+}
+
+/**
+ * @param ms number of milliseconds to sleep
+ */
+export const sleep = async (ms: number) => {
+  await new Promise((resolve) => setTimeout(resolve, ms))
 }
 
 /**
@@ -380,7 +436,9 @@ export const zipContents = async (rootFolderPath: string, zipPath: string) => {
     const zipContent = await zip.generateAsync({type: 'nodebuffer'})
     fs.writeFileSync(zipPath, zipContent)
   } catch (err) {
-    throw Error(`Unable to zip the flare files: ${err.message}`)
+    if (err instanceof Error) {
+      throw Error(`Unable to zip the flare files: ${err.message}`)
+    }
   }
 }
 

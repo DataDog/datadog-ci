@@ -44,6 +44,8 @@ const MOCK_CONFIG = {
   FunctionName: 'some-function',
 }
 const MOCK_LOG_GROUP = 'mockLogGroup'
+const MOCK_OUTPUT_EVENT: OutputLogEvent[] = [{timestamp: 123, message: 'Log 1'}]
+const MOCK_LOGS = new Map().set('log1', MOCK_OUTPUT_EVENT)
 
 // Commons mocks
 jest.mock('../functions/commons', () => ({
@@ -245,16 +247,14 @@ describe('lambda flare', () => {
 
   describe('createDirectories', () => {
     const MOCK_LOG_PATH = path.join(MOCK_FOLDER_PATH, 'logs')
-    const mockOutputEvent: OutputLogEvent[] = [{timestamp: 123, message: 'Log 1'}]
-    const mockLogs: [string, OutputLogEvent[]][] = [['log1', mockOutputEvent]]
     it('successfully creates a root folder', async () => {
-      createDirectories(MOCK_FOLDER_PATH, MOCK_LOG_PATH, [])
+      createDirectories(MOCK_FOLDER_PATH, MOCK_LOG_PATH, new Map())
 
       expect(fs.mkdirSync).toHaveBeenCalledWith(MOCK_FOLDER_PATH)
     })
 
     it('successfully creates a root and logs folder', async () => {
-      createDirectories(MOCK_FOLDER_PATH, MOCK_LOG_PATH, mockLogs)
+      createDirectories(MOCK_FOLDER_PATH, MOCK_LOG_PATH, MOCK_LOGS)
 
       expect(fs.mkdirSync).toHaveBeenCalledWith(MOCK_FOLDER_PATH)
       expect(fs.mkdirSync).toHaveBeenCalledWith(MOCK_LOG_PATH)
@@ -265,7 +265,7 @@ describe('lambda flare', () => {
         throw new Error('MOCK ERROR: Unable to create folder')
       })
 
-      expect(() => createDirectories(MOCK_FOLDER_PATH, MOCK_LOG_PATH, [])).toThrowErrorMatchingSnapshot()
+      expect(() => createDirectories(MOCK_FOLDER_PATH, MOCK_LOG_PATH, new Map())).toThrowErrorMatchingSnapshot()
       expect(fs.mkdirSync).toHaveBeenCalledWith(MOCK_FOLDER_PATH)
       fs.mkdirSync = jest.fn().mockImplementation(() => {})
     })
@@ -293,7 +293,7 @@ describe('lambda flare', () => {
 
       const logStreams = await getLogStreamNames((mockCwlClient as unknown) as CloudWatchLogsClient, MOCK_LOG_GROUP)
 
-      expect(logStreams).toBeUndefined()
+      expect(logStreams).toEqual([])
       expect(mockCwlClient.send).toHaveBeenCalled()
     })
 
@@ -347,7 +347,7 @@ describe('lambda flare', () => {
         MOCK_LOG_STREAM
       )
 
-      expect(logEvents).toBeUndefined()
+      expect(logEvents).toEqual([])
       expect(mockCwlClient.send).toHaveBeenCalled()
     })
 
@@ -355,7 +355,6 @@ describe('lambda flare', () => {
       const mockCwlClient = {
         send: jest.fn().mockRejectedValue(new Error('Cannot retrieve log events')),
       }
-
       await expect(
         getLogEvents((mockCwlClient as unknown) as CloudWatchLogsClient, MOCK_LOG_GROUP, MOCK_LOG_STREAM)
       ).rejects.toThrow('Cannot retrieve log events')
@@ -408,8 +407,8 @@ describe('lambda flare', () => {
       expect(output).toMatchSnapshot()
     })
 
-    it('warns and skips getting logs when getLogStreamNames returns undefined', async () => {
-      jest.spyOn(flareModule, 'getLogStreamNames').mockResolvedValue(undefined)
+    it('warns and skips getting logs when getLogStreamNames returns []', async () => {
+      jest.spyOn(flareModule, 'getLogStreamNames').mockResolvedValue([])
       const cli = makeCli()
       const context = createMockContext()
       const code = await cli.run(FLAGS_WITH_LOGS, context as any)
@@ -430,8 +429,8 @@ describe('lambda flare', () => {
       expect(output).toMatchSnapshot()
     })
 
-    it('warns and skips log when getLogEvents returns undefined', async () => {
-      jest.spyOn(flareModule, 'getLogEvents').mockResolvedValue(undefined)
+    it('warns and skips log when getLogEvents returns []', async () => {
+      jest.spyOn(flareModule, 'getLogEvents').mockResolvedValue([])
       const cli = makeCli()
       const context = createMockContext()
       const code = await cli.run(FLAGS_WITH_LOGS, context as any)
