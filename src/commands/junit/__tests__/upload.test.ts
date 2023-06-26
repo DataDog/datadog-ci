@@ -257,7 +257,7 @@ describe('upload', () => {
     test('should parse tags argument', async () => {
       const context = createMockContext()
       const command = new UploadJUnitXMLCommand()
-      const spanTags: SpanTags = await command['getCustomTags'].call({
+      const spanTags: SpanTags = command['getCustomTags'].call({
         config: {},
         context,
         tags: ['key1:value1', 'key2:value2'],
@@ -271,7 +271,7 @@ describe('upload', () => {
     test('should parse metrics argument', async () => {
       const context = createMockContext()
       const command = new UploadJUnitXMLCommand()
-      const spanTags: SpanTags = await command['getCustomMetrics'].call({
+      const spanTags: SpanTags = command['getCustomMetrics'].call({
         config: {},
         context,
         metrics: ['key1:10', 'key2:20'],
@@ -285,7 +285,7 @@ describe('upload', () => {
     test('should parse report tags argument', async () => {
       const context = createMockContext()
       const command = new UploadJUnitXMLCommand()
-      const spanTags: SpanTags = await command['getReportTags'].call({
+      const spanTags: SpanTags = command['getReportTags'].call({
         config: {},
         context,
         reportTags: ['key1:value1', 'key2:value2'],
@@ -299,7 +299,7 @@ describe('upload', () => {
     test('should parse report metrics argument', async () => {
       const context = createMockContext()
       const command = new UploadJUnitXMLCommand()
-      const spanTags: SpanTags = await command['getReportMetrics'].call({
+      const spanTags: SpanTags = command['getReportMetrics'].call({
         config: {},
         context,
         reportMetrics: ['key1:20', 'key2:30'],

@@ -301,18 +301,20 @@ export class UploadJUnitXMLCommand extends Command {
   private getCustomTags(): Record<string, string> {
     const envVarTags = this.config.envVarTags ? parseTags(this.config.envVarTags.split(',')) : {}
     const cliTags = this.tags ? parseTags(this.tags) : {}
+
     return {
       ...envVarTags,
-      ...cliTags
+      ...cliTags,
     }
   }
 
   private getCustomMetrics(): Record<string, number> {
     const envVarMetrics = this.config.envVarMetrics ? parseMetrics(this.config.envVarMetrics.split(',')) : {}
     const cliMetrics = this.metrics ? parseMetrics(this.metrics) : {}
+
     return {
       ...envVarMetrics,
-      ...cliMetrics
+      ...cliMetrics,
     }
   }
 
