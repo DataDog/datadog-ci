@@ -85,7 +85,6 @@ export class LambdaFlareCommand extends Command {
       errorFound = true
     }
 
-    // Exit if there are errors
     if (errorFound) {
       return 1
     }
