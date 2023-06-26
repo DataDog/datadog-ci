@@ -173,10 +173,10 @@ export class UploadJUnitXMLCommand extends Command {
     this.logger.info(renderCommandInfo(this.basePaths, this.service, this.maxConcurrency, this.dryRun))
 
     const spanTags = await this.getSpanTags()
-    const customTags = await this.getCustomTags()
-    const customMetrics = await this.getCustomMetrics()
-    const reportTags = await this.getReportTags()
-    const reportMetrics = await this.getReportMetrics()
+    const customTags = this.getCustomTags()
+    const customMetrics = this.getCustomMetrics()
+    const reportTags = this.getReportTags()
+    const reportMetrics = this.getReportMetrics()
     const payloads = await this.getMatchingJUnitXMLFiles(spanTags, customTags, customMetrics, reportTags, reportMetrics)
     const upload = (p: Payload) => this.uploadJUnitXML(api, p)
 
@@ -289,33 +289,38 @@ export class UploadJUnitXMLCommand extends Command {
     const gitSpanTags = await getGitMetadata()
     const userGitSpanTags = getUserGitSpanTags()
 
-    const envVarTags = this.config.envVarTags ? parseTags(this.config.envVarTags.split(',')) : {}
-    const envVarMetrics = this.config.envVarMetrics ? parseMetrics(this.config.envVarMetrics.split(',')) : {}
-
     return {
       ...gitSpanTags,
       ...ciSpanTags,
       ...userGitSpanTags,
-      ...envVarTags,
-      ...envVarMetrics,
       ...(this.config.env ? {env: this.config.env} : {}),
       service: this.service!,
     }
   }
 
-  private async getCustomTags(): Promise<Record<string, string>> {
-    return this.tags ? parseTags(this.tags) : {}
+  private getCustomTags(): Record<string, string> {
+    const envVarTags = this.config.envVarTags ? parseTags(this.config.envVarTags.split(',')) : {}
+    const cliTags = this.tags ? parseTags(this.tags) : {}
+    return {
+      ...envVarTags,
+      ...cliTags
+    }
   }
 
-  private async getCustomMetrics(): Promise<Record<string, number>> {
-    return this.metrics ? parseMetrics(this.metrics) : {}
+  private getCustomMetrics(): Record<string, number> {
+    const envVarMetrics = this.config.envVarMetrics ? parseMetrics(this.config.envVarMetrics.split(',')) : {}
+    const cliMetrics = this.metrics ? parseMetrics(this.metrics) : {}
+    return {
+      ...envVarMetrics,
+      ...cliMetrics
+    }
   }
 
-  private async getReportTags(): Promise<Record<string, string>> {
+  private getReportTags(): Record<string, string> {
     return this.reportTags ? parseTags(this.reportTags) : {}
   }
 
-  private async getReportMetrics(): Promise<Record<string, number>> {
+  private getReportMetrics(): Record<string, number> {
     return this.reportMetrics ? parseMetrics(this.reportMetrics) : {}
   }
 
