@@ -45,7 +45,7 @@ describe('upload', () => {
       command.context = {stdout: {write}} as any
 
       expect(command['getApiHelper'].bind(command)).toThrow('API key is missing')
-      expect(write.mock.calls[0][0]).toContain('DATADOG_API_KEY')
+      expect(write.mock.calls[0][0]).toContain('DD_API_KEY')
     })
   })
   describe('getMatchingJUnitXMLFiles', () => {
@@ -287,7 +287,7 @@ describe('execute', () => {
   const runCLI = async (extraArgs: string[]) => {
     const cli = makeCli()
     const context = createMockContext() as any
-    process.env = {DATADOG_API_KEY: 'PLACEHOLDER'}
+    process.env = {DD_API_KEY: 'PLACEHOLDER'}
     const code = await cli.run(
       ['junit', 'upload', '--service', 'test-service', '--dry-run', '--logs', ...extraArgs],
       context
