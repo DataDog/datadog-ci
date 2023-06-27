@@ -251,7 +251,7 @@ describe('upload', () => {
       process.env.DD_TAGS = 'key1:https://google.com,key2:value2'
       const context = createMockContext()
       const command = new UploadJUnitXMLCommand()
-      const spanTags: SpanTags = await command['getCustomTags'].call({
+      const spanTags: SpanTags = command['getCustomTags'].call({
         config: {
           envVarTags: process.env.DD_TAGS,
         },
@@ -280,7 +280,7 @@ describe('upload', () => {
       process.env.DD_METRICS = 'key1:321,key2:123,key3:321.1,key4:abc,key5:-12.1'
       const context = createMockContext()
       const command = new UploadJUnitXMLCommand()
-      const spanTags: SpanTags = await command['getCustomMetrics'].call({
+      const spanTags: SpanTags = command['getCustomMetrics'].call({
         config: {
           envVarMetrics: process.env.DD_METRICS,
         },
