@@ -340,9 +340,11 @@ export const waitForResults = async (
   trigger: Trigger,
   tests: Test[],
   options: {
+    datadogSite: string
     failOnCriticalErrors?: boolean
     failOnTimeout?: boolean
     maxPollingTimeout: number
+    subdomain: string
   },
   reporter: MainReporter,
   tunnel?: Tunnel
@@ -354,6 +356,8 @@ export const waitForResults = async (
       .then(() => (isTunnelConnected = false))
       .catch(() => (isTunnelConnected = false))
   }
+
+  reporter.testsWait(tests, getAppBaseURL(options), trigger.batch_id)
 
   const {batch, hasExceededMaxPollingDate} = await waitForBatchToFinish(
     api,
@@ -481,10 +485,10 @@ export const getReporter = (reporters: Reporter[]): MainReporter => ({
       }
     }
   },
-  testsWait: (tests) => {
+  testsWait: (tests, baseUrl, batchId) => {
     for (const reporter of reporters) {
       if (typeof reporter.testsWait === 'function') {
-        reporter.testsWait(tests)
+        reporter.testsWait(tests, baseUrl, batchId)
       }
     }
   },
@@ -641,10 +645,6 @@ export const getTestsToTrigger = async (
       'TOO_MANY_TESTS_TO_TRIGGER',
       `Cannot trigger more than ${MAX_TESTS_TO_TRIGGER} tests (received ${triggerConfigs.length})`
     )
-  }
-
-  if (waitedTests.length > 0) {
-    reporter.testsWait(waitedTests)
   }
 
   return {tests: waitedTests, overriddenTestsToTrigger, initialSummary}

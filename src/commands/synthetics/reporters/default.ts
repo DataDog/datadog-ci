@@ -363,13 +363,16 @@ export class DefaultReporter implements MainReporter {
     this.write(lines.join('\n'))
   }
 
-  public testsWait(tests: Test[]) {
+  public testsWait(tests: Test[], baseUrl: string, batchId: string) {
     const testsList = tests.map((t) => t.public_id)
     if (testsList.length > 10) {
       testsList.splice(10)
       testsList.push('…')
     }
     const testsDisplay = chalk.gray(`(${testsList.join(', ')})`)
+
+    const batchUrl = getBatchUrl(baseUrl, batchId)
+    this.write(`View pending summary in Datadog: ${chalk.dim.cyan(batchUrl)}\n\n`)
 
     this.testWaitSpinner = ora({
       stream: this.context.stdout,

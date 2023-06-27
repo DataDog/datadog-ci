@@ -150,8 +150,7 @@ export const executeTests = async (
       trigger,
       tests,
       {
-        failOnCriticalErrors: config.failOnCriticalErrors,
-        failOnTimeout: config.failOnTimeout,
+        ...config,
         maxPollingTimeout,
       },
       reporter,
