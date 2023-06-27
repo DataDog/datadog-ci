@@ -161,13 +161,14 @@ export class LambdaFlareCommand extends Command {
           )
         } else {
           this.context.stdout.write('\n✅ Found log streams:\n')
-          for (const [logStreamName, logEvents] of logs) {
-            const warningMessage =
-              logEvents && logEvents.length > 0
-                ? '\n'
-                : ' - ' + commonRenderer.renderSoftWarning('No log events found in this stream')
-            this.context.stdout.write(`• ${logStreamName}${warningMessage}`)
+        }
+
+        for (const [logStreamName, logEvents] of logs) {
+          let warningMessage = '\n'
+          if (logEvents.length === 0) {
+            warningMessage = ' - ' + commonRenderer.renderSoftWarning('No log events found in this stream')
           }
+          this.context.stdout.write(`• ${logStreamName}${warningMessage}`)
         }
       }
 
