@@ -153,15 +153,13 @@ export class LambdaFlareCommand extends Command {
     try {
       // CloudWatch messages
       if (this.withLogs) {
+        let message = '\n✅ Found log streams:\n'
         if (logs.size === 0) {
-          this.context.stdout.write(
-            commonRenderer.renderSoftWarning(
-              'No CloudWatch log streams were found. Logs will not be retrieved or sent.'
-            )
+          message = commonRenderer.renderSoftWarning(
+            'No CloudWatch log streams were found. Logs will not be retrieved or sent.'
           )
-        } else {
-          this.context.stdout.write('\n✅ Found log streams:\n')
         }
+        this.context.stdout.write(message)
 
         for (const [logStreamName, logEvents] of logs) {
           let warningMessage = '\n'
