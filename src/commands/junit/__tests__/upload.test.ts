@@ -217,39 +217,18 @@ describe('upload', () => {
     })
   })
   describe('getSpanTags', () => {
-    test('should parse DD_TAGS and DD_ENV environment variables', async () => {
-      process.env.DD_TAGS = 'key1:https://google.com,key2:value2'
+    test('should parse DD_ENV environment variable', async () => {
       process.env.DD_ENV = 'ci'
       const context = createMockContext()
       const command = new UploadJUnitXMLCommand()
       const spanTags: SpanTags = await command['getSpanTags'].call({
         config: {
           env: process.env.DD_ENV,
-          envVarTags: process.env.DD_TAGS,
         },
         context,
       })
       expect(spanTags).toMatchObject({
         env: 'ci',
-        key1: 'https://google.com',
-        key2: 'value2',
-      })
-    })
-    test('should parse DD_METRICS environment variable', async () => {
-      process.env.DD_METRICS = 'key1:321,key2:123,key3:321.1,key4:abc,key5:-12.1'
-      const context = createMockContext()
-      const command = new UploadJUnitXMLCommand()
-      const spanTags: SpanTags = await command['getSpanTags'].call({
-        config: {
-          envVarMetrics: process.env.DD_METRICS,
-        },
-        context,
-      })
-      expect(spanTags).toMatchObject({
-        key1: 321,
-        key2: 123,
-        key3: 321.1,
-        key5: -12.1,
       })
     })
   })
@@ -268,6 +247,21 @@ describe('upload', () => {
         key2: 'value2',
       })
     })
+    test('should parse DD_TAGS environment variable', async () => {
+      process.env.DD_TAGS = 'key1:https://google.com,key2:value2'
+      const context = createMockContext()
+      const command = new UploadJUnitXMLCommand()
+      const spanTags: SpanTags = await command['getCustomTags'].call({
+        config: {
+          envVarTags: process.env.DD_TAGS,
+        },
+        context,
+      })
+      expect(spanTags).toMatchObject({
+        key1: 'https://google.com',
+        key2: 'value2',
+      })
+    })
     test('should parse metrics argument', async () => {
       const context = createMockContext()
       const command = new UploadJUnitXMLCommand()
@@ -280,6 +274,23 @@ describe('upload', () => {
       expect(spanTags).toMatchObject({
         key1: 10,
         key2: 20,
+      })
+    })
+    test('should parse DD_METRICS environment variable', async () => {
+      process.env.DD_METRICS = 'key1:321,key2:123,key3:321.1,key4:abc,key5:-12.1'
+      const context = createMockContext()
+      const command = new UploadJUnitXMLCommand()
+      const spanTags: SpanTags = await command['getCustomMetrics'].call({
+        config: {
+          envVarMetrics: process.env.DD_METRICS,
+        },
+        context,
+      })
+      expect(spanTags).toMatchObject({
+        key1: 321,
+        key2: 123,
+        key3: 321.1,
+        key5: -12.1,
       })
     })
     test('should parse report tags argument', async () => {
