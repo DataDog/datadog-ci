@@ -145,14 +145,13 @@ export const executeTests = async (
 
   try {
     const maxPollingTimeout = Math.max(...testsToTrigger.map((t) => t.config.pollingTimeout || config.pollingTimeout))
+    const {datadogSite, failOnCriticalErrors, failOnTimeout, subdomain} = config
+
     const results = await waitForResults(
       api,
       trigger,
       tests,
-      {
-        ...config,
-        maxPollingTimeout,
-      },
+      {datadogSite, failOnCriticalErrors, failOnTimeout, subdomain, maxPollingTimeout},
       reporter,
       tunnel
     )
