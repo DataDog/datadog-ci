@@ -28,7 +28,7 @@ datadog-ci junit upload --service my-service --tags key1:value1 --tags key2:valu
   - The resulting dictionary will be merged with whatever is in the `DD_METRICS` environment variable. If a `key` appears both in `--metrics` and `DD_METRICS`, whatever value is in `DD_METRICS` will take precedence.
 - `--report-tags` is an array of key value pairs like the `--tags` argument, but the tags are only applied to the session instead of to every test.
   - The resulting dictionary will NOT be merged with `DD_TAGS`.
-- `--report-metrics` is an array of key value pairs like the `--metrics` argument, but the tags are only applied to the session instead of to every test.
+- `--report-metrics` is an array of key numerical value pairs like the `--metrics` argument, but the metrics are only applied to the session instead of to every test.
   - The resulting dictionary will NOT be merged with `DD_METRICS`.
 - `--env` (default: `DD_ENV` env var) is a string that represents the environment where you want your tests to appear in.
 - `--max-concurrency` (default: `20`): number of concurrent uploads to the API.
