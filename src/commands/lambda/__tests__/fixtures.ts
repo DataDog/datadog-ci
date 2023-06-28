@@ -10,7 +10,8 @@ import {
   PutSubscriptionFilterCommand,
   LogStream,
   DescribeLogStreamsCommand,
-  GetLogEventsCommand, OutputLogEvent,
+  GetLogEventsCommand,
+  OutputLogEvent,
 } from '@aws-sdk/client-cloudwatch-logs'
 import {
   FunctionConfiguration as LFunctionConfiguration,
