@@ -23,9 +23,9 @@ datadog-ci tag --level job --tags "go.version:`go version`"
 
 ### Environment variables
 
-- `DATADOG_API_KEY` or `DD_API_KEY` (**required**): API key used to authenticate the requests.
+- `DD_API_KEY` (**required**): API key used to authenticate the requests.
 - `DD_TAGS`: set tags applied to the pipeline or job span. The format must be `key1:value1,key2:value2`.
-- `DATADOG_SITE`: choose your Datadog site, e.g. datadoghq.com or datadoghq.eu.
+- `DD_SITE`: choose your Datadog site, e.g. datadoghq.com or datadoghq.eu.
 
 ### Supported providers
 
@@ -39,7 +39,7 @@ error.
 To verify this command works as expected, you can tag a mock pipeline and validate the command returns 0:
 
 ```bash
-export DATADOG_API_KEY='<API key>'
+export DD_API_KEY='<API key>'
 export BUILDKITE=true
 export BUILDKITE_BUILD_ID=uuid
 

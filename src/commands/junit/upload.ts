@@ -81,7 +81,7 @@ export class UploadJUnitXMLCommand extends Command {
       ],
       [
         'Upload all jUnit XML test report files in current directory to the datadoghq.eu site',
-        'DATADOG_SITE=datadoghq.eu datadog-ci junit upload --service my-service .',
+        'DD_SITE=datadoghq.eu datadog-ci junit upload --service my-service .',
       ],
       [
         'Upload all jUnit XML test report files in current directory while also collecting logs',
