@@ -256,6 +256,17 @@ module.exports = {
     'use-isnan': 'error',
     'valid-typeof': 'off',
   },
+  overrides: [
+    {
+      files: ['**/__tests__/**'],
+      rules: {
+        'no-restricted-properties': [
+          'error',
+          {property: 'only', message: '.only was found in the tests, please remove it'},
+        ],
+      },
+    },
+  ],
   settings: {
     'import/resolver': {
       typescript: {
