@@ -1,0 +1,2 @@
+# Make sure git does not convert line endings, as our linter checks that all line endings are LF.
+*.ts -text
