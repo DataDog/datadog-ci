@@ -4,6 +4,7 @@ import {BaseContext} from 'clipanion/lib/advanced'
 
 import {ExecutionRule, MainReporter, Result, Summary, Test, UserConfigOverride} from '../../interfaces'
 import {DefaultReporter} from '../../reporters/default'
+import {DEFAULT_COMMAND_CONFIG} from '../../run-tests-command'
 
 import {
   getApiResult,
@@ -35,22 +36,23 @@ describe('Default reporter', () => {
   const reporter = new DefaultReporter(mockContext as {context: BaseContext})
 
   it('should log for each hook', () => {
-    type ReporterCall = {[Fn in keyof MainReporter]: [Fn, Parameters<MainReporter[Fn]>]}[keyof MainReporter]
+    type ReporterCall = {[Fn in keyof MainReporter]: [Fn, Parameters<MainReporter[Fn]>, number]}[keyof MainReporter]
 
     // `testWait`/`resultReceived` is skipped as nothing is logged for the default reporter.
     const calls: ReporterCall[] = [
-      ['error', ['error']],
-      ['initErrors', [['error']]],
-      ['log', ['log']],
-      ['reportStart', [{startTime: 0}]],
-      ['resultEnd', [getApiResult('1', getApiTest()), '']],
-      ['runEnd', [getSummary(), '']],
-      ['testTrigger', [getApiTest(), '', ExecutionRule.BLOCKING, {}]],
-      ['testsWait', [[getApiTest()]]],
+      ['error', ['error'], 1],
+      ['initErrors', [['error']], 1],
+      ['log', ['log'], 1],
+      ['reportStart', [{startTime: 0}], 1],
+      ['resultEnd', [getApiResult('1', getApiTest()), ''], 1],
+      ['runEnd', [getSummary(), ''], 1],
+      ['testTrigger', [getApiTest(), '', ExecutionRule.BLOCKING, {}], 1],
+      ['testsWait', [[getApiTest()], '', ''], 2],
     ]
-    for (const [fnName, args] of calls) {
+
+    for (const [fnName, args, calledTimes] of calls) {
       ;(reporter[fnName] as any)(...args)
-      expect(writeMock).toHaveBeenCalledTimes(1)
+      expect(writeMock).toHaveBeenCalledTimes(calledTimes)
       writeMock.mockClear()
     }
   })
@@ -105,7 +107,7 @@ describe('Default reporter', () => {
   })
 
   test('testsWait outputs triggered tests', async () => {
-    reporter.testsWait(new Array(11).fill(getApiTest()))
+    reporter.testsWait(new Array(11).fill(getApiTest()), baseUrlFixture, '123')
     const output = writeMock.mock.calls.map((c) => c[0]).join('\n')
     expect(output).toMatchSnapshot()
   })

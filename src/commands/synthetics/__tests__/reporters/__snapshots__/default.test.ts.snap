@@ -176,7 +176,10 @@ exports[`Default reporter testTrigger Skipped test, with 2 config overrides 1`] 
 `;
 
 exports[`Default reporter testsWait outputs triggered tests 1`] = `
-"- Waiting for [1m[36m11[39m[22m test results [90m(abc-def-ghi, abc-def-ghi, abc-def-ghi, abc-def-ghi, abc-def-ghi, abc-def-ghi, abc-def-ghi, abc-def-ghi, abc-def-ghi, abc-def-ghi, …)[39m…
+"View pending summary in Datadog: [2m[36mhttps://app.datadoghq.com/synthetics/explorer/ci?batchResultId=123[39m[22m
+
+
+- Waiting for [1m[36m11[39m[22m test results [90m(abc-def-ghi, abc-def-ghi, abc-def-ghi, abc-def-ghi, abc-def-ghi, abc-def-ghi, abc-def-ghi, abc-def-ghi, abc-def-ghi, abc-def-ghi, …)[39m…
 
 "
 `;
