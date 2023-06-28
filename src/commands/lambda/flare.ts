@@ -6,6 +6,7 @@ import {
   CloudWatchLogsClient,
   DescribeLogStreamsCommand,
   GetLogEventsCommand,
+  OrderBy,
   OutputLogEvent,
 } from '@aws-sdk/client-cloudwatch-logs'
 import {LambdaClient, LambdaClientConfig} from '@aws-sdk/client-lambda'
@@ -28,6 +29,7 @@ const FLARE_OUTPUT_DIRECTORY = '.datadog-ci'
 const LOGS_DIRECTORY = 'logs'
 const FUNCTION_CONFIG_FILE_NAME = 'function_config.json'
 const ZIP_FILE_NAME = 'lambda-flare-output.zip'
+const LOG_STREAM_COUNT = 3
 
 export class LambdaFlareCommand extends Command {
   private isDryRun = false
@@ -267,18 +269,18 @@ export const createDirectories = (
 }
 
 /**
- * Gets the 3 latest log stream names, sorted by last event time
+ * Gets the LOG_STREAM_COUNT latest log stream names, sorted by last event time
  * @param cwlClient CloudWatch Logs client
  * @param logGroupName name of the log group
- * @returns an array of the last 3 log stream names or an empty array if no log streams are found
+ * @returns an array of the last LOG_STREAM_COUNT log stream names or an empty array if no log streams are found
  * @throws Error if the log streams cannot be retrieved
  */
 export const getLogStreamNames = async (cwlClient: CloudWatchLogsClient, logGroupName: string) => {
   const command = new DescribeLogStreamsCommand({
     logGroupName,
-    limit: 3,
+    limit: LOG_STREAM_COUNT,
     descending: true,
-    orderBy: 'LastEventTime',
+    orderBy: OrderBy.LastEventTime,
   })
   const response = await cwlClient.send(command)
   const logStreams = response.logStreams
