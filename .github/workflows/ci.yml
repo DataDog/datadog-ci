@@ -9,20 +9,32 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        version: [14, 16, 18]
+        include:
+          - os: ubuntu-latest
+            node_version: 14
+
+          - os: ubuntu-latest
+            node_version: 16
+
+          - os: ubuntu-latest
+            node_version: 18
+
+          - os: windows-latest
+            node_version: 18
 
     name: Build and test
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
 
     steps:
       - uses: actions/checkout@v3
       - name: Install node
         uses: actions/setup-node@v3
         with:
-          node-version: ${{ matrix.version }}
+          node-version: ${{ matrix.node_version }}
       - run: yarn install --immutable
       - run: yarn build
       - name: Run yarn lint:ci
+        shell: bash
         run: |
           if ! yarn lint:ci ; then
             echo "ESLint failed with the following errors:"
