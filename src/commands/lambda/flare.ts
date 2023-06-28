@@ -474,8 +474,14 @@ export const sendToDatadog = async (
     // Ensure the root folder is deleted if the request fails
     deleteFolder(rootFolderPath)
 
-    const errResponse: string = err.response?.data?.error
-    throw Error(`Failed to send flare file to Datadog Support: ${err.message}. ${errResponse ?? ''}\n`)
+    if (axios.isAxiosError(err)) {
+      const errResponse: string = (err.response?.data.error as string) ?? ''
+      const errorMessage = err.message ?? ''
+
+      throw Error(`Failed to send flare file to Datadog Support: ${errorMessage}. ${errResponse}\n`)
+    }
+
+    throw err
   }
 }
 
