@@ -8,6 +8,9 @@ import {
   CreateLogGroupCommand,
   DeleteSubscriptionFilterCommand,
   PutSubscriptionFilterCommand,
+  LogStream,
+  DescribeLogStreamsCommand,
+  GetLogEventsCommand, OutputLogEvent,
 } from '@aws-sdk/client-cloudwatch-logs'
 import {
   FunctionConfiguration as LFunctionConfiguration,
@@ -175,6 +178,20 @@ export const mockCloudWatchLogsClientCommands = (
   cloudWatchLogsClientMock.on(CreateLogGroupCommand).resolves({})
   cloudWatchLogsClientMock.on(DeleteSubscriptionFilterCommand).resolves({})
   cloudWatchLogsClientMock.on(PutSubscriptionFilterCommand).resolves({})
+}
+
+export const mockCloudWatchStreams = (
+  cloudWatchLogsClientMock: AwsStub<CWLServiceInputTypes, CWLServiceOutputTypes>,
+  streams: LogStream[]
+) => {
+  cloudWatchLogsClientMock.on(DescribeLogStreamsCommand).resolves({logStreams: streams})
+}
+
+export const mockCloudWatchLogEvents = (
+  cloudWatchLogsClientMock: AwsStub<CWLServiceInputTypes, CWLServiceOutputTypes>,
+  events: OutputLogEvent[]
+) => {
+  cloudWatchLogsClientMock.on(GetLogEventsCommand).resolves({events})
 }
 
 export const mockAwsAccount = '123456789012'
