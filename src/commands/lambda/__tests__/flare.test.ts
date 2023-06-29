@@ -247,11 +247,11 @@ describe('lambda flare', () => {
   })
 
   describe('getObfuscation', () => {
-    it('should obfuscate the entire string if its length is less than 32', () => {
+    it('should obfuscate the entire string if its length is less than 12', () => {
       expect(getObfuscation('shortString')).toEqual('****************')
     })
 
-    it('should keep the first two and last four characters for strings longer than 32 characters', () => {
+    it('should keep the first two and last four characters for strings longer than 12 characters', () => {
       const original = 'abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz'
       const obfuscated = 'ab**********wxyz'
       expect(getObfuscation(original)).toEqual(obfuscated)
@@ -259,12 +259,6 @@ describe('lambda flare', () => {
 
     it('should return empty string if input is empty', () => {
       expect(getObfuscation('')).toEqual('')
-    })
-
-    it('should correctly handle strings of exactly 32 characters', () => {
-      const original = 'abcd1234567890123456789012345678'
-      const obfuscated = 'ab**********5678'
-      expect(getObfuscation(original)).toEqual(obfuscated)
     })
 
     it('should not obfuscate booleans', () => {
