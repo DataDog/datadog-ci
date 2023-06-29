@@ -30,6 +30,8 @@ const LOGS_DIRECTORY = 'logs'
 const FUNCTION_CONFIG_FILE_NAME = 'function_config.json'
 const ZIP_FILE_NAME = 'lambda-flare-output.zip'
 const LOG_STREAM_COUNT = 3
+const FULL_OBFUSCATION = '****************'
+const MIDDLE_OBFUSCATION = '**********'
 const NON_OBFUSCATED_ENV_VARS = new Set([
   constants.SITE_ENV_VAR,
   constants.LOG_LEVEL_ENV_VAR,
@@ -286,16 +288,15 @@ export const getObfuscation = (original: string) => {
   }
 
   // Obfuscate entire string if it's short
-  if (original.length < 20) {
-    return '*'.repeat(original.length)
+  if (original.length < 12) {
+    return FULL_OBFUSCATION
   }
 
   // Keep first two and last four characters if it's long
   const front = original.substring(0, 2)
-  const middle = '*'.repeat(original.length - 6)
   const end = original.substring(original.length - 4)
 
-  return front + middle + end
+  return front + MIDDLE_OBFUSCATION + end
 }
 
 /**

@@ -248,12 +248,12 @@ describe('lambda flare', () => {
 
   describe('getObfuscation', () => {
     it('should obfuscate the entire string if its length is less than 32', () => {
-      expect(getObfuscation('shortString')).toEqual('***********')
+      expect(getObfuscation('shortString')).toEqual('****************')
     })
 
     it('should keep the first two and last four characters for strings longer than 32 characters', () => {
       const original = 'abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz'
-      const obfuscated = 'ab**********************************************wxyz'
+      const obfuscated = 'ab**********wxyz'
       expect(getObfuscation(original)).toEqual(obfuscated)
     })
 
@@ -262,8 +262,8 @@ describe('lambda flare', () => {
     })
 
     it('should correctly handle strings of exactly 32 characters', () => {
-      const original = '12345678901234567890123456789012'
-      const obfuscated = '12**************************9012'
+      const original = 'abcd1234567890123456789012345678'
+      const obfuscated = 'ab**********5678'
       expect(getObfuscation(original)).toEqual(obfuscated)
     })
 
@@ -272,7 +272,7 @@ describe('lambda flare', () => {
       expect(getObfuscation('TrUe')).toEqual('TrUe')
       expect(getObfuscation('false')).toEqual('false')
       expect(getObfuscation('FALSE')).toEqual('FALSE')
-      expect(getObfuscation('trueee')).toEqual('******')
+      expect(getObfuscation('trueee')).toEqual('****************')
     })
   })
 

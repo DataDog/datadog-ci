@@ -13,7 +13,7 @@ exports[`lambda flare AWS Lambda configuration prints config when running as a d
 {
   Environment: {
     Variables: {
-      DD_API_KEY: '02**************************33bd',
+      DD_API_KEY: '02**********33bd',
       DD_SITE: 'datadoghq.com',
       DD_LOG_LEVEL: 'debug'
     }
@@ -55,7 +55,7 @@ exports[`lambda flare AWS credentials continues when getAWSCredentials() returns
 {
   Environment: {
     Variables: {
-      DD_API_KEY: '02**************************33bd',
+      DD_API_KEY: '02**********33bd',
       DD_SITE: 'datadoghq.com',
       DD_LOG_LEVEL: 'debug'
     }
@@ -86,7 +86,7 @@ exports[`lambda flare AWS credentials requests AWS credentials when none are fou
 {
   Environment: {
     Variables: {
-      DD_API_KEY: '02**************************33bd',
+      DD_API_KEY: '02**********33bd',
       DD_SITE: 'datadoghq.com',
       DD_LOG_LEVEL: 'debug'
     }
@@ -145,7 +145,7 @@ exports[`lambda flare gets CloudWatch Logs does not get logs when --with-logs is
 {
   Environment: {
     Variables: {
-      DD_API_KEY: '02**************************33bd',
+      DD_API_KEY: '02**********33bd',
       DD_SITE: 'datadoghq.com',
       DD_LOG_LEVEL: 'debug'
     }
@@ -176,7 +176,7 @@ exports[`lambda flare gets CloudWatch Logs gets logs, saves, and sends correctly
 {
   Environment: {
     Variables: {
-      DD_API_KEY: '02**************************33bd',
+      DD_API_KEY: '02**********33bd',
       DD_SITE: 'datadoghq.com',
       DD_LOG_LEVEL: 'debug'
     }
@@ -217,7 +217,7 @@ exports[`lambda flare gets CloudWatch Logs prints error when getLogEvents throws
 {
   Environment: {
     Variables: {
-      DD_API_KEY: '02**************************33bd',
+      DD_API_KEY: '02**********33bd',
       DD_SITE: 'datadoghq.com',
       DD_LOG_LEVEL: 'debug'
     }
@@ -244,7 +244,7 @@ exports[`lambda flare gets CloudWatch Logs prints error when getLogStreamNames t
 {
   Environment: {
     Variables: {
-      DD_API_KEY: '02**************************33bd',
+      DD_API_KEY: '02**********33bd',
       DD_SITE: 'datadoghq.com',
       DD_LOG_LEVEL: 'debug'
     }
@@ -271,7 +271,7 @@ exports[`lambda flare gets CloudWatch Logs warns and skips getting logs when get
 {
   Environment: {
     Variables: {
-      DD_API_KEY: '02**************************33bd',
+      DD_API_KEY: '02**********33bd',
       DD_SITE: 'datadoghq.com',
       DD_LOG_LEVEL: 'debug'
     }
@@ -305,7 +305,7 @@ exports[`lambda flare gets CloudWatch Logs warns and skips log when getLogEvents
 {
   Environment: {
     Variables: {
-      DD_API_KEY: '02**************************33bd',
+      DD_API_KEY: '02**********33bd',
       DD_SITE: 'datadoghq.com',
       DD_LOG_LEVEL: 'debug'
     }
@@ -334,7 +334,7 @@ exports[`lambda flare obfuscateConfig should obfuscate API key but not whitelist
 Object {
   "Environment": Object {
     "Variables": Object {
-      "DD_API_KEY": "02**************************33bd",
+      "DD_API_KEY": "02**********33bd",
       "DD_LOG_LEVEL": "debug",
       "DD_SITE": "datadoghq.com",
     },
@@ -371,7 +371,7 @@ exports[`lambda flare send to Datadog does not send request to Datadog when a dr
 {
   Environment: {
     Variables: {
-      DD_API_KEY: '02**************************33bd',
+      DD_API_KEY: '02**********33bd',
       DD_SITE: 'datadoghq.com',
       DD_LOG_LEVEL: 'debug'
     }
@@ -402,7 +402,7 @@ exports[`lambda flare send to Datadog successfully adds zip file to FormData 1`]
 {
   Environment: {
     Variables: {
-      DD_API_KEY: '02**************************33bd',
+      DD_API_KEY: '02**********33bd',
       DD_SITE: 'datadoghq.com',
       DD_LOG_LEVEL: 'debug'
     }
@@ -433,7 +433,7 @@ exports[`lambda flare send to Datadog successfully sends request to Datadog 1`] 
 {
   Environment: {
     Variables: {
-      DD_API_KEY: '02**************************33bd',
+      DD_API_KEY: '02**********33bd',
       DD_SITE: 'datadoghq.com',
       DD_LOG_LEVEL: 'debug'
     }
@@ -464,7 +464,7 @@ exports[`lambda flare validates required flags extracts region from function nam
 {
   Environment: {
     Variables: {
-      DD_API_KEY: '02**************************33bd',
+      DD_API_KEY: '02**********33bd',
       DD_SITE: 'datadoghq.com',
       DD_LOG_LEVEL: 'debug'
     }
@@ -530,7 +530,7 @@ exports[`lambda flare validates required flags runs successfully with all requir
 {
   Environment: {
     Variables: {
-      DD_API_KEY: '02**************************33bd',
+      DD_API_KEY: '02**********33bd',
       DD_SITE: 'datadoghq.com',
       DD_LOG_LEVEL: 'debug'
     }
@@ -561,7 +561,7 @@ exports[`lambda flare validates required flags uses API key ENV variable and run
 {
   Environment: {
     Variables: {
-      DD_API_KEY: '02**************************33bd',
+      DD_API_KEY: '02**********33bd',
       DD_SITE: 'datadoghq.com',
       DD_LOG_LEVEL: 'debug'
     }
@@ -592,7 +592,7 @@ exports[`lambda flare validates required flags uses API key ENV variable and run
 {
   Environment: {
     Variables: {
-      DD_API_KEY: '02**************************33bd',
+      DD_API_KEY: '02**********33bd',
       DD_SITE: 'datadoghq.com',
       DD_LOG_LEVEL: 'debug'
     }
@@ -619,7 +619,7 @@ exports[`lambda flare validates required flags uses API key ENV variable and run
 {
   Environment: {
     Variables: {
-      DD_API_KEY: '02**************************33bd',
+      DD_API_KEY: '02**********33bd',
       DD_SITE: 'datadoghq.com',
       DD_LOG_LEVEL: 'debug'
     }
@@ -650,7 +650,7 @@ exports[`lambda flare validates required flags uses region ENV variable when no 
 {
   Environment: {
     Variables: {
-      DD_API_KEY: '02**************************33bd',
+      DD_API_KEY: '02**********33bd',
       DD_SITE: 'datadoghq.com',
       DD_LOG_LEVEL: 'debug'
     }
