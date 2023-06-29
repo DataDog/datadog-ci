@@ -839,7 +839,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@aws-sdk/property-provider@npm:3.357.0":
+"@aws-sdk/property-provider@npm:3.357.0, @aws-sdk/property-provider@npm:^3.357.0":
   version: 3.357.0
   resolution: "@aws-sdk/property-provider@npm:3.357.0"
   dependencies:
@@ -2755,6 +2755,7 @@ __metadata:
     "@aws-sdk/client-lambda": ^3.358.0
     "@aws-sdk/client-sfn": ^3.358.0
     "@aws-sdk/credential-providers": ^3.358.0
+    "@aws-sdk/property-provider": ^3.357.0
     "@aws-sdk/types": ^3.357.0
     "@babel/core": 7.8.0
     "@babel/preset-env": 7.4.5
