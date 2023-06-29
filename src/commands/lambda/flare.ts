@@ -9,14 +9,14 @@ import {
   OrderBy,
   OutputLogEvent,
 } from '@aws-sdk/client-cloudwatch-logs'
-import {LambdaClient, LambdaClientConfig} from '@aws-sdk/client-lambda'
+import {FunctionConfiguration, LambdaClient, LambdaClientConfig} from '@aws-sdk/client-lambda'
 import {AwsCredentialIdentity} from '@aws-sdk/types'
 import axios from 'axios'
 import {Command} from 'clipanion'
 import FormData from 'form-data'
 import JSZip from 'jszip'
 
-import {API_KEY_ENV_VAR, AWS_DEFAULT_REGION_ENV_VAR, CI_API_KEY_ENV_VAR} from './constants'
+import * as constants from './constants'
 import {getAWSCredentials, getLambdaFunctionConfig, getRegion} from './functions/commons'
 import {requestAWSCredentials} from './prompt'
 import * as commonRenderer from './renderers/common-renderer'
@@ -30,6 +30,17 @@ const LOGS_DIRECTORY = 'logs'
 const FUNCTION_CONFIG_FILE_NAME = 'function_config.json'
 const ZIP_FILE_NAME = 'lambda-flare-output.zip'
 const LOG_STREAM_COUNT = 3
+const NON_OBFUSCATED_ENV_VARS = new Set([
+  constants.SITE_ENV_VAR,
+  constants.LOG_LEVEL_ENV_VAR,
+  constants.LAMBDA_HANDLER_ENV_VAR,
+  constants.SERVICE_ENV_VAR,
+  constants.VERSION_ENV_VAR,
+  constants.ENVIRONMENT_ENV_VAR,
+  constants.EXTRA_TAGS_ENV_VAR,
+  constants.APM_FLUSH_DEADLINE_MILLISECONDS_ENV_VAR,
+  constants.DOTNET_TRACER_HOME_ENV_VAR,
+])
 
 export class LambdaFlareCommand extends Command {
   private isDryRun = false
@@ -58,14 +69,14 @@ export class LambdaFlareCommand extends Command {
 
     // Validate region
     let errorFound = false
-    const region = getRegion(this.functionName) ?? this.region ?? process.env[AWS_DEFAULT_REGION_ENV_VAR]
+    const region = getRegion(this.functionName) ?? this.region ?? process.env[constants.AWS_DEFAULT_REGION_ENV_VAR]
     if (region === undefined) {
       this.context.stderr.write(commonRenderer.renderNoDefaultRegionSpecifiedError())
       errorFound = true
     }
 
     // Validate Datadog API key
-    this.apiKey = process.env[CI_API_KEY_ENV_VAR] ?? process.env[API_KEY_ENV_VAR]
+    this.apiKey = process.env[constants.CI_API_KEY_ENV_VAR] ?? process.env[constants.API_KEY_ENV_VAR]
     if (this.apiKey === undefined) {
       this.context.stderr.write(
         commonRenderer.renderError(
@@ -122,7 +133,7 @@ export class LambdaFlareCommand extends Command {
       credentials: this.credentials,
     }
     const lambdaClient = new LambdaClient(lambdaClientConfig)
-    let config
+    let config: FunctionConfiguration
     try {
       config = await getLambdaFunctionConfig(lambdaClient, this.functionName)
     } catch (err) {
@@ -134,6 +145,7 @@ export class LambdaFlareCommand extends Command {
 
       return 1
     }
+    config = obfuscateConfig(config)
     const configStr = util.inspect(config, false, undefined, true)
     this.context.stdout.write(`\n${configStr}\n`)
 
@@ -227,6 +239,63 @@ export class LambdaFlareCommand extends Command {
 
     return 0
   }
+}
+
+/**
+ * Obfuscate the environment variables in a Lambda function configuration
+ * @param config
+ */
+export const obfuscateConfig = (config: FunctionConfiguration) => {
+  const environmentVariables = config.Environment?.Variables
+  if (!environmentVariables) {
+    return config
+  }
+
+  const obfuscatedEnvironmentVariables: {[key: string]: string} = {}
+  for (const [key, value] of Object.entries(environmentVariables)) {
+    obfuscatedEnvironmentVariables[key] = value
+    if (!NON_OBFUSCATED_ENV_VARS.has(key)) {
+      obfuscatedEnvironmentVariables[key] = getObfuscation(value)
+    }
+  }
+
+  return {
+    ...config,
+    Environment: {
+      ...config.Environment,
+      Variables: obfuscatedEnvironmentVariables,
+    },
+  }
+}
+
+/**
+ * Obfuscate a string but keep the first two and last four characters
+ * Obfuscate the entire string if it's short
+ * @param original the string to obfuscate
+ * @returns the obfuscated string
+ */
+export const getObfuscation = (original: string) => {
+  // Don't obfuscate booleans
+  if (original.toLowerCase() === 'true' || original.toLowerCase() === 'false') {
+    return original
+  }
+
+  // Dont obfuscate numbers
+  if (!isNaN(Number(original))) {
+    return original
+  }
+
+  // Obfuscate entire string if it's short
+  if (original.length < 20) {
+    return '*'.repeat(original.length)
+  }
+
+  // Keep first two and last four characters if it's long
+  const front = original.substring(0, 2)
+  const middle = '*'.repeat(original.length - 6)
+  const end = original.substring(original.length - 4)
+
+  return front + middle + end
 }
 
 /**

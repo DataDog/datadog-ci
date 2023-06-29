@@ -23,6 +23,8 @@ import {
   getAllLogs,
   getLogEvents,
   getLogStreamNames,
+  getObfuscation,
+  obfuscateConfig,
   writeFile,
   zipContents,
 } from '../flare'
@@ -241,6 +243,50 @@ describe('lambda flare', () => {
       expect(code).toBe(0)
       const output = context.stdout.toString()
       expect(output).toMatchSnapshot()
+    })
+  })
+
+  describe('getObfuscation', () => {
+    it('should obfuscate the entire string if its length is less than 32', () => {
+      expect(getObfuscation('shortString')).toEqual('***********')
+    })
+
+    it('should keep the first two and last four characters for strings longer than 32 characters', () => {
+      const original = 'abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz'
+      const obfuscated = 'ab**********************************************wxyz'
+      expect(getObfuscation(original)).toEqual(obfuscated)
+    })
+
+    it('should return empty string if input is empty', () => {
+      expect(getObfuscation('')).toEqual('')
+    })
+
+    it('should correctly handle strings of exactly 32 characters', () => {
+      const original = '12345678901234567890123456789012'
+      const obfuscated = '12**************************9012'
+      expect(getObfuscation(original)).toEqual(obfuscated)
+    })
+
+    it('should not obfuscate booleans', () => {
+      expect(getObfuscation('true')).toEqual('true')
+      expect(getObfuscation('TrUe')).toEqual('TrUe')
+      expect(getObfuscation('false')).toEqual('false')
+      expect(getObfuscation('FALSE')).toEqual('FALSE')
+      expect(getObfuscation('trueee')).toEqual('******')
+    })
+  })
+
+  describe('obfuscateConfig', () => {
+    it('should obfuscate API key but not whitelisted environment variables', () => {
+      const obfuscatedConfig = obfuscateConfig(MOCK_CONFIG)
+      expect(obfuscatedConfig).toMatchSnapshot()
+    })
+
+    it('should return the original config if there are no environment variables', () => {
+      const config: any = {...MOCK_CONFIG}
+      config.Environment = undefined
+      const obfuscatedConfig = obfuscateConfig(config)
+      expect(obfuscatedConfig).toEqual(config)
     })
   })
 
