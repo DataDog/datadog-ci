@@ -40,7 +40,6 @@ const NON_OBFUSCATED_ENV_VARS = new Set([
   constants.VERSION_ENV_VAR,
   constants.ENVIRONMENT_ENV_VAR,
   constants.EXTRA_TAGS_ENV_VAR,
-  constants.APM_FLUSH_DEADLINE_MILLISECONDS_ENV_VAR,
   constants.DOTNET_TRACER_HOME_ENV_VAR,
 ])
 
