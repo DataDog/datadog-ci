@@ -3,7 +3,13 @@ import path from 'path'
 import process from 'process'
 import * as stream from 'stream'
 
-import {CloudWatchLogsClient, LogStream, OutputLogEvent} from '@aws-sdk/client-cloudwatch-logs'
+import {
+  CloudWatchLogsClient,
+  DescribeLogStreamsCommand,
+  GetLogEventsCommand,
+  LogStream,
+  OutputLogEvent,
+} from '@aws-sdk/client-cloudwatch-logs'
 import {mockClient} from 'aws-sdk-client-mock'
 import axios from 'axios'
 import FormData from 'form-data'
@@ -30,7 +36,7 @@ import {
   mockAwsCredentials,
   mockCloudWatchLogEvents,
   mockCloudWatchLogsClientCommands,
-  mockCloudWatchStreams,
+  mockCloudWatchLogStreams,
   mockDatadogApiKey,
 } from './fixtures'
 
@@ -56,7 +62,7 @@ const MOCK_CONFIG = {
 const MOCK_LOG_GROUP = 'mockLogGroup'
 const MOCK_OUTPUT_EVENT: OutputLogEvent[] = [{timestamp: 123, message: 'Log 1'}]
 const MOCK_LOGS = new Map().set('log1', MOCK_OUTPUT_EVENT)
-const CLOUDWATCH_CLIENT_MOCK = mockClient(CloudWatchLogsClient)
+const cloudWatchLogsClientMock = mockClient(CloudWatchLogsClient)
 
 // Commons mocks
 jest.mock('../functions/commons', () => ({
@@ -284,8 +290,8 @@ describe('lambda flare', () => {
 
   describe('getLogStreamNames', () => {
     beforeEach(() => {
-      CLOUDWATCH_CLIENT_MOCK.reset()
-      mockCloudWatchLogsClientCommands(CLOUDWATCH_CLIENT_MOCK)
+      cloudWatchLogsClientMock.reset()
+      mockCloudWatchLogsClientCommands(cloudWatchLogsClientMock)
     })
 
     it('returns the 3 latest log stream names sorted by last event time', async () => {
@@ -294,7 +300,7 @@ describe('lambda flare', () => {
         {logStreamName: 'Stream2'},
         {logStreamName: 'Stream1'},
       ]
-      mockCloudWatchStreams(CLOUDWATCH_CLIENT_MOCK, mockStreams)
+      mockCloudWatchLogStreams(cloudWatchLogsClientMock, mockStreams)
 
       const expectedLogStreams = ['Stream1', 'Stream2', 'Stream3']
       const logStreams = await getLogStreamNames(new CloudWatchLogsClient({}), MOCK_LOG_GROUP)
@@ -302,8 +308,8 @@ describe('lambda flare', () => {
       expect(logStreams).toEqual(expectedLogStreams)
     })
 
-    it('returns undefined when no log streams are found', async () => {
-      mockCloudWatchStreams(CLOUDWATCH_CLIENT_MOCK, [])
+    it('returns empty array when no log streams are found', async () => {
+      mockCloudWatchLogStreams(cloudWatchLogsClientMock, [])
 
       const logStreams = await getLogStreamNames(new CloudWatchLogsClient({}), MOCK_LOG_GROUP)
 
@@ -311,27 +317,23 @@ describe('lambda flare', () => {
     })
 
     it('throws error when log streams cannot be retrieved', async () => {
-      mockCloudWatchStreams(CLOUDWATCH_CLIENT_MOCK, [])
-      const mockCwlClient = {
-        send: jest.fn().mockRejectedValue(new Error('Cannot retrieve log streams')),
-      }
+      cloudWatchLogsClientMock.on(DescribeLogStreamsCommand).rejects('Cannot retrieve log streams')
 
       await expect(
-        getLogStreamNames((mockCwlClient as unknown) as CloudWatchLogsClient, MOCK_LOG_GROUP)
+        getLogStreamNames((cloudWatchLogsClientMock as unknown) as CloudWatchLogsClient, MOCK_LOG_GROUP)
       ).rejects.toThrow('Cannot retrieve log streams')
-      expect(mockCwlClient.send).toHaveBeenCalled()
     })
   })
 
   describe('getLogEvents', () => {
     beforeEach(() => {
-      CLOUDWATCH_CLIENT_MOCK.reset()
-      mockCloudWatchLogsClientCommands(CLOUDWATCH_CLIENT_MOCK)
+      cloudWatchLogsClientMock.reset()
+      mockCloudWatchLogsClientCommands(cloudWatchLogsClientMock)
     })
 
     const MOCK_LOG_STREAM = 'mockLogStream'
     it('returns the log events for a log stream', async () => {
-      mockCloudWatchLogEvents(CLOUDWATCH_CLIENT_MOCK, [
+      mockCloudWatchLogEvents(cloudWatchLogsClientMock, [
         {timestamp: 123, message: 'Log1'},
         {timestamp: 456, message: 'Log2'},
       ])
@@ -342,7 +344,7 @@ describe('lambda flare', () => {
       ]
 
       const logEvents = await getLogEvents(
-        (CLOUDWATCH_CLIENT_MOCK as unknown) as CloudWatchLogsClient,
+        (cloudWatchLogsClientMock as unknown) as CloudWatchLogsClient,
         MOCK_LOG_GROUP,
         MOCK_LOG_STREAM
       )
@@ -350,11 +352,11 @@ describe('lambda flare', () => {
       expect(logEvents).toEqual(expectedEvents)
     })
 
-    it('returns undefined when no log events are found', async () => {
-      mockCloudWatchLogEvents(CLOUDWATCH_CLIENT_MOCK, [])
+    it('returns empty array when no log events are found', async () => {
+      mockCloudWatchLogEvents(cloudWatchLogsClientMock, [])
 
       const logEvents = await getLogEvents(
-        (CLOUDWATCH_CLIENT_MOCK as unknown) as CloudWatchLogsClient,
+        (cloudWatchLogsClientMock as unknown) as CloudWatchLogsClient,
         MOCK_LOG_GROUP,
         MOCK_LOG_STREAM
       )
@@ -363,13 +365,10 @@ describe('lambda flare', () => {
     })
 
     it('throws error when log events cannot be retrieved', async () => {
-      const mockCwlClient = {
-        send: jest.fn().mockRejectedValue(new Error('Cannot retrieve log events')),
-      }
+      cloudWatchLogsClientMock.on(GetLogEventsCommand).rejects('Cannot retrieve log events')
       await expect(
-        getLogEvents((mockCwlClient as unknown) as CloudWatchLogsClient, MOCK_LOG_GROUP, MOCK_LOG_STREAM)
+        getLogEvents((cloudWatchLogsClientMock as unknown) as CloudWatchLogsClient, MOCK_LOG_GROUP, MOCK_LOG_STREAM)
       ).rejects.toThrow('Cannot retrieve log events')
-      expect(mockCwlClient.send).toHaveBeenCalled()
     })
   })
 

@@ -181,11 +181,11 @@ export const mockCloudWatchLogsClientCommands = (
   cloudWatchLogsClientMock.on(PutSubscriptionFilterCommand).resolves({})
 }
 
-export const mockCloudWatchStreams = (
+export const mockCloudWatchLogStreams = (
   cloudWatchLogsClientMock: AwsStub<CWLServiceInputTypes, CWLServiceOutputTypes>,
-  streams: LogStream[]
+  logStreams: LogStream[]
 ) => {
-  cloudWatchLogsClientMock.on(DescribeLogStreamsCommand).resolves({logStreams: streams})
+  cloudWatchLogsClientMock.on(DescribeLogStreamsCommand).resolves({logStreams})
 }
 
 export const mockCloudWatchLogEvents = (
