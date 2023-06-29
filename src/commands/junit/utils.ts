@@ -1,3 +1,5 @@
+import {lstatSync} from 'fs'
+
 import {SpanTags} from '../../helpers/interfaces'
 import {CI_JOB_URL, CI_PIPELINE_URL, GIT_BRANCH, GIT_REPOSITORY_URL, GIT_SHA} from '../../helpers/tags'
 
@@ -53,4 +55,12 @@ export const isFalse = (value: string | boolean) => {
   const lowerCaseValue = String(value).toLowerCase()
 
   return lowerCaseValue === '0' || lowerCaseValue === 'false'
+}
+
+export const isFile = (path: string) => {
+  try {
+    return lstatSync(path).isFile()
+  } catch (e) {
+    return false
+  }
 }

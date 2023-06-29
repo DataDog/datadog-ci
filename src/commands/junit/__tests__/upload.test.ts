@@ -145,6 +145,27 @@ describe('upload', () => {
         xmlPath: './src/commands/junit/__tests__/fixtures/subfolder/js-report.xml',
       })
     })
+    test('should allow folders with extensions', async () => {
+      const context = createMockContext()
+      const command = new UploadJUnitXMLCommand()
+      const [firstFile, secondFile] = await command['getMatchingJUnitXMLFiles'].call(
+        {
+          basePaths: ['./src/commands/junit/__tests__/fixtures/junit.xml'],
+          config: {},
+          context,
+          service: 'service',
+        },
+        {}
+      )
+      expect(firstFile).toMatchObject({
+        service: 'service',
+        xmlPath: './src/commands/junit/__tests__/fixtures/junit.xml/valid-report-2.xml',
+      })
+      expect(secondFile).toMatchObject({
+        service: 'service',
+        xmlPath: './src/commands/junit/__tests__/fixtures/junit.xml/valid-report.xml',
+      })
+    })
     test('should not have repeated files', async () => {
       const context = createMockContext()
       const command = new UploadJUnitXMLCommand()
