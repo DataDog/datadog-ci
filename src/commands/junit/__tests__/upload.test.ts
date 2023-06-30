@@ -4,8 +4,11 @@ import {Cli} from 'clipanion/lib/advanced'
 
 import {SpanTags} from '../../../helpers/interfaces'
 
+import id from '../id'
 import {renderInvalidFile} from '../renderer'
 import {UploadJUnitXMLCommand} from '../upload'
+
+jest.mock('../id', () => jest.fn())
 
 const makeCli = () => {
   const cli = new Cli()
@@ -42,7 +45,7 @@ describe('upload', () => {
       command.context = {stdout: {write}} as any
 
       expect(command['getApiHelper'].bind(command)).toThrow('API key is missing')
-      expect(write.mock.calls[0][0]).toContain('DATADOG_API_KEY')
+      expect(write.mock.calls[0][0]).toContain('DD_API_KEY')
     })
   })
   describe('getMatchingJUnitXMLFiles', () => {
@@ -140,6 +143,27 @@ describe('upload', () => {
       expect(thirdFile).toMatchObject({
         service: 'service',
         xmlPath: './src/commands/junit/__tests__/fixtures/subfolder/js-report.xml',
+      })
+    })
+    test('should allow folders with extensions', async () => {
+      const context = createMockContext()
+      const command = new UploadJUnitXMLCommand()
+      const [firstFile, secondFile] = await command['getMatchingJUnitXMLFiles'].call(
+        {
+          basePaths: ['./src/commands/junit/__tests__/fixtures/junit.xml'],
+          config: {},
+          context,
+          service: 'service',
+        },
+        {}
+      )
+      expect(firstFile).toMatchObject({
+        service: 'service',
+        xmlPath: './src/commands/junit/__tests__/fixtures/junit.xml/valid-report-2.xml',
+      })
+      expect(secondFile).toMatchObject({
+        service: 'service',
+        xmlPath: './src/commands/junit/__tests__/fixtures/junit.xml/valid-report.xml',
       })
     })
     test('should not have repeated files', async () => {
@@ -284,7 +308,7 @@ describe('execute', () => {
   const runCLI = async (extraArgs: string[]) => {
     const cli = makeCli()
     const context = createMockContext() as any
-    process.env = {DATADOG_API_KEY: 'PLACEHOLDER'}
+    process.env = {DD_API_KEY: 'PLACEHOLDER'}
     const code = await cli.run(
       ['junit', 'upload', '--service', 'test-service', '--dry-run', '--logs', ...extraArgs],
       context
@@ -341,6 +365,7 @@ describe('execute', () => {
       process.cwd() + '/src/commands/junit/__tests__/fixtures/single_file.xml',
     ])
     const output = context.stdout.toString().split(os.EOL)
+    expect(id).not.toHaveBeenCalled()
     expect(code).toBe(0)
     expect(output[5]).toContain('Not syncing git metadata (skip git upload flag detected)')
   })
@@ -354,6 +379,14 @@ describe('execute', () => {
     expect(code).toBe(0)
     expect(output[5]).toContain('Syncing git metadata')
   })
+
+  test('id headers are added when git metadata is uploaded', async () => {
+    await runCLI([
+      '--skip-git-metadata-upload=0',
+      process.cwd() + '/src/commands/junit/__tests__/fixtures/single_file.xml',
+    ])
+    expect(id).toHaveBeenCalled()
+  }, 10000000)
 })
 
 interface ExpectedOutput {

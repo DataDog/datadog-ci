@@ -737,7 +737,12 @@ describe('utils', () => {
           api,
           trigger,
           [result.test],
-          {maxPollingTimeout: 120000, failOnCriticalErrors: false},
+          {
+            datadogSite: DEFAULT_COMMAND_CONFIG.datadogSite,
+            failOnCriticalErrors: false,
+            maxPollingTimeout: 120000,
+            subdomain: DEFAULT_COMMAND_CONFIG.subdomain,
+          },
           mockReporter
         )
       ).toEqual([result])
@@ -762,7 +767,12 @@ describe('utils', () => {
         api,
         trigger,
         [result.test, result.test],
-        {maxPollingTimeout: 0, failOnCriticalErrors: false},
+        {
+          datadogSite: DEFAULT_COMMAND_CONFIG.datadogSite,
+          failOnCriticalErrors: false,
+          maxPollingTimeout: 0,
+          subdomain: DEFAULT_COMMAND_CONFIG.subdomain,
+        },
         mockReporter
       )
 
@@ -786,7 +796,12 @@ describe('utils', () => {
           api,
           trigger,
           [result.test, result.test],
-          {maxPollingTimeout: 0, failOnCriticalErrors: false},
+          {
+            datadogSite: DEFAULT_COMMAND_CONFIG.datadogSite,
+            failOnCriticalErrors: false,
+            maxPollingTimeout: 0,
+            subdomain: DEFAULT_COMMAND_CONFIG.subdomain,
+          },
           mockReporter
         )
       ).toEqual([
@@ -830,7 +845,12 @@ describe('utils', () => {
           api,
           trigger,
           [result.test],
-          {maxPollingTimeout: 0, failOnCriticalErrors: false},
+          {
+            datadogSite: DEFAULT_COMMAND_CONFIG.datadogSite,
+            failOnCriticalErrors: false,
+            maxPollingTimeout: 0,
+            subdomain: DEFAULT_COMMAND_CONFIG.subdomain,
+          },
           mockReporter
         )
       ).toStrictEqual([
@@ -855,7 +875,12 @@ describe('utils', () => {
           api,
           trigger,
           [result.test],
-          {maxPollingTimeout: 120000, failOnCriticalErrors: false},
+          {
+            datadogSite: DEFAULT_COMMAND_CONFIG.datadogSite,
+            failOnCriticalErrors: false,
+            maxPollingTimeout: 120000,
+            subdomain: DEFAULT_COMMAND_CONFIG.subdomain,
+          },
           mockReporter
         )
       ).toEqual([
@@ -886,7 +911,12 @@ describe('utils', () => {
           api,
           trigger,
           [result.test],
-          {maxPollingTimeout: 120000, failOnCriticalErrors: false},
+          {
+            datadogSite: DEFAULT_COMMAND_CONFIG.datadogSite,
+            failOnCriticalErrors: false,
+            maxPollingTimeout: 120000,
+            subdomain: DEFAULT_COMMAND_CONFIG.subdomain,
+          },
           mockReporter
         )
       ).toEqual([result])
@@ -912,7 +942,12 @@ describe('utils', () => {
           api,
           trigger,
           [result.test],
-          {maxPollingTimeout: 2000, failOnCriticalErrors: false},
+          {
+            datadogSite: DEFAULT_COMMAND_CONFIG.datadogSite,
+            failOnCriticalErrors: false,
+            maxPollingTimeout: 2000,
+            subdomain: DEFAULT_COMMAND_CONFIG.subdomain,
+          },
           mockReporter
         )
       ).toEqual([result, {...result, resultId: pollTimeoutResult.resultID, timedOut: true}])
@@ -931,7 +966,12 @@ describe('utils', () => {
         api,
         trigger,
         [result.test],
-        {maxPollingTimeout: 2000, failOnCriticalErrors: true},
+        {
+          datadogSite: DEFAULT_COMMAND_CONFIG.datadogSite,
+          failOnCriticalErrors: true,
+          maxPollingTimeout: 2000,
+          subdomain: DEFAULT_COMMAND_CONFIG.subdomain,
+        },
         mockReporter,
         mockTunnel
       )
@@ -948,7 +988,12 @@ describe('utils', () => {
         api,
         trigger,
         [result.test],
-        {maxPollingTimeout: 2000, failOnCriticalErrors: true},
+        {
+          datadogSite: DEFAULT_COMMAND_CONFIG.datadogSite,
+          failOnCriticalErrors: true,
+          maxPollingTimeout: 2000,
+          subdomain: DEFAULT_COMMAND_CONFIG.subdomain,
+        },
         mockReporter,
         mockTunnel
       )
@@ -961,7 +1006,12 @@ describe('utils', () => {
         api,
         trigger,
         [newTest],
-        {maxPollingTimeout: 2000, failOnCriticalErrors: true},
+        {
+          datadogSite: DEFAULT_COMMAND_CONFIG.datadogSite,
+          failOnCriticalErrors: true,
+          maxPollingTimeout: 2000,
+          subdomain: DEFAULT_COMMAND_CONFIG.subdomain,
+        },
         mockReporter,
         mockTunnel
       )
@@ -973,7 +1023,12 @@ describe('utils', () => {
         api,
         trigger,
         [newTest],
-        {failOnCriticalErrors: true, maxPollingTimeout: 2000},
+        {
+          datadogSite: DEFAULT_COMMAND_CONFIG.datadogSite,
+          failOnCriticalErrors: true,
+          maxPollingTimeout: 2000,
+          subdomain: DEFAULT_COMMAND_CONFIG.subdomain,
+        },
         mockReporter,
         mockTunnel
       )
@@ -988,7 +1043,17 @@ describe('utils', () => {
       })
 
       await expect(
-        utils.waitForResults(api, trigger, [result.test], {maxPollingTimeout: 2000}, mockReporter)
+        utils.waitForResults(
+          api,
+          trigger,
+          [result.test],
+          {
+            datadogSite: DEFAULT_COMMAND_CONFIG.datadogSite,
+            maxPollingTimeout: 2000,
+            subdomain: DEFAULT_COMMAND_CONFIG.subdomain,
+          },
+          mockReporter
+        )
       ).rejects.toThrowError(
         'Failed to poll results: could not query https://app.datadoghq.com/example\nPoll results server error\n'
       )
@@ -1004,7 +1069,17 @@ describe('utils', () => {
       })
 
       await expect(
-        utils.waitForResults(api, trigger, [result.test], {maxPollingTimeout: 2000}, mockReporter)
+        utils.waitForResults(
+          api,
+          trigger,
+          [result.test],
+          {
+            datadogSite: DEFAULT_COMMAND_CONFIG.datadogSite,
+            maxPollingTimeout: 2000,
+            subdomain: DEFAULT_COMMAND_CONFIG.subdomain,
+          },
+          mockReporter
+        )
       ).rejects.toThrowError(
         'Failed to get batch: could not query https://app.datadoghq.com/example\nGet batch server error\n'
       )

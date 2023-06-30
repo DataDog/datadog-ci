@@ -23,6 +23,7 @@ import {uploadToGitDB} from '../git-metadata/gitdb'
 import {isGitRepo} from '../git-metadata/library'
 
 import {apiConstructor, apiUrl, intakeUrl} from './api'
+import id from './id'
 import {APIHelper, Payload} from './interfaces'
 import {
   renderCommandInfo,
@@ -36,8 +37,10 @@ import {
   renderSuccessfulUpload,
   renderUpload,
 } from './renderer'
-import {isFalse} from './utils'
+import {isFalse, isFile} from './utils'
 
+const TRACE_ID_HTTP_HEADER = 'x-datadog-trace-id'
+const PARENT_ID_HTTP_HEADER = 'x-datadog-parent-id'
 const errorCodesStopUpload = [400, 403]
 
 const validateXml = (xmlFilePath: string) => {
@@ -78,7 +81,7 @@ export class UploadJUnitXMLCommand extends Command {
       ],
       [
         'Upload all jUnit XML test report files in current directory to the datadoghq.eu site',
-        'DATADOG_SITE=datadoghq.eu datadog-ci junit upload --service my-service .',
+        'DD_SITE=datadoghq.eu datadog-ci junit upload --service my-service .',
       ],
       [
         'Upload all jUnit XML test report files in current directory while also collecting logs',
@@ -183,7 +186,16 @@ export class UploadJUnitXMLCommand extends Command {
 
     if (!this.skipGitMetadataUpload) {
       if (await isGitRepo()) {
-        const requestBuilder = getRequestBuilder({baseUrl: apiUrl, apiKey: this.config.apiKey!})
+        const traceId = id()
+
+        const requestBuilder = getRequestBuilder({
+          baseUrl: apiUrl,
+          apiKey: this.config.apiKey!,
+          headers: new Map([
+            [TRACE_ID_HTTP_HEADER, traceId],
+            [PARENT_ID_HTTP_HEADER, traceId],
+          ]),
+        })
         try {
           this.logger.info(`${this.dryRun ? '[DRYRUN] ' : ''}Syncing git metadata...`)
           let elapsed = 0
@@ -239,14 +251,15 @@ export class UploadJUnitXMLCommand extends Command {
   }
 
   private async getMatchingJUnitXMLFiles(spanTags: SpanTags): Promise<Payload[]> {
-    const jUnitXMLFiles = (this.basePaths || []).reduce((acc: string[], basePath: string) => {
-      const isFile = !!path.extname(basePath)
-      if (isFile) {
-        return acc.concat(fs.existsSync(basePath) ? [basePath] : [])
-      }
+    const jUnitXMLFiles = (this.basePaths || [])
+      .reduce((acc: string[], basePath: string) => {
+        if (isFile(basePath)) {
+          return acc.concat(fs.existsSync(basePath) ? [basePath] : [])
+        }
 
-      return acc.concat(glob.sync(buildPath(basePath, '*.xml')))
-    }, [])
+        return acc.concat(glob.sync(buildPath(basePath, '*.xml')))
+      }, [])
+      .filter(isFile)
 
     const validUniqueFiles = [...new Set(jUnitXMLFiles)].filter((jUnitXMLFilePath) => {
       const validationErrorMessage = validateXml(jUnitXMLFilePath)

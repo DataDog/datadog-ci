@@ -32,7 +32,7 @@ export class TraceCommand extends Command {
       ],
       [
         'Trace a command and report to the datadoghq.eu site',
-        'DATADOG_SITE=datadoghq.eu datadog-ci trace -- echo "Hello World"',
+        'DD_SITE=datadoghq.eu datadog-ci trace -- echo "Hello World"',
       ],
     ],
   })
