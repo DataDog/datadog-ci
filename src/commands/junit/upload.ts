@@ -253,8 +253,7 @@ export class UploadJUnitXMLCommand extends Command {
   private async getMatchingJUnitXMLFiles(spanTags: SpanTags): Promise<Payload[]> {
     const jUnitXMLFiles = (this.basePaths || [])
       .reduce((acc: string[], basePath: string) => {
-        const isBasePathFile = isFile(basePath)
-        if (isBasePathFile) {
+        if (isFile(basePath)) {
           return acc.concat(fs.existsSync(basePath) ? [basePath] : [])
         }
 
