@@ -37,7 +37,7 @@ import {
   renderSuccessfulUpload,
   renderUpload,
 } from './renderer'
-import {isFalse} from './utils'
+import {isFalse, isFile} from './utils'
 
 const TRACE_ID_HTTP_HEADER = 'x-datadog-trace-id'
 const PARENT_ID_HTTP_HEADER = 'x-datadog-parent-id'
@@ -251,14 +251,15 @@ export class UploadJUnitXMLCommand extends Command {
   }
 
   private async getMatchingJUnitXMLFiles(spanTags: SpanTags): Promise<Payload[]> {
-    const jUnitXMLFiles = (this.basePaths || []).reduce((acc: string[], basePath: string) => {
-      const isFile = !!path.extname(basePath)
-      if (isFile) {
-        return acc.concat(fs.existsSync(basePath) ? [basePath] : [])
-      }
+    const jUnitXMLFiles = (this.basePaths || [])
+      .reduce((acc: string[], basePath: string) => {
+        if (isFile(basePath)) {
+          return acc.concat(fs.existsSync(basePath) ? [basePath] : [])
+        }
 
-      return acc.concat(glob.sync(buildPath(basePath, '*.xml')))
-    }, [])
+        return acc.concat(glob.sync(buildPath(basePath, '*.xml')))
+      }, [])
+      .filter(isFile)
 
     const validUniqueFiles = [...new Set(jUnitXMLFiles)].filter((jUnitXMLFilePath) => {
       const validationErrorMessage = validateXml(jUnitXMLFilePath)
