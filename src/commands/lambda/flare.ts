@@ -156,7 +156,15 @@ export class LambdaFlareCommand extends Command {
       return 1
     }
     const tagLength = Object.keys(tags).length
-    this.context.stdout.write(`✅ Found ${tagLength} resource tag${tagLength === 1 ? '' : 's'}.\n`)
+    if (tagLength === 0) {
+      this.context.stdout.write(
+        commonRenderer.renderSoftWarning(
+          'No resource tags were found, so the `tags.json` file will not be created or sent.'
+        )
+      )
+    } else {
+      this.context.stdout.write(`✅ Found ${tagLength} resource tags.\n`)
+    }
 
     // Get CloudWatch logs
     let logs: Map<string, OutputLogEvent[]> = new Map()
