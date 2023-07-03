@@ -446,7 +446,8 @@ export const convertToCSV = (logEvents: OutputLogEvent[]) => {
     const timestamp = `"${logEvent.timestamp ?? ''}"`
     let datetime = ''
     if (logEvent.timestamp) {
-      datetime = new Date(logEvent.timestamp).toISOString().replace('T', ' ').replace('Z', '')
+      const date = new Date(logEvent.timestamp)
+      datetime = date.toISOString().replace('T', ' ').replace('Z', '')
     }
     const message = `"${logEvent.message ?? ''}"`
     rows.push([timestamp, datetime, message])
