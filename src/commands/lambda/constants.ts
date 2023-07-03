@@ -118,7 +118,8 @@ export const AWS_SECRET_ARN_REG_EXP = /arn:aws:secretsmanager:[\w-]+:\d{12}:secr
 export const DATADOG_API_KEY_REG_EXP = /(?<![a-f0-9])[a-f0-9]{32}(?![a-f0-9])/g
 export const DATADOG_APP_KEY_REG_EXP = /(?<![a-f0-9])[a-f0-9]{40}(?![a-f0-9])/g
 
-// Lambda Flare environment variables
+// Environment Variables whose values don't need to be
+// masked in a Flare
 export const SKIP_MASKING_ENV_VARS = new Set([
   AWS_LAMBDA_EXEC_WRAPPER_VAR,
   SITE_ENV_VAR,
@@ -128,8 +129,7 @@ export const SKIP_MASKING_ENV_VARS = new Set([
   VERSION_ENV_VAR,
   ENVIRONMENT_ENV_VAR,
   EXTRA_TAGS_ENV_VAR,
+  PROFILER_ENV_VAR,
   PROFILER_PATH_ENV_VAR,
   DOTNET_TRACER_HOME_ENV_VAR,
-  CI_SITE_ENV_VAR,
-  AWS_DEFAULT_REGION_ENV_VAR,
 ])
