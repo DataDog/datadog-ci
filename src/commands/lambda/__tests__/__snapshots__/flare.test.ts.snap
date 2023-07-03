@@ -126,6 +126,20 @@ exports[`lambda flare AWS credentials stops and prints error when requestAWSCred
 "
 `;
 
+exports[`lambda flare convertToCSV handles missing timestamp and message in log events 1`] = `
+"timestamp,datetime,message
+\\"\\",,\\"Log 1\\"
+\\"456\\",1970-01-01 00:00:00.456,\\"\\""
+`;
+
+exports[`lambda flare convertToCSV returns a CSV string from an array of log events 1`] = `
+"timestamp,datetime,message
+\\"123\\",1970-01-01 00:00:00.123,\\"Log 1\\"
+\\"456\\",1970-01-01 00:00:00.456,\\"Log 2\\""
+`;
+
+exports[`lambda flare convertToCSV returns a CSV string with only headers when given an empty array 1`] = `"timestamp,datetime,message"`;
+
 exports[`lambda flare createDirectories throws error when unable to create a folder 1`] = `"Unable to create directories: MOCK ERROR: Unable to create folder"`;
 
 exports[`lambda flare deleteFolder throws error when unable to delete a folder 1`] = `"Failed to delete files located at mock-folder/.datadog-ci: MOCK ERROR: Unable to delete folder"`;

@@ -555,8 +555,7 @@ describe('lambda flare', () => {
         {timestamp: 456, message: 'Log 2'},
       ]
 
-      const expectedCSV = 'timestamp,message\n"123","Log 1"\n"456","Log 2"'
-      expect(convertToCSV(mockLogEvents)).toBe(expectedCSV)
+      expect(convertToCSV(mockLogEvents)).toMatchSnapshot()
     })
 
     it('handles missing timestamp and message in log events', () => {
@@ -565,14 +564,12 @@ describe('lambda flare', () => {
         {timestamp: 456, message: undefined},
       ]
 
-      const expectedCSV = 'timestamp,message\n"","Log 1"\n"456",""'
-      expect(convertToCSV(mockLogEvents)).toBe(expectedCSV)
+      expect(convertToCSV(mockLogEvents)).toMatchSnapshot()
     })
 
     it('returns a CSV string with only headers when given an empty array', () => {
       const mockLogEvents: OutputLogEvent[] = []
-      const expectedCSV = 'timestamp,message'
-      expect(convertToCSV(mockLogEvents)).toBe(expectedCSV)
+      expect(convertToCSV(mockLogEvents)).toMatchSnapshot()
     })
   })
 
