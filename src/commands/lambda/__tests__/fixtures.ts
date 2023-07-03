@@ -24,7 +24,10 @@ import {
   TagResourceCommand,
   ListTagsCommand,
   ListTagsResponse,
-  GetLayerVersionCommandInput, ServiceInputTypes, ServiceOutputTypes, ListTagsCommandOutput,
+  GetLayerVersionCommandInput,
+  ServiceInputTypes,
+  ServiceOutputTypes,
+  ListTagsCommandOutput,
 } from '@aws-sdk/client-lambda'
 import {AwsStub} from 'aws-sdk-client-mock'
 import {Cli, Command} from 'clipanion/lib/advanced'
