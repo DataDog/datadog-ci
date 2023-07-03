@@ -16,7 +16,7 @@ import {Command} from 'clipanion'
 import FormData from 'form-data'
 import JSZip from 'jszip'
 
-import * as constants from './constants'
+import {API_KEY_ENV_VAR, AWS_DEFAULT_REGION_ENV_VAR, CI_API_KEY_ENV_VAR, SKIP_MASKING_ENV_VARS} from './constants'
 import {getAWSCredentials, getLambdaFunctionConfig, getRegion} from './functions/commons'
 import {requestAWSCredentials} from './prompt'
 import * as commonRenderer from './renderers/common-renderer'
@@ -32,16 +32,6 @@ const ZIP_FILE_NAME = 'lambda-flare-output.zip'
 const LOG_STREAM_COUNT = 3
 const FULL_OBFUSCATION = '****************'
 const MIDDLE_OBFUSCATION = '**********'
-const NON_OBFUSCATED_ENV_VARS = new Set([
-  constants.SITE_ENV_VAR,
-  constants.LOG_LEVEL_ENV_VAR,
-  constants.LAMBDA_HANDLER_ENV_VAR,
-  constants.SERVICE_ENV_VAR,
-  constants.VERSION_ENV_VAR,
-  constants.ENVIRONMENT_ENV_VAR,
-  constants.EXTRA_TAGS_ENV_VAR,
-  constants.DOTNET_TRACER_HOME_ENV_VAR,
-])
 
 export class LambdaFlareCommand extends Command {
   private isDryRun = false
@@ -70,14 +60,14 @@ export class LambdaFlareCommand extends Command {
 
     // Validate region
     let errorFound = false
-    const region = getRegion(this.functionName) ?? this.region ?? process.env[constants.AWS_DEFAULT_REGION_ENV_VAR]
+    const region = getRegion(this.functionName) ?? this.region ?? process.env[AWS_DEFAULT_REGION_ENV_VAR]
     if (region === undefined) {
       this.context.stderr.write(commonRenderer.renderNoDefaultRegionSpecifiedError())
       errorFound = true
     }
 
     // Validate Datadog API key
-    this.apiKey = process.env[constants.CI_API_KEY_ENV_VAR] ?? process.env[constants.API_KEY_ENV_VAR]
+    this.apiKey = process.env[CI_API_KEY_ENV_VAR] ?? process.env[API_KEY_ENV_VAR]
     if (this.apiKey === undefined) {
       this.context.stderr.write(
         commonRenderer.renderError(
@@ -146,7 +136,7 @@ export class LambdaFlareCommand extends Command {
 
       return 1
     }
-    config = obfuscateConfig(config)
+    config = maskConfig(config)
     const configStr = util.inspect(config, false, undefined, true)
     this.context.stdout.write(`\n${configStr}\n`)
 
@@ -243,50 +233,51 @@ export class LambdaFlareCommand extends Command {
 }
 
 /**
- * Obfuscate the environment variables in a Lambda function configuration
+ * Mask the environment variables in a Lambda function configuration
  * @param config
  */
-export const obfuscateConfig = (config: FunctionConfiguration) => {
+export const maskConfig = (config: FunctionConfiguration) => {
   const environmentVariables = config.Environment?.Variables
   if (!environmentVariables) {
     return config
   }
 
-  const obfuscatedEnvironmentVariables: {[key: string]: string} = {}
+  const maskedEnvironmentVariables: {[key: string]: string} = {}
   for (const [key, value] of Object.entries(environmentVariables)) {
-    obfuscatedEnvironmentVariables[key] = value
-    if (!NON_OBFUSCATED_ENV_VARS.has(key)) {
-      obfuscatedEnvironmentVariables[key] = getObfuscation(value)
+    if (SKIP_MASKING_ENV_VARS.has(key)) {
+      maskedEnvironmentVariables[key] = value
+      continue
     }
+    maskedEnvironmentVariables[key] = getMasking(value)
   }
 
   return {
     ...config,
     Environment: {
       ...config.Environment,
-      Variables: obfuscatedEnvironmentVariables,
+      Variables: maskedEnvironmentVariables,
     },
   }
 }
 
 /**
- * Obfuscate a string but keep the first two and last four characters
- * Obfuscate the entire string if it's short
- * @param original the string to obfuscate
- * @returns the obfuscated string
+ * Mask a string but keep the first two and last four characters
+ * Mask the entire string if it's short
+ * @param original the string to mask
+ * @returns the masked string
  */
-export const getObfuscation = (original: string) => {
-  // Don't obfuscate booleans
+export const getMasking = (original: string) => {
+  // Don't mask booleans
   if (original.toLowerCase() === 'true' || original.toLowerCase() === 'false') {
     return original
   }
 
-  // Dont obfuscate numbers
+  // Dont mask numbers
   if (!isNaN(Number(original))) {
     return original
   }
 
-  // Obfuscate entire string if it's short
+  // Mask entire string if it's short
   if (original.length < 12) {
     return FULL_OBFUSCATION
   }

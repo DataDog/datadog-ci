@@ -330,7 +330,7 @@ exports[`lambda flare gets CloudWatch Logs warns and skips log when getLogEvents
 "
 `;
 
-exports[`lambda flare obfuscateConfig should obfuscate API key but not whitelisted environment variables 1`] = `
+exports[`lambda flare maskConfig should mask API key but not whitelisted environment variables 1`] = `
 Object {
   "Environment": Object {
     "Variables": Object {
