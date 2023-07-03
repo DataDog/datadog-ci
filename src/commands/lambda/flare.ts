@@ -14,11 +14,12 @@ import {AwsCredentialIdentity} from '@aws-sdk/types'
 import axios from 'axios'
 import {Command} from 'clipanion'
 import FormData from 'form-data'
+import inquirer from 'inquirer'
 import JSZip from 'jszip'
 
 import {API_KEY_ENV_VAR, AWS_DEFAULT_REGION_ENV_VAR, CI_API_KEY_ENV_VAR} from './constants'
 import {getAWSCredentials, getLambdaFunctionConfig, getRegion} from './functions/commons'
-import {requestAWSCredentials} from './prompt'
+import {confirmationQuestion, requestAWSCredentials} from './prompt'
 import * as commonRenderer from './renderers/common-renderer'
 import * as flareRenderer from './renderers/flare-renderer'
 
@@ -199,9 +200,22 @@ export class LambdaFlareCommand extends Command {
       }
 
       // Exit if dry run
+      const outputMsg = `\nℹ️ Your output files are located at: ${rootFolderPath}\n\n`
       if (this.isDryRun) {
         this.context.stdout.write('\n🚫 The flare files were not sent as it was executed in dry run mode.')
-        this.context.stdout.write(`\nℹ️ Your output files are located at: ${rootFolderPath}\n\n`)
+        this.context.stdout.write(outputMsg)
+
+        return 0
+      }
+
+      // Confirm before sending
+      this.context.stdout.write('\n')
+      const answer = await inquirer.prompt(
+        confirmationQuestion('Are you sure you want to send the flare file to Datadog Support?')
+      )
+      if (!answer.confirmation) {
+        this.context.stdout.write('\n🚫 The flare files were not sent based on your selection.')
+        this.context.stdout.write(outputMsg)
 
         return 0
       }

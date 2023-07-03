@@ -13,6 +13,7 @@ import {
 import {mockClient} from 'aws-sdk-client-mock'
 import axios from 'axios'
 import FormData from 'form-data'
+import inquirer from 'inquirer'
 import JSZip from 'jszip'
 
 import {API_KEY_ENV_VAR, AWS_DEFAULT_REGION_ENV_VAR, CI_API_KEY_ENV_VAR} from '../constants'
@@ -71,6 +72,10 @@ jest.mock('../functions/commons', () => ({
   getLambdaFunctionConfig: jest.fn().mockImplementation(() => Promise.resolve(MOCK_CONFIG)),
 }))
 jest.mock('../prompt')
+jest.mock('inquirer', () => ({
+  ...jest.requireActual('inquirer'),
+  prompt: jest.fn().mockResolvedValue({confirmation: true}),
+}))
 jest.mock('util')
 
 // File system mocks
@@ -762,5 +767,17 @@ describe('lambda flare', () => {
       const output = context.stdout.toString()
       expect(output).toMatchSnapshot()
     })
+  })
+
+  it('does not send when user answers prompt with no', async () => {
+    ;(inquirer.prompt as any).mockResolvedValueOnce({confirmation: false})
+    ;(getAWSCredentials as any).mockResolvedValue(mockAwsCredentials)
+
+    const cli = makeCli()
+    const context = createMockContext()
+    const code = await cli.run(MOCK_REQUIRED_FLAGS, context as any)
+    expect(code).toBe(0)
+    const output = context.stdout.toString()
+    expect(output).toMatchSnapshot()
   })
 })
