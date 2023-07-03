@@ -67,6 +67,7 @@ exports[`lambda flare AWS credentials continues when getAWSCredentials() returns
 💾 Saving files...
 • Saved function config to mock-folder/.datadog-ci/function_config.json
 
+
 🚀 Sending to Datadog Support...
 
 ✅ Successfully sent flare file to Datadog Support!
@@ -97,6 +98,7 @@ exports[`lambda flare AWS credentials requests AWS credentials when none are fou
 
 💾 Saving files...
 • Saved function config to mock-folder/.datadog-ci/function_config.json
+
 
 🚀 Sending to Datadog Support...
 
@@ -157,6 +159,7 @@ exports[`lambda flare gets CloudWatch Logs does not get logs when --with-logs is
 💾 Saving files...
 • Saved function config to mock-folder/.datadog-ci/function_config.json
 
+
 🚀 Sending to Datadog Support...
 
 ✅ Successfully sent flare file to Datadog Support!
@@ -197,6 +200,7 @@ exports[`lambda flare gets CloudWatch Logs gets logs, saves, and sends correctly
 • Saved logs to mock-folder/.datadog-ci/logs/Stream1.csv
 • Saved logs to mock-folder/.datadog-ci/logs/Stream2.csv
 • Saved logs to mock-folder/.datadog-ci/logs/Stream3.csv
+
 
 🚀 Sending to Datadog Support...
 
@@ -286,6 +290,7 @@ exports[`lambda flare gets CloudWatch Logs warns and skips getting logs when get
 💾 Saving files...
 • Saved function config to mock-folder/.datadog-ci/function_config.json
 
+
 🚀 Sending to Datadog Support...
 
 ✅ Successfully sent flare file to Datadog Support!
@@ -324,6 +329,7 @@ exports[`lambda flare gets CloudWatch Logs warns and skips log when getLogEvents
 💾 Saving files...
 • Saved function config to mock-folder/.datadog-ci/function_config.json
 
+
 🚀 Sending to Datadog Support...
 
 ✅ Successfully sent flare file to Datadog Support!
@@ -355,6 +361,66 @@ exports[`lambda flare prints correct headers prints non-dry-run header 1`] = `
 "
 🐶 Generating Lambda flare to send your configuration to Datadog...
 [Error] No function name specified. [-f,--function]
+"
+`;
+
+exports[`lambda flare prompt to send works as expected does not send when user answers prompt with no 1`] = `
+"
+🐶 Generating Lambda flare to send your configuration to Datadog...
+
+🔑 Getting AWS credentials...
+
+🔍 Fetching Lambda function configuration...
+
+{
+  Environment: {
+    Variables: {
+      DD_API_KEY: '02**********33bd',
+      DD_SITE: 'datadoghq.com',
+      DD_LOG_LEVEL: 'debug'
+    }
+  },
+  FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:some-function',
+  FunctionName: 'some-function'
+}
+
+💾 Saving files...
+• Saved function config to mock-folder/.datadog-ci/function_config.json
+
+
+🚫 The flare files were not sent based on your selection.
+ℹ️ Your output files are located at: mock-folder/.datadog-ci
+
+"
+`;
+
+exports[`lambda flare prompt to send works as expected sends when user answers prompt with yes 1`] = `
+"
+🐶 Generating Lambda flare to send your configuration to Datadog...
+
+🔑 Getting AWS credentials...
+
+🔍 Fetching Lambda function configuration...
+
+{
+  Environment: {
+    Variables: {
+      DD_API_KEY: '02**********33bd',
+      DD_SITE: 'datadoghq.com',
+      DD_LOG_LEVEL: 'debug'
+    }
+  },
+  FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:some-function',
+  FunctionName: 'some-function'
+}
+
+💾 Saving files...
+• Saved function config to mock-folder/.datadog-ci/function_config.json
+
+
+🚀 Sending to Datadog Support...
+
+✅ Successfully sent flare file to Datadog Support!
 "
 `;
 
@@ -414,6 +480,7 @@ exports[`lambda flare send to Datadog successfully adds zip file to FormData 1`]
 💾 Saving files...
 • Saved function config to mock-folder/.datadog-ci/function_config.json
 
+
 🚀 Sending to Datadog Support...
 
 ✅ Successfully sent flare file to Datadog Support!
@@ -445,6 +512,7 @@ exports[`lambda flare send to Datadog successfully sends request to Datadog 1`] 
 💾 Saving files...
 • Saved function config to mock-folder/.datadog-ci/function_config.json
 
+
 🚀 Sending to Datadog Support...
 
 ✅ Successfully sent flare file to Datadog Support!
@@ -475,6 +543,7 @@ exports[`lambda flare validates required flags extracts region from function nam
 
 💾 Saving files...
 • Saved function config to mock-folder/.datadog-ci/function_config.json
+
 
 🚀 Sending to Datadog Support...
 
@@ -542,6 +611,7 @@ exports[`lambda flare validates required flags runs successfully with all requir
 💾 Saving files...
 • Saved function config to mock-folder/.datadog-ci/function_config.json
 
+
 🚀 Sending to Datadog Support...
 
 ✅ Successfully sent flare file to Datadog Support!
@@ -572,6 +642,7 @@ exports[`lambda flare validates required flags uses API key ENV variable and run
 
 💾 Saving files...
 • Saved function config to mock-folder/.datadog-ci/function_config.json
+
 
 🚀 Sending to Datadog Support...
 
@@ -604,6 +675,7 @@ exports[`lambda flare validates required flags uses API key ENV variable and run
 💾 Saving files...
 • Saved function config to mock-folder/.datadog-ci/function_config.json
 
+
 🚀 Sending to Datadog Support...
 
 ✅ Successfully sent flare file to Datadog Support!
@@ -630,6 +702,7 @@ exports[`lambda flare validates required flags uses API key ENV variable and run
 
 💾 Saving files...
 • Saved function config to mock-folder/.datadog-ci/function_config.json
+
 
 🚀 Sending to Datadog Support...
 
@@ -661,6 +734,7 @@ exports[`lambda flare validates required flags uses region ENV variable when no 
 
 💾 Saving files...
 • Saved function config to mock-folder/.datadog-ci/function_config.json
+
 
 🚀 Sending to Datadog Support...
 
