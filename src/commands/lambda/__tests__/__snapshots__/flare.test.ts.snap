@@ -364,7 +364,7 @@ exports[`lambda flare prints correct headers prints non-dry-run header 1`] = `
 "
 `;
 
-exports[`lambda flare prompt to send works as expected does not send when user answers prompt with no 1`] = `
+exports[`lambda flare prompts for confirmation before sending does not send when user answers prompt with no 1`] = `
 "
 🐶 Generating Lambda flare to send your configuration to Datadog...
 
@@ -394,7 +394,7 @@ exports[`lambda flare prompt to send works as expected does not send when user a
 "
 `;
 
-exports[`lambda flare prompt to send works as expected sends when user answers prompt with yes 1`] = `
+exports[`lambda flare prompts for confirmation before sending sends when user answers prompt with yes 1`] = `
 "
 🐶 Generating Lambda flare to send your configuration to Datadog...
 

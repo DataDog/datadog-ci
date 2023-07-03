@@ -809,7 +809,7 @@ describe('lambda flare', () => {
     })
   })
 
-  describe('prompt to send works as expected', () => {
+  describe('prompts for confirmation before sending', () => {
     beforeEach(() => {
       ;(getAWSCredentials as any).mockResolvedValue(mockAwsCredentials)
     })
