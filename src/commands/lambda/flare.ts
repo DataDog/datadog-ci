@@ -441,11 +441,15 @@ export const writeFile = (filePath: string, data: string) => {
  * @returns the CSV string
  */
 export const convertToCSV = (logEvents: OutputLogEvent[]) => {
-  const rows = [['timestamp', 'message']]
+  const rows = [['timestamp', 'datetime', 'message']]
   for (const logEvent of logEvents) {
     const timestamp = `"${logEvent.timestamp ?? ''}"`
+    let datetime = ''
+    if (logEvent.timestamp) {
+      datetime = new Date(logEvent.timestamp).toISOString().replace('T', ' ').replace('Z', '')
+    }
     const message = `"${logEvent.message ?? ''}"`
-    rows.push([timestamp, message])
+    rows.push([timestamp, datetime, message])
   }
 
   return rows.join('\n')
