@@ -159,7 +159,7 @@ export class LambdaFlareCommand extends Command {
     if (tagLength === 0) {
       this.context.stdout.write(
         commonRenderer.renderSoftWarning(
-          'No resource tags were found, so the `tags.json` file will not be created or sent.'
+          `No resource tags were found, so the \`${TAGS_FILE_NAME}\` file will not be created or sent.`
         )
       )
     } else {
