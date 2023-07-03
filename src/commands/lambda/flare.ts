@@ -9,14 +9,14 @@ import {
   OrderBy,
   OutputLogEvent,
 } from '@aws-sdk/client-cloudwatch-logs'
-import {LambdaClient, LambdaClientConfig} from '@aws-sdk/client-lambda'
+import {FunctionConfiguration, LambdaClient, LambdaClientConfig} from '@aws-sdk/client-lambda'
 import {AwsCredentialIdentity} from '@aws-sdk/types'
 import axios from 'axios'
 import {Command} from 'clipanion'
 import FormData from 'form-data'
 import JSZip from 'jszip'
 
-import {API_KEY_ENV_VAR, AWS_DEFAULT_REGION_ENV_VAR, CI_API_KEY_ENV_VAR} from './constants'
+import {API_KEY_ENV_VAR, AWS_DEFAULT_REGION_ENV_VAR, CI_API_KEY_ENV_VAR, SKIP_MASKING_ENV_VARS} from './constants'
 import {getAWSCredentials, getLambdaFunctionConfig, getRegion} from './functions/commons'
 import {requestAWSCredentials} from './prompt'
 import * as commonRenderer from './renderers/common-renderer'
@@ -30,6 +30,8 @@ const LOGS_DIRECTORY = 'logs'
 const FUNCTION_CONFIG_FILE_NAME = 'function_config.json'
 const ZIP_FILE_NAME = 'lambda-flare-output.zip'
 const LOG_STREAM_COUNT = 3
+const FULL_OBFUSCATION = '****************'
+const MIDDLE_OBFUSCATION = '**********'
 
 export class LambdaFlareCommand extends Command {
   private isDryRun = false
@@ -122,7 +124,7 @@ export class LambdaFlareCommand extends Command {
       credentials: this.credentials,
     }
     const lambdaClient = new LambdaClient(lambdaClientConfig)
-    let config
+    let config: FunctionConfiguration
     try {
       config = await getLambdaFunctionConfig(lambdaClient, this.functionName)
     } catch (err) {
@@ -134,6 +136,7 @@ export class LambdaFlareCommand extends Command {
 
       return 1
     }
+    config = maskConfig(config)
     const configStr = util.inspect(config, false, undefined, true)
     this.context.stdout.write(`\n${configStr}\n`)
 
@@ -227,6 +230,63 @@ export class LambdaFlareCommand extends Command {
 
     return 0
   }
+}
+
+/**
+ * Mask the environment variables in a Lambda function configuration
+ * @param config
+ */
+export const maskConfig = (config: FunctionConfiguration) => {
+  const environmentVariables = config.Environment?.Variables
+  if (!environmentVariables) {
+    return config
+  }
+
+  const maskedEnvironmentVariables: {[key: string]: string} = {}
+  for (const [key, value] of Object.entries(environmentVariables)) {
+    if (SKIP_MASKING_ENV_VARS.has(key)) {
+      maskedEnvironmentVariables[key] = value
+      continue
+    }
+    maskedEnvironmentVariables[key] = getMasking(value)
+  }
+
+  return {
+    ...config,
+    Environment: {
+      ...config.Environment,
+      Variables: maskedEnvironmentVariables,
+    },
+  }
+}
+
+/**
+ * Mask a string but keep the first two and last four characters
+ * Mask the entire string if it's short
+ * @param original the string to mask
+ * @returns the masked string
+ */
+export const getMasking = (original: string) => {
+  // Don't mask booleans
+  if (original.toLowerCase() === 'true' || original.toLowerCase() === 'false') {
+    return original
+  }
+
+  // Dont mask numbers
+  if (!isNaN(Number(original))) {
+    return original
+  }
+
+  // Mask entire string if it's short
+  if (original.length < 12) {
+    return FULL_OBFUSCATION
+  }
+
+  // Keep first two and last four characters if it's long
+  const front = original.substring(0, 2)
+  const end = original.substring(original.length - 4)
+
+  return front + MIDDLE_OBFUSCATION + end
 }
 
 /**

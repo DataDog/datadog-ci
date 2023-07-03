@@ -23,6 +23,8 @@ import {
   getAllLogs,
   getLogEvents,
   getLogStreamNames,
+  getMasking,
+  maskConfig,
   writeFile,
   zipContents,
 } from '../flare'
@@ -241,6 +243,44 @@ describe('lambda flare', () => {
       expect(code).toBe(0)
       const output = context.stdout.toString()
       expect(output).toMatchSnapshot()
+    })
+  })
+
+  describe('getMasking', () => {
+    it('should mask the entire string if its length is less than 12', () => {
+      expect(getMasking('shortString')).toEqual('****************')
+    })
+
+    it('should keep the first two and last four characters for strings longer than 12 characters', () => {
+      const original = 'abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz'
+      const masked = 'ab**********wxyz'
+      expect(getMasking(original)).toEqual(masked)
+    })
+
+    it('should return empty string if input is empty', () => {
+      expect(getMasking('')).toEqual('')
+    })
+
+    it('should not mask booleans', () => {
+      expect(getMasking('true')).toEqual('true')
+      expect(getMasking('TrUe')).toEqual('TrUe')
+      expect(getMasking('false')).toEqual('false')
+      expect(getMasking('FALSE')).toEqual('FALSE')
+      expect(getMasking('trueee')).toEqual('****************')
+    })
+  })
+
+  describe('maskConfig', () => {
+    it('should mask API key but not whitelisted environment variables', () => {
+      const maskedConfig = maskConfig(MOCK_CONFIG)
+      expect(maskedConfig).toMatchSnapshot()
+    })
+
+    it('should return the original config if there are no environment variables', () => {
+      const config: any = {...MOCK_CONFIG}
+      config.Environment = undefined
+      const maskedConfig = maskConfig(config)
+      expect(maskedConfig).toEqual(config)
     })
   })
 
