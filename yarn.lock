@@ -2810,7 +2810,7 @@ __metadata:
     ora: 5.4.1
     pkg: 5.5.2
     prettier: 2.0.5
-    proxy: 1.0.2
+    proxy: ^2.1.1
     proxy-agent: ^6.2.1
     rimraf: ^3.0.2
     semver: ^7.5.3
@@ -4214,15 +4214,15 @@ __metadata:
   languageName: node
   linkType: hard
 
-"args@npm:5.0.1":
-  version: 5.0.1
-  resolution: "args@npm:5.0.1"
+"args@npm:^5.0.3":
+  version: 5.0.3
+  resolution: "args@npm:5.0.3"
   dependencies:
     camelcase: 5.0.0
     chalk: 2.4.2
     leven: 2.1.0
     mri: 1.1.4
-  checksum: 51e2a05f32d15b8e292f000e6b232118df61b8f4fd446b17bb4e99df9ab47fe2c4a01924d7f967a6f08e82f9c19be277b08ed22bceff058aca849144ef8efed3
+  checksum: ac39e656090f9364d7a2a42216a572dfe36d3e4d16d87ca4c1c9552a1c325dc222b642124cb96cdeeafb46662922910191f5aa12142cc4ca117b6d85454c8423
   languageName: node
   linkType: hard
 
@@ -4453,10 +4453,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"basic-auth-parser@npm:0.0.2":
-  version: 0.0.2
-  resolution: "basic-auth-parser@npm:0.0.2"
-  checksum: f4067fd7e937d27b548a1dd95ead7b1de1a5763fd82c04a2a019bf6364af0f2ccee30ce43d5e6155f4e02c2b2fd0944db92dac3d2b1b0588a9a04a6e9c6b535c
+"basic-auth-parser@npm:0.0.2-1":
+  version: 0.0.2-1
+  resolution: "basic-auth-parser@npm:0.0.2-1"
+  checksum: b06dafe108d66290c1c02fac5d656efe810fb5a88c13bb2a5681cd07e5e11ebe5d1b8bc3b18b55bf0c4ad6dff3820fc297f958fcfeafdd67b6ed977936c55cc8
   languageName: node
   linkType: hard
 
@@ -8941,16 +8941,14 @@ jschardet@latest:
   languageName: node
   linkType: hard
 
-"proxy@npm:1.0.2":
-  version: 1.0.2
-  resolution: "proxy@npm:1.0.2"
+"proxy@npm:^2.1.1":
+  version: 2.1.1
+  resolution: "proxy@npm:2.1.1"
   dependencies:
-    args: 5.0.1
-    basic-auth-parser: 0.0.2
-    debug: ^4.1.1
-  bin:
-    proxy: bin/proxy.js
-  checksum: 39d690a3a0fffde5776aa30d82dade59a52e6ef859fcfd46cb14a1dfd905d6437ed3863cdb6794e06219add81afad805790bd84c8192ab1bfb93b007f906eb34
+    args: ^5.0.3
+    basic-auth-parser: 0.0.2-1
+    debug: ^4.3.4
+  checksum: f1e0d585c0378e6f381ce05e2d8818605b6507977fa65b3829f97b07f5bdacdc05bdb8cefcec2d0bbf8d9f3f9c98c5fb155cfcdce8987f084345d3fc8ef301fd
   languageName: node
   linkType: hard
 

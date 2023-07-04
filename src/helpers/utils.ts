@@ -209,18 +209,13 @@ export const getRequestBuilder = (options: RequestOptions) => {
 }
 
 export const getProxyAgent = (proxyOpts?: ProxyConfiguration): ProxyAgent => {
-  if (!proxyOpts) {
+  const proxyUrlFromConfiguration = getProxyUrl(proxyOpts)
+  if (!proxyOpts || proxyUrlFromConfiguration === '') {
+    // Let the default proxy agent discover environment variables.
     return new ProxyAgent()
   }
 
-  const {auth, host, port, protocol} = proxyOpts
-
-  return new ProxyAgent({
-    auth: auth ? `${auth.username}:${auth.password}` : undefined,
-    host,
-    port,
-    protocol: `${protocol}:`,
-  })
+  return new ProxyAgent({getProxyForUrl: () => proxyUrlFromConfiguration})
 }
 
 export const getApiHostForSite = (site: string) => {
