@@ -9,16 +9,27 @@ export const gitRemote = async (git: simpleGit.SimpleGit): Promise<string> => {
   if (remotes.length === 0) {
     throw new Error('No git remotes available')
   }
+  const defaultRemote = await getDefaultRemoteName(git)
 
   for (const remote of remotes) {
     // We're trying to pick the remote called with the default git name 'origin'.
-    if (remote.name === 'origin') {
+    if (remote.name === defaultRemote) {
       return stripCredentials(remote.refs.push)
     }
   }
 
   // Falling back to picking the first remote in the list if 'origin' is not found.
   return stripCredentials(remotes[0].refs.push)
+}
+
+export const getDefaultRemoteName = async (git: simpleGit.SimpleGit): Promise<string> => {
+  try {
+    const defaultRemoteConfig = (await git.getConfig('clone.defaultRemoteName')) ?? {}
+
+    return defaultRemoteConfig.value ?? 'origin'
+  } catch (e) {
+    return 'origin'
+  }
 }
 
 // StripCredentials removes credentials from a remote HTTP url.

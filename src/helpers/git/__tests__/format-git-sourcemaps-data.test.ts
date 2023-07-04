@@ -68,6 +68,7 @@ describe('git', () => {
 
   describe('GetRepositoryData', () => {
     const createMockSimpleGit = () => ({
+      getConfig: (arg: string) => ({value: 'origin'}),
       getRemotes: (arg: boolean) => [{refs: {push: 'git@github.com:user/repository.git'}}],
       raw: (arg: string) => 'src/commands/sourcemaps/__tests__/git.test.ts',
       revparse: (arg: string) => '25da22df90210a40b919debe3f7ebfb0c1811898',

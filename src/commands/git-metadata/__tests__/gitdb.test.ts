@@ -87,6 +87,15 @@ describe('gitdb', () => {
     }
   )
 
+  const defaultRemoteNameNotConfigured = {
+    key: 'clone.defaultRemoteName',
+    paths: [],
+    scopes: new Map<string, string[]>(),
+    // eslint-disable-next-line no-null/no-null
+    value: null,
+    values: [],
+  }
+
   type MockParam<I, O> = {
     input: I | undefined
     output: O | Error
@@ -248,14 +257,11 @@ describe('gitdb', () => {
       getConfig: [
         {
           input: 'clone.defaultRemoteName',
-          output: {
-            key: 'clone.defaultRemoteName',
-            paths: [],
-            scopes: new Map<string, string[]>(),
-            // eslint-disable-next-line no-null/no-null
-            value: null,
-            values: [],
-          },
+          output: defaultRemoteNameNotConfigured,
+        },
+        {
+          input: 'clone.defaultRemoteName',
+          output: defaultRemoteNameNotConfigured,
         },
       ],
       fetch: [
@@ -308,6 +314,16 @@ describe('gitdb', () => {
             values: [],
           },
         },
+        {
+          input: 'clone.defaultRemoteName',
+          output: {
+            key: 'clone.defaultRemoteName',
+            paths: [],
+            scopes: new Map<string, string[]>(),
+            value: 'myorigin',
+            values: [],
+          },
+        },
       ],
       fetch: [
         {
@@ -347,7 +363,12 @@ describe('gitdb', () => {
 
   test('should not unshallow repository if git version is old', async () => {
     const mocks = new MockAll({
-      getConfig: [],
+      getConfig: [
+        {
+          input: 'clone.defaultRemoteName',
+          output: defaultRemoteNameNotConfigured,
+        },
+      ],
       fetch: [],
       getRemotes: [
         {
@@ -371,7 +392,12 @@ describe('gitdb', () => {
 
   test('should send packfiles', async () => {
     const mocks = new MockAll({
-      getConfig: [],
+      getConfig: [
+        {
+          input: 'clone.defaultRemoteName',
+          output: defaultRemoteNameNotConfigured,
+        },
+      ],
       fetch: [],
       getRemotes: [
         {
@@ -552,7 +578,12 @@ describe('gitdb', () => {
 
   test('should omit known commits', async () => {
     const mocks = new MockAll({
-      getConfig: [],
+      getConfig: [
+        {
+          input: 'clone.defaultRemoteName',
+          output: defaultRemoteNameNotConfigured,
+        },
+      ],
       fetch: [],
       getRemotes: [
         {
@@ -644,7 +675,12 @@ describe('gitdb', () => {
 
   test('retries http requests', async () => {
     const mocks = new MockAll({
-      getConfig: [],
+      getConfig: [
+        {
+          input: 'clone.defaultRemoteName',
+          output: defaultRemoteNameNotConfigured,
+        },
+      ],
       fetch: [],
       getRemotes: [
         {
@@ -757,7 +793,12 @@ describe('gitdb', () => {
 
   test('fails after 3 http requests', async () => {
     const mocks = new MockAll({
-      getConfig: [],
+      getConfig: [
+        {
+          input: 'clone.defaultRemoteName',
+          output: defaultRemoteNameNotConfigured,
+        },
+      ],
       fetch: [],
       getRemotes: [
         {
@@ -857,7 +898,12 @@ describe('gitdb', () => {
 
   test('fail immediately if returned format is incorrect', async () => {
     const mocks = new MockAll({
-      getConfig: [],
+      getConfig: [
+        {
+          input: 'clone.defaultRemoteName',
+          output: defaultRemoteNameNotConfigured,
+        },
+      ],
       fetch: [],
       getRemotes: [
         {
@@ -926,7 +972,12 @@ describe('gitdb', () => {
 
   test('all commits are known, no packfile upload', async () => {
     const mocks = new MockAll({
-      getConfig: [],
+      getConfig: [
+        {
+          input: 'clone.defaultRemoteName',
+          output: defaultRemoteNameNotConfigured,
+        },
+      ],
       fetch: [],
       getRemotes: [
         {

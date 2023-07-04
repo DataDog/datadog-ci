@@ -9,11 +9,10 @@ import FormData from 'form-data'
 import {gte} from 'semver'
 import * as simpleGit from 'simple-git'
 
+import {getDefaultRemoteName, gitRemote as getRepoURL} from '../../helpers/git/get-git-data'
 import {RequestBuilder} from '../../helpers/interfaces'
 import {Logger} from '../../helpers/logger'
 import {retryRequest} from '../../helpers/retry'
-
-import {gitRemote as getRepoURL} from './git'
 
 const API_TIMEOUT = 15000
 
@@ -126,7 +125,7 @@ const unshallowRepositoryWhenNeeded = async (log: Logger, git: simpleGit.SimpleG
   if (isShallow && gte(gitversion, '2.27.0')) {
     log.info('[unshallow] Git repository is a shallow clone, unshallowing it...')
     const headCmdPromise = git.revparse('HEAD')
-    const remoteNameCmdPromise = git.getConfig('clone.defaultRemoteName')
+    const remoteNameCmdPromise = getDefaultRemoteName(git)
     log.info(
       `[unshallow] Running git fetch --shallow-since="${MAX_HISTORY.oldestCommits}" --update-shallow --filter="blob:none" --recurse-submodules=no`
     )
@@ -135,7 +134,7 @@ const unshallowRepositoryWhenNeeded = async (log: Logger, git: simpleGit.SimpleG
       '--update-shallow',
       '--filter="blob:none"',
       '--recurse-submodules=no',
-      (await remoteNameCmdPromise).value ?? 'origin',
+      (await remoteNameCmdPromise) ?? 'origin',
       await headCmdPromise,
     ])
     log.info('[unshallow] Fetch completed.')
