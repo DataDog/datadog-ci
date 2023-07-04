@@ -215,7 +215,16 @@ export const getProxyAgent = (proxyOpts?: ProxyConfiguration): ProxyAgent => {
     return new ProxyAgent()
   }
 
-  return new ProxyAgent({getProxyForUrl: () => proxyUrlFromConfiguration})
+  return new ProxyAgent({
+    getProxyForUrl: (url) => {
+      // Do not proxy the WebSocket connections.
+      if (url?.match(/^wss?:/)) {
+        return ''
+      }
+
+      return proxyUrlFromConfiguration
+    },
+  })
 }
 
 export const getApiHostForSite = (site: string) => {
