@@ -473,7 +473,6 @@ export const getLogEvents = async (
     logStreamName,
     limit: MAX_LOG_EVENTS_PER_STREAM,
   }
-  console.log(startMillis, endMillis)
   if (startMillis !== 0 || endMillis !== 0) {
     config.startTime = startMillis
     config.endTime = endMillis
