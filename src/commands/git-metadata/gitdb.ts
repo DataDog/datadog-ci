@@ -6,13 +6,13 @@ import path from 'path'
 
 import {AxiosResponse} from 'axios'
 import FormData from 'form-data'
+import {lte} from 'semver'
 import * as simpleGit from 'simple-git'
 
+import {getDefaultRemoteName, gitRemote as getRepoURL} from '../../helpers/git/get-git-data'
 import {RequestBuilder} from '../../helpers/interfaces'
 import {Logger} from '../../helpers/logger'
 import {retryRequest} from '../../helpers/retry'
-
-import {gitRemote as getRepoURL} from './git'
 
 const API_TIMEOUT = 15000
 
@@ -45,7 +45,7 @@ export const uploadToGitDB = async (
 
   await unshallowRepositoryWhenNeeded(log, git)
 
-  let latestCommits
+  let latestCommits: string[]
   try {
     latestCommits = await getLatestLocalCommits(git)
     if (latestCommits.length === 0) {
@@ -59,7 +59,7 @@ export const uploadToGitDB = async (
     throw err
   }
 
-  let commitsToExclude
+  let commitsToExclude: string[]
   try {
     commitsToExclude = await getKnownCommits(log, request, repoURL, latestCommits)
     log.debug(`${commitsToExclude.length} commits already in GitDB.`)
@@ -68,11 +68,13 @@ export const uploadToGitDB = async (
     throw err
   }
 
+  const commitsToInclude = latestCommits.filter((x) => !commitsToExclude.includes(x))
+
   // Get the list of all objects (commits, trees) to upload. This list can be quite long
   // so quite memory intensive (multiple MBs).
   let objectsToUpload
   try {
-    objectsToUpload = await getObjectsToUpload(git, commitsToExclude)
+    objectsToUpload = await getObjectsToUpload(git, commitsToInclude, commitsToExclude)
     log.debug(`${objectsToUpload.length} objects to upload.`)
   } catch (err) {
     log.warn(`Failed getting objects to upload: ${err}`)
@@ -117,14 +119,28 @@ const getLatestLocalCommits = async (git: simpleGit.SimpleGit) => {
 
 const unshallowRepositoryWhenNeeded = async (log: Logger, git: simpleGit.SimpleGit) => {
   const isShallow = (await git.revparse('--is-shallow-repository')) === 'true'
-  if (isShallow) {
-    log.info('[unshallow] Git repository is a shallow clone, unshallowing it...')
-    log.info('[unshallow] Setting remote.origin.partialclonefilter to "blob:none" to avoid fetching file content')
-    await git.addConfig('remote.origin.partialclonefilter', 'blob:none')
-    log.info(`[unshallow] Running git fetch --shallow-since="${MAX_HISTORY.oldestCommits}" --update-shallow --refetch`)
-    await git.fetch([`--shallow-since="${MAX_HISTORY.oldestCommits}"`, '--update-shallow', '--refetch'])
-    log.info('[unshallow] Fetch completed.')
+  if (!isShallow) {
+    return
   }
+  const gitversion = String(await git.version())
+  if (lte(gitversion, '2.27.0')) {
+    return
+  }
+  log.info('[unshallow] Git repository is a shallow clone, unshallowing it...')
+  const headCmdPromise = git.revparse('HEAD')
+  const remoteNameCmdPromise = getDefaultRemoteName(git)
+  log.info(
+    `[unshallow] Running git fetch --shallow-since="${MAX_HISTORY.oldestCommits}" --update-shallow --filter=blob:none --recurse-submodules=no`
+  )
+  await git.fetch([
+    `--shallow-since="${MAX_HISTORY.oldestCommits}"`,
+    '--update-shallow',
+    '--filter=blob:none',
+    '--recurse-submodules=no',
+    (await remoteNameCmdPromise) ?? 'origin',
+    await headCmdPromise,
+  ])
+  log.info('[unshallow] Fetch completed.')
 }
 
 // getKnownCommits asks the backend which of the given commits are already known
@@ -183,20 +199,15 @@ const validateCommit = (sha: string) => {
   return sha
 }
 
-const getObjectsToUpload = async (git: simpleGit.SimpleGit, commitsToExclude: string[]) => {
+const getObjectsToUpload = async (git: simpleGit.SimpleGit, commitsToInclude: string[], commitsToExclude: string[]) => {
   const rawResponse = await git.raw(
-    [
-      'rev-list',
-      '--objects',
-      '--no-object-names',
-      '--filter=blob:none',
-      `--since="${MAX_HISTORY.oldestCommits}"`,
-      'HEAD',
-    ].concat(commitsToExclude.map((sha) => '^' + sha))
+    ['rev-list', '--objects', '--no-object-names', '--filter=blob:none', `--since="${MAX_HISTORY.oldestCommits}"`]
+      .concat(commitsToExclude.map((sha) => '^' + sha))
+      .concat(commitsToInclude)
   )
-  const commitsToInclude = rawResponse.split('\n').filter((c) => c !== '')
+  const objectsToInclude = rawResponse.split('\n').filter((c) => c !== '')
 
-  return commitsToInclude
+  return objectsToInclude
 }
 
 const generatePackFilesForCommits = async (log: Logger, commits: string[]): Promise<[string[], string | undefined]> => {

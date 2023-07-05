@@ -15,14 +15,14 @@ export const newSimpleGit = async (): Promise<simpleGit.SimpleGit> => {
   try {
     // Attempt to set the baseDir to the root of the repository so the 'git ls-files' command
     // returns the tracked files paths relative to the root of the repository.
-    const git = simpleGit.gitP(options)
+    const git = simpleGit.simpleGit(options)
     const root = await git.revparse('--show-toplevel')
     options.baseDir = root
   } catch {
     // Ignore exception as it will fail if we are not inside a git repository.
   }
 
-  return simpleGit.gitP(options)
+  return simpleGit.simpleGit(options)
 }
 
 export interface RepositoryData {
