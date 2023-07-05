@@ -53,6 +53,7 @@ export class LambdaFlareCommand extends Command {
     this.context.stdout.write(flareRenderer.renderLambdaFlareHeader(this.isDryRun))
 
     // Validate function name
+    const errorMessages = []
     if (this.functionName === undefined) {
       this.context.stderr.write(commonRenderer.renderError('No function name specified. [-f,--function]'))
 
@@ -60,37 +61,36 @@ export class LambdaFlareCommand extends Command {
     }
 
     // Validate region
-    let errorFound = false
     const region = getRegion(this.functionName) ?? this.region ?? process.env[AWS_DEFAULT_REGION_ENV_VAR]
     if (region === undefined) {
-      this.context.stderr.write(commonRenderer.renderNoDefaultRegionSpecifiedError())
-      errorFound = true
+      errorMessages.push(commonRenderer.renderNoDefaultRegionSpecifiedError())
     }
 
     // Validate Datadog API key
     this.apiKey = process.env[CI_API_KEY_ENV_VAR] ?? process.env[API_KEY_ENV_VAR]
     if (this.apiKey === undefined) {
-      this.context.stderr.write(
+      errorMessages.push(
         commonRenderer.renderError(
           'No Datadog API key specified. Set an API key with the DATADOG_API_KEY environment variable.'
         )
       )
-      errorFound = true
     }
 
     // Validate case ID
     if (this.caseId === undefined) {
-      this.context.stderr.write(commonRenderer.renderError('No case ID specified. [-c,--case-id]'))
-      errorFound = true
+      errorMessages.push(commonRenderer.renderError('No case ID specified. [-c,--case-id]'))
     }
 
     // Validate email
     if (this.email === undefined) {
-      this.context.stderr.write(commonRenderer.renderError('No email specified. [-e,--email]'))
-      errorFound = true
+      errorMessages.push(commonRenderer.renderError('No email specified. [-e,--email]'))
     }
 
-    if (errorFound) {
+    if (errorMessages.length > 0) {
+      for (const message of errorMessages) {
+        this.context.stderr.write(message)
+      }
+
       return 1
     }
 
