@@ -26,6 +26,7 @@ import {
   getLogStreamNames,
   getMasking,
   maskConfig,
+  validateStartEndFlags,
   writeFile,
   zipContents,
 } from '../flare'
@@ -249,6 +250,118 @@ describe('lambda flare', () => {
       const output = context.stdout.toString()
       expect(output).toMatchSnapshot()
     })
+
+    it('prints error when start time is specified but end time is not', async () => {
+      const cli = makeCli()
+      const context = createMockContext()
+      const code = await cli.run([...MOCK_REQUIRED_FLAGS, '--start', '100'], context as any)
+      expect(code).toBe(1)
+      const output = context.stdout.toString()
+      expect(output).toMatchSnapshot()
+    })
+
+    it('prints error when end time is specified but start time is not', async () => {
+      const cli = makeCli()
+      const context = createMockContext()
+      const code = await cli.run([...MOCK_REQUIRED_FLAGS, '--end', '100'], context as any)
+      expect(code).toBe(1)
+      const output = context.stdout.toString()
+      expect(output).toMatchSnapshot()
+    })
+
+    it('prints error when start time is invalid', async () => {
+      const cli = makeCli()
+      const context = createMockContext()
+      const code = await cli.run([...MOCK_REQUIRED_FLAGS, '--start', '123abc', '--end', '200'], context as any)
+      expect(code).toBe(1)
+      const output = context.stdout.toString()
+      expect(output).toMatchSnapshot()
+    })
+
+    it('prints error when end time is invalid', async () => {
+      const cli = makeCli()
+      const context = createMockContext()
+      const code = await cli.run([...MOCK_REQUIRED_FLAGS, '--start', '100', '--end', '123abc'], context as any)
+      expect(code).toBe(1)
+      const output = context.stdout.toString()
+      expect(output).toMatchSnapshot()
+    })
+
+    it('prints error when start time is after end time', async () => {
+      const cli = makeCli()
+      const context = createMockContext()
+      const code = await cli.run([...MOCK_REQUIRED_FLAGS, '--start', '200', '--end', '100'], context as any)
+      expect(code).toBe(1)
+      const output = context.stdout.toString()
+      expect(output).toMatchSnapshot()
+    })
+
+    it('runs successfully when start and end times are valid', async () => {
+      const cli = makeCli()
+      const context = createMockContext()
+      const code = await cli.run([...MOCK_REQUIRED_FLAGS, '--start', '100', '--end', '200'], context as any)
+      expect(code).toBe(0)
+      const output = context.stdout.toString()
+      expect(output).toMatchSnapshot()
+    })
+  })
+
+  describe('validateStartEndFlags', () => {
+    it('returns [0, 0] when start and end flags are not specified', () => {
+      const errorMessages: string[] = []
+      const [start, end] = validateStartEndFlags(undefined, undefined, errorMessages)
+      expect(start).toBe(0)
+      expect(end).toBe(0)
+      expect(errorMessages).toEqual([])
+    })
+
+    it('returns [0, 0] when start is specified but end is not specified', () => {
+      const errorMessages: string[] = []
+      const [start, end] = validateStartEndFlags('123', undefined, errorMessages)
+      expect(start).toBe(0)
+      expect(end).toBe(0)
+      expect(errorMessages).toMatchSnapshot()
+    })
+
+    it('returns [0, 0] when end is specified but start is not specified', () => {
+      const errorMessages: string[] = []
+      const [start, end] = validateStartEndFlags(undefined, '123', errorMessages)
+      expect(start).toBe(0)
+      expect(end).toBe(0)
+      expect(errorMessages).toMatchSnapshot()
+    })
+
+    it('returns [0, 0] when start is invalid', () => {
+      const errorMessages: string[] = []
+      const [start, end] = validateStartEndFlags('123abc', '200', errorMessages)
+      expect(start).toBe(0)
+      expect(end).toBe(0)
+      expect(errorMessages).toMatchSnapshot()
+    })
+
+    it('returns [0, 0] when end is invalid', () => {
+      const errorMessages: string[] = []
+      const [start, end] = validateStartEndFlags('100', '234abc', errorMessages)
+      expect(start).toBe(0)
+      expect(end).toBe(0)
+      expect(errorMessages).toMatchSnapshot()
+    })
+
+    it('returns [0, 0] when start is not before the end time', () => {
+      const errorMessages: string[] = []
+      const [start, end] = validateStartEndFlags('200', '100', errorMessages)
+      expect(start).toBe(0)
+      expect(end).toBe(0)
+      expect(errorMessages).toMatchSnapshot()
+    })
+
+    it('sets end time to current time if end time is too large', () => {
+      const now = Date.now()
+      const [start, end] = validateStartEndFlags('0', '9999999999999', [])
+      expect(start).toBe(0)
+      expect(end).toBeGreaterThanOrEqual(now - 1000)
+      expect(end).toBeLessThanOrEqual(now + 1000)
+    })
   })
 
   describe('getMasking', () => {
@@ -348,7 +461,7 @@ describe('lambda flare', () => {
       mockCloudWatchLogStreams(cloudWatchLogsClientMock, mockStreams)
 
       const expectedLogStreams = ['Stream1', 'Stream2', 'Stream3']
-      const logStreams = await getLogStreamNames(new CloudWatchLogsClient({}), MOCK_LOG_GROUP)
+      const logStreams = await getLogStreamNames(new CloudWatchLogsClient({}), MOCK_LOG_GROUP, 0, 0)
 
       expect(logStreams).toEqual(expectedLogStreams)
     })
@@ -356,7 +469,7 @@ describe('lambda flare', () => {
     it('returns empty array when no log streams are found', async () => {
       mockCloudWatchLogStreams(cloudWatchLogsClientMock, [])
 
-      const logStreams = await getLogStreamNames(new CloudWatchLogsClient({}), MOCK_LOG_GROUP)
+      const logStreams = await getLogStreamNames(new CloudWatchLogsClient({}), MOCK_LOG_GROUP, 0, 0)
 
       expect(logStreams).toEqual([])
     })
@@ -365,8 +478,23 @@ describe('lambda flare', () => {
       cloudWatchLogsClientMock.on(DescribeLogStreamsCommand).rejects('Cannot retrieve log streams')
 
       await expect(
-        getLogStreamNames((cloudWatchLogsClientMock as unknown) as CloudWatchLogsClient, MOCK_LOG_GROUP)
+        getLogStreamNames((cloudWatchLogsClientMock as unknown) as CloudWatchLogsClient, MOCK_LOG_GROUP, 0, 0)
       ).rejects.toThrow('Cannot retrieve log streams')
+    })
+
+    it('returns log streams within the specified time range', async () => {
+      const mockStreams: LogStream[] = [
+        {logStreamName: 'Stream1', firstEventTimestamp: 100, lastEventTimestamp: 200},
+        {logStreamName: 'Stream2', firstEventTimestamp: 200, lastEventTimestamp: 300},
+        {logStreamName: 'Stream3', firstEventTimestamp: 300, lastEventTimestamp: 400},
+        {logStreamName: 'Stream4', firstEventTimestamp: 400, lastEventTimestamp: 500},
+      ]
+      mockCloudWatchLogStreams(cloudWatchLogsClientMock, mockStreams)
+
+      const expectedLogStreams = ['Stream2', 'Stream1']
+      const logStreams = await getLogStreamNames(new CloudWatchLogsClient({}), MOCK_LOG_GROUP, 0, 250)
+
+      expect(logStreams).toEqual(expectedLogStreams)
     })
   })
 
@@ -391,7 +519,9 @@ describe('lambda flare', () => {
       const logEvents = await getLogEvents(
         (cloudWatchLogsClientMock as unknown) as CloudWatchLogsClient,
         MOCK_LOG_GROUP,
-        MOCK_LOG_STREAM
+        MOCK_LOG_STREAM,
+        0,
+        0
       )
 
       expect(logEvents).toEqual(expectedEvents)
@@ -403,7 +533,9 @@ describe('lambda flare', () => {
       const logEvents = await getLogEvents(
         (cloudWatchLogsClientMock as unknown) as CloudWatchLogsClient,
         MOCK_LOG_GROUP,
-        MOCK_LOG_STREAM
+        MOCK_LOG_STREAM,
+        0,
+        0
       )
 
       expect(logEvents).toEqual([])
@@ -412,8 +544,50 @@ describe('lambda flare', () => {
     it('throws error when log events cannot be retrieved', async () => {
       cloudWatchLogsClientMock.on(GetLogEventsCommand).rejects('Cannot retrieve log events')
       await expect(
-        getLogEvents((cloudWatchLogsClientMock as unknown) as CloudWatchLogsClient, MOCK_LOG_GROUP, MOCK_LOG_STREAM)
+        getLogEvents(
+          (cloudWatchLogsClientMock as unknown) as CloudWatchLogsClient,
+          MOCK_LOG_GROUP,
+          MOCK_LOG_STREAM,
+          0,
+          0
+        )
       ).rejects.toThrow('Cannot retrieve log events')
+    })
+
+    it('sets start and end time when provided', async () => {
+      const mockStartTime = 100
+      const mockEndTime = 200
+
+      const logEvents = [
+        {timestamp: 125, message: 'Log1'},
+        {timestamp: 150, message: 'Log2'},
+        {timestamp: 175, message: 'Log3'},
+      ]
+
+      const sendMock: any = jest.fn().mockResolvedValue({events: logEvents})
+      cloudWatchLogsClientMock.send = sendMock
+
+      const logEventsResult = await getLogEvents(
+        (cloudWatchLogsClientMock as unknown) as CloudWatchLogsClient,
+        MOCK_LOG_GROUP,
+        MOCK_LOG_STREAM,
+        mockStartTime,
+        mockEndTime
+      )
+
+      expect(sendMock).toHaveBeenCalledWith(
+        expect.objectContaining({
+          input: expect.objectContaining({
+            logGroupName: MOCK_LOG_GROUP,
+            logStreamName: MOCK_LOG_STREAM,
+            limit: 10000,
+            startTime: mockStartTime,
+            endTime: mockEndTime,
+          }),
+        })
+      )
+
+      expect(logEventsResult).toEqual(logEvents)
     })
   })
 
@@ -431,21 +605,21 @@ describe('lambda flare', () => {
       jest.spyOn(flareModule, 'getLogStreamNames').mockResolvedValue([mockStreamName])
       jest.spyOn(flareModule, 'getLogEvents').mockResolvedValue(mockLogs)
 
-      const result = await getAllLogs(region, functionName)
+      const result = await getAllLogs(region, functionName, 0, 0)
       expect(result.get(mockStreamName)).toEqual(mockLogs)
     })
 
     it('throws an error when unable to get log streams', async () => {
       jest.spyOn(flareModule, 'getLogStreamNames').mockRejectedValueOnce(new Error('Error getting log streams'))
 
-      await expect(getAllLogs(region, functionName)).rejects.toMatchSnapshot()
+      await expect(getAllLogs(region, functionName, 0, 0)).rejects.toMatchSnapshot()
     })
 
     it('throws an error when unable to get log events', async () => {
       jest.spyOn(flareModule, 'getLogStreamNames').mockResolvedValueOnce([mockStreamName])
       jest.spyOn(flareModule, 'getLogEvents').mockRejectedValueOnce(new Error('Error getting log events'))
 
-      await expect(getAllLogs(region, functionName)).rejects.toMatchSnapshot()
+      await expect(getAllLogs(region, functionName, 0, 0)).rejects.toMatchSnapshot()
     })
   })
 
