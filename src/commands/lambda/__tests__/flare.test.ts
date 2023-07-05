@@ -576,7 +576,7 @@ describe('lambda flare', () => {
           input: expect.objectContaining({
             logGroupName: MOCK_LOG_GROUP,
             logStreamName: MOCK_LOG_STREAM,
-            limit: 10000,
+            limit: 1000,
             startTime: mockStartTime,
             endTime: mockEndTime,
           }),
