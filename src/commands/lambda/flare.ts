@@ -32,7 +32,7 @@ const FUNCTION_CONFIG_FILE_NAME = 'function_config.json'
 const ZIP_FILE_NAME = 'lambda-flare-output.zip'
 const MAX_LOG_STREAMS = 50
 const DEFAULT_LOG_STREAMS = 3
-const MAX_LOG_EVENTS_PER_STREAM = 10000
+const MAX_LOG_EVENTS_PER_STREAM = 1000
 const FULL_OBFUSCATION = '****************'
 const MIDDLE_OBFUSCATION = '**********'
 
