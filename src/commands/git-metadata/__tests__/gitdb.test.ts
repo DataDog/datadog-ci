@@ -51,7 +51,7 @@ describe('gitdb', () => {
   // This is a bit hacky but the documentation of simpleGit asks you to depend on
   // a behavior of VersionResult which is not defined in its typings: it has an
   // override on toString. Here I am replicating this toString behavior so that
-  // the tests pass
+  // the tests pass. See https://github.com/steveukx/git-js/blob/d184c13273abca4b6572c260f9625c19f944d4f7/simple-git/src/lib/tasks/version.ts#L15-L39
   const newGitVersion: simpleGit.VersionResult = Object.defineProperty(
     {
       major: 2,
