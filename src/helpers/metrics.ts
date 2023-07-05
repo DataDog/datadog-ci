@@ -1,5 +1,5 @@
 import metrics from 'datadog-metrics'
-import ProxyAgent from 'proxy-agent'
+import {ProxyAgent} from 'proxy-agent'
 
 export interface MetricsLogger {
   logger: metrics.BufferedMetricsLogger

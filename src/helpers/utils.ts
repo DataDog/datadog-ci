@@ -6,7 +6,7 @@ import type {SpanTag, SpanTags} from './interfaces'
 import {AxiosRequestConfig, default as axios} from 'axios'
 import {BaseContext, CommandClass, Cli} from 'clipanion'
 import deepExtend from 'deep-extend'
-import ProxyAgent from 'proxy-agent'
+import {ProxyAgent} from 'proxy-agent'
 
 export const DEFAULT_CONFIG_PATHS = ['datadog-ci.json']
 
@@ -208,10 +208,23 @@ export const getRequestBuilder = (options: RequestOptions) => {
   return (args: AxiosRequestConfig) => axios.create(baseConfiguration)(overrideArgs(args))
 }
 
-export const getProxyAgent = (proxyOpts?: ProxyConfiguration): ReturnType<typeof ProxyAgent> => {
+export const getProxyAgent = (proxyOpts?: ProxyConfiguration): ProxyAgent => {
   const proxyUrlFromConfiguration = getProxyUrl(proxyOpts)
+  if (!proxyOpts || proxyUrlFromConfiguration === '') {
+    // Let the default proxy agent discover environment variables.
+    return new ProxyAgent()
+  }
 
-  return new ProxyAgent(proxyUrlFromConfiguration)
+  return new ProxyAgent({
+    getProxyForUrl: (url) => {
+      // Do not proxy the WebSocket connections.
+      if (url?.match(/^wss?:/)) {
+        return ''
+      }
+
+      return proxyUrlFromConfiguration
+    },
+  })
 }
 
 export const getApiHostForSite = (site: string) => {
