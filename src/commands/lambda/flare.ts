@@ -57,7 +57,6 @@ export class LambdaFlareCommand extends Command {
     this.context.stdout.write(flareRenderer.renderLambdaFlareHeader(this.isDryRun))
 
     // Validate function name
-    const errorMessages: string[] = []
     if (this.functionName === undefined) {
       this.context.stderr.write(commonRenderer.renderError('No function name specified. [-f,--function]'))
 
