@@ -472,6 +472,9 @@ export const getAllLogs = async (region: string, functionName: string) => {
  * @throws Error if the tags cannot be retrieved
  */
 export const getTags = async (lambdaClient: LambdaClient, region: string, arn: string) => {
+  if (!arn.startsWith('arn:aws')) {
+    throw Error(`Invalid function ARN: ${arn}`)
+  }
   const command = new ListTagsCommand({
     Resource: arn,
   })
