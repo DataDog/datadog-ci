@@ -23,9 +23,7 @@ export const gitRemote = async (git: simpleGit.SimpleGit): Promise<string> => {
 
 export const getDefaultRemoteName = async (git: simpleGit.SimpleGit): Promise<string> => {
   try {
-    const defaultRemoteConfig = (await git.getConfig('clone.defaultRemoteName')) ?? {}
-
-    return defaultRemoteConfig.value ?? 'origin'
+    return (await git.getConfig('clone.defaultRemoteName'))?.value ?? 'origin'
   } catch (e) {
     return 'origin'
   }

@@ -118,21 +118,24 @@ const getLatestLocalCommits = async (git: simpleGit.SimpleGit) => {
 }
 
 const unshallowRepositoryWhenNeeded = async (log: Logger, git: simpleGit.SimpleGit) => {
-  const shallowCmdPromise = git.revparse('--is-shallow-repository')
-  const versionCmdPromise: simpleGit.Response<simpleGit.VersionResult> = git.version()
-  const isShallow = (await shallowCmdPromise) === 'true'
-  const gitversion = String(await versionCmdPromise)
-  if (isShallow && gte(gitversion, '2.27.0')) {
-    log.info('[unshallow] Git repository is a shallow clone, unshallowing it...')
+  const isShallow = (await git.revparse('--is-shallow-repository')) === 'true'
+  if (!isShallow) {
+    return
+  }
+  const gitversion = String(await git.version())
+  if (lte(gitversion, '2.27.0')) {
+    return
+  }
+  log.info('[unshallow] Git repository is a shallow clone, unshallowing it...')
     const headCmdPromise = git.revparse('HEAD')
     const remoteNameCmdPromise = getDefaultRemoteName(git)
     log.info(
-      `[unshallow] Running git fetch --shallow-since="${MAX_HISTORY.oldestCommits}" --update-shallow --filter="blob:none" --recurse-submodules=no`
+      `[unshallow] Running git fetch --shallow-since="${MAX_HISTORY.oldestCommits}" --update-shallow --filter=blob:none --recurse-submodules=no`
     )
     await git.fetch([
       `--shallow-since="${MAX_HISTORY.oldestCommits}"`,
       '--update-shallow',
-      '--filter="blob:none"',
+      '--filter=blob:none',
       '--recurse-submodules=no',
       (await remoteNameCmdPromise) ?? 'origin',
       await headCmdPromise,
