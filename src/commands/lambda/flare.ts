@@ -53,13 +53,13 @@ export class LambdaFlareCommand extends Command {
     this.context.stdout.write(flareRenderer.renderLambdaFlareHeader(this.isDryRun))
 
     // Validate function name
-    const errorMessages: string[] = []
     if (this.functionName === undefined) {
       this.context.stderr.write(commonRenderer.renderError('No function name specified. [-f,--function]'))
 
       return 1
     }
 
+    const errorMessages: string[] = []
     // Validate region
     const region = getRegion(this.functionName) ?? this.region ?? process.env[AWS_DEFAULT_REGION_ENV_VAR]
     if (region === undefined) {
