@@ -209,7 +209,7 @@ UpdateFunctionConfiguration -> arn:aws:lambda:sa-east-1:123456789012:function:la
   \\"Handler\\": \\"lambda_function.lambda_handler\\",
   \\"Environment\\": {
     \\"Variables\\": {
-      \\"USER_VARIABLE\\": \\"shouldnt be deleted by uninstrumentation\\"
+      \\"USER_VARIABLE\\": \\"************************************tion\\"
     }
   },
   \\"Layers\\": []
@@ -246,7 +246,7 @@ UpdateFunctionConfiguration -> arn:aws:lambda:sa-east-1:123456789012:function:la
   \\"Handler\\": \\"lambda_function.lambda_handler\\",
   \\"Environment\\": {
     \\"Variables\\": {
-      \\"USER_VARIABLE\\": \\"shouldnt be deleted by uninstrumentation\\"
+      \\"USER_VARIABLE\\": \\"************************************tion\\"
     }
   },
   \\"Layers\\": []
