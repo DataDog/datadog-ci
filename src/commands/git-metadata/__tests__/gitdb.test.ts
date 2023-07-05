@@ -269,7 +269,7 @@ describe('gitdb', () => {
           input: [
             '--shallow-since="1 month ago"',
             '--update-shallow',
-            '--filter="blob:none"',
+            '--filter=blob:none',
             '--recurse-submodules=no',
             'origin',
             'COMMIT',
@@ -330,7 +330,7 @@ describe('gitdb', () => {
           input: [
             '--shallow-since="1 month ago"',
             '--update-shallow',
-            '--filter="blob:none"',
+            '--filter=blob:none',
             '--recurse-submodules=no',
             'myorigin',
             'COMMIT',
@@ -435,7 +435,7 @@ describe('gitdb', () => {
         },
       ],
       revparse: [{input: '--is-shallow-repository', output: 'false'}],
-      version: [{input: undefined, output: newGitVersion}],
+      version: [],
       execSync: [
         {
           input: `git pack-objects --compression=9 --max-pack-size=3m ${tmpdir}/1000`,
@@ -520,7 +520,7 @@ describe('gitdb', () => {
         },
       ],
       revparse: [{input: '--is-shallow-repository', output: 'false'}],
-      version: [{input: undefined, output: newGitVersion}],
+      version: [],
       execSync: [
         {
           input: `git pack-objects --compression=9 --max-pack-size=3m ${tmpdir}/1000`,
@@ -621,7 +621,7 @@ describe('gitdb', () => {
         },
       ],
       revparse: [{input: '--is-shallow-repository', output: 'false'}],
-      version: [{input: undefined, output: newGitVersion}],
+      version: [],
       execSync: [
         {
           input: `git pack-objects --compression=9 --max-pack-size=3m ${tmpdir}/1000`,
@@ -718,7 +718,7 @@ describe('gitdb', () => {
         },
       ],
       revparse: [{input: '--is-shallow-repository', output: 'false'}],
-      version: [{input: undefined, output: newGitVersion}],
+      version: [],
       execSync: [
         {
           input: `git pack-objects --compression=9 --max-pack-size=3m ${tmpdir}/1000`,
@@ -823,7 +823,7 @@ describe('gitdb', () => {
       ],
       raw: [],
       revparse: [{input: '--is-shallow-repository', output: 'false'}],
-      version: [{input: undefined, output: newGitVersion}],
+      version: [],
       execSync: [],
       axios: [
         {
@@ -928,7 +928,7 @@ describe('gitdb', () => {
       ],
       raw: [],
       revparse: [{input: '--is-shallow-repository', output: 'false'}],
-      version: [{input: undefined, output: newGitVersion}],
+      version: [],
       execSync: [],
       axios: [
         {
@@ -1015,7 +1015,7 @@ describe('gitdb', () => {
         },
       ],
       revparse: [{input: '--is-shallow-repository', output: 'false'}],
-      version: [{input: undefined, output: newGitVersion}],
+      version: [],
       execSync: [],
       axios: [
         {

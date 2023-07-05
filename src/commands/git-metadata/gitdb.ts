@@ -6,7 +6,7 @@ import path from 'path'
 
 import {AxiosResponse} from 'axios'
 import FormData from 'form-data'
-import {gte} from 'semver'
+import {lte} from 'semver'
 import * as simpleGit from 'simple-git'
 
 import {getDefaultRemoteName, gitRemote as getRepoURL} from '../../helpers/git/get-git-data'
@@ -127,21 +127,20 @@ const unshallowRepositoryWhenNeeded = async (log: Logger, git: simpleGit.SimpleG
     return
   }
   log.info('[unshallow] Git repository is a shallow clone, unshallowing it...')
-    const headCmdPromise = git.revparse('HEAD')
-    const remoteNameCmdPromise = getDefaultRemoteName(git)
-    log.info(
-      `[unshallow] Running git fetch --shallow-since="${MAX_HISTORY.oldestCommits}" --update-shallow --filter=blob:none --recurse-submodules=no`
-    )
-    await git.fetch([
-      `--shallow-since="${MAX_HISTORY.oldestCommits}"`,
-      '--update-shallow',
-      '--filter=blob:none',
-      '--recurse-submodules=no',
-      (await remoteNameCmdPromise) ?? 'origin',
-      await headCmdPromise,
-    ])
-    log.info('[unshallow] Fetch completed.')
-  }
+  const headCmdPromise = git.revparse('HEAD')
+  const remoteNameCmdPromise = getDefaultRemoteName(git)
+  log.info(
+    `[unshallow] Running git fetch --shallow-since="${MAX_HISTORY.oldestCommits}" --update-shallow --filter=blob:none --recurse-submodules=no`
+  )
+  await git.fetch([
+    `--shallow-since="${MAX_HISTORY.oldestCommits}"`,
+    '--update-shallow',
+    '--filter=blob:none',
+    '--recurse-submodules=no',
+    (await remoteNameCmdPromise) ?? 'origin',
+    await headCmdPromise,
+  ])
+  log.info('[unshallow] Fetch completed.')
 }
 
 // getKnownCommits asks the backend which of the given commits are already known
