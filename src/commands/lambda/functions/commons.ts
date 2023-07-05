@@ -33,6 +33,9 @@ import {
   LayerKey,
   LAYER_LOOKUP,
   LIST_FUNCTIONS_MAX_RETRY_COUNT,
+  OBFUSCATE_NUM_CHAR_TO_KEEP,
+  OBFUSCATE_PATTERN_BLACKLIST,
+  OBFUSCATE_PATTERN_WHITELIST,
   Runtime,
   RUNTIME_LOOKUP,
 } from '../constants'
@@ -500,4 +503,20 @@ export const willUpdateFunctionConfigs = (configs: FunctionConfiguration[]) => {
   }
 
   return willUpdate
+}
+
+export const obfuscateVariables = (config: UpdateFunctionConfigurationCommandInput) => {
+  return function (this: Record<string, unknown>, key: string, value: string) {
+    // Display a value if (1) it is not an environment variable or (2) the key matches any whitelist rule and the key does not match any blacklist rules. Otherwise obfuscate the value
+    if (
+      this !== config.Environment?.Variables ||
+      (OBFUSCATE_PATTERN_WHITELIST.some((pattern) => pattern.test(key)) &&
+        !OBFUSCATE_PATTERN_BLACKLIST.some((pattern) => pattern.test(key)))
+    ) {
+      return value
+    } else {
+      // Obfuscate all but the last 4 characters
+      return value.slice(0, -OBFUSCATE_NUM_CHAR_TO_KEEP).replace(/./g, '*') + value.slice(-OBFUSCATE_NUM_CHAR_TO_KEEP)
+    }
+  }
 }

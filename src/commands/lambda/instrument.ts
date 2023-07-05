@@ -25,6 +25,7 @@ import {
   handleLambdaFunctionUpdates,
   getAWSCredentials,
   isMissingDatadogEnvVars,
+  obfuscateVariables,
   sentenceMatchesRegEx,
   willUpdateFunctionConfigs,
 } from './functions/commons'
@@ -506,7 +507,7 @@ export class InstrumentCommand extends Command {
         this.context.stdout.write(
           `UpdateFunctionConfiguration -> ${config.functionARN}\n${JSON.stringify(
             config.updateFunctionConfigurationCommandInput,
-            undefined,
+            obfuscateVariables(config.updateFunctionConfigurationCommandInput),
             2
           )}\n`
         )

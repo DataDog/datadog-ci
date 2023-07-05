@@ -117,3 +117,10 @@ export const AWS_SECRET_ACCESS_KEY_REG_EXP = /(?<![A-Za-z0-9/+=])[A-Za-z0-9/+=]{
 export const AWS_SECRET_ARN_REG_EXP = /arn:aws:secretsmanager:[\w-]+:\d{12}:secret:.+/
 export const DATADOG_API_KEY_REG_EXP = /(?<![a-f0-9])[a-f0-9]{32}(?![a-f0-9])/g
 export const DATADOG_APP_KEY_REG_EXP = /(?<![a-f0-9])[a-f0-9]{40}(?![a-f0-9])/g
+
+// Obfuscation rules
+// Keys matching any pattern in the whitelist are displayed
+// Keys matching any pattern in the blacklist are obfuscated even if they also match the whitelist
+export const OBFUSCATE_NUM_CHAR_TO_KEEP = 4
+export const OBFUSCATE_PATTERN_BLACKLIST = [/^DD_API_KEY$/]
+export const OBFUSCATE_PATTERN_WHITELIST = [/^DD_/]

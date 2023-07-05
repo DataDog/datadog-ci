@@ -13,6 +13,7 @@ import {
   getAWSProfileCredentials,
   handleLambdaFunctionUpdates,
   getAWSCredentials,
+  obfuscateVariables,
   willUpdateFunctionConfigs,
 } from './functions/commons'
 import {getUninstrumentedFunctionConfigs, getUninstrumentedFunctionConfigsFromRegEx} from './functions/uninstrument'
@@ -259,7 +260,7 @@ export class UninstrumentCommand extends Command {
         this.context.stdout.write(
           `UpdateFunctionConfiguration -> ${config.functionARN}\n${JSON.stringify(
             config.updateFunctionConfigurationCommandInput,
-            undefined,
+            obfuscateVariables(config.updateFunctionConfigurationCommandInput),
             2
           )}\n`
         )
