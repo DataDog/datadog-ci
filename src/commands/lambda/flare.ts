@@ -64,6 +64,7 @@ export class LambdaFlareCommand extends Command {
       return 1
     }
 
+    const errorMessages: string[] = []
     // Validate region
     const region = getRegion(this.functionName) ?? this.region ?? process.env[AWS_DEFAULT_REGION_ENV_VAR]
     if (region === undefined) {
@@ -92,7 +93,6 @@ export class LambdaFlareCommand extends Command {
 
     // Validate start/end flags if both are specified
     const [startMillis, endMillis] = validateStartEndFlags(this.start, this.end, errorMessages)
-
     if (errorMessages.length > 0) {
       for (const message of errorMessages) {
         this.context.stderr.write(message)
