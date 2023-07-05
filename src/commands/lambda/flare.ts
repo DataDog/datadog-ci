@@ -144,10 +144,9 @@ export class LambdaFlareCommand extends Command {
 
     // Get tags
     this.context.stdout.write('\n🏷 Getting Resource Tags...\n')
-    const arn = config.FunctionArn ?? this.functionName
     let tags: Record<string, string>
     try {
-      tags = await getTags(lambdaClient, region!, arn)
+      tags = await getTags(lambdaClient, region!, config.FunctionArn!)
     } catch (err) {
       if (err instanceof Error) {
         this.context.stderr.write(commonRenderer.renderError(err.message))
