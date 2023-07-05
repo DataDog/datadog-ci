@@ -49,7 +49,7 @@ describe('gitdb', () => {
   const testError = new Error('call failed')
 
   // This is a bit hacky but the documentation of simpleGit asks you to depend on
-  // a behavior of VersionResult which is not debined in its typings: it has an
+  // a behavior of VersionResult which is not defined in its typings: it has an
   // override on toString. Here I am replicating this toString behavior so that
   // the tests pass
   const newGitVersion: simpleGit.VersionResult = Object.defineProperty(
