@@ -91,7 +91,7 @@ export class LambdaFlareCommand extends Command {
     }
 
     // Validate start/end flags if both are specified
-    const [startMillis, endMillis] = validateStartEndFlags(this.start, this.end, errorMessages)
+    const [startMillis, endMillis] = validateStartEndFlags(this.start, this.end, errorMessages) ?? [0, 0]
     if (errorMessages.length > 0) {
       for (const message of errorMessages) {
         this.context.stderr.write(message)
@@ -257,21 +257,21 @@ export class LambdaFlareCommand extends Command {
  * @param start start time as a string
  * @param end end time as a string
  * @param errorMessages array of error messages to add to
- * @returns [startMillis, endMillis] as numbers if valid or [0, 0] otherwise
+ * @returns [startMillis, endMillis] as numbers if valid or undefined otherwise
  */
 export const validateStartEndFlags = (start: string | undefined, end: string | undefined, errorMessages: string[]) => {
   if (!start && !end) {
-    return [0, 0]
+    return
   }
 
   if (!start) {
     errorMessages.push(commonRenderer.renderError('Start time is required when end time is specified. [--start]'))
 
-    return [0, 0]
+    return
   } else if (!end) {
     errorMessages.push(commonRenderer.renderError('End time is required when start time is specified. [--end]'))
 
-    return [0, 0]
+    return
   }
 
   const startMillis = Number(start)
@@ -281,11 +281,11 @@ export const validateStartEndFlags = (start: string | undefined, end: string | u
       commonRenderer.renderError('Start time must be a time in milliseconds since Unix Epoch. [--start]')
     )
 
-    return [0, 0]
+    return
   } else if (isNaN(endMillis)) {
     errorMessages.push(commonRenderer.renderError('End time must be a time in milliseconds since Unix Epoch. [--end]'))
 
-    return [0, 0]
+    return
   }
 
   // Required for AWS SDK to work correctly
@@ -294,7 +294,7 @@ export const validateStartEndFlags = (start: string | undefined, end: string | u
   if (startMillis >= endMillis) {
     errorMessages.push(commonRenderer.renderError('Start time must be before end time.'))
 
-    return [0, 0]
+    return
   }
 
   return [startMillis, endMillis]
@@ -473,6 +473,7 @@ export const getLogEvents = async (
     logStreamName,
     limit: MAX_LOG_EVENTS_PER_STREAM,
   }
+  console.log(startMillis, endMillis)
   if (startMillis !== 0 || endMillis !== 0) {
     config.startTime = startMillis
     config.endTime = endMillis

@@ -307,57 +307,53 @@ describe('lambda flare', () => {
   })
 
   describe('validateStartEndFlags', () => {
-    it('returns [0, 0] when start and end flags are not specified', () => {
+    it('returns undefined when start and end flags are not specified', () => {
       const errorMessages: string[] = []
-      const [start, end] = validateStartEndFlags(undefined, undefined, errorMessages)
-      expect(start).toBe(0)
-      expect(end).toBe(0)
+      const res = validateStartEndFlags(undefined, undefined, errorMessages)
+      expect(res).toBeUndefined()
       expect(errorMessages).toEqual([])
     })
 
-    it('returns [0, 0] when start is specified but end is not specified', () => {
+    it('returns undefined when start is specified but end is not specified', () => {
       const errorMessages: string[] = []
-      const [start, end] = validateStartEndFlags('123', undefined, errorMessages)
-      expect(start).toBe(0)
-      expect(end).toBe(0)
+      const res = validateStartEndFlags('123', undefined, errorMessages)
+      expect(res).toBeUndefined()
       expect(errorMessages).toMatchSnapshot()
     })
 
-    it('returns [0, 0] when end is specified but start is not specified', () => {
+    it('returns undefined when end is specified but start is not specified', () => {
       const errorMessages: string[] = []
-      const [start, end] = validateStartEndFlags(undefined, '123', errorMessages)
-      expect(start).toBe(0)
-      expect(end).toBe(0)
+      const res = validateStartEndFlags(undefined, '123', errorMessages)
+      expect(res).toBeUndefined()
       expect(errorMessages).toMatchSnapshot()
     })
 
-    it('returns [0, 0] when start is invalid', () => {
+    it('returns undefined when start is invalid', () => {
       const errorMessages: string[] = []
-      const [start, end] = validateStartEndFlags('123abc', '200', errorMessages)
-      expect(start).toBe(0)
-      expect(end).toBe(0)
+      const res = validateStartEndFlags('123abc', '200', errorMessages)
+      expect(res).toBeUndefined()
       expect(errorMessages).toMatchSnapshot()
     })
 
-    it('returns [0, 0] when end is invalid', () => {
+    it('returns undefined when end is invalid', () => {
       const errorMessages: string[] = []
-      const [start, end] = validateStartEndFlags('100', '234abc', errorMessages)
-      expect(start).toBe(0)
-      expect(end).toBe(0)
+      const res = validateStartEndFlags('100', '234abc', errorMessages)
+      expect(res).toBeUndefined()
       expect(errorMessages).toMatchSnapshot()
     })
 
-    it('returns [0, 0] when start is not before the end time', () => {
+    it('returns undefined when start is not before the end time', () => {
       const errorMessages: string[] = []
-      const [start, end] = validateStartEndFlags('200', '100', errorMessages)
-      expect(start).toBe(0)
-      expect(end).toBe(0)
+      const res = validateStartEndFlags('200', '100', errorMessages)
+      expect(res).toBeUndefined()
       expect(errorMessages).toMatchSnapshot()
     })
 
     it('sets end time to current time if end time is too large', () => {
       const now = Date.now()
-      const [start, end] = validateStartEndFlags('0', '9999999999999', [])
+      const res = validateStartEndFlags('0', '9999999999999', [])
+      expect(res).not.toBeUndefined()
+      const [start, end] = res!
       expect(start).toBe(0)
       expect(end).toBeGreaterThanOrEqual(now - 1000)
       expect(end).toBeLessThanOrEqual(now + 1000)

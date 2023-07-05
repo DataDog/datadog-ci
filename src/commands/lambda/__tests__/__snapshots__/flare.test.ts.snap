@@ -568,6 +568,41 @@ Array [
 ]
 `;
 
+exports[`lambda flare validateStartEndFlags returns undefined when end is invalid 1`] = `
+Array [
+  "[Error] End time must be a time in milliseconds since Unix Epoch. [--end]
+",
+]
+`;
+
+exports[`lambda flare validateStartEndFlags returns undefined when end is specified but start is not specified 1`] = `
+Array [
+  "[Error] Start time is required when end time is specified. [--start]
+",
+]
+`;
+
+exports[`lambda flare validateStartEndFlags returns undefined when start is invalid 1`] = `
+Array [
+  "[Error] Start time must be a time in milliseconds since Unix Epoch. [--start]
+",
+]
+`;
+
+exports[`lambda flare validateStartEndFlags returns undefined when start is not before the end time 1`] = `
+Array [
+  "[Error] Start time must be before end time.
+",
+]
+`;
+
+exports[`lambda flare validateStartEndFlags returns undefined when start is specified but end is not specified 1`] = `
+Array [
+  "[Error] End time is required when start time is specified. [--end]
+",
+]
+`;
+
 exports[`lambda flare validates required flags extracts region from function name when given a function ARN 1`] = `
 "
 🐶 Generating Lambda flare to send your configuration to Datadog...
