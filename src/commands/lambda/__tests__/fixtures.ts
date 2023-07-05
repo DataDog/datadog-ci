@@ -199,10 +199,10 @@ export const mockCloudWatchLogEvents = (
 }
 
 export const mockResourceTags = (
-  cloudWatchLogsClientMock: AwsStub<ServiceInputTypes, ServiceOutputTypes>,
+  lambdaClientMock: AwsStub<ServiceInputTypes, ServiceOutputTypes>,
   output: ListTagsCommandOutput
 ) => {
-  cloudWatchLogsClientMock.on(ListTagsCommand).resolves(output)
+  lambdaClientMock.on(ListTagsCommand).resolves(output)
 }
 
 export const mockAwsAccount = '123456789012'

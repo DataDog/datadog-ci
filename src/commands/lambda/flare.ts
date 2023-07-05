@@ -155,15 +155,11 @@ export class LambdaFlareCommand extends Command {
 
       return 1
     }
-    const tagLength = Object.keys(tags).length
-    if (tagLength === 0) {
-      this.context.stdout.write(
-        commonRenderer.renderSoftWarning(
-          `No resource tags were found, so the \`${TAGS_FILE_NAME}\` file will not be created or sent.`
-        )
-      )
+    const tagsLength = Object.keys(tags).length
+    if (tagsLength === 0) {
+      this.context.stdout.write(commonRenderer.renderSoftWarning(`No resource tags were found.`))
     } else {
-      this.context.stdout.write(`✅ Found ${tagLength} resource tags.\n`)
+      this.context.stdout.write(`✅ Found ${tagsLength} resource tags.\n`)
     }
 
     // Get CloudWatch logs
@@ -214,7 +210,7 @@ export class LambdaFlareCommand extends Command {
       const configFilePath = path.join(rootFolderPath, FUNCTION_CONFIG_FILE_NAME)
       writeFile(configFilePath, JSON.stringify(config, undefined, 2))
       this.context.stdout.write(`• Saved function config to ${configFilePath}\n`)
-      if (tagLength > 0) {
+      if (tagsLength > 0) {
         const tagsFilePath = path.join(rootFolderPath, TAGS_FILE_NAME)
         writeFile(tagsFilePath, JSON.stringify(tags, undefined, 2))
         this.context.stdout.write(`• Saved tags to ${tagsFilePath}\n`)
