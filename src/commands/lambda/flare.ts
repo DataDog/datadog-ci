@@ -412,11 +412,11 @@ export const getLogStreamNames = async (
     logGroupName,
     descending: true,
     orderBy: OrderBy.LastEventTime,
-    limit: MAX_LOG_STREAMS,
+    limit: DEFAULT_LOG_STREAMS,
   }
   const rangeSpecified = startMillis !== 0 || endMillis !== 0
-  if (!rangeSpecified) {
-    config.limit = DEFAULT_LOG_STREAMS
+  if (rangeSpecified) {
+    config.limit = MAX_LOG_STREAMS
   }
   const command = new DescribeLogStreamsCommand(config)
   const response = await cwlClient.send(command)
