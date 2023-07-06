@@ -533,40 +533,15 @@ exports[`lambda flare send to Datadog successfully sends request to Datadog 1`] 
 "
 `;
 
-exports[`lambda flare validateStartEndFlags returns undefined when end is invalid 1`] = `
-Array [
-  "[Error] End time must be a time in milliseconds since Unix Epoch. [--end]
-",
-]
-`;
+exports[`lambda flare validateStartEndFlags throws error when end is invalid 1`] = `"End time must be a time in milliseconds since Unix Epoch. '234abc' is not a number."`;
 
-exports[`lambda flare validateStartEndFlags returns undefined when end is specified but start is not specified 1`] = `
-Array [
-  "[Error] Start time is required when end time is specified. [--start]
-",
-]
-`;
+exports[`lambda flare validateStartEndFlags throws error when end is specified but start is not specified 1`] = `"Start time is required when end time is specified. [--start]"`;
 
-exports[`lambda flare validateStartEndFlags returns undefined when start is invalid 1`] = `
-Array [
-  "[Error] Start time must be a time in milliseconds since Unix Epoch. [--start]
-",
-]
-`;
+exports[`lambda flare validateStartEndFlags throws error when start is invalid 1`] = `"Start time must be a time in milliseconds since Unix Epoch. '123abc' is not a number."`;
 
-exports[`lambda flare validateStartEndFlags returns undefined when start is not before the end time 1`] = `
-Array [
-  "[Error] Start time must be before end time.
-",
-]
-`;
+exports[`lambda flare validateStartEndFlags throws error when start is not before the end time 1`] = `"Start time must be before end time."`;
 
-exports[`lambda flare validateStartEndFlags returns undefined when start is specified but end is not specified 1`] = `
-Array [
-  "[Error] End time is required when start time is specified. [--end]
-",
-]
-`;
+exports[`lambda flare validateStartEndFlags throws error when start is specified but end is not specified 1`] = `"End time is required when start time is specified. [--end]"`;
 
 exports[`lambda flare validates required flags extracts region from function name when given a function ARN 1`] = `
 "
@@ -603,7 +578,7 @@ exports[`lambda flare validates required flags extracts region from function nam
 exports[`lambda flare validates required flags prints error when end time is invalid 1`] = `
 "
 🐶 Generating Lambda flare to send your configuration to Datadog...
-[Error] End time must be a time in milliseconds since Unix Epoch. [--end]
+[Error] End time must be a time in milliseconds since Unix Epoch. '123abc' is not a number.
 "
 `;
 
@@ -659,7 +634,7 @@ exports[`lambda flare validates required flags prints error when start time is a
 exports[`lambda flare validates required flags prints error when start time is invalid 1`] = `
 "
 🐶 Generating Lambda flare to send your configuration to Datadog...
-[Error] Start time must be a time in milliseconds since Unix Epoch. [--start]
+[Error] Start time must be a time in milliseconds since Unix Epoch. '123abc' is not a number.
 "
 `;
 
