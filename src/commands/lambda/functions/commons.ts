@@ -520,11 +520,11 @@ export const maskEnvVar = (key: string, value: string) => {
 
   // Mask entire string if it's short
   if (value.length < 12) {
-    return value.replace(/./g, '*')
+    return '*'.repeat(16)
   }
 
   // Keep first two and last four characters if it's long
-  return value.slice(0, 2) + value.slice(2, -4).replace(/./g, '*') + value.slice(-4)
+  return value.slice(0, 2) + '*'.repeat(10) + value.slice(-4)
 }
 
 export const maskUpdateFunctionConfigurationCommandInput = (config: UpdateFunctionConfigurationCommandInput) => {
