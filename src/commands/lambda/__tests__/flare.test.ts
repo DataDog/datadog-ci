@@ -69,6 +69,7 @@ const MOCK_CONFIG = {
 const MOCK_LOG_GROUP = 'mockLogGroup'
 const MOCK_OUTPUT_EVENT: OutputLogEvent[] = [{timestamp: 123, message: 'Log 1'}]
 const MOCK_LOGS = new Map().set('log1', MOCK_OUTPUT_EVENT)
+const MOCK_TAGS: any = {Tags: {}}
 const cloudWatchLogsClientMock = mockClient(CloudWatchLogsClient)
 const lambdaClientMock: any = mockClient(LambdaClient)
 
@@ -109,11 +110,11 @@ const mockJSZip = {
 }
 ;(JSZip as any).mockImplementation(() => mockJSZip)
 
-// Resource tags mock
-const mockTags: any = {Tags: {}}
-mockResourceTags(lambdaClientMock, mockTags)
-
 describe('lambda flare', () => {
+  beforeAll(() => {
+    mockResourceTags(lambdaClientMock, MOCK_TAGS)
+  })
+
   describe('prints correct headers', () => {
     it('prints non-dry-run header', async () => {
       const cli = makeCli()
@@ -538,17 +539,17 @@ describe('lambda flare', () => {
   describe('getTags', () => {
     const MOCK_ARN = 'arn:aws:lambda:us-east-1:123456789012:function:my-function'
     it('should return the tags when they exist', async () => {
-      const expectedTags: any = {Tags: {Key1: 'Value1', Key2: 'Value2'}}
+      const mockTags: any = {Tags: {Key1: 'Value1', Key2: 'Value2'}}
 
-      mockResourceTags(lambdaClientMock, expectedTags)
+      mockResourceTags(lambdaClientMock, mockTags)
 
       const tags = await getTags(lambdaClientMock, MOCK_REGION, MOCK_ARN)
       expect(tags).toMatchSnapshot()
     })
 
     it('should return an empty object when there are no tags', async () => {
-      const expectedTags: any = {Tags: {}}
-      mockResourceTags(lambdaClientMock, expectedTags)
+      const mockTags: any = {Tags: {}}
+      mockResourceTags(lambdaClientMock, mockTags)
 
       const tags = await getTags(lambdaClientMock, MOCK_REGION, MOCK_ARN)
       expect(tags).toEqual({})
@@ -559,7 +560,7 @@ describe('lambda flare', () => {
       lambdaClientMock.on(ListTagsCommand).rejects(new Error('Test Error'))
 
       await expect(getTags(lambdaClientMock, MOCK_REGION, MOCK_ARN)).rejects.toThrow(errorMessage)
-      mockResourceTags(lambdaClientMock, mockTags)
+      mockResourceTags(lambdaClientMock, MOCK_TAGS)
     })
   })
 
