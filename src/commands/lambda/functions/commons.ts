@@ -503,6 +503,7 @@ export const willUpdateFunctionConfigs = (configs: FunctionConfiguration[]) => {
   return willUpdate
 }
 
+// Mask environment variables with sensitive values
 export const maskEnvVar = (key: string, value: string) => {
   if (SKIP_MASKING_ENV_VARS.has(key)) {
     return value
@@ -527,9 +528,12 @@ export const maskEnvVar = (key: string, value: string) => {
   return value.slice(0, 2) + '*'.repeat(10) + value.slice(-4)
 }
 
-export const maskUpdateFunctionConfigurationCommandInput = (config: UpdateFunctionConfigurationCommandInput) => {
+// Called as a replacer function from the JSON.stringify method.
+// Each property passed to JSON.stringify is iterated over by this function. If the current
+// property is part of the Environment.Variables object, then the maskEnvVar function is run on the property
+export const maskStringifiedEnvVar = (envVars: Record<string, string> | undefined) => {
   return function (this: Record<string, unknown>, key: string, value: string) {
-    if (this === config.Environment?.Variables) {
+    if (this === envVars) {
       return maskEnvVar(key, value)
     }
 
