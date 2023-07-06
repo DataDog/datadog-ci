@@ -100,7 +100,6 @@ export class LambdaFlareCommand extends Command {
         errorMessages.push(commonRenderer.renderError(err.message))
       }
     }
-    console.log(startMillis, endMillis)
 
     if (errorMessages.length > 0) {
       for (const message of errorMessages) {
