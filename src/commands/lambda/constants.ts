@@ -118,9 +118,17 @@ export const AWS_SECRET_ARN_REG_EXP = /arn:aws:secretsmanager:[\w-]+:\d{12}:secr
 export const DATADOG_API_KEY_REG_EXP = /(?<![a-f0-9])[a-f0-9]{32}(?![a-f0-9])/g
 export const DATADOG_APP_KEY_REG_EXP = /(?<![a-f0-9])[a-f0-9]{40}(?![a-f0-9])/g
 
-// Obfuscation rules
-// Keys matching any pattern in the whitelist are displayed
-// Keys matching any pattern in the blacklist are obfuscated even if they also match the whitelist
-export const OBFUSCATE_NUM_CHAR_TO_KEEP = 4
-export const OBFUSCATE_PATTERN_BLACKLIST = [/^DD_API_KEY$/]
-export const OBFUSCATE_PATTERN_WHITELIST = [/^DD_/]
+// Environment Variables whose values don't need to be masked
+export const SKIP_MASKING_ENV_VARS = new Set([
+  AWS_LAMBDA_EXEC_WRAPPER_VAR,
+  DOTNET_TRACER_HOME_ENV_VAR,
+  ENVIRONMENT_ENV_VAR,
+  EXTRA_TAGS_ENV_VAR,
+  LAMBDA_HANDLER_ENV_VAR,
+  LOG_LEVEL_ENV_VAR,
+  PROFILER_ENV_VAR,
+  PROFILER_PATH_ENV_VAR,
+  SERVICE_ENV_VAR,
+  SITE_ENV_VAR,
+  VERSION_ENV_VAR,
+])

@@ -168,7 +168,7 @@ UpdateFunctionConfiguration -> arn:aws:lambda:sa-east-1:123456789012:function:la
   \\"Environment\\": {
     \\"Variables\\": {
       \\"DD_LAMBDA_HANDLER\\": \\"index.handler\\",
-      \\"DD_API_KEY\\": \\"****************************33bd\\",
+      \\"DD_API_KEY\\": \\"02**************************33bd\\",
       \\"DD_SITE\\": \\"datadoghq.com\\",
       \\"DD_CAPTURE_LAMBDA_PAYLOAD\\": \\"false\\",
       \\"DD_MERGE_XRAY_TRACES\\": \\"false\\",
@@ -191,7 +191,7 @@ UpdateFunctionConfiguration -> arn:aws:lambda:sa-east-1:123456789012:function:la
   \\"Environment\\": {
     \\"Variables\\": {
       \\"DD_LAMBDA_HANDLER\\": \\"index.handler\\",
-      \\"DD_API_KEY\\": \\"****************************33bd\\",
+      \\"DD_API_KEY\\": \\"02**************************33bd\\",
       \\"DD_SITE\\": \\"datadoghq.com\\",
       \\"DD_CAPTURE_LAMBDA_PAYLOAD\\": \\"false\\",
       \\"DD_MERGE_XRAY_TRACES\\": \\"false\\",
@@ -241,7 +241,7 @@ UpdateFunctionConfiguration -> arn:aws:lambda:sa-east-1:123456789012:function:la
   \\"Environment\\": {
     \\"Variables\\": {
       \\"DD_LAMBDA_HANDLER\\": \\"index.handler\\",
-      \\"DD_API_KEY\\": \\"****************************33bd\\",
+      \\"DD_API_KEY\\": \\"02**************************33bd\\",
       \\"DD_SITE\\": \\"datadoghq.com\\",
       \\"DD_CAPTURE_LAMBDA_PAYLOAD\\": \\"false\\",
       \\"DD_MERGE_XRAY_TRACES\\": \\"false\\",
@@ -264,7 +264,7 @@ UpdateFunctionConfiguration -> arn:aws:lambda:sa-east-1:123456789012:function:la
   \\"Environment\\": {
     \\"Variables\\": {
       \\"DD_LAMBDA_HANDLER\\": \\"index.handler\\",
-      \\"DD_API_KEY\\": \\"****************************33bd\\",
+      \\"DD_API_KEY\\": \\"02**************************33bd\\",
       \\"DD_SITE\\": \\"datadoghq.com\\",
       \\"DD_CAPTURE_LAMBDA_PAYLOAD\\": \\"false\\",
       \\"DD_MERGE_XRAY_TRACES\\": \\"false\\",
@@ -430,8 +430,8 @@ UpdateFunctionConfiguration -> arn:aws:lambda:us-east-1:123456789012:function:la
       \\"DD_VERSION\\": \\"0.2\\",
       \\"DD_FLUSH_TO_LOG\\": \\"true\\",
       \\"CORECLR_ENABLE_PROFILING\\": \\"1\\",
-      \\"CORECLR_PROFILER\\": \\"**********************************0D8}\\",
-      \\"CORECLR_PROFILER_PATH\\": \\"********************************************e.so\\",
+      \\"CORECLR_PROFILER\\": \\"{846F5F1C-F9AE-4B07-969E-05C26BC060D8}\\",
+      \\"CORECLR_PROFILER_PATH\\": \\"/opt/datadog/Datadog.Trace.ClrProfiler.Native.so\\",
       \\"DD_DOTNET_TRACER_HOME\\": \\"/opt/datadog\\"
     }
   },
@@ -724,7 +724,7 @@ UpdateFunctionConfiguration -> arn:aws:lambda:sa-east-1:123456789012:function:la
   \\"Environment\\": {
     \\"Variables\\": {
       \\"DD_LAMBDA_HANDLER\\": \\"index.handler\\",
-      \\"DD_API_KEY\\": \\"****************************33bd\\",
+      \\"DD_API_KEY\\": \\"02**************************33bd\\",
       \\"DD_SITE\\": \\"datadoghq.com\\",
       \\"DD_CAPTURE_LAMBDA_PAYLOAD\\": \\"false\\",
       \\"DD_MERGE_XRAY_TRACES\\": \\"false\\",
@@ -770,7 +770,7 @@ UpdateFunctionConfiguration -> arn:aws:lambda:sa-east-1:123456789012:function:la
   \\"Environment\\": {
     \\"Variables\\": {
       \\"DD_LAMBDA_HANDLER\\": \\"index.handler\\",
-      \\"DD_API_KEY\\": \\"****************************33bd\\",
+      \\"DD_API_KEY\\": \\"02**************************33bd\\",
       \\"DD_SITE\\": \\"datadoghq.com\\",
       \\"DD_CAPTURE_LAMBDA_PAYLOAD\\": \\"false\\",
       \\"DD_ENV\\": \\"sandbox\\",

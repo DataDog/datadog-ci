@@ -33,11 +33,9 @@ import {
   LayerKey,
   LAYER_LOOKUP,
   LIST_FUNCTIONS_MAX_RETRY_COUNT,
-  OBFUSCATE_NUM_CHAR_TO_KEEP,
-  OBFUSCATE_PATTERN_BLACKLIST,
-  OBFUSCATE_PATTERN_WHITELIST,
   Runtime,
   RUNTIME_LOOKUP,
+  SKIP_MASKING_ENV_VARS,
 } from '../constants'
 import {FunctionConfiguration, InstrumentationSettings, InstrumentedConfigurationGroup} from '../interfaces'
 import {applyLogGroupConfig} from '../loggroup'
@@ -505,18 +503,36 @@ export const willUpdateFunctionConfigs = (configs: FunctionConfiguration[]) => {
   return willUpdate
 }
 
-export const obfuscateVariables = (config: UpdateFunctionConfigurationCommandInput) => {
+export const maskEnvVar = (key: string, value: string) => {
+  if (SKIP_MASKING_ENV_VARS.has(key)) {
+    return value
+  }
+
+  // Don't mask booleans
+  if (value.toLowerCase() === 'true' || value.toLowerCase() === 'false') {
+    return value
+  }
+
+  // Dont mask numbers
+  if (!isNaN(Number(value))) {
+    return value
+  }
+
+  // Mask entire string if it's short
+  if (value.length < 12) {
+    return value.replace(/./g, '*')
+  }
+
+  // Keep first two and last four characters if it's long
+  return value.slice(0, 2) + value.slice(2, -4).replace(/./g, '*') + value.slice(-4)
+}
+
+export const maskUpdateFunctionConfigurationCommandInput = (config: UpdateFunctionConfigurationCommandInput) => {
   return function (this: Record<string, unknown>, key: string, value: string) {
-    // Display a value if (1) it is not an environment variable or (2) the key matches any whitelist rule and the key does not match any blacklist rules. Otherwise obfuscate the value
-    if (
-      this !== config.Environment?.Variables ||
-      (OBFUSCATE_PATTERN_WHITELIST.some((pattern) => pattern.test(key)) &&
-        !OBFUSCATE_PATTERN_BLACKLIST.some((pattern) => pattern.test(key)))
-    ) {
-      return value
-    } else {
-      // Obfuscate all but the last 4 characters
-      return value.slice(0, -OBFUSCATE_NUM_CHAR_TO_KEEP).replace(/./g, '*') + value.slice(-OBFUSCATE_NUM_CHAR_TO_KEEP)
+    if (this === config.Environment?.Variables) {
+      return maskEnvVar(key, value)
     }
+
+    return value
   }
 }
