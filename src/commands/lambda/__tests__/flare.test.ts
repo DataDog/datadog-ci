@@ -538,6 +538,11 @@ describe('lambda flare', () => {
 
   describe('getTags', () => {
     const MOCK_ARN = 'arn:aws:lambda:us-east-1:123456789012:function:my-function'
+
+    afterAll(() => {
+      mockResourceTags(lambdaClientMock, MOCK_TAGS)
+    })
+
     it('should return the tags when they exist', async () => {
       const mockTags: any = {Tags: {Key1: 'Value1', Key2: 'Value2'}}
 
@@ -560,7 +565,6 @@ describe('lambda flare', () => {
       lambdaClientMock.on(ListTagsCommand).rejects(new Error('Test Error'))
 
       await expect(getTags(lambdaClientMock, MOCK_REGION, MOCK_ARN)).rejects.toThrow(errorMessage)
-      mockResourceTags(lambdaClientMock, MOCK_TAGS)
     })
   })
 
