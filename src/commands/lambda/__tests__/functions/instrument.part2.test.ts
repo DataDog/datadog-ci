@@ -133,7 +133,7 @@ describe('instrument', () => {
     })
 
     test('calculates an update request with a lambda library, extension, and DATADOG_API_KEY', async () => {
-      process.env[CI_API_KEY_ENV_VAR] = '1234'
+      process.env[CI_API_KEY_ENV_VAR] = '1234a'
       const runtime = 'nodejs12.x'
       const config = {
         FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world',
@@ -156,7 +156,7 @@ describe('instrument', () => {
         Object {
           "Environment": Object {
             "Variables": Object {
-              "DD_API_KEY": "1234",
+              "DD_API_KEY": "1234a",
               "DD_LAMBDA_HANDLER": "index.handler",
               "DD_MERGE_XRAY_TRACES": "false",
               "DD_SITE": "datadoghq.com",
@@ -256,7 +256,7 @@ describe('instrument', () => {
 
     test('prioritizes the KMS API KEY when all of them are exported', async () => {
       process.env = {
-        [CI_API_KEY_ENV_VAR]: '1234',
+        [CI_API_KEY_ENV_VAR]: '1234a',
         [CI_API_KEY_SECRET_ARN_ENV_VAR]: '5678',
         [CI_KMS_API_KEY_ENV_VAR]: 'should-be-selected',
       }
@@ -284,7 +284,7 @@ describe('instrument', () => {
     })
 
     test("doesn't set DD_FLUSH_TO_LOGS when extension is being used", async () => {
-      process.env[CI_API_KEY_ENV_VAR] = '1234'
+      process.env[CI_API_KEY_ENV_VAR] = '1234a'
 
       const config = {
         FunctionArn: 'arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world',
@@ -304,7 +304,7 @@ describe('instrument', () => {
         Object {
           "Environment": Object {
             "Variables": Object {
-              "DD_API_KEY": "1234",
+              "DD_API_KEY": "1234a",
               "DD_LAMBDA_HANDLER": "index.handler",
               "DD_MERGE_XRAY_TRACES": "false",
               "DD_SITE": "datadoghq.com",
