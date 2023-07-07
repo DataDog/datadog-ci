@@ -25,6 +25,9 @@ import {
   ListTagsCommand,
   ListTagsResponse,
   GetLayerVersionCommandInput,
+  ServiceInputTypes,
+  ServiceOutputTypes,
+  ListTagsCommandOutput,
 } from '@aws-sdk/client-lambda'
 import {AwsStub} from 'aws-sdk-client-mock'
 import {Cli, Command} from 'clipanion/lib/advanced'
@@ -193,6 +196,13 @@ export const mockCloudWatchLogEvents = (
   events: OutputLogEvent[]
 ) => {
   cloudWatchLogsClientMock.on(GetLogEventsCommand).resolves({events})
+}
+
+export const mockResourceTags = (
+  lambdaClientMock: AwsStub<ServiceInputTypes, ServiceOutputTypes>,
+  output: ListTagsCommandOutput
+) => {
+  lambdaClientMock.on(ListTagsCommand).resolves(output)
 }
 
 export const mockAwsAccount = '123456789012'

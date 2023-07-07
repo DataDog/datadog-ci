@@ -10,6 +10,7 @@ import {
   LogStream,
   OutputLogEvent,
 } from '@aws-sdk/client-cloudwatch-logs'
+import {LambdaClient, ListTagsCommand} from '@aws-sdk/client-lambda'
 import {mockClient} from 'aws-sdk-client-mock'
 import axios from 'axios'
 import FormData from 'form-data'
@@ -26,6 +27,7 @@ import {
   getLogStreamNames,
   getMasking,
   getProjectFiles,
+  getTags,
   maskConfig,
   writeFile,
   zipContents,
@@ -43,6 +45,7 @@ import {
   mockCloudWatchLogsClientCommands,
   mockCloudWatchLogStreams,
   mockDatadogApiKey,
+  mockResourceTags,
 } from './fixtures'
 
 // Constants
@@ -52,7 +55,8 @@ const MOCK_FOLDER_PATH = path.join(MOCK_CWD, MOCK_FOLDER_NAME)
 const MOCK_FILE_NAME = 'function_config.json'
 const MOCK_FILES = new Set([MOCK_FILE_NAME, 'file1.csv', 'file2.csv', 'file3.csv'])
 const MOCK_ZIP_PATH = 'output.zip'
-const MOCK_REQUIRED_FLAGS = ['lambda', 'flare', '-f', 'func', '-r', 'us-west-2', '-c', '123', '-e', 'test@test.com']
+const MOCK_REGION = 'us-east-1'
+const MOCK_REQUIRED_FLAGS = ['lambda', 'flare', '-f', 'func', '-r', MOCK_REGION, '-c', '123', '-e', 'test@test.com']
 const MOCK_CONFIG = {
   Environment: {
     Variables: {
@@ -66,7 +70,9 @@ const MOCK_CONFIG = {
 }
 const MOCK_LOG_GROUP = 'mockLogGroup'
 const MOCK_OUTPUT_EVENT: OutputLogEvent[] = [{timestamp: 123, message: 'Log 1'}]
+const MOCK_TAGS: any = {Tags: {}}
 const cloudWatchLogsClientMock = mockClient(CloudWatchLogsClient)
+const lambdaClientMock = mockClient(LambdaClient)
 
 // Commons mocks
 jest.mock('../functions/commons', () => ({
@@ -110,6 +116,10 @@ jest.spyOn(flareModule, 'getProjectFiles').mockResolvedValue(new Map())
 jest.spyOn(promptModule, 'requestFilePath').mockResolvedValue('')
 
 describe('lambda flare', () => {
+  beforeAll(() => {
+    mockResourceTags(lambdaClientMock, MOCK_TAGS)
+  })
+
   describe('prints correct headers', () => {
     it('prints non-dry-run header', async () => {
       const cli = makeCli()
@@ -139,7 +149,7 @@ describe('lambda flare', () => {
       const cli = makeCli()
       const context = createMockContext()
       const code = await cli.run(
-        ['lambda', 'flare', '-r', 'us-west-2', '-c', '123', '-e', 'test@test.com'],
+        ['lambda', 'flare', '-r', MOCK_REGION, '-c', '123', '-e', 'test@test.com'],
         context as any
       )
       expect(code).toBe(1)
@@ -164,7 +174,7 @@ describe('lambda flare', () => {
           'lambda',
           'flare',
           '-f',
-          'arn:aws:lambda:us-west-2:123456789012:function:my-function',
+          'arn:aws:lambda:us-east-1:123456789012:function:my-function',
           '-c',
           '123',
           '-e',
@@ -192,7 +202,7 @@ describe('lambda flare', () => {
       const cli = makeCli()
       const context = createMockContext()
       const code = await cli.run(
-        ['lambda', 'flare', '-f', 'func', '-r', 'us-west-2', '-c', '123', '-e', 'test@test.com'],
+        ['lambda', 'flare', '-f', 'func', '-r', MOCK_REGION, '-c', '123', '-e', 'test@test.com'],
         context as any
       )
       expect(code).toBe(1)
@@ -207,7 +217,7 @@ describe('lambda flare', () => {
       const cli = makeCli()
       const context = createMockContext()
       let code = await cli.run(
-        ['lambda', 'flare', '-f', 'func', '-r', 'test-region', '-c', '123', '-e', 'test@test.com'],
+        ['lambda', 'flare', '-f', 'func', '-r', MOCK_REGION, '-c', '123', '-e', 'test@test.com'],
         context as any
       )
       expect(code).toBe(0)
@@ -217,7 +227,7 @@ describe('lambda flare', () => {
       process.env[CI_API_KEY_ENV_VAR] = undefined
       process.env[API_KEY_ENV_VAR] = mockDatadogApiKey
       code = await cli.run(
-        ['lambda', 'flare', '-f', 'func', '-r', 'test-region', '-c', '123', '-e', 'test@test.com'],
+        ['lambda', 'flare', '-f', 'func', '-r', MOCK_REGION, '-c', '123', '-e', 'test@test.com'],
         context as any
       )
       expect(code).toBe(0)
@@ -229,7 +239,7 @@ describe('lambda flare', () => {
       const cli = makeCli()
       const context = createMockContext()
       const code = await cli.run(
-        ['lambda', 'flare', '-f', 'func', '-r', 'us-west-2', '-e', 'test@test.com'],
+        ['lambda', 'flare', '-f', 'func', '-r', MOCK_REGION, '-e', 'test@test.com'],
         context as any
       )
       expect(code).toBe(1)
@@ -240,7 +250,7 @@ describe('lambda flare', () => {
     it('prints error when no email specified', async () => {
       const cli = makeCli()
       const context = createMockContext()
-      const code = await cli.run(['lambda', 'flare', '-f', 'func', '-r', 'us-west-2', '-c', '123'], context as any)
+      const code = await cli.run(['lambda', 'flare', '-f', 'func', '-r', MOCK_REGION, '-c', '123'], context as any)
       expect(code).toBe(1)
       const output = context.stdout.toString()
       expect(output).toMatchSnapshot()
@@ -423,7 +433,6 @@ describe('lambda flare', () => {
   })
 
   describe('getAllLogs', () => {
-    const region = 'us-east-1'
     const functionName = 'testFunction'
     const mockStreamName = 'streamName'
 
@@ -436,21 +445,21 @@ describe('lambda flare', () => {
       jest.spyOn(flareModule, 'getLogStreamNames').mockResolvedValue([mockStreamName])
       jest.spyOn(flareModule, 'getLogEvents').mockResolvedValue(mockLogs)
 
-      const result = await getAllLogs(region, functionName)
+      const result = await getAllLogs(MOCK_REGION, functionName)
       expect(result.get(mockStreamName)).toEqual(mockLogs)
     })
 
     it('throws an error when unable to get log streams', async () => {
       jest.spyOn(flareModule, 'getLogStreamNames').mockRejectedValueOnce(new Error('Error getting log streams'))
 
-      await expect(getAllLogs(region, functionName)).rejects.toMatchSnapshot()
+      await expect(getAllLogs(MOCK_REGION, functionName)).rejects.toMatchSnapshot()
     })
 
     it('throws an error when unable to get log events', async () => {
       jest.spyOn(flareModule, 'getLogStreamNames').mockResolvedValueOnce([mockStreamName])
       jest.spyOn(flareModule, 'getLogEvents').mockRejectedValueOnce(new Error('Error getting log events'))
 
-      await expect(getAllLogs(region, functionName)).rejects.toMatchSnapshot()
+      await expect(getAllLogs(MOCK_REGION, functionName)).rejects.toMatchSnapshot()
     })
   })
 
@@ -529,6 +538,38 @@ describe('lambda flare', () => {
       expect(code).toBe(0)
       const output = context.stdout.toString()
       expect(output).toMatchSnapshot()
+    })
+  })
+
+  describe('getTags', () => {
+    const MOCK_ARN = 'arn:aws:lambda:us-east-1:123456789012:function:my-function'
+
+    afterAll(() => {
+      mockResourceTags(lambdaClientMock, MOCK_TAGS)
+    })
+
+    it('should return the tags when they exist', async () => {
+      const mockTags: any = {Tags: {Key1: 'Value1', Key2: 'Value2'}}
+
+      mockResourceTags(lambdaClientMock, mockTags)
+
+      const tags = await getTags(lambdaClientMock as any, MOCK_REGION, MOCK_ARN)
+      expect(tags).toMatchSnapshot()
+    })
+
+    it('should return an empty object when there are no tags', async () => {
+      const mockTags: any = {Tags: {}}
+      mockResourceTags(lambdaClientMock, mockTags)
+
+      const tags = await getTags(lambdaClientMock as any, MOCK_REGION, MOCK_ARN)
+      expect(tags).toEqual({})
+    })
+
+    it('should throw an error when the command fails', async () => {
+      const errorMessage = 'Unable to get resource tags: Test Error'
+      lambdaClientMock.on(ListTagsCommand).rejects(new Error('Test Error'))
+
+      await expect(getTags(lambdaClientMock as any, MOCK_REGION, MOCK_ARN)).rejects.toThrow(errorMessage)
     })
   })
 

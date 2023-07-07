@@ -28,6 +28,10 @@ exports[`lambda flare AWS Lambda configuration prints config when running as a d
 
 ✅ Added 0 custom files
 
+🏷 Getting Resource Tags...
+[!] No resource tags were found.
+
+
 💾 Saving files...
 • Saved function config to mock-folder/.datadog-ci/function_config.json
 
@@ -76,6 +80,10 @@ exports[`lambda flare AWS credentials continues when getAWSCredentials() returns
 
 ✅ Added 0 custom files
 
+🏷 Getting Resource Tags...
+[!] No resource tags were found.
+
+
 💾 Saving files...
 • Saved function config to mock-folder/.datadog-ci/function_config.json
 
@@ -113,6 +121,10 @@ exports[`lambda flare AWS credentials requests AWS credentials when none are fou
 
 
 ✅ Added 0 custom files
+
+🏷 Getting Resource Tags...
+[!] No resource tags were found.
+
 
 💾 Saving files...
 • Saved function config to mock-folder/.datadog-ci/function_config.json
@@ -166,6 +178,13 @@ exports[`lambda flare getAllLogs throws an error when unable to get log events 1
 
 exports[`lambda flare getAllLogs throws an error when unable to get log streams 1`] = `[Error: Unable to get log streams: Error getting log streams]`;
 
+exports[`lambda flare getTags should return the tags when they exist 1`] = `
+Object {
+  "Key1": "Value1",
+  "Key2": "Value2",
+}
+`;
+
 exports[`lambda flare gets CloudWatch Logs does not get logs when --with-logs is not included 1`] = `
 "
 🐶 Generating Lambda flare to send your configuration to Datadog...
@@ -188,11 +207,16 @@ exports[`lambda flare gets CloudWatch Logs does not get logs when --with-logs is
   FunctionName: 'some-function'
 }
 
+
 📁 Searching for project files in current directory...
 [!] No project files found.
 
 
 ✅ Added 0 custom files
+
+🏷 Getting Resource Tags...
+[!] No resource tags were found.
+
 
 💾 Saving files...
 • Saved function config to mock-folder/.datadog-ci/function_config.json
@@ -231,6 +255,10 @@ exports[`lambda flare gets CloudWatch Logs gets logs, saves, and sends correctly
 
 
 ✅ Added 0 custom files
+
+🏷 Getting Resource Tags...
+[!] No resource tags were found.
+
 
 ☁️ Getting CloudWatch logs...
 
@@ -280,6 +308,10 @@ exports[`lambda flare gets CloudWatch Logs prints error when getLogEvents throws
 
 ✅ Added 0 custom files
 
+🏷 Getting Resource Tags...
+[!] No resource tags were found.
+
+
 ☁️ Getting CloudWatch logs...
 [Error] Unable to get log events for stream Stream1: MOCK ERROR: Unable to get log events
 "
@@ -313,6 +345,9 @@ exports[`lambda flare gets CloudWatch Logs prints error when getLogStreamNames t
 
 ✅ Added 0 custom files
 
+🏷 Getting Resource Tags...
+[!] No resource tags were found.
+
 ☁️ Getting CloudWatch logs...
 [Error] Unable to get log streams: MOCK ERROR: Unable to get log stream names
 "
@@ -340,11 +375,15 @@ exports[`lambda flare gets CloudWatch Logs warns and skips getting logs when get
   FunctionName: 'some-function'
 }
 
+
 📁 Searching for project files in current directory...
 [!] No project files found.
 
 
 ✅ Added 0 custom files
+
+🏷 Getting Resource Tags...
+[!] No resource tags were found.
 
 ☁️ Getting CloudWatch logs...
 [!] No CloudWatch log streams were found. Logs will not be retrieved or sent.
@@ -386,6 +425,9 @@ exports[`lambda flare gets CloudWatch Logs warns and skips log when getLogEvents
 
 
 ✅ Added 0 custom files
+
+🏷 Getting Resource Tags...
+[!] No resource tags were found.
 
 ☁️ Getting CloudWatch logs...
 
@@ -528,6 +570,9 @@ exports[`lambda flare prompts for confirmation before sending does not send when
 
 ✅ Added 0 custom files
 
+🏷 Getting Resource Tags...
+[!] No resource tags were found.
+
 💾 Saving files...
 • Saved function config to mock-folder/.datadog-ci/function_config.json
 
@@ -563,6 +608,9 @@ exports[`lambda flare prompts for confirmation before sending sends when user an
 
 
 ✅ Added 0 custom files
+
+🏷 Getting Resource Tags...
+[!] No resource tags were found.
 
 💾 Saving files...
 • Saved function config to mock-folder/.datadog-ci/function_config.json
@@ -602,6 +650,10 @@ exports[`lambda flare send to Datadog does not send request to Datadog when a dr
 
 ✅ Added 0 custom files
 
+🏷 Getting Resource Tags...
+[!] No resource tags were found.
+
+
 💾 Saving files...
 • Saved function config to mock-folder/.datadog-ci/function_config.json
 
@@ -638,6 +690,10 @@ exports[`lambda flare send to Datadog successfully adds zip file to FormData 1`]
 
 
 ✅ Added 0 custom files
+
+🏷 Getting Resource Tags...
+[!] No resource tags were found.
+
 
 💾 Saving files...
 • Saved function config to mock-folder/.datadog-ci/function_config.json
@@ -677,6 +733,10 @@ exports[`lambda flare send to Datadog successfully sends request to Datadog 1`] 
 
 ✅ Added 0 custom files
 
+🏷 Getting Resource Tags...
+[!] No resource tags were found.
+
+
 💾 Saving files...
 • Saved function config to mock-folder/.datadog-ci/function_config.json
 
@@ -714,6 +774,10 @@ exports[`lambda flare validates required flags extracts region from function nam
 
 
 ✅ Added 0 custom files
+
+🏷 Getting Resource Tags...
+[!] No resource tags were found.
+
 
 💾 Saving files...
 • Saved function config to mock-folder/.datadog-ci/function_config.json
@@ -788,6 +852,10 @@ exports[`lambda flare validates required flags runs successfully with all requir
 
 ✅ Added 0 custom files
 
+🏷 Getting Resource Tags...
+[!] No resource tags were found.
+
+
 💾 Saving files...
 • Saved function config to mock-folder/.datadog-ci/function_config.json
 
@@ -826,6 +894,9 @@ exports[`lambda flare validates required flags uses API key ENV variable and run
 
 ✅ Added 0 custom files
 
+🏷 Getting Resource Tags...
+[!] No resource tags were found.
+
 💾 Saving files...
 • Saved function config to mock-folder/.datadog-ci/function_config.json
 
@@ -858,11 +929,16 @@ exports[`lambda flare validates required flags uses API key ENV variable and run
   FunctionName: 'some-function'
 }
 
+
 📁 Searching for project files in current directory...
 [!] No project files found.
 
 
 ✅ Added 0 custom files
+
+🏷 Getting Resource Tags...
+[!] No resource tags were found.
+
 
 💾 Saving files...
 • Saved function config to mock-folder/.datadog-ci/function_config.json
@@ -897,6 +973,10 @@ exports[`lambda flare validates required flags uses API key ENV variable and run
 
 
 ✅ Added 0 custom files
+
+🏷 Getting Resource Tags...
+[!] No resource tags were found.
+
 
 💾 Saving files...
 • Saved function config to mock-folder/.datadog-ci/function_config.json
@@ -930,11 +1010,16 @@ exports[`lambda flare validates required flags uses region ENV variable when no 
   FunctionName: 'some-function'
 }
 
+
 📁 Searching for project files in current directory...
 [!] No project files found.
 
 
 ✅ Added 0 custom files
+
+🏷 Getting Resource Tags...
+[!] No resource tags were found.
+
 
 💾 Saving files...
 • Saved function config to mock-folder/.datadog-ci/function_config.json
