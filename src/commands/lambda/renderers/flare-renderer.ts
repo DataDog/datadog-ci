@@ -1,3 +1,5 @@
+import chalk from 'chalk'
+
 import {dryRunTag} from './common-renderer'
 
 /**
@@ -11,5 +13,5 @@ import {dryRunTag} from './common-renderer'
 export const renderLambdaFlareHeader = (isDryRun: boolean) => {
   const prefix = isDryRun ? `${dryRunTag} ` : ''
 
-  return `\n${prefix}🐶 Generating Lambda flare to send your configuration to Datadog...\n`
+  return chalk.bold(`\n${prefix}🐶 Generating Lambda flare to send your configuration to Datadog...\n`)
 }

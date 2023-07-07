@@ -133,3 +133,40 @@ export const SKIP_MASKING_ENV_VARS = new Set([
   PROFILER_PATH_ENV_VAR,
   DOTNET_TRACER_HOME_ENV_VAR,
 ])
+
+// Infrastructure files to search for in Flare
+export const INFRASTRUCTURE_FILES = [
+  // Serverless framework
+  'serverless.yml',
+  'serverless.js',
+  // AWS CDK
+  'cdk.json',
+  // CloudFormation Template
+  'template.yml',
+  'template.json',
+  'datadog-cloudfomation-macro.yml',
+  'datadog-cloudformation-macro.json',
+  // Node.js
+  'package.json',
+  'package-lock.json',
+  'yarn.lock',
+  // Python
+  'requirements.txt',
+  'Pipfile',
+  'Pipfile.lock',
+  'pyproject.toml',
+  // Java
+  'pom.xml',
+  'build.gradle',
+  // Go
+  'go.mod',
+  'go.sum',
+  // Ruby
+  'Gemfile',
+  'Gemfile.lock',
+  // .NET
+  'project.json',
+  'packages.config',
+  'PackageReference',
+  'global.json',
+]

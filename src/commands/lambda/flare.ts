@@ -12,12 +12,19 @@ import {
 import {FunctionConfiguration, LambdaClient, LambdaClientConfig} from '@aws-sdk/client-lambda'
 import {AwsCredentialIdentity} from '@aws-sdk/types'
 import axios from 'axios'
+import chalk from 'chalk'
 import {Command} from 'clipanion'
 import FormData from 'form-data'
 import inquirer from 'inquirer'
 import JSZip from 'jszip'
 
-import {API_KEY_ENV_VAR, AWS_DEFAULT_REGION_ENV_VAR, CI_API_KEY_ENV_VAR, SKIP_MASKING_ENV_VARS} from './constants'
+import {
+  API_KEY_ENV_VAR,
+  AWS_DEFAULT_REGION_ENV_VAR,
+  CI_API_KEY_ENV_VAR,
+  INFRASTRUCTURE_FILES,
+  SKIP_MASKING_ENV_VARS,
+} from './constants'
 import {getAWSCredentials, getLambdaFunctionConfig, getRegion} from './functions/commons'
 import {confirmationQuestion, requestAWSCredentials} from './prompt'
 import * as commonRenderer from './renderers/common-renderer'
@@ -28,6 +35,8 @@ const {version} = require('../../../package.json')
 const ENDPOINT_URL = 'https://datad0g.com/api/ui/support/serverless/flare'
 const FLARE_OUTPUT_DIRECTORY = '.datadog-ci'
 const LOGS_DIRECTORY = 'logs'
+const INFRASTRUCTURE_DIRECTORY = 'infrastructure'
+const ADDITIONAL_FILES_DIRECTORY = 'additional_files'
 const FUNCTION_CONFIG_FILE_NAME = 'function_config.json'
 const ZIP_FILE_NAME = 'lambda-flare-output.zip'
 const LOG_STREAM_COUNT = 3
@@ -95,7 +104,7 @@ export class LambdaFlareCommand extends Command {
     }
 
     // Get AWS credentials
-    this.context.stdout.write('\n🔑 Getting AWS credentials...\n')
+    this.context.stdout.write(chalk.bold('\n🔑 Getting AWS credentials...\n'))
     try {
       this.credentials = await getAWSCredentials()
     } catch (err) {
@@ -119,7 +128,7 @@ export class LambdaFlareCommand extends Command {
     }
 
     // Get and print Lambda function configuration
-    this.context.stdout.write('\n🔍 Fetching Lambda function configuration...\n')
+    this.context.stdout.write(chalk.bold('\n🔍 Fetching Lambda function configuration...\n'))
     const lambdaClientConfig: LambdaClientConfig = {
       region,
       credentials: this.credentials,
@@ -141,10 +150,61 @@ export class LambdaFlareCommand extends Command {
     const configStr = util.inspect(config, false, undefined, true)
     this.context.stdout.write(`\n${configStr}\n`)
 
+    // Get infrastructure files
+    this.context.stdout.write(chalk.bold('\n📁 Searching for infrastructure files...\n'))
+    const infraFilesToPath = await getInfrastructureFiles()
+    if (infraFilesToPath.size === 0) {
+      this.context.stdout.write(commonRenderer.renderSoftWarning('No infrastructure files found.'))
+    } else {
+      this.context.stdout.write(chalk.bold('\n✅ Found infrastructure files:\n'))
+      for (const file of infraFilesToPath.keys()) {
+        this.context.stdout.write(`• ${file}\n`)
+      }
+    }
+
+    // Additional files
+    this.context.stdout.write('\n')
+    const additionalFiles: string[] = []
+    const addFilesQuestion = await inquirer.prompt(
+      confirmationQuestion('Do you want to send any additional files to Datadog support?')
+    )
+    while (addFilesQuestion.confirmation) {
+      this.context.stdout.write('\n')
+      let filePath: string = (
+        await inquirer.prompt([
+          {
+            type: 'input',
+            name: 'filePath',
+            message: 'Please enter a file path, or press Enter to finish:',
+          },
+        ])
+      ).filePath
+      if (filePath === '') {
+        this.context.stdout.write(
+          `✅ Added ${additionalFiles.length} custom file${additionalFiles.length === 1 ? '' : 's'}\n`
+        )
+        break
+      }
+      const originalPath = filePath
+      filePath = fs.existsSync(filePath) ? filePath : path.join(process.cwd(), filePath)
+      if (!fs.existsSync(filePath)) {
+        this.context.stderr.write(
+          commonRenderer.renderError(`File path '${originalPath}' not found. Please try again.\n`)
+        )
+        continue
+      }
+      if (infraFilesToPath.has(filePath) || additionalFiles.includes(filePath)) {
+        this.context.stderr.write(commonRenderer.renderError(`File '${filePath}' already added. Please try again.\n`))
+        continue
+      }
+      additionalFiles.push(filePath)
+      this.context.stdout.write(`• Added file '${filePath}'\n`)
+    }
+
     // Get CloudWatch logs
     let logs: Map<string, OutputLogEvent[]> = new Map()
     if (this.withLogs) {
-      this.context.stdout.write('\n☁️ Getting CloudWatch logs...\n')
+      this.context.stdout.write(chalk.bold('\n☁️ Getting CloudWatch logs...\n'))
       try {
         logs = await getAllLogs(region!, this.functionName)
       } catch (err) {
@@ -159,7 +219,7 @@ export class LambdaFlareCommand extends Command {
     try {
       // CloudWatch messages
       if (this.withLogs) {
-        let message = '\n✅ Found log streams:\n'
+        let message = chalk.bold('\n✅ Found log streams:\n')
         if (logs.size === 0) {
           message = commonRenderer.renderSoftWarning(
             'No CloudWatch log streams were found. Logs will not be retrieved or sent.'
@@ -177,18 +237,32 @@ export class LambdaFlareCommand extends Command {
       }
 
       // Create folders
-      this.context.stdout.write('\n💾 Saving files...\n')
+      this.context.stdout.write(chalk.bold('\n💾 Saving files...\n'))
       const rootFolderPath = path.join(process.cwd(), FLARE_OUTPUT_DIRECTORY)
       const logsFolderPath = path.join(rootFolderPath, LOGS_DIRECTORY)
+      const infraFolderPath = path.join(rootFolderPath, INFRASTRUCTURE_DIRECTORY)
+      const additionalFilesFolderPath = path.join(rootFolderPath, ADDITIONAL_FILES_DIRECTORY)
       if (fs.existsSync(rootFolderPath)) {
         deleteFolder(rootFolderPath)
       }
-      createDirectories(rootFolderPath, logsFolderPath, logs)
+      const subFolders = []
+      if (logs.size > 0) {
+        subFolders.push(logsFolderPath)
+      }
+      if (infraFilesToPath.size > 0) {
+        subFolders.push(infraFolderPath)
+      }
+      if (additionalFiles.length > 0) {
+        subFolders.push(additionalFilesFolderPath)
+      }
+      createDirectories(rootFolderPath, subFolders)
 
-      // Write files
+      // Write config file
       const configFilePath = path.join(rootFolderPath, FUNCTION_CONFIG_FILE_NAME)
       writeFile(configFilePath, JSON.stringify(config, undefined, 2))
       this.context.stdout.write(`• Saved function config to ${configFilePath}\n`)
+
+      // Write log files
       for (const [logStreamName, logEvents] of logs) {
         if (logEvents.length === 0) {
           continue
@@ -200,6 +274,21 @@ export class LambdaFlareCommand extends Command {
         // Sleep for 1 millisecond so creation times are different
         // This allows the logs to be sorted by creation time by the support team
         await sleep(1)
+      }
+
+      // Write infrastructure files
+      for (const [fileName, filePath] of infraFilesToPath) {
+        const newFilePath = path.join(infraFolderPath, fileName)
+        fs.copyFileSync(filePath, newFilePath)
+        this.context.stdout.write(`• Saved ${fileName} to ${newFilePath}\n`)
+      }
+
+      // Write additional files
+      for (const filePath of additionalFiles) {
+        const fileName = path.basename(filePath)
+        const newFilePath = path.join(additionalFilesFolderPath, fileName)
+        fs.copyFileSync(filePath, newFilePath)
+        this.context.stdout.write(`• Saved ${fileName} to ${newFilePath}\n`)
       }
 
       // Exit if dry run
@@ -319,27 +408,39 @@ export const deleteFolder = (folderPath: string) => {
 }
 
 /**
- * Creates the root folder and the logs sub-folder
+ * Creates the root folder and any subfolders
  * @param rootFolderPath path to the root folder
- * @param logsFolderPath path to the logs folder
- * @param logs array of logs
+ * @param subFolders paths to any subfolders to be created
  * @throws Error if the root folder cannot be deleted or folders cannot be created
  */
-export const createDirectories = (
-  rootFolderPath: string,
-  logsFolderPath: string,
-  logs: Map<string, OutputLogEvent[]>
-) => {
+export const createDirectories = (rootFolderPath: string, subFolders: string[]) => {
   try {
     fs.mkdirSync(rootFolderPath)
-    if (logs.size > 0) {
-      fs.mkdirSync(logsFolderPath)
+    for (const subFolder of subFolders) {
+      fs.mkdirSync(subFolder)
     }
   } catch (err) {
     if (err instanceof Error) {
       throw Error(`Unable to create directories: ${err.message}`)
     }
   }
+}
+
+/**
+ * Searches current directory for infrastructure files
+ * @returns a map of file names to file paths
+ */
+export const getInfrastructureFiles = async () => {
+  const fileToPath = new Map<string, string>()
+  const cwd = process.cwd()
+  for (const fileName of INFRASTRUCTURE_FILES) {
+    const filePath = path.join(cwd, fileName)
+    if (fs.existsSync(filePath)) {
+      fileToPath.set(fileName, filePath)
+    }
+  }
+
+  return fileToPath
 }
 
 /**
