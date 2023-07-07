@@ -134,8 +134,8 @@ export const SKIP_MASKING_ENV_VARS = new Set([
   DOTNET_TRACER_HOME_ENV_VAR,
 ])
 
-// Infrastructure files to search for in Flare
-export const INFRASTRUCTURE_FILES = [
+// Project files to search for in Flare
+export const PROJECT_FILES = [
   // Serverless framework
   'serverless.yml',
   'serverless.js',
@@ -169,4 +169,6 @@ export const INFRASTRUCTURE_FILES = [
   'packages.config',
   'PackageReference',
   'global.json',
+  // Webpack, bundlers, todo
+  // Other common project files
 ]

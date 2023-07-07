@@ -22,11 +22,11 @@ import {
   API_KEY_ENV_VAR,
   AWS_DEFAULT_REGION_ENV_VAR,
   CI_API_KEY_ENV_VAR,
-  INFRASTRUCTURE_FILES,
+  PROJECT_FILES,
   SKIP_MASKING_ENV_VARS,
 } from './constants'
 import {getAWSCredentials, getLambdaFunctionConfig, getRegion} from './functions/commons'
-import {confirmationQuestion, requestAWSCredentials} from './prompt'
+import {confirmationQuestion, requestAWSCredentials, requestFilePath} from './prompt'
 import * as commonRenderer from './renderers/common-renderer'
 import * as flareRenderer from './renderers/flare-renderer'
 
@@ -35,7 +35,7 @@ const {version} = require('../../../package.json')
 const ENDPOINT_URL = 'https://datad0g.com/api/ui/support/serverless/flare'
 const FLARE_OUTPUT_DIRECTORY = '.datadog-ci'
 const LOGS_DIRECTORY = 'logs'
-const INFRASTRUCTURE_DIRECTORY = 'infrastructure'
+const PROJECT_FILES_DIRECTORY = 'project_files'
 const ADDITIONAL_FILES_DIRECTORY = 'additional_files'
 const FUNCTION_CONFIG_FILE_NAME = 'function_config.json'
 const ZIP_FILE_NAME = 'lambda-flare-output.zip'
@@ -150,19 +150,20 @@ export class LambdaFlareCommand extends Command {
     const configStr = util.inspect(config, false, undefined, true)
     this.context.stdout.write(`\n${configStr}\n`)
 
-    // Get infrastructure files
-    this.context.stdout.write(chalk.bold('\n📁 Searching for infrastructure files...\n'))
-    const infraFilesToPath = await getInfrastructureFiles()
-    if (infraFilesToPath.size === 0) {
-      this.context.stdout.write(commonRenderer.renderSoftWarning('No infrastructure files found.'))
-    } else {
-      this.context.stdout.write(chalk.bold('\n✅ Found infrastructure files:\n'))
-      for (const file of infraFilesToPath.keys()) {
-        this.context.stdout.write(`• ${file}\n`)
-      }
+    // Get project files
+    // TODO make search more explicit to user
+    this.context.stdout.write(chalk.bold('\n📁 Searching for project files in current directory...\n'))
+    const projectFilesToPath = await getProjectFiles()
+    let projectFilesMessage = chalk.bold('\n✅ Found project files:\n')
+    if (projectFilesToPath.size === 0) {
+      projectFilesMessage = commonRenderer.renderSoftWarning('No project files found.')
+    }
+    this.context.stdout.write(projectFilesMessage)
+    for (const file of projectFilesToPath.keys()) {
+      this.context.stdout.write(`• ${file}\n`)
     }
 
-    // Additional files
+    // Additional files TODO libraries for scrubbing sensitive data
     this.context.stdout.write('\n')
     const additionalFiles: string[] = []
     const addFilesQuestion = await inquirer.prompt(
@@ -170,17 +171,19 @@ export class LambdaFlareCommand extends Command {
     )
     while (addFilesQuestion.confirmation) {
       this.context.stdout.write('\n')
-      let filePath: string = (
-        await inquirer.prompt([
-          {
-            type: 'input',
-            name: 'filePath',
-            message: 'Please enter a file path, or press Enter to finish:',
-          },
-        ])
-      ).filePath
+      let filePath: string
+      try {
+        filePath = await requestFilePath()
+      } catch (err) {
+        if (err instanceof Error) {
+          this.context.stderr.write(commonRenderer.renderError(err.message))
+        }
+
+        return 1
+      }
       if (filePath === '') {
         this.context.stdout.write(
+          // Be more descriptive
           `✅ Added ${additionalFiles.length} custom file${additionalFiles.length === 1 ? '' : 's'}\n`
         )
         break
@@ -189,12 +192,12 @@ export class LambdaFlareCommand extends Command {
       filePath = fs.existsSync(filePath) ? filePath : path.join(process.cwd(), filePath)
       if (!fs.existsSync(filePath)) {
         this.context.stderr.write(
-          commonRenderer.renderError(`File path '${originalPath}' not found. Please try again.\n`)
+          commonRenderer.renderError(`File path '${originalPath}' not found. Please try again.`)
         )
         continue
       }
-      if (infraFilesToPath.has(filePath) || additionalFiles.includes(filePath)) {
-        this.context.stderr.write(commonRenderer.renderError(`File '${filePath}' already added. Please try again.\n`))
+      if (projectFilesToPath.has(filePath) || additionalFiles.includes(filePath)) {
+        this.context.stderr.write(commonRenderer.renderError(`File '${filePath}' already added. Please try again.`))
         continue
       }
       additionalFiles.push(filePath)
@@ -240,7 +243,7 @@ export class LambdaFlareCommand extends Command {
       this.context.stdout.write(chalk.bold('\n💾 Saving files...\n'))
       const rootFolderPath = path.join(process.cwd(), FLARE_OUTPUT_DIRECTORY)
       const logsFolderPath = path.join(rootFolderPath, LOGS_DIRECTORY)
-      const infraFolderPath = path.join(rootFolderPath, INFRASTRUCTURE_DIRECTORY)
+      const projectFilesFolderPath = path.join(rootFolderPath, PROJECT_FILES_DIRECTORY)
       const additionalFilesFolderPath = path.join(rootFolderPath, ADDITIONAL_FILES_DIRECTORY)
       if (fs.existsSync(rootFolderPath)) {
         deleteFolder(rootFolderPath)
@@ -249,8 +252,8 @@ export class LambdaFlareCommand extends Command {
       if (logs.size > 0) {
         subFolders.push(logsFolderPath)
       }
-      if (infraFilesToPath.size > 0) {
-        subFolders.push(infraFolderPath)
+      if (projectFilesToPath.size > 0) {
+        subFolders.push(projectFilesFolderPath)
       }
       if (additionalFiles.length > 0) {
         subFolders.push(additionalFilesFolderPath)
@@ -276,9 +279,9 @@ export class LambdaFlareCommand extends Command {
         await sleep(1)
       }
 
-      // Write infrastructure files
-      for (const [fileName, filePath] of infraFilesToPath) {
-        const newFilePath = path.join(infraFolderPath, fileName)
+      // Write project files files
+      for (const [fileName, filePath] of projectFilesToPath) {
+        const newFilePath = path.join(projectFilesFolderPath, fileName)
         fs.copyFileSync(filePath, newFilePath)
         this.context.stdout.write(`• Saved ${fileName} to ${newFilePath}\n`)
       }
@@ -427,13 +430,13 @@ export const createDirectories = (rootFolderPath: string, subFolders: string[]) 
 }
 
 /**
- * Searches current directory for infrastructure files
+ * Searches current directory for project files
  * @returns a map of file names to file paths
  */
-export const getInfrastructureFiles = async () => {
+export const getProjectFiles = async () => {
   const fileToPath = new Map<string, string>()
   const cwd = process.cwd()
-  for (const fileName of INFRASTRUCTURE_FILES) {
+  for (const fileName of PROJECT_FILES) {
     const filePath = path.join(cwd, fileName)
     if (fs.existsSync(filePath)) {
       fileToPath.set(fileName, filePath)

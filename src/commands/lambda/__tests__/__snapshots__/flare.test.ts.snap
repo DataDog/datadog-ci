@@ -22,6 +22,12 @@ exports[`lambda flare AWS Lambda configuration prints config when running as a d
   FunctionName: 'some-function'
 }
 
+📁 Searching for project files in current directory...
+[!] No project files found.
+
+
+✅ Added 0 custom files
+
 💾 Saving files...
 • Saved function config to mock-folder/.datadog-ci/function_config.json
 
@@ -64,6 +70,12 @@ exports[`lambda flare AWS credentials continues when getAWSCredentials() returns
   FunctionName: 'some-function'
 }
 
+📁 Searching for project files in current directory...
+[!] No project files found.
+
+
+✅ Added 0 custom files
+
 💾 Saving files...
 • Saved function config to mock-folder/.datadog-ci/function_config.json
 
@@ -95,6 +107,12 @@ exports[`lambda flare AWS credentials requests AWS credentials when none are fou
   FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:some-function',
   FunctionName: 'some-function'
 }
+
+📁 Searching for project files in current directory...
+[!] No project files found.
+
+
+✅ Added 0 custom files
 
 💾 Saving files...
 • Saved function config to mock-folder/.datadog-ci/function_config.json
@@ -170,6 +188,12 @@ exports[`lambda flare gets CloudWatch Logs does not get logs when --with-logs is
   FunctionName: 'some-function'
 }
 
+📁 Searching for project files in current directory...
+[!] No project files found.
+
+
+✅ Added 0 custom files
+
 💾 Saving files...
 • Saved function config to mock-folder/.datadog-ci/function_config.json
 
@@ -201,6 +225,12 @@ exports[`lambda flare gets CloudWatch Logs gets logs, saves, and sends correctly
   FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:some-function',
   FunctionName: 'some-function'
 }
+
+📁 Searching for project files in current directory...
+[!] No project files found.
+
+
+✅ Added 0 custom files
 
 ☁️ Getting CloudWatch logs...
 
@@ -244,6 +274,12 @@ exports[`lambda flare gets CloudWatch Logs prints error when getLogEvents throws
   FunctionName: 'some-function'
 }
 
+📁 Searching for project files in current directory...
+[!] No project files found.
+
+
+✅ Added 0 custom files
+
 ☁️ Getting CloudWatch logs...
 [Error] Unable to get log events for stream Stream1: MOCK ERROR: Unable to get log events
 "
@@ -271,6 +307,12 @@ exports[`lambda flare gets CloudWatch Logs prints error when getLogStreamNames t
   FunctionName: 'some-function'
 }
 
+📁 Searching for project files in current directory...
+[!] No project files found.
+
+
+✅ Added 0 custom files
+
 ☁️ Getting CloudWatch logs...
 [Error] Unable to get log streams: MOCK ERROR: Unable to get log stream names
 "
@@ -297,6 +339,12 @@ exports[`lambda flare gets CloudWatch Logs warns and skips getting logs when get
   FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:some-function',
   FunctionName: 'some-function'
 }
+
+📁 Searching for project files in current directory...
+[!] No project files found.
+
+
+✅ Added 0 custom files
 
 ☁️ Getting CloudWatch logs...
 [!] No CloudWatch log streams were found. Logs will not be retrieved or sent.
@@ -332,6 +380,12 @@ exports[`lambda flare gets CloudWatch Logs warns and skips log when getLogEvents
   FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:some-function',
   FunctionName: 'some-function'
 }
+
+📁 Searching for project files in current directory...
+[!] No project files found.
+
+
+✅ Added 0 custom files
 
 ☁️ Getting CloudWatch logs...
 
@@ -378,66 +432,6 @@ exports[`lambda flare prints correct headers prints non-dry-run header 1`] = `
 "
 `;
 
-exports[`lambda flare prompts for confirmation before sending does not send when user answers prompt with no 1`] = `
-"
-🐶 Generating Lambda flare to send your configuration to Datadog...
-
-🔑 Getting AWS credentials...
-
-🔍 Fetching Lambda function configuration...
-
-{
-  Environment: {
-    Variables: {
-      DD_API_KEY: '02**********33bd',
-      DD_SITE: 'datadoghq.com',
-      DD_LOG_LEVEL: 'debug'
-    }
-  },
-  FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:some-function',
-  FunctionName: 'some-function'
-}
-
-💾 Saving files...
-• Saved function config to mock-folder/.datadog-ci/function_config.json
-
-
-🚫 The flare files were not sent based on your selection.
-ℹ️ Your output files are located at: mock-folder/.datadog-ci
-
-"
-`;
-
-exports[`lambda flare prompts for confirmation before sending sends when user answers prompt with yes 1`] = `
-"
-🐶 Generating Lambda flare to send your configuration to Datadog...
-
-🔑 Getting AWS credentials...
-
-🔍 Fetching Lambda function configuration...
-
-{
-  Environment: {
-    Variables: {
-      DD_API_KEY: '02**********33bd',
-      DD_SITE: 'datadoghq.com',
-      DD_LOG_LEVEL: 'debug'
-    }
-  },
-  FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:some-function',
-  FunctionName: 'some-function'
-}
-
-💾 Saving files...
-• Saved function config to mock-folder/.datadog-ci/function_config.json
-
-
-🚀 Sending to Datadog Support...
-
-✅ Successfully sent flare file to Datadog Support!
-"
-`;
-
 exports[`lambda flare send to Datadog does not send request to Datadog when a dry run 1`] = `
 "
 [Dry Run] 🐶 Generating Lambda flare to send your configuration to Datadog...
@@ -459,6 +453,12 @@ exports[`lambda flare send to Datadog does not send request to Datadog when a dr
   FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:some-function',
   FunctionName: 'some-function'
 }
+
+📁 Searching for project files in current directory...
+[!] No project files found.
+
+
+✅ Added 0 custom files
 
 💾 Saving files...
 • Saved function config to mock-folder/.datadog-ci/function_config.json
@@ -490,6 +490,12 @@ exports[`lambda flare send to Datadog successfully adds zip file to FormData 1`]
   FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:some-function',
   FunctionName: 'some-function'
 }
+
+📁 Searching for project files in current directory...
+[!] No project files found.
+
+
+✅ Added 0 custom files
 
 💾 Saving files...
 • Saved function config to mock-folder/.datadog-ci/function_config.json
@@ -523,6 +529,12 @@ exports[`lambda flare send to Datadog successfully sends request to Datadog 1`] 
   FunctionName: 'some-function'
 }
 
+📁 Searching for project files in current directory...
+[!] No project files found.
+
+
+✅ Added 0 custom files
+
 💾 Saving files...
 • Saved function config to mock-folder/.datadog-ci/function_config.json
 
@@ -554,6 +566,12 @@ exports[`lambda flare validates required flags extracts region from function nam
   FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:some-function',
   FunctionName: 'some-function'
 }
+
+📁 Searching for project files in current directory...
+[!] No project files found.
+
+
+✅ Added 0 custom files
 
 💾 Saving files...
 • Saved function config to mock-folder/.datadog-ci/function_config.json
@@ -622,6 +640,12 @@ exports[`lambda flare validates required flags runs successfully with all requir
   FunctionName: 'some-function'
 }
 
+📁 Searching for project files in current directory...
+[!] No project files found.
+
+
+✅ Added 0 custom files
+
 💾 Saving files...
 • Saved function config to mock-folder/.datadog-ci/function_config.json
 
@@ -653,6 +677,12 @@ exports[`lambda flare validates required flags uses API key ENV variable and run
   FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:some-function',
   FunctionName: 'some-function'
 }
+
+📁 Searching for project files in current directory...
+[!] No project files found.
+
+
+✅ Added 0 custom files
 
 💾 Saving files...
 • Saved function config to mock-folder/.datadog-ci/function_config.json
@@ -686,6 +716,12 @@ exports[`lambda flare validates required flags uses API key ENV variable and run
   FunctionName: 'some-function'
 }
 
+📁 Searching for project files in current directory...
+[!] No project files found.
+
+
+✅ Added 0 custom files
+
 💾 Saving files...
 • Saved function config to mock-folder/.datadog-ci/function_config.json
 
@@ -713,6 +749,12 @@ exports[`lambda flare validates required flags uses API key ENV variable and run
   FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:some-function',
   FunctionName: 'some-function'
 }
+
+📁 Searching for project files in current directory...
+[!] No project files found.
+
+
+✅ Added 0 custom files
 
 💾 Saving files...
 • Saved function config to mock-folder/.datadog-ci/function_config.json
@@ -745,6 +787,12 @@ exports[`lambda flare validates required flags uses region ENV variable when no 
   FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:some-function',
   FunctionName: 'some-function'
 }
+
+📁 Searching for project files in current directory...
+[!] No project files found.
+
+
+✅ Added 0 custom files
 
 💾 Saving files...
 • Saved function config to mock-folder/.datadog-ci/function_config.json

@@ -305,3 +305,21 @@ export const requestFunctionSelection = async (functionNames: string[]) => {
     }
   }
 }
+
+export const requestFilePath = async () => {
+  try {
+    const filePathAnswer = await inquirer.prompt([
+      {
+        type: 'input',
+        name: 'filePath',
+        message: 'Please enter a file path, or press Enter to finish:',
+      },
+    ])
+
+    return filePathAnswer.filePath
+  } catch (e) {
+    if (e instanceof Error) {
+      throw Error(`Couldn't receive file path. ${e.message}`)
+    }
+  }
+}
