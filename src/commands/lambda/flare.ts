@@ -151,7 +151,6 @@ export class LambdaFlareCommand extends Command {
     this.context.stdout.write(`\n${configStr}\n`)
 
     // Get project files
-    // TODO make search more explicit to user
     this.context.stdout.write(chalk.bold('\n📁 Searching for project files in current directory...\n'))
     const projectFilesToPath = await getProjectFiles()
     let projectFilesMessage = chalk.bold('\n✅ Found project files:\n')
@@ -159,11 +158,11 @@ export class LambdaFlareCommand extends Command {
       projectFilesMessage = commonRenderer.renderSoftWarning('No project files found.')
     }
     this.context.stdout.write(projectFilesMessage)
-    for (const file of projectFilesToPath.keys()) {
-      this.context.stdout.write(`• ${file}\n`)
+    for (const paths of projectFilesToPath.values()) {
+      this.context.stdout.write(`• ${paths}\n`)
     }
 
-    // Additional files TODO libraries for scrubbing sensitive data
+    // Additional files
     this.context.stdout.write('\n')
     const additionalFiles: string[] = []
     const addFilesQuestion = await inquirer.prompt(
@@ -197,7 +196,9 @@ export class LambdaFlareCommand extends Command {
         continue
       }
       if (projectFilesToPath.has(filePath) || additionalFiles.includes(filePath)) {
-        this.context.stderr.write(commonRenderer.renderError(`File '${filePath}' already added. Please try again.`))
+        this.context.stderr.write(
+          commonRenderer.renderSoftWarning(`File '${filePath}' already added. Please try again.`)
+        )
         continue
       }
       additionalFiles.push(filePath)

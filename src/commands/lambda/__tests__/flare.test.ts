@@ -13,9 +13,10 @@ import {
 import {mockClient} from 'aws-sdk-client-mock'
 import axios from 'axios'
 import FormData from 'form-data'
+import inquirer from 'inquirer'
 import JSZip from 'jszip'
 
-import {API_KEY_ENV_VAR, AWS_DEFAULT_REGION_ENV_VAR, CI_API_KEY_ENV_VAR} from '../constants'
+import {API_KEY_ENV_VAR, AWS_DEFAULT_REGION_ENV_VAR, CI_API_KEY_ENV_VAR, PROJECT_FILES} from '../constants'
 import {
   convertToCSV,
   createDirectories,
@@ -24,6 +25,7 @@ import {
   getLogEvents,
   getLogStreamNames,
   getMasking,
+  getProjectFiles,
   maskConfig,
   writeFile,
   zipContents,
@@ -64,7 +66,6 @@ const MOCK_CONFIG = {
 }
 const MOCK_LOG_GROUP = 'mockLogGroup'
 const MOCK_OUTPUT_EVENT: OutputLogEvent[] = [{timestamp: 123, message: 'Log 1'}]
-const MOCK_LOGS = new Map().set('log1', MOCK_OUTPUT_EVENT)
 const cloudWatchLogsClientMock = mockClient(CloudWatchLogsClient)
 
 // Commons mocks
@@ -815,24 +816,82 @@ describe('lambda flare', () => {
       ;(getAWSCredentials as any).mockResolvedValue(mockAwsCredentials)
     })
 
-    // it('sends when user answers prompt with yes', async () => {
-    //   ;(inquirer.prompt as any).mockResolvedValueOnce({confirmation: true})
-    //   const cli = makeCli()
-    //   const context = createMockContext()
-    //   const code = await cli.run(MOCK_REQUIRED_FLAGS, context as any)
-    //   expect(code).toBe(0)
-    //   const output = context.stdout.toString()
-    //   expect(output).toMatchSnapshot()
-    // })
+    it('sends when user answers prompt with yes', async () => {
+      // The first prompt is for additional files, the second is for confirmation before sending
+      ;(inquirer.prompt as any).mockResolvedValueOnce({confirmation: true}).mockResolvedValueOnce({confirmation: true})
+      const cli = makeCli()
+      const context = createMockContext()
+      const code = await cli.run(MOCK_REQUIRED_FLAGS, context as any)
+      expect(code).toBe(0)
+      const output = context.stdout.toString()
+      expect(output).toMatchSnapshot()
+      expect(output).toContain('✅ Successfully sent flare file to Datadog Support!')
+    })
 
-    // it('does not send when user answers prompt with no', async () => {
-    //   ;(inquirer.prompt as any).mockResolvedValueOnce({confirmation: false})
-    //   const cli = makeCli()
-    //   const context = createMockContext()
-    //   const code = await cli.run(MOCK_REQUIRED_FLAGS, context as any)
-    //   expect(code).toBe(0)
-    //   const output = context.stdout.toString()
-    //   expect(output).toMatchSnapshot()
-    // })
+    it('does not send when user answers prompt with no', async () => {
+      // The first prompt is for additional files, the second is for confirmation before sending
+      ;(inquirer.prompt as any).mockResolvedValueOnce({confirmation: true}).mockResolvedValueOnce({confirmation: false})
+      const cli = makeCli()
+      const context = createMockContext()
+      const code = await cli.run(MOCK_REQUIRED_FLAGS, context as any)
+      expect(code).toBe(0)
+      const output = context.stdout.toString()
+      expect(output).toMatchSnapshot()
+      expect(output).toContain('🚫 The flare files were not sent based on your selection.')
+    })
+  })
+
+  describe('prompts for additional files', () => {
+    beforeEach(() => {
+      ;(getAWSCredentials as any).mockResolvedValue(mockAwsCredentials)
+    })
+
+    it('requests additional files when user answers yes', async () => {
+      // The first prompt is for additional files, the second is for confirmation before sending
+      ;(inquirer.prompt as any).mockResolvedValueOnce({confirmation: true}).mockResolvedValueOnce({confirmation: true})
+      const cli = makeCli()
+      const context = createMockContext()
+      const code = await cli.run(MOCK_REQUIRED_FLAGS, context as any)
+      expect(code).toBe(0)
+      const output = context.stdout.toString()
+      expect(output).toMatchSnapshot()
+      expect(output).toContain('✅ Added 0 custom files')
+    })
+
+    it('does not request additional files when user answers no', async () => {
+      // The first prompt is for additional files, the second is for confirmation before sending
+      ;(inquirer.prompt as any).mockResolvedValueOnce({confirmation: false}).mockResolvedValueOnce({confirmation: true})
+      const cli = makeCli()
+      const context = createMockContext()
+      const code = await cli.run(MOCK_REQUIRED_FLAGS, context as any)
+      expect(code).toBe(0)
+      const output = context.stdout.toString()
+      expect(output).toMatchSnapshot()
+      expect(output).not.toContain('✅ Added 0 custom files')
+    })
+  })
+
+  describe('getProjectFiles', () => {
+    beforeAll(() => {
+      ;(flareModule.getProjectFiles as jest.Mock).mockRestore()
+      ;(process.cwd as jest.Mock).mockReturnValue('')
+    })
+
+    it('should return a map of existing project files', async () => {
+      const mockProjectFiles = ['serverless.yml', 'package.json']
+      ;(fs.existsSync as jest.Mock).mockImplementation((filePath: string) => mockProjectFiles.includes(filePath))
+
+      const result = await getProjectFiles()
+      expect(Array.from(result.keys())).toEqual(mockProjectFiles)
+      expect(fs.existsSync).toHaveBeenCalledTimes(PROJECT_FILES.length)
+    })
+
+    it('should return an empty map when no files exist', async () => {
+      ;(fs.existsSync as jest.Mock).mockReturnValue(false)
+
+      const result = await getProjectFiles()
+      expect(result).toEqual(new Map())
+      expect(fs.existsSync).toHaveBeenCalledTimes(PROJECT_FILES.length)
+    })
   })
 })
