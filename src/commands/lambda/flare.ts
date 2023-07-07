@@ -207,7 +207,7 @@ export class LambdaFlareCommand extends Command {
     }
 
     // Get tags
-    this.context.stdout.write('\n🏷 Getting Resource Tags...\n')
+    this.context.stdout.write(chalk.bold('\n🏷 Getting Resource Tags...\n'))
     let tags: Record<string, string>
     try {
       tags = await getTags(lambdaClient, region!, config.FunctionArn!)
@@ -290,7 +290,7 @@ export class LambdaFlareCommand extends Command {
       if (tagsLength > 0) {
         const tagsFilePath = path.join(rootFolderPath, TAGS_FILE_NAME)
         writeFile(tagsFilePath, JSON.stringify(tags, undefined, 2))
-        this.context.stdout.write(`• Saved tags to ${tagsFilePath}\n`)
+        this.context.stdout.write(`• wSaved tags to ${tagsFilePath}\n`)
       }
 
       // Write log files
