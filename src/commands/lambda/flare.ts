@@ -9,7 +9,7 @@ import {
   OrderBy,
   OutputLogEvent,
 } from '@aws-sdk/client-cloudwatch-logs'
-import {FunctionConfiguration, LambdaClient, LambdaClientConfig} from '@aws-sdk/client-lambda'
+import {FunctionConfiguration, LambdaClient, LambdaClientConfig, ListTagsCommand} from '@aws-sdk/client-lambda'
 import {AwsCredentialIdentity} from '@aws-sdk/types'
 import axios from 'axios'
 import {Command} from 'clipanion'
@@ -29,6 +29,7 @@ const ENDPOINT_URL = 'https://datad0g.com/api/ui/support/serverless/flare'
 const FLARE_OUTPUT_DIRECTORY = '.datadog-ci'
 const LOGS_DIRECTORY = 'logs'
 const FUNCTION_CONFIG_FILE_NAME = 'function_config.json'
+const TAGS_FILE_NAME = 'tags.json'
 const ZIP_FILE_NAME = 'lambda-flare-output.zip'
 const MAX_LOG_STREAMS = 50
 const DEFAULT_LOG_STREAMS = 3
@@ -156,6 +157,25 @@ export class LambdaFlareCommand extends Command {
     const configStr = util.inspect(config, false, undefined, true)
     this.context.stdout.write(`\n${configStr}\n`)
 
+    // Get tags
+    this.context.stdout.write('\n🏷 Getting Resource Tags...\n')
+    let tags: Record<string, string>
+    try {
+      tags = await getTags(lambdaClient, region!, config.FunctionArn!)
+    } catch (err) {
+      if (err instanceof Error) {
+        this.context.stderr.write(commonRenderer.renderError(err.message))
+      }
+
+      return 1
+    }
+    const tagsLength = Object.keys(tags).length
+    if (tagsLength === 0) {
+      this.context.stdout.write(commonRenderer.renderSoftWarning(`No resource tags were found.`))
+    } else {
+      this.context.stdout.write(`✅ Found ${tagsLength} resource tags.\n`)
+    }
+
     // Get CloudWatch logs
     let logs: Map<string, OutputLogEvent[]> = new Map()
     if (this.withLogs) {
@@ -204,6 +224,11 @@ export class LambdaFlareCommand extends Command {
       const configFilePath = path.join(rootFolderPath, FUNCTION_CONFIG_FILE_NAME)
       writeFile(configFilePath, JSON.stringify(config, undefined, 2))
       this.context.stdout.write(`• Saved function config to ${configFilePath}\n`)
+      if (tagsLength > 0) {
+        const tagsFilePath = path.join(rootFolderPath, TAGS_FILE_NAME)
+        writeFile(tagsFilePath, JSON.stringify(tags, undefined, 2))
+        this.context.stdout.write(`• Saved tags to ${tagsFilePath}\n`)
+      }
       for (const [logStreamName, logEvents] of logs) {
         if (logEvents.length === 0) {
           continue
@@ -521,6 +546,34 @@ export const getAllLogs = async (region: string, functionName: string, startMill
   }
 
   return logs
+}
+
+/**
+ * Gets the tags for a function
+ * @param lambdaClient
+ * @param region
+ * @param arn
+ * @returns the tags or an empty object if no tags are found
+ * @throws Error if the tags cannot be retrieved
+ */
+export const getTags = async (lambdaClient: LambdaClient, region: string, arn: string) => {
+  if (!arn.startsWith('arn:aws')) {
+    throw Error(`Invalid function ARN: ${arn}`)
+  }
+  const command = new ListTagsCommand({
+    Resource: arn,
+  })
+  try {
+    const response = await lambdaClient.send(command)
+
+    return response.Tags ?? {}
+  } catch (err) {
+    let message = ''
+    if (err instanceof Error) {
+      message = err.message
+    }
+    throw Error(`Unable to get resource tags: ${message}`)
+  }
 }
 
 /**
