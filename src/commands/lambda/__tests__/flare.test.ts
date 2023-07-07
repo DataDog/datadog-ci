@@ -71,7 +71,7 @@ const MOCK_OUTPUT_EVENT: OutputLogEvent[] = [{timestamp: 123, message: 'Log 1'}]
 const MOCK_LOGS = new Map().set('log1', MOCK_OUTPUT_EVENT)
 const MOCK_TAGS: any = {Tags: {}}
 const cloudWatchLogsClientMock = mockClient(CloudWatchLogsClient)
-const lambdaClientMock: any = mockClient(LambdaClient)
+const lambdaClientMock = mockClient(LambdaClient)
 
 // Commons mocks
 jest.mock('../functions/commons', () => ({
@@ -548,7 +548,7 @@ describe('lambda flare', () => {
 
       mockResourceTags(lambdaClientMock, mockTags)
 
-      const tags = await getTags(lambdaClientMock, MOCK_REGION, MOCK_ARN)
+      const tags = await getTags(lambdaClientMock as any, MOCK_REGION, MOCK_ARN)
       expect(tags).toMatchSnapshot()
     })
 
@@ -556,7 +556,7 @@ describe('lambda flare', () => {
       const mockTags: any = {Tags: {}}
       mockResourceTags(lambdaClientMock, mockTags)
 
-      const tags = await getTags(lambdaClientMock, MOCK_REGION, MOCK_ARN)
+      const tags = await getTags(lambdaClientMock as any, MOCK_REGION, MOCK_ARN)
       expect(tags).toEqual({})
     })
 
@@ -564,7 +564,7 @@ describe('lambda flare', () => {
       const errorMessage = 'Unable to get resource tags: Test Error'
       lambdaClientMock.on(ListTagsCommand).rejects(new Error('Test Error'))
 
-      await expect(getTags(lambdaClientMock, MOCK_REGION, MOCK_ARN)).rejects.toThrow(errorMessage)
+      await expect(getTags(lambdaClientMock as any, MOCK_REGION, MOCK_ARN)).rejects.toThrow(errorMessage)
     })
   })
 
