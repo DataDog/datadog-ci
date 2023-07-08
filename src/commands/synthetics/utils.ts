@@ -29,7 +29,6 @@ import {
   ResultInBatch,
   RunTestsCommandConfig,
   ServerResult,
-  ServerTest,
   Suite,
   Summary,
   SyntheticsCIConfig,
@@ -142,7 +141,7 @@ export const getStrictestExecutionRule = (configRule: ExecutionRule, testRule?: 
   return ExecutionRule.BLOCKING
 }
 
-export const isTestSupportedByTunnel = (test: ServerTest) => {
+export const isTestSupportedByTunnel = (test: Test) => {
   return (
     test.type === 'browser' ||
     test.subtype === 'http' ||
