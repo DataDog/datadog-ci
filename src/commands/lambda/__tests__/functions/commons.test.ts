@@ -52,6 +52,7 @@ import {
   mockAwsAccessKeyId,
   mockAwsAccount,
   mockAwsSecretAccessKey,
+  mockDatadogApiKey,
   mockLambdaClientCommands,
   mockLambdaLayers,
 } from '../fixtures'
@@ -876,7 +877,7 @@ describe('commons', () => {
     })
 
     it('should mask sensitive datadog environment variables', () => {
-      expect(maskEnvVar('DD_API_KEY', '1234a')).toEqual('****************')
+      expect(maskEnvVar('DD_API_KEY', mockDatadogApiKey)).toEqual('02**********33bd')
     })
 
     it('should skip whitelisted environment variables', () => {
