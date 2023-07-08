@@ -528,9 +528,17 @@ export const maskEnvVar = (key: string, value: string) => {
   return value.slice(0, 2) + '*'.repeat(10) + value.slice(-4)
 }
 
-// Called as a replacer function from the JSON.stringify method.
-// Each property passed to JSON.stringify is iterated over by this function. If the current
-// property is part of the Environment.Variables object, then the maskEnvVar function is run on the property
+/**
+ * Returns a function to be used as replacer in `JSON.stringify`.
+ * 
+ * In `JSON.stringify` the passed value is the Lambda `FunctionConfiguration`.
+ * This method requires the `Environment.Variables` object, since each property
+ * passed to `JSON.stringify` is iterated over by the function. If the current
+ * property is part of the desired object, then masking is applied to it.
+ *
+ * @param envVars `Environment.Variables` object in `FunctionConfiguration`.
+ * @returns a function to be used as replacer.
+ */
 export const maskStringifiedEnvVar = (envVars: Record<string, string> | undefined) => {
   return function (this: Record<string, unknown>, key: string, value: string) {
     if (this === envVars) {
