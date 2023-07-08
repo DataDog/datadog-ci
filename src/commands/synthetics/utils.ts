@@ -29,6 +29,7 @@ import {
   ResultInBatch,
   RunTestsCommandConfig,
   ServerResult,
+  ServerTest,
   Suite,
   Summary,
   SyntheticsCIConfig,
@@ -139,6 +140,14 @@ export const getStrictestExecutionRule = (configRule: ExecutionRule, testRule?: 
   }
 
   return ExecutionRule.BLOCKING
+}
+
+export const isTestSupportedByTunnel = (test: ServerTest) => {
+  return (
+    test.type === 'browser' ||
+    test.subtype === 'http' ||
+    (test.subtype === 'multi' && test.config.steps?.every((step) => step.subtype === 'http'))
+  )
 }
 
 export const hasResultPassed = (
@@ -377,7 +386,7 @@ export const waitForResults = async (
   }, {})
 
   const getLocation = (dcId: string, test: Test) => {
-    const hasTunnel = !!tunnel && (test.type === 'browser' || test.subtype === 'http')
+    const hasTunnel = !!tunnel && isTestSupportedByTunnel(test)
 
     return hasTunnel ? 'Tunneled' : locationNames[dcId] || dcId
   }
@@ -545,12 +554,24 @@ export const getTestAndOverrideConfig = async (
   }
   reporter.testWait(test)
 
-  if (isTunnelEnabled && test.type !== 'browser' && test.subtype !== 'http') {
+  if (isTunnelEnabled && !isTestSupportedByTunnel(test)) {
+    const details = [`public ID: ${test.public_id}`, `type: ${test.type}`]
+
+    if (test.subtype) {
+      details.push(`sub-type: ${test.subtype}`)
+    }
+
+    if (test.subtype === 'multi') {
+      const unsupportedStepSubTypes = (test.config.steps || [])
+        .filter((step) => step.subtype !== 'http')
+        .map(({subtype}) => subtype)
+
+      details.push(`step sub-types: [${unsupportedStepSubTypes.join(', ')}]`)
+    }
+
     throw new CriticalError(
       'TUNNEL_NOT_SUPPORTED',
-      `The tunnel is only supported with HTTP API tests and Browser tests (public ID: ${test.public_id}, type: ${
-        test.type
-      }${test.subtype ? `, sub-type: ${test.subtype}` : ''}).`
+      `The tunnel is only supported with HTTP API tests and Browser tests (${details.join(', ')}).`
     )
   }
 
