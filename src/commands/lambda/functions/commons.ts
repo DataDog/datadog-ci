@@ -530,7 +530,7 @@ export const maskEnvVar = (key: string, value: string) => {
 
 /**
  * Returns a function to be used as replacer in `JSON.stringify`.
- * 
+ *
  * In `JSON.stringify` the passed value is the Lambda `FunctionConfiguration`.
  * This method requires the `Environment.Variables` object, since each property
  * passed to `JSON.stringify` is iterated over by the function. If the current
