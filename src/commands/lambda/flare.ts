@@ -183,7 +183,7 @@ export class LambdaFlareCommand extends Command {
       }
 
       if (filePath === '') {
-        this.context.stdout.write(`✅ Added ${additionalFiles.size} custom file(s):\n`)
+        this.context.stdout.write(`Added ${additionalFiles.size} custom file(s):\n`)
         for (const file of additionalFiles) {
           this.context.stdout.write(`• ${file}\n`)
         }
@@ -202,7 +202,7 @@ export class LambdaFlareCommand extends Command {
     }
 
     // Get tags
-    this.context.stdout.write(chalk.bold('\n🏷 Getting Resource Tags...\n'))
+    this.context.stdout.write(chalk.bold('\n🏷  Getting Resource Tags...\n'))
     let tags: Record<string, string>
     try {
       tags = await getTags(lambdaClient, region!, config.FunctionArn!)
@@ -217,13 +217,13 @@ export class LambdaFlareCommand extends Command {
     if (tagsLength === 0) {
       this.context.stdout.write(commonRenderer.renderSoftWarning(`No resource tags were found.`))
     } else {
-      this.context.stdout.write(`✅ Found ${tagsLength} resource tag(s).\n`)
+      this.context.stdout.write(`Found ${tagsLength} resource tag(s).\n`)
     }
 
     // Get CloudWatch logs
     let logs: Map<string, OutputLogEvent[]> = new Map()
     if (this.withLogs) {
-      this.context.stdout.write(chalk.bold('\n☁️ Getting CloudWatch logs...\n'))
+      this.context.stdout.write(chalk.bold('\n🌧️  Getting CloudWatch logs...\n'))
       try {
         logs = await getAllLogs(region!, this.functionName)
       } catch (err) {

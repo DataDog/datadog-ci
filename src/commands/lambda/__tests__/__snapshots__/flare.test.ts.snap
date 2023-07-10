@@ -26,9 +26,9 @@ exports[`lambda flare AWS Lambda configuration prints config when running as a d
 [!] No project files found.
 
 
-✅ Added 0 custom file(s):
+Added 0 custom file(s):
 
-🏷 Getting Resource Tags...
+🏷  Getting Resource Tags...
 [!] No resource tags were found.
 
 💾 Saving files...
@@ -77,9 +77,9 @@ exports[`lambda flare AWS credentials continues when getAWSCredentials() returns
 [!] No project files found.
 
 
-✅ Added 0 custom file(s):
+Added 0 custom file(s):
 
-🏷 Getting Resource Tags...
+🏷  Getting Resource Tags...
 [!] No resource tags were found.
 
 💾 Saving files...
@@ -118,9 +118,9 @@ exports[`lambda flare AWS credentials requests AWS credentials when none are fou
 [!] No project files found.
 
 
-✅ Added 0 custom file(s):
+Added 0 custom file(s):
 
-🏷 Getting Resource Tags...
+🏷  Getting Resource Tags...
 [!] No resource tags were found.
 
 💾 Saving files...
@@ -208,9 +208,9 @@ exports[`lambda flare gets CloudWatch Logs does not get logs when --with-logs is
 [!] No project files found.
 
 
-✅ Added 0 custom file(s):
+Added 0 custom file(s):
 
-🏷 Getting Resource Tags...
+🏷  Getting Resource Tags...
 [!] No resource tags were found.
 
 💾 Saving files...
@@ -249,12 +249,12 @@ exports[`lambda flare gets CloudWatch Logs gets logs, saves, and sends correctly
 [!] No project files found.
 
 
-✅ Added 0 custom file(s):
+Added 0 custom file(s):
 
-🏷 Getting Resource Tags...
+🏷  Getting Resource Tags...
 [!] No resource tags were found.
 
-☁️ Getting CloudWatch logs...
+🌧️  Getting CloudWatch logs...
 
 ✅ Found log streams:
 • Stream1
@@ -300,12 +300,12 @@ exports[`lambda flare gets CloudWatch Logs prints error when getLogEvents throws
 [!] No project files found.
 
 
-✅ Added 0 custom file(s):
+Added 0 custom file(s):
 
-🏷 Getting Resource Tags...
+🏷  Getting Resource Tags...
 [!] No resource tags were found.
 
-☁️ Getting CloudWatch logs...
+🌧️  Getting CloudWatch logs...
 [Error] Unable to get log events for stream Stream1: MOCK ERROR: Unable to get log events
 "
 `;
@@ -336,12 +336,12 @@ exports[`lambda flare gets CloudWatch Logs prints error when getLogStreamNames t
 [!] No project files found.
 
 
-✅ Added 0 custom file(s):
+Added 0 custom file(s):
 
-🏷 Getting Resource Tags...
+🏷  Getting Resource Tags...
 [!] No resource tags were found.
 
-☁️ Getting CloudWatch logs...
+🌧️  Getting CloudWatch logs...
 [Error] Unable to get log streams: MOCK ERROR: Unable to get log stream names
 "
 `;
@@ -372,12 +372,12 @@ exports[`lambda flare gets CloudWatch Logs warns and skips getting logs when get
 [!] No project files found.
 
 
-✅ Added 0 custom file(s):
+Added 0 custom file(s):
 
-🏷 Getting Resource Tags...
+🏷  Getting Resource Tags...
 [!] No resource tags were found.
 
-☁️ Getting CloudWatch logs...
+🌧️  Getting CloudWatch logs...
 [!] No CloudWatch log streams were found. Logs will not be retrieved or sent.
 
 💾 Saving files...
@@ -416,12 +416,12 @@ exports[`lambda flare gets CloudWatch Logs warns and skips log when getLogEvents
 [!] No project files found.
 
 
-✅ Added 0 custom file(s):
+Added 0 custom file(s):
 
-🏷 Getting Resource Tags...
+🏷  Getting Resource Tags...
 [!] No resource tags were found.
 
-☁️ Getting CloudWatch logs...
+🌧️  Getting CloudWatch logs...
 
 ✅ Found log streams:
 • Stream1 - [!] No log events found in this stream
@@ -490,7 +490,7 @@ exports[`lambda flare prompts for additional files does not request additional f
 [!] No project files found.
 
 
-🏷 Getting Resource Tags...
+🏷  Getting Resource Tags...
 [!] No resource tags were found.
 
 💾 Saving files...
@@ -527,9 +527,9 @@ exports[`lambda flare prompts for additional files requests additional files whe
 [!] No project files found.
 
 
-✅ Added 0 custom file(s):
+Added 0 custom file(s):
 
-🏷 Getting Resource Tags...
+🏷  Getting Resource Tags...
 [!] No resource tags were found.
 
 💾 Saving files...
@@ -566,9 +566,9 @@ exports[`lambda flare prompts for confirmation before sending does not send when
 [!] No project files found.
 
 
-✅ Added 0 custom file(s):
+Added 0 custom file(s):
 
-🏷 Getting Resource Tags...
+🏷  Getting Resource Tags...
 [!] No resource tags were found.
 
 💾 Saving files...
@@ -605,9 +605,9 @@ exports[`lambda flare prompts for confirmation before sending sends when user an
 [!] No project files found.
 
 
-✅ Added 0 custom file(s):
+Added 0 custom file(s):
 
-🏷 Getting Resource Tags...
+🏷  Getting Resource Tags...
 [!] No resource tags were found.
 
 💾 Saving files...
@@ -646,9 +646,9 @@ exports[`lambda flare send to Datadog does not send request to Datadog when a dr
 [!] No project files found.
 
 
-✅ Added 0 custom file(s):
+Added 0 custom file(s):
 
-🏷 Getting Resource Tags...
+🏷  Getting Resource Tags...
 [!] No resource tags were found.
 
 💾 Saving files...
@@ -686,9 +686,9 @@ exports[`lambda flare send to Datadog successfully adds zip file to FormData 1`]
 [!] No project files found.
 
 
-✅ Added 0 custom file(s):
+Added 0 custom file(s):
 
-🏷 Getting Resource Tags...
+🏷  Getting Resource Tags...
 [!] No resource tags were found.
 
 💾 Saving files...
@@ -727,9 +727,9 @@ exports[`lambda flare send to Datadog successfully sends request to Datadog 1`] 
 [!] No project files found.
 
 
-✅ Added 0 custom file(s):
+Added 0 custom file(s):
 
-🏷 Getting Resource Tags...
+🏷  Getting Resource Tags...
 [!] No resource tags were found.
 
 💾 Saving files...
@@ -778,9 +778,9 @@ exports[`lambda flare validates required flags extracts region from function nam
 [!] No project files found.
 
 
-✅ Added 0 custom file(s):
+Added 0 custom file(s):
 
-🏷 Getting Resource Tags...
+🏷  Getting Resource Tags...
 [!] No resource tags were found.
 
 💾 Saving files...
@@ -854,9 +854,9 @@ exports[`lambda flare validates required flags runs successfully with all requir
 [!] No project files found.
 
 
-✅ Added 0 custom file(s):
+Added 0 custom file(s):
 
-🏷 Getting Resource Tags...
+🏷  Getting Resource Tags...
 [!] No resource tags were found.
 
 💾 Saving files...
@@ -895,9 +895,9 @@ exports[`lambda flare validates required flags uses API key ENV variable and run
 [!] No project files found.
 
 
-✅ Added 0 custom file(s):
+Added 0 custom file(s):
 
-🏷 Getting Resource Tags...
+🏷  Getting Resource Tags...
 [!] No resource tags were found.
 
 💾 Saving files...
@@ -936,9 +936,9 @@ exports[`lambda flare validates required flags uses API key ENV variable and run
 [!] No project files found.
 
 
-✅ Added 0 custom file(s):
+Added 0 custom file(s):
 
-🏷 Getting Resource Tags...
+🏷  Getting Resource Tags...
 [!] No resource tags were found.
 
 💾 Saving files...
@@ -973,9 +973,9 @@ exports[`lambda flare validates required flags uses API key ENV variable and run
 [!] No project files found.
 
 
-✅ Added 0 custom file(s):
+Added 0 custom file(s):
 
-🏷 Getting Resource Tags...
+🏷  Getting Resource Tags...
 [!] No resource tags were found.
 
 💾 Saving files...
@@ -1014,9 +1014,9 @@ exports[`lambda flare validates required flags uses region ENV variable when no 
 [!] No project files found.
 
 
-✅ Added 0 custom file(s):
+Added 0 custom file(s):
 
-🏷 Getting Resource Tags...
+🏷  Getting Resource Tags...
 [!] No resource tags were found.
 
 💾 Saving files...

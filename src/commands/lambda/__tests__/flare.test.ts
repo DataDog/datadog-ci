@@ -945,7 +945,7 @@ describe('lambda flare', () => {
       expect(code).toBe(0)
       const output = context.stdout.toString()
       expect(output).toMatchSnapshot()
-      expect(output).toContain('✅ Added 0 custom file(s)')
+      expect(output).toContain('Added 0 custom file(s)')
     })
 
     it('does not request additional files when user answers no', async () => {
@@ -957,7 +957,7 @@ describe('lambda flare', () => {
       expect(code).toBe(0)
       const output = context.stdout.toString()
       expect(output).toMatchSnapshot()
-      expect(output).not.toContain('✅ Added 0 custom file(s)')
+      expect(output).not.toContain('Added 0 custom file(s)')
     })
   })
 
