@@ -589,6 +589,9 @@ export const zipContents = async (rootFolderPath: string, zipPath: string) => {
  */
 export const getEndpointUrl = () => {
   let baseUrl = process.env[CI_SITE_ENV_VAR] ?? process.env[SITE_ENV_VAR] ?? DEFAULT_DD_SITE
+  // These checks cover the case where the environment variables are invalid
+  // For example, the correct endpoint URL will still be returned when the user
+  // sets DATADOG_SITE=https://datadoghq.com/ instead of DATADOG_SITE=datadoghq.com
   if (!baseUrl.startsWith('http')) {
     baseUrl = `https://${baseUrl}`
   }
