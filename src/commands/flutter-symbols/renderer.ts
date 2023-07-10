@@ -30,6 +30,14 @@ export const renderCommandInfo = (
   const serviceVersionProjectPathStr = chalk.green(`  version: ${version} service: ${service} flavor: ${flavor}\n`)
   fullString += serviceVersionProjectPathStr
 
+  fullString += chalk.green(
+    `Please ensure you use the same values during SDK initialization to guarantee the success of the symbolication process.\n`
+  )
+
+  fullString += chalk.green(
+    `After upload is successful symbol files will be processed and ready to use within the next 5 minutes.\n`
+  )
+
   return fullString
 }
 
