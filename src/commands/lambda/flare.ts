@@ -300,7 +300,8 @@ export const validateStartEndFlags = (start: string | undefined, end: string | u
 
   if (!start) {
     throw Error('Start time is required when end time is specified. [--start]')
-  } else if (!end) {
+  }
+  if (!end) {
     throw Error('End time is required when start time is specified. [--end]')
   }
 
@@ -308,7 +309,8 @@ export const validateStartEndFlags = (start: string | undefined, end: string | u
   let endMillis = Number(end)
   if (isNaN(startMillis)) {
     throw Error(`Start time must be a time in milliseconds since Unix Epoch. '${start}' is not a number.`)
-  } else if (isNaN(endMillis)) {
+  }
+  if (isNaN(endMillis)) {
     throw Error(`End time must be a time in milliseconds since Unix Epoch. '${end}' is not a number.`)
   }
 
@@ -459,10 +461,7 @@ export const getLogStreamNames = async (
     if (rangeSpecified) {
       const lastEventTime = logStream.lastEventTimestamp
       const firstEventTime = logStream.firstEventTimestamp
-      if (!lastEventTime || !firstEventTime) {
-        continue
-      }
-      if (lastEventTime < startMillis || firstEventTime > endMillis) {
+      if (lastEventTime && firstEventTime && (lastEventTime < startMillis || firstEventTime > endMillis)) {
         continue
       }
     }
