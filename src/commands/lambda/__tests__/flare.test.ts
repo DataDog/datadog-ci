@@ -29,6 +29,7 @@ import {
   getProjectFiles,
   getTags,
   maskConfig,
+  validateFilePath,
   writeFile,
   zipContents,
 } from '../flare'
@@ -345,6 +346,54 @@ describe('lambda flare', () => {
       expect(() => createDirectories(MOCK_FOLDER_PATH, [])).toThrowErrorMatchingSnapshot()
       expect(fs.mkdirSync).toHaveBeenCalledWith(MOCK_FOLDER_PATH)
       fs.mkdirSync = jest.fn().mockImplementation(() => {})
+    })
+  })
+
+  describe('validateFilePath', () => {
+    const projectFiles = new Map<string, string>()
+    const additionalFiles = new Set<string>()
+
+    it('returns the correct path when the file exists', () => {
+      const filePath = '/exists'
+
+      ;(fs.existsSync as jest.Mock).mockReturnValueOnce(true)
+      const result = validateFilePath(filePath, projectFiles, additionalFiles)
+
+      expect(result).toBe(filePath)
+      expect(fs.existsSync).toHaveBeenCalledWith(filePath)
+    })
+
+    it('returns the correct path when the file exists relative to the cwd', () => {
+      const filePath = 'relative'
+      const cwd = process.cwd()
+      const expectedPath = path.join(cwd, filePath)
+
+      ;(fs.existsSync as jest.Mock).mockReturnValueOnce(false).mockReturnValueOnce(true)
+
+      const result = validateFilePath(filePath, projectFiles, additionalFiles)
+
+      expect(result).toBe(expectedPath)
+      expect(fs.existsSync).toHaveBeenNthCalledWith(1, filePath)
+      expect(fs.existsSync).toHaveBeenNthCalledWith(2, expectedPath)
+    })
+
+    it('throws an error when the file does not exist', async () => {
+      const filePath = '/not-exists'
+
+      ;(fs.existsSync as jest.Mock).mockReturnValue(false)
+
+      expect(() => validateFilePath(filePath, projectFiles, additionalFiles)).toThrowErrorMatchingSnapshot()
+      expect(fs.existsSync).toHaveBeenCalledWith(filePath)
+    })
+
+    it('throws an error when the file has already been added', async () => {
+      const filePath = '/added'
+
+      ;(fs.existsSync as jest.Mock).mockReturnValue(true)
+      projectFiles.set(filePath, filePath)
+
+      expect(() => validateFilePath(filePath, projectFiles, additionalFiles)).toThrowErrorMatchingSnapshot()
+      expect(fs.existsSync).toHaveBeenCalledWith(filePath)
     })
   })
 
@@ -896,7 +945,7 @@ describe('lambda flare', () => {
       expect(code).toBe(0)
       const output = context.stdout.toString()
       expect(output).toMatchSnapshot()
-      expect(output).toContain('✅ Added 0 custom files')
+      expect(output).toContain('✅ Added 0 custom file(s)')
     })
 
     it('does not request additional files when user answers no', async () => {
@@ -908,7 +957,7 @@ describe('lambda flare', () => {
       expect(code).toBe(0)
       const output = context.stdout.toString()
       expect(output).toMatchSnapshot()
-      expect(output).not.toContain('✅ Added 0 custom files')
+      expect(output).not.toContain('✅ Added 0 custom file(s)')
     })
   })
 

@@ -26,7 +26,7 @@ exports[`lambda flare AWS Lambda configuration prints config when running as a d
 [!] No project files found.
 
 
-✅ Added 0 custom files
+✅ Added 0 custom file(s):
 
 🏷 Getting Resource Tags...
 [!] No resource tags were found.
@@ -77,7 +77,7 @@ exports[`lambda flare AWS credentials continues when getAWSCredentials() returns
 [!] No project files found.
 
 
-✅ Added 0 custom files
+✅ Added 0 custom file(s):
 
 🏷 Getting Resource Tags...
 [!] No resource tags were found.
@@ -118,7 +118,7 @@ exports[`lambda flare AWS credentials requests AWS credentials when none are fou
 [!] No project files found.
 
 
-✅ Added 0 custom files
+✅ Added 0 custom file(s):
 
 🏷 Getting Resource Tags...
 [!] No resource tags were found.
@@ -208,7 +208,7 @@ exports[`lambda flare gets CloudWatch Logs does not get logs when --with-logs is
 [!] No project files found.
 
 
-✅ Added 0 custom files
+✅ Added 0 custom file(s):
 
 🏷 Getting Resource Tags...
 [!] No resource tags were found.
@@ -249,7 +249,7 @@ exports[`lambda flare gets CloudWatch Logs gets logs, saves, and sends correctly
 [!] No project files found.
 
 
-✅ Added 0 custom files
+✅ Added 0 custom file(s):
 
 🏷 Getting Resource Tags...
 [!] No resource tags were found.
@@ -300,7 +300,7 @@ exports[`lambda flare gets CloudWatch Logs prints error when getLogEvents throws
 [!] No project files found.
 
 
-✅ Added 0 custom files
+✅ Added 0 custom file(s):
 
 🏷 Getting Resource Tags...
 [!] No resource tags were found.
@@ -336,7 +336,7 @@ exports[`lambda flare gets CloudWatch Logs prints error when getLogStreamNames t
 [!] No project files found.
 
 
-✅ Added 0 custom files
+✅ Added 0 custom file(s):
 
 🏷 Getting Resource Tags...
 [!] No resource tags were found.
@@ -372,7 +372,7 @@ exports[`lambda flare gets CloudWatch Logs warns and skips getting logs when get
 [!] No project files found.
 
 
-✅ Added 0 custom files
+✅ Added 0 custom file(s):
 
 🏷 Getting Resource Tags...
 [!] No resource tags were found.
@@ -416,7 +416,7 @@ exports[`lambda flare gets CloudWatch Logs warns and skips log when getLogEvents
 [!] No project files found.
 
 
-✅ Added 0 custom files
+✅ Added 0 custom file(s):
 
 🏷 Getting Resource Tags...
 [!] No resource tags were found.
@@ -527,7 +527,7 @@ exports[`lambda flare prompts for additional files requests additional files whe
 [!] No project files found.
 
 
-✅ Added 0 custom files
+✅ Added 0 custom file(s):
 
 🏷 Getting Resource Tags...
 [!] No resource tags were found.
@@ -566,7 +566,7 @@ exports[`lambda flare prompts for confirmation before sending does not send when
 [!] No project files found.
 
 
-✅ Added 0 custom files
+✅ Added 0 custom file(s):
 
 🏷 Getting Resource Tags...
 [!] No resource tags were found.
@@ -605,7 +605,7 @@ exports[`lambda flare prompts for confirmation before sending sends when user an
 [!] No project files found.
 
 
-✅ Added 0 custom files
+✅ Added 0 custom file(s):
 
 🏷 Getting Resource Tags...
 [!] No resource tags were found.
@@ -646,7 +646,7 @@ exports[`lambda flare send to Datadog does not send request to Datadog when a dr
 [!] No project files found.
 
 
-✅ Added 0 custom files
+✅ Added 0 custom file(s):
 
 🏷 Getting Resource Tags...
 [!] No resource tags were found.
@@ -686,7 +686,7 @@ exports[`lambda flare send to Datadog successfully adds zip file to FormData 1`]
 [!] No project files found.
 
 
-✅ Added 0 custom files
+✅ Added 0 custom file(s):
 
 🏷 Getting Resource Tags...
 [!] No resource tags were found.
@@ -727,7 +727,7 @@ exports[`lambda flare send to Datadog successfully sends request to Datadog 1`] 
 [!] No project files found.
 
 
-✅ Added 0 custom files
+✅ Added 0 custom file(s):
 
 🏷 Getting Resource Tags...
 [!] No resource tags were found.
@@ -739,6 +739,16 @@ exports[`lambda flare send to Datadog successfully sends request to Datadog 1`] 
 🚀 Sending to Datadog Support...
 
 ✅ Successfully sent flare file to Datadog Support!
+"
+`;
+
+exports[`lambda flare validateFilePath throws an error when the file does not exist 1`] = `
+"[Error] File path '/not-exists' not found. Please try again.
+"
+`;
+
+exports[`lambda flare validateFilePath throws an error when the file has already been added 1`] = `
+"[!] File '/added' has already been added.
 "
 `;
 
@@ -768,7 +778,7 @@ exports[`lambda flare validates required flags extracts region from function nam
 [!] No project files found.
 
 
-✅ Added 0 custom files
+✅ Added 0 custom file(s):
 
 🏷 Getting Resource Tags...
 [!] No resource tags were found.
@@ -844,7 +854,7 @@ exports[`lambda flare validates required flags runs successfully with all requir
 [!] No project files found.
 
 
-✅ Added 0 custom files
+✅ Added 0 custom file(s):
 
 🏷 Getting Resource Tags...
 [!] No resource tags were found.
@@ -885,7 +895,7 @@ exports[`lambda flare validates required flags uses API key ENV variable and run
 [!] No project files found.
 
 
-✅ Added 0 custom files
+✅ Added 0 custom file(s):
 
 🏷 Getting Resource Tags...
 [!] No resource tags were found.
@@ -926,7 +936,7 @@ exports[`lambda flare validates required flags uses API key ENV variable and run
 [!] No project files found.
 
 
-✅ Added 0 custom files
+✅ Added 0 custom file(s):
 
 🏷 Getting Resource Tags...
 [!] No resource tags were found.
@@ -963,7 +973,7 @@ exports[`lambda flare validates required flags uses API key ENV variable and run
 [!] No project files found.
 
 
-✅ Added 0 custom files
+✅ Added 0 custom file(s):
 
 🏷 Getting Resource Tags...
 [!] No resource tags were found.
@@ -1004,7 +1014,7 @@ exports[`lambda flare validates required flags uses region ENV variable when no 
 [!] No project files found.
 
 
-✅ Added 0 custom files
+✅ Added 0 custom file(s):
 
 🏷 Getting Resource Tags...
 [!] No resource tags were found.

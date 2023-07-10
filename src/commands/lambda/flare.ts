@@ -154,7 +154,7 @@ export class LambdaFlareCommand extends Command {
     // Get project files
     this.context.stdout.write(chalk.bold('\n📁 Searching for project files in current directory...\n'))
     const projectFilesToPath = await getProjectFiles()
-    let projectFilesMessage = chalk.bold('\n✅ Found project files:\n')
+    let projectFilesMessage = chalk.bold('\n✅ Found project file(s):\n')
     if (projectFilesToPath.size === 0) {
       projectFilesMessage = commonRenderer.renderSoftWarning('No project files found.')
     }
@@ -165,9 +165,9 @@ export class LambdaFlareCommand extends Command {
 
     // Additional files
     this.context.stdout.write('\n')
-    const additionalFiles: string[] = []
+    const additionalFiles = new Set<string>()
     const addFilesQuestion = await inquirer.prompt(
-      confirmationQuestion('Do you want to send any additional files to Datadog support?')
+      confirmationQuestion('Do you want to specify any additional files to send to Datadog support?')
     )
     while (addFilesQuestion.confirmation) {
       this.context.stdout.write('\n')
@@ -181,29 +181,24 @@ export class LambdaFlareCommand extends Command {
 
         return 1
       }
+
       if (filePath === '') {
-        this.context.stdout.write(
-          // Be more descriptive
-          `✅ Added ${additionalFiles.length} custom file${additionalFiles.length === 1 ? '' : 's'}\n`
-        )
+        this.context.stdout.write(`✅ Added ${additionalFiles.size} custom file(s):\n`)
+        for (const file of additionalFiles) {
+          this.context.stdout.write(`• ${file}\n`)
+        }
         break
       }
-      const originalPath = filePath
-      filePath = fs.existsSync(filePath) ? filePath : path.join(process.cwd(), filePath)
-      if (!fs.existsSync(filePath)) {
-        this.context.stderr.write(
-          commonRenderer.renderError(`File path '${originalPath}' not found. Please try again.`)
-        )
-        continue
+
+      try {
+        filePath = validateFilePath(filePath, projectFilesToPath, additionalFiles)
+        additionalFiles.add(filePath)
+        this.context.stdout.write(`• Added file '${filePath}'\n`)
+      } catch (err) {
+        if (err instanceof Error) {
+          this.context.stderr.write(err.message)
+        }
       }
-      if (projectFilesToPath.has(filePath) || additionalFiles.includes(filePath)) {
-        this.context.stderr.write(
-          commonRenderer.renderSoftWarning(`File '${filePath}' already added. Please try again.`)
-        )
-        continue
-      }
-      additionalFiles.push(filePath)
-      this.context.stdout.write(`• Added file '${filePath}'\n`)
     }
 
     // Get tags
@@ -222,7 +217,7 @@ export class LambdaFlareCommand extends Command {
     if (tagsLength === 0) {
       this.context.stdout.write(commonRenderer.renderSoftWarning(`No resource tags were found.`))
     } else {
-      this.context.stdout.write(`✅ Found ${tagsLength} resource tags.\n`)
+      this.context.stdout.write(`✅ Found ${tagsLength} resource tag(s).\n`)
     }
 
     // Get CloudWatch logs
@@ -276,7 +271,7 @@ export class LambdaFlareCommand extends Command {
       if (projectFilesToPath.size > 0) {
         subFolders.push(projectFilesFolderPath)
       }
-      if (additionalFiles.length > 0) {
+      if (additionalFiles.size > 0) {
         subFolders.push(additionalFilesFolderPath)
       }
       createDirectories(rootFolderPath, subFolders)
@@ -290,7 +285,7 @@ export class LambdaFlareCommand extends Command {
       if (tagsLength > 0) {
         const tagsFilePath = path.join(rootFolderPath, TAGS_FILE_NAME)
         writeFile(tagsFilePath, JSON.stringify(tags, undefined, 2))
-        this.context.stdout.write(`• wSaved tags to ${tagsFilePath}\n`)
+        this.context.stdout.write(`• Saved tags to ${tagsFilePath}\n`)
       }
 
       // Write log files
@@ -311,7 +306,7 @@ export class LambdaFlareCommand extends Command {
       for (const [fileName, filePath] of projectFilesToPath) {
         const newFilePath = path.join(projectFilesFolderPath, fileName)
         fs.copyFileSync(filePath, newFilePath)
-        this.context.stdout.write(`• Saved ${fileName} to ${newFilePath}\n`)
+        this.context.stdout.write(`• Copied ${fileName} to ${newFilePath}\n`)
       }
 
       // Write additional files
@@ -319,7 +314,7 @@ export class LambdaFlareCommand extends Command {
         const fileName = path.basename(filePath)
         const newFilePath = path.join(additionalFilesFolderPath, fileName)
         fs.copyFileSync(filePath, newFilePath)
-        this.context.stdout.write(`• Saved ${fileName} to ${newFilePath}\n`)
+        this.context.stdout.write(`• Copied ${fileName} to ${newFilePath}\n`)
       }
 
       // Exit if dry run
@@ -472,6 +467,32 @@ export const getProjectFiles = async () => {
   }
 
   return fileToPath
+}
+
+/**
+ * Validates a path to a file
+ * @param filePath path to the file
+ * @param projectFilesToPath map of file names to file paths
+ * @param additionalFiles set of additional file paths
+ * @throws Error if the file path is invalid or the file was already added
+ * @returns the full path to the file
+ */
+export const validateFilePath = (
+  filePath: string,
+  projectFilesToPath: Map<string, string>,
+  additionalFiles: Set<string>
+) => {
+  const originalPath = filePath
+  filePath = fs.existsSync(filePath) ? filePath : path.join(process.cwd(), filePath)
+  if (!fs.existsSync(filePath)) {
+    throw Error(commonRenderer.renderError(`File path '${originalPath}' not found. Please try again.`))
+  }
+
+  if (projectFilesToPath.has(filePath) || additionalFiles.has(filePath)) {
+    throw Error(commonRenderer.renderSoftWarning(`File '${filePath}' has already been added.`))
+  }
+
+  return filePath
 }
 
 /**
