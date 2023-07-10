@@ -17,12 +17,19 @@ import FormData from 'form-data'
 import inquirer from 'inquirer'
 import JSZip from 'jszip'
 
-import {API_KEY_ENV_VAR, AWS_DEFAULT_REGION_ENV_VAR, CI_API_KEY_ENV_VAR} from '../constants'
+import {
+  API_KEY_ENV_VAR,
+  AWS_DEFAULT_REGION_ENV_VAR,
+  CI_API_KEY_ENV_VAR,
+  CI_SITE_ENV_VAR,
+  SITE_ENV_VAR,
+} from '../constants'
 import {
   convertToCSV,
   createDirectories,
   deleteFolder,
   getAllLogs,
+  getEndpointUrl,
   getLogEvents,
   getLogStreamNames,
   getMasking,
@@ -719,6 +726,44 @@ describe('lambda flare', () => {
 
       // Reset mock
       fs.writeFileSync = jest.fn().mockImplementation(() => {})
+    })
+  })
+
+  describe('getEndpointUrl', () => {
+    const ORIGINAL_ENV = process.env
+
+    beforeEach(() => {
+      process.env = {...ORIGINAL_ENV}
+    })
+
+    afterAll(() => {
+      process.env = ORIGINAL_ENV
+    })
+
+    it('should return URL with https if the environment variable does not start with http', () => {
+      process.env[CI_SITE_ENV_VAR] = 'datad0g.com'
+      const url = getEndpointUrl()
+      expect(url).toMatchSnapshot()
+    })
+
+    it('should return URL without trailing slash if the environment variable ends with /', () => {
+      process.env[CI_SITE_ENV_VAR] = 'https://datadoghq.com/'
+      const url = getEndpointUrl()
+      expect(url).toMatchSnapshot()
+    })
+
+    it('should use SITE_ENV_VAR if CI_SITE_ENV_VAR is not set', () => {
+      delete process.env[CI_SITE_ENV_VAR]
+      process.env[SITE_ENV_VAR] = 'https://us3.datadoghq.com/'
+      const url = getEndpointUrl()
+      expect(url).toMatchSnapshot()
+    })
+
+    it('should use DEFAULT_DD_SITE if CI_SITE_ENV_VAR and SITE_ENV_VAR are not set', () => {
+      delete process.env[CI_SITE_ENV_VAR]
+      delete process.env[SITE_ENV_VAR]
+      const url = getEndpointUrl()
+      expect(url).toMatchSnapshot()
     })
   })
 

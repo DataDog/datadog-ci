@@ -17,7 +17,14 @@ import FormData from 'form-data'
 import inquirer from 'inquirer'
 import JSZip from 'jszip'
 
-import {API_KEY_ENV_VAR, AWS_DEFAULT_REGION_ENV_VAR, CI_API_KEY_ENV_VAR, SKIP_MASKING_ENV_VARS} from './constants'
+import {
+  API_KEY_ENV_VAR,
+  AWS_DEFAULT_REGION_ENV_VAR,
+  CI_API_KEY_ENV_VAR,
+  CI_SITE_ENV_VAR,
+  SITE_ENV_VAR,
+  SKIP_MASKING_ENV_VARS,
+} from './constants'
 import {getAWSCredentials, getLambdaFunctionConfig, getRegion} from './functions/commons'
 import {confirmationQuestion, requestAWSCredentials} from './prompt'
 import * as commonRenderer from './renderers/common-renderer'
@@ -25,7 +32,8 @@ import * as flareRenderer from './renderers/flare-renderer'
 
 const {version} = require('../../../package.json')
 
-const ENDPOINT_URL = 'https://datad0g.com/api/ui/support/serverless/flare'
+const DEFAULT_DD_SITE = 'datadoghq.com'
+const ENDPOINT_PATH = '/api/ui/support/serverless/flare'
 const FLARE_OUTPUT_DIRECTORY = '.datadog-ci'
 const LOGS_DIRECTORY = 'logs'
 const FUNCTION_CONFIG_FILE_NAME = 'function_config.json'
@@ -253,8 +261,9 @@ export class LambdaFlareCommand extends Command {
       await zipContents(rootFolderPath, zipPath)
 
       // Send to Datadog
-      this.context.stdout.write('\n🚀 Sending to Datadog Support...\n')
-      await sendToDatadog(zipPath, this.caseId!, this.email!, this.apiKey!, rootFolderPath)
+      const endpointUrl = getEndpointUrl()
+      this.context.stdout.write(`\n🚀 Sending to Datadog Support via ${endpointUrl}...\n`)
+      await sendToDatadog(endpointUrl, zipPath, this.caseId!, this.email!, this.apiKey!, rootFolderPath)
       this.context.stdout.write('\n✅ Successfully sent flare file to Datadog Support!\n')
 
       // Delete contents
@@ -575,7 +584,24 @@ export const zipContents = async (rootFolderPath: string, zipPath: string) => {
 }
 
 /**
+ * Calculates the full endpoint URL
+ * @returns the full endpoint URL
+ */
+export const getEndpointUrl = () => {
+  let baseUrl = process.env[CI_SITE_ENV_VAR] ?? process.env[SITE_ENV_VAR] ?? DEFAULT_DD_SITE
+  if (!baseUrl.startsWith('http')) {
+    baseUrl = `https://${baseUrl}`
+  }
+  if (baseUrl.endsWith('/')) {
+    baseUrl = baseUrl.slice(0, -1)
+  }
+
+  return `${baseUrl}${ENDPOINT_PATH}`
+}
+
+/**
  * Send the zip file to Datadog support
+ * @param endpointUrl
  * @param zipPath
  * @param caseId
  * @param email
@@ -584,6 +610,7 @@ export const zipContents = async (rootFolderPath: string, zipPath: string) => {
  * @throws Error if the request fails
  */
 export const sendToDatadog = async (
+  endpointUrl: string,
   zipPath: string,
   caseId: string,
   email: string,
@@ -603,7 +630,7 @@ export const sendToDatadog = async (
   }
 
   try {
-    await axios.post(ENDPOINT_URL, form, headerConfig)
+    await axios.post(endpointUrl, form, headerConfig)
   } catch (err) {
     // Ensure the root folder is deleted if the request fails
     deleteFolder(rootFolderPath)

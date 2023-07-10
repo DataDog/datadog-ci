@@ -74,7 +74,7 @@ exports[`lambda flare AWS credentials continues when getAWSCredentials() returns
 • Saved function config to mock-folder/.datadog-ci/function_config.json
 
 
-🚀 Sending to Datadog Support...
+🚀 Sending to Datadog Support via https://datadoghq.com/api/ui/support/serverless/flare...
 
 ✅ Successfully sent flare file to Datadog Support!
 "
@@ -109,7 +109,7 @@ exports[`lambda flare AWS credentials requests AWS credentials when none are fou
 • Saved function config to mock-folder/.datadog-ci/function_config.json
 
 
-🚀 Sending to Datadog Support...
+🚀 Sending to Datadog Support via https://datadoghq.com/api/ui/support/serverless/flare...
 
 ✅ Successfully sent flare file to Datadog Support!
 "
@@ -157,6 +157,14 @@ exports[`lambda flare getAllLogs throws an error when unable to get log events 1
 
 exports[`lambda flare getAllLogs throws an error when unable to get log streams 1`] = `[Error: Unable to get log streams: Error getting log streams]`;
 
+exports[`lambda flare getEndpointUrl should return URL with https if the environment variable does not start with http 1`] = `"https://datad0g.com/api/ui/support/serverless/flare"`;
+
+exports[`lambda flare getEndpointUrl should return URL without trailing slash if the environment variable ends with / 1`] = `"https://datadoghq.com/api/ui/support/serverless/flare"`;
+
+exports[`lambda flare getEndpointUrl should use DEFAULT_DD_SITE if CI_SITE_ENV_VAR and SITE_ENV_VAR are not set 1`] = `"https://datadoghq.com/api/ui/support/serverless/flare"`;
+
+exports[`lambda flare getEndpointUrl should use SITE_ENV_VAR if CI_SITE_ENV_VAR is not set 1`] = `"https://us3.datadoghq.com/api/ui/support/serverless/flare"`;
+
 exports[`lambda flare getTags should return the tags when they exist 1`] = `
 Object {
   "Key1": "Value1",
@@ -193,7 +201,7 @@ exports[`lambda flare gets CloudWatch Logs does not get logs when --with-logs is
 • Saved function config to mock-folder/.datadog-ci/function_config.json
 
 
-🚀 Sending to Datadog Support...
+🚀 Sending to Datadog Support via https://datadoghq.com/api/ui/support/serverless/flare...
 
 ✅ Successfully sent flare file to Datadog Support!
 "
@@ -238,7 +246,7 @@ exports[`lambda flare gets CloudWatch Logs gets logs, saves, and sends correctly
 • Saved logs to mock-folder/.datadog-ci/logs/Stream3.csv
 
 
-🚀 Sending to Datadog Support...
+🚀 Sending to Datadog Support via https://datadoghq.com/api/ui/support/serverless/flare...
 
 ✅ Successfully sent flare file to Datadog Support!
 "
@@ -336,7 +344,7 @@ exports[`lambda flare gets CloudWatch Logs warns and skips getting logs when get
 • Saved function config to mock-folder/.datadog-ci/function_config.json
 
 
-🚀 Sending to Datadog Support...
+🚀 Sending to Datadog Support via https://datadoghq.com/api/ui/support/serverless/flare...
 
 ✅ Successfully sent flare file to Datadog Support!
 "
@@ -378,7 +386,7 @@ exports[`lambda flare gets CloudWatch Logs warns and skips log when getLogEvents
 • Saved function config to mock-folder/.datadog-ci/function_config.json
 
 
-🚀 Sending to Datadog Support...
+🚀 Sending to Datadog Support via https://datadoghq.com/api/ui/support/serverless/flare...
 
 ✅ Successfully sent flare file to Datadog Support!
 "
@@ -472,7 +480,7 @@ exports[`lambda flare prompts for confirmation before sending sends when user an
 • Saved function config to mock-folder/.datadog-ci/function_config.json
 
 
-🚀 Sending to Datadog Support...
+🚀 Sending to Datadog Support via https://datadoghq.com/api/ui/support/serverless/flare...
 
 ✅ Successfully sent flare file to Datadog Support!
 "
@@ -541,7 +549,7 @@ exports[`lambda flare send to Datadog successfully adds zip file to FormData 1`]
 • Saved function config to mock-folder/.datadog-ci/function_config.json
 
 
-🚀 Sending to Datadog Support...
+🚀 Sending to Datadog Support via https://datadoghq.com/api/ui/support/serverless/flare...
 
 ✅ Successfully sent flare file to Datadog Support!
 "
@@ -576,7 +584,7 @@ exports[`lambda flare send to Datadog successfully sends request to Datadog 1`] 
 • Saved function config to mock-folder/.datadog-ci/function_config.json
 
 
-🚀 Sending to Datadog Support...
+🚀 Sending to Datadog Support via https://datadoghq.com/api/ui/support/serverless/flare...
 
 ✅ Successfully sent flare file to Datadog Support!
 "
@@ -611,7 +619,7 @@ exports[`lambda flare validates required flags extracts region from function nam
 • Saved function config to mock-folder/.datadog-ci/function_config.json
 
 
-🚀 Sending to Datadog Support...
+🚀 Sending to Datadog Support via https://datadoghq.com/api/ui/support/serverless/flare...
 
 ✅ Successfully sent flare file to Datadog Support!
 "
@@ -681,7 +689,7 @@ exports[`lambda flare validates required flags runs successfully with all requir
 • Saved function config to mock-folder/.datadog-ci/function_config.json
 
 
-🚀 Sending to Datadog Support...
+🚀 Sending to Datadog Support via https://datadoghq.com/api/ui/support/serverless/flare...
 
 ✅ Successfully sent flare file to Datadog Support!
 "
@@ -716,7 +724,7 @@ exports[`lambda flare validates required flags uses API key ENV variable and run
 • Saved function config to mock-folder/.datadog-ci/function_config.json
 
 
-🚀 Sending to Datadog Support...
+🚀 Sending to Datadog Support via https://datadoghq.com/api/ui/support/serverless/flare...
 
 ✅ Successfully sent flare file to Datadog Support!
 "
@@ -751,7 +759,7 @@ exports[`lambda flare validates required flags uses API key ENV variable and run
 • Saved function config to mock-folder/.datadog-ci/function_config.json
 
 
-🚀 Sending to Datadog Support...
+🚀 Sending to Datadog Support via https://datadoghq.com/api/ui/support/serverless/flare...
 
 ✅ Successfully sent flare file to Datadog Support!
 
@@ -782,7 +790,7 @@ exports[`lambda flare validates required flags uses API key ENV variable and run
 • Saved function config to mock-folder/.datadog-ci/function_config.json
 
 
-🚀 Sending to Datadog Support...
+🚀 Sending to Datadog Support via https://datadoghq.com/api/ui/support/serverless/flare...
 
 ✅ Successfully sent flare file to Datadog Support!
 "
@@ -817,7 +825,7 @@ exports[`lambda flare validates required flags uses region ENV variable when no 
 • Saved function config to mock-folder/.datadog-ci/function_config.json
 
 
-🚀 Sending to Datadog Support...
+🚀 Sending to Datadog Support via https://datadoghq.com/api/ui/support/serverless/flare...
 
 ✅ Successfully sent flare file to Datadog Support!
 "
