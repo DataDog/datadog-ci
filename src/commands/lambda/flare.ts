@@ -159,8 +159,8 @@ export class LambdaFlareCommand extends Command {
       projectFilesMessage = commonRenderer.renderSoftWarning('No project files found.')
     }
     this.context.stdout.write(projectFilesMessage)
-    for (const paths of projectFilesToPath.values()) {
-      this.context.stdout.write(`• ${paths}\n`)
+    for (const projectFilePath of projectFilesToPath.values()) {
+      this.context.stdout.write(`• ${projectFilePath}\n`)
     }
 
     // Additional files
