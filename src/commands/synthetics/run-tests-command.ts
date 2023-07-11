@@ -135,6 +135,12 @@ export class RunTestsCommand extends Command {
       }
     }
 
+    if (this.config.pollingTimeout !== DEFAULT_COMMAND_CONFIG.pollingTimeout) {
+      this.reporter?.log(
+        '[DEPRECATED] "pollingTimeout" should be set under the `global` key in the global configuration file or in a test file.\n'
+      )
+    }
+
     // Override with ENV variables
     this.config = deepExtend(
       this.config,
@@ -184,7 +190,7 @@ export class RunTestsCommand extends Command {
     )
 
     if (typeof this.config.files === 'string') {
-      this.reporter!.log('[DEPRECATED] "files" should be an array of string instead of a string.\n')
+      this.reporter?.log('[DEPRECATED] "files" should be an array of string instead of a string.\n')
       this.config.files = [this.config.files]
     }
 

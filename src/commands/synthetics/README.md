@@ -77,17 +77,13 @@ See below for the list of advanced options in the global configuration file. For
 : A boolean flag that fails the CI job if at least one test exceeds the default test timeout. The default is set to `true`.
 
 `files`
-: Glob patterns to detect Synthetic test [configuration files](#test-files).
+: Glob patterns to detect Synthetic [test files](#test-files).
 
 `global`
-: Overrides for Synthetic tests applied to all tests.
+: Overrides for Synthetic tests applied to all tests. They are the same overrides as those documented in the [test files](#test-files) section.
 
 `mobileApplicationVersionFilePath`
 : Override the application version for all Synthetic mobile application tests.
-
-`pollingTimeout`
-: **Type**: integer<br>
-The duration (in milliseconds) after which `datadog-ci` stops polling for test results. The default is 30 minutes. At the CI level, test results completed after this duration are considered failed.
 
 `proxy`
 : The proxy to be used for outgoing connections to Datadog. `host` and `port` keys are mandatory arguments, the `protocol` key defaults to `http`. Supported values for the `protocol` key are `http`, `https`, `socks`, `socks4`, `socks4a`, `socks5`, `socks5h`, `pac+data`, `pac+file`, `pac+ftp`, `pac+http`, and `pac+https`. The library used to configure the proxy is the [proxy-agent][2] library.

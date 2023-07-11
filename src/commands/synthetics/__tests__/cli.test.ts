@@ -8,7 +8,7 @@ import {DEFAULT_COMMAND_CONFIG, DEFAULT_POLLING_TIMEOUT, RunTestsCommand} from '
 import {DEFAULT_UPLOAD_COMMAND_CONFIG, UploadApplicationCommand} from '../upload-application-command'
 import * as utils from '../utils'
 
-import {getApiTest, getAxiosHttpError, getTestSuite, mockTestTriggerResponse} from './fixtures'
+import {getApiTest, getAxiosHttpError, getTestSuite, mockReporter, mockTestTriggerResponse} from './fixtures'
 test('all option flags are supported', async () => {
   const options = [
     'apiKey',
@@ -302,15 +302,22 @@ describe('run-test', () => {
 
     test('pass command pollingTimeout as global override if undefined', async () => {
       const command = new RunTestsCommand()
+      command['reporter'] = mockReporter
       command['configPath'] =
         'src/commands/synthetics/__tests__/config-fixtures/config-with-global-polling-timeout.json'
+
       await command['resolveConfig']()
+
       expect(command['config']).toEqual({
         ...DEFAULT_COMMAND_CONFIG,
         configPath: 'src/commands/synthetics/__tests__/config-fixtures/config-with-global-polling-timeout.json',
         global: {followRedirects: false, pollingTimeout: 333},
         pollingTimeout: 333,
       })
+
+      expect(mockReporter.log).toHaveBeenCalledWith(
+        '[DEPRECATED] "pollingTimeout" should be set under the `global` key in the global configuration file or in a test file.\n'
+      )
     })
   })
 
