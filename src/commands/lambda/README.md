@@ -150,7 +150,7 @@ Instead of supplying arguments, you can create a configuration file in your proj
 ### `flare`
 To troubleshoot issues you may be encountering with Datadog monitoring on your Lambda functions, use `datadog-ci lambda flare`. This command sends relevant files to Datadog's support team for investigation.
 
-Note: This command works whether or not your Lambda functions were instrumented using `datadog-ci lambda instrument`.
+**Note**: This command works whether or not your Lambda functions were instrumented using `datadog-ci lambda instrument`.
 
 ```bash
 # Collect and send files to Datadog support for a single function
@@ -159,18 +159,18 @@ datadog-ci lambda flare -f <function-name> -r us-east-1 -c <case-id> -e <email-o
 # Include recent CloudWatch logs
 datadog-ci lambda flare -f <function-name> -r us-east-1 -c <case-id> -e <email-on-case-id> --with-logs
 
-# Dry run -- collect files, but don't send them to Datadog support
+# Dry run -- collect data, but don't send to Datadog support
 datadog-ci lambda flare -f <function-name> -r us-east-1 -c <case-id> -e <email-on-case-id> --dry
 ```
 
 | Argument      | Shorthand | Description                                                                                                         | Default |
-|---------------|------|---------------------------------------------------------------------------------------------------------------------| --- |
-| `--function`  | `-f` | The ARN of the Lambda function to gather data for, or the name of the Lambda function (`--region` must be defined). | |
-| `--region`    | `-r` | The default region to use when `--function` is defined by name and not by ARN.                                      | |
-| `--case-id`   | `-c` | The Datadog case ID to send the files to.                                                                           | |
-| `--email`     | `-e` | The email associated with the specified case ID.                                                                    | |
-| `--with-logs` |      | Collect recent CloudWatch logs for the specified function.                                                          | |
-| `--dry`       | `-d` | Collect files without sending them to Datadog support.                                                              | `false` |
+|---------------|------|---------------------------------------------------------------------------------------------------------------------|---------|
+| `--function`  | `-f` | The ARN of the Lambda function to gather data for, or the name of the Lambda function (`--region` must be defined). |         |
+| `--region`    | `-r` | Default region to use, when `--function` is specified by the function name instead of the ARN.                                      |         |
+| `--case-id`   | `-c` | The Datadog case ID to send the files to.                                                                           |         |
+| `--email`     | `-e` | The email associated with the specified case ID.                                                                    |         |
+| `--with-logs` |      | Collect recent CloudWatch logs for the specified function.                                                          | `false` |
+| `--dry`       | `-d` | Preview collected data which would be sent to Datadog support.                                                              | `false` |
 
 
 ## Community
