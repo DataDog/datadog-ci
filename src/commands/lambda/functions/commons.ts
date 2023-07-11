@@ -35,6 +35,7 @@ import {
   LIST_FUNCTIONS_MAX_RETRY_COUNT,
   Runtime,
   RUNTIME_LOOKUP,
+  SKIP_MASKING_ENV_VARS,
 } from '../constants'
 import {FunctionConfiguration, InstrumentationSettings, InstrumentedConfigurationGroup} from '../interfaces'
 import {applyLogGroupConfig} from '../loggroup'
@@ -500,4 +501,50 @@ export const willUpdateFunctionConfigs = (configs: FunctionConfiguration[]) => {
   }
 
   return willUpdate
+}
+
+// Mask environment variables with sensitive values
+export const maskEnvVar = (key: string, value: string) => {
+  if (SKIP_MASKING_ENV_VARS.has(key)) {
+    return value
+  }
+
+  // Don't mask booleans
+  if (value.toLowerCase() === 'true' || value.toLowerCase() === 'false') {
+    return value
+  }
+
+  // Dont mask numbers
+  if (!isNaN(Number(value))) {
+    return value
+  }
+
+  // Mask entire string if it's short
+  if (value.length < 12) {
+    return '*'.repeat(16)
+  }
+
+  // Keep first two and last four characters if it's long
+  return value.slice(0, 2) + '*'.repeat(10) + value.slice(-4)
+}
+
+/**
+ * Returns a function to be used as replacer in `JSON.stringify`.
+ *
+ * In `JSON.stringify` the passed value is the Lambda `FunctionConfiguration`.
+ * This method requires the `Environment.Variables` object, since each property
+ * passed to `JSON.stringify` is iterated over by the function. If the current
+ * property is part of the desired object, then masking is applied to it.
+ *
+ * @param envVars `Environment.Variables` object in `FunctionConfiguration`.
+ * @returns a function to be used as replacer.
+ */
+export const maskStringifiedEnvVar = (envVars: Record<string, string> | undefined) => {
+  return function (this: Record<string, unknown>, key: string, value: string) {
+    if (this === envVars) {
+      return maskEnvVar(key, value)
+    }
+
+    return value
+  }
 }

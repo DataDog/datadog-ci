@@ -117,3 +117,20 @@ export const AWS_SECRET_ACCESS_KEY_REG_EXP = /(?<![A-Za-z0-9/+=])[A-Za-z0-9/+=]{
 export const AWS_SECRET_ARN_REG_EXP = /arn:aws:secretsmanager:[\w-]+:\d{12}:secret:.+/
 export const DATADOG_API_KEY_REG_EXP = /(?<![a-f0-9])[a-f0-9]{32}(?![a-f0-9])/g
 export const DATADOG_APP_KEY_REG_EXP = /(?<![a-f0-9])[a-f0-9]{40}(?![a-f0-9])/g
+
+// Environment Variables whose values don't need to be masked
+export const SKIP_MASKING_ENV_VARS = new Set([
+  AWS_LAMBDA_EXEC_WRAPPER_VAR,
+  API_KEY_SECRET_ARN_ENV_VAR,
+  DOTNET_TRACER_HOME_ENV_VAR,
+  ENVIRONMENT_ENV_VAR,
+  EXTRA_TAGS_ENV_VAR,
+  LAMBDA_HANDLER_ENV_VAR,
+  LOG_LEVEL_ENV_VAR,
+  KMS_API_KEY_ENV_VAR,
+  PROFILER_ENV_VAR,
+  PROFILER_PATH_ENV_VAR,
+  SERVICE_ENV_VAR,
+  SITE_ENV_VAR,
+  VERSION_ENV_VAR,
+])
