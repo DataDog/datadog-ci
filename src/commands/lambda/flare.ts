@@ -263,7 +263,7 @@ export class LambdaFlareCommand extends Command {
       await zipContents(rootFolderPath, zipPath)
 
       // Send to Datadog
-      this.context.stdout.write(`\n🚀 Sending to Datadog Support...\n`)
+      this.context.stdout.write('\n🚀 Sending to Datadog Support...\n')
       await sendToDatadog(zipPath, this.caseId!, this.email!, this.apiKey!, rootFolderPath)
       this.context.stdout.write('\n✅ Successfully sent flare file to Datadog Support!\n')
 
@@ -600,7 +600,6 @@ export const getEndpointUrl = () => {
 
 /**
  * Send the zip file to Datadog support
- * @param endpointUrl
  * @param zipPath
  * @param caseId
  * @param email
