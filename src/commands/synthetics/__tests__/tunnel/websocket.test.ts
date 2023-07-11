@@ -73,7 +73,7 @@ describe('Proxy configuration', () => {
 
     try {
       const command = new RunTestsCommand()
-      command.configPath = 'src/commands/synthetics/__tests__/config-fixtures/config-with-tunnel-no-proxy.json'
+      command['configPath'] = 'src/commands/synthetics/__tests__/config-fixtures/config-with-tunnel-no-proxy.json'
       command.context = {stdout: {write: jest.fn()}} as any
       jest.spyOn(utils, 'getDatadogHost').mockImplementation(() => 'http://datadoghq.com/')
 
