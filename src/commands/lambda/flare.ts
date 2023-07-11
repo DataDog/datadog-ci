@@ -17,6 +17,8 @@ import FormData from 'form-data'
 import inquirer from 'inquirer'
 import JSZip from 'jszip'
 
+import {DATADOG_SITE_US1} from '../../constants'
+
 import {
   API_KEY_ENV_VAR,
   AWS_DEFAULT_REGION_ENV_VAR,
@@ -32,7 +34,6 @@ import * as flareRenderer from './renderers/flare-renderer'
 
 const {version} = require('../../../package.json')
 
-const DEFAULT_DD_SITE = 'datadoghq.com'
 const ENDPOINT_PATH = '/api/ui/support/serverless/flare'
 const FLARE_OUTPUT_DIRECTORY = '.datadog-ci'
 const LOGS_DIRECTORY = 'logs'
@@ -261,9 +262,8 @@ export class LambdaFlareCommand extends Command {
       await zipContents(rootFolderPath, zipPath)
 
       // Send to Datadog
-      const endpointUrl = getEndpointUrl()
-      this.context.stdout.write(`\n🚀 Sending to Datadog Support via ${endpointUrl}...\n`)
-      await sendToDatadog(endpointUrl, zipPath, this.caseId!, this.email!, this.apiKey!, rootFolderPath)
+      this.context.stdout.write(`\n🚀 Sending to Datadog Support...\n`)
+      await sendToDatadog(zipPath, this.caseId!, this.email!, this.apiKey!, rootFolderPath)
       this.context.stdout.write('\n✅ Successfully sent flare file to Datadog Support!\n')
 
       // Delete contents
@@ -588,7 +588,7 @@ export const zipContents = async (rootFolderPath: string, zipPath: string) => {
  * @returns the full endpoint URL
  */
 export const getEndpointUrl = () => {
-  let baseUrl = process.env[CI_SITE_ENV_VAR] ?? process.env[SITE_ENV_VAR] ?? DEFAULT_DD_SITE
+  let baseUrl = process.env[CI_SITE_ENV_VAR] ?? process.env[SITE_ENV_VAR] ?? DATADOG_SITE_US1
   // These checks cover the case where the environment variables are invalid
   // For example, the correct endpoint URL will still be returned when the user
   // sets DATADOG_SITE=https://datadoghq.com/ instead of DATADOG_SITE=datadoghq.com
@@ -599,7 +599,7 @@ export const getEndpointUrl = () => {
     baseUrl = baseUrl.slice(0, -1)
   }
 
-  return `${baseUrl}${ENDPOINT_PATH}`
+  return baseUrl + ENDPOINT_PATH
 }
 
 /**
@@ -613,13 +613,13 @@ export const getEndpointUrl = () => {
  * @throws Error if the request fails
  */
 export const sendToDatadog = async (
-  endpointUrl: string,
   zipPath: string,
   caseId: string,
   email: string,
   apiKey: string,
   rootFolderPath: string
 ) => {
+  const endpointUrl = getEndpointUrl()
   const form = new FormData()
   form.append('case_id', caseId)
   form.append('flare_file', fs.createReadStream(zipPath))
