@@ -17,7 +17,8 @@ import FormData from 'form-data'
 import inquirer from 'inquirer'
 import JSZip from 'jszip'
 
-import {DATADOG_SITE_US1} from '../../constants'
+import {DATADOG_SITE_US1, DATADOG_SITES} from '../../constants'
+import {isValidDatadogSite} from '../../helpers/validation'
 
 import {
   API_KEY_ENV_VAR,
@@ -585,21 +586,16 @@ export const zipContents = async (rootFolderPath: string, zipPath: string) => {
 
 /**
  * Calculates the full endpoint URL
+ * @throws Error if the site is invalid
  * @returns the full endpoint URL
  */
 export const getEndpointUrl = () => {
-  let baseUrl = process.env[CI_SITE_ENV_VAR] ?? process.env[SITE_ENV_VAR] ?? DATADOG_SITE_US1
-  // These checks cover the case where the environment variables are invalid
-  // For example, the correct endpoint URL will still be returned when the user
-  // sets DATADOG_SITE=https://datadoghq.com/ instead of DATADOG_SITE=datadoghq.com
-  if (!baseUrl.startsWith('http')) {
-    baseUrl = `https://${baseUrl}`
-  }
-  if (baseUrl.endsWith('/')) {
-    baseUrl = baseUrl.slice(0, -1)
+  const baseUrl = process.env[CI_SITE_ENV_VAR] ?? process.env[SITE_ENV_VAR] ?? DATADOG_SITE_US1
+  if (!isValidDatadogSite(baseUrl)) {
+    throw Error(`Invalid site: ${baseUrl}. Must be one of: ${DATADOG_SITES.join(', ')}`)
   }
 
-  return baseUrl + ENDPOINT_PATH
+  return 'https://' + baseUrl + ENDPOINT_PATH
 }
 
 /**

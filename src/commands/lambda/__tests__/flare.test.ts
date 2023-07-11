@@ -740,21 +740,28 @@ describe('lambda flare', () => {
       process.env = ORIGINAL_ENV
     })
 
-    it('should return URL with https if the environment variable does not start with http', () => {
-      process.env[CI_SITE_ENV_VAR] = 'datad0g.com'
+    it('should return correct endpoint url', () => {
+      process.env[CI_SITE_ENV_VAR] = 'datadoghq.com'
       const url = getEndpointUrl()
       expect(url).toMatchSnapshot()
     })
 
-    it('should return URL without trailing slash if the environment variable ends with /', () => {
-      process.env[CI_SITE_ENV_VAR] = 'https://datadoghq.com/'
+    it('should throw error if the site is invalid', () => {
+      process.env[CI_SITE_ENV_VAR] = 'datad0ge.com'
+      expect(() => getEndpointUrl()).toThrowErrorMatchingSnapshot()
+    })
+
+    it('should not throw error if the site is invalid and DD_CI_BYPASS_SITE_VALIDATION is set', () => {
+      process.env['DD_CI_BYPASS_SITE_VALIDATION'] = 'true'
+      process.env[CI_SITE_ENV_VAR] = 'datad0ge.com'
       const url = getEndpointUrl()
       expect(url).toMatchSnapshot()
+      delete process.env['DD_CI_BYPASS_SITE_VALIDATION']
     })
 
     it('should use SITE_ENV_VAR if CI_SITE_ENV_VAR is not set', () => {
       delete process.env[CI_SITE_ENV_VAR]
-      process.env[SITE_ENV_VAR] = 'https://us3.datadoghq.com/'
+      process.env[SITE_ENV_VAR] = 'us3.datadoghq.com'
       const url = getEndpointUrl()
       expect(url).toMatchSnapshot()
     })
