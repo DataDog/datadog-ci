@@ -79,3 +79,65 @@ export const parseArn = (
 export const buildLogAccessPolicyName = (stepFunction: DescribeStateMachineCommandOutput): string => {
   return `LogsDeliveryAccessPolicy-${stepFunction.name}`
 }
+
+export const updateStateMachineDefinition = (
+  describeStateMachineCommandOutput: DescribeStateMachineCommandOutput,
+  context: BaseContext
+): void => {
+  if (typeof describeStateMachineCommandOutput.definition !== "string") {
+    return
+  }
+  const definitionObj = JSON.parse(describeStateMachineCommandOutput.definition) as StateMachineDefinitionType
+  for (const stepName in definitionObj.States) {
+    if (definitionObj.States.hasOwnProperty(stepName)) {
+      const step = definitionObj.States[stepName]
+      if (shouldUpdateStepForTracesMerging(step)) {
+        updatePayloadInStateMachineDefinition()
+      }
+    }
+  }
+
+
+}
+
+export const updatePayloadInStateMachineDefinition() => {
+  return
+}
+
+export const shouldUpdateStepForTracesMerging = (step: StepType): boolean => {
+  // is default lambda api
+  if (step.Resource === 'arn:aws:states:::lambda:invoke') {
+    if (step.Parameters === undefined) {
+      return false
+    }
+    // payload field not set
+    if (!step.Parameters.hasOwnProperty('Payload.$')) {
+      return true
+    }
+    // default payload
+    if (step.Parameters['Payload.$'] === '$') {
+      return true
+    }
+  }
+
+  return false
+}
+
+type StateMachineDefinitionType = {
+  Comment?: string
+  StartAt?: string
+  States?: StatesType
+}
+
+type StatesType = Record<string, StepType>
+type StepType = {
+  Type: string
+  Parameters?: ParametersType
+  Resource: string
+  Next?: string
+  End?: string
+}
+
+type ParametersType = {
+  'Payload.$'?: string
+}
