@@ -223,7 +223,7 @@ export class LambdaFlareCommand extends Command {
     // Get CloudWatch logs
     let logs: Map<string, OutputLogEvent[]> = new Map()
     if (this.withLogs) {
-      this.context.stdout.write(chalk.bold('\n🌧️  Getting CloudWatch logs...\n'))
+      this.context.stdout.write(chalk.bold('\n🌧  Getting CloudWatch logs...\n'))
       try {
         logs = await getAllLogs(region!, this.functionName)
       } catch (err) {
@@ -343,9 +343,9 @@ export class LambdaFlareCommand extends Command {
       await zipContents(rootFolderPath, zipPath)
 
       // Send to Datadog
-      this.context.stdout.write('\n🚀 Sending to Datadog Support...\n')
+      this.context.stdout.write(chalk.bold('\n🚀 Sending to Datadog Support...\n'))
       await sendToDatadog(zipPath, this.caseId!, this.email!, this.apiKey!, rootFolderPath)
-      this.context.stdout.write('\n✅ Successfully sent flare file to Datadog Support!\n')
+      this.context.stdout.write(chalk.bold('\n✅ Successfully sent flare file to Datadog Support!\n'))
 
       // Delete contents
       deleteFolder(rootFolderPath)

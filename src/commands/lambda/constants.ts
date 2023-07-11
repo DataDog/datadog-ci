@@ -150,6 +150,7 @@ export const PROJECT_FILES = [
   'package.json',
   'package-lock.json',
   'yarn.lock',
+  '.nvmrc',
   // Python
   'requirements.txt',
   'Pipfile',
@@ -158,9 +159,14 @@ export const PROJECT_FILES = [
   // Java
   'pom.xml',
   'build.gradle',
+  'gradlew',
+  'gradlew.bat',
   // Go
+  'Makefile',
   'go.mod',
   'go.sum',
+  'Gopkg.toml',
+  'gomod.sh',
   // Ruby
   'Gemfile',
   'Gemfile.lock',
@@ -169,6 +175,15 @@ export const PROJECT_FILES = [
   'packages.config',
   'PackageReference',
   'global.json',
-  // Webpack, bundlers, todo
-  // Other common project files
+  'AwsDotnetCsharp.csproj',
+  // Docker
+  'Dockerfile',
+  'docker-compose.yml',
+  // Webpack, bundlers
+  'webpack.config.js',
+  'rollup.config.js',
+  '.babelrc',
+  'tsconfig.json',
+  '.eslintrc.js',
+  '.prettierrc',
 ]
