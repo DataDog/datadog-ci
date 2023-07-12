@@ -137,11 +137,11 @@ Instead of supplying arguments, you can create a configuration file in your proj
         "captureLambdaPayload": true,
         "forwarder": "arn:aws:lambda:us-east-1:000000000000:function:datadog-forwarder",
         "logLevel": "debug",
-        "service":"some-service",
-        "version":"b17s47h3w1n",
-        "profile": "my-credentials"
-        "environment":"staging",
-        "extraTags":"layer:api,team:intake"
+        "service": "some-service",
+        "version": "b17s47h3w1n",
+        "profile": "my-credentials",
+        "environment": "staging",
+        "extraTags": "layer:api,team:intake"
     }
 }
 ```
