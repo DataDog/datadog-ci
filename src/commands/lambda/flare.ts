@@ -18,11 +18,17 @@ import FormData from 'form-data'
 import inquirer from 'inquirer'
 import JSZip from 'jszip'
 
+import {DATADOG_SITE_US1, DATADOG_SITES} from '../../constants'
+import {isValidDatadogSite} from '../../helpers/validation'
 import {
   API_KEY_ENV_VAR,
   AWS_DEFAULT_REGION_ENV_VAR,
   CI_API_KEY_ENV_VAR,
+  CI_SITE_ENV_VAR,
+  DATADOG_SITES,
+  DATADOG_SITE_US1,
   PROJECT_FILES,
+  SITE_ENV_VAR,
   SKIP_MASKING_ENV_VARS,
 } from './constants'
 import {getAWSCredentials, getLambdaFunctionConfig, getRegion} from './functions/commons'
@@ -32,7 +38,7 @@ import * as flareRenderer from './renderers/flare-renderer'
 
 const {version} = require('../../../package.json')
 
-const ENDPOINT_URL = 'https://datad0g.com/api/ui/support/serverless/flare'
+const ENDPOINT_PATH = '/api/ui/support/serverless/flare'
 const FLARE_OUTPUT_DIRECTORY = '.datadog-ci'
 const LOGS_DIRECTORY = 'logs'
 const PROJECT_FILES_DIRECTORY = 'project_files'
@@ -703,6 +709,20 @@ export const zipContents = async (rootFolderPath: string, zipPath: string) => {
 }
 
 /**
+ * Calculates the full endpoint URL
+ * @throws Error if the site is invalid
+ * @returns the full endpoint URL
+ */
+export const getEndpointUrl = () => {
+  const baseUrl = process.env[CI_SITE_ENV_VAR] ?? process.env[SITE_ENV_VAR] ?? DATADOG_SITE_US1
+  if (!isValidDatadogSite(baseUrl)) {
+    throw Error(`Invalid site: ${baseUrl}. Must be one of: ${DATADOG_SITES.join(', ')}`)
+  }
+
+  return 'https://' + baseUrl + ENDPOINT_PATH
+}
+
+/**
  * Send the zip file to Datadog support
  * @param zipPath
  * @param caseId
@@ -718,6 +738,7 @@ export const sendToDatadog = async (
   apiKey: string,
   rootFolderPath: string
 ) => {
+  const endpointUrl = getEndpointUrl()
   const form = new FormData()
   form.append('case_id', caseId)
   form.append('flare_file', fs.createReadStream(zipPath))
@@ -731,7 +752,7 @@ export const sendToDatadog = async (
   }
 
   try {
-    await axios.post(ENDPOINT_URL, form, headerConfig)
+    await axios.post(endpointUrl, form, headerConfig)
   } catch (err) {
     // Ensure the root folder is deleted if the request fails
     deleteFolder(rootFolderPath)
