@@ -241,7 +241,14 @@ const checkConsoleOutput = (output: string[], expected: ExpectedOutput) => {
     `Upload of ${expected.sourcemapPath} for bundle ${expected.bundlePath} on platform ${expected.platform} with project path ${expected.projectPath}`
   )
   expect(output[3]).toContain(`version: ${expected.version} build: ${expected.build} service: ${expected.service}`)
-  const uploadedFileLines = output.slice(4, -4)
+  expect(output[4]).toContain(
+    `Please ensure you use the same values during SDK initialization to guarantee the success of the unminify process.`
+  )
+  expect(output[5]).toContain(
+    `After upload is successful sourcemap files will be processed and ready to use within the next 5 minutes.`
+  )
+
+  const uploadedFileLines = output.slice(6, -4)
   expect(uploadedFileLines.length).toEqual(expected.sourcemapsPaths.length) // Safety check
   uploadedFileLines.forEach((_, index) => {
     expect(uploadedFileLines[index]).toContain(

@@ -42,6 +42,7 @@ import {
   isMissingAnyDatadogApiKeyEnvVar,
   getAWSCredentials,
   isMissingDatadogEnvVars,
+  maskEnvVar,
   sentenceMatchesRegEx,
   updateLambdaFunctionConfig,
 } from '../../functions/commons'
@@ -53,6 +54,7 @@ import {
   mockAwsAccessKeyId,
   mockAwsAccount,
   mockAwsSecretAccessKey,
+  mockDatadogApiKey,
   mockLambdaClientCommands,
   mockLambdaLayers,
 } from '../fixtures'
@@ -850,6 +852,43 @@ describe('commons', () => {
         },
       ]
       expect(checkRuntimeTypesAreUniform(configs)).toBe(false)
+    })
+  })
+
+  describe('maskEnvVar', () => {
+    it('should mask the entire string if its length is less than 12', () => {
+      expect(maskEnvVar('TEST_ENV_VAR', 'shortString')).toEqual('****************')
+    })
+
+    it('should keep the first two and last four characters for strings longer than 12 characters', () => {
+      const original = 'abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz'
+      const masked = 'ab**********wxyz'
+      expect(maskEnvVar('TEST_ENV_VAR', original)).toEqual(masked)
+    })
+
+    it('should return empty string if input is empty', () => {
+      expect(maskEnvVar('TEST_ENV_VAR', '')).toEqual('')
+    })
+
+    it('should not mask booleans', () => {
+      expect(maskEnvVar('TEST_ENV_VAR', 'true')).toEqual('true')
+      expect(maskEnvVar('TEST_ENV_VAR', 'TrUe')).toEqual('TrUe')
+      expect(maskEnvVar('TEST_ENV_VAR', 'false')).toEqual('false')
+      expect(maskEnvVar('TEST_ENV_VAR', 'FALSE')).toEqual('FALSE')
+      expect(maskEnvVar('TEST_ENV_VAR', 'trueee')).toEqual('****************')
+    })
+
+    it('should mask sensitive datadog environment variables', () => {
+      expect(maskEnvVar('DD_API_KEY', mockDatadogApiKey)).toEqual('02**********33bd')
+    })
+
+    it('should skip whitelisted environment variables', () => {
+      expect(
+        maskEnvVar('DD_API_KEY_SECRET_ARN', 'arn:aws:secretsmanager:us-east-1:1234:secret:DdApiKeySecret-1234')
+      ).toEqual('arn:aws:secretsmanager:us-east-1:1234:secret:DdApiKeySecret-1234')
+      expect(maskEnvVar('DD_KMS_API_KEY', 'AQICAg1iQYQvBiOLACA=')).toEqual('AQICAg1iQYQvBiOLACA=')
+      expect(maskEnvVar('DD_LOG_LEVEL', 'debug')).toEqual('debug')
+      expect(maskEnvVar('DD_SITE', 'datadoghq.com')).toEqual('datadoghq.com')
     })
   })
 })
