@@ -32,7 +32,6 @@ import {
   getEndpointUrl,
   getLogEvents,
   getLogStreamNames,
-  getMasking,
   getTags,
   maskConfig,
   validateStartEndFlags,
@@ -368,30 +367,6 @@ describe('lambda flare', () => {
       expect(start).toBe(0)
       expect(end).toBeGreaterThanOrEqual(now - 1000)
       expect(end).toBeLessThanOrEqual(now + 1000)
-    })
-  })
-
-  describe('getMasking', () => {
-    it('should mask the entire string if its length is less than 12', () => {
-      expect(getMasking('shortString')).toEqual('****************')
-    })
-
-    it('should keep the first two and last four characters for strings longer than 12 characters', () => {
-      const original = 'abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz'
-      const masked = 'ab**********wxyz'
-      expect(getMasking(original)).toEqual(masked)
-    })
-
-    it('should return empty string if input is empty', () => {
-      expect(getMasking('')).toEqual('')
-    })
-
-    it('should not mask booleans', () => {
-      expect(getMasking('true')).toEqual('true')
-      expect(getMasking('TrUe')).toEqual('TrUe')
-      expect(getMasking('false')).toEqual('false')
-      expect(getMasking('FALSE')).toEqual('FALSE')
-      expect(getMasking('trueee')).toEqual('****************')
     })
   })
 

@@ -26,9 +26,8 @@ import {
   CI_API_KEY_ENV_VAR,
   CI_SITE_ENV_VAR,
   SITE_ENV_VAR,
-  SKIP_MASKING_ENV_VARS,
 } from './constants'
-import {getAWSCredentials, getLambdaFunctionConfig, getRegion} from './functions/commons'
+import {getAWSCredentials, getLambdaFunctionConfig, getRegion, maskStringifiedEnvVar} from './functions/commons'
 import {confirmationQuestion, requestAWSCredentials} from './prompt'
 import * as commonRenderer from './renderers/common-renderer'
 import * as flareRenderer from './renderers/flare-renderer'
@@ -346,51 +345,10 @@ export const maskConfig = (config: FunctionConfiguration) => {
     return config
   }
 
-  const maskedEnvironmentVariables: {[key: string]: string} = {}
-  for (const [key, value] of Object.entries(environmentVariables)) {
-    if (SKIP_MASKING_ENV_VARS.has(key)) {
-      maskedEnvironmentVariables[key] = value
-      continue
-    }
-    maskedEnvironmentVariables[key] = getMasking(value)
-  }
+  const replacer = maskStringifiedEnvVar(environmentVariables)
+  const stringifiedConfig = JSON.stringify(config, replacer)
 
-  return {
-    ...config,
-    Environment: {
-      ...config.Environment,
-      Variables: maskedEnvironmentVariables,
-    },
-  }
-}
-
-/**
- * Mask a string but keep the first two and last four characters
- * Mask the entire string if it's short
- * @param original the string to mask
- * @returns the masked string
- */
-export const getMasking = (original: string) => {
-  // Don't mask booleans
-  if (original.toLowerCase() === 'true' || original.toLowerCase() === 'false') {
-    return original
-  }
-
-  // Dont mask numbers
-  if (!isNaN(Number(original))) {
-    return original
-  }
-
-  // Mask entire string if it's short
-  if (original.length < 12) {
-    return FULL_OBFUSCATION
-  }
-
-  // Keep first two and last four characters if it's long
-  const front = original.substring(0, 2)
-  const end = original.substring(original.length - 4)
-
-  return front + MIDDLE_OBFUSCATION + end
+  return JSON.parse(stringifiedConfig) as FunctionConfiguration
 }
 
 /**
