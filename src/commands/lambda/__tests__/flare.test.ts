@@ -17,12 +17,19 @@ import FormData from 'form-data'
 import inquirer from 'inquirer'
 import JSZip from 'jszip'
 
-import {API_KEY_ENV_VAR, AWS_DEFAULT_REGION_ENV_VAR, CI_API_KEY_ENV_VAR} from '../constants'
+import {
+  API_KEY_ENV_VAR,
+  AWS_DEFAULT_REGION_ENV_VAR,
+  CI_API_KEY_ENV_VAR,
+  CI_SITE_ENV_VAR,
+  SITE_ENV_VAR,
+} from '../constants'
 import {
   convertToCSV,
   createDirectories,
   deleteFolder,
   getAllLogs,
+  getEndpointUrl,
   getLogEvents,
   getLogStreamNames,
   getMasking,
@@ -248,6 +255,15 @@ describe('lambda flare', () => {
       const context = createMockContext()
       const code = await cli.run(['lambda', 'flare', '-f', 'func', '-r', MOCK_REGION, '-c', '123'], context as any)
       expect(code).toBe(1)
+      const output = context.stdout.toString()
+      expect(output).toMatchSnapshot()
+    })
+
+    it('runs successfully when dry run but no email or case ID is specified', async () => {
+      const cli = makeCli()
+      const context = createMockContext()
+      const code = await cli.run(['lambda', 'flare', '-f', 'func', '-r', MOCK_REGION, '-d'], context as any)
+      expect(code).toBe(0)
       const output = context.stdout.toString()
       expect(output).toMatchSnapshot()
     })
@@ -874,6 +890,51 @@ describe('lambda flare', () => {
 
       // Reset mock
       fs.writeFileSync = jest.fn().mockImplementation(() => {})
+    })
+  })
+
+  describe('getEndpointUrl', () => {
+    const ORIGINAL_ENV = process.env
+
+    beforeEach(() => {
+      process.env = {...ORIGINAL_ENV}
+    })
+
+    afterAll(() => {
+      process.env = ORIGINAL_ENV
+    })
+
+    it('should return correct endpoint url', () => {
+      process.env[CI_SITE_ENV_VAR] = 'datadoghq.com'
+      const url = getEndpointUrl()
+      expect(url).toMatchSnapshot()
+    })
+
+    it('should throw error if the site is invalid', () => {
+      process.env[CI_SITE_ENV_VAR] = 'datad0ge.com'
+      expect(() => getEndpointUrl()).toThrowErrorMatchingSnapshot()
+    })
+
+    it('should not throw error if the site is invalid and DD_CI_BYPASS_SITE_VALIDATION is set', () => {
+      process.env['DD_CI_BYPASS_SITE_VALIDATION'] = 'true'
+      process.env[CI_SITE_ENV_VAR] = 'datad0ge.com'
+      const url = getEndpointUrl()
+      expect(url).toMatchSnapshot()
+      delete process.env['DD_CI_BYPASS_SITE_VALIDATION']
+    })
+
+    it('should use SITE_ENV_VAR if CI_SITE_ENV_VAR is not set', () => {
+      delete process.env[CI_SITE_ENV_VAR]
+      process.env[SITE_ENV_VAR] = 'us3.datadoghq.com'
+      const url = getEndpointUrl()
+      expect(url).toMatchSnapshot()
+    })
+
+    it('should use DEFAULT_DD_SITE if CI_SITE_ENV_VAR and SITE_ENV_VAR are not set', () => {
+      delete process.env[CI_SITE_ENV_VAR]
+      delete process.env[SITE_ENV_VAR]
+      const url = getEndpointUrl()
+      expect(url).toMatchSnapshot()
     })
   })
 

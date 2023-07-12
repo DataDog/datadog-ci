@@ -157,6 +157,16 @@ exports[`lambda flare getAllLogs throws an error when unable to get log events 1
 
 exports[`lambda flare getAllLogs throws an error when unable to get log streams 1`] = `[Error: Unable to get log streams: Error getting log streams]`;
 
+exports[`lambda flare getEndpointUrl should not throw error if the site is invalid and DD_CI_BYPASS_SITE_VALIDATION is set 1`] = `"https://datad0ge.com/api/ui/support/serverless/flare"`;
+
+exports[`lambda flare getEndpointUrl should return correct endpoint url 1`] = `"https://datadoghq.com/api/ui/support/serverless/flare"`;
+
+exports[`lambda flare getEndpointUrl should throw error if the site is invalid 1`] = `"Invalid site: datad0ge.com. Must be one of: datadoghq.com, datadoghq.eu, us3.datadoghq.com, us5.datadoghq.com, ap1.datadoghq.com, ddog-gov.com"`;
+
+exports[`lambda flare getEndpointUrl should use DEFAULT_DD_SITE if CI_SITE_ENV_VAR and SITE_ENV_VAR are not set 1`] = `"https://datadoghq.com/api/ui/support/serverless/flare"`;
+
+exports[`lambda flare getEndpointUrl should use SITE_ENV_VAR if CI_SITE_ENV_VAR is not set 1`] = `"https://us3.datadoghq.com/api/ui/support/serverless/flare"`;
+
 exports[`lambda flare getTags should return the tags when they exist 1`] = `
 Object {
   "Key1": "Value1",
@@ -700,6 +710,9 @@ exports[`lambda flare validates required flags prints error when start time is s
 exports[`lambda flare validates required flags runs successfully when start and end times are valid 1`] = `
 "
 🐶 Generating Lambda flare to send your configuration to Datadog...
+exports[`lambda flare validates required flags runs successfully when dry run but no email or case ID is specified 1`] = `
+"
+[Dry Run] 🐶 Generating Lambda flare to send your configuration to Datadog...
 
 🔑 Getting AWS credentials...
 
@@ -725,10 +738,13 @@ exports[`lambda flare validates required flags runs successfully when start and 
 💾 Saving files...
 • Saved function config to mock-folder/.datadog-ci/function_config.json
 
-
 🚀 Sending to Datadog Support...
 
 ✅ Successfully sent flare file to Datadog Support!
+
+🚫 The flare files were not sent as it was executed in dry run mode.
+ℹ️ Your output files are located at: mock-folder/.datadog-ci
+
 "
 `;
 
