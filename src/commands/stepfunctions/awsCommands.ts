@@ -277,10 +277,12 @@ export const updateStateMachineDefinition = async (
   )
   if (!dryRun) {
     try {
-      await stepFunctionsClient.send(command)
+      const data = await stepFunctionsClient.send(command)
       context.stdout.write(
         `Step Function context is injected into lambda payload in steps of ${stepFunction.stateMachineArn}\n\n`
       )
+
+      return data
     } catch (err) {
       if (err instanceof Error) {
         context.stdout.write(

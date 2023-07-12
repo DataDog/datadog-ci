@@ -26,9 +26,9 @@ import {
   tagResource,
   untagResource,
   createLogsAccessPolicy,
-  attachPolicyToStateMachineIamRole,
+  attachPolicyToStateMachineIamRole, updateStateMachineDefinition,
 } from '../awsCommands'
-import {buildLogAccessPolicyName} from '../helpers'
+import {buildLogAccessPolicyName, StateMachineDefinitionType} from '../helpers'
 
 import {createMockContext} from './fixtures/aws-resources'
 
@@ -237,6 +237,29 @@ describe('awsCommands test', () => {
       describeStateMachineCommandOutput,
       fakeLogGroupArn,
       fakeStepFunctionArn,
+      mockedContext,
+      false
+    )
+
+    expect(actual).toEqual(expectedResp)
+  })
+
+  test('updateStateMachineDefinition test', async () => {
+    const definitionObj: StateMachineDefinitionType = {
+      Comment: 'no comment',
+      States: {},
+    }
+    const input = {
+      stateMachineArn: fakeStepFunctionArn,
+      definition: JSON.stringify(definitionObj),
+    }
+
+    mockedStepFunctionsClient.on(UpdateStateMachineCommand, input).resolves(expectedResp)
+
+    const actual = await updateStateMachineDefinition(
+      new SFNClient({}),
+      describeStateMachineCommandOutput,
+      definitionObj,
       mockedContext,
       false
     )
