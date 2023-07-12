@@ -45,7 +45,9 @@ const ADDITIONAL_FILES_DIRECTORY = 'additional_files'
 const FUNCTION_CONFIG_FILE_NAME = 'function_config.json'
 const TAGS_FILE_NAME = 'tags.json'
 const ZIP_FILE_NAME = 'lambda-flare-output.zip'
-const LOG_STREAM_COUNT = 3
+const MAX_LOG_STREAMS = 50
+const DEFAULT_LOG_STREAMS = 3
+const MAX_LOG_EVENTS_PER_STREAM = 1000
 const FULL_OBFUSCATION = '****************'
 const MIDDLE_OBFUSCATION = '**********'
 
@@ -57,6 +59,8 @@ export class LambdaFlareCommand extends Command {
   private apiKey?: string
   private caseId?: string
   private email?: string
+  private start?: string
+  private end?: string
   private credentials?: AwsCredentialIdentity
 
   /**
@@ -91,14 +95,27 @@ export class LambdaFlareCommand extends Command {
       )
     }
 
-    // Validate case ID
-    if (this.caseId === undefined) {
-      errorMessages.push(commonRenderer.renderError('No case ID specified. [-c,--case-id]'))
+    if (!this.isDryRun) {
+      // Validate case ID
+      if (this.caseId === undefined) {
+        errorMessages.push(commonRenderer.renderError('No case ID specified. [-c,--case-id]'))
+      }
+
+      // Validate email
+      if (this.email === undefined) {
+        errorMessages.push(commonRenderer.renderError('No email specified. [-e,--email]'))
+      }
     }
 
-    // Validate email
-    if (this.email === undefined) {
-      errorMessages.push(commonRenderer.renderError('No email specified. [-e,--email]'))
+    // Validate start/end flags if both are specified
+    let startMillis
+    let endMillis
+    try {
+      ;[startMillis, endMillis] = validateStartEndFlags(this.start, this.end)
+    } catch (err) {
+      if (err instanceof Error) {
+        errorMessages.push(commonRenderer.renderError(err.message))
+      }
     }
 
     if (errorMessages.length > 0) {
@@ -230,7 +247,7 @@ export class LambdaFlareCommand extends Command {
     if (this.withLogs) {
       this.context.stdout.write(chalk.bold('\n🌧  Getting CloudWatch logs...\n'))
       try {
-        logs = await getAllLogs(region!, this.functionName)
+        logs = await getAllLogs(region!, this.functionName, startMillis, endMillis)
       } catch (err) {
         if (err instanceof Error) {
           this.context.stderr.write(commonRenderer.renderError(err.message))
@@ -364,6 +381,44 @@ export class LambdaFlareCommand extends Command {
 
     return 0
   }
+}
+
+/**
+ * Validate the start and end flags and adds error messages if found
+ * @param start start time as a string
+ * @param end end time as a string
+ * @throws error if start or end are not valid numbers
+ * @returns [startMillis, endMillis] as numbers or [undefined, undefined] if both are undefined
+ */
+export const validateStartEndFlags = (start: string | undefined, end: string | undefined) => {
+  if (!start && !end) {
+    return [undefined, undefined]
+  }
+
+  if (!start) {
+    throw Error('Start time is required when end time is specified. [--start]')
+  }
+  if (!end) {
+    throw Error('End time is required when start time is specified. [--end]')
+  }
+
+  const startMillis = Number(start)
+  let endMillis = Number(end)
+  if (isNaN(startMillis)) {
+    throw Error(`Start time must be a time in milliseconds since Unix Epoch. '${start}' is not a number.`)
+  }
+  if (isNaN(endMillis)) {
+    throw Error(`End time must be a time in milliseconds since Unix Epoch. '${end}' is not a number.`)
+  }
+
+  // Required for AWS SDK to work correctly
+  endMillis = Math.min(endMillis, Date.now())
+
+  if (startMillis >= endMillis) {
+    throw Error('Start time must be before end time.')
+  }
+
+  return [startMillis, endMillis]
 }
 
 /**
@@ -504,16 +559,28 @@ export const validateFilePath = (
  * Gets the LOG_STREAM_COUNT latest log stream names, sorted by last event time
  * @param cwlClient CloudWatch Logs client
  * @param logGroupName name of the log group
+ * @param startMillis start time in milliseconds or undefined if no start time is specified
+ * @param endMillis end time in milliseconds or undefined if no end time is specified
  * @returns an array of the last LOG_STREAM_COUNT log stream names or an empty array if no log streams are found
  * @throws Error if the log streams cannot be retrieved
  */
-export const getLogStreamNames = async (cwlClient: CloudWatchLogsClient, logGroupName: string) => {
-  const command = new DescribeLogStreamsCommand({
+export const getLogStreamNames = async (
+  cwlClient: CloudWatchLogsClient,
+  logGroupName: string,
+  startMillis: number | undefined,
+  endMillis: number | undefined
+) => {
+  const config = {
     logGroupName,
-    limit: LOG_STREAM_COUNT,
     descending: true,
     orderBy: OrderBy.LastEventTime,
-  })
+    limit: DEFAULT_LOG_STREAMS,
+  }
+  const rangeSpecified = startMillis !== undefined && endMillis !== undefined
+  if (rangeSpecified) {
+    config.limit = MAX_LOG_STREAMS
+  }
+  const command = new DescribeLogStreamsCommand(config)
   const response = await cwlClient.send(command)
   const logStreams = response.logStreams
   if (logStreams === undefined || logStreams.length === 0) {
@@ -523,9 +590,20 @@ export const getLogStreamNames = async (cwlClient: CloudWatchLogsClient, logGrou
   const output: string[] = []
   for (const logStream of logStreams) {
     const logStreamName = logStream.logStreamName
-    if (logStreamName) {
-      output.push(logStreamName)
+    if (!logStreamName) {
+      continue
     }
+    if (rangeSpecified) {
+      const firstEventTime = logStream.firstEventTimestamp
+      const lastEventTime = logStream.lastEventTimestamp
+      if (lastEventTime && lastEventTime < startMillis!) {
+        continue
+      }
+      if (firstEventTime && firstEventTime > endMillis!) {
+        continue
+      }
+    }
+    output.push(logStreamName)
   }
 
   // Reverse array so the oldest log is created first, so Support Staff can sort by creation time
@@ -537,14 +615,28 @@ export const getLogStreamNames = async (cwlClient: CloudWatchLogsClient, logGrou
  * @param cwlClient
  * @param logGroupName
  * @param logStreamName
+ * @param startMillis
+ * @param endMillis
  * @returns the log events or an empty array if no log events are found
  * @throws Error if the log events cannot be retrieved
  */
-export const getLogEvents = async (cwlClient: CloudWatchLogsClient, logGroupName: string, logStreamName: string) => {
-  const command = new GetLogEventsCommand({
+export const getLogEvents = async (
+  cwlClient: CloudWatchLogsClient,
+  logGroupName: string,
+  logStreamName: string,
+  startMillis: number | undefined,
+  endMillis: number | undefined
+) => {
+  const config: any = {
     logGroupName,
     logStreamName,
-  })
+    limit: MAX_LOG_EVENTS_PER_STREAM,
+  }
+  if (startMillis !== undefined && endMillis !== undefined) {
+    config.startTime = startMillis
+    config.endTime = endMillis
+  }
+  const command = new GetLogEventsCommand(config)
 
   const response = await cwlClient.send(command)
   const logEvents = response.events
@@ -560,9 +652,16 @@ export const getLogEvents = async (cwlClient: CloudWatchLogsClient, logGroupName
  * Gets all CloudWatch logs for a function
  * @param region
  * @param functionName
+ * @param startMillis start time in milliseconds or undefined if no end time is specified
+ * @param endMillis end time in milliseconds or undefined if no end time is specified
  * @returns a map of log stream names to log events or an empty map if no logs are found
  */
-export const getAllLogs = async (region: string, functionName: string) => {
+export const getAllLogs = async (
+  region: string,
+  functionName: string,
+  startMillis: number | undefined,
+  endMillis: number | undefined
+) => {
   const logs = new Map<string, OutputLogEvent[]>()
   const cwlClient = new CloudWatchLogsClient({region})
   if (functionName.startsWith('arn:aws')) {
@@ -571,7 +670,7 @@ export const getAllLogs = async (region: string, functionName: string) => {
   const logGroupName = `/aws/lambda/${functionName}`
   let logStreamNames: string[]
   try {
-    logStreamNames = await getLogStreamNames(cwlClient, logGroupName)
+    logStreamNames = await getLogStreamNames(cwlClient, logGroupName, startMillis, endMillis)
   } catch (err) {
     const msg = err instanceof Error ? err.message : ''
     throw new Error(`Unable to get log streams: ${msg}`)
@@ -580,7 +679,7 @@ export const getAllLogs = async (region: string, functionName: string) => {
   for (const logStreamName of logStreamNames) {
     let logEvents
     try {
-      logEvents = await getLogEvents(cwlClient, logGroupName, logStreamName)
+      logEvents = await getLogEvents(cwlClient, logGroupName, logStreamName, startMillis, endMillis)
     } catch (err) {
       const msg = err instanceof Error ? err.message : ''
       throw new Error(`Unable to get log events for stream ${logStreamName}: ${msg}`)
@@ -774,3 +873,5 @@ LambdaFlareCommand.addOption('functionName', Command.String('-f,--function'))
 LambdaFlareCommand.addOption('region', Command.String('-r,--region'))
 LambdaFlareCommand.addOption('caseId', Command.String('-c,--case-id'))
 LambdaFlareCommand.addOption('email', Command.String('-e,--email'))
+LambdaFlareCommand.addOption('start', Command.String('--start'))
+LambdaFlareCommand.addOption('end', Command.String('--end'))
