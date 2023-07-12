@@ -77,14 +77,16 @@ export class LambdaFlareCommand extends Command {
       )
     }
 
-    // Validate case ID
-    if (this.caseId === undefined) {
-      errorMessages.push(commonRenderer.renderError('No case ID specified. [-c,--case-id]'))
-    }
+    if (!this.isDryRun) {
+      // Validate case ID
+      if (this.caseId === undefined) {
+        errorMessages.push(commonRenderer.renderError('No case ID specified. [-c,--case-id]'))
+      }
 
-    // Validate email
-    if (this.email === undefined) {
-      errorMessages.push(commonRenderer.renderError('No email specified. [-e,--email]'))
+      // Validate email
+      if (this.email === undefined) {
+        errorMessages.push(commonRenderer.renderError('No email specified. [-e,--email]'))
+      }
     }
 
     if (errorMessages.length > 0) {
