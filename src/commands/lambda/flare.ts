@@ -17,7 +17,7 @@ import FormData from 'form-data'
 import inquirer from 'inquirer'
 import JSZip from 'jszip'
 
-import {DATADOG_SITE_US1, DATADOG_SITES} from '../../constants'
+import {DATADOG_SITE_EU1, DATADOG_SITE_GOV, DATADOG_SITE_US1, DATADOG_SITES} from '../../constants'
 import {isValidDatadogSite} from '../../helpers/validation'
 
 import {
@@ -646,11 +646,18 @@ export const zipContents = async (rootFolderPath: string, zipPath: string) => {
  */
 export const getEndpointUrl = () => {
   const baseUrl = process.env[CI_SITE_ENV_VAR] ?? process.env[SITE_ENV_VAR] ?? DATADOG_SITE_US1
+  // The DNS doesn't redirect to the proper endpoint when a subdomain is not present in the baseUrl.
+  // There is a DNS inconsistency
+  let endpointUrl = baseUrl
+  if ([DATADOG_SITE_US1, DATADOG_SITE_EU1, DATADOG_SITE_GOV].includes(baseUrl)) {
+    endpointUrl = 'app.' + baseUrl
+  }
+
   if (!isValidDatadogSite(baseUrl)) {
     throw Error(`Invalid site: ${baseUrl}. Must be one of: ${DATADOG_SITES.join(', ')}`)
   }
 
-  return 'https://' + baseUrl + ENDPOINT_PATH
+  return 'https://' + endpointUrl + ENDPOINT_PATH
 }
 
 /**
