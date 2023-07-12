@@ -461,10 +461,10 @@ export const getLogStreamNames = async (
     if (rangeSpecified) {
       const firstEventTime = logStream.firstEventTimestamp
       const lastEventTime = logStream.lastEventTimestamp
-      if (!firstEventTime || !lastEventTime) {
+      if (lastEventTime && lastEventTime < startMillis) {
         continue
       }
-      if (lastEventTime < startMillis || firstEventTime > endMillis) {
+      if (firstEventTime && firstEventTime > endMillis) {
         continue
       }
     }
