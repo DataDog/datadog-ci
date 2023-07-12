@@ -1,7 +1,9 @@
 import {DescribeStateMachineCommandOutput} from '@aws-sdk/client-sfn'
+import {SFNClient} from '@aws-sdk/client-sfn/dist-types/SFNClient'
 import {BaseContext} from 'clipanion'
 import {diff} from 'deep-object-diff'
 
+import {updateStateMachineDefinition} from './awsCommands'
 import {DD_CI_IDENTIFYING_STRING} from './constants'
 
 export const displayChanges = (
@@ -80,28 +82,41 @@ export const buildLogAccessPolicyName = (stepFunction: DescribeStateMachineComma
   return `LogsDeliveryAccessPolicy-${stepFunction.name}`
 }
 
-export const updateStateMachineDefinition = (
+export const injectContextIntoLambdaPayload = async (
   describeStateMachineCommandOutput: DescribeStateMachineCommandOutput,
-  context: BaseContext
-): void => {
-  if (typeof describeStateMachineCommandOutput.definition !== "string") {
+  stepFunctionsClient: SFNClient,
+  context: BaseContext,
+  dryRun: boolean
+): Promise<void> => {
+  if (typeof describeStateMachineCommandOutput.definition !== 'string') {
     return
   }
+  let definitionHasBeenUpdated = false
   const definitionObj = JSON.parse(describeStateMachineCommandOutput.definition) as StateMachineDefinitionType
   for (const stepName in definitionObj.States) {
     if (definitionObj.States.hasOwnProperty(stepName)) {
       const step = definitionObj.States[stepName]
       if (shouldUpdateStepForTracesMerging(step)) {
-        updatePayloadInStateMachineDefinition()
+        updateStepObject(step)
+        definitionHasBeenUpdated = true
       }
     }
   }
-
-
+  if (definitionHasBeenUpdated) {
+    await updateStateMachineDefinition(
+      stepFunctionsClient,
+      describeStateMachineCommandOutput,
+      definitionObj,
+      context,
+      dryRun
+    )
+  }
 }
 
-export const updatePayloadInStateMachineDefinition() => {
-  return
+export const updateStepObject = ({Parameters}: StepType): void => {
+  if (Parameters) {
+    Parameters[`Payload.$`] = 'States.JsonMerge($$, $, false)'
+  }
 }
 
 export const shouldUpdateStepForTracesMerging = (step: StepType): boolean => {
@@ -123,7 +138,7 @@ export const shouldUpdateStepForTracesMerging = (step: StepType): boolean => {
   return false
 }
 
-type StateMachineDefinitionType = {
+export type StateMachineDefinitionType = {
   Comment?: string
   StartAt?: string
   States?: StatesType

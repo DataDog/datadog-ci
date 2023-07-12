@@ -32,7 +32,7 @@ import {
 import {SFNClient} from '@aws-sdk/client-sfn/dist-types/SFNClient'
 import {BaseContext} from 'clipanion'
 
-import {buildLogAccessPolicyName, displayChanges} from './helpers'
+import {buildLogAccessPolicyName, displayChanges, StateMachineDefinitionType} from './helpers'
 
 export const describeStateMachine = async (
   stepFunctionsClient: SFNClient,
@@ -82,7 +82,7 @@ export const putSubscriptionFilter = async (
     // Even if the same filter name is created before, the response is still 200.
     // there are no way to tell
     context.stdout.write(
-      `Subscription filter ${filterName} is created or the original filter ${filterName} is overwritten.\nt`
+      `Subscription filter ${filterName} is created or the original filter ${filterName} is overwritten.\n\n`
     )
 
     return data
@@ -251,6 +251,37 @@ export const enableStepFunctionLogs = async (
   if (!dryRun) {
     const data = await stepFunctionsClient.send(command)
     printSuccessfulMessage(commandName, context)
+
+    return data
+  }
+}
+
+export const updateStateMachineDefinition = async (
+  stepFunctionsClient: SFNClient,
+  stepFunction: DescribeStateMachineCommandOutput,
+  definitionObj: StateMachineDefinitionType,
+  context: BaseContext,
+  dryRun: boolean
+): Promise<UpdateStateMachineCommandOutput | undefined> => {
+  if (stepFunction === undefined) {
+    return
+  }
+  const input = {
+    stateMachineArn: stepFunction.stateMachineArn,
+    definition: JSON.stringify(definitionObj),
+  }
+
+  const command = new UpdateStateMachineCommand(input)
+  context.stdout.write(
+    `Going to inject Step Function context into lambda payload in steps of ${stepFunction.stateMachineArn}.\n\n`
+  )
+  if (!dryRun) {
+    const data = await stepFunctionsClient.send(command)
+    context.stdout.write(JSON.stringify(data))
+    context.stdout.write('\n')
+    context.stdout.write(
+      `Step Function context is injected into lambda payload in steps of ${stepFunction.stateMachineArn}\n\n`
+    )
 
     return data
   }

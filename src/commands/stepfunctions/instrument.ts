@@ -20,7 +20,8 @@ import {
   buildSubscriptionFilterName,
   isValidArn,
   parseArn,
-  getStepFunctionLogGroupArn, updateStateMachineDefinition,
+  getStepFunctionLogGroupArn,
+  injectContextIntoLambdaPayload,
 } from './helpers'
 
 const cliVersion = require('../../../package.json').version
@@ -331,9 +332,14 @@ export class InstrumentStepFunctionsCommand extends Command {
       }
 
       if (this.mergeStepFunctionAndLambdaTraces) {
-        // Not putting the update operation into business log of subscribing to logs to allow
-        // easier testing.
-        updateStateMachineDefinition(describeStateMachineCommandOutput, this.context)
+        // Not putting the update operation into the business logic of logs subscribing to allow
+        // easier testing and cleaner code.
+        await injectContextIntoLambdaPayload(
+          describeStateMachineCommandOutput,
+          stepFunctionsClient,
+          this.context,
+          this.dryRun
+        )
       }
     }
     if (!hasChanges) {
