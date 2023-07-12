@@ -17,6 +17,7 @@ describe('stepfunctions instrument test', () => {
     aws = require('../awsCommands')
     helpers = require('../helpers')
     helpers.applyChanges = jest.fn().mockImplementation(() => false)
+    helpers.injectContextIntoLambdaPayload = jest.fn().mockImplementation()
     cli = new Cli()
     cli.register(InstrumentStepFunctionsCommand)
   })
@@ -454,6 +455,41 @@ describe('stepfunctions instrument test', () => {
       expect(aws.attachPolicyToStateMachineIamRole).toHaveBeenCalledTimes(0)
       expect(aws.enableStepFunctionLogs).toHaveBeenCalledTimes(1)
       expect(aws.putSubscriptionFilter).toHaveBeenCalledTimes(1)
+      expect(exitCode).toBe(0)
+    })
+  })
+
+  describe('mergeStepFunctionAndLambdaTraces enabled', () => {
+    test('mergeStepFunctionAndLambdaTraces flag is set (to true)', async () => {
+      const exitCode = await cli.run(
+        [
+          'stepfunctions',
+          'instrument',
+          '--forwarder',
+          'arn:aws:lambda:us-east-1:000000000000:function:DatadogForwarder',
+          '--step-function',
+          'arn:aws:states:us-east-1:000000000000:stateMachine:ExampleStepFunction',
+          '--merge-lambda-traces',
+        ],
+        context
+      )
+      expect(helpers.injectContextIntoLambdaPayload).toHaveBeenCalledTimes(1)
+      expect(exitCode).toBe(0)
+    })
+
+    test('mergeStepFunctionAndLambdaTraces flag is not set (default to false)', async () => {
+      const exitCode = await cli.run(
+        [
+          'stepfunctions',
+          'instrument',
+          '--forwarder',
+          'arn:aws:lambda:us-east-1:000000000000:function:DatadogForwarder',
+          '--step-function',
+          'arn:aws:states:us-east-1:000000000000:stateMachine:ExampleStepFunction',
+        ],
+        context
+      )
+      expect(helpers.injectContextIntoLambdaPayload).toHaveBeenCalledTimes(0)
       expect(exitCode).toBe(0)
     })
   })
