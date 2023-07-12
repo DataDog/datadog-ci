@@ -20,13 +20,12 @@ import JSZip from 'jszip'
 
 import {DATADOG_SITE_US1, DATADOG_SITES} from '../../constants'
 import {isValidDatadogSite} from '../../helpers/validation'
+
 import {
   API_KEY_ENV_VAR,
   AWS_DEFAULT_REGION_ENV_VAR,
   CI_API_KEY_ENV_VAR,
   CI_SITE_ENV_VAR,
-  DATADOG_SITES,
-  DATADOG_SITE_US1,
   PROJECT_FILES,
   SITE_ENV_VAR,
   SKIP_MASKING_ENV_VARS,

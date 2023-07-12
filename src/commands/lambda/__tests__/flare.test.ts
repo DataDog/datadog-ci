@@ -78,7 +78,6 @@ const MOCK_CONFIG = {
   FunctionName: 'some-function',
 }
 const MOCK_LOG_GROUP = 'mockLogGroup'
-const MOCK_OUTPUT_EVENT: OutputLogEvent[] = [{timestamp: 123, message: 'Log 1'}]
 const MOCK_TAGS: any = {Tags: {}}
 const cloudWatchLogsClientMock = mockClient(CloudWatchLogsClient)
 const lambdaClientMock = mockClient(LambdaClient)
