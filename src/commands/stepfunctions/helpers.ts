@@ -142,15 +142,17 @@ export type StateMachineDefinitionType = {
   States?: StatesType
 }
 
-type StatesType = Record<string, StepType>
-type StepType = {
+export type StatesType = Record<string, StepType>
+export type StepType = {
   Type: string
   Parameters?: ParametersType
   Resource: string
   Next?: string
-  End?: string
+  End?: boolean
 }
 
-type ParametersType = {
+export type ParametersType = {
   'Payload.$'?: string
+  FunctionName?: string
+  TableName?: string
 }
