@@ -44,17 +44,20 @@ export const DEFAULT_COMMAND_CONFIG: RunTestsCommandConfig = {
 }
 
 export class RunTestsCommand extends Command {
-  public configPath?: string
+  // CLI arguments for JUnit reports
   public jUnitReport?: string
   public runName?: string
+
+  // CLI arguments
   private apiKey?: string
   private appKey?: string
-  private config: RunTestsCommandConfig = JSON.parse(JSON.stringify(DEFAULT_COMMAND_CONFIG)) // Deep copy to avoid mutation during unit tests
+  private configPath?: string
   private datadogSite?: string
   private failOnCriticalErrors?: boolean
   private failOnMissingTests?: boolean
   private failOnTimeout?: boolean
   private files?: string[]
+  private mobileApplicationVersionFilePath?: string
   private pollingTimeout?: string
   private publicIds?: string[]
   private reporter?: MainReporter
@@ -62,7 +65,8 @@ export class RunTestsCommand extends Command {
   private testSearchQuery?: string
   private tunnel?: boolean
   private variableStrings?: string[]
-  private mobileApplicationVersionFilePath?: string
+
+  private config = JSON.parse(JSON.stringify(DEFAULT_COMMAND_CONFIG)) as RunTestsCommandConfig // Deep copy to avoid mutation during unit tests
 
   public async execute() {
     const reporters: Reporter[] = [new DefaultReporter(this)]

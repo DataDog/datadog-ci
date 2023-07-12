@@ -8,7 +8,7 @@ import {DEFAULT_COMMAND_CONFIG, DEFAULT_POLLING_TIMEOUT, RunTestsCommand} from '
 import {DEFAULT_UPLOAD_COMMAND_CONFIG, UploadApplicationCommand} from '../upload-application-command'
 import * as utils from '../utils'
 
-import {getApiTest, getAxiosHttpError, getTestSuite, mockTestTriggerResponse} from './fixtures'
+import {getApiTest, getAxiosHttpError, getTestSuite, mockReporter, mockTestTriggerResponse} from './fixtures'
 test('all option flags are supported', async () => {
   const options = [
     'apiKey',
@@ -94,7 +94,7 @@ describe('run-test', () => {
       }
 
       const command = new RunTestsCommand()
-      command.configPath = 'src/commands/synthetics/__tests__/config-fixtures/config-with-all-keys.json'
+      command['configPath'] = 'src/commands/synthetics/__tests__/config-fixtures/config-with-all-keys.json'
 
       await command['resolveConfig']()
       expect(command['config']).toEqual(overrideConfigFile)
@@ -302,8 +302,12 @@ describe('run-test', () => {
 
     test('pass command pollingTimeout as global override if undefined', async () => {
       const command = new RunTestsCommand()
-      command.configPath = 'src/commands/synthetics/__tests__/config-fixtures/config-with-global-polling-timeout.json'
+      command['reporter'] = mockReporter
+      command['configPath'] =
+        'src/commands/synthetics/__tests__/config-fixtures/config-with-global-polling-timeout.json'
+
       await command['resolveConfig']()
+
       expect(command['config']).toEqual({
         ...DEFAULT_COMMAND_CONFIG,
         configPath: 'src/commands/synthetics/__tests__/config-fixtures/config-with-global-polling-timeout.json',
@@ -532,7 +536,7 @@ describe('upload-application', () => {
       }
 
       const command = new UploadApplicationCommand()
-      command.configPath = 'src/commands/synthetics/__tests__/config-fixtures/upload-app-config-with-all-keys.json'
+      command['configPath'] = 'src/commands/synthetics/__tests__/config-fixtures/upload-app-config-with-all-keys.json'
 
       await command['resolveConfig']()
       expect(command['config']).toEqual(overrideConfigFile)
