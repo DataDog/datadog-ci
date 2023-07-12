@@ -905,7 +905,13 @@ exports[`lambda flare validates required flags runs successfully when dry run bu
   FunctionName: 'some-function'
 }
 
-🏷 Getting Resource Tags...
+📁 Searching for project files in current directory...
+[!] No project files found.
+
+
+Added 0 custom file(s):
+
+🏷  Getting Resource Tags...
 [!] No resource tags were found.
 
 💾 Saving files...
@@ -939,7 +945,13 @@ exports[`lambda flare validates required flags runs successfully when start and 
   FunctionName: 'some-function'
 }
 
-🏷 Getting Resource Tags...
+📁 Searching for project files in current directory...
+[!] No project files found.
+
+
+Added 0 custom file(s):
+
+🏷  Getting Resource Tags...
 [!] No resource tags were found.
 
 💾 Saving files...
