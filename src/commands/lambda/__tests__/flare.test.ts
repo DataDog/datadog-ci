@@ -258,6 +258,15 @@ describe('lambda flare', () => {
       expect(output).toMatchSnapshot()
     })
 
+    it('runs successfully when dry run but no email or case ID is specified', async () => {
+      const cli = makeCli()
+      const context = createMockContext()
+      const code = await cli.run(['lambda', 'flare', '-f', 'func', '-r', MOCK_REGION, '-d'], context as any)
+      expect(code).toBe(0)
+      const output = context.stdout.toString()
+      expect(output).toMatchSnapshot()
+    })
+
     it('runs successfully with all required options specified', async () => {
       const cli = makeCli()
       const context = createMockContext()
