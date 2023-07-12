@@ -160,7 +160,7 @@ datadog-ci lambda flare -f <function-name> -r us-east-1 -c <case-id> -e <email-o
 datadog-ci lambda flare -f <function-name> -r us-east-1 -c <case-id> -e <email-on-case-id> --with-logs
 
 # Dry run -- collect data, but don't send to Datadog support
-datadog-ci lambda flare -f <function-name> -r us-east-1 -c <case-id> -e <email-on-case-id> --dry
+datadog-ci lambda flare -f <function-arn> --with-logs --dry
 ```
 
 | Argument      | Shorthand | Description                                                                                                         | Default |
