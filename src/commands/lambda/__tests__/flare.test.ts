@@ -532,8 +532,8 @@ describe('lambda flare', () => {
         (cloudWatchLogsClientMock as unknown) as CloudWatchLogsClient,
         MOCK_LOG_GROUP,
         MOCK_LOG_STREAM,
-        0,
-        0
+        undefined,
+        undefined
       )
 
       expect(logEvents).toEqual(expectedEvents)
@@ -546,8 +546,8 @@ describe('lambda flare', () => {
         (cloudWatchLogsClientMock as unknown) as CloudWatchLogsClient,
         MOCK_LOG_GROUP,
         MOCK_LOG_STREAM,
-        0,
-        0
+        undefined,
+        undefined
       )
 
       expect(logEvents).toEqual([])
@@ -560,8 +560,8 @@ describe('lambda flare', () => {
           (cloudWatchLogsClientMock as unknown) as CloudWatchLogsClient,
           MOCK_LOG_GROUP,
           MOCK_LOG_STREAM,
-          0,
-          0
+          undefined,
+          undefined
         )
       ).rejects.toThrow('Cannot retrieve log events')
     })
