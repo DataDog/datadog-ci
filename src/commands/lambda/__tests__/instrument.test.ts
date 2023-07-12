@@ -4,7 +4,9 @@ jest.mock('@aws-sdk/credential-providers', () => ({
   fromIni: jest.fn(),
 }))
 jest.mock('../prompt')
-jest.mock('../renderer', () => require('../__mocks__/renderer'))
+jest.mock('../renderers/instrument-uninstrument-renderer', () =>
+  require('../__mocks__/instrument-uninstrument-renderer')
+)
 jest.mock('../../../../package.json', () => ({version: 'XXXX'}))
 
 import * as fs from 'fs'
@@ -695,7 +697,7 @@ describe('lambda', () => {
         command['sourceCodeIntegration'] = false
         await command['execute']()
         const output = command.context.stdout.toString()
-        expect(output).toMatch('[Error] No default region specified. Use `-r`, `--region`.\n')
+        expect(output).toMatch('[Error] No default region specified. [-r,--region]\n')
       })
       test('aborts if the regEx pattern is an ARN', async () => {
         ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({code: 'ENOENT'}))

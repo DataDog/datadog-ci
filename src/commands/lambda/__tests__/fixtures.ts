@@ -8,6 +8,10 @@ import {
   CreateLogGroupCommand,
   DeleteSubscriptionFilterCommand,
   PutSubscriptionFilterCommand,
+  LogStream,
+  DescribeLogStreamsCommand,
+  GetLogEventsCommand,
+  OutputLogEvent,
 } from '@aws-sdk/client-cloudwatch-logs'
 import {
   FunctionConfiguration as LFunctionConfiguration,
@@ -21,10 +25,14 @@ import {
   ListTagsCommand,
   ListTagsResponse,
   GetLayerVersionCommandInput,
+  ServiceInputTypes,
+  ServiceOutputTypes,
+  ListTagsCommandOutput,
 } from '@aws-sdk/client-lambda'
 import {AwsStub} from 'aws-sdk-client-mock'
 import {Cli, Command} from 'clipanion/lib/advanced'
 
+import {LambdaFlareCommand} from '../flare'
 import {InstrumentCommand} from '../instrument'
 import {UninstrumentCommand} from '../uninstrument'
 
@@ -38,6 +46,12 @@ export const createMockContext = () => {
         data += input
       },
     },
+    stderr: {
+      toString: () => data,
+      write: (input: string) => {
+        data += input
+      },
+    },
   }
 }
 
@@ -45,6 +59,7 @@ export const makeCli = () => {
   const cli = new Cli()
   cli.register(InstrumentCommand)
   cli.register(UninstrumentCommand)
+  cli.register(LambdaFlareCommand)
 
   return cli
 }
@@ -167,6 +182,27 @@ export const mockCloudWatchLogsClientCommands = (
   cloudWatchLogsClientMock.on(CreateLogGroupCommand).resolves({})
   cloudWatchLogsClientMock.on(DeleteSubscriptionFilterCommand).resolves({})
   cloudWatchLogsClientMock.on(PutSubscriptionFilterCommand).resolves({})
+}
+
+export const mockCloudWatchLogStreams = (
+  cloudWatchLogsClientMock: AwsStub<CWLServiceInputTypes, CWLServiceOutputTypes>,
+  logStreams: LogStream[]
+) => {
+  cloudWatchLogsClientMock.on(DescribeLogStreamsCommand).resolves({logStreams})
+}
+
+export const mockCloudWatchLogEvents = (
+  cloudWatchLogsClientMock: AwsStub<CWLServiceInputTypes, CWLServiceOutputTypes>,
+  events: OutputLogEvent[]
+) => {
+  cloudWatchLogsClientMock.on(GetLogEventsCommand).resolves({events})
+}
+
+export const mockResourceTags = (
+  lambdaClientMock: AwsStub<ServiceInputTypes, ServiceOutputTypes>,
+  output: ListTagsCommandOutput
+) => {
+  lambdaClientMock.on(ListTagsCommand).resolves(output)
 }
 
 export const mockAwsAccount = '123456789012'
