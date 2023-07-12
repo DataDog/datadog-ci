@@ -175,6 +175,7 @@ describe('run-test', () => {
         appKey: 'app_key_config_file',
         datadogSite: 'us5.datadoghq.com',
         global: {
+          pollingTimeout: 111,
           mobileApplicationVersionFilePath: './path/to/application_config_file.apk',
         },
       }))
@@ -187,6 +188,7 @@ describe('run-test', () => {
       const command = new RunTestsCommand()
       command['apiKey'] = 'api_key_cli'
       command['mobileApplicationVersionFilePath'] = './path/to/application_cli.apk'
+      command['pollingTimeout'] = '333'
 
       await command['resolveConfig']()
       expect(command['config']).toEqual({
@@ -195,7 +197,7 @@ describe('run-test', () => {
         appKey: 'app_key_env',
         datadogSite: 'us5.datadoghq.com',
         global: {
-          pollingTimeout: DEFAULT_POLLING_TIMEOUT,
+          pollingTimeout: 333,
           mobileApplicationVersionFilePath: './path/to/application_cli.apk',
         },
       })

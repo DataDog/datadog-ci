@@ -23,6 +23,15 @@ describe('utils', () => {
     expect(Object.keys(resultHash).length).toBe(0)
   })
 
+  test('parseOptionalInteger', () => {
+    expect(ciUtils.parseOptionalInteger(undefined)).toStrictEqual(undefined)
+    expect(ciUtils.parseOptionalInteger('')).toStrictEqual(undefined)
+    expect(() => ciUtils.parseOptionalInteger('1.2')).toThrow('1.2 is not an integer')
+    expect(() => ciUtils.parseOptionalInteger('abc')).toThrow('NaN is not an integer')
+
+    expect(ciUtils.parseOptionalInteger('1')).toStrictEqual(1)
+  })
+
   describe('resolveConfigFromFile', () => {
     test('should read a config file', async () => {
       const config: any = await ciUtils.resolveConfigFromFile(
