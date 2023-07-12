@@ -14,9 +14,7 @@ export const displayChanges = (
   params: any,
   previousParams?: any
 ): void => {
-  context.stdout.write(`${'='.repeat(50)}`)
-  context.stdout.write(`\n${dryRun ? '\n[Dry Run] Planning for' : 'Will apply'} the following change:\n`)
-  context.stdout.write(`\nChanges for ${stepFunctionArn}\n`)
+  context.stdout.write(`\n${dryRun ? '\nPlanning for' : 'Will apply'} the following change:\n`)
   if (previousParams !== undefined) {
     context.stdout.write(
       `\n${commandName}:\nFrom:\n${JSON.stringify(diff(params, previousParams), undefined, 2)}\nTo:\n${JSON.stringify(

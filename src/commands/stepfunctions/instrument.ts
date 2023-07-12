@@ -90,6 +90,9 @@ export class InstrumentStepFunctionsCommand extends Command {
 
     // loop over step functions passed as parameters and generate a list of requests to make to AWS for each step function
     for (const stepFunctionArn of stepFunctionArns) {
+      this.context.stdout.write(
+        `\n======= ${this.dryRun ? '[Dry Run] Planning for' : 'For'} ${stepFunctionArn} =========\n`
+      )
       // use region from the step function arn to make requests to AWS
       const arnObject = parseArn(stepFunctionArn)
       const region = arnObject.region
@@ -332,8 +335,8 @@ export class InstrumentStepFunctionsCommand extends Command {
       }
 
       if (this.mergeStepFunctionAndLambdaTraces) {
-        // Not putting the update operation into the business logic of logs subscribing to allow
-        // easier testing and cleaner code.
+        // Not putting the update operation into the business logic of logs subscription. This will
+        // add additional API call, but it would also allow easier testing and cleaner code.
         await injectContextIntoLambdaPayload(
           describeStateMachineCommandOutput,
           stepFunctionsClient,
