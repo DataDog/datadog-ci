@@ -333,10 +333,10 @@ describe('lambda flare', () => {
   })
 
   describe('validateStartEndFlags', () => {
-    it('returns [0, 0] when start and end flags are not specified', () => {
+    it('returns [undefined, undefined] when start and end flags are not specified', () => {
       const errorMessages: string[] = []
       const res = validateStartEndFlags(undefined, undefined)
-      expect(res).toEqual([0, 0])
+      expect(res).toEqual([undefined, undefined])
       expect(errorMessages).toEqual([])
     })
 
@@ -468,7 +468,7 @@ describe('lambda flare', () => {
       mockCloudWatchLogStreams(cloudWatchLogsClientMock, mockStreams)
 
       const expectedLogStreams = ['Stream1', 'Stream2', 'Stream3']
-      const logStreams = await getLogStreamNames(new CloudWatchLogsClient({}), MOCK_LOG_GROUP, 0, 0)
+      const logStreams = await getLogStreamNames(new CloudWatchLogsClient({}), MOCK_LOG_GROUP, undefined, undefined)
 
       expect(logStreams).toEqual(expectedLogStreams)
     })
@@ -476,7 +476,7 @@ describe('lambda flare', () => {
     it('returns empty array when no log streams are found', async () => {
       mockCloudWatchLogStreams(cloudWatchLogsClientMock, [])
 
-      const logStreams = await getLogStreamNames(new CloudWatchLogsClient({}), MOCK_LOG_GROUP, 0, 0)
+      const logStreams = await getLogStreamNames(new CloudWatchLogsClient({}), MOCK_LOG_GROUP, undefined, undefined)
 
       expect(logStreams).toEqual([])
     })
@@ -485,7 +485,12 @@ describe('lambda flare', () => {
       cloudWatchLogsClientMock.on(DescribeLogStreamsCommand).rejects('Cannot retrieve log streams')
 
       await expect(
-        getLogStreamNames((cloudWatchLogsClientMock as unknown) as CloudWatchLogsClient, MOCK_LOG_GROUP, 0, 0)
+        getLogStreamNames(
+          (cloudWatchLogsClientMock as unknown) as CloudWatchLogsClient,
+          MOCK_LOG_GROUP,
+          undefined,
+          undefined
+        )
       ).rejects.toThrow('Cannot retrieve log streams')
     })
 
@@ -611,21 +616,21 @@ describe('lambda flare', () => {
       jest.spyOn(flareModule, 'getLogStreamNames').mockResolvedValue([mockStreamName])
       jest.spyOn(flareModule, 'getLogEvents').mockResolvedValue(mockLogs)
 
-      const result = await getAllLogs(MOCK_REGION, functionName, 0, 0)
+      const result = await getAllLogs(MOCK_REGION, functionName, undefined, undefined)
       expect(result.get(mockStreamName)).toEqual(mockLogs)
     })
 
     it('throws an error when unable to get log streams', async () => {
       jest.spyOn(flareModule, 'getLogStreamNames').mockRejectedValueOnce(new Error('Error getting log streams'))
 
-      await expect(getAllLogs(MOCK_REGION, functionName, 0, 0)).rejects.toMatchSnapshot()
+      await expect(getAllLogs(MOCK_REGION, functionName, undefined, undefined)).rejects.toMatchSnapshot()
     })
 
     it('throws an error when unable to get log events', async () => {
       jest.spyOn(flareModule, 'getLogStreamNames').mockResolvedValueOnce([mockStreamName])
       jest.spyOn(flareModule, 'getLogEvents').mockRejectedValueOnce(new Error('Error getting log events'))
 
-      await expect(getAllLogs(MOCK_REGION, functionName, 0, 0)).rejects.toMatchSnapshot()
+      await expect(getAllLogs(MOCK_REGION, functionName, undefined, undefined)).rejects.toMatchSnapshot()
     })
   })
 

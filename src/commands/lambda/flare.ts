@@ -104,8 +104,8 @@ export class LambdaFlareCommand extends Command {
     }
 
     // Validate start/end flags if both are specified
-    let startMillis = 0
-    let endMillis = 0
+    let startMillis
+    let endMillis
     try {
       ;[startMillis, endMillis] = validateStartEndFlags(this.start, this.end)
     } catch (err) {
@@ -303,11 +303,11 @@ export class LambdaFlareCommand extends Command {
  * @param start start time as a string
  * @param end end time as a string
  * @throws error if start or end are not valid numbers
- * @returns [startMillis, endMillis] as numbers
+ * @returns [startMillis, endMillis] as numbers or [undefined, undefined] if both are undefined
  */
 export const validateStartEndFlags = (start: string | undefined, end: string | undefined) => {
   if (!start && !end) {
-    return [0, 0]
+    return [undefined, undefined]
   }
 
   if (!start) {
@@ -436,16 +436,16 @@ export const createDirectories = (
  * Gets the LOG_STREAM_COUNT latest log stream names, sorted by last event time
  * @param cwlClient CloudWatch Logs client
  * @param logGroupName name of the log group
- * @param startMillis start time in milliseconds or 0 if no start time is specified
- * @param endMillis end time in milliseconds or 0 if no end time is specified
+ * @param startMillis start time in milliseconds or undefined if no start time is specified
+ * @param endMillis end time in milliseconds or undefined if no end time is specified
  * @returns an array of the last LOG_STREAM_COUNT log stream names or an empty array if no log streams are found
  * @throws Error if the log streams cannot be retrieved
  */
 export const getLogStreamNames = async (
   cwlClient: CloudWatchLogsClient,
   logGroupName: string,
-  startMillis: number,
-  endMillis: number
+  startMillis: number | undefined,
+  endMillis: number | undefined
 ) => {
   const config = {
     logGroupName,
@@ -453,7 +453,7 @@ export const getLogStreamNames = async (
     orderBy: OrderBy.LastEventTime,
     limit: DEFAULT_LOG_STREAMS,
   }
-  const rangeSpecified = startMillis !== 0 || endMillis !== 0
+  const rangeSpecified = startMillis !== undefined && endMillis !== undefined
   if (rangeSpecified) {
     config.limit = MAX_LOG_STREAMS
   }
@@ -473,10 +473,10 @@ export const getLogStreamNames = async (
     if (rangeSpecified) {
       const firstEventTime = logStream.firstEventTimestamp
       const lastEventTime = logStream.lastEventTimestamp
-      if (lastEventTime && lastEventTime < startMillis) {
+      if (lastEventTime && lastEventTime < startMillis!) {
         continue
       }
-      if (firstEventTime && firstEventTime > endMillis) {
+      if (firstEventTime && firstEventTime > endMillis!) {
         continue
       }
     }
@@ -501,15 +501,15 @@ export const getLogEvents = async (
   cwlClient: CloudWatchLogsClient,
   logGroupName: string,
   logStreamName: string,
-  startMillis: number,
-  endMillis: number
+  startMillis: number | undefined,
+  endMillis: number | undefined
 ) => {
   const config: any = {
     logGroupName,
     logStreamName,
     limit: MAX_LOG_EVENTS_PER_STREAM,
   }
-  if (startMillis !== 0 || endMillis !== 0) {
+  if (startMillis !== undefined && endMillis !== undefined) {
     config.startTime = startMillis
     config.endTime = endMillis
   }
@@ -529,11 +529,16 @@ export const getLogEvents = async (
  * Gets all CloudWatch logs for a function
  * @param region
  * @param functionName
- * @param startMillis start time in milliseconds or 0 if no end time is specified
- * @param endMillis end time in milliseconds or 0 if no end time is specified
+ * @param startMillis start time in milliseconds or undefined if no end time is specified
+ * @param endMillis end time in milliseconds or undefined if no end time is specified
  * @returns a map of log stream names to log events or an empty map if no logs are found
  */
-export const getAllLogs = async (region: string, functionName: string, startMillis: number, endMillis: number) => {
+export const getAllLogs = async (
+  region: string,
+  functionName: string,
+  startMillis: number | undefined,
+  endMillis: number | undefined
+) => {
   const logs = new Map<string, OutputLogEvent[]>()
   const cwlClient = new CloudWatchLogsClient({region})
   if (functionName.startsWith('arn:aws')) {
