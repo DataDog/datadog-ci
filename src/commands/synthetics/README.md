@@ -77,10 +77,10 @@ See below for the list of advanced options in the global configuration file. For
 : A boolean flag that fails the CI job if at least one test exceeds the default test timeout. The default is set to `true`.
 
 `files`
-: Glob patterns to detect Synthetic test [configuration files](#test-files).
+: Glob patterns to detect Synthetic [test files](#test-files).
 
 `global`
-: Overrides for Synthetic tests applied to all tests.
+: Overrides for Synthetic tests applied to all tests. They are the same overrides as those documented in the [test files](#test-files) section.
 
 `mobileApplicationVersionFilePath`
 : Override the application version for all Synthetic mobile application tests.
