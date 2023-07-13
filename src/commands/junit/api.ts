@@ -6,8 +6,7 @@ import type {AxiosPromise, AxiosRequestConfig, AxiosResponse} from 'axios'
 
 import FormData from 'form-data'
 
-import {getSafeFileName} from '../../helpers/file'
-import {CI_JOB_URL, CI_PIPELINE_URL, GIT_SHA} from '../../helpers/tags'
+import {replaceForwardSlashes} from '../../helpers/file'
 import {getRequestBuilder} from '../../helpers/utils'
 
 import {Payload} from './interfaces'
@@ -32,34 +31,32 @@ export const uploadJUnitXML = (request: (args: AxiosRequestConfig) => AxiosPromi
     fileName = 'default_file_name'
   }
 
-  const metadata: Record<string, any> = {
-    service: jUnitXML.service,
-    ...jUnitXML.spanTags,
-    '_dd.cireport_version': '2',
+  const reportTagsAndMetrics: Record<string, any> = {
+    tags: jUnitXML.reportTags,
+    metrics: jUnitXML.reportMetrics,
+  }
+
+  const custom: Record<string, any> = {
+    metadata: jUnitXML.spanTags,
+    tags: jUnitXML.customTags,
+    metrics: jUnitXML.customMetrics,
+    session: reportTagsAndMetrics,
+    '_dd.cireport_version': '3',
     '_dd.hostname': jUnitXML.hostname,
   }
 
   if (jUnitXML.logsEnabled) {
-    metadata['_dd.junitxml_logs'] = true
+    custom['_dd.junitxml_logs'] = true
   }
 
   if (jUnitXML.xpathTags) {
-    metadata['_dd.junitxml_xpath_tags'] = jUnitXML.xpathTags
+    custom['_dd.junitxml_xpath_tags'] = jUnitXML.xpathTags
   }
 
-  form.append('event', JSON.stringify(metadata), {filename: 'event.json'})
-
-  let uniqueFileName = `${fileName}-${jUnitXML.service}-${metadata[GIT_SHA]}`
-
-  if (metadata[CI_PIPELINE_URL]) {
-    uniqueFileName = `${uniqueFileName}-${metadata[CI_PIPELINE_URL]}`
-  }
-  if (metadata[CI_JOB_URL]) {
-    uniqueFileName = `${uniqueFileName}-${metadata[CI_JOB_URL]}`
-  }
+  form.append('event', JSON.stringify(custom), {filename: 'event.json'})
 
   form.append('junit_xml_report_file', fs.createReadStream(jUnitXML.xmlPath).pipe(createGzip()), {
-    filename: `${getSafeFileName(uniqueFileName)}.xml.gz`,
+    filename: `${replaceForwardSlashes(fileName)}.xml.gz`,
   })
 
   return request({
