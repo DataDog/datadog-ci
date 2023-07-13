@@ -26,7 +26,8 @@ import {
   tagResource,
   untagResource,
   createLogsAccessPolicy,
-  attachPolicyToStateMachineIamRole, updateStateMachineDefinition,
+  attachPolicyToStateMachineIamRole,
+  updateStateMachineDefinition,
 } from '../awsCommands'
 import {buildLogAccessPolicyName, StateMachineDefinitionType} from '../helpers'
 
