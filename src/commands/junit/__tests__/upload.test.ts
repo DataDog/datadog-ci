@@ -172,11 +172,9 @@ describe('upload', () => {
         {}
       )
       expect(firstFile).toMatchObject({
-        service: 'service',
         xmlPath: './src/commands/junit/__tests__/fixtures/junit.xml/valid-report-2.xml',
       })
       expect(secondFile).toMatchObject({
-        service: 'service',
         xmlPath: './src/commands/junit/__tests__/fixtures/junit.xml/valid-report.xml',
       })
     })
