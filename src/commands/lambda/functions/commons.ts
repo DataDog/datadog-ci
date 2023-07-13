@@ -35,11 +35,13 @@ import {
   LIST_FUNCTIONS_MAX_RETRY_COUNT,
   Runtime,
   RUNTIME_LOOKUP,
+  SKIP_MASKING_ENV_VARS,
 } from '../constants'
 import {FunctionConfiguration, InstrumentationSettings, InstrumentedConfigurationGroup} from '../interfaces'
 import {applyLogGroupConfig} from '../loggroup'
 import {awsProfileQuestion} from '../prompt'
-import * as renderer from '../renderer'
+import * as commonRenderer from '../renderers/common-renderer'
+import * as instrumentRenderer from '../renderers/instrument-uninstrument-renderer'
 import {applyTagConfig} from '../tags'
 
 /**
@@ -386,7 +388,7 @@ export const getLambdaFunctionConfig = async (
 
 /**
  * Given a Function ARN, return its region by splitting the string,
- * can return undefined if it is doesn't exist.
+ * can return undefined if it doesn't exist.
  *
  * @param functionARN a string, can be Function ARN, Partial ARN, or a Function Name.
  * @returns the region of an ARN.
@@ -438,7 +440,7 @@ export const handleLambdaFunctionUpdates = async (configGroups: InstrumentedConf
   let totalFunctions = 0
   let totalFailedUpdates = 0
   for (const group of configGroups) {
-    const spinner = renderer.updatingFunctionsConfigFromRegionSpinner(group.region, group.configs.length)
+    const spinner = instrumentRenderer.updatingFunctionsConfigFromRegionSpinner(group.region, group.configs.length)
     spinner.start()
     const failedUpdates = []
     for (const config of group.configs) {
@@ -452,34 +454,41 @@ export const handleLambdaFunctionUpdates = async (configGroups: InstrumentedConf
     }
 
     if (failedUpdates.length === group.configs.length) {
-      spinner.fail(renderer.renderFailedUpdatingEveryLambdaFunctionFromRegion(group.region))
+      spinner.fail(instrumentRenderer.renderFailedUpdatingEveryLambdaFunctionFromRegion(group.region))
     } else if (failedUpdates.length > 0) {
       spinner.warn(
-        renderer.renderUpdatedLambdaFunctionsFromRegion(group.region, group.configs.length - failedUpdates.length)
+        instrumentRenderer.renderUpdatedLambdaFunctionsFromRegion(
+          group.region,
+          group.configs.length - failedUpdates.length
+        )
       )
     }
 
     for (const failedUpdate of failedUpdates) {
-      stdout.write(renderer.renderFailedUpdatingLambdaFunction(failedUpdate.functionARN, failedUpdate.error))
+      stdout.write(instrumentRenderer.renderFailedUpdatingLambdaFunction(failedUpdate.functionARN, failedUpdate.error))
     }
 
     if (failedUpdates.length === 0) {
-      spinner.succeed(renderer.renderUpdatedLambdaFunctionsFromRegion(group.region, group.configs.length))
+      spinner.succeed(instrumentRenderer.renderUpdatedLambdaFunctionsFromRegion(group.region, group.configs.length))
     }
   }
 
   if (totalFunctions === totalFailedUpdates) {
-    stdout.write(renderer.renderFail(renderer.renderFailedUpdatingEveryLambdaFunction()))
+    stdout.write(instrumentRenderer.renderFail(instrumentRenderer.renderFailedUpdatingEveryLambdaFunction()))
 
     throw Error()
   }
 
   if (totalFailedUpdates > 0) {
-    stdout.write(renderer.renderSoftWarning(renderer.renderUpdatedLambdaFunctions(totalFunctions - totalFailedUpdates)))
+    stdout.write(
+      commonRenderer.renderSoftWarning(
+        instrumentRenderer.renderUpdatedLambdaFunctions(totalFunctions - totalFailedUpdates)
+      )
+    )
   }
 
   if (!totalFailedUpdates) {
-    stdout.write(renderer.renderSuccess(renderer.renderUpdatedLambdaFunctions(totalFunctions)))
+    stdout.write(instrumentRenderer.renderSuccess(instrumentRenderer.renderUpdatedLambdaFunctions(totalFunctions)))
   }
 }
 
@@ -500,4 +509,50 @@ export const willUpdateFunctionConfigs = (configs: FunctionConfiguration[]) => {
   }
 
   return willUpdate
+}
+
+// Mask environment variables with sensitive values
+export const maskEnvVar = (key: string, value: string) => {
+  if (SKIP_MASKING_ENV_VARS.has(key)) {
+    return value
+  }
+
+  // Don't mask booleans
+  if (value.toLowerCase() === 'true' || value.toLowerCase() === 'false') {
+    return value
+  }
+
+  // Dont mask numbers
+  if (!isNaN(Number(value))) {
+    return value
+  }
+
+  // Mask entire string if it's short
+  if (value.length < 12) {
+    return '*'.repeat(16)
+  }
+
+  // Keep first two and last four characters if it's long
+  return value.slice(0, 2) + '*'.repeat(10) + value.slice(-4)
+}
+
+/**
+ * Returns a function to be used as replacer in `JSON.stringify`.
+ *
+ * In `JSON.stringify` the passed value is the Lambda `FunctionConfiguration`.
+ * This method requires the `Environment.Variables` object, since each property
+ * passed to `JSON.stringify` is iterated over by the function. If the current
+ * property is part of the desired object, then masking is applied to it.
+ *
+ * @param envVars `Environment.Variables` object in `FunctionConfiguration`.
+ * @returns a function to be used as replacer.
+ */
+export const maskStringifiedEnvVar = (envVars: Record<string, string> | undefined) => {
+  return function (this: Record<string, unknown>, key: string, value: string) {
+    if (this === envVars) {
+      return maskEnvVar(key, value)
+    }
+
+    return value
+  }
 }

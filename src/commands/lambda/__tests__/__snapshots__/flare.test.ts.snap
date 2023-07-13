@@ -1,0 +1,962 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`lambda flare AWS Lambda configuration prints config when running as a dry run 1`] = `
+"
+[Dry Run] 🐶 Generating Lambda flare to send your configuration to Datadog...
+
+🔑 Getting AWS credentials...
+
+[!] No AWS credentials found, let's set them up! Or you can re-run the command and supply the AWS credentials in the same way when you invoke the AWS CLI.
+
+🔍 Fetching Lambda function configuration...
+
+{
+  Environment: {
+    Variables: {
+      DD_API_KEY: '02**********33bd',
+      DD_SITE: 'datadoghq.com',
+      DD_LOG_LEVEL: 'debug'
+    }
+  },
+  FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:some-function',
+  FunctionName: 'some-function'
+}
+
+🏷 Getting Resource Tags...
+[!] No resource tags were found.
+
+💾 Saving files...
+• Saved function config to mock-folder/.datadog-ci/function_config.json
+
+🚫 The flare files were not sent as it was executed in dry run mode.
+ℹ️ Your output files are located at: mock-folder/.datadog-ci
+
+"
+`;
+
+exports[`lambda flare AWS Lambda configuration stops and prints error when getLambdaFunctionConfig fails 1`] = `
+"
+🐶 Generating Lambda flare to send your configuration to Datadog...
+
+🔑 Getting AWS credentials...
+
+[!] No AWS credentials found, let's set them up! Or you can re-run the command and supply the AWS credentials in the same way when you invoke the AWS CLI.
+
+🔍 Fetching Lambda function configuration...
+[Error] Unable to get Lambda function configuration: MOCK ERROR: Some API error
+"
+`;
+
+exports[`lambda flare AWS credentials continues when getAWSCredentials() returns valid credentials 1`] = `
+"
+🐶 Generating Lambda flare to send your configuration to Datadog...
+
+🔑 Getting AWS credentials...
+
+🔍 Fetching Lambda function configuration...
+
+{
+  Environment: {
+    Variables: {
+      DD_API_KEY: '02**********33bd',
+      DD_SITE: 'datadoghq.com',
+      DD_LOG_LEVEL: 'debug'
+    }
+  },
+  FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:some-function',
+  FunctionName: 'some-function'
+}
+
+🏷 Getting Resource Tags...
+[!] No resource tags were found.
+
+💾 Saving files...
+• Saved function config to mock-folder/.datadog-ci/function_config.json
+
+
+🚀 Sending to Datadog Support...
+
+✅ Successfully sent flare file to Datadog Support!
+"
+`;
+
+exports[`lambda flare AWS credentials requests AWS credentials when none are found by getAWSCredentials() 1`] = `
+"
+🐶 Generating Lambda flare to send your configuration to Datadog...
+
+🔑 Getting AWS credentials...
+
+[!] No AWS credentials found, let's set them up! Or you can re-run the command and supply the AWS credentials in the same way when you invoke the AWS CLI.
+
+🔍 Fetching Lambda function configuration...
+
+{
+  Environment: {
+    Variables: {
+      DD_API_KEY: '02**********33bd',
+      DD_SITE: 'datadoghq.com',
+      DD_LOG_LEVEL: 'debug'
+    }
+  },
+  FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:some-function',
+  FunctionName: 'some-function'
+}
+
+🏷 Getting Resource Tags...
+[!] No resource tags were found.
+
+💾 Saving files...
+• Saved function config to mock-folder/.datadog-ci/function_config.json
+
+
+🚀 Sending to Datadog Support...
+
+✅ Successfully sent flare file to Datadog Support!
+"
+`;
+
+exports[`lambda flare AWS credentials stops and prints error when getAWSCredentials() fails 1`] = `
+"
+🐶 Generating Lambda flare to send your configuration to Datadog...
+
+🔑 Getting AWS credentials...
+[Error] MOCK ERROR: Error getting AWS credentials
+"
+`;
+
+exports[`lambda flare AWS credentials stops and prints error when requestAWSCredentials() fails 1`] = `
+"
+🐶 Generating Lambda flare to send your configuration to Datadog...
+
+🔑 Getting AWS credentials...
+
+[!] No AWS credentials found, let's set them up! Or you can re-run the command and supply the AWS credentials in the same way when you invoke the AWS CLI.
+[Error] MOCK ERROR: Error requesting AWS credentials
+"
+`;
+
+exports[`lambda flare convertToCSV handles missing timestamp and message in log events 1`] = `
+"timestamp,datetime,message
+\\"\\",,\\"Log 1\\"
+\\"456\\",1970-01-01 00:00:00.456,\\"\\""
+`;
+
+exports[`lambda flare convertToCSV returns a CSV string from an array of log events 1`] = `
+"timestamp,datetime,message
+\\"123\\",1970-01-01 00:00:00.123,\\"Log 1\\"
+\\"456\\",1970-01-01 00:00:00.456,\\"Log 2\\""
+`;
+
+exports[`lambda flare convertToCSV returns a CSV string with only headers when given an empty array 1`] = `"timestamp,datetime,message"`;
+
+exports[`lambda flare createDirectories throws error when unable to create a folder 1`] = `"Unable to create directories: MOCK ERROR: Unable to create folder"`;
+
+exports[`lambda flare deleteFolder throws error when unable to delete a folder 1`] = `"Failed to delete files located at mock-folder/.datadog-ci: MOCK ERROR: Unable to delete folder"`;
+
+exports[`lambda flare getAllLogs throws an error when unable to get log events 1`] = `[Error: Unable to get log events for stream streamName: Error getting log events]`;
+
+exports[`lambda flare getAllLogs throws an error when unable to get log streams 1`] = `[Error: Unable to get log streams: Error getting log streams]`;
+
+exports[`lambda flare getEndpointUrl should not throw error if the site is invalid and DD_CI_BYPASS_SITE_VALIDATION is set 1`] = `"https://datad0ge.com/api/ui/support/serverless/flare"`;
+
+exports[`lambda flare getEndpointUrl should return correct endpoint url 1`] = `"https://app.datadoghq.com/api/ui/support/serverless/flare"`;
+
+exports[`lambda flare getEndpointUrl should throw error if the site is invalid 1`] = `"Invalid site: datad0ge.com. Must be one of: datadoghq.com, datadoghq.eu, us3.datadoghq.com, us5.datadoghq.com, ap1.datadoghq.com, ddog-gov.com"`;
+
+exports[`lambda flare getEndpointUrl should use DEFAULT_DD_SITE if CI_SITE_ENV_VAR and SITE_ENV_VAR are not set 1`] = `"https://app.datadoghq.com/api/ui/support/serverless/flare"`;
+
+exports[`lambda flare getEndpointUrl should use SITE_ENV_VAR if CI_SITE_ENV_VAR is not set 1`] = `"https://us3.datadoghq.com/api/ui/support/serverless/flare"`;
+
+exports[`lambda flare getTags should return the tags when they exist 1`] = `
+Object {
+  "Key1": "Value1",
+  "Key2": "Value2",
+}
+`;
+
+exports[`lambda flare gets CloudWatch Logs does not get logs when --with-logs is not included 1`] = `
+"
+🐶 Generating Lambda flare to send your configuration to Datadog...
+
+🔑 Getting AWS credentials...
+
+[!] No AWS credentials found, let's set them up! Or you can re-run the command and supply the AWS credentials in the same way when you invoke the AWS CLI.
+
+🔍 Fetching Lambda function configuration...
+
+{
+  Environment: {
+    Variables: {
+      DD_API_KEY: '02**********33bd',
+      DD_SITE: 'datadoghq.com',
+      DD_LOG_LEVEL: 'debug'
+    }
+  },
+  FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:some-function',
+  FunctionName: 'some-function'
+}
+
+🏷 Getting Resource Tags...
+[!] No resource tags were found.
+
+💾 Saving files...
+• Saved function config to mock-folder/.datadog-ci/function_config.json
+
+
+🚀 Sending to Datadog Support...
+
+✅ Successfully sent flare file to Datadog Support!
+"
+`;
+
+exports[`lambda flare gets CloudWatch Logs gets logs, saves, and sends correctly when --with-logs is included 1`] = `
+"
+🐶 Generating Lambda flare to send your configuration to Datadog...
+
+🔑 Getting AWS credentials...
+
+[!] No AWS credentials found, let's set them up! Or you can re-run the command and supply the AWS credentials in the same way when you invoke the AWS CLI.
+
+🔍 Fetching Lambda function configuration...
+
+{
+  Environment: {
+    Variables: {
+      DD_API_KEY: '02**********33bd',
+      DD_SITE: 'datadoghq.com',
+      DD_LOG_LEVEL: 'debug'
+    }
+  },
+  FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:some-function',
+  FunctionName: 'some-function'
+}
+
+🏷 Getting Resource Tags...
+[!] No resource tags were found.
+
+☁️ Getting CloudWatch logs...
+
+✅ Found log streams:
+• Stream1
+• Stream2
+• Stream3
+
+💾 Saving files...
+• Saved function config to mock-folder/.datadog-ci/function_config.json
+• Saved logs to mock-folder/.datadog-ci/logs/Stream1.csv
+• Saved logs to mock-folder/.datadog-ci/logs/Stream2.csv
+• Saved logs to mock-folder/.datadog-ci/logs/Stream3.csv
+
+
+🚀 Sending to Datadog Support...
+
+✅ Successfully sent flare file to Datadog Support!
+"
+`;
+
+exports[`lambda flare gets CloudWatch Logs prints error when getLogEvents throws error 1`] = `
+"
+🐶 Generating Lambda flare to send your configuration to Datadog...
+
+🔑 Getting AWS credentials...
+
+[!] No AWS credentials found, let's set them up! Or you can re-run the command and supply the AWS credentials in the same way when you invoke the AWS CLI.
+
+🔍 Fetching Lambda function configuration...
+
+{
+  Environment: {
+    Variables: {
+      DD_API_KEY: '02**********33bd',
+      DD_SITE: 'datadoghq.com',
+      DD_LOG_LEVEL: 'debug'
+    }
+  },
+  FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:some-function',
+  FunctionName: 'some-function'
+}
+
+🏷 Getting Resource Tags...
+[!] No resource tags were found.
+
+☁️ Getting CloudWatch logs...
+[Error] Unable to get log events for stream Stream1: MOCK ERROR: Unable to get log events
+"
+`;
+
+exports[`lambda flare gets CloudWatch Logs prints error when getLogStreamNames throws error 1`] = `
+"
+🐶 Generating Lambda flare to send your configuration to Datadog...
+
+🔑 Getting AWS credentials...
+
+[!] No AWS credentials found, let's set them up! Or you can re-run the command and supply the AWS credentials in the same way when you invoke the AWS CLI.
+
+🔍 Fetching Lambda function configuration...
+
+{
+  Environment: {
+    Variables: {
+      DD_API_KEY: '02**********33bd',
+      DD_SITE: 'datadoghq.com',
+      DD_LOG_LEVEL: 'debug'
+    }
+  },
+  FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:some-function',
+  FunctionName: 'some-function'
+}
+
+🏷 Getting Resource Tags...
+[!] No resource tags were found.
+
+☁️ Getting CloudWatch logs...
+[Error] Unable to get log streams: MOCK ERROR: Unable to get log stream names
+"
+`;
+
+exports[`lambda flare gets CloudWatch Logs warns and skips getting logs when getLogStreamNames returns [] 1`] = `
+"
+🐶 Generating Lambda flare to send your configuration to Datadog...
+
+🔑 Getting AWS credentials...
+
+[!] No AWS credentials found, let's set them up! Or you can re-run the command and supply the AWS credentials in the same way when you invoke the AWS CLI.
+
+🔍 Fetching Lambda function configuration...
+
+{
+  Environment: {
+    Variables: {
+      DD_API_KEY: '02**********33bd',
+      DD_SITE: 'datadoghq.com',
+      DD_LOG_LEVEL: 'debug'
+    }
+  },
+  FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:some-function',
+  FunctionName: 'some-function'
+}
+
+🏷 Getting Resource Tags...
+[!] No resource tags were found.
+
+☁️ Getting CloudWatch logs...
+[!] No CloudWatch log streams were found. Logs will not be retrieved or sent.
+
+💾 Saving files...
+• Saved function config to mock-folder/.datadog-ci/function_config.json
+
+
+🚀 Sending to Datadog Support...
+
+✅ Successfully sent flare file to Datadog Support!
+"
+`;
+
+exports[`lambda flare gets CloudWatch Logs warns and skips log when getLogEvents returns [] 1`] = `
+"
+🐶 Generating Lambda flare to send your configuration to Datadog...
+
+🔑 Getting AWS credentials...
+
+[!] No AWS credentials found, let's set them up! Or you can re-run the command and supply the AWS credentials in the same way when you invoke the AWS CLI.
+
+🔍 Fetching Lambda function configuration...
+
+{
+  Environment: {
+    Variables: {
+      DD_API_KEY: '02**********33bd',
+      DD_SITE: 'datadoghq.com',
+      DD_LOG_LEVEL: 'debug'
+    }
+  },
+  FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:some-function',
+  FunctionName: 'some-function'
+}
+
+🏷 Getting Resource Tags...
+[!] No resource tags were found.
+
+☁️ Getting CloudWatch logs...
+
+✅ Found log streams:
+• Stream1 - [!] No log events found in this stream
+• Stream2 - [!] No log events found in this stream
+• Stream3 - [!] No log events found in this stream
+
+💾 Saving files...
+• Saved function config to mock-folder/.datadog-ci/function_config.json
+
+
+🚀 Sending to Datadog Support...
+
+✅ Successfully sent flare file to Datadog Support!
+"
+`;
+
+exports[`lambda flare maskConfig should mask API key but not whitelisted environment variables 1`] = `
+Object {
+  "Environment": Object {
+    "Variables": Object {
+      "DD_API_KEY": "02**********33bd",
+      "DD_LOG_LEVEL": "debug",
+      "DD_SITE": "datadoghq.com",
+    },
+  },
+  "FunctionArn": "arn:aws:lambda:us-east-1:123456789012:function:some-function",
+  "FunctionName": "some-function",
+}
+`;
+
+exports[`lambda flare prints correct headers prints dry-run header 1`] = `
+"
+[Dry Run] 🐶 Generating Lambda flare to send your configuration to Datadog...
+[Error] No function name specified. [-f,--function]
+"
+`;
+
+exports[`lambda flare prints correct headers prints non-dry-run header 1`] = `
+"
+🐶 Generating Lambda flare to send your configuration to Datadog...
+[Error] No function name specified. [-f,--function]
+"
+`;
+
+exports[`lambda flare prompts for confirmation before sending does not send when user answers prompt with no 1`] = `
+"
+🐶 Generating Lambda flare to send your configuration to Datadog...
+
+🔑 Getting AWS credentials...
+
+🔍 Fetching Lambda function configuration...
+
+{
+  Environment: {
+    Variables: {
+      DD_API_KEY: '02**********33bd',
+      DD_SITE: 'datadoghq.com',
+      DD_LOG_LEVEL: 'debug'
+    }
+  },
+  FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:some-function',
+  FunctionName: 'some-function'
+}
+
+🏷 Getting Resource Tags...
+[!] No resource tags were found.
+
+💾 Saving files...
+• Saved function config to mock-folder/.datadog-ci/function_config.json
+
+
+🚫 The flare files were not sent based on your selection.
+ℹ️ Your output files are located at: mock-folder/.datadog-ci
+
+"
+`;
+
+exports[`lambda flare prompts for confirmation before sending sends when user answers prompt with yes 1`] = `
+"
+🐶 Generating Lambda flare to send your configuration to Datadog...
+
+🔑 Getting AWS credentials...
+
+🔍 Fetching Lambda function configuration...
+
+{
+  Environment: {
+    Variables: {
+      DD_API_KEY: '02**********33bd',
+      DD_SITE: 'datadoghq.com',
+      DD_LOG_LEVEL: 'debug'
+    }
+  },
+  FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:some-function',
+  FunctionName: 'some-function'
+}
+
+🏷 Getting Resource Tags...
+[!] No resource tags were found.
+
+💾 Saving files...
+• Saved function config to mock-folder/.datadog-ci/function_config.json
+
+
+🚀 Sending to Datadog Support...
+
+✅ Successfully sent flare file to Datadog Support!
+"
+`;
+
+exports[`lambda flare send to Datadog does not send request to Datadog when a dry run 1`] = `
+"
+[Dry Run] 🐶 Generating Lambda flare to send your configuration to Datadog...
+
+🔑 Getting AWS credentials...
+
+[!] No AWS credentials found, let's set them up! Or you can re-run the command and supply the AWS credentials in the same way when you invoke the AWS CLI.
+
+🔍 Fetching Lambda function configuration...
+
+{
+  Environment: {
+    Variables: {
+      DD_API_KEY: '02**********33bd',
+      DD_SITE: 'datadoghq.com',
+      DD_LOG_LEVEL: 'debug'
+    }
+  },
+  FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:some-function',
+  FunctionName: 'some-function'
+}
+
+🏷 Getting Resource Tags...
+[!] No resource tags were found.
+
+💾 Saving files...
+• Saved function config to mock-folder/.datadog-ci/function_config.json
+
+🚫 The flare files were not sent as it was executed in dry run mode.
+ℹ️ Your output files are located at: mock-folder/.datadog-ci
+
+"
+`;
+
+exports[`lambda flare send to Datadog successfully adds zip file to FormData 1`] = `
+"
+🐶 Generating Lambda flare to send your configuration to Datadog...
+
+🔑 Getting AWS credentials...
+
+[!] No AWS credentials found, let's set them up! Or you can re-run the command and supply the AWS credentials in the same way when you invoke the AWS CLI.
+
+🔍 Fetching Lambda function configuration...
+
+{
+  Environment: {
+    Variables: {
+      DD_API_KEY: '02**********33bd',
+      DD_SITE: 'datadoghq.com',
+      DD_LOG_LEVEL: 'debug'
+    }
+  },
+  FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:some-function',
+  FunctionName: 'some-function'
+}
+
+🏷 Getting Resource Tags...
+[!] No resource tags were found.
+
+💾 Saving files...
+• Saved function config to mock-folder/.datadog-ci/function_config.json
+
+
+🚀 Sending to Datadog Support...
+
+✅ Successfully sent flare file to Datadog Support!
+"
+`;
+
+exports[`lambda flare send to Datadog successfully sends request to Datadog 1`] = `
+"
+🐶 Generating Lambda flare to send your configuration to Datadog...
+
+🔑 Getting AWS credentials...
+
+[!] No AWS credentials found, let's set them up! Or you can re-run the command and supply the AWS credentials in the same way when you invoke the AWS CLI.
+
+🔍 Fetching Lambda function configuration...
+
+{
+  Environment: {
+    Variables: {
+      DD_API_KEY: '02**********33bd',
+      DD_SITE: 'datadoghq.com',
+      DD_LOG_LEVEL: 'debug'
+    }
+  },
+  FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:some-function',
+  FunctionName: 'some-function'
+}
+
+🏷 Getting Resource Tags...
+[!] No resource tags were found.
+
+💾 Saving files...
+• Saved function config to mock-folder/.datadog-ci/function_config.json
+
+
+🚀 Sending to Datadog Support...
+
+✅ Successfully sent flare file to Datadog Support!
+"
+`;
+
+exports[`lambda flare validateStartEndFlags throws error when end is invalid 1`] = `"End time must be a time in milliseconds since Unix Epoch. '234abc' is not a number."`;
+
+exports[`lambda flare validateStartEndFlags throws error when end is specified but start is not specified 1`] = `"Start time is required when end time is specified. [--start]"`;
+
+exports[`lambda flare validateStartEndFlags throws error when start is invalid 1`] = `"Start time must be a time in milliseconds since Unix Epoch. '123abc' is not a number."`;
+
+exports[`lambda flare validateStartEndFlags throws error when start is not before the end time 1`] = `"Start time must be before end time."`;
+
+exports[`lambda flare validateStartEndFlags throws error when start is specified but end is not specified 1`] = `"End time is required when start time is specified. [--end]"`;
+
+exports[`lambda flare validates required flags extracts region from function name when given a function ARN 1`] = `
+"
+🐶 Generating Lambda flare to send your configuration to Datadog...
+
+🔑 Getting AWS credentials...
+
+[!] No AWS credentials found, let's set them up! Or you can re-run the command and supply the AWS credentials in the same way when you invoke the AWS CLI.
+
+🔍 Fetching Lambda function configuration...
+
+{
+  Environment: {
+    Variables: {
+      DD_API_KEY: '02**********33bd',
+      DD_SITE: 'datadoghq.com',
+      DD_LOG_LEVEL: 'debug'
+    }
+  },
+  FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:some-function',
+  FunctionName: 'some-function'
+}
+
+🏷 Getting Resource Tags...
+[!] No resource tags were found.
+
+💾 Saving files...
+• Saved function config to mock-folder/.datadog-ci/function_config.json
+
+
+🚀 Sending to Datadog Support...
+
+✅ Successfully sent flare file to Datadog Support!
+"
+`;
+
+exports[`lambda flare validates required flags prints error when end time is invalid 1`] = `
+"
+🐶 Generating Lambda flare to send your configuration to Datadog...
+[Error] End time must be a time in milliseconds since Unix Epoch. '123abc' is not a number.
+"
+`;
+
+exports[`lambda flare validates required flags prints error when end time is specified but start time is not 1`] = `
+"
+🐶 Generating Lambda flare to send your configuration to Datadog...
+[Error] Start time is required when end time is specified. [--start]
+"
+`;
+
+exports[`lambda flare validates required flags prints error when no API key in env variables 1`] = `
+"
+🐶 Generating Lambda flare to send your configuration to Datadog...
+[Error] No Datadog API key specified. Set an API key with the DATADOG_API_KEY environment variable.
+"
+`;
+
+exports[`lambda flare validates required flags prints error when no case ID specified 1`] = `
+"
+🐶 Generating Lambda flare to send your configuration to Datadog...
+[Error] No case ID specified. [-c,--case-id]
+"
+`;
+
+exports[`lambda flare validates required flags prints error when no email specified 1`] = `
+"
+🐶 Generating Lambda flare to send your configuration to Datadog...
+[Error] No email specified. [-e,--email]
+"
+`;
+
+exports[`lambda flare validates required flags prints error when no function specified 1`] = `
+"
+🐶 Generating Lambda flare to send your configuration to Datadog...
+[Error] No function name specified. [-f,--function]
+"
+`;
+
+exports[`lambda flare validates required flags prints error when no region specified 1`] = `
+"
+🐶 Generating Lambda flare to send your configuration to Datadog...
+[Error] No default region specified. [-r,--region]
+"
+`;
+
+exports[`lambda flare validates required flags prints error when start time is after end time 1`] = `
+"
+🐶 Generating Lambda flare to send your configuration to Datadog...
+[Error] Start time must be before end time.
+"
+`;
+
+exports[`lambda flare validates required flags prints error when start time is invalid 1`] = `
+"
+🐶 Generating Lambda flare to send your configuration to Datadog...
+[Error] Start time must be a time in milliseconds since Unix Epoch. '123abc' is not a number.
+"
+`;
+
+exports[`lambda flare validates required flags prints error when start time is specified but end time is not 1`] = `
+"
+🐶 Generating Lambda flare to send your configuration to Datadog...
+[Error] End time is required when start time is specified. [--end]
+"
+`;
+
+exports[`lambda flare validates required flags runs successfully when dry run but no email or case ID is specified 1`] = `
+"
+[Dry Run] 🐶 Generating Lambda flare to send your configuration to Datadog...
+
+🔑 Getting AWS credentials...
+
+[!] No AWS credentials found, let's set them up! Or you can re-run the command and supply the AWS credentials in the same way when you invoke the AWS CLI.
+
+🔍 Fetching Lambda function configuration...
+
+{
+  Environment: {
+    Variables: {
+      DD_API_KEY: '02**********33bd',
+      DD_SITE: 'datadoghq.com',
+      DD_LOG_LEVEL: 'debug'
+    }
+  },
+  FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:some-function',
+  FunctionName: 'some-function'
+}
+
+🏷 Getting Resource Tags...
+[!] No resource tags were found.
+
+💾 Saving files...
+• Saved function config to mock-folder/.datadog-ci/function_config.json
+
+🚫 The flare files were not sent as it was executed in dry run mode.
+ℹ️ Your output files are located at: mock-folder/.datadog-ci
+
+"
+`;
+
+exports[`lambda flare validates required flags runs successfully when start and end times are valid 1`] = `
+"
+🐶 Generating Lambda flare to send your configuration to Datadog...
+
+🔑 Getting AWS credentials...
+
+[!] No AWS credentials found, let's set them up! Or you can re-run the command and supply the AWS credentials in the same way when you invoke the AWS CLI.
+
+🔍 Fetching Lambda function configuration...
+
+{
+  Environment: {
+    Variables: {
+      DD_API_KEY: '02**********33bd',
+      DD_SITE: 'datadoghq.com',
+      DD_LOG_LEVEL: 'debug'
+    }
+  },
+  FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:some-function',
+  FunctionName: 'some-function'
+}
+
+🏷 Getting Resource Tags...
+[!] No resource tags were found.
+
+💾 Saving files...
+• Saved function config to mock-folder/.datadog-ci/function_config.json
+
+
+🚀 Sending to Datadog Support...
+
+✅ Successfully sent flare file to Datadog Support!
+"
+`;
+
+exports[`lambda flare validates required flags runs successfully with all required options specified 1`] = `
+"
+🐶 Generating Lambda flare to send your configuration to Datadog...
+
+🔑 Getting AWS credentials...
+
+[!] No AWS credentials found, let's set them up! Or you can re-run the command and supply the AWS credentials in the same way when you invoke the AWS CLI.
+
+🔍 Fetching Lambda function configuration...
+
+{
+  Environment: {
+    Variables: {
+      DD_API_KEY: '02**********33bd',
+      DD_SITE: 'datadoghq.com',
+      DD_LOG_LEVEL: 'debug'
+    }
+  },
+  FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:some-function',
+  FunctionName: 'some-function'
+}
+
+🏷 Getting Resource Tags...
+[!] No resource tags were found.
+
+💾 Saving files...
+• Saved function config to mock-folder/.datadog-ci/function_config.json
+
+
+🚀 Sending to Datadog Support...
+
+✅ Successfully sent flare file to Datadog Support!
+"
+`;
+
+exports[`lambda flare validates required flags uses API key ENV variable and runs as expected 1`] = `
+"
+🐶 Generating Lambda flare to send your configuration to Datadog...
+
+🔑 Getting AWS credentials...
+
+[!] No AWS credentials found, let's set them up! Or you can re-run the command and supply the AWS credentials in the same way when you invoke the AWS CLI.
+
+🔍 Fetching Lambda function configuration...
+
+{
+  Environment: {
+    Variables: {
+      DD_API_KEY: '02**********33bd',
+      DD_SITE: 'datadoghq.com',
+      DD_LOG_LEVEL: 'debug'
+    }
+  },
+  FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:some-function',
+  FunctionName: 'some-function'
+}
+
+🏷 Getting Resource Tags...
+[!] No resource tags were found.
+
+💾 Saving files...
+• Saved function config to mock-folder/.datadog-ci/function_config.json
+
+
+🚀 Sending to Datadog Support...
+
+✅ Successfully sent flare file to Datadog Support!
+"
+`;
+
+exports[`lambda flare validates required flags uses API key ENV variable and runs as expected 2`] = `
+"
+🐶 Generating Lambda flare to send your configuration to Datadog...
+
+🔑 Getting AWS credentials...
+
+[!] No AWS credentials found, let's set them up! Or you can re-run the command and supply the AWS credentials in the same way when you invoke the AWS CLI.
+
+🔍 Fetching Lambda function configuration...
+
+{
+  Environment: {
+    Variables: {
+      DD_API_KEY: '02**********33bd',
+      DD_SITE: 'datadoghq.com',
+      DD_LOG_LEVEL: 'debug'
+    }
+  },
+  FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:some-function',
+  FunctionName: 'some-function'
+}
+
+🏷 Getting Resource Tags...
+[!] No resource tags were found.
+
+💾 Saving files...
+• Saved function config to mock-folder/.datadog-ci/function_config.json
+
+
+🚀 Sending to Datadog Support...
+
+✅ Successfully sent flare file to Datadog Support!
+
+🐶 Generating Lambda flare to send your configuration to Datadog...
+
+🔑 Getting AWS credentials...
+
+[!] No AWS credentials found, let's set them up! Or you can re-run the command and supply the AWS credentials in the same way when you invoke the AWS CLI.
+
+🔍 Fetching Lambda function configuration...
+
+{
+  Environment: {
+    Variables: {
+      DD_API_KEY: '02**********33bd',
+      DD_SITE: 'datadoghq.com',
+      DD_LOG_LEVEL: 'debug'
+    }
+  },
+  FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:some-function',
+  FunctionName: 'some-function'
+}
+
+🏷 Getting Resource Tags...
+[!] No resource tags were found.
+
+💾 Saving files...
+• Saved function config to mock-folder/.datadog-ci/function_config.json
+
+
+🚀 Sending to Datadog Support...
+
+✅ Successfully sent flare file to Datadog Support!
+"
+`;
+
+exports[`lambda flare validates required flags uses region ENV variable when no region specified 1`] = `
+"
+🐶 Generating Lambda flare to send your configuration to Datadog...
+
+🔑 Getting AWS credentials...
+
+[!] No AWS credentials found, let's set them up! Or you can re-run the command and supply the AWS credentials in the same way when you invoke the AWS CLI.
+
+🔍 Fetching Lambda function configuration...
+
+{
+  Environment: {
+    Variables: {
+      DD_API_KEY: '02**********33bd',
+      DD_SITE: 'datadoghq.com',
+      DD_LOG_LEVEL: 'debug'
+    }
+  },
+  FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:some-function',
+  FunctionName: 'some-function'
+}
+
+🏷 Getting Resource Tags...
+[!] No resource tags were found.
+
+💾 Saving files...
+• Saved function config to mock-folder/.datadog-ci/function_config.json
+
+
+🚀 Sending to Datadog Support...
+
+✅ Successfully sent flare file to Datadog Support!
+"
+`;
+
+exports[`lambda flare writeFile throws error when unable to write data to a file 1`] = `"Unable to create function configuration file: MOCK ERROR: Unable to write file"`;
+
+exports[`lambda flare zipContents throws error when path is not a directory 1`] = `[Error: Unable to zip the flare files: Path is not a directory: mock-folder/.datadog-ci]`;
+
+exports[`lambda flare zipContents throws error when path is not found 1`] = `[Error: Unable to zip the flare files: Folder does not exist: mock-folder/.datadog-ci]`;
+
+exports[`lambda flare zipContents throws error when unable to generate zip 1`] = `[Error: Unable to zip the flare files: MOCK ERROR: Unable to generate zip]`;
+
+exports[`lambda flare zipContents throws error when unable to read file 1`] = `[Error: Unable to zip the flare files: MOCK ERROR: Unable to read file]`;
+
+exports[`lambda flare zipContents throws error when unable to save zip 1`] = `[Error: Unable to zip the flare files: MOCK ERROR: Unable to save zip]`;
+
+exports[`lambda flare zipContents throws error when unable to write file 1`] = `[Error: Unable to zip the flare files: MOCK ERROR: Unable to write file]`;

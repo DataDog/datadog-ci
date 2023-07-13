@@ -13,7 +13,7 @@ export interface MainReporter {
   resultEnd(result: Result, baseUrl: string): void
   resultReceived(result: Batch['results'][0]): void
   runEnd(summary: Summary, baseUrl: string, orgSettings?: SyntheticsOrgSettings): void
-  testsWait(tests: Test[]): void
+  testsWait(tests: Test[], baseUrl: string, batchId: string): void
   testTrigger(test: Test, testId: string, executionRule: ExecutionRule, config: UserConfigOverride): void
   testWait(test: Test): void
 }
@@ -386,6 +386,7 @@ export interface RunTestsCommandConfig extends SyntheticsCIConfig {
 export type WrapperConfig = Partial<RunTestsCommandConfig>
 
 export interface UploadApplicationCommandConfig extends SyntheticsCIConfig {
+  configPath: string
   mobileApplicationVersionFilePath?: string
   mobileApplicationId?: string
   versionName?: string

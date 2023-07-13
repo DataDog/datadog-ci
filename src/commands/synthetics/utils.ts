@@ -141,6 +141,14 @@ export const getStrictestExecutionRule = (configRule: ExecutionRule, testRule?: 
   return ExecutionRule.BLOCKING
 }
 
+export const isTestSupportedByTunnel = (test: Test) => {
+  return (
+    test.type === 'browser' ||
+    test.subtype === 'http' ||
+    (test.subtype === 'multi' && test.config.steps?.every((step) => step.subtype === 'http'))
+  )
+}
+
 export const hasResultPassed = (
   result: ServerResult,
   hasTimedOut: boolean,
@@ -340,9 +348,11 @@ export const waitForResults = async (
   trigger: Trigger,
   tests: Test[],
   options: {
+    datadogSite: string
     failOnCriticalErrors?: boolean
     failOnTimeout?: boolean
     maxPollingTimeout: number
+    subdomain: string
   },
   reporter: MainReporter,
   tunnel?: Tunnel
@@ -354,6 +364,8 @@ export const waitForResults = async (
       .then(() => (isTunnelConnected = false))
       .catch(() => (isTunnelConnected = false))
   }
+
+  reporter.testsWait(tests, getAppBaseURL(options), trigger.batch_id)
 
   const {batch, hasExceededMaxPollingDate} = await waitForBatchToFinish(
     api,
@@ -373,7 +385,7 @@ export const waitForResults = async (
   }, {})
 
   const getLocation = (dcId: string, test: Test) => {
-    const hasTunnel = !!tunnel && (test.type === 'browser' || test.subtype === 'http')
+    const hasTunnel = !!tunnel && isTestSupportedByTunnel(test)
 
     return hasTunnel ? 'Tunneled' : locationNames[dcId] || dcId
   }
@@ -481,10 +493,10 @@ export const getReporter = (reporters: Reporter[]): MainReporter => ({
       }
     }
   },
-  testsWait: (tests) => {
+  testsWait: (tests, baseUrl, batchId) => {
     for (const reporter of reporters) {
       if (typeof reporter.testsWait === 'function') {
-        reporter.testsWait(tests)
+        reporter.testsWait(tests, baseUrl, batchId)
       }
     }
   },
@@ -541,12 +553,24 @@ export const getTestAndOverrideConfig = async (
   }
   reporter.testWait(test)
 
-  if (isTunnelEnabled && test.type !== 'browser' && test.subtype !== 'http') {
+  if (isTunnelEnabled && !isTestSupportedByTunnel(test)) {
+    const details = [`public ID: ${test.public_id}`, `type: ${test.type}`]
+
+    if (test.subtype) {
+      details.push(`sub-type: ${test.subtype}`)
+    }
+
+    if (test.subtype === 'multi') {
+      const unsupportedStepSubTypes = (test.config.steps || [])
+        .filter((step) => step.subtype !== 'http')
+        .map(({subtype}) => subtype)
+
+      details.push(`step sub-types: [${unsupportedStepSubTypes.join(', ')}]`)
+    }
+
     throw new CriticalError(
       'TUNNEL_NOT_SUPPORTED',
-      `The tunnel is only supported with HTTP API tests and Browser tests (public ID: ${test.public_id}, type: ${
-        test.type
-      }${test.subtype ? `, sub-type: ${test.subtype}` : ''}).`
+      `The tunnel is only supported with HTTP API tests and Browser tests (${details.join(', ')}).`
     )
   }
 
@@ -641,10 +665,6 @@ export const getTestsToTrigger = async (
       'TOO_MANY_TESTS_TO_TRIGGER',
       `Cannot trigger more than ${MAX_TESTS_TO_TRIGGER} tests (received ${triggerConfigs.length})`
     )
-  }
-
-  if (waitedTests.length > 0) {
-    reporter.testsWait(waitedTests)
   }
 
   return {tests: waitedTests, overriddenTestsToTrigger, initialSummary}

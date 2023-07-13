@@ -444,6 +444,32 @@ describe('utils', () => {
       )
     })
 
+    test('Passes when the tunnel is enabled for Multi step test with HTTP steps only', async () => {
+      const axiosMock = jest.spyOn(axios, 'create')
+      axiosMock.mockImplementation((() => (e: any) => {
+        return {
+          data: {
+            type: 'api',
+            subtype: 'multi',
+            config: {steps: [{subtype: 'http'}, {subtype: 'http'}]},
+            public_id: '123-456-789',
+          },
+        }
+      }) as any)
+
+      const triggerConfig = {suite: 'Suite 1', config: {}, id: '123-456-789'}
+      expect(await utils.getTestAndOverrideConfig(api, triggerConfig, mockReporter, getSummary(), true)).toEqual(
+        expect.objectContaining({
+          test: expect.objectContaining({
+            public_id: '123-456-789',
+            type: 'api',
+            subtype: 'multi',
+            config: {steps: [{subtype: 'http'}, {subtype: 'http'}]},
+          }),
+        })
+      )
+    })
+
     test('Fails when the tunnel is enabled for an unsupported test type', async () => {
       const axiosMock = jest.spyOn(axios, 'create')
       axiosMock.mockImplementation((() => (e: any) => {
@@ -455,6 +481,27 @@ describe('utils', () => {
         utils.getTestAndOverrideConfig(api, triggerConfig, mockReporter, getSummary(), true)
       ).rejects.toThrow(
         'The tunnel is only supported with HTTP API tests and Browser tests (public ID: 123-456-789, type: api, sub-type: grpc).'
+      )
+    })
+
+    test('Fails when the tunnel is enabled for unsupported steps in a Multi step test', async () => {
+      const axiosMock = jest.spyOn(axios, 'create')
+      axiosMock.mockImplementation((() => (e: any) => {
+        return {
+          data: {
+            type: 'api',
+            subtype: 'multi',
+            config: {steps: [{subtype: 'dns'}, {subtype: 'ssl'}, {subtype: 'http'}]},
+            public_id: '123-456-789',
+          },
+        }
+      }) as any)
+
+      const triggerConfig = {suite: 'Suite 1', config: {}, id: '123-456-789'}
+      await expect(() =>
+        utils.getTestAndOverrideConfig(api, triggerConfig, mockReporter, getSummary(), true)
+      ).rejects.toThrow(
+        'The tunnel is only supported with HTTP API tests and Browser tests (public ID: 123-456-789, type: api, sub-type: multi, step sub-types: [dns, ssl]).'
       )
     })
   })
@@ -737,7 +784,12 @@ describe('utils', () => {
           api,
           trigger,
           [result.test],
-          {maxPollingTimeout: 120000, failOnCriticalErrors: false},
+          {
+            datadogSite: DEFAULT_COMMAND_CONFIG.datadogSite,
+            failOnCriticalErrors: false,
+            maxPollingTimeout: 120000,
+            subdomain: DEFAULT_COMMAND_CONFIG.subdomain,
+          },
           mockReporter
         )
       ).toEqual([result])
@@ -762,7 +814,12 @@ describe('utils', () => {
         api,
         trigger,
         [result.test, result.test],
-        {maxPollingTimeout: 0, failOnCriticalErrors: false},
+        {
+          datadogSite: DEFAULT_COMMAND_CONFIG.datadogSite,
+          failOnCriticalErrors: false,
+          maxPollingTimeout: 0,
+          subdomain: DEFAULT_COMMAND_CONFIG.subdomain,
+        },
         mockReporter
       )
 
@@ -786,7 +843,12 @@ describe('utils', () => {
           api,
           trigger,
           [result.test, result.test],
-          {maxPollingTimeout: 0, failOnCriticalErrors: false},
+          {
+            datadogSite: DEFAULT_COMMAND_CONFIG.datadogSite,
+            failOnCriticalErrors: false,
+            maxPollingTimeout: 0,
+            subdomain: DEFAULT_COMMAND_CONFIG.subdomain,
+          },
           mockReporter
         )
       ).toEqual([
@@ -830,7 +892,12 @@ describe('utils', () => {
           api,
           trigger,
           [result.test],
-          {maxPollingTimeout: 0, failOnCriticalErrors: false},
+          {
+            datadogSite: DEFAULT_COMMAND_CONFIG.datadogSite,
+            failOnCriticalErrors: false,
+            maxPollingTimeout: 0,
+            subdomain: DEFAULT_COMMAND_CONFIG.subdomain,
+          },
           mockReporter
         )
       ).toStrictEqual([
@@ -855,7 +922,12 @@ describe('utils', () => {
           api,
           trigger,
           [result.test],
-          {maxPollingTimeout: 120000, failOnCriticalErrors: false},
+          {
+            datadogSite: DEFAULT_COMMAND_CONFIG.datadogSite,
+            failOnCriticalErrors: false,
+            maxPollingTimeout: 120000,
+            subdomain: DEFAULT_COMMAND_CONFIG.subdomain,
+          },
           mockReporter
         )
       ).toEqual([
@@ -886,7 +958,12 @@ describe('utils', () => {
           api,
           trigger,
           [result.test],
-          {maxPollingTimeout: 120000, failOnCriticalErrors: false},
+          {
+            datadogSite: DEFAULT_COMMAND_CONFIG.datadogSite,
+            failOnCriticalErrors: false,
+            maxPollingTimeout: 120000,
+            subdomain: DEFAULT_COMMAND_CONFIG.subdomain,
+          },
           mockReporter
         )
       ).toEqual([result])
@@ -912,7 +989,12 @@ describe('utils', () => {
           api,
           trigger,
           [result.test],
-          {maxPollingTimeout: 2000, failOnCriticalErrors: false},
+          {
+            datadogSite: DEFAULT_COMMAND_CONFIG.datadogSite,
+            failOnCriticalErrors: false,
+            maxPollingTimeout: 2000,
+            subdomain: DEFAULT_COMMAND_CONFIG.subdomain,
+          },
           mockReporter
         )
       ).toEqual([result, {...result, resultId: pollTimeoutResult.resultID, timedOut: true}])
@@ -931,7 +1013,12 @@ describe('utils', () => {
         api,
         trigger,
         [result.test],
-        {maxPollingTimeout: 2000, failOnCriticalErrors: true},
+        {
+          datadogSite: DEFAULT_COMMAND_CONFIG.datadogSite,
+          failOnCriticalErrors: true,
+          maxPollingTimeout: 2000,
+          subdomain: DEFAULT_COMMAND_CONFIG.subdomain,
+        },
         mockReporter,
         mockTunnel
       )
@@ -948,7 +1035,12 @@ describe('utils', () => {
         api,
         trigger,
         [result.test],
-        {maxPollingTimeout: 2000, failOnCriticalErrors: true},
+        {
+          datadogSite: DEFAULT_COMMAND_CONFIG.datadogSite,
+          failOnCriticalErrors: true,
+          maxPollingTimeout: 2000,
+          subdomain: DEFAULT_COMMAND_CONFIG.subdomain,
+        },
         mockReporter,
         mockTunnel
       )
@@ -961,7 +1053,12 @@ describe('utils', () => {
         api,
         trigger,
         [newTest],
-        {maxPollingTimeout: 2000, failOnCriticalErrors: true},
+        {
+          datadogSite: DEFAULT_COMMAND_CONFIG.datadogSite,
+          failOnCriticalErrors: true,
+          maxPollingTimeout: 2000,
+          subdomain: DEFAULT_COMMAND_CONFIG.subdomain,
+        },
         mockReporter,
         mockTunnel
       )
@@ -973,7 +1070,12 @@ describe('utils', () => {
         api,
         trigger,
         [newTest],
-        {failOnCriticalErrors: true, maxPollingTimeout: 2000},
+        {
+          datadogSite: DEFAULT_COMMAND_CONFIG.datadogSite,
+          failOnCriticalErrors: true,
+          maxPollingTimeout: 2000,
+          subdomain: DEFAULT_COMMAND_CONFIG.subdomain,
+        },
         mockReporter,
         mockTunnel
       )
@@ -988,7 +1090,17 @@ describe('utils', () => {
       })
 
       await expect(
-        utils.waitForResults(api, trigger, [result.test], {maxPollingTimeout: 2000}, mockReporter)
+        utils.waitForResults(
+          api,
+          trigger,
+          [result.test],
+          {
+            datadogSite: DEFAULT_COMMAND_CONFIG.datadogSite,
+            maxPollingTimeout: 2000,
+            subdomain: DEFAULT_COMMAND_CONFIG.subdomain,
+          },
+          mockReporter
+        )
       ).rejects.toThrowError(
         'Failed to poll results: could not query https://app.datadoghq.com/example\nPoll results server error\n'
       )
@@ -1004,7 +1116,17 @@ describe('utils', () => {
       })
 
       await expect(
-        utils.waitForResults(api, trigger, [result.test], {maxPollingTimeout: 2000}, mockReporter)
+        utils.waitForResults(
+          api,
+          trigger,
+          [result.test],
+          {
+            datadogSite: DEFAULT_COMMAND_CONFIG.datadogSite,
+            maxPollingTimeout: 2000,
+            subdomain: DEFAULT_COMMAND_CONFIG.subdomain,
+          },
+          mockReporter
+        )
       ).rejects.toThrowError(
         'Failed to get batch: could not query https://app.datadoghq.com/example\nGet batch server error\n'
       )

@@ -22,10 +22,10 @@ datadog-ci trace --name "Say Hello" -- echo "Hello World"
 
 Additionally you might configure the `trace` command with environment variables:
 
-- `DATADOG_API_KEY` or `DD_API_KEY` (**required**): API key used to authenticate the requests.
+- `DD_API_KEY` (**required**): API key used to authenticate the requests.
 - `DD_ENV`: you may choose the environment you want your test results to appear in.
 - `DD_TAGS`: set global tags applied to all spans. The format must be `key1:value1,key2:value2`.
-- `DATADOG_SITE`: choose your Datadog site, e.g. datadoghq.com or datadoghq.eu.
+- `DD_SITE`: choose your Datadog site, e.g. datadoghq.com or datadoghq.eu.
 
 ### Optional dependencies
 
@@ -36,7 +36,7 @@ Additionally you might configure the `trace` command with environment variables:
 To verify this command works as expected, you can trace a mock command and validate the command returns 0:
 
 ```bash
-export DATADOG_API_KEY='<API key>'
+export DD_API_KEY='<API key>'
 export CIRCLECI=true
 
 yarn launch trace --name "Say Hello" echo "Hello World"

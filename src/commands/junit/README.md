@@ -42,14 +42,14 @@ datadog-ci junit upload --service my-service --tags key1:value1 --tags key2:valu
 
 Additionally you might configure the `junit` command with environment variables:
 
-- `DATADOG_API_KEY` or `DD_API_KEY` (**required**): API key used to authenticate the requests.
+- `DD_API_KEY` (**required**): API key used to authenticate the requests.
 - `DD_ENV`: you may choose the environment you want your test results to appear in.
 - `DD_SERVICE`: if you haven't specified a service through `--service` you might do it with this env var.
 - `DD_TAGS`: set global tags applied to all test spans. The format must be `key1:value1,key2:value2`.
   - The resulting dictionary will be merged with whatever is in the `--tags` parameter. If a `key` appears both in `--tags` and `DD_TAGS`, whatever value is in `DD_TAGS` will take precedence.
 - `DD_METRICS`: set global numerical tags applied to all test spans. The format must be `key1:123,key2:321`.
   - The resulting dictionary will be merged with whatever is in the `--metrics` parameter. If a `key` appears both in `--metrics` and `DD_METRICS`, whatever value is in `DD_METRICS` will take precedence.
-- `DATADOG_SITE`: choose your Datadog site, e.g. datadoghq.com or datadoghq.eu.
+- `DD_SITE`: choose your Datadog site, e.g. datadoghq.com or datadoghq.eu.
 - `DD_CIVISIBILITY_LOGS_ENABLED`: it will enable collecting logs from the content in the XML reports.
 
 ### Optional dependencies
@@ -61,7 +61,7 @@ Additionally you might configure the `junit` command with environment variables:
 To verify this command works as expected, you can use `--dry-run`:
 
 ```bash
-export DATADOG_API_KEY='<API key>'
+export DD_API_KEY='<API key>'
 
 yarn launch junit upload ./src/commands/junit/__tests__/fixtures/java-report.xml --service example-upload --dry-run
 ```

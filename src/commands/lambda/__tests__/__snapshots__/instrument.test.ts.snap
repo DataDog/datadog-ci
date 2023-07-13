@@ -75,7 +75,7 @@ UpdateFunctionConfiguration -> arn:aws:lambda:us-east-1:123456789012:function:la
   \\"Environment\\": {
     \\"Variables\\": {
       \\"DD_LAMBDA_HANDLER\\": \\"index.handler\\",
-      \\"DD_API_KEY\\": \\"1234\\",
+      \\"DD_API_KEY\\": \\"02**********33bd\\",
       \\"DD_SITE\\": \\"datadoghq.com\\",
       \\"DD_CAPTURE_LAMBDA_PAYLOAD\\": \\"false\\",
       \\"DD_ENV\\": \\"dummy\\",
@@ -117,7 +117,7 @@ UpdateFunctionConfiguration -> arn:aws:lambda:us-east-1:123456789012:function:la
   \\"Environment\\": {
     \\"Variables\\": {
       \\"DD_LAMBDA_HANDLER\\": \\"index.handler\\",
-      \\"DD_API_KEY\\": \\"1234\\",
+      \\"DD_API_KEY\\": \\"02**********33bd\\",
       \\"DD_SITE\\": \\"datadoghq.com\\",
       \\"DD_CAPTURE_LAMBDA_PAYLOAD\\": \\"false\\",
       \\"DD_ENV\\": \\"dummy\\",
@@ -168,7 +168,7 @@ UpdateFunctionConfiguration -> arn:aws:lambda:sa-east-1:123456789012:function:la
   \\"Environment\\": {
     \\"Variables\\": {
       \\"DD_LAMBDA_HANDLER\\": \\"index.handler\\",
-      \\"DD_API_KEY\\": \\"02aeb762fff59ac0d5ad1536cd9633bd\\",
+      \\"DD_API_KEY\\": \\"02**********33bd\\",
       \\"DD_SITE\\": \\"datadoghq.com\\",
       \\"DD_CAPTURE_LAMBDA_PAYLOAD\\": \\"false\\",
       \\"DD_MERGE_XRAY_TRACES\\": \\"false\\",
@@ -191,7 +191,7 @@ UpdateFunctionConfiguration -> arn:aws:lambda:sa-east-1:123456789012:function:la
   \\"Environment\\": {
     \\"Variables\\": {
       \\"DD_LAMBDA_HANDLER\\": \\"index.handler\\",
-      \\"DD_API_KEY\\": \\"02aeb762fff59ac0d5ad1536cd9633bd\\",
+      \\"DD_API_KEY\\": \\"02**********33bd\\",
       \\"DD_SITE\\": \\"datadoghq.com\\",
       \\"DD_CAPTURE_LAMBDA_PAYLOAD\\": \\"false\\",
       \\"DD_MERGE_XRAY_TRACES\\": \\"false\\",
@@ -241,7 +241,7 @@ UpdateFunctionConfiguration -> arn:aws:lambda:sa-east-1:123456789012:function:la
   \\"Environment\\": {
     \\"Variables\\": {
       \\"DD_LAMBDA_HANDLER\\": \\"index.handler\\",
-      \\"DD_API_KEY\\": \\"02aeb762fff59ac0d5ad1536cd9633bd\\",
+      \\"DD_API_KEY\\": \\"02**********33bd\\",
       \\"DD_SITE\\": \\"datadoghq.com\\",
       \\"DD_CAPTURE_LAMBDA_PAYLOAD\\": \\"false\\",
       \\"DD_MERGE_XRAY_TRACES\\": \\"false\\",
@@ -264,7 +264,7 @@ UpdateFunctionConfiguration -> arn:aws:lambda:sa-east-1:123456789012:function:la
   \\"Environment\\": {
     \\"Variables\\": {
       \\"DD_LAMBDA_HANDLER\\": \\"index.handler\\",
-      \\"DD_API_KEY\\": \\"02aeb762fff59ac0d5ad1536cd9633bd\\",
+      \\"DD_API_KEY\\": \\"02**********33bd\\",
       \\"DD_SITE\\": \\"datadoghq.com\\",
       \\"DD_CAPTURE_LAMBDA_PAYLOAD\\": \\"false\\",
       \\"DD_MERGE_XRAY_TRACES\\": \\"false\\",
@@ -306,7 +306,7 @@ UpdateFunctionConfiguration -> arn:aws:lambda:us-east-1:123456789012:function:la
   \\"FunctionName\\": \\"arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world\\",
   \\"Environment\\": {
     \\"Variables\\": {
-      \\"DD_API_KEY\\": \\"1234\\",
+      \\"DD_API_KEY\\": \\"02**********33bd\\",
       \\"DD_SITE\\": \\"datadoghq.com\\",
       \\"DD_CAPTURE_LAMBDA_PAYLOAD\\": \\"false\\",
       \\"DD_ENV\\": \\"staging\\",
@@ -331,7 +331,7 @@ UpdateFunctionConfiguration -> arn:aws:lambda:us-east-1:123456789012:function:la
   \\"FunctionName\\": \\"arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world-2\\",
   \\"Environment\\": {
     \\"Variables\\": {
-      \\"DD_API_KEY\\": \\"1234\\",
+      \\"DD_API_KEY\\": \\"02**********33bd\\",
       \\"DD_SITE\\": \\"datadoghq.com\\",
       \\"DD_CAPTURE_LAMBDA_PAYLOAD\\": \\"false\\",
       \\"DD_ENV\\": \\"staging\\",
@@ -356,7 +356,7 @@ UpdateFunctionConfiguration -> arn:aws:lambda:us-east-1:123456789012:function:la
   \\"FunctionName\\": \\"arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world-3\\",
   \\"Environment\\": {
     \\"Variables\\": {
-      \\"DD_API_KEY\\": \\"1234\\",
+      \\"DD_API_KEY\\": \\"02**********33bd\\",
       \\"DD_SITE\\": \\"datadoghq.com\\",
       \\"DD_CAPTURE_LAMBDA_PAYLOAD\\": \\"false\\",
       \\"DD_ENV\\": \\"staging\\",
@@ -381,7 +381,7 @@ UpdateFunctionConfiguration -> arn:aws:lambda:us-east-1:123456789012:function:la
   \\"FunctionName\\": \\"arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world-4\\",
   \\"Environment\\": {
     \\"Variables\\": {
-      \\"DD_API_KEY\\": \\"1234\\",
+      \\"DD_API_KEY\\": \\"02**********33bd\\",
       \\"DD_SITE\\": \\"datadoghq.com\\",
       \\"DD_CAPTURE_LAMBDA_PAYLOAD\\": \\"false\\",
       \\"DD_ENV\\": \\"staging\\",
@@ -419,7 +419,7 @@ UpdateFunctionConfiguration -> arn:aws:lambda:us-east-1:123456789012:function:la
   \\"FunctionName\\": \\"arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world\\",
   \\"Environment\\": {
     \\"Variables\\": {
-      \\"DD_API_KEY\\": \\"1234\\",
+      \\"DD_API_KEY\\": \\"02**********33bd\\",
       \\"DD_SITE\\": \\"datadoghq.com\\",
       \\"DD_CAPTURE_LAMBDA_PAYLOAD\\": \\"false\\",
       \\"DD_ENV\\": \\"staging\\",
@@ -462,7 +462,7 @@ UpdateFunctionConfiguration -> arn:aws:lambda:us-east-1:123456789012:function:la
   \\"Environment\\": {
     \\"Variables\\": {
       \\"DD_LAMBDA_HANDLER\\": \\"index.handler\\",
-      \\"DD_API_KEY\\": \\"1234\\",
+      \\"DD_API_KEY\\": \\"02**********33bd\\",
       \\"DD_SITE\\": \\"datadoghq.com\\",
       \\"DD_CAPTURE_LAMBDA_PAYLOAD\\": \\"false\\",
       \\"DD_ENV\\": \\"staging\\",
@@ -501,7 +501,7 @@ UpdateFunctionConfiguration -> arn:aws:lambda:us-east-1:123456789012:function:la
   \\"Environment\\": {
     \\"Variables\\": {
       \\"DD_LAMBDA_HANDLER\\": \\"index.handler\\",
-      \\"DD_API_KEY\\": \\"1234\\",
+      \\"DD_API_KEY\\": \\"02**********33bd\\",
       \\"DD_SITE\\": \\"datadoghq.com\\",
       \\"DD_CAPTURE_LAMBDA_PAYLOAD\\": \\"false\\",
       \\"DD_ENV\\": \\"staging\\",
@@ -724,7 +724,7 @@ UpdateFunctionConfiguration -> arn:aws:lambda:sa-east-1:123456789012:function:la
   \\"Environment\\": {
     \\"Variables\\": {
       \\"DD_LAMBDA_HANDLER\\": \\"index.handler\\",
-      \\"DD_API_KEY\\": \\"02aeb762fff59ac0d5ad1536cd9633bd\\",
+      \\"DD_API_KEY\\": \\"02**********33bd\\",
       \\"DD_SITE\\": \\"datadoghq.com\\",
       \\"DD_CAPTURE_LAMBDA_PAYLOAD\\": \\"false\\",
       \\"DD_MERGE_XRAY_TRACES\\": \\"false\\",
@@ -770,7 +770,7 @@ UpdateFunctionConfiguration -> arn:aws:lambda:sa-east-1:123456789012:function:la
   \\"Environment\\": {
     \\"Variables\\": {
       \\"DD_LAMBDA_HANDLER\\": \\"index.handler\\",
-      \\"DD_API_KEY\\": \\"02aeb762fff59ac0d5ad1536cd9633bd\\",
+      \\"DD_API_KEY\\": \\"02**********33bd\\",
       \\"DD_SITE\\": \\"datadoghq.com\\",
       \\"DD_CAPTURE_LAMBDA_PAYLOAD\\": \\"false\\",
       \\"DD_ENV\\": \\"sandbox\\",

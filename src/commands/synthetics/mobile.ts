@@ -155,7 +155,7 @@ export const uploadMobileApplicationVersion = async (
   if (!config.versionName) {
     throw new CiError('MISSING_MOBILE_VERSION_NAME', 'Version name is required')
   }
-  config.latest = config.latest ?? true
+  config.latest = config.latest ?? false
 
   const fileName = await uploadMobileApplications(
     api,

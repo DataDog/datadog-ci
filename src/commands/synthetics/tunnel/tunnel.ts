@@ -2,7 +2,7 @@ import {timingSafeEqual} from 'crypto'
 import {Socket} from 'net'
 import {Duplex, pipeline} from 'stream'
 
-import type ProxyAgent from 'proxy-agent'
+import type {ProxyAgent} from 'proxy-agent'
 
 import {
   AuthContext,
@@ -49,7 +49,7 @@ export class Tunnel {
   constructor(
     private url: string,
     private testIDs: string[],
-    proxyAgent?: ReturnType<typeof ProxyAgent>,
+    proxyAgent?: ProxyAgent,
     private reporter?: TunnelReporter
   ) {
     // Setup SSH
