@@ -256,7 +256,6 @@ export class UploadJUnitXMLCommand extends Command {
     }, {})
   }
 
-
   private async getMatchingJUnitXMLFiles(
     spanTags: SpanTags,
     customTags: Record<string, string>,

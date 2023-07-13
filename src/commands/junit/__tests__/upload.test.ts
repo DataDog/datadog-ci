@@ -165,6 +165,10 @@ describe('upload', () => {
           context,
           service: 'service',
         },
+        {},
+        {},
+        {},
+        {},
         {}
       )
       expect(firstFile).toMatchObject({
