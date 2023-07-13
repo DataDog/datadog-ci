@@ -24,6 +24,7 @@ import {
   GIT_REPOSITORY_URL,
   GIT_SHA,
   GIT_TAG,
+  SERVICE,
 } from './tags'
 
 export interface Metadata {
@@ -91,6 +92,7 @@ export type SpanTag =
   | typeof CI_ENV_VARS
   | typeof CI_NODE_NAME
   | typeof CI_NODE_LABELS
+  | typeof SERVICE
 
 export type SpanTags = Partial<Record<SpanTag, string>>
 

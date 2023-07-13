@@ -5,8 +5,11 @@ import {SpanTags} from '../../helpers/interfaces'
 export interface Payload {
   hostname: string
   logsEnabled: boolean
-  service: string
   spanTags: SpanTags
+  customTags: Record<string, string>
+  customMetrics: Record<string, number>
+  reportTags: Record<string, string>
+  reportMetrics: Record<string, number>
   xmlPath: string
   xpathTags?: Record<string, string>
 }
