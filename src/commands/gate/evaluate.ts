@@ -1,5 +1,6 @@
 import chalk from 'chalk'
 import {Command} from 'clipanion'
+import {v4 as uuidv4} from 'uuid'
 
 import {getCISpanTags} from '../../helpers/ci'
 import {getGitMetadata} from '../../helpers/git/format-git-span-data'
@@ -74,6 +75,7 @@ export class GateEvaluateCommand extends Command {
     const userScope = this.userScope ? parseScope(this.userScope) : {}
 
     const payload = {
+      requestId: uuidv4(),
       spanTags,
       userScope,
     }

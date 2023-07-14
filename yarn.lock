@@ -2775,6 +2775,7 @@ __metadata:
     "@types/ssh2-streams": 0.1.9
     "@types/sshpk": 1.10.5
     "@types/tiny-async-pool": 1.0.0
+    "@types/uuid": ^9.0.2
     "@types/ws": 7.2.9
     "@types/xml2js": 0.4.9
     "@typescript-eslint/eslint-plugin": ^4.33.0
@@ -3817,6 +3818,13 @@ __metadata:
   version: 1.0.0
   resolution: "@types/tiny-async-pool@npm:1.0.0"
   checksum: 0713cbce33f84f708a54c037cba829b05591998316de16c22b14cd16837322926897f5cbdd5bf3eb69f2c9829dc1c3949762198f10dbef0867a3f24e1cbdfc4b
+  languageName: node
+  linkType: hard
+
+"@types/uuid@npm:^9.0.2":
+  version: 9.0.2
+  resolution: "@types/uuid@npm:9.0.2"
+  checksum: 1754bcf3444e1e3aeadd6e774fc328eb53bc956665e2e8fb6ec127aa8e1f43d9a224c3d22a9a6233dca8dd81a12dc7fed4d84b8876dd5ec82d40f574f7ff8b68
   languageName: node
   linkType: hard
 

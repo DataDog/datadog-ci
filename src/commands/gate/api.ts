@@ -13,6 +13,7 @@ export const evaluateGateRules = (
     data: {
       type: 'gate_evaluation',
       attributes: {
+        request_id: evaluateRequest.requestId,
         tags: evaluateRequest.spanTags,
         user_scope: evaluateRequest.userScope,
       },

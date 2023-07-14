@@ -5,6 +5,7 @@ import {AxiosPromise} from 'axios'
 import {SpanTags} from '../../helpers/interfaces'
 
 export interface Payload {
+  requestId: string
   spanTags: SpanTags
   userScope: Record<string, string[]>
 }
