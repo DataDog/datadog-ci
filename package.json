@@ -91,6 +91,7 @@
     "ssh2-streams": "0.4.10",
     "sshpk": "1.16.1",
     "tiny-async-pool": "1.2.0",
+    "uuid": "^9.0.0",
     "ws": "7.4.6",
     "xml2js": "0.5.0",
     "yamux-js": "0.1.2"
@@ -114,6 +115,7 @@
     "@types/ssh2-streams": "0.1.9",
     "@types/sshpk": "1.10.5",
     "@types/tiny-async-pool": "1.0.0",
+    "@types/uuid": "^9.0.2",
     "@types/ws": "7.2.9",
     "@types/xml2js": "0.4.9",
     "@typescript-eslint/eslint-plugin": "^4.33.0",
