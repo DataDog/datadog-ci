@@ -146,12 +146,19 @@ Instead of supplying arguments, you can create a configuration file in your proj
 }
 ```
 
-## Troubleshooting Datadog Lambda Monitoring
+## Troubleshooting Serverless Monitoring
 ### `flare`
-To troubleshoot issues you may be encountering with Datadog monitoring on your Lambda functions, use `datadog-ci lambda flare`. This command sends relevant files to Datadog's support team for investigation.
+
+To troubleshoot issues you may be encountering with Datadog monitoring on your Lambda functions, use `datadog-ci lambda flare`. This command collects important data about a Lambda function, such as environment variables and the config file. These files will be submitted to Datadog support via a ticket matching the provided Zendesk case ID.
 
 **Note**: This command works whether or not your Lambda functions were instrumented using `datadog-ci lambda instrument`.
 
+**Requirements**
+1. Set a valid API key in the `DATADOG_API_KEY` environment variable, or specify it directly in the command as follows: `DATADOG_API_KEY=<api key here> datadog-ci lambda flare ...`
+2. The command is expected to be run in your project's root directory.
+3. Required flags must be included (see table below), but the tool will inform you of any missing flags. 
+
+**Examples**
 ```bash
 # Collect and send files to Datadog support for a single function
 datadog-ci lambda flare -f <function-arn> -c <case-id> -e <email-on-case-id>
@@ -162,6 +169,8 @@ datadog-ci lambda flare -f <function-name> -r <AWS region> -c <case-id> -e <emai
 # Dry run: collect data, but don't send to Datadog support
 datadog-ci lambda flare -f <function-arn> --with-logs --dry
 ```
+
+**Arguments**
 
 | Argument              | Shorthand | Description                                                                                                                 | Default |
 |-----------------------|-----------|-----------------------------------------------------------------------------------------------------------------------------|---------|
