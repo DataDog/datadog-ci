@@ -23,6 +23,7 @@ Component,Origin,Licence,Copyright
 @types/ssh2,dev,MIT,Copyright Microsoft Corporation
 @types/ssh2-streams,dev,MIT,Copyright Microsoft Corporation
 @types/sshpk,dev,MIT,Copyright Microsoft Corporation
+@types/uuid,import,MIT,Copyright (c) 2010-2020 Robert Kieffer and other contributors
 @types/xml2js,dev,MIT,Copyright Microsoft Corporation
 @types/ws,dev,MIT,Copyright Microsoft Corporation
 async-retry,import,MIT,"Copyright (c) 2017 ZEIT, Inc."
