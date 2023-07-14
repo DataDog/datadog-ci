@@ -25,6 +25,7 @@ import {
   handleLambdaFunctionUpdates,
   getAWSCredentials,
   isMissingDatadogEnvVars,
+  maskStringifiedEnvVar,
   sentenceMatchesRegEx,
   willUpdateFunctionConfigs,
 } from './functions/commons'
@@ -509,7 +510,7 @@ export class InstrumentCommand extends Command {
         this.context.stdout.write(
           `UpdateFunctionConfiguration -> ${config.functionARN}\n${JSON.stringify(
             config.updateFunctionConfigurationCommandInput,
-            undefined,
+            maskStringifiedEnvVar(config.updateFunctionConfigurationCommandInput.Environment?.Variables),
             2
           )}\n`
         )

@@ -31,6 +31,7 @@ export const GIT_TAG = 'git.tag'
 
 // General
 export const SPAN_TYPE = 'span.type'
+export const SERVICE = 'service'
 
 const parseNumericTag = (numericTag: string | undefined): number | undefined => {
   if (numericTag) {

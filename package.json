@@ -1,6 +1,6 @@
 {
   "name": "@datadog/datadog-ci",
-  "version": "2.16.1",
+  "version": "2.17.0",
   "description": "Run datadog actions from the CI.",
   "repository": "https://github.com/DataDog/datadog-ci",
   "license": "Apache-2.0",
@@ -83,7 +83,7 @@
     "js-yaml": "3.13.1",
     "jszip": "^3.10.1",
     "ora": "5.4.1",
-    "proxy-agent": "5.0.0",
+    "proxy-agent": "^6.2.1",
     "rimraf": "^3.0.2",
     "semver": "^7.5.3",
     "simple-git": "3.16.0",
@@ -132,7 +132,7 @@
     "jest-matcher-specific-error": "1.0.0",
     "pkg": "5.5.2",
     "prettier": "2.0.5",
-    "proxy": "1.0.2",
+    "proxy": "^2.1.1",
     "ts-jest": "28.0.8",
     "ts-node": "8.8.1",
     "typescript": "4.3.5"

@@ -117,6 +117,8 @@ export class UploadJUnitXMLCommand extends Command {
   private metrics?: string[]
   private service?: string
   private tags?: string[]
+  private reportTags?: string[]
+  private reportMetrics?: string[]
   private rawXPathTags?: string[]
   private xpathTags?: Record<string, string>
   private gitRepositoryURL?: string
@@ -174,7 +176,11 @@ export class UploadJUnitXMLCommand extends Command {
     this.logger.info(renderCommandInfo(this.basePaths, this.service, this.maxConcurrency, this.dryRun))
 
     const spanTags = await this.getSpanTags()
-    const payloads = await this.getMatchingJUnitXMLFiles(spanTags)
+    const customTags = this.getCustomTags()
+    const customMetrics = this.getCustomMetrics()
+    const reportTags = this.getReportTags()
+    const reportMetrics = this.getReportMetrics()
+    const payloads = await this.getMatchingJUnitXMLFiles(spanTags, customTags, customMetrics, reportTags, reportMetrics)
     const upload = (p: Payload) => this.uploadJUnitXML(api, p)
 
     const initialTime = new Date().getTime()
@@ -250,7 +256,13 @@ export class UploadJUnitXMLCommand extends Command {
     }, {})
   }
 
-  private async getMatchingJUnitXMLFiles(spanTags: SpanTags): Promise<Payload[]> {
+  private async getMatchingJUnitXMLFiles(
+    spanTags: SpanTags,
+    customTags: Record<string, string>,
+    customMetrics: Record<string, number>,
+    reportTags: Record<string, string>,
+    reportMetrics: Record<string, number>
+  ): Promise<Payload[]> {
     const jUnitXMLFiles = (this.basePaths || [])
       .reduce((acc: string[], basePath: string) => {
         if (isFile(basePath)) {
@@ -276,8 +288,11 @@ export class UploadJUnitXMLCommand extends Command {
       hostname: os.hostname(),
       logsEnabled: this.logs,
       xpathTags: this.xpathTags,
-      service: this.service!,
       spanTags,
+      customTags,
+      customMetrics,
+      reportTags,
+      reportMetrics,
       xmlPath: jUnitXMLFilePath,
     }))
   }
@@ -287,21 +302,41 @@ export class UploadJUnitXMLCommand extends Command {
     const gitSpanTags = await getGitMetadata()
     const userGitSpanTags = getUserGitSpanTags()
 
-    const envVarTags = this.config.envVarTags ? parseTags(this.config.envVarTags.split(',')) : {}
-    const envVarMetrics = this.config.envVarMetrics ? parseMetrics(this.config.envVarMetrics.split(',')) : {}
-    const cliTags = this.tags ? parseTags(this.tags) : {}
-    const cliMetrics = this.metrics ? parseMetrics(this.metrics) : {}
-
     return {
       ...gitSpanTags,
       ...ciSpanTags,
       ...userGitSpanTags,
+      ...(this.config.env ? {env: this.config.env} : {}),
+      service: this.service!,
+    }
+  }
+
+  private getCustomTags(): Record<string, string> {
+    const envVarTags = this.config.envVarTags ? parseTags(this.config.envVarTags.split(',')) : {}
+    const cliTags = this.tags ? parseTags(this.tags) : {}
+
+    return {
       ...cliTags,
       ...envVarTags,
+    }
+  }
+
+  private getCustomMetrics(): Record<string, number> {
+    const envVarMetrics = this.config.envVarMetrics ? parseMetrics(this.config.envVarMetrics.split(',')) : {}
+    const cliMetrics = this.metrics ? parseMetrics(this.metrics) : {}
+
+    return {
       ...cliMetrics,
       ...envVarMetrics,
-      ...(this.config.env ? {env: this.config.env} : {}),
     }
+  }
+
+  private getReportTags(): Record<string, string> {
+    return this.reportTags ? parseTags(this.reportTags) : {}
+  }
+
+  private getReportMetrics(): Record<string, number> {
+    return this.reportMetrics ? parseMetrics(this.reportMetrics) : {}
   }
 
   private async uploadJUnitXML(api: APIHelper, jUnitXML: Payload) {
@@ -338,6 +373,8 @@ UploadJUnitXMLCommand.addOption('env', Command.String('--env'))
 UploadJUnitXMLCommand.addOption('dryRun', Command.Boolean('--dry-run'))
 UploadJUnitXMLCommand.addOption('tags', Command.Array('--tags'))
 UploadJUnitXMLCommand.addOption('metrics', Command.Array('--metrics'))
+UploadJUnitXMLCommand.addOption('reportTags', Command.Array('--report-tags'))
+UploadJUnitXMLCommand.addOption('reportMetrics', Command.Array('--report-metrics'))
 UploadJUnitXMLCommand.addOption('basePaths', Command.Rest({required: 1}))
 UploadJUnitXMLCommand.addOption('maxConcurrency', Command.String('--max-concurrency'))
 UploadJUnitXMLCommand.addOption('logs', Command.Boolean('--logs'))

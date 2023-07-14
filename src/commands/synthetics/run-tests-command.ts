@@ -1,7 +1,7 @@
 import {Command} from 'clipanion'
 import deepExtend from 'deep-extend'
 
-import {removeUndefinedValues, resolveConfigFromFile} from '../../helpers/utils'
+import {parseOptionalInteger, removeUndefinedValues, resolveConfigFromFile} from '../../helpers/utils'
 import {isValidDatadogSite} from '../../helpers/validation'
 
 import {CiError} from './errors'
@@ -55,6 +55,7 @@ export class RunTestsCommand extends Command {
   private failOnMissingTests?: boolean
   private failOnTimeout?: boolean
   private files?: string[]
+  private pollingTimeout?: string
   private publicIds?: string[]
   private reporter?: MainReporter
   private subdomain?: string
@@ -161,8 +162,12 @@ export class RunTestsCommand extends Command {
       })
     )
 
-    // Pass root polling timeout to global override to get it applied to all tests if not defined individually
-    this.config.global.pollingTimeout = this.config.global.pollingTimeout ?? this.config.pollingTimeout
+    let pollingTimeoutCliArgument
+    try {
+      pollingTimeoutCliArgument = parseOptionalInteger(this.pollingTimeout)
+    } catch (error) {
+      throw new CiError('INVALID_CONFIG', `Invalid value for \`pollingTimeout\`: ${error.message}`)
+    }
 
     // Override with Global CLI parameters
     this.config.global = deepExtend(
@@ -170,6 +175,7 @@ export class RunTestsCommand extends Command {
       removeUndefinedValues({
         mobileApplicationVersionFilePath: this.mobileApplicationVersionFilePath,
         variables: parseVariablesFromCli(this.variableStrings, (log) => this.reporter?.log(log)),
+        pollingTimeout: pollingTimeoutCliArgument ?? this.config.global.pollingTimeout ?? this.config.pollingTimeout,
       })
     )
 
@@ -203,6 +209,7 @@ RunTestsCommand.addOption(
   'mobileApplicationVersionFilePath',
   Command.String('--mobileApp,--mobileApplicationVersionFilePath')
 )
+RunTestsCommand.addOption('pollingTimeout', Command.String('--pollingTimeout'))
 RunTestsCommand.addOption('publicIds', Command.Array('-p,--public-id'))
 RunTestsCommand.addOption('runName', Command.String('-n,--runName'))
 RunTestsCommand.addOption('subdomain', Command.String('--subdomain'))

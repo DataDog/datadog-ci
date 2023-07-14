@@ -2,8 +2,8 @@ import http from 'http'
 import {AddressInfo} from 'net'
 
 import {AxiosPromise, AxiosRequestConfig, default as axios} from 'axios'
-import proxy from 'proxy'
-import ProxyAgent from 'proxy-agent'
+import {createProxy} from 'proxy'
+import {ProxyAgent} from 'proxy-agent'
 
 import * as ciUtils from '../utils'
 
@@ -21,6 +21,15 @@ describe('utils', () => {
 
     resultHash = ciUtils.pick(initialHash, ['c'] as any)
     expect(Object.keys(resultHash).length).toBe(0)
+  })
+
+  test('parseOptionalInteger', () => {
+    expect(ciUtils.parseOptionalInteger(undefined)).toStrictEqual(undefined)
+    expect(ciUtils.parseOptionalInteger('')).toStrictEqual(undefined)
+    expect(() => ciUtils.parseOptionalInteger('1.2')).toThrow('1.2 is not an integer')
+    expect(() => ciUtils.parseOptionalInteger('abc')).toThrow('NaN is not an integer')
+
+    expect(ciUtils.parseOptionalInteger('1')).toStrictEqual(1)
   })
 
   describe('resolveConfigFromFile', () => {
@@ -123,7 +132,7 @@ describe('utils', () => {
         const fakeEndpoint = fakeEndpointBuilder(request)
         const httpsAgent = await fakeEndpoint()
         expect(httpsAgent).toBeDefined()
-        expect((httpsAgent as any).proxyUri).toBe('http://1.2.3.4:1234')
+        expect((httpsAgent as any).getProxyForUrl()).toBe('http://1.2.3.4:1234')
       })
     })
 
@@ -231,38 +240,29 @@ describe('utils', () => {
     // handling any requests, and a function to close them.
     const setupServer = async () => {
       // Create target http server
-      const mockCallback = jest.fn((_, res) => {
+      const spyTargetServer = jest.fn()
+      const targetHttpServer = http.createServer((_, res) => {
+        spyTargetServer()
         res.end('response from target http server')
       })
-      const targetHttpServer = http.createServer(mockCallback)
       await new Promise<void>((resolve, reject) => {
-        targetHttpServer.listen((err: Error | undefined) => {
-          if (err) {
-            reject(err)
-          }
-          resolve()
-        })
+        targetHttpServer.listen().once('listening', resolve).once('error', reject)
       })
 
       // Create proxy
       const proxyHttpServer = http.createServer()
-      const proxyServer = proxy(proxyHttpServer)
-      const spyProxy = jest.fn()
-      proxyHttpServer.on('request', spyProxy)
+      const proxyServer = createProxy(proxyHttpServer)
+      const spyProxyServer = jest.fn()
+      proxyHttpServer.on('request', spyProxyServer)
       await new Promise<void>((resolve, reject) => {
-        proxyServer.listen((err: Error | undefined) => {
-          if (err) {
-            reject(err)
-          }
-          resolve()
-        })
+        proxyHttpServer.listen().once('listening', resolve).once('error', reject)
       })
 
       return {
         proxyServer: {
           close: async () =>
             new Promise<void>((resolve, reject) => {
-              proxyServer.close((err: Error) => {
+              proxyServer.close((err) => {
                 if (err) {
                   reject(err)
                 }
@@ -270,7 +270,7 @@ describe('utils', () => {
               })
             }),
           port: (proxyHttpServer.address() as AddressInfo).port,
-          spy: spyProxy,
+          spy: spyProxyServer,
         },
         targetServer: {
           close: async () =>
@@ -283,7 +283,7 @@ describe('utils', () => {
               })
             }),
           port: (targetHttpServer.address() as AddressInfo).port,
-          spy: mockCallback,
+          spy: spyTargetServer,
         },
       }
     }

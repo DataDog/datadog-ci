@@ -18,7 +18,7 @@ import FormData from 'form-data'
 import inquirer from 'inquirer'
 import JSZip from 'jszip'
 
-import {DATADOG_SITE_US1, DATADOG_SITES} from '../../constants'
+import {DATADOG_SITE_EU1, DATADOG_SITE_GOV, DATADOG_SITE_US1, DATADOG_SITES} from '../../constants'
 import {isValidDatadogSite} from '../../helpers/validation'
 
 import {
@@ -28,9 +28,8 @@ import {
   CI_SITE_ENV_VAR,
   PROJECT_FILES,
   SITE_ENV_VAR,
-  SKIP_MASKING_ENV_VARS,
 } from './constants'
-import {getAWSCredentials, getLambdaFunctionConfig, getRegion} from './functions/commons'
+import {getAWSCredentials, getLambdaFunctionConfig, getRegion, maskStringifiedEnvVar} from './functions/commons'
 import {confirmationQuestion, requestAWSCredentials, requestFilePath} from './prompt'
 import * as commonRenderer from './renderers/common-renderer'
 import * as flareRenderer from './renderers/flare-renderer'
@@ -48,8 +47,6 @@ const ZIP_FILE_NAME = 'lambda-flare-output.zip'
 const MAX_LOG_STREAMS = 50
 const DEFAULT_LOG_STREAMS = 3
 const MAX_LOG_EVENTS_PER_STREAM = 1000
-const FULL_OBFUSCATION = '****************'
-const MIDDLE_OBFUSCATION = '**********'
 
 export class LambdaFlareCommand extends Command {
   private isDryRun = false
@@ -431,51 +428,10 @@ export const maskConfig = (config: FunctionConfiguration) => {
     return config
   }
 
-  const maskedEnvironmentVariables: {[key: string]: string} = {}
-  for (const [key, value] of Object.entries(environmentVariables)) {
-    if (SKIP_MASKING_ENV_VARS.has(key)) {
-      maskedEnvironmentVariables[key] = value
-      continue
-    }
-    maskedEnvironmentVariables[key] = getMasking(value)
-  }
+  const replacer = maskStringifiedEnvVar(environmentVariables)
+  const stringifiedConfig = JSON.stringify(config, replacer)
 
-  return {
-    ...config,
-    Environment: {
-      ...config.Environment,
-      Variables: maskedEnvironmentVariables,
-    },
-  }
-}
-
-/**
- * Mask a string but keep the first two and last four characters
- * Mask the entire string if it's short
- * @param original the string to mask
- * @returns the masked string
- */
-export const getMasking = (original: string) => {
-  // Don't mask booleans
-  if (original.toLowerCase() === 'true' || original.toLowerCase() === 'false') {
-    return original
-  }
-
-  // Dont mask numbers
-  if (!isNaN(Number(original))) {
-    return original
-  }
-
-  // Mask entire string if it's short
-  if (original.length < 12) {
-    return FULL_OBFUSCATION
-  }
-
-  // Keep first two and last four characters if it's long
-  const front = original.substring(0, 2)
-  const end = original.substring(original.length - 4)
-
-  return front + MIDDLE_OBFUSCATION + end
+  return JSON.parse(stringifiedConfig) as FunctionConfiguration
 }
 
 /**
@@ -813,11 +769,18 @@ export const zipContents = async (rootFolderPath: string, zipPath: string) => {
  */
 export const getEndpointUrl = () => {
   const baseUrl = process.env[CI_SITE_ENV_VAR] ?? process.env[SITE_ENV_VAR] ?? DATADOG_SITE_US1
+  // The DNS doesn't redirect to the proper endpoint when a subdomain is not present in the baseUrl.
+  // There is a DNS inconsistency
+  let endpointUrl = baseUrl
+  if ([DATADOG_SITE_US1, DATADOG_SITE_EU1, DATADOG_SITE_GOV].includes(baseUrl)) {
+    endpointUrl = 'app.' + baseUrl
+  }
+
   if (!isValidDatadogSite(baseUrl)) {
     throw Error(`Invalid site: ${baseUrl}. Must be one of: ${DATADOG_SITES.join(', ')}`)
   }
 
-  return 'https://' + baseUrl + ENDPOINT_PATH
+  return 'https://' + endpointUrl + ENDPOINT_PATH
 }
 
 /**
