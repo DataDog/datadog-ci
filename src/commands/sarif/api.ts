@@ -7,7 +7,7 @@ import type {AxiosPromise, AxiosRequestConfig, AxiosResponse} from 'axios'
 
 import FormData from 'form-data'
 
-import {getSafeFileName} from '../../helpers/file'
+import {getSafeFilename} from '../../helpers/file'
 import {CI_JOB_URL, CI_PIPELINE_URL, GIT_SHA} from '../../helpers/tags'
 import {getRequestBuilder} from '../../helpers/utils'
 
@@ -52,7 +52,7 @@ export const uploadSarifReport = (request: (args: AxiosRequestConfig) => AxiosPr
   }
 
   form.append('sarif_report_file', fs.createReadStream(sarifReport.reportPath).pipe(createGzip()), {
-    filename: `${getSafeFileName(uniqueFileName)}.sarif.gz`,
+    filename: `${getSafeFilename(uniqueFileName)}.sarif.gz`,
   })
 
   return request({
