@@ -6,7 +6,7 @@ import type {AxiosPromise, AxiosRequestConfig, AxiosResponse} from 'axios'
 
 import FormData from 'form-data'
 
-import {replaceForwardSlashes} from '../../helpers/file'
+import {getSafeFilename} from '../../helpers/file'
 import {getRequestBuilder} from '../../helpers/utils'
 
 import {Payload} from './interfaces'
@@ -43,6 +43,7 @@ export const uploadJUnitXML = (request: (args: AxiosRequestConfig) => AxiosPromi
     session: reportTagsAndMetrics,
     '_dd.cireport_version': '3',
     '_dd.hostname': jUnitXML.hostname,
+    '_dd.report_name': fileName,
   }
 
   if (jUnitXML.logsEnabled) {
@@ -56,7 +57,7 @@ export const uploadJUnitXML = (request: (args: AxiosRequestConfig) => AxiosPromi
   form.append('event', JSON.stringify(custom), {filename: 'event.json'})
 
   form.append('junit_xml_report_file', fs.createReadStream(jUnitXML.xmlPath).pipe(createGzip()), {
-    filename: `${replaceForwardSlashes(fileName)}.xml.gz`,
+    filename: `${getSafeFilename(fileName)}.xml.gz`,
   })
 
   return request({
