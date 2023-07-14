@@ -33,7 +33,6 @@ import {
   getEndpointUrl,
   getLogEvents,
   getLogStreamNames,
-  getMasking,
   getProjectFiles,
   getTags,
   maskConfig,
