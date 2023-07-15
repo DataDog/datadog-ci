@@ -258,7 +258,9 @@ export interface Trigger {
 }
 
 export interface RetryConfig {
+  /** The number of attempts to perform in case of test failure. */
   count: number
+  /** The interval between attempts in milliseconds. */
   interval: number
 }
 
@@ -268,33 +270,67 @@ export interface MobileApplication {
   referenceType: 'latest' | 'version' | 'temporary'
 }
 
+export interface CookieSettings {
+  /** Whether to append or replace the original cookies. */
+  append?: boolean
+  /** Cookie header to add or replace (e.g. `name1=value1;name2=value2;`). */
+  value: string
+}
+
 export interface BaseConfigOverride {
+  /** Disable certificate checks in Synthetic API tests. */
   allowInsecureCertificates?: boolean
+  /** Credentials to provide if basic authentication is required. */
   basicAuth?: BasicAuthCredentials
+  /** Data to send in an API test. */
   body?: string
+  /** Content type for the data to send in an API test. */
   bodyType?: string
-  cookies?: string | {append?: boolean; value: string}
+  /**
+   * Use the provided string as a cookie header in an API or browser test (in addition or as a replacement).
+   * - If this is a string (e.g. `name1=value1;name2=value2;`), it is used to replace the original cookies.
+   * - If this is an object, it is used to either add to or replace the original cookies, depending on `append`.
+   */
+  cookies?: string | CookieSettings
+  /** The maximum duration of steps in seconds for browser tests, which does not override individually set step timeouts. */
   defaultStepTimeout?: number
+  /** A list of devices to run the browser test on. */
   deviceIds?: string[]
+  /**
+   * The execution rule for the test defines the behavior of the CLI in case of a failing test.
+   * - `blocking`: The CLI returns an error if the test fails.
+   * - `non_blocking`: The CLI only prints a warning if the test fails.
+   * - `skipped`: The test is not executed at all.
+   */
   executionRule?: ExecutionRule
+  /** Indicates whether or not to follow HTTP redirections in Synthetic API tests. */
   followRedirects?: boolean
+  /** The headers to replace in the test. This object should contain keys as the name of the header to replace and values as the new value of the header to replace. */
   headers?: {[key: string]: string}
+  /** A list of locations to run the test from. */
   locations?: string[]
+  /** The maximum duration in milliseconds of a test. If the execution exceeds this value, it is considered failed. */
   pollingTimeout?: number
+  /** The retry policy for the test. */
   retry?: RetryConfig
+  /** The new start URL to provide to the test. Variables specified in brackets (for example, `{{ EXAMPLE }}`) found in environment variables are replaced. */
   startUrl?: string
+  /** The regex to modify the starting URL of the test (for browser and HTTP tests only), whether it was given by the original test or the configuration override `startUrl`. */
   startUrlSubstitutionRegex?: string
-  tunnel?: TunnelInfo
+  /** The variables to replace in the test. This object should contain key as the name of the variable to replace and values as the new value of the variable to replace. */
   variables?: {[key: string]: string}
 }
 
 export interface UserConfigOverride extends BaseConfigOverride {
+  /** The ID of an application version to run a Synthetic mobile application test on. */
   mobileApplicationVersion?: string
+  /** Upload an application as a temporary version for a Synthetic mobile application test. */
   mobileApplicationVersionFilePath?: string
 }
 
 export interface ServerConfigOverride extends BaseConfigOverride {
-  mobileApplication?: MobileApplication
+  mobileApplication?: MobileApplication // Programmatically set with `overrideMobileConfig()`.
+  tunnel?: TunnelInfo // Programmatically set with `tunnel.start()`.
 }
 
 export interface Payload {
@@ -312,8 +348,11 @@ export interface BasicAuthCredentials {
   username: string
 }
 export interface TriggerConfig {
+  /** Overrides for this Synthetic test only. This takes precedence over all other overrides. */
   config: UserConfigOverride
+  /** Public ID of a test (e.g. `abc-def-ghi`), or its full URL (e.g. `https://app.datadoghq.com/synthetics/details/abc-def-ghi`). */
   id: string
+  /** Name of a test suite (for JUnit reports). */
   suite?: string
 }
 
@@ -323,10 +362,12 @@ export enum ExecutionRule {
   SKIPPED = 'skipped',
 }
 
+export interface TestFile {
+  tests: TriggerConfig[]
+}
+
 export interface Suite {
-  content: {
-    tests: TriggerConfig[]
-  }
+  content: TestFile
   name?: string
 }
 
@@ -358,28 +399,44 @@ export interface APIConfiguration {
 }
 
 export interface APIHelperConfig {
+  /** The API key used to query the Datadog API. */
   apiKey: string
+  /** The application key used to query the Datadog API. */
   appKey: string
+  /** The Datadog instance to which request is sent. */
   datadogSite: string
+  /** The proxy to be used for outgoing connections to Datadog. */
   proxy: ProxyConfiguration
 }
 
 // eslint-disable-next-line @typescript-eslint/no-empty-interface
 export interface SyntheticsCIConfig extends APIHelperConfig {}
 
-export interface RunTestsCommandConfig extends SyntheticsCIConfig {
-  configPath: string
+export interface RunTestsLibConfig extends SyntheticsCIConfig {
+  /** A boolean flag that fails the CI job if no tests were triggered, or results could not be fetched from Datadog. */
   failOnCriticalErrors: boolean
+  /** A boolean flag that fails the CI job if at least one specified test with a public ID is missing in a run (for example, if it has been deleted programmatically or on the Datadog site). */
   failOnMissingTests: boolean
+  /** A boolean flag that fails the CI job if at least one test exceeds the default test timeout. */
   failOnTimeout: boolean
+  /** Glob patterns to detect Synthetic test configuration files (their well-known name is `*.synthetics.json`). */
   files: string[]
+  /** Overrides for Synthetic tests applied to all tests. */
   global: UserConfigOverride
-  locations: string[]
+  /** The duration (in milliseconds) after which polling for test results is stopped. */
   pollingTimeout: number
-  publicIds: string[]
+  /** The name of the custom subdomain set to access your Datadog application. If the URL used to access Datadog is `myorg.datadoghq.com`, the `subdomain` value needs to be set to `myorg`. */
   subdomain: string
+  /** Search query to select which Synthetic tests to run. */
   testSearchQuery?: string
+  /** Use the Continuous Testing Tunnel to execute your test batch. */
   tunnel: boolean
+}
+
+export interface RunTestsCommandConfig extends RunTestsLibConfig {
+  configPath: string
+  locations: string[]
+  publicIds: string[]
   variableStrings: string[]
 }
 
