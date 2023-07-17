@@ -33,7 +33,7 @@ import {InstrumentCommand} from '../instrument'
 import {InstrumentationSettings, LambdaConfigOptions} from '../interfaces'
 import {
   requestAWSCredentials,
-  requestChangesConfirmation,
+  requestConfirmation,
   requestDatadogEnvVars,
   requestEnvServiceVersion,
   requestFunctionSelection,
@@ -791,7 +791,7 @@ describe('lambda', () => {
           'arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world',
           'arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world-2',
         ])
-        ;(requestChangesConfirmation as any).mockImplementation(() => true)
+        ;(requestConfirmation as any).mockImplementation(() => true)
 
         const cli = makeCli()
         const context = createMockContext() as any
@@ -862,7 +862,7 @@ describe('lambda', () => {
           process.env[CI_SITE_ENV_VAR] = 'datadoghq.com'
           process.env[CI_API_KEY_ENV_VAR] = mockDatadogApiKey
         })
-        ;(requestChangesConfirmation as any).mockImplementation(() => true)
+        ;(requestConfirmation as any).mockImplementation(() => true)
 
         const cli = makeCli()
         const context = createMockContext() as any
@@ -960,7 +960,7 @@ describe('lambda', () => {
         ;(requestFunctionSelection as any).mockImplementation(() => [
           'arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world',
         ])
-        ;(requestChangesConfirmation as any).mockImplementation(() => true)
+        ;(requestConfirmation as any).mockImplementation(() => true)
         ;(requestEnvServiceVersion as any).mockImplementation(() => {
           process.env[ENVIRONMENT_ENV_VAR] = mockDatadogEnv
           process.env[SERVICE_ENV_VAR] = mockDatadogService
@@ -1012,7 +1012,7 @@ describe('lambda', () => {
         ;(requestFunctionSelection as any).mockImplementation(() => [
           'arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world',
         ])
-        ;(requestChangesConfirmation as any).mockImplementation(() => true)
+        ;(requestConfirmation as any).mockImplementation(() => true)
         ;(requestEnvServiceVersion as any).mockImplementation(() => {
           process.env[ENVIRONMENT_ENV_VAR] = undefined
           process.env[SERVICE_ENV_VAR] = undefined

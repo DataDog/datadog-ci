@@ -176,7 +176,6 @@ export const PROJECT_FILES = [
   'packages.config',
   'PackageReference',
   'global.json',
-  'AwsDotnetCsharp.csproj',
   // Docker
   'Dockerfile',
   'docker-compose.yml',
@@ -185,6 +184,5 @@ export const PROJECT_FILES = [
   'rollup.config.js',
   '.babelrc',
   'tsconfig.json',
-  '.eslintrc.js',
-  '.prettierrc',
+  'esbuild.config.js',
 ]

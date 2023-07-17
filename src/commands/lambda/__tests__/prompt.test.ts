@@ -16,7 +16,7 @@ import {
   datadogEnvVarsQuestions,
   functionSelectionQuestion,
   requestAWSCredentials,
-  requestChangesConfirmation,
+  requestConfirmation,
   requestDatadogEnvVars,
   requestFunctionSelection,
 } from '../prompt'
@@ -165,7 +165,7 @@ describe('prompt', () => {
     })
   })
 
-  describe('requestChangesConfirmation', () => {
+  describe('requestConfirmation', () => {
     test('returns boolean when users responds to confirmation question', async () => {
       ;(prompt as any).mockImplementation(() =>
         Promise.resolve({
@@ -173,7 +173,7 @@ describe('prompt', () => {
         })
       )
 
-      const confirmation = await requestChangesConfirmation('Do you want to continue?')
+      const confirmation = await requestConfirmation('Do you want to continue?')
       expect(confirmation).toBe(true)
     })
 
@@ -181,7 +181,7 @@ describe('prompt', () => {
       ;(prompt as any).mockImplementation(() => Promise.reject(new Error('Unexpected error')))
       let error
       try {
-        await requestChangesConfirmation('Do you wanna continue?')
+        await requestConfirmation('Do you wanna continue?')
       } catch (e) {
         if (e instanceof Error) {
           error = e

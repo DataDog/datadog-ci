@@ -15,7 +15,6 @@ import axios from 'axios'
 import chalk from 'chalk'
 import {Command} from 'clipanion'
 import FormData from 'form-data'
-import inquirer from 'inquirer'
 import JSZip from 'jszip'
 
 import {DATADOG_SITE_EU1, DATADOG_SITE_GOV, DATADOG_SITE_US1, DATADOG_SITES} from '../../constants'
@@ -30,7 +29,7 @@ import {
   SITE_ENV_VAR,
 } from './constants'
 import {getAWSCredentials, getLambdaFunctionConfig, getRegion, maskStringifiedEnvVar} from './functions/commons'
-import {confirmationQuestion, requestAWSCredentials, requestFilePath} from './prompt'
+import {requestAWSCredentials, requestConfirmation, requestFilePath} from './prompt'
 import * as commonRenderer from './renderers/common-renderer'
 import * as flareRenderer from './renderers/flare-renderer'
 
@@ -185,10 +184,11 @@ export class LambdaFlareCommand extends Command {
     // Additional files
     this.context.stdout.write('\n')
     const additionalFiles = new Set<string>()
-    const addFilesQuestion = await inquirer.prompt(
-      confirmationQuestion('Do you want to specify any additional files to send to Datadog support?')
+    const confirmAdditionalFiles = await requestConfirmation(
+      'Do you want to specify any additional files to flare?',
+      false
     )
-    while (addFilesQuestion.confirmation) {
+    while (confirmAdditionalFiles) {
       this.context.stdout.write('\n')
       let filePath: string
       try {
@@ -347,10 +347,11 @@ export class LambdaFlareCommand extends Command {
 
       // Confirm before sending
       this.context.stdout.write('\n')
-      const answer = await inquirer.prompt(
-        confirmationQuestion('Are you sure you want to send the flare file to Datadog Support?')
+      const confirmSendFiles = await requestConfirmation(
+        'Are you sure you want to send the flare file to Datadog Support?',
+        false
       )
-      if (!answer.confirmation) {
+      if (!confirmSendFiles) {
         this.context.stdout.write('\n🚫 The flare files were not sent based on your selection.')
         this.context.stdout.write(outputMsg)
 

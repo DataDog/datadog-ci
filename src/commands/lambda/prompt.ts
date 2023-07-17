@@ -179,10 +179,11 @@ export const datadogEnvVarsQuestions = (datadogApiKeyType: Record<string, any>):
   },
 })
 
-export const confirmationQuestion = (message: string): inquirer.ConfirmQuestion => ({
+export const confirmationQuestion = (message: string, defaultValue = true): inquirer.ConfirmQuestion => ({
   message,
   name: 'confirmation',
   type: 'confirm',
+  default: defaultValue,
 })
 
 export const functionSelectionQuestion = (functionNames: string[]): typeof checkboxPlusPrompt => ({
@@ -282,9 +283,9 @@ export const requestEnvServiceVersion = async () => {
   }
 }
 
-export const requestChangesConfirmation = async (message: string) => {
+export const requestConfirmation = async (message: string, defaultValue = true) => {
   try {
-    const confirmationAnswer = await inquirer.prompt(confirmationQuestion(message))
+    const confirmationAnswer = await inquirer.prompt(confirmationQuestion(message, defaultValue))
 
     return confirmationAnswer.confirmation
   } catch (e) {

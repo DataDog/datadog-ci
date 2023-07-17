@@ -14,7 +14,6 @@ import {LambdaClient, ListTagsCommand} from '@aws-sdk/client-lambda'
 import {mockClient} from 'aws-sdk-client-mock'
 import axios from 'axios'
 import FormData from 'form-data'
-import inquirer from 'inquirer'
 import JSZip from 'jszip'
 
 import {
@@ -88,12 +87,12 @@ jest.mock('../functions/commons', () => ({
   getAWSCredentials: jest.fn(),
   getLambdaFunctionConfig: jest.fn().mockImplementation(() => Promise.resolve(MOCK_CONFIG)),
 }))
+
+// Prompt mocks
 jest.mock('../prompt')
-jest.mock('inquirer', () => ({
-  ...jest.requireActual('inquirer'),
-  prompt: jest.fn().mockResolvedValue({confirmation: true}),
-}))
-jest.mock('util')
+jest.spyOn(promptModule, 'requestFilePath').mockResolvedValue('')
+jest.spyOn(promptModule, 'requestConfirmation').mockResolvedValue(true)
+jest.spyOn(flareModule, 'getProjectFiles').mockResolvedValue(new Map())
 
 // File system mocks
 process.cwd = jest.fn().mockReturnValue(MOCK_CWD)
@@ -119,9 +118,8 @@ const mockJSZip = {
 }
 ;(JSZip as any).mockImplementation(() => mockJSZip)
 
-// Additional files mocks
-jest.spyOn(flareModule, 'getProjectFiles').mockResolvedValue(new Map())
-jest.spyOn(promptModule, 'requestFilePath').mockResolvedValue('')
+// Misc
+jest.mock('util')
 
 describe('lambda flare', () => {
   beforeAll(() => {
@@ -1104,7 +1102,7 @@ describe('lambda flare', () => {
 
     it('sends when user answers prompt with yes', async () => {
       // The first prompt is for additional files, the second is for confirmation before sending
-      ;(inquirer.prompt as any).mockResolvedValueOnce({confirmation: true}).mockResolvedValueOnce({confirmation: true})
+      jest.spyOn(promptModule, 'requestConfirmation').mockResolvedValueOnce(true).mockResolvedValueOnce(true)
       const cli = makeCli()
       const context = createMockContext()
       const code = await cli.run(MOCK_REQUIRED_FLAGS, context as any)
@@ -1116,7 +1114,7 @@ describe('lambda flare', () => {
 
     it('does not send when user answers prompt with no', async () => {
       // The first prompt is for additional files, the second is for confirmation before sending
-      ;(inquirer.prompt as any).mockResolvedValueOnce({confirmation: true}).mockResolvedValueOnce({confirmation: false})
+      jest.spyOn(promptModule, 'requestConfirmation').mockResolvedValueOnce(true).mockResolvedValueOnce(false)
       const cli = makeCli()
       const context = createMockContext()
       const code = await cli.run(MOCK_REQUIRED_FLAGS, context as any)
@@ -1134,7 +1132,7 @@ describe('lambda flare', () => {
 
     it('requests additional files when user answers yes', async () => {
       // The first prompt is for additional files, the second is for confirmation before sending
-      ;(inquirer.prompt as any).mockResolvedValueOnce({confirmation: true}).mockResolvedValueOnce({confirmation: true})
+      jest.spyOn(promptModule, 'requestConfirmation').mockResolvedValueOnce(true).mockResolvedValueOnce(true)
       const cli = makeCli()
       const context = createMockContext()
       const code = await cli.run(MOCK_REQUIRED_FLAGS, context as any)
@@ -1146,7 +1144,7 @@ describe('lambda flare', () => {
 
     it('does not request additional files when user answers no', async () => {
       // The first prompt is for additional files, the second is for confirmation before sending
-      ;(inquirer.prompt as any).mockResolvedValueOnce({confirmation: false}).mockResolvedValueOnce({confirmation: true})
+      jest.spyOn(promptModule, 'requestConfirmation').mockResolvedValueOnce(false).mockResolvedValueOnce(true)
       const cli = makeCli()
       const context = createMockContext()
       const code = await cli.run(MOCK_REQUIRED_FLAGS, context as any)
