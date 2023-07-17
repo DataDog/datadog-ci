@@ -172,13 +172,13 @@ export class LambdaFlareCommand extends Command {
     // Get project files
     this.context.stdout.write(chalk.bold('\n📁 Searching for project files in current directory...\n'))
     const projectFilesToPath = await getProjectFiles()
-    let projectFilesMessage = chalk.bold('\n✅ Found project file(s):\n')
+    let projectFilesMessage = chalk.bold(`\n✅ Found project file(s) in ${process.cwd()}:\n`)
     if (projectFilesToPath.size === 0) {
       projectFilesMessage = commonRenderer.renderSoftWarning('No project files found.')
     }
     this.context.stdout.write(projectFilesMessage)
-    for (const projectFilePath of projectFilesToPath.values()) {
-      this.context.stdout.write(`• ${projectFilePath}\n`)
+    for (const projectFile of projectFilesToPath.keys()) {
+      this.context.stdout.write(`• ${projectFile}\n`)
     }
 
     // Additional files
@@ -221,7 +221,7 @@ export class LambdaFlareCommand extends Command {
     }
 
     // Get tags
-    this.context.stdout.write(chalk.bold('\n🏷  Getting Resource Tags...\n'))
+    this.context.stdout.write(chalk.bold('\n🏷 Getting Resource Tags...\n'))
     let tags: Record<string, string>
     try {
       tags = await getTags(lambdaClient, region!, config.FunctionArn!)
@@ -242,7 +242,7 @@ export class LambdaFlareCommand extends Command {
     // Get CloudWatch logs
     let logs: Map<string, OutputLogEvent[]> = new Map()
     if (this.withLogs) {
-      this.context.stdout.write(chalk.bold('\n🌧  Getting CloudWatch logs...\n'))
+      this.context.stdout.write(chalk.bold('\n🌧 Getting CloudWatch logs...\n'))
       try {
         logs = await getAllLogs(region!, this.functionName, startMillis, endMillis)
       } catch (err) {
@@ -275,11 +275,11 @@ export class LambdaFlareCommand extends Command {
       }
 
       // Create folders
-      this.context.stdout.write(chalk.bold('\n💾 Saving files...\n'))
       const rootFolderPath = path.join(process.cwd(), FLARE_OUTPUT_DIRECTORY)
       const logsFolderPath = path.join(rootFolderPath, LOGS_DIRECTORY)
       const projectFilesFolderPath = path.join(rootFolderPath, PROJECT_FILES_DIRECTORY)
       const additionalFilesFolderPath = path.join(rootFolderPath, ADDITIONAL_FILES_DIRECTORY)
+      this.context.stdout.write(chalk.bold(`\n💾 Saving files to ${rootFolderPath}...\n`))
       if (fs.existsSync(rootFolderPath)) {
         deleteFolder(rootFolderPath)
       }
@@ -298,13 +298,13 @@ export class LambdaFlareCommand extends Command {
       // Write config file
       const configFilePath = path.join(rootFolderPath, FUNCTION_CONFIG_FILE_NAME)
       writeFile(configFilePath, JSON.stringify(config, undefined, 2))
-      this.context.stdout.write(`• Saved function config to ${configFilePath}\n`)
+      this.context.stdout.write(`• Saved function config to ./${FUNCTION_CONFIG_FILE_NAME}\n`)
 
       // Write tags file
       if (tagsLength > 0) {
         const tagsFilePath = path.join(rootFolderPath, TAGS_FILE_NAME)
         writeFile(tagsFilePath, JSON.stringify(tags, undefined, 2))
-        this.context.stdout.write(`• Saved tags to ${tagsFilePath}\n`)
+        this.context.stdout.write(`• Saved tags to ./${TAGS_FILE_NAME}\n`)
       }
 
       // Write log files
@@ -315,7 +315,7 @@ export class LambdaFlareCommand extends Command {
         const logFilePath = path.join(logsFolderPath, `${logStreamName.split('/').join('-')}.csv`)
         const data = convertToCSV(logEvents)
         writeFile(logFilePath, data)
-        this.context.stdout.write(`• Saved logs to ${logFilePath}\n`)
+        this.context.stdout.write(`• Saved logs to ./${LOGS_DIRECTORY}/${logStreamName}\n`)
         // Sleep for 1 millisecond so creation times are different
         // This allows the logs to be sorted by creation time by the support team
         await sleep(1)
@@ -325,7 +325,7 @@ export class LambdaFlareCommand extends Command {
       for (const [fileName, filePath] of projectFilesToPath) {
         const newFilePath = path.join(projectFilesFolderPath, fileName)
         fs.copyFileSync(filePath, newFilePath)
-        this.context.stdout.write(`• Copied ${fileName} to ${newFilePath}\n`)
+        this.context.stdout.write(`• Copied ${fileName} to ./${PROJECT_FILES_DIRECTORY}/${fileName}\n`)
       }
 
       // Write additional files
@@ -333,7 +333,7 @@ export class LambdaFlareCommand extends Command {
         const fileName = path.basename(filePath)
         const newFilePath = path.join(additionalFilesFolderPath, fileName)
         fs.copyFileSync(filePath, newFilePath)
-        this.context.stdout.write(`• Copied ${fileName} to ${newFilePath}\n`)
+        this.context.stdout.write(`• Copied ${fileName} to ./${ADDITIONAL_FILES_DIRECTORY}/${fileName}\n`)
       }
 
       // Exit if dry run
