@@ -1,7 +1,9 @@
 import {DescribeStateMachineCommandOutput} from '@aws-sdk/client-sfn'
+import {SFNClient} from '@aws-sdk/client-sfn/dist-types/SFNClient'
 import {BaseContext} from 'clipanion'
 import {diff} from 'deep-object-diff'
 
+import {updateStateMachineDefinition} from './awsCommands'
 import {DD_CI_IDENTIFYING_STRING} from './constants'
 
 export const displayChanges = (
@@ -12,9 +14,7 @@ export const displayChanges = (
   params: any,
   previousParams?: any
 ): void => {
-  context.stdout.write(`${'='.repeat(50)}`)
-  context.stdout.write(`\n${dryRun ? '\n[Dry Run] Planning for' : 'Will apply'} the following change:\n`)
-  context.stdout.write(`\nChanges for ${stepFunctionArn}\n`)
+  context.stdout.write(`\n${dryRun ? '\nPlanning for' : 'Will apply'} the following change:\n`)
   if (previousParams !== undefined) {
     context.stdout.write(
       `\n${commandName}:\nFrom:\n${JSON.stringify(diff(params, previousParams), undefined, 2)}\nTo:\n${JSON.stringify(
@@ -78,4 +78,81 @@ export const parseArn = (
 }
 export const buildLogAccessPolicyName = (stepFunction: DescribeStateMachineCommandOutput): string => {
   return `LogsDeliveryAccessPolicy-${stepFunction.name}`
+}
+
+export const injectContextIntoLambdaPayload = async (
+  describeStateMachineCommandOutput: DescribeStateMachineCommandOutput,
+  stepFunctionsClient: SFNClient,
+  context: BaseContext,
+  dryRun: boolean
+): Promise<void> => {
+  if (typeof describeStateMachineCommandOutput.definition !== 'string') {
+    return
+  }
+  let definitionHasBeenUpdated = false
+  const definitionObj = JSON.parse(describeStateMachineCommandOutput.definition) as StateMachineDefinitionType
+  for (const stepName in definitionObj.States) {
+    if (definitionObj.States.hasOwnProperty(stepName)) {
+      const step = definitionObj.States[stepName]
+      if (shouldUpdateStepForTracesMerging(step)) {
+        updateStepObject(step)
+        definitionHasBeenUpdated = true
+      }
+    }
+  }
+  if (definitionHasBeenUpdated) {
+    await updateStateMachineDefinition(
+      stepFunctionsClient,
+      describeStateMachineCommandOutput,
+      definitionObj,
+      context,
+      dryRun
+    )
+  }
+}
+
+export const updateStepObject = ({Parameters}: StepType): void => {
+  if (Parameters) {
+    Parameters[`Payload.$`] = 'States.JsonMerge($$, $, false)'
+  }
+}
+
+export const shouldUpdateStepForTracesMerging = (step: StepType): boolean => {
+  // is default lambda api
+  if (step.Resource === 'arn:aws:states:::lambda:invoke') {
+    if (!step.Parameters) {
+      return false
+    }
+    // payload field not set
+    if (!step.Parameters.hasOwnProperty('Payload.$')) {
+      return true
+    }
+    // default payload
+    if (step.Parameters['Payload.$'] === '$') {
+      return true
+    }
+  }
+
+  return false
+}
+
+export type StateMachineDefinitionType = {
+  Comment?: string
+  StartAt?: string
+  States?: StatesType
+}
+
+export type StatesType = Record<string, StepType>
+export type StepType = {
+  Type: string
+  Parameters?: ParametersType
+  Resource: string
+  Next?: string
+  End?: boolean
+}
+
+export type ParametersType = {
+  'Payload.$'?: string
+  FunctionName?: string
+  TableName?: string
 }

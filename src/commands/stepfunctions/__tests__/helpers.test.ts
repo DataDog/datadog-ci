@@ -8,11 +8,74 @@ import {
   getStepFunctionLogGroupArn,
   parseArn,
   buildLogAccessPolicyName,
+  shouldUpdateStepForTracesMerging,
+  StepType,
 } from '../helpers'
 
 import {describeStateMachineFixture} from './fixtures/aws-resources'
 
-describe('helpers', () => {
+describe('stepfunctions command helpers tests', () => {
+  describe('shouldUpdateStepForTracesMerging test', () => {
+    test('already has JsonMerge added to paylaod field', () => {
+      const step: StepType = {
+        Type: 'Task',
+        Resource: 'arn:aws:states:::lambda:invoke',
+        Parameters: {
+          FunctionName: 'arn:aws:lambda:sa-east-1:425362991234:function:unit-test-lambda-function',
+          'Payload.$': 'States.JsonMerge($$, $, false)',
+        },
+        End: true,
+      }
+      expect(shouldUpdateStepForTracesMerging(step)).toBeFalsy()
+    })
+
+    test('no payload field', () => {
+      const step: StepType = {
+        Type: 'Task',
+        Resource: 'arn:aws:states:::lambda:invoke',
+        Parameters: {
+          FunctionName: 'arn:aws:lambda:sa-east-1:425362991234:function:unit-test-lambda-function',
+        },
+        End: true,
+      }
+      expect(shouldUpdateStepForTracesMerging(step)).toBeTruthy()
+    })
+
+    test('default payload field of $', () => {
+      const step: StepType = {
+        Type: 'Task',
+        Resource: 'arn:aws:states:::lambda:invoke',
+        Parameters: {
+          FunctionName: 'arn:aws:lambda:sa-east-1:425362991234:function:unit-test-lambda-function',
+          'Payload.$': '$',
+        },
+        End: true,
+      }
+      expect(shouldUpdateStepForTracesMerging(step)).toBeTruthy()
+    })
+
+    test('none-lambda step should not be updated', () => {
+      const step: StepType = {
+        Type: 'Task',
+        Resource: 'arn:aws:states:::dynamodb:updateItem',
+        Parameters: {
+          TableName: 'step-functions-tracing-self-monitoring-table-staging',
+        },
+        End: true,
+      }
+      expect(shouldUpdateStepForTracesMerging(step)).toBeFalsy()
+    })
+
+    test('legacy lambda api should not be updated', () => {
+      const step: StepType = {
+        Type: 'Task',
+        Resource: 'arn:aws:lambda:sa-east-1:601427271234:function:hello-function',
+        End: true,
+      }
+      expect(shouldUpdateStepForTracesMerging(step)).toBeFalsy()
+    })
+  })
+
   describe('buildArn', () => {
     test('builds log group arn', () => {
       const partition = 'aws'
