@@ -59,15 +59,17 @@ describe('upload', () => {
           context,
           service: 'service',
         },
+        {},
+        {},
+        {},
+        {},
         {}
       )
 
       expect(firstFile).toMatchObject({
-        service: 'service',
         xmlPath: './src/commands/junit/__tests__/fixtures/go-report.xml',
       })
       expect(secondFile).toMatchObject({
-        service: 'service',
         xmlPath: './src/commands/junit/__tests__/fixtures/java-report.xml',
       })
 
@@ -92,13 +94,16 @@ describe('upload', () => {
           context,
           service: 'service',
         },
+        {},
+        {},
+        {},
+        {},
         {}
       )
 
       expect(files.length).toEqual(1)
 
       expect(files[0]).toMatchObject({
-        service: 'service',
         xmlPath: './src/commands/junit/__tests__/fixtures/go-report.xml',
       })
     })
@@ -112,6 +117,10 @@ describe('upload', () => {
           context,
           service: 'service',
         },
+        {},
+        {},
+        {},
+        {},
         {}
       )
 
@@ -130,18 +139,19 @@ describe('upload', () => {
           context,
           service: 'service',
         },
+        {},
+        {},
+        {},
+        {},
         {}
       )
       expect(firstFile).toMatchObject({
-        service: 'service',
         xmlPath: './src/commands/junit/__tests__/fixtures/go-report.xml',
       })
       expect(secondFile).toMatchObject({
-        service: 'service',
         xmlPath: './src/commands/junit/__tests__/fixtures/java-report.xml',
       })
       expect(thirdFile).toMatchObject({
-        service: 'service',
         xmlPath: './src/commands/junit/__tests__/fixtures/subfolder/js-report.xml',
       })
     })
@@ -155,14 +165,16 @@ describe('upload', () => {
           context,
           service: 'service',
         },
+        {},
+        {},
+        {},
+        {},
         {}
       )
       expect(firstFile).toMatchObject({
-        service: 'service',
         xmlPath: './src/commands/junit/__tests__/fixtures/junit.xml/valid-report-2.xml',
       })
       expect(secondFile).toMatchObject({
-        service: 'service',
         xmlPath: './src/commands/junit/__tests__/fixtures/junit.xml/valid-report.xml',
       })
     })
@@ -179,6 +191,10 @@ describe('upload', () => {
           context,
           service: 'service',
         },
+        {},
+        {},
+        {},
+        {},
         {}
       )
 
@@ -194,6 +210,10 @@ describe('upload', () => {
           context,
           service: 'service',
         },
+        {},
+        {},
+        {},
+        {},
         {}
       )
 
@@ -212,6 +232,10 @@ describe('upload', () => {
           logs: true,
           service: 'service',
         },
+        {},
+        {},
+        {},
+        {},
         {}
       )
       expect(firstFile.logsEnabled).toBe(true)
@@ -219,29 +243,70 @@ describe('upload', () => {
     })
   })
   describe('getSpanTags', () => {
-    test('should parse DD_TAGS and DD_ENV environment variables', async () => {
-      process.env.DD_TAGS = 'key1:https://google.com,key2:value2'
+    test('should parse DD_ENV environment variable', async () => {
       process.env.DD_ENV = 'ci'
       const context = createMockContext()
       const command = new UploadJUnitXMLCommand()
       const spanTags: SpanTags = await command['getSpanTags'].call({
         config: {
           env: process.env.DD_ENV,
-          envVarTags: process.env.DD_TAGS,
         },
         context,
       })
       expect(spanTags).toMatchObject({
         env: 'ci',
+      })
+    })
+  })
+  describe('parseCustomTags', () => {
+    test('should parse tags argument', async () => {
+      const context = createMockContext()
+      const command = new UploadJUnitXMLCommand()
+      const spanTags: SpanTags = command['getCustomTags'].call({
+        config: {},
+        context,
+        tags: ['key1:value1', 'key2:value2'],
+      })
+
+      expect(spanTags).toMatchObject({
+        key1: 'value1',
+        key2: 'value2',
+      })
+    })
+    test('should parse DD_TAGS environment variable', async () => {
+      process.env.DD_TAGS = 'key1:https://google.com,key2:value2'
+      const context = createMockContext()
+      const command = new UploadJUnitXMLCommand()
+      const spanTags: SpanTags = command['getCustomTags'].call({
+        config: {
+          envVarTags: process.env.DD_TAGS,
+        },
+        context,
+      })
+      expect(spanTags).toMatchObject({
         key1: 'https://google.com',
         key2: 'value2',
+      })
+    })
+    test('should parse metrics argument', async () => {
+      const context = createMockContext()
+      const command = new UploadJUnitXMLCommand()
+      const spanTags: SpanTags = command['getCustomMetrics'].call({
+        config: {},
+        context,
+        metrics: ['key1:10', 'key2:20'],
+      })
+
+      expect(spanTags).toMatchObject({
+        key1: 10,
+        key2: 20,
       })
     })
     test('should parse DD_METRICS environment variable', async () => {
       process.env.DD_METRICS = 'key1:321,key2:123,key3:321.1,key4:abc,key5:-12.1'
       const context = createMockContext()
       const command = new UploadJUnitXMLCommand()
-      const spanTags: SpanTags = await command['getSpanTags'].call({
+      const spanTags: SpanTags = command['getCustomMetrics'].call({
         config: {
           envVarMetrics: process.env.DD_METRICS,
         },
@@ -254,17 +319,32 @@ describe('upload', () => {
         key5: -12.1,
       })
     })
-    test('should parse tags argument', async () => {
+    test('should parse report tags argument', async () => {
       const context = createMockContext()
       const command = new UploadJUnitXMLCommand()
-      const spanTags: SpanTags = await command['getSpanTags'].call({
+      const spanTags: SpanTags = command['getReportTags'].call({
         config: {},
         context,
-        tags: ['key1:value1', 'key2:value2'],
+        reportTags: ['key1:value1', 'key2:value2'],
       })
+
       expect(spanTags).toMatchObject({
         key1: 'value1',
         key2: 'value2',
+      })
+    })
+    test('should parse report metrics argument', async () => {
+      const context = createMockContext()
+      const command = new UploadJUnitXMLCommand()
+      const spanTags: SpanTags = command['getReportMetrics'].call({
+        config: {},
+        context,
+        reportMetrics: ['key1:20', 'key2:30'],
+      })
+
+      expect(spanTags).toMatchObject({
+        key1: 20,
+        key2: 30,
       })
     })
   })

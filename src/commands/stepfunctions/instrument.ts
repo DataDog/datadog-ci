@@ -21,6 +21,7 @@ import {
   isValidArn,
   parseArn,
   getStepFunctionLogGroupArn,
+  injectContextIntoLambdaPayload,
 } from './helpers'
 
 const cliVersion = require('../../../package.json').version
@@ -50,6 +51,7 @@ export class InstrumentStepFunctionsCommand extends Command {
   private forwarderArn!: string
   private service?: string
   private stepFunctionArns: string[] = []
+  private mergeStepFunctionAndLambdaTraces?: boolean = false
 
   public async execute() {
     let validationError = false
@@ -88,6 +90,9 @@ export class InstrumentStepFunctionsCommand extends Command {
 
     // loop over step functions passed as parameters and generate a list of requests to make to AWS for each step function
     for (const stepFunctionArn of stepFunctionArns) {
+      this.context.stdout.write(
+        `\n======= ${this.dryRun ? '[Dry Run] Planning for' : 'For'} ${stepFunctionArn} =========\n`
+      )
       // use region from the step function arn to make requests to AWS
       const arnObject = parseArn(stepFunctionArn)
       const region = arnObject.region
@@ -328,6 +333,17 @@ export class InstrumentStepFunctionsCommand extends Command {
         }
         hasChanges = true
       }
+
+      if (this.mergeStepFunctionAndLambdaTraces) {
+        // Not putting the update operation into the business logic of logs subscription. This will
+        // add additional API call, but it would also allow easier testing and cleaner code.
+        await injectContextIntoLambdaPayload(
+          describeStateMachineCommandOutput,
+          stepFunctionsClient,
+          this.context,
+          this.dryRun
+        )
+      }
     }
     if (!hasChanges) {
       this.context.stdout.write(`\nNo change is applied.\n `)
@@ -342,5 +358,9 @@ InstrumentStepFunctionsCommand.addPath('stepfunctions', 'instrument')
 InstrumentStepFunctionsCommand.addOption('dryRun', Command.Boolean('-d,--dry-run'))
 InstrumentStepFunctionsCommand.addOption('environment', Command.String('-e,--env'))
 InstrumentStepFunctionsCommand.addOption('forwarderArn', Command.String('--forwarder'))
+InstrumentStepFunctionsCommand.addOption(
+  'mergeStepFunctionAndLambdaTraces',
+  Command.Boolean('-mlt,--merge-lambda-traces,--merge-step-function-and-lambda-traces')
+)
 InstrumentStepFunctionsCommand.addOption('service', Command.String('--service'))
 InstrumentStepFunctionsCommand.addOption('stepFunctionArns', Command.Array('-s,--step-function'))

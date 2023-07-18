@@ -162,11 +162,11 @@ exports[`lambda flare getAllLogs throws an error when unable to get log streams 
 
 exports[`lambda flare getEndpointUrl should not throw error if the site is invalid and DD_CI_BYPASS_SITE_VALIDATION is set 1`] = `"https://datad0ge.com/api/ui/support/serverless/flare"`;
 
-exports[`lambda flare getEndpointUrl should return correct endpoint url 1`] = `"https://datadoghq.com/api/ui/support/serverless/flare"`;
+exports[`lambda flare getEndpointUrl should return correct endpoint url 1`] = `"https://app.datadoghq.com/api/ui/support/serverless/flare"`;
 
 exports[`lambda flare getEndpointUrl should throw error if the site is invalid 1`] = `"Invalid site: datad0ge.com. Must be one of: datadoghq.com, datadoghq.eu, us3.datadoghq.com, us5.datadoghq.com, ap1.datadoghq.com, ddog-gov.com"`;
 
-exports[`lambda flare getEndpointUrl should use DEFAULT_DD_SITE if CI_SITE_ENV_VAR and SITE_ENV_VAR are not set 1`] = `"https://datadoghq.com/api/ui/support/serverless/flare"`;
+exports[`lambda flare getEndpointUrl should use DEFAULT_DD_SITE if CI_SITE_ENV_VAR and SITE_ENV_VAR are not set 1`] = `"https://app.datadoghq.com/api/ui/support/serverless/flare"`;
 
 exports[`lambda flare getEndpointUrl should use SITE_ENV_VAR if CI_SITE_ENV_VAR is not set 1`] = `"https://us3.datadoghq.com/api/ui/support/serverless/flare"`;
 
@@ -604,6 +604,16 @@ exports[`lambda flare send to Datadog successfully sends request to Datadog 1`] 
 "
 `;
 
+exports[`lambda flare validateStartEndFlags throws error when end is invalid 1`] = `"End time must be a time in milliseconds since Unix Epoch. '234abc' is not a number."`;
+
+exports[`lambda flare validateStartEndFlags throws error when end is specified but start is not specified 1`] = `"Start time is required when end time is specified. [--start]"`;
+
+exports[`lambda flare validateStartEndFlags throws error when start is invalid 1`] = `"Start time must be a time in milliseconds since Unix Epoch. '123abc' is not a number."`;
+
+exports[`lambda flare validateStartEndFlags throws error when start is not before the end time 1`] = `"Start time must be before end time."`;
+
+exports[`lambda flare validateStartEndFlags throws error when start is specified but end is not specified 1`] = `"End time is required when start time is specified. [--end]"`;
+
 exports[`lambda flare validates required flags extracts region from function name when given a function ARN 1`] = `
 "
 🐶 Generating Lambda flare to send your configuration to Datadog...
@@ -637,6 +647,20 @@ exports[`lambda flare validates required flags extracts region from function nam
 🚀 Sending to Datadog Support...
 
 ✅ Successfully sent flare file to Datadog Support!
+"
+`;
+
+exports[`lambda flare validates required flags prints error when end time is invalid 1`] = `
+"
+🐶 Generating Lambda flare to send your configuration to Datadog...
+[Error] End time must be a time in milliseconds since Unix Epoch. '123abc' is not a number.
+"
+`;
+
+exports[`lambda flare validates required flags prints error when end time is specified but start time is not 1`] = `
+"
+🐶 Generating Lambda flare to send your configuration to Datadog...
+[Error] Start time is required when end time is specified. [--start]
 "
 `;
 
@@ -675,6 +699,27 @@ exports[`lambda flare validates required flags prints error when no region speci
 "
 `;
 
+exports[`lambda flare validates required flags prints error when start time is after end time 1`] = `
+"
+🐶 Generating Lambda flare to send your configuration to Datadog...
+[Error] Start time must be before end time.
+"
+`;
+
+exports[`lambda flare validates required flags prints error when start time is invalid 1`] = `
+"
+🐶 Generating Lambda flare to send your configuration to Datadog...
+[Error] Start time must be a time in milliseconds since Unix Epoch. '123abc' is not a number.
+"
+`;
+
+exports[`lambda flare validates required flags prints error when start time is specified but end time is not 1`] = `
+"
+🐶 Generating Lambda flare to send your configuration to Datadog...
+[Error] End time is required when start time is specified. [--end]
+"
+`;
+
 exports[`lambda flare validates required flags runs successfully when dry run but no email or case ID is specified 1`] = `
 "
 [Dry Run] 🐶 Generating Lambda flare to send your configuration to Datadog...
@@ -707,6 +752,41 @@ exports[`lambda flare validates required flags runs successfully when dry run bu
 🚫 The flare files were not sent as it was executed in dry run mode.
 ℹ️ Your output files are located at: mock-folder/.datadog-ci
 
+"
+`;
+
+exports[`lambda flare validates required flags runs successfully when start and end times are valid 1`] = `
+"
+🐶 Generating Lambda flare to send your configuration to Datadog...
+
+🔑 Getting AWS credentials...
+
+[!] No AWS credentials found, let's set them up! Or you can re-run the command and supply the AWS credentials in the same way when you invoke the AWS CLI.
+
+🔍 Fetching Lambda function configuration...
+
+{
+  Environment: {
+    Variables: {
+      DD_API_KEY: '02**********33bd',
+      DD_SITE: 'datadoghq.com',
+      DD_LOG_LEVEL: 'debug'
+    }
+  },
+  FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:some-function',
+  FunctionName: 'some-function'
+}
+
+🏷 Getting Resource Tags...
+[!] No resource tags were found.
+
+💾 Saving files...
+• Saved function config to mock-folder/.datadog-ci/function_config.json
+
+
+🚀 Sending to Datadog Support...
+
+✅ Successfully sent flare file to Datadog Support!
 "
 `;
 

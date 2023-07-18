@@ -127,7 +127,7 @@ describe('lambda', () => {
             \\"Handler\\": \\"lambda_function.lambda_handler\\",
             \\"Environment\\": {
               \\"Variables\\": {
-                \\"USER_VARIABLE\\": \\"shouldnt be deleted by uninstrumentation\\"
+                \\"USER_VARIABLE\\": \\"sh**********tion\\"
               }
             },
             \\"Layers\\": []

@@ -370,7 +370,7 @@ export const getSyntheticsProxy = () => {
 
   // eslint-disable-next-line prefer-const
   let port: number
-  const server = http.createServer({}, (request, response) => {
+  const proxyServer = http.createServer({}, (request, response) => {
     const mockResponse = (call: jest.Mock, responseData: any) => {
       let body = ''
       request.on('data', (data) => (body += data.toString()))
@@ -408,15 +408,15 @@ export const getSyntheticsProxy = () => {
     response.end()
   })
 
-  server.on('upgrade', (request, socket, head) => {
+  proxyServer.on('upgrade', (request, socket, head) => {
     wss.handleUpgrade(request, socket as net.Socket, head, (ws: WebSocket) => {
       calls.tunnel()
       ws.send(JSON.stringify(mockTunnelConnectionFirstMessage))
     })
   })
 
-  server.listen()
-  const address = server.address()
+  proxyServer.listen()
+  const address = proxyServer.address()
   if (!address) {
     throw new Error('Cannot get proxy server address')
   }
@@ -424,9 +424,9 @@ export const getSyntheticsProxy = () => {
   port = typeof address === 'string' ? Number(new URL(address).port) : address.port
   const config: ProxyConfiguration = {host: '127.0.0.1', port, protocol: 'http'}
 
-  const close = () => Promise.all([new Promise((res) => server.close(res)), new Promise((res) => wss.close(res))])
+  const close = () => Promise.all([new Promise((res) => proxyServer.close(res)), new Promise((res) => wss.close(res))])
 
-  return {calls, close, config, server}
+  return {calls, close, config, server: proxyServer}
 }
 
 export interface RenderResultsTestCase {
