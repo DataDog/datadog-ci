@@ -2,7 +2,7 @@ import {timingSafeEqual} from 'crypto'
 import {Socket} from 'net'
 import {Duplex, pipeline} from 'stream'
 
-import type {ProxyAgent} from 'proxy-agent'
+import type {Agent} from 'http'
 
 import {
   AuthContext,
@@ -46,12 +46,7 @@ export class Tunnel {
   private multiplexer?: Multiplexer
   private forwardedSockets: Set<Socket> = new Set()
 
-  constructor(
-    private url: string,
-    private testIDs: string[],
-    proxyAgent?: ProxyAgent,
-    private reporter?: TunnelReporter
-  ) {
+  constructor(private url: string, private testIDs: string[], proxyAgent?: Agent, private reporter?: TunnelReporter) {
     // Setup SSH
     const {privateKey: hostPrivateKey} = generateOpenSSHKeys()
     const parsedHostPrivateKey = parseSSHKey(hostPrivateKey)

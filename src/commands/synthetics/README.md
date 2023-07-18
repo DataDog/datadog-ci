@@ -2,7 +2,7 @@
 
 ## Overview
 
-Use the [`@datadog-ci` NPM package][1] to run Continuous Testing tests directly within your CI/CD pipeline. You can automatically halt a build, block a deployment, and roll back a deployment when a Synthetic browser test detects a regression. 
+Use the [`@datadog-ci` NPM package][1] to run Continuous Testing tests directly within your CI/CD pipeline. You can automatically halt a build, block a deployment, and roll back a deployment when a Synthetic browser test detects a regression.
 
 To configure which URL your test starts on, provide a `startUrl` to your test object. Build your own starting URL with any part of your test's original starting URL and include environment variables.
 
@@ -50,7 +50,7 @@ To setup the client, your Datadog API and application keys need to be configured
 
 3. Or defined in a [global JSON configuration file](#global-configuration-file-options):
 
-   Create a JSON configuration file on your system. Specify the path to the file using the `--config` flag [when launching your tests](#run-tests). If you don't specify a file path, Datadog uses the default filename of `datadog-ci.json`. 
+   Create a JSON configuration file on your system. Specify the path to the file using the `--config` flag [when launching your tests](#run-tests). If you don't specify a file path, Datadog uses the default filename of `datadog-ci.json`.
 
 ### Global configuration file options
 
@@ -90,7 +90,7 @@ See below for the list of advanced options in the global configuration file. For
 The duration (in milliseconds) after which `datadog-ci` stops polling for test results. The default is 30 minutes. At the CI level, test results completed after this duration are considered failed.
 
 `proxy`
-: The proxy to be used for outgoing connections to Datadog. `host` and `port` keys are mandatory arguments, the `protocol` key defaults to `http`. Supported values for the `protocol` key are `http`, `https`, `socks`, `socks4`, `socks4a`, `socks5`, `socks5h`, `pac+data`, `pac+file`, `pac+ftp`, `pac+http`, and `pac+https`. The library used to configure the proxy is the [proxy-agent][2] library.
+: The proxy to be used for outgoing connections to Datadog. `host` and `port` keys are mandatory arguments, the `protocol` key defaults to `http`. Supported values for the `protocol` key are `http`, `https`, `socks`, `socks4`, `socks4a`, `socks5`, and `socks5h`. The library used to configure the proxy are [proxy-agents][2] libraries.
 
 `subdomain`
 : The name of the custom subdomain set to access your Datadog application. If the URL used to access Datadog is `myorg.datadoghq.com`, the `subdomain` value needs to be set to `myorg`.
@@ -105,11 +105,11 @@ The duration (in milliseconds) after which `datadog-ci` stops polling for test r
 
 It is possible to configure a proxy to be used for outgoing connections to Datadog using the `proxy` key of the global configuration file.
 
-As the [`proxy-agent` library][2] is used to configure the proxy, the supported protocols include `http`, `https`, `socks`, `socks4`, `socks4a`, `socks5`, `socks5h`, `pac+data`, `pac+file`, `pac+ftp`, `pac+http`, and `pac+https`. The `proxy` key of the global configuration file is passed to a new `proxy-agent` instance, which means the same configuration for the library is supported.
+As the [`proxy-agents` libraries][2] is used to configure the proxy, the supported protocols include `http`, `https`, `socks`, `socks4`, `socks4a`, `socks5`, and `socks5h`. The `proxy` key of the global configuration file is passed to a new `proxy-agent` instance, which means the same configuration for the library is supported.
 
 **Note**: `host` and `port` keys are mandatory arguments and the `protocol` key defaults to `http` if not defined.
 
-For example: 
+For example:
 
 ```json
 {
@@ -153,7 +153,7 @@ For example:
 
 ### Command line options
 
-If the organization uses a custom sub-domain to access Datadog, this needs to be set in the `DATADOG_SUBDOMAIN` environment variable or in the global configuration file under the `subdomain` key in order to properly display the test results URL. 
+If the organization uses a custom sub-domain to access Datadog, this needs to be set in the `DATADOG_SUBDOMAIN` environment variable or in the global configuration file under the `subdomain` key in order to properly display the test results URL.
 
 For example, if the URL used to access Datadog is `myorg.datadoghq.com`, set the environment variable to `myorg`:
 
@@ -177,7 +177,7 @@ For example:
 {
   "apiKey": "<DATADOG_API_KEY>",
   "appKey": "<DATADOG_APPLICATION_KEY>",
-  "datadogSite": "datadoghq.com", // You can use another Datadog site in https://docs.datadoghq.com/getting_started/site/. By default, requests are sent to Datadog US1. 
+  "datadogSite": "datadoghq.com", // You can use another Datadog site in https://docs.datadoghq.com/getting_started/site/. By default, requests are sent to Datadog US1.
   "failOnCriticalErrors": true,
   "failOnMissingTests": true,
   "failOnTimeout": true,
@@ -284,7 +284,7 @@ yarn datadog-ci synthetics run-tests -f ./component-1/**/*.synthetics.json -v PA
 
 ### Test files
 
-Your test files must be named with a `.synthetics.json` suffix. 
+Your test files must be named with a `.synthetics.json` suffix.
 
 ```json
 // myTest.synthetics.json
@@ -342,7 +342,7 @@ All options under the `config` key are optional and allow overriding of the test
 
 ## Use the testing tunnel
 
-You can combine variable overrides with the [Continuous Testing Tunnel][3] to run tests within your development environment. The testing tunnel creates an end-to-end encrypted HTTP proxy between your infrastructure and Datadog that allows all test requests sent through the CLI to be automatically routed through the `datadog-ci` client. 
+You can combine variable overrides with the [Continuous Testing Tunnel][3] to run tests within your development environment. The testing tunnel creates an end-to-end encrypted HTTP proxy between your infrastructure and Datadog that allows all test requests sent through the CLI to be automatically routed through the `datadog-ci` client.
 
 This allows you to run tests with end-to-end encryption at every stage of your software development lifecycle, from pre-production environments to your production system.
 
@@ -428,7 +428,7 @@ You can also see the outcome of test executions directly in your CI as your test
     * location: 30019
       ⎋ total duration: 32.6 ms - result url: https://app.datadoghq.com/synthetics/details/2cj-h3c-39x?resultId=122140688175981634
       x GET - https://www.datadoghq.com
-        [INCORRECT_ASSUMPTION] - [{"index":1,"operator":"is","property":"content-type","type":"header","target":"text/html","valid":false,"actual":"text/html"; charset=utf-8"}] 
+        [INCORRECT_ASSUMPTION] - [{"index":1,"operator":"is","property":"content-type","type":"header","target":"text/html","valid":false,"actual":"text/html"; charset=utf-8"}]
   error Command failed with exit code 1.
   info Visit https://yarnpkg.com/en/docs/cli/run for documentation about this command.
 ```
@@ -440,18 +440,20 @@ To upload a new version to an **existing application**, you can use the `synthet
 `--mobileApplicationId` - string - the ID of the application you want to upload the new version to
 `--mobileApplicationVersionFilePath` - string - path to the mobile app (.apk/.ipa)
 `--versionName` - string - name of the new version. It has to be unique.
-`--latest` - bool - if present, marks the application as 'latest'. Any tests that run on the latest version will use this version on their next run 
- 
+`--latest` - bool - if present, marks the application as 'latest'. Any tests that run on the latest version will use this version on their next run
+
 Example:
+
 ```
 datadog-ci synthetics upload-application              \
 --mobileApplicationId '123-123-123'                   \
 --mobileApplicationVersionFilePath example/test.apk \
 --versionName 'example 1.0'                           \
 --latest
-```   
+```
 
 You can also pass these options in a configuration file
+
 ```
 {
   "apiKey": <DATADOG_API_KEY>,
@@ -464,6 +466,7 @@ You can also pass these options in a configuration file
 ```
 
 And pass it to the command with the `--config` flag, example:
+
 ```
 datadog-ci synthetics upload-application --config global.config.json
 ```
@@ -478,7 +481,7 @@ Additional helpful documentation, links, and articles:
 - [Learn about the Continuous Testing Tunnel][3]
 
 [1]: https://www.npmjs.com/package/@datadog/datadog-ci
-[2]: https://github.com/TooTallNate/node-proxy-agent
+[2]: https://github.com/TooTallNate/proxy-agents
 [3]: https://docs.datadoghq.com/continuous_testing/testing_tunnel/
 [4]: https://app.datadoghq.com/synthetics/explorer/
 [5]: https://app.datadoghq.com/synthetics/tests

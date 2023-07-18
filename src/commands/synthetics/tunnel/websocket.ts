@@ -1,6 +1,6 @@
 import {EventEmitter, once} from 'events'
 
-import type {ProxyAgent} from 'proxy-agent'
+import type {Agent} from 'http'
 
 import {createWebSocketStream, default as WebSocketModule} from 'ws'
 
@@ -9,7 +9,7 @@ export class WebSocket extends EventEmitter {
   private keepAliveWebsocket?: Promise<void> // Artificial promise that resolves when closing and will reject in case of error
   private websocket?: WebSocketModule
 
-  constructor(private url: string, private proxyAgent: ProxyAgent | undefined) {
+  constructor(private url: string, private proxyAgent: Agent | undefined) {
     super()
   }
 

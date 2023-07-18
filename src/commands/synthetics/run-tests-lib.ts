@@ -1,4 +1,4 @@
-import {getProxyAgent} from '../../helpers/utils'
+import {getProxyAgent} from '../../helpers/proxy'
 
 import {APIHelper, getApiHelper, isForbiddenError} from './api'
 import {CiError, CriticalError} from './errors'

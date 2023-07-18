@@ -2,9 +2,10 @@ import http from 'http'
 import {AddressInfo} from 'net'
 
 import {AxiosPromise, AxiosRequestConfig, default as axios} from 'axios'
+import {HttpProxyAgent} from 'http-proxy-agent'
 import {createProxy} from 'proxy'
-import {ProxyAgent} from 'proxy-agent'
 
+import {getProxyUrlFromConfiguration, ProxyAgent, ProxyConfiguration} from '../proxy'
 import * as ciUtils from '../utils'
 
 describe('utils', () => {
@@ -115,13 +116,12 @@ describe('utils', () => {
         const request = ciUtils.getRequestBuilder(requestOptions)
         const fakeEndpoint = fakeEndpointBuilder(request)
         const httpsAgent = await fakeEndpoint()
-        expect(httpsAgent).toBeDefined()
         expect(httpsAgent).toBeInstanceOf(ProxyAgent)
       })
 
       test('should add proxy configuration when explicitly defined', async () => {
         jest.spyOn(axios, 'create').mockImplementation((() => (args: AxiosRequestConfig) => args.httpsAgent) as any)
-        const proxyOpts: ciUtils.ProxyConfiguration = {protocol: 'http', host: '1.2.3.4', port: 1234}
+        const proxyOpts: ProxyConfiguration = {protocol: 'http', host: '1.2.3.4', port: 1234}
         const requestOptions = {
           apiKey: 'apiKey',
           appKey: 'applicationKey',
@@ -131,8 +131,8 @@ describe('utils', () => {
         const request = ciUtils.getRequestBuilder(requestOptions)
         const fakeEndpoint = fakeEndpointBuilder(request)
         const httpsAgent = await fakeEndpoint()
-        expect(httpsAgent).toBeDefined()
-        expect((httpsAgent as any).getProxyForUrl()).toBe('http://1.2.3.4:1234')
+        expect(httpsAgent).toBeInstanceOf(HttpProxyAgent)
+        expect((httpsAgent as any).proxy).toEqual(new URL('http://1.2.3.4:1234'))
       })
     })
 
@@ -194,18 +194,20 @@ describe('utils', () => {
     })
   })
 
-  describe('getProxyUrl', () => {
+  describe('getProxyUrlFromConfiguration', () => {
     test('should return correct proxy URI', () => {
-      expect(ciUtils.getProxyUrl()).toBe('')
-      expect(ciUtils.getProxyUrl({protocol: 'http'})).toBe('')
-      expect(ciUtils.getProxyUrl({host: '127.0.0.1', protocol: 'http'})).toBe('')
-      expect(ciUtils.getProxyUrl({host: '127.0.0.1', port: 1234, protocol: 'http'})).toBe('http://127.0.0.1:1234')
+      expect(getProxyUrlFromConfiguration()).toBe('')
+      expect(getProxyUrlFromConfiguration({protocol: 'http'})).toBe('')
+      expect(getProxyUrlFromConfiguration({host: '127.0.0.1', protocol: 'http'})).toBe('')
+      expect(getProxyUrlFromConfiguration({host: '127.0.0.1', port: 1234, protocol: 'http'})).toBe(
+        'http://127.0.0.1:1234'
+      )
 
       const auth = {password: 'pwd', username: 'john'}
-      expect(ciUtils.getProxyUrl({auth, host: '127.0.0.1', port: 1234, protocol: 'http'})).toBe(
+      expect(getProxyUrlFromConfiguration({auth, host: '127.0.0.1', port: 1234, protocol: 'http'})).toBe(
         'http://john:pwd@127.0.0.1:1234'
       )
-      expect(ciUtils.getProxyUrl({auth, protocol: 'http'})).toBe('')
+      expect(getProxyUrlFromConfiguration({auth, protocol: 'http'})).toBe('')
     })
   })
 

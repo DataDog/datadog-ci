@@ -5,7 +5,7 @@ import {URL} from 'url'
 import {AxiosError, AxiosResponse} from 'axios'
 import WebSocket, {Server as WebSocketServer} from 'ws'
 
-import {ProxyConfiguration} from '../../../helpers/utils'
+import {ProxyConfiguration} from '../../../helpers/proxy'
 
 import {apiConstructor} from '../api'
 import {

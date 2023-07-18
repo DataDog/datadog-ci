@@ -1,5 +1,6 @@
 import metrics from 'datadog-metrics'
-import {ProxyAgent} from 'proxy-agent'
+
+import {getProxyAgent} from './proxy'
 
 export interface MetricsLogger {
   logger: metrics.BufferedMetricsLogger
@@ -19,7 +20,7 @@ export const getMetricsLogger = (opts: MetricsLoggerOptions): MetricsLogger => {
   const metricsOpts = {
     // ProxyAgent will retrieve proxy agent from env vars when relevant
     // agent is not in the type definitions file but has been introduced in datadog-metrics 0.8.x
-    agent: new ProxyAgent(),
+    agent: getProxyAgent(),
     apiHost: apiUrl,
     apiKey: opts.apiKey,
     defaultTags: opts.defaultTags,

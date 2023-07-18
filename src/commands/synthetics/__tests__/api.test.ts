@@ -1,6 +1,6 @@
 import {AxiosError, AxiosResponse, default as axios} from 'axios'
 
-import {ProxyConfiguration} from '../../../helpers/utils'
+import {ProxyConfiguration} from '../../../helpers/proxy'
 
 import {apiConstructor, formatBackendErrors, getApiHelper} from '../api'
 import {CriticalError} from '../errors'

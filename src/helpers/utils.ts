@@ -6,7 +6,8 @@ import type {SpanTag, SpanTags} from './interfaces'
 import {AxiosRequestConfig, default as axios} from 'axios'
 import {BaseContext, CommandClass, Cli} from 'clipanion'
 import deepExtend from 'deep-extend'
-import {ProxyAgent} from 'proxy-agent'
+
+import {getProxyAgent, ProxyConfiguration} from './proxy'
 
 export const DEFAULT_CONFIG_PATHS = ['datadog-ci.json']
 
@@ -131,46 +132,6 @@ export const parseConfigFile = async <T>(baseConfig: T, configPath?: string): Pr
   return baseConfig
 }
 
-type ProxyType =
-  | 'http'
-  | 'https'
-  | 'socks'
-  | 'socks4'
-  | 'socks4a'
-  | 'socks5'
-  | 'socks5h'
-  | 'pac+data'
-  | 'pac+file'
-  | 'pac+ftp'
-  | 'pac+http'
-  | 'pac+https'
-
-export interface ProxyConfiguration {
-  auth?: {
-    password: string
-    username: string
-  }
-  host?: string
-  port?: number
-  protocol: ProxyType
-}
-
-export const getProxyUrl = (options?: ProxyConfiguration): string => {
-  if (!options) {
-    return ''
-  }
-
-  const {auth, host, port, protocol} = options
-
-  if (!host || !port) {
-    return ''
-  }
-
-  const authFragment = auth ? `${auth.username}:${auth.password}@` : ''
-
-  return `${protocol}://${authFragment}${host}:${port}`
-}
-
 export interface RequestOptions {
   apiKey: string
   appKey?: string
@@ -219,25 +180,6 @@ export const getRequestBuilder = (options: RequestOptions) => {
   }
 
   return (args: AxiosRequestConfig) => axios.create(baseConfiguration)(overrideArgs(args))
-}
-
-export const getProxyAgent = (proxyOpts?: ProxyConfiguration): ProxyAgent => {
-  const proxyUrlFromConfiguration = getProxyUrl(proxyOpts)
-  if (!proxyOpts || proxyUrlFromConfiguration === '') {
-    // Let the default proxy agent discover environment variables.
-    return new ProxyAgent()
-  }
-
-  return new ProxyAgent({
-    getProxyForUrl: (url) => {
-      // Do not proxy the WebSocket connections.
-      if (url?.match(/^wss?:/)) {
-        return ''
-      }
-
-      return proxyUrlFromConfiguration
-    },
-  })
 }
 
 export const getApiHostForSite = (site: string) => {

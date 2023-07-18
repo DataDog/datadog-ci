@@ -1,5 +1,5 @@
 import {Metadata} from '../../helpers/interfaces'
-import {ProxyConfiguration} from '../../helpers/utils'
+import {ProxyConfiguration} from '../../helpers/proxy'
 
 import {TunnelInfo} from './tunnel'
 

@@ -50,7 +50,7 @@ process.env.DATADOG_SYNTHETICS_CI_TRIGGER_APP = 'env_default'
 
 import * as ciHelpers from '../../../helpers/ci'
 import {Metadata} from '../../../helpers/interfaces'
-import * as ciUtils from '../../../helpers/utils'
+import {ProxyConfiguration} from '../../../helpers/proxy'
 
 import {apiConstructor, APIHelper} from '../api'
 import {CiError} from '../errors'
@@ -95,7 +95,7 @@ describe('utils', () => {
     baseIntakeUrl: 'baseintake',
     baseUnstableUrl: 'baseUnstable',
     baseUrl: 'base',
-    proxyOpts: {protocol: 'http'} as ciUtils.ProxyConfiguration,
+    proxyOpts: {protocol: 'http'} as ProxyConfiguration,
   }
   const api = apiConstructor(apiConfiguration)
 
