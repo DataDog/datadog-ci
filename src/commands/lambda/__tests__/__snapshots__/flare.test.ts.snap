@@ -782,6 +782,7 @@ exports[`lambda flare validates required flags runs successfully when start and 
 
 💾 Saving files...
 • Saved function config to mock-folder/.datadog-ci/function_config.json
+• Saved info file to mock-folder/.datadog-ci/INFO.md
 
 
 🚀 Sending to Datadog Support...
