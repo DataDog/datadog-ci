@@ -120,7 +120,7 @@ export const updateStepObject = ({Parameters}: StepType): void => {
 export const shouldUpdateStepForTracesMerging = (step: StepType): boolean => {
   // is default lambda api
   if (step.Resource === 'arn:aws:states:::lambda:invoke') {
-    if (step.Parameters === undefined) {
+    if (!step.Parameters) {
       return false
     }
     // payload field not set
