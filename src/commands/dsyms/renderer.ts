@@ -96,6 +96,10 @@ export const renderCommandInfo = (basePath: string, poolLimit: number, dryRun: b
   const basePathStr = chalk.green(`Will look for dSYMs in ${basePath}\n`)
   fullStr += basePathStr
 
+  fullStr += chalk.green(
+    `Once dSYMs upload is successful files will be processed and ready to use within the next 5 minutes.\n`
+  )
+
   return fullStr
 }
 
