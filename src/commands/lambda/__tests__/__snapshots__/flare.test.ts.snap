@@ -967,7 +967,7 @@ exports[`lambda flare validates required flags uses region ENV variable when no 
 "
 `;
 
-exports[`lambda flare writeFile throws error when unable to write data to a file 1`] = `"Unable to create function configuration file: MOCK ERROR: Unable to write file"`;
+exports[`lambda flare writeFile throws error when unable to write data to a file 1`] = `"Unable to create file at function_config.json: MOCK ERROR: Unable to write file"`;
 
 exports[`lambda flare zipContents throws error when path is not a directory 1`] = `[Error: Unable to zip the flare files: Path is not a directory: mock-folder/.datadog-ci]`;
 

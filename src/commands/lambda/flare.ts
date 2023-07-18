@@ -568,7 +568,7 @@ export const writeFile = (filePath: string, data: string) => {
     fs.writeFileSync(filePath, data)
   } catch (err) {
     if (err instanceof Error) {
-      throw Error(`Unable to create function configuration file: ${err.message}`)
+      throw Error(`Unable to create file at ${filePath}: ${err.message}`)
     }
   }
 }
