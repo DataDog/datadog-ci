@@ -53,6 +53,7 @@
     "test": "jest --colors",
     "test:debug": "node --inspect-brk node_modules/jest/bin/jest --runInBand",
     "test:lambda": "jest src/commands/lambda --colors",
+    "test:cloud-run": "jest src/commands/cloud-run --colors",
     "eslint": "eslint --quiet 'src/**/*.ts'",
     "typecheck": "bash bin/typecheck.sh",
     "watch": "tsc -w"

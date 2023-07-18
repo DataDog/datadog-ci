@@ -1,11 +1,12 @@
 jest.mock('inquirer')
 import {prompt} from 'inquirer'
 
+import {CI_API_KEY_ENV_VAR} from '../../../constants'
+
 import {
   AWS_ACCESS_KEY_ID_ENV_VAR,
   AWS_SECRET_ACCESS_KEY_ENV_VAR,
   AWS_SESSION_TOKEN_ENV_VAR,
-  CI_API_KEY_ENV_VAR,
   CI_API_KEY_SECRET_ARN_ENV_VAR,
   CI_KMS_API_KEY_ENV_VAR,
   CI_SITE_ENV_VAR,

@@ -17,20 +17,21 @@ import FormData from 'form-data'
 import inquirer from 'inquirer'
 import JSZip from 'jszip'
 
-import {DATADOG_SITE_EU1, DATADOG_SITE_GOV, DATADOG_SITE_US1, DATADOG_SITES} from '../../constants'
-import {isValidDatadogSite} from '../../helpers/validation'
-
 import {
   API_KEY_ENV_VAR,
-  AWS_DEFAULT_REGION_ENV_VAR,
   CI_API_KEY_ENV_VAR,
-  CI_SITE_ENV_VAR,
-  SITE_ENV_VAR,
-} from './constants'
+  DATADOG_SITE_EU1,
+  DATADOG_SITE_GOV,
+  DATADOG_SITE_US1,
+  DATADOG_SITES,
+} from '../../constants'
+import * as helpersRenderer from '../../helpers/renderer'
+import {isValidDatadogSite} from '../../helpers/validation'
+
+import {AWS_DEFAULT_REGION_ENV_VAR, CI_SITE_ENV_VAR, SITE_ENV_VAR} from './constants'
 import {getAWSCredentials, getLambdaFunctionConfig, getRegion, maskStringifiedEnvVar} from './functions/commons'
 import {confirmationQuestion, requestAWSCredentials} from './prompt'
 import * as commonRenderer from './renderers/common-renderer'
-import * as flareRenderer from './renderers/flare-renderer'
 
 const {version} = require('../../../package.json')
 
@@ -62,11 +63,11 @@ export class LambdaFlareCommand extends Command {
    * @returns 0 if the command ran successfully, 1 otherwise.
    */
   public async execute() {
-    this.context.stdout.write(flareRenderer.renderLambdaFlareHeader(this.isDryRun))
+    this.context.stdout.write(helpersRenderer.renderFlareHeader('Lambda', this.isDryRun))
 
     // Validate function name
     if (this.functionName === undefined) {
-      this.context.stderr.write(commonRenderer.renderError('No function name specified. [-f,--function]'))
+      this.context.stderr.write(helpersRenderer.renderError('No function name specified. [-f,--function]'))
 
       return 1
     }
@@ -82,7 +83,7 @@ export class LambdaFlareCommand extends Command {
     this.apiKey = process.env[CI_API_KEY_ENV_VAR] ?? process.env[API_KEY_ENV_VAR]
     if (this.apiKey === undefined) {
       errorMessages.push(
-        commonRenderer.renderError(
+        helpersRenderer.renderError(
           'No Datadog API key specified. Set an API key with the DATADOG_API_KEY environment variable.'
         )
       )
@@ -91,12 +92,12 @@ export class LambdaFlareCommand extends Command {
     if (!this.isDryRun) {
       // Validate case ID
       if (this.caseId === undefined) {
-        errorMessages.push(commonRenderer.renderError('No case ID specified. [-c,--case-id]'))
+        errorMessages.push(helpersRenderer.renderError('No case ID specified. [-c,--case-id]'))
       }
 
       // Validate email
       if (this.email === undefined) {
-        errorMessages.push(commonRenderer.renderError('No email specified. [-e,--email]'))
+        errorMessages.push(helpersRenderer.renderError('No email specified. [-e,--email]'))
       }
     }
 
@@ -107,7 +108,7 @@ export class LambdaFlareCommand extends Command {
       ;[startMillis, endMillis] = validateStartEndFlags(this.start, this.end)
     } catch (err) {
       if (err instanceof Error) {
-        errorMessages.push(commonRenderer.renderError(err.message))
+        errorMessages.push(helpersRenderer.renderError(err.message))
       }
     }
 
@@ -125,7 +126,7 @@ export class LambdaFlareCommand extends Command {
       this.credentials = await getAWSCredentials()
     } catch (err) {
       if (err instanceof Error) {
-        this.context.stderr.write(commonRenderer.renderError(err.message))
+        this.context.stderr.write(helpersRenderer.renderError(err.message))
       }
 
       return 1
@@ -136,7 +137,7 @@ export class LambdaFlareCommand extends Command {
         await requestAWSCredentials()
       } catch (err) {
         if (err instanceof Error) {
-          this.context.stderr.write(commonRenderer.renderError(err.message))
+          this.context.stderr.write(helpersRenderer.renderError(err.message))
         }
 
         return 1
@@ -156,7 +157,7 @@ export class LambdaFlareCommand extends Command {
     } catch (err) {
       if (err instanceof Error) {
         this.context.stderr.write(
-          commonRenderer.renderError(`Unable to get Lambda function configuration: ${err.message}`)
+          helpersRenderer.renderError(`Unable to get Lambda function configuration: ${err.message}`)
         )
       }
 
@@ -173,14 +174,14 @@ export class LambdaFlareCommand extends Command {
       tags = await getTags(lambdaClient, region!, config.FunctionArn!)
     } catch (err) {
       if (err instanceof Error) {
-        this.context.stderr.write(commonRenderer.renderError(err.message))
+        this.context.stderr.write(helpersRenderer.renderError(err.message))
       }
 
       return 1
     }
     const tagsLength = Object.keys(tags).length
     if (tagsLength === 0) {
-      this.context.stdout.write(commonRenderer.renderSoftWarning(`No resource tags were found.`))
+      this.context.stdout.write(helpersRenderer.renderSoftWarning(`No resource tags were found.`))
     } else {
       this.context.stdout.write(`✅ Found ${tagsLength} resource tags.\n`)
     }
@@ -193,7 +194,7 @@ export class LambdaFlareCommand extends Command {
         logs = await getAllLogs(region!, this.functionName, startMillis, endMillis)
       } catch (err) {
         if (err instanceof Error) {
-          this.context.stderr.write(commonRenderer.renderError(err.message))
+          this.context.stderr.write(helpersRenderer.renderError(err.message))
         }
 
         return 1
@@ -205,7 +206,7 @@ export class LambdaFlareCommand extends Command {
       if (this.withLogs) {
         let message = '\n✅ Found log streams:\n'
         if (logs.size === 0) {
-          message = commonRenderer.renderSoftWarning(
+          message = helpersRenderer.renderSoftWarning(
             'No CloudWatch log streams were found. Logs will not be retrieved or sent.'
           )
         }
@@ -214,7 +215,7 @@ export class LambdaFlareCommand extends Command {
         for (const [logStreamName, logEvents] of logs) {
           let warningMessage = '\n'
           if (logEvents.length === 0) {
-            warningMessage = ' - ' + commonRenderer.renderSoftWarning('No log events found in this stream')
+            warningMessage = ' - ' + helpersRenderer.renderSoftWarning('No log events found in this stream')
           }
           this.context.stdout.write(`• ${logStreamName}${warningMessage}`)
         }
@@ -285,7 +286,7 @@ export class LambdaFlareCommand extends Command {
       deleteFolder(rootFolderPath)
     } catch (err) {
       if (err instanceof Error) {
-        this.context.stderr.write(commonRenderer.renderError(err.message))
+        this.context.stderr.write(helpersRenderer.renderError(err.message))
       }
 
       return 1

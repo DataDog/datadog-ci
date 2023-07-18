@@ -72,7 +72,6 @@ export const CORECLR_PROFILER_PATH = '/opt/datadog/Datadog.Trace.ClrProfiler.Nat
 export const DD_DOTNET_TRACER_HOME = '/opt/datadog'
 
 // Environment variables used in the Lambda environment
-export const API_KEY_ENV_VAR = 'DD_API_KEY'
 export const API_KEY_SECRET_ARN_ENV_VAR = 'DD_API_KEY_SECRET_ARN'
 export const KMS_API_KEY_ENV_VAR = 'DD_KMS_API_KEY'
 export const SITE_ENV_VAR = 'DD_SITE'
@@ -94,7 +93,6 @@ export const DOTNET_TRACER_HOME_ENV_VAR = 'DD_DOTNET_TRACER_HOME'
 
 // Environment variables used by Datadog CI
 export const CI_SITE_ENV_VAR = 'DATADOG_SITE'
-export const CI_API_KEY_ENV_VAR = 'DATADOG_API_KEY'
 export const CI_API_KEY_SECRET_ARN_ENV_VAR = 'DATADOG_API_KEY_SECRET_ARN'
 export const CI_KMS_API_KEY_ENV_VAR = 'DATADOG_KMS_API_KEY'
 

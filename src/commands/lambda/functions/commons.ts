@@ -17,6 +17,8 @@ import {CredentialsProviderError} from '@aws-sdk/property-provider'
 import {AwsCredentialIdentity, AwsCredentialIdentityProvider} from '@aws-sdk/types'
 import inquirer from 'inquirer'
 
+import {CI_API_KEY_ENV_VAR} from '../../../constants'
+import * as helpersRenderer from '../../../helpers/renderer'
 import {isValidDatadogSite} from '../../../helpers/validation'
 
 import {
@@ -24,7 +26,6 @@ import {
   ARM_LAYERS,
   ARM_LAYER_SUFFIX,
   AWS_SHARED_CREDENTIALS_FILE_ENV_VAR,
-  CI_API_KEY_ENV_VAR,
   CI_API_KEY_SECRET_ARN_ENV_VAR,
   CI_KMS_API_KEY_ENV_VAR,
   CI_SITE_ENV_VAR,
@@ -40,7 +41,6 @@ import {
 import {FunctionConfiguration, InstrumentationSettings, InstrumentedConfigurationGroup} from '../interfaces'
 import {applyLogGroupConfig} from '../loggroup'
 import {awsProfileQuestion} from '../prompt'
-import * as commonRenderer from '../renderers/common-renderer'
 import * as instrumentRenderer from '../renderers/instrument-uninstrument-renderer'
 import {applyTagConfig} from '../tags'
 
@@ -48,7 +48,7 @@ import {applyTagConfig} from '../tags'
  * Returns an array of merged layer ARNs if given a Full Layer ARN,
  * if not, it justs returns the layer ARNs provided.
  *
- * @param fullLayerARN a complete layer ARN.
+ * @param fullLayerARN a comple`te layer ARN.
  * @param partialLayerARN a partial layer ARN.
  * @param layerARNs an array of layer ARNs.
  * @returns an array of layer ARNs.
@@ -481,7 +481,7 @@ export const handleLambdaFunctionUpdates = async (configGroups: InstrumentedConf
 
   if (totalFailedUpdates > 0) {
     stdout.write(
-      commonRenderer.renderSoftWarning(
+      helpersRenderer.renderSoftWarning(
         instrumentRenderer.renderUpdatedLambdaFunctions(totalFunctions - totalFailedUpdates)
       )
     )

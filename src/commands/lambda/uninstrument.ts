@@ -4,6 +4,7 @@ import {AwsCredentialIdentity} from '@aws-sdk/types'
 import {bold} from 'chalk'
 import {Command} from 'clipanion'
 
+import * as helperRenderer from '../../helpers/renderer'
 import {DEFAULT_CONFIG_PATHS, resolveConfigFromFile} from '../../helpers/utils'
 
 import {AWS_DEFAULT_REGION_ENV_VAR} from './constants'
@@ -51,7 +52,7 @@ export class UninstrumentCommand extends Command {
       try {
         this.credentials = await getAWSProfileCredentials(profile)
       } catch (err) {
-        this.context.stdout.write(commonRenderer.renderError(err))
+        this.context.stdout.write(helperRenderer.renderError(err))
 
         return 1
       }
@@ -68,7 +69,7 @@ export class UninstrumentCommand extends Command {
           this.credentials = credentials
         }
       } catch (err) {
-        this.context.stdout.write(commonRenderer.renderError(err))
+        this.context.stdout.write(helperRenderer.renderError(err))
 
         return 1
       }

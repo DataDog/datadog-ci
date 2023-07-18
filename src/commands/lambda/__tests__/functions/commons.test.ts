@@ -10,10 +10,11 @@ import {CloudWatchLogsClient} from '@aws-sdk/client-cloudwatch-logs'
 import {LambdaClient, UpdateFunctionConfigurationCommand} from '@aws-sdk/client-lambda'
 import {fromNodeProviderChain} from '@aws-sdk/credential-providers'
 import {mockClient} from 'aws-sdk-client-mock'
+
 import 'aws-sdk-client-mock-jest'
+import {CI_API_KEY_ENV_VAR} from '../../../../constants'
 
 import {
-  CI_API_KEY_ENV_VAR,
   CI_API_KEY_SECRET_ARN_ENV_VAR,
   CI_KMS_API_KEY_ENV_VAR,
   CI_SITE_ENV_VAR,

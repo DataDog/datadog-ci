@@ -5,8 +5,9 @@ import {
   UpdateFunctionConfigurationRequest,
 } from '@aws-sdk/client-lambda'
 
+import {API_KEY_ENV_VAR} from '../../../constants'
+
 import {
-  API_KEY_ENV_VAR,
   API_KEY_SECRET_ARN_ENV_VAR,
   CAPTURE_LAMBDA_PAYLOAD_ENV_VAR,
   DD_LAMBDA_EXTENSION_LAYER_NAME,

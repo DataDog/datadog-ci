@@ -4,6 +4,7 @@ import {AwsCredentialIdentity} from '@aws-sdk/types'
 import {bold} from 'chalk'
 import {Cli, Command} from 'clipanion'
 
+import * as helperRenderer from '../../helpers/renderer'
 import {resolveConfigFromFile, filterAndFormatGithubRemote, DEFAULT_CONFIG_PATHS} from '../../helpers/utils'
 
 import {getCommitInfo, newSimpleGit} from '../git-metadata/git'
@@ -91,7 +92,7 @@ export class InstrumentCommand extends Command {
       try {
         this.credentials = await getAWSProfileCredentials(profile)
       } catch (err) {
-        this.context.stdout.write(commonRenderer.renderError(err))
+        this.context.stdout.write(helperRenderer.renderError(err))
 
         return 1
       }
@@ -121,7 +122,7 @@ export class InstrumentCommand extends Command {
           await requestDatadogEnvVars()
         }
       } catch (err) {
-        this.context.stdout.write(commonRenderer.renderError(err))
+        this.context.stdout.write(helperRenderer.renderError(err))
 
         return 1
       }
@@ -165,7 +166,7 @@ export class InstrumentCommand extends Command {
         await requestEnvServiceVersion()
       } catch (err) {
         this.context.stdout.write(
-          commonRenderer.renderError(`Grabbing env, service, and version values from user. ${err}`)
+          helperRenderer.renderError(`Grabbing env, service, and version values from user. ${err}`)
         )
 
         return 1

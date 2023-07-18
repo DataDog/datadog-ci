@@ -1,6 +1,8 @@
+import {CI_API_KEY_ENV_VAR} from '../../../../constants'
+
 jest.mock('../../loggroup')
 
-import {CI_API_KEY_ENV_VAR, CI_API_KEY_SECRET_ARN_ENV_VAR, CI_KMS_API_KEY_ENV_VAR} from '../../constants'
+import {CI_API_KEY_SECRET_ARN_ENV_VAR, CI_KMS_API_KEY_ENV_VAR} from '../../constants'
 import {calculateUpdateRequest} from '../../functions/instrument'
 import {InstrumentationSettings} from '../../interfaces'
 

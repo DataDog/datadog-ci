@@ -5,16 +5,15 @@ import {
   UpdateFunctionConfigurationCommandInput,
 } from '@aws-sdk/client-lambda'
 
+import {API_KEY_ENV_VAR, CI_API_KEY_ENV_VAR} from '../../../constants'
 import {isValidDatadogSite} from '../../../helpers/validation'
 
 import {
-  API_KEY_ENV_VAR,
   API_KEY_SECRET_ARN_ENV_VAR,
   ARM64_ARCHITECTURE,
   AWS_LAMBDA_EXEC_WRAPPER,
   AWS_LAMBDA_EXEC_WRAPPER_VAR,
   CAPTURE_LAMBDA_PAYLOAD_ENV_VAR,
-  CI_API_KEY_ENV_VAR,
   CI_API_KEY_SECRET_ARN_ENV_VAR,
   CI_KMS_API_KEY_ENV_VAR,
   CI_SITE_ENV_VAR,

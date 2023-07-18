@@ -1,9 +1,6 @@
 import {blueBright, bold, hex, underline} from 'chalk'
 import ora from 'ora'
 
-import {InstrumentCommand} from '../instrument'
-import {UninstrumentCommand} from '../uninstrument'
-
 import {
   dryRunTag,
   warningTag,
@@ -11,7 +8,10 @@ import {
   failCrossTag,
   renderError,
   renderSoftWarning,
-} from './common-renderer'
+} from '../../../helpers/renderer'
+
+import {InstrumentCommand} from '../instrument'
+import {UninstrumentCommand} from '../uninstrument'
 
 /**
  * @returns a header indicating which `lambda` subcommand is running.

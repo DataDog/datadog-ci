@@ -17,13 +17,9 @@ import FormData from 'form-data'
 import inquirer from 'inquirer'
 import JSZip from 'jszip'
 
-import {
-  API_KEY_ENV_VAR,
-  AWS_DEFAULT_REGION_ENV_VAR,
-  CI_API_KEY_ENV_VAR,
-  CI_SITE_ENV_VAR,
-  SITE_ENV_VAR,
-} from '../constants'
+import {API_KEY_ENV_VAR, CI_API_KEY_ENV_VAR} from '../../../constants'
+
+import {AWS_DEFAULT_REGION_ENV_VAR, CI_SITE_ENV_VAR, SITE_ENV_VAR} from '../constants'
 import {
   convertToCSV,
   createDirectories,

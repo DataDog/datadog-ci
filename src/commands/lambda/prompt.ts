@@ -2,7 +2,7 @@ import {blueBright, bold, dim} from 'chalk'
 import {filter} from 'fuzzy'
 import inquirer from 'inquirer'
 
-import {DATADOG_SITES} from '../../constants'
+import {CI_API_KEY_ENV_VAR, DATADOG_SITES} from '../../constants'
 import {isValidDatadogSite} from '../../helpers/validation'
 
 import {
@@ -13,7 +13,6 @@ import {
   AWS_SECRET_ACCESS_KEY_REG_EXP,
   AWS_SECRET_ARN_REG_EXP,
   AWS_SESSION_TOKEN_ENV_VAR,
-  CI_API_KEY_ENV_VAR,
   CI_API_KEY_SECRET_ARN_ENV_VAR,
   CI_KMS_API_KEY_ENV_VAR,
   CI_SITE_ENV_VAR,

@@ -13,3 +13,6 @@ export const DATADOG_SITES: string[] = [
   DATADOG_SITE_AP1,
   DATADOG_SITE_GOV,
 ]
+
+export const API_KEY_ENV_VAR = 'DD_API_KEY'
+export const CI_API_KEY_ENV_VAR = 'DATADOG_API_KEY'

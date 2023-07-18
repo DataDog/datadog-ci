@@ -4,10 +4,11 @@ jest.mock('../../renderers/instrument-uninstrument-renderer')
 import {CloudWatchLogsClient} from '@aws-sdk/client-cloudwatch-logs'
 import {LambdaClient, ListFunctionsCommand} from '@aws-sdk/client-lambda'
 import {mockClient} from 'aws-sdk-client-mock'
+
 import 'aws-sdk-client-mock-jest'
+import {API_KEY_ENV_VAR} from '../../../../constants'
 
 import {
-  API_KEY_ENV_VAR,
   API_KEY_SECRET_ARN_ENV_VAR,
   AWS_LAMBDA_EXEC_WRAPPER,
   AWS_LAMBDA_EXEC_WRAPPER_VAR,
