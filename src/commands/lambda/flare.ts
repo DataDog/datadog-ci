@@ -606,28 +606,28 @@ export const sleep = async (ms: number) => {
  * @returns the framework used or undefined if no framework is found
  */
 export const getFramework = () => {
-  const files = fs.readdirSync(process.cwd())
+  const files = new Set(fs.readdirSync(process.cwd()))
 
   // Check for serverless framework
   const serverlessFiles = ['serverless.yml', 'serverless.yaml']
-  serverlessFiles.forEach((file) => {
-    if (files.includes(file)) {
+  for (const file of serverlessFiles) {
+    if (files.has(file)) {
       return 'Serverless Framework'
     }
-  })
+  }
 
   // Check for AWS CDK
-  if (files.includes('cdk.json')) {
+  if (files.has('cdk.json')) {
     return 'AWS CDK'
   }
 
   // Check for AWS CloudFormation
   const cloudFormationFiles = ['template.yaml', 'template.yml']
-  cloudFormationFiles.forEach((file) => {
-    if (files.includes(file)) {
+  for (const file of cloudFormationFiles) {
+    if (files.has(file)) {
       return 'AWS CloudFormation'
     }
-  })
+  }
 
   return undefined
 }
