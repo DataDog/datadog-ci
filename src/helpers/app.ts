@@ -1,4 +1,4 @@
-const DEFAULT_SUBDOMAIN = 'app';
+const DEFAULT_SUBDOMAIN = 'app'
 
 export const getCommonAppBaseURL = (datadogSite: string, subdomain: string) => {
   const validSubdomain = subdomain || DEFAULT_SUBDOMAIN
