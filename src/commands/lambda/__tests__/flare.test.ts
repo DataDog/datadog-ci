@@ -23,7 +23,6 @@ import {AWS_DEFAULT_REGION_ENV_VAR, CI_SITE_ENV_VAR, SITE_ENV_VAR} from '../cons
 import {
   convertToCSV,
   createDirectories,
-  deleteFolder,
   getAllLogs,
   getEndpointUrl,
   getLogEvents,
@@ -377,24 +376,6 @@ describe('lambda flare', () => {
       config.Environment = undefined
       const maskedConfig = maskConfig(config)
       expect(maskedConfig).toEqual(config)
-    })
-  })
-
-  describe('deleteFolder', () => {
-    it('successfully deletes a folder', async () => {
-      deleteFolder(MOCK_FOLDER_PATH)
-
-      expect(fs.rmSync).toHaveBeenCalledWith(MOCK_FOLDER_PATH, {recursive: true, force: true})
-    })
-
-    it('throws error when unable to delete a folder', async () => {
-      ;(fs.rmSync as jest.Mock).mockImplementation(() => {
-        throw new Error('MOCK ERROR: Unable to delete folder')
-      })
-
-      expect(() => deleteFolder(MOCK_FOLDER_PATH)).toThrowErrorMatchingSnapshot()
-      expect(fs.rmSync).toHaveBeenCalledWith(MOCK_FOLDER_PATH, {recursive: true, force: true})
-      ;(fs.rmSync as jest.Mock).mockRestore()
     })
   })
 

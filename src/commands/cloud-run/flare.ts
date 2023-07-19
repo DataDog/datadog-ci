@@ -15,8 +15,8 @@ import {maskEnvVar} from '../lambda/functions/commons'
 
 export class CloudRunFlareCommand extends Command {
   private isDryRun = false
-  private serviceId?: string
-  private projectId?: string
+  private service?: string
+  private project?: string
   private location?: string
   private caseId?: string
   private email?: string
@@ -31,14 +31,14 @@ export class CloudRunFlareCommand extends Command {
     this.context.stdout.write(helpersRenderer.renderFlareHeader('Cloud Run', this.isDryRun))
 
     const errorMessages: string[] = []
-    // Validate service ID
-    if (this.serviceId === undefined) {
-      errorMessages.push(helpersRenderer.renderError('No service ID specified. [-s,--service-id]'))
+    // Validate service
+    if (this.service === undefined) {
+      errorMessages.push(helpersRenderer.renderError('No service specified. [-s,--service]'))
     }
 
-    // Validate project ID
-    if (this.projectId === undefined) {
-      errorMessages.push(helpersRenderer.renderError('No project ID specified. [-p,--project-id]'))
+    // Validate project
+    if (this.project === undefined) {
+      errorMessages.push(helpersRenderer.renderError('No project specified. [-p,--project]'))
     }
 
     // Validate location
@@ -97,7 +97,7 @@ export class CloudRunFlareCommand extends Command {
     const runClient = new ServicesClient()
     let config: IService
     try {
-      config = await getCloudRunServiceConfig(runClient, this.serviceId!, this.projectId!, this.location!)
+      config = await getCloudRunServiceConfig(runClient, this.service!, this.project!, this.location!)
     } catch (err) {
       if (err instanceof Error) {
         this.context.stderr.write(helpersRenderer.renderError(`Unable to fetch service configuration: ${err.message}`))
@@ -113,6 +113,10 @@ export class CloudRunFlareCommand extends Command {
   }
 }
 
+/**
+ * Check if the user is authenticated with GCP.
+ * @returns true if the user is authenticated, false otherwise
+ */
 const checkAuthentication = async () => {
   const auth = new GoogleAuth()
   try {
@@ -124,6 +128,15 @@ const checkAuthentication = async () => {
   }
 }
 
+/**
+ * Call the google-cloud run sdk to get the configuration
+ * for the given service.
+ * @param runClient the google-cloud run sdk client
+ * @param serviceName the name of the service
+ * @param projectName the project where the service is deployed
+ * @param location the region where the service is deployed
+ * @returns the configuration for the given service
+ */
 export const getCloudRunServiceConfig = async (
   runClient: ServicesClient,
   serviceName: string,
@@ -163,8 +176,8 @@ export const maskConfig = (config: IService) => {
 
 CloudRunFlareCommand.addPath('cloud-run', 'flare')
 CloudRunFlareCommand.addOption('isDryRun', Command.Boolean('-d,--dry'))
-CloudRunFlareCommand.addOption('serviceId', Command.String('-s,--service-id'))
-CloudRunFlareCommand.addOption('projectId', Command.String('-p,--project-id'))
+CloudRunFlareCommand.addOption('service', Command.String('-s,--service'))
+CloudRunFlareCommand.addOption('project', Command.String('-p,--project'))
 CloudRunFlareCommand.addOption('location', Command.String('-l,--location'))
 CloudRunFlareCommand.addOption('caseId', Command.String('-c,--case-id'))
 CloudRunFlareCommand.addOption('email', Command.String('-e,--email'))

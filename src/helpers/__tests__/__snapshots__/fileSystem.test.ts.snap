@@ -1,0 +1,3 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`fileSystem deleteFolder throws error when unable to delete a folder 1`] = `"Failed to delete files located at mock-cwd/mock-folder: MOCK ERROR: Unable to delete folder"`;
