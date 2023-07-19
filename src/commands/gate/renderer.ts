@@ -74,10 +74,6 @@ export const renderRuleEvaluation = (ruleEvaluation: RuleEvaluation): string => 
   return fullStr
 }
 
-export const renderDryRunEvaluation = (): string => {
-  return chalk.yellow('Dry run mode is enabled. Not evaluating the rules.')
-}
-
 export const renderGateEvaluationInput = (evaluateRequest: Payload): string => {
   let fullStr = chalk.bold(`${ICONS.INFO} Evaluating rules matching the following information:\n`)
   fullStr += `Repository: ${evaluateRequest.spanTags[GIT_REPOSITORY_URL]}\n`
