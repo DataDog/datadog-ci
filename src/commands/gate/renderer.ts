@@ -4,6 +4,7 @@ import {GIT_BRANCH, GIT_REPOSITORY_URL} from '../../helpers/tags'
 
 import {EvaluationResponse, Payload, RuleEvaluation} from './interfaces'
 import {getStatus, is5xxError, isBadRequestError} from './utils'
+import {renderDryRunWarning} from "../git-metadata/renderer";
 
 const ICONS = {
   FAILED: '❌',
@@ -16,13 +17,12 @@ export const renderEvaluationResponse = (evaluationResponse: EvaluationResponse)
   if (evaluationResponse.status.toLowerCase() === 'empty') {
     return renderEmptyEvaluation()
   }
+  if (evaluationResponse.status.toLowerCase() === 'dry_run') {
+    return renderDryRunEvaluation(evaluationResponse)
+  }
 
   let fullStr = ''
-  fullStr += chalk.green(
-    evaluationResponse.status.toLowerCase() === 'dry_run'
-      ? 'Successfully completed a dry run request\n'
-      : 'Successfully evaluated all matching rules.\n'
-  )
+  fullStr += chalk.green('Successfully evaluated all matching rules.\n')
   fullStr += `Overall result: ${renderStatus(evaluationResponse.status)}\n`
   fullStr += `Number of rules evaluated: ${chalk.bold(evaluationResponse.rule_evaluations.length)}\n`
 
@@ -70,6 +70,20 @@ export const renderRuleEvaluation = (ruleEvaluation: RuleEvaluation): string => 
   }
 
   fullStr += '\n'
+
+  return fullStr
+}
+
+export const renderDryRunEvaluation = (evaluationResponse: EvaluationResponse): string => {
+
+  let fullStr = ''
+  fullStr += chalk.green('Successfully completed a dry run request\n')
+  fullStr += `Overall result: ${renderStatus(evaluationResponse.status)}\n`
+  fullStr += `Number of matching rules: ${chalk.bold(evaluationResponse.rule_evaluations.length)}\n`
+
+  fullStr += '\n'
+  fullStr += chalk.yellow('####### Matching rules #######\n')
+  evaluationResponse.rule_evaluations.forEach((ruleEvaluation) => (fullStr += renderRuleEvaluation(ruleEvaluation)))
 
   return fullStr
 }
