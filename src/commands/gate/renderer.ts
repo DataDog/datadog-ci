@@ -79,9 +79,11 @@ export const renderDryRunEvaluation = (evaluationResponse: EvaluationResponse): 
   fullStr += `Overall result: ${renderStatus(evaluationResponse.status)}\n`
   fullStr += `Number of matching rules: ${chalk.bold(evaluationResponse.rule_evaluations.length)}\n`
 
-  fullStr += '\n'
-  fullStr += chalk.yellow('####### Matching rules #######\n')
-  evaluationResponse.rule_evaluations.forEach((ruleEvaluation) => (fullStr += renderRuleEvaluation(ruleEvaluation)))
+  if (evaluationResponse.rule_evaluations.length > 0) {
+    fullStr += '\n'
+    fullStr += chalk.yellow('####### Matching rules #######\n')
+    evaluationResponse.rule_evaluations.forEach((ruleEvaluation) => (fullStr += renderRuleEvaluation(ruleEvaluation)))
+  }
 
   return fullStr
 }
