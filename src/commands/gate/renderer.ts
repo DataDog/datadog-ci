@@ -4,7 +4,6 @@ import {GIT_BRANCH, GIT_REPOSITORY_URL} from '../../helpers/tags'
 
 import {EvaluationResponse, Payload, RuleEvaluation} from './interfaces'
 import {getStatus, is5xxError, isBadRequestError} from './utils'
-import {renderDryRunWarning} from "../git-metadata/renderer";
 
 const ICONS = {
   FAILED: '❌',
