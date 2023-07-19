@@ -138,13 +138,16 @@ export const SKIP_MASKING_ENV_VARS = new Set([
 // Project files to search for in Flare
 export const PROJECT_FILES = [
   // Serverless framework
+  'serverless.yaml',
   'serverless.yml',
   'serverless.js',
   // AWS CDK
   'cdk.json',
   // CloudFormation Template
+  'template.yaml',
   'template.yml',
   'template.json',
+  'datadog-cloudfomation-macro.yaml',
   'datadog-cloudfomation-macro.yml',
   'datadog-cloudformation-macro.json',
   // Node.js
@@ -178,10 +181,10 @@ export const PROJECT_FILES = [
   'global.json',
   // Docker
   'Dockerfile',
+  'docker-compose.yaml',
   'docker-compose.yml',
   // Webpack, bundlers
   'webpack.config.js',
-  'rollup.config.js',
   '.babelrc',
   'tsconfig.json',
   'esbuild.config.js',
