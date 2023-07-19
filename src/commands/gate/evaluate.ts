@@ -125,6 +125,8 @@ export class GateEvaluateCommand extends Command {
       await this.delay(this.waitingTime)
     }
 
+    this.context.stdout.write(renderGateEvaluationInput(evaluateRequest))
+
     return retryRequest(
       () => api.evaluateGateRules(evaluateRequest, this.context.stdout.write.bind(this.context.stdout)),
       {
