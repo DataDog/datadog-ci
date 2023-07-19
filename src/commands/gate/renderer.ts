@@ -18,7 +18,11 @@ export const renderEvaluationResponse = (evaluationResponse: EvaluationResponse)
   }
 
   let fullStr = ''
-  fullStr += chalk.green('Successfully evaluated all matching rules.\n')
+  fullStr += chalk.green(
+    evaluationResponse.status.toLowerCase() === 'dry_run'
+      ? 'Successfully completed a dry run request\n'
+      : 'Successfully evaluated all matching rules.\n'
+  )
   fullStr += `Overall result: ${renderStatus(evaluationResponse.status)}\n`
   fullStr += `Number of rules evaluated: ${chalk.bold(evaluationResponse.rule_evaluations.length)}\n`
 
@@ -43,6 +47,8 @@ export const renderStatus = (result: string): string => {
       return chalk.red(`Failed ${ICONS.FAILED} `)
     case 'no_data':
       return chalk.yellow(`No Data ${ICONS.WARNING} `)
+    case 'dry_run':
+      return chalk.yellow(`Dry Run ${ICONS.INFO}`)
   }
 
   return result.toLowerCase()

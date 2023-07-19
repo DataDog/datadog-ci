@@ -78,6 +78,9 @@ export class GateEvaluateCommand extends Command {
       requestId: uuidv4(),
       spanTags,
       userScope,
+      options: {
+        dryRun: this.dryRun,
+      },
     }
 
     return this.evaluateRules(api, payload)
@@ -120,13 +123,6 @@ export class GateEvaluateCommand extends Command {
     if (this.shouldWait()) {
       this.context.stdout.write(renderWaiting())
       await this.delay(this.waitingTime)
-    }
-
-    this.context.stdout.write(renderGateEvaluationInput(evaluateRequest))
-    if (this.dryRun) {
-      this.context.stdout.write(renderDryRunEvaluation())
-
-      return 0
     }
 
     return retryRequest(

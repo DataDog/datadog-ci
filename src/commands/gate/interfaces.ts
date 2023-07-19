@@ -8,6 +8,11 @@ export interface Payload {
   requestId: string
   spanTags: SpanTags
   userScope: Record<string, string[]>
+  options: PayloadOptions
+}
+
+export interface PayloadOptions {
+  dryRun: boolean
 }
 
 export interface EvaluationResponsePayload {
