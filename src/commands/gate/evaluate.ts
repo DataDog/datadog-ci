@@ -12,7 +12,6 @@ import {getUserGitSpanTags} from '../../helpers/user-provided-git'
 import {apiConstructor} from './api'
 import {APIHelper, EvaluationResponse, Payload} from './interfaces'
 import {
-  renderDryRunEvaluation,
   renderEvaluationResponse,
   renderGateEvaluationInput,
   renderGateEvaluationError,
