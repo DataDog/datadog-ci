@@ -74,7 +74,6 @@ export const renderRuleEvaluation = (ruleEvaluation: RuleEvaluation): string => 
 }
 
 export const renderDryRunEvaluation = (evaluationResponse: EvaluationResponse): string => {
-
   let fullStr = ''
   fullStr += chalk.green('Successfully completed a dry run request\n')
   fullStr += `Overall result: ${renderStatus(evaluationResponse.status)}\n`
