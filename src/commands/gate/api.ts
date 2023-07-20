@@ -11,6 +11,7 @@ export const evaluateGateRules = (
 ) => async (evaluateRequest: Payload, write: Writable['write']) => {
   const payload = JSON.stringify({
     data: {
+      id: evaluateRequest.requestId,
       type: 'gate_evaluation',
       attributes: {
         tags: evaluateRequest.spanTags,
