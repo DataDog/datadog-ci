@@ -12,7 +12,7 @@ import {GoogleAuth} from 'google-auth-library'
 import inquirer from 'inquirer'
 
 import {API_KEY_ENV_VAR, CI_API_KEY_ENV_VAR, FLARE_OUTPUT_DIRECTORY, FLARE_ZIP_FILE_NAME} from '../../constants'
-import {deleteFolder, writeFile, zipContents} from '../../helpers/fileSystem'
+import { createDirectories, deleteFolder, writeFile, zipContents } from '../../helpers/fileSystem'
 import {sendToDatadog} from '../../helpers/flareFunctions'
 import * as helpersRenderer from '../../helpers/renderer'
 
@@ -127,8 +127,7 @@ export class CloudRunFlareCommand extends Command {
       }
 
       // Create folder
-      // TODO use common createDirectories function
-      fs.mkdirSync(rootFolderPath)
+      createDirectories(rootFolderPath, [])
 
       // Write file
       const configFilePath = path.join(rootFolderPath, SERVICE_CONFIG_FILE_NAME)

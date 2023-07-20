@@ -77,3 +77,22 @@ export const zipContents = async (rootFolderPath: string, zipPath: string) => {
     }
   }
 }
+
+/**
+ * Creates the root folder and any subfolders
+ * @param rootFolderPath path to the root folder
+ * @param subFolders paths to any subfolders to be created
+ * @throws Error if the root folder cannot be deleted or folders cannot be created
+ */
+export const createDirectories = (rootFolderPath: string, subFolders: string[]) => {
+  try {
+    fs.mkdirSync(rootFolderPath)
+    for (const subFolder of subFolders) {
+      fs.mkdirSync(subFolder)
+    }
+  } catch (err) {
+    if (err instanceof Error) {
+      throw Error(`Unable to create directories: ${err.message}`)
+    }
+  }
+}

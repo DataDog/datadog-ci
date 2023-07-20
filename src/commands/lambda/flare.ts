@@ -15,7 +15,7 @@ import chalk from 'chalk'
 import {Command} from 'clipanion'
 
 import {API_KEY_ENV_VAR, CI_API_KEY_ENV_VAR, FLARE_OUTPUT_DIRECTORY, FLARE_ZIP_FILE_NAME} from '../../constants'
-import {deleteFolder, writeFile, zipContents} from '../../helpers/fileSystem'
+import {createDirectories, deleteFolder, writeFile, zipContents} from '../../helpers/fileSystem'
 import {sendToDatadog} from '../../helpers/flareFunctions'
 import * as helpersRenderer from '../../helpers/renderer'
 
@@ -439,25 +439,6 @@ export const maskConfig = (config: FunctionConfiguration) => {
   const stringifiedConfig = JSON.stringify(config, replacer)
 
   return JSON.parse(stringifiedConfig) as FunctionConfiguration
-}
-
-/**
- * Creates the root folder and any subfolders
- * @param rootFolderPath path to the root folder
- * @param subFolders paths to any subfolders to be created
- * @throws Error if the root folder cannot be deleted or folders cannot be created
- */
-export const createDirectories = (rootFolderPath: string, subFolders: string[]) => {
-  try {
-    fs.mkdirSync(rootFolderPath)
-    for (const subFolder of subFolders) {
-      fs.mkdirSync(subFolder)
-    }
-  } catch (err) {
-    if (err instanceof Error) {
-      throw Error(`Unable to create directories: ${err.message}`)
-    }
-  }
 }
 
 /**

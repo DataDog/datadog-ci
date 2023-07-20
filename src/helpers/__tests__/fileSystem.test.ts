@@ -6,7 +6,7 @@ import JSZip from 'jszip'
 
 import {mockDatadogApiKey} from '../../commands/lambda/__tests__/fixtures'
 
-import {deleteFolder, writeFile, zipContents} from '../fileSystem'
+import {createDirectories, deleteFolder, writeFile, zipContents} from '../fileSystem'
 
 // Mock constants
 const MOCK_CWD = 'mock-cwd'
@@ -187,6 +187,32 @@ describe('fileSystem', () => {
 
       // Reset mock
       fs.writeFileSync = jest.fn().mockImplementation(() => {})
+    })
+  })
+
+  describe('createDirectories', () => {
+    const MOCK_LOG_PATH = path.join(MOCK_FOLDER_PATH, 'logs')
+    it('successfully creates a root folder', async () => {
+      createDirectories(MOCK_FOLDER_PATH, [])
+
+      expect(fs.mkdirSync).toHaveBeenCalledWith(MOCK_FOLDER_PATH)
+    })
+
+    it('successfully creates a root and logs folder', async () => {
+      createDirectories(MOCK_FOLDER_PATH, [MOCK_LOG_PATH])
+
+      expect(fs.mkdirSync).toHaveBeenCalledWith(MOCK_FOLDER_PATH)
+      expect(fs.mkdirSync).toHaveBeenCalledWith(MOCK_LOG_PATH)
+    })
+
+    it('throws error when unable to create a folder', async () => {
+      ;(fs.mkdirSync as jest.Mock).mockImplementation(() => {
+        throw new Error('MOCK ERROR: Unable to create folder')
+      })
+
+      expect(() => createDirectories(MOCK_FOLDER_PATH, [])).toThrowErrorMatchingSnapshot()
+      expect(fs.mkdirSync).toHaveBeenCalledWith(MOCK_FOLDER_PATH)
+      fs.mkdirSync = jest.fn().mockImplementation(() => {})
     })
   })
 })

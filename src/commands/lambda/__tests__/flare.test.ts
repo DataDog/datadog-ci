@@ -19,7 +19,6 @@ import {API_KEY_ENV_VAR, CI_API_KEY_ENV_VAR} from '../../../constants'
 import {AWS_DEFAULT_REGION_ENV_VAR, PROJECT_FILES} from '../constants'
 import {
   convertToCSV,
-  createDirectories,
   getAllLogs,
   getLogEvents,
   getLogStreamNames,
@@ -374,32 +373,6 @@ describe('lambda flare', () => {
       config.Environment = undefined
       const maskedConfig = maskConfig(config)
       expect(maskedConfig).toEqual(config)
-    })
-  })
-
-  describe('createDirectories', () => {
-    const MOCK_LOG_PATH = path.join(MOCK_FOLDER_PATH, 'logs')
-    it('successfully creates a root folder', async () => {
-      createDirectories(MOCK_FOLDER_PATH, [])
-
-      expect(fs.mkdirSync).toHaveBeenCalledWith(MOCK_FOLDER_PATH)
-    })
-
-    it('successfully creates a root and logs folder', async () => {
-      createDirectories(MOCK_FOLDER_PATH, [MOCK_LOG_PATH])
-
-      expect(fs.mkdirSync).toHaveBeenCalledWith(MOCK_FOLDER_PATH)
-      expect(fs.mkdirSync).toHaveBeenCalledWith(MOCK_LOG_PATH)
-    })
-
-    it('throws error when unable to create a folder', async () => {
-      ;(fs.mkdirSync as jest.Mock).mockImplementation(() => {
-        throw new Error('MOCK ERROR: Unable to create folder')
-      })
-
-      expect(() => createDirectories(MOCK_FOLDER_PATH, [])).toThrowErrorMatchingSnapshot()
-      expect(fs.mkdirSync).toHaveBeenCalledWith(MOCK_FOLDER_PATH)
-      fs.mkdirSync = jest.fn().mockImplementation(() => {})
     })
   })
 

@@ -42,5 +42,5 @@ export const renderSoftWarning = (warning: string) => `${warningExclamationSignT
 export const renderFlareHeader = (platformName: string, isDryRun: boolean) => {
   const prefix = isDryRun ? `${dryRunTag} ` : ''
 
-  return `\n${prefix}🐶 Generating ${platformName} flare to send your configuration to Datadog...\n`
+  return bold(`\n${prefix}🐶 Generating ${platformName} flare to send your configuration to Datadog...\n`)
 }

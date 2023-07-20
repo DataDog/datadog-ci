@@ -1,5 +1,7 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
+exports[`fileSystem createDirectories throws error when unable to create a folder 1`] = `"Unable to create directories: MOCK ERROR: Unable to create folder"`;
+
 exports[`fileSystem deleteFolder throws error when unable to delete a folder 1`] = `"Failed to delete files located at mock-cwd/mock-folder: MOCK ERROR: Unable to delete folder"`;
 
 exports[`fileSystem writeFile throws error when unable to write data to a file 1`] = `"Unable to write file: MOCK ERROR: Unable to write file"`;

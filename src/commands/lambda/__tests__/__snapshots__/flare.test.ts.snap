@@ -167,8 +167,6 @@ exports[`lambda flare convertToCSV returns a CSV string from an array of log eve
 
 exports[`lambda flare convertToCSV returns a CSV string with only headers when given an empty array 1`] = `"timestamp,datetime,message"`;
 
-exports[`lambda flare createDirectories throws error when unable to create a folder 1`] = `"Unable to create directories: MOCK ERROR: Unable to create folder"`;
-
 exports[`lambda flare getAllLogs throws an error when unable to get log events 1`] = `[Error: Unable to get log events for stream streamName: Error getting log events]`;
 
 exports[`lambda flare getAllLogs throws an error when unable to get log streams 1`] = `[Error: Unable to get log streams: Error getting log streams]`;
