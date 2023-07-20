@@ -17,7 +17,7 @@ import {CredentialsProviderError} from '@aws-sdk/property-provider'
 import {AwsCredentialIdentity, AwsCredentialIdentityProvider} from '@aws-sdk/types'
 import inquirer from 'inquirer'
 
-import {CI_API_KEY_ENV_VAR} from '../../../constants'
+import {CI_API_KEY_ENV_VAR, CI_SITE_ENV_VAR} from '../../../constants'
 import * as helpersRenderer from '../../../helpers/renderer'
 import {isValidDatadogSite} from '../../../helpers/validation'
 
@@ -28,7 +28,6 @@ import {
   AWS_SHARED_CREDENTIALS_FILE_ENV_VAR,
   CI_API_KEY_SECRET_ARN_ENV_VAR,
   CI_KMS_API_KEY_ENV_VAR,
-  CI_SITE_ENV_VAR,
   DEFAULT_LAYER_AWS_ACCOUNT,
   GOVCLOUD_LAYER_AWS_ACCOUNT,
   LayerKey,

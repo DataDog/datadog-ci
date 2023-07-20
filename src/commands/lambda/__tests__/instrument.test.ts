@@ -17,14 +17,13 @@ import {mockClient} from 'aws-sdk-client-mock'
 import 'aws-sdk-client-mock-jest'
 import {Cli} from 'clipanion/lib/advanced'
 
-import {CI_API_KEY_ENV_VAR} from '../../../constants'
+import {CI_API_KEY_ENV_VAR, CI_SITE_ENV_VAR} from '../../../constants'
 
 import {
   AWS_ACCESS_KEY_ID_ENV_VAR,
   AWS_DEFAULT_REGION_ENV_VAR,
   AWS_SECRET_ACCESS_KEY_ENV_VAR,
   AWS_SESSION_TOKEN_ENV_VAR,
-  CI_SITE_ENV_VAR,
   DEFAULT_LAYER_AWS_ACCOUNT,
   ENVIRONMENT_ENV_VAR,
   SERVICE_ENV_VAR,

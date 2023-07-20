@@ -1,4 +1,6 @@
 import IService = google.cloud.run.v2.IService
+import fs from 'fs'
+import path from 'path'
 import process from 'process'
 import util from 'util'
 
@@ -7,11 +9,17 @@ import {google} from '@google-cloud/run/build/protos/protos'
 import chalk from 'chalk'
 import {Command} from 'clipanion'
 import {GoogleAuth} from 'google-auth-library'
+import inquirer from 'inquirer'
 
-import {API_KEY_ENV_VAR, CI_API_KEY_ENV_VAR} from '../../constants'
+import {API_KEY_ENV_VAR, CI_API_KEY_ENV_VAR, FLARE_OUTPUT_DIRECTORY, FLARE_ZIP_FILE_NAME} from '../../constants'
+import {deleteFolder, writeFile, zipContents} from '../../helpers/fileSystem'
+import {sendToDatadog} from '../../helpers/flareFunctions'
 import * as helpersRenderer from '../../helpers/renderer'
 
 import {maskEnvVar} from '../lambda/functions/commons'
+import {confirmationQuestion} from '../lambda/prompt'
+
+const SERVICE_CONFIG_FILE_NAME = 'service_config.json'
 
 export class CloudRunFlareCommand extends Command {
   private isDryRun = false
@@ -92,7 +100,7 @@ export class CloudRunFlareCommand extends Command {
     }
     this.context.stdout.write('GCP credentials verified!\n')
 
-    // Get service configuration
+    // Get and print service configuration
     this.context.stdout.write(chalk.bold('\n🔍 Fetching service configuration...\n'))
     const runClient = new ServicesClient()
     let config: IService
@@ -108,6 +116,61 @@ export class CloudRunFlareCommand extends Command {
     maskConfig(config)
     const configStr = util.inspect(config, false, 10, true)
     this.context.stdout.write(`\n${configStr}\n`)
+
+    // Save and zip service configuration
+    this.context.stdout.write(chalk.bold('\n💾 Saving configuration...\n'))
+    const rootFolderPath = path.join(process.cwd(), FLARE_OUTPUT_DIRECTORY)
+    try {
+      // Delete folder if it already exists
+      if (fs.existsSync(rootFolderPath)) {
+        deleteFolder(rootFolderPath)
+      }
+
+      // Create folder
+      // TODO use common createDirectories function
+      fs.mkdirSync(rootFolderPath)
+
+      // Write file
+      const configFilePath = path.join(rootFolderPath, SERVICE_CONFIG_FILE_NAME)
+      writeFile(configFilePath, JSON.stringify(config, undefined, 2))
+
+      // Exit if dry run
+      const outputMsg = `\nℹ️ Your output files are located at: ${rootFolderPath}\n\n`
+      if (this.isDryRun) {
+        this.context.stdout.write('\n🚫 The flare files were not sent as it was executed in dry run mode.')
+        this.context.stdout.write(outputMsg)
+
+        return 0
+      }
+
+      // Confirm before sending
+      this.context.stdout.write('\n')
+      const answer = await inquirer.prompt(
+        confirmationQuestion('Are you sure you want to send the flare file to Datadog Support?')
+      )
+      if (!answer.confirmation) {
+        this.context.stdout.write('\n🚫 The flare files were not sent based on your selection.')
+        this.context.stdout.write(outputMsg)
+
+        return 0
+      }
+
+      // Zip folder
+      const zipPath = path.join(rootFolderPath, FLARE_ZIP_FILE_NAME)
+      await zipContents(rootFolderPath, zipPath)
+
+      // Send to Datadog
+      this.context.stdout.write(chalk.bold('\n🚀 Sending to Datadog Support...\n'))
+      await sendToDatadog(zipPath, this.caseId!, this.email!, this.apiKey!, rootFolderPath)
+      this.context.stdout.write('\n✅ Successfully sent flare file to Datadog Support!\n')
+
+      // Delete contents
+      deleteFolder(rootFolderPath)
+    } catch (err) {
+      if (err instanceof Error) {
+        this.context.stderr.write(helpersRenderer.renderError(`Unable to save configuration: ${err.message}`))
+      }
+    }
 
     return 0
   }

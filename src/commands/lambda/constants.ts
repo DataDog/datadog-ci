@@ -1,3 +1,5 @@
+import {SITE_ENV_VAR} from '../../constants'
+
 export const DD_LAMBDA_EXTENSION_LAYER_NAME = 'Datadog-Extension'
 export const EXTENSION_LAYER_KEY = 'extension'
 export const LAYER_LOOKUP = {
@@ -74,7 +76,6 @@ export const DD_DOTNET_TRACER_HOME = '/opt/datadog'
 // Environment variables used in the Lambda environment
 export const API_KEY_SECRET_ARN_ENV_VAR = 'DD_API_KEY_SECRET_ARN'
 export const KMS_API_KEY_ENV_VAR = 'DD_KMS_API_KEY'
-export const SITE_ENV_VAR = 'DD_SITE'
 export const TRACE_ENABLED_ENV_VAR = 'DD_TRACE_ENABLED'
 export const MERGE_XRAY_TRACES_ENV_VAR = 'DD_MERGE_XRAY_TRACES'
 export const FLUSH_TO_LOG_ENV_VAR = 'DD_FLUSH_TO_LOG'
@@ -92,7 +93,6 @@ export const PROFILER_PATH_ENV_VAR = 'CORECLR_PROFILER_PATH'
 export const DOTNET_TRACER_HOME_ENV_VAR = 'DD_DOTNET_TRACER_HOME'
 
 // Environment variables used by Datadog CI
-export const CI_SITE_ENV_VAR = 'DATADOG_SITE'
 export const CI_API_KEY_SECRET_ARN_ENV_VAR = 'DATADOG_API_KEY_SECRET_ARN'
 export const CI_KMS_API_KEY_ENV_VAR = 'DATADOG_KMS_API_KEY'
 

@@ -20,6 +20,8 @@ import {
 import {fromIni} from '@aws-sdk/credential-providers'
 import {mockClient} from 'aws-sdk-client-mock'
 
+import {SITE_ENV_VAR} from '../../../constants'
+
 import 'aws-sdk-client-mock-jest'
 
 import {
@@ -33,7 +35,6 @@ import {
   LOG_LEVEL_ENV_VAR,
   MERGE_XRAY_TRACES_ENV_VAR,
   SERVICE_ENV_VAR,
-  SITE_ENV_VAR,
   TRACE_ENABLED_ENV_VAR,
   VERSION_ENV_VAR,
 } from '../constants'

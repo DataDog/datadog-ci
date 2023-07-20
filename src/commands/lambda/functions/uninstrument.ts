@@ -5,7 +5,7 @@ import {
   UpdateFunctionConfigurationRequest,
 } from '@aws-sdk/client-lambda'
 
-import {API_KEY_ENV_VAR} from '../../../constants'
+import {API_KEY_ENV_VAR, SITE_ENV_VAR} from '../../../constants'
 
 import {
   API_KEY_SECRET_ARN_ENV_VAR,
@@ -30,7 +30,6 @@ import {
   RuntimeType,
   RUNTIME_LOOKUP,
   SERVICE_ENV_VAR,
-  SITE_ENV_VAR,
   TRACE_ENABLED_ENV_VAR,
   VERSION_ENV_VAR,
   AWS_LAMBDA_EXEC_WRAPPER_VAR,

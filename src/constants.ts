@@ -14,5 +14,13 @@ export const DATADOG_SITES: string[] = [
   DATADOG_SITE_GOV,
 ]
 
+// Environment variables for Lambda and Cloud Run
 export const API_KEY_ENV_VAR = 'DD_API_KEY'
 export const CI_API_KEY_ENV_VAR = 'DATADOG_API_KEY'
+export const CI_SITE_ENV_VAR = 'DATADOG_SITE'
+export const SITE_ENV_VAR = 'DD_SITE'
+
+// Flare constants
+export const FLARE_OUTPUT_DIRECTORY = '.datadog-ci'
+export const FLARE_ENDPOINT_PATH = '/api/ui/support/serverless/flare'
+export const FLARE_ZIP_FILE_NAME = 'lambda-flare-output.zip'

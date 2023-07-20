@@ -5,7 +5,7 @@ import {
   UpdateFunctionConfigurationCommandInput,
 } from '@aws-sdk/client-lambda'
 
-import {API_KEY_ENV_VAR, CI_API_KEY_ENV_VAR} from '../../../constants'
+import {API_KEY_ENV_VAR, CI_API_KEY_ENV_VAR, CI_SITE_ENV_VAR, SITE_ENV_VAR} from '../../../constants'
 import {isValidDatadogSite} from '../../../helpers/validation'
 
 import {
@@ -16,7 +16,6 @@ import {
   CAPTURE_LAMBDA_PAYLOAD_ENV_VAR,
   CI_API_KEY_SECRET_ARN_ENV_VAR,
   CI_KMS_API_KEY_ENV_VAR,
-  CI_SITE_ENV_VAR,
   CORECLR_ENABLE_PROFILING,
   CORECLR_PROFILER,
   CORECLR_PROFILER_PATH,
@@ -42,7 +41,6 @@ import {
   RuntimeType,
   RUNTIME_LOOKUP,
   SERVICE_ENV_VAR,
-  SITE_ENV_VAR,
   TRACE_ENABLED_ENV_VAR,
   VERSION_ENV_VAR,
   APM_FLUSH_DEADLINE_MILLISECONDS_ENV_VAR,

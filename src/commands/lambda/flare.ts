@@ -11,37 +11,22 @@ import {
 } from '@aws-sdk/client-cloudwatch-logs'
 import {FunctionConfiguration, LambdaClient, LambdaClientConfig, ListTagsCommand} from '@aws-sdk/client-lambda'
 import {AwsCredentialIdentity} from '@aws-sdk/types'
-import axios from 'axios'
 import {Command} from 'clipanion'
-import FormData from 'form-data'
 import inquirer from 'inquirer'
-import JSZip from 'jszip'
 
-import {
-  API_KEY_ENV_VAR,
-  CI_API_KEY_ENV_VAR,
-  DATADOG_SITE_EU1,
-  DATADOG_SITE_GOV,
-  DATADOG_SITE_US1,
-  DATADOG_SITES,
-} from '../../constants'
-import {deleteFolder} from '../../helpers/fileSystem'
+import {API_KEY_ENV_VAR, CI_API_KEY_ENV_VAR, FLARE_OUTPUT_DIRECTORY, FLARE_ZIP_FILE_NAME} from '../../constants'
+import {deleteFolder, writeFile, zipContents} from '../../helpers/fileSystem'
+import {sendToDatadog} from '../../helpers/flareFunctions'
 import * as helpersRenderer from '../../helpers/renderer'
-import {isValidDatadogSite} from '../../helpers/validation'
 
-import {AWS_DEFAULT_REGION_ENV_VAR, CI_SITE_ENV_VAR, SITE_ENV_VAR} from './constants'
+import {AWS_DEFAULT_REGION_ENV_VAR} from './constants'
 import {getAWSCredentials, getLambdaFunctionConfig, getRegion, maskStringifiedEnvVar} from './functions/commons'
 import {confirmationQuestion, requestAWSCredentials} from './prompt'
 import * as commonRenderer from './renderers/common-renderer'
 
-const {version} = require('../../../package.json')
-
-const ENDPOINT_PATH = '/api/ui/support/serverless/flare'
-const FLARE_OUTPUT_DIRECTORY = '.datadog-ci'
 const LOGS_DIRECTORY = 'logs'
 const FUNCTION_CONFIG_FILE_NAME = 'function_config.json'
 const TAGS_FILE_NAME = 'tags.json'
-const ZIP_FILE_NAME = 'lambda-flare-output.zip'
 const MAX_LOG_STREAMS = 50
 const DEFAULT_LOG_STREAMS = 3
 const MAX_LOG_EVENTS_PER_STREAM = 1000
@@ -275,7 +260,7 @@ export class LambdaFlareCommand extends Command {
       }
 
       // Zip folder
-      const zipPath = path.join(rootFolderPath, ZIP_FILE_NAME)
+      const zipPath = path.join(rootFolderPath, FLARE_ZIP_FILE_NAME)
       await zipContents(rootFolderPath, zipPath)
 
       // Send to Datadog
@@ -539,22 +524,6 @@ export const getTags = async (lambdaClient: LambdaClient, region: string, arn: s
 }
 
 /**
- * Write the function config to a file
- * @param filePath path to the file
- * @param data the data to write
- * @throws Error if the file cannot be written
- */
-export const writeFile = (filePath: string, data: string) => {
-  try {
-    fs.writeFileSync(filePath, data)
-  } catch (err) {
-    if (err instanceof Error) {
-      throw Error(`Unable to create function configuration file: ${err.message}`)
-    }
-  }
-}
-
-/**
  * Convert the log events to a CSV string
  * @param logEvents array of log events
  * @returns the CSV string
@@ -580,117 +549,6 @@ export const convertToCSV = (logEvents: OutputLogEvent[]) => {
  */
 export const sleep = async (ms: number) => {
   await new Promise((resolve) => setTimeout(resolve, ms))
-}
-
-/**
- * Zip the contents of the flare folder
- * @param rootFolderPath path to the root folder to zip
- * @param zipPath path to save the zip file
- * @throws Error if the zip fails
- */
-export const zipContents = async (rootFolderPath: string, zipPath: string) => {
-  const zip = new JSZip()
-
-  const addFolderToZip = (folderPath: string) => {
-    if (!fs.existsSync(folderPath)) {
-      throw Error(`Folder does not exist: ${folderPath}`)
-    }
-
-    const folder = fs.statSync(folderPath)
-    if (!folder.isDirectory()) {
-      throw Error(`Path is not a directory: ${folderPath}`)
-    }
-
-    const contents = fs.readdirSync(folderPath)
-    for (const item of contents) {
-      const fullPath = path.join(folderPath, item)
-      const file = fs.statSync(fullPath)
-
-      if (file.isDirectory()) {
-        addFolderToZip(fullPath)
-      } else {
-        const data = fs.readFileSync(fullPath)
-        zip.file(path.relative(rootFolderPath, fullPath), data)
-      }
-    }
-  }
-
-  try {
-    addFolderToZip(rootFolderPath)
-    const zipContent = await zip.generateAsync({type: 'nodebuffer'})
-    fs.writeFileSync(zipPath, zipContent)
-  } catch (err) {
-    if (err instanceof Error) {
-      throw Error(`Unable to zip the flare files: ${err.message}`)
-    }
-  }
-}
-
-/**
- * Calculates the full endpoint URL
- * @throws Error if the site is invalid
- * @returns the full endpoint URL
- */
-export const getEndpointUrl = () => {
-  const baseUrl = process.env[CI_SITE_ENV_VAR] ?? process.env[SITE_ENV_VAR] ?? DATADOG_SITE_US1
-  // The DNS doesn't redirect to the proper endpoint when a subdomain is not present in the baseUrl.
-  // There is a DNS inconsistency
-  let endpointUrl = baseUrl
-  if ([DATADOG_SITE_US1, DATADOG_SITE_EU1, DATADOG_SITE_GOV].includes(baseUrl)) {
-    endpointUrl = 'app.' + baseUrl
-  }
-
-  if (!isValidDatadogSite(baseUrl)) {
-    throw Error(`Invalid site: ${baseUrl}. Must be one of: ${DATADOG_SITES.join(', ')}`)
-  }
-
-  return 'https://' + endpointUrl + ENDPOINT_PATH
-}
-
-/**
- * Send the zip file to Datadog support
- * @param zipPath
- * @param caseId
- * @param email
- * @param apiKey
- * @param rootFolderPath
- * @throws Error if the request fails
- */
-export const sendToDatadog = async (
-  zipPath: string,
-  caseId: string,
-  email: string,
-  apiKey: string,
-  rootFolderPath: string
-) => {
-  const endpointUrl = getEndpointUrl()
-  const form = new FormData()
-  form.append('case_id', caseId)
-  form.append('flare_file', fs.createReadStream(zipPath))
-  form.append('datadog_ci_version', version)
-  form.append('email', email)
-  const headerConfig = {
-    headers: {
-      ...form.getHeaders(),
-      'DD-API-KEY': apiKey,
-    },
-  }
-
-  try {
-    await axios.post(endpointUrl, form, headerConfig)
-  } catch (err) {
-    // Ensure the root folder is deleted if the request fails
-    deleteFolder(rootFolderPath)
-
-    if (axios.isAxiosError(err)) {
-      const errResponse: string = (err.response?.data.error as string) ?? ''
-      const errorMessage = err.message ?? ''
-
-      throw Error(`Failed to send flare file to Datadog Support: ${errorMessage}. ${errResponse}\n`)
-    }
-
-    throw err
-  }
 }
 
 LambdaFlareCommand.addPath('lambda', 'flare')

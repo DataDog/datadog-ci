@@ -12,26 +12,21 @@ import {
 } from '@aws-sdk/client-cloudwatch-logs'
 import {LambdaClient, ListTagsCommand} from '@aws-sdk/client-lambda'
 import {mockClient} from 'aws-sdk-client-mock'
-import axios from 'axios'
-import FormData from 'form-data'
 import inquirer from 'inquirer'
 import JSZip from 'jszip'
 
 import {API_KEY_ENV_VAR, CI_API_KEY_ENV_VAR} from '../../../constants'
 
-import {AWS_DEFAULT_REGION_ENV_VAR, CI_SITE_ENV_VAR, SITE_ENV_VAR} from '../constants'
+import {AWS_DEFAULT_REGION_ENV_VAR} from '../constants'
 import {
   convertToCSV,
   createDirectories,
   getAllLogs,
-  getEndpointUrl,
   getLogEvents,
   getLogStreamNames,
   getTags,
   maskConfig,
   validateStartEndFlags,
-  writeFile,
-  zipContents,
 } from '../flare'
 import * as flareModule from '../flare'
 import {getAWSCredentials, getLambdaFunctionConfig} from '../functions/commons'
@@ -52,9 +47,6 @@ import {
 const MOCK_CWD = 'mock-folder'
 const MOCK_FOLDER_NAME = '.datadog-ci'
 const MOCK_FOLDER_PATH = path.join(MOCK_CWD, MOCK_FOLDER_NAME)
-const MOCK_FILE_NAME = 'function_config.json'
-const MOCK_FILES = new Set([MOCK_FILE_NAME, 'file1.csv', 'file2.csv', 'file3.csv'])
-const MOCK_ZIP_PATH = 'output.zip'
 const MOCK_REGION = 'us-east-1'
 const MOCK_REQUIRED_FLAGS = ['lambda', 'flare', '-f', 'func', '-r', MOCK_REGION, '-c', '123', '-e', 'test@test.com']
 const MOCK_CONFIG = {
@@ -93,6 +85,7 @@ process.cwd = jest.fn().mockReturnValue(MOCK_CWD)
 jest.mock('fs')
 fs.writeFileSync = jest.fn().mockImplementation(() => {})
 fs.readFileSync = jest.fn().mockReturnValue(JSON.stringify(MOCK_CONFIG, undefined, 2))
+fs.existsSync = jest.fn().mockReturnValue(true)
 const mockReadStream = new stream.Readable({
   read() {
     this.push(JSON.stringify(MOCK_CONFIG, undefined, 2))
@@ -100,6 +93,7 @@ const mockReadStream = new stream.Readable({
   },
 })
 fs.createReadStream = jest.fn().mockReturnValue(mockReadStream)
+fs.readdirSync = jest.fn().mockReturnValue([])
 ;(fs.statSync as jest.Mock).mockImplementation((file_path: string) => ({
   isDirectory: () => file_path === MOCK_FOLDER_PATH || file_path === MOCK_CWD,
 }))
@@ -696,27 +690,6 @@ describe('lambda flare', () => {
     })
   })
 
-  describe('writeFile', () => {
-    const MOCK_DATA = 'mock data'
-    ;(fs.existsSync as jest.Mock).mockReturnValue(false)
-
-    it('successfully writes data to a file with no error', async () => {
-      writeFile(MOCK_FILE_NAME, MOCK_DATA)
-
-      expect(fs.writeFileSync).toHaveBeenCalledWith(MOCK_FILE_NAME, MOCK_DATA)
-    })
-
-    it('throws error when unable to write data to a file', async () => {
-      ;(fs.writeFileSync as jest.Mock).mockImplementation(() => {
-        throw new Error('MOCK ERROR: Unable to write file')
-      })
-
-      expect(() => writeFile(MOCK_FILE_NAME, MOCK_DATA)).toThrowErrorMatchingSnapshot()
-      expect(fs.writeFileSync).toHaveBeenCalledWith(MOCK_FILE_NAME, MOCK_DATA)
-      fs.writeFileSync = jest.fn().mockImplementation(() => {})
-    })
-  })
-
   describe('convertToCSV', () => {
     it('returns a CSV string from an array of log events', () => {
       const mockLogEvents: OutputLogEvent[] = [
@@ -739,210 +712,6 @@ describe('lambda flare', () => {
     it('returns a CSV string with only headers when given an empty array', () => {
       const mockLogEvents: OutputLogEvent[] = []
       expect(convertToCSV(mockLogEvents)).toMatchSnapshot()
-    })
-  })
-
-  describe('zipContents', () => {
-    ;(fs.existsSync as jest.Mock).mockReturnValue(true)
-    ;(fs.readdirSync as jest.Mock).mockImplementation((file_path: string) =>
-      file_path === MOCK_FOLDER_PATH ? Array.from(MOCK_FILES) : []
-    )
-
-    it('successfully zips the contents of a file', async () => {
-      await zipContents(MOCK_FOLDER_PATH, MOCK_ZIP_PATH)
-
-      expect(fs.existsSync).toHaveBeenCalledWith(MOCK_FOLDER_PATH)
-      expect(fs.statSync).toHaveBeenCalledWith(MOCK_FOLDER_PATH)
-      expect(fs.readdirSync).toHaveBeenCalledWith(MOCK_FOLDER_PATH)
-      expect(fs.readFileSync).toHaveBeenCalledTimes(MOCK_FILES.size)
-      expect(mockJSZip.file).toHaveBeenCalledTimes(MOCK_FILES.size)
-      expect(mockJSZip.generateAsync).toHaveBeenCalledWith({type: 'nodebuffer'})
-      expect(fs.writeFileSync).toHaveBeenCalledWith(MOCK_ZIP_PATH, 'zip content')
-    })
-
-    it('throws error when path is not found', async () => {
-      ;(fs.existsSync as any).mockReturnValue(false)
-
-      await expect(zipContents(MOCK_FOLDER_PATH, MOCK_ZIP_PATH)).rejects.toMatchSnapshot()
-      expect(fs.existsSync).toHaveBeenCalledWith(MOCK_FOLDER_PATH)
-      expect(fs.statSync).not.toHaveBeenCalled()
-
-      // Reset mock
-      ;(fs.existsSync as any).mockReturnValue(true)
-    })
-
-    it('throws error when path is not a directory', async () => {
-      ;(fs.statSync as any).mockReturnValue({isDirectory: () => false})
-
-      await expect(zipContents(MOCK_FOLDER_PATH, MOCK_ZIP_PATH)).rejects.toMatchSnapshot()
-      expect(fs.existsSync).toHaveBeenCalledWith(MOCK_FOLDER_PATH)
-      expect(fs.statSync).toHaveBeenCalled()
-      expect(fs.writeFileSync).not.toHaveBeenCalled()
-
-      // Reset mock
-      ;(fs.statSync as jest.Mock).mockImplementation((file_path: string) => ({
-        isDirectory: () => file_path === MOCK_FOLDER_PATH || file_path === MOCK_CWD,
-      }))
-    })
-
-    it('throws error when unable to read file', async () => {
-      ;(fs.readFileSync as any).mockImplementation(() => {
-        throw new Error('MOCK ERROR: Unable to read file')
-      })
-
-      await expect(zipContents(MOCK_FOLDER_PATH, MOCK_ZIP_PATH)).rejects.toMatchSnapshot()
-
-      expect(fs.readFileSync).toHaveBeenCalled()
-      expect(mockJSZip.file).not.toHaveBeenCalled()
-      expect(mockJSZip.generateAsync).not.toHaveBeenCalled()
-      expect(fs.writeFileSync).not.toHaveBeenCalled()
-
-      // Reset mock
-      ;(fs.readFileSync as any).mockReturnValue(JSON.stringify(MOCK_CONFIG, undefined, 2))
-    })
-
-    it('throws error when unable to write file', async () => {
-      ;(mockJSZip.file as any).mockImplementation(() => {
-        throw new Error('MOCK ERROR: Unable to write file')
-      })
-
-      await expect(zipContents(MOCK_FOLDER_PATH, MOCK_ZIP_PATH)).rejects.toMatchSnapshot()
-
-      expect(fs.readFileSync).toHaveBeenCalled()
-      expect(mockJSZip.file).toHaveBeenCalled()
-      expect(mockJSZip.generateAsync).not.toHaveBeenCalled()
-      expect(fs.writeFileSync).not.toHaveBeenCalled()
-
-      // Reset mock
-      ;(mockJSZip.file as any).mockImplementation(() => {})
-    })
-
-    it('throws error when unable to generate zip', async () => {
-      mockJSZip.generateAsync = jest.fn().mockImplementation(() => {
-        throw new Error('MOCK ERROR: Unable to generate zip')
-      })
-
-      await expect(zipContents(MOCK_FOLDER_PATH, MOCK_ZIP_PATH)).rejects.toMatchSnapshot()
-
-      expect(fs.readFileSync).toHaveBeenCalledTimes(MOCK_FILES.size)
-      expect(mockJSZip.file).toHaveBeenCalled()
-      expect(mockJSZip.generateAsync).toHaveBeenCalledWith({type: 'nodebuffer'})
-      expect(fs.writeFileSync).not.toHaveBeenCalled()
-
-      // Reset mock
-      mockJSZip.generateAsync = jest.fn().mockImplementation(() => 'zip content')
-    })
-
-    it('throws error when unable to save zip', async () => {
-      fs.writeFileSync = jest.fn().mockImplementation(() => {
-        throw new Error('MOCK ERROR: Unable to save zip')
-      })
-
-      await expect(zipContents(MOCK_FOLDER_PATH, MOCK_ZIP_PATH)).rejects.toMatchSnapshot()
-
-      expect(fs.readFileSync).toHaveBeenCalledTimes(MOCK_FILES.size)
-      expect(mockJSZip.file).toHaveBeenCalledTimes(MOCK_FILES.size)
-      expect(mockJSZip.generateAsync).toHaveBeenCalledWith({type: 'nodebuffer'})
-      expect(fs.writeFileSync).toHaveBeenCalled()
-
-      // Reset mock
-      fs.writeFileSync = jest.fn().mockImplementation(() => {})
-    })
-  })
-
-  describe('getEndpointUrl', () => {
-    const ORIGINAL_ENV = process.env
-
-    beforeEach(() => {
-      process.env = {...ORIGINAL_ENV}
-    })
-
-    afterAll(() => {
-      process.env = ORIGINAL_ENV
-    })
-
-    it('should return correct endpoint url', () => {
-      process.env[CI_SITE_ENV_VAR] = 'datadoghq.com'
-      const url = getEndpointUrl()
-      expect(url).toMatchSnapshot()
-    })
-
-    it('should throw error if the site is invalid', () => {
-      process.env[CI_SITE_ENV_VAR] = 'datad0ge.com'
-      expect(() => getEndpointUrl()).toThrowErrorMatchingSnapshot()
-    })
-
-    it('should not throw error if the site is invalid and DD_CI_BYPASS_SITE_VALIDATION is set', () => {
-      process.env['DD_CI_BYPASS_SITE_VALIDATION'] = 'true'
-      process.env[CI_SITE_ENV_VAR] = 'datad0ge.com'
-      const url = getEndpointUrl()
-      expect(url).toMatchSnapshot()
-      delete process.env['DD_CI_BYPASS_SITE_VALIDATION']
-    })
-
-    it('should use SITE_ENV_VAR if CI_SITE_ENV_VAR is not set', () => {
-      delete process.env[CI_SITE_ENV_VAR]
-      process.env[SITE_ENV_VAR] = 'us3.datadoghq.com'
-      const url = getEndpointUrl()
-      expect(url).toMatchSnapshot()
-    })
-
-    it('should use DEFAULT_DD_SITE if CI_SITE_ENV_VAR and SITE_ENV_VAR are not set', () => {
-      delete process.env[CI_SITE_ENV_VAR]
-      delete process.env[SITE_ENV_VAR]
-      const url = getEndpointUrl()
-      expect(url).toMatchSnapshot()
-    })
-  })
-
-  describe('send to Datadog', () => {
-    // File system mocks
-    beforeAll(() => {
-      fs.writeFileSync = jest.fn().mockImplementation(() => {})
-      fs.mkdirSync = jest.fn().mockImplementation(() => {})
-    })
-    process.env = {['DATADOG_API_KEY']: mockDatadogApiKey}
-
-    it('successfully adds zip file to FormData', async () => {
-      const appendSpy = jest.spyOn(FormData.prototype, 'append')
-      const cli = makeCli()
-      const context = createMockContext()
-      await cli.run(MOCK_REQUIRED_FLAGS, context as any)
-      expect(appendSpy).toHaveBeenCalled()
-      appendSpy.mockRestore()
-      const output = context.stdout.toString()
-      expect(output).toMatchSnapshot()
-    })
-
-    it('successfully sends request to Datadog', async () => {
-      const postSpy = jest.spyOn(axios, 'post').mockResolvedValue({status: 200})
-      const cli = makeCli()
-      const context = createMockContext()
-      await cli.run(MOCK_REQUIRED_FLAGS, context as any)
-      expect(postSpy).toHaveBeenCalledWith(
-        expect.any(String),
-        expect.any(FormData),
-        expect.objectContaining({
-          headers: expect.objectContaining({
-            'DD-API-KEY': mockDatadogApiKey,
-          }),
-        })
-      )
-      const output = context.stdout.toString()
-      expect(output).toMatchSnapshot()
-      postSpy.mockRestore()
-    })
-
-    it('does not send request to Datadog when a dry run', async () => {
-      const postSpy = (axios.post = jest.fn().mockRejectedValue({status: 500}))
-      const cli = makeCli()
-      const context = createMockContext()
-      const code = await cli.run([...MOCK_REQUIRED_FLAGS, '-d'], context as any)
-      expect(code).toBe(0)
-      expect(postSpy).not.toHaveBeenCalled()
-      const output = context.stdout.toString()
-      expect(output).toMatchSnapshot()
-      postSpy.mockRestore()
     })
   })
 
