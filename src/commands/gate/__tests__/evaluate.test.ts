@@ -70,6 +70,18 @@ describe('evaluate', () => {
       expect(command['handleEvaluationSuccess'].bind(command).call({}, response)).toEqual(1)
       expect(write.mock.calls[0][0]).toContain('No matching rules were found in Datadog')
     })
+    test('should pass the command on dry run evaluation status', () => {
+      const write = jest.fn()
+      const command = new GateEvaluateCommand()
+      command.context = {stdout: {write}} as any
+
+      const response: EvaluationResponse = {
+        status: 'dry_run',
+        rule_evaluations: [],
+      }
+      expect(command['handleEvaluationSuccess'].bind(command).call({}, response)).toEqual(0)
+      expect(write.mock.calls[0][0]).toContain('Successfully completed a dry run request')
+    })
   })
   describe('handleEvaluationError', () => {
     test('should fail the command if the error is 4xx', () => {

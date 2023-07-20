@@ -16,6 +16,9 @@ export const evaluateGateRules = (
       attributes: {
         tags: evaluateRequest.spanTags,
         user_scope: evaluateRequest.userScope,
+        options: {
+          dry_run: evaluateRequest.options.dryRun,
+        },
       },
     },
   })
