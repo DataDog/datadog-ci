@@ -134,3 +134,58 @@ export const SKIP_MASKING_ENV_VARS = new Set([
   SITE_ENV_VAR,
   VERSION_ENV_VAR,
 ])
+
+// Project files to search for in Flare
+export const PROJECT_FILES = [
+  // Serverless framework
+  'serverless.yaml',
+  'serverless.yml',
+  'serverless.js',
+  // AWS CDK
+  'cdk.json',
+  // CloudFormation Template
+  'template.yaml',
+  'template.yml',
+  'template.json',
+  'datadog-cloudfomation-macro.yaml',
+  'datadog-cloudfomation-macro.yml',
+  'datadog-cloudformation-macro.json',
+  // Node.js
+  'package.json',
+  'package-lock.json',
+  'yarn.lock',
+  '.nvmrc',
+  // Python
+  'requirements.txt',
+  'Pipfile',
+  'Pipfile.lock',
+  'pyproject.toml',
+  // Java
+  'pom.xml',
+  'build.gradle',
+  'gradlew',
+  'gradlew.bat',
+  // Go
+  'Makefile',
+  'go.mod',
+  'go.sum',
+  'Gopkg.toml',
+  'gomod.sh',
+  // Ruby
+  'Gemfile',
+  'Gemfile.lock',
+  // .NET
+  'project.json',
+  'packages.config',
+  'PackageReference',
+  'global.json',
+  // Docker
+  'Dockerfile',
+  'docker-compose.yaml',
+  'docker-compose.yml',
+  // Webpack, bundlers
+  'webpack.config.js',
+  '.babelrc',
+  'tsconfig.json',
+  'esbuild.config.js',
+]

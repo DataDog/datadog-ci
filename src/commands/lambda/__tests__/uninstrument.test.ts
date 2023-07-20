@@ -36,7 +36,7 @@ import {
   TRACE_ENABLED_ENV_VAR,
   VERSION_ENV_VAR,
 } from '../constants'
-import {requestAWSCredentials, requestChangesConfirmation, requestFunctionSelection} from '../prompt'
+import {requestAWSCredentials, requestConfirmation, requestFunctionSelection} from '../prompt'
 import {UninstrumentCommand} from '../uninstrument'
 
 import {
@@ -396,7 +396,7 @@ describe('lambda', () => {
           'arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world',
           'arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world-2',
         ])
-        ;(requestChangesConfirmation as any).mockImplementation(() => true)
+        ;(requestConfirmation as any).mockImplementation(() => true)
 
         const cli = makeCli()
         const context = createMockContext() as any
@@ -492,7 +492,7 @@ describe('lambda', () => {
           'arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world',
           'arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world-2',
         ])
-        ;(requestChangesConfirmation as any).mockImplementation(() => true)
+        ;(requestConfirmation as any).mockImplementation(() => true)
 
         const cli = makeCli()
         const context = createMockContext() as any

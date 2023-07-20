@@ -14,7 +14,6 @@ import {LambdaClient, ListTagsCommand} from '@aws-sdk/client-lambda'
 import {mockClient} from 'aws-sdk-client-mock'
 import axios from 'axios'
 import FormData from 'form-data'
-import inquirer from 'inquirer'
 import JSZip from 'jszip'
 
 import {
@@ -23,6 +22,7 @@ import {
   CI_API_KEY_ENV_VAR,
   CI_SITE_ENV_VAR,
   SITE_ENV_VAR,
+  PROJECT_FILES,
 } from '../constants'
 import {
   convertToCSV,
@@ -32,14 +32,18 @@ import {
   getEndpointUrl,
   getLogEvents,
   getLogStreamNames,
+  getProjectFiles,
   getTags,
+  getUniqueFileNames,
   maskConfig,
+  validateFilePath,
   validateStartEndFlags,
   writeFile,
   zipContents,
 } from '../flare'
 import * as flareModule from '../flare'
 import {getAWSCredentials, getLambdaFunctionConfig} from '../functions/commons'
+import * as promptModule from '../prompt'
 import {requestAWSCredentials} from '../prompt'
 
 import {
@@ -74,8 +78,6 @@ const MOCK_CONFIG = {
   FunctionName: 'some-function',
 }
 const MOCK_LOG_GROUP = 'mockLogGroup'
-const MOCK_OUTPUT_EVENT: OutputLogEvent[] = [{timestamp: 123, message: 'Log 1'}]
-const MOCK_LOGS = new Map().set('log1', MOCK_OUTPUT_EVENT)
 const MOCK_TAGS: any = {Tags: {}}
 const cloudWatchLogsClientMock = mockClient(CloudWatchLogsClient)
 const lambdaClientMock = mockClient(LambdaClient)
@@ -86,12 +88,12 @@ jest.mock('../functions/commons', () => ({
   getAWSCredentials: jest.fn(),
   getLambdaFunctionConfig: jest.fn().mockImplementation(() => Promise.resolve(MOCK_CONFIG)),
 }))
+
+// Prompt mocks
 jest.mock('../prompt')
-jest.mock('inquirer', () => ({
-  ...jest.requireActual('inquirer'),
-  prompt: jest.fn().mockResolvedValue({confirmation: true}),
-}))
-jest.mock('util')
+jest.spyOn(promptModule, 'requestFilePath').mockResolvedValue('')
+jest.spyOn(promptModule, 'requestConfirmation').mockResolvedValue(true)
+jest.spyOn(flareModule, 'getProjectFiles').mockResolvedValue(new Set())
 
 // File system mocks
 process.cwd = jest.fn().mockReturnValue(MOCK_CWD)
@@ -116,6 +118,9 @@ const mockJSZip = {
   generateAsync: jest.fn().mockResolvedValue('zip content'),
 }
 ;(JSZip as any).mockImplementation(() => mockJSZip)
+
+// Misc
+jest.mock('util')
 
 describe('lambda flare', () => {
   beforeAll(() => {
@@ -405,13 +410,13 @@ describe('lambda flare', () => {
   describe('createDirectories', () => {
     const MOCK_LOG_PATH = path.join(MOCK_FOLDER_PATH, 'logs')
     it('successfully creates a root folder', async () => {
-      createDirectories(MOCK_FOLDER_PATH, MOCK_LOG_PATH, new Map())
+      createDirectories(MOCK_FOLDER_PATH, [])
 
       expect(fs.mkdirSync).toHaveBeenCalledWith(MOCK_FOLDER_PATH)
     })
 
     it('successfully creates a root and logs folder', async () => {
-      createDirectories(MOCK_FOLDER_PATH, MOCK_LOG_PATH, MOCK_LOGS)
+      createDirectories(MOCK_FOLDER_PATH, [MOCK_LOG_PATH])
 
       expect(fs.mkdirSync).toHaveBeenCalledWith(MOCK_FOLDER_PATH)
       expect(fs.mkdirSync).toHaveBeenCalledWith(MOCK_LOG_PATH)
@@ -422,9 +427,55 @@ describe('lambda flare', () => {
         throw new Error('MOCK ERROR: Unable to create folder')
       })
 
-      expect(() => createDirectories(MOCK_FOLDER_PATH, MOCK_LOG_PATH, new Map())).toThrowErrorMatchingSnapshot()
+      expect(() => createDirectories(MOCK_FOLDER_PATH, [])).toThrowErrorMatchingSnapshot()
       expect(fs.mkdirSync).toHaveBeenCalledWith(MOCK_FOLDER_PATH)
       fs.mkdirSync = jest.fn().mockImplementation(() => {})
+    })
+  })
+
+  describe('validateFilePath', () => {
+    const projectFilePaths = new Set<string>()
+    const additionalFilePaths = new Set<string>()
+
+    it('returns the correct path when the file exists', () => {
+      const filePath = '/exists'
+
+      ;(fs.existsSync as jest.Mock).mockReturnValueOnce(true)
+      const result = validateFilePath(filePath, projectFilePaths, additionalFilePaths)
+
+      expect(result).toBe(filePath)
+      expect(fs.existsSync).toHaveBeenCalledWith(filePath)
+    })
+
+    it('returns the correct path when the file exists relative to the cwd', () => {
+      const filePath = 'relative'
+
+      ;(fs.existsSync as jest.Mock).mockReturnValueOnce(false).mockReturnValueOnce(true)
+
+      const result = validateFilePath(filePath, projectFilePaths, additionalFilePaths)
+
+      expect(result).toContain(filePath)
+      expect(fs.existsSync).toHaveBeenNthCalledWith(1, filePath)
+      expect(fs.existsSync).toHaveBeenCalledTimes(2)
+    })
+
+    it('throws an error when the file does not exist', async () => {
+      const filePath = '/not-exists'
+
+      ;(fs.existsSync as jest.Mock).mockReturnValue(false)
+
+      expect(() => validateFilePath(filePath, projectFilePaths, additionalFilePaths)).toThrowErrorMatchingSnapshot()
+      expect(fs.existsSync).toHaveBeenCalledWith(filePath)
+    })
+
+    it('throws an error when the file has already been added', async () => {
+      const filePath = '/added'
+
+      ;(fs.existsSync as jest.Mock).mockReturnValue(true)
+      projectFilePaths.add(filePath)
+
+      expect(() => validateFilePath(filePath, projectFilePaths, additionalFilePaths)).toThrowErrorMatchingSnapshot()
+      expect(fs.existsSync).toHaveBeenCalledWith(filePath)
     })
   })
 
@@ -1049,23 +1100,143 @@ describe('lambda flare', () => {
     })
 
     it('sends when user answers prompt with yes', async () => {
-      ;(inquirer.prompt as any).mockResolvedValueOnce({confirmation: true})
+      // The first prompt is for additional files, the second is for confirmation before sending
+      jest.spyOn(promptModule, 'requestConfirmation').mockResolvedValueOnce(true).mockResolvedValueOnce(true)
       const cli = makeCli()
       const context = createMockContext()
       const code = await cli.run(MOCK_REQUIRED_FLAGS, context as any)
       expect(code).toBe(0)
       const output = context.stdout.toString()
       expect(output).toMatchSnapshot()
+      expect(output).toContain('✅ Successfully sent flare file to Datadog Support!')
     })
 
     it('does not send when user answers prompt with no', async () => {
-      ;(inquirer.prompt as any).mockResolvedValueOnce({confirmation: false})
+      // The first prompt is for additional files, the second is for confirmation before sending
+      jest.spyOn(promptModule, 'requestConfirmation').mockResolvedValueOnce(true).mockResolvedValueOnce(false)
       const cli = makeCli()
       const context = createMockContext()
       const code = await cli.run(MOCK_REQUIRED_FLAGS, context as any)
       expect(code).toBe(0)
       const output = context.stdout.toString()
       expect(output).toMatchSnapshot()
+      expect(output).toContain('🚫 The flare files were not sent based on your selection.')
+    })
+  })
+
+  describe('prompts for additional files', () => {
+    beforeEach(() => {
+      ;(getAWSCredentials as any).mockResolvedValue(mockAwsCredentials)
+    })
+
+    it('requests additional files when user answers yes', async () => {
+      // The first prompt is for additional files, the second is for confirmation before sending
+      jest.spyOn(promptModule, 'requestConfirmation').mockResolvedValueOnce(true).mockResolvedValueOnce(true)
+      const cli = makeCli()
+      const context = createMockContext()
+      const code = await cli.run(MOCK_REQUIRED_FLAGS, context as any)
+      expect(code).toBe(0)
+      const output = context.stdout.toString()
+      expect(output).toMatchSnapshot()
+      expect(output).toContain('Added 0 custom file(s)')
+    })
+
+    it('does not request additional files when user answers no', async () => {
+      // The first prompt is for additional files, the second is for confirmation before sending
+      jest.spyOn(promptModule, 'requestConfirmation').mockResolvedValueOnce(false).mockResolvedValueOnce(true)
+      const cli = makeCli()
+      const context = createMockContext()
+      const code = await cli.run(MOCK_REQUIRED_FLAGS, context as any)
+      expect(code).toBe(0)
+      const output = context.stdout.toString()
+      expect(output).toMatchSnapshot()
+      expect(output).not.toContain('Added 0 custom file(s)')
+    })
+  })
+
+  describe('getProjectFiles', () => {
+    beforeAll(() => {
+      ;(flareModule.getProjectFiles as jest.Mock).mockRestore()
+      ;(process.cwd as jest.Mock).mockReturnValue('')
+    })
+
+    it('should return a map of existing project files', async () => {
+      const mockProjectFiles = ['serverless.yml', 'package.json']
+      ;(fs.existsSync as jest.Mock).mockImplementation((filePath: string) => mockProjectFiles.includes(filePath))
+
+      const result = await getProjectFiles()
+      expect(Array.from(result.keys())).toEqual(mockProjectFiles)
+      expect(fs.existsSync).toHaveBeenCalledTimes(PROJECT_FILES.length)
+    })
+
+    it('should return an empty map when no files exist', async () => {
+      ;(fs.existsSync as jest.Mock).mockReturnValue(false)
+
+      const result = await getProjectFiles()
+      expect(result).toEqual(new Set())
+      expect(fs.existsSync).toHaveBeenCalledTimes(PROJECT_FILES.length)
+    })
+  })
+
+  describe('getUniqueFilesNames', () => {
+    it('should return file names when all are unique', () => {
+      const mockFilePaths = new Set<string>(['src/serverless.yml', 'src/package.json'])
+      const expectedFiles = new Map([
+        ['src/serverless.yml', 'serverless.yml'],
+        ['src/package.json', 'package.json'],
+      ])
+      const result = getUniqueFileNames(mockFilePaths)
+      expect(result).toEqual(expectedFiles)
+    })
+
+    it('returns unique file names when there are duplicates', () => {
+      const mockFilePaths = new Set<string>([
+        'src/func1/serverless.yml',
+        'src/func2/serverless.yml',
+        'src/func1/package.json',
+        'src/func2/package.json',
+        'src/Dockerfile',
+        'src/README.md',
+      ])
+
+      const expectedFiles = new Map([
+        ['src/func1/serverless.yml', 'src-func1-serverless.yml'],
+        ['src/func2/serverless.yml', 'src-func2-serverless.yml'],
+        ['src/func1/package.json', 'src-func1-package.json'],
+        ['src/func2/package.json', 'src-func2-package.json'],
+        ['src/Dockerfile', 'Dockerfile'],
+        ['src/README.md', 'README.md'],
+      ])
+
+      const result = getUniqueFileNames(mockFilePaths)
+      expect(result).toEqual(expectedFiles)
+    })
+
+    it('returns unique file names when there are duplicates with different prefixes', () => {
+      const mockFilePaths = new Set<string>([
+        'project1/src/func1/serverless.yml',
+        'project1/src/func2/serverless.yml',
+        'project2/src/func1/serverless.yml',
+        'project2/src/func2/serverless.yml',
+        'project2/src/func3/serverless.yml',
+        'project3/src/cool_function/serverless.yml',
+        'src/Dockerfile',
+        'src/README.md',
+      ])
+
+      const expectedFiles = new Map([
+        ['project1/src/func1/serverless.yml', 'project1-src-func1-serverless.yml'],
+        ['project1/src/func2/serverless.yml', 'project1-src-func2-serverless.yml'],
+        ['project2/src/func1/serverless.yml', 'project2-src-func1-serverless.yml'],
+        ['project2/src/func2/serverless.yml', 'project2-src-func2-serverless.yml'],
+        ['project2/src/func3/serverless.yml', 'project2-src-func3-serverless.yml'],
+        ['project3/src/cool_function/serverless.yml', 'project3-src-cool_function-serverless.yml'],
+        ['src/Dockerfile', 'Dockerfile'],
+        ['src/README.md', 'README.md'],
+      ])
+
+      const result = getUniqueFileNames(mockFilePaths)
+      expect(result).toEqual(expectedFiles)
     })
   })
 })
