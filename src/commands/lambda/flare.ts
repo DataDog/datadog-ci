@@ -340,11 +340,11 @@ export class LambdaFlareCommand extends Command {
 
       // Write additional files
       const additionalFilesMap = getUniqueFileNames(additionalFilePaths)
-      for (const [filePath, fileName] of additionalFilesMap) {
-        const originalFileName = path.basename(filePath)
-        const newFilePath = path.join(additionalFilesFolderPath, fileName)
-        fs.copyFileSync(filePath, newFilePath)
-        this.context.stdout.write(`• Copied ${originalFileName} to ./${ADDITIONAL_FILES_DIRECTORY}/${fileName}\n`)
+      for (const [originalFilePath, newFileName] of additionalFilesMap) {
+        const originalFileName = path.basename(originalFilePath)
+        const newFilePath = path.join(additionalFilesFolderPath, newFileName)
+        fs.copyFileSync(originalFilePath, newFilePath)
+        this.context.stdout.write(`• Copied ${originalFileName} to ./${ADDITIONAL_FILES_DIRECTORY}/${newFileName}\n`)
       }
 
       // Exit if dry run
