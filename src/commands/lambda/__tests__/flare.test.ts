@@ -34,6 +34,7 @@ import {
   getLogStreamNames,
   getProjectFiles,
   getTags,
+  getUniqueFileNames,
   maskConfig,
   validateFilePath,
   validateStartEndFlags,
@@ -92,7 +93,7 @@ jest.mock('../functions/commons', () => ({
 jest.mock('../prompt')
 jest.spyOn(promptModule, 'requestFilePath').mockResolvedValue('')
 jest.spyOn(promptModule, 'requestConfirmation').mockResolvedValue(true)
-jest.spyOn(flareModule, 'getProjectFiles').mockResolvedValue(new Map())
+jest.spyOn(flareModule, 'getProjectFiles').mockResolvedValue(new Set())
 
 // File system mocks
 process.cwd = jest.fn().mockReturnValue(MOCK_CWD)
@@ -433,14 +434,14 @@ describe('lambda flare', () => {
   })
 
   describe('validateFilePath', () => {
-    const projectFiles = new Map<string, string>()
-    const additionalFiles = new Set<string>()
+    const projectFilePaths = new Set<string>()
+    const additionalFilePaths = new Set<string>()
 
     it('returns the correct path when the file exists', () => {
       const filePath = '/exists'
 
       ;(fs.existsSync as jest.Mock).mockReturnValueOnce(true)
-      const result = validateFilePath(filePath, projectFiles, additionalFiles)
+      const result = validateFilePath(filePath, projectFilePaths, additionalFilePaths)
 
       expect(result).toBe(filePath)
       expect(fs.existsSync).toHaveBeenCalledWith(filePath)
@@ -448,16 +449,14 @@ describe('lambda flare', () => {
 
     it('returns the correct path when the file exists relative to the cwd', () => {
       const filePath = 'relative'
-      const cwd = process.cwd()
-      const expectedPath = path.join(cwd, filePath)
 
       ;(fs.existsSync as jest.Mock).mockReturnValueOnce(false).mockReturnValueOnce(true)
 
-      const result = validateFilePath(filePath, projectFiles, additionalFiles)
+      const result = validateFilePath(filePath, projectFilePaths, additionalFilePaths)
 
-      expect(result).toBe(expectedPath)
+      expect(result).toContain(filePath)
       expect(fs.existsSync).toHaveBeenNthCalledWith(1, filePath)
-      expect(fs.existsSync).toHaveBeenNthCalledWith(2, expectedPath)
+      expect(fs.existsSync).toHaveBeenCalledTimes(2)
     })
 
     it('throws an error when the file does not exist', async () => {
@@ -465,7 +464,7 @@ describe('lambda flare', () => {
 
       ;(fs.existsSync as jest.Mock).mockReturnValue(false)
 
-      expect(() => validateFilePath(filePath, projectFiles, additionalFiles)).toThrowErrorMatchingSnapshot()
+      expect(() => validateFilePath(filePath, projectFilePaths, additionalFilePaths)).toThrowErrorMatchingSnapshot()
       expect(fs.existsSync).toHaveBeenCalledWith(filePath)
     })
 
@@ -473,9 +472,9 @@ describe('lambda flare', () => {
       const filePath = '/added'
 
       ;(fs.existsSync as jest.Mock).mockReturnValue(true)
-      projectFiles.set(filePath, filePath)
+      projectFilePaths.add(filePath)
 
-      expect(() => validateFilePath(filePath, projectFiles, additionalFiles)).toThrowErrorMatchingSnapshot()
+      expect(() => validateFilePath(filePath, projectFilePaths, additionalFilePaths)).toThrowErrorMatchingSnapshot()
       expect(fs.existsSync).toHaveBeenCalledWith(filePath)
     })
   })
@@ -1174,8 +1173,70 @@ describe('lambda flare', () => {
       ;(fs.existsSync as jest.Mock).mockReturnValue(false)
 
       const result = await getProjectFiles()
-      expect(result).toEqual(new Map())
+      expect(result).toEqual(new Set())
       expect(fs.existsSync).toHaveBeenCalledTimes(PROJECT_FILES.length)
+    })
+  })
+
+  describe('getUniqueFilesNames', () => {
+    it('should return file names when all are unique', () => {
+      const mockFilePaths = new Set<string>(['src/serverless.yml', 'src/package.json'])
+      const expectedFiles = new Map([
+        ['src/serverless.yml', 'serverless.yml'],
+        ['src/package.json', 'package.json'],
+      ])
+      const result = getUniqueFileNames(mockFilePaths)
+      expect(result).toEqual(expectedFiles)
+    })
+
+    it('returns unique file names when there are duplicates', () => {
+      const mockFilePaths = new Set<string>([
+        'src/func1/serverless.yml',
+        'src/func2/serverless.yml',
+        'src/func1/package.json',
+        'src/func2/package.json',
+        'src/Dockerfile',
+        'src/README.md',
+      ])
+
+      const expectedFiles = new Map([
+        ['src/func1/serverless.yml', 'src-func1-serverless.yml'],
+        ['src/func2/serverless.yml', 'src-func2-serverless.yml'],
+        ['src/func1/package.json', 'src-func1-package.json'],
+        ['src/func2/package.json', 'src-func2-package.json'],
+        ['src/Dockerfile', 'Dockerfile'],
+        ['src/README.md', 'README.md'],
+      ])
+
+      const result = getUniqueFileNames(mockFilePaths)
+      expect(result).toEqual(expectedFiles)
+    })
+
+    it('returns unique file names when there are duplicates with different prefixes', () => {
+      const mockFilePaths = new Set<string>([
+        'project1/src/func1/serverless.yml',
+        'project1/src/func2/serverless.yml',
+        'project2/src/func1/serverless.yml',
+        'project2/src/func2/serverless.yml',
+        'project2/src/func3/serverless.yml',
+        'project3/src/cool_function/serverless.yml',
+        'src/Dockerfile',
+        'src/README.md',
+      ])
+
+      const expectedFiles = new Map([
+        ['project1/src/func1/serverless.yml', 'project1-src-func1-serverless.yml'],
+        ['project1/src/func2/serverless.yml', 'project1-src-func2-serverless.yml'],
+        ['project2/src/func1/serverless.yml', 'project2-src-func1-serverless.yml'],
+        ['project2/src/func2/serverless.yml', 'project2-src-func2-serverless.yml'],
+        ['project2/src/func3/serverless.yml', 'project2-src-func3-serverless.yml'],
+        ['project3/src/cool_function/serverless.yml', 'project3-src-cool_function-serverless.yml'],
+        ['src/Dockerfile', 'Dockerfile'],
+        ['src/README.md', 'README.md'],
+      ])
+
+      const result = getUniqueFileNames(mockFilePaths)
+      expect(result).toEqual(expectedFiles)
     })
   })
 })

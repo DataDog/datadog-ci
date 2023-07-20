@@ -171,19 +171,20 @@ export class LambdaFlareCommand extends Command {
 
     // Get project files
     this.context.stdout.write(chalk.bold('\n📁 Searching for project files in current directory...\n'))
-    const projectFilesToPath = await getProjectFiles()
+    const projectFilePaths = await getProjectFiles()
     let projectFilesMessage = chalk.bold(`\n✅ Found project file(s) in ${process.cwd()}:\n`)
-    if (projectFilesToPath.size === 0) {
+    if (projectFilePaths.size === 0) {
       projectFilesMessage = commonRenderer.renderSoftWarning('No project files found.')
     }
     this.context.stdout.write(projectFilesMessage)
-    for (const projectFile of projectFilesToPath.keys()) {
-      this.context.stdout.write(`• ${projectFile}\n`)
+    for (const filePath of projectFilePaths) {
+      const fileName = path.basename(filePath)
+      this.context.stdout.write(`• ${fileName}\n`)
     }
 
-    // Additional filesw
+    // Additional files
     this.context.stdout.write('\n')
-    const additionalFiles = new Set<string>()
+    const additionalFilePaths = new Set<string>()
     let confirmAdditionalFiles
     try {
       confirmAdditionalFiles = await requestConfirmation('Do you want to specify any additional files to flare?', false)
@@ -208,17 +209,19 @@ export class LambdaFlareCommand extends Command {
       }
 
       if (filePath === '') {
-        this.context.stdout.write(`Added ${additionalFiles.size} custom file(s):\n`)
-        for (const file of additionalFiles) {
-          this.context.stdout.write(`• ${file}\n`)
+        this.context.stdout.write(`Added ${additionalFilePaths.size} custom file(s):\n`)
+        for (const additionalFilePath of additionalFilePaths) {
+          const fileName = path.basename(additionalFilePath)
+          this.context.stdout.write(`• ${fileName}\n`)
         }
         break
       }
 
       try {
-        filePath = validateFilePath(filePath, projectFilesToPath, additionalFiles)
-        additionalFiles.add(filePath)
-        this.context.stdout.write(`• Added file '${filePath}'\n`)
+        filePath = validateFilePath(filePath, projectFilePaths, additionalFilePaths)
+        additionalFilePaths.add(filePath)
+        const fileName = path.basename(filePath)
+        this.context.stdout.write(`• Added file '${fileName}'\n`)
       } catch (err) {
         if (err instanceof Error) {
           this.context.stderr.write(err.message)
@@ -293,10 +296,10 @@ export class LambdaFlareCommand extends Command {
       if (logs.size > 0) {
         subFolders.push(logsFolderPath)
       }
-      if (projectFilesToPath.size > 0) {
+      if (projectFilePaths.size > 0) {
         subFolders.push(projectFilesFolderPath)
       }
-      if (additionalFiles.size > 0) {
+      if (additionalFilePaths.size > 0) {
         subFolders.push(additionalFilesFolderPath)
       }
       createDirectories(rootFolderPath, subFolders)
@@ -327,19 +330,21 @@ export class LambdaFlareCommand extends Command {
         await sleep(1)
       }
 
-      // Write project files files
-      for (const [fileName, filePath] of projectFilesToPath) {
+      // Write project files
+      for (const filePath of projectFilePaths) {
+        const fileName = path.basename(filePath)
         const newFilePath = path.join(projectFilesFolderPath, fileName)
         fs.copyFileSync(filePath, newFilePath)
         this.context.stdout.write(`• Copied ${fileName} to ./${PROJECT_FILES_DIRECTORY}/${fileName}\n`)
       }
 
       // Write additional files
-      for (const filePath of additionalFiles) {
-        const fileName = path.basename(filePath)
+      const additionalFilesMap = getUniqueFileNames(additionalFilePaths)
+      for (const [filePath, fileName] of additionalFilesMap) {
+        const originalFileName = path.basename(filePath)
         const newFilePath = path.join(additionalFilesFolderPath, fileName)
         fs.copyFileSync(filePath, newFilePath)
-        this.context.stdout.write(`• Copied ${fileName} to ./${ADDITIONAL_FILES_DIRECTORY}/${fileName}\n`)
+        this.context.stdout.write(`• Copied ${originalFileName} to ./${ADDITIONAL_FILES_DIRECTORY}/${fileName}\n`)
       }
 
       // Exit if dry run
@@ -486,41 +491,38 @@ export const createDirectories = (rootFolderPath: string, subFolders: string[]) 
 
 /**
  * Searches current directory for project files
- * @returns a map of file names to file paths
+ * @returns a set of file paths of project files
  */
 export const getProjectFiles = async () => {
-  const fileToPath = new Map<string, string>()
+  const filePaths = new Set<string>()
   const cwd = process.cwd()
   for (const fileName of PROJECT_FILES) {
     const filePath = path.join(cwd, fileName)
     if (fs.existsSync(filePath)) {
-      fileToPath.set(fileName, filePath)
+      filePaths.add(filePath)
     }
   }
 
-  return fileToPath
+  return filePaths
 }
 
 /**
  * Validates a path to a file
  * @param filePath path to the file
- * @param projectFilesToPath map of file names to file paths
+ * @param projectFilePaths map of file names to file paths
  * @param additionalFiles set of additional file paths
  * @throws Error if the file path is invalid or the file was already added
  * @returns the full path to the file
  */
-export const validateFilePath = (
-  filePath: string,
-  projectFilesToPath: Map<string, string>,
-  additionalFiles: Set<string>
-) => {
+export const validateFilePath = (filePath: string, projectFilePaths: Set<string>, additionalFiles: Set<string>) => {
   const originalPath = filePath
   filePath = fs.existsSync(filePath) ? filePath : path.join(process.cwd(), filePath)
   if (!fs.existsSync(filePath)) {
     throw Error(commonRenderer.renderError(`File path '${originalPath}' not found. Please try again.`))
   }
 
-  if (projectFilesToPath.has(filePath) || additionalFiles.has(filePath)) {
+  filePath = path.resolve(filePath)
+  if (projectFilePaths.has(filePath) || additionalFiles.has(filePath)) {
     throw Error(commonRenderer.renderSoftWarning(`File '${filePath}' has already been added.`))
   }
 
@@ -704,6 +706,39 @@ export const writeFile = (filePath: string, data: string) => {
       throw Error(`Unable to create function configuration file: ${err.message}`)
     }
   }
+}
+
+/**
+ * Generate unique file names
+ * If the original file name is unique, keep it as is
+ * Otherwise, replace separators in the file path with dashes
+ * @param filePaths the list of file paths
+ * @returns a mapping of file paths to new file names
+ */
+export const getUniqueFileNames = (filePaths: Set<string>) => {
+  // Count occurrences of each filename
+  const fileNameCount: {[fileName: string]: number} = {}
+  filePaths.forEach((filePath) => {
+    const fileName = path.basename(filePath)
+    fileNameCount[fileName] = (fileNameCount[fileName] || 0) + 1
+  })
+
+  // Create new filenames
+  const filePathsToNewFileNames = new Map<string, string>()
+  filePaths.forEach((filePath) => {
+    const fileName = path.basename(filePath)
+    if (fileNameCount[fileName] > 1) {
+      // Trim leading and trailing '/'s and '\'s
+      const filePathTrimmed = filePath.replace(/^\/+|\/+$/g, '')
+      // Replace '/'s and '\'s with '-'s
+      const newFileName = filePathTrimmed.split(path.sep).join('-')
+      filePathsToNewFileNames.set(filePath, newFileName)
+    } else {
+      filePathsToNewFileNames.set(filePath, fileName)
+    }
+  })
+
+  return filePathsToNewFileNames
 }
 
 /**
