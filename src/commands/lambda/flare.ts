@@ -720,7 +720,8 @@ export const getUniqueFileNames = (filePaths: Set<string>) => {
   const fileNameCount: {[fileName: string]: number} = {}
   filePaths.forEach((filePath) => {
     const fileName = path.basename(filePath)
-    fileNameCount[fileName] = (fileNameCount[fileName] || 0) + 1
+    const count = fileNameCount[fileName] || 0
+    fileNameCount[fileName] = count + 1
   })
 
   // Create new filenames
@@ -729,7 +730,8 @@ export const getUniqueFileNames = (filePaths: Set<string>) => {
     const fileName = path.basename(filePath)
     if (fileNameCount[fileName] > 1) {
       // Trim leading and trailing '/'s and '\'s
-      const filePathTrimmed = filePath.replace(/^\/+|\/+$/g, '')
+      const trimRegex = /^\/+|\/+$/g
+      const filePathTrimmed = filePath.replace(trimRegex, '')
       // Replace '/'s and '\'s with '-'s
       const newFileName = filePathTrimmed.split(path.sep).join('-')
       filePathsToNewFileNames.set(filePath, newFileName)
