@@ -7,6 +7,11 @@ describe('getCommonAppBaseUrl', () => {
     expect(getCommonAppBaseURL('datadoghq.com', 'app')).toBe('https://app.datadoghq.com/')
     expect(getCommonAppBaseURL('datadoghq.com', 'myorg')).toBe('https://myorg.datadoghq.com/')
 
+    // Other datadog site.
+    expect(getCommonAppBaseURL('dd.datad0g.com', '')).toBe('https://dd.datad0g.com/')
+    expect(getCommonAppBaseURL('dd.datad0g.com', 'dd')).toBe('https://dd.datad0g.com/')
+    expect(getCommonAppBaseURL('dd.datad0g.com', 'myorg')).toBe('https://myorg.datad0g.com/')
+
     // Different top-level domain.
     expect(getCommonAppBaseURL('datadoghq.eu', '')).toBe('https://app.datadoghq.eu/')
     expect(getCommonAppBaseURL('datadoghq.eu', 'app')).toBe('https://app.datadoghq.eu/')
