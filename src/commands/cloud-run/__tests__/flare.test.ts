@@ -170,7 +170,7 @@ describe('cloud-run flare', () => {
       const cli = makeCli()
       const context = createMockContext()
       const code = await cli.run(
-        ['cloud-run', 'flare', '-s', 'service', '-p', 'project', '-c', '123', '-e', 'test@test.com'],
+        ['cloud-run', 'flare', '-s', 'service', '-p', 'project', '-l', MOCK_LOCATION, '-c', '123'],
         context as any
       )
       expect(code).toBe(1)

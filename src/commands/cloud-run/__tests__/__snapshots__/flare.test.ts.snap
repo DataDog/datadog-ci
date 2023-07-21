@@ -156,7 +156,7 @@ exports[`cloud-run flare validates required flags prints error when no case ID s
 exports[`cloud-run flare validates required flags prints error when no email specified 1`] = `
 "
 🐶 Generating Cloud Run flare to send your configuration to Datadog...
-[Error] No location specified. [-l,--location]
+[Error] No email specified. [-e,--email]
 "
 `;
 
