@@ -172,8 +172,8 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: 18
-      - name: Install tracer
-        run: yarn add --dev dd-trace@https://github.com/DataDog/dd-trace-js/tarball/juan-fernandez/fix-cache-issues-with-jest
+      # - name: Install tracer
+      #   run: yarn add --dev dd-trace@https://github.com/DataDog/dd-trace-js/tarball/juan-fernandez/fix-cache-issues-with-jest
       - run: yarn test
         env:
           CI: true
