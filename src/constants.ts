@@ -25,4 +25,3 @@ export const AWS_DEFAULT_REGION_ENV_VAR = 'AWS_DEFAULT_REGION'
 // Flare constants
 export const FLARE_OUTPUT_DIRECTORY = '.datadog-ci'
 export const FLARE_ENDPOINT_PATH = '/api/ui/support/serverless/flare'
-export const FLARE_ZIP_FILE_NAME = 'lambda-flare-output.zip'

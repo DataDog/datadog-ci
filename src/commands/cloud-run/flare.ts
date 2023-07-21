@@ -10,7 +10,7 @@ import chalk from 'chalk'
 import {Command} from 'clipanion'
 import {GoogleAuth} from 'google-auth-library'
 
-import {API_KEY_ENV_VAR, CI_API_KEY_ENV_VAR, FLARE_OUTPUT_DIRECTORY, FLARE_ZIP_FILE_NAME} from '../../constants'
+import {API_KEY_ENV_VAR, CI_API_KEY_ENV_VAR, FLARE_OUTPUT_DIRECTORY} from '../../constants'
 import {createDirectories, deleteFolder, writeFile, zipContents} from '../../helpers/fileSystem'
 import {sendToDatadog} from '../../helpers/flareFunctions'
 import {requestConfirmation} from '../../helpers/prompt'
@@ -21,6 +21,7 @@ import {maskEnvVar} from '../lambda/functions/commons'
 import {renderAuthenticationInstructions} from './renderer'
 
 const SERVICE_CONFIG_FILE_NAME = 'service_config.json'
+const FLARE_ZIP_FILE_NAME = 'cloudrun-flare-output.zip'
 
 export class CloudRunFlareCommand extends Command {
   private isDryRun = false
