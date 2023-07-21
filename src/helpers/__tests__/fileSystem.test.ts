@@ -4,9 +4,9 @@ import process from 'process'
 
 import JSZip from 'jszip'
 
-import {mockDatadogApiKey} from '../../commands/lambda/__tests__/fixtures'
-
 import {createDirectories, deleteFolder, writeFile, zipContents} from '../fileSystem'
+
+import {MOCK_DATADOG_API_KEY} from './flareFixtures'
 
 // Mock constants
 const MOCK_CWD = 'mock-cwd'
@@ -18,7 +18,7 @@ const MOCK_FILES = new Set([MOCK_FILE_NAME, 'file1.csv', 'file2.csv', 'file3.csv
 const MOCK_CONFIG = {
   Environment: {
     Variables: {
-      DD_API_KEY: mockDatadogApiKey,
+      DD_API_KEY: MOCK_DATADOG_API_KEY,
       DD_SITE: 'datadoghq.com',
       DD_LOG_LEVEL: 'debug',
     },

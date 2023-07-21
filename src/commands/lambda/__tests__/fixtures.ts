@@ -32,28 +32,11 @@ import {
 import {AwsStub} from 'aws-sdk-client-mock'
 import {Cli, Command} from 'clipanion/lib/advanced'
 
+import {createMockContext} from '../../../helpers/__tests__/flareFixtures'
+
 import {LambdaFlareCommand} from '../flare'
 import {InstrumentCommand} from '../instrument'
 import {UninstrumentCommand} from '../uninstrument'
-
-export const createMockContext = () => {
-  let data = ''
-
-  return {
-    stdout: {
-      toString: () => data,
-      write: (input: string) => {
-        data += input
-      },
-    },
-    stderr: {
-      toString: () => data,
-      write: (input: string) => {
-        data += input
-      },
-    },
-  }
-}
 
 export const makeCli = () => {
   const cli = new Cli()
@@ -214,7 +197,6 @@ export const mockAwsCredentials = {
   sessionToken: undefined,
 }
 
-export const mockDatadogApiKey = '02aeb762fff59ac0d5ad1536cd9633bd'
 export const mockDatadogEnv = 'sandbox'
 export const mockDatadogService = 'testServiceName'
 export const mockDatadogVersion = '1.0.0'

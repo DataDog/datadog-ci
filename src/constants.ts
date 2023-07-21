@@ -20,6 +20,8 @@ export const CI_API_KEY_ENV_VAR = 'DATADOG_API_KEY'
 export const CI_SITE_ENV_VAR = 'DATADOG_SITE'
 export const SITE_ENV_VAR = 'DD_SITE'
 
+export const AWS_DEFAULT_REGION_ENV_VAR = 'AWS_DEFAULT_REGION'
+
 // Flare constants
 export const FLARE_OUTPUT_DIRECTORY = '.datadog-ci'
 export const FLARE_ENDPOINT_PATH = '/api/ui/support/serverless/flare'

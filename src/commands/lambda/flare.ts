@@ -14,14 +14,21 @@ import {AwsCredentialIdentity} from '@aws-sdk/types'
 import chalk from 'chalk'
 import {Command} from 'clipanion'
 
-import {API_KEY_ENV_VAR, CI_API_KEY_ENV_VAR, FLARE_OUTPUT_DIRECTORY, FLARE_ZIP_FILE_NAME} from '../../constants'
+import {
+  API_KEY_ENV_VAR,
+  AWS_DEFAULT_REGION_ENV_VAR,
+  CI_API_KEY_ENV_VAR,
+  FLARE_OUTPUT_DIRECTORY,
+  FLARE_ZIP_FILE_NAME,
+} from '../../constants'
 import {createDirectories, deleteFolder, writeFile, zipContents} from '../../helpers/fileSystem'
 import {sendToDatadog} from '../../helpers/flareFunctions'
+import {requestConfirmation} from '../../helpers/prompt'
 import * as helpersRenderer from '../../helpers/renderer'
 
-import {AWS_DEFAULT_REGION_ENV_VAR, PROJECT_FILES} from './constants'
+import {PROJECT_FILES} from './constants'
 import {getAWSCredentials, getLambdaFunctionConfig, getRegion, maskStringifiedEnvVar} from './functions/commons'
-import {requestAWSCredentials, requestConfirmation, requestFilePath} from './prompt'
+import {requestAWSCredentials, requestFilePath} from './prompt'
 import * as commonRenderer from './renderers/common-renderer'
 
 const LOGS_DIRECTORY = 'logs'

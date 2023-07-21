@@ -9,15 +9,14 @@ import {google} from '@google-cloud/run/build/protos/protos'
 import chalk from 'chalk'
 import {Command} from 'clipanion'
 import {GoogleAuth} from 'google-auth-library'
-import inquirer from 'inquirer'
 
 import {API_KEY_ENV_VAR, CI_API_KEY_ENV_VAR, FLARE_OUTPUT_DIRECTORY, FLARE_ZIP_FILE_NAME} from '../../constants'
-import { createDirectories, deleteFolder, writeFile, zipContents } from '../../helpers/fileSystem'
+import {createDirectories, deleteFolder, writeFile, zipContents} from '../../helpers/fileSystem'
 import {sendToDatadog} from '../../helpers/flareFunctions'
+import {requestConfirmation} from '../../helpers/prompt'
 import * as helpersRenderer from '../../helpers/renderer'
 
 import {maskEnvVar} from '../lambda/functions/commons'
-import {confirmationQuestion} from '../lambda/prompt'
 
 const SERVICE_CONFIG_FILE_NAME = 'service_config.json'
 
@@ -94,7 +93,7 @@ export class CloudRunFlareCommand extends Command {
       this.context.stdout.write(
         '2. Run "gcloud auth application-default login" and follow the prompts in your browser to log in.\n'
       )
-      this.context.stdout.write('3. After logging in, run this program again.\n\n')
+      this.context.stdout.write('3. After logging in, run the `cloud-run flare` command again.\n\n')
 
       return 1
     }
@@ -144,10 +143,20 @@ export class CloudRunFlareCommand extends Command {
 
       // Confirm before sending
       this.context.stdout.write('\n')
-      const answer = await inquirer.prompt(
-        confirmationQuestion('Are you sure you want to send the flare file to Datadog Support?')
-      )
-      if (!answer.confirmation) {
+      let confirmSendFiles
+      try {
+        confirmSendFiles = await requestConfirmation(
+          'Are you sure you want to send the flare file to Datadog Support?',
+          false
+        )
+      } catch (err) {
+        if (err instanceof Error) {
+          this.context.stderr.write(helpersRenderer.renderError(err.message))
+        }
+
+        return 1
+      }
+      if (!confirmSendFiles) {
         this.context.stdout.write('\n🚫 The flare files were not sent based on your selection.')
         this.context.stdout.write(outputMsg)
 
@@ -179,7 +188,7 @@ export class CloudRunFlareCommand extends Command {
  * Check if the user is authenticated with GCP.
  * @returns true if the user is authenticated, false otherwise
  */
-const checkAuthentication = async () => {
+export const checkAuthentication = async () => {
   const auth = new GoogleAuth()
   try {
     await auth.getApplicationDefault()

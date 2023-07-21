@@ -1,7 +1,6 @@
 import fs from 'fs'
-import path from 'path'
 import process from 'process'
-import * as stream from 'stream'
+import stream from 'stream'
 
 import {
   CloudWatchLogsClient,
@@ -14,9 +13,16 @@ import {LambdaClient, ListTagsCommand} from '@aws-sdk/client-lambda'
 import {mockClient} from 'aws-sdk-client-mock'
 import JSZip from 'jszip'
 
-import {API_KEY_ENV_VAR, CI_API_KEY_ENV_VAR} from '../../../constants'
+import {API_KEY_ENV_VAR, AWS_DEFAULT_REGION_ENV_VAR, CI_API_KEY_ENV_VAR} from '../../../constants'
+import {
+  createMockContext,
+  MOCK_CWD,
+  MOCK_DATADOG_API_KEY,
+  MOCK_FOLDER_PATH,
+} from '../../../helpers/__tests__/flareFixtures'
+import * as helpersPromptModule from '../../../helpers/prompt'
 
-import {AWS_DEFAULT_REGION_ENV_VAR, PROJECT_FILES} from '../constants'
+import {PROJECT_FILES} from '../constants'
 import {
   convertToCSV,
   getAllLogs,
@@ -31,30 +37,25 @@ import {
 } from '../flare'
 import * as flareModule from '../flare'
 import {getAWSCredentials, getLambdaFunctionConfig} from '../functions/commons'
-import * as promptModule from '../prompt'
+import * as lambdaPromptModule from '../prompt'
 import {requestAWSCredentials} from '../prompt'
 
 import {
-  createMockContext,
   makeCli,
   mockAwsCredentials,
   mockCloudWatchLogEvents,
   mockCloudWatchLogsClientCommands,
   mockCloudWatchLogStreams,
-  mockDatadogApiKey,
   mockResourceTags,
 } from './fixtures'
 
 // Constants
-const MOCK_CWD = 'mock-folder'
-const MOCK_FOLDER_NAME = '.datadog-ci'
-const MOCK_FOLDER_PATH = path.join(MOCK_CWD, MOCK_FOLDER_NAME)
 const MOCK_REGION = 'us-east-1'
 const MOCK_REQUIRED_FLAGS = ['lambda', 'flare', '-f', 'func', '-r', MOCK_REGION, '-c', '123', '-e', 'test@test.com']
 const MOCK_CONFIG = {
   Environment: {
     Variables: {
-      DD_API_KEY: mockDatadogApiKey,
+      DD_API_KEY: MOCK_DATADOG_API_KEY,
       DD_SITE: 'datadoghq.com',
       DD_LOG_LEVEL: 'debug',
     },
@@ -64,6 +65,12 @@ const MOCK_CONFIG = {
 }
 const MOCK_LOG_GROUP = 'mockLogGroup'
 const MOCK_TAGS: any = {Tags: {}}
+const MOCK_READ_STREAM = new stream.Readable({
+  read() {
+    this.push(JSON.stringify(MOCK_CONFIG, undefined, 2))
+    this.push(undefined)
+  },
+})
 const cloudWatchLogsClientMock = mockClient(CloudWatchLogsClient)
 const lambdaClientMock = mockClient(LambdaClient)
 
@@ -76,8 +83,8 @@ jest.mock('../functions/commons', () => ({
 
 // Prompt mocks
 jest.mock('../prompt')
-jest.spyOn(promptModule, 'requestFilePath').mockResolvedValue('')
-jest.spyOn(promptModule, 'requestConfirmation').mockResolvedValue(true)
+jest.spyOn(lambdaPromptModule, 'requestFilePath').mockResolvedValue('')
+jest.spyOn(helpersPromptModule, 'requestConfirmation').mockResolvedValue(true)
 jest.spyOn(flareModule, 'getProjectFiles').mockResolvedValue(new Set())
 
 // File system mocks
@@ -86,13 +93,7 @@ jest.mock('fs')
 fs.writeFileSync = jest.fn().mockImplementation(() => {})
 fs.readFileSync = jest.fn().mockReturnValue(JSON.stringify(MOCK_CONFIG, undefined, 2))
 fs.existsSync = jest.fn().mockReturnValue(true)
-const mockReadStream = new stream.Readable({
-  read() {
-    this.push(JSON.stringify(MOCK_CONFIG, undefined, 2))
-    this.push(undefined)
-  },
-})
-fs.createReadStream = jest.fn().mockReturnValue(mockReadStream)
+fs.createReadStream = jest.fn().mockReturnValue(MOCK_READ_STREAM)
 fs.readdirSync = jest.fn().mockReturnValue([])
 ;(fs.statSync as jest.Mock).mockImplementation((file_path: string) => ({
   isDirectory: () => file_path === MOCK_FOLDER_PATH || file_path === MOCK_CWD,
@@ -136,7 +137,7 @@ describe('lambda flare', () => {
 
   describe('validates required flags', () => {
     beforeEach(() => {
-      process.env = {[CI_API_KEY_ENV_VAR]: mockDatadogApiKey}
+      process.env = {[CI_API_KEY_ENV_VAR]: MOCK_DATADOG_API_KEY}
     })
 
     it('prints error when no function specified', async () => {
@@ -206,7 +207,7 @@ describe('lambda flare', () => {
 
     it('uses API key ENV variable and runs as expected', async () => {
       process.env = {}
-      process.env[CI_API_KEY_ENV_VAR] = mockDatadogApiKey
+      process.env[CI_API_KEY_ENV_VAR] = MOCK_DATADOG_API_KEY
       process.env[API_KEY_ENV_VAR] = undefined
       const cli = makeCli()
       const context = createMockContext()
@@ -219,7 +220,7 @@ describe('lambda flare', () => {
       expect(output).toMatchSnapshot()
 
       process.env[CI_API_KEY_ENV_VAR] = undefined
-      process.env[API_KEY_ENV_VAR] = mockDatadogApiKey
+      process.env[API_KEY_ENV_VAR] = MOCK_DATADOG_API_KEY
       code = await cli.run(
         ['lambda', 'flare', '-f', 'func', '-r', MOCK_REGION, '-c', '123', '-e', 'test@test.com'],
         context as any
@@ -366,6 +367,7 @@ describe('lambda flare', () => {
     it('should mask API key but not whitelisted environment variables', () => {
       const maskedConfig = maskConfig(MOCK_CONFIG)
       expect(maskedConfig).toMatchSnapshot()
+      expect(JSON.stringify(maskedConfig)).not.toContain(MOCK_DATADOG_API_KEY)
     })
 
     it('should return the original config if there are no environment variables', () => {
@@ -604,7 +606,7 @@ describe('lambda flare', () => {
   })
 
   describe('gets CloudWatch Logs', () => {
-    process.env = {[CI_API_KEY_ENV_VAR]: mockDatadogApiKey}
+    process.env = {[CI_API_KEY_ENV_VAR]: MOCK_DATADOG_API_KEY}
     const FLAGS_WITH_LOGS = [...MOCK_REQUIRED_FLAGS, '--with-logs']
 
     const mockLogStreamNames = ['Stream1', 'Stream2', 'Stream3']
@@ -819,7 +821,7 @@ describe('lambda flare', () => {
 
     it('sends when user answers prompt with yes', async () => {
       // The first prompt is for additional files, the second is for confirmation before sending
-      jest.spyOn(promptModule, 'requestConfirmation').mockResolvedValueOnce(true).mockResolvedValueOnce(true)
+      jest.spyOn(helpersPromptModule, 'requestConfirmation').mockResolvedValueOnce(true).mockResolvedValueOnce(true)
       const cli = makeCli()
       const context = createMockContext()
       const code = await cli.run(MOCK_REQUIRED_FLAGS, context as any)
@@ -831,7 +833,7 @@ describe('lambda flare', () => {
 
     it('does not send when user answers prompt with no', async () => {
       // The first prompt is for additional files, the second is for confirmation before sending
-      jest.spyOn(promptModule, 'requestConfirmation').mockResolvedValueOnce(true).mockResolvedValueOnce(false)
+      jest.spyOn(helpersPromptModule, 'requestConfirmation').mockResolvedValueOnce(true).mockResolvedValueOnce(false)
       const cli = makeCli()
       const context = createMockContext()
       const code = await cli.run(MOCK_REQUIRED_FLAGS, context as any)
@@ -849,7 +851,7 @@ describe('lambda flare', () => {
 
     it('requests additional files when user answers yes', async () => {
       // The first prompt is for additional files, the second is for confirmation before sending
-      jest.spyOn(promptModule, 'requestConfirmation').mockResolvedValueOnce(true).mockResolvedValueOnce(true)
+      jest.spyOn(helpersPromptModule, 'requestConfirmation').mockResolvedValueOnce(true).mockResolvedValueOnce(true)
       const cli = makeCli()
       const context = createMockContext()
       const code = await cli.run(MOCK_REQUIRED_FLAGS, context as any)
@@ -861,7 +863,7 @@ describe('lambda flare', () => {
 
     it('does not request additional files when user answers no', async () => {
       // The first prompt is for additional files, the second is for confirmation before sending
-      jest.spyOn(promptModule, 'requestConfirmation').mockResolvedValueOnce(false).mockResolvedValueOnce(true)
+      jest.spyOn(helpersPromptModule, 'requestConfirmation').mockResolvedValueOnce(false).mockResolvedValueOnce(true)
       const cli = makeCli()
       const context = createMockContext()
       const code = await cli.run(MOCK_REQUIRED_FLAGS, context as any)

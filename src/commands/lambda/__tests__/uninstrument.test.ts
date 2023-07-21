@@ -4,6 +4,7 @@ jest.mock('@aws-sdk/credential-providers', () => ({
   fromIni: jest.fn(),
 }))
 jest.mock('../prompt')
+jest.mock('../../../helpers/prompt')
 jest.mock('../renderers/instrument-uninstrument-renderer', () =>
   require('../__mocks__/instrument-uninstrument-renderer')
 )
@@ -20,14 +21,15 @@ import {
 import {fromIni} from '@aws-sdk/credential-providers'
 import {mockClient} from 'aws-sdk-client-mock'
 
-import {SITE_ENV_VAR} from '../../../constants'
+import {AWS_DEFAULT_REGION_ENV_VAR, SITE_ENV_VAR} from '../../../constants'
+import {createMockContext} from '../../../helpers/__tests__/flareFixtures'
+import {requestConfirmation} from '../../../helpers/prompt'
 
 import 'aws-sdk-client-mock-jest'
 
 import {
   APM_FLUSH_DEADLINE_MILLISECONDS_ENV_VAR,
   AWS_ACCESS_KEY_ID_ENV_VAR,
-  AWS_DEFAULT_REGION_ENV_VAR,
   AWS_SECRET_ACCESS_KEY_ENV_VAR,
   ENVIRONMENT_ENV_VAR,
   FLUSH_TO_LOG_ENV_VAR,
@@ -38,12 +40,11 @@ import {
   TRACE_ENABLED_ENV_VAR,
   VERSION_ENV_VAR,
 } from '../constants'
-import {requestAWSCredentials, requestConfirmation, requestFunctionSelection} from '../prompt'
+import {requestAWSCredentials, requestFunctionSelection} from '../prompt'
 import {UninstrumentCommand} from '../uninstrument'
 
 import {
   createCommand,
-  createMockContext,
   makeCli,
   mockAwsAccessKeyId,
   mockAwsSecretAccessKey,

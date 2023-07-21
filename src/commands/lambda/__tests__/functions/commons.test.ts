@@ -13,6 +13,7 @@ import {mockClient} from 'aws-sdk-client-mock'
 
 import 'aws-sdk-client-mock-jest'
 import {CI_API_KEY_ENV_VAR, CI_SITE_ENV_VAR} from '../../../../constants'
+import {MOCK_DATADOG_API_KEY} from '../../../../helpers/__tests__/flareFixtures'
 
 import {
   CI_API_KEY_SECRET_ARN_ENV_VAR,
@@ -54,7 +55,6 @@ import {
   mockAwsAccessKeyId,
   mockAwsAccount,
   mockAwsSecretAccessKey,
-  mockDatadogApiKey,
   mockLambdaClientCommands,
   mockLambdaLayers,
 } from '../fixtures'
@@ -879,7 +879,7 @@ describe('commons', () => {
     })
 
     it('should mask sensitive datadog environment variables', () => {
-      expect(maskEnvVar('DD_API_KEY', mockDatadogApiKey)).toEqual('02**********33bd')
+      expect(maskEnvVar('DD_API_KEY', MOCK_DATADOG_API_KEY)).toEqual('02**********33bd')
     })
 
     it('should skip whitelisted environment variables', () => {

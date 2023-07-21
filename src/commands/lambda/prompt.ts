@@ -2,13 +2,12 @@ import {blueBright, bold, dim} from 'chalk'
 import {filter} from 'fuzzy'
 import inquirer from 'inquirer'
 
-import {CI_API_KEY_ENV_VAR, CI_SITE_ENV_VAR, DATADOG_SITES} from '../../constants'
+import {AWS_DEFAULT_REGION_ENV_VAR, CI_API_KEY_ENV_VAR, CI_SITE_ENV_VAR, DATADOG_SITES} from '../../constants'
 import {isValidDatadogSite} from '../../helpers/validation'
 
 import {
   AWS_ACCESS_KEY_ID_ENV_VAR,
   AWS_ACCESS_KEY_ID_REG_EXP,
-  AWS_DEFAULT_REGION_ENV_VAR,
   AWS_SECRET_ACCESS_KEY_ENV_VAR,
   AWS_SECRET_ACCESS_KEY_REG_EXP,
   AWS_SECRET_ARN_REG_EXP,
@@ -177,13 +176,6 @@ export const datadogEnvVarsQuestions = (datadogApiKeyType: Record<string, any>):
   },
 })
 
-export const confirmationQuestion = (message: string, defaultValue = true): inquirer.ConfirmQuestion => ({
-  message,
-  name: 'confirmation',
-  type: 'confirm',
-  default: defaultValue,
-})
-
 export const functionSelectionQuestion = (functionNames: string[]): typeof checkboxPlusPrompt => ({
   choices: functionNames,
   highlight: true,
@@ -277,18 +269,6 @@ export const requestEnvServiceVersion = async () => {
   } catch (e) {
     if (e instanceof Error) {
       throw Error(`Couldn't set user defined env, service, and version environment variables. ${e.message}`)
-    }
-  }
-}
-
-export const requestConfirmation = async (message: string, defaultValue = true) => {
-  try {
-    const confirmationAnswer = await inquirer.prompt(confirmationQuestion(message, defaultValue))
-
-    return confirmationAnswer.confirmation
-  } catch (e) {
-    if (e instanceof Error) {
-      throw Error(`Couldn't receive confirmation. ${e.message}`)
     }
   }
 }
