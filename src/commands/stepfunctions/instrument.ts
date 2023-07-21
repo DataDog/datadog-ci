@@ -13,7 +13,7 @@ import {
   attachPolicyToStateMachineIamRole,
   createLogsAccessPolicy,
 } from './awsCommands'
-import {TAG_VERSION_NAME} from './constants'
+import {DD_TRACE_ENABLED, TAG_VERSION_NAME} from './constants'
 import {
   buildLogGroupName,
   buildArn,
@@ -153,6 +153,10 @@ export class InstrumentStepFunctionsCommand extends Command {
         )
       ) {
         stepFunctionTagsToAdd.push({key: TAG_VERSION_NAME, value: `v${cliVersion}`})
+      }
+
+      if (!listStepFunctionTagsResponse?.tags?.some((tag) => tag.key === DD_TRACE_ENABLED)) {
+        stepFunctionTagsToAdd.push({key: DD_TRACE_ENABLED, value: 'true'})
       }
 
       if (stepFunctionTagsToAdd.length > 0) {
