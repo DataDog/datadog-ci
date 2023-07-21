@@ -47,7 +47,7 @@ import {applyTagConfig} from '../tags'
  * Returns an array of merged layer ARNs if given a Full Layer ARN,
  * if not, it justs returns the layer ARNs provided.
  *
- * @param fullLayerARN a comple`te layer ARN.
+ * @param fullLayerARN a complete layer ARN.
  * @param partialLayerARN a partial layer ARN.
  * @param layerARNs an array of layer ARNs.
  * @returns an array of layer ARNs.

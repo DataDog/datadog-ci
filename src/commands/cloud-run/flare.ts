@@ -18,6 +18,8 @@ import * as helpersRenderer from '../../helpers/renderer'
 
 import {maskEnvVar} from '../lambda/functions/commons'
 
+import {renderAuthenticationInstructions} from './renderer'
+
 const SERVICE_CONFIG_FILE_NAME = 'service_config.json'
 
 export class CloudRunFlareCommand extends Command {
@@ -85,15 +87,7 @@ export class CloudRunFlareCommand extends Command {
     // Get GCP credentials
     this.context.stdout.write(chalk.bold('\n🔑 Verifying GCP credentials...\n'))
     if (!(await checkAuthentication())) {
-      this.context.stderr.write('\n' + helpersRenderer.renderError('Unable to authenticate with GCP.'))
-      this.context.stdout.write('\nTo authenticate with GCP, please follow these steps:\n')
-      this.context.stdout.write(
-        "1. If you haven't already, install the Google Cloud SDK: https://cloud.google.com/sdk/docs/install\n"
-      )
-      this.context.stdout.write(
-        '2. Run "gcloud auth application-default login" and follow the prompts in your browser to log in.\n'
-      )
-      this.context.stdout.write('3. After logging in, run the `cloud-run flare` command again.\n\n')
+      this.context.stderr.write(renderAuthenticationInstructions())
 
       return 1
     }
