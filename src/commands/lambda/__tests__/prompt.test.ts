@@ -2,7 +2,7 @@ jest.mock('inquirer')
 import {prompt} from 'inquirer'
 
 import {CI_API_KEY_ENV_VAR, CI_SITE_ENV_VAR} from '../../../constants'
-import {MOCK_DATADOG_API_KEY} from '../../../helpers/__tests__/flareFixtures'
+import {MOCK_DATADOG_API_KEY} from '../../../helpers/__tests__/serverlessFixtures'
 
 import {
   AWS_ACCESS_KEY_ID_ENV_VAR,

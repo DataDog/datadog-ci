@@ -12,7 +12,7 @@ import {
   MOCK_CWD,
   MOCK_DATADOG_API_KEY,
   MOCK_FOLDER_PATH,
-} from '../../../helpers/__tests__/flareFixtures'
+} from '../../../helpers/__tests__/serverlessFixtures'
 import * as helpersPromptModule from '../../../helpers/prompt'
 
 import * as flareModule from '../flare'

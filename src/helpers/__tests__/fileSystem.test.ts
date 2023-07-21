@@ -6,7 +6,7 @@ import JSZip from 'jszip'
 
 import {createDirectories, deleteFolder, writeFile, zipContents} from '../fileSystem'
 
-import {MOCK_DATADOG_API_KEY} from './flareFixtures'
+import {MOCK_DATADOG_API_KEY} from './serverlessFixtures'
 
 // Mock constants
 const MOCK_CWD = 'mock-cwd'

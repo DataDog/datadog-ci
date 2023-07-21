@@ -22,7 +22,7 @@ import {fromIni} from '@aws-sdk/credential-providers'
 import {mockClient} from 'aws-sdk-client-mock'
 
 import {AWS_DEFAULT_REGION_ENV_VAR, SITE_ENV_VAR} from '../../../constants'
-import {createMockContext} from '../../../helpers/__tests__/flareFixtures'
+import {createMockContext} from '../../../helpers/__tests__/serverlessFixtures'
 import {requestConfirmation} from '../../../helpers/prompt'
 
 import 'aws-sdk-client-mock-jest'

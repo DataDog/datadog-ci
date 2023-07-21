@@ -19,7 +19,7 @@ import 'aws-sdk-client-mock-jest'
 import {Cli} from 'clipanion/lib/advanced'
 
 import {AWS_DEFAULT_REGION_ENV_VAR, CI_API_KEY_ENV_VAR, CI_SITE_ENV_VAR} from '../../../constants'
-import {createMockContext, MOCK_DATADOG_API_KEY} from '../../../helpers/__tests__/flareFixtures'
+import {createMockContext, MOCK_DATADOG_API_KEY} from '../../../helpers/__tests__/serverlessFixtures'
 import {requestConfirmation} from '../../../helpers/prompt'
 
 import {

@@ -13,7 +13,7 @@ import {mockClient} from 'aws-sdk-client-mock'
 
 import 'aws-sdk-client-mock-jest'
 import {CI_API_KEY_ENV_VAR, CI_SITE_ENV_VAR} from '../../../../constants'
-import {MOCK_DATADOG_API_KEY} from '../../../../helpers/__tests__/flareFixtures'
+import {MOCK_DATADOG_API_KEY} from '../../../../helpers/__tests__/serverlessFixtures'
 
 import {
   CI_API_KEY_SECRET_ARN_ENV_VAR,
