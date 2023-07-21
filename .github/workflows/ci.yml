@@ -163,7 +163,7 @@ jobs:
       - run: yarn check-licenses
 
   test-cache:
-    name: Build and test
+    name: Test cache
     runs-on: ubuntu-latest
 
     steps:
