@@ -15,8 +15,7 @@ import {createDirectories, deleteFolder, writeFile, zipContents} from '../../hel
 import {sendToDatadog} from '../../helpers/flareFunctions'
 import {requestConfirmation} from '../../helpers/prompt'
 import * as helpersRenderer from '../../helpers/renderer'
-
-import {maskEnvVar} from '../lambda/functions/commons'
+import {maskEnvVar} from '../../helpers/utils'
 
 import {renderAuthenticationInstructions} from './renderer'
 

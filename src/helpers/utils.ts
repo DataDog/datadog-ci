@@ -8,6 +8,8 @@ import {BaseContext, CommandClass, Cli} from 'clipanion'
 import deepExtend from 'deep-extend'
 import {ProxyAgent} from 'proxy-agent'
 
+import {SKIP_MASKING_ENV_VARS} from '../constants'
+
 export const DEFAULT_CONFIG_PATHS = ['datadog-ci.json']
 
 export const pick = <T extends Record<any, any>, K extends keyof T>(base: T, keys: K[]) => {
@@ -351,4 +353,29 @@ export const timedExecAsync = async <I, O>(f: (input: I) => Promise<O>, input: I
   await f(input)
 
   return (Date.now() - initialTime) / 1000
+}
+
+// Mask environment variables with sensitive values
+export const maskEnvVar = (key: string, value: string) => {
+  if (SKIP_MASKING_ENV_VARS.has(key)) {
+    return value
+  }
+
+  // Don't mask booleans
+  if (value.toLowerCase() === 'true' || value.toLowerCase() === 'false') {
+    return value
+  }
+
+  // Dont mask numbers
+  if (!isNaN(Number(value))) {
+    return value
+  }
+
+  // Mask entire string if it's short
+  if (value.length < 12) {
+    return '*'.repeat(16)
+  }
+
+  // Keep first two and last four characters if it's long
+  return value.slice(0, 2) + '*'.repeat(10) + value.slice(-4)
 }

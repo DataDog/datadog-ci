@@ -14,6 +14,7 @@ import {mockClient} from 'aws-sdk-client-mock'
 import 'aws-sdk-client-mock-jest'
 import {CI_API_KEY_ENV_VAR, CI_SITE_ENV_VAR} from '../../../../constants'
 import {MOCK_DATADOG_API_KEY} from '../../../../helpers/__tests__/serverlessFixtures'
+import {maskEnvVar} from '../../../../helpers/utils'
 
 import {
   CI_API_KEY_SECRET_ARN_ENV_VAR,
@@ -43,7 +44,6 @@ import {
   isMissingAnyDatadogApiKeyEnvVar,
   getAWSCredentials,
   isMissingDatadogEnvVars,
-  maskEnvVar,
   sentenceMatchesRegEx,
   updateLambdaFunctionConfig,
 } from '../../functions/commons'

@@ -19,6 +19,7 @@ import inquirer from 'inquirer'
 
 import {CI_API_KEY_ENV_VAR, CI_SITE_ENV_VAR} from '../../../constants'
 import * as helpersRenderer from '../../../helpers/renderer'
+import {maskEnvVar} from '../../../helpers/utils'
 import {isValidDatadogSite} from '../../../helpers/validation'
 
 import {
@@ -35,7 +36,6 @@ import {
   LIST_FUNCTIONS_MAX_RETRY_COUNT,
   Runtime,
   RUNTIME_LOOKUP,
-  SKIP_MASKING_ENV_VARS,
 } from '../constants'
 import {FunctionConfiguration, InstrumentationSettings, InstrumentedConfigurationGroup} from '../interfaces'
 import {applyLogGroupConfig} from '../loggroup'
@@ -508,31 +508,6 @@ export const willUpdateFunctionConfigs = (configs: FunctionConfiguration[]) => {
   }
 
   return willUpdate
-}
-
-// Mask environment variables with sensitive values
-export const maskEnvVar = (key: string, value: string) => {
-  if (SKIP_MASKING_ENV_VARS.has(key)) {
-    return value
-  }
-
-  // Don't mask booleans
-  if (value.toLowerCase() === 'true' || value.toLowerCase() === 'false') {
-    return value
-  }
-
-  // Dont mask numbers
-  if (!isNaN(Number(value))) {
-    return value
-  }
-
-  // Mask entire string if it's short
-  if (value.length < 12) {
-    return '*'.repeat(16)
-  }
-
-  // Keep first two and last four characters if it's long
-  return value.slice(0, 2) + '*'.repeat(10) + value.slice(-4)
 }
 
 /**
