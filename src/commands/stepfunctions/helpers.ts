@@ -97,9 +97,9 @@ export const injectContextIntoLambdaPayload = async (
       if (shouldUpdateStepForTracesMerging(step)) {
         updateStepObject(step)
         definitionHasBeenUpdated = true
-      } else if (step.Resource.startsWith('arn:aws:lambda')) {
+      } else if (step.Resource?.startsWith('arn:aws:lambda')) {
         context.stdout.write(
-          `\n[Warn] Step ${stepName} may be using the basic legacy integration, which does not support merging lambda trace(s) with Step Functions trace. 
+          `[Warn] Step ${stepName} may be using the basic legacy integration, which does not support merging lambda trace(s) with Step Functions trace. 
           To merge lambda trace(s) with Step Functions trace, please consider using the latest integration. 
           More details can be found on https://docs.aws.amazon.com/step-functions/latest/dg/connect-lambda.html \n`
         )
@@ -152,7 +152,7 @@ export type StatesType = Record<string, StepType>
 export type StepType = {
   Type: string
   Parameters?: ParametersType
-  Resource: string
+  Resource?: string
   Next?: string
   End?: boolean
 }

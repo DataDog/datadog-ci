@@ -140,7 +140,7 @@ export class InstrumentStepFunctionsCommand extends Command {
       }
 
       if (
-        !listStepFunctionTagsResponse?.tags?.some((tag) => tag.key === 'service') &&
+        !listStepFunctionTagsResponse?.tags?.some((tag) => tag.key === 'service' && tag.value === this.service) &&
         typeof this.service === 'string'
       ) {
         stepFunctionTagsToAdd.push({key: 'service', value: this.service})
@@ -155,7 +155,11 @@ export class InstrumentStepFunctionsCommand extends Command {
         stepFunctionTagsToAdd.push({key: TAG_VERSION_NAME, value: `v${cliVersion}`})
       }
 
-      if (!listStepFunctionTagsResponse?.tags?.some((tag) => tag.key === DD_TRACE_ENABLED)) {
+      if (
+        !listStepFunctionTagsResponse?.tags?.some(
+          (tag) => tag.key === DD_TRACE_ENABLED && tag.value?.toLowerCase() === 'true'
+        )
+      ) {
         stepFunctionTagsToAdd.push({key: DD_TRACE_ENABLED, value: 'true'})
       }
 
