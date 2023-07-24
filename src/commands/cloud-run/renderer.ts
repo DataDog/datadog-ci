@@ -5,7 +5,7 @@ const AUTHENTICATION_INSTRUCTIONS = [
   'To authenticate with GCP, please follow these steps:',
   "1. If you haven't already, install the Google Cloud SDK: https://cloud.google.com/sdk/docs/install",
   '2. Run "gcloud auth application-default login" and follow the prompts in your browser to log in.',
-  '3. After logging in, run the `cloud-run flare` command again.\n\n',
+  '3. After logging in, run the `cloud-run flare` command again.\n',
 ]
 /**
  * @returns instructions on how to authenticate with GCP.

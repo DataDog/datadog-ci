@@ -511,7 +511,11 @@ export const willUpdateFunctionConfigs = (configs: FunctionConfiguration[]) => {
   return willUpdate
 }
 
-// Mask environment variables
+/**
+ * Masks environment variables in a Lambda function configuration.
+ * Modifies the config object in place, so no need to return anything.
+ * @param config
+ */
 export const maskConfig = (config: any) => {
   const vars = config.Environment?.Variables
   if (!vars) {

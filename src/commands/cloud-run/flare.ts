@@ -85,7 +85,7 @@ export class CloudRunFlareCommand extends Command {
       return 1
     }
 
-    // Get GCP credentials
+    // Verify GCP credentials
     this.context.stdout.write(chalk.bold('\n🔑 Verifying GCP credentials...\n'))
     if (!(await checkAuthentication())) {
       this.context.stderr.write(renderAuthenticationInstructions())
@@ -212,13 +212,16 @@ export const getCloudRunServiceConfig = async (
   const request = {
     name: runClient.servicePath(projectName, region, serviceName),
   }
-
   const [response] = await runClient.getService(request)
 
   return response
 }
 
-// Mask environment variables
+/**
+ * Masks environment variables in a Cloud Run service configuration.
+ * Modifies the config object in place, so no need to return anything.
+ * @param config
+ */
 export const maskConfig = (config: any) => {
   const containers = config.template?.containers
   if (!containers) {

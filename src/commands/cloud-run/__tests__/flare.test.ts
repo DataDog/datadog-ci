@@ -20,7 +20,7 @@ import {checkAuthentication, getCloudRunServiceConfig, maskConfig} from '../flar
 
 import {makeCli} from './fixtures'
 
-const MOCK_LOCATION = 'us-east1'
+const MOCK_REGION = 'us-east1'
 const MOCK_REQUIRED_FLAGS = [
   'cloud-run',
   'flare',
@@ -28,8 +28,8 @@ const MOCK_REQUIRED_FLAGS = [
   'service',
   '-p',
   'project',
-  '-l',
-  MOCK_LOCATION,
+  '-r',
+  MOCK_REGION,
   '-c',
   '123',
   '-e',
@@ -77,7 +77,14 @@ jest.mock('google-auth-library', () => {
     })),
   }
 })
-jest.spyOn(flareModule, 'getCloudRunServiceConfig').mockResolvedValue(MOCK_CLOUDRUN_CONFIG as IService)
+jest.mock('@google-cloud/run', () => {
+  return {
+    ServicesClient: jest.fn().mockImplementation(() => ({
+      servicePath: jest.fn().mockReturnValue('servicePath'),
+      getService: () => Promise.resolve([MOCK_CLOUDRUN_CONFIG]),
+    })),
+  }
+})
 jest.spyOn(helpersPromptModule, 'requestConfirmation').mockResolvedValue(true)
 jest.mock('util')
 jest.mock('jszip')
@@ -122,7 +129,7 @@ describe('cloud-run flare', () => {
       const cli = makeCli()
       const context = createMockContext()
       const code = await cli.run(
-        ['cloud-run', 'flare', '-p', 'project', '-l', MOCK_LOCATION, '-c', '123', '-e', 'test@test.com'],
+        ['cloud-run', 'flare', '-p', 'project', '-r', MOCK_REGION, '-c', '123', '-e', 'test@test.com'],
         context as any
       )
       expect(code).toBe(1)
@@ -134,7 +141,7 @@ describe('cloud-run flare', () => {
       const cli = makeCli()
       const context = createMockContext()
       const code = await cli.run(
-        ['cloud-run', 'flare', '-s', 'service', '-l', MOCK_LOCATION, '-c', '123', '-e', 'test@test.com'],
+        ['cloud-run', 'flare', '-s', 'service', '-r', MOCK_REGION, '-c', '123', '-e', 'test@test.com'],
         context as any
       )
       expect(code).toBe(1)
@@ -142,7 +149,7 @@ describe('cloud-run flare', () => {
       expect(output).toMatchSnapshot()
     })
 
-    it('prints error when no location specified', async () => {
+    it('prints error when no region specified', async () => {
       const cli = makeCli()
       const context = createMockContext()
       const code = await cli.run(
@@ -158,7 +165,7 @@ describe('cloud-run flare', () => {
       const cli = makeCli()
       const context = createMockContext()
       const code = await cli.run(
-        ['cloud-run', 'flare', '-s', 'service', '-p', 'project', '-l', MOCK_LOCATION, '-e', 'test@test.com'],
+        ['cloud-run', 'flare', '-s', 'service', '-p', 'project', '-r', MOCK_REGION, '-e', 'test@test.com'],
         context as any
       )
       expect(code).toBe(1)
@@ -170,7 +177,7 @@ describe('cloud-run flare', () => {
       const cli = makeCli()
       const context = createMockContext()
       const code = await cli.run(
-        ['cloud-run', 'flare', '-s', 'service', '-p', 'project', '-l', MOCK_LOCATION, '-c', '123'],
+        ['cloud-run', 'flare', '-s', 'service', '-p', 'project', '-r', MOCK_REGION, '-c', '123'],
         context as any
       )
       expect(code).toBe(1)
@@ -253,6 +260,12 @@ describe('cloud-run flare', () => {
   })
 
   describe('getCloudRunServiceConfig', () => {
+    const getConfigSpy = jest.spyOn(flareModule, 'getCloudRunServiceConfig')
+
+    afterAll(() => {
+      getConfigSpy.mockRestore()
+    })
+
     it('stops and prints error when getCloudRunServiceConfig fails', async () => {
       ;(getCloudRunServiceConfig as any).mockImplementation(() => {
         throw new Error('MOCK ERROR: Some API error')

@@ -49,7 +49,8 @@ export class LambdaFlareCommand extends Command {
 
   /**
    * Entry point for the `lambda flare` command.
-   * Gathers lambda function configuration and sends it to Datadog.
+   * Gathers config, logs, tags, project files, and more from a
+   * Lambda function and sends them to Datadog support.
    * @returns 0 if the command ran successfully, 1 otherwise.
    */
   public async execute() {

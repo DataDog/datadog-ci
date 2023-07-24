@@ -12,7 +12,6 @@ To authenticate with GCP, please follow these steps:
 1. If you haven't already, install the Google Cloud SDK: https://cloud.google.com/sdk/docs/install
 2. Run \\"gcloud auth application-default login\\" and follow the prompts in your browser to log in.
 3. After logging in, run the \`cloud-run flare\` command again.
-
 "
 `;
 
@@ -168,17 +167,17 @@ exports[`cloud-run flare validates required flags prints error when no email spe
 "
 `;
 
-exports[`cloud-run flare validates required flags prints error when no location specified 1`] = `
-"
-🐶 Generating Cloud Run flare to send your configuration to Datadog...
-[Error] No region specified. [-r,--region]
-"
-`;
-
 exports[`cloud-run flare validates required flags prints error when no project specified 1`] = `
 "
 🐶 Generating Cloud Run flare to send your configuration to Datadog...
 [Error] No project specified. [-p,--project]
+"
+`;
+
+exports[`cloud-run flare validates required flags prints error when no region specified 1`] = `
+"
+🐶 Generating Cloud Run flare to send your configuration to Datadog...
+[Error] No region specified. [-r,--region]
 "
 `;
 
