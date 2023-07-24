@@ -36,6 +36,7 @@ import {
   LIST_FUNCTIONS_MAX_RETRY_COUNT,
   Runtime,
   RUNTIME_LOOKUP,
+  SKIP_MASKING_LAMBDA_ENV_VARS,
 } from '../constants'
 import {FunctionConfiguration, InstrumentationSettings, InstrumentedConfigurationGroup} from '../interfaces'
 import {applyLogGroupConfig} from '../loggroup'
@@ -521,6 +522,7 @@ export const willUpdateFunctionConfigs = (configs: FunctionConfiguration[]) => {
  * @param envVars `Environment.Variables` object in `FunctionConfiguration`.
  * @returns a function to be used as replacer.
  */
+// TODO remove, use maskConfig instead
 export const maskStringifiedEnvVar = (envVars: Record<string, string> | undefined) => {
   return function (this: Record<string, unknown>, key: string, value: string) {
     if (this === envVars) {

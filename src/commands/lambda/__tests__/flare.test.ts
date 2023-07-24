@@ -13,16 +13,16 @@ import {LambdaClient, ListTagsCommand} from '@aws-sdk/client-lambda'
 import {mockClient} from 'aws-sdk-client-mock'
 import JSZip from 'jszip'
 
-import {API_KEY_ENV_VAR, AWS_DEFAULT_REGION_ENV_VAR, CI_API_KEY_ENV_VAR} from '../../../constants'
+import {API_KEY_ENV_VAR, CI_API_KEY_ENV_VAR} from '../../../constants'
 import {
   createMockContext,
   MOCK_CWD,
   MOCK_DATADOG_API_KEY,
-  MOCK_FOLDER_PATH,
-} from '../../../helpers/__tests__/serverlessFixtures'
+  MOCK_FLARE_FOLDER_PATH,
+} from '../../../helpers/__tests__/fixtures'
 import * as helpersPromptModule from '../../../helpers/prompt'
 
-import {PROJECT_FILES} from '../constants'
+import {AWS_DEFAULT_REGION_ENV_VAR, PROJECT_FILES} from '../constants'
 import {
   convertToCSV,
   getAllLogs,
@@ -31,7 +31,6 @@ import {
   getProjectFiles,
   getTags,
   getUniqueFileNames,
-  maskConfig,
   validateFilePath,
   validateStartEndFlags,
 } from '../flare'
@@ -52,7 +51,7 @@ import {
 // Constants
 const MOCK_REGION = 'us-east-1'
 const MOCK_REQUIRED_FLAGS = ['lambda', 'flare', '-f', 'func', '-r', MOCK_REGION, '-c', '123', '-e', 'test@test.com']
-const MOCK_CONFIG = {
+export const MOCK_LAMBDA_CONFIG = {
   Environment: {
     Variables: {
       DD_API_KEY: MOCK_DATADOG_API_KEY,
@@ -67,7 +66,7 @@ const MOCK_LOG_GROUP = 'mockLogGroup'
 const MOCK_TAGS: any = {Tags: {}}
 const MOCK_READ_STREAM = new stream.Readable({
   read() {
-    this.push(JSON.stringify(MOCK_CONFIG, undefined, 2))
+    this.push(JSON.stringify(MOCK_LAMBDA_CONFIG, undefined, 2))
     this.push(undefined)
   },
 })
@@ -78,7 +77,7 @@ const lambdaClientMock = mockClient(LambdaClient)
 jest.mock('../functions/commons', () => ({
   ...jest.requireActual('../functions/commons'),
   getAWSCredentials: jest.fn(),
-  getLambdaFunctionConfig: jest.fn().mockImplementation(() => Promise.resolve(MOCK_CONFIG)),
+  getLambdaFunctionConfig: jest.fn().mockImplementation(() => Promise.resolve(MOCK_LAMBDA_CONFIG)),
 }))
 
 // Prompt mocks
@@ -91,12 +90,12 @@ jest.spyOn(flareModule, 'getProjectFiles').mockResolvedValue(new Set())
 process.cwd = jest.fn().mockReturnValue(MOCK_CWD)
 jest.mock('fs')
 fs.writeFileSync = jest.fn().mockImplementation(() => {})
-fs.readFileSync = jest.fn().mockReturnValue(JSON.stringify(MOCK_CONFIG, undefined, 2))
+fs.readFileSync = jest.fn().mockReturnValue(JSON.stringify(MOCK_LAMBDA_CONFIG, undefined, 2))
 fs.existsSync = jest.fn().mockReturnValue(true)
 fs.createReadStream = jest.fn().mockReturnValue(MOCK_READ_STREAM)
 fs.readdirSync = jest.fn().mockReturnValue([])
 ;(fs.statSync as jest.Mock).mockImplementation((file_path: string) => ({
-  isDirectory: () => file_path === MOCK_FOLDER_PATH || file_path === MOCK_CWD,
+  isDirectory: () => file_path === MOCK_FLARE_FOLDER_PATH || file_path === MOCK_CWD,
 }))
 
 // Zip mocks
@@ -360,21 +359,6 @@ describe('lambda flare', () => {
       expect(start).toBe(0)
       expect(end).toBeGreaterThanOrEqual(now - 1000)
       expect(end).toBeLessThanOrEqual(now + 1000)
-    })
-  })
-
-  describe('maskConfig', () => {
-    it('should mask API key but not whitelisted environment variables', () => {
-      const maskedConfig = maskConfig(MOCK_CONFIG)
-      expect(maskedConfig).toMatchSnapshot()
-      expect(JSON.stringify(maskedConfig)).not.toContain(MOCK_DATADOG_API_KEY)
-    })
-
-    it('should return the original config if there are no environment variables', () => {
-      const config: any = {...MOCK_CONFIG}
-      config.Environment = undefined
-      const maskedConfig = maskConfig(config)
-      expect(maskedConfig).toEqual(config)
     })
   })
 
@@ -754,7 +738,7 @@ describe('lambda flare', () => {
     })
 
     it('prints config when running as a dry run', async () => {
-      ;(getLambdaFunctionConfig as any).mockImplementation(() => Promise.resolve(MOCK_CONFIG))
+      ;(getLambdaFunctionConfig as any).mockImplementation(() => Promise.resolve(MOCK_LAMBDA_CONFIG))
       const cli = makeCli()
       const context = createMockContext()
       const code = await cli.run([...MOCK_REQUIRED_FLAGS, '-d'], context as any)

@@ -47,36 +47,6 @@ GCP credentials verified!
 "
 `;
 
-exports[`cloud-run flare maskConfig should mask API key but not whitelisted environment variables 1`] = `
-Object {
-  "template": Object {
-    "containers": Array [
-      Object {
-        "env": Array [
-          Object {
-            "name": "DD_API_KEY",
-            "value": "02**********33bd",
-            "values": "value",
-          },
-          Object {
-            "name": "DD_TRACE_ENABLED",
-            "value": "true",
-            "values": "value",
-          },
-          Object {
-            "name": "DD_SITE",
-            "value": "datad0g.com",
-            "values": "value",
-          },
-        ],
-        "image": "gcr.io/datadog-sandbox/nicholas-hulston-docker-test",
-      },
-    ],
-    "someData": "data",
-  },
-}
-`;
-
 exports[`cloud-run flare prints correct headers prints dry-run header 1`] = `
 "
 [Dry Run] 🐶 Generating Cloud Run flare to send your configuration to Datadog...

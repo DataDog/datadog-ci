@@ -4,19 +4,19 @@ import {AwsCredentialIdentity} from '@aws-sdk/types'
 import {bold} from 'chalk'
 import {Command} from 'clipanion'
 
-import {AWS_DEFAULT_REGION_ENV_VAR} from '../../constants'
 import {requestConfirmation} from '../../helpers/prompt'
 import * as helperRenderer from '../../helpers/renderer'
 import {DEFAULT_CONFIG_PATHS, resolveConfigFromFile} from '../../helpers/utils'
 
+import {AWS_DEFAULT_REGION_ENV_VAR} from './constants'
 import {
   collectFunctionsByRegion,
   getAllLambdaFunctionConfigs,
   getAWSProfileCredentials,
   handleLambdaFunctionUpdates,
   getAWSCredentials,
-  maskStringifiedEnvVar,
   willUpdateFunctionConfigs,
+  maskStringifiedEnvVar,
 } from './functions/commons'
 import {getUninstrumentedFunctionConfigs, getUninstrumentedFunctionConfigsFromRegEx} from './functions/uninstrument'
 import {FunctionConfiguration} from './interfaces'

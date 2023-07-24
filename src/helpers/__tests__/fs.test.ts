@@ -4,9 +4,9 @@ import process from 'process'
 
 import JSZip from 'jszip'
 
-import {createDirectories, deleteFolder, writeFile, zipContents} from '../fileSystem'
+import {createDirectories, deleteFolder, writeFile, zipContents} from '../fs'
 
-import {MOCK_DATADOG_API_KEY} from './serverlessFixtures'
+import {MOCK_DATADOG_API_KEY} from './fixtures'
 
 // Mock constants
 const MOCK_CWD = 'mock-cwd'

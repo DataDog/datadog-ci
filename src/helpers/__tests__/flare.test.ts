@@ -6,7 +6,7 @@ import FormData from 'form-data'
 
 import {CI_SITE_ENV_VAR, SITE_ENV_VAR} from '../../constants'
 
-import {getEndpointUrl, sendToDatadog} from '../flareFunctions'
+import {getEndpointUrl, sendToDatadog} from '../flare'
 
 jest.mock('jszip')
 jest.mock('fs')

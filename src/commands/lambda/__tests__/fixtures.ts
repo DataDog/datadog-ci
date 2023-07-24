@@ -32,7 +32,7 @@ import {
 import {AwsStub} from 'aws-sdk-client-mock'
 import {Cli, Command} from 'clipanion/lib/advanced'
 
-import {createMockContext} from '../../../helpers/__tests__/serverlessFixtures'
+import {createMockContext} from '../../../helpers/__tests__/fixtures'
 
 import {LambdaFlareCommand} from '../flare'
 import {InstrumentCommand} from '../instrument'

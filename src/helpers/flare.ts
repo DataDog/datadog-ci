@@ -1,3 +1,7 @@
+/**
+ * @file Functions used by `lambda flare` and `cloud-run flare`.
+ */
+
 import fs from 'fs'
 
 import axios from 'axios'
@@ -13,7 +17,7 @@ import {
   SITE_ENV_VAR,
 } from '../constants'
 
-import {deleteFolder} from './fileSystem'
+import {deleteFolder} from './fs'
 import {isValidDatadogSite} from './validation'
 
 const {version} = require('../../package.json')

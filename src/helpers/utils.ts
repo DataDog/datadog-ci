@@ -8,7 +8,7 @@ import {BaseContext, CommandClass, Cli} from 'clipanion'
 import deepExtend from 'deep-extend'
 import {ProxyAgent} from 'proxy-agent'
 
-import {SKIP_MASKING_ENV_VARS} from '../constants'
+import {SKIP_MASKING_LAMBDA_ENV_VARS} from '../commands/lambda/constants'
 
 export const DEFAULT_CONFIG_PATHS = ['datadog-ci.json']
 
@@ -357,7 +357,8 @@ export const timedExecAsync = async <I, O>(f: (input: I) => Promise<O>, input: I
 
 // Mask environment variables with sensitive values
 export const maskEnvVar = (key: string, value: string) => {
-  if (SKIP_MASKING_ENV_VARS.has(key)) {
+  if (SKIP_MASKING_LAMBDA_ENV_VARS.has(key)) {
+    // TODO this should be different for cloud run
     return value
   }
 

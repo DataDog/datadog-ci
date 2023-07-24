@@ -11,8 +11,8 @@ import {Command} from 'clipanion'
 import {GoogleAuth} from 'google-auth-library'
 
 import {API_KEY_ENV_VAR, CI_API_KEY_ENV_VAR, FLARE_OUTPUT_DIRECTORY} from '../../constants'
-import {createDirectories, deleteFolder, writeFile, zipContents} from '../../helpers/fileSystem'
-import {sendToDatadog} from '../../helpers/flareFunctions'
+import {sendToDatadog} from '../../helpers/flare'
+import {createDirectories, deleteFolder, writeFile, zipContents} from '../../helpers/fs'
 import {requestConfirmation} from '../../helpers/prompt'
 import * as helpersRenderer from '../../helpers/renderer'
 import {maskEnvVar} from '../../helpers/utils'
@@ -243,6 +243,6 @@ CloudRunFlareCommand.addPath('cloud-run', 'flare')
 CloudRunFlareCommand.addOption('isDryRun', Command.Boolean('-d,--dry'))
 CloudRunFlareCommand.addOption('service', Command.String('-s,--service'))
 CloudRunFlareCommand.addOption('project', Command.String('-p,--project'))
-CloudRunFlareCommand.addOption('location', Command.String('-l,--location'))
+CloudRunFlareCommand.addOption('location', Command.String('-l,--location,-r,--region'))
 CloudRunFlareCommand.addOption('caseId', Command.String('-c,--case-id'))
 CloudRunFlareCommand.addOption('email', Command.String('-e,--email'))

@@ -1,3 +1,8 @@
+/**
+ * @file Functions that interact with the file system.
+ * Functions have built-in error handling for more descriptive error messages.
+ */
+
 import fs from 'fs'
 import path from 'path'
 

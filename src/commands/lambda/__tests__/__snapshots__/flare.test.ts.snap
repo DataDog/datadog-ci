@@ -434,20 +434,6 @@ Added 0 custom file(s):
 "
 `;
 
-exports[`lambda flare maskConfig should mask API key but not whitelisted environment variables 1`] = `
-Object {
-  "Environment": Object {
-    "Variables": Object {
-      "DD_API_KEY": "02**********33bd",
-      "DD_LOG_LEVEL": "debug",
-      "DD_SITE": "datadoghq.com",
-    },
-  },
-  "FunctionArn": "arn:aws:lambda:us-east-1:123456789012:function:some-function",
-  "FunctionName": "some-function",
-}
-`;
-
 exports[`lambda flare prints correct headers prints dry-run header 1`] = `
 "
 [Dry Run] 🐶 Generating Lambda flare to send your configuration to Datadog...

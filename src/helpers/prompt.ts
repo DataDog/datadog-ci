@@ -1,3 +1,7 @@
+/**
+ * @file Functions used to prompt the user for input.
+ */
+
 import inquirer from 'inquirer'
 
 export const confirmationQuestion = (message: string, defaultValue = true): inquirer.ConfirmQuestion => ({

@@ -11,12 +11,12 @@ import {
   createMockContext,
   MOCK_CWD,
   MOCK_DATADOG_API_KEY,
-  MOCK_FOLDER_PATH,
-} from '../../../helpers/__tests__/serverlessFixtures'
+  MOCK_FLARE_FOLDER_PATH,
+} from '../../../helpers/__tests__/fixtures'
 import * as helpersPromptModule from '../../../helpers/prompt'
 
 import * as flareModule from '../flare'
-import {checkAuthentication, getCloudRunServiceConfig, maskConfig} from '../flare'
+import {checkAuthentication, getCloudRunServiceConfig} from '../flare'
 
 import {makeCli} from './fixtures'
 
@@ -35,7 +35,7 @@ const MOCK_REQUIRED_FLAGS = [
   '-e',
   'test@test.com',
 ]
-const MOCK_CONFIG = {
+export const MOCK_CLOUDRUN_CONFIG = {
   template: {
     containers: [
       {
@@ -64,7 +64,7 @@ const MOCK_CONFIG = {
 }
 const MOCK_READ_STREAM = new stream.Readable({
   read() {
-    this.push(JSON.stringify(MOCK_CONFIG, undefined, 2))
+    this.push(JSON.stringify(MOCK_CLOUDRUN_CONFIG, undefined, 2))
     this.push(undefined)
   },
 })
@@ -77,7 +77,7 @@ jest.mock('google-auth-library', () => {
     })),
   }
 })
-jest.spyOn(flareModule, 'getCloudRunServiceConfig').mockResolvedValue(MOCK_CONFIG as IService)
+jest.spyOn(flareModule, 'getCloudRunServiceConfig').mockResolvedValue(MOCK_CLOUDRUN_CONFIG as IService)
 jest.spyOn(helpersPromptModule, 'requestConfirmation').mockResolvedValue(true)
 jest.mock('util')
 jest.mock('jszip')
@@ -87,7 +87,7 @@ process.cwd = jest.fn().mockReturnValue(MOCK_CWD)
 jest.mock('fs')
 fs.existsSync = jest.fn().mockReturnValue(true)
 ;(fs.statSync as jest.Mock).mockImplementation((file_path: string) => ({
-  isDirectory: () => file_path === MOCK_FOLDER_PATH || file_path === MOCK_CWD,
+  isDirectory: () => file_path === MOCK_FLARE_FOLDER_PATH || file_path === MOCK_CWD,
 }))
 fs.readdirSync = jest.fn().mockReturnValue([])
 fs.createReadStream = jest.fn().mockReturnValue(MOCK_READ_STREAM)
@@ -266,30 +266,13 @@ describe('cloud-run flare', () => {
     })
 
     it('prints config when running as a dry run', async () => {
-      ;(getCloudRunServiceConfig as any).mockImplementation(() => Promise.resolve(MOCK_CONFIG))
+      ;(getCloudRunServiceConfig as any).mockImplementation(() => Promise.resolve(MOCK_CLOUDRUN_CONFIG))
       const cli = makeCli()
       const context = createMockContext()
       const code = await cli.run([...MOCK_REQUIRED_FLAGS, '-d'], context as any)
       expect(code).toBe(0)
       const output = context.stdout.toString()
       expect(output).toMatchSnapshot()
-    })
-  })
-
-  describe('maskConfig', () => {
-    it('should mask API key but not whitelisted environment variables', () => {
-      const configCopy = JSON.parse(JSON.stringify(MOCK_CONFIG)) as IService
-      maskConfig(configCopy)
-      expect(configCopy).toMatchSnapshot()
-      expect(JSON.stringify(configCopy)).not.toContain(MOCK_DATADOG_API_KEY)
-    })
-
-    it('should return the original config if there are no environment variables', () => {
-      const config = JSON.parse(JSON.stringify(MOCK_CONFIG))
-      config.template.containers.env = undefined
-      const configDuplicate = {...config}
-      maskConfig(config)
-      expect(configDuplicate).toEqual(config)
     })
   })
 
