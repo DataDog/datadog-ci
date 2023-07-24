@@ -967,3 +967,5 @@ export const reportCiError = (error: CiError, reporter: MainReporter) => {
       reporter.error(`\n${chalk.bgRed.bold(' ERROR ')}\n${error.message}\n\n`)
   }
 }
+
+export const structuredClone = <T>(input: T): T => JSON.parse(JSON.stringify(input)) as T

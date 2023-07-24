@@ -367,23 +367,25 @@ export interface APIHelperConfig {
 // eslint-disable-next-line @typescript-eslint/no-empty-interface
 export interface SyntheticsCIConfig extends APIHelperConfig {}
 
-export interface RunTestsCommandConfig extends SyntheticsCIConfig {
-  configPath: string
+export interface RunTestsConfig extends SyntheticsCIConfig {
   failOnCriticalErrors: boolean
   failOnMissingTests: boolean
   failOnTimeout: boolean
   files: string[]
   global: UserConfigOverride
+  jUnitReport?: string
   locations: string[]
+  mobileApplicationVersionFilePath?: string
   pollingTimeout: number
   publicIds: string[]
+  runName?: string
   subdomain: string
   testSearchQuery?: string
   tunnel: boolean
   variableStrings: string[]
 }
 
-export type WrapperConfig = Partial<RunTestsCommandConfig>
+export type WrapperConfig = Partial<RunTestsConfig>
 
 export interface UploadApplicationCommandConfig extends SyntheticsCIConfig {
   configPath: string
