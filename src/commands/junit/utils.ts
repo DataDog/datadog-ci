@@ -23,7 +23,7 @@ export const getTestRunsUrl = (spanTags: SpanTags): string => {
     query += ` @ci.pipeline.url:"${spanTags[CI_PIPELINE_URL]}"`
   }
 
-  return `${getBaseUrl()}/ci/test-runs?query=${encodeURIComponent(query)}`
+  return `${getBaseUrl()}ci/test-runs?query=${encodeURIComponent(query)}`
 }
 
 export const getTestCommitRedirectURL = (spanTags: SpanTags, service?: string, env?: string): string => {
@@ -36,7 +36,7 @@ export const getTestCommitRedirectURL = (spanTags: SpanTags, service?: string, e
   const encodedBranch = encodeURIComponent(`${spanTags[GIT_BRANCH]}`)
   const commitSha = `${spanTags[GIT_SHA]}`
 
-  let url = `${getBaseUrl()}/ci/redirect/tests/${encodedRepoUrl}/-/${encodedService}/-/${encodedBranch}/-/${commitSha}`
+  let url = `${getBaseUrl()}ci/redirect/tests/${encodedRepoUrl}/-/${encodedService}/-/${encodedBranch}/-/${commitSha}`
   if (env) {
     url += `?env=${encodeURIComponent(env)}`
   }
