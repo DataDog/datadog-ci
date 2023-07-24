@@ -51,6 +51,7 @@ Additionally you might configure the `junit` command with environment variables:
   - The resulting dictionary will be merged with whatever is in the `--metrics` parameter. If a `key` appears both in `--metrics` and `DD_METRICS`, whatever value is in `DD_METRICS` will take precedence.
 - `DD_SITE`: choose your Datadog site, e.g. datadoghq.com or datadoghq.eu.
 - `DD_CIVISIBILITY_LOGS_ENABLED`: it will enable collecting logs from the content in the XML reports.
+- `DD_SUBDOMAIN`: if you have a [custom sub-domain enabled](https://docs.datadoghq.com/account_management/multi_organization/#custom-sub-domains) for your organization, this value should be set with the subdomain so that the link to the Datadog Application that the library logs once the upload finishes is accurate.
 
 ### Optional dependencies
 

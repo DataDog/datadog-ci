@@ -8,6 +8,7 @@ import chalk from 'chalk'
 import deepExtend from 'deep-extend'
 import glob from 'glob'
 
+import {getCommonAppBaseURL} from '../../helpers/app'
 import {getCIMetadata} from '../../helpers/ci'
 import {GIT_COMMIT_MESSAGE} from '../../helpers/tags'
 import {pick} from '../../helpers/utils'
@@ -750,18 +751,7 @@ export const parseVariablesFromCli = (
 // XXX: `CommandConfig` should be replaced by `SyntheticsCIConfig` here because it's the smallest
 //      interface that we need, and it's better semantically.
 export const getAppBaseURL = ({datadogSite, subdomain}: Pick<RunTestsCommandConfig, 'datadogSite' | 'subdomain'>) => {
-  const validSubdomain = subdomain || DEFAULT_COMMAND_CONFIG.subdomain
-  const datadogSiteParts = datadogSite.split('.')
-
-  if (datadogSiteParts.length === 3) {
-    if (validSubdomain === DEFAULT_COMMAND_CONFIG.subdomain) {
-      return `https://${datadogSite}/`
-    }
-
-    return `https://${validSubdomain}.${datadogSiteParts[1]}.${datadogSiteParts[2]}/`
-  }
-
-  return `https://${validSubdomain}.${datadogSite}/`
+  return getCommonAppBaseURL(datadogSite, subdomain)
 }
 
 export const getBatchUrl = (baseUrl: string, batchId: string) =>
