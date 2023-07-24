@@ -1,0 +1,19 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`fileSystem createDirectories throws error when unable to create a folder 1`] = `"Unable to create directories: MOCK ERROR: Unable to create folder"`;
+
+exports[`fileSystem deleteFolder throws error when unable to delete a folder 1`] = `"Failed to delete files located at mock-cwd/mock-folder: MOCK ERROR: Unable to delete folder"`;
+
+exports[`fileSystem writeFile throws error when unable to write data to a file 1`] = `"Unable to write file: MOCK ERROR: Unable to write file"`;
+
+exports[`fileSystem zipContents throws error when path is not a directory 1`] = `[Error: Unable to zip files: Path is not a directory: mock-cwd/mock-folder]`;
+
+exports[`fileSystem zipContents throws error when path is not found 1`] = `[Error: Unable to zip files: Folder does not exist: mock-cwd/mock-folder]`;
+
+exports[`fileSystem zipContents throws error when unable to generate zip 1`] = `[Error: Unable to zip files: MOCK ERROR: Unable to generate zip]`;
+
+exports[`fileSystem zipContents throws error when unable to read file 1`] = `[Error: Unable to zip files: MOCK ERROR: Unable to read file]`;
+
+exports[`fileSystem zipContents throws error when unable to save zip 1`] = `[Error: Unable to zip files: MOCK ERROR: Unable to save zip]`;
+
+exports[`fileSystem zipContents throws error when unable to write file 1`] = `[Error: Unable to zip files: MOCK ERROR: Unable to write file]`;
