@@ -27,9 +27,9 @@ import {
   handleLambdaFunctionUpdates,
   getAWSCredentials,
   isMissingDatadogEnvVars,
-  maskStringifiedEnvVar,
   sentenceMatchesRegEx,
   willUpdateFunctionConfigs,
+  maskConfig,
 } from './functions/commons'
 import {getInstrumentedFunctionConfigs, getInstrumentedFunctionConfigsFromRegEx} from './functions/instrument'
 import {
@@ -508,10 +508,11 @@ export class InstrumentCommand extends Command {
     this.context.stdout.write(instrumentRenderer.renderWillApplyUpdates(this.dryRun))
     for (const config of configs) {
       if (config.updateFunctionConfigurationCommandInput) {
+        maskConfig(config.updateFunctionConfigurationCommandInput)
         this.context.stdout.write(
           `UpdateFunctionConfiguration -> ${config.functionARN}\n${JSON.stringify(
             config.updateFunctionConfigurationCommandInput,
-            maskStringifiedEnvVar(config.updateFunctionConfigurationCommandInput.Environment?.Variables),
+            undefined,
             2
           )}\n`
         )

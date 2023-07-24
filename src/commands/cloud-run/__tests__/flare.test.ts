@@ -16,7 +16,7 @@ import {
 import * as helpersPromptModule from '../../../helpers/prompt'
 
 import * as flareModule from '../flare'
-import {checkAuthentication, getCloudRunServiceConfig} from '../flare'
+import {checkAuthentication, getCloudRunServiceConfig, maskConfig} from '../flare'
 
 import {makeCli} from './fixtures'
 
@@ -273,6 +273,21 @@ describe('cloud-run flare', () => {
       expect(code).toBe(0)
       const output = context.stdout.toString()
       expect(output).toMatchSnapshot()
+    })
+  })
+
+  describe('maskConfig', () => {
+    it('should mask a Cloud Run config correctly', () => {
+      const cloudrunConfigCopy = JSON.parse(JSON.stringify(MOCK_CLOUDRUN_CONFIG)) as IService
+      maskConfig(cloudrunConfigCopy)
+      expect(cloudrunConfigCopy).toMatchSnapshot()
+    })
+
+    it('should not modify config if env vars are missing', () => {
+      const cloudrunConfigCopy = JSON.parse(JSON.stringify(MOCK_CLOUDRUN_CONFIG))
+      delete cloudrunConfigCopy.template.containers
+      maskConfig(cloudrunConfigCopy)
+      expect(cloudrunConfigCopy).toMatchSnapshot()
     })
   })
 

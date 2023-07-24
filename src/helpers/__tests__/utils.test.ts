@@ -6,6 +6,9 @@ import {createProxy} from 'proxy'
 import {ProxyAgent} from 'proxy-agent'
 
 import * as ciUtils from '../utils'
+import {maskString} from '../utils'
+
+import {MOCK_DATADOG_API_KEY} from './fixtures'
 
 describe('utils', () => {
   beforeEach(() => {
@@ -386,6 +389,34 @@ describe('utils', () => {
         'github.com/datadog/test.git'
       )
       expect(ciUtils.filterAndFormatGithubRemote('github.com/datadog/test.git')).toEqual('github.com/datadog/test.git')
+    })
+  })
+
+  describe('maskString', () => {
+    it('should make the entire string if its length is less than 12', () => {
+      expect(maskString('shortString')).toEqual('****************')
+    })
+
+    it('should keep the first two and last four characters for strings longer than 12 characters', () => {
+      const original = 'abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz'
+      const masked = 'ab**********wxyz'
+      expect(maskString(original)).toEqual(masked)
+    })
+
+    it('should return empty string if input is empty', () => {
+      expect(maskString('')).toEqual('')
+    })
+
+    it('should not mask booleans', () => {
+      expect(maskString('true')).toEqual('true')
+      expect(maskString('TrUe')).toEqual('TrUe')
+      expect(maskString('false')).toEqual('false')
+      expect(maskString('FALSE')).toEqual('FALSE')
+      expect(maskString('trueee')).toEqual('****************')
+    })
+
+    it('should mask API keys correctly', () => {
+      expect(maskString(MOCK_DATADOG_API_KEY)).toEqual('02**********33bd')
     })
   })
 })

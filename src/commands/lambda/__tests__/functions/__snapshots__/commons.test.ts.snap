@@ -1,0 +1,23 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`commons maskConfig should mask a Lambda config correctly 1`] = `
+Object {
+  "Environment": Object {
+    "Variables": Object {
+      "DD_API_KEY": "02**********33bd",
+      "DD_LOG_LEVEL": "debug",
+      "DD_SITE": "datadoghq.com",
+    },
+  },
+  "FunctionArn": "arn:aws:lambda:us-east-1:123456789012:function:some-function",
+  "FunctionName": "some-function",
+}
+`;
+
+exports[`commons maskConfig should not modify config if env vars are missing 1`] = `
+Object {
+  "Environment": Object {},
+  "FunctionArn": "arn:aws:lambda:us-east-1:123456789012:function:some-function",
+  "FunctionName": "some-function",
+}
+`;

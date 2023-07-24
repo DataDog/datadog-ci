@@ -1,2 +1,4 @@
 // TODO fill this out
-export const SKIP_MASKING_CLOUDRUN_ENV_VARS = new Set([])
+import {SITE_ENV_VAR} from '../../constants'
+
+export const SKIP_MASKING_CLOUDRUN_ENV_VARS = new Set([SITE_ENV_VAR])

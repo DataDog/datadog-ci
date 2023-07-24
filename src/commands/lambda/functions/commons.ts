@@ -19,7 +19,7 @@ import inquirer from 'inquirer'
 
 import {CI_API_KEY_ENV_VAR, CI_SITE_ENV_VAR} from '../../../constants'
 import * as helpersRenderer from '../../../helpers/renderer'
-import {maskEnvVar} from '../../../helpers/utils'
+import {maskString} from '../../../helpers/utils'
 import {isValidDatadogSite} from '../../../helpers/validation'
 
 import {
@@ -511,24 +511,16 @@ export const willUpdateFunctionConfigs = (configs: FunctionConfiguration[]) => {
   return willUpdate
 }
 
-/**
- * Returns a function to be used as replacer in `JSON.stringify`.
- *
- * In `JSON.stringify` the passed value is the Lambda `FunctionConfiguration`.
- * This method requires the `Environment.Variables` object, since each property
- * passed to `JSON.stringify` is iterated over by the function. If the current
- * property is part of the desired object, then masking is applied to it.
- *
- * @param envVars `Environment.Variables` object in `FunctionConfiguration`.
- * @returns a function to be used as replacer.
- */
-// TODO remove, use maskConfig instead
-export const maskStringifiedEnvVar = (envVars: Record<string, string> | undefined) => {
-  return function (this: Record<string, unknown>, key: string, value: string) {
-    if (this === envVars) {
-      return maskEnvVar(key, value)
-    }
+// Mask environment variables
+export const maskConfig = (config: any) => {
+  const vars = config.Environment?.Variables
+  if (!vars) {
+    return
+  }
 
-    return value
+  for (const key in vars) {
+    if (!SKIP_MASKING_LAMBDA_ENV_VARS.has(key)) {
+      vars[key] = maskString(vars[key])
+    }
   }
 }

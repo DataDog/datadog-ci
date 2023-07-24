@@ -16,7 +16,7 @@ import {
   handleLambdaFunctionUpdates,
   getAWSCredentials,
   willUpdateFunctionConfigs,
-  maskStringifiedEnvVar,
+  maskConfig,
 } from './functions/commons'
 import {getUninstrumentedFunctionConfigs, getUninstrumentedFunctionConfigsFromRegEx} from './functions/uninstrument'
 import {FunctionConfiguration} from './interfaces'
@@ -260,10 +260,11 @@ export class UninstrumentCommand extends Command {
     this.context.stdout.write(instrumentRenderer.renderWillApplyUpdates(this.dryRun))
     for (const config of configs) {
       if (config.updateFunctionConfigurationCommandInput) {
+        maskConfig(config.updateFunctionConfigurationCommandInput)
         this.context.stdout.write(
           `UpdateFunctionConfiguration -> ${config.functionARN}\n${JSON.stringify(
             config.updateFunctionConfigurationCommandInput,
-            maskStringifiedEnvVar(config.updateFunctionConfigurationCommandInput.Environment?.Variables),
+            undefined,
             2
           )}\n`
         )

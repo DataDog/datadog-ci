@@ -20,8 +20,8 @@ import {createDirectories, deleteFolder, writeFile, zipContents} from '../../hel
 import {requestConfirmation} from '../../helpers/prompt'
 import * as helpersRenderer from '../../helpers/renderer'
 
-import {AWS_DEFAULT_REGION_ENV_VAR, PROJECT_FILES, SKIP_MASKING_LAMBDA_ENV_VARS} from './constants'
-import {getAWSCredentials, getLambdaFunctionConfig, getRegion, maskStringifiedEnvVar} from './functions/commons'
+import {AWS_DEFAULT_REGION_ENV_VAR, PROJECT_FILES} from './constants'
+import {getAWSCredentials, getLambdaFunctionConfig, getRegion, maskConfig} from './functions/commons'
 import {requestAWSCredentials, requestFilePath} from './prompt'
 import * as commonRenderer from './renderers/common-renderer'
 
@@ -153,7 +153,7 @@ export class LambdaFlareCommand extends Command {
 
       return 1
     }
-    config = maskConfig(config)
+    maskConfig(config)
     const configStr = util.inspect(config, false, undefined, true)
     this.context.stdout.write(`\n${configStr}\n`)
 
@@ -425,22 +425,6 @@ export const validateStartEndFlags = (start: string | undefined, end: string | u
   }
 
   return [startMillis, endMillis]
-}
-
-/**
- * Mask the environment variables in a Lambda function configuration
- * @param config
- */
-export const maskConfig = (config: FunctionConfiguration) => {
-  const environmentVariables = config.Environment?.Variables
-  if (!environmentVariables) {
-    return config
-  }
-
-  const replacer = maskStringifiedEnvVar(environmentVariables)
-  const stringifiedConfig = JSON.stringify(config, replacer)
-
-  return JSON.parse(stringifiedConfig) as FunctionConfiguration
 }
 
 /**

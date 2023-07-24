@@ -8,8 +8,6 @@ import {BaseContext, CommandClass, Cli} from 'clipanion'
 import deepExtend from 'deep-extend'
 import {ProxyAgent} from 'proxy-agent'
 
-import {SKIP_MASKING_LAMBDA_ENV_VARS} from '../commands/lambda/constants'
-
 export const DEFAULT_CONFIG_PATHS = ['datadog-ci.json']
 
 export const pick = <T extends Record<any, any>, K extends keyof T>(base: T, keys: K[]) => {
@@ -355,13 +353,8 @@ export const timedExecAsync = async <I, O>(f: (input: I) => Promise<O>, input: I
   return (Date.now() - initialTime) / 1000
 }
 
-// Mask environment variables with sensitive values
-export const maskEnvVar = (key: string, value: string) => {
-  if (SKIP_MASKING_LAMBDA_ENV_VARS.has(key)) {
-    // TODO this should be different for cloud run
-    return value
-  }
-
+// Mask a string to hide sensitive values
+export const maskString = (value: string) => {
   // Don't mask booleans
   if (value.toLowerCase() === 'true' || value.toLowerCase() === 'false') {
     return value

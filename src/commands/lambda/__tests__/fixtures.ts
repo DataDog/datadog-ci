@@ -32,7 +32,7 @@ import {
 import {AwsStub} from 'aws-sdk-client-mock'
 import {Cli, Command} from 'clipanion/lib/advanced'
 
-import {createMockContext} from '../../../helpers/__tests__/fixtures'
+import {createMockContext, MOCK_DATADOG_API_KEY} from '../../../helpers/__tests__/fixtures'
 
 import {LambdaFlareCommand} from '../flare'
 import {InstrumentCommand} from '../instrument'
@@ -200,3 +200,15 @@ export const mockAwsCredentials = {
 export const mockDatadogEnv = 'sandbox'
 export const mockDatadogService = 'testServiceName'
 export const mockDatadogVersion = '1.0.0'
+
+export const MOCK_LAMBDA_CONFIG = {
+  Environment: {
+    Variables: {
+      DD_API_KEY: MOCK_DATADOG_API_KEY,
+      DD_SITE: 'datadoghq.com',
+      DD_LOG_LEVEL: 'debug',
+    },
+  },
+  FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:some-function',
+  FunctionName: 'some-function',
+}

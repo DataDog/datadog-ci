@@ -41,6 +41,7 @@ import {requestAWSCredentials} from '../prompt'
 
 import {
   makeCli,
+  MOCK_LAMBDA_CONFIG,
   mockAwsCredentials,
   mockCloudWatchLogEvents,
   mockCloudWatchLogsClientCommands,
@@ -51,17 +52,6 @@ import {
 // Constants
 const MOCK_REGION = 'us-east-1'
 const MOCK_REQUIRED_FLAGS = ['lambda', 'flare', '-f', 'func', '-r', MOCK_REGION, '-c', '123', '-e', 'test@test.com']
-export const MOCK_LAMBDA_CONFIG = {
-  Environment: {
-    Variables: {
-      DD_API_KEY: MOCK_DATADOG_API_KEY,
-      DD_SITE: 'datadoghq.com',
-      DD_LOG_LEVEL: 'debug',
-    },
-  },
-  FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:some-function',
-  FunctionName: 'some-function',
-}
 const MOCK_LOG_GROUP = 'mockLogGroup'
 const MOCK_TAGS: any = {Tags: {}}
 const MOCK_READ_STREAM = new stream.Readable({

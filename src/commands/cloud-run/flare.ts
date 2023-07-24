@@ -15,8 +15,9 @@ import {sendToDatadog} from '../../helpers/flare'
 import {createDirectories, deleteFolder, writeFile, zipContents} from '../../helpers/fs'
 import {requestConfirmation} from '../../helpers/prompt'
 import * as helpersRenderer from '../../helpers/renderer'
-import {maskEnvVar} from '../../helpers/utils'
+import {maskString} from '../../helpers/utils'
 
+import {SKIP_MASKING_CLOUDRUN_ENV_VARS} from './constants'
 import {renderAuthenticationInstructions} from './renderer'
 
 const SERVICE_CONFIG_FILE_NAME = 'service_config.json'
@@ -26,7 +27,7 @@ export class CloudRunFlareCommand extends Command {
   private isDryRun = false
   private service?: string
   private project?: string
-  private location?: string
+  private region?: string
   private caseId?: string
   private email?: string
   private apiKey?: string
@@ -50,9 +51,9 @@ export class CloudRunFlareCommand extends Command {
       errorMessages.push(helpersRenderer.renderError('No project specified. [-p,--project]'))
     }
 
-    // Validate location
-    if (this.location === undefined) {
-      errorMessages.push(helpersRenderer.renderError('No location specified. [-l,--location]'))
+    // Validate region
+    if (this.region === undefined) {
+      errorMessages.push(helpersRenderer.renderError('No region specified. [-r,--region]'))
     }
 
     // Validate Datadog API key
@@ -98,7 +99,7 @@ export class CloudRunFlareCommand extends Command {
     const runClient = new ServicesClient()
     let config: IService
     try {
-      config = await getCloudRunServiceConfig(runClient, this.service!, this.project!, this.location!)
+      config = await getCloudRunServiceConfig(runClient, this.service!, this.project!, this.region!)
     } catch (err) {
       if (err instanceof Error) {
         this.context.stderr.write(helpersRenderer.renderError(`Unable to fetch service configuration: ${err.message}`))
@@ -199,17 +200,17 @@ export const checkAuthentication = async () => {
  * @param runClient the google-cloud run sdk client
  * @param serviceName the name of the service
  * @param projectName the project where the service is deployed
- * @param location the region where the service is deployed
+ * @param region the region where the service is deployed
  * @returns the configuration for the given service
  */
 export const getCloudRunServiceConfig = async (
   runClient: ServicesClient,
   serviceName: string,
   projectName: string,
-  location: string
+  region: string
 ) => {
   const request = {
-    name: runClient.servicePath(projectName, location, serviceName),
+    name: runClient.servicePath(projectName, region, serviceName),
   }
 
   const [response] = await runClient.getService(request)
@@ -217,25 +218,19 @@ export const getCloudRunServiceConfig = async (
   return response
 }
 
-/**
- * Mask the environment variables in a Cloud Run service configuration
- * @param config
- */
-export const maskConfig = (config: IService) => {
-  const environmentVariables = config.template?.containers?.[0]?.env
-
-  if (!environmentVariables) {
+// Mask environment variables
+export const maskConfig = (config: any) => {
+  const containers = config.template?.containers
+  if (!containers) {
     return
   }
 
-  for (const envVar of environmentVariables) {
-    const envName = envVar.name
-    const envValue = envVar.value
-    if (!envName || !envValue) {
-      continue
+  for (const container of config.template.containers) {
+    for (const envVar of container.env) {
+      if (!SKIP_MASKING_CLOUDRUN_ENV_VARS.has(envVar.name)) {
+        envVar.value = maskString(envVar.value)
+      }
     }
-
-    envVar.value = maskEnvVar(envName, envValue)
   }
 }
 
@@ -243,6 +238,6 @@ CloudRunFlareCommand.addPath('cloud-run', 'flare')
 CloudRunFlareCommand.addOption('isDryRun', Command.Boolean('-d,--dry'))
 CloudRunFlareCommand.addOption('service', Command.String('-s,--service'))
 CloudRunFlareCommand.addOption('project', Command.String('-p,--project'))
-CloudRunFlareCommand.addOption('location', Command.String('-l,--location,-r,--region'))
+CloudRunFlareCommand.addOption('region', Command.String('-r,--region,-l,--location'))
 CloudRunFlareCommand.addOption('caseId', Command.String('-c,--case-id'))
 CloudRunFlareCommand.addOption('email', Command.String('-e,--email'))
