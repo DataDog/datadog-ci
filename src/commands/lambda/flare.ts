@@ -154,7 +154,7 @@ export class LambdaFlareCommand extends Command {
 
       return 1
     }
-    maskConfig(config)
+    config = maskConfig(config)
     const configStr = util.inspect(config, false, undefined, true)
     this.context.stdout.write(`\n${configStr}\n`)
 

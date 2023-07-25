@@ -858,16 +858,15 @@ describe('commons', () => {
 
   describe('maskConfig', () => {
     it('should mask a Lambda config correctly', () => {
-      const lambdaConfigCopy = JSON.parse(JSON.stringify(MOCK_LAMBDA_CONFIG)) as FunctionConfiguration
-      maskConfig(lambdaConfigCopy)
-      expect(lambdaConfigCopy).toMatchSnapshot()
+      const maskedConfig = maskConfig(MOCK_LAMBDA_CONFIG)
+      expect(maskedConfig).toMatchSnapshot()
     })
 
     it('should not modify config if env vars are missing', () => {
       const lambdaConfigCopy = JSON.parse(JSON.stringify(MOCK_LAMBDA_CONFIG))
       delete lambdaConfigCopy.Environment.Variables
-      maskConfig(lambdaConfigCopy)
-      expect(lambdaConfigCopy).toMatchSnapshot()
+      const maksedConfig = maskConfig(lambdaConfigCopy)
+      expect(maksedConfig).toMatchSnapshot()
     })
   })
 })

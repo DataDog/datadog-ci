@@ -260,10 +260,9 @@ export class UninstrumentCommand extends Command {
     this.context.stdout.write(instrumentRenderer.renderWillApplyUpdates(this.dryRun))
     for (const config of configs) {
       if (config.updateFunctionConfigurationCommandInput) {
-        const configCopy = JSON.parse(JSON.stringify(config.updateFunctionConfigurationCommandInput))
-        maskConfig(configCopy)
+        const maskedConfig = maskConfig(config.updateFunctionConfigurationCommandInput)
         this.context.stdout.write(
-          `UpdateFunctionConfiguration -> ${config.functionARN}\n${JSON.stringify(configCopy, undefined, 2)}\n`
+          `UpdateFunctionConfiguration -> ${config.functionARN}\n${JSON.stringify(maskedConfig, undefined, 2)}\n`
         )
       }
       const {logGroupConfiguration, tagConfiguration} = config

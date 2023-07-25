@@ -107,7 +107,7 @@ export class CloudRunFlareCommand extends Command {
 
       return 1
     }
-    maskConfig(config)
+    config = maskConfig(config)
     const configStr = util.inspect(config, false, 10, true)
     this.context.stdout.write(`\n${configStr}\n`)
 
@@ -219,22 +219,26 @@ export const getCloudRunServiceConfig = async (
 
 /**
  * Masks environment variables in a Cloud Run service configuration.
- * Modifies the config object in place, so no need to return anything.
+ * Makes a copy as to not modify the config in place.
  * @param config
+ * @returns masked config
  */
 export const maskConfig = (config: any) => {
-  const containers = config.template?.containers
+  const configCopy = JSON.parse(JSON.stringify(config))
+  const containers = configCopy.template?.containers
   if (!containers) {
-    return
+    return configCopy
   }
 
-  for (const container of config.template.containers) {
+  for (const container of configCopy.template.containers) {
     for (const envVar of container.env) {
       if (!SKIP_MASKING_CLOUDRUN_ENV_VARS.has(envVar.name)) {
         envVar.value = maskString(envVar.value)
       }
     }
   }
+
+  return configCopy
 }
 
 CloudRunFlareCommand.addPath('cloud-run', 'flare')

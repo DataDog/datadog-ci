@@ -513,13 +513,15 @@ export const willUpdateFunctionConfigs = (configs: FunctionConfiguration[]) => {
 
 /**
  * Masks environment variables in a Lambda function configuration.
- * Modifies the config object in place, so no need to return anything.
+ * Makes a copy as to not modify the config in place.
  * @param config
+ * @returns masked config
  */
 export const maskConfig = (config: any) => {
-  const vars = config.Environment?.Variables
+  const configCopy = JSON.parse(JSON.stringify(config))
+  const vars = configCopy.Environment?.Variables
   if (!vars) {
-    return
+    return configCopy
   }
 
   for (const key in vars) {
@@ -527,4 +529,6 @@ export const maskConfig = (config: any) => {
       vars[key] = maskString(vars[key])
     }
   }
+
+  return configCopy
 }

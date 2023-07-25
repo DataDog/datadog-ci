@@ -291,16 +291,15 @@ describe('cloud-run flare', () => {
 
   describe('maskConfig', () => {
     it('should mask a Cloud Run config correctly', () => {
-      const cloudrunConfigCopy = JSON.parse(JSON.stringify(MOCK_CLOUDRUN_CONFIG)) as IService
-      maskConfig(cloudrunConfigCopy)
-      expect(cloudrunConfigCopy).toMatchSnapshot()
+      const maskedConfig = maskConfig(MOCK_CLOUDRUN_CONFIG)
+      expect(maskedConfig).toMatchSnapshot()
     })
 
     it('should not modify config if env vars are missing', () => {
       const cloudrunConfigCopy = JSON.parse(JSON.stringify(MOCK_CLOUDRUN_CONFIG))
       delete cloudrunConfigCopy.template.containers
-      maskConfig(cloudrunConfigCopy)
-      expect(cloudrunConfigCopy).toMatchSnapshot()
+      const maskedConfig = maskConfig(cloudrunConfigCopy)
+      expect(maskedConfig).toMatchSnapshot()
     })
   })
 
