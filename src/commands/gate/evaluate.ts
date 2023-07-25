@@ -1,5 +1,6 @@
 import chalk from 'chalk'
 import {Command} from 'clipanion'
+import {v4 as uuidv4} from 'uuid'
 
 import {getCISpanTags} from '../../helpers/ci'
 import {getGitMetadata} from '../../helpers/git/format-git-span-data'
@@ -11,7 +12,6 @@ import {getUserGitSpanTags} from '../../helpers/user-provided-git'
 import {apiConstructor} from './api'
 import {APIHelper, EvaluationResponse, Payload} from './interfaces'
 import {
-  renderDryRunEvaluation,
   renderEvaluationResponse,
   renderGateEvaluationInput,
   renderGateEvaluationError,
@@ -74,8 +74,12 @@ export class GateEvaluateCommand extends Command {
     const userScope = this.userScope ? parseScope(this.userScope) : {}
 
     const payload = {
+      requestId: uuidv4(),
       spanTags,
       userScope,
+      options: {
+        dryRun: this.dryRun,
+      },
     }
 
     return this.evaluateRules(api, payload)
@@ -121,11 +125,6 @@ export class GateEvaluateCommand extends Command {
     }
 
     this.context.stdout.write(renderGateEvaluationInput(evaluateRequest))
-    if (this.dryRun) {
-      this.context.stdout.write(renderDryRunEvaluation())
-
-      return 0
-    }
 
     return retryRequest(
       () => api.evaluateGateRules(evaluateRequest, this.context.stdout.write.bind(this.context.stdout)),

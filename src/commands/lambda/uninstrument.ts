@@ -18,7 +18,7 @@ import {
 } from './functions/commons'
 import {getUninstrumentedFunctionConfigs, getUninstrumentedFunctionConfigsFromRegEx} from './functions/uninstrument'
 import {FunctionConfiguration} from './interfaces'
-import {requestAWSCredentials, requestChangesConfirmation, requestFunctionSelection} from './prompt'
+import {requestAWSCredentials, requestConfirmation, requestFunctionSelection} from './prompt'
 import * as commonRenderer from './renderers/common-renderer'
 import * as instrumentRenderer from './renderers/instrument-uninstrument-renderer'
 
@@ -220,7 +220,7 @@ export class UninstrumentCommand extends Command {
     const willUpdate = willUpdateFunctionConfigs(configList)
     if (this.interactive && willUpdate) {
       this.context.stdout.write(instrumentRenderer.renderConfirmationNeededSoftWarning())
-      const isConfirmed = await requestChangesConfirmation('Do you want to apply the changes?')
+      const isConfirmed = await requestConfirmation('Do you want to apply the changes?')
       if (!isConfirmed) {
         return 0
       }

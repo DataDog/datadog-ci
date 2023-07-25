@@ -16,6 +16,9 @@ export const renderEvaluationResponse = (evaluationResponse: EvaluationResponse)
   if (evaluationResponse.status.toLowerCase() === 'empty') {
     return renderEmptyEvaluation()
   }
+  if (evaluationResponse.status.toLowerCase() === 'dry_run') {
+    return renderDryRunEvaluation(evaluationResponse)
+  }
 
   let fullStr = ''
   fullStr += chalk.green('Successfully evaluated all matching rules.\n')
@@ -43,6 +46,8 @@ export const renderStatus = (result: string): string => {
       return chalk.red(`Failed ${ICONS.FAILED} `)
     case 'no_data':
       return chalk.yellow(`No Data ${ICONS.WARNING} `)
+    case 'dry_run':
+      return chalk.yellow(`Dry Run ${ICONS.INFO}`)
   }
 
   return result.toLowerCase()
@@ -68,8 +73,19 @@ export const renderRuleEvaluation = (ruleEvaluation: RuleEvaluation): string => 
   return fullStr
 }
 
-export const renderDryRunEvaluation = (): string => {
-  return chalk.yellow('Dry run mode is enabled. Not evaluating the rules.')
+export const renderDryRunEvaluation = (evaluationResponse: EvaluationResponse): string => {
+  let fullStr = ''
+  fullStr += chalk.green('Successfully completed a dry run request\n')
+  fullStr += `Overall result: ${renderStatus(evaluationResponse.status)}\n`
+  fullStr += `Number of matching rules: ${chalk.bold(evaluationResponse.rule_evaluations.length)}\n`
+
+  if (evaluationResponse.rule_evaluations.length > 0) {
+    fullStr += '\n'
+    fullStr += chalk.yellow('####### Matching rules #######\n')
+    evaluationResponse.rule_evaluations.forEach((ruleEvaluation) => (fullStr += renderRuleEvaluation(ruleEvaluation)))
+  }
+
+  return fullStr
 }
 
 export const renderGateEvaluationInput = (evaluateRequest: Payload): string => {
