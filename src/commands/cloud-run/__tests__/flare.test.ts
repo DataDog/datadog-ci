@@ -1,9 +1,7 @@
-import IService = google.cloud.run.v2.IService
 import fs from 'fs'
 import process from 'process'
 import stream from 'stream'
 
-import {google} from '@google-cloud/run/build/protos/protos'
 import {GoogleAuth} from 'google-auth-library'
 
 import {API_KEY_ENV_VAR, CI_API_KEY_ENV_VAR} from '../../../constants'
