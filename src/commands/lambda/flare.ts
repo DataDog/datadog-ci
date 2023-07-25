@@ -784,6 +784,13 @@ export const sleep = async (ms: number) => {
   await new Promise((resolve) => setTimeout(resolve, ms))
 }
 
+enum Frameworks {
+  Serverless_Framework = 'Serverless Framework',
+  AWS_CDK = 'AWS CDK',
+  AWS_CloudFormation = 'AWS CloudFormation',
+  Unknown = 'Unknown',
+}
+
 /**
  * Get the framework used based on the files in the directory
  * @returns the framework used or undefined if no framework is found
@@ -795,24 +802,24 @@ export const getFramework = () => {
   const serverlessFiles = ['serverless.yml', 'serverless.yaml']
   for (const file of serverlessFiles) {
     if (files.has(file)) {
-      return 'Serverless Framework'
+      return Frameworks.Serverless_Framework
     }
   }
 
   // Check for AWS CDK
   if (files.has('cdk.json')) {
-    return 'AWS CDK'
+    return Frameworks.AWS_CDK
   }
 
   // Check for AWS CloudFormation
   const cloudFormationFiles = ['template.yml', 'template.yaml']
   for (const file of cloudFormationFiles) {
     if (files.has(file)) {
-      return 'AWS CloudFormation'
+      return Frameworks.AWS_CloudFormation
     }
   }
 
-  return 'Unknown'
+  return Frameworks.Unknown
 }
 
 /**

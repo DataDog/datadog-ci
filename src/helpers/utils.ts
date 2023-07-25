@@ -368,10 +368,11 @@ export const formatBytes = (bytes: number, decimals = 2) => {
     throw Error("'bytes' can't be negative.")
   }
 
-  const k = 1024
-  const dm = decimals < 0 ? 0 : decimals
-  const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB']
-  const i = Math.floor(Math.log(bytes) / Math.log(k))
+  const bytesPerKB = 1024
+  const numDecimals = decimals < 0 ? 0 : decimals
+  const units = ['Bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB']
+  const i = Math.floor(Math.log(bytes) / Math.log(bytesPerKB))
+  const formattedBytes = parseFloat((bytes / Math.pow(bytesPerKB, i)).toFixed(numDecimals))
 
-  return `${parseFloat((bytes / Math.pow(k, i)).toFixed(dm))} ${sizes[i]}`
+  return `${formattedBytes} ${units[i]}`
 }
