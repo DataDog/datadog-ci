@@ -66,13 +66,20 @@ jobs:
         with:
           node-version: 18
       - run: yarn install
+      - name: Show cache folder before tests
+        run: | 
+          cd "$(node get-config.js)"
+          ls
+          cd $GITHUB_WORKSPACE     
       - name: Run unit tests 
         run: yarn test
-      - name: Show cache folder
+      - name: Show cache folder after tests
         run: | 
           cd "$(node get-config.js)"
           ls
           cd $GITHUB_WORKSPACE
+      - name: Run unit tests (before deleting files - cache should kick in)
+        run: yarn test
       - name: Remove repository to clone it again
         run: |
           rm -rf ./*
@@ -80,5 +87,5 @@ jobs:
       - name: Checkout repository again
         uses: actions/checkout@v3
       - run: yarn install
-      - name: Run unit tests again (cache should kick in)
+      - name: Run unit tests again (does cache kick in)
         run: yarn test
