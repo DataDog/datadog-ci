@@ -237,14 +237,14 @@ describe('Default reporter', () => {
       expect(mostRecentOutput).toMatchSnapshot()
     })
 
-    const orgMaxConcurrencyCaps: {description: string; cap: number}[] = [
-      {cap: 0, description: 'communicates 0 parallelization'},
-      {cap: 1, description: 'communicates no (1 test at a time) parallelization'},
+    const onDemandConcurrencyCaps: {description: string; cap: number}[] = [
+      {cap: 0, description: 'does not communicate for uncapped orgs'},
+      {cap: 1, description: 'communicates no parallelization (1 test at a time)'},
       {cap: 2, description: 'communicates 2 tests parallelization'},
     ]
 
-    test.each(orgMaxConcurrencyCaps)('$description', (testCase) => {
-      reporter.runEnd({...baseSummary, passed: 1}, MOCK_BASE_URL, {orgMaxConcurrencyCap: testCase.cap})
+    test.each(onDemandConcurrencyCaps)('$description', (testCase) => {
+      reporter.runEnd({...baseSummary, passed: 1}, MOCK_BASE_URL, {onDemandConcurrencyCap: testCase.cap})
       const mostRecentOutput = writeMock.mock.calls[writeMock.mock.calls.length - 1][0]
       expect(mostRecentOutput).toMatchSnapshot()
     })

@@ -1360,7 +1360,7 @@ describe('utils', () => {
           ))
       )
 
-      jest.spyOn(api, 'getSyntheticsOrgSettings').mockResolvedValue({orgMaxConcurrencyCap: 1})
+      jest.spyOn(api, 'getSyntheticsOrgSettings').mockResolvedValue({onDemandConcurrencyCap: 1})
 
       const config = {
         ...DEFAULT_COMMAND_CONFIG,
@@ -1374,7 +1374,7 @@ describe('utils', () => {
 
       utils.renderResults({
         config,
-        orgSettings: {orgMaxConcurrencyCap: 1},
+        orgSettings: {onDemandConcurrencyCap: 1},
         reporter: mockReporter,
         results: testCase.results,
         startTime,
@@ -1393,7 +1393,7 @@ describe('utils', () => {
 
       expect(testCase.summary).toEqual(testCase.expected.summary)
       expect((mockReporter as MockedReporter).runEnd).toHaveBeenCalledWith(testCase.expected.summary, baseUrl, {
-        orgMaxConcurrencyCap: 1,
+        onDemandConcurrencyCap: 1,
       })
 
       expect(exitCode).toBe(testCase.expected.exitCode)
