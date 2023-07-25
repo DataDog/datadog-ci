@@ -55,7 +55,8 @@
     "test:lambda": "jest src/commands/lambda --colors",
     "eslint": "eslint --quiet 'src/**/*.ts'",
     "typecheck": "bash bin/typecheck.sh",
-    "watch": "tsc -w"
+    "watch": "tsc -w",
+    "jest:show-config": "jest --showConfig"
   },
   "dependencies": {
     "@aws-sdk/client-cloudwatch-logs": "^3.358.0",

@@ -60,26 +60,25 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - run: |
-          ls
       - uses: actions/checkout@v3
-      - run: |
-          ls
       - name: Install node
         uses: actions/setup-node@v3
         with:
           node-version: 18
-      # - run: yarn install
-      # - run: yarn test
+      - run: yarn install
+      - name: Run unit tests 
+        run: yarn test
+      - name: Show cache folder
+        run: | 
+          cd "$(node get-config.js)"
+          ls
+          cd $GITHUB_WORKSPACE
       - name: Remove repository to clone it again
         run: |
           rm -rf ./*
           ls
-      - uses: actions/checkout@v3
-        # with:
-        #   path: datadog-ci-new-clone
+      - name: Checkout repository again
+        uses: actions/checkout@v3
       - run: yarn install
-        # working-directory: datadog-ci-new-clone
       - name: Run unit tests again (cache should kick in)
         run: yarn test
-        # working-directory: datadog-ci-new-clone
