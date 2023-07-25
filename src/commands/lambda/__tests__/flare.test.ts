@@ -134,8 +134,7 @@ const mockJSZip = {
 ;(JSZip as any).mockImplementation(() => mockJSZip)
 
 // Date
-jest.useFakeTimers()
-jest.setSystemTime(new Date(2023, 7, 20))
+jest.useFakeTimers({advanceTimers: true, now: new Date(2023, 0)})
 jest.spyOn(flareModule, 'sleep').mockResolvedValue()
 
 // Misc
