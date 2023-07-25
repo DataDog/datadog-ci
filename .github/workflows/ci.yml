@@ -6,7 +6,7 @@ on: push
 
 jobs:
   test-cache-master-no-ci-vis:
-    name: Test cache for current release
+    name: Test cache for current release (no ci vis)
     runs-on: ubuntu-latest
 
     steps:
@@ -21,7 +21,7 @@ jobs:
         run: yarn test
 
   test-cache-change-ci-vis:
-    name: Test cache for branch
+    name: Test cache for branch (ci vis enabled)
     runs-on: ubuntu-latest
 
     steps:
@@ -56,7 +56,7 @@ jobs:
           NODE_OPTIONS: -r dd-trace/ci/init
 
   test-cache-clean-checkout:
-    name: Test cache for branch
+    name: Test cache for branch (clean checkout, no ci vis)
     runs-on: ubuntu-latest
 
     steps:
@@ -66,17 +66,17 @@ jobs:
         with:
           node-version: 18
       - run: yarn install
-      - name: Install tracer's branch
-        run: yarn add --dev dd-trace@3.29.1
       - run: yarn test
+      - name: Remove repository to clone it again
+        run: |
+          pwd
+          cd ..
+          rm -rf datadog-ci
       - uses: actions/checkout@v3
-        with:
-          path: datadog-ci-new-clone
+        # with:
+        #   path: datadog-ci-new-clone
       - run: yarn install
-        working-directory: datadog-ci-new-clone
-      - name: Run unit tests 
-        run: yarn test
-        working-directory: datadog-ci-new-clone
+        # working-directory: datadog-ci-new-clone
       - name: Run unit tests again (cache should kick in)
         run: yarn test
-        working-directory: datadog-ci-new-clone
+        # working-directory: datadog-ci-new-clone
