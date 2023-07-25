@@ -90,6 +90,10 @@ const MOCK_CONFIG = {
       CodeSize: 3614995,
     },
   ],
+  Handler: '/path/handler.handler',
+  Timeout: 6,
+  MemorySize: 1024,
+  Architectures: ['x86_64'],
 }
 const MOCK_LOG_GROUP = 'mockLogGroup'
 const MOCK_TAGS: any = {Tags: {}}
@@ -867,7 +871,7 @@ describe('lambda flare', () => {
     const writeFileSpy = jest.spyOn(flareModule, 'writeFile')
 
     it('should call writeFile with correct content when isDryRun is false', () => {
-      generateInsightsFile(insightsFilePath, false, MOCK_CONFIG)
+      generateInsightsFile(insightsFilePath, false, maskConfig(MOCK_CONFIG))
 
       expect(writeFileSpy).toHaveBeenCalledTimes(1)
 
@@ -876,7 +880,7 @@ describe('lambda flare', () => {
     })
 
     it('should call writeFile with correct content when isDryRun is true', () => {
-      generateInsightsFile(insightsFilePath, true, MOCK_CONFIG)
+      generateInsightsFile(insightsFilePath, true, maskConfig(MOCK_CONFIG))
 
       expect(writeFileSpy).toHaveBeenCalledTimes(1)
 
