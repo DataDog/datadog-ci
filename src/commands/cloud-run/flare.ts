@@ -108,6 +108,8 @@ export class CloudRunFlareCommand extends Command {
       return 1
     }
     config = maskConfig(config)
+    // 10 is the depth when inspecting the config file. Cloud-run configs have high depth, so
+    // we must raise the depth from the default depth of 2.
     const configStr = util.inspect(config, false, 10, true)
     this.context.stdout.write(`\n${configStr}\n`)
 
