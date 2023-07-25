@@ -61,9 +61,10 @@ jobs:
 
     steps:
       - run: |
-          echo $GITHUB_WORKSPACE
-          pwd
+          la
       - uses: actions/checkout@v3
+      - run: |
+          la
       - name: Install node
         uses: actions/setup-node@v3
         with:
@@ -72,10 +73,8 @@ jobs:
       # - run: yarn test
       - name: Remove repository to clone it again
         run: |
-          pwd
-          echo $GITHUB_WORKSPACE
-          cd $GITHUB_WORKSPACE
-          rm -rf datadog-ci
+          rm *
+          la
       - uses: actions/checkout@v3
         # with:
         #   path: datadog-ci-new-clone
