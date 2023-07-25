@@ -352,3 +352,26 @@ export const timedExecAsync = async <I, O>(f: (input: I) => Promise<O>, input: I
 
   return (Date.now() - initialTime) / 1000
 }
+
+/**
+ * Convert bytes to a formatted string in KB, MB, GB, etc.
+ * Note: Lambda documentation uses MB (instead of Mib) to refer to 1024 KB, so we follow that style here
+ * @param bytes
+ * @param decimals
+ */
+export const formatBytes = (bytes: number, decimals = 2) => {
+  if (!bytes) {
+    return '0 Bytes'
+  }
+
+  if (bytes < 0) {
+    throw Error("'bytes' can't be negative.")
+  }
+
+  const k = 1024
+  const dm = decimals < 0 ? 0 : decimals
+  const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB']
+  const i = Math.floor(Math.log(bytes) / Math.log(k))
+
+  return `${parseFloat((bytes / Math.pow(k, i)).toFixed(dm))} ${sizes[i]}`
+}
