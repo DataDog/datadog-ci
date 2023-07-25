@@ -61,10 +61,10 @@ jobs:
 
     steps:
       - run: |
-          la
+          ls
       - uses: actions/checkout@v3
       - run: |
-          la
+          ls
       - name: Install node
         uses: actions/setup-node@v3
         with:
@@ -74,7 +74,7 @@ jobs:
       - name: Remove repository to clone it again
         run: |
           rm *
-          la
+          ls
       - uses: actions/checkout@v3
         # with:
         #   path: datadog-ci-new-clone
