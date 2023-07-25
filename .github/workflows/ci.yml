@@ -68,13 +68,16 @@ jobs:
       - run: yarn install
       - name: Show cache folder before tests
         run: | 
+          echo "$(node get-config.js)"
           cd "$(node get-config.js)"
           ls
-          cd $GITHUB_WORKSPACE     
+          cd $GITHUB_WORKSPACE
+        continue-on-error: true  
       - name: Run unit tests 
         run: yarn test
       - name: Show cache folder after tests
         run: | 
+          echo "$(node get-config.js)"
           cd "$(node get-config.js)"
           ls
           cd $GITHUB_WORKSPACE
