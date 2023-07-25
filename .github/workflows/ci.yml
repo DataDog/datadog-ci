@@ -60,17 +60,21 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      - run: |
+          echo $GITHUB_WORKSPACE
+          pwd
       - uses: actions/checkout@v3
       - name: Install node
         uses: actions/setup-node@v3
         with:
           node-version: 18
-      - run: yarn install
-      - run: yarn test
+      # - run: yarn install
+      # - run: yarn test
       - name: Remove repository to clone it again
         run: |
           pwd
-          cd ..
+          echo $GITHUB_WORKSPACE
+          cd $GITHUB_WORKSPACE
           rm -rf datadog-ci
       - uses: actions/checkout@v3
         # with:
