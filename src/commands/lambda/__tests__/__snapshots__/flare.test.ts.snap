@@ -217,7 +217,7 @@ exports[`lambda flare generateInsightsFile should call writeFile with correct co
 
 **CLI Version**: \`1.0-mock-version\`
 
-**Timestamp**: \`2023-01-01 05:00:00.000 UTC\`
+**Timestamp**: \`2023-01-01 00:00:00.000 UTC\`
 
 **Framework**: \`Unknown\`
 
@@ -238,7 +238,7 @@ exports[`lambda flare generateInsightsFile should call writeFile with correct co
 
 **CLI Version**: \`1.0-mock-version\`
 
-**Timestamp**: \`2023-01-01 05:00:00.000 UTC\`
+**Timestamp**: \`2023-01-01 00:00:00.000 UTC\`
 
 **Framework**: \`Unknown\`
 
