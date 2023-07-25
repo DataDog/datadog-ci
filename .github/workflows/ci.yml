@@ -73,7 +73,7 @@ jobs:
       # - run: yarn test
       - name: Remove repository to clone it again
         run: |
-          rm *
+          rm -rf ./*
           ls
       - uses: actions/checkout@v3
         # with:
