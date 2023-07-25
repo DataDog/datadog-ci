@@ -90,5 +90,11 @@ jobs:
       - name: Checkout repository again
         uses: actions/checkout@v3
       - run: yarn install
+      - name: Show cache folder before tests
+        run: | 
+          echo "$(node get-config.js)"
+          cd "$(node get-config.js)"
+          ls
+          cd $GITHUB_WORKSPACE
       - name: Run unit tests again (does cache kick in)
         run: yarn test
