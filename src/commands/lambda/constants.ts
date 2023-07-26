@@ -135,7 +135,7 @@ export const SKIP_MASKING_ENV_VARS = new Set([
   VERSION_ENV_VAR,
 ])
 
-export enum Frameworks {
+export enum DeploymentFrameworks {
   ServerlessFramework = 'Serverless Framework',
   AwsCdk = 'AWS CDK',
   AwsCloudFormation = 'AWS CloudFormation',
@@ -145,14 +145,14 @@ export enum Frameworks {
 // Mappings of files to frameworks.
 // For example, if `serverless.yml` exists, we know it's the Serverless Framework
 export const FRAMEWORK_MAPPINGS = new Map([
-  ['serverless.yaml', Frameworks.ServerlessFramework],
-  ['serverless.yml', Frameworks.ServerlessFramework],
-  ['serverless.js', Frameworks.ServerlessFramework],
-  ['cdk.json', Frameworks.AwsCdk],
-  ['.cdk.json', Frameworks.AwsCdk],
-  ['template.yaml', Frameworks.AwsCloudFormation],
-  ['template.yml', Frameworks.AwsCloudFormation],
-  ['template.json', Frameworks.AwsCloudFormation],
+  ['serverless.yaml', DeploymentFrameworks.ServerlessFramework],
+  ['serverless.yml', DeploymentFrameworks.ServerlessFramework],
+  ['serverless.js', DeploymentFrameworks.ServerlessFramework],
+  ['cdk.json', DeploymentFrameworks.AwsCdk],
+  ['.cdk.json', DeploymentFrameworks.AwsCdk],
+  ['template.yaml', DeploymentFrameworks.AwsCloudFormation],
+  ['template.yml', DeploymentFrameworks.AwsCloudFormation],
+  ['template.json', DeploymentFrameworks.AwsCloudFormation],
 ])
 
 // Project files to search for in Flare

@@ -27,7 +27,7 @@ import {
   CI_API_KEY_ENV_VAR,
   CI_SITE_ENV_VAR,
   FRAMEWORK_MAPPINGS,
-  Frameworks,
+  DeploymentFrameworks,
   PROJECT_FILES,
   SITE_ENV_VAR,
 } from './constants'
@@ -791,7 +791,7 @@ export const sleep = async (ms: number) => {
  * @returns the framework used or undefined if no framework is found
  */
 export const getFramework = () => {
-  const frameworks = new Set<Frameworks>()
+  const frameworks = new Set<DeploymentFrameworks>()
   const files = fs.readdirSync(process.cwd())
   files.forEach((file) => {
     if (FRAMEWORK_MAPPINGS.has(file)) {
@@ -803,7 +803,7 @@ export const getFramework = () => {
     return Array.from(frameworks).join(', ')
   }
 
-  return Frameworks.Unknown
+  return DeploymentFrameworks.Unknown
 }
 
 /**

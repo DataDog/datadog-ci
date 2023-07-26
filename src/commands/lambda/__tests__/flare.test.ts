@@ -23,7 +23,7 @@ import {
   CI_SITE_ENV_VAR,
   SITE_ENV_VAR,
   PROJECT_FILES,
-  Frameworks,
+  DeploymentFrameworks,
 } from '../constants'
 import {
   convertToCSV,
@@ -844,27 +844,27 @@ describe('lambda flare', () => {
   describe('getFramework', () => {
     it('returns Serverless Framework when serverless.yml exists', () => {
       ;(fs.readdirSync as jest.Mock).mockReturnValueOnce(['serverless.yml', 'test.js'])
-      expect(getFramework()).toBe(Frameworks.ServerlessFramework)
+      expect(getFramework()).toBe(DeploymentFrameworks.ServerlessFramework)
     })
 
     it('returns AWS CDK when cdk.json exists', () => {
       ;(fs.readdirSync as jest.Mock).mockReturnValueOnce(['abc.md', 'Dockerfile', 'cdk.json'])
-      expect(getFramework()).toBe(Frameworks.AwsCdk)
+      expect(getFramework()).toBe(DeploymentFrameworks.AwsCdk)
     })
 
     it('returns AWS CloudFormation when template.yaml exists', () => {
       ;(fs.readdirSync as jest.Mock).mockReturnValueOnce(['abc.md', 'template.yaml', 'Dockerfile'])
-      expect(getFramework()).toBe(Frameworks.AwsCloudFormation)
+      expect(getFramework()).toBe(DeploymentFrameworks.AwsCloudFormation)
     })
 
     it('returns Unknown when no framework files exist', () => {
       ;(fs.readdirSync as jest.Mock).mockReturnValueOnce(['abc.md', 'Dockerfile', 'test.js', 'README.md'])
-      expect(getFramework()).toBe(Frameworks.Unknown)
+      expect(getFramework()).toBe(DeploymentFrameworks.Unknown)
     })
 
     it('returns multiple frameworks when multiple are found', () => {
       ;(fs.readdirSync as jest.Mock).mockReturnValueOnce(['serverless.yml', 'cdk.json', 'Dockerfile'])
-      expect(getFramework()).toBe(`${Frameworks.ServerlessFramework}, ${Frameworks.AwsCdk}`)
+      expect(getFramework()).toBe(`${DeploymentFrameworks.ServerlessFramework}, ${DeploymentFrameworks.AwsCdk}`)
     })
   })
 
