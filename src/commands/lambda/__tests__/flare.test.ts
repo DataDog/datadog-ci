@@ -289,15 +289,6 @@ describe('lambda flare', () => {
       expect(output).toMatchSnapshot()
     })
 
-    it('runs successfully when dry run but no email or case ID is specified', async () => {
-      const cli = makeCli()
-      const context = createMockContext()
-      const code = await cli.run(['lambda', 'flare', '-f', 'func', '-r', MOCK_REGION, '-d'], context as any)
-      expect(code).toBe(0)
-      const output = context.stdout.toString()
-      expect(output).toMatchSnapshot()
-    })
-
     it('runs successfully with all required options specified', async () => {
       const cli = makeCli()
       const context = createMockContext()
@@ -1089,6 +1080,42 @@ describe('lambda flare', () => {
       const code = await cli.run([...MOCK_REQUIRED_FLAGS, '-d'], context as any)
       expect(code).toBe(0)
       expect(postSpy).not.toHaveBeenCalled()
+      const output = context.stdout.toString()
+      expect(output).toMatchSnapshot()
+      postSpy.mockRestore()
+    })
+
+    it('prints correct warning when post fail with error 500', async () => {
+      jest.spyOn(axios, 'isAxiosError').mockReturnValueOnce(true)
+      const postSpy = (axios.post = jest.fn().mockRejectedValue({
+        response: {
+          status: 500,
+          data: {error: 'error'},
+        },
+      }))
+      const cli = makeCli()
+      const context = createMockContext()
+      const code = await cli.run(MOCK_REQUIRED_FLAGS, context as any)
+      expect(code).toBe(1)
+      expect(postSpy).toHaveBeenCalled()
+      const output = context.stdout.toString()
+      expect(output).toMatchSnapshot()
+      postSpy.mockRestore()
+    })
+
+    it('prints correct warning when post fail with error 403', async () => {
+      jest.spyOn(axios, 'isAxiosError').mockReturnValueOnce(true)
+      const postSpy = (axios.post = jest.fn().mockRejectedValue({
+        response: {
+          status: 403,
+          data: {error: 'error'},
+        },
+      }))
+      const cli = makeCli()
+      const context = createMockContext()
+      const code = await cli.run(MOCK_REQUIRED_FLAGS, context as any)
+      expect(code).toBe(1)
+      expect(postSpy).toHaveBeenCalled()
       const output = context.stdout.toString()
       expect(output).toMatchSnapshot()
       postSpy.mockRestore()

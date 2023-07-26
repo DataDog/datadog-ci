@@ -101,16 +101,14 @@ export class LambdaFlareCommand extends Command {
       )
     }
 
-    if (!this.isDryRun) {
-      // Validate case ID
-      if (this.caseId === undefined) {
-        errorMessages.push(commonRenderer.renderError('No case ID specified. [-c,--case-id]'))
-      }
+    // Validate case ID
+    if (this.caseId === undefined) {
+      errorMessages.push(commonRenderer.renderError('No case ID specified. [-c,--case-id]'))
+    }
 
-      // Validate email
-      if (this.email === undefined) {
-        errorMessages.push(commonRenderer.renderError('No email specified. [-e,--email]'))
-      }
+    // Validate email
+    if (this.email === undefined) {
+      errorMessages.push(commonRenderer.renderError('No email specified. [-e,--email]'))
     }
 
     // Validate start/end flags if both are specified
@@ -971,7 +969,16 @@ export const sendToDatadog = async (
       const errResponse: string = (err.response?.data.error as string) ?? ''
       const errorMessage = err.message ?? ''
 
-      throw Error(`Failed to send flare file to Datadog Support: ${errorMessage}. ${errResponse}\n`)
+      let message = `Failed to send flare file to Datadog Support: ${errorMessage}. ${errResponse}\n`
+      const code = err.response?.status
+      // The error message doesn't say why there was an error, so it's important to tell the user why the request failed.
+      if (code === 500) {
+        message += 'Is your case ID and email correct?\n'
+      } else if (code === 403) {
+        message += 'Is your Datadog API key correct?\n'
+      }
+
+      throw Error(message)
     }
 
     throw err
