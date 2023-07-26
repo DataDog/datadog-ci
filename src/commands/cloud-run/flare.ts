@@ -167,7 +167,7 @@ export class CloudRunFlareCommand extends Command {
       // Send to Datadog
       this.context.stdout.write(chalk.bold('\n🚀 Sending to Datadog Support...\n'))
       await sendToDatadog(zipPath, this.caseId!, this.email!, this.apiKey!, rootFolderPath)
-      this.context.stdout.write('\n✅ Successfully sent flare file to Datadog Support!\n')
+      this.context.stdout.write(chalk.bold('\n✅ Successfully sent flare file to Datadog Support!\n'))
 
       // Delete contents
       deleteFolder(rootFolderPath)
