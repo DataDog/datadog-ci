@@ -26,7 +26,7 @@ import {
   AWS_DEFAULT_REGION_ENV_VAR,
   CI_API_KEY_ENV_VAR,
   CI_SITE_ENV_VAR,
-  FRAMEWORK_FILES_MAPPINGS,
+  FRAMEWORK_FILES_MAPPING,
   DeploymentFrameworks,
   PROJECT_FILES,
   SITE_ENV_VAR,
@@ -794,8 +794,8 @@ export const getFramework = () => {
   const frameworks = new Set<DeploymentFrameworks>()
   const files = fs.readdirSync(process.cwd())
   files.forEach((file) => {
-    if (FRAMEWORK_FILES_MAPPINGS.has(file)) {
-      frameworks.add(FRAMEWORK_FILES_MAPPINGS.get(file)!)
+    if (FRAMEWORK_FILES_MAPPING.has(file)) {
+      frameworks.add(FRAMEWORK_FILES_MAPPING.get(file)!)
     }
   })
 
