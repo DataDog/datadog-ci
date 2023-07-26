@@ -2,6 +2,10 @@
 
 exports[`commons maskConfig should mask a Lambda config correctly 1`] = `
 Object {
+  "Architectures": Array [
+    "x86_64",
+  ],
+  "CodeSize": 2275,
   "Environment": Object {
     "Variables": Object {
       "DD_API_KEY": "02**********33bd",
@@ -11,13 +15,45 @@ Object {
   },
   "FunctionArn": "arn:aws:lambda:us-east-1:123456789012:function:some-function",
   "FunctionName": "some-function",
+  "Handler": "/path/handler.handler",
+  "Layers": Array [
+    Object {
+      "Arn": "arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Extension:43",
+      "CodeSize": 13145076,
+    },
+    Object {
+      "Arn": "arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Node18-x:91",
+      "CodeSize": 3614995,
+    },
+  ],
+  "MemorySize": 1024,
+  "Runtime": "nodejs18.x",
+  "Timeout": 6,
 }
 `;
 
 exports[`commons maskConfig should not modify config if env vars are missing 1`] = `
 Object {
+  "Architectures": Array [
+    "x86_64",
+  ],
+  "CodeSize": 2275,
   "Environment": Object {},
   "FunctionArn": "arn:aws:lambda:us-east-1:123456789012:function:some-function",
   "FunctionName": "some-function",
+  "Handler": "/path/handler.handler",
+  "Layers": Array [
+    Object {
+      "Arn": "arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Extension:43",
+      "CodeSize": 13145076,
+    },
+    Object {
+      "Arn": "arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Node18-x:91",
+      "CodeSize": 3614995,
+    },
+  ],
+  "MemorySize": 1024,
+  "Runtime": "nodejs18.x",
+  "Timeout": 6,
 }
 `;

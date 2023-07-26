@@ -211,4 +211,20 @@ export const MOCK_LAMBDA_CONFIG = {
   },
   FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:some-function',
   FunctionName: 'some-function',
+  Runtime: 'nodejs18.x',
+  CodeSize: 2275,
+  Layers: [
+    {
+      Arn: 'arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Extension:43',
+      CodeSize: 13145076,
+    },
+    {
+      Arn: 'arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Node18-x:91',
+      CodeSize: 3614995,
+    },
+  ],
+  Handler: '/path/handler.handler',
+  Timeout: 6,
+  MemorySize: 1024,
+  Architectures: ['x86_64'],
 }

@@ -133,18 +133,30 @@ export const SKIP_MASKING_LAMBDA_ENV_VARS = new Set([
   VERSION_ENV_VAR,
 ])
 
+export enum DeploymentFrameworks {
+  ServerlessFramework = 'Serverless Framework',
+  AwsCdk = 'AWS CDK',
+  AwsCloudFormation = 'AWS CloudFormation',
+  Unknown = 'Unknown',
+}
+
+// Mappings of files to frameworks.
+// For example, if `serverless.yml` exists, we know it's the Serverless Framework
+export const FRAMEWORK_FILES_MAPPING = new Map([
+  ['serverless.yaml', DeploymentFrameworks.ServerlessFramework],
+  ['serverless.yml', DeploymentFrameworks.ServerlessFramework],
+  ['serverless.js', DeploymentFrameworks.ServerlessFramework],
+  ['cdk.json', DeploymentFrameworks.AwsCdk],
+  ['.cdk.json', DeploymentFrameworks.AwsCdk],
+  ['template.yaml', DeploymentFrameworks.AwsCloudFormation],
+  ['template.yml', DeploymentFrameworks.AwsCloudFormation],
+  ['template.json', DeploymentFrameworks.AwsCloudFormation],
+])
+
 // Project files to search for in Flare
 export const PROJECT_FILES = [
-  // Serverless framework
-  'serverless.yaml',
-  'serverless.yml',
-  'serverless.js',
-  // AWS CDK
-  'cdk.json',
-  // CloudFormation Template
-  'template.yaml',
-  'template.yml',
-  'template.json',
+  ...FRAMEWORK_FILES_MAPPING.keys(),
+  // Datadog CloudFormation Template
   'datadog-cloudfomation-macro.yaml',
   'datadog-cloudfomation-macro.yml',
   'datadog-cloudformation-macro.json',

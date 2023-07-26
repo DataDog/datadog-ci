@@ -20,12 +20,15 @@ import {
   MOCK_DATADOG_API_KEY,
   MOCK_FLARE_FOLDER_PATH,
 } from '../../../helpers/__tests__/fixtures'
+import * as fsModule from '../../../helpers/fs'
 import * as helpersPromptModule from '../../../helpers/prompt'
 
-import {AWS_DEFAULT_REGION_ENV_VAR, PROJECT_FILES} from '../constants'
+import {AWS_DEFAULT_REGION_ENV_VAR, DeploymentFrameworks, PROJECT_FILES} from '../constants'
 import {
   convertToCSV,
+  generateInsightsFile,
   getAllLogs,
+  getFramework,
   getLogEvents,
   getLogStreamNames,
   getProjectFiles,
@@ -35,7 +38,7 @@ import {
   validateStartEndFlags,
 } from '../flare'
 import * as flareModule from '../flare'
-import {getAWSCredentials, getLambdaFunctionConfig} from '../functions/commons'
+import {getAWSCredentials, getLambdaFunctionConfig, maskConfig} from '../functions/commons'
 import * as lambdaPromptModule from '../prompt'
 import {requestAWSCredentials} from '../prompt'
 
@@ -96,8 +99,15 @@ const mockJSZip = {
 }
 ;(JSZip as any).mockImplementation(() => mockJSZip)
 
+// Date
+jest.useFakeTimers({advanceTimers: true, now: new Date(Date.UTC(2023, 0))})
+jest.spyOn(flareModule, 'sleep').mockResolvedValue()
+
 // Misc
 jest.mock('util')
+jest.mock('../../../../package.json', () => ({
+  version: '1.0-mock-version',
+}))
 
 describe('lambda flare', () => {
   beforeAll(() => {
@@ -347,8 +357,7 @@ describe('lambda flare', () => {
       expect(res).not.toBeUndefined()
       const [start, end] = res
       expect(start).toBe(0)
-      expect(end).toBeGreaterThanOrEqual(now - 1000)
-      expect(end).toBeLessThanOrEqual(now + 1000)
+      expect(end).toEqual(now)
     })
   })
 
@@ -711,6 +720,56 @@ describe('lambda flare', () => {
     it('returns a CSV string with only headers when given an empty array', () => {
       const mockLogEvents: OutputLogEvent[] = []
       expect(convertToCSV(mockLogEvents)).toMatchSnapshot()
+    })
+  })
+
+  describe('getFramework', () => {
+    it('returns Serverless Framework when serverless.yml exists', () => {
+      ;(fs.readdirSync as jest.Mock).mockReturnValueOnce(['serverless.yml', 'test.js'])
+      expect(getFramework()).toBe(DeploymentFrameworks.ServerlessFramework)
+    })
+
+    it('returns AWS CDK when cdk.json exists', () => {
+      ;(fs.readdirSync as jest.Mock).mockReturnValueOnce(['abc.md', 'Dockerfile', 'cdk.json'])
+      expect(getFramework()).toBe(DeploymentFrameworks.AwsCdk)
+    })
+
+    it('returns AWS CloudFormation when template.yaml exists', () => {
+      ;(fs.readdirSync as jest.Mock).mockReturnValueOnce(['abc.md', 'template.yaml', 'Dockerfile'])
+      expect(getFramework()).toBe(DeploymentFrameworks.AwsCloudFormation)
+    })
+
+    it('returns Unknown when no framework files exist', () => {
+      ;(fs.readdirSync as jest.Mock).mockReturnValueOnce(['abc.md', 'Dockerfile', 'test.js', 'README.md'])
+      expect(getFramework()).toBe(DeploymentFrameworks.Unknown)
+    })
+
+    it('returns multiple frameworks when multiple are found', () => {
+      ;(fs.readdirSync as jest.Mock).mockReturnValueOnce(['serverless.yml', 'cdk.json', 'Dockerfile'])
+      expect(getFramework()).toBe(`${DeploymentFrameworks.ServerlessFramework}, ${DeploymentFrameworks.AwsCdk}`)
+    })
+  })
+
+  describe('generateInsightsFile', () => {
+    const insightsFilePath = 'mock/INSIGHTS.md'
+    const writeFileSpy = jest.spyOn(fsModule, 'writeFile')
+
+    it('should call writeFile with correct content when isDryRun is false', () => {
+      generateInsightsFile(insightsFilePath, false, maskConfig(MOCK_LAMBDA_CONFIG))
+
+      expect(writeFileSpy).toHaveBeenCalledTimes(1)
+
+      const receivedContent = writeFileSpy.mock.calls[0][1]
+      expect(receivedContent).toMatchSnapshot()
+    })
+
+    it('should call writeFile with correct content when isDryRun is true', () => {
+      generateInsightsFile(insightsFilePath, true, maskConfig(MOCK_LAMBDA_CONFIG))
+
+      expect(writeFileSpy).toHaveBeenCalledTimes(1)
+
+      const receivedContent = writeFileSpy.mock.calls[0][1]
+      expect(receivedContent).toMatchSnapshot()
     })
   })
 

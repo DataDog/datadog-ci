@@ -2799,7 +2799,7 @@ __metadata:
     chalk: 3.0.0
     clipanion: 2.2.2
     datadog-metrics: 0.9.3
-    dd-trace: 3.29.0
+    dd-trace: 3.29.1
     deep-extend: 0.6.0
     deep-object-diff: ^1.1.9
     eslint: ^7.32.0
@@ -5187,9 +5187,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"dd-trace@npm:3.29.0":
-  version: 3.29.0
-  resolution: "dd-trace@npm:3.29.0"
+"dd-trace@npm:3.29.1":
+  version: 3.29.1
+  resolution: "dd-trace@npm:3.29.1"
   dependencies:
     "@datadog/native-appsec": ^3.2.0
     "@datadog/native-iast-rewriter": 2.0.1
@@ -5222,7 +5222,7 @@ __metadata:
     protobufjs: ^7.2.4
     retry: ^0.10.1
     semver: ^7.3.8
-  checksum: c3b686b638329837c15756a9da74936d8fb95a4d33a94bb769745ed07a3ffcdb992b85b557eddaea2ad1d69849b4daeda81f05e89a413b0f5e61467aaf76610b
+  checksum: 840b6cc8b6f0a78329eae738217644757566c5e39d4b823f9be3586139fddf6532dec4c57f6f1102e83bceef32e8ddeb1949bf50e0761c73476a6fc69b9b520f
   languageName: node
   linkType: hard
 
