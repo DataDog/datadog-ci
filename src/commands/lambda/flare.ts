@@ -854,7 +854,7 @@ export const generateInsightsFile = (insightsFilePath: string, isDryRun: boolean
     }
     codeSize += layer.CodeSize ?? 0
   })
-  lines.push(`\n**Package Size**: ${formatBytes(codeSize)}`)
+  lines.push(`\n**Package Size**: \`${formatBytes(codeSize)}\``)
 
   // CLI Insights
   lines.push('\n ## CLI')
