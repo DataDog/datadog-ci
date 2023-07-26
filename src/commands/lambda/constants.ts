@@ -144,7 +144,7 @@ export enum DeploymentFrameworks {
 
 // Mappings of files to frameworks.
 // For example, if `serverless.yml` exists, we know it's the Serverless Framework
-export const FRAMEWORK_MAPPINGS = new Map([
+export const FRAMEWORK_FILES_MAPPINGS = new Map([
   ['serverless.yaml', DeploymentFrameworks.ServerlessFramework],
   ['serverless.yml', DeploymentFrameworks.ServerlessFramework],
   ['serverless.js', DeploymentFrameworks.ServerlessFramework],
@@ -157,7 +157,7 @@ export const FRAMEWORK_MAPPINGS = new Map([
 
 // Project files to search for in Flare
 export const PROJECT_FILES = [
-  ...FRAMEWORK_MAPPINGS.keys(),
+  ...FRAMEWORK_FILES_MAPPINGS.keys(),
   // Datadog CloudFormation Template
   'datadog-cloudfomation-macro.yaml',
   'datadog-cloudfomation-macro.yml',
