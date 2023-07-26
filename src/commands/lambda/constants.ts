@@ -135,18 +135,30 @@ export const SKIP_MASKING_ENV_VARS = new Set([
   VERSION_ENV_VAR,
 ])
 
+export enum Frameworks {
+  ServerlessFramework = 'Serverless Framework',
+  AwsCdk = 'AWS CDK',
+  AwsCloudFormation = 'AWS CloudFormation',
+  Unknown = 'Unknown',
+}
+
+// Mappings of files to frameworks.
+// For example, if `serverless.yml` exists, we know it's the Serverless Framework
+export const FRAMEWORK_MAPPINGS = new Map([
+  ['serverless.yaml', Frameworks.ServerlessFramework],
+  ['serverless.yml', Frameworks.ServerlessFramework],
+  ['serverless.js', Frameworks.ServerlessFramework],
+  ['cdk.json', Frameworks.AwsCdk],
+  ['.cdk.json', Frameworks.AwsCdk],
+  ['template.yaml', Frameworks.AwsCloudFormation],
+  ['template.yml', Frameworks.AwsCloudFormation],
+  ['template.json', Frameworks.AwsCloudFormation],
+])
+
 // Project files to search for in Flare
 export const PROJECT_FILES = [
-  // Serverless framework
-  'serverless.yaml',
-  'serverless.yml',
-  'serverless.js',
-  // AWS CDK
-  'cdk.json',
-  // CloudFormation Template
-  'template.yaml',
-  'template.yml',
-  'template.json',
+  ...FRAMEWORK_MAPPINGS.keys(),
+  // Datadog CloudFormation Template
   'datadog-cloudfomation-macro.yaml',
   'datadog-cloudfomation-macro.yml',
   'datadog-cloudformation-macro.json',

@@ -26,6 +26,8 @@ import {
   AWS_DEFAULT_REGION_ENV_VAR,
   CI_API_KEY_ENV_VAR,
   CI_SITE_ENV_VAR,
+  FRAMEWORK_MAPPINGS,
+  Frameworks,
   PROJECT_FILES,
   SITE_ENV_VAR,
 } from './constants'
@@ -784,39 +786,21 @@ export const sleep = async (ms: number) => {
   await new Promise((resolve) => setTimeout(resolve, ms))
 }
 
-enum Frameworks {
-  ServerlessFramework = 'Serverless Framework',
-  AwsCdk = 'AWS CDK',
-  AwsCloudFormation = 'AWS CloudFormation',
-  Unknown = 'Unknown',
-}
-
 /**
  * Get the framework used based on the files in the directory
  * @returns the framework used or undefined if no framework is found
  */
 export const getFramework = () => {
-  const files = new Set(fs.readdirSync(process.cwd()))
-
-  // Check for serverless framework
-  const serverlessFiles = ['serverless.yml', 'serverless.yaml']
-  for (const file of serverlessFiles) {
-    if (files.has(file)) {
-      return Frameworks.ServerlessFramework
+  const frameworks = new Set<Frameworks>()
+  const files = fs.readdirSync(process.cwd())
+  files.forEach((file) => {
+    if (FRAMEWORK_MAPPINGS.has(file)) {
+      frameworks.add(FRAMEWORK_MAPPINGS.get(file)!)
     }
-  }
+  })
 
-  // Check for AWS CDK
-  if (files.has('cdk.json')) {
-    return Frameworks.AwsCdk
-  }
-
-  // Check for AWS CloudFormation
-  const cloudFormationFiles = ['template.yml', 'template.yaml']
-  for (const file of cloudFormationFiles) {
-    if (files.has(file)) {
-      return Frameworks.AwsCloudFormation
-    }
+  if (frameworks.size > 0) {
+    return Array.from(frameworks).join(', ')
   }
 
   return Frameworks.Unknown
@@ -872,8 +856,8 @@ export const generateInsightsFile = (insightsFilePath: string, isDryRun: boolean
   })
   lines.push(`\n**Package Size**: ${formatBytes(codeSize)}`)
 
-  // CLI Info
-  lines.push('\n ## CLI Info')
+  // CLI Insights
+  lines.push('\n ## CLI')
   lines.push(`**Run Location**: \`${process.cwd()}\`  `)
   lines.push(`**CLI Version**: \`${version}\`  `)
   const timeString = new Date().toISOString().replace('T', ' ').replace('Z', '') + ' UTC'

@@ -23,6 +23,7 @@ import {
   CI_SITE_ENV_VAR,
   SITE_ENV_VAR,
   PROJECT_FILES,
+  Frameworks,
 } from '../constants'
 import {
   convertToCSV,
@@ -841,28 +842,29 @@ describe('lambda flare', () => {
   })
 
   describe('getFramework', () => {
-    afterAll(() => {
-      ;(fs.readdirSync as jest.Mock).mockClear()
-    })
-
     it('returns Serverless Framework when serverless.yml exists', () => {
-      ;(fs.readdirSync as jest.Mock).mockReturnValue(['serverless.yml', 'test.js'])
-      expect(getFramework()).toBe('Serverless Framework')
+      ;(fs.readdirSync as jest.Mock).mockReturnValueOnce(['serverless.yml', 'test.js'])
+      expect(getFramework()).toBe(Frameworks.ServerlessFramework)
     })
 
     it('returns AWS CDK when cdk.json exists', () => {
-      ;(fs.readdirSync as jest.Mock).mockReturnValue(['abc.md', 'Dockerfile', 'cdk.json'])
-      expect(getFramework()).toBe('AWS CDK')
+      ;(fs.readdirSync as jest.Mock).mockReturnValueOnce(['abc.md', 'Dockerfile', 'cdk.json'])
+      expect(getFramework()).toBe(Frameworks.AwsCdk)
     })
 
     it('returns AWS CloudFormation when template.yaml exists', () => {
-      ;(fs.readdirSync as jest.Mock).mockReturnValue(['abc.md', 'template.yaml', 'Dockerfile'])
-      expect(getFramework()).toBe('AWS CloudFormation')
+      ;(fs.readdirSync as jest.Mock).mockReturnValueOnce(['abc.md', 'template.yaml', 'Dockerfile'])
+      expect(getFramework()).toBe(Frameworks.AwsCloudFormation)
     })
 
     it('returns Unknown when no framework files exist', () => {
-      ;(fs.readdirSync as jest.Mock).mockReturnValue(['abc.md', 'Dockerfile', 'test.js', 'README.md'])
-      expect(getFramework()).toBe('Unknown')
+      ;(fs.readdirSync as jest.Mock).mockReturnValueOnce(['abc.md', 'Dockerfile', 'test.js', 'README.md'])
+      expect(getFramework()).toBe(Frameworks.Unknown)
+    })
+
+    it('returns multiple frameworks when multiple are found', () => {
+      ;(fs.readdirSync as jest.Mock).mockReturnValueOnce(['serverless.yml', 'cdk.json', 'Dockerfile'])
+      expect(getFramework()).toBe(`${Frameworks.ServerlessFramework}, ${Frameworks.AwsCdk}`)
     })
   })
 
