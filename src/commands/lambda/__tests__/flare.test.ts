@@ -23,13 +23,16 @@ import {
   CI_SITE_ENV_VAR,
   SITE_ENV_VAR,
   PROJECT_FILES,
+  DeploymentFrameworks,
 } from '../constants'
 import {
   convertToCSV,
   createDirectories,
   deleteFolder,
+  generateInsightsFile,
   getAllLogs,
   getEndpointUrl,
+  getFramework,
   getLogEvents,
   getLogStreamNames,
   getProjectFiles,
@@ -76,6 +79,22 @@ const MOCK_CONFIG = {
   },
   FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:some-function',
   FunctionName: 'some-function',
+  Runtime: 'nodejs18.x',
+  CodeSize: 2275,
+  Layers: [
+    {
+      Arn: 'arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Extension:43',
+      CodeSize: 13145076,
+    },
+    {
+      Arn: 'arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Node18-x:91',
+      CodeSize: 3614995,
+    },
+  ],
+  Handler: '/path/handler.handler',
+  Timeout: 6,
+  MemorySize: 1024,
+  Architectures: ['x86_64'],
 }
 const MOCK_LOG_GROUP = 'mockLogGroup'
 const MOCK_TAGS: any = {Tags: {}}
@@ -119,8 +138,15 @@ const mockJSZip = {
 }
 ;(JSZip as any).mockImplementation(() => mockJSZip)
 
+// Date
+jest.useFakeTimers({advanceTimers: true, now: new Date(Date.UTC(2023, 0))})
+jest.spyOn(flareModule, 'sleep').mockResolvedValue()
+
 // Misc
 jest.mock('util')
+jest.mock('../../../../package.json', () => ({
+  version: '1.0-mock-version',
+}))
 
 describe('lambda flare', () => {
   beforeAll(() => {
@@ -370,8 +396,7 @@ describe('lambda flare', () => {
       expect(res).not.toBeUndefined()
       const [start, end] = res
       expect(start).toBe(0)
-      expect(end).toBeGreaterThanOrEqual(now - 1000)
-      expect(end).toBeLessThanOrEqual(now + 1000)
+      expect(end).toEqual(now)
     })
   })
 
@@ -813,6 +838,56 @@ describe('lambda flare', () => {
     it('returns a CSV string with only headers when given an empty array', () => {
       const mockLogEvents: OutputLogEvent[] = []
       expect(convertToCSV(mockLogEvents)).toMatchSnapshot()
+    })
+  })
+
+  describe('getFramework', () => {
+    it('returns Serverless Framework when serverless.yml exists', () => {
+      ;(fs.readdirSync as jest.Mock).mockReturnValueOnce(['serverless.yml', 'test.js'])
+      expect(getFramework()).toBe(DeploymentFrameworks.ServerlessFramework)
+    })
+
+    it('returns AWS CDK when cdk.json exists', () => {
+      ;(fs.readdirSync as jest.Mock).mockReturnValueOnce(['abc.md', 'Dockerfile', 'cdk.json'])
+      expect(getFramework()).toBe(DeploymentFrameworks.AwsCdk)
+    })
+
+    it('returns AWS CloudFormation when template.yaml exists', () => {
+      ;(fs.readdirSync as jest.Mock).mockReturnValueOnce(['abc.md', 'template.yaml', 'Dockerfile'])
+      expect(getFramework()).toBe(DeploymentFrameworks.AwsCloudFormation)
+    })
+
+    it('returns Unknown when no framework files exist', () => {
+      ;(fs.readdirSync as jest.Mock).mockReturnValueOnce(['abc.md', 'Dockerfile', 'test.js', 'README.md'])
+      expect(getFramework()).toBe(DeploymentFrameworks.Unknown)
+    })
+
+    it('returns multiple frameworks when multiple are found', () => {
+      ;(fs.readdirSync as jest.Mock).mockReturnValueOnce(['serverless.yml', 'cdk.json', 'Dockerfile'])
+      expect(getFramework()).toBe(`${DeploymentFrameworks.ServerlessFramework}, ${DeploymentFrameworks.AwsCdk}`)
+    })
+  })
+
+  describe('generateInsightsFile', () => {
+    const insightsFilePath = 'mock/INSIGHTS.md'
+    const writeFileSpy = jest.spyOn(flareModule, 'writeFile')
+
+    it('should call writeFile with correct content when isDryRun is false', () => {
+      generateInsightsFile(insightsFilePath, false, maskConfig(MOCK_CONFIG))
+
+      expect(writeFileSpy).toHaveBeenCalledTimes(1)
+
+      const receivedContent = writeFileSpy.mock.calls[0][1]
+      expect(receivedContent).toMatchSnapshot()
+    })
+
+    it('should call writeFile with correct content when isDryRun is true', () => {
+      generateInsightsFile(insightsFilePath, true, maskConfig(MOCK_CONFIG))
+
+      expect(writeFileSpy).toHaveBeenCalledTimes(1)
+
+      const receivedContent = writeFileSpy.mock.calls[0][1]
+      expect(receivedContent).toMatchSnapshot()
     })
   })
 
