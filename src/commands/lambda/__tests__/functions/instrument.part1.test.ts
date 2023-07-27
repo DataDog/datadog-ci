@@ -8,17 +8,14 @@ import {
 } from '@aws-sdk/client-lambda'
 import {mockClient} from 'aws-sdk-client-mock'
 
-import {SITE_ENV_VAR} from '../../../../constants'
+import {ENVIRONMENT_ENV_VAR, SERVICE_ENV_VAR, SITE_ENV_VAR, VERSION_ENV_VAR} from '../../../../constants'
 
 import {
-  ENVIRONMENT_ENV_VAR,
   FLUSH_TO_LOG_ENV_VAR,
   LAMBDA_HANDLER_ENV_VAR,
   LOG_LEVEL_ENV_VAR,
   MERGE_XRAY_TRACES_ENV_VAR,
-  SERVICE_ENV_VAR,
   TRACE_ENABLED_ENV_VAR,
-  VERSION_ENV_VAR,
 } from '../../constants'
 import {
   getInstrumentedFunctionConfig,

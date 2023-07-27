@@ -33,7 +33,7 @@ const MOCK_REQUIRED_FLAGS = [
   '-e',
   'test@test.com',
 ]
-export const MOCK_CLOUDRUN_CONFIG = {
+const MOCK_CLOUDRUN_CONFIG = {
   template: {
     containers: [
       {

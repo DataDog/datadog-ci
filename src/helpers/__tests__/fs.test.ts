@@ -15,7 +15,7 @@ const MOCK_FOLDER_PATH = path.join(MOCK_CWD, MOCK_FOLDER_NAME)
 const MOCK_FILE_NAME = 'function_config.json'
 const MOCK_ZIP_PATH = 'output.zip'
 const MOCK_FILES = new Set([MOCK_FILE_NAME, 'file1.csv', 'file2.csv', 'file3.csv'])
-const MOCK_CONFIG = {
+const MOCK_LAMBDA_CONFIG = {
   Environment: {
     Variables: {
       DD_API_KEY: MOCK_DATADOG_API_KEY,
@@ -138,7 +138,7 @@ describe('fileSystem', () => {
       expect(fs.writeFileSync).not.toHaveBeenCalled()
 
       // Reset mock
-      ;(fs.readFileSync as any).mockReturnValue(JSON.stringify(MOCK_CONFIG, undefined, 2))
+      ;(fs.readFileSync as any).mockReturnValue(JSON.stringify(MOCK_LAMBDA_CONFIG, undefined, 2))
     })
 
     it('throws error when unable to write file', async () => {

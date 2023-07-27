@@ -4,6 +4,7 @@ import {AwsCredentialIdentity} from '@aws-sdk/types'
 import {bold} from 'chalk'
 import {Cli, Command} from 'clipanion'
 
+import {ENVIRONMENT_ENV_VAR, SERVICE_ENV_VAR, VERSION_ENV_VAR} from '../../constants'
 import {requestConfirmation} from '../../helpers/prompt'
 import * as helperRenderer from '../../helpers/renderer'
 import {resolveConfigFromFile, filterAndFormatGithubRemote, DEFAULT_CONFIG_PATHS} from '../../helpers/utils'
@@ -11,13 +12,7 @@ import {resolveConfigFromFile, filterAndFormatGithubRemote, DEFAULT_CONFIG_PATHS
 import {getCommitInfo, newSimpleGit} from '../git-metadata/git'
 import {UploadCommand} from '../git-metadata/upload'
 
-import {
-  AWS_DEFAULT_REGION_ENV_VAR,
-  ENVIRONMENT_ENV_VAR,
-  EXTRA_TAGS_REG_EXP,
-  SERVICE_ENV_VAR,
-  VERSION_ENV_VAR,
-} from './constants'
+import {AWS_DEFAULT_REGION_ENV_VAR, EXTRA_TAGS_REG_EXP} from './constants'
 import {
   checkRuntimeTypesAreUniform,
   coerceBoolean,

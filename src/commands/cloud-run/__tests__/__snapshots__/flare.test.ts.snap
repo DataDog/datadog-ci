@@ -11,7 +11,7 @@ exports[`cloud-run flare checkAuthentication prints instructions on how to authe
 To authenticate with GCP, please follow these steps:
 1. If you haven't already, install the Google Cloud SDK: https://cloud.google.com/sdk/docs/install
 2. Run \\"gcloud auth application-default login\\" and follow the prompts in your browser to log in.
-3. After logging in, run the \`cloud-run flare\` command again.
+3. After logging in, run the \`datadog-ci cloud-run flare\` command again.
 "
 `;
 
@@ -24,7 +24,25 @@ GCP credentials verified!
 
 🔍 Fetching service configuration...
 
-{ template: { containers: [ [Object] ], someData: 'data' } }
+{
+  template: {
+    containers: [
+      {
+        env: [
+          {
+            name: 'DD_API_KEY',
+            value: '02**********33bd',
+            values: 'value'
+          },
+          { name: 'DD_TRACE_ENABLED', value: 'true', values: 'value' },
+          { name: 'DD_SITE', value: 'datad0g.com', values: 'value' }
+        ],
+        image: 'gcr.io/datadog-sandbox/nicholas-hulston-docker-test'
+      }
+    ],
+    someData: 'data'
+  }
+}
 
 💾 Saving configuration...
 
@@ -115,7 +133,25 @@ GCP credentials verified!
 
 🔍 Fetching service configuration...
 
-{ template: { containers: [ [Object] ], someData: 'data' } }
+{
+  template: {
+    containers: [
+      {
+        env: [
+          {
+            name: 'DD_API_KEY',
+            value: '02**********33bd',
+            values: 'value'
+          },
+          { name: 'DD_TRACE_ENABLED', value: 'true', values: 'value' },
+          { name: 'DD_SITE', value: 'datad0g.com', values: 'value' }
+        ],
+        image: 'gcr.io/datadog-sandbox/nicholas-hulston-docker-test'
+      }
+    ],
+    someData: 'data'
+  }
+}
 
 💾 Saving configuration...
 
@@ -135,7 +171,25 @@ GCP credentials verified!
 
 🔍 Fetching service configuration...
 
-{ template: { containers: [ [Object] ], someData: 'data' } }
+{
+  template: {
+    containers: [
+      {
+        env: [
+          {
+            name: 'DD_API_KEY',
+            value: '02**********33bd',
+            values: 'value'
+          },
+          { name: 'DD_TRACE_ENABLED', value: 'true', values: 'value' },
+          { name: 'DD_SITE', value: 'datad0g.com', values: 'value' }
+        ],
+        image: 'gcr.io/datadog-sandbox/nicholas-hulston-docker-test'
+      }
+    ],
+    someData: 'data'
+  }
+}
 
 💾 Saving configuration...
 
@@ -197,7 +251,25 @@ GCP credentials verified!
 
 🔍 Fetching service configuration...
 
-{ template: { containers: [ [Object] ], someData: 'data' } }
+{
+  template: {
+    containers: [
+      {
+        env: [
+          {
+            name: 'DD_API_KEY',
+            value: '02**********33bd',
+            values: 'value'
+          },
+          { name: 'DD_TRACE_ENABLED', value: 'true', values: 'value' },
+          { name: 'DD_SITE', value: 'datad0g.com', values: 'value' }
+        ],
+        image: 'gcr.io/datadog-sandbox/nicholas-hulston-docker-test'
+      }
+    ],
+    someData: 'data'
+  }
+}
 
 💾 Saving configuration...
 
@@ -217,7 +289,25 @@ GCP credentials verified!
 
 🔍 Fetching service configuration...
 
-{ template: { containers: [ [Object] ], someData: 'data' } }
+{
+  template: {
+    containers: [
+      {
+        env: [
+          {
+            name: 'DD_API_KEY',
+            value: '02**********33bd',
+            values: 'value'
+          },
+          { name: 'DD_TRACE_ENABLED', value: 'true', values: 'value' },
+          { name: 'DD_SITE', value: 'datad0g.com', values: 'value' }
+        ],
+        image: 'gcr.io/datadog-sandbox/nicholas-hulston-docker-test'
+      }
+    ],
+    someData: 'data'
+  }
+}
 
 💾 Saving configuration...
 
@@ -237,7 +327,25 @@ GCP credentials verified!
 
 🔍 Fetching service configuration...
 
-{ template: { containers: [ [Object] ], someData: 'data' } }
+{
+  template: {
+    containers: [
+      {
+        env: [
+          {
+            name: 'DD_API_KEY',
+            value: '02**********33bd',
+            values: 'value'
+          },
+          { name: 'DD_TRACE_ENABLED', value: 'true', values: 'value' },
+          { name: 'DD_SITE', value: 'datad0g.com', values: 'value' }
+        ],
+        image: 'gcr.io/datadog-sandbox/nicholas-hulston-docker-test'
+      }
+    ],
+    someData: 'data'
+  }
+}
 
 💾 Saving configuration...
 
@@ -253,7 +361,25 @@ GCP credentials verified!
 
 🔍 Fetching service configuration...
 
-{ template: { containers: [ [Object] ], someData: 'data' } }
+{
+  template: {
+    containers: [
+      {
+        env: [
+          {
+            name: 'DD_API_KEY',
+            value: '02**********33bd',
+            values: 'value'
+          },
+          { name: 'DD_TRACE_ENABLED', value: 'true', values: 'value' },
+          { name: 'DD_SITE', value: 'datad0g.com', values: 'value' }
+        ],
+        image: 'gcr.io/datadog-sandbox/nicholas-hulston-docker-test'
+      }
+    ],
+    someData: 'data'
+  }
+}
 
 💾 Saving configuration...
 

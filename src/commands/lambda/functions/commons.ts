@@ -518,6 +518,7 @@ export const willUpdateFunctionConfigs = (configs: FunctionConfiguration[]) => {
  * @returns masked config
  */
 export const maskConfig = (config: any) => {
+  // We stringify and parse again to make a deep copy
   const configCopy = JSON.parse(JSON.stringify(config))
   const vars = configCopy.Environment?.Variables
   if (!vars) {

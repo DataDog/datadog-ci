@@ -18,7 +18,13 @@ import {mockClient} from 'aws-sdk-client-mock'
 import 'aws-sdk-client-mock-jest'
 import {Cli} from 'clipanion/lib/advanced'
 
-import {CI_API_KEY_ENV_VAR, CI_SITE_ENV_VAR} from '../../../constants'
+import {
+  CI_API_KEY_ENV_VAR,
+  CI_SITE_ENV_VAR,
+  ENVIRONMENT_ENV_VAR,
+  SERVICE_ENV_VAR,
+  VERSION_ENV_VAR,
+} from '../../../constants'
 import {createMockContext, MOCK_DATADOG_API_KEY} from '../../../helpers/__tests__/fixtures'
 import {requestConfirmation} from '../../../helpers/prompt'
 
@@ -28,9 +34,6 @@ import {
   AWS_SECRET_ACCESS_KEY_ENV_VAR,
   AWS_SESSION_TOKEN_ENV_VAR,
   DEFAULT_LAYER_AWS_ACCOUNT,
-  ENVIRONMENT_ENV_VAR,
-  SERVICE_ENV_VAR,
-  VERSION_ENV_VAR,
 } from '../constants'
 import {InstrumentCommand} from '../instrument'
 import {InstrumentationSettings, LambdaConfigOptions} from '../interfaces'

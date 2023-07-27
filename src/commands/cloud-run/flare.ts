@@ -87,7 +87,8 @@ export class CloudRunFlareCommand extends Command {
 
     // Verify GCP credentials
     this.context.stdout.write(chalk.bold('\n🔑 Verifying GCP credentials...\n'))
-    if (!(await checkAuthentication())) {
+    const authenticated = await checkAuthentication()
+    if (!authenticated) {
       this.context.stderr.write(renderAuthenticationInstructions())
 
       return 1
@@ -191,7 +192,7 @@ export const checkAuthentication = async () => {
     await auth.getApplicationDefault()
 
     return true
-  } catch (err) {
+  } catch (_) {
     return false
   }
 }
@@ -226,6 +227,7 @@ export const getCloudRunServiceConfig = async (
  * @returns masked config
  */
 export const maskConfig = (config: any) => {
+  // We stringify and parse again to make a deep copy
   const configCopy = JSON.parse(JSON.stringify(config))
   const containers = configCopy.template?.containers
   if (!containers) {

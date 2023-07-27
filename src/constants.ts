@@ -1,18 +1,3 @@
-import {
-  API_KEY_SECRET_ARN_ENV_VAR,
-  AWS_LAMBDA_EXEC_WRAPPER_VAR,
-  DOTNET_TRACER_HOME_ENV_VAR,
-  ENVIRONMENT_ENV_VAR,
-  EXTRA_TAGS_ENV_VAR,
-  KMS_API_KEY_ENV_VAR,
-  LAMBDA_HANDLER_ENV_VAR,
-  LOG_LEVEL_ENV_VAR,
-  PROFILER_ENV_VAR,
-  PROFILER_PATH_ENV_VAR,
-  SERVICE_ENV_VAR,
-  VERSION_ENV_VAR,
-} from './commands/lambda/constants'
-
 export const DATADOG_SITE_US1 = 'datadoghq.com'
 export const DATADOG_SITE_EU1 = 'datadoghq.eu'
 export const DATADOG_SITE_US3 = 'us3.datadoghq.com'
@@ -28,6 +13,11 @@ export const DATADOG_SITES: string[] = [
   DATADOG_SITE_AP1,
   DATADOG_SITE_GOV,
 ]
+
+// Tagging env vars
+export const SERVICE_ENV_VAR = 'DD_SERVICE'
+export const ENVIRONMENT_ENV_VAR = 'DD_ENV'
+export const VERSION_ENV_VAR = 'DD_VERSION'
 
 // Environment variables for Lambda and Cloud Run
 export const API_KEY_ENV_VAR = 'DD_API_KEY'
