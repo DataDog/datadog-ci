@@ -402,9 +402,9 @@ export interface PresignedUrlResponse {
   }
 }
 
-// not the entire response, but only the slice needed
+// Not the entire response, but only what's needed.
 export interface SyntheticsOrgSettings {
-  orgMaxConcurrencyCap: number
+  onDemandConcurrencyCap: number
 }
 
 export interface MobileApplicationVersion {
