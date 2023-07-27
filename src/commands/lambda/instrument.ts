@@ -4,18 +4,15 @@ import {AwsCredentialIdentity} from '@aws-sdk/types'
 import {bold} from 'chalk'
 import {Cli, Command} from 'clipanion'
 
+import {ENVIRONMENT_ENV_VAR, SERVICE_ENV_VAR, VERSION_ENV_VAR} from '../../constants'
+import {requestConfirmation} from '../../helpers/prompt'
+import * as helperRenderer from '../../helpers/renderer'
 import {resolveConfigFromFile, filterAndFormatGithubRemote, DEFAULT_CONFIG_PATHS} from '../../helpers/utils'
 
 import {getCommitInfo, newSimpleGit} from '../git-metadata/git'
 import {UploadCommand} from '../git-metadata/upload'
 
-import {
-  AWS_DEFAULT_REGION_ENV_VAR,
-  ENVIRONMENT_ENV_VAR,
-  EXTRA_TAGS_REG_EXP,
-  SERVICE_ENV_VAR,
-  VERSION_ENV_VAR,
-} from './constants'
+import {AWS_DEFAULT_REGION_ENV_VAR, EXTRA_TAGS_REG_EXP} from './constants'
 import {
   checkRuntimeTypesAreUniform,
   coerceBoolean,
@@ -25,9 +22,9 @@ import {
   handleLambdaFunctionUpdates,
   getAWSCredentials,
   isMissingDatadogEnvVars,
-  maskStringifiedEnvVar,
   sentenceMatchesRegEx,
   willUpdateFunctionConfigs,
+  maskConfig,
 } from './functions/commons'
 import {getInstrumentedFunctionConfigs, getInstrumentedFunctionConfigsFromRegEx} from './functions/instrument'
 import {
@@ -39,7 +36,6 @@ import {
 import {
   requestAWSCredentials,
   requestAWSRegion,
-  requestConfirmation,
   requestDatadogEnvVars,
   requestEnvServiceVersion,
   requestFunctionSelection,
@@ -91,7 +87,7 @@ export class InstrumentCommand extends Command {
       try {
         this.credentials = await getAWSProfileCredentials(profile)
       } catch (err) {
-        this.context.stdout.write(commonRenderer.renderError(err))
+        this.context.stdout.write(helperRenderer.renderError(err))
 
         return 1
       }
@@ -121,7 +117,7 @@ export class InstrumentCommand extends Command {
           await requestDatadogEnvVars()
         }
       } catch (err) {
-        this.context.stdout.write(commonRenderer.renderError(err))
+        this.context.stdout.write(helperRenderer.renderError(err))
 
         return 1
       }
@@ -165,7 +161,7 @@ export class InstrumentCommand extends Command {
         await requestEnvServiceVersion()
       } catch (err) {
         this.context.stdout.write(
-          commonRenderer.renderError(`Grabbing env, service, and version values from user. ${err}`)
+          helperRenderer.renderError(`Grabbing env, service, and version values from user. ${err}`)
         )
 
         return 1
@@ -507,12 +503,9 @@ export class InstrumentCommand extends Command {
     this.context.stdout.write(instrumentRenderer.renderWillApplyUpdates(this.dryRun))
     for (const config of configs) {
       if (config.updateFunctionConfigurationCommandInput) {
+        const maskedConfig = maskConfig(config.updateFunctionConfigurationCommandInput)
         this.context.stdout.write(
-          `UpdateFunctionConfiguration -> ${config.functionARN}\n${JSON.stringify(
-            config.updateFunctionConfigurationCommandInput,
-            maskStringifiedEnvVar(config.updateFunctionConfigurationCommandInput.Environment?.Variables),
-            2
-          )}\n`
+          `UpdateFunctionConfiguration -> ${config.functionARN}\n${JSON.stringify(maskedConfig, undefined, 2)}\n`
         )
       }
       const {logGroupConfiguration, tagConfiguration} = config

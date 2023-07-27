@@ -1,0 +1,391 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`cloud-run flare checkAuthentication prints instructions on how to authenticate when authentication fails 1`] = `
+"
+🐶 Generating Cloud Run flare to send your configuration to Datadog...
+
+🔑 Verifying GCP credentials...
+
+[Error] Unable to authenticate with GCP.
+
+To authenticate with GCP, please follow these steps:
+1. If you haven't already, install the Google Cloud SDK: https://cloud.google.com/sdk/docs/install
+2. Run \\"gcloud auth application-default login\\" and follow the prompts in your browser to log in.
+3. After logging in, run the \`datadog-ci cloud-run flare\` command again.
+"
+`;
+
+exports[`cloud-run flare getCloudRunServiceConfig prints config when running as a dry run 1`] = `
+"
+[Dry Run] 🐶 Generating Cloud Run flare to send your configuration to Datadog...
+
+🔑 Verifying GCP credentials...
+GCP credentials verified!
+
+🔍 Fetching service configuration...
+
+{
+  template: {
+    containers: [
+      {
+        env: [
+          {
+            name: 'DD_API_KEY',
+            value: '02**********33bd',
+            values: 'value'
+          },
+          { name: 'DD_TRACE_ENABLED', value: 'true', values: 'value' },
+          { name: 'DD_SITE', value: 'datad0g.com', values: 'value' }
+        ],
+        image: 'gcr.io/datadog-sandbox/nicholas-hulston-docker-test'
+      }
+    ],
+    someData: 'data'
+  }
+}
+
+💾 Saving configuration...
+
+🚫 The flare files were not sent as it was executed in dry run mode.
+ℹ️ Your output files are located at: mock-folder/.datadog-ci
+
+"
+`;
+
+exports[`cloud-run flare getCloudRunServiceConfig stops and prints error when getCloudRunServiceConfig fails 1`] = `
+"
+🐶 Generating Cloud Run flare to send your configuration to Datadog...
+
+🔑 Verifying GCP credentials...
+GCP credentials verified!
+
+🔍 Fetching service configuration...
+[Error] Unable to fetch service configuration: MOCK ERROR: Some API error
+"
+`;
+
+exports[`cloud-run flare maskConfig should mask a Cloud Run config correctly 1`] = `
+Object {
+  "template": Object {
+    "containers": Array [
+      Object {
+        "env": Array [
+          Object {
+            "name": "DD_API_KEY",
+            "value": "02**********33bd",
+            "values": "value",
+          },
+          Object {
+            "name": "DD_TRACE_ENABLED",
+            "value": "true",
+            "values": "value",
+          },
+          Object {
+            "name": "DD_SITE",
+            "value": "datad0g.com",
+            "values": "value",
+          },
+        ],
+        "image": "gcr.io/datadog-sandbox/nicholas-hulston-docker-test",
+      },
+    ],
+    "someData": "data",
+  },
+}
+`;
+
+exports[`cloud-run flare maskConfig should not modify config if env vars are missing 1`] = `
+Object {
+  "template": Object {
+    "someData": "data",
+  },
+}
+`;
+
+exports[`cloud-run flare prints correct headers prints dry-run header 1`] = `
+"
+[Dry Run] 🐶 Generating Cloud Run flare to send your configuration to Datadog...
+[Error] No service specified. [-s,--service]
+[Error] No project specified. [-p,--project]
+[Error] No region specified. [-r,--region]
+[Error] No case ID specified. [-c,--case-id]
+[Error] No email specified. [-e,--email]
+"
+`;
+
+exports[`cloud-run flare prints correct headers prints non-dry-run header 1`] = `
+"
+🐶 Generating Cloud Run flare to send your configuration to Datadog...
+[Error] No service specified. [-s,--service]
+[Error] No project specified. [-p,--project]
+[Error] No region specified. [-r,--region]
+[Error] No case ID specified. [-c,--case-id]
+[Error] No email specified. [-e,--email]
+"
+`;
+
+exports[`cloud-run flare prompts for confirmation before sending does not send when user answers prompt with no 1`] = `
+"
+🐶 Generating Cloud Run flare to send your configuration to Datadog...
+
+🔑 Verifying GCP credentials...
+GCP credentials verified!
+
+🔍 Fetching service configuration...
+
+{
+  template: {
+    containers: [
+      {
+        env: [
+          {
+            name: 'DD_API_KEY',
+            value: '02**********33bd',
+            values: 'value'
+          },
+          { name: 'DD_TRACE_ENABLED', value: 'true', values: 'value' },
+          { name: 'DD_SITE', value: 'datad0g.com', values: 'value' }
+        ],
+        image: 'gcr.io/datadog-sandbox/nicholas-hulston-docker-test'
+      }
+    ],
+    someData: 'data'
+  }
+}
+
+💾 Saving configuration...
+
+
+🚫 The flare files were not sent based on your selection.
+ℹ️ Your output files are located at: mock-folder/.datadog-ci
+
+"
+`;
+
+exports[`cloud-run flare prompts for confirmation before sending sends when user answers prompt with yes 1`] = `
+"
+🐶 Generating Cloud Run flare to send your configuration to Datadog...
+
+🔑 Verifying GCP credentials...
+GCP credentials verified!
+
+🔍 Fetching service configuration...
+
+{
+  template: {
+    containers: [
+      {
+        env: [
+          {
+            name: 'DD_API_KEY',
+            value: '02**********33bd',
+            values: 'value'
+          },
+          { name: 'DD_TRACE_ENABLED', value: 'true', values: 'value' },
+          { name: 'DD_SITE', value: 'datad0g.com', values: 'value' }
+        ],
+        image: 'gcr.io/datadog-sandbox/nicholas-hulston-docker-test'
+      }
+    ],
+    someData: 'data'
+  }
+}
+
+💾 Saving configuration...
+
+
+🚀 Sending to Datadog Support...
+
+✅ Successfully sent flare file to Datadog Support!
+"
+`;
+
+exports[`cloud-run flare validates required flags prints error when no API key in env variables 1`] = `
+"
+🐶 Generating Cloud Run flare to send your configuration to Datadog...
+[Error] No Datadog API key specified. Set an API key with the DATADOG_API_KEY environment variable.
+"
+`;
+
+exports[`cloud-run flare validates required flags prints error when no case ID specified 1`] = `
+"
+🐶 Generating Cloud Run flare to send your configuration to Datadog...
+[Error] No case ID specified. [-c,--case-id]
+"
+`;
+
+exports[`cloud-run flare validates required flags prints error when no email specified 1`] = `
+"
+🐶 Generating Cloud Run flare to send your configuration to Datadog...
+[Error] No email specified. [-e,--email]
+"
+`;
+
+exports[`cloud-run flare validates required flags prints error when no project specified 1`] = `
+"
+🐶 Generating Cloud Run flare to send your configuration to Datadog...
+[Error] No project specified. [-p,--project]
+"
+`;
+
+exports[`cloud-run flare validates required flags prints error when no region specified 1`] = `
+"
+🐶 Generating Cloud Run flare to send your configuration to Datadog...
+[Error] No region specified. [-r,--region]
+"
+`;
+
+exports[`cloud-run flare validates required flags prints error when no service specified 1`] = `
+"
+🐶 Generating Cloud Run flare to send your configuration to Datadog...
+[Error] No service specified. [-s,--service]
+"
+`;
+
+exports[`cloud-run flare validates required flags runs successfully with all required options specified 1`] = `
+"
+🐶 Generating Cloud Run flare to send your configuration to Datadog...
+
+🔑 Verifying GCP credentials...
+GCP credentials verified!
+
+🔍 Fetching service configuration...
+
+{
+  template: {
+    containers: [
+      {
+        env: [
+          {
+            name: 'DD_API_KEY',
+            value: '02**********33bd',
+            values: 'value'
+          },
+          { name: 'DD_TRACE_ENABLED', value: 'true', values: 'value' },
+          { name: 'DD_SITE', value: 'datad0g.com', values: 'value' }
+        ],
+        image: 'gcr.io/datadog-sandbox/nicholas-hulston-docker-test'
+      }
+    ],
+    someData: 'data'
+  }
+}
+
+💾 Saving configuration...
+
+
+🚀 Sending to Datadog Support...
+
+✅ Successfully sent flare file to Datadog Support!
+"
+`;
+
+exports[`cloud-run flare validates required flags uses API key ENV variable and runs as expected 1`] = `
+"
+🐶 Generating Cloud Run flare to send your configuration to Datadog...
+
+🔑 Verifying GCP credentials...
+GCP credentials verified!
+
+🔍 Fetching service configuration...
+
+{
+  template: {
+    containers: [
+      {
+        env: [
+          {
+            name: 'DD_API_KEY',
+            value: '02**********33bd',
+            values: 'value'
+          },
+          { name: 'DD_TRACE_ENABLED', value: 'true', values: 'value' },
+          { name: 'DD_SITE', value: 'datad0g.com', values: 'value' }
+        ],
+        image: 'gcr.io/datadog-sandbox/nicholas-hulston-docker-test'
+      }
+    ],
+    someData: 'data'
+  }
+}
+
+💾 Saving configuration...
+
+
+🚀 Sending to Datadog Support...
+
+✅ Successfully sent flare file to Datadog Support!
+"
+`;
+
+exports[`cloud-run flare validates required flags uses API key ENV variable and runs as expected 2`] = `
+"
+🐶 Generating Cloud Run flare to send your configuration to Datadog...
+
+🔑 Verifying GCP credentials...
+GCP credentials verified!
+
+🔍 Fetching service configuration...
+
+{
+  template: {
+    containers: [
+      {
+        env: [
+          {
+            name: 'DD_API_KEY',
+            value: '02**********33bd',
+            values: 'value'
+          },
+          { name: 'DD_TRACE_ENABLED', value: 'true', values: 'value' },
+          { name: 'DD_SITE', value: 'datad0g.com', values: 'value' }
+        ],
+        image: 'gcr.io/datadog-sandbox/nicholas-hulston-docker-test'
+      }
+    ],
+    someData: 'data'
+  }
+}
+
+💾 Saving configuration...
+
+
+🚀 Sending to Datadog Support...
+
+✅ Successfully sent flare file to Datadog Support!
+
+🐶 Generating Cloud Run flare to send your configuration to Datadog...
+
+🔑 Verifying GCP credentials...
+GCP credentials verified!
+
+🔍 Fetching service configuration...
+
+{
+  template: {
+    containers: [
+      {
+        env: [
+          {
+            name: 'DD_API_KEY',
+            value: '02**********33bd',
+            values: 'value'
+          },
+          { name: 'DD_TRACE_ENABLED', value: 'true', values: 'value' },
+          { name: 'DD_SITE', value: 'datad0g.com', values: 'value' }
+        ],
+        image: 'gcr.io/datadog-sandbox/nicholas-hulston-docker-test'
+      }
+    ],
+    someData: 'data'
+  }
+}
+
+💾 Saving configuration...
+
+
+🚀 Sending to Datadog Support...
+
+✅ Successfully sent flare file to Datadog Support!
+"
+`;

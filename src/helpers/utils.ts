@@ -376,3 +376,24 @@ export const formatBytes = (bytes: number, decimals = 2) => {
 
   return `${formattedBytes} ${units[i]}`
 }
+
+// Mask a string to hide sensitive values
+export const maskString = (value: string) => {
+  // Don't mask booleans
+  if (value.toLowerCase() === 'true' || value.toLowerCase() === 'false') {
+    return value
+  }
+
+  // Dont mask numbers
+  if (!isNaN(Number(value))) {
+    return value
+  }
+
+  // Mask entire string if it's short
+  if (value.length < 12) {
+    return '*'.repeat(16)
+  }
+
+  // Keep first two and last four characters if it's long
+  return value.slice(0, 2) + '*'.repeat(10) + value.slice(-4)
+}

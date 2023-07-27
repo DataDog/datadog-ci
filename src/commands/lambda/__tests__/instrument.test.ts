@@ -4,6 +4,7 @@ jest.mock('@aws-sdk/credential-providers', () => ({
   fromIni: jest.fn(),
 }))
 jest.mock('../prompt')
+jest.mock('../../../helpers/prompt')
 jest.mock('../renderers/instrument-uninstrument-renderer', () =>
   require('../__mocks__/instrument-uninstrument-renderer')
 )
@@ -18,22 +19,26 @@ import 'aws-sdk-client-mock-jest'
 import {Cli} from 'clipanion/lib/advanced'
 
 import {
+  CI_API_KEY_ENV_VAR,
+  CI_SITE_ENV_VAR,
+  ENVIRONMENT_ENV_VAR,
+  SERVICE_ENV_VAR,
+  VERSION_ENV_VAR,
+} from '../../../constants'
+import {createMockContext, MOCK_DATADOG_API_KEY} from '../../../helpers/__tests__/fixtures'
+import {requestConfirmation} from '../../../helpers/prompt'
+
+import {
   AWS_ACCESS_KEY_ID_ENV_VAR,
   AWS_DEFAULT_REGION_ENV_VAR,
   AWS_SECRET_ACCESS_KEY_ENV_VAR,
   AWS_SESSION_TOKEN_ENV_VAR,
-  CI_API_KEY_ENV_VAR,
-  CI_SITE_ENV_VAR,
   DEFAULT_LAYER_AWS_ACCOUNT,
-  ENVIRONMENT_ENV_VAR,
-  SERVICE_ENV_VAR,
-  VERSION_ENV_VAR,
 } from '../constants'
 import {InstrumentCommand} from '../instrument'
 import {InstrumentationSettings, LambdaConfigOptions} from '../interfaces'
 import {
   requestAWSCredentials,
-  requestConfirmation,
   requestDatadogEnvVars,
   requestEnvServiceVersion,
   requestFunctionSelection,
@@ -41,12 +46,10 @@ import {
 
 import {
   createCommand,
-  createMockContext,
   makeCli,
   mockAwsAccessKeyId,
   mockAwsCredentials,
   mockAwsSecretAccessKey,
-  mockDatadogApiKey,
   mockDatadogEnv,
   mockDatadogService,
   mockDatadogVersion,
@@ -130,7 +133,7 @@ describe('lambda', () => {
         const cli = makeCli()
         const context = createMockContext() as any
         const functionARN = 'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world'
-        process.env.DATADOG_API_KEY = mockDatadogApiKey
+        process.env.DATADOG_API_KEY = MOCK_DATADOG_API_KEY
         const code = await cli.run(
           [
             'lambda',
@@ -179,7 +182,7 @@ describe('lambda', () => {
         const cli = makeCli()
         const context = createMockContext() as any
         const functionARN = 'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world'
-        process.env.DATADOG_API_KEY = mockDatadogApiKey
+        process.env.DATADOG_API_KEY = MOCK_DATADOG_API_KEY
         const code = await cli.run(
           [
             'lambda',
@@ -219,7 +222,7 @@ describe('lambda', () => {
         const cli = makeCli()
         const context = createMockContext() as any
         const functionARN = 'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world'
-        process.env.DATADOG_API_KEY = mockDatadogApiKey
+        process.env.DATADOG_API_KEY = MOCK_DATADOG_API_KEY
         const code = await cli.run(
           [
             'lambda',
@@ -257,7 +260,7 @@ describe('lambda', () => {
             },
           },
         })
-        process.env.DATADOG_API_KEY = mockDatadogApiKey
+        process.env.DATADOG_API_KEY = MOCK_DATADOG_API_KEY
         const cli = makeCli()
         const context = createMockContext() as any
         await cli.run(
@@ -293,7 +296,7 @@ describe('lambda', () => {
             },
           },
         })
-        process.env.DATADOG_API_KEY = mockDatadogApiKey
+        process.env.DATADOG_API_KEY = MOCK_DATADOG_API_KEY
         const context = createMockContext() as any
         const instrumentCommand = InstrumentCommand
         const mockGitStatus = jest.spyOn(instrumentCommand.prototype as any, 'getCurrentGitStatus')
@@ -338,7 +341,7 @@ describe('lambda', () => {
             },
           },
         })
-        process.env.DATADOG_API_KEY = mockDatadogApiKey
+        process.env.DATADOG_API_KEY = MOCK_DATADOG_API_KEY
         const context = createMockContext() as any
         const instrumentCommand = InstrumentCommand
         const mockGitStatus = jest.spyOn(instrumentCommand.prototype as any, 'getCurrentGitStatus')
@@ -390,7 +393,7 @@ describe('lambda', () => {
             },
           },
         })
-        process.env.DATADOG_API_KEY = mockDatadogApiKey
+        process.env.DATADOG_API_KEY = MOCK_DATADOG_API_KEY
         const context = createMockContext() as any
         const instrumentCommand = InstrumentCommand
         const mockGitStatus = jest.spyOn(instrumentCommand.prototype as any, 'getCurrentGitStatus')
@@ -442,7 +445,7 @@ describe('lambda', () => {
             },
           },
         })
-        process.env.DATADOG_API_KEY = mockDatadogApiKey
+        process.env.DATADOG_API_KEY = MOCK_DATADOG_API_KEY
         const context = createMockContext() as any
         const instrumentCommand = InstrumentCommand
         const mockGitStatus = jest.spyOn(instrumentCommand.prototype as any, 'getCurrentGitStatus')
@@ -517,7 +520,7 @@ describe('lambda', () => {
         })
         const cli = makeCli()
         const context = createMockContext() as any
-        process.env.DATADOG_API_KEY = mockDatadogApiKey
+        process.env.DATADOG_API_KEY = MOCK_DATADOG_API_KEY
         await cli.run(
           [
             'lambda',
@@ -785,7 +788,7 @@ describe('lambda', () => {
         })
         ;(requestDatadogEnvVars as any).mockImplementation(() => {
           process.env[CI_SITE_ENV_VAR] = 'datadoghq.com'
-          process.env[CI_API_KEY_ENV_VAR] = mockDatadogApiKey
+          process.env[CI_API_KEY_ENV_VAR] = MOCK_DATADOG_API_KEY
         })
         ;(requestFunctionSelection as any).mockImplementation(() => [
           'arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world',
@@ -860,7 +863,7 @@ describe('lambda', () => {
         })
         ;(requestDatadogEnvVars as any).mockImplementation(() => {
           process.env[CI_SITE_ENV_VAR] = 'datadoghq.com'
-          process.env[CI_API_KEY_ENV_VAR] = mockDatadogApiKey
+          process.env[CI_API_KEY_ENV_VAR] = MOCK_DATADOG_API_KEY
         })
         ;(requestConfirmation as any).mockImplementation(() => true)
 
@@ -955,7 +958,7 @@ describe('lambda', () => {
         })
         ;(requestDatadogEnvVars as any).mockImplementation(() => {
           process.env[CI_SITE_ENV_VAR] = 'datadoghq.com'
-          process.env[CI_API_KEY_ENV_VAR] = mockDatadogApiKey
+          process.env[CI_API_KEY_ENV_VAR] = MOCK_DATADOG_API_KEY
         })
         ;(requestFunctionSelection as any).mockImplementation(() => [
           'arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world',
@@ -1007,7 +1010,7 @@ describe('lambda', () => {
         })
         ;(requestDatadogEnvVars as any).mockImplementation(() => {
           process.env[CI_SITE_ENV_VAR] = 'datadoghq.com'
-          process.env[CI_API_KEY_ENV_VAR] = mockDatadogApiKey
+          process.env[CI_API_KEY_ENV_VAR] = MOCK_DATADOG_API_KEY
         })
         ;(requestFunctionSelection as any).mockImplementation(() => [
           'arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world',
@@ -1034,7 +1037,7 @@ describe('lambda', () => {
           [AWS_SECRET_ACCESS_KEY_ENV_VAR]: mockAwsSecretAccessKey,
           [AWS_DEFAULT_REGION_ENV_VAR]: 'sa-east-1',
           [CI_SITE_ENV_VAR]: 'datadoghq.com',
-          [CI_API_KEY_ENV_VAR]: mockDatadogApiKey,
+          [CI_API_KEY_ENV_VAR]: MOCK_DATADOG_API_KEY,
         }
 
         const cli = makeCli()
@@ -1057,7 +1060,7 @@ describe('lambda', () => {
           [AWS_SECRET_ACCESS_KEY_ENV_VAR]: mockAwsSecretAccessKey,
           [AWS_DEFAULT_REGION_ENV_VAR]: 'sa-east-1',
           [CI_SITE_ENV_VAR]: 'datadoghq.com',
-          [CI_API_KEY_ENV_VAR]: mockDatadogApiKey,
+          [CI_API_KEY_ENV_VAR]: MOCK_DATADOG_API_KEY,
         }
 
         lambdaClientMock.on(ListFunctionsCommand).rejects('ListFunctionsError')
@@ -1109,7 +1112,7 @@ describe('lambda', () => {
 
         const cli = makeCli()
         const context = createMockContext() as any
-        process.env.DATADOG_API_KEY = mockDatadogApiKey
+        process.env.DATADOG_API_KEY = MOCK_DATADOG_API_KEY
         const code = await cli.run(
           [
             'lambda',
@@ -1158,7 +1161,7 @@ describe('lambda', () => {
         const cli = makeCli()
         const context = createMockContext() as any
         const functionARN = 'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world'
-        process.env.DATADOG_API_KEY = mockDatadogApiKey
+        process.env.DATADOG_API_KEY = MOCK_DATADOG_API_KEY
         const code = await cli.run(
           [
             'lambda',
@@ -1204,7 +1207,7 @@ describe('lambda', () => {
         const cli = makeCli()
         const context = createMockContext() as any
         const functionARN = 'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world'
-        process.env.DATADOG_API_KEY = mockDatadogApiKey
+        process.env.DATADOG_API_KEY = MOCK_DATADOG_API_KEY
         const code = await cli.run(
           [
             'lambda',

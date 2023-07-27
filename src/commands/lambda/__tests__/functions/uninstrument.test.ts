@@ -4,27 +4,30 @@ jest.mock('../../renderers/instrument-uninstrument-renderer')
 import {CloudWatchLogsClient} from '@aws-sdk/client-cloudwatch-logs'
 import {LambdaClient, ListFunctionsCommand} from '@aws-sdk/client-lambda'
 import {mockClient} from 'aws-sdk-client-mock'
-import 'aws-sdk-client-mock-jest'
 
+import 'aws-sdk-client-mock-jest'
 import {
   API_KEY_ENV_VAR,
+  ENVIRONMENT_ENV_VAR,
+  SERVICE_ENV_VAR,
+  SITE_ENV_VAR,
+  VERSION_ENV_VAR,
+} from '../../../../constants'
+
+import {
   API_KEY_SECRET_ARN_ENV_VAR,
   AWS_LAMBDA_EXEC_WRAPPER,
   AWS_LAMBDA_EXEC_WRAPPER_VAR,
   DOTNET_TRACER_HOME_ENV_VAR,
   ENABLE_PROFILING_ENV_VAR,
-  ENVIRONMENT_ENV_VAR,
   FLUSH_TO_LOG_ENV_VAR,
   LAMBDA_HANDLER_ENV_VAR,
   LOG_LEVEL_ENV_VAR,
   MERGE_XRAY_TRACES_ENV_VAR,
   PROFILER_ENV_VAR,
   PROFILER_PATH_ENV_VAR,
-  SERVICE_ENV_VAR,
-  SITE_ENV_VAR,
   SUBSCRIPTION_FILTER_NAME,
   TRACE_ENABLED_ENV_VAR,
-  VERSION_ENV_VAR,
 } from '../../constants'
 import {getLambdaFunctionConfig} from '../../functions/commons'
 import {

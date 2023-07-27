@@ -218,10 +218,6 @@ exports[`lambda flare convertToCSV returns a CSV string from an array of log eve
 
 exports[`lambda flare convertToCSV returns a CSV string with only headers when given an empty array 1`] = `"timestamp,datetime,message"`;
 
-exports[`lambda flare createDirectories throws error when unable to create a folder 1`] = `"Unable to create directories: MOCK ERROR: Unable to create folder"`;
-
-exports[`lambda flare deleteFolder throws error when unable to delete a folder 1`] = `"Failed to delete files located at mock-folder/.datadog-ci: MOCK ERROR: Unable to delete folder"`;
-
 exports[`lambda flare generateInsightsFile should call writeFile with correct content when isDryRun is false 1`] = `
 "# Flare Insights
 
@@ -288,16 +284,6 @@ _This command was run in dry mode._
 exports[`lambda flare getAllLogs throws an error when unable to get log events 1`] = `[Error: Unable to get log events for stream streamName: Error getting log events]`;
 
 exports[`lambda flare getAllLogs throws an error when unable to get log streams 1`] = `[Error: Unable to get log streams: Error getting log streams]`;
-
-exports[`lambda flare getEndpointUrl should not throw error if the site is invalid and DD_CI_BYPASS_SITE_VALIDATION is set 1`] = `"https://datad0ge.com/api/ui/support/serverless/flare"`;
-
-exports[`lambda flare getEndpointUrl should return correct endpoint url 1`] = `"https://app.datadoghq.com/api/ui/support/serverless/flare"`;
-
-exports[`lambda flare getEndpointUrl should throw error if the site is invalid 1`] = `"Invalid site: datad0ge.com. Must be one of: datadoghq.com, datadoghq.eu, us3.datadoghq.com, us5.datadoghq.com, ap1.datadoghq.com, ddog-gov.com"`;
-
-exports[`lambda flare getEndpointUrl should use DEFAULT_DD_SITE if CI_SITE_ENV_VAR and SITE_ENV_VAR are not set 1`] = `"https://app.datadoghq.com/api/ui/support/serverless/flare"`;
-
-exports[`lambda flare getEndpointUrl should use SITE_ENV_VAR if CI_SITE_ENV_VAR is not set 1`] = `"https://us3.datadoghq.com/api/ui/support/serverless/flare"`;
 
 exports[`lambda flare getTags should return the tags when they exist 1`] = `
 Object {
@@ -662,38 +648,6 @@ Added 0 custom file(s):
 "
 `;
 
-exports[`lambda flare maskConfig should mask API key but not whitelisted environment variables 1`] = `
-Object {
-  "Architectures": Array [
-    "x86_64",
-  ],
-  "CodeSize": 2275,
-  "Environment": Object {
-    "Variables": Object {
-      "DD_API_KEY": "02**********33bd",
-      "DD_LOG_LEVEL": "debug",
-      "DD_SITE": "datadoghq.com",
-    },
-  },
-  "FunctionArn": "arn:aws:lambda:us-east-1:123456789012:function:some-function",
-  "FunctionName": "some-function",
-  "Handler": "/path/handler.handler",
-  "Layers": Array [
-    Object {
-      "Arn": "arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Extension:43",
-      "CodeSize": 13145076,
-    },
-    Object {
-      "Arn": "arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Node18-x:91",
-      "CodeSize": 3614995,
-    },
-  ],
-  "MemorySize": 1024,
-  "Runtime": "nodejs18.x",
-  "Timeout": 6,
-}
-`;
-
 exports[`lambda flare prints correct headers prints dry-run header 1`] = `
 "
 [Dry Run] 🐶 Generating Lambda flare to send your configuration to Datadog...
@@ -879,179 +833,6 @@ exports[`lambda flare prompts for confirmation before sending sends when user an
 🐶 Generating Lambda flare to send your configuration to Datadog...
 
 🔑 Getting AWS credentials...
-
-🔍 Fetching Lambda function configuration...
-
-{
-  Environment: {
-    Variables: {
-      DD_API_KEY: '02**********33bd',
-      DD_SITE: 'datadoghq.com',
-      DD_LOG_LEVEL: 'debug'
-    }
-  },
-  FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:some-function',
-  FunctionName: 'some-function',
-  Runtime: 'nodejs18.x',
-  CodeSize: 2275,
-  Layers: [
-    {
-      Arn: 'arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Extension:43',
-      CodeSize: 13145076
-    },
-    {
-      Arn: 'arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Node18-x:91',
-      CodeSize: 3614995
-    }
-  ],
-  Handler: '/path/handler.handler',
-  Timeout: 6,
-  MemorySize: 1024,
-  Architectures: [ 'x86_64' ]
-}
-
-📁 Searching for project files in current directory...
-[!] No project files found.
-
-
-Added 0 custom file(s):
-
-🏷 Getting Resource Tags...
-[!] No resource tags were found.
-
-💾 Saving files to mock-folder/.datadog-ci...
-• Saved function config to ./function_config.json
-• Saved insights file to ./INSIGHTS.md
-
-
-🚀 Sending to Datadog Support...
-
-✅ Successfully sent flare file to Datadog Support!
-"
-`;
-
-exports[`lambda flare send to Datadog does not send request to Datadog when a dry run 1`] = `
-"
-[Dry Run] 🐶 Generating Lambda flare to send your configuration to Datadog...
-
-🔑 Getting AWS credentials...
-
-[!] No AWS credentials found, let's set them up! Or you can re-run the command and supply the AWS credentials in the same way when you invoke the AWS CLI.
-
-🔍 Fetching Lambda function configuration...
-
-{
-  Environment: {
-    Variables: {
-      DD_API_KEY: '02**********33bd',
-      DD_SITE: 'datadoghq.com',
-      DD_LOG_LEVEL: 'debug'
-    }
-  },
-  FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:some-function',
-  FunctionName: 'some-function',
-  Runtime: 'nodejs18.x',
-  CodeSize: 2275,
-  Layers: [
-    {
-      Arn: 'arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Extension:43',
-      CodeSize: 13145076
-    },
-    {
-      Arn: 'arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Node18-x:91',
-      CodeSize: 3614995
-    }
-  ],
-  Handler: '/path/handler.handler',
-  Timeout: 6,
-  MemorySize: 1024,
-  Architectures: [ 'x86_64' ]
-}
-
-📁 Searching for project files in current directory...
-[!] No project files found.
-
-
-Added 0 custom file(s):
-
-🏷 Getting Resource Tags...
-[!] No resource tags were found.
-
-💾 Saving files to mock-folder/.datadog-ci...
-• Saved function config to ./function_config.json
-• Saved insights file to ./INSIGHTS.md
-
-🚫 The flare files were not sent as it was executed in dry run mode.
-ℹ️ Your output files are located at: mock-folder/.datadog-ci
-
-"
-`;
-
-exports[`lambda flare send to Datadog successfully adds zip file to FormData 1`] = `
-"
-🐶 Generating Lambda flare to send your configuration to Datadog...
-
-🔑 Getting AWS credentials...
-
-[!] No AWS credentials found, let's set them up! Or you can re-run the command and supply the AWS credentials in the same way when you invoke the AWS CLI.
-
-🔍 Fetching Lambda function configuration...
-
-{
-  Environment: {
-    Variables: {
-      DD_API_KEY: '02**********33bd',
-      DD_SITE: 'datadoghq.com',
-      DD_LOG_LEVEL: 'debug'
-    }
-  },
-  FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:some-function',
-  FunctionName: 'some-function',
-  Runtime: 'nodejs18.x',
-  CodeSize: 2275,
-  Layers: [
-    {
-      Arn: 'arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Extension:43',
-      CodeSize: 13145076
-    },
-    {
-      Arn: 'arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Node18-x:91',
-      CodeSize: 3614995
-    }
-  ],
-  Handler: '/path/handler.handler',
-  Timeout: 6,
-  MemorySize: 1024,
-  Architectures: [ 'x86_64' ]
-}
-
-📁 Searching for project files in current directory...
-[!] No project files found.
-
-
-Added 0 custom file(s):
-
-🏷 Getting Resource Tags...
-[!] No resource tags were found.
-
-💾 Saving files to mock-folder/.datadog-ci...
-• Saved function config to ./function_config.json
-• Saved insights file to ./INSIGHTS.md
-
-
-🚀 Sending to Datadog Support...
-
-✅ Successfully sent flare file to Datadog Support!
-"
-`;
-
-exports[`lambda flare send to Datadog successfully sends request to Datadog 1`] = `
-"
-🐶 Generating Lambda flare to send your configuration to Datadog...
-
-🔑 Getting AWS credentials...
-
-[!] No AWS credentials found, let's set them up! Or you can re-run the command and supply the AWS credentials in the same way when you invoke the AWS CLI.
 
 🔍 Fetching Lambda function configuration...
 
@@ -1651,17 +1432,3 @@ Added 0 custom file(s):
 ✅ Successfully sent flare file to Datadog Support!
 "
 `;
-
-exports[`lambda flare writeFile throws error when unable to write data to a file 1`] = `"Unable to create file at function_config.json: MOCK ERROR: Unable to write file"`;
-
-exports[`lambda flare zipContents throws error when path is not a directory 1`] = `[Error: Unable to zip the flare files: Path is not a directory: mock-folder/.datadog-ci]`;
-
-exports[`lambda flare zipContents throws error when path is not found 1`] = `[Error: Unable to zip the flare files: Folder does not exist: mock-folder/.datadog-ci]`;
-
-exports[`lambda flare zipContents throws error when unable to generate zip 1`] = `[Error: Unable to zip the flare files: MOCK ERROR: Unable to generate zip]`;
-
-exports[`lambda flare zipContents throws error when unable to read file 1`] = `[Error: Unable to zip the flare files: MOCK ERROR: Unable to read file]`;
-
-exports[`lambda flare zipContents throws error when unable to save zip 1`] = `[Error: Unable to zip the flare files: MOCK ERROR: Unable to save zip]`;
-
-exports[`lambda flare zipContents throws error when unable to write file 1`] = `[Error: Unable to zip the flare files: MOCK ERROR: Unable to write file]`;
