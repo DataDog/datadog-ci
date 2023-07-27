@@ -4,27 +4,35 @@ import path from 'path'
 import process from 'process'
 import util from 'util'
 
+import {Logging} from '@google-cloud/logging'
 import {ServicesClient} from '@google-cloud/run'
 import {google} from '@google-cloud/run/build/protos/protos'
 import chalk from 'chalk'
 import {Command} from 'clipanion'
 import {GoogleAuth} from 'google-auth-library'
 
-import {API_KEY_ENV_VAR, CI_API_KEY_ENV_VAR, FLARE_OUTPUT_DIRECTORY} from '../../constants'
+import {API_KEY_ENV_VAR, CI_API_KEY_ENV_VAR, FLARE_OUTPUT_DIRECTORY, LOGS_DIRECTORY} from '../../constants'
 import {sendToDatadog} from '../../helpers/flare'
 import {createDirectories, deleteFolder, writeFile, zipContents} from '../../helpers/fs'
 import {requestConfirmation} from '../../helpers/prompt'
 import * as helpersRenderer from '../../helpers/renderer'
-import {maskString} from '../../helpers/utils'
+import {formatBytes, maskString} from '../../helpers/utils'
 
 import {SKIP_MASKING_CLOUDRUN_ENV_VARS} from './constants'
 import {renderAuthenticationInstructions} from './renderer'
 
 const SERVICE_CONFIG_FILE_NAME = 'service_config.json'
 const FLARE_ZIP_FILE_NAME = 'cloudrun-flare-output.zip'
+const ALL_LOGS_FILE_NAME = 'all_logs.csv'
+const REDUCED_LOGS_FILE_NAME = 'reduced_logs.csv'
+const WARNINGS_ERRORS_LOGS_FILE_NAME = 'warnings_errors_logs.csv'
+
+// Logs per page. Must be in range 0 - 1000
+const LOGS_PER_PAGE = 1000
 
 export class CloudRunFlareCommand extends Command {
   private isDryRun = false
+  private withLogs = false
   private service?: string
   private project?: string
   private region?: string
@@ -114,21 +122,46 @@ export class CloudRunFlareCommand extends Command {
     const configStr = util.inspect(config, false, 10, true)
     this.context.stdout.write(`\n${configStr}\n`)
 
-    // Save and zip service configuration
-    this.context.stdout.write(chalk.bold('\n💾 Saving configuration...\n'))
-    const rootFolderPath = path.join(process.cwd(), FLARE_OUTPUT_DIRECTORY)
+    // Get logs
+    const logFileMappings = new Map<Log[], string>()
+    if (this.withLogs) {
+      this.context.stdout.write(chalk.bold('\n📖 Getting logs...\n'))
+      const allLogs = await listLogEntries(this.project!, this.service!, this.region!, false, false)
+      this.context.stdout.write(`• Found ${allLogs.length} logs\n`)
+      const reducedLogs = await listLogEntries(this.project!, this.service!, this.region!, true, false)
+      this.context.stdout.write(`• Found ${reducedLogs.length} important logs\n`)
+      const warningsErrorsLogs = await listLogEntries(this.project!, this.service!, this.region!, false, true)
+      this.context.stdout.write(`• Found ${warningsErrorsLogs.length} logs with warnings or errors\n`)
+      logFileMappings.set(allLogs, ALL_LOGS_FILE_NAME)
+      logFileMappings.set(reducedLogs, REDUCED_LOGS_FILE_NAME)
+      logFileMappings.set(warningsErrorsLogs, WARNINGS_ERRORS_LOGS_FILE_NAME)
+    }
+
     try {
-      // Delete folder if it already exists
+      // Create folders
+      const rootFolderPath = path.join(process.cwd(), FLARE_OUTPUT_DIRECTORY)
+      const logsFolderPath = path.join(rootFolderPath, LOGS_DIRECTORY)
+      this.context.stdout.write(chalk.bold(`\n💾 Saving files to ${rootFolderPath}...\n`))
       if (fs.existsSync(rootFolderPath)) {
         deleteFolder(rootFolderPath)
       }
+      const subFolders = []
+      if (this.withLogs) {
+        subFolders.push(logsFolderPath)
+      }
+      createDirectories(rootFolderPath, subFolders)
 
-      // Create folder
-      createDirectories(rootFolderPath, [])
-
-      // Write file
+      // Write config file
       const configFilePath = path.join(rootFolderPath, SERVICE_CONFIG_FILE_NAME)
       writeFile(configFilePath, JSON.stringify(config, undefined, 2))
+      this.context.stdout.write(`• Saved function config to ./${SERVICE_CONFIG_FILE_NAME}\n`)
+
+      // Write logs
+      for (const [logs, fileName] of logFileMappings) {
+        const logFilePath = path.join(logsFolderPath, fileName)
+        saveLogs(logs, logFilePath)
+        this.context.stdout.write(`• Saved logs to ./${LOGS_DIRECTORY}/${fileName}\n`)
+      }
 
       // Exit if dry run
       const outputMsg = `\nℹ️ Your output files are located at: ${rootFolderPath}\n\n`
@@ -141,19 +174,10 @@ export class CloudRunFlareCommand extends Command {
 
       // Confirm before sending
       this.context.stdout.write('\n')
-      let confirmSendFiles
-      try {
-        confirmSendFiles = await requestConfirmation(
-          'Are you sure you want to send the flare file to Datadog Support?',
-          false
-        )
-      } catch (err) {
-        if (err instanceof Error) {
-          this.context.stderr.write(helpersRenderer.renderError(err.message))
-        }
-
-        return 1
-      }
+      const confirmSendFiles = await requestConfirmation(
+        'Are you sure you want to send the flare file to Datadog Support?',
+        false
+      )
       if (!confirmSendFiles) {
         this.context.stdout.write('\n🚫 The flare files were not sent based on your selection.')
         this.context.stdout.write(outputMsg)
@@ -174,11 +198,11 @@ export class CloudRunFlareCommand extends Command {
       deleteFolder(rootFolderPath)
     } catch (err) {
       if (err instanceof Error) {
-        this.context.stderr.write(helpersRenderer.renderError(`Unable to save configuration: ${err.message}`))
+        this.context.stderr.write(helpersRenderer.renderError(err.message))
       }
-    }
 
-    return 0
+      return 1
+    }
   }
 }
 
@@ -245,8 +269,90 @@ export const maskConfig = (config: any) => {
   return configCopy
 }
 
+interface Log {
+  severity?: string
+  timestamp?: string
+  logName?: string | null
+  message: string
+}
+
+const listLogEntries = async (
+  projectId: string,
+  serviceId: string,
+  location: string,
+  reducedLogs: boolean,
+  onlyWarningsErrors: boolean
+) => {
+  const logs: Log[] = []
+  const logging = new Logging({projectId})
+  let filter = `resource.labels.service_name="${serviceId}" AND resource.labels.location="${location}"`
+  if (reducedLogs) {
+    filter +=
+      ' AND -(protoPayload.methodName="google.cloud.run.v1.Services.GetService") AND -(protoPayload.methodName="google.cloud.run.v2.Services.GetService")'
+  }
+  if (onlyWarningsErrors) {
+    filter += ' AND severity>="WARNING"'
+  }
+  const orderBy = 'timestamp asc'
+
+  const options = {
+    filter,
+    orderBy,
+    pageSize: LOGS_PER_PAGE,
+  }
+
+  const [entries] = await logging.getEntries(options)
+  entries.forEach((entry) => {
+    let msg
+    if (entry.metadata.httpRequest) {
+      const request = entry.metadata.httpRequest
+      const ms = Number(request.latency?.seconds) * 1000 + Math.round(Number(request.latency?.nanos) / 1000000)
+      const bytes = formatBytes(Number(request.responseSize))
+      msg = `${request.requestMethod} ${request.status}. responseSize: ${bytes}. latency: ${ms} ms. requestUrl: ${request.requestUrl}`
+    }
+    if (entry.metadata.textPayload) {
+      msg = entry.metadata.textPayload
+    }
+    if (entry.metadata.protoPayload) {
+      msg = entry.metadata.protoPayload.type_url
+    }
+
+    if (msg) {
+      const log: Log = {
+        severity: entry.metadata.severity?.toString(),
+        timestamp: entry.metadata.timestamp?.toString(),
+        logName: entry.metadata.logName,
+        message: msg,
+      }
+      logs.push(log)
+    }
+  })
+
+  return logs
+}
+
+const saveLogs = (logs: Log[], filePath: string) => {
+  if (logs.length === 0) {
+    writeFile(filePath, 'No logs found.')
+
+    return
+  }
+
+  const rows = [['severity', 'timestamp', 'logName', 'message']]
+  logs.forEach((log) => {
+    const severity = `"${log.severity ?? ''}"`
+    const timestamp = `"${log.timestamp ?? ''}"`
+    const logName = `"${log.logName ?? ''}"`
+    const logMessage = `"${log.message}"`
+    rows.push([severity, timestamp, logName, logMessage])
+  })
+  const data = rows.join('\n')
+  writeFile(filePath, data)
+}
+
 CloudRunFlareCommand.addPath('cloud-run', 'flare')
 CloudRunFlareCommand.addOption('isDryRun', Command.Boolean('-d,--dry'))
+CloudRunFlareCommand.addOption('withLogs', Command.Boolean('--with-logs'))
 CloudRunFlareCommand.addOption('service', Command.String('-s,--service'))
 CloudRunFlareCommand.addOption('project', Command.String('-p,--project'))
 CloudRunFlareCommand.addOption('region', Command.String('-r,--region,-l,--location'))
