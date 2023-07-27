@@ -183,16 +183,11 @@ export class LambdaFlareCommand extends Command {
     // Additional files
     this.context.stdout.write('\n')
     const additionalFilePaths = new Set<string>()
-    let confirmAdditionalFiles
-    try {
-      confirmAdditionalFiles = await requestConfirmation('Do you want to specify any additional files to flare?', false)
-    } catch (err) {
-      if (err instanceof Error) {
-        this.context.stderr.write(helpersRenderer.renderError(err.message))
-      }
+    const confirmAdditionalFiles = await requestConfirmation(
+      'Do you want to specify any additional files to flare?',
+      false
+    )
 
-      return 1
-    }
     while (confirmAdditionalFiles) {
       this.context.stdout.write('\n')
       let filePath: string

@@ -24,11 +24,13 @@ import {renderAuthenticationInstructions} from './renderer'
 const SERVICE_CONFIG_FILE_NAME = 'service_config.json'
 const FLARE_ZIP_FILE_NAME = 'cloudrun-flare-output.zip'
 const ALL_LOGS_FILE_NAME = 'all_logs.csv'
-const REDUCED_LOGS_FILE_NAME = 'reduced_logs.csv'
-const WARNINGS_ERRORS_LOGS_FILE_NAME = 'warnings_errors_logs.csv'
+const TEXT_LOGS_FILE_NAME = 'text_logs.csv'
+const WARNING_ERROR_LOGS_FILE_NAME = 'warning_error_logs.csv'
+const ERRORS_LOGS_FILE_NAME = 'error_logs.csv'
 
-// Logs per page. Must be in range 0 - 1000
-const LOGS_PER_PAGE = 1000
+// Must be in range 0 - 1000
+const MAX_LOGS = 1000
+const MAX_PAGES = 5
 
 export class CloudRunFlareCommand extends Command {
   private isDryRun = false
@@ -126,15 +128,18 @@ export class CloudRunFlareCommand extends Command {
     const logFileMappings = new Map<Log[], string>()
     if (this.withLogs) {
       this.context.stdout.write(chalk.bold('\n📖 Getting logs...\n'))
-      const allLogs = await listLogEntries(this.project!, this.service!, this.region!, false, false)
+      const allLogs = await getLogs(this.project!, this.service!, this.region!, false)
       this.context.stdout.write(`• Found ${allLogs.length} logs\n`)
-      const reducedLogs = await listLogEntries(this.project!, this.service!, this.region!, true, false)
-      this.context.stdout.write(`• Found ${reducedLogs.length} important logs\n`)
-      const warningsErrorsLogs = await listLogEntries(this.project!, this.service!, this.region!, false, true)
+      const textLogs = await getLogs(this.project!, this.service!, this.region!, true)
+      this.context.stdout.write(`• Found ${textLogs.length} text logs\n`)
+      const warningsErrorsLogs = await getLogs(this.project!, this.service!, this.region!, false, 'WARNING')
       this.context.stdout.write(`• Found ${warningsErrorsLogs.length} logs with warnings or errors\n`)
+      const errorLogs = await getLogs(this.project!, this.service!, this.region!, false, 'ERROR')
+      this.context.stdout.write(`• Found ${warningsErrorsLogs.length} logs with errors\n`)
       logFileMappings.set(allLogs, ALL_LOGS_FILE_NAME)
-      logFileMappings.set(reducedLogs, REDUCED_LOGS_FILE_NAME)
-      logFileMappings.set(warningsErrorsLogs, WARNINGS_ERRORS_LOGS_FILE_NAME)
+      logFileMappings.set(textLogs, TEXT_LOGS_FILE_NAME)
+      logFileMappings.set(warningsErrorsLogs, WARNING_ERROR_LOGS_FILE_NAME)
+      logFileMappings.set(errorLogs, ERRORS_LOGS_FILE_NAME)
     }
 
     try {
@@ -270,63 +275,70 @@ export const maskConfig = (config: any) => {
 }
 
 interface Log {
-  severity?: string
-  timestamp?: string
-  logName?: string | null
+  severity: string
+  timestamp: string
+  logName: string
   message: string
 }
 
-const listLogEntries = async (
+const getLogs = async (
   projectId: string,
   serviceId: string,
   location: string,
-  reducedLogs: boolean,
-  onlyWarningsErrors: boolean
+  textLogs: boolean,
+  severity?: string
 ) => {
   const logs: Log[] = []
   const logging = new Logging({projectId})
   let filter = `resource.labels.service_name="${serviceId}" AND resource.labels.location="${location}"`
-  if (reducedLogs) {
-    filter +=
-      ' AND -(protoPayload.methodName="google.cloud.run.v1.Services.GetService") AND -(protoPayload.methodName="google.cloud.run.v2.Services.GetService")'
+  if (severity) {
+    filter += ` AND severity>="${severity}"`
   }
-  if (onlyWarningsErrors) {
-    filter += ' AND severity>="WARNING"'
+  if (textLogs) {
+    filter += ' AND textPayload:*'
   }
   const orderBy = 'timestamp asc'
 
   const options = {
     filter,
     orderBy,
-    pageSize: LOGS_PER_PAGE,
+    pageSize: MAX_LOGS,
+    page: '1',
   }
 
-  const [entries] = await logging.getEntries(options)
-  entries.forEach((entry) => {
-    let msg
-    if (entry.metadata.httpRequest) {
-      const request = entry.metadata.httpRequest
-      const ms = Number(request.latency?.seconds) * 1000 + Math.round(Number(request.latency?.nanos) / 1000000)
-      const bytes = formatBytes(Number(request.responseSize))
-      msg = `${request.requestMethod} ${request.status}. responseSize: ${bytes}. latency: ${ms} ms. requestUrl: ${request.requestUrl}`
-    }
-    if (entry.metadata.textPayload) {
-      msg = entry.metadata.textPayload
-    }
-    if (entry.metadata.protoPayload) {
-      msg = entry.metadata.protoPayload.type_url
-    }
+  let isCompleted = false
+  let count = 1
+  while (!isCompleted) {
+    const [entries, nextQuery] = await logging.getEntries(options)
+    entries.forEach((entry) => {
+      let msg
+      if (entry.metadata.httpRequest) {
+        const request = entry.metadata.httpRequest
+        const ms = Number(request.latency?.seconds) * 1000 + Math.round(Number(request.latency?.nanos) / 1000000)
+        const bytes = formatBytes(Number(request.responseSize))
+        msg = `${request.requestMethod} ${request.status}. responseSize: ${bytes}. latency: ${ms} ms. requestUrl: ${request.requestUrl}`
+      } else if (entry.metadata.textPayload) {
+        msg = entry.metadata.textPayload
+      } else if (entry.metadata.protoPayload) {
+        msg = entry.metadata.protoPayload.type_url
+      }
 
-    if (msg) {
       const log: Log = {
-        severity: entry.metadata.severity?.toString(),
-        timestamp: entry.metadata.timestamp?.toString(),
-        logName: entry.metadata.logName,
-        message: msg,
+        severity: entry.metadata.severity?.toString() ?? '',
+        timestamp: entry.metadata.timestamp?.toString() ?? '',
+        logName: entry.metadata.logName ?? '',
+        message: `"${msg ?? ''}"`,
       }
       logs.push(log)
+    })
+
+    if (count < MAX_PAGES && nextQuery?.pageToken) {
+      options.page = nextQuery.pageToken
+      count++
+    } else {
+      isCompleted = true
     }
-  })
+  }
 
   return logs
 }
@@ -340,9 +352,9 @@ const saveLogs = (logs: Log[], filePath: string) => {
 
   const rows = [['severity', 'timestamp', 'logName', 'message']]
   logs.forEach((log) => {
-    const severity = `"${log.severity ?? ''}"`
-    const timestamp = `"${log.timestamp ?? ''}"`
-    const logName = `"${log.logName ?? ''}"`
+    const severity = `"${log.severity}"`
+    const timestamp = `"${log.timestamp}"`
+    const logName = `"${log.logName}"`
     const logMessage = `"${log.message}"`
     rows.push([severity, timestamp, logName, logMessage])
   })
