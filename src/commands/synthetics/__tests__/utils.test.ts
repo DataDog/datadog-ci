@@ -609,6 +609,7 @@ describe('utils', () => {
         retry: {count: 5, interval: 30},
         startUrl: 'http://127.0.0.1:60/newPath',
         startUrlSubstitutionRegex: '.*',
+        testTimeout: 360,
         tunnel: {host: 'host', id: 'id', privateKey: 'privateKey'},
         variables: {VAR_1: 'value'},
       }

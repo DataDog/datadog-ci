@@ -284,6 +284,7 @@ export interface BaseConfigOverride {
   retry?: RetryConfig
   startUrl?: string
   startUrlSubstitutionRegex?: string
+  testTimeout?: number
   tunnel?: TunnelInfo
   variables?: {[key: string]: string}
 }
