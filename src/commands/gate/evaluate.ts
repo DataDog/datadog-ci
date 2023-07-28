@@ -19,6 +19,7 @@ import {
   renderWaiting,
 } from './renderer'
 import {getBaseIntakeUrl, is4xxError, is5xxError, parseScope} from './utils'
+import { wait } from '../synthetics/utils'
 
 export class GateEvaluateCommand extends Command {
   public static usage = Command.Usage({
@@ -66,23 +67,24 @@ export class GateEvaluateCommand extends Command {
   private userScope?: string[]
   private tags?: string[]
 
-  private waitingTime = 30000 // 30 seconds
-
   public async execute() {
     const api = this.getApiHelper()
     const spanTags = await this.getSpanTags()
     const userScope = this.userScope ? parseScope(this.userScope) : {}
 
+    const startTimeMs = new Date().getTime()
     const payload = {
       requestId: uuidv4(),
       spanTags,
       userScope,
+      startTimeMs: startTimeMs, 
       options: {
         dryRun: this.dryRun,
+        noWait: this.noWait,
       },
     }
 
-    return this.evaluateRules(api, payload)
+    return this.evaluateRules(api, payload, startTimeMs)
   }
 
   private getApiHelper(): APIHelper {
@@ -119,31 +121,33 @@ export class GateEvaluateCommand extends Command {
   }
 
   private async evaluateRules(api: APIHelper, evaluateRequest: Payload): Promise<number> {
-    if (this.shouldWait()) {
-      this.context.stdout.write(renderWaiting())
-      await this.delay(this.waitingTime)
-    }
-
     this.context.stdout.write(renderGateEvaluationInput(evaluateRequest))
 
+    const waitTime = 0
     return retryRequest(
       () => api.evaluateGateRules(evaluateRequest, this.context.stdout.write.bind(this.context.stdout)),
       {
         onRetry: (e, attempt) => {
-          this.context.stderr.write(renderEvaluationRetry(attempt, e))
+          if (e.status === 'wait') {
+            this.context.stdout.write(renderWaiting())
+            this.wait(e.waitTime)
+          } else {
+            this.context.stderr.write(renderEvaluationRetry(attempt, e))
+          }
         },
-        retries: 5,
+        maxRetryTime: 300000,
       }
     )
       .then((response) => {
         return this.handleEvaluationSuccess(response.data.data.attributes)
       })
       .catch((error) => {
+        console.log(error)
         return this.handleEvaluationError(error)
       })
   }
 
-  private handleEvaluationSuccess(evaluationResponse: EvaluationResponse): number {
+  private async handleEvaluationSuccess(evaluationResponse: EvaluationResponse): number {
     this.context.stdout.write(renderEvaluationResponse(evaluationResponse))
 
     if (evaluationResponse.status === 'failed' || (evaluationResponse.status === 'empty' && this.failOnEmpty)) {
@@ -162,12 +166,12 @@ export class GateEvaluateCommand extends Command {
     return 0
   }
 
-  private async delay(ms: number) {
-    await new Promise((resolve) => setTimeout(resolve, ms))
-  }
-
-  private shouldWait(): boolean {
-    return !this.dryRun && !this.noWait
+  private wait(ms) {
+    var start = Date.now(),
+        now = start;
+    while (now - start < ms) {
+      now = Date.now();
+    }
   }
 }
 

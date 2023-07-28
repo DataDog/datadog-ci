@@ -4,6 +4,7 @@ import {GIT_BRANCH, GIT_REPOSITORY_URL} from '../../helpers/tags'
 
 import {EvaluationResponse, Payload, RuleEvaluation} from './interfaces'
 import {getStatus, is5xxError, isBadRequestError} from './utils'
+import { DelayError } from './evaluate'
 
 const ICONS = {
   FAILED: '❌',
@@ -18,6 +19,9 @@ export const renderEvaluationResponse = (evaluationResponse: EvaluationResponse)
   }
   if (evaluationResponse.status.toLowerCase() === 'dry_run') {
     return renderDryRunEvaluation(evaluationResponse)
+  }
+  if (evaluationResponse.status.toLowerCase() === 'wait') {
+    return renderWaiting()
   }
 
   let fullStr = ''
