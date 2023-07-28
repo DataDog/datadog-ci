@@ -93,19 +93,19 @@ exports[`cloud-run flare getLogs uses correct filter when \`isOnlyTextLogs\` is 
 Array [
   Object {
     "logName": "mock-logname",
-    "message": "\\"Test log 1\\"",
+    "message": "\\"Log 1\\"",
     "severity": "DEFAULT",
     "timestamp": "2023-07-28 00:00:00",
   },
   Object {
     "logName": "mock-logname",
-    "message": "\\"Test log 2\\"",
+    "message": "\\"Log 2\\"",
     "severity": "INFO",
     "timestamp": "2023-07-28 00:00:00",
   },
   Object {
     "logName": "mock-logname",
-    "message": "\\"Test log 3\\"",
+    "message": "\\"Log 3\\"",
     "severity": "NOTICE",
     "timestamp": "2023-07-28 01:01:01",
   },

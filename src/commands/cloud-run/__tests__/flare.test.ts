@@ -13,10 +13,18 @@ import {
   MOCK_DATADOG_API_KEY,
   MOCK_FLARE_FOLDER_PATH,
 } from '../../../helpers/__tests__/fixtures'
+import * as fsModule from '../../../helpers/fs'
 import * as helpersPromptModule from '../../../helpers/prompt'
 
 import * as flareModule from '../flare'
-import {checkAuthentication, getCloudRunServiceConfig, getLogs, maskConfig, MAX_LOGS_PER_PAGE} from '../flare'
+import {
+  checkAuthentication,
+  getCloudRunServiceConfig,
+  getLogs,
+  maskConfig,
+  MAX_LOGS_PER_PAGE,
+  saveLogsFile,
+} from '../flare'
 
 import {makeCli} from './fixtures'
 
@@ -335,9 +343,9 @@ describe('cloud-run flare', () => {
   describe('getLogs', () => {
     const logName = 'mock-logname'
     const mockLogs = [
-      {metadata: {severity: 'DEFAULT', timestamp: '2023-07-28 00:00:00', logName, textPayload: 'Test log 1'}},
-      {metadata: {severity: 'INFO', timestamp: '2023-07-28 00:00:00', logName, textPayload: 'Test log 2'}},
-      {metadata: {severity: 'NOTICE', timestamp: '2023-07-28 01:01:01', logName, textPayload: 'Test log 3'}},
+      {metadata: {severity: 'DEFAULT', timestamp: '2023-07-28 00:00:00', logName, textPayload: 'Log 1'}},
+      {metadata: {severity: 'INFO', timestamp: '2023-07-28 00:00:00', logName, textPayload: 'Log 2'}},
+      {metadata: {severity: 'NOTICE', timestamp: '2023-07-28 01:01:01', logName, textPayload: 'Log 3'}},
     ]
     let mockGetEntries = jest.fn().mockResolvedValue([mockLogs, {pageToken: undefined}])
     MockedLogging.mockImplementation(() => {
@@ -528,6 +536,34 @@ describe('cloud-run flare', () => {
 
       const logs = await getLogs(MOCK_PROJECT, MOCK_SERVICE, MOCK_REGION, false)
       expect(logs).toMatchSnapshot()
+    })
+  })
+
+  describe('saveLogsFile', () => {
+    const mockLogs = [
+      {severity: 'DEFAULT', timestamp: '2023-07-28 00:00:00', logName: 'mock-logname', message: 'Test log 1'},
+      {severity: 'INFO', timestamp: '2023-07-28 00:00:01', logName: 'mock-logname', message: 'Test log 2'},
+      {severity: 'NOTICE', timestamp: '2023-07-28 01:01:01', logName: 'mock-logname', message: 'Test log 3'},
+    ]
+    const writeFileSpy = jest.spyOn(fsModule, 'writeFile')
+    const mockFilePath = 'path/to/logs.csv'
+
+    it('should save logs to file correctly', () => {
+      saveLogsFile(mockLogs, mockFilePath)
+      const expectedContent = [
+        'severity,timestamp,logName,message',
+        '"DEFAULT","2023-07-28 00:00:00","mock-logname","Test log 1"',
+        '"INFO","2023-07-28 00:00:01","mock-logname","Test log 2"',
+        '"NOTICE","2023-07-28 01:01:01","mock-logname","Test log 3"',
+      ].join('\n')
+      expect(writeFileSpy).toHaveBeenCalledWith(mockFilePath, expectedContent)
+    })
+
+    it('should handle the case when no logs are provided', () => {
+      saveLogsFile([], mockFilePath)
+
+      const expectedContent = 'No logs found.'
+      expect(writeFileSpy).toHaveBeenCalledWith(mockFilePath, expectedContent)
     })
   })
 })
