@@ -19,6 +19,7 @@ import * as helpersRenderer from '../../helpers/renderer'
 import {formatBytes, maskString} from '../../helpers/utils'
 
 import {SKIP_MASKING_CLOUDRUN_ENV_VARS} from './constants'
+import {CloudRunLog} from './interfaces'
 import {renderAuthenticationInstructions} from './renderer'
 
 const SERVICE_CONFIG_FILE_NAME = 'service_config.json'
@@ -29,8 +30,9 @@ const WARNING_ERROR_LOGS_FILE_NAME = 'warning_error_logs.csv'
 const ERRORS_LOGS_FILE_NAME = 'error_logs.csv'
 
 // Must be in range 0 - 1000
-const MAX_LOGS = 1000
-const MAX_PAGES = 5
+export const MAX_LOGS_PER_PAGE = 1000
+// There will be a maximum of (MAX_LOGS_PER_PAGE * MAX_PAGES) logs
+export const MAX_PAGES = 5
 
 export class CloudRunFlareCommand extends Command {
   private isDryRun = false
@@ -125,21 +127,29 @@ export class CloudRunFlareCommand extends Command {
     this.context.stdout.write(`\n${configStr}\n`)
 
     // Get logs
-    const logFileMappings = new Map<Log[], string>()
+    const logFileMappings = new Map<CloudRunLog[], string>()
     if (this.withLogs) {
-      this.context.stdout.write(chalk.bold('\n📖 Getting logs...\n'))
-      const allLogs = await getLogs(this.project!, this.service!, this.region!, false)
-      this.context.stdout.write(`• Found ${allLogs.length} logs\n`)
-      const textLogs = await getLogs(this.project!, this.service!, this.region!, true)
-      this.context.stdout.write(`• Found ${textLogs.length} text logs\n`)
-      const warningsErrorsLogs = await getLogs(this.project!, this.service!, this.region!, false, 'WARNING')
-      this.context.stdout.write(`• Found ${warningsErrorsLogs.length} logs with warnings or errors\n`)
-      const errorLogs = await getLogs(this.project!, this.service!, this.region!, false, 'ERROR')
-      this.context.stdout.write(`• Found ${warningsErrorsLogs.length} logs with errors\n`)
-      logFileMappings.set(allLogs, ALL_LOGS_FILE_NAME)
-      logFileMappings.set(textLogs, TEXT_LOGS_FILE_NAME)
-      logFileMappings.set(warningsErrorsLogs, WARNING_ERROR_LOGS_FILE_NAME)
-      logFileMappings.set(errorLogs, ERRORS_LOGS_FILE_NAME)
+      try {
+        this.context.stdout.write(chalk.bold('\n📖 Getting logs...\n'))
+        const allLogs = await getLogs(this.project!, this.service!, this.region!, false)
+        this.context.stdout.write(`• Found ${allLogs.length} logs\n`)
+        const textLogs = await getLogs(this.project!, this.service!, this.region!, true)
+        this.context.stdout.write(`• Found ${textLogs.length} text logs\n`)
+        const warningsErrorsLogs = await getLogs(this.project!, this.service!, this.region!, false, 'WARNING')
+        this.context.stdout.write(`• Found ${warningsErrorsLogs.length} logs with warnings or errors\n`)
+        const errorLogs = await getLogs(this.project!, this.service!, this.region!, false, 'ERROR')
+        this.context.stdout.write(`• Found ${warningsErrorsLogs.length} logs with errors\n`)
+        logFileMappings.set(allLogs, ALL_LOGS_FILE_NAME)
+        logFileMappings.set(textLogs, TEXT_LOGS_FILE_NAME)
+        logFileMappings.set(warningsErrorsLogs, WARNING_ERROR_LOGS_FILE_NAME)
+        logFileMappings.set(errorLogs, ERRORS_LOGS_FILE_NAME)
+      } catch (err) {
+        if (err instanceof Error) {
+          this.context.stderr.write(helpersRenderer.renderError(err.message))
+        }
+
+        return 1
+      }
     }
 
     try {
@@ -164,7 +174,7 @@ export class CloudRunFlareCommand extends Command {
       // Write logs
       for (const [logs, fileName] of logFileMappings) {
         const logFilePath = path.join(logsFolderPath, fileName)
-        saveLogs(logs, logFilePath)
+        saveLogsFile(logs, logFilePath)
         this.context.stdout.write(`• Saved logs to ./${LOGS_DIRECTORY}/${fileName}\n`)
       }
 
@@ -274,42 +284,53 @@ export const maskConfig = (config: any) => {
   return configCopy
 }
 
-interface Log {
-  severity: string
-  timestamp: string
-  logName: string
-  message: string
-}
-
-const getLogs = async (
+/**
+ * Gets recent logs
+ * @param projectId
+ * @param serviceId
+ * @param location
+ * @param isOnlyTextLogs whether or not to only get logs with a text payload
+ * @param severity if included, only gets logs with a >= severity
+ * @returns array of logs as CloudRunLog interfaces
+ */
+export const getLogs = async (
   projectId: string,
   serviceId: string,
   location: string,
-  textLogs: boolean,
+  isOnlyTextLogs: boolean,
   severity?: string
 ) => {
-  const logs: Log[] = []
+  const logs: CloudRunLog[] = []
   const logging = new Logging({projectId})
+
+  // Query options
   let filter = `resource.labels.service_name="${serviceId}" AND resource.labels.location="${location}"`
   if (severity) {
     filter += ` AND severity>="${severity}"`
   }
-  if (textLogs) {
+  if (isOnlyTextLogs) {
     filter += ' AND textPayload:*'
   }
   const orderBy = 'timestamp asc'
-
   const options = {
     filter,
     orderBy,
-    pageSize: MAX_LOGS,
-    page: '1',
+    pageSize: MAX_LOGS_PER_PAGE,
+    page: '',
   }
 
-  let isCompleted = false
+  // Use pagination to get more than the limit of 1000 logs
   let count = 1
-  while (!isCompleted) {
-    const [entries, nextQuery] = await logging.getEntries(options)
+  while (true) {
+    let entries
+    let nextQuery
+    try {
+      ;[entries, nextQuery] = await logging.getEntries(options)
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : ''
+      throw Error(`Unable to get logs: ${msg}`)
+    }
+
     entries.forEach((entry) => {
       let msg
       if (entry.metadata.httpRequest) {
@@ -323,7 +344,7 @@ const getLogs = async (
         msg = entry.metadata.protoPayload.type_url
       }
 
-      const log: Log = {
+      const log: CloudRunLog = {
         severity: entry.metadata.severity?.toString() ?? '',
         timestamp: entry.metadata.timestamp?.toString() ?? '',
         logName: entry.metadata.logName ?? '',
@@ -336,14 +357,19 @@ const getLogs = async (
       options.page = nextQuery.pageToken
       count++
     } else {
-      isCompleted = true
+      break
     }
   }
 
   return logs
 }
 
-const saveLogs = (logs: Log[], filePath: string) => {
+/**
+ * Save logs in a CSV format
+ * @param logs array of logs stored as CloudRunLog interfaces
+ * @param filePath path to save the CSV file
+ */
+export const saveLogsFile = (logs: CloudRunLog[], filePath: string) => {
   if (logs.length === 0) {
     writeFile(filePath, 'No logs found.')
 
