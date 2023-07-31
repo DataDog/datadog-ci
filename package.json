@@ -66,7 +66,7 @@
     "@aws-sdk/client-sfn": "^3.358.0",
     "@aws-sdk/credential-providers": "^3.358.0",
     "@aws-sdk/property-provider": "^3.357.0",
-    "@google-cloud/logging": "^10.5.0",
+    "@google-cloud/logging-min": "^10.4.0",
     "@google-cloud/run": "^0.6.0",
     "@types/datadog-metrics": "0.6.1",
     "agent-base": "^7.1.0",

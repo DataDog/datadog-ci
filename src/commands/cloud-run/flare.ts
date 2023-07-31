@@ -4,7 +4,7 @@ import path from 'path'
 import process from 'process'
 import util from 'util'
 
-import {Logging} from '@google-cloud/logging'
+import {Logging} from '@google-cloud/logging-min'
 import {ServicesClient} from '@google-cloud/run'
 import {google} from '@google-cloud/run/build/protos/protos'
 import chalk from 'chalk'
