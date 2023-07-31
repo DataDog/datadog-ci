@@ -19,7 +19,6 @@ import {
   renderWaiting,
 } from './renderer'
 import {getBaseIntakeUrl, is4xxError, is5xxError, parseScope} from './utils'
-import { wait } from '../synthetics/utils'
 import { AxiosPromise } from 'axios'
 
 export class GateEvaluateCommand extends Command {
