@@ -98,7 +98,7 @@ jest.mock('@google-cloud/run', () => {
 jest.spyOn(helpersPromptModule, 'requestConfirmation').mockResolvedValue(true)
 jest.mock('util')
 jest.mock('jszip')
-jest.mock('@google-cloud/logging')
+jest.mock('@google-cloud/logging-min')
 
 const MockedLogging = mocked(Logging, true)
 
