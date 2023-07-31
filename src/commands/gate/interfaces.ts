@@ -26,7 +26,9 @@ export interface EvaluationResponsePayload {
 export interface EvaluationResponse {
   status: string
   rule_evaluations: RuleEvaluation[]
-  wait_time_ms: number
+  metadata: {
+    wait_time_ms: number
+  }
 }
 
 export interface RuleEvaluation {

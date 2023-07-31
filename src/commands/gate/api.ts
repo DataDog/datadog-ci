@@ -5,9 +5,6 @@ import {AxiosPromise, AxiosRequestConfig} from 'axios'
 import {getRequestBuilder} from '../../helpers/utils'
 
 import {EvaluationResponsePayload, Payload} from './interfaces'
-import {
-  renderWaiting,
-} from './renderer'
 
 export const evaluateGateRules = (
   request: (args: AxiosRequestConfig) => AxiosPromise<EvaluationResponsePayload>
@@ -34,15 +31,6 @@ export const evaluateGateRules = (
     },
     method: 'POST',
     url: '/api/v2/quality-gates/evaluate',
-  })
-  .then((response) => {
-    if (response.data.data.attributes.status === 'wait') {
-      throw {
-        "status" : "wait",
-        "waitTime": response.data.data.attributes.wait_time_ms,
-      }
-    }
-    return response
   })
 }
 

@@ -10,7 +10,7 @@ import {parseTags} from '../../helpers/tags'
 import {getUserGitSpanTags} from '../../helpers/user-provided-git'
 
 import {apiConstructor} from './api'
-import {APIHelper, EvaluationResponse, Payload} from './interfaces'
+import {APIHelper, EvaluationResponse, EvaluationResponsePayload, Payload} from './interfaces'
 import {
   renderEvaluationResponse,
   renderGateEvaluationInput,
@@ -20,6 +20,7 @@ import {
 } from './renderer'
 import {getBaseIntakeUrl, is4xxError, is5xxError, parseScope} from './utils'
 import { wait } from '../synthetics/utils'
+import { AxiosPromise } from 'axios'
 
 export class GateEvaluateCommand extends Command {
   public static usage = Command.Usage({
@@ -60,6 +61,8 @@ export class GateEvaluateCommand extends Command {
     envVarTags: process.env.DD_TAGS,
   }
 
+  private maxRetries = 5
+  private maxRetryTimeMs = 300000
   private dryRun = false
   private failOnEmpty = false
   private failIfUnavailable = false
@@ -77,14 +80,14 @@ export class GateEvaluateCommand extends Command {
       requestId: uuidv4(),
       spanTags,
       userScope,
-      startTimeMs: startTimeMs, 
+      startTimeMs,
       options: {
         dryRun: this.dryRun,
         noWait: this.noWait,
       },
     }
 
-    return this.evaluateRules(api, payload, startTimeMs)
+    return this.evaluateRules(api, payload)
   }
 
   private getApiHelper(): APIHelper {
@@ -123,28 +126,42 @@ export class GateEvaluateCommand extends Command {
   private async evaluateRules(api: APIHelper, evaluateRequest: Payload): Promise<number> {
     this.context.stdout.write(renderGateEvaluationInput(evaluateRequest))
 
-    const waitTime = 0
     return retryRequest(
-      () => api.evaluateGateRules(evaluateRequest, this.context.stdout.write.bind(this.context.stdout)),
+      () => this.evaluateRulesWithWait(api, evaluateRequest),
       {
         onRetry: (e, attempt) => {
-          if (e.status === 'wait') {
-            this.context.stdout.write(renderWaiting())
-            this.wait(e.waitTime)
-          } else {
+          if (e.message !== 'wait') {
             this.context.stderr.write(renderEvaluationRetry(attempt, e))
           }
         },
-        maxRetryTime: 300000,
+        maxRetryTime: this.maxRetryTimeMs,
+        retries: this.maxRetries,
+        minTimeout: 0,
+        maxTimeout: 0,
+        factor: 1
       }
     )
       .then((response) => {
         return this.handleEvaluationSuccess(response.data.data.attributes)
       })
       .catch((error) => {
-        console.log(error)
         return this.handleEvaluationError(error)
       })
+  }
+
+  private async evaluateRulesWithWait(api: APIHelper, evaluateRequest: Payload): Promise<AxiosPromise<EvaluationResponsePayload>> {
+    return new Promise((resolve, reject) => {
+      api.evaluateGateRules(evaluateRequest, this.context.stdout.write.bind(this.context.stdout)).then((response) => {
+          if (response.data.data.attributes.status === 'wait') {
+            this.context.stdout.write(renderWaiting())
+            setTimeout(() => {
+              reject(new Error('wait'))
+            }, response.data.data.attributes.metadata.wait_time_ms)
+          } else {
+            resolve(response)
+          }
+        })
+    })
   }
 
   private async handleEvaluationSuccess(evaluationResponse: EvaluationResponse): number {
@@ -164,14 +181,6 @@ export class GateEvaluateCommand extends Command {
     }
 
     return 0
-  }
-
-  private wait(ms) {
-    var start = Date.now(),
-        now = start;
-    while (now - start < ms) {
-      now = Date.now();
-    }
   }
 }
 

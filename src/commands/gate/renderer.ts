@@ -20,9 +20,6 @@ export const renderEvaluationResponse = (evaluationResponse: EvaluationResponse)
   if (evaluationResponse.status.toLowerCase() === 'dry_run') {
     return renderDryRunEvaluation(evaluationResponse)
   }
-  if (evaluationResponse.status.toLowerCase() === 'wait') {
-    return renderWaiting()
-  }
 
   let fullStr = ''
   fullStr += chalk.green('Successfully evaluated all matching rules.\n')
