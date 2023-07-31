@@ -144,6 +144,7 @@ export class CloudRunFlareCommand extends Command {
         logFileMappings.set(warningsErrorsLogs, WARNING_ERROR_LOGS_FILE_NAME)
         logFileMappings.set(errorLogs, ERRORS_LOGS_FILE_NAME)
       } catch (err) {
+        // TODO Don't let one bad log stop whole process
         if (err instanceof Error) {
           this.context.stderr.write(helpersRenderer.renderError(err.message))
         }
@@ -331,6 +332,8 @@ export const getLogs = async (
       throw Error(`Unable to get logs: ${msg}`)
     }
 
+    // TODO debug logs
+    // TODO time limit
     entries.forEach((entry) => {
       let msg
       if (entry.metadata.httpRequest) {
