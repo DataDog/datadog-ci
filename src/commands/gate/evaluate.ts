@@ -126,7 +126,7 @@ export class GateEvaluateCommand extends Command {
   private async evaluateRules(api: APIHelper, evaluateRequest: Payload): Promise<number> {
     this.context.stdout.write(renderGateEvaluationInput(evaluateRequest))
 
-    return retryRequest(() => this.evaluateRulesWithWait(api, evaluateRequest), {
+    return retryRequest((attempt) => this.evaluateRulesWithWait(api, evaluateRequest, attempt), {
       onRetry: (e, attempt) => {
         if (e.message !== 'wait') {
           this.context.stderr.write(renderEvaluationRetry(attempt, e))
@@ -148,7 +148,8 @@ export class GateEvaluateCommand extends Command {
 
   private async evaluateRulesWithWait(
     api: APIHelper,
-    evaluateRequest: Payload
+    evaluateRequest: Payload,
+    attempt?: number
   ): Promise<AxiosResponse<EvaluationResponsePayload>> {
     return new Promise((resolve, reject) => {
       api
@@ -163,7 +164,11 @@ export class GateEvaluateCommand extends Command {
             resolve(response)
           }
         })
-        .catch(reject)
+        .catch((err) => {
+          setTimeout(() => {
+            reject(err)
+          }, (attempt || 1) * 5000)
+        })
     })
   }
 
