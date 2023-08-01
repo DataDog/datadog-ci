@@ -26,13 +26,17 @@ const SERVICE_CONFIG_FILE_NAME = 'service_config.json'
 const FLARE_ZIP_FILE_NAME = 'cloudrun-flare-output.zip'
 const ALL_LOGS_FILE_NAME = 'all_logs.csv'
 const TEXT_LOGS_FILE_NAME = 'text_logs.csv'
-const WARNING_ERROR_LOGS_FILE_NAME = 'warning_error_logs.csv'
+const WARNING_LOGS_FILE_NAME = 'warning_logs.csv'
 const ERRORS_LOGS_FILE_NAME = 'error_logs.csv'
+const DEBUG_LOGS_FILE_NAME = 'DEBUG_logs.csv'
 
 // Must be in range 0 - 1000
 export const MAX_LOGS_PER_PAGE = 1000
-// There will be a maximum of (MAX_LOGS_PER_PAGE * MAX_PAGES) logs
-export const MAX_PAGES = 5
+// There will be a maximum of (MAX_LOGS_PER_PAGE * MAX_PAGES) logs for each log file
+// The more pages there are, the longer the program will take to run
+export const MAX_PAGES = 3
+// How old the logs can be in minutes. Skip older logs
+const MAX_LOG_AGE_MINUTES = 1440
 
 export class CloudRunFlareCommand extends Command {
   private isDryRun = false
@@ -129,27 +133,26 @@ export class CloudRunFlareCommand extends Command {
     // Get logs
     const logFileMappings = new Map<CloudRunLog[], string>()
     if (this.withLogs) {
-      try {
-        this.context.stdout.write(chalk.bold('\n📖 Getting logs...\n'))
-        const allLogs = await getLogs(this.project!, this.service!, this.region!, false)
-        this.context.stdout.write(`• Found ${allLogs.length} logs\n`)
-        const textLogs = await getLogs(this.project!, this.service!, this.region!, true)
-        this.context.stdout.write(`• Found ${textLogs.length} text logs\n`)
-        const warningsErrorsLogs = await getLogs(this.project!, this.service!, this.region!, false, 'WARNING')
-        this.context.stdout.write(`• Found ${warningsErrorsLogs.length} logs with warnings or errors\n`)
-        const errorLogs = await getLogs(this.project!, this.service!, this.region!, false, 'ERROR')
-        this.context.stdout.write(`• Found ${warningsErrorsLogs.length} logs with errors\n`)
-        logFileMappings.set(allLogs, ALL_LOGS_FILE_NAME)
-        logFileMappings.set(textLogs, TEXT_LOGS_FILE_NAME)
-        logFileMappings.set(warningsErrorsLogs, WARNING_ERROR_LOGS_FILE_NAME)
-        logFileMappings.set(errorLogs, ERRORS_LOGS_FILE_NAME)
-      } catch (err) {
-        // TODO Don't let one bad log stop whole process
-        if (err instanceof Error) {
-          this.context.stderr.write(helpersRenderer.renderError(err.message))
-        }
+      this.context.stdout.write(chalk.bold('\n📖 Getting logs...\n'))
 
-        return 1
+      const logsConfig = [
+        {type: 'total', text: false, fileName: ALL_LOGS_FILE_NAME},
+        {type: 'text', text: true, fileName: TEXT_LOGS_FILE_NAME},
+        {type: 'warning', text: false, filter: 'severity>="WARNING"', fileName: WARNING_LOGS_FILE_NAME},
+        {type: 'error', text: false, filter: 'severity>="ERROR"', fileName: ERRORS_LOGS_FILE_NAME},
+        {type: 'debug', text: false, filter: 'severity="DEBUG"', fileName: DEBUG_LOGS_FILE_NAME},
+      ]
+
+      for (const logConfig of logsConfig) {
+        try {
+          const logs = await getLogs(this.project!, this.service!, this.region!, logConfig.text, logConfig.filter)
+          this.context.stdout.write(`• Found ${logs.length} ${logConfig.type} logs\n`)
+          logFileMappings.set(logs, logConfig.fileName)
+        } catch (err) {
+          if (err instanceof Error) {
+            this.context.stderr.write(`• Unable to get ${logConfig.type} logs: ${err.message}. Skipping...\n`)
+          }
+        }
       }
     }
 
@@ -174,9 +177,11 @@ export class CloudRunFlareCommand extends Command {
 
       // Write logs
       for (const [logs, fileName] of logFileMappings) {
-        const logFilePath = path.join(logsFolderPath, fileName)
-        saveLogsFile(logs, logFilePath)
-        this.context.stdout.write(`• Saved logs to ./${LOGS_DIRECTORY}/${fileName}\n`)
+        if (logs.length > 0) {
+          const logFilePath = path.join(logsFolderPath, fileName)
+          saveLogsFile(logs, logFilePath)
+          this.context.stdout.write(`• Saved logs to ./${LOGS_DIRECTORY}/${fileName}\n`)
+        }
       }
 
       // Exit if dry run
@@ -291,7 +296,7 @@ export const maskConfig = (config: any) => {
  * @param serviceId
  * @param location
  * @param isOnlyTextLogs whether or not to only get logs with a text payload
- * @param severity if included, only gets logs with a >= severity
+ * @param severityFilter if included, adds the string to the filter
  * @returns array of logs as CloudRunLog interfaces
  */
 export const getLogs = async (
@@ -299,19 +304,26 @@ export const getLogs = async (
   serviceId: string,
   location: string,
   isOnlyTextLogs: boolean,
-  severity?: string
+  severityFilter?: string
 ) => {
   const logs: CloudRunLog[] = []
   const logging = new Logging({projectId})
 
   // Query options
   let filter = `resource.labels.service_name="${serviceId}" AND resource.labels.location="${location}"`
-  if (severity) {
-    filter += ` AND severity>="${severity}"`
+  if (severityFilter) {
+    filter += ` AND ${severityFilter}`
   }
   if (isOnlyTextLogs) {
     filter += ' AND textPayload:*'
   }
+
+  // Only get logs from the last 24 hours
+  const date = new Date()
+  date.setMinutes(date.getMinutes() - MAX_LOG_AGE_MINUTES)
+  const formattedDate = date.toISOString()
+  filter += ` AND timestamp>="${formattedDate}"`
+
   const orderBy = 'timestamp asc'
   const options = {
     filter,
@@ -321,19 +333,10 @@ export const getLogs = async (
   }
 
   // Use pagination to get more than the limit of 1000 logs
-  let count = 1
-  while (true) {
-    let entries
-    let nextQuery
-    try {
-      ;[entries, nextQuery] = await logging.getEntries(options)
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : ''
-      throw Error(`Unable to get logs: ${msg}`)
-    }
+  let count = 0
+  while (count < MAX_PAGES) {
+    const [entries, nextQuery] = await logging.getEntries(options)
 
-    // TODO debug logs
-    // TODO time limit
     entries.forEach((entry) => {
       let msg
       if (entry.metadata.httpRequest) {
@@ -356,12 +359,10 @@ export const getLogs = async (
       logs.push(log)
     })
 
-    if (count < MAX_PAGES && nextQuery?.pageToken) {
+    if (nextQuery?.pageToken) {
       options.page = nextQuery.pageToken
-      count++
-    } else {
-      break
     }
+    count++
   }
 
   return logs
