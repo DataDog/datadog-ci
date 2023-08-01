@@ -281,16 +281,20 @@ export const getCloudRunServiceConfig = async (
  */
 export const maskConfig = (config: any) => {
   // We stringify and parse again to make a deep copy
-  const configCopy = JSON.parse(JSON.stringify(config))
+  const configCopy: IService = JSON.parse(JSON.stringify(config))
   const containers = configCopy.template?.containers
   if (!containers) {
     return configCopy
   }
 
-  for (const container of configCopy.template.containers) {
-    for (const envVar of container.env) {
-      if (!SKIP_MASKING_CLOUDRUN_ENV_VARS.has(envVar.name)) {
-        envVar.value = maskString(envVar.value)
+  for (const container of containers) {
+    const env = container.env ?? []
+    for (const envVar of env) {
+      if (!SKIP_MASKING_CLOUDRUN_ENV_VARS.has(envVar.name ?? '')) {
+        const val = envVar.value
+        if (val) {
+          envVar.value = maskString(val)
+        }
       }
     }
   }
@@ -317,7 +321,7 @@ export const getLogs = async (
   const logs: CloudRunLog[] = []
   const logging = new Logging({projectId})
 
-  // Only get logs from the last 24 hours
+  // Only get recent logs
   const date = new Date()
   date.setMinutes(date.getMinutes() - MAX_LOG_AGE_MINUTES)
   const formattedDate = date.toISOString()
@@ -343,9 +347,16 @@ export const getLogs = async (
       let msg
       if (entry.metadata.httpRequest) {
         const request = entry.metadata.httpRequest
-        const ms = Number(request.latency?.seconds) * 1000 + Math.round(Number(request.latency?.nanos) / 1000000)
+        let ms = 'unknown'
+        const latency = request.latency
+        if (latency) {
+          ms = (Number(latency.seconds) * 1000 + Math.round(Number(latency.nanos) / 1000000)).toString()
+        }
         const bytes = formatBytes(Number(request.responseSize))
-        msg = `${request.requestMethod} ${request.status}. responseSize: ${bytes}. latency: ${ms} ms. requestUrl: ${request.requestUrl}`
+        const method = request.requestMethod ?? ''
+        const status = request.status ?? ''
+        const requestUrl = request.requestUrl ?? ''
+        msg = `${method} ${status}. responseSize: ${bytes}. latency: ${ms} ms. requestUrl: ${requestUrl}`
       } else if (entry.metadata.textPayload) {
         msg = entry.metadata.textPayload
       } else if (entry.metadata.protoPayload) {
