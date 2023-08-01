@@ -183,10 +183,16 @@ export class LambdaFlareCommand extends Command {
     // Additional files
     this.context.stdout.write('\n')
     const additionalFilePaths = new Set<string>()
-    const confirmAdditionalFiles = await requestConfirmation(
-      'Do you want to specify any additional files to flare?',
-      false
-    )
+    let confirmAdditionalFiles
+    try {
+      confirmAdditionalFiles = await requestConfirmation('Do you want to specify any additional files to flare?', false)
+    } catch (err) {
+      if (err instanceof Error) {
+        this.context.stderr.write(helpersRenderer.renderError(err.message))
+      }
+
+      return 1
+    }
 
     while (confirmAdditionalFiles) {
       this.context.stdout.write('\n')
@@ -356,19 +362,11 @@ export class LambdaFlareCommand extends Command {
 
       // Confirm before sending
       this.context.stdout.write('\n')
-      let confirmSendFiles
-      try {
-        confirmSendFiles = await requestConfirmation(
-          'Are you sure you want to send the flare file to Datadog Support?',
-          false
-        )
-      } catch (err) {
-        if (err instanceof Error) {
-          this.context.stderr.write(helpersRenderer.renderError(err.message))
-        }
+      const confirmSendFiles = await requestConfirmation(
+        'Are you sure you want to send the flare file to Datadog Support?',
+        false
+      )
 
-        return 1
-      }
       if (!confirmSendFiles) {
         this.context.stdout.write('\n🚫 The flare files were not sent based on your selection.')
         this.context.stdout.write(outputMsg)
