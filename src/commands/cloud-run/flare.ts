@@ -152,11 +152,15 @@ export class CloudRunFlareCommand extends Command {
             logConfig.isTextLog,
             logConfig.severityFilter
           )
-          this.context.stdout.write(`• Found ${logs.length} ${logConfig.type} logs\n`)
-          logFileMappings.set(logs, logConfig.fileName)
+          if (logs.length === 0) {
+            this.context.stdout.write(`• No ${logConfig.type} logs were found\n`)
+          } else {
+            this.context.stdout.write(`• Found ${logs.length} ${logConfig.type} logs\n`)
+            logFileMappings.set(logs, logConfig.fileName)
+          }
         } catch (err) {
           const msg = err instanceof Error ? err.message : ''
-          this.context.stderr.write(`• Unable to get ${logConfig.type} logs: ${msg}. Skipping...\n`)
+          this.context.stderr.write(`• Unable to get ${logConfig.type} logs: ${msg}\n`)
         }
       }
     }
@@ -182,11 +186,9 @@ export class CloudRunFlareCommand extends Command {
 
       // Write logs
       for (const [logs, fileName] of logFileMappings) {
-        if (logs.length > 0) {
-          const logFilePath = path.join(logsFolderPath, fileName)
-          saveLogsFile(logs, logFilePath)
-          this.context.stdout.write(`• Saved logs to ./${LOGS_DIRECTORY}/${fileName}\n`)
-        }
+        const logFilePath = path.join(logsFolderPath, fileName)
+        saveLogsFile(logs, logFilePath)
+        this.context.stdout.write(`• Saved logs to ./${LOGS_DIRECTORY}/${fileName}\n`)
       }
 
       // Exit if dry run

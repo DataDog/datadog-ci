@@ -526,6 +526,29 @@ describe('cloud-run flare', () => {
       const logs = await getLogs(MOCK_PROJECT, MOCK_SERVICE, MOCK_REGION, false)
       expect(logs).toMatchSnapshot()
     })
+
+    it('handles textPayload correctly', async () => {
+      const page1 = [
+        {
+          metadata: {
+            severity: 'DEFAULT',
+            timestamp: '2023-07-28 00:00:00',
+            logName,
+            textPayload: 'Some text payload',
+          },
+        },
+      ]
+      mockGetEntries = jest.fn().mockResolvedValueOnce([page1, {pageToken: undefined}])
+
+      MockedLogging.mockImplementation(() => {
+        return {
+          getEntries: mockGetEntries,
+        } as any
+      })
+
+      const logs = await getLogs(MOCK_PROJECT, MOCK_SERVICE, MOCK_REGION, false)
+      expect(logs).toMatchSnapshot()
+    })
   })
 
   describe('saveLogsFile', () => {

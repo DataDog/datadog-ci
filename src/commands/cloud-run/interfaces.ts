@@ -6,6 +6,7 @@ export interface CloudRunLog {
   message: string
 }
 
+// Defines what log files will be created
 export interface LogConfig {
   type: string
   fileName: string

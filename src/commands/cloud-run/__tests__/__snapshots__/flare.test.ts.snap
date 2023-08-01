@@ -87,6 +87,17 @@ Array [
 ]
 `;
 
+exports[`cloud-run flare getLogs handles textPayload correctly 1`] = `
+Array [
+  Object {
+    "logName": "mock-logname",
+    "message": "\\"Some text payload\\"",
+    "severity": "DEFAULT",
+    "timestamp": "2023-07-28 00:00:00",
+  },
+]
+`;
+
 exports[`cloud-run flare getLogs throws an error when \`getEntries\` fails 1`] = `[Error: getEntries failed]`;
 
 exports[`cloud-run flare getLogs uses correct filter when \`isOnlyTextLogs\` is false and \`severity\` is unspecified 1`] = `
