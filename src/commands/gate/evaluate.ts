@@ -1,3 +1,5 @@
+import type {AxiosResponse} from 'axios'
+
 import chalk from 'chalk'
 import {Command} from 'clipanion'
 import {v4 as uuidv4} from 'uuid'
@@ -19,7 +21,6 @@ import {
   renderWaiting,
 } from './renderer'
 import {getBaseIntakeUrl, is4xxError, is5xxError, parseScope} from './utils'
-import { AxiosPromise } from 'axios'
 
 export class GateEvaluateCommand extends Command {
   public static usage = Command.Usage({
@@ -125,21 +126,18 @@ export class GateEvaluateCommand extends Command {
   private async evaluateRules(api: APIHelper, evaluateRequest: Payload): Promise<number> {
     this.context.stdout.write(renderGateEvaluationInput(evaluateRequest))
 
-    return retryRequest(
-      () => this.evaluateRulesWithWait(api, evaluateRequest),
-      {
-        onRetry: (e, attempt) => {
-          if (e.message !== 'wait') {
-            this.context.stderr.write(renderEvaluationRetry(attempt, e))
-          }
-        },
-        maxRetryTime: this.maxRetryTimeMs,
-        retries: this.maxRetries,
-        minTimeout: 0,
-        maxTimeout: 0,
-        factor: 1
-      }
-    )
+    return retryRequest(() => this.evaluateRulesWithWait(api, evaluateRequest), {
+      onRetry: (e, attempt) => {
+        if (e.message !== 'wait') {
+          this.context.stderr.write(renderEvaluationRetry(attempt, e))
+        }
+      },
+      maxRetryTime: this.maxRetryTimeMs,
+      retries: this.maxRetries,
+      minTimeout: 0,
+      maxTimeout: 0,
+      factor: 1,
+    })
       .then((response) => {
         return this.handleEvaluationSuccess(response.data.data.attributes)
       })
@@ -148,9 +146,14 @@ export class GateEvaluateCommand extends Command {
       })
   }
 
-  private async evaluateRulesWithWait(api: APIHelper, evaluateRequest: Payload): Promise<AxiosPromise<EvaluationResponsePayload>> {
+  private async evaluateRulesWithWait(
+    api: APIHelper,
+    evaluateRequest: Payload
+  ): Promise<AxiosResponse<EvaluationResponsePayload>> {
     return new Promise((resolve, reject) => {
-      api.evaluateGateRules(evaluateRequest, this.context.stdout.write.bind(this.context.stdout)).then((response) => {
+      api
+        .evaluateGateRules(evaluateRequest, this.context.stdout.write.bind(this.context.stdout))
+        .then((response) => {
           if (response.data.data.attributes.status === 'wait') {
             this.context.stdout.write(renderWaiting())
             setTimeout(() => {
@@ -160,10 +163,11 @@ export class GateEvaluateCommand extends Command {
             resolve(response)
           }
         })
+        .catch(reject)
     })
   }
 
-  private async handleEvaluationSuccess(evaluationResponse: EvaluationResponse): number {
+  private handleEvaluationSuccess(evaluationResponse: EvaluationResponse) {
     this.context.stdout.write(renderEvaluationResponse(evaluationResponse))
 
     if (evaluationResponse.status === 'failed' || (evaluationResponse.status === 'empty' && this.failOnEmpty)) {
@@ -173,7 +177,7 @@ export class GateEvaluateCommand extends Command {
     return 0
   }
 
-  private handleEvaluationError(error: any): number {
+  private handleEvaluationError(error: any) {
     this.context.stderr.write(renderGateEvaluationError(error, this.failIfUnavailable))
     if (is4xxError(error) || (is5xxError(error) && this.failIfUnavailable)) {
       return 1
