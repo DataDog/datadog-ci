@@ -37,6 +37,7 @@ export const MAX_LOGS_PER_PAGE = 1000
 export const MAX_PAGES = 3
 // How old the logs can be in minutes. Skip older logs
 const MAX_LOG_AGE_MINUTES = 1440
+const FILTER_ORDER = 'timestamp asc'
 
 export class CloudRunFlareCommand extends Command {
   private isDryRun = false
@@ -174,7 +175,7 @@ export class CloudRunFlareCommand extends Command {
         deleteFolder(rootFolderPath)
       }
       const subFolders = []
-      if (this.withLogs) {
+      if (logFileMappings.size > 0) {
         subFolders.push(logsFolderPath)
       }
       createDirectories(rootFolderPath, subFolders)
@@ -323,17 +324,12 @@ export const getLogs = async (
 
   // Query options
   let filter = `resource.labels.service_name="${serviceId}" AND resource.labels.location="${location}" AND timestamp>="${formattedDate}"`
-  if (severityFilter) {
-    filter += ` AND ${severityFilter}`
-  }
-  if (isOnlyTextLogs) {
-    filter += ' AND textPayload:*'
-  }
+  filter += severityFilter ? ` AND ${severityFilter}` : ''
+  filter += isOnlyTextLogs ? ' AND textPayload:*' : ''
 
-  const orderBy = 'timestamp asc'
   const options = {
     filter,
-    orderBy,
+    orderBy: FILTER_ORDER,
     pageSize: MAX_LOGS_PER_PAGE,
     page: '',
   }
@@ -343,7 +339,7 @@ export const getLogs = async (
   while (count < MAX_PAGES) {
     const [entries, nextQuery] = await logging.getEntries(options)
 
-    entries.forEach((entry) => {
+    const newLogs = entries.map((entry) => {
       let msg
       if (entry.metadata.httpRequest) {
         const request = entry.metadata.httpRequest
@@ -362,8 +358,10 @@ export const getLogs = async (
         logName: entry.metadata.logName ?? '',
         message: `"${msg ?? ''}"`,
       }
-      logs.push(log)
+
+      return log
     })
+    logs.push(...newLogs)
 
     if (nextQuery?.pageToken) {
       options.page = nextQuery.pageToken
