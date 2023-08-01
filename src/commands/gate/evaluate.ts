@@ -61,8 +61,10 @@ export class GateEvaluateCommand extends Command {
     envVarTags: process.env.DD_TAGS,
   }
 
-  private maxRetries = 5
+  private initialRetryMs = 5000
   private maxRetryTimeMs = 300000
+  private maxRetries = 5
+
   private dryRun = false
   private failOnEmpty = false
   private failIfUnavailable = false
@@ -126,17 +128,18 @@ export class GateEvaluateCommand extends Command {
   private async evaluateRules(api: APIHelper, evaluateRequest: Payload): Promise<number> {
     this.context.stdout.write(renderGateEvaluationInput(evaluateRequest))
 
+    // retry is handled in evaluateRulesWithWait, so we set maxTimeout and minTimeout as 0 for retryRequest
     return retryRequest((attempt) => this.evaluateRulesWithWait(api, evaluateRequest, attempt), {
       onRetry: (e, attempt) => {
+        // render retry message if error is not wait
         if (e.message !== 'wait') {
           this.context.stderr.write(renderEvaluationRetry(attempt, e))
         }
       },
       maxRetryTime: this.maxRetryTimeMs,
       retries: this.maxRetries,
-      minTimeout: 0,
       maxTimeout: 0,
-      factor: 1,
+      minTimeout: 0,
     })
       .then((response) => {
         return this.handleEvaluationSuccess(response.data.data.attributes)
@@ -146,6 +149,11 @@ export class GateEvaluateCommand extends Command {
       })
   }
 
+  /**
+   * Evaluate rules with retry
+   * then if service returns status:wait, retry for wait_time_ms
+   * if service returns 5xx, exponential backoff retry
+   */
   private async evaluateRulesWithWait(
     api: APIHelper,
     evaluateRequest: Payload,
@@ -167,9 +175,13 @@ export class GateEvaluateCommand extends Command {
         .catch((err) => {
           setTimeout(() => {
             reject(err)
-          }, (attempt || 1) * 5000)
+          }, this.getDelay(attempt ?? 1))
         })
     })
+  }
+
+  private getDelay(attempt: number): number {
+    return attempt * this.initialRetryMs
   }
 
   private handleEvaluationSuccess(evaluationResponse: EvaluationResponse) {

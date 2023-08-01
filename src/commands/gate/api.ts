@@ -18,6 +18,7 @@ export const evaluateGateRules = (
         user_scope: evaluateRequest.userScope,
         start_time_ms: evaluateRequest.startTimeMs,
         options: {
+          no_wait: evaluateRequest.options.noWait,
           dry_run: evaluateRequest.options.dryRun,
         },
       },

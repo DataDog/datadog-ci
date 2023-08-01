@@ -139,6 +139,22 @@ describe('evaluate', () => {
       expect(stdErrLog).not.toContain('internal issue')
     })
   })
+  describe('wait', () => {
+    test('should pass the command if the response status is wait', () => {
+      const write = jest.fn()
+      const command = new GateEvaluateCommand()
+      command.context = {stdout: {write}} as any
+
+      const response: EvaluationResponse = {
+        status: 'wait',
+        rule_evaluations: [],
+        metadata: {
+          wait_time_ms: 10,
+        },
+      }
+      expect(command['handleEvaluationSuccess'].bind(command).call({}, response)).toEqual(0)
+    })
+  })
 })
 
 const createError = (statusCode: number, message: string): any => {
