@@ -87,7 +87,7 @@ Array [
 ]
 `;
 
-exports[`cloud-run flare getLogs throws an error when \`getEntries\` fails 1`] = `[Error: Unable to get logs: getEntries failed]`;
+exports[`cloud-run flare getLogs throws an error when \`getEntries\` fails 1`] = `[Error: getEntries failed]`;
 
 exports[`cloud-run flare getLogs uses correct filter when \`isOnlyTextLogs\` is false and \`severity\` is unspecified 1`] = `
 Array [

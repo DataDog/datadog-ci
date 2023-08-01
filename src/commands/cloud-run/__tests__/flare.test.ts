@@ -99,6 +99,7 @@ jest.spyOn(helpersPromptModule, 'requestConfirmation').mockResolvedValue(true)
 jest.mock('util')
 jest.mock('jszip')
 jest.mock('@google-cloud/logging-min')
+jest.useFakeTimers({advanceTimers: true, now: new Date(Date.UTC(2023, 0))})
 
 const MockedLogging = mocked(Logging, true)
 
@@ -357,7 +358,7 @@ describe('cloud-run flare', () => {
 
     it('uses correct filter when `isOnlyTextLogs` is false and `severity` is unspecified', async () => {
       const logs = await getLogs(MOCK_PROJECT, MOCK_SERVICE, MOCK_REGION, false)
-      const expectedFilter = `resource.labels.service_name="${MOCK_SERVICE}" AND resource.labels.location="${MOCK_REGION}"`
+      const expectedFilter = `resource.labels.service_name="${MOCK_SERVICE}" AND resource.labels.location="${MOCK_REGION}" AND timestamp>="2022-12-31T00:00:00.000Z"`
 
       expect(mockGetEntries).toHaveBeenCalledWith({
         filter: expectedFilter,
@@ -371,7 +372,7 @@ describe('cloud-run flare', () => {
 
     it('uses correct filter when `isOnlyTextLogs` is true and `severity` is unspecified', async () => {
       await getLogs(MOCK_PROJECT, MOCK_SERVICE, MOCK_REGION, true)
-      const expectedFilter = `resource.labels.service_name="${MOCK_SERVICE}" AND resource.labels.location="${MOCK_REGION}" AND textPayload:*`
+      const expectedFilter = `resource.labels.service_name="${MOCK_SERVICE}" AND resource.labels.location="${MOCK_REGION}" AND timestamp>="2022-12-31T00:00:00.000Z" AND textPayload:*`
 
       expect(mockGetEntries).toHaveBeenCalledWith({
         filter: expectedFilter,
@@ -381,21 +382,9 @@ describe('cloud-run flare', () => {
       })
     })
 
-    it('uses correct filter when `isOnlyTextLogs` is false and `severity` is WARNING', async () => {
-      await getLogs(MOCK_PROJECT, MOCK_SERVICE, MOCK_REGION, false, 'WARNING')
-      const expectedFilter = `resource.labels.service_name="${MOCK_SERVICE}" AND resource.labels.location="${MOCK_REGION}" AND severity>="WARNING"`
-
-      expect(mockGetEntries).toHaveBeenCalledWith({
-        filter: expectedFilter,
-        orderBy: expectedOrder,
-        pageSize: MAX_LOGS_PER_PAGE,
-        page: '',
-      })
-    })
-
-    it('uses correct filter when `isOnlyTextLogs` is true and `severity` is ERROR', async () => {
-      await getLogs(MOCK_PROJECT, MOCK_SERVICE, MOCK_REGION, true, 'ERROR')
-      const expectedFilter = `resource.labels.service_name="${MOCK_SERVICE}" AND resource.labels.location="${MOCK_REGION}" AND severity>="ERROR" AND textPayload:*`
+    it('uses correct filter when `isOnlyTextLogs` is false and `severity` is defined', async () => {
+      await getLogs(MOCK_PROJECT, MOCK_SERVICE, MOCK_REGION, false, 'severity>="WARNING"')
+      const expectedFilter = `resource.labels.service_name="${MOCK_SERVICE}" AND resource.labels.location="${MOCK_REGION}" AND timestamp>="2022-12-31T00:00:00.000Z" AND severity>="WARNING"`
 
       expect(mockGetEntries).toHaveBeenCalledWith({
         filter: expectedFilter,
@@ -556,13 +545,6 @@ describe('cloud-run flare', () => {
         '"INFO","2023-07-28 00:00:01","mock-logname","Test log 2"',
         '"NOTICE","2023-07-28 01:01:01","mock-logname","Test log 3"',
       ].join('\n')
-      expect(writeFileSpy).toHaveBeenCalledWith(mockFilePath, expectedContent)
-    })
-
-    it('should handle the case when no logs are provided', () => {
-      saveLogsFile([], mockFilePath)
-
-      const expectedContent = 'No logs found.'
       expect(writeFileSpy).toHaveBeenCalledWith(mockFilePath, expectedContent)
     })
   })

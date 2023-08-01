@@ -19,7 +19,7 @@ import * as helpersRenderer from '../../helpers/renderer'
 import {formatBytes, maskString} from '../../helpers/utils'
 
 import {SKIP_MASKING_CLOUDRUN_ENV_VARS} from './constants'
-import {CloudRunLog} from './interfaces'
+import {CloudRunLog, LogConfig} from './interfaces'
 import {renderAuthenticationInstructions} from './renderer'
 
 const SERVICE_CONFIG_FILE_NAME = 'service_config.json'
@@ -135,23 +135,28 @@ export class CloudRunFlareCommand extends Command {
     if (this.withLogs) {
       this.context.stdout.write(chalk.bold('\n📖 Getting logs...\n'))
 
-      const logsConfig = [
-        {type: 'total', text: false, fileName: ALL_LOGS_FILE_NAME},
-        {type: 'text', text: true, fileName: TEXT_LOGS_FILE_NAME},
-        {type: 'warning', text: false, filter: 'severity>="WARNING"', fileName: WARNING_LOGS_FILE_NAME},
-        {type: 'error', text: false, filter: 'severity>="ERROR"', fileName: ERRORS_LOGS_FILE_NAME},
-        {type: 'debug', text: false, filter: 'severity="DEBUG"', fileName: DEBUG_LOGS_FILE_NAME},
+      const logsConfig: LogConfig[] = [
+        {type: 'total', isTextLog: false, fileName: ALL_LOGS_FILE_NAME},
+        {type: 'text', isTextLog: true, fileName: TEXT_LOGS_FILE_NAME},
+        {type: 'warning', isTextLog: false, severityFilter: 'severity>="WARNING"', fileName: WARNING_LOGS_FILE_NAME},
+        {type: 'error', isTextLog: false, severityFilter: 'severity>="ERROR"', fileName: ERRORS_LOGS_FILE_NAME},
+        {type: 'debug', isTextLog: false, severityFilter: 'severity="DEBUG"', fileName: DEBUG_LOGS_FILE_NAME},
       ]
 
       for (const logConfig of logsConfig) {
         try {
-          const logs = await getLogs(this.project!, this.service!, this.region!, logConfig.text, logConfig.filter)
+          const logs = await getLogs(
+            this.project!,
+            this.service!,
+            this.region!,
+            logConfig.isTextLog,
+            logConfig.severityFilter
+          )
           this.context.stdout.write(`• Found ${logs.length} ${logConfig.type} logs\n`)
           logFileMappings.set(logs, logConfig.fileName)
         } catch (err) {
-          if (err instanceof Error) {
-            this.context.stderr.write(`• Unable to get ${logConfig.type} logs: ${err.message}. Skipping...\n`)
-          }
+          const msg = err instanceof Error ? err.message : ''
+          this.context.stderr.write(`• Unable to get ${logConfig.type} logs: ${msg}. Skipping...\n`)
         }
       }
     }
@@ -309,20 +314,19 @@ export const getLogs = async (
   const logs: CloudRunLog[] = []
   const logging = new Logging({projectId})
 
+  // Only get logs from the last 24 hours
+  const date = new Date()
+  date.setMinutes(date.getMinutes() - MAX_LOG_AGE_MINUTES)
+  const formattedDate = date.toISOString()
+
   // Query options
-  let filter = `resource.labels.service_name="${serviceId}" AND resource.labels.location="${location}"`
+  let filter = `resource.labels.service_name="${serviceId}" AND resource.labels.location="${location}" AND timestamp>="${formattedDate}"`
   if (severityFilter) {
     filter += ` AND ${severityFilter}`
   }
   if (isOnlyTextLogs) {
     filter += ' AND textPayload:*'
   }
-
-  // Only get logs from the last 24 hours
-  const date = new Date()
-  date.setMinutes(date.getMinutes() - MAX_LOG_AGE_MINUTES)
-  const formattedDate = date.toISOString()
-  filter += ` AND timestamp>="${formattedDate}"`
 
   const orderBy = 'timestamp asc'
   const options = {
@@ -361,8 +365,10 @@ export const getLogs = async (
 
     if (nextQuery?.pageToken) {
       options.page = nextQuery.pageToken
+      count++
+    } else {
+      break
     }
-    count++
   }
 
   return logs
@@ -374,12 +380,6 @@ export const getLogs = async (
  * @param filePath path to save the CSV file
  */
 export const saveLogsFile = (logs: CloudRunLog[], filePath: string) => {
-  if (logs.length === 0) {
-    writeFile(filePath, 'No logs found.')
-
-    return
-  }
-
   const rows = [['severity', 'timestamp', 'logName', 'message']]
   logs.forEach((log) => {
     const severity = `"${log.severity}"`
