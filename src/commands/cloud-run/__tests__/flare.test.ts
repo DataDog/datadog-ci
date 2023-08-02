@@ -545,7 +545,7 @@ describe('cloud-run flare', () => {
           },
         },
       ]
-      mockGetEntries = jest.fn().mockResolvedValueOnce([page, { pageToken: undefined }])
+      mockGetEntries = jest.fn().mockResolvedValueOnce([page, {pageToken: undefined}])
 
       MockedLogging.mockImplementation(() => {
         return {
