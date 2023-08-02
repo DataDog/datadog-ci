@@ -128,7 +128,12 @@ export class GateEvaluateCommand extends Command {
   private async evaluateRules(api: APIHelper, evaluateRequest: Payload): Promise<number> {
     this.context.stdout.write(renderGateEvaluationInput(evaluateRequest))
 
-    // retry is handled in evaluateRulesWithWait, so we set maxTimeout and minTimeout as 0 for retryRequest
+    /** 
+    * `retryRequest` does not allow setting a wait time dependent on a backend response,
+    * so we handle the wait time in `evaluateRulesWithWait`: we'll wait whatever is necessary 
+    * for the returned promise to resolve or be rejected. The retry will start immediately after 
+    * and will be handled by `retryRequest`.
+    */
     return retryRequest((attempt) => this.evaluateRulesWithWait(api, evaluateRequest, attempt), {
       onRetry: (e, attempt) => {
         // render retry message if error is not wait
@@ -150,9 +155,11 @@ export class GateEvaluateCommand extends Command {
   }
 
   /**
-   * Evaluate rules with retry
-   * then if service returns status:wait, retry for wait_time_ms
-   * if service returns 5xx, exponential backoff retry
+   * Evaluate gate rules and return a promise that will behave as follows:
+   * - If the request is successful, the promise will be resolved with the response
+   * - If the request is successful but the status is 'wait', the promise will be rejected after the received wait time (wait_time_ms)
+   * - If the request is not successful, the promise will be rejected after `initialRetryMs`, with an exponential factor that depends on the attempt (exponential backoff).
+   * If the promise is rejected, `retryRequest` will handle the retry immediately.
    */
   private async evaluateRulesWithWait(
     api: APIHelper,
