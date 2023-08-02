@@ -28,7 +28,7 @@ datadog-ci metric --level job --metrics binary.size:1024
 
 ### Supported providers
 
-The metric command only works for the following CI providers: [Buildkite, CircleCI, GitHub, GitLab]. If used in
+The metric command only works for the following CI providers: [Buildkite, CircleCI, GitHub, GitLab, Azure Pipelines]. If used in
 any other provider it will fail. Note that for GitHub actions only the level `pipeline` is supported. If the
 command is invoked in GitHub actions with level `job` it will exit with status code 1 and return an
 error.
