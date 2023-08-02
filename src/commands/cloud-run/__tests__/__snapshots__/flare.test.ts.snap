@@ -65,22 +65,22 @@ GCP credentials verified!
 "
 `;
 
-exports[`cloud-run flare getLogs handles httpRequest payload correctly 1`] = `
+exports[`cloud-run flare getLogs breaks after timing out 1`] = `
 Array [
   Object {
     "logName": "mock-logname",
-    "message": "\\"GET 200. responseSize: 1.27 KB. latency: 1500 ms. requestUrl: /test-endpoint\\"",
+    "message": "\\"Test log 1\\"",
     "severity": "DEFAULT",
     "timestamp": "2023-07-28 00:00:00",
   },
 ]
 `;
 
-exports[`cloud-run flare getLogs handles protoPayload correctly 1`] = `
+exports[`cloud-run flare getLogs handles httpRequest payload correctly 1`] = `
 Array [
   Object {
     "logName": "mock-logname",
-    "message": "\\"test.com/type\\"",
+    "message": "\\"GET 200. responseSize: 1.27 KB. latency: 1500 ms. requestUrl: /test-endpoint\\"",
     "severity": "DEFAULT",
     "timestamp": "2023-07-28 00:00:00",
   },

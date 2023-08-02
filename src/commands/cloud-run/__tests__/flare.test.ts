@@ -358,7 +358,7 @@ describe('cloud-run flare', () => {
 
     it('uses correct filter when `isOnlyTextLogs` is false and `severity` is unspecified', async () => {
       const logs = await getLogs(MOCK_PROJECT, MOCK_SERVICE, MOCK_REGION, false)
-      const expectedFilter = `resource.labels.service_name="${MOCK_SERVICE}" AND resource.labels.location="${MOCK_REGION}" AND timestamp>="2022-12-31T00:00:00.000Z"`
+      const expectedFilter = `resource.labels.service_name="${MOCK_SERVICE}" AND resource.labels.location="${MOCK_REGION}" AND timestamp>="2022-12-31T00:00:00.000Z" AND (textPayload:* OR httpRequest:*)`
 
       expect(mockGetEntries).toHaveBeenCalledWith({
         filter: expectedFilter,
@@ -384,7 +384,7 @@ describe('cloud-run flare', () => {
 
     it('uses correct filter when `isOnlyTextLogs` is false and `severity` is defined', async () => {
       await getLogs(MOCK_PROJECT, MOCK_SERVICE, MOCK_REGION, false, 'severity>="WARNING"')
-      const expectedFilter = `resource.labels.service_name="${MOCK_SERVICE}" AND resource.labels.location="${MOCK_REGION}" AND timestamp>="2022-12-31T00:00:00.000Z" AND severity>="WARNING"`
+      const expectedFilter = `resource.labels.service_name="${MOCK_SERVICE}" AND resource.labels.location="${MOCK_REGION}" AND timestamp>="2022-12-31T00:00:00.000Z" AND severity>="WARNING" AND (textPayload:* OR httpRequest:*)`
 
       expect(mockGetEntries).toHaveBeenCalledWith({
         filter: expectedFilter,
@@ -502,31 +502,6 @@ describe('cloud-run flare', () => {
       expect(logs).toMatchSnapshot()
     })
 
-    it('handles protoPayload correctly', async () => {
-      const page1 = [
-        {
-          metadata: {
-            severity: 'DEFAULT',
-            timestamp: '2023-07-28 00:00:00',
-            logName,
-            protoPayload: {
-              type_url: 'test.com/type',
-            },
-          },
-        },
-      ]
-      mockGetEntries = jest.fn().mockResolvedValueOnce([page1, {pageToken: undefined}])
-
-      MockedLogging.mockImplementation(() => {
-        return {
-          getEntries: mockGetEntries,
-        } as any
-      })
-
-      const logs = await getLogs(MOCK_PROJECT, MOCK_SERVICE, MOCK_REGION, false)
-      expect(logs).toMatchSnapshot()
-    })
-
     it('handles textPayload correctly', async () => {
       const page1 = [
         {
@@ -547,6 +522,39 @@ describe('cloud-run flare', () => {
       })
 
       const logs = await getLogs(MOCK_PROJECT, MOCK_SERVICE, MOCK_REGION, false)
+      expect(logs).toMatchSnapshot()
+    })
+
+    it('breaks after timing out', async () => {
+      const page = [
+        {metadata: {severity: 'DEFAULT', timestamp: '2023-07-28 00:00:00', logName, textPayload: 'Test log 1'}},
+        {
+          metadata: {
+            severity: 'DEFAULT',
+            timestamp: '2023-07-28 00:00:01',
+            logName,
+            textPayload: 'The request has been terminated due to timeout',
+          },
+        },
+        {
+          metadata: {
+            severity: 'DEFAULT',
+            timestamp: '2023-07-28 00:00:02',
+            logName,
+            textPayload: 'A log that should be skipped',
+          },
+        },
+      ]
+      mockGetEntries = jest.fn().mockResolvedValueOnce([page, { pageToken: undefined }])
+
+      MockedLogging.mockImplementation(() => {
+        return {
+          getEntries: mockGetEntries,
+        } as any
+      })
+
+      const logs = await getLogs(MOCK_PROJECT, MOCK_SERVICE, MOCK_REGION, false)
+
       expect(logs).toMatchSnapshot()
     })
   })

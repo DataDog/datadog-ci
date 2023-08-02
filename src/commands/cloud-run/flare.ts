@@ -329,7 +329,7 @@ export const getLogs = async (
   // Query options
   let filter = `resource.labels.service_name="${serviceId}" AND resource.labels.location="${location}" AND timestamp>="${formattedDate}"`
   filter += severityFilter ? ` AND ${severityFilter}` : ''
-  filter += isOnlyTextLogs ? ' AND textPayload:*' : ''
+  filter += isOnlyTextLogs ? ' AND textPayload:*' : ' AND (textPayload:* OR httpRequest:*)'
 
   const options = {
     filter,
@@ -343,9 +343,11 @@ export const getLogs = async (
   while (count < MAX_PAGES) {
     const [entries, nextQuery] = await logging.getEntries(options)
 
-    const newLogs = entries.map((entry) => {
-      let msg
-      if (entry.metadata.httpRequest) {
+    for (const entry of entries) {
+      let msg = ''
+      if (entry.metadata.textPayload) {
+        msg = entry.metadata.textPayload
+      } else if (entry.metadata.httpRequest) {
         const request = entry.metadata.httpRequest
         let ms = 'unknown'
         const latency = request.latency
@@ -357,22 +359,23 @@ export const getLogs = async (
         const status = request.status ?? ''
         const requestUrl = request.requestUrl ?? ''
         msg = `${method} ${status}. responseSize: ${bytes}. latency: ${ms} ms. requestUrl: ${requestUrl}`
-      } else if (entry.metadata.textPayload) {
-        msg = entry.metadata.textPayload
-      } else if (entry.metadata.protoPayload) {
-        msg = entry.metadata.protoPayload.type_url
+      }
+
+      // The request limit has been reached, so skip all following entries
+      // since they will not be real logs.
+      if (msg.includes('request has been terminated')) {
+        break
       }
 
       const log: CloudRunLog = {
         severity: entry.metadata.severity?.toString() ?? '',
         timestamp: entry.metadata.timestamp?.toString() ?? '',
         logName: entry.metadata.logName ?? '',
-        message: `"${msg ?? ''}"`,
+        message: `"${msg}"`,
       }
 
-      return log
-    })
-    logs.push(...newLogs)
+      logs.push(log)
+    }
 
     if (nextQuery?.pageToken) {
       options.page = nextQuery.pageToken
