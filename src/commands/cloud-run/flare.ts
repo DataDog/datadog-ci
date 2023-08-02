@@ -345,10 +345,13 @@ export const getLogs = async (
 
     for (const entry of entries) {
       let msg = ''
-      if (entry.metadata.textPayload) {
-        msg = entry.metadata.textPayload
-      } else if (entry.metadata.httpRequest) {
+      if (entry.metadata.httpRequest) {
         const request = entry.metadata.httpRequest
+        const status = request.status ?? ''
+        if (status === 504) {
+          // Request limit reached, so skip this log
+          continue
+        }
         let ms = 'unknown'
         const latency = request.latency
         if (latency) {
@@ -356,15 +359,10 @@ export const getLogs = async (
         }
         const bytes = formatBytes(Number(request.responseSize))
         const method = request.requestMethod ?? ''
-        const status = request.status ?? ''
         const requestUrl = request.requestUrl ?? ''
         msg = `${method} ${status}. responseSize: ${bytes}. latency: ${ms} ms. requestUrl: ${requestUrl}`
-      }
-
-      // The request limit has been reached, so skip all following entries
-      // since they will not be real logs.
-      if (msg.includes('request has been terminated')) {
-        break
+      } else if (entry.metadata.textPayload) {
+        msg = entry.metadata.textPayload
       }
 
       const log: CloudRunLog = {

@@ -73,6 +73,12 @@ Array [
     "severity": "DEFAULT",
     "timestamp": "2023-07-28 00:00:00",
   },
+  Object {
+    "logName": "mock-logname",
+    "message": "\\"Test log 2\\"",
+    "severity": "DEFAULT",
+    "timestamp": "2023-07-28 00:00:02",
+  },
 ]
 `;
 

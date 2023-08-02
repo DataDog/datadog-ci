@@ -530,10 +530,11 @@ describe('cloud-run flare', () => {
         {metadata: {severity: 'DEFAULT', timestamp: '2023-07-28 00:00:00', logName, textPayload: 'Test log 1'}},
         {
           metadata: {
-            severity: 'DEFAULT',
+            httpRequest: {
+              status: 504,
+            },
             timestamp: '2023-07-28 00:00:01',
             logName,
-            textPayload: 'The request has been terminated due to timeout',
           },
         },
         {
@@ -541,7 +542,7 @@ describe('cloud-run flare', () => {
             severity: 'DEFAULT',
             timestamp: '2023-07-28 00:00:02',
             logName,
-            textPayload: 'A log that should be skipped',
+            textPayload: 'Test log 2',
           },
         },
       ]
@@ -556,6 +557,7 @@ describe('cloud-run flare', () => {
       const logs = await getLogs(MOCK_PROJECT, MOCK_SERVICE, MOCK_REGION, false)
 
       expect(logs).toMatchSnapshot()
+      expect(JSON.stringify(logs)).not.toContain('504')
     })
   })
 
