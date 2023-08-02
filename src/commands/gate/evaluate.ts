@@ -61,8 +61,7 @@ export class GateEvaluateCommand extends Command {
     envVarTags: process.env.DD_TAGS,
   }
 
-  private initialRetryMs = 5000
-  private maxRetryTimeMs = 300000
+  private initialRetryMs = 1000
   private maxRetries = 5
 
   private dryRun = false
@@ -128,12 +127,12 @@ export class GateEvaluateCommand extends Command {
   private async evaluateRules(api: APIHelper, evaluateRequest: Payload): Promise<number> {
     this.context.stdout.write(renderGateEvaluationInput(evaluateRequest))
 
-    /** 
-    * `retryRequest` does not allow setting a wait time dependent on a backend response,
-    * so we handle the wait time in `evaluateRulesWithWait`: we'll wait whatever is necessary 
-    * for the returned promise to resolve or be rejected. The retry will start immediately after 
-    * and will be handled by `retryRequest`.
-    */
+    /**
+     * `retryRequest` does not allow setting a wait time dependent on a backend response,
+     * so we handle the wait time in `evaluateRulesWithWait`: we'll wait whatever is necessary 
+     * for the returned promise to resolve or be rejected. The retry will start immediately after
+     * and will be handled by `retryRequest`.
+     */
     return retryRequest((attempt) => this.evaluateRulesWithWait(api, evaluateRequest, attempt), {
       onRetry: (e, attempt) => {
         // render retry message if error is not wait
@@ -141,7 +140,6 @@ export class GateEvaluateCommand extends Command {
           this.context.stderr.write(renderEvaluationRetry(attempt, e))
         }
       },
-      maxRetryTime: this.maxRetryTimeMs,
       retries: this.maxRetries,
       maxTimeout: 0,
       minTimeout: 0,
@@ -188,7 +186,7 @@ export class GateEvaluateCommand extends Command {
   }
 
   private getDelay(attempt: number): number {
-    return attempt * this.initialRetryMs
+    return 2 ** attempt * this.initialRetryMs
   }
 
   private handleEvaluationSuccess(evaluationResponse: EvaluationResponse) {
