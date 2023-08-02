@@ -10,6 +10,5 @@ export interface CloudRunLog {
 export interface LogConfig {
   type: string
   fileName: string
-  isTextLog: boolean
   severityFilter?: string
 }

@@ -25,7 +25,6 @@ import {renderAuthenticationInstructions} from './renderer'
 const SERVICE_CONFIG_FILE_NAME = 'service_config.json'
 const FLARE_ZIP_FILE_NAME = 'cloudrun-flare-output.zip'
 const ALL_LOGS_FILE_NAME = 'all_logs.csv'
-const TEXT_LOGS_FILE_NAME = 'text_logs.csv'
 const WARNING_LOGS_FILE_NAME = 'warning_logs.csv'
 const ERRORS_LOGS_FILE_NAME = 'error_logs.csv'
 const DEBUG_LOGS_FILE_NAME = 'DEBUG_logs.csv'
@@ -137,22 +136,16 @@ export class CloudRunFlareCommand extends Command {
       this.context.stdout.write(chalk.bold('\n📖 Getting logs...\n'))
 
       const logsConfig: LogConfig[] = [
-        {type: 'total', isTextLog: false, fileName: ALL_LOGS_FILE_NAME},
-        {type: 'text', isTextLog: true, fileName: TEXT_LOGS_FILE_NAME},
-        {type: 'warning', isTextLog: false, severityFilter: 'severity>="WARNING"', fileName: WARNING_LOGS_FILE_NAME},
-        {type: 'error', isTextLog: false, severityFilter: 'severity>="ERROR"', fileName: ERRORS_LOGS_FILE_NAME},
-        {type: 'debug', isTextLog: false, severityFilter: 'severity="DEBUG"', fileName: DEBUG_LOGS_FILE_NAME},
+        {type: 'total', fileName: ALL_LOGS_FILE_NAME},
+        {type: 'warning', severityFilter: ' AND severity>="WARNING"', fileName: WARNING_LOGS_FILE_NAME},
+        {type: 'error', severityFilter: ' AND severity>="ERROR"', fileName: ERRORS_LOGS_FILE_NAME},
+        {type: 'debug', severityFilter: ' AND severity="DEBUG"', fileName: DEBUG_LOGS_FILE_NAME},
       ]
 
+      const logClient = new Logging({projectId: this.project})
       for (const logConfig of logsConfig) {
         try {
-          const logs = await getLogs(
-            this.project!,
-            this.service!,
-            this.region!,
-            logConfig.isTextLog,
-            logConfig.severityFilter
-          )
+          const logs = await getLogs(logClient, this.service!, this.region!, logConfig.severityFilter)
           if (logs.length === 0) {
             this.context.stdout.write(`• No ${logConfig.type} logs were found\n`)
           } else {
@@ -304,22 +297,14 @@ export const maskConfig = (config: any) => {
 
 /**
  * Gets recent logs
- * @param projectId
+ * @param logClient Logging client
  * @param serviceId
  * @param location
- * @param isOnlyTextLogs whether or not to only get logs with a text payload
  * @param severityFilter if included, adds the string to the filter
  * @returns array of logs as CloudRunLog interfaces
  */
-export const getLogs = async (
-  projectId: string,
-  serviceId: string,
-  location: string,
-  isOnlyTextLogs: boolean,
-  severityFilter?: string
-) => {
+export const getLogs = async (logClient: Logging, serviceId: string, location: string, severityFilter?: string) => {
   const logs: CloudRunLog[] = []
-  const logging = new Logging({projectId})
 
   // Only get recent logs
   const date = new Date()
@@ -327,9 +312,11 @@ export const getLogs = async (
   const formattedDate = date.toISOString()
 
   // Query options
-  let filter = `resource.labels.service_name="${serviceId}" AND resource.labels.location="${location}" AND timestamp>="${formattedDate}"`
-  filter += severityFilter ? ` AND ${severityFilter}` : ''
-  filter += isOnlyTextLogs ? ' AND textPayload:*' : ' AND (textPayload:* OR httpRequest:*)'
+  let filter = `resource.labels.service_name="${serviceId}" AND resource.labels.location="${location}" AND timestamp>="${formattedDate}" AND (textPayload:* OR httpRequest:*)`
+  // We only want to get logs from the last `MAX_LOG_AGE_MINUTES` to make sure they are relevant.
+  // We also only want to include logs with a textPayload or logs that were an HTTP request.
+  // Any other logs are just audit logs which are spammy and don't have any relevant information.
+  filter += severityFilter ?? ''
 
   const options = {
     filter,
@@ -341,7 +328,7 @@ export const getLogs = async (
   // Use pagination to get more than the limit of 1000 logs
   let count = 0
   while (count < MAX_PAGES) {
-    const [entries, nextQuery] = await logging.getEntries(options)
+    const [entries, nextQuery] = await logClient.getEntries(options)
 
     for (const entry of entries) {
       let msg = ''
@@ -349,7 +336,8 @@ export const getLogs = async (
         const request = entry.metadata.httpRequest
         const status = request.status ?? ''
         if (status === 504) {
-          // Request limit reached, so skip this log
+          // When we receive a log with status 504, it means the log entry timed out
+          // and has no relevant information. Therefore, we can skip this log.
           continue
         }
         let ms = 'unknown'

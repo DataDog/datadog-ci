@@ -1,4 +1,3 @@
-import mocked = jest.mocked
 import fs from 'fs'
 import process from 'process'
 import stream from 'stream'
@@ -31,6 +30,7 @@ import {makeCli} from './fixtures'
 const MOCK_REGION = 'us-east1'
 const MOCK_SERVICE = 'mock-service'
 const MOCK_PROJECT = 'mock-project'
+const MOCK_LOG_CLIENT = new Logging({projectId: MOCK_PROJECT})
 const MOCK_REQUIRED_FLAGS = [
   'cloud-run',
   'flare',
@@ -100,8 +100,6 @@ jest.mock('util')
 jest.mock('jszip')
 jest.mock('@google-cloud/logging-min')
 jest.useFakeTimers({advanceTimers: true, now: new Date(Date.UTC(2023, 0))})
-
-const MockedLogging = mocked(Logging, true)
 
 // File system mocks
 process.cwd = jest.fn().mockReturnValue(MOCK_CWD)
@@ -348,33 +346,15 @@ describe('cloud-run flare', () => {
       {metadata: {severity: 'INFO', timestamp: '2023-07-28 00:00:00', logName, textPayload: 'Log 2'}},
       {metadata: {severity: 'NOTICE', timestamp: '2023-07-28 01:01:01', logName, textPayload: 'Log 3'}},
     ]
-    let mockGetEntries = jest.fn().mockResolvedValue([mockLogs, {pageToken: undefined}])
-    MockedLogging.mockImplementation(() => {
-      return {
-        getEntries: mockGetEntries,
-      } as any
-    })
+    const MOCK_GET_ENTRIES = MOCK_LOG_CLIENT.getEntries as jest.Mock
+    MOCK_GET_ENTRIES.mockResolvedValue([mockLogs, {pageToken: undefined}])
     const expectedOrder = 'timestamp asc'
 
-    it('uses correct filter when `isOnlyTextLogs` is false and `severity` is unspecified', async () => {
-      const logs = await getLogs(MOCK_PROJECT, MOCK_SERVICE, MOCK_REGION, false)
+    it('uses correct filter when `severityFilter` is unspecified', async () => {
+      await getLogs(MOCK_LOG_CLIENT, MOCK_SERVICE, MOCK_REGION)
       const expectedFilter = `resource.labels.service_name="${MOCK_SERVICE}" AND resource.labels.location="${MOCK_REGION}" AND timestamp>="2022-12-31T00:00:00.000Z" AND (textPayload:* OR httpRequest:*)`
 
-      expect(mockGetEntries).toHaveBeenCalledWith({
-        filter: expectedFilter,
-        orderBy: expectedOrder,
-        pageSize: MAX_LOGS_PER_PAGE,
-        page: '',
-      })
-
-      expect(logs).toMatchSnapshot()
-    })
-
-    it('uses correct filter when `isOnlyTextLogs` is true and `severity` is unspecified', async () => {
-      await getLogs(MOCK_PROJECT, MOCK_SERVICE, MOCK_REGION, true)
-      const expectedFilter = `resource.labels.service_name="${MOCK_SERVICE}" AND resource.labels.location="${MOCK_REGION}" AND timestamp>="2022-12-31T00:00:00.000Z" AND textPayload:*`
-
-      expect(mockGetEntries).toHaveBeenCalledWith({
+      expect(MOCK_LOG_CLIENT.getEntries).toHaveBeenCalledWith({
         filter: expectedFilter,
         orderBy: expectedOrder,
         pageSize: MAX_LOGS_PER_PAGE,
@@ -382,11 +362,11 @@ describe('cloud-run flare', () => {
       })
     })
 
-    it('uses correct filter when `isOnlyTextLogs` is false and `severity` is defined', async () => {
-      await getLogs(MOCK_PROJECT, MOCK_SERVICE, MOCK_REGION, false, 'severity>="WARNING"')
-      const expectedFilter = `resource.labels.service_name="${MOCK_SERVICE}" AND resource.labels.location="${MOCK_REGION}" AND timestamp>="2022-12-31T00:00:00.000Z" AND severity>="WARNING" AND (textPayload:* OR httpRequest:*)`
+    it('uses correct filter when `severityFilter` is defined', async () => {
+      await getLogs(MOCK_LOG_CLIENT, MOCK_SERVICE, MOCK_REGION, ' AND severity>="WARNING"')
+      const expectedFilter = `resource.labels.service_name="${MOCK_SERVICE}" AND resource.labels.location="${MOCK_REGION}" AND timestamp>="2022-12-31T00:00:00.000Z" AND (textPayload:* OR httpRequest:*) AND severity>="WARNING"`
 
-      expect(mockGetEntries).toHaveBeenCalledWith({
+      expect(MOCK_LOG_CLIENT.getEntries).toHaveBeenCalledWith({
         filter: expectedFilter,
         orderBy: expectedOrder,
         pageSize: MAX_LOGS_PER_PAGE,
@@ -404,21 +384,13 @@ describe('cloud-run flare', () => {
       const page3 = [
         {metadata: {severity: 'INFO', timestamp: '2023-07-30 00:00:00', logName, textPayload: 'Test log 3'}},
       ]
-      mockGetEntries = jest
-        .fn()
-        .mockResolvedValueOnce([page1, {pageToken: 'nextPageToken'}])
-        .mockResolvedValueOnce([page2, {pageToken: 'anotherPageToken'}])
+      MOCK_GET_ENTRIES.mockResolvedValueOnce([page1, {pageToken: 'nextPageToken'}])
+        .mockReturnValueOnce([page2, {pageToken: 'anotherPageToken'}])
         .mockResolvedValueOnce([page3, {pageToken: undefined}])
 
-      MockedLogging.mockImplementation(() => {
-        return {
-          getEntries: mockGetEntries,
-        } as any
-      })
+      const logs = await getLogs(MOCK_LOG_CLIENT, MOCK_SERVICE, MOCK_REGION)
 
-      const logs = await getLogs(MOCK_PROJECT, MOCK_SERVICE, MOCK_REGION, false)
-
-      expect(mockGetEntries).toHaveBeenCalledTimes(3)
+      expect(MOCK_LOG_CLIENT.getEntries).toHaveBeenCalledTimes(3)
       expect(logs).toHaveLength(3)
     })
 
@@ -426,15 +398,9 @@ describe('cloud-run flare', () => {
       const page1 = [
         {metadata: {severity: 'DEFAULT', timestamp: '2023-07-28 00:00:00', logName, textPayload: 'Test log'}},
       ]
-      mockGetEntries = jest.fn().mockResolvedValueOnce([page1, {pageToken: undefined}])
+      MOCK_GET_ENTRIES.mockResolvedValueOnce([page1, {pageToken: undefined}])
 
-      MockedLogging.mockImplementation(() => {
-        return {
-          getEntries: mockGetEntries,
-        } as any
-      })
-
-      const logs = await getLogs(MOCK_PROJECT, MOCK_SERVICE, MOCK_REGION, false)
+      const logs = await getLogs(MOCK_LOG_CLIENT, MOCK_SERVICE, MOCK_REGION)
 
       expect(logs).toEqual([
         {
@@ -448,33 +414,20 @@ describe('cloud-run flare', () => {
 
     it('throws an error when `getEntries` fails', async () => {
       const error = new Error('getEntries failed')
-      mockGetEntries = jest.fn().mockRejectedValue(error)
+      MOCK_GET_ENTRIES.mockRejectedValueOnce(error)
 
-      MockedLogging.mockImplementation(() => {
-        return {
-          getEntries: mockGetEntries,
-        } as any
-      })
-
-      await expect(getLogs(MOCK_PROJECT, MOCK_SERVICE, MOCK_REGION, false)).rejects.toMatchSnapshot()
+      await expect(getLogs(MOCK_LOG_CLIENT, MOCK_SERVICE, MOCK_REGION)).rejects.toMatchSnapshot()
     })
 
     it('returns an empty array when no logs are returned', async () => {
-      mockGetEntries = jest.fn().mockResolvedValue([[], {pageToken: undefined}])
-
-      MockedLogging.mockImplementation(() => {
-        return {
-          getEntries: mockGetEntries,
-        } as any
-      })
-
-      const logs = await getLogs(MOCK_PROJECT, MOCK_SERVICE, MOCK_REGION, false)
+      MOCK_GET_ENTRIES.mockResolvedValueOnce([[], {pageToken: undefined}])
+      const logs = await getLogs(MOCK_LOG_CLIENT, MOCK_SERVICE, MOCK_REGION)
 
       expect(logs).toEqual([])
     })
 
     it('handles httpRequest payload correctly', async () => {
-      const page1 = [
+      const page = [
         {
           metadata: {
             severity: 'DEFAULT',
@@ -490,20 +443,14 @@ describe('cloud-run flare', () => {
           },
         },
       ]
-      mockGetEntries = jest.fn().mockResolvedValueOnce([page1, {pageToken: undefined}])
+      MOCK_GET_ENTRIES.mockResolvedValueOnce([page, {pageToken: undefined}])
 
-      MockedLogging.mockImplementation(() => {
-        return {
-          getEntries: mockGetEntries,
-        } as any
-      })
-
-      const logs = await getLogs(MOCK_PROJECT, MOCK_SERVICE, MOCK_REGION, false)
+      const logs = await getLogs(MOCK_LOG_CLIENT, MOCK_SERVICE, MOCK_REGION)
       expect(logs).toMatchSnapshot()
     })
 
     it('handles textPayload correctly', async () => {
-      const page1 = [
+      const page = [
         {
           metadata: {
             severity: 'DEFAULT',
@@ -513,19 +460,13 @@ describe('cloud-run flare', () => {
           },
         },
       ]
-      mockGetEntries = jest.fn().mockResolvedValueOnce([page1, {pageToken: undefined}])
+      MOCK_GET_ENTRIES.mockResolvedValueOnce([page, {pageToken: undefined}])
 
-      MockedLogging.mockImplementation(() => {
-        return {
-          getEntries: mockGetEntries,
-        } as any
-      })
-
-      const logs = await getLogs(MOCK_PROJECT, MOCK_SERVICE, MOCK_REGION, false)
+      const logs = await getLogs(MOCK_LOG_CLIENT, MOCK_SERVICE, MOCK_REGION)
       expect(logs).toMatchSnapshot()
     })
 
-    it('breaks after timing out', async () => {
+    it('skips timed out log with status 504', async () => {
       const page = [
         {metadata: {severity: 'DEFAULT', timestamp: '2023-07-28 00:00:00', logName, textPayload: 'Test log 1'}},
         {
@@ -546,15 +487,9 @@ describe('cloud-run flare', () => {
           },
         },
       ]
-      mockGetEntries = jest.fn().mockResolvedValueOnce([page, {pageToken: undefined}])
+      MOCK_GET_ENTRIES.mockResolvedValueOnce([page, {pageToken: undefined}])
 
-      MockedLogging.mockImplementation(() => {
-        return {
-          getEntries: mockGetEntries,
-        } as any
-      })
-
-      const logs = await getLogs(MOCK_PROJECT, MOCK_SERVICE, MOCK_REGION, false)
+      const logs = await getLogs(MOCK_LOG_CLIENT, MOCK_SERVICE, MOCK_REGION)
 
       expect(logs).toMatchSnapshot()
       expect(JSON.stringify(logs)).not.toContain('504')

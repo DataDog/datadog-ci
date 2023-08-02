@@ -65,23 +65,6 @@ GCP credentials verified!
 "
 `;
 
-exports[`cloud-run flare getLogs breaks after timing out 1`] = `
-Array [
-  Object {
-    "logName": "mock-logname",
-    "message": "\\"Test log 1\\"",
-    "severity": "DEFAULT",
-    "timestamp": "2023-07-28 00:00:00",
-  },
-  Object {
-    "logName": "mock-logname",
-    "message": "\\"Test log 2\\"",
-    "severity": "DEFAULT",
-    "timestamp": "2023-07-28 00:00:02",
-  },
-]
-`;
-
 exports[`cloud-run flare getLogs handles httpRequest payload correctly 1`] = `
 Array [
   Object {
@@ -104,30 +87,24 @@ Array [
 ]
 `;
 
-exports[`cloud-run flare getLogs throws an error when \`getEntries\` fails 1`] = `[Error: getEntries failed]`;
-
-exports[`cloud-run flare getLogs uses correct filter when \`isOnlyTextLogs\` is false and \`severity\` is unspecified 1`] = `
+exports[`cloud-run flare getLogs skips timed out log with status 504 1`] = `
 Array [
   Object {
     "logName": "mock-logname",
-    "message": "\\"Log 1\\"",
+    "message": "\\"Test log 1\\"",
     "severity": "DEFAULT",
     "timestamp": "2023-07-28 00:00:00",
   },
   Object {
     "logName": "mock-logname",
-    "message": "\\"Log 2\\"",
-    "severity": "INFO",
-    "timestamp": "2023-07-28 00:00:00",
-  },
-  Object {
-    "logName": "mock-logname",
-    "message": "\\"Log 3\\"",
-    "severity": "NOTICE",
-    "timestamp": "2023-07-28 01:01:01",
+    "message": "\\"Test log 2\\"",
+    "severity": "DEFAULT",
+    "timestamp": "2023-07-28 00:00:02",
   },
 ]
 `;
+
+exports[`cloud-run flare getLogs throws an error when \`getEntries\` fails 1`] = `[Error: getEntries failed]`;
 
 exports[`cloud-run flare maskConfig should mask a Cloud Run config correctly 1`] = `
 Object {
