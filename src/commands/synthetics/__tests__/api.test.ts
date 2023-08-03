@@ -71,6 +71,28 @@ describe('dd-api', () => {
   })
 
   describe('Retry policy', () => {
+    beforeEach(() => {
+      jest.useFakeTimers({doNotFake: ['nextTick']})
+    })
+
+    afterEach(() => {
+      jest.useRealTimers()
+    })
+
+    const MIN_ATTEMPTS = 1
+    const MAX_ATTEMPTS = 4 // `MAX_RETRIES` + 1
+
+    const fastForwardRetries = async () => {
+      for (let i = 1; i <= MAX_ATTEMPTS - 1; i++) {
+        // Skip the `setTimeout` in `await wait(waiter)`.
+        jest.runOnlyPendingTimers()
+        // Wait for the retry to happen, and for the next `setTimeout`.
+        // This is used to flush promises, and requires `nextTick` not to be faked.
+        // eslint-disable-next-line @typescript-eslint/unbound-method
+        await new Promise(process.nextTick)
+      }
+    }
+
     const api = apiConstructor(apiConfiguration)
 
     const testCases = [
@@ -136,17 +158,27 @@ describe('dd-api', () => {
         })
         jest.spyOn(axios, 'create').mockImplementation((() => requestMock) as any)
 
-        serverError.response = {status: 404} as AxiosResponse
+        {
+          serverError.response = {status: 404} as AxiosResponse
 
-        await expect(makeApiRequest()).rejects.toThrow()
-        expect(requestMock).toHaveBeenCalledTimes(shouldBeRetriedOn404 ? 4 : 1)
+          const requestPromise = makeApiRequest()
+          await fastForwardRetries()
+          await expect(requestPromise).rejects.toThrow()
+
+          expect(requestMock).toHaveBeenCalledTimes(shouldBeRetriedOn404 ? MAX_ATTEMPTS : MIN_ATTEMPTS)
+        }
 
         requestMock.mockClear()
 
-        serverError.response = {status: 502} as AxiosResponse
+        {
+          serverError.response = {status: 502} as AxiosResponse
 
-        await expect(makeApiRequest()).rejects.toThrow()
-        expect(requestMock).toHaveBeenCalledTimes(shouldBeRetriedOn5xx ? 4 : 1)
+          const requestPromise = makeApiRequest()
+          await fastForwardRetries()
+          await expect(requestPromise).rejects.toThrow()
+
+          expect(requestMock).toHaveBeenCalledTimes(shouldBeRetriedOn5xx ? 4 : 1)
+        }
       }
     )
   })
