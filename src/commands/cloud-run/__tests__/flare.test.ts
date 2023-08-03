@@ -81,7 +81,7 @@ const MOCK_READ_STREAM = new stream.Readable({
 })
 
 // GCP mocks
-jest.mock('@google-cloud/logging-min')
+jest.mock('@google-cloud/logging')
 jest.mock('google-auth-library', () => {
   return {
     GoogleAuth: jest.fn().mockImplementation(() => ({
