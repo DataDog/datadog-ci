@@ -89,7 +89,7 @@ fs.readdirSync = jest.fn().mockReturnValue([])
 }))
 
 // Date
-jest.useFakeTimers({advanceTimers: true, now: new Date(Date.UTC(2023, 0))})
+jest.useFakeTimers({now: new Date(Date.UTC(2023, 0))})
 jest.spyOn(flareModule, 'sleep').mockResolvedValue()
 
 // Misc
