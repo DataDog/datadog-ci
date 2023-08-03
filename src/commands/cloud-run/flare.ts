@@ -285,11 +285,13 @@ export const maskConfig = (config: any) => {
   for (const container of containers) {
     const env = container.env ?? []
     for (const envVar of env) {
-      if (!SKIP_MASKING_CLOUDRUN_ENV_VARS.has(envVar.name ?? '')) {
-        const val = envVar.value
-        if (val) {
-          envVar.value = maskString(val)
-        }
+      const name = envVar.name
+      const val = envVar.value
+      if (!name || !val) {
+        continue
+      }
+      if (!SKIP_MASKING_CLOUDRUN_ENV_VARS.has(name)) {
+        envVar.value = maskString(val)
       }
     }
   }
