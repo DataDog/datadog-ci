@@ -26,6 +26,7 @@ import {getProjectFiles, sendToDatadog, validateFilePath} from '../../helpers/fl
 import {createDirectories, deleteFolder, writeFile, zipContents} from '../../helpers/fs'
 import {requestConfirmation, requestFilePath} from '../../helpers/prompt'
 import * as helpersRenderer from '../../helpers/renderer'
+import {renderProjectFiles} from '../../helpers/renderer'
 import {formatBytes} from '../../helpers/utils'
 
 import {AWS_DEFAULT_REGION_ENV_VAR, FRAMEWORK_FILES_MAPPING, DeploymentFrameworks, PROJECT_FILES} from './constants'
@@ -175,15 +176,7 @@ export class LambdaFlareCommand extends Command {
     // Get project files
     this.context.stdout.write(chalk.bold('\n📁 Searching for project files in current directory...\n'))
     const projectFilePaths = await getProjectFiles()
-    let projectFilesMessage = chalk.bold(`\n✅ Found project file(s) in ${process.cwd()}:\n`)
-    if (projectFilePaths.size === 0) {
-      projectFilesMessage = helpersRenderer.renderSoftWarning('No project files found.')
-    }
-    this.context.stdout.write(projectFilesMessage)
-    for (const filePath of projectFilePaths) {
-      const fileName = path.basename(filePath)
-      this.context.stdout.write(`• ${fileName}\n`)
-    }
+    this.context.stdout.write(renderProjectFiles(projectFilePaths))
 
     // Additional files
     this.context.stdout.write('\n')

@@ -23,6 +23,7 @@ import {getProjectFiles, sendToDatadog, validateFilePath} from '../../helpers/fl
 import {createDirectories, deleteFolder, writeFile, zipContents} from '../../helpers/fs'
 import {requestConfirmation, requestFilePath} from '../../helpers/prompt'
 import * as helpersRenderer from '../../helpers/renderer'
+import {renderProjectFiles} from '../../helpers/renderer'
 import {formatBytes, maskString} from '../../helpers/utils'
 
 import {getUniqueFileNames} from '../lambda/flare'
@@ -32,7 +33,7 @@ import {CloudRunLog, LogConfig} from './interfaces'
 import {renderAuthenticationInstructions} from './renderer'
 
 const SERVICE_CONFIG_FILE_NAME = 'service_config.json'
-const FLARE_ZIP_FILE_NAME = 'cloudrun-flare-output.zip'
+const FLARE_ZIP_FILE_NAME = 'cloud-run-flare-output.zip'
 const ALL_LOGS_FILE_NAME = 'all_logs.csv'
 const WARNING_LOGS_FILE_NAME = 'warning_logs.csv'
 const ERRORS_LOGS_FILE_NAME = 'error_logs.csv'
@@ -139,20 +140,10 @@ export class CloudRunFlareCommand extends Command {
     const configStr = util.inspect(config, false, 10, true)
     this.context.stdout.write(`\n${configStr}\n`)
 
-    // TODO make a render project files
-    // TODO less copy and pasting of code
     // Get project files
     this.context.stdout.write(chalk.bold('\n📁 Searching for project files in current directory...\n'))
     const projectFilePaths = await getProjectFiles()
-    let projectFilesMessage = chalk.bold(`\n✅ Found project file(s) in ${process.cwd()}:\n`)
-    if (projectFilePaths.size === 0) {
-      projectFilesMessage = helpersRenderer.renderSoftWarning('No project files found.')
-    }
-    this.context.stdout.write(projectFilesMessage)
-    for (const filePath of projectFilePaths) {
-      const fileName = path.basename(filePath)
-      this.context.stdout.write(`• ${fileName}\n`)
-    }
+    this.context.stdout.write(renderProjectFiles(projectFilePaths))
 
     // Additional files
     this.context.stdout.write('\n')
@@ -266,7 +257,6 @@ export class CloudRunFlareCommand extends Command {
       }
 
       // Write project files
-      // TODO reused code
       for (const filePath of projectFilePaths) {
         const fileName = path.basename(filePath)
         const newFilePath = path.join(projectFilesFolderPath, fileName)
@@ -275,7 +265,6 @@ export class CloudRunFlareCommand extends Command {
       }
 
       // Write additional files
-      // TODO reused code
       const additionalFilesMap = getUniqueFileNames(additionalFilePaths)
       for (const [originalFilePath, newFileName] of additionalFilesMap) {
         const originalFileName = path.basename(originalFilePath)

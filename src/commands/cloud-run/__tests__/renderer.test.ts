@@ -1,5 +1,25 @@
+import process from 'process'
+
+import {MOCK_CWD} from '../../../helpers/__tests__/fixtures'
+import {renderProjectFiles} from '../../../helpers/renderer'
+
 import {renderAuthenticationInstructions} from '../renderer'
 
-test('renderAuthenticationInstructions', () => {
-  expect(renderAuthenticationInstructions()).toMatchSnapshot()
+process.cwd = jest.fn().mockReturnValue(MOCK_CWD)
+
+describe('renderer', () => {
+  test('renderAuthenticationInstructions', () => {
+    expect(renderAuthenticationInstructions()).toMatchSnapshot()
+  })
+
+  describe('renderProjectFiles', () => {
+    it('returns correct text when no project files were found', () => {
+      expect(renderProjectFiles(new Set())).toMatchSnapshot()
+    })
+
+    it('returns correct text when multiple project files are found', () => {
+      const mockProject = new Set(['package.json', 'yarn.lock', 'tsconfig.json'])
+      expect(renderProjectFiles(mockProject)).toMatchSnapshot()
+    })
+  })
 })

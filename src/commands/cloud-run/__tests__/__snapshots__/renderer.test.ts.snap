@@ -1,6 +1,6 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`renderAuthenticationInstructions 1`] = `
+exports[`renderer renderAuthenticationInstructions 1`] = `
 "
 [Error] Unable to authenticate with GCP.
 
@@ -8,5 +8,19 @@ To authenticate with GCP, please follow these steps:
 1. If you haven't already, install the Google Cloud SDK: https://cloud.google.com/sdk/docs/install
 2. Run \\"gcloud auth application-default login\\" and follow the prompts in your browser to log in.
 3. After logging in, run the \`datadog-ci cloud-run flare\` command again.
+"
+`;
+
+exports[`renderer renderProjectFiles returns correct text when multiple project files are found 1`] = `
+"
+✅ Found project file(s) in mock-folder:
+• package.json
+• yarn.lock
+• tsconfig.json
+"
+`;
+
+exports[`renderer renderProjectFiles returns correct text when no project files were found 1`] = `
+"[!] No project files found.
 "
 `;
