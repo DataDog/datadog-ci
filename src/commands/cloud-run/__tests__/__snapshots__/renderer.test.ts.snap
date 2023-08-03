@@ -1,5 +1,17 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
+exports[`renderer renderAdditionalFiles returns correct text when an additional file is added 1`] = `
+"
+Added 1 custom file(s):
+• README.md
+"
+`;
+
+exports[`renderer renderAdditionalFiles returns correct text when no additional files were added 1`] = `
+"[!] No additional files specified.
+"
+`;
+
 exports[`renderer renderAuthenticationInstructions 1`] = `
 "
 [Error] Unable to authenticate with GCP.

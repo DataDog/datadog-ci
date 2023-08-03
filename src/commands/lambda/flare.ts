@@ -26,7 +26,7 @@ import {getProjectFiles, sendToDatadog, validateFilePath} from '../../helpers/fl
 import {createDirectories, deleteFolder, writeFile, zipContents} from '../../helpers/fs'
 import {requestConfirmation, requestFilePath} from '../../helpers/prompt'
 import * as helpersRenderer from '../../helpers/renderer'
-import {renderProjectFiles} from '../../helpers/renderer'
+import {renderAdditionalFiles, renderProjectFiles} from '../../helpers/renderer'
 import {formatBytes} from '../../helpers/utils'
 
 import {AWS_DEFAULT_REGION_ENV_VAR, FRAMEWORK_FILES_MAPPING, DeploymentFrameworks, PROJECT_FILES} from './constants'
@@ -206,11 +206,7 @@ export class LambdaFlareCommand extends Command {
       }
 
       if (filePath === '') {
-        this.context.stdout.write(`Added ${additionalFilePaths.size} custom file(s):\n`)
-        for (const additionalFilePath of additionalFilePaths) {
-          const fileName = path.basename(additionalFilePath)
-          this.context.stdout.write(`• ${fileName}\n`)
-        }
+        this.context.stdout.write(renderAdditionalFiles(additionalFilePaths))
         break
       }
 

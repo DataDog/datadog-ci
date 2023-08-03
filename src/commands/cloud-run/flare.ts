@@ -23,7 +23,7 @@ import {getProjectFiles, sendToDatadog, validateFilePath} from '../../helpers/fl
 import {createDirectories, deleteFolder, writeFile, zipContents} from '../../helpers/fs'
 import {requestConfirmation, requestFilePath} from '../../helpers/prompt'
 import * as helpersRenderer from '../../helpers/renderer'
-import {renderProjectFiles} from '../../helpers/renderer'
+import {renderAdditionalFiles, renderProjectFiles} from '../../helpers/renderer'
 import {formatBytes, maskString} from '../../helpers/utils'
 
 import {getUniqueFileNames} from '../lambda/flare'
@@ -173,11 +173,7 @@ export class CloudRunFlareCommand extends Command {
       }
 
       if (filePath === '') {
-        this.context.stdout.write(`Added ${additionalFilePaths.size} custom file(s):\n`)
-        for (const additionalFilePath of additionalFilePaths) {
-          const fileName = path.basename(additionalFilePath)
-          this.context.stdout.write(`• ${fileName}\n`)
-        }
+        this.context.stdout.write(renderAdditionalFiles(additionalFilePaths))
         break
       }
 
