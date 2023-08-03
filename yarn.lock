@@ -2769,7 +2769,7 @@ __metadata:
     "@babel/core": 7.8.0
     "@babel/preset-env": 7.4.5
     "@babel/preset-typescript": 7.3.3
-    "@google-cloud/logging-min": ^10.4.0
+    "@google-cloud/logging": ^10.5.0
     "@google-cloud/run": ^0.6.0
     "@microsoft/eslint-formatter-sarif": ^3.0.0
     "@types/async-retry": 1.4.2
@@ -2966,9 +2966,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@google-cloud/logging-min@npm:^10.4.0":
-  version: 10.4.0
-  resolution: "@google-cloud/logging-min@npm:10.4.0"
+"@google-cloud/logging@npm:^10.5.0":
+  version: 10.5.0
+  resolution: "@google-cloud/logging@npm:10.5.0"
   dependencies:
     "@google-cloud/common": ^4.0.0
     "@google-cloud/paginator": ^4.0.0
@@ -2980,12 +2980,12 @@ __metadata:
     extend: ^3.0.2
     gcp-metadata: ^4.0.0
     google-auth-library: ^8.0.2
-    google-gax: ^3.5.2
+    google-gax: ^3.5.8
     on-finished: ^2.3.0
     pumpify: ^2.0.1
     stream-events: ^1.0.5
     uuid: ^9.0.0
-  checksum: 3f1f92d2188d59ec4e23329bf585d7f6ce7ef9db0e86294171b40d59581a6adc30c76db44493cd4dad1408ccdd99dbdc2f77d5d8ec42dd61c8317dabb7936a77
+  checksum: 8847fbe7acffa599137cc470d453e9b1fada8875e9ceefb03b4523b0aeba8491e74690390f6bbd672d402b7bf0de638d34c92dfcab8fd7b9e0a89421b8887770
   languageName: node
   linkType: hard
 
@@ -6855,7 +6855,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"google-gax@npm:^3.5.2, google-gax@npm:^3.5.8":
+"google-gax@npm:^3.5.8":
   version: 3.6.1
   resolution: "google-gax@npm:3.6.1"
   dependencies:

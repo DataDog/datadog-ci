@@ -1,4 +1,12 @@
-// Info that will be used to build the CSV file
+/**
+ * Used to store important info about a CloudRun log.
+ * This info will be used to build the CSV log files.
+ * @typedef {Object} CloudRunLog
+ * @property {string} severity - The level of severity of the log. It can be values such as 'DEBUG', 'INFO', 'ERROR', etc.
+ * @property {string} timestamp - The timestamp of when the log was generated.
+ * @property {string} logName - The name of the log
+ * @property {string} message - The actual log message detailing what event occurred.
+ */
 export interface CloudRunLog {
   severity: string
   timestamp: string
@@ -6,7 +14,13 @@ export interface CloudRunLog {
   message: string
 }
 
-// Defines what log files will be created
+/**
+ * Contains all the information used to create a log file.
+ * @typedef {Object} LogConfig
+ * @property {string} type - string name of the type of log. Used when printing CLI messages.
+ * @property {string} fileName - The name of the log file (such as 'all_logs.csv' or 'error_logs.csv')
+ * @property {string} [severityFilter] - Optional filter to modify the Logging query. Example: ' AND severity="DEBUG"'
+ */
 export interface LogConfig {
   type: string
   fileName: string

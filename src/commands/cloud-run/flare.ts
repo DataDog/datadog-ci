@@ -4,7 +4,7 @@ import path from 'path'
 import process from 'process'
 import util from 'util'
 
-import {Logging} from '@google-cloud/logging-min'
+import {Logging} from '@google-cloud/logging'
 import {ServicesClient} from '@google-cloud/run'
 import {google} from '@google-cloud/run/build/protos/protos'
 import chalk from 'chalk'
@@ -37,6 +37,13 @@ export const MAX_PAGES = 3
 // How old the logs can be in minutes. Skip older logs
 const MAX_LOG_AGE_MINUTES = 1440
 const FILTER_ORDER = 'timestamp asc'
+// Types of log files to create
+const LOG_CONFIGS: LogConfig[] = [
+  {type: 'total', fileName: ALL_LOGS_FILE_NAME},
+  {type: 'warning', severityFilter: ' AND severity>="WARNING"', fileName: WARNING_LOGS_FILE_NAME},
+  {type: 'error', severityFilter: ' AND severity>="ERROR"', fileName: ERRORS_LOGS_FILE_NAME},
+  {type: 'debug', severityFilter: ' AND severity="DEBUG"', fileName: DEBUG_LOGS_FILE_NAME},
+]
 
 export class CloudRunFlareCommand extends Command {
   private isDryRun = false
@@ -131,26 +138,19 @@ export class CloudRunFlareCommand extends Command {
     this.context.stdout.write(`\n${configStr}\n`)
 
     // Get logs
-    const logFileMappings = new Map<CloudRunLog[], string>()
+    const logFileMappings = new Map<string, CloudRunLog[]>()
     if (this.withLogs) {
       this.context.stdout.write(chalk.bold('\n📖 Getting logs...\n'))
 
-      const logsConfig: LogConfig[] = [
-        {type: 'total', fileName: ALL_LOGS_FILE_NAME},
-        {type: 'warning', severityFilter: ' AND severity>="WARNING"', fileName: WARNING_LOGS_FILE_NAME},
-        {type: 'error', severityFilter: ' AND severity>="ERROR"', fileName: ERRORS_LOGS_FILE_NAME},
-        {type: 'debug', severityFilter: ' AND severity="DEBUG"', fileName: DEBUG_LOGS_FILE_NAME},
-      ]
-
       const logClient = new Logging({projectId: this.project})
-      for (const logConfig of logsConfig) {
+      for (const logConfig of LOG_CONFIGS) {
         try {
           const logs = await getLogs(logClient, this.service!, this.region!, logConfig.severityFilter)
           if (logs.length === 0) {
             this.context.stdout.write(`• No ${logConfig.type} logs were found\n`)
           } else {
             this.context.stdout.write(`• Found ${logs.length} ${logConfig.type} logs\n`)
-            logFileMappings.set(logs, logConfig.fileName)
+            logFileMappings.set(logConfig.fileName, logs)
           }
         } catch (err) {
           const msg = err instanceof Error ? err.message : ''
@@ -179,7 +179,7 @@ export class CloudRunFlareCommand extends Command {
       this.context.stdout.write(`• Saved function config to ./${SERVICE_CONFIG_FILE_NAME}\n`)
 
       // Write logs
-      for (const [logs, fileName] of logFileMappings) {
+      for (const [fileName, logs] of logFileMappings) {
         const logFilePath = path.join(logsFolderPath, fileName)
         saveLogsFile(logs, logFilePath)
         this.context.stdout.write(`• Saved logs to ./${LOGS_DIRECTORY}/${fileName}\n`)
@@ -367,12 +367,11 @@ export const getLogs = async (logClient: Logging, serviceId: string, location: s
       logs.push(log)
     }
 
-    if (nextQuery?.pageToken) {
-      options.page = nextQuery.pageToken
-      count++
-    } else {
+    if (!nextQuery?.pageToken) {
       break
     }
+    options.page = nextQuery.pageToken
+    count++
   }
 
   return logs

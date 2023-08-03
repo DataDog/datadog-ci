@@ -2,7 +2,7 @@ import fs from 'fs'
 import process from 'process'
 import stream from 'stream'
 
-import {Logging} from '@google-cloud/logging-min'
+import {Logging} from '@google-cloud/logging'
 import {GoogleAuth} from 'google-auth-library'
 
 import {API_KEY_ENV_VAR, CI_API_KEY_ENV_VAR} from '../../../constants'
@@ -98,7 +98,7 @@ jest.mock('@google-cloud/run', () => {
 jest.spyOn(helpersPromptModule, 'requestConfirmation').mockResolvedValue(true)
 jest.mock('util')
 jest.mock('jszip')
-jest.mock('@google-cloud/logging-min')
+jest.mock('@google-cloud/logging')
 jest.useFakeTimers({now: new Date(Date.UTC(2023, 0))})
 
 // File system mocks
