@@ -27,7 +27,7 @@ const FLARE_ZIP_FILE_NAME = 'cloudrun-flare-output.zip'
 const ALL_LOGS_FILE_NAME = 'all_logs.csv'
 const WARNING_LOGS_FILE_NAME = 'warning_logs.csv'
 const ERRORS_LOGS_FILE_NAME = 'error_logs.csv'
-const DEBUG_LOGS_FILE_NAME = 'DEBUG_logs.csv'
+const DEBUG_LOGS_FILE_NAME = 'debug_logs.csv'
 
 // Must be in range 0 - 1000
 export const MAX_LOGS_PER_PAGE = 1000
@@ -225,6 +225,8 @@ export class CloudRunFlareCommand extends Command {
 
       return 1
     }
+
+    return 0
   }
 }
 

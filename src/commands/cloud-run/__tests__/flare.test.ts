@@ -99,7 +99,7 @@ jest.spyOn(helpersPromptModule, 'requestConfirmation').mockResolvedValue(true)
 jest.mock('util')
 jest.mock('jszip')
 jest.mock('@google-cloud/logging-min')
-jest.useFakeTimers({advanceTimers: true, now: new Date(Date.UTC(2023, 0))})
+jest.useFakeTimers({now: new Date(Date.UTC(2023, 0))})
 
 // File system mocks
 process.cwd = jest.fn().mockReturnValue(MOCK_CWD)
