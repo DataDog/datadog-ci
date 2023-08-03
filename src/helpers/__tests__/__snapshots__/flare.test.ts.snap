@@ -9,3 +9,13 @@ exports[`flare getEndpointUrl should throw error if the site is invalid 1`] = `"
 exports[`flare getEndpointUrl should use DEFAULT_DD_SITE if CI_SITE_ENV_VAR and SITE_ENV_VAR are not set 1`] = `"https://app.datadoghq.com/api/ui/support/serverless/flare"`;
 
 exports[`flare getEndpointUrl should use SITE_ENV_VAR if CI_SITE_ENV_VAR is not set 1`] = `"https://us3.datadoghq.com/api/ui/support/serverless/flare"`;
+
+exports[`flare validateFilePath throws an error when the file does not exist 1`] = `
+"[Error] File path '/not-exists' not found. Please try again.
+"
+`;
+
+exports[`flare validateFilePath throws an error when the file has already been added 1`] = `
+"[!] File '/added' has already been added.
+"
+`;

@@ -11,7 +11,6 @@ import {
 } from '@aws-sdk/client-cloudwatch-logs'
 import {LambdaClient, ListTagsCommand} from '@aws-sdk/client-lambda'
 import {mockClient} from 'aws-sdk-client-mock'
-import JSZip from 'jszip'
 
 import {API_KEY_ENV_VAR, CI_API_KEY_ENV_VAR} from '../../../constants'
 import {
@@ -20,10 +19,11 @@ import {
   MOCK_DATADOG_API_KEY,
   MOCK_FLARE_FOLDER_PATH,
 } from '../../../helpers/__tests__/fixtures'
+import * as helpersFlareModule from '../../../helpers/flare'
 import * as fsModule from '../../../helpers/fs'
 import * as helpersPromptModule from '../../../helpers/prompt'
 
-import {AWS_DEFAULT_REGION_ENV_VAR, DeploymentFrameworks, PROJECT_FILES} from '../constants'
+import {AWS_DEFAULT_REGION_ENV_VAR, DeploymentFrameworks} from '../constants'
 import {
   convertToCSV,
   generateInsightsFile,
@@ -31,15 +31,12 @@ import {
   getFramework,
   getLogEvents,
   getLogStreamNames,
-  getProjectFiles,
   getTags,
   getUniqueFileNames,
-  validateFilePath,
   validateStartEndFlags,
 } from '../flare'
 import * as flareModule from '../flare'
 import {getAWSCredentials, getLambdaFunctionConfig, maskConfig} from '../functions/commons'
-import * as lambdaPromptModule from '../prompt'
 import {requestAWSCredentials} from '../prompt'
 
 import {
@@ -75,9 +72,9 @@ jest.mock('../functions/commons', () => ({
 
 // Prompt mocks
 jest.mock('../prompt')
-jest.spyOn(lambdaPromptModule, 'requestFilePath').mockResolvedValue('')
+jest.spyOn(helpersPromptModule, 'requestFilePath').mockResolvedValue('')
 jest.spyOn(helpersPromptModule, 'requestConfirmation').mockResolvedValue(true)
-jest.spyOn(flareModule, 'getProjectFiles').mockResolvedValue(new Set())
+jest.spyOn(helpersFlareModule, 'getProjectFiles').mockResolvedValue(new Set())
 
 // File system mocks
 process.cwd = jest.fn().mockReturnValue(MOCK_CWD)
@@ -91,20 +88,13 @@ fs.readdirSync = jest.fn().mockReturnValue([])
   isDirectory: () => file_path === MOCK_FLARE_FOLDER_PATH || file_path === MOCK_CWD,
 }))
 
-// Zip mocks
-jest.mock('jszip')
-const mockJSZip = {
-  file: jest.fn(),
-  generateAsync: jest.fn().mockResolvedValue('zip content'),
-}
-;(JSZip as any).mockImplementation(() => mockJSZip)
-
 // Date
 jest.useFakeTimers({advanceTimers: true, now: new Date(Date.UTC(2023, 0))})
 jest.spyOn(flareModule, 'sleep').mockResolvedValue()
 
 // Misc
 jest.mock('util')
+jest.mock('jszip')
 jest.mock('../../../../package.json', () => ({
   version: '1.0-mock-version',
 }))
@@ -358,52 +348,6 @@ describe('lambda flare', () => {
       const [start, end] = res
       expect(start).toBe(0)
       expect(end).toEqual(now)
-    })
-  })
-
-  describe('validateFilePath', () => {
-    const projectFilePaths = new Set<string>()
-    const additionalFilePaths = new Set<string>()
-
-    it('returns the correct path when the file exists', () => {
-      const filePath = '/exists'
-
-      ;(fs.existsSync as jest.Mock).mockReturnValueOnce(true)
-      const result = validateFilePath(filePath, projectFilePaths, additionalFilePaths)
-
-      expect(result).toBe(filePath)
-      expect(fs.existsSync).toHaveBeenCalledWith(filePath)
-    })
-
-    it('returns the correct path when the file exists relative to the cwd', () => {
-      const filePath = 'relative'
-
-      ;(fs.existsSync as jest.Mock).mockReturnValueOnce(false).mockReturnValueOnce(true)
-
-      const result = validateFilePath(filePath, projectFilePaths, additionalFilePaths)
-
-      expect(result).toContain(filePath)
-      expect(fs.existsSync).toHaveBeenNthCalledWith(1, filePath)
-      expect(fs.existsSync).toHaveBeenCalledTimes(2)
-    })
-
-    it('throws an error when the file does not exist', async () => {
-      const filePath = '/not-exists'
-
-      ;(fs.existsSync as jest.Mock).mockReturnValue(false)
-
-      expect(() => validateFilePath(filePath, projectFilePaths, additionalFilePaths)).toThrowErrorMatchingSnapshot()
-      expect(fs.existsSync).toHaveBeenCalledWith(filePath)
-    })
-
-    it('throws an error when the file has already been added', async () => {
-      const filePath = '/added'
-
-      ;(fs.existsSync as jest.Mock).mockReturnValue(true)
-      projectFilePaths.add(filePath)
-
-      expect(() => validateFilePath(filePath, projectFilePaths, additionalFilePaths)).toThrowErrorMatchingSnapshot()
-      expect(fs.existsSync).toHaveBeenCalledWith(filePath)
     })
   })
 
@@ -904,30 +848,6 @@ describe('lambda flare', () => {
       const output = context.stdout.toString()
       expect(output).toMatchSnapshot()
       expect(output).not.toContain('Added 0 custom file(s)')
-    })
-  })
-
-  describe('getProjectFiles', () => {
-    beforeAll(() => {
-      ;(flareModule.getProjectFiles as jest.Mock).mockRestore()
-      ;(process.cwd as jest.Mock).mockReturnValue('')
-    })
-
-    it('should return a map of existing project files', async () => {
-      const mockProjectFiles = ['serverless.yml', 'package.json']
-      ;(fs.existsSync as jest.Mock).mockImplementation((filePath: string) => mockProjectFiles.includes(filePath))
-
-      const result = await getProjectFiles()
-      expect(Array.from(result.keys())).toEqual(mockProjectFiles)
-      expect(fs.existsSync).toHaveBeenCalledTimes(PROJECT_FILES.length)
-    })
-
-    it('should return an empty map when no files exist', async () => {
-      ;(fs.existsSync as jest.Mock).mockReturnValue(false)
-
-      const result = await getProjectFiles()
-      expect(result).toEqual(new Set())
-      expect(fs.existsSync).toHaveBeenCalledTimes(PROJECT_FILES.length)
     })
   })
 

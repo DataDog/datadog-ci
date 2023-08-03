@@ -11,12 +11,21 @@ import chalk from 'chalk'
 import {Command} from 'clipanion'
 import {GoogleAuth} from 'google-auth-library'
 
-import {API_KEY_ENV_VAR, CI_API_KEY_ENV_VAR, FLARE_OUTPUT_DIRECTORY, LOGS_DIRECTORY} from '../../constants'
-import {sendToDatadog} from '../../helpers/flare'
+import {
+  ADDITIONAL_FILES_DIRECTORY,
+  API_KEY_ENV_VAR,
+  CI_API_KEY_ENV_VAR,
+  FLARE_OUTPUT_DIRECTORY,
+  LOGS_DIRECTORY,
+  PROJECT_FILES_DIRECTORY,
+} from '../../constants'
+import {getProjectFiles, sendToDatadog, validateFilePath} from '../../helpers/flare'
 import {createDirectories, deleteFolder, writeFile, zipContents} from '../../helpers/fs'
-import {requestConfirmation} from '../../helpers/prompt'
+import {requestConfirmation, requestFilePath} from '../../helpers/prompt'
 import * as helpersRenderer from '../../helpers/renderer'
 import {formatBytes, maskString} from '../../helpers/utils'
+
+import {getUniqueFileNames} from '../lambda/flare'
 
 import {SKIP_MASKING_CLOUDRUN_ENV_VARS} from './constants'
 import {CloudRunLog, LogConfig} from './interfaces'
@@ -130,6 +139,69 @@ export class CloudRunFlareCommand extends Command {
     const configStr = util.inspect(config, false, 10, true)
     this.context.stdout.write(`\n${configStr}\n`)
 
+    // TODO make a render project files
+    // TODO less copy and pasting of code
+    // Get project files
+    this.context.stdout.write(chalk.bold('\n📁 Searching for project files in current directory...\n'))
+    const projectFilePaths = await getProjectFiles()
+    let projectFilesMessage = chalk.bold(`\n✅ Found project file(s) in ${process.cwd()}:\n`)
+    if (projectFilePaths.size === 0) {
+      projectFilesMessage = helpersRenderer.renderSoftWarning('No project files found.')
+    }
+    this.context.stdout.write(projectFilesMessage)
+    for (const filePath of projectFilePaths) {
+      const fileName = path.basename(filePath)
+      this.context.stdout.write(`• ${fileName}\n`)
+    }
+
+    // Additional files
+    this.context.stdout.write('\n')
+    const additionalFilePaths = new Set<string>()
+    let confirmAdditionalFiles
+    try {
+      confirmAdditionalFiles = await requestConfirmation('Do you want to specify any additional files to flare?', false)
+    } catch (err) {
+      if (err instanceof Error) {
+        this.context.stderr.write(helpersRenderer.renderError(err.message))
+      }
+
+      return 1
+    }
+
+    while (confirmAdditionalFiles) {
+      this.context.stdout.write('\n')
+      let filePath: string
+      try {
+        filePath = await requestFilePath()
+      } catch (err) {
+        if (err instanceof Error) {
+          this.context.stderr.write(helpersRenderer.renderError(err.message))
+        }
+
+        return 1
+      }
+
+      if (filePath === '') {
+        this.context.stdout.write(`Added ${additionalFilePaths.size} custom file(s):\n`)
+        for (const additionalFilePath of additionalFilePaths) {
+          const fileName = path.basename(additionalFilePath)
+          this.context.stdout.write(`• ${fileName}\n`)
+        }
+        break
+      }
+
+      try {
+        filePath = validateFilePath(filePath, projectFilePaths, additionalFilePaths)
+        additionalFilePaths.add(filePath)
+        const fileName = path.basename(filePath)
+        this.context.stdout.write(`• Added file '${fileName}'\n`)
+      } catch (err) {
+        if (err instanceof Error) {
+          this.context.stderr.write(err.message)
+        }
+      }
+    }
+
     // Get logs
     const logFileMappings = new Map<CloudRunLog[], string>()
     if (this.withLogs) {
@@ -163,6 +235,8 @@ export class CloudRunFlareCommand extends Command {
       // Create folders
       const rootFolderPath = path.join(process.cwd(), FLARE_OUTPUT_DIRECTORY)
       const logsFolderPath = path.join(rootFolderPath, LOGS_DIRECTORY)
+      const projectFilesFolderPath = path.join(rootFolderPath, PROJECT_FILES_DIRECTORY)
+      const additionalFilesFolderPath = path.join(rootFolderPath, ADDITIONAL_FILES_DIRECTORY)
       this.context.stdout.write(chalk.bold(`\n💾 Saving files to ${rootFolderPath}...\n`))
       if (fs.existsSync(rootFolderPath)) {
         deleteFolder(rootFolderPath)
@@ -170,6 +244,12 @@ export class CloudRunFlareCommand extends Command {
       const subFolders = []
       if (logFileMappings.size > 0) {
         subFolders.push(logsFolderPath)
+      }
+      if (projectFilePaths.size > 0) {
+        subFolders.push(projectFilesFolderPath)
+      }
+      if (additionalFilePaths.size > 0) {
+        subFolders.push(additionalFilesFolderPath)
       }
       createDirectories(rootFolderPath, subFolders)
 
@@ -183,6 +263,25 @@ export class CloudRunFlareCommand extends Command {
         const logFilePath = path.join(logsFolderPath, fileName)
         saveLogsFile(logs, logFilePath)
         this.context.stdout.write(`• Saved logs to ./${LOGS_DIRECTORY}/${fileName}\n`)
+      }
+
+      // Write project files
+      // TODO reused code
+      for (const filePath of projectFilePaths) {
+        const fileName = path.basename(filePath)
+        const newFilePath = path.join(projectFilesFolderPath, fileName)
+        fs.copyFileSync(filePath, newFilePath)
+        this.context.stdout.write(`• Copied ${fileName} to ./${PROJECT_FILES_DIRECTORY}/${fileName}\n`)
+      }
+
+      // Write additional files
+      // TODO reused code
+      const additionalFilesMap = getUniqueFileNames(additionalFilePaths)
+      for (const [originalFilePath, newFileName] of additionalFilesMap) {
+        const originalFileName = path.basename(originalFilePath)
+        const newFilePath = path.join(additionalFilesFolderPath, newFileName)
+        fs.copyFileSync(originalFilePath, newFilePath)
+        this.context.stdout.write(`• Copied ${originalFileName} to ./${ADDITIONAL_FILES_DIRECTORY}/${newFileName}\n`)
       }
 
       // Exit if dry run

@@ -12,6 +12,7 @@ import {
   MOCK_DATADOG_API_KEY,
   MOCK_FLARE_FOLDER_PATH,
 } from '../../../helpers/__tests__/fixtures'
+import * as helpersFlareModule from '../../../helpers/flare'
 import * as fsModule from '../../../helpers/fs'
 import * as helpersPromptModule from '../../../helpers/prompt'
 
@@ -79,7 +80,8 @@ const MOCK_READ_STREAM = new stream.Readable({
   },
 })
 
-// Mocks
+// GCP mocks
+jest.mock('@google-cloud/logging-min')
 jest.mock('google-auth-library', () => {
   return {
     GoogleAuth: jest.fn().mockImplementation(() => ({
@@ -95,11 +97,18 @@ jest.mock('@google-cloud/run', () => {
     })),
   }
 })
+
+// Prompt mocks
+jest.spyOn(helpersPromptModule, 'requestFilePath').mockResolvedValue('')
 jest.spyOn(helpersPromptModule, 'requestConfirmation').mockResolvedValue(true)
+jest.spyOn(helpersFlareModule, 'getProjectFiles').mockResolvedValue(new Set())
+
+// Date
+jest.useFakeTimers({now: new Date(Date.UTC(2023, 0))})
+
+// Misc
 jest.mock('util')
 jest.mock('jszip')
-jest.mock('@google-cloud/logging-min')
-jest.useFakeTimers({now: new Date(Date.UTC(2023, 0))})
 
 // File system mocks
 process.cwd = jest.fn().mockReturnValue(MOCK_CWD)
@@ -315,30 +324,6 @@ describe('cloud-run flare', () => {
     })
   })
 
-  describe('prompts for confirmation before sending', () => {
-    it('sends when user answers prompt with yes', async () => {
-      jest.spyOn(helpersPromptModule, 'requestConfirmation').mockResolvedValueOnce(true)
-      const cli = makeCli()
-      const context = createMockContext()
-      const code = await cli.run(MOCK_REQUIRED_FLAGS, context as any)
-      expect(code).toBe(0)
-      const output = context.stdout.toString()
-      expect(output).toMatchSnapshot()
-      expect(output).toContain('✅ Successfully sent flare file to Datadog Support!')
-    })
-
-    it('does not send when user answers prompt with no', async () => {
-      jest.spyOn(helpersPromptModule, 'requestConfirmation').mockResolvedValueOnce(false)
-      const cli = makeCli()
-      const context = createMockContext()
-      const code = await cli.run(MOCK_REQUIRED_FLAGS, context as any)
-      expect(code).toBe(0)
-      const output = context.stdout.toString()
-      expect(output).toMatchSnapshot()
-      expect(output).toContain('🚫 The flare files were not sent based on your selection.')
-    })
-  })
-
   describe('getLogs', () => {
     const logName = 'mock-logname'
     const mockLogs = [
@@ -514,6 +499,31 @@ describe('cloud-run flare', () => {
         '"NOTICE","2023-07-28 01:01:01","mock-logname","Test log 3"',
       ].join('\n')
       expect(writeFileSpy).toHaveBeenCalledWith(mockFilePath, expectedContent)
+    })
+  })
+
+  describe('prompts for confirmation before sending', () => {
+    it('sends when user answers prompt with yes', async () => {
+      jest.spyOn(helpersPromptModule, 'requestConfirmation').mockResolvedValueOnce(true)
+      const cli = makeCli()
+      const context = createMockContext()
+      const code = await cli.run(MOCK_REQUIRED_FLAGS, context as any)
+      expect(code).toBe(0)
+      const output = context.stdout.toString()
+      expect(output).toMatchSnapshot()
+      expect(output).toContain('✅ Successfully sent flare file to Datadog Support!')
+    })
+
+    it('does not send when user answers prompt with no', async () => {
+      // The first prompt is for additional files, the second is for confirmation before sending
+      jest.spyOn(helpersPromptModule, 'requestConfirmation').mockResolvedValueOnce(false).mockResolvedValueOnce(false)
+      const cli = makeCli()
+      const context = createMockContext()
+      const code = await cli.run(MOCK_REQUIRED_FLAGS, context as any)
+      expect(code).toBe(0)
+      const output = context.stdout.toString()
+      expect(output).toMatchSnapshot()
+      expect(output).toContain('🚫 The flare files were not sent based on your selection.')
     })
   })
 })

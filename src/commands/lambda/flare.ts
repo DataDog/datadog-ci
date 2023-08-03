@@ -14,10 +14,17 @@ import {AwsCredentialIdentity} from '@aws-sdk/types'
 import chalk from 'chalk'
 import {Command} from 'clipanion'
 
-import {API_KEY_ENV_VAR, CI_API_KEY_ENV_VAR, FLARE_OUTPUT_DIRECTORY, LOGS_DIRECTORY} from '../../constants'
-import {sendToDatadog} from '../../helpers/flare'
+import {
+  ADDITIONAL_FILES_DIRECTORY,
+  API_KEY_ENV_VAR,
+  CI_API_KEY_ENV_VAR,
+  FLARE_OUTPUT_DIRECTORY,
+  LOGS_DIRECTORY,
+  PROJECT_FILES_DIRECTORY,
+} from '../../constants'
+import {getProjectFiles, sendToDatadog, validateFilePath} from '../../helpers/flare'
 import {createDirectories, deleteFolder, writeFile, zipContents} from '../../helpers/fs'
-import {requestConfirmation} from '../../helpers/prompt'
+import {requestConfirmation, requestFilePath} from '../../helpers/prompt'
 import * as helpersRenderer from '../../helpers/renderer'
 import {formatBytes} from '../../helpers/utils'
 
@@ -29,13 +36,11 @@ import {
   getRegion,
   maskConfig,
 } from './functions/commons'
-import {requestAWSCredentials, requestFilePath} from './prompt'
+import {requestAWSCredentials} from './prompt'
 import * as commonRenderer from './renderers/common-renderer'
 
 const version = require('../../../package.json').version
 
-const PROJECT_FILES_DIRECTORY = 'project_files'
-const ADDITIONAL_FILES_DIRECTORY = 'additional_files'
 const FUNCTION_CONFIG_FILE_NAME = 'function_config.json'
 const TAGS_FILE_NAME = 'tags.json'
 const INSIGHTS_FILE_NAME = 'INSIGHTS.md'
@@ -433,46 +438,6 @@ export const validateStartEndFlags = (start: string | undefined, end: string | u
   }
 
   return [startMillis, endMillis]
-}
-
-/**
- * Searches current directory for project files
- * @returns a set of file paths of project files
- */
-export const getProjectFiles = async () => {
-  const filePaths = new Set<string>()
-  const cwd = process.cwd()
-  for (const fileName of PROJECT_FILES) {
-    const filePath = path.join(cwd, fileName)
-    if (fs.existsSync(filePath)) {
-      filePaths.add(filePath)
-    }
-  }
-
-  return filePaths
-}
-
-/**
- * Validates a path to a file
- * @param filePath path to the file
- * @param projectFilePaths map of file names to file paths
- * @param additionalFiles set of additional file paths
- * @throws Error if the file path is invalid or the file was already added
- * @returns the full path to the file
- */
-export const validateFilePath = (filePath: string, projectFilePaths: Set<string>, additionalFiles: Set<string>) => {
-  const originalPath = filePath
-  filePath = fs.existsSync(filePath) ? filePath : path.join(process.cwd(), filePath)
-  if (!fs.existsSync(filePath)) {
-    throw Error(helpersRenderer.renderError(`File path '${originalPath}' not found. Please try again.`))
-  }
-
-  filePath = path.resolve(filePath)
-  if (projectFilePaths.has(filePath) || additionalFiles.has(filePath)) {
-    throw Error(helpersRenderer.renderSoftWarning(`File '${filePath}' has already been added.`))
-  }
-
-  return filePath
 }
 
 /**
