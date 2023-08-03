@@ -129,7 +129,7 @@ export class GateEvaluateCommand extends Command {
 
     /**
      * `retryRequest` does not allow setting a wait time dependent on a backend response,
-     * so we handle the wait time in `evaluateRulesWithWait`: we'll wait whatever is necessary 
+     * so we handle the wait time in `evaluateRulesWithWait`: we'll wait whatever is necessary
      * for the returned promise to be rejected. The retry will start immediately after
      * and will be handled by `retryRequest`.
      */
