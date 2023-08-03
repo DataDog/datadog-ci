@@ -177,7 +177,7 @@ describe('dd-api', () => {
           await fastForwardRetries()
           await expect(requestPromise).rejects.toThrow()
 
-          expect(requestMock).toHaveBeenCalledTimes(shouldBeRetriedOn5xx ? 4 : 1)
+          expect(requestMock).toHaveBeenCalledTimes(shouldBeRetriedOn5xx ? MAX_ATTEMPTS : MIN_ATTEMPTS)
         }
       }
     )
