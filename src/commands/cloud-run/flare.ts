@@ -7,7 +7,7 @@ import util from 'util'
 import {ServicesClient} from '@google-cloud/run'
 import {google} from '@google-cloud/run/build/protos/protos'
 import chalk from 'chalk'
-import {Command} from 'clipanion'
+import {Command, Option} from 'clipanion'
 import {GoogleAuth} from 'google-auth-library'
 
 import {API_KEY_ENV_VAR, CI_API_KEY_ENV_VAR, FLARE_OUTPUT_DIRECTORY} from '../../constants'
@@ -24,12 +24,15 @@ const SERVICE_CONFIG_FILE_NAME = 'service_config.json'
 const FLARE_ZIP_FILE_NAME = 'cloudrun-flare-output.zip'
 
 export class CloudRunFlareCommand extends Command {
-  private isDryRun = false
-  private service?: string
-  private project?: string
-  private region?: string
-  private caseId?: string
-  private email?: string
+  public static paths = [['cloud-run', 'flare']]
+
+  private isDryRun = Option.Boolean('-d,--dry', false)
+  private service = Option.String('-s,--service')
+  private project = Option.String('-p,--project')
+  private region = Option.String('-r,--region,-l,--location')
+  private caseId = Option.String('-c,--case-id')
+  private email = Option.String('-e,--email')
+
   private apiKey?: string
 
   /**
@@ -244,11 +247,3 @@ export const maskConfig = (config: any) => {
 
   return configCopy
 }
-
-CloudRunFlareCommand.addPath('cloud-run', 'flare')
-CloudRunFlareCommand.addOption('isDryRun', Command.Boolean('-d,--dry'))
-CloudRunFlareCommand.addOption('service', Command.String('-s,--service'))
-CloudRunFlareCommand.addOption('project', Command.String('-p,--project'))
-CloudRunFlareCommand.addOption('region', Command.String('-r,--region,-l,--location'))
-CloudRunFlareCommand.addOption('caseId', Command.String('-c,--case-id'))
-CloudRunFlareCommand.addOption('email', Command.String('-e,--email'))
