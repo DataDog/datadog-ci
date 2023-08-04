@@ -29,7 +29,7 @@ const WARNING_LOGS_FILE_NAME = 'warning_logs.csv'
 const ERRORS_LOGS_FILE_NAME = 'error_logs.csv'
 const DEBUG_LOGS_FILE_NAME = 'debug_logs.csv'
 
-// Must be in range 0 - 1000
+// Must be in range 0 - 1000. If more logs are needed, pagination must be implemented
 export const MAX_LOGS = 1000
 // How old the logs can be in minutes. Skip older logs
 const MAX_LOG_AGE_MINUTES = 1440
