@@ -532,7 +532,7 @@ describe('upload-application', () => {
       }
 
       const command = new UploadApplicationCommand()
-      command.configPath = 'src/commands/synthetics/__tests__/config-fixtures/upload-app-config-with-all-keys.json'
+      command['configPath'] = 'src/commands/synthetics/__tests__/config-fixtures/upload-app-config-with-all-keys.json'
 
       await command['resolveConfig']()
       expect(command['config']).toEqual(overrideConfigFile)
