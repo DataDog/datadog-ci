@@ -1,10 +1,11 @@
 import fs from 'fs'
 import path from 'path'
 
+import type {Writable} from 'stream'
+
 import c from 'chalk'
 import {Builder} from 'xml2js'
 
-import type {Writable} from 'stream'
 import type {CommandContext} from '../../../helpers/interfaces'
 
 import {
@@ -332,7 +333,9 @@ export class JUnitReporter implements Reporter {
     }
   }
 
-  private getBrowserTestErrors(stepDetail: Step): {
+  private getBrowserTestErrors(
+    stepDetail: Step
+  ): {
     allowedErrors: XMLError[]
     browserErrors: XMLError[]
     errors: XMLError[]

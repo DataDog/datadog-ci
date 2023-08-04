@@ -1,7 +1,6 @@
 import chalk from 'chalk'
 import {Command, Option} from 'clipanion'
 import asyncPool from 'tiny-async-pool'
-import * as validation from '../../helpers/validation'
 
 import {ApiKeyValidator, newApiKeyValidator} from '../../helpers/apikey'
 import {getBaseSourcemapIntakeUrl} from '../../helpers/base-intake-url'
@@ -11,6 +10,7 @@ import {RequestBuilder} from '../../helpers/interfaces'
 import {getMetricsLogger, MetricsLogger} from '../../helpers/metrics'
 import {upload, UploadStatus} from '../../helpers/upload'
 import {getRequestBuilder, resolveConfigFromFileAndEnvironment} from '../../helpers/utils'
+import * as validation from '../../helpers/validation'
 import {checkAPIKeyOverride} from '../../helpers/validation'
 
 import {RNPlatform, RNSourcemap, RN_SUPPORTED_PLATFORMS} from './interfaces'

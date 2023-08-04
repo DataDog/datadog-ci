@@ -216,10 +216,10 @@ describe('run-test', () => {
 
       const getExpectedTestsToTriggerArguments = (
         config: Partial<UserConfigOverride>
-      ): Parameters<(typeof utils)['getTestsToTrigger']> => {
+      ): Parameters<typeof utils['getTestsToTrigger']> => {
         return [
           // Parameters we care about.
-          apiHelper as unknown as api.APIHelper,
+          (apiHelper as unknown) as api.APIHelper,
           [{suite: 'Suite 1', id: 'publicId', config}],
 
           // Ignore the rest of the parameters.

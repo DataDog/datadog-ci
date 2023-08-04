@@ -5,7 +5,6 @@ import chalk from 'chalk'
 import {Command, Option} from 'clipanion'
 import glob from 'glob'
 import asyncPool from 'tiny-async-pool'
-import * as validation from '../../helpers/validation'
 
 import {ApiKeyValidator, newApiKeyValidator} from '../../helpers/apikey'
 import {getBaseSourcemapIntakeUrl} from '../../helpers/base-intake-url'
@@ -15,6 +14,7 @@ import {RequestBuilder} from '../../helpers/interfaces'
 import {getMetricsLogger, MetricsLogger} from '../../helpers/metrics'
 import {upload, UploadStatus} from '../../helpers/upload'
 import {getRequestBuilder, buildPath} from '../../helpers/utils'
+import * as validation from '../../helpers/validation'
 
 import {Sourcemap} from './interfaces'
 import {

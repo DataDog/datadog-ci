@@ -1,8 +1,8 @@
 import {Command, Option} from 'clipanion'
 import deepExtend from 'deep-extend'
-import * as validation from '../../helpers/validation'
 
 import {removeUndefinedValues, resolveConfigFromFile} from '../../helpers/utils'
+import * as validation from '../../helpers/validation'
 import {isValidDatadogSite} from '../../helpers/validation'
 
 import {CiError} from './errors'

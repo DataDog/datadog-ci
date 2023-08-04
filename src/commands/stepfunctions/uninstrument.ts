@@ -106,8 +106,8 @@ export class UninstrumentStepFunctionsCommand extends Command {
         return 1
       }
       const subscriptionFilters =
-        describeSubscriptionFiltersResponse.subscriptionFilters?.filter(
-          (subscriptionFilter) => subscriptionFilter.filterName?.includes(DD_CI_IDENTIFYING_STRING)
+        describeSubscriptionFiltersResponse.subscriptionFilters?.filter((subscriptionFilter) =>
+          subscriptionFilter.filterName?.includes(DD_CI_IDENTIFYING_STRING)
         ) ?? []
 
       for (const subscriptionFilter of subscriptionFilters) {

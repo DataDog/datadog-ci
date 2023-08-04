@@ -5,7 +5,6 @@ import glob from 'glob'
 import yaml from 'js-yaml'
 import semver from 'semver'
 import asyncPool from 'tiny-async-pool'
-import * as validation from '../../helpers/validation'
 
 import {newApiKeyValidator} from '../../helpers/apikey'
 import {getRepositoryData, RepositoryData} from '../../helpers/git/format-git-sourcemaps-data'
@@ -17,6 +16,7 @@ import {
   performSubCommand,
   resolveConfigFromFileAndEnvironment,
 } from '../../helpers/utils'
+import * as validation from '../../helpers/validation'
 import {checkAPIKeyOverride} from '../../helpers/validation'
 
 import * as dsyms from '../dsyms/upload'

@@ -1,4 +1,5 @@
 import fs from 'fs'
+
 import * as t from 'typanion'
 
 import {DATADOG_SITES} from '../constants'
