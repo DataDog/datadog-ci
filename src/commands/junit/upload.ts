@@ -3,15 +3,15 @@ import os from 'os'
 import path from 'path'
 
 import chalk from 'chalk'
-import {Command} from 'clipanion'
+import {Command, Option} from 'clipanion'
 import {XMLParser, XMLValidator} from 'fast-xml-parser'
 import glob from 'glob'
 import asyncPool from 'tiny-async-pool'
+import * as t from 'typanion'
 
 import {getCISpanTags} from '../../helpers/ci'
 import {getGitMetadata} from '../../helpers/git/format-git-span-data'
-import {SpanTags} from '../../helpers/interfaces'
-import {RequestBuilder} from '../../helpers/interfaces'
+import {SpanTags, RequestBuilder} from '../../helpers/interfaces'
 import {Logger, LogLevel} from '../../helpers/logger'
 import {retryRequest} from '../../helpers/retry'
 import {parseTags, parseMetrics} from '../../helpers/tags'
@@ -59,6 +59,8 @@ const validateXml = (xmlFilePath: string) => {
 }
 
 export class UploadJUnitXMLCommand extends Command {
+  public static paths = [['junit', 'upload']]
+
   public static usage = Command.Usage({
     description: 'Upload jUnit XML test reports files to Datadog.',
     details: `
@@ -102,27 +104,29 @@ export class UploadJUnitXMLCommand extends Command {
     ],
   })
 
-  private basePaths?: string[]
+  private basePaths = Option.Rest({required: 1})
+  private verbose = Option.Boolean('--verbose', false)
+  private dryRun = Option.Boolean('--dry-run', false)
+  private env = Option.String('--env')
+  private logs = Option.Boolean('--logs', false)
+  private maxConcurrency = Option.String('--max-concurrency', '20', {validator: t.cascade(t.isNumber(), t.isInteger())})
+  private metrics = Option.Array('--metrics')
+  private service = Option.String('--service')
+  private tags = Option.Array('--tags')
+  private reportTags = Option.Array('--report-tags')
+  private reportMetrics = Option.Array('--report-metrics')
+  private rawXPathTags = Option.Array('--xpath-tag')
+  private gitRepositoryURL = Option.String('--git-repository-url')
+  private skipGitMetadataUpload = Option.Boolean('--skip-git-metadata-upload', true)
+
   private config = {
     apiKey: process.env.DATADOG_API_KEY || process.env.DD_API_KEY,
     env: process.env.DD_ENV,
     envVarTags: process.env.DD_TAGS,
     envVarMetrics: process.env.DD_METRICS,
   }
-  private verbose = false
-  private dryRun = false
-  private env?: string
-  private logs = false
-  private maxConcurrency = 20
-  private metrics?: string[]
-  private service?: string
-  private tags?: string[]
-  private reportTags?: string[]
-  private reportMetrics?: string[]
-  private rawXPathTags?: string[]
+
   private xpathTags?: Record<string, string>
-  private gitRepositoryURL?: string
-  private skipGitMetadataUpload = true
   private logger: Logger = new Logger((s: string) => this.context.stdout.write(s), LogLevel.INFO)
 
   public async execute() {
@@ -367,18 +371,3 @@ export class UploadJUnitXMLCommand extends Command {
     }
   }
 }
-UploadJUnitXMLCommand.addPath('junit', 'upload')
-UploadJUnitXMLCommand.addOption('service', Command.String('--service'))
-UploadJUnitXMLCommand.addOption('env', Command.String('--env'))
-UploadJUnitXMLCommand.addOption('dryRun', Command.Boolean('--dry-run'))
-UploadJUnitXMLCommand.addOption('tags', Command.Array('--tags'))
-UploadJUnitXMLCommand.addOption('metrics', Command.Array('--metrics'))
-UploadJUnitXMLCommand.addOption('reportTags', Command.Array('--report-tags'))
-UploadJUnitXMLCommand.addOption('reportMetrics', Command.Array('--report-metrics'))
-UploadJUnitXMLCommand.addOption('basePaths', Command.Rest({required: 1}))
-UploadJUnitXMLCommand.addOption('maxConcurrency', Command.String('--max-concurrency'))
-UploadJUnitXMLCommand.addOption('logs', Command.Boolean('--logs'))
-UploadJUnitXMLCommand.addOption('rawXPathTags', Command.Array('--xpath-tag'))
-UploadJUnitXMLCommand.addOption('skipGitMetadataUpload', Command.Boolean('--skip-git-metadata-upload'))
-UploadJUnitXMLCommand.addOption('gitRepositoryURL', Command.String('--git-repository-url'))
-UploadJUnitXMLCommand.addOption('verbose', Command.Boolean('--verbose'))
