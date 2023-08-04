@@ -1,12 +1,14 @@
 import {CloudWatchLogsClient, DescribeSubscriptionFiltersCommandOutput} from '@aws-sdk/client-cloudwatch-logs'
 import {SFNClient} from '@aws-sdk/client-sfn'
-import {Command} from 'clipanion'
+import {Command, Option} from 'clipanion'
 
 import {deleteSubscriptionFilter, describeStateMachine, describeSubscriptionFilters, untagResource} from './awsCommands'
 import {DD_CI_IDENTIFYING_STRING, TAG_VERSION_NAME} from './constants'
 import {getStepFunctionLogGroupArn, isValidArn, parseArn} from './helpers'
 
 export class UninstrumentStepFunctionsCommand extends Command {
+  public static paths = [['stepfunctions', 'uninstrument']]
+
   public static usage = Command.Usage({
     description: 'Remove Step Functions log groups subscription filter created by Datadog-CI',
     details: '--stepfunction expects a Step Function ARN',
@@ -26,8 +28,19 @@ export class UninstrumentStepFunctionsCommand extends Command {
     ],
   })
 
-  private dryRun = false
-  private stepFunctionArns: string[] = []
+  private dryRun = Option.Boolean('-d,--dry-run', false)
+  private stepFunctionArns = Option.Array('-s,--step-function')
+
+  // The options below are to match what InstrumentStepFunctionsCommand has so that customers can switch from instrument to uninstrument.
+  // Lambda command adopts the same approach as well.
+  private environment = Option.String('-e,--env', {hidden: true})
+  private forwarderArn = Option.String('--forwarder', {hidden: true})
+  private service = Option.String('--service', {hidden: true})
+  private mergeStepFunctionAndLambdaTraces = Option.Boolean(
+    '-mlt,--merge-lambda-traces,--merge-step-function-and-lambda-traces',
+    false,
+    {hidden: true}
+  )
 
   public async execute() {
     let validationError = false
@@ -93,8 +106,8 @@ export class UninstrumentStepFunctionsCommand extends Command {
         return 1
       }
       const subscriptionFilters =
-        describeSubscriptionFiltersResponse.subscriptionFilters?.filter((subscriptionFilter) =>
-          subscriptionFilter.filterName?.includes(DD_CI_IDENTIFYING_STRING)
+        describeSubscriptionFiltersResponse.subscriptionFilters?.filter(
+          (subscriptionFilter) => subscriptionFilter.filterName?.includes(DD_CI_IDENTIFYING_STRING)
         ) ?? []
 
       for (const subscriptionFilter of subscriptionFilters) {
@@ -142,14 +155,3 @@ export class UninstrumentStepFunctionsCommand extends Command {
     return 0
   }
 }
-
-UninstrumentStepFunctionsCommand.addPath('stepfunctions', 'uninstrument')
-
-UninstrumentStepFunctionsCommand.addOption('dryRun', Command.Boolean('-d,--dry-run'))
-UninstrumentStepFunctionsCommand.addOption('stepFunctionArns', Command.Array('-s,--step-function'))
-
-// The options below is to match what InstrumentStepFunctionsCommand has so that customers can switch from instrument to uninstrument.
-// Lambda command adopts the same approach as well.
-UninstrumentStepFunctionsCommand.addOption('environment', Command.String('-e,--env', {hidden: true}))
-UninstrumentStepFunctionsCommand.addOption('forwarderArn', Command.String('--forwarder', {hidden: true}))
-UninstrumentStepFunctionsCommand.addOption('service', Command.String('--service', {hidden: true}))
