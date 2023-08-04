@@ -5,7 +5,7 @@ import chalk from 'chalk'
 import {Command, Option} from 'clipanion'
 import glob from 'glob'
 import asyncPool from 'tiny-async-pool'
-import * as t from 'typanion'
+import * as validation from '../../helpers/validation'
 
 import {ApiKeyValidator, newApiKeyValidator} from '../../helpers/apikey'
 import {getBaseSourcemapIntakeUrl} from '../../helpers/base-intake-url'
@@ -56,7 +56,7 @@ export class UploadCommand extends Command {
   private basePath = Option.String({required: true})
   private disableGit = Option.Boolean('--disable-git')
   private dryRun = Option.Boolean('--dry-run', false)
-  private maxConcurrency = Option.String('--max-concurrency', '20', {validator: t.cascade(t.isNumber(), t.isInteger())})
+  private maxConcurrency = Option.String('--max-concurrency', '20', {validator: validation.isInteger()})
   private minifiedPathPrefix = Option.String('--minified-path-prefix')
   private projectPath = Option.String('--project-path', '')
   private releaseVersion = Option.String('--release-version')

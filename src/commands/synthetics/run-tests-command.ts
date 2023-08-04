@@ -1,6 +1,6 @@
 import {Command, Option} from 'clipanion'
 import deepExtend from 'deep-extend'
-import * as t from 'typanion'
+import * as validation from '../../helpers/validation'
 
 import {removeUndefinedValues, resolveConfigFromFile} from '../../helpers/utils'
 import {isValidDatadogSite} from '../../helpers/validation'
@@ -59,7 +59,7 @@ export class RunTestsCommand extends Command {
   private failOnTimeout = Option.Boolean('--failOnTimeout')
   private files = Option.Array('-f,--files')
   private mobileApplicationVersionFilePath = Option.String('--mobileApp,--mobileApplicationVersionFilePath')
-  private pollingTimeout = Option.String('--pollingTimeout', {validator: t.cascade(t.isNumber(), t.isInteger())})
+  private pollingTimeout = Option.String('--pollingTimeout', {validator: validation.isInteger()})
   private publicIds = Option.Array('-p,--public-id')
   private subdomain = Option.String('--subdomain')
   private testSearchQuery = Option.String('-s,--search')

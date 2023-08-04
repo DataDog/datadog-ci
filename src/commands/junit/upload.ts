@@ -7,7 +7,7 @@ import {Command, Option} from 'clipanion'
 import {XMLParser, XMLValidator} from 'fast-xml-parser'
 import glob from 'glob'
 import asyncPool from 'tiny-async-pool'
-import * as t from 'typanion'
+import * as validation from '../../helpers/validation'
 
 import {getCISpanTags} from '../../helpers/ci'
 import {getGitMetadata} from '../../helpers/git/format-git-span-data'
@@ -109,7 +109,7 @@ export class UploadJUnitXMLCommand extends Command {
   private dryRun = Option.Boolean('--dry-run', false)
   private env = Option.String('--env')
   private logs = Option.Boolean('--logs', false)
-  private maxConcurrency = Option.String('--max-concurrency', '20', {validator: t.cascade(t.isNumber(), t.isInteger())})
+  private maxConcurrency = Option.String('--max-concurrency', '20', {validator: validation.isInteger()})
   private metrics = Option.Array('--metrics')
   private service = Option.String('--service')
   private tags = Option.Array('--tags')

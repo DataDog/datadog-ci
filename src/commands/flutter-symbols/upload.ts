@@ -5,7 +5,7 @@ import glob from 'glob'
 import yaml from 'js-yaml'
 import semver from 'semver'
 import asyncPool from 'tiny-async-pool'
-import * as t from 'typanion'
+import * as validation from '../../helpers/validation'
 
 import {newApiKeyValidator} from '../../helpers/apikey'
 import {getRepositoryData, RepositoryData} from '../../helpers/git/format-git-sourcemaps-data'
@@ -84,7 +84,7 @@ export class UploadCommand extends Command {
   private flavor = Option.String('--flavor', 'release')
   private iosDsyms = Option.Boolean('--ios-dsyms', false)
   private iosDsymsLocation = Option.String('--ios-dsyms-location')
-  private maxConcurrency = Option.String('--max-concurrency', '5', {validator: t.cascade(t.isNumber(), t.isInteger())})
+  private maxConcurrency = Option.String('--max-concurrency', '5', {validator: validation.isInteger()})
   private pubspecLocation = Option.String('--pubspec', './pubspec.yaml')
   private repositoryUrl = Option.String('--repository-url')
   private serviceName = Option.String('--service-name')

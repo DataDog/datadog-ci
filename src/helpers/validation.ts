@@ -1,4 +1,5 @@
 import fs from 'fs'
+import * as t from 'typanion'
 
 import {DATADOG_SITES} from '../constants'
 
@@ -51,3 +52,5 @@ export const checkAPIKeyOverride = (
     stdout.write(renderDuplicateAPIKey(environmentAPIKey))
   }
 }
+
+export const isInteger = () => t.cascade(t.isNumber(), t.isInteger())

@@ -9,7 +9,7 @@ import chalk from 'chalk'
 import {Command, Option} from 'clipanion'
 import glob from 'glob'
 import asyncPool from 'tiny-async-pool'
-import * as t from 'typanion'
+import * as validation from '../../helpers/validation'
 
 import {getCISpanTags} from '../../helpers/ci'
 import {getGitMetadata} from '../../helpers/git/format-git-span-data'
@@ -86,7 +86,7 @@ export class UploadSarifReportCommand extends Command {
   private basePaths = Option.Rest({required: 1})
   private dryRun = Option.Boolean('--dry-run', false)
   private env = Option.String('--env')
-  private maxConcurrency = Option.String('--max-concurrency', '20', {validator: t.cascade(t.isNumber(), t.isInteger())})
+  private maxConcurrency = Option.String('--max-concurrency', '20', {validator: validation.isInteger()})
   private service = Option.String('--service')
   private tags = Option.Array('--tags')
   private noVerify = Option.Boolean('--no-verify', false)
