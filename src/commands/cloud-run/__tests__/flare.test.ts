@@ -16,14 +16,7 @@ import * as fsModule from '../../../helpers/fs'
 import * as helpersPromptModule from '../../../helpers/prompt'
 
 import * as flareModule from '../flare'
-import {
-  checkAuthentication,
-  getCloudRunServiceConfig,
-  getLogs,
-  maskConfig,
-  MAX_LOGS_PER_PAGE,
-  saveLogsFile,
-} from '../flare'
+import {checkAuthentication, getCloudRunServiceConfig, getLogs, maskConfig, MAX_LOGS, saveLogsFile} from '../flare'
 
 import {makeCli} from './fixtures'
 
@@ -357,8 +350,7 @@ describe('cloud-run flare', () => {
       expect(MOCK_LOG_CLIENT.getEntries).toHaveBeenCalledWith({
         filter: expectedFilter,
         orderBy: expectedOrder,
-        pageSize: MAX_LOGS_PER_PAGE,
-        page: '',
+        pageSize: MAX_LOGS,
       })
     })
 
@@ -369,29 +361,8 @@ describe('cloud-run flare', () => {
       expect(MOCK_LOG_CLIENT.getEntries).toHaveBeenCalledWith({
         filter: expectedFilter,
         orderBy: expectedOrder,
-        pageSize: MAX_LOGS_PER_PAGE,
-        page: '',
+        pageSize: MAX_LOGS,
       })
-    })
-
-    it('handles pagination correctly', async () => {
-      const page1 = [
-        {metadata: {severity: 'DEFAULT', timestamp: '2023-07-28 00:00:00', logName, textPayload: 'Test log 1'}},
-      ]
-      const page2 = [
-        {metadata: {severity: 'INFO', timestamp: '2023-07-29 00:00:00', logName, textPayload: 'Test log 2'}},
-      ]
-      const page3 = [
-        {metadata: {severity: 'INFO', timestamp: '2023-07-30 00:00:00', logName, textPayload: 'Test log 3'}},
-      ]
-      MOCK_GET_ENTRIES.mockResolvedValueOnce([page1, {pageToken: 'nextPageToken'}])
-        .mockReturnValueOnce([page2, {pageToken: 'anotherPageToken'}])
-        .mockResolvedValueOnce([page3, {pageToken: undefined}])
-
-      const logs = await getLogs(MOCK_LOG_CLIENT, MOCK_SERVICE, MOCK_REGION)
-
-      expect(MOCK_LOG_CLIENT.getEntries).toHaveBeenCalledTimes(3)
-      expect(logs).toHaveLength(3)
     })
 
     it('converts logs to the CloudRunLog interface correctly', async () => {
@@ -466,7 +437,7 @@ describe('cloud-run flare', () => {
       expect(logs).toMatchSnapshot()
     })
 
-    it('skips timed out log with status 504', async () => {
+    it('handles when a log is an HTTP request and has a textPayload', async () => {
       const page = [
         {metadata: {severity: 'DEFAULT', timestamp: '2023-07-28 00:00:00', logName, textPayload: 'Test log 1'}},
         {
@@ -476,14 +447,7 @@ describe('cloud-run flare', () => {
             },
             timestamp: '2023-07-28 00:00:01',
             logName,
-          },
-        },
-        {
-          metadata: {
-            severity: 'DEFAULT',
-            timestamp: '2023-07-28 00:00:02',
-            logName,
-            textPayload: 'Test log 2',
+            textPayload: 'some text payload.',
           },
         },
       ]
@@ -492,7 +456,6 @@ describe('cloud-run flare', () => {
       const logs = await getLogs(MOCK_LOG_CLIENT, MOCK_SERVICE, MOCK_REGION)
 
       expect(logs).toMatchSnapshot()
-      expect(JSON.stringify(logs)).not.toContain('504')
     })
   })
 

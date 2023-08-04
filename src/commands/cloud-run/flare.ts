@@ -30,10 +30,7 @@ const ERRORS_LOGS_FILE_NAME = 'error_logs.csv'
 const DEBUG_LOGS_FILE_NAME = 'debug_logs.csv'
 
 // Must be in range 0 - 1000
-export const MAX_LOGS_PER_PAGE = 1000
-// There will be a maximum of (MAX_LOGS_PER_PAGE * MAX_PAGES) logs for each log file
-// The more pages there are, the longer the program will take to run
-export const MAX_PAGES = 3
+export const MAX_LOGS = 1000
 // How old the logs can be in minutes. Skip older logs
 const MAX_LOG_AGE_MINUTES = 1440
 const FILTER_ORDER = 'timestamp asc'
@@ -325,53 +322,38 @@ export const getLogs = async (logClient: Logging, serviceId: string, location: s
   const options = {
     filter,
     orderBy: FILTER_ORDER,
-    pageSize: MAX_LOGS_PER_PAGE,
-    page: '',
+    pageSize: MAX_LOGS,
   }
 
-  // Use pagination to get more than the limit of 1000 logs
-  let count = 0
-  while (count < MAX_PAGES) {
-    const [entries, nextQuery] = await logClient.getEntries(options)
+  const [entries] = await logClient.getEntries(options)
 
-    for (const entry of entries) {
-      let msg = ''
-      if (entry.metadata.httpRequest) {
-        const request = entry.metadata.httpRequest
-        const status = request.status ?? ''
-        if (status === 504) {
-          // When we receive a log with status 504, it means the log entry timed out
-          // and has no relevant information. Therefore, we can skip this log.
-          continue
-        }
-        let ms = 'unknown'
-        const latency = request.latency
-        if (latency) {
-          ms = (Number(latency.seconds) * 1000 + Math.round(Number(latency.nanos) / 1000000)).toString()
-        }
-        const bytes = formatBytes(Number(request.responseSize))
-        const method = request.requestMethod ?? ''
-        const requestUrl = request.requestUrl ?? ''
-        msg = `${method} ${status}. responseSize: ${bytes}. latency: ${ms} ms. requestUrl: ${requestUrl}`
-      } else if (entry.metadata.textPayload) {
-        msg = entry.metadata.textPayload
+  for (const entry of entries) {
+    let msg = ''
+    if (entry.metadata.textPayload) {
+      msg = entry.metadata.textPayload
+    }
+    if (entry.metadata.httpRequest) {
+      const request = entry.metadata.httpRequest
+      const status = request.status ?? ''
+      let ms = 'unknown'
+      const latency = request.latency
+      if (latency) {
+        ms = (Number(latency.seconds) * 1000 + Math.round(Number(latency.nanos) / 1000000)).toString()
       }
-
-      const log: CloudRunLog = {
-        severity: entry.metadata.severity?.toString() ?? '',
-        timestamp: entry.metadata.timestamp?.toString() ?? '',
-        logName: entry.metadata.logName ?? '',
-        message: `"${msg}"`,
-      }
-
-      logs.push(log)
+      const bytes = formatBytes(Number(request.responseSize))
+      const method = request.requestMethod ?? ''
+      const requestUrl = request.requestUrl ?? ''
+      msg += `${method} ${status}. responseSize: ${bytes}. latency: ${ms} ms. requestUrl: ${requestUrl}`
     }
 
-    if (!nextQuery?.pageToken) {
-      break
+    const log: CloudRunLog = {
+      severity: entry.metadata.severity?.toString() ?? '',
+      timestamp: entry.metadata.timestamp?.toString() ?? '',
+      logName: entry.metadata.logName ?? '',
+      message: `"${msg}"`,
     }
-    options.page = nextQuery.pageToken
-    count++
+
+    logs.push(log)
   }
 
   return logs

@@ -87,7 +87,7 @@ Array [
 ]
 `;
 
-exports[`cloud-run flare getLogs skips timed out log with status 504 1`] = `
+exports[`cloud-run flare getLogs handles when a log is an HTTP request and has a textPayload 1`] = `
 Array [
   Object {
     "logName": "mock-logname",
@@ -97,9 +97,9 @@ Array [
   },
   Object {
     "logName": "mock-logname",
-    "message": "\\"Test log 2\\"",
-    "severity": "DEFAULT",
-    "timestamp": "2023-07-28 00:00:02",
+    "message": "\\"some text payload. 504. responseSize: 0 Bytes. latency: unknown ms. requestUrl: \\"",
+    "severity": "",
+    "timestamp": "2023-07-28 00:00:01",
   },
 ]
 `;
