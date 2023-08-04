@@ -58,26 +58,13 @@ const resolveConfigPath = ({
   return undefined
 }
 
-export const parseOptionalInteger = (value: string | undefined): number | undefined => {
-  if (!value) {
-    return undefined
-  }
-
-  const number = parseFloat(value)
-  if (!Number.isInteger(number)) {
-    throw new Error(`${number} is not an integer`)
-  }
-
-  return number
-}
-
 /**
  * Applies configurations in this order of priority:
  * environment > config file > base config
  */
 export const resolveConfigFromFileAndEnvironment = async <
   T extends Record<string, unknown>,
-  U extends Record<string, unknown>
+  U extends Record<string, unknown>,
 >(
   baseConfig: T,
   environment: U,

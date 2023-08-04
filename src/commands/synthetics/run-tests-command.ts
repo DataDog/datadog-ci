@@ -1,7 +1,8 @@
 import {Command, Option} from 'clipanion'
 import deepExtend from 'deep-extend'
+import * as t from 'typanion'
 
-import {parseOptionalInteger, removeUndefinedValues, resolveConfigFromFile} from '../../helpers/utils'
+import {removeUndefinedValues, resolveConfigFromFile} from '../../helpers/utils'
 import {isValidDatadogSite} from '../../helpers/validation'
 
 import {CiError} from './errors'
@@ -58,7 +59,7 @@ export class RunTestsCommand extends Command {
   private failOnTimeout = Option.Boolean('--failOnTimeout')
   private files = Option.Array('-f,--files')
   private mobileApplicationVersionFilePath = Option.String('--mobileApp,--mobileApplicationVersionFilePath')
-  private pollingTimeout = Option.String('--pollingTimeout')
+  private pollingTimeout = Option.String('--pollingTimeout', {validator: t.cascade(t.isNumber(), t.isInteger())})
   private publicIds = Option.Array('-p,--public-id')
   private subdomain = Option.String('--subdomain')
   private testSearchQuery = Option.String('-s,--search')
@@ -166,20 +167,13 @@ export class RunTestsCommand extends Command {
       })
     )
 
-    let pollingTimeoutCliArgument
-    try {
-      pollingTimeoutCliArgument = parseOptionalInteger(this.pollingTimeout)
-    } catch (error) {
-      throw new CiError('INVALID_CONFIG', `Invalid value for \`pollingTimeout\`: ${error.message}`)
-    }
-
     // Override with Global CLI parameters
     this.config.global = deepExtend(
       this.config.global,
       removeUndefinedValues({
         mobileApplicationVersionFilePath: this.mobileApplicationVersionFilePath,
         variables: parseVariablesFromCli(this.variableStrings, (log) => this.reporter?.log(log)),
-        pollingTimeout: pollingTimeoutCliArgument ?? this.config.global.pollingTimeout ?? this.config.pollingTimeout,
+        pollingTimeout: this.pollingTimeout ?? this.config.global.pollingTimeout ?? this.config.pollingTimeout,
       })
     )
 
