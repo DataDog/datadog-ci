@@ -11,48 +11,36 @@ import {
 } from '@aws-sdk/client-cloudwatch-logs'
 import {FunctionConfiguration, LambdaClient, LambdaClientConfig, ListTagsCommand} from '@aws-sdk/client-lambda'
 import {AwsCredentialIdentity} from '@aws-sdk/types'
-import axios from 'axios'
 import chalk from 'chalk'
 import {Command} from 'clipanion'
-import FormData from 'form-data'
-import JSZip from 'jszip'
 
-import {DATADOG_SITE_EU1, DATADOG_SITE_GOV, DATADOG_SITE_US1, DATADOG_SITES} from '../../constants'
+import {API_KEY_ENV_VAR, CI_API_KEY_ENV_VAR, FLARE_OUTPUT_DIRECTORY} from '../../constants'
+import {sendToDatadog} from '../../helpers/flare'
+import {createDirectories, deleteFolder, writeFile, zipContents} from '../../helpers/fs'
+import {requestConfirmation} from '../../helpers/prompt'
+import * as helpersRenderer from '../../helpers/renderer'
 import {formatBytes} from '../../helpers/utils'
-import {isValidDatadogSite} from '../../helpers/validation'
 
-import {
-  API_KEY_ENV_VAR,
-  AWS_DEFAULT_REGION_ENV_VAR,
-  CI_API_KEY_ENV_VAR,
-  CI_SITE_ENV_VAR,
-  FRAMEWORK_FILES_MAPPING,
-  DeploymentFrameworks,
-  PROJECT_FILES,
-  SITE_ENV_VAR,
-} from './constants'
+import {AWS_DEFAULT_REGION_ENV_VAR, FRAMEWORK_FILES_MAPPING, DeploymentFrameworks, PROJECT_FILES} from './constants'
 import {
   getAWSCredentials,
   getLambdaFunctionConfig,
   getLayerNameWithVersion,
   getRegion,
-  maskStringifiedEnvVar,
+  maskConfig,
 } from './functions/commons'
-import {requestAWSCredentials, requestConfirmation, requestFilePath} from './prompt'
+import {requestAWSCredentials, requestFilePath} from './prompt'
 import * as commonRenderer from './renderers/common-renderer'
-import * as flareRenderer from './renderers/flare-renderer'
 
-const {version} = require('../../../package.json')
+const version = require('../../../package.json').version
 
-const ENDPOINT_PATH = '/api/ui/support/serverless/flare'
-const FLARE_OUTPUT_DIRECTORY = '.datadog-ci'
 const LOGS_DIRECTORY = 'logs'
 const PROJECT_FILES_DIRECTORY = 'project_files'
 const ADDITIONAL_FILES_DIRECTORY = 'additional_files'
 const FUNCTION_CONFIG_FILE_NAME = 'function_config.json'
 const TAGS_FILE_NAME = 'tags.json'
 const INSIGHTS_FILE_NAME = 'INSIGHTS.md'
-const ZIP_FILE_NAME = 'lambda-flare-output.zip'
+const FLARE_ZIP_FILE_NAME = 'lambda-flare-output.zip'
 const MAX_LOG_STREAMS = 50
 const DEFAULT_LOG_STREAMS = 3
 const MAX_LOG_EVENTS_PER_STREAM = 1000
@@ -71,15 +59,16 @@ export class LambdaFlareCommand extends Command {
 
   /**
    * Entry point for the `lambda flare` command.
-   * Gathers lambda function configuration and sends it to Datadog.
+   * Gathers config, logs, tags, project files, and more from a
+   * Lambda function and sends them to Datadog support.
    * @returns 0 if the command ran successfully, 1 otherwise.
    */
   public async execute() {
-    this.context.stdout.write(flareRenderer.renderLambdaFlareHeader(this.isDryRun))
+    this.context.stdout.write(helpersRenderer.renderFlareHeader('Lambda', this.isDryRun))
 
     // Validate function name
     if (this.functionName === undefined) {
-      this.context.stderr.write(commonRenderer.renderError('No function name specified. [-f,--function]'))
+      this.context.stderr.write(helpersRenderer.renderError('No function name specified. [-f,--function]'))
 
       return 1
     }
@@ -95,7 +84,7 @@ export class LambdaFlareCommand extends Command {
     this.apiKey = process.env[CI_API_KEY_ENV_VAR] ?? process.env[API_KEY_ENV_VAR]
     if (this.apiKey === undefined) {
       errorMessages.push(
-        commonRenderer.renderError(
+        helpersRenderer.renderError(
           'No Datadog API key specified. Set an API key with the DATADOG_API_KEY environment variable.'
         )
       )
@@ -103,12 +92,12 @@ export class LambdaFlareCommand extends Command {
 
     // Validate case ID
     if (this.caseId === undefined) {
-      errorMessages.push(commonRenderer.renderError('No case ID specified. [-c,--case-id]'))
+      errorMessages.push(helpersRenderer.renderError('No case ID specified. [-c,--case-id]'))
     }
 
     // Validate email
     if (this.email === undefined) {
-      errorMessages.push(commonRenderer.renderError('No email specified. [-e,--email]'))
+      errorMessages.push(helpersRenderer.renderError('No email specified. [-e,--email]'))
     }
 
     // Validate start/end flags if both are specified
@@ -118,7 +107,7 @@ export class LambdaFlareCommand extends Command {
       ;[startMillis, endMillis] = validateStartEndFlags(this.start, this.end)
     } catch (err) {
       if (err instanceof Error) {
-        errorMessages.push(commonRenderer.renderError(err.message))
+        errorMessages.push(helpersRenderer.renderError(err.message))
       }
     }
 
@@ -136,7 +125,7 @@ export class LambdaFlareCommand extends Command {
       this.credentials = await getAWSCredentials()
     } catch (err) {
       if (err instanceof Error) {
-        this.context.stderr.write(commonRenderer.renderError(err.message))
+        this.context.stderr.write(helpersRenderer.renderError(err.message))
       }
 
       return 1
@@ -147,7 +136,7 @@ export class LambdaFlareCommand extends Command {
         await requestAWSCredentials()
       } catch (err) {
         if (err instanceof Error) {
-          this.context.stderr.write(commonRenderer.renderError(err.message))
+          this.context.stderr.write(helpersRenderer.renderError(err.message))
         }
 
         return 1
@@ -167,7 +156,7 @@ export class LambdaFlareCommand extends Command {
     } catch (err) {
       if (err instanceof Error) {
         this.context.stderr.write(
-          commonRenderer.renderError(`Unable to get Lambda function configuration: ${err.message}`)
+          helpersRenderer.renderError(`Unable to get Lambda function configuration: ${err.message}`)
         )
       }
 
@@ -182,7 +171,7 @@ export class LambdaFlareCommand extends Command {
     const projectFilePaths = await getProjectFiles()
     let projectFilesMessage = chalk.bold(`\n✅ Found project file(s) in ${process.cwd()}:\n`)
     if (projectFilePaths.size === 0) {
-      projectFilesMessage = commonRenderer.renderSoftWarning('No project files found.')
+      projectFilesMessage = helpersRenderer.renderSoftWarning('No project files found.')
     }
     this.context.stdout.write(projectFilesMessage)
     for (const filePath of projectFilePaths) {
@@ -198,7 +187,7 @@ export class LambdaFlareCommand extends Command {
       confirmAdditionalFiles = await requestConfirmation('Do you want to specify any additional files to flare?', false)
     } catch (err) {
       if (err instanceof Error) {
-        this.context.stderr.write(commonRenderer.renderError(err.message))
+        this.context.stderr.write(helpersRenderer.renderError(err.message))
       }
 
       return 1
@@ -210,7 +199,7 @@ export class LambdaFlareCommand extends Command {
         filePath = await requestFilePath()
       } catch (err) {
         if (err instanceof Error) {
-          this.context.stderr.write(commonRenderer.renderError(err.message))
+          this.context.stderr.write(helpersRenderer.renderError(err.message))
         }
 
         return 1
@@ -244,14 +233,14 @@ export class LambdaFlareCommand extends Command {
       tags = await getTags(lambdaClient, region!, config.FunctionArn!)
     } catch (err) {
       if (err instanceof Error) {
-        this.context.stderr.write(commonRenderer.renderError(err.message))
+        this.context.stderr.write(helpersRenderer.renderError(err.message))
       }
 
       return 1
     }
     const tagsLength = Object.keys(tags).length
     if (tagsLength === 0) {
-      this.context.stdout.write(commonRenderer.renderSoftWarning(`No resource tags were found.`))
+      this.context.stdout.write(helpersRenderer.renderSoftWarning(`No resource tags were found.`))
     } else {
       this.context.stdout.write(`Found ${tagsLength} resource tag(s).\n`)
     }
@@ -264,7 +253,7 @@ export class LambdaFlareCommand extends Command {
         logs = await getAllLogs(region!, this.functionName, startMillis, endMillis)
       } catch (err) {
         if (err instanceof Error) {
-          this.context.stderr.write(commonRenderer.renderError(err.message))
+          this.context.stderr.write(helpersRenderer.renderError(err.message))
         }
 
         return 1
@@ -276,7 +265,7 @@ export class LambdaFlareCommand extends Command {
       if (this.withLogs) {
         let message = chalk.bold('\n✅ Found log streams:\n')
         if (logs.size === 0) {
-          message = commonRenderer.renderSoftWarning(
+          message = helpersRenderer.renderSoftWarning(
             'No CloudWatch log streams were found. Logs will not be retrieved or sent.'
           )
         }
@@ -285,7 +274,7 @@ export class LambdaFlareCommand extends Command {
         for (const [logStreamName, logEvents] of logs) {
           let warningMessage = '\n'
           if (logEvents.length === 0) {
-            warningMessage = ` - ${commonRenderer.renderSoftWarning('No log events found in this stream')}`
+            warningMessage = ` - ${helpersRenderer.renderSoftWarning('No log events found in this stream')}`
           }
           this.context.stdout.write(`• ${logStreamName}${warningMessage}`)
         }
@@ -379,7 +368,7 @@ export class LambdaFlareCommand extends Command {
         )
       } catch (err) {
         if (err instanceof Error) {
-          this.context.stderr.write(commonRenderer.renderError(err.message))
+          this.context.stderr.write(helpersRenderer.renderError(err.message))
         }
 
         return 1
@@ -392,7 +381,7 @@ export class LambdaFlareCommand extends Command {
       }
 
       // Zip folder
-      const zipPath = path.join(rootFolderPath, ZIP_FILE_NAME)
+      const zipPath = path.join(rootFolderPath, FLARE_ZIP_FILE_NAME)
       await zipContents(rootFolderPath, zipPath)
 
       // Send to Datadog
@@ -404,7 +393,7 @@ export class LambdaFlareCommand extends Command {
       deleteFolder(rootFolderPath)
     } catch (err) {
       if (err instanceof Error) {
-        this.context.stderr.write(commonRenderer.renderError(err.message))
+        this.context.stderr.write(helpersRenderer.renderError(err.message))
       }
 
       return 1
@@ -453,56 +442,6 @@ export const validateStartEndFlags = (start: string | undefined, end: string | u
 }
 
 /**
- * Mask the environment variables in a Lambda function configuration
- * @param config
- */
-export const maskConfig = (config: FunctionConfiguration) => {
-  const environmentVariables = config.Environment?.Variables
-  if (!environmentVariables) {
-    return config
-  }
-
-  const replacer = maskStringifiedEnvVar(environmentVariables)
-  const stringifiedConfig = JSON.stringify(config, replacer)
-
-  return JSON.parse(stringifiedConfig) as FunctionConfiguration
-}
-
-/**
- * Delete a folder and all its contents
- * @param folderPath the folder to delete
- * @throws Error if the deletion fails
- */
-export const deleteFolder = (folderPath: string) => {
-  try {
-    fs.rmSync(folderPath, {recursive: true, force: true})
-  } catch (err) {
-    if (err instanceof Error) {
-      throw Error(`Failed to delete files located at ${folderPath}: ${err.message}`)
-    }
-  }
-}
-
-/**
- * Creates the root folder and any subfolders
- * @param rootFolderPath path to the root folder
- * @param subFolders paths to any subfolders to be created
- * @throws Error if the root folder cannot be deleted or folders cannot be created
- */
-export const createDirectories = (rootFolderPath: string, subFolders: string[]) => {
-  try {
-    fs.mkdirSync(rootFolderPath)
-    for (const subFolder of subFolders) {
-      fs.mkdirSync(subFolder)
-    }
-  } catch (err) {
-    if (err instanceof Error) {
-      throw Error(`Unable to create directories: ${err.message}`)
-    }
-  }
-}
-
-/**
  * Searches current directory for project files
  * @returns a set of file paths of project files
  */
@@ -531,12 +470,12 @@ export const validateFilePath = (filePath: string, projectFilePaths: Set<string>
   const originalPath = filePath
   filePath = fs.existsSync(filePath) ? filePath : path.join(process.cwd(), filePath)
   if (!fs.existsSync(filePath)) {
-    throw Error(commonRenderer.renderError(`File path '${originalPath}' not found. Please try again.`))
+    throw Error(helpersRenderer.renderError(`File path '${originalPath}' not found. Please try again.`))
   }
 
   filePath = path.resolve(filePath)
   if (projectFilePaths.has(filePath) || additionalFiles.has(filePath)) {
-    throw Error(commonRenderer.renderSoftWarning(`File '${filePath}' has already been added.`))
+    throw Error(helpersRenderer.renderSoftWarning(`File '${filePath}' has already been added.`))
   }
 
   return filePath
@@ -706,22 +645,6 @@ export const getTags = async (lambdaClient: LambdaClient, region: string, arn: s
 }
 
 /**
- * Write the function config to a file
- * @param filePath path to the file
- * @param data the data to write
- * @throws Error if the file cannot be written
- */
-export const writeFile = (filePath: string, data: string) => {
-  try {
-    fs.writeFileSync(filePath, data)
-  } catch (err) {
-    if (err instanceof Error) {
-      throw Error(`Unable to create file at ${filePath}: ${err.message}`)
-    }
-  }
-}
-
-/**
  * Generate unique file names
  * If the original file name is unique, keep it as is
  * Otherwise, replace separators in the file path with dashes
@@ -863,126 +786,6 @@ export const generateInsightsFile = (insightsFilePath: string, isDryRun: boolean
   lines.push(`**Framework**: \`${getFramework()}\``)
 
   writeFile(insightsFilePath, lines.join('\n'))
-}
-
-/**
- * Zip the contents of the flare folder
- * @param rootFolderPath path to the root folder to zip
- * @param zipPath path to save the zip file
- * @throws Error if the zip fails
- */
-export const zipContents = async (rootFolderPath: string, zipPath: string) => {
-  const zip = new JSZip()
-
-  const addFolderToZip = (folderPath: string) => {
-    if (!fs.existsSync(folderPath)) {
-      throw Error(`Folder does not exist: ${folderPath}`)
-    }
-
-    const folder = fs.statSync(folderPath)
-    if (!folder.isDirectory()) {
-      throw Error(`Path is not a directory: ${folderPath}`)
-    }
-
-    const contents = fs.readdirSync(folderPath)
-    for (const item of contents) {
-      const fullPath = path.join(folderPath, item)
-      const file = fs.statSync(fullPath)
-
-      if (file.isDirectory()) {
-        addFolderToZip(fullPath)
-      } else {
-        const data = fs.readFileSync(fullPath)
-        zip.file(path.relative(rootFolderPath, fullPath), data)
-      }
-    }
-  }
-
-  try {
-    addFolderToZip(rootFolderPath)
-    const zipContent = await zip.generateAsync({type: 'nodebuffer'})
-    fs.writeFileSync(zipPath, zipContent)
-  } catch (err) {
-    if (err instanceof Error) {
-      throw Error(`Unable to zip the flare files: ${err.message}`)
-    }
-  }
-}
-
-/**
- * Calculates the full endpoint URL
- * @throws Error if the site is invalid
- * @returns the full endpoint URL
- */
-export const getEndpointUrl = () => {
-  const baseUrl = process.env[CI_SITE_ENV_VAR] ?? process.env[SITE_ENV_VAR] ?? DATADOG_SITE_US1
-  // The DNS doesn't redirect to the proper endpoint when a subdomain is not present in the baseUrl.
-  // There is a DNS inconsistency
-  let endpointUrl = baseUrl
-  if ([DATADOG_SITE_US1, DATADOG_SITE_EU1, DATADOG_SITE_GOV].includes(baseUrl)) {
-    endpointUrl = 'app.' + baseUrl
-  }
-
-  if (!isValidDatadogSite(baseUrl)) {
-    throw Error(`Invalid site: ${baseUrl}. Must be one of: ${DATADOG_SITES.join(', ')}`)
-  }
-
-  return 'https://' + endpointUrl + ENDPOINT_PATH
-}
-
-/**
- * Send the zip file to Datadog support
- * @param zipPath
- * @param caseId
- * @param email
- * @param apiKey
- * @param rootFolderPath
- * @throws Error if the request fails
- */
-export const sendToDatadog = async (
-  zipPath: string,
-  caseId: string,
-  email: string,
-  apiKey: string,
-  rootFolderPath: string
-) => {
-  const endpointUrl = getEndpointUrl()
-  const form = new FormData()
-  form.append('case_id', caseId)
-  form.append('flare_file', fs.createReadStream(zipPath))
-  form.append('datadog_ci_version', version)
-  form.append('email', email)
-  const headerConfig = {
-    headers: {
-      ...form.getHeaders(),
-      'DD-API-KEY': apiKey,
-    },
-  }
-
-  try {
-    await axios.post(endpointUrl, form, headerConfig)
-  } catch (err) {
-    // Ensure the root folder is deleted if the request fails
-    deleteFolder(rootFolderPath)
-
-    if (axios.isAxiosError(err)) {
-      const errResponse: string = (err.response?.data.error as string) ?? ''
-      const errorMessage = err.message ?? ''
-
-      let message = `Failed to send flare file to Datadog Support: ${errorMessage}. ${errResponse}\n`
-      const code = err.response?.status
-      // The error message doesn't say why there was an error, so it's important to tell the user why the request failed.
-      if (code === 500) {
-        message += 'Is your case ID and email correct?\n'
-      } else if (code === 403) {
-        message += 'Is your Datadog API key correct?\n'
-      }
-
-      throw Error(message)
-    }
-
-    throw err
-  }
 }
 
 LambdaFlareCommand.addPath('lambda', 'flare')

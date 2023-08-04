@@ -4,6 +4,8 @@ import {AwsCredentialIdentity} from '@aws-sdk/types'
 import {bold} from 'chalk'
 import {Command} from 'clipanion'
 
+import {requestConfirmation} from '../../helpers/prompt'
+import * as helperRenderer from '../../helpers/renderer'
 import {DEFAULT_CONFIG_PATHS, resolveConfigFromFile} from '../../helpers/utils'
 
 import {AWS_DEFAULT_REGION_ENV_VAR} from './constants'
@@ -13,12 +15,12 @@ import {
   getAWSProfileCredentials,
   handleLambdaFunctionUpdates,
   getAWSCredentials,
-  maskStringifiedEnvVar,
   willUpdateFunctionConfigs,
+  maskConfig,
 } from './functions/commons'
 import {getUninstrumentedFunctionConfigs, getUninstrumentedFunctionConfigsFromRegEx} from './functions/uninstrument'
 import {FunctionConfiguration} from './interfaces'
-import {requestAWSCredentials, requestConfirmation, requestFunctionSelection} from './prompt'
+import {requestAWSCredentials, requestFunctionSelection} from './prompt'
 import * as commonRenderer from './renderers/common-renderer'
 import * as instrumentRenderer from './renderers/instrument-uninstrument-renderer'
 
@@ -51,7 +53,7 @@ export class UninstrumentCommand extends Command {
       try {
         this.credentials = await getAWSProfileCredentials(profile)
       } catch (err) {
-        this.context.stdout.write(commonRenderer.renderError(err))
+        this.context.stdout.write(helperRenderer.renderError(err))
 
         return 1
       }
@@ -68,7 +70,7 @@ export class UninstrumentCommand extends Command {
           this.credentials = credentials
         }
       } catch (err) {
-        this.context.stdout.write(commonRenderer.renderError(err))
+        this.context.stdout.write(helperRenderer.renderError(err))
 
         return 1
       }
@@ -258,12 +260,9 @@ export class UninstrumentCommand extends Command {
     this.context.stdout.write(instrumentRenderer.renderWillApplyUpdates(this.dryRun))
     for (const config of configs) {
       if (config.updateFunctionConfigurationCommandInput) {
+        const maskedConfig = maskConfig(config.updateFunctionConfigurationCommandInput)
         this.context.stdout.write(
-          `UpdateFunctionConfiguration -> ${config.functionARN}\n${JSON.stringify(
-            config.updateFunctionConfigurationCommandInput,
-            maskStringifiedEnvVar(config.updateFunctionConfigurationCommandInput.Environment?.Variables),
-            2
-          )}\n`
+          `UpdateFunctionConfiguration -> ${config.functionARN}\n${JSON.stringify(maskedConfig, undefined, 2)}\n`
         )
       }
       const {logGroupConfiguration, tagConfiguration} = config

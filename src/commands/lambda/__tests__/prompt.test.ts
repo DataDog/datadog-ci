@@ -1,38 +1,29 @@
 jest.mock('inquirer')
 import {prompt} from 'inquirer'
 
+import {CI_API_KEY_ENV_VAR, CI_SITE_ENV_VAR} from '../../../constants'
+import {MOCK_DATADOG_API_KEY} from '../../../helpers/__tests__/fixtures'
+
 import {
   AWS_ACCESS_KEY_ID_ENV_VAR,
   AWS_SECRET_ACCESS_KEY_ENV_VAR,
   AWS_SESSION_TOKEN_ENV_VAR,
-  CI_API_KEY_ENV_VAR,
   CI_API_KEY_SECRET_ARN_ENV_VAR,
   CI_KMS_API_KEY_ENV_VAR,
-  CI_SITE_ENV_VAR,
 } from '../constants'
 import {
-  confirmationQuestion,
   datadogApiKeyTypeQuestion,
   datadogEnvVarsQuestions,
   functionSelectionQuestion,
   requestAWSCredentials,
-  requestConfirmation,
   requestDatadogEnvVars,
   requestFilePath,
   requestFunctionSelection,
 } from '../prompt'
 
-import {mockAwsAccessKeyId, mockAwsSecretAccessKey, mockDatadogApiKey} from './fixtures'
+import {mockAwsAccessKeyId, mockAwsSecretAccessKey} from './fixtures'
 
 describe('prompt', () => {
-  describe('confirmationQuestion', () => {
-    test('returns question with provided message', async () => {
-      const message = 'Do you want to continue?'
-      const question = confirmationQuestion(message)
-      expect(await question.message).toBe(message)
-    })
-  })
-
   describe('datadogApiKeyTypeQuestion', () => {
     test('returns question with message pointing to the correct given site', async () => {
       const site = 'datadoghq.com'
@@ -166,32 +157,6 @@ describe('prompt', () => {
     })
   })
 
-  describe('requestConfirmation', () => {
-    test('returns boolean when users responds to confirmation question', async () => {
-      ;(prompt as any).mockImplementation(() =>
-        Promise.resolve({
-          confirmation: true,
-        })
-      )
-
-      const confirmation = await requestConfirmation('Do you want to continue?')
-      expect(confirmation).toBe(true)
-    })
-
-    test('throws error when something unexpected happens while prompting', async () => {
-      ;(prompt as any).mockImplementation(() => Promise.reject(new Error('Unexpected error')))
-      let error
-      try {
-        await requestConfirmation('Do you wanna continue?')
-      } catch (e) {
-        if (e instanceof Error) {
-          error = e
-        }
-      }
-      expect(error?.message).toBe("Couldn't receive confirmation. Unexpected error")
-    })
-  })
-
   describe('requestDatadogEnvVars', () => {
     const OLD_ENV = process.env
     beforeEach(() => {
@@ -207,7 +172,7 @@ describe('prompt', () => {
         switch (question.name) {
           case CI_API_KEY_ENV_VAR:
             return Promise.resolve({
-              [CI_API_KEY_ENV_VAR]: mockDatadogApiKey,
+              [CI_API_KEY_ENV_VAR]: MOCK_DATADOG_API_KEY,
             })
           case CI_SITE_ENV_VAR:
             return Promise.resolve({
@@ -227,7 +192,7 @@ describe('prompt', () => {
       await requestDatadogEnvVars()
 
       expect(process.env[CI_SITE_ENV_VAR]).toBe(site)
-      expect(process.env[CI_API_KEY_ENV_VAR]).toBe(mockDatadogApiKey)
+      expect(process.env[CI_API_KEY_ENV_VAR]).toBe(MOCK_DATADOG_API_KEY)
     })
 
     test('throws error when something unexpected happens while prompting', async () => {

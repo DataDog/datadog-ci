@@ -32,28 +32,11 @@ import {
 import {AwsStub} from 'aws-sdk-client-mock'
 import {Cli, Command} from 'clipanion/lib/advanced'
 
+import {createMockContext, MOCK_DATADOG_API_KEY} from '../../../helpers/__tests__/fixtures'
+
 import {LambdaFlareCommand} from '../flare'
 import {InstrumentCommand} from '../instrument'
 import {UninstrumentCommand} from '../uninstrument'
-
-export const createMockContext = () => {
-  let data = ''
-
-  return {
-    stdout: {
-      toString: () => data,
-      write: (input: string) => {
-        data += input
-      },
-    },
-    stderr: {
-      toString: () => data,
-      write: (input: string) => {
-        data += input
-      },
-    },
-  }
-}
 
 export const makeCli = () => {
   const cli = new Cli()
@@ -214,7 +197,34 @@ export const mockAwsCredentials = {
   sessionToken: undefined,
 }
 
-export const mockDatadogApiKey = '02aeb762fff59ac0d5ad1536cd9633bd'
 export const mockDatadogEnv = 'sandbox'
 export const mockDatadogService = 'testServiceName'
 export const mockDatadogVersion = '1.0.0'
+
+export const MOCK_LAMBDA_CONFIG = {
+  Environment: {
+    Variables: {
+      DD_API_KEY: MOCK_DATADOG_API_KEY,
+      DD_SITE: 'datadoghq.com',
+      DD_LOG_LEVEL: 'debug',
+    },
+  },
+  FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:some-function',
+  FunctionName: 'some-function',
+  Runtime: 'nodejs18.x',
+  CodeSize: 2275,
+  Layers: [
+    {
+      Arn: 'arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Extension:43',
+      CodeSize: 13145076,
+    },
+    {
+      Arn: 'arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Node18-x:91',
+      CodeSize: 3614995,
+    },
+  ],
+  Handler: '/path/handler.handler',
+  Timeout: 6,
+  MemorySize: 1024,
+  Architectures: ['x86_64'],
+}

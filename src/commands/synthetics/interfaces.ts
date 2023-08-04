@@ -284,6 +284,7 @@ export interface BaseConfigOverride {
   retry?: RetryConfig
   startUrl?: string
   startUrlSubstitutionRegex?: string
+  testTimeout?: number
   tunnel?: TunnelInfo
   variables?: {[key: string]: string}
 }
@@ -402,9 +403,9 @@ export interface PresignedUrlResponse {
   }
 }
 
-// not the entire response, but only the slice needed
+// Not the entire response, but only what's needed.
 export interface SyntheticsOrgSettings {
-  orgMaxConcurrencyCap: number
+  onDemandConcurrencyCap: number
 }
 
 export interface MobileApplicationVersion {

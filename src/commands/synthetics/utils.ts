@@ -102,6 +102,7 @@ export const getOverriddenConfig = (
       'pollingTimeout',
       'retry',
       'startUrlSubstitutionRegex',
+      'testTimeout',
       'tunnel',
       'variables',
     ]),

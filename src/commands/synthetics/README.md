@@ -195,11 +195,12 @@ For example:
     "headers": {"NEW_HEADER": "NEW VALUE"},
     "locations": ["aws:us-east-1"],
     "mobileApplicationVersionFilePath": "path/to/application.apk",
+    "pollingTimeout": 120000,
     "retry": {"count": 2, "interval": 300},
     "startUrl": "{{URL}}?static_hash={{STATIC_HASH}}",
     "startUrlSubstitutionRegex": "s/(https://www.)(.*)/$1extra-$2/",
-    "variables": {"NEW_VARIABLE": "NEW VARIABLE"},
-    "pollingTimeout": 120000
+    "testTimeout": 300,
+    "variables": {"NEW_VARIABLE": "NEW VARIABLE"}
   },
   "proxy": {
     "auth": {
@@ -309,6 +310,7 @@ Your test files must be named with a `.synthetics.json` suffix.
         "retry": {"count": 2, "interval": 300},
         "startUrl": "{{URL}}?static_hash={{STATIC_HASH}}",
         "startUrlSubstitutionRegex": "s/(https://www.)(.*)/$1extra-$2/",
+        "testTimeout": 300,
         "variables": {"MY_VARIABLE": "new title"}
       }
     }
@@ -338,6 +340,7 @@ All options under the `config` key are optional and allow overriding of the test
 | `retry`                            | Object           | The retry policy for the test.<br><br>- `count` (Integer): The number of attempts to perform in case of test failure.<br>- `interval` (Integer): The interval between attempts in milliseconds.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
 | `startUrl`                         | String           | The new start URL to provide to the test. Variables specified in brackets (for example, `{{ EXAMPLE }}`) found in environment variables are replaced.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
 | `startUrlSubstitutionRegex`        | String           | The regex to modify the starting URL of the test (for browser and HTTP tests only), whether it was given by the original test or the configuration override `startUrl`. <br><br>If the URL contains variables, this regex applies after the interpolation of the variables. There are two possible formats: <br>- `your_regex\|your_substitution`: The pipe-based syntax, to avoid any conflicts with `/` characters in URLs. For example, `https://example.com(.*)\|http://subdomain.example.com$1` to transform `https://example.com/test` to `http://subdomain.example.com/test`. <br>- `s/your_regex/your_substitution/modifiers`: The slash syntax, which supports modifiers. For example, `s/(https://www.)(.*)/$1extra-$2/` to transform `https://www.example.com` into `https://www.extra-example.com`. |
+| `testTimeout`                      | Number           | The maximum duration of a browser test in seconds.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
 | `variables`                        | Object           | The variables to replace in the test. This object should contain key as the name of the variable to replace and values as the new value of the variable to replace.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
 
 ## Use the testing tunnel

@@ -1,3 +1,5 @@
+import {ENVIRONMENT_ENV_VAR, SERVICE_ENV_VAR, SITE_ENV_VAR, VERSION_ENV_VAR} from '../../constants'
+
 export const DD_LAMBDA_EXTENSION_LAYER_NAME = 'Datadog-Extension'
 export const EXTENSION_LAYER_KEY = 'extension'
 export const LAYER_LOOKUP = {
@@ -15,6 +17,7 @@ export const LAYER_LOOKUP = {
   'python3.8': 'Datadog-Python38',
   'python3.9': 'Datadog-Python39',
   'python3.10': 'Datadog-Python310',
+  'python3.11': 'Datadog-Python311',
   'ruby2.7': 'Datadog-Ruby2-7',
   'ruby3.2': 'Datadog-Ruby3-2',
 } as const
@@ -43,13 +46,23 @@ export const RUNTIME_LOOKUP = {
   'python3.8': RuntimeType.PYTHON,
   'python3.9': RuntimeType.PYTHON,
   'python3.10': RuntimeType.PYTHON,
+  'python3.11': RuntimeType.PYTHON,
   'ruby2.7': RuntimeType.RUBY,
   'ruby3.2': RuntimeType.RUBY,
 }
 
 export type Runtime = keyof typeof RUNTIME_LOOKUP
 export type LayerKey = keyof typeof LAYER_LOOKUP
-export const ARM_LAYERS = [EXTENSION_LAYER_KEY, 'dotnet6', 'python3.8', 'python3.9', 'python3.10', 'ruby2.7', 'ruby3.2']
+export const ARM_LAYERS = [
+  EXTENSION_LAYER_KEY,
+  'dotnet6',
+  'python3.8',
+  'python3.9',
+  'python3.10',
+  'python3.11',
+  'ruby2.7',
+  'ruby3.2',
+]
 export const ARM64_ARCHITECTURE = 'arm64'
 export const ARM_LAYER_SUFFIX = '-ARM'
 
@@ -72,18 +85,13 @@ export const CORECLR_PROFILER_PATH = '/opt/datadog/Datadog.Trace.ClrProfiler.Nat
 export const DD_DOTNET_TRACER_HOME = '/opt/datadog'
 
 // Environment variables used in the Lambda environment
-export const API_KEY_ENV_VAR = 'DD_API_KEY'
 export const API_KEY_SECRET_ARN_ENV_VAR = 'DD_API_KEY_SECRET_ARN'
 export const KMS_API_KEY_ENV_VAR = 'DD_KMS_API_KEY'
-export const SITE_ENV_VAR = 'DD_SITE'
 export const TRACE_ENABLED_ENV_VAR = 'DD_TRACE_ENABLED'
 export const MERGE_XRAY_TRACES_ENV_VAR = 'DD_MERGE_XRAY_TRACES'
 export const FLUSH_TO_LOG_ENV_VAR = 'DD_FLUSH_TO_LOG'
 export const LOG_LEVEL_ENV_VAR = 'DD_LOG_LEVEL'
 export const LAMBDA_HANDLER_ENV_VAR = 'DD_LAMBDA_HANDLER'
-export const SERVICE_ENV_VAR = 'DD_SERVICE'
-export const VERSION_ENV_VAR = 'DD_VERSION'
-export const ENVIRONMENT_ENV_VAR = 'DD_ENV'
 export const EXTRA_TAGS_ENV_VAR = 'DD_TAGS'
 export const CAPTURE_LAMBDA_PAYLOAD_ENV_VAR = 'DD_CAPTURE_LAMBDA_PAYLOAD'
 export const APM_FLUSH_DEADLINE_MILLISECONDS_ENV_VAR = 'DD_APM_FLUSH_DEADLINE_MILLISECONDS'
@@ -93,8 +101,6 @@ export const PROFILER_PATH_ENV_VAR = 'CORECLR_PROFILER_PATH'
 export const DOTNET_TRACER_HOME_ENV_VAR = 'DD_DOTNET_TRACER_HOME'
 
 // Environment variables used by Datadog CI
-export const CI_SITE_ENV_VAR = 'DATADOG_SITE'
-export const CI_API_KEY_ENV_VAR = 'DATADOG_API_KEY'
 export const CI_API_KEY_SECRET_ARN_ENV_VAR = 'DATADOG_API_KEY_SECRET_ARN'
 export const CI_KMS_API_KEY_ENV_VAR = 'DATADOG_KMS_API_KEY'
 
@@ -119,7 +125,7 @@ export const DATADOG_API_KEY_REG_EXP = /(?<![a-f0-9])[a-f0-9]{32}(?![a-f0-9])/g
 export const DATADOG_APP_KEY_REG_EXP = /(?<![a-f0-9])[a-f0-9]{40}(?![a-f0-9])/g
 
 // Environment Variables whose values don't need to be masked
-export const SKIP_MASKING_ENV_VARS = new Set([
+export const SKIP_MASKING_LAMBDA_ENV_VARS = new Set([
   AWS_LAMBDA_EXEC_WRAPPER_VAR,
   API_KEY_SECRET_ARN_ENV_VAR,
   DOTNET_TRACER_HOME_ENV_VAR,

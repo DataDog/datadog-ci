@@ -202,7 +202,7 @@ describe('dd-api', () => {
   })
 
   test('should receive settings', async () => {
-    const settings = {orgMaxConcurrencyCap: 100}
+    const settings = {onDemandConcurrencyCap: 10}
     const requestMock = jest.fn(() => ({status: 200, data: settings}))
     const spy = jest.spyOn(axios, 'create').mockImplementation((() => requestMock) as any)
 
