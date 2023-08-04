@@ -99,7 +99,9 @@ describe('flare', () => {
       })
 
       const fn = sendToDatadog(MOCK_ZIP_PATH, MOCK_CASE_ID, MOCK_EMAIL, MOCK_API_KEY, MOCK_ROOT_FOLDER_PATH)
-      await expect(fn).rejects.toThrow(`Failed to send flare file to Datadog Support: Some error. Server error\nIs your case ID and email correct?\n`)
+      await expect(fn).rejects.toThrow(
+        `Failed to send flare file to Datadog Support: Some error. Server error\nIs your case ID and email correct?\n`
+      )
     })
 
     it('prints correct warning when post fail with error 403', async () => {
@@ -110,7 +112,9 @@ describe('flare', () => {
       })
 
       const fn = sendToDatadog(MOCK_ZIP_PATH, MOCK_CASE_ID, MOCK_EMAIL, MOCK_API_KEY, MOCK_ROOT_FOLDER_PATH)
-      await expect(fn).rejects.toThrow(`Failed to send flare file to Datadog Support: Some error. Another error\nIs your Datadog API key correct?\n`)
+      await expect(fn).rejects.toThrow(
+        `Failed to send flare file to Datadog Support: Some error. Another error\nIs your Datadog API key correct?\n`
+      )
     })
   })
 })
