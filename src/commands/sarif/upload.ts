@@ -6,9 +6,10 @@ import type {ErrorObject} from 'ajv'
 import Ajv from 'ajv'
 import addFormats from 'ajv-formats'
 import chalk from 'chalk'
-import {Command} from 'clipanion'
+import {Command, Option} from 'clipanion'
 import glob from 'glob'
 import asyncPool from 'tiny-async-pool'
+import * as t from 'typanion'
 
 import {getCISpanTags} from '../../helpers/ci'
 import {getGitMetadata} from '../../helpers/git/format-git-span-data'
@@ -57,6 +58,8 @@ const validateSarif = (sarifReportPath: string) => {
 }
 
 export class UploadSarifReportCommand extends Command {
+  public static paths = [['sarif', 'upload']]
+
   public static usage = Command.Usage({
     description: 'Upload SARIF reports files to Datadog.',
     details: `
@@ -80,18 +83,19 @@ export class UploadSarifReportCommand extends Command {
     ],
   })
 
-  private basePaths?: string[]
+  private basePaths = Option.Rest({required: 1})
+  private dryRun = Option.Boolean('--dry-run', false)
+  private env = Option.String('--env')
+  private maxConcurrency = Option.String('--max-concurrency', '20', {validator: t.cascade(t.isNumber(), t.isInteger())})
+  private service = Option.String('--service')
+  private tags = Option.Array('--tags')
+  private noVerify = Option.Boolean('--no-verify', false)
+
   private config = {
     apiKey: process.env.DATADOG_API_KEY || process.env.DD_API_KEY,
     env: process.env.DD_ENV,
     envVarTags: process.env.DD_TAGS,
   }
-  private dryRun = false
-  private env?: string
-  private maxConcurrency = 20
-  private service?: string
-  private tags?: string[]
-  private noVerify = false
 
   public async execute() {
     if (!this.service) {
@@ -232,11 +236,3 @@ export class UploadSarifReportCommand extends Command {
     }))
   }
 }
-UploadSarifReportCommand.addPath('sarif', 'upload')
-UploadSarifReportCommand.addOption('service', Command.String('--service'))
-UploadSarifReportCommand.addOption('env', Command.String('--env'))
-UploadSarifReportCommand.addOption('dryRun', Command.Boolean('--dry-run'))
-UploadSarifReportCommand.addOption('noVerify', Command.Boolean('--no-verify'))
-UploadSarifReportCommand.addOption('tags', Command.Array('--tags'))
-UploadSarifReportCommand.addOption('basePaths', Command.Rest({required: 1}))
-UploadSarifReportCommand.addOption('maxConcurrency', Command.String('--max-concurrency'))
