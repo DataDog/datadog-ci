@@ -1,5 +1,7 @@
 import {AxiosPromise, AxiosRequestConfig} from 'axios'
 
+import type {Writable} from 'stream'
+
 import {
   CI_ENV_VARS,
   CI_JOB_NAME,
@@ -97,3 +99,7 @@ export type SpanTag =
 export type SpanTags = Partial<Record<SpanTag, string>>
 
 export type RequestBuilder = (args: AxiosRequestConfig) => AxiosPromise
+
+export type CommandContext = {
+  stdout: Writable
+}

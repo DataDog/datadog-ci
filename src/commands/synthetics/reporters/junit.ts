@@ -1,10 +1,11 @@
 import fs from 'fs'
 import path from 'path'
-import {Writable} from 'stream'
 
 import c from 'chalk'
-import {BaseContext} from 'clipanion'
 import {Builder} from 'xml2js'
+
+import type {Writable} from 'stream'
+import type {CommandContext} from '../../../helpers/interfaces'
 
 import {
   ApiServerResult,
@@ -112,7 +113,7 @@ interface XMLError {
 }
 
 export interface Args {
-  context: BaseContext
+  context: CommandContext
   jUnitReport?: string
   runName?: string
 }
@@ -331,9 +332,7 @@ export class JUnitReporter implements Reporter {
     }
   }
 
-  private getBrowserTestErrors(
-    stepDetail: Step
-  ): {
+  private getBrowserTestErrors(stepDetail: Step): {
     allowedErrors: XMLError[]
     browserErrors: XMLError[]
     errors: XMLError[]

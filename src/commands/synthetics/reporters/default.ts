@@ -1,10 +1,9 @@
-import {Writable} from 'stream'
-
-import type {TunnelReporter} from '../tunnel/tunnel'
-
 import chalk from 'chalk'
-import {BaseContext} from 'clipanion'
 import ora from 'ora'
+
+import type {Writable} from 'stream'
+import type {TunnelReporter} from '../tunnel/tunnel'
+import type {CommandContext} from '../../../helpers/interfaces'
 
 import {
   Assertion,
@@ -250,12 +249,12 @@ const getResultIconAndColor = (resultOutcome: ResultOutcome): [string, chalk.Cha
 }
 
 export class DefaultReporter implements MainReporter {
-  private context: BaseContext
+  private context: CommandContext
   private testWaitSpinner?: ora.Ora
   private write: Writable['write']
   private totalDuration?: number
 
-  constructor({context}: {context: BaseContext}) {
+  constructor({context}: {context: CommandContext}) {
     this.context = context
     this.write = context.stdout.write.bind(context.stdout)
   }
