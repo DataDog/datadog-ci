@@ -2,9 +2,10 @@ import {promises} from 'fs'
 import path from 'path'
 
 import chalk from 'chalk'
-import {Command} from 'clipanion'
+import {Command, Option} from 'clipanion'
 import glob from 'glob'
 import asyncPool from 'tiny-async-pool'
+import * as t from 'typanion'
 
 import {ApiKeyValidator, newApiKeyValidator} from '../../helpers/apikey'
 import {InvalidConfigurationError} from '../../helpers/errors'
@@ -38,6 +39,8 @@ import {
 } from './utils'
 
 export class UploadCommand extends Command {
+  public static paths = [['dsyms', 'upload']]
+
   public static usage = Command.Usage({
     description: 'Upload dSYM files to Datadog.',
     details: `
@@ -53,14 +56,15 @@ export class UploadCommand extends Command {
     ],
   })
 
-  private basePath!: string
+  private basePath = Option.String({required: true})
+  private configPath = Option.String('--config')
+  private dryRun = Option.Boolean('--dry-run', false)
+  private maxConcurrency = Option.String('--max-concurrency', '20', {validator: t.cascade(t.isNumber(), t.isInteger())})
+
   private cliVersion: string
   private config: Record<string, string> = {
     datadogSite: 'datadoghq.com',
   }
-  private configPath?: string
-  private dryRun = false
-  private maxConcurrency = 20
 
   constructor() {
     super()
@@ -303,9 +307,3 @@ export class UploadCommand extends Command {
     }
   }
 }
-
-UploadCommand.addPath('dsyms', 'upload')
-UploadCommand.addOption('basePath', Command.String({required: true}))
-UploadCommand.addOption('maxConcurrency', Command.String('--max-concurrency'))
-UploadCommand.addOption('dryRun', Command.Boolean('--dry-run'))
-UploadCommand.addOption('configPath', Command.String('--config'))
