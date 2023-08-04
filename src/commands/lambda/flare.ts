@@ -14,7 +14,7 @@ import {AwsCredentialIdentity} from '@aws-sdk/types'
 import chalk from 'chalk'
 import {Command} from 'clipanion'
 
-import {API_KEY_ENV_VAR, CI_API_KEY_ENV_VAR, FLARE_OUTPUT_DIRECTORY} from '../../constants'
+import {API_KEY_ENV_VAR, CI_API_KEY_ENV_VAR, FLARE_OUTPUT_DIRECTORY, INSIGHTS_FILE_NAME} from '../../constants'
 import {sendToDatadog} from '../../helpers/flare'
 import {createDirectories, deleteFolder, writeFile, zipContents} from '../../helpers/fs'
 import {requestConfirmation} from '../../helpers/prompt'
@@ -39,7 +39,6 @@ const PROJECT_FILES_DIRECTORY = 'project_files'
 const ADDITIONAL_FILES_DIRECTORY = 'additional_files'
 const FUNCTION_CONFIG_FILE_NAME = 'function_config.json'
 const TAGS_FILE_NAME = 'tags.json'
-const INSIGHTS_FILE_NAME = 'INSIGHTS.md'
 const FLARE_ZIP_FILE_NAME = 'lambda-flare-output.zip'
 const MAX_LOG_STREAMS = 50
 const DEFAULT_LOG_STREAMS = 3

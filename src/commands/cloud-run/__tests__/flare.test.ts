@@ -11,14 +11,17 @@ import {
   MOCK_DATADOG_API_KEY,
   MOCK_FLARE_FOLDER_PATH,
 } from '../../../helpers/__tests__/fixtures'
+import * as fsModule from '../../../helpers/fs'
 import * as helpersPromptModule from '../../../helpers/prompt'
 
 import * as flareModule from '../flare'
-import {checkAuthentication, getCloudRunServiceConfig, maskConfig} from '../flare'
+import {checkAuthentication, generateInsightsFile, getCloudRunServiceConfig, maskConfig} from '../flare'
 
 import {makeCli} from './fixtures'
 
 const MOCK_REGION = 'us-east1'
+const MOCK_PROJECT = 'mock-project'
+const MOCK_SERVICE = 'mock-service'
 const MOCK_REQUIRED_FLAGS = [
   'cloud-run',
   'flare',
@@ -34,6 +37,9 @@ const MOCK_REQUIRED_FLAGS = [
   'test@test.com',
 ]
 const MOCK_CLOUDRUN_CONFIG = {
+  name: `projects/${MOCK_PROJECT}/locations/${MOCK_REGION}/services/${MOCK_SERVICE}`,
+  description: 'description',
+  uri: `https://${MOCK_SERVICE}-abc12345-ue.a.run.app`,
   template: {
     containers: [
       {
@@ -86,6 +92,7 @@ jest.mock('@google-cloud/run', () => {
 jest.spyOn(helpersPromptModule, 'requestConfirmation').mockResolvedValue(true)
 jest.mock('util')
 jest.mock('jszip')
+jest.useFakeTimers({now: new Date(Date.UTC(2023, 0))})
 
 // File system mocks
 process.cwd = jest.fn().mockReturnValue(MOCK_CWD)
@@ -298,6 +305,29 @@ describe('cloud-run flare', () => {
       delete cloudrunConfigCopy.template.containers
       const maskedConfig = maskConfig(cloudrunConfigCopy)
       expect(maskedConfig).toMatchSnapshot()
+    })
+  })
+
+  describe('generateInsightsFile', () => {
+    const insightsFilePath = 'mock/INSIGHTS.md'
+    const writeFileSpy = jest.spyOn(fsModule, 'writeFile')
+
+    it('should call writeFile with correct content when isDryRun is false', () => {
+      generateInsightsFile(insightsFilePath, false, maskConfig(MOCK_CLOUDRUN_CONFIG))
+
+      expect(writeFileSpy).toHaveBeenCalledTimes(1)
+
+      const receivedContent = writeFileSpy.mock.calls[0][1]
+      expect(receivedContent).toMatchSnapshot()
+    })
+
+    it('should call writeFile with correct content when isDryRun is true', () => {
+      generateInsightsFile(insightsFilePath, true, maskConfig(MOCK_CLOUDRUN_CONFIG))
+
+      expect(writeFileSpy).toHaveBeenCalledTimes(1)
+
+      const receivedContent = writeFileSpy.mock.calls[0][1]
+      expect(receivedContent).toMatchSnapshot()
     })
   })
 
