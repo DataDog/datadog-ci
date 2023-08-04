@@ -188,7 +188,7 @@ describe('run-test', () => {
       const command = new RunTestsCommand()
       command['apiKey'] = 'api_key_cli'
       command['mobileApplicationVersionFilePath'] = './path/to/application_cli.apk'
-      command['pollingTimeout'] = '333'
+      command['pollingTimeout'] = 333
 
       await command['resolveConfig']()
       expect(command['config']).toEqual({
@@ -215,10 +215,10 @@ describe('run-test', () => {
 
       const getExpectedTestsToTriggerArguments = (
         config: Partial<UserConfigOverride>
-      ): Parameters<typeof utils['getTestsToTrigger']> => {
+      ): Parameters<(typeof utils)['getTestsToTrigger']> => {
         return [
           // Parameters we care about.
-          (apiHelper as unknown) as api.APIHelper,
+          apiHelper as unknown as api.APIHelper,
           [{suite: 'Suite 1', id: 'publicId', config}],
 
           // Ignore the rest of the parameters.
@@ -233,7 +233,7 @@ describe('run-test', () => {
 
       const write = jest.fn()
       const command = new RunTestsCommand()
-      command.context = ({stdout: {write}} as unknown) as BaseContext
+      command.context = {stdout: {write}} as unknown as BaseContext
 
       // Test file (empty config for now)
       const testFile = {name: 'Suite 1', content: {tests: [{id: 'publicId', config: {}}]}}
