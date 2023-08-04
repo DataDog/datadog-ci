@@ -1,5 +1,5 @@
 import chalk from 'chalk'
-import {Command} from 'clipanion'
+import {Command, Option} from 'clipanion'
 
 import {getCIEnv, PROVIDER_TO_DISPLAY_NAME} from '../../helpers/ci'
 import {retryRequest} from '../../helpers/retry'
@@ -24,6 +24,8 @@ export const parseMetrics = (metrics: string[]) =>
   }, {})
 
 export class MetricCommand extends Command {
+  public static paths = [['metric']]
+
   public static usage = Command.Usage({
     description: 'Add metrics to a CI Pipeline trace pipeline or job span in Datadog.',
     details: `
@@ -35,13 +37,14 @@ export class MetricCommand extends Command {
       ['Tag the current CI job with a command runtime', 'datadog-ci metric --level job --tags command.runtime:67.1'],
     ],
   })
+
+  private level = Option.String('--level')
+  private metrics = Option.Array('--metrics')
+  private noFail = Option.Boolean('--no-fail')
+
   private config = {
     apiKey: process.env.DATADOG_API_KEY || process.env.DD_API_KEY,
   }
-
-  private level?: string
-  private metrics?: string[]
-  private noFail?: boolean
 
   public async execute() {
     if (this.level !== 'pipeline' && this.level !== 'job') {
@@ -139,8 +142,3 @@ export class MetricCommand extends Command {
     return 0
   }
 }
-
-MetricCommand.addPath('metric')
-MetricCommand.addOption('noFail', Command.Boolean('--no-fail'))
-MetricCommand.addOption('metrics', Command.Array('--metrics'))
-MetricCommand.addOption('level', Command.String('--level'))
