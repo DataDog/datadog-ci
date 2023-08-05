@@ -2,6 +2,7 @@ import os from 'os'
 
 import {Cli} from 'clipanion/lib/advanced'
 
+import {createMockContext} from '../../../helpers/__tests__/fixtures'
 import {SpanTags} from '../../../helpers/interfaces'
 
 import id from '../id'
@@ -15,25 +16,6 @@ const makeCli = () => {
   cli.register(UploadJUnitXMLCommand)
 
   return cli
-}
-
-const createMockContext = () => {
-  let data = ''
-
-  return {
-    stdout: {
-      toString: () => data,
-      write: (input: string) => {
-        data += input
-      },
-    },
-    stderr: {
-      toString: () => data,
-      write: (input: string) => {
-        data += input
-      },
-    },
-  }
 }
 
 describe('upload', () => {
@@ -452,7 +434,7 @@ describe('execute', () => {
 
   test('with git metadata', async () => {
     const {context, code} = await runCLI([
-      '--skip-git-metadata-upload=0',
+      '--no-skip-git-metadata-upload',
       process.cwd() + '/src/commands/junit/__tests__/fixtures/single_file.xml',
     ])
     const output = context.stdout.toString().split(os.EOL)
@@ -462,7 +444,7 @@ describe('execute', () => {
 
   test('id headers are added when git metadata is uploaded', async () => {
     await runCLI([
-      '--skip-git-metadata-upload=0',
+      '--no-skip-git-metadata-upload',
       process.cwd() + '/src/commands/junit/__tests__/fixtures/single_file.xml',
     ])
     expect(id).toHaveBeenCalled()

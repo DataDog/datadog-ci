@@ -135,6 +135,8 @@ export class UploadJUnitXMLCommand extends Command {
     if (!this.service) {
       this.service = process.env.DD_SERVICE
     }
+
+    // TODO: support this
     // Unless the user explicitly passes '0' or 'false'
     // by `--skip-git-metadata-upload=0` or `--skip-git-metadata-upload=false` respectively,
     // this will be true, so git metadata won't be uploaded

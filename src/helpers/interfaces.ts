@@ -102,4 +102,5 @@ export type RequestBuilder = (args: AxiosRequestConfig) => AxiosPromise
 
 export type CommandContext = {
   stdout: Writable
+  stderr: Writable
 }

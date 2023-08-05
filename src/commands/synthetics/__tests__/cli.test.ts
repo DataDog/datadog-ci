@@ -1,5 +1,6 @@
-import {BaseContext, Cli} from 'clipanion/lib/advanced'
+import {Cli} from 'clipanion/lib/advanced'
 
+import {createCommand} from '../../../helpers/__tests__/fixtures'
 import * as ciUtils from '../../../helpers/utils'
 
 import * as api from '../api'
@@ -56,7 +57,7 @@ describe('run-test', () => {
       }
 
       process.env = overrideEnv
-      const command = new RunTestsCommand()
+      const command = createCommand(RunTestsCommand)
 
       await command['resolveConfig']()
       expect(command['config']).toEqual({
@@ -93,7 +94,7 @@ describe('run-test', () => {
         variableStrings: [],
       }
 
-      const command = new RunTestsCommand()
+      const command = createCommand(RunTestsCommand)
       command.configPath = 'src/commands/synthetics/__tests__/config-fixtures/config-with-all-keys.json'
 
       await command['resolveConfig']()
@@ -117,7 +118,7 @@ describe('run-test', () => {
         tunnel: true,
       }
 
-      const command = new RunTestsCommand()
+      const command = createCommand(RunTestsCommand)
       command['apiKey'] = overrideCLI.apiKey
       command['appKey'] = overrideCLI.appKey
       command['configPath'] = overrideCLI.configPath
@@ -185,7 +186,7 @@ describe('run-test', () => {
         DATADOG_APP_KEY: 'app_key_env',
       }
 
-      const command = new RunTestsCommand()
+      const command = createCommand(RunTestsCommand)
       command['apiKey'] = 'api_key_cli'
       command['mobileApplicationVersionFilePath'] = './path/to/application_cli.apk'
       command['pollingTimeout'] = 333
@@ -232,8 +233,7 @@ describe('run-test', () => {
       const getTestsToTriggerMock = jest.spyOn(utils, 'getTestsToTrigger')
 
       const write = jest.fn()
-      const command = new RunTestsCommand()
-      command.context = {stdout: {write}} as unknown as BaseContext
+      const command = createCommand(RunTestsCommand, {stderr: {write}} as any)
 
       // Test file (empty config for now)
       const testFile = {name: 'Suite 1', content: {tests: [{id: 'publicId', config: {}}]}}
@@ -301,7 +301,7 @@ describe('run-test', () => {
     })
 
     test('pass command pollingTimeout as global override if undefined', async () => {
-      const command = new RunTestsCommand()
+      const command = createCommand(RunTestsCommand)
       command.configPath = 'src/commands/synthetics/__tests__/config-fixtures/config-with-global-polling-timeout.json'
       await command['resolveConfig']()
       expect(command['config']).toEqual({
@@ -315,8 +315,7 @@ describe('run-test', () => {
 
   describe('exit code respects `failOnCriticalErrors`', () => {
     test('404 leading to `NO_TESTS_TO_RUN` never exits with 1', async () => {
-      const command = new RunTestsCommand()
-      command.context = {stdout: {write: jest.fn()}} as any
+      const command = createCommand(RunTestsCommand, {stdout: {write: jest.fn()}} as any)
       command['config'].failOnCriticalErrors = true
 
       const apiHelper = {
@@ -338,8 +337,7 @@ describe('run-test', () => {
 
       describe.each(cases)('%s', (_, errorCode) => {
         test('unable to obtain test configurations', async () => {
-          const command = new RunTestsCommand()
-          command.context = {stdout: {write: jest.fn()}} as any
+          const command = createCommand(RunTestsCommand, {stdout: {write: jest.fn()}} as any)
           command['config'].failOnCriticalErrors = failOnCriticalErrors
           command['testSearchQuery'] = 'test:search'
 
@@ -356,8 +354,7 @@ describe('run-test', () => {
         })
 
         test('unavailable test config', async () => {
-          const command = new RunTestsCommand()
-          command.context = {stdout: {write: jest.fn()}} as any
+          const command = createCommand(RunTestsCommand, {stdout: {write: jest.fn()}} as any)
           command['config'].failOnCriticalErrors = failOnCriticalErrors
 
           const apiHelper = {
@@ -374,8 +371,7 @@ describe('run-test', () => {
         })
 
         test('unable to trigger tests', async () => {
-          const command = new RunTestsCommand()
-          command.context = {stdout: {write: jest.fn()}} as any
+          const command = createCommand(RunTestsCommand, {stdout: {write: jest.fn()}} as any)
           command['config'].failOnCriticalErrors = failOnCriticalErrors
 
           const apiHelper = {
@@ -393,8 +389,7 @@ describe('run-test', () => {
         })
 
         test('unable to poll test results', async () => {
-          const command = new RunTestsCommand()
-          command.context = {stdout: {write: jest.fn()}} as any
+          const command = createCommand(RunTestsCommand, {stdout: {write: jest.fn()}} as any)
           command['config'].failOnCriticalErrors = failOnCriticalErrors
 
           const apiHelper = {
@@ -427,8 +422,7 @@ describe('run-test', () => {
     test.each(cases)(
       '%s with failOnMissingTests=%s exits with %s',
       async (_: string, failOnMissingTests: boolean, exitCode: number, tests: (string | null)[]) => {
-        const command = new RunTestsCommand()
-        command.context = {stdout: {write: jest.fn()}} as any
+        const command = createCommand(RunTestsCommand, {stdout: {write: jest.fn()}} as any)
         command['config'].failOnMissingTests = failOnMissingTests
 
         const apiHelper = {
@@ -461,8 +455,7 @@ describe('run-test', () => {
     test('enough context is provided', async () => {
       const writeMock = jest.fn()
 
-      const command = new RunTestsCommand()
-      command.context = {stdout: {write: writeMock}} as any
+      const command = createCommand(RunTestsCommand, {stdout: {write: writeMock}} as any)
       command['config'].failOnCriticalErrors = true
 
       const apiHelper = {
@@ -531,7 +524,7 @@ describe('upload-application', () => {
         latest: true,
       }
 
-      const command = new UploadApplicationCommand()
+      const command = createCommand(UploadApplicationCommand)
       command['configPath'] = 'src/commands/synthetics/__tests__/config-fixtures/upload-app-config-with-all-keys.json'
 
       await command['resolveConfig']()
@@ -550,7 +543,7 @@ describe('upload-application', () => {
         latest: true,
       }
 
-      const command = new UploadApplicationCommand()
+      const command = createCommand(UploadApplicationCommand)
       command['apiKey'] = overrideCLI.apiKey
       command['appKey'] = overrideCLI.appKey
       command['configPath'] = overrideCLI.configPath
@@ -591,7 +584,7 @@ describe('upload-application', () => {
         DATADOG_APP_KEY: 'app_key_env',
       }
 
-      const command = new UploadApplicationCommand()
+      const command = createCommand(UploadApplicationCommand)
       command['apiKey'] = 'api_key_cli'
       command['mobileApplicationVersionFilePath'] = './path/to/application_cli.apk'
 

@@ -16,6 +16,7 @@ export const contextFixture = (): ContextFixture => {
         next()
       },
     }),
+    stderr: jest.fn() as any,
     toString: () => data,
   }
 }
