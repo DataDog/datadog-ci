@@ -15,5 +15,4 @@ module.exports = {
     ],
   },
   roots: ['src'],
-  setupFilesAfterEnv: ['jest-matcher-specific-error'],
 }
