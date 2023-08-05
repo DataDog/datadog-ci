@@ -68,12 +68,12 @@ export class TraceCommand extends Command {
       childProcess.stderr.on('error', (err) => reject(err))
       childProcess.stderr.on('end', () => resolve(Buffer.concat(chunks).toString('utf8')))
     })
-    const [status, signal] = await new Promise((resolve, reject) => {
+    const [status, signal] = await new Promise<[number, NodeJS.Signals]>((resolve, reject) => {
       childProcess.on('error', (error: Error) => {
         reject(error)
       })
 
-      childProcess.on('close', (exitStatus: number, exitSignal: string) => {
+      childProcess.on('close', (exitStatus: number, exitSignal: NodeJS.Signals) => {
         resolve([exitStatus, exitSignal])
       })
     })
