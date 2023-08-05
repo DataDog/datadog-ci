@@ -1,13 +1,13 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
 exports[`commons maskConfig should mask a Lambda config correctly 1`] = `
-Object {
-  "Architectures": Array [
+{
+  "Architectures": [
     "x86_64",
   ],
   "CodeSize": 2275,
-  "Environment": Object {
-    "Variables": Object {
+  "Environment": {
+    "Variables": {
       "DD_API_KEY": "02**********33bd",
       "DD_LOG_LEVEL": "debug",
       "DD_SITE": "datadoghq.com",
@@ -16,12 +16,12 @@ Object {
   "FunctionArn": "arn:aws:lambda:us-east-1:123456789012:function:some-function",
   "FunctionName": "some-function",
   "Handler": "/path/handler.handler",
-  "Layers": Array [
-    Object {
+  "Layers": [
+    {
       "Arn": "arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Extension:43",
       "CodeSize": 13145076,
     },
-    Object {
+    {
       "Arn": "arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Node18-x:91",
       "CodeSize": 3614995,
     },
@@ -33,21 +33,21 @@ Object {
 `;
 
 exports[`commons maskConfig should not modify config if env vars are missing 1`] = `
-Object {
-  "Architectures": Array [
+{
+  "Architectures": [
     "x86_64",
   ],
   "CodeSize": 2275,
-  "Environment": Object {},
+  "Environment": {},
   "FunctionArn": "arn:aws:lambda:us-east-1:123456789012:function:some-function",
   "FunctionName": "some-function",
   "Handler": "/path/handler.handler",
-  "Layers": Array [
-    Object {
+  "Layers": [
+    {
       "Arn": "arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Extension:43",
       "CodeSize": 13145076,
     },
-    Object {
+    {
       "Arn": "arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Node18-x:91",
       "CodeSize": 3614995,
     },

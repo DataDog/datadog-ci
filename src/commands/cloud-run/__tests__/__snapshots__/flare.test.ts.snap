@@ -10,7 +10,7 @@ exports[`cloud-run flare checkAuthentication prints instructions on how to authe
 
 To authenticate with GCP, please follow these steps:
 1. If you haven't already, install the Google Cloud SDK: https://cloud.google.com/sdk/docs/install
-2. Run \\"gcloud auth application-default login\\" and follow the prompts in your browser to log in.
+2. Run "gcloud auth application-default login" and follow the prompts in your browser to log in.
 3. After logging in, run the \`datadog-ci cloud-run flare\` command again.
 "
 `;
@@ -65,22 +65,22 @@ GCP credentials verified!
 `;
 
 exports[`cloud-run flare maskConfig should mask a Cloud Run config correctly 1`] = `
-Object {
-  "template": Object {
-    "containers": Array [
-      Object {
-        "env": Array [
-          Object {
+{
+  "template": {
+    "containers": [
+      {
+        "env": [
+          {
             "name": "DD_API_KEY",
             "value": "02**********33bd",
             "values": "value",
           },
-          Object {
+          {
             "name": "DD_TRACE_ENABLED",
             "value": "true",
             "values": "value",
           },
-          Object {
+          {
             "name": "DD_SITE",
             "value": "datad0g.com",
             "values": "value",
@@ -95,8 +95,8 @@ Object {
 `;
 
 exports[`cloud-run flare maskConfig should not modify config if env vars are missing 1`] = `
-Object {
-  "template": Object {
+{
+  "template": {
     "someData": "data",
   },
 }

@@ -39,9 +39,9 @@ describe('instrument', () => {
 
       const updateRequest = await calculateUpdateRequest(config, settings, region, runtime)
       expect(updateRequest).toMatchInlineSnapshot(`
-        Object {
-          "Environment": Object {
-            "Variables": Object {
+        {
+          "Environment": {
+            "Variables": {
               "DD_FLUSH_TO_LOG": "false",
               "DD_LAMBDA_HANDLER": "index.handler",
               "DD_MERGE_XRAY_TRACES": "false",
@@ -51,7 +51,7 @@ describe('instrument', () => {
           },
           "FunctionName": "arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world",
           "Handler": "/opt/nodejs/node_modules/datadog-lambda-js/handler.handler",
-          "Layers": Array [
+          "Layers": [
             "arn:aws:lambda:sa-east-1:123456789012:layer:Datadog-Node12-x:5",
           ],
         }
@@ -77,9 +77,9 @@ describe('instrument', () => {
 
       const updateRequest = await calculateUpdateRequest(config, settings, region, runtime)
       expect(updateRequest).toMatchInlineSnapshot(`
-        Object {
-          "Environment": Object {
-            "Variables": Object {
+        {
+          "Environment": {
+            "Variables": {
               "DD_FLUSH_TO_LOG": "false",
               "DD_LAMBDA_HANDLER": "index.handler",
               "DD_MERGE_XRAY_TRACES": "false",
@@ -89,7 +89,7 @@ describe('instrument', () => {
           },
           "FunctionName": "arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world",
           "Handler": "datadog_lambda.handler.handler",
-          "Layers": Array [
+          "Layers": [
             "arn:aws:lambda:sa-east-1:123456789012:layer:Datadog-Python310:71",
           ],
         }
@@ -115,9 +115,9 @@ describe('instrument', () => {
 
       const updateRequest = await calculateUpdateRequest(config, settings, region, runtime)
       expect(updateRequest).toMatchInlineSnapshot(`
-        Object {
-          "Environment": Object {
-            "Variables": Object {
+        {
+          "Environment": {
+            "Variables": {
               "DD_FLUSH_TO_LOG": "false",
               "DD_LAMBDA_HANDLER": "index.handler",
               "DD_MERGE_XRAY_TRACES": "false",
@@ -127,7 +127,7 @@ describe('instrument', () => {
           },
           "FunctionName": "arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world",
           "Handler": "datadog_lambda.handler.handler",
-          "Layers": Array [
+          "Layers": [
             "arn:aws:lambda:sa-east-1:123456789012:layer:Datadog-Python311:77",
           ],
         }
@@ -154,9 +154,9 @@ describe('instrument', () => {
 
       const updateRequest = await calculateUpdateRequest(config, settings, region, runtime)
       expect(updateRequest).toMatchInlineSnapshot(`
-        Object {
-          "Environment": Object {
-            "Variables": Object {
+        {
+          "Environment": {
+            "Variables": {
               "DD_FLUSH_TO_LOG": "false",
               "DD_LAMBDA_HANDLER": "handler.hello",
               "DD_MERGE_XRAY_TRACES": "false",
@@ -166,7 +166,7 @@ describe('instrument', () => {
           },
           "FunctionName": "arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world",
           "Handler": "datadog_lambda.handler.handler",
-          "Layers": Array [
+          "Layers": [
             "arn:aws:lambda:sa-east-1:123456789012:layer:Datadog-Python39-ARM:11",
           ],
         }
@@ -194,9 +194,9 @@ describe('instrument', () => {
 
       const updateRequest = await calculateUpdateRequest(config, settings, region, runtime)
       expect(updateRequest).toMatchInlineSnapshot(`
-        Object {
-          "Environment": Object {
-            "Variables": Object {
+        {
+          "Environment": {
+            "Variables": {
               "DD_API_KEY": "02aeb762fff59ac0d5ad1536cd9633bd",
               "DD_LAMBDA_HANDLER": "index.handler",
               "DD_MERGE_XRAY_TRACES": "false",
@@ -206,7 +206,7 @@ describe('instrument', () => {
           },
           "FunctionName": "arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world",
           "Handler": "/opt/nodejs/node_modules/datadog-lambda-js/handler.handler",
-          "Layers": Array [
+          "Layers": [
             "arn:aws:lambda:sa-east-1:123456789012:layer:Datadog-Extension:6",
             "arn:aws:lambda:sa-east-1:123456789012:layer:Datadog-Node12-x:5",
           ],
@@ -234,9 +234,9 @@ describe('instrument', () => {
       const region = 'sa-east-1'
       const updateRequest = await calculateUpdateRequest(config, settings, region, runtime)
       expect(updateRequest).toMatchInlineSnapshot(`
-        Object {
-          "Environment": Object {
-            "Variables": Object {
+        {
+          "Environment": {
+            "Variables": {
               "DD_API_KEY_SECRET_ARN": "some-secret:arn:from:aws",
               "DD_LAMBDA_HANDLER": "index.handler",
               "DD_MERGE_XRAY_TRACES": "false",
@@ -246,7 +246,7 @@ describe('instrument', () => {
           },
           "FunctionName": "arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world",
           "Handler": "datadog_lambda.handler.handler",
-          "Layers": Array [
+          "Layers": [
             "arn:aws:lambda:sa-east-1:123456789012:layer:Datadog-Extension:11",
             "arn:aws:lambda:sa-east-1:123456789012:layer:Datadog-Python39:49",
           ],
@@ -275,9 +275,9 @@ describe('instrument', () => {
 
       const updateRequest = await calculateUpdateRequest(config, settings, region, runtime)
       expect(updateRequest).toMatchInlineSnapshot(`
-        Object {
-          "Environment": Object {
-            "Variables": Object {
+        {
+          "Environment": {
+            "Variables": {
               "DD_KMS_API_KEY": "5678",
               "DD_LAMBDA_HANDLER": "index.handler",
               "DD_MERGE_XRAY_TRACES": "false",
@@ -287,7 +287,7 @@ describe('instrument', () => {
           },
           "FunctionName": "arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world",
           "Handler": "datadog_lambda.handler.handler",
-          "Layers": Array [
+          "Layers": [
             "arn:aws:lambda:sa-east-1:123456789012:layer:Datadog-Extension:6",
             "arn:aws:lambda:sa-east-1:123456789012:layer:Datadog-Python39:5",
           ],
@@ -311,9 +311,9 @@ describe('instrument', () => {
       const region = 'sa-east-1'
       const updateRequest = await calculateUpdateRequest(config, {} as any, region, runtime)
       expect(updateRequest).toMatchInlineSnapshot(`
-        Object {
-          "Environment": Object {
-            "Variables": Object {
+        {
+          "Environment": {
+            "Variables": {
               "DD_KMS_API_KEY": "should-be-selected",
               "DD_LAMBDA_HANDLER": "index.handler",
               "DD_SITE": "datadoghq.com",
@@ -342,9 +342,9 @@ describe('instrument', () => {
       }
       const updateRequest = await calculateUpdateRequest(config, settings, region, runtime)
       expect(updateRequest).toMatchInlineSnapshot(`
-        Object {
-          "Environment": Object {
-            "Variables": Object {
+        {
+          "Environment": {
+            "Variables": {
               "DD_API_KEY": "02aeb762fff59ac0d5ad1536cd9633bd",
               "DD_LAMBDA_HANDLER": "index.handler",
               "DD_MERGE_XRAY_TRACES": "false",
@@ -353,7 +353,7 @@ describe('instrument', () => {
             },
           },
           "FunctionName": "arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world",
-          "Layers": Array [
+          "Layers": [
             "arn:aws:lambda:sa-east-1:464622532012:layer:Datadog-Extension:13",
           ],
         }
@@ -378,9 +378,9 @@ describe('instrument', () => {
 
       const updateRequest = await calculateUpdateRequest(config, settings, region, runtime)
       expect(updateRequest).toMatchInlineSnapshot(`
-        Object {
-          "Environment": Object {
-            "Variables": Object {
+        {
+          "Environment": {
+            "Variables": {
               "DD_FLUSH_TO_LOG": "false",
               "DD_LAMBDA_HANDLER": "index.handler",
               "DD_MERGE_XRAY_TRACES": "false",
@@ -411,9 +411,9 @@ describe('instrument', () => {
 
       const updateRequest = await calculateUpdateRequest(config, settings, region, runtime)
       expect(updateRequest).toMatchInlineSnapshot(`
-        Object {
-          "Environment": Object {
-            "Variables": Object {
+        {
+          "Environment": {
+            "Variables": {
               "DD_FLUSH_TO_LOG": "false",
               "DD_LAMBDA_HANDLER": "index.handler",
               "DD_MERGE_XRAY_TRACES": "false",
