@@ -4,10 +4,8 @@ jest.mock('@aws-sdk/credential-providers', () => ({
   fromIni: jest.fn(),
 }))
 jest.mock('../prompt')
+jest.mock('../renderers/instrument-uninstrument-renderer')
 jest.mock('../../../helpers/prompt')
-jest.mock('../renderers/instrument-uninstrument-renderer', () =>
-  require('../__mocks__/instrument-uninstrument-renderer')
-)
 jest.mock('../../../../package.json', () => ({version: 'XXXX'}))
 
 import * as fs from 'fs'

@@ -1,8 +1,6 @@
 jest.mock('fs')
-jest.mock('../../renderers/instrument-uninstrument-renderer', () =>
-  require('../../__mocks__/instrument-uninstrument-renderer')
-)
 jest.mock('@aws-sdk/credential-providers')
+jest.mock('../../renderers/instrument-uninstrument-renderer')
 
 import * as fs from 'fs'
 
