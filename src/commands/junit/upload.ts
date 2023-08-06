@@ -109,10 +109,14 @@ export class UploadJUnitXMLCommand extends Command {
   private verbose = Option.Boolean('--verbose', false)
   private dryRun = Option.Boolean('--dry-run', false)
   private env = Option.String('--env')
-  private logs = Option.Boolean('--logs', false)
+  private logs = Option.String('--logs', 'false', {
+    env: 'DD_CIVISIBILITY_LOGS_ENABLED',
+    tolerateBoolean: true,
+    validator: t.isBoolean(),
+  })
   private maxConcurrency = Option.String('--max-concurrency', '20', {validator: validation.isInteger()})
   private metrics = Option.Array('--metrics')
-  private service = Option.String('--service')
+  private service = Option.String('--service', {env: 'DD_SERVICE'})
   private tags = Option.Array('--tags')
   private reportTags = Option.Array('--report-tags')
   private reportMetrics = Option.Array('--report-metrics')
@@ -133,17 +137,6 @@ export class UploadJUnitXMLCommand extends Command {
   public async execute() {
     this.logger.setLogLevel(this.verbose ? LogLevel.DEBUG : LogLevel.INFO)
     this.logger.setShouldIncludeTime(this.verbose)
-    if (!this.service) {
-      this.service = process.env.DD_SERVICE
-    }
-
-    // TODO: support this
-    // Unless the user explicitly passes '0' or 'false'
-    // by `--skip-git-metadata-upload=0` or `--skip-git-metadata-upload=false` respectively,
-    // this will be true, so git metadata won't be uploaded
-    if (this.skipGitMetadataUpload) {
-      this.skipGitMetadataUpload = !isFalse(this.skipGitMetadataUpload)
-    }
 
     if (!this.service) {
       this.context.stderr.write('Missing service\n')
@@ -158,14 +151,6 @@ export class UploadJUnitXMLCommand extends Command {
 
     if (!this.config.env) {
       this.config.env = this.env
-    }
-
-    if (
-      !this.logs &&
-      process.env.DD_CIVISIBILITY_LOGS_ENABLED &&
-      !['false', '0'].includes(process.env.DD_CIVISIBILITY_LOGS_ENABLED.toLowerCase())
-    ) {
-      this.logs = true
     }
 
     if (this.rawXPathTags) {
