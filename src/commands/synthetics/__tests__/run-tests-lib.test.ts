@@ -475,7 +475,7 @@ describe('run-test', () => {
         jest.spyOn(utils, 'getReporter').mockImplementation(jest.fn())
       })
 
-      test('should use default reporter whith empty config', async () => {
+      test('should use default reporter with empty config', async () => {
         await runTests.execute({}, {})
         expect(utils.getReporter).toHaveBeenCalledWith(expect.arrayContaining([expect.any(DefaultReporter)]))
       })
