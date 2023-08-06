@@ -22,18 +22,21 @@ export const DEFAULT_UPLOAD_COMMAND_CONFIG: UploadApplicationCommandConfig = {
 }
 
 export class UploadApplicationCommand extends Command {
-  public configPath?: string
+  // CLI arguments
   private apiKey?: string
   private appKey?: string
-  private config: UploadApplicationCommandConfig = JSON.parse(JSON.stringify(DEFAULT_UPLOAD_COMMAND_CONFIG)) // Deep copy to avoid mutation during unit tests
+  private configPath?: string
   private datadogSite?: string
-  private mobileApplicationVersionFilePath?: string
-  private mobileApplicationId?: string
-  private versionName?: string
   private latest?: boolean
+  private mobileApplicationId?: string
+  private mobileApplicationVersionFilePath?: string
+  private versionName?: string
+
   private logger: Logger = new Logger((s: string) => {
     this.context.stdout.write(s)
   }, LogLevel.INFO)
+
+  private config = JSON.parse(JSON.stringify(DEFAULT_UPLOAD_COMMAND_CONFIG)) as UploadApplicationCommandConfig // Deep copy to avoid mutation during unit tests
 
   public async execute() {
     try {
