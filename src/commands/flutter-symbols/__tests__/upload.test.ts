@@ -685,7 +685,7 @@ describe('flutter-symbol upload', () => {
         getExpectedMetadata('ios', 'arm64'),
       ]
 
-      expect(uploadMultipartHelper).toBeCalledTimes(4)
+      expect(uploadMultipartHelper).toHaveBeenCalledTimes(4)
       expectedMetadatas.forEach((expectedMetadata) => {
         const mockCalls = (uploadMultipartHelper as jest.Mock).mock.calls
         const index = mockCalls.findIndex((call) => {
@@ -747,7 +747,7 @@ describe('flutter-symbol upload', () => {
         version: 1,
       }
 
-      expect(uploadMultipartHelper).toBeCalledTimes(4)
+      expect(uploadMultipartHelper).toHaveBeenCalledTimes(4)
       expectedMetadatas.forEach((expectedMetadata) => {
         const mockCalls = (uploadMultipartHelper as jest.Mock).mock.calls
         const index = mockCalls.findIndex((call) => {

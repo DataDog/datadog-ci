@@ -230,7 +230,7 @@ describe('cloud-run flare', () => {
 
       const result = await checkAuthentication()
       expect(result).toBeTruthy()
-      expect(GoogleAuth).toBeCalledTimes(1)
+      expect(GoogleAuth).toHaveBeenCalledTimes(1)
     })
 
     it('should return false when authentication fails', async () => {
@@ -240,7 +240,7 @@ describe('cloud-run flare', () => {
 
       const result = await checkAuthentication()
       expect(result).toBeFalsy()
-      expect(GoogleAuth).toBeCalledTimes(1)
+      expect(GoogleAuth).toHaveBeenCalledTimes(1)
     })
 
     it('prints instructions on how to authenticate when authentication fails', async () => {

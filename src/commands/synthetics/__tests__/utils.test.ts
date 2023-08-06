@@ -398,7 +398,7 @@ describe('utils', () => {
       ]
 
       await utils.getTestsToTrigger(api, triggerConfigs, mockReporter)
-      expect(spy).toBeCalledTimes(1)
+      expect(spy).toHaveBeenCalledTimes(1)
     })
   })
 
@@ -693,7 +693,7 @@ describe('utils', () => {
     ]
 
     test.each(cases)(
-      'Test execution rule: %s, result execution rule: %s. Expected rule: %s',
+      'execution rule: %s, result execution rule: %s. Expected rule: %s',
       (testRule, resultRule, expectedRule) => {
         const test = getApiTest('abc-def-ghi')
 
@@ -794,7 +794,7 @@ describe('utils', () => {
       expect(mockReporter.resultReceived).toHaveBeenCalledWith(batch.results[0])
     })
 
-    test('Test object in each result should be different even if they share the same public ID (config overrides)', async () => {
+    test('object in each result should be different even if they share the same public ID (config overrides)', async () => {
       mockApi({
         getBatchImplementation: async () => ({
           results: [batch.results[0], {...batch.results[0], result_id: '3'}],
@@ -1019,7 +1019,9 @@ describe('utils', () => {
         mockTunnel
       )
 
-      expect(mockReporter.error).toBeCalledWith('The tunnel has stopped working, this may have affected the results.')
+      expect(mockReporter.error).toHaveBeenCalledWith(
+        'The tunnel has stopped working, this may have affected the results.'
+      )
     })
 
     test('location when tunnel', async () => {
@@ -1097,7 +1099,7 @@ describe('utils', () => {
           },
           mockReporter
         )
-      ).rejects.toThrowError(
+      ).rejects.toThrow(
         'Failed to poll results: could not query https://app.datadoghq.com/example\nPoll results server error\n'
       )
 
@@ -1123,7 +1125,7 @@ describe('utils', () => {
           },
           mockReporter
         )
-      ).rejects.toThrowError(
+      ).rejects.toThrow(
         'Failed to get batch: could not query https://app.datadoghq.com/example\nGet batch server error\n'
       )
 
@@ -1187,7 +1189,7 @@ describe('utils', () => {
             }
           }
         )
-      ).rejects.toThrowError('FAILURE')
+      ).rejects.toThrow('FAILURE')
       expect(counter).toBe(3)
     })
   })

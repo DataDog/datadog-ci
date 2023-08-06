@@ -105,7 +105,7 @@ describe('run-test', () => {
             ...partialCIConfig,
             publicIds: ['public-id-1', 'public-id-2'],
           })
-        ).rejects.toThrowError(new CiError('NO_TESTS_TO_RUN'))
+        ).rejects.toThrow(new CiError('NO_TESTS_TO_RUN'))
         expect(getTestsToTriggersMock).toHaveBeenCalledWith(
           apiHelper,
           expect.arrayContaining([
@@ -139,7 +139,7 @@ describe('run-test', () => {
           global: configOverride,
           publicIds: ['public-id-1', 'public-id-2'],
         })
-      ).rejects.toThrowError(new CiError('NO_TESTS_TO_RUN'))
+      ).rejects.toThrow(new CiError('NO_TESTS_TO_RUN'))
       expect(getTestsToTriggersMock).toHaveBeenCalledWith(
         apiHelper,
         expect.arrayContaining([
@@ -175,7 +175,7 @@ describe('run-test', () => {
           publicIds: ['public-id-1', 'public-id-2'],
           tunnel: true,
         })
-      ).rejects.toThrowError(new CiError('NO_TESTS_TO_RUN'))
+      ).rejects.toThrow(new CiError('NO_TESTS_TO_RUN'))
       expect(getTestsToTriggersMock).toHaveBeenCalledWith(
         apiHelper,
         expect.arrayContaining([
@@ -240,7 +240,7 @@ describe('run-test', () => {
         jest.spyOn(api, 'getApiHelper').mockImplementation(() => apiHelper as any)
         await expect(
           runTests.executeTests(mockReporter, {...ciConfig, testSearchQuery: 'a-search-query', tunnel: true})
-        ).rejects.toThrowError(new CriticalError(error, 'Server Error'))
+        ).rejects.toThrow(new CriticalError(error, 'Server Error'))
       })
 
       test(`getTestsToTrigger throws - ${status}`, async () => {
@@ -252,7 +252,7 @@ describe('run-test', () => {
         jest.spyOn(api, 'getApiHelper').mockImplementation(() => apiHelper as any)
         await expect(
           runTests.executeTests(mockReporter, {...ciConfig, publicIds: ['public-id-1'], tunnel: true})
-        ).rejects.toThrowError(
+        ).rejects.toThrow(
           new CriticalError(
             error,
             'Failed to get test: query on https://app.datadoghq.com/example returned: "Bad Gateway"\n'
@@ -279,7 +279,7 @@ describe('run-test', () => {
       jest.spyOn(api, 'getApiHelper').mockImplementation(() => apiHelper as any)
       await expect(
         runTests.executeTests(mockReporter, {...ciConfig, publicIds: ['public-id-1', 'public-id-2'], tunnel: true})
-      ).rejects.toThrowError(new CriticalError('UNAVAILABLE_TUNNEL_CONFIG', 'Server Error'))
+      ).rejects.toThrow(new CriticalError('UNAVAILABLE_TUNNEL_CONFIG', 'Server Error'))
     })
 
     test('getMobileApplicationPresignedURL throws', async () => {
@@ -367,7 +367,7 @@ describe('run-test', () => {
       jest.spyOn(api, 'getApiHelper').mockImplementation(() => apiHelper as any)
       await expect(
         runTests.executeTests(mockReporter, {...ciConfig, publicIds: ['public-id-1', 'public-id-2'], tunnel: true})
-      ).rejects.toThrowError(
+      ).rejects.toThrow(
         new CriticalError(
           'TRIGGER_TESTS_FAILED',
           '[] Failed to trigger tests: query on https://app.datadoghq.com/example returned: "Bad Gateway"\n'
@@ -419,7 +419,7 @@ describe('run-test', () => {
           publicIds: ['public-id-1', 'public-id-2'],
           tunnel: true,
         })
-      ).rejects.toThrowError(
+      ).rejects.toThrow(
         new CriticalError(
           'POLL_RESULTS_FAILED',
           'Failed to poll results: query on https://app.datadoghq.com/example returned: "Bad Gateway"\n'
