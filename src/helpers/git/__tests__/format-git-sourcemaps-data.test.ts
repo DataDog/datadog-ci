@@ -76,9 +76,7 @@ describe('git', () => {
 
     test('integration', async () => {
       const data = await getRepositoryData(createMockSimpleGit() as any, '')
-      if (!data) {
-        fail('data should not be undefined')
-      }
+      expect(data).not.toBeUndefined()
 
       const files = data.trackedFilesMatcher.matchSourcemap(
         'src/commands/sourcemaps/__tests__/fixtures/basic/common.min.js.map',
@@ -91,9 +89,8 @@ describe('git', () => {
 
     test('integration: remote override', async () => {
       const data = await getRepositoryData(createMockSimpleGit() as any, 'git@github.com:user/other.git')
-      if (!data) {
-        fail('data should not be undefined')
-      }
+      expect(data).not.toBeUndefined()
+
       const files = data.trackedFilesMatcher.matchSourcemap(
         'src/commands/sourcemaps/__tests__/fixtures/basic/common.min.js.map',
         () => undefined
