@@ -84,10 +84,6 @@ import {
   RenderResultsTestCase,
 } from './fixtures'
 
-beforeEach(() => {
-  jest.restoreAllMocks()
-})
-
 describe('utils', () => {
   const apiConfiguration = {
     apiKey: '123',
@@ -124,10 +120,6 @@ describe('utils', () => {
   })
 
   describe('getFilePathRelativeToRepo', () => {
-    afterEach(() => {
-      jest.restoreAllMocks()
-    })
-
     test('datadog-ci is not run in a git repository', async () => {
       const pathToProject = '/path/to/project'
       jest.spyOn(process, 'cwd').mockImplementation(() => pathToProject)
@@ -205,6 +197,10 @@ describe('utils', () => {
   })
 
   describe('runTest', () => {
+    beforeEach(() => {
+      jest.restoreAllMocks()
+    })
+
     const fakeId = '123-456-789'
     const fakeTrigger: Trigger = {
       batch_id: 'bid',
@@ -941,7 +937,6 @@ describe('utils', () => {
     })
 
     test('wait between batch polling', async () => {
-      jest.restoreAllMocks()
       const waitMock = jest.spyOn(utils, 'wait').mockImplementation(() => new Promise((r) => setTimeout(r, 10)))
 
       let counter = 0
@@ -1402,10 +1397,6 @@ describe('utils', () => {
   })
 
   describe('getDatadogHost', () => {
-    beforeEach(() => {
-      jest.restoreAllMocks()
-    })
-
     test('should default to datadog us api', async () => {
       process.env = {}
 
@@ -1447,12 +1438,18 @@ describe('utils', () => {
     })
   })
 
-  test('getOrgSettings is not important enough to throw', async () => {
-    jest.spyOn(api, 'getSyntheticsOrgSettings').mockImplementation(() => {
-      throw getAxiosHttpError(502, {message: 'Server Error'})
+  describe('getSyntheticsOrgSettings', () => {
+    beforeEach(() => {
+      jest.restoreAllMocks()
     })
 
-    const config = (apiConfiguration as unknown) as SyntheticsCIConfig
-    expect(await utils.getOrgSettings(mockReporter, config)).toBeUndefined()
+    test('failing to get org settings is not important enough to throw', async () => {
+      jest.spyOn(api, 'getSyntheticsOrgSettings').mockImplementation(() => {
+        throw getAxiosHttpError(502, {message: 'Server Error'})
+      })
+
+      const config = (apiConfiguration as unknown) as SyntheticsCIConfig
+      expect(await utils.getOrgSettings(mockReporter, config)).toBeUndefined()
+    })
   })
 })
