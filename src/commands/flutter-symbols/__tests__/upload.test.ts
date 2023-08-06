@@ -42,10 +42,6 @@ const cliVersion = require('../../../../package.json').version
 const fixtureDir = './src/commands/flutter-symbols/__tests__/fixtures'
 
 describe('flutter-symbol upload', () => {
-  beforeAll(() => {
-    jest.clearAllMocks()
-  })
-
   const createMockContext = () => {
     let outString = ''
     let errString = ''
