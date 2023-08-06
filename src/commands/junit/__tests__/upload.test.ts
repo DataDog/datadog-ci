@@ -434,7 +434,7 @@ describe('execute', () => {
 
   test('with git metadata', async () => {
     const {context, code} = await runCLI([
-      '--no-skip-git-metadata-upload',
+      '--skip-git-metadata-upload=0',
       process.cwd() + '/src/commands/junit/__tests__/fixtures/single_file.xml',
     ])
     const output = context.stdout.toString().split(os.EOL)
@@ -444,7 +444,7 @@ describe('execute', () => {
 
   test('id headers are added when git metadata is uploaded', async () => {
     await runCLI([
-      '--no-skip-git-metadata-upload',
+      '--skip-git-metadata-upload=0',
       process.cwd() + '/src/commands/junit/__tests__/fixtures/single_file.xml',
     ])
     expect(id).toHaveBeenCalled()

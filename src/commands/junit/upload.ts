@@ -7,6 +7,7 @@ import {Command, Option} from 'clipanion'
 import {XMLParser, XMLValidator} from 'fast-xml-parser'
 import glob from 'glob'
 import asyncPool from 'tiny-async-pool'
+import * as t from 'typanion'
 
 import {getCISpanTags} from '../../helpers/ci'
 import {getGitMetadata} from '../../helpers/git/format-git-span-data'
@@ -37,7 +38,7 @@ import {
   renderSuccessfulUpload,
   renderUpload,
 } from './renderer'
-import {isFalse, isFile} from './utils'
+import {isFile} from './utils'
 
 const TRACE_ID_HTTP_HEADER = 'x-datadog-trace-id'
 const PARENT_ID_HTTP_HEADER = 'x-datadog-parent-id'
@@ -117,7 +118,7 @@ export class UploadJUnitXMLCommand extends Command {
   private reportMetrics = Option.Array('--report-metrics')
   private rawXPathTags = Option.Array('--xpath-tag')
   private gitRepositoryURL = Option.String('--git-repository-url')
-  private skipGitMetadataUpload = Option.Boolean('--skip-git-metadata-upload', true)
+  private skipGitMetadataUpload = Option.String('--skip-git-metadata-upload', 'true', {validator: t.isBoolean()})
 
   private config = {
     apiKey: process.env.DATADOG_API_KEY || process.env.DD_API_KEY,
