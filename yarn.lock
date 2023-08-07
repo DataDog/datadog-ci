@@ -2791,7 +2791,6 @@ __metadata:
     "@types/xml2js": 0.4.9
     "@typescript-eslint/eslint-plugin": ^4.33.0
     "@typescript-eslint/parser": ^4.33.0
-    agent-base: ^7.1.0
     ajv: ^8.12.0
     ajv-formats: ^2.1.1
     async-retry: 1.3.1
