@@ -1,6 +1,6 @@
 /**
- * Used to store important info about a CloudRun log.
- * This info will be used to build the CSV log files.
+ * Summarize relevant information about a Cloud Run log.
+ * Also used to build CSV log files.
  * @typedef {Object} CloudRunLog
  * @property {string} severity - The level of severity of the log. It can be values such as 'DEBUG', 'INFO', 'ERROR', etc.
  * @property {string} timestamp - The timestamp of when the log was generated.
