@@ -329,6 +329,18 @@ describe('cloud-run flare', () => {
       const receivedContent = writeFileSpy.mock.calls[0][1]
       expect(receivedContent).toMatchSnapshot()
     })
+
+    it('prints a warning when generateInsightsFile() errors', async () => {
+      jest.spyOn(flareModule, 'generateInsightsFile').mockImplementationOnce(() => {
+        throw new Error('Some error')
+      })
+      const cli = makeCli()
+      const context = createMockContext()
+      const code = await cli.run(MOCK_REQUIRED_FLAGS, context as any)
+      const output = context.stdout.toString()
+      expect(code).toBe(0)
+      expect(output).toMatchSnapshot()
+    })
   })
 
   describe('prompts for confirmation before sending', () => {

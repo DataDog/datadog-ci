@@ -346,9 +346,16 @@ export class LambdaFlareCommand extends Command {
       }
 
       // Write insights file
-      const insightsFilePath = path.join(rootFolderPath, INSIGHTS_FILE_NAME)
-      generateInsightsFile(insightsFilePath, this.isDryRun, config)
-      this.context.stdout.write(`• Saved insights file to ./${INSIGHTS_FILE_NAME}\n`)
+      try {
+        const insightsFilePath = path.join(rootFolderPath, INSIGHTS_FILE_NAME)
+        generateInsightsFile(insightsFilePath, this.isDryRun, config)
+        this.context.stdout.write(`• Saved insights file to ./${INSIGHTS_FILE_NAME}\n`)
+      } catch (err) {
+        const errorDetails = err instanceof Error ? err.message : ''
+        this.context.stdout.write(
+          helpersRenderer.renderSoftWarning(`Unable to create INSIGHTS.md file. ${errorDetails}`)
+        )
+      }
 
       // Exit if dry run
       const outputMsg = `\nℹ️ Your output files are located at: ${rootFolderPath}\n\n`
