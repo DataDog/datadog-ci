@@ -316,6 +316,31 @@ describe('cloud-run flare', () => {
     })
   })
 
+  describe('prompts for confirmation before sending', () => {
+    it('sends when user answers prompt with yes', async () => {
+      jest.spyOn(helpersPromptModule, 'requestConfirmation').mockResolvedValueOnce(true)
+      const cli = makeCli()
+      const context = createMockContext()
+      const code = await cli.run(MOCK_REQUIRED_FLAGS, context as any)
+      expect(code).toBe(0)
+      const output = context.stdout.toString()
+      expect(output).toMatchSnapshot()
+      expect(output).toContain('✅ Successfully sent flare file to Datadog Support!')
+    })
+
+    it('does not send when user answers prompt with no', async () => {
+      // The first prompt is for additional files, the second is for confirmation before sending
+      jest.spyOn(helpersPromptModule, 'requestConfirmation').mockResolvedValueOnce(false).mockResolvedValueOnce(false)
+      const cli = makeCli()
+      const context = createMockContext()
+      const code = await cli.run(MOCK_REQUIRED_FLAGS, context as any)
+      expect(code).toBe(0)
+      const output = context.stdout.toString()
+      expect(output).toMatchSnapshot()
+      expect(output).toContain('🚫 The flare files were not sent based on your selection.')
+    })
+  })
+
   describe('getLogs', () => {
     const logName = 'mock-logname'
     const mockLogs = [
@@ -461,31 +486,6 @@ describe('cloud-run flare', () => {
         '"NOTICE","2023-07-28 01:01:01","mock-logname","Test log 3"',
       ].join('\n')
       expect(writeFileSpy).toHaveBeenCalledWith(mockFilePath, expectedContent)
-    })
-  })
-
-  describe('prompts for confirmation before sending', () => {
-    it('sends when user answers prompt with yes', async () => {
-      jest.spyOn(helpersPromptModule, 'requestConfirmation').mockResolvedValueOnce(true)
-      const cli = makeCli()
-      const context = createMockContext()
-      const code = await cli.run(MOCK_REQUIRED_FLAGS, context as any)
-      expect(code).toBe(0)
-      const output = context.stdout.toString()
-      expect(output).toMatchSnapshot()
-      expect(output).toContain('✅ Successfully sent flare file to Datadog Support!')
-    })
-
-    it('does not send when user answers prompt with no', async () => {
-      // The first prompt is for additional files, the second is for confirmation before sending
-      jest.spyOn(helpersPromptModule, 'requestConfirmation').mockResolvedValueOnce(false).mockResolvedValueOnce(false)
-      const cli = makeCli()
-      const context = createMockContext()
-      const code = await cli.run(MOCK_REQUIRED_FLAGS, context as any)
-      expect(code).toBe(0)
-      const output = context.stdout.toString()
-      expect(output).toMatchSnapshot()
-      expect(output).toContain('🚫 The flare files were not sent based on your selection.')
     })
   })
 })
