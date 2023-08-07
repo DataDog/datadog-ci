@@ -267,7 +267,7 @@ export const getProjectLocationServiceFromName = (name: string | null | undefine
   const location = components[3]
   const service = components[5]
 
-  return [project, location, service]
+  return [service, location, project]
 }
 
 /**
@@ -285,13 +285,13 @@ export const generateInsightsFile = (insightsFilePath: string, isDryRun: boolean
     lines.push('_This command was run in dry mode._')
   }
 
-  // // Cloud Run Service Configuration
-  const [project, location, service] = getProjectLocationServiceFromName(config.name) ?? ['', '', '']
+  // Cloud Run Service Configuration
+  const [service, location, project] = getProjectLocationServiceFromName(config.name) ?? ['', '', '']
   lines.push('\n## Cloud Run Service Configuration')
-  lines.push(`**Project**: \`${project}\`  `)
-  lines.push(`**Location**: \`${location}\`  `)
   lines.push(`**Service Name**: \`${service}\`  `)
-  lines.push(`**Description**: \`${config.description ?? ''}\`  `)
+  lines.push(`**Location**: \`${location}\`  `)
+  lines.push(`**Project**: \`${project}\`  `)
+  lines.push(`**Description**: \`${config.description ?? 'No description'}\`  `)
   lines.push(`**URI**: \`${config.uri ?? ''}\`  `)
   const containers = config.template?.containers ?? []
   const envVars = new Map<string, string>()
@@ -312,7 +312,7 @@ export const generateInsightsFile = (insightsFilePath: string, isDryRun: boolean
     lines.push(`- \`${key}\`: \`${value}\``)
   }
 
-  // // CLI Insights
+  // CLI Insights
   lines.push('\n ## CLI')
   lines.push(`**Run Location**: \`${process.cwd()}\`  `)
   lines.push(`**CLI Version**: \`${version}\`  `)
