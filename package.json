@@ -10,9 +10,9 @@
   },
   "volta": {
     "node": "14.20.1",
-    "yarn": "3.4.1"
+    "yarn": "1.22.19"
   },
-  "packageManager": "yarn@3.4.1",
+  "packageManager": "yarn@1.22.19",
   "files": [
     "dist/**/*",
     "README",
