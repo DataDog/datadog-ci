@@ -100,7 +100,7 @@ describe('flare', () => {
 
       const fn = sendToDatadog(MOCK_ZIP_PATH, MOCK_CASE_ID, MOCK_EMAIL, MOCK_API_KEY, MOCK_ROOT_FOLDER_PATH)
       await expect(fn).rejects.toThrow(
-        `Failed to send flare file to Datadog Support: Some error. Server error\nIs your case ID and email correct?\n`
+        `Failed to send flare file to Datadog Support: Some error. Server error\nAre your case ID and email correct?\n`
       )
     })
 
