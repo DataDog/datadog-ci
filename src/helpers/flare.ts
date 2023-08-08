@@ -8,7 +8,6 @@ import path from 'path'
 import axios from 'axios'
 import FormData from 'form-data'
 
-import {PROJECT_FILES} from '../commands/lambda/constants'
 import {
   CI_SITE_ENV_VAR,
   DATADOG_SITE_EU1,
@@ -96,10 +95,10 @@ export const getEndpointUrl = () => {
  * Searches current directory for project files
  * @returns a set of file paths of project files
  */
-export const getProjectFiles = async () => {
+export const getProjectFiles = async (projectFiles: string[]) => {
   const filePaths = new Set<string>()
   const cwd = process.cwd()
-  for (const fileName of PROJECT_FILES) {
+  for (const fileName of projectFiles) {
     const filePath = path.join(cwd, fileName)
     if (fs.existsSync(filePath)) {
       filePaths.add(filePath)

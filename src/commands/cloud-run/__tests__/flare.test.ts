@@ -103,7 +103,7 @@ jest.mock('@google-cloud/logging')
 jest.useFakeTimers({now: new Date(Date.UTC(2023, 0))})
 
 // File system mocks
-process.cwd = jest.fn().mockReturnValue(MOCK_CWD)
+jest.spyOn(process, 'cwd').mockReturnValue(MOCK_CWD)
 jest.mock('fs')
 fs.existsSync = jest.fn().mockReturnValue(true)
 ;(fs.statSync as jest.Mock).mockImplementation((file_path: string) => ({

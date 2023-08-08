@@ -4,8 +4,7 @@ import process from 'process'
 import axios from 'axios'
 import FormData from 'form-data'
 
-import {PROJECT_FILES} from '../../commands/lambda/constants'
-import {CI_SITE_ENV_VAR, SITE_ENV_VAR} from '../../constants'
+import {CI_SITE_ENV_VAR, FLARE_PROJECT_FILES, SITE_ENV_VAR} from '../../constants'
 
 import {getEndpointUrl, getProjectFiles, sendToDatadog, validateFilePath} from '../flare'
 import * as flareModule from '../flare'
@@ -14,7 +13,7 @@ import {MOCK_CWD} from './fixtures'
 
 // Mocks
 jest.mock('fs')
-process.cwd = jest.fn().mockReturnValue(MOCK_CWD)
+jest.spyOn(process, 'cwd').mockReturnValue(MOCK_CWD)
 jest.spyOn(flareModule, 'getProjectFiles').mockResolvedValue(new Set())
 fs.createReadStream = jest.fn().mockReturnValue('test data')
 jest.mock('jszip')
@@ -108,20 +107,20 @@ describe('flare', () => {
     })
 
     it('should return a map of existing project files', async () => {
-      const mockProjectFiles = ['serverless.yml', 'package.json']
-      ;(fs.existsSync as jest.Mock).mockImplementation((filePath: string) => mockProjectFiles.includes(filePath))
+      const mockFiles = ['serverless.yml', 'package.json']
+      ;(fs.existsSync as jest.Mock).mockImplementation((filePath: string) => mockFiles.includes(filePath))
 
-      const result = await getProjectFiles()
-      expect(Array.from(result.keys())).toEqual(mockProjectFiles)
-      expect(fs.existsSync).toHaveBeenCalledTimes(PROJECT_FILES.length)
+      const result = await getProjectFiles(FLARE_PROJECT_FILES)
+      expect(Array.from(result.keys())).toEqual(['package.json'])
+      expect(fs.existsSync).toHaveBeenCalledTimes(FLARE_PROJECT_FILES.length)
     })
 
     it('should return an empty map when no files exist', async () => {
       ;(fs.existsSync as jest.Mock).mockReturnValue(false)
 
-      const result = await getProjectFiles()
+      const result = await getProjectFiles(FLARE_PROJECT_FILES)
       expect(result).toEqual(new Set())
-      expect(fs.existsSync).toHaveBeenCalledTimes(PROJECT_FILES.length)
+      expect(fs.existsSync).toHaveBeenCalledTimes(FLARE_PROJECT_FILES.length)
     })
   })
 

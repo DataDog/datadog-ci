@@ -16,6 +16,7 @@ import {
   API_KEY_ENV_VAR,
   CI_API_KEY_ENV_VAR,
   FLARE_OUTPUT_DIRECTORY,
+  FLARE_PROJECT_FILES,
   LOGS_DIRECTORY,
   PROJECT_FILES_DIRECTORY,
 } from '../../constants'
@@ -146,7 +147,7 @@ export class CloudRunFlareCommand extends Command {
 
     // Get project files
     this.context.stdout.write(chalk.bold('\n📁 Searching for project files in current directory...\n'))
-    const projectFilePaths = await getProjectFiles()
+    const projectFilePaths = await getProjectFiles(FLARE_PROJECT_FILES)
     this.context.stdout.write(renderProjectFiles(projectFilePaths))
 
     // Additional files

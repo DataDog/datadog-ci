@@ -29,7 +29,12 @@ import * as helpersRenderer from '../../helpers/renderer'
 import {renderAdditionalFiles, renderProjectFiles} from '../../helpers/renderer'
 import {formatBytes} from '../../helpers/utils'
 
-import {AWS_DEFAULT_REGION_ENV_VAR, FRAMEWORK_FILES_MAPPING, DeploymentFrameworks, PROJECT_FILES} from './constants'
+import {
+  AWS_DEFAULT_REGION_ENV_VAR,
+  FRAMEWORK_FILES_MAPPING,
+  DeploymentFrameworks,
+  LAMBDA_PROJECT_FILES,
+} from './constants'
 import {
   getAWSCredentials,
   getLambdaFunctionConfig,
@@ -175,7 +180,7 @@ export class LambdaFlareCommand extends Command {
 
     // Get project files
     this.context.stdout.write(chalk.bold('\n📁 Searching for project files in current directory...\n'))
-    const projectFilePaths = await getProjectFiles()
+    const projectFilePaths = await getProjectFiles(LAMBDA_PROJECT_FILES)
     this.context.stdout.write(renderProjectFiles(projectFilePaths))
 
     // Additional files

@@ -77,7 +77,7 @@ jest.spyOn(helpersPromptModule, 'requestConfirmation').mockResolvedValue(true)
 jest.spyOn(helpersFlareModule, 'getProjectFiles').mockResolvedValue(new Set())
 
 // File system mocks
-process.cwd = jest.fn().mockReturnValue(MOCK_CWD)
+jest.spyOn(process, 'cwd').mockReturnValue(MOCK_CWD)
 jest.mock('fs')
 fs.writeFileSync = jest.fn().mockImplementation(() => {})
 fs.readFileSync = jest.fn().mockReturnValue(JSON.stringify(MOCK_LAMBDA_CONFIG, undefined, 2))

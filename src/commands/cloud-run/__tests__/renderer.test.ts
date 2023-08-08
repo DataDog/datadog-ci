@@ -1,11 +1,9 @@
-import process from 'process'
-
 import {MOCK_CWD} from '../../../helpers/__tests__/fixtures'
 import {renderAdditionalFiles, renderProjectFiles} from '../../../helpers/renderer'
 
 import {renderAuthenticationInstructions} from '../renderer'
 
-process.cwd = jest.fn().mockReturnValue(MOCK_CWD)
+jest.spyOn(process, 'cwd').mockReturnValue(MOCK_CWD)
 
 describe('renderer', () => {
   test('renderAuthenticationInstructions', () => {
