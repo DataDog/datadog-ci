@@ -80,6 +80,7 @@ src/commands/react-native/__tests__/fixtures/with-sources-content/main.jsbundle.
 !src/commands/sarif/__tests__/fixtures/*.sarif
 !src/commands/sarif/__tests__/fixtures/subfolder/*.sarif
 !src/commands/sarif/__tests__/fixtures/another_subfolder/*.sarif
+!.github/workflows/e2e/sarif-reports/*.sarif
 
 # Yarn non zero-install. See: https://yarnpkg.com/getting-started/qa#which-files-should-be-gitignored
 .pnp.*
