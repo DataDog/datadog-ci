@@ -33,10 +33,11 @@ import {
   getLogStreamNames,
   getProjectFiles,
   getTags,
-  getUniqueFileNames, summarizeConfig,
+  getUniqueFileNames,
+  summarizeConfig,
   validateFilePath,
-  validateStartEndFlags
-} from "../flare";
+  validateStartEndFlags,
+} from '../flare'
 import * as flareModule from '../flare'
 import {getAWSCredentials, getLambdaFunctionConfig, maskConfig} from '../functions/commons'
 import * as lambdaPromptModule from '../prompt'
