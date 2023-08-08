@@ -14,7 +14,7 @@ import {AwsCredentialIdentity} from '@aws-sdk/types'
 import chalk from 'chalk'
 import {Command} from 'clipanion'
 
-import {API_KEY_ENV_VAR, CI_API_KEY_ENV_VAR, FLARE_OUTPUT_DIRECTORY} from '../../constants'
+import {API_KEY_ENV_VAR, CI_API_KEY_ENV_VAR, FLARE_OUTPUT_DIRECTORY, LOGS_DIRECTORY} from '../../constants'
 import {sendToDatadog} from '../../helpers/flare'
 import {createDirectories, deleteFolder, writeFile, zipContents} from '../../helpers/fs'
 import {requestConfirmation} from '../../helpers/prompt'
@@ -34,7 +34,6 @@ import * as commonRenderer from './renderers/common-renderer'
 
 const version = require('../../../package.json').version
 
-const LOGS_DIRECTORY = 'logs'
 const PROJECT_FILES_DIRECTORY = 'project_files'
 const ADDITIONAL_FILES_DIRECTORY = 'additional_files'
 const FUNCTION_CONFIG_FILE_NAME = 'function_config.json'
@@ -194,6 +193,7 @@ export class LambdaFlareCommand extends Command {
 
       return 1
     }
+
     while (confirmAdditionalFiles) {
       this.context.stdout.write('\n')
       let filePath: string
@@ -362,19 +362,11 @@ export class LambdaFlareCommand extends Command {
 
       // Confirm before sending
       this.context.stdout.write('\n')
-      let confirmSendFiles
-      try {
-        confirmSendFiles = await requestConfirmation(
-          'Are you sure you want to send the flare file to Datadog Support?',
-          false
-        )
-      } catch (err) {
-        if (err instanceof Error) {
-          this.context.stderr.write(helpersRenderer.renderError(err.message))
-        }
+      const confirmSendFiles = await requestConfirmation(
+        'Are you sure you want to send the flare file to Datadog Support?',
+        false
+      )
 
-        return 1
-      }
       if (!confirmSendFiles) {
         this.context.stdout.write('\n🚫 The flare files were not sent based on your selection.')
         this.context.stdout.write(outputMsg)
