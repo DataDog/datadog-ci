@@ -43,6 +43,7 @@ const FLARE_ZIP_FILE_NAME = 'lambda-flare-output.zip'
 const MAX_LOG_STREAMS = 50
 const DEFAULT_LOG_STREAMS = 3
 const MAX_LOG_EVENTS_PER_STREAM = 1000
+const SUMMARIZED_FIELDS = new Set(['FunctionName', 'Runtime', 'FunctionArn', 'Handler', 'Environment'])
 
 export class LambdaFlareCommand extends Command {
   private isDryRun = false
@@ -162,8 +163,14 @@ export class LambdaFlareCommand extends Command {
       return 1
     }
     config = maskConfig(config)
-    const configStr = util.inspect(config, false, undefined, true)
-    this.context.stdout.write(`\n${configStr}\n`)
+    const summarizedConfig = summarizeConfig(config)
+    const summarizedConfigStr = util.inspect(summarizedConfig, false, undefined, true)
+    this.context.stdout.write(`\n${summarizedConfigStr}\n`)
+    this.context.stdout.write(
+      chalk.italic(
+        `(This is a summary of the config. The full config will be saved in "${FUNCTION_CONFIG_FILE_NAME}".)\n`
+      )
+    )
 
     // Get project files
     this.context.stdout.write(chalk.bold('\n📁 Searching for project files in current directory...\n'))
@@ -431,6 +438,22 @@ export const validateStartEndFlags = (start: string | undefined, end: string | u
   }
 
   return [startMillis, endMillis]
+}
+
+/**
+ * Summarizes the Lambda config as to not spam the terminal
+ * @param config
+ * @returns a summarized config
+ */
+export const summarizeConfig = (config: any) => {
+  const summarizedConfig: any = {}
+  for (const key in config) {
+    if (SUMMARIZED_FIELDS.has(key)) {
+      summarizedConfig[key] = config[key]
+    }
+  }
+
+  return summarizedConfig
 }
 
 /**

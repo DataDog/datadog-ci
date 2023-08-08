@@ -1,4 +1,5 @@
 import IService = google.cloud.run.v2.IService
+import IContainer = google.cloud.run.v2.IContainer
 import fs from 'fs'
 import path from 'path'
 import process from 'process'
@@ -129,10 +130,16 @@ export class CloudRunFlareCommand extends Command {
       return 1
     }
     config = maskConfig(config)
+    const summarizedConfig = summarizeConfig(config)
     // 10 is the depth when inspecting the config file. Cloud-run configs have high depth, so
     // we must raise the depth from the default depth of 2.
-    const configStr = util.inspect(config, false, 10, true)
-    this.context.stdout.write(`\n${configStr}\n`)
+    const summarizedConfigStr = util.inspect(summarizedConfig, false, 10, true)
+    this.context.stdout.write(`\n${summarizedConfigStr}\n`)
+    this.context.stdout.write(
+      chalk.italic(
+        `(This is a summary of the config. The full config will be saved in "${SERVICE_CONFIG_FILE_NAME}".)\n`
+      )
+    )
 
     // Get logs
     const logFileMappings = new Map<string, CloudRunLog[]>()
@@ -294,6 +301,34 @@ export const maskConfig = (config: any) => {
   }
 
   return configCopy
+}
+
+/**
+ * Summarizes the Cloud Run config as to not spam the terminal
+ * @param config
+ * @returns a summarized config
+ */
+export const summarizeConfig = (config: IService) => {
+  const summarizedConfig: any = {}
+  summarizedConfig.name = config.name
+  summarizedConfig.uid = config.uid
+  summarizedConfig.uri = config.uri
+
+  // Get env vars and image for each containers
+  const template = config.template
+  if (template) {
+    const summarizedContainers: IContainer[] = []
+    const containers = template.containers ?? []
+    containers.forEach((container) => {
+      const summarizedContainer: any = {}
+      summarizedContainer.env = container.env
+      summarizedContainer.image = container.image
+      summarizedContainers.push(summarizedContainer)
+    })
+    summarizedConfig.containers = summarizedContainers
+  }
+
+  return summarizedConfig
 }
 
 /**

@@ -33,10 +33,10 @@ import {
   getLogStreamNames,
   getProjectFiles,
   getTags,
-  getUniqueFileNames,
+  getUniqueFileNames, summarizeConfig,
   validateFilePath,
-  validateStartEndFlags,
-} from '../flare'
+  validateStartEndFlags
+} from "../flare";
 import * as flareModule from '../flare'
 import {getAWSCredentials, getLambdaFunctionConfig, maskConfig} from '../functions/commons'
 import * as lambdaPromptModule from '../prompt'
@@ -982,5 +982,9 @@ describe('lambda flare', () => {
       const result = getUniqueFileNames(mockFilePaths)
       expect(result).toEqual(expectedFiles)
     })
+  })
+
+  test('summarizeConfig', () => {
+    expect(summarizeConfig(MOCK_LAMBDA_CONFIG)).toMatchSnapshot()
   })
 })
