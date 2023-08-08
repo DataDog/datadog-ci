@@ -304,7 +304,7 @@ export const maskConfig = (config: any) => {
 }
 
 /**
- * Summarizes the Cloud Run config as to not spam the terminal
+ * Summarizes the Cloud Run config as to not flood the terminal
  * @param config
  * @returns a summarized config
  */

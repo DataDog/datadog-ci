@@ -441,7 +441,7 @@ export const validateStartEndFlags = (start: string | undefined, end: string | u
 }
 
 /**
- * Summarizes the Lambda config as to not spam the terminal
+ * Summarizes the Lambda config as to not flood the terminal
  * @param config
  * @returns a summarized config
  */
