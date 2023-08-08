@@ -27,4 +27,5 @@ export const SITE_ENV_VAR = 'DD_SITE'
 
 // Flare constants
 export const FLARE_OUTPUT_DIRECTORY = '.datadog-ci'
+export const LOGS_DIRECTORY = 'logs'
 export const FLARE_ENDPOINT_PATH = '/api/ui/support/serverless/flare'
