@@ -43,10 +43,6 @@ const cliVersion = require('../../../../package.json').version
 const fixtureDir = './src/commands/flutter-symbols/__tests__/fixtures'
 
 describe('flutter-symbol upload', () => {
-  beforeAll(() => {
-    jest.clearAllMocks()
-  })
-
   const runCommand = async (prepFunction: (command: UploadCommand) => void) => {
     const command = createCommand(UploadCommand)
     prepFunction(command)
@@ -661,7 +657,7 @@ describe('flutter-symbol upload', () => {
         getExpectedMetadata('ios', 'arm64'),
       ]
 
-      expect(uploadMultipartHelper).toBeCalledTimes(4)
+      expect(uploadMultipartHelper).toHaveBeenCalledTimes(4)
       expectedMetadatas.forEach((expectedMetadata) => {
         const mockCalls = (uploadMultipartHelper as jest.Mock).mock.calls
         const index = mockCalls.findIndex((call) => {
@@ -723,7 +719,7 @@ describe('flutter-symbol upload', () => {
         version: 1,
       }
 
-      expect(uploadMultipartHelper).toBeCalledTimes(4)
+      expect(uploadMultipartHelper).toHaveBeenCalledTimes(4)
       expectedMetadatas.forEach((expectedMetadata) => {
         const mockCalls = (uploadMultipartHelper as jest.Mock).mock.calls
         const index = mockCalls.findIndex((call) => {

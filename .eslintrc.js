@@ -8,13 +8,14 @@ module.exports = {
     'plugin:@typescript-eslint/recommended-requiring-type-checking',
     'plugin:import/recommended',
     'plugin:prettier/recommended',
+    'plugin:jest/recommended',
   ],
   parser: '@typescript-eslint/parser',
   parserOptions: {
     project: 'tsconfig.json',
     sourceType: 'module',
   },
-  plugins: ['eslint-plugin-import', 'eslint-plugin-prefer-arrow', '@typescript-eslint', 'no-null'],
+  plugins: ['@typescript-eslint', 'import', 'jest', 'no-null', 'prefer-arrow'],
   root: true,
   rules: {
     '@typescript-eslint/adjacent-overload-signatures': 'error',
@@ -251,6 +252,7 @@ module.exports = {
     ],
     'use-isnan': 'error',
     'valid-typeof': 'off',
+    'jest/no-interpolation-in-snapshots': 'off', // allow showing from which variable comes a specific value in inline snapshots
   },
   settings: {
     'import/resolver': {

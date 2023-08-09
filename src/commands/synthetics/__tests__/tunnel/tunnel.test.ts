@@ -62,7 +62,7 @@ describe('Tunnel', () => {
     })
     const tunnel = new Tunnel(wsPresignedURL, testIDs, undefined, mockTunnelReporter)
     await expect(tunnel.start()).rejects.toThrow(websocketConnectError)
-    expect(mockClose).toBeCalled()
+    expect(mockClose).toHaveBeenCalled()
     mockConnect.mockRestore()
   })
 
