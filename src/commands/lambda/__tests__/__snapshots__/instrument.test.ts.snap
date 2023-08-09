@@ -17,39 +17,39 @@ exports[`lambda instrument execute aborts when every lambda function fails to up
 Will apply the following updates:
 UpdateFunctionConfiguration -> arn:aws:lambda:us-east-1:123456789012:function:lambda-1-us-east-1
 {
-  \\"FunctionName\\": \\"arn:aws:lambda:us-east-1:123456789012:function:lambda-1-us-east-1\\",
-  \\"Environment\\": {
-    \\"Variables\\": {
-      \\"DD_LAMBDA_HANDLER\\": \\"index.handler\\",
-      \\"DD_SITE\\": \\"datadoghq.com\\",
-      \\"DD_CAPTURE_LAMBDA_PAYLOAD\\": \\"false\\",
-      \\"DD_MERGE_XRAY_TRACES\\": \\"false\\",
-      \\"DD_TRACE_ENABLED\\": \\"true\\",
-      \\"DD_FLUSH_TO_LOG\\": \\"true\\"
+  "FunctionName": "arn:aws:lambda:us-east-1:123456789012:function:lambda-1-us-east-1",
+  "Environment": {
+    "Variables": {
+      "DD_LAMBDA_HANDLER": "index.handler",
+      "DD_SITE": "datadoghq.com",
+      "DD_CAPTURE_LAMBDA_PAYLOAD": "false",
+      "DD_MERGE_XRAY_TRACES": "false",
+      "DD_TRACE_ENABLED": "true",
+      "DD_FLUSH_TO_LOG": "true"
     }
   }
 }
 TagResource -> arn:aws:lambda:us-east-1:123456789012:function:lambda-1-us-east-1
 {
-  \\"dd_sls_ci\\": \\"vXXXX\\"
+  "dd_sls_ci": "vXXXX"
 }
 UpdateFunctionConfiguration -> arn:aws:lambda:us-east-2:123456789012:function:lambda-1-us-east-2
 {
-  \\"FunctionName\\": \\"arn:aws:lambda:us-east-2:123456789012:function:lambda-1-us-east-2\\",
-  \\"Environment\\": {
-    \\"Variables\\": {
-      \\"DD_LAMBDA_HANDLER\\": \\"index.handler\\",
-      \\"DD_SITE\\": \\"datadoghq.com\\",
-      \\"DD_CAPTURE_LAMBDA_PAYLOAD\\": \\"false\\",
-      \\"DD_MERGE_XRAY_TRACES\\": \\"false\\",
-      \\"DD_TRACE_ENABLED\\": \\"true\\",
-      \\"DD_FLUSH_TO_LOG\\": \\"true\\"
+  "FunctionName": "arn:aws:lambda:us-east-2:123456789012:function:lambda-1-us-east-2",
+  "Environment": {
+    "Variables": {
+      "DD_LAMBDA_HANDLER": "index.handler",
+      "DD_SITE": "datadoghq.com",
+      "DD_CAPTURE_LAMBDA_PAYLOAD": "false",
+      "DD_MERGE_XRAY_TRACES": "false",
+      "DD_TRACE_ENABLED": "true",
+      "DD_FLUSH_TO_LOG": "true"
     }
   }
 }
 TagResource -> arn:aws:lambda:us-east-2:123456789012:function:lambda-1-us-east-2
 {
-  \\"dd_sls_ci\\": \\"vXXXX\\"
+  "dd_sls_ci": "vXXXX"
 }
 [Error] Failed updating arn:aws:lambda:us-east-1:123456789012:function:lambda-1-us-east-1 Error: Unexpected error updating request
 [Error] Failed updating arn:aws:lambda:us-east-2:123456789012:function:lambda-1-us-east-2 Error: Unexpected error updating request
@@ -70,30 +70,30 @@ exports[`lambda instrument execute ensure no git metadata upload flag works 1`] 
 Will apply the following updates:
 UpdateFunctionConfiguration -> arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world
 {
-  \\"FunctionName\\": \\"arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world\\",
-  \\"Handler\\": \\"/opt/nodejs/node_modules/datadog-lambda-js/handler.handler\\",
-  \\"Environment\\": {
-    \\"Variables\\": {
-      \\"DD_LAMBDA_HANDLER\\": \\"index.handler\\",
-      \\"DD_API_KEY\\": \\"02**********33bd\\",
-      \\"DD_SITE\\": \\"datadoghq.com\\",
-      \\"DD_CAPTURE_LAMBDA_PAYLOAD\\": \\"false\\",
-      \\"DD_ENV\\": \\"dummy\\",
-      \\"DD_TAGS\\": \\"git.commit.sha:1be168ff837f043bde17c0314341c84271047b31,git.repository_url:git.repository_url:github.com/datadog/test.git\\",
-      \\"DD_MERGE_XRAY_TRACES\\": \\"false\\",
-      \\"DD_SERVICE\\": \\"dummy\\",
-      \\"DD_TRACE_ENABLED\\": \\"true\\",
-      \\"DD_VERSION\\": \\"0.1\\",
-      \\"DD_FLUSH_TO_LOG\\": \\"true\\"
+  "FunctionName": "arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world",
+  "Handler": "/opt/nodejs/node_modules/datadog-lambda-js/handler.handler",
+  "Environment": {
+    "Variables": {
+      "DD_LAMBDA_HANDLER": "index.handler",
+      "DD_API_KEY": "02**********33bd",
+      "DD_SITE": "datadoghq.com",
+      "DD_CAPTURE_LAMBDA_PAYLOAD": "false",
+      "DD_ENV": "dummy",
+      "DD_TAGS": "git.commit.sha:1be168ff837f043bde17c0314341c84271047b31,git.repository_url:git.repository_url:github.com/datadog/test.git",
+      "DD_MERGE_XRAY_TRACES": "false",
+      "DD_SERVICE": "dummy",
+      "DD_TRACE_ENABLED": "true",
+      "DD_VERSION": "0.1",
+      "DD_FLUSH_TO_LOG": "true"
     }
   },
-  \\"Layers\\": [
-    \\"arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Node12-x:10\\"
+  "Layers": [
+    "arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Node12-x:10"
   ]
 }
 TagResource -> arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world
 {
-  \\"dd_sls_ci\\": \\"vXXXX\\"
+  "dd_sls_ci": "vXXXX"
 }
 ✔ Updated 1 Lambda function.
 
@@ -112,30 +112,30 @@ exports[`lambda instrument execute ensure source code integration flag works fro
 Will apply the following updates:
 UpdateFunctionConfiguration -> arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world
 {
-  \\"FunctionName\\": \\"arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world\\",
-  \\"Handler\\": \\"/opt/nodejs/node_modules/datadog-lambda-js/handler.handler\\",
-  \\"Environment\\": {
-    \\"Variables\\": {
-      \\"DD_LAMBDA_HANDLER\\": \\"index.handler\\",
-      \\"DD_API_KEY\\": \\"02**********33bd\\",
-      \\"DD_SITE\\": \\"datadoghq.com\\",
-      \\"DD_CAPTURE_LAMBDA_PAYLOAD\\": \\"false\\",
-      \\"DD_ENV\\": \\"dummy\\",
-      \\"DD_TAGS\\": \\"git.commit.sha:1be168ff837f043bde17c0314341c84271047b31,git.repository_url:git.repository_url:github.com/datadog/test.git\\",
-      \\"DD_MERGE_XRAY_TRACES\\": \\"false\\",
-      \\"DD_SERVICE\\": \\"dummy\\",
-      \\"DD_TRACE_ENABLED\\": \\"true\\",
-      \\"DD_VERSION\\": \\"0.1\\",
-      \\"DD_FLUSH_TO_LOG\\": \\"true\\"
+  "FunctionName": "arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world",
+  "Handler": "/opt/nodejs/node_modules/datadog-lambda-js/handler.handler",
+  "Environment": {
+    "Variables": {
+      "DD_LAMBDA_HANDLER": "index.handler",
+      "DD_API_KEY": "02**********33bd",
+      "DD_SITE": "datadoghq.com",
+      "DD_CAPTURE_LAMBDA_PAYLOAD": "false",
+      "DD_ENV": "dummy",
+      "DD_TAGS": "git.commit.sha:1be168ff837f043bde17c0314341c84271047b31,git.repository_url:git.repository_url:github.com/datadog/test.git",
+      "DD_MERGE_XRAY_TRACES": "false",
+      "DD_SERVICE": "dummy",
+      "DD_TRACE_ENABLED": "true",
+      "DD_VERSION": "0.1",
+      "DD_FLUSH_TO_LOG": "true"
     }
   },
-  \\"Layers\\": [
-    \\"arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Node12-x:10\\"
+  "Layers": [
+    "arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Node12-x:10"
   ]
 }
 TagResource -> arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world
 {
-  \\"dd_sls_ci\\": \\"vXXXX\\"
+  "dd_sls_ci": "vXXXX"
 }
 ✔ Updated 1 Lambda function.
 
@@ -164,49 +164,49 @@ exports[`lambda instrument execute instrument multiple functions interactively 1
 Will apply the following updates:
 UpdateFunctionConfiguration -> arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world
 {
-  \\"FunctionName\\": \\"arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world\\",
-  \\"Environment\\": {
-    \\"Variables\\": {
-      \\"DD_LAMBDA_HANDLER\\": \\"index.handler\\",
-      \\"DD_API_KEY\\": \\"02**********33bd\\",
-      \\"DD_SITE\\": \\"datadoghq.com\\",
-      \\"DD_CAPTURE_LAMBDA_PAYLOAD\\": \\"false\\",
-      \\"DD_MERGE_XRAY_TRACES\\": \\"false\\",
-      \\"DD_TRACE_ENABLED\\": \\"true\\",
-      \\"DD_FLUSH_TO_LOG\\": \\"true\\"
+  "FunctionName": "arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world",
+  "Environment": {
+    "Variables": {
+      "DD_LAMBDA_HANDLER": "index.handler",
+      "DD_API_KEY": "02**********33bd",
+      "DD_SITE": "datadoghq.com",
+      "DD_CAPTURE_LAMBDA_PAYLOAD": "false",
+      "DD_MERGE_XRAY_TRACES": "false",
+      "DD_TRACE_ENABLED": "true",
+      "DD_FLUSH_TO_LOG": "true"
     }
   },
-  \\"Layers\\": [
-    \\"arn:aws:lambda:sa-east-1:464622532012:layer:Datadog-Extension:1\\",
-    \\"arn:aws:lambda:sa-east-1:464622532012:layer:Datadog-Node12-x:1\\"
+  "Layers": [
+    "arn:aws:lambda:sa-east-1:464622532012:layer:Datadog-Extension:1",
+    "arn:aws:lambda:sa-east-1:464622532012:layer:Datadog-Node12-x:1"
   ]
 }
 TagResource -> arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world
 {
-  \\"dd_sls_ci\\": \\"vXXXX\\"
+  "dd_sls_ci": "vXXXX"
 }
 UpdateFunctionConfiguration -> arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world-2
 {
-  \\"FunctionName\\": \\"arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world-2\\",
-  \\"Environment\\": {
-    \\"Variables\\": {
-      \\"DD_LAMBDA_HANDLER\\": \\"index.handler\\",
-      \\"DD_API_KEY\\": \\"02**********33bd\\",
-      \\"DD_SITE\\": \\"datadoghq.com\\",
-      \\"DD_CAPTURE_LAMBDA_PAYLOAD\\": \\"false\\",
-      \\"DD_MERGE_XRAY_TRACES\\": \\"false\\",
-      \\"DD_TRACE_ENABLED\\": \\"true\\",
-      \\"DD_FLUSH_TO_LOG\\": \\"true\\"
+  "FunctionName": "arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world-2",
+  "Environment": {
+    "Variables": {
+      "DD_LAMBDA_HANDLER": "index.handler",
+      "DD_API_KEY": "02**********33bd",
+      "DD_SITE": "datadoghq.com",
+      "DD_CAPTURE_LAMBDA_PAYLOAD": "false",
+      "DD_MERGE_XRAY_TRACES": "false",
+      "DD_TRACE_ENABLED": "true",
+      "DD_FLUSH_TO_LOG": "true"
     }
   },
-  \\"Layers\\": [
-    \\"arn:aws:lambda:sa-east-1:464622532012:layer:Datadog-Extension:1\\",
-    \\"arn:aws:lambda:sa-east-1:464622532012:layer:Datadog-Node14-x:1\\"
+  "Layers": [
+    "arn:aws:lambda:sa-east-1:464622532012:layer:Datadog-Extension:1",
+    "arn:aws:lambda:sa-east-1:464622532012:layer:Datadog-Node14-x:1"
   ]
 }
 TagResource -> arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world-2
 {
-  \\"dd_sls_ci\\": \\"vXXXX\\"
+  "dd_sls_ci": "vXXXX"
 }
 [!] Confirmation needed.
 [!] Instrumenting functions.
@@ -237,49 +237,49 @@ exports[`lambda instrument execute instrument multiple specified functions inter
 Will apply the following updates:
 UpdateFunctionConfiguration -> arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world
 {
-  \\"FunctionName\\": \\"arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world\\",
-  \\"Environment\\": {
-    \\"Variables\\": {
-      \\"DD_LAMBDA_HANDLER\\": \\"index.handler\\",
-      \\"DD_API_KEY\\": \\"02**********33bd\\",
-      \\"DD_SITE\\": \\"datadoghq.com\\",
-      \\"DD_CAPTURE_LAMBDA_PAYLOAD\\": \\"false\\",
-      \\"DD_MERGE_XRAY_TRACES\\": \\"false\\",
-      \\"DD_TRACE_ENABLED\\": \\"true\\",
-      \\"DD_FLUSH_TO_LOG\\": \\"true\\"
+  "FunctionName": "arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world",
+  "Environment": {
+    "Variables": {
+      "DD_LAMBDA_HANDLER": "index.handler",
+      "DD_API_KEY": "02**********33bd",
+      "DD_SITE": "datadoghq.com",
+      "DD_CAPTURE_LAMBDA_PAYLOAD": "false",
+      "DD_MERGE_XRAY_TRACES": "false",
+      "DD_TRACE_ENABLED": "true",
+      "DD_FLUSH_TO_LOG": "true"
     }
   },
-  \\"Layers\\": [
-    \\"arn:aws:lambda:sa-east-1:464622532012:layer:Datadog-Extension:1\\",
-    \\"arn:aws:lambda:sa-east-1:464622532012:layer:Datadog-Node12-x:1\\"
+  "Layers": [
+    "arn:aws:lambda:sa-east-1:464622532012:layer:Datadog-Extension:1",
+    "arn:aws:lambda:sa-east-1:464622532012:layer:Datadog-Node12-x:1"
   ]
 }
 TagResource -> arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world
 {
-  \\"dd_sls_ci\\": \\"vXXXX\\"
+  "dd_sls_ci": "vXXXX"
 }
 UpdateFunctionConfiguration -> arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world-2
 {
-  \\"FunctionName\\": \\"arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world-2\\",
-  \\"Environment\\": {
-    \\"Variables\\": {
-      \\"DD_LAMBDA_HANDLER\\": \\"index.handler\\",
-      \\"DD_API_KEY\\": \\"02**********33bd\\",
-      \\"DD_SITE\\": \\"datadoghq.com\\",
-      \\"DD_CAPTURE_LAMBDA_PAYLOAD\\": \\"false\\",
-      \\"DD_MERGE_XRAY_TRACES\\": \\"false\\",
-      \\"DD_TRACE_ENABLED\\": \\"true\\",
-      \\"DD_FLUSH_TO_LOG\\": \\"true\\"
+  "FunctionName": "arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world-2",
+  "Environment": {
+    "Variables": {
+      "DD_LAMBDA_HANDLER": "index.handler",
+      "DD_API_KEY": "02**********33bd",
+      "DD_SITE": "datadoghq.com",
+      "DD_CAPTURE_LAMBDA_PAYLOAD": "false",
+      "DD_MERGE_XRAY_TRACES": "false",
+      "DD_TRACE_ENABLED": "true",
+      "DD_FLUSH_TO_LOG": "true"
     }
   },
-  \\"Layers\\": [
-    \\"arn:aws:lambda:sa-east-1:464622532012:layer:Datadog-Extension:1\\",
-    \\"arn:aws:lambda:sa-east-1:464622532012:layer:Datadog-Node14-x:1\\"
+  "Layers": [
+    "arn:aws:lambda:sa-east-1:464622532012:layer:Datadog-Extension:1",
+    "arn:aws:lambda:sa-east-1:464622532012:layer:Datadog-Node14-x:1"
   ]
 }
 TagResource -> arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world-2
 {
-  \\"dd_sls_ci\\": \\"vXXXX\\"
+  "dd_sls_ci": "vXXXX"
 }
 [!] Confirmation needed.
 [!] Instrumenting functions.
@@ -303,103 +303,103 @@ exports[`lambda instrument execute instruments Ruby application properly 1`] = `
 [Dry Run] Will apply the following updates:
 UpdateFunctionConfiguration -> arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world
 {
-  \\"FunctionName\\": \\"arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world\\",
-  \\"Environment\\": {
-    \\"Variables\\": {
-      \\"DD_API_KEY\\": \\"02**********33bd\\",
-      \\"DD_SITE\\": \\"datadoghq.com\\",
-      \\"DD_CAPTURE_LAMBDA_PAYLOAD\\": \\"false\\",
-      \\"DD_ENV\\": \\"staging\\",
-      \\"DD_TAGS\\": \\"layer:api,team:intake\\",
-      \\"DD_MERGE_XRAY_TRACES\\": \\"false\\",
-      \\"DD_SERVICE\\": \\"middletier\\",
-      \\"DD_TRACE_ENABLED\\": \\"true\\",
-      \\"DD_VERSION\\": \\"0.2\\"
+  "FunctionName": "arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world",
+  "Environment": {
+    "Variables": {
+      "DD_API_KEY": "02**********33bd",
+      "DD_SITE": "datadoghq.com",
+      "DD_CAPTURE_LAMBDA_PAYLOAD": "false",
+      "DD_ENV": "staging",
+      "DD_TAGS": "layer:api,team:intake",
+      "DD_MERGE_XRAY_TRACES": "false",
+      "DD_SERVICE": "middletier",
+      "DD_TRACE_ENABLED": "true",
+      "DD_VERSION": "0.2"
     }
   },
-  \\"Layers\\": [
-    \\"arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Extension:40\\",
-    \\"arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Ruby2-7:19\\"
+  "Layers": [
+    "arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Extension:40",
+    "arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Ruby2-7:19"
   ]
 }
 TagResource -> arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world
 {
-  \\"dd_sls_ci\\": \\"vXXXX\\"
+  "dd_sls_ci": "vXXXX"
 }
 UpdateFunctionConfiguration -> arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world-2
 {
-  \\"FunctionName\\": \\"arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world-2\\",
-  \\"Environment\\": {
-    \\"Variables\\": {
-      \\"DD_API_KEY\\": \\"02**********33bd\\",
-      \\"DD_SITE\\": \\"datadoghq.com\\",
-      \\"DD_CAPTURE_LAMBDA_PAYLOAD\\": \\"false\\",
-      \\"DD_ENV\\": \\"staging\\",
-      \\"DD_TAGS\\": \\"layer:api,team:intake\\",
-      \\"DD_MERGE_XRAY_TRACES\\": \\"false\\",
-      \\"DD_SERVICE\\": \\"middletier\\",
-      \\"DD_TRACE_ENABLED\\": \\"true\\",
-      \\"DD_VERSION\\": \\"0.2\\"
+  "FunctionName": "arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world-2",
+  "Environment": {
+    "Variables": {
+      "DD_API_KEY": "02**********33bd",
+      "DD_SITE": "datadoghq.com",
+      "DD_CAPTURE_LAMBDA_PAYLOAD": "false",
+      "DD_ENV": "staging",
+      "DD_TAGS": "layer:api,team:intake",
+      "DD_MERGE_XRAY_TRACES": "false",
+      "DD_SERVICE": "middletier",
+      "DD_TRACE_ENABLED": "true",
+      "DD_VERSION": "0.2"
     }
   },
-  \\"Layers\\": [
-    \\"arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Extension-ARM:40\\",
-    \\"arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Ruby2-7-ARM:19\\"
+  "Layers": [
+    "arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Extension-ARM:40",
+    "arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Ruby2-7-ARM:19"
   ]
 }
 TagResource -> arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world-2
 {
-  \\"dd_sls_ci\\": \\"vXXXX\\"
+  "dd_sls_ci": "vXXXX"
 }
 UpdateFunctionConfiguration -> arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world-3
 {
-  \\"FunctionName\\": \\"arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world-3\\",
-  \\"Environment\\": {
-    \\"Variables\\": {
-      \\"DD_API_KEY\\": \\"02**********33bd\\",
-      \\"DD_SITE\\": \\"datadoghq.com\\",
-      \\"DD_CAPTURE_LAMBDA_PAYLOAD\\": \\"false\\",
-      \\"DD_ENV\\": \\"staging\\",
-      \\"DD_TAGS\\": \\"layer:api,team:intake\\",
-      \\"DD_MERGE_XRAY_TRACES\\": \\"false\\",
-      \\"DD_SERVICE\\": \\"middletier\\",
-      \\"DD_TRACE_ENABLED\\": \\"true\\",
-      \\"DD_VERSION\\": \\"0.2\\"
+  "FunctionName": "arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world-3",
+  "Environment": {
+    "Variables": {
+      "DD_API_KEY": "02**********33bd",
+      "DD_SITE": "datadoghq.com",
+      "DD_CAPTURE_LAMBDA_PAYLOAD": "false",
+      "DD_ENV": "staging",
+      "DD_TAGS": "layer:api,team:intake",
+      "DD_MERGE_XRAY_TRACES": "false",
+      "DD_SERVICE": "middletier",
+      "DD_TRACE_ENABLED": "true",
+      "DD_VERSION": "0.2"
     }
   },
-  \\"Layers\\": [
-    \\"arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Extension:40\\",
-    \\"arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Ruby3-2:19\\"
+  "Layers": [
+    "arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Extension:40",
+    "arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Ruby3-2:19"
   ]
 }
 TagResource -> arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world-3
 {
-  \\"dd_sls_ci\\": \\"vXXXX\\"
+  "dd_sls_ci": "vXXXX"
 }
 UpdateFunctionConfiguration -> arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world-4
 {
-  \\"FunctionName\\": \\"arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world-4\\",
-  \\"Environment\\": {
-    \\"Variables\\": {
-      \\"DD_API_KEY\\": \\"02**********33bd\\",
-      \\"DD_SITE\\": \\"datadoghq.com\\",
-      \\"DD_CAPTURE_LAMBDA_PAYLOAD\\": \\"false\\",
-      \\"DD_ENV\\": \\"staging\\",
-      \\"DD_TAGS\\": \\"layer:api,team:intake\\",
-      \\"DD_MERGE_XRAY_TRACES\\": \\"false\\",
-      \\"DD_SERVICE\\": \\"middletier\\",
-      \\"DD_TRACE_ENABLED\\": \\"true\\",
-      \\"DD_VERSION\\": \\"0.2\\"
+  "FunctionName": "arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world-4",
+  "Environment": {
+    "Variables": {
+      "DD_API_KEY": "02**********33bd",
+      "DD_SITE": "datadoghq.com",
+      "DD_CAPTURE_LAMBDA_PAYLOAD": "false",
+      "DD_ENV": "staging",
+      "DD_TAGS": "layer:api,team:intake",
+      "DD_MERGE_XRAY_TRACES": "false",
+      "DD_SERVICE": "middletier",
+      "DD_TRACE_ENABLED": "true",
+      "DD_VERSION": "0.2"
     }
   },
-  \\"Layers\\": [
-    \\"arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Extension-ARM:40\\",
-    \\"arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Ruby3-2-ARM:19\\"
+  "Layers": [
+    "arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Extension-ARM:40",
+    "arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Ruby3-2-ARM:19"
   ]
 }
 TagResource -> arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world-4
 {
-  \\"dd_sls_ci\\": \\"vXXXX\\"
+  "dd_sls_ci": "vXXXX"
 }
 "
 `;
@@ -416,32 +416,32 @@ exports[`lambda instrument execute prints dry run data for lambda .NET layer 1`]
 [Dry Run] Will apply the following updates:
 UpdateFunctionConfiguration -> arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world
 {
-  \\"FunctionName\\": \\"arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world\\",
-  \\"Environment\\": {
-    \\"Variables\\": {
-      \\"DD_API_KEY\\": \\"02**********33bd\\",
-      \\"DD_SITE\\": \\"datadoghq.com\\",
-      \\"DD_CAPTURE_LAMBDA_PAYLOAD\\": \\"false\\",
-      \\"DD_ENV\\": \\"staging\\",
-      \\"DD_TAGS\\": \\"layer:api,team:intake\\",
-      \\"DD_MERGE_XRAY_TRACES\\": \\"false\\",
-      \\"DD_SERVICE\\": \\"middletier\\",
-      \\"DD_TRACE_ENABLED\\": \\"true\\",
-      \\"DD_VERSION\\": \\"0.2\\",
-      \\"DD_FLUSH_TO_LOG\\": \\"true\\",
-      \\"CORECLR_ENABLE_PROFILING\\": \\"1\\",
-      \\"CORECLR_PROFILER\\": \\"{846F5F1C-F9AE-4B07-969E-05C26BC060D8}\\",
-      \\"CORECLR_PROFILER_PATH\\": \\"/opt/datadog/Datadog.Trace.ClrProfiler.Native.so\\",
-      \\"DD_DOTNET_TRACER_HOME\\": \\"/opt/datadog\\"
+  "FunctionName": "arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world",
+  "Environment": {
+    "Variables": {
+      "DD_API_KEY": "02**********33bd",
+      "DD_SITE": "datadoghq.com",
+      "DD_CAPTURE_LAMBDA_PAYLOAD": "false",
+      "DD_ENV": "staging",
+      "DD_TAGS": "layer:api,team:intake",
+      "DD_MERGE_XRAY_TRACES": "false",
+      "DD_SERVICE": "middletier",
+      "DD_TRACE_ENABLED": "true",
+      "DD_VERSION": "0.2",
+      "DD_FLUSH_TO_LOG": "true",
+      "CORECLR_ENABLE_PROFILING": "1",
+      "CORECLR_PROFILER": "{846F5F1C-F9AE-4B07-969E-05C26BC060D8}",
+      "CORECLR_PROFILER_PATH": "/opt/datadog/Datadog.Trace.ClrProfiler.Native.so",
+      "DD_DOTNET_TRACER_HOME": "/opt/datadog"
     }
   },
-  \\"Layers\\": [
-    \\"arn:aws:lambda:us-east-1:464622532012:layer:dd-trace-dotnet:129\\"
+  "Layers": [
+    "arn:aws:lambda:us-east-1:464622532012:layer:dd-trace-dotnet:129"
   ]
 }
 TagResource -> arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world
 {
-  \\"dd_sls_ci\\": \\"vXXXX\\"
+  "dd_sls_ci": "vXXXX"
 }
 "
 `;
@@ -458,28 +458,28 @@ exports[`lambda instrument execute prints dry run data for lambda extension laye
 [Dry Run] Will apply the following updates:
 UpdateFunctionConfiguration -> arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world
 {
-  \\"FunctionName\\": \\"arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world\\",
-  \\"Environment\\": {
-    \\"Variables\\": {
-      \\"DD_LAMBDA_HANDLER\\": \\"index.handler\\",
-      \\"DD_API_KEY\\": \\"02**********33bd\\",
-      \\"DD_SITE\\": \\"datadoghq.com\\",
-      \\"DD_CAPTURE_LAMBDA_PAYLOAD\\": \\"false\\",
-      \\"DD_ENV\\": \\"staging\\",
-      \\"DD_TAGS\\": \\"layer:api,team:intake\\",
-      \\"DD_MERGE_XRAY_TRACES\\": \\"false\\",
-      \\"DD_SERVICE\\": \\"middletier\\",
-      \\"DD_TRACE_ENABLED\\": \\"true\\",
-      \\"DD_VERSION\\": \\"0.2\\"
+  "FunctionName": "arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world",
+  "Environment": {
+    "Variables": {
+      "DD_LAMBDA_HANDLER": "index.handler",
+      "DD_API_KEY": "02**********33bd",
+      "DD_SITE": "datadoghq.com",
+      "DD_CAPTURE_LAMBDA_PAYLOAD": "false",
+      "DD_ENV": "staging",
+      "DD_TAGS": "layer:api,team:intake",
+      "DD_MERGE_XRAY_TRACES": "false",
+      "DD_SERVICE": "middletier",
+      "DD_TRACE_ENABLED": "true",
+      "DD_VERSION": "0.2"
     }
   },
-  \\"Layers\\": [
-    \\"arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Extension:6\\"
+  "Layers": [
+    "arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Extension:6"
   ]
 }
 TagResource -> arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world
 {
-  \\"dd_sls_ci\\": \\"vXXXX\\"
+  "dd_sls_ci": "vXXXX"
 }
 "
 `;
@@ -496,31 +496,31 @@ exports[`lambda instrument execute prints dry run data for lambda library and ex
 [Dry Run] Will apply the following updates:
 UpdateFunctionConfiguration -> arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world
 {
-  \\"FunctionName\\": \\"arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world\\",
-  \\"Handler\\": \\"/opt/nodejs/node_modules/datadog-lambda-js/handler.handler\\",
-  \\"Environment\\": {
-    \\"Variables\\": {
-      \\"DD_LAMBDA_HANDLER\\": \\"index.handler\\",
-      \\"DD_API_KEY\\": \\"02**********33bd\\",
-      \\"DD_SITE\\": \\"datadoghq.com\\",
-      \\"DD_CAPTURE_LAMBDA_PAYLOAD\\": \\"false\\",
-      \\"DD_ENV\\": \\"staging\\",
-      \\"DD_TAGS\\": \\"layer:api,team:intake\\",
-      \\"DD_MERGE_XRAY_TRACES\\": \\"true\\",
-      \\"DD_SERVICE\\": \\"middletier\\",
-      \\"DD_TRACE_ENABLED\\": \\"true\\",
-      \\"DD_VERSION\\": \\"0.2\\",
-      \\"DD_LOG_LEVEL\\": \\"debug\\"
+  "FunctionName": "arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world",
+  "Handler": "/opt/nodejs/node_modules/datadog-lambda-js/handler.handler",
+  "Environment": {
+    "Variables": {
+      "DD_LAMBDA_HANDLER": "index.handler",
+      "DD_API_KEY": "02**********33bd",
+      "DD_SITE": "datadoghq.com",
+      "DD_CAPTURE_LAMBDA_PAYLOAD": "false",
+      "DD_ENV": "staging",
+      "DD_TAGS": "layer:api,team:intake",
+      "DD_MERGE_XRAY_TRACES": "true",
+      "DD_SERVICE": "middletier",
+      "DD_TRACE_ENABLED": "true",
+      "DD_VERSION": "0.2",
+      "DD_LOG_LEVEL": "debug"
     }
   },
-  \\"Layers\\": [
-    \\"arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Extension:5\\",
-    \\"arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Node12-x:10\\"
+  "Layers": [
+    "arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Extension:5",
+    "arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Node12-x:10"
   ]
 }
 TagResource -> arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world
 {
-  \\"dd_sls_ci\\": \\"vXXXX\\"
+  "dd_sls_ci": "vXXXX"
 }
 "
 `;
@@ -537,30 +537,30 @@ exports[`lambda instrument execute prints dry run data for lambda library layer 
 [Dry Run] Will apply the following updates:
 UpdateFunctionConfiguration -> arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world
 {
-  \\"FunctionName\\": \\"arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world\\",
-  \\"Handler\\": \\"/opt/nodejs/node_modules/datadog-lambda-js/handler.handler\\",
-  \\"Environment\\": {
-    \\"Variables\\": {
-      \\"DD_LAMBDA_HANDLER\\": \\"index.handler\\",
-      \\"DD_SITE\\": \\"datadoghq.com\\",
-      \\"DD_CAPTURE_LAMBDA_PAYLOAD\\": \\"false\\",
-      \\"DD_ENV\\": \\"staging\\",
-      \\"DD_TAGS\\": \\"layer:api,team:intake\\",
-      \\"DD_MERGE_XRAY_TRACES\\": \\"false\\",
-      \\"DD_SERVICE\\": \\"middletier\\",
-      \\"DD_TRACE_ENABLED\\": \\"true\\",
-      \\"DD_VERSION\\": \\"0.2\\",
-      \\"DD_FLUSH_TO_LOG\\": \\"true\\",
-      \\"DD_LOG_LEVEL\\": \\"debug\\"
+  "FunctionName": "arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world",
+  "Handler": "/opt/nodejs/node_modules/datadog-lambda-js/handler.handler",
+  "Environment": {
+    "Variables": {
+      "DD_LAMBDA_HANDLER": "index.handler",
+      "DD_SITE": "datadoghq.com",
+      "DD_CAPTURE_LAMBDA_PAYLOAD": "false",
+      "DD_ENV": "staging",
+      "DD_TAGS": "layer:api,team:intake",
+      "DD_MERGE_XRAY_TRACES": "false",
+      "DD_SERVICE": "middletier",
+      "DD_TRACE_ENABLED": "true",
+      "DD_VERSION": "0.2",
+      "DD_FLUSH_TO_LOG": "true",
+      "DD_LOG_LEVEL": "debug"
     }
   },
-  \\"Layers\\": [
-    \\"arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Node12-x:10\\"
+  "Layers": [
+    "arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Node12-x:10"
   ]
 }
 TagResource -> arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world
 {
-  \\"dd_sls_ci\\": \\"vXXXX\\"
+  "dd_sls_ci": "vXXXX"
 }
 "
 `;
@@ -586,111 +586,111 @@ exports[`lambda instrument execute prints which functions failed to instrument w
 Will apply the following updates:
 UpdateFunctionConfiguration -> arn:aws:lambda:us-east-1:123456789012:function:lambda-1-us-east-1
 {
-  \\"FunctionName\\": \\"arn:aws:lambda:us-east-1:123456789012:function:lambda-1-us-east-1\\",
-  \\"Environment\\": {
-    \\"Variables\\": {
-      \\"DD_LAMBDA_HANDLER\\": \\"index.handler\\",
-      \\"DD_SITE\\": \\"datadoghq.com\\",
-      \\"DD_CAPTURE_LAMBDA_PAYLOAD\\": \\"false\\",
-      \\"DD_MERGE_XRAY_TRACES\\": \\"false\\",
-      \\"DD_TRACE_ENABLED\\": \\"true\\",
-      \\"DD_FLUSH_TO_LOG\\": \\"true\\"
+  "FunctionName": "arn:aws:lambda:us-east-1:123456789012:function:lambda-1-us-east-1",
+  "Environment": {
+    "Variables": {
+      "DD_LAMBDA_HANDLER": "index.handler",
+      "DD_SITE": "datadoghq.com",
+      "DD_CAPTURE_LAMBDA_PAYLOAD": "false",
+      "DD_MERGE_XRAY_TRACES": "false",
+      "DD_TRACE_ENABLED": "true",
+      "DD_FLUSH_TO_LOG": "true"
     }
   }
 }
 TagResource -> arn:aws:lambda:us-east-1:123456789012:function:lambda-1-us-east-1
 {
-  \\"dd_sls_ci\\": \\"vXXXX\\"
+  "dd_sls_ci": "vXXXX"
 }
 UpdateFunctionConfiguration -> arn:aws:lambda:us-east-1:123456789012:function:lambda-2-us-east-1
 {
-  \\"FunctionName\\": \\"arn:aws:lambda:us-east-1:123456789012:function:lambda-2-us-east-1\\",
-  \\"Environment\\": {
-    \\"Variables\\": {
-      \\"DD_LAMBDA_HANDLER\\": \\"index.handler\\",
-      \\"DD_SITE\\": \\"datadoghq.com\\",
-      \\"DD_CAPTURE_LAMBDA_PAYLOAD\\": \\"false\\",
-      \\"DD_MERGE_XRAY_TRACES\\": \\"false\\",
-      \\"DD_TRACE_ENABLED\\": \\"true\\",
-      \\"DD_FLUSH_TO_LOG\\": \\"true\\"
+  "FunctionName": "arn:aws:lambda:us-east-1:123456789012:function:lambda-2-us-east-1",
+  "Environment": {
+    "Variables": {
+      "DD_LAMBDA_HANDLER": "index.handler",
+      "DD_SITE": "datadoghq.com",
+      "DD_CAPTURE_LAMBDA_PAYLOAD": "false",
+      "DD_MERGE_XRAY_TRACES": "false",
+      "DD_TRACE_ENABLED": "true",
+      "DD_FLUSH_TO_LOG": "true"
     }
   }
 }
 TagResource -> arn:aws:lambda:us-east-1:123456789012:function:lambda-2-us-east-1
 {
-  \\"dd_sls_ci\\": \\"vXXXX\\"
+  "dd_sls_ci": "vXXXX"
 }
 UpdateFunctionConfiguration -> arn:aws:lambda:us-east-1:123456789012:function:lambda-3-us-east-1
 {
-  \\"FunctionName\\": \\"arn:aws:lambda:us-east-1:123456789012:function:lambda-3-us-east-1\\",
-  \\"Environment\\": {
-    \\"Variables\\": {
-      \\"DD_LAMBDA_HANDLER\\": \\"index.handler\\",
-      \\"DD_SITE\\": \\"datadoghq.com\\",
-      \\"DD_CAPTURE_LAMBDA_PAYLOAD\\": \\"false\\",
-      \\"DD_MERGE_XRAY_TRACES\\": \\"false\\",
-      \\"DD_TRACE_ENABLED\\": \\"true\\",
-      \\"DD_FLUSH_TO_LOG\\": \\"true\\"
+  "FunctionName": "arn:aws:lambda:us-east-1:123456789012:function:lambda-3-us-east-1",
+  "Environment": {
+    "Variables": {
+      "DD_LAMBDA_HANDLER": "index.handler",
+      "DD_SITE": "datadoghq.com",
+      "DD_CAPTURE_LAMBDA_PAYLOAD": "false",
+      "DD_MERGE_XRAY_TRACES": "false",
+      "DD_TRACE_ENABLED": "true",
+      "DD_FLUSH_TO_LOG": "true"
     }
   }
 }
 TagResource -> arn:aws:lambda:us-east-1:123456789012:function:lambda-3-us-east-1
 {
-  \\"dd_sls_ci\\": \\"vXXXX\\"
+  "dd_sls_ci": "vXXXX"
 }
 UpdateFunctionConfiguration -> arn:aws:lambda:us-east-2:123456789012:function:lambda-1-us-east-2
 {
-  \\"FunctionName\\": \\"arn:aws:lambda:us-east-2:123456789012:function:lambda-1-us-east-2\\",
-  \\"Environment\\": {
-    \\"Variables\\": {
-      \\"DD_LAMBDA_HANDLER\\": \\"index.handler\\",
-      \\"DD_SITE\\": \\"datadoghq.com\\",
-      \\"DD_CAPTURE_LAMBDA_PAYLOAD\\": \\"false\\",
-      \\"DD_MERGE_XRAY_TRACES\\": \\"false\\",
-      \\"DD_TRACE_ENABLED\\": \\"true\\",
-      \\"DD_FLUSH_TO_LOG\\": \\"true\\"
+  "FunctionName": "arn:aws:lambda:us-east-2:123456789012:function:lambda-1-us-east-2",
+  "Environment": {
+    "Variables": {
+      "DD_LAMBDA_HANDLER": "index.handler",
+      "DD_SITE": "datadoghq.com",
+      "DD_CAPTURE_LAMBDA_PAYLOAD": "false",
+      "DD_MERGE_XRAY_TRACES": "false",
+      "DD_TRACE_ENABLED": "true",
+      "DD_FLUSH_TO_LOG": "true"
     }
   }
 }
 TagResource -> arn:aws:lambda:us-east-2:123456789012:function:lambda-1-us-east-2
 {
-  \\"dd_sls_ci\\": \\"vXXXX\\"
+  "dd_sls_ci": "vXXXX"
 }
 UpdateFunctionConfiguration -> arn:aws:lambda:us-east-2:123456789012:function:lambda-2-us-east-2
 {
-  \\"FunctionName\\": \\"arn:aws:lambda:us-east-2:123456789012:function:lambda-2-us-east-2\\",
-  \\"Environment\\": {
-    \\"Variables\\": {
-      \\"DD_LAMBDA_HANDLER\\": \\"index.handler\\",
-      \\"DD_SITE\\": \\"datadoghq.com\\",
-      \\"DD_CAPTURE_LAMBDA_PAYLOAD\\": \\"false\\",
-      \\"DD_MERGE_XRAY_TRACES\\": \\"false\\",
-      \\"DD_TRACE_ENABLED\\": \\"true\\",
-      \\"DD_FLUSH_TO_LOG\\": \\"true\\"
+  "FunctionName": "arn:aws:lambda:us-east-2:123456789012:function:lambda-2-us-east-2",
+  "Environment": {
+    "Variables": {
+      "DD_LAMBDA_HANDLER": "index.handler",
+      "DD_SITE": "datadoghq.com",
+      "DD_CAPTURE_LAMBDA_PAYLOAD": "false",
+      "DD_MERGE_XRAY_TRACES": "false",
+      "DD_TRACE_ENABLED": "true",
+      "DD_FLUSH_TO_LOG": "true"
     }
   }
 }
 TagResource -> arn:aws:lambda:us-east-2:123456789012:function:lambda-2-us-east-2
 {
-  \\"dd_sls_ci\\": \\"vXXXX\\"
+  "dd_sls_ci": "vXXXX"
 }
 UpdateFunctionConfiguration -> arn:aws:lambda:us-east-2:123456789012:function:lambda-3-us-east-2
 {
-  \\"FunctionName\\": \\"arn:aws:lambda:us-east-2:123456789012:function:lambda-3-us-east-2\\",
-  \\"Environment\\": {
-    \\"Variables\\": {
-      \\"DD_LAMBDA_HANDLER\\": \\"index.handler\\",
-      \\"DD_SITE\\": \\"datadoghq.com\\",
-      \\"DD_CAPTURE_LAMBDA_PAYLOAD\\": \\"false\\",
-      \\"DD_MERGE_XRAY_TRACES\\": \\"false\\",
-      \\"DD_TRACE_ENABLED\\": \\"true\\",
-      \\"DD_FLUSH_TO_LOG\\": \\"true\\"
+  "FunctionName": "arn:aws:lambda:us-east-2:123456789012:function:lambda-3-us-east-2",
+  "Environment": {
+    "Variables": {
+      "DD_LAMBDA_HANDLER": "index.handler",
+      "DD_SITE": "datadoghq.com",
+      "DD_CAPTURE_LAMBDA_PAYLOAD": "false",
+      "DD_MERGE_XRAY_TRACES": "false",
+      "DD_TRACE_ENABLED": "true",
+      "DD_FLUSH_TO_LOG": "true"
     }
   }
 }
 TagResource -> arn:aws:lambda:us-east-2:123456789012:function:lambda-3-us-east-2
 {
-  \\"dd_sls_ci\\": \\"vXXXX\\"
+  "dd_sls_ci": "vXXXX"
 }
 [Error] Failed updating arn:aws:lambda:us-east-1:123456789012:function:lambda-1-us-east-1 Error: Unexpected error updating request
 [Error] Failed updating arn:aws:lambda:us-east-1:123456789012:function:lambda-2-us-east-1 Error: Unexpected error updating request
@@ -720,26 +720,26 @@ exports[`lambda instrument execute when not provided it does not set DD_ENV, DD_
 Will apply the following updates:
 UpdateFunctionConfiguration -> arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world
 {
-  \\"FunctionName\\": \\"arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world\\",
-  \\"Environment\\": {
-    \\"Variables\\": {
-      \\"DD_LAMBDA_HANDLER\\": \\"index.handler\\",
-      \\"DD_API_KEY\\": \\"02**********33bd\\",
-      \\"DD_SITE\\": \\"datadoghq.com\\",
-      \\"DD_CAPTURE_LAMBDA_PAYLOAD\\": \\"false\\",
-      \\"DD_MERGE_XRAY_TRACES\\": \\"false\\",
-      \\"DD_TRACE_ENABLED\\": \\"true\\",
-      \\"DD_FLUSH_TO_LOG\\": \\"true\\"
+  "FunctionName": "arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world",
+  "Environment": {
+    "Variables": {
+      "DD_LAMBDA_HANDLER": "index.handler",
+      "DD_API_KEY": "02**********33bd",
+      "DD_SITE": "datadoghq.com",
+      "DD_CAPTURE_LAMBDA_PAYLOAD": "false",
+      "DD_MERGE_XRAY_TRACES": "false",
+      "DD_TRACE_ENABLED": "true",
+      "DD_FLUSH_TO_LOG": "true"
     }
   },
-  \\"Layers\\": [
-    \\"arn:aws:lambda:sa-east-1:464622532012:layer:Datadog-Extension:1\\",
-    \\"arn:aws:lambda:sa-east-1:464622532012:layer:Datadog-Node12-x:1\\"
+  "Layers": [
+    "arn:aws:lambda:sa-east-1:464622532012:layer:Datadog-Extension:1",
+    "arn:aws:lambda:sa-east-1:464622532012:layer:Datadog-Node12-x:1"
   ]
 }
 TagResource -> arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world
 {
-  \\"dd_sls_ci\\": \\"vXXXX\\"
+  "dd_sls_ci": "vXXXX"
 }
 [!] Confirmation needed.
 [!] Instrumenting functions.
@@ -766,29 +766,29 @@ exports[`lambda instrument execute when provided it sets DD_ENV, DD_SERVICE, and
 Will apply the following updates:
 UpdateFunctionConfiguration -> arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world
 {
-  \\"FunctionName\\": \\"arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world\\",
-  \\"Environment\\": {
-    \\"Variables\\": {
-      \\"DD_LAMBDA_HANDLER\\": \\"index.handler\\",
-      \\"DD_API_KEY\\": \\"02**********33bd\\",
-      \\"DD_SITE\\": \\"datadoghq.com\\",
-      \\"DD_CAPTURE_LAMBDA_PAYLOAD\\": \\"false\\",
-      \\"DD_ENV\\": \\"sandbox\\",
-      \\"DD_MERGE_XRAY_TRACES\\": \\"false\\",
-      \\"DD_SERVICE\\": \\"testServiceName\\",
-      \\"DD_TRACE_ENABLED\\": \\"true\\",
-      \\"DD_VERSION\\": \\"1.0.0\\",
-      \\"DD_FLUSH_TO_LOG\\": \\"true\\"
+  "FunctionName": "arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world",
+  "Environment": {
+    "Variables": {
+      "DD_LAMBDA_HANDLER": "index.handler",
+      "DD_API_KEY": "02**********33bd",
+      "DD_SITE": "datadoghq.com",
+      "DD_CAPTURE_LAMBDA_PAYLOAD": "false",
+      "DD_ENV": "sandbox",
+      "DD_MERGE_XRAY_TRACES": "false",
+      "DD_SERVICE": "testServiceName",
+      "DD_TRACE_ENABLED": "true",
+      "DD_VERSION": "1.0.0",
+      "DD_FLUSH_TO_LOG": "true"
     }
   },
-  \\"Layers\\": [
-    \\"arn:aws:lambda:sa-east-1:464622532012:layer:Datadog-Extension:1\\",
-    \\"arn:aws:lambda:sa-east-1:464622532012:layer:Datadog-Node12-x:1\\"
+  "Layers": [
+    "arn:aws:lambda:sa-east-1:464622532012:layer:Datadog-Extension:1",
+    "arn:aws:lambda:sa-east-1:464622532012:layer:Datadog-Node12-x:1"
   ]
 }
 TagResource -> arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world
 {
-  \\"dd_sls_ci\\": \\"vXXXX\\"
+  "dd_sls_ci": "vXXXX"
 }
 [!] Confirmation needed.
 [!] Instrumenting functions.

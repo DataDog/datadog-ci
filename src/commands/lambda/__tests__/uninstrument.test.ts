@@ -123,14 +123,14 @@ describe('lambda', () => {
           [Dry Run] Will apply the following updates:
           UpdateFunctionConfiguration -> arn:aws:lambda:us-east-1:000000000000:function:uninstrument
           {
-            \\"FunctionName\\": \\"arn:aws:lambda:us-east-1:000000000000:function:uninstrument\\",
-            \\"Handler\\": \\"lambda_function.lambda_handler\\",
-            \\"Environment\\": {
-              \\"Variables\\": {
-                \\"USER_VARIABLE\\": \\"sh**********tion\\"
+            "FunctionName": "arn:aws:lambda:us-east-1:000000000000:function:uninstrument",
+            "Handler": "lambda_function.lambda_handler",
+            "Environment": {
+              "Variables": {
+                "USER_VARIABLE": "sh**********tion"
               }
             },
-            \\"Layers\\": []
+            "Layers": []
           }
           "
         `)
