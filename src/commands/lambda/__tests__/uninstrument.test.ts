@@ -4,10 +4,8 @@ jest.mock('@aws-sdk/credential-providers', () => ({
   fromIni: jest.fn(),
 }))
 jest.mock('../prompt')
+jest.mock('../renderers/instrument-uninstrument-renderer')
 jest.mock('../../../helpers/prompt')
-jest.mock('../renderers/instrument-uninstrument-renderer', () =>
-  require('../__mocks__/instrument-uninstrument-renderer')
-)
 jest.mock('../../../../package.json', () => ({version: 'XXXX'}))
 
 import * as fs from 'fs'
@@ -123,14 +121,14 @@ describe('lambda', () => {
           [Dry Run] Will apply the following updates:
           UpdateFunctionConfiguration -> arn:aws:lambda:us-east-1:000000000000:function:uninstrument
           {
-            \\"FunctionName\\": \\"arn:aws:lambda:us-east-1:000000000000:function:uninstrument\\",
-            \\"Handler\\": \\"lambda_function.lambda_handler\\",
-            \\"Environment\\": {
-              \\"Variables\\": {
-                \\"USER_VARIABLE\\": \\"sh**********tion\\"
+            "FunctionName": "arn:aws:lambda:us-east-1:000000000000:function:uninstrument",
+            "Handler": "lambda_function.lambda_handler",
+            "Environment": {
+              "Variables": {
+                "USER_VARIABLE": "sh**********tion"
               }
             },
-            \\"Layers\\": []
+            "Layers": []
           }
           "
         `)

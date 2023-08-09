@@ -84,10 +84,6 @@ import {
   RenderResultsTestCase,
 } from './fixtures'
 
-beforeEach(() => {
-  jest.restoreAllMocks()
-})
-
 describe('utils', () => {
   const apiConfiguration = {
     apiKey: '123',
@@ -124,10 +120,6 @@ describe('utils', () => {
   })
 
   describe('getFilePathRelativeToRepo', () => {
-    afterEach(() => {
-      jest.restoreAllMocks()
-    })
-
     test('datadog-ci is not run in a git repository', async () => {
       const pathToProject = '/path/to/project'
       jest.spyOn(process, 'cwd').mockImplementation(() => pathToProject)
@@ -205,6 +197,10 @@ describe('utils', () => {
   })
 
   describe('runTest', () => {
+    beforeEach(() => {
+      jest.restoreAllMocks()
+    })
+
     const fakeId = '123-456-789'
     const fakeTrigger: Trigger = {
       batch_id: 'bid',
@@ -402,7 +398,7 @@ describe('utils', () => {
       ]
 
       await utils.getTestsToTrigger(api, triggerConfigs, mockReporter)
-      expect(spy).toBeCalledTimes(1)
+      expect(spy).toHaveBeenCalledTimes(1)
     })
   })
 
@@ -697,7 +693,7 @@ describe('utils', () => {
     ]
 
     test.each(cases)(
-      'Test execution rule: %s, result execution rule: %s. Expected rule: %s',
+      'execution rule: %s, result execution rule: %s. Expected rule: %s',
       (testRule, resultRule, expectedRule) => {
         const test = getApiTest('abc-def-ghi')
 
@@ -798,7 +794,7 @@ describe('utils', () => {
       expect(mockReporter.resultReceived).toHaveBeenCalledWith(batch.results[0])
     })
 
-    test('Test object in each result should be different even if they share the same public ID (config overrides)', async () => {
+    test('object in each result should be different even if they share the same public ID (config overrides)', async () => {
       mockApi({
         getBatchImplementation: async () => ({
           results: [batch.results[0], {...batch.results[0], result_id: '3'}],
@@ -941,7 +937,6 @@ describe('utils', () => {
     })
 
     test('wait between batch polling', async () => {
-      jest.restoreAllMocks()
       const waitMock = jest.spyOn(utils, 'wait').mockImplementation(() => new Promise((r) => setTimeout(r, 10)))
 
       let counter = 0
@@ -1024,7 +1019,9 @@ describe('utils', () => {
         mockTunnel
       )
 
-      expect(mockReporter.error).toBeCalledWith('The tunnel has stopped working, this may have affected the results.')
+      expect(mockReporter.error).toHaveBeenCalledWith(
+        'The tunnel has stopped working, this may have affected the results.'
+      )
     })
 
     test('location when tunnel', async () => {
@@ -1102,7 +1099,7 @@ describe('utils', () => {
           },
           mockReporter
         )
-      ).rejects.toThrowError(
+      ).rejects.toThrow(
         'Failed to poll results: could not query https://app.datadoghq.com/example\nPoll results server error\n'
       )
 
@@ -1128,7 +1125,7 @@ describe('utils', () => {
           },
           mockReporter
         )
-      ).rejects.toThrowError(
+      ).rejects.toThrow(
         'Failed to get batch: could not query https://app.datadoghq.com/example\nGet batch server error\n'
       )
 
@@ -1192,7 +1189,7 @@ describe('utils', () => {
             }
           }
         )
-      ).rejects.toThrowError('FAILURE')
+      ).rejects.toThrow('FAILURE')
       expect(counter).toBe(3)
     })
   })
@@ -1402,10 +1399,6 @@ describe('utils', () => {
   })
 
   describe('getDatadogHost', () => {
-    beforeEach(() => {
-      jest.restoreAllMocks()
-    })
-
     test('should default to datadog us api', async () => {
       process.env = {}
 
@@ -1447,12 +1440,18 @@ describe('utils', () => {
     })
   })
 
-  test('getOrgSettings is not important enough to throw', async () => {
-    jest.spyOn(api, 'getSyntheticsOrgSettings').mockImplementation(() => {
-      throw getAxiosHttpError(502, {message: 'Server Error'})
+  describe('getSyntheticsOrgSettings', () => {
+    beforeEach(() => {
+      jest.restoreAllMocks()
     })
 
-    const config = (apiConfiguration as unknown) as SyntheticsCIConfig
-    expect(await utils.getOrgSettings(mockReporter, config)).toBeUndefined()
+    test('failing to get org settings is not important enough to throw', async () => {
+      jest.spyOn(api, 'getSyntheticsOrgSettings').mockImplementation(() => {
+        throw getAxiosHttpError(502, {message: 'Server Error'})
+      })
+
+      const config = (apiConfiguration as unknown) as SyntheticsCIConfig
+      expect(await utils.getOrgSettings(mockReporter, config)).toBeUndefined()
+    })
   })
 })

@@ -10,7 +10,7 @@ exports[`cloud-run flare checkAuthentication prints instructions on how to authe
 
 To authenticate with GCP, please follow these steps:
 1. If you haven't already, install the Google Cloud SDK: https://cloud.google.com/sdk/docs/install
-2. Run \\"gcloud auth application-default login\\" and follow the prompts in your browser to log in.
+2. Run "gcloud auth application-default login" and follow the prompts in your browser to log in.
 3. After logging in, run the \`datadog-ci cloud-run flare\` command again.
 "
 `;
@@ -43,7 +43,13 @@ GCP credentials verified!
     }
   ]
 }
-(This is a summary of the configuration. The full configuration will be saved in \\"service_config.json\\".)
+(This is a summary of the configuration. The full configuration will be saved in "service_config.json".)
+
+📁 Searching for project files in current directory...
+[!] No project files found.
+
+
+[!] No additional files specified.
 
 💾 Saving files to mock-folder/.datadog-ci...
 • Saved function config to ./service_config.json
@@ -67,10 +73,10 @@ GCP credentials verified!
 `;
 
 exports[`cloud-run flare getLogs handles httpRequest payload correctly 1`] = `
-Array [
-  Object {
+[
+  {
     "logName": "mock-logname",
-    "message": "\\"GET 200. responseSize: 1.27 KB. latency: 1500 ms. requestUrl: /test-endpoint\\"",
+    "message": ""GET 200. responseSize: 1.27 KB. latency: 1500 ms. requestUrl: /test-endpoint"",
     "severity": "DEFAULT",
     "timestamp": "2023-07-28 00:00:00",
   },
@@ -78,10 +84,10 @@ Array [
 `;
 
 exports[`cloud-run flare getLogs handles textPayload correctly 1`] = `
-Array [
-  Object {
+[
+  {
     "logName": "mock-logname",
-    "message": "\\"Some text payload\\"",
+    "message": ""Some text payload"",
     "severity": "DEFAULT",
     "timestamp": "2023-07-28 00:00:00",
   },
@@ -89,16 +95,16 @@ Array [
 `;
 
 exports[`cloud-run flare getLogs handles when a log is an HTTP request and has a textPayload 1`] = `
-Array [
-  Object {
+[
+  {
     "logName": "mock-logname",
-    "message": "\\"Test log 1\\"",
+    "message": ""Test log 1"",
     "severity": "DEFAULT",
     "timestamp": "2023-07-28 00:00:00",
   },
-  Object {
+  {
     "logName": "mock-logname",
-    "message": "\\"some text payload. 504. responseSize: 0 Bytes. latency: unknown ms. requestUrl: \\"",
+    "message": ""some text payload. 504. responseSize: 0 Bytes. latency: unknown ms. requestUrl: "",
     "severity": "",
     "timestamp": "2023-07-28 00:00:01",
   },
@@ -108,23 +114,23 @@ Array [
 exports[`cloud-run flare getLogs throws an error when \`getEntries\` fails 1`] = `[Error: getEntries failed]`;
 
 exports[`cloud-run flare maskConfig should mask a Cloud Run config correctly 1`] = `
-Object {
+{
   "name": "projects/some-project/locations/some-location/services/some-service",
-  "template": Object {
-    "containers": Array [
-      Object {
-        "env": Array [
-          Object {
+  "template": {
+    "containers": [
+      {
+        "env": [
+          {
             "name": "DD_API_KEY",
             "value": "02**********33bd",
             "values": "value",
           },
-          Object {
+          {
             "name": "DD_TRACE_ENABLED",
             "value": "true",
             "values": "value",
           },
-          Object {
+          {
             "name": "DD_SITE",
             "value": "datad0g.com",
             "values": "value",
@@ -141,9 +147,9 @@ Object {
 `;
 
 exports[`cloud-run flare maskConfig should not modify config if env vars are missing 1`] = `
-Object {
+{
   "name": "projects/some-project/locations/some-location/services/some-service",
-  "template": Object {
+  "template": {
     "someData": "data",
   },
   "uid": "abc1234-def5678",
@@ -201,7 +207,11 @@ GCP credentials verified!
     }
   ]
 }
-(This is a summary of the configuration. The full configuration will be saved in \\"service_config.json\\".)
+(This is a summary of the configuration. The full configuration will be saved in "service_config.json".)
+
+📁 Searching for project files in current directory...
+[!] No project files found.
+
 
 💾 Saving files to mock-folder/.datadog-ci...
 • Saved function config to ./service_config.json
@@ -241,7 +251,13 @@ GCP credentials verified!
     }
   ]
 }
-(This is a summary of the configuration. The full configuration will be saved in \\"service_config.json\\".)
+(This is a summary of the configuration. The full configuration will be saved in "service_config.json".)
+
+📁 Searching for project files in current directory...
+[!] No project files found.
+
+
+[!] No additional files specified.
 
 💾 Saving files to mock-folder/.datadog-ci...
 • Saved function config to ./service_config.json
@@ -254,21 +270,21 @@ GCP credentials verified!
 `;
 
 exports[`cloud-run flare summarizeConfig 1`] = `
-Object {
-  "containers": Array [
-    Object {
-      "env": Array [
-        Object {
+{
+  "containers": [
+    {
+      "env": [
+        {
           "name": "DD_API_KEY",
           "value": "02aeb762fff59ac0d5ad1536cd9633bd",
           "values": "value",
         },
-        Object {
+        {
           "name": "DD_TRACE_ENABLED",
           "value": "true",
           "values": "value",
         },
-        Object {
+        {
           "name": "DD_SITE",
           "value": "datad0g.com",
           "values": "value",
@@ -353,7 +369,13 @@ GCP credentials verified!
     }
   ]
 }
-(This is a summary of the configuration. The full configuration will be saved in \\"service_config.json\\".)
+(This is a summary of the configuration. The full configuration will be saved in "service_config.json".)
+
+📁 Searching for project files in current directory...
+[!] No project files found.
+
+
+[!] No additional files specified.
 
 💾 Saving files to mock-folder/.datadog-ci...
 • Saved function config to ./service_config.json
@@ -393,7 +415,13 @@ GCP credentials verified!
     }
   ]
 }
-(This is a summary of the configuration. The full configuration will be saved in \\"service_config.json\\".)
+(This is a summary of the configuration. The full configuration will be saved in "service_config.json".)
+
+📁 Searching for project files in current directory...
+[!] No project files found.
+
+
+[!] No additional files specified.
 
 💾 Saving files to mock-folder/.datadog-ci...
 • Saved function config to ./service_config.json
@@ -433,7 +461,13 @@ GCP credentials verified!
     }
   ]
 }
-(This is a summary of the configuration. The full configuration will be saved in \\"service_config.json\\".)
+(This is a summary of the configuration. The full configuration will be saved in "service_config.json".)
+
+📁 Searching for project files in current directory...
+[!] No project files found.
+
+
+[!] No additional files specified.
 
 💾 Saving files to mock-folder/.datadog-ci...
 • Saved function config to ./service_config.json
@@ -469,7 +503,13 @@ GCP credentials verified!
     }
   ]
 }
-(This is a summary of the configuration. The full configuration will be saved in \\"service_config.json\\".)
+(This is a summary of the configuration. The full configuration will be saved in "service_config.json".)
+
+📁 Searching for project files in current directory...
+[!] No project files found.
+
+
+[!] No additional files specified.
 
 💾 Saving files to mock-folder/.datadog-ci...
 • Saved function config to ./service_config.json

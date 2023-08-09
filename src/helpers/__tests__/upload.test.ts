@@ -37,10 +37,10 @@ describe('upload', () => {
           retries: 5,
         }
       )
-      expect(mockCreate).toBeCalledTimes(1)
-      expect(uploadCallback).toBeCalledTimes(1)
-      expect(errorCallback).toBeCalledTimes(0)
-      expect(retryCallback).toBeCalledTimes(0)
+      expect(mockCreate).toHaveBeenCalledTimes(1)
+      expect(uploadCallback).toHaveBeenCalledTimes(1)
+      expect(errorCallback).toHaveBeenCalledTimes(0)
+      expect(retryCallback).toHaveBeenCalledTimes(0)
       expect(result).toStrictEqual(UploadStatus.Success)
     })
 
@@ -66,10 +66,10 @@ describe('upload', () => {
           retries: 5,
         }
       )
-      expect(mockCreate).toBeCalledTimes(2)
-      expect(uploadCallback).toBeCalledTimes(1)
-      expect(errorCallback).toBeCalledTimes(0)
-      expect(retryCallback).toBeCalledTimes(1)
+      expect(mockCreate).toHaveBeenCalledTimes(2)
+      expect(uploadCallback).toHaveBeenCalledTimes(1)
+      expect(errorCallback).toHaveBeenCalledTimes(0)
+      expect(retryCallback).toHaveBeenCalledTimes(1)
       expect(result).toStrictEqual(UploadStatus.Success)
     })
 
@@ -94,10 +94,10 @@ describe('upload', () => {
           retries: 5,
         }
       )
-      expect(mockCreate).toBeCalledTimes(1)
-      expect(uploadCallback).toBeCalledTimes(1)
-      expect(errorCallback).toBeCalledTimes(1)
-      expect(retryCallback).toBeCalledTimes(0)
+      expect(mockCreate).toHaveBeenCalledTimes(1)
+      expect(uploadCallback).toHaveBeenCalledTimes(1)
+      expect(errorCallback).toHaveBeenCalledTimes(1)
+      expect(retryCallback).toHaveBeenCalledTimes(0)
       expect(result).toStrictEqual(UploadStatus.Failure)
     })
 
@@ -128,10 +128,10 @@ describe('upload', () => {
           retries: 1,
         }
       )
-      expect(mockCreate).toBeCalledTimes(1)
-      expect(uploadCallback).toBeCalledTimes(1)
-      expect(errorCallback).toBeCalledTimes(1)
-      expect(retryCallback).toBeCalledTimes(0)
+      expect(mockCreate).toHaveBeenCalledTimes(1)
+      expect(uploadCallback).toHaveBeenCalledTimes(1)
+      expect(errorCallback).toHaveBeenCalledTimes(1)
+      expect(retryCallback).toHaveBeenCalledTimes(0)
       expect(result).toStrictEqual(UploadStatus.Failure)
     })
 
@@ -151,11 +151,11 @@ describe('upload', () => {
           retries: 1,
         }
       )
-      expect(mockCreate).toBeCalledTimes(1)
-      expect(verifyKey).toBeCalledTimes(0)
-      expect(uploadCallback).toBeCalledTimes(1)
-      expect(errorCallback).toBeCalledTimes(0)
-      expect(retryCallback).toBeCalledTimes(0)
+      expect(mockCreate).toHaveBeenCalledTimes(1)
+      expect(verifyKey).toHaveBeenCalledTimes(0)
+      expect(uploadCallback).toHaveBeenCalledTimes(1)
+      expect(errorCallback).toHaveBeenCalledTimes(0)
+      expect(retryCallback).toHaveBeenCalledTimes(0)
       expect(result).toStrictEqual(UploadStatus.Success)
     })
 
@@ -183,10 +183,10 @@ describe('upload', () => {
         }
       )
       await expect(result).rejects.toMatch('errorApiKey')
-      expect(mockCreate).toBeCalledTimes(1)
-      expect(uploadCallback).toBeCalledTimes(1)
-      expect(errorCallback).toBeCalledTimes(0)
-      expect(retryCallback).toBeCalledTimes(0)
+      expect(mockCreate).toHaveBeenCalledTimes(1)
+      expect(uploadCallback).toHaveBeenCalledTimes(1)
+      expect(errorCallback).toHaveBeenCalledTimes(0)
+      expect(retryCallback).toHaveBeenCalledTimes(0)
     })
   })
 })

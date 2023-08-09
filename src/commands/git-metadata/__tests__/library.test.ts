@@ -41,7 +41,7 @@ describe('library', () => {
 
       jest.spyOn(apikey, 'newApiKeyValidator').mockReturnValue({} as any)
 
-      await expect(uploadGitCommitHash('dummy', 'fake.site')).rejects.toThrowError('git is not installed')
+      await expect(uploadGitCommitHash('dummy', 'fake.site')).rejects.toThrow('git is not installed')
     })
 
     test('source code integration returns the correct hash and url', async () => {

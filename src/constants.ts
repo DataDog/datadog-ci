@@ -28,4 +28,52 @@ export const SITE_ENV_VAR = 'DD_SITE'
 // Flare constants
 export const FLARE_OUTPUT_DIRECTORY = '.datadog-ci'
 export const LOGS_DIRECTORY = 'logs'
+export const PROJECT_FILES_DIRECTORY = 'project_files'
+export const ADDITIONAL_FILES_DIRECTORY = 'additional_files'
 export const FLARE_ENDPOINT_PATH = '/api/ui/support/serverless/flare'
+
+// Project files to search for in Flare
+export const FLARE_PROJECT_FILES = [
+  // Datadog CloudFormation Template
+  'datadog-cloudfomation-macro.yaml',
+  'datadog-cloudfomation-macro.yml',
+  'datadog-cloudformation-macro.json',
+  // Node.js
+  'package.json',
+  'package-lock.json',
+  'yarn.lock',
+  '.nvmrc',
+  // Python
+  'requirements.txt',
+  'Pipfile',
+  'Pipfile.lock',
+  'pyproject.toml',
+  // Java
+  'pom.xml',
+  'build.gradle',
+  'gradlew',
+  'gradlew.bat',
+  // Go
+  'Makefile',
+  'go.mod',
+  'go.sum',
+  'Gopkg.toml',
+  'gomod.sh',
+  // Ruby
+  'Gemfile',
+  'Gemfile.lock',
+  // .NET
+  'project.json',
+  'packages.config',
+  'PackageReference',
+  'global.json',
+  // Docker
+  'Dockerfile',
+  'docker-compose.yaml',
+  'docker-compose.yml',
+  // Webpack, bundlers
+  'webpack.config.js',
+  '.babelrc',
+  'tsconfig.json',
+  'esbuild.config.js',
+]

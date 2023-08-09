@@ -1,4 +1,4 @@
-import {ENVIRONMENT_ENV_VAR, SERVICE_ENV_VAR, SITE_ENV_VAR, VERSION_ENV_VAR} from '../../constants'
+import {ENVIRONMENT_ENV_VAR, FLARE_PROJECT_FILES, SERVICE_ENV_VAR, SITE_ENV_VAR, VERSION_ENV_VAR} from '../../constants'
 
 export const DD_LAMBDA_EXTENSION_LAYER_NAME = 'Datadog-Extension'
 export const EXTENSION_LAYER_KEY = 'extension'
@@ -161,49 +161,4 @@ export const FRAMEWORK_FILES_MAPPING = new Map([
   ['template.json', DeploymentFrameworks.AwsCloudFormation],
 ])
 
-// Project files to search for in Flare
-export const PROJECT_FILES = [
-  ...FRAMEWORK_FILES_MAPPING.keys(),
-  // Datadog CloudFormation Template
-  'datadog-cloudfomation-macro.yaml',
-  'datadog-cloudfomation-macro.yml',
-  'datadog-cloudformation-macro.json',
-  // Node.js
-  'package.json',
-  'package-lock.json',
-  'yarn.lock',
-  '.nvmrc',
-  // Python
-  'requirements.txt',
-  'Pipfile',
-  'Pipfile.lock',
-  'pyproject.toml',
-  // Java
-  'pom.xml',
-  'build.gradle',
-  'gradlew',
-  'gradlew.bat',
-  // Go
-  'Makefile',
-  'go.mod',
-  'go.sum',
-  'Gopkg.toml',
-  'gomod.sh',
-  // Ruby
-  'Gemfile',
-  'Gemfile.lock',
-  // .NET
-  'project.json',
-  'packages.config',
-  'PackageReference',
-  'global.json',
-  // Docker
-  'Dockerfile',
-  'docker-compose.yaml',
-  'docker-compose.yml',
-  // Webpack, bundlers
-  'webpack.config.js',
-  '.babelrc',
-  'tsconfig.json',
-  'esbuild.config.js',
-]
+export const LAMBDA_PROJECT_FILES = [...FLARE_PROJECT_FILES, ...FRAMEWORK_FILES_MAPPING.keys()]

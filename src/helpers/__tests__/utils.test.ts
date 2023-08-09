@@ -15,7 +15,7 @@ describe('utils', () => {
     jest.restoreAllMocks()
   })
 
-  test('Test pick', () => {
+  test('pick', () => {
     const initialHash = {a: 1, b: 2}
 
     let resultHash = ciUtils.pick(initialHash, ['a'])
@@ -172,7 +172,7 @@ describe('utils', () => {
       ['datadoghq.com', 'api.datadoghq.com'],
       ['datadoghq.eu', 'api.datadoghq.eu'],
       ['whitelabel.com', 'api.whitelabel.com'],
-    ])('for site = %p, returns api host = %p ', (site, expectedApiHost) => {
+    ])('for site = %p, returns api host = %p', (site, expectedApiHost) => {
       expect(ciUtils.getApiHostForSite(site)).toEqual(expectedApiHost)
     })
   })

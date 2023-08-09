@@ -4,13 +4,19 @@ import process from 'process'
 import axios from 'axios'
 import FormData from 'form-data'
 
-import {CI_SITE_ENV_VAR, SITE_ENV_VAR} from '../../constants'
+import {CI_SITE_ENV_VAR, FLARE_PROJECT_FILES, SITE_ENV_VAR} from '../../constants'
 
-import {getEndpointUrl, sendToDatadog} from '../flare'
+import {getEndpointUrl, getProjectFiles, sendToDatadog, validateFilePath} from '../flare'
+import * as flareModule from '../flare'
 
-jest.mock('jszip')
+import {MOCK_CWD} from './fixtures'
+
+// Mocks
 jest.mock('fs')
+jest.spyOn(process, 'cwd').mockReturnValue(MOCK_CWD)
+jest.spyOn(flareModule, 'getProjectFiles').mockResolvedValue(new Set())
 fs.createReadStream = jest.fn().mockReturnValue('test data')
+jest.mock('jszip')
 
 describe('flare', () => {
   describe('getEndpointUrl', () => {
@@ -115,6 +121,76 @@ describe('flare', () => {
       await expect(fn).rejects.toThrow(
         `Failed to send flare file to Datadog Support: Some error. Another error\nIs your Datadog API key correct?\n`
       )
+    })
+  })
+
+  describe('getProjectFiles', () => {
+    beforeAll(() => {
+      ;(flareModule.getProjectFiles as jest.Mock).mockRestore()
+      ;(process.cwd as jest.Mock).mockReturnValue('')
+    })
+
+    it('should return a map of existing project files', async () => {
+      const mockFiles = ['serverless.yml', 'package.json']
+      ;(fs.existsSync as jest.Mock).mockImplementation((filePath: string) => mockFiles.includes(filePath))
+
+      const result = await getProjectFiles(FLARE_PROJECT_FILES)
+      expect(Array.from(result.keys())).toEqual(['package.json'])
+      expect(fs.existsSync).toHaveBeenCalledTimes(FLARE_PROJECT_FILES.length)
+    })
+
+    it('should return an empty map when no files exist', async () => {
+      ;(fs.existsSync as jest.Mock).mockReturnValue(false)
+
+      const result = await getProjectFiles(FLARE_PROJECT_FILES)
+      expect(result).toEqual(new Set())
+      expect(fs.existsSync).toHaveBeenCalledTimes(FLARE_PROJECT_FILES.length)
+    })
+  })
+
+  describe('validateFilePath', () => {
+    const projectFilePaths = new Set<string>()
+    const additionalFilePaths = new Set<string>()
+
+    it('returns the correct path when the file exists', () => {
+      const filePath = '/exists'
+
+      ;(fs.existsSync as jest.Mock).mockReturnValue(true)
+      const result = validateFilePath(filePath, projectFilePaths, additionalFilePaths)
+
+      expect(result).toBe(filePath)
+      expect(fs.existsSync).toHaveBeenCalledWith(filePath)
+    })
+
+    it('returns the correct path when the file exists relative to the cwd', () => {
+      const filePath = 'relative'
+
+      ;(fs.existsSync as jest.Mock).mockReturnValueOnce(false).mockReturnValueOnce(true)
+
+      const result = validateFilePath(filePath, projectFilePaths, additionalFilePaths)
+
+      expect(result).toContain(filePath)
+      expect(fs.existsSync).toHaveBeenNthCalledWith(1, filePath)
+      expect(fs.existsSync).toHaveBeenCalledTimes(2)
+    })
+
+    it('throws an error when the file does not exist', async () => {
+      const filePath = '/not-exists'
+
+      ;(fs.existsSync as jest.Mock).mockReturnValue(false)
+
+      expect(() => validateFilePath(filePath, projectFilePaths, additionalFilePaths)).toThrowErrorMatchingSnapshot()
+      expect(fs.existsSync).toHaveBeenCalledWith(filePath)
+    })
+
+    it('throws an error when the file has already been added', async () => {
+      const filePath = '/added'
+
+      ;(fs.existsSync as jest.Mock).mockReturnValue(true)
+      projectFilePaths.add(filePath)
+
+      expect(() => validateFilePath(filePath, projectFilePaths, additionalFilePaths)).toThrowErrorMatchingSnapshot()
+      expect(fs.existsSync).toHaveBeenCalledWith(filePath)
     })
   })
 })

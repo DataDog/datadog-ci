@@ -17,39 +17,39 @@ exports[`lambda uninstrument execute aborts when every lambda function fails to 
 Will apply the following updates:
 UpdateFunctionConfiguration -> arn:aws:lambda:us-east-1:123456789012:function:lambda-1-us-east-1
 {
-  \\"FunctionName\\": \\"arn:aws:lambda:us-east-1:123456789012:function:lambda-1-us-east-1\\",
-  \\"Environment\\": {
-    \\"Variables\\": {
-      \\"DD_LAMBDA_HANDLER\\": \\"index.handler\\",
-      \\"DD_SITE\\": \\"datadoghq.com\\",
-      \\"DD_CAPTURE_LAMBDA_PAYLOAD\\": \\"false\\",
-      \\"DD_MERGE_XRAY_TRACES\\": \\"false\\",
-      \\"DD_TRACE_ENABLED\\": \\"true\\",
-      \\"DD_FLUSH_TO_LOG\\": \\"true\\"
+  "FunctionName": "arn:aws:lambda:us-east-1:123456789012:function:lambda-1-us-east-1",
+  "Environment": {
+    "Variables": {
+      "DD_LAMBDA_HANDLER": "index.handler",
+      "DD_SITE": "datadoghq.com",
+      "DD_CAPTURE_LAMBDA_PAYLOAD": "false",
+      "DD_MERGE_XRAY_TRACES": "false",
+      "DD_TRACE_ENABLED": "true",
+      "DD_FLUSH_TO_LOG": "true"
     }
   }
 }
 TagResource -> arn:aws:lambda:us-east-1:123456789012:function:lambda-1-us-east-1
 {
-  \\"dd_sls_ci\\": \\"vXXXX\\"
+  "dd_sls_ci": "vXXXX"
 }
 UpdateFunctionConfiguration -> arn:aws:lambda:us-east-2:123456789012:function:lambda-1-us-east-2
 {
-  \\"FunctionName\\": \\"arn:aws:lambda:us-east-2:123456789012:function:lambda-1-us-east-2\\",
-  \\"Environment\\": {
-    \\"Variables\\": {
-      \\"DD_LAMBDA_HANDLER\\": \\"index.handler\\",
-      \\"DD_SITE\\": \\"datadoghq.com\\",
-      \\"DD_CAPTURE_LAMBDA_PAYLOAD\\": \\"false\\",
-      \\"DD_MERGE_XRAY_TRACES\\": \\"false\\",
-      \\"DD_TRACE_ENABLED\\": \\"true\\",
-      \\"DD_FLUSH_TO_LOG\\": \\"true\\"
+  "FunctionName": "arn:aws:lambda:us-east-2:123456789012:function:lambda-1-us-east-2",
+  "Environment": {
+    "Variables": {
+      "DD_LAMBDA_HANDLER": "index.handler",
+      "DD_SITE": "datadoghq.com",
+      "DD_CAPTURE_LAMBDA_PAYLOAD": "false",
+      "DD_MERGE_XRAY_TRACES": "false",
+      "DD_TRACE_ENABLED": "true",
+      "DD_FLUSH_TO_LOG": "true"
     }
   }
 }
 TagResource -> arn:aws:lambda:us-east-2:123456789012:function:lambda-1-us-east-2
 {
-  \\"dd_sls_ci\\": \\"vXXXX\\"
+  "dd_sls_ci": "vXXXX"
 }
 [Error] Failed updating arn:aws:lambda:us-east-1:123456789012:function:lambda-1-us-east-1 Error: Unexpected error updating request
 [Error] Failed updating arn:aws:lambda:us-east-2:123456789012:function:lambda-1-us-east-2 Error: Unexpected error updating request
@@ -79,111 +79,111 @@ exports[`lambda uninstrument execute prints which functions failed to uninstrume
 Will apply the following updates:
 UpdateFunctionConfiguration -> arn:aws:lambda:us-east-1:123456789012:function:lambda-1-us-east-1
 {
-  \\"FunctionName\\": \\"arn:aws:lambda:us-east-1:123456789012:function:lambda-1-us-east-1\\",
-  \\"Environment\\": {
-    \\"Variables\\": {
-      \\"DD_LAMBDA_HANDLER\\": \\"index.handler\\",
-      \\"DD_SITE\\": \\"datadoghq.com\\",
-      \\"DD_CAPTURE_LAMBDA_PAYLOAD\\": \\"false\\",
-      \\"DD_MERGE_XRAY_TRACES\\": \\"false\\",
-      \\"DD_TRACE_ENABLED\\": \\"true\\",
-      \\"DD_FLUSH_TO_LOG\\": \\"true\\"
+  "FunctionName": "arn:aws:lambda:us-east-1:123456789012:function:lambda-1-us-east-1",
+  "Environment": {
+    "Variables": {
+      "DD_LAMBDA_HANDLER": "index.handler",
+      "DD_SITE": "datadoghq.com",
+      "DD_CAPTURE_LAMBDA_PAYLOAD": "false",
+      "DD_MERGE_XRAY_TRACES": "false",
+      "DD_TRACE_ENABLED": "true",
+      "DD_FLUSH_TO_LOG": "true"
     }
   }
 }
 TagResource -> arn:aws:lambda:us-east-1:123456789012:function:lambda-1-us-east-1
 {
-  \\"dd_sls_ci\\": \\"vXXXX\\"
+  "dd_sls_ci": "vXXXX"
 }
 UpdateFunctionConfiguration -> arn:aws:lambda:us-east-1:123456789012:function:lambda-2-us-east-1
 {
-  \\"FunctionName\\": \\"arn:aws:lambda:us-east-1:123456789012:function:lambda-2-us-east-1\\",
-  \\"Environment\\": {
-    \\"Variables\\": {
-      \\"DD_LAMBDA_HANDLER\\": \\"index.handler\\",
-      \\"DD_SITE\\": \\"datadoghq.com\\",
-      \\"DD_CAPTURE_LAMBDA_PAYLOAD\\": \\"false\\",
-      \\"DD_MERGE_XRAY_TRACES\\": \\"false\\",
-      \\"DD_TRACE_ENABLED\\": \\"true\\",
-      \\"DD_FLUSH_TO_LOG\\": \\"true\\"
+  "FunctionName": "arn:aws:lambda:us-east-1:123456789012:function:lambda-2-us-east-1",
+  "Environment": {
+    "Variables": {
+      "DD_LAMBDA_HANDLER": "index.handler",
+      "DD_SITE": "datadoghq.com",
+      "DD_CAPTURE_LAMBDA_PAYLOAD": "false",
+      "DD_MERGE_XRAY_TRACES": "false",
+      "DD_TRACE_ENABLED": "true",
+      "DD_FLUSH_TO_LOG": "true"
     }
   }
 }
 TagResource -> arn:aws:lambda:us-east-1:123456789012:function:lambda-2-us-east-1
 {
-  \\"dd_sls_ci\\": \\"vXXXX\\"
+  "dd_sls_ci": "vXXXX"
 }
 UpdateFunctionConfiguration -> arn:aws:lambda:us-east-1:123456789012:function:lambda-3-us-east-1
 {
-  \\"FunctionName\\": \\"arn:aws:lambda:us-east-1:123456789012:function:lambda-3-us-east-1\\",
-  \\"Environment\\": {
-    \\"Variables\\": {
-      \\"DD_LAMBDA_HANDLER\\": \\"index.handler\\",
-      \\"DD_SITE\\": \\"datadoghq.com\\",
-      \\"DD_CAPTURE_LAMBDA_PAYLOAD\\": \\"false\\",
-      \\"DD_MERGE_XRAY_TRACES\\": \\"false\\",
-      \\"DD_TRACE_ENABLED\\": \\"true\\",
-      \\"DD_FLUSH_TO_LOG\\": \\"true\\"
+  "FunctionName": "arn:aws:lambda:us-east-1:123456789012:function:lambda-3-us-east-1",
+  "Environment": {
+    "Variables": {
+      "DD_LAMBDA_HANDLER": "index.handler",
+      "DD_SITE": "datadoghq.com",
+      "DD_CAPTURE_LAMBDA_PAYLOAD": "false",
+      "DD_MERGE_XRAY_TRACES": "false",
+      "DD_TRACE_ENABLED": "true",
+      "DD_FLUSH_TO_LOG": "true"
     }
   }
 }
 TagResource -> arn:aws:lambda:us-east-1:123456789012:function:lambda-3-us-east-1
 {
-  \\"dd_sls_ci\\": \\"vXXXX\\"
+  "dd_sls_ci": "vXXXX"
 }
 UpdateFunctionConfiguration -> arn:aws:lambda:us-east-2:123456789012:function:lambda-1-us-east-2
 {
-  \\"FunctionName\\": \\"arn:aws:lambda:us-east-2:123456789012:function:lambda-1-us-east-2\\",
-  \\"Environment\\": {
-    \\"Variables\\": {
-      \\"DD_LAMBDA_HANDLER\\": \\"index.handler\\",
-      \\"DD_SITE\\": \\"datadoghq.com\\",
-      \\"DD_CAPTURE_LAMBDA_PAYLOAD\\": \\"false\\",
-      \\"DD_MERGE_XRAY_TRACES\\": \\"false\\",
-      \\"DD_TRACE_ENABLED\\": \\"true\\",
-      \\"DD_FLUSH_TO_LOG\\": \\"true\\"
+  "FunctionName": "arn:aws:lambda:us-east-2:123456789012:function:lambda-1-us-east-2",
+  "Environment": {
+    "Variables": {
+      "DD_LAMBDA_HANDLER": "index.handler",
+      "DD_SITE": "datadoghq.com",
+      "DD_CAPTURE_LAMBDA_PAYLOAD": "false",
+      "DD_MERGE_XRAY_TRACES": "false",
+      "DD_TRACE_ENABLED": "true",
+      "DD_FLUSH_TO_LOG": "true"
     }
   }
 }
 TagResource -> arn:aws:lambda:us-east-2:123456789012:function:lambda-1-us-east-2
 {
-  \\"dd_sls_ci\\": \\"vXXXX\\"
+  "dd_sls_ci": "vXXXX"
 }
 UpdateFunctionConfiguration -> arn:aws:lambda:us-east-2:123456789012:function:lambda-2-us-east-2
 {
-  \\"FunctionName\\": \\"arn:aws:lambda:us-east-2:123456789012:function:lambda-2-us-east-2\\",
-  \\"Environment\\": {
-    \\"Variables\\": {
-      \\"DD_LAMBDA_HANDLER\\": \\"index.handler\\",
-      \\"DD_SITE\\": \\"datadoghq.com\\",
-      \\"DD_CAPTURE_LAMBDA_PAYLOAD\\": \\"false\\",
-      \\"DD_MERGE_XRAY_TRACES\\": \\"false\\",
-      \\"DD_TRACE_ENABLED\\": \\"true\\",
-      \\"DD_FLUSH_TO_LOG\\": \\"true\\"
+  "FunctionName": "arn:aws:lambda:us-east-2:123456789012:function:lambda-2-us-east-2",
+  "Environment": {
+    "Variables": {
+      "DD_LAMBDA_HANDLER": "index.handler",
+      "DD_SITE": "datadoghq.com",
+      "DD_CAPTURE_LAMBDA_PAYLOAD": "false",
+      "DD_MERGE_XRAY_TRACES": "false",
+      "DD_TRACE_ENABLED": "true",
+      "DD_FLUSH_TO_LOG": "true"
     }
   }
 }
 TagResource -> arn:aws:lambda:us-east-2:123456789012:function:lambda-2-us-east-2
 {
-  \\"dd_sls_ci\\": \\"vXXXX\\"
+  "dd_sls_ci": "vXXXX"
 }
 UpdateFunctionConfiguration -> arn:aws:lambda:us-east-2:123456789012:function:lambda-3-us-east-2
 {
-  \\"FunctionName\\": \\"arn:aws:lambda:us-east-2:123456789012:function:lambda-3-us-east-2\\",
-  \\"Environment\\": {
-    \\"Variables\\": {
-      \\"DD_LAMBDA_HANDLER\\": \\"index.handler\\",
-      \\"DD_SITE\\": \\"datadoghq.com\\",
-      \\"DD_CAPTURE_LAMBDA_PAYLOAD\\": \\"false\\",
-      \\"DD_MERGE_XRAY_TRACES\\": \\"false\\",
-      \\"DD_TRACE_ENABLED\\": \\"true\\",
-      \\"DD_FLUSH_TO_LOG\\": \\"true\\"
+  "FunctionName": "arn:aws:lambda:us-east-2:123456789012:function:lambda-3-us-east-2",
+  "Environment": {
+    "Variables": {
+      "DD_LAMBDA_HANDLER": "index.handler",
+      "DD_SITE": "datadoghq.com",
+      "DD_CAPTURE_LAMBDA_PAYLOAD": "false",
+      "DD_MERGE_XRAY_TRACES": "false",
+      "DD_TRACE_ENABLED": "true",
+      "DD_FLUSH_TO_LOG": "true"
     }
   }
 }
 TagResource -> arn:aws:lambda:us-east-2:123456789012:function:lambda-3-us-east-2
 {
-  \\"dd_sls_ci\\": \\"vXXXX\\"
+  "dd_sls_ci": "vXXXX"
 }
 [Error] Failed updating arn:aws:lambda:us-east-1:123456789012:function:lambda-1-us-east-1 Error: Unexpected error updating request
 [Error] Failed updating arn:aws:lambda:us-east-1:123456789012:function:lambda-2-us-east-1 Error: Unexpected error updating request
@@ -205,23 +205,23 @@ exports[`lambda uninstrument execute uninstrument multiple functions interactive
 Will apply the following updates:
 UpdateFunctionConfiguration -> arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world
 {
-  \\"FunctionName\\": \\"arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world\\",
-  \\"Handler\\": \\"lambda_function.lambda_handler\\",
-  \\"Environment\\": {
-    \\"Variables\\": {
-      \\"USER_VARIABLE\\": \\"sh**********tion\\"
+  "FunctionName": "arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world",
+  "Handler": "lambda_function.lambda_handler",
+  "Environment": {
+    "Variables": {
+      "USER_VARIABLE": "sh**********tion"
     }
   },
-  \\"Layers\\": []
+  "Layers": []
 }
 UpdateFunctionConfiguration -> arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world-2
 {
-  \\"FunctionName\\": \\"arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world-2\\",
-  \\"Handler\\": \\"lambda_function.lambda_handler\\",
-  \\"Environment\\": {
-    \\"Variables\\": {}
+  "FunctionName": "arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world-2",
+  "Handler": "lambda_function.lambda_handler",
+  "Environment": {
+    "Variables": {}
   },
-  \\"Layers\\": []
+  "Layers": []
 }
 [!] Confirmation needed.
 [!] Uninstrumenting functions.
@@ -242,23 +242,23 @@ exports[`lambda uninstrument execute uninstrument multiple specified functions i
 Will apply the following updates:
 UpdateFunctionConfiguration -> arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world
 {
-  \\"FunctionName\\": \\"arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world\\",
-  \\"Handler\\": \\"lambda_function.lambda_handler\\",
-  \\"Environment\\": {
-    \\"Variables\\": {
-      \\"USER_VARIABLE\\": \\"sh**********tion\\"
+  "FunctionName": "arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world",
+  "Handler": "lambda_function.lambda_handler",
+  "Environment": {
+    "Variables": {
+      "USER_VARIABLE": "sh**********tion"
     }
   },
-  \\"Layers\\": []
+  "Layers": []
 }
 UpdateFunctionConfiguration -> arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world-2
 {
-  \\"FunctionName\\": \\"arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world-2\\",
-  \\"Handler\\": \\"lambda_function.lambda_handler\\",
-  \\"Environment\\": {
-    \\"Variables\\": {}
+  "FunctionName": "arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world-2",
+  "Handler": "lambda_function.lambda_handler",
+  "Environment": {
+    "Variables": {}
   },
-  \\"Layers\\": []
+  "Layers": []
 }
 [!] Confirmation needed.
 [!] Uninstrumenting functions.

@@ -89,9 +89,9 @@ describe('uninstrument', () => {
       )
       const updateRequest = calculateUpdateRequest(config, config.Runtime as any)
       expect(updateRequest).toMatchInlineSnapshot(`
-        Object {
-          "Environment": Object {
-            "Variables": Object {
+        {
+          "Environment": {
+            "Variables": {
               "USER_VARIABLE": "shouldnt be deleted by uninstrumentation",
             },
           },
@@ -122,9 +122,9 @@ describe('uninstrument', () => {
       )
       const updateRequest = calculateUpdateRequest(config, config.Runtime as any)
       expect(updateRequest).toMatchInlineSnapshot(`
-        Object {
-          "Environment": Object {
-            "Variables": Object {},
+        {
+          "Environment": {
+            "Variables": {},
           },
           "FunctionName": "arn:aws:lambda:us-east-1:000000000000:function:uninstrument",
           "Handler": "lambda_function.lambda_handler",
@@ -167,13 +167,13 @@ describe('uninstrument', () => {
       )
       const updateRequest = calculateUpdateRequest(config, config.Runtime as any)
       expect(updateRequest).toMatchInlineSnapshot(`
-        Object {
-          "Environment": Object {
-            "Variables": Object {},
+        {
+          "Environment": {
+            "Variables": {},
           },
           "FunctionName": "arn:aws:lambda:us-east-1:000000000000:function:uninstrument",
           "Handler": "lambda_function.lambda_handler",
-          "Layers": Array [],
+          "Layers": [],
         }
       `)
     })
@@ -202,9 +202,9 @@ describe('uninstrument', () => {
 
         const updateRequest = calculateUpdateRequest(config, config.Runtime as any)
         expect(updateRequest).toMatchInlineSnapshot(`
-          Object {
-            "Environment": Object {
-              "Variables": Object {},
+          {
+            "Environment": {
+              "Variables": {},
             },
             "FunctionName": "arn:aws:lambda:us-east-1:000000000000:function:dotnet",
           }
@@ -223,9 +223,9 @@ describe('uninstrument', () => {
         }
         const updateRequest = calculateUpdateRequest(config, config.Runtime as any)
         expect(updateRequest).toMatchInlineSnapshot(`
-          Object {
-            "Environment": Object {
-              "Variables": Object {},
+          {
+            "Environment": {
+              "Variables": {},
             },
             "FunctionName": "arn:aws:lambda:us-east-1:000000000000:function:java",
           }
@@ -245,9 +245,9 @@ describe('uninstrument', () => {
         }
         const updateRequest = calculateUpdateRequest(config, config.Runtime as any)
         expect(updateRequest).toMatchInlineSnapshot(`
-          Object {
-            "Environment": Object {
-              "Variables": Object {
+          {
+            "Environment": {
+              "Variables": {
                 "AWS_LAMBDA_EXEC_WRAPPER": "my-custom-wrapper",
               },
             },
@@ -303,9 +303,9 @@ describe('uninstrument', () => {
       )
       expect(result.length).toEqual(1)
       expect(result[0].updateFunctionConfigurationCommandInput).toMatchInlineSnapshot(`
-        Object {
-          "Environment": Object {
-            "Variables": Object {
+        {
+          "Environment": {
+            "Variables": {
               "USER_VARIABLE": "shouldnt be deleted by uninstrumentation",
             },
           },
@@ -358,9 +358,9 @@ describe('uninstrument', () => {
       expect(result.length).toEqual(2)
       expect(result[0].updateFunctionConfigurationCommandInput).toBeUndefined()
       expect(result[1].updateFunctionConfigurationCommandInput).toMatchInlineSnapshot(`
-        Object {
-          "Environment": Object {
-            "Variables": Object {},
+        {
+          "Environment": {
+            "Variables": {},
           },
           "FunctionName": "arn:aws:lambda:us-east-1:000000000000:function:uninstrument",
           "Handler": "index.handler",
@@ -402,13 +402,13 @@ describe('uninstrument', () => {
       )
 
       expect(result[0].updateFunctionConfigurationCommandInput).toMatchInlineSnapshot(`
-          Object {
-            "Environment": Object {
-              "Variables": Object {},
-            },
-            "FunctionName": "arn:aws:lambda:us-east-1:000000000000:function:uninstrument",
-          }
-        `)
+        {
+          "Environment": {
+            "Variables": {},
+          },
+          "FunctionName": "arn:aws:lambda:us-east-1:000000000000:function:uninstrument",
+        }
+      `)
     })
   })
 
@@ -498,7 +498,7 @@ describe('uninstrument', () => {
       )
       expect(result).toBeDefined()
       expect(result.logGroupConfiguration).toMatchInlineSnapshot(`
-        Object {
+        {
           "filterName": "${SUBSCRIPTION_FILTER_NAME}",
           "logGroupName": "${logGroupName}",
         }
@@ -569,9 +569,9 @@ describe('uninstrument', () => {
       )
       expect(result.length).toEqual(1)
       expect(result[0].updateFunctionConfigurationCommandInput).toMatchInlineSnapshot(`
-        Object {
-          "Environment": Object {
-            "Variables": Object {},
+        {
+          "Environment": {
+            "Variables": {},
           },
           "FunctionName": "arn:aws:lambda:us-east-1:000000000000:function:autoinstrument-scrapy",
           "Handler": "index.handler",
