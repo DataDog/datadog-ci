@@ -42,3 +42,5 @@ if (require.main === module) {
     stdout: process.stdout,
   })
 }
+
+export {cli}
