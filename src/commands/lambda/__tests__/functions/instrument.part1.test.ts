@@ -134,11 +134,11 @@ describe('instrument', () => {
         settings
       )
       expect(result.updateFunctionConfigurationCommandInput?.Layers).toMatchInlineSnapshot(`
-                      Array [
-                        "arn:aws:lambda:us-east-1:464622532012:layer:AnotherLayer:10",
-                        "arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Node12-x:23",
-                      ]
-                `)
+        [
+          "arn:aws:lambda:us-east-1:464622532012:layer:AnotherLayer:10",
+          "arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Node12-x:23",
+        ]
+      `)
     })
 
     test('returns configurations without updateRequest when no changes need to be made', async () => {
@@ -208,10 +208,10 @@ describe('instrument', () => {
         settings
       )
       expect(result.updateFunctionConfigurationCommandInput?.Layers).toMatchInlineSnapshot(`
-                      Array [
-                        "arn:aws-us-gov:lambda:us-gov-east-1:002406178527:layer:Datadog-Node12-x:30",
-                      ]
-                `)
+        [
+          "arn:aws-us-gov:lambda:us-gov-east-1:002406178527:layer:Datadog-Node12-x:30",
+        ]
+      `)
     })
 
     test('requests log group configuration when forwarderARN is set', async () => {
@@ -246,10 +246,10 @@ describe('instrument', () => {
       )
       expect(result).toBeDefined()
       expect(result.logGroupConfiguration).toMatchInlineSnapshot(`
-                Object {
-                  "logGroupName": "/aws/lambda/group",
-                }
-            `)
+        {
+          "logGroupName": "/aws/lambda/group",
+        }
+      `)
     })
   })
   describe('getInstrumentedFunctionConfigs', () => {
@@ -295,9 +295,9 @@ describe('instrument', () => {
       )
       expect(result.length).toEqual(1)
       expect(result[0].updateFunctionConfigurationCommandInput).toMatchInlineSnapshot(`
-        Object {
-          "Environment": Object {
-            "Variables": Object {
+        {
+          "Environment": {
+            "Variables": {
               "DD_ENV": "staging",
               "DD_FLUSH_TO_LOG": "false",
               "DD_LAMBDA_HANDLER": "index.handler",
@@ -311,7 +311,7 @@ describe('instrument', () => {
           },
           "FunctionName": "arn:aws:lambda:us-east-1:000000000000:function:autoinstrument",
           "Handler": "/opt/nodejs/node_modules/datadog-lambda-js/handler.handler",
-          "Layers": Array [
+          "Layers": [
             "arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Node12-x:22",
           ],
         }
@@ -417,9 +417,9 @@ describe('instrument', () => {
       )
       expect(result.length).toEqual(1)
       expect(result[0].updateFunctionConfigurationCommandInput).toMatchInlineSnapshot(`
-        Object {
-          "Environment": Object {
-            "Variables": Object {
+        {
+          "Environment": {
+            "Variables": {
               "DD_FLUSH_TO_LOG": "false",
               "DD_LAMBDA_HANDLER": "index.handler",
               "DD_LOG_LEVEL": "debug",
@@ -430,7 +430,7 @@ describe('instrument', () => {
           },
           "FunctionName": "arn:aws:lambda:us-east-1:000000000000:function:autoinstrument-scr.",
           "Handler": "/opt/nodejs/node_modules/datadog-lambda-js/handler.handler",
-          "Layers": Array [
+          "Layers": [
             "arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Node12-x:22",
           ],
         }

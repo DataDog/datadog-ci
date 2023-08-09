@@ -41,7 +41,7 @@ import {
   UserConfigOverride,
 } from './interfaces'
 import {uploadApplicationAndOverrideConfig} from './mobile'
-import {DEFAULT_COMMAND_CONFIG, MAX_TESTS_TO_TRIGGER} from './run-tests-command'
+import {MAX_TESTS_TO_TRIGGER} from './run-tests-command'
 import {Tunnel} from './tunnel'
 
 const POLLING_INTERVAL = 5000 // In ms

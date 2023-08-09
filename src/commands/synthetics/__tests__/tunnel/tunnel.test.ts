@@ -27,7 +27,7 @@ describe('Tunnel', () => {
   const testIDs = ['aaa-bbb-ccc']
   const wsPresignedURL = 'wss://tunnel.synthetics'
 
-  const mockedWebSocket = jest.mocked(WebSocket, true)
+  const mockedWebSocket = jest.mocked(WebSocket)
 
   test('starts by connecting over WebSocket and closes the WebSocket when stopping', async () => {
     mockedWebSocket.mockImplementation(() => mockWebSocket as any)
