@@ -17,7 +17,6 @@ import {
   functionSelectionQuestion,
   requestAWSCredentials,
   requestDatadogEnvVars,
-  requestFilePath,
   requestFunctionSelection,
 } from '../prompt'
 
@@ -229,29 +228,6 @@ describe('prompt', () => {
         }
       }
       expect(error?.message).toBe("Couldn't receive selected functions. Unexpected error")
-    })
-  })
-
-  describe('requestFilePath', () => {
-    const mockFilePath = '/Users/username/project/test.ts'
-    test('returns the selected file path', async () => {
-      ;(prompt as any).mockImplementation(() => Promise.resolve({filePath: mockFilePath}))
-
-      const selectedPath = await requestFilePath()
-      expect(mockFilePath).toBe(selectedPath)
-    })
-
-    test('throws error when something unexpected happens while prompting', async () => {
-      ;(prompt as any).mockImplementation(() => Promise.reject(new Error('Unexpected error')))
-      let error
-      try {
-        await requestFilePath()
-      } catch (e) {
-        if (e instanceof Error) {
-          error = e
-        }
-      }
-      expect(error?.message).toBe("Couldn't receive file path. Unexpected error")
     })
   })
 })

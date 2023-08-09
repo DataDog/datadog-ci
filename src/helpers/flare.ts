@@ -3,6 +3,7 @@
  */
 
 import fs from 'fs'
+import path from 'path'
 
 import axios from 'axios'
 import FormData from 'form-data'
@@ -18,6 +19,7 @@ import {
 } from '../constants'
 
 import {deleteFolder} from './fs'
+import * as helpersRenderer from './renderer'
 import {isValidDatadogSite} from './validation'
 
 const {version} = require('../../package.json')
@@ -87,4 +89,44 @@ export const getEndpointUrl = () => {
   }
 
   return 'https://' + endpointUrl + FLARE_ENDPOINT_PATH
+}
+
+/**
+ * Searches current directory for project files
+ * @returns a set of file paths of project files
+ */
+export const getProjectFiles = async (projectFiles: string[]) => {
+  const filePaths = new Set<string>()
+  const cwd = process.cwd()
+  for (const fileName of projectFiles) {
+    const filePath = path.join(cwd, fileName)
+    if (fs.existsSync(filePath)) {
+      filePaths.add(filePath)
+    }
+  }
+
+  return filePaths
+}
+
+/**
+ * Validates a path to a file
+ * @param filePath path to the file
+ * @param projectFilePaths map of file names to file paths
+ * @param additionalFiles set of additional file paths
+ * @throws Error if the file path is invalid or the file was already added
+ * @returns the full path to the file
+ */
+export const validateFilePath = (filePath: string, projectFilePaths: Set<string>, additionalFiles: Set<string>) => {
+  const originalPath = filePath
+  filePath = fs.existsSync(filePath) ? filePath : path.join(process.cwd(), filePath)
+  if (!fs.existsSync(filePath)) {
+    throw Error(helpersRenderer.renderError(`File path '${originalPath}' not found. Please try again.`))
+  }
+
+  filePath = path.resolve(filePath)
+  if (projectFilePaths.has(filePath) || additionalFiles.has(filePath)) {
+    throw Error(helpersRenderer.renderSoftWarning(`File '${filePath}' has already been added.`))
+  }
+
+  return filePath
 }

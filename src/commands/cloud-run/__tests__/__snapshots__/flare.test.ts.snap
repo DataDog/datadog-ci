@@ -44,6 +44,12 @@ GCP credentials verified!
   }
 }
 
+📁 Searching for project files in current directory...
+[!] No project files found.
+
+
+[!] No additional files specified.
+
 💾 Saving files to mock-folder/.datadog-ci...
 • Saved function config to ./service_config.json
 
@@ -195,6 +201,10 @@ GCP credentials verified!
   }
 }
 
+📁 Searching for project files in current directory...
+[!] No project files found.
+
+
 💾 Saving files to mock-folder/.datadog-ci...
 • Saved function config to ./service_config.json
 
@@ -233,6 +243,12 @@ GCP credentials verified!
     someData: 'data'
   }
 }
+
+📁 Searching for project files in current directory...
+[!] No project files found.
+
+
+[!] No additional files specified.
 
 💾 Saving files to mock-folder/.datadog-ci...
 • Saved function config to ./service_config.json
@@ -315,6 +331,12 @@ GCP credentials verified!
   }
 }
 
+📁 Searching for project files in current directory...
+[!] No project files found.
+
+
+[!] No additional files specified.
+
 💾 Saving files to mock-folder/.datadog-ci...
 • Saved function config to ./service_config.json
 
@@ -353,6 +375,12 @@ GCP credentials verified!
     someData: 'data'
   }
 }
+
+📁 Searching for project files in current directory...
+[!] No project files found.
+
+
+[!] No additional files specified.
 
 💾 Saving files to mock-folder/.datadog-ci...
 • Saved function config to ./service_config.json
@@ -393,6 +421,12 @@ GCP credentials verified!
   }
 }
 
+📁 Searching for project files in current directory...
+[!] No project files found.
+
+
+[!] No additional files specified.
+
 💾 Saving files to mock-folder/.datadog-ci...
 • Saved function config to ./service_config.json
 
@@ -427,6 +461,12 @@ GCP credentials verified!
     someData: 'data'
   }
 }
+
+📁 Searching for project files in current directory...
+[!] No project files found.
+
+
+[!] No additional files specified.
 
 💾 Saving files to mock-folder/.datadog-ci...
 • Saved function config to ./service_config.json

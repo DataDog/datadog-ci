@@ -12,6 +12,7 @@ import {
   MOCK_DATADOG_API_KEY,
   MOCK_FLARE_FOLDER_PATH,
 } from '../../../helpers/__tests__/fixtures'
+import * as helpersFlareModule from '../../../helpers/flare'
 import * as fsModule from '../../../helpers/fs'
 import * as helpersPromptModule from '../../../helpers/prompt'
 
@@ -72,7 +73,8 @@ const MOCK_READ_STREAM = new stream.Readable({
   },
 })
 
-// Mocks
+// GCP mocks
+jest.mock('@google-cloud/logging')
 jest.mock('google-auth-library', () => {
   return {
     GoogleAuth: jest.fn().mockImplementation(() => ({
@@ -88,14 +90,20 @@ jest.mock('@google-cloud/run', () => {
     })),
   }
 })
+
+// Prompt mocks
+jest.spyOn(helpersPromptModule, 'requestFilePath').mockResolvedValue('')
 jest.spyOn(helpersPromptModule, 'requestConfirmation').mockResolvedValue(true)
+jest.spyOn(helpersFlareModule, 'getProjectFiles').mockResolvedValue(new Set())
+
+// Misc
 jest.mock('util')
 jest.mock('jszip')
 jest.mock('@google-cloud/logging')
 jest.useFakeTimers({now: new Date(Date.UTC(2023, 0))})
 
 // File system mocks
-process.cwd = jest.fn().mockReturnValue(MOCK_CWD)
+jest.spyOn(process, 'cwd').mockReturnValue(MOCK_CWD)
 jest.mock('fs')
 fs.existsSync = jest.fn().mockReturnValue(true)
 ;(fs.statSync as jest.Mock).mockImplementation((file_path: string) => ({
@@ -321,7 +329,8 @@ describe('cloud-run flare', () => {
     })
 
     it('does not send when user answers prompt with no', async () => {
-      jest.spyOn(helpersPromptModule, 'requestConfirmation').mockResolvedValueOnce(false)
+      // The first prompt is for additional files, the second is for confirmation before sending
+      jest.spyOn(helpersPromptModule, 'requestConfirmation').mockResolvedValueOnce(false).mockResolvedValueOnce(false)
       const cli = makeCli()
       const context = createMockContext()
       const code = await cli.run(MOCK_REQUIRED_FLAGS, context)

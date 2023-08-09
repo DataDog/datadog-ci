@@ -1,3 +1,6 @@
+import path from 'path'
+import process from 'process'
+
 import {bold, cyan, green, red, yellow} from 'chalk'
 
 export const dryRunTag = bold(cyan('[Dry Run]'))
@@ -43,4 +46,52 @@ export const renderFlareHeader = (platformName: string, isDryRun: boolean) => {
   const prefix = isDryRun ? `${dryRunTag} ` : ''
 
   return bold(`\n${prefix}🐶 Generating ${platformName} flare to send your configuration to Datadog...\n`)
+}
+
+/**
+ * @returns a message indicating which project files were found, or a different
+ * message if no project files were found.
+ * @param projectFilePaths list of project file paths that were discovered
+ *
+ * ```txt
+ * ✅ Found project file(s) in /Users/current-directory:
+ * • package.json
+ * • tsconfig.json
+ * ```
+ */
+export const renderProjectFiles = (projectFilePaths: Set<string>) => {
+  if (projectFilePaths.size === 0) {
+    return renderSoftWarning('No project files found.')
+  }
+  let msg = bold(`\n✅ Found project file(s) in ${process.cwd()}:\n`)
+  for (const filePath of projectFilePaths) {
+    const fileName = path.basename(filePath)
+    msg += `• ${fileName}\n`
+  }
+
+  return msg
+}
+
+/**
+ * @returns a message indicating which additional files were added, or a different
+ * message if no additional files were added.
+ * @param additionalFilePaths list of additional file paths that were added
+ *
+ * ```txt
+ * ✅ Found project file(s) in /Users/current-directory:
+ * • package.json
+ * • tsconfig.json
+ * ```
+ */
+export const renderAdditionalFiles = (additionalFilePaths: Set<string>) => {
+  if (additionalFilePaths.size === 0) {
+    return renderSoftWarning('No additional files specified.')
+  }
+  let msg = bold(`\nAdded ${additionalFilePaths.size} custom file(s):\n`)
+  for (const filePath of additionalFilePaths) {
+    const fileName = path.basename(filePath)
+    msg += `• ${fileName}\n`
+  }
+
+  return msg
 }
