@@ -23,7 +23,7 @@ exports[`lambda flare AWS Lambda configuration prints config when running as a d
   Runtime: 'nodejs18.x',
   Handler: '/path/handler.handler'
 }
-(This is a summary of the config. The full config will be saved in \\"function_config.json\\".)
+(This is a summary of the configuration. The full configuration will be saved in \\"function_config.json\\".)
 
 📁 Searching for project files in current directory...
 [!] No project files found.
@@ -36,9 +36,9 @@ Added 0 custom file(s):
 
 💾 Saving files to mock-folder/.datadog-ci...
 • Saved function config to ./function_config.json
-• Saved insights file to ./INSIGHTS.md
+• Saved the insights file to ./INSIGHTS.md
 
-🚫 The flare files were not sent as it was executed in dry run mode.
+🚫 The flare files were not sent because the command was executed in dry run mode.
 ℹ️ Your output files are located at: mock-folder/.datadog-ci
 
 "
@@ -78,7 +78,7 @@ exports[`lambda flare AWS credentials continues when getAWSCredentials() returns
   Runtime: 'nodejs18.x',
   Handler: '/path/handler.handler'
 }
-(This is a summary of the config. The full config will be saved in \\"function_config.json\\".)
+(This is a summary of the configuration. The full configuration will be saved in \\"function_config.json\\".)
 
 📁 Searching for project files in current directory...
 [!] No project files found.
@@ -91,7 +91,7 @@ Added 0 custom file(s):
 
 💾 Saving files to mock-folder/.datadog-ci...
 • Saved function config to ./function_config.json
-• Saved insights file to ./INSIGHTS.md
+• Saved the insights file to ./INSIGHTS.md
 
 
 🚀 Sending to Datadog Support...
@@ -123,7 +123,7 @@ exports[`lambda flare AWS credentials requests AWS credentials when none are fou
   Runtime: 'nodejs18.x',
   Handler: '/path/handler.handler'
 }
-(This is a summary of the config. The full config will be saved in \\"function_config.json\\".)
+(This is a summary of the configuration. The full configuration will be saved in \\"function_config.json\\".)
 
 📁 Searching for project files in current directory...
 [!] No project files found.
@@ -136,7 +136,7 @@ Added 0 custom file(s):
 
 💾 Saving files to mock-folder/.datadog-ci...
 • Saved function config to ./function_config.json
-• Saved insights file to ./INSIGHTS.md
+• Saved the insights file to ./INSIGHTS.md
 
 
 🚀 Sending to Datadog Support...
@@ -276,7 +276,7 @@ exports[`lambda flare gets CloudWatch Logs does not get logs when --with-logs is
   Runtime: 'nodejs18.x',
   Handler: '/path/handler.handler'
 }
-(This is a summary of the config. The full config will be saved in \\"function_config.json\\".)
+(This is a summary of the configuration. The full configuration will be saved in \\"function_config.json\\".)
 
 📁 Searching for project files in current directory...
 [!] No project files found.
@@ -289,7 +289,7 @@ Added 0 custom file(s):
 
 💾 Saving files to mock-folder/.datadog-ci...
 • Saved function config to ./function_config.json
-• Saved insights file to ./INSIGHTS.md
+• Saved the insights file to ./INSIGHTS.md
 
 
 🚀 Sending to Datadog Support...
@@ -321,7 +321,7 @@ exports[`lambda flare gets CloudWatch Logs gets logs, saves, and sends correctly
   Runtime: 'nodejs18.x',
   Handler: '/path/handler.handler'
 }
-(This is a summary of the config. The full config will be saved in \\"function_config.json\\".)
+(This is a summary of the configuration. The full configuration will be saved in \\"function_config.json\\".)
 
 📁 Searching for project files in current directory...
 [!] No project files found.
@@ -344,7 +344,7 @@ Added 0 custom file(s):
 • Saved logs to ./logs/Stream1
 • Saved logs to ./logs/Stream2
 • Saved logs to ./logs/Stream3
-• Saved insights file to ./INSIGHTS.md
+• Saved the insights file to ./INSIGHTS.md
 
 
 🚀 Sending to Datadog Support...
@@ -376,7 +376,7 @@ exports[`lambda flare gets CloudWatch Logs prints error when getLogEvents throws
   Runtime: 'nodejs18.x',
   Handler: '/path/handler.handler'
 }
-(This is a summary of the config. The full config will be saved in \\"function_config.json\\".)
+(This is a summary of the configuration. The full configuration will be saved in \\"function_config.json\\".)
 
 📁 Searching for project files in current directory...
 [!] No project files found.
@@ -415,7 +415,7 @@ exports[`lambda flare gets CloudWatch Logs prints error when getLogStreamNames t
   Runtime: 'nodejs18.x',
   Handler: '/path/handler.handler'
 }
-(This is a summary of the config. The full config will be saved in \\"function_config.json\\".)
+(This is a summary of the configuration. The full configuration will be saved in \\"function_config.json\\".)
 
 📁 Searching for project files in current directory...
 [!] No project files found.
@@ -454,7 +454,7 @@ exports[`lambda flare gets CloudWatch Logs warns and skips getting logs when get
   Runtime: 'nodejs18.x',
   Handler: '/path/handler.handler'
 }
-(This is a summary of the config. The full config will be saved in \\"function_config.json\\".)
+(This is a summary of the configuration. The full configuration will be saved in \\"function_config.json\\".)
 
 📁 Searching for project files in current directory...
 [!] No project files found.
@@ -470,7 +470,7 @@ Added 0 custom file(s):
 
 💾 Saving files to mock-folder/.datadog-ci...
 • Saved function config to ./function_config.json
-• Saved insights file to ./INSIGHTS.md
+• Saved the insights file to ./INSIGHTS.md
 
 
 🚀 Sending to Datadog Support...
@@ -502,7 +502,7 @@ exports[`lambda flare gets CloudWatch Logs warns and skips log when getLogEvents
   Runtime: 'nodejs18.x',
   Handler: '/path/handler.handler'
 }
-(This is a summary of the config. The full config will be saved in \\"function_config.json\\".)
+(This is a summary of the configuration. The full configuration will be saved in \\"function_config.json\\".)
 
 📁 Searching for project files in current directory...
 [!] No project files found.
@@ -522,7 +522,7 @@ Added 0 custom file(s):
 
 💾 Saving files to mock-folder/.datadog-ci...
 • Saved function config to ./function_config.json
-• Saved insights file to ./INSIGHTS.md
+• Saved the insights file to ./INSIGHTS.md
 
 
 🚀 Sending to Datadog Support...
@@ -566,7 +566,7 @@ exports[`lambda flare prompts for additional files does not request additional f
   Runtime: 'nodejs18.x',
   Handler: '/path/handler.handler'
 }
-(This is a summary of the config. The full config will be saved in \\"function_config.json\\".)
+(This is a summary of the configuration. The full configuration will be saved in \\"function_config.json\\".)
 
 📁 Searching for project files in current directory...
 [!] No project files found.
@@ -577,7 +577,7 @@ exports[`lambda flare prompts for additional files does not request additional f
 
 💾 Saving files to mock-folder/.datadog-ci...
 • Saved function config to ./function_config.json
-• Saved insights file to ./INSIGHTS.md
+• Saved the insights file to ./INSIGHTS.md
 
 
 🚀 Sending to Datadog Support...
@@ -607,7 +607,7 @@ exports[`lambda flare prompts for additional files requests additional files whe
   Runtime: 'nodejs18.x',
   Handler: '/path/handler.handler'
 }
-(This is a summary of the config. The full config will be saved in \\"function_config.json\\".)
+(This is a summary of the configuration. The full configuration will be saved in \\"function_config.json\\".)
 
 📁 Searching for project files in current directory...
 [!] No project files found.
@@ -620,7 +620,7 @@ Added 0 custom file(s):
 
 💾 Saving files to mock-folder/.datadog-ci...
 • Saved function config to ./function_config.json
-• Saved insights file to ./INSIGHTS.md
+• Saved the insights file to ./INSIGHTS.md
 
 
 🚀 Sending to Datadog Support...
@@ -650,7 +650,7 @@ exports[`lambda flare prompts for confirmation before sending does not send when
   Runtime: 'nodejs18.x',
   Handler: '/path/handler.handler'
 }
-(This is a summary of the config. The full config will be saved in \\"function_config.json\\".)
+(This is a summary of the configuration. The full configuration will be saved in \\"function_config.json\\".)
 
 📁 Searching for project files in current directory...
 [!] No project files found.
@@ -663,7 +663,7 @@ Added 0 custom file(s):
 
 💾 Saving files to mock-folder/.datadog-ci...
 • Saved function config to ./function_config.json
-• Saved insights file to ./INSIGHTS.md
+• Saved the insights file to ./INSIGHTS.md
 
 
 🚫 The flare files were not sent based on your selection.
@@ -693,7 +693,7 @@ exports[`lambda flare prompts for confirmation before sending sends when user an
   Runtime: 'nodejs18.x',
   Handler: '/path/handler.handler'
 }
-(This is a summary of the config. The full config will be saved in \\"function_config.json\\".)
+(This is a summary of the configuration. The full configuration will be saved in \\"function_config.json\\".)
 
 📁 Searching for project files in current directory...
 [!] No project files found.
@@ -706,7 +706,7 @@ Added 0 custom file(s):
 
 💾 Saving files to mock-folder/.datadog-ci...
 • Saved function config to ./function_config.json
-• Saved insights file to ./INSIGHTS.md
+• Saved the insights file to ./INSIGHTS.md
 
 
 🚀 Sending to Datadog Support...
@@ -774,7 +774,7 @@ exports[`lambda flare validates required flags extracts region from function nam
   Runtime: 'nodejs18.x',
   Handler: '/path/handler.handler'
 }
-(This is a summary of the config. The full config will be saved in \\"function_config.json\\".)
+(This is a summary of the configuration. The full configuration will be saved in \\"function_config.json\\".)
 
 📁 Searching for project files in current directory...
 [!] No project files found.
@@ -787,7 +787,7 @@ Added 0 custom file(s):
 
 💾 Saving files to mock-folder/.datadog-ci...
 • Saved function config to ./function_config.json
-• Saved insights file to ./INSIGHTS.md
+• Saved the insights file to ./INSIGHTS.md
 
 
 🚀 Sending to Datadog Support...
@@ -889,7 +889,7 @@ exports[`lambda flare validates required flags runs successfully when start and 
   Runtime: 'nodejs18.x',
   Handler: '/path/handler.handler'
 }
-(This is a summary of the config. The full config will be saved in \\"function_config.json\\".)
+(This is a summary of the configuration. The full configuration will be saved in \\"function_config.json\\".)
 
 📁 Searching for project files in current directory...
 [!] No project files found.
@@ -902,7 +902,7 @@ Added 0 custom file(s):
 
 💾 Saving files to mock-folder/.datadog-ci...
 • Saved function config to ./function_config.json
-• Saved insights file to ./INSIGHTS.md
+• Saved the insights file to ./INSIGHTS.md
 
 
 🚀 Sending to Datadog Support...
@@ -934,7 +934,7 @@ exports[`lambda flare validates required flags runs successfully with all requir
   Runtime: 'nodejs18.x',
   Handler: '/path/handler.handler'
 }
-(This is a summary of the config. The full config will be saved in \\"function_config.json\\".)
+(This is a summary of the configuration. The full configuration will be saved in \\"function_config.json\\".)
 
 📁 Searching for project files in current directory...
 [!] No project files found.
@@ -947,7 +947,7 @@ Added 0 custom file(s):
 
 💾 Saving files to mock-folder/.datadog-ci...
 • Saved function config to ./function_config.json
-• Saved insights file to ./INSIGHTS.md
+• Saved the insights file to ./INSIGHTS.md
 
 
 🚀 Sending to Datadog Support...
@@ -979,7 +979,7 @@ exports[`lambda flare validates required flags uses API key ENV variable and run
   Runtime: 'nodejs18.x',
   Handler: '/path/handler.handler'
 }
-(This is a summary of the config. The full config will be saved in \\"function_config.json\\".)
+(This is a summary of the configuration. The full configuration will be saved in \\"function_config.json\\".)
 
 📁 Searching for project files in current directory...
 [!] No project files found.
@@ -992,7 +992,7 @@ Added 0 custom file(s):
 
 💾 Saving files to mock-folder/.datadog-ci...
 • Saved function config to ./function_config.json
-• Saved insights file to ./INSIGHTS.md
+• Saved the insights file to ./INSIGHTS.md
 
 
 🚀 Sending to Datadog Support...
@@ -1024,7 +1024,7 @@ exports[`lambda flare validates required flags uses API key ENV variable and run
   Runtime: 'nodejs18.x',
   Handler: '/path/handler.handler'
 }
-(This is a summary of the config. The full config will be saved in \\"function_config.json\\".)
+(This is a summary of the configuration. The full configuration will be saved in \\"function_config.json\\".)
 
 📁 Searching for project files in current directory...
 [!] No project files found.
@@ -1037,7 +1037,7 @@ Added 0 custom file(s):
 
 💾 Saving files to mock-folder/.datadog-ci...
 • Saved function config to ./function_config.json
-• Saved insights file to ./INSIGHTS.md
+• Saved the insights file to ./INSIGHTS.md
 
 
 🚀 Sending to Datadog Support...
@@ -1065,7 +1065,7 @@ Added 0 custom file(s):
   Runtime: 'nodejs18.x',
   Handler: '/path/handler.handler'
 }
-(This is a summary of the config. The full config will be saved in \\"function_config.json\\".)
+(This is a summary of the configuration. The full configuration will be saved in \\"function_config.json\\".)
 
 📁 Searching for project files in current directory...
 [!] No project files found.
@@ -1078,7 +1078,7 @@ Added 0 custom file(s):
 
 💾 Saving files to mock-folder/.datadog-ci...
 • Saved function config to ./function_config.json
-• Saved insights file to ./INSIGHTS.md
+• Saved the insights file to ./INSIGHTS.md
 
 
 🚀 Sending to Datadog Support...
@@ -1110,7 +1110,7 @@ exports[`lambda flare validates required flags uses region ENV variable when no 
   Runtime: 'nodejs18.x',
   Handler: '/path/handler.handler'
 }
-(This is a summary of the config. The full config will be saved in \\"function_config.json\\".)
+(This is a summary of the configuration. The full configuration will be saved in \\"function_config.json\\".)
 
 📁 Searching for project files in current directory...
 [!] No project files found.
@@ -1123,7 +1123,7 @@ Added 0 custom file(s):
 
 💾 Saving files to mock-folder/.datadog-ci...
 • Saved function config to ./function_config.json
-• Saved insights file to ./INSIGHTS.md
+• Saved the insights file to ./INSIGHTS.md
 
 
 🚀 Sending to Datadog Support...

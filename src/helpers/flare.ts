@@ -63,11 +63,17 @@ export const sendToDatadog = async (
 
       let message = `Failed to send flare file to Datadog Support: ${errorMessage}. ${errResponse}\n`
       const code = err.response?.status
-      // The error message doesn't say why there was an error, so it's important to tell the user why the request failed.
-      if (code === 500) {
-        message += 'Are your case ID and email correct?\n'
-      } else if (code === 403) {
-        message += 'Is your Datadog API key correct?\n'
+      // The error message doesn't say why there was an error. All it says is:
+      // "[Error] Failed to send flare file to Datadog Support: Request failed with status code 500."
+      // Therefore, we need to add an explanation to clarify when the code is 500 or 403.
+      switch (code) {
+        case 500:
+          message += 'Are your case ID and email correct?\n'
+          break
+        case 400:
+        case 403:
+          message += 'Is your Datadog API key correct?\n'
+          break
       }
 
       throw Error(message)

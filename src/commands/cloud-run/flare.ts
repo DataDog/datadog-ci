@@ -140,7 +140,7 @@ export class CloudRunFlareCommand extends Command {
     this.context.stdout.write(`\n${summarizedConfigStr}\n`)
     this.context.stdout.write(
       chalk.italic(
-        `(This is a summary of the config. The full config will be saved in "${SERVICE_CONFIG_FILE_NAME}".)\n`
+        `(This is a summary of the configuration. The full configuration will be saved in "${SERVICE_CONFIG_FILE_NAME}".)\n`
       )
     )
 
@@ -195,7 +195,9 @@ export class CloudRunFlareCommand extends Command {
       // Exit if dry run
       const outputMsg = `\nℹ️ Your output files are located at: ${rootFolderPath}\n\n`
       if (this.isDryRun) {
-        this.context.stdout.write('\n🚫 The flare files were not sent as it was executed in dry run mode.')
+        this.context.stdout.write(
+          '\n🚫 The flare files were not sent because the command was executed in dry run mode.'
+        )
         this.context.stdout.write(outputMsg)
 
         return 0

@@ -43,12 +43,12 @@ GCP credentials verified!
     }
   ]
 }
-(This is a summary of the config. The full config will be saved in \\"service_config.json\\".)
+(This is a summary of the configuration. The full configuration will be saved in \\"service_config.json\\".)
 
 💾 Saving files to mock-folder/.datadog-ci...
 • Saved function config to ./service_config.json
 
-🚫 The flare files were not sent as it was executed in dry run mode.
+🚫 The flare files were not sent because the command was executed in dry run mode.
 ℹ️ Your output files are located at: mock-folder/.datadog-ci
 
 "
@@ -201,7 +201,7 @@ GCP credentials verified!
     }
   ]
 }
-(This is a summary of the config. The full config will be saved in \\"service_config.json\\".)
+(This is a summary of the configuration. The full configuration will be saved in \\"service_config.json\\".)
 
 💾 Saving files to mock-folder/.datadog-ci...
 • Saved function config to ./service_config.json
@@ -241,7 +241,7 @@ GCP credentials verified!
     }
   ]
 }
-(This is a summary of the config. The full config will be saved in \\"service_config.json\\".)
+(This is a summary of the configuration. The full configuration will be saved in \\"service_config.json\\".)
 
 💾 Saving files to mock-folder/.datadog-ci...
 • Saved function config to ./service_config.json
@@ -353,7 +353,7 @@ GCP credentials verified!
     }
   ]
 }
-(This is a summary of the config. The full config will be saved in \\"service_config.json\\".)
+(This is a summary of the configuration. The full configuration will be saved in \\"service_config.json\\".)
 
 💾 Saving files to mock-folder/.datadog-ci...
 • Saved function config to ./service_config.json
@@ -393,7 +393,7 @@ GCP credentials verified!
     }
   ]
 }
-(This is a summary of the config. The full config will be saved in \\"service_config.json\\".)
+(This is a summary of the configuration. The full configuration will be saved in \\"service_config.json\\".)
 
 💾 Saving files to mock-folder/.datadog-ci...
 • Saved function config to ./service_config.json
@@ -433,7 +433,7 @@ GCP credentials verified!
     }
   ]
 }
-(This is a summary of the config. The full config will be saved in \\"service_config.json\\".)
+(This is a summary of the configuration. The full configuration will be saved in \\"service_config.json\\".)
 
 💾 Saving files to mock-folder/.datadog-ci...
 • Saved function config to ./service_config.json
@@ -469,7 +469,7 @@ GCP credentials verified!
     }
   ]
 }
-(This is a summary of the config. The full config will be saved in \\"service_config.json\\".)
+(This is a summary of the configuration. The full configuration will be saved in \\"service_config.json\\".)
 
 💾 Saving files to mock-folder/.datadog-ci...
 • Saved function config to ./service_config.json

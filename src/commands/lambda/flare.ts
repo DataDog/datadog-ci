@@ -171,7 +171,7 @@ export class LambdaFlareCommand extends Command {
     this.context.stdout.write(`\n${summarizedConfigStr}\n`)
     this.context.stdout.write(
       chalk.italic(
-        `(This is a summary of the config. The full config will be saved in "${FUNCTION_CONFIG_FILE_NAME}".)\n`
+        `(This is a summary of the configuration. The full configuration will be saved in "${FUNCTION_CONFIG_FILE_NAME}".)\n`
       )
     )
 
@@ -357,12 +357,14 @@ export class LambdaFlareCommand extends Command {
       // Write insights file
       const insightsFilePath = path.join(rootFolderPath, INSIGHTS_FILE_NAME)
       generateInsightsFile(insightsFilePath, this.isDryRun, config)
-      this.context.stdout.write(`• Saved insights file to ./${INSIGHTS_FILE_NAME}\n`)
+      this.context.stdout.write(`• Saved the insights file to ./${INSIGHTS_FILE_NAME}\n`)
 
       // Exit if dry run
       const outputMsg = `\nℹ️ Your output files are located at: ${rootFolderPath}\n\n`
       if (this.isDryRun) {
-        this.context.stdout.write('\n🚫 The flare files were not sent as it was executed in dry run mode.')
+        this.context.stdout.write(
+          '\n🚫 The flare files were not sent because the command was executed in dry run mode.'
+        )
         this.context.stdout.write(outputMsg)
 
         return 0
