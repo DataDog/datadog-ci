@@ -3,7 +3,7 @@ import {spawn} from 'child_process'
 import {existsSync, readFileSync} from 'fs'
 import {sep} from 'path'
 
-import {Cli, Command} from 'clipanion'
+import {Cli, Command, Option} from 'clipanion'
 
 import {parsePlist} from '../../helpers/plist'
 
@@ -33,6 +33,8 @@ const reactNativePath = (() => {
 })()
 
 export class XCodeCommand extends Command {
+  public static paths = [['react-native', 'xcode']]
+
   public static usage = Command.Usage({
     description: 'Bundle React Native code and images in XCode and send sourcemaps to Datadog.',
     details: `
@@ -51,26 +53,28 @@ export class XCodeCommand extends Command {
     ],
   })
 
-  private composeSourcemapsPath = `${reactNativePath}/scripts/compose-source-maps.js`
-  private configPath?: string
-  private disableGit?: boolean
-  private dryRun = false
-  private force = false
-  private infoPlistPath =
-    process.env.PROJECT_DIR && process.env.INFOPLIST_FILE
-      ? `${process.env.PROJECT_DIR}/${process.env.INFOPLIST_FILE}`
-      : null
-  private removeSourcesContent?: boolean
-  private repositoryURL?: string
-  private scriptPath = `${reactNativePath}/scripts/react-native-xcode.sh`
-  private service?: string = process.env.PRODUCT_BUNDLE_IDENTIFIER
+  private composeSourcemapsPath = Option.String(
+    '--compose-sourcemaps-path',
+    `${reactNativePath}/scripts/compose-source-maps.js`
+  )
+  private configPath = Option.String('--config')
+  private disableGit = Option.Boolean('--disable-git')
+  private dryRun = Option.Boolean('--dry-run', false)
+  private force = Option.Boolean('--force', false)
+  private infoPlistPath = Option.String('--info-plist-path')
+  private removeSourcesContent = Option.Boolean('--remove-sources-content')
+  private repositoryURL = Option.String('--repository-url')
+  private service = Option.String('--service')
 
-  constructor() {
-    super()
-  }
+  private scriptPath = Option.String({required: false}) || `${reactNativePath}/scripts/react-native-xcode.sh` // Positional
 
   public async execute() {
-    this.service = process.env.SERVICE_NAME_IOS || this.service
+    this.service = process.env.SERVICE_NAME_IOS || this.service || process.env.PRODUCT_BUNDLE_IDENTIFIER
+
+    if (!this.infoPlistPath && process.env.PROJECT_DIR && process.env.INFOPLIST_FILE) {
+      this.infoPlistPath = `${process.env.PROJECT_DIR}/${process.env.INFOPLIST_FILE}`
+    }
+
     if (!this.service) {
       this.context.stderr.write(
         'Environment variable PRODUCT_BUNDLE_IDENTIFIER is missing for Datadog sourcemaps upload.\n'
@@ -425,15 +429,3 @@ export class XCodeCommand extends Command {
 
   private shouldUploadSourcemaps = (): boolean => process.env.CONFIGURATION === 'Release' || this.force
 }
-
-XCodeCommand.addPath('react-native', 'xcode')
-XCodeCommand.addOption('scriptPath', Command.String({required: false}))
-XCodeCommand.addOption('service', Command.String('--service'))
-XCodeCommand.addOption('dryRun', Command.Boolean('--dry-run'))
-XCodeCommand.addOption('force', Command.Boolean('--force'))
-XCodeCommand.addOption('composeSourcemapsPath', Command.String('--compose-sourcemaps-path'))
-XCodeCommand.addOption('repositoryURL', Command.String('--repository-url'))
-XCodeCommand.addOption('disableGit', Command.Boolean('--disable-git'))
-XCodeCommand.addOption('configPath', Command.String('--config'))
-XCodeCommand.addOption('removeSourcesContent', Command.Boolean('--remove-sources-content'))
-XCodeCommand.addOption('infoPlistPath', Command.String('--info-plist-path'))

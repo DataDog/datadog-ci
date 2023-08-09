@@ -2,6 +2,7 @@ import os from 'os'
 
 import {Cli} from 'clipanion/lib/advanced'
 
+import {createMockContext} from '../../../helpers/__tests__/fixtures'
 import {SpanTags} from '../../../helpers/interfaces'
 
 import id from '../id'
@@ -15,25 +16,6 @@ const makeCli = () => {
   cli.register(UploadJUnitXMLCommand)
 
   return cli
-}
-
-const createMockContext = () => {
-  let data = ''
-
-  return {
-    stdout: {
-      toString: () => data,
-      write: (input: string) => {
-        data += input
-      },
-    },
-    stderr: {
-      toString: () => data,
-      write: (input: string) => {
-        data += input
-      },
-    },
-  }
 }
 
 describe('upload', () => {

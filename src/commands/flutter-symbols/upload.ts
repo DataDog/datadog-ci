@@ -1,6 +1,6 @@
 import fs from 'fs'
 
-import {Command} from 'clipanion'
+import {Command, Option} from 'clipanion'
 import glob from 'glob'
 import yaml from 'js-yaml'
 import semver from 'semver'
@@ -16,6 +16,7 @@ import {
   performSubCommand,
   resolveConfigFromFileAndEnvironment,
 } from '../../helpers/utils'
+import * as validation from '../../helpers/validation'
 import {checkAPIKeyOverride} from '../../helpers/validation'
 
 import * as dsyms from '../dsyms/upload'
@@ -54,6 +55,8 @@ import {
 } from './renderer'
 
 export class UploadCommand extends Command {
+  public static paths = [['flutter-symbols', 'upload']]
+
   public static usage = Command.Usage({
     description: 'Upload symbol files for Flutter.',
     details: `
@@ -69,28 +72,29 @@ export class UploadCommand extends Command {
     ],
   })
 
-  private androidMapping = false
-  private androidMappingLocation?: string
-  private webSourceMaps = false
-  private webSourceMapsLocation?: string
-  private minifiedPathPrefix?: string
+  private androidMapping = Option.Boolean('--android-mapping', false)
+  private androidMappingLocation = Option.String('--android-mapping-location')
+  private webSourceMaps = Option.Boolean('--web-sourcemaps', false)
+  private webSourceMapsLocation = Option.String('--web-sourcemaps-location')
+  private minifiedPathPrefix = Option.String('--minified-path-prefix')
+  private configPath = Option.String('--config')
+  private dartSymbolsLocation = Option.String('--dart-symbols-location')
+  private disableGit = Option.Boolean('--disable-git', false)
+  private dryRun = Option.Boolean('--dry-run', false)
+  private flavor = Option.String('--flavor', 'release')
+  private iosDsyms = Option.Boolean('--ios-dsyms', false)
+  private iosDsymsLocation = Option.String('--ios-dsyms-location')
+  private maxConcurrency = Option.String('--max-concurrency', '5', {validator: validation.isInteger()})
+  private pubspecLocation = Option.String('--pubspec', './pubspec.yaml')
+  private repositoryUrl = Option.String('--repository-url')
+  private serviceName = Option.String('--service-name')
+  private version = Option.String('--version')
+
   private cliVersion: string
   private config: Record<string, string> = {
     datadogSite: 'datadoghq.com',
   }
-  private configPath?: string
-  private dartSymbolsLocation?: string
-  private disableGit = false
-  private dryRun = false
-  private flavor = 'release'
   private gitData?: RepositoryData
-  private iosDsyms = false
-  private iosDsymsLocation?: string
-  private maxConcurrency = 5
-  private pubspecLocation = './pubspec.yaml'
-  private repositoryUrl?: string
-  private serviceName!: string
-  private version?: string
 
   constructor() {
     super()
@@ -132,7 +136,7 @@ export class UploadCommand extends Command {
       })
     }
 
-    this.context.stdout.write(renderCommandInfo(this.dryRun, this.version!, this.serviceName, this.flavor, uploadInfo))
+    this.context.stdout.write(renderCommandInfo(this.dryRun, this.version!, this.serviceName!, this.flavor, uploadInfo))
 
     this.config = await resolveConfigFromFileAndEnvironment(
       this.config,
@@ -239,7 +243,7 @@ export class UploadCommand extends Command {
       git_commit_sha: this.gitData?.hash,
       git_repository_url: this.gitData?.remote,
       platform,
-      service: this.serviceName,
+      service: this.serviceName!,
       type,
       variant: this.flavor,
       version: this.getSanitizedVersion(),
@@ -508,21 +512,3 @@ export class UploadCommand extends Command {
     return parametersOkay
   }
 }
-
-UploadCommand.addPath('flutter-symbols', 'upload')
-UploadCommand.addOption('flavor', Command.String('--flavor'))
-UploadCommand.addOption('dartSymbolsLocation', Command.String('--dart-symbols-location'))
-UploadCommand.addOption('iosDsyms', Command.Boolean('--ios-dsyms'))
-UploadCommand.addOption('iosDsymsLocation', Command.String('--ios-dsyms-location'))
-UploadCommand.addOption('androidMapping', Command.Boolean('--android-mapping'))
-UploadCommand.addOption('androidMappingLocation', Command.String('--android-mapping-location'))
-UploadCommand.addOption('webSourceMaps', Command.Boolean('--web-sourcemaps'))
-UploadCommand.addOption('webSourceMapsLocation', Command.String('--web-sourcemaps-location'))
-UploadCommand.addOption('minifiedPathPrefix', Command.String('--minified-path-prefix'))
-UploadCommand.addOption('pubspecLocation', Command.String('--pubspec'))
-UploadCommand.addOption('serviceName', Command.String('--service-name'))
-UploadCommand.addOption('maxConcurrency', Command.String('--max-concurrency'))
-UploadCommand.addOption('version', Command.String('--version'))
-UploadCommand.addOption('dryRun', Command.Boolean('--dry-run'))
-UploadCommand.addOption('disableGit', Command.Boolean('--disable-git'))
-UploadCommand.addOption('repositoryURL', Command.String('--repository-url'))

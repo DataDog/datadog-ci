@@ -16,7 +16,7 @@ import {describeStateMachineFixture} from './fixtures/aws-resources'
 
 describe('stepfunctions command helpers tests', () => {
   describe('shouldUpdateStepForTracesMerging test', () => {
-    test('already has JsonMerge added to paylaod field', () => {
+    test('already has JsonMerge added to payload field', () => {
       const step: StepType = {
         Type: 'Task',
         Resource: 'arn:aws:states:::lambda:invoke',

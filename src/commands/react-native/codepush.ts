@@ -1,12 +1,14 @@
 import {exec} from 'child_process'
 
-import {Cli, Command} from 'clipanion'
+import {Cli, Command, Option} from 'clipanion'
 
 import {CodepushHistoryCommandError, CodepushHistoryParseError, NoCodepushReleaseError} from './errors'
 import {RNPlatform, RN_SUPPORTED_PLATFORMS} from './interfaces'
 import {UploadCommand} from './upload'
 
 export class CodepushCommand extends Command {
+  public static paths = [['react-native', 'codepush']]
+
   public static usage = Command.Usage({
     description: 'Upload your React Native Codepush bundle and sourcemaps to Datadog.',
     details: `
@@ -25,25 +27,26 @@ export class CodepushCommand extends Command {
     ],
   })
 
-  private appCenterAppName?: string
-  private appCenterDeployment?: string
+  private appCenterAppName = Option.String('--app')
+  private appCenterDeployment = Option.String('--deployment')
   /**
    * There should not be multiple uploads with the same version in the case
    * of codepush, so we can go with a default of "1".
    */
-  private buildVersion = '1'
-  private bundle?: string
-  private configPath?: string
-  private disableGit?: boolean
-  private dryRun = false
-  private maxConcurrency = 20
-  private platform?: RNPlatform
-  private projectPath?: string
+  private buildVersion = Option.String('--build-version', '1')
+  private bundle = Option.String('--bundle')
+  private configPath = Option.String('--config')
+  private disableGit = Option.Boolean('--disable-git')
+  private dryRun = Option.Boolean('--dry-run', false)
+  private maxConcurrency = Option.String('--max-concurrency', '20')
+  private platform?: RNPlatform = Option.String('--platform')
+  private projectPath = Option.String('--project-path')
+  private removeSourcesContent = Option.Boolean('--remove-sources-content')
+  private repositoryURL = Option.String('--repository-url')
+  private service = Option.String('--service')
+  private sourcemap = Option.String('--sourcemap')
+
   private releaseVersion?: string
-  private removeSourcesContent?: boolean
-  private repositoryURL?: string
-  private service?: string
-  private sourcemap?: string
 
   public async execute() {
     if (!this.service) {
@@ -167,19 +170,3 @@ export class CodepushCommand extends Command {
     })
   }
 }
-
-CodepushCommand.addPath('react-native', 'codepush')
-CodepushCommand.addOption('buildVersion', Command.String('--build-version'))
-CodepushCommand.addOption('service', Command.String('--service'))
-CodepushCommand.addOption('bundle', Command.String('--bundle'))
-CodepushCommand.addOption('sourcemap', Command.String('--sourcemap'))
-CodepushCommand.addOption('platform', Command.String('--platform'))
-CodepushCommand.addOption('dryRun', Command.Boolean('--dry-run'))
-CodepushCommand.addOption('repositoryURL', Command.String('--repository-url'))
-CodepushCommand.addOption('disableGit', Command.Boolean('--disable-git'))
-CodepushCommand.addOption('maxConcurrency', Command.String('--max-concurrency'))
-CodepushCommand.addOption('projectPath', Command.String('--project-path'))
-CodepushCommand.addOption('configPath', Command.String('--config'))
-CodepushCommand.addOption('appCenterAppName', Command.String('--app'))
-CodepushCommand.addOption('appCenterDeployment', Command.String('--deployment'))
-CodepushCommand.addOption('removeSourcesContent', Command.Boolean('--remove-sources-content'))

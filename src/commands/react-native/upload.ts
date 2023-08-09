@@ -1,5 +1,5 @@
 import chalk from 'chalk'
-import {Command} from 'clipanion'
+import {Command, Option} from 'clipanion'
 import asyncPool from 'tiny-async-pool'
 
 import {ApiKeyValidator, newApiKeyValidator} from '../../helpers/apikey'
@@ -10,6 +10,7 @@ import {RequestBuilder} from '../../helpers/interfaces'
 import {getMetricsLogger, MetricsLogger} from '../../helpers/metrics'
 import {upload, UploadStatus} from '../../helpers/upload'
 import {getRequestBuilder, resolveConfigFromFileAndEnvironment} from '../../helpers/utils'
+import * as validation from '../../helpers/validation'
 import {checkAPIKeyOverride} from '../../helpers/validation'
 
 import {RNPlatform, RNSourcemap, RN_SUPPORTED_PLATFORMS} from './interfaces'
@@ -30,6 +31,8 @@ import {getBundleName} from './utils'
 import {InvalidPayload, validatePayload} from './validation'
 
 export class UploadCommand extends Command {
+  public static paths = [['react-native', 'upload']]
+
   public static usage = Command.Usage({
     description: 'Upload React Native sourcemaps to Datadog.',
     details: `
@@ -48,23 +51,24 @@ export class UploadCommand extends Command {
     ],
   })
 
-  private buildVersion?: string
-  private bundle?: string
+  private buildVersion = Option.String('--build-version')
+  private bundle = Option.String('--bundle')
+  private configPath = Option.String('--config')
+  private disableGit = Option.Boolean('--disable-git')
+  private dryRun = Option.Boolean('--dry-run', false)
+  private maxConcurrency = Option.String('--max-concurrency', '20', {validator: validation.isInteger()})
+  private platform?: RNPlatform = Option.String('--platform')
+  private projectPath = Option.String('--project-path', process.cwd() || '')
+  private releaseVersion = Option.String('--release-version')
+  private removeSourcesContent = Option.Boolean('--remove-sources-content', false)
+  private repositoryURL = Option.String('--repository-url')
+  private service = Option.String('--service')
+  private sourcemap = Option.String('--sourcemap')
+
   private cliVersion: string
   private config: Record<string, string> = {
     datadogSite: 'datadoghq.com',
   }
-  private configPath?: string
-  private disableGit?: boolean
-  private dryRun = false
-  private maxConcurrency = 20
-  private platform?: RNPlatform
-  private projectPath: string = process.cwd() || ''
-  private releaseVersion?: string
-  private removeSourcesContent = false
-  private repositoryURL?: string
-  private service?: string
-  private sourcemap?: string
 
   constructor() {
     super()
@@ -338,18 +342,3 @@ export class UploadCommand extends Command {
     }
   }
 }
-
-UploadCommand.addPath('react-native', 'upload')
-UploadCommand.addOption('releaseVersion', Command.String('--release-version'))
-UploadCommand.addOption('buildVersion', Command.String('--build-version'))
-UploadCommand.addOption('service', Command.String('--service'))
-UploadCommand.addOption('bundle', Command.String('--bundle'))
-UploadCommand.addOption('sourcemap', Command.String('--sourcemap'))
-UploadCommand.addOption('platform', Command.String('--platform'))
-UploadCommand.addOption('dryRun', Command.Boolean('--dry-run'))
-UploadCommand.addOption('repositoryURL', Command.String('--repository-url'))
-UploadCommand.addOption('disableGit', Command.Boolean('--disable-git'))
-UploadCommand.addOption('maxConcurrency', Command.String('--max-concurrency'))
-UploadCommand.addOption('projectPath', Command.String('--project-path'))
-UploadCommand.addOption('configPath', Command.String('--config'))
-UploadCommand.addOption('removeSourcesContent', Command.Boolean('--remove-sources-content'))
