@@ -30,9 +30,6 @@ describe('evaluate', () => {
       const response: EvaluationResponse = {
         status: 'failed',
         rule_evaluations: [],
-        metadata: {
-          wait_time_ms: 0,
-        },
       }
       expect(command['handleEvaluationSuccess'].bind(command).call({}, response)).toEqual(1)
     })
@@ -43,9 +40,6 @@ describe('evaluate', () => {
       const response: EvaluationResponse = {
         status: 'passed',
         rule_evaluations: [],
-        metadata: {
-          wait_time_ms: 0,
-        },
       }
       expect(command['handleEvaluationSuccess'].bind(command).call({}, response)).toEqual(0)
     })
@@ -56,9 +50,6 @@ describe('evaluate', () => {
       const response: EvaluationResponse = {
         status: 'empty',
         rule_evaluations: [],
-        metadata: {
-          wait_time_ms: 0,
-        },
       }
       expect(command['handleEvaluationSuccess'].bind(command).call({}, response)).toEqual(0)
       expect(write.mock.calls[0][0]).toContain('No matching rules were found in Datadog')
@@ -71,9 +62,6 @@ describe('evaluate', () => {
       const response: EvaluationResponse = {
         status: 'empty',
         rule_evaluations: [],
-        metadata: {
-          wait_time_ms: 0,
-        },
       }
       expect(command['handleEvaluationSuccess'].bind(command).call({}, response)).toEqual(1)
       expect(write.mock.calls[0][0]).toContain('No matching rules were found in Datadog')
@@ -85,9 +73,6 @@ describe('evaluate', () => {
       const response: EvaluationResponse = {
         status: 'dry_run',
         rule_evaluations: [],
-        metadata: {
-          wait_time_ms: 0,
-        },
       }
       expect(command['handleEvaluationSuccess'].bind(command).call({}, response)).toEqual(0)
       expect(write.mock.calls[0][0]).toContain('Successfully completed a dry run request')

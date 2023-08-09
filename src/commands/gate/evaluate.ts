@@ -174,7 +174,7 @@ export class GateEvaluateCommand extends Command {
             this.context.stdout.write(renderWaiting())
             setTimeout(() => {
               reject(new Error('wait'))
-            }, response.data.data.attributes.metadata.wait_time_ms)
+            }, response.data.data.attributes.metadata?.wait_time_ms ?? 0)
           } else {
             resolve(response)
           }
