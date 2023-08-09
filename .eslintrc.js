@@ -252,6 +252,7 @@ module.exports = {
     ],
     'use-isnan': 'error',
     'valid-typeof': 'off',
+    'jest/no-interpolation-in-snapshots': 'off', // allow showing from which variable comes a specific value in inline snapshots
   },
   settings: {
     'import/resolver': {
