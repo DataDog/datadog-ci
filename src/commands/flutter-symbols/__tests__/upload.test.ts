@@ -3,6 +3,7 @@ import os from 'os'
 
 import FormData from 'form-data'
 
+import {createCommand} from '../../../helpers/__tests__/fixtures'
 import {TrackedFilesMatcher, getRepositoryData} from '../../../helpers/git/format-git-sourcemaps-data'
 import {MultipartPayload} from '../../../helpers/upload'
 import {performSubCommand} from '../../../helpers/utils'
@@ -42,36 +43,17 @@ const cliVersion = require('../../../../package.json').version
 const fixtureDir = './src/commands/flutter-symbols/__tests__/fixtures'
 
 describe('flutter-symbol upload', () => {
-  const createMockContext = () => {
-    let outString = ''
-    let errString = ''
-
-    return {
-      stderr: {
-        toString: () => errString,
-        write: (input: string) => {
-          errString += input
-        },
-      },
-      stdin: {},
-      stdout: {
-        toString: () => outString,
-        write: (input: string) => {
-          outString += input
-        },
-      },
-    }
-  }
+  beforeAll(() => {
+    jest.clearAllMocks()
+  })
 
   const runCommand = async (prepFunction: (command: UploadCommand) => void) => {
-    const command = new UploadCommand()
-    const context = createMockContext() as any
-    command.context = context
+    const command = createCommand(UploadCommand)
     prepFunction(command)
 
     const exitCode = await command.execute()
 
-    return {exitCode, context}
+    return {exitCode, context: command.context}
   }
 
   describe('parameter validation', () => {
@@ -163,9 +145,8 @@ describe('flutter-symbol upload', () => {
 
   describe('parsePubspec', () => {
     test('writes error on missing pubspec', async () => {
-      const context = createMockContext() as any
-      const command = new UploadCommand()
-      command.context = context
+      const command = createCommand(UploadCommand)
+      const context = command.context
       const exitCode = await command['parsePubspecVersion']('./pubspec.yaml')
 
       const errorOutput = context.stderr.toString()
@@ -175,9 +156,8 @@ describe('flutter-symbol upload', () => {
     })
 
     test('writes error on invalid pubspec', async () => {
-      const context = createMockContext() as any
-      const command = new UploadCommand()
-      command.context = context
+      const command = createCommand(UploadCommand)
+      const context = command.context
       const exitCode = await command['parsePubspecVersion'](`${fixtureDir}/pubspecs/invalidPubspec.yaml`)
 
       const errorOutput = context.stderr.toString()
@@ -187,9 +167,8 @@ describe('flutter-symbol upload', () => {
     })
 
     test('writes error on missing version in pubspec', async () => {
-      const context = createMockContext() as any
-      const command = new UploadCommand()
-      command.context = context
+      const command = createCommand(UploadCommand)
+      const context = command.context
       const exitCode = await command['parsePubspecVersion'](`${fixtureDir}/pubspecs/missingVersionPubspec.yaml`)
 
       const errorOutput = context.stderr.toString()
@@ -199,9 +178,8 @@ describe('flutter-symbol upload', () => {
     })
 
     test('populates version from valid pubspec', async () => {
-      const context = createMockContext() as any
-      const command = new UploadCommand()
-      command.context = context
+      const command = createCommand(UploadCommand)
+      const context = command.context
       const exitCode = await command['parsePubspecVersion'](`${fixtureDir}/pubspecs/validPubspec.yaml`)
 
       const errorOutput = context.stderr.toString()
@@ -212,9 +190,8 @@ describe('flutter-symbol upload', () => {
     })
 
     test('strips pre-release from pre-release pubspec and shows warning', async () => {
-      const context = createMockContext() as any
-      const command = new UploadCommand()
-      command.context = context
+      const command = createCommand(UploadCommand)
+      const context = command.context
       const exitCode = await command['parsePubspecVersion'](`${fixtureDir}/pubspecs/prereleasePubspec.yaml`)
 
       const errorOutput = context.stderr.toString()
@@ -225,9 +202,8 @@ describe('flutter-symbol upload', () => {
     })
 
     test('strips build from build pubspec and shows warning', async () => {
-      const context = createMockContext() as any
-      const command = new UploadCommand()
-      command.context = context
+      const command = createCommand(UploadCommand)
+      const context = command.context
       const exitCode = await command['parsePubspecVersion'](`${fixtureDir}/pubspecs/buildPubspec.yaml`)
 
       const errorOutput = context.stderr.toString()
@@ -332,7 +308,7 @@ describe('flutter-symbol upload', () => {
     })
 
     test('creates correct metadata payload', () => {
-      const command = new UploadCommand()
+      const command = createCommand(UploadCommand)
       addDefaultCommandParameters(command)
       mockGitRepoParameters(command)
 
@@ -350,7 +326,7 @@ describe('flutter-symbol upload', () => {
     })
 
     test('build in version is sanitized in metadata payload', () => {
-      const command = new UploadCommand()
+      const command = createCommand(UploadCommand)
       addDefaultCommandParameters(command)
       mockGitRepoParameters(command)
       command['version'] = '1.2.4+987'
@@ -601,7 +577,7 @@ describe('flutter-symbol upload', () => {
     })
 
     test('creates correct metadata payloads', () => {
-      const command = new UploadCommand()
+      const command = createCommand(UploadCommand)
       addDefaultCommandParameters(command)
       mockGitRepoParameters(command)
 
@@ -621,7 +597,7 @@ describe('flutter-symbol upload', () => {
     })
 
     test('sanitizes build in version number payload', () => {
-      const command = new UploadCommand()
+      const command = createCommand(UploadCommand)
       addDefaultCommandParameters(command)
       mockGitRepoParameters(command)
       command['version'] = '1.2.4+567'

@@ -25,7 +25,7 @@ import {
   SERVICE_ENV_VAR,
   VERSION_ENV_VAR,
 } from '../../../constants'
-import {createMockContext, MOCK_DATADOG_API_KEY} from '../../../helpers/__tests__/fixtures'
+import {createCommand, createMockContext, MOCK_DATADOG_API_KEY} from '../../../helpers/__tests__/fixtures'
 import {requestConfirmation} from '../../../helpers/prompt'
 
 import {
@@ -45,7 +45,6 @@ import {
 } from '../prompt'
 
 import {
-  createCommand,
   makeCli,
   mockAwsAccessKeyId,
   mockAwsCredentials,
@@ -89,7 +88,7 @@ describe('lambda', () => {
         })
 
         const cli = makeCli()
-        const context = createMockContext() as any
+        const context = createMockContext()
         const functionARN = 'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world'
         const code = await cli.run(
           [
@@ -131,7 +130,7 @@ describe('lambda', () => {
           },
         })
         const cli = makeCli()
-        const context = createMockContext() as any
+        const context = createMockContext()
         const functionARN = 'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world'
         process.env.DATADOG_API_KEY = MOCK_DATADOG_API_KEY
         const code = await cli.run(
@@ -180,7 +179,7 @@ describe('lambda', () => {
           },
         })
         const cli = makeCli()
-        const context = createMockContext() as any
+        const context = createMockContext()
         const functionARN = 'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world'
         process.env.DATADOG_API_KEY = MOCK_DATADOG_API_KEY
         const code = await cli.run(
@@ -220,7 +219,7 @@ describe('lambda', () => {
           },
         })
         const cli = makeCli()
-        const context = createMockContext() as any
+        const context = createMockContext()
         const functionARN = 'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world'
         process.env.DATADOG_API_KEY = MOCK_DATADOG_API_KEY
         const code = await cli.run(
@@ -262,7 +261,7 @@ describe('lambda', () => {
         })
         process.env.DATADOG_API_KEY = MOCK_DATADOG_API_KEY
         const cli = makeCli()
-        const context = createMockContext() as any
+        const context = createMockContext()
         await cli.run(
           [
             'lambda',
@@ -297,7 +296,7 @@ describe('lambda', () => {
           },
         })
         process.env.DATADOG_API_KEY = MOCK_DATADOG_API_KEY
-        const context = createMockContext() as any
+        const context = createMockContext()
         const instrumentCommand = InstrumentCommand
         const mockGitStatus = jest.spyOn(instrumentCommand.prototype as any, 'getCurrentGitStatus')
         mockGitStatus.mockImplementation(() => ({
@@ -342,7 +341,7 @@ describe('lambda', () => {
           },
         })
         process.env.DATADOG_API_KEY = MOCK_DATADOG_API_KEY
-        const context = createMockContext() as any
+        const context = createMockContext()
         const instrumentCommand = InstrumentCommand
         const mockGitStatus = jest.spyOn(instrumentCommand.prototype as any, 'getCurrentGitStatus')
         mockGitStatus.mockImplementation(() => ({
@@ -394,7 +393,7 @@ describe('lambda', () => {
           },
         })
         process.env.DATADOG_API_KEY = MOCK_DATADOG_API_KEY
-        const context = createMockContext() as any
+        const context = createMockContext()
         const instrumentCommand = InstrumentCommand
         const mockGitStatus = jest.spyOn(instrumentCommand.prototype as any, 'getCurrentGitStatus')
         mockGitStatus.mockImplementation(() => ({
@@ -446,7 +445,7 @@ describe('lambda', () => {
           },
         })
         process.env.DATADOG_API_KEY = MOCK_DATADOG_API_KEY
-        const context = createMockContext() as any
+        const context = createMockContext()
         const instrumentCommand = InstrumentCommand
         const mockGitStatus = jest.spyOn(instrumentCommand.prototype as any, 'getCurrentGitStatus')
         mockGitStatus.mockImplementation(() => ({
@@ -491,7 +490,7 @@ describe('lambda', () => {
           },
         })
         const cli = makeCli()
-        const context = createMockContext() as any
+        const context = createMockContext()
         await cli.run(
           [
             'lambda',
@@ -519,7 +518,7 @@ describe('lambda', () => {
           },
         })
         const cli = makeCli()
-        const context = createMockContext() as any
+        const context = createMockContext()
         process.env.DATADOG_API_KEY = MOCK_DATADOG_API_KEY
         await cli.run(
           [
@@ -540,7 +539,7 @@ describe('lambda', () => {
       test('aborts early when no functions are specified', async () => {
         ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({code: 'ENOENT'}))
         const cli = makeCli()
-        const context = createMockContext() as any
+        const context = createMockContext()
         const code = await cli.run(
           [
             'lambda',
@@ -590,7 +589,7 @@ describe('lambda', () => {
       test("aborts early when function regions can't be found", async () => {
         ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({code: 'ENOENT'}))
         const cli = makeCli()
-        const context = createMockContext() as any
+        const context = createMockContext()
         const code = await cli.run(
           [
             'lambda',
@@ -619,7 +618,7 @@ describe('lambda', () => {
       test('aborts early when extensionVersion and forwarder are set', async () => {
         ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({code: 'ENOENT'}))
         const cli = makeCli()
-        const context = createMockContext() as any
+        const context = createMockContext()
         const code = await cli.run(
           [
             'lambda',
@@ -800,7 +799,7 @@ describe('lambda', () => {
         ;(requestConfirmation as any).mockImplementation(() => true)
 
         const cli = makeCli()
-        const context = createMockContext() as any
+        const context = createMockContext()
         const code = await cli.run(['lambda', 'instrument', '-i', '--no-source-code-integration'], context)
         const output = context.stdout.toString()
         expect(code).toBe(0)
@@ -871,7 +870,7 @@ describe('lambda', () => {
         ;(requestConfirmation as any).mockImplementation(() => true)
 
         const cli = makeCli()
-        const context = createMockContext() as any
+        const context = createMockContext()
         const code = await cli.run(
           [
             'lambda',
@@ -894,7 +893,7 @@ describe('lambda', () => {
         ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({code: 'ENOENT'}))
         ;(requestAWSCredentials as any).mockImplementation(() => Promise.reject('Unexpected error'))
         const cli = makeCli()
-        const context = createMockContext() as any
+        const context = createMockContext()
         const code = await cli.run(['lambda', 'instrument', '-i'], context)
         const output = context.stdout.toString()
         expect(code).toBe(1)
@@ -916,7 +915,7 @@ describe('lambda', () => {
         }
         ;(requestDatadogEnvVars as any).mockImplementation(() => Promise.reject('Unexpected error'))
         const cli = makeCli()
-        const context = createMockContext() as any
+        const context = createMockContext()
         const code = await cli.run(['lambda', 'instrument', '-i'], context)
         const output = context.stdout.toString()
         expect(code).toBe(1)
@@ -978,7 +977,7 @@ describe('lambda', () => {
         })
 
         const cli = makeCli()
-        const context = createMockContext() as any
+        const context = createMockContext()
         const code = await cli.run(['lambda', 'instrument', '-i', '--no-source-code-integration'], context)
         const output = context.stdout.toString()
         expect(code).toBe(0)
@@ -1030,7 +1029,7 @@ describe('lambda', () => {
         })
 
         const cli = makeCli()
-        const context = createMockContext() as any
+        const context = createMockContext()
         const code = await cli.run(['lambda', 'instrument', '-i', '--no-source-code-integration'], context)
         const output = context.stdout.toString()
         expect(code).toBe(0)
@@ -1048,7 +1047,7 @@ describe('lambda', () => {
         }
 
         const cli = makeCli()
-        const context = createMockContext() as any
+        const context = createMockContext()
         const code = await cli.run(['lambda', 'instrument', '-i'], context)
         const output = context.stdout.toString()
         expect(code).toBe(1)
@@ -1075,7 +1074,7 @@ describe('lambda', () => {
         lambdaClientMock.on(ListFunctionsCommand).rejects('ListFunctionsError')
 
         const cli = makeCli()
-        const context = createMockContext() as any
+        const context = createMockContext()
         const code = await cli.run(['lambda', 'instrument', '-i'], context)
         const output = context.stdout.toString()
         expect(code).toBe(1)
@@ -1122,7 +1121,7 @@ describe('lambda', () => {
         })
 
         const cli = makeCli()
-        const context = createMockContext() as any
+        const context = createMockContext()
         process.env.DATADOG_API_KEY = MOCK_DATADOG_API_KEY
         const code = await cli.run(
           [
@@ -1170,7 +1169,7 @@ describe('lambda', () => {
           },
         })
         const cli = makeCli()
-        const context = createMockContext() as any
+        const context = createMockContext()
         const functionARN = 'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world'
         process.env.DATADOG_API_KEY = MOCK_DATADOG_API_KEY
         const code = await cli.run(
@@ -1217,7 +1216,7 @@ describe('lambda', () => {
         })
 
         const cli = makeCli()
-        const context = createMockContext() as any
+        const context = createMockContext()
         const functionARN = 'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world'
         process.env.DATADOG_API_KEY = MOCK_DATADOG_API_KEY
         const code = await cli.run(
@@ -1266,7 +1265,7 @@ describe('lambda', () => {
         })
 
         const cli = makeCli()
-        const context = createMockContext() as any
+        const context = createMockContext()
         const functionARN = 'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world'
         const code = await cli.run(
           ['lambda', 'instrument', '-f', functionARN, '--profile', 'SOME-AWS-PROFILE', '--no-source-code-integration'],
@@ -1281,7 +1280,7 @@ describe('lambda', () => {
         })
 
         const cli = makeCli()
-        const context = createMockContext() as any
+        const context = createMockContext()
         const functionARN = 'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world'
         const code = await cli.run(
           ['lambda', 'instrument', '-f', functionARN, '--profile', 'SOME-AWS-PROFILE'],
@@ -1362,7 +1361,7 @@ describe('lambda', () => {
         }
 
         const cli = makeCli()
-        const context = createMockContext() as any
+        const context = createMockContext()
         const code = await cli.run(
           [
             'lambda',
@@ -1411,7 +1410,7 @@ describe('lambda', () => {
         lambdaClientMock.on(UpdateFunctionConfigurationCommand).rejects('Unexpected error updating request')
 
         const cli = makeCli()
-        const context = createMockContext() as any
+        const context = createMockContext()
         const code = await cli.run(
           [
             'lambda',

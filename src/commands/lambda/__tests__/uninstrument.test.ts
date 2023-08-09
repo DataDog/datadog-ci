@@ -22,7 +22,7 @@ import {fromIni} from '@aws-sdk/credential-providers'
 import {mockClient} from 'aws-sdk-client-mock'
 
 import {ENVIRONMENT_ENV_VAR, SERVICE_ENV_VAR, SITE_ENV_VAR, VERSION_ENV_VAR} from '../../../constants'
-import {createMockContext} from '../../../helpers/__tests__/fixtures'
+import {createCommand, createMockContext} from '../../../helpers/__tests__/fixtures'
 import {requestConfirmation} from '../../../helpers/prompt'
 
 import 'aws-sdk-client-mock-jest'
@@ -42,7 +42,6 @@ import {requestAWSCredentials, requestFunctionSelection} from '../prompt'
 import {UninstrumentCommand} from '../uninstrument'
 
 import {
-  createCommand,
   makeCli,
   mockAwsAccessKeyId,
   mockAwsSecretAccessKey,
@@ -108,7 +107,7 @@ describe('lambda', () => {
         })
 
         const cli = makeCli()
-        const context = createMockContext() as any
+        const context = createMockContext()
         const functionARN = 'arn:aws:lambda:us-east-1:000000000000:function:uninstrument'
         process.env.DATADOG_API_KEY = '1234'
         const code = await cli.run(['lambda', 'uninstrument', '-f', functionARN, '-r', 'us-east-1', '-d'], context)
@@ -177,7 +176,7 @@ describe('lambda', () => {
         })
 
         const cli = makeCli()
-        const context = createMockContext() as any
+        const context = createMockContext()
         const functionARN = 'arn:aws:lambda:us-east-1:000000000000:function:uninstrument'
         process.env.DATADOG_API_KEY = '1234'
         await cli.run(['lambda', 'uninstrument', '-f', functionARN, '-r', 'us-east-1'], context)
@@ -206,7 +205,7 @@ describe('lambda', () => {
         ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({code: 'ENOENT'}))
 
         const cli = makeCli()
-        const context = createMockContext() as any
+        const context = createMockContext()
         const code = await cli.run(['lambda', 'uninstrument', '--function', 'my-func'], context)
 
         const output = context.stdout.toString()
@@ -219,7 +218,7 @@ describe('lambda', () => {
         ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({code: 'ENOENT'}))
 
         const cli = makeCli()
-        const context = createMockContext() as any
+        const context = createMockContext()
         const code = await cli.run(['lambda', 'uninstrument'], context)
         const output = context.stdout.toString()
         expect(code).toBe(1)
@@ -400,7 +399,7 @@ describe('lambda', () => {
         ;(requestConfirmation as any).mockImplementation(() => true)
 
         const cli = makeCli()
-        const context = createMockContext() as any
+        const context = createMockContext()
         const code = await cli.run(['lambda', 'uninstrument', '-i'], context)
         const output = context.stdout.toString()
         expect(code).toBe(0)
@@ -496,7 +495,7 @@ describe('lambda', () => {
         ;(requestConfirmation as any).mockImplementation(() => true)
 
         const cli = makeCli()
-        const context = createMockContext() as any
+        const context = createMockContext()
         const code = await cli.run(
           [
             'lambda',
@@ -518,7 +517,7 @@ describe('lambda', () => {
         ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({code: 'ENOENT'}))
         ;(requestAWSCredentials as any).mockImplementation(() => Promise.reject('Unexpected error'))
         const cli = makeCli()
-        const context = createMockContext() as any
+        const context = createMockContext()
         const code = await cli.run(['lambda', 'uninstrument', '-i'], context)
         const output = context.stdout.toString()
         expect(code).toBe(1)
@@ -540,7 +539,7 @@ describe('lambda', () => {
         }
 
         const cli = makeCli()
-        const context = createMockContext() as any
+        const context = createMockContext()
         const code = await cli.run(['lambda', 'uninstrument', '-i'], context)
         const output = context.stdout.toString()
         expect(code).toBe(1)
@@ -563,7 +562,7 @@ describe('lambda', () => {
         lambdaClientMock.on(ListFunctionsCommand).rejects('ListFunctionsError')
 
         const cli = makeCli()
-        const context = createMockContext() as any
+        const context = createMockContext()
         const code = await cli.run(['lambda', 'uninstrument', '-i'], context)
         const output = context.stdout.toString()
         expect(code).toBe(1)
@@ -581,7 +580,7 @@ describe('lambda', () => {
         })
 
         const cli = makeCli()
-        const context = createMockContext() as any
+        const context = createMockContext()
         const functionARN = 'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world'
         const code = await cli.run(
           ['lambda', 'uninstrument', '-f', functionARN, '--profile', 'SOME-AWS-PROFILE'],
@@ -662,7 +661,7 @@ describe('lambda', () => {
         }
 
         const cli = makeCli()
-        const context = createMockContext() as any
+        const context = createMockContext()
         const code = await cli.run(
           [
             'lambda',
@@ -718,7 +717,7 @@ describe('lambda', () => {
         }
 
         const cli = makeCli()
-        const context = createMockContext() as any
+        const context = createMockContext()
         const code = await cli.run(
           [
             'lambda',

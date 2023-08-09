@@ -44,7 +44,8 @@ GCP credentials verified!
   }
 }
 
-💾 Saving configuration...
+💾 Saving files to mock-folder/.datadog-ci...
+• Saved function config to ./service_config.json
 
 🚫 The flare files were not sent as it was executed in dry run mode.
 ℹ️ Your output files are located at: mock-folder/.datadog-ci
@@ -63,6 +64,47 @@ GCP credentials verified!
 [Error] Unable to fetch service configuration: MOCK ERROR: Some API error
 "
 `;
+
+exports[`cloud-run flare getLogs handles httpRequest payload correctly 1`] = `
+[
+  {
+    "logName": "mock-logname",
+    "message": ""GET 200. responseSize: 1.27 KB. latency: 1500 ms. requestUrl: /test-endpoint"",
+    "severity": "DEFAULT",
+    "timestamp": "2023-07-28 00:00:00",
+  },
+]
+`;
+
+exports[`cloud-run flare getLogs handles textPayload correctly 1`] = `
+[
+  {
+    "logName": "mock-logname",
+    "message": ""Some text payload"",
+    "severity": "DEFAULT",
+    "timestamp": "2023-07-28 00:00:00",
+  },
+]
+`;
+
+exports[`cloud-run flare getLogs handles when a log is an HTTP request and has a textPayload 1`] = `
+[
+  {
+    "logName": "mock-logname",
+    "message": ""Test log 1"",
+    "severity": "DEFAULT",
+    "timestamp": "2023-07-28 00:00:00",
+  },
+  {
+    "logName": "mock-logname",
+    "message": ""some text payload. 504. responseSize: 0 Bytes. latency: unknown ms. requestUrl: "",
+    "severity": "",
+    "timestamp": "2023-07-28 00:00:01",
+  },
+]
+`;
+
+exports[`cloud-run flare getLogs throws an error when \`getEntries\` fails 1`] = `[Error: getEntries failed]`;
 
 exports[`cloud-run flare maskConfig should mask a Cloud Run config correctly 1`] = `
 {
@@ -153,7 +195,8 @@ GCP credentials verified!
   }
 }
 
-💾 Saving configuration...
+💾 Saving files to mock-folder/.datadog-ci...
+• Saved function config to ./service_config.json
 
 
 🚫 The flare files were not sent based on your selection.
@@ -191,7 +234,8 @@ GCP credentials verified!
   }
 }
 
-💾 Saving configuration...
+💾 Saving files to mock-folder/.datadog-ci...
+• Saved function config to ./service_config.json
 
 
 🚀 Sending to Datadog Support...
@@ -271,7 +315,8 @@ GCP credentials verified!
   }
 }
 
-💾 Saving configuration...
+💾 Saving files to mock-folder/.datadog-ci...
+• Saved function config to ./service_config.json
 
 
 🚀 Sending to Datadog Support...
@@ -309,7 +354,8 @@ GCP credentials verified!
   }
 }
 
-💾 Saving configuration...
+💾 Saving files to mock-folder/.datadog-ci...
+• Saved function config to ./service_config.json
 
 
 🚀 Sending to Datadog Support...
@@ -347,7 +393,8 @@ GCP credentials verified!
   }
 }
 
-💾 Saving configuration...
+💾 Saving files to mock-folder/.datadog-ci...
+• Saved function config to ./service_config.json
 
 
 🚀 Sending to Datadog Support...
@@ -381,7 +428,8 @@ GCP credentials verified!
   }
 }
 
-💾 Saving configuration...
+💾 Saving files to mock-folder/.datadog-ci...
+• Saved function config to ./service_config.json
 
 
 🚀 Sending to Datadog Support...
