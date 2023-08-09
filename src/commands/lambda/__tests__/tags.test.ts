@@ -189,9 +189,9 @@ describe('tags', () => {
       expect(result).toMatchInlineSnapshot(`
         {
           "untagResourceCommandInput": {
-            "Resource": "arn:aws:lambda:us-east-1:000000000000:function:autoinstrument",
+            "Resource": "${functionArn}",
             "TagKeys": [
-              "dd_sls_ci",
+              "${TAG_VERSION_NAME}",
             ],
           },
         }

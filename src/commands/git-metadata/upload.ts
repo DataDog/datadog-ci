@@ -1,5 +1,5 @@
 import chalk from 'chalk'
-import {Command} from 'clipanion'
+import {Command, Option} from 'clipanion'
 
 import {DATADOG_SITE_GOV} from '../../constants'
 import {ApiKeyValidator, newApiKeyValidator} from '../../helpers/apikey'
@@ -26,6 +26,8 @@ import {
 } from './renderer'
 
 export class UploadCommand extends Command {
+  public static paths = [['git-metadata', 'upload']]
+
   public static usage = Command.Usage({
     description: 'Report the current commit details to Datadog.',
     details: `
@@ -37,17 +39,18 @@ export class UploadCommand extends Command {
     examples: [['Upload the current commit details', 'datadog-ci report-commits upload']],
   })
 
-  public repositoryURL?: string
+  private repositoryURL = Option.String('--repository-url')
+  private dryRun = Option.Boolean('--dry-run', false)
+  private verbose = Option.Boolean('--verbose', false)
+  private gitSync = Option.Boolean('--git-sync', false)
+  private noGitSync = Option.Boolean('--no-gitsync', false)
+  private directory = Option.String('--directory', '')
 
   private cliVersion: string
   private config = {
     apiKey: process.env.DATADOG_API_KEY,
   }
-  private dryRun = false
-  private verbose = false
-  private gitSync = false
-  private noGitSync = false
-  private directory = ''
+
   private logger: Logger = new Logger((s: string) => {
     this.context.stdout.write(s)
   }, LogLevel.INFO)
@@ -224,11 +227,3 @@ export class UploadCommand extends Command {
     return process.env.DATADOG_SITE === DATADOG_SITE_GOV
   }
 }
-
-UploadCommand.addPath('git-metadata', 'upload')
-UploadCommand.addOption('dryRun', Command.Boolean('--dry-run'))
-UploadCommand.addOption('verbose', Command.Boolean('--verbose'))
-UploadCommand.addOption('gitSync', Command.Boolean('--git-sync'))
-UploadCommand.addOption('noGitSync', Command.Boolean('--no-gitsync'))
-UploadCommand.addOption('directory', Command.String('--directory'))
-UploadCommand.addOption('repositoryURL', Command.String('--repository-url'))

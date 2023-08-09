@@ -1,5 +1,5 @@
 import chalk from 'chalk'
-import {Command} from 'clipanion'
+import {Command, Option} from 'clipanion'
 import {v4 as uuidv4} from 'uuid'
 
 import {getCISpanTags} from '../../helpers/ci'
@@ -21,6 +21,8 @@ import {
 import {getBaseIntakeUrl, is4xxError, is5xxError, parseScope} from './utils'
 
 export class GateEvaluateCommand extends Command {
+  public static paths = [['gate', 'evaluate']]
+
   public static usage = Command.Usage({
     description: 'Evaluate Quality Gates rules in Datadog.',
     details: `
@@ -53,18 +55,18 @@ export class GateEvaluateCommand extends Command {
     ],
   })
 
+  private dryRun = Option.Boolean('--dry-run', false)
+  private failOnEmpty = Option.Boolean('--fail-on-empty', false)
+  private failIfUnavailable = Option.Boolean('--fail-if-unavailable', false)
+  private noWait = Option.Boolean('--no-wait', false)
+  private userScope = Option.Array('--scope')
+  private tags = Option.Array('--tags')
+
   private config = {
     apiKey: process.env.DATADOG_API_KEY || process.env.DD_API_KEY,
-    appKey: process.env.DATADOG_APP_KEY,
+    appKey: process.env.DATADOG_APP_KEY || process.env.DD_APP_KEY,
     envVarTags: process.env.DD_TAGS,
   }
-
-  private dryRun = false
-  private failOnEmpty = false
-  private failIfUnavailable = false
-  private noWait = false
-  private userScope?: string[]
-  private tags?: string[]
 
   private waitingTime = 30000 // 30 seconds
 
@@ -170,11 +172,3 @@ export class GateEvaluateCommand extends Command {
     return !this.dryRun && !this.noWait
   }
 }
-
-GateEvaluateCommand.addPath('gate', 'evaluate')
-GateEvaluateCommand.addOption('dryRun', Command.Boolean('--dry-run'))
-GateEvaluateCommand.addOption('failOnEmpty', Command.Boolean('--fail-on-empty'))
-GateEvaluateCommand.addOption('failIfUnavailable', Command.Boolean('--fail-if-unavailable'))
-GateEvaluateCommand.addOption('noWait', Command.Boolean('--no-wait'))
-GateEvaluateCommand.addOption('userScope', Command.Array('--scope'))
-GateEvaluateCommand.addOption('tags', Command.Array('--tags'))

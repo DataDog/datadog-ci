@@ -499,8 +499,8 @@ describe('uninstrument', () => {
       expect(result).toBeDefined()
       expect(result.logGroupConfiguration).toMatchInlineSnapshot(`
         {
-          "filterName": "datadog-ci-filter",
-          "logGroupName": "/aws/lambda/group",
+          "filterName": "${SUBSCRIPTION_FILTER_NAME}",
+          "logGroupName": "${logGroupName}",
         }
       `)
     })

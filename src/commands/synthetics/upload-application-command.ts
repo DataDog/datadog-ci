@@ -1,4 +1,4 @@
-import {Command} from 'clipanion'
+import {Command, Option} from 'clipanion'
 import deepExtend from 'deep-extend'
 
 import {LogLevel, Logger} from '../../helpers/logger'
@@ -22,15 +22,19 @@ export const DEFAULT_UPLOAD_COMMAND_CONFIG: UploadApplicationCommandConfig = {
 }
 
 export class UploadApplicationCommand extends Command {
-  public configPath?: string
-  private apiKey?: string
-  private appKey?: string
+  public static paths = [['synthetics', 'upload-application']]
+
+  private apiKey = Option.String('--apiKey')
+  private appKey = Option.String('--appKey')
+  private configPath = Option.String('--config')
+  private datadogSite = Option.String('--datadogSite')
+  private mobileApplicationVersionFilePath = Option.String('--mobileApp,--mobileApplicationVersionFilePath')
+  private mobileApplicationId = Option.String('--mobileApplicationId')
+  private versionName = Option.String('--versionName')
+  private latest = Option.Boolean('--latest')
+
   private config: UploadApplicationCommandConfig = JSON.parse(JSON.stringify(DEFAULT_UPLOAD_COMMAND_CONFIG)) // Deep copy to avoid mutation during unit tests
-  private datadogSite?: string
-  private mobileApplicationVersionFilePath?: string
-  private mobileApplicationId?: string
-  private versionName?: string
-  private latest?: boolean
+
   private logger: Logger = new Logger((s: string) => {
     this.context.stdout.write(s)
   }, LogLevel.INFO)
@@ -94,16 +98,3 @@ export class UploadApplicationCommand extends Command {
     )
   }
 }
-
-UploadApplicationCommand.addPath('synthetics', 'upload-application')
-UploadApplicationCommand.addOption('apiKey', Command.String('--apiKey'))
-UploadApplicationCommand.addOption('appKey', Command.String('--appKey'))
-UploadApplicationCommand.addOption('configPath', Command.String('--config'))
-UploadApplicationCommand.addOption('datadogSite', Command.String('--datadogSite'))
-UploadApplicationCommand.addOption(
-  'mobileApplicationVersionFilePath',
-  Command.String('--mobileApp,--mobileApplicationVersionFilePath')
-)
-UploadApplicationCommand.addOption('mobileApplicationId', Command.String('--mobileApplicationId'))
-UploadApplicationCommand.addOption('versionName', Command.String('--versionName'))
-UploadApplicationCommand.addOption('latest', Command.Boolean('--latest'))
