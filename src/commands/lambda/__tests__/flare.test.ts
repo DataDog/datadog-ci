@@ -57,12 +57,6 @@ const MOCK_REGION = 'us-east-1'
 const MOCK_REQUIRED_FLAGS = ['lambda', 'flare', '-f', 'func', '-r', MOCK_REGION, '-c', '123', '-e', 'test@test.com']
 const MOCK_LOG_GROUP = 'mockLogGroup'
 const MOCK_TAGS: any = {Tags: {}}
-const MOCK_READ_STREAM = new stream.Readable({
-  read() {
-    this.push(JSON.stringify(MOCK_LAMBDA_CONFIG, undefined, 2))
-    this.push(undefined)
-  },
-})
 const cloudWatchLogsClientMock = mockClient(CloudWatchLogsClient)
 const lambdaClientMock = mockClient(LambdaClient)
 
@@ -85,7 +79,17 @@ jest.mock('fs')
 fs.writeFileSync = jest.fn().mockImplementation(() => {})
 fs.readFileSync = jest.fn().mockReturnValue(JSON.stringify(MOCK_LAMBDA_CONFIG, undefined, 2))
 fs.existsSync = jest.fn().mockReturnValue(true)
-fs.createReadStream = jest.fn().mockReturnValue(MOCK_READ_STREAM)
+fs.createReadStream = jest.fn().mockImplementation(
+  () =>
+    // Return a different stream every time, otherwise a `MaxListenersExceededWarning` is generated
+    // when appending this stream to the `FormData` under `flare_file`.
+    new stream.Readable({
+      read() {
+        this.push(JSON.stringify(MOCK_LAMBDA_CONFIG, undefined, 2))
+        this.push(undefined)
+      },
+    })
+)
 fs.readdirSync = jest.fn().mockReturnValue([])
 ;(fs.statSync as jest.Mock).mockImplementation((file_path: string) => ({
   isDirectory: () => file_path === MOCK_FLARE_FOLDER_PATH || file_path === MOCK_CWD,
