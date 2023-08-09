@@ -1,3 +1,5 @@
+import {createCommand} from '../../../helpers/__tests__/fixtures'
+
 import {GateEvaluateCommand} from '../evaluate'
 import {EvaluationResponse} from '../interfaces'
 
@@ -6,8 +8,7 @@ describe('evaluate', () => {
     test('should throw an error if API key is undefined', () => {
       process.env = {}
       const write = jest.fn()
-      const command = new GateEvaluateCommand()
-      command.context = {stdout: {write}} as any
+      const command = createCommand(GateEvaluateCommand, {stdout: {write}} as any)
 
       expect(command['getApiHelper'].bind(command)).toThrow('API key is missing')
       expect(write.mock.calls[0][0]).toContain('DATADOG_API_KEY')
@@ -15,8 +16,7 @@ describe('evaluate', () => {
     test('should throw an error if APP key is undefined', () => {
       process.env = {DATADOG_API_KEY: 'PLACEHOLDER'}
       const write = jest.fn()
-      const command = new GateEvaluateCommand()
-      command.context = {stdout: {write}} as any
+      const command = createCommand(GateEvaluateCommand, {stdout: {write}} as any)
 
       expect(command['getApiHelper'].bind(command)).toThrow('APP key is missing')
       expect(write.mock.calls[0][0]).toContain('DATADOG_APP_KEY')
@@ -25,8 +25,7 @@ describe('evaluate', () => {
   describe('handleEvaluationSuccess', () => {
     test('should fail the command if gate evaluation failed', () => {
       const write = jest.fn()
-      const command = new GateEvaluateCommand()
-      command.context = {stdout: {write}} as any
+      const command = createCommand(GateEvaluateCommand, {stdout: {write}} as any)
 
       const response: EvaluationResponse = {
         status: 'failed',
@@ -39,8 +38,7 @@ describe('evaluate', () => {
     })
     test('should pass the command if gate evaluation passed', () => {
       const write = jest.fn()
-      const command = new GateEvaluateCommand()
-      command.context = {stdout: {write}} as any
+      const command = createCommand(GateEvaluateCommand, {stdout: {write}} as any)
 
       const response: EvaluationResponse = {
         status: 'passed',
@@ -53,8 +51,7 @@ describe('evaluate', () => {
     })
     test('should pass the command on empty evaluation status by default', () => {
       const write = jest.fn()
-      const command = new GateEvaluateCommand()
-      command.context = {stdout: {write}} as any
+      const command = createCommand(GateEvaluateCommand, {stdout: {write}} as any)
 
       const response: EvaluationResponse = {
         status: 'empty',
@@ -68,9 +65,8 @@ describe('evaluate', () => {
     })
     test('should fail the command on empty result if the override option is provided', () => {
       const write = jest.fn()
-      const command = new GateEvaluateCommand()
+      const command = createCommand(GateEvaluateCommand, {stdout: {write}} as any)
       command['failOnEmpty'] = true
-      command.context = {stdout: {write}} as any
 
       const response: EvaluationResponse = {
         status: 'empty',
@@ -84,8 +80,7 @@ describe('evaluate', () => {
     })
     test('should pass the command on dry run evaluation status', () => {
       const write = jest.fn()
-      const command = new GateEvaluateCommand()
-      command.context = {stdout: {write}} as any
+      const command = createCommand(GateEvaluateCommand, {stdout: {write}} as any)
 
       const response: EvaluationResponse = {
         status: 'dry_run',
@@ -101,8 +96,7 @@ describe('evaluate', () => {
   describe('handleEvaluationError', () => {
     test('should fail the command if the error is 4xx', () => {
       const write = jest.fn()
-      const command = new GateEvaluateCommand()
-      command.context = {stderr: {write}} as any
+      const command = createCommand(GateEvaluateCommand, {stderr: {write}} as any)
 
       const error = createError(400, 'validation failure')
       expect(command['handleEvaluationError'].bind(command).call({}, error)).toEqual(1)
@@ -113,9 +107,8 @@ describe('evaluate', () => {
     })
     test('should fail the command if the error is 5xx and fail-if-unavailable option is enabled', () => {
       const write = jest.fn()
-      const command = new GateEvaluateCommand()
+      const command = createCommand(GateEvaluateCommand, {stderr: {write}} as any)
       command['failIfUnavailable'] = true
-      command.context = {stderr: {write}} as any
 
       const error = createError(500, 'internal issue')
       expect(command['handleEvaluationError'].bind(command).call({}, error)).toEqual(1)
@@ -127,8 +120,7 @@ describe('evaluate', () => {
     })
     test('should pass the command if the error is 5xx and fail-if-unavailable option is not enabled', () => {
       const write = jest.fn()
-      const command = new GateEvaluateCommand()
-      command.context = {stderr: {write}} as any
+      const command = createCommand(GateEvaluateCommand, {stderr: {write}} as any)
 
       const error = createError(500, 'internal issue')
       expect(command['handleEvaluationError'].bind(command).call({}, error)).toEqual(0)

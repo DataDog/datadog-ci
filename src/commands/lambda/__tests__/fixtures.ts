@@ -30,30 +30,13 @@ import {
   ListTagsCommandOutput,
 } from '@aws-sdk/client-lambda'
 import {AwsStub} from 'aws-sdk-client-mock'
-import {Cli, Command} from 'clipanion/lib/advanced'
+import {Cli} from 'clipanion/lib/advanced'
+
+import {MOCK_DATADOG_API_KEY} from '../../../helpers/__tests__/fixtures'
 
 import {LambdaFlareCommand} from '../flare'
 import {InstrumentCommand} from '../instrument'
 import {UninstrumentCommand} from '../uninstrument'
-
-export const createMockContext = () => {
-  let data = ''
-
-  return {
-    stdout: {
-      toString: () => data,
-      write: (input: string) => {
-        data += input
-      },
-    },
-    stderr: {
-      toString: () => data,
-      write: (input: string) => {
-        data += input
-      },
-    },
-  }
-}
 
 export const makeCli = () => {
   const cli = new Cli()
@@ -62,28 +45,6 @@ export const makeCli = () => {
   cli.register(LambdaFlareCommand)
 
   return cli
-}
-
-/**
- * Allow for constructors with any amount of parameters.
- * Mainly used for testing when we are creating commands.
- */
-export type ConstructorOf<T> = new (...args: any[]) => T
-
-/**
- * Allows to create an instance of any command that
- * extends the Command clss.
- *
- * @param commandClass any class that extends the Command class.
- * @param parameters parameters to use while creating the commandClass
- * @returns the instance of the given command with a mock context attatched.
- */
-export const createCommand = <T extends Command>(commandClass: ConstructorOf<T>, ...parameters: any[]) => {
-  // Create a new instance of commandClass and pass in the parameters
-  const command = new commandClass(...parameters)
-  command.context = createMockContext() as any
-
-  return command
 }
 
 export const mockLambdaClientCommands = (lambdaClientMock: AwsStub<LServiceInputTypes, LServiceOutputTypes>) => {
@@ -214,7 +175,34 @@ export const mockAwsCredentials = {
   sessionToken: undefined,
 }
 
-export const mockDatadogApiKey = '02aeb762fff59ac0d5ad1536cd9633bd'
 export const mockDatadogEnv = 'sandbox'
 export const mockDatadogService = 'testServiceName'
 export const mockDatadogVersion = '1.0.0'
+
+export const MOCK_LAMBDA_CONFIG = {
+  Environment: {
+    Variables: {
+      DD_API_KEY: MOCK_DATADOG_API_KEY,
+      DD_SITE: 'datadoghq.com',
+      DD_LOG_LEVEL: 'debug',
+    },
+  },
+  FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:some-function',
+  FunctionName: 'some-function',
+  Runtime: 'nodejs18.x',
+  CodeSize: 2275,
+  Layers: [
+    {
+      Arn: 'arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Extension:43',
+      CodeSize: 13145076,
+    },
+    {
+      Arn: 'arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Node18-x:91',
+      CodeSize: 3614995,
+    },
+  ],
+  Handler: '/path/handler.handler',
+  Timeout: 6,
+  MemorySize: 1024,
+  Architectures: ['x86_64'],
+}

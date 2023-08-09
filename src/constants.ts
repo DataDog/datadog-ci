@@ -13,3 +13,19 @@ export const DATADOG_SITES: string[] = [
   DATADOG_SITE_AP1,
   DATADOG_SITE_GOV,
 ]
+
+// Tagging env vars
+export const SERVICE_ENV_VAR = 'DD_SERVICE'
+export const ENVIRONMENT_ENV_VAR = 'DD_ENV'
+export const VERSION_ENV_VAR = 'DD_VERSION'
+
+// Environment variables for Lambda and Cloud Run
+export const API_KEY_ENV_VAR = 'DD_API_KEY'
+export const CI_API_KEY_ENV_VAR = 'DATADOG_API_KEY'
+export const CI_SITE_ENV_VAR = 'DATADOG_SITE'
+export const SITE_ENV_VAR = 'DD_SITE'
+
+// Flare constants
+export const FLARE_OUTPUT_DIRECTORY = '.datadog-ci'
+export const LOGS_DIRECTORY = 'logs'
+export const FLARE_ENDPOINT_PATH = '/api/ui/support/serverless/flare'

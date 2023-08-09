@@ -2,8 +2,10 @@ import {CloudWatchLogsClient} from '@aws-sdk/client-cloudwatch-logs'
 import {LambdaClient, LambdaClientConfig} from '@aws-sdk/client-lambda'
 import {AwsCredentialIdentity} from '@aws-sdk/types'
 import {bold} from 'chalk'
-import {Command} from 'clipanion'
+import {Command, Option} from 'clipanion'
 
+import {requestConfirmation} from '../../helpers/prompt'
+import * as helperRenderer from '../../helpers/renderer'
 import {DEFAULT_CONFIG_PATHS, resolveConfigFromFile} from '../../helpers/utils'
 
 import {AWS_DEFAULT_REGION_ENV_VAR} from './constants'
@@ -13,28 +15,48 @@ import {
   getAWSProfileCredentials,
   handleLambdaFunctionUpdates,
   getAWSCredentials,
-  maskStringifiedEnvVar,
   willUpdateFunctionConfigs,
+  maskConfig,
 } from './functions/commons'
 import {getUninstrumentedFunctionConfigs, getUninstrumentedFunctionConfigsFromRegEx} from './functions/uninstrument'
 import {FunctionConfiguration} from './interfaces'
-import {requestAWSCredentials, requestConfirmation, requestFunctionSelection} from './prompt'
+import {requestAWSCredentials, requestFunctionSelection} from './prompt'
 import * as commonRenderer from './renderers/common-renderer'
 import * as instrumentRenderer from './renderers/instrument-uninstrument-renderer'
 
 export class UninstrumentCommand extends Command {
+  public static paths = [['lambda', 'uninstrument']]
+
+  private configPath = Option.String('--config')
+  private dryRun = Option.Boolean('-d,--dry', false)
+  private forwarder = Option.String('--forwarder')
+  private functions = Option.Array('-f,--function', [])
+  private interactive = Option.Boolean('-i,--interactive', false)
+  private profile = Option.String('--profile')
+  private regExPattern = Option.String('--functions-regex,--functionsRegex')
+  private region = Option.String('-r,--region')
+
+  /**
+   * Arguments that are not really in use, but to
+   * make uninstrumentation easier for the user.
+   */
+  private layerVersion = Option.String('-v,--layer-version,--layerVersion', {hidden: true})
+  private tracing = Option.String('--tracing', {hidden: true})
+  private logLevel = Option.String('--log-level,--logLevel', {hidden: true})
+  private service = Option.String('--service', {hidden: true})
+  private environment = Option.String('--env', {hidden: true})
+  private version = Option.String('--version', {hidden: true})
+  private apmFlushDeadline = Option.String('--apm-flush-deadline', {hidden: true})
+  private extraTags = Option.String('--extra-tags,--extraTags', {hidden: true})
+  private extensionVersion = Option.String('-e,--extension-version,--extensionVersion', {hidden: true})
+  private mergeXrayTraces = Option.String('--merge-xray-traces,--mergeXrayTraces', {hidden: true})
+  private flushMetricsToLogs = Option.String('--flush-metrics-to-logs,--flushMetricsToLogs', {hidden: true})
+  private captureLambdaPayload = Option.String('--capture-lambda-payload,--captureLambdaPayload', {hidden: true})
+
   private config: any = {
     functions: [],
     region: process.env[AWS_DEFAULT_REGION_ENV_VAR],
   }
-  private configPath?: string
-  private dryRun = false
-  private forwarder?: string
-  private functions: string[] = []
-  private interactive = false
-  private profile?: string
-  private regExPattern?: string
-  private region?: string
 
   private credentials?: AwsCredentialIdentity
 
@@ -51,7 +73,7 @@ export class UninstrumentCommand extends Command {
       try {
         this.credentials = await getAWSProfileCredentials(profile)
       } catch (err) {
-        this.context.stdout.write(commonRenderer.renderError(err))
+        this.context.stdout.write(helperRenderer.renderError(err))
 
         return 1
       }
@@ -68,7 +90,7 @@ export class UninstrumentCommand extends Command {
           this.credentials = credentials
         }
       } catch (err) {
-        this.context.stdout.write(commonRenderer.renderError(err))
+        this.context.stdout.write(helperRenderer.renderError(err))
 
         return 1
       }
@@ -258,12 +280,9 @@ export class UninstrumentCommand extends Command {
     this.context.stdout.write(instrumentRenderer.renderWillApplyUpdates(this.dryRun))
     for (const config of configs) {
       if (config.updateFunctionConfigurationCommandInput) {
+        const maskedConfig = maskConfig(config.updateFunctionConfigurationCommandInput)
         this.context.stdout.write(
-          `UpdateFunctionConfiguration -> ${config.functionARN}\n${JSON.stringify(
-            config.updateFunctionConfigurationCommandInput,
-            maskStringifiedEnvVar(config.updateFunctionConfigurationCommandInput.Environment?.Variables),
-            2
-          )}\n`
+          `UpdateFunctionConfiguration -> ${config.functionARN}\n${JSON.stringify(maskedConfig, undefined, 2)}\n`
         )
       }
       const {logGroupConfiguration, tagConfiguration} = config
@@ -288,41 +307,3 @@ export class UninstrumentCommand extends Command {
     }
   }
 }
-
-UninstrumentCommand.addPath('lambda', 'uninstrument')
-UninstrumentCommand.addOption('functions', Command.Array('-f,--function'))
-UninstrumentCommand.addOption('region', Command.String('-r,--region'))
-UninstrumentCommand.addOption('configPath', Command.String('--config'))
-UninstrumentCommand.addOption('dryRun', Command.Boolean('-d,--dry'))
-UninstrumentCommand.addOption('forwarder', Command.String('--forwarder'))
-UninstrumentCommand.addOption('regExPattern', Command.String('--functions-regex,--functionsRegex'))
-UninstrumentCommand.addOption('interactive', Command.Boolean('-i,--interactive'))
-UninstrumentCommand.addOption('profile', Command.String('--profile'))
-/**
- * Commands that are not really in use, but to
- * make uninstrumentation easier for the user.
- */
-UninstrumentCommand.addOption(
-  'extensionVersion',
-  Command.String('-e,--extension-version,--extensionVersion', {hidden: true})
-)
-UninstrumentCommand.addOption('layerVersion', Command.String('-v,--layer-version,--layerVersion', {hidden: true}))
-UninstrumentCommand.addOption('tracing', Command.String('--tracing', {hidden: true}))
-UninstrumentCommand.addOption(
-  'mergeXrayTraces',
-  Command.String('--merge-xray-traces,--mergeXrayTraces', {hidden: true})
-)
-UninstrumentCommand.addOption(
-  'flushMetricsToLogs',
-  Command.String('--flush-metrics-to-logs,--flushMetricsToLogs', {hidden: true})
-)
-UninstrumentCommand.addOption('logLevel', Command.String('--log-level,--logLevel', {hidden: true}))
-UninstrumentCommand.addOption('service', Command.String('--service', {hidden: true}))
-UninstrumentCommand.addOption('environment', Command.String('--env', {hidden: true}))
-UninstrumentCommand.addOption('version', Command.String('--version', {hidden: true}))
-UninstrumentCommand.addOption('apmFlushDeadline', Command.String('--apm-flush-deadline', {hidden: true}))
-UninstrumentCommand.addOption('extraTags', Command.String('--extra-tags,--extraTags', {hidden: true}))
-UninstrumentCommand.addOption(
-  'captureLambdaPayload',
-  Command.String('--capture-lambda-payload,--captureLambdaPayload', {hidden: true})
-)

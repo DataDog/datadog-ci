@@ -1,14 +1,12 @@
 import fs from 'fs'
-import path from 'path'
 import {Writable} from 'stream'
 import {createGzip} from 'zlib'
 
 import type {AxiosPromise, AxiosRequestConfig, AxiosResponse} from 'axios'
 
 import FormData from 'form-data'
+import {v4 as uuidv4} from 'uuid'
 
-import {getSafeFilename} from '../../helpers/file'
-import {CI_JOB_URL, CI_PIPELINE_URL, GIT_SHA} from '../../helpers/tags'
 import {getRequestBuilder} from '../../helpers/utils'
 
 import {Payload} from './interfaces'
@@ -25,13 +23,6 @@ export const uploadSarifReport = (request: (args: AxiosRequestConfig) => AxiosPr
   const form = new FormData()
   write(renderUpload(sarifReport))
 
-  let fileName
-  try {
-    fileName = path.parse(sarifReport.reportPath).name
-  } catch (e) {
-    fileName = 'default_file_name'
-  }
-
   const metadata: Record<string, any> = {
     service: sarifReport.service,
     ...sarifReport.spanTags,
@@ -42,17 +33,8 @@ export const uploadSarifReport = (request: (args: AxiosRequestConfig) => AxiosPr
 
   form.append('event', JSON.stringify(metadata), {filename: 'event.json'})
 
-  let uniqueFileName = `${fileName}-${sarifReport.service}-${metadata[GIT_SHA]}`
-
-  if (metadata[CI_PIPELINE_URL]) {
-    uniqueFileName = `${uniqueFileName}-${metadata[CI_PIPELINE_URL]}`
-  }
-  if (metadata[CI_JOB_URL]) {
-    uniqueFileName = `${uniqueFileName}-${metadata[CI_JOB_URL]}`
-  }
-
   form.append('sarif_report_file', fs.createReadStream(sarifReport.reportPath).pipe(createGzip()), {
-    filename: `${getSafeFilename(uniqueFileName)}.sarif.gz`,
+    filename: `${uuidv4()}.sarif.gz`,
   })
 
   return request({

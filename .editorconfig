@@ -1,3 +1,5 @@
 [*.{ts,json,js}]
 indent_size = 2
 indent_style = space
+[*.snap]
+trim_trailing_whitespace = false

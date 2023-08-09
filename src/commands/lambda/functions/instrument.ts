@@ -5,19 +5,25 @@ import {
   UpdateFunctionConfigurationCommandInput,
 } from '@aws-sdk/client-lambda'
 
+import {
+  API_KEY_ENV_VAR,
+  CI_API_KEY_ENV_VAR,
+  CI_SITE_ENV_VAR,
+  ENVIRONMENT_ENV_VAR,
+  SERVICE_ENV_VAR,
+  SITE_ENV_VAR,
+  VERSION_ENV_VAR,
+} from '../../../constants'
 import {isValidDatadogSite} from '../../../helpers/validation'
 
 import {
-  API_KEY_ENV_VAR,
   API_KEY_SECRET_ARN_ENV_VAR,
   ARM64_ARCHITECTURE,
   AWS_LAMBDA_EXEC_WRAPPER,
   AWS_LAMBDA_EXEC_WRAPPER_VAR,
   CAPTURE_LAMBDA_PAYLOAD_ENV_VAR,
-  CI_API_KEY_ENV_VAR,
   CI_API_KEY_SECRET_ARN_ENV_VAR,
   CI_KMS_API_KEY_ENV_VAR,
-  CI_SITE_ENV_VAR,
   CORECLR_ENABLE_PROFILING,
   CORECLR_PROFILER,
   CORECLR_PROFILER_PATH,
@@ -25,7 +31,6 @@ import {
   DD_LAMBDA_EXTENSION_LAYER_NAME,
   DOTNET_TRACER_HOME_ENV_VAR,
   ENABLE_PROFILING_ENV_VAR,
-  ENVIRONMENT_ENV_VAR,
   EXTENSION_LAYER_KEY,
   EXTRA_TAGS_ENV_VAR,
   FLUSH_TO_LOG_ENV_VAR,
@@ -42,10 +47,7 @@ import {
   Runtime,
   RuntimeType,
   RUNTIME_LOOKUP,
-  SERVICE_ENV_VAR,
-  SITE_ENV_VAR,
   TRACE_ENABLED_ENV_VAR,
-  VERSION_ENV_VAR,
   APM_FLUSH_DEADLINE_MILLISECONDS_ENV_VAR,
 } from '../constants'
 import {FunctionConfiguration, InstrumentationSettings, LogGroupConfiguration, TagConfiguration} from '../interfaces'

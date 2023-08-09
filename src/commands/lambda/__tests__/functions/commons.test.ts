@@ -10,13 +10,14 @@ import {CloudWatchLogsClient} from '@aws-sdk/client-cloudwatch-logs'
 import {LambdaClient, UpdateFunctionConfigurationCommand} from '@aws-sdk/client-lambda'
 import {fromNodeProviderChain} from '@aws-sdk/credential-providers'
 import {mockClient} from 'aws-sdk-client-mock'
+
 import 'aws-sdk-client-mock-jest'
+import {CI_API_KEY_ENV_VAR, CI_SITE_ENV_VAR} from '../../../../constants'
+import {createCommand} from '../../../../helpers/__tests__/fixtures'
 
 import {
-  CI_API_KEY_ENV_VAR,
   CI_API_KEY_SECRET_ARN_ENV_VAR,
   CI_KMS_API_KEY_ENV_VAR,
-  CI_SITE_ENV_VAR,
   DD_LAMBDA_EXTENSION_LAYER_NAME,
   DEFAULT_LAYER_AWS_ACCOUNT,
   EXTENSION_LAYER_KEY,
@@ -42,19 +43,18 @@ import {
   isMissingAnyDatadogApiKeyEnvVar,
   getAWSCredentials,
   isMissingDatadogEnvVars,
-  maskEnvVar,
   sentenceMatchesRegEx,
   updateLambdaFunctionConfig,
+  maskConfig,
 } from '../../functions/commons'
 import {InstrumentCommand} from '../../instrument'
 import {FunctionConfiguration} from '../../interfaces'
 
 import {
-  createCommand,
+  MOCK_LAMBDA_CONFIG,
   mockAwsAccessKeyId,
   mockAwsAccount,
   mockAwsSecretAccessKey,
-  mockDatadogApiKey,
   mockLambdaClientCommands,
   mockLambdaLayers,
 } from '../fixtures'
@@ -793,6 +793,7 @@ describe('commons', () => {
       expect(result).toBe(undefined)
     })
   })
+
   describe('handles multiple runtimes', () => {
     test('returns true if all runtimes are uniform', async () => {
       const configs: FunctionConfiguration[] = [
@@ -855,40 +856,17 @@ describe('commons', () => {
     })
   })
 
-  describe('maskEnvVar', () => {
-    it('should mask the entire string if its length is less than 12', () => {
-      expect(maskEnvVar('TEST_ENV_VAR', 'shortString')).toEqual('****************')
+  describe('maskConfig', () => {
+    it('should mask a Lambda config correctly', () => {
+      const maskedConfig = maskConfig(MOCK_LAMBDA_CONFIG)
+      expect(maskedConfig).toMatchSnapshot()
     })
 
-    it('should keep the first two and last four characters for strings longer than 12 characters', () => {
-      const original = 'abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz'
-      const masked = 'ab**********wxyz'
-      expect(maskEnvVar('TEST_ENV_VAR', original)).toEqual(masked)
-    })
-
-    it('should return empty string if input is empty', () => {
-      expect(maskEnvVar('TEST_ENV_VAR', '')).toEqual('')
-    })
-
-    it('should not mask booleans', () => {
-      expect(maskEnvVar('TEST_ENV_VAR', 'true')).toEqual('true')
-      expect(maskEnvVar('TEST_ENV_VAR', 'TrUe')).toEqual('TrUe')
-      expect(maskEnvVar('TEST_ENV_VAR', 'false')).toEqual('false')
-      expect(maskEnvVar('TEST_ENV_VAR', 'FALSE')).toEqual('FALSE')
-      expect(maskEnvVar('TEST_ENV_VAR', 'trueee')).toEqual('****************')
-    })
-
-    it('should mask sensitive datadog environment variables', () => {
-      expect(maskEnvVar('DD_API_KEY', mockDatadogApiKey)).toEqual('02**********33bd')
-    })
-
-    it('should skip whitelisted environment variables', () => {
-      expect(
-        maskEnvVar('DD_API_KEY_SECRET_ARN', 'arn:aws:secretsmanager:us-east-1:1234:secret:DdApiKeySecret-1234')
-      ).toEqual('arn:aws:secretsmanager:us-east-1:1234:secret:DdApiKeySecret-1234')
-      expect(maskEnvVar('DD_KMS_API_KEY', 'AQICAg1iQYQvBiOLACA=')).toEqual('AQICAg1iQYQvBiOLACA=')
-      expect(maskEnvVar('DD_LOG_LEVEL', 'debug')).toEqual('debug')
-      expect(maskEnvVar('DD_SITE', 'datadoghq.com')).toEqual('datadoghq.com')
+    it('should not modify config if env vars are missing', () => {
+      const lambdaConfigCopy = JSON.parse(JSON.stringify(MOCK_LAMBDA_CONFIG))
+      delete lambdaConfigCopy.Environment.Variables
+      const maskedConfig = maskConfig(lambdaConfigCopy)
+      expect(maskedConfig).toMatchSnapshot()
     })
   })
 })

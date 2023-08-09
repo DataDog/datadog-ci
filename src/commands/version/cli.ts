@@ -1,6 +1,8 @@
 import {Command} from 'clipanion'
 
 class VersionCommand extends Command {
+  public static paths = [['version']]
+
   public static usage = Command.Usage({
     description: 'Get the current version of datadog-ci.',
     examples: [['Get the current version of datadog-ci', 'datadog-ci version']],
@@ -13,7 +15,5 @@ class VersionCommand extends Command {
     return 0
   }
 }
-
-VersionCommand.addPath('version')
 
 module.exports = [VersionCommand]

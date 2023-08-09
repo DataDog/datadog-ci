@@ -58,19 +58,6 @@ const resolveConfigPath = ({
   return undefined
 }
 
-export const parseOptionalInteger = (value: string | undefined): number | undefined => {
-  if (!value) {
-    return undefined
-  }
-
-  const number = parseFloat(value)
-  if (!Number.isInteger(number)) {
-    throw new Error(`${number} is not an integer`)
-  }
-
-  return number
-}
-
 /**
  * Applies configurations in this order of priority:
  * environment > config file > base config
@@ -351,4 +338,49 @@ export const timedExecAsync = async <I, O>(f: (input: I) => Promise<O>, input: I
   await f(input)
 
   return (Date.now() - initialTime) / 1000
+}
+
+/**
+ * Convert bytes to a formatted string in KB, MB, GB, etc.
+ * Note: Lambda documentation uses MB (instead of Mib) to refer to 1024 KB, so we follow that style here
+ * @param bytes
+ * @param decimals
+ */
+export const formatBytes = (bytes: number, decimals = 2) => {
+  if (!bytes) {
+    return '0 Bytes'
+  }
+
+  if (bytes < 0) {
+    throw Error("'bytes' can't be negative.")
+  }
+
+  const bytesPerKB = 1024
+  const numDecimals = decimals < 0 ? 0 : decimals
+  const units = ['Bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB']
+  const i = Math.floor(Math.log(bytes) / Math.log(bytesPerKB))
+  const formattedBytes = parseFloat((bytes / Math.pow(bytesPerKB, i)).toFixed(numDecimals))
+
+  return `${formattedBytes} ${units[i]}`
+}
+
+// Mask a string to hide sensitive values
+export const maskString = (value: string) => {
+  // Don't mask booleans
+  if (value.toLowerCase() === 'true' || value.toLowerCase() === 'false') {
+    return value
+  }
+
+  // Dont mask numbers
+  if (!isNaN(Number(value))) {
+    return value
+  }
+
+  // Mask entire string if it's short
+  if (value.length < 12) {
+    return '*'.repeat(16)
+  }
+
+  // Keep first two and last four characters if it's long
+  return value.slice(0, 2) + '*'.repeat(10) + value.slice(-4)
 }

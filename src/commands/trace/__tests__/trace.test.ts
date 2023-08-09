@@ -1,4 +1,6 @@
 /* eslint-disable no-null/no-null */
+import {createCommand} from '../../../helpers/__tests__/fixtures'
+
 import {TraceCommand} from '../trace'
 
 describe('trace', () => {
@@ -16,7 +18,7 @@ describe('trace', () => {
   describe('getCIEnvVars', () => {
     test('should throw if no CI is detected', () => {
       process.env = {}
-      const command = new TraceCommand()
+      const command = createCommand(TraceCommand)
       expect(command['getCIEnvVars'].bind(command)).toThrow(
         /Cannot detect any supported CI Provider\. This command only works if run as part of your CI\..*/
       )

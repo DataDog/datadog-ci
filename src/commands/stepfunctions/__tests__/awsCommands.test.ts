@@ -16,6 +16,8 @@ import {
 } from '@aws-sdk/client-sfn'
 import {mockClient} from 'aws-sdk-client-mock'
 
+import {createMockContext} from '../../../helpers/__tests__/fixtures'
+
 import {
   createLogGroup,
   deleteSubscriptionFilter,
@@ -30,8 +32,6 @@ import {
   updateStateMachineDefinition,
 } from '../awsCommands'
 import {buildLogAccessPolicyName, StateMachineDefinitionType} from '../helpers'
-
-import {createMockContext} from './fixtures/aws-resources'
 
 describe('awsCommands test', () => {
   const expectedResp = {fakeKey: 'fakeValue'} as any

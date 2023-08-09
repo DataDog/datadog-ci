@@ -436,7 +436,7 @@ describe('run-test', () => {
         () =>
           ({
             getSyntheticsOrgSettings: () => ({
-              orgMaxConcurrencyCap: 1,
+              onDemandConcurrencyCap: 1,
             }),
           } as any)
       )

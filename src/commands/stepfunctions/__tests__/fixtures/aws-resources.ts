@@ -2,19 +2,6 @@ import {SubscriptionFilter} from '@aws-sdk/client-cloudwatch-logs/dist-types/mod
 import {DescribeStateMachineCommandOutput} from '@aws-sdk/client-sfn'
 import {Tag} from '@aws-sdk/client-sfn/dist-types/ts3.4/models/models_0'
 
-export const createMockContext = () => {
-  let data = ''
-
-  return {
-    stdout: {
-      toString: () => data,
-      write: (input: string) => {
-        data += input
-      },
-    },
-  }
-}
-
 export const describeStateMachineFixture = (
   props: Partial<DescribeStateMachineCommandOutput> = {}
 ): DescribeStateMachineCommandOutput => {

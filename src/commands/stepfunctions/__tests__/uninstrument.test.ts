@@ -4,14 +4,14 @@ import {Cli} from 'clipanion/lib/advanced'
 import {UninstrumentStepFunctionsCommand} from '../uninstrument'
 
 import {describeStateMachineFixture, subscriptionFilterFixture} from './fixtures/aws-resources'
-import {contextFixture, testContext} from './fixtures/cli'
+import {contextFixture, ContextFixture} from './fixtures/cli'
 
 jest.mock('../../../../package.json', () => ({version: '2.0.0'}))
 
 describe('stepfunctions uninstrument', () => {
   let aws: any
   let cli: Cli
-  let context: testContext
+  let context: ContextFixture
   let describeStateMachineCommandOutput: DescribeStateMachineCommandOutput
   let helpers: any
 

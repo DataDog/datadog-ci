@@ -1,23 +1,22 @@
-import {Readable, Writable} from 'stream'
+import {Writable} from 'stream'
 
-import {BaseContext} from 'clipanion'
+import type {CommandContext} from '../../../../helpers/interfaces'
 
-export interface testContext extends BaseContext {
+export interface ContextFixture extends CommandContext {
   toString: () => string
 }
 
-export const contextFixture = (): testContext => {
+export const contextFixture = (): ContextFixture => {
   let data = ''
 
   return {
-    stdin: new Readable(),
     stdout: new Writable({
       write: (chunk, encoding, next) => {
         data += chunk.toString()
         next()
       },
     }),
-    stderr: new Writable(),
+    stderr: jest.fn() as any,
     toString: () => data,
   }
 }

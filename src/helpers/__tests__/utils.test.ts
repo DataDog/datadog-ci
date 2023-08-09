@@ -6,6 +6,9 @@ import {createProxy} from 'proxy'
 import {ProxyAgent} from 'proxy-agent'
 
 import * as ciUtils from '../utils'
+import {formatBytes, maskString} from '../utils'
+
+import {MOCK_DATADOG_API_KEY} from './fixtures'
 
 describe('utils', () => {
   beforeEach(() => {
@@ -21,15 +24,6 @@ describe('utils', () => {
 
     resultHash = ciUtils.pick(initialHash, ['c'] as any)
     expect(Object.keys(resultHash).length).toBe(0)
-  })
-
-  test('parseOptionalInteger', () => {
-    expect(ciUtils.parseOptionalInteger(undefined)).toStrictEqual(undefined)
-    expect(ciUtils.parseOptionalInteger('')).toStrictEqual(undefined)
-    expect(() => ciUtils.parseOptionalInteger('1.2')).toThrow('1.2 is not an integer')
-    expect(() => ciUtils.parseOptionalInteger('abc')).toThrow('NaN is not an integer')
-
-    expect(ciUtils.parseOptionalInteger('1')).toStrictEqual(1)
   })
 
   describe('resolveConfigFromFile', () => {
@@ -386,6 +380,69 @@ describe('utils', () => {
         'github.com/datadog/test.git'
       )
       expect(ciUtils.filterAndFormatGithubRemote('github.com/datadog/test.git')).toEqual('github.com/datadog/test.git')
+    })
+  })
+
+  describe('formatBytes', () => {
+    it('returns "0 Bytes" when input is 0', () => {
+      expect(formatBytes(0)).toEqual('0 Bytes')
+    })
+
+    it('returns correct format for input in Bytes', () => {
+      expect(formatBytes(500)).toEqual('500 Bytes')
+    })
+
+    it('returns correct format for input in KB', () => {
+      expect(formatBytes(1024)).toEqual('1 KB')
+      expect(formatBytes(1500, 2)).toEqual('1.46 KB')
+    })
+
+    it('returns correct format for input in MB', () => {
+      expect(formatBytes(1048576)).toEqual('1 MB')
+      expect(formatBytes(1572864, 2)).toEqual('1.5 MB')
+    })
+
+    it('respects the decimal parameter and rounds up when needed', () => {
+      expect(formatBytes(2313561)).toEqual('2.21 MB')
+      expect(formatBytes(2313561, 0)).toEqual('2 MB')
+      expect(formatBytes(2313561, 1)).toEqual('2.2 MB')
+      expect(formatBytes(2313561, 3)).toEqual('2.206 MB')
+    })
+
+    it('handles negative decimals by treating them as zero', () => {
+      expect(formatBytes(1572864, -1)).toEqual('2 MB')
+    })
+
+    it('throws an error if the input is negative', () => {
+      expect(() => formatBytes(-1000)).toThrow()
+    })
+  })
+
+  describe('maskString', () => {
+    it('should make the entire string if its length is less than 12', () => {
+      expect(maskString('shortString')).toEqual('****************')
+    })
+
+    it('should keep the first two and last four characters for strings longer than 12 characters', () => {
+      const original = 'abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz'
+      const masked = 'ab**********wxyz'
+      expect(maskString(original)).toEqual(masked)
+    })
+
+    it('should return empty string if input is empty', () => {
+      expect(maskString('')).toEqual('')
+    })
+
+    it('should not mask booleans', () => {
+      expect(maskString('true')).toEqual('true')
+      expect(maskString('TrUe')).toEqual('TrUe')
+      expect(maskString('false')).toEqual('false')
+      expect(maskString('FALSE')).toEqual('FALSE')
+      expect(maskString('trueee')).toEqual('****************')
+    })
+
+    it('should mask API keys correctly', () => {
+      expect(maskString(MOCK_DATADOG_API_KEY)).toEqual('02**********33bd')
     })
   })
 })

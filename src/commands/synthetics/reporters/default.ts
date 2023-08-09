@@ -1,10 +1,10 @@
-import {Writable} from 'stream'
-
 import type {TunnelReporter} from '../tunnel/tunnel'
+import type {Writable} from 'stream'
 
 import chalk from 'chalk'
-import {BaseContext} from 'clipanion'
 import ora from 'ora'
+
+import type {CommandContext} from '../../../helpers/interfaces'
 
 import {
   Assertion,
@@ -250,12 +250,12 @@ const getResultIconAndColor = (resultOutcome: ResultOutcome): [string, chalk.Cha
 }
 
 export class DefaultReporter implements MainReporter {
-  private context: BaseContext
+  private context: CommandContext
   private testWaitSpinner?: ora.Ora
   private write: Writable['write']
   private totalDuration?: number
 
-  constructor({context}: {context: BaseContext}) {
+  constructor({context}: {context: CommandContext}) {
     this.context = context
     this.write = context.stdout.write.bind(context.stdout)
   }
@@ -332,10 +332,10 @@ export class DefaultReporter implements MainReporter {
     lines.push(`\n${b('Continuous Testing Summary:')}`)
     lines.push(`Test Results: ${runSummary.join(', ')}${extraInfoStr}`)
 
-    if (orgSettings && orgSettings.orgMaxConcurrencyCap > 0) {
+    if (orgSettings && orgSettings.onDemandConcurrencyCap > 0) {
       lines.push(
-        `Max parallelization configured: ${orgSettings.orgMaxConcurrencyCap} test${
-          orgSettings.orgMaxConcurrencyCap > 1 ? 's' : ''
+        `Max parallelization configured: ${orgSettings.onDemandConcurrencyCap} test${
+          orgSettings.onDemandConcurrencyCap > 1 ? 's' : ''
         } running at the same time`
       )
     }
@@ -348,11 +348,7 @@ export class DefaultReporter implements MainReporter {
       )
     }
 
-    if (
-      orgSettings &&
-      typeof orgSettings.orgMaxConcurrencyCap !== 'undefined' &&
-      orgSettings.orgMaxConcurrencyCap > 0
-    ) {
+    if (orgSettings && orgSettings.onDemandConcurrencyCap > 0) {
       lines.push(
         `\nIncrease your parallelization to reduce your total duration: ${chalk.dim.cyan(
           baseUrl + 'synthetics/settings/continuous-testing'

@@ -1,5 +1,7 @@
 import fs from 'fs'
 
+import * as t from 'typanion'
+
 import {DATADOG_SITES} from '../constants'
 
 export const checkFile: (path: string) => {empty: boolean; exists: boolean} = (path: string) => {
@@ -51,3 +53,5 @@ export const checkAPIKeyOverride = (
     stdout.write(renderDuplicateAPIKey(environmentAPIKey))
   }
 }
+
+export const isInteger = () => t.cascade(t.isNumber(), t.isInteger())
