@@ -15,6 +15,7 @@ import {getMetricsLogger, MetricsLogger} from '../../helpers/metrics'
 import {upload, UploadStatus} from '../../helpers/upload'
 import {getRequestBuilder, buildPath} from '../../helpers/utils'
 import * as validation from '../../helpers/validation'
+import {version} from '../../helpers/version'
 
 import {Sourcemap} from './interfaces'
 import {
@@ -63,16 +64,10 @@ export class UploadCommand extends Command {
   private repositoryURL = Option.String('--repository-url')
   private service = Option.String('--service')
 
+  private cliVersion = version
   private config = {
     apiKey: process.env.DATADOG_API_KEY,
     datadogSite: process.env.DATADOG_SITE || 'datadoghq.com',
-  }
-
-  private cliVersion: string
-
-  constructor() {
-    super()
-    this.cliVersion = require('../../../package.json').version
   }
 
   public async execute() {

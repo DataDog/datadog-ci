@@ -1,5 +1,7 @@
 import {Command} from 'clipanion'
 
+import {version} from '../../helpers/version'
+
 class VersionCommand extends Command {
   public static paths = [['version']]
 
@@ -9,7 +11,6 @@ class VersionCommand extends Command {
   })
 
   public async execute() {
-    const {version} = require('../../../package.json')
     this.context.stdout.write(`v${version}\n`)
 
     return 0

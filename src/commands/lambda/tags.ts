@@ -8,10 +8,10 @@ import {
   ListTagsCommand,
 } from '@aws-sdk/client-lambda'
 
+import {version} from '../../helpers/version'
+
 import {TAG_VERSION_NAME} from './constants'
 import {TagConfiguration} from './interfaces'
-
-const {version} = require('../../../package.json')
 
 export const applyTagConfig = async (lambdaClient: LambdaClient, config: TagConfiguration) => {
   const {tagResourceCommandInput, untagResourceCommandInput} = config
