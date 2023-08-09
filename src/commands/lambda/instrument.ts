@@ -49,7 +49,7 @@ export class InstrumentCommand extends Command {
   private apmFlushDeadline = Option.String('--apm-flush-deadline')
   private captureLambdaPayload = Option.String('--capture-lambda-payload,--captureLambdaPayload')
   private configPath = Option.String('--config')
-  private dryRun = Option.Boolean('-d,--dry', false)
+  private dryRun = Option.Boolean('-d,--dry,--dry-run', false)
   private environment = Option.String('--env')
   private extensionVersion = Option.String('-e,--extension-version,--extensionVersion')
   private extraTags = Option.String('--extra-tags,--extraTags')

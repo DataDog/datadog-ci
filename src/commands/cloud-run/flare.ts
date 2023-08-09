@@ -45,7 +45,7 @@ const LOG_CONFIGS: LogConfig[] = [
 export class CloudRunFlareCommand extends Command {
   public static paths = [['cloud-run', 'flare']]
 
-  private isDryRun = Option.Boolean('-d,--dry', false)
+  private isDryRun = Option.Boolean('-d,--dry,--dry-run', false)
   private withLogs = Option.Boolean('--with-logs', false)
   private service = Option.String('-s,--service')
   private project = Option.String('-p,--project')

@@ -47,7 +47,7 @@ const MAX_LOG_EVENTS_PER_STREAM = 1000
 export class LambdaFlareCommand extends Command {
   public static paths = [['lambda', 'flare']]
 
-  private isDryRun = Option.Boolean('-d,--dry', false)
+  private isDryRun = Option.Boolean('-d,--dry,--dry-run', false)
   private withLogs = Option.Boolean('--with-logs', false)
   private functionName = Option.String('-f,--function')
   private region = Option.String('-r,--region')
