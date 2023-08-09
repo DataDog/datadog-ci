@@ -2,7 +2,7 @@ import {CloudWatchLogsClient} from '@aws-sdk/client-cloudwatch-logs'
 import {LambdaClient, LambdaClientConfig} from '@aws-sdk/client-lambda'
 import {AwsCredentialIdentity} from '@aws-sdk/types'
 import {bold} from 'chalk'
-import {Cli, Command} from 'clipanion'
+import {Cli, Command, Option} from 'clipanion'
 
 import {ENVIRONMENT_ENV_VAR, SERVICE_ENV_VAR, VERSION_ENV_VAR} from '../../constants'
 import {requestConfirmation} from '../../helpers/prompt'
@@ -44,33 +44,36 @@ import * as commonRenderer from './renderers/common-renderer'
 import * as instrumentRenderer from './renderers/instrument-uninstrument-renderer'
 
 export class InstrumentCommand extends Command {
-  private apmFlushDeadline?: string
-  private captureLambdaPayload?: string
+  public static paths = [['lambda', 'instrument']]
+
+  private apmFlushDeadline = Option.String('--apm-flush-deadline')
+  private captureLambdaPayload = Option.String('--capture-lambda-payload,--captureLambdaPayload')
+  private configPath = Option.String('--config')
+  private dryRun = Option.Boolean('-d,--dry', false)
+  private environment = Option.String('--env')
+  private extensionVersion = Option.String('-e,--extension-version,--extensionVersion')
+  private extraTags = Option.String('--extra-tags,--extraTags')
+  private flushMetricsToLogs = Option.String('--flush-metrics-to-logs,--flushMetricsToLogs')
+  private forwarder = Option.String('--forwarder')
+  private functions = Option.Array('-f,--function', [])
+  private interactive = Option.Boolean('-i,--interactive', false)
+  private layerAWSAccount = Option.String('-a,--layer-account,--layerAccount', {hidden: true})
+  private layerVersion = Option.String('-v,--layer-version,--layerVersion')
+  private logLevel = Option.String('--log-level,--logLevel')
+  private mergeXrayTraces = Option.String('--merge-xray-traces,--mergeXrayTraces')
+  private profile = Option.String('--profile')
+  private regExPattern = Option.String('--functions-regex,--functionsRegex')
+  private region = Option.String('-r,--region')
+  private service = Option.String('--service')
+  private sourceCodeIntegration = Option.Boolean('-s,--source-code-integration,--sourceCodeIntegration', true)
+  private uploadGitMetadata = Option.Boolean('-u,--upload-git-metadata,--uploadGitMetadata', true)
+  private tracing = Option.String('--tracing')
+  private version = Option.String('--version')
+
   private config: LambdaConfigOptions = {
     functions: [],
     tracing: 'true',
   }
-  private configPath?: string
-  private dryRun = false
-  private environment?: string
-  private extensionVersion?: string
-  private extraTags?: string
-  private flushMetricsToLogs?: string
-  private forwarder?: string
-  private functions: string[] = []
-  private interactive = false
-  private layerAWSAccount?: string
-  private layerVersion?: string
-  private logLevel?: string
-  private mergeXrayTraces?: string
-  private profile?: string
-  private regExPattern?: string
-  private region?: string
-  private service?: string
-  private sourceCodeIntegration = true
-  private uploadGitMetadata = true
-  private tracing?: string
-  private version?: string
 
   private credentials?: AwsCredentialIdentity
 
@@ -554,32 +557,3 @@ export class InstrumentCommand extends Command {
     this.version = process.env[VERSION_ENV_VAR] || undefined
   }
 }
-
-InstrumentCommand.addPath('lambda', 'instrument')
-InstrumentCommand.addOption('functions', Command.Array('-f,--function'))
-InstrumentCommand.addOption('regExPattern', Command.String('--functions-regex,--functionsRegex'))
-InstrumentCommand.addOption('region', Command.String('-r,--region'))
-InstrumentCommand.addOption('extensionVersion', Command.String('-e,--extension-version,--extensionVersion'))
-InstrumentCommand.addOption('layerVersion', Command.String('-v,--layer-version,--layerVersion'))
-InstrumentCommand.addOption('layerAWSAccount', Command.String('-a,--layer-account,--layerAccount', {hidden: true}))
-InstrumentCommand.addOption('tracing', Command.String('--tracing'))
-InstrumentCommand.addOption('mergeXrayTraces', Command.String('--merge-xray-traces,--mergeXrayTraces'))
-InstrumentCommand.addOption('flushMetricsToLogs', Command.String('--flush-metrics-to-logs,--flushMetricsToLogs'))
-InstrumentCommand.addOption('dryRun', Command.Boolean('-d,--dry'))
-InstrumentCommand.addOption('configPath', Command.String('--config'))
-InstrumentCommand.addOption('forwarder', Command.String('--forwarder'))
-InstrumentCommand.addOption('logLevel', Command.String('--log-level,--logLevel'))
-InstrumentCommand.addOption('apmFlushDeadline', Command.String('--apm-flush-deadline'))
-
-InstrumentCommand.addOption('service', Command.String('--service'))
-InstrumentCommand.addOption('environment', Command.String('--env'))
-InstrumentCommand.addOption('version', Command.String('--version'))
-InstrumentCommand.addOption('extraTags', Command.String('--extra-tags,--extraTags'))
-InstrumentCommand.addOption(
-  'sourceCodeIntegration',
-  Command.Boolean('-s,--source-code-integration,--sourceCodeIntegration')
-)
-InstrumentCommand.addOption('uploadGitMetadata', Command.Boolean('-u,--upload-git-metadata,--uploadGitMetadata'))
-InstrumentCommand.addOption('interactive', Command.Boolean('-i,--interactive'))
-InstrumentCommand.addOption('captureLambdaPayload', Command.String('--capture-lambda-payload,--captureLambdaPayload'))
-InstrumentCommand.addOption('profile', Command.String('--profile'))

@@ -1,5 +1,5 @@
 import chalk from 'chalk'
-import {Command} from 'clipanion'
+import {Command, Option} from 'clipanion'
 
 import {getCIEnv, PROVIDER_TO_DISPLAY_NAME} from '../../helpers/ci'
 import {retryRequest} from '../../helpers/retry'
@@ -7,6 +7,8 @@ import {parseTags} from '../../helpers/tags'
 import {getApiHostForSite, getRequestBuilder} from '../../helpers/utils'
 
 export class TagCommand extends Command {
+  public static paths = [['tag']]
+
   public static usage = Command.Usage({
     description: 'Add tags to a CI Pipeline trace pipeline or job span in Datadog.',
     details: `
@@ -18,14 +20,15 @@ export class TagCommand extends Command {
       ['Tag the current CI job with the go version', 'datadog-ci tag --level job --tags "go.version:`go version`"'],
     ],
   })
+
+  private level = Option.String('--level')
+  private noFail = Option.Boolean('--no-fail')
+  private tags = Option.Array('--tags')
+
   private config = {
     apiKey: process.env.DATADOG_API_KEY || process.env.DD_API_KEY,
     envVarTags: process.env.DD_TAGS,
   }
-
-  private level?: string
-  private noFail?: boolean
-  private tags?: string[]
 
   public async execute() {
     if (this.level !== 'pipeline' && this.level !== 'job') {
@@ -131,8 +134,3 @@ export class TagCommand extends Command {
     return 0
   }
 }
-
-TagCommand.addPath('tag')
-TagCommand.addOption('noFail', Command.Boolean('--no-fail'))
-TagCommand.addOption('tags', Command.Array('--tags'))
-TagCommand.addOption('level', Command.String('--level'))

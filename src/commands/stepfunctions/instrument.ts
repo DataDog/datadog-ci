@@ -1,7 +1,7 @@
 import {CloudWatchLogsClient} from '@aws-sdk/client-cloudwatch-logs'
 import {IAMClient} from '@aws-sdk/client-iam'
 import {SFNClient} from '@aws-sdk/client-sfn'
-import {Command} from 'clipanion'
+import {Command, Option} from 'clipanion'
 
 import {
   createLogGroup,
@@ -27,6 +27,8 @@ import {
 const cliVersion = require('../../../package.json').version
 
 export class InstrumentStepFunctionsCommand extends Command {
+  public static paths = [['stepfunctions', 'instrument']]
+
   public static usage = Command.Usage({
     description: 'Subscribe Step Function Log Groups to a Datadog Forwarder',
     details: '--step-function expects a Step Function ARN\n--forwarder expects a Lambda ARN',
@@ -46,12 +48,15 @@ export class InstrumentStepFunctionsCommand extends Command {
     ],
   })
 
-  private dryRun = false
-  private environment?: string
-  private forwarderArn!: string
-  private service?: string
-  private stepFunctionArns: string[] = []
-  private mergeStepFunctionAndLambdaTraces?: boolean = false
+  private dryRun = Option.Boolean('-d,--dry-run', false)
+  private environment = Option.String('-e,--env')
+  private forwarderArn = Option.String('--forwarder')
+  private service = Option.String('--service')
+  private stepFunctionArns = Option.Array('-s,--step-function')
+  private mergeStepFunctionAndLambdaTraces = Option.Boolean(
+    '-mlt,--merge-lambda-traces,--merge-step-function-and-lambda-traces',
+    false
+  )
 
   public async execute() {
     let validationError = false
@@ -200,7 +205,7 @@ export class InstrumentStepFunctionsCommand extends Command {
         try {
           await putSubscriptionFilter(
             cloudWatchLogsClient,
-            this.forwarderArn,
+            this.forwarderArn!,
             subscriptionFilterName,
             logGroupName,
             stepFunctionArn,
@@ -323,7 +328,7 @@ export class InstrumentStepFunctionsCommand extends Command {
         try {
           await putSubscriptionFilter(
             cloudWatchLogsClient,
-            this.forwarderArn,
+            this.forwarderArn!,
             subscriptionFilterName,
             logGroupName,
             stepFunctionArn,
@@ -360,15 +365,3 @@ export class InstrumentStepFunctionsCommand extends Command {
     return 0
   }
 }
-
-InstrumentStepFunctionsCommand.addPath('stepfunctions', 'instrument')
-
-InstrumentStepFunctionsCommand.addOption('dryRun', Command.Boolean('-d,--dry-run'))
-InstrumentStepFunctionsCommand.addOption('environment', Command.String('-e,--env'))
-InstrumentStepFunctionsCommand.addOption('forwarderArn', Command.String('--forwarder'))
-InstrumentStepFunctionsCommand.addOption(
-  'mergeStepFunctionAndLambdaTraces',
-  Command.Boolean('-mlt,--merge-lambda-traces,--merge-step-function-and-lambda-traces')
-)
-InstrumentStepFunctionsCommand.addOption('service', Command.String('--service'))
-InstrumentStepFunctionsCommand.addOption('stepFunctionArns', Command.Array('-s,--step-function'))

@@ -9,7 +9,7 @@ import {Logging} from '@google-cloud/logging'
 import {ServicesClient} from '@google-cloud/run'
 import {google} from '@google-cloud/run/build/protos/protos'
 import chalk from 'chalk'
-import {Command} from 'clipanion'
+import {Command, Option} from 'clipanion'
 import {GoogleAuth} from 'google-auth-library'
 
 import {API_KEY_ENV_VAR, CI_API_KEY_ENV_VAR, FLARE_OUTPUT_DIRECTORY, LOGS_DIRECTORY} from '../../constants'
@@ -44,13 +44,16 @@ const LOG_CONFIGS: LogConfig[] = [
 ]
 
 export class CloudRunFlareCommand extends Command {
-  private isDryRun = false
-  private withLogs = false
-  private service?: string
-  private project?: string
-  private region?: string
-  private caseId?: string
-  private email?: string
+  public static paths = [['cloud-run', 'flare']]
+
+  private isDryRun = Option.Boolean('-d,--dry', false)
+  private withLogs = Option.Boolean('--with-logs', false)
+  private service = Option.String('-s,--service')
+  private project = Option.String('-p,--project')
+  private region = Option.String('-r,--region,-l,--location')
+  private caseId = Option.String('-c,--case-id')
+  private email = Option.String('-e,--email')
+
   private apiKey?: string
 
   /**
@@ -411,12 +414,3 @@ export const saveLogsFile = (logs: CloudRunLog[], filePath: string) => {
   const data = rows.join('\n')
   writeFile(filePath, data)
 }
-
-CloudRunFlareCommand.addPath('cloud-run', 'flare')
-CloudRunFlareCommand.addOption('isDryRun', Command.Boolean('-d,--dry'))
-CloudRunFlareCommand.addOption('withLogs', Command.Boolean('--with-logs'))
-CloudRunFlareCommand.addOption('service', Command.String('-s,--service'))
-CloudRunFlareCommand.addOption('project', Command.String('-p,--project'))
-CloudRunFlareCommand.addOption('region', Command.String('-r,--region,-l,--location'))
-CloudRunFlareCommand.addOption('caseId', Command.String('-c,--case-id'))
-CloudRunFlareCommand.addOption('email', Command.String('-e,--email'))

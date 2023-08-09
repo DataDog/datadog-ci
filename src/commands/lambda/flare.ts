@@ -12,7 +12,7 @@ import {
 import {FunctionConfiguration, LambdaClient, LambdaClientConfig, ListTagsCommand} from '@aws-sdk/client-lambda'
 import {AwsCredentialIdentity} from '@aws-sdk/types'
 import chalk from 'chalk'
-import {Command} from 'clipanion'
+import {Command, Option} from 'clipanion'
 
 import {API_KEY_ENV_VAR, CI_API_KEY_ENV_VAR, FLARE_OUTPUT_DIRECTORY, LOGS_DIRECTORY} from '../../constants'
 import {sendToDatadog} from '../../helpers/flare'
@@ -46,15 +46,18 @@ const MAX_LOG_EVENTS_PER_STREAM = 1000
 const SUMMARIZED_FIELDS = new Set(['FunctionName', 'Runtime', 'FunctionArn', 'Handler', 'Environment'])
 
 export class LambdaFlareCommand extends Command {
-  private isDryRun = false
-  private withLogs = false
-  private functionName?: string
-  private region?: string
+  public static paths = [['lambda', 'flare']]
+
+  private isDryRun = Option.Boolean('-d,--dry', false)
+  private withLogs = Option.Boolean('--with-logs', false)
+  private functionName = Option.String('-f,--function')
+  private region = Option.String('-r,--region')
+  private caseId = Option.String('-c,--case-id')
+  private email = Option.String('-e,--email')
+  private start = Option.String('--start')
+  private end = Option.String('--end')
+
   private apiKey?: string
-  private caseId?: string
-  private email?: string
-  private start?: string
-  private end?: string
   private credentials?: AwsCredentialIdentity
 
   /**
@@ -802,13 +805,3 @@ export const generateInsightsFile = (insightsFilePath: string, isDryRun: boolean
 
   writeFile(insightsFilePath, lines.join('\n'))
 }
-
-LambdaFlareCommand.addPath('lambda', 'flare')
-LambdaFlareCommand.addOption('isDryRun', Command.Boolean('-d,--dry'))
-LambdaFlareCommand.addOption('withLogs', Command.Boolean('--with-logs'))
-LambdaFlareCommand.addOption('functionName', Command.String('-f,--function'))
-LambdaFlareCommand.addOption('region', Command.String('-r,--region'))
-LambdaFlareCommand.addOption('caseId', Command.String('-c,--case-id'))
-LambdaFlareCommand.addOption('email', Command.String('-e,--email'))
-LambdaFlareCommand.addOption('start', Command.String('--start'))
-LambdaFlareCommand.addOption('end', Command.String('--end'))
