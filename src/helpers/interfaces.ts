@@ -1,3 +1,5 @@
+import type {Writable} from 'stream'
+
 import {AxiosPromise, AxiosRequestConfig} from 'axios'
 
 import {
@@ -97,3 +99,8 @@ export type SpanTag =
 export type SpanTags = Partial<Record<SpanTag, string>>
 
 export type RequestBuilder = (args: AxiosRequestConfig) => AxiosPromise
+
+export type CommandContext = {
+  stdout: Writable
+  stderr: Writable
+}

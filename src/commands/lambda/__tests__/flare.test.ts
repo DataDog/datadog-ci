@@ -108,7 +108,7 @@ describe('lambda flare', () => {
     it('prints non-dry-run header', async () => {
       const cli = makeCli()
       const context = createMockContext()
-      const code = await cli.run(['lambda', 'flare'], context as any)
+      const code = await cli.run(['lambda', 'flare'], context)
       const output = context.stdout.toString()
       expect(code).toBe(1)
       expect(output).toMatchSnapshot()
@@ -117,7 +117,7 @@ describe('lambda flare', () => {
     it('prints dry-run header', async () => {
       const cli = makeCli()
       const context = createMockContext()
-      const code = await cli.run(['lambda', 'flare', '-d'], context as any)
+      const code = await cli.run(['lambda', 'flare', '-d'], context)
       const output = context.stdout.toString()
       expect(code).toBe(1)
       expect(output).toMatchSnapshot()
@@ -132,10 +132,7 @@ describe('lambda flare', () => {
     it('prints error when no function specified', async () => {
       const cli = makeCli()
       const context = createMockContext()
-      const code = await cli.run(
-        ['lambda', 'flare', '-r', MOCK_REGION, '-c', '123', '-e', 'test@test.com'],
-        context as any
-      )
+      const code = await cli.run(['lambda', 'flare', '-r', MOCK_REGION, '-c', '123', '-e', 'test@test.com'], context)
       expect(code).toBe(1)
       const output = context.stdout.toString()
       expect(output).toMatchSnapshot()
@@ -144,7 +141,7 @@ describe('lambda flare', () => {
     it('prints error when no region specified', async () => {
       const cli = makeCli()
       const context = createMockContext()
-      const code = await cli.run(['lambda', 'flare', '-f', 'func', '-c', '123', '-e', 'test@test.com'], context as any)
+      const code = await cli.run(['lambda', 'flare', '-f', 'func', '-c', '123', '-e', 'test@test.com'], context)
       expect(code).toBe(1)
       const output = context.stdout.toString()
       expect(output).toMatchSnapshot()
@@ -164,7 +161,7 @@ describe('lambda flare', () => {
           '-e',
           'test@test.com',
         ],
-        context as any
+        context
       )
       expect(code).toBe(0)
       const output = context.stdout.toString()
@@ -175,7 +172,7 @@ describe('lambda flare', () => {
       process.env[AWS_DEFAULT_REGION_ENV_VAR] = 'test-region'
       const cli = makeCli()
       const context = createMockContext()
-      const code = await cli.run(['lambda', 'flare', '-f', 'func', '-c', '123', '-e', 'test@test.com'], context as any)
+      const code = await cli.run(['lambda', 'flare', '-f', 'func', '-c', '123', '-e', 'test@test.com'], context)
       expect(code).toBe(0)
       const output = context.stdout.toString()
       expect(output).toMatchSnapshot()
@@ -187,7 +184,7 @@ describe('lambda flare', () => {
       const context = createMockContext()
       const code = await cli.run(
         ['lambda', 'flare', '-f', 'func', '-r', MOCK_REGION, '-c', '123', '-e', 'test@test.com'],
-        context as any
+        context
       )
       expect(code).toBe(1)
       const output = context.stdout.toString()
@@ -202,7 +199,7 @@ describe('lambda flare', () => {
       const context = createMockContext()
       let code = await cli.run(
         ['lambda', 'flare', '-f', 'func', '-r', MOCK_REGION, '-c', '123', '-e', 'test@test.com'],
-        context as any
+        context
       )
       expect(code).toBe(0)
       let output = context.stdout.toString()
@@ -212,7 +209,7 @@ describe('lambda flare', () => {
       process.env[API_KEY_ENV_VAR] = MOCK_DATADOG_API_KEY
       code = await cli.run(
         ['lambda', 'flare', '-f', 'func', '-r', MOCK_REGION, '-c', '123', '-e', 'test@test.com'],
-        context as any
+        context
       )
       expect(code).toBe(0)
       output = context.stdout.toString()
@@ -222,10 +219,7 @@ describe('lambda flare', () => {
     it('prints error when no case ID specified', async () => {
       const cli = makeCli()
       const context = createMockContext()
-      const code = await cli.run(
-        ['lambda', 'flare', '-f', 'func', '-r', MOCK_REGION, '-e', 'test@test.com'],
-        context as any
-      )
+      const code = await cli.run(['lambda', 'flare', '-f', 'func', '-r', MOCK_REGION, '-e', 'test@test.com'], context)
       expect(code).toBe(1)
       const output = context.stdout.toString()
       expect(output).toMatchSnapshot()
@@ -234,7 +228,7 @@ describe('lambda flare', () => {
     it('prints error when no email specified', async () => {
       const cli = makeCli()
       const context = createMockContext()
-      const code = await cli.run(['lambda', 'flare', '-f', 'func', '-r', MOCK_REGION, '-c', '123'], context as any)
+      const code = await cli.run(['lambda', 'flare', '-f', 'func', '-r', MOCK_REGION, '-c', '123'], context)
       expect(code).toBe(1)
       const output = context.stdout.toString()
       expect(output).toMatchSnapshot()
@@ -243,7 +237,7 @@ describe('lambda flare', () => {
     it('runs successfully when dry run but no email or case ID is specified', async () => {
       const cli = makeCli()
       const context = createMockContext()
-      const code = await cli.run(['lambda', 'flare', '-f', 'func', '-r', MOCK_REGION, '-d'], context as any)
+      const code = await cli.run(['lambda', 'flare', '-f', 'func', '-r', MOCK_REGION, '-d'], context)
       expect(code).toBe(0)
       const output = context.stdout.toString()
       expect(output).toMatchSnapshot()
@@ -252,7 +246,7 @@ describe('lambda flare', () => {
     it('runs successfully with all required options specified', async () => {
       const cli = makeCli()
       const context = createMockContext()
-      const code = await cli.run(MOCK_REQUIRED_FLAGS, context as any)
+      const code = await cli.run(MOCK_REQUIRED_FLAGS, context)
       expect(code).toBe(0)
       const output = context.stdout.toString()
       expect(output).toMatchSnapshot()
@@ -261,7 +255,7 @@ describe('lambda flare', () => {
     it('prints error when start time is specified but end time is not', async () => {
       const cli = makeCli()
       const context = createMockContext()
-      const code = await cli.run([...MOCK_REQUIRED_FLAGS, '--start', '100'], context as any)
+      const code = await cli.run([...MOCK_REQUIRED_FLAGS, '--start', '100'], context)
       expect(code).toBe(1)
       const output = context.stdout.toString()
       expect(output).toMatchSnapshot()
@@ -270,7 +264,7 @@ describe('lambda flare', () => {
     it('prints error when end time is specified but start time is not', async () => {
       const cli = makeCli()
       const context = createMockContext()
-      const code = await cli.run([...MOCK_REQUIRED_FLAGS, '--end', '100'], context as any)
+      const code = await cli.run([...MOCK_REQUIRED_FLAGS, '--end', '100'], context)
       expect(code).toBe(1)
       const output = context.stdout.toString()
       expect(output).toMatchSnapshot()
@@ -279,7 +273,7 @@ describe('lambda flare', () => {
     it('prints error when start time is invalid', async () => {
       const cli = makeCli()
       const context = createMockContext()
-      const code = await cli.run([...MOCK_REQUIRED_FLAGS, '--start', '123abc', '--end', '200'], context as any)
+      const code = await cli.run([...MOCK_REQUIRED_FLAGS, '--start', '123abc', '--end', '200'], context)
       expect(code).toBe(1)
       const output = context.stdout.toString()
       expect(output).toMatchSnapshot()
@@ -288,7 +282,7 @@ describe('lambda flare', () => {
     it('prints error when end time is invalid', async () => {
       const cli = makeCli()
       const context = createMockContext()
-      const code = await cli.run([...MOCK_REQUIRED_FLAGS, '--start', '100', '--end', '123abc'], context as any)
+      const code = await cli.run([...MOCK_REQUIRED_FLAGS, '--start', '100', '--end', '123abc'], context)
       expect(code).toBe(1)
       const output = context.stdout.toString()
       expect(output).toMatchSnapshot()
@@ -297,7 +291,7 @@ describe('lambda flare', () => {
     it('prints error when start time is after end time', async () => {
       const cli = makeCli()
       const context = createMockContext()
-      const code = await cli.run([...MOCK_REQUIRED_FLAGS, '--start', '200', '--end', '100'], context as any)
+      const code = await cli.run([...MOCK_REQUIRED_FLAGS, '--start', '200', '--end', '100'], context)
       expect(code).toBe(1)
       const output = context.stdout.toString()
       expect(output).toMatchSnapshot()
@@ -306,7 +300,7 @@ describe('lambda flare', () => {
     it('runs successfully when start and end times are valid', async () => {
       const cli = makeCli()
       const context = createMockContext()
-      const code = await cli.run([...MOCK_REQUIRED_FLAGS, '--start', '100', '--end', '200'], context as any)
+      const code = await cli.run([...MOCK_REQUIRED_FLAGS, '--start', '100', '--end', '200'], context)
       expect(code).toBe(0)
       const output = context.stdout.toString()
       expect(output).toMatchSnapshot()
@@ -550,7 +544,7 @@ describe('lambda flare', () => {
     it('gets logs, saves, and sends correctly when --with-logs is included', async () => {
       const cli = makeCli()
       const context = createMockContext()
-      const code = await cli.run(FLAGS_WITH_LOGS, context as any)
+      const code = await cli.run(FLAGS_WITH_LOGS, context)
       expect(code).toBe(0)
       const output = context.stdout.toString()
       expect(output).toMatchSnapshot()
@@ -559,7 +553,7 @@ describe('lambda flare', () => {
     it('does not get logs when --with-logs is not included', async () => {
       const cli = makeCli()
       const context = createMockContext()
-      const code = await cli.run(MOCK_REQUIRED_FLAGS, context as any)
+      const code = await cli.run(MOCK_REQUIRED_FLAGS, context)
       expect(code).toBe(0)
       const output = context.stdout.toString()
       expect(output).toMatchSnapshot()
@@ -571,7 +565,7 @@ describe('lambda flare', () => {
       })
       const cli = makeCli()
       const context = createMockContext()
-      const code = await cli.run(FLAGS_WITH_LOGS, context as any)
+      const code = await cli.run(FLAGS_WITH_LOGS, context)
       expect(code).toBe(1)
       const output = context.stdout.toString()
       expect(output).toMatchSnapshot()
@@ -581,7 +575,7 @@ describe('lambda flare', () => {
       jest.spyOn(flareModule, 'getLogStreamNames').mockResolvedValue([])
       const cli = makeCli()
       const context = createMockContext()
-      const code = await cli.run(FLAGS_WITH_LOGS, context as any)
+      const code = await cli.run(FLAGS_WITH_LOGS, context)
       expect(code).toBe(0)
       const output = context.stdout.toString()
       expect(output).toMatchSnapshot()
@@ -593,7 +587,7 @@ describe('lambda flare', () => {
       })
       const cli = makeCli()
       const context = createMockContext()
-      const code = await cli.run(FLAGS_WITH_LOGS, context as any)
+      const code = await cli.run(FLAGS_WITH_LOGS, context)
       expect(code).toBe(1)
       const output = context.stdout.toString()
       expect(output).toMatchSnapshot()
@@ -603,7 +597,7 @@ describe('lambda flare', () => {
       jest.spyOn(flareModule, 'getLogEvents').mockResolvedValue([])
       const cli = makeCli()
       const context = createMockContext()
-      const code = await cli.run(FLAGS_WITH_LOGS, context as any)
+      const code = await cli.run(FLAGS_WITH_LOGS, context)
       expect(code).toBe(0)
       const output = context.stdout.toString()
       expect(output).toMatchSnapshot()
@@ -724,7 +718,7 @@ describe('lambda flare', () => {
       })
       const cli = makeCli()
       const context = createMockContext()
-      const code = await cli.run(MOCK_REQUIRED_FLAGS, context as any)
+      const code = await cli.run(MOCK_REQUIRED_FLAGS, context)
       expect(code).toBe(1)
       const output = context.stdout.toString()
       expect(output).toMatchSnapshot()
@@ -734,7 +728,7 @@ describe('lambda flare', () => {
       ;(getLambdaFunctionConfig as any).mockImplementation(() => Promise.resolve(MOCK_LAMBDA_CONFIG))
       const cli = makeCli()
       const context = createMockContext()
-      const code = await cli.run([...MOCK_REQUIRED_FLAGS, '-d'], context as any)
+      const code = await cli.run([...MOCK_REQUIRED_FLAGS, '-d'], context)
       expect(code).toBe(0)
       const output = context.stdout.toString()
       expect(output).toMatchSnapshot()
@@ -746,7 +740,7 @@ describe('lambda flare', () => {
       ;(getAWSCredentials as any).mockResolvedValue(mockAwsCredentials)
       const cli = makeCli()
       const context = createMockContext()
-      const code = await cli.run(MOCK_REQUIRED_FLAGS, context as any)
+      const code = await cli.run(MOCK_REQUIRED_FLAGS, context)
       expect(code).toBe(0)
       const output = context.stdout.toString()
       expect(output).toMatchSnapshot()
@@ -757,7 +751,7 @@ describe('lambda flare', () => {
       ;(getAWSCredentials as any).mockResolvedValue(undefined)
       const cli = makeCli()
       const context = createMockContext()
-      const code = await cli.run(MOCK_REQUIRED_FLAGS, context as any)
+      const code = await cli.run(MOCK_REQUIRED_FLAGS, context)
       expect(code).toBe(0)
       const output = context.stdout.toString()
       expect(output).toMatchSnapshot()
@@ -770,7 +764,7 @@ describe('lambda flare', () => {
       })
       const cli = makeCli()
       const context = createMockContext()
-      const code = await cli.run(MOCK_REQUIRED_FLAGS, context as any)
+      const code = await cli.run(MOCK_REQUIRED_FLAGS, context)
       expect(code).toBe(1)
       const output = context.stdout.toString()
       expect(output).toMatchSnapshot()
@@ -783,7 +777,7 @@ describe('lambda flare', () => {
       })
       const cli = makeCli()
       const context = createMockContext()
-      const code = await cli.run(MOCK_REQUIRED_FLAGS, context as any)
+      const code = await cli.run(MOCK_REQUIRED_FLAGS, context)
       expect(requestAWSCredentials).toHaveBeenCalled()
       expect(code).toBe(1)
       const output = context.stdout.toString()
@@ -801,7 +795,7 @@ describe('lambda flare', () => {
       jest.spyOn(helpersPromptModule, 'requestConfirmation').mockResolvedValueOnce(true).mockResolvedValueOnce(true)
       const cli = makeCli()
       const context = createMockContext()
-      const code = await cli.run(MOCK_REQUIRED_FLAGS, context as any)
+      const code = await cli.run(MOCK_REQUIRED_FLAGS, context)
       expect(code).toBe(0)
       const output = context.stdout.toString()
       expect(output).toMatchSnapshot()
@@ -813,7 +807,7 @@ describe('lambda flare', () => {
       jest.spyOn(helpersPromptModule, 'requestConfirmation').mockResolvedValueOnce(true).mockResolvedValueOnce(false)
       const cli = makeCli()
       const context = createMockContext()
-      const code = await cli.run(MOCK_REQUIRED_FLAGS, context as any)
+      const code = await cli.run(MOCK_REQUIRED_FLAGS, context)
       expect(code).toBe(0)
       const output = context.stdout.toString()
       expect(output).toMatchSnapshot()
@@ -831,7 +825,7 @@ describe('lambda flare', () => {
       jest.spyOn(helpersPromptModule, 'requestConfirmation').mockResolvedValueOnce(true).mockResolvedValueOnce(true)
       const cli = makeCli()
       const context = createMockContext()
-      const code = await cli.run(MOCK_REQUIRED_FLAGS, context as any)
+      const code = await cli.run(MOCK_REQUIRED_FLAGS, context)
       expect(code).toBe(0)
       const output = context.stdout.toString()
       expect(output).toMatchSnapshot()
@@ -843,7 +837,7 @@ describe('lambda flare', () => {
       jest.spyOn(helpersPromptModule, 'requestConfirmation').mockResolvedValueOnce(false).mockResolvedValueOnce(true)
       const cli = makeCli()
       const context = createMockContext()
-      const code = await cli.run(MOCK_REQUIRED_FLAGS, context as any)
+      const code = await cli.run(MOCK_REQUIRED_FLAGS, context)
       expect(code).toBe(0)
       const output = context.stdout.toString()
       expect(output).toMatchSnapshot()

@@ -13,6 +13,7 @@ import {mockClient} from 'aws-sdk-client-mock'
 
 import 'aws-sdk-client-mock-jest'
 import {CI_API_KEY_ENV_VAR, CI_SITE_ENV_VAR} from '../../../../constants'
+import {createCommand} from '../../../../helpers/__tests__/fixtures'
 
 import {
   CI_API_KEY_SECRET_ARN_ENV_VAR,
@@ -50,7 +51,6 @@ import {InstrumentCommand} from '../../instrument'
 import {FunctionConfiguration} from '../../interfaces'
 
 import {
-  createCommand,
   MOCK_LAMBDA_CONFIG,
   mockAwsAccessKeyId,
   mockAwsAccount,
