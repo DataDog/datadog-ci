@@ -1,6 +1,6 @@
 import fs from 'fs'
 
-import {Cli} from 'clipanion'
+import {Builtins, Cli} from 'clipanion'
 import {CommandClass} from 'clipanion/lib/advanced/Command'
 
 const BETA_COMMANDS = ['gate']
@@ -18,6 +18,9 @@ const cli = new Cli({
   binaryName: 'datadog-ci',
   binaryVersion: require('../package.json').version,
 })
+
+cli.register(Builtins.HelpCommand)
+cli.register(Builtins.VersionCommand)
 
 const commandsPath = `${__dirname}/commands`
 for (const commandFolder of fs.readdirSync(commandsPath)) {
