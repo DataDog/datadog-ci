@@ -36,6 +36,7 @@ export class UploadCommand extends Command {
   public static paths = [['sourcemaps', 'upload']]
 
   public static usage = Command.Usage({
+    category: 'Source Code Integration',
     description: 'Upload javascript sourcemaps to Datadog.',
     details: `
       This command will upload all javascript sourcemaps and their corresponding javascript file to Datadog in order to un-minify front-end stack traces received by Datadog.\n

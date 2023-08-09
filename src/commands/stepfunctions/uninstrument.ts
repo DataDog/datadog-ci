@@ -10,19 +10,20 @@ export class UninstrumentStepFunctionsCommand extends Command {
   public static paths = [['stepfunctions', 'uninstrument']]
 
   public static usage = Command.Usage({
-    description: 'Remove Step Functions log groups subscription filter created by Datadog-CI',
+    category: 'Serverless',
+    description: 'Remove Step Functions log groups subscription filter created by datadog-ci.',
     details: '--stepfunction expects a Step Function ARN',
     examples: [
       [
-        'View and apply changes to remove Step Functions log groups subscription filters created by Datadog-CI',
+        'View and apply changes to remove Step Functions log groups subscription filters created by datadog-ci',
         'datadog-ci stepfunctions uninstrument --step-function arn:aws:states:us-east-1:000000000000:stateMachine:ExampleStepFunction',
       ],
       [
-        'View changes to remove Step Functions log groups subscription filters created by Datadog-CI',
+        'View changes to remove Step Functions log groups subscription filters created by datadog-ci',
         'datadog-ci stepfunctions uninstrument --step-function arn:aws:states:us-east-1:000000000000:stateMachine:ExampleStepFunction --dry-run',
       ],
       [
-        'View and apply changes to remove Step Functions log groups subscription filters created by Datadog-CI',
+        'View and apply changes to remove Step Functions log groups subscription filters created by datadog-ci',
         'datadog-ci stepfunctions uninstrument --step-function arn:aws:states:us-east-1:000000000000:stateMachine:ExampleStepFunction1 --step-function arn:aws:states:us-east-1:000000000000:stateMachine:ExampleStepFunction2',
       ],
     ],
@@ -92,7 +93,7 @@ export class UninstrumentStepFunctionsCommand extends Command {
       }
       const logGroupName = parseArn(logGroupArn).resourceName
 
-      // delete subscription filters that are created by Datadog-CI
+      // delete subscription filters that are created by datadog-ci
       let describeSubscriptionFiltersResponse: DescribeSubscriptionFiltersCommandOutput | undefined
       try {
         describeSubscriptionFiltersResponse = await describeSubscriptionFilters(cloudWatchLogsClient, logGroupName)

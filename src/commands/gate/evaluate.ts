@@ -24,6 +24,7 @@ export class GateEvaluateCommand extends Command {
   public static paths = [['gate', 'evaluate']]
 
   public static usage = Command.Usage({
+    category: 'CI Visibility',
     description: 'Evaluate Quality Gates rules in Datadog.',
     details: `
       This command will evaluate the matching quality gate rules in Datadog.\n

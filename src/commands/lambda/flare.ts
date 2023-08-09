@@ -58,6 +58,12 @@ const MAX_LOG_EVENTS_PER_STREAM = 1000
 export class LambdaFlareCommand extends Command {
   public static paths = [['lambda', 'flare']]
 
+  public static usage = Command.Usage({
+    category: 'Serverless',
+    description:
+      'Gather config, logs, tags, project files, and more from a Lambda function and sends them to Datadog support.',
+  })
+
   private isDryRun = Option.Boolean('-d,--dry', false)
   private withLogs = Option.Boolean('--with-logs', false)
   private functionName = Option.String('-f,--function')

@@ -63,6 +63,7 @@ export class UploadJUnitXMLCommand extends Command {
   public static paths = [['junit', 'upload']]
 
   public static usage = Command.Usage({
+    category: 'CI Visibility',
     description: 'Upload jUnit XML test reports files to Datadog.',
     details: `
       This command will upload to jUnit XML test reports files to Datadog.\n
