@@ -64,7 +64,7 @@ export class GateEvaluateCommand extends Command {
 
   private config = {
     apiKey: process.env.DATADOG_API_KEY || process.env.DD_API_KEY,
-    appKey: process.env.DATADOG_APP_KEY,
+    appKey: process.env.DATADOG_APP_KEY || process.env.DD_APP_KEY,
     envVarTags: process.env.DD_TAGS,
   }
 
