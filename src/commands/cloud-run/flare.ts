@@ -491,9 +491,9 @@ export const getServiceLocationProjectFromName = (name: string | null | undefine
   }
 
   const components = name.split('/')
-  const project = components[1]
-  const location = components[3]
   const service = components[5]
+  const location = components[3]
+  const project = components[1]
 
   return [service, location, project]
 }
