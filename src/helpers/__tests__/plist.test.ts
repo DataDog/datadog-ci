@@ -24,30 +24,30 @@ describe('plist util', () => {
 
     it('returns an empty string for an env variable that is not declared', () => {
       const plist = parsePlist('src/helpers/__tests__/plist-fixtures/Info.plist')
-      expect(() => plist.getPropertyValue('CFBundleExecutable')).toThrowError(
+      expect(() => plist.getPropertyValue('CFBundleExecutable')).toThrow(
         "Environment variable $(EXECUTABLE_NAME) for key CFBundleExecutable wasn't found."
       )
     })
 
     it('throws an error if a property does not exist', () => {
       const plist = parsePlist('src/helpers/__tests__/plist-fixtures/Info.plist')
-      expect(() => plist.getPropertyValue('NonExistingValue')).toThrowError('Property not found')
+      expect(() => plist.getPropertyValue('NonExistingValue')).toThrow('Property not found')
     })
 
     it('throws an error if a property is not a string', () => {
       const plist = parsePlist('src/helpers/__tests__/plist-fixtures/Info.plist')
-      expect(() => plist.getPropertyValue('CFBundleURLTypes')).toThrowError(
+      expect(() => plist.getPropertyValue('CFBundleURLTypes')).toThrow(
         'Property is not a string, this is not supported yet'
       )
     })
 
     it('throws an error if the file does not exist', () => {
-      expect(() => parsePlist('non-existing-file')).toThrowError(
+      expect(() => parsePlist('non-existing-file')).toThrow(
         "ENOENT: no such file or directory, open 'non-existing-file'"
       )
     })
     it('throws an error if the file is not correctly formatted', () => {
-      expect(() => parsePlist('src/helpers/__tests__/plist-fixtures/BadlyFormatted.plist')).toThrowError(
+      expect(() => parsePlist('src/helpers/__tests__/plist-fixtures/BadlyFormatted.plist')).toThrow(
         "Expected closing tag 'string' (opened in line 7, col 2) instead of closing tag 'dict'."
       )
     })

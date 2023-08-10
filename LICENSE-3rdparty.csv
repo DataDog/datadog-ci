@@ -43,7 +43,6 @@ glob,import,ISC,Copyright (c) Isaac Z. Schlueter and Contributors
 inquirer,import,MIT,Copyright (c) 2012 Simon Boudrias
 inquirer-checkbox-plus-prompt,import,MIT,Copyright (c) 2018 Mohammad Anas Fares
 jest,dev,MIT,"Copyright (c) Facebook, Inc. and its affiliates."
-jest-matcher-specific-error,dev,MIT,Copyright (c) 2020 Daniel Hreben
 js-yaml,import,MIT,Copyright (C) 2011-2015 by Vitaly Puzrin
 ora,import,MIT,Copyright (c) Sindre Sorhus <sindresorhus@gmail.com> (https://sindresorhus.com)
 pkg,dev,MIT,"Copyright (c) 2021 Vercel, Inc."
@@ -70,6 +69,7 @@ eslint,dev,MIT,Copyright OpenJS Foundation and other contributors
 eslint-config-prettier,dev,MIT,Copyright (c) 2017-2022 Simon Lydell and contributors
 eslint-import-resolver-typescript,dev,ISC,Copyright 2021 Alex Gorbatchev <alex.gorbatchev@gmail.com>
 eslint-plugin-import,dev,MIT,Copyright (c) 2015 Ben Mosher
+eslint-plugin-jest,dev,MIT,Copyright (c) 2018 Jonathan Kim
 eslint-plugin-prefer-arrow,dev,MIT,Copyright (c) 2018 Triston Jones
 eslint-plugin-prettier,dev,MIT,Copyright © 2017 Andres Suarez and Teddy Katz
 eslint-plugin-no-null,dev,MIT,Copyright (c) 2016 Rene Saarsoo
@@ -79,3 +79,5 @@ ajv-formats,import,MIT,Copyright (c) 2020 Evgeny Poberezkin
 jszip,import,MIT,Copyright (c) 2009-2016 Stuart Knightley and other contributors
 @google-cloud/run,import,Apache-2.0,Copyright (c) 2023 Google LLC and other contributors
 google-auth-library,import,Apache-2.0,Copyright (c) 2023 Google LLC and other contributors
+@google-cloud/logging,import,Apache-2.0,Copyright (c) 2023 Google LLC and other contributors
+http-proxy-agent,import,MIT,Copyright (c) 2013 Nathan Rajlich

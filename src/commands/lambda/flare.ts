@@ -12,16 +12,30 @@ import {
 import {FunctionConfiguration, LambdaClient, LambdaClientConfig, ListTagsCommand} from '@aws-sdk/client-lambda'
 import {AwsCredentialIdentity} from '@aws-sdk/types'
 import chalk from 'chalk'
-import {Command} from 'clipanion'
+import {Command, Option} from 'clipanion'
 
-import {API_KEY_ENV_VAR, CI_API_KEY_ENV_VAR, FLARE_OUTPUT_DIRECTORY, INSIGHTS_FILE_NAME} from '../../constants'
-import {sendToDatadog} from '../../helpers/flare'
+import {
+  ADDITIONAL_FILES_DIRECTORY,
+  API_KEY_ENV_VAR,
+  CI_API_KEY_ENV_VAR,
+  FLARE_OUTPUT_DIRECTORY,
+  INSIGHTS_FILE_NAME,
+  LOGS_DIRECTORY,
+  PROJECT_FILES_DIRECTORY,
+} from '../../constants'
+import {getProjectFiles, sendToDatadog, validateFilePath} from '../../helpers/flare'
 import {createDirectories, deleteFolder, writeFile, zipContents} from '../../helpers/fs'
-import {requestConfirmation} from '../../helpers/prompt'
+import {requestConfirmation, requestFilePath} from '../../helpers/prompt'
 import * as helpersRenderer from '../../helpers/renderer'
+import {renderAdditionalFiles, renderProjectFiles} from '../../helpers/renderer'
 import {formatBytes} from '../../helpers/utils'
 
-import {AWS_DEFAULT_REGION_ENV_VAR, FRAMEWORK_FILES_MAPPING, DeploymentFrameworks, PROJECT_FILES} from './constants'
+import {
+  AWS_DEFAULT_REGION_ENV_VAR,
+  FRAMEWORK_FILES_MAPPING,
+  DeploymentFrameworks,
+  LAMBDA_PROJECT_FILES,
+} from './constants'
 import {
   getAWSCredentials,
   getLambdaFunctionConfig,
@@ -29,14 +43,11 @@ import {
   getRegion,
   maskConfig,
 } from './functions/commons'
-import {requestAWSCredentials, requestFilePath} from './prompt'
+import {requestAWSCredentials} from './prompt'
 import * as commonRenderer from './renderers/common-renderer'
 
 const version = require('../../../package.json').version
 
-const LOGS_DIRECTORY = 'logs'
-const PROJECT_FILES_DIRECTORY = 'project_files'
-const ADDITIONAL_FILES_DIRECTORY = 'additional_files'
 const FUNCTION_CONFIG_FILE_NAME = 'function_config.json'
 const TAGS_FILE_NAME = 'tags.json'
 const FLARE_ZIP_FILE_NAME = 'lambda-flare-output.zip'
@@ -45,15 +56,18 @@ const DEFAULT_LOG_STREAMS = 3
 const MAX_LOG_EVENTS_PER_STREAM = 1000
 
 export class LambdaFlareCommand extends Command {
-  private isDryRun = false
-  private withLogs = false
-  private functionName?: string
-  private region?: string
+  public static paths = [['lambda', 'flare']]
+
+  private isDryRun = Option.Boolean('-d,--dry,--dry-run', false)
+  private withLogs = Option.Boolean('--with-logs', false)
+  private functionName = Option.String('-f,--function')
+  private region = Option.String('-r,--region')
+  private caseId = Option.String('-c,--case-id')
+  private email = Option.String('-e,--email')
+  private start = Option.String('--start')
+  private end = Option.String('--end')
+
   private apiKey?: string
-  private caseId?: string
-  private email?: string
-  private start?: string
-  private end?: string
   private credentials?: AwsCredentialIdentity
 
   /**
@@ -169,16 +183,8 @@ export class LambdaFlareCommand extends Command {
 
     // Get project files
     this.context.stdout.write(chalk.bold('\n📁 Searching for project files in current directory...\n'))
-    const projectFilePaths = await getProjectFiles()
-    let projectFilesMessage = chalk.bold(`\n✅ Found project file(s) in ${process.cwd()}:\n`)
-    if (projectFilePaths.size === 0) {
-      projectFilesMessage = helpersRenderer.renderSoftWarning('No project files found.')
-    }
-    this.context.stdout.write(projectFilesMessage)
-    for (const filePath of projectFilePaths) {
-      const fileName = path.basename(filePath)
-      this.context.stdout.write(`• ${fileName}\n`)
-    }
+    const projectFilePaths = await getProjectFiles(LAMBDA_PROJECT_FILES)
+    this.context.stdout.write(renderProjectFiles(projectFilePaths))
 
     // Additional files
     this.context.stdout.write('\n')
@@ -193,6 +199,7 @@ export class LambdaFlareCommand extends Command {
 
       return 1
     }
+
     while (confirmAdditionalFiles) {
       this.context.stdout.write('\n')
       let filePath: string
@@ -207,11 +214,7 @@ export class LambdaFlareCommand extends Command {
       }
 
       if (filePath === '') {
-        this.context.stdout.write(`Added ${additionalFilePaths.size} custom file(s):\n`)
-        for (const additionalFilePath of additionalFilePaths) {
-          const fileName = path.basename(additionalFilePath)
-          this.context.stdout.write(`• ${fileName}\n`)
-        }
+        this.context.stdout.write(renderAdditionalFiles(additionalFilePaths))
         break
       }
 
@@ -368,19 +371,11 @@ export class LambdaFlareCommand extends Command {
 
       // Confirm before sending
       this.context.stdout.write('\n')
-      let confirmSendFiles
-      try {
-        confirmSendFiles = await requestConfirmation(
-          'Are you sure you want to send the flare file to Datadog Support?',
-          false
-        )
-      } catch (err) {
-        if (err instanceof Error) {
-          this.context.stderr.write(helpersRenderer.renderError(err.message))
-        }
+      const confirmSendFiles = await requestConfirmation(
+        'Are you sure you want to send the flare file to Datadog Support?',
+        false
+      )
 
-        return 1
-      }
       if (!confirmSendFiles) {
         this.context.stdout.write('\n🚫 The flare files were not sent based on your selection.')
         this.context.stdout.write(outputMsg)
@@ -450,46 +445,6 @@ export const validateStartEndFlags = (start: string | undefined, end: string | u
 }
 
 /**
- * Searches current directory for project files
- * @returns a set of file paths of project files
- */
-export const getProjectFiles = async () => {
-  const filePaths = new Set<string>()
-  const cwd = process.cwd()
-  for (const fileName of PROJECT_FILES) {
-    const filePath = path.join(cwd, fileName)
-    if (fs.existsSync(filePath)) {
-      filePaths.add(filePath)
-    }
-  }
-
-  return filePaths
-}
-
-/**
- * Validates a path to a file
- * @param filePath path to the file
- * @param projectFilePaths map of file names to file paths
- * @param additionalFiles set of additional file paths
- * @throws Error if the file path is invalid or the file was already added
- * @returns the full path to the file
- */
-export const validateFilePath = (filePath: string, projectFilePaths: Set<string>, additionalFiles: Set<string>) => {
-  const originalPath = filePath
-  filePath = fs.existsSync(filePath) ? filePath : path.join(process.cwd(), filePath)
-  if (!fs.existsSync(filePath)) {
-    throw Error(helpersRenderer.renderError(`File path '${originalPath}' not found. Please try again.`))
-  }
-
-  filePath = path.resolve(filePath)
-  if (projectFilePaths.has(filePath) || additionalFiles.has(filePath)) {
-    throw Error(helpersRenderer.renderSoftWarning(`File '${filePath}' has already been added.`))
-  }
-
-  return filePath
-}
-
-/**
  * Gets the LOG_STREAM_COUNT latest log stream names, sorted by last event time
  * @param cwlClient CloudWatch Logs client
  * @param logGroupName name of the log group
@@ -530,10 +485,10 @@ export const getLogStreamNames = async (
     if (rangeSpecified) {
       const firstEventTime = logStream.firstEventTimestamp
       const lastEventTime = logStream.lastEventTimestamp
-      if (lastEventTime && lastEventTime < startMillis!) {
+      if (lastEventTime && lastEventTime < startMillis) {
         continue
       }
-      if (firstEventTime && firstEventTime > endMillis!) {
+      if (firstEventTime && firstEventTime > endMillis) {
         continue
       }
     }
@@ -795,13 +750,3 @@ export const generateInsightsFile = (insightsFilePath: string, isDryRun: boolean
 
   writeFile(insightsFilePath, lines.join('\n'))
 }
-
-LambdaFlareCommand.addPath('lambda', 'flare')
-LambdaFlareCommand.addOption('isDryRun', Command.Boolean('-d,--dry'))
-LambdaFlareCommand.addOption('withLogs', Command.Boolean('--with-logs'))
-LambdaFlareCommand.addOption('functionName', Command.String('-f,--function'))
-LambdaFlareCommand.addOption('region', Command.String('-r,--region'))
-LambdaFlareCommand.addOption('caseId', Command.String('-c,--case-id'))
-LambdaFlareCommand.addOption('email', Command.String('-e,--email'))
-LambdaFlareCommand.addOption('start', Command.String('--start'))
-LambdaFlareCommand.addOption('end', Command.String('--end'))

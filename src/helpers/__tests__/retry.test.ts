@@ -40,7 +40,7 @@ describe('retry', () => {
       onRetry: retryCallback,
       retries: 5,
     })
-    expect(retryCallback).toBeCalledTimes(1)
+    expect(retryCallback).toHaveBeenCalledTimes(1)
   })
 
   test('should retry non-http errors', async () => {
@@ -50,7 +50,7 @@ describe('retry', () => {
       onRetry: retryCallback,
       retries: 5,
     })
-    expect(retryCallback).toBeCalledTimes(1)
+    expect(retryCallback).toHaveBeenCalledTimes(1)
   })
 
   test('should not retry some clients failures', async () => {
@@ -66,7 +66,7 @@ describe('retry', () => {
       threwError = true
     }
     expect(threwError).toBeTruthy()
-    expect(retryCallback).toBeCalledTimes(0)
+    expect(retryCallback).toHaveBeenCalledTimes(0)
   })
 
   test('should retry only a given amount of times', async () => {
@@ -85,7 +85,7 @@ describe('retry', () => {
       threwError = true
     }
     expect(threwError).toBeTruthy()
-    expect(retryCallback).toBeCalledTimes(3)
+    expect(retryCallback).toHaveBeenCalledTimes(3)
   })
 
   test('should not retry if the call was successful', async () => {
@@ -95,6 +95,6 @@ describe('retry', () => {
       onRetry: retryCallback,
       retries: 5,
     })
-    expect(retryCallback).toBeCalledTimes(0)
+    expect(retryCallback).toHaveBeenCalledTimes(0)
   })
 })

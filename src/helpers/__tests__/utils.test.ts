@@ -15,7 +15,7 @@ describe('utils', () => {
     jest.restoreAllMocks()
   })
 
-  test('Test pick', () => {
+  test('pick', () => {
     const initialHash = {a: 1, b: 2}
 
     let resultHash = ciUtils.pick(initialHash, ['a'])
@@ -24,15 +24,6 @@ describe('utils', () => {
 
     resultHash = ciUtils.pick(initialHash, ['c'] as any)
     expect(Object.keys(resultHash).length).toBe(0)
-  })
-
-  test('parseOptionalInteger', () => {
-    expect(ciUtils.parseOptionalInteger(undefined)).toStrictEqual(undefined)
-    expect(ciUtils.parseOptionalInteger('')).toStrictEqual(undefined)
-    expect(() => ciUtils.parseOptionalInteger('1.2')).toThrow('1.2 is not an integer')
-    expect(() => ciUtils.parseOptionalInteger('abc')).toThrow('NaN is not an integer')
-
-    expect(ciUtils.parseOptionalInteger('1')).toStrictEqual(1)
   })
 
   describe('resolveConfigFromFile', () => {
@@ -181,7 +172,7 @@ describe('utils', () => {
       ['datadoghq.com', 'api.datadoghq.com'],
       ['datadoghq.eu', 'api.datadoghq.eu'],
       ['whitelabel.com', 'api.whitelabel.com'],
-    ])('for site = %p, returns api host = %p ', (site, expectedApiHost) => {
+    ])('for site = %p, returns api host = %p', (site, expectedApiHost) => {
       expect(ciUtils.getApiHostForSite(site)).toEqual(expectedApiHost)
     })
   })

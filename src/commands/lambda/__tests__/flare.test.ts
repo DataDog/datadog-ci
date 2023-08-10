@@ -11,7 +11,6 @@ import {
 } from '@aws-sdk/client-cloudwatch-logs'
 import {LambdaClient, ListTagsCommand} from '@aws-sdk/client-lambda'
 import {mockClient} from 'aws-sdk-client-mock'
-import JSZip from 'jszip'
 
 import {API_KEY_ENV_VAR, CI_API_KEY_ENV_VAR} from '../../../constants'
 import {
@@ -20,10 +19,11 @@ import {
   MOCK_DATADOG_API_KEY,
   MOCK_FLARE_FOLDER_PATH,
 } from '../../../helpers/__tests__/fixtures'
+import * as helpersFlareModule from '../../../helpers/flare'
 import * as fsModule from '../../../helpers/fs'
 import * as helpersPromptModule from '../../../helpers/prompt'
 
-import {AWS_DEFAULT_REGION_ENV_VAR, DeploymentFrameworks, PROJECT_FILES} from '../constants'
+import {AWS_DEFAULT_REGION_ENV_VAR, DeploymentFrameworks} from '../constants'
 import {
   convertToCSV,
   generateInsightsFile,
@@ -31,15 +31,12 @@ import {
   getFramework,
   getLogEvents,
   getLogStreamNames,
-  getProjectFiles,
   getTags,
   getUniqueFileNames,
-  validateFilePath,
   validateStartEndFlags,
 } from '../flare'
 import * as flareModule from '../flare'
 import {getAWSCredentials, getLambdaFunctionConfig, maskConfig} from '../functions/commons'
-import * as lambdaPromptModule from '../prompt'
 import {requestAWSCredentials} from '../prompt'
 
 import {
@@ -75,12 +72,12 @@ jest.mock('../functions/commons', () => ({
 
 // Prompt mocks
 jest.mock('../prompt')
-jest.spyOn(lambdaPromptModule, 'requestFilePath').mockResolvedValue('')
+jest.spyOn(helpersPromptModule, 'requestFilePath').mockResolvedValue('')
 jest.spyOn(helpersPromptModule, 'requestConfirmation').mockResolvedValue(true)
-jest.spyOn(flareModule, 'getProjectFiles').mockResolvedValue(new Set())
+jest.spyOn(helpersFlareModule, 'getProjectFiles').mockResolvedValue(new Set())
 
 // File system mocks
-process.cwd = jest.fn().mockReturnValue(MOCK_CWD)
+jest.spyOn(process, 'cwd').mockReturnValue(MOCK_CWD)
 jest.mock('fs')
 fs.writeFileSync = jest.fn().mockImplementation(() => {})
 fs.readFileSync = jest.fn().mockReturnValue(JSON.stringify(MOCK_LAMBDA_CONFIG, undefined, 2))
@@ -91,20 +88,13 @@ fs.readdirSync = jest.fn().mockReturnValue([])
   isDirectory: () => file_path === MOCK_FLARE_FOLDER_PATH || file_path === MOCK_CWD,
 }))
 
-// Zip mocks
-jest.mock('jszip')
-const mockJSZip = {
-  file: jest.fn(),
-  generateAsync: jest.fn().mockResolvedValue('zip content'),
-}
-;(JSZip as any).mockImplementation(() => mockJSZip)
-
 // Date
-jest.useFakeTimers({advanceTimers: true, now: new Date(Date.UTC(2023, 0))})
+jest.useFakeTimers({now: new Date(Date.UTC(2023, 0))})
 jest.spyOn(flareModule, 'sleep').mockResolvedValue()
 
 // Misc
 jest.mock('util')
+jest.mock('jszip')
 jest.mock('../../../../package.json', () => ({
   version: '1.0-mock-version',
 }))
@@ -118,7 +108,7 @@ describe('lambda flare', () => {
     it('prints non-dry-run header', async () => {
       const cli = makeCli()
       const context = createMockContext()
-      const code = await cli.run(['lambda', 'flare'], context as any)
+      const code = await cli.run(['lambda', 'flare'], context)
       const output = context.stdout.toString()
       expect(code).toBe(1)
       expect(output).toMatchSnapshot()
@@ -127,7 +117,7 @@ describe('lambda flare', () => {
     it('prints dry-run header', async () => {
       const cli = makeCli()
       const context = createMockContext()
-      const code = await cli.run(['lambda', 'flare', '-d'], context as any)
+      const code = await cli.run(['lambda', 'flare', '-d'], context)
       const output = context.stdout.toString()
       expect(code).toBe(1)
       expect(output).toMatchSnapshot()
@@ -142,10 +132,7 @@ describe('lambda flare', () => {
     it('prints error when no function specified', async () => {
       const cli = makeCli()
       const context = createMockContext()
-      const code = await cli.run(
-        ['lambda', 'flare', '-r', MOCK_REGION, '-c', '123', '-e', 'test@test.com'],
-        context as any
-      )
+      const code = await cli.run(['lambda', 'flare', '-r', MOCK_REGION, '-c', '123', '-e', 'test@test.com'], context)
       expect(code).toBe(1)
       const output = context.stdout.toString()
       expect(output).toMatchSnapshot()
@@ -154,7 +141,7 @@ describe('lambda flare', () => {
     it('prints error when no region specified', async () => {
       const cli = makeCli()
       const context = createMockContext()
-      const code = await cli.run(['lambda', 'flare', '-f', 'func', '-c', '123', '-e', 'test@test.com'], context as any)
+      const code = await cli.run(['lambda', 'flare', '-f', 'func', '-c', '123', '-e', 'test@test.com'], context)
       expect(code).toBe(1)
       const output = context.stdout.toString()
       expect(output).toMatchSnapshot()
@@ -174,7 +161,7 @@ describe('lambda flare', () => {
           '-e',
           'test@test.com',
         ],
-        context as any
+        context
       )
       expect(code).toBe(0)
       const output = context.stdout.toString()
@@ -185,7 +172,7 @@ describe('lambda flare', () => {
       process.env[AWS_DEFAULT_REGION_ENV_VAR] = 'test-region'
       const cli = makeCli()
       const context = createMockContext()
-      const code = await cli.run(['lambda', 'flare', '-f', 'func', '-c', '123', '-e', 'test@test.com'], context as any)
+      const code = await cli.run(['lambda', 'flare', '-f', 'func', '-c', '123', '-e', 'test@test.com'], context)
       expect(code).toBe(0)
       const output = context.stdout.toString()
       expect(output).toMatchSnapshot()
@@ -197,7 +184,7 @@ describe('lambda flare', () => {
       const context = createMockContext()
       const code = await cli.run(
         ['lambda', 'flare', '-f', 'func', '-r', MOCK_REGION, '-c', '123', '-e', 'test@test.com'],
-        context as any
+        context
       )
       expect(code).toBe(1)
       const output = context.stdout.toString()
@@ -212,7 +199,7 @@ describe('lambda flare', () => {
       const context = createMockContext()
       let code = await cli.run(
         ['lambda', 'flare', '-f', 'func', '-r', MOCK_REGION, '-c', '123', '-e', 'test@test.com'],
-        context as any
+        context
       )
       expect(code).toBe(0)
       let output = context.stdout.toString()
@@ -222,7 +209,7 @@ describe('lambda flare', () => {
       process.env[API_KEY_ENV_VAR] = MOCK_DATADOG_API_KEY
       code = await cli.run(
         ['lambda', 'flare', '-f', 'func', '-r', MOCK_REGION, '-c', '123', '-e', 'test@test.com'],
-        context as any
+        context
       )
       expect(code).toBe(0)
       output = context.stdout.toString()
@@ -232,10 +219,7 @@ describe('lambda flare', () => {
     it('prints error when no case ID specified', async () => {
       const cli = makeCli()
       const context = createMockContext()
-      const code = await cli.run(
-        ['lambda', 'flare', '-f', 'func', '-r', MOCK_REGION, '-e', 'test@test.com'],
-        context as any
-      )
+      const code = await cli.run(['lambda', 'flare', '-f', 'func', '-r', MOCK_REGION, '-e', 'test@test.com'], context)
       expect(code).toBe(1)
       const output = context.stdout.toString()
       expect(output).toMatchSnapshot()
@@ -244,7 +228,7 @@ describe('lambda flare', () => {
     it('prints error when no email specified', async () => {
       const cli = makeCli()
       const context = createMockContext()
-      const code = await cli.run(['lambda', 'flare', '-f', 'func', '-r', MOCK_REGION, '-c', '123'], context as any)
+      const code = await cli.run(['lambda', 'flare', '-f', 'func', '-r', MOCK_REGION, '-c', '123'], context)
       expect(code).toBe(1)
       const output = context.stdout.toString()
       expect(output).toMatchSnapshot()
@@ -253,7 +237,7 @@ describe('lambda flare', () => {
     it('runs successfully when dry run but no email or case ID is specified', async () => {
       const cli = makeCli()
       const context = createMockContext()
-      const code = await cli.run(['lambda', 'flare', '-f', 'func', '-r', MOCK_REGION, '-d'], context as any)
+      const code = await cli.run(['lambda', 'flare', '-f', 'func', '-r', MOCK_REGION, '-d'], context)
       expect(code).toBe(0)
       const output = context.stdout.toString()
       expect(output).toMatchSnapshot()
@@ -262,7 +246,7 @@ describe('lambda flare', () => {
     it('runs successfully with all required options specified', async () => {
       const cli = makeCli()
       const context = createMockContext()
-      const code = await cli.run(MOCK_REQUIRED_FLAGS, context as any)
+      const code = await cli.run(MOCK_REQUIRED_FLAGS, context)
       expect(code).toBe(0)
       const output = context.stdout.toString()
       expect(output).toMatchSnapshot()
@@ -271,7 +255,7 @@ describe('lambda flare', () => {
     it('prints error when start time is specified but end time is not', async () => {
       const cli = makeCli()
       const context = createMockContext()
-      const code = await cli.run([...MOCK_REQUIRED_FLAGS, '--start', '100'], context as any)
+      const code = await cli.run([...MOCK_REQUIRED_FLAGS, '--start', '100'], context)
       expect(code).toBe(1)
       const output = context.stdout.toString()
       expect(output).toMatchSnapshot()
@@ -280,7 +264,7 @@ describe('lambda flare', () => {
     it('prints error when end time is specified but start time is not', async () => {
       const cli = makeCli()
       const context = createMockContext()
-      const code = await cli.run([...MOCK_REQUIRED_FLAGS, '--end', '100'], context as any)
+      const code = await cli.run([...MOCK_REQUIRED_FLAGS, '--end', '100'], context)
       expect(code).toBe(1)
       const output = context.stdout.toString()
       expect(output).toMatchSnapshot()
@@ -289,7 +273,7 @@ describe('lambda flare', () => {
     it('prints error when start time is invalid', async () => {
       const cli = makeCli()
       const context = createMockContext()
-      const code = await cli.run([...MOCK_REQUIRED_FLAGS, '--start', '123abc', '--end', '200'], context as any)
+      const code = await cli.run([...MOCK_REQUIRED_FLAGS, '--start', '123abc', '--end', '200'], context)
       expect(code).toBe(1)
       const output = context.stdout.toString()
       expect(output).toMatchSnapshot()
@@ -298,7 +282,7 @@ describe('lambda flare', () => {
     it('prints error when end time is invalid', async () => {
       const cli = makeCli()
       const context = createMockContext()
-      const code = await cli.run([...MOCK_REQUIRED_FLAGS, '--start', '100', '--end', '123abc'], context as any)
+      const code = await cli.run([...MOCK_REQUIRED_FLAGS, '--start', '100', '--end', '123abc'], context)
       expect(code).toBe(1)
       const output = context.stdout.toString()
       expect(output).toMatchSnapshot()
@@ -307,7 +291,7 @@ describe('lambda flare', () => {
     it('prints error when start time is after end time', async () => {
       const cli = makeCli()
       const context = createMockContext()
-      const code = await cli.run([...MOCK_REQUIRED_FLAGS, '--start', '200', '--end', '100'], context as any)
+      const code = await cli.run([...MOCK_REQUIRED_FLAGS, '--start', '200', '--end', '100'], context)
       expect(code).toBe(1)
       const output = context.stdout.toString()
       expect(output).toMatchSnapshot()
@@ -316,7 +300,7 @@ describe('lambda flare', () => {
     it('runs successfully when start and end times are valid', async () => {
       const cli = makeCli()
       const context = createMockContext()
-      const code = await cli.run([...MOCK_REQUIRED_FLAGS, '--start', '100', '--end', '200'], context as any)
+      const code = await cli.run([...MOCK_REQUIRED_FLAGS, '--start', '100', '--end', '200'], context)
       expect(code).toBe(0)
       const output = context.stdout.toString()
       expect(output).toMatchSnapshot()
@@ -358,52 +342,6 @@ describe('lambda flare', () => {
       const [start, end] = res
       expect(start).toBe(0)
       expect(end).toEqual(now)
-    })
-  })
-
-  describe('validateFilePath', () => {
-    const projectFilePaths = new Set<string>()
-    const additionalFilePaths = new Set<string>()
-
-    it('returns the correct path when the file exists', () => {
-      const filePath = '/exists'
-
-      ;(fs.existsSync as jest.Mock).mockReturnValueOnce(true)
-      const result = validateFilePath(filePath, projectFilePaths, additionalFilePaths)
-
-      expect(result).toBe(filePath)
-      expect(fs.existsSync).toHaveBeenCalledWith(filePath)
-    })
-
-    it('returns the correct path when the file exists relative to the cwd', () => {
-      const filePath = 'relative'
-
-      ;(fs.existsSync as jest.Mock).mockReturnValueOnce(false).mockReturnValueOnce(true)
-
-      const result = validateFilePath(filePath, projectFilePaths, additionalFilePaths)
-
-      expect(result).toContain(filePath)
-      expect(fs.existsSync).toHaveBeenNthCalledWith(1, filePath)
-      expect(fs.existsSync).toHaveBeenCalledTimes(2)
-    })
-
-    it('throws an error when the file does not exist', async () => {
-      const filePath = '/not-exists'
-
-      ;(fs.existsSync as jest.Mock).mockReturnValue(false)
-
-      expect(() => validateFilePath(filePath, projectFilePaths, additionalFilePaths)).toThrowErrorMatchingSnapshot()
-      expect(fs.existsSync).toHaveBeenCalledWith(filePath)
-    })
-
-    it('throws an error when the file has already been added', async () => {
-      const filePath = '/added'
-
-      ;(fs.existsSync as jest.Mock).mockReturnValue(true)
-      projectFilePaths.add(filePath)
-
-      expect(() => validateFilePath(filePath, projectFilePaths, additionalFilePaths)).toThrowErrorMatchingSnapshot()
-      expect(fs.existsSync).toHaveBeenCalledWith(filePath)
     })
   })
 
@@ -606,7 +544,7 @@ describe('lambda flare', () => {
     it('gets logs, saves, and sends correctly when --with-logs is included', async () => {
       const cli = makeCli()
       const context = createMockContext()
-      const code = await cli.run(FLAGS_WITH_LOGS, context as any)
+      const code = await cli.run(FLAGS_WITH_LOGS, context)
       expect(code).toBe(0)
       const output = context.stdout.toString()
       expect(output).toMatchSnapshot()
@@ -615,7 +553,7 @@ describe('lambda flare', () => {
     it('does not get logs when --with-logs is not included', async () => {
       const cli = makeCli()
       const context = createMockContext()
-      const code = await cli.run(MOCK_REQUIRED_FLAGS, context as any)
+      const code = await cli.run(MOCK_REQUIRED_FLAGS, context)
       expect(code).toBe(0)
       const output = context.stdout.toString()
       expect(output).toMatchSnapshot()
@@ -627,7 +565,7 @@ describe('lambda flare', () => {
       })
       const cli = makeCli()
       const context = createMockContext()
-      const code = await cli.run(FLAGS_WITH_LOGS, context as any)
+      const code = await cli.run(FLAGS_WITH_LOGS, context)
       expect(code).toBe(1)
       const output = context.stdout.toString()
       expect(output).toMatchSnapshot()
@@ -637,7 +575,7 @@ describe('lambda flare', () => {
       jest.spyOn(flareModule, 'getLogStreamNames').mockResolvedValue([])
       const cli = makeCli()
       const context = createMockContext()
-      const code = await cli.run(FLAGS_WITH_LOGS, context as any)
+      const code = await cli.run(FLAGS_WITH_LOGS, context)
       expect(code).toBe(0)
       const output = context.stdout.toString()
       expect(output).toMatchSnapshot()
@@ -649,7 +587,7 @@ describe('lambda flare', () => {
       })
       const cli = makeCli()
       const context = createMockContext()
-      const code = await cli.run(FLAGS_WITH_LOGS, context as any)
+      const code = await cli.run(FLAGS_WITH_LOGS, context)
       expect(code).toBe(1)
       const output = context.stdout.toString()
       expect(output).toMatchSnapshot()
@@ -659,7 +597,7 @@ describe('lambda flare', () => {
       jest.spyOn(flareModule, 'getLogEvents').mockResolvedValue([])
       const cli = makeCli()
       const context = createMockContext()
-      const code = await cli.run(FLAGS_WITH_LOGS, context as any)
+      const code = await cli.run(FLAGS_WITH_LOGS, context)
       expect(code).toBe(0)
       const output = context.stdout.toString()
       expect(output).toMatchSnapshot()
@@ -792,7 +730,7 @@ describe('lambda flare', () => {
       })
       const cli = makeCli()
       const context = createMockContext()
-      const code = await cli.run(MOCK_REQUIRED_FLAGS, context as any)
+      const code = await cli.run(MOCK_REQUIRED_FLAGS, context)
       expect(code).toBe(1)
       const output = context.stdout.toString()
       expect(output).toMatchSnapshot()
@@ -802,7 +740,7 @@ describe('lambda flare', () => {
       ;(getLambdaFunctionConfig as any).mockImplementation(() => Promise.resolve(MOCK_LAMBDA_CONFIG))
       const cli = makeCli()
       const context = createMockContext()
-      const code = await cli.run([...MOCK_REQUIRED_FLAGS, '-d'], context as any)
+      const code = await cli.run([...MOCK_REQUIRED_FLAGS, '-d'], context)
       expect(code).toBe(0)
       const output = context.stdout.toString()
       expect(output).toMatchSnapshot()
@@ -814,7 +752,7 @@ describe('lambda flare', () => {
       ;(getAWSCredentials as any).mockResolvedValue(mockAwsCredentials)
       const cli = makeCli()
       const context = createMockContext()
-      const code = await cli.run(MOCK_REQUIRED_FLAGS, context as any)
+      const code = await cli.run(MOCK_REQUIRED_FLAGS, context)
       expect(code).toBe(0)
       const output = context.stdout.toString()
       expect(output).toMatchSnapshot()
@@ -825,7 +763,7 @@ describe('lambda flare', () => {
       ;(getAWSCredentials as any).mockResolvedValue(undefined)
       const cli = makeCli()
       const context = createMockContext()
-      const code = await cli.run(MOCK_REQUIRED_FLAGS, context as any)
+      const code = await cli.run(MOCK_REQUIRED_FLAGS, context)
       expect(code).toBe(0)
       const output = context.stdout.toString()
       expect(output).toMatchSnapshot()
@@ -838,7 +776,7 @@ describe('lambda flare', () => {
       })
       const cli = makeCli()
       const context = createMockContext()
-      const code = await cli.run(MOCK_REQUIRED_FLAGS, context as any)
+      const code = await cli.run(MOCK_REQUIRED_FLAGS, context)
       expect(code).toBe(1)
       const output = context.stdout.toString()
       expect(output).toMatchSnapshot()
@@ -851,7 +789,7 @@ describe('lambda flare', () => {
       })
       const cli = makeCli()
       const context = createMockContext()
-      const code = await cli.run(MOCK_REQUIRED_FLAGS, context as any)
+      const code = await cli.run(MOCK_REQUIRED_FLAGS, context)
       expect(requestAWSCredentials).toHaveBeenCalled()
       expect(code).toBe(1)
       const output = context.stdout.toString()
@@ -869,7 +807,7 @@ describe('lambda flare', () => {
       jest.spyOn(helpersPromptModule, 'requestConfirmation').mockResolvedValueOnce(true).mockResolvedValueOnce(true)
       const cli = makeCli()
       const context = createMockContext()
-      const code = await cli.run(MOCK_REQUIRED_FLAGS, context as any)
+      const code = await cli.run(MOCK_REQUIRED_FLAGS, context)
       expect(code).toBe(0)
       const output = context.stdout.toString()
       expect(output).toMatchSnapshot()
@@ -881,7 +819,7 @@ describe('lambda flare', () => {
       jest.spyOn(helpersPromptModule, 'requestConfirmation').mockResolvedValueOnce(true).mockResolvedValueOnce(false)
       const cli = makeCli()
       const context = createMockContext()
-      const code = await cli.run(MOCK_REQUIRED_FLAGS, context as any)
+      const code = await cli.run(MOCK_REQUIRED_FLAGS, context)
       expect(code).toBe(0)
       const output = context.stdout.toString()
       expect(output).toMatchSnapshot()
@@ -899,11 +837,11 @@ describe('lambda flare', () => {
       jest.spyOn(helpersPromptModule, 'requestConfirmation').mockResolvedValueOnce(true).mockResolvedValueOnce(true)
       const cli = makeCli()
       const context = createMockContext()
-      const code = await cli.run(MOCK_REQUIRED_FLAGS, context as any)
+      const code = await cli.run(MOCK_REQUIRED_FLAGS, context)
       expect(code).toBe(0)
       const output = context.stdout.toString()
       expect(output).toMatchSnapshot()
-      expect(output).toContain('Added 0 custom file(s)')
+      expect(output).toContain('[!] No additional files specified.')
     })
 
     it('does not request additional files when user answers no', async () => {
@@ -911,35 +849,11 @@ describe('lambda flare', () => {
       jest.spyOn(helpersPromptModule, 'requestConfirmation').mockResolvedValueOnce(false).mockResolvedValueOnce(true)
       const cli = makeCli()
       const context = createMockContext()
-      const code = await cli.run(MOCK_REQUIRED_FLAGS, context as any)
+      const code = await cli.run(MOCK_REQUIRED_FLAGS, context)
       expect(code).toBe(0)
       const output = context.stdout.toString()
       expect(output).toMatchSnapshot()
       expect(output).not.toContain('Added 0 custom file(s)')
-    })
-  })
-
-  describe('getProjectFiles', () => {
-    beforeAll(() => {
-      ;(flareModule.getProjectFiles as jest.Mock).mockRestore()
-      ;(process.cwd as jest.Mock).mockReturnValue('')
-    })
-
-    it('should return a map of existing project files', async () => {
-      const mockProjectFiles = ['serverless.yml', 'package.json']
-      ;(fs.existsSync as jest.Mock).mockImplementation((filePath: string) => mockProjectFiles.includes(filePath))
-
-      const result = await getProjectFiles()
-      expect(Array.from(result.keys())).toEqual(mockProjectFiles)
-      expect(fs.existsSync).toHaveBeenCalledTimes(PROJECT_FILES.length)
-    })
-
-    it('should return an empty map when no files exist', async () => {
-      ;(fs.existsSync as jest.Mock).mockReturnValue(false)
-
-      const result = await getProjectFiles()
-      expect(result).toEqual(new Set())
-      expect(fs.existsSync).toHaveBeenCalledTimes(PROJECT_FILES.length)
     })
   })
 

@@ -189,10 +189,12 @@ describe('ci spec', () => {
 
         // `CI_ENV_VARS` key contains a dictionary, so we JSON parse it
         if (envVars && expectedEnvVars) {
+          // eslint-disable-next-line jest/no-conditional-expect
           expect(JSON.parse(envVars)).toEqual(JSON.parse(expectedEnvVars))
         }
         // `CI_NODE_LABELS` key contains an array, so we JSON parse it
         if (nodeLabels && expectedNodeLabels) {
+          // eslint-disable-next-line jest/no-conditional-expect
           expect(JSON.parse(nodeLabels)).toEqual(expect.arrayContaining(JSON.parse(expectedNodeLabels)))
         }
       })

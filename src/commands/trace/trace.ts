@@ -3,7 +3,7 @@ import crypto from 'crypto'
 import os from 'os'
 
 import chalk from 'chalk'
-import {Command} from 'clipanion'
+import {Command, Option} from 'clipanion'
 
 import {retryRequest} from '../../helpers/retry'
 import {parseTags} from '../../helpers/tags'
@@ -15,6 +15,8 @@ import {APIHelper, CIRCLECI, JENKINS, Payload, Provider, SUPPORTED_PROVIDERS} fr
 const BAD_COMMAND_EXIT_CODE = 127
 
 export class TraceCommand extends Command {
+  public static paths = [['trace']]
+
   public static usage = Command.Usage({
     description: 'Trace a command with a custom span and report it to Datadog.',
     details: `
@@ -36,16 +38,16 @@ export class TraceCommand extends Command {
       ],
     ],
   })
-  private command?: string[]
+
+  private command = Option.Rest({required: 1})
+  private name = Option.String('--name')
+  private noFail = Option.Boolean('--no-fail')
+  private tags = Option.Array('--tags')
 
   private config = {
     apiKey: process.env.DATADOG_API_KEY || process.env.DD_API_KEY,
     envVarTags: process.env.DD_TAGS,
   }
-
-  private name?: string
-  private noFail?: boolean
-  private tags?: string[]
 
   public async execute() {
     if (!this.command || !this.command.length) {
@@ -68,12 +70,12 @@ export class TraceCommand extends Command {
       childProcess.stderr.on('error', (err) => reject(err))
       childProcess.stderr.on('end', () => resolve(Buffer.concat(chunks).toString('utf8')))
     })
-    const [status, signal] = await new Promise((resolve, reject) => {
+    const [status, signal] = await new Promise<[number, NodeJS.Signals]>((resolve, reject) => {
       childProcess.on('error', (error: Error) => {
         reject(error)
       })
 
-      childProcess.on('close', (exitStatus: number, exitSignal: string) => {
+      childProcess.on('close', (exitStatus: number, exitSignal: NodeJS.Signals) => {
         resolve([exitStatus, exitSignal])
       })
     })
@@ -230,9 +232,3 @@ export class TraceCommand extends Command {
     return os.constants.signals[signal] + 128
   }
 }
-
-TraceCommand.addPath('trace')
-TraceCommand.addOption('noFail', Command.Boolean('--no-fail'))
-TraceCommand.addOption('name', Command.String('--name'))
-TraceCommand.addOption('tags', Command.Array('--tags'))
-TraceCommand.addOption('command', Command.Rest({required: 1}))

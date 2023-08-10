@@ -8,18 +8,14 @@ module.exports = {
     'plugin:@typescript-eslint/recommended-requiring-type-checking',
     'plugin:import/recommended',
     'plugin:prettier/recommended',
+    'plugin:jest/recommended',
   ],
   parser: '@typescript-eslint/parser',
   parserOptions: {
     project: 'tsconfig.json',
     sourceType: 'module',
   },
-  plugins: [
-    'eslint-plugin-import',
-    'eslint-plugin-prefer-arrow',
-    '@typescript-eslint',
-    'no-null',
-  ],
+  plugins: ['@typescript-eslint', 'import', 'jest', 'no-null', 'prefer-arrow'],
   root: true,
   rules: {
     '@typescript-eslint/adjacent-overload-signatures': 'error',
@@ -104,6 +100,7 @@ module.exports = {
     '@typescript-eslint/no-unsafe-return': 'warn',
     '@typescript-eslint/no-unsafe-member-access': 'warn',
     '@typescript-eslint/no-unsafe-call': 'warn',
+    '@typescript-eslint/no-unsafe-argument': 'warn',
     '@typescript-eslint/require-await': 'off',
     '@typescript-eslint/restrict-template-expressions': 'warn',
     '@typescript-eslint/no-shadow': [
@@ -171,12 +168,12 @@ module.exports = {
     'import/order': [
       'error',
       {
-        alphabetize: { order: 'asc', caseInsensitive: true },
+        alphabetize: {order: 'asc', caseInsensitive: true},
         'newlines-between': 'always',
         groups: [['builtin', 'object'], 'type', 'external', 'internal', 'parent', ['sibling', 'index']],
         // set different groups for 5 different import levels ('../../../../**', '../../../**', ...)
         pathGroups: [
-          ...Array.from({ length: 5 }).map((_, index) => ({
+          ...Array.from({length: 5}).map((_, index) => ({
             pattern: `${'../'.repeat(5 + 1 - index)}**`,
             group: 'parent',
             position: 'before',
@@ -217,7 +214,7 @@ module.exports = {
     'no-unused-vars': 'off',
     'no-use-before-define': 'off',
     'no-var': 'error',
-    "no-null/no-null": 'error',
+    'no-null/no-null': 'error',
     'object-shorthand': 'error',
     'one-var': ['error', 'never'],
     'padded-blocks': [
@@ -255,6 +252,7 @@ module.exports = {
     ],
     'use-isnan': 'error',
     'valid-typeof': 'off',
+    'jest/no-interpolation-in-snapshots': 'off', // allow showing from which variable comes a specific value in inline snapshots
   },
   settings: {
     'import/resolver': {

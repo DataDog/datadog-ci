@@ -2,7 +2,7 @@ import path from 'path'
 import {URL} from 'url'
 
 import chalk from 'chalk'
-import {Command} from 'clipanion'
+import {Command, Option} from 'clipanion'
 import glob from 'glob'
 import asyncPool from 'tiny-async-pool'
 
@@ -14,6 +14,7 @@ import {RequestBuilder} from '../../helpers/interfaces'
 import {getMetricsLogger, MetricsLogger} from '../../helpers/metrics'
 import {upload, UploadStatus} from '../../helpers/upload'
 import {getRequestBuilder, buildPath} from '../../helpers/utils'
+import * as validation from '../../helpers/validation'
 
 import {Sourcemap} from './interfaces'
 import {
@@ -32,6 +33,8 @@ import {getMinifiedFilePath} from './utils'
 import {InvalidPayload, validatePayload} from './validation'
 
 export class UploadCommand extends Command {
+  public static paths = [['sourcemaps', 'upload']]
+
   public static usage = Command.Usage({
     description: 'Upload javascript sourcemaps to Datadog.',
     details: `
@@ -50,20 +53,22 @@ export class UploadCommand extends Command {
     ],
   })
 
-  private basePath?: string
-  private cliVersion: string
+  private basePath = Option.String({required: true})
+  private disableGit = Option.Boolean('--disable-git')
+  private dryRun = Option.Boolean('--dry-run', false)
+  private maxConcurrency = Option.String('--max-concurrency', '20', {validator: validation.isInteger()})
+  private minifiedPathPrefix = Option.String('--minified-path-prefix')
+  private projectPath = Option.String('--project-path', '')
+  private releaseVersion = Option.String('--release-version')
+  private repositoryURL = Option.String('--repository-url')
+  private service = Option.String('--service')
+
   private config = {
     apiKey: process.env.DATADOG_API_KEY,
     datadogSite: process.env.DATADOG_SITE || 'datadoghq.com',
   }
-  private disableGit?: boolean
-  private dryRun = false
-  private maxConcurrency = 20
-  private minifiedPathPrefix?: string
-  private projectPath = ''
-  private releaseVersion?: string
-  private repositoryURL?: string
-  private service?: string
+
+  private cliVersion: string
 
   constructor() {
     super()
@@ -97,7 +102,7 @@ export class UploadCommand extends Command {
 
     // Normalizing the basePath to resolve .. and .
     // Always using the posix version to avoid \ on Windows.
-    this.basePath = path.posix.normalize(this.basePath!)
+    this.basePath = path.posix.normalize(this.basePath)
     this.context.stdout.write(
       renderCommandInfo(
         this.basePath,
@@ -170,7 +175,7 @@ export class UploadCommand extends Command {
   // Looks for the sourcemaps and minified files on disk and returns
   // the associated payloads.
   private getMatchingSourcemapFiles = async (): Promise<Sourcemap[]> => {
-    const sourcemapFiles = glob.sync(buildPath(this.basePath!, '**/*js.map'))
+    const sourcemapFiles = glob.sync(buildPath(this.basePath, '**/*js.map'))
 
     return Promise.all(
       sourcemapFiles.map(async (sourcemapPath) => {
@@ -183,7 +188,7 @@ export class UploadCommand extends Command {
   }
 
   private getMinifiedURLAndRelativePath(minifiedFilePath: string): [string, string] {
-    const relativePath = minifiedFilePath.replace(this.basePath!, '')
+    const relativePath = minifiedFilePath.replace(this.basePath, '')
 
     return [buildPath(this.minifiedPathPrefix!, relativePath), relativePath]
   }
@@ -319,14 +324,3 @@ export class UploadCommand extends Command {
     }
   }
 }
-
-UploadCommand.addPath('sourcemaps', 'upload')
-UploadCommand.addOption('basePath', Command.String({required: true}))
-UploadCommand.addOption('releaseVersion', Command.String('--release-version'))
-UploadCommand.addOption('service', Command.String('--service'))
-UploadCommand.addOption('minifiedPathPrefix', Command.String('--minified-path-prefix'))
-UploadCommand.addOption('projectPath', Command.String('--project-path'))
-UploadCommand.addOption('maxConcurrency', Command.String('--max-concurrency'))
-UploadCommand.addOption('dryRun', Command.Boolean('--dry-run'))
-UploadCommand.addOption('repositoryURL', Command.String('--repository-url'))
-UploadCommand.addOption('disableGit', Command.Boolean('--disable-git'))

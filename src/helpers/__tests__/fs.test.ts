@@ -28,7 +28,7 @@ const MOCK_LAMBDA_CONFIG = {
 }
 
 // fs mocks
-process.cwd = jest.fn().mockReturnValue(MOCK_CWD)
+jest.spyOn(process, 'cwd').mockReturnValue(MOCK_CWD)
 jest.mock('fs')
 ;(fs.statSync as jest.Mock).mockImplementation((file_path: string) => ({
   isDirectory: () => file_path === MOCK_FOLDER_PATH || file_path === MOCK_CWD,

@@ -1,163 +1,163 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
 exports[`plist util parsePlist parses the content of the info plist file 1`] = `
-Array [
-  Object {
-    "key": Array [
-      Object {
+[
+  {
+    "key": [
+      {
         "#text": "CFBundleDevelopmentRegion",
       },
     ],
   },
-  Object {
-    "string": Array [
-      Object {
+  {
+    "string": [
+      {
         "#text": "$(DEVELOPMENT_LANGUAGE)",
       },
     ],
   },
-  Object {
-    "key": Array [
-      Object {
+  {
+    "key": [
+      {
         "#text": "CFBundleDisplayName",
       },
     ],
   },
-  Object {
-    "string": Array [
-      Object {
+  {
+    "string": [
+      {
         "#text": "sample-app",
       },
     ],
   },
-  Object {
-    "key": Array [
-      Object {
+  {
+    "key": [
+      {
         "#text": "CFBundleExecutable",
       },
     ],
   },
-  Object {
-    "string": Array [
-      Object {
+  {
+    "string": [
+      {
         "#text": "$(EXECUTABLE_NAME)",
       },
     ],
   },
-  Object {
-    "key": Array [
-      Object {
+  {
+    "key": [
+      {
         "#text": "CFBundleIdentifier",
       },
     ],
   },
-  Object {
-    "string": Array [
-      Object {
+  {
+    "string": [
+      {
         "#text": "$(PRODUCT_BUNDLE_IDENTIFIER)",
       },
     ],
   },
-  Object {
-    "key": Array [
-      Object {
+  {
+    "key": [
+      {
         "#text": "CFBundleInfoDictionaryVersion",
       },
     ],
   },
-  Object {
-    "string": Array [
-      Object {
+  {
+    "string": [
+      {
         "#text": 6,
       },
     ],
   },
-  Object {
-    "key": Array [
-      Object {
+  {
+    "key": [
+      {
         "#text": "CFBundleName",
       },
     ],
   },
-  Object {
-    "string": Array [
-      Object {
+  {
+    "string": [
+      {
         "#text": "$(PRODUCT_NAME)",
       },
     ],
   },
-  Object {
-    "key": Array [
-      Object {
+  {
+    "key": [
+      {
         "#text": "CFBundlePackageType",
       },
     ],
   },
-  Object {
-    "string": Array [
-      Object {
+  {
+    "string": [
+      {
         "#text": "$(PRODUCT_BUNDLE_PACKAGE_TYPE)",
       },
     ],
   },
-  Object {
-    "key": Array [
-      Object {
+  {
+    "key": [
+      {
         "#text": "CFBundleShortVersionString",
       },
     ],
   },
-  Object {
-    "string": Array [
-      Object {
+  {
+    "string": [
+      {
         "#text": "1.0.4",
       },
     ],
   },
-  Object {
-    "key": Array [
-      Object {
+  {
+    "key": [
+      {
         "#text": "CFBundleSignature",
       },
     ],
   },
-  Object {
-    "string": Array [
-      Object {
+  {
+    "string": [
+      {
         "#text": "????",
       },
     ],
   },
-  Object {
-    "key": Array [
-      Object {
+  {
+    "key": [
+      {
         "#text": "CFBundleURLTypes",
       },
     ],
   },
-  Object {
-    "array": Array [
-      Object {
-        "dict": Array [
-          Object {
-            "key": Array [
-              Object {
+  {
+    "array": [
+      {
+        "dict": [
+          {
+            "key": [
+              {
                 "#text": "CFBundleURLSchemes",
               },
             ],
           },
-          Object {
-            "array": Array [
-              Object {
-                "string": Array [
-                  Object {
+          {
+            "array": [
+              {
+                "string": [
+                  {
                     "#text": "myapp",
                   },
                 ],
               },
-              Object {
-                "string": Array [
-                  Object {
+              {
+                "string": [
+                  {
                     "#text": "com.sample.app",
                   },
                 ],
@@ -166,20 +166,20 @@ Array [
           },
         ],
       },
-      Object {
-        "dict": Array [
-          Object {
-            "key": Array [
-              Object {
+      {
+        "dict": [
+          {
+            "key": [
+              {
                 "#text": "CFBundleURLSchemes",
               },
             ],
           },
-          Object {
-            "array": Array [
-              Object {
-                "string": Array [
-                  Object {
+          {
+            "array": [
+              {
+                "string": [
+                  {
                     "#text": "exp+sample-app",
                   },
                 ],
@@ -190,76 +190,76 @@ Array [
       },
     ],
   },
-  Object {
-    "key": Array [
-      Object {
+  {
+    "key": [
+      {
         "#text": "CFBundleVersion",
       },
     ],
   },
-  Object {
-    "string": Array [
-      Object {
+  {
+    "string": [
+      {
         "#text": 12,
       },
     ],
   },
-  Object {
-    "key": Array [
-      Object {
+  {
+    "key": [
+      {
         "#text": "LSRequiresIPhoneOS",
       },
     ],
   },
-  Object {
-    "true": Array [],
+  {
+    "true": [],
   },
-  Object {
-    "key": Array [
-      Object {
+  {
+    "key": [
+      {
         "#text": "NSAppTransportSecurity",
       },
     ],
   },
-  Object {
-    "dict": Array [
-      Object {
-        "key": Array [
-          Object {
+  {
+    "dict": [
+      {
+        "key": [
+          {
             "#text": "NSAllowsArbitraryLoads",
           },
         ],
       },
-      Object {
-        "true": Array [],
+      {
+        "true": [],
       },
-      Object {
-        "key": Array [
-          Object {
+      {
+        "key": [
+          {
             "#text": "NSExceptionDomains",
           },
         ],
       },
-      Object {
-        "dict": Array [
-          Object {
-            "key": Array [
-              Object {
+      {
+        "dict": [
+          {
+            "key": [
+              {
                 "#text": "localhost",
               },
             ],
           },
-          Object {
-            "dict": Array [
-              Object {
-                "key": Array [
-                  Object {
+          {
+            "dict": [
+              {
+                "key": [
+                  {
                     "#text": "NSExceptionAllowsInsecureHTTPLoads",
                   },
                 ],
               },
-              Object {
-                "true": Array [],
+              {
+                "true": [],
               },
             ],
           },
@@ -267,149 +267,149 @@ Array [
       },
     ],
   },
-  Object {
-    "key": Array [
-      Object {
+  {
+    "key": [
+      {
         "#text": "UILaunchStoryboardName",
       },
     ],
   },
-  Object {
-    "string": Array [
-      Object {
+  {
+    "string": [
+      {
         "#text": "SplashScreen",
       },
     ],
   },
-  Object {
-    "key": Array [
-      Object {
+  {
+    "key": [
+      {
         "#text": "UIRequiredDeviceCapabilities",
       },
     ],
   },
-  Object {
-    "array": Array [
-      Object {
-        "string": Array [
-          Object {
+  {
+    "array": [
+      {
+        "string": [
+          {
             "#text": "armv7",
           },
         ],
       },
     ],
   },
-  Object {
-    "key": Array [
-      Object {
+  {
+    "key": [
+      {
         "#text": "UIRequiresFullScreen",
       },
     ],
   },
-  Object {
-    "false": Array [],
+  {
+    "false": [],
   },
-  Object {
-    "key": Array [
-      Object {
+  {
+    "key": [
+      {
         "#text": "UIStatusBarStyle",
       },
     ],
   },
-  Object {
-    "string": Array [
-      Object {
+  {
+    "string": [
+      {
         "#text": "UIStatusBarStyleDefault",
       },
     ],
   },
-  Object {
-    "key": Array [
-      Object {
+  {
+    "key": [
+      {
         "#text": "UISupportedInterfaceOrientations",
       },
     ],
   },
-  Object {
-    "array": Array [
-      Object {
-        "string": Array [
-          Object {
+  {
+    "array": [
+      {
+        "string": [
+          {
             "#text": "UIInterfaceOrientationPortrait",
           },
         ],
       },
-      Object {
-        "string": Array [
-          Object {
+      {
+        "string": [
+          {
             "#text": "UIInterfaceOrientationPortraitUpsideDown",
           },
         ],
       },
     ],
   },
-  Object {
-    "key": Array [
-      Object {
+  {
+    "key": [
+      {
         "#text": "UISupportedInterfaceOrientations~ipad",
       },
     ],
   },
-  Object {
-    "array": Array [
-      Object {
-        "string": Array [
-          Object {
+  {
+    "array": [
+      {
+        "string": [
+          {
             "#text": "UIInterfaceOrientationPortrait",
           },
         ],
       },
-      Object {
-        "string": Array [
-          Object {
+      {
+        "string": [
+          {
             "#text": "UIInterfaceOrientationPortraitUpsideDown",
           },
         ],
       },
-      Object {
-        "string": Array [
-          Object {
+      {
+        "string": [
+          {
             "#text": "UIInterfaceOrientationLandscapeLeft",
           },
         ],
       },
-      Object {
-        "string": Array [
-          Object {
+      {
+        "string": [
+          {
             "#text": "UIInterfaceOrientationLandscapeRight",
           },
         ],
       },
     ],
   },
-  Object {
-    "key": Array [
-      Object {
+  {
+    "key": [
+      {
         "#text": "UIUserInterfaceStyle",
       },
     ],
   },
-  Object {
-    "string": Array [
-      Object {
+  {
+    "string": [
+      {
         "#text": "Automatic",
       },
     ],
   },
-  Object {
-    "key": Array [
-      Object {
+  {
+    "key": [
+      {
         "#text": "UIViewControllerBasedStatusBarAppearance",
       },
     ],
   },
-  Object {
-    "false": Array [],
+  {
+    "false": [],
   },
 ]
 `;

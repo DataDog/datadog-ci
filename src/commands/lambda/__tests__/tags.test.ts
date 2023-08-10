@@ -187,10 +187,10 @@ describe('tags', () => {
       })
       const result = await calculateTagRemoveRequest(lambdaClientMock as any, functionArn)
       expect(result).toMatchInlineSnapshot(`
-        Object {
-          "untagResourceCommandInput": Object {
+        {
+          "untagResourceCommandInput": {
             "Resource": "${functionArn}",
-            "TagKeys": Array [
+            "TagKeys": [
               "${TAG_VERSION_NAME}",
             ],
           },
