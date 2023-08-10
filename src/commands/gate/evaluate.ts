@@ -10,6 +10,7 @@ import {SpanTags} from '../../helpers/interfaces'
 import {retryRequest} from '../../helpers/retry'
 import {parseTags} from '../../helpers/tags'
 import {getUserGitSpanTags} from '../../helpers/user-provided-git'
+import * as validation from '../../helpers/validation'
 
 import {apiConstructor} from './api'
 import {APIHelper, EvaluationResponse, EvaluationResponsePayload, Payload} from './interfaces'
@@ -53,14 +54,23 @@ export class GateEvaluateCommand extends Command {
         'Evaluate matching quality gate rules in Datadog from the datadoghq.eu site',
         'DATADOG_SITE=datadoghq.eu datadog-ci gate evaluate',
       ],
+      [
+        'Evaluate matching quality gate rules in Datadog with a timeout of 120 seconds',
+        'datadog-ci gate evaluate --timeout 120',
+      ],
       ['Evaluate matching quality gate rules in Datadog without waiting', 'datadog-ci gate evaluate --no-wait'],
     ],
   })
+
+  private initialRetryMs = 1000
+  private maxRetries = 5
+  private defaultTimeout = '1800' // 30 min
 
   private dryRun = Option.Boolean('--dry-run', false)
   private failOnEmpty = Option.Boolean('--fail-on-empty', false)
   private failIfUnavailable = Option.Boolean('--fail-if-unavailable', false)
   private noWait = Option.Boolean('--no-wait', false)
+  private timeoutS = Option.String('--timeout', this.defaultTimeout, {validator: validation.isInteger()})
   private userScope = Option.Array('--scope')
   private tags = Option.Array('--tags')
 
@@ -69,9 +79,6 @@ export class GateEvaluateCommand extends Command {
     appKey: process.env.DATADOG_APP_KEY,
     envVarTags: process.env.DD_TAGS,
   }
-
-  private initialRetryMs = 1000
-  private maxRetries = 5
 
   public async execute() {
     const api = this.getApiHelper()
@@ -143,6 +150,7 @@ export class GateEvaluateCommand extends Command {
         }
       },
       retries: this.maxRetries,
+      maxRetryTime: this.timeoutS * 1000,
       maxTimeout: 0,
       minTimeout: 0,
     })
@@ -166,15 +174,19 @@ export class GateEvaluateCommand extends Command {
     evaluateRequest: Payload,
     attempt?: number
   ): Promise<AxiosResponse<EvaluationResponsePayload>> {
+    const timePassed = new Date().getTime() - evaluateRequest.startTimeMs
+    const remainingWait = Math.max(0, this.timeoutS * 1000 - timePassed)
+
     return new Promise((resolve, reject) => {
       api
         .evaluateGateRules(evaluateRequest, this.context.stdout.write.bind(this.context.stdout))
         .then((response) => {
           if (response.data.data.attributes.status === 'wait') {
             this.context.stdout.write(renderWaiting())
+            const waitTime = response.data.data.attributes.metadata?.wait_time_ms ?? 0
             setTimeout(() => {
               reject(new Error('wait'))
-            }, response.data.data.attributes.metadata?.wait_time_ms ?? 0)
+            }, Math.min(remainingWait, waitTime))
           } else {
             resolve(response)
           }
@@ -182,7 +194,7 @@ export class GateEvaluateCommand extends Command {
         .catch((err) => {
           setTimeout(() => {
             reject(err)
-          }, this.getDelay(attempt ?? 1))
+          }, Math.min(remainingWait, this.getDelay(attempt ?? 1)))
         })
     })
   }
