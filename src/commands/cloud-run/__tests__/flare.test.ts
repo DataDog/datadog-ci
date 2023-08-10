@@ -51,6 +51,10 @@ const MOCK_CLOUDRUN_CONFIG = {
   name: `projects/${MOCK_PROJECT}/locations/${MOCK_REGION}/services/${MOCK_SERVICE}`,
   description: 'description',
   uri: `https://${MOCK_SERVICE}-abc12345-ue.a.run.app`,
+  labels: {
+    someLabel: 'someValue',
+    anotherLabel: 'anotherValue',
+  },
   template: {
     containers: [
       {
@@ -362,6 +366,28 @@ describe('cloud-run flare', () => {
       const output = context.stdout.toString()
       expect(code).toBe(0)
       expect(output).toMatchSnapshot()
+    })
+
+    it('splits environment variables when there are multiple containers', async () => {
+      // Define a config with multiple containers
+      // Deep copy MOCK_CLOUDRUN_CONFIG, and then add another container
+      const multipleContainerConfig = JSON.parse(JSON.stringify(MOCK_CLOUDRUN_CONFIG))
+      const secondContainer = {
+        env: [
+          {
+            name: 'DD_API_KEY',
+            value: MOCK_DATADOG_API_KEY,
+            values: 'value',
+          },
+        ],
+        image: 'gcr.io/datadog-sandbox/another-container',
+      }
+      multipleContainerConfig.template.containers.push(secondContainer)
+
+      generateInsightsFile(insightsFilePath, false, maskConfig(multipleContainerConfig))
+      expect(writeFileSpy).toHaveBeenCalledTimes(1)
+      const receivedContent = writeFileSpy.mock.calls[0][1]
+      expect(receivedContent).toMatchSnapshot()
     })
   })
 

@@ -519,11 +519,20 @@ export const generateInsightsFile = (insightsFilePath: string, isDryRun: boolean
   lines.push(`**Service Name**: \`${service}\`  `)
   lines.push(`**Location**: \`${location}\`  `)
   lines.push(`**Project**: \`${project}\`  `)
-  lines.push(`**Description**: \`${config.description ?? 'No description'}\`  `)
-  lines.push(`**URI**: \`${config.uri ?? ''}\`  `)
+  const description = config.description
+  if (description && description.length > 0) {
+    lines.push(`**Description**: \`${description}\`  `)
+  }
+  lines.push(`**URI**: \`${config.uri ?? ''}\``)
+
+  // Environment variables
   const containers = config.template?.containers ?? []
-  const envVars = new Map<string, string>()
   for (const container of containers) {
+    // We want to separate environment variables by container if there are multiple containers
+    // We can use the container image to uniquely identify each container
+    lines.push(`\n**Environment Variables** (${container.image ?? 'unknown image'}):`)
+
+    const envVars = new Map<string, string>()
     for (const envVar of container.env ?? []) {
       const name = envVar.name
       const value = envVar.value
@@ -531,12 +540,22 @@ export const generateInsightsFile = (insightsFilePath: string, isDryRun: boolean
         envVars.set(name, value)
       }
     }
+    if (envVars.size === 0) {
+      lines.push('- No environment variables found.')
+    }
+    for (const [key, value] of envVars) {
+      lines.push(`- \`${key}\`: \`${value}\``)
+    }
   }
-  lines.push('**Environment Variables**:')
-  if (envVars.size === 0) {
-    lines.push('- No environment variables found.')
+
+  // Labels
+  lines.push('\n**Labels**:')
+  const labels = config.labels ?? {}
+  const entries = Object.entries(labels)
+  if (entries.length === 0) {
+    lines.push('- No labels found.')
   }
-  for (const [key, value] of envVars) {
+  for (const [key, value] of entries) {
     lines.push(`- \`${key}\`: \`${value}\``)
   }
 
