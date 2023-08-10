@@ -5,7 +5,7 @@ import process from 'process'
 import util from 'util'
 
 import {Logging} from '@google-cloud/logging'
-import {ServicesClient} from '@google-cloud/run'
+import {RevisionsClient, ServicesClient} from '@google-cloud/run'
 import {google} from '@google-cloud/run/build/protos/protos'
 import chalk from 'chalk'
 import {Command, Option} from 'clipanion'
@@ -42,6 +42,9 @@ const ALL_LOGS_FILE_NAME = 'all_logs.csv'
 const WARNING_LOGS_FILE_NAME = 'warning_logs.csv'
 const ERRORS_LOGS_FILE_NAME = 'error_logs.csv'
 const DEBUG_LOGS_FILE_NAME = 'debug_logs.csv'
+
+// What's the maximum number of revisions we want to include? Too many revisions will flood the INSIGHTS.md file
+const MAX_REVISIONS = 10
 
 // Must be in range 0 - 1000. If more logs are needed, pagination must be implemented
 export const MAX_LOGS = 1000
@@ -200,6 +203,17 @@ export class CloudRunFlareCommand extends Command {
       }
     }
 
+    // Get recent revisions, which will be used to generate insights file
+    this.context.stdout.write(chalk.bold('\n🌧 Fetching recent revisions...\n'))
+    let revisions: string[] = []
+    try {
+      revisions = await getRecentRevisions(this.service!, this.region!, this.project!)
+      this.context.stdout.write(`• Found ${revisions.length} revisions\n`)
+    } catch (err) {
+      const errorDetails = err instanceof Error ? err.message : ''
+      this.context.stdout.write(helpersRenderer.renderSoftWarning(`Unable to fetch recent revisions. ${errorDetails}`))
+    }
+
     // Get logs
     const logFileMappings = new Map<string, CloudRunLog[]>()
     if (this.withLogs) {
@@ -276,7 +290,15 @@ export class CloudRunFlareCommand extends Command {
       // Write insights file
       try {
         const insightsFilePath = path.join(rootFolderPath, INSIGHTS_FILE_NAME)
-        generateInsightsFile(insightsFilePath, this.isDryRun, config)
+        generateInsightsFile(
+          insightsFilePath,
+          this.isDryRun,
+          config,
+          this.service!,
+          this.region!,
+          this.project!,
+          revisions
+        )
         this.context.stdout.write(`• Saved insights file to ./${INSIGHTS_FILE_NAME}\n`)
       } catch (err) {
         const errorDetails = err instanceof Error ? err.message : ''
@@ -481,30 +503,54 @@ export const saveLogsFile = (logs: CloudRunLog[], filePath: string) => {
 }
 
 /**
- * Parse and extract project, location, and service from a given name string
- * @param name Cloud Run name, such as "projects/datadog-sandbox/locations/us-east1/services/nicholas-hulston-docker-test"
- * @returns an array of [project, location, service] if a valid name is provided, or undefined otherwise
+ * Gets recent revisions for a cloud-run service
+ * @param service
+ * @param location
+ * @param project
+ * @returns a string array of recent revisions
  */
-export const getServiceLocationProjectFromName = (name: string | null | undefined) => {
-  if (!name) {
-    return
+export const getRecentRevisions = async (service: string, location: string, project: string) => {
+  const client = new RevisionsClient()
+  const request = {
+    parent: client.servicePath(project, location, service),
+  }
+  const iterable = (await client.listRevisions(request)) as any
+  const revisions: string[] = []
+  for (const response of iterable) {
+    if (!response) {
+      break
+    }
+
+    for (const entry of response) {
+      const fullName: string = entry.name
+      const nameSplit = fullName.split('/')
+      const revisionName = nameSplit[nameSplit.length - 1]
+      revisions.push(revisionName)
+    }
   }
 
-  const components = name.split('/')
-  const service = components[5]
-  const location = components[3]
-  const project = components[1]
-
-  return [service, location, project]
+  return revisions.slice(0, MAX_REVISIONS)
 }
 
 /**
  * Generate the insights file
  * @param insightsFilePath path to the insights file
  * @param isDryRun whether or not this is a dry run
- * @param config Lambda function configuration
+ * @param config Cloud run service configuration
+ * @param service
+ * @param location
+ * @param project
+ * @param revisions a string array of recent revisions
  */
-export const generateInsightsFile = (insightsFilePath: string, isDryRun: boolean, config: IService) => {
+export const generateInsightsFile = (
+  insightsFilePath: string,
+  isDryRun: boolean,
+  config: IService,
+  service: string,
+  location: string,
+  project: string,
+  revisions: string[]
+) => {
   const lines: string[] = []
   // Header
   lines.push('# Flare Insights')
@@ -514,7 +560,6 @@ export const generateInsightsFile = (insightsFilePath: string, isDryRun: boolean
   }
 
   // Cloud Run Service Configuration
-  const [service, location, project] = getServiceLocationProjectFromName(config.name) ?? ['', '', '']
   lines.push('\n## Cloud Run Service Configuration')
   lines.push(`**Service Name**: \`${service}\`  `)
   lines.push(`**Location**: \`${location}\`  `)
@@ -557,6 +602,14 @@ export const generateInsightsFile = (insightsFilePath: string, isDryRun: boolean
   }
   for (const [key, value] of entries) {
     lines.push(`- \`${key}\`: \`${value}\``)
+  }
+
+  // Recent revisions
+  if (revisions.length > 0) {
+    lines.push('\n**Recent Revisions**:')
+    for (const revision of revisions) {
+      lines.push(`- ${revision}`)
+    }
   }
 
   // CLI Insights

@@ -22,7 +22,7 @@ import {
   generateInsightsFile,
   getCloudRunServiceConfig,
   getLogs,
-  getServiceLocationProjectFromName,
+  getRecentRevisions,
   maskConfig,
   MAX_LOGS,
   saveLogsFile,
@@ -88,6 +88,20 @@ const MOCK_READ_STREAM = new stream.Readable({
     this.push(undefined)
   },
 })
+const MOCK_REVISIONS = [
+  {name: 'projects/some-project/locations/some-location/services/service/revisions/service-00005-abc'},
+  {name: 'projects/some-project/locations/some-location/services/service/revisions/service-00004-def'},
+  {name: 'projects/some-project/locations/some-location/services/service/revisions/service-00003-ghi'},
+  {name: 'projects/some-project/locations/some-location/services/service/revisions/service-00002-jkl'},
+  {name: 'projects/some-project/locations/some-location/services/service/revisions/service-00001-mno'},
+]
+const MOCK_REVISION_NAMES = [
+  'service-00005-abc',
+  'service-00004-def',
+  'service-00003-ghi',
+  'service-00002-jkl',
+  'service-00001-mno',
+]
 
 // GCP mocks
 jest.mock('@google-cloud/logging')
@@ -103,6 +117,10 @@ jest.mock('@google-cloud/run', () => {
     ServicesClient: jest.fn().mockImplementation(() => ({
       servicePath: jest.fn().mockReturnValue('servicePath'),
       getService: () => Promise.resolve([MOCK_CLOUDRUN_CONFIG]),
+    })),
+    RevisionsClient: jest.fn().mockImplementation(() => ({
+      servicePath: jest.fn().mockReturnValue('servicePath'),
+      listRevisions: jest.fn().mockReturnValue([MOCK_REVISIONS]),
     })),
   }
 })
@@ -335,21 +353,9 @@ describe('cloud-run flare', () => {
     })
   })
 
-  describe('getServiceLocationProjectFromName', () => {
-    it('should return undefined if the name is null or undefined', () => {
-      // eslint-disable-next-line no-null/no-null
-      expect(getServiceLocationProjectFromName(null)).toBeUndefined()
-      expect(getServiceLocationProjectFromName(undefined)).toBeUndefined()
-    })
-
-    it('should return undefined if the name is an empty string', () => {
-      expect(getServiceLocationProjectFromName('')).toBeUndefined()
-    })
-
-    it('should return the correct service, location, and project', () => {
-      const name = `projects/${MOCK_PROJECT}/locations/${MOCK_REGION}/services/${MOCK_SERVICE}`
-      expect(getServiceLocationProjectFromName(name)).toEqual([MOCK_SERVICE, MOCK_REGION, MOCK_PROJECT])
-    })
+  test('getRecentRevisions should return the correct revision names', async () => {
+    const revisions = await getRecentRevisions(MOCK_SERVICE, MOCK_REGION, MOCK_PROJECT)
+    expect(revisions).toEqual(MOCK_REVISION_NAMES)
   })
 
   describe('generateInsightsFile', () => {
@@ -357,7 +363,15 @@ describe('cloud-run flare', () => {
     const writeFileSpy = jest.spyOn(fsModule, 'writeFile')
 
     it('should call writeFile with correct content when isDryRun is false', () => {
-      generateInsightsFile(insightsFilePath, false, maskConfig(MOCK_CLOUDRUN_CONFIG))
+      generateInsightsFile(
+        insightsFilePath,
+        false,
+        maskConfig(MOCK_CLOUDRUN_CONFIG),
+        MOCK_SERVICE,
+        MOCK_REGION,
+        MOCK_PROJECT,
+        MOCK_REVISION_NAMES
+      )
 
       expect(writeFileSpy).toHaveBeenCalledTimes(1)
 
@@ -366,7 +380,15 @@ describe('cloud-run flare', () => {
     })
 
     it('should call writeFile with correct content when isDryRun is true', () => {
-      generateInsightsFile(insightsFilePath, true, maskConfig(MOCK_CLOUDRUN_CONFIG))
+      generateInsightsFile(
+        insightsFilePath,
+        true,
+        maskConfig(MOCK_CLOUDRUN_CONFIG),
+        MOCK_SERVICE,
+        MOCK_REGION,
+        MOCK_PROJECT,
+        MOCK_REVISION_NAMES
+      )
 
       expect(writeFileSpy).toHaveBeenCalledTimes(1)
 
@@ -402,7 +424,15 @@ describe('cloud-run flare', () => {
       }
       multipleContainerConfig.template.containers.push(secondContainer)
 
-      generateInsightsFile(insightsFilePath, false, maskConfig(multipleContainerConfig))
+      generateInsightsFile(
+        insightsFilePath,
+        false,
+        maskConfig(multipleContainerConfig),
+        MOCK_SERVICE,
+        MOCK_REGION,
+        MOCK_PROJECT,
+        MOCK_REVISION_NAMES
+      )
       expect(writeFileSpy).toHaveBeenCalledTimes(1)
       const receivedContent = writeFileSpy.mock.calls[0][1]
       expect(receivedContent).toMatchSnapshot()
