@@ -22,6 +22,7 @@ import {
   generateInsightsFile,
   getCloudRunServiceConfig,
   getLogs,
+  getServiceLocationProjectFromName,
   maskConfig,
   MAX_LOGS,
   saveLogsFile,
@@ -331,6 +332,23 @@ describe('cloud-run flare', () => {
       delete cloudrunConfigCopy.template.containers
       const maskedConfig = maskConfig(cloudrunConfigCopy)
       expect(maskedConfig).toMatchSnapshot()
+    })
+  })
+
+  describe('getServiceLocationProjectFromName', () => {
+    it('should return undefined if the name is null or undefined', () => {
+      // eslint-disable-next-line no-null/no-null
+      expect(getServiceLocationProjectFromName(null)).toBeUndefined()
+      expect(getServiceLocationProjectFromName(undefined)).toBeUndefined()
+    })
+
+    it('should return undefined if the name is an empty string', () => {
+      expect(getServiceLocationProjectFromName('')).toBeUndefined()
+    })
+
+    it('should return the correct service, location, and project', () => {
+      const name = `projects/${MOCK_PROJECT}/locations/${MOCK_REGION}/services/${MOCK_SERVICE}`
+      expect(getServiceLocationProjectFromName(name)).toEqual([MOCK_SERVICE, MOCK_REGION, MOCK_PROJECT])
     })
   })
 

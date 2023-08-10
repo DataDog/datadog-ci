@@ -485,7 +485,7 @@ export const saveLogsFile = (logs: CloudRunLog[], filePath: string) => {
  * @param name Cloud Run name, such as "projects/datadog-sandbox/locations/us-east1/services/nicholas-hulston-docker-test"
  * @returns an array of [project, location, service] if a valid name is provided, or undefined otherwise
  */
-export const getProjectLocationServiceFromName = (name: string | null | undefined) => {
+export const getServiceLocationProjectFromName = (name: string | null | undefined) => {
   if (!name) {
     return
   }
@@ -514,7 +514,7 @@ export const generateInsightsFile = (insightsFilePath: string, isDryRun: boolean
   }
 
   // Cloud Run Service Configuration
-  const [service, location, project] = getProjectLocationServiceFromName(config.name) ?? ['', '', '']
+  const [service, location, project] = getServiceLocationProjectFromName(config.name) ?? ['', '', '']
   lines.push('\n## Cloud Run Service Configuration')
   lines.push(`**Service Name**: \`${service}\`  `)
   lines.push(`**Location**: \`${location}\`  `)
