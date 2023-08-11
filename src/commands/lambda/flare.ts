@@ -19,6 +19,7 @@ import {
   API_KEY_ENV_VAR,
   CI_API_KEY_ENV_VAR,
   FLARE_OUTPUT_DIRECTORY,
+  INSIGHTS_FILE_NAME,
   LOGS_DIRECTORY,
   PROJECT_FILES_DIRECTORY,
 } from '../../constants'
@@ -48,7 +49,6 @@ import * as commonRenderer from './renderers/common-renderer'
 
 const FUNCTION_CONFIG_FILE_NAME = 'function_config.json'
 const TAGS_FILE_NAME = 'tags.json'
-const INSIGHTS_FILE_NAME = 'INSIGHTS.md'
 const FLARE_ZIP_FILE_NAME = 'lambda-flare-output.zip'
 const MAX_LOG_STREAMS = 50
 const DEFAULT_LOG_STREAMS = 3
@@ -353,9 +353,16 @@ export class LambdaFlareCommand extends Command {
       }
 
       // Write insights file
-      const insightsFilePath = path.join(rootFolderPath, INSIGHTS_FILE_NAME)
-      generateInsightsFile(insightsFilePath, this.isDryRun, config)
-      this.context.stdout.write(`• Saved the insights file to ./${INSIGHTS_FILE_NAME}\n`)
+      try {
+        const insightsFilePath = path.join(rootFolderPath, INSIGHTS_FILE_NAME)
+        generateInsightsFile(insightsFilePath, this.isDryRun, config)
+        this.context.stdout.write(`• Saved the insights file to ./${INSIGHTS_FILE_NAME}\n`)
+      } catch (err) {
+        const errorDetails = err instanceof Error ? err.message : ''
+        this.context.stdout.write(
+          helpersRenderer.renderSoftWarning(`Unable to create INSIGHTS.md file. ${errorDetails}`)
+        )
+      }
 
       // Exit if dry run
       const outputMsg = `\nℹ️ Your output files are located at: ${rootFolderPath}\n\n`

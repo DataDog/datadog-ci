@@ -6,7 +6,7 @@ import process from 'process'
 import util from 'util'
 
 import {Logging} from '@google-cloud/logging'
-import {ServicesClient} from '@google-cloud/run'
+import {RevisionsClient, ServicesClient} from '@google-cloud/run'
 import {google} from '@google-cloud/run/build/protos/protos'
 import chalk from 'chalk'
 import {Command, Option} from 'clipanion'
@@ -18,6 +18,7 @@ import {
   CI_API_KEY_ENV_VAR,
   FLARE_OUTPUT_DIRECTORY,
   FLARE_PROJECT_FILES,
+  INSIGHTS_FILE_NAME,
   LOGS_DIRECTORY,
   PROJECT_FILES_DIRECTORY,
 } from '../../constants'
@@ -27,6 +28,7 @@ import {requestConfirmation, requestFilePath} from '../../helpers/prompt'
 import * as helpersRenderer from '../../helpers/renderer'
 import {renderAdditionalFiles, renderProjectFiles} from '../../helpers/renderer'
 import {formatBytes, maskString} from '../../helpers/utils'
+import {version} from '../../helpers/version'
 
 import {getUniqueFileNames} from '../lambda/flare'
 
@@ -40,6 +42,9 @@ const ALL_LOGS_FILE_NAME = 'all_logs.csv'
 const WARNING_LOGS_FILE_NAME = 'warning_logs.csv'
 const ERRORS_LOGS_FILE_NAME = 'error_logs.csv'
 const DEBUG_LOGS_FILE_NAME = 'debug_logs.csv'
+
+// What's the maximum number of revisions we want to include? Too many revisions will flood the INSIGHTS.md file
+const MAX_REVISIONS = 10
 
 // Must be in range 0 - 1000. If more logs are needed, pagination must be implemented
 export const MAX_LOGS = 1000
@@ -217,6 +222,17 @@ export class CloudRunFlareCommand extends Command {
       }
     }
 
+    // Get recent revisions, which will be used to generate insights file
+    this.context.stdout.write(chalk.bold('\n🌧 Fetching recent revisions...\n'))
+    let revisions: string[] = []
+    try {
+      revisions = await getRecentRevisions(this.service!, this.region!, this.project!)
+      this.context.stdout.write(`• Found ${revisions.length} revisions\n`)
+    } catch (err) {
+      const errorDetails = err instanceof Error ? err.message : ''
+      this.context.stdout.write(helpersRenderer.renderSoftWarning(`Unable to fetch recent revisions. ${errorDetails}`))
+    }
+
     // Get logs
     const logFileMappings = new Map<string, CloudRunLog[]>()
     if (this.withLogs) {
@@ -295,6 +311,26 @@ export class CloudRunFlareCommand extends Command {
         const newFilePath = path.join(additionalFilesFolderPath, newFileName)
         fs.copyFileSync(originalFilePath, newFilePath)
         this.context.stdout.write(`• Copied ${originalFileName} to ./${ADDITIONAL_FILES_DIRECTORY}/${newFileName}\n`)
+      }
+
+      // Write insights file
+      try {
+        const insightsFilePath = path.join(rootFolderPath, INSIGHTS_FILE_NAME)
+        generateInsightsFile(
+          insightsFilePath,
+          this.isDryRun,
+          config,
+          this.service!,
+          this.region!,
+          this.project!,
+          revisions
+        )
+        this.context.stdout.write(`• Saved insights file to ./${INSIGHTS_FILE_NAME}\n`)
+      } catch (err) {
+        const errorDetails = err instanceof Error ? err.message : ''
+        this.context.stdout.write(
+          helpersRenderer.renderSoftWarning(`Unable to create INSIGHTS.md file. ${errorDetails}`)
+        )
       }
 
       // Exit if dry run
@@ -537,4 +573,136 @@ export const saveLogsFile = (logs: CloudRunLog[], filePath: string) => {
   })
   const data = rows.join('\n')
   writeFile(filePath, data)
+}
+
+/**
+ * Gets recent revisions for a cloud-run service
+ * @param service
+ * @param location
+ * @param project
+ * @returns a string array of recent revisions and their deployment timestamp
+ */
+export const getRecentRevisions = async (service: string, location: string, project: string) => {
+  const client = new RevisionsClient()
+  const request = {
+    parent: client.servicePath(project, location, service),
+  }
+  // listRevisions() returns a tuple [Revision[], Request, Response],
+  // so we index the first element to get the array of revisions
+  const revisions = (await client.listRevisions(request))[0]
+  const revisionTimestampStrings: string[] = []
+  let counter = 1
+  for (const entry of revisions) {
+    const fullName = entry.name
+    const timestamp = entry.createTime
+    if (fullName && timestamp) {
+      // Get the revision name
+      const nameSplit = fullName.split('/')
+      const revisionName = nameSplit[nameSplit.length - 1]
+
+      // Format the timestamp by first converting seconds/nanos to milliseconds, then using `new Date()`
+      const milliseconds = Number(timestamp.seconds ?? 0) * 1000
+      const timestampString = new Date(milliseconds).toISOString().replace('T', ' ').replace('Z', '').slice(0, -4) // Chop off the milliseconds, which will always be .000
+
+      revisionTimestampStrings.push(`\`${revisionName}\` Deployed on ${timestampString}`)
+    }
+
+    // Stop iterating once we reach MAX_REVISIONS
+    counter += 1
+    if (counter > MAX_REVISIONS) {
+      break
+    }
+  }
+
+  return revisionTimestampStrings
+}
+
+/**
+ * Generate the insights file
+ * @param insightsFilePath path to the insights file
+ * @param isDryRun whether or not this is a dry run
+ * @param config Cloud run service configuration
+ * @param service
+ * @param location
+ * @param project
+ * @param revisions a string array of recent revisions
+ */
+export const generateInsightsFile = (
+  insightsFilePath: string,
+  isDryRun: boolean,
+  config: IService,
+  service: string,
+  location: string,
+  project: string,
+  revisions: string[]
+) => {
+  const lines: string[] = []
+  // Header
+  lines.push('# Flare Insights')
+  lines.push('\n_Autogenerated file from `cloud-run flare`_  ')
+  if (isDryRun) {
+    lines.push('_This command was run in dry mode._')
+  }
+
+  // Cloud Run Service Configuration
+  lines.push('\n## Cloud Run Service Configuration')
+  lines.push(`**Service Name**: \`${service}\`  `)
+  lines.push(`**Location**: \`${location}\`  `)
+  lines.push(`**Project**: \`${project}\`  `)
+  const description = config.description
+  if (description && description.length > 0) {
+    lines.push(`**Description**: \`${description}\`  `)
+  }
+  lines.push(`**URI**: \`${config.uri ?? ''}\``)
+
+  // Environment variables
+  const containers = config.template?.containers ?? []
+  for (const container of containers) {
+    // We want to separate environment variables by container if there are multiple containers
+    // We can use the container image to uniquely identify each container
+    lines.push(`\n**Environment Variables** (${container.image ?? 'unknown image'}):`)
+
+    const envVars = new Map<string, string>()
+    for (const envVar of container.env ?? []) {
+      const name = envVar.name
+      const value = envVar.value
+      if (name && value) {
+        envVars.set(name, value)
+      }
+    }
+    if (envVars.size === 0) {
+      lines.push('- No environment variables found.')
+    }
+    for (const [key, value] of envVars) {
+      lines.push(`- \`${key}\`: \`${value}\``)
+    }
+  }
+
+  // Labels
+  lines.push('\n**Labels**:')
+  const labels = config.labels ?? {}
+  const entries = Object.entries(labels)
+  if (entries.length === 0) {
+    lines.push('- No labels found.')
+  }
+  for (const [key, value] of entries) {
+    lines.push(`- \`${key}\`: \`${value}\``)
+  }
+
+  // Recent revisions
+  if (revisions.length > 0) {
+    lines.push('\n**Recent Revisions**:')
+    for (const revision of revisions) {
+      lines.push(`- ${revision}`)
+    }
+  }
+
+  // CLI Insights
+  lines.push('\n ## CLI')
+  lines.push(`**Run Location**: \`${process.cwd()}\`  `)
+  lines.push(`**CLI Version**: \`${version}\`  `)
+  const timeString = new Date().toISOString().replace('T', ' ').replace('Z', '') + ' UTC'
+  lines.push(`**Timestamp**: \`${timeString}\`  `)
+
+  writeFile(insightsFilePath, lines.join('\n'))
 }
