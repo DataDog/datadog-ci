@@ -179,6 +179,51 @@ exports[`lambda flare convertToCSV returns a CSV string from an array of log eve
 
 exports[`lambda flare convertToCSV returns a CSV string with only headers when given an empty array 1`] = `"timestamp,datetime,message"`;
 
+exports[`lambda flare generateInsightsFile prints a warning when generateInsightsFile() errors 1`] = `
+"
+🐶 Generating Lambda flare to send your configuration to Datadog...
+
+🔑 Getting AWS credentials...
+
+[!] No AWS credentials found, let's set them up! Or you can re-run the command and supply the AWS credentials in the same way when you invoke the AWS CLI.
+
+🔍 Fetching Lambda function configuration...
+
+{
+  Environment: {
+    Variables: {
+      DD_API_KEY: '02**********33bd',
+      DD_SITE: 'datadoghq.com',
+      DD_LOG_LEVEL: 'debug'
+    }
+  },
+  FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:some-function',
+  FunctionName: 'some-function',
+  Runtime: 'nodejs18.x',
+  Handler: '/path/handler.handler'
+}
+(This is a summary of the configuration. The full configuration will be saved in "function_config.json".)
+
+📁 Searching for project files in current directory...
+[!] No project files found.
+
+
+[!] No additional files specified.
+
+🏷 Getting Resource Tags...
+[!] No resource tags were found.
+
+💾 Saving files to mock-folder/.datadog-ci...
+• Saved function config to ./function_config.json
+[!] Unable to create INSIGHTS.md file. Some error
+
+
+🚀 Sending to Datadog Support...
+
+✅ Successfully sent flare file to Datadog Support!
+"
+`;
+
 exports[`lambda flare generateInsightsFile should call writeFile with correct content when isDryRun is false 1`] = `
 "# Flare Insights
 
