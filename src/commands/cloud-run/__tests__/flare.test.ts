@@ -90,19 +90,35 @@ const MOCK_READ_STREAM = new stream.Readable({
     this.push(undefined)
   },
 })
+const MOCK_REVISION_TIMESTAMP = {seconds: 100}
 const MOCK_REVISIONS = [
-  {name: 'projects/some-project/locations/some-location/services/service/revisions/service-00005-abc'},
-  {name: 'projects/some-project/locations/some-location/services/service/revisions/service-00004-def'},
-  {name: 'projects/some-project/locations/some-location/services/service/revisions/service-00003-ghi'},
-  {name: 'projects/some-project/locations/some-location/services/service/revisions/service-00002-jkl'},
-  {name: 'projects/some-project/locations/some-location/services/service/revisions/service-00001-mno'},
+  {
+    name: 'projects/some-project/locations/some-location/services/service/revisions/service-00005-abc',
+    createTime: MOCK_REVISION_TIMESTAMP,
+  },
+  {
+    name: 'projects/some-project/locations/some-location/services/service/revisions/service-00004-def',
+    createTime: MOCK_REVISION_TIMESTAMP,
+  },
+  {
+    name: 'projects/some-project/locations/some-location/services/service/revisions/service-00003-ghi',
+    createTime: MOCK_REVISION_TIMESTAMP,
+  },
+  {
+    name: 'projects/some-project/locations/some-location/services/service/revisions/service-00002-jkl',
+    createTime: MOCK_REVISION_TIMESTAMP,
+  },
+  {
+    name: 'projects/some-project/locations/some-location/services/service/revisions/service-00001-mno',
+    createTime: MOCK_REVISION_TIMESTAMP,
+  },
 ]
 const MOCK_REVISION_NAMES = [
-  'service-00005-abc',
-  'service-00004-def',
-  'service-00003-ghi',
-  'service-00002-jkl',
-  'service-00001-mno',
+  '`service-00005-abc` Deployed on 1970-01-01 00:01:40',
+  '`service-00004-def` Deployed on 1970-01-01 00:01:40',
+  '`service-00003-ghi` Deployed on 1970-01-01 00:01:40',
+  '`service-00002-jkl` Deployed on 1970-01-01 00:01:40',
+  '`service-00001-mno` Deployed on 1970-01-01 00:01:40',
 ]
 
 // GCP mocks

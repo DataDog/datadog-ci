@@ -28,14 +28,13 @@ import {requestConfirmation, requestFilePath} from '../../helpers/prompt'
 import * as helpersRenderer from '../../helpers/renderer'
 import {renderAdditionalFiles, renderProjectFiles} from '../../helpers/renderer'
 import {formatBytes, maskString} from '../../helpers/utils'
+import {version} from '../../helpers/version'
 
 import {getUniqueFileNames} from '../lambda/flare'
 
 import {SKIP_MASKING_CLOUDRUN_ENV_VARS} from './constants'
 import {CloudRunLog, LogConfig} from './interfaces'
 import {renderAuthenticationInstructions} from './renderer'
-
-const version = require('../../../package.json').version
 
 const SERVICE_CONFIG_FILE_NAME = 'service_config.json'
 const FLARE_ZIP_FILE_NAME = 'cloud-run-flare-output.zip'
@@ -544,29 +543,39 @@ export const saveLogsFile = (logs: CloudRunLog[], filePath: string) => {
  * @param service
  * @param location
  * @param project
- * @returns a string array of recent revisions
+ * @returns a string array of recent revisions and their deployment timestamp
  */
 export const getRecentRevisions = async (service: string, location: string, project: string) => {
   const client = new RevisionsClient()
   const request = {
     parent: client.servicePath(project, location, service),
   }
-  const iterable = (await client.listRevisions(request)) as any
-  const revisions: string[] = []
-  for (const response of iterable) {
-    if (!response) {
-      break
-    }
-
-    for (const entry of response) {
-      const fullName: string = entry.name
+  const revisions = (await client.listRevisions(request))[0]
+  const revisionTimestampStrings: string[] = []
+  let counter = 1
+  for (const entry of revisions) {
+    const fullName = entry.name
+    const timestamp = entry.createTime
+    if (fullName && timestamp) {
+      // Get the revision name
       const nameSplit = fullName.split('/')
       const revisionName = nameSplit[nameSplit.length - 1]
-      revisions.push(revisionName)
+
+      // Format the timestamp by first converting seconds/nanos to milliseconds, then using `new Date()`
+      const milliseconds = Number(timestamp.seconds ?? 0) * 1000
+      const timestampString = new Date(milliseconds).toISOString().replace('T', ' ').replace('Z', '').slice(0, -4) // Chop off the milliseconds, which will always be .000
+
+      revisionTimestampStrings.push(`\`${revisionName}\` Deployed on ${timestampString}`)
+    }
+
+    // Stop iterating once we reach MAX_REVISIONS
+    counter += 1
+    if (counter > MAX_REVISIONS) {
+      break
     }
   }
 
-  return revisions.slice(0, MAX_REVISIONS)
+  return revisionTimestampStrings
 }
 
 /**
