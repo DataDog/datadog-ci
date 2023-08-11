@@ -64,13 +64,13 @@ export class GateEvaluateCommand extends Command {
 
   private initialRetryMs = 1000
   private maxRetries = 5
-  private defaultTimeout = '1800' // 30 min
+  private defaultTimeout = 1800 // 30 min
 
   private dryRun = Option.Boolean('--dry-run', false)
   private failOnEmpty = Option.Boolean('--fail-on-empty', false)
   private failIfUnavailable = Option.Boolean('--fail-if-unavailable', false)
   private noWait = Option.Boolean('--no-wait', false)
-  private timeoutS = Option.String('--timeout', this.defaultTimeout, {validator: validation.isInteger()})
+  private timeoutInSeconds = Option.String('--timeout', String(this.defaultTimeout), {validator: validation.isInteger()})
   private userScope = Option.Array('--scope')
   private tags = Option.Array('--tags')
 
@@ -150,7 +150,7 @@ export class GateEvaluateCommand extends Command {
         }
       },
       retries: this.maxRetries,
-      maxRetryTime: this.timeoutS * 1000,
+      maxRetryTime: this.timeoutInSeconds * 1000,
       maxTimeout: 0,
       minTimeout: 0,
     })
@@ -175,7 +175,7 @@ export class GateEvaluateCommand extends Command {
     attempt?: number
   ): Promise<AxiosResponse<EvaluationResponsePayload>> {
     const timePassed = new Date().getTime() - evaluateRequest.startTimeMs
-    const remainingWait = Math.max(0, this.timeoutS * 1000 - timePassed)
+    const remainingWait = Math.max(0, this.timeoutInSeconds * 1000 - timePassed)
 
     return new Promise((resolve, reject) => {
       api
