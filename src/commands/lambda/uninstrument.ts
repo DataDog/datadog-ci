@@ -33,7 +33,7 @@ export class UninstrumentCommand extends Command {
   })
 
   private configPath = Option.String('--config')
-  private dryRun = Option.Boolean('-d,--dry', false)
+  private dryRun = Option.Boolean('-d,--dry,--dry-run', false)
   private forwarder = Option.String('--forwarder')
   private functions = Option.Array('-f,--function', [])
   private interactive = Option.Boolean('-i,--interactive', false)

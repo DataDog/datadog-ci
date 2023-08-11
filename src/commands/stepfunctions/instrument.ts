@@ -3,6 +3,8 @@ import {IAMClient} from '@aws-sdk/client-iam'
 import {SFNClient} from '@aws-sdk/client-sfn'
 import {Command, Option} from 'clipanion'
 
+import {version} from '../../helpers/version'
+
 import {
   createLogGroup,
   enableStepFunctionLogs,
@@ -24,7 +26,7 @@ import {
   injectContextIntoLambdaPayload,
 } from './helpers'
 
-const cliVersion = require('../../../package.json').version
+const cliVersion = version
 
 export class InstrumentStepFunctionsCommand extends Command {
   public static paths = [['stepfunctions', 'instrument']]

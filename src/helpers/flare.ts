@@ -21,8 +21,7 @@ import {
 import {deleteFolder} from './fs'
 import * as helpersRenderer from './renderer'
 import {isValidDatadogSite} from './validation'
-
-const {version} = require('../../package.json')
+import {version} from './version'
 
 /**
  * Send the zip file to Datadog support

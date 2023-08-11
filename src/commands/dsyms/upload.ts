@@ -14,6 +14,7 @@ import {upload, UploadStatus} from '../../helpers/upload'
 import {buildPath, getRequestBuilder, resolveConfigFromFileAndEnvironment} from '../../helpers/utils'
 import * as validation from '../../helpers/validation'
 import {checkAPIKeyOverride} from '../../helpers/validation'
+import {version} from '../../helpers/version'
 
 import {ArchSlice, CompressedDsym, Dsym} from './interfaces'
 import {
@@ -62,14 +63,9 @@ export class UploadCommand extends Command {
   private dryRun = Option.Boolean('--dry-run', false)
   private maxConcurrency = Option.String('--max-concurrency', '20', {validator: validation.isInteger()})
 
-  private cliVersion: string
+  private cliVersion = version
   private config: Record<string, string> = {
     datadogSite: 'datadoghq.com',
-  }
-
-  constructor() {
-    super()
-    this.cliVersion = require('../../../package.json').version
   }
 
   public async execute() {

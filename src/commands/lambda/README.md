@@ -30,7 +30,7 @@ datadog-ci lambda instrument -i
 datadog-ci lambda instrument --functions-regex <valid-regex-pattern> -r us-east-1 -v 46 -e 10
 
 # Dry run of all updates
-datadog-ci lambda instrument -f <function-name> -f <another-function-name> -r us-east-1 -v 46 -e 10 --dry
+datadog-ci lambda instrument -f <function-name> -f <another-function-name> -r us-east-1 -v 46 -e 10 --dry-run
 ```
 
 ### `uninstrument`
@@ -48,7 +48,7 @@ datadog-ci lambda uninstrument -i
 datadog-ci lambda uninstrument --functions-regex <valid-regex-pattern> -r us-east-1
 
 # Dry run of all updates
-datadog-ci lambda uninstrument -f <function-name> -f <another-function-name> -r us-east-1 --dry
+datadog-ci lambda uninstrument -f <function-name> -f <another-function-name> -r us-east-1 --dry-run
 ```
 
 See the configuration section for additional settings.
@@ -96,7 +96,7 @@ You can pass the following arguments to `instrument` to specify its behavior. Th
 | `--flush-metrics-to-logs` | | Whether to send metrics via the Datadog Forwarder [asynchronously][11]. If you disable this parameter, it's required to export `DATADOG_API_KEY` (or if encrypted, `DATADOG_KMS_API_KEY` or `DATADOG_API_KEY_SECRET_ARN`). | `true` |
 | `--capture-lambda-payload` | | Whether to capture and store the payload and response of a lambda invocation. | `false` |
 | `--forwarder` | | The ARN of the [datadog forwarder][10] to attach this function's LogGroup to. | |
-| `--dry` | `-d` | Preview changes running command would apply. | `false` |
+| `--dry-run` | `-d` | Preview changes running command would apply. | `false` |
 | `--log-level` | | Set to `debug` to see additional output from the Datadog Lambda Library and/or Lambda Extension for troubleshooting purposes. | |
 | `--source-code-integration` | `-s` | Whether to enable [Datadog Source Code Integration][13]. This will tag your lambda(s) with the Git repository URL and the latest commit hash of the current local directory. **Note**: Git repository must not be ahead of remote, and must not be dirty. | `true` |
 | `--no-source-code-integration` | | Disables Datadog Source Code Integration. | |
@@ -117,7 +117,7 @@ Any other argument stated on the `instrument` table, but not below, will be igno
 | `--region` | `-r` | Default region to use, when `--function` is specified by the function name instead of the ARN. | |
 | `--profile` | | Specify the AWS named profile credentials to use to uninstrument. Learn more about AWS named profiles [here][12]. |  | 
 | `--forwarder` | | The ARN of the [datadog forwarder][10] to remove from this function. | |
-| `--dry` | `-d` | Preview changes running command would apply. | `false` |
+| `--dry-run` | `-d` | Preview changes running command would apply. | `false` |
 
 <br/>
 
@@ -161,7 +161,7 @@ datadog-ci lambda flare -f <function-arn> -c <case-id> -e <email-on-case-id>
 datadog-ci lambda flare -f <function-name> -r <AWS region> -c <case-id> -e <email-on-case-id> --with-logs
 
 # Dry run: collect data, but don't send to Datadog support
-datadog-ci lambda flare -f <function-arn> --with-logs --dry
+datadog-ci lambda flare -f <function-arn> --with-logs --dry-run
 ```
 
 **Arguments**
@@ -174,7 +174,7 @@ datadog-ci lambda flare -f <function-arn> --with-logs --dry
 | `--email`             | `-e`      | The email associated with the specified case ID.                                                                            |         |
 | `--with-logs`         |           | Collect recent CloudWatch logs for the specified function.                                                                  | `false` |
 | `--start` and `--end` |           | Define a time range in milliseconds since the Unix Epoch to gather logs within that range. (`--with-logs` must be included) |         |
-| `--dry`               | `-d`      | Preview collected data which would be sent to Datadog support.                                                              | `false` |
+| `--dry-run`           | `-d`      | Preview collected data which would be sent to Datadog support.                                                              | `false` |
 
 
 ## Community

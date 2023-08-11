@@ -8,6 +8,7 @@ export const getReactNativeVersion = (packageJsonPath: string): undefined | stri
   }
 
   try {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-var-requires
     return require(packageJsonPath).version as string
   } catch (e) {
     return undefined

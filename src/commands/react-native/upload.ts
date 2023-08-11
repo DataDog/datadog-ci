@@ -12,6 +12,7 @@ import {upload, UploadStatus} from '../../helpers/upload'
 import {getRequestBuilder, resolveConfigFromFileAndEnvironment} from '../../helpers/utils'
 import * as validation from '../../helpers/validation'
 import {checkAPIKeyOverride} from '../../helpers/validation'
+import {version} from '../../helpers/version'
 
 import {RNPlatform, RNSourcemap, RN_SUPPORTED_PLATFORMS} from './interfaces'
 import {
@@ -66,14 +67,9 @@ export class UploadCommand extends Command {
   private service = Option.String('--service')
   private sourcemap = Option.String('--sourcemap')
 
-  private cliVersion: string
+  private cliVersion = version
   private config: Record<string, string> = {
     datadogSite: 'datadoghq.com',
-  }
-
-  constructor() {
-    super()
-    this.cliVersion = require('../../../package.json').version
   }
 
   public async execute() {
