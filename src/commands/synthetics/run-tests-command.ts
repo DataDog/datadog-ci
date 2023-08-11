@@ -1,5 +1,6 @@
 import {Command, Option} from 'clipanion'
 import deepExtend from 'deep-extend'
+import terminalLink from 'terminal-link'
 
 import {removeUndefinedValues, resolveConfigFromFile} from '../../helpers/utils'
 import * as validation from '../../helpers/validation'
@@ -44,32 +45,83 @@ export const DEFAULT_COMMAND_CONFIG: RunTestsCommandConfig = {
   variableStrings: [],
 }
 
+const configurationLink = 'https://docs.datadoghq.com/continuous_testing/cicd_integrations/configuration'
+
+const $1 = (text: string) => terminalLink(text, `${configurationLink}#global-configuration-file-options`)
+const $2 = (text: string) => terminalLink(text, `${configurationLink}#test-files`)
+const $3 = (text: string) => terminalLink(text, `${configurationLink}#use-the-testing-tunnel`)
+
 export class RunTestsCommand extends Command {
   public static paths = [['synthetics', 'run-tests']]
 
   public static usage = Command.Usage({
     category: 'Synthetics',
-    description: 'Run Synthetics tests with Datadog.',
+    description: 'Run Synthetic tests with Datadog.',
+    details: `
+      This command will run Synthetic tests with Datadog, wait for the results and report a summary.\n
+      https://docs.datadoghq.com/continuous_testing/cicd_integrations
+    `,
+    examples: [
+      [
+        'Explicitly specify multiple tests to run',
+        'datadog-ci synthetics run-tests --public-id pub-lic-id1 --public-id pub-lic-id2',
+      ],
+      ['Discover tests with a search query', "datadog-ci synthetics run-tests --search 'tag:e2e-tests'"],
+      [
+        'Override the default glob pattern to group the tests in suites',
+        'datadog-ci synthetics run-tests -f ./component-1/**/*.synthetics.json -f ./component-2/**/*.synthetics.json',
+      ],
+      [
+        'Pass variables as arguments',
+        'datadog-ci synthetics run-tests -f ./component-1/**/*.synthetics.json --variable PASSWORD=$PASSWORD',
+      ],
+    ],
   })
 
-  public configPath = Option.String('--config')
-  public jUnitReport = Option.String('-j,--jUnitReport')
-  public runName = Option.String('-n,--runName')
+  public configPath = Option.String('--config', {description: `Pass a path to a ${$1('global configuration file')}.`})
+  public jUnitReport = Option.String('-j,--jUnitReport', {description: 'Pass a path to a JUnit report file.'})
+  public runName = Option.String('-n,--runName', {
+    description: 'A name for this run, which will be included in the JUnit report file.',
+  })
 
-  private apiKey = Option.String('--apiKey')
-  private appKey = Option.String('--appKey')
-  private datadogSite = Option.String('--datadogSite')
-  private failOnCriticalErrors = Option.Boolean('--failOnCriticalErrors')
-  private failOnMissingTests = Option.Boolean('--failOnMissingTests')
-  private failOnTimeout = Option.Boolean('--failOnTimeout')
-  private files = Option.Array('-f,--files')
-  private mobileApplicationVersionFilePath = Option.String('--mobileApp,--mobileApplicationVersionFilePath')
-  private pollingTimeout = Option.String('--pollingTimeout', {validator: validation.isInteger()})
-  private publicIds = Option.Array('-p,--public-id')
-  private subdomain = Option.String('--subdomain')
-  private testSearchQuery = Option.String('-s,--search')
-  private tunnel = Option.Boolean('-t,--tunnel')
-  private variableStrings = Option.Array('-v,--variable')
+  private apiKey = Option.String('--apiKey', {description: 'The API key used to query the Datadog API.'})
+  private appKey = Option.String('--appKey', {description: 'The application key used to query the Datadog API.'})
+  private datadogSite = Option.String('--datadogSite', {description: 'The Datadog instance to which request is sent.'})
+  private failOnCriticalErrors = Option.Boolean('--failOnCriticalErrors', {
+    description:
+      'A boolean flag that fails the CI job if no tests were triggered, or results could not be fetched from Datadog.',
+  })
+  private failOnMissingTests = Option.Boolean('--failOnMissingTests', {
+    description: `A boolean flag that fails the CI job if at least one specified test with a public ID (a \`--public-id\` CLI argument or listed in a ${$2(
+      'test file'
+    )} is missing in a run (for example, if it has been deleted programmatically or on the Datadog site).`,
+  })
+  private failOnTimeout = Option.Boolean('--failOnTimeout', {
+    description: 'A boolean flag that fails the CI job if at least one test exceeds the default test timeout.',
+  })
+  private files = Option.Array('-f,--files', {
+    description: `Glob pattern to detect Synthetic test ${$2('configuration files')}}.`,
+  })
+  private mobileApplicationVersionFilePath = Option.String('--mobileApp,--mobileApplicationVersionFilePath', {
+    description: 'Override the application version for all Synthetic mobile application tests.',
+  })
+  private pollingTimeout = Option.String('--pollingTimeout', {
+    description:
+      'The duration (in milliseconds) after which `datadog-ci` stops polling for test results. The default is 30 minutes. At the CI level, test results completed after this duration are considered failed.',
+    validator: validation.isInteger(),
+  })
+  private publicIds = Option.Array('-p,--public-id', {description: 'Specify a test to run.'})
+  private subdomain = Option.String('--subdomain', {
+    description:
+      'The name of the custom subdomain set to access your Datadog application. If the URL used to access Datadog is `myorg.datadoghq.com`, the `subdomain` value needs to be set to `myorg`.',
+  })
+  private testSearchQuery = Option.String('-s,--search', {
+    description: 'Pass a query to select which Synthetic tests to run.',
+  })
+  private tunnel = Option.Boolean('-t,--tunnel', {
+    description: `Use the ${$3('Continuous Testing Tunnel')} to execute your test batch.`,
+  })
+  private variableStrings = Option.Array('-v,--variable', {description: 'Pass a variable override.'})
 
   private reporter?: MainReporter
   private config: RunTestsCommandConfig = JSON.parse(JSON.stringify(DEFAULT_COMMAND_CONFIG)) // Deep copy to avoid mutation during unit tests
