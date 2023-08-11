@@ -119,8 +119,7 @@ describe('evaluate', () => {
   describe('wait', () => {
     test('should pass the command if the response status is wait', () => {
       const write = jest.fn()
-      const command = new GateEvaluateCommand()
-      command.context = {stdout: {write}} as any
+      const command = createCommand(GateEvaluateCommand, {stderr: {write}} as any)
 
       const response: EvaluationResponse = {
         status: 'wait',
