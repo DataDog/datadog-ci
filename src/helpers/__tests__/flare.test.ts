@@ -6,7 +6,7 @@ import FormData from 'form-data'
 
 import {CI_SITE_ENV_VAR, FLARE_PROJECT_FILES, SITE_ENV_VAR} from '../../constants'
 
-import {getEndpointUrl, getProjectFiles, sendToDatadog, validateFilePath} from '../flare'
+import {getEndpointUrl, getProjectFiles, sendToDatadog, validateFilePath, validateStartEndFlags} from '../flare'
 import * as flareModule from '../flare'
 
 import {MOCK_CWD} from './fixtures'
@@ -191,6 +191,44 @@ describe('flare', () => {
 
       expect(() => validateFilePath(filePath, projectFilePaths, additionalFilePaths)).toThrowErrorMatchingSnapshot()
       expect(fs.existsSync).toHaveBeenCalledWith(filePath)
+    })
+  })
+
+  describe('validateStartEndFlags', () => {
+    it('returns [undefined, undefined] when start and end flags are not specified', () => {
+      const errorMessages: string[] = []
+      const res = validateStartEndFlags(undefined, undefined)
+      expect(res).toEqual([undefined, undefined])
+      expect(errorMessages).toEqual([])
+    })
+
+    it('throws error when start is specified but end is not specified', () => {
+      expect(() => validateStartEndFlags('123', undefined)).toThrowErrorMatchingSnapshot()
+    })
+
+    it('throws error when end is specified but start is not specified', () => {
+      expect(() => validateStartEndFlags(undefined, '123')).toThrowErrorMatchingSnapshot()
+    })
+
+    it('throws error when start is invalid', () => {
+      expect(() => validateStartEndFlags('123abc', '200')).toThrowErrorMatchingSnapshot()
+    })
+
+    it('throws error when end is invalid', () => {
+      expect(() => validateStartEndFlags('100', '234abc')).toThrowErrorMatchingSnapshot()
+    })
+
+    it('throws error when start is not before the end time', () => {
+      expect(() => validateStartEndFlags('200', '100')).toThrowErrorMatchingSnapshot()
+    })
+
+    it('sets end time to current time if end time is too large', () => {
+      const now = Date.now()
+      const res = validateStartEndFlags('0', '9999999999999')
+      expect(res).not.toBeUndefined()
+      const [start, end] = res
+      expect(start).toBe(0)
+      expect(end).toEqual(now)
     })
   })
 })

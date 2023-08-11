@@ -364,7 +364,7 @@ describe('cloud-run flare', () => {
     const expectedOrder = 'timestamp asc'
 
     it('uses correct filter when `severityFilter` is unspecified', async () => {
-      await getLogs(MOCK_LOG_CLIENT, MOCK_SERVICE, MOCK_REGION)
+      await getLogs(MOCK_LOG_CLIENT, MOCK_SERVICE, MOCK_REGION, undefined, undefined)
       const expectedFilter = `resource.labels.service_name="${MOCK_SERVICE}" AND resource.labels.location="${MOCK_REGION}" AND timestamp>="2022-12-31T00:00:00.000Z" AND (textPayload:* OR httpRequest:*)`
 
       expect(MOCK_LOG_CLIENT.getEntries).toHaveBeenCalledWith({
@@ -375,7 +375,7 @@ describe('cloud-run flare', () => {
     })
 
     it('uses correct filter when `severityFilter` is defined', async () => {
-      await getLogs(MOCK_LOG_CLIENT, MOCK_SERVICE, MOCK_REGION, ' AND severity>="WARNING"')
+      await getLogs(MOCK_LOG_CLIENT, MOCK_SERVICE, MOCK_REGION, undefined, undefined, ' AND severity>="WARNING"')
       const expectedFilter = `resource.labels.service_name="${MOCK_SERVICE}" AND resource.labels.location="${MOCK_REGION}" AND timestamp>="2022-12-31T00:00:00.000Z" AND (textPayload:* OR httpRequest:*) AND severity>="WARNING"`
 
       expect(MOCK_LOG_CLIENT.getEntries).toHaveBeenCalledWith({
@@ -391,7 +391,7 @@ describe('cloud-run flare', () => {
       ]
       MOCK_GET_ENTRIES.mockResolvedValueOnce([page1, {pageToken: undefined}])
 
-      const logs = await getLogs(MOCK_LOG_CLIENT, MOCK_SERVICE, MOCK_REGION)
+      const logs = await getLogs(MOCK_LOG_CLIENT, MOCK_SERVICE, MOCK_REGION, undefined, undefined)
 
       expect(logs).toEqual([
         {
@@ -407,12 +407,12 @@ describe('cloud-run flare', () => {
       const error = new Error('getEntries failed')
       MOCK_GET_ENTRIES.mockRejectedValueOnce(error)
 
-      await expect(getLogs(MOCK_LOG_CLIENT, MOCK_SERVICE, MOCK_REGION)).rejects.toMatchSnapshot()
+      await expect(getLogs(MOCK_LOG_CLIENT, MOCK_SERVICE, MOCK_REGION, undefined, undefined)).rejects.toMatchSnapshot()
     })
 
     it('returns an empty array when no logs are returned', async () => {
       MOCK_GET_ENTRIES.mockResolvedValueOnce([[], {pageToken: undefined}])
-      const logs = await getLogs(MOCK_LOG_CLIENT, MOCK_SERVICE, MOCK_REGION)
+      const logs = await getLogs(MOCK_LOG_CLIENT, MOCK_SERVICE, MOCK_REGION, undefined, undefined)
 
       expect(logs).toEqual([])
     })
@@ -436,7 +436,7 @@ describe('cloud-run flare', () => {
       ]
       MOCK_GET_ENTRIES.mockResolvedValueOnce([page, {pageToken: undefined}])
 
-      const logs = await getLogs(MOCK_LOG_CLIENT, MOCK_SERVICE, MOCK_REGION)
+      const logs = await getLogs(MOCK_LOG_CLIENT, MOCK_SERVICE, MOCK_REGION, undefined, undefined)
       expect(logs).toMatchSnapshot()
     })
 
@@ -453,7 +453,7 @@ describe('cloud-run flare', () => {
       ]
       MOCK_GET_ENTRIES.mockResolvedValueOnce([page, {pageToken: undefined}])
 
-      const logs = await getLogs(MOCK_LOG_CLIENT, MOCK_SERVICE, MOCK_REGION)
+      const logs = await getLogs(MOCK_LOG_CLIENT, MOCK_SERVICE, MOCK_REGION, undefined, undefined)
       expect(logs).toMatchSnapshot()
     })
 
@@ -473,7 +473,7 @@ describe('cloud-run flare', () => {
       ]
       MOCK_GET_ENTRIES.mockResolvedValueOnce([page, {pageToken: undefined}])
 
-      const logs = await getLogs(MOCK_LOG_CLIENT, MOCK_SERVICE, MOCK_REGION)
+      const logs = await getLogs(MOCK_LOG_CLIENT, MOCK_SERVICE, MOCK_REGION, undefined, undefined)
 
       expect(logs).toMatchSnapshot()
     })

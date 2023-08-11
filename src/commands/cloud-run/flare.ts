@@ -21,7 +21,7 @@ import {
   LOGS_DIRECTORY,
   PROJECT_FILES_DIRECTORY,
 } from '../../constants'
-import {getProjectFiles, sendToDatadog, validateFilePath} from '../../helpers/flare'
+import {getProjectFiles, sendToDatadog, validateFilePath, validateStartEndFlags} from '../../helpers/flare'
 import {createDirectories, deleteFolder, writeFile, zipContents} from '../../helpers/fs'
 import {requestConfirmation, requestFilePath} from '../../helpers/prompt'
 import * as helpersRenderer from '../../helpers/renderer'
@@ -64,6 +64,8 @@ export class CloudRunFlareCommand extends Command {
   private region = Option.String('-r,--region,-l,--location')
   private caseId = Option.String('-c,--case-id')
   private email = Option.String('-e,--email')
+  private start = Option.String('--start')
+  private end = Option.String('--end')
 
   private apiKey?: string
 
@@ -109,6 +111,17 @@ export class CloudRunFlareCommand extends Command {
     // Validate email
     if (this.email === undefined) {
       errorMessages.push(helpersRenderer.renderError('No email specified. [-e,--email]'))
+    }
+
+    // Validate start/end flags if both are specified
+    let startMillis
+    let endMillis
+    try {
+      ;[startMillis, endMillis] = validateStartEndFlags(this.start, this.end)
+    } catch (err) {
+      if (err instanceof Error) {
+        errorMessages.push(helpersRenderer.renderError(err.message))
+      }
     }
 
     // If there are errors, print them and exit
@@ -212,7 +225,14 @@ export class CloudRunFlareCommand extends Command {
       const logClient = new Logging({projectId: this.project})
       for (const logConfig of LOG_CONFIGS) {
         try {
-          const logs = await getLogs(logClient, this.service!, this.region!, logConfig.severityFilter)
+          const logs = await getLogs(
+            logClient,
+            this.service!,
+            this.region!,
+            startMillis,
+            endMillis,
+            logConfig.severityFilter
+          )
           if (logs.length === 0) {
             this.context.stdout.write(`• No ${logConfig.type} logs were found\n`)
           } else {
@@ -426,21 +446,38 @@ export const summarizeConfig = (config: IService) => {
  * @param logClient Logging client
  * @param serviceId
  * @param location
+ * @param startMillis start time in milliseconds or undefined if no start time is specified
+ * @param endMillis end time in milliseconds or undefined if no end time is specified
  * @param severityFilter if included, adds the string to the filter
  * @returns array of logs as CloudRunLog interfaces
  */
-export const getLogs = async (logClient: Logging, serviceId: string, location: string, severityFilter?: string) => {
+export const getLogs = async (
+  logClient: Logging,
+  serviceId: string,
+  location: string,
+  startMillis: number | undefined,
+  endMillis: number | undefined,
+  severityFilter?: string
+) => {
   const logs: CloudRunLog[] = []
 
-  // Only get recent logs
-  const date = new Date()
-  date.setMinutes(date.getMinutes() - MAX_LOG_AGE_MINUTES)
-  const formattedDate = date.toISOString()
+  // If startMillis and endMillis are provided, use them to set the date range
+  // Otherwise, default to the recent logs using MAX_LOG_AGE_MINUTES
+  let startDate: string
+  let endDate: string
+  if (startMillis && endMillis) {
+    startDate = new Date(startMillis).toISOString()
+    endDate = new Date(endMillis).toISOString()
+  } else {
+    const date = new Date()
+    date.setMinutes(date.getMinutes() - MAX_LOG_AGE_MINUTES)
+    startDate = date.toISOString()
+    endDate = new Date().toISOString() // Current time
+  }
 
   // Query options
-  let filter = `resource.labels.service_name="${serviceId}" AND resource.labels.location="${location}" AND timestamp>="${formattedDate}" AND (textPayload:* OR httpRequest:*)`
-  // We only want to get logs from the last `MAX_LOG_AGE_MINUTES` to make sure they are relevant.
-  // We also only want to include logs with a textPayload or logs that were an HTTP request.
+  let filter = `resource.labels.service_name="${serviceId}" AND resource.labels.location="${location}" AND timestamp>="${startDate}" AND timestamp<="${endDate}" AND (textPayload:* OR httpRequest:*)`
+  // We only want to include logs with a textPayload or logs that were an HTTP request.
   // Any other logs are just audit logs which are spammy and don't have any relevant information.
   filter += severityFilter ?? ''
 
