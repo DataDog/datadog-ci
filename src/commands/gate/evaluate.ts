@@ -70,7 +70,9 @@ export class GateEvaluateCommand extends Command {
   private failOnEmpty = Option.Boolean('--fail-on-empty', false)
   private failIfUnavailable = Option.Boolean('--fail-if-unavailable', false)
   private noWait = Option.Boolean('--no-wait', false)
-  private timeoutInSeconds = Option.String('--timeout', String(this.defaultTimeout), {validator: validation.isInteger()})
+  private timeoutInSeconds = Option.String('--timeout', String(this.defaultTimeout), {
+    validator: validation.isInteger(),
+  })
   private userScope = Option.Array('--scope')
   private tags = Option.Array('--tags')
 
