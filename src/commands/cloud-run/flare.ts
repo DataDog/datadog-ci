@@ -550,6 +550,8 @@ export const getRecentRevisions = async (service: string, location: string, proj
   const request = {
     parent: client.servicePath(project, location, service),
   }
+  // listRevisions() returns a tuple [Revision[], Request, Response],
+  // so we index the first element to get the array of revisions
   const revisions = (await client.listRevisions(request))[0]
   const revisionTimestampStrings: string[] = []
   let counter = 1
