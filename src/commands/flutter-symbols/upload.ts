@@ -18,6 +18,7 @@ import {
 } from '../../helpers/utils'
 import * as validation from '../../helpers/validation'
 import {checkAPIKeyOverride} from '../../helpers/validation'
+import {version} from '../../helpers/version'
 
 import * as dsyms from '../dsyms/upload'
 import {newSimpleGit} from '../git-metadata/git'
@@ -90,16 +91,11 @@ export class UploadCommand extends Command {
   private serviceName = Option.String('--service-name')
   private version = Option.String('--version')
 
-  private cliVersion: string
+  private cliVersion = version
   private config: Record<string, string> = {
     datadogSite: 'datadoghq.com',
   }
   private gitData?: RepositoryData
-
-  constructor() {
-    super()
-    this.cliVersion = require('../../../package.json').version
-  }
 
   public async execute() {
     if (!(await this.verifyParameters())) {

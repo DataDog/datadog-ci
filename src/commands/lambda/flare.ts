@@ -28,6 +28,7 @@ import {requestConfirmation, requestFilePath} from '../../helpers/prompt'
 import * as helpersRenderer from '../../helpers/renderer'
 import {renderAdditionalFiles, renderProjectFiles} from '../../helpers/renderer'
 import {formatBytes} from '../../helpers/utils'
+import {version} from '../../helpers/version'
 
 import {
   AWS_DEFAULT_REGION_ENV_VAR,
@@ -44,8 +45,6 @@ import {
 } from './functions/commons'
 import {requestAWSCredentials} from './prompt'
 import * as commonRenderer from './renderers/common-renderer'
-
-const version = require('../../../package.json').version
 
 const FUNCTION_CONFIG_FILE_NAME = 'function_config.json'
 const TAGS_FILE_NAME = 'tags.json'

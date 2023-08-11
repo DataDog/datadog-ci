@@ -10,6 +10,7 @@ import {Logger, LogLevel} from '../../helpers/logger'
 import {MetricsLogger, getMetricsLogger} from '../../helpers/metrics'
 import {UploadStatus} from '../../helpers/upload'
 import {getRequestBuilder, timedExecAsync} from '../../helpers/utils'
+import {version} from '../../helpers/version'
 
 import {apiHost, datadogSite, getBaseIntakeUrl} from './api'
 import {getCommitInfo, newSimpleGit} from './git'
@@ -46,7 +47,7 @@ export class UploadCommand extends Command {
   private noGitSync = Option.Boolean('--no-gitsync', false)
   private directory = Option.String('--directory', '')
 
-  private cliVersion: string
+  private cliVersion = version
   private config = {
     apiKey: process.env.DATADOG_API_KEY,
   }
@@ -54,11 +55,6 @@ export class UploadCommand extends Command {
   private logger: Logger = new Logger((s: string) => {
     this.context.stdout.write(s)
   }, LogLevel.INFO)
-
-  constructor() {
-    super()
-    this.cliVersion = require('../../../package.json').version
-  }
 
   public async execute() {
     const initialTime = Date.now()
