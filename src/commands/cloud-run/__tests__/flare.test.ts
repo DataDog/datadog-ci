@@ -17,7 +17,15 @@ import * as fsModule from '../../../helpers/fs'
 import * as helpersPromptModule from '../../../helpers/prompt'
 
 import * as flareModule from '../flare'
-import {checkAuthentication, getCloudRunServiceConfig, getLogs, maskConfig, MAX_LOGS, saveLogsFile} from '../flare'
+import {
+  checkAuthentication,
+  getCloudRunServiceConfig,
+  getLogs,
+  maskConfig,
+  MAX_LOGS,
+  saveLogsFile,
+  summarizeConfig,
+} from '../flare'
 
 import {makeCli} from './fixtures'
 
@@ -40,6 +48,9 @@ const MOCK_REQUIRED_FLAGS = [
   'test@test.com',
 ]
 const MOCK_CLOUDRUN_CONFIG = {
+  name: 'projects/some-project/locations/some-location/services/some-service',
+  uid: 'abc1234-def5678',
+  uri: 'https://something.run.app',
   template: {
     containers: [
       {
@@ -487,5 +498,9 @@ describe('cloud-run flare', () => {
       ].join('\n')
       expect(writeFileSpy).toHaveBeenCalledWith(mockFilePath, expectedContent)
     })
+  })
+
+  test('summarizeConfig', () => {
+    expect(summarizeConfig(MOCK_CLOUDRUN_CONFIG)).toMatchSnapshot()
   })
 })

@@ -53,6 +53,7 @@ const FLARE_ZIP_FILE_NAME = 'lambda-flare-output.zip'
 const MAX_LOG_STREAMS = 50
 const DEFAULT_LOG_STREAMS = 3
 const MAX_LOG_EVENTS_PER_STREAM = 1000
+const SUMMARIZED_FIELDS = new Set(['FunctionName', 'Runtime', 'FunctionArn', 'Handler', 'Environment'])
 
 export class LambdaFlareCommand extends Command {
   public static paths = [['lambda', 'flare']]
@@ -102,16 +103,14 @@ export class LambdaFlareCommand extends Command {
       )
     }
 
-    if (!this.isDryRun) {
-      // Validate case ID
-      if (this.caseId === undefined) {
-        errorMessages.push(helpersRenderer.renderError('No case ID specified. [-c,--case-id]'))
-      }
+    // Validate case ID
+    if (this.caseId === undefined) {
+      errorMessages.push(helpersRenderer.renderError('No case ID specified. [-c,--case-id]'))
+    }
 
-      // Validate email
-      if (this.email === undefined) {
-        errorMessages.push(helpersRenderer.renderError('No email specified. [-e,--email]'))
-      }
+    // Validate email
+    if (this.email === undefined) {
+      errorMessages.push(helpersRenderer.renderError('No email specified. [-e,--email]'))
     }
 
     // Validate start/end flags if both are specified
@@ -177,8 +176,14 @@ export class LambdaFlareCommand extends Command {
       return 1
     }
     config = maskConfig(config)
-    const configStr = util.inspect(config, false, undefined, true)
-    this.context.stdout.write(`\n${configStr}\n`)
+    const summarizedConfig = summarizeConfig(config)
+    const summarizedConfigStr = util.inspect(summarizedConfig, false, undefined, true)
+    this.context.stdout.write(`\n${summarizedConfigStr}\n`)
+    this.context.stdout.write(
+      chalk.italic(
+        `(This is a summary of the configuration. The full configuration will be saved in "${FUNCTION_CONFIG_FILE_NAME}".)\n`
+      )
+    )
 
     // Get project files
     this.context.stdout.write(chalk.bold('\n📁 Searching for project files in current directory...\n'))
@@ -350,12 +355,14 @@ export class LambdaFlareCommand extends Command {
       // Write insights file
       const insightsFilePath = path.join(rootFolderPath, INSIGHTS_FILE_NAME)
       generateInsightsFile(insightsFilePath, this.isDryRun, config)
-      this.context.stdout.write(`• Saved insights file to ./${INSIGHTS_FILE_NAME}\n`)
+      this.context.stdout.write(`• Saved the insights file to ./${INSIGHTS_FILE_NAME}\n`)
 
       // Exit if dry run
       const outputMsg = `\nℹ️ Your output files are located at: ${rootFolderPath}\n\n`
       if (this.isDryRun) {
-        this.context.stdout.write('\n🚫 The flare files were not sent as it was executed in dry run mode.')
+        this.context.stdout.write(
+          '\n🚫 The flare files were not sent because the command was executed in dry run mode.'
+        )
         this.context.stdout.write(outputMsg)
 
         return 0
@@ -434,6 +441,22 @@ export const validateStartEndFlags = (start: string | undefined, end: string | u
   }
 
   return [startMillis, endMillis]
+}
+
+/**
+ * Summarizes the Lambda config as to not flood the terminal
+ * @param config
+ * @returns a summarized config
+ */
+export const summarizeConfig = (config: any) => {
+  const summarizedConfig: any = {}
+  for (const key in config) {
+    if (SUMMARIZED_FIELDS.has(key)) {
+      summarizedConfig[key] = config[key]
+    }
+  }
+
+  return summarizedConfig
 }
 
 /**

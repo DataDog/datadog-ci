@@ -25,24 +25,25 @@ GCP credentials verified!
 🔍 Fetching service configuration...
 
 {
-  template: {
-    containers: [
-      {
-        env: [
-          {
-            name: 'DD_API_KEY',
-            value: '02**********33bd',
-            values: 'value'
-          },
-          { name: 'DD_TRACE_ENABLED', value: 'true', values: 'value' },
-          { name: 'DD_SITE', value: 'datad0g.com', values: 'value' }
-        ],
-        image: 'gcr.io/datadog-sandbox/nicholas-hulston-docker-test'
-      }
-    ],
-    someData: 'data'
-  }
+  name: 'projects/some-project/locations/some-location/services/some-service',
+  uid: 'abc1234-def5678',
+  uri: 'https://something.run.app',
+  containers: [
+    {
+      env: [
+        {
+          name: 'DD_API_KEY',
+          value: '02**********33bd',
+          values: 'value'
+        },
+        { name: 'DD_TRACE_ENABLED', value: 'true', values: 'value' },
+        { name: 'DD_SITE', value: 'datad0g.com', values: 'value' }
+      ],
+      image: 'gcr.io/datadog-sandbox/nicholas-hulston-docker-test'
+    }
+  ]
 }
+(This is a summary of the configuration. The full configuration will be saved in "service_config.json".)
 
 📁 Searching for project files in current directory...
 [!] No project files found.
@@ -53,7 +54,7 @@ GCP credentials verified!
 💾 Saving files to mock-folder/.datadog-ci...
 • Saved function config to ./service_config.json
 
-🚫 The flare files were not sent as it was executed in dry run mode.
+🚫 The flare files were not sent because the command was executed in dry run mode.
 ℹ️ Your output files are located at: mock-folder/.datadog-ci
 
 "
@@ -114,6 +115,7 @@ exports[`cloud-run flare getLogs throws an error when \`getEntries\` fails 1`] =
 
 exports[`cloud-run flare maskConfig should mask a Cloud Run config correctly 1`] = `
 {
+  "name": "projects/some-project/locations/some-location/services/some-service",
   "template": {
     "containers": [
       {
@@ -139,14 +141,19 @@ exports[`cloud-run flare maskConfig should mask a Cloud Run config correctly 1`]
     ],
     "someData": "data",
   },
+  "uid": "abc1234-def5678",
+  "uri": "https://something.run.app",
 }
 `;
 
 exports[`cloud-run flare maskConfig should not modify config if env vars are missing 1`] = `
 {
+  "name": "projects/some-project/locations/some-location/services/some-service",
   "template": {
     "someData": "data",
   },
+  "uid": "abc1234-def5678",
+  "uri": "https://something.run.app",
 }
 `;
 
@@ -182,24 +189,25 @@ GCP credentials verified!
 🔍 Fetching service configuration...
 
 {
-  template: {
-    containers: [
-      {
-        env: [
-          {
-            name: 'DD_API_KEY',
-            value: '02**********33bd',
-            values: 'value'
-          },
-          { name: 'DD_TRACE_ENABLED', value: 'true', values: 'value' },
-          { name: 'DD_SITE', value: 'datad0g.com', values: 'value' }
-        ],
-        image: 'gcr.io/datadog-sandbox/nicholas-hulston-docker-test'
-      }
-    ],
-    someData: 'data'
-  }
+  name: 'projects/some-project/locations/some-location/services/some-service',
+  uid: 'abc1234-def5678',
+  uri: 'https://something.run.app',
+  containers: [
+    {
+      env: [
+        {
+          name: 'DD_API_KEY',
+          value: '02**********33bd',
+          values: 'value'
+        },
+        { name: 'DD_TRACE_ENABLED', value: 'true', values: 'value' },
+        { name: 'DD_SITE', value: 'datad0g.com', values: 'value' }
+      ],
+      image: 'gcr.io/datadog-sandbox/nicholas-hulston-docker-test'
+    }
+  ]
 }
+(This is a summary of the configuration. The full configuration will be saved in "service_config.json".)
 
 📁 Searching for project files in current directory...
 [!] No project files found.
@@ -225,24 +233,25 @@ GCP credentials verified!
 🔍 Fetching service configuration...
 
 {
-  template: {
-    containers: [
-      {
-        env: [
-          {
-            name: 'DD_API_KEY',
-            value: '02**********33bd',
-            values: 'value'
-          },
-          { name: 'DD_TRACE_ENABLED', value: 'true', values: 'value' },
-          { name: 'DD_SITE', value: 'datad0g.com', values: 'value' }
-        ],
-        image: 'gcr.io/datadog-sandbox/nicholas-hulston-docker-test'
-      }
-    ],
-    someData: 'data'
-  }
+  name: 'projects/some-project/locations/some-location/services/some-service',
+  uid: 'abc1234-def5678',
+  uri: 'https://something.run.app',
+  containers: [
+    {
+      env: [
+        {
+          name: 'DD_API_KEY',
+          value: '02**********33bd',
+          values: 'value'
+        },
+        { name: 'DD_TRACE_ENABLED', value: 'true', values: 'value' },
+        { name: 'DD_SITE', value: 'datad0g.com', values: 'value' }
+      ],
+      image: 'gcr.io/datadog-sandbox/nicholas-hulston-docker-test'
+    }
+  ]
 }
+(This is a summary of the configuration. The full configuration will be saved in "service_config.json".)
 
 📁 Searching for project files in current directory...
 [!] No project files found.
@@ -258,6 +267,36 @@ GCP credentials verified!
 
 ✅ Successfully sent flare file to Datadog Support!
 "
+`;
+
+exports[`cloud-run flare summarizeConfig 1`] = `
+{
+  "containers": [
+    {
+      "env": [
+        {
+          "name": "DD_API_KEY",
+          "value": "02aeb762fff59ac0d5ad1536cd9633bd",
+          "values": "value",
+        },
+        {
+          "name": "DD_TRACE_ENABLED",
+          "value": "true",
+          "values": "value",
+        },
+        {
+          "name": "DD_SITE",
+          "value": "datad0g.com",
+          "values": "value",
+        },
+      ],
+      "image": "gcr.io/datadog-sandbox/nicholas-hulston-docker-test",
+    },
+  ],
+  "name": "projects/some-project/locations/some-location/services/some-service",
+  "uid": "abc1234-def5678",
+  "uri": "https://something.run.app",
+}
 `;
 
 exports[`cloud-run flare validates required flags prints error when no API key in env variables 1`] = `
@@ -312,24 +351,25 @@ GCP credentials verified!
 🔍 Fetching service configuration...
 
 {
-  template: {
-    containers: [
-      {
-        env: [
-          {
-            name: 'DD_API_KEY',
-            value: '02**********33bd',
-            values: 'value'
-          },
-          { name: 'DD_TRACE_ENABLED', value: 'true', values: 'value' },
-          { name: 'DD_SITE', value: 'datad0g.com', values: 'value' }
-        ],
-        image: 'gcr.io/datadog-sandbox/nicholas-hulston-docker-test'
-      }
-    ],
-    someData: 'data'
-  }
+  name: 'projects/some-project/locations/some-location/services/some-service',
+  uid: 'abc1234-def5678',
+  uri: 'https://something.run.app',
+  containers: [
+    {
+      env: [
+        {
+          name: 'DD_API_KEY',
+          value: '02**********33bd',
+          values: 'value'
+        },
+        { name: 'DD_TRACE_ENABLED', value: 'true', values: 'value' },
+        { name: 'DD_SITE', value: 'datad0g.com', values: 'value' }
+      ],
+      image: 'gcr.io/datadog-sandbox/nicholas-hulston-docker-test'
+    }
+  ]
 }
+(This is a summary of the configuration. The full configuration will be saved in "service_config.json".)
 
 📁 Searching for project files in current directory...
 [!] No project files found.
@@ -357,24 +397,25 @@ GCP credentials verified!
 🔍 Fetching service configuration...
 
 {
-  template: {
-    containers: [
-      {
-        env: [
-          {
-            name: 'DD_API_KEY',
-            value: '02**********33bd',
-            values: 'value'
-          },
-          { name: 'DD_TRACE_ENABLED', value: 'true', values: 'value' },
-          { name: 'DD_SITE', value: 'datad0g.com', values: 'value' }
-        ],
-        image: 'gcr.io/datadog-sandbox/nicholas-hulston-docker-test'
-      }
-    ],
-    someData: 'data'
-  }
+  name: 'projects/some-project/locations/some-location/services/some-service',
+  uid: 'abc1234-def5678',
+  uri: 'https://something.run.app',
+  containers: [
+    {
+      env: [
+        {
+          name: 'DD_API_KEY',
+          value: '02**********33bd',
+          values: 'value'
+        },
+        { name: 'DD_TRACE_ENABLED', value: 'true', values: 'value' },
+        { name: 'DD_SITE', value: 'datad0g.com', values: 'value' }
+      ],
+      image: 'gcr.io/datadog-sandbox/nicholas-hulston-docker-test'
+    }
+  ]
 }
+(This is a summary of the configuration. The full configuration will be saved in "service_config.json".)
 
 📁 Searching for project files in current directory...
 [!] No project files found.
@@ -402,24 +443,25 @@ GCP credentials verified!
 🔍 Fetching service configuration...
 
 {
-  template: {
-    containers: [
-      {
-        env: [
-          {
-            name: 'DD_API_KEY',
-            value: '02**********33bd',
-            values: 'value'
-          },
-          { name: 'DD_TRACE_ENABLED', value: 'true', values: 'value' },
-          { name: 'DD_SITE', value: 'datad0g.com', values: 'value' }
-        ],
-        image: 'gcr.io/datadog-sandbox/nicholas-hulston-docker-test'
-      }
-    ],
-    someData: 'data'
-  }
+  name: 'projects/some-project/locations/some-location/services/some-service',
+  uid: 'abc1234-def5678',
+  uri: 'https://something.run.app',
+  containers: [
+    {
+      env: [
+        {
+          name: 'DD_API_KEY',
+          value: '02**********33bd',
+          values: 'value'
+        },
+        { name: 'DD_TRACE_ENABLED', value: 'true', values: 'value' },
+        { name: 'DD_SITE', value: 'datad0g.com', values: 'value' }
+      ],
+      image: 'gcr.io/datadog-sandbox/nicholas-hulston-docker-test'
+    }
+  ]
 }
+(This is a summary of the configuration. The full configuration will be saved in "service_config.json".)
 
 📁 Searching for project files in current directory...
 [!] No project files found.
@@ -443,24 +485,25 @@ GCP credentials verified!
 🔍 Fetching service configuration...
 
 {
-  template: {
-    containers: [
-      {
-        env: [
-          {
-            name: 'DD_API_KEY',
-            value: '02**********33bd',
-            values: 'value'
-          },
-          { name: 'DD_TRACE_ENABLED', value: 'true', values: 'value' },
-          { name: 'DD_SITE', value: 'datad0g.com', values: 'value' }
-        ],
-        image: 'gcr.io/datadog-sandbox/nicholas-hulston-docker-test'
-      }
-    ],
-    someData: 'data'
-  }
+  name: 'projects/some-project/locations/some-location/services/some-service',
+  uid: 'abc1234-def5678',
+  uri: 'https://something.run.app',
+  containers: [
+    {
+      env: [
+        {
+          name: 'DD_API_KEY',
+          value: '02**********33bd',
+          values: 'value'
+        },
+        { name: 'DD_TRACE_ENABLED', value: 'true', values: 'value' },
+        { name: 'DD_SITE', value: 'datad0g.com', values: 'value' }
+      ],
+      image: 'gcr.io/datadog-sandbox/nicholas-hulston-docker-test'
+    }
+  ]
 }
+(This is a summary of the configuration. The full configuration will be saved in "service_config.json".)
 
 📁 Searching for project files in current directory...
 [!] No project files found.

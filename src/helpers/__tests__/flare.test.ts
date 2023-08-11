@@ -70,12 +70,11 @@ describe('flare', () => {
     const MOCK_EMAIL = 'test@example.com'
     const MOCK_API_KEY = 'api-key'
     const MOCK_ROOT_FOLDER_PATH = '/root/folder/path'
+    const MOCK_AXIOS = axios as jest.Mocked<typeof axios>
 
     it('should send data to the correct endpoint', async () => {
-      const mockAxios = axios as jest.Mocked<typeof axios>
-
       await sendToDatadog(MOCK_ZIP_PATH, MOCK_CASE_ID, MOCK_EMAIL, MOCK_API_KEY, MOCK_ROOT_FOLDER_PATH)
-      expect(mockAxios.post).toHaveBeenCalledWith(
+      expect(MOCK_AXIOS.post).toHaveBeenCalledWith(
         expect.any(String),
         expect.any(FormData),
         expect.objectContaining({
@@ -87,9 +86,8 @@ describe('flare', () => {
     })
 
     it('should delete root folder and rethrow error if request fails', async () => {
-      const mockAxios = axios as jest.Mocked<typeof axios>
       const error = new Error('Network error')
-      mockAxios.post.mockRejectedValueOnce({
+      MOCK_AXIOS.post.mockRejectedValueOnce({
         isAxiosError: true,
         message: error.message,
         response: {data: {error: 'Server error'}},
@@ -97,6 +95,32 @@ describe('flare', () => {
 
       const fn = sendToDatadog(MOCK_ZIP_PATH, MOCK_CASE_ID, MOCK_EMAIL, MOCK_API_KEY, MOCK_ROOT_FOLDER_PATH)
       await expect(fn).rejects.toThrow(`Failed to send flare file to Datadog Support: ${error.message}. Server error\n`)
+    })
+
+    it('prints correct warning when post fail with error 500', async () => {
+      MOCK_AXIOS.post.mockRejectedValueOnce({
+        isAxiosError: true,
+        message: 'Some error',
+        response: {status: 500, data: {error: 'Server error'}},
+      })
+
+      const fn = sendToDatadog(MOCK_ZIP_PATH, MOCK_CASE_ID, MOCK_EMAIL, MOCK_API_KEY, MOCK_ROOT_FOLDER_PATH)
+      await expect(fn).rejects.toThrow(
+        `Failed to send flare file to Datadog Support: Some error. Server error\nAre your case ID and email correct?\n`
+      )
+    })
+
+    it('prints correct warning when post fail with error 403', async () => {
+      MOCK_AXIOS.post.mockRejectedValueOnce({
+        isAxiosError: true,
+        message: 'Some error',
+        response: {status: 403, data: {error: 'Another error'}},
+      })
+
+      const fn = sendToDatadog(MOCK_ZIP_PATH, MOCK_CASE_ID, MOCK_EMAIL, MOCK_API_KEY, MOCK_ROOT_FOLDER_PATH)
+      await expect(fn).rejects.toThrow(
+        `Failed to send flare file to Datadog Support: Some error. Another error\nIs your Datadog API key correct?\n`
+      )
     })
   })
 
