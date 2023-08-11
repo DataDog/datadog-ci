@@ -26,6 +26,7 @@ import {
   maskConfig,
   MAX_LOGS,
   saveLogsFile,
+  summarizeConfig,
 } from '../flare'
 
 import {makeCli} from './fixtures'
@@ -51,6 +52,7 @@ const MOCK_REQUIRED_FLAGS = [
 const MOCK_CLOUDRUN_CONFIG = {
   name: `projects/${MOCK_PROJECT}/locations/${MOCK_REGION}/services/${MOCK_SERVICE}`,
   description: 'description',
+  uid: 'abc1234-def5678',
   uri: `https://${MOCK_SERVICE}-abc12345-ue.a.run.app`,
   labels: {
     someLabel: 'someValue',
@@ -610,5 +612,9 @@ describe('cloud-run flare', () => {
       ].join('\n')
       expect(writeFileSpy).toHaveBeenCalledWith(mockFilePath, expectedContent)
     })
+  })
+
+  test('summarizeConfig', () => {
+    expect(summarizeConfig(MOCK_CLOUDRUN_CONFIG)).toMatchSnapshot()
   })
 })

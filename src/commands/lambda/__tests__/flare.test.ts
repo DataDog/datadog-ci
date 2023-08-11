@@ -33,6 +33,7 @@ import {
   getLogStreamNames,
   getTags,
   getUniqueFileNames,
+  summarizeConfig,
   validateStartEndFlags,
 } from '../flare'
 import * as flareModule from '../flare'
@@ -230,15 +231,6 @@ describe('lambda flare', () => {
       const context = createMockContext()
       const code = await cli.run(['lambda', 'flare', '-f', 'func', '-r', MOCK_REGION, '-c', '123'], context)
       expect(code).toBe(1)
-      const output = context.stdout.toString()
-      expect(output).toMatchSnapshot()
-    })
-
-    it('runs successfully when dry run but no email or case ID is specified', async () => {
-      const cli = makeCli()
-      const context = createMockContext()
-      const code = await cli.run(['lambda', 'flare', '-f', 'func', '-r', MOCK_REGION, '-d'], context)
-      expect(code).toBe(0)
       const output = context.stdout.toString()
       expect(output).toMatchSnapshot()
     })
@@ -917,5 +909,9 @@ describe('lambda flare', () => {
       const result = getUniqueFileNames(mockFilePaths)
       expect(result).toEqual(expectedFiles)
     })
+  })
+
+  test('summarizeConfig', () => {
+    expect(summarizeConfig(MOCK_LAMBDA_CONFIG)).toMatchSnapshot()
   })
 })

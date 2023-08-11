@@ -7,6 +7,7 @@ import {createCommand} from '../../../helpers/__tests__/fixtures'
 import {TrackedFilesMatcher, getRepositoryData} from '../../../helpers/git/format-git-sourcemaps-data'
 import {MultipartPayload} from '../../../helpers/upload'
 import {performSubCommand} from '../../../helpers/utils'
+import {version} from '../../../helpers/version'
 
 import * as dsyms from '../../dsyms/upload'
 import * as sourcemaps from '../../sourcemaps/upload'
@@ -39,7 +40,7 @@ jest.mock('../../../helpers/git/format-git-sourcemaps-data', () => ({
   getRepositoryData: jest.fn(),
 }))
 
-const cliVersion = require('../../../../package.json').version
+const cliVersion = version
 const fixtureDir = './src/commands/flutter-symbols/__tests__/fixtures'
 
 describe('flutter-symbol upload', () => {

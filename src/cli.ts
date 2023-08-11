@@ -3,6 +3,8 @@ import fs from 'fs'
 import {Cli} from 'clipanion'
 import {CommandClass} from 'clipanion/lib/advanced/Command'
 
+import {version} from './helpers/version'
+
 const BETA_COMMANDS = ['gate']
 
 const onError = (err: any) => {
@@ -16,7 +18,7 @@ process.on('unhandledRejection', onError)
 const cli = new Cli({
   binaryLabel: 'Datadog CI',
   binaryName: 'datadog-ci',
-  binaryVersion: require('../package.json').version,
+  binaryVersion: version,
 })
 
 const commandsPath = `${__dirname}/commands`
@@ -28,7 +30,8 @@ for (const commandFolder of fs.readdirSync(commandsPath)) {
   }
   const commandPath = `${commandsPath}/${commandFolder}`
   if (fs.statSync(commandPath).isDirectory()) {
-    require(`${commandPath}/cli`).forEach((command: CommandClass) => cli.register(command))
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    ;(require(`${commandPath}/cli`) as CommandClass[]).forEach((command) => cli.register(command))
   }
 }
 
