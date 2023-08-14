@@ -1,7 +1,7 @@
 * @DataDog/datadog-ci
 
 
-# Commands
+# Commands (grouped by product)
 
 ## CI Visibility
 src/commands/junit   @DataDog/ci-app-libraries
@@ -17,14 +17,16 @@ src/commands/sarif   @DataDog/static-analysis-core
 src/commands/dsyms            @DataDog/rum-mobile
 src/commands/flutter-symbols  @DataDog/rum-mobile
 src/commands/react-native     @DataDog/rum-mobile
+### Related to RUM, but maintained by Source Code Integration for legacy reasons
+src/commands/sourcemaps       @DataDog/source-code-integration
 
 ## Serverless
-src/commands/lambda  @DataDog/serverless
+src/commands/lambda         @DataDog/serverless
 src/commands/stepfunctions  @DataDog/serverless
+src/commands/cloud-run      @DataDog/serverless
 
 ## Source Code Integration
 src/commands/git-metadata  @DataDog/source-code-integration
-src/commands/sourcemaps    @DataDog/source-code-integration
 
 ## Synthetics
 src/commands/synthetics  @DataDog/synthetics-ct
