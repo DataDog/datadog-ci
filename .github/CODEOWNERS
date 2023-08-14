@@ -19,8 +19,9 @@ src/commands/flutter-symbols  @DataDog/rum-mobile
 src/commands/react-native     @DataDog/rum-mobile
 
 ## Serverless
-src/commands/lambda  @DataDog/serverless
+src/commands/lambda         @DataDog/serverless
 src/commands/stepfunctions  @DataDog/serverless
+src/commands/cloud-run      @DataDog/serverless
 
 ## Source Code Integration
 src/commands/git-metadata  @DataDog/source-code-integration
