@@ -23,7 +23,7 @@ import {
   LOGS_DIRECTORY,
   PROJECT_FILES_DIRECTORY,
 } from '../../constants'
-import {getProjectFiles, sendToDatadog, validateFilePath} from '../../helpers/flare'
+import {getProjectFiles, sendToDatadog, validateFilePath, validateStartEndFlags} from '../../helpers/flare'
 import {createDirectories, deleteFolder, writeFile, zipContents} from '../../helpers/fs'
 import {requestConfirmation, requestFilePath} from '../../helpers/prompt'
 import * as helpersRenderer from '../../helpers/renderer'
@@ -413,44 +413,6 @@ export class LambdaFlareCommand extends Command {
 }
 
 /**
- * Validate the start and end flags and adds error messages if found
- * @param start start time as a string
- * @param end end time as a string
- * @throws error if start or end are not valid numbers
- * @returns [startMillis, endMillis] as numbers or [undefined, undefined] if both are undefined
- */
-export const validateStartEndFlags = (start: string | undefined, end: string | undefined) => {
-  if (!start && !end) {
-    return [undefined, undefined]
-  }
-
-  if (!start) {
-    throw Error('Start time is required when end time is specified. [--start]')
-  }
-  if (!end) {
-    throw Error('End time is required when start time is specified. [--end]')
-  }
-
-  const startMillis = Number(start)
-  let endMillis = Number(end)
-  if (isNaN(startMillis)) {
-    throw Error(`Start time must be a time in milliseconds since Unix Epoch. '${start}' is not a number.`)
-  }
-  if (isNaN(endMillis)) {
-    throw Error(`End time must be a time in milliseconds since Unix Epoch. '${end}' is not a number.`)
-  }
-
-  // Required for AWS SDK to work correctly
-  endMillis = Math.min(endMillis, Date.now())
-
-  if (startMillis >= endMillis) {
-    throw Error('Start time must be before end time.')
-  }
-
-  return [startMillis, endMillis]
-}
-
-/**
  * Summarizes the Lambda config as to not flood the terminal
  * @param config
  * @returns a summarized config
@@ -478,8 +440,8 @@ export const summarizeConfig = (config: any) => {
 export const getLogStreamNames = async (
   cwlClient: CloudWatchLogsClient,
   logGroupName: string,
-  startMillis: number | undefined,
-  endMillis: number | undefined
+  startMillis?: number,
+  endMillis?: number
 ) => {
   const config = {
     logGroupName,
@@ -535,8 +497,8 @@ export const getLogEvents = async (
   cwlClient: CloudWatchLogsClient,
   logGroupName: string,
   logStreamName: string,
-  startMillis: number | undefined,
-  endMillis: number | undefined
+  startMillis?: number,
+  endMillis?: number
 ) => {
   const config: any = {
     logGroupName,
@@ -567,12 +529,7 @@ export const getLogEvents = async (
  * @param endMillis end time in milliseconds or undefined if no end time is specified
  * @returns a map of log stream names to log events or an empty map if no logs are found
  */
-export const getAllLogs = async (
-  region: string,
-  functionName: string,
-  startMillis: number | undefined,
-  endMillis: number | undefined
-) => {
+export const getAllLogs = async (region: string, functionName: string, startMillis?: number, endMillis?: number) => {
   const logs = new Map<string, OutputLogEvent[]>()
   const cwlClient = new CloudWatchLogsClient({region})
   if (functionName.startsWith('arn:aws')) {
