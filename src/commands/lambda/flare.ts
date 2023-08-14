@@ -440,8 +440,8 @@ export const summarizeConfig = (config: any) => {
 export const getLogStreamNames = async (
   cwlClient: CloudWatchLogsClient,
   logGroupName: string,
-  startMillis: number | undefined,
-  endMillis: number | undefined
+  startMillis?: number,
+  endMillis?: number
 ) => {
   const config = {
     logGroupName,
@@ -497,8 +497,8 @@ export const getLogEvents = async (
   cwlClient: CloudWatchLogsClient,
   logGroupName: string,
   logStreamName: string,
-  startMillis: number | undefined,
-  endMillis: number | undefined
+  startMillis?: number,
+  endMillis?: number
 ) => {
   const config: any = {
     logGroupName,
@@ -529,12 +529,7 @@ export const getLogEvents = async (
  * @param endMillis end time in milliseconds or undefined if no end time is specified
  * @returns a map of log stream names to log events or an empty map if no logs are found
  */
-export const getAllLogs = async (
-  region: string,
-  functionName: string,
-  startMillis: number | undefined,
-  endMillis: number | undefined
-) => {
+export const getAllLogs = async (region: string, functionName: string, startMillis?: number, endMillis?: number) => {
   const logs = new Map<string, OutputLogEvent[]>()
   const cwlClient = new CloudWatchLogsClient({region})
   if (functionName.startsWith('arn:aws')) {

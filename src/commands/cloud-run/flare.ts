@@ -491,8 +491,8 @@ export const getLogs = async (
   logClient: Logging,
   serviceId: string,
   location: string,
-  startMillis: number | undefined,
-  endMillis: number | undefined,
+  startMillis?: number,
+  endMillis?: number,
   severityFilter?: string
 ) => {
   const logs: CloudRunLog[] = []
