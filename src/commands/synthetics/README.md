@@ -254,13 +254,13 @@ The `run-tests` sub-command runs the tests discovered in the folder according to
 yarn datadog-ci synthetics run-tests --public-id pub-lic-id1 --public-id pub-lic-id2
 ```
 
-It is also possible to trigger tests corresponding to a search query by using the flag `--search` (or shorthand `-s`). With this option, the global configuration overrides applies to all tests discovered with the search query.
+It is also possible to trigger tests corresponding to a search query by using the flag `--search` (or shorthand `-s`). With this option, the overrides defined in your [global configuration file](#global-configuration-file-options) apply to all tests discovered with the search query.
 
 ```bash
-yarn datadog-ci synthetics run-tests -s 'tag:e2e-tests' --config global.config.json
+yarn datadog-ci synthetics run-tests -s 'tag:e2e-tests'
 ```
 
-You can use `--files` (shorthand `-f`) to override the global file selector when you want to run multiple suites in parallel with a single global configuration file.
+You can use `--files` (shorthand `-f`) to override the default glob pattern (which would match all `**/*.synthetics.json` files) when you want to discover only a subset of the tests.
 
 ```bash
 yarn datadog-ci synthetics run-tests -f ./component-1/**/*.synthetics.json -f ./component-2/**/*.synthetics.json
