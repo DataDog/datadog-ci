@@ -23,7 +23,7 @@ describe('cli', () => {
     )
 
     describe.each(cases)('%s', (commandName, subcommandCases) => {
-      test.each(subcommandCases)('%s', (__, command) => {
+      test.each(subcommandCases)('%s', (_, command) => {
         expect(command).toHaveProperty('paths')
         expect(command).toHaveProperty('usage')
 
