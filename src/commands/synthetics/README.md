@@ -449,7 +449,7 @@ Example:
 ```
 datadog-ci synthetics upload-application              \
 --mobileApplicationId '123-123-123'                   \
---mobileApplicationVersionFilePath example/test.apk \
+--mobileApplicationVersionFilePath example/test.apk   \
 --versionName 'example 1.0'                           \
 --latest
 ```   
