@@ -495,7 +495,7 @@ describe('cloud-run flare', () => {
 
     it('uses correct filter when `severityFilter` is unspecified', async () => {
       await getLogs(MOCK_LOG_CLIENT, MOCK_SERVICE, MOCK_REGION, undefined, undefined)
-      const expectedFilter = `resource.labels.service_name="${MOCK_SERVICE}" AND resource.labels.location="${MOCK_REGION}" AND timestamp>="2022-12-31T00:00:00.000Z" AND (textPayload:* OR httpRequest:*)`
+      const expectedFilter = `resource.labels.service_name="${MOCK_SERVICE}" AND resource.labels.location="${MOCK_REGION}" AND timestamp>="2022-12-31T00:00:00.000Z" AND timestamp<="2023-01-01T00:00:00.000Z" AND (textPayload:* OR httpRequest:*)`
 
       expect(MOCK_LOG_CLIENT.getEntries).toHaveBeenCalledWith({
         filter: expectedFilter,
@@ -506,7 +506,7 @@ describe('cloud-run flare', () => {
 
     it('uses correct filter when `severityFilter` is defined', async () => {
       await getLogs(MOCK_LOG_CLIENT, MOCK_SERVICE, MOCK_REGION, undefined, undefined, ' AND severity>="WARNING"')
-      const expectedFilter = `resource.labels.service_name="${MOCK_SERVICE}" AND resource.labels.location="${MOCK_REGION}" AND timestamp>="2022-12-31T00:00:00.000Z" AND (textPayload:* OR httpRequest:*) AND severity>="WARNING"`
+      const expectedFilter = `resource.labels.service_name="${MOCK_SERVICE}" AND resource.labels.location="${MOCK_REGION}" AND timestamp>="2022-12-31T00:00:00.000Z" AND timestamp<="2023-01-01T00:00:00.000Z" AND (textPayload:* OR httpRequest:*) AND severity>="WARNING"`
 
       expect(MOCK_LOG_CLIENT.getEntries).toHaveBeenCalledWith({
         filter: expectedFilter,
