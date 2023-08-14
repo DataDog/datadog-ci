@@ -164,7 +164,7 @@ export const validateStartEndFlags = (start: string | undefined, end: string | u
     throw Error('End time is required when start time is specified. [--end]')
   }
 
-  const startMillis = Number(start)
+  let startMillis = Number(start)
   let endMillis = Number(end)
   if (isNaN(startMillis)) {
     throw Error(`Start time must be a time in milliseconds since Unix Epoch. '${start}' is not a number.`)
@@ -174,6 +174,7 @@ export const validateStartEndFlags = (start: string | undefined, end: string | u
   }
 
   // Required for AWS SDK to work correctly
+  startMillis = Math.min(startMillis, Date.now())
   endMillis = Math.min(endMillis, Date.now())
 
   if (startMillis >= endMillis) {
