@@ -497,13 +497,13 @@ export const getLogs = async (
 ) => {
   const logs: CloudRunLog[] = []
 
-  // If startMillis and endMillis are provided, use them to set the date range
-  // Otherwise, default to the recent logs using MAX_LOG_AGE_MINUTES
+  // Default to the recent logs using MAX_LOG_AGE_MINUTES
   const date = new Date()
   date.setMinutes(date.getMinutes() - MAX_LOG_AGE_MINUTES)
   let startDate: string = date.toISOString()
   let endDate: string = new Date().toISOString() // Current time
 
+  // If startMillis and endMillis are provided, use them to set the date range
   if (startMillis && endMillis) {
     startDate = new Date(startMillis).toISOString()
     endDate = new Date(endMillis).toISOString()
