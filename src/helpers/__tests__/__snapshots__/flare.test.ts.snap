@@ -19,3 +19,13 @@ exports[`flare validateFilePath throws an error when the file has already been a
 "[!] File '/added' has already been added.
 "
 `;
+
+exports[`flare validateStartEndFlags throws error when end is invalid 1`] = `"End time must be a time in milliseconds since Unix Epoch. '234abc' is not a number."`;
+
+exports[`flare validateStartEndFlags throws error when end is specified but start is not specified 1`] = `"Start time is required when end time is specified. [--start]"`;
+
+exports[`flare validateStartEndFlags throws error when start is invalid 1`] = `"Start time must be a time in milliseconds since Unix Epoch. '123abc' is not a number."`;
+
+exports[`flare validateStartEndFlags throws error when start is not before the end time 1`] = `"Start time must be before end time."`;
+
+exports[`flare validateStartEndFlags throws error when start is specified but end is not specified 1`] = `"End time is required when start time is specified. [--end]"`;

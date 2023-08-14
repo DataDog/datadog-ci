@@ -144,3 +144,42 @@ export const validateFilePath = (filePath: string, projectFilePaths: Set<string>
 
   return filePath
 }
+
+/**
+ * Validate the start and end flags and adds error messages if found
+ * @param start start time as a string
+ * @param end end time as a string
+ * @throws error if start or end are not valid numbers
+ * @returns [startMillis, endMillis] as numbers or [undefined, undefined] if both are undefined
+ */
+export const validateStartEndFlags = (start: string | undefined, end: string | undefined) => {
+  if (!start && !end) {
+    return [undefined, undefined]
+  }
+
+  if (!start) {
+    throw Error('Start time is required when end time is specified. [--start]')
+  }
+  if (!end) {
+    throw Error('End time is required when start time is specified. [--end]')
+  }
+
+  let startMillis = Number(start)
+  let endMillis = Number(end)
+  if (isNaN(startMillis)) {
+    throw Error(`Start time must be a time in milliseconds since Unix Epoch. '${start}' is not a number.`)
+  }
+  if (isNaN(endMillis)) {
+    throw Error(`End time must be a time in milliseconds since Unix Epoch. '${end}' is not a number.`)
+  }
+
+  // Required for AWS SDK to work correctly
+  startMillis = Math.min(startMillis, Date.now())
+  endMillis = Math.min(endMillis, Date.now())
+
+  if (startMillis >= endMillis) {
+    throw Error('Start time must be before end time.')
+  }
+
+  return [startMillis, endMillis]
+}
