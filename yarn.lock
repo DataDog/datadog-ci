@@ -1884,7 +1884,7 @@ __metadata:
     ora: 5.4.1
     pkg: 5.5.2
     prettier: 2.0.5
-    protobuf: ^0.11.1
+    protobufjs: ^7.2.4
     proxy: ^2.1.1
     proxy-agent: ^6.3.0
     rimraf: ^3.0.2
@@ -4154,15 +4154,15 @@ __metadata:
   languageName: node
   linkType: hard
 
-"aws-sdk-client-mock-jest@npm:^2.1.1":
-  version: 2.2.0
-  resolution: "aws-sdk-client-mock-jest@npm:2.2.0"
+"aws-sdk-client-mock-jest@npm:2.1.1":
+  version: 2.1.1
+  resolution: "aws-sdk-client-mock-jest@npm:2.1.1"
   dependencies:
     "@types/jest": ^28.1.3
     tslib: ^2.1.0
   peerDependencies:
-    aws-sdk-client-mock: 2.2.0
-  checksum: 2b9367077b745df34da049e2c90f4d743e38369d2d0f0469582ad27a8db52c2f1d5a711ec93b398bd54b732e1454e0028ef161eaea29a0309094ca24ef51a926
+    aws-sdk-client-mock: 2.1.1
+  checksum: 4b5ca96bbcaa60ea3ea947821c7ff1f073c1342a12ce5c778b70832bdcc6106e10591e98e09b22c5b0d83dfc6fe554e8a08d5df5cf067a7eaadb804087b891ed
   languageName: node
   linkType: hard
 
@@ -8508,13 +8508,6 @@ jschardet@latest:
   languageName: node
   linkType: hard
 
-"nan@npm:~1.0.0":
-  version: 1.0.0
-  resolution: "nan@npm:1.0.0"
-  checksum: b5ad9e05d0c7c5a2764c387e336d8131257403e9f14e4ca4f760bcbb13faa9832cb5688b3d39cff21174818ed808b8043c7e2e31cd1424054c1e9f327f482dd2
-  languageName: node
-  linkType: hard
-
 "napi-build-utils@npm:^1.0.1":
   version: 1.0.2
   resolution: "napi-build-utils@npm:1.0.2"
@@ -9262,16 +9255,6 @@ jschardet@latest:
   dependencies:
     protobufjs: ^7.0.0
   checksum: 0cd94cb635a9b9b3a2d047700175be4a6c7b7a43e2698826edad17604793764bcdfc270585ea58cb94aa690211b6cdaae5bf7a22522bea68ca67a2844773b4b7
-  languageName: node
-  linkType: hard
-
-"protobuf@npm:^0.11.1":
-  version: 0.11.1
-  resolution: "protobuf@npm:0.11.1"
-  dependencies:
-    nan: ~1.0.0
-    node-gyp: latest
-  checksum: ed6cb4b160dec0b872070dcd744f383c4549dfd38e0b8c0b7aa8594dd9726df79048ebb8afdb61f14226ff975cae2d05f65195c3c2ea0d6ce7ffe4af22562ff5
   languageName: node
   linkType: hard
 
