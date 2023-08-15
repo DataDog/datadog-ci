@@ -32,16 +32,7 @@ datadog-ci cloud-run -s <service> -p <project> -r <region/location> -c <case-id>
 
 For product feedback and questions, join the `#serverless` channel in the [Datadog community on Slack](https://chat.datadoghq.com/).
 
-[1]: https://docs.aws.amazon.com/sdk-for-javascript/v2/developer-guide/setting-credentials-node.html
+[1]: https://cloud.google.com/sdk/gcloud/reference/auth/login
 [2]: https://github.com/DataDog/datadog-ci
-[3]: https://github.com/DataDog/datadog-lambda-layer-js/releases
-[4]: https://github.com/DataDog/datadog-lambda-layer-python/releases
-[5]: https://docs.datadoghq.com/serverless/datadog_lambda_library/extension
-[6]: https://docs.datadoghq.com/account_management/api-app-keys/#api-keys
-[7]: https://docs.datadoghq.com/serverless/troubleshooting/serverless_tagging/#the-env-tag
-[8]: https://docs.datadoghq.com/serverless/troubleshooting/serverless_tagging/#the-version-tag
-[9]: https://docs.datadoghq.com/serverless/troubleshooting/serverless_tagging/#the-service-tag
-[10]: https://docs.datadoghq.com/serverless/forwarder/
-[11]: https://docs.datadoghq.com/serverless/custom_metrics?tab=python#enabling-asynchronous-custom-metrics
-[12]: https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-profiles.html#using-profiles
-[13]: https://docs.datadoghq.com/integrations/guide/source-code-integration
+[3]: https://docs.datadoghq.com/serverless/google_cloud_run
+[4]: https://docs.datadoghq.com/account_management/api-app-keys/#api-keys
