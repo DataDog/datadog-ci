@@ -48,6 +48,7 @@ js-yaml,import,MIT,Copyright (C) 2011-2015 by Vitaly Puzrin
 ora,import,MIT,Copyright (c) Sindre Sorhus <sindresorhus@gmail.com> (https://sindresorhus.com)
 pkg,dev,MIT,"Copyright (c) 2021 Vercel, Inc."
 prettier,dev,MIT,Copyright © James Long and contributors
+protobuf,import,BSD-3-Clause,Copyright (c) 2023 Google LLC and other contributors
 proxy,dev,MIT,Copyright (c) 2013 Nathan Rajlich <nathan@tootallnate.net>
 proxy-agent,import,MIT,Copyright (c) 2013 Nathan Rajlich <nathan@tootallnate.net>
 rimraf,import,ISC,Copyright (c) 2011-2022 Isaac Z. Schlueter and Contributors
