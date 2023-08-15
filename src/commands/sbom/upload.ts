@@ -24,7 +24,9 @@ import FormData from 'form-data'
 import {renderUpload} from '../sarif/renderer'
 import {createGzip} from 'zlib'
 import {v4 as uuidv4} from 'uuid'
-import {INTAKE_NAME} from './constants'
+import {API_ENDPOINT, INTAKE_NAME} from './constants'
+import {CONTENT_TYPE_HEADER, CONTENT_TYPE_VALUE_PROTOBUF, METHOD_POST} from '../../constants'
+import {getApiHelper} from './api'
 
 /**
  * Get the validate function. Read all the schemas and return
@@ -88,34 +90,6 @@ const generatePayload = (payloadData: SbomPayloadData, tags: SpanTags): SBOMPayl
   })
 }
 
-const maxBodyLength = Infinity
-
-export const uploadSBomPayload = (request: (args: AxiosRequestConfig) => AxiosPromise<AxiosResponse>) => async (
-  payload: SBOMPayload
-) => {
-  const buffer = SBOMPayload.encode(payload).finish()
-
-  return request({
-    data: buffer,
-    headers: {
-      'Content-Type': 'application/x-protobuf',
-      'DD-EVP-ORIGIN': 'datadog-ci',
-      'DD-EVP-ORIGIN-VERSION': '0.0.1',
-    },
-    maxBodyLength,
-    method: 'POST',
-    url: 'api/v2/sbom',
-  })
-}
-
-const getApiHelper = (apiKey: string): ((sbomPayload: SBOMPayload) => AxiosPromise<AxiosResponse>) => {
-  const intakeUrl = getBaseIntakeUrl(INTAKE_NAME)
-
-  const r = getRequestBuilder({baseUrl: intakeUrl, apiKey})
-
-  return uploadSBomPayload(r)
-}
-
 export class UploadSbomCommand extends Command {
   public static paths = [['sbom', 'upload']]
 
@@ -128,10 +102,8 @@ export class UploadSbomCommand extends Command {
   })
 
   private basePaths = Option.Rest({required: 1})
-  private dryRun = Option.Boolean('--dry-run', false)
   private service = Option.String('--service')
   private tags = Option.Array('--tags')
-  private noVerify = Option.Boolean('--no-verify', false)
 
   private config = {
     apiKey: process.env.DATADOG_API_KEY || process.env.DD_API_KEY,
@@ -164,7 +136,7 @@ export class UploadSbomCommand extends Command {
       return 1
     }
 
-    const api = getApiHelper(this.config.apiKey)
+    const api: (sbomPayload: SBOMPayload) => AxiosPromise<AxiosResponse> = getApiHelper(this.config.apiKey)
 
     const spanTags = await getSpanTags(this.config, this.tags)
 
