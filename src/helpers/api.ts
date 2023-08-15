@@ -1,7 +1,4 @@
 import {DATADOG_SITE_US1} from '../constants'
-import {APIHelper} from '../commands/sarif/interfaces'
-import chalk from 'chalk'
-import {apiConstructor} from '../commands/sarif/api'
 
 /**
  * Get the base intake URL for a service. If the `DD_SITE` or `DATADOG_SITE` environment
