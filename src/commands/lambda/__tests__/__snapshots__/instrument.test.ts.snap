@@ -165,6 +165,7 @@ Will apply the following updates:
 UpdateFunctionConfiguration -> arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world
 {
   "FunctionName": "arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world",
+  "Handler": "/opt/nodejs/node_modules/datadog-lambda-js/handler.handler",
   "Environment": {
     "Variables": {
       "DD_LAMBDA_HANDLER": "index.handler",
@@ -188,6 +189,7 @@ TagResource -> arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world
 UpdateFunctionConfiguration -> arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world-2
 {
   "FunctionName": "arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world-2",
+  "Handler": "/opt/nodejs/node_modules/datadog-lambda-js/handler.handler",
   "Environment": {
     "Variables": {
       "DD_LAMBDA_HANDLER": "index.handler",
@@ -238,6 +240,7 @@ Will apply the following updates:
 UpdateFunctionConfiguration -> arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world
 {
   "FunctionName": "arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world",
+  "Handler": "/opt/nodejs/node_modules/datadog-lambda-js/handler.handler",
   "Environment": {
     "Variables": {
       "DD_LAMBDA_HANDLER": "index.handler",
@@ -261,6 +264,7 @@ TagResource -> arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world
 UpdateFunctionConfiguration -> arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world-2
 {
   "FunctionName": "arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world-2",
+  "Handler": "/opt/nodejs/node_modules/datadog-lambda-js/handler.handler",
   "Environment": {
     "Variables": {
       "DD_LAMBDA_HANDLER": "index.handler",
@@ -721,6 +725,7 @@ Will apply the following updates:
 UpdateFunctionConfiguration -> arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world
 {
   "FunctionName": "arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world",
+  "Handler": "/opt/nodejs/node_modules/datadog-lambda-js/handler.handler",
   "Environment": {
     "Variables": {
       "DD_LAMBDA_HANDLER": "index.handler",
@@ -767,6 +772,7 @@ Will apply the following updates:
 UpdateFunctionConfiguration -> arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world
 {
   "FunctionName": "arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world",
+  "Handler": "/opt/nodejs/node_modules/datadog-lambda-js/handler.handler",
   "Environment": {
     "Variables": {
       "DD_LAMBDA_HANDLER": "index.handler",
