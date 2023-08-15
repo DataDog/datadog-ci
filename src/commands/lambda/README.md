@@ -146,7 +146,7 @@ Instead of supplying arguments, you can create a configuration file in your proj
 }
 ```
 
-## Troubleshooting Serverless Instrumentation
+## Troubleshooting Lambda Instrumentation
 
 To troubleshoot issues you may be encountering with Datadog monitoring on your Lambda functions, use the `datadog-ci lambda flare` command in the root of your project directory. This command collects important data about a Lambda function, such as environment variables and the config file. These files will be submitted to Datadog support via a ticket matching the provided Zendesk case ID.
 
@@ -161,7 +161,7 @@ datadog-ci lambda flare -f <function-arn> -c <case-id> -e <email-on-case-id>
 datadog-ci lambda flare -f <function-name> -r <AWS region> -c <case-id> -e <email-on-case-id> --with-logs
 
 # Dry run: collect data, but don't send to Datadog support
-datadog-ci lambda flare -f <function-arn> --with-logs --dry-run
+datadog-ci lambda flare -f <function-arn> -c <case-id> -e <email-on-case-id> --with-logs --dry-run
 ```
 
 **Arguments**
