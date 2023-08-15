@@ -1,17 +1,30 @@
-import chalk from 'chalk'
-import {Command, Option} from 'clipanion'
+import fs from 'fs'
+import os from 'os'
+import process from 'process'
+
 import Ajv from 'ajv'
 import addFormats from 'ajv-formats'
+import chalk from 'chalk'
+import {Command, Option} from 'clipanion'
+
+import {SpanTags} from '../../helpers/interfaces'
+import {getSpanTags} from '../../helpers/tags'
+
 import cycloneDxSchema from './json-schema/cyclonedx/bom-1.4.schema.json'
 import jsfSchema from './json-schema/jsf/jsf-0.82.schema.json'
 import spdxSchema from './json-schema/spdx/spdx.schema.json'
-import fs from 'fs'
-import process from 'process'
-import {getSpanTags} from '../../helpers/tags'
-import {SbomPayloadData} from './types'
 import {SBOMEntity, SBOMPayload, SBOMSourceType} from './protobuf/sbom_intake'
-import os from 'os'
-import {SpanTags} from '../../helpers/interfaces'
+import {SbomPayloadData} from './types'
+import {getBaseIntakeUrl} from '../../helpers/api'
+import {getRequestBuilder} from '../../helpers/utils'
+import {AxiosInstance, AxiosPromise, AxiosRequestConfig, AxiosResponse} from 'axios'
+import {Payload} from '../sarif/interfaces'
+import {Writable} from 'stream'
+import FormData from 'form-data'
+import {renderUpload} from '../sarif/renderer'
+import {createGzip} from 'zlib'
+import {v4 as uuidv4} from 'uuid'
+import {INTAKE_NAME} from './constants'
 
 /**
  * Get the validate function. Read all the schemas and return
@@ -75,7 +88,33 @@ const generatePayload = (payloadData: SbomPayloadData, tags: SpanTags): SBOMPayl
   })
 }
 
-const getApiHelper = () => {}
+const maxBodyLength = Infinity
+
+export const uploadSBomPayload = (request: (args: AxiosRequestConfig) => AxiosPromise<AxiosResponse>) => async (
+  payload: SBOMPayload
+) => {
+  const buffer = SBOMPayload.encode(payload).finish()
+
+  return request({
+    data: buffer,
+    headers: {
+      'Content-Type': 'application/x-protobuf',
+      'DD-EVP-ORIGIN': 'datadog-ci',
+      'DD-EVP-ORIGIN-VERSION': '0.0.1',
+    },
+    maxBodyLength,
+    method: 'POST',
+    url: 'api/v2/sbom',
+  })
+}
+
+const getApiHelper = (apiKey: string): ((sbomPayload: SBOMPayload) => AxiosPromise<AxiosResponse>) => {
+  const intakeUrl = getBaseIntakeUrl(INTAKE_NAME)
+
+  const r = getRequestBuilder({baseUrl: intakeUrl, apiKey})
+
+  return uploadSBomPayload(r)
+}
 
 export class UploadSbomCommand extends Command {
   public static paths = [['sbom', 'upload']]
@@ -119,12 +158,18 @@ export class UploadSbomCommand extends Command {
       return 1
     }
 
-    const api = getApiHelper()
+    if (!this.config.apiKey) {
+      this.context.stderr.write('API key not defined\n')
+
+      return 1
+    }
+
+    const api = getApiHelper(this.config.apiKey)
 
     const spanTags = await getSpanTags(this.config, this.tags)
 
     const validator: Ajv = getValidator()
-    this.basePaths.forEach((basePath: string): void => {
+    for (const basePath of this.basePaths) {
       if (validateSbomFile(basePath, validator)) {
         // Get the payload to upload
         const payloadData: SbomPayloadData = {
@@ -134,14 +179,23 @@ export class UploadSbomCommand extends Command {
         const payloadBytes = SBOMPayload.encode(generatePayload(payloadData, spanTags)).finish()
 
         // Upload content
-
         fs.writeFileSync(`${basePath}.payload.pbytes`, payloadBytes)
+        try {
+          await api(generatePayload(payloadData, spanTags))
+          this.context.stdout.write(`File ${basePath} successfully uploaded\n`)
+        } catch (error) {
+          process.stderr.write(`Error while writing the payload: ${error.message}\n`)
+          if (error.response) {
+            process.stderr.write(`API status: ${error.response.status}\n`)
+          }
+        }
       } else {
         this.context.stdout.write(`File ${chalk.red.bold(basePath)} is not a valid SBOM file.\n`)
       }
-    })
-    this.context.stdout.write('finished')
+    }
 
-    return 1
+    this.context.stdout.write('Upload finished\n')
+
+    return 0
   }
 }
