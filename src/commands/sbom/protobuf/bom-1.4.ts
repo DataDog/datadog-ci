@@ -1,6 +1,7 @@
 /* eslint-disable */
 import * as _m0 from 'protobufjs/minimal'
 import {Timestamp} from './google/protobuf/timestamp'
+import {CustomMessage} from './custom_message'
 
 export const protobufPackage = 'cyclonedx.v1_4'
 
@@ -1529,7 +1530,7 @@ function createBaseBom(): Bom {
 }
 
 // @ts-ignore
-export const Bom = {
+export const Bom: CustomMessage<Bom> = {
   encode(message: Bom, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
     if (message.specVersion !== '') {
       writer.uint32(10).string(message.specVersion)
@@ -1881,7 +1882,7 @@ function createBaseComponent(): Component {
 }
 
 // @ts-ignore
-export const Component = {
+export const Component: CustomMessage<Component> = {
   encode(message: Component, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
     if (message.type !== 0) {
       writer.uint32(8).int32(message.type)
@@ -3182,7 +3183,7 @@ function createBaseMetadata(): Metadata {
   }
 }
 
-export const Metadata = {
+export const Metadata: CustomMessage<Metadata> = {
   encode(message: Metadata, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
     if (message.timestamp !== undefined) {
       Timestamp.encode(toTimestamp(message.timestamp), writer.uint32(10).fork()).ldelim()
@@ -3621,7 +3622,7 @@ function createBasePedigree(): Pedigree {
   return {ancestors: [], descendants: [], variants: [], commits: [], patches: [], notes: undefined}
 }
 
-export const Pedigree = {
+export const Pedigree: CustomMessage<Pedigree> = {
   encode(message: Pedigree, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
     for (const v of message.ancestors) {
       Component.encode(v!, writer.uint32(10).fork()).ldelim()

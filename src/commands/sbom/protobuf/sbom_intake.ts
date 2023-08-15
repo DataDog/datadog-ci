@@ -3,6 +3,7 @@ import * as _m0 from 'protobufjs/minimal'
 import {Bom} from './bom-1.4'
 import {Duration} from './google/protobuf/duration'
 import {Timestamp} from './google/protobuf/timestamp'
+import {CustomMessage} from './custom_message'
 
 export const protobufPackage = 'appsecpb'
 
@@ -84,7 +85,7 @@ function createBaseSBOMPayload(): SBOMPayload {
 }
 
 // @ts-ignore
-export const SBOMPayload = {
+export const SBOMPayload: CustomMessage<SBOMPayload> = {
   encode(message: SBOMPayload, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
     if (message.version !== 0) {
       writer.uint32(8).int32(message.version)
@@ -213,7 +214,7 @@ function createBaseSBOMEntity(): SBOMEntity {
 }
 
 // @ts-ignore
-export const SBOMEntity = {
+export const SBOMEntity: CustomMessage<SBOMEntity> = {
   encode(message: SBOMEntity, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
     if (message.type !== 0) {
       writer.uint32(8).int32(message.type)
