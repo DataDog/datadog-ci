@@ -1,6 +1,5 @@
-import {parseTags, parseMetrics, getSpanTags} from '../tags'
-import {UploadSarifReportCommand} from '../../commands/sarif/upload'
 import {SpanTags} from '../interfaces'
+import {parseTags, parseMetrics, getSpanTags} from '../tags'
 
 describe('parseTags', () => {
   test('falls back to empty object if invalid format', () => {

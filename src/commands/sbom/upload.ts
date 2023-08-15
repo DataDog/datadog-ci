@@ -4,29 +4,19 @@ import process from 'process'
 
 import Ajv from 'ajv'
 import addFormats from 'ajv-formats'
+import {AxiosPromise, AxiosResponse} from 'axios'
 import chalk from 'chalk'
 import {Command, Option} from 'clipanion'
 
 import {SpanTags} from '../../helpers/interfaces'
 import {getSpanTags} from '../../helpers/tags'
 
+import {getApiHelper} from './api'
 import cycloneDxSchema from './json-schema/cyclonedx/bom-1.4.schema.json'
 import jsfSchema from './json-schema/jsf/jsf-0.82.schema.json'
 import spdxSchema from './json-schema/spdx/spdx.schema.json'
 import {SBOMEntity, SBOMPayload, SBOMSourceType} from './protobuf/sbom_intake'
 import {SbomPayloadData} from './types'
-import {getBaseIntakeUrl} from '../../helpers/api'
-import {getRequestBuilder} from '../../helpers/utils'
-import {AxiosInstance, AxiosPromise, AxiosRequestConfig, AxiosResponse} from 'axios'
-import {Payload} from '../sarif/interfaces'
-import {Writable} from 'stream'
-import FormData from 'form-data'
-import {renderUpload} from '../sarif/renderer'
-import {createGzip} from 'zlib'
-import {v4 as uuidv4} from 'uuid'
-import {API_ENDPOINT, INTAKE_NAME} from './constants'
-import {CONTENT_TYPE_HEADER, CONTENT_TYPE_VALUE_PROTOBUF, METHOD_POST} from '../../constants'
-import {getApiHelper} from './api'
 
 /**
  * Get the validate function. Read all the schemas and return
