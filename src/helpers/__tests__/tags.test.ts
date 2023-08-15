@@ -1,4 +1,6 @@
-import {parseTags, parseMetrics} from '../tags'
+import {parseTags, parseMetrics, getSpanTags} from '../tags'
+import {UploadSarifReportCommand} from '../../commands/sarif/upload'
+import {SpanTags} from '../interfaces'
 
 describe('parseTags', () => {
   test('falls back to empty object if invalid format', () => {
@@ -30,5 +32,40 @@ describe('parseMetrics', () => {
   })
   test('should not include invalid key:value pairs', () => {
     expect(parseMetrics(['key1:123', 'key2:321', 'invalidkeyvalue', 'key3:a'])).toEqual({key1: 123, key2: 321})
+  })
+})
+
+describe('getSpanTags', () => {
+  test('should parse DD_TAGS and DD_ENV environment variables', async () => {
+    process.env.DD_TAGS = 'key1:https://google.com,key2:value2'
+    process.env.DD_ENV = 'ci'
+
+    const spanTags: SpanTags = await getSpanTags(
+      {
+        apiKey: undefined,
+        env: process.env.DD_ENV,
+        envVarTags: process.env.DD_TAGS,
+      },
+      undefined
+    )
+    expect(spanTags).toMatchObject({
+      env: 'ci',
+      key1: 'https://google.com',
+      key2: 'value2',
+    })
+  })
+  test('should parse tags argument', async () => {
+    const spanTags: SpanTags = await getSpanTags(
+      {
+        apiKey: undefined,
+        env: undefined,
+        envVarTags: undefined,
+      },
+      ['key1:value1', 'key2:value2']
+    )
+    expect(spanTags).toMatchObject({
+      key1: 'value1',
+      key2: 'value2',
+    })
   })
 })
