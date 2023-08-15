@@ -18,6 +18,7 @@ Component,Origin,Licence,Copyright
 @types/jest,dev,MIT,Copyright Microsoft Corporation
 @types/js-yaml,dev,MIT,Bart van der Schoor
 @types/node,dev,MIT,Copyright Microsoft Corporation
+@types/retry,dev,MIT,Copyright Stan Goldmann and BendingBender.
 @types/rimraf,dev,MIT,Copyright Carlos Ballesteros Velasco <https://github.com/soywiz> and contributors
 @types/semver,dev,MIT,Copyright Microsoft Corporation
 @types/ssh2,dev,MIT,Copyright Microsoft Corporation
@@ -58,6 +59,7 @@ sshpk,import,MIT,"Copyright (c) Joyent, Inc."
 tiny-async-pool,import,MIT,Copyright (c) 2017 Rafael Xavier de Souza http://rafael.xavier.blog.br
 ts-jest,dev,MIT,Copyright (c) 2016-2018
 ts-node,import,MIT,Copyright (c) 2014 Blake Embrey (hello@blakeembrey.com)
+ts-proto,import,Apache-2.0,Copyright Stephen Haberman
 typescript,dev,Apache-2.0,Copyright (c) Microsoft Corporation.
 uuid,import,MIT,Copyright (c) 2010-2020 Robert Kieffer and other contributors
 xml2js,import,MIT,Copyright (c) Marek Kubica <marek@xivilization.net> (https://xivilization.net)
