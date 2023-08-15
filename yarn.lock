@@ -1838,6 +1838,7 @@ __metadata:
     "@types/jest": 29.5.3
     "@types/js-yaml": ^4.0.5
     "@types/node": 14.18.34
+    "@types/retry": 0.12.0
     "@types/rimraf": ^3.0.2
     "@types/semver": ^7.3.12
     "@types/ssh2": 1.11.6
@@ -3484,10 +3485,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/retry@npm:*":
-  version: 0.12.2
-  resolution: "@types/retry@npm:0.12.2"
-  checksum: e5675035717b39ce4f42f339657cae9637cf0c0051cf54314a6a2c44d38d91f6544be9ddc0280587789b6afd056be5d99dbe3e9f4df68c286c36321579b1bf4a
+"@types/retry@npm:0.12.0":
+  version: 0.12.0
+  resolution: "@types/retry@npm:0.12.0"
+  checksum: 61a072c7639f6e8126588bf1eb1ce8835f2cb9c2aba795c4491cf6310e013267b0c8488039857c261c387e9728c1b43205099223f160bb6a76b4374f741b5603
   languageName: node
   linkType: hard
 
@@ -4173,14 +4174,14 @@ __metadata:
   languageName: node
   linkType: hard
 
-"aws-sdk-client-mock@npm:^2.1.1":
-  version: 2.2.0
-  resolution: "aws-sdk-client-mock@npm:2.2.0"
+"aws-sdk-client-mock@npm:2.1.1":
+  version: 2.1.1
+  resolution: "aws-sdk-client-mock@npm:2.1.1"
   dependencies:
     "@types/sinon": ^10.0.10
     sinon: ^14.0.2
     tslib: ^2.1.0
-  checksum: 25232d56cd0401bc1212730a4a0192efc5154a211a648fe0cb4d71bd693216f63c8f13776ef04b4b36fb8eb70b9a7d19d87a3979816b9fd153450d44515d5598
+  checksum: 8330b88cdaeae401390ece094344ed727db0b007369d862a88afc0a29249828b95cce809faa0c2289c1af99528af0e765b4aba8156b948d01a12299390195cea
   languageName: node
   linkType: hard
 
