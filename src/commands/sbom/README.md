@@ -29,7 +29,7 @@ The following environment variables must be defined
 
 ### Generate Intake definition
 
-First, install protobuf CLI on my laptop
+First, install protobuf CLI:
 
 
 ```bash
