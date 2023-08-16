@@ -46,6 +46,11 @@ import * as instrumentRenderer from './renderers/instrument-uninstrument-rendere
 export class InstrumentCommand extends Command {
   public static paths = [['lambda', 'instrument']]
 
+  public static usage = Command.Usage({
+    category: 'Serverless',
+    description: 'Apply Datadog instrumentation to a Lambda.',
+  })
+
   private apmFlushDeadline = Option.String('--apm-flush-deadline')
   private captureLambdaPayload = Option.String('--capture-lambda-payload,--captureLambdaPayload')
   private configPath = Option.String('--config')

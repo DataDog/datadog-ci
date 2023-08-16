@@ -30,6 +30,7 @@ export class UploadCommand extends Command {
   public static paths = [['git-metadata', 'upload']]
 
   public static usage = Command.Usage({
+    category: 'Source Code Integration',
     description: 'Report the current commit details to Datadog.',
     details: `
       This command will upload the commit details to Datadog in order to create links to your repositories inside Datadog's UI.\n

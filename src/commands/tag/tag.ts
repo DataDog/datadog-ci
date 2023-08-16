@@ -10,6 +10,7 @@ export class TagCommand extends Command {
   public static paths = [['tag']]
 
   public static usage = Command.Usage({
+    category: 'CI Visibility',
     description: 'Add tags to a CI Pipeline trace pipeline or job span in Datadog.',
     details: `
             This command when run from a supported CI provider sends an arbitrary set of key:value

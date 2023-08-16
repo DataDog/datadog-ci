@@ -18,6 +18,7 @@ export class TraceCommand extends Command {
   public static paths = [['trace']]
 
   public static usage = Command.Usage({
+    category: 'CI Visibility',
     description: 'Trace a command with a custom span and report it to Datadog.',
     details: `
       This command wraps another command, which it will launch, and report a custom span to Datadog.\n

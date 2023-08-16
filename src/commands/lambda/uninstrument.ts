@@ -27,6 +27,11 @@ import * as instrumentRenderer from './renderers/instrument-uninstrument-rendere
 export class UninstrumentCommand extends Command {
   public static paths = [['lambda', 'uninstrument']]
 
+  public static usage = Command.Usage({
+    category: 'Serverless',
+    description: 'Revert Datadog instrumentation in a Lambda.',
+  })
+
   private configPath = Option.String('--config')
   private dryRun = Option.Boolean('-d,--dry,--dry-run', false)
   private forwarder = Option.String('--forwarder')

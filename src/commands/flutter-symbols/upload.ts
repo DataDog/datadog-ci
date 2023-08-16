@@ -59,7 +59,8 @@ export class UploadCommand extends Command {
   public static paths = [['flutter-symbols', 'upload']]
 
   public static usage = Command.Usage({
-    description: 'Upload symbol files for Flutter.',
+    category: 'RUM',
+    description: 'Upload Flutter symbol files to Datadog.',
     details: `
             This command will upload all symbol files for Flutter applications in order to symbolicate errors and
             crash reports received by Datadog. This includes uploading iOS dSYMs, Proguard mapping files, and Dart

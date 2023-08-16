@@ -24,6 +24,11 @@ export const DEFAULT_UPLOAD_COMMAND_CONFIG: UploadApplicationCommandConfig = {
 export class UploadApplicationCommand extends Command {
   public static paths = [['synthetics', 'upload-application']]
 
+  public static usage = Command.Usage({
+    category: 'Synthetics',
+    description: 'Upload a new version to an existing application in Datadog.',
+  })
+
   private apiKey = Option.String('--apiKey')
   private appKey = Option.String('--appKey')
   private configPath = Option.String('--config')

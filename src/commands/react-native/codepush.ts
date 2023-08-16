@@ -10,6 +10,7 @@ export class CodepushCommand extends Command {
   public static paths = [['react-native', 'codepush']]
 
   public static usage = Command.Usage({
+    category: 'RUM',
     description: 'Upload your React Native Codepush bundle and sourcemaps to Datadog.',
     details: `
       This command will upload React Native Codepush sourcemaps and their corresponding javascript bundle to Datadog in order to un-minify front-end stack traces received by Datadog.\n

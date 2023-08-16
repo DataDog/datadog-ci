@@ -58,6 +58,12 @@ const SUMMARIZED_FIELDS = new Set(['FunctionName', 'Runtime', 'FunctionArn', 'Ha
 export class LambdaFlareCommand extends Command {
   public static paths = [['lambda', 'flare']]
 
+  public static usage = Command.Usage({
+    category: 'Serverless',
+    description:
+      'Gather config, logs, tags, project files, and more from a Lambda function and sends them to Datadog support.',
+  })
+
   private isDryRun = Option.Boolean('-d,--dry,--dry-run', false)
   private withLogs = Option.Boolean('--with-logs', false)
   private functionName = Option.String('-f,--function')

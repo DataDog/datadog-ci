@@ -1,6 +1,6 @@
 import fs from 'fs'
 
-import {Cli} from 'clipanion'
+import {Builtins, Cli} from 'clipanion'
 import {CommandClass} from 'clipanion/lib/advanced/Command'
 
 import {version} from './helpers/version'
@@ -20,6 +20,9 @@ const cli = new Cli({
   binaryName: 'datadog-ci',
   binaryVersion: version,
 })
+
+cli.register(Builtins.HelpCommand)
+cli.register(Builtins.VersionCommand)
 
 const commandsPath = `${__dirname}/commands`
 for (const commandFolder of fs.readdirSync(commandsPath)) {
@@ -42,3 +45,5 @@ if (require.main === module) {
     stdout: process.stdout,
   })
 }
+
+export {cli}

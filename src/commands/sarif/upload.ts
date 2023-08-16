@@ -61,6 +61,7 @@ export class UploadSarifReportCommand extends Command {
   public static paths = [['sarif', 'upload']]
 
   public static usage = Command.Usage({
+    category: 'Static Analysis',
     description: 'Upload SARIF reports files to Datadog.',
     details: `
       This command will upload SARIF reports files to Datadog.\n

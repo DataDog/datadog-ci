@@ -43,6 +43,7 @@ export class UploadCommand extends Command {
   public static paths = [['dsyms', 'upload']]
 
   public static usage = Command.Usage({
+    category: 'RUM',
     description: 'Upload dSYM files to Datadog.',
     details: `
       This command will upload all dSYM files to Datadog in order to symbolicate crash reports received by Datadog.\n

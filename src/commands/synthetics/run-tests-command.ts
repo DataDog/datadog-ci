@@ -47,6 +47,11 @@ export const DEFAULT_COMMAND_CONFIG: RunTestsCommandConfig = {
 export class RunTestsCommand extends Command {
   public static paths = [['synthetics', 'run-tests']]
 
+  public static usage = Command.Usage({
+    category: 'Synthetics',
+    description: 'Run Synthetics tests with Datadog.',
+  })
+
   public configPath = Option.String('--config')
   public jUnitReport = Option.String('-j,--jUnitReport')
   public runName = Option.String('-n,--runName')
