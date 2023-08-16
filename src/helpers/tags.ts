@@ -105,7 +105,7 @@ export const parseMetrics = (tags: string[]) => {
 }
 
 /**
- * Get SPAN tags get the tags to upload results in CI for the following commands: sarif and sbom.
+ * Get the tags to upload results in CI for the following commands: sarif and sbom.
  * @param config - the configuration of the CLI
  * @param additionalTags - additional tags passed, generally from the command line.
  */

@@ -37,7 +37,7 @@ export const validateSbomFile = (path: string, ajv: Ajv): boolean => {
       const errors = validateFunction.errors || []
 
       errors.forEach((em) => {
-        process.stderr.write(`Error while reading file: ${em}\n`)
+        process.stderr.write(`Error while validating file: ${em}\n`)
       })
 
       return false
