@@ -14,6 +14,11 @@ export const DATADOG_SITES: string[] = [
   DATADOG_SITE_GOV,
 ]
 
+export const CONTENT_TYPE_HEADER = 'Content-Type'
+export const CONTENT_TYPE_VALUE_PROTOBUF = 'application/x-protobuf'
+
+export const METHOD_POST = 'post'
+
 // Tagging env vars
 export const SERVICE_ENV_VAR = 'DD_SERVICE'
 export const ENVIRONMENT_ENV_VAR = 'DD_ENV'

@@ -2,8 +2,6 @@ import os from 'os'
 
 import {Cli} from 'clipanion/lib/advanced'
 
-import {SpanTags} from '../../../helpers/interfaces'
-
 import {renderInvalidFile} from '../renderer'
 import {UploadSarifReportCommand} from '../upload'
 
@@ -165,39 +163,6 @@ describe('upload', () => {
       )
 
       expect(files.length).toEqual(2)
-    })
-  })
-  describe('getSpanTags', () => {
-    test('should parse DD_TAGS and DD_ENV environment variables', async () => {
-      process.env.DD_TAGS = 'key1:https://google.com,key2:value2'
-      process.env.DD_ENV = 'ci'
-      const context = createMockContext()
-      const command = new UploadSarifReportCommand()
-      const spanTags: SpanTags = await command['getSpanTags'].call({
-        config: {
-          env: process.env.DD_ENV,
-          envVarTags: process.env.DD_TAGS,
-        },
-        context,
-      })
-      expect(spanTags).toMatchObject({
-        env: 'ci',
-        key1: 'https://google.com',
-        key2: 'value2',
-      })
-    })
-    test('should parse tags argument', async () => {
-      const context = createMockContext()
-      const command = new UploadSarifReportCommand()
-      const spanTags: SpanTags = await command['getSpanTags'].call({
-        config: {},
-        context,
-        tags: ['key1:value1', 'key2:value2'],
-      })
-      expect(spanTags).toMatchObject({
-        key1: 'value1',
-        key2: 'value2',
-      })
     })
   })
 })

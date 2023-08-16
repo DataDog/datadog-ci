@@ -1,4 +1,10 @@
 // Build
+import {getCISpanTags} from './ci'
+import {DatadogCiConfig} from './config'
+import {getGitMetadata} from './git/format-git-span-data'
+import {SpanTags} from './interfaces'
+import {getUserGitSpanTags} from './user-provided-git'
+
 export const CI_PIPELINE_URL = 'ci.pipeline.url'
 export const CI_PROVIDER_NAME = 'ci.provider.name'
 export const CI_PIPELINE_ID = 'ci.pipeline.id'
@@ -95,5 +101,28 @@ export const parseMetrics = (tags: string[]) => {
     }, {})
   } catch (e) {
     return {}
+  }
+}
+
+/**
+ * Get the tags to upload results in CI for the following commands: sarif and sbom.
+ * @param config - the configuration of the CLI
+ * @param additionalTags - additional tags passed, generally from the command line.
+ */
+export const getSpanTags = async (config: DatadogCiConfig, additionalTags: string[] | undefined): Promise<SpanTags> => {
+  const ciSpanTags = getCISpanTags()
+  const gitSpanTags = await getGitMetadata()
+  const userGitSpanTags = getUserGitSpanTags()
+
+  const envVarTags = config.envVarTags ? parseTags(config.envVarTags.split(',')) : {}
+  const cliTags = additionalTags ? parseTags(additionalTags) : {}
+
+  return {
+    ...gitSpanTags,
+    ...ciSpanTags,
+    ...userGitSpanTags,
+    ...cliTags,
+    ...envVarTags,
+    ...(config.env ? {env: config.env} : {}),
   }
 }

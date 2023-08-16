@@ -10,12 +10,10 @@ import {Command, Option} from 'clipanion'
 import glob from 'glob'
 import asyncPool from 'tiny-async-pool'
 
-import {getCISpanTags} from '../../helpers/ci'
-import {getGitMetadata} from '../../helpers/git/format-git-span-data'
+import {DatadogCiConfig} from '../../helpers/config'
 import {SpanTags} from '../../helpers/interfaces'
 import {retryRequest} from '../../helpers/retry'
-import {parseTags} from '../../helpers/tags'
-import {getUserGitSpanTags} from '../../helpers/user-provided-git'
+import {getSpanTags} from '../../helpers/tags'
 import {buildPath} from '../../helpers/utils'
 import * as validation from '../../helpers/validation'
 
@@ -92,7 +90,7 @@ export class UploadSarifReportCommand extends Command {
   private tags = Option.Array('--tags')
   private noVerify = Option.Boolean('--no-verify', false)
 
-  private config = {
+  private config: DatadogCiConfig = {
     apiKey: process.env.DATADOG_API_KEY || process.env.DD_API_KEY,
     env: process.env.DD_ENV,
     envVarTags: process.env.DD_TAGS,
@@ -122,7 +120,7 @@ export class UploadSarifReportCommand extends Command {
     // Always using the posix version to avoid \ on Windows.
     this.basePaths = this.basePaths.map((basePath) => path.posix.normalize(basePath))
 
-    const spanTags = await this.getSpanTags()
+    const spanTags = await getSpanTags(this.config, this.tags)
     const payloads = await this.getMatchingSarifReports(spanTags)
 
     if (payloads.length === 0) {
@@ -144,24 +142,6 @@ export class UploadSarifReportCommand extends Command {
     this.context.stdout.write(
       renderSuccessfulCommand(payloads.length, totalTimeSeconds, spanTags, this.service, this.config.env)
     )
-  }
-
-  private async getSpanTags(): Promise<SpanTags> {
-    const ciSpanTags = getCISpanTags()
-    const gitSpanTags = await getGitMetadata()
-    const userGitSpanTags = getUserGitSpanTags()
-
-    const envVarTags = this.config.envVarTags ? parseTags(this.config.envVarTags.split(',')) : {}
-    const cliTags = this.tags ? parseTags(this.tags) : {}
-
-    return {
-      ...gitSpanTags,
-      ...ciSpanTags,
-      ...userGitSpanTags,
-      ...cliTags,
-      ...envVarTags,
-      ...(this.config.env ? {env: this.config.env} : {}),
-    }
   }
 
   private async uploadSarifReport(api: APIHelper, sarifReport: Payload) {
