@@ -36,7 +36,7 @@ First, install protobuf CLI:
 brew install protobuf
 ``
 
-Then, install `ts-proto` as a development dependency on your laptop.
+Then, install `ts-proto` as a development dependency.
 You can find information about this binary [here](https://github.com/stephenh/ts-proto).
 
 
