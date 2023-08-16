@@ -11,6 +11,7 @@ import {SpanTags} from '../../helpers/interfaces'
 import {getSpanTags} from '../../helpers/tags'
 
 import {getApiHelper} from './api'
+import {Bom} from './protobuf/bom-1.4'
 import {SBOMEntity, SBOMPayload, SBOMSourceType} from './protobuf/sbom_intake'
 import {SbomPayloadData} from './types'
 import {getValidator, validateSbomFile} from './validation'
@@ -28,7 +29,7 @@ const generatePayload = (payloadData: SbomPayloadData, tags: SpanTags): SBOMPayl
         inUse: true,
         generatedAt: new Date(),
         ddTags: spanTagsAsStringArray,
-        cyclonedx: undefined,
+        cyclonedx: Bom.fromJSON(payloadData.content),
       }),
     ],
   })
@@ -90,7 +91,7 @@ export class UploadSbomCommand extends Command {
         // Get the payload to upload
         const payloadData: SbomPayloadData = {
           filePath: basePath,
-          content: JSON.parse(String(fs.readFileSync(basePath))),
+          content: JSON.parse(fs.readFileSync(basePath).toString('utf8')),
         }
 
         // write the content (for debugging only if necessary)
