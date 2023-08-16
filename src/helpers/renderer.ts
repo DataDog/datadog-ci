@@ -1,15 +1,15 @@
 import path from 'path'
 import process from 'process'
 
-import {bold, cyan, green, red, yellow} from 'chalk'
+import chalk from 'chalk'
 
-export const dryRunTag = bold(cyan('[Dry Run]'))
-export const errorTag = bold(red('[Error]'))
-export const warningTag = bold(yellow('[Warning]'))
+export const dryRunTag = chalk.bold(chalk.cyan('[Dry Run]'))
+export const errorTag = chalk.bold(chalk.red('[Error]'))
+export const warningTag = chalk.bold(chalk.yellow('[Warning]'))
 
-export const warningExclamationSignTag = bold(yellow('[!]'))
-export const successCheckmarkTag = bold(green('✔'))
-export const failCrossTag = bold(red('✖'))
+export const warningExclamationSignTag = chalk.bold(chalk.yellow('[!]'))
+export const successCheckmarkTag = chalk.bold(chalk.green('✔'))
+export const failCrossTag = chalk.bold(chalk.red('✖'))
 
 /**
  * @param error an error message or an object of type `unknown`*.
@@ -45,7 +45,7 @@ export const renderSoftWarning = (warning: string) => `${warningExclamationSignT
 export const renderFlareHeader = (platformName: string, isDryRun: boolean) => {
   const prefix = isDryRun ? `${dryRunTag} ` : ''
 
-  return bold(`\n${prefix}🐶 Generating ${platformName} flare to send your configuration to Datadog...\n`)
+  return chalk.bold(`\n${prefix}🐶 Generating ${platformName} flare to send your configuration to Datadog...\n`)
 }
 
 /**
@@ -63,7 +63,7 @@ export const renderProjectFiles = (projectFilePaths: Set<string>) => {
   if (projectFilePaths.size === 0) {
     return renderSoftWarning('No project files found.')
   }
-  let msg = bold(`\n✅ Found project file(s) in ${process.cwd()}:\n`)
+  let msg = chalk.bold(`\n✅ Found project file(s) in ${process.cwd()}:\n`)
   for (const filePath of projectFilePaths) {
     const fileName = path.basename(filePath)
     msg += `• ${fileName}\n`
@@ -87,7 +87,7 @@ export const renderAdditionalFiles = (additionalFilePaths: Set<string>) => {
   if (additionalFilePaths.size === 0) {
     return renderSoftWarning('No additional files specified.')
   }
-  let msg = bold(`\nAdded ${additionalFilePaths.size} custom file(s):\n`)
+  let msg = chalk.bold(`\nAdded ${additionalFilePaths.size} custom file(s):\n`)
   for (const filePath of additionalFilePaths) {
     const fileName = path.basename(filePath)
     msg += `• ${fileName}\n`
