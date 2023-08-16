@@ -2,6 +2,23 @@
 
 To troubleshoot issues you encounter with Datadog monitoring on your Cloud Run services, run the `datadog-ci cloud-run flare` command in the root of your project directory. This command collects important data about the Cloud Run service, such as environment variables and configuration information. These files will be submitted to Datadog support via a ticket matching the provided Zendesk case ID.
 
+## Configuration
+
+### GCP Credentials
+
+You must have valid [GCP credentials][1] configured with access to the Lambda and CloudWatch services where you are running any `datadog-ci lambda` command. You can configure credentials by running `gcloud auth application-default login` and following the prompts in your browser. 
+
+### Environment variables
+
+Expose these environment variables in the environment where you are running `datadog-ci cloud-run flare`:
+
+| Environment Variable | Description                                                                                                                                                                                                                                      | Example                               |
+|----------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|---------------------------------------|
+| `DATADOG_API_KEY`    | Datadog API Key. Used to attach the flare files to your Zendesk ticket. For more information about getting a Datadog API key, see the [API key documentation][4].                                                                                | `export DATADOG_API_KEY=<API_KEY>`    |
+| `DATADOG_SITE`       | Optional. Set which Datadog site to send the flare for lower latency. Possible values are  `datadoghq.com` , `datadoghq.eu` , `us3.datadoghq.com`, `us5.datadoghq.com`, `ap1.datadoghq.com`, and `ddog-gov.com`. The default is `datadoghq.com`. | `export DATADOG_SITE="datadoghq.com"` |
+
+## Flare Command
+
 **Examples**
 ```bash
 # Collect and send files to Datadog support for a single service
