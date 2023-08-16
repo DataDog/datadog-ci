@@ -19,10 +19,11 @@ import {
   API_KEY_ENV_VAR,
   CI_API_KEY_ENV_VAR,
   FLARE_OUTPUT_DIRECTORY,
+  INSIGHTS_FILE_NAME,
   LOGS_DIRECTORY,
   PROJECT_FILES_DIRECTORY,
 } from '../../constants'
-import {getProjectFiles, sendToDatadog, validateFilePath} from '../../helpers/flare'
+import {getProjectFiles, sendToDatadog, validateFilePath, validateStartEndFlags} from '../../helpers/flare'
 import {createDirectories, deleteFolder, writeFile, zipContents} from '../../helpers/fs'
 import {requestConfirmation, requestFilePath} from '../../helpers/prompt'
 import * as helpersRenderer from '../../helpers/renderer'
@@ -48,11 +49,11 @@ import * as commonRenderer from './renderers/common-renderer'
 
 const FUNCTION_CONFIG_FILE_NAME = 'function_config.json'
 const TAGS_FILE_NAME = 'tags.json'
-const INSIGHTS_FILE_NAME = 'INSIGHTS.md'
 const FLARE_ZIP_FILE_NAME = 'lambda-flare-output.zip'
 const MAX_LOG_STREAMS = 50
 const DEFAULT_LOG_STREAMS = 3
 const MAX_LOG_EVENTS_PER_STREAM = 1000
+const SUMMARIZED_FIELDS = new Set(['FunctionName', 'Runtime', 'FunctionArn', 'Handler', 'Environment'])
 
 export class LambdaFlareCommand extends Command {
   public static paths = [['lambda', 'flare']]
@@ -108,16 +109,14 @@ export class LambdaFlareCommand extends Command {
       )
     }
 
-    if (!this.isDryRun) {
-      // Validate case ID
-      if (this.caseId === undefined) {
-        errorMessages.push(helpersRenderer.renderError('No case ID specified. [-c,--case-id]'))
-      }
+    // Validate case ID
+    if (this.caseId === undefined) {
+      errorMessages.push(helpersRenderer.renderError('No case ID specified. [-c,--case-id]'))
+    }
 
-      // Validate email
-      if (this.email === undefined) {
-        errorMessages.push(helpersRenderer.renderError('No email specified. [-e,--email]'))
-      }
+    // Validate email
+    if (this.email === undefined) {
+      errorMessages.push(helpersRenderer.renderError('No email specified. [-e,--email]'))
     }
 
     // Validate start/end flags if both are specified
@@ -183,8 +182,14 @@ export class LambdaFlareCommand extends Command {
       return 1
     }
     config = maskConfig(config)
-    const configStr = util.inspect(config, false, undefined, true)
-    this.context.stdout.write(`\n${configStr}\n`)
+    const summarizedConfig = summarizeConfig(config)
+    const summarizedConfigStr = util.inspect(summarizedConfig, false, undefined, true)
+    this.context.stdout.write(`\n${summarizedConfigStr}\n`)
+    this.context.stdout.write(
+      chalk.italic(
+        `(This is a summary of the configuration. The full configuration will be saved in "${FUNCTION_CONFIG_FILE_NAME}".)\n`
+      )
+    )
 
     // Get project files
     this.context.stdout.write(chalk.bold('\n📁 Searching for project files in current directory...\n'))
@@ -354,14 +359,23 @@ export class LambdaFlareCommand extends Command {
       }
 
       // Write insights file
-      const insightsFilePath = path.join(rootFolderPath, INSIGHTS_FILE_NAME)
-      generateInsightsFile(insightsFilePath, this.isDryRun, config)
-      this.context.stdout.write(`• Saved insights file to ./${INSIGHTS_FILE_NAME}\n`)
+      try {
+        const insightsFilePath = path.join(rootFolderPath, INSIGHTS_FILE_NAME)
+        generateInsightsFile(insightsFilePath, this.isDryRun, config)
+        this.context.stdout.write(`• Saved the insights file to ./${INSIGHTS_FILE_NAME}\n`)
+      } catch (err) {
+        const errorDetails = err instanceof Error ? err.message : ''
+        this.context.stdout.write(
+          helpersRenderer.renderSoftWarning(`Unable to create INSIGHTS.md file. ${errorDetails}`)
+        )
+      }
 
       // Exit if dry run
       const outputMsg = `\nℹ️ Your output files are located at: ${rootFolderPath}\n\n`
       if (this.isDryRun) {
-        this.context.stdout.write('\n🚫 The flare files were not sent as it was executed in dry run mode.')
+        this.context.stdout.write(
+          '\n🚫 The flare files were not sent because the command was executed in dry run mode.'
+        )
         this.context.stdout.write(outputMsg)
 
         return 0
@@ -405,41 +419,19 @@ export class LambdaFlareCommand extends Command {
 }
 
 /**
- * Validate the start and end flags and adds error messages if found
- * @param start start time as a string
- * @param end end time as a string
- * @throws error if start or end are not valid numbers
- * @returns [startMillis, endMillis] as numbers or [undefined, undefined] if both are undefined
+ * Summarizes the Lambda config as to not flood the terminal
+ * @param config
+ * @returns a summarized config
  */
-export const validateStartEndFlags = (start: string | undefined, end: string | undefined) => {
-  if (!start && !end) {
-    return [undefined, undefined]
+export const summarizeConfig = (config: any) => {
+  const summarizedConfig: any = {}
+  for (const key in config) {
+    if (SUMMARIZED_FIELDS.has(key)) {
+      summarizedConfig[key] = config[key]
+    }
   }
 
-  if (!start) {
-    throw Error('Start time is required when end time is specified. [--start]')
-  }
-  if (!end) {
-    throw Error('End time is required when start time is specified. [--end]')
-  }
-
-  const startMillis = Number(start)
-  let endMillis = Number(end)
-  if (isNaN(startMillis)) {
-    throw Error(`Start time must be a time in milliseconds since Unix Epoch. '${start}' is not a number.`)
-  }
-  if (isNaN(endMillis)) {
-    throw Error(`End time must be a time in milliseconds since Unix Epoch. '${end}' is not a number.`)
-  }
-
-  // Required for AWS SDK to work correctly
-  endMillis = Math.min(endMillis, Date.now())
-
-  if (startMillis >= endMillis) {
-    throw Error('Start time must be before end time.')
-  }
-
-  return [startMillis, endMillis]
+  return summarizedConfig
 }
 
 /**
@@ -454,8 +446,8 @@ export const validateStartEndFlags = (start: string | undefined, end: string | u
 export const getLogStreamNames = async (
   cwlClient: CloudWatchLogsClient,
   logGroupName: string,
-  startMillis: number | undefined,
-  endMillis: number | undefined
+  startMillis?: number,
+  endMillis?: number
 ) => {
   const config = {
     logGroupName,
@@ -511,8 +503,8 @@ export const getLogEvents = async (
   cwlClient: CloudWatchLogsClient,
   logGroupName: string,
   logStreamName: string,
-  startMillis: number | undefined,
-  endMillis: number | undefined
+  startMillis?: number,
+  endMillis?: number
 ) => {
   const config: any = {
     logGroupName,
@@ -543,12 +535,7 @@ export const getLogEvents = async (
  * @param endMillis end time in milliseconds or undefined if no end time is specified
  * @returns a map of log stream names to log events or an empty map if no logs are found
  */
-export const getAllLogs = async (
-  region: string,
-  functionName: string,
-  startMillis: number | undefined,
-  endMillis: number | undefined
-) => {
+export const getAllLogs = async (region: string, functionName: string, startMillis?: number, endMillis?: number) => {
   const logs = new Map<string, OutputLogEvent[]>()
   const cwlClient = new CloudWatchLogsClient({region})
   if (functionName.startsWith('arn:aws')) {

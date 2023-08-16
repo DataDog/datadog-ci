@@ -1,13 +1,16 @@
 jest.mock('../../loggroup')
 
+import {LambdaClient} from '@aws-sdk/client-lambda'
+import {mockClient} from 'aws-sdk-client-mock'
+
 import {CI_API_KEY_ENV_VAR} from '../../../../constants'
 import {MOCK_DATADOG_API_KEY} from '../../../../helpers/__tests__/fixtures'
 
-import {CI_API_KEY_SECRET_ARN_ENV_VAR, CI_KMS_API_KEY_ENV_VAR} from '../../constants'
+import {CI_API_KEY_SECRET_ARN_ENV_VAR, CI_KMS_API_KEY_ENV_VAR, DEFAULT_LAYER_AWS_ACCOUNT} from '../../constants'
 import {calculateUpdateRequest} from '../../functions/instrument'
 import {InstrumentationSettings} from '../../interfaces'
 
-import {mockAwsAccount} from '../fixtures'
+import {mockAwsAccount, mockLambdaClientCommands, mockLambdaLayers} from '../fixtures'
 
 describe('instrument', () => {
   describe('calculateUpdateRequest', () => {
@@ -701,6 +704,77 @@ describe('instrument', () => {
             expect(updateRequest).toEqual(outputResult)
           }
         )
+      })
+    })
+
+    describe('sets handlers correctly', () => {
+      const lambdaClientMock = mockClient(LambdaClient)
+
+      describe('interactive mode', () => {
+        const extensionLayer = `arn:aws:lambda:us-east-1:${DEFAULT_LAYER_AWS_ACCOUNT}:layer:Datadog-Extension`
+
+        beforeAll(() => {
+          lambdaClientMock.reset()
+          process.env = {}
+
+          mockLambdaClientCommands(lambdaClientMock)
+        })
+
+        afterAll(() => {
+          process.env = OLD_ENV
+        })
+
+        it.each([
+          [
+            'python',
+            {
+              runtime: 'python3.11',
+              layer: 'Datadog-Python311',
+            },
+            'datadog_lambda.handler.handler',
+          ],
+          [
+            'node',
+            {
+              runtime: 'nodejs16.x',
+              layer: 'Datadog-Node16-x',
+            },
+            '/opt/nodejs/node_modules/datadog-lambda-js/handler.handler',
+          ],
+        ])('%s', async (_, test, expected) => {
+          process.env[CI_API_KEY_ENV_VAR] = MOCK_DATADOG_API_KEY
+          const libraryLayer = `arn:aws:lambda:us-east-1:${DEFAULT_LAYER_AWS_ACCOUNT}:layer:${test.layer}`
+
+          // Mock Layers for interactive mode.
+          mockLambdaLayers(lambdaClientMock, {
+            [`${libraryLayer}:1`]: {
+              LayerName: `${libraryLayer}`,
+              VersionNumber: 1,
+            },
+            [`${extensionLayer}:1`]: {
+              LayerName: `${extensionLayer}`,
+              VersionNumber: 1,
+            },
+          })
+
+          const config = {
+            FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world',
+            Handler: 'index.handler',
+            Layers: [],
+            Runtime: test.runtime,
+          }
+
+          const settings = {
+            flushMetricsToLogs: false,
+            interactive: true, // Interactive mode
+            mergeXrayTraces: false,
+            tracingEnabled: false,
+          }
+
+          const updateRequest = await calculateUpdateRequest(config, settings, 'us-east-1', test.runtime as any)
+
+          expect(updateRequest?.Handler).toBe(expected)
+        })
       })
     })
   })

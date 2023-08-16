@@ -17,7 +17,17 @@ import * as fsModule from '../../../helpers/fs'
 import * as helpersPromptModule from '../../../helpers/prompt'
 
 import * as flareModule from '../flare'
-import {checkAuthentication, getCloudRunServiceConfig, getLogs, maskConfig, MAX_LOGS, saveLogsFile} from '../flare'
+import {
+  checkAuthentication,
+  generateInsightsFile,
+  getCloudRunServiceConfig,
+  getLogs,
+  getRecentRevisions,
+  maskConfig,
+  MAX_LOGS,
+  saveLogsFile,
+  summarizeConfig,
+} from '../flare'
 
 import {makeCli} from './fixtures'
 
@@ -40,6 +50,14 @@ const MOCK_REQUIRED_FLAGS = [
   'test@test.com',
 ]
 const MOCK_CLOUDRUN_CONFIG = {
+  name: `projects/${MOCK_PROJECT}/locations/${MOCK_REGION}/services/${MOCK_SERVICE}`,
+  description: 'description',
+  uid: 'abc1234-def5678',
+  uri: `https://${MOCK_SERVICE}-abc12345-ue.a.run.app`,
+  labels: {
+    someLabel: 'someValue',
+    anotherLabel: 'anotherValue',
+  },
   template: {
     containers: [
       {
@@ -72,6 +90,36 @@ const MOCK_READ_STREAM = new stream.Readable({
     this.push(undefined)
   },
 })
+const MOCK_REVISION_TIMESTAMP = {seconds: 100}
+const MOCK_REVISIONS = [
+  {
+    name: 'projects/some-project/locations/some-location/services/service/revisions/service-00005-abc',
+    createTime: MOCK_REVISION_TIMESTAMP,
+  },
+  {
+    name: 'projects/some-project/locations/some-location/services/service/revisions/service-00004-def',
+    createTime: MOCK_REVISION_TIMESTAMP,
+  },
+  {
+    name: 'projects/some-project/locations/some-location/services/service/revisions/service-00003-ghi',
+    createTime: MOCK_REVISION_TIMESTAMP,
+  },
+  {
+    name: 'projects/some-project/locations/some-location/services/service/revisions/service-00002-jkl',
+    createTime: MOCK_REVISION_TIMESTAMP,
+  },
+  {
+    name: 'projects/some-project/locations/some-location/services/service/revisions/service-00001-mno',
+    createTime: MOCK_REVISION_TIMESTAMP,
+  },
+]
+const MOCK_REVISION_NAMES = [
+  '`service-00005-abc` Deployed on 1970-01-01 00:01:40',
+  '`service-00004-def` Deployed on 1970-01-01 00:01:40',
+  '`service-00003-ghi` Deployed on 1970-01-01 00:01:40',
+  '`service-00002-jkl` Deployed on 1970-01-01 00:01:40',
+  '`service-00001-mno` Deployed on 1970-01-01 00:01:40',
+]
 
 // GCP mocks
 jest.mock('@google-cloud/logging')
@@ -88,6 +136,10 @@ jest.mock('@google-cloud/run', () => {
       servicePath: jest.fn().mockReturnValue('servicePath'),
       getService: () => Promise.resolve([MOCK_CLOUDRUN_CONFIG]),
     })),
+    RevisionsClient: jest.fn().mockImplementation(() => ({
+      servicePath: jest.fn().mockReturnValue('servicePath'),
+      listRevisions: jest.fn().mockReturnValue([MOCK_REVISIONS]),
+    })),
   }
 })
 
@@ -101,6 +153,9 @@ jest.mock('util')
 jest.mock('jszip')
 jest.mock('@google-cloud/logging')
 jest.useFakeTimers({now: new Date(Date.UTC(2023, 0))})
+jest.mock('../../../../package.json', () => ({
+  version: '1.0-mock-version',
+}))
 
 // File system mocks
 jest.spyOn(process, 'cwd').mockReturnValue(MOCK_CWD)
@@ -316,6 +371,92 @@ describe('cloud-run flare', () => {
     })
   })
 
+  test('getRecentRevisions should return the correct revision names', async () => {
+    const revisions = await getRecentRevisions(MOCK_SERVICE, MOCK_REGION, MOCK_PROJECT)
+    expect(revisions).toEqual(MOCK_REVISION_NAMES)
+  })
+
+  describe('generateInsightsFile', () => {
+    const insightsFilePath = 'mock/INSIGHTS.md'
+    const writeFileSpy = jest.spyOn(fsModule, 'writeFile')
+
+    it('should call writeFile with correct content when isDryRun is false', () => {
+      generateInsightsFile(
+        insightsFilePath,
+        false,
+        maskConfig(MOCK_CLOUDRUN_CONFIG),
+        MOCK_SERVICE,
+        MOCK_REGION,
+        MOCK_PROJECT,
+        MOCK_REVISION_NAMES
+      )
+
+      expect(writeFileSpy).toHaveBeenCalledTimes(1)
+
+      const receivedContent = writeFileSpy.mock.calls[0][1]
+      expect(receivedContent).toMatchSnapshot()
+    })
+
+    it('should call writeFile with correct content when isDryRun is true', () => {
+      generateInsightsFile(
+        insightsFilePath,
+        true,
+        maskConfig(MOCK_CLOUDRUN_CONFIG),
+        MOCK_SERVICE,
+        MOCK_REGION,
+        MOCK_PROJECT,
+        MOCK_REVISION_NAMES
+      )
+
+      expect(writeFileSpy).toHaveBeenCalledTimes(1)
+
+      const receivedContent = writeFileSpy.mock.calls[0][1]
+      expect(receivedContent).toMatchSnapshot()
+    })
+
+    it('prints a warning when generateInsightsFile() errors', async () => {
+      jest.spyOn(flareModule, 'generateInsightsFile').mockImplementationOnce(() => {
+        throw new Error('Some error')
+      })
+      const cli = makeCli()
+      const context = createMockContext()
+      const code = await cli.run(MOCK_REQUIRED_FLAGS, context as any)
+      const output = context.stdout.toString()
+      expect(code).toBe(0)
+      expect(output).toMatchSnapshot()
+    })
+
+    it('splits environment variables when there are multiple containers', async () => {
+      // Define a config with multiple containers
+      // Deep copy MOCK_CLOUDRUN_CONFIG, and then add another container
+      const multipleContainerConfig = JSON.parse(JSON.stringify(MOCK_CLOUDRUN_CONFIG))
+      const secondContainer = {
+        env: [
+          {
+            name: 'DD_API_KEY',
+            value: MOCK_DATADOG_API_KEY,
+            values: 'value',
+          },
+        ],
+        image: 'gcr.io/datadog-sandbox/another-container',
+      }
+      multipleContainerConfig.template.containers.push(secondContainer)
+
+      generateInsightsFile(
+        insightsFilePath,
+        false,
+        maskConfig(multipleContainerConfig),
+        MOCK_SERVICE,
+        MOCK_REGION,
+        MOCK_PROJECT,
+        MOCK_REVISION_NAMES
+      )
+      expect(writeFileSpy).toHaveBeenCalledTimes(1)
+      const receivedContent = writeFileSpy.mock.calls[0][1]
+      expect(receivedContent).toMatchSnapshot()
+    })
+  })
+
   describe('prompts for confirmation before sending', () => {
     it('sends when user answers prompt with yes', async () => {
       jest.spyOn(helpersPromptModule, 'requestConfirmation').mockResolvedValueOnce(true)
@@ -354,7 +495,7 @@ describe('cloud-run flare', () => {
 
     it('uses correct filter when `severityFilter` is unspecified', async () => {
       await getLogs(MOCK_LOG_CLIENT, MOCK_SERVICE, MOCK_REGION)
-      const expectedFilter = `resource.labels.service_name="${MOCK_SERVICE}" AND resource.labels.location="${MOCK_REGION}" AND timestamp>="2022-12-31T00:00:00.000Z" AND (textPayload:* OR httpRequest:*)`
+      const expectedFilter = `resource.labels.service_name="${MOCK_SERVICE}" AND resource.labels.location="${MOCK_REGION}" AND timestamp>="2022-12-31T00:00:00.000Z" AND timestamp<="2023-01-01T00:00:00.000Z" AND (textPayload:* OR httpRequest:*)`
 
       expect(MOCK_LOG_CLIENT.getEntries).toHaveBeenCalledWith({
         filter: expectedFilter,
@@ -364,8 +505,8 @@ describe('cloud-run flare', () => {
     })
 
     it('uses correct filter when `severityFilter` is defined', async () => {
-      await getLogs(MOCK_LOG_CLIENT, MOCK_SERVICE, MOCK_REGION, ' AND severity>="WARNING"')
-      const expectedFilter = `resource.labels.service_name="${MOCK_SERVICE}" AND resource.labels.location="${MOCK_REGION}" AND timestamp>="2022-12-31T00:00:00.000Z" AND (textPayload:* OR httpRequest:*) AND severity>="WARNING"`
+      await getLogs(MOCK_LOG_CLIENT, MOCK_SERVICE, MOCK_REGION, undefined, undefined, ' AND severity>="WARNING"')
+      const expectedFilter = `resource.labels.service_name="${MOCK_SERVICE}" AND resource.labels.location="${MOCK_REGION}" AND timestamp>="2022-12-31T00:00:00.000Z" AND timestamp<="2023-01-01T00:00:00.000Z" AND (textPayload:* OR httpRequest:*) AND severity>="WARNING"`
 
       expect(MOCK_LOG_CLIENT.getEntries).toHaveBeenCalledWith({
         filter: expectedFilter,
@@ -487,5 +628,9 @@ describe('cloud-run flare', () => {
       ].join('\n')
       expect(writeFileSpy).toHaveBeenCalledWith(mockFilePath, expectedContent)
     })
+  })
+
+  test('summarizeConfig', () => {
+    expect(summarizeConfig(MOCK_CLOUDRUN_CONFIG)).toMatchSnapshot()
   })
 })

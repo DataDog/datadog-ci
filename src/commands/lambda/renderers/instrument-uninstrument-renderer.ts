@@ -1,4 +1,4 @@
-import {blueBright, bold, hex, underline} from 'chalk'
+import chalk from 'chalk'
 import ora from 'ora'
 
 import {
@@ -171,9 +171,11 @@ export const renderSourceCodeIntegrationWarning = (sourceCodeIntegrationError: u
  */
 export const renderInstrumentInStagingFirst = () =>
   `\n${renderWarning(
-    `Instrument your ${hex('#FF9900').bold(
-      'Lambda'
-    )} functions in a dev or staging environment first. Should the instrumentation result be unsatisfactory, run \`${bold(
+    `Instrument your ${chalk
+      .hex('#FF9900')
+      .bold(
+        'Lambda'
+      )} functions in a dev or staging environment first. Should the instrumentation result be unsatisfactory, run \`${chalk.bold(
       'uninstrument'
     )}\` with the same arguments to revert the changes.`
   )}`
@@ -257,8 +259,10 @@ export const renderTagsNotConfiguredWarning = (tagsMissing: string[]) => {
   return `\n${renderWarning(
     `The ${tags} tag${
       plural ? 's have' : ' has'
-    } not been configured. Learn more about Datadog unified service tagging: ${underline(
-      blueBright('https://docs.datadoghq.com/getting_started/tagging/unified_service_tagging/#serverless-environment')
+    } not been configured. Learn more about Datadog unified service tagging: ${chalk.underline(
+      chalk.blueBright(
+        'https://docs.datadoghq.com/getting_started/tagging/unified_service_tagging/#serverless-environment'
+      )
     )}.`
   )}`
 }
@@ -376,7 +380,7 @@ export const renderUninstrumentingFunctionsSoftWarning = () => renderSoftWarning
 export const renderFetchedLambdaFunctions = (functionsLength: number) => {
   const plural = functionsLength > 1
 
-  return `Fetched ${bold(functionsLength)} ${hex('#FF9900').bold('Lambda')} function${plural ? 's' : ''}.\n`
+  return `Fetched ${chalk.bold(functionsLength)} ${chalk.hex('#FF9900').bold('Lambda')} function${plural ? 's' : ''}.\n`
 }
 
 /**
@@ -389,7 +393,9 @@ export const renderFetchedLambdaFunctions = (functionsLength: number) => {
  * ```
  */
 export const renderFetchedLambdaConfigurationsFromRegion = (region: string, configsLength: number) =>
-  `${bold(`[${region}]`)} Fetched ${bold(configsLength)} ${hex('#FF9900').bold('Lambda')} configurations.\n`
+  `${chalk.bold(`[${region}]`)} Fetched ${chalk.bold(configsLength)} ${chalk
+    .hex('#FF9900')
+    .bold('Lambda')} configurations.\n`
 
 /**
  * @param functionsLength the number of Lambda functions that were updated.
@@ -402,7 +408,7 @@ export const renderFetchedLambdaConfigurationsFromRegion = (region: string, conf
 export const renderUpdatedLambdaFunctions = (functionsLength: number) => {
   const plural = functionsLength > 1
 
-  return `Updated ${bold(functionsLength)} ${hex('#FF9900').bold('Lambda')} function${plural ? 's' : ''}.\n`
+  return `Updated ${chalk.bold(functionsLength)} ${chalk.hex('#FF9900').bold('Lambda')} function${plural ? 's' : ''}.\n`
 }
 
 /**
@@ -417,9 +423,9 @@ export const renderUpdatedLambdaFunctions = (functionsLength: number) => {
 export const renderUpdatedLambdaFunctionsFromRegion = (region: string, functionsLength: number) => {
   const plural = functionsLength > 1
 
-  return `${bold(`[${region}]`)} Updated ${bold(functionsLength)} ${hex('#FF9900').bold('Lambda')} function${
-    plural ? 's' : ''
-  }.\n`
+  return `${chalk.bold(`[${region}]`)} Updated ${chalk.bold(functionsLength)} ${chalk
+    .hex('#FF9900')
+    .bold('Lambda')} function${plural ? 's' : ''}.\n`
 }
 
 /**
@@ -430,7 +436,7 @@ export const renderUpdatedLambdaFunctionsFromRegion = (region: string, functions
  * ```
  */
 export const renderFailedFetchingLambdaFunctions = () =>
-  `Failed fetching ${hex('#FF9900').bold('Lambda')} configurations.\n`
+  `Failed fetching ${chalk.hex('#FF9900').bold('Lambda')} configurations.\n`
 
 /**
  * @param region the AWS region where the Lambda configs belong to.
@@ -442,7 +448,7 @@ export const renderFailedFetchingLambdaFunctions = () =>
  * ```
  */
 export const renderFailedFetchingLambdaConfigurationsFromRegion = (region: string) =>
-  `${bold(`[${region}]`)} Failed fetching ${hex('#FF9900').bold('Lambda')} configurations.\n`
+  `${chalk.bold(`[${region}]`)} Failed fetching ${chalk.hex('#FF9900').bold('Lambda')} configurations.\n`
 
 /**
  * @param f the Lambda function which failed to update.
@@ -457,7 +463,7 @@ export const renderFailedFetchingLambdaConfigurationsFromRegion = (region: strin
  * ```
  */
 export const renderFailedUpdatingLambdaFunction = (f: string, error: unknown) =>
-  renderError(`Failed updating ${bold(f)} ${error}`)
+  renderError(`Failed updating ${chalk.bold(f)} ${error}`)
 
 /**
  * @returns a message indicating that it failed to update Lambda functions.
@@ -466,7 +472,8 @@ export const renderFailedUpdatingLambdaFunction = (f: string, error: unknown) =>
  * Failed updating Lambda functions.
  * ```
  */
-export const renderFailedUpdatingLambdaFunctions = () => `Failed updating ${hex('#FF9900').bold('Lambda')} functions.\n`
+export const renderFailedUpdatingLambdaFunctions = () =>
+  `Failed updating ${chalk.hex('#FF9900').bold('Lambda')} functions.\n`
 
 /**
  * @returns a message indicating that it failed to update all Lambda functions.
@@ -476,7 +483,7 @@ export const renderFailedUpdatingLambdaFunctions = () => `Failed updating ${hex(
  * ```
  */
 export const renderFailedUpdatingEveryLambdaFunction = () =>
-  `Failed updating every ${hex('#FF9900').bold('Lambda')} function.\n`
+  `Failed updating every ${chalk.hex('#FF9900').bold('Lambda')} function.\n`
 
 /**
  * @param region the AWS region where the Lambda configs belong to.
@@ -488,7 +495,7 @@ export const renderFailedUpdatingEveryLambdaFunction = () =>
  * ```
  */
 export const renderFailedUpdatingEveryLambdaFunctionFromRegion = (region: string) =>
-  `${bold(`[${region}]`)} Failed updating every ${hex('#FF9900').bold('Lambda')} function.\n`
+  `${chalk.bold(`[${region}]`)} Failed updating every ${chalk.hex('#FF9900').bold('Lambda')} function.\n`
 
 /**
  * Returns a spinner instance with text for lambda functions fetching.
@@ -503,7 +510,7 @@ export const fetchingFunctionsSpinner = () =>
   ora({
     color: 'magenta',
     discardStdin: false,
-    text: `Fetching ${hex('#FF9900').bold('Lambda')} functions.\n`,
+    text: `Fetching ${chalk.hex('#FF9900').bold('Lambda')} functions.\n`,
   })
 
 /**
@@ -519,7 +526,7 @@ export const fetchingFunctionsConfigSpinner = (region: string) =>
   ora({
     color: 'magenta',
     discardStdin: false,
-    text: `${bold(`[${region}]`)} Fetching ${hex('#FF9900').bold('Lambda')} configurations.\n`,
+    text: `${chalk.bold(`[${region}]`)} Fetching ${chalk.hex('#FF9900').bold('Lambda')} configurations.\n`,
   })
 
 /**
@@ -535,7 +542,7 @@ export const updatingFunctionsSpinner = (functions: number) =>
   ora({
     color: 'magenta',
     discardStdin: false,
-    text: `Updating ${bold(functions)} ${hex('#FF9900').bold('Lambda')} functions.\n`,
+    text: `Updating ${chalk.bold(functions)} ${chalk.hex('#FF9900').bold('Lambda')} functions.\n`,
   })
 
 /**
@@ -552,5 +559,7 @@ export const updatingFunctionsConfigFromRegionSpinner = (region: string, functio
   ora({
     color: 'magenta',
     discardStdin: false,
-    text: `${bold(`[${region}]`)} Updating ${bold(functions)} ${hex('#FF9900').bold('Lambda')} functions.\n`,
+    text: `${chalk.bold(`[${region}]`)} Updating ${chalk.bold(functions)} ${chalk
+      .hex('#FF9900')
+      .bold('Lambda')} functions.\n`,
   })

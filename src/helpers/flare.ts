@@ -62,7 +62,22 @@ export const sendToDatadog = async (
       const errResponse: string = (err.response?.data.error as string) ?? ''
       const errorMessage = err.message ?? ''
 
-      throw Error(`Failed to send flare file to Datadog Support: ${errorMessage}. ${errResponse}\n`)
+      let message = `Failed to send flare file to Datadog Support: ${errorMessage}. ${errResponse}\n`
+      const code = err.response?.status
+      // The error message doesn't say why there was an error. All it says is:
+      // "[Error] Failed to send flare file to Datadog Support: Request failed with status code 500."
+      // Therefore, we need to add an explanation to clarify when the code is 500 or 403.
+      switch (code) {
+        case 500:
+          message += 'Are your case ID and email correct?\n'
+          break
+        case 400:
+        case 403:
+          message += 'Is your Datadog API key correct?\n'
+          break
+      }
+
+      throw Error(message)
     }
 
     throw err
@@ -128,4 +143,43 @@ export const validateFilePath = (filePath: string, projectFilePaths: Set<string>
   }
 
   return filePath
+}
+
+/**
+ * Validate the start and end flags and adds error messages if found
+ * @param start start time as a string
+ * @param end end time as a string
+ * @throws error if start or end are not valid numbers
+ * @returns [startMillis, endMillis] as numbers or [undefined, undefined] if both are undefined
+ */
+export const validateStartEndFlags = (start: string | undefined, end: string | undefined) => {
+  if (!start && !end) {
+    return [undefined, undefined]
+  }
+
+  if (!start) {
+    throw Error('Start time is required when end time is specified. [--start]')
+  }
+  if (!end) {
+    throw Error('End time is required when start time is specified. [--end]')
+  }
+
+  let startMillis = Number(start)
+  let endMillis = Number(end)
+  if (isNaN(startMillis)) {
+    throw Error(`Start time must be a time in milliseconds since Unix Epoch. '${start}' is not a number.`)
+  }
+  if (isNaN(endMillis)) {
+    throw Error(`End time must be a time in milliseconds since Unix Epoch. '${end}' is not a number.`)
+  }
+
+  // Required for AWS SDK to work correctly
+  startMillis = Math.min(startMillis, Date.now())
+  endMillis = Math.min(endMillis, Date.now())
+
+  if (startMillis >= endMillis) {
+    throw Error('Start time must be before end time.')
+  }
+
+  return [startMillis, endMillis]
 }

@@ -1,7 +1,7 @@
 import {CloudWatchLogsClient} from '@aws-sdk/client-cloudwatch-logs'
 import {LambdaClient, LambdaClientConfig} from '@aws-sdk/client-lambda'
 import {AwsCredentialIdentity} from '@aws-sdk/types'
-import {bold} from 'chalk'
+import chalk from 'chalk'
 import {Cli, Command, Option} from 'clipanion'
 
 import {ENVIRONMENT_ENV_VAR, SERVICE_ENV_VAR, VERSION_ENV_VAR} from '../../constants'
@@ -498,7 +498,7 @@ export class InstrumentCommand extends Command {
 
     this.context.stdout.write(instrumentRenderer.renderFunctionsToBeUpdated())
     for (const config of configs) {
-      this.context.stdout.write(`\t- ${bold(config.functionARN)}\n`)
+      this.context.stdout.write(`\t- ${chalk.bold(config.functionARN)}\n`)
 
       // Later, we should inform which layer is the latest.
       if (this.interactive) {

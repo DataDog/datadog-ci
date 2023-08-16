@@ -6,7 +6,7 @@ import FormData from 'form-data'
 
 import {CI_SITE_ENV_VAR, FLARE_PROJECT_FILES, SITE_ENV_VAR} from '../../constants'
 
-import {getEndpointUrl, getProjectFiles, sendToDatadog, validateFilePath} from '../flare'
+import {getEndpointUrl, getProjectFiles, sendToDatadog, validateFilePath, validateStartEndFlags} from '../flare'
 import * as flareModule from '../flare'
 
 import {MOCK_CWD} from './fixtures'
@@ -70,12 +70,11 @@ describe('flare', () => {
     const MOCK_EMAIL = 'test@example.com'
     const MOCK_API_KEY = 'api-key'
     const MOCK_ROOT_FOLDER_PATH = '/root/folder/path'
+    const MOCK_AXIOS = axios as jest.Mocked<typeof axios>
 
     it('should send data to the correct endpoint', async () => {
-      const mockAxios = axios as jest.Mocked<typeof axios>
-
       await sendToDatadog(MOCK_ZIP_PATH, MOCK_CASE_ID, MOCK_EMAIL, MOCK_API_KEY, MOCK_ROOT_FOLDER_PATH)
-      expect(mockAxios.post).toHaveBeenCalledWith(
+      expect(MOCK_AXIOS.post).toHaveBeenCalledWith(
         expect.any(String),
         expect.any(FormData),
         expect.objectContaining({
@@ -87,9 +86,8 @@ describe('flare', () => {
     })
 
     it('should delete root folder and rethrow error if request fails', async () => {
-      const mockAxios = axios as jest.Mocked<typeof axios>
       const error = new Error('Network error')
-      mockAxios.post.mockRejectedValueOnce({
+      MOCK_AXIOS.post.mockRejectedValueOnce({
         isAxiosError: true,
         message: error.message,
         response: {data: {error: 'Server error'}},
@@ -97,6 +95,32 @@ describe('flare', () => {
 
       const fn = sendToDatadog(MOCK_ZIP_PATH, MOCK_CASE_ID, MOCK_EMAIL, MOCK_API_KEY, MOCK_ROOT_FOLDER_PATH)
       await expect(fn).rejects.toThrow(`Failed to send flare file to Datadog Support: ${error.message}. Server error\n`)
+    })
+
+    it('prints correct warning when post fail with error 500', async () => {
+      MOCK_AXIOS.post.mockRejectedValueOnce({
+        isAxiosError: true,
+        message: 'Some error',
+        response: {status: 500, data: {error: 'Server error'}},
+      })
+
+      const fn = sendToDatadog(MOCK_ZIP_PATH, MOCK_CASE_ID, MOCK_EMAIL, MOCK_API_KEY, MOCK_ROOT_FOLDER_PATH)
+      await expect(fn).rejects.toThrow(
+        `Failed to send flare file to Datadog Support: Some error. Server error\nAre your case ID and email correct?\n`
+      )
+    })
+
+    it('prints correct warning when post fail with error 403', async () => {
+      MOCK_AXIOS.post.mockRejectedValueOnce({
+        isAxiosError: true,
+        message: 'Some error',
+        response: {status: 403, data: {error: 'Another error'}},
+      })
+
+      const fn = sendToDatadog(MOCK_ZIP_PATH, MOCK_CASE_ID, MOCK_EMAIL, MOCK_API_KEY, MOCK_ROOT_FOLDER_PATH)
+      await expect(fn).rejects.toThrow(
+        `Failed to send flare file to Datadog Support: Some error. Another error\nIs your Datadog API key correct?\n`
+      )
     })
   })
 
@@ -167,6 +191,44 @@ describe('flare', () => {
 
       expect(() => validateFilePath(filePath, projectFilePaths, additionalFilePaths)).toThrowErrorMatchingSnapshot()
       expect(fs.existsSync).toHaveBeenCalledWith(filePath)
+    })
+  })
+
+  describe('validateStartEndFlags', () => {
+    it('returns [undefined, undefined] when start and end flags are not specified', () => {
+      const errorMessages: string[] = []
+      const res = validateStartEndFlags(undefined, undefined)
+      expect(res).toEqual([undefined, undefined])
+      expect(errorMessages).toEqual([])
+    })
+
+    it('throws error when start is specified but end is not specified', () => {
+      expect(() => validateStartEndFlags('123', undefined)).toThrowErrorMatchingSnapshot()
+    })
+
+    it('throws error when end is specified but start is not specified', () => {
+      expect(() => validateStartEndFlags(undefined, '123')).toThrowErrorMatchingSnapshot()
+    })
+
+    it('throws error when start is invalid', () => {
+      expect(() => validateStartEndFlags('123abc', '200')).toThrowErrorMatchingSnapshot()
+    })
+
+    it('throws error when end is invalid', () => {
+      expect(() => validateStartEndFlags('100', '234abc')).toThrowErrorMatchingSnapshot()
+    })
+
+    it('throws error when start is not before the end time', () => {
+      expect(() => validateStartEndFlags('200', '100')).toThrowErrorMatchingSnapshot()
+    })
+
+    it('sets end time to current time if end time is too large', () => {
+      const now = Date.now()
+      const res = validateStartEndFlags('0', '9999999999999')
+      expect(res).not.toBeUndefined()
+      const [start, end] = res
+      expect(start).toBe(0)
+      expect(end).toEqual(now)
     })
   })
 })

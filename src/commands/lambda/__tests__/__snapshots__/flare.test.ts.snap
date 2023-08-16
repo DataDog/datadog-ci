@@ -21,22 +21,9 @@ exports[`lambda flare AWS Lambda configuration prints config when running as a d
   FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:some-function',
   FunctionName: 'some-function',
   Runtime: 'nodejs18.x',
-  CodeSize: 2275,
-  Layers: [
-    {
-      Arn: 'arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Extension:43',
-      CodeSize: 13145076
-    },
-    {
-      Arn: 'arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Node18-x:91',
-      CodeSize: 3614995
-    }
-  ],
-  Handler: '/path/handler.handler',
-  Timeout: 6,
-  MemorySize: 1024,
-  Architectures: [ 'x86_64' ]
+  Handler: '/path/handler.handler'
 }
+(This is a summary of the configuration. The full configuration will be saved in "function_config.json".)
 
 📁 Searching for project files in current directory...
 [!] No project files found.
@@ -49,9 +36,9 @@ exports[`lambda flare AWS Lambda configuration prints config when running as a d
 
 💾 Saving files to mock-folder/.datadog-ci...
 • Saved function config to ./function_config.json
-• Saved insights file to ./INSIGHTS.md
+• Saved the insights file to ./INSIGHTS.md
 
-🚫 The flare files were not sent as it was executed in dry run mode.
+🚫 The flare files were not sent because the command was executed in dry run mode.
 ℹ️ Your output files are located at: mock-folder/.datadog-ci
 
 "
@@ -89,22 +76,9 @@ exports[`lambda flare AWS credentials continues when getAWSCredentials() returns
   FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:some-function',
   FunctionName: 'some-function',
   Runtime: 'nodejs18.x',
-  CodeSize: 2275,
-  Layers: [
-    {
-      Arn: 'arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Extension:43',
-      CodeSize: 13145076
-    },
-    {
-      Arn: 'arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Node18-x:91',
-      CodeSize: 3614995
-    }
-  ],
-  Handler: '/path/handler.handler',
-  Timeout: 6,
-  MemorySize: 1024,
-  Architectures: [ 'x86_64' ]
+  Handler: '/path/handler.handler'
 }
+(This is a summary of the configuration. The full configuration will be saved in "function_config.json".)
 
 📁 Searching for project files in current directory...
 [!] No project files found.
@@ -117,7 +91,7 @@ exports[`lambda flare AWS credentials continues when getAWSCredentials() returns
 
 💾 Saving files to mock-folder/.datadog-ci...
 • Saved function config to ./function_config.json
-• Saved insights file to ./INSIGHTS.md
+• Saved the insights file to ./INSIGHTS.md
 
 
 🚀 Sending to Datadog Support...
@@ -147,22 +121,9 @@ exports[`lambda flare AWS credentials requests AWS credentials when none are fou
   FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:some-function',
   FunctionName: 'some-function',
   Runtime: 'nodejs18.x',
-  CodeSize: 2275,
-  Layers: [
-    {
-      Arn: 'arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Extension:43',
-      CodeSize: 13145076
-    },
-    {
-      Arn: 'arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Node18-x:91',
-      CodeSize: 3614995
-    }
-  ],
-  Handler: '/path/handler.handler',
-  Timeout: 6,
-  MemorySize: 1024,
-  Architectures: [ 'x86_64' ]
+  Handler: '/path/handler.handler'
 }
+(This is a summary of the configuration. The full configuration will be saved in "function_config.json".)
 
 📁 Searching for project files in current directory...
 [!] No project files found.
@@ -175,7 +136,7 @@ exports[`lambda flare AWS credentials requests AWS credentials when none are fou
 
 💾 Saving files to mock-folder/.datadog-ci...
 • Saved function config to ./function_config.json
-• Saved insights file to ./INSIGHTS.md
+• Saved the insights file to ./INSIGHTS.md
 
 
 🚀 Sending to Datadog Support...
@@ -217,6 +178,51 @@ exports[`lambda flare convertToCSV returns a CSV string from an array of log eve
 `;
 
 exports[`lambda flare convertToCSV returns a CSV string with only headers when given an empty array 1`] = `"timestamp,datetime,message"`;
+
+exports[`lambda flare generateInsightsFile prints a warning when generateInsightsFile() errors 1`] = `
+"
+🐶 Generating Lambda flare to send your configuration to Datadog...
+
+🔑 Getting AWS credentials...
+
+[!] No AWS credentials found, let's set them up! Or you can re-run the command and supply the AWS credentials in the same way when you invoke the AWS CLI.
+
+🔍 Fetching Lambda function configuration...
+
+{
+  Environment: {
+    Variables: {
+      DD_API_KEY: '02**********33bd',
+      DD_SITE: 'datadoghq.com',
+      DD_LOG_LEVEL: 'debug'
+    }
+  },
+  FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:some-function',
+  FunctionName: 'some-function',
+  Runtime: 'nodejs18.x',
+  Handler: '/path/handler.handler'
+}
+(This is a summary of the configuration. The full configuration will be saved in "function_config.json".)
+
+📁 Searching for project files in current directory...
+[!] No project files found.
+
+
+[!] No additional files specified.
+
+🏷 Getting Resource Tags...
+[!] No resource tags were found.
+
+💾 Saving files to mock-folder/.datadog-ci...
+• Saved function config to ./function_config.json
+[!] Unable to create INSIGHTS.md file. Some error
+
+
+🚀 Sending to Datadog Support...
+
+✅ Successfully sent flare file to Datadog Support!
+"
+`;
 
 exports[`lambda flare generateInsightsFile should call writeFile with correct content when isDryRun is false 1`] = `
 "# Flare Insights
@@ -313,22 +319,9 @@ exports[`lambda flare gets CloudWatch Logs does not get logs when --with-logs is
   FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:some-function',
   FunctionName: 'some-function',
   Runtime: 'nodejs18.x',
-  CodeSize: 2275,
-  Layers: [
-    {
-      Arn: 'arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Extension:43',
-      CodeSize: 13145076
-    },
-    {
-      Arn: 'arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Node18-x:91',
-      CodeSize: 3614995
-    }
-  ],
-  Handler: '/path/handler.handler',
-  Timeout: 6,
-  MemorySize: 1024,
-  Architectures: [ 'x86_64' ]
+  Handler: '/path/handler.handler'
 }
+(This is a summary of the configuration. The full configuration will be saved in "function_config.json".)
 
 📁 Searching for project files in current directory...
 [!] No project files found.
@@ -341,7 +334,7 @@ exports[`lambda flare gets CloudWatch Logs does not get logs when --with-logs is
 
 💾 Saving files to mock-folder/.datadog-ci...
 • Saved function config to ./function_config.json
-• Saved insights file to ./INSIGHTS.md
+• Saved the insights file to ./INSIGHTS.md
 
 
 🚀 Sending to Datadog Support...
@@ -371,22 +364,9 @@ exports[`lambda flare gets CloudWatch Logs gets logs, saves, and sends correctly
   FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:some-function',
   FunctionName: 'some-function',
   Runtime: 'nodejs18.x',
-  CodeSize: 2275,
-  Layers: [
-    {
-      Arn: 'arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Extension:43',
-      CodeSize: 13145076
-    },
-    {
-      Arn: 'arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Node18-x:91',
-      CodeSize: 3614995
-    }
-  ],
-  Handler: '/path/handler.handler',
-  Timeout: 6,
-  MemorySize: 1024,
-  Architectures: [ 'x86_64' ]
+  Handler: '/path/handler.handler'
 }
+(This is a summary of the configuration. The full configuration will be saved in "function_config.json".)
 
 📁 Searching for project files in current directory...
 [!] No project files found.
@@ -409,7 +389,7 @@ exports[`lambda flare gets CloudWatch Logs gets logs, saves, and sends correctly
 • Saved logs to ./logs/Stream1
 • Saved logs to ./logs/Stream2
 • Saved logs to ./logs/Stream3
-• Saved insights file to ./INSIGHTS.md
+• Saved the insights file to ./INSIGHTS.md
 
 
 🚀 Sending to Datadog Support...
@@ -439,22 +419,9 @@ exports[`lambda flare gets CloudWatch Logs prints error when getLogEvents throws
   FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:some-function',
   FunctionName: 'some-function',
   Runtime: 'nodejs18.x',
-  CodeSize: 2275,
-  Layers: [
-    {
-      Arn: 'arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Extension:43',
-      CodeSize: 13145076
-    },
-    {
-      Arn: 'arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Node18-x:91',
-      CodeSize: 3614995
-    }
-  ],
-  Handler: '/path/handler.handler',
-  Timeout: 6,
-  MemorySize: 1024,
-  Architectures: [ 'x86_64' ]
+  Handler: '/path/handler.handler'
 }
+(This is a summary of the configuration. The full configuration will be saved in "function_config.json".)
 
 📁 Searching for project files in current directory...
 [!] No project files found.
@@ -491,22 +458,9 @@ exports[`lambda flare gets CloudWatch Logs prints error when getLogStreamNames t
   FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:some-function',
   FunctionName: 'some-function',
   Runtime: 'nodejs18.x',
-  CodeSize: 2275,
-  Layers: [
-    {
-      Arn: 'arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Extension:43',
-      CodeSize: 13145076
-    },
-    {
-      Arn: 'arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Node18-x:91',
-      CodeSize: 3614995
-    }
-  ],
-  Handler: '/path/handler.handler',
-  Timeout: 6,
-  MemorySize: 1024,
-  Architectures: [ 'x86_64' ]
+  Handler: '/path/handler.handler'
 }
+(This is a summary of the configuration. The full configuration will be saved in "function_config.json".)
 
 📁 Searching for project files in current directory...
 [!] No project files found.
@@ -543,22 +497,9 @@ exports[`lambda flare gets CloudWatch Logs warns and skips getting logs when get
   FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:some-function',
   FunctionName: 'some-function',
   Runtime: 'nodejs18.x',
-  CodeSize: 2275,
-  Layers: [
-    {
-      Arn: 'arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Extension:43',
-      CodeSize: 13145076
-    },
-    {
-      Arn: 'arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Node18-x:91',
-      CodeSize: 3614995
-    }
-  ],
-  Handler: '/path/handler.handler',
-  Timeout: 6,
-  MemorySize: 1024,
-  Architectures: [ 'x86_64' ]
+  Handler: '/path/handler.handler'
 }
+(This is a summary of the configuration. The full configuration will be saved in "function_config.json".)
 
 📁 Searching for project files in current directory...
 [!] No project files found.
@@ -574,7 +515,7 @@ exports[`lambda flare gets CloudWatch Logs warns and skips getting logs when get
 
 💾 Saving files to mock-folder/.datadog-ci...
 • Saved function config to ./function_config.json
-• Saved insights file to ./INSIGHTS.md
+• Saved the insights file to ./INSIGHTS.md
 
 
 🚀 Sending to Datadog Support...
@@ -604,22 +545,9 @@ exports[`lambda flare gets CloudWatch Logs warns and skips log when getLogEvents
   FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:some-function',
   FunctionName: 'some-function',
   Runtime: 'nodejs18.x',
-  CodeSize: 2275,
-  Layers: [
-    {
-      Arn: 'arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Extension:43',
-      CodeSize: 13145076
-    },
-    {
-      Arn: 'arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Node18-x:91',
-      CodeSize: 3614995
-    }
-  ],
-  Handler: '/path/handler.handler',
-  Timeout: 6,
-  MemorySize: 1024,
-  Architectures: [ 'x86_64' ]
+  Handler: '/path/handler.handler'
 }
+(This is a summary of the configuration. The full configuration will be saved in "function_config.json".)
 
 📁 Searching for project files in current directory...
 [!] No project files found.
@@ -639,7 +567,7 @@ exports[`lambda flare gets CloudWatch Logs warns and skips log when getLogEvents
 
 💾 Saving files to mock-folder/.datadog-ci...
 • Saved function config to ./function_config.json
-• Saved insights file to ./INSIGHTS.md
+• Saved the insights file to ./INSIGHTS.md
 
 
 🚀 Sending to Datadog Support...
@@ -681,22 +609,9 @@ exports[`lambda flare prompts for additional files does not request additional f
   FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:some-function',
   FunctionName: 'some-function',
   Runtime: 'nodejs18.x',
-  CodeSize: 2275,
-  Layers: [
-    {
-      Arn: 'arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Extension:43',
-      CodeSize: 13145076
-    },
-    {
-      Arn: 'arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Node18-x:91',
-      CodeSize: 3614995
-    }
-  ],
-  Handler: '/path/handler.handler',
-  Timeout: 6,
-  MemorySize: 1024,
-  Architectures: [ 'x86_64' ]
+  Handler: '/path/handler.handler'
 }
+(This is a summary of the configuration. The full configuration will be saved in "function_config.json".)
 
 📁 Searching for project files in current directory...
 [!] No project files found.
@@ -707,7 +622,7 @@ exports[`lambda flare prompts for additional files does not request additional f
 
 💾 Saving files to mock-folder/.datadog-ci...
 • Saved function config to ./function_config.json
-• Saved insights file to ./INSIGHTS.md
+• Saved the insights file to ./INSIGHTS.md
 
 
 🚀 Sending to Datadog Support...
@@ -735,22 +650,9 @@ exports[`lambda flare prompts for additional files requests additional files whe
   FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:some-function',
   FunctionName: 'some-function',
   Runtime: 'nodejs18.x',
-  CodeSize: 2275,
-  Layers: [
-    {
-      Arn: 'arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Extension:43',
-      CodeSize: 13145076
-    },
-    {
-      Arn: 'arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Node18-x:91',
-      CodeSize: 3614995
-    }
-  ],
-  Handler: '/path/handler.handler',
-  Timeout: 6,
-  MemorySize: 1024,
-  Architectures: [ 'x86_64' ]
+  Handler: '/path/handler.handler'
 }
+(This is a summary of the configuration. The full configuration will be saved in "function_config.json".)
 
 📁 Searching for project files in current directory...
 [!] No project files found.
@@ -763,7 +665,7 @@ exports[`lambda flare prompts for additional files requests additional files whe
 
 💾 Saving files to mock-folder/.datadog-ci...
 • Saved function config to ./function_config.json
-• Saved insights file to ./INSIGHTS.md
+• Saved the insights file to ./INSIGHTS.md
 
 
 🚀 Sending to Datadog Support...
@@ -791,22 +693,9 @@ exports[`lambda flare prompts for confirmation before sending does not send when
   FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:some-function',
   FunctionName: 'some-function',
   Runtime: 'nodejs18.x',
-  CodeSize: 2275,
-  Layers: [
-    {
-      Arn: 'arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Extension:43',
-      CodeSize: 13145076
-    },
-    {
-      Arn: 'arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Node18-x:91',
-      CodeSize: 3614995
-    }
-  ],
-  Handler: '/path/handler.handler',
-  Timeout: 6,
-  MemorySize: 1024,
-  Architectures: [ 'x86_64' ]
+  Handler: '/path/handler.handler'
 }
+(This is a summary of the configuration. The full configuration will be saved in "function_config.json".)
 
 📁 Searching for project files in current directory...
 [!] No project files found.
@@ -819,7 +708,7 @@ exports[`lambda flare prompts for confirmation before sending does not send when
 
 💾 Saving files to mock-folder/.datadog-ci...
 • Saved function config to ./function_config.json
-• Saved insights file to ./INSIGHTS.md
+• Saved the insights file to ./INSIGHTS.md
 
 
 🚫 The flare files were not sent based on your selection.
@@ -847,22 +736,9 @@ exports[`lambda flare prompts for confirmation before sending sends when user an
   FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:some-function',
   FunctionName: 'some-function',
   Runtime: 'nodejs18.x',
-  CodeSize: 2275,
-  Layers: [
-    {
-      Arn: 'arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Extension:43',
-      CodeSize: 13145076
-    },
-    {
-      Arn: 'arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Node18-x:91',
-      CodeSize: 3614995
-    }
-  ],
-  Handler: '/path/handler.handler',
-  Timeout: 6,
-  MemorySize: 1024,
-  Architectures: [ 'x86_64' ]
+  Handler: '/path/handler.handler'
 }
+(This is a summary of the configuration. The full configuration will be saved in "function_config.json".)
 
 📁 Searching for project files in current directory...
 [!] No project files found.
@@ -875,7 +751,7 @@ exports[`lambda flare prompts for confirmation before sending sends when user an
 
 💾 Saving files to mock-folder/.datadog-ci...
 • Saved function config to ./function_config.json
-• Saved insights file to ./INSIGHTS.md
+• Saved the insights file to ./INSIGHTS.md
 
 
 🚀 Sending to Datadog Support...
@@ -884,15 +760,21 @@ exports[`lambda flare prompts for confirmation before sending sends when user an
 "
 `;
 
-exports[`lambda flare validateStartEndFlags throws error when end is invalid 1`] = `"End time must be a time in milliseconds since Unix Epoch. '234abc' is not a number."`;
-
-exports[`lambda flare validateStartEndFlags throws error when end is specified but start is not specified 1`] = `"Start time is required when end time is specified. [--start]"`;
-
-exports[`lambda flare validateStartEndFlags throws error when start is invalid 1`] = `"Start time must be a time in milliseconds since Unix Epoch. '123abc' is not a number."`;
-
-exports[`lambda flare validateStartEndFlags throws error when start is not before the end time 1`] = `"Start time must be before end time."`;
-
-exports[`lambda flare validateStartEndFlags throws error when start is specified but end is not specified 1`] = `"End time is required when start time is specified. [--end]"`;
+exports[`lambda flare summarizeConfig 1`] = `
+{
+  "Environment": {
+    "Variables": {
+      "DD_API_KEY": "02aeb762fff59ac0d5ad1536cd9633bd",
+      "DD_LOG_LEVEL": "debug",
+      "DD_SITE": "datadoghq.com",
+    },
+  },
+  "FunctionArn": "arn:aws:lambda:us-east-1:123456789012:function:some-function",
+  "FunctionName": "some-function",
+  "Handler": "/path/handler.handler",
+  "Runtime": "nodejs18.x",
+}
+`;
 
 exports[`lambda flare validates required flags extracts region from function name when given a function ARN 1`] = `
 "
@@ -915,22 +797,9 @@ exports[`lambda flare validates required flags extracts region from function nam
   FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:some-function',
   FunctionName: 'some-function',
   Runtime: 'nodejs18.x',
-  CodeSize: 2275,
-  Layers: [
-    {
-      Arn: 'arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Extension:43',
-      CodeSize: 13145076
-    },
-    {
-      Arn: 'arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Node18-x:91',
-      CodeSize: 3614995
-    }
-  ],
-  Handler: '/path/handler.handler',
-  Timeout: 6,
-  MemorySize: 1024,
-  Architectures: [ 'x86_64' ]
+  Handler: '/path/handler.handler'
 }
+(This is a summary of the configuration. The full configuration will be saved in "function_config.json".)
 
 📁 Searching for project files in current directory...
 [!] No project files found.
@@ -943,7 +812,7 @@ exports[`lambda flare validates required flags extracts region from function nam
 
 💾 Saving files to mock-folder/.datadog-ci...
 • Saved function config to ./function_config.json
-• Saved insights file to ./INSIGHTS.md
+• Saved the insights file to ./INSIGHTS.md
 
 
 🚀 Sending to Datadog Support...
@@ -1022,63 +891,6 @@ exports[`lambda flare validates required flags prints error when start time is s
 "
 `;
 
-exports[`lambda flare validates required flags runs successfully when dry run but no email or case ID is specified 1`] = `
-"
-[Dry Run] 🐶 Generating Lambda flare to send your configuration to Datadog...
-
-🔑 Getting AWS credentials...
-
-[!] No AWS credentials found, let's set them up! Or you can re-run the command and supply the AWS credentials in the same way when you invoke the AWS CLI.
-
-🔍 Fetching Lambda function configuration...
-
-{
-  Environment: {
-    Variables: {
-      DD_API_KEY: '02**********33bd',
-      DD_SITE: 'datadoghq.com',
-      DD_LOG_LEVEL: 'debug'
-    }
-  },
-  FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:some-function',
-  FunctionName: 'some-function',
-  Runtime: 'nodejs18.x',
-  CodeSize: 2275,
-  Layers: [
-    {
-      Arn: 'arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Extension:43',
-      CodeSize: 13145076
-    },
-    {
-      Arn: 'arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Node18-x:91',
-      CodeSize: 3614995
-    }
-  ],
-  Handler: '/path/handler.handler',
-  Timeout: 6,
-  MemorySize: 1024,
-  Architectures: [ 'x86_64' ]
-}
-
-📁 Searching for project files in current directory...
-[!] No project files found.
-
-
-[!] No additional files specified.
-
-🏷 Getting Resource Tags...
-[!] No resource tags were found.
-
-💾 Saving files to mock-folder/.datadog-ci...
-• Saved function config to ./function_config.json
-• Saved insights file to ./INSIGHTS.md
-
-🚫 The flare files were not sent as it was executed in dry run mode.
-ℹ️ Your output files are located at: mock-folder/.datadog-ci
-
-"
-`;
-
 exports[`lambda flare validates required flags runs successfully when start and end times are valid 1`] = `
 "
 🐶 Generating Lambda flare to send your configuration to Datadog...
@@ -1100,22 +912,9 @@ exports[`lambda flare validates required flags runs successfully when start and 
   FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:some-function',
   FunctionName: 'some-function',
   Runtime: 'nodejs18.x',
-  CodeSize: 2275,
-  Layers: [
-    {
-      Arn: 'arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Extension:43',
-      CodeSize: 13145076
-    },
-    {
-      Arn: 'arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Node18-x:91',
-      CodeSize: 3614995
-    }
-  ],
-  Handler: '/path/handler.handler',
-  Timeout: 6,
-  MemorySize: 1024,
-  Architectures: [ 'x86_64' ]
+  Handler: '/path/handler.handler'
 }
+(This is a summary of the configuration. The full configuration will be saved in "function_config.json".)
 
 📁 Searching for project files in current directory...
 [!] No project files found.
@@ -1128,7 +927,7 @@ exports[`lambda flare validates required flags runs successfully when start and 
 
 💾 Saving files to mock-folder/.datadog-ci...
 • Saved function config to ./function_config.json
-• Saved insights file to ./INSIGHTS.md
+• Saved the insights file to ./INSIGHTS.md
 
 
 🚀 Sending to Datadog Support...
@@ -1158,22 +957,9 @@ exports[`lambda flare validates required flags runs successfully with all requir
   FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:some-function',
   FunctionName: 'some-function',
   Runtime: 'nodejs18.x',
-  CodeSize: 2275,
-  Layers: [
-    {
-      Arn: 'arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Extension:43',
-      CodeSize: 13145076
-    },
-    {
-      Arn: 'arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Node18-x:91',
-      CodeSize: 3614995
-    }
-  ],
-  Handler: '/path/handler.handler',
-  Timeout: 6,
-  MemorySize: 1024,
-  Architectures: [ 'x86_64' ]
+  Handler: '/path/handler.handler'
 }
+(This is a summary of the configuration. The full configuration will be saved in "function_config.json".)
 
 📁 Searching for project files in current directory...
 [!] No project files found.
@@ -1186,7 +972,7 @@ exports[`lambda flare validates required flags runs successfully with all requir
 
 💾 Saving files to mock-folder/.datadog-ci...
 • Saved function config to ./function_config.json
-• Saved insights file to ./INSIGHTS.md
+• Saved the insights file to ./INSIGHTS.md
 
 
 🚀 Sending to Datadog Support...
@@ -1216,22 +1002,9 @@ exports[`lambda flare validates required flags uses API key ENV variable and run
   FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:some-function',
   FunctionName: 'some-function',
   Runtime: 'nodejs18.x',
-  CodeSize: 2275,
-  Layers: [
-    {
-      Arn: 'arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Extension:43',
-      CodeSize: 13145076
-    },
-    {
-      Arn: 'arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Node18-x:91',
-      CodeSize: 3614995
-    }
-  ],
-  Handler: '/path/handler.handler',
-  Timeout: 6,
-  MemorySize: 1024,
-  Architectures: [ 'x86_64' ]
+  Handler: '/path/handler.handler'
 }
+(This is a summary of the configuration. The full configuration will be saved in "function_config.json".)
 
 📁 Searching for project files in current directory...
 [!] No project files found.
@@ -1244,7 +1017,7 @@ exports[`lambda flare validates required flags uses API key ENV variable and run
 
 💾 Saving files to mock-folder/.datadog-ci...
 • Saved function config to ./function_config.json
-• Saved insights file to ./INSIGHTS.md
+• Saved the insights file to ./INSIGHTS.md
 
 
 🚀 Sending to Datadog Support...
@@ -1274,22 +1047,9 @@ exports[`lambda flare validates required flags uses API key ENV variable and run
   FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:some-function',
   FunctionName: 'some-function',
   Runtime: 'nodejs18.x',
-  CodeSize: 2275,
-  Layers: [
-    {
-      Arn: 'arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Extension:43',
-      CodeSize: 13145076
-    },
-    {
-      Arn: 'arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Node18-x:91',
-      CodeSize: 3614995
-    }
-  ],
-  Handler: '/path/handler.handler',
-  Timeout: 6,
-  MemorySize: 1024,
-  Architectures: [ 'x86_64' ]
+  Handler: '/path/handler.handler'
 }
+(This is a summary of the configuration. The full configuration will be saved in "function_config.json".)
 
 📁 Searching for project files in current directory...
 [!] No project files found.
@@ -1302,7 +1062,7 @@ exports[`lambda flare validates required flags uses API key ENV variable and run
 
 💾 Saving files to mock-folder/.datadog-ci...
 • Saved function config to ./function_config.json
-• Saved insights file to ./INSIGHTS.md
+• Saved the insights file to ./INSIGHTS.md
 
 
 🚀 Sending to Datadog Support...
@@ -1328,22 +1088,9 @@ exports[`lambda flare validates required flags uses API key ENV variable and run
   FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:some-function',
   FunctionName: 'some-function',
   Runtime: 'nodejs18.x',
-  CodeSize: 2275,
-  Layers: [
-    {
-      Arn: 'arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Extension:43',
-      CodeSize: 13145076
-    },
-    {
-      Arn: 'arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Node18-x:91',
-      CodeSize: 3614995
-    }
-  ],
-  Handler: '/path/handler.handler',
-  Timeout: 6,
-  MemorySize: 1024,
-  Architectures: [ 'x86_64' ]
+  Handler: '/path/handler.handler'
 }
+(This is a summary of the configuration. The full configuration will be saved in "function_config.json".)
 
 📁 Searching for project files in current directory...
 [!] No project files found.
@@ -1356,7 +1103,7 @@ exports[`lambda flare validates required flags uses API key ENV variable and run
 
 💾 Saving files to mock-folder/.datadog-ci...
 • Saved function config to ./function_config.json
-• Saved insights file to ./INSIGHTS.md
+• Saved the insights file to ./INSIGHTS.md
 
 
 🚀 Sending to Datadog Support...
@@ -1386,22 +1133,9 @@ exports[`lambda flare validates required flags uses region ENV variable when no 
   FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:some-function',
   FunctionName: 'some-function',
   Runtime: 'nodejs18.x',
-  CodeSize: 2275,
-  Layers: [
-    {
-      Arn: 'arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Extension:43',
-      CodeSize: 13145076
-    },
-    {
-      Arn: 'arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Node18-x:91',
-      CodeSize: 3614995
-    }
-  ],
-  Handler: '/path/handler.handler',
-  Timeout: 6,
-  MemorySize: 1024,
-  Architectures: [ 'x86_64' ]
+  Handler: '/path/handler.handler'
 }
+(This is a summary of the configuration. The full configuration will be saved in "function_config.json".)
 
 📁 Searching for project files in current directory...
 [!] No project files found.
@@ -1414,7 +1148,7 @@ exports[`lambda flare validates required flags uses region ENV variable when no 
 
 💾 Saving files to mock-folder/.datadog-ci...
 • Saved function config to ./function_config.json
-• Saved insights file to ./INSIGHTS.md
+• Saved the insights file to ./INSIGHTS.md
 
 
 🚀 Sending to Datadog Support...
