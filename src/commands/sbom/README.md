@@ -2,6 +2,10 @@
 
 This command lets you upload SBOM file to the Datadog intake endpoint.
 
+**WARNING**: this command is in beta mode. Please do not use it in production today and you need 
+to set `DD_BETA_COMMANDS_ENABLED=1` to make it run.
+
+
 ## Supported Formats
 
  - CycloneDX 1.4
