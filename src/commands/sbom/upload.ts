@@ -16,7 +16,7 @@ import {SBOMEntity, SBOMPayload, SBOMSourceType} from './protobuf/sbom_intake'
 import {SbomPayloadData} from './types'
 import {getValidator, validateSbomFile} from './validation'
 
-const generatePayload = (payloadData: SbomPayloadData, tags: SpanTags): SBOMPayload => {
+const generatePayload = (payloadData: SbomPayloadData, service: string, tags: SpanTags): SBOMPayload => {
   const spanTagsAsStringArray = Object.keys(tags).map((key) => `${key}:${tags[key as keyof SpanTags]}`)
 
   return SBOMPayload.create({
@@ -24,7 +24,7 @@ const generatePayload = (payloadData: SbomPayloadData, tags: SpanTags): SBOMPayl
     source: 'CI',
     entities: [
       SBOMEntity.create({
-        id: payloadData.filePath,
+        id: service,
         type: SBOMSourceType.UNSPECIFIED,
         inUse: true,
         generatedAt: new Date(),
@@ -103,13 +103,13 @@ export class UploadSbomCommand extends Command {
         if (this.debug) {
           const debugFilePath = `${basePath}.payload.pbytes`
           this.context.stdout.write(`Writing payload for debugging in: ${debugFilePath}\n`)
-          const payloadBytes = SBOMPayload.toJSON(generatePayload(payloadData, spanTags))
+          const payloadBytes = SBOMPayload.toJSON(generatePayload(payloadData, service, spanTags))
           fs.writeFileSync(debugFilePath, JSON.stringify(payloadBytes))
         }
 
         // Upload content
         try {
-          const response = await api(generatePayload(payloadData, spanTags))
+          const response = await api(generatePayload(payloadData, service, spanTags))
           if (this.debug) {
             this.context.stdout.write(`Upload done, status: ${response.status}\n`)
           }
