@@ -13,7 +13,7 @@ to set `DD_BETA_COMMANDS_ENABLED=1` to make it run.
 ## Usage
 
 ```bash
-DD_BETA_COMMANDS_ENABLED=1 datadog-ci sbom  upload --service <my-service> <path/to/sbom.json>
+DD_BETA_COMMANDS_ENABLED=1 datadog-ci sbom upload --service <my-service> <path/to/sbom.json>
 ```
 
 ### Environment variables
