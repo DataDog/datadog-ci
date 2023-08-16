@@ -25,6 +25,7 @@ const generatePayload = (payloadData: SbomPayloadData, tags: SpanTags): SBOMPayl
       SBOMEntity.create({
         id: payloadData.filePath,
         type: SBOMSourceType.UNSPECIFIED,
+        inUse: true,
         generatedAt: new Date(),
         ddTags: spanTagsAsStringArray,
         cyclonedx: undefined,
