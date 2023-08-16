@@ -14,7 +14,7 @@ Expose these environment variables in the environment where you are running `dat
 
 | Environment Variable | Description                                                                                                                                                                                                                                      | Example                               |
 |----------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|---------------------------------------|
-| `DATADOG_API_KEY`    | Datadog API Key. Used to attach the flare files to your Zendesk ticket. For more information about getting a Datadog API key, see the [API key documentation][4].                                                                                | `export DATADOG_API_KEY=<API_KEY>`    |
+| `DATADOG_API_KEY`    | Datadog API Key. Used to attach the flare files to your Zendesk ticket. For more information about getting a Datadog API key, see the [API key documentation][2].                                                                                | `export DATADOG_API_KEY=<API_KEY>`    |
 | `DATADOG_SITE`       | Optional. Set which Datadog site to send the flare for lower latency. Possible values are  `datadoghq.com` , `datadoghq.eu` , `us3.datadoghq.com`, `us5.datadoghq.com`, `ap1.datadoghq.com`, and `ddog-gov.com`. The default is `datadoghq.com`. | `export DATADOG_SITE="datadoghq.com"` |
 
 ## Flare Command
@@ -50,6 +50,4 @@ datadog-ci cloud-run -s <service> -p <project> -r <region/location> -c <case-id>
 For product feedback and questions, join the `#serverless` channel in the [Datadog community on Slack](https://chat.datadoghq.com/).
 
 [1]: https://cloud.google.com/sdk/gcloud/reference/auth/login
-[2]: https://github.com/DataDog/datadog-ci
-[3]: https://docs.datadoghq.com/serverless/google_cloud_run
-[4]: https://docs.datadoghq.com/account_management/api-app-keys/#api-keys
+[2]: https://docs.datadoghq.com/account_management/api-app-keys/#api-keys
