@@ -6,7 +6,7 @@ describe('validation of sbom file', () => {
   test('should succeed when called on a valid SBOM file', () => {
     expect(validateSbomFile('./src/commands/sbom/__tests__/fixtures/bom.1.4.ok.json', validator)).toBeTruthy()
   })
-  test('should fail on files that do not exists', () => {
+  test('should fail on files that do not exist', () => {
     expect(validateSbomFile('./src/commands/sbom/__tests__/fixtures/bom.1.4.do.not.exists', validator)).toBeFalsy()
   })
   test('should fail on files that do not satisfy the schema', () => {
