@@ -216,7 +216,7 @@ export const getProxyAgent = (proxyOpts?: ProxyConfiguration): ProxyAgent => {
   }
 
   return new ProxyAgent({
-    getProxyForUrl: (url: string) => {
+    getProxyForUrl: (url) => {
       // Do not proxy the WebSocket connections.
       if (url?.match(/^wss?:/)) {
         return ''

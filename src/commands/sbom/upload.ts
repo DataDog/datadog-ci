@@ -91,10 +91,12 @@ export class UploadSbomCommand extends Command {
           filePath: basePath,
           content: JSON.parse(String(fs.readFileSync(basePath))),
         }
-        const payloadBytes = SBOMPayload.encode(generatePayload(payloadData, spanTags)).finish()
+
+        // write the content (for debugging only if necessary)
+        // const payloadBytes = SBOMPayload.encode(generatePayload(payloadData, spanTags)).finish()
+        // fs.writeFileSync(`${basePath}.payload.pbytes`, payloadBytes)
 
         // Upload content
-        fs.writeFileSync(`${basePath}.payload.pbytes`, payloadBytes)
         try {
           await api(generatePayload(payloadData, spanTags))
           this.context.stdout.write(`File ${basePath} successfully uploaded\n`)

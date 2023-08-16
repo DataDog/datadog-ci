@@ -28,7 +28,7 @@ export const getValidator = (): Ajv => {
 export const validateSbomFile = (path: string, ajv: Ajv): boolean => {
   try {
     // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-    const fileContent = JSON.parse(String(fs.readFileSync(path)))
+    const fileContent = JSON.parse(fs.readFileSync(path).toString('utf8'))
     const validateFunction = ajv.compile(cycloneDxSchema)
 
     const isValid = validateFunction(fileContent)
