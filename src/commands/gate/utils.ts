@@ -57,3 +57,7 @@ export const is5xxError = (error: any) => {
 
   return status && status >= 500 && status <= 599
 }
+
+export const isTimeout = (error: any) => {
+  return error.message === 'wait'
+}

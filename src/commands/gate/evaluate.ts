@@ -21,7 +21,7 @@ import {
   renderEvaluationRetry,
   renderWaiting,
 } from './renderer'
-import {getBaseIntakeUrl, is4xxError, is5xxError, parseScope} from './utils'
+import {getBaseIntakeUrl, is4xxError, is5xxError, isTimeout, parseScope} from './utils'
 
 export class GateEvaluateCommand extends Command {
   public static paths = [['gate', 'evaluate']]
@@ -64,7 +64,7 @@ export class GateEvaluateCommand extends Command {
 
   private initialRetryMs = 1000
   private maxRetries = 5
-  private defaultTimeout = 1800 // 30 min
+  private defaultTimeout = 600 // 10 min
 
   private dryRun = Option.Boolean('--dry-run', false)
   private failOnEmpty = Option.Boolean('--fail-on-empty', false)
@@ -152,7 +152,6 @@ export class GateEvaluateCommand extends Command {
         }
       },
       retries: this.maxRetries,
-      maxRetryTime: this.timeoutInSeconds * 1000,
       maxTimeout: 0,
       minTimeout: 0,
     })
@@ -169,6 +168,7 @@ export class GateEvaluateCommand extends Command {
    * - If the request is successful, the promise will be resolved with the response
    * - If the request is successful but the status is 'wait', the promise will be rejected after the received wait time (wait_time_ms)
    * - If the request is not successful, the promise will be rejected after `initialRetryMs`, with an exponential factor that depends on the attempt (exponential backoff).
+   * - If the command execution time is greater than the command timeout, the promise will be rejected immediately
    * If the promise is rejected, `retryRequest` will handle the retry immediately.
    */
   private async evaluateRulesWithWait(
@@ -177,27 +177,31 @@ export class GateEvaluateCommand extends Command {
     attempt?: number
   ): Promise<AxiosResponse<EvaluationResponsePayload>> {
     const timePassed = new Date().getTime() - evaluateRequest.startTimeMs
-    const remainingWait = Math.max(0, this.timeoutInSeconds * 1000 - timePassed)
+    const remainingWait = this.timeoutInSeconds * 1000 - timePassed
 
     return new Promise((resolve, reject) => {
-      api
-        .evaluateGateRules(evaluateRequest, this.context.stdout.write.bind(this.context.stdout))
-        .then((response) => {
-          if (response.data.data.attributes.status === 'wait') {
-            this.context.stdout.write(renderWaiting())
-            const waitTime = response.data.data.attributes.metadata?.wait_time_ms ?? 0
+      if (remainingWait <= 0) {
+        reject(new Error('wait'))
+      } else {
+        api
+          .evaluateGateRules(evaluateRequest, this.context.stdout.write.bind(this.context.stdout))
+          .then((response) => {
+            if (response.data.data.attributes.status === 'wait') {
+              this.context.stdout.write(renderWaiting())
+              const waitTime = response.data.data.attributes.metadata?.wait_time_ms ?? 0
+              setTimeout(() => {
+                reject(new Error('wait'))
+              }, Math.min(remainingWait, waitTime))
+            } else {
+              resolve(response)
+            }
+          })
+          .catch((err) => {
             setTimeout(() => {
-              reject(new Error('wait'))
-            }, Math.min(remainingWait, waitTime))
-          } else {
-            resolve(response)
-          }
-        })
-        .catch((err) => {
-          setTimeout(() => {
-            reject(err)
-          }, Math.min(remainingWait, this.getDelay(attempt ?? 1)))
-        })
+              reject(err)
+            }, Math.min(remainingWait, this.getDelay(attempt ?? 1)))
+          })
+      }
     })
   }
 
@@ -217,7 +221,7 @@ export class GateEvaluateCommand extends Command {
 
   private handleEvaluationError(error: any) {
     this.context.stderr.write(renderGateEvaluationError(error, this.failIfUnavailable))
-    if (is4xxError(error) || (is5xxError(error) && this.failIfUnavailable)) {
+    if (is4xxError(error) || ((is5xxError(error) || isTimeout(error)) && this.failIfUnavailable)) {
       return 1
     }
 
