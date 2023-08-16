@@ -223,6 +223,26 @@ describe('upload', () => {
       expect(firstFile.logsEnabled).toBe(true)
       expect(secondFile.logsEnabled).toBe(true)
     })
+    test('should accept no test report', async () => {
+      process.env.DD_CIVISIBILITY_LOGS_ENABLED = 'true'
+      const context = createMockContext()
+      const command = new UploadJUnitXMLCommand()
+      const files = await command['getMatchingJUnitXMLFiles'].call(
+        {
+          basePaths: ['./src/commands/junit/__tests__/fixtures/subfolder/valid-no-tests.xml'],
+          config: {},
+          context,
+          logs: true,
+          service: 'service',
+        },
+        {},
+        {},
+        {},
+        {},
+        {}
+      )
+      expect(files.length).toEqual(1)
+    })
   })
   describe('getSpanTags', () => {
     test('should parse DD_ENV environment variable', async () => {
