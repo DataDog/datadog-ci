@@ -1,4 +1,4 @@
-import {blueBright, bold, dim} from 'chalk'
+import chalk from 'chalk'
 import {filter} from 'fuzzy'
 import inquirer from 'inquirer'
 
@@ -90,7 +90,7 @@ const awsRegionQuestion = (defaultRegion?: string): inquirer.InputQuestion => ({
 export const datadogApiKeyTypeQuestion = (datadogSite: string): inquirer.ListQuestion => ({
   choices: [
     {
-      name: `Plain text ${bold('API Key')} (Recommended for trial users) `,
+      name: `Plain text ${chalk.bold('API Key')} (Recommended for trial users) `,
       value: {
         envVar: CI_API_KEY_ENV_VAR,
         message: 'API Key:',
@@ -98,21 +98,21 @@ export const datadogApiKeyTypeQuestion = (datadogSite: string): inquirer.ListQue
     },
     new inquirer.Separator(),
     {
-      name: `API key encrypted with AWS Key Management Service ${bold('(KMS) API Key')}`,
+      name: `API key encrypted with AWS Key Management Service ${chalk.bold('(KMS) API Key')}`,
       value: {
         envVar: CI_KMS_API_KEY_ENV_VAR,
         message: 'KMS Encrypted API Key:',
       },
     },
     {
-      name: `AWS Secrets Manager ${bold('API Key Secret ARN')}`,
+      name: `AWS Secrets Manager ${chalk.bold('API Key Secret ARN')}`,
       value: {
         envVar: CI_API_KEY_SECRET_ARN_ENV_VAR,
         message: 'API Key Secret ARN:',
       },
     },
   ],
-  message: `Which type of Datadog API Key you want to set? \nLearn more at ${blueBright(
+  message: `Which type of Datadog API Key you want to set? \nLearn more at ${chalk.blueBright(
     `https://app.${datadogSite}/organization-settings/api-keys`
   )}`,
   name: 'type',
@@ -122,7 +122,7 @@ export const datadogApiKeyTypeQuestion = (datadogSite: string): inquirer.ListQue
 const datadogSiteQuestion: inquirer.ListQuestion = {
   // DATADOG SITE
   choices: DATADOG_SITES,
-  message: `Select the Datadog site to send data. \nLearn more at ${blueBright(
+  message: `Select the Datadog site to send data. \nLearn more at ${chalk.blueBright(
     'https://docs.datadoghq.com/getting_started/site/'
   )}`,
   name: CI_SITE_ENV_VAR,
@@ -132,7 +132,7 @@ const datadogSiteQuestion: inquirer.ListQuestion = {
 const envQuestion: inquirer.InputQuestion = {
   default: undefined,
   message: 'Enter a value for the environment variable DD_ENV',
-  suffix: dim(' (recommended)'),
+  suffix: chalk.dim(' (recommended)'),
   name: ENVIRONMENT_ENV_VAR,
   type: 'input',
 }
@@ -140,7 +140,7 @@ const envQuestion: inquirer.InputQuestion = {
 const serviceQuestion: inquirer.InputQuestion = {
   default: undefined,
   message: 'Enter a value for the environment variable DD_SERVICE',
-  suffix: dim(' (recommended)'),
+  suffix: chalk.dim(' (recommended)'),
   name: SERVICE_ENV_VAR,
   type: 'input',
 }
@@ -148,7 +148,7 @@ const serviceQuestion: inquirer.InputQuestion = {
 const versionQuestion: inquirer.InputQuestion = {
   default: undefined,
   message: 'Enter a value for the environment variable DD_VERSION',
-  suffix: dim(' (recommended)'),
+  suffix: chalk.dim(' (recommended)'),
   name: VERSION_ENV_VAR,
   type: 'input',
 }
