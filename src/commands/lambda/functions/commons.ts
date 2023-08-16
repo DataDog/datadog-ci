@@ -251,7 +251,8 @@ export const getAWSCredentials = async () => {
 
 export const isMissingAnyDatadogApiKeyEnvVar = () =>
   !(
-    (process.env[CI_API_KEY_ENV_VAR] && process.env[API_KEY_ENV_VAR]) ||
+    process.env[CI_API_KEY_ENV_VAR] ||
+    process.env[API_KEY_ENV_VAR] ||
     process.env[CI_KMS_API_KEY_ENV_VAR] ||
     process.env[CI_API_KEY_SECRET_ARN_ENV_VAR]
   )
