@@ -12,6 +12,7 @@ src/commands/trace   @DataDog/ci-app-libraries
 
 ## Static Analysis
 src/commands/sarif   @DataDog/static-analysis-core
+src/commands/sbom    @DataDog/static-analysis-core
 
 ## RUM
 src/commands/dsyms            @DataDog/rum-mobile
