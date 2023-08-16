@@ -1,6 +1,6 @@
 # SBOM uploader
 
-<div class="alert alert-warning">The <code>SBOM upload</code> command is in beta. It requires you to set <code>DD_BETA_COMMANDS_ENABLED=1</code>, and should not be used in production.</div>
+<div class="alert alert-warning"><strong>Warning:</strong> The <code>SBOM upload</code> command is in beta. It requires you to set <code>DD_BETA_COMMANDS_ENABLED=1</code>, and should not be used in production.</div>
 
 This command lets you upload SBOM files to the Datadog intake endpoint.
 
