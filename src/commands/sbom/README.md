@@ -37,7 +37,7 @@ brew install protobuf
 ``
 
 Then, install `ts-proto` as a development dependency.
-You can find information about this binary [here](https://github.com/stephenh/ts-proto).
+You can find information about this binary [in the ts-proto repo](https://github.com/stephenh/ts-proto).
 
 
 Finally, generate the TypeScript definition of the protobuf format as this.
