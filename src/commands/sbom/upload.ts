@@ -49,6 +49,7 @@ export class UploadSbomCommand extends Command {
   private basePaths = Option.Rest({required: 1})
   private service = Option.String('--service')
   private tags = Option.Array('--tags')
+  private debug = Option.Boolean('--debug')
 
   private config = {
     apiKey: process.env.DATADOG_API_KEY || process.env.DD_API_KEY,
@@ -87,6 +88,10 @@ export class UploadSbomCommand extends Command {
 
     const validator: Ajv = getValidator()
     for (const basePath of this.basePaths) {
+      if (this.debug) {
+        this.context.stdout.write(`Processing file ${basePath}`)
+      }
+
       if (validateSbomFile(basePath, validator)) {
         // Get the payload to upload
         const payloadData: SbomPayloadData = {
@@ -94,13 +99,20 @@ export class UploadSbomCommand extends Command {
           content: JSON.parse(fs.readFileSync(basePath).toString('utf8')),
         }
 
-        // write the content (for debugging only if necessary)
-        // const payloadBytes = SBOMPayload.encode(generatePayload(payloadData, spanTags)).finish()
-        // fs.writeFileSync(`${basePath}.payload.pbytes`, payloadBytes)
+        // If debug mode is activated, we write the payload in a file
+        if (this.debug) {
+          const debugFilePath = `${basePath}.payload.pbytes`
+          this.context.stdout.write(`Writing payload for debugging in: ${debugFilePath}\n`)
+          const payloadBytes = SBOMPayload.toJSON(generatePayload(payloadData, spanTags))
+          fs.writeFileSync(debugFilePath, JSON.stringify(payloadBytes))
+        }
 
         // Upload content
         try {
-          await api(generatePayload(payloadData, spanTags))
+          const response = await api(generatePayload(payloadData, spanTags))
+          if (this.debug) {
+            this.context.stdout.write(`Upload done, status: ${response.status}\n`)
+          }
           this.context.stdout.write(`File ${basePath} successfully uploaded\n`)
         } catch (error) {
           process.stderr.write(`Error while writing the payload: ${error.message}\n`)
