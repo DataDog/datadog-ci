@@ -1,6 +1,6 @@
 ## Troubleshooting Cloud Run Instrumentation
 
-To troubleshoot issues you may be encountering with Datadog monitoring on your Cloud Run services, use the `datadog-ci cloud-run flare` command in the root of your project directory. This command collects important data about a Cloud Run service, such as environment variables and configuration information. These files will be submitted to Datadog support via a ticket matching the provided Zendesk case ID.
+To troubleshoot issues you encounter with Datadog monitoring on your Cloud Run services, run the `datadog-ci cloud-run flare` command in the root of your project directory. This command collects important data about the Cloud Run service, such as environment variables and configuration information. These files will be submitted to Datadog support via a ticket matching the provided Zendesk case ID.
 
 **Examples**
 ```bash
@@ -16,16 +16,16 @@ datadog-ci cloud-run -s <service> -p <project> -r <region/location> -c <case-id>
 
 **Arguments**
 
-| Argument              | Shorthand | Description                                                                                                                 | Default |
-|-----------------------|-----------|-----------------------------------------------------------------------------------------------------------------------------|---------|
-| `--service`           | `-s`      | The name of the Cloud Run service.                                                                                          |         |
-| `--project`           | `-p`      | The name of the Google Cloud project within which the Cloud Run service is hosted.                                          |         |
-| `--region`            | `-r`      | The region where the Cloud Run service is hosted.                                                                           |         |
-| `--case-id`           | `-c`      | The Datadog case ID to send the files to.                                                                                   |         |
-| `--email`             | `-e`      | The email associated with the specified case ID.                                                                            |         |
-| `--with-logs`         |           | Collect recent logs for the specified service.                                                                              | `false` |
-| `--start` and `--end` |           | Define a time range in milliseconds since the Unix Epoch to gather logs within that range. (`--with-logs` must be included) |         |
-| `--dry-run`           | `-d`      | Preview collected data which would be sent to Datadog support.                                                              | `false` |
+| Argument              | Shorthand | Description                                                                                                               | Default |
+|-----------------------|-----------|---------------------------------------------------------------------------------------------------------------------------|---------|
+| `--service`           | `-s`      | The name of the Cloud Run service.                                                                                        |         |
+| `--project`           | `-p`      | The name of the Google Cloud project where the Cloud Run service is hosted.                                               |         |
+| `--region`            | `-r`      | The region where the Cloud Run service is hosted.                                                                         |         |
+| `--case-id`           | `-c`      | The Datadog case ID to send the files to.                                                                                 |         |
+| `--email`             | `-e`      | The email associated with the specified case ID.                                                                          |         |
+| `--with-logs`         |           | Collect recent logs for the specified service.                                                                            | `false` |
+| `--start` and `--end` |           | Using numbers in milliseconds since Unix Epoch, only gather logs within the time range. (`--with-logs` must be included.) |         |
+| `--dry-run`           | `-d`      | Preview data that will be sent to Datadog support.                                                                        | `false` |
 
 
 ## Community
