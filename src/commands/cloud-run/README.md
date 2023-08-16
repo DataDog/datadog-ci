@@ -24,7 +24,7 @@ datadog-ci cloud-run -s <service> -p <project> -r <region/location> -c <case-id>
 | `--case-id`           | `-c`      | The Datadog case ID to send the files to.                                                                                 |         |
 | `--email`             | `-e`      | The email associated with the specified case ID.                                                                          |         |
 | `--with-logs`         |           | Collect recent logs for the specified service.                                                                            | `false` |
-| `--start` and `--end` |           | Using numbers in milliseconds since Unix Epoch, only gather logs within the time range. (`--with-logs` must be included.) |         |
+| `--start` and `--end` |           | Only gather logs within the time range (`--with-logs` must be included.) Both arguments are numbers in milliseconds since Unix Epoch. |         |
 | `--dry-run`           | `-d`      | Preview data that will be sent to Datadog support.                                                                        | `false` |
 
 
