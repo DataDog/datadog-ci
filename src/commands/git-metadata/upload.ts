@@ -50,7 +50,7 @@ export class UploadCommand extends Command {
 
   private cliVersion = version
   private config = {
-    apiKey: process.env.DATADOG_API_KEY,
+    apiKey: process.env.DATADOG_API_KEY ?? process.env.DD_API_KEY,
   }
 
   private logger: Logger = new Logger((s: string) => {
