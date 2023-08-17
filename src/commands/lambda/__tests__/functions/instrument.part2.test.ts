@@ -3,7 +3,7 @@ jest.mock('../../loggroup')
 import {LambdaClient} from '@aws-sdk/client-lambda'
 import {mockClient} from 'aws-sdk-client-mock'
 
-import {CI_API_KEY_ENV_VAR} from '../../../../constants'
+import {API_KEY_ENV_VAR, CI_API_KEY_ENV_VAR} from '../../../../constants'
 import {MOCK_DATADOG_API_KEY} from '../../../../helpers/__tests__/fixtures'
 
 import {CI_API_KEY_SECRET_ARN_ENV_VAR, CI_KMS_API_KEY_ENV_VAR, DEFAULT_LAYER_AWS_ACCOUNT} from '../../constants'
@@ -201,6 +201,47 @@ describe('instrument', () => {
           "Environment": {
             "Variables": {
               "DD_API_KEY": "02aeb762fff59ac0d5ad1536cd9633bd",
+              "DD_LAMBDA_HANDLER": "index.handler",
+              "DD_MERGE_XRAY_TRACES": "false",
+              "DD_SITE": "datadoghq.com",
+              "DD_TRACE_ENABLED": "false",
+            },
+          },
+          "FunctionName": "arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world",
+          "Handler": "/opt/nodejs/node_modules/datadog-lambda-js/handler.handler",
+          "Layers": [
+            "arn:aws:lambda:sa-east-1:123456789012:layer:Datadog-Extension:6",
+            "arn:aws:lambda:sa-east-1:123456789012:layer:Datadog-Node12-x:5",
+          ],
+        }
+      `)
+    })
+
+    test('calculates an update request with a lambda library, extension, and DD_API_KEY', async () => {
+      process.env[API_KEY_ENV_VAR] = `dd-api-key${MOCK_DATADOG_API_KEY}`
+      const runtime = 'nodejs12.x'
+      const config = {
+        FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world',
+        Handler: 'index.handler',
+        Layers: [],
+        Runtime: runtime,
+      }
+      const settings = {
+        extensionVersion: 6,
+        flushMetricsToLogs: false,
+        layerAWSAccount: mockAwsAccount,
+        layerVersion: 5,
+        mergeXrayTraces: false,
+        tracingEnabled: false,
+      }
+      const region = 'sa-east-1'
+
+      const updateRequest = await calculateUpdateRequest(config, settings, region, runtime)
+      expect(updateRequest).toMatchInlineSnapshot(`
+        {
+          "Environment": {
+            "Variables": {
+              "DD_API_KEY": "dd-api-key-02aeb762fff59ac0d5ad1536cd9633bf",
               "DD_LAMBDA_HANDLER": "index.handler",
               "DD_MERGE_XRAY_TRACES": "false",
               "DD_SITE": "datadoghq.com",
