@@ -218,7 +218,7 @@ describe('instrument', () => {
     })
 
     test('calculates an update request with a lambda library, extension, and DD_API_KEY', async () => {
-      process.env[API_KEY_ENV_VAR] = `dd-api-key${MOCK_DATADOG_API_KEY}`
+      process.env[API_KEY_ENV_VAR] = 'SOME-DD-API-KEY'
       const runtime = 'nodejs12.x'
       const config = {
         FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world',
@@ -241,7 +241,7 @@ describe('instrument', () => {
         {
           "Environment": {
             "Variables": {
-              "DD_API_KEY": "dd-api-key-02aeb762fff59ac0d5ad1536cd9633bf",
+              "DD_API_KEY": "SOME-DD-API-KEY",
               "DD_LAMBDA_HANDLER": "index.handler",
               "DD_MERGE_XRAY_TRACES": "false",
               "DD_SITE": "datadoghq.com",
