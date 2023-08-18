@@ -1,7 +1,10 @@
+import {AxiosResponse} from 'axios'
+
 import {createCommand} from '../../../helpers/__tests__/fixtures'
 
+import {apiConstructor} from '../api'
 import {GateEvaluateCommand} from '../evaluate'
-import {EvaluationResponse} from '../interfaces'
+import {EvaluationResponse, EvaluationResponsePayload, Payload} from '../interfaces'
 
 describe('evaluate', () => {
   describe('getApiHelper', () => {
@@ -114,6 +117,134 @@ describe('evaluate', () => {
       expect(stdErrLog).toContain('ERROR: Could not evaluate the rules. Status code: 500')
       expect(stdErrLog).toContain("Use the '--fail-if-unavailable' option to fail the command in this situation.")
       expect(stdErrLog).not.toContain('internal issue')
+    })
+    test('should pass the command if the error is timeout and fail-if-unavailable option is not enabled', () => {
+      const write = jest.fn()
+      const command = createCommand(GateEvaluateCommand, {stderr: {write}} as any)
+
+      const error = new Error('wait')
+      expect(command['handleEvaluationError'].bind(command).call({}, error)).toEqual(0)
+      const stdErrLog = write.mock.calls[0][0]
+      expect(stdErrLog).toContain('ERROR: Could not evaluate the rules. The command timed out.')
+    })
+    test('should fail the command if the error is timeout and fail-if-unavailable option is enabled', () => {
+      const write = jest.fn()
+      const command = createCommand(GateEvaluateCommand, {stderr: {write}} as any)
+      command['failIfUnavailable'] = true
+
+      const error = new Error('wait')
+      expect(command['handleEvaluationError'].bind(command).call({}, error)).toEqual(1)
+      const stdErrLog = write.mock.calls[0][0]
+      expect(stdErrLog).toContain('ERROR: Could not evaluate the rules. The command timed out.')
+    })
+  })
+  describe('evaluateRules', () => {
+    process.env = {DATADOG_API_KEY: 'PLACEHOLDER', DATADOG_APP_KEY: 'PLACEHOLDER'}
+    const api = apiConstructor('', '', '')
+    const mockRequest: Payload = {
+      requestId: '123',
+      startTimeMs: new Date().getTime(),
+      spanTags: {},
+      userScope: {},
+      options: {
+        dryRun: false,
+        noWait: false,
+      },
+    }
+    const waitMockResponse = (waitTime: number): AxiosResponse<EvaluationResponsePayload> => {
+      return {
+        status: 200,
+        statusText: 'OK',
+        headers: {},
+        config: {},
+        data: {
+          data: {
+            attributes: {
+              status: 'wait',
+              rule_evaluations: [],
+              metadata: {
+                wait_time_ms: waitTime,
+              },
+            },
+          },
+        },
+      }
+    }
+    const passedMockResponse: AxiosResponse<EvaluationResponsePayload> = {
+      status: 200,
+      statusText: 'OK',
+      headers: {},
+      config: {},
+      data: {
+        data: {
+          attributes: {
+            status: 'passed',
+            rule_evaluations: [],
+          },
+        },
+      },
+    }
+    test('should pass the command after waiting if the status is passed on the retry', async () => {
+      const write = jest.fn()
+      const command = createCommand(GateEvaluateCommand, {stderr: {write}} as any)
+
+      jest
+        .spyOn(api, 'evaluateGateRules')
+        .mockResolvedValueOnce(waitMockResponse(1))
+        .mockResolvedValueOnce(passedMockResponse)
+
+      return expect(command['evaluateRules'].bind(command).call({}, api, mockRequest)).resolves.toBe(0)
+    })
+    test('should pass the command after exhausting all retries and fail-if-unavailable option is not enabled', async () => {
+      const write = jest.fn()
+      const command = createCommand(GateEvaluateCommand, {stderr: {write}} as any)
+
+      jest.spyOn(api, 'evaluateGateRules').mockResolvedValue(waitMockResponse(1))
+
+      return expect(command['evaluateRules'].bind(command).call({}, api, mockRequest)).resolves.toBe(0)
+    })
+    test('should fail the command after exhausting all retries and fail-if-unavailable option is enabled', async () => {
+      const write = jest.fn()
+      const command = createCommand(GateEvaluateCommand, {stderr: {write}} as any)
+      command['failIfUnavailable'] = true
+
+      jest.spyOn(api, 'evaluateGateRules').mockResolvedValue(waitMockResponse(1))
+
+      return expect(command['evaluateRules'].bind(command).call({}, api, mockRequest)).resolves.toBe(1)
+    })
+    test('should pass the command if the timeout is 0 and fail-if-unavailable option is not enabled', async () => {
+      const write = jest.fn()
+      const command = createCommand(GateEvaluateCommand, {stderr: {write}} as any)
+      command['timeoutInSeconds'] = 0
+      jest.spyOn(api, 'evaluateGateRules').mockResolvedValueOnce(waitMockResponse(1))
+
+      return expect(command['evaluateRules'].bind(command).call({}, api, mockRequest)).resolves.toBe(0)
+    })
+    test('should fail the command if the timeout is 0 and fail-if-unavailable option is enabled', async () => {
+      const write = jest.fn()
+      const command = createCommand(GateEvaluateCommand, {stderr: {write}} as any)
+      command['timeoutInSeconds'] = 0
+      command['failIfUnavailable'] = true
+      jest.spyOn(api, 'evaluateGateRules').mockResolvedValueOnce(waitMockResponse(1))
+
+      return expect(command['evaluateRules'].bind(command).call({}, api, mockRequest)).resolves.toBe(1)
+    })
+    test('should pass the command if wait time is greater than the timeout and fail-if-unavailable option is not enabled', async () => {
+      const write = jest.fn()
+      const command = createCommand(GateEvaluateCommand, {stderr: {write}} as any)
+      command['timeoutInSeconds'] = 1
+      jest.spyOn(api, 'evaluateGateRules').mockResolvedValueOnce(waitMockResponse(1100))
+
+      return expect(command['evaluateRules'].bind(command).call({}, api, mockRequest)).resolves.toBe(0)
+    })
+    test('should pass the command if wait time is greater than the timeout and fail-if-unavailable option is enabled', async () => {
+      const write = jest.fn()
+      const command = createCommand(GateEvaluateCommand, {stderr: {write}} as any)
+      command['timeoutInSeconds'] = 1
+      command['failIfUnavailable'] = true
+      jest.spyOn(api, 'evaluateGateRules').mockResolvedValueOnce(waitMockResponse(1100))
+
+      return expect(command['evaluateRules'].bind(command).call({}, api, mockRequest)).resolves.toBe(1)
     })
   })
 })

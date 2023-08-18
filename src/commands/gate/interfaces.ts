@@ -6,6 +6,7 @@ import {SpanTags} from '../../helpers/interfaces'
 
 export interface Payload {
   requestId: string
+  startTimeMs: number
   spanTags: SpanTags
   userScope: Record<string, string[]>
   options: PayloadOptions
@@ -13,6 +14,7 @@ export interface Payload {
 
 export interface PayloadOptions {
   dryRun: boolean
+  noWait: boolean
 }
 
 export interface EvaluationResponsePayload {
@@ -24,6 +26,9 @@ export interface EvaluationResponsePayload {
 export interface EvaluationResponse {
   status: string
   rule_evaluations: RuleEvaluation[]
+  metadata?: {
+    wait_time_ms: number
+  }
 }
 
 export interface RuleEvaluation {
