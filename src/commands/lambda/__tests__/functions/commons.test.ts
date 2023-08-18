@@ -10,7 +10,7 @@ import {fromNodeProviderChain} from '@aws-sdk/credential-providers'
 import {mockClient} from 'aws-sdk-client-mock'
 
 import 'aws-sdk-client-mock-jest'
-import {CI_API_KEY_ENV_VAR, CI_SITE_ENV_VAR} from '../../../../constants'
+import {API_KEY_ENV_VAR, CI_API_KEY_ENV_VAR, CI_SITE_ENV_VAR} from '../../../../constants'
 import {createCommand} from '../../../../helpers/__tests__/fixtures'
 
 import {
@@ -364,6 +364,10 @@ describe('commons', () => {
       expect(isMissingDatadogEnvVars()).toBe(true)
 
       process.env = {}
+      process.env[API_KEY_ENV_VAR] = 'SOME-DATADOG-API-KEY'
+      expect(isMissingDatadogEnvVars()).toBe(true)
+
+      process.env = {}
       process.env[CI_KMS_API_KEY_ENV_VAR] = 'SOME-AWS-KMS-API-KEY-CONTAINING-DATADOG-API-KEY'
       expect(isMissingDatadogEnvVars()).toBe(true)
 
@@ -374,6 +378,12 @@ describe('commons', () => {
 
     test('returns false when Datadog Env Vars are set with DATADOG_API_KEY', () => {
       process.env[CI_API_KEY_ENV_VAR] = 'SOME-DATADOG-API-KEY'
+      process.env[CI_SITE_ENV_VAR] = 'datadoghq.com'
+      expect(isMissingDatadogEnvVars()).toBe(false)
+    })
+
+    test('returns false when Datadog Env Vars are set with DD_API_KEY', () => {
+      process.env[API_KEY_ENV_VAR] = 'SOME-DATADOG-API-KEY'
       process.env[CI_SITE_ENV_VAR] = 'datadoghq.com'
       expect(isMissingDatadogEnvVars()).toBe(false)
     })
@@ -407,6 +417,11 @@ describe('commons', () => {
 
     test('returns false when DATADOG_API_KEY is set', () => {
       process.env[CI_API_KEY_ENV_VAR] = 'SOME-DATADOG-API-KEY'
+      expect(isMissingAnyDatadogApiKeyEnvVar()).toBe(false)
+    })
+
+    test('returns false when DD_API_KEY is set', () => {
+      process.env[API_KEY_ENV_VAR] = 'SOME-DATADOG-API-KEY'
       expect(isMissingAnyDatadogApiKeyEnvVar()).toBe(false)
     })
 

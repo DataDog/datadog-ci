@@ -17,7 +17,7 @@ import {CredentialsProviderError} from '@aws-sdk/property-provider'
 import {AwsCredentialIdentity, AwsCredentialIdentityProvider} from '@aws-sdk/types'
 import inquirer from 'inquirer'
 
-import {CI_API_KEY_ENV_VAR, CI_SITE_ENV_VAR} from '../../../constants'
+import {API_KEY_ENV_VAR, CI_API_KEY_ENV_VAR, CI_SITE_ENV_VAR} from '../../../constants'
 import * as helpersRenderer from '../../../helpers/renderer'
 import {maskString} from '../../../helpers/utils'
 import {isValidDatadogSite} from '../../../helpers/validation'
@@ -252,6 +252,7 @@ export const getAWSCredentials = async () => {
 export const isMissingAnyDatadogApiKeyEnvVar = () =>
   !(
     process.env[CI_API_KEY_ENV_VAR] ||
+    process.env[API_KEY_ENV_VAR] ||
     process.env[CI_KMS_API_KEY_ENV_VAR] ||
     process.env[CI_API_KEY_SECRET_ARN_ENV_VAR]
   )
