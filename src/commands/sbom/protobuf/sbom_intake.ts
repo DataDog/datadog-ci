@@ -12,6 +12,7 @@ export enum SBOMSourceType {
   CONTAINER_IMAGE_LAYERS = 1,
   CONTAINER_FILE_SYSTEM = 2,
   HOST_FILE_SYSTEM = 3,
+  CI_PIPELINE = 4,
   UNRECOGNIZED = -1,
 }
 
@@ -29,6 +30,9 @@ export function sBOMSourceTypeFromJSON(object: any): SBOMSourceType {
     case 3:
     case 'HOST_FILE_SYSTEM':
       return SBOMSourceType.HOST_FILE_SYSTEM
+    case 4:
+    case 'CI_PIPELINE':
+      return SBOMSourceType.CI_PIPELINE
     case -1:
     case 'UNRECOGNIZED':
     default:
@@ -46,6 +50,8 @@ export function sBOMSourceTypeToJSON(object: SBOMSourceType): string {
       return 'CONTAINER_FILE_SYSTEM'
     case SBOMSourceType.HOST_FILE_SYSTEM:
       return 'HOST_FILE_SYSTEM'
+    case SBOMSourceType.CI_PIPELINE:
+      return 'CI_PIPELINE'
     case SBOMSourceType.UNRECOGNIZED:
     default:
       return 'UNRECOGNIZED'
@@ -84,7 +90,6 @@ function createBaseSBOMPayload(): SBOMPayload {
   return {version: 0, host: '', source: undefined, entities: [], ddEnv: undefined}
 }
 
-// @ts-ignore
 export const SBOMPayload: CustomMessage<SBOMPayload> = {
   encode(message: SBOMPayload, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
     if (message.version !== 0) {
@@ -213,7 +218,6 @@ function createBaseSBOMEntity(): SBOMEntity {
   }
 }
 
-// @ts-ignore
 export const SBOMEntity: CustomMessage<SBOMEntity> = {
   encode(message: SBOMEntity, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
     if (message.type !== 0) {

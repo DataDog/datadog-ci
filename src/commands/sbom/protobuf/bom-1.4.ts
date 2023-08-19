@@ -1529,7 +1529,6 @@ function createBaseBom(): Bom {
   }
 }
 
-// @ts-ignore
 export const Bom: CustomMessage<Bom> = {
   encode(message: Bom, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
     if (message.specVersion !== '') {
@@ -1881,7 +1880,6 @@ function createBaseComponent(): Component {
   }
 }
 
-// @ts-ignore
 export const Component: CustomMessage<Component> = {
   encode(message: Component, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
     if (message.type !== 0) {
