@@ -25,7 +25,7 @@ const generatePayload = (payloadData: SbomPayloadData, service: string, tags: Sp
     entities: [
       SBOMEntity.create({
         id: service,
-        type: SBOMSourceType.UNSPECIFIED,
+        type: SBOMSourceType.CI_PIPELINE,
         inUse: true,
         generatedAt: new Date(),
         ddTags: spanTagsAsStringArray,
@@ -48,6 +48,7 @@ export class UploadSbomCommand extends Command {
 
   private basePaths = Option.Rest({required: 1})
   private service = Option.String('--service')
+  private env = Option.String('--env')
   private tags = Option.Array('--tags')
   private debug = Option.Boolean('--debug')
 
@@ -66,6 +67,14 @@ export class UploadSbomCommand extends Command {
 
     if (!service) {
       this.context.stderr.write('Missing service\n')
+
+      return 1
+    }
+
+    this.config.env = this.env || this.config.env
+
+    if (!this.config.env) {
+      this.context.stderr.write('Missing env\n')
 
       return 1
     }
