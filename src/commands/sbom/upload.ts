@@ -71,7 +71,7 @@ export class UploadSbomCommand extends Command {
       return 1
     }
 
-    this.config.env = this.config.env || this.env
+    this.config.env = this.env || this.config.env
 
     if (!this.config.env) {
       this.context.stderr.write('Missing env\n')
