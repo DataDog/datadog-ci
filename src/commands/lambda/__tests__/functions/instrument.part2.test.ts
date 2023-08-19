@@ -8,7 +8,7 @@ import {MOCK_DATADOG_API_KEY} from '../../../../helpers/__tests__/fixtures'
 
 import {CI_API_KEY_SECRET_ARN_ENV_VAR, CI_KMS_API_KEY_ENV_VAR, DEFAULT_LAYER_AWS_ACCOUNT} from '../../constants'
 import {calculateUpdateRequest} from '../../functions/instrument'
-import {InstrumentationSettings} from '../../interfaces'
+import type {InstrumentationSettings} from '../../interfaces'
 
 import {mockAwsAccount, mockLambdaClientCommands, mockLambdaLayers} from '../fixtures'
 
@@ -16,7 +16,6 @@ describe('instrument', () => {
   describe('calculateUpdateRequest', () => {
     const OLD_ENV = process.env
     beforeEach(() => {
-      jest.resetModules()
       process.env = {}
     })
     afterAll(() => {

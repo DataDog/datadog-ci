@@ -1,30 +1,8 @@
-import {CloudWatchLogsClient} from '@aws-sdk/client-cloudwatch-logs'
-import {IAMClient} from '@aws-sdk/client-iam'
-import {SFNClient} from '@aws-sdk/client-sfn'
 import {Command, Option} from 'clipanion'
 
 import {version} from '../../helpers/version'
 
-import {
-  createLogGroup,
-  enableStepFunctionLogs,
-  describeStateMachine,
-  listTagsForResource,
-  putSubscriptionFilter,
-  tagResource,
-  attachPolicyToStateMachineIamRole,
-  createLogsAccessPolicy,
-} from './awsCommands'
 import {DD_TRACE_ENABLED, TAG_VERSION_NAME} from './constants'
-import {
-  buildLogGroupName,
-  buildArn,
-  buildSubscriptionFilterName,
-  isValidArn,
-  parseArn,
-  getStepFunctionLogGroupArn,
-  injectContextIntoLambdaPayload,
-} from './helpers'
 
 const cliVersion = version
 
@@ -62,6 +40,29 @@ export class InstrumentStepFunctionsCommand extends Command {
   )
 
   public async execute() {
+    const {CloudWatchLogsClient} = await import('@aws-sdk/client-cloudwatch-logs')
+    const {SFNClient} = await import('@aws-sdk/client-sfn')
+    const {IAMClient} = await import('@aws-sdk/client-iam')
+    const {
+      createLogGroup,
+      enableStepFunctionLogs,
+      describeStateMachine,
+      listTagsForResource,
+      putSubscriptionFilter,
+      tagResource,
+      attachPolicyToStateMachineIamRole,
+      createLogsAccessPolicy,
+    } = await import('./awsCommands')
+    const {
+      buildLogGroupName,
+      buildArn,
+      buildSubscriptionFilterName,
+      isValidArn,
+      parseArn,
+      getStepFunctionLogGroupArn,
+      injectContextIntoLambdaPayload,
+    } = await import('./helpers')
+
     let validationError = false
     if (typeof this.forwarderArn !== 'string') {
       this.context.stdout.write('[Error] `--forwarder` is required\n')

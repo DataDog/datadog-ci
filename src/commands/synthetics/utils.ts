@@ -4,25 +4,13 @@ import * as path from 'path'
 import process from 'process'
 import {promisify} from 'util'
 
-import chalk from 'chalk'
-import deepExtend from 'deep-extend'
-import glob from 'glob'
-
-import {getCommonAppBaseURL} from '../../helpers/app'
-import {getCIMetadata} from '../../helpers/ci'
-import {GIT_COMMIT_MESSAGE} from '../../helpers/tags'
-import {pick} from '../../helpers/utils'
-
-import {APIHelper, EndpointError, formatBackendErrors, getApiHelper, isNotFoundError} from './api'
-import {CiError, CriticalError} from './errors'
-import {
+import type {APIHelper} from './api'
+import type {
   APIHelperConfig,
   Batch,
   BrowserServerResult,
-  ExecutionRule,
   LocationsMapping,
   MainReporter,
-  Operator,
   Payload,
   PollResult,
   Reporter,
@@ -40,9 +28,21 @@ import {
   TriggerConfig,
   UserConfigOverride,
 } from './interfaces'
+import type {Tunnel} from './tunnel'
+
+import chalk from 'chalk'
+import deepExtend from 'deep-extend'
+
+import {getCommonAppBaseURL} from '../../helpers/app'
+import {getCIMetadata} from '../../helpers/ci'
+import {GIT_COMMIT_MESSAGE} from '../../helpers/tags'
+import {pick} from '../../helpers/utils'
+
+import {EndpointError, formatBackendErrors, getApiHelper, isNotFoundError} from './api'
+import {MAX_TESTS_TO_TRIGGER} from './constants'
+import {CiError, CriticalError} from './errors'
+import {ExecutionRule, Operator} from './interfaces'
 import {uploadApplicationAndOverrideConfig} from './mobile'
-import {MAX_TESTS_TO_TRIGGER} from './run-tests-command'
-import {Tunnel} from './tunnel'
 
 const POLLING_INTERVAL = 5000 // In ms
 const PUBLIC_ID_REGEX = /^[\d\w]{3}-[\d\w]{3}-[\d\w]{3}$/
@@ -202,6 +202,8 @@ export const getResultOutcome = (result: Result): ResultOutcome => {
 }
 
 export const getSuites = async (GLOB: string, reporter: MainReporter): Promise<Suite[]> => {
+  const {default: glob} = await import('glob')
+
   reporter.log(`Finding files in ${path.join(process.cwd(), GLOB)}\n`)
   const files: string[] = await promisify(glob)(GLOB)
   if (files.length) {

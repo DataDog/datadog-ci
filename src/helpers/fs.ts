@@ -6,8 +6,6 @@
 import fs from 'fs'
 import path from 'path'
 
-import JSZip from 'jszip'
-
 /**
  * Delete a folder and all its contents
  * @param folderPath the folder to delete
@@ -46,6 +44,8 @@ export const writeFile = (filePath: string, data: string) => {
  * @throws Error if the zip fails
  */
 export const zipContents = async (rootFolderPath: string, zipPath: string) => {
+  const {default: JSZip} = await import('jszip')
+
   const zip = new JSZip()
 
   const addFolderToZip = (folderPath: string) => {

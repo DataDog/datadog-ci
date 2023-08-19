@@ -4,14 +4,12 @@ import {mkdtemp} from 'fs/promises'
 import os from 'os'
 import path from 'path'
 
-import {AxiosResponse} from 'axios'
-import FormData from 'form-data'
-import {lte} from 'semver'
-import * as simpleGit from 'simple-git'
+import type {AxiosResponse} from 'axios'
+import type * as simpleGit from 'simple-git'
 
 import {getDefaultRemoteName, gitRemote as getRepoURL} from '../../helpers/git/get-git-data'
-import {RequestBuilder} from '../../helpers/interfaces'
-import {Logger} from '../../helpers/logger'
+import type {RequestBuilder} from '../../helpers/interfaces'
+import type {Logger} from '../../helpers/logger'
 import {retryRequest} from '../../helpers/retry'
 
 const API_TIMEOUT = 15000
@@ -122,13 +120,17 @@ const unshallowRepositoryWhenNeeded = async (log: Logger, git: simpleGit.SimpleG
   if (!isShallow) {
     return
   }
-  const gitversion = String(await git.version())
-  if (lte(gitversion, '2.27.0')) {
+
+  const semver = await import('semver')
+  const gitVersion = String(await git.version())
+  if (semver.lte(gitVersion, '2.27.0')) {
     return
   }
+
   log.info('[unshallow] Git repository is a shallow clone, unshallowing it...')
   const headCmdPromise = git.revparse('HEAD')
   const remoteNameCmdPromise = getDefaultRemoteName(git)
+
   log.info(
     `[unshallow] Running git fetch --shallow-since="${MAX_HISTORY.oldestCommits}" --update-shallow --filter=blob:none --recurse-submodules=no`
   )
@@ -140,6 +142,7 @@ const unshallowRepositoryWhenNeeded = async (log: Logger, git: simpleGit.SimpleG
     (await remoteNameCmdPromise) ?? 'origin',
     await headCmdPromise,
   ])
+
   log.info('[unshallow] Fetch completed.')
 }
 
@@ -274,6 +277,8 @@ export const uploadPackfile = async (
   headCommit: string,
   packfilePath: string
 ) => {
+  const {default: FormData} = await import('form-data')
+
   const pushedSha = JSON.stringify({
     data: {
       id: headCommit,

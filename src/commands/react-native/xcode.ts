@@ -121,8 +121,8 @@ export class XCodeCommand extends Command {
       return 1
     }
 
-    const releaseVersion = this.getReleaseVersion()
-    const buildVersion = this.getBuildVersion()
+    const releaseVersion = await this.getReleaseVersion()
+    const buildVersion = await this.getBuildVersion()
     if (releaseVersion === null || buildVersion === null) {
       return 1
     }
@@ -228,7 +228,7 @@ export class XCodeCommand extends Command {
     const env = process.env
 
     /**
-     * On React Native 0.70, we need to explicitely set USE_HERMES to true
+     * On React Native 0.70, we need to explicitly set USE_HERMES to true
      * if Hermes is used, otherwise the source maps won't be generated.
      * See the fix for next releases: https://github.com/facebook/react-native/commit/03de19745eec9a0d4d1075bac48639ecf1d41352
      */
@@ -288,9 +288,9 @@ export class XCodeCommand extends Command {
     }
   }
 
-  private getBuildVersion = (): string | null => {
+  private getBuildVersion = async (): Promise<string | null> => {
     try {
-      const buildVersion = this.getPlistValue('CFBundleVersion')
+      const buildVersion = await this.getPlistValue('CFBundleVersion')
 
       return typeof buildVersion === 'number' ? buildVersion.toString() : buildVersion
     } catch (error) {
@@ -323,17 +323,19 @@ export class XCodeCommand extends Command {
     return `${process.env.CONFIGURATION_BUILD_DIR}/main.jsbundle`
   }
 
-  private getPlistValue = (propertyName: string): string | number => {
+  private getPlistValue = async (propertyName: string): Promise<string | number> => {
     if (!this.infoPlistPath) {
       throw new Error('Could not find plist path')
     }
 
-    return parsePlist(this.infoPlistPath).getPropertyValue(propertyName)
+    const plist = await parsePlist(this.infoPlistPath)
+
+    return plist.getPropertyValue(propertyName)
   }
 
-  private getReleaseVersion = (): string | null => {
+  private getReleaseVersion = async (): Promise<string | null> => {
     try {
-      const releaseVersion = this.getPlistValue('CFBundleShortVersionString')
+      const releaseVersion = await this.getPlistValue('CFBundleShortVersionString')
 
       return typeof releaseVersion === 'number' ? releaseVersion.toString() : releaseVersion
     } catch (error) {

@@ -1,11 +1,9 @@
 jest.mock('../../loggroup')
 
+import type {FunctionConfiguration as LFunctionConfiguration} from '@aws-sdk/client-lambda'
+
 import {CloudWatchLogsClient} from '@aws-sdk/client-cloudwatch-logs'
-import {
-  LambdaClient,
-  FunctionConfiguration as LFunctionConfiguration,
-  ListFunctionsCommand,
-} from '@aws-sdk/client-lambda'
+import {LambdaClient, ListFunctionsCommand} from '@aws-sdk/client-lambda'
 import {mockClient} from 'aws-sdk-client-mock'
 
 import {ENVIRONMENT_ENV_VAR, SERVICE_ENV_VAR, SITE_ENV_VAR, VERSION_ENV_VAR} from '../../../../constants'
@@ -35,7 +33,6 @@ describe('instrument', () => {
     beforeEach(() => {
       cloudWatchLogsClientMock.reset()
       lambdaClientMock.reset()
-      jest.resetModules()
       process.env = {}
 
       mockLambdaClientCommands(lambdaClientMock)
@@ -215,7 +212,9 @@ describe('instrument', () => {
     })
 
     test('requests log group configuration when forwarderARN is set', async () => {
-      ;(loggroup.calculateLogGroupUpdateRequest as any).mockImplementation(() => ({logGroupName: '/aws/lambda/group'}))
+      jest
+        .spyOn(loggroup, 'calculateLogGroupUpdateRequest')
+        .mockImplementation(async () => ({logGroupName: '/aws/lambda/group'}))
 
       const functionConfiguration: LFunctionConfiguration = {
         FunctionArn: 'arn:aws:lambda:us-east-1:000000000000:function:autoinstrument',
@@ -256,7 +255,6 @@ describe('instrument', () => {
     const OLD_ENV = process.env
     beforeEach(() => {
       lambdaClientMock.reset()
-      jest.resetModules()
       process.env = {}
 
       mockLambdaClientCommands(lambdaClientMock)
@@ -373,7 +371,6 @@ describe('instrument', () => {
     const OLD_ENV = process.env
     beforeEach(() => {
       lambdaClientMock.reset()
-      jest.resetModules()
       process.env = {}
 
       mockLambdaClientCommands(lambdaClientMock)

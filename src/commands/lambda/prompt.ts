@@ -1,6 +1,7 @@
+import type inquirer from 'inquirer'
+
 import chalk from 'chalk'
 import {filter} from 'fuzzy'
-import inquirer from 'inquirer'
 
 import {
   CI_API_KEY_ENV_VAR,
@@ -25,9 +26,6 @@ import {
   DATADOG_API_KEY_REG_EXP,
 } from './constants'
 import {isMissingAnyDatadogApiKeyEnvVar, sentenceMatchesRegEx} from './functions/commons'
-
-const checkboxPlusPrompt = require('inquirer-checkbox-plus-prompt')
-inquirer.registerPrompt('checkbox-plus', checkboxPlusPrompt)
 
 export const awsProfileQuestion = (mfaSerial: string): inquirer.InputQuestion => ({
   default: undefined,
@@ -87,7 +85,10 @@ const awsRegionQuestion = (defaultRegion?: string): inquirer.InputQuestion => ({
   type: 'input',
 })
 
-export const datadogApiKeyTypeQuestion = (datadogSite: string): inquirer.ListQuestion => ({
+export const datadogApiKeyTypeQuestion = (
+  datadogSite: string,
+  separator: inquirer.Separator
+): inquirer.ListQuestion => ({
   choices: [
     {
       name: `Plain text ${chalk.bold('API Key')} (Recommended for trial users) `,
@@ -96,7 +97,7 @@ export const datadogApiKeyTypeQuestion = (datadogSite: string): inquirer.ListQue
         message: 'API Key:',
       },
     },
-    new inquirer.Separator(),
+    separator,
     {
       name: `API key encrypted with AWS Key Management Service ${chalk.bold('(KMS) API Key')}`,
       value: {
@@ -181,7 +182,7 @@ export const datadogEnvVarsQuestions = (datadogApiKeyType: Record<string, any>):
   },
 })
 
-export const functionSelectionQuestion = (functionNames: string[]): typeof checkboxPlusPrompt => ({
+export const functionSelectionQuestion = (functionNames: string[]): inquirer.QuestionMap['checkboxPlus'] => ({
   choices: functionNames,
   highlight: true,
   message:
@@ -209,6 +210,8 @@ export const functionSelectionQuestion = (functionNames: string[]): typeof check
 })
 
 export const requestAWSCredentials = async () => {
+  const inquirer = await import('inquirer')
+
   try {
     const awsCredentialsAnswers = await inquirer.prompt(awsCredentialsQuestions)
     process.env[AWS_ACCESS_KEY_ID_ENV_VAR] = awsCredentialsAnswers[AWS_ACCESS_KEY_ID_ENV_VAR]
@@ -224,6 +227,8 @@ export const requestAWSCredentials = async () => {
 }
 
 export const requestAWSRegion = async (defaultRegion?: string) => {
+  const inquirer = await import('inquirer')
+
   try {
     const awsRegionAnswer = await inquirer.prompt(awsRegionQuestion(defaultRegion))
     process.env[AWS_DEFAULT_REGION_ENV_VAR] = awsRegionAnswer[AWS_DEFAULT_REGION_ENV_VAR]
@@ -235,6 +240,8 @@ export const requestAWSRegion = async (defaultRegion?: string) => {
 }
 
 export const requestDatadogEnvVars = async () => {
+  const inquirer = await import('inquirer')
+
   try {
     const envSite = process.env[CI_SITE_ENV_VAR]
     let selectedDatadogSite = envSite
@@ -245,7 +252,9 @@ export const requestDatadogEnvVars = async () => {
     }
 
     if (isMissingAnyDatadogApiKeyEnvVar()) {
-      const datadogApiKeyTypeAnswer = await inquirer.prompt(datadogApiKeyTypeQuestion(selectedDatadogSite!))
+      const datadogApiKeyTypeAnswer = await inquirer.prompt(
+        datadogApiKeyTypeQuestion(selectedDatadogSite!, new inquirer.Separator())
+      )
       const datadogApiKeyType = datadogApiKeyTypeAnswer.type
       const datadogEnvVars = await inquirer.prompt(datadogEnvVarsQuestions(datadogApiKeyType))
       const selectedDatadogApiKeyEnvVar = datadogApiKeyType.envVar
@@ -259,6 +268,8 @@ export const requestDatadogEnvVars = async () => {
 }
 
 export const requestEnvServiceVersion = async () => {
+  const inquirer = await import('inquirer')
+
   try {
     const envQuestionAnswer = await inquirer.prompt(envQuestion)
     const inputedEnvQuestionAnswer = envQuestionAnswer[ENVIRONMENT_ENV_VAR]
@@ -279,13 +290,22 @@ export const requestEnvServiceVersion = async () => {
 }
 
 export const requestFunctionSelection = async (functionNames: string[]) => {
+  const inquirer = await import('inquirer')
+
   try {
-    const selectedFunctionsAnswer: any = await inquirer.prompt(functionSelectionQuestion(functionNames))
+    const {default: CheckboxPlusPrompt} = await import('inquirer-checkbox-plus-prompt')
+    inquirer.registerPrompt('checkbox-plus', CheckboxPlusPrompt)
+
+    const selectedFunctionsAnswer = (await inquirer.prompt(functionSelectionQuestion(functionNames))) as {
+      functions: string[]
+    }
 
     return selectedFunctionsAnswer.functions
   } catch (e) {
     if (e instanceof Error) {
       throw Error(`Couldn't receive selected functions. ${e.message}`)
     }
+
+    return []
   }
 }

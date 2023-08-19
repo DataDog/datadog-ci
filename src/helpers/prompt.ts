@@ -2,7 +2,7 @@
  * @file Functions used to prompt the user for input.
  */
 
-import inquirer from 'inquirer'
+import type inquirer from 'inquirer'
 
 export const confirmationQuestion = (message: string, defaultValue = true): inquirer.ConfirmQuestion => ({
   message,
@@ -12,6 +12,8 @@ export const confirmationQuestion = (message: string, defaultValue = true): inqu
 })
 
 export const requestConfirmation = async (message: string, defaultValue = true) => {
+  const inquirer = await import('inquirer')
+
   try {
     const confirmationAnswer = await inquirer.prompt(confirmationQuestion(message, defaultValue))
 
@@ -24,6 +26,8 @@ export const requestConfirmation = async (message: string, defaultValue = true) 
 }
 
 export const requestFilePath = async () => {
+  const inquirer = await import('inquirer')
+
   try {
     const filePathAnswer = await inquirer.prompt([
       {

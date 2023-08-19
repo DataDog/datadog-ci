@@ -17,6 +17,14 @@ module.exports = {
   },
   plugins: ['@typescript-eslint', 'import', 'jest', 'no-null', 'prefer-arrow'],
   root: true,
+  overrides: [
+    {
+      files: ['**/__tests__/**'],
+      rules: {
+        '@typescript-eslint/no-restricted-imports': 'off',
+      },
+    },
+  ],
   rules: {
     '@typescript-eslint/adjacent-overload-signatures': 'error',
     '@typescript-eslint/array-type': [
@@ -253,10 +261,180 @@ module.exports = {
     'use-isnan': 'error',
     'valid-typeof': 'off',
     'jest/no-interpolation-in-snapshots': 'off', // allow showing from which variable comes a specific value in inline snapshots
-    'no-restricted-imports': [
+    '@typescript-eslint/consistent-type-imports': 'warn',
+    '@typescript-eslint/no-restricted-imports': [
       'error',
       {
         paths: [
+          {
+            name: '@aws-sdk/client-cloudwatch-logs',
+            allowTypeImports: true,
+            message:
+              "This cloud provider's SDK package slows down the CLI's startup time. Please use a dynamic import.",
+          },
+          {
+            name: '@aws-sdk/client-iam',
+            allowTypeImports: true,
+            message:
+              "This cloud provider's SDK package slows down the CLI's startup time. Please use a dynamic import.",
+          },
+          {
+            name: '@aws-sdk/client-lambda',
+            allowTypeImports: true,
+            message:
+              "This cloud provider's SDK package slows down the CLI's startup time. Please use a dynamic import.",
+          },
+          {
+            name: '@aws-sdk/client-sfn',
+            allowTypeImports: true,
+            message:
+              "This cloud provider's SDK package slows down the CLI's startup time. Please use a dynamic import.",
+          },
+          {
+            name: '@aws-sdk/credential-providers',
+            allowTypeImports: true,
+            message:
+              "This cloud provider's SDK package slows down the CLI's startup time. Please use a dynamic import.",
+          },
+          {
+            name: '@aws-sdk/property-provider',
+            allowTypeImports: true,
+            message:
+              "This cloud provider's SDK package slows down the CLI's startup time. Please use a dynamic import.",
+          },
+          {
+            name: '@google-cloud/logging',
+            allowTypeImports: true,
+            message:
+              "This cloud provider's SDK package slows down the CLI's startup time. Please use a dynamic import.",
+          },
+          {
+            name: '@google-cloud/run',
+            allowTypeImports: true,
+            message:
+              "This cloud provider's SDK package slows down the CLI's startup time. Please use a dynamic import.",
+          },
+          {
+            name: 'google-auth-library',
+            allowTypeImports: true,
+            message:
+              "This cloud provider's SDK package slows down the CLI's startup time. Please use a dynamic import.",
+          },
+          {
+            name: 'inquirer',
+            allowTypeImports: true,
+            message: "This package slows down the CLI's startup time. Please use a dynamic import.",
+          },
+          {
+            name: 'inquirer-checkbox-plus-prompt',
+            allowTypeImports: true,
+            message: "This package slows down the CLI's startup time. Please use a dynamic import.",
+          },
+          {
+            name: 'ssh2',
+            allowTypeImports: true,
+            message: "This package slows down the CLI's startup time. Please use a dynamic import.",
+          },
+          {
+            name: 'crypto',
+            allowTypeImports: true,
+            message: "This package slows down the CLI's startup time. Please use a dynamic import.",
+          },
+          {
+            name: 'sshpk',
+            allowTypeImports: true,
+            message: "This package slows down the CLI's startup time. Please use a dynamic import.",
+          },
+          {
+            name: 'proxy-agent',
+            allowTypeImports: true,
+            message: "This package slows down the CLI's startup time. Please use a dynamic import.",
+          },
+          {
+            name: 'dogapi',
+            allowTypeImports: true,
+            message: "This package slows down the CLI's startup time. Please use a dynamic import.",
+          },
+          {
+            name: 'axios',
+            allowTypeImports: true,
+            message: "This package slows down the CLI's startup time. Please use a dynamic import instead.",
+          },
+          {
+            name: 'ws',
+            allowTypeImports: true,
+            message: "This package slows down the CLI's startup time. Please use a dynamic import instead.",
+          },
+          {
+            name: 'form-data',
+            allowTypeImports: true,
+            message: "This package slows down the CLI's startup time. Please use a dynamic import instead.",
+          },
+          {
+            name: 'jszip',
+            allowTypeImports: true,
+            message: "This package slows down the CLI's startup time. Please use a dynamic import instead.",
+          },
+          {
+            name: 'ajv',
+            allowTypeImports: true,
+            message: "This package slows down the CLI's startup time. Please use a dynamic import instead.",
+          },
+          {
+            name: 'ajv-formats',
+            allowTypeImports: true,
+            message: "This package slows down the CLI's startup time. Please use a dynamic import instead.",
+          },
+          {
+            name: 'xml2js',
+            allowTypeImports: true,
+            message: "This package slows down the CLI's startup time. Please use a dynamic import instead.",
+          },
+          {
+            name: 'datadog-metrics',
+            allowTypeImports: true,
+            message: "This package slows down the CLI's startup time. Please use a dynamic import instead.",
+          },
+          {
+            name: 'js-yaml',
+            allowTypeImports: true,
+            message: "This package slows down the CLI's startup time. Please use a dynamic import instead.",
+          },
+          {
+            name: 'simple-git',
+            allowTypeImports: true,
+            message: "This package slows down the CLI's startup time. Please use a dynamic import instead.",
+          },
+          {
+            name: 'semver',
+            allowTypeImports: true,
+            message: "This package slows down the CLI's startup time. Please use a dynamic import instead.",
+          },
+          {
+            name: 'ora',
+            allowTypeImports: true,
+            message: "This package slows down the CLI's startup time. Please use a dynamic import instead.",
+          },
+          {
+            name: 'uuid',
+            allowTypeImports: true,
+            message: "This package slows down the CLI's startup time. Please use a dynamic import.",
+          },
+          {
+            name: 'glob',
+            allowTypeImports: true,
+            message: "This package slows down the CLI's startup time. Please use a dynamic import.",
+          },
+          {
+            name: 'tiny-async-pool',
+            allowTypeImports: true,
+            message: "This package slows down the CLI's startup time. Please use a dynamic import.",
+          },
+          {
+            name: 'fast-xml-parser',
+            allowTypeImports: true,
+            message: "This package slows down the CLI's startup time. Please use a dynamic import.",
+          },
           {
             // forbid using named imports for chalk
             // since we can't restrict to only using default imports, this is a list of all chalk members

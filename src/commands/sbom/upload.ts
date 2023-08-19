@@ -2,18 +2,18 @@ import fs from 'fs'
 import os from 'os'
 import process from 'process'
 
-import Ajv from 'ajv'
-import {AxiosPromise, AxiosResponse} from 'axios'
+import type {SbomPayloadData} from './types'
+import type {AxiosPromise, AxiosResponse} from 'axios'
+
 import chalk from 'chalk'
 import {Command, Option} from 'clipanion'
 
-import {SpanTags} from '../../helpers/interfaces'
+import type {SpanTags} from '../../helpers/interfaces'
 import {getSpanTags} from '../../helpers/tags'
 
 import {getApiHelper} from './api'
 import {Bom} from './protobuf/bom-1.4'
 import {SBOMEntity, SBOMPayload, SBOMSourceType} from './protobuf/sbom_intake'
-import {SbomPayloadData} from './types'
 import {getValidator, validateSbomFile} from './validation'
 
 const generatePayload = (payloadData: SbomPayloadData, service: string, tags: SpanTags): SBOMPayload => {
@@ -86,7 +86,7 @@ export class UploadSbomCommand extends Command {
 
     const spanTags = await getSpanTags(this.config, this.tags)
 
-    const validator: Ajv = getValidator()
+    const validator = await getValidator()
     for (const basePath of this.basePaths) {
       if (this.debug) {
         this.context.stdout.write(`Processing file ${basePath}`)

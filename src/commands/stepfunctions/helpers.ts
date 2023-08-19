@@ -1,6 +1,7 @@
-import {DescribeStateMachineCommandOutput} from '@aws-sdk/client-sfn'
-import {SFNClient} from '@aws-sdk/client-sfn/dist-types/SFNClient'
-import {BaseContext} from 'clipanion'
+import type {DescribeStateMachineCommandOutput} from '@aws-sdk/client-sfn'
+import type {SFNClient} from '@aws-sdk/client-sfn/dist-types/SFNClient'
+import type {BaseContext} from 'clipanion'
+
 import {diff} from 'deep-object-diff'
 
 import {updateStateMachineDefinition} from './awsCommands'

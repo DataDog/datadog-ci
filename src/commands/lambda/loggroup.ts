@@ -1,14 +1,9 @@
-import {
+import type {
   CloudWatchLogsClient,
-  CreateLogGroupCommand,
   CreateLogGroupCommandInput,
-  DeleteSubscriptionFilterCommand,
   DeleteSubscriptionFilterCommandInput,
-  DescribeLogGroupsCommand,
   DescribeLogGroupsCommandInput,
-  DescribeSubscriptionFiltersCommand,
   DescribeSubscriptionFiltersCommandInput,
-  PutSubscriptionFilterCommand,
   PutSubscriptionFilterCommandInput,
 } from '@aws-sdk/client-cloudwatch-logs'
 
@@ -38,6 +33,8 @@ export const applyLogGroupConfig = async (client: CloudWatchLogsClient, config: 
 }
 
 export const createLogGroup = async (client: CloudWatchLogsClient, input: CreateLogGroupCommandInput) => {
+  const {CreateLogGroupCommand} = await import('@aws-sdk/client-cloudwatch-logs')
+
   const command = new CreateLogGroupCommand(input)
   await client.send(command)
 }
@@ -46,11 +43,15 @@ export const deleteSubscriptionFilter = async (
   client: CloudWatchLogsClient,
   input: DeleteSubscriptionFilterCommandInput
 ) => {
+  const {DeleteSubscriptionFilterCommand} = await import('@aws-sdk/client-cloudwatch-logs')
+
   const command = new DeleteSubscriptionFilterCommand(input)
   await client.send(command)
 }
 
 export const putSubscriptionFilter = async (client: CloudWatchLogsClient, input: PutSubscriptionFilterCommandInput) => {
+  const {PutSubscriptionFilterCommand} = await import('@aws-sdk/client-cloudwatch-logs')
+
   const command = new PutSubscriptionFilterCommand(input)
   await client.send(command)
 }
@@ -121,6 +122,8 @@ export const calculateLogGroupRemoveRequest = async (
 }
 
 export const hasLogGroup = async (client: CloudWatchLogsClient, logGroupName: string): Promise<boolean> => {
+  const {DescribeLogGroupsCommand} = await import('@aws-sdk/client-cloudwatch-logs')
+
   const input: DescribeLogGroupsCommandInput = {
     logGroupNamePrefix: logGroupName,
   }
@@ -163,6 +166,8 @@ export const getSubscriptionFilterState = async (
 }
 
 export const getSubscriptionFilters = async (client: CloudWatchLogsClient, logGroupName: string) => {
+  const {DescribeSubscriptionFiltersCommand} = await import('@aws-sdk/client-cloudwatch-logs')
+
   const input: DescribeSubscriptionFiltersCommandInput = {
     logGroupName,
   }

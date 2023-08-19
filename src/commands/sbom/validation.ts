@@ -1,7 +1,6 @@
 import fs from 'fs'
 
-import Ajv from 'ajv'
-import addFormats from 'ajv-formats'
+import type Ajv from 'ajv'
 
 import cycloneDxSchema from './json-schema/cyclonedx/bom-1.4.schema.json'
 import jsfSchema from './json-schema/jsf/jsf-0.82.schema.json'
@@ -11,7 +10,10 @@ import spdxSchema from './json-schema/spdx/spdx.schema.json'
  * Get the validate function. Read all the schemas and return
  * the function used to validate all SBOM documents.
  */
-export const getValidator = (): Ajv => {
+export const getValidator = async (): Promise<Ajv> => {
+  const {default: Ajv} = await import('ajv')
+  const {default: addFormats} = await import('ajv-formats')
+
   const ajv = new Ajv({strict: false, validateFormats: false})
   ajv.addMetaSchema(spdxSchema)
   ajv.addMetaSchema(jsfSchema)

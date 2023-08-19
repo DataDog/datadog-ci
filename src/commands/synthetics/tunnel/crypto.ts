@@ -1,10 +1,14 @@
-import {generateKeyPairSync} from 'crypto'
-
-import {ParsedKey, utils} from 'ssh2'
-import {parseKey, parsePrivateKey} from 'sshpk'
+import type * as crypto from 'crypto'
+import type * as ssh2 from 'ssh2'
+import type sshpk from 'sshpk'
 
 // Generate public/private key in OpenSSH format (used for encryption in tunnel over SSH)
 export const generateOpenSSHKeys = () => {
+  // eslint-disable-next-line @typescript-eslint/no-var-requires -- We don't want asynchronous code here.
+  const {generateKeyPairSync} = require('crypto') as typeof crypto
+  // eslint-disable-next-line @typescript-eslint/no-var-requires -- We don't want asynchronous code here.
+  const {parseKey, parsePrivateKey} = require('sshpk') as typeof sshpk
+
   const format = 'pem'
   const {publicKey, privateKey} = generateKeyPairSync('ec', {
     namedCurve: 'P-256',
@@ -27,7 +31,10 @@ export const generateOpenSSHKeys = () => {
 }
 
 // Parse SSH key for ssh2 module
-export const parseSSHKey = (key: string): ParsedKey => {
+export const parseSSHKey = (key: string): ssh2.ParsedKey => {
+  // eslint-disable-next-line @typescript-eslint/no-var-requires -- We don't want asynchronous code here.
+  const {utils} = require('ssh2') as typeof ssh2
+
   const parsedKey = utils.parseKey(key)
 
   if (!parsedKey) {

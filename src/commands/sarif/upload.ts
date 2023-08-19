@@ -1,25 +1,19 @@
 import fs from 'fs'
 import path from 'path'
 
-import type {ErrorObject} from 'ajv'
+import type {APIHelper, Payload} from './interfaces'
 
-import Ajv from 'ajv'
-import addFormats from 'ajv-formats'
 import chalk from 'chalk'
 import {Command, Option} from 'clipanion'
-import glob from 'glob'
-import asyncPool from 'tiny-async-pool'
 
-import {DatadogCiConfig} from '../../helpers/config'
-import {SpanTags} from '../../helpers/interfaces'
+import type {DatadogCiConfig} from '../../helpers/config'
+import type {SpanTags} from '../../helpers/interfaces'
 import {retryRequest} from '../../helpers/retry'
 import {getSpanTags} from '../../helpers/tags'
 import {buildPath} from '../../helpers/utils'
 import * as validation from '../../helpers/validation'
 
 import {apiConstructor} from './api'
-import {APIHelper, Payload} from './interfaces'
-import sarifJsonSchema from './json-schema/sarif-schema-2.1.0.json'
 import {
   renderCommandInfo,
   renderSuccessfulCommand,
@@ -30,30 +24,9 @@ import {
   renderFilesNotFound,
 } from './renderer'
 import {getBaseIntakeUrl} from './utils'
+import {getValidator, validateSarifFile} from './validation'
 
 const errorCodesStopUpload = [400, 403]
-
-const validateSarif = (sarifReportPath: string) => {
-  const ajv = new Ajv({allErrors: true})
-  addFormats(ajv)
-  const sarifJsonSchemaValidate = ajv.compile(sarifJsonSchema)
-  try {
-    const sarifReportContent = JSON.parse(String(fs.readFileSync(sarifReportPath)))
-    const valid = sarifJsonSchemaValidate(sarifReportContent)
-    if (!valid) {
-      const errors = sarifJsonSchemaValidate.errors || []
-      const errorMessages = errors.map((error: ErrorObject) => {
-        return `${error.instancePath}: ${error.message}`
-      })
-
-      return errorMessages.join('\n')
-    }
-  } catch (error) {
-    return error.message
-  }
-
-  return undefined
-}
 
 export class UploadSarifReportCommand extends Command {
   public static paths = [['sarif', 'upload']]
@@ -136,6 +109,8 @@ export class UploadSarifReportCommand extends Command {
 
     const initialTime = new Date().getTime()
 
+    const {default: asyncPool} = await import('tiny-async-pool')
+
     await asyncPool(this.maxConcurrency, payloads, upload)
 
     const totalTimeSeconds = (Date.now() - initialTime) / 1000
@@ -186,6 +161,8 @@ export class UploadSarifReportCommand extends Command {
   }
 
   private async getMatchingSarifReports(spanTags: SpanTags): Promise<Payload[]> {
+    const {default: glob} = await import('glob')
+
     const sarifReports = (this.basePaths || []).reduce((acc: string[], basePath: string) => {
       const isFile = !!path.extname(basePath)
       if (isFile) {
@@ -195,14 +172,22 @@ export class UploadSarifReportCommand extends Command {
       return acc.concat(glob.sync(buildPath(basePath, '*.sarif')))
     }, [])
 
-    const validUniqueFiles = [...new Set(sarifReports)].filter((sarifReport) => {
+    const validator = await getValidator()
+
+    const uniqueValidFiles = [...new Set(sarifReports)].filter((sarifReport) => {
       if (this.noVerify) {
         return true
       }
 
-      const validationErrorMessage = validateSarif(sarifReport)
-      if (validationErrorMessage) {
-        this.context.stdout.write(renderInvalidFile(sarifReport, validationErrorMessage))
+      try {
+        const validationErrorMessage = validateSarifFile(sarifReport, validator)
+        if (validationErrorMessage) {
+          this.context.stdout.write(renderInvalidFile(sarifReport, validationErrorMessage))
+
+          return false
+        }
+      } catch (error) {
+        console.log(error)
 
         return false
       }
@@ -210,7 +195,7 @@ export class UploadSarifReportCommand extends Command {
       return true
     })
 
-    return validUniqueFiles.map((sarifReport) => ({
+    return uniqueValidFiles.map((sarifReport) => ({
       service: this.service!,
       reportPath: sarifReport,
       spanTags,

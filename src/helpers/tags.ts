@@ -1,8 +1,9 @@
 // Build
+import type {DatadogCiConfig} from './config'
+import type {SpanTags} from './interfaces'
+
 import {getCISpanTags} from './ci'
-import {DatadogCiConfig} from './config'
 import {getGitMetadata} from './git/format-git-span-data'
-import {SpanTags} from './interfaces'
 import {getUserGitSpanTags} from './user-provided-git'
 
 export const CI_PIPELINE_URL = 'ci.pipeline.url'

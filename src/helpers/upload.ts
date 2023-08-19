@@ -1,10 +1,10 @@
-import {ReadStream} from 'fs'
 import {createGzip} from 'zlib'
 
-import FormData from 'form-data'
+import type {ApiKeyValidator} from './apikey'
+import type {RequestBuilder} from './interfaces'
+import type FormData from 'form-data'
+import type {ReadStream} from 'fs'
 
-import {ApiKeyValidator} from './apikey'
-import {RequestBuilder} from './interfaces'
 import {retryRequest} from './retry'
 
 /** Multipart payload destined to be sent to Datadog's API
@@ -90,6 +90,8 @@ export const upload = (requestBuilder: RequestBuilder) => async (
 const maxBodyLength = Infinity
 
 const uploadMultipart = async (request: RequestBuilder, payload: MultipartPayload, useGzip: boolean) => {
+  const {default: FormData} = await import('form-data')
+
   const form = new FormData()
   payload.content.forEach((value: MultipartValue, key: string) => {
     form.append(key, value.value, value.options)

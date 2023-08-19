@@ -1,5 +1,7 @@
+import type {InstrumentCommand} from '../instrument'
+import type {default as Ora} from 'ora'
+
 import chalk from 'chalk'
-import ora from 'ora'
 
 import {
   dryRunTag,
@@ -10,7 +12,6 @@ import {
   renderSoftWarning,
 } from '../../../helpers/renderer'
 
-import {InstrumentCommand} from '../instrument'
 import {UninstrumentCommand} from '../uninstrument'
 
 /**
@@ -506,7 +507,7 @@ export const renderFailedUpdatingEveryLambdaFunctionFromRegion = (region: string
  * ⠋ Fetching Lambda functions.
  * ```
  */
-export const fetchingFunctionsSpinner = () =>
+export const fetchingFunctionsSpinner = (ora: typeof Ora) =>
   ora({
     color: 'magenta',
     discardStdin: false,
@@ -522,7 +523,7 @@ export const fetchingFunctionsSpinner = () =>
  * ⠋ [us-east-1] Fetching Lambda configurations.
  * ```
  */
-export const fetchingFunctionsConfigSpinner = (region: string) =>
+export const fetchingFunctionsConfigSpinner = (ora: typeof Ora, region: string) =>
   ora({
     color: 'magenta',
     discardStdin: false,
@@ -538,7 +539,7 @@ export const fetchingFunctionsConfigSpinner = (region: string) =>
  * ⠋ Updating 5 Lambda functions.
  * ```
  */
-export const updatingFunctionsSpinner = (functions: number) =>
+export const updatingFunctionsSpinner = (ora: typeof Ora, functions: number) =>
   ora({
     color: 'magenta',
     discardStdin: false,
@@ -555,7 +556,7 @@ export const updatingFunctionsSpinner = (functions: number) =>
  * ⠋ [us-east-1] Updating Lambda functions.
  * ```
  */
-export const updatingFunctionsConfigFromRegionSpinner = (region: string, functions: number) =>
+export const updatingFunctionsConfigFromRegionSpinner = (ora: typeof Ora, region: string, functions: number) =>
   ora({
     color: 'magenta',
     discardStdin: false,

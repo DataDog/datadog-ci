@@ -1,8 +1,4 @@
-import type {Writable} from 'stream'
-
-import {AxiosPromise, AxiosRequestConfig} from 'axios'
-
-import {
+import type {
   CI_ENV_VARS,
   CI_JOB_NAME,
   CI_JOB_URL,
@@ -28,6 +24,8 @@ import {
   GIT_TAG,
   SERVICE,
 } from './tags'
+import type {AxiosPromise, AxiosRequestConfig} from 'axios'
+import type {Writable} from 'stream'
 
 export interface Metadata {
   ci: {

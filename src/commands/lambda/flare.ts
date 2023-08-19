@@ -2,15 +2,10 @@ import * as fs from 'fs'
 import * as path from 'path'
 import util from 'util'
 
-import {
-  CloudWatchLogsClient,
-  DescribeLogStreamsCommand,
-  GetLogEventsCommand,
-  OrderBy,
-  OutputLogEvent,
-} from '@aws-sdk/client-cloudwatch-logs'
-import {FunctionConfiguration, LambdaClient, LambdaClientConfig, ListTagsCommand} from '@aws-sdk/client-lambda'
-import {AwsCredentialIdentity} from '@aws-sdk/types'
+import type {CloudWatchLogsClient, OutputLogEvent} from '@aws-sdk/client-cloudwatch-logs'
+import type {FunctionConfiguration, LambdaClient, LambdaClientConfig} from '@aws-sdk/client-lambda'
+import type {AwsCredentialIdentity} from '@aws-sdk/types'
+
 import chalk from 'chalk'
 import {Command, Option} from 'clipanion'
 
@@ -23,7 +18,6 @@ import {
   LOGS_DIRECTORY,
   PROJECT_FILES_DIRECTORY,
 } from '../../constants'
-import {getProjectFiles, sendToDatadog, validateFilePath, validateStartEndFlags} from '../../helpers/flare'
 import {createDirectories, deleteFolder, writeFile, zipContents} from '../../helpers/fs'
 import {requestConfirmation, requestFilePath} from '../../helpers/prompt'
 import * as helpersRenderer from '../../helpers/renderer'
@@ -37,14 +31,6 @@ import {
   DeploymentFrameworks,
   LAMBDA_PROJECT_FILES,
 } from './constants'
-import {
-  getAWSCredentials,
-  getLambdaFunctionConfig,
-  getLayerNameWithVersion,
-  getRegion,
-  maskConfig,
-} from './functions/commons'
-import {requestAWSCredentials} from './prompt'
 import * as commonRenderer from './renderers/common-renderer'
 
 const FUNCTION_CONFIG_FILE_NAME = 'function_config.json'
@@ -83,6 +69,12 @@ export class LambdaFlareCommand extends Command {
    * @returns 0 if the command ran successfully, 1 otherwise.
    */
   public async execute() {
+    const {LambdaClient} = await import('@aws-sdk/client-lambda')
+    const {getAWSCredentials, getLambdaFunctionConfig, getRegion, maskConfig} = await import('./functions/commons')
+    const {getProjectFiles, getUniqueFileNames, sendToDatadog, validateFilePath, validateStartEndFlags} = await import(
+      '../../helpers/flare'
+    )
+
     this.context.stdout.write(helpersRenderer.renderFlareHeader('Lambda', this.isDryRun))
 
     // Validate function name
@@ -152,6 +144,7 @@ export class LambdaFlareCommand extends Command {
     if (this.credentials === undefined) {
       this.context.stdout.write('\n' + commonRenderer.renderNoAWSCredentialsFound())
       try {
+        const {requestAWSCredentials} = await import('./prompt')
         await requestAWSCredentials()
       } catch (err) {
         if (err instanceof Error) {
@@ -361,7 +354,7 @@ export class LambdaFlareCommand extends Command {
       // Write insights file
       try {
         const insightsFilePath = path.join(rootFolderPath, INSIGHTS_FILE_NAME)
-        generateInsightsFile(insightsFilePath, this.isDryRun, config)
+        await generateInsightsFile(insightsFilePath, this.isDryRun, config)
         this.context.stdout.write(`• Saved the insights file to ./${INSIGHTS_FILE_NAME}\n`)
       } catch (err) {
         const errorDetails = err instanceof Error ? err.message : ''
@@ -449,6 +442,8 @@ export const getLogStreamNames = async (
   startMillis?: number,
   endMillis?: number
 ) => {
+  const {DescribeLogStreamsCommand, OrderBy} = await import('@aws-sdk/client-cloudwatch-logs')
+
   const config = {
     logGroupName,
     descending: true,
@@ -506,6 +501,8 @@ export const getLogEvents = async (
   startMillis?: number,
   endMillis?: number
 ) => {
+  const {GetLogEventsCommand} = await import('@aws-sdk/client-cloudwatch-logs')
+
   const config: any = {
     logGroupName,
     logStreamName,
@@ -536,6 +533,8 @@ export const getLogEvents = async (
  * @returns a map of log stream names to log events or an empty map if no logs are found
  */
 export const getAllLogs = async (region: string, functionName: string, startMillis?: number, endMillis?: number) => {
+  const {CloudWatchLogsClient} = await import('@aws-sdk/client-cloudwatch-logs')
+
   const logs = new Map<string, OutputLogEvent[]>()
   const cwlClient = new CloudWatchLogsClient({region})
   if (functionName.startsWith('arn:aws')) {
@@ -573,6 +572,8 @@ export const getAllLogs = async (region: string, functionName: string, startMill
  * @throws Error if the tags cannot be retrieved
  */
 export const getTags = async (lambdaClient: LambdaClient, region: string, arn: string) => {
+  const {ListTagsCommand} = await import('@aws-sdk/client-lambda')
+
   if (!arn.startsWith('arn:aws')) {
     throw Error(`Invalid function ARN: ${arn}`)
   }
@@ -590,41 +591,6 @@ export const getTags = async (lambdaClient: LambdaClient, region: string, arn: s
     }
     throw Error(`Unable to get resource tags: ${message}`)
   }
-}
-
-/**
- * Generate unique file names
- * If the original file name is unique, keep it as is
- * Otherwise, replace separators in the file path with dashes
- * @param filePaths the list of file paths
- * @returns a mapping of file paths to new file names
- */
-export const getUniqueFileNames = (filePaths: Set<string>) => {
-  // Count occurrences of each filename
-  const fileNameCount: {[fileName: string]: number} = {}
-  filePaths.forEach((filePath) => {
-    const fileName = path.basename(filePath)
-    const count = fileNameCount[fileName] || 0
-    fileNameCount[fileName] = count + 1
-  })
-
-  // Create new filenames
-  const filePathsToNewFileNames = new Map<string, string>()
-  filePaths.forEach((filePath) => {
-    const fileName = path.basename(filePath)
-    if (fileNameCount[fileName] > 1) {
-      // Trim leading and trailing '/'s and '\'s
-      const trimRegex = /^\/+|\/+$/g
-      const filePathTrimmed = filePath.replace(trimRegex, '')
-      // Replace '/'s and '\'s with '-'s
-      const newFileName = filePathTrimmed.split(path.sep).join('-')
-      filePathsToNewFileNames.set(filePath, newFileName)
-    } else {
-      filePathsToNewFileNames.set(filePath, fileName)
-    }
-  })
-
-  return filePathsToNewFileNames
 }
 
 /**
@@ -681,7 +647,13 @@ export const getFramework = () => {
  * @param isDryRun whether or not this is a dry run
  * @param config Lambda function configuration
  */
-export const generateInsightsFile = (insightsFilePath: string, isDryRun: boolean, config: FunctionConfiguration) => {
+export const generateInsightsFile = async (
+  insightsFilePath: string,
+  isDryRun: boolean,
+  config: FunctionConfiguration
+) => {
+  const {getLayerNameWithVersion} = await import('./functions/commons')
+
   const lines: string[] = []
   // Header
   lines.push('# Flare Insights')

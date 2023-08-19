@@ -42,21 +42,10 @@ import child_process from 'child_process'
 import * as fs from 'fs'
 import process from 'process'
 
-import {default as axios} from 'axios'
-import deepExtend from 'deep-extend'
-import glob from 'glob'
-
-process.env.DATADOG_SYNTHETICS_CI_TRIGGER_APP = 'env_default'
-
-import * as ciHelpers from '../../../helpers/ci'
-import {Metadata} from '../../../helpers/interfaces'
-import * as ciUtils from '../../../helpers/utils'
-
-import {apiConstructor, APIHelper} from '../api'
-import {CiError} from '../errors'
-import {
+import type {MockedReporter, RenderResultsTestCase} from './fixtures'
+import type {APIHelper} from '../api'
+import type {
   Batch,
-  ExecutionRule,
   PollResult,
   Result,
   ServerResult,
@@ -65,8 +54,23 @@ import {
   Trigger,
   UserConfigOverride,
 } from '../interfaces'
+
+import {default as axios} from 'axios'
+import deepExtend from 'deep-extend'
+import glob from 'glob'
+
+import * as ciHelpers from '../../../helpers/ci'
+import type {Metadata} from '../../../helpers/interfaces'
+import type * as ciUtils from '../../../helpers/utils'
+
+// This should be put before the `../utils` import.
+process.env.DATADOG_SYNTHETICS_CI_TRIGGER_APP = 'env_default'
+
+import {apiConstructor} from '../api'
+import {DEFAULT_COMMAND_CONFIG, MAX_TESTS_TO_TRIGGER} from '../constants'
+import {CiError} from '../errors'
+import {ExecutionRule} from '../interfaces'
 import * as mobile from '../mobile'
-import {DEFAULT_COMMAND_CONFIG, MAX_TESTS_TO_TRIGGER} from '../run-tests-command'
 import * as utils from '../utils'
 
 import {
@@ -78,10 +82,8 @@ import {
   getBrowserServerResult,
   getResults,
   getSummary,
-  MockedReporter,
   mockLocation,
   mockReporter,
-  RenderResultsTestCase,
 } from './fixtures'
 
 describe('utils', () => {

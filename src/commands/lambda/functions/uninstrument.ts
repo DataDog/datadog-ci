@@ -1,5 +1,5 @@
-import {CloudWatchLogsClient} from '@aws-sdk/client-cloudwatch-logs'
-import {
+import type {CloudWatchLogsClient} from '@aws-sdk/client-cloudwatch-logs'
+import type {
   LambdaClient,
   FunctionConfiguration as LFunctionConfiguration,
   UpdateFunctionConfigurationRequest,

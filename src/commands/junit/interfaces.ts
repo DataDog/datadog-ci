@@ -1,6 +1,6 @@
-import {AxiosPromise, AxiosResponse} from 'axios'
+import type {AxiosPromise, AxiosResponse} from 'axios'
 
-import {SpanTags} from '../../helpers/interfaces'
+import type {SpanTags} from '../../helpers/interfaces'
 
 export interface Payload {
   hostname: string

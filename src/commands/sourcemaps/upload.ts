@@ -3,15 +3,15 @@ import {URL} from 'url'
 
 import chalk from 'chalk'
 import {Command, Option} from 'clipanion'
-import glob from 'glob'
-import asyncPool from 'tiny-async-pool'
 
-import {ApiKeyValidator, newApiKeyValidator} from '../../helpers/apikey'
+import type {ApiKeyValidator} from '../../helpers/apikey'
 import {getBaseSourcemapIntakeUrl} from '../../helpers/base-intake-url'
 import {InvalidConfigurationError} from '../../helpers/errors'
-import {getRepositoryData, newSimpleGit, RepositoryData} from '../../helpers/git/format-git-sourcemaps-data'
-import {RequestBuilder} from '../../helpers/interfaces'
-import {getMetricsLogger, MetricsLogger} from '../../helpers/metrics'
+import type {RepositoryData} from '../../helpers/git/format-git-sourcemaps-data'
+import {getRepositoryData, newSimpleGit} from '../../helpers/git/format-git-sourcemaps-data'
+import type {RequestBuilder} from '../../helpers/interfaces'
+import type {MetricsLogger} from '../../helpers/metrics'
+import {getMetricsLogger} from '../../helpers/metrics'
 import {upload, UploadStatus} from '../../helpers/upload'
 import {getRequestBuilder, buildPath} from '../../helpers/utils'
 import * as validation from '../../helpers/validation'
@@ -110,22 +110,27 @@ export class UploadCommand extends Command {
         this.dryRun
       )
     )
-    const metricsLogger = getMetricsLogger({
+    const metricsLogger = await getMetricsLogger({
       datadogSite: process.env.DATADOG_SITE,
       defaultTags: [`version:${this.releaseVersion}`, `service:${this.service}`, `cli_version:${this.cliVersion}`],
       prefix: 'datadog.ci.sourcemaps.',
     })
+
+    const {newApiKeyValidator} = await import('../../helpers/apikey')
     const apiKeyValidator = newApiKeyValidator({
       apiKey: this.config.apiKey,
       datadogSite: this.config.datadogSite,
       metricsLogger: metricsLogger.logger,
     })
+
     const useGit = this.disableGit === undefined || !this.disableGit
     const initialTime = Date.now()
     const payloads = await this.getPayloadsToUpload(useGit)
     const requestBuilder = this.getRequestBuilder()
     const uploadMultipart = this.upload(requestBuilder, metricsLogger, apiKeyValidator)
     try {
+      const {default: asyncPool} = await import('tiny-async-pool')
+
       const results = await asyncPool(this.maxConcurrency, payloads, uploadMultipart)
       const totalTime = (Date.now() - initialTime) / 1000
       this.context.stdout.write(renderSuccessfulCommand(results, totalTime, this.dryRun))
@@ -171,6 +176,8 @@ export class UploadCommand extends Command {
   // Looks for the sourcemaps and minified files on disk and returns
   // the associated payloads.
   private getMatchingSourcemapFiles = async (): Promise<Sourcemap[]> => {
+    const {default: glob} = await import('glob')
+
     const sourcemapFiles = glob.sync(buildPath(this.basePath, '**/*js.map'))
 
     return Promise.all(

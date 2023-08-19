@@ -1,19 +1,18 @@
+import type {APIHelper, EvaluationResponse, EvaluationResponsePayload, Payload} from './interfaces'
 import type {AxiosResponse} from 'axios'
 
 import chalk from 'chalk'
 import {Command, Option} from 'clipanion'
-import {v4 as uuidv4} from 'uuid'
 
 import {getCISpanTags} from '../../helpers/ci'
 import {getGitMetadata} from '../../helpers/git/format-git-span-data'
-import {SpanTags} from '../../helpers/interfaces'
+import type {SpanTags} from '../../helpers/interfaces'
 import {retryRequest} from '../../helpers/retry'
 import {parseTags} from '../../helpers/tags'
 import {getUserGitSpanTags} from '../../helpers/user-provided-git'
 import * as validation from '../../helpers/validation'
 
 import {apiConstructor} from './api'
-import {APIHelper, EvaluationResponse, EvaluationResponsePayload, Payload} from './interfaces'
 import {
   renderEvaluationResponse,
   renderGateEvaluationInput,
@@ -84,6 +83,8 @@ export class GateEvaluateCommand extends Command {
   }
 
   public async execute() {
+    const {v4: uuidv4} = await import('uuid')
+
     const api = this.getApiHelper()
     const spanTags = await this.getSpanTags()
     const userScope = this.userScope ? parseScope(this.userScope) : {}

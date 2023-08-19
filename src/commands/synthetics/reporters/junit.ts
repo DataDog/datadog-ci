@@ -1,17 +1,9 @@
 import fs from 'fs'
 import path from 'path'
 
-import type {Writable} from 'stream'
-
-import c from 'chalk'
-import {Builder} from 'xml2js'
-
-import type {CommandContext} from '../../../helpers/interfaces'
-
-import {
+import type {
   ApiServerResult,
   Assertion,
-  ExecutionRule,
   MultiStep,
   Reporter,
   Result,
@@ -21,6 +13,14 @@ import {
   Test,
   UserConfigOverride,
 } from '../interfaces'
+import type {Writable} from 'stream'
+import type * as xml2js from 'xml2js'
+
+import c from 'chalk'
+
+import type {CommandContext} from '../../../helpers/interfaces'
+
+import {ExecutionRule} from '../interfaces'
 import {
   getBatchUrl,
   getResultDuration,
@@ -159,18 +159,21 @@ export const getDefaultSuiteStats = (): SuiteStats => ({
 })
 
 export class JUnitReporter implements Reporter {
-  private builder: Builder
+  private builder: xml2js.Builder
   private destination: string
   private json: XMLJSON
   private write: Writable['write']
 
   constructor({context, jUnitReport, runName}: Args) {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires -- We don't want asynchronous code here.
+    const {Builder} = require('xml2js') as typeof xml2js
+    this.builder = new Builder()
+
     this.write = context.stdout.write.bind(context.stdout)
     this.destination = jUnitReport!
     if (!this.destination.endsWith('.xml')) {
       this.destination += '.xml'
     }
-    this.builder = new Builder()
     this.json = {
       testsuites: {
         $: {

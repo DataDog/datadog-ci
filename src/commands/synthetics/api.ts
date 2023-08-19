@@ -1,12 +1,6 @@
 import {stringify} from 'querystring'
 
-import {AxiosError, AxiosPromise, AxiosRequestConfig} from 'axios'
-import FormData from 'form-data'
-
-import {getRequestBuilder} from '../../helpers/utils'
-
-import {CriticalError} from './errors'
-import {
+import type {
   APIConfiguration,
   APIHelperConfig,
   Batch,
@@ -20,7 +14,12 @@ import {
   TestSearchResult,
   Trigger,
 } from './interfaces'
-import {MAX_TESTS_TO_TRIGGER} from './run-tests-command'
+import type {AxiosError, AxiosPromise, AxiosRequestConfig} from 'axios'
+
+import {getRequestBuilder} from '../../helpers/utils'
+
+import {MAX_TESTS_TO_TRIGGER} from './constants'
+import {CriticalError} from './errors'
 import {ciTriggerApp, getDatadogHost, retry} from './utils'
 
 const MAX_RETRIES = 3
@@ -177,6 +176,8 @@ const uploadMobileApplication = (request: (args: AxiosRequestConfig) => AxiosPro
   fileBuffer: Buffer,
   presignedUrlParams: PresignedUrlResponse['presigned_url_params']
 ) => {
+  const {default: FormData} = await import('form-data')
+
   const form = new FormData()
   Object.entries(presignedUrlParams.fields).forEach(([key, value]) => {
     form.append(key, value)

@@ -1,11 +1,11 @@
 import {ReadStream} from 'fs'
 import os from 'os'
 
-import FormData from 'form-data'
+import type FormData from 'form-data'
 
 import {createCommand} from '../../../helpers/__tests__/fixtures'
 import {TrackedFilesMatcher, getRepositoryData} from '../../../helpers/git/format-git-sourcemaps-data'
-import {MultipartPayload} from '../../../helpers/upload'
+import type {MultipartPayload} from '../../../helpers/upload'
 import {performSubCommand} from '../../../helpers/utils'
 import {version} from '../../../helpers/version'
 
@@ -129,7 +129,7 @@ describe('flutter-symbol upload', () => {
     test('should read all symbol files', async () => {
       const command = new UploadCommand()
       const searchDir = `${fixtureDir}/dart-symbols`
-      const files = command['getFlutterSymbolFiles'](searchDir)
+      const files = await command['getFlutterSymbolFiles'](searchDir)
 
       expect(files).toEqual([
         `${searchDir}/app.android-arm.symbols`,

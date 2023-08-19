@@ -10,6 +10,8 @@ jest.mock('../../../../package.json', () => ({version: 'XXXX'}))
 
 import * as fs from 'fs'
 
+import type {InstrumentationSettings, LambdaConfigOptions} from '../interfaces'
+
 import {LambdaClient, ListFunctionsCommand, UpdateFunctionConfigurationCommand} from '@aws-sdk/client-lambda'
 import {fromIni} from '@aws-sdk/credential-providers'
 import {mockClient} from 'aws-sdk-client-mock'
@@ -34,13 +36,7 @@ import {
   DEFAULT_LAYER_AWS_ACCOUNT,
 } from '../constants'
 import {InstrumentCommand} from '../instrument'
-import {InstrumentationSettings, LambdaConfigOptions} from '../interfaces'
-import {
-  requestAWSCredentials,
-  requestDatadogEnvVars,
-  requestEnvServiceVersion,
-  requestFunctionSelection,
-} from '../prompt'
+import * as prompt from '../prompt'
 
 import {
   makeCli,
@@ -63,7 +59,6 @@ describe('lambda', () => {
       const OLD_ENV = process.env
       beforeEach(() => {
         lambdaClientMock.reset()
-        jest.resetModules()
         process.env = {}
 
         mockLambdaClientCommands(lambdaClientMock)
@@ -781,19 +776,21 @@ describe('lambda', () => {
             VersionNumber: 1,
           },
         })
-        ;(requestAWSCredentials as any).mockImplementation(() => {
+        jest.spyOn(prompt, 'requestAWSCredentials').mockImplementation(async () => {
           process.env[AWS_ACCESS_KEY_ID_ENV_VAR] = mockAwsAccessKeyId
           process.env[AWS_SECRET_ACCESS_KEY_ENV_VAR] = mockAwsSecretAccessKey
           process.env[AWS_DEFAULT_REGION_ENV_VAR] = 'sa-east-1'
         })
-        ;(requestDatadogEnvVars as any).mockImplementation(() => {
+        jest.spyOn(prompt, 'requestDatadogEnvVars').mockImplementation(async () => {
           process.env[CI_SITE_ENV_VAR] = 'datadoghq.com'
           process.env[CI_API_KEY_ENV_VAR] = MOCK_DATADOG_API_KEY
         })
-        ;(requestFunctionSelection as any).mockImplementation(() => [
-          'arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world',
-          'arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world-2',
-        ])
+        jest
+          .spyOn(prompt, 'requestFunctionSelection')
+          .mockImplementation(async () => [
+            'arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world',
+            'arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world-2',
+          ])
         ;(requestConfirmation as any).mockImplementation(() => true)
 
         const cli = makeCli()
@@ -855,13 +852,13 @@ describe('lambda', () => {
             VersionNumber: 1,
           },
         })
-        ;(requestAWSCredentials as any).mockImplementation(() => {
+        jest.spyOn(prompt, 'requestAWSCredentials').mockImplementation(async () => {
           process.env[AWS_ACCESS_KEY_ID_ENV_VAR] = mockAwsAccessKeyId
           process.env[AWS_SECRET_ACCESS_KEY_ENV_VAR] = mockAwsSecretAccessKey
           process.env[AWS_DEFAULT_REGION_ENV_VAR] = 'sa-east-1'
           process.env[AWS_SESSION_TOKEN_ENV_VAR] = 'some-session-token'
         })
-        ;(requestDatadogEnvVars as any).mockImplementation(() => {
+        jest.spyOn(prompt, 'requestDatadogEnvVars').mockImplementation(async () => {
           process.env[CI_SITE_ENV_VAR] = 'datadoghq.com'
           process.env[CI_API_KEY_ENV_VAR] = MOCK_DATADOG_API_KEY
         })
@@ -889,7 +886,7 @@ describe('lambda', () => {
 
       test('aborts if a problem occurs while setting the AWS credentials interactively', async () => {
         ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({code: 'ENOENT'}))
-        ;(requestAWSCredentials as any).mockImplementation(() => Promise.reject('Unexpected error'))
+        jest.spyOn(prompt, 'requestAWSCredentials').mockImplementation(() => Promise.reject('Unexpected error'))
         const cli = makeCli()
         const context = createMockContext()
         const code = await cli.run(['lambda', 'instrument', '-i'], context)
@@ -911,7 +908,7 @@ describe('lambda', () => {
           [AWS_SECRET_ACCESS_KEY_ENV_VAR]: mockAwsSecretAccessKey,
           [AWS_DEFAULT_REGION_ENV_VAR]: 'sa,-east-1',
         }
-        ;(requestDatadogEnvVars as any).mockImplementation(() => Promise.reject('Unexpected error'))
+        jest.spyOn(prompt, 'requestDatadogEnvVars').mockImplementation(() => Promise.reject('Unexpected error'))
         const cli = makeCli()
         const context = createMockContext()
         const code = await cli.run(['lambda', 'instrument', '-i'], context)
@@ -955,20 +952,20 @@ describe('lambda', () => {
             VersionNumber: 1,
           },
         })
-        ;(requestAWSCredentials as any).mockImplementation(() => {
+        jest.spyOn(prompt, 'requestAWSCredentials').mockImplementation(async () => {
           process.env[AWS_ACCESS_KEY_ID_ENV_VAR] = mockAwsAccessKeyId
           process.env[AWS_SECRET_ACCESS_KEY_ENV_VAR] = mockAwsSecretAccessKey
           process.env[AWS_DEFAULT_REGION_ENV_VAR] = 'sa-east-1'
         })
-        ;(requestDatadogEnvVars as any).mockImplementation(() => {
+        jest.spyOn(prompt, 'requestDatadogEnvVars').mockImplementation(async () => {
           process.env[CI_SITE_ENV_VAR] = 'datadoghq.com'
           process.env[CI_API_KEY_ENV_VAR] = MOCK_DATADOG_API_KEY
         })
-        ;(requestFunctionSelection as any).mockImplementation(() => [
-          'arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world',
-        ])
+        jest
+          .spyOn(prompt, 'requestFunctionSelection')
+          .mockImplementation(async () => ['arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world'])
         ;(requestConfirmation as any).mockImplementation(() => true)
-        ;(requestEnvServiceVersion as any).mockImplementation(() => {
+        jest.spyOn(prompt, 'requestEnvServiceVersion').mockImplementation(async () => {
           process.env[ENVIRONMENT_ENV_VAR] = mockDatadogEnv
           process.env[SERVICE_ENV_VAR] = mockDatadogService
           process.env[VERSION_ENV_VAR] = mockDatadogVersion
@@ -1007,20 +1004,20 @@ describe('lambda', () => {
             VersionNumber: 1,
           },
         })
-        ;(requestAWSCredentials as any).mockImplementation(() => {
+        jest.spyOn(prompt, 'requestAWSCredentials').mockImplementation(async () => {
           process.env[AWS_ACCESS_KEY_ID_ENV_VAR] = mockAwsAccessKeyId
           process.env[AWS_SECRET_ACCESS_KEY_ENV_VAR] = mockAwsSecretAccessKey
           process.env[AWS_DEFAULT_REGION_ENV_VAR] = 'sa-east-1'
         })
-        ;(requestDatadogEnvVars as any).mockImplementation(() => {
+        jest.spyOn(prompt, 'requestDatadogEnvVars').mockImplementation(async () => {
           process.env[CI_SITE_ENV_VAR] = 'datadoghq.com'
           process.env[CI_API_KEY_ENV_VAR] = MOCK_DATADOG_API_KEY
         })
-        ;(requestFunctionSelection as any).mockImplementation(() => [
-          'arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world',
-        ])
+        jest
+          .spyOn(prompt, 'requestFunctionSelection')
+          .mockImplementation(async () => ['arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world'])
         ;(requestConfirmation as any).mockImplementation(() => true)
-        ;(requestEnvServiceVersion as any).mockImplementation(() => {
+        jest.spyOn(prompt, 'requestEnvServiceVersion').mockImplementation(async () => {
           process.env[ENVIRONMENT_ENV_VAR] = undefined
           process.env[SERVICE_ENV_VAR] = undefined
           process.env[VERSION_ENV_VAR] = undefined
@@ -1431,7 +1428,7 @@ describe('lambda', () => {
         lambdaClientMock.reset()
       })
 
-      test('uses config file settings', () => {
+      test('uses config file settings', async () => {
         process.env = {}
         const command = createCommand(InstrumentCommand)
         command['config']['flushMetricsToLogs'] = 'false'
@@ -1443,7 +1440,7 @@ describe('lambda', () => {
         command['config']['tracing'] = 'false'
         command['config']['logLevel'] = 'debug'
 
-        expect(command['getSettings']()).toEqual({
+        expect(await command['getSettings']()).toEqual({
           apmFlushDeadline: undefined,
           captureLambdaPayload: false,
           environment: undefined,
@@ -1462,7 +1459,7 @@ describe('lambda', () => {
         })
       })
 
-      test('prefers command line arguments over config file', () => {
+      test('prefers command line arguments over config file', async () => {
         process.env = {}
         const command = createCommand(InstrumentCommand)
         command['forwarder'] = 'my-forwarder'
@@ -1482,7 +1479,7 @@ describe('lambda', () => {
         command['apmFlushDeadline'] = '20'
         command['config']['apmFlushDeadline'] = '50'
 
-        expect(command['getSettings']()).toEqual({
+        expect(await command['getSettings']()).toEqual({
           apmFlushDeadline: '20',
           captureLambdaPayload: false,
           flushMetricsToLogs: false,
@@ -1496,7 +1493,7 @@ describe('lambda', () => {
         })
       })
 
-      test("returns undefined when layer version can't be parsed", () => {
+      test("returns undefined when layer version can't be parsed", async () => {
         process.env = {}
 
         const command = createCommand(InstrumentCommand)
@@ -1505,10 +1502,10 @@ describe('lambda', () => {
         } as any
         command['layerVersion'] = 'abd'
 
-        expect(command['getSettings']()).toBeUndefined()
+        expect(await command['getSettings']()).toBeUndefined()
       })
 
-      test("returns undefined when extension version can't be parsed", () => {
+      test("returns undefined when extension version can't be parsed", async () => {
         process.env = {}
 
         const command = createCommand(InstrumentCommand)
@@ -1517,10 +1514,10 @@ describe('lambda', () => {
         } as any
         command['extensionVersion'] = 'abd'
 
-        expect(command['getSettings']()).toBeUndefined()
+        expect(await command['getSettings']()).toBeUndefined()
       })
 
-      test('converts string boolean from command line and config file correctly', () => {
+      test('converts string boolean from command line and config file correctly', async () => {
         process.env = {}
         const command = createCommand(InstrumentCommand)
         const validSettings: InstrumentationSettings = {
@@ -1540,13 +1537,13 @@ describe('lambda', () => {
         command['config']['mergeXrayTraces'] = 'falSE'
         command['config']['tracing'] = 'TRUE'
 
-        expect(command['getSettings']()).toEqual(validSettings)
+        expect(await command['getSettings']()).toEqual(validSettings)
 
         command['config']['captureLambdaPayload'] = 'true'
         command['config']['flushMetricsToLogs'] = 'false'
         command['config']['mergeXrayTraces'] = 'false'
         command['config']['tracing'] = 'true'
-        expect(command['getSettings']()).toEqual(validSettings)
+        expect(await command['getSettings']()).toEqual(validSettings)
 
         validSettings.captureLambdaPayload = false
         validSettings.flushMetricsToLogs = true
@@ -1557,16 +1554,16 @@ describe('lambda', () => {
         command['flushMetricsToLogs'] = 'truE'
         command['mergeXrayTraces'] = 'TRUe'
         command['tracing'] = 'FALSE'
-        expect(command['getSettings']()).toEqual(validSettings)
+        expect(await command['getSettings']()).toEqual(validSettings)
 
         command['captureLambdaPayload'] = 'false'
         command['flushMetricsToLogs'] = 'true'
         command['mergeXrayTraces'] = 'true'
         command['tracing'] = 'false'
-        expect(command['getSettings']()).toEqual(validSettings)
+        expect(await command['getSettings']()).toEqual(validSettings)
       })
 
-      test('aborts early if converting string boolean has an invalid value', () => {
+      test('aborts early if converting string boolean has an invalid value', async () => {
         process.env = {}
         const stringBooleans: (keyof Omit<LambdaConfigOptions, 'functions' | 'interactive'>)[] = [
           'flushMetricsToLogs',
@@ -1576,14 +1573,14 @@ describe('lambda', () => {
         for (const option of stringBooleans) {
           let command = createCommand(InstrumentCommand)
           command['config'][option] = 'NotBoolean'
-          command['getSettings']()
+          await command['getSettings']()
 
           let output = command.context.stdout.toString()
           expect(output).toMatch(`[Error] Invalid boolean specified for ${option}.\n`)
 
           command = createCommand(InstrumentCommand)
           command[option] = 'NotBoolean'
-          command['getSettings']()
+          await command['getSettings']()
 
           output = command.context.stdout.toString()
           expect(output).toMatch(`Invalid boolean specified for ${option}.\n`)
@@ -1596,7 +1593,7 @@ describe('lambda', () => {
         let command = createCommand(InstrumentCommand)
         command['config']['region'] = 'ap-southeast-1'
         command['config']['functions'] = ['arn:aws:lambda:ap-southeast-1:123456789012:function:lambda-hello-world']
-        command['getSettings']()
+        await command['getSettings']()
         let output = command.context.stdout.toString()
         expect(output).toMatch(
           '[Warning] The environment, service and version tags have not been configured. Learn more about Datadog unified service tagging: https://docs.datadoghq.com/getting_started/tagging/unified_service_tagging/#serverless-environment.\n'
@@ -1607,7 +1604,7 @@ describe('lambda', () => {
         command['config']['functions'] = ['arn:aws:lambda:ap-southeast-1:123456789012:function:lambda-hello-world']
         command['config']['environment'] = 'b'
         command['config']['service'] = 'middletier'
-        command['getSettings']()
+        await command['getSettings']()
         output = command.context.stdout.toString()
         expect(output).toMatch(
           '[Warning] The version tag has not been configured. Learn more about Datadog unified service tagging: https://docs.datadoghq.com/getting_started/tagging/unified_service_tagging/#serverless-environment.\n'
@@ -1624,17 +1621,18 @@ describe('lambda', () => {
         command['config']['environment'] = 'staging'
         command['config']['version'] = '0.2'
         command['config']['extraTags'] = 'not@complying:illegal-chars-in-key,complies:valid-pair'
-        command['getSettings']()
+
+        await command['getSettings']()
         const output = command.context.stdout.toString()
         expect(output).toMatch('[Error] Extra tags do not comply with the <key>:<value> array.\n')
       })
     })
     describe('printPlannedActions', () => {
-      test('prints no output when list is empty', () => {
+      test('prints no output when list is empty', async () => {
         process.env = {}
         const command = createCommand(InstrumentCommand)
 
-        command['printPlannedActions']([])
+        await command['printPlannedActions']([])
         const output = command.context.stdout.toString()
         expect(output).toMatchInlineSnapshot(`
                                         "
@@ -1643,11 +1641,11 @@ describe('lambda', () => {
                                 `)
       })
 
-      test('prints log group actions', () => {
+      test('prints log group actions', async () => {
         process.env = {}
         const command = createCommand(InstrumentCommand)
 
-        command['printPlannedActions']([
+        await command['printPlannedActions']([
           {
             functionARN: 'my-func',
             lambdaConfig: {} as any,

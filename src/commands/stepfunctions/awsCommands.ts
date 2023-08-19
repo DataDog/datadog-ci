@@ -1,35 +1,21 @@
-import {
+import type {
   CloudWatchLogsClient,
-  CreateLogGroupCommand,
   CreateLogGroupCommandOutput,
-  DeleteSubscriptionFilterCommand,
   DeleteSubscriptionFilterCommandOutput,
-  DescribeSubscriptionFiltersCommand,
   DescribeSubscriptionFiltersCommandOutput,
-  PutSubscriptionFilterCommand,
   PutSubscriptionFilterCommandOutput,
 } from '@aws-sdk/client-cloudwatch-logs'
-import {
-  AttachRolePolicyCommand,
-  AttachRolePolicyCommandOutput,
-  CreatePolicyCommand,
-  CreatePolicyCommandOutput,
-  IAMClient,
-} from '@aws-sdk/client-iam'
-import {
-  DescribeStateMachineCommand,
+import type {AttachRolePolicyCommandOutput, CreatePolicyCommandOutput, IAMClient} from '@aws-sdk/client-iam'
+import type {
   DescribeStateMachineCommandOutput,
-  ListTagsForResourceCommand,
   ListTagsForResourceCommandOutput,
   Tag,
-  TagResourceCommand,
   TagResourceCommandOutput,
-  UntagResourceCommand,
   UntagResourceCommandOutput,
-  UpdateStateMachineCommand,
   UpdateStateMachineCommandOutput,
+  SFNClient,
 } from '@aws-sdk/client-sfn'
-import {SFNClient} from '@aws-sdk/client-sfn/dist-types/SFNClient'
+
 import {BaseContext} from 'clipanion'
 
 import {buildLogAccessPolicyName, displayChanges, StateMachineDefinitionType} from './helpers'
@@ -38,6 +24,8 @@ export const describeStateMachine = async (
   stepFunctionsClient: SFNClient,
   stepFunctionArn: string
 ): Promise<DescribeStateMachineCommandOutput> => {
+  const {DescribeStateMachineCommand} = await import('@aws-sdk/client-sfn')
+
   const input = {stateMachineArn: stepFunctionArn}
   const command = new DescribeStateMachineCommand(input)
   const data = await stepFunctionsClient.send(command)
@@ -49,6 +37,8 @@ export const listTagsForResource = async (
   stepFunctionsClient: SFNClient,
   stepFunctionArn: string
 ): Promise<ListTagsForResourceCommandOutput> => {
+  const {ListTagsForResourceCommand} = await import('@aws-sdk/client-sfn')
+
   const input = {resourceArn: stepFunctionArn}
   const command = new ListTagsForResourceCommand(input)
   const data = await stepFunctionsClient.send(command)
@@ -67,6 +57,8 @@ export const putSubscriptionFilter = async (
 ): Promise<PutSubscriptionFilterCommandOutput | undefined> => {
   // Running this function multiple times would not create duplicate filters (old filter with the same name would be overwritten).
   // However, two filters with the same destination forwarder can exist when the filter names are different.
+
+  const {PutSubscriptionFilterCommand} = await import('@aws-sdk/client-cloudwatch-logs')
 
   const input = {
     destinationArn: forwarderArn,
@@ -96,6 +88,8 @@ export const tagResource = async (
   context: BaseContext,
   dryRun: boolean
 ): Promise<TagResourceCommandOutput | undefined> => {
+  const {TagResourceCommand} = await import('@aws-sdk/client-sfn')
+
   const input = {
     resourceArn: stepFunctionArn,
     tags,
@@ -119,6 +113,8 @@ export const createLogGroup = async (
   context: BaseContext,
   dryRun: boolean
 ): Promise<CreateLogGroupCommandOutput | undefined> => {
+  const {CreateLogGroupCommand} = await import('@aws-sdk/client-cloudwatch-logs')
+
   const input = {
     logGroupName,
   }
@@ -149,6 +145,8 @@ export const createLogsAccessPolicy = async (
   context: BaseContext,
   dryRun: boolean
 ): Promise<CreatePolicyCommandOutput | undefined> => {
+  const {CreatePolicyCommand} = await import('@aws-sdk/client-iam')
+
   // according to https://docs.aws.amazon.com/step-functions/latest/dg/cw-logs.html#cloudwatch-iam-policy
   const logsAccessPolicy = {
     Version: '2012-10-17',
@@ -204,6 +202,8 @@ export const attachPolicyToStateMachineIamRole = async (
   context: BaseContext,
   dryRun: boolean
 ): Promise<AttachRolePolicyCommandOutput | undefined> => {
+  const {AttachRolePolicyCommand} = await import('@aws-sdk/client-iam')
+
   const roleName = describeStateMachineCommandOutput?.roleArn?.split('/')[1]
   const policyArn = `arn:aws:iam::${accountId}:policy/${buildLogAccessPolicyName(describeStateMachineCommandOutput)}`
 
@@ -231,6 +231,8 @@ export const enableStepFunctionLogs = async (
   context: BaseContext,
   dryRun: boolean
 ): Promise<UpdateStateMachineCommandOutput | undefined> => {
+  const {UpdateStateMachineCommand} = await import('@aws-sdk/client-sfn')
+
   const input = {
     stateMachineArn: stepFunction.stateMachineArn,
     loggingConfiguration: {
@@ -263,6 +265,8 @@ export const updateStateMachineDefinition = async (
   context: BaseContext,
   dryRun: boolean
 ): Promise<UpdateStateMachineCommandOutput | undefined> => {
+  const {UpdateStateMachineCommand} = await import('@aws-sdk/client-sfn')
+
   if (stepFunction === undefined) {
     return
   }
@@ -301,6 +305,8 @@ export const deleteSubscriptionFilter = async (
   context: BaseContext,
   dryRun: boolean
 ): Promise<DeleteSubscriptionFilterCommandOutput | undefined> => {
+  const {DeleteSubscriptionFilterCommand} = await import('@aws-sdk/client-cloudwatch-logs')
+
   const input = {
     filterName,
     logGroupName,
@@ -321,6 +327,8 @@ export const describeSubscriptionFilters = async (
   cloudWatchLogsClient: CloudWatchLogsClient,
   logGroupName: string
 ): Promise<DescribeSubscriptionFiltersCommandOutput> => {
+  const {DescribeSubscriptionFiltersCommand} = await import('@aws-sdk/client-cloudwatch-logs')
+
   const input = {logGroupName}
   const command = new DescribeSubscriptionFiltersCommand(input)
   const data = await cloudWatchLogsClient.send(command)
@@ -339,6 +347,8 @@ export const untagResource = async (
   context: BaseContext,
   dryRun: boolean
 ): Promise<UntagResourceCommandOutput | undefined> => {
+  const {UntagResourceCommand} = await import('@aws-sdk/client-sfn')
+
   const input = {
     resourceArn: stepFunctionArn,
     tagKeys,

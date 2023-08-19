@@ -2,16 +2,16 @@ import fs from 'fs'
 import os from 'os'
 import path from 'path'
 
+import type {APIHelper, Payload} from './interfaces'
+import type {XMLParser, XMLValidator} from 'fast-xml-parser'
+
 import chalk from 'chalk'
 import {Command, Option} from 'clipanion'
-import {XMLParser, XMLValidator} from 'fast-xml-parser'
-import glob from 'glob'
-import asyncPool from 'tiny-async-pool'
 import * as t from 'typanion'
 
 import {getCISpanTags} from '../../helpers/ci'
 import {getGitMetadata} from '../../helpers/git/format-git-span-data'
-import {SpanTags, RequestBuilder} from '../../helpers/interfaces'
+import type {SpanTags, RequestBuilder} from '../../helpers/interfaces'
 import {Logger, LogLevel} from '../../helpers/logger'
 import {retryRequest} from '../../helpers/retry'
 import {parseTags, parseMetrics} from '../../helpers/tags'
@@ -24,34 +24,19 @@ import {uploadToGitDB} from '../git-metadata/gitdb'
 import {isGitRepo} from '../git-metadata/library'
 
 import {apiConstructor, apiUrl, intakeUrl} from './api'
-import id from './id'
-import {APIHelper, Payload} from './interfaces'
-import {
-  renderCommandInfo,
-  renderDryRunUpload,
-  renderFailedUpload,
-  renderFailedGitDBSync,
-  renderInvalidFile,
-  renderRetriedUpload,
-  renderSuccessfulCommand,
-  renderSuccessfulGitDBSync,
-  renderSuccessfulUpload,
-  renderUpload,
-} from './renderer'
 import {isFile} from './utils'
 
 const TRACE_ID_HTTP_HEADER = 'x-datadog-trace-id'
 const PARENT_ID_HTTP_HEADER = 'x-datadog-parent-id'
 const errorCodesStopUpload = [400, 403]
 
-const validateXml = (xmlFilePath: string) => {
+const validateXml = (xmlFilePath: string, parser: XMLParser, validator: typeof XMLValidator) => {
   const xmlFileContentString = String(fs.readFileSync(xmlFilePath))
-  const validationOutput = XMLValidator.validate(xmlFileContentString)
+  const validationOutput = validator.validate(xmlFileContentString)
   if (validationOutput !== true) {
     return validationOutput.err.msg
   }
-  const xmlParser = new XMLParser()
-  const xmlFileJSON = xmlParser.parse(String(xmlFileContentString))
+  const xmlFileJSON = parser.parse(String(xmlFileContentString))
   if (!xmlFileJSON.testsuites && !xmlFileJSON.testsuite) {
     return 'Neither <testsuites> nor <testsuite> are the root tag.'
   }
@@ -136,6 +121,14 @@ export class UploadJUnitXMLCommand extends Command {
   private logger: Logger = new Logger((s: string) => this.context.stdout.write(s), LogLevel.INFO)
 
   public async execute() {
+    const {
+      renderCommandInfo,
+      renderFailedGitDBSync,
+      renderSuccessfulCommand,
+      renderSuccessfulGitDBSync,
+      renderSuccessfulUpload,
+    } = await import('./renderer')
+
     this.logger.setLogLevel(this.verbose ? LogLevel.DEBUG : LogLevel.INFO)
     this.logger.setShouldIncludeTime(this.verbose)
 
@@ -178,6 +171,8 @@ export class UploadJUnitXMLCommand extends Command {
 
     const initialTime = new Date().getTime()
 
+    const {default: asyncPool} = await import('tiny-async-pool')
+
     await asyncPool(this.maxConcurrency, payloads, upload)
 
     const totalTimeSeconds = (Date.now() - initialTime) / 1000
@@ -185,6 +180,7 @@ export class UploadJUnitXMLCommand extends Command {
 
     if (!this.skipGitMetadataUpload) {
       if (await isGitRepo()) {
+        const {default: id} = await import('./id')
         const traceId = id()
 
         const requestBuilder = getRequestBuilder({
@@ -256,6 +252,9 @@ export class UploadJUnitXMLCommand extends Command {
     reportTags: Record<string, string>,
     reportMetrics: Record<string, number>
   ): Promise<Payload[]> {
+    const {default: glob} = await import('glob')
+    const {renderInvalidFile} = await import('./renderer')
+
     const jUnitXMLFiles = (this.basePaths || [])
       .reduce((acc: string[], basePath: string) => {
         if (isFile(basePath)) {
@@ -266,8 +265,11 @@ export class UploadJUnitXMLCommand extends Command {
       }, [])
       .filter(isFile)
 
+    const {XMLParser, XMLValidator} = await import('fast-xml-parser')
+    const xmlParser = new XMLParser()
+
     const validUniqueFiles = [...new Set(jUnitXMLFiles)].filter((jUnitXMLFilePath) => {
-      const validationErrorMessage = validateXml(jUnitXMLFilePath)
+      const validationErrorMessage = validateXml(jUnitXMLFilePath, xmlParser, XMLValidator)
       if (validationErrorMessage) {
         this.context.stdout.write(renderInvalidFile(jUnitXMLFilePath, validationErrorMessage))
 
@@ -333,6 +335,8 @@ export class UploadJUnitXMLCommand extends Command {
   }
 
   private async uploadJUnitXML(api: APIHelper, jUnitXML: Payload) {
+    const {renderDryRunUpload, renderFailedUpload, renderRetriedUpload, renderUpload} = await import('./renderer')
+
     if (this.dryRun) {
       this.logger.info(renderDryRunUpload(jUnitXML))
 

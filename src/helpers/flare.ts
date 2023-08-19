@@ -5,9 +5,6 @@
 import fs from 'fs'
 import path from 'path'
 
-import axios from 'axios'
-import FormData from 'form-data'
-
 import {
   CI_SITE_ENV_VAR,
   DATADOG_SITE_EU1,
@@ -39,6 +36,9 @@ export const sendToDatadog = async (
   apiKey: string,
   rootFolderPath: string
 ) => {
+  const {default: axios} = await import('axios')
+  const {default: FormData} = await import('form-data')
+
   const endpointUrl = getEndpointUrl()
   const form = new FormData()
   form.append('case_id', caseId)
@@ -182,4 +182,39 @@ export const validateStartEndFlags = (start: string | undefined, end: string | u
   }
 
   return [startMillis, endMillis]
+}
+
+/**
+ * Generate unique file names
+ * If the original file name is unique, keep it as is
+ * Otherwise, replace separators in the file path with dashes
+ * @param filePaths the list of file paths
+ * @returns a mapping of file paths to new file names
+ */
+export const getUniqueFileNames = (filePaths: Set<string>) => {
+  // Count occurrences of each filename
+  const fileNameCount: {[fileName: string]: number} = {}
+  filePaths.forEach((filePath) => {
+    const fileName = path.basename(filePath)
+    const count = fileNameCount[fileName] || 0
+    fileNameCount[fileName] = count + 1
+  })
+
+  // Create new filenames
+  const filePathsToNewFileNames = new Map<string, string>()
+  filePaths.forEach((filePath) => {
+    const fileName = path.basename(filePath)
+    if (fileNameCount[fileName] > 1) {
+      // Trim leading and trailing '/'s and '\'s
+      const trimRegex = /^\/+|\/+$/g
+      const filePathTrimmed = filePath.replace(trimRegex, '')
+      // Replace '/'s and '\'s with '-'s
+      const newFileName = filePathTrimmed.split(path.sep).join('-')
+      filePathsToNewFileNames.set(filePath, newFileName)
+    } else {
+      filePathsToNewFileNames.set(filePath, fileName)
+    }
+  })
+
+  return filePathsToNewFileNames
 }

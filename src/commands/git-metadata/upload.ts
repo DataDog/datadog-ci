@@ -1,13 +1,16 @@
+import type {CommitInfo} from './interfaces'
+
 import chalk from 'chalk'
 import {Command, Option} from 'clipanion'
 
 import {DATADOG_SITE_GOV} from '../../constants'
-import {ApiKeyValidator, newApiKeyValidator} from '../../helpers/apikey'
+import type {ApiKeyValidator} from '../../helpers/apikey'
 import {InvalidConfigurationError} from '../../helpers/errors'
 import {ICONS} from '../../helpers/formatting'
-import {RequestBuilder} from '../../helpers/interfaces'
+import type {RequestBuilder} from '../../helpers/interfaces'
 import {Logger, LogLevel} from '../../helpers/logger'
-import {MetricsLogger, getMetricsLogger} from '../../helpers/metrics'
+import type {MetricsLogger} from '../../helpers/metrics'
+import {getMetricsLogger} from '../../helpers/metrics'
 import {UploadStatus} from '../../helpers/upload'
 import {getRequestBuilder, timedExecAsync} from '../../helpers/utils'
 import {version} from '../../helpers/version'
@@ -15,7 +18,6 @@ import {version} from '../../helpers/version'
 import {apiHost, datadogSite, getBaseIntakeUrl} from './api'
 import {getCommitInfo, newSimpleGit} from './git'
 import {uploadToGitDB} from './gitdb'
-import {CommitInfo} from './interfaces'
 import {uploadRepository} from './library'
 import {
   renderCommandInfo,
@@ -87,11 +89,14 @@ export class UploadCommand extends Command {
       this.logger.warn('Option --git-sync is deprecated as it is now the default behavior')
     }
 
-    const metricsLogger = getMetricsLogger({
+    const metricsLogger = await getMetricsLogger({
       datadogSite: process.env.DATADOG_SITE,
       defaultTags: [`cli_version:${this.cliVersion}`],
       prefix: 'datadog.ci.report_commits.',
     })
+
+    const {newApiKeyValidator} = await import('../../helpers/apikey')
+
     const apiKeyValidator = newApiKeyValidator({
       apiKey: this.config.apiKey,
       datadogSite,

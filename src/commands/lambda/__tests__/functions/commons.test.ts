@@ -13,6 +13,7 @@ import 'aws-sdk-client-mock-jest'
 import {API_KEY_ENV_VAR, CI_API_KEY_ENV_VAR, CI_SITE_ENV_VAR} from '../../../../constants'
 import {createCommand} from '../../../../helpers/__tests__/fixtures'
 
+import type {LayerKey, Runtime} from '../../constants'
 import {
   CI_API_KEY_SECRET_ARN_ENV_VAR,
   CI_KMS_API_KEY_ENV_VAR,
@@ -22,10 +23,8 @@ import {
   EXTRA_TAGS_REG_EXP,
   GOVCLOUD_LAYER_AWS_ACCOUNT,
   LAMBDA_HANDLER_ENV_VAR,
-  LayerKey,
   LAYER_LOOKUP,
   MERGE_XRAY_TRACES_ENV_VAR,
-  Runtime,
   TRACE_ENABLED_ENV_VAR,
 } from '../../constants'
 import {
@@ -46,7 +45,7 @@ import {
   maskConfig,
 } from '../../functions/commons'
 import {InstrumentCommand} from '../../instrument'
-import {FunctionConfiguration} from '../../interfaces'
+import type {FunctionConfiguration} from '../../interfaces'
 
 import {
   MOCK_LAMBDA_CONFIG,
@@ -305,7 +304,6 @@ describe('commons', () => {
     const OLD_ENV = process.env
 
     beforeEach(() => {
-      jest.resetModules()
       process.env = {}
     })
     afterEach(() => {
@@ -315,7 +313,7 @@ describe('commons', () => {
     // ignore reading `.aws/config` `.aws/credentials` files
     ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({code: 'ENOENT'}))
 
-    test('returns credentials when `fromNodeProviderChain` returns a succesful promise', async () => {
+    test('returns credentials when `fromNodeProviderChain` returns a successful promise', async () => {
       ;(fromNodeProviderChain as any).mockImplementation(() => () =>
         Promise.resolve({
           accessKeyId: mockAwsAccessKeyId,
@@ -348,7 +346,6 @@ describe('commons', () => {
   describe('isMissingDatadogEnvVars', () => {
     const OLD_ENV = process.env
     beforeEach(() => {
-      jest.resetModules()
       process.env = {}
     })
     afterAll(() => {
@@ -404,7 +401,6 @@ describe('commons', () => {
   describe('isMissingAnyDatadogApiKeyEnvVar', () => {
     const OLD_ENV = process.env
     beforeEach(() => {
-      jest.resetModules()
       process.env = {}
     })
     afterAll(() => {
@@ -439,7 +435,6 @@ describe('commons', () => {
   describe('getLayerArn', () => {
     const OLD_ENV = process.env
     beforeEach(() => {
-      jest.resetModules()
       process.env = {}
     })
     afterAll(() => {
@@ -588,7 +583,6 @@ describe('commons', () => {
   describe('getLayerNameWithVersion', () => {
     const OLD_ENV = process.env
     beforeEach(() => {
-      jest.resetModules()
       process.env = {}
     })
     afterAll(() => {
@@ -659,7 +653,6 @@ describe('commons', () => {
     beforeEach(() => {
       cloudWatchLogsClientMock.reset()
       lambdaClientMock.reset()
-      jest.resetModules()
       process.env = {}
     })
     afterAll(() => {
@@ -716,7 +709,6 @@ describe('commons', () => {
     beforeEach(() => {
       cloudWatchLogsClientMock.reset()
       lambdaClientMock.reset()
-      jest.resetModules()
       process.env = {}
     })
     afterAll(() => {

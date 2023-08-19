@@ -1,3 +1,6 @@
+import type {StateMachineDefinitionType} from '../helpers'
+import type {DescribeStateMachineCommandOutput} from '@aws-sdk/client-sfn'
+
 import {
   CloudWatchLogsClient,
   CreateLogGroupCommand,
@@ -12,7 +15,6 @@ import {
   UntagResourceCommand,
   UpdateStateMachineCommand,
   SFNClient,
-  DescribeStateMachineCommandOutput,
 } from '@aws-sdk/client-sfn'
 import {mockClient} from 'aws-sdk-client-mock'
 
@@ -31,7 +33,7 @@ import {
   attachPolicyToStateMachineIamRole,
   updateStateMachineDefinition,
 } from '../awsCommands'
-import {buildLogAccessPolicyName, StateMachineDefinitionType} from '../helpers'
+import {buildLogAccessPolicyName} from '../helpers'
 
 describe('awsCommands test', () => {
   const expectedResp = {fakeKey: 'fakeValue'} as any
@@ -54,7 +56,6 @@ describe('awsCommands test', () => {
     mockedStepFunctionsClient.reset()
     mockedCloudWatchLogsClient.reset()
     mockedIamClient.reset()
-    jest.resetModules()
     process.env = {}
 
     mockedContext = createMockContext()

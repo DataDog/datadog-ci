@@ -1,8 +1,5 @@
-import {getProxyAgent} from '../../helpers/utils'
-
-import {APIHelper, getApiHelper, isForbiddenError} from './api'
-import {CiError, CriticalError} from './errors'
-import {
+import type {APIHelper} from './api'
+import type {
   MainReporter,
   Reporter,
   Result,
@@ -17,16 +14,18 @@ import {
   UserConfigOverride,
   WrapperConfig,
 } from './interfaces'
-import {DefaultReporter, getTunnelReporter} from './reporters/default'
-import {JUnitReporter} from './reporters/junit'
-import {DEFAULT_COMMAND_CONFIG, MAX_TESTS_TO_TRIGGER} from './run-tests-command'
-import {Tunnel} from './tunnel'
+import type {Tunnel} from './tunnel'
+import type {InitialSummary} from './utils'
+
+import {getProxyAgent} from '../../helpers/utils'
+
+import {DEFAULT_COMMAND_CONFIG, MAX_TESTS_TO_TRIGGER} from './constants'
+import {CiError, CriticalError} from './errors'
 import {
   getReporter,
   getOrgSettings,
   getSuites,
   getTestsToTrigger,
-  InitialSummary,
   renderResults,
   runTests,
   waitForResults,
@@ -43,6 +42,8 @@ export const executeTests = async (
   results: Result[]
   summary: Summary
 }> => {
+  const {getApiHelper, isForbiddenError} = await import('./api')
+
   const api = getApiHelper(config)
 
   const publicIdsFromCli = config.publicIds.map((id) => ({
@@ -112,6 +113,9 @@ export const executeTests = async (
   const publicIdsToTrigger = tests.map(({public_id}) => public_id)
 
   if (config.tunnel) {
+    const {Tunnel} = await import('./tunnel')
+    const {getTunnelReporter} = await import('./reporters/default')
+
     let presignedURL: string
     try {
       // Get the pre-signed URL to connect to the tunnel service
@@ -246,6 +250,9 @@ export const execute = async (
     suites?: Suite[]
   }
 ): Promise<0 | 1> => {
+  const {DefaultReporter} = await import('./reporters/default')
+  const {JUnitReporter} = await import('./reporters/junit')
+
   const startTime = Date.now()
   const localConfig = {
     ...DEFAULT_COMMAND_CONFIG,

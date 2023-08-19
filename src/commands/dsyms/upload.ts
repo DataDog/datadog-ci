@@ -1,43 +1,20 @@
 import {promises} from 'fs'
 import path from 'path'
 
-import chalk from 'chalk'
-import {Command, Option} from 'clipanion'
-import glob from 'glob'
-import asyncPool from 'tiny-async-pool'
+import type {ArchSlice, Dsym} from './interfaces'
 
-import {ApiKeyValidator, newApiKeyValidator} from '../../helpers/apikey'
+import {Command, Option} from 'clipanion'
+
+import type {ApiKeyValidator} from '../../helpers/apikey'
 import {InvalidConfigurationError} from '../../helpers/errors'
-import {RequestBuilder} from '../../helpers/interfaces'
-import {getMetricsLogger, MetricsLogger} from '../../helpers/metrics'
-import {upload, UploadStatus} from '../../helpers/upload'
-import {buildPath, getRequestBuilder, resolveConfigFromFileAndEnvironment} from '../../helpers/utils'
+import type {RequestBuilder} from '../../helpers/interfaces'
+import type {MetricsLogger} from '../../helpers/metrics'
+import {getMetricsLogger} from '../../helpers/metrics'
+import type {UploadStatus} from '../../helpers/upload'
 import * as validation from '../../helpers/validation'
-import {checkAPIKeyOverride} from '../../helpers/validation'
 import {version} from '../../helpers/version'
 
-import {ArchSlice, CompressedDsym, Dsym} from './interfaces'
-import {
-  renderCommandDetail,
-  renderCommandInfo,
-  renderConfigurationError,
-  renderDSYMSlimmingFailure,
-  renderFailedUpload,
-  renderInvalidDsymWarning,
-  renderRetriedUpload,
-  renderSuccessfulCommand,
-  renderUpload,
-} from './renderer'
-import {
-  createUniqueTmpDirectory,
-  deleteDirectory,
-  executeDwarfdump,
-  executeLipo,
-  getBaseIntakeUrl,
-  isZipFile,
-  unzipArchiveToDirectory,
-  zipDirectoryToArchive,
-} from './utils'
+import {CompressedDsym} from './interfaces'
 
 export class UploadCommand extends Command {
   public static paths = [['dsyms', 'upload']]
@@ -69,6 +46,14 @@ export class UploadCommand extends Command {
   }
 
   public async execute() {
+    const {newApiKeyValidator} = await import('../../helpers/apikey')
+    const {checkAPIKeyOverride} = await import('../../helpers/validation')
+    const {buildPath, resolveConfigFromFileAndEnvironment} = await import('../../helpers/utils')
+    const {createUniqueTmpDirectory, deleteDirectory, isZipFile, unzipArchiveToDirectory} = await import('./utils')
+    const {renderCommandDetail, renderCommandInfo, renderConfigurationError, renderSuccessfulCommand} = await import(
+      './renderer'
+    )
+
     // Normalizing the basePath to resolve .. and .
     this.basePath = path.posix.normalize(this.basePath)
     this.context.stdout.write(renderCommandInfo(this.basePath, this.maxConcurrency, this.dryRun))
@@ -88,7 +73,7 @@ export class UploadCommand extends Command {
       }
     )
 
-    const metricsLogger = getMetricsLogger({
+    const metricsLogger = await getMetricsLogger({
       apiKey: this.config.apiKey,
       datadogSite: this.config.datadogSite,
       defaultTags: [`cli_version:${this.cliVersion}`],
@@ -121,9 +106,11 @@ export class UploadCommand extends Command {
     // Compress each dSYM into single `.zip` archive.
     const compressedDSYMs = await this.compressDSYMsToDirectory(slimDSYMs, uploadDirectory)
 
-    const requestBuilder = this.getRequestBuilder()
-    const uploadDSYM = this.uploadDSYM(requestBuilder, metricsLogger, apiKeyValidator)
+    const requestBuilder = await this.getRequestBuilder()
+    const uploadDSYM = await this.getDSYMUploader(requestBuilder, metricsLogger, apiKeyValidator)
     try {
+      const {default: asyncPool} = await import('tiny-async-pool')
+
       const results = await asyncPool(this.maxConcurrency, compressedDSYMs, uploadDSYM)
       const totalTime = (Date.now() - initialTime) / 1000
       this.context.stdout.write(renderSuccessfulCommand(results, totalTime, this.dryRun))
@@ -149,6 +136,9 @@ export class UploadCommand extends Command {
   }
 
   private compressDSYMsToDirectory = async (dsyms: Dsym[], directoryPath: string): Promise<CompressedDsym[]> => {
+    const {buildPath} = await import('../../helpers/utils')
+    const {zipDirectoryToArchive} = await import('./utils')
+
     await promises.mkdir(directoryPath, {recursive: true})
 
     return Promise.all(
@@ -162,6 +152,11 @@ export class UploadCommand extends Command {
   }
 
   private findDSYMsInDirectory = async (directoryPath: string): Promise<Dsym[]> => {
+    const {default: glob} = await import('glob')
+    const {renderInvalidDsymWarning} = await import('./renderer')
+    const {buildPath} = await import('../../helpers/utils')
+    const {executeDwarfdump} = await import('./utils')
+
     const dsyms: Dsym[] = []
     for (const dSYMPath of glob.sync(buildPath(directoryPath, '**/*.dSYM'))) {
       try {
@@ -176,10 +171,14 @@ export class UploadCommand extends Command {
     return Promise.all(dsyms)
   }
 
-  private getRequestBuilder(): RequestBuilder {
+  private async getRequestBuilder(): Promise<RequestBuilder> {
     if (!this.config.apiKey) {
+      const {default: chalk} = await import('chalk')
       throw new InvalidConfigurationError(`Missing ${chalk.bold('DATADOG_API_KEY')} in your environment.`)
     }
+
+    const {getRequestBuilder} = await import('../../helpers/utils')
+    const {getBaseIntakeUrl} = await import('./utils')
 
     return getRequestBuilder({
       apiKey: this.config.apiKey,
@@ -222,6 +221,11 @@ export class UploadCommand extends Command {
    * - create `<intermediate path>/<uuid2>.dSYM/Contents/Resources/DWARF/Foo` for `x86_64`.
    */
   private thinDSYM = async (dsym: Dsym, intermediatePath: string): Promise<Dsym[]> => {
+    const {default: glob} = await import('glob')
+    const {renderDSYMSlimmingFailure} = await import('./renderer')
+    const {buildPath} = await import('../../helpers/utils')
+    const {executeLipo} = await import('./utils')
+
     const slimmedDSYMs: Dsym[] = []
     for (const slice of dsym.slices) {
       try {
@@ -273,11 +277,14 @@ export class UploadCommand extends Command {
     return Promise.all(slimDSYMs)
   }
 
-  private uploadDSYM(
+  private async getDSYMUploader(
     requestBuilder: RequestBuilder,
     metricsLogger: MetricsLogger,
     apiKeyValidator: ApiKeyValidator
-  ): (dSYM: CompressedDsym) => Promise<UploadStatus> {
+  ): Promise<(dSYM: CompressedDsym) => Promise<UploadStatus>> {
+    const {renderFailedUpload, renderRetriedUpload, renderUpload} = await import('./renderer')
+    const {upload, UploadStatus} = await import('../../helpers/upload')
+
     return async (dSYM: CompressedDsym) => {
       const payload = dSYM.asMultipartPayload()
       if (this.dryRun) {

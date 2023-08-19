@@ -1,5 +1,12 @@
-import {CloudWatchLogsClient} from '@aws-sdk/client-cloudwatch-logs'
-import {
+import type {LayerKey, Runtime} from '../constants'
+import type {
+  FunctionConfiguration,
+  InstrumentationSettings,
+  LogGroupConfiguration,
+  TagConfiguration,
+} from '../interfaces'
+import type {CloudWatchLogsClient} from '@aws-sdk/client-cloudwatch-logs'
+import type {
   LambdaClient,
   FunctionConfiguration as LFunctionConfiguration,
   UpdateFunctionConfigurationCommandInput,
@@ -36,7 +43,6 @@ import {
   FLUSH_TO_LOG_ENV_VAR,
   KMS_API_KEY_ENV_VAR,
   LAMBDA_HANDLER_ENV_VAR,
-  LayerKey,
   LAYER_LOOKUP,
   LOG_LEVEL_ENV_VAR,
   MERGE_XRAY_TRACES_ENV_VAR,
@@ -44,13 +50,11 @@ import {
   PROFILER_ENV_VAR,
   PROFILER_PATH_ENV_VAR,
   PYTHON_HANDLER_LOCATION,
-  Runtime,
   RuntimeType,
   RUNTIME_LOOKUP,
   TRACE_ENABLED_ENV_VAR,
   APM_FLUSH_DEADLINE_MILLISECONDS_ENV_VAR,
 } from '../constants'
-import {FunctionConfiguration, InstrumentationSettings, LogGroupConfiguration, TagConfiguration} from '../interfaces'
 import {calculateLogGroupUpdateRequest} from '../loggroup'
 import {calculateTagUpdateRequest} from '../tags'
 
@@ -294,6 +298,7 @@ export const calculateUpdateRequest = async (
     if (settings.layerVersion !== undefined || settings.interactive) {
       layerOrTraceVersion = settings.layerVersion
       if (settings.interactive && !settings.layerVersion) {
+        //
         layerOrTraceVersion = await findLatestLayerVersion(config.Runtime as LayerKey, region)
       }
       fullLambdaLibraryLayerARN = `${lambdaLibraryLayerArn}:${layerOrTraceVersion}`
@@ -307,6 +312,7 @@ export const calculateUpdateRequest = async (
   if (settings.extensionVersion !== undefined || settings.interactive) {
     extensionVersion = settings.extensionVersion
     if (settings.interactive && !settings.extensionVersion) {
+      //
       extensionVersion = await findLatestLayerVersion(EXTENSION_LAYER_KEY as LayerKey, region)
     }
     fullExtensionLayerARN = `${lambdaExtensionLayerArn}:${extensionVersion}`
@@ -316,7 +322,7 @@ export const calculateUpdateRequest = async (
   // Special handling for .NET and Java to support universal instrumentation
   if (runtimeType === RuntimeType.DOTNET || runtimeType === RuntimeType.JAVA) {
     if (layerOrTraceVersion && isExtensionCompatibleWithUniversalInstrumentation(runtimeType, extensionVersion)) {
-      // If the user configures the trace version and the extension support univeral instrumenation
+      // If the user configures the trace version and the extension support universal instrumentation
       // Then check whether the trace and extension are compatible with each other
       if (isTracerCompatibleWithExtension(runtimeType, layerOrTraceVersion)) {
         needsUpdate = true

@@ -1,6 +1,7 @@
 import {spawn} from 'child_process'
-import crypto from 'crypto'
 import os from 'os'
+
+import type {APIHelper, Payload, Provider} from './interfaces'
 
 import chalk from 'chalk'
 import {Command, Option} from 'clipanion'
@@ -9,7 +10,7 @@ import {retryRequest} from '../../helpers/retry'
 import {parseTags} from '../../helpers/tags'
 
 import {apiConstructor} from './api'
-import {APIHelper, CIRCLECI, JENKINS, Payload, Provider, SUPPORTED_PROVIDERS} from './interfaces'
+import {CIRCLECI, JENKINS, SUPPORTED_PROVIDERS} from './interfaces'
 
 // We use 127 as exit code for invalid commands since that is what *sh terminals return
 const BAD_COMMAND_EXIT_CODE = 127
@@ -51,6 +52,8 @@ export class TraceCommand extends Command {
   }
 
   public async execute() {
+    const crypto = await import('crypto')
+
     if (!this.command || !this.command.length) {
       this.context.stderr.write('Missing command to run\n')
 

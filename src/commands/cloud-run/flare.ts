@@ -1,16 +1,14 @@
-import IService = google.cloud.run.v2.IService
-import IContainer = google.cloud.run.v2.IContainer
 import fs from 'fs'
 import path from 'path'
 import process from 'process'
 import util from 'util'
 
-import {Logging} from '@google-cloud/logging'
-import {RevisionsClient, ServicesClient} from '@google-cloud/run'
-import {google} from '@google-cloud/run/build/protos/protos'
-import chalk from 'chalk'
+import type {CloudRunLog, LogConfig} from './interfaces'
+import type {Logging} from '@google-cloud/logging'
+import type {ServicesClient} from '@google-cloud/run'
+import type {google} from '@google-cloud/run/build/protos/protos'
+
 import {Command, Option} from 'clipanion'
-import {GoogleAuth} from 'google-auth-library'
 
 import {
   ADDITIONAL_FILES_DIRECTORY,
@@ -22,19 +20,15 @@ import {
   LOGS_DIRECTORY,
   PROJECT_FILES_DIRECTORY,
 } from '../../constants'
-import {getProjectFiles, sendToDatadog, validateFilePath, validateStartEndFlags} from '../../helpers/flare'
 import {createDirectories, deleteFolder, writeFile, zipContents} from '../../helpers/fs'
 import {requestConfirmation, requestFilePath} from '../../helpers/prompt'
-import * as helpersRenderer from '../../helpers/renderer'
-import {renderAdditionalFiles, renderProjectFiles} from '../../helpers/renderer'
 import {formatBytes, maskString} from '../../helpers/utils'
 import {version} from '../../helpers/version'
 
-import {getUniqueFileNames} from '../lambda/flare'
-
 import {SKIP_MASKING_CLOUDRUN_ENV_VARS} from './constants'
-import {CloudRunLog, LogConfig} from './interfaces'
-import {renderAuthenticationInstructions} from './renderer'
+
+type IService = google.cloud.run.v2.IService
+type IContainer = google.cloud.run.v2.IContainer
 
 const SERVICE_CONFIG_FILE_NAME = 'service_config.json'
 const FLARE_ZIP_FILE_NAME = 'cloud-run-flare-output.zip'
@@ -85,42 +79,49 @@ export class CloudRunFlareCommand extends Command {
    * @returns 0 if the command ran successfully, 1 otherwise.
    */
   public async execute() {
-    this.context.stdout.write(helpersRenderer.renderFlareHeader('Cloud Run', this.isDryRun))
+    const {default: chalk} = await import('chalk')
+    const {ServicesClient} = await import('@google-cloud/run')
+    const {getProjectFiles, getUniqueFileNames, sendToDatadog, validateFilePath, validateStartEndFlags} = await import(
+      '../../helpers/flare'
+    )
+    const {renderAdditionalFiles, renderProjectFiles, renderFlareHeader, renderError, renderSoftWarning} = await import(
+      '../../helpers/renderer'
+    )
+
+    this.context.stdout.write(renderFlareHeader('Cloud Run', this.isDryRun))
 
     const errorMessages: string[] = []
     // Validate service
     if (this.service === undefined) {
-      errorMessages.push(helpersRenderer.renderError('No service specified. [-s,--service]'))
+      errorMessages.push(renderError('No service specified. [-s,--service]'))
     }
 
     // Validate project
     if (this.project === undefined) {
-      errorMessages.push(helpersRenderer.renderError('No project specified. [-p,--project]'))
+      errorMessages.push(renderError('No project specified. [-p,--project]'))
     }
 
     // Validate region
     if (this.region === undefined) {
-      errorMessages.push(helpersRenderer.renderError('No region specified. [-r,--region]'))
+      errorMessages.push(renderError('No region specified. [-r,--region]'))
     }
 
     // Validate Datadog API key
     this.apiKey = process.env[CI_API_KEY_ENV_VAR] ?? process.env[API_KEY_ENV_VAR]
     if (this.apiKey === undefined) {
       errorMessages.push(
-        helpersRenderer.renderError(
-          'No Datadog API key specified. Set an API key with the DATADOG_API_KEY environment variable.'
-        )
+        renderError('No Datadog API key specified. Set an API key with the DATADOG_API_KEY environment variable.')
       )
     }
 
     // Validate case ID
     if (this.caseId === undefined) {
-      errorMessages.push(helpersRenderer.renderError('No case ID specified. [-c,--case-id]'))
+      errorMessages.push(renderError('No case ID specified. [-c,--case-id]'))
     }
 
     // Validate email
     if (this.email === undefined) {
-      errorMessages.push(helpersRenderer.renderError('No email specified. [-e,--email]'))
+      errorMessages.push(renderError('No email specified. [-e,--email]'))
     }
 
     // Validate start/end flags if both are specified
@@ -130,7 +131,7 @@ export class CloudRunFlareCommand extends Command {
       ;[startMillis, endMillis] = validateStartEndFlags(this.start, this.end)
     } catch (err) {
       if (err instanceof Error) {
-        errorMessages.push(helpersRenderer.renderError(err.message))
+        errorMessages.push(renderError(err.message))
       }
     }
 
@@ -147,6 +148,7 @@ export class CloudRunFlareCommand extends Command {
     this.context.stdout.write(chalk.bold('\n🔑 Verifying GCP credentials...\n'))
     const authenticated = await checkAuthentication()
     if (!authenticated) {
+      const {renderAuthenticationInstructions} = await import('./renderer')
       this.context.stderr.write(renderAuthenticationInstructions())
 
       return 1
@@ -156,12 +158,12 @@ export class CloudRunFlareCommand extends Command {
     // Get and print service configuration
     this.context.stdout.write(chalk.bold('\n🔍 Fetching service configuration...\n'))
     const runClient = new ServicesClient()
-    let config: IService
+    let config: IService = {}
     try {
       config = await getCloudRunServiceConfig(runClient, this.service!, this.project!, this.region!)
     } catch (err) {
       if (err instanceof Error) {
-        this.context.stderr.write(helpersRenderer.renderError(`Unable to fetch service configuration: ${err.message}`))
+        this.context.stderr.write(renderError(`Unable to fetch service configuration: ${err.message}`))
       }
 
       return 1
@@ -191,7 +193,7 @@ export class CloudRunFlareCommand extends Command {
       confirmAdditionalFiles = await requestConfirmation('Do you want to specify any additional files to flare?', false)
     } catch (err) {
       if (err instanceof Error) {
-        this.context.stderr.write(helpersRenderer.renderError(err.message))
+        this.context.stderr.write(renderError(err.message))
       }
 
       return 1
@@ -204,7 +206,7 @@ export class CloudRunFlareCommand extends Command {
         filePath = await requestFilePath()
       } catch (err) {
         if (err instanceof Error) {
-          this.context.stderr.write(helpersRenderer.renderError(err.message))
+          this.context.stderr.write(renderError(err.message))
         }
 
         return 1
@@ -235,12 +237,14 @@ export class CloudRunFlareCommand extends Command {
       this.context.stdout.write(`• Found ${revisions.length} revisions\n`)
     } catch (err) {
       const errorDetails = err instanceof Error ? err.message : ''
-      this.context.stdout.write(helpersRenderer.renderSoftWarning(`Unable to fetch recent revisions. ${errorDetails}`))
+      this.context.stdout.write(renderSoftWarning(`Unable to fetch recent revisions. ${errorDetails}`))
     }
 
     // Get logs
     const logFileMappings = new Map<string, CloudRunLog[]>()
     if (this.withLogs) {
+      const {Logging} = await import('@google-cloud/logging')
+
       this.context.stdout.write(chalk.bold('\n📖 Getting logs...\n'))
 
       const logClient = new Logging({projectId: this.project})
@@ -333,9 +337,7 @@ export class CloudRunFlareCommand extends Command {
         this.context.stdout.write(`• Saved insights file to ./${INSIGHTS_FILE_NAME}\n`)
       } catch (err) {
         const errorDetails = err instanceof Error ? err.message : ''
-        this.context.stdout.write(
-          helpersRenderer.renderSoftWarning(`Unable to create INSIGHTS.md file. ${errorDetails}`)
-        )
+        this.context.stdout.write(renderSoftWarning(`Unable to create INSIGHTS.md file. ${errorDetails}`))
       }
 
       // Exit if dry run
@@ -375,7 +377,7 @@ export class CloudRunFlareCommand extends Command {
       deleteFolder(rootFolderPath)
     } catch (err) {
       if (err instanceof Error) {
-        this.context.stderr.write(helpersRenderer.renderError(err.message))
+        this.context.stderr.write(renderError(err.message))
       }
 
       return 1
@@ -390,6 +392,8 @@ export class CloudRunFlareCommand extends Command {
  * @returns true if the user is authenticated, false otherwise
  */
 export const checkAuthentication = async () => {
+  const {GoogleAuth} = await import('google-auth-library')
+
   const auth = new GoogleAuth()
   try {
     await auth.getApplicationDefault()
@@ -586,6 +590,8 @@ export const saveLogsFile = (logs: CloudRunLog[], filePath: string) => {
  * @returns a string array of recent revisions and their deployment timestamp
  */
 export const getRecentRevisions = async (service: string, location: string, project: string) => {
+  const {RevisionsClient} = await import('@google-cloud/run')
+
   const client = new RevisionsClient()
   const request = {
     parent: client.servicePath(project, location, service),

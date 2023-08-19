@@ -1,13 +1,28 @@
-import {Interface as ReadLineInterface} from 'readline'
+import type inquirer from 'inquirer'
+import type Paginator from 'inquirer/lib/utils/paginator'
+import type {Interface as ReadLineInterface} from 'readline'
 
-import inquirer from 'inquirer'
 import Prompt from 'inquirer/lib/prompts/base'
-import Paginator from 'inquirer/lib/utils/paginator'
 
 /**
  * The question-options for the `ChoicePrompt<T>`.
  */
 type Question = inquirer.CheckboxQuestionOptions<inquirer.Answers>
+
+type CheckboxPlusPromptOptions = Question & {
+  choices: string[]
+  highlight?: boolean
+  searchable?: boolean
+  defaults?: string[]
+  pageSize: number
+  source: (answersSoFar: inquirer.Answers, input: string) => Promise<any[]>
+}
+
+declare module 'inquirer' {
+  interface QuestionMap {
+    checkboxPlus: CheckboxPlusPromptOptions & {type: 'checkbox-plus'}
+  }
+}
 
 /**
  * Represents a prompt which provides a set of choices to check.

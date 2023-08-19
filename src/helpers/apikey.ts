@@ -1,6 +1,7 @@
-import {AxiosError, default as axios} from 'axios'
+import type {AxiosError} from 'axios'
+import type {BufferedMetricsLogger} from 'datadog-metrics'
+
 import chalk from 'chalk'
-import {BufferedMetricsLogger} from 'datadog-metrics'
 
 import {InvalidConfigurationError} from './errors'
 
@@ -68,6 +69,8 @@ class ApiKeyValidatorImplem {
   }
 
   private async validateApiKey(): Promise<boolean> {
+    const {default: axios} = await import('axios')
+
     try {
       const response = await axios.get(this.getApiKeyValidationURL(), {
         headers: {

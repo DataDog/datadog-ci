@@ -2,11 +2,12 @@ import fs, {existsSync} from 'fs'
 import {promisify} from 'util'
 
 import type {SpanTag, SpanTags} from './interfaces'
+import type * as axs from 'axios'
+import type {BaseContext, CommandClass} from 'clipanion'
+import type * as proxyAgent from 'proxy-agent'
 
-import {AxiosRequestConfig, default as axios} from 'axios'
-import {BaseContext, CommandClass, Cli} from 'clipanion'
+import {Cli} from 'clipanion'
 import deepExtend from 'deep-extend'
-import {ProxyAgent} from 'proxy-agent'
 
 export const DEFAULT_CONFIG_PATHS = ['datadog-ci.json']
 
@@ -168,8 +169,13 @@ export interface RequestOptions {
 }
 
 export const getRequestBuilder = (options: RequestOptions) => {
+  // eslint-disable-next-line @typescript-eslint/no-var-requires -- We don't want asynchronous code here.
+  const {default: axios} = require('axios') as typeof axs
+
   const {apiKey, appKey, baseUrl, overrideUrl, proxyOpts} = options
-  const overrideArgs = (args: AxiosRequestConfig) => {
+  const proxyAgent = getProxyAgent(proxyOpts)
+
+  const overrideArgs = (args: axs.AxiosRequestConfig) => {
     const newArguments = {
       ...args,
       headers: {
@@ -183,7 +189,6 @@ export const getRequestBuilder = (options: RequestOptions) => {
       newArguments.url = overrideUrl
     }
 
-    const proxyAgent = getProxyAgent(proxyOpts)
     if (proxyAgent) {
       newArguments.httpAgent = proxyAgent
       newArguments.httpsAgent = proxyAgent
@@ -198,17 +203,20 @@ export const getRequestBuilder = (options: RequestOptions) => {
     return newArguments
   }
 
-  const baseConfiguration: AxiosRequestConfig = {
+  const baseConfiguration: axs.AxiosRequestConfig = {
     baseURL: baseUrl,
     // Disabling proxy in Axios config as it's not working properly
     // the passed httpAgent/httpsAgent are handling the proxy instead.
     proxy: false,
   }
 
-  return (args: AxiosRequestConfig) => axios.create(baseConfiguration)(overrideArgs(args))
+  return (args: axs.AxiosRequestConfig) => axios.create(baseConfiguration)(overrideArgs(args))
 }
 
-export const getProxyAgent = (proxyOpts?: ProxyConfiguration): ProxyAgent => {
+export const getProxyAgent = (proxyOpts?: ProxyConfiguration): proxyAgent.ProxyAgent => {
+  // eslint-disable-next-line @typescript-eslint/no-var-requires -- We don't want asynchronous code here.
+  const {ProxyAgent} = require('proxy-agent') as typeof proxyAgent
+
   const proxyUrlFromConfiguration = getProxyUrl(proxyOpts)
   if (!proxyOpts || proxyUrlFromConfiguration === '') {
     // Let the default proxy agent discover environment variables.

@@ -36,7 +36,7 @@ import {
   MERGE_XRAY_TRACES_ENV_VAR,
   TRACE_ENABLED_ENV_VAR,
 } from '../constants'
-import {requestAWSCredentials, requestFunctionSelection} from '../prompt'
+import * as prompt from '../prompt'
 import {UninstrumentCommand} from '../uninstrument'
 
 import {
@@ -55,7 +55,6 @@ describe('lambda', () => {
       beforeEach(() => {
         lambdaClientMock.reset()
         mockLambdaClientCommands(lambdaClientMock)
-        jest.resetModules()
         process.env = {}
       })
       afterAll(() => {
@@ -385,15 +384,17 @@ describe('lambda', () => {
             },
           },
         })
-        ;(requestAWSCredentials as any).mockImplementation(() => {
+        jest.spyOn(prompt, 'requestAWSCredentials').mockImplementation(async () => {
           process.env[AWS_ACCESS_KEY_ID_ENV_VAR] = mockAwsAccessKeyId
           process.env[AWS_SECRET_ACCESS_KEY_ENV_VAR] = mockAwsSecretAccessKey
           process.env[AWS_DEFAULT_REGION_ENV_VAR] = 'sa-east-1'
         })
-        ;(requestFunctionSelection as any).mockImplementation(() => [
-          'arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world',
-          'arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world-2',
-        ])
+        jest
+          .spyOn(prompt, 'requestFunctionSelection')
+          .mockImplementation(async () => [
+            'arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world',
+            'arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world-2',
+          ])
         ;(requestConfirmation as any).mockImplementation(() => true)
 
         const cli = makeCli()
@@ -481,15 +482,17 @@ describe('lambda', () => {
             },
           },
         })
-        ;(requestAWSCredentials as any).mockImplementation(() => {
+        jest.spyOn(prompt, 'requestAWSCredentials').mockImplementation(async () => {
           process.env[AWS_ACCESS_KEY_ID_ENV_VAR] = mockAwsAccessKeyId
           process.env[AWS_SECRET_ACCESS_KEY_ENV_VAR] = mockAwsSecretAccessKey
           process.env[AWS_DEFAULT_REGION_ENV_VAR] = 'sa-east-1'
         })
-        ;(requestFunctionSelection as any).mockImplementation(() => [
-          'arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world',
-          'arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world-2',
-        ])
+        jest
+          .spyOn(prompt, 'requestFunctionSelection')
+          .mockImplementation(async () => [
+            'arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world',
+            'arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world-2',
+          ])
         ;(requestConfirmation as any).mockImplementation(() => true)
 
         const cli = makeCli()
@@ -513,7 +516,7 @@ describe('lambda', () => {
 
       test('aborts if a problem occurs while setting the AWS credentials interactively', async () => {
         ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({code: 'ENOENT'}))
-        ;(requestAWSCredentials as any).mockImplementation(() => Promise.reject('Unexpected error'))
+        jest.spyOn(prompt, 'requestAWSCredentials').mockImplementation(() => Promise.reject('Unexpected error'))
         const cli = makeCli()
         const context = createMockContext()
         const code = await cli.run(['lambda', 'uninstrument', '-i'], context)
@@ -734,11 +737,11 @@ describe('lambda', () => {
     })
 
     describe('printPlannedActions', () => {
-      test('prints no output when list is empty', () => {
+      test('prints no output when list is empty', async () => {
         process.env = {}
         const command = createCommand(UninstrumentCommand)
 
-        command['printPlannedActions']([])
+        await command['printPlannedActions']([])
         const output = command.context.stdout.toString()
         expect(output).toMatchInlineSnapshot(`
                    "

@@ -1,26 +1,21 @@
-import {timingSafeEqual} from 'crypto'
 import {Socket} from 'net'
-import {Duplex, pipeline} from 'stream'
+import {pipeline} from 'stream'
 
 import type {ProxyAgent} from 'proxy-agent'
-
-import {
+import type {
   AuthContext,
   Connection as SSHConnection,
   ParsedKey,
-  Server as SSHServer,
   ServerChannel as SSHServerChannel,
   ServerConfig,
 } from 'ssh2'
-import {Config as MultiplexerConfig, Server as Multiplexer} from 'yamux-js'
+import type {Duplex} from 'stream'
+import type {Config as MultiplexerConfig} from 'yamux-js'
+
+import {Server as Multiplexer} from 'yamux-js'
 
 import {generateOpenSSHKeys, parseSSHKey} from './crypto'
 import {WebSocket} from './websocket'
-
-// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-var-requires -- SW-1310
-const SSH_CONSTANTS = require('ssh2/lib/protocol/constants')
-// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-var-requires -- SW-1310
-const {KexInit} = require('ssh2/lib/protocol/kex')
 
 export interface TunnelInfo {
   host: string
@@ -128,7 +123,7 @@ export class Tunnel {
   }
 
   // Authenticate SSH with key authentication - username should be the test ID
-  private authenticateSSHConnection(ctx: AuthContext) {
+  private authenticateSSHConnection(ctx: AuthContext, timingSafeEqual: (a: Buffer, b: Buffer) => boolean) {
     const allowedUsers = this.testIDs.map((testId) => Buffer.from(testId))
     // Ensure username is allowed
     const user = Buffer.from(ctx.username)
@@ -266,7 +261,7 @@ export class Tunnel {
     }, multiplexerConfig)
 
     // Pipe WebSocket to multiplexing
-    const duplex = this.ws.duplex()
+    const duplex = await this.ws.duplex()
     this.multiplexer.on('error', (error) => this.reporter?.warn(`Multiplexer error: ${error.message}`))
     duplex.on('error', (error) => this.reporter?.warn(`Websocket error: ${error.message}`))
 
@@ -300,6 +295,14 @@ export class Tunnel {
   }
 
   private async processSSHStream(stream: Duplex) {
+    const {Server: SSHServer} = await import('ssh2')
+    const {timingSafeEqual} = await import('crypto')
+
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-var-requires -- SW-1310
+    const SSH_CONSTANTS = require('ssh2/lib/protocol/constants')
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-var-requires -- SW-1310
+    const {KexInit} = require('ssh2/lib/protocol/kex')
+
     // Process SSH stream - see https://github.com/mscdex/ssh2/blob/v0.8.x/lib/server.js#L24
     const serverConfig = {
       ...this.sshConfig,
@@ -343,7 +346,7 @@ export class Tunnel {
     )
 
     client
-      .on('authentication', (ctx) => this.authenticateSSHConnection(ctx))
+      .on('authentication', (ctx) => this.authenticateSSHConnection(ctx, timingSafeEqual))
       .on('ready', () => this.forwardProxiedPacketsFromSSH(client))
       .on('close', () => {
         server.close()

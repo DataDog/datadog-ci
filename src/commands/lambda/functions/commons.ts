@@ -1,21 +1,16 @@
-import {Writable} from 'stream'
-
-import {CloudWatchLogsClient} from '@aws-sdk/client-cloudwatch-logs'
-import {
+import type {LayerKey, Runtime} from '../constants'
+import type {FunctionConfiguration, InstrumentationSettings, InstrumentedConfigurationGroup} from '../interfaces'
+import type {CloudWatchLogsClient} from '@aws-sdk/client-cloudwatch-logs'
+import type {
   LambdaClient,
   FunctionConfiguration as LFunctionConfiguration,
   GetFunctionCommandInput,
   ListFunctionsCommandOutput,
-  GetLayerVersionCommand,
-  ListFunctionsCommand,
-  GetFunctionCommand,
-  UpdateFunctionConfigurationCommand,
   UpdateFunctionConfigurationCommandInput,
 } from '@aws-sdk/client-lambda'
-import {FromIniInit, fromIni, fromNodeProviderChain} from '@aws-sdk/credential-providers'
-import {CredentialsProviderError} from '@aws-sdk/property-provider'
-import {AwsCredentialIdentity, AwsCredentialIdentityProvider} from '@aws-sdk/types'
-import inquirer from 'inquirer'
+import type {FromIniInit} from '@aws-sdk/credential-providers'
+import type {AwsCredentialIdentity, AwsCredentialIdentityProvider} from '@aws-sdk/types'
+import type {Writable} from 'stream'
 
 import {API_KEY_ENV_VAR, CI_API_KEY_ENV_VAR, CI_SITE_ENV_VAR} from '../../../constants'
 import * as helpersRenderer from '../../../helpers/renderer'
@@ -31,14 +26,11 @@ import {
   CI_KMS_API_KEY_ENV_VAR,
   DEFAULT_LAYER_AWS_ACCOUNT,
   GOVCLOUD_LAYER_AWS_ACCOUNT,
-  LayerKey,
   LAYER_LOOKUP,
   LIST_FUNCTIONS_MAX_RETRY_COUNT,
-  Runtime,
   RUNTIME_LOOKUP,
   SKIP_MASKING_LAMBDA_ENV_VARS,
 } from '../constants'
-import {FunctionConfiguration, InstrumentationSettings, InstrumentedConfigurationGroup} from '../interfaces'
 import {applyLogGroupConfig} from '../loggroup'
 import {awsProfileQuestion} from '../prompt'
 import * as instrumentRenderer from '../renderers/instrument-uninstrument-renderer'
@@ -137,6 +129,8 @@ export const collectFunctionsByRegion = (
  * @returns the latest version of the layer to find.
  */
 export const findLatestLayerVersion = async (layer: LayerKey, region: string) => {
+  const {LambdaClient, GetLayerVersionCommand} = await import('@aws-sdk/client-lambda')
+
   let latestVersion = 0
 
   let searchStep = latestVersion > 0 ? 1 : 100
@@ -200,6 +194,7 @@ export const getAWSFileCredentialsParams = (profile: string): FromIniInit => {
   // If provided profile is enforced by MFA and a session
   // token is not set we must request for the MFA token.
   init.mfaCodeProvider = async (mfaSerial) => {
+    const inquirer = await import('inquirer')
     const answer = await inquirer.prompt(awsProfileQuestion(mfaSerial))
 
     return answer.AWS_MFA
@@ -218,6 +213,8 @@ export const getAWSFileCredentialsParams = (profile: string): FromIniInit => {
  * @returns {AwsCredentialIdentity} credentials object.
  */
 export const getAWSProfileCredentials = async (profile: string) => {
+  const {fromIni} = await import('@aws-sdk/credential-providers')
+
   const init = getAWSFileCredentialsParams(profile)
 
   try {
@@ -233,6 +230,9 @@ export const getAWSProfileCredentials = async (profile: string) => {
 }
 
 export const getAWSCredentials = async () => {
+  const {fromNodeProviderChain} = await import('@aws-sdk/credential-providers')
+  const {CredentialsProviderError} = await import('@aws-sdk/property-provider')
+
   const provider = fromNodeProviderChain()
 
   try {
@@ -282,6 +282,8 @@ export const getLambdaFunctionConfigsFromRegex = async (
   lambdaClient: LambdaClient,
   pattern: string
 ): Promise<LFunctionConfiguration[]> => {
+  const {ListFunctionsCommand} = await import('@aws-sdk/client-lambda')
+
   const regEx = new RegExp(pattern)
   const matchedFunctions: LFunctionConfiguration[] = []
   let retryCount = 0
@@ -375,6 +377,8 @@ export const getLambdaFunctionConfig = async (
   lambdaClient: LambdaClient,
   functionARN: string
 ): Promise<LFunctionConfiguration> => {
+  const {GetFunctionCommand} = await import('@aws-sdk/client-lambda')
+
   const params: GetFunctionCommandInput = {
     FunctionName: functionARN,
   }
@@ -433,15 +437,19 @@ export const updateFunctionConfiguration = async (
   client: LambdaClient,
   input: UpdateFunctionConfigurationCommandInput
 ) => {
+  const {UpdateFunctionConfigurationCommand} = await import('@aws-sdk/client-lambda')
+
   const command = new UpdateFunctionConfigurationCommand(input)
   await client.send(command)
 }
 
 export const handleLambdaFunctionUpdates = async (configGroups: InstrumentedConfigurationGroup[], stdout: Writable) => {
+  const {default: ora} = await import('ora')
+
   let totalFunctions = 0
   let totalFailedUpdates = 0
   for (const group of configGroups) {
-    const spinner = instrumentRenderer.updatingFunctionsConfigFromRegionSpinner(group.region, group.configs.length)
+    const spinner = instrumentRenderer.updatingFunctionsConfigFromRegionSpinner(ora, group.region, group.configs.length)
     spinner.start()
     const failedUpdates = []
     for (const config of group.configs) {

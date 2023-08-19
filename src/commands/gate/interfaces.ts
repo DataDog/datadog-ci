@@ -1,8 +1,7 @@
-import {Writable} from 'stream'
+import type {AxiosPromise} from 'axios'
+import type {Writable} from 'stream'
 
-import {AxiosPromise} from 'axios'
-
-import {SpanTags} from '../../helpers/interfaces'
+import type {SpanTags} from '../../helpers/interfaces'
 
 export interface Payload {
   requestId: string

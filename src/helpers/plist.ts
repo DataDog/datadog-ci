@@ -1,7 +1,5 @@
 import {readFileSync} from 'fs'
 
-import {XMLParser, XMLValidator} from 'fast-xml-parser'
-
 type PlistNode = {[tagName: string]: [{[valueType: string]: string | number | PlistNode}]}
 
 const parseIfEnvVariable = (propertyValue: string | number, metadata: {propertyName: string}): string | number => {
@@ -93,7 +91,9 @@ class PlistContent {
   }
 }
 
-export const parsePlist = (plistPath: string): PlistContent => {
+export const parsePlist = async (plistPath: string): Promise<PlistContent> => {
+  const {XMLParser, XMLValidator} = await import('fast-xml-parser')
+
   const xmlFileContentString = readFileSync(plistPath).toString()
   const validationOutput = XMLValidator.validate(xmlFileContentString)
 

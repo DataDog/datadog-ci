@@ -1,11 +1,14 @@
-import {AxiosError, AxiosResponse, default as axios} from 'axios'
+import type {APIConfiguration, PollResult, ServerResult, TestPayload, Trigger} from '../interfaces'
+import type {AxiosError, AxiosResponse} from 'axios'
 
-import {ProxyConfiguration} from '../../../helpers/utils'
+import {default as axios} from 'axios'
+
+import type {ProxyConfiguration} from '../../../helpers/utils'
 
 import {apiConstructor, formatBackendErrors, getApiHelper} from '../api'
+import {MAX_TESTS_TO_TRIGGER} from '../constants'
 import {CriticalError} from '../errors'
-import {APIConfiguration, ExecutionRule, PollResult, ServerResult, TestPayload, Trigger} from '../interfaces'
-import {MAX_TESTS_TO_TRIGGER} from '../run-tests-command'
+import {ExecutionRule} from '../interfaces'
 
 import {
   ciConfig,

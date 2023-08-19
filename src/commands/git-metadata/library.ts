@@ -1,11 +1,12 @@
-import {newApiKeyValidator} from '../../helpers/apikey'
-import {RequestBuilder} from '../../helpers/interfaces'
-import {upload, UploadOptions, UploadStatus} from '../../helpers/upload'
+import type {CommitInfo} from './interfaces'
+
+import type {RequestBuilder} from '../../helpers/interfaces'
+import type {UploadOptions} from '../../helpers/upload'
+import {upload, UploadStatus} from '../../helpers/upload'
 import {getRequestBuilder, filterAndFormatGithubRemote} from '../../helpers/utils'
 import {version} from '../../helpers/version'
 
 import {getCommitInfo, newSimpleGit} from './git'
-import {CommitInfo} from './interfaces'
 
 export const isGitRepo = async (): Promise<boolean> => {
   try {
@@ -40,6 +41,8 @@ export const uploadGitCommitHash = async (
   datadogSite: string,
   repositoryURL?: string
 ): Promise<[string, string]> => {
+  const {newApiKeyValidator} = await import('../../helpers/apikey')
+
   const apiKeyValidator = newApiKeyValidator({
     apiKey,
     datadogSite,

@@ -1,15 +1,15 @@
 import fs from 'fs'
 
-import {Command, Option} from 'clipanion'
-import glob from 'glob'
-import yaml from 'js-yaml'
-import semver from 'semver'
-import asyncPool from 'tiny-async-pool'
+import type {MappingMetadata} from './interfaces'
+import type {UploadInfo} from './renderer'
 
-import {newApiKeyValidator} from '../../helpers/apikey'
-import {getRepositoryData, RepositoryData} from '../../helpers/git/format-git-sourcemaps-data'
-import {getMetricsLogger, MetricsLogger} from '../../helpers/metrics'
-import {MultipartValue, UploadStatus} from '../../helpers/upload'
+import {Command, Option} from 'clipanion'
+
+import type {RepositoryData} from '../../helpers/git/format-git-sourcemaps-data'
+import {getRepositoryData} from '../../helpers/git/format-git-sourcemaps-data'
+import type {MetricsLogger} from '../../helpers/metrics'
+import {getMetricsLogger} from '../../helpers/metrics'
+import type {MultipartValue, UploadStatus} from '../../helpers/upload'
 import {
   buildPath,
   DEFAULT_CONFIG_PATHS,
@@ -22,38 +22,16 @@ import {version} from '../../helpers/version'
 
 import * as dsyms from '../dsyms/upload'
 import {newSimpleGit} from '../git-metadata/git'
-import * as sourcemaps from '../sourcemaps/upload'
 
 import {getArchInfoFromFilename, getFlutterRequestBuilder, uploadMultipartHelper} from './helpers'
 import {
   DART_SYMBOL_FILE_NAME,
   JVM_MAPPING_FILE_NAME,
-  MappingMetadata,
   TYPE_DART_SYMBOLS,
   TYPE_JVM_MAPPING,
   VALUE_NAME_DART_MAPPING,
   VALUE_NAME_JVM_MAPPING,
 } from './interfaces'
-import {
-  renderArgumentMissingError,
-  renderCommandInfo,
-  renderCommandSummary,
-  renderFailedUpload,
-  renderGeneralizedError,
-  renderGitWarning,
-  renderInvalidPubspecError,
-  renderInvalidSymbolsDir,
-  renderMinifiedPathPrefixRequired,
-  renderMissingAndroidMappingFile,
-  renderMissingDartSymbolsDir,
-  renderMissingPubspecError,
-  renderPubspecMissingVersionError,
-  renderRetriedUpload,
-  renderUpload,
-  renderVersionBuildNumberWarning,
-  renderVersionNotSemver,
-  UploadInfo,
-} from './renderer'
 
 export class UploadCommand extends Command {
   public static paths = [['flutter-symbols', 'upload']]
@@ -133,6 +111,8 @@ export class UploadCommand extends Command {
       })
     }
 
+    const {renderCommandInfo, renderCommandSummary, renderGeneralizedError} = await import('./renderer')
+
     this.context.stdout.write(renderCommandInfo(this.dryRun, this.version!, this.serviceName!, this.flavor, uploadInfo))
 
     this.config = await resolveConfigFromFileAndEnvironment(
@@ -186,7 +166,9 @@ export class UploadCommand extends Command {
     return this.getMappingMetadata(TYPE_JVM_MAPPING)
   }
 
-  private getApiKeyValidator(metricsLogger: MetricsLogger) {
+  private async getApiKeyValidator(metricsLogger: MetricsLogger) {
+    const {newApiKeyValidator} = await import('../../helpers/apikey')
+
     return newApiKeyValidator({
       apiKey: this.config.apiKey,
       datadogSite: this.config.datadogSite,
@@ -198,7 +180,8 @@ export class UploadCommand extends Command {
     return this.getMappingMetadata(TYPE_DART_SYMBOLS, platform, arch)
   }
 
-  private getFlutterSymbolFiles(dartSymbolLocation: string): string[] {
+  private async getFlutterSymbolFiles(dartSymbolLocation: string): Promise<string[]> {
+    const {default: glob} = await import('glob')
     const symbolPaths = glob.sync(buildPath(dartSymbolLocation, '*.symbols'))
 
     return symbolPaths
@@ -224,6 +207,8 @@ export class UploadCommand extends Command {
   }
 
   private async getGitMetadata(): Promise<RepositoryData | undefined> {
+    const {renderGitWarning} = await import('./renderer')
+
     try {
       return await getRepositoryData(await newSimpleGit(), this.repositoryUrl)
     } catch (e) {
@@ -247,8 +232,8 @@ export class UploadCommand extends Command {
     }
   }
 
-  private getMetricsLogger(tags: string[]) {
-    const metricsLogger = getMetricsLogger({
+  private async getMetricsLogger(tags: string[]) {
+    const metricsLogger = await getMetricsLogger({
       apiKey: this.config.apiKey,
       datadogSite: this.config.datadogSite,
       defaultTags: [
@@ -269,6 +254,16 @@ export class UploadCommand extends Command {
   }
 
   private async parsePubspecVersion(pubspecLocation: string): Promise<number> {
+    const yaml = await import('js-yaml')
+    const semver = await import('semver')
+    const {
+      renderInvalidPubspecError,
+      renderMissingPubspecError,
+      renderPubspecMissingVersionError,
+      renderVersionBuildNumberWarning,
+      renderVersionNotSemver,
+    } = await import('./renderer')
+
     if (!fs.existsSync(pubspecLocation)) {
       this.context.stderr.write(renderMissingPubspecError(pubspecLocation))
 
@@ -304,8 +299,10 @@ export class UploadCommand extends Command {
   }
 
   private async performAndroidMappingUpload(): Promise<UploadStatus> {
-    const metricsLogger = this.getMetricsLogger(['platform:android'])
-    const apiKeyValidator = this.getApiKeyValidator(metricsLogger)
+    const {renderFailedUpload, renderRetriedUpload, renderUpload} = await import('./renderer')
+
+    const metricsLogger = await this.getMetricsLogger(['platform:android'])
+    const apiKeyValidator = await this.getApiKeyValidator(metricsLogger)
 
     const requestBuilder = getFlutterRequestBuilder(this.config.apiKey!, this.cliVersion, this.config.datadogSite)
     if (this.dryRun) {
@@ -351,15 +348,19 @@ export class UploadCommand extends Command {
   }
 
   private async performDartSymbolsUpload(): Promise<UploadStatus[]> {
-    const metricsLogger = this.getMetricsLogger(['platform:android'])
-    const apiKeyValidator = this.getApiKeyValidator(metricsLogger)
+    const {UploadStatus} = await import('../../helpers/upload')
+    const {renderFailedUpload, renderRetriedUpload, renderUpload} = await import('./renderer')
 
-    const files = this.getFlutterSymbolFiles(this.dartSymbolsLocation!)
+    const metricsLogger = await this.getMetricsLogger(['platform:android'])
+    const apiKeyValidator = await this.getApiKeyValidator(metricsLogger)
 
+    const files = await this.getFlutterSymbolFiles(this.dartSymbolsLocation!)
     const filesMetadata = files.map((filename) => ({filename, ...getArchInfoFromFilename(filename)}))
 
     const requestBuilder = getFlutterRequestBuilder(this.config.apiKey!, this.cliVersion, this.config.datadogSite)
     try {
+      const {default: asyncPool} = await import('tiny-async-pool')
+
       const results = await asyncPool(this.maxConcurrency, filesMetadata, async (fileMetadata) => {
         if (!fileMetadata.arch || !fileMetadata.platform) {
           renderFailedUpload(
@@ -421,6 +422,8 @@ export class UploadCommand extends Command {
   }
 
   private async performDsymUpload() {
+    const {UploadStatus} = await import('../../helpers/upload')
+
     const dsymUploadCommand = ['dsyms', 'upload', this.iosDsymsLocation!]
     if (this.dryRun) {
       dsymUploadCommand.push('--dry-run')
@@ -435,6 +438,9 @@ export class UploadCommand extends Command {
   }
 
   private async performSourceMapUpload() {
+    const sourcemaps = await import('../sourcemaps/upload')
+    const {UploadStatus} = await import('../../helpers/upload')
+
     const sourceMapUploadCommand = [
       'sourcemaps',
       'upload',
@@ -456,6 +462,14 @@ export class UploadCommand extends Command {
   }
 
   private async verifyParameters(): Promise<boolean> {
+    const {
+      renderArgumentMissingError,
+      renderInvalidSymbolsDir,
+      renderMinifiedPathPrefixRequired,
+      renderMissingAndroidMappingFile,
+      renderMissingDartSymbolsDir,
+    } = await import('./renderer')
+
     let parametersOkay = true
 
     if (!this.serviceName) {

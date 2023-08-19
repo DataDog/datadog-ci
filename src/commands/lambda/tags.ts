@@ -1,11 +1,8 @@
-import {
+import type {
   LambdaClient,
   ListTagsCommandInput,
   TagResourceCommandInput,
   UntagResourceCommandInput,
-  TagResourceCommand,
-  UntagResourceCommand,
-  ListTagsCommand,
 } from '@aws-sdk/client-lambda'
 
 import {version} from '../../helpers/version'
@@ -24,11 +21,15 @@ export const applyTagConfig = async (lambdaClient: LambdaClient, config: TagConf
 }
 
 export const tagResource = async (client: LambdaClient, input: TagResourceCommandInput) => {
+  const {TagResourceCommand} = await import('@aws-sdk/client-lambda')
+
   const command = new TagResourceCommand(input)
   await client.send(command)
 }
 
 export const untagResource = async (client: LambdaClient, input: UntagResourceCommandInput) => {
+  const {UntagResourceCommand} = await import('@aws-sdk/client-lambda')
+
   const command = new UntagResourceCommand(input)
   await client.send(command)
 }
@@ -68,6 +69,8 @@ export const calculateTagRemoveRequest = async (lambdaClient: LambdaClient, func
 }
 
 export const hasVersionTag = async (client: LambdaClient, functionARN: string): Promise<boolean> => {
+  const {ListTagsCommand} = await import('@aws-sdk/client-lambda')
+
   const input: ListTagsCommandInput = {
     Resource: functionARN,
   }

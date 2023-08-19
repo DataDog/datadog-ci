@@ -1,13 +1,15 @@
 import {EventEmitter, once} from 'events'
 
 import type {ProxyAgent} from 'proxy-agent'
+import type ws from 'ws'
 
-import {createWebSocketStream, default as WebSocketModule} from 'ws'
+// https://developer.mozilla.org/en-US/docs/Web/API/WebSocket/readyState
+const WEBSOCKET_OPEN = 1
 
 export class WebSocket extends EventEmitter {
-  private firstMessage?: Promise<WebSocketModule.Data>
+  private firstMessage?: Promise<ws.Data>
   private keepAliveWebsocket?: Promise<void> // Artificial promise that resolves when closing and will reject in case of error
-  private websocket?: WebSocketModule
+  private websocket?: ws
 
   constructor(private url: string, private proxyAgent: ProxyAgent | undefined) {
     super()
@@ -19,7 +21,7 @@ export class WebSocket extends EventEmitter {
   public async close(gracefullyClose = true) {
     if (this.websocket) {
       this.websocket.removeAllListeners()
-      if (this.websocket.readyState === WebSocketModule.OPEN) {
+      if (this.websocket.readyState === WEBSOCKET_OPEN) {
         if (gracefullyClose) {
           // Gracefully close the tunnel
           this.websocket.close()
@@ -37,16 +39,18 @@ export class WebSocket extends EventEmitter {
    */
   public async connect() {
     // Open the connection or throw
-    await new Promise((resolve, reject) => this.establishWebsocketConnection(resolve, reject))
+    await this.establishWebsocketConnection()
   }
 
   /**
    * duplex will create a duplex stream for the WS connection
    */
-  public duplex() {
+  public async duplex() {
     if (!this.websocket) {
       throw new Error('You must start the WebSocket connection before calling duplex')
     }
+
+    const {createWebSocketStream} = await import('ws')
 
     return createWebSocketStream(this.websocket, {
       // Increase websocket buffer sizes from 16kb to 64kb.
@@ -61,7 +65,7 @@ export class WebSocket extends EventEmitter {
   public keepAlive() {
     if (!this.keepAliveWebsocket) {
       // Use an artificial promise to keep track of the connection state and reconnect if necessary
-      this.keepAliveWebsocket = new Promise((resolve, reject) => this.establishWebsocketConnection(resolve, reject))
+      this.keepAliveWebsocket = this.establishWebsocketConnection()
     }
 
     return this.keepAliveWebsocket
@@ -70,7 +74,7 @@ export class WebSocket extends EventEmitter {
   /**
    * on allows to listen for WebSocket messages
    */
-  public on(event: 'message', listener: (data: WebSocketModule.Data) => void) {
+  public on(event: 'message', listener: (data: ws.Data) => void) {
     if (!this.websocket) {
       throw new Error('You must start the WebSocket connection before listening to messages')
     }
@@ -83,7 +87,7 @@ export class WebSocket extends EventEmitter {
   /**
    * once allows to listen for a WebSocket message
    */
-  public once(event: 'message', listener: (data: WebSocketModule.Data) => void) {
+  public once(event: 'message', listener: (data: ws.Data) => void) {
     if (!this.websocket) {
       throw new Error('You must start the WebSocket connection before listening to messages')
     }
@@ -101,13 +105,15 @@ export class WebSocket extends EventEmitter {
     return this.firstMessage
   }
 
-  private establishWebsocketConnection(resolve: (value: void) => void, reject: (error: Error) => void) {
+  private async establishWebsocketConnection() {
     if (!this.websocket) {
-      const options: WebSocketModule.ClientOptions = {
+      const {default: WS} = await import('ws')
+
+      const options: ws.ClientOptions = {
         agent: this.proxyAgent,
       }
 
-      this.websocket = new WebSocketModule(this.url, options)
+      this.websocket = new WS(this.url, options)
     }
 
     this.firstMessage = new Promise((firstMessageResolve, firstMessageReject) => {
@@ -118,20 +124,28 @@ export class WebSocket extends EventEmitter {
       }
     })
 
-    this.websocket.on('unexpected-response', (req, res) => {
-      let body = ''
-      res.on('readable', () => {
-        body += res.read()
-      })
-      res.on('end', () => {
-        reject(Error(`Got unexpected response in WebSocket connection (code: ${res.statusCode}): ${body}`))
-      })
-      req.end()
-      res.destroy()
-    })
+    return new Promise<void>((resolve, reject) => {
+      if (!this.websocket) {
+        // Should not happen since we already checked this above,
+        // but TypeScript doesn't understand that.
+        return
+      }
 
-    this.websocket.on('open', () => {
-      resolve()
+      this.websocket.on('unexpected-response', (req, res) => {
+        let body = ''
+        res.on('readable', () => {
+          body += res.read()
+        })
+        res.on('end', () => {
+          reject(Error(`Got unexpected response in WebSocket connection (code: ${res.statusCode}): ${body}`))
+        })
+        req.end()
+        res.destroy()
+      })
+
+      this.websocket.on('open', () => {
+        resolve()
+      })
     })
   }
 }

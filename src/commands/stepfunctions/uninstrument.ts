@@ -1,10 +1,8 @@
-import {CloudWatchLogsClient, DescribeSubscriptionFiltersCommandOutput} from '@aws-sdk/client-cloudwatch-logs'
-import {SFNClient} from '@aws-sdk/client-sfn'
+import type {DescribeSubscriptionFiltersCommandOutput} from '@aws-sdk/client-cloudwatch-logs'
+
 import {Command, Option} from 'clipanion'
 
-import {deleteSubscriptionFilter, describeStateMachine, describeSubscriptionFilters, untagResource} from './awsCommands'
 import {DD_CI_IDENTIFYING_STRING, TAG_VERSION_NAME} from './constants'
-import {getStepFunctionLogGroupArn, isValidArn, parseArn} from './helpers'
 
 export class UninstrumentStepFunctionsCommand extends Command {
   public static paths = [['stepfunctions', 'uninstrument']]
@@ -44,6 +42,13 @@ export class UninstrumentStepFunctionsCommand extends Command {
   )
 
   public async execute() {
+    const {CloudWatchLogsClient} = await import('@aws-sdk/client-cloudwatch-logs')
+    const {SFNClient} = await import('@aws-sdk/client-sfn')
+    const {describeStateMachine, describeSubscriptionFilters, deleteSubscriptionFilter, untagResource} = await import(
+      './awsCommands'
+    )
+    const {isValidArn, parseArn, getStepFunctionLogGroupArn} = await import('./helpers')
+
     let validationError = false
     let hasChanges = false
 

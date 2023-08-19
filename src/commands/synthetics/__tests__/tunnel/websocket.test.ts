@@ -1,8 +1,9 @@
 import {createCommand} from '../../../../helpers/__tests__/fixtures'
 import * as ciUtils from '../../../../helpers/utils'
 
+import {DEFAULT_POLLING_TIMEOUT} from '../../constants'
 import {ExecutionRule} from '../../interfaces'
-import {DEFAULT_POLLING_TIMEOUT, RunTestsCommand} from '../../run-tests-command'
+import {RunTestsCommand} from '../../run-tests-command'
 import * as utils from '../../utils'
 
 import {getSyntheticsProxy} from '../fixtures'

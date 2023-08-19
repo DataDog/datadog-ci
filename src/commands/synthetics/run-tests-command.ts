@@ -1,3 +1,5 @@
+import type {MainReporter, Reporter, Result, RunTestsCommandConfig, Summary} from './interfaces'
+
 import {Command, Option} from 'clipanion'
 import deepExtend from 'deep-extend'
 import terminalLink from 'terminal-link'
@@ -6,10 +8,8 @@ import {removeUndefinedValues, resolveConfigFromFile} from '../../helpers/utils'
 import * as validation from '../../helpers/validation'
 import {isValidDatadogSite} from '../../helpers/validation'
 
+import {DEFAULT_COMMAND_CONFIG} from './constants'
 import {CiError} from './errors'
-import {MainReporter, Reporter, Result, RunTestsCommandConfig, Summary} from './interfaces'
-import {DefaultReporter} from './reporters/default'
-import {JUnitReporter} from './reporters/junit'
 import {executeTests} from './run-tests-lib'
 import {
   getExitReason,
@@ -21,29 +21,6 @@ import {
   toExitCode,
   reportExitLogs,
 } from './utils'
-
-export const MAX_TESTS_TO_TRIGGER = 100
-
-export const DEFAULT_POLLING_TIMEOUT = 30 * 60 * 1000
-
-export const DEFAULT_COMMAND_CONFIG: RunTestsCommandConfig = {
-  apiKey: '',
-  appKey: '',
-  configPath: 'datadog-ci.json',
-  datadogSite: 'datadoghq.com',
-  failOnCriticalErrors: false,
-  failOnMissingTests: false,
-  failOnTimeout: true,
-  files: ['{,!(node_modules)/**/}*.synthetics.json'],
-  global: {},
-  locations: [],
-  pollingTimeout: DEFAULT_POLLING_TIMEOUT,
-  proxy: {protocol: 'http'},
-  publicIds: [],
-  subdomain: 'app',
-  tunnel: false,
-  variableStrings: [],
-}
 
 const configurationLink = 'https://docs.datadoghq.com/continuous_testing/cicd_integrations/configuration'
 
@@ -127,6 +104,9 @@ export class RunTestsCommand extends Command {
   private config: RunTestsCommandConfig = JSON.parse(JSON.stringify(DEFAULT_COMMAND_CONFIG)) // Deep copy to avoid mutation during unit tests
 
   public async execute() {
+    const {DefaultReporter} = await import('./reporters/default')
+    const {JUnitReporter} = await import('./reporters/junit')
+
     const reporters: Reporter[] = [new DefaultReporter(this)]
     this.reporter = getReporter(reporters)
 

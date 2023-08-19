@@ -1,15 +1,6 @@
-import type {TunnelReporter} from '../tunnel/tunnel'
-import type {Writable} from 'stream'
-
-import chalk from 'chalk'
-import ora from 'ora'
-
-import type {CommandContext} from '../../../helpers/interfaces'
-
-import {
+import type {
   Assertion,
   Batch,
-  ExecutionRule,
   MainReporter,
   Result,
   ServerResult,
@@ -19,6 +10,15 @@ import {
   Test,
   UserConfigOverride,
 } from '../interfaces'
+import type {TunnelReporter} from '../tunnel/tunnel'
+import type {default as Ora, Ora as Spinner} from 'ora'
+import type {Writable} from 'stream'
+
+import chalk from 'chalk'
+
+import type {CommandContext} from '../../../helpers/interfaces'
+
+import {ExecutionRule} from '../interfaces'
 import {
   getBatchUrl,
   getResultDuration,
@@ -251,11 +251,15 @@ const getResultIconAndColor = (resultOutcome: ResultOutcome): [string, chalk.Cha
 
 export class DefaultReporter implements MainReporter {
   private context: CommandContext
-  private testWaitSpinner?: ora.Ora
+  private testWaitSpinner?: Spinner
   private write: Writable['write']
   private totalDuration?: number
+  private ora: typeof Ora
 
   constructor({context}: {context: CommandContext}) {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires -- We don't want asynchronous code here.
+    this.ora = require('ora') as typeof Ora
+
     this.context = context
     this.write = context.stdout.write.bind(context.stdout)
   }
@@ -370,7 +374,7 @@ export class DefaultReporter implements MainReporter {
     const batchUrl = getBatchUrl(baseUrl, batchId)
     this.write(`View pending summary in Datadog: ${chalk.dim.cyan(batchUrl)}\n\n`)
 
-    this.testWaitSpinner = ora({
+    this.testWaitSpinner = this.ora({
       stream: this.context.stdout,
       text: `Waiting for ${chalk.bold.cyan(tests.length)} test ${pluralize('result', tests.length)} ${testsDisplay}…\n`,
     }).start()

@@ -1,20 +1,23 @@
+import type {RNPlatform} from './interfaces'
+
 import chalk from 'chalk'
 import {Command, Option} from 'clipanion'
-import asyncPool from 'tiny-async-pool'
 
-import {ApiKeyValidator, newApiKeyValidator} from '../../helpers/apikey'
+import type {ApiKeyValidator} from '../../helpers/apikey'
 import {getBaseSourcemapIntakeUrl} from '../../helpers/base-intake-url'
 import {InvalidConfigurationError} from '../../helpers/errors'
-import {getRepositoryData, newSimpleGit, RepositoryData} from '../../helpers/git/format-git-sourcemaps-data'
-import {RequestBuilder} from '../../helpers/interfaces'
-import {getMetricsLogger, MetricsLogger} from '../../helpers/metrics'
+import type {RepositoryData} from '../../helpers/git/format-git-sourcemaps-data'
+import {getRepositoryData, newSimpleGit} from '../../helpers/git/format-git-sourcemaps-data'
+import type {RequestBuilder} from '../../helpers/interfaces'
+import type {MetricsLogger} from '../../helpers/metrics'
+import {getMetricsLogger} from '../../helpers/metrics'
 import {upload, UploadStatus} from '../../helpers/upload'
 import {getRequestBuilder, resolveConfigFromFileAndEnvironment} from '../../helpers/utils'
 import * as validation from '../../helpers/validation'
 import {checkAPIKeyOverride} from '../../helpers/validation'
 import {version} from '../../helpers/version'
 
-import {RNPlatform, RNSourcemap, RN_SUPPORTED_PLATFORMS} from './interfaces'
+import {RNSourcemap, RN_SUPPORTED_PLATFORMS} from './interfaces'
 import {
   renderCommandInfo,
   renderConfigurationError,
@@ -143,7 +146,7 @@ export class UploadCommand extends Command {
       }
     )
 
-    const metricsLogger = getMetricsLogger({
+    const metricsLogger = await getMetricsLogger({
       apiKey: this.config.apiKey,
       datadogSite: this.config.datadogSite,
       defaultTags: [
@@ -157,17 +160,21 @@ export class UploadCommand extends Command {
       prefix: 'datadog.ci.sourcemaps.upload.',
     })
 
+    const {newApiKeyValidator} = await import('../../helpers/apikey')
     const apiKeyValidator = newApiKeyValidator({
       apiKey: this.config.apiKey,
       datadogSite: this.config.datadogSite,
       metricsLogger: metricsLogger.logger,
     })
+
     const useGit = this.disableGit === undefined || !this.disableGit
     const initialTime = Date.now()
     const payloads = await this.getPayloadsToUpload(useGit, bundleName)
     const requestBuilder = this.getRequestBuilder()
     const uploadMultipart = this.upload(requestBuilder, metricsLogger, apiKeyValidator)
     try {
+      const {default: asyncPool} = await import('tiny-async-pool')
+
       const results = await asyncPool(this.maxConcurrency, payloads, uploadMultipart)
       const totalTime = (Date.now() - initialTime) / 1000
       this.context.stdout.write(renderSuccessfulCommand(results, totalTime, this.dryRun))

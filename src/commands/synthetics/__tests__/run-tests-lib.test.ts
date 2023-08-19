@@ -1,13 +1,16 @@
 import fs from 'fs'
 
+import type {CriticalCiErrorCode} from '../errors'
+import type {RunTestsCommandConfig, Summary, UserConfigOverride} from '../interfaces'
+
 import * as ciUtils from '../../../helpers/utils'
 
 import * as api from '../api'
-import {CiError, CriticalCiErrorCode, CriticalError} from '../errors'
-import {ExecutionRule, RunTestsCommandConfig, Summary, UserConfigOverride} from '../interfaces'
+import {MAX_TESTS_TO_TRIGGER} from '../constants'
+import {CiError, CriticalError} from '../errors'
+import {ExecutionRule} from '../interfaces'
 import {DefaultReporter} from '../reporters/default'
 import {JUnitReporter} from '../reporters/junit'
-import {MAX_TESTS_TO_TRIGGER} from '../run-tests-command'
 import * as runTests from '../run-tests-lib'
 import {Tunnel} from '../tunnel'
 import * as utils from '../utils'

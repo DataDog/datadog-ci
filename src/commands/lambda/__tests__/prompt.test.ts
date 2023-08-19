@@ -1,5 +1,6 @@
 jest.mock('inquirer')
-import {prompt} from 'inquirer'
+
+import inquirer from 'inquirer'
 
 import {CI_API_KEY_ENV_VAR, CI_SITE_ENV_VAR} from '../../../constants'
 import {MOCK_DATADOG_API_KEY} from '../../../helpers/__tests__/fixtures'
@@ -25,8 +26,12 @@ import {mockAwsAccessKeyId, mockAwsSecretAccessKey} from './fixtures'
 describe('prompt', () => {
   describe('datadogApiKeyTypeQuestion', () => {
     test('returns question with message pointing to the correct given site', async () => {
+      // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
+      const actualInquirer = jest.requireActual('inquirer') as typeof inquirer
+      const separator = new actualInquirer.Separator()
+
       const site = 'datadoghq.com'
-      const question = datadogApiKeyTypeQuestion(site)
+      const question = datadogApiKeyTypeQuestion(site, separator)
       expect(await question.message).toBe(
         `Which type of Datadog API Key you want to set? \nLearn more at https://app.${site}/organization-settings/api-keys`
       )
@@ -103,17 +108,16 @@ describe('prompt', () => {
     })
   })
 
-  describe('requestAWSCrendentials', () => {
+  describe('requestAWSCredentials', () => {
     const OLD_ENV = process.env
     beforeEach(() => {
-      jest.resetModules()
       process.env = {}
     })
     afterAll(() => {
       process.env = OLD_ENV
     })
     test('sets the AWS credentials as environment variables', async () => {
-      ;(prompt as any).mockImplementation(() =>
+      jest.spyOn(inquirer, 'prompt').mockImplementation(() =>
         Promise.resolve({
           [AWS_ACCESS_KEY_ID_ENV_VAR]: mockAwsAccessKeyId,
           [AWS_SECRET_ACCESS_KEY_ENV_VAR]: mockAwsSecretAccessKey,
@@ -127,7 +131,7 @@ describe('prompt', () => {
     })
 
     test('sets the AWS credentials with session token as environment variables', async () => {
-      ;(prompt as any).mockImplementation(() =>
+      jest.spyOn(inquirer, 'prompt').mockImplementation(() =>
         Promise.resolve({
           [AWS_ACCESS_KEY_ID_ENV_VAR]: mockAwsAccessKeyId,
           [AWS_SECRET_ACCESS_KEY_ENV_VAR]: mockAwsSecretAccessKey,
@@ -143,7 +147,7 @@ describe('prompt', () => {
     })
 
     test('throws error when something unexpected happens while prompting', async () => {
-      ;(prompt as any).mockImplementation(() => Promise.reject(new Error('Unexpected error')))
+      jest.spyOn(inquirer, 'prompt').mockImplementation(() => Promise.reject(new Error('Unexpected error')))
       let error
       try {
         await requestAWSCredentials()
@@ -159,7 +163,6 @@ describe('prompt', () => {
   describe('requestDatadogEnvVars', () => {
     const OLD_ENV = process.env
     beforeEach(() => {
-      jest.resetModules()
       process.env = {}
     })
     afterAll(() => {
@@ -167,7 +170,7 @@ describe('prompt', () => {
     })
     test('sets the Datadog Environment Variables as provided/selected by user', async () => {
       const site = 'datadoghq.com'
-      ;(prompt as any).mockImplementation((question: any) => {
+      jest.spyOn(inquirer, 'prompt').mockImplementation((question: any): any => {
         switch (question.name) {
           case CI_API_KEY_ENV_VAR:
             return Promise.resolve({
@@ -195,7 +198,7 @@ describe('prompt', () => {
     })
 
     test('throws error when something unexpected happens while prompting', async () => {
-      ;(prompt as any).mockImplementation(() => Promise.reject(new Error('Unexpected error')))
+      jest.spyOn(inquirer, 'prompt').mockImplementation(() => Promise.reject(new Error('Unexpected error')))
       let error
       try {
         await requestDatadogEnvVars()
@@ -211,14 +214,14 @@ describe('prompt', () => {
   describe('requestFunctionSelection', () => {
     const selectedFunctions = ['my-func', 'my-func-2', 'my-third-func']
     test('returns the selected functions', async () => {
-      ;(prompt as any).mockImplementation(() => Promise.resolve({functions: selectedFunctions}))
+      jest.spyOn(inquirer, 'prompt').mockImplementation(() => Promise.resolve({functions: selectedFunctions}))
 
       const functions = await requestFunctionSelection(selectedFunctions)
       expect(functions).toBe(selectedFunctions)
     })
 
     test('throws error when something unexpected happens while prompting', async () => {
-      ;(prompt as any).mockImplementation(() => Promise.reject(new Error('Unexpected error')))
+      jest.spyOn(inquirer, 'prompt').mockImplementation(() => Promise.reject(new Error('Unexpected error')))
       let error
       try {
         await requestFunctionSelection(selectedFunctions)

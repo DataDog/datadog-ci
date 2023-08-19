@@ -1,5 +1,4 @@
-import metrics from 'datadog-metrics'
-import {ProxyAgent} from 'proxy-agent'
+import type metrics from 'datadog-metrics'
 
 export interface MetricsLogger {
   logger: metrics.BufferedMetricsLogger
@@ -13,7 +12,10 @@ export interface MetricsLoggerOptions {
   prefix: string
 }
 
-export const getMetricsLogger = (opts: MetricsLoggerOptions): MetricsLogger => {
+export const getMetricsLogger = async (opts: MetricsLoggerOptions): Promise<MetricsLogger> => {
+  const {ProxyAgent} = await import('proxy-agent')
+  const metrics = await import('datadog-metrics')
+
   const apiUrl = getBaseAPIUrl(opts.datadogSite)
 
   const metricsOpts = {

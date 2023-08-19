@@ -1,10 +1,10 @@
-import {
+import type {
   CloudWatchLogsClient,
   CreateLogGroupCommandInput,
   DeleteSubscriptionFilterCommandInput,
   PutSubscriptionFilterCommandInput,
 } from '@aws-sdk/client-cloudwatch-logs'
-import {
+import type {
   FunctionConfiguration as LFunctionConfiguration,
   LambdaClient,
   TagResourceCommandInput,

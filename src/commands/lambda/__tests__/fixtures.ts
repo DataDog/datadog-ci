@@ -1,35 +1,40 @@
-import {
-  DescribeSubscriptionFiltersCommand,
+import type {
   DescribeLogGroupsResponse,
   DescribeSubscriptionFiltersResponse,
   ServiceInputTypes as CWLServiceInputTypes,
   ServiceOutputTypes as CWLServiceOutputTypes,
-  DescribeLogGroupsCommand,
-  CreateLogGroupCommand,
-  DeleteSubscriptionFilterCommand,
-  PutSubscriptionFilterCommand,
   LogStream,
-  DescribeLogStreamsCommand,
-  GetLogEventsCommand,
   OutputLogEvent,
 } from '@aws-sdk/client-cloudwatch-logs'
-import {
+import type {
   FunctionConfiguration as LFunctionConfiguration,
   ServiceInputTypes as LServiceInputTypes,
   ServiceOutputTypes as LServiceOutputTypes,
-  GetLayerVersionCommand,
-  GetFunctionCommand,
-  ListFunctionsCommand,
-  UpdateFunctionConfigurationCommand,
-  TagResourceCommand,
-  ListTagsCommand,
   ListTagsResponse,
   GetLayerVersionCommandInput,
   ServiceInputTypes,
   ServiceOutputTypes,
   ListTagsCommandOutput,
 } from '@aws-sdk/client-lambda'
-import {AwsStub} from 'aws-sdk-client-mock'
+import type {AwsStub} from 'aws-sdk-client-mock'
+
+import {
+  DescribeSubscriptionFiltersCommand,
+  DescribeLogGroupsCommand,
+  CreateLogGroupCommand,
+  DeleteSubscriptionFilterCommand,
+  PutSubscriptionFilterCommand,
+  DescribeLogStreamsCommand,
+  GetLogEventsCommand,
+} from '@aws-sdk/client-cloudwatch-logs'
+import {
+  GetLayerVersionCommand,
+  GetFunctionCommand,
+  ListFunctionsCommand,
+  UpdateFunctionConfigurationCommand,
+  TagResourceCommand,
+  ListTagsCommand,
+} from '@aws-sdk/client-lambda'
 import {Cli} from 'clipanion/lib/advanced'
 
 import {MOCK_DATADOG_API_KEY} from '../../../helpers/__tests__/fixtures'

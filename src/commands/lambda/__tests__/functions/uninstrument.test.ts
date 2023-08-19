@@ -49,7 +49,6 @@ describe('uninstrument', () => {
     beforeEach(() => {
       cloudWatchLogsClientMock.reset()
       lambdaClientMock.reset()
-      jest.resetModules()
       process.env = {}
 
       mockLambdaClientCommands(lambdaClientMock)
@@ -180,7 +179,6 @@ describe('uninstrument', () => {
 
     describe('handlers using AWS_LAMBDA_EXEC_WRAPPER', () => {
       beforeEach(() => {
-        jest.resetModules()
         process.env = {}
 
         mockLambdaClientCommands(lambdaClientMock)
@@ -262,7 +260,6 @@ describe('uninstrument', () => {
     beforeEach(() => {
       cloudWatchLogsClientMock.reset()
       lambdaClientMock.reset()
-      jest.resetModules()
       process.env = {}
 
       mockLambdaClientCommands(lambdaClientMock)
@@ -416,7 +413,6 @@ describe('uninstrument', () => {
     beforeEach(() => {
       cloudWatchLogsClientMock.reset()
       lambdaClientMock.reset()
-      jest.resetModules()
       process.env = {}
 
       mockLambdaClientCommands(lambdaClientMock)
@@ -472,7 +468,7 @@ describe('uninstrument', () => {
 
     test('returns log group configuration subscription delete request when forwarderARN is set', async () => {
       const logGroupName = '/aws/lambda/group'
-      ;(loggroup.calculateLogGroupRemoveRequest as any).mockImplementation(() => ({
+      jest.spyOn(loggroup, 'calculateLogGroupRemoveRequest').mockImplementation(async () => ({
         filterName: SUBSCRIPTION_FILTER_NAME,
         logGroupName,
       }))
@@ -510,7 +506,6 @@ describe('uninstrument', () => {
     beforeEach(() => {
       cloudWatchLogsClientMock.reset()
       lambdaClientMock.reset()
-      jest.resetModules()
       process.env = {}
 
       mockLambdaClientCommands(lambdaClientMock)

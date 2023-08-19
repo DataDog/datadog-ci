@@ -1,10 +1,11 @@
 jest.unmock('chalk')
 
-import {BaseContext} from 'clipanion/lib/advanced'
+import type {BaseContext} from 'clipanion/lib/advanced'
 
-import {ExecutionRule, MainReporter, Result, Summary, Test, UserConfigOverride} from '../../interfaces'
+import {DEFAULT_COMMAND_CONFIG} from '../../constants'
+import type {MainReporter, Result, Summary, Test, UserConfigOverride} from '../../interfaces'
+import {ExecutionRule} from '../../interfaces'
 import {DefaultReporter} from '../../reporters/default'
-import {DEFAULT_COMMAND_CONFIG} from '../../run-tests-command'
 
 import {
   getApiResult,

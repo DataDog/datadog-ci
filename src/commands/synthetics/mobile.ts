@@ -1,9 +1,7 @@
-import * as crypto from 'crypto'
 import fs from 'fs'
 
-import {APIHelper, EndpointError, formatBackendErrors, getApiHelper} from './api'
-import {CiError} from './errors'
-import {
+import type {APIHelper} from './api'
+import type {
   MobileApplicationVersion,
   PresignedUrlResponse,
   Test,
@@ -12,7 +10,12 @@ import {
   UserConfigOverride,
 } from './interfaces'
 
+import {EndpointError, formatBackendErrors, getApiHelper} from './api'
+import {CiError} from './errors'
+
 export const getSizeAndMD5HashFromFile = async (filePath: string): Promise<{appSize: number; md5: string}> => {
+  const crypto = await import('crypto')
+
   const hash = crypto.createHash('md5')
   const fileStream = fs.createReadStream(filePath)
   for await (const chunk of fileStream) {

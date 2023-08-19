@@ -1,6 +1,8 @@
-import {CloudWatchLogsClient} from '@aws-sdk/client-cloudwatch-logs'
-import {LambdaClient, LambdaClientConfig} from '@aws-sdk/client-lambda'
-import {AwsCredentialIdentity} from '@aws-sdk/types'
+import type {FunctionConfiguration} from './interfaces'
+import type {CloudWatchLogsClient} from '@aws-sdk/client-cloudwatch-logs'
+import type {LambdaClient, LambdaClientConfig} from '@aws-sdk/client-lambda'
+import type {AwsCredentialIdentity} from '@aws-sdk/types'
+
 import chalk from 'chalk'
 import {Command, Option} from 'clipanion'
 
@@ -9,17 +11,7 @@ import * as helperRenderer from '../../helpers/renderer'
 import {DEFAULT_CONFIG_PATHS, resolveConfigFromFile} from '../../helpers/utils'
 
 import {AWS_DEFAULT_REGION_ENV_VAR} from './constants'
-import {
-  collectFunctionsByRegion,
-  getAllLambdaFunctionConfigs,
-  getAWSProfileCredentials,
-  handleLambdaFunctionUpdates,
-  getAWSCredentials,
-  willUpdateFunctionConfigs,
-  maskConfig,
-} from './functions/commons'
 import {getUninstrumentedFunctionConfigs, getUninstrumentedFunctionConfigsFromRegEx} from './functions/uninstrument'
-import {FunctionConfiguration} from './interfaces'
 import {requestAWSCredentials, requestFunctionSelection} from './prompt'
 import * as commonRenderer from './renderers/common-renderer'
 import * as instrumentRenderer from './renderers/instrument-uninstrument-renderer'
@@ -66,6 +58,18 @@ export class UninstrumentCommand extends Command {
   private credentials?: AwsCredentialIdentity
 
   public async execute() {
+    const {CloudWatchLogsClient} = await import('@aws-sdk/client-cloudwatch-logs')
+    const {LambdaClient} = await import('@aws-sdk/client-lambda')
+    const {default: ora} = await import('ora')
+    const {
+      collectFunctionsByRegion,
+      getAWSProfileCredentials,
+      getAllLambdaFunctionConfigs,
+      handleLambdaFunctionUpdates,
+      getAWSCredentials,
+      willUpdateFunctionConfigs,
+    } = await import('./functions/commons')
+
     this.context.stdout.write(instrumentRenderer.renderLambdaHeader(Object.getPrototypeOf(this), this.dryRun))
 
     const lambdaConfig = {lambda: this.config}
@@ -85,6 +89,7 @@ export class UninstrumentCommand extends Command {
     }
 
     let hasSpecifiedFunctions = this.functions.length !== 0 || this.config.functions.length !== 0
+
     if (this.interactive) {
       try {
         const credentials = await getAWSCredentials()
@@ -104,7 +109,7 @@ export class UninstrumentCommand extends Command {
       this.region = region
 
       if (!hasSpecifiedFunctions) {
-        const spinner = instrumentRenderer.fetchingFunctionsSpinner()
+        const spinner = instrumentRenderer.fetchingFunctionsSpinner(ora)
         try {
           const lambdaClientConfig: LambdaClientConfig = {
             region,
@@ -171,7 +176,7 @@ export class UninstrumentCommand extends Command {
         return 1
       }
 
-      const spinner = instrumentRenderer.fetchingFunctionsSpinner()
+      const spinner = instrumentRenderer.fetchingFunctionsSpinner(ora)
       try {
         const cloudWatchLogsClient = new CloudWatchLogsClient({region})
 
@@ -211,7 +216,7 @@ export class UninstrumentCommand extends Command {
       }
 
       for (const [region, functionARNs] of Object.entries(functionGroups)) {
-        const spinner = instrumentRenderer.fetchingFunctionsConfigSpinner(region)
+        const spinner = instrumentRenderer.fetchingFunctionsConfigSpinner(ora, region)
         spinner.start()
         const lambdaClientConfig: LambdaClientConfig = {
           region,
@@ -239,7 +244,7 @@ export class UninstrumentCommand extends Command {
     }
 
     const configList = configGroups.map((group) => group.configs).reduce((a, b) => a.concat(b))
-    this.printPlannedActions(configList)
+    await this.printPlannedActions(configList)
     if (this.dryRun || configList.length === 0) {
       return 0
     }
@@ -268,7 +273,9 @@ export class UninstrumentCommand extends Command {
     return 0
   }
 
-  private printPlannedActions(configs: FunctionConfiguration[]) {
+  private async printPlannedActions(configs: FunctionConfiguration[]) {
+    const {willUpdateFunctionConfigs, maskConfig} = await import('./functions/commons')
+
     const willUpdate = willUpdateFunctionConfigs(configs)
 
     if (!willUpdate) {

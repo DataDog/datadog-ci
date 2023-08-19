@@ -1,6 +1,12 @@
-import {CloudWatchLogsClient} from '@aws-sdk/client-cloudwatch-logs'
-import {LambdaClient, LambdaClientConfig} from '@aws-sdk/client-lambda'
-import {AwsCredentialIdentity} from '@aws-sdk/types'
+import type {
+  FunctionConfiguration,
+  InstrumentationSettings,
+  InstrumentedConfigurationGroup,
+  LambdaConfigOptions,
+} from './interfaces'
+import type {LambdaClientConfig} from '@aws-sdk/client-lambda'
+import type {AwsCredentialIdentity} from '@aws-sdk/types'
+
 import chalk from 'chalk'
 import {Cli, Command, Option} from 'clipanion'
 
@@ -13,26 +19,7 @@ import {getCommitInfo, newSimpleGit} from '../git-metadata/git'
 import {UploadCommand} from '../git-metadata/upload'
 
 import {AWS_DEFAULT_REGION_ENV_VAR, EXTRA_TAGS_REG_EXP} from './constants'
-import {
-  checkRuntimeTypesAreUniform,
-  coerceBoolean,
-  collectFunctionsByRegion,
-  getAWSProfileCredentials,
-  getAllLambdaFunctionConfigs,
-  handleLambdaFunctionUpdates,
-  getAWSCredentials,
-  isMissingDatadogEnvVars,
-  sentenceMatchesRegEx,
-  willUpdateFunctionConfigs,
-  maskConfig,
-} from './functions/commons'
-import {getInstrumentedFunctionConfigs, getInstrumentedFunctionConfigsFromRegEx} from './functions/instrument'
-import {
-  FunctionConfiguration,
-  InstrumentationSettings,
-  InstrumentedConfigurationGroup,
-  LambdaConfigOptions,
-} from './interfaces'
+import {getInstrumentedFunctionConfigsFromRegEx, getInstrumentedFunctionConfigs} from './functions/instrument'
 import {
   requestAWSCredentials,
   requestAWSRegion,
@@ -83,6 +70,20 @@ export class InstrumentCommand extends Command {
   private credentials?: AwsCredentialIdentity
 
   public async execute() {
+    const {CloudWatchLogsClient} = await import('@aws-sdk/client-cloudwatch-logs')
+    const {LambdaClient} = await import('@aws-sdk/client-lambda')
+    const {default: ora} = await import('ora')
+    const {
+      checkRuntimeTypesAreUniform,
+      collectFunctionsByRegion,
+      getAWSProfileCredentials,
+      getAllLambdaFunctionConfigs,
+      handleLambdaFunctionUpdates,
+      getAWSCredentials,
+      isMissingDatadogEnvVars,
+      willUpdateFunctionConfigs,
+    } = await import('./functions/commons')
+
     this.context.stdout.write(instrumentRenderer.renderLambdaHeader(Object.getPrototypeOf(this), this.dryRun))
 
     const lambdaConfig = {lambda: this.config}
@@ -137,7 +138,7 @@ export class InstrumentCommand extends Command {
       // to select from all of the functions from the
       // requested region.
       if (!hasSpecifiedFunctions) {
-        const spinner = instrumentRenderer.fetchingFunctionsSpinner()
+        const spinner = instrumentRenderer.fetchingFunctionsSpinner(ora)
         try {
           const lambdaClientConfig: LambdaClientConfig = {
             region,
@@ -178,7 +179,7 @@ export class InstrumentCommand extends Command {
       this.setEnvServiceVersion()
     }
 
-    const settings = this.getSettings()
+    const settings = await this.getSettings()
     if (settings === undefined) {
       return 1
     }
@@ -239,7 +240,7 @@ export class InstrumentCommand extends Command {
         return 1
       }
 
-      const spinner = instrumentRenderer.fetchingFunctionsSpinner()
+      const spinner = instrumentRenderer.fetchingFunctionsSpinner(ora)
       try {
         const cloudWatchLogsClient = new CloudWatchLogsClient({region})
 
@@ -250,6 +251,7 @@ export class InstrumentCommand extends Command {
 
         const lambdaClient = new LambdaClient(lambdaClientConfig)
         spinner.start()
+
         const configs = await getInstrumentedFunctionConfigsFromRegEx(
           lambdaClient,
           cloudWatchLogsClient,
@@ -281,8 +283,9 @@ export class InstrumentCommand extends Command {
       }
 
       for (const [region, functionList] of Object.entries(functionGroups)) {
-        const spinner = instrumentRenderer.fetchingFunctionsConfigSpinner(region)
+        const spinner = instrumentRenderer.fetchingFunctionsConfigSpinner(ora, region)
         spinner.start()
+
         const lambdaClientConfig: LambdaClientConfig = {
           region,
           credentials: this.credentials,
@@ -317,7 +320,7 @@ export class InstrumentCommand extends Command {
       )
     }
 
-    this.printPlannedActions(configList)
+    await this.printPlannedActions(configList)
     if (this.dryRun || configList.length === 0) {
       return 0
     }
@@ -392,7 +395,7 @@ export class InstrumentCommand extends Command {
     return
   }
 
-  private getSettings(): InstrumentationSettings | undefined {
+  private async getSettings(): Promise<InstrumentationSettings | undefined> {
     const layerVersionStr = this.layerVersion ?? this.config.layerVersion
     const extensionVersionStr = this.extensionVersion ?? this.config.extensionVersion
     const layerAWSAccount = this.layerAWSAccount ?? this.config.layerAWSAccount
@@ -433,6 +436,8 @@ export class InstrumentCommand extends Command {
         return
       }
     }
+
+    const {coerceBoolean, sentenceMatchesRegEx} = await import('./functions/commons')
 
     const captureLambdaPayload = coerceBoolean(false, this.captureLambdaPayload, this.config.captureLambdaPayload)
     const flushMetricsToLogs = coerceBoolean(true, this.flushMetricsToLogs, this.config.flushMetricsToLogs)
@@ -487,7 +492,9 @@ export class InstrumentCommand extends Command {
     }
   }
 
-  private printPlannedActions(configs: FunctionConfiguration[]) {
+  private async printPlannedActions(configs: FunctionConfiguration[]) {
+    const {willUpdateFunctionConfigs, maskConfig} = await import('./functions/commons')
+
     const willUpdate = willUpdateFunctionConfigs(configs)
     if (!willUpdate) {
       this.context.stdout.write(instrumentRenderer.renderNoUpdatesApplied(this.dryRun))

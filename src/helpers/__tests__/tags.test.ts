@@ -1,4 +1,5 @@
-import {SpanTags} from '../interfaces'
+import type {SpanTags} from '../interfaces'
+
 import {parseTags, parseMetrics, getSpanTags} from '../tags'
 
 describe('parseTags', () => {
