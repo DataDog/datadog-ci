@@ -145,7 +145,7 @@ export class GateEvaluateCommand extends Command {
      * for the returned promise to be rejected. The retry will start immediately after
      * and will be handled by `retryRequest`.
      */
-    return retryRequest((attempt) => this.evaluateRulesWithWait(api, evaluateRequest, attempt), {
+    return retryRequest((bail, attempt) => this.evaluateRulesWithWait(api, evaluateRequest, attempt, bail), {
       onRetry: (e, attempt) => {
         // render retry message if error is not wait
         if (e.message !== 'wait') {
@@ -169,20 +169,21 @@ export class GateEvaluateCommand extends Command {
    * - If the request is successful, the promise will be resolved with the response
    * - If the request is successful but the status is 'wait', the promise will be rejected after the received wait time (wait_time_ms)
    * - If the request is not successful, the promise will be rejected after `initialRetryMs`, with an exponential factor that depends on the attempt (exponential backoff).
-   * - If the command execution time is greater than the command timeout, the promise will be rejected immediately
+   * - If the command execution time is greater than the command timeout, we bail to avoid retrying.
    * If the promise is rejected, `retryRequest` will handle the retry immediately.
    */
   private async evaluateRulesWithWait(
     api: APIHelper,
     evaluateRequest: Payload,
-    attempt?: number
+    attempt?: number,
+    bail?: (e: Error) => void
   ): Promise<AxiosResponse<EvaluationResponsePayload>> {
     const timePassed = new Date().getTime() - evaluateRequest.startTimeMs
     const remainingWait = this.timeoutInSeconds * 1000 - timePassed
 
     return new Promise((resolve, reject) => {
       if (remainingWait <= 0) {
-        reject(new Error('wait'))
+        bail?.(new Error('wait'))
       } else {
         api
           .evaluateGateRules(evaluateRequest, this.context.stdout.write.bind(this.context.stdout))

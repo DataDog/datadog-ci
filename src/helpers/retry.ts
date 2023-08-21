@@ -3,13 +3,13 @@ import retry from 'async-retry'
 const errorCodesNoRetry = [400, 403, 413]
 
 export const retryRequest = async <T>(
-  requestPerformer: (attempt?: number) => Promise<T>,
+  requestPerformer: (bail?: (e: Error) => void, attempt?: number) => Promise<T>,
   retryOpts: retry.Options
 ): Promise<T> => {
   // Request function, passed to async-retry
   const doRequest = async (bail: (e: Error) => void, attempt: number) => {
     try {
-      return await requestPerformer(attempt)
+      return await requestPerformer(bail, attempt)
     } catch (error) {
       if (error.response && errorCodesNoRetry.includes(error.response.status)) {
         // If it's an axios error with a status code that is excluded from retries, we bail to avoid retrying
