@@ -144,19 +144,19 @@ yarn prepack
 To release a new version of `datadog-ci`:
 
 1. Create a new branch for the version upgrade.
-2. Update the `package.json` version, commit the change `vX.X.X` and tag it with `git tag vX.X.X`, based on the version you are upgrading to. You may refer to [Semantic Versioning](https://semver.org/#summary) to determine what level to increment.
-3. Push the branch along with the tag to the upstream (GitHub) with `git push --tags origin name-of-the-branch`, create a Pull Request, and get at least one approval.
-   - Create a [draft GitHub Release](https://github.com/DataDog/datadog-ci/releases/new?title=%3Csame-as-tag%3E&body=%3C!--%20Use%20the%20%22Generate%20release%20notes%22%20button%20at%20the%20top%20right,%20then%20categorize%20the%20changes%20--%3E)
-     by choosing your tag, using `Generate release notes` and **saving it as a draft**.
-   - Copy the generated release notes, and paste them in the description of your Pull Request. This ensures the feature PRs are linked to your release PR.
-   - Please categorize the changes by product (commands are grouped by product in the [`.github/CODEOWNERS`](https://github.com/DataDog/datadog-ci/blob/master/.github/CODEOWNERS) file), or "Documentation" / "Dependencies" / "Chores".
+2. Update the `package.json` version to `X.X.X`, commit the change `vX.X.X` and tag it with `git tag vX.X.X`.
+   - You may refer to [Semantic Versioning](https://semver.org/#summary) to determine what level to increment.
+4. Push the branch **along with the tag** with `git push --tags origin name-of-the-branch`, create a PR, and get at least one approval.
+   - [Create a draft GitHub Release (prefilled link)](https://github.com/DataDog/datadog-ci/releases/new?title=%3Csame-as-tag%3E&body=%3C!--%20Use%20the%20%22Generate%20release%20notes%22%20button%20at%20the%20top%20right,%20then%20categorize%20the%20changes%20--%3E) and **save it as a draft**.
+   - Please categorize the changes by product or "Documentation" / "Dependencies" / "Chores". You can find commands grouped by product in the [`.github/CODEOWNERS`](https://github.com/DataDog/datadog-ci/blob/master/.github/CODEOWNERS) file.
+   - Copy the generated release notes, and paste them in the description of your PR. This ensures the feature PRs are linked to your release PR.
    - See this [example PR](https://github.com/DataDog/datadog-ci/pull/1047).
-4. Once you've received at least one approval, merge the Pull Request **with the "Create a merge commit" strategy**.
-   - You may notice that some **GitLab** jobs are pending, this is expected (see step 7). You can merge the PR when *only those jobs* are left.
-   - The "Create a merge commit" strategy is required for step 7, and for the GitHub Release to point to an existing commit once the PR is merged.
-5. Go back to your draft GitHub Release, and publish it.
-6. Once the release is created, [this GitHub Workflow](https://github.com/DataDog/datadog-ci/actions/workflows/release.yml) publishes the NPM package and adds binaries to the release's assets. Wait for it to succeed.
-7. When the NPM package is published, go to the [GitLab pipelines](https://gitlab.ddbuild.io/DataDog/datadog-ci/-/pipelines?scope=tags&status=manual), find the pipeline for your tag, and start the `build` stage to run the Docker image build jobs.
+5. Once you've received at least one approval, merge the PR **with the "Create a merge commit" strategy**.
+   - You may notice that some **_GitLab_** jobs are pending, this is expected (see **step 7**). You can merge the PR when *only those jobs* are left.
+   - The "Create a merge commit" strategy is required for **step 7**, and for the GitHub Release to point to an existing commit once the PR is merged.
+6. Go back to your draft GitHub Release, and publish it.
+7. Once the release is published, [this GitHub Workflow](https://github.com/DataDog/datadog-ci/actions/workflows/release.yml) publishes the NPM package and adds binaries to the release's assets. Wait for it to succeed.
+8. When the NPM package is published, go to the [_GitLab_ pipelines](https://gitlab.ddbuild.io/DataDog/datadog-ci/-/pipelines?scope=tags&status=manual), find the pipeline for your tag, and start the `build` stage to run the Docker image build jobs.
    - Make sure all the jobs and downstream jobs succeed.
 
 Thanks for creating a release! 🎉
