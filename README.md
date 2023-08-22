@@ -149,7 +149,7 @@ To release a new version of `datadog-ci`:
 4. Push the branch **along with the tag** with `git push --tags origin name-of-the-branch`, create a PR, and get at least one approval.
    - [Create a draft GitHub Release (prefilled link)](https://github.com/DataDog/datadog-ci/releases/new?title=%3Csame-as-tag%3E&body=%3C!--%20Use%20the%20%22Generate%20release%20notes%22%20button%20at%20the%20top%20right,%20then%20categorize%20the%20changes%20--%3E) and **save it as a draft**.
    - Please categorize the changes by product or "Documentation" / "Dependencies" / "Chores". You can find commands grouped by product in the [`.github/CODEOWNERS`](https://github.com/DataDog/datadog-ci/blob/master/.github/CODEOWNERS) file.
-   - Copy the generated release notes, and paste them in the description of your PR. This ensures the feature PRs are linked to your release PR.
+   - Copy the categorized release notes, and paste them in the description of your PR. This ensures the feature PRs are linked to your release PR.
    - See this [example PR](https://github.com/DataDog/datadog-ci/pull/1047).
 5. Once you've received at least one approval, merge the PR **with the "Create a merge commit" strategy**.
    - You may notice that some **_GitLab_** jobs are pending, this is expected (see **step 7**). You can merge the PR when *only those jobs* are left.
