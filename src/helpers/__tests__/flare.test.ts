@@ -195,6 +195,14 @@ describe('flare', () => {
   })
 
   describe('validateStartEndFlags', () => {
+    beforeEach(() => {
+      jest.useFakeTimers({now: new Date(Date.UTC(2023, 0))})
+    })
+
+    afterEach(() => {
+      jest.useRealTimers()
+    })
+
     it('returns [undefined, undefined] when start and end flags are not specified', () => {
       const errorMessages: string[] = []
       const res = validateStartEndFlags(undefined, undefined)
