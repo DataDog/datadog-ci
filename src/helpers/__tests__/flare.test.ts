@@ -236,7 +236,8 @@ describe('flare', () => {
       expect(res).not.toBeUndefined()
       const [start, end] = res
       expect(start).toBe(0)
-      expect(end).toEqual(now)
+      expect(end).toBeLessThan(9999999999999)
+      expect(end).toStrictEqual(now)
     })
   })
 })
