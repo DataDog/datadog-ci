@@ -1898,6 +1898,7 @@ __metadata:
     ts-jest: 29.1.1
     ts-node: 8.8.1
     ts-proto: ^1.156.3
+    typanion: ^3.14.0
     typescript: 5.1.6
     uuid: ^9.0.0
     ws: 7.4.6
@@ -10581,7 +10582,7 @@ jschardet@latest:
   languageName: node
   linkType: hard
 
-"typanion@npm:^3.8.0":
+"typanion@npm:^3.14.0, typanion@npm:^3.8.0":
   version: 3.14.0
   resolution: "typanion@npm:3.14.0"
   checksum: fc0590d02c13c659eb1689e8adf7777e6c00dc911377e44cd36fe1b1271cfaca71547149f12cdc275058c0de5562a14e5273adbae66d47e6e0320e36007f5912
