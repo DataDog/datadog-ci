@@ -15,7 +15,7 @@ import {getReactNativeVersion} from './utils'
  * be unit tested. If you make any change to it, make sure to test
  * it with a real project.
  */
-const reactNativePath = (() => {
+const getReactNativePath = () => {
   try {
     const reactNativeIndexFile = require.resolve('react-native')
 
@@ -27,10 +27,19 @@ const reactNativePath = (() => {
       return '../node_modules/react-native'
     }
 
+    // Used for internal testing purposes only
+    if (process.env.DATADOG_CI_REACT_NATIVE_PATH) {
+      return process.env.DATADOG_CI_REACT_NATIVE_PATH
+    }
+
     // When the command is ran from XCode with yarn react-native xcode` (legacy)
     return 'node_modules/react-native'
   }
-})()
+}
+
+const reactNativePath = getReactNativePath()
+
+const getDefaultScriptPath = () => `${getReactNativePath()}/scripts/react-native-xcode.sh`
 
 export class XCodeCommand extends Command {
   public static paths = [['react-native', 'xcode']]
@@ -67,7 +76,7 @@ export class XCodeCommand extends Command {
   private repositoryURL = Option.String('--repository-url')
   private service = Option.String('--service')
 
-  private scriptPath = Option.String({required: false}) || `${reactNativePath}/scripts/react-native-xcode.sh` // Positional
+  private scriptPath = Option.String({required: false}) // Positional
 
   public async execute() {
     this.service = process.env.SERVICE_NAME_IOS || this.service || process.env.PRODUCT_BUNDLE_IDENTIFIER
@@ -198,7 +207,7 @@ export class XCodeCommand extends Command {
   }
 
   private bundleReactNativeCodeAndImages = async () => {
-    const bundleJSChildProcess = spawn(this.scriptPath, [], {
+    const bundleJSChildProcess = spawn(this.scriptPath || getDefaultScriptPath(), [], {
       env: this.getBundleReactNativeCodeAndImagesEnvironment(),
       stdio: ['inherit', 'pipe', 'pipe'],
     })

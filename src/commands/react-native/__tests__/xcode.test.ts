@@ -62,7 +62,7 @@ const basicEnvironment = {
 }
 
 const runCLI = async (
-  script: string,
+  script?: string,
   options?: {
     composeSourcemapsPath?: string
     configPath?: string
@@ -77,7 +77,11 @@ const runCLI = async (
   const context = createMockContext() as any
   process.env = {...process.env, DATADOG_API_KEY: 'PLACEHOLDER'}
 
-  const command = ['react-native', 'xcode', script, '--dry-run']
+  const command = ['react-native', 'xcode']
+  if (script) {
+    command.push(script)
+  }
+  command.push('--dry-run')
   if (options?.force) {
     command.push('--force')
   }
@@ -156,6 +160,26 @@ describe('xcode', () => {
       const {context, code} = await runCLI(
         './src/commands/react-native/__tests__/fixtures/bundle-script/successful_script.sh'
       )
+      // Uncomment these lines for debugging failing script
+      // console.log(context.stdout.toString())
+      // console.log(context.stderr.toString())
+
+      expect(code).toBe(0)
+      const output = context.stdout.toString()
+      expect(output).toContain(
+        'Upload of ./src/commands/react-native/__tests__/fixtures/basic-ios/main.jsbundle.map for bundle main.jsbundle on platform ios'
+      )
+      expect(output).toContain('version: 0.0.2 build: 000020 service: com.myapp.test')
+    })
+
+    test('should run the provided script and upload sourcemaps when no path is provided', async () => {
+      process.env = {
+        ...process.env,
+        ...basicEnvironment,
+        // This ensures we point to an existing file as the command is ran without any script path
+        DATADOG_CI_REACT_NATIVE_PATH: './src/commands/react-native/__tests__/fixtures/react-native',
+      }
+      const {context, code} = await runCLI()
       // Uncomment these lines for debugging failing script
       // console.log(context.stdout.toString())
       // console.log(context.stderr.toString())
