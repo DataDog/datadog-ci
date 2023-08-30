@@ -15,6 +15,7 @@ export interface Payload {
 export interface PayloadOptions {
   dryRun: boolean
   noWait: boolean
+  isLastRetry?: boolean
 }
 
 export interface EvaluationResponsePayload {

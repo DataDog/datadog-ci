@@ -182,28 +182,39 @@ export class GateEvaluateCommand extends Command {
     const remainingWait = this.timeoutInSeconds * 1000 - timePassed
 
     return new Promise((resolve, reject) => {
-      if (remainingWait <= 0) {
-        bail?.(new Error('wait'))
-      } else {
-        api
-          .evaluateGateRules(evaluateRequest, this.context.stdout.write.bind(this.context.stdout))
-          .then((response) => {
-            if (response.data.data.attributes.status === 'wait') {
-              this.context.stdout.write(renderWaiting())
-              const waitTime = response.data.data.attributes.metadata?.wait_time_ms ?? 0
-              setTimeout(() => {
-                reject(new Error('wait'))
-              }, Math.min(remainingWait, waitTime))
-            } else {
-              resolve(response)
-            }
-          })
-          .catch((err) => {
-            setTimeout(() => {
-              reject(err)
-            }, Math.min(remainingWait, this.getDelay(attempt ?? 1)))
-          })
+      const request = {...evaluateRequest, options: {...evaluateRequest.options}}
+      if (remainingWait <= 0 || attempt === this.maxRetries + 1) {
+        request.options.isLastRetry = true
       }
+
+      api
+        .evaluateGateRules(request, this.context.stdout.write.bind(this.context.stdout))
+        .then((response) => {
+          if (remainingWait <= 0) {
+            bail?.(new Error('wait'))
+
+            return
+          }
+          if (response.data.data.attributes.status === 'wait') {
+            this.context.stdout.write(renderWaiting())
+            const waitTime = response.data.data.attributes.metadata?.wait_time_ms ?? 0
+            setTimeout(() => {
+              reject(new Error('wait'))
+            }, Math.min(remainingWait, waitTime))
+          } else {
+            resolve(response)
+          }
+        })
+        .catch((err) => {
+          if (remainingWait <= 0) {
+            bail?.(new Error('wait'))
+
+            return
+          }
+          setTimeout(() => {
+            reject(err)
+          }, Math.min(remainingWait, this.getDelay(attempt ?? 1)))
+        })
     })
   }
 
