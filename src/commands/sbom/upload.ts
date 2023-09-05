@@ -1,5 +1,4 @@
 import fs from 'fs'
-import os from 'os'
 import process from 'process'
 
 import Ajv from 'ajv'
@@ -7,33 +6,13 @@ import {AxiosPromise, AxiosResponse} from 'axios'
 import chalk from 'chalk'
 import {Command, Option} from 'clipanion'
 
-import {SpanTags} from '../../helpers/interfaces'
 import {getSpanTags} from '../../helpers/tags'
 
 import {getApiHelper} from './api'
-import {Bom} from './protobuf/bom-1.4'
-import {SBOMEntity, SBOMPayload, SBOMSourceType} from './protobuf/sbom_intake'
+import {generatePayload} from './payload'
+import {SBOMPayload} from './protobuf/sbom_intake'
 import {SbomPayloadData} from './types'
 import {getValidator, validateSbomFile} from './validation'
-
-const generatePayload = (payloadData: SbomPayloadData, service: string, tags: SpanTags): SBOMPayload => {
-  const spanTagsAsStringArray = Object.keys(tags).map((key) => `${key}:${tags[key as keyof SpanTags]}`)
-
-  return SBOMPayload.create({
-    host: os.hostname(),
-    source: 'CI',
-    entities: [
-      SBOMEntity.create({
-        id: service,
-        type: SBOMSourceType.CI_PIPELINE,
-        inUse: true,
-        generatedAt: new Date(),
-        ddTags: spanTagsAsStringArray,
-        cyclonedx: Bom.fromJSON(payloadData.content),
-      }),
-    ],
-  })
-}
 
 export class UploadSbomCommand extends Command {
   public static paths = [['sbom', 'upload']]
@@ -98,10 +77,10 @@ export class UploadSbomCommand extends Command {
     const validator: Ajv = getValidator()
     for (const basePath of this.basePaths) {
       if (this.debug) {
-        this.context.stdout.write(`Processing file ${basePath}`)
+        this.context.stdout.write(`Processing file ${basePath}\n`)
       }
 
-      if (validateSbomFile(basePath, validator)) {
+      if (validateSbomFile(basePath, validator, this.debug || false)) {
         // Get the payload to upload
         const payloadData: SbomPayloadData = {
           filePath: basePath,

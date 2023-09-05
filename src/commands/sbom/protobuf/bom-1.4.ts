@@ -30,30 +30,39 @@ export function classificationFromJSON(object: any): Classification {
   switch (object) {
     case 0:
     case 'CLASSIFICATION_NULL':
+    case 'null':
       return Classification.CLASSIFICATION_NULL
     case 1:
     case 'CLASSIFICATION_APPLICATION':
+    case 'application':
       return Classification.CLASSIFICATION_APPLICATION
     case 2:
     case 'CLASSIFICATION_FRAMEWORK':
+    case 'framework':
       return Classification.CLASSIFICATION_FRAMEWORK
     case 3:
     case 'CLASSIFICATION_LIBRARY':
+    case 'library':
       return Classification.CLASSIFICATION_LIBRARY
     case 4:
     case 'CLASSIFICATION_OPERATING_SYSTEM':
+    case 'operating_system':
       return Classification.CLASSIFICATION_OPERATING_SYSTEM
     case 5:
     case 'CLASSIFICATION_DEVICE':
+    case 'device':
       return Classification.CLASSIFICATION_DEVICE
     case 6:
     case 'CLASSIFICATION_FILE':
+    case 'file':
       return Classification.CLASSIFICATION_FILE
     case 7:
     case 'CLASSIFICATION_CONTAINER':
+    case 'container':
       return Classification.CLASSIFICATION_CONTAINER
     case 8:
     case 'CLASSIFICATION_FIRMWARE':
+    case 'firmware':
       return Classification.CLASSIFICATION_FIRMWARE
     case -1:
     case 'UNRECOGNIZED':
