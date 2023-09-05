@@ -80,7 +80,7 @@ export class UploadSbomCommand extends Command {
         this.context.stdout.write(`Processing file ${basePath}\n`)
       }
 
-      if (validateSbomFile(basePath, validator, this.debug || false)) {
+      if (validateSbomFile(basePath, validator, !!this.debug)) {
         // Get the payload to upload
         const payloadData: SbomPayloadData = {
           filePath: basePath,
