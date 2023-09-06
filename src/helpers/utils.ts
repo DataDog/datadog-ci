@@ -328,7 +328,7 @@ export const filterAndFormatGithubRemote = (rawRemote: string | undefined): stri
   if (!rawRemote) {
     return rawRemote
   }
-  rawRemote = rawRemote.replace(/git@github\.com:|https:\/\/github\.com\//, 'github.com/')
+  rawRemote = rawRemote.replace(/(git@|https:\/\/)([^/^:]*)(:|\/)/, '$2/')
 
   return rawRemote
 }
