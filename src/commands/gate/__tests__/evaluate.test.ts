@@ -141,15 +141,17 @@ describe('evaluate', () => {
   describe('evaluateRules', () => {
     process.env = {DATADOG_API_KEY: 'PLACEHOLDER', DATADOG_APP_KEY: 'PLACEHOLDER'}
     const api = apiConstructor('', '', '')
-    const mockRequest: Payload = {
-      requestId: '123',
-      startTimeMs: new Date().getTime(),
-      spanTags: {},
-      userScope: {},
-      options: {
-        dryRun: false,
-        noWait: false,
-      },
+    const mockRequest = (): Payload => {
+      return {
+        requestId: '123',
+        startTimeMs: new Date().getTime(),
+        spanTags: {},
+        userScope: {},
+        options: {
+          dryRun: false,
+          noWait: false,
+        },
+      }
     }
     const waitMockResponse = (waitTime: number): AxiosResponse<EvaluationResponsePayload> => {
       return {
@@ -193,7 +195,15 @@ describe('evaluate', () => {
         .mockResolvedValueOnce(waitMockResponse(1))
         .mockResolvedValueOnce(passedMockResponse)
 
-      return expect(command['evaluateRules'].bind(command).call({}, api, mockRequest)).resolves.toBe(0)
+      return command['evaluateRules']
+        .bind(command)
+        .call({}, api, mockRequest())
+        .then((response) => {
+          // should not send isLastRetry if it's not the last retry or a timeout
+          expect(api.evaluateGateRules).toHaveBeenCalledTimes(2)
+          expectNoLastRetry(api, 2)
+          expect(response).toBe(0)
+        })
     })
     test('should pass the command after exhausting all retries and fail-if-unavailable option is not enabled', async () => {
       const write = jest.fn()
@@ -201,7 +211,16 @@ describe('evaluate', () => {
 
       jest.spyOn(api, 'evaluateGateRules').mockResolvedValue(waitMockResponse(1))
 
-      return expect(command['evaluateRules'].bind(command).call({}, api, mockRequest)).resolves.toBe(0)
+      return command['evaluateRules']
+        .bind(command)
+        .call({}, api, mockRequest())
+        .then((response) => {
+          expect(api.evaluateGateRules).toHaveBeenCalledTimes(6)
+          expectNoLastRetry(api, 5)
+          // should send isLastRetry if it's the last retry
+          expectLastRetry(api)
+          expect(response).toBe(0)
+        })
     })
     test('should fail the command after exhausting all retries and fail-if-unavailable option is enabled', async () => {
       const write = jest.fn()
@@ -210,7 +229,16 @@ describe('evaluate', () => {
 
       jest.spyOn(api, 'evaluateGateRules').mockResolvedValue(waitMockResponse(1))
 
-      return expect(command['evaluateRules'].bind(command).call({}, api, mockRequest)).resolves.toBe(1)
+      return command['evaluateRules']
+        .bind(command)
+        .call({}, api, mockRequest())
+        .then((response) => {
+          expect(api.evaluateGateRules).toHaveBeenCalledTimes(6)
+          expectNoLastRetry(api, 5)
+          // should send isLastRetry if it's the last retry
+          expectLastRetry(api)
+          expect(response).toBe(1)
+        })
     })
     test('should pass the command if the timeout is 0 and fail-if-unavailable option is not enabled', async () => {
       const write = jest.fn()
@@ -218,7 +246,15 @@ describe('evaluate', () => {
       command['timeoutInSeconds'] = 0
       jest.spyOn(api, 'evaluateGateRules').mockResolvedValueOnce(waitMockResponse(1))
 
-      return expect(command['evaluateRules'].bind(command).call({}, api, mockRequest)).resolves.toBe(0)
+      return command['evaluateRules']
+        .bind(command)
+        .call({}, api, mockRequest())
+        .then((response) => {
+          expect(api.evaluateGateRules).toHaveBeenCalledTimes(1)
+          // should send isLastRetry if it's timeout
+          expectLastRetry(api)
+          expect(response).toBe(0)
+        })
     })
     test('should fail the command if the timeout is 0 and fail-if-unavailable option is enabled', async () => {
       const write = jest.fn()
@@ -227,7 +263,15 @@ describe('evaluate', () => {
       command['failIfUnavailable'] = true
       jest.spyOn(api, 'evaluateGateRules').mockResolvedValueOnce(waitMockResponse(1))
 
-      return expect(command['evaluateRules'].bind(command).call({}, api, mockRequest)).resolves.toBe(1)
+      return command['evaluateRules']
+        .bind(command)
+        .call({}, api, mockRequest())
+        .then((response) => {
+          expect(api.evaluateGateRules).toHaveBeenCalledTimes(1)
+          // should send isLastRetry if it's timeout
+          expectLastRetry(api)
+          expect(response).toBe(1)
+        })
     })
     test('should pass the command if wait time is greater than the timeout and fail-if-unavailable option is not enabled', async () => {
       const write = jest.fn()
@@ -235,16 +279,34 @@ describe('evaluate', () => {
       command['timeoutInSeconds'] = 1
       jest.spyOn(api, 'evaluateGateRules').mockResolvedValueOnce(waitMockResponse(1100))
 
-      return expect(command['evaluateRules'].bind(command).call({}, api, mockRequest)).resolves.toBe(0)
+      return command['evaluateRules']
+        .bind(command)
+        .call({}, api, mockRequest())
+        .then((response) => {
+          expect(api.evaluateGateRules).toHaveBeenCalledTimes(2)
+          expectNoLastRetry(api, 1)
+          // should send isLastRetry if it's timeout
+          expectLastRetry(api)
+          expect(response).toBe(0)
+        })
     })
-    test('should pass the command if wait time is greater than the timeout and fail-if-unavailable option is enabled', async () => {
+    test('should fail the command if wait time is greater than the timeout and fail-if-unavailable option is enabled', async () => {
       const write = jest.fn()
       const command = createCommand(GateEvaluateCommand, {stderr: {write}} as any)
       command['timeoutInSeconds'] = 1
       command['failIfUnavailable'] = true
       jest.spyOn(api, 'evaluateGateRules').mockResolvedValueOnce(waitMockResponse(1100))
 
-      return expect(command['evaluateRules'].bind(command).call({}, api, mockRequest)).resolves.toBe(1)
+      return command['evaluateRules']
+        .bind(command)
+        .call({}, api, mockRequest())
+        .then((response) => {
+          expect(api.evaluateGateRules).toHaveBeenCalledTimes(2)
+          expectNoLastRetry(api, 1)
+          // should send isLastRetry if it's timeout
+          expectLastRetry(api)
+          expect(response).toBe(1)
+        })
     })
   })
 })
@@ -262,4 +324,29 @@ const createError = (statusCode: number, message: string): any => {
       },
     },
   }
+}
+
+const expectNoLastRetry = (api: any, attempts: number): void => {
+  for (let i = 0; i < attempts; i++) {
+    expect(api.evaluateGateRules).toHaveBeenNthCalledWith(
+      i + 1,
+      expect.objectContaining({
+        options: expect.not.objectContaining({
+          isLastRetry: true,
+        }),
+      }),
+      expect.anything()
+    )
+  }
+}
+
+const expectLastRetry = (api: any): void => {
+  expect(api.evaluateGateRules).toHaveBeenLastCalledWith(
+    expect.objectContaining({
+      options: expect.objectContaining({
+        isLastRetry: true,
+      }),
+    }),
+    expect.anything()
+  )
 }
