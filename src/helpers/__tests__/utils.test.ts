@@ -386,7 +386,7 @@ describe('utils', () => {
       expect(ciUtils.filterAndFormatGithubRemote('git@test.domain.com:datadog/test.git')).toEqual(
         'test.domain.com/datadog/test.git'
       )
-      expect(ciUtils.filterAndFormatGithubRemote('todo.domain.com/datadog/test.git')).toEqual('todo.domain.com/datadog/test.git')
+      expect(ciUtils.filterAndFormatGithubRemote('example.domain.com/datadog/test.git')).toEqual('example.domain.com/datadog/test.git')
     })
   })
 
