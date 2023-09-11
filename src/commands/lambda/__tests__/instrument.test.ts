@@ -1568,7 +1568,7 @@ describe('lambda', () => {
 
       test('aborts early if converting string boolean has an invalid value', () => {
         process.env = {}
-        const stringBooleans: (keyof Omit<LambdaConfigOptions, 'functions' | 'interactive'>)[] = [
+        const stringBooleans: (keyof Omit<LambdaConfigOptions, 'functions' | 'interactive' | 'appSecEnabled'>)[] = [
           'flushMetricsToLogs',
           'mergeXrayTraces',
           'tracing',
