@@ -281,6 +281,7 @@ export interface BaseConfigOverride {
   headers?: {[key: string]: string}
   locations?: string[]
   pollingTimeout?: number
+  resourceUrlSubstitutionRegexes?: string[]
   retry?: RetryConfig
   startUrl?: string
   startUrlSubstitutionRegex?: string
