@@ -1444,6 +1444,7 @@ describe('lambda', () => {
         command['config']['logLevel'] = 'debug'
 
         expect(command['getSettings']()).toEqual({
+          appSecEnabled: false,
           apmFlushDeadline: undefined,
           captureLambdaPayload: false,
           environment: undefined,
@@ -1483,6 +1484,7 @@ describe('lambda', () => {
         command['config']['apmFlushDeadline'] = '50'
 
         expect(command['getSettings']()).toEqual({
+          appSecEnabled: false,
           apmFlushDeadline: '20',
           captureLambdaPayload: false,
           flushMetricsToLogs: false,
@@ -1524,6 +1526,7 @@ describe('lambda', () => {
         process.env = {}
         const command = createCommand(InstrumentCommand)
         const validSettings: InstrumentationSettings = {
+          appSecEnabled: false,
           captureLambdaPayload: true,
           extensionVersion: undefined,
           flushMetricsToLogs: false,
