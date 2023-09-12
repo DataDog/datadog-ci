@@ -52,7 +52,7 @@ export class InstrumentCommand extends Command {
   })
 
   private apmFlushDeadline = Option.String('--apm-flush-deadline')
-  private appSecEnabled = Option.Boolean('--app-sec,--appSec', false)
+  private appsecEnabled = Option.Boolean('--appsec', false)
   private captureLambdaPayload = Option.String('--capture-lambda-payload,--captureLambdaPayload')
   private configPath = Option.String('--config')
   private dryRun = Option.Boolean('-d,--dry,--dry-run', false)
@@ -442,7 +442,7 @@ export class InstrumentCommand extends Command {
     const interactive = coerceBoolean(false, this.interactive, this.config.interactive)
     const logLevel = this.logLevel ?? this.config.logLevel
     const apmFlushDeadline = this.apmFlushDeadline ?? this.config.apmFlushDeadline
-    const appSecEnabled = this.appSecEnabled ?? this.config.appSecEnabled
+    const appsecEnabled = this.appsecEnabled ?? this.config.appsecEnabled
 
     const service = this.service ?? this.config.service
     const environment = this.environment ?? this.config.environment
@@ -472,7 +472,7 @@ export class InstrumentCommand extends Command {
 
     return {
       apmFlushDeadline,
-      appSecEnabled,
+      appsecEnabled,
       captureLambdaPayload,
       environment,
       extensionVersion,

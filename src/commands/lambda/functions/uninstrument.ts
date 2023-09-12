@@ -32,7 +32,7 @@ import {
   AWS_LAMBDA_EXEC_WRAPPER_VAR,
   AWS_LAMBDA_EXEC_WRAPPER,
   APM_FLUSH_DEADLINE_MILLISECONDS_ENV_VAR,
-  APP_SEC_ENABLED_ENV_VAR,
+  APPSEC_ENABLED_ENV_VAR,
 } from '../constants'
 import {FunctionConfiguration, LogGroupConfiguration, TagConfiguration} from '../interfaces'
 import {calculateLogGroupRemoveRequest} from '../loggroup'
@@ -150,8 +150,12 @@ export const calculateUpdateRequest = (config: LFunctionConfiguration, runtime: 
     }
   }
 
-  // Remove AWS_LAMBDA_EXEC_WRAPPER for .NET and Java
-  if (runtimeType === RuntimeType.DOTNET || runtimeType === RuntimeType.JAVA) {
+  // Remove AWS_LAMBDA_EXEC_WRAPPER for .NET and Java or if ASM is enabled
+  if (
+    runtimeType === RuntimeType.DOTNET ||
+    runtimeType === RuntimeType.JAVA ||
+    oldEnvVars[APPSEC_ENABLED_ENV_VAR] === 'true'
+  ) {
     if (oldEnvVars[AWS_LAMBDA_EXEC_WRAPPER_VAR] === AWS_LAMBDA_EXEC_WRAPPER) {
       needsUpdate = true
       delete oldEnvVars[AWS_LAMBDA_EXEC_WRAPPER_VAR]
@@ -168,7 +172,7 @@ export const calculateUpdateRequest = (config: LFunctionConfiguration, runtime: 
     KMS_API_KEY_ENV_VAR,
     SITE_ENV_VAR,
     APM_FLUSH_DEADLINE_MILLISECONDS_ENV_VAR,
-    APP_SEC_ENABLED_ENV_VAR,
+    APPSEC_ENABLED_ENV_VAR,
     CAPTURE_LAMBDA_PAYLOAD_ENV_VAR,
     ENVIRONMENT_ENV_VAR,
     EXTRA_TAGS_ENV_VAR,

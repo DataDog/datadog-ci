@@ -1444,7 +1444,7 @@ describe('lambda', () => {
         command['config']['logLevel'] = 'debug'
 
         expect(command['getSettings']()).toEqual({
-          appSecEnabled: false,
+          appsecEnabled: false,
           apmFlushDeadline: undefined,
           captureLambdaPayload: false,
           environment: undefined,
@@ -1484,7 +1484,7 @@ describe('lambda', () => {
         command['config']['apmFlushDeadline'] = '50'
 
         expect(command['getSettings']()).toEqual({
-          appSecEnabled: false,
+          appsecEnabled: false,
           apmFlushDeadline: '20',
           captureLambdaPayload: false,
           flushMetricsToLogs: false,
@@ -1526,7 +1526,7 @@ describe('lambda', () => {
         process.env = {}
         const command = createCommand(InstrumentCommand)
         const validSettings: InstrumentationSettings = {
-          appSecEnabled: false,
+          appsecEnabled: false,
           captureLambdaPayload: true,
           extensionVersion: undefined,
           flushMetricsToLogs: false,
@@ -1571,7 +1571,7 @@ describe('lambda', () => {
 
       test('aborts early if converting string boolean has an invalid value', () => {
         process.env = {}
-        const stringBooleans: (keyof Omit<LambdaConfigOptions, 'functions' | 'interactive' | 'appSecEnabled'>)[] = [
+        const stringBooleans: (keyof Omit<LambdaConfigOptions, 'functions' | 'interactive' | 'appsecEnabled'>)[] = [
           'flushMetricsToLogs',
           'mergeXrayTraces',
           'tracing',

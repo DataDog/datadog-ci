@@ -49,7 +49,7 @@ import {
   RUNTIME_LOOKUP,
   TRACE_ENABLED_ENV_VAR,
   APM_FLUSH_DEADLINE_MILLISECONDS_ENV_VAR,
-  APP_SEC_ENABLED_ENV_VAR,
+  APPSEC_ENABLED_ENV_VAR,
 } from '../constants'
 import {FunctionConfiguration, InstrumentationSettings, LogGroupConfiguration, TagConfiguration} from '../interfaces'
 import {calculateLogGroupUpdateRequest} from '../loggroup'
@@ -246,7 +246,7 @@ export const calculateUpdateRequest = async (
 
   const environmentVarsTupleArray: [keyof InstrumentationSettings, string][] = [
     ['apmFlushDeadline', APM_FLUSH_DEADLINE_MILLISECONDS_ENV_VAR],
-    ['appSecEnabled', APP_SEC_ENABLED_ENV_VAR],
+    ['appsecEnabled', APPSEC_ENABLED_ENV_VAR],
     ['captureLambdaPayload', CAPTURE_LAMBDA_PAYLOAD_ENV_VAR],
     ['environment', ENVIRONMENT_ENV_VAR],
     ['extraTags', EXTRA_TAGS_ENV_VAR],
@@ -283,6 +283,11 @@ export const calculateUpdateRequest = async (
     } else {
       delete newEnvVars[LOG_LEVEL_ENV_VAR]
     }
+  }
+
+  // Enable ASM
+  if (settings['appsecEnabled'] === true) {
+    newEnvVars[AWS_LAMBDA_EXEC_WRAPPER_VAR] = AWS_LAMBDA_EXEC_WRAPPER
   }
 
   let layerARNs = getLayers(config)
