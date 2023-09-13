@@ -51,6 +51,7 @@ export class UninstrumentCommand extends Command {
   private service = Option.String('--service', {hidden: true})
   private environment = Option.String('--env', {hidden: true})
   private version = Option.String('--version', {hidden: true})
+  private appsecEnabled = Option.Boolean('--appsec', {hidden: true})
   private apmFlushDeadline = Option.String('--apm-flush-deadline', {hidden: true})
   private extraTags = Option.String('--extra-tags,--extraTags', {hidden: true})
   private extensionVersion = Option.String('-e,--extension-version,--extensionVersion', {hidden: true})
