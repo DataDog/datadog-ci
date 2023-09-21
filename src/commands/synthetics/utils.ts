@@ -100,6 +100,7 @@ export const getOverriddenConfig = (
       'headers',
       'locations',
       'pollingTimeout',
+      'resourceUrlSubstitutionRegexes',
       'retry',
       'startUrlSubstitutionRegex',
       'testTimeout',
