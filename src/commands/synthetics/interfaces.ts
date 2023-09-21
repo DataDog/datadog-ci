@@ -300,6 +300,7 @@ export interface ServerConfigOverride extends BaseConfigOverride {
 
 export interface Payload {
   metadata?: Metadata
+  selective_rerun?: boolean
   tests: TestPayload[]
 }
 
@@ -378,6 +379,7 @@ export interface RunTestsCommandConfig extends SyntheticsCIConfig {
   locations: string[]
   pollingTimeout: number
   publicIds: string[]
+  selectiveRerun: boolean
   subdomain: string
   testSearchQuery?: string
   tunnel: boolean

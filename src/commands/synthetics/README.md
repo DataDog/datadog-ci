@@ -92,6 +92,9 @@ The duration (in milliseconds) after which `datadog-ci` stops polling for test r
 `proxy`
 : The proxy to be used for outgoing connections to Datadog. `host` and `port` keys are mandatory arguments, the `protocol` key defaults to `http`. Supported values for the `protocol` key are `http`, `https`, `socks`, `socks4`, `socks4a`, `socks5`, `socks5h`, `pac+data`, `pac+file`, `pac+ftp`, `pac+http`, and `pac+https`. The library used to configure the proxy is the [proxy-agent][2] library.
 
+`selectiveRerun`
+: A boolean flag to only run the tests which failed in the previous test batches. Use the `--no-selectiveRerun` CLI flag to force a full run if your configuration enables it by default.
+
 `subdomain`
 : The name of the custom subdomain set to access your Datadog application. If the URL used to access Datadog is `myorg.datadoghq.com`, the `subdomain` value needs to be set to `myorg`.
 

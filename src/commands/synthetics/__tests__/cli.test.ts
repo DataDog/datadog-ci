@@ -89,6 +89,7 @@ describe('run-test', () => {
         pollingTimeout: 1,
         proxy: {protocol: 'https'},
         publicIds: ['ran-dom-id'],
+        selectiveRerun: false,
         subdomain: 'ppa',
         tunnel: true,
         variableStrings: [],

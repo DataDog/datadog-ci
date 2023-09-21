@@ -40,6 +40,7 @@ export const DEFAULT_COMMAND_CONFIG: RunTestsCommandConfig = {
   pollingTimeout: DEFAULT_POLLING_TIMEOUT,
   proxy: {protocol: 'http'},
   publicIds: [],
+  selectiveRerun: false,
   subdomain: 'app',
   tunnel: false,
   variableStrings: [],
@@ -111,6 +112,10 @@ export class RunTestsCommand extends Command {
     validator: validation.isInteger(),
   })
   private publicIds = Option.Array('-p,--public-id', {description: 'Specify a test to run.'})
+  private selectiveRerun = Option.Boolean('--selectiveRerun', false, {
+    description:
+      'A boolean flag to only run the tests which failed in the previous test batches. Use `--no-selectiveRerun` to force a full run if your configuration enables it by default.',
+  })
   private subdomain = Option.String('--subdomain', {
     description:
       'The name of the custom subdomain set to access your Datadog application. If the URL used to access Datadog is `myorg.datadoghq.com`, the `subdomain` value needs to be set to `myorg`.',
@@ -218,6 +223,7 @@ export class RunTestsCommand extends Command {
         failOnTimeout: this.failOnTimeout,
         files: this.files,
         publicIds: this.publicIds,
+        selectiveRerun: this.selectiveRerun,
         subdomain: this.subdomain,
         testSearchQuery: this.testSearchQuery,
         tunnel: this.tunnel,
