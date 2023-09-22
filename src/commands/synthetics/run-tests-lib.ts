@@ -20,7 +20,7 @@ import {
 import {DefaultReporter, getTunnelReporter} from './reporters/default'
 import {JUnitReporter} from './reporters/junit'
 import {DEFAULT_COMMAND_CONFIG, MAX_TESTS_TO_TRIGGER} from './run-tests-command'
-import {Tunnel} from './tunnel'
+import {getTunnelFirewallRules, Tunnel} from './tunnel'
 import {
   getReporter,
   getOrgSettings,
@@ -123,7 +123,8 @@ export const executeTests = async (
     try {
       const tunnelProxyAgent = getProxyAgent(config.proxy)
       const tunnelReporter = getTunnelReporter(reporter)
-      tunnel = new Tunnel(presignedURL, publicIdsToTrigger, tunnelProxyAgent, tunnelReporter)
+      const tunnelFirewallRules = getTunnelFirewallRules(config)
+      tunnel = new Tunnel(presignedURL, publicIdsToTrigger, tunnelFirewallRules, tunnelProxyAgent, tunnelReporter)
 
       const tunnelInfo = await tunnel.start()
       overriddenTestsToTrigger.forEach((testToTrigger) => {

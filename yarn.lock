@@ -1878,6 +1878,8 @@ __metadata:
     http-proxy-agent: ^7.0.0
     inquirer: ^8.2.5
     inquirer-checkbox-plus-prompt: ^1.4.2
+    ipaddr.js: ^2.1.0
+    is-in-subnet: ^4.0.1
     jest: 29.6.2
     js-yaml: 3.13.1
     jszip: ^3.10.1
@@ -6955,6 +6957,13 @@ __metadata:
   dependencies:
     is-extglob: ^2.1.1
   checksum: d381c1319fcb69d341cc6e6c7cd588e17cd94722d9a32dbd60660b993c4fb7d0f19438674e68dfec686d09b7c73139c9166b47597f846af387450224a8101ab4
+  languageName: node
+  linkType: hard
+
+"is-in-subnet@npm:^4.0.1":
+  version: 4.0.1
+  resolution: "is-in-subnet@npm:4.0.1"
+  checksum: eb0613ed8620aa4ccc26d6067f873e6484f1b8f0e637b38500dfb2be213adc238ec4c2aa15b4d9b14481d2dd4fd026639b26a825f726629a8cb01c61182666b2
   languageName: node
   linkType: hard
 

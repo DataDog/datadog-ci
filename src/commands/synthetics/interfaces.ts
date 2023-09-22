@@ -2,6 +2,7 @@ import {Metadata} from '../../helpers/interfaces'
 import {ProxyConfiguration} from '../../helpers/utils'
 
 import {TunnelInfo} from './tunnel'
+import {RESERVED_ADDRESS_BLOCKS} from './tunnel/blockedIPs'
 
 export type SupportedReporter = 'junit' | 'default'
 
@@ -370,7 +371,10 @@ export interface APIHelperConfig {
 export interface SyntheticsCIConfig extends APIHelperConfig {}
 
 export interface RunTestsCommandConfig extends SyntheticsCIConfig {
+  allowedIPRanges: typeof RESERVED_ADDRESS_BLOCKS
+  blockedIPRanges: typeof RESERVED_ADDRESS_BLOCKS
   configPath: string
+  enableDefaultBlockedIPRanges: boolean
   failOnCriticalErrors: boolean
   failOnMissingTests: boolean
   failOnTimeout: boolean

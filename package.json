@@ -92,6 +92,8 @@
     "http-proxy-agent": "^7.0.0",
     "inquirer": "^8.2.5",
     "inquirer-checkbox-plus-prompt": "^1.4.2",
+    "ipaddr.js": "^2.1.0",
+    "is-in-subnet": "^4.0.1",
     "js-yaml": "3.13.1",
     "jszip": "^3.10.1",
     "ora": "5.4.1",
