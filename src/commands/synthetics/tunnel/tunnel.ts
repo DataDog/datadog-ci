@@ -177,6 +177,21 @@ export class Tunnel {
     await this.ws.close()
   }
 
+  public validateIP(ip: string): boolean {
+    const ipFamily = getIPFamily(ip)
+    const {allowedSubnetsByFamily, blockedSubnetsByFamily} = this.tunnelFirewallRules
+
+    if (isInSubnet(ip, allowedSubnetsByFamily[ipFamily])) {
+      return true
+    }
+
+    if (isInSubnet(ip, blockedSubnetsByFamily[ipFamily])) {
+      return false
+    }
+
+    return true
+  }
+
   // Authenticate SSH with key authentication - username should be the test ID
   private authenticateSSHConnection(ctx: AuthContext) {
     const allowedUsers = this.testIDs.map((testId) => Buffer.from(testId))
@@ -213,21 +228,6 @@ export class Tunnel {
       this.reporter?.log('Successfully connected')
     }
     ctx.accept()
-  }
-
-  public validateIP(ip: string): boolean {
-    const ipFamily = getIPFamily(ip)
-    const {allowedSubnetsByFamily, blockedSubnetsByFamily} = this.tunnelFirewallRules
-
-    if (isInSubnet(ip, allowedSubnetsByFamily[ipFamily])) {
-      return true
-    }
-
-    if (isInSubnet(ip, blockedSubnetsByFamily[ipFamily])) {
-      return false
-    }
-
-    return true
   }
 
   private forwardProxiedPacketsFromSSH(client: SSHConnection) {

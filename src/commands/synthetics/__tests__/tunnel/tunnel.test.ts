@@ -3,12 +3,12 @@ import {PassThrough} from 'stream'
 import {getProxyAgent} from '../../../../../src/helpers/utils'
 
 import {getTunnelReporter} from '../../reporters/default'
-import {Tunnel, getTunnelFirewallRules} from '../../tunnel'
+import {Tunnel} from '../../tunnel'
+import {RESERVED_ADDRESS_BLOCKS} from '../../tunnel/blockedIPs'
 import {WebSocket} from '../../tunnel/websocket'
 jest.mock('../../tunnel/websocket')
 
 import {mockReporter} from '../fixtures'
-import {RESERVED_ADDRESS_BLOCKS} from '../../tunnel/blockedIPs'
 
 const EMPTY_FIREWALL_RULES = {
   allowedSubnetsByFamily: {4: [], 6: []},
