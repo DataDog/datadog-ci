@@ -20,6 +20,7 @@ export const evaluateGateRules = (
         options: {
           no_wait: evaluateRequest.options.noWait,
           dry_run: evaluateRequest.options.dryRun,
+          is_last_retry: evaluateRequest.options.isLastRetry,
         },
       },
     },
