@@ -14,15 +14,15 @@ describe('evaluate', () => {
       const command = createCommand(GateEvaluateCommand, {stdout: {write}} as any)
 
       expect(command['getApiHelper'].bind(command)).toThrow('API key is missing')
-      expect(write.mock.calls[0][0]).toContain('DATADOG_API_KEY')
+      expect(write.mock.calls[0][0]).toContain('DD_API_KEY')
     })
     test('should throw an error if APP key is undefined', () => {
-      process.env = {DATADOG_API_KEY: 'PLACEHOLDER'}
+      process.env = {DD_API_KEY: 'PLACEHOLDER'}
       const write = jest.fn()
       const command = createCommand(GateEvaluateCommand, {stdout: {write}} as any)
 
       expect(command['getApiHelper'].bind(command)).toThrow('APP key is missing')
-      expect(write.mock.calls[0][0]).toContain('DATADOG_APP_KEY')
+      expect(write.mock.calls[0][0]).toContain('DD_APP_KEY')
     })
   })
   describe('handleEvaluationSuccess', () => {
@@ -139,7 +139,7 @@ describe('evaluate', () => {
     })
   })
   describe('evaluateRules', () => {
-    process.env = {DATADOG_API_KEY: 'PLACEHOLDER', DATADOG_APP_KEY: 'PLACEHOLDER'}
+    process.env = {DD_API_KEY: 'PLACEHOLDER', DD_APP_KEY: 'PLACEHOLDER'}
     const api = apiConstructor('', '', '')
     const mockRequest = (): Payload => {
       return {

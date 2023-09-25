@@ -33,10 +33,10 @@ datadog-ci gate evaluate --scope team:backend --scope team:frontend --fail-on-em
 
 Additionally, you can configure the `gate` command with the following environment variables:
 
-- `DATADOG_API_KEY` or `DD_API_KEY` (**required**): The API key used to authenticate the requests.
-- `DATADOG_APP_KEY` (**required**): The application key used to authenticate the requests.
+- `DD_API_KEY` (**required**): The API key used to authenticate the requests.
+- `DD_APP_KEY` (**required**): The application key used to authenticate the requests.
 - `DD_TAGS`: Sets global tags applied to all spans. The format must be `key1:value1,key2:value2`. The upload process merges the tags passed on the command line with the tags in the `--tags` parameter. If a key appears in both `--tags` and `DD_TAGS`, the value in `DD_TAGS` takes precedence.
-- `DATADOG_SITE`: Your Datadog site, for example, datadoghq.com or datadoghq.eu.
+- `DD_SITE`: Your Datadog site, for example, datadoghq.com or datadoghq.eu.
 
 ### Dependencies
 
@@ -47,8 +47,8 @@ Additionally, you can configure the `gate` command with the following environmen
 To verify the command works as expected, use `--dry-run`:
 
 ```bash
-export DATADOG_API_KEY='<API key>'
-export DATADOG_APP_KEY='<APP key>'
+export DD_API_KEY='<API key>'
+export DD_APP_KEY='<APP key>'
 
 yarn launch gate evaluate --scope team:backend --dry-run
 ```
