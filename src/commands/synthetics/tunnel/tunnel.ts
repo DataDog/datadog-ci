@@ -74,9 +74,9 @@ export const getTunnelFirewallRules = (config: RunTestsCommandConfig): TunnelFir
   return firewallRules
 }
 
-const getIPFamily = (ipAddress: string): 4 | 6 => {
+const getIPFamily = (ipAddress: string): IpFamily.v4 | IpFamily.v6 => {
   const ipFamily = isIP(ipAddress)
-  if (ipFamily === 4 || ipFamily === 6) {
+  if (ipFamily === IpFamily.v4 || ipFamily === IpFamily.v6) {
     return ipFamily
   } else {
     throw new Error('invalid IP address')
