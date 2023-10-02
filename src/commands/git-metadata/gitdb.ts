@@ -129,17 +129,48 @@ const unshallowRepositoryWhenNeeded = async (log: Logger, git: simpleGit.SimpleG
   log.info('[unshallow] Git repository is a shallow clone, unshallowing it...')
   const headCmdPromise = git.revparse('HEAD')
   const remoteNameCmdPromise = getDefaultRemoteName(git)
-  log.info(
-    `[unshallow] Running git fetch --shallow-since="${MAX_HISTORY.oldestCommits}" --update-shallow --filter=blob:none --recurse-submodules=no`
-  )
-  await git.fetch([
-    `--shallow-since="${MAX_HISTORY.oldestCommits}"`,
-    '--update-shallow',
-    '--filter=blob:none',
-    '--recurse-submodules=no',
-    (await remoteNameCmdPromise) ?? 'origin',
-    await headCmdPromise,
-  ])
+
+  const baseCommandLogLine = `[unshallow] Running git fetch --shallow-since="${MAX_HISTORY.oldestCommits}" --update-shallow --filter=blob:none --recurse-submodules=no`
+
+  log.info(`${baseCommandLogLine} $(git config --default origin --get clone.defaultRemoteName) $(git rev-parse HEAD)`)
+  try {
+    await git.fetch([
+      `--shallow-since="${MAX_HISTORY.oldestCommits}"`,
+      '--update-shallow',
+      '--filter=blob:none',
+      '--recurse-submodules=no',
+      (await remoteNameCmdPromise) ?? 'origin',
+      await headCmdPromise,
+    ])
+  } catch (err) {
+    // If the local HEAD is a commit that has not been pushed to the remote, the above command will fail.
+    log.warn(`[unshallow] Failed to unshallow: ${err}`)
+    try {
+      log.info(
+        `${baseCommandLogLine} $(git config --default origin --get clone.defaultRemoteName) $(git rev-parse --abbrev-ref --symbolic-full-name @{upstream})`
+      )
+      const upstreamRemoteCmdPromise = git.revparse('--abbrev-ref --symbolic-full-name @{upstream}')
+      await git.fetch([
+        `--shallow-since="${MAX_HISTORY.oldestCommits}"`,
+        '--update-shallow',
+        '--filter=blob:none',
+        '--recurse-submodules=no',
+        (await remoteNameCmdPromise) ?? 'origin',
+        await upstreamRemoteCmdPromise,
+      ])
+    } catch (secondError) {
+      // If the CI is working on a detached HEAD or branch tracking hasn’t been set up, the above command will fail.
+      log.warn(`[unshallow] Failed to unshallow again: ${secondError}`)
+      log.info(`${baseCommandLogLine} $(git config --default origin --get clone.defaultRemoteName)`)
+      await git.fetch([
+        `--shallow-since="${MAX_HISTORY.oldestCommits}"`,
+        '--update-shallow',
+        '--filter=blob:none',
+        '--recurse-submodules=no',
+        await headCmdPromise,
+      ])
+    }
+  }
   log.info('[unshallow] Fetch completed.')
 }
 
