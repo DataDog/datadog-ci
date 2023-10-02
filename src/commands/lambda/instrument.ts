@@ -7,7 +7,7 @@ import {Cli, Command, Option} from 'clipanion'
 import {ENVIRONMENT_ENV_VAR, SERVICE_ENV_VAR, VERSION_ENV_VAR} from '../../constants'
 import {requestConfirmation} from '../../helpers/prompt'
 import * as helperRenderer from '../../helpers/renderer'
-import {resolveConfigFromFile, filterAndFormatGithubRemote, DEFAULT_CONFIG_PATHS} from '../../helpers/utils'
+import {resolveConfigFromFile, filterAndFormatGitRemote, DEFAULT_CONFIG_PATHS} from '../../helpers/utils'
 
 import {getCommitInfo, newSimpleGit} from '../git-metadata/git'
 import {UploadCommand} from '../git-metadata/upload'
@@ -377,7 +377,7 @@ export class InstrumentCommand extends Command {
       throw Error('Local changes have not been pushed remotely. Aborting git data tagging.')
     }
 
-    const gitRemote = filterAndFormatGithubRemote(currentStatus.remote)
+    const gitRemote = filterAndFormatGitRemote(currentStatus.remote)
 
     return {commitSha: currentStatus.hash, gitRemote}
   }

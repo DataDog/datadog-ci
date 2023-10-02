@@ -323,7 +323,7 @@ export const filterSensitiveInfoFromRepository = (repositoryUrl: string | undefi
 
 // Removes sensitive info from the given git remote url and normalizes the url prefix.
 // "git@github.com:" and "https://github.com/" prefixes will be normalized into "github.com/"
-export const filterAndFormatGithubRemote = (rawRemote: string | undefined): string | undefined => {
+export const filterAndFormatGitRemote = (rawRemote: string | undefined): string | undefined => {
   rawRemote = filterSensitiveInfoFromRepository(rawRemote)
   if (!rawRemote) {
     return rawRemote
