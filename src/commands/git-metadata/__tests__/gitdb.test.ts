@@ -390,6 +390,159 @@ describe('gitdb', () => {
     mocks.expectCalls()
   })
 
+  test('should unshallow repository if the local HEAD is a commit not pushed to the remote', async () => {
+    const mocks = new MockAll({
+      getConfig: [
+        {
+          input: 'clone.defaultRemoteName',
+          output: {
+            key: 'clone.defaultRemoteName',
+            paths: [],
+            scopes: new Map<string, string[]>(),
+            value: 'origin',
+            values: [],
+          },
+        },
+        {
+          input: 'clone.defaultRemoteName',
+          output: {
+            key: 'clone.defaultRemoteName',
+            paths: [],
+            scopes: new Map<string, string[]>(),
+            value: 'origin',
+            values: [],
+          },
+        },
+      ],
+      fetch: [
+        {
+          input: [
+            '--shallow-since="1 month ago"',
+            '--update-shallow',
+            '--filter=blob:none',
+            '--recurse-submodules=no',
+            'origin',
+            'commit',
+          ],
+          output: new Error('commit not found'),
+        },
+        {
+          input: [
+            '--shallow-since="1 month ago"',
+            '--update-shallow',
+            '--filter=blob:none',
+            '--recurse-submodules=no',
+            'origin',
+            'origin/branch',
+          ],
+          output: '',
+        },
+      ],
+      getRemotes: [
+        {
+          input: undefined,
+          output: [{name: 'origin', refs: {push: 'https://github.com/DataDog/datadog-ci'}}],
+        },
+      ],
+      // throw an exception after the update shallow to shortcut the rest of the test as we only
+      // care about updating the shallow clone, not about the rest of the process for this test
+      log: [{input: undefined, output: testError}],
+      raw: [],
+      revparse: [
+        {input: '--is-shallow-repository', output: 'true'},
+        {input: 'HEAD', output: 'commit'},
+        {input: '--abbrev-ref --symbolic-full-name @{upstream}', output: 'origin/branch'},
+      ],
+      version: [{input: undefined, output: newGitVersion}],
+      execSync: [],
+      axios: [],
+    })
+    const upload = uploadToGitDB(logger, request, mocks.simpleGit as any, false)
+    await expect(upload).rejects.toThrow(testError)
+    mocks.expectCalls()
+  })
+
+  test('should unshallow repository if the CI is working on a detached HEAD or branch tracking hasn’t been set up', async () => {
+    const mocks = new MockAll({
+      getConfig: [
+        {
+          input: 'clone.defaultRemoteName',
+          output: {
+            key: 'clone.defaultRemoteName',
+            paths: [],
+            scopes: new Map<string, string[]>(),
+            value: 'origin',
+            values: [],
+          },
+        },
+        {
+          input: 'clone.defaultRemoteName',
+          output: {
+            key: 'clone.defaultRemoteName',
+            paths: [],
+            scopes: new Map<string, string[]>(),
+            value: 'origin',
+            values: [],
+          },
+        },
+      ],
+      fetch: [
+        {
+          input: [
+            '--shallow-since="1 month ago"',
+            '--update-shallow',
+            '--filter=blob:none',
+            '--recurse-submodules=no',
+            'origin',
+            'commit',
+          ],
+          output: new Error('commit not found'),
+        },
+        {
+          input: [
+            '--shallow-since="1 month ago"',
+            '--update-shallow',
+            '--filter=blob:none',
+            '--recurse-submodules=no',
+            'origin',
+            'origin/branch',
+          ],
+          output: new Error('working in detached mode'),
+        },
+        {
+          input: [
+            '--shallow-since="1 month ago"',
+            '--update-shallow',
+            '--filter=blob:none',
+            '--recurse-submodules=no',
+            'origin',
+          ],
+          output: '',
+        },
+      ],
+      getRemotes: [
+        {
+          input: undefined,
+          output: [{name: 'origin', refs: {push: 'https://github.com/DataDog/datadog-ci'}}],
+        },
+      ],
+      // throw an exception after the update shallow to shortcut the rest of the test as we only
+      // care about updating the shallow clone, not about the rest of the process for this test
+      log: [{input: undefined, output: testError}],
+      raw: [],
+      revparse: [
+        {input: '--is-shallow-repository', output: 'true'},
+        {input: 'HEAD', output: 'commit'},
+        {input: '--abbrev-ref --symbolic-full-name @{upstream}', output: 'origin/branch'},
+      ],
+      version: [{input: undefined, output: newGitVersion}],
+      execSync: [],
+      axios: [],
+    })
+    const upload = uploadToGitDB(logger, request, mocks.simpleGit as any, false)
+    await expect(upload).rejects.toThrow(testError)
+    mocks.expectCalls()
+  })
   test('should send packfiles', async () => {
     const mocks = new MockAll({
       getConfig: [

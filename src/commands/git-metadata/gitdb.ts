@@ -127,20 +127,21 @@ const unshallowRepositoryWhenNeeded = async (log: Logger, git: simpleGit.SimpleG
     return
   }
   log.info('[unshallow] Git repository is a shallow clone, unshallowing it...')
-  const headCmdPromise = git.revparse('HEAD')
-  const remoteNameCmdPromise = getDefaultRemoteName(git)
+  const headCommit = await git.revparse('HEAD')
+  const remoteName = (await getDefaultRemoteName(git)) ?? 'origin'
 
   const baseCommandLogLine = `[unshallow] Running git fetch --shallow-since="${MAX_HISTORY.oldestCommits}" --update-shallow --filter=blob:none --recurse-submodules=no`
 
   log.info(`${baseCommandLogLine} $(git config --default origin --get clone.defaultRemoteName) $(git rev-parse HEAD)`)
+
   try {
     await git.fetch([
       `--shallow-since="${MAX_HISTORY.oldestCommits}"`,
       '--update-shallow',
       '--filter=blob:none',
       '--recurse-submodules=no',
-      (await remoteNameCmdPromise) ?? 'origin',
-      await headCmdPromise,
+      remoteName,
+      headCommit,
     ])
   } catch (err) {
     // If the local HEAD is a commit that has not been pushed to the remote, the above command will fail.
@@ -149,14 +150,14 @@ const unshallowRepositoryWhenNeeded = async (log: Logger, git: simpleGit.SimpleG
       log.info(
         `${baseCommandLogLine} $(git config --default origin --get clone.defaultRemoteName) $(git rev-parse --abbrev-ref --symbolic-full-name @{upstream})`
       )
-      const upstreamRemoteCmdPromise = git.revparse('--abbrev-ref --symbolic-full-name @{upstream}')
+      const upstreamRemote = await git.revparse('--abbrev-ref --symbolic-full-name @{upstream}')
       await git.fetch([
         `--shallow-since="${MAX_HISTORY.oldestCommits}"`,
         '--update-shallow',
         '--filter=blob:none',
         '--recurse-submodules=no',
-        (await remoteNameCmdPromise) ?? 'origin',
-        await upstreamRemoteCmdPromise,
+        remoteName,
+        upstreamRemote,
       ])
     } catch (secondError) {
       // If the CI is working on a detached HEAD or branch tracking hasn’t been set up, the above command will fail.
@@ -167,7 +168,7 @@ const unshallowRepositoryWhenNeeded = async (log: Logger, git: simpleGit.SimpleG
         '--update-shallow',
         '--filter=blob:none',
         '--recurse-submodules=no',
-        await headCmdPromise,
+        remoteName,
       ])
     }
   }
