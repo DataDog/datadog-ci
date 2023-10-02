@@ -678,7 +678,12 @@ export const runTests = async (
   testsToTrigger: TestPayload[],
   selectiveRerun = false
 ): Promise<Trigger> => {
-  const payload: Payload = {selective_rerun: selectiveRerun, tests: testsToTrigger}
+  const payload: Payload = {
+    tests: testsToTrigger,
+    options: {
+      selective_rerun: selectiveRerun,
+    },
+  }
   const tagsToLimit = {
     [GIT_COMMIT_MESSAGE]: 500,
   }

@@ -298,10 +298,14 @@ export interface ServerConfigOverride extends BaseConfigOverride {
   mobileApplication?: MobileApplication
 }
 
+export interface BatchOptions {
+  selective_rerun?: boolean
+}
+
 export interface Payload {
   metadata?: Metadata
-  selective_rerun?: boolean
   tests: TestPayload[]
+  options?: BatchOptions
 }
 
 export interface TestPayload extends ServerConfigOverride {
