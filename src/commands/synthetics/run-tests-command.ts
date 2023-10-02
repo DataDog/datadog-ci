@@ -246,16 +246,16 @@ export class RunTestsCommand extends Command {
         ...(this.allowedIPv4Ranges || this.allowedIPv6Ranges
           ? {
               allowedIPRanges: {
-                [IpFamily.v4]: this.allowedIPv4Ranges,
-                [IpFamily.v6]: this.allowedIPv6Ranges,
+                [IpFamily.v4]: this.allowedIPv4Ranges ?? [],
+                [IpFamily.v6]: this.allowedIPv6Ranges ?? [],
               },
             }
           : {}),
-        ...(this.blockedIPv4Ranges && this.blockedIPv6Ranges
+        ...(this.blockedIPv4Ranges || this.blockedIPv6Ranges
           ? {
               blockedIPRanges: {
-                [IpFamily.v4]: this.blockedIPv4Ranges,
-                [IpFamily.v6]: this.blockedIPv6Ranges,
+                [IpFamily.v4]: this.blockedIPv4Ranges ?? [],
+                [IpFamily.v6]: this.blockedIPv6Ranges ?? [],
               },
             }
           : {}),
