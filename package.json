@@ -34,9 +34,7 @@
   },
   "pkg": {
     "scripts": [
-      "dist/commands/*/*.js",
-      "node_modules/vm2/lib/contextify.js",
-      "node_modules/vm2/lib/setup-sandbox.js"
+      "dist/commands/*/*.js"
     ]
   },
   "scripts": {
