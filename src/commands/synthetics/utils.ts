@@ -674,8 +674,17 @@ export const getTestsToTrigger = async (
 }
 
 // XXX: We shouldn't export functions that take an `APIHelper` because the `utils` module is exported while `api` is not.
-export const runTests = async (api: APIHelper, testsToTrigger: TestPayload[]): Promise<Trigger> => {
-  const payload: Payload = {tests: testsToTrigger}
+export const runTests = async (
+  api: APIHelper,
+  testsToTrigger: TestPayload[],
+  selectiveRerun = false
+): Promise<Trigger> => {
+  const payload: Payload = {
+    tests: testsToTrigger,
+    options: {
+      selective_rerun: selectiveRerun,
+    },
+  }
   const tagsToLimit = {
     [GIT_COMMIT_MESSAGE]: 500,
   }

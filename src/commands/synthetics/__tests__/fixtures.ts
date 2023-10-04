@@ -77,6 +77,7 @@ export const ciConfig: RunTestsCommandConfig = {
   pollingTimeout: 2 * 60 * 1000,
   proxy: {protocol: 'http'},
   publicIds: [],
+  selectiveRerun: false,
   subdomain: 'app',
   tunnel: false,
   variableStrings: [],

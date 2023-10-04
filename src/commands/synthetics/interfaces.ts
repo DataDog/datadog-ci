@@ -299,9 +299,14 @@ export interface ServerConfigOverride extends BaseConfigOverride {
   mobileApplication?: MobileApplication
 }
 
+export interface BatchOptions {
+  selective_rerun?: boolean
+}
+
 export interface Payload {
   metadata?: Metadata
   tests: TestPayload[]
+  options?: BatchOptions
 }
 
 export interface TestPayload extends ServerConfigOverride {
@@ -379,6 +384,7 @@ export interface RunTestsCommandConfig extends SyntheticsCIConfig {
   locations: string[]
   pollingTimeout: number
   publicIds: string[]
+  selectiveRerun: boolean
   subdomain: string
   testSearchQuery?: string
   tunnel: boolean

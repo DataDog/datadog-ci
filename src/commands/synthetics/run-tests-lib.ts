@@ -137,7 +137,7 @@ export const executeTests = async (
 
   let trigger: Trigger
   try {
-    trigger = await runTests(api, overriddenTestsToTrigger)
+    trigger = await runTests(api, overriddenTestsToTrigger, config.selectiveRerun)
   } catch (error) {
     await stopTunnel()
     throw new CriticalError('TRIGGER_TESTS_FAILED', error.message)
