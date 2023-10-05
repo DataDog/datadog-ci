@@ -127,9 +127,8 @@ const unshallowRepositoryWhenNeeded = async (log: Logger, git: simpleGit.SimpleG
     return
   }
   log.info('[unshallow] Git repository is a shallow clone, unshallowing it...')
-  const headCommit = await git.revparse('HEAD')
-  const remoteName = (await getDefaultRemoteName(git)) ?? 'origin'
 
+  const [headCommit, remoteName] = await Promise.all([git.revparse('HEAD'), getDefaultRemoteName(git)])
   const baseCommandLogLine = `[unshallow] Running git fetch --shallow-since="${MAX_HISTORY.oldestCommits}" --update-shallow --filter=blob:none --recurse-submodules=no`
 
   log.info(`${baseCommandLogLine} $(git config --default origin --get clone.defaultRemoteName) $(git rev-parse HEAD)`)
