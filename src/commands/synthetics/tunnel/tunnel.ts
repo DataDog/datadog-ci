@@ -1,9 +1,10 @@
 import {timingSafeEqual} from 'crypto'
-import {Socket} from 'net'
+import {Socket, isIP} from 'net'
 import {Duplex, pipeline} from 'stream'
 
 import type {ProxyAgent} from 'proxy-agent'
 
+import {isInSubnet} from 'is-in-subnet'
 import {
   AuthContext,
   Connection as SSHConnection,
@@ -14,6 +15,9 @@ import {
 } from 'ssh2'
 import {Config as MultiplexerConfig, Server as Multiplexer} from 'yamux-js'
 
+import {RunTestsCommandConfig} from '../interfaces'
+
+import {IpFamily, RESERVED_ADDRESS_BLOCKS} from './blockedIPs'
 import {generateOpenSSHKeys, parseSSHKey} from './crypto'
 import {WebSocket} from './websocket'
 
@@ -34,6 +38,51 @@ export interface TunnelReporter {
   warn(message: string): void
 }
 
+export interface TunnelFirewallRules {
+  allowedSubnetsByFamily: typeof RESERVED_ADDRESS_BLOCKS
+  blockedSubnetsByFamily: typeof RESERVED_ADDRESS_BLOCKS
+}
+
+export const getTunnelFirewallRules = (config: RunTestsCommandConfig): TunnelFirewallRules => {
+  const {allowedIPRanges, blockedIPRanges, enableDefaultBlockedIPRanges} = config
+  const firewallRules: TunnelFirewallRules = {
+    allowedSubnetsByFamily: {
+      [IpFamily.v4]: [],
+      [IpFamily.v6]: [],
+    },
+    blockedSubnetsByFamily: {
+      [IpFamily.v4]: [],
+      [IpFamily.v6]: [],
+    },
+  }
+
+  const hasDefinedRanges = (firewallRanges: typeof RESERVED_ADDRESS_BLOCKS) =>
+    [IpFamily.v4, IpFamily.v6].some((family) => (firewallRanges[family] || []).length !== 0)
+
+  if (enableDefaultBlockedIPRanges) {
+    firewallRules.blockedSubnetsByFamily[IpFamily.v4].push(...(RESERVED_ADDRESS_BLOCKS[IpFamily.v4] || []))
+    firewallRules.blockedSubnetsByFamily[IpFamily.v6].push(...(RESERVED_ADDRESS_BLOCKS[IpFamily.v6] || []))
+  }
+
+  if (hasDefinedRanges(allowedIPRanges) || hasDefinedRanges(blockedIPRanges) || enableDefaultBlockedIPRanges) {
+    firewallRules.allowedSubnetsByFamily[IpFamily.v4].push(...(allowedIPRanges[IpFamily.v4] || []))
+    firewallRules.allowedSubnetsByFamily[IpFamily.v6].push(...(allowedIPRanges[IpFamily.v6] || []))
+    firewallRules.blockedSubnetsByFamily[IpFamily.v4].push(...(blockedIPRanges[IpFamily.v4] || []))
+    firewallRules.blockedSubnetsByFamily[IpFamily.v6].push(...(blockedIPRanges[IpFamily.v6] || []))
+  }
+
+  return firewallRules
+}
+
+const getIPFamily = (ipAddress: string): IpFamily.v4 | IpFamily.v6 => {
+  const ipFamily = isIP(ipAddress)
+  if (ipFamily === IpFamily.v4 || ipFamily === IpFamily.v6) {
+    return ipFamily
+  } else {
+    throw new Error('invalid IP address')
+  }
+}
+
 export class Tunnel {
   private FORWARDING_TIMEOUT = 40000 as const
 
@@ -49,6 +98,7 @@ export class Tunnel {
   constructor(
     private url: string,
     private testIDs: string[],
+    private tunnelFirewallRules: TunnelFirewallRules,
     proxyAgent?: ProxyAgent,
     private reporter?: TunnelReporter
   ) {
@@ -127,6 +177,21 @@ export class Tunnel {
     await this.ws.close()
   }
 
+  public validateIP(ip: string): boolean {
+    const ipFamily = getIPFamily(ip)
+    const {allowedSubnetsByFamily, blockedSubnetsByFamily} = this.tunnelFirewallRules
+
+    if (isInSubnet(ip, allowedSubnetsByFamily[ipFamily])) {
+      return true
+    }
+
+    if (isInSubnet(ip, blockedSubnetsByFamily[ipFamily])) {
+      return false
+    }
+
+    return true
+  }
+
   // Authenticate SSH with key authentication - username should be the test ID
   private authenticateSSHConnection(ctx: AuthContext) {
     const allowedUsers = this.testIDs.map((testId) => Buffer.from(testId))
@@ -173,6 +238,11 @@ export class Tunnel {
         })
       })
       .on('tcpip', (accept, reject, {destIP, destPort}) => {
+        // Perform IP blocking
+        if (!this.validateIP(destIP)) {
+          this.reporter?.warn(`Requested blocked IP address (${destIP})`)
+          reject()
+        }
         // Forward packets
         // See https://github.com/mscdex/ssh2/issues/479#issuecomment-250416559
         let src: SSHServerChannel
