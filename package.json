@@ -41,6 +41,7 @@
     "build": "yarn clean; tsc",
     "build:win": "tsc",
     "check-licenses": "node bin/check-licenses.js",
+    "check-junit-upload": "node bin/check-junit-upload.js",
     "clean:win": "rm dist -r",
     "clean": "rm -rf dist/*",
     "dist-standalone": "pkg --compress GZip .",
