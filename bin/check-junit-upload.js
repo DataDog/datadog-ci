@@ -13,10 +13,10 @@ const params = {
 };
 
 const CHECK_INTERVAL_SECONDS = 10 // 10 seconds
-const MAX_NUM_CHECKS = 10
+const MAX_NUM_ATTEMPTS = 10
 
 function getTestData () {
-  console.log(`Querying CI Visibility tests with ${params.filterQuery}`)
+  console.log(`🔎 Querying CI Visibility tests with ${params.filterQuery}.`)
   return apiInstance
     .listCIAppTestEvents(params)
     .then(data => data.data)
@@ -28,19 +28,27 @@ function waitFor (waitSeconds) {
 } 
 
 async function checkJunitUpload () {
-  let numChecks = 0
+  let numAttempts = 0
   let isSuccess = false
-  while (numChecks++ < MAX_NUM_CHECKS && !isSuccess) {
+  while (numAttempts++ < MAX_NUM_ATTEMPTS && !isSuccess) {
     const data = await getTestData()
     if (data.length > 0) {
       isSuccess = true
-      console.log(`The API returned ${data.length} tests.`)
     } else {
-      console.log(`Attempt number ${numChecks} failed, retrying in ${CHECK_INTERVAL_SECONDS} seconds.`)
-      await waitFor(CHECK_INTERVAL_SECONDS)
+      const isLastAttempt = numAttempts === MAX_NUM_ATTEMPTS
+      if (!isLastAttempt) {
+        console.log(`🔁 Attempt number ${numAttempts} failed, retrying in ${CHECK_INTERVAL_SECONDS} seconds.`)
+        await waitFor(CHECK_INTERVAL_SECONDS)
+      }
     }
   }
-  process.exit(isSuccess ? 0 : 1)
+  if (isSuccess) {
+    console.log(`✅ Successful check: the API returned ${data.length} tests.`)
+    process.exit(0)
+  } else {
+    console.log(`❌ Failed check: the API did not return any test for the given filter.`)
+    process.exit(1)
+  }
 }
 
 checkJunitUpload()
