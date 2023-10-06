@@ -12,7 +12,7 @@ const params = {
   pageLimit: 5,
 };
 
-const CHECK_INTERVAL_SECONDS = 10 // 10 seconds
+const CHECK_INTERVAL_SECONDS = 10
 const MAX_NUM_ATTEMPTS = 10
 
 function getTestData () {
