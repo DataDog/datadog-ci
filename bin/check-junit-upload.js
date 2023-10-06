@@ -30,8 +30,9 @@ function waitFor (waitSeconds) {
 async function checkJunitUpload () {
   let numAttempts = 0
   let isSuccess = false
+  let data = []
   while (numAttempts++ < MAX_NUM_ATTEMPTS && !isSuccess) {
-    const data = await getTestData()
+    data = await getTestData()
     if (data.length > 0) {
       isSuccess = true
     } else {
