@@ -35,6 +35,7 @@ jobs:
             exit 1
           fi
       - run: yarn no-only-in-tests
+      
       - run: yarn test
         env:
           CI: true
@@ -68,6 +69,7 @@ jobs:
     needs: build-and-test
 
     steps:
+      - uses: actions/checkout@v3
       - name: Install node
         uses: actions/setup-node@v3
         with:
@@ -90,6 +92,14 @@ jobs:
         run: yarn datadog-ci junit upload --service=datadog-ci-e2e-tests-junit artifacts/e2e/junit-reports
         env:
           DD_API_KEY: ${{ secrets.DD_API_KEY_CI_VISIBILITY }}
+      - name: Check that test data can be queried
+        run: |
+          yarn add @datadog/datadog-api-client
+          yarn check-junit-upload
+        env:
+          DD_API_KEY: ${{ secrets.DD_API_KEY_CI_VISIBILITY }}
+          DD_APP_KEY: ${{ secrets.DD_APP_KEY_CI_VISIBILITY }}
+          DD_SERVICE: datadog-ci-e2e-tests-junit
       - name: Run sarif upload test
         run: yarn datadog-ci sarif upload --service=datadog-ci-e2e-tests-sarif artifacts/e2e/sarif-reports
         env:
