@@ -89,7 +89,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@aws-sdk/client-cloudwatch-logs@npm:3.427.0":
+"@aws-sdk/client-cloudwatch-logs@npm:^3.427.0":
   version: 3.427.0
   resolution: "@aws-sdk/client-cloudwatch-logs@npm:3.427.0"
   dependencies:
@@ -180,7 +180,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@aws-sdk/client-iam@npm:3.427.0":
+"@aws-sdk/client-iam@npm:^3.427.0":
   version: 3.427.0
   resolution: "@aws-sdk/client-iam@npm:3.427.0"
   dependencies:
@@ -227,7 +227,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@aws-sdk/client-lambda@npm:3.427.0":
+"@aws-sdk/client-lambda@npm:^3.427.0":
   version: 3.427.0
   resolution: "@aws-sdk/client-lambda@npm:3.427.0"
   dependencies:
@@ -277,7 +277,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@aws-sdk/client-sfn@npm:3.427.0":
+"@aws-sdk/client-sfn@npm:^3.427.0":
   version: 3.427.0
   resolution: "@aws-sdk/client-sfn@npm:3.427.0"
   dependencies:
@@ -527,7 +527,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@aws-sdk/credential-providers@npm:3.427.0":
+"@aws-sdk/credential-providers@npm:^3.427.0":
   version: 3.427.0
   resolution: "@aws-sdk/credential-providers@npm:3.427.0"
   dependencies:
@@ -682,7 +682,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@aws-sdk/types@npm:3.425.0":
+"@aws-sdk/types@npm:3.425.0, @aws-sdk/types@npm:^3.425.0":
   version: 3.425.0
   resolution: "@aws-sdk/types@npm:3.425.0"
   dependencies:
@@ -1855,19 +1855,19 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@datadog/datadog-ci@workspace:."
   dependencies:
-    "@aws-sdk/client-cloudwatch-logs": 3.427.0
-    "@aws-sdk/client-iam": 3.427.0
-    "@aws-sdk/client-lambda": 3.427.0
-    "@aws-sdk/client-sfn": 3.427.0
-    "@aws-sdk/credential-providers": 3.427.0
-    "@aws-sdk/types": 3.425.0
+    "@aws-sdk/client-cloudwatch-logs": ^3.427.0
+    "@aws-sdk/client-iam": ^3.427.0
+    "@aws-sdk/client-lambda": ^3.427.0
+    "@aws-sdk/client-sfn": ^3.427.0
+    "@aws-sdk/credential-providers": ^3.427.0
+    "@aws-sdk/types": ^3.425.0
     "@babel/core": 7.8.0
     "@babel/preset-env": 7.4.5
     "@babel/preset-typescript": 7.3.3
     "@google-cloud/logging": ^10.5.0
     "@google-cloud/run": ^0.6.0
     "@microsoft/eslint-formatter-sarif": ^3.0.0
-    "@smithy/property-provider": 2.0.12
+    "@smithy/property-provider": ^2.0.12
     "@types/async-retry": 1.4.2
     "@types/datadog-metrics": 0.6.1
     "@types/deep-extend": 0.4.31
@@ -3053,16 +3053,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@smithy/property-provider@npm:2.0.12, @smithy/property-provider@npm:^2.0.12":
-  version: 2.0.12
-  resolution: "@smithy/property-provider@npm:2.0.12"
-  dependencies:
-    "@smithy/types": ^2.3.5
-    tslib: ^2.5.0
-  checksum: 5d7afa158d66f4cd7f9561fbbb9adef987abfc490dfd5f0e5dcae5596611618f83a856273308f70e56347115a0f07ecc2f0eb434b4186725f8dc461b3be3cd5c
-  languageName: node
-  linkType: hard
-
 "@smithy/property-provider@npm:^2.0.0, @smithy/property-provider@npm:^2.0.3":
   version: 2.0.3
   resolution: "@smithy/property-provider@npm:2.0.3"
@@ -3070,6 +3060,16 @@ __metadata:
     "@smithy/types": ^2.2.0
     tslib: ^2.5.0
   checksum: 8b567a43c42f145c8585f4574174cc7a7b045c2d93085ba85abf8559a94787a68536b18c0ce689efc2c3894e7b9ce937cc567085429d3e1275e7e5a57af1f45b
+  languageName: node
+  linkType: hard
+
+"@smithy/property-provider@npm:^2.0.12":
+  version: 2.0.12
+  resolution: "@smithy/property-provider@npm:2.0.12"
+  dependencies:
+    "@smithy/types": ^2.3.5
+    tslib: ^2.5.0
+  checksum: 5d7afa158d66f4cd7f9561fbbb9adef987abfc490dfd5f0e5dcae5596611618f83a856273308f70e56347115a0f07ecc2f0eb434b4186725f8dc461b3be3cd5c
   languageName: node
   linkType: hard
 
