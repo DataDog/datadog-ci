@@ -13,8 +13,8 @@ import {
   UpdateFunctionConfigurationCommandInput,
 } from '@aws-sdk/client-lambda'
 import {FromIniInit, fromIni, fromNodeProviderChain} from '@aws-sdk/credential-providers'
-import {CredentialsProviderError} from '@aws-sdk/property-provider'
 import {AwsCredentialIdentity, AwsCredentialIdentityProvider} from '@aws-sdk/types'
+import {CredentialsProviderError} from '@smithy/property-provider'
 import inquirer from 'inquirer'
 
 import {API_KEY_ENV_VAR, CI_API_KEY_ENV_VAR, CI_SITE_ENV_VAR} from '../../../constants'
