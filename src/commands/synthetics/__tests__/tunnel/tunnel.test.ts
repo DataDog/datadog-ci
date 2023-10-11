@@ -4,16 +4,10 @@ import {getProxyAgent} from '../../../../../src/helpers/utils'
 
 import {getTunnelReporter} from '../../reporters/default'
 import {Tunnel} from '../../tunnel'
-import {RESERVED_ADDRESS_BLOCKS} from '../../tunnel/blockedIPs'
 import {WebSocket} from '../../tunnel/websocket'
 jest.mock('../../tunnel/websocket')
 
 import {mockReporter} from '../fixtures'
-
-const EMPTY_FIREWALL_RULES = {
-  allowedSubnetsByFamily: {4: [], 6: []},
-  blockedSubnetsByFamily: {4: [], 6: []},
-}
 
 describe('Tunnel', () => {
   const mockConnect = jest.fn()
@@ -38,7 +32,7 @@ describe('Tunnel', () => {
   test('starts by connecting over WebSocket and closes the WebSocket when stopping', async () => {
     mockedWebSocket.mockImplementation(() => mockWebSocket as any)
 
-    const tunnel = new Tunnel(wsPresignedURL, testIDs, EMPTY_FIREWALL_RULES, undefined, mockTunnelReporter)
+    const tunnel = new Tunnel(wsPresignedURL, testIDs, undefined, mockTunnelReporter)
     const connectionInfo = await tunnel.start()
     expect(WebSocket).toHaveBeenCalledWith(wsPresignedURL, undefined)
     expect(mockConnect).toHaveBeenCalled()
@@ -66,7 +60,7 @@ describe('Tunnel', () => {
     mockConnect.mockImplementation(() => {
       throw websocketConnectError
     })
-    const tunnel = new Tunnel(wsPresignedURL, testIDs, EMPTY_FIREWALL_RULES, undefined, mockTunnelReporter)
+    const tunnel = new Tunnel(wsPresignedURL, testIDs, undefined, mockTunnelReporter)
     await expect(tunnel.start()).rejects.toThrow(websocketConnectError)
     expect(mockClose).toHaveBeenCalled()
     mockConnect.mockRestore()
@@ -79,34 +73,11 @@ describe('Tunnel', () => {
       port: 8080,
       protocol: 'http',
     })
-    const tunnel = new Tunnel(wsPresignedURL, testIDs, EMPTY_FIREWALL_RULES, localProxyAgent, mockTunnelReporter)
+    const tunnel = new Tunnel(wsPresignedURL, testIDs, localProxyAgent, mockTunnelReporter)
     await tunnel.start()
     expect(WebSocket).toHaveBeenCalledWith(wsPresignedURL, localProxyAgent)
 
     // Stop the tunnel
     await tunnel.stop()
-  })
-
-  test('blocks default IP addresses', async () => {
-    const defaultBlockedIPs = {
-      allowedSubnetsByFamily: {4: [], 6: []},
-      blockedSubnetsByFamily: RESERVED_ADDRESS_BLOCKS,
-    }
-
-    const tunnel = new Tunnel(wsPresignedURL, testIDs, defaultBlockedIPs, undefined, mockTunnelReporter)
-    expect(tunnel.validateIP('127.0.0.1')).toBe(false)
-    expect(tunnel.validateIP('::1')).toBe(false)
-    expect(tunnel.validateIP('169.254.169.254')).toBe(false)
-    expect(tunnel.validateIP('54.52.123.45')).toBe(true)
-  })
-
-  test('allows localhost IP address', async () => {
-    const defaultBlockedIPs = {
-      allowedSubnetsByFamily: {4: ['127.0.0.1/32'], 6: []},
-      blockedSubnetsByFamily: {4: ['127.0.0.0/8'], 6: []},
-    }
-
-    const tunnel = new Tunnel(wsPresignedURL, testIDs, defaultBlockedIPs, undefined, mockTunnelReporter)
-    expect(tunnel.validateIP('127.0.0.1')).toBe(true)
   })
 })

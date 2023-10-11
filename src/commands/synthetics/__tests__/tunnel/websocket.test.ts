@@ -35,10 +35,8 @@ describe('Proxy configuration', () => {
       // Instead we mock the util function that is called in the command.
       jest.spyOn(ciUtils, 'resolveConfigFromFile').mockImplementationOnce(async (config) => ({
         ...(config as Record<string, unknown>),
-        allowedIPRanges: {4: [], 6: []},
         apiKey: '123',
         appKey: '123',
-        blockedIPRanges: {4: [], 6: []},
         proxy: proxyOpts,
         publicIds: ['123-456-789'],
         tunnel: true,

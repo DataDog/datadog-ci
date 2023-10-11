@@ -11,7 +11,6 @@ import {MainReporter, Reporter, Result, RunTestsCommandConfig, Summary} from './
 import {DefaultReporter} from './reporters/default'
 import {JUnitReporter} from './reporters/junit'
 import {executeTests} from './run-tests-lib'
-import {hasValidRanges, IpFamily, RESERVED_ADDRESS_BLOCKS} from './tunnel/blockedIPs'
 import {
   getExitReason,
   getOrgSettings,
@@ -28,13 +27,10 @@ export const MAX_TESTS_TO_TRIGGER = 100
 export const DEFAULT_POLLING_TIMEOUT = 30 * 60 * 1000
 
 export const DEFAULT_COMMAND_CONFIG: RunTestsCommandConfig = {
-  allowedIPRanges: {[IpFamily.v4]: [], [IpFamily.v6]: []} as typeof RESERVED_ADDRESS_BLOCKS,
   apiKey: '',
   appKey: '',
-  blockedIPRanges: {[IpFamily.v4]: [], [IpFamily.v6]: []} as typeof RESERVED_ADDRESS_BLOCKS,
   configPath: 'datadog-ci.json',
   datadogSite: 'datadoghq.com',
-  enableDefaultBlockedIPRanges: false,
   failOnCriticalErrors: false,
   failOnMissingTests: false,
   failOnTimeout: true,
@@ -132,23 +128,6 @@ export class RunTestsCommand extends Command {
   })
   private variableStrings = Option.Array('-v,--variable', {description: 'Pass a variable override.'})
 
-  private enableDefaultBlockedIPRanges = Option.Boolean('--enableDefaultBlockedIPRanges', {
-    description:
-      'Deny access to reserved IP ranges (IANA [IPv4](https://www.iana.org/assignments/iana-ipv4-special-registry/iana-ipv4-special-registry.xhtml) and [IPv6](https://www.iana.org/assignments/iana-ipv6-special-registry/iana-ipv6-special-registry.xhtml) Special-Purpose Address Registry), except for those explicitly set in --allowedIPRanges.',
-  })
-  private allowedIPv4Ranges = Option.Array('--allowedIPRanges.4', {
-    description: 'Grant access to IPv4 ranges while using the tunnel (has precedence over --blockedIPRanges.4).',
-  })
-  private allowedIPv6Ranges = Option.Array('--allowedIPRanges.6', {
-    description: 'Grant access to IPv6 ranges while using the tunnel (has precedence over --blockedIPRanges.6).',
-  })
-  private blockedIPv4Ranges = Option.Array('--blockedIPRanges.4', {
-    description: 'Deny access to IP ranges while using the tunnel. (such as --blockedIPRanges.4="127.0.0.0/8").',
-  })
-  private blockedIPv6Ranges = Option.Array('--blockedIPRanges.6', {
-    description: 'Deny access to IP ranges while using the tunnel. (such as --blockedIPRanges.6="::1/128").',
-  })
-
   private reporter?: MainReporter
   private config: RunTestsCommandConfig = JSON.parse(JSON.stringify(DEFAULT_COMMAND_CONFIG)) // Deep copy to avoid mutation during unit tests
 
@@ -239,7 +218,6 @@ export class RunTestsCommand extends Command {
         appKey: this.appKey,
         configPath: this.configPath,
         datadogSite: this.datadogSite,
-        enableDefaultBlockedIPRanges: this.enableDefaultBlockedIPRanges,
         failOnCriticalErrors: this.failOnCriticalErrors,
         failOnMissingTests: this.failOnMissingTests,
         failOnTimeout: this.failOnTimeout,
@@ -249,22 +227,6 @@ export class RunTestsCommand extends Command {
         subdomain: this.subdomain,
         testSearchQuery: this.testSearchQuery,
         tunnel: this.tunnel,
-        ...(this.allowedIPv4Ranges || this.allowedIPv6Ranges
-          ? {
-              allowedIPRanges: {
-                [IpFamily.v4]: this.allowedIPv4Ranges ?? [],
-                [IpFamily.v6]: this.allowedIPv6Ranges ?? [],
-              },
-            }
-          : {}),
-        ...(this.blockedIPv4Ranges || this.blockedIPv6Ranges
-          ? {
-              blockedIPRanges: {
-                [IpFamily.v4]: this.blockedIPv4Ranges ?? [],
-                [IpFamily.v6]: this.blockedIPv6Ranges ?? [],
-              },
-            }
-          : {}),
       })
     )
 
@@ -290,12 +252,6 @@ export class RunTestsCommand extends Command {
           this.config.datadogSite
         )}) must match one of the sites supported by Datadog.\nFor more information, see "Site parameter" in our documentation: https://docs.datadoghq.com/getting_started/site/#access-the-datadog-site`
       )
-    }
-
-    for (const range of [this.config.allowedIPRanges, this.config.blockedIPRanges]) {
-      if (!hasValidRanges(range)) {
-        throw new CiError('INVALID_CONFIG', `Invalid IP range (${JSON.stringify(range)})`)
-      }
     }
   }
 }
