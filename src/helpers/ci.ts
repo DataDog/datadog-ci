@@ -584,6 +584,15 @@ export const getCISpanTags = (): SpanTags | undefined => {
     tags[refKey] = ref
   }
 
+  if (env.CODEBUILD_INITIATOR?.startsWith('codepipeline')) {
+    const {CODEBUILD_BUILD_ARN, DD_ACTION_EXECUTION_ID, DD_PIPELINE_EXECUTION_ID} = env
+    tags = {
+      [CI_PROVIDER_NAME]: 'awscodepipeline',
+      [CI_PIPELINE_ID]: DD_PIPELINE_EXECUTION_ID,
+      [CI_ENV_VARS]: JSON.stringify({CODEBUILD_BUILD_ARN, DD_PIPELINE_EXECUTION_ID, DD_ACTION_EXECUTION_ID}),
+    }
+  }
+
   if (tags[CI_WORKSPACE_PATH]) {
     tags[CI_WORKSPACE_PATH] = resolveTilde(tags[CI_WORKSPACE_PATH])
   }
