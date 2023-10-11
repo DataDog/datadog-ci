@@ -43,8 +43,6 @@ fuzzy,import,MIT,Copyright (c) 2012 Matt York
 glob,import,ISC,Copyright (c) Isaac Z. Schlueter and Contributors
 inquirer,import,MIT,Copyright (c) 2012 Simon Boudrias
 inquirer-checkbox-plus-prompt,import,MIT,Copyright (c) 2018 Mohammad Anas Fares
-ipaddr.js,import,MIT,github.com/whitequark/ipaddr.js
-is-in-subnet,import,MIT,github.com/natesilva/is-in-subnet
 jest,dev,MIT,"Copyright (c) Facebook, Inc. and its affiliates."
 js-yaml,import,MIT,Copyright (C) 2011-2015 by Vitaly Puzrin
 ora,import,MIT,Copyright (c) Sindre Sorhus <sindresorhus@gmail.com> (https://sindresorhus.com)

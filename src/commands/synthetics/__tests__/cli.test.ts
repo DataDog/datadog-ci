@@ -72,19 +72,10 @@ describe('run-test', () => {
 
     test('override from config file', async () => {
       const overrideConfigFile = {
-        allowedIPRanges: {
-          4: ['127.0.0.1'],
-          6: ['::1'],
-        },
         apiKey: 'fake_api_key',
         appKey: 'fake_app_key',
-        blockedIPRanges: {
-          4: ['127.0.0.1/8'],
-          6: ['::1/8'],
-        },
         configPath: 'src/commands/synthetics/__tests__/config-fixtures/config-with-all-keys.json',
         datadogSite: 'datadoghq.eu',
-        enableDefaultBlockedIPRanges: true,
         failOnCriticalErrors: true,
         failOnMissingTests: true,
         failOnTimeout: false,

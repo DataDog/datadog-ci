@@ -1,1 +1,1 @@
-export {getTunnelFirewallRules, Tunnel, TunnelInfo, TunnelReporter} from './tunnel'
+export {Tunnel, TunnelInfo, TunnelReporter} from './tunnel'
