@@ -10,7 +10,6 @@ import {getSpanTags} from '../../helpers/tags'
 
 import {getApiHelper} from './api'
 import {generatePayload} from './payload'
-import {SBOMPayload} from './protobuf/sbom_intake'
 import {SbomPayloadData} from './types'
 import {getValidator, validateSbomFile} from './validation'
 
@@ -72,7 +71,7 @@ export class UploadSbomCommand extends Command {
 
     const api: (sbomPayload: SBOMPayload) => AxiosPromise<AxiosResponse> = getApiHelper(this.config.apiKey)
 
-    const spanTags = await getSpanTags(this.config, this.tags)
+    const tags = await getSpanTags(this.config, this.tags)
 
     const validator: Ajv = getValidator()
     for (const basePath of this.basePaths) {
@@ -81,23 +80,12 @@ export class UploadSbomCommand extends Command {
       }
 
       if (validateSbomFile(basePath, validator, !!this.debug)) {
-        // Get the payload to upload
-        const payloadData: SbomPayloadData = {
-          filePath: basePath,
-          content: JSON.parse(fs.readFileSync(basePath).toString('utf8')),
-        }
-
-        // If debug mode is activated, we write the payload in a file
-        if (this.debug) {
-          const debugFilePath = `${basePath}.payload.pbytes`
-          this.context.stdout.write(`Writing payload for debugging in: ${debugFilePath}\n`)
-          const payloadBytes = SBOMPayload.toJSON(generatePayload(payloadData, service, spanTags))
-          fs.writeFileSync(debugFilePath, JSON.stringify(payloadBytes))
-        }
+        const filePath = basePath
+        const jsonContent = JSON.parse(fs.readFileSync(basePath).toString('utf8'))
 
         // Upload content
         try {
-          const response = await api(generatePayload(payloadData, service, spanTags))
+          const response = await api(generatePayload(jsonContent, tags))
           if (this.debug) {
             this.context.stdout.write(`Upload done, status: ${response.status}\n`)
           }

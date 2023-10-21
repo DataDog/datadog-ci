@@ -1,68 +1,62 @@
 import fs from 'fs'
 
-import {SERVICE} from '../../../helpers/tags'
+import {DatadogCiConfig} from '../../../helpers/config'
+import {getSpanTags} from '../../../helpers/tags'
 
 import {generatePayload} from '../payload'
-import {Classification} from '../protobuf/bom-1.4'
-import {SBOMPayload} from '../protobuf/sbom_intake'
-import {SbomPayloadData} from '../types'
+import {DependencyLanguage, DependencyLicense} from '../types'
 
-/**
- * Generate the payload from a SBOM file
- * @param file - the JSON file to use to generate the payload
- */
-const getPayload = (file: string) => {
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-  const content = JSON.parse(fs.readFileSync(file).toString('utf8'))
+describe('generation of payload', () => {
+  test('should correctly work with a CycloneDX 1.4 file', async () => {
+    const sbomFile = './src/commands/sbom/__tests__/fixtures/sbom.1.4.ok.json'
+    const sbomContent = JSON.parse(fs.readFileSync(sbomFile).toString('utf8'))
+    const config: DatadogCiConfig = {
+      apiKey: undefined,
+      env: undefined,
+      envVarTags: undefined,
+    }
+    const tags = await getSpanTags(config, [])
 
-  const payloadData: SbomPayloadData = {
-    filePath: file,
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-    content,
-  }
+    const payload = generatePayload(sbomContent, tags)
+    expect(payload).not.toBeNull()
+    expect(payload?.id).not.toBeNull()
 
-  return generatePayload(payloadData, 'my-service', {[SERVICE]: 'bar'})
-}
-
-/**
- * Check that the file correctly parse and have all the information we need
- * @param payload - the payload previously generated
- */
-const checkFile = (payload: SBOMPayload) => {
-  expect(payload.entities.length).toBe(1)
-  expect(payload.source).toBe('CI')
-
-  const entity = payload.entities[0]
-  expect(entity.ddTags.length).toBe(1)
-  expect(entity.ddTags[0]).toBe('service:bar')
-
-  expect(entity.id).toBe('my-service')
-  expect(entity.inUse).toBeTruthy()
-
-  expect(entity.cyclonedx?.components.map((v) => v.type)).not.toContain(Classification.UNRECOGNIZED)
-  // for each library, we should have a purl, name and version
-  expect(
-    entity.cyclonedx?.components.filter((v) => v.type === Classification.CLASSIFICATION_LIBRARY).map((v) => v.purl)
-  ).not.toContain(undefined)
-  expect(
-    entity.cyclonedx?.components.filter((v) => v.type === Classification.CLASSIFICATION_LIBRARY).map((v) => v.name)
-  ).not.toContain(undefined)
-  expect(
-    entity.cyclonedx?.components.filter((v) => v.type === Classification.CLASSIFICATION_LIBRARY).map((v) => v.version)
-  ).not.toContain(undefined)
-}
-
-describe('payload of files', () => {
-  test('should succeed when called on a valid SBOM file for CycloneDX 1.4', () => {
-    const payload = getPayload('./src/commands/sbom/__tests__/fixtures/sbom.1.4.ok.json')
-    checkFile(payload)
-    const entity = payload.entities[0]
-    expect(entity.cyclonedx?.components.length).toBe(62)
+    expect(payload?.commit.sha).not.toBeNull()
+    expect(payload?.commit.authorName).not.toBeNull()
+    expect(payload?.commit.authorEmail).not.toBeNull()
+    expect(payload?.commit.branch).not.toBeNull()
+    expect(payload?.repository.url).toContain('github.com')
+    expect(payload?.repository.url).toContain('DataDog/datadog-ci')
+    expect(payload?.dependencies.length).toBe(62)
+    expect(payload?.dependencies[0].name).toBe('stack-cors')
+    expect(payload?.dependencies[0].version).toBe('1.3.0')
+    expect(payload?.dependencies[0].licenses.length).toBe(1)
+    expect(payload?.dependencies[0].licenses[0]).toBe(DependencyLicense.MIT)
+    expect(payload?.dependencies[0].language).toBe(DependencyLanguage.PHP)
   })
-  test('should succeed when called on a valid SBOM file for CycloneDX 1.5', () => {
-    const payload = getPayload('./src/commands/sbom/__tests__/fixtures/sbom.1.5.ok.json')
-    checkFile(payload)
-    const entity = payload.entities[0]
-    expect(entity.cyclonedx?.components.length).toBe(153)
+  test('should succeed when called on a valid SBOM file for CycloneDX 1.5', async () => {
+    const sbomFile = './src/commands/sbom/__tests__/fixtures/sbom.1.5.ok.json'
+    const sbomContent = JSON.parse(fs.readFileSync(sbomFile).toString('utf8'))
+    const config: DatadogCiConfig = {
+      apiKey: undefined,
+      env: undefined,
+      envVarTags: undefined,
+    }
+    const tags = await getSpanTags(config, [])
+
+    const payload = generatePayload(sbomContent, tags)
+    expect(payload).not.toBeNull()
+    expect(payload?.id).not.toBeNull()
+
+    expect(payload?.commit.sha).not.toBeNull()
+    expect(payload?.commit.authorName).not.toBeNull()
+    expect(payload?.commit.authorEmail).not.toBeNull()
+    expect(payload?.commit.branch).not.toBeNull()
+    expect(payload?.repository.url).toContain('github.com')
+    expect(payload?.repository.url).toContain('DataDog/datadog-ci')
+    expect(payload?.dependencies.length).toBe(147)
+
+    const dependenciesWithoutLicense = payload?.dependencies.filter((d) => d.licenses.length === 0)
+    expect(dependenciesWithoutLicense?.length).toBe(17)
   })
 })
