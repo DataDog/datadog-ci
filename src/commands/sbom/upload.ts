@@ -10,7 +10,7 @@ import {getSpanTags} from '../../helpers/tags'
 
 import {getApiHelper} from './api'
 import {generatePayload} from './payload'
-import {SbomPayloadData} from './types'
+import {ScaRequest} from './types'
 import {getValidator, validateSbomFile} from './validation'
 
 export class UploadSbomCommand extends Command {
@@ -69,7 +69,7 @@ export class UploadSbomCommand extends Command {
       return 1
     }
 
-    const api: (sbomPayload: SBOMPayload) => AxiosPromise<AxiosResponse> = getApiHelper(this.config.apiKey)
+    const api: (sbomPayload: ScaRequest) => AxiosPromise<AxiosResponse> = getApiHelper(this.config.apiKey)
 
     const tags = await getSpanTags(this.config, this.tags)
 
@@ -85,7 +85,14 @@ export class UploadSbomCommand extends Command {
 
         // Upload content
         try {
-          const response = await api(generatePayload(jsonContent, tags))
+          const scaPayload = generatePayload(jsonContent, tags)
+
+          if (!scaPayload) {
+            console.log(`Cannot generate payload for file ${filePath}`)
+            continue
+          }
+
+          const response = await api(scaPayload)
           if (this.debug) {
             this.context.stdout.write(`Upload done, status: ${response.status}\n`)
           }

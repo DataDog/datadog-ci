@@ -126,8 +126,8 @@ export const generatePayload = (jsonContent: any, tags: SpanTags): ScaRequest | 
   return {
     id: crypto.randomUUID(),
     commit: {
-      authorName: tags[GIT_COMMIT_AUTHOR_NAME],
-      authorEmail: tags[GIT_COMMIT_AUTHOR_EMAIL],
+      author_name: tags[GIT_COMMIT_AUTHOR_NAME],
+      author_email: tags[GIT_COMMIT_AUTHOR_EMAIL],
       sha: tags[GIT_SHA],
       branch: tags[GIT_BRANCH],
     },

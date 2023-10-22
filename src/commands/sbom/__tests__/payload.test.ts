@@ -22,8 +22,8 @@ describe('generation of payload', () => {
     expect(payload?.id).not.toBeNull()
 
     expect(payload?.commit.sha).not.toBeNull()
-    expect(payload?.commit.authorName).not.toBeNull()
-    expect(payload?.commit.authorEmail).not.toBeNull()
+    expect(payload?.commit.author_name).not.toBeNull()
+    expect(payload?.commit.author_email).not.toBeNull()
     expect(payload?.commit.branch).not.toBeNull()
     expect(payload?.repository.url).toContain('github.com')
     expect(payload?.repository.url).toContain('DataDog/datadog-ci')
@@ -49,8 +49,8 @@ describe('generation of payload', () => {
     expect(payload?.id).not.toBeNull()
 
     expect(payload?.commit.sha).not.toBeNull()
-    expect(payload?.commit.authorName).not.toBeNull()
-    expect(payload?.commit.authorEmail).not.toBeNull()
+    expect(payload?.commit.author_name).not.toBeNull()
+    expect(payload?.commit.author_email).not.toBeNull()
     expect(payload?.commit.branch).not.toBeNull()
     expect(payload?.repository.url).toContain('github.com')
     expect(payload?.repository.url).toContain('DataDog/datadog-ci')

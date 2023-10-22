@@ -1,11 +1,12 @@
 import {AxiosPromise, AxiosRequestConfig, AxiosResponse} from 'axios'
 
 import {CONTENT_TYPE_HEADER, CONTENT_TYPE_VALUE_PROTOBUF, METHOD_POST} from '../../constants'
-import {getBaseIntakeUrl} from '../../helpers/api'
 import {getRequestBuilder} from '../../helpers/utils'
 
+import {getBaseUrl} from '../junit/utils'
+
 import {API_ENDPOINT, INTAKE_NAME} from './constants'
-import {SBOMPayload} from './protobuf/sbom_intake'
+import {ScaRequest} from './types'
 
 const maxBodyLength = Infinity
 
@@ -13,18 +14,18 @@ const maxBodyLength = Infinity
  * Get the function to upload our results to the intake.
  * @param apiKey
  */
-export const getApiHelper = (apiKey: string): ((sbomPayload: SBOMPayload) => AxiosPromise<AxiosResponse>) => {
+export const getApiHelper = (apiKey: string): ((scaRequest: ScaRequest) => AxiosPromise<AxiosResponse>) => {
   /**
    * function used to marshall and send the data
    * @param request - the AXIOS element used to send the request
    */
   const uploadSBomPayload = (request: (args: AxiosRequestConfig) => AxiosPromise<AxiosResponse>) => async (
-    payload: SBOMPayload
+    scaPayload: ScaRequest
   ) => {
-    const buffer = SBOMPayload.encode(payload).finish()
+    // const buffer = SBOMPayload.encode(payload).finish()
 
     return request({
-      data: buffer,
+      data: JSON.stringify(scaPayload),
       headers: {
         [CONTENT_TYPE_HEADER]: CONTENT_TYPE_VALUE_PROTOBUF,
         'DD-EVP-ORIGIN': 'datadog-ci',
@@ -37,9 +38,9 @@ export const getApiHelper = (apiKey: string): ((sbomPayload: SBOMPayload) => Axi
   }
 
   // Get the intake name
-  const intakeUrl = getBaseIntakeUrl(INTAKE_NAME)
+  const url = getBaseUrl() + 'api/v2/static-analysis-sca/dependencies'
   // Get the AXIOS request/response function
-  const requestIntake = getRequestBuilder({baseUrl: intakeUrl, apiKey})
+  const requestIntake = getRequestBuilder({baseUrl: url, apiKey})
 
   return uploadSBomPayload(requestIntake)
 }

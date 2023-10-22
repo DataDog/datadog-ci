@@ -94,6 +94,7 @@
     "js-yaml": "3.13.1",
     "jszip": "^3.10.1",
     "ora": "5.4.1",
+    "protobufjs": "^7.2.4",
     "proxy-agent": "^6.3.0",
     "rimraf": "^3.0.2",
     "semver": "^7.5.3",
@@ -150,6 +151,7 @@
     "proxy": "^2.1.1",
     "ts-jest": "29.1.1",
     "ts-node": "8.8.1",
+    "ts-proto": "^1.156.3",
     "typescript": "5.1.6"
   }
 }

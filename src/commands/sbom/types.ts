@@ -52,8 +52,8 @@ export interface Dependency {
 }
 
 export interface CommitInformation {
-  authorName: string
-  authorEmail: string
+  author_name: string
+  author_email: string
   sha: string
   branch: string
 }

@@ -104,12 +104,6 @@ jobs:
         run: yarn datadog-ci sarif upload --service=datadog-ci-e2e-tests-sarif artifacts/e2e/sarif-reports
         env:
           DD_API_KEY: ${{ secrets.DD_API_KEY_CI_VISIBILITY }}
-      - name: Run sbom upload test
-        run: yarn datadog-ci sbom upload --service=datadog-ci-e2e-tests-sbom --env test artifacts/e2e/sbom-reports/sbom.json
-        env:
-          DD_BETA_COMMANDS_ENABLED: 1
-          DD_API_KEY: ${{ secrets.DD_API_KEY_CI_VISIBILITY }}
-
 
   standalone-binary-test-ubuntu:
     name: Test standalone binary in ubuntu
