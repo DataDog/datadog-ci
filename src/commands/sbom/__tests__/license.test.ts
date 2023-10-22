@@ -8,5 +8,7 @@ describe('licenses', () => {
     expect(getLicensesFromString('MIT OR Apache-2.0')).toStrictEqual([DependencyLicense.MIT, DependencyLicense.APACHE2])
     expect(getLicensesFromString('MIT OR foobar')).toStrictEqual([DependencyLicense.MIT])
     expect(getLicensesFromString('foobar OR MIT')).toStrictEqual([DependencyLicense.MIT])
+    expect(getLicensesFromString('')).toStrictEqual([])
+    expect(getLicensesFromString('foobar')).toStrictEqual([])
   })
 })
