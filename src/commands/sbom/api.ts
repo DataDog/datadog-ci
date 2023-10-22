@@ -1,11 +1,11 @@
 import {AxiosPromise, AxiosRequestConfig, AxiosResponse} from 'axios'
 
-import {CONTENT_TYPE_HEADER, CONTENT_TYPE_VALUE_PROTOBUF, METHOD_POST} from '../../constants'
+import {CONTENT_TYPE_HEADER, CONTENT_TYPE_VALUE_JSON, CONTENT_TYPE_VALUE_PROTOBUF, METHOD_POST} from '../../constants'
 import {getRequestBuilder} from '../../helpers/utils'
 
 import {getBaseUrl} from '../junit/utils'
 
-import {API_ENDPOINT, INTAKE_NAME} from './constants'
+import {API_ENDPOINT} from './constants'
 import {ScaRequest} from './types'
 
 const maxBodyLength = Infinity
@@ -14,7 +14,10 @@ const maxBodyLength = Infinity
  * Get the function to upload our results to the intake.
  * @param apiKey
  */
-export const getApiHelper = (apiKey: string): ((scaRequest: ScaRequest) => AxiosPromise<AxiosResponse>) => {
+export const getApiHelper = (
+  apiKey: string,
+  appKey: string
+): ((scaRequest: ScaRequest) => AxiosPromise<AxiosResponse>) => {
   /**
    * function used to marshall and send the data
    * @param request - the AXIOS element used to send the request
@@ -22,12 +25,18 @@ export const getApiHelper = (apiKey: string): ((scaRequest: ScaRequest) => Axios
   const uploadSBomPayload = (request: (args: AxiosRequestConfig) => AxiosPromise<AxiosResponse>) => async (
     scaPayload: ScaRequest
   ) => {
-    // const buffer = SBOMPayload.encode(payload).finish()
+    // Make sure we follow the API signature
+    const payload = {
+      data: {
+        type: 'scarequests',
+        attributes: scaPayload,
+      },
+    }
 
     return request({
-      data: JSON.stringify(scaPayload),
+      data: JSON.stringify(payload),
       headers: {
-        [CONTENT_TYPE_HEADER]: CONTENT_TYPE_VALUE_PROTOBUF,
+        [CONTENT_TYPE_HEADER]: CONTENT_TYPE_VALUE_JSON,
         'DD-EVP-ORIGIN': 'datadog-ci',
         'DD-EVP-ORIGIN-VERSION': '0.0.1',
       },
@@ -38,9 +47,9 @@ export const getApiHelper = (apiKey: string): ((scaRequest: ScaRequest) => Axios
   }
 
   // Get the intake name
-  const url = getBaseUrl() + 'api/v2/static-analysis-sca/dependencies'
+  const url = getBaseUrl()
   // Get the AXIOS request/response function
-  const requestIntake = getRequestBuilder({baseUrl: url, apiKey})
+  const requestIntake = getRequestBuilder({baseUrl: url, apiKey, appKey})
 
   return uploadSBomPayload(requestIntake)
 }
