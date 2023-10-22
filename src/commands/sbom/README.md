@@ -24,3 +24,11 @@ The following environment variables must be defined:
  - `DD_API_KEY`: the API key to use
  - `DD_SERVICE`: the Datadog service you use (if `--service` not specified)
 
+
+## Development
+
+When developing software, you can try with the following command
+
+```bash
+DD_BETA_COMMANDS_ENABLED=1 yarn launch sbom upload --service <your-service> --env <your-environment> /path/to/sbom.json
+```

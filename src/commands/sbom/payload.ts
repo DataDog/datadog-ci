@@ -11,6 +11,8 @@ import {
 
 import {Dependency, DependencyLanguage, DependencyLicense, ScaRequest} from './types'
 
+// Attempt to find the language from a SBOM component. For now, we get the source either from
+// the bom-ref or the purl property of the SBOM.
 const getLanguageFromComponent = (component: any): DependencyLanguage | undefined => {
   const componentName = component['name']
 
@@ -21,13 +23,17 @@ const getLanguageFromComponent = (component: any): DependencyLanguage | undefine
     if (component['purl'].indexOf('pkg:composer') !== -1) {
       return DependencyLanguage.PHP
     }
+    if (component['purl'].indexOf('pkg:cargo') !== -1) {
+      return DependencyLanguage.RUST
+    }
   }
 
-  console.log(`language for component ${componentName} not found`)
+  console.debug(`language for component ${componentName} not found`)
 
   return undefined
 }
 
+// Get the license from a string. If the license is valid, we return it. Otherwise, we return undefined
 const getLicenseFromString = (s: string): DependencyLicense | undefined => {
   if (!s) {
     return undefined
@@ -42,32 +48,71 @@ const getLicenseFromString = (s: string): DependencyLicense | undefined => {
       return DependencyLicense.BSD2CLAUSE
     case 'BSD-3-Clause':
       return DependencyLicense.BSD3CLAUSE
+    case 'BSL-1.0':
+      return DependencyLicense.BSL1
     case 'ISC':
       return DependencyLicense.ISC
     case 'MIT':
       return DependencyLicense.MIT
+    case 'Zlib':
+      return DependencyLicense.ZLIB
   }
 
-  console.log(`license ${s} not recognized`)
+  console.debug(`license ${s} not recognized`)
 
   return undefined
 }
 
+// Get all the licenses from a string. Sometimes, there are two licenses in one string
+// such as "MIT OR Apache-2.0". In this case, we return all the licenses in this condition.
+const getLicensesFromString = (s: string): DependencyLicense[] => {
+  if (!s) {
+    return []
+  }
+  const licenses: DependencyLicense[] = []
+
+  if (s.indexOf('OR') !== -1) {
+    for (const lic of s.split(' OR ')) {
+      const l = getLicenseFromString(lic.replace(' ', ''))
+      if (l) {
+        licenses.push(l)
+      }
+    }
+  } else {
+    const lic = getLicenseFromString(s)
+    if (lic) {
+      licenses.push(lic)
+    }
+  }
+
+  return licenses
+}
+
+// Get all the licenses of this component We extract the "licenses" element from the SBOM component.
+// Unfortunately, depending on the SBOM generator, the licenses are generated in a different manner.
+// We attempt to get as much as possible.
 const getLicensesFromComponent = (component: any): DependencyLicense[] => {
+  const elementsForLicense = ['id', 'name']
+
   const componentName = component['name']
   const licenses: DependencyLicense[] = []
+
+  // Get the "licenses" attribute of the SBOM component.
   if (component['licenses']) {
     for (const license of component['licenses']) {
-      if (license['license'] && license['license']['id']) {
-        const li = getLicenseFromString(license['license']['id'])
-        if (li) {
-          licenses.push(li)
+      for (const el of elementsForLicense) {
+        // Handle "license": [ {"license": {"id": <license>}}]
+        if (license['license'] && license['license'][el]) {
+          for (const l of getLicensesFromString(license['license'][el])) {
+            licenses.push(l)
+          }
         }
-      }
-      if (license['license'] && license['license']['name']) {
-        const li = getLicenseFromString(license['license']['name'])
-        if (li) {
-          licenses.push(li)
+
+        // Handle "license": [ {"expression": "MIT"}]
+        if (license['expression']) {
+          for (const l of getLicensesFromString(license['expression'])) {
+            licenses.push(l)
+          }
         }
       }
     }
@@ -109,7 +154,7 @@ export const generatePayload = (jsonContent: any, tags: SpanTags): ScaRequest | 
         const lang = getLanguageFromComponent(component)
 
         if (!lang) {
-          return
+          continue
         }
 
         const dependency: Dependency = {

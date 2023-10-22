@@ -2,6 +2,7 @@ export enum DependencyLanguage {
   NPM = 'node',
   PYPI = 'pypi',
   PHP = 'php',
+  RUST = 'rust',
 }
 
 // List from https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/licensing-a-repository
