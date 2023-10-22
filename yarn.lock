@@ -2010,7 +2010,6 @@ __metadata:
     ora: 5.4.1
     pkg: 5.5.2
     prettier: 2.0.5
-    protobufjs: ^7.2.4
     proxy: ^2.1.1
     proxy-agent: ^6.3.0
     rimraf: ^3.0.2
@@ -2023,7 +2022,6 @@ __metadata:
     tiny-async-pool: 1.2.0
     ts-jest: 29.1.1
     ts-node: 8.8.1
-    ts-proto: ^1.156.3
     typanion: ^3.14.0
     typescript: 5.1.6
     uuid: ^9.0.0
@@ -4710,13 +4708,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"case-anything@npm:^2.1.13":
-  version: 2.1.13
-  resolution: "case-anything@npm:2.1.13"
-  checksum: c39c69d7e418337b6006a9692f13c2b257e907e867149a102e9beb7e9d2d52da14e754da1f4e4ce82a866d86d93047e522f64360bda54e7d7c308f4cdd736c3d
-  languageName: node
-  linkType: hard
-
 "catharsis@npm:^0.9.0":
   version: 0.9.0
   resolution: "catharsis@npm:0.9.0"
@@ -5307,15 +5298,6 @@ __metadata:
   dependencies:
     is-obj: ^2.0.0
   checksum: 0f47600a4b93e1dc37261da4e6909652c008832a5d3684b5bf9a9a0d3f4c67ea949a86dceed9b72f5733ed8e8e6383cc5958df3bbd0799ee317fd181f2ece700
-  languageName: node
-  linkType: hard
-
-"dprint-node@npm:^1.0.7":
-  version: 1.0.7
-  resolution: "dprint-node@npm:1.0.7"
-  dependencies:
-    detect-libc: ^1.0.3
-  checksum: cd29f8e2b7de334273b4f53d24072718139635408b015963bcc80829cc785a84591462585b5b569791c8b1420c5672bec7499bda70d7298c58c8a3f43796e659
   languageName: node
   linkType: hard
 
@@ -8322,7 +8304,7 @@ jschardet@latest:
   languageName: node
   linkType: hard
 
-"long@npm:^5.0.0, long@npm:^5.2.3":
+"long@npm:^5.0.0":
   version: 5.2.3
   resolution: "long@npm:5.2.3"
   checksum: 885ede7c3de4facccbd2cacc6168bae3a02c3e836159ea4252c87b6e34d40af819824b2d4edce330bfb5c4d6e8ce3ec5864bdcf9473fa1f53a4f8225860e5897
@@ -10698,39 +10680,6 @@ jschardet@latest:
     ts-node-transpile-only: dist/bin-transpile.js
     ts-script: dist/bin-script-deprecated.js
   checksum: fa4a76076f49dbe26238992babe596d74c8902adc7638b491678313d17b4381258f30c429cb42306335669c77296d5c95bfee6276d11f5cbf9fa63c06223dfc0
-  languageName: node
-  linkType: hard
-
-"ts-poet@npm:^6.5.0":
-  version: 6.5.0
-  resolution: "ts-poet@npm:6.5.0"
-  dependencies:
-    dprint-node: ^1.0.7
-  checksum: 1a3705c7864cb0dc6f9305884a91a6582fdd93257977324cda8ea7e3e5dbd7525cbc3fb4d5753a088356a4b8b3fb9245d83c244740f52881725a79ab36d0d168
-  languageName: node
-  linkType: hard
-
-"ts-proto-descriptors@npm:1.15.0":
-  version: 1.15.0
-  resolution: "ts-proto-descriptors@npm:1.15.0"
-  dependencies:
-    long: ^5.2.3
-    protobufjs: ^7.2.4
-  checksum: 50e77d7c89dc52e9e74ee859e3232cece527d59ddcce515852059df70b4d80b49e73eb65166ec87f6f9238cadc2c77eb05695724f82aa4501bc2378fb2457643
-  languageName: node
-  linkType: hard
-
-"ts-proto@npm:^1.156.3":
-  version: 1.156.3
-  resolution: "ts-proto@npm:1.156.3"
-  dependencies:
-    case-anything: ^2.1.13
-    protobufjs: ^7.2.4
-    ts-poet: ^6.5.0
-    ts-proto-descriptors: 1.15.0
-  bin:
-    protoc-gen-ts_proto: protoc-gen-ts_proto
-  checksum: bd6a80d5b5c8401f925a197b243c12f695c9d33aaad3ef10fbbe68603e8c5fc8d0fc61c4ab6f368d154d0ee32873366c07f7dc9bab7a4e030639858f1843f169
   languageName: node
   linkType: hard
 
