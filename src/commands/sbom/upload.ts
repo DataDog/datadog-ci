@@ -97,11 +97,14 @@ export class UploadSbomCommand extends Command {
             continue
           }
 
+          const startTimeMs = Date.now()
           const response = await api(scaPayload)
+          const endTimeMs = Date.now()
           if (this.debug) {
             this.context.stdout.write(`Upload done, status: ${response.status}\n`)
           }
-          this.context.stdout.write(`File ${basePath} successfully uploaded\n`)
+          const apiTimeMs = endTimeMs - startTimeMs
+          this.context.stdout.write(`File ${basePath} successfully uploaded in ${apiTimeMs} ms\n`)
         } catch (error) {
           process.stderr.write(`Error while writing the payload: ${error.message}\n`)
           if (error.response) {
