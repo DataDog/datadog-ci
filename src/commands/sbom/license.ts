@@ -1,6 +1,7 @@
 import {DependencyLicense} from './types'
 
 // Get the license from a string. If the license is valid, we return it. Otherwise, we return undefined
+// List of licenses: https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/licensing-a-repository
 const getLicenseFromString = (s: string): DependencyLicense | undefined => {
   if (!s) {
     return undefined
@@ -21,6 +22,8 @@ const getLicenseFromString = (s: string): DependencyLicense | undefined => {
       return DependencyLicense.ISC
     case 'mit':
       return DependencyLicense.MIT
+    case 'unlicense':
+      return DependencyLicense.UNLICENSE
     case 'zlib':
       return DependencyLicense.ZLIB
   }

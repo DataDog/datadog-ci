@@ -19,12 +19,12 @@ describe('generation of payload', () => {
 
     const payload = generatePayload(sbomContent, tags)
     expect(payload).not.toBeNull()
-    expect(payload?.id).not.toBeNull()
+    expect(payload?.id).toStrictEqual(expect.any(String))
 
-    expect(payload?.commit.sha).not.toBeNull()
-    expect(payload?.commit.author_name).not.toBeNull()
-    expect(payload?.commit.author_email).not.toBeNull()
-    expect(payload?.commit.branch).not.toBeNull()
+    expect(payload?.commit.sha).toStrictEqual(expect.any(String))
+    expect(payload?.commit.author_name).toStrictEqual(expect.any(String))
+    expect(payload?.commit.author_email).toStrictEqual(expect.any(String))
+    expect(payload?.commit.branch).toStrictEqual(expect.any(String))
     expect(payload?.repository.url).toContain('github.com')
     expect(payload?.repository.url).toContain('DataDog/datadog-ci')
     expect(payload?.dependencies.length).toBe(62)
@@ -46,17 +46,34 @@ describe('generation of payload', () => {
 
     const payload = generatePayload(sbomContent, tags)
     expect(payload).not.toBeNull()
-    expect(payload?.id).not.toBeNull()
+    expect(payload?.id).toStrictEqual(expect.any(String))
 
-    expect(payload?.commit.sha).not.toBeNull()
-    expect(payload?.commit.author_name).not.toBeNull()
-    expect(payload?.commit.author_email).not.toBeNull()
-    expect(payload?.commit.branch).not.toBeNull()
+    expect(payload?.commit.sha).toStrictEqual(expect.any(String))
+    expect(payload?.commit.author_name).toStrictEqual(expect.any(String))
+    expect(payload?.commit.author_email).toStrictEqual(expect.any(String))
+    expect(payload?.commit.branch).toStrictEqual(expect.any(String))
     expect(payload?.repository.url).toContain('github.com')
     expect(payload?.repository.url).toContain('DataDog/datadog-ci')
     expect(payload?.dependencies.length).toBe(147)
 
     const dependenciesWithoutLicense = payload?.dependencies.filter((d) => d.licenses.length === 0)
     expect(dependenciesWithoutLicense?.length).toBe(17)
+  })
+
+  test('SBOM for rust with multiple licenses', async () => {
+    const sbomFile = './src/commands/sbom/__tests__/fixtures/sbom-rust.json'
+    const sbomContent = JSON.parse(fs.readFileSync(sbomFile).toString('utf8'))
+    const config: DatadogCiConfig = {
+      apiKey: undefined,
+      env: undefined,
+      envVarTags: undefined,
+    }
+    const tags = await getSpanTags(config, [])
+
+    const payload = generatePayload(sbomContent, tags)
+
+    expect(payload?.dependencies.length).toStrictEqual(305)
+    const dependenciesWithoutLicense = payload?.dependencies.filter((d) => d.licenses.length === 0)
+    expect(dependenciesWithoutLicense?.length).toStrictEqual(3)
   })
 })
