@@ -41,7 +41,7 @@ export const getLicensesFromString = (s: string): DependencyLicense[] => {
   }
   const licenses: DependencyLicense[] = []
 
-  if (s.indexOf('OR') !== -1) {
+  if (s.includes('OR')) {
     for (const lic of s.toLowerCase().split(' or ')) {
       const l = getLicenseFromString(lic.replace(' ', ''))
       if (l) {
