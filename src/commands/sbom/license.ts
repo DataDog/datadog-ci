@@ -69,7 +69,7 @@ export const getLicensesFromComponent = (component: any): DependencyLicense[] =>
     for (const license of component['licenses']) {
       for (const el of elementsForLicense) {
         // Handle "license": [ {"license": {"id": <license>}} ]
-        if (license['license'] && license['license'][el]) {
+        if (license['license']?.[el]) {
           for (const l of getLicensesFromString(license['license'][el])) {
             licenses.push(l)
           }
