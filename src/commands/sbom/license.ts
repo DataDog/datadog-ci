@@ -55,7 +55,7 @@ export const getLicensesFromString = (s: string): DependencyLicense[] => {
   return licenses
 }
 
-// Get all the licenses of this component We extract the "licenses" element from the SBOM component.
+// Get all the licenses of this component. We extract the "licenses" element from the SBOM component.
 // Unfortunately, depending on the SBOM generator, the licenses are generated in a different manner.
 // We attempt to get as much as possible.
 export const getLicensesFromComponent = (component: any): DependencyLicense[] => {
