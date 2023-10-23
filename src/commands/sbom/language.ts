@@ -9,10 +9,10 @@ export const getLanguageFromComponent = (component: any): DependencyLanguage | u
     if (component['bom-ref'].includes('pkg:npm')) {
       return DependencyLanguage.NPM
     }
-    if (component['purl'].indexOf('pkg:composer') !== -1) {
+    if (component['purl'].includes('pkg:composer')) {
       return DependencyLanguage.PHP
     }
-    if (component['purl'].indexOf('pkg:cargo') !== -1) {
+    if (component['purl'].includes('pkg:cargo')) {
       return DependencyLanguage.RUST
     }
   }
