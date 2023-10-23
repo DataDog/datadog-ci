@@ -119,6 +119,25 @@ describe('utils', () => {
     })
   })
 
+  describe('getGlobForDisplay', () => {
+    test('should return good values', () => {
+      const pathToProject = '/path/to/project'
+      jest.spyOn(process, 'cwd').mockImplementation(() => pathToProject)
+
+      expect(utils.getGlobForDisplay('')).toStrictEqual('/path/to/project')
+      expect(utils.getGlobForDisplay('hello')).toStrictEqual('/path/to/project/hello')
+      expect(utils.getGlobForDisplay('{,!(node_modules)/**/}*.synthetics.json')).toStrictEqual(
+        '/path/to/project/{,!(node_modules)/**/}*.synthetics.json'
+      )
+      expect(utils.getGlobForDisplay('/absolute/glob/*.synthetics.json')).toStrictEqual(
+        '/absolute/glob/*.synthetics.json'
+      )
+      expect(utils.getGlobForDisplay('/absolute/glob/specific-file.synthetics.json')).toStrictEqual(
+        '/absolute/glob/specific-file.synthetics.json'
+      )
+    })
+  })
+
   describe('getFilePathRelativeToRepo', () => {
     test('datadog-ci is not run in a git repository', async () => {
       const pathToProject = '/path/to/project'

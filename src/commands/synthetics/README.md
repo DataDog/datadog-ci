@@ -419,7 +419,7 @@ You can also see the outcome of test executions directly in your CI as your test
   yarn datadog-ci synthetics run-tests --config synthetics.global.json
   yarn run v1.22.4
   $ /Users/demo.user/go/src/github.com/Datadog/tmp/test/testDemo/node_modules/.bin/datadog-ci synthetics run-tests --config synthetics.global.json
-  Finding files in /Users/demo.user/go/src/github.com/Datadog/tmp/test/testDemo/{,!(node_modules)/**/}*.synthetics.json
+  Finding files matching /Users/demo.user/go/src/github.com/Datadog/tmp/test/testDemo/{,!(node_modules)/**/}*.synthetics.json
 
   Got test files:
     - user.synthetics.json
