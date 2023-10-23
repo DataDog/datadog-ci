@@ -6,7 +6,7 @@ export const getLanguageFromComponent = (component: any): DependencyLanguage | u
   const componentName = component['name']
 
   if (component['bom-ref']) {
-    if (component['bom-ref'].indexOf('pkg:npm') !== -1) {
+    if (component['bom-ref'].includes('pkg:npm')) {
       return DependencyLanguage.NPM
     }
     if (component['purl'].indexOf('pkg:composer') !== -1) {
