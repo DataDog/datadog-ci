@@ -11,6 +11,8 @@ const getLicenseFromString = (s: string): DependencyLicense | undefined => {
     case '0bsd':
       return DependencyLicense.ZEROBSD
     case 'apache-2.0':
+    case 'apache license, version 2.0':
+    case 'the apache software license, version 2.0':
       return DependencyLicense.APACHE2
     case 'bsd-2-clause':
       return DependencyLicense.BSD2CLAUSE
@@ -18,9 +20,14 @@ const getLicenseFromString = (s: string): DependencyLicense | undefined => {
       return DependencyLicense.BSD3CLAUSE
     case 'bsl-1.0':
       return DependencyLicense.BSL1
+    case 'gpl v2':
+      return DependencyLicense.GPL2_0
+    case 'gpl v3':
+      return DependencyLicense.GPL3_0
     case 'isc':
       return DependencyLicense.ISC
     case 'mit':
+    case 'the mit license':
       return DependencyLicense.MIT
     case 'unlicense':
       return DependencyLicense.UNLICENSE

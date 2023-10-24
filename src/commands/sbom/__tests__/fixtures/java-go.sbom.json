@@ -1,0 +1,3206 @@
+{
+  "$schema": "http://cyclonedx.org/schema/bom-1.5.schema.json",
+  "bomFormat": "CycloneDX",
+  "specVersion": "1.5",
+  "serialNumber": "urn:uuid:6ce8fe38-536c-4daf-94f0-4ebc38cde2d3",
+  "version": 1,
+  "metadata": {
+    "timestamp": "2023-10-24T17:58:47+00:00",
+    "tools": [
+      {
+        "vendor": "aquasecurity",
+        "name": "trivy",
+        "version": "0.46.0"
+      }
+    ],
+    "component": {
+      "bom-ref": "e4eee236-a16b-4458-990a-fcc14def339a",
+      "type": "application",
+      "name": ".",
+      "properties": [
+        {
+          "name": "aquasecurity:trivy:SchemaVersion",
+          "value": "2"
+        }
+      ]
+    }
+  },
+  "components": [
+    {
+      "bom-ref": "26e5aec4-4b8c-4652-9eb0-6487c9c3869b",
+      "type": "application",
+      "name": "pom.xml",
+      "properties": [
+        {
+          "name": "aquasecurity:trivy:Class",
+          "value": "lang-pkgs"
+        },
+        {
+          "name": "aquasecurity:trivy:Type",
+          "value": "pom"
+        }
+      ]
+    },
+    {
+      "bom-ref": "2c66cf1c-8e66-435e-a8b5-a236f819e1f2",
+      "type": "application",
+      "name": "src/test/fixture/sdkintegration/gocc/sample1/src/github.com/example_cc/vendor/google.golang.org/grpc/go.mod",
+      "properties": [
+        {
+          "name": "aquasecurity:trivy:Class",
+          "value": "lang-pkgs"
+        },
+        {
+          "name": "aquasecurity:trivy:Type",
+          "value": "gomod"
+        }
+      ]
+    },
+    {
+      "bom-ref": "2c6d9149-a391-4e09-80bf-0210182efa20",
+      "type": "application",
+      "name": "src/test/fixture/sdkintegration/gocc/sampleIdemix/src/github.com/example_cc/vendor/google.golang.org/grpc/go.mod",
+      "properties": [
+        {
+          "name": "aquasecurity:trivy:Class",
+          "value": "lang-pkgs"
+        },
+        {
+          "name": "aquasecurity:trivy:Type",
+          "value": "gomod"
+        }
+      ]
+    },
+    {
+      "bom-ref": "2c8ed45e-e6f4-4343-9391-6d631ffc3ac3",
+      "type": "application",
+      "name": "src/test/fixture/sdkintegration/gocc/sample_11/src/github.com/example_cc/vendor/google.golang.org/grpc/go.mod",
+      "properties": [
+        {
+          "name": "aquasecurity:trivy:Class",
+          "value": "lang-pkgs"
+        },
+        {
+          "name": "aquasecurity:trivy:Type",
+          "value": "gomod"
+        }
+      ]
+    },
+    {
+      "bom-ref": "39cc9e82-beee-4164-9827-9f22e58a9f0b",
+      "type": "application",
+      "name": "src/test/fixture/sdkintegration/gocc/sample1NoInit/src/github.com/example_cc/go.mod",
+      "properties": [
+        {
+          "name": "aquasecurity:trivy:Class",
+          "value": "lang-pkgs"
+        },
+        {
+          "name": "aquasecurity:trivy:Type",
+          "value": "gomod"
+        }
+      ]
+    },
+    {
+      "bom-ref": "43090543-f1a2-412c-ae01-a8bf569e48f0",
+      "type": "application",
+      "name": "src/test/fixture/sdkintegration/gocc/sample1/src/github.com/example_cc/go.mod",
+      "properties": [
+        {
+          "name": "aquasecurity:trivy:Class",
+          "value": "lang-pkgs"
+        },
+        {
+          "name": "aquasecurity:trivy:Type",
+          "value": "gomod"
+        }
+      ]
+    },
+    {
+      "bom-ref": "82f54327-c490-490a-b8b4-4117f81f5570",
+      "type": "application",
+      "name": "src/test/fixture/sdkintegration/gocc/sample1NoInit/src/github.com/example_cc/vendor/google.golang.org/grpc/go.mod",
+      "properties": [
+        {
+          "name": "aquasecurity:trivy:Class",
+          "value": "lang-pkgs"
+        },
+        {
+          "name": "aquasecurity:trivy:Type",
+          "value": "gomod"
+        }
+      ]
+    },
+    {
+      "bom-ref": "8b503cd4-e3e6-47d5-8e12-b65bc6cbc84f",
+      "type": "application",
+      "name": "src/test/fixture/sdkintegration/gocc/sample_11/src/github.com/example_cc/go.mod",
+      "properties": [
+        {
+          "name": "aquasecurity:trivy:Class",
+          "value": "lang-pkgs"
+        },
+        {
+          "name": "aquasecurity:trivy:Type",
+          "value": "gomod"
+        }
+      ]
+    },
+    {
+      "bom-ref": "92e709f8-e698-4f21-aecb-d51f65aadb58",
+      "type": "application",
+      "name": "src/test/fixture/sdkintegration/gocc/sample_mv/src/github.com/example_cc/go.mod",
+      "properties": [
+        {
+          "name": "aquasecurity:trivy:Class",
+          "value": "lang-pkgs"
+        },
+        {
+          "name": "aquasecurity:trivy:Type",
+          "value": "gomod"
+        }
+      ]
+    },
+    {
+      "bom-ref": "da404db5-355a-46f3-9174-5b60588c1c3c",
+      "type": "application",
+      "name": "src/test/fixture/sdkintegration/gocc/samplePrivateData/src/github.com/private_data_cc/go.mod",
+      "properties": [
+        {
+          "name": "aquasecurity:trivy:Class",
+          "value": "lang-pkgs"
+        },
+        {
+          "name": "aquasecurity:trivy:Type",
+          "value": "gomod"
+        }
+      ]
+    },
+    {
+      "bom-ref": "e2b30296-4cf4-4c40-b900-f32a78db2efc",
+      "type": "application",
+      "name": "src/test/fixture/sdkintegration/gocc/sampleIdemix/src/github.com/example_cc/go.mod",
+      "properties": [
+        {
+          "name": "aquasecurity:trivy:Class",
+          "value": "lang-pkgs"
+        },
+        {
+          "name": "aquasecurity:trivy:Type",
+          "value": "gomod"
+        }
+      ]
+    },
+    {
+      "bom-ref": "e5d2dbc4-cfa5-4c28-a87e-5185437289bc",
+      "type": "application",
+      "name": "src/test/fixture/sdkintegration/gocc/samplePrivateData/src/github.com/private_data_cc/vendor/google.golang.org/grpc/go.mod",
+      "properties": [
+        {
+          "name": "aquasecurity:trivy:Class",
+          "value": "lang-pkgs"
+        },
+        {
+          "name": "aquasecurity:trivy:Type",
+          "value": "gomod"
+        }
+      ]
+    },
+    {
+      "bom-ref": "f3ba4d89-ae60-4a8f-bd10-03d4213d419e",
+      "type": "application",
+      "name": "src/test/fixture/sdkintegration/gocc/sample_mv/src/github.com/example_cc/vendor/google.golang.org/grpc/go.mod",
+      "properties": [
+        {
+          "name": "aquasecurity:trivy:Class",
+          "value": "lang-pkgs"
+        },
+        {
+          "name": "aquasecurity:trivy:Type",
+          "value": "gomod"
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:golang/cloud.google.com/go@0.26.0",
+      "type": "library",
+      "name": "cloud.google.com/go",
+      "version": "0.26.0",
+      "licenses": [
+        {
+          "license": {
+            "name": "Apache-2.0"
+          }
+        }
+      ],
+      "purl": "pkg:golang/cloud.google.com/go@0.26.0",
+      "properties": [
+        {
+          "name": "aquasecurity:trivy:PkgID",
+          "value": "cloud.google.com/go@v0.26.0"
+        },
+        {
+          "name": "aquasecurity:trivy:PkgType",
+          "value": "gomod"
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:golang/github.com/burntsushi/toml@0.3.1",
+      "type": "library",
+      "name": "github.com/BurntSushi/toml",
+      "version": "0.3.1",
+      "licenses": [
+        {
+          "license": {
+            "name": "MIT"
+          }
+        }
+      ],
+      "purl": "pkg:golang/github.com/burntsushi/toml@0.3.1",
+      "properties": [
+        {
+          "name": "aquasecurity:trivy:PkgID",
+          "value": "github.com/BurntSushi/toml@v0.3.1"
+        },
+        {
+          "name": "aquasecurity:trivy:PkgType",
+          "value": "gomod"
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:golang/github.com/client9/misspell@0.3.4",
+      "type": "library",
+      "name": "github.com/client9/misspell",
+      "version": "0.3.4",
+      "licenses": [
+        {
+          "license": {
+            "name": "MIT"
+          }
+        }
+      ],
+      "purl": "pkg:golang/github.com/client9/misspell@0.3.4",
+      "properties": [
+        {
+          "name": "aquasecurity:trivy:PkgID",
+          "value": "github.com/client9/misspell@v0.3.4"
+        },
+        {
+          "name": "aquasecurity:trivy:PkgType",
+          "value": "gomod"
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:golang/github.com/davecgh/go-spew@1.1.1",
+      "type": "library",
+      "name": "github.com/davecgh/go-spew",
+      "version": "1.1.1",
+      "licenses": [
+        {
+          "license": {
+            "name": "ISC"
+          }
+        }
+      ],
+      "purl": "pkg:golang/github.com/davecgh/go-spew@1.1.1",
+      "properties": [
+        {
+          "name": "aquasecurity:trivy:PkgID",
+          "value": "github.com/davecgh/go-spew@v1.1.1"
+        },
+        {
+          "name": "aquasecurity:trivy:PkgType",
+          "value": "gomod"
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:golang/github.com/golang/glog@0.0.0-20160126235308-23def4e6c14b",
+      "type": "library",
+      "name": "github.com/golang/glog",
+      "version": "0.0.0-20160126235308-23def4e6c14b",
+      "licenses": [
+        {
+          "license": {
+            "name": "Apache-2.0"
+          }
+        }
+      ],
+      "purl": "pkg:golang/github.com/golang/glog@0.0.0-20160126235308-23def4e6c14b",
+      "properties": [
+        {
+          "name": "aquasecurity:trivy:PkgID",
+          "value": "github.com/golang/glog@v0.0.0-20160126235308-23def4e6c14b"
+        },
+        {
+          "name": "aquasecurity:trivy:PkgType",
+          "value": "gomod"
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:golang/github.com/golang/mock@1.1.1",
+      "type": "library",
+      "name": "github.com/golang/mock",
+      "version": "1.1.1",
+      "licenses": [
+        {
+          "license": {
+            "name": "Apache-2.0"
+          }
+        }
+      ],
+      "purl": "pkg:golang/github.com/golang/mock@1.1.1",
+      "properties": [
+        {
+          "name": "aquasecurity:trivy:PkgID",
+          "value": "github.com/golang/mock@v1.1.1"
+        },
+        {
+          "name": "aquasecurity:trivy:PkgType",
+          "value": "gomod"
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:golang/github.com/golang/protobuf@1.2.0",
+      "type": "library",
+      "name": "github.com/golang/protobuf",
+      "version": "1.2.0",
+      "licenses": [
+        {
+          "license": {
+            "name": "BSD-3-Clause"
+          }
+        }
+      ],
+      "purl": "pkg:golang/github.com/golang/protobuf@1.2.0",
+      "properties": [
+        {
+          "name": "aquasecurity:trivy:PkgID",
+          "value": "github.com/golang/protobuf@v1.2.0"
+        },
+        {
+          "name": "aquasecurity:trivy:PkgType",
+          "value": "gomod"
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:golang/github.com/golang/protobuf@1.3.2",
+      "type": "library",
+      "name": "github.com/golang/protobuf",
+      "version": "1.3.2",
+      "licenses": [
+        {
+          "license": {
+            "name": "BSD-3-Clause"
+          }
+        }
+      ],
+      "purl": "pkg:golang/github.com/golang/protobuf@1.3.2",
+      "properties": [
+        {
+          "name": "aquasecurity:trivy:PkgID",
+          "value": "github.com/golang/protobuf@v1.3.2"
+        },
+        {
+          "name": "aquasecurity:trivy:PkgType",
+          "value": "gomod"
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:golang/github.com/google/go-cmp@0.2.0",
+      "type": "library",
+      "name": "github.com/google/go-cmp",
+      "version": "0.2.0",
+      "licenses": [
+        {
+          "license": {
+            "name": "BSD-3-Clause"
+          }
+        }
+      ],
+      "purl": "pkg:golang/github.com/google/go-cmp@0.2.0",
+      "properties": [
+        {
+          "name": "aquasecurity:trivy:PkgID",
+          "value": "github.com/google/go-cmp@v0.2.0"
+        },
+        {
+          "name": "aquasecurity:trivy:PkgType",
+          "value": "gomod"
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:golang/github.com/hyperledger/fabric-chaincode-go@0.0.0-20220131132609-1476cf1d3206",
+      "type": "library",
+      "name": "github.com/hyperledger/fabric-chaincode-go",
+      "version": "0.0.0-20220131132609-1476cf1d3206",
+      "purl": "pkg:golang/github.com/hyperledger/fabric-chaincode-go@0.0.0-20220131132609-1476cf1d3206",
+      "properties": [
+        {
+          "name": "aquasecurity:trivy:PkgID",
+          "value": "github.com/hyperledger/fabric-chaincode-go@v0.0.0-20220131132609-1476cf1d3206"
+        },
+        {
+          "name": "aquasecurity:trivy:PkgType",
+          "value": "gomod"
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:golang/github.com/hyperledger/fabric-protos-go@0.0.0-20190919234611-2a87503ac7c9",
+      "type": "library",
+      "name": "github.com/hyperledger/fabric-protos-go",
+      "version": "0.0.0-20190919234611-2a87503ac7c9",
+      "purl": "pkg:golang/github.com/hyperledger/fabric-protos-go@0.0.0-20190919234611-2a87503ac7c9",
+      "properties": [
+        {
+          "name": "aquasecurity:trivy:PkgID",
+          "value": "github.com/hyperledger/fabric-protos-go@v0.0.0-20190919234611-2a87503ac7c9"
+        },
+        {
+          "name": "aquasecurity:trivy:PkgType",
+          "value": "gomod"
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:golang/github.com/kr/pretty@0.1.0",
+      "type": "library",
+      "name": "github.com/kr/pretty",
+      "version": "0.1.0",
+      "licenses": [
+        {
+          "license": {
+            "name": "MIT"
+          }
+        }
+      ],
+      "purl": "pkg:golang/github.com/kr/pretty@0.1.0",
+      "properties": [
+        {
+          "name": "aquasecurity:trivy:PkgID",
+          "value": "github.com/kr/pretty@v0.1.0"
+        },
+        {
+          "name": "aquasecurity:trivy:PkgType",
+          "value": "gomod"
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:golang/github.com/kr/pty@1.1.1",
+      "type": "library",
+      "name": "github.com/kr/pty",
+      "version": "1.1.1",
+      "licenses": [
+        {
+          "license": {
+            "name": "MIT"
+          }
+        }
+      ],
+      "purl": "pkg:golang/github.com/kr/pty@1.1.1",
+      "properties": [
+        {
+          "name": "aquasecurity:trivy:PkgID",
+          "value": "github.com/kr/pty@v1.1.1"
+        },
+        {
+          "name": "aquasecurity:trivy:PkgType",
+          "value": "gomod"
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:golang/github.com/kr/text@0.1.0",
+      "type": "library",
+      "name": "github.com/kr/text",
+      "version": "0.1.0",
+      "licenses": [
+        {
+          "license": {
+            "name": "MIT"
+          }
+        }
+      ],
+      "purl": "pkg:golang/github.com/kr/text@0.1.0",
+      "properties": [
+        {
+          "name": "aquasecurity:trivy:PkgID",
+          "value": "github.com/kr/text@v0.1.0"
+        },
+        {
+          "name": "aquasecurity:trivy:PkgType",
+          "value": "gomod"
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:golang/github.com/pmezard/go-difflib@1.0.0",
+      "type": "library",
+      "name": "github.com/pmezard/go-difflib",
+      "version": "1.0.0",
+      "licenses": [
+        {
+          "license": {
+            "name": "BSD-3-Clause"
+          }
+        }
+      ],
+      "purl": "pkg:golang/github.com/pmezard/go-difflib@1.0.0",
+      "properties": [
+        {
+          "name": "aquasecurity:trivy:PkgID",
+          "value": "github.com/pmezard/go-difflib@v1.0.0"
+        },
+        {
+          "name": "aquasecurity:trivy:PkgType",
+          "value": "gomod"
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:golang/github.com/stretchr/objx@0.1.0",
+      "type": "library",
+      "name": "github.com/stretchr/objx",
+      "version": "0.1.0",
+      "licenses": [
+        {
+          "license": {
+            "name": "MIT"
+          }
+        }
+      ],
+      "purl": "pkg:golang/github.com/stretchr/objx@0.1.0",
+      "properties": [
+        {
+          "name": "aquasecurity:trivy:PkgID",
+          "value": "github.com/stretchr/objx@v0.1.0"
+        },
+        {
+          "name": "aquasecurity:trivy:PkgType",
+          "value": "gomod"
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:golang/github.com/stretchr/testify@1.7.0",
+      "type": "library",
+      "name": "github.com/stretchr/testify",
+      "version": "1.7.0",
+      "licenses": [
+        {
+          "license": {
+            "name": "MIT"
+          }
+        }
+      ],
+      "purl": "pkg:golang/github.com/stretchr/testify@1.7.0",
+      "properties": [
+        {
+          "name": "aquasecurity:trivy:PkgID",
+          "value": "github.com/stretchr/testify@v1.7.0"
+        },
+        {
+          "name": "aquasecurity:trivy:PkgType",
+          "value": "gomod"
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:golang/golang.org/x/crypto@0.0.0-20190308221718-c2843e01d9a2",
+      "type": "library",
+      "name": "golang.org/x/crypto",
+      "version": "0.0.0-20190308221718-c2843e01d9a2",
+      "licenses": [
+        {
+          "license": {
+            "name": "BSD-3-Clause"
+          }
+        }
+      ],
+      "purl": "pkg:golang/golang.org/x/crypto@0.0.0-20190308221718-c2843e01d9a2",
+      "properties": [
+        {
+          "name": "aquasecurity:trivy:PkgID",
+          "value": "golang.org/x/crypto@v0.0.0-20190308221718-c2843e01d9a2"
+        },
+        {
+          "name": "aquasecurity:trivy:PkgType",
+          "value": "gomod"
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:golang/golang.org/x/lint@0.0.0-20190313153728-d0100b6bd8b3",
+      "type": "library",
+      "name": "golang.org/x/lint",
+      "version": "0.0.0-20190313153728-d0100b6bd8b3",
+      "licenses": [
+        {
+          "license": {
+            "name": "BSD-3-Clause"
+          }
+        }
+      ],
+      "purl": "pkg:golang/golang.org/x/lint@0.0.0-20190313153728-d0100b6bd8b3",
+      "properties": [
+        {
+          "name": "aquasecurity:trivy:PkgID",
+          "value": "golang.org/x/lint@v0.0.0-20190313153728-d0100b6bd8b3"
+        },
+        {
+          "name": "aquasecurity:trivy:PkgType",
+          "value": "gomod"
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:golang/golang.org/x/net@0.0.0-20190311183353-d8887717615a",
+      "type": "library",
+      "name": "golang.org/x/net",
+      "version": "0.0.0-20190311183353-d8887717615a",
+      "licenses": [
+        {
+          "license": {
+            "name": "BSD-3-Clause"
+          }
+        }
+      ],
+      "purl": "pkg:golang/golang.org/x/net@0.0.0-20190311183353-d8887717615a",
+      "properties": [
+        {
+          "name": "aquasecurity:trivy:PkgID",
+          "value": "golang.org/x/net@v0.0.0-20190311183353-d8887717615a"
+        },
+        {
+          "name": "aquasecurity:trivy:PkgType",
+          "value": "gomod"
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:golang/golang.org/x/net@0.0.0-20190522155817-f3200d17e092",
+      "type": "library",
+      "name": "golang.org/x/net",
+      "version": "0.0.0-20190522155817-f3200d17e092",
+      "licenses": [
+        {
+          "license": {
+            "name": "BSD-3-Clause"
+          }
+        }
+      ],
+      "purl": "pkg:golang/golang.org/x/net@0.0.0-20190522155817-f3200d17e092",
+      "properties": [
+        {
+          "name": "aquasecurity:trivy:PkgID",
+          "value": "golang.org/x/net@v0.0.0-20190522155817-f3200d17e092"
+        },
+        {
+          "name": "aquasecurity:trivy:PkgType",
+          "value": "gomod"
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:golang/golang.org/x/oauth2@0.0.0-20180821212333-d2e6202438be",
+      "type": "library",
+      "name": "golang.org/x/oauth2",
+      "version": "0.0.0-20180821212333-d2e6202438be",
+      "licenses": [
+        {
+          "license": {
+            "name": "BSD-3-Clause"
+          }
+        }
+      ],
+      "purl": "pkg:golang/golang.org/x/oauth2@0.0.0-20180821212333-d2e6202438be",
+      "properties": [
+        {
+          "name": "aquasecurity:trivy:PkgID",
+          "value": "golang.org/x/oauth2@v0.0.0-20180821212333-d2e6202438be"
+        },
+        {
+          "name": "aquasecurity:trivy:PkgType",
+          "value": "gomod"
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:golang/golang.org/x/sync@0.0.0-20190423024810-112230192c58",
+      "type": "library",
+      "name": "golang.org/x/sync",
+      "version": "0.0.0-20190423024810-112230192c58",
+      "licenses": [
+        {
+          "license": {
+            "name": "BSD-3-Clause"
+          }
+        }
+      ],
+      "purl": "pkg:golang/golang.org/x/sync@0.0.0-20190423024810-112230192c58",
+      "properties": [
+        {
+          "name": "aquasecurity:trivy:PkgID",
+          "value": "golang.org/x/sync@v0.0.0-20190423024810-112230192c58"
+        },
+        {
+          "name": "aquasecurity:trivy:PkgType",
+          "value": "gomod"
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:golang/golang.org/x/sys@0.0.0-20190215142949-d0b11bdaac8a",
+      "type": "library",
+      "name": "golang.org/x/sys",
+      "version": "0.0.0-20190215142949-d0b11bdaac8a",
+      "licenses": [
+        {
+          "license": {
+            "name": "BSD-3-Clause"
+          }
+        }
+      ],
+      "purl": "pkg:golang/golang.org/x/sys@0.0.0-20190215142949-d0b11bdaac8a",
+      "properties": [
+        {
+          "name": "aquasecurity:trivy:PkgID",
+          "value": "golang.org/x/sys@v0.0.0-20190215142949-d0b11bdaac8a"
+        },
+        {
+          "name": "aquasecurity:trivy:PkgType",
+          "value": "gomod"
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:golang/golang.org/x/sys@0.0.0-20190710143415-6ec70d6a5542",
+      "type": "library",
+      "name": "golang.org/x/sys",
+      "version": "0.0.0-20190710143415-6ec70d6a5542",
+      "purl": "pkg:golang/golang.org/x/sys@0.0.0-20190710143415-6ec70d6a5542",
+      "properties": [
+        {
+          "name": "aquasecurity:trivy:PkgID",
+          "value": "golang.org/x/sys@v0.0.0-20190710143415-6ec70d6a5542"
+        },
+        {
+          "name": "aquasecurity:trivy:PkgType",
+          "value": "gomod"
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:golang/golang.org/x/text@0.3.0",
+      "type": "library",
+      "name": "golang.org/x/text",
+      "version": "0.3.0",
+      "licenses": [
+        {
+          "license": {
+            "name": "BSD-3-Clause"
+          }
+        }
+      ],
+      "purl": "pkg:golang/golang.org/x/text@0.3.0",
+      "properties": [
+        {
+          "name": "aquasecurity:trivy:PkgID",
+          "value": "golang.org/x/text@v0.3.0"
+        },
+        {
+          "name": "aquasecurity:trivy:PkgType",
+          "value": "gomod"
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:golang/golang.org/x/tools@0.0.0-20190524140312-2c0ae7006135",
+      "type": "library",
+      "name": "golang.org/x/tools",
+      "version": "0.0.0-20190524140312-2c0ae7006135",
+      "licenses": [
+        {
+          "license": {
+            "name": "BSD-3-Clause"
+          }
+        }
+      ],
+      "purl": "pkg:golang/golang.org/x/tools@0.0.0-20190524140312-2c0ae7006135",
+      "properties": [
+        {
+          "name": "aquasecurity:trivy:PkgID",
+          "value": "golang.org/x/tools@v0.0.0-20190524140312-2c0ae7006135"
+        },
+        {
+          "name": "aquasecurity:trivy:PkgType",
+          "value": "gomod"
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:golang/google.golang.org/appengine@1.1.0",
+      "type": "library",
+      "name": "google.golang.org/appengine",
+      "version": "1.1.0",
+      "licenses": [
+        {
+          "license": {
+            "name": "Apache-2.0"
+          }
+        }
+      ],
+      "purl": "pkg:golang/google.golang.org/appengine@1.1.0",
+      "properties": [
+        {
+          "name": "aquasecurity:trivy:PkgID",
+          "value": "google.golang.org/appengine@v1.1.0"
+        },
+        {
+          "name": "aquasecurity:trivy:PkgType",
+          "value": "gomod"
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:golang/google.golang.org/genproto@0.0.0-20180817151627-c66870c02cf8",
+      "type": "library",
+      "name": "google.golang.org/genproto",
+      "version": "0.0.0-20180817151627-c66870c02cf8",
+      "licenses": [
+        {
+          "license": {
+            "name": "Apache-2.0"
+          }
+        }
+      ],
+      "purl": "pkg:golang/google.golang.org/genproto@0.0.0-20180817151627-c66870c02cf8",
+      "properties": [
+        {
+          "name": "aquasecurity:trivy:PkgID",
+          "value": "google.golang.org/genproto@v0.0.0-20180817151627-c66870c02cf8"
+        },
+        {
+          "name": "aquasecurity:trivy:PkgType",
+          "value": "gomod"
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:golang/google.golang.org/genproto@0.0.0-20180831171423-11092d34479b",
+      "type": "library",
+      "name": "google.golang.org/genproto",
+      "version": "0.0.0-20180831171423-11092d34479b",
+      "purl": "pkg:golang/google.golang.org/genproto@0.0.0-20180831171423-11092d34479b",
+      "properties": [
+        {
+          "name": "aquasecurity:trivy:PkgID",
+          "value": "google.golang.org/genproto@v0.0.0-20180831171423-11092d34479b"
+        },
+        {
+          "name": "aquasecurity:trivy:PkgType",
+          "value": "gomod"
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:golang/google.golang.org/grpc@1.23.0",
+      "type": "library",
+      "name": "google.golang.org/grpc",
+      "version": "1.23.0",
+      "licenses": [
+        {
+          "license": {
+            "name": "Apache-2.0"
+          }
+        }
+      ],
+      "purl": "pkg:golang/google.golang.org/grpc@1.23.0",
+      "properties": [
+        {
+          "name": "aquasecurity:trivy:PkgID",
+          "value": "google.golang.org/grpc@v1.23.0"
+        },
+        {
+          "name": "aquasecurity:trivy:PkgType",
+          "value": "gomod"
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:golang/gopkg.in/check.v1@1.0.0-20180628173108-788fd7840127",
+      "type": "library",
+      "name": "gopkg.in/check.v1",
+      "version": "1.0.0-20180628173108-788fd7840127",
+      "licenses": [
+        {
+          "license": {
+            "name": "BSD-2-Clause"
+          }
+        }
+      ],
+      "purl": "pkg:golang/gopkg.in/check.v1@1.0.0-20180628173108-788fd7840127",
+      "properties": [
+        {
+          "name": "aquasecurity:trivy:PkgID",
+          "value": "gopkg.in/check.v1@v1.0.0-20180628173108-788fd7840127"
+        },
+        {
+          "name": "aquasecurity:trivy:PkgType",
+          "value": "gomod"
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:golang/gopkg.in/yaml.v3@3.0.0-20200313102051-9f266ea9e77c",
+      "type": "library",
+      "name": "gopkg.in/yaml.v3",
+      "version": "3.0.0-20200313102051-9f266ea9e77c",
+      "licenses": [
+        {
+          "license": {
+            "name": "Apache-2.0"
+          }
+        },
+        {
+          "license": {
+            "name": "MIT"
+          }
+        }
+      ],
+      "purl": "pkg:golang/gopkg.in/yaml.v3@3.0.0-20200313102051-9f266ea9e77c",
+      "properties": [
+        {
+          "name": "aquasecurity:trivy:PkgID",
+          "value": "gopkg.in/yaml.v3@v3.0.0-20200313102051-9f266ea9e77c"
+        },
+        {
+          "name": "aquasecurity:trivy:PkgType",
+          "value": "gomod"
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:golang/honnef.co/go/tools@0.0.0-20190523083050-ea95bdfd59fc",
+      "type": "library",
+      "name": "honnef.co/go/tools",
+      "version": "0.0.0-20190523083050-ea95bdfd59fc",
+      "licenses": [
+        {
+          "license": {
+            "name": "MIT"
+          }
+        }
+      ],
+      "purl": "pkg:golang/honnef.co/go/tools@0.0.0-20190523083050-ea95bdfd59fc",
+      "properties": [
+        {
+          "name": "aquasecurity:trivy:PkgID",
+          "value": "honnef.co/go/tools@v0.0.0-20190523083050-ea95bdfd59fc"
+        },
+        {
+          "name": "aquasecurity:trivy:PkgType",
+          "value": "gomod"
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:maven/com.google.api.grpc/proto-google-common-protos@2.17.0",
+      "type": "library",
+      "name": "com.google.api.grpc:proto-google-common-protos",
+      "version": "2.17.0",
+      "licenses": [
+        {
+          "license": {
+            "name": "Apache-2.0"
+          }
+        }
+      ],
+      "purl": "pkg:maven/com.google.api.grpc/proto-google-common-protos@2.17.0",
+      "properties": [
+        {
+          "name": "aquasecurity:trivy:PkgID",
+          "value": "com.google.api.grpc:proto-google-common-protos:2.17.0"
+        },
+        {
+          "name": "aquasecurity:trivy:PkgType",
+          "value": "pom"
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:maven/com.google.api/api-common@2.15.0",
+      "type": "library",
+      "name": "com.google.api:api-common",
+      "version": "2.15.0",
+      "licenses": [
+        {
+          "license": {
+            "name": "BSD-3-Clause"
+          }
+        }
+      ],
+      "purl": "pkg:maven/com.google.api/api-common@2.15.0",
+      "properties": [
+        {
+          "name": "aquasecurity:trivy:PkgID",
+          "value": "com.google.api:api-common:2.15.0"
+        },
+        {
+          "name": "aquasecurity:trivy:PkgType",
+          "value": "pom"
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:maven/com.google.auto.value/auto-value-annotations@1.10.2",
+      "type": "library",
+      "name": "com.google.auto.value:auto-value-annotations",
+      "version": "1.10.2",
+      "licenses": [
+        {
+          "license": {
+            "name": "Apache-2.0"
+          }
+        }
+      ],
+      "purl": "pkg:maven/com.google.auto.value/auto-value-annotations@1.10.2",
+      "properties": [
+        {
+          "name": "aquasecurity:trivy:PkgID",
+          "value": "com.google.auto.value:auto-value-annotations:1.10.2"
+        },
+        {
+          "name": "aquasecurity:trivy:PkgType",
+          "value": "pom"
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:maven/com.google.code.findbugs/jsr305@3.0.2",
+      "type": "library",
+      "name": "com.google.code.findbugs:jsr305",
+      "version": "3.0.2",
+      "licenses": [
+        {
+          "license": {
+            "name": "The Apache Software License, Version 2.0"
+          }
+        }
+      ],
+      "purl": "pkg:maven/com.google.code.findbugs/jsr305@3.0.2",
+      "properties": [
+        {
+          "name": "aquasecurity:trivy:PkgID",
+          "value": "com.google.code.findbugs:jsr305:3.0.2"
+        },
+        {
+          "name": "aquasecurity:trivy:PkgType",
+          "value": "pom"
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:maven/com.google.errorprone/error_prone_annotations@2.18.0",
+      "type": "library",
+      "name": "com.google.errorprone:error_prone_annotations",
+      "version": "2.18.0",
+      "licenses": [
+        {
+          "license": {
+            "name": "Apache-2.0"
+          }
+        }
+      ],
+      "purl": "pkg:maven/com.google.errorprone/error_prone_annotations@2.18.0",
+      "properties": [
+        {
+          "name": "aquasecurity:trivy:PkgID",
+          "value": "com.google.errorprone:error_prone_annotations:2.18.0"
+        },
+        {
+          "name": "aquasecurity:trivy:PkgType",
+          "value": "pom"
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:maven/com.google.guava/failureaccess@1.0.1",
+      "type": "library",
+      "name": "com.google.guava:failureaccess",
+      "version": "1.0.1",
+      "licenses": [
+        {
+          "license": {
+            "name": "The Apache Software License, Version 2.0"
+          }
+        }
+      ],
+      "purl": "pkg:maven/com.google.guava/failureaccess@1.0.1",
+      "properties": [
+        {
+          "name": "aquasecurity:trivy:PkgID",
+          "value": "com.google.guava:failureaccess:1.0.1"
+        },
+        {
+          "name": "aquasecurity:trivy:PkgType",
+          "value": "pom"
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:maven/com.google.guava/guava@32.0.1-android",
+      "type": "library",
+      "name": "com.google.guava:guava",
+      "version": "32.0.1-android",
+      "licenses": [
+        {
+          "license": {
+            "name": "Apache License, Version 2.0"
+          }
+        }
+      ],
+      "purl": "pkg:maven/com.google.guava/guava@32.0.1-android",
+      "properties": [
+        {
+          "name": "aquasecurity:trivy:PkgID",
+          "value": "com.google.guava:guava:32.0.1-android"
+        },
+        {
+          "name": "aquasecurity:trivy:PkgType",
+          "value": "pom"
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:maven/com.google.guava/listenablefuture@9999.0-empty-to-avoid-conflict-with-guava",
+      "type": "library",
+      "name": "com.google.guava:listenablefuture",
+      "version": "9999.0-empty-to-avoid-conflict-with-guava",
+      "licenses": [
+        {
+          "license": {
+            "name": "The Apache Software License, Version 2.0"
+          }
+        }
+      ],
+      "purl": "pkg:maven/com.google.guava/listenablefuture@9999.0-empty-to-avoid-conflict-with-guava",
+      "properties": [
+        {
+          "name": "aquasecurity:trivy:PkgID",
+          "value": "com.google.guava:listenablefuture:9999.0-empty-to-avoid-conflict-with-guava"
+        },
+        {
+          "name": "aquasecurity:trivy:PkgType",
+          "value": "pom"
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:maven/com.google.j2objc/j2objc-annotations@2.8",
+      "type": "library",
+      "name": "com.google.j2objc:j2objc-annotations",
+      "version": "2.8",
+      "licenses": [
+        {
+          "license": {
+            "name": "Apache License, Version 2.0"
+          }
+        }
+      ],
+      "purl": "pkg:maven/com.google.j2objc/j2objc-annotations@2.8",
+      "properties": [
+        {
+          "name": "aquasecurity:trivy:PkgID",
+          "value": "com.google.j2objc:j2objc-annotations:2.8"
+        },
+        {
+          "name": "aquasecurity:trivy:PkgType",
+          "value": "pom"
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:maven/com.google.protobuf/protobuf-java@3.22.5",
+      "type": "library",
+      "name": "com.google.protobuf:protobuf-java",
+      "version": "3.22.5",
+      "licenses": [
+        {
+          "license": {
+            "name": "BSD-3-Clause"
+          }
+        }
+      ],
+      "purl": "pkg:maven/com.google.protobuf/protobuf-java@3.22.5",
+      "properties": [
+        {
+          "name": "aquasecurity:trivy:PkgID",
+          "value": "com.google.protobuf:protobuf-java:3.22.5"
+        },
+        {
+          "name": "aquasecurity:trivy:PkgType",
+          "value": "pom"
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:maven/com.spotify/futures-extra@4.3.1",
+      "type": "library",
+      "name": "com.spotify:futures-extra",
+      "version": "4.3.1",
+      "licenses": [
+        {
+          "license": {
+            "name": "The Apache Software License, Version 2.0"
+          }
+        }
+      ],
+      "purl": "pkg:maven/com.spotify/futures-extra@4.3.1",
+      "properties": [
+        {
+          "name": "aquasecurity:trivy:PkgID",
+          "value": "com.spotify:futures-extra:4.3.1"
+        },
+        {
+          "name": "aquasecurity:trivy:PkgType",
+          "value": "pom"
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:maven/commons-cli/commons-cli@1.5.0",
+      "type": "library",
+      "name": "commons-cli:commons-cli",
+      "version": "1.5.0",
+      "licenses": [
+        {
+          "license": {
+            "name": "Apache License, Version 2.0"
+          }
+        }
+      ],
+      "purl": "pkg:maven/commons-cli/commons-cli@1.5.0",
+      "properties": [
+        {
+          "name": "aquasecurity:trivy:PkgID",
+          "value": "commons-cli:commons-cli:1.5.0"
+        },
+        {
+          "name": "aquasecurity:trivy:PkgType",
+          "value": "pom"
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:maven/commons-codec/commons-codec@1.11",
+      "type": "library",
+      "name": "commons-codec:commons-codec",
+      "version": "1.11",
+      "licenses": [
+        {
+          "license": {
+            "name": "Apache License, Version 2.0"
+          }
+        }
+      ],
+      "purl": "pkg:maven/commons-codec/commons-codec@1.11",
+      "properties": [
+        {
+          "name": "aquasecurity:trivy:PkgID",
+          "value": "commons-codec:commons-codec:1.11"
+        },
+        {
+          "name": "aquasecurity:trivy:PkgType",
+          "value": "pom"
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:maven/commons-io/commons-io@2.13.0",
+      "type": "library",
+      "name": "commons-io:commons-io",
+      "version": "2.13.0",
+      "licenses": [
+        {
+          "license": {
+            "name": "Apache-2.0"
+          }
+        }
+      ],
+      "purl": "pkg:maven/commons-io/commons-io@2.13.0",
+      "properties": [
+        {
+          "name": "aquasecurity:trivy:PkgID",
+          "value": "commons-io:commons-io:2.13.0"
+        },
+        {
+          "name": "aquasecurity:trivy:PkgType",
+          "value": "pom"
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:maven/commons-logging/commons-logging@1.2",
+      "type": "library",
+      "name": "commons-logging:commons-logging",
+      "version": "1.2",
+      "licenses": [
+        {
+          "license": {
+            "name": "The Apache Software License, Version 2.0"
+          }
+        }
+      ],
+      "purl": "pkg:maven/commons-logging/commons-logging@1.2",
+      "properties": [
+        {
+          "name": "aquasecurity:trivy:PkgID",
+          "value": "commons-logging:commons-logging:1.2"
+        },
+        {
+          "name": "aquasecurity:trivy:PkgType",
+          "value": "pom"
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:maven/io.grpc/grpc-api@1.57.2",
+      "type": "library",
+      "name": "io.grpc:grpc-api",
+      "version": "1.57.2",
+      "licenses": [
+        {
+          "license": {
+            "name": "Apache-2.0"
+          }
+        }
+      ],
+      "purl": "pkg:maven/io.grpc/grpc-api@1.57.2",
+      "properties": [
+        {
+          "name": "aquasecurity:trivy:PkgID",
+          "value": "io.grpc:grpc-api:1.57.2"
+        },
+        {
+          "name": "aquasecurity:trivy:PkgType",
+          "value": "pom"
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:maven/io.grpc/grpc-core@1.57.2",
+      "type": "library",
+      "name": "io.grpc:grpc-core",
+      "version": "1.57.2",
+      "licenses": [
+        {
+          "license": {
+            "name": "Apache-2.0"
+          }
+        }
+      ],
+      "purl": "pkg:maven/io.grpc/grpc-core@1.57.2",
+      "properties": [
+        {
+          "name": "aquasecurity:trivy:PkgID",
+          "value": "io.grpc:grpc-core:1.57.2"
+        },
+        {
+          "name": "aquasecurity:trivy:PkgType",
+          "value": "pom"
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:maven/io.grpc/grpc-netty-shaded@1.57.2",
+      "type": "library",
+      "name": "io.grpc:grpc-netty-shaded",
+      "version": "1.57.2",
+      "licenses": [
+        {
+          "license": {
+            "name": "Apache-2.0"
+          }
+        }
+      ],
+      "purl": "pkg:maven/io.grpc/grpc-netty-shaded@1.57.2",
+      "properties": [
+        {
+          "name": "aquasecurity:trivy:PkgID",
+          "value": "io.grpc:grpc-netty-shaded:1.57.2"
+        },
+        {
+          "name": "aquasecurity:trivy:PkgType",
+          "value": "pom"
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:maven/io.grpc/grpc-protobuf-lite@1.57.2",
+      "type": "library",
+      "name": "io.grpc:grpc-protobuf-lite",
+      "version": "1.57.2",
+      "licenses": [
+        {
+          "license": {
+            "name": "Apache-2.0"
+          }
+        }
+      ],
+      "purl": "pkg:maven/io.grpc/grpc-protobuf-lite@1.57.2",
+      "properties": [
+        {
+          "name": "aquasecurity:trivy:PkgID",
+          "value": "io.grpc:grpc-protobuf-lite:1.57.2"
+        },
+        {
+          "name": "aquasecurity:trivy:PkgType",
+          "value": "pom"
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:maven/io.grpc/grpc-protobuf@1.57.2",
+      "type": "library",
+      "name": "io.grpc:grpc-protobuf",
+      "version": "1.57.2",
+      "licenses": [
+        {
+          "license": {
+            "name": "Apache-2.0"
+          }
+        }
+      ],
+      "purl": "pkg:maven/io.grpc/grpc-protobuf@1.57.2",
+      "properties": [
+        {
+          "name": "aquasecurity:trivy:PkgID",
+          "value": "io.grpc:grpc-protobuf:1.57.2"
+        },
+        {
+          "name": "aquasecurity:trivy:PkgType",
+          "value": "pom"
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:maven/io.grpc/grpc-stub@1.57.2",
+      "type": "library",
+      "name": "io.grpc:grpc-stub",
+      "version": "1.57.2",
+      "licenses": [
+        {
+          "license": {
+            "name": "Apache-2.0"
+          }
+        }
+      ],
+      "purl": "pkg:maven/io.grpc/grpc-stub@1.57.2",
+      "properties": [
+        {
+          "name": "aquasecurity:trivy:PkgID",
+          "value": "io.grpc:grpc-stub:1.57.2"
+        },
+        {
+          "name": "aquasecurity:trivy:PkgType",
+          "value": "pom"
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:maven/io.opentelemetry.instrumentation/opentelemetry-grpc-1.6@1.29.0-alpha",
+      "type": "library",
+      "name": "io.opentelemetry.instrumentation:opentelemetry-grpc-1.6",
+      "version": "1.29.0-alpha",
+      "licenses": [
+        {
+          "license": {
+            "name": "The Apache License, Version 2.0"
+          }
+        }
+      ],
+      "purl": "pkg:maven/io.opentelemetry.instrumentation/opentelemetry-grpc-1.6@1.29.0-alpha",
+      "properties": [
+        {
+          "name": "aquasecurity:trivy:PkgID",
+          "value": "io.opentelemetry.instrumentation:opentelemetry-grpc-1.6:1.29.0-alpha"
+        },
+        {
+          "name": "aquasecurity:trivy:PkgType",
+          "value": "pom"
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:maven/io.opentelemetry.instrumentation/opentelemetry-instrumentation-api-semconv@1.29.0-alpha",
+      "type": "library",
+      "name": "io.opentelemetry.instrumentation:opentelemetry-instrumentation-api-semconv",
+      "version": "1.29.0-alpha",
+      "licenses": [
+        {
+          "license": {
+            "name": "The Apache License, Version 2.0"
+          }
+        }
+      ],
+      "purl": "pkg:maven/io.opentelemetry.instrumentation/opentelemetry-instrumentation-api-semconv@1.29.0-alpha",
+      "properties": [
+        {
+          "name": "aquasecurity:trivy:PkgID",
+          "value": "io.opentelemetry.instrumentation:opentelemetry-instrumentation-api-semconv:1.29.0-alpha"
+        },
+        {
+          "name": "aquasecurity:trivy:PkgType",
+          "value": "pom"
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:maven/io.opentelemetry.instrumentation/opentelemetry-instrumentation-api@1.29.0",
+      "type": "library",
+      "name": "io.opentelemetry.instrumentation:opentelemetry-instrumentation-api",
+      "version": "1.29.0",
+      "licenses": [
+        {
+          "license": {
+            "name": "The Apache License, Version 2.0"
+          }
+        }
+      ],
+      "purl": "pkg:maven/io.opentelemetry.instrumentation/opentelemetry-instrumentation-api@1.29.0",
+      "properties": [
+        {
+          "name": "aquasecurity:trivy:PkgID",
+          "value": "io.opentelemetry.instrumentation:opentelemetry-instrumentation-api:1.29.0"
+        },
+        {
+          "name": "aquasecurity:trivy:PkgType",
+          "value": "pom"
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:maven/io.opentelemetry.proto/opentelemetry-proto@1.0.0-alpha",
+      "type": "library",
+      "name": "io.opentelemetry.proto:opentelemetry-proto",
+      "version": "1.0.0-alpha",
+      "licenses": [
+        {
+          "license": {
+            "name": "The Apache License, Version 2.0"
+          }
+        }
+      ],
+      "purl": "pkg:maven/io.opentelemetry.proto/opentelemetry-proto@1.0.0-alpha",
+      "properties": [
+        {
+          "name": "aquasecurity:trivy:PkgID",
+          "value": "io.opentelemetry.proto:opentelemetry-proto:1.0.0-alpha"
+        },
+        {
+          "name": "aquasecurity:trivy:PkgType",
+          "value": "pom"
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:maven/io.opentelemetry/opentelemetry-api@1.29.0",
+      "type": "library",
+      "name": "io.opentelemetry:opentelemetry-api",
+      "version": "1.29.0",
+      "licenses": [
+        {
+          "license": {
+            "name": "The Apache License, Version 2.0"
+          }
+        }
+      ],
+      "purl": "pkg:maven/io.opentelemetry/opentelemetry-api@1.29.0",
+      "properties": [
+        {
+          "name": "aquasecurity:trivy:PkgID",
+          "value": "io.opentelemetry:opentelemetry-api:1.29.0"
+        },
+        {
+          "name": "aquasecurity:trivy:PkgType",
+          "value": "pom"
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:maven/io.opentelemetry/opentelemetry-context@1.29.0",
+      "type": "library",
+      "name": "io.opentelemetry:opentelemetry-context",
+      "version": "1.29.0",
+      "licenses": [
+        {
+          "license": {
+            "name": "The Apache License, Version 2.0"
+          }
+        }
+      ],
+      "purl": "pkg:maven/io.opentelemetry/opentelemetry-context@1.29.0",
+      "properties": [
+        {
+          "name": "aquasecurity:trivy:PkgID",
+          "value": "io.opentelemetry:opentelemetry-context:1.29.0"
+        },
+        {
+          "name": "aquasecurity:trivy:PkgType",
+          "value": "pom"
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:maven/io.opentelemetry/opentelemetry-exporter-otlp@1.29.0",
+      "type": "library",
+      "name": "io.opentelemetry:opentelemetry-exporter-otlp",
+      "version": "1.29.0",
+      "licenses": [
+        {
+          "license": {
+            "name": "The Apache License, Version 2.0"
+          }
+        }
+      ],
+      "purl": "pkg:maven/io.opentelemetry/opentelemetry-exporter-otlp@1.29.0",
+      "properties": [
+        {
+          "name": "aquasecurity:trivy:PkgID",
+          "value": "io.opentelemetry:opentelemetry-exporter-otlp:1.29.0"
+        },
+        {
+          "name": "aquasecurity:trivy:PkgType",
+          "value": "pom"
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:maven/io.opentelemetry/opentelemetry-extension-trace-propagators@1.29.0",
+      "type": "library",
+      "name": "io.opentelemetry:opentelemetry-extension-trace-propagators",
+      "version": "1.29.0",
+      "licenses": [
+        {
+          "license": {
+            "name": "The Apache License, Version 2.0"
+          }
+        }
+      ],
+      "purl": "pkg:maven/io.opentelemetry/opentelemetry-extension-trace-propagators@1.29.0",
+      "properties": [
+        {
+          "name": "aquasecurity:trivy:PkgID",
+          "value": "io.opentelemetry:opentelemetry-extension-trace-propagators:1.29.0"
+        },
+        {
+          "name": "aquasecurity:trivy:PkgType",
+          "value": "pom"
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:maven/io.opentelemetry/opentelemetry-sdk-common@1.29.0",
+      "type": "library",
+      "name": "io.opentelemetry:opentelemetry-sdk-common",
+      "version": "1.29.0",
+      "licenses": [
+        {
+          "license": {
+            "name": "The Apache License, Version 2.0"
+          }
+        }
+      ],
+      "purl": "pkg:maven/io.opentelemetry/opentelemetry-sdk-common@1.29.0",
+      "properties": [
+        {
+          "name": "aquasecurity:trivy:PkgID",
+          "value": "io.opentelemetry:opentelemetry-sdk-common:1.29.0"
+        },
+        {
+          "name": "aquasecurity:trivy:PkgType",
+          "value": "pom"
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:maven/io.opentelemetry/opentelemetry-sdk-extension-autoconfigure-spi@1.29.0",
+      "type": "library",
+      "name": "io.opentelemetry:opentelemetry-sdk-extension-autoconfigure-spi",
+      "version": "1.29.0",
+      "licenses": [
+        {
+          "license": {
+            "name": "The Apache License, Version 2.0"
+          }
+        }
+      ],
+      "purl": "pkg:maven/io.opentelemetry/opentelemetry-sdk-extension-autoconfigure-spi@1.29.0",
+      "properties": [
+        {
+          "name": "aquasecurity:trivy:PkgID",
+          "value": "io.opentelemetry:opentelemetry-sdk-extension-autoconfigure-spi:1.29.0"
+        },
+        {
+          "name": "aquasecurity:trivy:PkgType",
+          "value": "pom"
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:maven/io.opentelemetry/opentelemetry-sdk-extension-autoconfigure@1.29.0",
+      "type": "library",
+      "name": "io.opentelemetry:opentelemetry-sdk-extension-autoconfigure",
+      "version": "1.29.0",
+      "licenses": [
+        {
+          "license": {
+            "name": "The Apache License, Version 2.0"
+          }
+        }
+      ],
+      "purl": "pkg:maven/io.opentelemetry/opentelemetry-sdk-extension-autoconfigure@1.29.0",
+      "properties": [
+        {
+          "name": "aquasecurity:trivy:PkgID",
+          "value": "io.opentelemetry:opentelemetry-sdk-extension-autoconfigure:1.29.0"
+        },
+        {
+          "name": "aquasecurity:trivy:PkgType",
+          "value": "pom"
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:maven/io.opentelemetry/opentelemetry-sdk-logs@1.29.0",
+      "type": "library",
+      "name": "io.opentelemetry:opentelemetry-sdk-logs",
+      "version": "1.29.0",
+      "licenses": [
+        {
+          "license": {
+            "name": "The Apache License, Version 2.0"
+          }
+        }
+      ],
+      "purl": "pkg:maven/io.opentelemetry/opentelemetry-sdk-logs@1.29.0",
+      "properties": [
+        {
+          "name": "aquasecurity:trivy:PkgID",
+          "value": "io.opentelemetry:opentelemetry-sdk-logs:1.29.0"
+        },
+        {
+          "name": "aquasecurity:trivy:PkgType",
+          "value": "pom"
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:maven/io.opentelemetry/opentelemetry-sdk-metrics@1.29.0",
+      "type": "library",
+      "name": "io.opentelemetry:opentelemetry-sdk-metrics",
+      "version": "1.29.0",
+      "licenses": [
+        {
+          "license": {
+            "name": "The Apache License, Version 2.0"
+          }
+        }
+      ],
+      "purl": "pkg:maven/io.opentelemetry/opentelemetry-sdk-metrics@1.29.0",
+      "properties": [
+        {
+          "name": "aquasecurity:trivy:PkgID",
+          "value": "io.opentelemetry:opentelemetry-sdk-metrics:1.29.0"
+        },
+        {
+          "name": "aquasecurity:trivy:PkgType",
+          "value": "pom"
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:maven/io.opentelemetry/opentelemetry-sdk-trace@1.29.0",
+      "type": "library",
+      "name": "io.opentelemetry:opentelemetry-sdk-trace",
+      "version": "1.29.0",
+      "licenses": [
+        {
+          "license": {
+            "name": "The Apache License, Version 2.0"
+          }
+        }
+      ],
+      "purl": "pkg:maven/io.opentelemetry/opentelemetry-sdk-trace@1.29.0",
+      "properties": [
+        {
+          "name": "aquasecurity:trivy:PkgID",
+          "value": "io.opentelemetry:opentelemetry-sdk-trace:1.29.0"
+        },
+        {
+          "name": "aquasecurity:trivy:PkgType",
+          "value": "pom"
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:maven/io.opentelemetry/opentelemetry-sdk@1.29.0",
+      "type": "library",
+      "name": "io.opentelemetry:opentelemetry-sdk",
+      "version": "1.29.0",
+      "licenses": [
+        {
+          "license": {
+            "name": "The Apache License, Version 2.0"
+          }
+        }
+      ],
+      "purl": "pkg:maven/io.opentelemetry/opentelemetry-sdk@1.29.0",
+      "properties": [
+        {
+          "name": "aquasecurity:trivy:PkgID",
+          "value": "io.opentelemetry:opentelemetry-sdk:1.29.0"
+        },
+        {
+          "name": "aquasecurity:trivy:PkgType",
+          "value": "pom"
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:maven/io.opentelemetry/opentelemetry-semconv@1.29.0-alpha",
+      "type": "library",
+      "name": "io.opentelemetry:opentelemetry-semconv",
+      "version": "1.29.0-alpha",
+      "licenses": [
+        {
+          "license": {
+            "name": "The Apache License, Version 2.0"
+          }
+        }
+      ],
+      "purl": "pkg:maven/io.opentelemetry/opentelemetry-semconv@1.29.0-alpha",
+      "properties": [
+        {
+          "name": "aquasecurity:trivy:PkgID",
+          "value": "io.opentelemetry:opentelemetry-semconv:1.29.0-alpha"
+        },
+        {
+          "name": "aquasecurity:trivy:PkgType",
+          "value": "pom"
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:maven/javax.activation/javax.activation-api@1.2.0",
+      "type": "library",
+      "name": "javax.activation:javax.activation-api",
+      "version": "1.2.0",
+      "licenses": [
+        {
+          "license": {
+            "name": "CDDL/GPLv2+CE"
+          }
+        }
+      ],
+      "purl": "pkg:maven/javax.activation/javax.activation-api@1.2.0",
+      "properties": [
+        {
+          "name": "aquasecurity:trivy:PkgID",
+          "value": "javax.activation:javax.activation-api:1.2.0"
+        },
+        {
+          "name": "aquasecurity:trivy:PkgType",
+          "value": "pom"
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:maven/javax.annotation/javax.annotation-api@1.3.2",
+      "type": "library",
+      "name": "javax.annotation:javax.annotation-api",
+      "version": "1.3.2",
+      "licenses": [
+        {
+          "license": {
+            "name": "CDDL + GPLv2 with classpath exception"
+          }
+        }
+      ],
+      "purl": "pkg:maven/javax.annotation/javax.annotation-api@1.3.2",
+      "properties": [
+        {
+          "name": "aquasecurity:trivy:PkgID",
+          "value": "javax.annotation:javax.annotation-api:1.3.2"
+        },
+        {
+          "name": "aquasecurity:trivy:PkgType",
+          "value": "pom"
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:maven/javax.xml.bind/jaxb-api@2.3.1",
+      "type": "library",
+      "name": "javax.xml.bind:jaxb-api",
+      "version": "2.3.1",
+      "licenses": [
+        {
+          "license": {
+            "name": "CDDL 1.1"
+          }
+        },
+        {
+          "license": {
+            "name": "GPL2 w/ CPE"
+          }
+        }
+      ],
+      "purl": "pkg:maven/javax.xml.bind/jaxb-api@2.3.1",
+      "properties": [
+        {
+          "name": "aquasecurity:trivy:PkgID",
+          "value": "javax.xml.bind:jaxb-api:2.3.1"
+        },
+        {
+          "name": "aquasecurity:trivy:PkgType",
+          "value": "pom"
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:maven/org.apache.commons/commons-compress@1.24.0",
+      "type": "library",
+      "name": "org.apache.commons:commons-compress",
+      "version": "1.24.0",
+      "licenses": [
+        {
+          "license": {
+            "name": "Apache-2.0"
+          }
+        }
+      ],
+      "purl": "pkg:maven/org.apache.commons/commons-compress@1.24.0",
+      "properties": [
+        {
+          "name": "aquasecurity:trivy:PkgID",
+          "value": "org.apache.commons:commons-compress:1.24.0"
+        },
+        {
+          "name": "aquasecurity:trivy:PkgType",
+          "value": "pom"
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:maven/org.apache.commons/commons-math3@3.6.1",
+      "type": "library",
+      "name": "org.apache.commons:commons-math3",
+      "version": "3.6.1",
+      "licenses": [
+        {
+          "license": {
+            "name": "Apache License, Version 2.0"
+          }
+        }
+      ],
+      "purl": "pkg:maven/org.apache.commons/commons-math3@3.6.1",
+      "properties": [
+        {
+          "name": "aquasecurity:trivy:PkgID",
+          "value": "org.apache.commons:commons-math3:3.6.1"
+        },
+        {
+          "name": "aquasecurity:trivy:PkgType",
+          "value": "pom"
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:maven/org.apache.httpcomponents/httpclient@4.5.14",
+      "type": "library",
+      "name": "org.apache.httpcomponents:httpclient",
+      "version": "4.5.14",
+      "licenses": [
+        {
+          "license": {
+            "name": "Apache License, Version 2.0"
+          }
+        }
+      ],
+      "purl": "pkg:maven/org.apache.httpcomponents/httpclient@4.5.14",
+      "properties": [
+        {
+          "name": "aquasecurity:trivy:PkgID",
+          "value": "org.apache.httpcomponents:httpclient:4.5.14"
+        },
+        {
+          "name": "aquasecurity:trivy:PkgType",
+          "value": "pom"
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:maven/org.apache.httpcomponents/httpcore@4.4.16",
+      "type": "library",
+      "name": "org.apache.httpcomponents:httpcore",
+      "version": "4.4.16",
+      "licenses": [
+        {
+          "license": {
+            "name": "Apache License, Version 2.0"
+          }
+        }
+      ],
+      "purl": "pkg:maven/org.apache.httpcomponents/httpcore@4.4.16",
+      "properties": [
+        {
+          "name": "aquasecurity:trivy:PkgID",
+          "value": "org.apache.httpcomponents:httpcore:4.4.16"
+        },
+        {
+          "name": "aquasecurity:trivy:PkgType",
+          "value": "pom"
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:maven/org.apache.logging.log4j/log4j-1.2-api@2.20.0",
+      "type": "library",
+      "name": "org.apache.logging.log4j:log4j-1.2-api",
+      "version": "2.20.0",
+      "licenses": [
+        {
+          "license": {
+            "name": "Apache License, Version 2.0"
+          }
+        }
+      ],
+      "purl": "pkg:maven/org.apache.logging.log4j/log4j-1.2-api@2.20.0",
+      "properties": [
+        {
+          "name": "aquasecurity:trivy:PkgID",
+          "value": "org.apache.logging.log4j:log4j-1.2-api:2.20.0"
+        },
+        {
+          "name": "aquasecurity:trivy:PkgType",
+          "value": "pom"
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:maven/org.apache.logging.log4j/log4j-api@2.20.0",
+      "type": "library",
+      "name": "org.apache.logging.log4j:log4j-api",
+      "version": "2.20.0",
+      "licenses": [
+        {
+          "license": {
+            "name": "Apache License, Version 2.0"
+          }
+        }
+      ],
+      "purl": "pkg:maven/org.apache.logging.log4j/log4j-api@2.20.0",
+      "properties": [
+        {
+          "name": "aquasecurity:trivy:PkgID",
+          "value": "org.apache.logging.log4j:log4j-api:2.20.0"
+        },
+        {
+          "name": "aquasecurity:trivy:PkgType",
+          "value": "pom"
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:maven/org.apache.logging.log4j/log4j-core@2.20.0",
+      "type": "library",
+      "name": "org.apache.logging.log4j:log4j-core",
+      "version": "2.20.0",
+      "licenses": [
+        {
+          "license": {
+            "name": "Apache License, Version 2.0"
+          }
+        }
+      ],
+      "purl": "pkg:maven/org.apache.logging.log4j/log4j-core@2.20.0",
+      "properties": [
+        {
+          "name": "aquasecurity:trivy:PkgID",
+          "value": "org.apache.logging.log4j:log4j-core:2.20.0"
+        },
+        {
+          "name": "aquasecurity:trivy:PkgType",
+          "value": "pom"
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:maven/org.bouncycastle/bcpkix-jdk18on@1.76",
+      "type": "library",
+      "name": "org.bouncycastle:bcpkix-jdk18on",
+      "version": "1.76",
+      "licenses": [
+        {
+          "license": {
+            "name": "Bouncy Castle Licence"
+          }
+        }
+      ],
+      "purl": "pkg:maven/org.bouncycastle/bcpkix-jdk18on@1.76",
+      "properties": [
+        {
+          "name": "aquasecurity:trivy:PkgID",
+          "value": "org.bouncycastle:bcpkix-jdk18on:1.76"
+        },
+        {
+          "name": "aquasecurity:trivy:PkgType",
+          "value": "pom"
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:maven/org.bouncycastle/bcprov-jdk18on@1.76",
+      "type": "library",
+      "name": "org.bouncycastle:bcprov-jdk18on",
+      "version": "1.76",
+      "licenses": [
+        {
+          "license": {
+            "name": "Bouncy Castle Licence"
+          }
+        }
+      ],
+      "purl": "pkg:maven/org.bouncycastle/bcprov-jdk18on@1.76",
+      "properties": [
+        {
+          "name": "aquasecurity:trivy:PkgID",
+          "value": "org.bouncycastle:bcprov-jdk18on:1.76"
+        },
+        {
+          "name": "aquasecurity:trivy:PkgType",
+          "value": "pom"
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:maven/org.bouncycastle/bcutil-jdk18on@1.76",
+      "type": "library",
+      "name": "org.bouncycastle:bcutil-jdk18on",
+      "version": "1.76",
+      "licenses": [
+        {
+          "license": {
+            "name": "Bouncy Castle Licence"
+          }
+        }
+      ],
+      "purl": "pkg:maven/org.bouncycastle/bcutil-jdk18on@1.76",
+      "properties": [
+        {
+          "name": "aquasecurity:trivy:PkgID",
+          "value": "org.bouncycastle:bcutil-jdk18on:1.76"
+        },
+        {
+          "name": "aquasecurity:trivy:PkgType",
+          "value": "pom"
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:maven/org.checkerframework/checker-qual@3.33.0",
+      "type": "library",
+      "name": "org.checkerframework:checker-qual",
+      "version": "3.33.0",
+      "licenses": [
+        {
+          "license": {
+            "name": "The MIT License"
+          }
+        }
+      ],
+      "purl": "pkg:maven/org.checkerframework/checker-qual@3.33.0",
+      "properties": [
+        {
+          "name": "aquasecurity:trivy:PkgID",
+          "value": "org.checkerframework:checker-qual:3.33.0"
+        },
+        {
+          "name": "aquasecurity:trivy:PkgType",
+          "value": "pom"
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:maven/org.glassfish/javax.json@1.1.4",
+      "type": "library",
+      "name": "org.glassfish:javax.json",
+      "version": "1.1.4",
+      "licenses": [
+        {
+          "license": {
+            "name": "Dual license consisting of the CDDL v1.1"
+          }
+        },
+        {
+          "license": {
+            "name": "GPL v2"
+          }
+        }
+      ],
+      "purl": "pkg:maven/org.glassfish/javax.json@1.1.4",
+      "properties": [
+        {
+          "name": "aquasecurity:trivy:PkgID",
+          "value": "org.glassfish:javax.json:1.1.4"
+        },
+        {
+          "name": "aquasecurity:trivy:PkgType",
+          "value": "pom"
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:maven/org.hyperledger.fabric-sdk-java/fabric-sdk-java@2.2.25-SNAPSHOT",
+      "type": "library",
+      "name": "org.hyperledger.fabric-sdk-java:fabric-sdk-java",
+      "version": "2.2.25-SNAPSHOT",
+      "licenses": [
+        {
+          "license": {
+            "name": "Apache License, Version 2.0"
+          }
+        }
+      ],
+      "purl": "pkg:maven/org.hyperledger.fabric-sdk-java/fabric-sdk-java@2.2.25-SNAPSHOT",
+      "properties": [
+        {
+          "name": "aquasecurity:trivy:PkgID",
+          "value": "org.hyperledger.fabric-sdk-java:fabric-sdk-java:2.2.25-SNAPSHOT"
+        },
+        {
+          "name": "aquasecurity:trivy:PkgType",
+          "value": "pom"
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:maven/org.miracl.milagro.amcl/milagro-crypto-java@0.4.0",
+      "type": "library",
+      "name": "org.miracl.milagro.amcl:milagro-crypto-java",
+      "version": "0.4.0",
+      "licenses": [
+        {
+          "license": {
+            "name": "The Apache Software License, Version 2.0"
+          }
+        }
+      ],
+      "purl": "pkg:maven/org.miracl.milagro.amcl/milagro-crypto-java@0.4.0",
+      "properties": [
+        {
+          "name": "aquasecurity:trivy:PkgID",
+          "value": "org.miracl.milagro.amcl:milagro-crypto-java:0.4.0"
+        },
+        {
+          "name": "aquasecurity:trivy:PkgType",
+          "value": "pom"
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:maven/org.yaml/snakeyaml@2.1",
+      "type": "library",
+      "name": "org.yaml:snakeyaml",
+      "version": "2.1",
+      "licenses": [
+        {
+          "license": {
+            "name": "Apache License, Version 2.0"
+          }
+        }
+      ],
+      "purl": "pkg:maven/org.yaml/snakeyaml@2.1",
+      "properties": [
+        {
+          "name": "aquasecurity:trivy:PkgID",
+          "value": "org.yaml:snakeyaml:2.1"
+        },
+        {
+          "name": "aquasecurity:trivy:PkgType",
+          "value": "pom"
+        }
+      ]
+    }
+  ],
+  "dependencies": [
+    {
+      "ref": "26e5aec4-4b8c-4652-9eb0-6487c9c3869b",
+      "dependsOn": [
+        "pkg:maven/com.google.api/api-common@2.15.0",
+        "pkg:maven/com.google.protobuf/protobuf-java@3.22.5",
+        "pkg:maven/com.spotify/futures-extra@4.3.1",
+        "pkg:maven/commons-cli/commons-cli@1.5.0",
+        "pkg:maven/commons-io/commons-io@2.13.0",
+        "pkg:maven/commons-logging/commons-logging@1.2",
+        "pkg:maven/io.grpc/grpc-netty-shaded@1.57.2",
+        "pkg:maven/io.grpc/grpc-protobuf@1.57.2",
+        "pkg:maven/io.grpc/grpc-stub@1.57.2",
+        "pkg:maven/io.opentelemetry.instrumentation/opentelemetry-grpc-1.6@1.29.0-alpha",
+        "pkg:maven/io.opentelemetry.proto/opentelemetry-proto@1.0.0-alpha",
+        "pkg:maven/io.opentelemetry/opentelemetry-api@1.29.0",
+        "pkg:maven/io.opentelemetry/opentelemetry-exporter-otlp@1.29.0",
+        "pkg:maven/io.opentelemetry/opentelemetry-extension-trace-propagators@1.29.0",
+        "pkg:maven/io.opentelemetry/opentelemetry-sdk-extension-autoconfigure@1.29.0",
+        "pkg:maven/io.opentelemetry/opentelemetry-sdk-trace@1.29.0",
+        "pkg:maven/io.opentelemetry/opentelemetry-sdk@1.29.0",
+        "pkg:maven/javax.xml.bind/jaxb-api@2.3.1",
+        "pkg:maven/org.apache.commons/commons-compress@1.24.0",
+        "pkg:maven/org.apache.httpcomponents/httpclient@4.5.14",
+        "pkg:maven/org.apache.logging.log4j/log4j-1.2-api@2.20.0",
+        "pkg:maven/org.apache.logging.log4j/log4j-core@2.20.0",
+        "pkg:maven/org.bouncycastle/bcpkix-jdk18on@1.76",
+        "pkg:maven/org.bouncycastle/bcprov-jdk18on@1.76",
+        "pkg:maven/org.glassfish/javax.json@1.1.4",
+        "pkg:maven/org.hyperledger.fabric-sdk-java/fabric-sdk-java@2.2.25-SNAPSHOT",
+        "pkg:maven/org.miracl.milagro.amcl/milagro-crypto-java@0.4.0",
+        "pkg:maven/org.yaml/snakeyaml@2.1"
+      ]
+    },
+    {
+      "ref": "2c66cf1c-8e66-435e-a8b5-a236f819e1f2",
+      "dependsOn": [
+        "pkg:golang/cloud.google.com/go@0.26.0",
+        "pkg:golang/github.com/burntsushi/toml@0.3.1",
+        "pkg:golang/github.com/client9/misspell@0.3.4",
+        "pkg:golang/github.com/golang/glog@0.0.0-20160126235308-23def4e6c14b",
+        "pkg:golang/github.com/golang/mock@1.1.1",
+        "pkg:golang/github.com/golang/protobuf@1.2.0",
+        "pkg:golang/github.com/google/go-cmp@0.2.0",
+        "pkg:golang/golang.org/x/lint@0.0.0-20190313153728-d0100b6bd8b3",
+        "pkg:golang/golang.org/x/net@0.0.0-20190311183353-d8887717615a",
+        "pkg:golang/golang.org/x/oauth2@0.0.0-20180821212333-d2e6202438be",
+        "pkg:golang/golang.org/x/sync@0.0.0-20190423024810-112230192c58",
+        "pkg:golang/golang.org/x/sys@0.0.0-20190215142949-d0b11bdaac8a",
+        "pkg:golang/golang.org/x/tools@0.0.0-20190524140312-2c0ae7006135",
+        "pkg:golang/google.golang.org/appengine@1.1.0",
+        "pkg:golang/google.golang.org/genproto@0.0.0-20180817151627-c66870c02cf8",
+        "pkg:golang/honnef.co/go/tools@0.0.0-20190523083050-ea95bdfd59fc"
+      ]
+    },
+    {
+      "ref": "2c6d9149-a391-4e09-80bf-0210182efa20",
+      "dependsOn": [
+        "pkg:golang/cloud.google.com/go@0.26.0",
+        "pkg:golang/github.com/burntsushi/toml@0.3.1",
+        "pkg:golang/github.com/client9/misspell@0.3.4",
+        "pkg:golang/github.com/golang/glog@0.0.0-20160126235308-23def4e6c14b",
+        "pkg:golang/github.com/golang/mock@1.1.1",
+        "pkg:golang/github.com/golang/protobuf@1.2.0",
+        "pkg:golang/github.com/google/go-cmp@0.2.0",
+        "pkg:golang/golang.org/x/crypto@0.0.0-20190308221718-c2843e01d9a2",
+        "pkg:golang/golang.org/x/lint@0.0.0-20190313153728-d0100b6bd8b3",
+        "pkg:golang/golang.org/x/net@0.0.0-20190311183353-d8887717615a",
+        "pkg:golang/golang.org/x/oauth2@0.0.0-20180821212333-d2e6202438be",
+        "pkg:golang/golang.org/x/sync@0.0.0-20190423024810-112230192c58",
+        "pkg:golang/golang.org/x/sys@0.0.0-20190215142949-d0b11bdaac8a",
+        "pkg:golang/golang.org/x/text@0.3.0",
+        "pkg:golang/golang.org/x/tools@0.0.0-20190524140312-2c0ae7006135",
+        "pkg:golang/google.golang.org/appengine@1.1.0",
+        "pkg:golang/google.golang.org/genproto@0.0.0-20180817151627-c66870c02cf8",
+        "pkg:golang/honnef.co/go/tools@0.0.0-20190523083050-ea95bdfd59fc"
+      ]
+    },
+    {
+      "ref": "2c8ed45e-e6f4-4343-9391-6d631ffc3ac3",
+      "dependsOn": [
+        "pkg:golang/cloud.google.com/go@0.26.0",
+        "pkg:golang/github.com/burntsushi/toml@0.3.1",
+        "pkg:golang/github.com/client9/misspell@0.3.4",
+        "pkg:golang/github.com/golang/glog@0.0.0-20160126235308-23def4e6c14b",
+        "pkg:golang/github.com/golang/mock@1.1.1",
+        "pkg:golang/github.com/golang/protobuf@1.2.0",
+        "pkg:golang/github.com/google/go-cmp@0.2.0",
+        "pkg:golang/golang.org/x/crypto@0.0.0-20190308221718-c2843e01d9a2",
+        "pkg:golang/golang.org/x/lint@0.0.0-20190313153728-d0100b6bd8b3",
+        "pkg:golang/golang.org/x/net@0.0.0-20190311183353-d8887717615a",
+        "pkg:golang/golang.org/x/oauth2@0.0.0-20180821212333-d2e6202438be",
+        "pkg:golang/golang.org/x/sync@0.0.0-20190423024810-112230192c58",
+        "pkg:golang/golang.org/x/sys@0.0.0-20190215142949-d0b11bdaac8a",
+        "pkg:golang/golang.org/x/text@0.3.0",
+        "pkg:golang/golang.org/x/tools@0.0.0-20190524140312-2c0ae7006135",
+        "pkg:golang/google.golang.org/appengine@1.1.0",
+        "pkg:golang/google.golang.org/genproto@0.0.0-20180817151627-c66870c02cf8",
+        "pkg:golang/honnef.co/go/tools@0.0.0-20190523083050-ea95bdfd59fc"
+      ]
+    },
+    {
+      "ref": "39cc9e82-beee-4164-9827-9f22e58a9f0b",
+      "dependsOn": [
+        "pkg:golang/cloud.google.com/go@0.26.0",
+        "pkg:golang/github.com/burntsushi/toml@0.3.1",
+        "pkg:golang/github.com/client9/misspell@0.3.4",
+        "pkg:golang/github.com/davecgh/go-spew@1.1.1",
+        "pkg:golang/github.com/golang/glog@0.0.0-20160126235308-23def4e6c14b",
+        "pkg:golang/github.com/golang/mock@1.1.1",
+        "pkg:golang/github.com/golang/protobuf@1.3.2",
+        "pkg:golang/github.com/google/go-cmp@0.2.0",
+        "pkg:golang/github.com/hyperledger/fabric-chaincode-go@0.0.0-20220131132609-1476cf1d3206",
+        "pkg:golang/github.com/hyperledger/fabric-protos-go@0.0.0-20190919234611-2a87503ac7c9",
+        "pkg:golang/github.com/kr/pretty@0.1.0",
+        "pkg:golang/github.com/kr/pty@1.1.1",
+        "pkg:golang/github.com/kr/text@0.1.0",
+        "pkg:golang/github.com/pmezard/go-difflib@1.0.0",
+        "pkg:golang/github.com/stretchr/objx@0.1.0",
+        "pkg:golang/github.com/stretchr/testify@1.7.0",
+        "pkg:golang/golang.org/x/crypto@0.0.0-20190308221718-c2843e01d9a2",
+        "pkg:golang/golang.org/x/lint@0.0.0-20190313153728-d0100b6bd8b3",
+        "pkg:golang/golang.org/x/net@0.0.0-20190522155817-f3200d17e092",
+        "pkg:golang/golang.org/x/oauth2@0.0.0-20180821212333-d2e6202438be",
+        "pkg:golang/golang.org/x/sync@0.0.0-20190423024810-112230192c58",
+        "pkg:golang/golang.org/x/sys@0.0.0-20190710143415-6ec70d6a5542",
+        "pkg:golang/golang.org/x/text@0.3.0",
+        "pkg:golang/golang.org/x/tools@0.0.0-20190524140312-2c0ae7006135",
+        "pkg:golang/google.golang.org/appengine@1.1.0",
+        "pkg:golang/google.golang.org/genproto@0.0.0-20180831171423-11092d34479b",
+        "pkg:golang/google.golang.org/grpc@1.23.0",
+        "pkg:golang/gopkg.in/check.v1@1.0.0-20180628173108-788fd7840127",
+        "pkg:golang/gopkg.in/yaml.v3@3.0.0-20200313102051-9f266ea9e77c",
+        "pkg:golang/honnef.co/go/tools@0.0.0-20190523083050-ea95bdfd59fc"
+      ]
+    },
+    {
+      "ref": "43090543-f1a2-412c-ae01-a8bf569e48f0",
+      "dependsOn": [
+        "pkg:golang/cloud.google.com/go@0.26.0",
+        "pkg:golang/github.com/burntsushi/toml@0.3.1",
+        "pkg:golang/github.com/hyperledger/fabric-chaincode-go@0.0.0-20220131132609-1476cf1d3206",
+        "pkg:golang/github.com/hyperledger/fabric-protos-go@0.0.0-20190919234611-2a87503ac7c9",
+        "pkg:golang/github.com/kr/pretty@0.1.0",
+        "pkg:golang/github.com/stretchr/testify@1.7.0",
+        "pkg:golang/google.golang.org/appengine@1.1.0",
+        "pkg:golang/google.golang.org/grpc@1.23.0"
+      ]
+    },
+    {
+      "ref": "82f54327-c490-490a-b8b4-4117f81f5570",
+      "dependsOn": [
+        "pkg:golang/cloud.google.com/go@0.26.0",
+        "pkg:golang/github.com/burntsushi/toml@0.3.1",
+        "pkg:golang/github.com/client9/misspell@0.3.4",
+        "pkg:golang/github.com/golang/glog@0.0.0-20160126235308-23def4e6c14b",
+        "pkg:golang/github.com/golang/mock@1.1.1",
+        "pkg:golang/github.com/golang/protobuf@1.2.0",
+        "pkg:golang/github.com/google/go-cmp@0.2.0",
+        "pkg:golang/golang.org/x/crypto@0.0.0-20190308221718-c2843e01d9a2",
+        "pkg:golang/golang.org/x/lint@0.0.0-20190313153728-d0100b6bd8b3",
+        "pkg:golang/golang.org/x/net@0.0.0-20190311183353-d8887717615a",
+        "pkg:golang/golang.org/x/oauth2@0.0.0-20180821212333-d2e6202438be",
+        "pkg:golang/golang.org/x/sync@0.0.0-20190423024810-112230192c58",
+        "pkg:golang/golang.org/x/sys@0.0.0-20190215142949-d0b11bdaac8a",
+        "pkg:golang/golang.org/x/text@0.3.0",
+        "pkg:golang/golang.org/x/tools@0.0.0-20190524140312-2c0ae7006135",
+        "pkg:golang/google.golang.org/appengine@1.1.0",
+        "pkg:golang/google.golang.org/genproto@0.0.0-20180817151627-c66870c02cf8",
+        "pkg:golang/honnef.co/go/tools@0.0.0-20190523083050-ea95bdfd59fc"
+      ]
+    },
+    {
+      "ref": "8b503cd4-e3e6-47d5-8e12-b65bc6cbc84f",
+      "dependsOn": [
+        "pkg:golang/cloud.google.com/go@0.26.0",
+        "pkg:golang/github.com/burntsushi/toml@0.3.1",
+        "pkg:golang/github.com/client9/misspell@0.3.4",
+        "pkg:golang/github.com/davecgh/go-spew@1.1.1",
+        "pkg:golang/github.com/golang/glog@0.0.0-20160126235308-23def4e6c14b",
+        "pkg:golang/github.com/golang/mock@1.1.1",
+        "pkg:golang/github.com/golang/protobuf@1.3.2",
+        "pkg:golang/github.com/google/go-cmp@0.2.0",
+        "pkg:golang/github.com/hyperledger/fabric-chaincode-go@0.0.0-20220131132609-1476cf1d3206",
+        "pkg:golang/github.com/hyperledger/fabric-protos-go@0.0.0-20190919234611-2a87503ac7c9",
+        "pkg:golang/github.com/kr/pretty@0.1.0",
+        "pkg:golang/github.com/kr/pty@1.1.1",
+        "pkg:golang/github.com/kr/text@0.1.0",
+        "pkg:golang/github.com/pmezard/go-difflib@1.0.0",
+        "pkg:golang/github.com/stretchr/objx@0.1.0",
+        "pkg:golang/github.com/stretchr/testify@1.7.0",
+        "pkg:golang/golang.org/x/crypto@0.0.0-20190308221718-c2843e01d9a2",
+        "pkg:golang/golang.org/x/lint@0.0.0-20190313153728-d0100b6bd8b3",
+        "pkg:golang/golang.org/x/net@0.0.0-20190522155817-f3200d17e092",
+        "pkg:golang/golang.org/x/oauth2@0.0.0-20180821212333-d2e6202438be",
+        "pkg:golang/golang.org/x/sync@0.0.0-20190423024810-112230192c58",
+        "pkg:golang/golang.org/x/sys@0.0.0-20190710143415-6ec70d6a5542",
+        "pkg:golang/golang.org/x/text@0.3.0",
+        "pkg:golang/golang.org/x/tools@0.0.0-20190524140312-2c0ae7006135",
+        "pkg:golang/google.golang.org/appengine@1.1.0",
+        "pkg:golang/google.golang.org/genproto@0.0.0-20180831171423-11092d34479b",
+        "pkg:golang/google.golang.org/grpc@1.23.0",
+        "pkg:golang/gopkg.in/check.v1@1.0.0-20180628173108-788fd7840127",
+        "pkg:golang/gopkg.in/yaml.v3@3.0.0-20200313102051-9f266ea9e77c",
+        "pkg:golang/honnef.co/go/tools@0.0.0-20190523083050-ea95bdfd59fc"
+      ]
+    },
+    {
+      "ref": "92e709f8-e698-4f21-aecb-d51f65aadb58",
+      "dependsOn": [
+        "pkg:golang/cloud.google.com/go@0.26.0",
+        "pkg:golang/github.com/burntsushi/toml@0.3.1",
+        "pkg:golang/github.com/client9/misspell@0.3.4",
+        "pkg:golang/github.com/davecgh/go-spew@1.1.1",
+        "pkg:golang/github.com/golang/glog@0.0.0-20160126235308-23def4e6c14b",
+        "pkg:golang/github.com/golang/mock@1.1.1",
+        "pkg:golang/github.com/golang/protobuf@1.3.2",
+        "pkg:golang/github.com/google/go-cmp@0.2.0",
+        "pkg:golang/github.com/hyperledger/fabric-chaincode-go@0.0.0-20220131132609-1476cf1d3206",
+        "pkg:golang/github.com/hyperledger/fabric-protos-go@0.0.0-20190919234611-2a87503ac7c9",
+        "pkg:golang/github.com/kr/pretty@0.1.0",
+        "pkg:golang/github.com/kr/pty@1.1.1",
+        "pkg:golang/github.com/kr/text@0.1.0",
+        "pkg:golang/github.com/pmezard/go-difflib@1.0.0",
+        "pkg:golang/github.com/stretchr/objx@0.1.0",
+        "pkg:golang/github.com/stretchr/testify@1.7.0",
+        "pkg:golang/golang.org/x/crypto@0.0.0-20190308221718-c2843e01d9a2",
+        "pkg:golang/golang.org/x/lint@0.0.0-20190313153728-d0100b6bd8b3",
+        "pkg:golang/golang.org/x/net@0.0.0-20190522155817-f3200d17e092",
+        "pkg:golang/golang.org/x/oauth2@0.0.0-20180821212333-d2e6202438be",
+        "pkg:golang/golang.org/x/sync@0.0.0-20190423024810-112230192c58",
+        "pkg:golang/golang.org/x/sys@0.0.0-20190710143415-6ec70d6a5542",
+        "pkg:golang/golang.org/x/text@0.3.0",
+        "pkg:golang/golang.org/x/tools@0.0.0-20190524140312-2c0ae7006135",
+        "pkg:golang/google.golang.org/appengine@1.1.0",
+        "pkg:golang/google.golang.org/genproto@0.0.0-20180831171423-11092d34479b",
+        "pkg:golang/google.golang.org/grpc@1.23.0",
+        "pkg:golang/gopkg.in/check.v1@1.0.0-20180628173108-788fd7840127",
+        "pkg:golang/gopkg.in/yaml.v3@3.0.0-20200313102051-9f266ea9e77c",
+        "pkg:golang/honnef.co/go/tools@0.0.0-20190523083050-ea95bdfd59fc"
+      ]
+    },
+    {
+      "ref": "da404db5-355a-46f3-9174-5b60588c1c3c",
+      "dependsOn": [
+        "pkg:golang/cloud.google.com/go@0.26.0",
+        "pkg:golang/github.com/burntsushi/toml@0.3.1",
+        "pkg:golang/github.com/client9/misspell@0.3.4",
+        "pkg:golang/github.com/davecgh/go-spew@1.1.1",
+        "pkg:golang/github.com/golang/glog@0.0.0-20160126235308-23def4e6c14b",
+        "pkg:golang/github.com/golang/mock@1.1.1",
+        "pkg:golang/github.com/golang/protobuf@1.3.2",
+        "pkg:golang/github.com/google/go-cmp@0.2.0",
+        "pkg:golang/github.com/hyperledger/fabric-chaincode-go@0.0.0-20220131132609-1476cf1d3206",
+        "pkg:golang/github.com/hyperledger/fabric-protos-go@0.0.0-20190919234611-2a87503ac7c9",
+        "pkg:golang/github.com/kr/pretty@0.1.0",
+        "pkg:golang/github.com/kr/pty@1.1.1",
+        "pkg:golang/github.com/kr/text@0.1.0",
+        "pkg:golang/github.com/pmezard/go-difflib@1.0.0",
+        "pkg:golang/github.com/stretchr/objx@0.1.0",
+        "pkg:golang/github.com/stretchr/testify@1.7.0",
+        "pkg:golang/golang.org/x/crypto@0.0.0-20190308221718-c2843e01d9a2",
+        "pkg:golang/golang.org/x/lint@0.0.0-20190313153728-d0100b6bd8b3",
+        "pkg:golang/golang.org/x/net@0.0.0-20190522155817-f3200d17e092",
+        "pkg:golang/golang.org/x/oauth2@0.0.0-20180821212333-d2e6202438be",
+        "pkg:golang/golang.org/x/sync@0.0.0-20190423024810-112230192c58",
+        "pkg:golang/golang.org/x/sys@0.0.0-20190710143415-6ec70d6a5542",
+        "pkg:golang/golang.org/x/text@0.3.0",
+        "pkg:golang/golang.org/x/tools@0.0.0-20190524140312-2c0ae7006135",
+        "pkg:golang/google.golang.org/appengine@1.1.0",
+        "pkg:golang/google.golang.org/genproto@0.0.0-20180831171423-11092d34479b",
+        "pkg:golang/google.golang.org/grpc@1.23.0",
+        "pkg:golang/gopkg.in/check.v1@1.0.0-20180628173108-788fd7840127",
+        "pkg:golang/gopkg.in/yaml.v3@3.0.0-20200313102051-9f266ea9e77c",
+        "pkg:golang/honnef.co/go/tools@0.0.0-20190523083050-ea95bdfd59fc"
+      ]
+    },
+    {
+      "ref": "e2b30296-4cf4-4c40-b900-f32a78db2efc",
+      "dependsOn": [
+        "pkg:golang/cloud.google.com/go@0.26.0",
+        "pkg:golang/github.com/burntsushi/toml@0.3.1",
+        "pkg:golang/github.com/client9/misspell@0.3.4",
+        "pkg:golang/github.com/davecgh/go-spew@1.1.1",
+        "pkg:golang/github.com/golang/glog@0.0.0-20160126235308-23def4e6c14b",
+        "pkg:golang/github.com/golang/mock@1.1.1",
+        "pkg:golang/github.com/golang/protobuf@1.3.2",
+        "pkg:golang/github.com/google/go-cmp@0.2.0",
+        "pkg:golang/github.com/hyperledger/fabric-chaincode-go@0.0.0-20220131132609-1476cf1d3206",
+        "pkg:golang/github.com/hyperledger/fabric-protos-go@0.0.0-20190919234611-2a87503ac7c9",
+        "pkg:golang/github.com/kr/pretty@0.1.0",
+        "pkg:golang/github.com/kr/pty@1.1.1",
+        "pkg:golang/github.com/kr/text@0.1.0",
+        "pkg:golang/github.com/pmezard/go-difflib@1.0.0",
+        "pkg:golang/github.com/stretchr/objx@0.1.0",
+        "pkg:golang/github.com/stretchr/testify@1.7.0",
+        "pkg:golang/golang.org/x/crypto@0.0.0-20190308221718-c2843e01d9a2",
+        "pkg:golang/golang.org/x/lint@0.0.0-20190313153728-d0100b6bd8b3",
+        "pkg:golang/golang.org/x/net@0.0.0-20190522155817-f3200d17e092",
+        "pkg:golang/golang.org/x/oauth2@0.0.0-20180821212333-d2e6202438be",
+        "pkg:golang/golang.org/x/sync@0.0.0-20190423024810-112230192c58",
+        "pkg:golang/golang.org/x/sys@0.0.0-20190710143415-6ec70d6a5542",
+        "pkg:golang/golang.org/x/text@0.3.0",
+        "pkg:golang/golang.org/x/tools@0.0.0-20190524140312-2c0ae7006135",
+        "pkg:golang/google.golang.org/appengine@1.1.0",
+        "pkg:golang/google.golang.org/genproto@0.0.0-20180831171423-11092d34479b",
+        "pkg:golang/google.golang.org/grpc@1.23.0",
+        "pkg:golang/gopkg.in/check.v1@1.0.0-20180628173108-788fd7840127",
+        "pkg:golang/gopkg.in/yaml.v3@3.0.0-20200313102051-9f266ea9e77c",
+        "pkg:golang/honnef.co/go/tools@0.0.0-20190523083050-ea95bdfd59fc"
+      ]
+    },
+    {
+      "ref": "e4eee236-a16b-4458-990a-fcc14def339a",
+      "dependsOn": [
+        "26e5aec4-4b8c-4652-9eb0-6487c9c3869b",
+        "2c66cf1c-8e66-435e-a8b5-a236f819e1f2",
+        "2c6d9149-a391-4e09-80bf-0210182efa20",
+        "2c8ed45e-e6f4-4343-9391-6d631ffc3ac3",
+        "39cc9e82-beee-4164-9827-9f22e58a9f0b",
+        "43090543-f1a2-412c-ae01-a8bf569e48f0",
+        "82f54327-c490-490a-b8b4-4117f81f5570",
+        "8b503cd4-e3e6-47d5-8e12-b65bc6cbc84f",
+        "92e709f8-e698-4f21-aecb-d51f65aadb58",
+        "da404db5-355a-46f3-9174-5b60588c1c3c",
+        "e2b30296-4cf4-4c40-b900-f32a78db2efc",
+        "e5d2dbc4-cfa5-4c28-a87e-5185437289bc",
+        "f3ba4d89-ae60-4a8f-bd10-03d4213d419e"
+      ]
+    },
+    {
+      "ref": "e5d2dbc4-cfa5-4c28-a87e-5185437289bc",
+      "dependsOn": [
+        "pkg:golang/cloud.google.com/go@0.26.0",
+        "pkg:golang/github.com/burntsushi/toml@0.3.1",
+        "pkg:golang/github.com/client9/misspell@0.3.4",
+        "pkg:golang/github.com/golang/glog@0.0.0-20160126235308-23def4e6c14b",
+        "pkg:golang/github.com/golang/mock@1.1.1",
+        "pkg:golang/github.com/golang/protobuf@1.2.0",
+        "pkg:golang/github.com/google/go-cmp@0.2.0",
+        "pkg:golang/golang.org/x/crypto@0.0.0-20190308221718-c2843e01d9a2",
+        "pkg:golang/golang.org/x/lint@0.0.0-20190313153728-d0100b6bd8b3",
+        "pkg:golang/golang.org/x/net@0.0.0-20190311183353-d8887717615a",
+        "pkg:golang/golang.org/x/oauth2@0.0.0-20180821212333-d2e6202438be",
+        "pkg:golang/golang.org/x/sync@0.0.0-20190423024810-112230192c58",
+        "pkg:golang/golang.org/x/sys@0.0.0-20190215142949-d0b11bdaac8a",
+        "pkg:golang/golang.org/x/text@0.3.0",
+        "pkg:golang/golang.org/x/tools@0.0.0-20190524140312-2c0ae7006135",
+        "pkg:golang/google.golang.org/appengine@1.1.0",
+        "pkg:golang/google.golang.org/genproto@0.0.0-20180817151627-c66870c02cf8",
+        "pkg:golang/honnef.co/go/tools@0.0.0-20190523083050-ea95bdfd59fc"
+      ]
+    },
+    {
+      "ref": "f3ba4d89-ae60-4a8f-bd10-03d4213d419e",
+      "dependsOn": [
+        "pkg:golang/cloud.google.com/go@0.26.0",
+        "pkg:golang/github.com/burntsushi/toml@0.3.1",
+        "pkg:golang/github.com/client9/misspell@0.3.4",
+        "pkg:golang/github.com/golang/glog@0.0.0-20160126235308-23def4e6c14b",
+        "pkg:golang/github.com/golang/mock@1.1.1",
+        "pkg:golang/github.com/golang/protobuf@1.2.0",
+        "pkg:golang/github.com/google/go-cmp@0.2.0",
+        "pkg:golang/golang.org/x/crypto@0.0.0-20190308221718-c2843e01d9a2",
+        "pkg:golang/golang.org/x/lint@0.0.0-20190313153728-d0100b6bd8b3",
+        "pkg:golang/golang.org/x/net@0.0.0-20190311183353-d8887717615a",
+        "pkg:golang/golang.org/x/oauth2@0.0.0-20180821212333-d2e6202438be",
+        "pkg:golang/golang.org/x/sync@0.0.0-20190423024810-112230192c58",
+        "pkg:golang/golang.org/x/sys@0.0.0-20190215142949-d0b11bdaac8a",
+        "pkg:golang/golang.org/x/text@0.3.0",
+        "pkg:golang/golang.org/x/tools@0.0.0-20190524140312-2c0ae7006135",
+        "pkg:golang/google.golang.org/appengine@1.1.0",
+        "pkg:golang/google.golang.org/genproto@0.0.0-20180817151627-c66870c02cf8",
+        "pkg:golang/honnef.co/go/tools@0.0.0-20190523083050-ea95bdfd59fc"
+      ]
+    },
+    {
+      "ref": "pkg:golang/cloud.google.com/go@0.26.0",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:golang/github.com/burntsushi/toml@0.3.1",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:golang/github.com/client9/misspell@0.3.4",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:golang/github.com/davecgh/go-spew@1.1.1",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:golang/github.com/golang/glog@0.0.0-20160126235308-23def4e6c14b",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:golang/github.com/golang/mock@1.1.1",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:golang/github.com/golang/protobuf@1.2.0",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:golang/github.com/golang/protobuf@1.3.2",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:golang/github.com/google/go-cmp@0.2.0",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:golang/github.com/hyperledger/fabric-chaincode-go@0.0.0-20220131132609-1476cf1d3206",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:golang/github.com/hyperledger/fabric-protos-go@0.0.0-20190919234611-2a87503ac7c9",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:golang/github.com/kr/pretty@0.1.0",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:golang/github.com/kr/pty@1.1.1",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:golang/github.com/kr/text@0.1.0",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:golang/github.com/pmezard/go-difflib@1.0.0",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:golang/github.com/stretchr/objx@0.1.0",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:golang/github.com/stretchr/testify@1.7.0",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:golang/golang.org/x/crypto@0.0.0-20190308221718-c2843e01d9a2",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:golang/golang.org/x/lint@0.0.0-20190313153728-d0100b6bd8b3",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:golang/golang.org/x/net@0.0.0-20190311183353-d8887717615a",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:golang/golang.org/x/net@0.0.0-20190522155817-f3200d17e092",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:golang/golang.org/x/oauth2@0.0.0-20180821212333-d2e6202438be",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:golang/golang.org/x/sync@0.0.0-20190423024810-112230192c58",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:golang/golang.org/x/sys@0.0.0-20190215142949-d0b11bdaac8a",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:golang/golang.org/x/sys@0.0.0-20190710143415-6ec70d6a5542",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:golang/golang.org/x/text@0.3.0",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:golang/golang.org/x/tools@0.0.0-20190524140312-2c0ae7006135",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:golang/google.golang.org/appengine@1.1.0",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:golang/google.golang.org/genproto@0.0.0-20180817151627-c66870c02cf8",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:golang/google.golang.org/genproto@0.0.0-20180831171423-11092d34479b",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:golang/google.golang.org/grpc@1.23.0",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:golang/gopkg.in/check.v1@1.0.0-20180628173108-788fd7840127",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:golang/gopkg.in/yaml.v3@3.0.0-20200313102051-9f266ea9e77c",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:golang/honnef.co/go/tools@0.0.0-20190523083050-ea95bdfd59fc",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:maven/com.google.api.grpc/proto-google-common-protos@2.17.0",
+      "dependsOn": [
+        "pkg:maven/com.google.protobuf/protobuf-java@3.22.5"
+      ]
+    },
+    {
+      "ref": "pkg:maven/com.google.api/api-common@2.15.0",
+      "dependsOn": [
+        "pkg:maven/com.google.auto.value/auto-value-annotations@1.10.2",
+        "pkg:maven/com.google.code.findbugs/jsr305@3.0.2",
+        "pkg:maven/com.google.errorprone/error_prone_annotations@2.18.0",
+        "pkg:maven/com.google.guava/guava@32.0.1-android",
+        "pkg:maven/javax.annotation/javax.annotation-api@1.3.2"
+      ]
+    },
+    {
+      "ref": "pkg:maven/com.google.auto.value/auto-value-annotations@1.10.2",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:maven/com.google.code.findbugs/jsr305@3.0.2",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:maven/com.google.errorprone/error_prone_annotations@2.18.0",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:maven/com.google.guava/failureaccess@1.0.1",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:maven/com.google.guava/guava@32.0.1-android",
+      "dependsOn": [
+        "pkg:maven/com.google.code.findbugs/jsr305@3.0.2",
+        "pkg:maven/com.google.errorprone/error_prone_annotations@2.18.0",
+        "pkg:maven/com.google.guava/failureaccess@1.0.1",
+        "pkg:maven/com.google.guava/listenablefuture@9999.0-empty-to-avoid-conflict-with-guava",
+        "pkg:maven/com.google.j2objc/j2objc-annotations@2.8",
+        "pkg:maven/org.checkerframework/checker-qual@3.33.0"
+      ]
+    },
+    {
+      "ref": "pkg:maven/com.google.guava/listenablefuture@9999.0-empty-to-avoid-conflict-with-guava",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:maven/com.google.j2objc/j2objc-annotations@2.8",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:maven/com.google.protobuf/protobuf-java@3.22.5",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:maven/com.spotify/futures-extra@4.3.1",
+      "dependsOn": [
+        "pkg:maven/com.google.api/api-common@2.15.0",
+        "pkg:maven/com.google.guava/guava@32.0.1-android"
+      ]
+    },
+    {
+      "ref": "pkg:maven/commons-cli/commons-cli@1.5.0",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:maven/commons-codec/commons-codec@1.11",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:maven/commons-io/commons-io@2.13.0",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:maven/commons-logging/commons-logging@1.2",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:maven/io.grpc/grpc-api@1.57.2",
+      "dependsOn": [
+        "pkg:maven/com.google.code.findbugs/jsr305@3.0.2",
+        "pkg:maven/com.google.errorprone/error_prone_annotations@2.18.0"
+      ]
+    },
+    {
+      "ref": "pkg:maven/io.grpc/grpc-core@1.57.2",
+      "dependsOn": [
+        "pkg:maven/io.grpc/grpc-api@1.57.2"
+      ]
+    },
+    {
+      "ref": "pkg:maven/io.grpc/grpc-netty-shaded@1.57.2",
+      "dependsOn": [
+        "pkg:maven/io.grpc/grpc-core@1.57.2"
+      ]
+    },
+    {
+      "ref": "pkg:maven/io.grpc/grpc-protobuf-lite@1.57.2",
+      "dependsOn": [
+        "pkg:maven/io.grpc/grpc-api@1.57.2"
+      ]
+    },
+    {
+      "ref": "pkg:maven/io.grpc/grpc-protobuf@1.57.2",
+      "dependsOn": [
+        "pkg:maven/com.google.api.grpc/proto-google-common-protos@2.17.0",
+        "pkg:maven/com.google.code.findbugs/jsr305@3.0.2",
+        "pkg:maven/com.google.protobuf/protobuf-java@3.22.5",
+        "pkg:maven/io.grpc/grpc-api@1.57.2",
+        "pkg:maven/io.grpc/grpc-protobuf-lite@1.57.2"
+      ]
+    },
+    {
+      "ref": "pkg:maven/io.grpc/grpc-stub@1.57.2",
+      "dependsOn": [
+        "pkg:maven/com.google.guava/guava@32.0.1-android",
+        "pkg:maven/io.grpc/grpc-api@1.57.2"
+      ]
+    },
+    {
+      "ref": "pkg:maven/io.opentelemetry.instrumentation/opentelemetry-grpc-1.6@1.29.0-alpha",
+      "dependsOn": [
+        "pkg:maven/io.opentelemetry.instrumentation/opentelemetry-instrumentation-api-semconv@1.29.0-alpha",
+        "pkg:maven/io.opentelemetry.instrumentation/opentelemetry-instrumentation-api@1.29.0",
+        "pkg:maven/io.opentelemetry/opentelemetry-api@1.29.0"
+      ]
+    },
+    {
+      "ref": "pkg:maven/io.opentelemetry.instrumentation/opentelemetry-instrumentation-api-semconv@1.29.0-alpha",
+      "dependsOn": [
+        "pkg:maven/io.opentelemetry.instrumentation/opentelemetry-instrumentation-api@1.29.0",
+        "pkg:maven/io.opentelemetry/opentelemetry-semconv@1.29.0-alpha"
+      ]
+    },
+    {
+      "ref": "pkg:maven/io.opentelemetry.instrumentation/opentelemetry-instrumentation-api@1.29.0",
+      "dependsOn": [
+        "pkg:maven/io.opentelemetry/opentelemetry-api@1.29.0"
+      ]
+    },
+    {
+      "ref": "pkg:maven/io.opentelemetry.proto/opentelemetry-proto@1.0.0-alpha",
+      "dependsOn": [
+        "pkg:maven/com.google.protobuf/protobuf-java@3.22.5"
+      ]
+    },
+    {
+      "ref": "pkg:maven/io.opentelemetry/opentelemetry-api@1.29.0",
+      "dependsOn": [
+        "pkg:maven/io.opentelemetry/opentelemetry-context@1.29.0"
+      ]
+    },
+    {
+      "ref": "pkg:maven/io.opentelemetry/opentelemetry-context@1.29.0",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:maven/io.opentelemetry/opentelemetry-exporter-otlp@1.29.0",
+      "dependsOn": [
+        "pkg:maven/io.opentelemetry/opentelemetry-sdk-logs@1.29.0",
+        "pkg:maven/io.opentelemetry/opentelemetry-sdk-metrics@1.29.0",
+        "pkg:maven/io.opentelemetry/opentelemetry-sdk-trace@1.29.0"
+      ]
+    },
+    {
+      "ref": "pkg:maven/io.opentelemetry/opentelemetry-extension-trace-propagators@1.29.0",
+      "dependsOn": [
+        "pkg:maven/io.opentelemetry/opentelemetry-api@1.29.0"
+      ]
+    },
+    {
+      "ref": "pkg:maven/io.opentelemetry/opentelemetry-sdk-common@1.29.0",
+      "dependsOn": [
+        "pkg:maven/io.opentelemetry/opentelemetry-api@1.29.0"
+      ]
+    },
+    {
+      "ref": "pkg:maven/io.opentelemetry/opentelemetry-sdk-extension-autoconfigure-spi@1.29.0",
+      "dependsOn": [
+        "pkg:maven/io.opentelemetry/opentelemetry-sdk@1.29.0"
+      ]
+    },
+    {
+      "ref": "pkg:maven/io.opentelemetry/opentelemetry-sdk-extension-autoconfigure@1.29.0",
+      "dependsOn": [
+        "pkg:maven/io.opentelemetry/opentelemetry-sdk-extension-autoconfigure-spi@1.29.0",
+        "pkg:maven/io.opentelemetry/opentelemetry-sdk@1.29.0"
+      ]
+    },
+    {
+      "ref": "pkg:maven/io.opentelemetry/opentelemetry-sdk-logs@1.29.0",
+      "dependsOn": [
+        "pkg:maven/io.opentelemetry/opentelemetry-api@1.29.0",
+        "pkg:maven/io.opentelemetry/opentelemetry-sdk-common@1.29.0"
+      ]
+    },
+    {
+      "ref": "pkg:maven/io.opentelemetry/opentelemetry-sdk-metrics@1.29.0",
+      "dependsOn": [
+        "pkg:maven/io.opentelemetry/opentelemetry-api@1.29.0",
+        "pkg:maven/io.opentelemetry/opentelemetry-sdk-common@1.29.0"
+      ]
+    },
+    {
+      "ref": "pkg:maven/io.opentelemetry/opentelemetry-sdk-trace@1.29.0",
+      "dependsOn": [
+        "pkg:maven/io.opentelemetry/opentelemetry-api@1.29.0",
+        "pkg:maven/io.opentelemetry/opentelemetry-sdk-common@1.29.0"
+      ]
+    },
+    {
+      "ref": "pkg:maven/io.opentelemetry/opentelemetry-sdk@1.29.0",
+      "dependsOn": [
+        "pkg:maven/io.opentelemetry/opentelemetry-api@1.29.0",
+        "pkg:maven/io.opentelemetry/opentelemetry-sdk-common@1.29.0",
+        "pkg:maven/io.opentelemetry/opentelemetry-sdk-logs@1.29.0",
+        "pkg:maven/io.opentelemetry/opentelemetry-sdk-metrics@1.29.0",
+        "pkg:maven/io.opentelemetry/opentelemetry-sdk-trace@1.29.0"
+      ]
+    },
+    {
+      "ref": "pkg:maven/io.opentelemetry/opentelemetry-semconv@1.29.0-alpha",
+      "dependsOn": [
+        "pkg:maven/io.opentelemetry/opentelemetry-api@1.29.0"
+      ]
+    },
+    {
+      "ref": "pkg:maven/javax.activation/javax.activation-api@1.2.0",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:maven/javax.annotation/javax.annotation-api@1.3.2",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:maven/javax.xml.bind/jaxb-api@2.3.1",
+      "dependsOn": [
+        "pkg:maven/javax.activation/javax.activation-api@1.2.0"
+      ]
+    },
+    {
+      "ref": "pkg:maven/org.apache.commons/commons-compress@1.24.0",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:maven/org.apache.commons/commons-math3@3.6.1",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:maven/org.apache.httpcomponents/httpclient@4.5.14",
+      "dependsOn": [
+        "pkg:maven/commons-codec/commons-codec@1.11",
+        "pkg:maven/commons-logging/commons-logging@1.2",
+        "pkg:maven/org.apache.httpcomponents/httpcore@4.4.16"
+      ]
+    },
+    {
+      "ref": "pkg:maven/org.apache.httpcomponents/httpcore@4.4.16",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:maven/org.apache.logging.log4j/log4j-1.2-api@2.20.0",
+      "dependsOn": [
+        "pkg:maven/org.apache.logging.log4j/log4j-api@2.20.0"
+      ]
+    },
+    {
+      "ref": "pkg:maven/org.apache.logging.log4j/log4j-api@2.20.0",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:maven/org.apache.logging.log4j/log4j-core@2.20.0",
+      "dependsOn": [
+        "pkg:maven/org.apache.logging.log4j/log4j-api@2.20.0"
+      ]
+    },
+    {
+      "ref": "pkg:maven/org.bouncycastle/bcpkix-jdk18on@1.76",
+      "dependsOn": [
+        "pkg:maven/org.bouncycastle/bcprov-jdk18on@1.76",
+        "pkg:maven/org.bouncycastle/bcutil-jdk18on@1.76"
+      ]
+    },
+    {
+      "ref": "pkg:maven/org.bouncycastle/bcprov-jdk18on@1.76",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:maven/org.bouncycastle/bcutil-jdk18on@1.76",
+      "dependsOn": [
+        "pkg:maven/org.bouncycastle/bcprov-jdk18on@1.76"
+      ]
+    },
+    {
+      "ref": "pkg:maven/org.checkerframework/checker-qual@3.33.0",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:maven/org.glassfish/javax.json@1.1.4",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:maven/org.hyperledger.fabric-sdk-java/fabric-sdk-java@2.2.25-SNAPSHOT",
+      "dependsOn": [
+        "pkg:maven/com.google.api/api-common@2.15.0",
+        "pkg:maven/com.google.protobuf/protobuf-java@3.22.5",
+        "pkg:maven/com.spotify/futures-extra@4.3.1",
+        "pkg:maven/commons-cli/commons-cli@1.5.0",
+        "pkg:maven/commons-io/commons-io@2.13.0",
+        "pkg:maven/commons-logging/commons-logging@1.2",
+        "pkg:maven/io.grpc/grpc-netty-shaded@1.57.2",
+        "pkg:maven/io.grpc/grpc-protobuf@1.57.2",
+        "pkg:maven/io.grpc/grpc-stub@1.57.2",
+        "pkg:maven/io.opentelemetry.instrumentation/opentelemetry-grpc-1.6@1.29.0-alpha",
+        "pkg:maven/io.opentelemetry.proto/opentelemetry-proto@1.0.0-alpha",
+        "pkg:maven/io.opentelemetry/opentelemetry-api@1.29.0",
+        "pkg:maven/io.opentelemetry/opentelemetry-exporter-otlp@1.29.0",
+        "pkg:maven/io.opentelemetry/opentelemetry-extension-trace-propagators@1.29.0",
+        "pkg:maven/io.opentelemetry/opentelemetry-sdk-extension-autoconfigure@1.29.0",
+        "pkg:maven/io.opentelemetry/opentelemetry-sdk-trace@1.29.0",
+        "pkg:maven/io.opentelemetry/opentelemetry-sdk@1.29.0",
+        "pkg:maven/javax.xml.bind/jaxb-api@2.3.1",
+        "pkg:maven/org.apache.commons/commons-compress@1.24.0",
+        "pkg:maven/org.apache.httpcomponents/httpclient@4.5.14",
+        "pkg:maven/org.apache.logging.log4j/log4j-1.2-api@2.20.0",
+        "pkg:maven/org.apache.logging.log4j/log4j-core@2.20.0",
+        "pkg:maven/org.bouncycastle/bcpkix-jdk18on@1.76",
+        "pkg:maven/org.bouncycastle/bcprov-jdk18on@1.76",
+        "pkg:maven/org.glassfish/javax.json@1.1.4",
+        "pkg:maven/org.miracl.milagro.amcl/milagro-crypto-java@0.4.0",
+        "pkg:maven/org.yaml/snakeyaml@2.1"
+      ]
+    },
+    {
+      "ref": "pkg:maven/org.miracl.milagro.amcl/milagro-crypto-java@0.4.0",
+      "dependsOn": [
+        "pkg:maven/org.apache.commons/commons-math3@3.6.1"
+      ]
+    },
+    {
+      "ref": "pkg:maven/org.yaml/snakeyaml@2.1",
+      "dependsOn": []
+    }
+  ],
+  "vulnerabilities": []
+}
