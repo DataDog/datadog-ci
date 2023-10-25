@@ -19,7 +19,7 @@ export const getLanguageFromComponent = (component: any): DependencyLanguage | u
       return DependencyLanguage.RUBY
     }
     if (component['purl'].includes('pkg:maven')) {
-      return DependencyLanguage.RUBY
+      return DependencyLanguage.JVM
     }
     if (component['purl'].includes('pkg:golang')) {
       return DependencyLanguage.GO

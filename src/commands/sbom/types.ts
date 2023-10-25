@@ -5,6 +5,7 @@ export enum DependencyLanguage {
   RUST = 'rust',
   RUBY = 'ruby',
   GO = 'go',
+  JVM = 'jvm',
 }
 
 // List from https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/licensing-a-repository

@@ -77,7 +77,7 @@ describe('generation of payload', () => {
     expect(dependenciesWithoutLicense?.length).toStrictEqual(3)
 
     // all languages are detected
-    const dependenciesWithoutLanguage = payload?.dependencies.filter((d) => d.language.length === 0)
+    const dependenciesWithoutLanguage = payload?.dependencies.filter((d) => !d.language)
     expect(dependenciesWithoutLanguage?.length).toStrictEqual(0)
   })
 
@@ -98,7 +98,7 @@ describe('generation of payload', () => {
     expect(dependenciesWithoutLicense?.length).toStrictEqual(64)
 
     // all languages are detected
-    const dependenciesWithoutLanguage = payload?.dependencies.filter((d) => d.language.length === 0)
+    const dependenciesWithoutLanguage = payload?.dependencies.filter((d) => !d.language)
     expect(dependenciesWithoutLanguage?.length).toStrictEqual(0)
   })
 
@@ -119,7 +119,11 @@ describe('generation of payload', () => {
     expect(dependenciesWithoutLicense?.length).toStrictEqual(26)
 
     // all languages are detected
-    const dependenciesWithoutLanguage = payload?.dependencies.filter((d) => d.language.length === 0)
+    const dependenciesWithoutLanguage = payload?.dependencies.filter((d) => !d.language)
     expect(dependenciesWithoutLanguage?.length).toStrictEqual(0)
+    const dependenciesWithJava = payload?.dependencies.filter((d) => d.language === DependencyLanguage.JVM)
+    expect(dependenciesWithJava?.length).toStrictEqual(55)
+    const dependenciesWithGo = payload?.dependencies.filter((d) => d.language === DependencyLanguage.GO)
+    expect(dependenciesWithGo?.length).toStrictEqual(34)
   })
 })
