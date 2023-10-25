@@ -15,6 +15,15 @@ export const getLanguageFromComponent = (component: any): DependencyLanguage | u
     if (component['purl'].includes('pkg:cargo')) {
       return DependencyLanguage.RUST
     }
+    if (component['purl'].includes('pkg:gem')) {
+      return DependencyLanguage.RUBY
+    }
+    if (component['purl'].includes('pkg:maven')) {
+      return DependencyLanguage.JVM
+    }
+    if (component['purl'].includes('pkg:golang')) {
+      return DependencyLanguage.GO
+    }
   }
 
   console.debug(`language for component ${componentName} not found`)

@@ -75,5 +75,55 @@ describe('generation of payload', () => {
     expect(payload?.dependencies.length).toStrictEqual(305)
     const dependenciesWithoutLicense = payload?.dependencies.filter((d) => d.licenses.length === 0)
     expect(dependenciesWithoutLicense?.length).toStrictEqual(3)
+
+    // all languages are detected
+    const dependenciesWithoutLanguage = payload?.dependencies.filter((d) => !d.language)
+    expect(dependenciesWithoutLanguage?.length).toStrictEqual(0)
+  })
+
+  test('SBOM generated for Ruby from a Gemfile lock', async () => {
+    const sbomFile = './src/commands/sbom/__tests__/fixtures/ruby.sbom.json'
+    const sbomContent = JSON.parse(fs.readFileSync(sbomFile).toString('utf8'))
+    const config: DatadogCiConfig = {
+      apiKey: undefined,
+      env: undefined,
+      envVarTags: undefined,
+    }
+    const tags = await getSpanTags(config, [])
+
+    const payload = generatePayload(sbomContent, tags)
+
+    expect(payload?.dependencies.length).toStrictEqual(64)
+    const dependenciesWithoutLicense = payload?.dependencies.filter((d) => d.licenses.length === 0)
+    expect(dependenciesWithoutLicense?.length).toStrictEqual(64)
+
+    // all languages are detected
+    const dependenciesWithoutLanguage = payload?.dependencies.filter((d) => !d.language)
+    expect(dependenciesWithoutLanguage?.length).toStrictEqual(0)
+  })
+
+  test('SBOM generated for Java and Go', async () => {
+    const sbomFile = './src/commands/sbom/__tests__/fixtures/java-go.sbom.json'
+    const sbomContent = JSON.parse(fs.readFileSync(sbomFile).toString('utf8'))
+    const config: DatadogCiConfig = {
+      apiKey: undefined,
+      env: undefined,
+      envVarTags: undefined,
+    }
+    const tags = await getSpanTags(config, [])
+
+    const payload = generatePayload(sbomContent, tags)
+
+    expect(payload?.dependencies.length).toStrictEqual(89)
+    const dependenciesWithoutLicense = payload?.dependencies.filter((d) => d.licenses.length === 0)
+    expect(dependenciesWithoutLicense?.length).toStrictEqual(26)
+
+    // all languages are detected
+    const dependenciesWithoutLanguage = payload?.dependencies.filter((d) => !d.language)
+    expect(dependenciesWithoutLanguage?.length).toStrictEqual(0)
+    const dependenciesWithJava = payload?.dependencies.filter((d) => d.language === DependencyLanguage.JVM)
+    expect(dependenciesWithJava?.length).toStrictEqual(55)
+    const dependenciesWithGo = payload?.dependencies.filter((d) => d.language === DependencyLanguage.GO)
+    expect(dependenciesWithGo?.length).toStrictEqual(34)
   })
 })
