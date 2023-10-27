@@ -85,6 +85,23 @@ export interface PollResult {
   timestamp: number
 }
 
+export type PollResultMap = {[resultId: string]: PollResult}
+
+/**
+ * Information required to convert a `PollResult` to a `Result`.
+ */
+export type ResultDisplayInfo = {
+  getLocation: (datacenterId: string, test: Test) => string
+  options: {
+    datadogSite: string
+    failOnCriticalErrors?: boolean
+    failOnTimeout?: boolean
+    maxPollingTimeout: number
+    subdomain: string
+  }
+  tests: Test[]
+}
+
 export interface Result {
   executionRule: ExecutionRule
   location: string

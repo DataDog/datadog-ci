@@ -24,9 +24,10 @@ import {
   MainReporter,
   Operator,
   Payload,
-  PollResult,
+  PollResultMap,
   Reporter,
   Result,
+  ResultDisplayInfo,
   ResultInBatch,
   RunTestsCommandConfig,
   ServerResult,
@@ -245,22 +246,60 @@ export const getFilePathRelativeToRepo = async (filePath: string) => {
 
 export const wait = async (duration: number) => new Promise((resolve) => setTimeout(resolve, duration))
 
-const getBatch = async (
+const pollBatchAndDisplayUpdates = async (
   api: APIHelper,
   emittedResultIndexes: Set<number>,
   trigger: Trigger,
+  resultDisplayInfo: ResultDisplayInfo,
+  hasBatchExceededMaxPollingDate: boolean,
   reporter: MainReporter
-): Promise<Batch> => {
-  try {
-    const currentBatch = await api.getBatch(trigger.batch_id)
-    for (const [index, result] of currentBatch.results.entries()) {
-      if (result.status !== 'in_progress' && !emittedResultIndexes.has(index)) {
-        emittedResultIndexes.add(index)
-        reporter.resultReceived(result)
-      }
-    }
+): Promise<{batch: Batch; pollResultMap: PollResultMap}> => {
+  const currentBatchState = await getBatch(api, trigger)
 
-    return currentBatch
+  const newResults: ResultInBatch[] = []
+  for (const [index, result] of currentBatchState.results.entries()) {
+    if (result.status !== 'in_progress' && !emittedResultIndexes.has(index)) {
+      emittedResultIndexes.add(index)
+      reporter.resultReceived(result)
+      newResults.push(result)
+    }
+  }
+
+  const resultIdsToFetch =
+    currentBatchState.status === 'in_progress'
+      ? newResults.map((r) => r.result_id)
+      : currentBatchState.results.map((r) => r.result_id)
+
+  const pollResultMap = await getPollResultMap(api, resultIdsToFetch)
+
+  const {tests, options} = resultDisplayInfo
+  const baseUrl = getAppBaseURL(options)
+
+  for (const result of newResults) {
+    reporter.resultEnd(
+      getResultFromBatch(pollResultMap, result, resultDisplayInfo, hasBatchExceededMaxPollingDate),
+      baseUrl
+    )
+  }
+
+  const inProgressPublicIds = new Set(
+    currentBatchState.results.filter((r) => r.status === 'in_progress').map((r) => r.test_public_id)
+  )
+  const remainingTests = tests.filter((t) => inProgressPublicIds.has(t.public_id))
+
+  reporter.testsWait(remainingTests, baseUrl, trigger.batch_id)
+
+  return {
+    batch: currentBatchState,
+    pollResultMap,
+  }
+}
+
+const getBatch = async (api: APIHelper, trigger: Trigger): Promise<Batch> => {
+  try {
+    const batch = await api.getBatch(trigger.batch_id)
+
+    return batch
   } catch (e) {
     throw new EndpointError(`Failed to get batch: ${formatBackendErrors(e)}\n`, e.response?.status)
   }
@@ -268,10 +307,10 @@ const getBatch = async (
 
 const getTestByPublicId = (id: string, tests: Test[]): Test => tests.find((t) => t.public_id === id)!
 
-const getPollResultMap = async (api: APIHelper, batch: Batch) => {
+const getPollResultMap = async (api: APIHelper, resultIds: string[]) => {
   try {
-    const pollResults = await api.pollResults(batch.results.map((r) => r.result_id))
-    const pollResultMap: {[key: string]: PollResult} = {}
+    const pollResults = await api.pollResults(resultIds)
+    const pollResultMap: PollResultMap = {}
     pollResults.forEach((r) => (pollResultMap[r.resultID] = r))
 
     return pollResultMap
@@ -297,36 +336,47 @@ const waitForBatchToFinish = async (
   api: APIHelper,
   maxPollingTimeout: number,
   trigger: Trigger,
+  resultDisplayInfo: ResultDisplayInfo,
   reporter: MainReporter
-): Promise<{batch: Batch; hasExceededMaxPollingDate: boolean}> => {
+): Promise<Result[]> => {
   const maxPollingDate = Date.now() + maxPollingTimeout
   const emittedResultIndexes = new Set<number>()
 
-  let batch = await getBatch(api, emittedResultIndexes, trigger, reporter)
+  let current = await pollBatchAndDisplayUpdates(api, emittedResultIndexes, trigger, resultDisplayInfo, false, reporter)
+
   // In theory polling the batch is enough, but in case something goes wrong backend-side
   // let's add a check to ensure it eventually times out.
-  let hasExceededMaxPollingDate = Date.now() >= maxPollingDate
-  while (batch.status === 'in_progress' && !hasExceededMaxPollingDate) {
+  let hasBatchExceededMaxPollingDate = Date.now() >= maxPollingDate
+  while (current.batch.status === 'in_progress' && !hasBatchExceededMaxPollingDate) {
     await wait(POLLING_INTERVAL)
-    batch = await getBatch(api, emittedResultIndexes, trigger, reporter)
-    hasExceededMaxPollingDate = Date.now() >= maxPollingDate
+    current = await pollBatchAndDisplayUpdates(
+      api,
+      emittedResultIndexes,
+      trigger,
+      resultDisplayInfo,
+      hasBatchExceededMaxPollingDate,
+      reporter
+    )
+    hasBatchExceededMaxPollingDate = Date.now() >= maxPollingDate
   }
 
-  return {batch, hasExceededMaxPollingDate}
+  return current.batch.results.map((r) =>
+    getResultFromBatch(current.pollResultMap, r, resultDisplayInfo, hasBatchExceededMaxPollingDate)
+  )
 }
 
 const getResultFromBatch = (
-  getLocation: (dcId: string, test: Test) => string,
-  hasExceededMaxPollingDate: boolean,
-  failOnCriticalErrors: boolean,
-  failOnTimeout: boolean,
-  pollResultMap: {[key: string]: PollResult},
+  pollResultMap: PollResultMap,
   resultInBatch: ResultInBatch,
-  tests: Test[]
+  resultDisplayInfo: ResultDisplayInfo,
+  hasBatchExceededMaxPollingDate: boolean
 ): Result => {
+  const {getLocation, options, tests} = resultDisplayInfo
+
   const pollResult = pollResultMap[resultInBatch.result_id]
-  const hasTimeout = resultInBatch.timed_out || (hasExceededMaxPollingDate && resultInBatch.timed_out !== false)
-  if (hasTimeout) {
+  const hasTimedOut = resultInBatch.timed_out !== undefined ? resultInBatch.timed_out : hasBatchExceededMaxPollingDate
+
+  if (hasTimedOut) {
     pollResult.result.failure = {code: 'TIMEOUT', message: 'Result timed out'}
     pollResult.result.passed = false
   }
@@ -336,11 +386,16 @@ const getResultFromBatch = (
   return {
     executionRule: resultInBatch.execution_rule,
     location: getLocation(resultInBatch.location, test),
-    passed: hasResultPassed(pollResult.result, hasTimeout, failOnCriticalErrors, failOnTimeout),
+    passed: hasResultPassed(
+      pollResult.result,
+      hasTimedOut,
+      options.failOnCriticalErrors ?? false,
+      options.failOnTimeout ?? false
+    ),
     result: pollResult.result,
     resultId: resultInBatch.result_id,
     test: deepExtend({}, test, pollResult.check),
-    timedOut: hasTimeout,
+    timedOut: hasTimedOut,
     timestamp: pollResult.timestamp,
   }
 }
@@ -350,13 +405,7 @@ export const waitForResults = async (
   api: APIHelper,
   trigger: Trigger,
   tests: Test[],
-  options: {
-    datadogSite: string
-    failOnCriticalErrors?: boolean
-    failOnTimeout?: boolean
-    maxPollingTimeout: number
-    subdomain: string
-  },
+  options: ResultDisplayInfo['options'],
   reporter: MainReporter,
   tunnel?: Tunnel
 ): Promise<Result[]> => {
@@ -370,17 +419,6 @@ export const waitForResults = async (
 
   reporter.testsWait(tests, getAppBaseURL(options), trigger.batch_id)
 
-  const {batch, hasExceededMaxPollingDate} = await waitForBatchToFinish(
-    api,
-    options.maxPollingTimeout,
-    trigger,
-    reporter
-  )
-
-  if (tunnel && !isTunnelConnected) {
-    reporter.error('The tunnel has stopped working, this may have affected the results.')
-  }
-
   const locationNames = trigger.locations.reduce<LocationsMapping>((mapping, location) => {
     mapping[location.name] = location.display_name
 
@@ -393,18 +431,17 @@ export const waitForResults = async (
     return hasTunnel ? 'Tunneled' : locationNames[dcId] || dcId
   }
 
-  const pollResultMap = await getPollResultMap(api, batch)
-  const results = batch.results.map((resultInBatch) =>
-    getResultFromBatch(
-      getLocation,
-      hasExceededMaxPollingDate,
-      options.failOnCriticalErrors ?? false,
-      options.failOnTimeout ?? false,
-      pollResultMap,
-      resultInBatch,
-      tests
-    )
-  )
+  const resultDisplayInfo = {
+    getLocation,
+    options,
+    tests,
+  }
+
+  const results = await waitForBatchToFinish(api, options.maxPollingTimeout, trigger, resultDisplayInfo, reporter)
+
+  if (tunnel && !isTunnelConnected) {
+    reporter.error('The tunnel has stopped working, this may have affected the results.')
+  }
 
   return results
 }
@@ -844,8 +881,6 @@ export const renderResults = ({
     } else {
       summary.failed++
     }
-
-    reporter.resultEnd(result, getAppBaseURL(config))
   }
 
   reporter.runEnd(summary, getAppBaseURL(config), orgSettings)

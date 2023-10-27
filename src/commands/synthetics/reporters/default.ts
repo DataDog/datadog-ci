@@ -8,7 +8,6 @@ import type {CommandContext} from '../../../helpers/interfaces'
 
 import {
   Assertion,
-  Batch,
   ExecutionRule,
   MainReporter,
   Result,
@@ -18,6 +17,7 @@ import {
   Summary,
   Test,
   UserConfigOverride,
+  Batch,
 } from '../interfaces'
 import {
   getBatchUrl,
@@ -285,7 +285,9 @@ export class DefaultReporter implements MainReporter {
   }
 
   public resultEnd(result: Result, baseUrl: string) {
+    this.testWaitSpinner?.stop()
     this.write(renderExecutionResult(result.test, result, baseUrl) + '\n\n')
+    this.testWaitSpinner?.start()
   }
 
   public resultReceived(result: Batch['results'][0]): void {
@@ -360,20 +362,36 @@ export class DefaultReporter implements MainReporter {
   }
 
   public testsWait(tests: Test[], baseUrl: string, batchId: string) {
+    if (tests.length === 0) {
+      return this.stopSpinner()
+    }
+
     const testsList = tests.map((t) => t.public_id)
     if (testsList.length > 10) {
       testsList.splice(10)
       testsList.push('…')
     }
+
     const testsDisplay = chalk.gray(`(${testsList.join(', ')})`)
+    const text = `Waiting for ${chalk.bold.cyan(tests.length)} ${pluralize('test', tests.length)} ${testsDisplay}…\n`
+
+    if (this.testWaitSpinner) {
+      this.testWaitSpinner.text = text
+      this.testWaitSpinner.start()
+
+      return
+    }
 
     const batchUrl = getBatchUrl(baseUrl, batchId)
     this.write(`View pending summary in Datadog: ${chalk.dim.cyan(batchUrl)}\n\n`)
 
     this.testWaitSpinner = ora({
       stream: this.context.stdout,
-      text: `Waiting for ${chalk.bold.cyan(tests.length)} test ${pluralize('result', tests.length)} ${testsDisplay}…\n`,
-    }).start()
+      prefixText: '\n',
+      text,
+    })
+
+    this.testWaitSpinner.start()
   }
 
   public testTrigger(
@@ -419,7 +437,7 @@ export class DefaultReporter implements MainReporter {
   }
 
   private stopSpinner() {
-    this.testWaitSpinner?.stopAndPersist()
+    this.testWaitSpinner?.stop()
     delete this.testWaitSpinner
   }
 }
