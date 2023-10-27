@@ -4,7 +4,6 @@ import {BaseContext} from 'clipanion/lib/advanced'
 
 import {ExecutionRule, MainReporter, Result, Summary, Test, UserConfigOverride} from '../../interfaces'
 import {DefaultReporter} from '../../reporters/default'
-import {DEFAULT_COMMAND_CONFIG} from '../../run-tests-command'
 
 import {
   getApiResult,
@@ -24,7 +23,6 @@ import {
  */
 
 describe('Default reporter', () => {
-  const baseUrlFixture = 'https://app.datadoghq.com/'
   const writeMock = jest.fn()
   const mockContext: unknown = {
     context: {
@@ -106,10 +104,61 @@ describe('Default reporter', () => {
     })
   })
 
-  test('testsWait outputs triggered tests', async () => {
-    reporter.testsWait(new Array(11).fill(getApiTest()), baseUrlFixture, '123')
-    const output = writeMock.mock.calls.map((c) => c[0]).join('\n')
-    expect(output).toMatchSnapshot()
+  describe('testsWait', () => {
+    test('outputs triggered tests', async () => {
+      reporter.testsWait(Array(11).fill(getApiTest()) as Test[], MOCK_BASE_URL, '123')
+      const output = writeMock.mock.calls.map((c) => c[0]).join('\n')
+      expect(output).toMatchSnapshot()
+    })
+
+    test('the spinner text is updated and cleared at the end', async () => {
+      jest.useFakeTimers()
+
+      let simulatedTerminalOutput = ''
+
+      const write = jest.fn().mockImplementation((text: string) => {
+        // Ignore show/hide cursor ANSI codes.
+        if (text.match(/\u001b\[\?25(l|h)/)) {
+          return
+        }
+
+        simulatedTerminalOutput += text
+      })
+
+      const clearLine = jest.fn().mockImplementation(() => {
+        simulatedTerminalOutput = simulatedTerminalOutput.split('\n').slice(0, -1).join('\n')
+      })
+
+      const ttyContext = {
+        context: {
+          stdout: {
+            isTTY: true,
+            write,
+            clearLine,
+            cursorTo: jest.fn(),
+            moveCursor: jest.fn(),
+          },
+        },
+      }
+
+      const ttyReporter = new DefaultReporter((ttyContext as unknown) as {context: BaseContext})
+
+      ttyReporter.testsWait([getApiTest('aaa-aaa-aaa'), getApiTest('bbb-bbb-bbb')], MOCK_BASE_URL, '123')
+      expect(clearLine).not.toHaveBeenCalled()
+      expect(simulatedTerminalOutput).toMatchSnapshot()
+
+      ttyReporter.testsWait([getApiTest('aaa-aaa-aaa')], MOCK_BASE_URL, '123')
+      ttyReporter['testWaitSpinner']?.render()
+      expect(clearLine).toHaveBeenCalled()
+      expect(simulatedTerminalOutput).toMatchSnapshot()
+
+      ttyReporter.testsWait([], MOCK_BASE_URL, '123')
+      ttyReporter['testWaitSpinner']?.render()
+      expect(clearLine).toHaveBeenCalled()
+      expect(simulatedTerminalOutput).toMatchSnapshot()
+
+      jest.useRealTimers()
+    })
   })
 
   describe('resultEnd', () => {
@@ -143,14 +192,14 @@ describe('Default reporter', () => {
       {
         description: '1 API test, 1 location, 1 result: success',
         fixtures: {
-          baseUrl: baseUrlFixture,
+          baseUrl: MOCK_BASE_URL,
           results: [getApiResult('1', apiTest)],
         },
       },
       {
         description: '1 API test, 1 location, 3 results: success, failed non-blocking, failed blocking',
         fixtures: {
-          baseUrl: baseUrlFixture,
+          baseUrl: MOCK_BASE_URL,
           results: [
             createApiResult('1', true, ExecutionRule.BLOCKING, apiTest),
             createApiResult('2', false, ExecutionRule.NON_BLOCKING, apiTest),
@@ -161,7 +210,7 @@ describe('Default reporter', () => {
       {
         description: '3 Browser test: failed blocking, timed out, global failure',
         fixtures: {
-          baseUrl: baseUrlFixture,
+          baseUrl: MOCK_BASE_URL,
           results: [
             getFailedBrowserResult(),
             getTimedOutBrowserResult(),
