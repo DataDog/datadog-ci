@@ -764,11 +764,11 @@ describe('utils', () => {
     } = {}) => {
       const getBatchMock = jest
         .spyOn(api, 'getBatch')
-        .mockImplementation(getBatchImplementation || (async () => JSON.parse(JSON.stringify(batch))))
+        .mockImplementation(getBatchImplementation || (async () => deepExtend({}, batch)))
 
       const pollResultsMock = jest
         .spyOn(api, 'pollResults')
-        .mockImplementation(pollResultsImplementation || (async () => JSON.parse(JSON.stringify([pollResult]))))
+        .mockImplementation(pollResultsImplementation || (async () => [deepExtend({}, pollResult)]))
 
       return {getBatchMock, pollResultsMock}
     }
@@ -969,10 +969,13 @@ describe('utils', () => {
     })
 
     test('correct number of pass and timeout results', async () => {
-      const pollTimeoutResult: PollResult = {...pollResult, resultID: 'another-id'}
+      const pollTimeoutResult: PollResult = {...deepExtend({}, pollResult), resultID: 'another-id'}
       const batchWithTimeoutResult: Batch = {
         ...batch,
-        results: [batch.results[0], {...batch.results[0], timed_out: true, result_id: pollTimeoutResult.resultID}],
+        results: [
+          batch.results[0],
+          {...batch.results[0], timed_out: true, result_id: pollTimeoutResult.resultID}, // backend is the source of truth for timeout
+        ],
       }
 
       mockApi({
@@ -988,12 +991,33 @@ describe('utils', () => {
           {
             datadogSite: DEFAULT_COMMAND_CONFIG.datadogSite,
             failOnCriticalErrors: false,
+            failOnTimeout: false,
             maxPollingTimeout: 2000,
             subdomain: DEFAULT_COMMAND_CONFIG.subdomain,
           },
           mockReporter
         )
-      ).toEqual([result, {...result, resultId: pollTimeoutResult.resultID, timedOut: true}])
+      ).toEqual([
+        {
+          ...result,
+          passed: true,
+          timedOut: false,
+        },
+        {
+          ...result,
+          passed: true, // because `failOnTimeout` is false
+          timedOut: true,
+          resultId: pollTimeoutResult.resultID,
+          result: {
+            ...result.result,
+            failure: {
+              code: 'TIMEOUT',
+              message: 'Result timed out',
+            },
+            passed: false,
+          },
+        },
+      ])
     })
 
     test('tunnel failure', async () => {
@@ -1348,15 +1372,14 @@ describe('utils', () => {
     ]
 
     test.each(cases)('$description', async (testCase) => {
-      testCase.results.forEach(
-        (result) =>
-          (result.passed = utils.hasResultPassed(
-            result.result,
-            result.timedOut,
-            testCase.failOnCriticalErrors,
-            testCase.failOnTimeout
-          ))
-      )
+      testCase.results.forEach((result) => {
+        result.passed = utils.hasResultPassed(
+          result.result,
+          result.timedOut,
+          testCase.failOnCriticalErrors,
+          testCase.failOnTimeout
+        )
+      })
 
       jest.spyOn(api, 'getSyntheticsOrgSettings').mockResolvedValue({onDemandConcurrencyCap: 1})
 
