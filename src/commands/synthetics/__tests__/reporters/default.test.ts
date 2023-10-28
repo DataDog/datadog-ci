@@ -105,15 +105,30 @@ describe('Default reporter', () => {
   })
 
   describe('testsWait', () => {
+    let initialCiEnv: string | undefined
+
+    beforeAll(() => {
+      jest.useFakeTimers()
+      initialCiEnv = process.env.CI
+    })
+
+    afterAll(() => {
+      jest.useRealTimers()
+      if (initialCiEnv !== undefined) {
+        process.env.CI = initialCiEnv
+      } else {
+        delete process.env.CI
+      }
+    })
+
     test('outputs triggered tests', async () => {
       reporter.testsWait(Array(11).fill(getApiTest()) as Test[], MOCK_BASE_URL, '123')
       const output = writeMock.mock.calls.map((c) => c[0]).join('\n')
       expect(output).toMatchSnapshot()
     })
 
-    test('the spinner text is updated and cleared at the end', async () => {
-      jest.useFakeTimers()
-
+    /* eslint-disable jest/no-conditional-expect */
+    test.each([false, true])('the spinner text is updated and cleared at the end (in CI: %s)', async (inCI) => {
       let simulatedTerminalOutput = ''
 
       const write = jest.fn().mockImplementation((text: string) => {
@@ -129,6 +144,12 @@ describe('Default reporter', () => {
         simulatedTerminalOutput = simulatedTerminalOutput.split('\n').slice(0, -1).join('\n')
       })
 
+      if (inCI) {
+        process.env.CI = 'true'
+      } else {
+        delete process.env.CI
+      }
+
       const ttyContext = {
         context: {
           stdout: {
@@ -143,23 +164,40 @@ describe('Default reporter', () => {
 
       const ttyReporter = new DefaultReporter((ttyContext as unknown) as {context: BaseContext})
 
+      clearLine.mockClear()
       ttyReporter.testsWait([getApiTest('aaa-aaa-aaa'), getApiTest('bbb-bbb-bbb')], MOCK_BASE_URL, '123')
+      ttyReporter.testsWait([getApiTest('aaa-aaa-aaa'), getApiTest('bbb-bbb-bbb')], MOCK_BASE_URL, '123')
+      // The same text is the same, so the spinner is not updated.
       expect(clearLine).not.toHaveBeenCalled()
       expect(simulatedTerminalOutput).toMatchSnapshot()
 
+      clearLine.mockClear()
+      ttyReporter.resultEnd(getApiResult('rid', getApiTest('aaa-aaa-aaa')), MOCK_BASE_URL)
+      if (inCI) {
+        // In CI the spinner does not spin, so `resultEnd()` has no spinner text to clear.
+        expect(clearLine).not.toHaveBeenCalled()
+      } else {
+        expect(clearLine).toHaveBeenCalled()
+      }
+      expect(simulatedTerminalOutput).toMatchSnapshot()
+
+      clearLine.mockClear()
       ttyReporter.testsWait([getApiTest('aaa-aaa-aaa')], MOCK_BASE_URL, '123')
-      ttyReporter['testWaitSpinner']?.render()
-      expect(clearLine).toHaveBeenCalled()
+      ttyReporter['testWaitSpinner']?.render() // Simulate the next frame for the spinner.
+      if (inCI) {
+        // In CI, the old text from the spinner is not cleared, so that it's persisted in the CI logs.
+        expect(clearLine).not.toHaveBeenCalled()
+      } else {
+        expect(clearLine).toHaveBeenCalled()
+      }
       expect(simulatedTerminalOutput).toMatchSnapshot()
 
+      // Should do nothing.
       ttyReporter.testsWait([], MOCK_BASE_URL, '123')
-      ttyReporter['testWaitSpinner']?.render()
-      expect(clearLine).toHaveBeenCalled()
       expect(simulatedTerminalOutput).toMatchSnapshot()
-
-      jest.useRealTimers()
     })
   })
+  /* eslint-enable jest/no-conditional-expect */
 
   describe('resultEnd', () => {
     const createApiResult = (

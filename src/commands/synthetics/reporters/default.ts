@@ -261,33 +261,33 @@ export class DefaultReporter implements MainReporter {
   }
 
   public error(error: string) {
-    this.stopSpinner()
+    this.removeSpinner()
     this.write(error)
   }
 
   public initErrors(errors: string[]) {
-    this.stopSpinner()
+    this.removeSpinner()
     this.write(errors.join('\n') + '\n\n')
   }
 
   public log(log: string) {
-    this.stopSpinner()
+    this.removeSpinner()
     this.write(log)
   }
 
   public reportStart(timings: {startTime: number}) {
     this.totalDuration = Date.now() - timings.startTime
 
-    this.stopSpinner()
+    this.removeSpinner()
     this.write(
       ['', chalk.bold.cyan('=== REPORT ==='), `Took ${chalk.bold(this.totalDuration).toString()}ms`, '\n'].join('\n')
     )
   }
 
   public resultEnd(result: Result, baseUrl: string) {
+    // Stop the spinner so it doesn't show multiple times in a burst of received results.
     this.testWaitSpinner?.stop()
     this.write(renderExecutionResult(result.test, result, baseUrl) + '\n\n')
-    this.testWaitSpinner?.start()
   }
 
   public resultReceived(result: Batch['results'][0]): void {
@@ -363,7 +363,7 @@ export class DefaultReporter implements MainReporter {
 
   public testsWait(tests: Test[], baseUrl: string, batchId: string) {
     if (tests.length === 0) {
-      return this.stopSpinner()
+      return
     }
 
     const testsList = tests.map((t) => t.public_id)
@@ -376,8 +376,12 @@ export class DefaultReporter implements MainReporter {
     const text = `Waiting for ${chalk.bold.cyan(tests.length)} ${pluralize('test', tests.length)} ${testsDisplay}…\n`
 
     if (this.testWaitSpinner) {
-      this.testWaitSpinner.text = text
-      this.testWaitSpinner.start()
+      // Only refresh the spinner when the text changes.
+      // The refreshed text will be persisted in the CI logs.
+      if (this.testWaitSpinner.text !== text) {
+        this.testWaitSpinner.text = text
+        this.testWaitSpinner.start()
+      }
 
       return
     }
@@ -436,7 +440,7 @@ export class DefaultReporter implements MainReporter {
     return
   }
 
-  private stopSpinner() {
+  private removeSpinner() {
     this.testWaitSpinner?.stop()
     delete this.testWaitSpinner
   }
