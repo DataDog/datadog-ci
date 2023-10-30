@@ -1,6 +1,6 @@
 export enum DependencyLanguage {
   NPM = 'node',
-  PYPI = 'pypi',
+  PYTHON = 'python',
   PHP = 'php',
   RUST = 'rust',
   RUBY = 'ruby',
