@@ -203,7 +203,7 @@ export const getResultOutcome = (result: Result): ResultOutcome => {
 }
 
 export const getSuites = async (GLOB: string, reporter: MainReporter): Promise<Suite[]> => {
-  reporter.log(`Finding files matching ${getGlobForDisplay(GLOB)}\n`)
+  reporter.log(`Finding files matching ${path.resolve(process.cwd(), GLOB)}\n`)
 
   const files: string[] = await promisify(glob)(GLOB)
   if (files.length) {
@@ -224,14 +224,6 @@ export const getSuites = async (GLOB: string, reporter: MainReporter): Promise<S
       }
     })
   )
-}
-
-export const getGlobForDisplay = (GLOB: string): string => {
-  if (path.isAbsolute(GLOB)) {
-    return GLOB
-  }
-
-  return path.join(process.cwd(), GLOB)
 }
 
 export const getFilePathRelativeToRepo = async (filePath: string) => {
