@@ -82,7 +82,7 @@ describe('generation of payload', () => {
   })
 
   test('SBOM generated for Ruby from a Gemfile lock', async () => {
-    const sbomFile = './src/commands/sbom/__tests__/fixtures/ruby.sbom.json'
+    const sbomFile = './src/commands/sbom/__tests__/fixtures/sbom-ruby.json'
     const sbomContent = JSON.parse(fs.readFileSync(sbomFile).toString('utf8'))
     const config: DatadogCiConfig = {
       apiKey: undefined,
@@ -103,7 +103,7 @@ describe('generation of payload', () => {
   })
 
   test('SBOM generated for Java and Go', async () => {
-    const sbomFile = './src/commands/sbom/__tests__/fixtures/java-go.sbom.json'
+    const sbomFile = './src/commands/sbom/__tests__/fixtures/sbom-java-go.json'
     const sbomContent = JSON.parse(fs.readFileSync(sbomFile).toString('utf8'))
     const config: DatadogCiConfig = {
       apiKey: undefined,
@@ -125,5 +125,28 @@ describe('generation of payload', () => {
     expect(dependenciesWithJava?.length).toStrictEqual(55)
     const dependenciesWithGo = payload?.dependencies.filter((d) => d.language === DependencyLanguage.GO)
     expect(dependenciesWithGo?.length).toStrictEqual(34)
+  })
+
+  test('SBOM generated for Python', async () => {
+    const sbomFile = './src/commands/sbom/__tests__/fixtures/sbom-python.json'
+    const sbomContent = JSON.parse(fs.readFileSync(sbomFile).toString('utf8'))
+    const config: DatadogCiConfig = {
+      apiKey: undefined,
+      env: undefined,
+      envVarTags: undefined,
+    }
+    const tags = await getSpanTags(config, [])
+
+    const payload = generatePayload(sbomContent, tags)
+
+    expect(payload?.dependencies.length).toStrictEqual(19)
+    const dependenciesWithoutLicense = payload?.dependencies.filter((d) => d.licenses.length === 0)
+    expect(dependenciesWithoutLicense?.length).toStrictEqual(19)
+
+    // all languages are detected
+    const dependenciesWithoutLanguage = payload?.dependencies.filter((d) => !d.language)
+    expect(dependenciesWithoutLanguage?.length).toStrictEqual(0)
+    const dependenciesWithPython = payload?.dependencies.filter((d) => d.language === DependencyLanguage.PYTHON)
+    expect(dependenciesWithPython?.length).toStrictEqual(19)
   })
 })

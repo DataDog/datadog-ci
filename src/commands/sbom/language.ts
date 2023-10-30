@@ -24,6 +24,9 @@ export const getLanguageFromComponent = (component: any): DependencyLanguage | u
     if (component['purl'].includes('pkg:golang')) {
       return DependencyLanguage.GO
     }
+    if (component['purl'].includes('pkg:pypi')) {
+      return DependencyLanguage.PYTHON
+    }
   }
 
   console.debug(`language for component ${componentName} not found`)
