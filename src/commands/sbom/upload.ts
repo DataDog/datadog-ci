@@ -1,8 +1,9 @@
 import fs from 'fs'
 import process from 'process'
 
+import type {AxiosPromise, AxiosResponse} from 'axios'
+
 import Ajv from 'ajv'
-import {AxiosPromise, AxiosResponse} from 'axios'
 import chalk from 'chalk'
 import {Command, Option} from 'clipanion'
 

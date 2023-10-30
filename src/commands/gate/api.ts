@@ -1,6 +1,6 @@
 import {Writable} from 'stream'
 
-import {AxiosPromise, AxiosRequestConfig} from 'axios'
+import type {AxiosPromise, AxiosRequestConfig} from 'axios'
 
 import {getRequestBuilder} from '../../helpers/utils'
 

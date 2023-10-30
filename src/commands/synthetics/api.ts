@@ -1,6 +1,7 @@
 import {stringify} from 'querystring'
 
-import {AxiosError, AxiosPromise, AxiosRequestConfig} from 'axios'
+import type {AxiosError, AxiosPromise, AxiosRequestConfig} from 'axios'
+
 import FormData from 'form-data'
 
 import {getRequestBuilder} from '../../helpers/utils'
@@ -38,6 +39,10 @@ export class EndpointError extends Error {
 }
 
 export const formatBackendErrors = (requestError: AxiosError<BackendError>) => {
+  if (!requestError.config) {
+    return `config unavailable\n${requestError.message}`
+  }
+
   if (requestError.response?.data?.errors) {
     const serverHead = `query on ${requestError.config.baseURL}${requestError.config.url} returned:`
     const errors = requestError.response.data.errors

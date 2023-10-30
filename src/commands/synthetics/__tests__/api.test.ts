@@ -1,4 +1,6 @@
-import {AxiosError, AxiosResponse, default as axios} from 'axios'
+import type {AxiosError, AxiosResponse} from 'axios'
+
+import axios from 'axios'
 
 import {ProxyConfiguration} from '../../../helpers/utils'
 

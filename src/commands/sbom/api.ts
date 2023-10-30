@@ -1,4 +1,4 @@
-import {AxiosPromise, AxiosRequestConfig, AxiosResponse} from 'axios'
+import type {AxiosPromise, AxiosRequestConfig, AxiosResponse} from 'axios'
 
 import {CONTENT_TYPE_HEADER, CONTENT_TYPE_VALUE_PROTOBUF, METHOD_POST} from '../../constants'
 import {getBaseIntakeUrl} from '../../helpers/api'
