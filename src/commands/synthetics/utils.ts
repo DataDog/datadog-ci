@@ -349,9 +349,41 @@ const waitForBatchToFinish = async (
     hasBatchExceededMaxPollingDate = Date.now() >= maxPollingDate
   }
 
+  // In theory we should get out of the while loop when the batch is finished, and all the results
+  // should have been emitted. But in case something goes wrong, let's emit the remaining results.
+  await emitResidualResultsIfAny(api, current, emittedResultIndexes, resultDisplayInfo, reporter)
+
   return current.batch.results.map((r) =>
     getResultFromBatch(current.pollResultMap, r, resultDisplayInfo, hasBatchExceededMaxPollingDate)
   )
+}
+
+const emitResidualResultsIfAny = async (
+  api: APIHelper,
+  {batch, pollResultMap}: {batch: Batch; pollResultMap: PollResultMap},
+  emittedResultIndexes: Set<number>,
+  resultDisplayInfo: ResultDisplayInfo,
+  reporter: MainReporter
+) => {
+  const notEmitted = batch.results.filter((_, index) => !emittedResultIndexes.has(index))
+  if (notEmitted.length === 0) {
+    return
+  }
+
+  const notEmittedPollResultMap = await getPollResultMap(
+    api,
+    notEmitted.map((r) => r.result_id)
+  )
+
+  const newPollResultMap = {...pollResultMap, ...notEmittedPollResultMap}
+
+  const {options} = resultDisplayInfo
+  const baseUrl = getAppBaseURL(options)
+
+  for (const result of notEmitted) {
+    // Residual results are considered as timed out
+    reporter.resultEnd(getResultFromBatch(newPollResultMap, result, resultDisplayInfo, true), baseUrl)
+  }
 }
 
 const getResultFromBatch = (

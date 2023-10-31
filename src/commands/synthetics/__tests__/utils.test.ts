@@ -971,7 +971,10 @@ describe('utils', () => {
     test('results should be timed out if global pollingTimeout is exceeded', async () => {
       mockApi({
         getBatchImplementation: async () => ({
-          results: [batch.results[0], {...batch.results[0], result_id: '3', timed_out: undefined}],
+          results: [
+            {...batch.results[0]},
+            {...batch.results[0], status: 'in_progress', result_id: '3', timed_out: undefined},
+          ],
           status: 'in_progress',
         }),
         pollResultsImplementation: async () => [
@@ -1007,7 +1010,8 @@ describe('utils', () => {
         },
       ])
 
-      expect(mockReporter.resultReceived).toHaveBeenCalledTimes(2)
+      // Residual results are never 'received': we force-end them.
+      expect(mockReporter.resultReceived).toHaveBeenCalledTimes(1)
       expect(mockReporter.resultEnd).toHaveBeenCalledTimes(2)
     })
 
@@ -1122,7 +1126,7 @@ describe('utils', () => {
         ...batch,
         results: [
           batch.results[0],
-          {...batch.results[0], status: 'failed', timed_out: true, result_id: pollTimeoutResult.resultID}, // backend is the source of truth for timeout
+          {...batch.results[0], status: 'failed', timed_out: true, result_id: pollTimeoutResult.resultID},
         ],
       }
 
