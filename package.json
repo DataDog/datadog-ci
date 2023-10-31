@@ -35,6 +35,9 @@
   "pkg": {
     "scripts": [
       "dist/commands/*/*.js"
+    ],
+    "assets": [
+      "node_modules/axios/dist/node/axios.cjs"
     ]
   },
   "scripts": {
