@@ -1006,6 +1006,9 @@ describe('utils', () => {
           timedOut: true,
         },
       ])
+
+      expect(mockReporter.resultReceived).toHaveBeenCalledTimes(2)
+      expect(mockReporter.resultEnd).toHaveBeenCalledTimes(2)
     })
 
     test('results failure should ignore if timed-out', async () => {
@@ -1054,7 +1057,7 @@ describe('utils', () => {
     test('results should be timed out if batch result is timed out', async () => {
       const batchWithTimeoutResult: Batch = {
         ...batch,
-        results: [{...batch.results[0], timed_out: true}],
+        results: [{...batch.results[0], status: 'failed', timed_out: true}],
       }
 
       mockApi({getBatchImplementation: async () => batchWithTimeoutResult})
@@ -1119,7 +1122,7 @@ describe('utils', () => {
         ...batch,
         results: [
           batch.results[0],
-          {...batch.results[0], timed_out: true, result_id: pollTimeoutResult.resultID}, // backend is the source of truth for timeout
+          {...batch.results[0], status: 'failed', timed_out: true, result_id: pollTimeoutResult.resultID}, // backend is the source of truth for timeout
         ],
       }
 
@@ -1163,6 +1166,9 @@ describe('utils', () => {
           },
         },
       ])
+
+      expect(mockReporter.resultReceived).toHaveBeenCalledTimes(2)
+      expect(mockReporter.resultEnd).toHaveBeenCalledTimes(2)
     })
 
     test('tunnel failure', async () => {
