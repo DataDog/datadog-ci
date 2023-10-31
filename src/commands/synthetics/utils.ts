@@ -251,7 +251,6 @@ const pollBatchAndDisplayUpdates = async (
   emittedResultIndexes: Set<number>,
   trigger: Trigger,
   resultDisplayInfo: ResultDisplayInfo,
-  hasBatchExceededMaxPollingDate: boolean,
   reporter: MainReporter
 ): Promise<{batch: Batch; pollResultMap: PollResultMap}> => {
   const currentBatchState = await getBatch(api, trigger)
@@ -276,10 +275,7 @@ const pollBatchAndDisplayUpdates = async (
   const baseUrl = getAppBaseURL(options)
 
   for (const result of newResults) {
-    reporter.resultEnd(
-      getResultFromBatch(pollResultMap, result, resultDisplayInfo, hasBatchExceededMaxPollingDate),
-      baseUrl
-    )
+    reporter.resultEnd(getResultFromBatch(pollResultMap, result, resultDisplayInfo), baseUrl)
   }
 
   const inProgressPublicIds = new Set(
@@ -342,21 +338,14 @@ const waitForBatchToFinish = async (
   const maxPollingDate = Date.now() + maxPollingTimeout
   const emittedResultIndexes = new Set<number>()
 
-  let current = await pollBatchAndDisplayUpdates(api, emittedResultIndexes, trigger, resultDisplayInfo, false, reporter)
+  let current = await pollBatchAndDisplayUpdates(api, emittedResultIndexes, trigger, resultDisplayInfo, reporter)
 
   // In theory polling the batch is enough, but in case something goes wrong backend-side
   // let's add a check to ensure it eventually times out.
   let hasBatchExceededMaxPollingDate = Date.now() >= maxPollingDate
   while (current.batch.status === 'in_progress' && !hasBatchExceededMaxPollingDate) {
     await wait(POLLING_INTERVAL)
-    current = await pollBatchAndDisplayUpdates(
-      api,
-      emittedResultIndexes,
-      trigger,
-      resultDisplayInfo,
-      hasBatchExceededMaxPollingDate,
-      reporter
-    )
+    current = await pollBatchAndDisplayUpdates(api, emittedResultIndexes, trigger, resultDisplayInfo, reporter)
     hasBatchExceededMaxPollingDate = Date.now() >= maxPollingDate
   }
 
@@ -369,7 +358,7 @@ const getResultFromBatch = (
   pollResultMap: PollResultMap,
   resultInBatch: ResultInBatch,
   resultDisplayInfo: ResultDisplayInfo,
-  hasBatchExceededMaxPollingDate: boolean
+  hasBatchExceededMaxPollingDate = false
 ): Result => {
   const {getLocation, options, tests} = resultDisplayInfo
 
