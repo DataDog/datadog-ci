@@ -455,7 +455,7 @@ This command uploads a new version to an **existing application**.
 : The name of the new version. It has to be unique.
 
 `--latest`
-: If present, marks the application as 'latest'. Any tests that run on the latest version will use this version on their next run
+: If present, marks the application as 'latest'. Any tests that run on the latest version will use this version on their next run.
  
 Example:
 ```bash
