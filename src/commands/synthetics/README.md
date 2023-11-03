@@ -441,23 +441,34 @@ You can also see the outcome of test executions directly in your CI as your test
 
 ## Upload Application Command
 
-To upload a new version to an **existing application**, you can use the `synthetics upload-application` command. To use it:
+This command uploads a new version to an **existing application**.
 
-`--mobileApplicationId` - string - the ID of the application you want to upload the new version to
-`--mobileApplicationVersionFilePath` - string - path to the mobile app (.apk/.ipa)
-`--versionName` - string - name of the new version. It has to be unique.
-`--latest` - bool - if present, marks the application as 'latest'. Any tests that run on the latest version will use this version on their next run 
+### Command line options
+
+`--mobileApplicationId`
+: The ID of the application you want to upload the new version to.
+
+`--mobileApplicationVersionFilePath`
+: The path to your mobile application (`.apk` or `.ipa`).
+
+`--versionName`
+: The name of the new version. It has to be unique.
+
+`--latest`
+: If present, marks the application as 'latest'. Any tests that run on the latest version will use this version on their next run
  
 Example:
 ```
-datadog-ci synthetics upload-application              \
---mobileApplicationId '123-123-123'                   \
---mobileApplicationVersionFilePath example/test.apk   \
---versionName 'example 1.0'                           \
---latest
+datadog-ci synthetics upload-application                \
+  --mobileApplicationId '123-123-123'                   \
+  --mobileApplicationVersionFilePath example/test.apk   \
+  --versionName 'example 1.0'                           \
+  --latest
 ```   
 
-You can also pass these options in a configuration file
+### Using the global configuration file
+
+You can also pass these options in a configuration file:
 ```
 {
   "apiKey": <DATADOG_API_KEY>,
@@ -469,7 +480,7 @@ You can also pass these options in a configuration file
 }
 ```
 
-And pass it to the command with the `--config` flag, example:
+And pass it to the command with the `--config` flag:
 ```
 datadog-ci synthetics upload-application --config global.config.json
 ```
