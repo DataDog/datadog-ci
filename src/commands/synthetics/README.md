@@ -458,7 +458,7 @@ This command uploads a new version to an **existing application**.
 : If present, marks the application as 'latest'. Any tests that run on the latest version will use this version on their next run
  
 Example:
-```
+```bash
 datadog-ci synthetics upload-application                \
   --mobileApplicationId '123-123-123'                   \
   --mobileApplicationVersionFilePath example/test.apk   \
@@ -469,7 +469,7 @@ datadog-ci synthetics upload-application                \
 ### Using the global configuration file
 
 You can also pass these options in a configuration file:
-```
+```json
 {
   "apiKey": <DATADOG_API_KEY>,
   "appKey": <DATADOG_APPLICATION_KEY>,
@@ -481,7 +481,7 @@ You can also pass these options in a configuration file:
 ```
 
 And pass it to the command with the `--config` flag:
-```
+```bash
 datadog-ci synthetics upload-application --config global.config.json
 ```
 
