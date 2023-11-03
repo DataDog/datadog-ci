@@ -246,7 +246,7 @@ export const getFilePathRelativeToRepo = async (filePath: string) => {
 
 export const wait = async (duration: number) => new Promise((resolve) => setTimeout(resolve, duration))
 
-const pollBatchAndDisplayUpdates = async (
+const getBatchAndReportUpdates = async (
   api: APIHelper,
   emittedResultIndexes: Set<number>,
   trigger: Trigger,
@@ -338,14 +338,14 @@ const waitForBatchToFinish = async (
   const maxPollingDate = Date.now() + maxPollingTimeout
   const emittedResultIndexes = new Set<number>()
 
-  let current = await pollBatchAndDisplayUpdates(api, emittedResultIndexes, trigger, resultDisplayInfo, reporter)
+  let current = await getBatchAndReportUpdates(api, emittedResultIndexes, trigger, resultDisplayInfo, reporter)
 
   // In theory polling the batch is enough, but in case something goes wrong backend-side
   // let's add a check to ensure it eventually times out.
   let hasBatchExceededMaxPollingDate = Date.now() >= maxPollingDate
   while (current.batch.status === 'in_progress' && !hasBatchExceededMaxPollingDate) {
     await wait(POLLING_INTERVAL)
-    current = await pollBatchAndDisplayUpdates(api, emittedResultIndexes, trigger, resultDisplayInfo, reporter)
+    current = await getBatchAndReportUpdates(api, emittedResultIndexes, trigger, resultDisplayInfo, reporter)
     hasBatchExceededMaxPollingDate = Date.now() >= maxPollingDate
   }
 
