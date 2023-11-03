@@ -114,7 +114,7 @@ As the [`proxy-agent` library][2] is used to configure the proxy, the supported 
 
 For example: 
 
-```json
+```jsonc
 {
   "apiKey": "<DATADOG_API_KEY>",
   "appKey": "<DATADOG_APPLICATION_KEY>",
@@ -176,7 +176,7 @@ By default, `datadog-ci` runs at the root of the working directory and finds `{,
 
 For example:
 
-```json
+```jsonc
 {
   "apiKey": "<DATADOG_API_KEY>",
   "appKey": "<DATADOG_APPLICATION_KEY>",
@@ -290,7 +290,7 @@ yarn datadog-ci synthetics run-tests -f ./component-1/**/*.synthetics.json -v PA
 
 Your test files must be named with a `.synthetics.json` suffix. 
 
-```json
+```jsonc
 // myTest.synthetics.json
 {
   "tests": [
@@ -471,8 +471,8 @@ datadog-ci synthetics upload-application                \
 You can also pass these options in a configuration file:
 ```json
 {
-  "apiKey": <DATADOG_API_KEY>,
-  "appKey": <DATADOG_APPLICATION_KEY>,
+  "apiKey": "<DATADOG_API_KEY>",
+  "appKey": "<DATADOG_APPLICATION_KEY>",
   "mobileApplicationVersionFilePath": "example_path/example_app.apk",
   "mobileApplicationId": "example-abc",
   "versionName": "example",
