@@ -214,16 +214,10 @@ const createMobileVersion = (request: (args: AxiosRequestConfig) => AxiosPromise
 
 type RetryPolicy = (retries: number, error: AxiosError) => number | undefined
 
-const retryOnNodeErrors: RetryPolicy = (retries, error) => {
+const retryOn5xxErrors: RetryPolicy = (retries, error) => {
+  // Retry on Node.js errors for both retry policies.
   if (retries < MAX_RETRIES && isNodeError(error)) {
     return LARGE_DELAY_BETWEEN_RETRIES
-  }
-}
-
-const retryOn5xxErrors: RetryPolicy = (retries, error) => {
-  const retryOnNodeErrorsDelay = retryOnNodeErrors(retries, error)
-  if (retryOnNodeErrorsDelay) {
-    return retryOnNodeErrorsDelay
   }
 
   if (retries < MAX_RETRIES && is5xxError(error)) {
