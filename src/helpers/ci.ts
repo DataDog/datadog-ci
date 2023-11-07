@@ -225,18 +225,20 @@ export const getCISpanTags = (): SpanTags | undefined => {
 
     tags = {
       [CI_JOB_NAME]: GITHUB_JOB,
-      [CI_JOB_URL]: `${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/commit/${GITHUB_SHA}/checks`,
+      [CI_JOB_URL]: filterSensitiveInfoFromRepository(
+        `${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/commit/${GITHUB_SHA}/checks`
+      ),
       [CI_PIPELINE_ID]: GITHUB_RUN_ID,
       [CI_PIPELINE_NAME]: GITHUB_WORKFLOW,
       [CI_PIPELINE_NUMBER]: GITHUB_RUN_NUMBER,
-      [CI_PIPELINE_URL]: pipelineURL,
+      [CI_PIPELINE_URL]: filterSensitiveInfoFromRepository(pipelineURL),
       [CI_PROVIDER_NAME]: CI_ENGINES.GITHUB,
       [CI_WORKSPACE_PATH]: GITHUB_WORKSPACE,
       [GIT_SHA]: GITHUB_SHA,
       [GIT_REPOSITORY_URL]: repositoryUrl,
       [GIT_BRANCH]: GITHUB_HEAD_REF || GITHUB_REF || '',
       [CI_ENV_VARS]: JSON.stringify({
-        GITHUB_SERVER_URL,
+        GITHUB_SERVER_URL: filterSensitiveInfoFromRepository(GITHUB_SERVER_URL),
         // Snapshots are generated automatically and are sort sensitive
         GITHUB_REPOSITORY,
         GITHUB_RUN_ID,
