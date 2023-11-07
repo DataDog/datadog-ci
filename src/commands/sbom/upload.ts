@@ -91,7 +91,6 @@ export class UploadSbomCommand extends Command {
         // Upload content
         try {
           const scaPayload = generatePayload(jsonContent, tags)
-          console.log(`sending ${JSON.stringify(scaPayload)}`)
           if (!scaPayload) {
             console.log(`Cannot generate payload for file ${filePath}`)
             continue
