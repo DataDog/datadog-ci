@@ -2,6 +2,11 @@ import {getLicensesFromString} from '../license'
 import {DependencyLicense} from '../types'
 
 describe('licenses', () => {
+  beforeEach(() => {
+    jest.spyOn(console, 'debug').mockImplementation()
+    jest.spyOn(console, 'log').mockImplementation()
+  })
+
   test('should return the correct values', async () => {
     expect(getLicensesFromString('MIT')).toStrictEqual([DependencyLicense.MIT])
     expect(getLicensesFromString('Apache-2.0 OR MIT')).toStrictEqual([DependencyLicense.APACHE2, DependencyLicense.MIT])

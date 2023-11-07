@@ -7,6 +7,11 @@ import {generatePayload} from '../payload'
 import {DependencyLanguage, DependencyLicense} from '../types'
 
 describe('generation of payload', () => {
+  beforeEach(() => {
+    jest.spyOn(console, 'debug').mockImplementation()
+    jest.spyOn(console, 'log').mockImplementation()
+  })
+
   test('should correctly work with a CycloneDX 1.4 file', async () => {
     const sbomFile = './src/commands/sbom/__tests__/fixtures/sbom.1.4.ok.json'
     const sbomContent = JSON.parse(fs.readFileSync(sbomFile).toString('utf8'))
