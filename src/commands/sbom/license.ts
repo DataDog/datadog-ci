@@ -72,7 +72,7 @@ export const getLicensesFromComponent = (component: any): DependencyLicense[] =>
   const elementsForLicense = ['id', 'name']
 
   const componentName = component['name']
-  const licenses: DependencyLicense[] = []
+  const licensesSet: Set<DependencyLicense> = new Set()
 
   // Get the "licenses" attribute of the SBOM component.
   if (component['licenses']) {
@@ -81,22 +81,22 @@ export const getLicensesFromComponent = (component: any): DependencyLicense[] =>
         // Handle "license": [ {"license": {"id": <license>}} ]
         if (license['license']?.[el]) {
           for (const l of getLicensesFromString(license['license'][el])) {
-            licenses.push(l)
+            licensesSet.add(l)
           }
         }
       }
       // Handle "license": [ {"expression": "MIT"} ]
       if (license['expression']) {
         for (const l of getLicensesFromString(license['expression'])) {
-          licenses.push(l)
+          licensesSet.add(l)
         }
       }
     }
   }
 
-  if (licenses.length === 0) {
+  if (licensesSet.size === 0) {
     console.log(`license for component ${componentName} not found`)
   }
 
-  return licenses
+  return Array.from(licensesSet)
 }
