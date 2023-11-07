@@ -303,7 +303,7 @@ describe('lambda', () => {
         expect(output).toMatchInlineSnapshot(`
           "
           🐶 Uninstrumenting Lambda function
-          [Error] Couldn't fetch Lambda functions. Error: Max retry count exceeded. Error: ListFunctionsError
+          [Error] Couldn't fetch Lambda functions. Error: ListFunctionsError
           "
         `)
       })
@@ -567,7 +567,7 @@ describe('lambda', () => {
         expect(output).toMatchInlineSnapshot(`
           "
           🐶 Uninstrumenting Lambda function
-          [Error] Couldn't fetch Lambda functions. Error: Max retry count exceeded. Error: ListFunctionsError
+          [Error] Couldn't fetch Lambda functions. Error: ListFunctionsError
           "
         `)
       })

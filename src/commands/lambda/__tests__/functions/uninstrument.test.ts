@@ -588,7 +588,7 @@ describe('uninstrument', () => {
         undefined
       )
 
-      await expect(uninstrumentedConfig).rejects.toThrow('Max retry count exceeded. Error: ListFunctionsError')
+      await expect(uninstrumentedConfig).rejects.toThrow('ListFunctionsError')
     })
   })
 })

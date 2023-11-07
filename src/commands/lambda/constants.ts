@@ -1,5 +1,7 @@
 import type {Runtime} from '@aws-sdk/client-lambda'
 
+import {ConfiguredRetryStrategy} from '@smithy/util-retry'
+
 import {ENVIRONMENT_ENV_VAR, FLARE_PROJECT_FILES, SERVICE_ENV_VAR, SITE_ENV_VAR, VERSION_ENV_VAR} from '../../constants'
 
 export const DD_LAMBDA_EXTENSION_LAYER_NAME = 'Datadog-Extension'
@@ -113,9 +115,6 @@ export const AWS_DEFAULT_REGION_ENV_VAR = 'AWS_DEFAULT_REGION'
 export const AWS_SESSION_TOKEN_ENV_VAR = 'AWS_SESSION_TOKEN'
 export const AWS_SHARED_CREDENTIALS_FILE_ENV_VAR = 'AWS_SHARED_CREDENTIALS_FILE'
 
-export const LIST_FUNCTIONS_MAX_RETRY_COUNT = 2
-export const MAX_LAMBDA_STATE_CHECK_ATTEMPTS = 3
-
 // DD_TAGS Regular Expression
 // This RegExp ensures that the --extra-tags string
 // matches a list of <key>:<value> separated by commas
@@ -165,3 +164,7 @@ export const FRAMEWORK_FILES_MAPPING = new Map([
 ])
 
 export const LAMBDA_PROJECT_FILES = [...FLARE_PROJECT_FILES, ...FRAMEWORK_FILES_MAPPING.keys()]
+
+// Configures max number of attempts and exponential backoff function for AWS requests
+// First retry is attempt 1
+export const RETRY_STRATEGY = new ConfiguredRetryStrategy(4, (attempt: number) => 1000 * 2 ** (attempt - 1))

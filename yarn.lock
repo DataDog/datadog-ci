@@ -1984,6 +1984,7 @@ __metadata:
     "@google-cloud/run": ^0.6.0
     "@microsoft/eslint-formatter-sarif": ^3.0.0
     "@smithy/property-provider": ^2.0.12
+    "@smithy/util-retry": ^2.0.4
     "@types/async-retry": 1.4.2
     "@types/datadog-metrics": 0.6.1
     "@types/deep-extend": 0.4.31
@@ -3247,6 +3248,15 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@smithy/service-error-classification@npm:^2.0.6":
+  version: 2.0.6
+  resolution: "@smithy/service-error-classification@npm:2.0.6"
+  dependencies:
+    "@smithy/types": ^2.5.0
+  checksum: 07be989a2d3e17e14f8c7824bf9342632ec5ed1e4e0b4f2d242442f49a50058db5cbb7b8419b684126bf5c4ba08f6bce3360f43d73bd2def15771a1af7c1c95f
+  languageName: node
+  linkType: hard
+
 "@smithy/shared-ini-file-loader@npm:^2.0.3":
   version: 2.0.3
   resolution: "@smithy/shared-ini-file-loader@npm:2.0.3"
@@ -3329,6 +3339,15 @@ __metadata:
   dependencies:
     tslib: ^2.5.0
   checksum: 936690f8ba9323c05a1046102f83d7ed76c5c2f2405ca22e8bfed8d66a5ba12d74a187c10d93b085d6822b98edaec7b6309a4401f036099bf239a0bf5cdcf00d
+  languageName: node
+  linkType: hard
+
+"@smithy/types@npm:^2.5.0":
+  version: 2.5.0
+  resolution: "@smithy/types@npm:2.5.0"
+  dependencies:
+    tslib: ^2.5.0
+  checksum: 9e03dcf6c9ae7239218ccecae0a04d5f0aaab42e17a326590becfd68f1b15ba1291ed408501efab4a20a0542d995b5a859ab58ca83cd4f3e2dbf430785e207a6
   languageName: node
   linkType: hard
 
@@ -3465,6 +3484,17 @@ __metadata:
     "@smithy/types": ^2.4.0
     tslib: ^2.5.0
   checksum: 9d001723e7472c0d78619320235f66d1de42f16e13d1189697f8e447d05643047ab97965525b147eaafbb0e169563ecb5b806da2d02bd4ce0b652b72df4d9131
+  languageName: node
+  linkType: hard
+
+"@smithy/util-retry@npm:^2.0.4":
+  version: 2.0.6
+  resolution: "@smithy/util-retry@npm:2.0.6"
+  dependencies:
+    "@smithy/service-error-classification": ^2.0.6
+    "@smithy/types": ^2.5.0
+    tslib: ^2.5.0
+  checksum: c37d163f83981ca58c7d924b178a09e18abc915ffb5efb20fcc4e662ad909938296fd295244ed84a209e84e56d66a629a9eba655306ca401c1a3b91c4433ff22
   languageName: node
   linkType: hard
 

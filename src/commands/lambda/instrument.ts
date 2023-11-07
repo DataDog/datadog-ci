@@ -12,7 +12,7 @@ import {resolveConfigFromFile, filterAndFormatGithubRemote, DEFAULT_CONFIG_PATHS
 import {getCommitInfo, newSimpleGit} from '../git-metadata/git'
 import {UploadCommand} from '../git-metadata/upload'
 
-import {AWS_DEFAULT_REGION_ENV_VAR, EXTRA_TAGS_REG_EXP} from './constants'
+import {AWS_DEFAULT_REGION_ENV_VAR, EXTRA_TAGS_REG_EXP, RETRY_STRATEGY} from './constants'
 import {
   checkRuntimeTypesAreUniform,
   coerceBoolean,
@@ -143,6 +143,7 @@ export class InstrumentCommand extends Command {
           const lambdaClientConfig: LambdaClientConfig = {
             region,
             credentials: this.credentials,
+            retryStrategy: RETRY_STRATEGY,
           }
 
           const lambdaClient = new LambdaClient(lambdaClientConfig)
@@ -242,11 +243,12 @@ export class InstrumentCommand extends Command {
 
       const spinner = instrumentRenderer.fetchingFunctionsSpinner()
       try {
-        const cloudWatchLogsClient = new CloudWatchLogsClient({region})
+        const cloudWatchLogsClient = new CloudWatchLogsClient({region, retryStrategy: RETRY_STRATEGY})
 
         const lambdaClientConfig: LambdaClientConfig = {
           region,
           credentials: this.credentials,
+          retryStrategy: RETRY_STRATEGY,
         }
 
         const lambdaClient = new LambdaClient(lambdaClientConfig)
@@ -287,10 +289,11 @@ export class InstrumentCommand extends Command {
         const lambdaClientConfig: LambdaClientConfig = {
           region,
           credentials: this.credentials,
+          retryStrategy: RETRY_STRATEGY,
         }
 
         const lambdaClient = new LambdaClient(lambdaClientConfig)
-        const cloudWatchLogsClient = new CloudWatchLogsClient({region})
+        const cloudWatchLogsClient = new CloudWatchLogsClient({region, retryStrategy: RETRY_STRATEGY})
         try {
           const configs = await getInstrumentedFunctionConfigs(
             lambdaClient,

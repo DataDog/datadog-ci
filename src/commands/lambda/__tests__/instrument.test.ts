@@ -1081,7 +1081,7 @@ describe('lambda', () => {
           🐶 Instrumenting Lambda function
 
           [!] Configure AWS region.
-          [Error] Couldn't fetch Lambda functions. Error: Max retry count exceeded. Error: ListFunctionsError
+          [Error] Couldn't fetch Lambda functions. Error: ListFunctionsError
           "
         `)
       })
