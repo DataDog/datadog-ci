@@ -1,3 +1,5 @@
+import type {Runtime} from '@aws-sdk/client-lambda'
+
 import {ENVIRONMENT_ENV_VAR, FLARE_PROJECT_FILES, SERVICE_ENV_VAR, SITE_ENV_VAR, VERSION_ENV_VAR} from '../../constants'
 
 export const DD_LAMBDA_EXTENSION_LAYER_NAME = 'Datadog-Extension'
@@ -29,29 +31,44 @@ export enum RuntimeType {
   NODE,
   PYTHON,
   RUBY,
+  GO,
 }
 
-export const RUNTIME_LOOKUP = {
+export const RUNTIME_LOOKUP: Record<Runtime, RuntimeType> = {
   dotnet6: RuntimeType.DOTNET,
+  'dotnetcore1.0': RuntimeType.DOTNET,
+  'dotnetcore2.0': RuntimeType.DOTNET,
+  'dotnetcore2.1': RuntimeType.DOTNET,
   'dotnetcore3.1': RuntimeType.DOTNET,
+  'go1.x': RuntimeType.GO,
+  java8: RuntimeType.JAVA,
   java11: RuntimeType.JAVA,
   java17: RuntimeType.JAVA,
   'java8.al2': RuntimeType.JAVA,
+  'nodejs4.3-edge': RuntimeType.NODE,
+  'nodejs4.3': RuntimeType.NODE,
+  'nodejs6.10': RuntimeType.NODE,
+  'nodejs8.10': RuntimeType.NODE,
+  'nodejs10.x': RuntimeType.NODE,
   'nodejs12.x': RuntimeType.NODE,
   'nodejs14.x': RuntimeType.NODE,
   'nodejs16.x': RuntimeType.NODE,
   'nodejs18.x': RuntimeType.NODE,
+  nodejs: RuntimeType.NODE,
+  provided: RuntimeType.CUSTOM,
   'provided.al2': RuntimeType.CUSTOM,
+  'python2.7': RuntimeType.PYTHON,
+  'python3.10': RuntimeType.PYTHON,
+  'python3.11': RuntimeType.PYTHON,
+  'python3.6': RuntimeType.PYTHON,
   'python3.7': RuntimeType.PYTHON,
   'python3.8': RuntimeType.PYTHON,
   'python3.9': RuntimeType.PYTHON,
-  'python3.10': RuntimeType.PYTHON,
-  'python3.11': RuntimeType.PYTHON,
+  'ruby2.5': RuntimeType.RUBY,
   'ruby2.7': RuntimeType.RUBY,
   'ruby3.2': RuntimeType.RUBY,
 }
 
-export type Runtime = keyof typeof RUNTIME_LOOKUP
 export type LayerKey = keyof typeof LAYER_LOOKUP
 export const ARM_LAYERS = [
   EXTENSION_LAYER_KEY,

@@ -5,6 +5,7 @@ import {
   LambdaClient,
   FunctionConfiguration as LFunctionConfiguration,
   ListFunctionsCommand,
+  Runtime,
 } from '@aws-sdk/client-lambda'
 import {mockClient} from 'aws-sdk-client-mock'
 
@@ -80,7 +81,7 @@ describe('instrument', () => {
         'arn:aws:lambda:us-east-1:000000000000:function:autoinstrument': {
           config: {
             FunctionArn: 'arn:aws:lambda:us-east-1:000000000000:function:autoinstrument',
-            Runtime: 'go',
+            Runtime: Runtime.go1x,
           },
         },
       })
