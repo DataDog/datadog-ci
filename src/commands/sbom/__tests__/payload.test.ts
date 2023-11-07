@@ -76,6 +76,14 @@ describe('generation of payload', () => {
     const dependenciesWithoutLicense = payload?.dependencies.filter((d) => d.licenses.length === 0)
     expect(dependenciesWithoutLicense?.length).toStrictEqual(3)
 
+    // Check licenses is correct
+    console.log(payload?.dependencies[0].licenses)
+    expect(payload?.dependencies[0].licenses.length).toStrictEqual(1)
+
+    expect(payload?.dependencies[1].licenses.length).toStrictEqual(2)
+    expect(payload?.dependencies[1].licenses[0]).toStrictEqual(DependencyLicense.MIT)
+    expect(payload?.dependencies[1].licenses[1]).toStrictEqual(DependencyLicense.APACHE2)
+
     // all languages are detected
     const dependenciesWithoutLanguage = payload?.dependencies.filter((d) => !d.language)
     expect(dependenciesWithoutLanguage?.length).toStrictEqual(0)

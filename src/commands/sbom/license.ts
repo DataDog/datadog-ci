@@ -84,12 +84,11 @@ export const getLicensesFromComponent = (component: any): DependencyLicense[] =>
             licenses.push(l)
           }
         }
-
-        // Handle "license": [ {"expression": "MIT"} ]
-        if (license['expression']) {
-          for (const l of getLicensesFromString(license['expression'])) {
-            licenses.push(l)
-          }
+      }
+      // Handle "license": [ {"expression": "MIT"} ]
+      if (license['expression']) {
+        for (const l of getLicensesFromString(license['expression'])) {
+          licenses.push(l)
         }
       }
     }
