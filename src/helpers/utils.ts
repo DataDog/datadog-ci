@@ -316,12 +316,12 @@ export const filterSensitiveInfoFromRepository = (repositoryUrl: string | undefi
 
       return repositoryUrl.replace(sshRegex, '$1')
     }
-    const {protocol, hostname, pathname} = new URL(repositoryUrl)
-    if (!protocol || !hostname) {
+    const {protocol, host, pathname} = new URL(repositoryUrl)
+    if (!protocol || !host) {
       return repositoryUrl
     }
 
-    return `${protocol}//${hostname}${pathname === '/' ? '' : pathname}`
+    return `${protocol}//${host}${pathname === '/' ? '' : pathname}`
   } catch (e) {
     return repositoryUrl
   }
