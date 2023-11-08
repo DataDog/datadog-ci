@@ -19,7 +19,7 @@ jest.mock('simple-git')
 
 describe('getGitMetadata', () => {
   it('reads git metadata successfully', async () => {
-    ;(simpleGit as any).mockImplementation(() => ({
+    ;(simpleGit as jest.Mock).mockImplementation(() => ({
       branch: () => ({current: 'main'}),
       listRemote: () => 'repository_url',
       revparse: () => 'commitSHA',
@@ -46,7 +46,7 @@ describe('getGitMetadata', () => {
     })
   })
   it('does not crash when git is not available', async () => {
-    ;(simpleGit as any).mockImplementation(() => ({
+    ;(simpleGit as jest.Mock).mockImplementation(() => ({
       branch: () => {
         throw new Error()
       },
@@ -62,5 +62,59 @@ describe('getGitMetadata', () => {
     }))
     const result = await getGitMetadata()
     expect(result).toEqual({})
+  })
+  it('scrubs credentials from https repository url', async () => {
+    ;(simpleGit as jest.Mock).mockImplementation(() => ({
+      branch: () => ({current: 'main'}),
+      listRemote: () => 'https://x-oauth-basic:ghp_safe_characters@github.com/datadog/safe-repository.git',
+      revparse: () => 'commitSHA',
+      show: (input: string[]) => {
+        if (input[1] === '--format=%s') {
+          return 'commit message'
+        }
+
+        return 'authorName,authorEmail,authorDate,committerName,committerEmail,committerDate'
+      },
+    }))
+    const result = await getGitMetadata()
+    expect(result).toEqual({
+      [GIT_REPOSITORY_URL]: 'https://github.com/datadog/safe-repository.git',
+      [GIT_BRANCH]: 'main',
+      [GIT_SHA]: 'commitSHA',
+      [GIT_COMMIT_MESSAGE]: 'commit message',
+      [GIT_COMMIT_COMMITTER_DATE]: 'committerDate',
+      [GIT_COMMIT_COMMITTER_EMAIL]: 'committerEmail',
+      [GIT_COMMIT_COMMITTER_NAME]: 'committerName',
+      [GIT_COMMIT_AUTHOR_DATE]: 'authorDate',
+      [GIT_COMMIT_AUTHOR_EMAIL]: 'authorEmail',
+      [GIT_COMMIT_AUTHOR_NAME]: 'authorName',
+    })
+  })
+  it('scrubs credentials from ssh repository url', async () => {
+    ;(simpleGit as jest.Mock).mockImplementation(() => ({
+      branch: () => ({current: 'main'}),
+      listRemote: () => 'ssh://username@host.xz:port/path/to/repo.git/',
+      revparse: () => 'commitSHA',
+      show: (input: string[]) => {
+        if (input[1] === '--format=%s') {
+          return 'commit message'
+        }
+
+        return 'authorName,authorEmail,authorDate,committerName,committerEmail,committerDate'
+      },
+    }))
+    const result = await getGitMetadata()
+    expect(result).toEqual({
+      [GIT_REPOSITORY_URL]: 'ssh://host.xz:port/path/to/repo.git/',
+      [GIT_BRANCH]: 'main',
+      [GIT_SHA]: 'commitSHA',
+      [GIT_COMMIT_MESSAGE]: 'commit message',
+      [GIT_COMMIT_COMMITTER_DATE]: 'committerDate',
+      [GIT_COMMIT_COMMITTER_EMAIL]: 'committerEmail',
+      [GIT_COMMIT_COMMITTER_NAME]: 'committerName',
+      [GIT_COMMIT_AUTHOR_DATE]: 'authorDate',
+      [GIT_COMMIT_AUTHOR_EMAIL]: 'authorEmail',
+      [GIT_COMMIT_AUTHOR_NAME]: 'authorName',
+    })
   })
 })

@@ -14,6 +14,7 @@ import {
   GIT_REPOSITORY_URL,
   GIT_SHA,
 } from '../tags'
+import {filterSensitiveInfoFromRepository} from '../utils'
 
 import {gitAuthorAndCommitter, gitBranch, gitHash, gitMessage, gitRepositoryURL} from './get-git-data'
 
@@ -44,7 +45,7 @@ export const getGitMetadata = async (): Promise<SpanTags> => {
     ] = authorAndCommitter.split(',')
 
     return {
-      [GIT_REPOSITORY_URL]: repositoryUrl.trim(),
+      [GIT_REPOSITORY_URL]: filterSensitiveInfoFromRepository(repositoryUrl.trim()),
       [GIT_BRANCH]: branch.current,
       [GIT_SHA]: commitSHA,
       [GIT_COMMIT_MESSAGE]: message.trim(),
