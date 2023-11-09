@@ -429,7 +429,7 @@ describe('uninstrument', () => {
         'arn:aws:lambda:us-east-1:000000000000:function:uninstrument': {
           config: {
             FunctionArn: 'arn:aws:lambda:us-east-1:000000000000:function:uninstrument',
-            Runtime: 'go' as Runtime, // wrong value
+            Runtime: Runtime.go1x,
           },
         },
       })
