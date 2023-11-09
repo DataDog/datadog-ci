@@ -2,6 +2,7 @@ import {CloudWatchLogsClient} from '@aws-sdk/client-cloudwatch-logs'
 import {
   LambdaClient,
   FunctionConfiguration as LFunctionConfiguration,
+  Runtime,
   UpdateFunctionConfigurationCommandInput,
 } from '@aws-sdk/client-lambda'
 
@@ -44,7 +45,6 @@ import {
   PROFILER_ENV_VAR,
   PROFILER_PATH_ENV_VAR,
   PYTHON_HANDLER_LOCATION,
-  Runtime,
   RuntimeType,
   RUNTIME_LOOKUP,
   TRACE_ENABLED_ENV_VAR,

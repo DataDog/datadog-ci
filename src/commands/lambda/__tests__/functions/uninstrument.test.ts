@@ -2,7 +2,7 @@ jest.mock('../../loggroup')
 jest.mock('../../renderers/instrument-uninstrument-renderer')
 
 import {CloudWatchLogsClient} from '@aws-sdk/client-cloudwatch-logs'
-import {LambdaClient, ListFunctionsCommand} from '@aws-sdk/client-lambda'
+import {LambdaClient, ListFunctionsCommand, Runtime} from '@aws-sdk/client-lambda'
 import {mockClient} from 'aws-sdk-client-mock'
 
 import 'aws-sdk-client-mock-jest'
@@ -197,7 +197,7 @@ describe('uninstrument', () => {
             },
           },
           FunctionArn: 'arn:aws:lambda:us-east-1:000000000000:function:dotnet',
-          Runtime: 'dotnetcore3.1',
+          Runtime: Runtime.dotnetcore31,
         }
 
         const updateRequest = calculateUpdateRequest(config, config.Runtime as any)
@@ -219,7 +219,7 @@ describe('uninstrument', () => {
             },
           },
           FunctionArn: 'arn:aws:lambda:us-east-1:000000000000:function:java',
-          Runtime: 'java11',
+          Runtime: Runtime.java11,
         }
         const updateRequest = calculateUpdateRequest(config, config.Runtime as any)
         expect(updateRequest).toMatchInlineSnapshot(`
@@ -241,7 +241,7 @@ describe('uninstrument', () => {
             },
           },
           FunctionArn: 'arn:aws:lambda:us-east-1:000000000000:function:dotnet-custom',
-          Runtime: 'dotnet6',
+          Runtime: Runtime.dotnet6,
         }
         const updateRequest = calculateUpdateRequest(config, config.Runtime as any)
         expect(updateRequest).toMatchInlineSnapshot(`
@@ -429,7 +429,7 @@ describe('uninstrument', () => {
         'arn:aws:lambda:us-east-1:000000000000:function:uninstrument': {
           config: {
             FunctionArn: 'arn:aws:lambda:us-east-1:000000000000:function:uninstrument',
-            Runtime: 'go',
+            Runtime: Runtime.go1x,
           },
         },
       })

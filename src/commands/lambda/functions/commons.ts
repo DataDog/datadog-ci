@@ -11,6 +11,7 @@ import {
   GetFunctionCommand,
   UpdateFunctionConfigurationCommand,
   UpdateFunctionConfigurationCommandInput,
+  Runtime,
 } from '@aws-sdk/client-lambda'
 import {FromIniInit, fromIni, fromNodeProviderChain} from '@aws-sdk/credential-providers'
 import {AwsCredentialIdentity, AwsCredentialIdentityProvider} from '@aws-sdk/types'
@@ -34,7 +35,6 @@ import {
   LayerKey,
   LAYER_LOOKUP,
   LIST_FUNCTIONS_MAX_RETRY_COUNT,
-  Runtime,
   RUNTIME_LOOKUP,
   SKIP_MASKING_LAMBDA_ENV_VARS,
 } from '../constants'
@@ -266,10 +266,7 @@ export const getAllLambdaFunctionConfigs = async (lambdaClient: LambdaClient) =>
 export const checkRuntimeTypesAreUniform = (configList: FunctionConfiguration[]) =>
   configList
     .map((item) => item.lambdaConfig.Runtime)
-    .every(
-      (runtime) =>
-        RUNTIME_LOOKUP[runtime! as Runtime] === RUNTIME_LOOKUP[configList[0].lambdaConfig.Runtime! as Runtime]
-    )
+    .every((runtime) => RUNTIME_LOOKUP[runtime!] === RUNTIME_LOOKUP[configList[0].lambdaConfig.Runtime!])
 /**
  * Given a Lambda instance and a regular expression,
  * returns all the Function Configurations that match.

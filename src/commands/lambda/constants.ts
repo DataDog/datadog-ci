@@ -1,3 +1,5 @@
+import type {Runtime} from '@aws-sdk/client-lambda'
+
 import {ENVIRONMENT_ENV_VAR, FLARE_PROJECT_FILES, SERVICE_ENV_VAR, SITE_ENV_VAR, VERSION_ENV_VAR} from '../../constants'
 
 export const DD_LAMBDA_EXTENSION_LAYER_NAME = 'Datadog-Extension'
@@ -31,7 +33,8 @@ export enum RuntimeType {
   RUBY,
 }
 
-export const RUNTIME_LOOKUP = {
+// Lookup table for runtimes that are currently supported by the CLI
+export const RUNTIME_LOOKUP: Partial<Record<Runtime, RuntimeType>> = {
   dotnet6: RuntimeType.DOTNET,
   'dotnetcore3.1': RuntimeType.DOTNET,
   java11: RuntimeType.JAVA,
@@ -51,7 +54,6 @@ export const RUNTIME_LOOKUP = {
   'ruby3.2': RuntimeType.RUBY,
 }
 
-export type Runtime = keyof typeof RUNTIME_LOOKUP
 export type LayerKey = keyof typeof LAYER_LOOKUP
 export const ARM_LAYERS = [
   EXTENSION_LAYER_KEY,

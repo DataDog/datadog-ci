@@ -1,6 +1,6 @@
 jest.mock('../../loggroup')
 
-import {LambdaClient} from '@aws-sdk/client-lambda'
+import {Architecture, LambdaClient, Runtime} from '@aws-sdk/client-lambda'
 import {mockClient} from 'aws-sdk-client-mock'
 
 import {API_KEY_ENV_VAR, CI_API_KEY_ENV_VAR} from '../../../../constants'
@@ -24,7 +24,7 @@ describe('instrument', () => {
     })
 
     test('calculates an update request with just lambda library layers', async () => {
-      const runtime = 'nodejs12.x'
+      const runtime = Runtime.nodejs12x
       const config = {
         FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world',
         Handler: 'index.handler',
@@ -62,7 +62,7 @@ describe('instrument', () => {
     })
 
     test('calculates an update request with python 3.10', async () => {
-      const runtime = 'python3.10'
+      const runtime = Runtime.python310
       const config = {
         FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world',
         Handler: 'index.handler',
@@ -100,7 +100,7 @@ describe('instrument', () => {
     })
 
     test('calculates an update request with python 3.11', async () => {
-      const runtime = 'python3.11'
+      const runtime = Runtime.python311
       const config = {
         FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world',
         Handler: 'index.handler',
@@ -138,9 +138,9 @@ describe('instrument', () => {
     })
 
     test('calculates an update request with just lambda library layers in arm architecture', async () => {
-      const runtime = 'python3.9'
+      const runtime = Runtime.python39
       const config = {
-        Architectures: ['arm64'],
+        Architectures: [Architecture.arm64],
         FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world',
         Handler: 'handler.hello',
         Layers: [],
@@ -178,7 +178,7 @@ describe('instrument', () => {
 
     test('calculates an update request with a lambda library, extension, and DATADOG_API_KEY', async () => {
       process.env[CI_API_KEY_ENV_VAR] = MOCK_DATADOG_API_KEY
-      const runtime = 'nodejs12.x'
+      const runtime = Runtime.nodejs12x
       const config = {
         FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world',
         Handler: 'index.handler',
@@ -219,7 +219,7 @@ describe('instrument', () => {
 
     test('calculates an update request with a lambda library, extension, and DD_API_KEY', async () => {
       process.env[API_KEY_ENV_VAR] = 'SOME-DD-API-KEY'
-      const runtime = 'nodejs12.x'
+      const runtime = Runtime.nodejs12x
       const config = {
         FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world',
         Handler: 'index.handler',
@@ -260,7 +260,7 @@ describe('instrument', () => {
 
     test('calculates an update request with a lambda library, extension, and DATADOG_API_KEY_SECRET_ARN', async () => {
       process.env[CI_API_KEY_SECRET_ARN_ENV_VAR] = 'some-secret:arn:from:aws'
-      const runtime = 'python3.9'
+      const runtime = Runtime.python39
       const config = {
         FunctionArn: 'arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world',
         Handler: 'index.handler',
@@ -300,7 +300,7 @@ describe('instrument', () => {
 
     test('calculates an update request with a lambda library, extension, and DATADOG_KMS_API_KEY', async () => {
       process.env[CI_KMS_API_KEY_ENV_VAR] = '5678'
-      const runtime = 'python3.9'
+      const runtime = Runtime.python39
       const config = {
         FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world',
         Handler: 'index.handler',
@@ -405,7 +405,7 @@ describe('instrument', () => {
     })
 
     test('by default calculates an update request with DATADOG_SITE being set to datadoghq.com', async () => {
-      const runtime = 'python3.9'
+      const runtime = Runtime.python39
       const config = {
         FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world',
         Handler: 'index.handler',
@@ -531,7 +531,7 @@ describe('instrument', () => {
 
     test('throws error when trying to add `DD_API_KEY_SECRET_ARN` while using sync metrics in a node runtime', async () => {
       process.env[CI_API_KEY_SECRET_ARN_ENV_VAR] = 'some-secret:arn:from:aws'
-      const runtime = 'nodejs14.x'
+      const runtime = Runtime.nodejs14x
       const region = 'us-east-1'
       const config = {
         FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world',
@@ -574,12 +574,12 @@ describe('instrument', () => {
         mergeXrayTraces: false,
         tracingEnabled: false,
       }
-      const dotnetRuntime = 'dotnet6'
-      const javaRuntime = 'java11'
+      const dotnetRuntime = Runtime.dotnet6
+      const javaRuntime = Runtime.java11
 
       describe(`test for runtime ${dotnetRuntime}`, () => {
         const dotNetConfig = {...config, Runtime: dotnetRuntime}
-        const dotNetConfigOnArm86 = {...config, Runtime: dotnetRuntime, Architectures: ['arm64']}
+        const dotNetConfigOnArm86 = {...config, Runtime: dotnetRuntime, Architectures: [Architecture.arm64]}
         test('should throw error when the extension version and trace version are not compatible', async () => {
           process.env[CI_KMS_API_KEY_ENV_VAR] = '5678'
           const badSettings = {...settings, extensionVersion: 24, layerVersion: 3}
@@ -769,7 +769,7 @@ describe('instrument', () => {
           [
             'python',
             {
-              runtime: 'python3.11',
+              runtime: Runtime.python311,
               layer: 'Datadog-Python311',
             },
             'datadog_lambda.handler.handler',
@@ -777,7 +777,7 @@ describe('instrument', () => {
           [
             'node',
             {
-              runtime: 'nodejs16.x',
+              runtime: Runtime.nodejs16x,
               layer: 'Datadog-Node16-x',
             },
             '/opt/nodejs/node_modules/datadog-lambda-js/handler.handler',

@@ -64,11 +64,11 @@
     "watch": "tsc -w"
   },
   "dependencies": {
-    "@aws-sdk/client-cloudwatch-logs": "^3.427.0",
-    "@aws-sdk/client-iam": "^3.427.0",
-    "@aws-sdk/client-lambda": "^3.427.0",
-    "@aws-sdk/client-sfn": "^3.427.0",
-    "@aws-sdk/credential-providers": "^3.427.0",
+    "@aws-sdk/client-cloudwatch-logs": "^3.445.0",
+    "@aws-sdk/client-iam": "^3.445.0",
+    "@aws-sdk/client-lambda": "^3.445.0",
+    "@aws-sdk/client-sfn": "^3.445.0",
+    "@aws-sdk/credential-providers": "^3.445.0",
     "@google-cloud/logging": "^10.5.0",
     "@google-cloud/run": "^0.6.0",
     "@smithy/property-provider": "^2.0.12",
@@ -110,7 +110,7 @@
     "yamux-js": "0.1.2"
   },
   "devDependencies": {
-    "@aws-sdk/types": "^3.425.0",
+    "@aws-sdk/types": "^3.433.0",
     "@babel/core": "7.8.0",
     "@babel/preset-env": "7.4.5",
     "@babel/preset-typescript": "7.3.3",
