@@ -299,11 +299,11 @@ const waitForBatchToFinish = async (
     const current = await getBatch(api, trigger)
     const hasBatchExceededMaxPollingDate = Date.now() >= maxPollingDate
 
-    const receivedResults = reportReceivedResults(current, emittedResultIndexes, reporter)
-
     // The backend is expected to handle the time out of the batch, and change its status to `failed` eventually.
     // But as a safety in case it fails to do that, we also use `hasBatchExceededMaxPollingDate`.
     const shouldContinuePolling = current.status === 'in_progress' && !hasBatchExceededMaxPollingDate
+
+    const receivedResults = reportReceivedResults(current, emittedResultIndexes, reporter)
 
     const resultIdsToFetch = shouldContinuePolling
       ? receivedResults.map((r) => r.result_id)
