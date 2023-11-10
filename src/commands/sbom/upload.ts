@@ -102,6 +102,11 @@ export class UploadSbomCommand extends Command {
           if (this.debug) {
             this.context.stdout.write(`Upload done, status: ${response.status}\n`)
           }
+
+          if (response.status !== 200) {
+            return 1
+          }
+
           const apiTimeMs = endTimeMs - startTimeMs
           this.context.stdout.write(`File ${basePath} successfully uploaded in ${apiTimeMs} ms\n`)
         } catch (error) {
