@@ -1,3 +1,6 @@
+import {createServer} from 'http'
+import {AddressInfo} from 'net'
+
 import type {AxiosError, AxiosResponse} from 'axios'
 
 import axios from 'axios'
@@ -8,6 +11,7 @@ import {apiConstructor, formatBackendErrors, getApiHelper} from '../api'
 import {CriticalError} from '../errors'
 import {APIConfiguration, ExecutionRule, PollResult, ServerResult, TestPayload, Trigger} from '../interfaces'
 import {MAX_TESTS_TO_TRIGGER} from '../run-tests-command'
+import * as utils from '../utils'
 
 import {
   ciConfig,
@@ -23,7 +27,7 @@ describe('dd-api', () => {
   const apiConfiguration: APIConfiguration = {
     apiKey: '123',
     appKey: '123',
-    baseIntakeUrl: 'baseintake',
+    baseIntakeUrl: 'baseIntake',
     baseUnstableUrl: 'baseUnstable',
     baseUrl: 'base',
     proxyOpts: {protocol: 'http'} as ProxyConfiguration,
@@ -75,6 +79,7 @@ describe('dd-api', () => {
   describe('Retry policy', () => {
     beforeEach(() => {
       jest.useFakeTimers({doNotFake: ['nextTick']})
+      jest.restoreAllMocks()
     })
 
     afterEach(() => {
@@ -97,7 +102,7 @@ describe('dd-api', () => {
 
     const api = apiConstructor(apiConfiguration)
 
-    const testCases = [
+    const cases = [
       {
         makeApiRequest: () => api.getBatch('batch-id'),
         name: 'get batch' as const,
@@ -149,13 +154,12 @@ describe('dd-api', () => {
       },
     ]
 
-    test.each(testCases)(
+    test.each(cases)(
       'should retry "$name" request (HTTP 404: $shouldBeRetriedOn404, HTTP 5xx: $shouldBeRetriedOn5xx)',
       async ({makeApiRequest, shouldBeRetriedOn404, shouldBeRetriedOn5xx}) => {
         const serverError = new Error('Server Error') as AxiosError
 
-        const requestMock = jest.fn()
-        requestMock.mockImplementation(() => {
+        const requestMock = jest.fn().mockImplementation(() => {
           throw serverError
         })
         jest.spyOn(axios, 'create').mockImplementation((() => requestMock) as any)
@@ -165,7 +169,7 @@ describe('dd-api', () => {
 
           const requestPromise = makeApiRequest()
           await fastForwardRetries()
-          await expect(requestPromise).rejects.toThrow()
+          await expect(requestPromise).rejects.toThrow('Server Error')
 
           expect(requestMock).toHaveBeenCalledTimes(shouldBeRetriedOn404 ? MAX_ATTEMPTS : MIN_ATTEMPTS)
         }
@@ -177,12 +181,39 @@ describe('dd-api', () => {
 
           const requestPromise = makeApiRequest()
           await fastForwardRetries()
-          await expect(requestPromise).rejects.toThrow()
+          await expect(requestPromise).rejects.toThrow('Server Error')
 
           expect(requestMock).toHaveBeenCalledTimes(shouldBeRetriedOn5xx ? MAX_ATTEMPTS : MIN_ATTEMPTS)
         }
       }
     )
+
+    test('should retry when socket hangs up', async () => {
+      jest.spyOn(utils, 'wait').mockImplementation()
+
+      const requestSpy = jest.fn()
+
+      const server = createServer((_, res) => {
+        // ECONNRESET: socket hang up
+        res.socket?.destroy()
+        requestSpy()
+      })
+
+      server.listen()
+
+      const {port} = server.address() as AddressInfo
+
+      const localApi = apiConstructor({
+        ...apiConfiguration,
+        baseUrl: `http://127.0.0.1:${port}`,
+      })
+
+      await expect(localApi.getSyntheticsOrgSettings).rejects.toThrow('socket hang up')
+
+      expect(requestSpy).toHaveBeenCalledTimes(MAX_ATTEMPTS)
+
+      server.close()
+    })
   })
 
   test('should get a mobile application presigned URL from api', async () => {

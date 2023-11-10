@@ -26,6 +26,7 @@ import {ciTriggerApp, getDatadogHost, retry} from './utils'
 
 const MAX_RETRIES = 3
 const DELAY_BETWEEN_RETRIES = 500 // In ms
+const LARGE_DELAY_BETWEEN_RETRIES = 1000 // In ms
 
 interface BackendError {
   errors: string[]
@@ -215,6 +216,11 @@ const createMobileVersion = (request: (args: AxiosRequestConfig) => AxiosPromise
 type RetryPolicy = (retries: number, error: AxiosError) => number | undefined
 
 const retryOn5xxErrors: RetryPolicy = (retries, error) => {
+  // Retry on Node.js errors for both retry policies.
+  if (retries < MAX_RETRIES && isNodeError(error)) {
+    return LARGE_DELAY_BETWEEN_RETRIES
+  }
+
   if (retries < MAX_RETRIES && is5xxError(error)) {
     return DELAY_BETWEEN_RETRIES
   }
@@ -237,6 +243,8 @@ const getErrorHttpStatus = (error: AxiosError | EndpointError) =>
 export const isForbiddenError = (error: AxiosError | EndpointError) => getErrorHttpStatus(error) === 403
 
 export const isNotFoundError = (error: AxiosError | EndpointError) => getErrorHttpStatus(error) === 404
+
+export const isNodeError = (error: unknown): error is NodeJS.ErrnoException => !!error && 'code' in (error as Error)
 
 export const is5xxError = (error: AxiosError | EndpointError) => {
   const statusCode = getErrorHttpStatus(error)
