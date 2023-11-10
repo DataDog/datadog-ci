@@ -1,6 +1,5 @@
+import type {AxiosPromise, AxiosRequestConfig} from 'axios'
 import type {Writable} from 'stream'
-
-import {AxiosPromise, AxiosRequestConfig} from 'axios'
 
 import {
   CI_ENV_VARS,

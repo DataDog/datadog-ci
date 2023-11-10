@@ -4,7 +4,8 @@ import {mkdtemp} from 'fs/promises'
 import os from 'os'
 import path from 'path'
 
-import {AxiosResponse} from 'axios'
+import type {AxiosResponse} from 'axios'
+
 import FormData from 'form-data'
 import {lte} from 'semver'
 import * as simpleGit from 'simple-git'

@@ -2,8 +2,9 @@ import fs, {existsSync} from 'fs'
 import {promisify} from 'util'
 
 import type {SpanTag, SpanTags} from './interfaces'
+import type {AxiosRequestConfig} from 'axios'
 
-import {AxiosRequestConfig, default as axios} from 'axios'
+import axios from 'axios'
 import {BaseContext, CommandClass, Cli} from 'clipanion'
 import deepExtend from 'deep-extend'
 import {ProxyAgent} from 'proxy-agent'
@@ -176,7 +177,7 @@ export const getRequestBuilder = (options: RequestOptions) => {
         'DD-API-KEY': apiKey,
         ...(appKey ? {'DD-APPLICATION-KEY': appKey} : {}),
         ...args.headers,
-      },
+      } as NonNullable<typeof args.headers>,
     }
 
     if (overrideUrl !== undefined) {
